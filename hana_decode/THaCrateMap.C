@@ -185,8 +185,7 @@ int THaCrateMap::init(UInt_t tloc) {
   TString db;
 
 #ifndef STANDALONE
-  FILE* fi = THaAnalysisObject::OpenFile("cratemap",date,here,"r",
-					 (first?1:0));
+  FILE* fi = THaAnalysisObject::OpenFile("cratemap",date,here,"r",0);
 #else
   FILE* fi = fopen("db_cratemap.dat","r");
 #endif
