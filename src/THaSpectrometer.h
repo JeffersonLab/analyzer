@@ -60,8 +60,12 @@ public:
   virtual void             TrackToLab( THaTrack& track, TVector3& pvect ) const;
   virtual void             TransportToLab( Double_t p, Double_t th, 
 					   Double_t ph, TVector3& pvect ) const;
-  virtual void             LabToTransport( TVector3& vertex, TVector3& pvect,
+  virtual void             LabToTransport( const TVector3& vertex, 
+					   const TVector3& pvect, 
 					   TVector3& tvertex, 
+					   Double_t* ray ) const;
+          void             LabToTransport( const TVector3& vertex, 
+					   const TVector3& pvect, 
 					   Double_t* ray ) const;
 
 protected:
@@ -130,6 +134,16 @@ inline const THaParticleInfo* THaSpectrometer::GetPidParticleInfo( Int_t i )
 inline const THaPidDetector* THaSpectrometer::GetPidDetector( Int_t i ) const
 {
   return (const THaPidDetector*) fPidDetectors->At(i);
+}
+
+//_____________________________________________________________________________
+inline
+void THaSpectrometer::LabToTransport( const TVector3& vertex,
+				      const TVector3& pvect,
+				      Double_t* ray ) const
+{
+  TVector3 dummy;
+  LabToTransport( vertex, pvect, dummy, ray );
 }
 
 #endif

@@ -403,7 +403,8 @@ void THaSpectrometer::TransportToLab( Double_t p, Double_t th, Double_t ph,
 }
 
 //_____________________________________________________________________________
-void THaSpectrometer::LabToTransport( TVector3& vertex, TVector3& pvect,
+void THaSpectrometer::LabToTransport( const TVector3& vertex, 
+				      const TVector3& pvect,
 				      TVector3& tvertex, Double_t* ray ) const
 {
   // Convert lab coordinates to TRANSPORT coordinates in the spectrometer
