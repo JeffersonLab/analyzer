@@ -18,12 +18,8 @@ public:
   THaArrayString() : fNdim(0), fDim(NULL), fLen(-1), fStatus(kNotinit) {}
   THaArrayString( const char* string ) 
     : fName(string), fDim(NULL), fLen(-1)   { Parse(); }
-  THaArrayString( TString& string ) 
-    : fName(string), fDim(NULL), fLen(-1)   { Parse(); }
   THaArrayString( const THaArrayString& );
   THaArrayString& operator=( const THaArrayString& );
-  THaArrayString& operator=( TString& rhs ) 
-  { return operator=(rhs.Data()); }
   THaArrayString& operator=( const char* rhs )
   { Parse( rhs ); return *this; }
   virtual ~THaArrayString()           { delete [] fDim; }
