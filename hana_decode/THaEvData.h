@@ -11,6 +11,7 @@
 #include "TObject.h"
 #include "TString.h"
 #include "THaSlotData.h"
+#include "TBits.h"
 #include "evio.h"
 
 class THaBenchmark;
@@ -22,7 +23,7 @@ class THaHelicity;
 class THaEvData : public TObject {
 
 public:
-     THaEvData();              
+     THaEvData();
      virtual ~THaEvData();
      int GetEvType()   const { return event_type; }
      int GetEvLength() const { return event_length; }
@@ -73,6 +74,9 @@ public:
      int LoadEvent(const int* evbuffer);          
      void PrintSlotData(int crate, int slot) const;
      void PrintOut() const { dump(buffer); }
+
+     UInt_t GetInstance() const { return fInstance; }
+     static UInt_t GetInstances() { return fgInstances.CountBits(); }
 
 // Utility function for hexdumping any sort of data
      static void hexdump(const char* cbuff, size_t len);
@@ -148,6 +152,9 @@ private:
 
      bool fDoBench;
      THaBenchmark *fBench;
+
+     UInt_t fInstance;          //My instance
+     static TBits fgInstances;  //number of instances of this object
 
      ClassDef(THaEvData,0)  // Decoder for CODA event buffer
 

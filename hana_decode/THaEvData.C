@@ -51,6 +51,9 @@ static const int VERBOSE = 1;
 static const int DEBUG   = 0;
 static const int BENCH   = 0;
 
+// Instances of this object
+TBits THaEvData::fgInstances;
+
 //_____________________________________________________________________________
 
 THaEvData::THaEvData() :
@@ -58,6 +61,9 @@ THaEvData::THaEvData() :
   numscaler_crate(0), buffer(0), run_num(0), run_type(0), run_time(0), 
   fNSlotUsed(0), fNSlotClear(0), fMap(0)
 {
+  fInstance = fgInstances.FirstNullBit();
+  fgInstances.SetBitNumber(fInstance);
+  fInstance++;
   epics = new THaEpicsStack;
   crateslot = new THaSlotData*[MAXROC*MAXSLOT];
   helicity = new THaHelicity;
@@ -83,7 +89,12 @@ THaEvData::THaEvData() :
       { "timestamp", "Timestamp",      kDouble, 0, &dtimestamp },
       { 0 }
     };
-    gHaVars->DefineVariables( vars, "g.", "THaEvData::THaEvData" );
+    TString prefix("g");
+    // Allow global variable clash if there are several instances of us
+    if( fInstance > 1 )
+      prefix.Append(Form("%d",fInstance));
+    prefix.Append(".");
+    gHaVars->DefineVariables( vars, prefix, "THaEvData::THaEvData" );
   } else
     Warning("THaEvData::THaEvData","No global variable list found. "
 	    "Variables not registered.");
@@ -104,8 +115,13 @@ THaEvData::~THaEvData() {
   }
   delete fBench;
 #ifndef STANDALONE
-  if( gHaVars )
-    gHaVars->RemoveRegexp( "g.*" );
+  if( gHaVars ) {
+    TString prefix("g");
+    if( fInstance > 1 )
+      prefix.Append(Form("%d",fInstance));
+    prefix.Append(".*");
+    gHaVars->RemoveRegexp( prefix );
+  }
 #endif
   // We must delete every array element since not all may be in fSlotUsed.
   for( int i=0; i<MAXROC*MAXSLOT; i++ )
@@ -117,6 +133,8 @@ THaEvData::~THaEvData() {
   delete fb;
   delete [] fSlotUsed;
   delete [] fSlotClear;
+  fInstance--;
+  fgInstances.SetBitNumber(fInstance,kFALSE);
 }
 
 int THaEvData::GetPrescaleFactor(int trigger_type) const {
