@@ -16,6 +16,9 @@
  *
  * Revision History:
  *   $Log$
+ *   Revision 1.4  2002/09/09 18:11:02  ole
+ *   Trim whitespace from beginning and end of filename in evOpen routine.
+ *
  *   Revision 1.3  2002/08/30 15:02:44  ole
  *   Remove leading spaces from file name in evOpen
  *
@@ -189,7 +192,11 @@ int evOpen(const char *filename,const char *flags,int *handle)
   int temp, blk_size = 0;
   char* fn = (char*)malloc(strlen(filename+1));
   strcpy(fn,filename);
-  while (*fn==' ') fn++; /* remove leading spaces */
+  /* remove leading whitespace */
+  while(isspace(*fn)) fn++; 
+  /* remove trailing whitespace */
+  for(char* cp=fn; *cp!='\0'; cp++)
+    if(isspace(*cp)||!isprint(*cp)) *cp='\0';
   switch (*flags)
   case '\0': case 'r': case 'R': {
     a->file = fopen(fn,"r"); free(fn);
