@@ -184,23 +184,23 @@ Int_t THaShower::SetupDetector( const TDatime& date )
 
   // Register variables in global list
 
-  VarDef vars[] = {
-    { "nhit",   "Number of hits",                     kInt,   0,        &fNhits },
-    { "a",      "Raw ADC amplitudes",                 kFloat, fNelem,   fA },
-    { "a_p",    "Ped-subtracted ADC amplitudes",      kFloat, fNelem,   fA_p },
-    { "a_c",    "Calibrated ADC amplitudes",          kFloat, fNelem,   fA_c },
-    { "asum_p", "Sum of ped-subtracted ADCs",         kFloat, 0,        &fAsum_p },
-    { "asum_c", "Sum of calibrated ADCs",             kFloat, 0,        &fAsum_c },
-    { "nclust", "Number of clusters",                 kInt,   0,        &fNclust },
-    { "e",      "Energy (MeV) of largest cluster",    kFloat, 0,        &fE },
-    { "x",      "x-position (cm) of largest cluster", kFloat, 0,        &fX },
-    { "y",      "y-position (cm) of largest cluster", kFloat, 0,        &fY },
-    { "mult",   "Multiplicity of largest cluster",    kInt,   0,        &fMult },
-    { "nblk",   "Numbers of blocks in main cluster",  kInt,   fNclublk, fNblk },
-    { "eblk",   "Energies of blocks in main cluster", kFloat, fNclublk, fEblk },
-    { "trx",    "track x-position in det plane",      kFloat, 0,        &fTRX },
-    { "try",    "track y-position in det plane",      kFloat, 0,        &fTRY },
-    { 0, 0, 0, 0, 0 }
+  RVarDef vars[] = {
+    { "nhit",   "Number of hits",                     "fNhits" },
+    { "a",      "Raw ADC amplitudes",                 "fA" },
+    { "a_p",    "Ped-subtracted ADC amplitudes",      "fA_p" },
+    { "a_c",    "Calibrated ADC amplitudes",          "fA_c" },
+    { "asum_p", "Sum of ped-subtracted ADCs",         "fAsum_p" },
+    { "asum_c", "Sum of calibrated ADCs",             "fAsum_c" },
+    { "nclust", "Number of clusters",                 "fNclust" },
+    { "e",      "Energy (MeV) of largest cluster",    "fE" },
+    { "x",      "x-position (cm) of largest cluster", "fX" },
+    { "y",      "y-position (cm) of largest cluster", "fY" },
+    { "mult",   "Multiplicity of largest cluster",    "fMult" },
+    { "nblk",   "Numbers of blocks in main cluster",  "fNblk" },
+    { "eblk",   "Energies of blocks in main cluster", "fEblk" },
+    { "trx",    "track x-position in det plane",      "fTRX" },
+    { "try",    "track y-position in det plane",      "fTRY" },
+    { 0 }
   };
   DefineVariables( vars );
 

@@ -189,9 +189,9 @@ Int_t THaTotalShower::SetupDetector( const TDatime& date )
 
   // Register global variables
 
-  VarDef vars[] = {
-    { "e",  "Energy (MeV) of largest cluster",    kFloat, 0, &fE },
-    { "id", "ID of Psh&Sh coincidence (1==good)", kInt,   0, &fID },
+  RVarDef vars[] = {
+    { "e",  "Energy (MeV) of largest cluster",    "fE" },
+    { "id", "ID of Psh&Sh coincidence (1==good)", "fID" },
     { 0 }
   };
   DefineVariables( vars );

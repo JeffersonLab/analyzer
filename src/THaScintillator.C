@@ -158,24 +158,24 @@ Int_t THaScintillator::SetupDetector( const TDatime& date )
 
   // Register variables in global list
 
-  VarDef vars[] = {
-    { "nlthit", "Number of Left paddles TDC times",  kInt,   0,      &fLTNhit },
-    { "nrthit", "Number of Right paddles TDC times", kInt,   0,      &fRTNhit },
-    { "nlahit", "Number of Left paddles ADCs amps",  kInt,   0,      &fLANhit },
-    { "nrahit", "Number of Right paddles ADCs amps", kInt,   0,      &fRANhit },
-    { "lt",     "TDC values left side",              kFloat, fNelem, fLT },
-    { "lt_c",   "Corrected TDC values left side",    kFloat, fNelem, fLT_c },
-    { "rt",     "TDC values right side",             kFloat, fNelem, fRT },
-    { "rt_c",   "Corrected TDC values right side",   kFloat, fNelem, fRT_c },
-    { "la",     "ADC values left side",              kFloat, fNelem, fLA },
-    { "la_p",   "Corrected ADC values left side",    kFloat, fNelem, fLA_p },
-    { "la_c",   "Corrected ADC values left side",    kFloat, fNelem, fLA_c },
-    { "ra",     "ADC values right side",             kFloat, fNelem, fRA },
-    { "ra_p",   "Corrected ADC values right side",   kFloat, fNelem, fRA_p },
-    { "ra_c",   "Corrected ADC values right side",   kFloat, fNelem, fRA_c },
-    { "trx",    "x-position of track in det plane",  kFloat, 0,      &fTRX },
-    { "try",    "y-position of track in det plane",  kFloat, 0,      &fTRY },
-    { 0, 0, 0, 0, 0 }
+  RVarDef vars[] = {
+    { "nlthit", "Number of Left paddles TDC times",  "fLTNhit" },
+    { "nrthit", "Number of Right paddles TDC times", "fRTNhit" },
+    { "nlahit", "Number of Left paddles ADCs amps",  "fLANhit" },
+    { "nrahit", "Number of Right paddles ADCs amps", "fRANhit" },
+    { "lt",     "TDC values left side",              "fLT" },
+    { "lt_c",   "Corrected TDC values left side",    "fLT_c" },
+    { "rt",     "TDC values right side",             "fRT" },
+    { "rt_c",   "Corrected TDC values right side",   "fRT_c" },
+    { "la",     "ADC values left side",              "fLA" },
+    { "la_p",   "Corrected ADC values left side",    "fLA_p" },
+    { "la_c",   "Corrected ADC values left side",    "fLA_c" },
+    { "ra",     "ADC values right side",             "fRA" },
+    { "ra_p",   "Corrected ADC values right side",   "fRA_p" },
+    { "ra_c",   "Corrected ADC values right side",   "fRA_c" },
+    { "trx",    "x-position of track in det plane",  "fTRX" },
+    { "try",    "y-position of track in det plane",  "fTRY" },
+    { 0 }
   };
   DefineVariables( vars );
 

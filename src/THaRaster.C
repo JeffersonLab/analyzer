@@ -85,12 +85,12 @@ THaDetectorBase::EStatus THaRaster::Init( const TDatime& run_time )
 
   // Register raster variables in global list
 
-  VarDef vars[] = {
-    { "Xcur", "X-axis current",        kFloat, 0, &fXcur },
-    { "Ycur", "Y-axis current",        kFloat, 0, &fYcur },
-    { "Xder", "X-axis derivative",     kFloat, 0, &fXder },
-    { "Yder", "Y-axis derivative",     kFloat, 0, &fYder },
-    { 0, 0, 0, 0, 0 }
+  RVarDef vars[] = {
+    { "Xcur", "X-axis current",    "fXcur" },
+    { "Ycur", "Y-axis current",    "fYcur" },
+    { "Xder", "X-axis derivative", "fXder" },
+    { "Yder", "Y-axis derivative", "fYder" },
+    { 0 }
   };
   DefineVariables( vars );
 

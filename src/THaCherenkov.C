@@ -132,19 +132,19 @@ Int_t THaCherenkov::SetupDetector( const TDatime& date )
   if( fIsSetup ) return kOK;
   fIsSetup = true;
 
-  VarDef vars[] = {
-    { "nthit",  "Number of Left paddles TDC times",  kInt,   0,      &fNThit },
-    { "nahit",  "Number of Right paddles TDC times", kInt,   0,      &fNAhit },
-    { "t",      "TDC values",                        kFloat, fNelem, fT },
-    { "t_c",    "Corrected TDC values",              kFloat, fNelem, fT_c },
-    { "a",      "ADC values",                        kFloat, fNelem, fA },
-    { "a_p",    "Ped-subtracted ADC values ",        kFloat, fNelem, fA_p },
-    { "a_c",    "Corrected ADC values",              kFloat, fNelem, fA_c },
-    { "asum_p", "Sum of ADC minus pedestal values",  kFloat, 0,      &fASUM_p },
-    { "asum_c", "Sum of corrected ADC amplitudes",   kFloat, 0,      &fASUM_c },
-    { "trx",    "x-position of track in det plane",  kFloat, 0,      &fTRX },
-    { "try",    "y-position of track in det plane",  kFloat, 0,      &fTRY },
-    { 0, 0, 0, 0, 0 }
+  RVarDef vars[] = {
+    { "nthit",  "Number of Left paddles TDC times",  "fNThit" },
+    { "nahit",  "Number of Right paddles TDC times", "fNAhit" },
+    { "t",      "TDC values",                        "fT" },
+    { "t_c",    "Corrected TDC values",              "fT_c" },
+    { "a",      "ADC values",                        "fA" },
+    { "a_p",    "Ped-subtracted ADC values ",        "fA_p" },
+    { "a_c",    "Corrected ADC values",              "fA_c" },
+    { "asum_p", "Sum of ADC minus pedestal values",  "fASUM_p" },
+    { "asum_c", "Sum of corrected ADC amplitudes",   "fASUM_c" },
+    { "trx",    "x-position of track in det plane",  "fTRX" },
+    { "try",    "y-position of track in det plane",  "fTRY" },
+    { 0 }
   };
   DefineVariables( vars );
 

@@ -63,13 +63,13 @@ THaDetectorBase::EStatus THaEpicsData::Init( const TDatime& run_time )
     
   // Register our variables in global list
 
-  VarDef vars[] = {
-    { "Xposa",  "EPICS Xa position",  kDouble, 0, &fXposa },
-    { "Yposa",  "EPICS Ya position",  kDouble, 0, &fYposa },
-    { "Xposb",  "EPICS Xb position",  kDouble, 0, &fXposb },
-    { "Yposb",  "EPICS Yb position",  kDouble, 0, &fYposb },
-    { "avgcur", "EPICS avg current",  kDouble, 0, &favgcur },
-    { 0, 0, 0, 0, 0 }
+  RVarDef vars[] = {
+    { "Xposa",  "EPICS Xa position", "fXposa" },
+    { "Yposa",  "EPICS Ya position", "fYposa" },
+    { "Xposb",  "EPICS Xb position", "fXposb" },
+    { "Yposb",  "EPICS Yb position", "fYposb" },
+    { "avgcur", "EPICS avg current", "favgcur" },
+    { 0 }
   };
   DefineVariables( vars );
 

@@ -203,12 +203,12 @@ THaDetectorBase::EStatus THaBpm::Init( const TDatime& run_time )
 
   // Define global variables
 
-  VarDef vars[] = {
-    { "x",  "Corrected x-axis data",   kFloat, 6,  fX },
-    { "y",  "Corrected y-axis data",   kFloat, 6,  fY },
-    { "Yx", "Curve parameters x",      kFloat, 3,  fYx },
-    { "Yy", "Curve parameters y",      kFloat, 3,  fYy },
-    { 0, 0, 0, 0, 0 }
+  RVarDef vars[] = {
+    { "x",  "Corrected x-axis data", "fX" },
+    { "y",  "Corrected y-axis data", "fY" },
+    { "Yx", "Curve parameters x",    "fYx" },
+    { "Yy", "Curve parameters y",    "fYy" },
+    { 0 }
   };
   DefineVariables( vars );
 
