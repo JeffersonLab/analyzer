@@ -45,15 +45,15 @@ Double_t THaBeamInfo::GetM() const
 }
 
 //_____________________________________________________________________________
-Double_t THaBeamInfo::GetQ() const
+Int_t THaBeamInfo::GetQ() const
 {
   // Return charge of beam particles (electrons: -1)
 
   if( !fBeam )
-    return kBig;
+    return 0;
   THaRunParameters* rp = fBeam->GetRunParameters();
   if( !rp )
-    return kBig;
+    return 0;
   return rp->GetBeamQ();
 }
 

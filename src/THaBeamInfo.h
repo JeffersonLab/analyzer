@@ -53,7 +53,7 @@ public:
   Double_t  GetPol()   const { return fPol; }
   Double_t  GetE()     const;
   Double_t  GetM()     const;
-  Double_t  GetQ()     const;
+  Int_t     GetQ()     const;
   Double_t  GetdE()    const;
   const TVector3& GetPvect()    const { return fPvect; }
   const TVector3& GetPosition() const { return fPosition; }
