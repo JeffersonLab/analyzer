@@ -47,7 +47,7 @@
 #include "THaGlobals.h"
 #include "THaEvData.h"
 #include "THaDetMap.h"
-//#include "THaVar.h"
+#include "TDatime.h"
 #include "VarDef.h"
 #include <stdio.h>
 
@@ -106,6 +106,8 @@ Int_t THaDecData::SetupDecData( const TDatime* run_time, EMode mode )
 {
   // Register global variables.
 
+  Int_t retval = 0;
+
   RVarDef vars[] = {
     { "evtypebits", "event type bit pattern",      "evtypebits" },  
     { "evtype",     "event type from bit pattern", "evtype" },  
@@ -129,8 +131,10 @@ Int_t THaDecData::SetupDecData( const TDatime* run_time, EMode mode )
     { "misc4",      "misc data 4",                 "misc4" },
     { 0 }
   };
-  Int_t retval = DefineVarsFromList( vars, mode );
+  if( mode != kDefine || !fIsSetup )
+    retval = DefineVarsFromList( vars, mode );
 
+  fIsSetup = ( mode == kDefine );
   if( mode != kDefine )
     return retval;
 
@@ -143,15 +147,38 @@ Int_t THaDecData::SetupDecData( const TDatime* run_time, EMode mode )
   fCrateLoc.clear();   
   fWordLoc.clear();   
 
-  ifstream decdatafile ("decdata.map");
-  if ( !decdatafile ) {
+  ifstream decdatafile;
+
+  const char* const here = "SetupDecData()";
+  const char* name = GetDBFileName();
+
+  TDatime date;
+  if( run_time ) date = *run_time;
+  vector<string> fnames = GetDBFileList( name, date, Here(here));
+  if( !fnames.empty() ) {
+    vector<string>::iterator it = fnames.begin();
+    do {
+#ifdef WITH_DEBUG
+      if( fDebug>0 ) {
+	cout << "<" << Here(here) << ">: Opening database file " << *it;
+      }
+#endif
+      decdatafile.open((*it).c_str());
+      
+#ifdef WITH_DEBUG
+      if( fDebug>0 ) 
+	if( !decdatafile ) cout << " ... failed" << endl;
+	else               cout << " ... ok" << endl;
+#endif
+    } while ( !decdatafile && ++it != fnames.end() );
+  }
+  if( fnames.empty() || !decdatafile )
     if (THADEC_VERBOSE) {
-      cout << "WARNING:: THaDecData: File decdata.map not found."<<endl;
-      cout << "An example of this file should be in ./examples directory."<<endl;
+      cout << "WARNING:: THaDecData: File db_"<<name<<".dat not found."<<endl;
+      cout << "An example of this file should be in the examples directory."<<endl;
       cout << "Will proceed with default mapping for THaDecData."<<endl;
       return DefaultMap();
     }
-  }
 
   string sinput;
   vector<string> strvect;
@@ -188,6 +215,8 @@ THaAnalysisObject::EStatus THaDecData::Init( const TDatime& run_time )
   // Custom Init() method. Since this apparatus has no detectors, we
   // skip the detector initialization.
 
+  fStatus = kNotinit;
+  MakePrefix();
   return fStatus = static_cast<EStatus>( SetupDecData( &run_time ) );
 }
 
