@@ -14,6 +14,7 @@ class THaVarList;
 class THaPrintOption;
 class THaNamedList;
 class TString;
+class THaCut;
 
 class THaCutList {
 
@@ -39,6 +40,8 @@ public:
   virtual Int_t     EvalBlock( const TString& block ) 
     { return EvalBlock(block.Data()); }
   virtual Int_t     EvalBlock( const THaNamedList* plist );
+  THaCut*           FindCut( const char* name ) const
+    { return reinterpret_cast<THaCut*>(fCuts->FindObject( name )); }
   THaNamedList*     FindBlock( const char* block ) const
     { return reinterpret_cast<THaNamedList*>(fBlocks->FindObject( block )); }
   const THashList*  GetCutList()   const { return fCuts; }   //These might disappear
