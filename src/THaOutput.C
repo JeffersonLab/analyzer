@@ -564,9 +564,11 @@ Int_t THaOutput::Process()
     pvar = fArrays[k];
     if ( pvar == 0) continue;
     for (Int_t i = 0; i < pvar->GetLen(); i++) {
-       if (fOdata[k]->Fill(i,pvar->GetValue(i)) != 1) 
-	 cout << "THaOutput::ERROR: storing too much variable sized data: " 
-	      << pvar->GetName() <<"  "<<pvar->GetLen()<<endl;
+      if (fOdata[k]->Fill(i,pvar->GetValue(i)) != 1) {
+	if( fgVerbose>0 )
+	  cerr << "THaOutput::ERROR: storing too much variable sized data: " 
+	       << pvar->GetName() <<"  "<<pvar->GetLen()<<endl;
+      }
     }
   }
   for (Vsiz_h ihist = 0; ihist < fHistos.size(); ihist++) 
@@ -580,7 +582,8 @@ Int_t THaOutput::End()
 {
   if (fTree != 0) fTree->Write();
   if (fEpicsTree != 0) fEpicsTree->Write();
-  cout << "End:: fScalTree size "<<fScalTree.size();
+  if( fgVerbose>1 )
+    cout << "End:: fScalTree size "<<fScalTree.size()<<endl;
   for (std::map<string, TTree*>::iterator mt = fScalTree.begin();
        mt != fScalTree.end(); mt++) {
       TTree* tree = mt->second;
