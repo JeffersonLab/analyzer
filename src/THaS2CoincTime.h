@@ -33,15 +33,15 @@ public:
   
 protected:
   // store the THaVar variable locations for faster processing
-  THaVar* fTrPads1;
-  THaVar* fS2TrPath1;
-  THaVar* fS2Times1;
-  THaVar* fTrPath1;
+  THaVar* fTrPads1;    //!
+  THaVar* fS2TrPath1;  //!
+  THaVar* fS2Times1;   //!
+  THaVar* fTrPath1;    //!
 
-  THaVar* fTrPads2;
-  THaVar* fS2TrPath2;
-  THaVar* fS2Times2;
-  THaVar* fTrPath2;
+  THaVar* fTrPads2;    //!
+  THaVar* fS2TrPath2;  //!
+  THaVar* fS2Times2;   //!
+  THaVar* fTrPath2;    //!
 
   TString fDetName;
   

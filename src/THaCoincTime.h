@@ -50,8 +50,8 @@ public:
   Int_t             fSz1, fSz2;         // allocated number of tracks
   Int_t             fNTr1, fNTr2;       // number of tracks in spectrometers
   
-  Double_t*         fVxTime1;           //[fNTr1] times at vertex for tracks in spec1
-  Double_t*         fVxTime2;           //[fNTr2] times at vertex for tracks in spec2
+  Double_t*         fVxTime1;      //[fNTr1] times at vertex for tracks in spec1
+  Double_t*         fVxTime2;      //[fNTr2] times at vertex for tracks in spec2
   
   Double_t          fdTdc[2];      // timing of trig sp2+delay after trig sp1,
                                    // and timiming of trig sp1+delay after trig sp2

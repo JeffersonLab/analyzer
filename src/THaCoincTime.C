@@ -33,6 +33,8 @@
 
 using namespace std;
 
+#define CAN_RESIZE 0
+
 //_____________________________________________________________________________
 THaCoincTime::THaCoincTime( const char* name,
 			    const char* description,
@@ -58,7 +60,8 @@ THaCoincTime::THaCoincTime( const char* name,
   }
 
   // set aside the memory
-  fSz1 = fSz2 = 3;
+  // only permit for a maximum of 10 tracks per spectrometer
+  fSz1 = fSz2 = 10;
   fVxTime1 = new Double_t[fSz1];
   fVxTime2 = new Double_t[fSz2];
   fSzNtr = fSz1*fSz2;
@@ -344,13 +347,19 @@ Int_t THaCoincTime::Process( const THaEvData& evdata )
   for (Spec_short* sp=SpList; sp->Sp; sp++) {
     sp->Ntr = sp->Sp->GetNTracks();
     if (sp->Ntr > sp->Sz) {  // expand array if necessary
+    // disable the automatic array re-sizing for now
+#if CAN_RESIZE
       delete [] sp->Vxtime;
       sp->Sz = sp->Ntr+5;
       sp->Vxtime = new Double_t[sp->Sz];
+#else
+      Warning(Here("Process()"), "Using only first %d out of %d tracks in spectrometer.", sp->Sz, sp->Ntr);
+      sp->Ntr=sp->Sz; // only look at the permitted number of tracks
+#endif
     }
 
     TClonesArray* tracks = sp->Sp->GetTracks();
-    for ( Int_t i=0; i<sp->Ntr; i++ ) {
+    for ( Int_t i=0; i<sp->Ntr && i<sp->Sz; i++ ) {
       THaTrack* tr = dynamic_cast<THaTrack*>(tracks->At(i));
 #ifdef DEBUG
       // this should be safe to assume -- only THaTrack's go into the tracks array
@@ -378,6 +387,7 @@ Int_t THaCoincTime::Process( const THaEvData& evdata )
   // now, we have the vertex times -- go through the combinations
   fNtimes = fNTr1*fNTr2;
   if (fNtimes > fSzNtr) {  // expand the array if necessary
+#if CAN_RESIZE
     delete [] fTrInd1;
     delete [] fTrInd2;
     delete [] fDiffT2by1;
@@ -388,6 +398,10 @@ Int_t THaCoincTime::Process( const THaEvData& evdata )
     fTrInd2 = new Int_t[fSzNtr];
     fDiffT2by1 = new Double_t[fSzNtr];
     fDiffT1by2 = new Double_t[fSzNtr];
+#else
+    Warning(Here("Process()"), "Using only first %d out of %d track combinations.", fSzNtr, fNtimes);
+    fNtimes = fSzNtr; // only look at the permitted number of tracks
+#endif
   }
   
   // Take the tracks and the coincidence TDC and construct
@@ -395,6 +409,7 @@ Int_t THaCoincTime::Process( const THaEvData& evdata )
   Int_t cnt=0;
   for ( Int_t i=0; i<fNTr1; i++ ) {
     for ( Int_t j=0; j<fNTr2; j++ ) {
+      if (cnt>=fNtimes) break;
       fTrInd1[cnt] = i;
       fTrInd2[cnt] = j;
       fDiffT2by1[cnt] = fVxTime2[j] - fVxTime1[i] + fdTdc[0];
