@@ -276,7 +276,7 @@ for(Int_t i=0, j=0; i<r_nentries; i++) {
 
   newtr->Fill();
 }
-/*
+
 cout<<"Left Arm Clusters:"<<endl;
 for(Int_t i=0, j=0; i<lc_nentries; i++) {
   t->GetEntry(j);
@@ -290,7 +290,6 @@ for(Int_t i=0, j=0; i<lc_nentries; i++) {
     i++;
     clt->GetEntry(i);
   }
-pine
 
   if((i%5000) == 0) cout<<i<<endl;
 
@@ -316,7 +315,7 @@ pine
 
   newclt->Fill();
 }
-*/
+
 newtl->Write();
 newtr->Write();
 newclt->Write();
