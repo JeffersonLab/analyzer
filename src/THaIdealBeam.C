@@ -16,7 +16,7 @@
 ClassImp(THaIdealBeam)
 
 //_____________________________________________________________________________
-Int_t THaIdealBeam::ReadRunDatabase( FILE* file, const TDatime& date )
+Int_t THaIdealBeam::ReadRunDatabase( const TDatime& date )
 {
   // Query the run database for the position and direction information.
   // Tags:  <prefix>.x     (m)
@@ -24,8 +24,11 @@ Int_t THaIdealBeam::ReadRunDatabase( FILE* file, const TDatime& date )
   //        <prefix>.theta (deg)
   //        <prefix>.phi   (deg)
 
-  Int_t err = THaBeam::ReadRunDatabase( file, date );
+  Int_t err = THaBeam::ReadRunDatabase( date );
   if( err ) return err;
+
+  FILE* file = OpenRunDBFile( date );
+  if( !file ) return kFileError;
 
   static const Double_t degrad = TMath::Pi()/180.0;
 
@@ -47,5 +50,6 @@ Int_t THaIdealBeam::ReadRunDatabase( FILE* file, const TDatime& date )
   fDirection.SetXYZ( tt, tp, 1.0 );
   fDirection *= 1.0/TMath::Sqrt( 1.0+tt*tt+tp*tp );
   
+  fclose(file);
   return kOK;
 }

@@ -69,7 +69,7 @@ protected:
 
   void           ClearEvent();
   void           DeleteArrays();
-  virtual Int_t  ReadDatabase( FILE* file, const TDatime& date );
+  virtual Int_t  ReadDatabase( const TDatime& date );
   virtual Int_t  DefineVariables( EMode mode );
   
   THaShower() {}

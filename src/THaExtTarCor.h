@@ -54,7 +54,7 @@ protected:
   const THaVertexModule*  fVertexModule; // Pointer to vertex module
 
   virtual Int_t DefineVariables( EMode mode = kDefine );
-  virtual Int_t ReadRunDatabase( FILE* file, const TDatime& date );
+  virtual Int_t ReadRunDatabase( const TDatime& date );
 
   ClassDef(THaExtTarCor,1)   //Extended target corrections module
 };

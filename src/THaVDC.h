@@ -119,7 +119,7 @@ protected:
 		 const double y, const int norder, const vector<double> &a);
   double CalcTargetVar(const vector<THaMatrixElement> &matrix, 
 		       const double powers[][3]);
-  Int_t ReadDatabase( FILE* file, const TDatime& date );
+  Int_t ReadDatabase( const TDatime& date );
 
   virtual void  Clear( Option_t* opt="" )  {}
   virtual Int_t ConstructTracks( TClonesArray * tracks = NULL, Int_t flag = 0 );

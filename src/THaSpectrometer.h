@@ -100,7 +100,7 @@ protected:
   THaSpectrometer() {}
   THaSpectrometer( const char* name, const char* description );
 
-  virtual Int_t   ReadRunDatabase( FILE* file, const TDatime& date );
+  virtual Int_t   ReadRunDatabase( const TDatime& date );
 
 private:
   Bool_t          fListInit;      //Detector lists initialized

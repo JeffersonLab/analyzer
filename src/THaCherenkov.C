@@ -28,7 +28,7 @@ THaCherenkov::THaCherenkov( const char* name, const char* description,
 }
 
 //_____________________________________________________________________________
-Int_t THaCherenkov::ReadDatabase( FILE* fi, const TDatime& date )
+Int_t THaCherenkov::ReadDatabase( const TDatime& date )
 {
   // Read this detector's parameters from the database file 'fi'.
   // This function is called by THaDetectorBase::Init() once at the
@@ -38,6 +38,9 @@ Int_t THaCherenkov::ReadDatabase( FILE* fi, const TDatime& date )
   static const char* const here = "ReadDatabase()";
 
   // Read database
+
+  FILE* fi = OpenFile( date );
+  if( !fi ) return kFileError;
 
   const int LEN = 100;
   char buf[LEN];
@@ -50,6 +53,7 @@ Int_t THaCherenkov::ReadDatabase( FILE* fi, const TDatime& date )
   if( fIsInit && nelem != fNelem ) {
     Error( Here(here), "Cannot re-initalize with different number of mirrors. "
 	   "(was: %d, now: %d). Detector not re-initialized.", fNelem, nelem );
+    fclose(fi);
     return kInitError;
   }
   fNelem = nelem;
@@ -71,6 +75,7 @@ Int_t THaCherenkov::ReadDatabase( FILE* fi, const TDatime& date )
       Error( Here(here), "Too many DetMap modules (maximum allowed - %d).", 
 	     THaDetMap::kDetMapSize);
       delete [] fFirstChan; fFirstChan = NULL;
+      fclose(fi);
       return kInitError;
     }
     fFirstChan[i++] = first_chan;
@@ -124,6 +129,7 @@ Int_t THaCherenkov::ReadDatabase( FILE* fi, const TDatime& date )
     fscanf( fi, "%f", fGain+i);                   // ADC gains
   fgets ( buf, LEN, fi );
 
+  fclose(fi);
   return kOK;
 }
 

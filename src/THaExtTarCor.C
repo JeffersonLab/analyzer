@@ -201,15 +201,18 @@ Int_t THaExtTarCor::Process()
 }
 
 //_____________________________________________________________________________
-Int_t THaExtTarCor::ReadRunDatabase( FILE* f, const TDatime& date )
+Int_t THaExtTarCor::ReadRunDatabase( const TDatime& date )
 {
   // Qeury the run database for the correction coefficients.
   // Use reasonable defaults if not found.
   // First try tags "<prefix>.theta_corr" and "<prefix>.delta_corr", then
   // global names "theta_corr" and "delta_corr".
 
-  Int_t err = THaPhysicsModule::ReadRunDatabase( f, date );
+  Int_t err = THaPhysicsModule::ReadRunDatabase( date );
   if( err ) return err;
+
+  FILE* f = OpenRunDBFile( date );
+  if( !f ) return kFileError;
 
   const Double_t DEL_COR = 5.18;
   fThetaCorr = 0.61;
@@ -231,6 +234,7 @@ Int_t THaExtTarCor::ReadRunDatabase( FILE* f, const TDatime& date )
 	    "Using default.", fDeltaCorr );
     fDeltaCorr = DEL_COR;
   }	    
-  return 0;
+  fclose(f);
+  return kOK;
 }
   

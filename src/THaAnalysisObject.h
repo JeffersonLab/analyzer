@@ -22,7 +22,7 @@ struct TagDef;
 class THaAnalysisObject : public TNamed {
   
 public:
-  enum EStatus { kOK, kNotinit, kInitError };
+  enum EStatus { kOK, kNotinit, kInitError, kFileError };
   enum EType   { kVarDef, kRVarDef };
   enum EMode   { kDefine, kDelete };
 
@@ -105,9 +105,11 @@ protected:
   virtual void         MakePrefix() = 0;
   virtual FILE*        OpenFile( const TDatime& date )
      { return OpenFile(GetDBFileName(), date, Here("OpenFile()")); }
-  virtual Int_t        ReadDatabase( FILE* file, const TDatime& date )
+  virtual FILE*        OpenRunDBFile( const TDatime& date )
+     { return OpenFile("run", date, Here("OpenFile()")); }
+  virtual Int_t        ReadDatabase( const TDatime& date )
      { return kOK; }
-  virtual Int_t        ReadRunDatabase( FILE* file, const TDatime& date );
+  virtual Int_t        ReadRunDatabase( const TDatime& date );
   virtual Int_t        RemoveVariables()
      { return DefineVariables( kDelete ); }
 

@@ -439,13 +439,16 @@ void THaSpectrometer::LabToTransport( const TVector3& vertex,
 }
 
 //_____________________________________________________________________________
-Int_t THaSpectrometer::ReadRunDatabase( FILE* file, const TDatime& date )
+Int_t THaSpectrometer::ReadRunDatabase( const TDatime& date )
 {
   // Query the run database for parameters specific to this spectrometer
   // (central angles, momentum, offsets, drift, etc.)
-
-  Int_t err = THaApparatus::ReadRunDatabase( file, date );
+  
+  Int_t err = THaApparatus::ReadRunDatabase( date );
   if( err ) return err;
+
+  FILE* file = OpenRunDBFile( date );
+  if( !file ) return kFileError;
 
   static const Double_t degrad = TMath::Pi()/180.0;
   Double_t th = 0.0, ph = 0.0;
@@ -467,6 +470,7 @@ Int_t THaSpectrometer::ReadRunDatabase( FILE* file, const TDatime& date )
       Error( Here("ReadRunDatabase()"), "Required tag %s%s missing in the "
 	     "run database.\nSpectrometer initialization failed.",
 	     fPrefix, tags[err-1].name );
+    fclose(file);
     return kInitError;
   }
 
@@ -495,5 +499,6 @@ Int_t THaSpectrometer::ReadRunDatabase( FILE* file, const TDatime& date )
 
   fPointingOffset.SetXYZ( off_x, off_y, off_z );
 
+  fclose(file);
   return kOK;
 }

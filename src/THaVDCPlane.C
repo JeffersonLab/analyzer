@@ -27,7 +27,6 @@
 
 #include <cstring>
 #include <vector>
-#include <stdio.h>
 
 ClassImp(THaVDCPlane)
 
@@ -77,10 +76,13 @@ void THaVDCPlane::MakePrefix()
 }
 
 //_____________________________________________________________________________
-Int_t THaVDCPlane::ReadDatabase( FILE* file, const TDatime& date )
+Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
 {
   // Allocate TClonesArray objects and load plane parameters from database
-  
+
+  FILE* file = OpenFile( date );
+  if( !file ) return kFileError;
+
   // Use default values until ready to read from database
   
   static const char* const here = "ReadDatabase()";
@@ -105,6 +107,7 @@ Int_t THaVDCPlane::ReadDatabase( FILE* file, const TDatime& date )
   }
   if( !found ) {
     Error(Here(here), "Database entry \"%s\" not found!", tag2.Data() );
+    fclose(file);
     return kInitError;
   }
   
@@ -213,6 +216,7 @@ Int_t THaVDCPlane::ReadDatabase( FILE* file, const TDatime& date )
     fOrigin += fDetector->GetOrigin();
 
   fIsInit = true;
+  fclose(file);
   return kOK;
 }
 

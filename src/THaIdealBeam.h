@@ -21,7 +21,7 @@ public:
 
 protected:
 
-  virtual Int_t ReadRunDatabase( FILE* file, const TDatime& date );
+  virtual Int_t ReadRunDatabase( const TDatime& date );
 
   ClassDef(THaIdealBeam,1)    // A beam with constant position and direction
 };

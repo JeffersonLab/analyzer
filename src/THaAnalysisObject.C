@@ -128,7 +128,6 @@ THaAnalysisObject::EStatus THaAnalysisObject::Init( const TDatime& date )
   // 
   // This implementation will change once the real database is  available.
 
-  Int_t status;
   fStatus = kInitError;
 
   // Generate the name prefix for global variables. Do this here, not in
@@ -138,32 +137,23 @@ THaAnalysisObject::EStatus THaAnalysisObject::Init( const TDatime& date )
 
   // Open the run database and call the reader. If database cannot be opened,
   // fail only if this object needs the run database
-  FILE* fi = OpenFile( "run", date, Here("OpenFile()"));
-  if( fi ) {
+  //  FILE* fi = OpenFile( "run", date, Here("OpenFile()"));
+  //  if( fi ) {
 
-    // Call this object's actual database reader
-    status = ReadRunDatabase( fi, date );
-    fclose(fi);
-    if( status )
-      return fStatus;
-  } else if( fProperties & kNeedsRunDB )
+  // Call this object's actual database reader
+  Int_t status = ReadRunDatabase(date);
+  if( status && (status != kFileError || (fProperties & kNeedsRunDB) != 0))
     return fStatus;
 
-  // Open the database file proper associated with this object's prefix, 
-  // but don't bother if this object has not implemented its own database reader.
+  // Read the database for this object.
+  // Don't bother if this object has not implemented its own database reader.
 
   // Note: requires ROOT >= 3.01 because of TClass::GetMethodAllAny()
   if( IsA()->GetMethodAllAny("ReadDatabase")
       != gROOT->GetClass("THaAnalysisObject")->GetMethodAllAny("ReadDatabase") ) {
 
-    fi = OpenFile( date );
-    if( !fi )
-      return fStatus;
-
     // Call this object's actual database reader
-    status = ReadDatabase( fi, date );
-    fclose(fi);
-    if( status )
+    if( ReadDatabase(date) )
       return fStatus;
   } 
 #ifdef WITH_DEBUG
@@ -174,8 +164,7 @@ THaAnalysisObject::EStatus THaAnalysisObject::Init( const TDatime& date )
 #endif
 
   // Define this object's variables.
-  status = DefineVariables( kDefine );
-  if( status )
+  if( DefineVariables(kDefine) )
     return fStatus;
   
   return fStatus = kOK;
@@ -187,9 +176,6 @@ FILE* THaAnalysisObject::OpenFile( const char *name, const TDatime& date,
 				   const int debug_flag )
 {
   // Open database file and return a pointer to the C-style file descriptor.
-
-  // FIXME: Try to write this in a system-independent way. Avoid direct Unix 
-  // system calls, call ROOT's OS interface instead.
 
   FILE* fi = NULL;
   vector<string> fnames( GetDBFileList(name, date, here) );
@@ -665,14 +651,18 @@ Int_t THaAnalysisObject::SeekDBconfig( FILE* file, const char* tag,
 }
 
 //_____________________________________________________________________________
-Int_t THaAnalysisObject::ReadRunDatabase( FILE* file, const TDatime& date )
+Int_t THaAnalysisObject::ReadRunDatabase( const TDatime& date )
 {
   // Default run database reader. Reads one value, <prefix>.config, into 
   // fConfig.
 
+  FILE* file = OpenRunDBFile( date );
+  if( !file ) return kFileError;
+
   string name(fPrefix); name.append("config");
   LoadDBvalue( file, date, name.c_str(), fConfig );
-    
+
+  fclose(file);
   return kOK;
 }
 

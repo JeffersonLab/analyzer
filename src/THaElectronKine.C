@@ -124,14 +124,17 @@ Int_t THaElectronKine::Process()
 }
 
 //_____________________________________________________________________________
-Int_t THaElectronKine::ReadRunDatabase( FILE* f, const TDatime& date )
+Int_t THaElectronKine::ReadRunDatabase( const TDatime& date )
 {
   // Qeury the run database. Currently queries for the target mass.
   // First searches for "<prefix>.MA", then, if not found, for "MA".
   // If still not found, use proton mass.
 
-  Int_t err = THaPhysicsModule::ReadRunDatabase( f, date );
+  Int_t err = THaPhysicsModule::ReadRunDatabase( date );
   if( err ) return err;
+
+  FILE* f = OpenRunDBFile( date );
+  if( !f ) return kFileError;
 
   fMA = 0.938;
 
@@ -140,6 +143,7 @@ Int_t THaElectronKine::ReadRunDatabase( FILE* f, const TDatime& date )
   if( st )
     LoadDBvalue( f, date, tag.Data(), fMA );
 
+  fclose(f);
   return 0;
 }
   

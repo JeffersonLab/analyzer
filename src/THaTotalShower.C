@@ -159,7 +159,7 @@ THaAnalysisObject::EStatus THaTotalShower::Init( const TDatime& run_time )
 }
 
 //_____________________________________________________________________________
-Int_t THaTotalShower::ReadDatabase( FILE* fi, const TDatime& date )
+Int_t THaTotalShower::ReadDatabase( const TDatime& date )
 {
   // Read this detector's parameters from the database file 'fi'.
   // This function is called by THaDetectorBase::Init() once at the
@@ -169,11 +169,14 @@ Int_t THaTotalShower::ReadDatabase( FILE* fi, const TDatime& date )
   const int LEN = 100;
   char line[LEN];
 
-  rewind( fi );
+  FILE* fi = OpenFile( date );
+  if( !fi ) return kFileError;
+
   fgets ( line, LEN, fi ); fgets ( line, LEN, fi );          
   fscanf ( fi, "%f%f", &fMaxDx, &fMaxDy );  // Max diff of shower centers
 
   fIsInit = true;
+  fclose(fi);
   return kOK;
 }
 

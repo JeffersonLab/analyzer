@@ -47,7 +47,7 @@ THaAnalysisObject::EStatus THaScintillator::Init( const TDatime& date )
 }
 
 //_____________________________________________________________________________
-Int_t THaScintillator::ReadDatabase( FILE* fi, const TDatime& date )
+Int_t THaScintillator::ReadDatabase( const TDatime& date )
 {
   // Read this detector's parameters from the database file 'fi'.
   // This function is called by THaDetectorBase::Init() once at the
@@ -61,7 +61,9 @@ Int_t THaScintillator::ReadDatabase( FILE* fi, const TDatime& date )
 
   // Read data from database 
 
-  rewind( fi );
+  FILE* fi = OpenFile( date );
+  if( !fi ) return kFileError;
+
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
   fscanf ( fi, "%d", &nelem );                        // Number of  paddles
 
@@ -69,6 +71,7 @@ Int_t THaScintillator::ReadDatabase( FILE* fi, const TDatime& date )
   if( fIsInit && nelem != fNelem ) {
     Error( Here(here), "Cannot re-initalize with different number of paddles. "
 	   "(was: %d, now: %d). Detector not re-initialized.", fNelem, nelem );
+    fclose(fi);
     return kInitError;
   }
   fNelem = nelem;
@@ -90,6 +93,7 @@ Int_t THaScintillator::ReadDatabase( FILE* fi, const TDatime& date )
       Error( Here(here), "Too many DetMap modules (maximum allowed - %d).", 
 	     THaDetMap::kDetMapSize);
       delete [] fFirstChan; fFirstChan = NULL;
+      fclose(fi);
       return kInitError;
     }
     fFirstChan[i++] = first_chan;
@@ -158,6 +162,7 @@ Int_t THaScintillator::ReadDatabase( FILE* fi, const TDatime& date )
     fscanf (fi,"%f",fRGain+i);                  // Right Pads ADC Coeff-s
   fgets ( buf, LEN, fi );
 
+  fclose(fi);
   return kOK;
 }
 

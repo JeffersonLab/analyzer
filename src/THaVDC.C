@@ -76,8 +76,13 @@ THaAnalysisObject::EStatus THaVDC::Init( const TDatime& date )
 }
 
 //_____________________________________________________________________________
-Int_t THaVDC::ReadDatabase( FILE* file, const TDatime& date )
+Int_t THaVDC::ReadDatabase( const TDatime& date )
 {
+  // Read VDC database
+
+  FILE* file = OpenFile( date );
+  if( !file ) return kFileError;
+
   // load global VDC parameters
   static const char* const here = "ReadDatabase()";
   const int LEN = 100;
@@ -112,6 +117,7 @@ Int_t THaVDC::ReadDatabase( FILE* file, const TDatime& date )
   }
   if( !found ) {
     Error(Here(here), "Database entry %s not found!", tag2.Data() );
+    fclose(file);
     return kInitError;
   }
 
@@ -158,6 +164,7 @@ Int_t THaVDC::ReadDatabase( FILE* file, const TDatime& date )
     fFPMatrixElems.push_back(ME);
   else {
     Error(Here(here), "Could not read in Matrix Element T000!");
+    fclose(file);
     return kInitError;
   }
   fscanf(file, "%*c");
@@ -184,6 +191,7 @@ Int_t THaVDC::ReadDatabase( FILE* file, const TDatime& date )
     fFPMatrixElems.push_back(ME);
   else {
     Error(Here(here), "Could not read in Matrix Element Y000!");
+    fclose(file);
     return kInitError;
   }
   fscanf(file, "%*c");
@@ -209,6 +217,7 @@ Int_t THaVDC::ReadDatabase( FILE* file, const TDatime& date )
     fFPMatrixElems.push_back(ME);
   else {
     Error(Here(here), "Could not read in Matrix Element P000!");
+    fclose(file);
     return kInitError;
   }
   fscanf(file, "%*c");
@@ -222,6 +231,7 @@ Int_t THaVDC::ReadDatabase( FILE* file, const TDatime& date )
       if(!fscanf(file, "%le", &ME.poly[p_cnt])) {
 	Error(Here(here), "Could not read in Matrix Element %c%d%d%d!",
 	      w, ME.pw[0], ME.pw[1], ME.pw[2]);
+	fclose(file);
 	return kInitError;
       }
 
@@ -273,6 +283,7 @@ Int_t THaVDC::ReadDatabase( FILE* file, const TDatime& date )
   // FIXME: Set geometry data (fOrigin). Currently fOrigin = (0,0,0).
 
   fIsInit = true;
+  fclose(file);
   return kOK;
 }
 

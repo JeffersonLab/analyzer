@@ -57,7 +57,7 @@ protected:
     { return *this; }
 
   virtual Int_t DefineVariables( EMode mode = kDefine );
-  virtual Int_t ReadRunDatabase( FILE* file, const TDatime& date );
+  virtual Int_t ReadRunDatabase( const TDatime& date );
 
   TString                 fSpectroName;  // Name of spectrom. to consider
   const THaSpectrometer*  fSpectro;      // Pointer to spectrometer object

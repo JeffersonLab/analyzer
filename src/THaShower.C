@@ -36,7 +36,7 @@ THaShower::THaShower( const char* name, const char* description,
 }
 
 //_____________________________________________________________________________
-Int_t THaShower::ReadDatabase( FILE* fi, const TDatime& date )
+Int_t THaShower::ReadDatabase( const TDatime& date )
 {
   // Read this detector's parameters from the database file 'fi'.
   // This function is called by THaDetectorBase::Init() once at the
@@ -50,7 +50,8 @@ Int_t THaShower::ReadDatabase( FILE* fi, const TDatime& date )
 
   // Read data from database
 
-  rewind( fi );
+  FILE* fi = OpenFile( date );
+  if( !fi ) return kFileError;
 
   // Blocks, rows, max blocks per cluster
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );          
@@ -62,12 +63,14 @@ Int_t THaShower::ReadDatabase( FILE* fi, const TDatime& date )
   if( fIsInit && (nelem != fNelem || nclbl != fNclublk) ) {
     Error( Here(here), "Cannot re-initalize with different number of blocks or "
 	   "blocks per cluster. Detector not re-initialized." );
+    fclose(fi);
     return kInitError;
   }
 
   if( nrows <= 0 || ncols <= 0 || nclbl <= 0 ) {
     Error( Here(here), "Illegal number of rows or columns: "
 	   "%d %d", nrows, ncols );
+    fclose(fi);
     return kInitError;
   }
   fNelem = nelem;
@@ -85,6 +88,7 @@ Int_t THaShower::ReadDatabase( FILE* fi, const TDatime& date )
     if( fDetMap->AddModule( crate, slot, first, last ) < 0 ) {
       Error( Here(here), "Too many DetMap modules (maximum allowed - %d).", 
 	    THaDetMap::kDetMapSize);
+      fclose(fi);
       return kInitError;
     }
   }
@@ -93,6 +97,7 @@ Int_t THaShower::ReadDatabase( FILE* fi, const TDatime& date )
   UShort_t mapsize = fDetMap->GetSize();
   if( mapsize == 0 ) {
     Error( Here(here), "No modules defined in detector map.");
+    fclose(fi);
     return kInitError;
   }
 
@@ -115,6 +120,7 @@ Int_t THaShower::ReadDatabase( FILE* fi, const TDatime& date )
       for( UShort_t j=0; j<i; j++ )
 	delete [] fChanMap[j];
       delete [] fChanMap; fChanMap = NULL;
+      fclose(fi);
       return kInitError;
     }
   }
@@ -196,6 +202,7 @@ Int_t THaShower::ReadDatabase( FILE* fi, const TDatime& date )
       fBlockY[k] = y + c*dy;
     }
   }
+  fclose(fi);
   return kOK;
 }
 
