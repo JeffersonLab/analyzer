@@ -46,6 +46,79 @@ typedef vector<THaString*>::size_type Vsiz_s;
 Int_t THaOutput::fgVerbose = 1;
 
 //_____________________________________________________________________________
+class THaScalerKey {
+// Utility class used by THaOutput to store a list
+// of 'keys' to access scaler data for output.
+public:
+  THaScalerKey(string& nm, string& bk, Int_t rc,
+	       Int_t hel, Int_t sl, Int_t ch) : 
+    fName(nm), fBank(bk), fRC(rc), fHelicity(hel), fSlot(sl), fChan(ch) { }
+  THaScalerKey(string& nm, string& bk) : 
+    fName(nm), fBank(bk), fRC(0), fHelicity(0), fSlot(-1), fChan(-1) { }
+  virtual ~THaScalerKey() { }
+  void AddBranches(TTree *T, string spref="");
+  void Fill(Double_t dat) { fData = dat; };
+  void Print() const;
+  Double_t GetData() { return fData; };
+  string GetChanName() { return fName; };
+  string GetBank() { return fBank; };
+  Bool_t SlotDefined() { return (fSlot >= 0); };
+  Bool_t IsRate() { return (fRC == 0); };
+  Bool_t IsCounts() { return !IsRate(); };
+  Int_t GetHelicity() { return fHelicity; }; // 0 = none, +1,-1 = helicity
+  Int_t GetSlot()  { return fSlot; };
+  Int_t GetChan() { return fChan; };
+
+private:
+
+  THaScalerKey(const THaScalerKey& key);
+  THaScalerKey& operator=(const THaScalerKey& key);
+  static string DashToUbar(string& var);
+  Double_t fData;
+  string fName, fBank;
+  Int_t fRC, fHelicity, fSlot, fChan;
+  //  ClassDef(THaScalerKey,0)  // Scaler data for output
+};
+
+//_____________________________________________________________________________
+void THaScalerKey::AddBranches(TTree *T, string spref ) 
+{
+  string name = "";
+  if (spref != "noprefix") name = fBank + "_";  
+  if (GetHelicity() > 0) name += "P_"; 
+  if (GetHelicity() < 0) name += "M_";
+  name += fName;
+  name = DashToUbar(name); // Can't have "-", replace with "_".
+  string tinfo = name + "/D";
+  T->Branch(name.c_str(), &fData, tinfo.c_str(), 4000);
+}
+
+//_____________________________________________________________________________
+void THaScalerKey::Print() const 
+{
+  cout << "Scaler key name = "<<fName<<"   bank = "<<fBank;
+  cout << "  sl = "<<fSlot;
+  cout << "  ch = "<<fChan<<"  RC = "<<fRC<<"  hel = "<<fHelicity;
+  cout << "  data = "<<fData<<endl;
+}
+
+//_____________________________________________________________________________
+string THaScalerKey::DashToUbar(string& var)
+{
+  // Replace "-" with "_" because "-" does not work in
+  // a tree variable name: Draw() thinks it's minus.
+  int pos,pos0=0;
+  string output = var;
+  while (1) {
+    pos = output.find("-");
+    if (pos > pos0) {
+      output.replace(pos, 1, "_"); pos0 = pos;
+    } else { break; }
+  }
+  return output;
+}
+
+//_____________________________________________________________________________
 THaOutput::THaOutput() :
    fNvar(0), fVar(NULL), fEpicsVar(0), fTree(NULL), 
    fEpicsTree(NULL), fInit(false)
@@ -1010,6 +1083,6 @@ void THaOutput::SetVerbosity( Int_t level )
 }
 
 //_____________________________________________________________________________
-ClassImp(THaScalerKey)
-ClassImp(THaOdata)
+//ClassImp(THaScalerKey)
+//ClassImp(THaOdata)
 ClassImp(THaOutput)

@@ -26,8 +26,6 @@ class THaVhist;
 class THaScalerGroup;
 class THaEvData;
 
-using namespace std;
-
 class THaOdata {
 // Utility class used by THaOutput to store arrays 
 // up to size 'nsize' for tree output.
@@ -82,70 +80,11 @@ public:
 
 private:
 
-  ClassDef(THaOdata,3)  // Variable sized array
+  //  ClassDef(THaOdata,3)  // Variable sized array
 };
 
 
-class THaScalerKey {
-// Utility class used by THaOutput to store a list
-// of 'keys' to access scaler data for output.
-public:
-  THaScalerKey(THaString nm, THaString bk, Int_t rc,
-          Int_t hel, Int_t sl, Int_t ch) : 
-    fName(nm), fBank(bk), fRC(rc), fHelicity(hel), fSlot(sl), fChan(ch) { }
-  THaScalerKey(THaString nm, THaString bk) : 
-    fName(nm), fBank(bk), fRC(0), fHelicity(0), fSlot(-1), fChan(-1) { }
-  virtual ~THaScalerKey() { }
-  void AddBranches(TTree *T, std::string spref="") {
-    std::string name = "";
-    if (spref != "noprefix") name = fBank + "_";  
-    if (GetHelicity() > 0) name += "P_"; 
-    if (GetHelicity() < 0) name += "M_";
-    name += fName;
-    name = DashToUbar(name); // Can't have "-", replace with "_".
-    std::string tinfo = name + "/D";
-    T->Branch(name.c_str(), &fData, tinfo.c_str(), 4000);
-  }
-  void Fill(Double_t dat) { fData = dat; };
-  void Print() {
-    cout << "Scaler key name = "<<fName<<"   bank = "<<fBank;
-    cout << "  sl = "<<fSlot;
-    cout << "  ch = "<<fChan<<"  RC = "<<fRC<<"  hel = "<<fHelicity;
-    cout << "  data = "<<fData<<endl;
-  }
-  Double_t GetData() { return fData; };
-  THaString GetChanName() { return fName; };
-  THaString GetBank() { return fBank; };
-  Bool_t SlotDefined() { return (fSlot >= 0); };
-  Bool_t IsRate() { return (fRC == 0); };
-  Bool_t IsCounts() { return !IsRate(); };
-  Int_t GetHelicity() { return fHelicity; }; // 0 = none, +1,-1 = helicity
-  Int_t GetSlot()  { return fSlot; };
-  Int_t GetChan() { return fChan; };
-
-private:
-
-  THaScalerKey(const THaScalerKey& key) {}
-  THaScalerKey& operator=(const THaScalerKey& key) { return *this; }
-  string DashToUbar(string& var) {
-    // Replace "-" with "_" because "-" does not work in
-    // a tree variable name: Draw() thinks it's minus.
-    int pos,pos0=0;
-    string output = var;
-    while (1) {
-      pos = output.find("-");
-      if (pos > pos0) {
-        output.replace(pos, 1, "_"); pos0 = pos;
-      } else { break; }
-    }
-    return output;
-  }
-  Double_t fData;
-  std::string fName, fBank;
-  Int_t fRC, fHelicity, fSlot, fChan;
-  ClassDef(THaScalerKey,3)  // Scaler data for output
-};
-
+class THaScalerKey;
 
 
 class THaOutput {
