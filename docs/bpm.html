@@ -253,6 +253,13 @@ $ more harp_results.txt
       calculates the diagonal matrix elements and offsets for the raster to position
       transformation, which are printed and need to be put into the database file 
       for that run. (If someone automates this procedure, let me know ;)
+      This procedure has a sign ambiguity for both the horizontal and the vertical width.
+      This sign depends on cabling and ADCs used, and can therefore change between experiments.
+      Only checking the data can reveal if things are done properly. E.g. looking at 
+      the correlation between rb.x and L/R.gold.y will show if the sign for the horizontal
+      calibration is correct. The vertical sign can be checked by looking at a sharp peak in 
+      an energy spectrum (emiss, omega), before and after applying extended target corrections.
+      If the sign is correct, the width of the peak should get smaller after the corrections.
       <p>
       Now you can replay the coda run again, this time using the THaRasteredBeam
       Apparatus (with the individual database file) to get the phase correct event-by-event 
@@ -268,6 +275,6 @@ $ more harp_results.txt
 <address><a href="mailto:reitz@jlab.org">Bodo Reitz &lt;reitz@jlab.org&gt;</a>
 </address>
 <!-- hhmts start -->
-Last modified: Mon Nov 17 13:11:14 EST 2003
+Last modified: Wed Jul 28 17:51:24 EDT 2004
 <!-- hhmts end -->
 </body> </html>
