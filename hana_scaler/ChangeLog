@@ -1,0 +1,16 @@
+
+
+	Modifications to hana_scaler
+	============================
+
+
+	Jan 20, 2002
+
+	THaScaler.C  and .h  
+	Added the RCS and synchronous scalers (roc9, roc11, etc).
+
+	THaScalerGui.C and .h
+	"scaler" is now a member, instead of inherited.  Solved compilation
+	problems in Ole's released version.
+
+	scaler.map  - updated.
