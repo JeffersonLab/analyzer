@@ -217,21 +217,25 @@ protected:
   Int_t*    fR_U1_rawtime;        //[fR_V1_nhit] Raw TDC times
   Double_t* fR_U1_time;           //[fR_U1_nhit] Corresponding TDC times
   Double_t* fR_U1_clpos;          //[fR_U1_nclust] Centers of clusters (m)
+  Double_t* fR_U1_slope;          //[fR_U1_nclust] Cluster slopes
   Int_t*    fR_U1_clsiz;          //[fR_U1_nclust]  Sizes of clusters (in wires)
   Int_t*    fR_V1_wire;           //[fR_V1_nhit] Hit wires numbers
   Int_t*    fR_V1_rawtime;        //[fR_V1_nhit] Raw TDC times
   Double_t* fR_V1_time;           //[fR_V1_nhit] Corresponding TDC times
   Double_t* fR_V1_clpos;          //[fR_V1_nclust]  Centers of clusters (m)
+  Double_t* fR_V1_slope;          //[fR_V1_nclust] Cluster slopes
   Int_t*    fR_V1_clsiz;          //[fR_V1_nclust]  Sizes of clusters (in wires)
   Int_t*    fR_U2_wire;           //[fR_U2_nhit] Hit wires numbers
   Int_t*    fR_U2_rawtime;        //[fR_V1_nhit] Raw TDC times
   Double_t* fR_U2_time;           //[fR_U2_nhit] Corresponding TDC times
   Double_t* fR_U2_clpos;          //[fR_U2_nclust]  Centers of clusters (m)
+  Double_t* fR_U2_slope;          //[fR_U2_nclust] Cluster slopes
   Int_t*    fR_U2_clsiz;          //[fR_U2_nclust]  Sizes of clusters (in wires)
   Int_t*    fR_V2_wire;           //[fR_V2_nhit] Hit wires numbers
   Int_t*    fR_V2_rawtime;        //[fR_V1_nhit] Raw TDC times
   Double_t* fR_V2_time;           //[fR_V2_nhit] Corresponding TDC times
   Double_t* fR_V2_clpos;          //[fR_V2_nclust]  Centers of clusters (m)
+  Double_t* fR_V2_slope;          //[fR_V2_nclust] Cluster slopes
   Int_t*    fR_V2_clsiz;          //[fR_V2_nclust]  Sizes of clusters (in wires)
   Double_t* fR_TR_x;              //[fR_TR_n] X coordinate (in cm) of track in E-arm cs
   Double_t* fR_TR_y;              //[fR_TR_n] Y coordinate (in cm) of track in E-arm cs
@@ -245,21 +249,25 @@ protected:
   Int_t*    fL_U1_rawtime;        //[fL_U1_nhit] Raw TDC times
   Double_t* fL_U1_time;           //[fL_U1_nhit] Corresponding TDC times
   Double_t* fL_U1_clpos;          //[fL_U1_nclust] Centers of clusters (m)
+  Double_t* fL_U1_slope;          //[fL_U1_nclust] Cluster slopes
   Int_t*    fL_U1_clsiz;          //[fL_U1_nclust]  Sizes of clusters (in wires)
   Int_t*    fL_V1_wire;           //[fL_V1_nhit] Hit wires numbers
   Int_t*    fL_V1_rawtime;        //[fL_V1_nhit] Raw TDC times
   Double_t* fL_V1_time;           //[fL_V1_nhit] Corresponding TDC times
   Double_t* fL_V1_clpos;          //[fL_V1_nclust]  Centers of clusters (m)
+  Double_t* fL_V1_slope;          //[fL_V1_nclust] Cluster slopes
   Int_t*    fL_V1_clsiz;          //[fL_V1_nclust]  Sizes of clusters (in wires)
   Int_t*    fL_U2_wire;           //[fL_U2_nhit] Hit wires numbers
   Int_t*    fL_U2_rawtime;        //[fL_U2_nhit] Raw TDC times
   Double_t* fL_U2_time;           //[fL_U2_nhit] Corresponding TDC times
   Double_t* fL_U2_clpos;          //[fL_U2_nclust]  Centers of clusters (m)
+  Double_t* fL_U2_slope;          //[fL_U2_nclust] Cluster slopes
   Int_t*    fL_U2_clsiz;          //[fL_U2_nclust]  Sizes of clusters (in wires)
   Int_t*    fL_V2_wire;           //[fL_V2_nhit] Hit wires numbers
   Int_t*    fL_V2_rawtime;        //[fL_V2_nhit] Raw TDC times
   Double_t* fL_V2_time;           //[fL_V2_nhit] Corresponding TDC times
   Double_t* fL_V2_clpos;          //[fL_V2_nclust]  Centers of clusters (m)
+  Double_t* fL_V2_slope;          //[fL_V2_nclust] Cluster slopes
   Int_t*    fL_V2_clsiz;          //[fL_V2_nclust]  Sizes of clusters (in wires
   Double_t* fL_TR_x;              //[fL_TR_n] X coordinate (in m) of track in E-arm cs
   Double_t* fL_TR_y;              //[fL_TR_n] Y coordinate (in m) of track in E-arm cs
