@@ -14,10 +14,10 @@ gHaApps->Add( BEAM );
 THaApparatus* DECDAT = new THaDecData("Misc. Decoder Data");
 gHaApps->Add( DECDAT );
 
-THaScaler* scaler;
-scaler = new THaScaler("Left");
+THaScalerGroup* scaler;
+scaler = new THaScalerGroup("Left");
 gHaScalers->Add( scaler );
-scaler = new THaScaler("Right");
+scaler = new THaScalerGroup("Right");
 gHaScalers->Add( scaler );
 
 // Set up the event layout for the output file

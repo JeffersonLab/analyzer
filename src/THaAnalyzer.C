@@ -20,7 +20,7 @@
 #include "THaApparatus.h"
 #include "THaNamedList.h"
 #include "THaCutList.h"
-#include "THaScaler.h"
+#include "THaScalerGroup.h"
 #include "THaPhysicsModule.h"
 #include "evio.h"
 #include "THaCodaData.h"
@@ -243,13 +243,13 @@ Int_t THaAnalyzer::Process( THaRun& run )
       // Similar to apparatuses.
 
       while( !fail && (obj = next_scaler())) {
-	if( !obj->IsA()->InheritsFrom("THaScaler")) {
-	  Error( here, "Scaler %s is not a THaScaler. "
+	if( !obj->IsA()->InheritsFrom("THaScalerGroup")) {
+	  Error( here, "Scaler %s is not a THaScalerGroup. "
 		 "Analyzer initialization failed.", obj->GetName() );
 	  retval = -30;
 	  fail = true;
 	} else {
-	  THaScaler* theScaler = static_cast<THaScaler*>( obj );
+	  THaScalerGroup* theScaler = static_cast<THaScalerGroup*>( obj );
 	  if( theScaler->Init( run_time ) != 0 ) {
 	    retval = -31;
 	    fail = true;
@@ -387,8 +387,8 @@ Int_t THaAnalyzer::Process( THaRun& run )
       //--- Loop over all defined scalers and execute LoadData()
 
       next_scaler.Reset();
-      while( THaScaler* theScaler =
-	     static_cast<THaScaler*>( next_scaler() )) {
+      while( THaScalerGroup* theScaler =
+	     static_cast<THaScalerGroup*>( next_scaler() )) {
 	theScaler->LoadData( evdata );
       }
 
@@ -418,8 +418,8 @@ Int_t THaAnalyzer::Process( THaRun& run )
 
   first = true;
   next_scaler.Reset();
-  while( THaScaler* theScaler =
-	 static_cast<THaScaler*>( next_scaler() )) {
+  while( THaScalerGroup* theScaler =
+	 static_cast<THaScalerGroup*>( next_scaler() )) {
     if( !first ) 
       cout << endl;
     else

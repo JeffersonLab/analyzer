@@ -71,6 +71,7 @@
 //#pragma link C++ class THaVDCLookupTTDConv+;
 #pragma link C++ class THaRawEvent+;
 #pragma link C++ class THaVDCEvent+;
+#pragma link C++ class THaScalerGroup+;
 
 #endif
 
