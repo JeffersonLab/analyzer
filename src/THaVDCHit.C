@@ -43,7 +43,7 @@ Double_t THaVDCHit::ConvertTimeToDist(Double_t slope)
 }
 
 //_____________________________________________________________________________
-Int_t THaVDCHit::Compare(TObject * obj) {
+Int_t THaVDCHit::Compare( const TObject * obj ) const {
   // Used to sort hits
   // A hit is "less than" another hit if it occurred on a lower wire number.
   // Also, for hits on the same wire, the first hit on the wire (the one with

@@ -21,11 +21,12 @@ public:
   virtual ~THaVDCHit();
 
   virtual Double_t ConvertTimeToDist(Double_t slope);
-  Int_t Compare (TObject * obj);
+  Int_t Compare ( const TObject * obj ) const;
   Bool_t IsSortable () const { return kTRUE; }
   
   // Get and Set Functions
   THaVDCWire* GetWire() { return fWire; }
+  Int_t GetWireNum() { return fWire ? fWire->GetNum() : -1; }
   Int_t GetRawTime() { return fRawTime; }
   Double_t GetTime() { return fTime; }
   Double_t GetDist() { return fDist; }
