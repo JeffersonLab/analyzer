@@ -16,9 +16,14 @@
 ////////////////////////////////////////////////////////////////////////
 
 #include "THaString.h"
-#include <strstream>
 #include <algorithm>
 #include <cctype>
+
+#ifdef HAS_SSTREAM
+#include <sstream>
+#else
+#include <strstream>
+#endif
 
 using namespace std;
 
@@ -45,7 +50,11 @@ int THaString::CmpNoCase (const THaString& s) const
 vector<THaString> THaString::Split() const
 {
   // Split on whitespace.
+#ifdef HAS_SSTREAM
+  istringstream ist(c_str());
+#else
   istrstream ist(c_str());
+#endif
   string w;
   vector<THaString> v;
 
@@ -58,7 +67,11 @@ vector<THaString> THaString::Split() const
 UInt_t THaString::Hex() const
 {
   // Conversion to unsigned interpreting as hex.
+#ifdef HAS_SSTREAM
+  istringstream ist(c_str());
+#else
   istrstream ist(c_str());
+#endif
   UInt_t in;
   ist >> hex >> in;
   return in;
