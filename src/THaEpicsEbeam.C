@@ -98,15 +98,12 @@ Int_t THaEpicsEbeam::Process( const THaEvData& evdata )
     Double_t p;
     if( fEpicsIsMomentum ) {
       p = e;
-      e = p*p+m*m;
+      e = TMath::Sqrt(p*p+m*m);
     } else {
-      Double_t t = e*e - m*m;
-      if( t<0.0 )
-	t = 0.0;
-      p = TMath::Sqrt(t);
+      p = TMath::Sqrt( TMath::Max(e*e-m*m,0.0) );
     }
     fBeamIfo.SetP(p);
-    fEcorr = input->GetE() - e;
+    fEcorr = e - input->GetE();
   }
   
   fDataValid = true;
