@@ -20,6 +20,7 @@ class TDatime;
 class THaCut;
 class THaBenchmark;
 class THaEvData;
+class THaPostProcess;
 
 class THaAnalyzer : public TObject {
 
@@ -27,18 +28,31 @@ public:
   THaAnalyzer();
   virtual ~THaAnalyzer();
 
-  void           EnableBenchmarks( Bool_t b = kTRUE ) { fDoBench = b; }
+  virtual Int_t  AddPostProcess( THaPostProcess* module );
+  virtual void   Close();
+  virtual Int_t  Init( THaRun* run );
+          Int_t  Init( THaRun& run )    { return Init( &run ); }
+  virtual Int_t  Process( THaRun* run=NULL );
+          Int_t  Process( THaRun& run ) { return Process(&run); }
+  virtual void   Print( Option_t* opt="" ) const;
+
+  void           EnableBenchmarks( Bool_t b = kTRUE );
   void           EnableHelicity( Bool_t b = kTRUE );
-  void           EnableRunUpdate( Bool_t b = kTRUE )  { fUpdateRun = b; }
-  void           EnableOverwrite( Bool_t b = kTRUE )  { fOverwrite = b; }
-  const char*    GetOutFileName()    const   { return fOutFileName.Data(); }
-  const char*    GetCutFileName()    const   { return fCutFileName.Data(); }
-  const char*    GetOdefFileName()   const   { return fOdefFileName.Data(); }
-  const char*    GetSummaryFileName() const  { return fSummaryFileName.Data(); }
-  const TFile*   GetOutFile()        const   { return fFile; }
-  Int_t          GetCompressionLevel() const { return fCompress; }
-  Bool_t         HasStarted()          const { return fAnalysisStarted; }
-  Bool_t         HelicityEnabled() const;
+  void           EnableRunUpdate( Bool_t b = kTRUE );
+  void           EnableOverwrite( Bool_t b = kTRUE );
+  const char*    GetOutFileName()      const  { return fOutFileName.Data(); }
+  const char*    GetCutFileName()      const  { return fCutFileName.Data(); }
+  const char*    GetOdefFileName()     const  { return fOdefFileName.Data(); }
+  const char*    GetSummaryFileName()  const  { return fSummaryFileName.Data(); }
+  TFile*         GetOutFile()          const  { return fFile; }
+  Int_t          GetCompressionLevel() const  { return fCompress; }
+  THaEvent*      GetEvent()            const  { return fEvent; }
+  TList*         GetApps()             const  { return fApps; }
+  TList*         GetPhysics()          const  { return fPhysics; }
+  TList*         GetScalers()          const  { return fScalers; }
+  TList*         GetPostProcess()      const  { return fPostProcess; }
+  Bool_t         HasStarted()          const  { return fAnalysisStarted; }
+  Bool_t         HelicityEnabled()     const  { return fHelicityEnabled; }
   void           SetEvent( THaEvent* event )     { fEvent = event; }
   void           SetOutFile( const char* name )  { fOutFileName = name; }
   void           SetCutFile( const char* name )  { fCutFileName = name; }
@@ -48,39 +62,38 @@ public:
   void           SetMarkInterval( UInt_t interval ) { fMarkInterval = interval; }
   void           SetVerbosity( Int_t level )        { fVerbose = level; }
 
-  virtual void   Close();
-  virtual Int_t  Init( THaRun* run );
-          Int_t  Init( THaRun& run )    { return Init( &run ); }
-  virtual Int_t  Process( THaRun* run=NULL );
-          Int_t  Process( THaRun& run ) { return Process(&run); }
-  virtual void   Print( Option_t* opt="" ) const;
-
   static THaAnalyzer* GetInstance() { return fgAnalyzer; }
+
+  // Return codes for analysis routines inside event loop
+  enum ERetVal { kOK, kSkip, kTerminate, kFatal };
 
 protected:
   static const char* const kMasterCutName;
 
-  enum { kPreDecode, kRawDecode, kDecode, kCoarseRecon, kReconstruct, kPhysics };
-  enum { kEvFileTrunc, kCodaErr, kPreDecodeTest, kRawDecodeTest, kDecodeTest, 
-	 kCoarseReconTest, kReconstructTest, kPhysicsTest };
-
-  int fMaxStage;
-  int fMaxSkip;
-  
-  // Statistics counters and message texts
-  struct Skip_t {
-    const char* reason;
-    Int_t       count;
-  };
   // Test and histogram blocks
-  struct Stage_t;
-  friend struct Stage_t;
+  enum { 
+    kRawDecode = 0, kDecode, kCoarseTrack, kCoarseRecon, 
+    kTracking, kReconstruct, kPhysics
+  };
   struct Stage_t {
+    Int_t         key;
+    Int_t         countkey;
     const char*   name;
-    int           skipkey;
     TList*        cut_list;
     TList*        hist_list;
     THaCut*       master_cut;
+  };
+  // Statistics counters and message texts
+  enum { 
+    kNevRead = 0, kNevGood, kNevPhysics, kNevScaler, kNevEpics, kNevOther,
+    kNevAnalyzed, kNevAccepted,
+    kEvFileTrunc, kCodaErr, kRawDecodeTest, kDecodeTest, kCoarseTrackTest, 
+    kCoarseReconTest, kTrackTest, kReconstructTest, kPhysicsTest 
+  };
+  struct Counter_t {
+    Int_t       key;
+    const char* description;
+    UInt_t      count;
   };
     
   TFile*         fFile;            //The ROOT output file.
@@ -91,38 +104,65 @@ protected:
   TString        fOdefFileName;    //Name of output definition file
   TString        fSummaryFileName; //Name of test/cut statistics output file
   THaEvent*      fEvent;           //The event structure to be written to file.
-  Stage_t*       fStages;          //Cuts/histograms for each analysis stage [kMaxStage]
-  Skip_t*        fSkipCnt;         //Counters for reasons to skip events [kMaxSkip]
+  Int_t          fMaxStage;        //Number of analysis stages
+  Int_t          fMaxCount;        //Number of counters
+  Stage_t*       fStages;          //[fMaxStage] Parameters for analysis stages
+  Counter_t*     fCounters;        //[fMaxCount] Statistics counters
   UInt_t         fNev;             //Number of events read during most recent replay
   UInt_t         fMarkInterval;    //Interval for printing event numbers
   Int_t          fCompress;        //Compression level for ROOT output file
-  Bool_t         fDoBench;         //Collect detailed timing statistics
+  Int_t          fVerbose;         //Verbosity level
   THaBenchmark*  fBench;           //Counters for timing statistics
-  Int_t          fVerbose;         //Write verbose messages
-  Bool_t         fLocalEvent;      //True if fEvent allocated by this object
-  Bool_t         fIsInit;          //True if Init() called successfully
-  Bool_t         fAnalysisStarted; //True if Process() run and output file still open
-  Bool_t         fUpdateRun;       //If true, update run parameters during replay
-  Bool_t         fOverwrite;       //If true, overwrite any existing output files
-  THaEvent*      fPrevEvent;       //Event structure found during Init()
+  THaEvent*      fPrevEvent;       //Event structure from last Init()
   THaRun*        fRun;             //Copy of current run
   THaEvData*     fEvData;          //Instance of decoder used by us
+  TList*         fApps;            //List of apparatuses
+  TList*         fPhysics;         //List of physics modules
+  TList*         fScalers;         //List of scaler groups
+  TList*         fPostProcess;     //List of post-processing modules
 
-  virtual void   InitStages();
+  // Status and control flags
+  Bool_t         fIsInit;          // Init() called successfully
+  Bool_t         fAnalysisStarted; // Process() run and output file open
+  Bool_t         fLocalEvent;      // fEvent allocated by this object
+  Bool_t         fUpdateRun;       // Update run parameters during replay
+  Bool_t         fOverwrite;       // Overwrite existing output files
+  Bool_t         fHelicityEnabled; // Enable helicity decoding
+  Bool_t         fDoBench;         // Collect detailed timing statistics
+
+  // Variables used in PhysicsAnalysis()
+  Bool_t         fFirstPhysics;    // Status flag for physics analysis
+
+  // Main analysis functions
+  virtual Int_t  BeginAnalysis();
   virtual Int_t  DoInit( THaRun* run );
+  virtual Int_t  EndAnalysis();
+  virtual Int_t  MainAnalysis();
+  virtual Int_t  PhysicsAnalysis( Int_t code );
+  virtual Int_t  ScalerAnalysis( Int_t code );
+  virtual Int_t  SlowControlAnalysis( Int_t code );
+  virtual Int_t  OtherAnalysis( Int_t code );
+  virtual Int_t  PostProcess( Int_t code );
+  virtual Int_t  ReadOneEvent();
+
+  // Support methods
+  void           ClearCounters();
+  Stage_t*       DefineStage( const Stage_t* stage );
+  Counter_t*     DefineCounter( const Counter_t* counter );
+  UInt_t         GetCount( Int_t which ) const;
+  UInt_t         Incr( Int_t which );
   virtual bool   EvalStage( int n );
+  virtual void   InitCounters();
   virtual void   InitCuts();
+  virtual void   InitStages();
   virtual Int_t  InitModules( const TList* module_list, TDatime& time, 
 			      Int_t erroff, const char* baseclass = NULL );
-  //FIXME: BCI: no need for evdata arg
-  virtual Int_t  ReadOneEvent( THaRun* run, THaEvData* evdata );
-  virtual void   PrintSummary( const THaRun* run ) const;
+  virtual void   PrintCounters() const;
+  virtual void   PrintScalers() const;
+  virtual void   PrintCutSummary() const;
 
-  
   static THaAnalyzer* fgAnalyzer;  //Pointer to instance of this class
 
-  //FIXME: BCI: use member variable? or put all flags into fBits?
-  enum { kHelicityEnabled = BIT(14) };
   
 private:
   THaAnalyzer( const THaAnalyzer& );
@@ -132,6 +172,17 @@ private:
 
 };
 
+//---------------- inlines ----------------------------------------------------
+inline UInt_t THaAnalyzer::GetCount( Int_t i ) const
+{ 
+  return fCounters[i].count;
+}
+
+//_____________________________________________________________________________
+inline UInt_t THaAnalyzer::Incr( Int_t i )
+{ 
+  return ++(fCounters[i].count);
+}
 
 #endif
 
