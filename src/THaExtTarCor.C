@@ -125,7 +125,7 @@ Int_t THaExtTarCor::DefineVariables( EMode mode )
   const char* var_prefix = "fTrkIfo.";
 
   const RVarDef var1[] = {
-    { "x",        "Target y coordinate",            "fX"},
+    { "x",        "Target x coordinate",            "fX"},
     { "y",        "Target y coordinate",            "fY"},
     { "th",       "Tangent of target theta angle",  "fTheta"},
     { "ph",       "Tangent of target phi angle",    "fPhi"},    
@@ -134,7 +134,7 @@ Int_t THaExtTarCor::DefineVariables( EMode mode )
     { "px",       "Lab momentum x (GeV)",           "GetPx()"},
     { "py",       "Lab momentum y (GeV)",           "GetPy()"},
     { "pz",       "Lab momentum z (GeV)",           "GetPz()"},
-    { "ok",       "Data valid status flag (1=ok)"   "fOK"},
+    { "ok",       "Data valid status flag (1=ok)",  "fOK"},
     { 0 }
   };
   DefineVarsFromList( var1, mode, var_prefix );
@@ -196,7 +196,7 @@ Int_t THaExtTarCor::Process()
 
   // Save results in our TrackInfo
   fTrkIfo->Set( p, dp, ray[0], theTrack->GetTY(), 
-		  theta, theTrack->GetTPhi(), pvect );
+		theta, theTrack->GetTPhi(), pvect );
 
   return 0;
 }
