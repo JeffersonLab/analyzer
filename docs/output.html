@@ -14,7 +14,7 @@ THaOutput &nbsp; for &nbsp; Analysis &nbsp; Output</font></EM></STRONG>
 <FONT COLOR="Black">
 <P Align=Left>
 <P>
-Bob Michaels, &nbsp; &nbsp; June 2003</FONT>
+Bob Michaels, &nbsp; &nbsp; updated Nov 10, 2003</FONT>
 <P>
 e-mail: &nbsp; &nbsp;rom@jlab.org
 <P>
@@ -35,6 +35,11 @@ new Root/C++ analyzer </A>.  &nbsp; The output is
 defined by an output definition file, e.g. what
 is specified when you do 'analyzer->SetOdefFile("output.def");'
 &nbsp; and has the following elements.
+&nbsp; <Font Color="Red">Note:</Font> To get vectorized
+formulas and histograms you must be using version 1.1
+and higher of the analyzer.  To get EPICS and Scaler data
+you need version 1.2.
+
 </FONT>
 <FONT Color="Black">
 <UL>
@@ -48,6 +53,8 @@ is specified when you do 'analyzer->SetOdefFile("output.def");'
 <LI>  Histograms.  These can involve variables and/or formula, as
       well as optional cuts.  The histograms can be vectors depending
       on the rules for dimensionality.
+<LI>  EPICS data (slow controls variables recorded in datastream.)
+<LI>  Scalers (i.e. data from devices called scalers that count things).
 </LI>
 </UL>
 </FONT>
@@ -56,7 +63,8 @@ is specified when you do 'analyzer->SetOdefFile("output.def");'
 <FONT COLOR="Magenta">SYNTAX &nbsp; of "output.def" &nbsp; FILE</FONT>
 <FONT Color="Black">
 <pre>
-Each line of "output.def" is of the form
+To add global variables, formulas, and histograms, the
+syntax of each line of "output.def" is of the form
 
      <FONT Color="Red">  "keyword  rest-of-line"  </FONT>
 
@@ -92,6 +100,22 @@ where the keywords are as follows :
                are listed together with bin info: nbin, xlo, xhi and if 2D
                the same bin info for y.  Optional cuts can be specified 
                at the end of the line.  See examples below.  
+
+One can add EPICS data or SCALER data to the output with a pair of
+("begin", "end") statements in the output.def file.  This adds the data 
+to both the main tree as well as to new trees.  The new trees are "E" 
+for epics data, and "left" or "right" for the left and right HRS scalers.
+
+     begin epics
+         #  put list of variables here
+     end epics
+
+And for the "left" spectrometer scalers (similarly for "right"):
+
+     begin scalers left
+         #  put list of variables here
+     end scalers
+
 
 </pre>
 
@@ -167,8 +191,8 @@ TH1F  Lor2  'Test of or 2' L.s1.lt 100 0 2000 OR:L.s1.lt>1000
 TH1F  Land1 'Test of and 1' L.s1.lt 100 0 2000 AND:L.s1.lt<1200
 
 
+# --------------------------------------------------
 # For reference, here is a collection of things that do NOT work.
-
 # Cannot define formula in terms of variable sized arrays.
 # Exception: 'formula Lv1w L.vdc.v1.wire' results in Lv1w[0], Lv1w[1]...
 # formula Lw2 L.vdc.v1.wire[2]     # error
@@ -180,6 +204,62 @@ TH1F  Land1 'Test of and 1' L.s1.lt 100 0 2000 AND:L.s1.lt<1200
 # If Lta is a formula, then cut = Lta>1160 is illegal.
 # Must instead write the formula explicitly.
 # TH1F  Lte  'Lta vector formula, cut 3' Lta 100 -1 2000 Lta>1160
+
+
+# --------------------------------------------------
+# EPICS data to appear in regular event tree ("T") and
+# a new EPICS tree ("E").  The E tree is only filled
+# on EPICS events.  The E tree also has a timestamp.
+# Access via T->Draw("hac_bcm_average")
+# and E->Draw("hac_bcm_average")
+# and E->Draw("hac_bcm_average:timestamp")
+
+begin epics
+   hac_bcm_average
+   IPM1H04A.XPOS
+   IPM1H04A.YPOS
+   IPM1H04B.XPOS
+   IPM1H04B.YPOS
+end epics
+
+
+# --------------------------------------------------
+# Scalers to appear in the regular event tree ("T") and
+# new scaler trees, one for each bank.
+# Banks are "right", "left" (and perhaps 3rd arm).
+# Access to data:
+# T->Draw("right_bcm_u1"), right->Draw("bcm_u1")  for R-arm
+# T->Draw("left_bcm_u1"), left->Draw("bcm_u1")  for L-arm
+# "default" and "default_helicity" cause a list
+# of normalization scalers to appear.  Examples:
+# T->Draw("right_trigger_1")  from default list
+# T->Draw("right_P_trigger_1") helicity plus ("P")
+# T->Draw("right_M_trigger_1") helicity minus ("M")
+# also right->Draw("trigger_1"), etc. appear.
+# Implictly the values are RATES (Hz) unless one
+# specifies the "counts" flag.
+# "myclk 8 7"  is a rate from slot 8 chan 7 and
+# appears as T->Draw("myclk").
+# "myclkc 8 7 counts" are raw counts, slot 8, chan 7.
+
+begin scalers right
+   default      # this expands to "trigger_1", "bcm_u1", etc...
+   default_helicity   # expands to "P_trigger_1", "M_trigger_1" ...
+   mypulser 7 3
+   myclk 8 7    
+   myclkc 8 7 counts
+end scalers
+
+begin scalers left
+   default
+   default_helicity
+   mypulser 4 3
+   myclk 4 7
+   myclkc 4 7 counts
+end scalers
+
+
+
 </pre>
 <P>
 <STRONG>
