@@ -4,20 +4,20 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-//#include "TROOT.h"
 #include "THaInterface.h"
+#include <iostream>
 
-//extern void InitGui();
-//VoidFuncPtr_t initfuncs[] = { InitGui, 0 };
-
-//TROOT root( "Analyzer", "The Hall A Analyzer Interactive Interface", initfuncs );
+using namespace std;
 
 int main(int argc, char **argv)
 {
   // Create a ROOT-style interactive interface
 
-  TRint *theApp = new THaInterface( "The Hall A analyzer", &argc, argv );
-  theApp->Run();
+  TApplication *theApp = 
+    new THaInterface( "The Hall A analyzer", &argc, argv );
+  theApp->Run(kTRUE);
+
+  cout << endl;
 
   delete theApp;
 

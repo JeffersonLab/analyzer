@@ -34,6 +34,7 @@
 #include "TFile.h"
 #include "TRegexp.h"
 #include "TError.h"
+#include "TROOT.h"
 #include <algorithm>
 #include <fstream>
 #include <cstring>
@@ -47,8 +48,10 @@ THaVhist::~THaVhist()
   if (fFormX) delete fFormX;
   if (fFormY) delete fFormY;
   if (fCut) delete fCut;
-  for (std::vector<TH1*>::iterator ith = fH1.begin();
-       ith != fH1.end(); ith++) delete *ith;
+  if( TROOT::Initialized() ) {
+    for (std::vector<TH1*>::iterator ith = fH1.begin();
+	 ith != fH1.end(); ith++) delete *ith;
+  }
   fH1.clear();
 }
 

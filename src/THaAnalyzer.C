@@ -178,8 +178,10 @@ void THaAnalyzer::Close()
 
   delete fEvData; fEvData = NULL;
   delete fOutput; fOutput = NULL;
-  delete fFile;   fFile   = NULL;
-  delete fRun;    fRun    = NULL;
+  if( TROOT::Initialized() )
+    delete fFile;
+  fFile = NULL;
+  delete fRun; fRun = NULL;
   if( fLocalEvent ) {
     delete fEvent; fEvent = fPrevEvent = NULL; 
   }
@@ -765,12 +767,11 @@ void THaAnalyzer::PrintScalers() const
   TIter next(fScalers);
   while( THaScalerGroup* theScaler =
 	 static_cast<THaScalerGroup*>( next() )) {
-    if( !first ) 
-      cout << endl;
-    else {
-      cout << "Scaler summary:" << endl;
+    if( first ) {
+      cout << "Scaler summary:";
       first = false;
     }
+    cout << endl;
     theScaler->PrintSummary();
   }
   if( !first ) cout << endl;

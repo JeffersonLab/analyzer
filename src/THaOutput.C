@@ -15,7 +15,7 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaOutput.h"
-#include "TObject.h"
+#include "TROOT.h"
 #include "THaFormula.h"
 #include "THaVform.h"
 #include "THaVhist.h"
@@ -25,7 +25,7 @@
 #include "THaCut.h"
 #include "TH1.h"
 #include "TH2.h"
-#include "TTree.h"
+//#include "TTree.h"
 #include "TFile.h"
 #include "TRegexp.h"
 #include "TError.h"
@@ -58,12 +58,22 @@ THaOutput::~THaOutput()
 {
   // Destructor
 
-  if (fTree) delete fTree;
-  if (fEpicsTree) delete fEpicsTree;
+  // Delete Trees and histograms only if ROOT system is initialized.
+  // ROOT will report being uninitialized if we're called from the TSystem
+  // destructor, at which point the trees already have been deleted.
+  // FIXME: Trees would also be deleted if deleting the output file, right?
+  // Can we use this here?
+  Bool_t alive = TROOT::Initialized();
+  if( alive ) {
+    if (fTree) delete fTree;
+    if (fEpicsTree) delete fEpicsTree;
+  }
   if (fVar) delete [] fVar;
   if (fEpicsVar) delete [] fEpicsVar;
-  for (std::map<string, TTree*>::iterator mt = fScalTree.begin();
-       mt != fScalTree.end(); mt++) delete mt->second;
+  if( alive ) {
+    for (std::map<string, TTree*>::iterator mt = fScalTree.begin();
+	 mt != fScalTree.end(); mt++) delete mt->second;
+  }
   for (std::vector<THaOdata* >::iterator od = fOdata.begin();
        od != fOdata.end(); od++) delete *od;
   for (std::vector<THaVform* >::iterator itf = fFormulas.begin();
