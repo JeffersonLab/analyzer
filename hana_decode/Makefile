@@ -62,34 +62,42 @@ ifndef STANDALONE
 else
    ARCH          = linuxegcs
   # ARCH          = solarisCC5
-endif
 
-ifeq ($(ARCH),solarisCC5)
-  # Solaris CC 5.0
-   CXX           = CC
-   LD            = CC
-   SOFLAGS       = -G
-   ifdef DEBUG
-      CXXFLAGS    = -g -KPIC
-      LDFLAGS     = -g
-   else
-      CXXFLAGS    = -O -KPIC
-      LDFLAGS     = -O
-   endif
-endif
+# Only define compiler options for STANDALONE, otherwise inherit them from
+# top-level Makefile
 
-ifeq ($(ARCH),linuxegcs)
-  # Linux with egcs (>= RedHat 5.2)
-   CXX           = g++
-   LD            = g++
-   SOFLAGS       = -shared
-   ifdef DEBUG
-      CXXFLAGS    = -g -O0 -Wall -Woverloaded-virtual -fPIC
-      LDFLAGS     = -g -O0
-   else
-      CXXFLAGS    = -O2 -Wall -Woverloaded-virtual -fPIC
-      LDFLAGS     = -O2
-   endif
+  DEFINES = -DSTANDALONE
+  ifeq ($(ARCH),solarisCC5)
+     # Solaris CC 5.0
+     CXX           = CC
+     LD            = CC
+     SOFLAGS       = -G
+     ifdef DEBUG
+        CXXFLG      = -g -KPIC
+        LDFLAGS     = -g
+     else
+        CXXFLG      = -O -KPIC
+        LDFLAGS     = -O
+     endif
+  endif
+
+  ifeq ($(ARCH),linuxegcs)
+     # Linux with egcs (>= RedHat 5.2)
+     CXX           = g++
+     LD            = g++
+     SOFLAGS       = -shared
+     ifdef DEBUG
+        CXXFLG      = -g -O0 -Wall -Woverloaded-virtual -fPIC
+        LDFLAGS     = -g -O0
+     else
+        CXXFLG      = -O2 -Wall -Woverloaded-virtual -fPIC
+        LDFLAGS     = -O2
+     endif
+  endif
+  ifdef WITH_DEBUG
+     DEFINES     += -DWITH_DEBUG
+  endif
+  CXXFLG       += $(INCLUDES) $(DEFINES)
 endif
 
 ifeq ($(CXX),)
@@ -98,15 +106,11 @@ endif
 
 MAKEDEPEND    = g++
 
-ifdef WITH_DEBUG
-   CXXFLAGS     += -DWITH_DEBUG
-endif
-
 export OSNAME := $(shell uname)
 
 ifeq ($(OSNAME),SunOS)
 
-   CXXFLAGS      += -DSUNVERS
+   DC_DEFINES    += -DSUNVERS
    EVIO_LIB=libevio_sun.a
    GLIB =  -lm -lc -lgen -lw -lnsl -ldl
    SLIB = -L/opt/SUNWspro/SC4.2/lib -lF77 -lM77 -lsunmath
@@ -123,23 +127,9 @@ ifeq ($(OSNAME),SunOS)
 
 endif
 
-# Note, ET system does not work on HP-UX
-ifeq ($(OSNAME),HP-UX)
-
-   CXX           =   g++
-   CXXFLAGS      =  -O -DHPVERS
-   LD            = g++
-   LDFLAGS       = -g -D
-   SOFLAGS       = -G
-   EVIO_LIB      = libevio_hpux.a
-   GLIB          = -lm -lc  
-   ALL_LIBS      = $(EVIO_LIB) $(GLIB)
-
-endif
-
 ifeq ($(OSNAME),Linux)
 
-   CXXFLAGS      += -DLINUXVERS 
+   DC_DEFINES   += -DLINUXVERS 
 
    LIBS          =
    GLIBS         = -L/usr/X11R6/lib -lXpm -lX11
@@ -156,19 +146,19 @@ ifeq ($(OSNAME),Linux)
    ONLIBS = $(LIBET) -lieee -lpthread -ldl -lresolv
 
    ifdef PROFILE
-      CXXFLAGS += -pg
+      CXXFLG   += -pg
    endif
 
 endif
 
 # ... finished, what ET needs.
 ifdef ONLINE_ET
-  CXXFLAGS   += -DONLINE_ET
+  DC_DEFINES += -DONLINE_ET
   ALL_LIBS   += $(ONLIBS)
 endif
 
-
-CXXFLAGS     += $(INCLUDES)
+DEFINES      += $(DC_DEFINES)
+CXXFLAGS     += $(CXXFLG) $(INCLUDES) $(DEFINES)
 LIBS         += $(ROOTLIBS) $(SYSLIBS)
 GLIBS        += $(ROOTGLIBS) $(SYSLIBS)
 
@@ -205,7 +195,6 @@ endif
 
 ifdef STANDALONE
   all: $(PROGS) libdc.a
-  CXXFLAGS += -DSTANDALONE
 endif
 
 # Library for main analyzer
@@ -283,7 +272,7 @@ swapped_intcpy.o: swapped_intcpy.c
 
 THaDecDict.C: $(HEAD) haDecode_LinkDef.h
 	@echo "Generating Decoder Dictionary..."
-	$(ROOTSYS)/bin/rootcint -f THaDecDict.C -c $(CXXFLAGS) $(INCLUDES) $(HEAD) haDecode_LinkDef.h
+	$(ROOTSYS)/bin/rootcint -f THaDecDict.C -c $(CXXFLAGS) $(HEAD) haDecode_LinkDef.h
 
 # create a tar file of ./$(VERS)/* (all code)
 
@@ -323,7 +312,7 @@ clean_evio:
 #	@$(SHELL) -ec '$(CXX) -MM $(CXXFLAGS) -c $< \
 #		| sed '\''s/\($*\)\.o[ :]*/\1.o $@ : /g'\'' > $@; \
 #		[ -s $@ ] || rm -f $@'
-	@$(SHELL) -ec '$(MAKEDEPEND) -MM $(INCLUDES) -c $< \
+	@$(SHELL) -ec '$(MAKEDEPEND) -MM $(INCLUDES) $(DEFINES) -c $< \
 		| sed '\''s/\($*\)\.o[ :]*/\1.o $@ : /g'\'' > $@; \
 		[ -s $@ ] || rm -f $@'
 

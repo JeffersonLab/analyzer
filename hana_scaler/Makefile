@@ -34,6 +34,9 @@ DCDIR=../hana_decode
 # To build a shared library, uncomment the following line
 export BUILD_SHARED = 1
 
+# To build debug code
+# export DEBUG = 1
+
 # For test executibles, must have the Decoder Library.  I will ship
 # a fairly stable version and call it libdc_local.a (a local copy).  
 # It's probably good enough.  If not, compile it in ../hana_decode
@@ -41,46 +44,53 @@ export BUILD_SHARED = 1
 
 LIBDC=libdc_local.a
 
-ifdef STANDALONE
-# export DEBUG = 1
-ARCH          = linuxegcs
-#ARCH          = solarisCC5
-endif
-
 ROOTCFLAGS   := $(shell root-config --cflags)
 ROOTLIBS     := $(shell root-config --libs)
 ROOTGLIBS    := $(shell root-config --glibs)
 
-INCLUDES      = $(ROOTCFLAGS) -I$(DCDIR)
+INCLUDES     = $(ROOTCFLAGS) -I$(DCDIR)
 
-ifeq ($(ARCH),solarisCC5)
-# Solaris CC 5.0
-CXX           = CC
-ifdef DEBUG
-  CXXFLAGS    = -g
-  LDFLAGS     = -g
-else
-  CXXFLAGS    = -O
-  LDFLAGS     = -O
-endif
-CXXFLAGS     += -KPIC
-LD            = CC
-SOFLAGS       = -G
-endif
+ifdef STANDALONE
+ARCH          = linuxegcs
+#ARCH          = solarisCC5
 
-ifeq ($(ARCH),linuxegcs)
-# Linux with egcs (>= RedHat 5.2)
-CXX           = g++
-ifdef DEBUG
-  CXXFLAGS    = -g -O0
-  LDFLAGS     = -g -O0
-else
-  CXXFLAGS    = -O
-  LDFLAGS     = -O
-endif
-CXXFLAGS     += -Wall -Woverloaded-virtual -fPIC
-LD            = g++
-SOFLAGS       = -shared
+# Only define compiler options for STANDALONE, otherwise inherit them from
+# top-level Makefile
+
+  DEFINES    = -DSTANDALONE
+  ifeq ($(ARCH),solarisCC5)
+  # Solaris CC 5.0
+    CXX           = CC
+    ifdef DEBUG
+      CXXFLG      = -g
+      LDFLAGS     = -g
+    else
+      CXXFLG      = -O
+      LDFLAGS     = -O
+    endif
+    CXXFLG       += -KPIC
+    LD            = CC
+    SOFLAGS       = -G
+    endif
+
+    ifeq ($(ARCH),linuxegcs)
+    # Linux with egcs (>= RedHat 5.2)
+    CXX           = g++
+    ifdef DEBUG
+      CXXFLG      = -g -O0
+      LDFLAGS     = -g -O0
+    else
+      CXXFLG      = -O
+      LDFLAGS     = -O
+    endif
+    CXXFLG       += -Wall -Woverloaded-virtual -fPIC
+    LD            = g++
+    SOFLAGS       = -shared
+  endif
+
+  ifdef WITH_DEBUG
+    DEFINES      += -DWITH_DEBUG
+  endif
 endif
 
 ifeq ($(CXX),)
@@ -89,15 +99,11 @@ endif
 
 MAKEDEPEND    = g++
 
-ifdef WITH_DEBUG
-CXXFLAGS     += -DWITH_DEBUG
-endif
-
 export OSNAME := $(shell uname)
 
 ifeq ($(OSNAME),SunOS)
 
-   CXXFLAGS     += -DSUNVERS
+   SC_DEFINES     += -DSUNVERS
 #   GLIB = -lc -lgen -lw
    GLIB = 
    SLIB = -L/opt/SUNWspro/SC4.2/lib -lsunmath
@@ -118,7 +124,7 @@ endif
 ifeq ($(OSNAME),HP-UX)
 
    CXX           = g++
-   CXXFLAGS      =  -O -DHPVERS -I$(DCDIR)
+   CXXFLG        =  -O -DHPVERS -I$(DCDIR)
    LD            = g++
    LDFLAGS       = -g -D
    SOFLAGS       = -G
@@ -132,7 +138,7 @@ endif
 
 ifeq ($(OSNAME),Linux)
 
-   CXXFLAGS     += -DLINUXVERS
+   SC_DEFINES   += -DLINUXVERS
 
    LIBS          = 
    GLIBS         = -L/usr/X11R6/lib -lXpm -lX11
@@ -140,7 +146,12 @@ ifeq ($(OSNAME),Linux)
 
 endif
 
-CXXFLAGS     += $(INCLUDES)
+ifdef ROOTPRE3
+  SC_DEFINES  += -DROOTPRE3
+endif
+
+DEFINES      += $(SC_DEFINES)
+CXXFLAGS     += $(CXXFLG) $(INCLUDES) $(DEFINES)
 LIBS         += $(ROOTLIBS) $(SYSLIBS)
 GLIBS        += $(ROOTGLIBS) $(SYSLIBS)
 
@@ -151,13 +162,8 @@ SRC = THaScaler.C THaNormScaler.C THaScalerBank.C THaScalerDB.C
 
 HEAD = $(SRC:.C=.h)
 DEPS = $(SRC:.C=.d)
-SCALER_OBJS = $(SRC:.C=.o)
+SCALER_OBJS = $(SRC:.C=.o) THaScalDict.o
 
-ifdef ROOTPRE3
-CXXFLAGS += -DROOTPRE3
-else
-SCALER_OBJS += THaScalDict.o
-endif
 
 # Test code executibles
 PROGS = tscalfile tscalasy tscalhist tscalonl 
@@ -169,7 +175,6 @@ PROGS += tscalntup tscaldtime tscalroc11 tscalevt tscalring
 # to compile only the library libscaler.a for use with the main analyzer.
 
 ifdef STANDALONE
-CXXFLAGS += -DSTANDALONE
   all: $(PROGS) libscaler.a
 else
  ifdef BUILD_SHARED
@@ -274,7 +279,7 @@ realclean:  clean
 #	@$(SHELL) -ec '$(CXX) -MM $(CXXFLAGS) -c $< \
 #		| sed '\''s/\($*\)\.o[ :]*/\1.o $@ : /g'\'' > $@; \
 #		[ -s $@ ] || rm -f $@'
-	@$(SHELL) -ec '$(MAKEDEPEND) -MM $(INCLUDES) -c $< \
+	@$(SHELL) -ec '$(MAKEDEPEND) -MM $(INCLUDES) $(DEFINES) -c $< \
 		| sed '\''s/\($*\)\.o[ :]*/\1.o $@ : /g'\'' > $@; \
 		[ -s $@ ] || rm -f $@'
 
