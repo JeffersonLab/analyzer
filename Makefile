@@ -101,6 +101,10 @@ SRC           = src/THaFormula.C src/THaVar.C src/THaVarList.C src/THaCut.C \
 		src/THaPhysicsModule.C src/THaVertexModule.C \
 		src/THaAnalyzer.C src/THaPrintOption.C \
 		src/THaBeam.C src/THaIdealBeam.C \
+		src/THaRasteredBeam.C src/THaRaster.C\
+		src/THaBeamDet.C\
+                src/THaBPM.C\
+		src/THaUnRasteredBeam.C\
 		src/THaTrack.C src/THaPIDinfo.C src/THaParticleInfo.C \
 		src/THaCluster.C src/THaMatrix.C src/THaArrayString.C \
 		src/THaScintillator.C src/THaShower.C \
