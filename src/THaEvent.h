@@ -20,7 +20,7 @@ public:
     fRun(0) {}
   virtual ~THaEventHeader() {}
 
-  void   Set( Int_t num, Int_t type, Int_t len, Double_t time,
+  void   Set( UInt_t num, Int_t type, Int_t len, Double_t time,
 	      Int_t hel, Int_t run ) { 
     fEvtNum   = num; 
     fEvtType  = type;
@@ -29,7 +29,7 @@ public:
     fHelicity = hel;
     fRun      = run; 
   }
-  Int_t    GetEvtNum()   const  { return fEvtNum; }
+  UInt_t   GetEvtNum()   const  { return fEvtNum; }
   Int_t    GetEvtType()  const  { return fEvtType; }
   Int_t    GetEvtLen()   const  { return fEvtLen; }
   Double_t GetEvtTime()  const  { return fEvtTime; }
@@ -37,14 +37,14 @@ public:
   Int_t    GetRun()      const  { return fRun; }
 
 private:
-  Int_t    fEvtNum;           // Event number
+  UInt_t   fEvtNum;           // Event number
   Int_t    fEvtType;          // Event type
   Int_t    fEvtLen;           // Event length
   Double_t fEvtTime;          // Event time stamp
   Int_t    fHelicity;         // Beam helicity
   Int_t    fRun;              // Run number
 
-  ClassDef(THaEventHeader,3)  //THaEvent Header
+  ClassDef(THaEventHeader,4)  //THaEvent Header
 };
 
 
