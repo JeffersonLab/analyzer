@@ -20,9 +20,10 @@
 ClassImp(THaElectronKine)
 
 //_____________________________________________________________________________
-THaElectronKine::THaElectronKine( const char* name, 
-				  const char* description ) :
-  THaPhysicsModule(name,description), fMA(0.0), fSpectro(NULL)
+THaElectronKine::THaElectronKine( const char* name, const char* description,
+				  const char* name ) :
+  THaPhysicsModule(name,description), fMA(0.0), 
+  fSpectroName(name), fSpectro(NULL)
 {
   // Normal constructor.
 

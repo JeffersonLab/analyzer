@@ -15,7 +15,8 @@ class THaSpectrometer;
 class THaElectronKine : public THaPhysicsModule {
   
 public:
-  THaElectronKine( const char* name, const char* description );
+  THaElectronKine( const char* name, const char* description,
+		   const char* spectro = "" );
   virtual ~THaElectronKine();
   
   virtual void      Clear( Option_t* opt="" );
