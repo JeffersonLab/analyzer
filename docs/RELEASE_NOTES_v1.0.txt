@@ -1,7 +1,7 @@
 Hall A C++ Analyzer version 1.00
 --------------------------------
 
-31 May 2003
+12 June 2003
 
 After more than one year of development since the last beta version, 
 the Hall A software team is proud to present the first major release 
@@ -134,11 +134,6 @@ to address some of the items below and is currently being tested.
 
 - There is no code yet to analyze the FPP.
 
-- The detection of the helicity sequence is not as intelligent
-  as in the latest (unofficial) ESPACE.  After a helicity synchronization loss
-  (e.g. due to deadtime), the helicity information is invalid for a relatively
-  long time (ca. 1 second), causing some loss in statistics.
-
 - Arrays cannot be used in formula and histogram definitions
   for the output. Arrays must be written in unmodified form to the output
   tree. The tree can then be post-processed with an analysis macro.
@@ -152,8 +147,29 @@ to address some of the items below and is currently being tested.
   This is mostly an inconvenience for authors of new detector/apparatus
   classes.
 
+- Currently it is not possible to use any sort of string variables and/or 
+  conditionals in the cut and output definition files.  This means,
+  for example, that cuts and output for left and right arm HRS must be
+  defined in separate definition files, even if the definitions are
+  very similar (i.e. only differ by the apparatus name).
+
+- Only one cut and output definition file can be loaded at the beginning
+  of the analysis.
+
+- The cut definition file is not checked for the correct order of the
+  analysis stage blocks. By arranging blocks in a non-standard order,
+  it is possible to mess up the test logic.
+
+- Histograms are always filled after the "Physics" analysis stage.
+  If events do not reach that point due to failed tests at earlier stages,
+  no data from such events can be histogrammed. As a workaround, do not
+  use tests to skip events of interest for histogramming.
+
 - There are some issues with the storage of the history of decoded EPICS
   (slow control) variables.
+
+- Analyzing the second and subsequent segments of split data files does
+  not work because these files do not contain a prestart event.
 
 - There is no "configure" script to handle system dependences of
   the Makefiles etc.  Whatever changes to the Makefiles are necessary 
