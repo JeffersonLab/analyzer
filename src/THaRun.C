@@ -11,6 +11,7 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaRun.h"
+#include "THaAnalysisObject.h"
 #include "THaCodaFile.h"
 #include "TMath.h"
 #include <iostream>
@@ -21,7 +22,7 @@
 ClassImp(THaRun)
 
 //_____________________________________________________________________________
-THaRun::THaRun() : TNamed(), fNumber(0), 
+THaRun::THaRun() : TNamed(), fNumber(0), fDBRead(false),
   fBeamE(0.0), fBeamP(0.0), fBeamM(0.0), fBeamQ(0), fBeamdE(0.0), fTarget(0)
 {
   // Default constructor
@@ -33,6 +34,7 @@ THaRun::THaRun() : TNamed(), fNumber(0),
 //_____________________________________________________________________________
 THaRun::THaRun( const char* fname, const char* descr ) : 
   TNamed("", strlen(descr) ? descr : fname), fNumber(0), fFilename(fname),
+  fDBRead(false),
   fBeamE(0.0), fBeamP(0.0), fBeamM(0.0), fBeamQ(0), fBeamdE(0.0), fTarget(0)
 {
   // Normal constructor
@@ -52,6 +54,7 @@ THaRun::THaRun( const THaRun& rhs ) : TNamed( rhs )
   fFirstEvent = rhs.fFirstEvent;
   fLastEvent  = rhs.fLastEvent;
   fCodaFile   = new THaCodaFile;
+  fDBRead     = rhs.fDBRead;
   fBeamE      = rhs.fBeamE;
   fBeamP      = rhs.fBeamP;
   fBeamM      = rhs.fBeamM;
@@ -72,6 +75,7 @@ THaRun& THaRun::operator=(const THaRun& rhs)
      fFilename   = rhs.fFilename;
      fFirstEvent = rhs.fFirstEvent;
      fLastEvent  = rhs.fLastEvent;
+     fDBRead     = rhs.fDBRead;
      delete fCodaFile;
      fCodaFile   = new THaCodaFile;
      fBeamE      = rhs.fBeamE;
@@ -171,6 +175,37 @@ void THaRun::Print( Option_t* opt ) const
 }
 
 //_____________________________________________________________________________
+Int_t THaRun::ReadDatabase()
+{
+  // Qeury the run database for the beam and target parameters for the 
+  // date/time of this run.  The run should have been set, otherwise
+  // the time when the run object was created (usually shortly before the 
+  // current time) will be used.
+  // Return 0 if success.
+
+#define OPEN THaAnalysisObject::OpenFile
+#define READ THaAnalysisObject::LoadRunDBvalue
+
+  FILE* f = OPEN( "run", fDate, "THaRun::ReadDatabase()" );
+  if( !f ) return -1;
+  Int_t iq;
+  Double_t E, M = 0.511e-3, Q = -1.0, dE = 0.0;
+
+  if( READ( f, fDate, "Ebeam", E ) ) return -1;  // Beam energy is required
+  READ( f, fDate, "mbeam", M );
+  READ( f, fDate, "qbeam", Q );
+  READ( f, fDate, "dEbeam", dE );
+  iq = int(Q);
+  SetBeam( E, M, iq, dE );
+
+  // FIXME: Read target parameters and 
+  fTarget = NULL;
+  fDBRead = true;
+
+  return 0;
+}
+  
+//_____________________________________________________________________________
 Int_t THaRun::ReadEvent()
 {
   // Read one event from CODA file.
@@ -199,7 +234,7 @@ void THaRun::SetDate( UInt_t tloc )
 
   // fDate.Set(tloc) only supported by ROOT>=3.01/06, so we 
   // code it by hand for now.
-  // FIXME: use preprocessor ifdef
+  // FIXME: use preprocessor ifdef? This is Unix-specific!
   time_t t = tloc;
   struct tm* tp = localtime(&t);
   fDate.Set( tp->tm_year, tp->tm_mon+1, tp->tm_mday, 

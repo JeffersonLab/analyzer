@@ -27,6 +27,7 @@ public:
   virtual Int_t        Compare( const TObject* obj ) const;
   virtual void         Copy( TObject& obj );
   //  virtual void         FillBuffer( char*& buffer );
+          bool         DBRead()         const { return fDBRead; }
           Double_t     GetBeamE()       const { return fBeamE; }
           Double_t     GetBeamdE()      const { return fBeamdE; }
           Double_t     GetBeamM()       const { return fBeamM; }
@@ -42,6 +43,7 @@ public:
   virtual Int_t        OpenFile();
   virtual Int_t        OpenFile( const char* filename );
   virtual void         Print( Option_t* opt="" ) const;
+  virtual Int_t        ReadDatabase();
   virtual Int_t        ReadEvent();
           void         SetBeam( Double_t E, Double_t M, Int_t Q, 
 				Double_t dE = 0.0 );
@@ -64,6 +66,7 @@ protected:
   UInt_t        fFirstEvent;   //  First event to analyze
   UInt_t        fLastEvent;    //  Last event to analyze
   THaCodaFile*  fCodaFile;     //! CODA file associated with this run
+  bool          fDBRead;       //  True if database successfully read.
 
   // The following comes from the run database
   Double_t      fBeamE;        //  Total nominal beam energy (GeV)
