@@ -88,7 +88,9 @@ const char* THaVar::GetTypeName() const
 {
   static const char* const type[] = { 
     "Double_t", "Float_t", "Long_t", "ULong_t", "Int_t", "UInt_t", "Short_t", 
-    "UShort_t", "Char_t", "Byte_t" };
+    "UShort_t", "Char_t", "Byte_t", 
+    "Double_t*", "Float_t*", "Long_t*", "ULong_t*", "Int_t*", "UInt_t*", 
+    "Short_t*", "UShort_t*", "Char_t*", "Byte_t*" };
 
   return type[fType];
 }
@@ -97,6 +99,9 @@ const char* THaVar::GetTypeName() const
 size_t THaVar::GetTypeSize() const
 {
   static const size_t size[] = { 
+    sizeof(Double_t), sizeof(Float_t), sizeof(Long_t), sizeof(ULong_t), 
+    sizeof(Int_t), sizeof(UInt_t), sizeof(Short_t), sizeof(UShort_t), 
+    sizeof(Char_t), sizeof(Byte_t),
     sizeof(Double_t), sizeof(Float_t), sizeof(Long_t), sizeof(ULong_t), 
     sizeof(Int_t), sizeof(UInt_t), sizeof(Short_t), sizeof(UShort_t), 
     sizeof(Char_t), sizeof(Byte_t) };
@@ -141,8 +146,9 @@ Int_t THaVar::Index( const char* s ) const
   // to the array element described by the string 's'.
   // 's' must be either a single integer subscript (for a 1-d array) 
   // or a comma-separated list of subscripts (for multi-dimensional arrays).
+  //
   // NOTE: This method is vastly less efficient than THaVar::Index( THaArraySring& )
-  // above.
+  // above because the string has to be parsed first.
   //
   // Return -1 if subscript(s) out of bound(s) or -2 if incompatible arrays.
 
@@ -175,6 +181,10 @@ void THaVar::Print(Option_t* option) const
   cout << GetLen() << "]";
   for( int i=0; i<GetLen(); i++ ) {
     cout << "  ";
+    if( IsPointerArray() && (!fValueDD || !fValueDD[i]) ) {
+      cout << "???";
+      continue;
+    }
     switch( fType ) {
     case kDouble:
       cout << fValueD[i]; break;
@@ -193,10 +203,32 @@ void THaVar::Print(Option_t* option) const
     case kUShort:
       cout << fValueW[i]; break;
     case kChar:
-      cout << static_cast<Short_t>(fValueC[i]); 
+      cout << static_cast<Short_t>(fValueC[i]);  // cast to force numeric output
       break;
     case kByte:
       cout << static_cast<UShort_t>(fValueB[i]); 
+      break;
+    case kDoubleP:
+      cout << *fValueDD[i]; break;
+    case kFloatP:
+      cout << *fValueFF[i]; break;
+    case kLongP:
+      cout << *fValueLL[i]; break;
+    case kULongP:
+      cout << *fValueXX[i]; break;
+    case kIntP:
+      cout << *fValueII[i]; break;
+    case kUIntP:
+      cout << *fValueUU[i]; break;
+    case kShortP:
+      cout << *fValueSS[i]; break;
+    case kUShortP:
+      cout << *fValueWW[i]; break;
+    case kCharP:
+      cout << static_cast<Short_t>(*fValueCC[i]);  // cast to force numeric output
+      break;
+    case kByteP:
+      cout << static_cast<UShort_t>(*fValueBB[i]); 
       break;
     default:
       break;
