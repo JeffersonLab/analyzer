@@ -43,16 +43,26 @@
 using namespace std;
 
 //_____________________________________________________________________________
+THaVhist::THaVhist( const THaString& type, const THaString& name, 
+		    const THaString& title ) :
+  fType(type), fName(name), fTitle(title), fNbinX(0), fNbinY(0), fSize(0),
+  fInitStat(0), fScaler(0), fEye(0), fXlo(0.0), fXhi(0.0), fYlo(0.0), fYhi(0.0),
+  fFirst(kTRUE), fProc(kTRUE), fFormX(NULL), fFormY(NULL), fCut(NULL),
+  fMyFormX(kFALSE), fMyFormY(kFALSE), fMyCut(kFALSE)
+{ 
+  fH1.clear();
+}
+
+//_____________________________________________________________________________
 THaVhist::~THaVhist() 
 {
-  if (fFormX) delete fFormX;
-  if (fFormY) delete fFormY;
-  if (fCut) delete fCut;
+  if (fFormX && fMyFormX) delete fFormX;
+  if (fFormY && fMyFormY) delete fFormY;
+  if (fCut && fMyCut) delete fCut;
   if( TROOT::Initialized() ) {
     for (std::vector<TH1*>::iterator ith = fH1.begin();
 	 ith != fH1.end(); ith++) delete *ith;
   }
-  fH1.clear();
 }
 
 //_____________________________________________________________________________
@@ -75,29 +85,6 @@ void THaVhist::CheckValidity( )
      cerr << "THaVhist:ERROR:: Improperly initialized."<<endl;
   }
 } 
-
-//_____________________________________________________________________________
-void THaVhist::Clear( ) 
-{
-  fVarX     = "";
-  fVarY     = "";
-  fScut     = "";
-  fNbinX    = 0;
-  fNbinY    = 0;
-  fScaler   = 0;
-  fEye      = 0;
-  fSize     = 0;
-  fInitStat = 0;
-  fXlo      = 0;
-  fXhi      = 0;
-  fYlo      = 0;
-  fYhi      = 0;
-  fFormX    = 0;
-  fFormY    = 0;
-  fCut      = 0;
-  fFirst    = kTRUE;
-  fProc     = kTRUE;
-}
 
 //_____________________________________________________________________________
 Int_t THaVhist::Init( ) 
@@ -134,6 +121,7 @@ Int_t THaVhist::Init( )
      } else {
        fFormX = new THaVform("formula",sname.c_str(),fVarX.c_str());
      }
+     fMyFormX = kTRUE;
   }
   status = fFormX->Init();
   if (status != 0) {
@@ -151,6 +139,7 @@ Int_t THaVhist::Init( )
      } else {
        fFormY = new THaVform("formula",sname.c_str(),fVarY.c_str());
      }
+     fMyFormY = kTRUE;
   }
   if (fFormY) {
      status = fFormY->Init();
@@ -163,6 +152,7 @@ Int_t THaVhist::Init( )
   if (fCut == 0 && HasCut()) {
      sname = fName+"Cut";
      fCut = new THaVform("cut",sname.c_str(),fScut.c_str());
+     fMyCut = kTRUE;
   }
   if (fCut) {
      status = fCut->Init();

@@ -21,7 +21,7 @@ class THaVhist {
   
 public:
 
-   THaVhist(THaString type, THaString name, THaString title) : fType(type), fName(name), fTitle(title) { Clear(); }
+   THaVhist(const THaString& type, const THaString& name, const THaString& title);
    virtual ~THaVhist(); 
 
 // Set up the axis and cuts, as applicable.
@@ -58,7 +58,6 @@ public:
 protected:
 
    Int_t ParseVar();
-   void  Clear();
    Int_t BookHisto(Int_t hfirst, Int_t hlast);
    Int_t FindVarSize();
    Bool_t FindEye(THaString& var);
@@ -78,6 +77,7 @@ protected:
 
    std::vector<TH1* > fH1;
    THaVform *fFormX, *fFormY, *fCut;
+   Bool_t fMyFormX, fMyFormY, fMyCut;
 
 private:
 
