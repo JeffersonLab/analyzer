@@ -1,0 +1,426 @@
+///////////////////////////////////////////////////////////////////////////////
+//                                                                           //
+// THaShower                                                                 //
+//                                                                           //
+// Shower counter class, describing a generic segmented shower detector      //
+// (preshower or shower).                                                    //
+// Currently, only the "main" cluster, i.e. cluster with the largest energy  //
+// deposition is considered. Units of measurements are MeV for energy of     //
+// shower and centimeters for coordinates.                                   //
+//                                                                           //
+///////////////////////////////////////////////////////////////////////////////
+
+#include "THaShower.h"
+#include "THaGlobals.h"
+#include "THaEvData.h"
+#include "THaDetMap.h"
+#include "THaVarList.h"
+#include "THaTrack.h"
+#include "TClonesArray.h"
+#include "TDatime.h"
+#include "TMath.h"
+
+#include <cstring>
+#include <iostream>
+
+ClassImp(THaShower)
+
+//_____________________________________________________________________________
+THaShower::THaShower( const char* name, const char* description,
+		      THaApparatus* apparatus ) :
+  THaPidDetector(name,description,apparatus), fNChan(NULL), fChanMap(NULL)
+{
+  // Constructor.
+
+}
+
+//_____________________________________________________________________________
+Int_t THaShower::ReadDatabase( FILE* fi, const TDatime& date )
+{
+  // Read this detector's parameters from the database file 'fi'.
+  // This function is called by THaDetectorBase::Init() once at the
+  // beginning of the analysis.
+  // 'date' contains the date/time of the run being analyzed.
+
+  static const char* const here = "ReadDatabase()";
+  const int LEN = 100;
+  char buf[LEN];
+  Int_t nelem, nrows, nclbl;
+
+  // Read data from database
+
+  rewind( fi );
+  // Blocks, rows, max blocks per cluster
+  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );          
+  fscanf ( fi, "%d%d%d", &nelem, &nrows, &nclbl );  
+
+  // Reinitialization only possible for same basic configuration 
+  if( fIsInit && (nelem != fNelem || nclbl != fNclublk) ) {
+    Error( Here(here), "Cannot re-initalize with different number of blocks or "
+	   "blocks per cluster. Detector not re-initialized." );
+    return kInitError;
+  }
+
+  if( nelem <= 0 || nrows <= 0 || nclbl <= 0 ) {
+    Error( Here(here), "Illegal number of blocks, rows, or blocks per cluster: "
+	   "%d %d %d", nelem, nrows, nclbl );
+    return kInitError;
+  }
+  fNelem = nelem;
+  fNrows = nrows;
+  fNclublk = nclbl;
+
+  // Read detector map
+  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
+  while (1) {
+    Int_t crate, slot, first, last;
+    fscanf ( fi,"%d%d%d%d", &crate, &slot, &first, &last );
+    fgets ( buf, LEN, fi );
+    if( crate < 0 ) break;
+    if( fDetMap->AddModule( crate, slot, first, last ) < 0 ) {
+      Error( Here(here), "Too many DetMap modules (maximum allowed - %d).", 
+	    THaDetMap::kDetMapSize);
+      return kInitError;
+    }
+  }
+
+  // Set up channel map
+  UShort_t mapsize = fDetMap->GetSize();
+  if( mapsize == 0 ) {
+    Error( Here(here), "No modules defined in detector map.");
+    return kInitError;
+  }
+
+  delete [] fNChan;
+  if( fChanMap ) {
+    for( UShort_t i = 0; i<mapsize; i++ )
+      delete [] fChanMap[i];
+  }
+  delete [] fChanMap;
+  fNChan = new UShort_t[ mapsize ];
+  fChanMap = new UShort_t*[ mapsize ];
+  for( UShort_t i=0; i < mapsize; i++ ) {
+    THaDetMap::Module* module = fDetMap->GetModule(i);
+    fNChan[i] = module->hi - module->lo + 1;
+    if( fNChan[i] > 0 )
+      fChanMap[i] = new UShort_t[ fNChan[i] ];
+    else {
+      Error( Here(here), "No channels defined for module %d.", i);
+      delete [] fNChan; fNChan = NULL;
+      for( UShort_t j=0; j<=i; j++ )
+	delete [] fChanMap[i];
+      delete [] fChanMap; fChanMap = NULL;
+      return kInitError;
+    }
+  }
+  // Read channel map
+  fgets ( buf, LEN, fi );
+  for ( UShort_t i = 0; i < mapsize; i++ ) {
+    for ( UShort_t j = 0; j < fNChan[i]; j++ )
+      fscanf (fi, "%hu", *(fChanMap+i)+j );
+    fgets ( buf, LEN, fi );
+  }
+  fgets ( buf, LEN, fi );
+
+  Float_t x,y,z;
+  fscanf ( fi, "%f%f%f", &x, &y, &z );               // Detector's X,Y,Z coord
+  fOrigin.SetXYZ( x, y, z );
+  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
+  fscanf ( fi, "%f%f%f", fSize, fSize+1, fSize+2 );  // Sizes of det in X,Y,Z
+  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
+
+  Float_t angle;
+  fscanf ( fi, "%f", &angle );                       // Rotation angle of det
+  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
+  const Double_t degrad = TMath::Pi()/180.0;
+  tan_angle = TMath::Tan(angle*degrad);
+  sin_angle = TMath::Sin(angle*degrad);
+  cos_angle = TMath::Cos(angle*degrad);
+
+  // Dimension arrays
+  if( !fIsInit ) {
+    fBlockX = new Float_t[ fNelem ];
+    fBlockY = new Float_t[ fNelem ];
+    fPed    = new Float_t[ fNelem ];
+    fGain   = new Float_t[ fNelem ];
+
+    // Per-event data
+    fA    = new Float_t[ fNelem ];
+    fA_p  = new Float_t[ fNelem ];
+    fA_c  = new Float_t[ fNelem ];
+    fNblk = new Int_t[ fNclublk ];
+    fEblk = new Float_t[ fNclublk ];
+
+    fIsInit = true;
+  }
+
+  // Read calibration and geometry info
+  for (int j=0; j<fNelem; j++) 
+    fscanf (fi,"%f",fBlockX+j);                      // Blk centers Xpositions
+  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
+  for (int j=0; j<fNelem; j++) 
+    fscanf (fi,"%f",fBlockY+j);                      // Blk centers Ypositions
+  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
+  for (int j=0; j<fNelem; j++) 
+    fscanf (fi,"%f",fPed+j);                         // Pedestals of channels
+  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
+  for (int j=0; j<fNelem; j++) 
+    fscanf (fi, "%f",fGain+j);                       // Coefficients of chans
+  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
+  fscanf ( fi, "%f", &fEmin );                       // Emin thresh for center
+  fgets ( buf, LEN, fi );
+
+  return kOK;
+}
+
+//_____________________________________________________________________________
+Int_t THaShower::SetupDetector( const TDatime& date )
+{
+  // Initialize global variables
+
+  if( fIsSetup ) return kOK;
+  fIsSetup = true;
+
+  // Register variables in global list
+
+  VarDef vars[] = {
+    { "nhit",   "Number of hits",                     kInt,   0,        &fNhits },
+    { "a",      "Raw ADC amplitudes",                 kFloat, fNelem,   fA },
+    { "a_p",    "Ped-subtracted ADC amplitudes",      kFloat, fNelem,   fA_p },
+    { "a_c",    "Calibrated ADC amplitudes",          kFloat, fNelem,   fA_c },
+    { "asum_p", "Sum of ped-subtracted ADCs",         kFloat, 0,        &fAsum_p },
+    { "asum_c", "Sum of calibrated ADCs",             kFloat, 0,        &fAsum_c },
+    { "nclust", "Number of clusters",                 kInt,   0,        &fNclust },
+    { "e",      "Energy (MeV) of largest cluster",    kFloat, 0,        &fE },
+    { "x",      "x-position (cm) of largest cluster", kFloat, 0,        &fX },
+    { "y",      "y-position (cm) of largest cluster", kFloat, 0,        &fY },
+    { "mult",   "Multiplicity of largest cluster",    kInt,   0,        &fMult },
+    { "nblk",   "Numbers of blocks in main cluster",  kInt,   fNclublk, fNblk },
+    { "eblk",   "Energies of blocks in main cluster", kFloat, fNclublk, fEblk },
+    { "trx",    "track x-position in det plane",      kFloat, 0,        &fTRX },
+    { "try",    "track y-position in det plane",      kFloat, 0,        &fTRY },
+    { 0, 0, 0, 0, 0 }
+  };
+  DefineVariables( vars );
+
+  return kOK;
+}
+
+//_____________________________________________________________________________
+THaShower::~THaShower()
+{
+  // Destructor. Removes internal arrays and global variables.
+
+  if( fIsSetup )
+    RemoveVariables();
+  if( fIsInit )
+    DeleteArrays();
+}
+
+//_____________________________________________________________________________
+void THaShower::DeleteArrays()
+{
+  // Delete member arrays. Internal function used by destructor.
+
+  delete [] fNChan; fNChan = 0;
+  UShort_t mapsize = fDetMap->GetSize();
+  if( fChanMap ) {
+    for( UShort_t i = 0; i<mapsize; i++ )
+      delete [] fChanMap[i];
+  }
+  delete [] fChanMap; fChanMap = 0;
+  delete [] fBlockX;  fBlockX  = 0;
+  delete [] fBlockY;  fBlockY  = 0;
+  delete [] fPed;     fPed     = 0;
+  delete [] fGain;    fGain    = 0;
+  delete [] fA;       fA       = 0;
+  delete [] fA_p;     fA_p     = 0;
+  delete [] fA_c;     fA_c     = 0;
+  delete [] fNblk;    fNblk    = 0;
+  delete [] fEblk;    fEblk    = 0;
+}
+
+//_____________________________________________________________________________
+inline
+void THaShower::ClearEvent()
+{
+  // Reset all local data to prepare for next event.
+
+  const int lsh = fNelem*sizeof(Float_t);
+  const int lsc = fNclublk*sizeof(Float_t);
+  const int lsi = fNclublk*sizeof(Int_t);
+
+  fNhits = 0;
+  memset( fA, 0, lsh );
+  memset( fA_p, 0, lsh );
+  memset( fA_c, 0, lsh );
+  fAsum_p = 0.0;
+  fAsum_c = 0.0;
+  fNclust = 0;
+  fE = 0.0;
+  fX = 0.0;
+  fY = 0.0;
+  fMult = 0;
+  memset( fNblk, 0, lsi );
+  memset( fEblk, 0, lsc );
+  fTRX = 0.0;
+  fTRY = 0.0;
+}
+
+//_____________________________________________________________________________
+Int_t THaShower::Decode( const THaEvData& evdata )
+{
+  // Decode shower data, scale the data to energy deposition
+  // ( in MeV ), and copy the data into the following local data structure:
+  //
+  // fNhits           -  Number of hits on shower;
+  // fA[0]...[95]     -  Array of ADC values of shower blocks;
+  // fA_p[0]...[95]   -  Array of ADC minus ped values of shower blocks;
+  // fA_c[0]...[95]   -  Array of corrected ADC values of shower blocks;
+  // fAsum_p          -  Sum of shower blocks ADC minus pedestal values;
+  // fAsum_c          -  Sum of shower blocks corrected ADC values;
+
+  ClearEvent();
+
+  // Loop over all modules defined for shower detector
+  for( UShort_t i = 0; i < fDetMap->GetSize(); i++ ) {
+    THaDetMap::Module* d = fDetMap->GetModule( i );
+
+    // Loop over all channels that have a hit.
+    for( Int_t j = 0; j < evdata.GetNumChan( d->crate, d->slot ); j++) {
+
+      Int_t chan = evdata.GetNextChan( d->crate, d->slot, j );
+      if( chan > d->hi || chan < d->lo ) continue;    // Not one of my channels.
+
+      // Get the data. shower blocks are assumed to have only single hit (hit=0)
+      Int_t data = evdata.GetData( d->crate, d->slot, chan, 0 );
+
+      // Copy the data to the local variables.
+      Int_t k = *(*(fChanMap+i)+chan) - 1;
+#ifdef WITH_DEBUG
+      if( k<0 || k>=fNelem ) 
+	Warning( Here("Decode()"), "Bad array index: %d. Your channel map is "
+		 "invalid. Data skipped.", k );
+      else
+#endif
+      {
+	fA[k]   = data;                   // ADC value
+	fA_p[k] = data - fPed[k];         // ADC minus ped
+	fA_c[k] = fA_p[k] * fGain[k];     // ADC corrected
+	fAsum_p += fA_p[k];               // Sum of ADC minus ped
+	fAsum_c += fA_c[k];               // Sum of ADC corrected
+	fNhits++;
+      }
+    }
+  }
+  return fNhits;
+}
+
+//_____________________________________________________________________________
+Int_t THaShower::CoarseProcess( TClonesArray& tracks )
+{
+  // Reconstruct Clusters in shower detector and copy the data 
+  // into the following local data structure:
+  //
+  // fNclust        -  Number of clusters in shower;
+  // fE             -  Energy (in MeV) of the "main" cluster;
+  // fX             -  X-coordinate (in cm) of the cluster;
+  // fY             -  Y-coordinate (in cm) of the cluster;
+  // fMult          -  Number of blocks in the cluster;
+  // fNblk[0]...[5] -  Numbers of blocks composing the cluster;
+  // fEblk[0]...[5] -  Energies in blocks composing the cluster;
+  // fTRX;          -  X-coordinate of track cross point with shower plane
+  // fTRY;          -  Y-coordinate of track cross point with shower plane
+  //
+  // Only one ("main") cluster, i.e. the cluster with the largest energy 
+  // deposition is considered. Units are MeV for energies and cm for 
+  // coordinates.
+
+  fNclust = 0;
+  short mult = 0, nr, nc, ir, ic, dr, dc;
+  int nmax = -1;
+  Int_t Ncol = fNelem/fNrows;
+  double  emax = fEmin;                     // Min threshold of energy in center
+  for ( int  i = 0; i < fNelem; i++) {      // Find the block with max energy:
+    double  ei = fA_c[i];                   // Energy in next block
+    if ( ei > emax) {
+      nmax = i;                             // Number of block with max energy 
+      emax = ei;                            // Max energy per a blocks
+    }
+  }
+  if ( nmax >= 0 ) {
+    double  sxe = 0, sye = 0;               // Sums of xi*ei and yi*ei
+    if ( fNelem == 80 ) {                   // For Shower-80:
+      nc = nmax/fNrows;                     // Column of the block with max engy
+      nr = nmax - nc*fNrows;                // Row of the block with max energy
+    } else {                                // For Shower-96:
+      nr = nmax/Ncol;                       // Row of the block with max energy
+      nc = nmax - nr*Ncol;                  // Column of the block with max engy
+    }
+                                            // Add the block to cluster (center)
+    fNblk[mult]   = nmax;                   // Add number of the block (center)
+    fEblk[mult++] = emax;                   // Add energy in the block (center)
+    sxe = emax * fBlockX[nmax];             // Sum of xi*ei
+    sye = emax * fBlockY[nmax];             // Sum of yi*ei
+    for ( int  i = 0; i < fNelem; i++) {    // Detach surround blocks:
+      double  ei = fA_c[i];                 // Energy in next block
+      if ( ei>0 && i!=nmax ) {              // Some energy out of cluster center
+	if ( fNelem == 80 ) {               // For Shower-80:
+	  ic = i/fNrows;                    // Column of next block
+	  ir = i - ic*fNrows;               // Row of next block
+	} else {                            // For Shower-96:
+	  ir = i/Ncol;                      // Row of next block
+	  ic = i - ir*Ncol;                 // Column of next block
+	}
+	dr = nr - ir;                       // Distance on row up to center
+	dc = nc - ic;                       // Distance on column up to center
+	if ( -2<dr&&dr<2&&-2<dc&&dc<2 ) {   // Surround block:
+	                                    // Add block to cluster (surround)
+	  fNblk[mult]   = i;                // Add number of block (surround)
+	  fEblk[mult++] = ei;               // Add energy of block (surround)
+	  sxe  += ei * fBlockX[i];          // Sum of xi*ei of cluster blocks
+	  sye  += ei * fBlockY[i];          // Sum of yi*ei of cluster blocks
+	  emax += ei;                       // Sum of energies in cluster blocks
+	}
+      }
+    }
+    fNclust = 1;                            // One ("main") cluster detected
+    fE      = emax;                         // Energy (MeV) in "main" cluster
+    fX      = sxe/emax;                     // X coordinate (cm) of the cluster
+    fY      = sye/emax;                     // Y coordinate (cm) of the cluster
+    fMult   = mult;                         // Number of blocks in "main" clust.
+  }
+
+
+
+  // Calculation of coordinates of the track cross point with 
+  // shower plane in the detector coordinate system. For this, parameters
+  // of track reconstructed in THaVDC::CoarseTrack() are used.
+
+  int ne_track = tracks.GetLast()+1;   // Number of reconstructed in Earm tracks
+
+  if ( ne_track >= 1 && tracks.At(0) != 0 ) {
+    THaTrack* theTrack = static_cast<THaTrack*>( tracks[0] );
+    double fpe_x       = theTrack->GetX();
+    double fpe_y       = theTrack->GetY();
+    double fpe_th      = theTrack->GetTheta();
+    double fpe_ph      = theTrack->GetPhi();
+
+    fTRX = ( fpe_x + fpe_th * fOrigin.Z() ) / 
+      ( cos_angle * (1.0 + fpe_th * tan_angle) );
+    fTRY = fpe_y + fpe_ph * fOrigin.Z() - fpe_ph * sin_angle * fTRX;
+   }
+
+  return 0;
+}
+//_____________________________________________________________________________
+Int_t THaShower::FineProcess( TClonesArray& tracks )
+{
+  // Fine Shower processing.
+  // Not implemented. Does nothing, returns 0.
+
+  return 0;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+

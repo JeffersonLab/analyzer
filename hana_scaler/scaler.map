@@ -1,0 +1,536 @@
+# This file: scaler.map
+# Author: Robert Michaels, Jlab, updated March 2001
+# Contains time-dependent text-based mapping of Hall A scaler channels
+# 2 kinds of fields :  "date"  and  scaler-map-info.
+# date format (without quotes): "date(this must be capital) day month year" 
+# scaler-map-info that appears after date pertains to time after, and
+# until the next date field (in time).  The order is irrelevant.
+# The format of scaler-map-info is as following line:
+# short-name  helicity  crate-num  slot-num  start-chan  num-chan  long-name
+# where:
+#    short-name = string corresponding to data member in THaScaler
+#    helicity :  0 = none, -1 = negative, +1 = positive
+#    crate :  THaCrateMap convention (7=Right, 8=Left, 9=RCS)
+#    slot:  Comes from 17th-20th bits of VME header, is related to 
+#           physical slot in VME (usually in order left to right).
+#    start-chan, num-chan starting and number of channels in raw data
+#    long-name: Long descriptive string used for plots.
+# Note about channel indices:  0 = 1st one (C-style)
+# Report problems to the author.
+#
+
+# ------- Sept 17, 2001 until ?  for RCS (reminder: channel index 0 = 1st) ----
+# desc  hel crate slot start nchan  long-description
+DATE 17 9 2001
+rcs1      0    9   0     0   31   RCS scalers 1 ==>  gsum 1 - 32
+rcs2      0    9   1     0   31   RCS scalers 2 ==>  gsum 33 - 56 and misc 1 - 8
+rcs3      0    9   2     0   31   RCS scalers 3 ==>  misc 9 - 40
+s1L       0    7   0     0    6   S1 Scintillator Left PMTs on Right Arm
+s2L       0    7   0     8    5   S2 Scintillator Left PMTs on Right Arm
+s2L       0    7   0    14    1   S2 Scintillator Left PMTs on Right Arm
+s1R       0    7   0    16    6   S1 Scintillator Right PMTs on Right Arm
+s2R       0    7   0    24    5   S2 Scintillator Right PMTs on Right Arm
+s2R       0    7   0    30    1   S2 Scintillator Right PMTs on Right Arm
+s1        0    7   2     0    6   S1 Paddles (Left.and.Right PMT) on Right Arm
+s2        0    7   2     8    5   S2 Paddles (Left.and.Right PMT) on Right Arm
+s2        0    7   2    14    1   S2 Paddles (Left.and.Right PMT) on Right Arm
+gasC      0    7   3     0   11   Gas Cerenkov PMT on Right Arm
+trigger-1 0    7   8     0    1   trigger 1 on Right Arm
+trigger-2 0    7   8     1    1   trigger 2 on Right Arm
+clock     0    7   8     7    1   1024 Hz clock (T8)
+trigger-8 0    7   8     7    1   1024 Hz trigger 8
+TS-accept 0    7   8    12    1   Trigger Supervisor accepted triggers 
+bcm_u1    0    7   8    13    1   Beam current, upstream cavity, gain = 1
+bcm_u3    0    7   8     6    1   Beam current, upstream cavity, gain = 3
+bcm_u10   0    7   8     2    1   Beam current, upstream cavity, gain = 10
+bcm_d1    0    7   8    15    1   Beam current, downstream cavity, gain = 1
+bcm_d3    0    7   8     9    1   Beam current, downstream cavity, gain = 3
+bcm_d10   0    7   8    10    1   Beam current, downstream cavity, gain = 10
+mlut1     0    7   8    24    1   MLU formed T1 (not main trigger)
+strobe    0    7   8    19    1   Strobe for S-ray trigger
+trigger-1 1    7   7     0    1   trigger 1 on Right Arm (Hel +)
+trigger-2 1    7   7     1    1   trigger 2 on Right Arm (Hel +)
+clock     1    7   7     7    1   1024 Hz clock (T8) (Hel +)
+trigger-8 1    7   7     7    1   1024 Hz trigger 8 (Hel +)
+TS-accept 1    7   7    12    1   Trigger Supervisor accepted triggers (Hel +) 
+bcm_u1    1    7   7    13    1   Beam current, upstream cavity, gain = 1 (Hel +)
+bcm_u3    1    7   7     6    1   Beam current, upstream cavity, gain = 3 (Hel +)
+bcm_u10   1    7   7     2    1   Beam current, upstream cavity, gain = 10 (Hel +)
+bcm_d1    1    7   7    15    1   Beam current, downstream cavity, gain = 1 (Hel +)
+bcm_d3    1    7   7     9    1   Beam current, downstream cavity, gain = 3 (Hel +)
+bcm_d10   1    7   7    10    1   Beam current, downstream cavity, gain = 10 (Hel +)
+mlut1     1    7   7    24    1   MLU formed T1 (not main trigger) (Hel +)
+strobe    1    7   7    19    1   Strobe for S-ray trigger (Hel +)
+trigger-1 -1    7   9     0    1   trigger 1 on Right Arm (Hel -)
+trigger-2 -1    7   9     1    1   trigger 2 on Right Arm (Hel -)
+clock     -1    7   9     7    1   1024 Hz clock (T8) (Hel -)
+trigger-8 -1    7   9     7    1   1024 Hz trigger 8 (Hel -)
+TS-accept -1    7   9    12    1   Trigger Supervisor accepted triggers (Hel -) 
+bcm_u1    -1    7   9    13    1   Beam current, upstream cavity, gain = 1 (Hel -)
+bcm_u3    -1    7   9     6    1   Beam current, upstream cavity, gain = 3 (Hel -)
+bcm_u10   -1    7   9     2    1   Beam current, upstream cavity, gain = 10 (Hel -)
+bcm_d1    -1    7   9    15    1   Beam current, downstream cavity, gain = 1 (Hel -)
+bcm_d3    -1    7   9     9    1   Beam current, downstream cavity, gain = 3 (Hel -)
+bcm_d10   -1    7   9    10    1   Beam current, downstream cavity, gain = 10 (Hel -)
+mlut1     -1    7   9    24    1   MLU formed T1 (not main trigger) (Hel -)
+strobe    -1    7   9    19    1   Strobe for S-ray trigger (Hel -)
+s1L       0    8   0     0    6   S1 Scintillator Left PMTs on Left Arm
+s2L       0    8   0     8    6   S2 Scintillator Left PMTs on Left Arm
+s1R       0    8   1     0    6   S1 Scintillator Right PMTs on Left Arm
+s2R       0    8   1     8    6   S2 Scintillator Right PMTs on Left Arm
+s1        0    8   2     0    6   S1 Paddles (Left.and.Right PMT) on Left Arm
+s2        0    8   2     8    6   S2 Paddles (Left.and.Right PMT) on Left Arm
+gasC      0    8   6     0   11   Gas Cerenkov PMT on Left Arm
+trigger-1 0    8   4     0    1   trigger 1 measured on Left Arm
+trigger-2 0    8   4     1    1   trigger 2 measured on Left Arm
+trigger-3 0    8   4     2    1   trigger 3 on Left Arm
+trigger-4 0    8   4     3    1   trigger 4 on Left Arm
+trigger-5 0    8   4     4    1   trigger 5 measured on Left Arm
+clock     0    8   4     7    1   1024 Hz clock (T8)
+trigger-8 0    8   4     7    1   1024 Hz trigger 8
+TS-accept 0    8   4    12    1   Trigger Supervisor accepted triggers 
+bcm_u1    0    8   4    13    1   Beam current, upstream cavity, gain = 1
+bcm_u3    0    8   4     6    1   Beam current, upstream cavity, gain = 3
+bcm_u10   0    8   4     8    1   Beam current, upstream cavity, gain = 10
+bcm_d1    0    8   4    15    1   Beam current, downstream cavity, gain = 1
+bcm_d3    0    8   4    10    1   Beam current, downstream cavity, gain = 3
+bcm_d10   0    8   4    11    1   Beam current, downstream cavity, gain = 10
+q10abusy  0    8   4    16    1   Q10 signal gated by Trigger Supervisor busy
+clkabusy  0    8   4    17    1   Clock gated by Trigger Supervisor busy
+strobe    0    8   4    19    1   Strobe for S-ray trigger
+mlut3     0    8   4    24    1   MLU formed T3 (not main trigger)
+unser     0    8   4    14    1   Unser monitor
+trigger-1 1    8   3     0    1   trigger 1 measured on Left Arm (Hel +)
+trigger-2 1    8   3     1    1   trigger 2 measured on Left Arm (Hel +)
+trigger-3 1    8   3     2    1   trigger 3 on Left Arm (Hel +)
+trigger-4 1    8   3     3    1   trigger 4 on Left Arm (Hel +)
+trigger-5 1    8   3     4    1   trigger 5 measured on Left Arm (Hel +)
+clock     1    8   3     7    1   1024 Hz clock (T8) (Hel +)
+trigger-8 1    8   3     7    1   1024 Hz trigger 8 (Hel +)
+TS-accept 1    8   3    12    1   Trigger Supervisor accepted triggers (Hel +) 
+bcm_u1    1    8   3    13    1   Beam current, upstream cavity, gain = 1 (Hel +)
+bcm_u3    1    8   3     6    1   Beam current, upstream cavity, gain = 3 (Hel +)
+bcm_u10   1    8   3     8    1   Beam current, upstream cavity, gain = 10 (Hel +)
+bcm_d1    1    8   3    15    1   Beam current, downstream cavity, gain = 1 (Hel +)
+bcm_d3    1    8   3    10    1   Beam current, downstream cavity, gain = 3 (Hel +)
+bcm_d10   1    8   3    11    1   Beam current, downstream cavity, gain = 10 (Hel +)
+q10abusy  1    8   3    16    1   Q10 signal gated by Trigger Supervisor busy (Hel +)
+clkabusy  1    8   3    17    1   Clock gated by Trigger Supervisor busy (Hel +)
+strobe    1    8   3    19    1   Strobe for S-ray trigger (Hel +)
+mlut3     1    8   3    24    1   MLU formed T3 (not main trigger) (Hel +)
+unser     1    8   3    14    1   Unser monitor (Hel +)
+trigger-1 -1    8   5     0    1   trigger 1 measured on Left Arm (Hel -)
+trigger-2 -1    8   5     1    1   trigger 2 measured on Left Arm (Hel -)
+trigger-3 -1    8   5     2    1   trigger 3 on Left Arm (Hel -)
+trigger-4 -1    8   5     3    1   trigger 4 on Left Arm (Hel -)
+trigger-5 -1    8   5     4    1   trigger 5 measured on Left Arm (Hel -)
+clock     -1    8   5     7    1   1024 Hz clock (T8) (Hel -)
+trigger-8 -1    8   5     7    1   1024 Hz trigger 8 (Hel -)
+TS-accept -1    8   5    12    1   Trigger Supervisor accepted triggers (Hel -) 
+bcm_u1    -1    8   5    13    1   Beam current, upstream cavity, gain = 1 (Hel -)
+bcm_u3    -1    8   5     6    1   Beam current, upstream cavity, gain = 3 (Hel -)
+bcm_u10   -1    8   5     8    1   Beam current, upstream cavity, gain = 10 (Hel -)
+bcm_d1    -1    8   5    15    1   Beam current, downstream cavity, gain = 1 (Hel -)
+bcm_d3    -1    8   5    10    1   Beam current, downstream cavity, gain = 3 (Hel -)
+bcm_d10   -1    8   5    11    1   Beam current, downstream cavity, gain = 10 (Hel -)
+q10abusy  -1    8   5    16    1   Q10 signal gated by Trigger Supervisor busy (Hel -)
+clkabusy  -1    8   5    17    1   Clock gated by Trigger Supervisor busy (Hel -)
+strobe    -1    8   5    19    1   Strobe for S-ray trigger (Hel -)
+mlut3     -1    8   5    24    1   MLU formed T3 (not main trigger) (Hel -)
+unser     -1    8   5    14    1   Unser monitor (Hel -)
+#
+#
+# -------  Jan 1, 2001 to May 15, 2001 (reminder: channel index 0 = 1st) ----
+# desc  hel crate slot start nchan  long-description
+DATE 1 1 2001
+s1L       0    7   0     0    6   S1 Scintillator Left PMTs on Right Arm
+s2L       0    7   0     8    5   S2 Scintillator Left PMTs on Right Arm
+s2L       0    7   0    14    1   S2 Scintillator Left PMTs on Right Arm
+s1R       0    7   0    16    6   S1 Scintillator Right PMTs on Right Arm
+s2R       0    7   0    24    5   S2 Scintillator Right PMTs on Right Arm
+s2R       0    7   0    30    1   S2 Scintillator Right PMTs on Right Arm
+s1        0    7   2     0    6   S1 Paddles (Left.and.Right PMT) on Right Arm
+s2        0    7   2     8    5   S2 Paddles (Left.and.Right PMT) on Right Arm
+s2        0    7   2    14    1   S2 Paddles (Left.and.Right PMT) on Right Arm
+gasC      0    7   3     0   11   Gas Cerenkov PMT on Right Arm
+trigger-1 0    7   8     0    1   trigger 1 measured on Right Arm
+trigger-2 0    7   8     1    1   trigger 2 measured on Right Arm
+clock     0    7   8     7    1   1024 Hz clock (T8)
+trigger-8 0    7   8     7    1   1024 Hz trigger 8
+bcm_u1    0    7   8    29    1   Beam current, upstream cavity, gain = 1
+bcm_u3    0    7   8    22    1   Beam current, upstream cavity, gain = 3
+bcm_u10   0    7   8    18    1   Beam current, upstream cavity, gain = 10
+bcm_d1    0    7   8    31    1   Beam current, downstream cavity, gain = 1
+bcm_d3    0    7   8    25    1   Beam current, downstream cavity, gain = 3
+bcm_d10   0    7   8    26    1   Beam current, downstream cavity, gain = 10
+sray      0    7   8     6    1   S-ray trigger (not main trigger)
+strobe    0    7   8    19    1   Strobe for S-ray trigger
+edtpulser 0    7   7    16    1   Electronics deadtime pulser on Right Arm
+edtatrig  0    7   7    17    1   EDT pulser anded with trigger on Right Arm
+s1L       0    8   0     0    6   S1 Scintillator Left PMTs on Left Arm
+s2L       0    8   0     8    6   S2 Scintillator Left PMTs on Left Arm
+s1R       0    8   1     0    6   S1 Scintillator Right PMTs on Left Arm
+s2R       0    8   1     8    6   S2 Scintillator Right PMTs on Left Arm
+s1        0    8   2     0    6   S1 Paddles (Left.and.Right PMT) on Left Arm
+s2        0    8   2     8    6   S2 Paddles (Left.and.Right PMT) on Left Arm
+gasC      0    8   3     0   11   Gas Cerenkov PMT on Left Arm
+trigger-1 0    8   4     0    1   trigger 1 measured on Left Arm
+trigger-2 0    8   4     1    1   trigger 2 measured on Left Arm
+trigger-3 0    8   4     2    1   trigger 3 measured on Left Arm
+trigger-4 0    8   4     3    1   trigger 4 measured on Left Arm
+trigger-5 0    8   4     4    1   trigger 5 measured on Left Arm
+clock     0    8   4     7    1   1024 Hz clock (T8)
+trigger-8 0    8   4     7    1   1024 Hz trigger 8
+TS-accept 0    8   4    12    1   Trigger Supervisor accepted triggers 
+bcm_u1    0    8   4    13    1   Beam current, upstream cavity, gain = 1
+bcm_u3    0    8   4     6    1   Beam current, upstream cavity, gain = 3
+bcm_u10   0    8   4     8    1   Beam current, upstream cavity, gain = 10
+bcm_d1    0    8   4    15    1   Beam current, downstream cavity, gain = 1
+bcm_d3    0    8   4    10    1   Beam current, downstream cavity, gain = 3
+bcm_d10   0    8   4    11    1   Beam current, downstream cavity, gain = 10
+edtpulser 0    8   4    21    1   Electronics deadtime pulser on Left Arm
+edtatrig  0    8   4    22    1   EDT pulser anded with trigger on Left Arm
+q10abusy  0    8   4    16    1   Q10 signal gated by Trigger Supervisor busy
+clkabusy  0    8   4    17    1   Clock gated by Trigger Supervisor busy
+strobe    0    8   4    19    1   Strobe for S-ray trigger
+sray      0    8   4    24    1   S-ray trigger (not main trigger)
+unser     0    8   4    14    1   Unser monitor
+#
+# ------ Nov 1 until Jan 1, 2000  (reminder: channel index 0 = 1st) 
+# desc  hel crate slot start nchan  long-description
+DATE 1 11 2000 
+s1L        0    7    0     0    6   S1 R-Arm Scintillator Left PMTs
+s2L        0    7    0     6    6   S2 R-Arm Scintillator Left PMTs
+s1R        0    7    1     0    6   S1 R-Arm Scintillator Right PMTs
+s2R        0    7    1     6    6   S2 R-Arm Scintillator Right PMTs
+s1         0    7    2     0    6   S1 R-Arm Paddles (Left.and.Right PMT)
+s2         0    7    2     6    6   S2 R-Arm Paddles (Left.and.Right PMT)
+gasC       0    7    6     0   11   Gas Cerenkov on R-arm
+strobe     0    7    4     3    1   Strobe for S-ray trigger on R-arm
+trigger-1  1    7    7     0    1   trigger 1 measured on R-arm (pos helicity)
+trigger-2  1    7    7     1    1   trigger 2 measured on R-arm (pos helicity)
+trigger-3  1    7    7     2    1   trigger 3 measured on R-arm (pos helicity)
+trigger-4  1    7    7     3    1   trigger 4 measured on R-arm (pos helicity)
+trigger-5  1    7    7     4    1   trigger 5 measured on R-arm (pos helicity)
+clock      1    7    7     7    1   clock, 1024 Hz (pos helicity)
+bcm_u1     1    7    7    13    1   Beam current, upstream cavity, gain = 1  (pos helicity)
+bcm_d1     1    7    7    15    1   Beam current, downstream cavity, gain = 1 (pos helicity)
+bcm_u3     1    7    7     6    1   Beam current, upstream cavity, gain = 3 (pos helicity)
+bcm_d3     1    7    7    10    1   Beam current, downstream cavity, gain = 3 (pos helicity)
+bcm_u10    1    7    7     8    1   Beam current, upstream cavity, gain = 10 (pos helicity)
+bcm_d10    1    7    7    11    1   Beam current, downstream cavity, gain = 10 (pos helicity)
+unser      1    7    7    14    1   Unser monitor
+TS-accept  1    7    7    12    1   Trigger Supervisor accepted triggers (pos helicity)
+trigger-1  0    7    8     0    1   trigger 1 measured on R-arm (ungated by hel)
+trigger-2  0    7    8     1    1   trigger 2 measured on R-arm  
+trigger-3  0    7    8     2    1   trigger 3 measured on R-arm  
+trigger-4  0    7    8     3    1   trigger 4 measured on R-arm  
+trigger-5  0    7    8     4    1   trigger 5 measured on R-arm  
+clock      0    7    8     7    1   clock, 1024 Hz  
+bcm_u1     0    7    8    13    1   Beam current, upstream cavity, gain = 1   
+bcm_d1     0    7    8    15    1   Beam current, downstream cavity, gain = 1  
+bcm_u3     0    7    8     6    1   Beam current, upstream cavity, gain = 3  
+bcm_d3     0    7    8    10    1   Beam current, downstream cavity, gain = 3  
+bcm_u10    0    7    8     8    1   Beam current, upstream cavity, gain = 10  
+bcm_d10    0    7    8    11    1   Beam current, downstream cavity, gain = 10
+unser      0    7    8    14    1   Unser monitor
+TS-accept  0    7    8    12    1   Trigger Supervisor accepted triggers  
+edtpulser  0    7    8    16    1   Electronics deadtime pulser on Right Arm
+edtatrig   0    7    8    17    1   EDT pulser anded with trigger on Right Arm
+trigger-1 -1    7    9     0    1   trigger 1 measured on R-arm (neg helicity)
+trigger-2 -1    7    9     1    1   trigger 2 measured on R-arm (neg helicity)
+trigger-3 -1    7    9     2    1   trigger 3 measured on R-arm (neg helicity)
+trigger-4 -1    7    9     3    1   trigger 4 measured on R-arm (neg helicity)
+trigger-5 -1    7    9     4    1   trigger 5 measured on R-arm (neg helicity)
+clock     -1    7    9     7    1   clock, 1024 Hz (neg helicity)
+bcm_u1    -1    7    9    13    1   Beam current, upstream cavity, gain = 1  (neg helicity)
+bcm_d1    -1    7    9    15    1   Beam current, downstream cavity, gain = 1 (neg helicity)
+bcm_u3    -1    7    9     6    1   Beam current, upstream cavity, gain = 3 (neg helicity)
+bcm_d3    -1    7    9    10    1   Beam current, downstream cavity, gain = 3 (neg helicity)
+bcm_u10   -1    7    9     8    1   Beam current, upstream cavity, gain = 10 (neg helicity)
+bcm_d10   -1    7    9    11    1   Beam current, downstream cavity, gain = 10 (neg helicity)
+unser     -1    7    9    14    1   Unser monitor
+TS-accept -1    7    9    12    1   Trigger Supervisor accepted triggers (neg helicity)
+s1L        0    8    0     0    6   S1 L-Arm Scintillator Left PMTs
+s2L        0    8    0     6    6   S2 L-Arm Scintillator Left PMTs
+s1R        0    8    1     0    6   S1 L-Arm Scintillator Right PMTs
+s2R        0    8    1     6    6   S2 L-Arm Scintillator Right PMTs
+s1         0    8    2     0    6   S1 L-Arm Paddles (Left.and.Right PMT)
+s2         0    8    2     6    6   S2 L-Arm Paddles (Left.and.Right PMT)
+gasC       0    8    3     0   11   L-arm Gas Cerenkov PMT
+trigger-1  0    8    4     0    1   Trigger 1 measured on L-arm
+trigger-2  0    8    4     1    1   Trigger 2 measured on L-arm
+helicity+  0    8    4     4    1   helicity plus counting
+helicity-  0    8    4     5    1   helicity minus counting
+clock      0    8    4     7    1   1024 Hz clock on L-arm
+unser      0    8    4     8    1   Unser Monitor on L-arm
+bcm_d1     0    8    4    15    1   Beam Current, Downstream Cavity, gain = 1
+bcm_u1     0    8    4    13    1   Beam Current, Upstream Cavity, gain = 1
+bcm_d3     0    8    4     9    1   Beam Current, Downstream Cavity, gain = 3
+bcm_d10    0    8    4    10    1   Beam Current, Downstream Cavity, gain = 10
+edtpulser  0    8    4    21    1   Electronics deadtime pulser on Left Arm
+edtatrig   0    8    4    22    1   EDT pulser anded with trigger on Left Arm
+q10abusy   0    8    4    16    1   Q10 signal gated by Trigger Supervisor busy
+clkabusy   0    8    4    17    1   Clock gated by Trigger Supervisor busy
+strobe     0    8    4    19    1   Strobe for S-ray trigger
+trigger-1  1    8    5     0    1   Trigger 1 measured on L-arm (pos helicity)
+trigger-2  1    8    5     1    1   Trigger 2 measured on L-arm (pos helicity)
+helicity+  1    8    5     4    1   helicity plus counting (pos helicity)
+helicity-  1    8    5     5    1   helicity minus counting (pos helicity)
+clock      1    8    5     7    1   1024 Hz clock on L-arm (pos helicity)
+unser      1    8    5     8    1   Unser Monitor on L-arm (pos helicity)
+bcm_d1     1    8    5    15    1   Beam Current, Downstream Cavity, gain = 1 (pos helicity)
+bcm_u1     1    8    5    13    1   Beam Current, Upstream Cavity, gain = 1 (pos helicity)
+bcm_d3     1    8    5     9    1   Beam Current, Downstream Cavity, gain = 3 (pos helicity)
+bcm_d10    1    8    5    10    1   Beam Current, Downstream Cavity, gain = 10 (pos helicity)
+trigger-1 -1    8    6     0    1   Trigger 1 measured on L-arm (neg helicity)
+trigger-2 -1    8    6     1    1   Trigger 2 measured on L-arm (neg helicity)
+helicity+ -1    8    6     4    1   helicity plus counting (neg helicity)
+helicity- -1    8    6     5    1   helicity minus counting (neg helicity)
+clock     -1    8    6     7    1   1024 Hz clock on L-arm (neg helicity)
+unser     -1    8    6     8    1   Unser Monitor on L-arm (neg helicity)
+bcm_d1    -1    8    6    15    1   Beam Current, Downstream Cavity, gain = 1 (neg helicity)
+bcm_u1    -1    8    6    13    1   Beam Current, Upstream Cavity, gain = 1 (neg helicity)
+bcm_d3    -1    8    6     9    1   Beam Current, Downstream Cavity, gain = 3 (neg helicity)
+bcm_d10   -1    8    6    10    1   Beam Current, Downstream Cavity, gain = 10 (neg helicity)
+
+# ------ Sept 1 until Nov 1, 2000  (reminder: channel index 0 = 1st) 
+# desc  hel crate slot start nchan  long-description
+DATE 1 9 2000 
+s1L        0    7    0     0    6   S1 R-Arm Scintillator Left PMTs
+s2L        0    7    0     6    6   S2 R-Arm Scintillator Left PMTs
+s1R        0    7    1     0    6   S1 R-Arm Scintillator Right PMTs
+s2R        0    7    1     6    6   S2 R-Arm Scintillator Right PMTs
+s1         0    7    2     0    6   S1 R-Arm Paddles (Left.and.Right PMT)
+s2         0    7    2     6    6   S2 R-Arm Paddles (Left.and.Right PMT)
+gasC       0    7    6     0   11   Gas Cerenkov on R-arm
+strobe     0    7    4     3    1   Strobe for S-ray trigger on R-arm
+trigger-1  0    7    7     0    1   trigger 1 measured on R-arm (ungated by hel)
+trigger-2  0    7    7     1    1   trigger 2 measured on R-arm  
+trigger-3  0    7    7     2    1   trigger 3 measured on R-arm  
+trigger-4  0    7    7     3    1   trigger 4 measured on R-arm  
+trigger-5  0    7    7     4    1   trigger 5 measured on R-arm  
+clock      0    7    7     7    1   clock, 1024 Hz  
+bcm_u1     0    7    7    13    1   Beam current, upstream cavity, gain = 1   
+bcm_d1     0    7    7    15    1   Beam current, downstream cavity, gain = 1  
+bcm_u3     0    7    7     6    1   Beam current, upstream cavity, gain = 3  
+bcm_d3     0    7    7    10    1   Beam current, downstream cavity, gain = 3  
+bcm_u10    0    7    7     8    1   Beam current, upstream cavity, gain = 10  
+bcm_d10    0    7    7    11    1   Beam current, downstream cavity, gain = 10
+unser      0    7    7    14    1   Unser monitor
+TS-accept  0    7    7    12    1   Trigger Supervisor accepted triggers  
+edtpulser  0    7    7    16    1   Electronics deadtime pulser on Right Arm
+edtatrig   0    7    7    17    1   EDT pulser anded with trigger on Right Arm
+s1L        0    8    0     0    6   S1 L-Arm Scintillator Left PMTs
+s2L        0    8    0     6    6   S2 L-Arm Scintillator Left PMTs
+s1R        0    8    1     0    6   S1 L-Arm Scintillator Right PMTs
+s2R        0    8    1     6    6   S2 L-Arm Scintillator Right PMTs
+s1         0    8    2     0    6   S1 L-Arm Paddles (Left.and.Right PMT)
+s2         0    8    2     6    6   S2 L-Arm Paddles (Left.and.Right PMT)
+gasC       0    8    3     0   11   L-arm Gas Cerenkov PMT
+trigger-1  0    8    4     0    1   Trigger 1 measured on L-arm
+trigger-2  0    8    4     1    1   Trigger 2 measured on L-arm
+helicity+  0    8    4     4    1   helicity plus counting
+helicity-  0    8    4     5    1   helicity minus counting
+clock      0    8    4     7    1   1024 Hz clock on L-arm
+unser      0    8    4     8    1   Unser Monitor on L-arm
+bcm_d1     0    8    4    15    1   Beam Current, Downstream Cavity, gain = 1
+bcm_u1     0    8    4    13    1   Beam Current, Upstream Cavity, gain = 1
+bcm_d3     0    8    4     9    1   Beam Current, Downstream Cavity, gain = 3
+bcm_d10    0    8    4    10    1   Beam Current, Downstream Cavity, gain = 10
+edtpulser  0    8    4    21    1   Electronics deadtime pulser on Left Arm
+edtatrig   0    8    4    22    1   EDT pulser anded with trigger on Left Arm
+q10abusy   0    8    4    16    1   Q10 signal gated by Trigger Supervisor busy
+clkabusy   0    8    4    17    1   Clock gated by Trigger Supervisor busy
+strobe     0    8    4    19    1   Strobe for S-ray trigger
+trigger-1  1    8    5     0    1   Trigger 1 measured on L-arm (pos helicity)
+trigger-2  1    8    5     1    1   Trigger 2 measured on L-arm (pos helicity)
+helicity+  1    8    5     4    1   helicity plus counting (pos helicity)
+helicity-  1    8    5     5    1   helicity minus counting (pos helicity)
+clock      1    8    5     7    1   1024 Hz clock on L-arm (pos helicity)
+unser      1    8    5     8    1   Unser Monitor on L-arm (pos helicity)
+bcm_d1     1    8    5    15    1   Beam Current, Downstream Cavity, gain = 1 (pos helicity)
+bcm_u1     1    8    5    13    1   Beam Current, Upstream Cavity, gain = 1 (pos helicity)
+bcm_d3     1    8    5     9    1   Beam Current, Downstream Cavity, gain = 3 (pos helicity)
+bcm_d10    1    8    5    10    1   Beam Current, Downstream Cavity, gain = 10 (pos helicity)
+trigger-1 -1    8    6     0    1   Trigger 1 measured on L-arm (neg helicity)
+trigger-2 -1    8    6     1    1   Trigger 2 measured on L-arm (neg helicity)
+helicity+ -1    8    6     4    1   helicity plus counting (neg helicity)
+helicity- -1    8    6     5    1   helicity minus counting (neg helicity)
+clock     -1    8    6     7    1   1024 Hz clock on L-arm (neg helicity)
+unser     -1    8    6     8    1   Unser Monitor on L-arm (neg helicity)
+bcm_d1    -1    8    6    15    1   Beam Current, Downstream Cavity, gain = 1 (neg helicity)
+bcm_u1    -1    8    6    13    1   Beam Current, Upstream Cavity, gain = 1 (neg helicity)
+bcm_d3    -1    8    6     9    1   Beam Current, Downstream Cavity, gain = 3 (neg helicity)
+bcm_d10   -1    8    6    10    1   Beam Current, Downstream Cavity, gain = 10 (neg helicity)
+
+# ------ Nov 6, 1999 until Sept 1, 2000  (reminder: channel index 0 = 1st) 
+# desc  hel crate slot start nchan  long-description
+DATE 6 11 1999 
+s1L        0    7    0     0    6   S1 H-Arm Scintillator Left PMTs
+s2L        0    7    0     6    6   S2 H-Arm Scintillator Left PMTs
+s1R        0    7    1     0    6   S1 H-Arm Scintillator Right PMTs
+s2R        0    7    1     6    6   S2 H-Arm Scintillator Right PMTs
+s1         0    7    2     0    6   S1 H-Arm Paddles (Left.and.Right PMT)
+s2         0    7    2     6    6   S2 H-Arm Paddles (Left.and.Right PMT)
+trigger-1 -1    7    3     0    1   trigger 1 measured on H-arm (neg helicity)
+trigger-2 -1    7    3     1    1   trigger 2 measured on H-arm (neg helicity)
+trigger-3 -1    7    3     2    1   trigger 3 measured on H-arm (neg helicity)
+trigger-4 -1    7    3     3    1   trigger 4 measured on H-arm (neg helicity)
+trigger-5 -1    7    3     4    1   trigger 5 measured on H-arm (neg helicity)
+clock     -1    7    3     7    1   clock, 1024 Hz (neg helicity)
+bcm_u1    -1    7    3    13    1   Beam current, upstream cavity, gain = 1  (neg helicity)
+bcm_d1    -1    7    3    15    1   Beam current, downstream cavity, gain = 1 (neg helicity)
+bcm_u3    -1    7    3     6    1   Beam current, upstream cavity, gain = 3 (neg helicity)
+bcm_d3    -1    7    3    10    1   Beam current, downstream cavity, gain = 3 (neg helicity)
+bcm_u10   -1    7    3     8    1   Beam current, upstream cavity, gain = 10 (neg helicity)
+bcm_d10   -1    7    3    11    1   Beam current, downstream cavity, gain = 10 (neg helicity)
+unser     -1    7    3    14    1   Unser monitor
+TS-accept -1    7    3    12    1   Trigger Supervisor accepted triggers (neg helicity)
+trigger-1  0    7    4     0    1   trigger 1 measured on H-arm  
+trigger-2  0    7    4     1    1   trigger 2 measured on H-arm  
+trigger-3  0    7    4     2    1   trigger 3 measured on H-arm  
+trigger-4  0    7    4     3    1   trigger 4 measured on H-arm  
+trigger-5  0    7    4     4    1   trigger 5 measured on H-arm  
+clock      0    7    4     7    1   clock, 1024 Hz  
+bcm_u1     0    7    4    13    1   Beam current, upstream cavity, gain = 1   
+bcm_d1     0    7    4    15    1   Beam current, downstream cavity, gain = 1  
+bcm_u3     0    7    4     6    1   Beam current, upstream cavity, gain = 3  
+bcm_d3     0    7    4    10    1   Beam current, downstream cavity, gain = 3  
+bcm_u10    0    7    4     8    1   Beam current, upstream cavity, gain = 10  
+bcm_d10    0    7    4    11    1   Beam current, downstream cavity, gain = 10
+unser      0    7    4    14    1   Unser monitor
+TS-accept  0    7    4    12    1   Trigger Supervisor accepted triggers  
+trigger-1  1    7    5     0    1   trigger 1 measured on H-arm (pos helicity)
+trigger-2  1    7    5     1    1   trigger 2 measured on H-arm (pos helicity)
+trigger-3  1    7    5     2    1   trigger 3 measured on H-arm (pos helicity)
+trigger-4  1    7    5     3    1   trigger 4 measured on H-arm (pos helicity)
+trigger-5  1    7    5     4    1   trigger 5 measured on H-arm (pos helicity)
+clock      1    7    5     7    1   clock, 1024 Hz (pos helicity)
+bcm_u1     1    7    5    13    1   Beam current, upstream cavity, gain = 1  (pos helicity)
+bcm_d1     1    7    5    15    1   Beam current, downstream cavity, gain = 1 (pos helicity)
+bcm_u3     1    7    5     6    1   Beam current, upstream cavity, gain = 3 (pos helicity)
+bcm_d3     1    7    5    10    1   Beam current, downstream cavity, gain = 3 (pos helicity)
+bcm_u10    1    7    5     8    1   Beam current, upstream cavity, gain = 10 (pos helicity)
+bcm_d10    1    7    5    11    1   Beam current, downstream cavity, gain = 10 (pos helicity)
+unser      1    7    5    14    1   Unser monitor
+TS-accept  1    7    5    12    1   Trigger Supervisor accepted triggers (pos helicity)
+gasC       0    7    6     0   11   Gas Cerenkov on H-arm
+s1L        0    8    0     0    6   S1 E-Arm Scintillator Left PMTs
+s2L        0    8    0     6    6   S2 E-Arm Scintillator Left PMTs
+s1R        0    8    1     0    6   S1 E-Arm Scintillator Right PMTs
+s2R        0    8    1     6    6   S2 E-Arm Scintillator Right PMTs
+s1         0    8    2     0    6   S1 E-Arm Paddles (Left.and.Right PMT)
+s2         0    8    2     6    6   S2 E-Arm Paddles (Left.and.Right PMT)
+gasC       0    8    3     0   11   E-arm Gas Cerenkov PMT
+trigger-1  0    8    4     0    1   Trigger 1 measured on E-arm
+trigger-2  0    8    4     1    1   Trigger 2 measured on E-arm
+helicity+  0    8    4     4    1   helicity plus counting
+helicity-  0    8    4     5    1   helicity minus counting
+clock      0    8    4     7    1   1024 Hz clock on E-arm
+unser      0    8    4     8    1   Unser Monitor on E-arm
+bcm_d1     0    8    4    15    1   Beam Current, Downstream Cavity, gain = 1
+bcm_u1     0    8    4    13    1   Beam Current, Upstream Cavity, gain = 1
+bcm_d3     0    8    4     9    1   Beam Current, Downstream Cavity, gain = 3
+bcm_d10    0    8    4    10    1   Beam Current, Downstream Cavity, gain = 10
+trigger-1  1    8    5     0    1   Trigger 1 measured on E-arm (pos helicity)
+trigger-2  1    8    5     1    1   Trigger 2 measured on E-arm (pos helicity)
+helicity+  1    8    5     4    1   helicity plus counting (pos helicity)
+helicity-  1    8    5     5    1   helicity minus counting (pos helicity)
+clock      1    8    5     7    1   1024 Hz clock on E-arm (pos helicity)
+unser      1    8    5     8    1   Unser Monitor on E-arm (pos helicity)
+bcm_d1     1    8    5    15    1   Beam Current, Downstream Cavity, gain = 1 (pos helicity)
+bcm_u1     1    8    5    13    1   Beam Current, Upstream Cavity, gain = 1 (pos helicity)
+bcm_d3     1    8    5     9    1   Beam Current, Downstream Cavity, gain = 3 (pos helicity)
+bcm_d10    1    8    5    10    1   Beam Current, Downstream Cavity, gain = 10 (pos helicity)
+trigger-1 -1    8    6     0    1   Trigger 1 measured on E-arm (neg helicity)
+trigger-2 -1    8    6     1    1   Trigger 2 measured on E-arm (neg helicity)
+helicity+ -1    8    6     4    1   helicity plus counting (neg helicity)
+helicity- -1    8    6     5    1   helicity minus counting (neg helicity)
+clock     -1    8    6     7    1   1024 Hz clock on E-arm (neg helicity)
+unser     -1    8    6     8    1   Unser Monitor on E-arm (neg helicity)
+bcm_d1    -1    8    6    15    1   Beam Current, Downstream Cavity, gain = 1 (neg helicity)
+bcm_u1    -1    8    6    13    1   Beam Current, Upstream Cavity, gain = 1 (neg helicity)
+bcm_d3    -1    8    6     9    1   Beam Current, Downstream Cavity, gain = 3 (neg helicity)
+bcm_d10   -1    8    6    10    1   Beam Current, Downstream Cavity, gain = 10 (neg helicity)
+#
+# ---------- Aug 20, 1998 until Nov 6, 1999  (reminder: channel index 0 = 1st)
+# desc  hel crate slot start nchan  long-description
+DATE 20 8 1998      
+s1L        0    7    0     0    6   S1 H-Arm Scintillator Left PMTs
+s2L        0    7    0     6    6   S2 H-Arm Scintillator Left PMTs
+s1R        0    7    1     0    6   S1 H-Arm Scintillator Right PMTs
+s2R        0    7    1     6    6   S2 H-Arm Scintillator Right PMTs
+s1         0    7    2     0    6   S1 H-Arm Paddles (Left.and.Right PMT)
+s2         0    7    2     6    6   S2 H-Arm Paddles (Left.and.Right PMT)
+trigger-1 -1    7    3     0    1   trigger 1 measured on H-arm (neg helicity)
+trigger-2 -1    7    3     1    1   trigger 2 measured on H-arm (neg helicity)
+trigger-3 -1    7    3     2    1   trigger 3 measured on H-arm (neg helicity)
+trigger-4 -1    7    3     3    1   trigger 4 measured on H-arm (neg helicity)
+trigger-5 -1    7    3     4    1   trigger 5 measured on H-arm (neg helicity)
+clock     -1    7    3     7    1   clock, 1024 Hz (neg helicity)
+bcm_u1    -1    7    3    13    1   Beam current, upstream cavity, gain = 1  (neg helicity)
+bcm_d1    -1    7    3    15    1   Beam current, downstream cavity, gain = 1 (neg helicity)
+bcm_u3    -1    7    3     6    1   Beam current, upstream cavity, gain = 3 (neg helicity)
+bcm_d3    -1    7    3    10    1   Beam current, downstream cavity, gain = 3 (neg helicity)
+bcm_u10   -1    7    3     8    1   Beam current, upstream cavity, gain = 10 (neg helicity)
+bcm_d10   -1    7    3    11    1   Beam current, downstream cavity, gain = 10 (neg helicity)
+unser     -1    7    3    14    1   Unser monitor
+TS-accept -1    7    3    12    1   Trigger Supervisor accepted triggers (neg helicity)
+trigger-1  0    7    4     0    1   trigger 1 measured on H-arm  
+trigger-2  0    7    4     1    1   trigger 2 measured on H-arm  
+trigger-3  0    7    4     2    1   trigger 3 measured on H-arm  
+trigger-4  0    7    4     3    1   trigger 4 measured on H-arm  
+trigger-5  0    7    4     4    1   trigger 5 measured on H-arm  
+clock      0    7    4     7    1   clock, 1024 Hz  
+bcm_u1     0    7    4    13    1   Beam current, upstream cavity, gain = 1   
+bcm_d1     0    7    4    15    1   Beam current, downstream cavity, gain = 1  
+bcm_u3     0    7    4     6    1   Beam current, upstream cavity, gain = 3  
+bcm_d3     0    7    4    10    1   Beam current, downstream cavity, gain = 3  
+bcm_u10    0    7    4     8    1   Beam current, upstream cavity, gain = 10  
+bcm_d10    0    7    4    11    1   Beam current, downstream cavity, gain = 10
+unser      0    7    4    14    1   Unser monitor
+TS-accept  0    7    4    12    1   Trigger Supervisor accepted triggers  
+trigger-1  1    7    5     0    1   trigger 1 measured on H-arm (pos helicity)
+trigger-2  1    7    5     1    1   trigger 2 measured on H-arm (pos helicity)
+trigger-3  1    7    5     2    1   trigger 3 measured on H-arm (pos helicity)
+trigger-4  1    7    5     3    1   trigger 4 measured on H-arm (pos helicity)
+trigger-5  1    7    5     4    1   trigger 5 measured on H-arm (pos helicity)
+clock      1    7    5     7    1   clock, 1024 Hz (pos helicity)
+bcm_u1     1    7    5    13    1   Beam current, upstream cavity, gain = 1  (pos helicity)
+bcm_d1     1    7    5    15    1   Beam current, downstream cavity, gain = 1 (pos helicity)
+bcm_u3     1    7    5     6    1   Beam current, upstream cavity, gain = 3 (pos helicity)
+bcm_d3     1    7    5    10    1   Beam current, downstream cavity, gain = 3 (pos helicity)
+bcm_u10    1    7    5     8    1   Beam current, upstream cavity, gain = 10 (pos helicity)
+bcm_d10    1    7    5    11    1   Beam current, downstream cavity, gain = 10 (pos helicity)
+unser      1    7    5    14    1   Unser monitor
+TS-accept  1    7    5    12    1   Trigger Supervisor accepted triggers (pos helicity)
+gasC       0    7    6     0   11   Gas Cerenkov on H-arm
+s1L        0    8    0     0    6   S1 E-Arm Scintillator Left PMTs
+s2L        0    8    0     6    6   S2 E-Arm Scintillator Left PMTs
+s1R        0    8    1     0    6   S1 E-Arm Scintillator Right PMTs
+s2R        0    8    1     6    6   S2 E-Arm Scintillator Right PMTs
+s1         0    8    2     0    6   S1 E-Arm Paddles (Left.and.Right PMT)
+s2         0    8    2     6    6   S2 E-Arm Paddles (Left.and.Right PMT)
+gasC       0    8    3     0   11   E-arm Gas Cerenkov PMT
+trigger-1  0    8    4     0    1   Trigger 1 measured on E-arm
+trigger-2  0    8    4     1    1   Trigger 2 measured on E-arm
+clock      0    8    4     7    1   1024 Hz clock on E-arm
+unser      0    8    4     8    1   Unser Monitor on E-arm
+bcm_d1     0    8    4    15    1   Beam Current, Downstream Cavity, gain = 1
+bcm_u1     0    8    4    13    1   Beam Current, Upstream Cavity, gain = 1
+bcm_d3     0    8    4     9    1   Beam Current, Downstream Cavity, gain = 3
+bcm_d10    0    8    4    10    1   Beam Current, Downstream Cavity, gain = 10
+a1L        0    8    5     0   13   Aerogel Left PMTs
+a1R        0    8    6     0   13   Aerogel Right PMTs
+
+
+
+
+
+
+
+
+
+
+

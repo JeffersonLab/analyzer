@@ -1,0 +1,277 @@
+Hall A C++ Analyzer version 0.60 ALPHA
+--------------------------------------
+
+31 October 2001
+
+Disclaimer
+~~~~~~~~~~
+This is ALPHA software. Use at your own risk. Don't be surprised if
+things don't work as expected.  The program structure is still in flux
+and subject to changes that might make new code incompatible with previous 
+versions.  Little effort has been made so far to make things foolproof.
+
+What's new in this version (a lot!)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Full set of apparatuses, including Left and Right HRS, each with its
+  own VDC and detectors.  Available apparatuses are:
+
+  THaHRS: (base class for an actual HRS):
+
+     THaLeftHRS:         VDC, S1, S2
+
+     THaRightHRS:        VDC, S1, S2, Aerogel, Gas Cherenkov, 
+			 Total Shower
+
+     THaBeam:            BPM 4A, BPM 4B, Raster, EpicsData
+
+  Since there now is a base class, THaHRS, the actual implementations of the
+  spectrometers, THaLeft/RightHRS, are extremely simple and very easy to
+  modify to accommodate different detector configurations.
+
+- Full set of detectors, capable of multiple instantiation (= one class
+  can be used to create objects for several different physical detectors).
+  Available detectors are:
+
+  THaSpectrometerDetector:
+
+     THaVDC:              Hall A VDC (two UV planes of 368 wires each).
+                          This class is still the basic version from 
+                          Analyzer v0.55 and is of limited precision. It 
+                          only uses wire numbers to find the track, and 
+                          can only find one track.  No fitting of drift times
+                          is performed. Still, it is perfectly suitable for
+                          detector checkout.
+     THaScintillator:     Generic scintillator (L-S1, L-S2, R-S1, R-S2, etc.)
+     THaCherenkov:        Generic Cherenkov (L/R aerogel, L/R gas Cherenkov)
+     THaShower:           Generic shower-type detector (preshower or shower)
+     THaTotalShower:      Combination of two shower detectors (preshower and
+                          shower)
+
+     THaRICH:             The Hall A RICH (very preliminary code)
+
+  THaDetector:
+
+      THaBpm:             Hall A beam position monitor
+      THaRaster:          Hall A beam raster readout
+      THaEpicsData:       Simple interface to some beamline-related 
+                          EPICS (slow control) data
+
+
+- Significant changes to the detector class hierarchy and public interface,
+  especially related to the detector initialization.
+
+  There is now support for subdetectors (THaSubDetector). Both the main
+  detectors (THaDetector) and subdetectors derive from a common base
+  class (THaDetectorBase).
+
+  Detectors are initialized at the beginning of the analysis (in prior
+  versions, they were initialized in the constructor). Initialization
+  occurs via the new Init() method. Init() takes an optional argument
+  of type "const TDatime&" which specifies the time of the current run.
+  Detectors are expected to retrieve appropriate time-dependent database
+  information accordingly.
+
+  For convenience, a generic Init() method is provided in THaDetectorBase,
+  which attempts to open an ASCII database file for the current detector.
+  The name of the database file is derived from the detector name.
+  There is primitive support for time dependence in that database files
+  may be places in subdirectories with a 8-character all-digit name 
+  that is interpreted as YYYYMMDD, where YYYY is the year, MM the month, 
+  and DD the day as of which the data in the directory are valid.
+
+  Detectors that want to use the generic Init() function should implement
+  the methods ReadDatabase(FILE*,const TDatime&) and/or 
+  SetupDetector(const TDatime&).
+
+  This release comes with two very preliminary sets of database files in 
+  subdirectories DB/19970101 and DB/20010101.  The former is probably
+  correct for data taken in 1997, the latter for data from 2001
+  (experiments E94-104 (photopion), E99-117 (A1n), and E97-103 (g2n)).
+  Calibration and geometry data (positions, offsets, pedestals, gains)
+  contained in these database files are not well checked and are little more
+  than ballpark figures.  To get more precise data, if you need them,
+  you need to carry out a calibration yourself, or extract the relevant
+  data from an ESPACE database file. Better database info will be included
+  in the next release.
+
+- Support for arrays of global variables and global variables
+  of types other than Double_t.  Both fixed- and variable-size
+  arrays are supported.
+
+  This greatly simplifies the design of detector classes as member variables 
+  containing information of interest can be of any (basic) type, and array 
+  elements no longer need to be declared one-by-one.
+
+- Utility functions to simplify definition of global variables in
+  detector classes.  In any detector class, global variables can be
+  defined with a single call to DefineVariables( VarDef* ). The argument is
+  and array of type VarDef that can be filled with a tidy, compact C-style 
+  initializer.  All variable definitions belonging to a detector can be 
+  deleted with a single call to RemoveVariables().
+
+- Improved decoder hana_decode_1.6.
+
+- Support for scalers via Bob's scaler package hana_scaler_1.4.
+
+  Scalers should be defined in the analysis macro and placed in
+  the global list gHaScalers.  See the example setup*.C scripts
+  (see "Example Scripts" below).  All scaler banks contained in this list 
+  will be updated throughout the run, and results will be printed at the 
+  end of the analysis.
+
+- Cleaned-up file/tree output (THaEvent).  THaEvent has been turned into
+  a base class that provides basic output functionality and should not be
+  modified.  The contents of the output tree should be defined in a class
+  derived from THaEvent. This release includes one example, THaRawEvent,
+  that contains all variables from the detectors defined in THaLeftHRS and 
+  THaRightHRS. 
+  
+- Basic support for histograms of global variables in THaEvent. One can
+  define 1-d histograms that are filled at the end of the analysis chain.
+  Any global variable can be histogrammed, including arrays. An appropriate
+  histogram class (TH1D, TH1F, TH1S, or TH1C) is chosen automatically based
+  on the type of the variable. Histograms of array variables are filled
+  with all array elements for each event.   Histograms can be defined
+  either with calls to THaEvent::DefineHist or loaded from a plaintext
+  file via THaEvent::LoadHist( const char* filename ).  The default
+  file name is "histdef.dat". An example "histdef.dat" is included.
+  Currently, no cuts can be applied to these histograms.
+
+- Updated demo scripts (see "Example Scripts" below).
+
+
+System requirements
+~~~~~~~~~~~~~~~~~~~
+
+IMPORTANT: This release requires ROOT 3.00 or higher! 
+
+These sources have been tested on the following platforms:
+
+   - RedHat Linux 6.2 with egcs-1.1.2 and ROOT 3.00-06 (ifarml)
+     and ROOT 3.02-00
+   - RedHat Linux 7.1 with g++-2.96 and ROOT 3.01-05
+   - Sun Solaris 2.6/SPARC with Sun's CC5 compiler and ROOT 3.01-03 (ifarms)
+
+Note: On Solaris, one still needs gcc to be installed, even though the
+analyzer is compiled with Sun's CC5.  The reason is that the Makefiles
+use gcc to create the include file dependency lists.  A standalone
+"makedepend" script will be included in a future release so that gcc
+is no longer required on all platforms.
+
+The analyzer requires about 20-50MB of free virtual memory (= physical
+RAM + swap space), possibly more on Solaris, depending on which
+classes you instantiate, how large the output tree grows, etc. These
+requirements are typical of ROOT applications.
+
+Currently, several classes contain direct Unix system calls, making porting
+to non-Unix platforms not trivial. This restriction will be lifted in
+a future release.
+
+
+Building and installing
+~~~~~~~~~~~~~~~~~~~~~~~
+The distribution is by default configured for Linux. To change to
+the Solaris/CC5 environment, please make the following change at the
+beginning of the Makefiles:
+
+#ARCH = linuxegcs
+ARCH = solarisCC5
+
+This affects the following three Makefiles:
+
+Makefile
+hana_decode_1.6/Makefile
+hana_scaler_1.4/Makefile
+
+A "configure" script to automate the platform detection will be included in
+the next release.
+
+Before compiling, make sure that your have set ROOTSYS correctly
+and $ROOTSYS/bin is in your PATH.
+
+On the ifarm machines, issue the command
+	use root/3.01-03
+to configure ROOT and set the PATH.
+
+To compile, run the Makefile with GNU make (tested with make 3.78-1).
+Usually, you just need to type "make". On Sun (ifarms), type "gmake".
+
+Before running, set your LD_LIBRARY_PATH as follows:
+
+  export LD_LIBRARY_PATH=.:$ROOTSYS/lib:$LD_LIBRARY_PATH
+OR
+  setenv LD_LIBRARY_PATH .:$ROOTSYS/lib:$LD_LIBRARY_PATH
+
+(i.e. make sure the current directory is in the LD_LIBRARY_PATH).
+
+Alternatively, you can copy the three shared libraries,
+	libHallA.so, libdc.so, libscaler.so
+to a directory of your choice (e.g. /usr/local/lib). Depending on your
+choice, you may or may not have to modify LD_LIBRARY_PATH (e.g. /usr/local/lib
+is usually included in the default shared library search path).
+
+Run the analyzer as follows:
+
+	./analyzer
+
+Usage
+~~~~~
+Here is an example session that analyzes 10000 events of a run file
+and writes a ROOT tree with values of the L- and R-arm HRS detector raw data.
+Then a few sample plots are created.
+
+Before running this session, get a CODA run file and put it
+in the current directory as "run.dat".  You can download a sample
+from the same location where you got this distribution.
+
+(make a link called run.dat to the data file you want to analyze)
+analyzer[1] .x setup.C                                // Setup analysis parameters
+analyzer[2] analyzer->Process( *run )                 // Process the run defined in setup.C
+analyzer[3] gDirectory->ls()                          // Show objects in current file
+analyzer[4] evlen->Draw()                             // Plot histogram evlen
+analyzer[5] T->Print()                                // Show variables in tree
+analyzer[6] T->Draw("fL_S1L_adc[3]:fL_S1R_adc[3]")    // Plot S1 ADC 3 left vs. right
+analyzer[7] T->Draw("fL_S1L_adc[3]:fEvtHdr.fEvtNum")  // Plot S1 ADC 3 left vs. event number
+analyzer[8] analyzer->Close()                         // Close output file
+analyzer[9] .q                                        // Quit interactive session
+
+You can now work with the output file "Afile.root" with standard ROOT
+or the analyzer.
+
+Example Scripts
+~~~~~~~~~~~~~~~
+A number of example scripts are included with this release. They are:
+
+setup.C            - generic analysis macro
+setup_demo.C       - setup script for the demo* macros
+demo_s1.C          - plot script for R- and L-arm S1 scintillators
+demo_s2.C          - plot script for R- and L-arm S2 scintillators
+demo_aerogel.C     - plot script for R-arm aerogel raw data
+demo_cherenkov.C   - plot script for R-arm gas Cherenkov raw data
+demo_shower.C      - plot script for R-arm total shower detector
+demo_track.C       - plot script for R-arm tracking data
+demo_VDC.[Ch]      - example class for VDC analysis
+
+The demo scripts were originally written by Armen Ketikyan.
+To use them (except demo_VDC), please do the following:
+
+(make a link called demo.dat to the data file you want to analyze)
+analyzer[0] .x setup_demo.C
+analyzer[1] analyzer->Process(*run)
+analyzer[2] .x demo_xxxx.C           // xxxx = s1,s2,aerogel,cherenkov,shower,track
+
+To use the demo_VDC script:
+
+analyzer[0] .L demo_VDC.C
+analyzer[1] demo_VDC t       // Instantiate a demo_VDC object. Opens Afile.root.
+analyzer[2] t.Loop()         // Loop over all events in the file, then plot results
+
+
+Documentation
+~~~~~~~~~~~~~
+Further documentation is available at the project home page:
+
+	http://hallaweb.jlab.org/root/
+
+

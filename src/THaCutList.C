@@ -1,0 +1,521 @@
+//*-- Author :    Ole Hansen     05-May-00
+
+
+//////////////////////////////////////////////////////////////////////////
+//
+// THaCutList
+//
+// Class to manage dynamically-defined cuts (tests).
+//
+//////////////////////////////////////////////////////////////////////////
+
+#include "THashList.h"
+#include "THaCut.h"
+#include "THaNamedList.h"
+#include "THaCutList.h"
+#include "THaPrintOption.h"
+#include "TError.h"
+
+#include <fstream>
+#include <iomanip>
+#include <algorithm>
+#include <cstring>
+#include <strstream.h>
+
+ClassImp(THaCutList)
+
+const char* const THaCutList::kDefaultBlockName = "Default";
+const char* const THaCutList::kDefaultCutFile   = "cutdef.dat";
+
+//______________________________________________________________________________
+THaCutList::THaCutList()
+{
+  // Default constructor. No variable list is defined. Either define it
+  // later with SetList() or pass the list as an argument to Define().
+  // Allowing this constructor is not very safe ...
+
+  fCuts   = new THashList();
+  fBlocks = new THashList();
+  fVarList = 0;
+}
+
+//______________________________________________________________________________
+THaCutList::THaCutList( const THaVarList& lst ) : fVarList(&lst)
+{
+  // Normal constructor. Create the main lists and set the variable list.
+
+  fCuts   = new THashList();
+  fBlocks = new THashList();
+}
+
+//______________________________________________________________________________
+THaCutList::~THaCutList()
+{
+  // Default destructor. Delete all dynamic cuts. 
+
+  fCuts->Clear();
+  fBlocks->Delete();
+  delete fCuts;
+  delete fBlocks;
+}
+
+//______________________________________________________________________________
+Int_t THaCutList::Define( const char* cutname, const char* expr, 
+			  const char* block )
+{
+  // Define a new cut with given name in given block. If the block does not
+  // exist, it is created.  This is the normal way to define a cut since
+  // there is usually just one variable list. 
+  //
+  // Cut names MUST be unique and cannot be empty. Quotes and whitespace are
+  // illegal in cut names; any other characters are allowed.
+  //
+  // Symbolic variables in expressions must only refer to variables defined 
+  // in the variable list OR to previously defined cuts.
+  //
+  // It is possible to use cut names from one block in definitions for a 
+  // different block. This should be done with care, however, since such
+  // "external" cuts are not necessarily updated with the same frequency
+  // as the current block, depending on the design of the application.
+  //
+  // A return value of 0 indicates success, negative numbers indicate error.
+  //
+
+  if( !fVarList ) { 
+    Error( "Define", "no variable list set, cut not created" );
+    return -1;
+  }
+  return Define( cutname, expr, *fVarList, block );
+}
+
+//______________________________________________________________________________
+Int_t THaCutList::Define( const char* cutname, const char* expr, 
+			  const THaVarList& lst, const char* block )
+{
+  // Define a new cut with given name in given block with variables from
+  // given list.  See description of Define() above.
+  //
+
+  static const char* here = "THaCutList::Define";
+
+  if( !cutname || !strlen(cutname) || (strspn(cutname," ")==strlen(cutname)) ) {
+    Error( here, "empty cut name, cut not created" );
+    return -4;
+  }
+  if( !expr || !strlen(expr) || (strspn(expr," ")==strlen(expr)) ) {
+    Error( here, "empty expression string, cut not created: %s", cutname );
+    return -5;
+  }
+  if( !block || !strlen(block) || (strspn(block," ")==strlen(block)) ) {
+    Error( here, "empty block name, cut not created: %s %s", cutname, expr );
+    return -6;
+  }
+  if( strpbrk(cutname,"\"'` ") ) {
+    Error( here, "illegal character(s) in cut name, cut not created: "
+	   "%s %s block: %s", cutname, expr, block );
+    return -7;
+  }
+  if( fCuts->FindObject(cutname) ) {
+    Error( here, "duplicate cut name, cut not created: %s %s block: %s",
+	   cutname, expr, block );
+    return -8;
+  }
+
+  // Create new cut using the given expression. Bail out if error.
+
+  THaCut* pcut = new THaCut( cutname, expr, block, lst );
+  if( !pcut ) return -2;
+  if( pcut->IsError() ) { 
+    Error( here, "expression error, cut not created: %s %s block: %s",
+	   cutname, expr, block );
+    delete pcut; 
+    return -3;
+  }
+
+  // Formula ok -> add it to the lists. If this is a new block, create it.
+
+  THaNamedList* plist = FindBlock( block );
+  if( !plist ) {
+    plist = new THaNamedList( block );
+    fBlocks->Add( plist );
+  }
+
+  fCuts->AddLast( pcut );
+  plist->AddLast( pcut );
+  return 0;
+}
+
+//______________________________________________________________________________
+Int_t THaCutList::Load( const char* filename )
+{
+  // Read cut definitions from a file and create the cuts. If no filename is
+  // given, the file ./cutdef.dat is used.
+  //
+  // Lines starting with # are treated as comments. Blank lines and leading 
+  // spaces are ignored.
+  //
+  // A valid cut definition consists of two tags, a cut name and the 
+  // corresponding expression.  The tags are separated by whitespace.  
+  // Any characters following the cut expression are ignored and can be 
+  // used for comments.  Expressions can be enclosed in double quotes ("") 
+  // to include spaces for better readability.
+  //
+  // Block names can be set using "Block:" as the cut name (without quotes)
+  // followed by the name of the block.
+  //
+  // Cuts are defined via the Define() method; see the description of 
+  // Define() for more details.  Examples:
+  //
+  // # This is a comment. Blank lines are ignored, so are leading spaces.
+  //
+  // xcut  x>1
+  // cut1  x+y<10
+  //
+  // Block: Target_cuts
+  // cut2  "x<10 || x>20"
+  // zcut  (z^2-2)>0      This text is ignored
+  //
+  // A return value of 0 indicates success. Negative values indicate severe 
+  // errors (e.g. file not found, read error).  Positive numbers indicate the 
+  // number of unprocessable lines (e.g. illegal expression, bad cutname) for 
+  // which no cuts were defined.
+  //
+
+  static const char* const here   = "THaCutList::Load";
+  static const char* const whtspc = " \t";
+
+  if( !filename || !strlen(filename) || strspn(filename," ") == 
+      strlen(filename) ) {
+    Error( here, "invalid file name, no cuts loaded" );
+    return -1;
+  }
+
+  ifstream ifile( filename );
+  if( !ifile ) {
+    Error( here, "error opening input file %s, no cuts loaded",
+	   filename );
+    return -2;
+  }
+
+  // Read the file line by line
+
+  unsigned line_size = 256;
+  char* line  = new char[ line_size ];
+  char block[ 256 ];
+  strcpy( block, kDefaultBlockName );
+  Int_t nlines_read = 0, nlines_ok = 0;
+
+  while( !ifile.eof() ) {
+    streampos pos = ifile.tellg();
+    ifile.getline( line, line_size );
+
+    // Buffer too small?
+
+    if( ifile.gcount() == line_size-1 ) {
+      ifile.clear();
+      ifile.seekg( pos );
+      delete [] line;
+      line_size *= 2;
+      line = new char[ line_size ];
+      continue;
+    }
+
+    // Blank line or comment?
+
+    size_t i = strspn( line, whtspc );
+    char c = line[i];
+    if( c == '#' || c == '\0' ) continue;
+
+    // Valid line ... start processing
+
+    nlines_read++;
+    char* arg1 = strtok( line+i, whtspc );
+    if( !arg1 ) continue;
+
+    // Permit spaces in the second argument if it is enclosed it quotes
+
+    char* arg2 = strchr( arg1+strlen(arg1)+1, '"' );
+    if( arg2 ) {
+      char* pc = strchr( arg2+1, '"' );
+      if( pc ) {
+	arg2++;
+	*pc = 0;
+      } else {
+	Error( here, "unbalanced quotes, cut not loaded: %s %s", 
+	       arg1, arg2 );
+	continue;
+      }
+    } else {
+      arg2 = strtok( 0, whtspc );
+      if( !arg2 ) {
+	Warning( here, "ignoring cutname without expression, %s", arg1 );
+	continue;
+      }
+    }
+
+    // Set block name
+
+    if( !strcmp( arg1, "Block:" ) ) {
+      if( strlen(arg2) > 255 ) {
+	Error( here, "block name too long, aborting: %s", arg2 );
+	return -3;
+      }
+      strcpy( block, arg2 );
+      nlines_ok++;
+      continue;
+    }
+
+    // Define the cut. Errors are reported by Define()
+
+    if( strlen(arg1) > 255 ) {
+      Error( here, "cut name too long, cut not loaded: %s %s", 
+	     arg1, arg2 );
+      continue;
+    }
+
+    if( !Define( arg1, arg2, block ) ) nlines_ok++;
+  }
+
+  ifile.close();
+  delete [] line;
+  Int_t nbad = nlines_read-nlines_ok;
+  if( nbad>0 ) Warning( here, "%d cut(s) could not be defined, check input "
+			"file %s", nbad, filename );
+  return nbad;
+}
+
+//______________________________________________________________________________
+Int_t THaCutList::Eval()
+{
+  // Evaluate all tests in all blocks.  Because of possible dependences between
+  // blocks, each block is evaluated separately in the order in which the blocks
+  // were defined.
+
+  Int_t i = 0;
+  TIter next( fBlocks );
+  while( THaNamedList* plist = static_cast<THaNamedList*>( next() ))
+    i += EvalBlock( plist );
+
+  return i;
+}
+
+//______________________________________________________________________________
+Int_t THaCutList::EvalBlock( const char* block )
+{
+  // Evaluate all tests in the given block in the order in which they were defined.
+  // If no argument is given, the default block is evaluated.
+
+  return EvalBlock( FindBlock( block ) );
+}
+
+//______________________________________________________________________________
+inline
+Int_t THaCutList::EvalBlock( const THaNamedList* plist )
+{
+  // Evaluate all cuts in the given list in the order in which they were defined.
+
+  if( !plist ) return -1;
+  Int_t i = 0;
+  TIter next( plist );
+  while( THaCut* pcut = static_cast<THaCut*>( next() )) {
+    pcut->EvalCut();
+    i++;
+  }
+  return i;
+}
+
+//______________________________________________________________________________
+void THaCutList::Reset()
+{
+  // Reset all cut and block counters to zero
+
+  TIter next( fCuts );
+  while( THaCut* pcut = static_cast<THaCut*>( next() ))
+    pcut->Reset();
+}
+
+//______________________________________________________________________________
+Int_t THaCutList::Result( const char* cutname, EWarnMode mode )
+{
+  // Return result of the last evaluation of the named cut
+  // (0 if false, 1 if true).
+  // If cut does not exist, return -1. Also, print warning if mode=kWarn.
+
+  THaCut* pcut = static_cast<THaCut*>( fCuts->FindObject( cutname ));
+  if( !pcut ) {
+    if( mode == kWarn )
+      Warning("Result()", "No such cut: %s", cutname );
+    return -1;
+  }
+  return static_cast<Int_t>( pcut->GetResult() );
+}
+
+//______________________________________________________________________________
+Int_t THaCutList::Remove( const char* cutname )
+{
+  // Remove the named cut completely
+
+  THaCut* pcut = static_cast<THaCut*>( fCuts->FindObject( cutname ));
+  if ( !pcut ) return 0;
+  const char* block = pcut->GetBlockname();
+  THaNamedList* plist = static_cast<THaNamedList*>(fBlocks->FindObject( block ));
+  if ( plist ) plist->Remove( pcut );
+  fCuts->Remove( pcut );
+  delete pcut;
+  return 1;
+}
+
+//______________________________________________________________________________
+Int_t THaCutList::RemoveBlock( const char* block )
+{
+  // Remove all cuts contained in the named block.
+
+  THaNamedList* plist = FindBlock( block );
+  if( !plist ) return -1;
+  Int_t i = 0;
+  TObjLink* lnk = plist->FirstLink();
+  while( lnk ) {
+    THaCut* pcut = static_cast<THaCut*>( lnk->GetObject() );
+    if( pcut ) i++;
+    lnk = lnk->Next();
+    fCuts->Remove( pcut );
+  }
+  plist->Delete();   // this should delete all pcuts
+  fBlocks->Remove( plist );
+  delete plist;
+
+  return i;
+}
+
+//______________________________________________________________________________
+void THaCutList::Clear( Option_t* option )
+{
+  // Remove all cuts and all blocks
+
+  fBlocks->Delete();
+  fCuts->Delete();
+}
+
+//______________________________________________________________________________
+UInt_t THaCutList::IntDigits( Int_t n ) const
+{ 
+  //Get number of printable digits of integer n.
+  //Internal utility function.
+
+  if( n == 0 ) return 1;
+  int j = 0;
+  if( n<0 ) {
+    j++;
+    n *= -1;
+  }
+  while( n>0 ) {
+    n /= 10;
+    j++;
+  }
+  return j;
+}
+
+//______________________________________________________________________________
+void THaCutList::MakePrintOption( THaPrintOption& opt, 
+				  const TList* plist ) const
+{ 
+  // If the print option is either "LINE" or "STATS", determine the widths 
+  // of the text fields of all the cuts in the given list and append them
+  // to the print option.
+  // This is an internal utility function used by Print() and PrintBlock().
+
+  const int NF = 4;         // Number of fields
+  if( opt.IsLine() && !strcmp(opt.GetOption(1),"") ) {
+    UInt_t width[NF] = { 0, 0, 0, 0 };
+    TIter next( plist );
+    while( THaCut* pcut = (THaCut*)next() ) {
+      width[0] = max( width[0], strlen(pcut->GetName()) );
+      width[1] = max( width[1], strlen(pcut->GetTitle()) );
+      width[2] = max( width[2], strlen(pcut->GetBlockname()) );
+      width[3] = max( width[3], IntDigits( (Int_t)pcut->GetNPassed() ) );
+    }
+    UInt_t len = strlen(opt.GetOption(0))+4*NF+1;
+    char* newopt = new char[ len ];
+    ostrstream ostr( newopt, len );
+    ostr << opt.GetOption(0);
+    for( int i=0; i<NF; i++ ) ostr << "," << width[i];
+    opt = newopt;
+    delete [] newopt;
+  }
+}
+
+//______________________________________________________________________________
+void THaCutList::Print( Option_t* option ) const
+{
+  // Print all cuts in all blocks.
+  // For options see THaCut.Print(). The default mode is "LINE". The 
+  // widths of the text fields are determined automatically.
+  // For "LINE" and "STATS", cuts are printed grouped in blocks.
+
+  THaPrintOption opt(option);
+  if( !strcmp(opt.GetOption(0),"") ) opt = kPRINTLINE;
+  MakePrintOption( opt, fCuts );
+  PrintHeader( opt );
+  if( opt.IsLine() ) {
+    TIter next( fBlocks );
+    while( THaNamedList* plist = static_cast<THaNamedList*>( next() )) {
+      bool is_stats = !strcmp( opt.GetOption(0), kPRINTSTATS );
+      if(  is_stats && strlen( plist->GetName() ) )
+	cout << "BLOCK: " << plist->GetName() << endl;
+      plist->Print( opt.Data() );
+      if ( is_stats ) cout << endl;
+    }
+  } else
+    fCuts->Print( opt.Data() );
+}
+
+//______________________________________________________________________________
+void THaCutList::PrintBlock( const char* block, Option_t* option ) const
+{
+  // Print all cuts in the named block.
+
+  THaNamedList* plist = FindBlock( block );
+  if( !plist ) return;
+  THaPrintOption opt(option);
+  if( !strcmp(opt.GetOption(0),"") ) opt = kPRINTLINE;
+  MakePrintOption( opt, plist );
+  PrintHeader( opt );
+  plist->Print( opt.Data() );
+}
+
+//______________________________________________________________________________
+void THaCutList::PrintCut( const char* cutname, Option_t* option ) const
+{
+  // Print the definition of a single cut
+
+  THaCut* pcut = static_cast<THaCut*>( fCuts->FindObject( cutname ));
+  if( !pcut ) return;
+  pcut->Print( option );
+}
+
+//______________________________________________________________________________
+void THaCutList::PrintHeader( const THaPrintOption& opt ) const
+{
+  // Print header for Print() and PrintBlock().
+  // This is an internal function.
+
+  if( !opt.IsLine() ) return;
+  cout.flags( ios::left );
+  cout << setw( opt.GetValue(1) ) << "Name" << "  "
+       << setw( opt.GetValue(2) ) << "Def"  << "  ";
+  if( !strcmp( opt.GetOption(), kPRINTLINE )) {
+    cout << setw(1) << "T" << "  "
+	 << setw( opt.GetValue(3) ) << "Block" << "  ";
+  }
+  cout << setw(9) << "Called" << "  "
+                  << "Passed" << endl;
+  int len = max( opt.GetValue(1) + opt.GetValue(2) 
+		 + opt.GetValue(4) + 24, 30 );
+  if( !strcmp( opt.GetOption(), kPRINTLINE ))
+    len += max( opt.GetValue(3) + 5, 10 );
+  char* line = new char[ len+1 ];
+  for( int i=0; i<len; i++ ) line[i] = '-';
+  line[len] = '\0';
+  cout << line << endl;
+  delete [] line;
+}

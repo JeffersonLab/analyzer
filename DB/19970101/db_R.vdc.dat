@@ -1,0 +1,34 @@
+####################### RIGHT VDC PLANES U1,V1,U2,V2 ###########################
+Crate,Slot,1st,Last TDC chans,Beg wire
+       1       4       0      95       1         - U1
+       1       5       0      95      97
+       1       6       0      95     193
+       1       7       0      79     289
+       1       8       0      95       1         - V1
+       1       9       0      95      97
+       1      10       0      95     193
+       1      11       0      79     289
+       1      12       0      95       1         - U2
+       1      13       0      95      97
+       1      14       0      95     193
+       1      15       0      79     289
+       1      16       0      95       1         - V2
+       1      17       0      95      97
+       1      18       0      95     193
+       1      19       0      79     289
+      -1      0        0       0       0
+Maximal gap, i.e. consecutive ineffective wires, in a cluster ----------- maxgap
+       1
+Min and Max times limits for hit including to cluster --------- mintime, maxtime
+     800    2200
+Rotation angle of the VDC package ------------------------------------- vdcangle
+    -45.                                          - Degrees
+Angles of U- and V-planes wires with dispersive planes -------- uwangle, vwangle
+     45.    -45.                                  - Degrees
+Z coordinates of VDC planes in U1 coordinate system --------- u1z, v1z, u2z, v2z
+      0.     2.6   33.48   36.09                  - Centimeters
+Positions of the planes 1-st wires in own cs ---- u1wbeg, v1wbeg, u2wbeg, v2wbeg
+  77.852  77.852 102.718 102.718                  - Centimeters
+Wires spacing with coordinate direction ----- u1wspac, v1wspac, u2wspac, v2wspac
+ -.42426 -.42426 -.42426 -.42426                  - Centimeters
+################################################################################

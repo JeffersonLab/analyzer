@@ -1,0 +1,320 @@
+# Makefile for "hana" (C++ Hall A Analyzer) Event Decoder.
+# R. Michaels, rom@jlab.org, Mar 2001
+#
+# Test Executibles:
+# tstcoda  --  test of abstract interface to THaCodaFile and THaEtClient.
+# tstio    --  simple tests of CODA I/O from a file.
+# tdecpr   --  test of decoder with self-explanatory printouts.
+# tdecex   --  test of decoder, example for a use by a detector class.
+# etclient --  test of ET connection for online data.
+# prfact   --  standalone code to print the prescale factors and exit.  
+# 
+# To understand how to use decoding classes, look at the 'main'
+# routines tstcoda_main.C, tstio_main.C, tdecpr_main.C, tdecex_main.C etc
+# corresponding to the above executibles.  Also see haGenDetTest.C
+# which shows proposed usage in a 'generic' detector class.
+
+# Note regarding software from DAQ group
+# evio.h, evio.C, swap_util.C, et.h are taken from DAQ group intact
+# (only a few tiny mod's by me).  For this reason I did not rename 
+# those modules with prefix "THa".  Next, swapped_intcpy.c is a version
+# extracted from swap_util and modified by Ole for higher speed.
+
+# name and version of this release
+VERS = hana_decode_1.6
+
+# If one defines STANDALONE, the library and test execs are compiled 
+# independently of the rest of the analyzer.  Normally this is commented out.
+# export STANDALONE = 1
+
+# To build a shared library, uncomment the following line
+export BUILD_SHARED = 1
+
+# MAINDIR is the source of headers for main code.
+# Also need objects from MAINDIR for standalone test executibles,
+# but NOT for making library.
+export MAINDIR = ../src
+
+# Use flag ONLINE_ET below if compiling standalone online code (ET system).
+# This flag gets passed by the main Makefile if not compiling standalone tests.
+# CODA environment variable must be set.  Examples are
+#   CODA = /adaqfs/coda/2.2        (in adaq cluster)
+#   CODA = /data7/user/coda/2.2    (on haplix cluster)
+# User's $LD_LIBRARY_PATH must include $CODA/$OSNAME/lib  (OSNAME = SunOS or Linux) 
+# Example:  OSNAME=Linux ; export OSNAME 
+# LD_LIBRARY_PATH=/app/root/lib:$CODA/$OSNAME/lib:.   ; export LD_LIBRARY_PATH
+# export ONLINE_ET = 1
+
+# Use this if profiling (note: it slows down the code)
+# export PROFILE = 1
+
+ARCH          = linuxegcs
+#ARCH          = solarisCC5
+
+ROOTCFLAGS   := $(shell root-config --cflags)
+ROOTLIBS     := $(shell root-config --libs)
+ROOTGLIBS    := $(shell root-config --glibs)
+
+INCLUDES      = $(ROOTCFLAGS) -I$(MAINDIR)
+
+ifeq ($(ARCH),solarisCC5)
+# Solaris CC 5.0
+CXX           = CC
+CXXFLAGS      = -O -KPIC
+LD            = CC
+LDFLAGS       = -O
+SOFLAGS       = -G
+endif
+
+ifeq ($(ARCH),linuxegcs)
+# Linux with egcs (>= RedHat 5.2)
+CXX           = g++
+CXXFLAGS      = -O -Wall -Woverloaded-virtual -fPIC
+LD            = g++
+LDFLAGS       = -O
+SOFLAGS       = -shared
+endif
+
+ifeq ($(CXX),)
+$(error $(ARCH) invalid architecture)
+endif
+
+MAKEDEPEND    = g++
+
+ifdef WITH_DEBUG
+CXXFLAGS     += -DWITH_DEBUG
+endif
+
+export OSNAME := $(shell uname)
+
+ifeq ($(OSNAME),SunOS)
+
+   CXXFLAGS      += -DSUNVERS
+   EVIO_LIB=libevio_sun.a
+   GLIB =  -lm -lc -lgen -lw -lnsl -ldl
+   SLIB = -L/opt/SUNWspro/SC4.2/lib -lF77 -lM77 -lsunmath
+# all this needed for ET...  up to comment below
+   ET_AC_FLAGS = -D_REENTRANT -D_POSIX_THREAD_SEMANTICS
+   ET_CFLAGS = -mt -fast -xO5 -KPIC $(ET_AC_FLAGS) -DSUNVERS
+# CODA environment variable must be set.  Examples are
+#   CODA = /adaqfs/coda/2.2        (in adaq cluster)
+#   CODA = /data7/user/coda/2.2    (on haplix cluster)
+   LIBET = $(CODA)/SunOS/lib/libet.so
+   ONLIBS = $(LIBET) -lposix4 -lnsl -lsocket -lresolv
+   LIBS = $(EVIO_LIB) $(GLIB)
+   ifdef ONLINE_ET
+     ALL_LIBS = $(LIBS) $(ONLIBS) 
+# ... finished, what ET needs.
+   else
+     ALL_LIBS = $(LIBS) 
+   endif
+
+endif
+
+# Note, ET system does not work on HP-UX
+ifeq ($(OSNAME),HP-UX)
+
+   CXX           =   g++
+   CXXFLAGS      =  -O -DHPVERS
+   LD            = g++
+   LDFLAGS       = -g -D
+   SOFLAGS       = -G
+   EVIO_LIB      = libevio_hpux.a
+   GLIB          = -lm -lc  
+   ALL_LIBS      = $(EVIO_LIB) $(GLIB)
+
+endif
+
+ifeq ($(OSNAME),Linux)
+
+   CXXFLAGS      += -DLINUXVERS 
+
+   LIBS          =
+   GLIBS         = -L/usr/X11R6/lib -lXpm -lX11
+   EVIO_LIB      = libevio_linux.a
+   ALL_LIBS      = $(EVIO_LIB) $(GLIBS) $(ROOTLIBS) $(ROOTGLIBS)
+
+# ONLIBS is needed for ET
+  ET_AC_FLAGS = -D_REENTRANT -D_POSIX_PTHREAD_SEMANTICS
+  ET_CFLAGS = -02 -fPIC -I. $(ET_AC_FLAGS) -DLINUXVERS
+# CODA environment variable must be set.  Examples are
+#   CODA = /adaqfs/coda/2.2        (in adaq cluster)
+#   CODA = /data7/user/coda/2.2    (on haplix cluster)
+  LIBET = $(CODA)/Linux/lib/libet.so
+  ONLIBS = $(LIBET) -lieee -lpthread -ldl -lresolv
+
+  ifdef ONLINE_ET
+     ALL_LIBS += $(ONLIBS)
+  endif
+
+  ifdef PROFILE
+     CXXFLAGS += -pg
+  endif
+
+endif
+
+CXXFLAGS     += $(INCLUDES)
+LIBS         += $(ROOTLIBS) $(SYSLIBS)
+GLIBS        += $(ROOTGLIBS) $(SYSLIBS)
+
+#-----------------------------------------------------------------------
+# DECODE_OBJS is the package for CODA I/O and decoder written by R. Michaels.
+# This, together with libevio, is what other developers need.
+
+SRC = THaUsrstrutils.C THaCrateMap.C THaCodaData.C THaHelicity.C \
+      THaEpicsStack.C THaFastBusWord.C THaCodaFile.C THaSlotData.C \
+      THaEvData.C 
+      
+HEAD = $(SRC:.C=.h)
+DEPS = $(SRC:.C=.d)
+DECODE_OBJS = $(SRC:.C=.o)
+
+PROGS = tstio tdecpr tdecex prfact 
+
+# If you want to use the ET system at Jlab.
+ifdef ONLINE_ET
+  SRC += THaEtClient.C
+  PROGS += etclient
+  PROGS += tstcoda
+endif
+
+ifdef BUILD_SHARED
+  all:  ../libdc.so
+else
+  all:  ../libdc.a
+endif
+
+# To compile local test codes:  Uncomment "export STANDALONE = 1" at top of Makefile
+# Normally this should be commented out.
+
+ifdef STANDALONE
+  all: $(PROGS) libdc.a
+  CXXFLAGS += -DSTANDALONE
+endif
+
+# Library for main analyzer
+
+../libdc.a: $(DECODE_OBJS) evio.o swap_util.o swapped_intcpy.o THaDecDict.o
+	rm -f $@
+	ar crs $@ $^
+
+../libdc.so: $(DECODE_OBJS) evio.o swap_util.o swapped_intcpy.o THaDecDict.o
+	rm -f $@
+	$(LD) $(LDFLAGS) $(SOFLAGS) -o $@ $^
+
+libdc.a: $(DECODE_OBJS) evio.o swap_util.o swapped_intcpy.o THaDecDict.o
+	rm -f $@
+	ar crs $@ $^
+
+# Test programs for standalone tests of decoder.
+# Need a few objects from MAINDIR because of some links to those classes.
+ifdef STANDALONE
+   MAINOBJS = 
+else
+   MAINOBJS = $(MAINDIR)/libHallA.so
+endif
+
+tstio: tstio_main.o $(DECODE_OBJS) THaDecDict.o $(SRC) $(EVIO_LIB) $(MAINOBJS)
+	rm -f $@
+	$(CXX) $(CXXFLAGS) -o $@ tstio_main.o $(DECODE_OBJS) THaDecDict.o $(ALL_LIBS) $(MAINOBJS)
+
+tdecpr: $(DECODE_OBJS) THaDecDict.o $(SRC) tdecpr_main.o $(HEAD) $(SRC) $(EVIO_LIB) $(MAINOBJS)
+	rm -f $@
+	$(CXX) $(CXXFLAGS) -o $@ tdecpr_main.o $(DECODE_OBJS) THaDecDict.o $(ALL_LIBS) $(MAINOBJS)
+
+tdecex: $(DECODE_OBJS) THaDecDict.o $(SRC) tdecex_main.o THaGenDetTest.o $(HEAD) THaGenDetTest.h $(SRC) $(DECODE_OBJS) THaDecDict.o $(EVIO_LIBS) $(MAINOBJS)  
+	rm -f $@
+	$(CXX) $(CXXFLAGS) -o $@ tdecex_main.o THaGenDetTest.o $(DECODE_OBJS) THaDecDict.o $(ALL_LIBS) $(MAINOBJS)
+
+etclient: etclient_main.o $(DECODE_OBJS) THaDecDict.o $(MAINOBJS)
+	$(CXX) $(CXXFLAGS) -o $@ etclient_main.o $(DECODE_OBJS) THaDecDict.o $(ALL_LIBS) $(MAINOBJS)
+
+prfact: $(DECODE_OBJS) THaDecDict.o $(SRC) prfact_main.o $(HEAD) $(EVIO_LIB) $(MAINOBJS)
+	rm -f $@
+	$(CXX) $(CXXFLAGS) -o $@ prfact_main.o $(DECODE_OBJS) THaDecDict.o $(ALL_LIBS) $(MAINOBJS)
+
+tstcoda: tstcoda_main.o THaCodaFile.o THaEtClient.o THaCodaData.o THaCodaFile.h THaEtClient.h THaCodaData.h $(DECODE_OBJS) THaDecDict.o $(MAINOBJS)
+	$(CXX) $(CXXFLAGS) -o $@ tstcoda_main.o $(DECODE_OBJS) THaDecDict.o $(ALL_LIBS) $(MAINOBJS)
+
+
+# Below is the evio library, which comes rather directly 
+# from CODA group with minor tweaking by R. Michaels & O. Hansen.
+
+libevio_sun.a:  evio.o swap_util.o swapped_intcpy.o
+	rm -f $@
+	ar cr $@ evio.o swap_util.o swapped_intcpy.o
+
+libevio_linux.a:  evio.o swap_util.o swapped_intcpy.o
+	rm -f $@
+	ar cr $@ evio.o swap_util.o swapped_intcpy.o
+
+libevio_hpux.a:  evio.o swap_util.o swapped_intcpy.o
+	rm -f $@
+	ar cr $@ evio.o swap_util.o swapped_intcpy.o
+
+evio.o: evio.C
+	$(CXX) -c  $<
+
+swap_util.o: swap_util.C
+	$(CXX) -c  $<
+
+swapped_intcpy.o: swapped_intcpy.c
+	$(CC) -c  $<
+
+# Dictionary
+
+THaDecDict.C: haDecode_LinkDef.h
+	@echo "Generating Decoder Dictionary..."
+	$(ROOTSYS)/bin/rootcint -f THaDecDict.C -c $(CXXFLAGS) $(INCLUDES) $(HEAD) haDecode_LinkDef.h
+
+# create a tar file of ./$(VERS)/* (all code)
+
+tarfile: clean version
+	tar cvf $(VERS).tar ./hana_decode
+
+version:
+	mkdir $(VERS) 
+	cp *.c ./$(VERS) 
+	cp *.C ./$(VERS) 
+	cp *.h ./$(VERS) 
+	cp Makefile ./$(VERS) 
+	cp snippet.dat ./$(VERS)
+	cp README* ./$(VERS)
+	cp ChangeLog ./$(VERS)
+	tar cvf $(VERS).tar ./$(VERS)
+         
+clean:  clean_evio
+	rm -f *.o *.a core *~ THaDecDict* *.out *.tar $(PROGS)
+
+realclean:  clean
+	rm -f *.d
+
+clean_evio:
+	rm -f evio.o swap_util.o swapped_intcpy.o
+
+###
+
+.SUFFIXES:
+.SUFFIXES: .c .cc .cpp .C .o .d
+
+%.o:	%.C
+	$(CXX) $(CXXFLAGS) -c $<
+
+%.d:	%.C
+	@echo Creating dependencies for $<
+#	@$(SHELL) -ec '$(CXX) -MM $(CXXFLAGS) -c $< \
+#		| sed '\''s/\($*\)\.o[ :]*/\1.o $@ : /g'\'' > $@; \
+#		[ -s $@ ] || rm -f $@'
+	@$(SHELL) -ec '$(MAKEDEPEND) -MM $(INCLUDES) -c $< \
+		| sed '\''s/\($*\)\.o[ :]*/\1.o $@ : /g'\'' > $@; \
+		[ -s $@ ] || rm -f $@'
+
+-include $(DEPS)
+
+
+
+
+
+
+
+

@@ -1,0 +1,348 @@
+//*-- Author :    Ole Hansen     8-Oct-2001
+
+////////////////////////////////////////////////////////////////////////
+//
+// THaRawEvent
+//
+// This is an example of an event structure. It contains raw data
+// and coarse tracking information for a number of detectors in
+// the HRS-Left, HRS-Right, and Beamline.
+// 
+// NOTE: Output generated with this event object will be LARGE.
+//
+// This class will be obsoleted in v0.80.
+//
+////////////////////////////////////////////////////////////////////////
+
+#include "THaRawEvent.h"
+#include "THaVDC.h"
+
+ClassImp(THaRawEvent)
+
+//______________________________________________________________________________
+THaRawEvent::THaRawEvent() : THaEvent()
+{
+  // Create a THaRawEvent object.
+
+  // Set up the variable-size arrays for the VDCs. This is easy
+  // since they have definite maximum sizes. Required heap memory ~4kB.
+
+  const int maxhit = THaVDC::MAXHIT;
+  const int maxclu = THaVDC::MAXCLU;
+
+  // Left HRS VDC
+  fR_U1_wire  = new Int_t  [ maxhit ];
+  fR_U1_time  = new Float_t[ maxhit ];
+  fR_U1_clpos = new Float_t[ maxclu ];
+  fR_U1_clsiz = new Int_t  [ maxclu ];
+  fR_V1_wire  = new Int_t  [ maxhit ];
+  fR_V1_time  = new Float_t[ maxhit ];
+  fR_V1_clpos = new Float_t[ maxclu ];
+  fR_V1_clsiz = new Int_t  [ maxclu ];
+  fR_U2_wire  = new Int_t  [ maxhit ];
+  fR_U2_time  = new Float_t[ maxhit ];
+  fR_U2_clpos = new Float_t[ maxclu ];
+  fR_U2_clsiz = new Int_t  [ maxclu ];
+  fR_V2_wire  = new Int_t  [ maxhit ];
+  fR_V2_time  = new Float_t[ maxhit ];
+  fR_V2_clpos = new Float_t[ maxclu ];
+  fR_V2_clsiz = new Int_t  [ maxclu ];
+
+  // Right HRS VDC
+  fL_U1_wire  = new Int_t  [ maxhit ];
+  fL_U1_time  = new Float_t[ maxhit ];
+  fL_U1_clpos = new Float_t[ maxclu ];
+  fL_U1_clsiz = new Int_t  [ maxclu ];
+  fL_V1_wire  = new Int_t  [ maxhit ];
+  fL_V1_time  = new Float_t[ maxhit ];
+  fL_V1_clpos = new Float_t[ maxclu ];
+  fL_V1_clsiz = new Int_t  [ maxclu ];
+  fL_U2_wire  = new Int_t  [ maxhit ];
+  fL_U2_time  = new Float_t[ maxhit ];
+  fL_U2_clpos = new Float_t[ maxclu ];
+  fL_U2_clsiz = new Int_t  [ maxclu ];
+  fL_V2_wire  = new Int_t  [ maxhit ];
+  fL_V2_time  = new Float_t[ maxhit ];
+  fL_V2_clpos = new Float_t[ maxclu ];
+  fL_V2_clsiz = new Int_t  [ maxclu ];
+
+  // Set up the data map, which relates global variable names to
+  // THaRawEvent member variables.
+
+  // Note: Before you freak out here, recall that string literals
+  // are always of storage class "static". So, the pointers to
+  // const char* are not dangling when datamap goes out of scope.
+
+  const DataMap datamap[] = {
+
+    //=== Beamline
+
+    { 2*NBPM, "B.bpm4a.x",         fB_X4a },
+    { 2*NBPM, "B.bpm4b.x",         fB_X4b },
+    { 4,      "B.rast.Xcur",       &fB_Xcur },
+
+    //=== Right HRS
+
+    // VDC
+    { 1,      "R.vdc.u1.nhit",     &fR_U1_nhit },
+    {-1,      "R.vdc.u1.wire",     fR_U1_wire,    &fR_U1_nhit },
+    {-1,      "R.vdc.u1.time",     fR_U1_time,    &fR_U1_nhit },
+    { 1,      "R.vdc.u1.nclust",   &fR_U1_nclust },
+    {-1,      "R.vdc.u1.clpos",    fR_U1_clpos,   &fR_U1_nclust },
+    {-1,      "R.vdc.u1.clsiz",    fR_U1_clsiz,   &fR_U1_nclust },
+    { 1,      "R.vdc.v1.nhit",     &fR_V1_nhit },
+    {-1,      "R.vdc.v1.wire",     fR_V1_wire,    &fR_V1_nhit },
+    {-1,      "R.vdc.v1.time",     fR_V1_time,    &fR_V1_nhit },
+    { 1,      "R.vdc.v1.nclust",   &fR_V1_nclust },
+    {-1,      "R.vdc.v1.clpos",    fR_V1_clpos,   &fR_V1_nclust },
+    {-1,      "R.vdc.v1.clsiz",    fR_V1_clsiz,   &fR_V1_nclust },
+    { 1,      "R.vdc.u2.nhit",     &fR_U2_nhit },
+    {-1,      "R.vdc.u2.wire",     fR_U2_wire,    &fR_U2_nhit },
+    {-1,      "R.vdc.u2.time",     fR_U2_time,    &fR_U2_nhit },
+    { 1,      "R.vdc.u2.nclust",   &fR_U2_nclust },
+    {-1,      "R.vdc.u2.clpos",    fR_U2_clpos,   &fR_U2_nclust },
+    {-1,      "R.vdc.u2.clsiz",    fR_U2_clsiz,   &fR_U2_nclust },
+    { 1,      "R.vdc.v2.nhit",     &fR_V2_nhit },
+    {-1,      "R.vdc.v2.wire",     fR_V2_wire,    &fR_V2_nhit },
+    {-1,      "R.vdc.v2.time",     fR_V2_time,    &fR_V2_nhit },
+    { 1,      "R.vdc.v2.nclust",   &fR_V2_nclust },
+    {-1,      "R.vdc.v2.clpos",    fR_V2_clpos,   &fR_V2_nclust },
+    {-1,      "R.vdc.v2.clsiz",    fR_V2_clsiz,   &fR_V2_nclust },
+    { 1,      "R.vdc.ntracks",     &fR_TR_n },
+    { 5,      "R.vdc.x",           &fR_TR_x },
+    
+    // S1
+    { 1,      "R.s1.nlthit",       &fR_S1L_nthit },
+    { NPAD,   "R.s1.lt",           fR_S1L_tdc },
+    { NPAD,   "R.s1.lt_c",         fR_S1L_tdc_c },
+    { 1,      "R.s1.nrthit",       &fR_S1R_nthit },
+    { NPAD,   "R.s1.rt",           fR_S1R_tdc },
+    { NPAD,   "R.s1.rt_c",         fR_S1R_tdc_c },
+    { 1,      "R.s1.nlahit",       &fR_S1L_nahit },
+    { NPAD,   "R.s1.la",           fR_S1L_adc },
+    { NPAD,   "R.s1.la_p",         fR_S1L_adc_p },
+    { NPAD,   "R.s1.la_c",         fR_S1L_adc_c },
+    { 1,      "R.s1.nrahit",       &fR_S1R_nahit },
+    { NPAD,   "R.s1.ra",           fR_S1R_adc },
+    { NPAD,   "R.s1.ra_p",         fR_S1R_adc_p },
+    { NPAD,   "R.s1.ra_c",         fR_S1R_adc_c },
+    { 1,      "R.s1.trx",          &fR_S1_trx },   
+    { 1,      "R.s1.try",          &fR_S1_try },
+
+    // S2
+    { 1,      "R.s2.nlthit",       &fR_S2L_nthit },
+    { NPAD,   "R.s2.lt",           fR_S2L_tdc },
+    { NPAD,   "R.s2.lt_c",         fR_S2L_tdc_c },
+    { 1,      "R.s2.nrthit",       &fR_S2R_nthit },
+    { NPAD,   "R.s2.rt",           fR_S2R_tdc },
+    { NPAD,   "R.s2.rt_c",         fR_S2R_tdc_c },
+    { 1,      "R.s2.nlahit",       &fR_S2L_nahit },
+    { NPAD,   "R.s2.la",           fR_S2L_adc },
+    { NPAD,   "R.s2.la_p",         fR_S2L_adc_p },
+    { NPAD,   "R.s2.la_c",         fR_S2L_adc_c },
+    { 1,      "R.s2.nrahit",       &fR_S2R_nahit },
+    { NPAD,   "R.s2.ra",           fR_S2R_adc },
+    { NPAD,   "R.s2.ra_p",         fR_S2R_adc_p },
+    { NPAD,   "R.s2.ra_c",         fR_S2R_adc_c },
+    { 1,      "R.s2.trx",          &fR_S2_trx },   
+    { 1,      "R.s2.try",          &fR_S2_try },
+
+    // Aerogel
+    { 1,      "R.aero1.nthit",     &fR_AR_nthit },
+    { RA1M,   "R.aero1.t",         fR_AR_tdc },
+    { RA1M,   "R.aero1.t_c",       fR_AR_tdc_c },
+    { 1,      "R.aero1.nahit",     &fR_AR_nahit },
+    { RA1M,   "R.aero1.a",         fR_AR_adc },
+    { RA1M,   "R.aero1.a_p",       fR_AR_adc_p },
+    { RA1M,   "R.aero1.a_c",       fR_AR_adc_c },
+    { 1,      "R.aero1.asum_p",    &fR_AR_asum_p },
+    { 1,      "R.aero1.asum_c",    &fR_AR_asum_c },
+    { 1,      "R.aero1.trx",       &fR_AR_trx },   
+    { 1,      "R.aero1.try",       &fR_AR_try },
+
+    // Cherenkov
+    { 1,      "R.cer.nthit",       &fR_CH_nthit },
+    { RCMR,   "R.cer.t",           fR_CH_tdc },
+    { RCMR,   "R.cer.t_c",         fR_CH_tdc_c },
+    { 1,      "R.cer.nahit",       &fR_CH_nahit },
+    { RCMR,   "R.cer.a",           fR_CH_adc },
+    { RCMR,   "R.cer.a_p",         fR_CH_adc_p },
+    { RCMR,   "R.cer.a_c",         fR_CH_adc_c },
+    { 1,      "R.cer.asum_p",      &fR_CH_asum_p },
+    { 1,      "R.cer.asum_c",      &fR_CH_asum_c },
+    { 1,      "R.cer.trx",         &fR_CH_trx },   
+    { 1,      "R.cer.try",         &fR_CH_try },
+
+    // Preshower
+    { 1,      "R.ps.nhit",         &fR_PSH_nhit },
+    { PSBL,   "R.ps.a",            fR_PSH_adc },
+    { PSBL,   "R.ps.a_p",          fR_PSH_adc_p },
+    { PSBL,   "R.ps.a_c",          fR_PSH_adc_c },
+    { 1,      "R.ps.asum_p",       &fR_PSH_asum_p },
+    { 1,      "R.ps.asum_c",       &fR_PSH_asum_c },
+    { 1,      "R.ps.nclust",       &fR_PSH_nclust },
+    { 1,      "R.ps.e",            &fR_PSH_e },
+    { 1,      "R.ps.x",            &fR_PSH_x },
+    { 1,      "R.ps.y",            &fR_PSH_y },
+    { 1,      "R.ps.mult",         &fR_PSH_mult },
+    { 6,      "R.ps.nblk",         fR_PSH_nblk },
+    { 6,      "R.ps.eblk",         fR_PSH_eblk },
+    { 1,      "R.ps.trx",          &fR_PSH_trx },   
+    { 1,      "R.ps.try",          &fR_PSH_try },
+
+    // Shower
+    { 1,      "R.sh.nhit",         &fR_SHR_nhit },
+    { SHBL,   "R.sh.a",            fR_SHR_adc },
+    { SHBL,   "R.sh.a_p",          fR_SHR_adc_p },
+    { SHBL,   "R.sh.a_c",          fR_SHR_adc_c },
+    { 1,      "R.sh.asum_p",       &fR_SHR_asum_p },
+    { 1,      "R.sh.asum_c",       &fR_SHR_asum_c },
+    { 1,      "R.sh.nclust",       &fR_SHR_nclust },
+    { 1,      "R.sh.e",            &fR_SHR_e },
+    { 1,      "R.sh.x",            &fR_SHR_x },
+    { 1,      "R.sh.y",            &fR_SHR_y },
+    { 1,      "R.sh.mult",         &fR_SHR_mult },
+    { 9,      "R.sh.nblk",         fR_SHR_nblk },
+    { 9,      "R.sh.eblk",         fR_SHR_eblk },
+    { 1,      "R.sh.trx",          &fR_SHR_trx },   
+    { 1,      "R.sh.try",          &fR_SHR_try },
+
+    // Total Shower
+    { 1,      "R.ts.e",            &fR_TSH_e },
+    { 1,      "R.ts.id",           &fR_TSH_id },
+
+    //=== Left HRS
+
+    // VDC
+    { 1,      "L.vdc.u1.nhit",     &fL_U1_nhit },
+    {-1,      "L.vdc.u1.wire",     fL_U1_wire,    &fL_U1_nhit },
+    {-1,      "L.vdc.u1.time",     fL_U1_time,    &fL_U1_nhit },
+    { 1,      "L.vdc.u1.nclust",   &fL_U1_nclust },
+    {-1,      "L.vdc.u1.clpos",    fL_U1_clpos,   &fL_U1_nclust },
+    {-1,      "L.vdc.u1.clsiz",    fL_U1_clsiz,   &fL_U1_nclust },
+    { 1,      "L.vdc.v1.nhit",     &fL_V1_nhit },
+    {-1,      "L.vdc.v1.wire",     fL_V1_wire,    &fL_V1_nhit },
+    {-1,      "L.vdc.v1.time",     fL_V1_time,    &fL_V1_nhit },
+    { 1,      "L.vdc.v1.nclust",   &fL_V1_nclust },
+    {-1,      "L.vdc.v1.clpos",    fL_V1_clpos,   &fL_V1_nclust },
+    {-1,      "L.vdc.v1.clsiz",    fL_V1_clsiz,   &fL_V1_nclust },
+    { 1,      "L.vdc.u2.nhit",     &fL_U2_nhit },
+    {-1,      "L.vdc.u2.wire",     fL_U2_wire,    &fL_U2_nhit },
+    {-1,      "L.vdc.u2.time",     fL_U2_time,    &fL_U2_nhit },
+    { 1,      "L.vdc.u2.nclust",   &fL_U2_nclust },
+    {-1,      "L.vdc.u2.clpos",    fL_U2_clpos,   &fL_U2_nclust },
+    {-1,      "L.vdc.u2.clsiz",    fL_U2_clsiz,   &fL_U2_nclust },
+    { 1,      "L.vdc.v2.nhit",     &fL_V2_nhit },
+    {-1,      "L.vdc.v2.wire",     fL_V2_wire,    &fL_V2_nhit },
+    {-1,      "L.vdc.v2.time",     fL_V2_time,    &fL_V2_nhit },
+    { 1,      "L.vdc.v2.nclust",   &fL_V2_nclust },
+    {-1,      "L.vdc.v2.clpos",    fL_V2_clpos,   &fL_V2_nclust },
+    {-1,      "L.vdc.v2.clsiz",    fL_V2_clsiz,   &fL_V2_nclust },
+    { 1,      "L.vdc.ntracks",     &fL_TR_n },
+    { 5,      "L.vdc.x",           &fL_TR_x },
+
+    // S1
+    { 1,      "L.s1.nlthit",       &fL_S1L_nthit },
+    { NPAD,   "L.s1.lt",           fL_S1L_tdc },
+    { NPAD,   "L.s1.lt_c",         fL_S1L_tdc_c },
+    { 1,      "L.s1.nrthit",       &fL_S1R_nthit },
+    { NPAD,   "L.s1.rt",           fL_S1R_tdc },
+    { NPAD,   "L.s1.rt_c",         fL_S1R_tdc_c },
+    { 1,      "L.s1.nlahit",       &fL_S1L_nahit },
+    { NPAD,   "L.s1.la",           fL_S1L_adc },
+    { NPAD,   "L.s1.la_p",         fL_S1L_adc_p },
+    { NPAD,   "L.s1.la_c",         fL_S1L_adc_c },
+    { 1,      "L.s1.nrahit",       &fL_S1R_nahit },
+    { NPAD,   "L.s1.ra",           fL_S1R_adc },
+    { NPAD,   "L.s1.ra_p",         fL_S1R_adc_p },
+    { NPAD,   "L.s1.ra_c",         fL_S1R_adc_c },
+    { 1,      "L.s1.trx",          &fL_S1_trx },   
+    { 1,      "L.s1.try",          &fL_S1_try },
+
+    // S2
+    { 1,      "L.s2.nlthit",       &fL_S2L_nthit },
+    { NPAD,   "L.s2.lt",           fL_S2L_tdc },
+    { NPAD,   "L.s2.lt_c",         fL_S2L_tdc_c },
+    { 1,      "L.s2.nrthit",       &fL_S2R_nthit },
+    { NPAD,   "L.s2.rt",           fL_S2R_tdc },
+    { NPAD,   "L.s2.rt_c",         fL_S2R_tdc_c },
+    { 1,      "L.s2.nlahit",       &fL_S2L_nahit },
+    { NPAD,   "L.s2.la",           fL_S2L_adc },
+    { NPAD,   "L.s2.la_p",         fL_S2L_adc_p },
+    { NPAD,   "L.s2.la_c",         fL_S2L_adc_c },
+    { 1,      "L.s2.nrahit",       &fL_S2R_nahit },
+    { NPAD,   "L.s2.ra",           fL_S2R_adc },
+    { NPAD,   "L.s2.ra_p",         fL_S2R_adc_p },
+    { NPAD,   "L.s2.ra_c",         fL_S2R_adc_c },
+    { 1,      "L.s2.trx",          &fL_S2_trx },   
+    { 1,      "L.s2.try",          &fL_S2_try },
+
+    { 0 }  //End of data
+  };
+
+  // Save the datamap
+  int nvar = sizeof(datamap)/sizeof(DataMap);
+  delete [] fDataMap;
+  fDataMap = new DataMap[ nvar ];
+  memcpy( fDataMap, datamap, sizeof(datamap) );
+
+  Clear();
+}
+
+//______________________________________________________________________________
+THaRawEvent::~THaRawEvent()
+{
+  // Destructor. Clean up all my objects.
+
+  // Note fDataMap is deleted by the base class destructor!
+
+  delete [] fR_U1_wire ;
+  delete [] fR_U1_time ;
+  delete [] fR_U1_clpos;
+  delete [] fR_U1_clsiz;
+  delete [] fR_V1_wire ;
+  delete [] fR_V1_time ;
+  delete [] fR_V1_clpos;
+  delete [] fR_V1_clsiz;
+  delete [] fR_U2_wire ;
+  delete [] fR_U2_time ;
+  delete [] fR_U2_clpos;
+  delete [] fR_U2_clsiz;
+  delete [] fR_V2_wire ;
+  delete [] fR_V2_time ;
+  delete [] fR_V2_clpos;
+  delete [] fR_V2_clsiz;
+
+  delete [] fL_U1_wire ;
+  delete [] fL_U1_time ;
+  delete [] fL_U1_clpos;
+  delete [] fL_U1_clsiz;
+  delete [] fL_V1_wire ;
+  delete [] fL_V1_time ;
+  delete [] fL_V1_clpos;
+  delete [] fL_V1_clsiz;
+  delete [] fL_U2_wire ;
+  delete [] fL_U2_time ;
+  delete [] fL_U2_clpos;
+  delete [] fL_U2_clsiz;
+  delete [] fL_V2_wire ;
+  delete [] fL_V2_time ;
+  delete [] fL_V2_clpos;
+  delete [] fL_V2_clsiz;
+}
+
+//______________________________________________________________________________
+void THaRawEvent::Clear( Option_t* opt )
+{
+  // Reset all contained data members to zero, i.e. scalars and
+  // fixed-size arrays, but not variable size arrays since those
+  // are simply reset by setting their dimension variable to zero.
+
+  // Clear the base class (i.e. histograms & event header)
+  THaEvent::Clear( opt );
+
+  size_t len = reinterpret_cast<const char*>( &fR_U1_wire ) - 
+    reinterpret_cast<const char*>( &fB_X4a );
+  memset( fB_X4a, 0, len );
+
+}

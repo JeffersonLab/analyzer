@@ -1,0 +1,128 @@
+
+   HANA SCALER PACKAGE, version 1.1
+   ================================
+
+Robert Michaels, Jefferson Lab, Aug 2001
+
+For documentation, see
+
+http://hallaweb.jlab.org/equipment/daq/THaScaler.html
+
+See also notes in the Makefile.
+
+To use the THaScaler class, you should only need to look at
+THaScaler.h (header) to see the public interface.  All the
+methods you need should be there.  
+
+---------------------------------------------------------------
+The basic steps to obtain scaler data:
+
+   1. Make sure you have the scaler map file in your directory.
+      See 'scaler.map' in /hana_scaler_VERSION or at
+      http://hallaweb.jlab.org/adaq/scaler.map
+
+   2. Once in the life of the object, you must call the 
+      THaScaler::Init() method with appropriate arguments.
+
+         THaScaler scaler;
+         scaler.Init("Left");  // Left spectrometer
+
+   3. Each event, you must LoadData.  There are several ways to
+      load data:  from a THaEvData object, directly from a CODA
+      file, from a scaler history file, from online (directly from
+      VME crates). 
+
+         scaler.LoadData(evdata);  // evdata is a THaEvData object
+
+      (Important: Loading from THaEvData only works if its THaCrateMap 
+       is initialized correctly.  I need to work on the time-dependent
+       crate map.)
+
+   4. Now you may access data via the methods in THaScaler.h
+      If you know the slot and channel, simply
+
+         THaScaler scaler;
+         data = scaler.GetScaler(slot, chan);       // Counts
+
+                 - or -
+
+         datarate = scaler.GetScalerRate(slot, chan);  // rate, Hz
+
+      The rates are computed using the last two readings, normalized
+      to a pulser clock.  
+      There are a number of other access methods for detectors,
+      beam current monitors, different helicities gated scalers, etc.
+
+   5. In my implementation of THaAnalyzer, I call THaScaler::
+      PrintSummary() at the end of analysis.
+
+---------------------------------------------------------------
+There are three ways to implement scalers in the root/C++ 
+analysis scheme:
+
+   1. Standalone codes that rapidly pick out scaler data and
+      do some analysis.  See the *main* routines.  Use the
+      flag STANDALONE=1 in Makefile.  
+
+   2. You can run the standard analyzer and use the above 
+      standalone codes as 'root macros'.  To execute the 
+      the scaler codes interactively from root shell, you must
+      use root version >= 3.x which has STL support.  For earlier
+      versions of root, compile with ROOTPRE3=1 in Makefile and
+      then you can only use the standalone codes.
+
+   3. In THaAnalyzer.C  and perhaps some other classes one
+      can incorporate the scalers, compiled into the code. 
+      Example of this is haplix7:/home/rom/haAna/ana_0.6b2/
+      THaAnalyzer.C
+
+
+---------------------------------------------------------------
+How to run standalone:
+
+    Most scaler analyses will probably be done as an 
+    activity seperate from physics event analysis. You
+    may therefore want to run simple standalone codes,
+    e.g. the codes with the word "main" in their name.
+
+  1. You need the event decoder library.  A "standalone"
+     version libdc_local.a is shipped with the scaler 
+     package.  It does not rely on any symbols of the 
+     main analyzer. However, if this library is not 
+     binary compatible with your system see section 
+     on making event decoder library.
+
+  2. Next compile the hana_scaler software with the line
+     "export STANDALONE = 1" uncommented in Makefile.
+
+
+---------------------------------------------------------------
+How to make a standalone event decoder library 
+
+    The directory structure of the C++ analyzer is normally
+
+                  
+           /ana_VERS
+                    \
+                     \
+                      /hana_scaler_VERS
+                     |
+                     |
+                      /hana_decoder_VERS
+
+     i.e. the hana_scaler and hana_decoder are two directories
+     under /ana_VERS.  To make hana_decoder_VERS standalone
+     library (which means independent of anything in /ana_VERS) 
+     compile with the line "export STANDALONE = 1" in the Makefile 
+     of hana_decoder_VERS.  Then copy it to hana_scaler_VERS
+
+          cp libdc.a ../hana_scaler_VERS/libdc_local.a
+
+     then you may compile hana_scaler standalone too.
+
+
+
+                     
+
+
+
