@@ -303,9 +303,7 @@ Int_t THaScaler::LoadData(const THaEvData& evdata) {
   if ( crate == cratenum_evleft || crate == cratenum_evright ) {
     evstream = 1;
     if (evdata.GetRocLength(crate) < 16) return 0;  // No data.
-  } else {
-     if ( !evdata.IsScalerEvent() ) return 0;  // Is evtype 140 ?
-  }
+  } 
   LoadPrevious();
   Clear();
   for (int slot = 0; slot < SCAL_NUMBANK; slot++) {
@@ -350,6 +348,7 @@ Int_t THaScaler::LoadDataCodaFile(THaCodaFile *codafile) {
   codastat = 0;
   while (codastat == 0) {
     codastat = codafile->codaRead();  
+    if (codastat < 0) return 0;
     int *data = codafile->getEvBuffer();
     int evtype = data[1]>>16;
     if (evtype == SCAL_EVTYPE) {
@@ -644,9 +643,9 @@ void THaScaler::PrintSummary() {
   printf("Time of run  %7.2f min \n",time_min);
   printf("Triggers:     1 = %d    2 = %d    3 = %d   4 = %d    5 = %d\n",
          GetTrig(1),GetTrig(2),GetTrig(3),GetTrig(4),GetTrig(5));
-  printf("Accepted triggers:   %d \n",GetNormData(0,"ts-accept"));
+  printf("Accepted triggers:   %d \n",GetNormData(0,"TS-accept"));
   printf("Accepted triggers by helicity:    (-) = %d    (+) = %d\n",
-         GetNormData(-1,"ts-accept"),GetNormData(1,"ts-accept"));
+         GetNormData(-1,"TS-accept"),GetNormData(1,"TS-accept"));
   printf("Charge Monitors  (Micro Coulombs)\n");
   printf("Upstream BCM   gain x1 %8.2f     x3 %8.2f     x10 %8.2f\n",
      curr_u1*time_sec,curr_u3*time_sec,curr_u10*time_sec);
