@@ -16,6 +16,11 @@
 ClassImp(THaOdata)
 ClassImp(THaOutput)
 
+const Int_t THaOutput::fgVariden;
+const Int_t THaOutput::fgFormiden;
+const Int_t THaOutput::fgTh1fiden;
+const Int_t THaOutput::fgTh2fiden;
+
 THaOutput::THaOutput() {
   fTree = 0;
 }

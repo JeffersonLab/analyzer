@@ -103,14 +103,14 @@ protected:
    vector<THaOdata* > fOdata;
    TTree *fTree; 
 
+   map<THaString, Int_t> fKeyint;
+
+private:
+
    static const Int_t fgVariden  = 1;
    static const Int_t fgFormiden = 2;
    static const Int_t fgTh1fiden = 3;
    static const Int_t fgTh2fiden = 4;
-
-   map<THaString, Int_t> fKeyint;
-
-private:
 
    THaOutput(const THaOutput& output);
    THaOutput& operator=(const THaOutput& output);
