@@ -109,7 +109,7 @@ SRC           = src/THaFormula.C src/THaVar.C src/THaVarList.C src/THaCut.C \
 		src/THaVDCWire.C src/THaVDCHit.C src/THaVDCCluster.C \
 		src/THaVDCTimeToDistConv.C src/THaVDCTrackID.C \
                 src/THaVDCAnalyticTTDConv.C src/THaVDCT0CalTable.C \
-		src/THaVDCTrackPair.C
+		src/THaVDCTrackPair.C src/THaScalerGroup.C
 
 OBJ           = $(SRC:.C=.o)
 HDR           = $(SRC:.C=.h) src/THaGlobals.h src/VarDef.h src/VarType.h
@@ -133,7 +133,8 @@ libdc.so:
 
 libscaler.so:
 		$(MAKE) -C $(SCALERDIR)
-		-ln -s ../$(SCALERDIR)/scaler.map DB/
+		rm -f DB/scaler.map
+		cp $(SCALERDIR)/scaler.map DB/
 
 clean:
 		$(MAKE) -C $(DCDIR) clean
