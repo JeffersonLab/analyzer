@@ -130,6 +130,12 @@ Int_t THaVDC::ReadDatabase( FILE* file, const TDatime& date )
   char w;
   bool good = false;
 
+  fTMatrixElems.erase( fTMatrixElems.begin(), fTMatrixElems.end());
+  fDMatrixElems.erase( fDMatrixElems.begin(), fDMatrixElems.end());
+  fPMatrixElems.erase( fPMatrixElems.begin(), fPMatrixElems.end());
+  fYMatrixElems.erase( fYMatrixElems.begin(), fYMatrixElems.end());
+  fFPMatrixElems.erase( fFPMatrixElems.begin(), fFPMatrixElems.end());
+
   // read in t000 and verify it
   ME.iszero = true;  ME.order = 0;
   // Read matrix element signature
@@ -280,7 +286,6 @@ THaVDC::~THaVDC()
 
   delete fLower;
   delete fUpper;
-  //  fUVpairs->Delete();
   delete fUVpairs;
 }
 
@@ -811,7 +816,6 @@ void THaVDC::CorrectTimeOfFlight(TClonesArray& tracks)
   //cerr<<"num tracks: "<<n_exist<<endl;
   for( Int_t t = 0; t < n_exist; t++ ) {
     THaTrack* track = static_cast<THaTrack*>( tracks.At(t) );
-    TList* clusters = track->GetClusters();
     
     // calculate the correction, since it's on a per track basis
     Double_t s1_dist, vdc_dist, dist, tdelta;
@@ -832,11 +836,11 @@ void THaVDC::CorrectTimeOfFlight(TClonesArray& tracks)
     //cout<<"time correction: "<<tdelta<<endl;
 
     // apply the correction
-    Int_t n_clust = clusters->GetSize();
+    Int_t n_clust = track->GetNclusters();
     for( Int_t i = 0; i < n_clust; i++ ) {
       THaVDCUVTrack* the_uvtrack = 
-	static_cast<THaVDCUVTrack*>( clusters->At(i) );
-      if(the_uvtrack == NULL)
+	static_cast<THaVDCUVTrack*>( track->GetCluster(i) );
+      if( !the_uvtrack )
 	continue;
       
       //FIXME: clusters guaranteed to be nonzero?
