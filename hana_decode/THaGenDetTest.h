@@ -21,6 +21,8 @@
 #include "THaEvData.h"
 #include "THaSlotData.h"
 
+using namespace std;
+
 class THaGenDetTest 
 {
 
@@ -31,7 +33,7 @@ class THaGenDetTest
 // Called at initialization phase of code
          void init();               
 // Processing of event data
-         void process_event(const THaEvData& evdata);
+         void process_event(THaEvData *evdata);
 
  private:
 
