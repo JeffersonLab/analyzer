@@ -41,9 +41,12 @@ public:
    Int_t ntoskip;              // how far to skip beyond header
 
 private:
-   const std::string name;          // name of the variable in global list.
+   const std::string name;     // name of the variable in global list.
    Int_t  search_choice;       // whether to search in crates or rel. to header
-   std::vector<UInt_t> rdata;       // raw data.  (It is vector to accom. multihit chan.)
+ /* unfortunately ROOT 3.03-06 with gcc-3.0 don't like these next lines */
+#ifndef __CINT__
+   std::vector<UInt_t> rdata;  // raw data.  (It is vector to accom. multihit chan.)
+#endif  /* __CINT__  -- broken cint */
    Bool_t loaded_once;
    BdataLoc();
    BdataLoc(const BdataLoc& dataloc);
