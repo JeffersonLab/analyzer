@@ -53,6 +53,10 @@ public:
   Double_t GetTDCRes()   const   { return fTDCRes; }
   Double_t GetDriftVel() const   { return fDriftVel; }
 
+  Double_t GetT0() const { return fT0; }
+  Int_t GetNumBins() const { return fNumBins; }
+  Float_t *GetTable() const { return fTable; }
+
 /*    void SetZ(Double_t z)          {fZ     = z;    } */
 /*    void SetWBeg(Double_t wbeg)    {fWBeg  = wbeg; } */
 /*    void SetWSpac(Double_t wspac)  {fWSpac = wspac;} */
@@ -81,6 +85,11 @@ protected:
                           // decreasing wire number (rad)
   Double_t fTDCRes;       // TDC Resolution ( s / channel)
   Double_t fDriftVel;     // Drift velocity in the wire plane (m/s)
+
+  // Lookup table parameters
+  Double_t fT0;     // calculated zero time 
+  Int_t fNumBins;   // size of lookup table
+  Float_t *fTable;  // time-to-distance lookup table
 
   THaDetectorBase* fVDC;  // VDC detector to which this plane belongs
 

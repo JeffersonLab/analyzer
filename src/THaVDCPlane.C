@@ -20,12 +20,15 @@
 #include "THaVDCHit.h"
 #include "THaDetMap.h"
 #include "THaVDCAnalyticTTDConv.h"
+#include "THaVDCLookupTTDConv.h"
 #include "TString.h"
 #include "TClass.h"
 #include "TMath.h"
 #include "VarDef.h"
 
 #include <cstring>
+#include <vector>
+#include <stdio.h>
 
 ClassImp(THaVDCPlane)
 
@@ -148,23 +151,64 @@ Int_t THaVDCPlane::ReadDatabase( FILE* file, const TDatime& date )
   // Create TClonesArray objects for wires, hits,  and clusters
   fWires = new TClonesArray("THaVDCWire", nWires);
 
+  // first read in the time offsets for the wires
+  vector<float> wire_offsets(nWires);
+
+  for (int i = 0; i < nWires; i++) {
+    float offset = 0.0;
+    fscanf(file, " %*d %f", &offset);
+    wire_offsets[i] = offset;
+  }
+
+  // now read in the time-to-drift-distance lookup table
+  // data (if it exists)
+  fgets(buff, LEN, file);
+  if(strncmp(buff, "TDC Lookup Table", 16) == 0) {
+    // if it exists, read the data in
+    fscanf(file, "%le", &fT0);
+    fscanf(file, "%d", &fNumBins);
+    
+    // this object is responsible for the memory management 
+    // of the lookup table
+    fTable = new Float_t[fNumBins];
+    for(int i=0; i<nWires; i++)
+      fscanf(file, "%e", &(fTable[i]));
+
+  } else {
+    // if not, set some reasonable defaults and rewind the file
+    fT0 = 0.0;
+    fNumBins = 0;
+    fTable = NULL;
+
+    fseek(file, -strlen(buff), SEEK_CUR);
+  }
+
   // Define time-to-drift-distance converter
   // Currently, we use the analytic converter. 
   // FIXME: Let user choose this via a parameter
-  THaVDCAnalyticTTDConv* ttdConv = new THaVDCAnalyticTTDConv(driftVel);
+  //THaVDCAnalyticTTDConv* ttdConv = new THaVDCAnalyticTTDConv(driftVel);
+
+  THaVDCLookupTTDConv* ttdConv = new THaVDCLookupTTDConv(fT0, fNumBins, fTable);
 
   // Now initialize wires (those wires... too lazy to initialize themselves!)
   // Caution: This may not correspond at all to actual wire channels!
+  for (int i = 0; i < nWires; i++)
+    new((*fWires)[i]) THaVDCWire( i, fWBeg+i*fWSpac, wire_offsets[i], 
+				  ttdConv );
 
+  /*
   for (int i = 0; i < nWires; i++) {
 
     float offset = 0.0;
     fscanf(file, " %*d %f", &offset);
 
-    // Constuct the new THaVDCWire (using space in the TClonesArray obj)
+    // Construct the new THaVDCWire (using space in the TClonesArray obj)
     new((*fWires)[i]) THaVDCWire( i, fWBeg+i*fWSpac, offset, ttdConv );
   }
+  */
 
+  // Read in TTD Lookup Table
+  
   fOrigin.SetXYZ( 0.0, 0.0, fZ );
   if( fDetector )
     fOrigin += fDetector->GetOrigin();

@@ -64,6 +64,7 @@
 #pragma link C++ class THaVDCTrackID+;
 #pragma link C++ class THaVDCTrackPair+;
 #pragma link C++ class THaRTTI+;
+#pragma link C++ class THaVDCLookupTTDConv+;
 
 #endif
 
