@@ -96,13 +96,6 @@ Int_t THaHRS::FindVertices( TClonesArray& tracks )
 #endif
   }
 
-  return 0;
-}
-
-//_____________________________________________________________________________
-Int_t THaHRS::TrackCalc()
-{
-  TrackTimes( fTracks );
   // Find the "Golden Track". 
 
   if( GetNTracks() > 0 ) {
@@ -114,6 +107,14 @@ Int_t THaHRS::TrackCalc()
     fGoldenTrack = NULL;
 
   return 0;
+}
+
+//_____________________________________________________________________________
+Int_t THaHRS::TrackCalc()
+{
+  // Additioal track calculations. At present, we only calculate beta here.
+
+  return TrackTimes( fTracks );
 }
 
 //_____________________________________________________________________________
