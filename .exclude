@@ -1,3 +1,6 @@
 CVS
 src/old
 src/new
+src/OLD
+src/NEW
+.#*
