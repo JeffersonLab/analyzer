@@ -54,7 +54,7 @@ private:
   static const Int_t fgLarm = 0;
   static const Int_t fgRarm = 1;
   static const Double_t fgTdiff;
-  Double_t *fTdavg, *fTdiff, *fT0;
+  Double_t *fTdavg, *fTdiff, *fT0, *fT9;
   Double_t *fTlastquad, *fTtol;
   Int_t *fQrt, *fGate, *fFirstquad, *fEvtype;
   Double_t *fTimestamp;
@@ -79,7 +79,7 @@ private:
   static const Int_t Plus     =  1;    
   static const Int_t Minus    = -1;    
   static const Int_t Unknown  =  0;    
-  static const Int_t HELDEBUG =  0;
+  static const Int_t HELDEBUG =  2;
 // STANDALONE restriction is not too bad since it only affects
 // old data prior to G0 mode.  But you can't run STANDALONE then.
 #ifndef STANDALONE

@@ -55,6 +55,7 @@ THaHelicity::~THaHelicity( )
     delete [] fTdavg;
     delete [] fTdiff;
     delete [] fT0;
+    delete [] fT9;
     delete [] fTlastquad;
     delete [] fTtol;
     delete [] t9count;
@@ -132,6 +133,7 @@ void THaHelicity::Init() {
     fTdiff              = new Double_t[2];
     fTtol               = new Double_t[2];
     fT0                 = new Double_t[2];
+    fT9                 = new Double_t[2];
     fTlastquad          = new Double_t[2];
     t9count             = new Int_t[2];
     present_reading     = new Int_t[2];   
@@ -386,6 +388,11 @@ void THaHelicity::ReadData( const THaEvData& evdata ) {
 //____________________________________________________________________
 void THaHelicity::QuadCalib() {
 // Calibrate the helicity predictor shift register.
+
+  // Is the Qrt signal delayed such that the evt9 at the beginning of
+  // a Qrt does NOT contain the qrt flag?
+   int delayed_qrt = 1; 
+
    fTdiff[fArm] = fTimestamp[fArm] - fT0[fArm];
    if (HELDEBUG >= 2) {
      cout << "QuadCalib "<<fTimestamp[fArm]<<"  "<<fT0[fArm];
@@ -413,7 +420,14 @@ void THaHelicity::QuadCalib() {
        fT0[fArm] = fTimestamp[fArm];
        fFirstquad[fArm] = 0;
    }
-   if (fEvtype[fArm] == 9) t9count[fArm] += 1;
+   if (fEvtype[fArm] == 9) {
+     t9count[fArm] += 1;
+     if ( delayed_qrt && fQrt[fArm] ) {
+       // don't record this time     
+     } else {
+       fT9[fArm] = fTimestamp[fArm]; // this sets the timing reference.
+     }
+   }
    if (fQrt[fArm] == 1) t9count[fArm] = 0;
 
 // The most solid predictor of a new helicity window:
@@ -421,7 +435,7 @@ void THaHelicity::QuadCalib() {
    // Do not worry about  evt9's for now, since that transition is redundant
    // when a new Qrt is found. And frequently the evt9 came immediately
    // BEFORE the Qrt.
-   if ( ( fTdiff[fArm] > 0.8*fTdavg[fArm] )  && ( fQrt[fArm] == 1 ) ) {
+   if ( ( fTdiff[fArm] > 0.5*fTdavg[fArm] )  && ( fQrt[fArm] == 1 ) ) {
 // ||
 // On rare occassions QRT bit might be missing.  Then look for
 // evtype 9 w/ gate = 0 within the first 0.5 msec after 4th window.
@@ -430,7 +444,11 @@ void THaHelicity::QuadCalib() {
 //        (( fTdiff[fArm] > 1.003*fTdavg[fArm] )  &&
 //     ( fEvtype[fArm] == 9 && fGate[fArm] == 0 && t9count[fArm] > 3 )) ) {
        if (HELDEBUG >= 2) cout << "found qrt "<<endl;
-       fT0[fArm] = fTimestamp[fArm];
+
+// Update fT0 to match the nearest/closest last evt9 (extrapolated from the
+//  last observed type 9 event) at the beginning of the Qrt.
+       fT0[fArm] = TMath::Floor((fTimestamp[fArm]-fT9[fArm])/(.25*fTdavg[fArm]))
+	 *(.25*fTdavg[fArm]) + fT9[fArm];
        q1_reading[fArm] = present_reading[fArm];
        QuadHelicity();
        q1_present_helicity[fArm] = present_helicity[fArm];
