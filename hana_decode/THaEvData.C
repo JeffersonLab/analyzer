@@ -38,6 +38,7 @@
 #include <cctype>
 #include <iostream>
 #include <iomanip>
+#include <ctime>
 
 #ifndef STANDALONE
 #include "THaVarList.h"
@@ -70,7 +71,7 @@ THaEvData::THaEvData() :
   epics->setupDefaultList();
   memset(psfact,0,MAX_PSFACT*sizeof(int));
   memset(crateslot,0,MAXROC*MAXSLOT*sizeof(THaSlotData*));
-
+  run_time = time(0); // default run_time is NOW
 #ifndef STANDALONE
 // Register global variables. 
   if( gHaVars ) {
@@ -164,6 +165,7 @@ int THaEvData::gendecode(const int* evbuffer, THaCrateMap* map) {
      if (first_decode) {
        for (int crate=0; crate<MAXROC; crate++)
 	 scalerdef[crate] = "nothing";
+       init_cmap();     
        if (init_slotdata(map) == HED_ERR) goto err;
        first_decode = false;
      }
@@ -552,9 +554,9 @@ int THaEvData::fastbus_decode(int roc, THaCrateMap* map,
        int chan = fb->Chan(model,*p);
        int data = fb->Data(model,*p);
        if (DEBUG) {
-	 cout << "chan "<<chan<<"  data "<<data<<"  ipt "<<(p-evbuffer)
-	      << "  raw  "<<hex<<*p<<dec<<"  device "
-	      <<fb->devType(model)<<endl;
+	 printf("roc %2d  slot %3d  chan %3d  data %5d  ipt %3d"
+		"  raw %8x  device %s\n",
+		roc, slot, chan, data, (p-evbuffer), *p, fb->devType(model));
        }
        // At this point, roc and slot ranges have been checked
        if( crateslot[idx(roc,slot)]->loadData(fb->devType(model),chan,data,*p) 
