@@ -44,7 +44,12 @@
 #pragma link C++ class THaAnalyzer+;
 #pragma link C++ class THaPrintOption+;
 #pragma link C++ class THaBeam+;
+#pragma link C++ class THaBeamDet+;
 #pragma link C++ class THaIdealBeam+;
+#pragma link C++ class THaRasteredBeam+;
+#pragma link C++ class THaUnRasteredBeam+;
+#pragma link C++ class THaRaster+;
+#pragma link C++ class THaBPM+;
 #pragma link C++ class THaShower+;
 #pragma link C++ class THaTrack+;
 #pragma link C++ class THaTrackID+;
