@@ -133,8 +133,7 @@ OBJS          = $(OBJ) haDict.o
 LIBHALLA      = $(LIBDIR)/libHallA.so
 PROGRAMS      = analyzer
 
-all:            subdirs $(LIBDIR)/libdc.so $(LIBDIR)/libscaler.so $(LIBHALLA) \
-		$(PROGRAMS)
+all:            subdirs $(PROGRAMS)
 
 src/ha_compiledata.h:
 		echo "#define HA_INCLUDEPATH \"$(INCDIRS)\"" > $@
@@ -158,7 +157,7 @@ $(DCDIR)/libdc.so:
 $(SCALERDIR)/libscaler.so:
 		$(MAKE) -C $(@D) $(@F)
 
-analyzer:	src/main.o
+analyzer:	src/main.o $(LIBDIR)/libdc.so $(LIBDIR)/libscaler.so $(LIBHALLA)
 		$(LD) $(LDFLAGS) $^ $(HALLALIBS) $(GLIBS) -o $@
 
 clean:
