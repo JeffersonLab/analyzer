@@ -118,30 +118,18 @@ public:
   const char*     GetTypeName() const;
   size_t          GetTypeSize() const;
 
-  Double_t        GetValue() const          
-     { return (fType == kDouble ) ? *fValueD : GetValueAsDouble(); }
-  Double_t        GetValueD() const          { return *fValueD; }
-  Float_t         GetValueF() const          { return *fValueF; }
-  Long_t          GetValueL() const          { return *fValueL; }
-  ULong_t         GetValueX() const          { return *fValueX; }
-  Int_t           GetValueI() const          { return *fValueI; }
-  UInt_t          GetValueU() const          { return *fValueU; }
-  Short_t         GetValueS() const          { return *fValueS; }
-  UShort_t        GetValueW() const          { return *fValueW; }
-  Char_t          GetValueC() const          { return *fValueC; }
-  Byte_t          GetValueB() const          { return *fValueB; }
-  Double_t        GetValue( Int_t i )  const 
-     { return (fType == kDouble) ? fValueD[i] : GetValueAsDouble(i); }
-  Double_t        GetValueD( Int_t i ) const { return fValueD[i]; }
-  Float_t         GetValueF( Int_t i ) const { return fValueF[i]; }
-  Long_t          GetValueL( Int_t i ) const { return fValueU[i]; }
-  ULong_t         GetValueX( Int_t i ) const { return fValueX[i]; }
-  Int_t           GetValueI( Int_t i ) const { return fValueI[i]; }
-  UInt_t          GetValueU( Int_t i ) const { return fValueU[i]; }
-  Short_t         GetValueS( Int_t i ) const { return fValueS[i]; }
-  UShort_t        GetValueW( Int_t i ) const { return fValueW[i]; }
-  Char_t          GetValueC( Int_t i ) const { return fValueC[i]; }
-  Byte_t          GetValueB( Int_t i ) const { return fValueB[i]; }
+  Double_t        GetValue( Int_t i = 0 )  const 
+    { return GetValueAsDouble(i); }
+  Double_t        GetValueD( Int_t i = 0 ) const { return fValueD[i]; }
+  Float_t         GetValueF( Int_t i = 0 ) const { return fValueF[i]; }
+  Long_t          GetValueL( Int_t i = 0 ) const { return fValueU[i]; }
+  ULong_t         GetValueX( Int_t i = 0 ) const { return fValueX[i]; }
+  Int_t           GetValueI( Int_t i = 0 ) const { return fValueI[i]; }
+  UInt_t          GetValueU( Int_t i = 0 ) const { return fValueU[i]; }
+  Short_t         GetValueS( Int_t i = 0 ) const { return fValueS[i]; }
+  UShort_t        GetValueW( Int_t i = 0 ) const { return fValueW[i]; }
+  Char_t          GetValueC( Int_t i = 0 ) const { return fValueC[i]; }
+  Byte_t          GetValueB( Int_t i = 0 ) const { return fValueB[i]; }
 
   const Double_t* GetValuePointer()  const   { return fValueD; }
   const Double_t* GetValuePointerD() const   { return fValueD; }
