@@ -1,100 +1,96 @@
 //--------------------------------------------------------
-//  tscalfile_main.C
+//  tscalroc11_main.C
 //
-//  Test of the ROC11 scalers which are read in the datastream
-//  every synch event (typ. every 100 events).  As of Oct 2001 this
-//  is a new readout.  The old readout was the "event type 140"
-//  which was inserted asynchronously every few seconds using ET.
-//  Those "event type 140" were called scaler events by THaEvData,
-//  and will continue to be supported.  The main advantage of ROC11
-//  (and ROC12 when it exists) is that it comes synchronously with
-//  physics triggers, and so you know the time relationship from the
-//  location in the sequence of events.
+//  Test of the ROC10/11 scalers which are read in the datastream
+//  typically every 100 events.  As of Aug 2002 this is a new 
+//  readout.  (Actually there was also a similar ROC11 since 
+//  Aug 2001, but the data format has changed due to G0 mode.)
 // 
-//  R. Michaels, Jan 2002
+//  R. Michaels, Aug 2002
 //--------------------------------------------------------
 
+#define MYROC 11
 #include <iostream>
-#include <string>
-
-#include "THaScaler.h"
 #include "THaCodaFile.h"
 #include "THaEvData.h"
 
 int main(int argc, char* argv[]) {
-
-   int printout1 = 1;   // To printout lots of stuff (1) or not (0)
-   int printout2 = 1;   // Another printout option
-   int trig;
-   TString filename = "run.dat";
-   
-   char bank[100] = "EvLeft";  // Event stream, Left HRS
-   cout << "Bank = "<<bank<<endl<<flush;
-
-   THaScaler *scaler = new THaScaler(bank);
-
-   if (scaler->Init("17-1-2002") == -1) {  // Init MUST be done once
-      cout << "Error initializing scaler "<<endl;
-      return 1;
+   int helicity, qrt, gate, timestamp;
+   int len, data, status, nscaler, header;
+   int numread, badread;
+   int ring_clock, ring_qrt, ring_helicity;
+   int ring_trig, ring_bcm, ring_l1a; 
+   if (argc < 2) {
+      cout << "You made a mistake... bye bye !\n" << endl;
+      cout << "Usage:   'tscalroc" << MYROC << " filename'" << endl;
+      cout << "  where 'filename' is the CODA file."<<endl;
+      exit(0);
    }
-
-   THaCodaFile *coda = new THaCodaFile(filename);
+   THaCodaFile *coda = new THaCodaFile(TString(argv[1]));
    THaEvData evdata;
-
-   int status = 0;
-   
+   status = 0;
    while (status == 0) {
-
      status = coda->codaRead();
      if (status != 0) break;
      evdata.LoadEvent(coda->getEvBuffer());
-     scaler->LoadData(evdata);
-
-// Not every trigger has new scaler data, so skip if not new.
-     if ( !scaler->IsRenewed() ) continue;
-
-     if (printout1) {
-       cout << "\n\n--------------  SCALER EVENT DATA -----------------------\n"<<endl;
-       //       scaler->Print();     // raw diagnostic printout
-       Double_t time = scaler->GetPulser("clock")/1024;
-       cout << "Time    " << time << "\n Counts :   " << endl;
-       cout << "Bcm u1   hel+  0  hel- " << scaler->GetBcm(1,"bcm_u1") << "   " << scaler->GetBcm("bcm_u1") << "   " << scaler->GetBcm(-1,"bcm_u1") << endl;
-       cout << "Bcm u3   hel+  0  hel- " << scaler->GetBcm(1,"bcm_u3") << "   " << scaler->GetBcm("bcm_u3") << "   " << scaler->GetBcm(-1,"bcm_u3") << endl;
-       cout << "Bcm u10   hel+  0  hel- " << scaler->GetBcm(1,"bcm_u10") << "   " << scaler->GetBcm("bcm_u10") << "   " << scaler->GetBcm(-1,"bcm_u10") << endl;
-       cout << "Bcm d1   hel+  0  hel- " << scaler->GetBcm(1,"bcm_d1") << "   " << scaler->GetBcm("bcm_d1") << "   " << scaler->GetBcm(-1,"bcm_d1") << endl;
-       cout << "Bcm d3   hel+  0  hel- " << scaler->GetBcm(1,"bcm_d3") << "   " << scaler->GetBcm("bcm_d3") << "   " << scaler->GetBcm(-1,"bcm_d3") << endl;
-       cout << "Bcm d10   hel+  0  hel- " << scaler->GetBcm(1,"bcm_d10") << "   " << scaler->GetBcm("bcm_d10") << "   " << scaler->GetBcm(-1,"bcm_d10") << endl;
-       cout << "Clock   hel+  0  hel- " << scaler->GetBcm(1,"clock") << "   " << scaler->GetBcm("clock") << "   " << scaler->GetBcm(-1,"clock") << endl;
-       for (trig = 1; trig <= 5; trig++ ) {
-          cout << "Trigger " << trig << "   hel+  0  hel- " << scaler->GetTrig(1,trig) << "   " << scaler->GetTrig(trig) << "   " << scaler->GetTrig(-1,trig) << endl;
-       }
-       cout << "Rates (Hz) = " << endl;
-       cout << "Bcm u1   hel+  0  hel- " << scaler->GetBcmRate(1,"bcm_u1") << "   " << scaler->GetBcmRate("bcm_u1") << "   " << scaler->GetBcmRate(-1,"bcm_u1") << endl;
-       cout << "Bcm u3   hel+  0  hel- " << scaler->GetBcmRate(1,"bcm_u3") << "   " << scaler->GetBcmRate("bcm_u3") << "   " << scaler->GetBcmRate(-1,"bcm_u3") << endl;
-       cout << "Bcm u10   hel+  0  hel- " << scaler->GetBcmRate(1,"bcm_u10") << "   " << scaler->GetBcmRate("bcm_u10") << "   " << scaler->GetBcmRate(-1,"bcm_u10") << endl;
-       cout << "Bcm d1   hel+  0  hel- " << scaler->GetBcmRate(1,"bcm_d1") << "   " << scaler->GetBcmRate("bcm_d1") << "   " << scaler->GetBcmRate(-1,"bcm_d1") << endl;
-       cout << "Bcm d3   hel+  0  hel- " << scaler->GetBcmRate(1,"bcm_d3") << "   " << scaler->GetBcmRate("bcm_d3") << "   " << scaler->GetBcmRate(-1,"bcm_d3") << endl;
-       cout << "Bcm d10   hel+  0  hel- " << scaler->GetBcmRate(1,"bcm_d10") << "   " << scaler->GetBcmRate("bcm_d10") << "   " << scaler->GetBcmRate(-1,"bcm_d10") << endl;
-       cout << "Clock   hel+  0  hel- " << scaler->GetBcmRate(1,"clock") << "   " << scaler->GetBcmRate("clock") << "   " << scaler->GetBcmRate(-1,"clock") << endl;
-       for (trig = 1; trig <= 5; trig++ ) {
-          cout << "Trigger " << trig << "   hel+  0  hel- " << scaler->GetTrigRate(1,trig) << "   " << scaler->GetTrigRate(trig) << "   " << scaler->GetTrigRate(-1,trig) << endl;
+     len = evdata.GetRocLength(MYROC);
+     if (len <= 4) continue;
+     data = evdata.GetRawData(MYROC,3);   
+     helicity = (data & 0x10) >> 4;
+     qrt = (data & 0x20) >> 5;
+     gate = (data & 0x40) >> 6;
+     timestamp = evdata.GetRawData(MYROC,4);
+     data = evdata.GetRawData(MYROC,5);
+     nscaler = data & 0x7;
+     cout << hex << "helicity " << helicity << "  qrt " << qrt;
+     cout << " gate " << gate << "   time stamp " << timestamp << endl;
+     cout << "nscaler in this event  " << nscaler << endl;
+     if (nscaler <= 0) continue;
+     int index = 6;
+     if (nscaler > 2) nscaler = 2;  // shouldn't be necessary
+// 32 channels of scaler data for two helicities.
+     cout << "Synch event ----> " << endl;
+     for (int ihel = 0; ihel < nscaler; ihel++) { 
+       header = evdata.GetRawData(MYROC,index++);
+       cout << "Scaler for helicity = " << dec << ihel;
+       cout << "  unique header = " << hex << header << endl;
+       for (int ichan = 0; ichan < 32; ichan++) {
+	 data = evdata.GetRawData(MYROC,index++);
+         cout << "channel # " << dec << ichan+1;
+         cout << "  (hex) data = " << hex << data << endl;
        }
      }
-
-     if (printout2) {
-       cout << "\n\n--------------  SCALERS in EVDATA -----------------------\n"<<endl;
-       for (int slot = 1; slot <= 3; slot++) {
-         for (int chan = 0; chan < 32; chan++) {
-	   cout << "slot "<<dec<<slot<<"   chan "<<chan<<"   data (dec) "<<evdata.GetScaler("evleft",slot,chan)<<"   hex "<<hex<<evdata.GetScaler("evleft",slot,chan)<<dec<<endl;
-	 }
+     numread = evdata.GetRawData(MYROC,index++);
+     badread = evdata.GetRawData(MYROC,index++);
+     cout << "FIFO num of last good read " << dec << numread << endl;
+     if (badread != 0) {
+       cout << "DISASTER: There are bad readings " << endl;
+       cout << "FIFO num of last bad read " << endl;
+     }
+// Subset of scaler channels stored in a 30 Hz ring buffer.
+     int nring = 0;
+     while (index < len && nring == 0) {
+       header = evdata.GetRawData(MYROC,index++);
+       if ((header & 0xffff0000) == 0xfb1b0000) {
+           nring = header & 0x3ff;
        }
      }
-     
-
+     cout << "Num in ring buffer = " << dec << nring << endl;
+     for (int iring = 0; iring < nring; iring++) {
+       ring_clock = evdata.GetRawData(MYROC,index++);
+       data = evdata.GetRawData(MYROC,index++);
+       ring_qrt = (data & 0x10) >> 4;
+       ring_helicity = (data & 0x1);
+       ring_trig = evdata.GetRawData(MYROC,index++);
+       ring_bcm = evdata.GetRawData(MYROC,index++);
+       ring_l1a = evdata.GetRawData(MYROC,index++);
+       cout << "buff [" << dec << iring << "] ";
+       cout << "  clock " << ring_clock << "  qrt " << ring_qrt;
+       cout << "  helicity " << ring_helicity;
+       cout << "  trigger " << ring_trig << "  bcm " << ring_bcm;
+       cout << "  L1a "<<ring_l1a<<endl;
+     }
    }
-
-   scaler->PrintSummary();
-
    return 0;
 }
 
