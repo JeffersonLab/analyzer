@@ -14,18 +14,37 @@ ClassImp(THaVDCCluster)
 
 
 //______________________________________________________________________________
-THaVDCCluster::THaVDCCluster( THaVDCPlane* owner )
+THaVDCCluster::THaVDCCluster( const THaVDCCluster& rhs ) :
+  fSize(rhs.fSize), fPlane(rhs.fPlane), fSlope(rhs.fSlope), 
+  fSigmaSlope(rhs.fSigmaSlope), fInt(rhs.fInt), fSigmaInt(rhs.fSigmaInt), 
+  fT0(rhs.fT0), fPivot(rhs.fPivot)
 {
-  // Constructor
-  Clear();
-  fPlane = owner;
+  // Copy constructor
+
+  for( int i = 0; i < fSize; i++ )
+    fHits[i] = rhs.fHits[i];
 }
 
-
 //______________________________________________________________________________
-THaVDCCluster::~THaVDCCluster()
+THaVDCCluster& THaVDCCluster::operator=( const THaVDCCluster& rhs )
 {
-  // Destructor.
+  // Assignment operator
+
+  TObject::operator=( rhs );
+  if( this != &rhs ) {
+    fSize       = rhs.fSize;
+    fPlane      = rhs.fPlane;
+    fSlope      = rhs.fSlope;
+    fSigmaSlope = rhs.fSigmaSlope;
+    fInt        = rhs.fInt;
+    fSigmaInt   = rhs.fSigmaInt;
+    fT0         = rhs.fT0;
+    fPivot      = rhs.fPivot;
+
+    for( int i = 0; i < fSize; i++ )
+      fHits[i] = rhs.fHits[i];
+  }
+  return *this;
 }
 
 //______________________________________________________________________________
@@ -38,6 +57,21 @@ void THaVDCCluster::AddHit(THaVDCHit * hit)
   } else {
     Warning( "AddHit()", "Max cluster size reached.");
   }
+}
+
+//______________________________________________________________________________
+void THaVDCCluster::Clear( const Option_t* opt )
+{
+  // Clears the contents of the cluster
+
+  fSize  = 0;                    // Size of cluster
+  fSlope = fSigmaSlope = 0.0;    // Slope and error in slope of track
+  fInt   = fSigmaInt =   0.0;    // Intercept and error of track
+  fPivot = NULL;                 // Pivot
+  fPlane = NULL;
+//    fUVTrack = NULL;               // UVTrack the cluster belongs to
+//    fTrack = NULL;                 // Track the cluster belongs to
+
 }
 
 //______________________________________________________________________________
@@ -71,6 +105,7 @@ void THaVDCCluster::EstTrackParameters()
 
   fSlope = dy / dx;
 }
+
 //______________________________________________________________________________
 void THaVDCCluster::ConvertTimeToDist()
 {
@@ -81,8 +116,18 @@ void THaVDCCluster::ConvertTimeToDist()
     fHits[i]->ConvertTimeToDist(fSlope); //Do conversion for each hit in cluster
   
 }
+
 //______________________________________________________________________________
 void THaVDCCluster::FitTrack()
+{
+  // Fit track to drift distances, allowing for a common timing offset (t0).
+  // Not yet implemented. Identical to FitSimpleTrack.
+
+  FitSimpleTrack();
+}
+
+//______________________________________________________________________________
+void THaVDCCluster::FitSimpleTrack()
 {
   // Calculate slope, intercept and errors
 
@@ -98,8 +143,8 @@ void THaVDCCluster::FitTrack()
   Double_t b, sigmaB;  // Intercept, St. Dev in Intercept
   Double_t sigmaY;     // St Dev in delta Y values
 
-  Double_t * xArr = new Double_t[fSize];
-  Double_t * yArr = new Double_t[fSize];
+  Double_t* xArr = new Double_t[fSize];
+  Double_t* yArr = new Double_t[fSize];
 
   Double_t bestFit = 0.0;
 
@@ -182,22 +227,6 @@ void THaVDCCluster::FitTrack()
   
   delete[] xArr;
   delete[] yArr;
-
-}
-
-//______________________________________________________________________________
-void THaVDCCluster::Clear( const Option_t* opt )
-{
-  // Clears the contents of the cluster
-  for (int i = 0; i < MAX_SIZE; i++)
-    fHits[i] = NULL;
-  fSize  = 0;                    // Size of cluster
-  fSlope = fSigmaSlope = 0.0;    // Slope and error in slope of track
-  fInt   = fSigmaInt =   0.0;    // Intercept and error of track
-  fPivot = NULL;                 // Pivot
-  fPlane = NULL;
-//    fUVTrack = NULL;               // UVTrack the cluster belongs to
-//    fTrack = NULL;                 // Track the cluster belongs to
 
 }
 
