@@ -132,8 +132,10 @@ Int_t THaOutput::Init( const char* filename )
       cout << "THaOutput::Init: WARNING: Error in formula ";
       cout << fFormnames[iform] << endl;
       cout << "There is probably a typo error... " << endl;
-      fFormulas[iform]->ErrPrint(status);
-//    fFormulas[iform]->LongPrint();  // for debug
+      if( fgVerbose<=2 )
+	fFormulas[iform]->ErrPrint(status);
+      else
+	fFormulas[iform]->LongPrint();  // for debug
     } else {
       fFormulas[iform]->SetOutput(fTree);
 // If formula has array ELEMENTS explicitly we add them to tree.
@@ -173,7 +175,8 @@ Int_t THaOutput::Init( const char* filename )
     } else {
       fCuts[icut]->SetOutput(fTree);
     }
-//    fCuts[icut]->LongPrint();  // for debug
+    if( fgVerbose>2 )
+      fCuts[icut]->LongPrint();  // for debug
   }
   for (Vsiz_h ihist = 0; ihist < fHistos.size(); ihist++) {
 // After initializing formulas and cuts, must sort through
