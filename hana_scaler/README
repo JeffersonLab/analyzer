@@ -1,6 +1,6 @@
 
-   HANA SCALER PACKAGE, version 1.1
-   ================================
+   HANA SCALER PACKAGE
+   ====================
 
 Robert Michaels, Jefferson Lab, Aug 2001
 
@@ -95,6 +95,12 @@ How to run standalone:
   2. Next compile the hana_scaler software with the line
      "export STANDALONE = 1" uncommented in Makefile.
 
+
+THaScalerGui:
+   For now I leave THaScalerGui out of the SRC list in
+   Makefile.  But you may want to put it back in (uncomment
+   the appropriate line) for 'xscaler' example, in which case
+   you also need to restore the line in haScal_LinkDef.h 
 
 ---------------------------------------------------------------
 How to make a standalone event decoder library 
