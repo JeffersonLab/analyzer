@@ -6,6 +6,9 @@ export WITH_DEBUG = 1
 # Compile debug version
 export DEBUG = 1
 
+# Profiling with gprof
+# export PROFILE = 1
+
 #------------------------------------------------------------------------------
 
 VERSION = 0.66
@@ -74,6 +77,11 @@ ifdef WITH_DEBUG
 CXXFLAGS     += -DWITH_DEBUG
 endif
 
+ifdef PROFILE
+CXXFLAGS     += -pg
+LDFLAGS      += -pg
+endif
+
 export ARCH
 
 #------------------------------------------------------------------------------
@@ -84,7 +92,7 @@ SRC           = src/THaFormula.C src/THaVar.C src/THaVarList.C src/THaCut.C \
 		src/THaDetMap.C src/THaApparatus.C src/THaDetector.C \
 		src/THaSpectrometer.C src/THaSpectrometerDetector.C \
 		src/THaHRS.C src/THaLeftHRS.C src/THaRightHRS.C \
-                src/THaDecData.C \
+                src/THaDecData.C src/THaOutput.C src/THaString.C \
 		src/THaTrackingDetector.C src/THaNonTrackingDetector.C \
 		src/THaPidDetector.C src/THaSubDetector.C \
 		src/THaDetectorBase.C src/THaRTTI.C \
@@ -94,7 +102,7 @@ SRC           = src/THaFormula.C src/THaVar.C src/THaVarList.C src/THaCut.C \
 		src/THaCluster.C src/THaMatrix.C src/THaArrayString.C \
 		src/THaScintillator.C src/THaShower.C \
 		src/THaTotalShower.C src/THaCherenkov.C \
-		src/THaEvent.C src/THaRawEvent.C src/THaTrackID.C \
+		src/THaEvent.C src/THaTrackID.C \
 		src/THaVDC.C \
 		src/THaVDCPlane.C src/THaVDCUVPlane.C src/THaVDCUVTrack.C \
 		src/THaVDCWire.C src/THaVDCHit.C src/THaVDCCluster.C \
