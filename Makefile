@@ -11,7 +11,7 @@ export DEBUG = 1
 
 #------------------------------------------------------------------------------
 
-VERSION = 1.0-rc2
+VERSION = 1.0-rc3
 NAME    = analyzer-$(VERSION)
 
 #------------------------------------------------------------------------------
@@ -23,16 +23,15 @@ ROOTCFLAGS   := $(shell root-config --cflags)
 ROOTLIBS     := $(shell root-config --libs)
 ROOTGLIBS    := $(shell root-config --glibs)
 
-DCDIR         = hana_decode
-DCLIB         = -L. -ldc
-SCALERDIR     = hana_scaler
-SCALERLIB     = -L. -lscaler
-HALLALIBS     = -L. -lHallA -ldc -lscaler
 
 SUBDIRS       = $(DCDIR) $(SCALERDIR)
 
 HA_DIR       := $(shell pwd)
 INCDIRS       = $(addprefix $(HA_DIR)/, src $(SUBDIRS))
+DCDIR         = hana_decode
+SCALERDIR     = hana_scaler
+LIBDIR        = $(HA_DIR)/.
+HALLALIBS     = -L$(LIBDIR) -lHallA -ldc -lscaler
 
 LIBS          = 
 GLIBS         = 
@@ -102,13 +101,12 @@ SRC           = src/THaFormula.C src/THaVar.C src/THaVarList.C src/THaCut.C \
 		src/THaTrackingDetector.C src/THaNonTrackingDetector.C \
 		src/THaPidDetector.C src/THaSubDetector.C \
 		src/THaAnalysisObject.C src/THaDetectorBase.C src/THaRTTI.C \
-		src/THaPhysicsModule.C src/THaVertexModule.C src/THaTrackingModule.C \
+		src/THaPhysicsModule.C src/THaVertexModule.C \
+		src/THaTrackingModule.C \
 		src/THaAnalyzer.C src/THaPrintOption.C \
 		src/THaBeam.C src/THaIdealBeam.C \
 		src/THaRasteredBeam.C src/THaRaster.C\
-		src/THaBeamDet.C\
-                src/THaBPM.C\
-		src/THaUnRasteredBeam.C\
+		src/THaBeamDet.C src/THaBPM.C src/THaUnRasteredBeam.C\
 		src/THaTrack.C src/THaPIDinfo.C src/THaParticleInfo.C \
 		src/THaCluster.C src/THaMatrix.C src/THaArrayString.C \
 		src/THaScintillator.C src/THaShower.C \
@@ -129,38 +127,39 @@ OBJ           = $(SRC:.C=.o)
 HDR           = $(SRC:.C=.h) src/THaGlobals.h src/VarDef.h src/VarType.h \
 		src/ha_compiledata.h
 
-DEP           = $(SRC:.C=.d)
+DEP           = $(SRC:.C=.d) src/main.d
 OBJS          = $(OBJ) haDict.o
 
-LIBHALLA      = libHallA.so
+LIBHALLA      = $(LIBDIR)/libHallA.so
 PROGRAMS      = analyzer
 
-all:            subdirs $(PROGRAMS)
+all:            subdirs $(LIBDIR)/libdc.so $(LIBDIR)/libscaler.so $(LIBHALLA) \
+		$(PROGRAMS)
 
 src/ha_compiledata.h:
 		echo "#define HA_INCLUDEPATH \"$(INCDIRS)\"" > $@
+
+subdirs:
+		set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i; done
 
 $(LIBHALLA):	$(HDR) $(OBJS)
 		$(LD) $(LDFLAGS) $(SOFLAGS) -o $@ $(OBJS)
 		@echo "$@ done"
 
-analyzer:	src/main.o $(LIBHALLA) libdc.so libscaler.so
-		$(LD) $(LDFLAGS) src/main.o $(HALLALIBS) $(GLIBS) -o $@
+$(LIBDIR)/libdc.so:	$(DCDIR)/libdc.so
+		cp $< $(LIBDIR)
 
-subdirs:
-		set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i; done
-
-libdc.so:	$(DCDIR)/libdc.so
-		cp $< .
-
-libscaler.so:	$(SCALERDIR)/libscaler.so
-		cp $< .
+$(LIBDIR)/libscaler.so:	$(SCALERDIR)/libscaler.so
+		cp $< $(LIBDIR)
 
 $(DCDIR)/libdc.so:
 		$(MAKE) -C $(@D) $(@F)
 
 $(SCALERDIR)/libscaler.so:
 		$(MAKE) -C $(@D) $(@F)
+
+analyzer:	src/main.o
+		$(LD) $(LDFLAGS) $^ $(HALLALIBS) $(GLIBS) -o $@
 
 clean:
 		$(MAKE) -C $(DCDIR) clean
@@ -196,7 +195,7 @@ haDict.C: $(HDR) src/HallA_LinkDef.h
 	$(ROOTSYS)/bin/rootcint -f $@ -c $(INCLUDES) $(HDR) \
 		src/HallA_LinkDef.h
 
-.PHONY: all clean realclean srcdist cvsdist subdirs $(SUBDIRS)
+.PHONY: all clean realclean srcdist cvsdist subdirs
 
 
 ###--- DO NOT CHANGE ANYTHING BELOW THIS LINE UNLESS YOU KNOW WHAT 
