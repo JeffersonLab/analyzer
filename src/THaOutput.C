@@ -1,5 +1,11 @@
 //*-- Author :    Robert Michaels   05/08/2002
 
+//////////////////////////////////////////////////////////////////////////
+//
+// THaOutput
+//
+//////////////////////////////////////////////////////////////////////////
+
 #define CHECKOUT 1
 
 #include "THaOutput.h"
@@ -21,11 +27,15 @@ const Int_t THaOutput::fgFormiden;
 const Int_t THaOutput::fgTh1fiden;
 const Int_t THaOutput::fgTh2fiden;
 
-THaOutput::THaOutput() {
+//_____________________________________________________________________________
+THaOutput::THaOutput() 
+{
   fTree = 0;
 }
 
-THaOutput::~THaOutput() {
+//_____________________________________________________________________________
+THaOutput::~THaOutput() 
+{
   delete fTree;
   delete [] fForm;
   delete [] fVar;
@@ -37,8 +47,9 @@ THaOutput::~THaOutput() {
   delete [] fH2formy;
 }
 
-Int_t THaOutput::Init( ) {
-
+//_____________________________________________________________________________
+Int_t THaOutput::Init( ) 
+{
   Int_t iform,ivar,ihist;
   char tinfo[20], cname[100];
   fNbout = 4000;  
@@ -155,13 +166,15 @@ Int_t THaOutput::Init( ) {
   return 0;
 }
  
+//_____________________________________________________________________________
 #ifdef IFCANWORK
 // Preferred method, but doesn't work, hence turned off with ifdef
-Int_t THaOutput::AddToTree(char *name, TObject *tobj) {
-// Add a TObject to the tree
-// I would have preferred to use this method, but it did not work !!
-// Instead, it works to add a TObject like this for THaOutput *fOut :
-// if (fOut->TreeDefined()) fOut->GetTree()->Branch(...etc)
+Int_t THaOutput::AddToTree(char *name, TObject *tobj) 
+{
+  // Add a TObject to the tree
+  // I would have preferred to use this method, but it did not work !!
+  // Instead, it works to add a TObject like this for THaOutput *fOut :
+  // if (fOut->TreeDefined()) fOut->GetTree()->Branch(...etc)
   if (fTree != 0 && tobj != 0) {
     fTree->Branch(name,tobj->IsA()->GetName(),&tobj);
     return 0;
@@ -170,7 +183,9 @@ Int_t THaOutput::AddToTree(char *name, TObject *tobj) {
 }
 #endif
 
-Int_t THaOutput::Process() {
+//_____________________________________________________________________________
+Int_t THaOutput::Process() 
+{
   static int iev = 0;
   iev++;
   for (Int_t iform = 0; iform < fNform; iform++) {
@@ -191,7 +206,8 @@ Int_t THaOutput::Process() {
     if ( pvar == 0) continue;
     for (Int_t i = 0; i < pvar->GetLen(); i++) {
        if (fOdata[k]->Fill(i,pvar->GetValue(i)) != 1) 
-	 cout << "THaOutput::ERROR: storing too much variable sized data: " << pvar->GetName() <<endl;
+	 cout << "THaOutput::ERROR: storing too much variable sized data: " 
+	      << pvar->GetName() <<endl;
     }
   }
   for (Int_t ihist = 0; ihist < fN1d; ihist++) {
@@ -250,7 +266,9 @@ Int_t THaOutput::Process() {
   return 0;
 }
 
-Int_t THaOutput::End() {
+//_____________________________________________________________________________
+Int_t THaOutput::End() 
+{
   if (fTree != 0) fTree->Write();
   Int_t ihist;
   for (ihist = 0; ihist < fN1d; ihist++) fH1d[ihist]->Write();
@@ -258,8 +276,10 @@ Int_t THaOutput::End() {
   return 0;
 }
 
-Int_t THaOutput::LoadFile() {
-// Process the file that defines the output
+//_____________________________________________________________________________
+Int_t THaOutput::LoadFile() 
+{
+  // Process the file that defines the output
   ifstream *odef;
   THaString loadfile = "output.def";
   odef = new ifstream(loadfile.c_str());
@@ -267,18 +287,21 @@ Int_t THaOutput::LoadFile() {
     ErrFile(-1, loadfile);
     return -1;
   }
-  THaString comment = "#";
+  const string comment = "#";
+  const string whitespace( " \t" );
+  string::size_type pos;
   vector<THaString> strvect;
-  THaString sinput,sline;
-  while (getline(*odef,sinput)) {
-    strvect.clear();   strvect = sinput.Split();
-    sline = "";
-    for (vector<THaString>::iterator str = strvect.begin();
-      str != strvect.end(); str++) {
-      if ( *str == comment ) break;
-      sline += *str;   sline += " ";
-    }
-    if (sline == "") continue;
+  THaString sline;
+  while (getline(*odef,sline)) {
+    // Blank line or comment line?
+    if( sline.empty()
+	|| (pos = sline.find_first_not_of( whitespace )) == string::npos
+	|| comment.find(sline[pos]) != string::npos )
+      continue;
+    // Get rid of trailing comments
+    if( (pos = sline.find_first_of( comment )) != string::npos )
+      sline.erase(pos);
+    // Split the line into tokens separated by whitespace
     strvect = sline.Split();
     if (strvect.size() < 2) {
       ErrFile(0, sline);
@@ -292,7 +315,7 @@ Int_t THaOutput::LoadFile() {
           break;
       case fgFormiden:
           if (strvect.size() < 3) {
-	    ErrFile(fgFormiden, sline);
+	    ErrFile(ikey, sline);
             continue;
 	  }
           fFormnames.push_back(strvect[1]);
@@ -301,7 +324,7 @@ Int_t THaOutput::LoadFile() {
       case fgTh1fiden:
   	  status = ParseTitle(sline);
           if (status != 1) {
-	    ErrFile(fgTh1fiden, sline);
+	    ErrFile(ikey, sline);
             continue;
 	  }
 	  fH1dname.push_back(strvect[1]);
@@ -314,7 +337,7 @@ Int_t THaOutput::LoadFile() {
       case fgTh2fiden:
   	  status = ParseTitle(sline);
           if (status != 2) {
-	    ErrFile(fgTh2fiden, sline);
+	    ErrFile(ikey, sline);
             continue;
 	  }
 	  fH2dname.push_back(strvect[1]);
@@ -339,17 +362,21 @@ Int_t THaOutput::LoadFile() {
   return 0;
 }
 
-Int_t THaOutput::FindKey(THaString key) {
-// Return integer flag corresponding to
-// case-insensitive keyword "key" if it exists
+//_____________________________________________________________________________
+Int_t THaOutput::FindKey(THaString key) 
+{
+  // Return integer flag corresponding to
+  // case-insensitive keyword "key" if it exists
     map<THaString, Int_t >::iterator dmap = 
         fKeyint.find(THaString(key).ToLower());
     if (dmap != fKeyint.end()) return dmap->second;
     return -1;
-};
+}
 
-void THaOutput::ErrFile(Int_t iden, THaString sline) {
-// Print error messages about the output definition file.
+//_____________________________________________________________________________
+void THaOutput::ErrFile(Int_t iden, THaString sline) 
+{
+  // Print error messages about the output definition file.
   if (iden == -1) {
     cerr << "THaOutput::LoadFile ERROR: file " << sline;
     cerr << " does not exist." << endl;
@@ -393,10 +420,12 @@ void THaOutput::ErrFile(Int_t iden, THaString sline) {
      default:
        break;
   }
-};
+}
 
-void THaOutput::Print() {
-// Printout the definitions
+//_____________________________________________________________________________
+void THaOutput::Print() 
+{
+  // Printout the definitions
   cout << "\n=== Number of variables "<<fVarnames.size()<<endl;
   for (vector<THaString>::iterator is = fVarnames.begin();
     is != fVarnames.end(); is++) cout << " Variable = "<<*is<<endl;
@@ -427,12 +456,14 @@ void THaOutput::Print() {
     cout << "   "<<fH2dyhi[i]<<endl;
   }
   cout << endl << endl;
-};
+}
 
-Int_t THaOutput::ParseTitle(THaString sline) {
-// Parse the string that defines the histogram.  The title must be
-// enclosed in single quotes (e.g. 'my title').  Ret value 'result'
-// means:  -1 == error,  1 == ok 1D histogram,  2 == ok 2D histogram
+//_____________________________________________________________________________
+Int_t THaOutput::ParseTitle(THaString sline) 
+{
+  // Parse the string that defines the histogram.  The title must be
+  // enclosed in single quotes (e.g. 'my title').  Ret value 'result'
+  // means:  -1 == error,  1 == ok 1D histogram,  2 == ok 2D histogram
   Int_t result = -1;
   stitle = "";   sfvar1 = "";  sfvar2  = "";
   Int_t pos1, pos2;
@@ -465,7 +496,9 @@ Int_t THaOutput::ParseTitle(THaString sline) {
      }
   }
   return result;
-};
+}
+
+//_____________________________________________________________________________
 
 
 

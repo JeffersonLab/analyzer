@@ -154,7 +154,9 @@ Int_t THaAnalyzer::Process( THaRun& run )
 
   //--- Output tree and histograms
 
-  if ( !fOutput ) fOutput = new THaOutput();
+  TTree* outputTree = NULL;
+  if( fEvent) fEvent->Reset();
+  if( !fOutput ) fOutput = new THaOutput();
 
   //--- Initialize counters
 
@@ -197,10 +199,11 @@ Int_t THaAnalyzer::Process( THaRun& run )
     if ( first ) {
       // Must get a prestart event before we can initialize
       // because the prestart event contains the run time.
+      // FIXME: Isn't this is overly restrictive?
       if( !evdata.IsPrestartEvent() ) continue;
 
-      run.SetDate(evdata.GetRunTime());
-      run_time = run.GetDate();
+      run_time.Set( evdata.GetRunTime() );
+      run.SetDate( run_time );
 
       if( verbose ) {
 	cout << "Run Number: " << evdata.GetRunNum() << endl;
@@ -254,15 +257,18 @@ Int_t THaAnalyzer::Process( THaRun& run )
 	}
       }
 
-      // fOutput must be initialized after all apparati are
+      // fOutput must be initialized after all apparatuses are
       // initialized and before adding anything to its tree.
 
       if (fOutput->Init() < 0) {
         cout << "ERROR: THaAnalyzer::Process: ";
         cout << "Error initializing THaOutput " << endl;
       }
-      if (fOutput->TreeDefined()) 
-       fOutput->GetTree()->Branch("event",fEvent->IsA()->GetName(),&fEvent);
+      outputTree = fOutput->GetTree();
+      if( fEvent ) {
+	outputTree->Branch( "Event_Branch", fEvent->IsA()->GetName(), &fEvent,
+			    16000, 99 );
+      }
 
       if( fail ) {
         delete fOutput;
@@ -270,7 +276,7 @@ Int_t THaAnalyzer::Process( THaRun& run )
 	run.CloseFile();
 	return retval;
       }
-    }
+    } //if(first)
 
     // Print marks every 1000 events
 
@@ -337,20 +343,25 @@ Int_t THaAnalyzer::Process( THaRun& run )
 
       //--- Fill histograms in block 3
 
-      //--- If Event class defined, fill it.
-
+      //--- If Event defined, fill it.
       if( fEvent ) {
-	fEvent->SetHeader( evdata.GetEvNum(), evdata.GetRunNum(), 0 );
-	fEvent->Fill( evdata );
+	fEvent->GetHeader()->Set( evdata.GetEvNum(), 
+				  evdata.GetEvType(),
+				  evdata.GetEvLength(),
+				  evdata.GetEvTime(),
+				  evdata.GetHelicity(),
+				  evdata.GetRunNum()
+				  );
+	fEvent->Fill();
       }
 
+      //---  Process output
       if( fOutput ) fOutput->Process();
 
-    } 
+    }
 
     //=== Scaler triggers ===
-
-    if( evdata.IsScalerEvent()) {
+    else if( evdata.IsScalerEvent()) {
 
       //--- Loop over all defined scalers and execute LoadData()
 
@@ -359,7 +370,8 @@ Int_t THaAnalyzer::Process( THaRun& run )
 	     static_cast<THaScaler*>( next_scaler() )) {
 	theScaler->LoadData( evdata );
       }
-    }
+
+    } // End trigger type test
   }  // End of event loop
   
   bench.Stop("Statistics");

@@ -38,7 +38,7 @@ class THaOdata : public TObject {
 public:
   THaOdata() { nsize = THAOMAX; data = new Double_t[THAOMAX]; Clear(); }
   THaOdata(int n) : nsize(n) { data = new Double_t[n]; Clear(); }
-  ~THaOdata() { delete [] data; };
+  virtual ~THaOdata() { delete [] data; };
   void Clear() { ndata = 0; memset(data, 0, nsize*sizeof(Double_t)); };
   Int_t Fill(Int_t i, Double_t dat) {
      if (i >= 0 && i < nsize-1) {
@@ -48,12 +48,14 @@ public:
      }
     return 0;
   };
-  Int_t       ndata,nsize;     
-  Double_t    *data;    // [ndata] 
-  ClassDef(THaOdata,2)  // Variable sized array
+  Int_t       ndata;
+  Int_t       nsize;     
+  Double_t*   data;    // [ndata] 
 private:
-  THaOdata(const THaOdata& odata);
-  THaOdata& operator=(const THaOdata& odata);
+  THaOdata(const THaOdata& odata) {}
+  THaOdata& operator=(const THaOdata& odata) { return *this; }
+
+  ClassDef(THaOdata,2)  // Variable sized array
 };
 
 class THaOutput {
@@ -112,8 +114,8 @@ private:
    static const Int_t fgTh1fiden = 3;
    static const Int_t fgTh2fiden = 4;
 
-   THaOutput(const THaOutput& output);
-   THaOutput& operator=(const THaOutput& output);
+   THaOutput(const THaOutput& output) {}
+   THaOutput& operator=(const THaOutput& output) { return *this; }
 
    THaString stitle, sfvar1, sfvar2;
    Int_t n1,n2;

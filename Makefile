@@ -102,8 +102,8 @@ SRC           = src/THaFormula.C src/THaVar.C src/THaVarList.C src/THaCut.C \
 		src/THaCluster.C src/THaMatrix.C src/THaArrayString.C \
 		src/THaScintillator.C src/THaShower.C \
 		src/THaTotalShower.C src/THaCherenkov.C \
-		src/THaEvent.C src/THaTrackID.C \
-		src/THaVDC.C \
+		src/THaEvent.C src/THaRawEvent.C src/THaTrackID.C \
+		src/THaVDC.C src/THaVDCEvent.C \
 		src/THaVDCPlane.C src/THaVDCUVPlane.C src/THaVDCUVTrack.C \
 		src/THaVDCWire.C src/THaVDCHit.C src/THaVDCCluster.C \
 		src/THaVDCTimeToDistConv.C src/THaVDCTrackID.C \

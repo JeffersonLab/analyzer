@@ -30,7 +30,6 @@ class THaRun;
 class THaOutput;
 class THaNamedList;
 class TFile;
-class TTree;
 
 class THaAnalyzer {
 
