@@ -8,6 +8,7 @@
 
 #define CHECKOUT 1
 
+
 #include "THaOutput.h"
 #include "TObject.h"
 #include "THaFormula.h"
@@ -18,16 +19,16 @@
 #include "TH2.h"
 #include "TTree.h"
 #include "TFile.h"
+#include "TRegexp.h"
 
+#include <algorithm>
 using namespace std;
-
-ClassImp(THaOdata)
-ClassImp(THaOutput)
 
 const Int_t THaOutput::fgVariden;
 const Int_t THaOutput::fgFormiden;
 const Int_t THaOutput::fgTh1fiden;
 const Int_t THaOutput::fgTh2fiden;
+const Int_t THaOutput::fgBlockiden;
 
 //_____________________________________________________________________________
 THaOutput::THaOutput() 
@@ -60,6 +61,7 @@ Int_t THaOutput::Init( )
   fKeyint.insert( make_pair (THaString("formula"), fgFormiden));
   fKeyint.insert( make_pair (THaString("th1f"), fgTh1fiden));
   fKeyint.insert( make_pair (THaString("th2f"), fgTh2fiden));
+  fKeyint.insert( make_pair (THaString("block"), fgBlockiden));
 
   if (fTree == 0) fTree = new TTree("T","Hall A Analyzer Output DST");
 
@@ -355,11 +357,26 @@ Int_t THaOutput::LoadFile()
 	  fH2dylo.push_back(xl2);
 	  fH2dyhi.push_back(xh2);
           break;
+      case fgBlockiden:
+	  status = BuildBlock(strvect[1]);
+	  break;
       default:
         cout << "Warning: keyword "<<strvect[0]<<" undefined "<<endl;
     }
   }
   delete odef;
+
+  // sort thru fVarnames, removing identical entries
+  sort(fVarnames.begin(),fVarnames.end());
+  vector<THaString>::iterator Vi = fVarnames.begin();
+  while ( (Vi+1)!=fVarnames.end() ) {
+    if ( *Vi == *(Vi+1) ) {
+      fVarnames.erase(Vi+1);
+    } else {
+      Vi++;
+    }
+  }
+
 #ifdef CHECKOUT
   Print();
 #endif
@@ -503,6 +520,37 @@ Int_t THaOutput::ParseTitle(THaString sline)
 }
 
 //_____________________________________________________________________________
+Int_t THaOutput::BuildBlock(THaString blockn)
+{
+  // From the block name, identify and save a specific grouping
+  // of global variables by adding them to the fVarnames list.
+  //
+  // For efficiency, at the end of building the list we should
+  // ensure that variables are listed only once.
+  //
+  // Eventually, we can have some specially named blocks,
+  // but for now we simply will use pattern matching, such that
+  //   block L.*
+  // would save all variables from the left spectrometer.
 
 
+  TRegexp re(blockn.c_str(),kTRUE);
+  TIter next(gHaVars);
+  TObject *obj;
 
+  Int_t nvars=0;
+  while ((obj = next())) {
+    TString s = obj->GetName();
+    if ( s.Index(re) != kNPOS ) {
+      s.Append('\0');
+      THaString vn(s.Data());
+      fVarnames.push_back(vn);
+      nvars++;
+    }
+  }
+  return nvars;
+}
+
+//_____________________________________________________________________________
+ClassImp(THaOdata)
+ClassImp(THaOutput)

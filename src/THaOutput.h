@@ -81,6 +81,8 @@ protected:
    virtual Int_t FindKey(THaString key);
    virtual void ErrFile(Int_t iden, THaString sline);
    virtual Int_t ParseTitle(THaString sline);
+   virtual Int_t BuildBlock(THaString blockn);
+   
    void Print();
 
    // Variables, Formulas, Histograms
@@ -113,6 +115,7 @@ private:
    static const Int_t fgFormiden = 2;
    static const Int_t fgTh1fiden = 3;
    static const Int_t fgTh2fiden = 4;
+   static const Int_t fgBlockiden= 5;
 
    THaOutput(const THaOutput& output) {}
    THaOutput& operator=(const THaOutput& output) { return *this; }
