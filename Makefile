@@ -67,12 +67,13 @@ endif
 ifeq ($(ARCH),linuxegcs)
 # Linux with egcs (>= RedHat 5.2)
 CXX           = g++
+# Always have the debugging symbols written out, but permit full optimization
 ifdef DEBUG
   CXXFLG      = -g -O0
   LDFLAGS     = -g -O0
 else
-  CXXFLG      = -O
-  LDFLAGS     = -O
+  CXXFLG      = -g -O
+  LDFLAGS     = -g -O
 endif
 DEFINES       = -DLINUXVERS
 CXXFLG       += -Wall -Woverloaded-virtual -fPIC
@@ -169,7 +170,8 @@ SRC           = src/THaFormula.C src/THaVform.C src/THaVhist.C \
 		src/THaPostProcess.C src/THaFilter.C \
 		src/THaElossCorrection.C src/THaTrackEloss.C \
 		src/THaBeamModule.C src/THaBeamInfo.C src/THaEpicsEbeam.C \
-		src/THaBeamEloss.C THaTrackOut.C
+		src/THaBeamEloss.C \
+		src/THaTrackOut.C
 
 ifdef ONLINE_ET
 SRC += src/THaOnlRun.C
