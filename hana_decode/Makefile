@@ -48,7 +48,7 @@ export MAINDIR = ../src
 # Use this if profiling (note: it slows down the code)
 # export PROFILE = 1
 
-export DEBUG = 1
+# export DEBUG = 1
 
 ARCH          = linuxegcs
 #ARCH          = solarisCC5
@@ -83,11 +83,11 @@ CXX           = g++
 LD            = g++
 SOFLAGS       = -shared
 ifdef DEBUG
-  CXXFLAGS    = -g -Wall -Woverloaded-virtual -fPIC
-  LDFLAGS     = -g
+  CXXFLAGS    = -g -O0 -Wall -Woverloaded-virtual -fPIC
+  LDFLAGS     = -g -O0
 else
-  CXXFLAGS    = -O -Wall -Woverloaded-virtual -fPIC
-  LDFLAGS     = -O
+  CXXFLAGS    = -O2 -Wall -Woverloaded-virtual -fPIC
+  LDFLAGS     = -O2
 endif
 endif
 
@@ -180,7 +180,7 @@ GLIBS        += $(ROOTGLIBS) $(SYSLIBS)
 SRC = THaUsrstrutils.C THaCrateMap.C THaCodaData.C THaHelicity.C \
       THaEpicsStack.C THaFastBusWord.C THaCodaFile.C THaSlotData.C \
       THaEvData.C 
-      
+
 HEAD = $(SRC:.C=.h)
 DEPS = $(SRC:.C=.d)
 DECODE_OBJS = $(SRC:.C=.o)
@@ -264,9 +264,9 @@ libevio_linux.a:  evio.o swap_util.o swapped_intcpy.o
 	rm -f $@
 	ar cr $@ evio.o swap_util.o swapped_intcpy.o
 
-libevio_hpux.a:  evio.o swap_util.o swapped_intcpy.o
-	rm -f $@
-	ar cr $@ evio.o swap_util.o swapped_intcpy.o
+#libevio_hpux.a:  evio.o swap_util.o swapped_intcpy.o
+#	rm -f $@
+#	ar cr $@ evio.o swap_util.o swapped_intcpy.o
 
 evio.o: evio.C
 	$(CXX) -c  $<
@@ -279,7 +279,7 @@ swapped_intcpy.o: swapped_intcpy.c
 
 # Dictionary
 
-THaDecDict.C: haDecode_LinkDef.h
+THaDecDict.C: $(HEAD) haDecode_LinkDef.h
 	@echo "Generating Decoder Dictionary..."
 	$(ROOTSYS)/bin/rootcint -f THaDecDict.C -c $(CXXFLAGS) $(INCLUDES) $(HEAD) haDecode_LinkDef.h
 
@@ -298,7 +298,7 @@ version:
 	cp README* ./$(VERS)
 	cp ChangeLog ./$(VERS)
 	tar cvf $(VERS).tar ./$(VERS)
-         
+
 clean:  clean_evio
 	rm -f *.o *.a core *~ THaDecDict* *.out *.tar $(PROGS)
 
