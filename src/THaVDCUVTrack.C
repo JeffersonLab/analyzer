@@ -2,12 +2,12 @@
 //                                                                           //
 // THaVDCUVTrack                                                             //
 //                                                                           //
-// Class for UV Tracks 
+// Class for UV Tracks                                                       //
+//                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "THaVDC.h"
 #include "THaVDCUVTrack.h"
-#include "THaVDCCluster.h"
 #include "THaVDCUVPlane.h"
 #include "THaTrack.h"
 
@@ -15,26 +15,6 @@
 ClassImp(THaVDCUVTrack)
 
 
-//______________________________________________________________________________
-THaVDCUVTrack::THaVDCUVTrack()
-{
-  //Normal constructor
-  fUClust = NULL;
-  fVClust = NULL;
-  fUVPlane = NULL;
-  fTrack   = NULL;
-  fPartner = NULL;
-  fX = fY = fTheta = fPhi = 0.0;
-}
-
-
-
-//______________________________________________________________________________
-THaVDCUVTrack::~THaVDCUVTrack()
-{
-  // Destructor. Remove variables from global list.
-
-}
 //______________________________________________________________________________
 THaVDCUVTrack * THaVDCUVTrack::FindPartner(TClonesArray& trackList, Int_t length)
 {

@@ -18,6 +18,35 @@ class THaVDCUVTrack : public TObject {
 
 private:
 
+public:
+  THaVDCUVTrack() :
+    fUClust(NULL), fVClust(NULL), fUVPlane(NULL), fTrack(NULL), fPartner(NULL),
+    fX(0.0), fY(0.0), fTheta(0.0), fPhi(0.0) {}
+
+  virtual ~THaVDCUVTrack() {}
+
+  virtual THaVDCUVTrack * FindPartner (TClonesArray& trackList, Int_t length);
+
+  // Get and Set Functions  
+  THaVDCCluster* GetUCluster() const { return fUClust; }
+  THaVDCCluster* GetVCluster() const { return fVClust; }
+  THaVDCUVPlane* GetUVPlane()  const { return fUVPlane; }
+  THaVDCUVTrack* GetPartner()  const { return fPartner; }
+  Double_t       GetX()        const { return fX; }
+  Double_t       GetY()        const { return fY; }
+  Double_t       GetTheta()    const { return fTheta; }
+  Double_t       GetPhi()      const { return fPhi; } 
+
+  void SetUCluster(THaVDCCluster * clust) {fUClust = clust;}
+  void SetVCluster(THaVDCCluster * clust) {fVClust = clust;}
+  void SetUVPlane(THaVDCUVPlane * plane)  {fUVPlane = plane;}
+  void SetTrack(THaTrack * track);
+  void SetPartner(THaVDCUVTrack * partner){fPartner = partner;}
+  void SetX(Double_t x) { fX = x;}
+  void SetY(Double_t y) { fY = y;}
+  void SetTheta(Double_t theta) { fTheta = theta;}
+  void SetPhi(Double_t phi)     { fPhi = phi;} 
+
 protected:
   THaVDCCluster * fUClust;       // Cluster in the U plane
   THaVDCCluster * fVClust;       // Cluster in the V plane
@@ -35,35 +64,6 @@ protected:
   THaVDCUVTrack& operator=( const THaVDCUVTrack& ) { return *this; }
 
   
-public:
-  //Constructors
-  THaVDCUVTrack( );
-
-  //Destructor
-  virtual ~THaVDCUVTrack();
-
-  virtual THaVDCUVTrack * FindPartner (TClonesArray& trackList, Int_t length);
-
-  // Get and Set Functions  
-  THaVDCCluster * GetUCluster() {return fUClust;}
-  THaVDCCluster * GetVCluster() {return fVClust;}
-  THaVDCUVPlane * GetUVPlane()  {return fUVPlane;}
-  THaVDCUVTrack * GetPartner()  {return fPartner;}
-  Double_t GetX() {return fX;}
-  Double_t GetY() {return fY;}
-  Double_t GetTheta() {return fTheta;}
-  Double_t GetPhi()   {return fPhi;} 
-
-  void SetUCluster(THaVDCCluster * clust) {fUClust = clust;}
-  void SetVCluster(THaVDCCluster * clust) {fVClust = clust;}
-  void SetUVPlane(THaVDCUVPlane * plane)  {fUVPlane = plane;}
-  void SetTrack(THaTrack * track);
-  void SetPartner(THaVDCUVTrack * partner){fPartner = partner;}
-  void SetX(Double_t x) { fX = x;}
-  void SetY(Double_t y) { fY = y;}
-  void SetTheta(Double_t theta) { fTheta = theta;}
-  void SetPhi(Double_t phi)     { fPhi = phi;} 
-
   ClassDef(THaVDCUVTrack,0)             // VDCUVTrack class
 };
 
