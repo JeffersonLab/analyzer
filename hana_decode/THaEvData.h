@@ -77,6 +77,8 @@ public:
      void SetRunTime( UInt_t tloc );
      void EnableHelicity( Bool_t enable=kTRUE );
      Bool_t HelicityEnabled() const;
+     void EnableScalers( Bool_t enable=kTRUE );
+     Bool_t ScalersEnabled() const;
 
      UInt_t GetInstance() const { return fInstance; }
      static UInt_t GetInstances() { return fgInstances.CountBits(); }
@@ -89,7 +91,9 @@ public:
 
 protected:
   // Control bits in TObject::fBits used by decoders
-     enum { kHelicityEnabled = BIT(14) };
+     enum { kHelicityEnabled = BIT(14),
+	    kScalersEnabled  = BIT(15)
+     };
 
 private:
      static const int MAXROC = 20;  
