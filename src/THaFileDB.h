@@ -111,7 +111,7 @@ class THaDBFile : public THaDB {
 
   friend std::ostream& operator<<(std::ostream&, THaDBFile&);
 
-  void PrintDB() { cout << *this << endl; }
+  void PrintDB();
   
  protected:
   Int_t LoadDetMap(const TDatime& date);
@@ -122,7 +122,7 @@ class THaDBFile : public THaDB {
   std::string fDescription;     // tmp string to hold the description of current system
 
  private:
-  bool find_constant(istream& from, int linebreak=0);
+  bool find_constant(std::istream& from, int linebreak=0);
   bool FindEntry( std::string& system, std::string& attr, std::istream& from,
 		  TDatime& date);
 
@@ -134,29 +134,29 @@ class THaDBFile : public THaDB {
 		     T& value, TDatime date);
   template<class T>
     Int_t ReadArray( const char* systemC, const char* attrC,
-		     vector<T>& array, TDatime date);
+		     std::vector<T>& array, TDatime date);
   template<class T>
     Int_t ReadArray( const char* systemC, const char* attrC,
 		     T* array, Int_t size, TDatime date );
   template<class T>
     Int_t ReadMatrix( const char* systemC, const char* attrC, 
-		      vector<vector<T> >& rows, TDatime date );
+		      std::vector<std::vector<T> >& rows, TDatime date );
   template<class T>
     Int_t WriteValue( const char* systemC, const char* attrC,
 		      const T& value, TDatime date);
   template<class T>
     Int_t WriteArray( const char* system, const char* attr,
-		      const vector<T>& v, TDatime date);
+		      const std::vector<T>& v, TDatime date);
   template<class T>
     Int_t WriteArray( const char* system, const char* attr,
 		      const T* array, Int_t size, 
 		      TDatime date);
   template <class T>
     Int_t WriteMatrix( const char* system, const char* attr,
-		       const vector<vector<T> >& matrix,
+		       const std::vector<std::vector<T> >& matrix,
 		       TDatime date );
 
-  string db_contents; // everything in this database -- buffer for reading/writing
+  std::string db_contents; // everything in this database -- buffer for reading/writing
   
 
   int modified;

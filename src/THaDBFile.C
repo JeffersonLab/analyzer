@@ -16,7 +16,7 @@
 #include <sstream>
 #define ISSTREAM istringstream
 #define OSSTREAM ostringstream
-#define ASSIGN_SSTREAM(a,b) a=b
+#define ASSIGN_SSTREAM(a,b) a=b.str()
 #else
 #include <strstream>
 #define ISSTREAM istrstream
@@ -41,11 +41,11 @@ typedef string::size_type ssiz_t;
 namespace {
   class DbString {
   public:
-    string fString;
-    DbString(const string& str="") : fString(str) { }
+    std::string fString;
+    DbString(const std::string& str="") : fString(str) { }
   };
 
-  ostream& operator<<(ostream& to, const DbString& str) {
+  std::ostream& operator<<(std::ostream& to, const DbString& str) {
     // for a string, break it into lines, writing each line out
     // with a single 'tab' character in front.
     // 
@@ -64,19 +64,19 @@ namespace {
     return to;
   }
   
-  istream& operator>>(istream& from, DbString& str) {
+  std::istream& operator>>(std::istream& from, DbString& str) {
     // for a string, read in each line belonging, and remove the initial
     // 'tab' character
     str.fString.erase();
     
     int ci;
-    string line;
+    std::string line;
     int cnt=0;
     // strings must begin with a '\t'
     while ( (ci=from.peek(),ci=='\t') && getline(from,line).good() ) {
       if (cnt>0 && line[0]!='\t') 
 	break;
-      str.fString.append(line,1);
+      str.fString += line[0];
     }
     return from;
   }
@@ -133,6 +133,13 @@ int THaDBFile::FlushDB()
   modified = 0;
   
   return to.good();
+}
+
+//_____________________________________________________________________________
+void THaDBFile::PrintDB()
+{
+  // Print database contents
+  cout << *this << endl;
 }
 
 //_____________________________________________________________________________
@@ -363,7 +370,7 @@ Int_t THaDBFile::ReadMatrix( const char* systemC, const char* attrC,
   T tmp;
   
   // Clear out the matrix vectors, first
-  vector<vector<T> >::size_type vi;
+  typename vector<vector<T> >::size_type vi;
   // Make certain we are starting with a fresh matrix
   for (vi = 0; vi<rows.size(); vi++) {
     rows[vi].clear();
@@ -461,7 +468,7 @@ Int_t THaDBFile::WriteValue( const char* system, const char* attr,
   int o_precision = to.precision();
   
   to.precision(6);
-  to.setf(0,ios::floatfield);
+  to.unsetf(ios::floatfield);
   
   to << value;
   to << endl;
@@ -483,7 +490,7 @@ Int_t THaDBFile::WriteValue( const char* system, const char* attr,
 }
 
 
-//    WRITING AN VECTOR TO THE FILE
+//    WRITING A VECTOR TO THE FILE
 //_____________________________________________________________________________
 Int_t THaDBFile::PutArray( const char* system, const char* attr,
 			   const vector<Int_t>& array, const TDatime& date )
@@ -544,9 +551,9 @@ Int_t THaDBFile::WriteArray( const char* system, const char* attr,
   int o_precision = to.precision();
   
   to.precision(6);
-  to.setf(0,ios::floatfield);
+  to.unsetf(ios::floatfield);
   
-  vector<T>::size_type i;
+  typename vector<T>::size_type i;
   for (i = 0; i < v.size(); i++) {
     if ( to.tellp() - oldpos > 75 ) {
       oldpos = to.tellp();
@@ -642,7 +649,7 @@ Int_t THaDBFile::WriteArray( const char* system, const char* attr,
   int o_precision = to.precision();
   
   to.precision(6);
-  to.setf(0,ios::floatfield);
+  to.unsetf(ios::floatfield);
   
   Int_t i;
   for (i = 0; i < size; i++) {
@@ -735,12 +742,12 @@ Int_t THaDBFile::WriteMatrix( const char* system, const char* attr,
   int o_precision = to.precision();
   
   to.precision(6);
-  to.setf(0,ios::floatfield);
+  to.unsetf(ios::floatfield);
 
-  vector<vector<T> >::size_type i;
+  typename vector<vector<T> >::size_type i;
   
   for (i = 0; i < matrix.size(); i++) {
-    vector<T>::size_type j;
+    typename vector<T>::size_type j;
     const vector<T>& v=matrix[i];
 
     to << '\t';
@@ -835,9 +842,9 @@ bool THaDBFile::IsDate( istream& from, streampos& pos, TDatime& date ) {
   // if the next line is a date entry, save that information
   // (position before the date and the date itself)
   int ci;
-  
+
   if ( (ci=from.peek()) =='-' ) {
-    pos = from.tellg()+1;
+    pos = from.tellg()+(streampos)1;
     // this should be a date
     string line;
     getline(from,line);

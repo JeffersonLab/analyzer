@@ -122,7 +122,7 @@ protected:
 		 const std::vector<double> &a);
   Double_t CalcTargetVar(const std::vector<THaMatrixElement> &matrix, 
 			 const double powers[][4]);
-  Double_t CalcTarget2FPLen(const vector<THaMatrixElement>& matrix,
+  Double_t CalcTarget2FPLen(const std::vector<THaMatrixElement>& matrix,
 			    const Double_t powers[][4]);
   Int_t ReadDatabase( const TDatime& date );
 

@@ -227,7 +227,8 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   }
   fscanf(file, "%*c");
 
-  map<string,int> power;
+  typedef vector<THaString>::size_type vsiz_t;
+  map<string,vsiz_t> power;
   power["t"] = 3;  // transport to focal-plane tensors
   power["y"] = 3;
   power["p"] = 3;
@@ -252,11 +253,11 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   // Read in line-by-line, so as to be able to handle tensors of
   // different orders.
   while( fgets(buff, LEN, file) && sscanf(buff,"%s",w)==1 ) {
-    int pos, p_cnt;
+    vsiz_t pos, p_cnt;
     THaString line(buff);
     vector<THaString> line_spl = line.Split();
     
-    int npow = power[w];
+    vsiz_t npow = power[w];
     ME.pw.resize(npow);
     ME.iszero = true;  ME.order = 0;
 
@@ -969,9 +970,10 @@ void THaVDC::FindBadTracks(TClonesArray& tracks)
 void THaVDC::Print(const Option_t* opt) const {
   // Print out the optics matrices, to verify they make sense
   printf("Matrix FP (t000, y000, p000)\n");
-  for (int i=0; i<fFPMatrixElems.size(); i++) {
+  typedef vector<THaMatrixElement>::size_type vsiz_t;
+  for (vsiz_t i=0; i<fFPMatrixElems.size(); i++) {
     const THaMatrixElement& m = fFPMatrixElems[i];
-    for (int j=0; j<m.pw.size(); j++) {
+    for (vsiz_t j=0; j<m.pw.size(); j++) {
       printf("  %2d",m.pw[j]);
     }
     for (int j=0; j<m.order; j++) {
@@ -981,9 +983,9 @@ void THaVDC::Print(const Option_t* opt) const {
   }
 
   printf("Transport Matrix:  D-terms\n");
-  for (int i=0; i<fDMatrixElems.size(); i++) {
+  for (vsiz_t i=0; i<fDMatrixElems.size(); i++) {
     const THaMatrixElement& m = fDMatrixElems[i];
-    for (int j=0; j<m.pw.size(); j++) {
+    for (vsiz_t j=0; j<m.pw.size(); j++) {
       printf("  %2d",m.pw[j]);
     }
     for (int j=0; j<m.order; j++) {
@@ -993,9 +995,9 @@ void THaVDC::Print(const Option_t* opt) const {
   }
 
   printf("Transport Matrix:  T-terms\n");
-  for (int i=0; i<fTMatrixElems.size(); i++) {
+  for (vsiz_t i=0; i<fTMatrixElems.size(); i++) {
     const THaMatrixElement& m = fTMatrixElems[i];
-    for (int j=0; j<m.pw.size(); j++) {
+    for (vsiz_t j=0; j<m.pw.size(); j++) {
       printf("  %2d",m.pw[j]);
     }
     for (int j=0; j<m.order; j++) {
@@ -1005,9 +1007,9 @@ void THaVDC::Print(const Option_t* opt) const {
   }
 
   printf("Transport Matrix:  Y-terms\n");
-  for (int i=0; i<fYMatrixElems.size(); i++) {
+  for (vsiz_t i=0; i<fYMatrixElems.size(); i++) {
     const THaMatrixElement& m = fYMatrixElems[i];
-    for (int j=0; j<m.pw.size(); j++) {
+    for (vsiz_t j=0; j<m.pw.size(); j++) {
       printf("  %2d",m.pw[j]);
     }
     for (int j=0; j<m.order; j++) {
@@ -1017,9 +1019,9 @@ void THaVDC::Print(const Option_t* opt) const {
   }
 
   printf("Transport Matrix:  P-terms\n");
-  for (int i=0; i<fPMatrixElems.size(); i++) {
+  for (vsiz_t i=0; i<fPMatrixElems.size(); i++) {
     const THaMatrixElement& m = fPMatrixElems[i];
-    for (int j=0; j<m.pw.size(); j++) {
+    for (vsiz_t j=0; j<m.pw.size(); j++) {
       printf("  %2d",m.pw[j]);
     }
     for (int j=0; j<m.order; j++) {
@@ -1029,9 +1031,9 @@ void THaVDC::Print(const Option_t* opt) const {
   }
 
   printf("Matrix L\n");
-  for (int i=0; i<fLMatrixElems.size(); i++) {
+  for (vsiz_t i=0; i<fLMatrixElems.size(); i++) {
     const THaMatrixElement& m = fLMatrixElems[i];
-    for (int j=0; j<m.pw.size(); j++) {
+    for (vsiz_t j=0; j<m.pw.size(); j++) {
       printf("  %2d",m.pw[j]);
     }
     for (int j=0; j<m.order; j++) {
