@@ -1,8 +1,0 @@
-g.evlen       evlen  "Event lengths" 256 0 1024
-L.s1.nlthit   s1nhit "Number of hits on L-S1" 25 0 25
-L.s2.nlthit   s2nhit "Nhits on L_S2"          25 0 25
-L.vdc.x       vdcx   "VDC x position"         256 -100 100
-L.vdc.y       vdcy   "VDC y position"         256 -20 20
-L.vdc.u1.time u1time "VDC U1 drift time"    250 0 2500
-L.vdc.u1.time[0] u1time0 "VDC U1 drift time el 0"    250 0 2500
-
