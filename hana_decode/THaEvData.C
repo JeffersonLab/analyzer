@@ -59,7 +59,7 @@ TBits THaEvData::fgInstances;
 THaEvData::THaEvData() :
   helicity(0), first_load(true), first_scaler(true), first_decode(true),
   numscaler_crate(0), buffer(0), run_num(0), run_type(0), run_time(0), 
-  dhel(0.0), fNSlotUsed(0), fNSlotClear(0), fMap(0)
+  dhel(0.0), dtimestamp(0.0), fNSlotUsed(0), fNSlotClear(0), fMap(0)
 {
   fInstance = fgInstances.FirstNullBit();
   fgInstances.SetBitNumber(fInstance);
