@@ -49,9 +49,9 @@ ClassImp(THaEvData)
 const int THaEvData::HED_OK  =  1;
 const int THaEvData::HED_ERR = -1;
 
-static const int  VERBOSE = 1;
-static const int  DEBUG   = 0;
-static const bool BENCH   = false;
+static const int VERBOSE = 1;
+static const int DEBUG   = 0;
+static const int BENCH   = 0;
 
 //_____________________________________________________________________________
 
@@ -317,68 +317,78 @@ int THaEvData::AddEpicsTag(const TString& tag) {
   return epics->addEpicsTag(tag);
 }
 
+//FIXME: This should be part of the EPICS object
 int THaEvData::epics_decode(const int* evbuffer) {
      if( fDoBench ) fBench->Start("epics_decode");
-     static const int DEBUGL = 0, MAX  = 5000, MAXEPV = 40;
-     const char *pos1, *pos2;
+     static const size_t DEBUGL = 0, MAX  = 5000, MAXEPV = 40;
+     const char *line, *date;
      const char* cbuff = (const char*)evbuffer;
-     char wtag[MAXEPV+1],wval[MAXEPV+1],date[MAXEPV+1];
+     char wtag[MAXEPV+1],wval[MAXEPV+1];
+     // Format string for line parsing
+     static char fmt[16];
+     static bool first = true;
+     if( first ) { sprintf(fmt,"%%%ds %%n",MAXEPV); first = false; }
 
-     int len = sizeof(int)*(evbuffer[0]+1);  
-     int nlen = (len < MAX) ? len : MAX;   
+     size_t len = sizeof(int)*(evbuffer[0]+1);  
+     size_t nlen = TMath::Min(len,MAX);
      if(DEBUGL) {
        cout << "epics_decode  --- length " <<nlen<<endl;
-       hexdump(cbuff,nlen);
+       if(DEBUGL==2) hexdump(cbuff,nlen);
      }
+     // Nothing to do?
+     if( nlen<16 ) {
+       if( fDoBench ) fBench->Stop("epics_decode");
+       return HED_OK;
+     }
+     // Set up buffer for parsing
+     size_t dlen = nlen-16;
+     char* buf = new char[ dlen+1 ];
+     strncpy( buf, cbuff+16, dlen );
+     buf[dlen] = 0;
+     
+     // The following is Hall A-specific
+
      // Extract date time stamp
-     pos1 = cbuff+16;
-     pos2 = pos1; while( *pos2 != '\n' && *pos2 != 0 ) pos2++;
-     int m = pos2-pos1;
-     if( m>0 ) {
-       m = TMath::Min(m,MAXEPV);
-       strncpy(date,pos1,m);
-     } date[m] = 0;
+     date = strtok(buf,"\n");
+     if(DEBUGL) cout << "Timestamp: " << date <<endl;
      // Extract EPICS tags
-     bool found = false, doing_tag = true;
-     pos1 = pos2+1;
-     while( pos1 < cbuff+nlen ) {
-       while( isspace(*pos1) && ++pos1 < cbuff+nlen );
-       if( pos1 >= cbuff+nlen ) break;
-       if( doing_tag )
-	 while( !isspace(*++pos2) && pos2 < cbuff+nlen );
-       else
-	 while( *++pos2 != '\n' && pos2 < cbuff+nlen );
-       if( pos2 >= cbuff+nlen ) break;
-       m = pos2-pos1;
-       if( doing_tag ) {
-	 if ( m>0 ) strncpy(wtag,pos1,TMath::Min(m,MAXEPV));
-	 wtag[m] = 0; 
-	 if( m>MAXEPV )
-	   cout << "THaEvData:epics_decode: WARNING: truncation of epics tag "
-		<< wtag << endl;
-	 if(DEBUGL) cout << "checking tag " << wtag << " ... ";
-	 found = (epics->findVar(wtag) >= 0);
-	 if(DEBUGL) cout << ((found) ? "found!" : "no") << endl;
-	 doing_tag = false;
-       } else {
-	 if( found ) {
-	   if ( m>0 ) strncpy(wval,pos1,TMath::Min(m,MAXEPV));
-	   wval[m] = 0; 
-	   if( m>MAXEPV ) {
-	     cout << "THaEvData:epics_decode: WARNING: truncation of epics val"
-		  << wval << endl;
-	   } else {
-	     if (DEBUGL) cout << "loading data "<<wtag<<"  val = "<<wval<<endl;
-	     epics->loadData(wtag,wval,recent_event);
-	   }
-	 }
-	 doing_tag = true;
+     int ntok = 0;
+     while( (line = strtok(0,"\n")) ) {
+       wtag[0] = 0; wval[0] = 0;
+       size_t n, m, slen = strlen(line);
+       // Read the tag - does not contain spaces
+       if( sscanf(line,fmt,wtag,&n) < 1 ) continue;
+       // Get the value string _including_ spaces and 
+       // excluding the trailing newline
+       m = slen-n;
+       if( m>0 ) { 
+	 m = TMath::Min(m,MAXEPV); 
+	 strncpy(wval,line+n,m); wval[m] = 0; 
        }
-       pos1 = pos2+1;
+       // Add tag/value pair to the EPICS record
+       int k = epics->loadData(wtag,wval,recent_event);
+       if( k>=0 ) ntok++;
+       
+       if(DEBUGL) {
+	 cout << ((k>=0) ? "OK: " : "    ") << setiosflags(ios::left);
+	 cout << setw(MAXEPV+1) << wtag 
+	      << setw(MAXEPV+1) << wval << endl;
+       }
+       if( VERBOSE ) {
+	 if( strlen(wtag) == MAXEPV ) {
+	   cout << "THaEvData:epics_decode: WARNING: possible truncation "
+		<< "of epics tag " << wtag << endl;
+	 }
+	 if( strlen(wval) == MAXEPV ) {
+	   cout << "THaEvData:epics_decode: WARNING: possible truncation "
+		<< "of epics val " << wval << endl;
+	 }
+       }
      }
-     epics->bumpStack();
-     if(DEBUGL) epics->print();
+     if( ntok ) epics->bumpStack();
+     if( DEBUGL==3 ) epics->print();
      if( fDoBench ) fBench->Stop("epics_decode");
+     delete [] buf;
      return HED_OK;
 };
 
@@ -810,20 +820,20 @@ int THaEvData::init_slotdata(const THaCrateMap* map)
   return HED_OK;
 }
 
-void THaEvData::hexdump(const char* cbuff, int nlen)
+void THaEvData::hexdump(const char* cbuff, size_t nlen)
 {
   // Hexdump buffer 'cbuff' of length 'nlen'
   const int NW = 16; const char* p = cbuff;
   while( p<cbuff+nlen ) {
-    cout << dec << setw(4) << setfill('0') << (int)(p-cbuff) << " ";
+    cout << dec << setw(4) << setfill('0') << (size_t)(p-cbuff) << " ";
     int nelem = TMath::Min(NW,cbuff+nlen-p);
     for(int i=0; i<NW; i++) {
       UInt_t c = (i<nelem) ? *(const unsigned char*)(p+i) : 0;
       cout << " " << hex << setfill('0') << setw(2) << c << dec;
-    } cout << "  ";
+    } cout << setfill(' ') << "  ";
     for(int i=0; i<NW; i++) {
       char c = (i<nelem) ? *(p+i) : 0;
-      if(isalnum(c)||c==' ') cout << c; else cout << ".";
+      if(isgraph(c)||c==' ') cout << c; else cout << ".";
     } cout << endl;
     p += NW;
   }
