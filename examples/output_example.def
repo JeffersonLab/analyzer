@@ -23,8 +23,9 @@
 # TH1F  tgtx  'Target X position'   targetX 100 -2 2 
 # TH2F  t12  'Time stamps on roc1 vs roc2'  D.timeroc1  D.timeroc2
 #       100 0 1000 100 0 1000
-# TH1F  s1trx 'R-arm S1 trx (with cut)' R.s1.trx 100 -1 1 R.s1.trx>0
-# (note, the cut R.s1.trx>0 appears optionally at the end).
+# TH1F  Rv1n 'R-arm VDC nhit (cut)' R.vdc.v1.nhit 100 0 10 R.vdc.v1.nhit>3
+# (note, the cut R.vdc.v1.nhit appears optionally at the end, also
+#  this variable cannot be a variable-sized array)
 #
 #
 # The lines are of the form
@@ -113,8 +114,8 @@ TH1F  rv1t  'R-arm vdc TDC on V1'  R.vdc.v1.rawtime  1000 0 5000
 TH1F  sc4  'Paddle 4 in s1' R.s1.lt[4] 200 0 5000
 TH1F  sc4f 'Paddle 4 in s1 by formula' s1l4 200 0 5000
 
-# Here is a histogram with a cut: R.s1.trx>0
-TH1F  s1trx 'R-arm S1 trx (with cut)' R.s1.trx 100 -1 1 R.s1.trx>0
+# Here is a histogram with a cut: R.vdc.v1.nhit>3
+TH1F  Rv1n 'R-arm VDC nhit (cut)' R.vdc.v1.nhit 100 0 10 R.vdc.v1.nhit>3
 
 TH2F  deltaNu 'Nu with vs. without Ex.Target Corrections' EK_R.nu ekdiff 200 0. .5 100 -0.005 0.005
 
@@ -173,4 +174,54 @@ TH2f  Lsum2 'Test of sum 2' SUM:L.s1.rt SUM:L.s1.rt 100 0 15000 100 0 2000
 TH1F  Lor1  'Test of or 1' L.s1.lt[4] 100 0 2000 OR:L.s1.lt>1000
 TH1F  Lor2  'Test of or 2' L.s1.lt 100 0 2000 OR:L.s1.lt>1000
 TH1F  Land1 'Test of and 1' L.s1.lt 100 0 2000 AND:L.s1.lt<1200
+
+# EPICS data to appear in event tree ("T") and
+# an EPICS tree ("E").  The E tree is only filled
+# on EPICS events.  The E tree also has a timestamp.
+# Access via T->Draw("hac_bcm_average")
+# and E->Draw("hac_bcm_average")
+
+begin epics
+   hac_bcm_average
+   IPM1H04A.XPOS
+   IPM1H04A.YPOS
+   IPM1H04B.XPOS
+   IPM1H04B.YPOS
+end epics
+
+# Scalers to appear in event tree ("T") and
+# scaler trees, one for each bank.  
+# Banks are "right", "left" (and perhaps 3rd arm).
+# Access to data:
+# T->Draw("right_bcm_u1"), right->Draw("bcm_u1")  for R-arm
+# T->Draw("left_bcm_u1"), left->Draw("bcm_u1")  for L-arm
+# "default" and "default_helicity" cause a list
+# of normalization scalers to appear.  Examples:
+# T->Draw("right_trigger_1")  from default list
+# T->Draw("right_P_trigger_1") helicity plus ("P") 
+# T->Draw("right_M_trigger_1") helicity minus ("M") 
+# also right->Draw("trigger_1"), etc. appear.
+# Implictly the values are RATES (Hz) unless one
+# specifies the "counts" flag.
+# "myclk 8 7"  is a rate from slot 8 chan 7 and
+# appears as T->Draw("myclk").
+# "myclkc 8 7 counts" are raw counts, slot 8, chan 7.
+
+begin scalers left
+   default
+   default_helicity
+   myclkc 4 7 counts
+   mypulser 4 3 
+   myclk 4 7
+end scalers
+
+begin scalers right
+  default
+  default_helicity
+  mypulser 7 3 
+  myclk 8 7
+  myclkc 8 7 counts
+end scalers
+
+
 
