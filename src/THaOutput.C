@@ -45,7 +45,7 @@ typedef vector<THaString*>::size_type Vsiz_s;
 
 //_____________________________________________________________________________
 THaOutput::THaOutput() :
-   fNvar(0), fTree(0), fInit(false)
+   fNvar(0), fVar(NULL), fTree(NULL), fInit(false)
 {
   // Constructor
 }
