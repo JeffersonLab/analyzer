@@ -56,11 +56,13 @@ public:
 protected:
   static const char* const kMasterCutName;
 
-  enum EStage      { kRawDecode, kDecode, kCoarseRecon, kReconstruct, kPhysics,
-		     kMaxStage };
-  enum ESkipReason { kEvFileTrunc, kCodaErr, kRawDecodeTest, kDecodeTest, 
-		     kCoarseReconTest, kReconstructTest, kPhysicsTest, 
-		     kMaxSkip };
+  enum { kPreDecode, kRawDecode, kDecode, kCoarseRecon, kReconstruct, kPhysics };
+  enum { kEvFileTrunc, kCodaErr, kPreDecodeTest, kRawDecodeTest, kDecodeTest, 
+	 kCoarseReconTest, kReconstructTest, kPhysicsTest };
+
+  int fMaxStage;
+  int fMaxSkip;
+  
   // Statistics counters and message texts
   struct Skip_t {
     const char* reason;
@@ -71,7 +73,7 @@ protected:
   friend struct Stage_t;
   struct Stage_t {
     const char*   name;
-    ESkipReason   skipkey;
+    int           skipkey;
     TList*        cut_list;
     TList*        hist_list;
     THaCut*       master_cut;
@@ -102,14 +104,16 @@ protected:
   THaRun*        fRun;             //Copy of current run
   THaEvData*     fEvData;          //Instance of decoder used by us
 
+  virtual void   InitStages();
   virtual Int_t  DoInit( THaRun* run );
-  virtual bool   EvalStage( EStage n );
+  virtual bool   EvalStage( int n );
   virtual void   InitCuts();
   virtual Int_t  InitModules( const TList* module_list, TDatime& time, 
 			      Int_t erroff, const char* baseclass = NULL );
   virtual Int_t  ReadOneEvent( THaRun* run, THaEvData* evdata );
   virtual void   PrintSummary( const THaRun* run ) const;
 
+  
   static THaAnalyzer* fgAnalyzer;  //Pointer to instance of this class
 
 private:

@@ -31,6 +31,7 @@
 #include "THaScalerGroup.h"
 #include "THaPhysicsModule.h"
 #include "THaCodaData.h"
+#include "THaPostProcess.h"
 #include "THaBenchmark.h"
 #include "TList.h"
 #include "TTree.h"
@@ -53,6 +54,7 @@ THaAnalyzer* THaAnalyzer::fgAnalyzer = NULL;
 
 //_____________________________________________________________________________
 THaAnalyzer::THaAnalyzer() :
+  fMaxStage(0), fMaxSkip(0),
   fFile(NULL), fOutput(NULL), fOdefFileName("output.def"), fEvent(NULL),
   fStages(NULL), fSkipCnt(NULL), fNev(0), fMarkInterval(1000), fCompress(1), 
   fDoBench(kFALSE), fBench(NULL), fVerbose(2), 
@@ -69,49 +71,61 @@ THaAnalyzer::THaAnalyzer() :
   }
   fgAnalyzer = this;
 
+  InitStages(); // define the cut/accounting stages for this class
+                // over-ride this to add more stages
+
+  fBench = new THaBenchmark;
+}
+
+//_____________________________________________________________________________
+void THaAnalyzer::InitStages()
+{
+  // Perform the initialization/definition of the stages and cuts
+  fMaxStage = kPhysics+1;
   // Initialize descriptions of analysis stages
-  fStages = new Stage_t[ kMaxStage ];
+  fStages = new Stage_t[ fMaxStage ];
   const struct StageDef_t {
-    EStage      key;
-    ESkipReason skipkey;
+    int       key;
+    int       skipkey;
     const char* name;
   } stagedef[] = {
+    { kPreDecode,   kPreDecodeTest,   "PreDecode" },
     { kRawDecode,   kRawDecodeTest,   "RawDecode" },
     { kDecode,      kDecodeTest,      "Decode" },
     { kCoarseRecon, kCoarseReconTest, "CoarseReconstruct" },
     { kReconstruct, kReconstructTest, "Reconstruct" },
     { kPhysics,     kPhysicsTest,     "Physics" },
-    { kMaxStage }
+    { fMaxStage }
   };
   const StageDef_t* idef = stagedef;
-  while( idef->key != kMaxStage ) {
+  while( idef->key != fMaxStage ) {
     fStages[ idef->key ].name    = idef->name;
     fStages[ idef->key ].skipkey = idef->skipkey;
     idef++;
   }
 
   // Initialize event skip statistics counters
-  fSkipCnt = new Skip_t[ kMaxSkip ];
+  fMaxSkip = kPhysicsTest+1;
+  fSkipCnt = new Skip_t[ fMaxSkip ];
   const struct SkipDef_t {
-    ESkipReason key;
+    int         key;
     const char* text;
   } skipdef[] = {
     { kEvFileTrunc,            "truncated event file" },
     { kCodaErr,                "CODA error" },
+    { kPreDecodeTest,          "failed master cut at pre-code stage" },
     { kRawDecodeTest,          "failed master cut after raw decoding" },
     { kDecodeTest,             "failed master cut after Decode" },
     { kCoarseReconTest,        "failed master cut after Coarse Reconstruct" },
     { kReconstructTest,        "failed master cut after Reconstruct" },
     { kPhysicsTest,            "failed master cut after Physics" },
-    { kMaxSkip }
+    { fMaxSkip }
   };
   const SkipDef_t* jdef = skipdef;
-  while( jdef->key != kMaxSkip ) {
+  while( jdef->key != fMaxSkip ) {
     fSkipCnt[ jdef->key ].reason = jdef->text;
     jdef++;
   }
-
-  fBench = new THaBenchmark;
 }
 
 //_____________________________________________________________________________
@@ -133,8 +147,19 @@ void THaAnalyzer::Close()
   // Close output files and delete fOutput, fFile, and fRun objects.
   // Also delete fEvent if it was allocated automatically by us.
   
+  // Clean-up all Post-process objects
+  if ( gHaPostProcess ) {
+    TIter nextp(gHaPostProcess);
+    TObject *obj;
+    while ( (obj=nextp()) ) {
+      (static_cast<THaPostProcess*>(obj))->CleanUp();
+    }
+    delete gHaPostProcess; gHaPostProcess=0;
+  }
+
   if( gHaRun && *gHaRun == *fRun ) 
     gHaRun = NULL;
+
   delete fEvData; fEvData = NULL;
   delete fOutput; fOutput = NULL;
   delete fFile;   fFile   = NULL;
@@ -158,7 +183,7 @@ void THaAnalyzer::Print( Option_t* opt ) const
 }
 
 //_____________________________________________________________________________
-bool THaAnalyzer::EvalStage( EStage n )
+bool THaAnalyzer::EvalStage( int n )
 {
   // Fill histogram block for analysis stage 'n', then evaluate cut block.
   // Return 'false' if master cut is not true, 'true' otherwise.
@@ -196,7 +221,7 @@ void THaAnalyzer::InitCuts()
   // - Find pointers to the THaNamedList lists that hold the cut blocks.
   // - find pointer to each block's master cut
 
-  for( int i=0; i<kMaxStage; i++ ) {
+  for( int i=0; i<fMaxStage; i++ ) {
     Stage_t* theStage = fStages+i;
     // If block not found, this will return NULL and work just fine later.
     theStage->cut_list = gHaCuts->FindBlock( theStage->name );
@@ -419,7 +444,7 @@ Int_t THaAnalyzer::DoInit( THaRun* run )
 
   // Clear counters unless we are continuing an analysis
   if( !fAnalysisStarted ) {
-    for( int i=0; i<kMaxSkip; i++ )
+    for( int i=0; i<fMaxSkip; i++ )
       fSkipCnt[i].count = 0;
   }
 
@@ -472,6 +497,15 @@ Int_t THaAnalyzer::DoInit( THaRun* run )
       if( outputTree )
 	outputTree->Branch( "Event_Branch", fEvent->IsA()->GetName(), 
 			    &fEvent, 16000, 99 );
+    }
+
+    // Post-process has to be initialized after all cuts are known
+    if ( gHaPostProcess ) {
+      TIter nextp(gHaPostProcess);
+      TObject *obj;
+      while ( !retval && (obj=nextp()) ) {
+	retval = (static_cast<THaPostProcess*>(obj))->Init(run_time);
+      }
     }
   }
 
@@ -614,6 +648,9 @@ Int_t THaAnalyzer::Process( THaRun* run )
     if( fUpdateRun )
       run->Update( fEvData );
 
+    //--- Evaluate test block "PreDecode" (THaEvData variables available)
+    if( !EvalStage(kPreDecode) ) continue;
+
     //=== Physics triggers ===
     if( fEvData->IsPhysicsTrigger()) {
       nev_physics++;
@@ -632,7 +669,7 @@ Int_t THaAnalyzer::Process( THaRun* run )
       // Update counters in the run object
       run->IncrNumAnalyzed();
 
-      //--- Evaluate test block 0 "RawDecode"
+      //--- Evaluate test block "RawDecode"
 
       if( !EvalStage(kRawDecode) ) continue;
 
@@ -709,6 +746,14 @@ Int_t THaAnalyzer::Process( THaRun* run )
       if( fOutput ) fOutput->Process();
       if( fDoBench ) fBench->Stop("Output");
 
+      //--- Post-process for physics events
+      if (gHaPostProcess) {
+	TIter nextp(gHaPostProcess);
+	TObject *obj;
+	while ( (obj=nextp()) ) {
+	  (static_cast<THaPostProcess*>(obj))->Process(run);
+	}
+      }
     }
 
     //=== EPICS data ===
@@ -734,6 +779,16 @@ Int_t THaAnalyzer::Process( THaRun* run )
       if( fDoBench ) fBench->Begin("Scaler");
 
     } // End trigger type test
+
+    // for all non-physics trigger-types, force processing by PostProcess
+    if ( ! fEvData->IsPhysicsTrigger() && gHaPostProcess ) {
+      TIter nextp(gHaPostProcess);
+      TObject *obj;
+      while ( (obj=nextp()) ) {
+	(static_cast<THaPostProcess*>(obj))->Process(run,1);
+      }
+    }
+
   }  // End of event loop
   
   // Save final run parameters locally
@@ -759,7 +814,7 @@ Int_t THaAnalyzer::Process( THaRun* run )
 	 << nev_analyzed << " data events, " 
 	 << nev_physics << " physics events.\n";
 
-    for (int i = 0; i < kMaxSkip; i++) {
+    for (int i = 0; i < fMaxSkip; i++) {
       if (fSkipCnt[i].count != 0) 
 	cout << "Skipped " << fSkipCnt[i].count
 	     << " events due to " << fSkipCnt[i].reason << endl;
