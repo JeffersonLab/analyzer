@@ -15,6 +15,7 @@ class THaHelicity;
 #include "THaSlotData.h"
 #include "THaCrateMap.h"
 #include "THaUsrstrutils.h"
+#include "THaCodaData.h"
 
 class THaEvData {
 
@@ -41,8 +42,12 @@ public:
      int GetRawData(int crate, int slot, int hit) const;            
 // To retrieve data by crate, slot, channel, and hit# (hit=0,1,2,..)
      int GetRawData(int crate, int slot, int chan, int hit) const;
+// To get element #i of the raw evbuffer
+     int GetRawData(int i) const;
+     int GetRawData(int crate, int i) const;   // Get raw element i within crate
      int GetNumHits(int crate, int slot, int chan) const;
      int GetData(int crate, int slot, int chan, int hit) const;
+     Bool_t InCrate(int crate, int i) const;
      int GetNumChan(int crate, int slot) const;    // Num unique channels hit
      int GetNextChan(int crate, int slot, int index) const; // List unique chan
      TString DevType(int crate, int slot) const;
@@ -95,6 +100,7 @@ private:
      static const int DETMAP_FILE      = 135;
      static const int TRIGGER_FILE     = 136;
      static const int SCALER_EVTYPE    = 140;
+     Int_t *buffer;
      Int_t event_type,event_length,event_num,run_num,evscaler;
      Int_t run_type;     // CODA run type from prestart event
      UInt_t run_time;     // CODA run time (Unix time) from prestart event
@@ -165,6 +171,28 @@ inline int THaEvData::GetRawData(int crate, int slot, int chan, int hit) const {
   if( GoodIndex(crate,slot))
     return crateslot[idx(crate,slot)].getRawData(chan,hit);
   return 0;
+};
+
+inline int THaEvData::GetRawData(int i) const {
+// Raw words in evbuffer at location #i.
+  if (i >= 0 || i < GetEvLength()) return buffer[i];
+  return 0;
+};
+
+inline int THaEvData::GetRawData(int crate, int i) const {
+// Raw words in evbuffer within crate #crate.
+  if (crate < 0 || crate > MAXROC) return 0;
+  int index = n1roc[crate] + i;
+  if (index >= 0 || index < GetEvLength()) return buffer[index];
+  return 0;
+};
+
+inline Bool_t THaEvData::InCrate(int crate, int i) const {
+// To tell if the index "i" points to a word inside crate #crate.
+  if (crate == 0) return kTRUE;     // Used for crawling through whole event.
+  if (crate < 0 || crate > MAXROC) return kFALSE;
+  if (n1roc[crate] == 0 || lenroc[crate] == 0) return kFALSE;
+  return (i >= n1roc[crate] && i < n1roc[crate]+lenroc[crate]);
 };
 
 inline int THaEvData::GetNumChan(int crate, int slot) const {

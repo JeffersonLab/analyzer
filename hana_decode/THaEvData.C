@@ -45,6 +45,7 @@ THaEvData::THaEvData() :
   first_load(true), first_scaler(true), first_decode(true),
   numscaler_crate(0), run_num(0), run_type(0), run_time(0)
 {
+  buffer = new Int_t[MAXEVLEN];
   epics = new THaEpicsStack;
   epics->setupDefaultList();
   for (int i=0; i<MAX_PSFACT; i++) psfact[i] = 0;
@@ -125,6 +126,7 @@ int THaEvData::GetPrescaleFactor(int trigger_type) const {
 
 int THaEvData::gendecode(const int* evbuffer, THaCrateMap& map) {
 // Main engine for decoding, called by public LoadEvent() methods
+     buffer = evbuffer;
      if(DEBUG) dump(evbuffer);    
      if (first_decode) {
        if (init_slotdata(map) == HED_ERR) return HED_ERR;
@@ -138,6 +140,11 @@ int THaEvData::gendecode(const int* evbuffer, THaCrateMap& map) {
  	  if (!map.slotClear(roc,slot)) continue;
           crateslot[idx(roc,slot)].clearEvent();  // clear hit counters
        }
+     }
+     for (int roc = 0; roc < MAXROC; roc++) {
+          n1roc[roc] = 0;
+          lenroc[roc] = 0;
+          irn[roc]=0;
      }
      evscaler = 0;
      event_length = evbuffer[0]+1;  
@@ -208,12 +215,7 @@ void THaEvData::dump(const int* evbuffer) {
 int THaEvData::physics_decode(const int* evbuffer, THaCrateMap& map) {
      int status = HED_OK;
      int i,roc,ipt,n1,numroc,lentot;
-     for (roc=0; roc<MAXROC; roc++) {
-          n1roc[roc] = 0;
-          lenroc[roc] = 0;
-          irn[roc]=0;
-     }
-     numroc=0;
+     numroc = 0;
 // This decoding is for physics triggers only
      if (evbuffer[3] > MAX_PHYS_EVTYPE) return HED_ERR; 
 // Split up the ROCs
@@ -247,9 +249,9 @@ int THaEvData::physics_decode(const int* evbuffer, THaCrateMap& map) {
        } 
        numroc++;
        if(DEBUG) {
-         cout << "Roc ptr " <<dec<<numroc<<"  "<<i+1<<"  ";
-         cout <<irn[i]<<"  "<<n1roc[irn[i]]<<"  "<<lenroc[irn[i]];
-         cout <<"  "<<lentot<<"  "<<event_length<<endl;
+           cout << "Roc ptr " <<dec<<numroc<<"  "<<i+1<<"  ";
+           cout <<irn[i]<<"  "<<n1roc[irn[i]]<<"  "<<lenroc[irn[i]];
+           cout <<"  "<<lentot<<"  "<<event_length<<endl;
        }
        if (lentot >= event_length) break;
      }
