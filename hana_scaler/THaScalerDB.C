@@ -313,6 +313,11 @@ load1:
 }
 
 std::string THaScalerDB::GetShortName(Int_t crate, Int_t slot, Int_t chan) {
+  Int_t slot0 = GetSlot(crate, "TS-accept", 0);
+  Int_t slotm = GetSlot(crate, "TS-accept", -1);
+  Int_t slotp = GetSlot(crate, "TS-accept", 1);
+  if ( slot == slotm && IsHelicityTied(crate, -1) ) slot = slot0;
+  if ( slot == slotp && IsHelicityTied(crate,  1) ) slot = slot0;
   std::pair<std::pair<Int_t, Int_t>, Int_t> cs = make_pair(make_pair(crate, slot), chan);
   if (channame.find(cs) == channame.end()) return "none";
   return channame[cs];
