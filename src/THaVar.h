@@ -124,6 +124,7 @@ public:
   Byte_t          GetNdim()      const            
     { return ( fCount != NULL || fOffset != -1 ) ? 1 : fArrayData.GetNdim(); } 
   const Int_t*    GetDim()       const;
+  Int_t           GetSize()      const { return GetLen(); }
   VarType         GetType()      const { return fType; }
   size_t          GetTypeSize()  const { return GetTypeSize( fType ); }
   static size_t   GetTypeSize( VarType type );
@@ -238,6 +239,10 @@ protected:
 inline
 Double_t THaVar::GetValueAsDouble( Int_t i ) const
 {
+  // Get value of global variable converted to Double_t.
+  // If index i is given, return array element i.
+  // The index is NOT checked to be within the allowed range.
+
   //  if( ( fValueP == NULL ) || 
   //    ( fType>=kDoubleP  && *fDoubleDD == NULL ) ||
   //    ( fType>=kDouble2P && (*fDouble3D)[i] == NULL ))
