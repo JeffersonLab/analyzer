@@ -10,6 +10,7 @@
 #include "TNamed.h"
 #include <vector>
 #include <string>
+#include <cstdio>
 
 class TDatime;
 struct VarDef;
@@ -42,6 +43,11 @@ public:
 			    const char* here = "OpenFile()",
 			    const char* filemode = "r", 
 			    const int debug_flag = 1);
+
+  // Support functions for reading run database files
+  static  Int_t   LoadRunDBvalue( FILE* file, TDatime& date, const char* tag,
+				  Double_t& value );
+
   // Angle transformation utility functions
   static  void    GeoToSph( Double_t  th_geo, Double_t  ph_geo,
 			    Double_t& th_sph, Double_t& ph_sph );
@@ -78,16 +84,23 @@ protected:
      { return OpenFile(GetDBFileName(), date, Here("OpenFile()")); }
   virtual Int_t        ReadDatabase( FILE* file, const TDatime& date )
      { return kOK; }
+  virtual Int_t        ReadRunDatabase( FILE* file, const TDatime& date )
+     { return kOK; }
   virtual Int_t        RemoveVariables()
      { return DefineVariables( kDelete ); }
 
+  // Support function for reading database files
   static vector<string> GetDBFileList( const char* name, const TDatime& date,
 				       const char* here = "GetDBFileList()" );
-
   //Only derived classes may construct me
   THaAnalysisObject() : fPrefix(NULL), fStatus(kNotinit), 
     fDebug(0), fIsInit(false), fIsSetup(false) {}
   THaAnalysisObject( const char* name, const char* description );
+
+private:
+  // Support fucntions for reading run database
+  static Int_t IsRunDBdate( const string& line, TDatime& date );
+  static Int_t IsRunDBtag ( const string& line, const char* tag, Double_t& value );
 
   ClassDef(THaAnalysisObject,0)   //ABC for a data analysis object
 };

@@ -20,6 +20,7 @@
 #include "TDatime.h"
 #include "TROOT.h"
 #include "TMath.h"
+#include "TError.h"
 
 #include <cstring>
 #include <cctype>
@@ -27,10 +28,9 @@
 #include <errno.h>
 #include <unistd.h>
 #include <algorithm>
-#include <string>
-#include <vector>
 #include <iostream>
 #include <cmath>
+#include <cstdlib>
 
 ClassImp(THaAnalysisObject)
 
@@ -150,10 +150,34 @@ THaAnalysisObject::EStatus THaAnalysisObject::Init( const TDatime& date )
   // especially subdetectors may have their own idea what prefix they like.
   MakePrefix();
 
-  // Open database file. Don't bother if this object has not implemented
-  // its own database reader.
+  // If this object has implemented its own ReadRunDatabase(), open
+  // the run database and call the reader.
+  if( IsA()->GetMethodAllAny("ReadRunDatabase") != 
+      gROOT->GetClass("THaAnalysisObject")->GetMethodAllAny("ReadRunDatabase")
+      ) {
 
-  // Note: requires ROOT >= 3.01 because it needs TClass::GetMethodAllAny()
+    FILE* fi = OpenFile( "run", date, Here("OpenFile()") );
+    if (!fi) {
+      return fStatus = kInitError;
+    }
+
+    // Call this object's actual database reader
+    status = ReadRunDatabase( fi, date );
+    fclose(fi);
+    if( status )
+      return fStatus = kInitError;
+  } 
+#ifdef WITH_DEBUG
+  else if ( fDebug>0 ) {
+    cout << "Info: Not reading run database call for object " << GetName() 
+	 << " since no ReadRunDatabase function defined.\n";
+  }
+#endif
+
+  // Open the database file proper associated with this object's prefix, 
+  // but don't bother if this object has not implemented its own database reader.
+
+  // Note: requires ROOT >= 3.01 because of TClass::GetMethodAllAny()
   if( IsA()->GetMethodAllAny("ReadDatabase")
       != gROOT->GetClass("THaAnalysisObject")->GetMethodAllAny("ReadDatabase") ) {
 
@@ -417,3 +441,97 @@ void THaAnalysisObject::SphToGeo( Double_t  th_sph, Double_t  ph_sph,
   if( ph_sph/twopi - floor(ph_sph/twopi) > 0.5 ) ph_geo =- ph_geo;
 }
 
+//_____________________________________________________________________________
+Int_t THaAnalysisObject::IsRunDBdate( const string& line, TDatime& date )
+{
+  // Check if 'line' contains a valid run database time stamp. If so, 
+  // parse the line, set 'date' to the extracted time stamp, and return 1.
+  // Else return 0;
+  // Time stamps must have the format [ yyyy-mm-dd:hh:mm:ss ].
+
+  string::size_type lbrk = line.find('[');
+  if( lbrk == string::npos || lbrk >= line.size()-12 ) return 0;
+  string::size_type rbrk = line.find(']',lbrk);
+  if( rbrk <= lbrk+11 ) return 0;
+  Int_t yy, mm, dd, hh, mi, ss;
+  if( sscanf( line.substr(lbrk+1,rbrk-lbrk-1).c_str(), "%d-%d-%d:%d:%d:%d",
+	      &yy, &mm, &dd, &hh, &mi, &ss) != 6) {
+    ::Warning("THaAnalysisObject::IsRunDBdate()", 
+	      "Invalid date tag %s", line.c_str());
+    return 0;
+  }
+  date.Set(yy, mm, dd, hh, mi, ss);
+  return 1;
+}
+
+//_____________________________________________________________________________
+Int_t THaAnalysisObject::IsRunDBtag( const string& line, const char* tag,
+				     Double_t& value )
+{
+  // Check if 'line' is a tag = value pair and whether the tag equals 'tag'. 
+  // If tag = value, but tag not found, return -1. If tag found, 
+  // parse the line, set 'value' to the extracted value, and return +1.
+  // Tags are not case sensitive.
+
+  string::size_type pos = line.find('=');
+  if( pos == string::npos ) return 0;
+  if( pos == 0 || pos == line.size()-1 ) return -1;
+  string::size_type pos1 = line.substr(0,pos).find_first_not_of(" \t");
+  if( pos1 == string::npos ) return -1;
+  string::size_type pos2 = line.substr(0,pos).find_last_not_of(" \t");
+  if( pos2 == string::npos ) return -1;
+  // Ignore case
+  string t1(line.substr(pos1,pos2-pos1+1)), t2(tag);
+  transform( t1.begin(), t1.end(), t1.begin(), tolower );
+  transform( t2.begin(), t2.end(), t2.begin(), tolower );
+  if( t1 != t2 ) return -1;
+  value = std::atof( line.substr(pos+1).c_str() );
+  return 1;
+}
+
+//_____________________________________________________________________________
+Int_t THaAnalysisObject::LoadRunDBvalue( FILE* file, TDatime& date, 
+					 const char* tag, Double_t& value )
+{
+  // Load a data value tagged with 'tag' from the run database 'file'.
+  // Lines before the first valid time stamp or starting with "#" are ignored.
+  // If 'tag' is found, then the most recent value seen (based on time stamps
+  // and position within the file) is returned.
+  // Values with time stamps later than 'date' are ignored.
+  // This allows incremental organization of the run database where
+  // only changes are recorded with time stamps.
+  // Values are always treated as doubles.
+  // Return 0 if success, >0 if tag not found, <0 if file error.
+
+  if( !file || !tag ) return 2;
+  const int LEN = 256;
+  char buf[LEN];
+  string line;
+  TDatime tagdate(950101,0), prevdate(950101,0);
+
+  errno = 0;
+  rewind(file);
+
+  bool found = false, ignore = true;
+  while( fgets( buf, LEN, file) != NULL) {
+    size_t len = strlen(buf);
+    if( len>0 && buf[len-1] == '\n') buf[len-1] = 0; //delete trailing newline
+    if( len<2 || buf[0] == '#' ) continue;
+    line = buf;
+    Int_t status;
+    if( !ignore && (status = IsRunDBtag( line, tag, value )) != 0) {
+      if( status > 0 ) {
+	found = true;
+	prevdate = tagdate;
+	// ignore is not set to true here so that the _last_, not the first,
+	// of multiple identical tags is evaluated.
+      }
+    } else if( IsRunDBdate( line, tagdate ) != 0 )
+      ignore = ( tagdate>date || tagdate<prevdate );
+  }
+  if( errno ) {
+    perror( "THaAnalysisObject::LoadRunDBvalue()" );
+    return -1;
+  }
+  return found ? 0 : 1;
+}
