@@ -64,6 +64,7 @@ private:
   Int_t *q1_reading, *present_helicity, *saved_helicity;
   Int_t *q1_present_helicity, *quad_calibrated;
   Int_t *hbits;
+  UInt_t *fNqrt;
   Int_t recovery_flag;
   int nb;
   UInt_t iseed, iseed_earlier, inquad;

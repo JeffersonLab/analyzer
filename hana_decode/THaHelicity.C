@@ -59,6 +59,7 @@ THaHelicity::~THaHelicity( )
     delete [] fTlastquad;
     delete [] fTtol;
     delete [] t9count;
+    delete [] fNqrt;
     delete [] present_reading;
     delete [] q1_reading;
     delete [] predicted_reading;
@@ -136,6 +137,7 @@ void THaHelicity::Init() {
     fT9                 = new Double_t[2];
     fTlastquad          = new Double_t[2];
     t9count             = new Int_t[2];
+    fNqrt               = new UInt_t[2];
     present_reading     = new Int_t[2];   
     q1_reading          = new Int_t[2];   
     predicted_reading   = new Int_t[2];
@@ -158,6 +160,7 @@ void THaHelicity::Init() {
     fFirstquad[1] = 1;
     memset(hbits, 0, fgNbits*sizeof(Int_t));
     memset(t9count, 0, 2*sizeof(Int_t));
+    memset(fNqrt, 0, 2*sizeof(UInt_t));
     memset(q1_reading, 0, 2*sizeof(Int_t));
     memset(predicted_reading, Unknown, 2*sizeof(Int_t));
     memset(saved_helicity, Unknown, 2*sizeof(Int_t));
@@ -406,8 +409,19 @@ void THaHelicity::QuadCalib() {
         if (HELDEBUG >= 2)
           cout << "Recovering large DT, nqmiss = "<<nqmiss<<endl;
         if (nqmiss < 30) {
-	  for (Int_t i = 0; i < nqmiss; i++) QuadHelicity(1);
-          fT0[fArm] = fT0[fArm] + nqmiss*fTdavg[fArm];
+	  for (Int_t i = 0; i < nqmiss; i++) {
+	    fNqrt[fArm]++;
+	    QuadHelicity(1);
+	    fT0[fArm] += fTdavg[fArm];
+	    q1_present_helicity[fArm] = present_helicity[fArm];
+	    if (HELDEBUG>=2) {
+	      cout << "QuadCalibQrt "<<fNqrt[fArm]<<"  "<<'M'
+		   <<"  "<<'M'<<" "<<q1_reading[fArm]<<" "
+		   <<q1_present_helicity[fArm]<<"  "<<fTimestamp[fArm]<<"  "
+		   <<fT0[fArm]<<"  "<<fTdiff[fArm]<<" Missing"<<endl;
+	    }
+
+	  }
           fTdiff[fArm] = fTimestamp[fArm] - fT0[fArm];
         } else { 
           cout << "WARN: THaHelicity: Skipped QRT.  Low rate ? " << endl;
@@ -421,12 +435,12 @@ void THaHelicity::QuadCalib() {
        fFirstquad[fArm] = 0;
    }
    if (fEvtype[fArm] == 9) {
-     t9count[fArm] += 1;
-     if ( delayed_qrt && fQrt[fArm] ) {
-       // don't record this time     
-     } else {
-       fT9[fArm] = fTimestamp[fArm]; // this sets the timing reference.
-     }
+       t9count[fArm] += 1;
+       if ( delayed_qrt && fQrt[fArm] ) {
+	 // don't record this time     
+       } else {
+	 fT9[fArm] = fTimestamp[fArm]; // this sets the timing reference.
+       }
    }
    if (fQrt[fArm] == 1) t9count[fArm] = 0;
 
@@ -452,6 +466,7 @@ void THaHelicity::QuadCalib() {
        q1_reading[fArm] = present_reading[fArm];
        QuadHelicity();
        q1_present_helicity[fArm] = present_helicity[fArm];
+       fNqrt[fArm]++;
        if (quad_calibrated[fArm] && !CompHel() ) {
 // This is ok if it doesn't happen too often.  You lose these events.
           cout << "WARNING: THaHelicity: QuadCalib";
@@ -464,6 +479,12 @@ void THaHelicity::QuadCalib() {
           quad_calibrated[fArm] = 0;
           fFirstquad[fArm] = 1;
           present_helicity[fArm] = Unknown;
+       }
+       if (HELDEBUG>=2) {
+	 cout << "QuadCalibQrt "<<fNqrt[fArm]<<"  "<<fEvtype[fArm]
+	      <<"  "<<fQrt[fArm]<<" "<<q1_reading[fArm]<<" "
+	      <<q1_present_helicity[fArm]<<"  "<<fTimestamp[fArm]<<"  "
+	      <<fT0[fArm]<<"  "<<fTdiff[fArm]<<endl;
        }
    }
    fTdiff[fArm] = fTimestamp[fArm] - fT0[fArm];
