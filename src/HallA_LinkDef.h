@@ -43,9 +43,6 @@
 #pragma link C++ class THaEpicsData;
 #pragma link C++ class THaTrack;
 #pragma link C++ class THaPIDinfo;
-#pragma link C++ class THaRICH;
-#pragma link C++ class THaRICHHit;
-#pragma link C++ class THaRICHCluster;
 #pragma link C++ class THaParticleInfo;
 #pragma link C++ class THaMatrix;
 #pragma link C++ class THaArrayString;

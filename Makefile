@@ -93,7 +93,6 @@ SRC           = src/THaFormula.C src/THaVar.C src/THaVarList.C src/THaCut.C \
 		src/THaMatrix.C src/THaArrayString.C \
 		src/THaScintillator.C src/THaShower.C \
 		src/THaTotalShower.C src/THaCherenkov.C \
-		src/THaRICH.C src/THaRICHClusterList.C \
 		src/THaEvent.C src/THaRawEvent.C \
 		src/THaVDC.C \
 		src/THaVDCPlane.C src/THaVDCUVPlane.C src/THaVDCUVTrack.C \
