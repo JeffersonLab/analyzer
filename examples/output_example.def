@@ -97,7 +97,6 @@ variable   R.vdc.v2.nhit
                        # Ndata.L.s1.lt
 
 formula    s1l2  R.s1.lt[2]-R.s1.rt[2]
-formula    s1dif R.s1.lt-R.s1.rt
 formula    s1l4  R.s1.lt[4]
 formula    nvdcv1 R.vdc.v1.nhit
 

@@ -104,7 +104,7 @@
   
   // Define the run(s) that we want to analyze.
   // We just set up one, but this could be many.
-  THaRun* run = new THaRun( "run.dat" );
+  THaRun* run = new THaRun( "runR.dat" );
   
   // Define the analysis parameters
   analyzer->SetEvent( event );
