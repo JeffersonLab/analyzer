@@ -177,7 +177,7 @@ int THaCrateMap::init(UInt_t tloc) {
   // The real work is done by the init(TString&) method
 
   // Only print warning/error messages exactly once
-  static bool user_warned = false;
+  static bool first = true;
   static const char* const here = "THaCrateMap::init";
 
   TDatime date(tloc);
@@ -186,7 +186,7 @@ int THaCrateMap::init(UInt_t tloc) {
 
 #ifndef STANDALONE
   FILE* fi = THaAnalysisObject::OpenFile("cratemap",date,here,"r",
-					 (user_warned?0:1));
+					 (first?1:0));
 #else
   FILE* fi = fopen("db_cratemap.dat","r");
 #endif
@@ -200,12 +200,12 @@ int THaCrateMap::init(UInt_t tloc) {
   }
 
   if ( db.Length() <= 0 ) {
-    if( !user_warned )
+    if( first )
       ::Warning( here, "Using hard-coded time-dependent crate-map" );
-    user_warned = true;
+    first = false;
     return init_hc(tloc);
   }
-
+  first = false;
   return init(db);
 }
 
