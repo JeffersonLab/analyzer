@@ -128,12 +128,18 @@ Int_t THaApparatus::DefineVarsFromList( const void* list,
   else if( mode == kDelete ) {
     if( type == kVarDef ) {
       const VarDef* item;
-      while( (item = ((const VarDef*)list)++) && item->name )
-	gHaVars->RemoveName( item->name );
+      while( (item = ((const VarDef*)list)++) && item->name ) {
+	TString name(prefix);
+	name.Append( item->name );
+	gHaVars->RemoveName( name );
+      }
     } else if( type == kRVarDef ) {
       const RVarDef* item;
-      while( (item = ((const RVarDef*)list)++) && item->name )
-	gHaVars->RemoveName( item->name );
+      while( (item = ((const RVarDef*)list)++) && item->name ) {
+	TString name(prefix);
+	name.Append( item->name );
+	gHaVars->RemoveName( name );
+      }
     }
   }
 
