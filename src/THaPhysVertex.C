@@ -4,7 +4,21 @@
 //
 // THaPhysVertex
 //
-// Calculate vertex for a track from a single-arm spectrometer.
+// Calculate vertex for all the tracks from a single spectrometer.
+//
+// This module assumes a small-acceptance pointing-type spectrometer
+// that generates tracks in TRANSPORT coordinates.
+// It is assumed that the spectrometer only reconstucts the 
+// position at the target transverse to the bend plane, i.e. y_tg, with 
+// relatively high precision. Any reconstructed or estimated x_tg is ignored.
+// The vertex is then defined as the intersection point of the 
+// "track plane" and the beam ray. The "track plane" is the plane 
+// spanned by the reconstructed momentum vector and the TRANSPORT x-axis
+// (vertical) whose origin is the y_tg point.
+// The beam ray is given by the measured beam positions and angles
+// for this event. If no beam position measurement is available, beam 
+// positions and angles are assumed to be zero.
+// The spectrometer pointing offset is taken into account.
 //
 //////////////////////////////////////////////////////////////////////////
 
@@ -59,21 +73,7 @@ THaAnalysisObject::EStatus THaPhysVertex::Init( const TDatime& run_time )
 //_____________________________________________________________________________
 Int_t THaPhysVertex::Process()
 {
-  // Calculate vertex coordinates for all tracks of the spectrometer.
-  //
-  // This module assumes a small-acceptance pointing-type spectrometer
-  // that generates tracks in TRANSPORT coordinates.
-  // It is assumed that the spectrometer only reconstucts the 
-  // position at the target transverse to the bend plane, i.e. y_tg, with 
-  // relatively high precision. Any reconstructed or estimated x_tg is ignored.
-  // The vertex is then defined as the intersection point of the 
-  // "particle plane" and the beam ray. The "particle plane" is the plane 
-  // spanned by the reconstructed momentum vector and the TRANSPORT x-axis
-  // (vertical) whose origin is the y_tg point.
-  // The beam ray is given by the measured beam positions and angles
-  // for this event. If no beam position measurement is available, beam 
-  // positions and angles are assumed to be zero.
-  // The spectrometer pointing offset is taken into account.
+  // Calculate the vertex coordinates.
 
   if( !IsOK() ) return -1;
 

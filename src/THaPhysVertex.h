@@ -36,7 +36,7 @@ protected:
   TString                 fBeamName;     // Name of beam position apparatus
   const THaBeam*          fBeam;         // Pointer to beam position apparatus
 
-  ClassDef(THaPhysVertex,0)   //Single arm kinematics module
+  ClassDef(THaPhysVertex,0)   //Single-arm vertex module
 };
 
 //_________ inlines __________________________________________________________

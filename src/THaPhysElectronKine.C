@@ -4,7 +4,7 @@
 //
 // THaPhysElectronKine
 //
-// Calculate electron kinematics
+// Calculate standard electron kinematics for a single spectrometer.
 //
 //////////////////////////////////////////////////////////////////////////
 
