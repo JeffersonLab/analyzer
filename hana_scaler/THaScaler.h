@@ -111,6 +111,7 @@ public:
    void SetPort(Int_t port);                    // set PORT# for online data
    void SetClockLoc(Int_t slot, Int_t chan);  // set clock location
    void SetClockRate(Double_t clkrate);       // set clock rate
+   void SetTimeInterval(Double_t time);    // set avg time interval between events. (if no clk)
    Int_t GetSlot(std::string which, Int_t helicity=0);
    Int_t GetChan(std::string which, Int_t helicity=0, Int_t chan=0);
    THaScalerDB* GetDataBase() { return database; };
@@ -128,7 +129,7 @@ protected:
    std::string vme_server;
    int vme_port, clkslot, clkchan;
    Bool_t found_crate,first_loop;
-   Bool_t did_init, new_load, one_load;
+   Bool_t did_init, new_load, one_load, use_clock;
    Int_t *normslot;
    Double_t clockrate;
    Int_t InitData(std::string bankgroup, const Bdate& bd);

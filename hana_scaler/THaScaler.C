@@ -59,6 +59,7 @@ THaScaler::THaScaler( const char* bankgr ) {
   coda_open = kFALSE;
   new_load = kFALSE;
   one_load = kFALSE;
+  use_clock = kTRUE;
   vme_server = "";
   vme_port = 0;
   normslot = new Int_t[3];
@@ -172,6 +173,9 @@ Int_t THaScaler::InitData(std::string bankgroup, const Bdate& date_want) {
              0,7,8,9,1,2,3,4,5,6,10,11 },
     { "dvcs",  0xd0c00000, 9, 140, 0, 105000, "129.57.192.51",  5064, 
              0,1,2,3,4,5,6,7,8,9,10,11 },
+    // N20: header 0xbba...,  crate=6 (our choice), and we don't know about clock yet.
+    { "N20",  0xbba00000, 6, 140, 1, 2048, "129.57.192.51",  5064, 
+             0,1,2,3,4,5,6,7,8,9,10,11 },
     // Data that are part of the event stream
     { "evleft",  0xabc00000, 11, 1, 4, 1024, "none",  0, 0,0,0,0,0,0,0,0,0,0,0,0},
     { "evright", 0xceb00000, 10, 1, 8, 1024, "none",  0, 0,0,0,0,0,0,0,0,0,0,0,0},
@@ -192,6 +196,9 @@ Int_t THaScaler::InitData(std::string bankgroup, const Bdate& date_want) {
      }
      if ( database->FindNoCase(bankgroup,"dvcs") != std::string::npos) {
           bank_to_find = "dvcs"; 
+     }
+     if ( database->FindNoCase(bankgroup,"N20") != std::string::npos) {
+          bank_to_find = "N20"; 
      }
      if ( database->FindNoCase(bankgroup,"evleft") != std::string::npos) {
           bank_to_find = "evleft"; 
@@ -295,6 +302,8 @@ void THaScaler::SetupNormMap() {
   normslot[0] = GetSlot("TS-accept");
   normslot[1] = GetSlot("TS-accept", -1);
   normslot[2] = GetSlot("TS-accept",  1);
+  clkslot = GetSlot("clock");
+  clkchan = GetChan("clock");
   for (Int_t ichan = 0; ichan < SCAL_NUMCHAN; ichan++) {
     std::string chan_name = database->GetShortName(crate, normslot[0], ichan);
     if (chan_name != "none") {
@@ -306,6 +315,19 @@ void THaScaler::SetupNormMap() {
 void THaScaler::SetClockRate(Double_t rate)
 { 
   clockrate = rate;
+}
+
+void THaScaler::SetTimeInterval(Double_t time)
+{ 
+// Set the average time interval between events.
+// Note, use this *ONLY IF* there is no clock in the datastream.
+  if (time <= 0) {
+    cout << "THaScaler::SetTimeInterval:ERROR:  nonsensical time value"<<endl;
+    return;
+  } else {
+    clockrate = 1/time;
+    use_clock = kFALSE;
+  }
 }
 
 Int_t THaScaler::LoadData(const THaEvData& evdata) {
@@ -860,6 +882,11 @@ Double_t THaScaler::GetTimeDiff(Int_t helicity) {
 // If we have "SetClockLoc" then we use the location it defined.
 // Otherwise we use the clock location from the "clock" item in
 // the scaler.map file (which is the usual way).
+  if ( !use_clock ) {
+    Double_t etime = 0;
+    if (clockrate != 0) etime = 1/clockrate;
+    return etime;
+  }
   if (clockrate == 0) return 0;
   if (clkslot != -1 && clkchan != -1) {
     return ((GetScaler(clkslot, clkchan, 0) -
