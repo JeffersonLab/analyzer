@@ -12,14 +12,17 @@
 
 #include "THaRun.h"
 #include "THaCodaFile.h"
+#include "TMath.h"
 #include <iostream>
 #include <cstring>
 #include <ctime>
+#include <cstdio>
 
 ClassImp(THaRun)
 
 //_____________________________________________________________________________
-THaRun::THaRun() : TNamed()
+THaRun::THaRun() : TNamed(), fNumber(0), 
+  fBeamE(0.0), fBeamP(0.0), fBeamM(0.0), fBeamQ(0), fBeamdE(0.0), fTarget(0)
 {
   // Default constructor
 
@@ -28,12 +31,13 @@ THaRun::THaRun() : TNamed()
 }
 
 //_____________________________________________________________________________
-THaRun::THaRun( const char* filename, const char* descr ) : 
-  TNamed("", strlen(descr) ? descr : filename), fFilename(filename)
+THaRun::THaRun( const char* fname, const char* descr ) : 
+  TNamed("", strlen(descr) ? descr : fname), fNumber(0), fFilename(fname),
+  fBeamE(0.0), fBeamP(0.0), fBeamM(0.0), fBeamQ(0), fBeamdE(0.0), fTarget(0)
 {
   // Normal constructor
 
-  fCodaFile = new THaCodaFile;  //Do not open the file
+  fCodaFile = new THaCodaFile;  //Do not open the file yet
   ClearEventRange();
 }
 
@@ -44,10 +48,16 @@ THaRun::THaRun( const THaRun& rhs ) : TNamed( rhs )
 
   fNumber     = rhs.fNumber;
   fFilename   = rhs.fFilename;
+  fDate       = rhs.fDate;
   fFirstEvent = rhs.fFirstEvent;
   fLastEvent  = rhs.fLastEvent;
-  fDate       = rhs.fDate;
   fCodaFile   = new THaCodaFile;
+  fBeamE      = rhs.fBeamE;
+  fBeamP      = rhs.fBeamP;
+  fBeamM      = rhs.fBeamM;
+  fBeamQ      = rhs.fBeamQ;
+  fBeamdE     = rhs.fBeamdE;
+  fTarget     = rhs.fTarget;  // Target object managed externally
 }
 
 //_____________________________________________________________________________
@@ -58,12 +68,18 @@ THaRun& THaRun::operator=(const THaRun& rhs)
   if (this != &rhs) {
      TNamed::operator=(rhs);
      fNumber     = rhs.fNumber;
+     fDate       = rhs.fDate;
      fFilename   = rhs.fFilename;
      fFirstEvent = rhs.fFirstEvent;
      fLastEvent  = rhs.fLastEvent;
-     fDate       = rhs.fDate;
      delete fCodaFile;
      fCodaFile   = new THaCodaFile;
+     fBeamE      = rhs.fBeamE;
+     fBeamP      = rhs.fBeamP;
+     fBeamM      = rhs.fBeamM;
+     fBeamQ      = rhs.fBeamQ;
+     fBeamdE     = rhs.fBeamdE;
+     fTarget     = rhs.fTarget;
   }
   return *this;
 }
@@ -105,13 +121,13 @@ void THaRun::Copy( TObject& rhs )
 }
 
 //_____________________________________________________________________________
-void THaRun::FillBuffer( char*& buffer )
-{
-  // Encode THaRun into output buffer.
+//void THaRun::FillBuffer( char*& buffer )
+//  {
+//    // Encode THaRun into output buffer.
 
-  TNamed::FillBuffer( buffer );
-  fFilename.FillBuffer( buffer );
-}
+//    TNamed::FillBuffer( buffer );
+//    fFilename.FillBuffer( buffer );
+//  }
 
 //_____________________________________________________________________________
 const Int_t* THaRun::GetEvBuffer() const
@@ -163,6 +179,19 @@ Int_t THaRun::ReadEvent()
 }
 
 //_____________________________________________________________________________
+void THaRun::SetBeam( Double_t E, Double_t M, Int_t Q, Double_t dE )
+{
+  // Set beam parameters.
+  fBeamE = E;
+  fBeamM = M;
+  fBeamQ = Q;
+  fBeamP = (E>M) ? TMath::Sqrt(E*E-M*M) : 0.0;
+  if( fBeamP == 0.0 )
+    Warning( "SetBeam()", "Beam momentum = 0 ??");
+  fBeamdE = dE;
+}
+
+//_____________________________________________________________________________
 void THaRun::SetDate( UInt_t tloc )
 {
   // Set timestamp of this run to 'tloc' which is in Unix time
@@ -175,7 +204,6 @@ void THaRun::SetDate( UInt_t tloc )
   struct tm* tp = localtime(&t);
   fDate.Set( tp->tm_year, tp->tm_mon+1, tp->tm_mday, 
 	     tp->tm_hour, tp->tm_min, tp->tm_sec );
-  
 }
 
 //_____________________________________________________________________________
@@ -188,5 +216,3 @@ void THaRun::SetNumber( UInt_t number )
   sprintf( str, "RUN_%u", number);
   SetName( str );
 }
-
-
