@@ -80,7 +80,7 @@ private:
   static const Int_t Plus     =  1;    
   static const Int_t Minus    = -1;    
   static const Int_t Unknown  =  0;    
-  static const Int_t HELDEBUG =  2;
+  static const Int_t HELDEBUG =  0;
 // STANDALONE restriction is not too bad since it only affects
 // old data prior to G0 mode.  But you can't run STANDALONE then.
 #ifndef STANDALONE
