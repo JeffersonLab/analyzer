@@ -1,195 +1,175 @@
-Hall A C++ Analyzer version 0.65
+Hall A C++ Analyzer version 1.00
 --------------------------------
 
-21 April 2002
+31 May 2003
 
-Disclaimer
-~~~~~~~~~~
-This is BETA software. Use at your own risk. The program structure is
-still somewhat in flux and subject to changes that might make new code
-incompatible with previous versions.  Little effort has been made so
-far to make things foolproof.
+After more than one year of development since the last beta version, 
+the Hall A software team is proud to present the first major release 
+of the Hall A C++ Analyzer.
+
+
 
 What's new
 ~~~~~~~~~~
+Compared to the previous public release "0.65", a large number of 
+new and essential features have been implemented:
 
-- A new set of VDC classes that incorporate drift-time fitting and
-  multitrack analysis, and generate high-precision tracking information. 
-  This VDC code produces results similar, but not identical to
-  ESPACE. Some differences are due to the different time-to-distance
-  conversion algorithm used. This will be studied in detail in the
-  next few weeks. 
+  - Full VDC tracking and target reconstruction
+  - Time-dependent database system
+  - Dynamic output module
+  - Dynamic definition of tests for statistics and analysis steering
+  - Plugin architecture for post-processing of basic results 
+    ("physics modules")
+  - Scaler analysis
+  - Helicity decoding
+  - Up-to-date BPM and raster analysis
+  - Large performance improvements (speed, memory)
 
-  Some of the coding for these classes was done in the summer of 2001 
-  by Hall A ERULF summer student Jonathan Robbins.
+Both HRS spectrometers are available. By default, they are configured
+with the VDC package and two scintillator planes.  Additional detectors
+can be added as appropriate for the experiment to be analyzed:
 
-- An extension to the global variable system that allow definitions of
-  variables using ROOT RTTI information.  This has several major
-  advantages over the previous way to define variables. In particular,
-  the data type of variables and the dimension of arrays is determined 
-  automatically, and it is possible to define variables on data stored in
-  object arrays (derived from TSeqCollection, e.g. TList, TClonesArray)
-  and on certain object member functions (e.g. GetSize()). 
-  Some limitations apply; see the documentation on the Web for details.
+  * Scintillator (one or more paddles with two PMTs each)
+  * Cherenkov (arbitrary number of PMTs/mirrors) - describes both the
+    gas Cherenkovs and Aerogels in each arm
+  * Shower counter (arbitrary organization in terms of rows and columns of
+    blocks) - describes both the shower/preshower and the pion rejectors
+  * Total shower counter (combination of a preshower and a shower)
 
-- (R. Michaels) A new multipurpose apparatus called THaDecData that contains
-  miscellaneous decoder data and can be used for quick testing of arbitrary
-  signals connected to the DAQ hardware.
+The beam position and direction can be reconstructed using an appropriate
+"beam" apparatus for either rastered or unrastered beam.
 
-Notes
-~~~~~
+"Physics Modules" can be used to perform a variety of experiment-specific
+calculations after the basic spectrometer and beamline analysis.
+Currently, the following calculations are available:
 
-- The VDC class is now able produce multiple tracks per event (THaTrack) 
-  in the tracks TClonesArray. These tracks always occupy indices 0 through
-  tracks->GetLast(). The number of tracks is tracks->GetLast()+1, which
-  is available as global variables "R.tr.n" and "L.tr.n".
+  * Electron kinematics (single arm)
+  * Reaction point reconstruction ("reaction_z")
+  * "Average" and "twoarm" reaction point reconstruction (as in ESPACE)
+  * Extended target corrections
 
-- Detector classes have not yet been updated to analyze all tracks
-  given to them. Many detectors calculate the position where a track
-  crosses the detector plane. This information is still calculated,
-  but now usually refers to the first of possibly several tracks.
+Physics modules are designed to be "plugins". For experiments requiring 
+specialized calculations of kinematics or any other quantities,
+writing a new plugin would be the preferred approach. As many physics
+modules as needed can be added to the analyzer before starting replay.
+Identical modules can be added multiple times with different parameters. 
+For example, on can calculate "electron kinematics" using both uncorrected 
+and energy-loss corrected tracks in one analysis pass without modifying 
+or recompiling any code.
 
-- The multitrack VDC analysis has not been debugged thoroughly and
-  has a number of known weaknesses. Do not expect particularly reliable
-  results for multitrack events yet. Improving multitrack analysis is
-  one of the priorities for the next release.
+To control the analysis flow and to collect statistics, tests can be defined 
+dynamically at runtime.  If certain tests fail for a given event,
+further analysis of that event is skipped, and the event is not
+included in the output.  Such tests can be put at the end of all the
+major stages of the analysis.  This allows making decisions about an
+event early in the analysis, improving performance.  A summary of all
+test results is written to a file at the end of the analysis.
 
-- There is no target reconstruction yet. This is another priority for the
-  next release.
-  
+Any variables of interest can be histogrammed and/or written to
+a ROOT Tree in the output file.  The contents of the output 
+is defined dynamically at the beginning of the analysis.
+Both 1- and 2-dimensional histograms are supported. Histograms
+can be filled subject to logical expressions (cuts).
 
 System requirements
 ~~~~~~~~~~~~~~~~~~~
+* Linux with gcc/g++; or Solaris with the Sun Workshop compiler
+* ROOT 3.02 or higher
+* GNU make
+* Decent hardware (e.g. 300MHz CPU, 128MB RAM).
 
-IMPORTANT: This release requires ROOT 3.00 or higher! 
+The following platforms have been tested:
 
-These sources have been tested on the following platforms:
+  - RedHat Linux 7.2 with g++-2.96 and ROOT 3.02-06
+  - SuSE 8 with the SuSE default compiler (g++ 2.95?) and ROOT 3.03
 
-   - RedHat Linux 6.2 with egcs-1.1.2 and ROOT 3.00-06 (ifarml)
-     and ROOT 3.02-00
-   - RedHat Linux 7.1 with g++-2.96 and ROOT 3.01-05
-   - Sun Solaris 2.6/SPARC with Sun's CC5 compiler and ROOT 3.01-03 (ifarms)
+The analyzer requires typically 20-50MB of virtual memory.
 
-Note: On Solaris, one still needs gcc to be installed, even though the
-analyzer is compiled with Sun's CC5.  The reason is that the Makefiles
-use gcc to create the include file dependency lists.  A standalone
-"makedepend" script will be included in a future release so that gcc
-is no longer required on all platforms.
+Building and installing the program
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Please see docs/install.html
 
-The analyzer requires about 20-50MB of free virtual memory (= physical
-RAM + swap space), possibly more on Solaris, depending on which
-classes you instantiate, how large the output tree grows, etc. These
-requirements are typical of ROOT applications.
+Running the program / How to analyze data
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Please see docs/quickstart.html
 
-Currently, several classes contain direct Unix system calls, making porting
-to non-Unix platforms not trivial. This restriction will be lifted in
-a future release.
+Known Limitations
+~~~~~~~~~~~~~~~~~
+The following is a summary of known limitations. We expect to remove
+most of these within the next several months. Code already exists
+to address some of the items below and is currently being tested.
 
+- The multi-cluster VDC analysis has not been tested thoroughly and
+  will currently produce results different from ESPACE. 
+  In particular, cluster fits use two parameters, not three as
+  they should in order to take a common timing offset ("t0") into account.
 
-Building and installing
-~~~~~~~~~~~~~~~~~~~~~~~
-The distribution is by default configured for Linux. To change to
-the Solaris/CC5 environment, please make the following change at the
-beginning of the Makefiles:
+  Therefore we recommend that you only analyze "clean" events
+  with exactly one cluster per VDC plane at this tims.
 
-#ARCH = linuxegcs
-ARCH = solarisCC5
+- No scintillator timing corrections are calculated.
 
-This affects the following three Makefiles:
+- VDC cluster fits are not corrected for scintillator timewalk and
+  the particle's time of flight.  The effect of this should be small,
+  however.
 
-Makefile
-hana_decode/Makefile
-hana_scaler/Makefile
+- The shower counter code uses a simpler cluster finding algorithm 
+  than that in ESPACE. The results will therefore be different from ESPACE.
+  
+- No physics modules are available yet for the following 
+  calculations done by ESPACE:
 
-A "configure" script to automate the platform detection will be included in
-a future release.
+    * Secondary particle kinematics
+    * Beta & time-of-flight
+    * Coincidence time
+    * Target energy loss corrections
 
-Before compiling, make sure that your have set ROOTSYS correctly
-and $ROOTSYS/bin is in your PATH.
+  These calculations currently have to be done externally in 
+  a ROOT analysis macro.
 
-On the ifarm machines, issue the command
-	use root/3.01-06
-or
-        use root/3.02-07
-to configure ROOT and set the PATH.
+- There is no code yet to analyze the FPP.
 
-To compile, run the Makefile with GNU make (tested with make 3.78-1).
-Usually, you just need to type "make". On Sun (ifarms), type "gmake".
+- The detection of the helicity sequence is not as intelligent
+  as in the latest (unofficial) ESPACE.  After a helicity synchronization loss
+  (e.g. due to deadtime), the helicity information is invalid for a relatively
+  long time (ca. 1 second), causing some loss in statistics.
 
-Before running, set your LD_LIBRARY_PATH as follows:
+- Arrays cannot be used in formula and histogram definitions
+  for the output. Arrays must be written in unmodified form to the output
+  tree. The tree can then be post-processed with an analysis macro.
+  Histograms must be defined explicitly for every array element.
 
-  export LD_LIBRARY_PATH=.:$ROOTSYS/lib:$LD_LIBRARY_PATH
-OR
-  setenv LD_LIBRARY_PATH .:$ROOTSYS/lib:$LD_LIBRARY_PATH
+- The ability to define global variables via ROOT's RTTI interface is
+  restricted to a nesting depth of one. Array elements cannot be
+  defined directly. No arguments can be passed to member functions
+  called to retrieve data. 
 
-(i.e. make sure the current directory is in the LD_LIBRARY_PATH).
+  This is mostly an inconvenience for authors of new detector/apparatus
+  classes.
 
-Alternatively, you can copy the three shared libraries,
-	libHallA.so, libdc.so, libscaler.so
-to a directory of your choice (e.g. /usr/local/lib). Depending on your
-choice, you may or may not have to modify LD_LIBRARY_PATH (e.g. /usr/local/lib
-is usually included in the default shared library search path).
+- There are some issues with the storage of the history of decoded EPICS
+  (slow control) variables.
 
-Run the analyzer as follows:
+- There is no "configure" script to handle system dependences of
+  the Makefiles etc.  Whatever changes to the Makefiles are necessary 
+  (not many) must be made by hand.
 
-	./analyzer
+- On Solaris, gcc must be installed even though the analyzer is compiled 
+  with the Sun compiler.  gcc is used to create the include file dependency 
+  lists.
 
-Usage
-~~~~~
-Here is an example session that analyzes 10000 events of a run file
-and writes a ROOT tree with values of the L- and R-arm HRS detector raw data.
-Then a few sample plots are created.
-
-Before running this session, get a CODA run file and put it
-in the current directory as "run.dat".  You can download a sample
-from the same location where you got this distribution.
-
-(make a link called run.dat to the data file you want to analyze)
-analyzer[1] .x setup.C                                // Setup analysis parameters
-analyzer[2] analyzer->Process( *run )                 // Process the run defined in setup.C
-analyzer[3] gDirectory->ls()                          // Show objects in current file
-analyzer[4] evlen->Draw()                             // Plot histogram evlen
-analyzer[5] T->Print()                                // Show variables in tree
-analyzer[6] T->Draw("fL_S1L_adc[3]:fL_S1R_adc[3]")    // Plot S1 ADC 3 left vs. right
-analyzer[7] T->Draw("fL_S1L_adc[3]:fEvtHdr.fEvtNum")  // Plot S1 ADC 3 left vs. event number
-analyzer[8] analyzer->Close()                         // Close output file
-analyzer[9] .q                                        // Quit interactive session
-
-You can now work with the output file "Afile.root" with standard ROOT
-or the analyzer.
+- Several classes contain direct Unix system calls, making porting
+  to non-Unix platforms not trivial.
 
 Example Scripts
 ~~~~~~~~~~~~~~~
-A number of example scripts are included with this release. They are:
-
-setup.C            - generic analysis macro
-setup_demo.C       - setup script for the demo* macros
-demo_s1.C          - plot script for R- and L-arm S1 scintillators
-demo_s2.C          - plot script for R- and L-arm S2 scintillators
-demo_aerogel.C     - plot script for R-arm aerogel raw data
-demo_cherenkov.C   - plot script for R-arm gas Cherenkov raw data
-demo_shower.C      - plot script for R-arm total shower detector
-demo_track.C       - plot script for R-arm tracking data
-demo_VDC.[Ch]      - example class for VDC analysis
-
-The demo scripts were originally written by Armen Ketikyan.
-To use them (except demo_VDC), please do the following:
-
-(make a link called demo.dat to the data file you want to analyze)
-analyzer[0] .x setup_demo.C
-analyzer[1] analyzer->Process(*run)
-analyzer[2] .x demo_xxxx.C           // xxxx = s1,s2,aerogel,cherenkov,shower,track
-
-To use the demo_VDC script:
-
-analyzer[0] .L demo_VDC.C
-analyzer[1] demo_VDC t       // Instantiate a demo_VDC object. Opens Afile.root.
-analyzer[2] t.Loop()         // Loop over all events in the file, then plot results
-
+Example scripts can be found in the "examples" subdirectory
+and have been completely rewritten for this release.
 
 Documentation
 ~~~~~~~~~~~~~
-Further documentation is available at the project home page:
+Further documentation is available in the "docs" subdirectory and
+at the project home page:
 
 	http://hallaweb.jlab.org/root/
 
