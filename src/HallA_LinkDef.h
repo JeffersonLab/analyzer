@@ -34,7 +34,9 @@
 #pragma link C++ class THaScintillator+;
 #pragma link C++ class THaEvent+;
 #pragma link C++ class THaEventHeader+;
-#pragma link C++ class THaRawEvent+;
+#pragma link C++ class THaOutput+;
+#pragma link C++ class THaOdata+;
+#pragma link C++ class THaString+;
 #pragma link C++ class THaAnalyzer+;
 #pragma link C++ class THaPrintOption+;
 #pragma link C++ class THaBeam+;
