@@ -56,6 +56,7 @@ Int_t THaRaster::ReadDatabase( const TDatime& date )
   // the wheel, i will keep it ugly and read in my own configuration file with 
   // a very fixed syntax: 
 
+  // Seek our detmap section (e.g. "Raster_detmap")
   sprintf(keyword,"[%s_detmap]",GetName());
   Int_t n=strlen(keyword);
 
@@ -85,6 +86,8 @@ Int_t THaRaster::ReadDatabase( const TDatime& date )
       }
     }
   } while (first_chan>=0);
+
+  // Seek our database section
   sprintf(keyword,"[%s]",GetName());
   n=strlen(keyword);
   do {
@@ -116,6 +119,11 @@ Int_t THaRaster::ReadDatabase( const TDatime& date )
   fgets( buf, LEN, fi);
   sscanf(buf,"%lf",&dummy1);
   fPosOff[2].SetZ(dummy1);
+
+  // Find timestamp, if any, for the raster constants. 
+  // Give up and rewind to current file position on any non-matching tag.
+  // Timestamps should be in ascending order
+  SeekDBdate( fi, date, true );
 
   fgets( buf, LEN, fi);
   sscanf(buf,"%lf%lf%lf%lf%lf%lf",&dummy1,&dummy2,&dummy3,&dummy4,&dummy5,&dummy6);
