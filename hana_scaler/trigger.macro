@@ -1,0 +1,52 @@
+// Purpose :  To plot some stuff from the ntuple "ascal" in scaler.root
+
+{
+   c1 = new TCanvas("bob","Trigger Rates vs time in scalers",800,600);
+
+   f = new TFile("scaler.root");
+   TNtuple *ntup = (TNtuple*)gROOT.FindObject("ascal");
+
+   pad1 = new TPad("pad1","",0.03,0.5,0.49,0.95,18);
+   pad2 = new TPad("pad2","",0.52,0.5,0.98,0.95,18);
+   pad3 = new TPad("pad3","",0.03,0.0,0.49,0.45,18);
+   pad4 = new TPad("pad4","",0.52,0.02,0.98,0.45,18);
+
+   gStyle->SetOptStat(1);
+   gStyle->SetStatH(0.40);
+   gStyle->SetStatW(0.5);
+   gStyle->SetTitleH(0.12);
+   gStyle->SetTitleW(0.7);
+   gStyle->SetLabelSize(0.05,"x");
+   gStyle->SetLabelSize(0.05,"y");
+   gROOT->ForceStyle();
+
+
+   c1->SetFillColor(42);
+   c1->Clear();
+   pad1->Draw();
+   pad2->Draw();
+   pad3->Draw();
+   pad4->Draw();
+
+   pad1->cd();
+   ntup.Draw("t1:time","");
+
+   pad2->cd();
+   ntup.Draw("t2:time","");
+
+   pad3->cd();
+   ntup.Draw("t3:time","");
+
+   pad4->cd();
+   ntup.Draw("t4:time","");
+
+
+   c1->Update();
+
+
+}
+
+
+
+
+
