@@ -7,13 +7,13 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-#include "THaPhysicsModule.h"
+#include "THaVertexModule.h"
 #include "TVector3.h"
 #include "TString.h"
 
 class THaSpectrometer;
 
-class THaTwoarmVertex : public THaPhysicsModule {
+class THaTwoarmVertex : public THaVertexModule {
   
 public:
   THaTwoarmVertex( const char* name, const char* description,

@@ -34,7 +34,7 @@ ClassImp(THaTwoarmVertex)
 //_____________________________________________________________________________
 THaTwoarmVertex::THaTwoarmVertex( const char* name, const char* description,
 				  const char* spectro1, const char* spectro2 ) :
-  THaPhysicsModule(name,description),
+  THaVertexModule(name,description),
   fName1(spectro1), fSpectro1(NULL), fName2(spectro2), fSpectro2(NULL)
 {
   // Normal constructor.
@@ -84,7 +84,7 @@ THaAnalysisObject::EStatus THaTwoarmVertex::Init( const TDatime& run_time )
   // pointer to it.
 
   // Standard initialization. Calls this object's DefineVariables().
-  if( THaPhysicsModule::Init( run_time ) != kOK )
+  if( THaVertexModule::Init( run_time ) != kOK )
     return fStatus;
 
   fSpectro1 = static_cast<THaSpectrometer*>
