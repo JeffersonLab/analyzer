@@ -28,7 +28,7 @@ protected:
 
   TVector3  fPosition;   // Beam position at the target (usually z=0) (meters)
   TVector3  fDirection;  // Beam direction vector (arbitrary units)
-  TList*    fDetectors;    
+
   // Only derived classes can construct me
   //  THaBeam() {}
   // THaBeam( const char* name, const char* description ) :
