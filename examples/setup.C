@@ -11,6 +11,8 @@ THaApparatus* HRSL = new THaLeftHRS("Left arm HRS");
 gHaApps->Add( HRSL );
 THaApparatus* BEAM = new THaBeam("Beamline");
 gHaApps->Add( BEAM );
+THaApparatus* DECDAT = new THaDecData("Misc. Decoder Data");
+gHaApps->Add( DECDAT );
 
 THaScaler* scaler;
 scaler = new THaScaler("Left");
@@ -20,7 +22,7 @@ gHaScalers->Add( scaler );
 
 // Set up the event layout for the output file
 
-THaEvent* event = new THaRawEvent;
+THaEvent* event = new THaEvent;
 
 // Set up the analyzer - we use the standard one,
 // but this could be an experiment-specific one as well.
