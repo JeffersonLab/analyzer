@@ -9,8 +9,8 @@
 
 #include "TObjArray.h"
 #include "THaApparatus.h"
+#include "TClonesArray.h"
 
-class TClonesArray;
 class THaSpectrometerDetector;
 class THaParticleInfo;
 class THaPidDetector;
@@ -26,13 +26,16 @@ public:
 					   const char* name,
 					   Double_t mass, Int_t charge = 0 );
   virtual Int_t            CalcPID();
+          void             Clear();
   virtual void             DefinePidParticles();
+  virtual Int_t            DefineVariables( EMode mode = kDefine ) const;
   virtual Int_t            FindVertices() = 0;
           Int_t            GetNpidParticles() const;
           Int_t            GetNpidDetectors() const;
   const   THaParticleInfo* GetPidParticleInfo( Int_t i ) const;
   const   THaPidDetector*  GetPidDetector( Int_t i ) const;
-          TClonesArray*    GetTracks() const   { return fTracks; }
+          Int_t            GetNTracks()  const { return fTracks->GetLast()+1; }
+          TClonesArray*    GetTracks()   const { return fTracks; }
           TClonesArray*    GetTrackPID() const { return fTrackPID; }
           TClonesArray*    GetVertices() const { return fVertices; }
           Bool_t           IsPID() const       { return fPID; }
@@ -56,6 +59,7 @@ protected:
 
   THaSpectrometer() {}     // only derived classes can construct me
   THaSpectrometer( const char* name, const char* description );
+
 
 private:
   Bool_t          fListInit;      //Detector lists initialized

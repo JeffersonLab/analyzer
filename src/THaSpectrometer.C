@@ -24,6 +24,7 @@
 #include "THaTrack.h"
 //#include "THaVertex.h"
 #include "TClass.h"
+#include "VarDef.h"
 
 #ifdef WITH_DEBUG
 #include <iostream>
@@ -46,6 +47,7 @@ THaSpectrometer::THaSpectrometer( const char* name, const char* desc ) :
   fPidDetectors         = new TObjArray;
   fPidParticles         = new TObjArray;
 
+  Clear();
   DefinePidParticles();
 }
 
@@ -64,6 +66,8 @@ THaSpectrometer::~THaSpectrometer()
   //  delete fVertices;              fVertices = 0;
   delete fTrackPID;              fTrackPID = 0;
   delete fTracks;                fTracks = 0;
+
+  DefineVariables( kDelete );
 }
 
 //_____________________________________________________________________________
@@ -130,6 +134,15 @@ Int_t THaSpectrometer::CalcPID()
 }
 
 //_____________________________________________________________________________
+inline
+void THaSpectrometer::Clear()
+{
+  // Delete contents of internal even-by-event arrays
+
+  fTracks->Delete();
+}
+
+//_____________________________________________________________________________
 void THaSpectrometer::DefinePidParticles()
 {
   // Define the default set of PID particles:
@@ -140,6 +153,25 @@ void THaSpectrometer::DefinePidParticles()
   AddPidParticle( "pi", "pion",   0.139, 0 );
   AddPidParticle( "k",  "kaon",   0.440, 0 );
   AddPidParticle( "p",  "proton", 0.938, 1 );
+}
+
+//_____________________________________________________________________________
+Int_t THaSpectrometer::DefineVariables( EMode mode ) const
+{
+  // Define/delete standard variables for a spectrometer (tracks etc.)
+  // Can be overridden or extended by derived (actual) apparatuses
+
+  RVarDef vars[] = {
+    { "ntracks", "Number of tracks",             "GetNTracks()" },
+    { "x",       "Track x coordinate (cm)",      "fTracks.THaTrack.fX" },
+    { "y",       "Track x coordinate (cm)",      "fTracks.THaTrack.fY" },
+    { "theta",   "Tangent of track theta angle", "fTracks.THaTrack.fTheta" },
+    { "phi",     "Tangent of track phi angle",   "fTracks.THaTrack.fPhi" },
+    { "p",       "Track momentum (GeV)",         "fTracks.THaTrack.fP" },
+    { 0 }
+  };
+
+  return DefineVarsFromList( vars, mode );
 }
 
 //_____________________________________________________________________________
@@ -218,7 +250,7 @@ Int_t THaSpectrometer::Reconstruct()
   TIter nextTrack( fTrackingDetectors );
   TIter nextNonTrack( fNonTrackingDetectors );
   TClonesArray& tracks = *fTracks;
-  tracks.Delete();
+  Clear();
 
   // 1st step: Coarse tracking.  This should be quick and dirty.
   // Any tracks found are put in the fTrack array.
