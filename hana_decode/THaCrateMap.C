@@ -272,7 +272,8 @@ ClassImp(THaCrateMap)
 // Default state: most recent.
      int prior_oct_2000 = 0;
      int prior_jan_2001 = 0;
-     int after_may_2001 = 1;   // most recent 
+     int after_may_2001 = 0;   
+     int after_sep_2002 = 1;  // most recent
 
      if (tloc == 0) {
 //       cout << "Initializing crate map for the time='now'."<<endl;
@@ -281,9 +282,12 @@ ClassImp(THaCrateMap)
        struct tm* tp = localtime(&t);
        year = 1900 + tp->tm_year;
        month = tp->tm_mon+1;
-       if (year < 2000 || (year < 2001 && month < 10)) prior_oct_2000 = 1; 
+       if (year < 2000 || (year < 2001 && month < 10)) 
+                prior_oct_2000 = 1; 
        if (year < 2001) prior_jan_2001 = 1;  
-       if (year < 2001 || year < 2002 && month < 6) after_may_2001 = 0; 
+       if (year >= 2001 && month > 5) after_may_2001 = 1; 
+       if (year < 2002 || (year >= 2002 && month < 9)) 
+                after_sep_2002 = 0;
      } 
      if (prior_oct_2000) prior_jan_2001 = 1;
      for(crate=0; crate<MAXROC; crate++) {
@@ -299,35 +303,60 @@ ClassImp(THaCrateMap)
      }
 // ROC1
      setCrateType(1,"fastbus");
-     for(slot=3; slot<=19; slot++) setModel(1,slot,1877);  
-     for(slot=22; slot<=25; slot++) setModel(1,slot,1881); 
-     setModel(1,20,1875);
-     setModel(1,21,1875);
+     if ( after_sep_2002 ) {
+       for(slot=6; slot<=15; slot++) setModel(1,slot,1877);  
+       for(slot=23; slot<=25; slot++) setModel(1,slot,1881); 
+       setModel(1,16,1875);
+       setModel(1,17,1875);
+     } else {
+       for(slot=3; slot<=19; slot++) setModel(1,slot,1877);  
+       for(slot=22; slot<=25; slot++) setModel(1,slot,1881); 
+       setModel(1,20,1875);
+       setModel(1,21,1875);
+     }
 // ROC2
      setCrateType(2,"fastbus");
-     if (prior_jan_2001) {
-        for(slot=6; slot<=22; slot++) setModel(2,slot,1877);
-        setModel(2,23,1875);
-        setModel(2,24,1881);
-        setModel(2,25,1881);
+     if ( after_sep_2002 ) {
+        for(slot=3; slot<=12; slot++) setModel(2,slot,1877);
+        setModel(2,22,1881);
+        setModel(2,23,1881);
      } else {
-        setModel(2,3,1875);
-        for(slot=4; slot<=21; slot++) setModel(2,slot,1877);
-        for(slot=22; slot<=25; slot++) setModel(2,slot,1881);
+       if ( prior_jan_2001 ) {
+          for(slot=6; slot<=22; slot++) setModel(2,slot,1877);
+          setModel(2,23,1875);
+          setModel(2,24,1881);
+          setModel(2,25,1881);
+       } else {
+          setModel(2,3,1875);
+          for(slot=4; slot<=21; slot++) setModel(2,slot,1877);
+          for(slot=22; slot<=25; slot++) setModel(2,slot,1881);
+       }
      }
 // ROC3
      setCrateType(3,"fastbus");
-     for(slot=4; slot<=10; slot++) setModel(3,slot,1877); 
-     setModel(3,22,1881);
-     setModel(3,23,1877);
+     if ( after_sep_2002 ) {
+        setModel(3,3,1875);
+        for(slot=4; slot<=21; slot++) setModel(3,slot,1877); 
+        for(slot=22; slot<=25; slot++) setModel(3,slot,1881); 
+     } else {
+        for(slot=4; slot<=10; slot++) setModel(3,slot,1877); 
+        setModel(3,22,1881);
+        setModel(3,23,1877);
+     }
 // ROC4
      setCrateType(4,"fastbus");
-     for(slot= 2; slot<= 7; slot++) setModel(4,slot,1881);
-     for(slot= 8; slot<=11; slot++) setModel(4,slot,1877);
-     for(slot=15; slot<=24; slot++) setModel(4,slot,1881);
+     if ( after_sep_2002 ) {
+       for(slot= 4; slot<=10; slot++) setModel(4,slot,1877);
+       setModel(4,22,1881);
+       setModel(4,23,1877);
+     } else {
+       for(slot= 2; slot<= 7; slot++) setModel(4,slot,1881);
+       for(slot= 8; slot<=11; slot++) setModel(4,slot,1877);
+       for(slot=22; slot<=24; slot++) setModel(4,slot,1881);
+     }
 // Scalers on the "right" spectrometer, call it crate 7
      setCrateType(7,"scaler");
-     if (prior_oct_2000) {
+     if ( prior_oct_2000 ) {
        setScalerLoc(7,"lscaler");   
      } else { 
        setScalerLoc(7,"rscaler");   
@@ -353,7 +382,7 @@ ClassImp(THaCrateMap)
      }
 // Scalers on the "left" spectrometer, call it crate 8
      setCrateType(8,"scaler");
-     if (prior_oct_2000) {
+     if ( prior_oct_2000 ) {
        setScalerLoc(8,"rscaler");
      } else {
        setScalerLoc(8,"lscaler");
@@ -375,7 +404,19 @@ ClassImp(THaCrateMap)
         setHeader(9,slot,0xbbc00000+(slot-1)*0x10000);
         setMask(9,slot,0xffff0000);
      }
-// ROC11, the synchronous event readout of scalers
+// ROC10 synchronous event readout of scalers
+     setCrateType(10,"scaler");
+     setScalerLoc(10,"evright");
+     setModel(10,1,3801);
+     setHeader(10,1,0xceb70000);
+     setMask(10,1,0xffff0000);
+     setModel(10,2,3801);
+     setHeader(10,2,0xceb80000);
+     setMask(10,2,0xffff0000);
+     setModel(10,3,3801);
+     setHeader(10,3,0xceb90000);
+     setMask(10,3,0xffff0000);
+// ROC11 synchronous event readout of scalers
      setCrateType(11,"scaler");
      setScalerLoc(11,"evleft");
      setModel(11,1,3801);
@@ -394,10 +435,10 @@ ClassImp(THaCrateMap)
        setHeader(12,slot,0xcd000000+((slot-1)<<16));
        setMask(12,slot,0xffff0000);     
      }
-     // FIX ME : this is a hack by BR, to read the tir_dat register of the
-     //          trigger mdoule in this crate, this model ID is just 
-     //          arbitary, maybe one can find something better
-     //          there is also no physical slot 25 
+     // This is a hack by BR, to read the tir_dat register of the
+     // trigger modoule in this crate, this model ID is just 
+     //  arbitary, maybe one can find something better
+     //  there is also no physical slot 25 
      setModel(12,25,7353);
      setHeader(12,25,0x73530000);
      setMask(12,25,0xffff0000);
