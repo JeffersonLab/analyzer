@@ -206,14 +206,14 @@ int THaEvData::gendecode(const int* evbuffer, THaCrateMap* map) {
            evt_time = static_cast<UInt_t>(evbuffer[2]);
            goto exit;
 	 case PRESTART_EVTYPE :
-           run_time = static_cast<UInt_t>(evbuffer[2]);
+// Usually prestart is the first 'event'.  Call SetRunTime() to re-initialize the
+// crate map since we now know the run time.  
+// This won't happen for split files (no prestart). For such files, 
+// the user should call SetRunTime() explicitly.
+           SetRunTime(static_cast<UInt_t>(evbuffer[2]));
            run_num  = evbuffer[3];
            run_type = evbuffer[4];
 	   evt_time = run_time;
-// Usually prestart is the first 'event'.  Re-initialize crate map since we
-// now know the run time.  This won't happen for split files (no prestart).
-           init_cmap();     
-           init_slotdata(map);
            goto exit;
 	 case GO_EVTYPE :
            evt_time = static_cast<UInt_t>(evbuffer[2]);
@@ -289,6 +289,7 @@ int THaEvData::physics_decode(const int* evbuffer, THaCrateMap* map) {
   	   cout << "ERROR in THaEvData::physics_decode:";
 	   cout << "  illegal ROC number " <<dec<<iroc<<endl;
 	 }
+	 if( fDoBench ) fBench->Stop("physics_decode");
          return HED_ERR;
        }
 // Save position and length of each found ROC data block
@@ -736,8 +737,8 @@ exit:
     return retval;
 }
 
-int THaEvData::camac_decode(int roc, THaCrateMap* map, const int* evbuffer,
-          int ipt, int istop) {
+int THaEvData::camac_decode(int roc, THaCrateMap* map, const int* evbuffer, 
+			    int ipt, int istop) {
    if (VERBOSE) {
      cout << "Sorry, no CAMAC decoding yet !!" << endl;
    }
@@ -830,6 +831,16 @@ int THaEvData::init_slotdata(const THaCrateMap* map)
     }
   }
   return HED_OK;
+}
+
+void THaEvData::SetRunTime( UInt_t tloc )
+{
+  // Set run time and re-initialize crate map (and possibly other
+  // database parameters for the new time.
+
+  run_time = tloc;
+  init_cmap();     
+  init_slotdata(fMap);
 }
 
 void THaEvData::hexdump(const char* cbuff, size_t nlen)

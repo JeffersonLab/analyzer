@@ -74,6 +74,7 @@ public:
      int LoadEvent(const int* evbuffer);          
      void PrintSlotData(int crate, int slot) const;
      void PrintOut() const { dump(buffer); }
+     void SetRunTime( UInt_t tloc );
 
      UInt_t GetInstance() const { return fInstance; }
      static UInt_t GetInstances() { return fgInstances.CountBits(); }
