@@ -243,7 +243,7 @@ void THaFormula::Print( Option_t* option ) const
   if( !strcmp( option, kPRINTFULL ))
     TFormula::Print( option );
   else
-    printf("%-20s : %s\n",GetName(),GetTitle());
+    TNamed::Print(option);
 }
 
 //_____________________________________________________________________________
