@@ -12,8 +12,11 @@
 //#include "TH1.h"
 //#include "TH2.h"
 #include <vector>
+#include <iostream>
 #include <string>
 #include <cstring>
+
+using namespace std;
 
 class TH1;
 
@@ -33,6 +36,14 @@ class BdataLoc {
      name(nm), search_choice(1) {}
    Bool_t IsSlot() { return (search_choice == 0); }
    void Clear() { ndata=0;  loaded_once = kFALSE; }
+   void Print() { 
+     cout << "DataLoc "<<name<<"   crate "<<crate;
+     if (IsSlot()) {
+       cout << "  slot "<<slot<<"   chan "<<chan<<endl;
+     } else {
+       cout << "  header "<<header<<"  ntoskip "<<ntoskip<<endl;
+     }
+   } 
    void Load(UInt_t data) {
      if (ndata<MxHits) rdata[ndata++]=data;
      loaded_once = kTRUE;
@@ -128,6 +139,7 @@ private:
    virtual void Print( Option_t* opt="" ) const;
    std::vector<TH1* > hist;
    Int_t DefaultMap();
+   void  PrintMap(Int_t flag=0);
    Int_t InitCalib();
    Int_t DoBpm();
    Int_t DoKine();

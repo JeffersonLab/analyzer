@@ -16,7 +16,7 @@
 //   Cut happexL L.tr.n==1&&P.hapadcl1>1800
 //   TH2F Lali1 'Left arm alignment' L.tr.x L.tr.y 100 -0.8 0.8 100 -0.2 0.2  onetrkL
 //   TH2F Lali2 'Left arm alignment (HAP det)' L.tr.x L.tr.y 100 -0.8 0.8 100 -0.2 0.2  happexL
-// b) Find detector using field too high by ~4%. Whole
+// b) Find detector using field too low by ~4%. Whole
 //    detector illuminated by rad. tail.
 //    --> Defines "box" of detector.
 // c) Put field at 0%, check if tracks fit in "box".
@@ -196,7 +196,9 @@ Int_t ParityData::SetupParData( const TDatime* run_time, EMode mode )
       cout << "WARNING:: ParityData: File db_"<<name<<".dat not found."<<endl;
       cout << "An example of this file should be in the examples directory."<<endl;
       cout << "Will proceed with default mapping for ParityData."<<endl;
-      return DefaultMap();
+      Int_t statm = DefaultMap();
+      PrintMap();
+      return statm;
     }
 
   string sinput;
@@ -233,7 +235,22 @@ Int_t ParityData::SetupParData( const TDatime* run_time, EMode mode )
       DefineChannel(b,mode);
     }
   }
+  PrintMap(1);
   return retval;
+}
+
+//_____________________________________________________________________________
+void ParityData::PrintMap(Int_t flag) {
+  cout << "Map for Parity Data "<<endl;
+  if (flag == 1) cout << "Map read from file "<<endl;
+  for( Iter_t p = fCrateLoc.begin(); p != fCrateLoc.end(); p++) {
+    BdataLoc *dataloc = *p;
+    dataloc->Print();
+  }
+  for (Iter_t p = fWordLoc.begin(); p != fWordLoc.end(); p++) {
+    BdataLoc *dataloc = *p;
+    dataloc->Print();
+  }  
 }
 
 //_____________________________________________________________________________
@@ -264,12 +281,12 @@ Int_t ParityData::End( THaRunBase* run )
   void ParityData::BookHist()
 {
   hist.clear();
-  hist.push_back(new TH1F("Cav1Q","Cavity1 Q",1000,-500,4500));
-  hist.push_back(new TH1F("Cav1X","Cavity1 X",1000,-500,4500));
-  hist.push_back(new TH1F("Cav1Y","Cavity1 Y",1000,-500,4500));
-  hist.push_back(new TH1F("Cav2Q","Cavity2 Q",1000,-500,4500));
-  hist.push_back(new TH1F("Cav2X","Cavity2 X",1000,-500,4500));
-  hist.push_back(new TH1F("Cav2Y","Cavity2 Y",1000,-500,4500));
+  hist.push_back(new TH1F("Cav1Q","Cavity1 Q",1200,-800,5200));
+  hist.push_back(new TH1F("Cav1X","Cavity1 X",1200,-800,5200));
+  hist.push_back(new TH1F("Cav1Y","Cavity1 Y",1200,-800,5200));
+  hist.push_back(new TH1F("Cav2Q","Cavity2 Q",1200,-800,5200));
+  hist.push_back(new TH1F("Cav2X","Cavity2 X",1200,-800,5200));
+  hist.push_back(new TH1F("Cav2Y","Cavity2 Y",1200,-800,5200));
 
 }
 
