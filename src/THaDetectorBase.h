@@ -42,8 +42,8 @@ protected:
   Int_t           fNelem;     // Number of detector elements (paddles, mirrors)
 
   // Geometry 
-  TVector3        fOrigin;    // Origin of detector plane in detector coordinates
-  Float_t         fSize[3];   // Detector size in x,y,z (cm) - x,y are half-widths
+  TVector3        fOrigin;    // Origin of detector plane in detector coordinates (m)
+  Float_t         fSize[3];   // Detector size in x,y,z (m) - x,y are half-widths
   
   // Extra Geometry for calculating intercepts
   TVector3  fXax;                  // X axis of the detector plane
