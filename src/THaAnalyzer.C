@@ -117,6 +117,40 @@ Int_t THaAnalyzer::EvalCuts( Int_t n )
 }
 
 //_____________________________________________________________________________
+Int_t THaAnalyzer::InitModules( TIter& next, TDatime& run_time, Int_t erroff,
+				const char* baseclass )
+{
+  // Initialize a list of THaAnalysisObjects for time 'run_time'.
+  // If 'baseclass' given, ensure that each object in the list inherits 
+  // from 'baseclass'.
+
+  static const char* const here = "InitModules()";
+
+  bool fail = false;
+  Int_t retval = 0;
+  TObject* obj;
+  while( !fail && (obj = next())) {
+    if( baseclass && !obj->IsA()->InheritsFrom( baseclass )) {
+      Error( here, "Object %s (%s) is not a %s. Analyzer initialization failed.", 
+	     obj->GetName(), obj->GetTitle(), baseclass );
+      retval = -2;
+      fail = true;
+    } else {
+      THaAnalysisObject* theModule = static_cast<THaAnalysisObject*>( obj );
+      theModule->Init( run_time );
+      if( !theModule->IsOK() ) {
+	Error( here, "Error initizlizing module %s (%s). "
+	       "Analyzer initialization failed.", 
+	       obj->GetName(), obj->GetTitle() );
+	retval = -1;
+	fail = true;
+      }
+    }
+  }
+  return (retval == 0) ? 0 : retval - erroff;
+}
+
+//_____________________________________________________________________________
 Int_t THaAnalyzer::Process( THaRun& run )
 {
   // Process the given run. Loop over all events in the event range and
@@ -217,83 +251,34 @@ Int_t THaAnalyzer::Process( THaRun& run )
       // FIXME: give this different name?
       run.Write("Run Data");
 
-      // Initialize apparatuses. Make sure that every object in
-      // gHaApps really is an apparatus.  Quit if any errors.
-      
-      bool fail = false;
+      // Initialize all apparatuses, scalers, and physics modules.
+      // Quit if any errors.
       Int_t retval = 0;
-      TObject* obj;
-      while( !fail && (obj = next())) {
-	if( !obj->IsA()->InheritsFrom("THaApparatus")) {
-	  Error( here, "Apparatus %s is not a THaApparatus. "
-		 "Analyzer initialization failed.", obj->GetName() );
-	  retval = -20;
-	  fail = true;
-	} else {
-	  THaApparatus* theApparatus = static_cast<THaApparatus*>( obj );
-	  theApparatus->Init( run_time );
-	  if( !theApparatus->IsOK() ) {
-	    retval = -21;
-	    fail = true;
-	  }
-	}
-      }
-
-      // Initialize scalers. Quit if any errors.
-      // Similar to apparatuses.
-
-      while( !fail && (obj = next_scaler())) {
-	if( !obj->IsA()->InheritsFrom("THaScalerGroup")) {
-	  Error( here, "Scaler %s is not a THaScalerGroup. "
-		 "Analyzer initialization failed.", obj->GetName() );
-	  retval = -30;
-	  fail = true;
-	} else {
-	  THaScalerGroup* theScaler = static_cast<THaScalerGroup*>( obj );
-	  if( theScaler->Init( run_time ) != 0 ) {
-	    retval = -31;
-	    fail = true;
-	  }
-	}
-      }
-
-      // Initialize physics modules. Quit on error.
-      // Similar to apparatuses and scalers.
-
-      while( !fail && (obj = next_physics())) {
-	if( !obj->IsA()->InheritsFrom("THaPhysicsModule")) {
-	  Error( here, "Physics module %s is not a THaPhysicsModule. "
-		 "Analyzer initialization failed.", obj->GetName() );
-	  retval = -40;
-	  fail = true;
-	} else {
-	  THaPhysicsModule* theModule = static_cast<THaPhysicsModule*>( obj );
-	  if( theModule->Init( run_time ) != 0 ) {
-	    retval = -41;
-	    fail = true;
-	  }
-	}
-      }
-
+      if( !((retval = InitModules( next,         run_time, 20, "THaApparatus")) ||
+	    (retval = InitModules( next_scaler,  run_time, 30, "THaScalerGroup")) ||
+	    (retval = InitModules( next_physics, run_time, 40, "THaPhysicsModule"))
+	    )) {
+	
       // fOutput must be initialized after all apparatuses are
       // initialized and before adding anything to its tree.
 
-      if (fOutput->Init() < 0) {
-        cout << "ERROR: THaAnalyzer::Process: ";
-        cout << "Error initializing THaOutput " << endl;
+	if( (retval = fOutput->Init()) < 0 ) {
+	  Error( here, "Error initializing THaOutput." );
+	} else {
+	  outputTree = fOutput->GetTree();
+	  if( fEvent ) {
+	    outputTree->Branch( "Event_Branch", fEvent->IsA()->GetName(), 
+				&fEvent, 16000, 99 );
+	  }
+	}
       }
-      outputTree = fOutput->GetTree();
-      if( fEvent ) {
-	outputTree->Branch( "Event_Branch", fEvent->IsA()->GetName(), &fEvent,
-			    16000, 99 );
-      }
-
-      if( fail ) {
+      if( retval ) {
         delete fOutput;
         delete fFile;
 	run.CloseFile();
 	return retval;
       }
+
     } //if(first)
 
     // Print marks every 1000 events

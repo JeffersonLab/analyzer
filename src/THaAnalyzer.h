@@ -20,14 +20,14 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "TString.h"
-#include "THaCutList.h"
-#include "THaGlobals.h"
 
 class THaEvent;
 class THaRun;
 class THaOutput;
 class THaNamedList;
 class TFile;
+class TIter;
+class TDatime;
 
 class THaAnalyzer {
 
@@ -62,10 +62,12 @@ protected:
   TString*       fMasterCutNames;  //Names of the "master cuts" for each cut block
   THaNamedList** fCutBlocks;       //Array of pointers to the blocks of cuts
   UInt_t         fNev;             //Current event number
-  Int_t          *fSkipCnt;        //Counters for reasons to skip events.
+  Int_t*         fSkipCnt;         //Counters for reasons to skip events.
 
   Int_t          EvalCuts( Int_t n );
   virtual void   SetupCuts();
+  virtual Int_t  InitModules( TIter& iter, TDatime& time, Int_t erroff,
+			      const char* baseclass = NULL );
 
   ClassDef(THaAnalyzer,0)  //Hall A Analyzer Standard Event Loop
 };
