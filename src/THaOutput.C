@@ -941,14 +941,26 @@ std::vector<THaString> THaOutput::reQuote(std::vector<THaString> input) const {
   result.clear();
   int first_quote = 1;
   int to_add = 0;
-  THaString temp1,temp2;
-  string::size_type pos1;
+  THaString temp1,temp2,temp3;
+  string::size_type pos1,pos2;
   for (vector<THaString>::iterator str = input.begin(); str != input.end(); str++) {
     temp1 = *str;
     pos1 = temp1.find("'");
     if (pos1 != THaString::npos) {
       if (first_quote) {
         temp2.assign(temp1.substr(pos1,temp1.length()));
+// But there might be a 2nd "'" with no spaces
+// like "'Yes'" (silly, but understandable & allowed)
+        temp3.assign(temp1.substr(pos1+1,temp1.length()));
+        pos2 = temp3.find("'");
+        if (pos2 != THaString::npos) {
+          temp1.assign(temp3.substr(0,pos2));
+          temp2.assign(temp3.substr
+		       (pos2+1,temp3.length()));
+	  temp3 = temp1+temp2;
+          result.push_back(temp3);
+          continue;
+        }
         first_quote = 0;
         to_add = 1;
       } else {
