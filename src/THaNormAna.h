@@ -165,7 +165,7 @@ private:
    Double_t bcmu3;       // a BCM (rate)
    Int_t *eventint;      // event intervals for BCM calib
    // scaler data from roc10 or 11 (counts)
-   Double_t roc11_bcmu3, roc11_bcmu10;
+   Double_t roc11_bcmu3, roc11_bcmu10, roc11_bcmd10;
    Double_t roc11_t1,roc11_t2,roc11_t3,roc11_t4,roc11_t5;
    Double_t roc11_clk1024, roc11_clk104k;
    Double_t *norm_scaler;

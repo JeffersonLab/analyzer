@@ -92,6 +92,7 @@ THaNormAna::THaNormAna( const char* name, const char* descript ) :
   hneg_alive = 0;
   roc11_bcmu3 = 0;
   roc11_bcmu10 = 0;
+  roc11_bcmd10 = 0;
   roc11_t1 = 0;
   roc11_t2 = 0;
   roc11_t3 = 0;
@@ -134,8 +135,9 @@ Int_t THaNormAna::SetupRawData( const TDatime* run_time, EMode mode )
     { "hneg_alive", "helicity negative livetime", "hneg_alive" },  
 
     // Now we add roc11 data, it is "newer" code.
-    { "roc11_bcmu3", "ROC11 BCM upsgream, gain 3", "roc11_bcmu3" },  
-    { "roc11_bcmu10", "ROC11 BCM upsgream, gain 10", "roc11_bcmu10" },  
+    { "roc11_bcmu3", "ROC11 BCM upstream, gain 3", "roc11_bcmu3" },  
+    { "roc11_bcmu10", "ROC11 BCM upstream, gain 10", "roc11_bcmu10" },  
+    { "roc11_bcmd10", "ROC11 BCM downstream, gain 10", "roc11_bcmd10" },  
     { "roc11_t1", "ROC11 trigger 1 counts", "roc11_t1" },  
     { "roc11_t2", "ROC11 trigger 2 counts", "roc11_t2" },  
     { "roc11_t3", "ROC11 trigger 3 counts", "roc11_t3" },  
@@ -166,7 +168,8 @@ void THaNormAna::InitRocScalers()
   fRocScaler.push_back(new BRocScaler(11,"trigger-5",0xabc30000, 0xabc50000, 4, &roc11_t5));
   fRocScaler.push_back(new BRocScaler(11,"clock1024",0xabc30000, 0xabc50000, 7, &roc11_clk1024));
   fRocScaler.push_back(new BRocScaler(11,"bcm_u3",0xabc30000, 0xabc50000, 6, &roc11_bcmu3));
-  fRocScaler.push_back(new BRocScaler(11,"bcm_u10",0xabc30000, 0xabc50000, 11, &roc11_bcmu10));
+  fRocScaler.push_back(new BRocScaler(11,"bcm_u10",0xabc30000, 0xabc50000, 8, &roc11_bcmu10));
+  fRocScaler.push_back(new BRocScaler(11,"bcm_d10",0xabc30000, 0xabc50000, 11, &roc11_bcmd10));
 }
 
 //_____________________________________________________________________________
