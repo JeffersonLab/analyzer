@@ -178,9 +178,12 @@ void THaAnalyzer::Print( Option_t* opt ) const
 void THaAnalyzer::PrintSummary( const THaRun* run ) const
 {
   // Print summary of cuts etc.
+  // Only print to screen if fVerbose>1, but always print to
+  // the summary file if a summary file is requested.
 
   if( gHaCuts->GetSize() > 0 ) {
-    gHaCuts->Print("STATS");
+    if( fVerbose>1 )
+      gHaCuts->Print("STATS");
     if( fSummaryFileName.Length() > 0 ) {
       TString filename(fSummaryFileName);
       Ssiz_t pos, dot=-1;
@@ -804,23 +807,24 @@ Int_t THaAnalyzer::Process( THaRun* run )
       }
       if( !first ) cout << endl;
     }
-    
-    // Print timing statistics, if benchmarking enabled
-
-    if( fDoBench ) {
-      fBench->Print("Prestart");
-      fBench->Print("Init");
-      fBench->Print("RawDecode");
-      fBench->Print("Decode");
-      fBench->Print("Reconstruct");
-      fBench->Print("Physics");
-      fBench->Print("Output");
-      fBench->Print("Cuts");
-      fBench->Print("Scaler");
-    }
-    fBench->Print("Total");
   }
 
+  // Print timing statistics, if benchmarking enabled
+
+  if( fDoBench ) {
+    fBench->Print("Prestart");
+    fBench->Print("Init");
+    fBench->Print("RawDecode");
+    fBench->Print("Decode");
+    fBench->Print("Reconstruct");
+    fBench->Print("Physics");
+    fBench->Print("Output");
+    fBench->Print("Cuts");
+    fBench->Print("Scaler");
+  }
+  if( fVerbose>1 || fDoBench )
+    fBench->Print("Total");
+  
   //--- Close the input file
   run->CloseFile();
 
@@ -836,8 +840,7 @@ Int_t THaAnalyzer::Process( THaRun* run )
   }
 
   // Print cut summary (also to file if one given)
-  if( fVerbose>1 )
-    PrintSummary(run);
+  PrintSummary(run);
 
   //keep the last run available
   //  gHaRun = NULL;
