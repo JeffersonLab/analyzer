@@ -165,7 +165,8 @@ SRC           = src/THaFormula.C src/THaVform.C src/THaVhist.C \
 		src/THaDB.C src/THaDBFile.C \
 	        src/THaCoincTime.C src/THaS2CoincTime.C \
                 src/THaTrackProj.C \
-		src/THaPostProcess.C src/THaFilter.C
+		src/THaPostProcess.C src/THaFilter.C \
+		src/THaElossCorrection.C
 
 ifdef ONLINE_ET
 SRC += src/THaOnlRun.C

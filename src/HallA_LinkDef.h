@@ -100,6 +100,7 @@
 #pragma link C++ class THaTrackProj+;
 #pragma link C++ class THaPostProcess+;
 #pragma link C++ class THaFilter+;
+#pragma link C++ class THaElossCorrection+;
 
 #ifdef ONLINE_ET
 #pragma link C++ class THaOnlRun+;
