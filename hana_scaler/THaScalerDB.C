@@ -41,6 +41,7 @@ bool THaScalerDB::extract_db(const Bdate& bdate, multimap< string, BscaLoc >& bm
   if( dbdir ) ndir += 2;
   vector<string> fname(ndir);
   int i = 0;
+  fname[i++] = scalmap; // always look in current directory first
   if( dbdir ) {
     string dbpath(dbdir);
     dbpath.append("/");
@@ -52,13 +53,12 @@ bool THaScalerDB::extract_db(const Bdate& bdate, multimap< string, BscaLoc >& bm
   fname[i++] = "db/DEFAULT/" + scalmap;
   fname[i++] = "db/" + scalmap;
   fname[i++] = "DEFAULT/" + scalmap;
-  fname[i++] = scalmap;
   i = 0;
   ifstream mapfile;
   do {
     mapfile.open(fname[i].c_str());
-  } while( !mapfile && (++i)<ndir );
-  if (!mapfile) {
+  } while( (! mapfile.is_open() ) && (++i)<ndir );
+  if (! mapfile.is_open() ) {
      cerr << "ERROR: THaScalerDB: scaler.map file does not exist !!"<<endl;
      cerr << "You must have scaler.map in present working directory,"<<endl;
      cerr << "or in $DB_DIR directory." << endl;
