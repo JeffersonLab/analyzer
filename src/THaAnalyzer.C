@@ -87,6 +87,9 @@ THaAnalyzer::THaAnalyzer() :
   fApps    = gHaApps;
   fScalers = gHaScalers;
   fPhysics = gHaPhysics;
+
+  // Timers
+  fBench = new THaBenchmark;
 }
 
 //_____________________________________________________________________________
@@ -227,13 +230,6 @@ THaAnalyzer::Counter_t* THaAnalyzer::DefineCounter( const Counter_t* item )
 //_____________________________________________________________________________
 void THaAnalyzer::EnableBenchmarks( Bool_t b )
 {
-  if( b ) {
-    if( !fBench )
-      fBench = new THaBenchmark;
-  } else {
-    delete fBench;
-    fBench = NULL;
-  }
   fDoBench = b;
 }
 
@@ -724,8 +720,10 @@ void THaAnalyzer::PrintScalers() const
 	 static_cast<THaScalerGroup*>( next() )) {
     if( !first ) 
       cout << endl;
-    else
+    else {
+      cout << "Scaler summary:" << endl;
       first = false;
+    }
     theScaler->PrintSummary();
   }
   if( !first ) cout << endl;
@@ -739,6 +737,7 @@ void THaAnalyzer::PrintCutSummary() const
   // the summary file if a summary file is requested.
 
   if( gHaCuts->GetSize() > 0 ) {
+    cout << "Cut summary:" << endl;
     if( fVerbose>1 )
       gHaCuts->Print("STATS");
     if( fSummaryFileName.Length() > 0 ) {
@@ -1069,7 +1068,7 @@ Int_t THaAnalyzer::Process( THaRun* run )
     else
       return -1;
   }
-  fBench->Reset();
+  if( !fAnalysisStarted ) fBench->Reset();
   fBench->Begin("Total");
 
   //--- Initialization. Creates fFile, fOutput, and fEvent if necessary.
@@ -1165,6 +1164,19 @@ Int_t THaAnalyzer::Process( THaRun* run )
   // Save final run parameters in run object of caller, if any
   *run = *fRun;
 
+  // Write the output file and clean up.
+  // This writes the Tree as well as any objects (histograms etc.)
+  // that are defined in the current directory.
+
+  if( fDoBench ) fBench->Begin("Output");
+  if( fOutput ) fOutput->End();
+  if( fFile ) {
+    fRun->Write("Run_Data");  // Save run data to ROOT file
+    //    fFile->Write();//already done by fOutput->End()
+    fFile->Purge();         // get rid of excess object "cycles"
+  }
+  if( fDoBench ) fBench->Stop("Output");
+
   fBench->Stop("Total");
 
   //--- Report statistics
@@ -1186,8 +1198,12 @@ Int_t THaAnalyzer::Process( THaRun* run )
       PrintScalers();
   }
 
+  // Print cut summary (also to file if one given)
+  PrintCutSummary();
+
   // Print timing statistics, if benchmarking enabled
   if( fDoBench ) {
+    cout << "Timing summary:" << endl;
     fBench->Print("Init");
     fBench->Print("RawDecode");
     fBench->Print("Decode");
@@ -1200,20 +1216,6 @@ Int_t THaAnalyzer::Process( THaRun* run )
   if( fVerbose>1 || fDoBench )
     fBench->Print("Total");
   
-  // Write the output file and clean up.
-  // This writes the Tree as well as any objects (histograms etc.)
-  // that are defined in the current directory.
-
-  if( fOutput ) fOutput->End();
-  if( fFile ) {
-    run->Write("Run_Data");  // Save run data to ROOT file
-    //    fFile->Write();//already done by fOutput->End()
-    fFile->Purge();         // get rid of excess object "cycles"
-  }
-
-  // Print cut summary (also to file if one given)
-  PrintCutSummary();
-
   //keep the last run available
   //  gHaRun = NULL;
   return fNev;
