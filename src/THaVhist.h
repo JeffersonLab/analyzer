@@ -81,10 +81,10 @@ protected:
 
 private:
 
-   THaVhist(const THaVhist& vhist) {}
-   THaVhist& operator=(const THaVhist& vhist) { return *this; }
+  THaVhist(const THaVhist& vhist);
+  THaVhist& operator=(const THaVhist& vhist);
 
-   ClassDef(THaVhist,0)  // Vector of histograms.
+  ClassDef(THaVhist,0)  // Vector of histograms.
 
 };
 
