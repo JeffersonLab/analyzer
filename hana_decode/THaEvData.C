@@ -45,6 +45,7 @@ THaEvData::THaEvData() :
   first_load(true), first_scaler(true), first_decode(true),
   numscaler_crate(0), run_num(0), run_type(0), run_time(0)
 {
+  buffer = 0;
   epics = new THaEpicsStack;
   epics->setupDefaultList();
   for (int i=0; i<MAX_PSFACT; i++) psfact[i] = 0;
