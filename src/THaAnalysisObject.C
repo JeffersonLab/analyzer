@@ -80,11 +80,6 @@ Int_t THaAnalysisObject::Begin( THaRunBase* run )
 }
 
 //_____________________________________________________________________________
-void THaAnalysisObject::Clear( Option_t* opt )
-{
-}
-
-//_____________________________________________________________________________
 Int_t THaAnalysisObject::DefineVariables( EMode mode )
 { 
   // Default method for defining global variables. Currently does nothing.
