@@ -66,7 +66,9 @@ void THaVform::Create(const THaVform &rhs)
   fNvar = rhs.fNvar;
   fVarPtr = rhs.fVarPtr;
   fObjSize = rhs.fObjSize;
-  fOdata = rhs.fOdata;
+  delete fOdata; fOdata = NULL;
+  if( rhs.fOdata )
+    fOdata = new THaOdata(*rhs.fOdata);
   fVarName = rhs.fVarName;
   fVarStat = rhs.fVarStat;
   fVectSform = rhs.fVectSform;
@@ -344,7 +346,6 @@ Int_t THaVform::MakeFormula(Int_t flo, Int_t fhi)
   // kIllPre = ambiguity of whether this is a cut.
 
   Int_t status = 0;
-  char cname[50],temp[50];
 
   if (flo < 0) flo = 0;
   if (flo >= fhi) return 0;
@@ -363,14 +364,13 @@ Int_t THaVform::MakeFormula(Int_t flo, Int_t fhi)
   if (fPrefix == kNoPrefix) {
 
    for (Int_t i = flo; i < fhi; i++) { 
-     strcpy(cname,GetName());
-     sprintf(temp,"-%d",i);
-     strcat(cname,temp);
+     string cname = Form("%s-%d",GetName(),i);
      if (IsCut()) {
-        fCut.push_back(new THaCut(cname,fVectSform[i].c_str(),
-               (const char*)"thavcut"));
+        fCut.push_back(new THaCut(cname.c_str(),fVectSform[i].c_str(),
+				  "thavcut"));
      } else if (IsFormula()) {
-        fFormula.push_back(new THaFormula(cname,fVectSform[i].c_str()));
+        fFormula.push_back(new THaFormula(cname.c_str(),
+					  fVectSform[i].c_str()));
      }
    }
 
@@ -415,7 +415,8 @@ Int_t THaVform::MakeFormula(Int_t flo, Int_t fhi)
       sform += fVectSform[i];
       if (i < (long)fVectSform.size()-1) sform += soper;
     }
-    strcpy(cname,GetName());
+
+    string cname(GetName());
 
     if (IsCut()) {
       if ((long)fCut.size() != 0) {  // drop what was there before
@@ -423,9 +424,9 @@ Int_t THaVform::MakeFormula(Int_t flo, Int_t fhi)
              itc != fCut.end(); itc++) delete *itc;
          fCut.clear();
       }
-      strcat(cname,"cut");
-      fCut.push_back(new THaCut(cname,sform.c_str(), 
-           (const char*)"thavsform"));
+      cname += "cut";
+      fCut.push_back(new THaCut(cname.c_str(),sform.c_str(), 
+				"thavsform"));
     } else if (IsFormula()) {
       if ((long)fFormula.size() != 0) {  // drop what was there before
          for (std::vector<THaFormula* >::iterator itf = 
@@ -433,8 +434,8 @@ Int_t THaVform::MakeFormula(Int_t flo, Int_t fhi)
                delete *itf;
          fFormula.clear();
       }
-      strcat(cname,"form");
-      fFormula.push_back(new THaFormula(cname,sform.c_str()));
+      cname += "form";
+      fFormula.push_back(new THaFormula(cname.c_str(),sform.c_str()));
     }
 
   }
