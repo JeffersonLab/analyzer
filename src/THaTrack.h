@@ -31,7 +31,7 @@ public:
 
   void              Clear( Option_t* opt );
   Double_t          GetP()  const                  { return fP; }
-  Double_t          GetPx() const                  { return fPy; }
+  Double_t          GetPx() const                  { return fPx; }
   Double_t          GetPy() const                  { return fPy; }
   Double_t          GetPz() const                  { return fPz; }
   Double_t          GetX( Double_t z=0.0 ) const;
