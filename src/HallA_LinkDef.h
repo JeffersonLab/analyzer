@@ -44,6 +44,7 @@
 #pragma link C++ class THaEventHeader+;
 #pragma link C++ class THaOutput+;
 #pragma link C++ class THaOdata+;
+#pragma link C++ class THaScalerKey+;
 #pragma link C++ class THaString+;
 #pragma link C++ class THaAnalyzer+;
 #pragma link C++ class THaPrintOption+;
