@@ -9,6 +9,9 @@ R.pcentral = 0.8
 L.theta    = 16.
 L.pcentral = 0.8
 
+R.sh.config = 1249
+R.ps.config = 1249
+
 --------[ 2003-01-06 00:00:00 ]
 
 ebeam      = 1.04686
@@ -114,6 +117,11 @@ R.pcentral = 2.575
 
 ebeam      = 5.008
 
+--------[ 2003-01-23 18:00:00 ]
+
+R.sh.config = 1908
+R.ps.config = 1908
+
 --------[ 2003-01-26 12:30:00 ]
 
 L.pcentral = 2.732
@@ -136,6 +144,16 @@ L.theta    = 32.0
 L.pcentral = 2.031
 R.pcentral = 2.031
 
+--------[ 2003-02-02 05:30:00 ]
+
+R.sh.config = 1858
+R.ps.config = 1858
+
+--------[ 2003-02-03 23:00:00 ]
+
+R.sh.config = 1908
+R.ps.config = 1908
+
 --------[ 2003-02-04 00:00:00 ]
 
 L.pcentral = 2.199
@@ -148,6 +166,9 @@ L.theta    = 25.0
 R.theta    = 25.0
 L.pcentral = 1.3338
 R.pcentral = 1.3338
+
+R.sh.config = 1858
+R.ps.config = 1858
 
 --------[ 2003-02-08 10:30:00 ]
 
@@ -178,6 +199,9 @@ R.pcentral = 1.836
 
 L.pcentral = 1.987
 R.pcentral = 1.987
+
+R.sh.config = 1908
+R.ps.config = 1908
 
 --------[ 2003-02-10 00:00:00 ]
 
