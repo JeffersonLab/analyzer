@@ -14,7 +14,7 @@
 #include "evio.h"
 
 class THaBenchmark;
-class THaEpicsStack;
+class THaEpics;
 class THaCrateMap;
 class THaFastBusWord;
 class THaHelicity;
@@ -56,7 +56,6 @@ public:
      int GetNumChan(int crate, int slot) const;    // Num unique channels hit
      int GetNextChan(int crate, int slot, int index) const; // List unique chan
      const char* DevType(int crate, int slot) const;
-     int AddEpicsTag(const TString& tag);
 // User can GetScaler, alternativly to GetSlotData for scalers
 // spec = "left", "right", "rcs" for event type 140 scaler "events"
 // spec = "evleft" or "evright" for L,R scalers injected into datastream.
@@ -65,8 +64,9 @@ public:
      int GetHelicity() const;         // Returns Beam Helicity (-1,0,+1)  '0' is 'unknown'
      int GetHelicity(const TString& spec) const;  // Beam Helicity for spec="left","right"
 // EPICS data which is nearest CODA event# 'event'.  Tag is EPICS variable, e.g. 'IPM1H04B.XPOS'
-     double GetEpicsData(const char* tag, int event) const;
-     double GetEpicsData(const char* tag) const;    // get nearest present event.
+     double GetEpicsData(const char* tag, int event=0) const;
+     double GetEpicsTime(const char* tag, int event=0) const;
+     Bool_t IsLoadedEpics(const char* tag) const;
 // Loads CODA data evbuffer using THaCrateMap passed as 2nd arg
      int LoadEvent(const int* evbuffer, THaCrateMap* usermap);    
 // Loads CODA data evbuffer using private crate map "cmap" (recommended)
@@ -104,7 +104,7 @@ private:
      THaFastBusWord* fb;
      THaSlotData** crateslot;  
      THaHelicity* helicity;
-     THaEpicsStack* epics;
+     THaEpics* epics;
      bool first_load,first_scaler,first_decode;
      TString scalerdef[MAXROC];
      int numscaler_crate;

@@ -7,7 +7,7 @@
 #pragma link C++ class THaCodaData;
 #pragma link C++ class THaCodaFile;
 #pragma link C++ class THaCrateMap;
-#pragma link C++ class THaEpicsStack;
+#pragma link C++ class THaEpics;
 #pragma link C++ class THaEvData;
 #pragma link C++ class THaFastBusWord;
 #pragma link C++ class THaHelicity;

@@ -8,6 +8,7 @@
 # tdecex   --  test of decoder, example for a use by a detector class.
 # etclient --  test of ET connection for online data.
 # prfact   --  standalone code to print the prescale factors and exit.  
+# epicsd   --  test of EPICS data
 # 
 # To understand how to use decoding classes, look at the 'main'
 # routines tstcoda_main.C, tstio_main.C, tdecpr_main.C, tdecex_main.C etc
@@ -167,10 +168,10 @@ GLIBS        += $(ROOTGLIBS) $(SYSLIBS)
 # This, together with libevio, is what other developers need.
 
 SRC = THaUsrstrutils.C THaCrateMap.C THaCodaData.C THaHelicity.C \
-      THaEpicsStack.C THaFastBusWord.C THaCodaFile.C THaSlotData.C \
+      THaEpics.C THaFastBusWord.C THaCodaFile.C THaSlotData.C \
       THaEvData.C evio.C
 
-PROGS = tstio tdecpr tdecex prfact 
+PROGS = tstio tdecpr tdecex prfact epicsd 
 # If you want to use the ET system at Jlab.
 ifdef ONLINE_ET
   SRC += THaEtClient.C
@@ -239,6 +240,10 @@ etclient: etclient_main.o $(DECODE_OBJS) $(MAINOBJS)
 prfact: $(DECODE_OBJS) $(SRC) prfact_main.o $(HEAD) $(EVIO_LIB) $(MAINOBJS)
 	rm -f $@
 	$(CXX) $(CXXFLAGS) -o $@ prfact_main.o $(DECODE_OBJS) $(ALL_LIBS) $(MAINOBJS)
+
+epicsd: $(DECODE_OBJS) $(SRC) epics_main.o $(HEAD) $(EVIO_LIB) $(MAINOBJS)
+	rm -f $@
+	$(CXX) $(CXXFLAGS) -o $@ epics_main.o $(DECODE_OBJS) $(ALL_LIBS) $(MAINOBJS)
 
 tstcoda: tstcoda_main.o THaCodaFile.o THaEtClient.o THaCodaData.o THaCodaFile.h THaEtClient.h THaCodaData.h $(DECODE_OBJS) $(MAINOBJS)
 	$(CXX) $(CXXFLAGS) -o $@ tstcoda_main.o $(DECODE_OBJS) $(ALL_LIBS) $(MAINOBJS)

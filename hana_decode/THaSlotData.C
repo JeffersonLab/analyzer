@@ -72,7 +72,16 @@ int THaSlotData::loadData(const char* type, int chan, int dat, int raw) {
 // loadData loads the data into storage arrays.
 // Note, this algorithm relies on channels being read out
 // in a sequential, not random, order.
-  if( !didini ) return SD_ERR;
+
+  static int very_verb=0;
+
+  if( !didini ) {
+    if (very_verb) {  // this might be your problem.
+      cout << "THaSlotData: ERROR: Did not init slot."<<endl;
+      cout << "  Fix your cratemap."<<endl;
+    }
+    return SD_ERR;
+  }
   if (chan < 0 || chan >= maxc) {
     if (VERBOSE) {
       cout << "THaSlotData: Warning in loadData: channel ";

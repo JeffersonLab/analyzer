@@ -29,7 +29,7 @@
 #include "THaHelicity.h"
 #include "THaFastBusWord.h"
 #include "THaCrateMap.h"
-#include "THaEpicsStack.h"
+#include "THaEpics.h"
 #include "THaUsrstrutils.h"
 #include "THaBenchmark.h"
 #include "TError.h"
@@ -42,7 +42,7 @@
 
 #ifndef STANDALONE
 #include "THaVarList.h"
-#include "THaInterface.h"
+#include "THaGlobals.h"
 #endif
 
 using namespace std;
@@ -56,16 +56,15 @@ static const int BENCH   = 0;
 THaEvData::THaEvData() :
   first_load(true), first_scaler(true), first_decode(true),
   numscaler_crate(0), buffer(0), run_num(0), run_type(0), run_time(0), 
-  fNSlotUsed(0), fNSlotClear(0), fMap(0)
+  recent_event(0), fNSlotUsed(0), fNSlotClear(0), fMap(0)
 {
-  epics = new THaEpicsStack;
+  epics = new THaEpics;
   crateslot = new THaSlotData*[MAXROC*MAXSLOT];
   helicity = new THaHelicity;
   cmap = new THaCrateMap;
   fb = new THaFastBusWord;
   fSlotUsed  = new UShort_t[MAXROC*MAXSLOT];
   fSlotClear = new UShort_t[MAXROC*MAXSLOT];
-  epics->setupDefaultList();
   memset(psfact,0,MAX_PSFACT*sizeof(int));
   memset(crateslot,0,MAXROC*MAXSLOT*sizeof(THaSlotData*));
   run_time = time(0); // default run_time is NOW
@@ -219,7 +218,8 @@ int THaEvData::gendecode(const int* evbuffer, THaCrateMap* map) {
            ret = scaler_event_decode(evbuffer,map);
 	   goto exit;
          default:
-           goto err;
+           ret = HED_OK;
+           goto exit;
        }
      }
  err:
@@ -305,84 +305,10 @@ int THaEvData::physics_decode(const int* evbuffer, THaCrateMap* map) {
      return HED_OK;
 }
 
-int THaEvData::AddEpicsTag(const TString& tag) {
-// Add EPICS variable to the list you want decoded
-// (though a reasonable list already exists by default).
-  return epics->addEpicsTag(tag);
-}
-
-//FIXME: This should be part of the EPICS object
 int THaEvData::epics_decode(const int* evbuffer) {
      if( fDoBench ) fBench->Begin("epics_decode");
-     static const size_t DEBUGL = 0, MAX  = 5000, MAXEPV = 40;
-     const char *line, *date;
-     const char* cbuff = (const char*)evbuffer;
-     char wtag[MAXEPV+1],wval[MAXEPV+1];
-     // Format string for line parsing
-     static char fmt[16];
-     static bool first = true;
-     if( first ) { sprintf(fmt,"%%%ds %%n",MAXEPV); first = false; }
-
-     size_t len = sizeof(int)*(evbuffer[0]+1);  
-     size_t nlen = TMath::Min(len,MAX);
-     if(DEBUGL) {
-       cout << "epics_decode  --- length " <<nlen<<endl;
-       if(DEBUGL==2) hexdump(cbuff,nlen);
-     }
-     // Nothing to do?
-     if( nlen<16 ) {
-       if( fDoBench ) fBench->Stop("epics_decode");
-       return HED_OK;
-     }
-     // Set up buffer for parsing
-     size_t dlen = nlen-16;
-     char* buf = new char[ dlen+1 ];
-     strncpy( buf, cbuff+16, dlen );
-     buf[dlen] = 0;
-     
-     // The following is Hall A-specific
-
-     // Extract date time stamp
-     date = strtok(buf,"\n");
-     if(DEBUGL) cout << "Timestamp: " << date <<endl;
-     // Extract EPICS tags
-     int ntok = 0;
-     while( (line = strtok(0,"\n")) ) {
-       wtag[0] = 0; wval[0] = 0;
-       size_t n, m, slen = strlen(line);
-       // Read the tag - does not contain spaces
-       if( sscanf(line,fmt,wtag,&n) < 1 ) continue;
-       // Get the value string _including_ spaces and 
-       // excluding the trailing newline
-       m = slen-n;
-       if( m>0 ) { 
-	 m = TMath::Min(m,MAXEPV); 
-	 strncpy(wval,line+n,m); wval[m] = 0; 
-       }
-       // Add tag/value pair to the EPICS record
-       int k = epics->loadData(wtag,wval,recent_event);
-       if( k>=0 ) ntok++;
-       
-       if(DEBUGL) {
-	 cout << ((k>=0) ? "OK: " : "    ") << setiosflags(ios::left);
-	 cout << setw(MAXEPV+1) << wtag 
-	      << setw(MAXEPV+1) << wval << endl;
-       }
-       if( VERBOSE ) {
-	 if( strlen(wtag) == MAXEPV ) {
-	   cout << "THaEvData:epics_decode: WARNING: possible truncation "
-		<< "of epics tag " << wtag << endl;
-	 }
-	 if( strlen(wval) == MAXEPV ) {
-	   cout << "THaEvData:epics_decode: WARNING: possible truncation "
-		<< "of epics val " << wval << endl;
-	 }
-       }
-     }
-     if( ntok ) epics->bumpStack();
-     if( DEBUGL==3 ) epics->print();
+     epics->LoadData(evbuffer, recent_event);
      if( fDoBench ) fBench->Stop("epics_decode");
-     delete [] buf;
      return HED_OK;
 };
 
@@ -425,6 +351,10 @@ int THaEvData::scaler_event_decode(const int* evbuffer, THaCrateMap* map)
           if (map->isScalerCrate(roc)) scaler_crate[numscaler_crate++] = roc;
 	}
       }
+      for(int cra=0; cra<numscaler_crate; cra++) {       
+        int roc = scaler_crate[cra];
+        rocdat[roc].len  = 0;
+      }
       int ret = HED_OK;
       int ipt = -1;
       while (++ipt < event_length) {
@@ -441,6 +371,7 @@ int THaEvData::scaler_event_decode(const int* evbuffer, THaCrateMap* map)
 	  else if (!strcmp(location,"lscaler")) scalerdef[roc] = "left";
 	  else if (!strcmp(location,"rcs"))     scalerdef[roc] = "rcs";
 	}
+        rocdat[roc].len++;
 // If more locations added, put them here.  But scalerdef[] is not
 // needed if you know the roc#, you can call getScaler(roc,...)
         int slot = (headerword&0xf0000)>>16; // 0<=slot<=15
@@ -450,16 +381,16 @@ int THaEvData::scaler_event_decode(const int* evbuffer, THaCrateMap* map)
 	crateslot[ics]->clearEvent();
 	for (int chan=0; chan<numchan; chan++) {
 	  ipt++; 
+          rocdat[roc].len++;
 	  int data = evbuffer[ipt];
 	  if (DEBUG) cout<<"scaler chan "<<chan<<" data "<<data<<endl;
 	  if (crateslot[ics]->loadData(location,chan,data,data)
-	      == SD_ERR) goto err;
+	      == SD_ERR) {
+             cout << "THaEvData:: ERROR: crateslot loadData for slot "
+                  <<slot<<endl;
+	  }
 	}
       }
-      goto exit;
- err:
-      ret = HED_ERR;
- exit:
       if( fDoBench ) fBench->Stop("scaler_event_decode");
       return ret;
 }
@@ -492,15 +423,23 @@ int THaEvData::GetHelicity(const TString& spec) const {
   return (int)helicity->GetHelicity(spec);
 }
 
-double THaEvData::GetEpicsData(const char* tag, int event) const {
-// EPICS data which is nearest CODA event# 'event'
-  return epics->getData(tag, event);
+Bool_t THaEvData::IsLoadedEpics(const char* tag) const {
+  return epics->IsLoaded(tag);
 }
 
-double THaEvData::GetEpicsData(const char* tag) const {
-// EPICS data, nearest to present CODA event.
-  return GetEpicsData(tag, recent_event);
+double THaEvData::GetEpicsData(const char* tag, int event) const {
+// EPICS data which is nearest CODA event# 'event'
+// event == 0 --> get latest data
+  return epics->GetData(tag, event);
 }
+
+double THaEvData::GetEpicsTime(const char* tag, int event) const {
+// EPICS time stamp
+// event == 0 --> get latest data
+  return epics->GetTimeStamp(tag, event);
+}
+
+
 
 int THaEvData::fastbus_decode(int roc, THaCrateMap* map,
           const int* evbuffer, int istart, int istop) {
