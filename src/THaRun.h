@@ -74,7 +74,7 @@ protected:
   Double_t      fBeamM;        //  Rest mass of beam particles (GeV/c^2)
   Int_t         fBeamQ;        //  Charge of beam particles (electron: -1)
   Double_t      fBeamdE;       //  Beam energy uncertainty (GeV)
-  THaTarget*    fTarget;       //  Pointer to target description
+  THaTarget*    fTarget;       //! Pointer to target description
 
   ClassDef(THaRun,2)   //Description of a run
 };
