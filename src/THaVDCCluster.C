@@ -206,7 +206,7 @@ Int_t THaVDCCluster::GetPivotWireNum() const
 {
   // Get wire number of cluster pivot (hit with smallest drift distance
 
-  return fPivot ? fPivot->GetWireNum() : 0;
+  return fPivot ? fPivot->GetWireNum() : -1;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

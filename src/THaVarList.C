@@ -140,6 +140,7 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
 	     "Variable not defined.", name.Data(), desc.Data() );
     return NULL;
   }
+  // Any zero-length strings?
   Int_t i = 0;
   while( i <= ndot )
     if( s[i++].Length() == 0 )

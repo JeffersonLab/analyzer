@@ -26,7 +26,7 @@ public:
   
   // Get and Set Functions
   THaVDCWire* GetWire() const { return fWire; }
-  Int_t    GetWireNum() const { return fWire ? fWire->GetNum() : -1; }
+  Int_t    GetWireNum() const { return fWire->GetNum(); }
   Int_t    GetRawTime() const { return fRawTime; }
   Double_t GetTime()    const { return fTime; }
   Double_t GetDist()    const { return fDist; }

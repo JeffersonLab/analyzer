@@ -5,14 +5,13 @@
 //                                                                           //
 // THaVDCCluster                                                             //
 //                                                                           //
-// Class representing a cluster in the VDC                                   //
 ///////////////////////////////////////////////////////////////////////////////
 #include "TObject.h"
 
 class THaVDCHit;
 class THaVDCPlane;
-class THaVDCUVTrack;
-class THaTrack;
+//class THaVDCUVTrack;
+//class THaTrack;
 
 class THaVDCCluster : public TObject {
 
