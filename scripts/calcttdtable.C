@@ -1,13 +1,18 @@
+#include <iostream>
 #include <vector>
 #include <algorithm>
+#include <string>
 
-//const int kBUFLEN = 150;
+const int kBUFLEN = 150;
 
 //const Int_t kNumBins = 700;
 //const Int_t kHistCenter = 1500;
 
 const Double_t kLongestDist = 15.12; // (mm)
 const Double_t kTimeRes = 0.5e-9;    // (s)
+
+const int kTrue = 1;
+const int kFalse = 0;
 
 Double_t CalcT0(int num_bins)
 {
@@ -78,6 +83,73 @@ Double_t CalcT0(int num_bins)
   return T0;
 }
 
+int SaveNewTTDData(TDatime &run_date, const char *planename, Double_t new_t0,
+		   Int_t new_num_bins, vector<Float_t> new_table)
+{
+  char buff[kBUFLEN], db_filename[kBUFLEN], tag[kBUFLEN];
+
+  sprintf(db_filename, "%c.vdc.", planename[0]);
+
+  FILE *db_file = THaDetectorBase::OpenFile(db_filename, run_date, 
+					    "OpenFile()", "r+");
+
+  // Build the search tag and find it in the file. Search tags
+  // are of form [ <prefix> ], e.g. [ R.vdc.u1 ].
+  sprintf(tag, "[ %s ]", planename);
+  bool found = false;
+  while (!found && fgets (buff, kBUFLEN, db_file) != NULL) {
+    if(strlen(buff) > 0 && buff[strlen(buff)-1] == '\n')
+      buff[strlen(buff)-1] = '\0';
+
+    if(strcmp(buff, tag) == 0)
+      found = true;
+  }
+  if( !found ) {
+    cerr<<"Database entry "<<tag<<" not found!"<<endl;
+    return kFalse;
+  }
+  
+  // read in other info until we get to the stuff we want
+  while(fgets(buff, kBUFLEN, db_file)) {
+    // check for signs that we've run into the section
+    // for a different plane
+    if(buff[0] == '[') {
+      cerr<<"Could not find lookup table info."<<endl;
+      return kFalse;
+    }
+    
+    // check for the lookup table header
+    if(strncmp(buff, "TDC Lookup Table", 16) == 0)
+      break;
+  }
+
+  if(feof(db_file) != 0) {
+    cerr<<"Could not find lookup table in database."<<endl;
+    return kFalse;
+  }
+  if(ferror(db_file) != 0) {
+    cerr<<"Error reading database file."<<endl;
+    return kFalse;
+  }
+
+  // save the header info
+  fprintf(db_file, "%7.3e\n", new_t0);
+  fprintf(db_file, "%d\n", new_num_bins);
+
+  // save the new table
+  for(int i=1; i<=new_num_bins; ++i) {
+    fprintf(db_file, "%7.2e", new_table[i]);
+
+    if(i%10 == 0)
+      fprintf(db_file, "\n");
+    else
+      fprintf(db_file, " ");
+  }
+
+  fclose(db_file);
+
+  return kTrue;
+}
 
 void GetTTDData(const char *planename, THaRawEvent *event, Int_t &hits,
 		Int_t **rawtimes, Double_t **times)
@@ -120,13 +192,12 @@ void GetTTDData(const char *planename, THaRawEvent *event, Int_t &hits,
   }
 }
 
-// for test data, low = -0.1e-6  and high = 0.25e-6
-//void CalcTTDTable(Double_t low, Double_t high, Double_t K=1.0)
+
 void CalcTTDTable(const char *treefile, const char *planename, 
 		  Double_t low, Double_t high, Int_t hist_center,
 		  Double_t K=1.0)
 {
-  TFile *f = new TFile(treefile);    // file to read from
+  TFile *f = new TFile(treefile);        // file to read from
   TTree *tt = (TTree *)f->Get("T");      // tree name in file
   THaRawEvent *event = new THaRawEvent();// the format the data was stored in
 
@@ -137,8 +208,8 @@ void CalcTTDTable(const char *treefile, const char *planename,
     return;
   }
 
+  TDatime run_date = the_run->GetDate();
   Int_t num_items=0;
-  //Double_t binres = (high - low) / (float)num_bins; // bin resolution
   Int_t num_bins = (high - low) / kTimeRes;
 
   cout<<"num bins = "<<num_bins<<endl;
@@ -151,10 +222,10 @@ void CalcTTDTable(const char *treefile, const char *planename,
   
   // make an array big enough to hold all of the time entries
   Int_t nentries = (Int_t)T->GetEntries();
+  //Int_t nentries = 10000;
 
-  /**
-  vector<Float_t> timelist(10*nentries);
-  **/
+  /**vector<Float_t> timelist(10*nentries);**/
+  
 
   // deal with all the data points
   for(Int_t i=0; i<nentries; i++) {
@@ -176,7 +247,7 @@ void CalcTTDTable(const char *treefile, const char *planename,
 	if(abs(rawtimes[j] - hist_center) < 400) {
 	  // save the calculated time
 	  hist->Fill(times[j]);
-	  //timelist[num_items] = times[j];
+	  /**timelist[num_items] = times[j];**/
 	  num_items++;
 	}
       }
@@ -184,8 +255,10 @@ void CalcTTDTable(const char *treefile, const char *planename,
     }
   }
 
-  hist->Draw()
-  
+  //hist->Draw();
+  //return;
+
+
   // figure out the adjusted t0 from the data
   Int_t t0 = (int)CalcT0(num_bins);
   cout<<"calculated t0 = "<<t0<<endl;
@@ -196,9 +269,23 @@ void CalcTTDTable(const char *treefile, const char *planename,
     table[i] = table[i-1] + K*hist->GetBinContent(i+1);
   }
 
-  cout<<"K estimate: "<<kLongestDist/table[num_bins-1]<<endl;
+  // autocalculate the scale factor, if the user'd like
+  K = kLongestDist/table[num_bins-1];
+  cout<<"K estimate: "<<K<<endl;
 
-  /**  
+  char input[kBUFLEN];
+  cout<<"Do you want to use this value? [y/n] ";
+  input[0] = '\0';
+  fgets(input, kBUFLEN, stdin);
+  
+  if(input[0] == 'y') {
+    for(Int_t i=t0; i<num_bins; i++) 
+      table[i] *= K;
+   
+    cout<<"Done."<<endl;
+  }
+
+  /**    
   // plot correspondance
   //TH2F *t2dhist = new TH2F("t2dhist", "Time v. Dist", num_bins, low, high,
   //			   num_bins, 0, 280000);
@@ -209,17 +296,15 @@ void CalcTTDTable(const char *treefile, const char *planename,
     		  table[(int)((timelist[i]-low)/kTimeRes)]);
 
   t2dhist->Draw();
+  return;
   **/
 
   // ask whether to replace the values in the database
   cout<<"Do you want to rebuild the database using these values? [y/n] ";
+  input[0] = '\0';
+  fgets(input, kBUFLEN, stdin);
 
-
-  //char input[kBUFLEN];
-  //fgets(input, kBUFLEN, stdin);
-  string input;
-  getline(cin, string);
-  if((input.size() < 1) && (input[0] != 'y')) {
+  if(input[0] != 'y') {
     cout<<"Exiting without rebuilding database."<<endl;
     goto cleanup;
   }
@@ -235,19 +320,28 @@ void CalcTTDTable(const char *treefile, const char *planename,
     printf("%11.2f\n", table[i]);
   */
 
-  printf("T0       = %7.3e\n", ((double)t0/kTimeRes) + low);
-  printf("high     = %7.3e\n", high);
-  printf("num bins = %d\n", num_bins);
-
-  for(Int_t i=t0; i<num_bins; i++) 
-    printf("%7.2e\n", table[i]);
-  
   /*
-  if(SaveNewTTDData(run_date, table, planename))
+  printf("T0       = %7.3e\n", ((double)t0*kTimeRes) + low);
+  printf("high     = %7.3e\n", high);
+  printf("num bins = %d\n", num_bins-(t0+1));
+
+  for(Int_t i=t0, cnt=0; i<num_bins; i++, cnt++) { 
+    printf("%7.2e", table[i]);
+
+    if(((cnt+1) % 10) == 0)
+      printf("\n");
+    else
+      printf(" ");
+  }
+  */  
+
+  
+  if(SaveNewTTDData(run_date, planename, ((double)t0*kTimeRes) + low, 
+		    num_bins-(t0+1), table))
     cout<<"Done."<<endl;
   else
     cout<<"Failed."<<endl;
-  */
+  
 
  cleanup:
   delete event;
