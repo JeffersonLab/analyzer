@@ -11,6 +11,8 @@
 #include "THaScaler.h"
 #include "THaCodaFile.h"
 
+using namespace std;
+
 int main(int argc, char* argv[]) {
 
    int printout = 1;   // To printout lots of stuff (1) or not (0)

@@ -37,6 +37,8 @@
 #include "TRandom.h"
 #endif
 
+using namespace std;
+
 int loadHelicity();
 int ranBit(unsigned int& seed);   
 unsigned int getSeed();

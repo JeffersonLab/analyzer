@@ -34,6 +34,8 @@
 #define BCM_CUT10 30000  // cut on BCM (x10 gain) to require beam on.
 #define NBCM 6           // number of BCM signals 
 
+using namespace std;
+
 int main(int argc, char* argv[]) {
 
    int i,iev,evnum,trig,iskip,status;

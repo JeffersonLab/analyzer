@@ -10,6 +10,8 @@
 #include <string>
 #include "THaScaler.h"
 
+using namespace std;
+
 int main(int argc, char* argv[]) {
 
   //   cout << "Enter bank 'Right' or 'Left' (spectrometer) ->" << endl;
