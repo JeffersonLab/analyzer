@@ -69,8 +69,8 @@ public:
      int LoadEvent(const int* evbuffer, THaCrateMap* usermap);    
 // Loads CODA data evbuffer using private crate map "cmap" (recommended)
      int LoadEvent(const int* evbuffer);          
-     void PrintSlotData(int crate, int slot);
-     void PrintOut();
+     void PrintSlotData(int crate, int slot) const;
+     void PrintOut() const;
      static const int HED_OK;
      static const int HED_ERR;
 
@@ -83,9 +83,9 @@ private:
        int pos;                  // position in evbuffer[]
        int len;                  // length of data
      } rocdat[MAXROC];
-     THaCrateMap* cmap;
+     THaCrateMap* cmap;          // default crate map
      THaFastBusWord* fb;
-     THaSlotData* crateslot;  
+     THaSlotData** crateslot;  
      THaHelicity* helicity;
      THaEpicsStack* epics;
      bool first_load,first_scaler,first_decode;
@@ -115,7 +115,7 @@ private:
      Int_t recent_event,synchflag,datascan;
      Double_t dhel,dtimestamp;
      bool buffmode,synchmiss,synchextra;
-     void dump(const int* evbuffer);                
+     void dump(const int* evbuffer) const;
      int gendecode(const int* evbuffer, THaCrateMap* map);
      int loadFlag(const int* evbuffer);
      int epics_decode(const int* evbuffer);
@@ -131,12 +131,16 @@ private:
      int init_cmap();      
      int init_slotdata(const THaCrateMap* map);
      int idx(int crate, int slot) const;
+     int idx(int crate, int slot);
+     void makeidx(int crate, int slot);
      bool GoodIndex(int crate, int slot) const;
 
      int       fNSlotUsed;   // Number of elements of crateslot[] actually used
      int       fNSlotClear;  // Number of elements of crateslot[] to clear
      UShort_t* fSlotUsed;    // [fNSlotUsed] Indices of crateslot[] used
      UShort_t* fSlotClear;   // [fNSlotClear] Indices of crateslot[] to clear
+
+     THaCrateMap* fMap;      // Pointer to active crate map
 
      bool fDoBench;
      THaBenchmark *fBench, *fTopBench;
@@ -151,10 +155,17 @@ private:
 inline int THaEvData::idx( int crate, int slot) const {
   return slot+MAXSLOT*crate;
 }
+//Another utility function, but it initializes empty slots
+inline int THaEvData::idx( int crate, int slot) {
+  int idx = slot+MAXSLOT*crate;
+  if( !crateslot[idx] ) makeidx(crate,slot);
+  return idx;
+}
 
 inline bool THaEvData::GoodIndex( int crate, int slot ) const {
-  return ( (crate >= 0) && (crate < MAXROC) && 
-	   (slot >= 0) && (slot < MAXSLOT) );
+  return ( crate >= 0 && crate < MAXROC && 
+	   slot >= 0 && slot < MAXSLOT &&
+	   crateslot[idx(crate,slot)] != 0);
 }
 
 inline int THaEvData::GetRocLength(int crate) const {
@@ -165,35 +176,35 @@ inline int THaEvData::GetRocLength(int crate) const {
 inline int THaEvData::GetNumHits(int crate, int slot, int chan) const {
 // Number hits in crate, slot, channel
   if( GoodIndex(crate,slot))
-    return crateslot[idx(crate,slot)].getNumHits(chan);
+    return crateslot[idx(crate,slot)]->getNumHits(chan);
   return 0;
 };
 
 inline int THaEvData::GetData(int crate, int slot, int chan, int hit) const {
 // Return the data in crate, slot, channel #chan and hit# hit
   if( GoodIndex(crate,slot))
-    return crateslot[idx(crate,slot)].getData(chan,hit);
+    return crateslot[idx(crate,slot)]->getData(chan,hit);
   return 0;
 };
 
 inline int THaEvData::GetNumRaw(int crate, int slot) const {
 // Number of raw words in crate, slot
   if( GoodIndex(crate,slot))
-    return crateslot[idx(crate,slot)].getNumRaw();
+    return crateslot[idx(crate,slot)]->getNumRaw();
   return 0;
 };
 
 inline int THaEvData::GetRawData(int crate, int slot, int hit) const {
 // Raw words in crate, slot
   if( GoodIndex(crate,slot))
-    return crateslot[idx(crate,slot)].getRawData(hit);
+    return crateslot[idx(crate,slot)]->getRawData(hit);
   return 0;
 };
 
 inline int THaEvData::GetRawData(int crate, int slot, int chan, int hit) const {
 // Return the Rawdata in crate, slot, channel #chan and hit# hit
   if( GoodIndex(crate,slot))
-    return crateslot[idx(crate,slot)].getRawData(chan,hit);
+    return crateslot[idx(crate,slot)]->getRawData(chan,hit);
   return 0;
 };
 
@@ -223,14 +234,14 @@ inline Bool_t THaEvData::InCrate(int crate, int i) const {
 inline int THaEvData::GetNumChan(int crate, int slot) const {
 // Get number of unique channels hit
   if( GoodIndex(crate,slot))
-    return crateslot[idx(crate,slot)].getNumChan();
+    return crateslot[idx(crate,slot)]->getNumChan();
   return 0;
 };
 
 inline int THaEvData::GetNextChan(int crate, int slot, int index) const {
 // Get list of unique channels hit (indexed by index=0,getNumChan())
   if( GoodIndex(crate,slot))
-    return crateslot[idx(crate,slot)].getNextChan(index);
+    return crateslot[idx(crate,slot)]->getNextChan(index);
   return 0;
 };
 
@@ -287,13 +298,3 @@ int THaEvData::LoadEvent(const int* evbuffer) {
 };
 
 #endif 
-
-
-
-
-
-
-
-
-
-

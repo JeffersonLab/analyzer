@@ -39,6 +39,8 @@ public:
        int getNumChan() const;              // Num unique channels hit
        int getNextChan(int index) const;    // List of unique channels hit
        int getData(int chan, int hit) const;  // Data (adc,tdc,scaler) on 1 chan
+       int getCrate() const { return crate; }
+       int getSlot()  const { return slot; }
        void clearEvent();                   // clear event counters
        int loadData(const char* type, int chan, int dat, int raw);
        void define(int crate, int slot, UShort_t nchan=DEFNCHAN, 
@@ -62,6 +64,7 @@ private:
        bool didini;          // true if object initialized via define()
        UShort_t maxc;        // Number of channels for this device
        UShort_t maxd;        // Max number of data words per event
+       UShort_t allocd;      // Allocated size of data arrays
 
        ClassDef(THaSlotData,0)   //  Data in one slot of fastbus, vme, camac
 };
