@@ -492,7 +492,7 @@ Int_t ParityData::Decode(const THaEvData& evdata)
     if ( dataloc->ThisIs("haptdcr2") ) haptdcr2  = dataloc->Get();
 
     if ( dataloc->ThisIs("profampl") ) profampl  = dataloc->Get();
-    if ( dataloc->ThisIs("profampr") ) profampl  = dataloc->Get();
+    if ( dataloc->ThisIs("profampr") ) profampr  = dataloc->Get();
 
   }
 
