@@ -95,7 +95,7 @@ Int_t THaApparatus::Decode( const THaEvData& evdata )
 
 //_____________________________________________________________________________
 Int_t THaApparatus::DefineVarsFromList( const void* list, 
-					EType type, EMode mode ) const
+					EType type, EMode mode )
 {
   // Add/delete variables defined in 'list' to/from the list of global 
   // variables, using prefix of the current apparatus.

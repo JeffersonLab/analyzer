@@ -28,7 +28,7 @@ public:
   virtual Int_t            CalcPID();
           void             Clear();
   virtual void             DefinePidParticles();
-  virtual Int_t            DefineVariables( EMode mode = kDefine ) const;
+  virtual Int_t            DefineVariables( EMode mode = kDefine );
   virtual Int_t            FindVertices() = 0;
           Int_t            GetNpidParticles() const;
           Int_t            GetNpidDetectors() const;

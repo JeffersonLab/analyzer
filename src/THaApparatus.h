@@ -31,7 +31,7 @@ public:
           Int_t        GetNumDets()   const      { return fDetectors->GetSize(); }
           Int_t        GetNumMyDets() const      { return fNmydets; }
           THaDetector* GetDetector( const char* name );
-  virtual Int_t        Init();
+          Int_t        Init();
   virtual Int_t        Init( const TDatime& run_time );
           Bool_t       IsOK() const              { return (fStatus == kOK); }
           Bool_t       IsInit() const            { return IsOK(); }
@@ -49,16 +49,16 @@ protected:
   THaDetector**  fMydets;       // Array of pointers to the detectors defined by me
   EStatus        fStatus;       // Initialization status flag
 
-  virtual Int_t  DefineVariables( EMode mode = kDefine ) const   
+  virtual Int_t  DefineVariables( EMode mode = kDefine )
     { return kOK; }
   Int_t          DefineVarsFromList( const VarDef* list, 
-				     EMode mode = kDefine ) const
+				     EMode mode = kDefine )
     { return DefineVarsFromList( list, kVarDef, mode ); }
   Int_t          DefineVarsFromList( const RVarDef* list, 
-				     EMode mode = kDefine ) const
+				     EMode mode = kDefine )
     { return DefineVarsFromList( list, kRVarDef, mode ); }
   Int_t          DefineVarsFromList( const void* list, 
-				     EType type, EMode mode ) const;
+				     EType type, EMode mode );
   virtual Int_t  SetupApparatus( const TDatime& date )
     { return DefineVariables(); }
 

@@ -156,7 +156,7 @@ void THaSpectrometer::DefinePidParticles()
 }
 
 //_____________________________________________________________________________
-Int_t THaSpectrometer::DefineVariables( EMode mode ) const
+Int_t THaSpectrometer::DefineVariables( EMode mode )
 {
   // Define/delete standard variables for a spectrometer (tracks etc.)
   // Can be overridden or extended by derived (actual) apparatuses
