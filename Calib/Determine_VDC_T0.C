@@ -1,5 +1,5 @@
 #include <string>
-#include <cstrings>
+#include <cstring>
 #include <iostream>
 #include <cstdio>
 #include "TObject.h"
@@ -33,8 +33,8 @@ using namespace std;
 //
 const Int_t NWire = 368;
 const Int_t kNumWires = 368;
-Int_t NENTRIES=1.e9;
-const Int_t NWireGrp = 4;
+Int_t NENTRIES=(Int_t)1.e9;
+const Int_t NWireGrp = 16;
 
 const Int_t kBUFLEN = 150;
 
@@ -48,7 +48,7 @@ Double_t *Build_T0(const char *HRS, TTree *tree);
 Int_t Initialize_detectors(TDatime &run_time);
 Int_t Find_TDC0(TH1 *hist, Double_t &t0);
 Int_t Find_TDC0_2(TH1 *hist, Double_t &t0);
-int SaveNewT0Data(TDatime& run_date, Double_t* new_t0, const char* planename);
+int SaveNewT0Data(const TDatime& run_date, Double_t* new_t0, const char* planename);
 
 const char *vdc_planes[4] = {"vdc.u1","vdc.v1","vdc.u2","vdc.v2"};
 
@@ -65,7 +65,7 @@ Int_t Determine_VDC_T0(Int_t TDC_Low=-500, Int_t TDC_High=500) {
   c1->cd();
   
   // First, make sure we have the required detectors initialized
-  THaRun *run = (THaRun*)gDirectory->Get("Run Data");
+  THaRun *run = (THaRun*)gDirectory->Get("Run_Data");
   if (!run) {
     cerr << "FAILED: No Run information to initialize Detectors!" << endl;
     ret = -1;
@@ -278,7 +278,7 @@ Int_t Find_TDC0(TH1 *hist, Double_t &t0) {
   }
   dbin = TMath::Max(grassb-downhalf,4);
   
-  hist->GetXaxis()->SetRange(downhalf-.5*dbin,downhalf+.5*dbin);
+  hist->GetXaxis()->SetRange((Int_t)(downhalf-.5*dbin),(Int_t)(downhalf+.5*dbin));
   hist->Fit("pol1");
   
   hist->SetAxisRange(1700.,2000.);
@@ -332,7 +332,7 @@ Int_t Find_TDC0_2(TH1 *hist, Double_t &t0) {
   
   Double_t dx = hist->GetBinWidth(2);
   Double_t x;
-  Double_t slope;
+  Double_t slope=0;
   Double_t slope_min=0.;
   Int_t ch_save=0;
 
@@ -377,7 +377,7 @@ Int_t Find_TDC0_2(TH1 *hist, Double_t &t0) {
   c1->Update();
   
   if (stop_and_wait) {
-    cerr << " **** NEXT? " << endl;
+    cerr << " **** NEXT? (q to quit, c for continuous) " << endl;
     char tmpc;
     
     cin >> tmpc;
@@ -406,7 +406,7 @@ void show_hists() {
 }
 
 // following routine taken from dobbs's scripts/calct0table.C
-int SaveNewT0Data(TDatime &run_date, Double_t *new_t0, const char *planename)
+int SaveNewT0Data(const TDatime &run_date, Double_t *new_t0, const char *planename)
 {
   char buff[kBUFLEN], db_filename[kBUFLEN], tag[kBUFLEN];
   
