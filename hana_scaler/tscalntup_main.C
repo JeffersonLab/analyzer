@@ -2,16 +2,16 @@
 //  tscalntup_main.C
 //
 //  Read a CODA file and fill an ntuple with scaler data.
+//  This version uses the "old" event type 140 data.
 // 
 //  R. Michaels, May 2001 
 //--------------------------------------------------------
 
-#define BCM_CUT1  3000   // cut on BCM (x1 gain) to require beam on.
-#define BCM_CUT3  10000  // cut on BCM (x3 gain) to require beam on.
-#define BCM_CUT10 30000  // cut on BCM (x10 gain) to require beam on.
+#define BCM_CUT1  1000   // cut on BCM (x1 gain) to require beam on.
+#define BCM_CUT3  3000   // cut on BCM (x3 gain) to require beam on.
+#define BCM_CUT10 7000   // cut on BCM (x10 gain) to require beam on.
 #define NBCM 6         // number of BCM signals 
 #define PRINTSUM 1
-//#define OUTFILENAME "/adaqfs/halla/a-onl/feedback/runasy.dat"
 #define OUTFILENAME "asytst.dat"
 
 #include <iostream>
@@ -55,7 +55,7 @@ int main(int argc, char* argv[]) {
    scaler = new THaScaler(bank.c_str());
 
 // Init must be done once.  If you leave out the date, it assumes "now".
-   if (scaler->Init("24-5-2001") == -1) {  
+   if (scaler->Init("1-1-2003") == -1) {  
       cout << "Error initializing scaler " << endl;
       return 1;
    }
@@ -150,6 +150,8 @@ int main(int argc, char* argv[]) {
        farray_ntup[5] = scaler->GetBcmRate("bcm_d3");
        farray_ntup[6] = scaler->GetBcmRate("bcm_d10");
        for (trig = 1; trig <= 5; trig++) farray_ntup[6+trig] = scaler->GetTrigRate(trig);
+       farray_ntup[12] = scaler->GetPulserRate("clock");
+       farray_ntup[13] = scaler->GetNormRate(0,"TS-accept");
        for (int pad = 0; pad < 6; pad++) {
 	 farray_ntup[14+pad] = scaler->GetScalerRate("s1",pad);
        }
