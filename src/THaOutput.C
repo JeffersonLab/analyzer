@@ -89,6 +89,7 @@ Int_t THaOutput::Init( )
   fTree = new TTree("T","Hall A Analyzer Output DST");
 
   THaVar *pvar;
+  string tinfo;
   vector<string> stemp1,stemp2;
   for (Int_t ivar = 0; ivar < fNvar; ivar++) {
     pvar = gHaVars->Find(fVarnames[ivar].c_str());
@@ -112,11 +113,13 @@ Int_t THaOutput::Init( )
 		  &fOdata[k]);
   fNvar = stemp2.size();
   fVar = new Double_t[fNvar];
-  for (Int_t k = 0; k < fNvar; k++)
-    fTree->Branch(stemp2[k].c_str(), &fVar[k], 
-		  stemp2[k].append("/D").c_str(), kNbout);
+  for (Int_t k = 0; k < fNvar; k++) {
+    tinfo = stemp2[k] + "/D";
+    fTree->Branch(stemp2[k].c_str(), &fVar[k], tinfo.c_str(), kNbout);
+  }
   for (Int_t iform = 0; iform < fNform; iform++) {
-    fFormulas.push_back(new THaFormula(Form("f%d",iform),
+    tinfo = Form("f%d",iform);
+    fFormulas.push_back(new THaFormula(tinfo.c_str(),
 				       fFormdef[iform].c_str()));
     if (fFormulas[iform]->IsError()) {
       cout << "THaOutput::Init: WARNING: Error in formula ";
@@ -124,9 +127,11 @@ Int_t THaOutput::Init( )
       cout << "There is probably a typo error... " << endl;
     }
   }
-  for (Int_t iform = 0; iform < fNform; iform++)
+  for (Int_t iform = 0; iform < fNform; iform++) {
+    tinfo = fFormnames[iform] + "/D";
     fTree->Branch(fFormnames[iform].c_str(), &fForm[iform], 
-		  fFormnames[iform].append("/D").c_str(), kNbout);   
+		  tinfo.c_str(), kNbout);
+  }
   fH1vtype = new Int_t[fN1d];
   fH1form  = new Int_t[fN1d];
   memset(fH1vtype, -1, fN1d*sizeof(Int_t));
