@@ -62,6 +62,7 @@ THaRun& THaRun::operator=(const THaRun& rhs)
      fFirstEvent = rhs.fFirstEvent;
      fLastEvent  = rhs.fLastEvent;
      fDate       = rhs.fDate;
+     delete fCodaFile;
      fCodaFile   = new THaCodaFile;
   }
   return *this;
