@@ -128,59 +128,87 @@ Int_t THaVDC::ReadDatabase( FILE* file, const TDatime& date )
   // the 3 focal plane matrix elements come first, followed by
   // the other backwards elements, starting with D000
   THaMatrixElement ME;
-  
-  // initialize some values
-  ME.pw[0] = ME.pw[1] = ME.pw[2] = 0;
+  char w;
+  bool good = false;
 
   // read in T000 and verify it
   ME.iszero = true;  ME.order = 0;
-  for(int p_cnt=0; p_cnt<kPORDER; p_cnt++) {
-    if(!fscanf(file, "%le", &ME.poly[p_cnt])) {
-      Error(Here(here), "Could not read in Matrix Element T000!");
-      return kInitError;
-    }
-
-    if(ME.poly[p_cnt] != 0.0) {
-      ME.iszero = false;
-      ME.order = p_cnt;
+  // Read matrix element signature
+  if( fscanf(file, "%c %d %d %d", &w, &ME.pw[0], &ME.pw[1], &ME.pw[2]) == 4) {
+    if( w == 'T' && ME.pw[0] == 0 && ME.pw[1] == 0 && ME.pw[2] == 0 ) {
+      good = true;
+      for(int p_cnt=0; p_cnt<kPORDER; p_cnt++) {
+	if(!fscanf(file, "%le", &ME.poly[p_cnt])) {
+	  good = false;
+	  break;
+	}
+	if(ME.poly[p_cnt] != 0.0) {
+	  ME.iszero = false;
+	  ME.order = p_cnt;
+	}
+      }
     }
   }
-  fFPMatrixElems.push_back(ME);
+  if( good ) 
+    fFPMatrixElems.push_back(ME);
+  else {
+    Error(Here(here), "Could not read in Matrix Element T000!");
+    return kInitError;
+  }
+  fscanf(file, "%*c");
 
   // read in Y000 and verify it
   ME.iszero = true;  ME.order = 0;
-  for(int p_cnt=0; p_cnt<kPORDER; p_cnt++) {
-    if(!fscanf(file, "%le", &ME.poly[p_cnt])) {
-      Error(Here(here), "Could not read in Matrix Element Y000!");
-      return kInitError;
-    }
-
-    if(ME.poly[p_cnt] != 0.0) {
-      ME.iszero = false;
-      ME.order = p_cnt;
+  // Read matrix element signature
+  if( fscanf(file, "%c %d %d %d", &w, &ME.pw[0], &ME.pw[1], &ME.pw[2]) == 4) {
+    if( w == 'Y' && ME.pw[0] == 0 && ME.pw[1] == 0 && ME.pw[2] == 0 ) {
+      good = true;
+      for(int p_cnt=0; p_cnt<kPORDER; p_cnt++) {
+	if(!fscanf(file, "%le", &ME.poly[p_cnt])) {
+	  good = false;
+	  break;
+	}
+	if(ME.poly[p_cnt] != 0.0) {
+	  ME.iszero = false;
+	  ME.order = p_cnt;
+	}
+      }
     }
   }
-  fFPMatrixElems.push_back(ME);
+  if( good )
+    fFPMatrixElems.push_back(ME);
+  else {
+    Error(Here(here), "Could not read in Matrix Element Y000!");
+    return kInitError;
+  }
+  fscanf(file, "%*c");
 
   // read in P000 and verify it
   ME.iszero = true;  ME.order = 0;
-  for(int p_cnt=0; p_cnt<kPORDER; p_cnt++) {
-    if(!fscanf(file, "%le", &ME.poly[p_cnt])) {
-      Error(Here(here), "Could not read in Matrix Element P000!");
-      return kInitError;
-    }
-
-    if(ME.poly[p_cnt] != 0.0) {
-      ME.iszero = false;
-      ME.order = p_cnt;
+  if( fscanf(file, "%c %d %d %d", &w, &ME.pw[0], &ME.pw[1], &ME.pw[2]) == 4) {
+    if( w == 'P' && ME.pw[0] == 0 && ME.pw[1] == 0 && ME.pw[2] == 0 ) {
+      good = true;
+      for(int p_cnt=0; p_cnt<kPORDER; p_cnt++) {
+	if(!fscanf(file, "%le", &ME.poly[p_cnt])) {
+	  good = false;
+	  break;
+	}
+	if(ME.poly[p_cnt] != 0.0) {
+	  ME.iszero = false;
+	  ME.order = p_cnt;
+	}
+      }
     }
   }
-  fFPMatrixElems.push_back(ME);
-
+  if( good )
+    fFPMatrixElems.push_back(ME);
+  else {
+    Error(Here(here), "Could not read in Matrix Element P000!");
+    return kInitError;
+  }
+  fscanf(file, "%*c");
 
   // Read in as many of the matrix elements as there are
-  fscanf(file, "%*c");
-  char w;
   while(fscanf(file, "%c %d %d %d", &w, &ME.pw[0], 
 	       &ME.pw[1], &ME.pw[2]) == 4) {
 
