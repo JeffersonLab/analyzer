@@ -44,6 +44,7 @@ private:
   Int_t    fHelicity;         // Beam helicity
   Int_t    fRun;              // Run number
 
+ public:
   ClassDef(THaEventHeader,4)  //THaEvent Header
 };
 
@@ -76,7 +77,7 @@ protected:
   };
   DataMap*       fDataMap;       //! Map of global variables to copy
 
-private:
+ public:
 
   ClassDef(THaEvent,3)  //Base class for event structure definition
 };
