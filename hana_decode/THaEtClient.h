@@ -45,10 +45,10 @@ public:
 
     THaEtClient(int mode=1);      // By default, gets data from ADAQS2
 // find data on 'computer'.  e.g. computer="129.57.164.44"
-    THaEtClient(const TString& computer, int mode=1);  
-    THaEtClient(const TString& computer, const TString& session, int mode=1);  
-    int codaOpen(const TString& computer, int mode=1);
-    int codaOpen(const TString& computer, const TString& session, int mode=1);
+    THaEtClient(const char* computer, int mode=1);  
+    THaEtClient(const char* computer, const char* session, int mode=1);  
+    int codaOpen(const char* computer, int mode=1);
+    int codaOpen(const char* computer, const char* session, int mode=1);
     int codaClose();
     ~THaEtClient();
     int *getEvBuffer()         // Gets next event buffer after codaRead()
@@ -76,8 +76,7 @@ private:
     char *daqhost,*session,*etfile;
     int waitflag,didclose,notopened,firstread;
     void initflags();
-    int init();
-    int init(const TString& computer);
+    int init(const char* computer="hana_sta");
 
     ClassDef(THaEtClient,0)   // ET client connection for online data
 

@@ -25,7 +25,6 @@
 #include <ctime>
 #include <sys/time.h>
 #include <netdb.h>
-#include "TString.h"
 
 
 using namespace std;
@@ -34,17 +33,17 @@ THaEtClient::THaEtClient(int smode)
 {
   // uses default server (where CODA runs)
   initflags();
-  TString defaultcomputer(ADAQS2);
+  const char* defaultcomputer = ADAQS2;
   codaOpen(defaultcomputer,smode);
 }
 
-THaEtClient::THaEtClient(const TString& computer,int smode)
+THaEtClient::THaEtClient(const char* computer,int smode)
 {
   initflags();
   codaOpen(computer,smode);
 }
 
-THaEtClient::THaEtClient(const TString& computer, const TString& mysession, int smode)
+THaEtClient::THaEtClient(const char* computer, const char* mysession, int smode)
 {
   initflags();
   codaOpen(computer, mysession, smode);
@@ -75,18 +74,14 @@ void THaEtClient::initflags()
   timeout = BIG_TIMEOUT;
 };
 
-int THaEtClient::init() {
-  return init("hana_sta");
-};
-
-int THaEtClient::init(const TString& mystation) 
+int THaEtClient::init(const char* mystation) 
 {
   static char station[ET_STATNAME_LENGTH];
-  if(mystation.Length()>=ET_STATNAME_LENGTH){
-    cout << "THaEtClient: station name too long\n";
+  if(!mystation||strlen(mystation)>=ET_STATNAME_LENGTH){
+    cout << "THaEtClient: bad station name\n";
     return CODA_ERROR;
   }
-  strcpy(station,mystation.Data());
+  strcpy(station,mystation);
   et_open_config_init(&openconfig);
   et_open_config_sethost(openconfig, daqhost);
   et_open_config_setcast(openconfig, ET_DIRECT);
@@ -281,8 +276,8 @@ int THaEtClient::codaRead() {
   return CODA_OK;
 }
 
-int THaEtClient::codaOpen(const TString& computer, 
-			  const TString& mysession, 
+int THaEtClient::codaOpen(const char* computer, 
+			  const char* mysession, 
 			  int smode) {
 // To run codaOpen, you need to know: 
 // 1) What computer is ET running on ? (e.g. computer='adaql2')
@@ -291,18 +286,18 @@ int THaEtClient::codaOpen(const TString& computer,
   delete [] daqhost;
   delete [] session;
   delete [] etfile;
-  daqhost = new char[strlen(computer.Data())+1];
-  strcpy(daqhost,computer.Data());
-  etfile = new char[strlen(ETMEM_PREFIX)+strlen(mysession.Data())+1];
+  daqhost = new char[strlen(computer)+1];
+  strcpy(daqhost,computer);
+  etfile = new char[strlen(ETMEM_PREFIX)+strlen(mysession)+1];
   strcpy(etfile,ETMEM_PREFIX);
-  strcat(etfile,mysession.Data());
-  session = new char[strlen(mysession.Data())+1];
-  strcpy(session,mysession.Data());
+  strcat(etfile,mysession);
+  session = new char[strlen(mysession)+1];
+  strcpy(session,mysession);
   waitflag = smode;
   return CODA_OK;
 }
 
-int THaEtClient::codaOpen(const TString& computer, int smode)
+int THaEtClient::codaOpen(const char* computer, int smode)
 {
   // See comment in the above version of codaOpen()
   char* s = getenv("SESSION");

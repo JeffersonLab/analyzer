@@ -30,8 +30,8 @@ public:
 
    THaCodaData();
    virtual ~THaCodaData();
-   virtual int codaOpen(const TString& file_name, int mode=1)=0;
-   virtual int codaOpen(const TString& file_name, const TString& session, int mode=1)=0;
+   virtual int codaOpen(const char* file_name, int mode=1)=0;
+   virtual int codaOpen(const char* file_name, const char* session, int mode=1)=0;
    virtual int codaClose()=0;
    virtual int codaRead()=0; 
    virtual int *getEvBuffer() { return evbuffer; }
