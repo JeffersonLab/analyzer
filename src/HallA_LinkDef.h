@@ -17,6 +17,7 @@
 #pragma link C++ class THaFormula+;
 #pragma link C++ class THaCut+;
 #pragma link C++ class THaCutList+;
+#pragma link C++ class THaHashList+;
 #pragma link C++ class THaInterface+;
 #pragma link C++ class THaRun+;
 #pragma link C++ class THaApparatus+;
