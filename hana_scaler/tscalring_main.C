@@ -176,7 +176,7 @@ int main(int argc, char* argv[]) {
    TNtuple *rnt = new TNtuple("aring","Ring values", ring_rates);
    Float_t *farray2 = new Float_t[16];
    THaCodaFile *coda = new THaCodaFile(TString(filename.c_str()));
-   THaCodaDecoder *evdata = new THaCodaDecoder();
+   THaEvData *evdata = new THaCodaDecoder();
    inquad = 0;
    q1_helicity = 0;
    rloc = 0;

@@ -19,7 +19,7 @@ int main(int argc, char* argv[]) {
    string bank;  cin >> bank;
 
    THaScaler scaler(bank.c_str());
-   if (scaler.Init("1-6-2001") == -1) {  // "day-month-year", or "now"
+   if (scaler.Init("10-12-2004") == -1) {  // "day-month-year", or "now"
       cout << "Error initializing scalers"<<endl;  return 1;
    }
 
@@ -57,9 +57,13 @@ int main(int argc, char* argv[]) {
 
    if (xcnt > 0) {
      au3 = au3sum / xcnt;
-     Double_t au3sig = sqrt(au3sq/xcnt - au3*au3);     
+     Double_t xx = au3sq/xcnt - au3*au3;
+     Double_t au3sig = 0;
+     if (xx > 0) au3sig = sqrt(xx);
      ad10 = ad10sum / xcnt;
-     Double_t ad10sig = sqrt(ad10sq/xcnt - ad10*ad10);     
+     xx = ad10sq/xcnt - ad10*ad10;
+     Double_t ad10sig = 0;
+     if (xx > 0) ad10sig = sqrt(xx);
      cout << "Upstream x3  Asymmetry    = "<<au3<<" +/- "<<au3sig<<endl;
      cout << "Downstream x10  Asymmetry = "<<ad10<<" +/- "<<ad10sig<<endl;
    } else {

@@ -56,7 +56,7 @@ int main(int argc, char* argv[]) {
    scaler = new THaScaler(bank.c_str());
 
 // Init must be done once.  If you leave out the date, it assumes "now".
-   if (scaler->Init("1-1-2003") == -1) {  
+   if (scaler->Init("1-10-2004") == -1) {  
       cout << "Error initializing scaler " << endl;
       return 1;
    }

@@ -31,7 +31,7 @@ int main(int argc, char* argv[]) {
    THaScaler *scaler;
    scaler = new THaScaler(bank);
 
-   if (scaler->Init("24-5-2001") == -1) {  // Init MUST be done once
+   if (scaler->Init("15-10-2004") == -1) {  // Init MUST be done once
       cout << "Error initializing scaler "<<endl;
       return 1;
    }
@@ -56,6 +56,9 @@ int main(int argc, char* argv[]) {
        for (trig = 1; trig <= 5; trig++ ) {
           cout << "Trigger " << trig << "   hel+  0  hel- " << scaler->GetTrig(1,trig) << "   " << scaler->GetTrig(trig) << "   " << scaler->GetTrig(-1,trig) << endl;
        }
+       cout << "S1 counts (hex) "<<hex<<scaler->GetScaler("s1",0)<<"  "<<scaler->GetScaler("s1",1)<<"  "<<scaler->GetScaler("s1",2)<<"  "<<scaler->GetScaler("s1",3)<<"  "<<scaler->GetScaler("s1",4)<<"  "<<scaler->GetScaler("s1",5)<<endl;
+       cout << "S2 counts (hex) "<<scaler->GetScaler("s2",0)<<"  "<<scaler->GetScaler("s2",1)<<"  "<<scaler->GetScaler("s2",2)<<"  "<<scaler->GetScaler("s2",3)<<"  "<<scaler->GetScaler("s2",4)<<"  "<<scaler->GetScaler("s2",5)<<endl;
+       cout << "gasC. counts (hex) "<<scaler->GetScaler("gasC",0)<<"  "<<scaler->GetScaler("gasC",1)<<"  "<<scaler->GetScaler("gasC",2)<<"  "<<scaler->GetScaler("gasC",3)<<"  "<<scaler->GetScaler("gasC",4)<<"  "<<scaler->GetScaler("gasC",5)<<"  "<<scaler->GetScaler("gasC",6)<<"  "<<scaler->GetScaler("gasC",7)<<"  "<<scaler->GetScaler("gasC",8)<<"  "<<scaler->GetScaler("gasC",9)<<dec<<endl;
        cout << "Rates (Hz) = " << endl;
        cout << "Bcm u1   hel+  0  hel- " << scaler->GetBcmRate(1,"bcm_u1") << "   " << scaler->GetBcmRate("bcm_u1") << "   " << scaler->GetBcmRate(-1,"bcm_u1") << endl;
        cout << "Bcm u3   hel+  0  hel- " << scaler->GetBcmRate(1,"bcm_u3") << "   " << scaler->GetBcmRate("bcm_u3") << "   " << scaler->GetBcmRate(-1,"bcm_u3") << endl;

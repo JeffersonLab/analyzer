@@ -12,7 +12,6 @@
 
 #include "THaScaler.h"
 #include "THaCodaFile.h"
-#include "THaEvData.h"
 #include "THaCodaDecoder.h"
 
 #ifndef __CINT__
@@ -25,7 +24,7 @@
 #include "TRandom.h"
 #endif
 
-#define DEBUG 0
+#define DEBUG 1
 
 #define SKIPEVENT 0     // How many scaler events to skip
                          // (This reduces effect of clock granularity)
@@ -53,13 +52,13 @@ int main(int argc, char* argv[]) {
 
    THaScaler *scaler = new THaScaler(bank);
 
-   if (scaler->Init("1-9-2002") == -1) {  
+   if (scaler->Init("1-10-2004") == -1) {  
       cout << "Error initializing scaler "<<endl;
       return 1;
    }
 
-   THaCodaFile *coda = new THaCodaFile(filename);
-   THaCodaDecoder *evdata = new THaCodaDecoder();
+   THaCodaData *coda = new THaCodaFile(filename);
+   THaEvData *evdata = new THaCodaDecoder();
 
 // Pedestals.  Left, Right Arms.  u1,u3,u10,d1,d3,d10
    Float_t bcmpedL[NBCM] = { 188.2, 146.2, 271.6, 37.8, 94.2, 260.2 };
@@ -103,12 +102,12 @@ int main(int argc, char* argv[]) {
 
    while (status == 0) {
 
-     status = coda->codaRead();
+     if(coda) status = coda->codaRead();
      if (status != 0) {
        cout << "coda status nonzero.  assume EOF"<<endl;
        goto quit;
      }
-     evdata->LoadEvent(coda->getEvBuffer());
+      evdata->LoadEvent(coda->getEvBuffer());
 
 // Dirty trick to average over larger time intervals (depending on 
 // SKIPEVENT) to reduce the fluctuations due to clock.  
@@ -119,7 +118,10 @@ int main(int argc, char* argv[]) {
      scaler->LoadData(*evdata);
 
 // Not every trigger has new scaler data, so skip if not new.
-     if ( !scaler->IsRenewed() ) continue;
+     if ( !scaler->IsRenewed() ) {
+       cout << "not renewed "<<endl<<flush;
+       continue;
+     }
 
      if (iev++ > evnum) goto quit;
 

@@ -104,7 +104,7 @@ int main(int argc, char* argv[]) {
    TNtuple *ntup = new TNtuple("ascal","Scaler Rates",string_ntup);
    Float_t farray_ntup[17];  // Dimension = size of string_ntup (i.e. nlen+1)
    THaCodaFile *coda = new THaCodaFile(TString(argv[1]));
-   THaCodaDecoder *evdata = new THaCodaDecoder();
+   THaEvData *evdata = new THaCodaDecoder();
    inquad = 0;
    q1_helicity = 0;
    rloc = 0;
