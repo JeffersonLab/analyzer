@@ -31,6 +31,7 @@ public:
   virtual const char*  GetDBFileName() const     { return GetPrefix(); }
           Int_t        GetDebug() const          { return fDebug; }
           const char*  GetPrefix() const         { return fPrefix; }
+  virtual void         Clear( Option_t* opt="" ) {}
           EStatus      Init();
   virtual EStatus      Init( const TDatime& run_time );
           Bool_t       IsInit() const            { return IsOK(); }
@@ -119,10 +120,10 @@ protected:
 
   //Only derived classes may construct me
   THaAnalysisObject() : fPrefix(NULL), fStatus(kNotinit), 
-    fDebug(0), fIsInit(false), fIsSetup(false), fProperties(0) { Clear(); }
+    fDebug(0), fIsInit(false), fIsSetup(false), fProperties(0) {}
   THaAnalysisObject( const char* name, const char* description ) :
     TNamed(name,description), fPrefix(NULL), fStatus(kNotinit), 
-    fDebug(0), fIsInit(false), fIsSetup(false), fProperties(0) { Clear(); }
+    fDebug(0), fIsInit(false), fIsSetup(false), fProperties(0) {}
 
 
 private:
