@@ -78,6 +78,6 @@
 #pragma link C++ class THaExtTarCor+;
 #pragma link C++ class THaTrackInfo+;
 #pragma link C++ class THaDebugModule+;
+#pragma link C++ class THaGoldenTrack+;
 
 #endif
-
