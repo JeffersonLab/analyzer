@@ -10,6 +10,7 @@
 #define THAOMAX 100
 #include "TObject.h"
 #include "THaString.h"
+#include "TClass.h"
 #include "TTree.h"
 #include <vector>
 
@@ -23,8 +24,13 @@ class THaOdata {
 // Utility class used by THaOutput to store arrays 
 // up to size 'nsize' for tree output.
 public:
-  THaOdata(int n=THAOMAX) : nsize(n) { data = new Double_t[n]; Clear(); }
+  THaOdata(int n=THAOMAX) : nsize(n) { 
+    Class()->IgnoreTObjectStreamer();
+    data = new Double_t[n]; Clear();
+    memset(data, 0, nsize*sizeof(Double_t)); 
+  }
   THaOdata(const THaOdata& other) : nsize(other.nsize) {
+    Class()->IgnoreTObjectStreamer();
     data = new Double_t[nsize]; ndata = other.ndata;
     memcpy( data, other.data, nsize*sizeof(Double_t));
   }
@@ -32,21 +38,20 @@ public:
     if( this != &rhs ) {
       if( nsize < rhs.nsize ) {
 	nsize = rhs.nsize; delete [] data; data = new Double_t[nsize];
+	memset(data, 0, nsize*sizeof(Double_t)); 
       }
       ndata = rhs.ndata; memcpy( data, rhs.data, nsize*sizeof(Double_t));
     }
     return *this;   
   }
   virtual ~THaOdata() { delete [] data; };
+  void Clear( Option_t* opt="" ) { ndata = 0; }
   void AddBranches(TTree *T, std::string name) {
      std::string sname = "Ndata." + name;
      std::string leaf = sname;
      T->Branch(sname.c_str(),&ndata,(leaf+"/I").c_str());
      leaf = "data["+leaf+"]/D";
      T->Branch(name.c_str(),data,leaf.c_str());
-  }
-  void Clear( Option_t* opt="" ) {
-    ndata = 0; memset(data, 0, nsize*sizeof(Double_t)); 
   }
   Int_t Fill(Int_t i, Double_t dat) {
     if (i >= 0 && i < nsize-1) {
@@ -68,7 +73,7 @@ public:
 
 private:
 
-  ClassDef(THaOdata,3)  // Variable sized array
+  ClassDef(THaOdata,4)  // Variable sized array
 };
 
 class THaOutput {
