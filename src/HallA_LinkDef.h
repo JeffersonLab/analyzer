@@ -45,8 +45,8 @@
 #pragma link C++ class THaEvent+;
 #pragma link C++ class THaEventHeader+;
 #pragma link C++ class THaOutput+;
-#pragma link C++ class THaOdata+;
-#pragma link C++ class THaScalerKey+;
+//#pragma link C++ class THaOdata+;
+//#pragma link C++ class THaScalerKey+;
 #pragma link C++ class THaString+;
 #pragma link C++ class THaAnalyzer+;
 #pragma link C++ class THaPrintOption+;
@@ -111,8 +111,9 @@
 #endif
 
 #ifdef __MAKECINT__
-#pragma link C++ class std::string;
 //FIXME: only the templates that we specify here will be available in CINT!!!
+#ifdef LINUXVERS
+#pragma link C++ class std::string;
 #pragma link C++ class std::vector<short>;
 #pragma link C++ class std::vector<int>;
 #pragma link C++ class std::vector<unsigned short>;
@@ -122,13 +123,14 @@
 #pragma link C++ class std::vector<std::string>;
 #pragma link C++ class std::vector<std::vector<int>>;
 #pragma link C++ class std::vector<std::vector<double>>;
-#pragma link C++ class std::vector<TString>;
+//#pragma link C++ class std::vector<TString>;
 //#pragma link C++ class std::vector<TH1F*>;
 //#pragma link C++ class std::vector<TH1*>;
 #pragma link C++ class std::vector<THaString>;
 #pragma link C++ class std::vector<THaVar*>;
 #pragma link C++ class std::vector<THaFormula*>;
 #pragma link C++ class std::vector<THaCut*>;
+#endif
 #endif
 
 #endif
