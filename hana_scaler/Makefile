@@ -15,6 +15,7 @@ DCDIR=../hana_decode
 # tscalntup -- Read a CODA file and fills an ntuple with stuff
 # tscaldtime -- Reads CODA file, checks deadtime
 # tscalroc11 -- To read the ROC11 scalers (from event stream)
+# tscalevt -- Analysis of ROC10/11 scalers. 
 # 
 # To understand how to use scaler classes, look at the 'main'
 # routines  tscalfile_main.C tscalasy_main.C tscalhist_main.C tscalonl_main.C
@@ -34,7 +35,9 @@ export BUILD_SHARED = 1
 
 # For test executibles, must have the Decoder Library.  I will ship
 # a fairly stable version and call it libdc_local.a (a local copy).  
-# It's probably good enough.  If not, see README.
+# It's probably good enough.  If not, compile it in ../hana_decode
+# by typing "make libdc.a" and copy it to $(pwd)/libdc_local.a
+
 LIBDC=libdc_local.a
 
 export DEBUG = 1
@@ -151,7 +154,8 @@ SCALER_OBJS += THaScalDict.o
 endif
 
 # Test code executibles
-PROGS = tscalfile tscalasy tscalhist tscalonl xscaler tscalntup tscaldtime tscalroc11
+PROGS = tscalfile tscalasy tscalhist tscalonl xscaler 
+PROGS += tscalntup tscaldtime tscalroc11 tscalevt
 
 # To compile the local test codes:
 # Set STANDALONE at top of makefile.  But comment it out if 
@@ -209,6 +213,10 @@ tscaldtime: tscaldtime_main.o $(SCALER_OBJS) $(SRC) $(HEAD) $(LIBDC)
 tscalroc11: tscalroc11_main.o $(SCALER_OBJS) $(SRC) $(HEAD) $(LIBDC)  
 	rm -f $@
 	$(CXX) $(CXXFLAGS) -o $@ tscalroc11_main.o $(SCALER_OBJS) $(ALL_LIBS) 
+
+tscalevt: tscalevt_main.o $(SCALER_OBJS) $(SRC) $(HEAD) $(LIBDC)  
+	rm -f $@
+	$(CXX) $(CXXFLAGS) -o $@ tscalevt_main.o $(SCALER_OBJS) $(ALL_LIBS) 
 
 
 
