@@ -6,6 +6,7 @@
 
 #include "THaVDCHit.h"
 #include "THaVDCTimeToDistConv.h"
+#include "TClass.h"
 
 ClassImp(THaVDCHit)
 
@@ -52,7 +53,10 @@ Int_t THaVDCHit::Compare( const TObject * obj ) const {
   // wire number and, for each wire, will be in the order in which they hit
   // the wire
 
-  THaVDCHit * hit   = (THaVDCHit*) obj;
+  if( !obj || IsA() != obj->IsA() )
+    return -1;
+
+  const THaVDCHit* hit = static_cast<const THaVDCHit*>( obj );
  
   Int_t myWireNum = fWire->GetNum();
   Int_t hitWireNum = hit->GetWire()->GetNum();
