@@ -152,8 +152,8 @@ public:
 				 const void* loc, VarType type, 
 				 const Int_t* count );
   virtual THaVar*  DefineByRTTI( const TString& name, const TString& desc,
-				 const TString& def, const TObject* const obj,
-				 const char* errloc="" );
+				 const TString& def, const void* const obj,
+				 TClass* const cl, const char* errloc="" );
   virtual Int_t    DefineVariables( const VarDef* list, 
 				    const char* prefix="",
 				    const char* caller="" );
@@ -168,7 +168,7 @@ public:
 
 protected:
 
-  ClassDef(THaVarList,1)   //List of analyzer global variables
+  ClassDef(THaVarList,2)   //List of analyzer global variables
 };
 
 #endif

@@ -102,10 +102,23 @@ THaVar* THaVarList::DefineByType( const char* name, const char* descript,
 
 //_____________________________________________________________________________
 THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc, 
-				  const TString& def,  const TObject* const obj,
-				  const char* errloc )
+				  const TString& def,  const void* const obj,
+				  TClass* const cl, const char* errloc )
 {
   // Define variable via its ROOT RTTI
+
+  if( !obj || !cl ) {
+    Warning( errloc, "Invalid class or object. Variable %s not defined.",
+	     name.Data() );
+    return NULL;
+  }
+
+  THaVar* var = Find( name );
+  if( var ) {
+    Warning( errloc, "Variable %s already exists. Not redefined.", 
+	     var->GetName() );
+    return NULL;
+  }
 
   // Find up to two dots in the definition and extract the strings between them
   Ssiz_t dot[2], pos = 0, ppos = 0;
@@ -127,19 +140,14 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
 	     "Variable not defined.", name.Data(), desc.Data() );
     return NULL;
   }
-  // FIXME: Make sure there are no null strings
-
-  // Sanity checks
-  if( !obj )
-    return NULL;
-  TClass* cl = obj->IsA();
-  if( !cl ) 
-    return NULL;
+  Int_t i = 0;
+  while( i <= ndot )
+    if( s[i++].Length() == 0 )
+      return NULL;
 
   Bool_t        function   =  s[ndot].EndsWith("()");
   TMethodCall*  theMethod  =  NULL;
   TClass*       theClass   =  NULL;
-  THaVar*       var        =  NULL;
   ULong_t       loc        =  (ULong_t)obj;
   void**        ploc;
 
@@ -491,7 +499,7 @@ Int_t THaVarList::DefineVariables( const RVarDef* list, const TObject* obj,
       continue;
     }
 
-    THaVar* var = DefineByRTTI( name, desc, def, obj, errloc );
+    THaVar* var = DefineByRTTI( name, desc, def, obj, cl, errloc );
 
     if( var )
       ndef++;
