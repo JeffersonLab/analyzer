@@ -69,6 +69,7 @@ Int_t THaFormula::Compile( const char* expression )
 
   fNcodes = 0;
   fNval   = 0;
+  fAlreadyFound.ResetAllBits();
   delete [] fVarDef;
   fVarDef = new FVarDef_t[ kMAXCODES ];
   memset( fVarDef, 0, kMAXCODES*sizeof(FVarDef_t));
