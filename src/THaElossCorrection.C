@@ -4,11 +4,6 @@
 //
 // THaElossCorrection
 //
-// Correct energy loss of a track by a constant. This is basically trivial,
-// but useful to have to provide input for kinematics modules. 
-// More advanced corrections can be implemented by inheritance from
-// this module.
-//
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaElossCorrection.h"
@@ -30,7 +25,7 @@ THaElossCorrection::THaElossCorrection( const char* name,
 					Int_t hadron_charge ) :
   THaPhysicsModule(name,description), fZ(hadron_charge),
   fZmed(0.0), fAmed(0.0), fDensity(0.0), fPathlength(0.0),
-  fTestMode(kFALSE), fInputName(input_tracks), fTrackModule(NULL)
+  fTestMode(kFALSE), fInputName(input_tracks)
 {
   // Normal constructor.
 
@@ -47,57 +42,13 @@ THaElossCorrection::~THaElossCorrection()
 }
 
 //_____________________________________________________________________________
-void THaElossCorrection::CalcEloss( THaTrackInfo* trkifo )
-{
-  // Compute the expected energy loss for the track given in trkifo.
-  //
-  // Currently, we use a very simple algorithm that computes
-  // the energy loss based on a fixed material thickness.
-  // Only the beta dependence of the energy loss is used,
-  // but there are no corrections for angle etc.
-  //
-  // May be overridden by derived classes as necessary.
-
-  Double_t p0 = trkifo->GetP();
-  Double_t beta = p0 / TMath::Sqrt(p0*p0 + fM*fM);
-  if( fElectronMode ) {
-    fEloss = ElossElectron( beta, fZmed, fAmed, 
-			    fDensity, fPathlength );
-  } else {
-    fEloss = ElossHadron( fZ, beta, fZmed, fAmed, 
-			  fDensity, fPathlength );
-  }
-}
-
-//_____________________________________________________________________________
 void THaElossCorrection::Clear( Option_t* opt )
 {
   // Clear all event-by-event variables.
   
   THaPhysicsModule::Clear(opt);
-  TrkIfoClear();
   if( !fTestMode )
     fEloss = kBig;
-}
-
-//_____________________________________________________________________________
-THaAnalysisObject::EStatus THaElossCorrection::Init( const TDatime& run_time )
-{
-  // Initialize the module.
-  // Locate the input tracking module named in fInputName and save
-  // pointer to it.
-
-  fTrackModule = dynamic_cast<THaTrackingModule*>
-    ( FindModule( fInputName.Data(), "THaTrackingModule"));
-  if( !fTrackModule )
-    return fStatus;
-
-  //  fTrkIfo.SetSpectrometer( fTrackModule->GetTrackInfo()->GetSpectrometer() );
-
-  // Standard initialization. Calls this object's DefineVariables().
-  THaPhysicsModule::Init( run_time );
-
-  return fStatus;
 }
 
 //_____________________________________________________________________________
@@ -108,24 +59,6 @@ Int_t THaElossCorrection::DefineVariables( EMode mode )
   if( mode == kDefine && fIsSetup ) return kOK;
   fIsSetup = ( mode == kDefine );
 
-  const char* var_prefix = "fTrkIfo.";
-
-  // Corrected track parameters
-  const RVarDef var1[] = {
-    { "x",        "Target x coordinate",            "fX"},
-    { "y",        "Target y coordinate",            "fY"},
-    { "th",       "Tangent of target theta angle",  "fTheta"},
-    { "ph",       "Tangent of target phi angle",    "fPhi"},    
-    { "dp",       "Target delta",                   "fDp"},
-    { "p",        "Lab momentum (GeV)",             "fP"},
-    { "px",       "Lab momentum x (GeV)",           "GetPx()"},
-    { "py",       "Lab momentum y (GeV)",           "GetPy()"},
-    { "pz",       "Lab momentum z (GeV)",           "GetPz()"},
-    { "ok",       "Data valid status flag (1=ok)",  "fOK"},
-    { 0 }
-  };
-  DefineVarsFromList( var1, mode, var_prefix );
-
   // Locally computed data
   const RVarDef var2[] = {
     { "eloss", "Calculated energy loss correction (GeV)", "fEloss" },
@@ -133,35 +66,6 @@ Int_t THaElossCorrection::DefineVariables( EMode mode )
   };
   DefineVarsFromList( var2, mode );
 
-  return 0;
-}
-
-//_____________________________________________________________________________
-Int_t THaElossCorrection::Process( const THaEvData& evdata )
-{
-  // Calculate corrections and adjust the track parameters.
-
-  if( !IsOK() ) return -1;
-
-  THaTrackInfo* trkifo = fTrackModule->GetTrackInfo();
-  if( !trkifo->IsOK() ) return 2;
-
-  // Copy the input track info
-  fTrkIfo = *trkifo;
-  
-  // Compute the correction
-  Double_t p_out = fTrkIfo.GetP(); 
-  if( p_out <= 0.0 ) return 4; //oops
-  Double_t E_out = TMath::Sqrt(p_out*p_out + fM*fM);
-  if( !fTestMode )
-    CalcEloss(trkifo);  //update fEloss
-  Double_t p_in = TMath::Sqrt(p_out*p_out + fEloss*fEloss + 2.0*E_out*fEloss);
-  
-  // Apply the correction
-  fTrkIfo.SetP(p_in);
-
-
-  fDataValid = true;
   return 0;
 }
 

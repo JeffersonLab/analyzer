@@ -8,14 +8,13 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaPhysicsModule.h"
-#include "THaTrackingModule.h"
 #include "TString.h"
 
-class THaElossCorrection : public THaPhysicsModule, public THaTrackingModule {
+class THaElossCorrection : public THaPhysicsModule {
   
 public:
   THaElossCorrection( const char* name, const char* description,
-		      const char* input_tracks = "", 
+		      const char* input = "", 
 		      Double_t particle_mass = 0.511e-3 /* GeV/c^2 */,
 		      Int_t hadron_charge = 1 );
   virtual ~THaElossCorrection();
@@ -25,8 +24,6 @@ public:
   Double_t          GetMass()       const { return fM; }
   Double_t          GetEloss()      const { return fEloss; }
 
-  virtual EStatus   Init( const TDatime& run_time );
-  virtual Int_t     Process( const THaEvData& );
           void      SetInputModule( const char* name );
           void      SetMass( Double_t m /* GeV/c^2 */ );
           void      SetTestMode( Bool_t enable=kTRUE,
@@ -58,11 +55,7 @@ protected:
 
   Bool_t             fTestMode;    // If true, use fixed value for fEloss
   Bool_t             fElectronMode;// Particle is electron or positron
-  TString            fInputName;   // Name of spectrometer/tracking module
-  THaTrackingModule* fTrackModule; // Pointer to tracking module
-
-  // Function for updating fEloss based on input trkifo.
-  virtual void  CalcEloss( THaTrackInfo* trkifo );
+  TString            fInputName;   // Name of input module
 
   // Setup functions
   virtual Int_t DefineVariables( EMode mode = kDefine );
