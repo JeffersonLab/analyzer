@@ -5,7 +5,6 @@
 //                                                                           //
 // THaVDCWire                                                                //
 //                                                                           //
-// Class to represent a wire from the Hall A Vertical Drift Chambers         //
 ///////////////////////////////////////////////////////////////////////////////
 #include "TObject.h"
 
@@ -18,7 +17,7 @@ public:
   THaVDCWire( Int_t num=0, Double_t pos=0.0, Double_t offset=0.0,
 	      THaVDCTimeToDistConv* ttd=NULL ) :
     fNum(num), fFlag(0), fPos(pos), fTOffset(offset), fTTDConv(ttd) {}
-  virtual ~THaVDCWire();
+  virtual ~THaVDCWire() {}
 
   // Get and Set Functions
   Int_t    GetNum()     const { return fNum;  }
@@ -43,7 +42,7 @@ protected:
   THaVDCWire( const THaVDCWire& ) {}
   THaVDCWire& operator=( const THaVDCWire& ) { return *this; }
  
-  ClassDef(THaVDCWire,0)             // VDCWire class
+  ClassDef(THaVDCWire,1)             // VDCWire class
 };
 
 ////////////////////////////////////////////////////////////////////////////////
