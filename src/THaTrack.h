@@ -102,7 +102,10 @@ public:
   void              SetCreator( TD* d )                { fCreator = d; }
   void              SetPIDinfo( THaPIDinfo* pid )      { fPIDinfo = pid; }
   void              SetPvect( const TVector3& pvect )  { fPvect   = pvect; }
-  void              SetVertex( const TVector3& vertx ) { fVertex  = vertx; }
+  void              SetVertex( const TVector3& vert )     
+  { fVertex = vert; fType |= kHasVertex; }
+  void              SetVertex( Double_t x, Double_t y, Double_t z )
+  { fVertex.SetXYZ( x, y, z ); fType |= kHasVertex; }
 
 protected:
 
@@ -117,32 +120,31 @@ protected:
   THaPIDinfo*       fPIDinfo;        //! Particle ID information for this track
   TD*               fCreator;        //! Detector creating this track
 
-  // coordinates in the rotated TRANSPORT system
-  Double_t fRX;     // x position in focal plane (m)
-  Double_t fRY;     // y position in focal plane (m)
-  Double_t fRTheta; // Tangent of TRANSPORT Theta (x')
-  Double_t fRPhi;   // Tangent of TRANSPORT Phi (y')
-
-  // coordinates in the target system
-  Double_t fTX;     // x position at target (m)
-  Double_t fTY;     // y position at target (m)
-  Double_t fTTheta; // Tangent of TRANSPORT Theta (out-of-plane angle) at target
-  Double_t fTPhi;   // Tangent of TRANSPORT Phi (in-plane angle) at target
-
   // coordinates in the detector system
   Double_t fDX;     // x position in DCS
   Double_t fDY;     // y position in DCS
   Double_t fDTheta; // Tangent of DCS Theta 
   Double_t fDPhi;   // Tangent of DCS Phi 
 
+  // coordinates in the rotated TRANSPORT system
+  Double_t fRX;     // x position in focal plane (m)
+  Double_t fRY;     // y position in focal plane (m)
+  Double_t fRTheta; // Tangent of TRANSPORT Theta (x')
+  Double_t fRPhi;   // Tangent of TRANSPORT Phi (y')
+
+  // reconstructed coordinates at the target in the target TRANSPORT system (z=0)
+  Double_t fTX;     // x position at target (m)
+  Double_t fTY;     // y position at target (m)
+  Double_t fTTheta; // Tangent of TRANSPORT Theta (out-of-plane angle) at target
+  Double_t fTPhi;   // Tangent of TRANSPORT Phi (in-plane angle) at target
   Double_t fDp;     // dp/p_center -- fractional change in momentum
+
+  TVector3          fPvect;  // Momentum vector at target in lab system (GeV)
+  TVector3          fVertex; // Vertex location in lab (m) valid if fHasVertex
 
   THaTrackID*       fID;     //! Track identifier
   UInt_t            fFlag;   // General status flag (for use by tracking det.)
   UInt_t            fType;   // Flag indicating which vectors reconstructed
-
-  TVector3          fPvect;  // Momentum vector at target in lab system (GeV)
-  TVector3          fVertex; // Vertex location in lab (m) valid if fHasVertex
 
   ClassDef(THaTrack,1)       // A generic particle track
 };
