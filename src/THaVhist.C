@@ -42,12 +42,16 @@
 
 using namespace std;
 
+static const char kMyFX = 1<<8;
+static const char kMyFY = 1<<9;
+static const char kMyCut = 1<<10;
+
 //_____________________________________________________________________________
 THaVhist::~THaVhist() 
 {
-  if (fFormX) delete fFormX;
-  if (fFormY) delete fFormY;
-  if (fCut) delete fCut;
+  if (fFormX && ((fEye&kMyFX)!=0)) delete fFormX;
+  if (fFormY && ((fEye&kMyFY)!=0)) delete fFormY;
+  if (fCut && ((fEye&kMyCut)!=0)) delete fCut;
   if( TROOT::Initialized() ) {
     for (std::vector<TH1*>::iterator ith = fH1.begin();
 	 ith != fH1.end(); ith++) delete *ith;
@@ -59,7 +63,7 @@ THaVhist::~THaVhist()
 void THaVhist::CheckValidity( ) 
 {
   fProc = kTRUE;
-  if (fEye == 0 && fSize != static_cast<Int_t>(fH1.size())) {
+  if ( ((fEye&1)==0) && fSize != static_cast<Int_t>(fH1.size())) {
      fProc = kFALSE;
      ErrPrint();
      cerr << "THaVhist:ERROR:: Inconsistent sizes."<<endl;
@@ -134,6 +138,7 @@ Int_t THaVhist::Init( )
      } else {
        fFormX = new THaVform("formula",sname.c_str(),fVarX.c_str());
      }
+     fEye |= kMyFX;
   }
   status = fFormX->Init();
   if (status != 0) {
@@ -151,6 +156,7 @@ Int_t THaVhist::Init( )
      } else {
        fFormY = new THaVform("formula",sname.c_str(),fVarY.c_str());
      }
+     fEye |= kMyFY;
   }
   if (fFormY) {
      status = fFormY->Init();
@@ -163,6 +169,7 @@ Int_t THaVhist::Init( )
   if (fCut == 0 && HasCut()) {
      sname = fName+"Cut";
      fCut = new THaVform("cut",sname.c_str(),fScut.c_str());
+     fEye |= kMyCut;
   }
   if (fCut) {
      status = fCut->Init();
@@ -259,14 +266,15 @@ Int_t THaVhist::FindVarSize()
   sizey = 0;
   sizec = 0;
   if ( fFormX->IsEye() ) {
-    fEye = 1;
+    fEye |= 1;
   } else {
+    fEye &= ~1;
     sizex = fFormX->GetSize();
   }
   if (fFormY) { 
     sizey = fFormY->GetSize();
     if ( fFormY->IsEye() ) {
-       fEye = 1;
+       fEye |= 1;
        sizey = sizex;
     } else {
        if (fFormX->IsEye()) sizex = sizey;
@@ -317,11 +325,11 @@ Int_t THaVhist::BookHisto(Int_t hfirst, Int_t hlast)
   string stitle = fTitle;
   bool doing_array = (fSize>1);
   for (Int_t i = hfirst; i < fSize; i++) {
-    if (fEye == 0 && doing_array) {
+    if (((fEye&1)==0) && doing_array) {
        sname = fName + Form("%d",i); 
        stitle = fTitle + Form(" %d",i);
     }
-    if (fEye == 1 && i > hfirst) continue;
+    if (((fEye&1)!=0) && i > hfirst) continue;
     if (fType.CmpNoCase("th1f") == 0) {
        fH1.push_back(new TH1F(sname.c_str(), 
 	     stitle.c_str(), fNbinX, fXlo, fXhi));
@@ -411,13 +419,13 @@ Int_t THaVhist::Process()
     for (Int_t i = 0; i < fSize; i++) {
       if ( CheckCut(i)==0 ) continue; 
       if (fFormY) {
-        if (fEye == 1) {
+        if (((fEye&1)!=0)) {
           fH1[0]->Fill(fFormX->GetData(i), fFormY->GetData(i));
 	} else {
           fH1[i]->Fill(fFormX->GetData(i), fFormY->GetData(i));
 	}
       } else {
-        if (fEye == 1) {
+        if (((fEye&1)!=0)) {
           fH1[0]->Fill(fFormX->GetData(i));
 	} else {
           fH1[i]->Fill(fFormX->GetData(i));
