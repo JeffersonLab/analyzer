@@ -12,27 +12,27 @@
 class THaPhysicsModule : public THaAnalysisObject {
   
 public:
-  virtual ~THaPhysicsModule();
+  virtual ~THaPhysicsModule() {}
   
-          bool  IsSingleTrack() const { return fSingleTrk; }
-          bool  IsMultiTrack()  const { return !IsSingleTrack(); }
+          bool  IsSingleTrack() const { return !IsMultiTrack(); }
+          bool  IsMultiTrack()  const { return fMultiTrk; }
 
   virtual Int_t Process() = 0;
 
 protected:
 
   //Only derived classes may construct me
-  THaPhysicsModule() : fSingleTrk(false) {}
-  THaPhysicsModule( const char* name, const char* description );
+  THaPhysicsModule() : fMultiTrk(false) {}
+  THaPhysicsModule( const char* name, const char* description ) :
+    THaAnalysisObject(name,description), fMultiTrk(false) {}
   THaPhysicsModule( const THaPhysicsModule& ) {};
   THaPhysicsModule& operator=( const THaPhysicsModule& ) { return *this; }
 
   virtual void MakePrefix() { THaAnalysisObject::MakePrefix( NULL ); }
 
-  bool  fSingleTrk;              //Flag for single track mode
+  bool  fMultiTrk;               //Flag for multi-track mode
 
-  ClassDef(THaPhysicsModule,0)   //ABC for a physics/kinematics module
-
+  ClassDef(THaPhysicsModule,1)   //ABC for a physics/kinematics module
 };
 
 #endif

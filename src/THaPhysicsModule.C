@@ -27,18 +27,3 @@
 ClassImp(THaPhysicsModule)
 
 //_____________________________________________________________________________
-THaPhysicsModule::THaPhysicsModule( const char* name, 
-				  const char* description ) :
-  THaAnalysisObject(name,description)
-{
-  // Normal constructor.
-
-}
-
-//_____________________________________________________________________________
-THaPhysicsModule::~THaPhysicsModule()
-{
-  // Destructor
-
-}
-
