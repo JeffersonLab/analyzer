@@ -132,6 +132,8 @@ public:
   const void*     GetValuePointer()        const { return fValueP; }
 
   virtual ULong_t Hash() const { return fArrayData.Hash(); }
+  virtual Bool_t  HasSameSize( const THaVar& rhs ) const;
+  virtual Bool_t  HasSameSize( const THaVar* rhs ) const;
   virtual Int_t   Index( const char* ) const;
   virtual Int_t   Index( const THaArrayString& ) const;
   Bool_t          IsArray() const            
