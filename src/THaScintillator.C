@@ -578,13 +578,13 @@ Int_t THaScintillator::CoarseProcess( TClonesArray& tracks )
       fHitPad[fNhit++] = i;
       fTime[i] = .5*(fLT_c[i]+fRT_c[i])-fSize[1]/fCn;
       fdTime[i] = fResolution/sqrt2;
-      fYt[i] = (fRT_c[i]-fLT_c[i])/(2*fCn);
+      fYt[i] = .5*fCn*(fRT_c[i]-fLT_c[i]);
     }
 
     // rough calculation of position from ADC reading
     if (fLA_c[i]>0&&fRA_c[i]>0) {
       fYa[i] = TMath::Log(fLA_c[i]/fRA_c[i])/(2.*fAttenuation);
-      fAmpl[i] = TMath::Sqrt(fLA_c[i]*fRA_c[i]);
+      fAmpl[i] = TMath::Sqrt(fLA_c[i]*fRA_c[i]*TMath::Exp(fAttenuation*2*fSize[1]));
     }
   }
   
