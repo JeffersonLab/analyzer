@@ -98,7 +98,7 @@ SRC           = src/THaFormula.C src/THaVar.C src/THaVarList.C src/THaCut.C \
 		src/THaAnalysisObject.C src/THaDetectorBase.C src/THaRTTI.C \
 		src/THaPhysicsModule.C src/THaVertexModule.C \
 		src/THaAnalyzer.C src/THaPrintOption.C \
-		src/THaBeam.C src/THaBpm.C src/THaRaster.C src/THaEpicsData.C \
+		src/THaBeam.C src/THaIdealBeam.C \
 		src/THaTrack.C src/THaPIDinfo.C src/THaParticleInfo.C \
 		src/THaCluster.C src/THaMatrix.C src/THaArrayString.C \
 		src/THaScintillator.C src/THaShower.C \
@@ -108,7 +108,7 @@ SRC           = src/THaFormula.C src/THaVar.C src/THaVarList.C src/THaCut.C \
 		src/THaVDCPlane.C src/THaVDCUVPlane.C src/THaVDCUVTrack.C \
 		src/THaVDCWire.C src/THaVDCHit.C src/THaVDCCluster.C \
 		src/THaVDCTimeToDistConv.C src/THaVDCTrackID.C \
-                src/THaVDCAnalyticTTDConv.C src/THaVDCT0CalTable.C \
+                src/THaVDCAnalyticTTDConv.C \
 		src/THaVDCTrackPair.C src/THaScalerGroup.C \
 		src/THaElectronKine.C src/THaReactionPoint.C \
 		src/THaTwoarmVertex.C src/THaAvgVertex.C \
