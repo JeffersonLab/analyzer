@@ -48,12 +48,12 @@ public:
   virtual void         SetNumber( UInt_t number );
 
 protected:
-  UInt_t        fNumber;       //Run number
-  TString       fFilename;     //File name
-  TDatime       fDate;         //Run date and time
-  UInt_t        fFirstEvent;   //First event to analyze
-  UInt_t        fLastEvent;    //Last event to analyze
-  THaCodaFile*  fCodaFile;     //!CODA file associated wih this run
+  UInt_t        fNumber;       //  Run number
+  TString       fFilename;     //  File name
+  TDatime       fDate;         //  Run date and time
+  UInt_t        fFirstEvent;   //  First event to analyze
+  UInt_t        fLastEvent;    //  Last event to analyze
+  THaCodaFile*  fCodaFile;     //! CODA file associated with this run
 
   ClassDef(THaRun,1)   //Description of a run
 };
