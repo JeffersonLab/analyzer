@@ -11,72 +11,90 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaRun.h"
-#include "THaAnalysisObject.h"
+#include "THaRunParameters.h"
 #include "THaEvData.h"
 #include "THaCodaData.h"
 #include "THaCodaFile.h"
+#include "THaGlobals.h"
 #include "TMath.h"
+#include "TClass.h"
 #include <iostream>
 #include <cstring>
 #include <cstdio>
+#include <climits>
 
 using namespace std;
 
+static const int MAXSCAN = 5000;
+static const int UNDEFDATE = 19950101;
+
 //_____________________________________________________________________________
 THaRun::THaRun( const char* fname, const char* descr ) : 
-  TNamed("", strlen(descr) ? descr : fname), fNumber(0), fFilename(fname),
-  fDate(19950101,0), fAssumeDate(kFALSE), fDBRead(kFALSE), fIsInit(kFALSE),
-  fBeamE(0.0), fBeamP(0.0), fBeamM(0.0), fBeamQ(0), fBeamdE(0.0), fTarget(0)
+  TNamed("uninitialized run", strlen(descr) ? descr : fname), 
+  fNumber(-1), fType(0), fFilename(fname), fDate(UNDEFDATE,0), 
+  fDBRead(kFALSE), fIsInit(kFALSE), fAssumeDate(kFALSE), fMaxScan(MAXSCAN),
+  fDataSet(0), fDataRead(0), fDataRequired(kDate), fParam(0)
 {
   // Normal & default constructor
 
-  fCodaData = new THaCodaFile;  //Do not open the file yet
+  fCodaData = new THaCodaFile;  //Specifying the file name would open the file
   ClearEventRange();
+  fAnalyzed[0] = 0;
+  fAnalyzed[1] = 0;
 }
 
 //_____________________________________________________________________________
-THaRun::THaRun( const THaRun& rhs ) : TNamed( rhs )
+THaRun::THaRun( const THaRun& rhs ) : 
+  TNamed( rhs ), fNumber(rhs.fNumber), fType(rhs.fType), 
+  fFilename(rhs.fFilename), fDate(rhs.fDate), fDBRead(rhs.fDBRead), 
+  fIsInit(rhs.fIsInit), fAssumeDate(rhs.fAssumeDate), fMaxScan(rhs.fMaxScan),
+  fDataSet(rhs.fDataSet), fDataRead(rhs.fDataRead), 
+  fDataRequired(rhs.fDataRequired)
 {
   // Copy ctor
 
-  fNumber     = rhs.fNumber;
-  fFilename   = rhs.fFilename;
-  fDate       = rhs.fDate;
-  fAssumeDate = rhs.fAssumeDate;
-  fFirstEvent = rhs.fFirstEvent;
-  fLastEvent  = rhs.fLastEvent;
-  fCodaData   = new THaCodaFile;
-  fDBRead     = rhs.fDBRead;
-  fBeamE      = rhs.fBeamE;
-  fBeamP      = rhs.fBeamP;
-  fBeamM      = rhs.fBeamM;
-  fBeamQ      = rhs.fBeamQ;
-  fBeamdE     = rhs.fBeamdE;
-  fTarget     = rhs.fTarget;  // Target object managed externally
+  fEvtRange[0] = rhs.fEvtRange[0];
+  fEvtRange[1] = rhs.fEvtRange[1];
+  fAnalyzed[0] = rhs.fAnalyzed[0];
+  fAnalyzed[1] = rhs.fAnalyzed[1];
+  fCodaData = new THaCodaFile;
+  // NB: the run parameter object might inherit from THaRunParameters
+  if( rhs.fParam ) {
+    fParam = static_cast<THaRunParameters*>(rhs.fParam->IsA()->New());
+    *fParam = *rhs.fParam;
+  } else
+    fParam    = 0;
 }
 
 //_____________________________________________________________________________
 THaRun& THaRun::operator=(const THaRun& rhs)
 {
-  // THaRun assignment operator.
+  // Assignment operator.
 
   if (this != &rhs) {
      TNamed::operator=(rhs);
      fNumber     = rhs.fNumber;
-     fDate       = rhs.fDate;
-     fAssumeDate = rhs.fAssumeDate;
+     fType       = rhs.fType;
      fFilename   = rhs.fFilename;
-     fFirstEvent = rhs.fFirstEvent;
-     fLastEvent  = rhs.fLastEvent;
+     fDate       = rhs.fDate;
+     fEvtRange[0] = rhs.fEvtRange[0];
+     fEvtRange[1] = rhs.fEvtRange[1];
+     fAnalyzed[0] = rhs.fAnalyzed[0];
+     fAnalyzed[1] = rhs.fAnalyzed[1];
      fDBRead     = rhs.fDBRead;
+     fIsInit     = rhs.fIsInit;
+     fAssumeDate = rhs.fAssumeDate;
+     fMaxScan    = rhs.fMaxScan;
+     fDataSet    = rhs.fDataSet;
+     fDataRead   = rhs.fDataRead;
+     fDataRequired = rhs.fDataRequired;
      delete fCodaData;
      fCodaData   = new THaCodaFile;
-     fBeamE      = rhs.fBeamE;
-     fBeamP      = rhs.fBeamP;
-     fBeamM      = rhs.fBeamM;
-     fBeamQ      = rhs.fBeamQ;
-     fBeamdE     = rhs.fBeamdE;
-     fTarget     = rhs.fTarget;
+     if( rhs.fParam ) {
+       fParam = static_cast<THaRunParameters*>(rhs.fParam->IsA()->New());
+       *fParam = *rhs.fParam;
+     } else
+       fParam    = 0;
   }
   return *this;
 }
@@ -87,6 +105,7 @@ THaRun::~THaRun()
   // Destroy the Run. The CODA file will be closed by the THaCodaFile 
   // destructor if necessary.
 
+  delete fParam   ; fParam    = 0;
   delete fCodaData; fCodaData = 0;
 }
 
@@ -97,6 +116,14 @@ Int_t THaRun::CloseFile()
 }
 
 //_____________________________________________________________________________
+Bool_t THaRun::HasInfo( UInt_t bits ) const
+{
+  // Test if all the bits set in 'bits' are also set in fDataSet. 
+  // 'bits' should consist of the bits defined in EInfoType.
+  return ((bits & fDataSet) == bits);
+}
+
+//_____________________________________________________________________________
 Int_t THaRun::Init()
 {
   // Initialize the run. This reads the run database, checks 
@@ -104,6 +131,20 @@ Int_t THaRun::Init()
   // run parameters (run number, time, etc.)
 
   static const char* const here = "Init()";
+
+  // Make sure we have a run parameter structure. This object will 
+  // allocate THaRunParameters automatically. If a derived class needs
+  // a different structure, then its Init() method must allocate it
+  // before calling this Init().
+  if( !fParam ) {
+    fParam = new THaRunParameters;
+    // THaEvData uses a fixed number of prescale factors, so we can
+    // just set the size of the array here once and for all
+    fParam->Prescales().Set(THaEvData::MAX_PSFACT);
+    // Default all prescale factors to -1 (not set)
+    for(int i=0; i<fParam->GetPrescales().GetSize(); i++)
+      fParam->Prescales()[i] = -1;
+  }
 
   // Open the data source. This will fail if the CODA file doesn't exist,
   // a common source of problems.
@@ -117,45 +158,49 @@ Int_t THaRun::Init()
     }
   }
 
-  // Determine the date of this run
-  // If the user gave us a date via SetDate(), we're done; otherwise we
-  // need to search for an event with a timestamp. 
-  // For CODA files, we need a prestart event. We search for a maximum of 
-  // 1000 events, then give up.
-  if( !fAssumeDate ) {
-    THaEvData evdata;
-    const Int_t MAXEV = 1000;
+  // If pre-scanning of the data file requested, read up to fMaxScan events
+  // and extract run parameters from the data.
+  if( fMaxScan > 0 ) {
+    UInt_t wanted_info = kDate|kRunNumber|kRunType|kPrescales;
+    THaEvData* evdata = static_cast<THaEvData*>(gHaDecoder->New());
     Int_t nev = 0;
-    Int_t status = 0;
-    while (status != EOF && status != CODA_ERROR) {
+    Int_t status = S_SUCCESS;
+    while( nev<fMaxScan && !HasInfo(wanted_info) && 
+	   (status = ReadEvent()) == S_SUCCESS ) {
 
-      status = ReadEvent();
-      if( status == S_EVFILE_TRUNC || status == CODA_ERROR ) {
-	Error( here, "Error %d reading CODA file %s. Check file permissions.",
-	       status, GetFilename());
-	return status;
-      }
-
-      // Decode the event
+      // Decode events
       nev++;
-      evdata.LoadEvent( GetEvBuffer() );
-      if( evdata.IsPrestartEvent())
-	// Got a good event! Get out of here.
-	break;
-      if( nev < MAXEV )
-	continue;
-      else {
-	Error( here, "Cannot find a timestamp within the first %d events "
-	       "in CODA file %s.\nMake sure the file is not a continuation "
-	       " segment.", MAXEV, GetFilename());
-	return 255;
+      if( evdata->LoadEvent( GetEvBuffer()) != THaEvData::HED_OK ) {
+	Error( here, "Error decoding event buffer.");
+	return 128;
       }
+
+      // Inspect event and extract run parameters if appropriate
+      status = Update( evdata );
+      if( status == 1 )
+	cout << "Prestart at " << nev << endl;
+      else if (status == 2 )
+	cout << "Prescales at " << nev << endl;
+
+    }//end while
+    delete evdata;
+
+    if( status != S_SUCCESS && status != EOF ) {
+      Error( here, "Error %d reading CODA file %s. Check file permissions.",
+	     status, GetFilename());
+      return status;
     }
-    fDate.Set( evdata.GetRunTime() );
-    SetNumber( evdata.GetRunNum() );
+  } //end if(fMaxScan>0)
+
+  if( !HasInfo(fDataRequired) ) {
+    Error( here, "Not all required run parameters are set.\n"
+	   "Set them explicitly or increase scan range and ensure "
+	   "that the data file is not a continuation segment." );
+    return 255;
   }
 
-  // Close the data source to avoid conflicts
+  // Close the data source for now to avoid conflicts. It will be opened
+  // again later.
   CloseFile();
 
   // Extract additional run parameters (beam energy etc.) from the database
@@ -170,6 +215,39 @@ Int_t THaRun::Init()
 
   fIsInit = kTRUE;
   return 0;
+}
+
+//_____________________________________________________________________________
+Int_t THaRun::Update( const THaEvData* evdata )
+{
+  // Inspect decoded event data 'evdata' for run parameter data (e.g. prescale
+  // factors) and, if any found, extract the parameters and store them here.
+
+  if( !evdata )
+    return -1;
+
+  Int_t ret = 0;
+  // Run date & number
+  if( evdata->IsPrestartEvent() ) {
+    if( !fAssumeDate ) {
+      fDate.Set( evdata->GetRunTime() );
+      fDataSet |= kDate;
+    }
+    SetNumber( evdata->GetRunNum() );
+    SetType( evdata->GetRunType() );
+    fDataSet  |= kRunNumber|kRunType;
+    fDataRead |= kDate|kRunNumber|kRunType;
+    ret = 1;
+  } 
+  // Prescale factors
+  if( evdata->IsPrescaleEvent() ) {
+    for(int i=0; i<fParam->GetPrescales().GetSize(); i++)
+      fParam->Prescales()[i] = evdata->GetPrescaleFactor(i+1);
+    fDataSet  |= kPrescales;
+    fDataRead |= kPrescales;
+    ret = 2;
+  }
+  return ret;
 }
 
 //_____________________________________________________________________________
@@ -243,9 +321,7 @@ Int_t THaRun::OpenFile()
   if( fFilename.IsNull() )
     return -2;  // filename not set
 
-  if( !fCodaData ) fCodaData = new THaCodaFile;
-  if( !fCodaData ) return -3;
-  return fCodaData->codaOpen( fFilename );
+  return fCodaData ? fCodaData->codaOpen( fFilename ) : -3;
 }
 
 //_____________________________________________________________________________
@@ -265,38 +341,26 @@ void THaRun::Print( Option_t* opt ) const
   cout << "File name:  " << fFilename.Data() << endl;
   cout << "Run number: " << fNumber << endl;
   cout << "Run date:   " << fDate.AsString() << endl;
+  if( fParam )
+    fParam->Print(opt);
 }
 
 //_____________________________________________________________________________
 Int_t THaRun::ReadDatabase()
 {
-  // Qeury the run database for the beam and target parameters for the 
-  // date/time of this run.  The run date should have been set, otherwise
-  // the time when the run object was created (usually shortly before the 
-  // current time) will be used, which is often not meaningful.
+  // Query the run database for the parameters of this run. The actual
+  // work is done in the THaRunParameters object. Usually, the beam and target 
+  // parameters are read.  Internal function called by Init().
   //
   // Return 0 if success, <0 if file error, >0 if not all required data found.
 
-#define OPEN THaAnalysisObject::OpenFile
-#define READ THaAnalysisObject::LoadDBvalue
+  if( !fParam )
+    return -1;
+  Int_t st = fParam->ReadDatabase(fDate);
+  if( st )
+    return st;
 
-  FILE* f = OPEN( "run", fDate, "THaRun::ReadDatabase()" );
-  if( !f ) return -1;
-  Int_t iq, st;
-  Double_t E, M = 0.511e-3, Q = -1.0, dE = 0.0;
-
-  if( (st = READ( f, fDate, "Ebeam", E )) ) return st; // Beam energy required
-  READ( f, fDate, "mbeam", M );
-  READ( f, fDate, "qbeam", Q );
-  READ( f, fDate, "dEbeam", dE );
-  iq = int(Q);
-  SetBeam( E, M, iq, dE );
-
-  // FIXME: Read target parameters and create structure.
-  fTarget = NULL;
   fDBRead = true;
-
-  fclose(f);
   return 0;
 }
   
@@ -305,29 +369,17 @@ Int_t THaRun::ReadEvent()
 {
   // Read one event from CODA file.
 
-  return fCodaData ? fCodaData->codaRead() : -1;
-}
-
-//_____________________________________________________________________________
-void THaRun::SetBeam( Double_t E, Double_t M, Int_t Q, Double_t dE )
-{
-  // Set beam parameters.
-  fBeamE = E;
-  fBeamM = M;
-  fBeamQ = Q;
-  fBeamP = (E>M) ? TMath::Sqrt(E*E-M*M) : 0.0;
-  if( fBeamP == 0.0 )
-    Warning( "SetBeam()", "Beam momentum = 0 ??");
-  fBeamdE = dE;
+  return fCodaData ? fCodaData->codaRead() : -255;
 }
 
 //_____________________________________________________________________________
 void THaRun::ClearDate()
 {
-  // Reset the run date to "undefined" (1.1.1995)
+  // Reset the run date to "undefined"
 
-  fDate.Set(19950101,0);
+  fDate.Set(UNDEFDATE,0);
   fAssumeDate = fIsInit = kFALSE;
+  fDataSet &= ~kDate;
 }
 
 //_____________________________________________________________________________
@@ -340,6 +392,7 @@ void THaRun::SetDate( const TDatime& date )
     fIsInit = kFALSE;
   }
   fAssumeDate = kTRUE;
+  fDataSet |= kDate;
 }
 
 //_____________________________________________________________________________
@@ -348,7 +401,7 @@ void THaRun::SetDate( UInt_t tloc )
   // Set timestamp of this run to 'tloc' which is in Unix time
   // format (number of seconds since 01 Jan 1970).
 
-  // NB: only supported by ROOT>=3.01/06
+  // NB: requires ROOT>=3.01/06
   TDatime date( tloc );
   SetDate( date );
 }
@@ -362,18 +415,36 @@ void THaRun::SetNumber( Int_t number )
   char str[16];
   sprintf( str, "RUN_%u", number);
   SetName( str );
+  fDataSet |= kRunNumber;
+}
+
+//_____________________________________________________________________________
+void THaRun::SetType( Int_t type )
+{
+  // Set run type
+  fType = type;
+  fDataSet |= kRunType;
 }
 
 //_____________________________________________________________________________
 void THaRun::SetFilename( const char* name )
 {
-  // Set the name of the run. If the name changes, the run will become
-  // uninitialized.
+  // Set the name of the raw data file.
+  // If the name changes, the run will become uninitialized.
 
-  if( name && fName != name )
+  if( !name || fFilename != name )
     fIsInit = kFALSE;
 
-  fName = name;
+  fFilename = name;
+}
+
+//_____________________________________________________________________________
+void THaRun::ClearEventRange()
+{
+  // Reset the range of events to analyze
+
+  fEvtRange[0] = 0; 
+  fEvtRange[1] = UINT_MAX;
 }
 
 //_____________________________________________________________________________
