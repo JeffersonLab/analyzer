@@ -157,6 +157,7 @@ void THaHelicity::Init() {
     memset(q1_reading, 0, 2*sizeof(Int_t));
     memset(predicted_reading, Unknown, 2*sizeof(Int_t));
     memset(saved_helicity, Unknown, 2*sizeof(Int_t));
+    memset(quad_calibrated, 0, 2*sizeof(Int_t));
     ClearEvent();
     recovery_flag = 1;
     iseed = 0;
