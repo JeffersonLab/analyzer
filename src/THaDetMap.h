@@ -30,6 +30,7 @@ public:
     UInt_t   first;  // logical number of first channel
     UInt_t   model;  // model number of module (for ADC/TDC identification).
                      // Upper two bytes of model -> ADC/TDC-ness of module
+    Int_t   refindex;  // for pipeline TDCs: index to a reference channel
   };
 
   THaDetMap();
@@ -39,7 +40,8 @@ public:
   
   virtual Int_t     AddModule( UShort_t crate, UShort_t slot, 
 			       UShort_t chan_lo, UShort_t chan_hi,
-			       UInt_t first=0, UInt_t model=0 );
+			       UInt_t first=0, UInt_t model=0,
+			       Int_t refindex=-1 );
   virtual void      Clear() { fNmodules = 0; }
           Module*   GetModule( UShort_t i ) const { return (Module*)fMap+i; }
           Int_t     GetSize() const { return static_cast<Int_t>(fNmodules); }
