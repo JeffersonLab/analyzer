@@ -104,6 +104,42 @@ Int_t THaRun::CloseFile()
 }
 
 //_____________________________________________________________________________
+bool THaRun::operator==( const THaRun& rhs ) const
+{
+  return (fNumber == rhs.fNumber);
+}
+
+//_____________________________________________________________________________
+bool THaRun::operator!=( const THaRun& rhs ) const
+{
+  return (fNumber != rhs.fNumber);
+}
+
+//_____________________________________________________________________________
+bool THaRun::operator<( const THaRun& rhs ) const
+{
+  return (fNumber < rhs.fNumber);
+}
+
+//_____________________________________________________________________________
+bool THaRun::operator>( const THaRun& rhs ) const
+{
+  return (fNumber > rhs.fNumber);
+}
+
+//_____________________________________________________________________________
+bool THaRun::operator<=( const THaRun& rhs ) const
+{
+  return (fNumber <= rhs.fNumber);
+}
+
+//_____________________________________________________________________________
+bool THaRun::operator>=( const THaRun& rhs ) const
+{
+  return (fNumber >= rhs.fNumber);
+}
+
+//_____________________________________________________________________________
 Int_t THaRun::Compare( const TObject* obj ) const
 {
   // Compare two THaRun objects via run numbers. Returns 0 when equal, 

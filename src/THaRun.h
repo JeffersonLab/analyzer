@@ -23,18 +23,12 @@ public:
   THaRun& operator=( const THaRun& rhs );
   virtual ~THaRun();
   
-  bool operator==( const THaRun& rhs ) const { return (fNumber == rhs.fNumber);}
-  bool operator!=( const THaRun& rhs ) const { return (fNumber != rhs.fNumber);}
-  bool operator<( const THaRun& rhs )  const { return (fNumber < rhs.fNumber); }
-  bool operator>( const THaRun& rhs )  const { return (fNumber > rhs.fNumber); }
-  bool operator<=( const THaRun& rhs ) const { return (fNumber <= rhs.fNumber);}
-  bool operator>=( const THaRun& rhs ) const { return (fNumber >= rhs.fNumber);}
-  bool operator==( Int_t run_number )  const { return (fNumber == run_number); }
-  bool operator!=( Int_t run_number )  const { return (fNumber != run_number); }
-  bool operator<( Int_t run_number )   const { return (fNumber < run_number); }
-  bool operator>( Int_t run_number )   const { return (fNumber > run_number); }
-  bool operator<=( Int_t run_number )  const { return (fNumber <= run_number); }
-  bool operator>=( Int_t run_number )  const { return (fNumber >= run_number); }
+  virtual bool operator==( const THaRun& ) const;
+  virtual bool operator!=( const THaRun& ) const;
+  virtual bool operator< ( const THaRun& ) const;
+  virtual bool operator> ( const THaRun& ) const;
+  virtual bool operator<=( const THaRun& ) const;
+  virtual bool operator>=( const THaRun& ) const;
 
   virtual Int_t        CloseFile();
   virtual Int_t        Compare( const TObject* obj ) const;
@@ -46,7 +40,7 @@ public:
           Int_t        GetBeamQ()       const { return fBeamQ; }
           const char*  GetFilename()    const { return fFilename.Data(); }
           const TDatime& GetDate()      const { return fDate; }
-          UInt_t       GetNumber()      const { return fNumber; }
+          Int_t        GetNumber()      const { return fNumber; }
           UInt_t       GetFirstEvent()  const { return fFirstEvent; }
           UInt_t       GetLastEvent()   const { return fLastEvent; }
           const Int_t* GetEvBuffer()    const;
