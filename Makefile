@@ -139,8 +139,8 @@ all:            subdirs $(PROGRAMS)
 src/ha_compiledata.h:
 		echo "#define HA_INCLUDEPATH \"$(INCDIRS)\"" > $@
 
-$(LIBHALLA):	$(OBJS)
-		$(LD) $(LDFLAGS) $(SOFLAGS) -o $@ $^
+$(LIBHALLA):	$(HDR) $(OBJS)
+		$(LD) $(LDFLAGS) $(SOFLAGS) -o $@ $(OBJS)
 		@echo "$@ done"
 
 analyzer:	src/main.o $(LIBHALLA) libdc.so libscaler.so
@@ -184,6 +184,8 @@ haDict.C: $(HDR) src/HallA_LinkDef.h
 	@echo "Generating dictionary haDict..."
 	$(ROOTSYS)/bin/rootcint -f $@ -c $(INCLUDES) $(HDR) \
 		src/HallA_LinkDef.h
+
+.PHONY: all clean realclean srcdist cvsdist subdirs $(SUBDIRS)
 
 
 ###--- DO NOT CHANGE ANYTHING BELOW THIS LINE UNLESS YOU KNOW WHAT 
