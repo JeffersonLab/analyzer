@@ -3,6 +3,13 @@
 	Modifications to hana_scaler
 	============================
 
+        Jan 31, 2003
+
+	Small bug fixes in THaScaler
+	scaler.map updated
+	tscalring -- new analyzer for ring buffer data
+        Added some new macros ( *.macro ) to look at root output.
+
 
 	Jan 20, 2002
 
