@@ -409,7 +409,6 @@ bool THaDetectorBase::CalcTrackIntercept(THaTrack *theTrack,
   Double_t det = fDenom.Determinant();
   if( fabs(det) < 1e-5 ) 
       return false;  // No useful solution for this track
-  cout<<theTrack->GetX()<<" "<<theTrack->GetY()<<endl;
   t = fNom.Determinant() / det;
 
   // ...then the intersection point
