@@ -20,6 +20,7 @@
 #include "THaEvData.h"
 #include "THaString.h"
 #include "THaGlobals.h"
+#include "THaAnalyzer.h"
 #include "ha_compiledata.h"
 
 //#include "TGXW.h"
@@ -75,7 +76,12 @@ THaInterface::THaInterface( const char* appClassName, int* argc, char** argv,
 //_____________________________________________________________________________
 THaInterface::~THaInterface()
 {
+  // Destructor
+
   if( fgAint == this ) {
+    // Clean up the analyzer object if defined
+    delete THaAnalyzer::GetInstance();
+    // Delete all global lists and objects contained in them
     delete gHaPhysics;
     delete gHaScalers;
     delete gHaApps;
