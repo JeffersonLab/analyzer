@@ -154,8 +154,9 @@ SRC           = src/THaFormula.C src/THaVform.C src/THaVhist.C \
 		src/THaPrimaryKine.C src/THaSecondaryKine.C \
 		src/THaDB.C src/THaDBFile.C \
                 src/THaCoincidenceTime.C \
-                src/THaTrackProj.C
-
+                src/THaTrackProj.C \
+		src/THaPostProcess.C src/THaFilter.C \
+		src/THaIORun.C
 
 ifdef ONLINE_ET
 SRC += src/THaOnlRun.C
