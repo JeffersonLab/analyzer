@@ -24,6 +24,8 @@
 using namespace std;
 
 static const bool VERBOSE = true;
+const int THaSlotData::DEFNCHAN = 100;  // Default number of channels
+const int THaSlotData::DEFNDATA = 1024; // Default number of data words
 
 THaSlotData::THaSlotData() : 
   crate(-1), slot(-1), numraw(0), numchanhit(0), numHits(0),
