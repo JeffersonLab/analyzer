@@ -105,4 +105,20 @@
 #pragma link C++ class THaOnlRun+;
 #endif
 
+#ifdef __MAKECINT__
+#pragma link C++ class std::string;
+#pragma link C++ class std::vector<int>;
+#pragma link C++ class std::vector<double>;
+#pragma link C++ class std::vector<std::string>;
+#pragma link C++ class std::vector<std::vector<int>>;
+#pragma link C++ class std::vector<std::vector<double>>;
+#pragma link C++ class std::vector<UInt_t>;
+#pragma link C++ class std::vector<TH1F*>;
+#pragma link C++ class std::vector<TH1*>;
+#pragma link C++ class std::vector<THaString>;
+#pragma link C++ class std::vector<THaVar*>;
+#pragma link C++ class std::vector<THaFormula*>;
+#pragma link C++ class std::vector<THaCut*>;
+#endif
+
 #endif
