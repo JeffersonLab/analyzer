@@ -33,7 +33,6 @@ protected:
 
   //Only derived classes may construct me
 
-  THaTrackingDetector() {}
   THaTrackingDetector( const char* name, const char* description,
 		       THaApparatus* a = NULL );
 

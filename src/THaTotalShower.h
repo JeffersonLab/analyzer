@@ -49,10 +49,6 @@ protected:
   virtual Int_t  ReadDatabase( const TDatime& date );
   virtual Int_t  DefineVariables( EMode mode );
 
-  THaTotalShower() {}                 // Must construct with name
-  THaTotalShower( const THaTotalShower& ) {}
-  THaTotalShower& operator=( const THaTotalShower& ) { return *this; }
-
 private:
   void           Setup( const char* name,  const char* desc, 
 			const char* shnam, const char* psnam,

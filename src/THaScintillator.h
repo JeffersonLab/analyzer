@@ -74,10 +74,6 @@ protected:
   virtual Int_t  ReadDatabase( const TDatime& date );
   virtual Int_t  DefineVariables( EMode mode );
 
-  THaScintillator() {}
-  THaScintillator( const THaScintillator& ) {}
-  THaScintillator& operator=( const THaScintillator& ) { return *this; }
-
   ClassDef(THaScintillator,0)   // Generic scintillator class
 };
 

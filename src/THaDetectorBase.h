@@ -13,7 +13,6 @@
 #include <cstdio>
 
 class THaDetMap;
-class THaEvData;
 class THaTrack;
 
 class THaDetectorBase : public THaAnalysisObject {
@@ -58,8 +57,13 @@ protected:
 				    Double_t& ycross, Double_t& xcross);
 
   //Only derived classes may construct me
-  THaDetectorBase() : fDetMap(NULL), fNelem(0) {}
   THaDetectorBase( const char* name, const char* description );
+
+private:
+  // Prevent default construction, copying, assignment
+  THaDetectorBase();
+  THaDetectorBase( const THaDetectorBase& );
+  THaDetectorBase& operator=( const THaDetectorBase& );
 
   ClassDef(THaDetectorBase,0)   //ABC for a detector or subdetector
 };

@@ -26,7 +26,6 @@ protected:
 
   //Only derived classes may construct me
 
-  THaSpectrometerDetector() {}
   THaSpectrometerDetector( const char* name, const char* description,
 			   THaApparatus* a = NULL );
 

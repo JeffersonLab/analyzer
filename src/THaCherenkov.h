@@ -53,10 +53,6 @@ protected:
           void   DeleteArrays();
   virtual Int_t  ReadDatabase( const TDatime& date );
 
-  THaCherenkov() {}
-  THaCherenkov( const THaCherenkov& ) {}
-  THaCherenkov& operator=( const THaCherenkov& ) { return *this; }
-
   ClassDef(THaCherenkov,0)    //Generic Cherenkov class
 };
 

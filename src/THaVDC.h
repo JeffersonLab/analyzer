@@ -60,10 +60,6 @@ public:
 
 protected:
 
-  THaVDC() {}                    // Must construct with name
-  THaVDC( const THaVDC& ) {}
-  THaVDC& operator=( const THaVDC& ) { return *this; }
-
   THaVDCUVPlane* fLower;    // Lower UV plane
   THaVDCUVPlane* fUpper;    // Upper UV plane
 
