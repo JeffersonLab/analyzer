@@ -22,6 +22,7 @@ public:
 
   virtual const TVector3& GetPosition()  const { return fPosition; }
   virtual const TVector3& GetDirection() const { return fDirection; }
+  THaRunParameters*   GetRunParameters() const { return fRunParam; }
 
 protected:
 
