@@ -104,9 +104,9 @@ protected:
           void         MakePrefix( const char* basename );
   virtual void         MakePrefix() = 0;
   virtual FILE*        OpenFile( const TDatime& date )
-     { return OpenFile(GetDBFileName(), date, Here("OpenFile()")); }
+     { return OpenFile(GetDBFileName(), date, Here("OpenFile()"), "r", fDebug); }
   virtual FILE*        OpenRunDBFile( const TDatime& date )
-     { return OpenFile("run", date, Here("OpenFile()")); }
+     { return OpenFile("run", date, Here("OpenFile()"), "r", fDebug); }
   virtual Int_t        ReadDatabase( const TDatime& date )
      { return kOK; }
   virtual Int_t        ReadRunDatabase( const TDatime& date );
