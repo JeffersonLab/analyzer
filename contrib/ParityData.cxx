@@ -68,9 +68,11 @@ ParityData::ParityData( const char* name, const char* descript ) :
 //_____________________________________________________________________________
 ParityData::~ParityData()
 {
-  delete [] trigcnt;
-  delete [] cped;
-  delete [] sped;
+  if (trigcnt) delete [] trigcnt;
+  if (cped) delete [] cped;
+  if (cfb) delete [] cfb; 
+  if (sped) delete [] sped;
+  if (sfb) delete [] sfb;
   SetupParData( NULL, kDelete ); 
   for( Iter_t p = fWordLoc.begin();  p != fWordLoc.end(); p++ )  delete *p;
   for( Iter_t p = fCrateLoc.begin(); p != fCrateLoc.end(); p++ ) delete *p;
@@ -381,7 +383,6 @@ Int_t ParityData::InitCalib() {
     sped[9] = 0;
     sped[10] = 0;
     sped[11] = 0;
-    sped[12] = 0;
 
     return 0;
 
@@ -398,9 +399,15 @@ Int_t ParityData::DefaultMap() {
      fCrateLoc.push_back(new BdataLoc(Form("bit%d",i+1), 3, (Int_t) 5, 64+i));
    }
 
-// (Temporary) Test on 1999 data (Left = roc1)
-   fCrateLoc.push_back(new BdataLoc("hapadcl1", 1, 25, 53));
-   fCrateLoc.push_back(new BdataLoc("hapadcr1", 2, 25, 21));
+   fCrateLoc.push_back(new BdataLoc("hapadcl1", 3, 25, 0));
+   fCrateLoc.push_back(new BdataLoc("hapadcl2", 3, 25, 2));
+   fCrateLoc.push_back(new BdataLoc("haptdcl1", 3, 3, 0));
+   fCrateLoc.push_back(new BdataLoc("haptdcl2", 3, 3, 2));
+
+   fCrateLoc.push_back(new BdataLoc("hapadcr1", 1, 25, 0));
+   fCrateLoc.push_back(new BdataLoc("hapadcr2", 1, 25, 2));
+   fCrateLoc.push_back(new BdataLoc("haptdcr1", 1, 16, 16));
+   fCrateLoc.push_back(new BdataLoc("haptdcr2", 1, 16, 18));
 
 
    return 0;
@@ -448,7 +455,14 @@ Int_t ParityData::Decode(const THaEvData& evdata)
     }
 
     if ( dataloc->ThisIs("hapadcl1") ) hapadcl1  = dataloc->Get();
+    if ( dataloc->ThisIs("hapadcl2") ) hapadcl2  = dataloc->Get();
     if ( dataloc->ThisIs("hapadcr1") ) hapadcr1  = dataloc->Get();
+    if ( dataloc->ThisIs("hapadcr2") ) hapadcr2  = dataloc->Get();
+
+    if ( dataloc->ThisIs("haptdcl1") ) haptdcl1  = dataloc->Get();
+    if ( dataloc->ThisIs("haptdcl2") ) haptdcl2  = dataloc->Get();
+    if ( dataloc->ThisIs("haptdcr1") ) haptdcr1  = dataloc->Get();
+    if ( dataloc->ThisIs("haptdcr2") ) haptdcr2  = dataloc->Get();
 
   }
 
@@ -726,10 +740,13 @@ void ParityData::TrigBits(UInt_t ibit, BdataLoc *dataloc) {
   bits.ResetBitNumber(ibit);
 
   static const UInt_t cutlo = 400;
-  static const UInt_t cuthi = 1200;
-  
-  for (int ihit = 0; ihit < dataloc->NumHits(); ihit++) {
-    if (dataloc->Get(ihit) > cutlo && dataloc->Get(ihit) < cuthi) {
+  static const UInt_t cuthi = 2500;
+
+  //  cout << "Bit TDC num hits "<<dataloc->NumHits()<<endl;
+    for (int ihit = 0; ihit < dataloc->NumHits(); ihit++) {
+      //      cout << "TDC data " << ibit<<"  "<<dataloc->Get(ihit)<<endl;
+
+  if (dataloc->Get(ihit) > cutlo && dataloc->Get(ihit) < cuthi) {
       bits.SetBitNumber(ibit);
       evtypebits |= BIT(ibit);
     }
