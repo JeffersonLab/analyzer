@@ -105,6 +105,7 @@
 #pragma link C++ class THaBeamModule+;
 #pragma link C++ class THaBeamInfo+;
 #pragma link C++ class THaEpicsEbeam+;
+#pragma link C++ class THaBeamEloss+;
 
 #ifdef ONLINE_ET
 #pragma link C++ class THaOnlRun+;
