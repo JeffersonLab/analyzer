@@ -116,7 +116,7 @@ protected:
 
   TVector3          fPvect;  // Momentum vector at target in lab system (GeV)
 
-  ClassDef(THaTrack,2)       // A generic particle track
+  ClassDef(THaTrack,1)       // A generic particle track
 };
 
 //__________________ inlines __________________________________________________
