@@ -33,7 +33,11 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaHRS.h"
-#include <math.h>
+#include "THaTrackingDetector.h"
+
+#ifdef WITH_DEBUG
+#include <iostream>
+#endif
 
 ClassImp(THaHRS)
 
@@ -44,6 +48,21 @@ Int_t THaHRS::FindVertices( TClonesArray& tracks )
 
 
   // first calculate the focal plane coordinates
+
+  TIter nextTrack( fTrackingDetectors );
+
+  nextTrack.Reset();
+  while( THaTrackingDetector* theTrackDetector =
+	 static_cast<THaTrackingDetector*>( nextTrack() )) {
+#ifdef WITH_DEBUG
+    if( fDebug>0 ) cout << "Call FineTrack() for " 
+			<< theTrackDetector->GetName() << "... ";
+#endif
+    theTrackDetector->FindVertices( tracks );
+#ifdef WITH_DEBUG
+    if( fDebug>0 ) cout << "done.\n";
+#endif
+  }
 
   return 0;
 }

@@ -257,7 +257,6 @@ Int_t THaSpectrometer::Reconstruct()
 
   TIter nextTrack( fTrackingDetectors );
   TIter nextNonTrack( fNonTrackingDetectors );
-  TClonesArray& tracks = *fTracks;
   Clear();
 
   // 1st step: Coarse tracking.  This should be quick and dirty.
@@ -269,7 +268,7 @@ Int_t THaSpectrometer::Reconstruct()
     if( fDebug>0 ) cout << "Call CoarseTrack() for " 
 			<< theTrackDetector->GetName() << "... ";
 #endif
-    theTrackDetector->CoarseTrack( tracks );
+    theTrackDetector->CoarseTrack( *fTracks );
 #ifdef WITH_DEBUG
     if( fDebug>0 ) cout << "done.\n";
 #endif
@@ -288,7 +287,7 @@ Int_t THaSpectrometer::Reconstruct()
     if( fDebug>0 ) cout << "Call CoarseProcess() for " 
 			<< theNonTrackDetector->GetName() << "... ";
 #endif
-    theNonTrackDetector->CoarseProcess( tracks );
+    theNonTrackDetector->CoarseProcess( *fTracks );
 #ifdef WITH_DEBUG
     if( fDebug>0 ) cout << "done.\n";
 #endif
@@ -307,7 +306,7 @@ Int_t THaSpectrometer::Reconstruct()
     if( fDebug>0 ) cout << "Call FineTrack() for " 
 			<< theTrackDetector->GetName() << "... ";
 #endif
-    theTrackDetector->FineTrack( tracks );
+    theTrackDetector->FineTrack( *fTracks );
 #ifdef WITH_DEBUG
     if( fDebug>0 ) cout << "done.\n";
 #endif
@@ -326,26 +325,15 @@ Int_t THaSpectrometer::Reconstruct()
     if( fDebug>0 ) cout << "Call FineProcess() for " 
 			<< theNonTrackDetector->GetName() << "... ";
 #endif
-    theNonTrackDetector->FineProcess( tracks );
+    theNonTrackDetector->FineProcess( *fTracks );
 #ifdef WITH_DEBUG
     if( fDebug>0 ) cout << "done.\n";
 #endif
   }
 
   // Reconstruct tracks to target/vertex
-  //FindVertices( tracks );
-  nextTrack.Reset();
-  while( THaTrackingDetector* theTrackDetector =
-	 static_cast<THaTrackingDetector*>( nextTrack() )) {
-#ifdef WITH_DEBUG
-    if( fDebug>0 ) cout << "Call FineTrack() for " 
-			<< theTrackDetector->GetName() << "... ";
-#endif
-    theTrackDetector->FindVertices( tracks );
-#ifdef WITH_DEBUG
-    if( fDebug>0 ) cout << "done.\n";
-#endif
-  }
+
+  FindVertices( *fTracks );
 
   // --evaluate test block--
 
@@ -363,8 +351,6 @@ Int_t THaSpectrometer::Reconstruct()
   if( fPID ) CalcPID();
       
   // --evaluate test block--
-
-
 
 
   return 0;
