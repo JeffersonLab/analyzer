@@ -48,7 +48,7 @@ private:
 
 // The fgG0mode flag turns G0 mode on (1) or off (0)
 // Variables in this section pertain to G0 helicity mode.
-  static const Int_t fgG0mode = 1;
+  static const Int_t fgG0mode = 0;
   static const Int_t fgG0delay = 8;  // delay of helicity (# windows)
   static const Int_t fgNbits = 24;   
   static const Int_t fgLarm = 0;

@@ -68,9 +68,9 @@ THaHelicity::~THaHelicity( )
     delete [] q1_present_helicity;
     delete [] quad_calibrated;
     delete [] hbits;
-    delete [] validTime;
-    delete [] validHel;
   }
+  delete [] validTime;
+  delete [] validHel;
 }
 
 //____________________________________________________________________
@@ -111,6 +111,8 @@ int THaHelicity::GetHelicity(const TString& spec) const {
 
 //____________________________________________________________________
 void THaHelicity::Init() {
+  validTime  = new Int_t[2];
+  validHel   = new Int_t[2];
   if (fgG0mode == 0) {
 // For non-G0 mode where we used ADC flags
 #ifndef STANDALONE
@@ -124,6 +126,9 @@ void THaHelicity::Init() {
     indices[0][1] = 61;
     indices[1][0] = 14;
     indices[1][1] = 15;
+    timestamp = Unknown;
+    Lhel = Unknown;
+    Rhel = Unknown;
   } else {
     fQrt                = new Int_t[2];
     fGate               = new Int_t[2];
@@ -146,8 +151,6 @@ void THaHelicity::Init() {
     quad_calibrated     = new Int_t[2]; 
     q1_present_helicity = new Int_t[2];
     hbits               = new Int_t[fgNbits];
-    validTime           = new Int_t[2];
-    validHel            = new Int_t[2];
     fTdavg[0]  = fgTdiff;  // Avg time diff between qrt's
     fTdavg[1]  = fgTdiff;    
     fTtol[0]   = 20;   
@@ -189,7 +192,12 @@ Int_t THaHelicity::Decode( const THaEvData& evdata ) {
       Int_t chan = evdata.GetNextChan( d->crate, d->slot, j );
       Double_t data = evdata.GetData (d->crate, d->slot, chan, 0);
       if( chan > d->hi || chan < d->lo ) continue;   
-       if (d->crate == 1) {
+      if (HELDEBUG >= 1) {
+         cout << "crate "<<d->crate<<"   data "<<data<<"   ";
+         if (data > HCUT) cout << "  above cut !";
+         cout << endl;
+      }
+      if (d->crate == 1) {
          indx = NCHAN+1;
          for ( k = 0; k < 2; k++) {	
            if (chan == indices[0][k]) indx = k;
@@ -203,19 +211,23 @@ Int_t THaHelicity::Decode( const THaEvData& evdata ) {
 	 }
          if(indx >=0 && indx < NCHAN) Radc_helicity[indx] = data;
        }
+// ROC14 has not existed for a long time.
+#ifdef OLDROC14
        if (d->crate == 14) {
           if(chan == 0) timestamp = data;
        }
+#endif
      }
    }
 #else
    cout << "Error: Cannot analyze pre-G0-mode data STANDALONE."<<endl;
-//  Must recompile with STANDALONE commented out in Makefile.
+//  If you get this error, you may recompile with STANDALONE 
+//  commented out in Makefile.
 //  Then run with rest of analyzer.
-//  This is not too bad since the analyzer will mostly live in the G0 era.
 #endif
-// Use 2 flags to make sure of helicity, for both L and R spectrom.
-// helicity[0] is should be opposite of helicity[1].
+// Redundant flags to make sure of helicity ...
+#ifdef OLD_ADC_METHOD
+// Obsolete code... but eventually a nice redundancy check
    Lhel = Minus;
    if (Ladc_helicity[0] > HCUT) {
       Lhel = Plus;
@@ -234,6 +246,43 @@ Int_t THaHelicity::Decode( const THaEvData& evdata ) {
    if (HELDEBUG >= 1) 
       cout << "Helicity L,R "<<Lhel<<" "<<Rhel<<" time "<<timestamp<<endl;
    return OK;
+#endif
+
+// Quickly for DVCS ...
+// Here is the new and simple way to get helicity and timestamp
+// Also, for now, we pick the Left spectrometer here (ROC11)
+
+   int myroc, data, qrt, gate, helicity_bit;
+
+   myroc = 11;
+
+   Lhel = Unknown;
+   Hel  = Unknown;
+   if(evdata.GetRocLength(myroc) <= 4) return OK;  // not really OK
+   data = evdata.GetRawData(myroc,3);   
+   helicity_bit = (data & 0x10) >> 4;
+   qrt = (data & 0x20) >> 5;
+   gate = (data & 0x40) >> 6;
+
+   if (gate != 0) {
+     if (helicity_bit) {
+       Lhel = Plus;
+     } else {
+       Lhel = Minus;
+     }
+   }
+   Hel = Lhel;
+   validHel[fgLarm] = 1;
+   timestamp = evdata.GetRawData(myroc,4);
+   validTime[fgLarm] = 1;
+   if (HELDEBUG) { 
+     cout << "In-time helicity check for roc "<<myroc<<endl;
+     cout << "Raw word 0x"<<hex<<data<<dec;
+     cout << "  Gate "<<gate<<"  qrt "<<qrt;
+     cout << "  helicity bit "<<helicity_bit;
+     cout << "  Resulting helicity "<<Hel<<endl;
+     cout << "  timestamp "<<timestamp<<endl;
+   }
 
  } else {   // G0 helicity mode:
 
@@ -250,6 +299,7 @@ Int_t THaHelicity::Decode( const THaEvData& evdata ) {
    Hel = -1 * Lhel;   // default helicity for 1-arm setup
    if (HELDEBUG >= 1) cout << "G0 helicitites "<<Lhel<<"  "<<Rhel<<endl;
  }
+
  return OK;
 }
  
@@ -266,17 +316,21 @@ Double_t THaHelicity::GetTime() const {
 void THaHelicity::ClearEvent() {
 // Reset data to prepare for next event.
   
+  memset(validTime, 0, 2*sizeof(Int_t));
+  memset(validHel, 0, 2*sizeof(Int_t));
+
   if (fgG0mode == 0) {
      memset( Ladc_helicity, 0, NCHAN*sizeof(Double_t) );
      memset( Radc_helicity, 0, NCHAN*sizeof(Double_t) );
+     timestamp = Unknown;
+     Lhel = Unknown;
+     Rhel = Unknown;
   } else {
      memset(fQrt, 0, 2*sizeof(Int_t));
      memset(fGate, 0, 2*sizeof(Int_t));
      memset(fTimestamp, 0, 2*sizeof(Double_t));
      memset(present_reading, Unknown, 2*sizeof(Int_t));
      memset(present_helicity, Unknown, 2*sizeof(Int_t));
-     memset(validTime, 0, 2*sizeof(Int_t));
-     memset(validHel, 0, 2*sizeof(Int_t));
      memset(fEvtype, 0, 2*sizeof(Int_t));
   }
 }
