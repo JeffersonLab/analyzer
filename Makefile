@@ -9,6 +9,9 @@ export DEBUG = 1
 # Profiling with gprof
 # export PROFILE = 1
 
+# Include libraries for reading from the ET ring
+#  (only for adaq? machines with the Coda libraries )
+# export ONLINE_ET = 1
 #------------------------------------------------------------------------------
 
 VERSION = 1.1-cvs
@@ -81,6 +84,22 @@ ifeq ($(CXX),)
 $(error $(ARCH) invalid architecture)
 endif
 
+ifdef ONLINE_ET
+
+# ONLIBS is needed for ET
+  ET_AC_FLAGS = -D_REENTRANT -D_POSIX_PTHREAD_SEMANTICS
+  ET_CFLAGS = -02 -fPIC -I. $(ET_AC_FLAGS) -DLINUXVERS
+# CODA environment variable must be set.  Examples are
+#   CODA = /adaqfs/coda/2.2        (in adaq cluster)
+#   CODA = /data7/user/coda/2.2    (on haplix cluster)
+  LIBET = $(CODA)/Linux/lib/libet.so
+  ONLIBS = $(LIBET) -lieee -lpthread -ldl -lresolv
+
+  DEFINES  += -DONLINE_ET
+  HALLALIBS += $(ONLIBS)
+endif
+
+
 MAKEDEPEND    = gcc
 
 ifdef WITH_DEBUG
@@ -137,6 +156,10 @@ SRC           = src/THaFormula.C src/THaVform.C src/THaVhist.C \
                 src/THaCoincidenceTime.C \
                 src/THaTrackProj.C
 
+
+ifdef ONLINE_ET
+SRC += src/THaOnlRun.C
+endif
 
 OBJ           = $(SRC:.C=.o)
 HDR           = $(SRC:.C=.h) src/THaGlobals.h src/VarDef.h src/VarType.h \
@@ -195,7 +218,7 @@ cvsdist:	srcdist
 
 haDict.C: $(HDR) src/HallA_LinkDef.h
 	@echo "Generating dictionary haDict..."
-	$(ROOTSYS)/bin/rootcint -f $@ -c $(INCLUDES) $(HDR) \
+	$(ROOTSYS)/bin/rootcint -f $@ -c $(INCLUDES) $(DEFINES) $(HDR) \
 		src/HallA_LinkDef.h
 
 .PHONY: all clean realclean srcdist cvsdist subdirs

@@ -12,6 +12,7 @@
 
 #include "THaRun.h"
 #include "THaAnalysisObject.h"
+#include "THaCodaData.h"
 #include "THaCodaFile.h"
 #include "TMath.h"
 #include <iostream>
@@ -23,11 +24,12 @@ using namespace std;
 
 //_____________________________________________________________________________
 THaRun::THaRun() : TNamed(), fNumber(0), fDBRead(false),
-  fBeamE(0.0), fBeamP(0.0), fBeamM(0.0), fBeamQ(0), fBeamdE(0.0), fTarget(0)
+		   fBeamE(0.0), fBeamP(0.0), fBeamM(0.0), fBeamQ(0), fBeamdE(0.0),
+		   fTarget(0), fDate(19950101,0)		   
 {
   // Default constructor
 
-  fCodaFile = 0;
+  fCodaData = 0;
   ClearEventRange();
 }
 
@@ -35,11 +37,12 @@ THaRun::THaRun() : TNamed(), fNumber(0), fDBRead(false),
 THaRun::THaRun( const char* fname, const char* descr ) : 
   TNamed("", strlen(descr) ? descr : fname), fNumber(0), fFilename(fname),
   fDBRead(false),
-  fBeamE(0.0), fBeamP(0.0), fBeamM(0.0), fBeamQ(0), fBeamdE(0.0), fTarget(0)
+  fBeamE(0.0), fBeamP(0.0), fBeamM(0.0), fBeamQ(0), fBeamdE(0.0), fTarget(0),
+  fDate(19950101,0)  
 {
   // Normal constructor
 
-  fCodaFile = new THaCodaFile;  //Do not open the file yet
+  fCodaData = new THaCodaFile;  //Do not open the file yet
   ClearEventRange();
 }
 
@@ -53,7 +56,7 @@ THaRun::THaRun( const THaRun& rhs ) : TNamed( rhs )
   fDate       = rhs.fDate;
   fFirstEvent = rhs.fFirstEvent;
   fLastEvent  = rhs.fLastEvent;
-  fCodaFile   = new THaCodaFile;
+  fCodaData   = new THaCodaFile;
   fDBRead     = rhs.fDBRead;
   fBeamE      = rhs.fBeamE;
   fBeamP      = rhs.fBeamP;
@@ -76,8 +79,8 @@ THaRun& THaRun::operator=(const THaRun& rhs)
      fFirstEvent = rhs.fFirstEvent;
      fLastEvent  = rhs.fLastEvent;
      fDBRead     = rhs.fDBRead;
-     delete fCodaFile;
-     fCodaFile   = new THaCodaFile;
+     delete fCodaData;
+     fCodaData   = new THaCodaFile;
      fBeamE      = rhs.fBeamE;
      fBeamP      = rhs.fBeamP;
      fBeamM      = rhs.fBeamM;
@@ -94,13 +97,13 @@ THaRun::~THaRun()
   // Destroy the Run. The CODA file will be closed by the THaCodaFile 
   // destructor if necessary.
 
-  delete fCodaFile;
+  delete fCodaData; fCodaData = 0;
 }
 
 //_____________________________________________________________________________
 Int_t THaRun::CloseFile()
 {
-  return fCodaFile ? fCodaFile->codaClose() : 0;
+  return fCodaData ? fCodaData->codaClose() : 0;
 }
 
 //_____________________________________________________________________________
@@ -155,9 +158,9 @@ Int_t THaRun::Compare( const TObject* obj ) const
 const Int_t* THaRun::GetEvBuffer() const
 { 
   // Return address of the eventbuffer allocated and filled 
-  // by fCodaFile->codaRead()
+  // by fCodaData->codaRead()
 
-  return fCodaFile ? fCodaFile->getEvBuffer() : 0; 
+  return fCodaData ? fCodaData->getEvBuffer() : 0; 
 }
 
 //_____________________________________________________________________________
@@ -168,9 +171,9 @@ Int_t THaRun::OpenFile()
   if( fFilename.IsNull() )
     return -2;  // filename not set
 
-  if( !fCodaFile ) fCodaFile = new THaCodaFile;
-  if( !fCodaFile ) return -3;
-  return fCodaFile->codaOpen( fFilename );
+  if( !fCodaData ) fCodaData = new THaCodaFile;
+  if( !fCodaData ) return -3;
+  return fCodaData->codaOpen( fFilename );
 }
 
 //_____________________________________________________________________________
@@ -230,7 +233,7 @@ Int_t THaRun::ReadEvent()
 {
   // Read one event from CODA file.
 
-  return fCodaFile ? fCodaFile->codaRead() : -1;
+  return fCodaData ? fCodaData->codaRead() : -1;
 }
 
 //_____________________________________________________________________________

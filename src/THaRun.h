@@ -11,7 +11,7 @@
 #include "TDatime.h"
 #include <climits>
 
-class THaCodaFile;
+class THaCodaData;
 class THaTarget;
 
 class THaRun : public TNamed {
@@ -70,7 +70,7 @@ protected:
   TDatime       fDate;         //  Run date and time
   UInt_t        fFirstEvent;   //  First event to analyze
   UInt_t        fLastEvent;    //  Last event to analyze
-  THaCodaFile*  fCodaFile;     //! CODA file associated with this run
+  THaCodaData*  fCodaData;     //! CODA data associated with this run
   bool          fDBRead;       //! True if database successfully read.
 
   // The following comes from the run database

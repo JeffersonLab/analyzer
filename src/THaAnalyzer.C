@@ -317,11 +317,19 @@ Int_t THaAnalyzer::Process( THaRun& run )
       // Must get a prestart event before we can initialize
       // because the prestart event contains the run time.
       // FIXME: Isn't this is overly restrictive?
-      if( !evdata.IsPrestartEvent() ) continue;
 
-      run_time.Set( evdata.GetRunTime() );
-      run.SetDate( run_time );
-      run.SetNumber( evdata.GetRunNum() );
+      // If the date isn't set, look for a prestart event
+      if ( run.GetDate().GetYear()<1997 ) {
+	if( !evdata.IsPrestartEvent() ) continue;
+	else {
+	  run_time.Set( evdata.GetRunTime() );
+	  run.SetDate( run_time );
+	  run.SetNumber( evdata.GetRunNum() );
+	}
+      } else {
+	run_time = run.GetDate();
+      }
+      
       run.ReadDatabase();
       gHaRun = &run;
 

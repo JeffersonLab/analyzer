@@ -93,4 +93,8 @@
 #pragma link C++ class THaCoincidenceTime+;
 #pragma link C++ class THaTrackProj+;
 
+#ifdef ONLINE_ET
+#pragma link C++ class THaOnlRun+;
+#endif
+
 #endif
