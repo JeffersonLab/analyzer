@@ -983,5 +983,6 @@ void THaOutput::SetVerbosity( Int_t level )
 }
 
 //_____________________________________________________________________________
+ClassImp(THaScalerKey)
 ClassImp(THaOdata)
 ClassImp(THaOutput)
