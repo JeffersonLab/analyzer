@@ -76,12 +76,17 @@ System requirements
 * Linux with gcc/g++; or Solaris with the Sun Workshop compiler
 * ROOT 3.02 or higher
 * GNU make
-* Decent hardware (e.g. 300MHz CPU, 128MB RAM).
+* Decent hardware (at least 300MHz CPU, 128MB RAM).
 
 The following platforms have been tested:
 
-  - RedHat Linux 7.2 with g++-2.96 and ROOT 3.02-06
-  - SuSE 8 with the SuSE default compiler (g++ 2.95?) and ROOT 3.03
+  - RedHat Linux 8 with default compiler (gcc 3.2) and ROOT 3.04-02
+    (compiled locally).
+  - RedHat Linux 7.2 with gcc-3.0.4 and ROOT 3.03-06-gcc3.0.4 (ifarml1/2/3).
+  - RedHat Linux 7.2/7.3 with gcc-2.96 and ROOT 3.02-06 (adaql1/2/3/4).
+  - SuSE Linux 8 with the SuSE default compiler (g++ 2.95?) and ROOT 3.03
+    (from CERN).
+  - Solaris 2.6 with Sun Workshop compiler suite 6, C++ 5.3 (ifarms1).
 
 The analyzer requires typically 20-50MB of virtual memory.
 
@@ -163,8 +168,7 @@ to address some of the items below and is currently being tested.
 
 Example Scripts
 ~~~~~~~~~~~~~~~
-Example scripts can be found in the "examples" subdirectory
-and have been completely rewritten for this release.
+Up-to-date example scripts can be found in the "examples" subdirectory.
 
 Documentation
 ~~~~~~~~~~~~~

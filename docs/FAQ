@@ -3,6 +3,8 @@ Hall A C++ Analyzer Frequently Asked Questions
 5 June 2003
 
 
+Building and Installing
+~~~~~~~~~~~~~~~~~~~~~~~
 Q: How do I compile and install the analyzer on ifarml1/2/3?
 
 A: Download the source tarball, unpack, set up ROOT and gcc, and compile:
@@ -14,7 +16,7 @@ A: Download the source tarball, unpack, set up ROOT and gcc, and compile:
    % use gcc/3.0.4
    % make -j4
    ( ... go drink a coffee ... )
-   
+ 
    To run the analyzer, you will also need to set up LD_LIBRARY_PATH:
 
    % setenv LD_LIBRARY_PATH `pwd`:${LD_LIBRARY_PATH}
@@ -26,6 +28,7 @@ A: Download the source tarball, unpack, set up ROOT and gcc, and compile:
    To "install" the analyzer, just add the build directory to your PATH
    as well as LD_LIBRARY_PATH.
 
+--------------------------------------------------------------------
 Q: Why does it build and start up so slowly?
 
 A: Because disk space on iframl1/2/3 is located on busy file servers.
@@ -34,6 +37,7 @@ A: Because disk space on iframl1/2/3 is located on busy file servers.
    move to your own standalone desktop machine or the Hall A counting 
    house machines.  You will be surprised.
 
+--------------------------------------------------------------------
 Q: The source used to compile fine, but then I switched to a different
    version of ROOT/gcc/Linux, moved stuff around, etc., and now I get a
    bizarre error like
@@ -49,6 +53,7 @@ A: Dependency files (.d) are out of date. To clean things up, do this:
 
    Then rebuild the analyzer.
 
+--------------------------------------------------------------------
 Q: How do I get the latest CVS version?
 
 A: Do this at your own risk. The CVS version may sometimes not even
@@ -62,4 +67,26 @@ A: Do this at your own risk. The CVS version may sometimes not even
 
    cvs -d :ext:cvs.jlab.org:/group/halla/analysis/cvs checkout -r Release-100 analyzer
 
+--------------------------------------------------------------------
+Q: How do I build the analyzer on a non-Linux Unix platform?
 
+A: Currently only Solaris with the Sun Workshop compiler is officially 
+   supported. (This is the environment on ifarms1.) To switch to
+   Solaris, simply change the definition of "ARCH" in the top-level
+   Makefile from "linuxegcs" to "solarisCC5".
+
+   On other platforms (e.g. Tru64, IRIX, HP-UX), you must add
+   appropriate compiler names and flags in the ARCH section of
+   all the Makefiles. You will need ROOT compiled on your system,
+   and you need to compile the analyzer with the same compiler that
+   was used to compile your ROOT.
+
+   We will add official support for other Unix platforms as time
+   permits and demand justifies.
+
+--------------------------------------------------------------------
+Q: Is Windows supported?
+
+A: Not at this time, but support is planned at some point.
+
+--------------------------------------------------------------------
