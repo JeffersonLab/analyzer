@@ -107,14 +107,12 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   bool found = false;
   while (!found && fgets (buff, LEN, file) != NULL) {
     char* buf = ::Compress(buff);  //strip blanks
-
-    if( strlen(buf) > 0 && buf[ strlen(buf)-1 ] == '\n' )
-      buf[ strlen(buf)-1 ] = 0;    //delete trailing newline
-    line = buf; line.ToLower();
- 
-    if ( tag == line ) 
-      found = true;
+    line = buf;
     delete [] buf;
+    if( line.EndsWith("\n") ) line.Chop();
+    line.ToLower();
+     if ( tag == line ) 
+      found = true;
   }
   if( !found ) {
     Error(Here(here), "Database entry %s not found!", tag2.Data() );
@@ -194,8 +192,8 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
     THaString line(buff);
     // Erase trailing newline
     if( line.size() > 0 && line[line.size()-1] == '\n' ) {
-      line.erase(line.size()-1,1);
       buff[line.size()-1] = 0;
+      line.erase(line.size()-1,1);
     }
     // Split the line into whitespace-separated fields    
     vector<THaString> line_spl = line.Split();
@@ -219,7 +217,8 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
       ME.pw[pos-1] = atoi(line_spl[pos].c_str());
     }
     vsiz_t p_cnt;
-    for ( p_cnt=0; pos<line_spl.size() && p_cnt<kPORDER; pos++,p_cnt++ ) {
+    for ( p_cnt=0; pos<line_spl.size() && p_cnt<kPORDER && pos<=npow+kPORDER;
+	  pos++,p_cnt++ ) {
       ME.poly[p_cnt] = atof(line_spl[pos].c_str());
       if (ME.poly[p_cnt] != 0.0) {
 	ME.iszero = false;
