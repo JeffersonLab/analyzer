@@ -76,7 +76,12 @@ Int_t THaBeam::DefineVariables( EMode mode )
     { 0 }
   };
     
-  return DefineVarsFromList( vars, mode );
+  DefineVarsFromList( vars, mode );
+
+  // Define the variables for the beam info subobject
+  DefineVarsFromList( GetRVarDef(), mode );
+
+  return 0;
 }
 
 //_____________________________________________________________________________
