@@ -13,8 +13,22 @@ class TList;
 class THaVarList;
 class THaPrintOption;
 class THaNamedList;
-class TString;
+class THaCut;
 
+// Utility class that provides the PrintOpt method
+class THaHashList : public THashList {
+public:
+  THaHashList(Int_t capacity = TCollection::kInitHashTableCapacity, Int_t rehash = 0) :
+    THashList(capacity,rehash) {}
+  THaHashList(TObject* parent, Int_t capacity = TCollection::kInitHashTableCapacity, 
+	    Int_t rehash = 0) :
+    THashList(parent,capacity,rehash) {}
+  virtual ~THaHashList() {}
+
+  virtual void PrintOpt( Option_t* opt ) const;
+  ClassDef(THaHashList,1) //A hash list with a PrintOpt method
+};
+  
 class THaCutList {
 
 public:
@@ -24,21 +38,21 @@ public:
   enum EWarnMode { kWarn, kNoWarn };
 
   THaCutList();
-  THaCutList( const THaVarList& lst );
+  THaCutList( const THaVarList* lst );
   virtual    ~THaCutList();
 
   virtual Int_t     Define( const char* cutname, const char* expr, 
 			    const char* block=kDefaultBlockName );
   virtual Int_t     Define( const char* cutname, const char* expr,
-			    const THaVarList& lst, 
+			    const THaVarList* lst, 
 			    const char* block=kDefaultBlockName );
   virtual Int_t     Load( const char* filename=kDefaultCutFile );
   virtual void      Clear( Option_t* opt="" );
   virtual Int_t     Eval();
   virtual Int_t     EvalBlock( const char* block=kDefaultBlockName );
-  virtual Int_t     EvalBlock( const TString& block ) 
-    { return EvalBlock(block.Data()); }
-  virtual Int_t     EvalBlock( const THaNamedList* plist );
+  virtual Int_t     EvalBlock( const TList* plist );
+  THaCut*           FindCut( const char* name ) const
+    { return reinterpret_cast<THaCut*>(fCuts->FindObject( name )); }
   THaNamedList*     FindBlock( const char* block ) const
     { return reinterpret_cast<THaNamedList*>(fBlocks->FindObject( block )); }
   const THashList*  GetCutList()   const { return fCuts; }   //These might disappear
@@ -47,19 +61,17 @@ public:
           Int_t     GetSize()      const { return fCuts->GetSize(); }
   virtual void      Reset();
   virtual Int_t     Result( const char* cutname = "", EWarnMode mode=kWarn );
-          Int_t     Result( const TString& cutname, EWarnMode mode=kWarn ) 
-    { return Result(cutname.Data(),mode); }
   virtual Int_t     Remove( const char* cutname );
   virtual Int_t     RemoveBlock( const char* block=kDefaultBlockName );
-  virtual void      SetList( THaVarList& lst ) { fVarList = &lst; }
+  virtual void      SetList( THaVarList* lst ) { fVarList = lst; }
   virtual void      Print( Option_t* option="" ) const;
   virtual void      PrintCut( const char* cutname, Option_t* option="" ) const;
   virtual void      PrintBlock( const char* block=kDefaultBlockName, 
 				Option_t* option="" ) const;
 
 protected:
-  THashList*        fCuts;      //Hash list holding all cuts
-  THashList*        fBlocks;    //Hash list holding blocks of cuts.
+  THaHashList*      fCuts;      //Hash list holding all cuts
+  THaHashList*      fBlocks;    //Hash list holding blocks of cuts.
                                 //Elements of this table are THaNamedLists of THaCuts
   const THaVarList* fVarList;   //Pointer to list of variables
 

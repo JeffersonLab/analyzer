@@ -49,7 +49,7 @@ THaInterface::THaInterface( const char* appClassName, int* argc, char** argv,
 
   SetPrompt("analyzer [%d] ");
   gHaVars    = new THaVarList;
-  gHaCuts    = new THaCutList( *gHaVars );
+  gHaCuts    = new THaCutList( gHaVars );
   gHaApps    = new TList;
   gHaScalers = new TList;
 
@@ -74,9 +74,9 @@ void THaInterface::PrintLogo()
    // Print the Hall A analyzer logo on standard output.
 
    Int_t iday,imonth,iyear,mille;
-   static const char* months[] = {"January","February","March","April","May",
-                                  "June","July","August","September","October",
-                                  "November","December"};
+   static const char* months[] = {"Jan","Feb","Mar","Apr","May",
+                                  "Jun","Jul","Aug","Sep","Oct",
+                                  "Nov","Dec"};
    const char* root_version = gROOT->GetVersion();
    Int_t idatqq = gROOT->GetVersionDate();
    iday   = idatqq%100;
@@ -88,17 +88,17 @@ void THaInterface::PrintLogo()
      mille = 1900 + iyear;
    else
      mille = iyear;
-   char* root_date = Form("%d %s %4d",iday,months[imonth-1],mille);
+   char* root_date = Form("%s %d %4d",months[imonth-1],iday,mille);
 
-   const char* halla_version = "0.70beta1";
-   const char* halla_date = Form("%d %s %4d",30,months[8-1],2002);
+   const char* halla_version = "0.80";
+   //   const char* halla_date = Form("%d %s %4d",24,months[2-1],2003);
 
    Printf("  ************************************************");
    Printf("  *                                              *");
    Printf("  *            W E L C O M E  to  the            *");
    Printf("  *       H A L L A   C++  A N A L Y Z E R       *");
    Printf("  *                                              *");
-   Printf("  *        Release %10s %18s *",halla_version,halla_date);
+   Printf("  *        Release %10s %18s *",halla_version,__DATE__);
    Printf("  *  Based on ROOT %8s %20s *",root_version,root_date);
    Printf("  *             Development version              *");
    Printf("  *                                              *");

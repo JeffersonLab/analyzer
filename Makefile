@@ -11,7 +11,7 @@ export DEBUG = 1
 
 #------------------------------------------------------------------------------
 
-VERSION = 0.66
+VERSION = 0.80
 
 #------------------------------------------------------------------------------
 
@@ -27,6 +27,8 @@ DCLIB         = -L. -ldc
 SCALERDIR     = hana_scaler
 SCALERLIB     = -L. -lscaler
 HALLALIBS     = -L. -lHallA -ldc -lscaler
+
+SUBDIRS       = $(DCDIR) $(SCALERDIR)
 
 LIBS          = 
 GLIBS         = 
@@ -118,7 +120,7 @@ OBJS          = $(OBJ) haDict.o
 LIBHALLA      = libHallA.so
 PROGRAMS      = analyzer
 
-all:            $(PROGRAMS)
+all:            subdirs $(PROGRAMS)
 
 $(LIBHALLA):	$(OBJS)
 		$(LD) $(LDFLAGS) $(SOFLAGS) -o $@ $^
@@ -133,6 +135,9 @@ libdc.so:
 libscaler.so:
 		$(MAKE) -C $(SCALERDIR)
 		-ln -s ../$(SCALERDIR)/scaler.map DB/
+
+subdirs:
+		set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i; done
 
 clean:
 		$(MAKE) -C $(DCDIR) clean

@@ -9,7 +9,6 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-#include "THashList.h"
 #include "THaCut.h"
 #include "THaNamedList.h"
 #include "THaCutList.h"
@@ -23,30 +22,41 @@
 #include <strstream>
 #include <iostream>
 
-ClassImp(THaCutList)
+using namespace std;
 
 const char* const THaCutList::kDefaultBlockName = "Default";
 const char* const THaCutList::kDefaultCutFile   = "cutdef.dat";
 
+//_____________________________________________________________________________
+void THaHashList::PrintOpt( Option_t* opt ) const
+{
+  // Print all objects in the list. Pass option 'opt' through to each object
+  // being printed. (This is the old ROOT 2,x behavior).
+
+  TIter next(this);
+  TObject* object;
+  while((object = next()))
+    object->Print(opt);
+}
+
 //______________________________________________________________________________
-THaCutList::THaCutList()
+THaCutList::THaCutList() : fVarList(NULL)
 {
   // Default constructor. No variable list is defined. Either define it
   // later with SetList() or pass the list as an argument to Define().
   // Allowing this constructor is not very safe ...
 
-  fCuts   = new THashList();
-  fBlocks = new THashList();
-  fVarList = 0;
+  fCuts   = new THaHashList();
+  fBlocks = new THaHashList();
 }
 
 //______________________________________________________________________________
-THaCutList::THaCutList( const THaVarList& lst ) : fVarList(&lst)
+THaCutList::THaCutList( const THaVarList* lst ) : fVarList(lst)
 {
   // Normal constructor. Create the main lists and set the variable list.
 
-  fCuts   = new THashList();
-  fBlocks = new THashList();
+  fCuts   = new THaHashList();
+  fBlocks = new THaHashList();
 }
 
 //______________________________________________________________________________
@@ -86,12 +96,12 @@ Int_t THaCutList::Define( const char* cutname, const char* expr,
     Error( "Define", "no variable list set, cut not created" );
     return -1;
   }
-  return Define( cutname, expr, *fVarList, block );
+  return Define( cutname, expr, fVarList, block );
 }
 
 //______________________________________________________________________________
 Int_t THaCutList::Define( const char* cutname, const char* expr, 
-			  const THaVarList& lst, const char* block )
+			  const THaVarList* lst, const char* block )
 {
   // Define a new cut with given name in given block with variables from
   // given list.  See description of Define() above.
@@ -124,7 +134,7 @@ Int_t THaCutList::Define( const char* cutname, const char* expr,
 
   // Create new cut using the given expression. Bail out if error.
 
-  THaCut* pcut = new THaCut( cutname, expr, block, lst );
+  THaCut* pcut = new THaCut( cutname, expr, block, lst, this );
   if( !pcut ) return -2;
   if( pcut->IsError() ) { 
     Error( here, "expression error, cut not created: %s %s block: %s",
@@ -311,7 +321,7 @@ Int_t THaCutList::EvalBlock( const char* block )
 
 //______________________________________________________________________________
 inline
-Int_t THaCutList::EvalBlock( const THaNamedList* plist )
+Int_t THaCutList::EvalBlock( const TList* plist )
 {
   // Evaluate all cuts in the given list in the order in which they were defined.
 
@@ -463,11 +473,11 @@ void THaCutList::Print( Option_t* option ) const
       bool is_stats = !strcmp( opt.GetOption(0), kPRINTSTATS );
       if(  is_stats && strlen( plist->GetName() ) )
 	cout << "BLOCK: " << plist->GetName() << endl;
-      plist->Print( opt.Data() );
+      plist->PrintOpt( opt.Data() );
       if ( is_stats ) cout << endl;
     }
   } else
-    fCuts->Print( opt.Data() );
+    fCuts->PrintOpt( opt.Data() );
 }
 
 //______________________________________________________________________________
@@ -481,7 +491,7 @@ void THaCutList::PrintBlock( const char* block, Option_t* option ) const
   if( !strcmp(opt.GetOption(0),"") ) opt = kPRINTLINE;
   MakePrintOption( opt, plist );
   PrintHeader( opt );
-  plist->Print( opt.Data() );
+  plist->PrintOpt( opt.Data() );
 }
 
 //______________________________________________________________________________
@@ -520,3 +530,7 @@ void THaCutList::PrintHeader( const THaPrintOption& opt ) const
   cout << line << endl;
   delete [] line;
 }
+
+//______________________________________________________________________________
+ClassImp(THaCutList)
+ClassImp(THaHashList)

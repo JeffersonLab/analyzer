@@ -5,14 +5,14 @@
 //
 // THaNamedList
 //
-// A list with a name. Used to store blocks of THaCuts (tests) in a THashTable.
+// A list with a name. Used to store blocks of THaCuts (tests) 
+// in a THashList, where the name of this list is the hash index.
 //
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaNamedList.h"
 #include "TNamed.h"
 #include "TClass.h"
-
 #include <iostream>
 #include <cstring>
 
@@ -49,6 +49,18 @@ THaNamedList::~THaNamedList()
   // THaNamed list destructor
 
   delete fNamed;
+}
+
+//_____________________________________________________________________________
+void THaNamedList::PrintOpt( Option_t* opt ) const
+{
+  // Print all objects in the list. Pass option 'opt' through to each object
+  // being printed. (This is the old ROOT 2,x behavior).
+
+  TIter next(this);
+  TObject* object;
+  while((object = next()))
+    object->Print(opt);
 }
 
 //_____________________________________________________________________________

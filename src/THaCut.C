@@ -8,17 +8,81 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
+#include "THaCut.h"
+#include "THaPrintOption.h"
+
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
 #include <cstdlib>
 #include <cstring>
 
-#include "THaCut.h"
-#include "THaPrintOption.h"
 
+using namespace std;
 
-ClassImp(THaCut);
+//_____________________________________________________________________________
+THaCut::THaCut( const char* name, const char* expression, const char* block, 
+		const THaVarList* vlst, const THaCutList* clst ) :
+  THaFormula(), fLastResult(kFALSE), fBlockname(block), fNCalled(0), fNPassed(0)
+{
+  // Create a cut 'name' according to 'expression'. 
+  // The cut may use global variables from the list 'vlst' and other,
+  // previously defined cuts from 'clst'.
+  //  
+  // Unlike the behavior of THaFormula, THaCuts do NOT store themselves in 
+  // ROOT's list of formulas. Otherwise existing cuts used in new cut expressions 
+  // will get reparsed instead of queried. As a result, existing cuts can only
+  // be used by other cuts, not by formulas.
+
+  // Sadly, we have to duplicate the TFormula constructor code here because of
+  // the call to Compile(), which in turn calls our virtual function 
+  // DefinedVariable().
+
+  SetName(name);
+  SetList(vlst);
+  SetCutList(clst);
+  fRegister = kFALSE;
+
+  //eliminate blanks in expression
+  Int_t nch = strlen(expression);
+  char *expr = new char[nch+1];
+  Int_t j = 0;
+  for (Int_t i=0;i<nch;i++) {
+     if (expression[i] == ' ') continue;
+     if (i > 0 && (expression[i] == '*') && (expression[i-1] == '*')) {
+        expr[j-1] = '^';
+        continue;
+     }
+     expr[j] = expression[i]; j++;
+   }
+  expr[j] = 0;
+  if (j) SetTitle(expr);
+  delete [] expr;
+
+  Compile();   // This calls our own Compile()
+}
+
+//_____________________________________________________________________________
+Int_t THaCut::DefinedVariable(TString& name)
+{
+  // Check if 'name' is in the list of existing cuts. 
+  // If so, store pointer to the cut for use by DefinedValue().
+  // Otherwise, assume 'name' is a global variable and pass it on
+  // to THaFormula::DefinedVariable().
+
+  //  Return codes:
+  //  >=0  serial number of variable or cut found
+  //   -1  no list of variables defined
+  //   -2  error parsing variable name
+  //   -3  variable name not defined
+  //   -4  array requested, but defined variable is no array
+  //   -5  array index out of bounds
+  //   -6  maximum number of variables exceeded
+
+  Int_t k = DefinedCut( name );
+  if( k>=0 ) return k;
+  return DefinedGlobalVariable( name );
+}
 
 //_____________________________________________________________________________
 void THaCut::Print( Option_t* option ) const
@@ -97,4 +161,7 @@ void THaCut::SetNameTitle( const Text_t* name, const Text_t* formula )
   if( fName.Length() == 0 )
     TNamed::SetNameTitle( name, formula );
 }
+
+//_____________________________________________________________________________
+ClassImp(THaCut)
 

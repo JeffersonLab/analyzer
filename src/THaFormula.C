@@ -1,18 +1,20 @@
 //*-- Author :    Ole Hansen    20/04/2000
 
-#include "TROOT.h"
-#include "THaArrayString.h"
 #include "THaFormula.h"
+#include "THaArrayString.h"
 #include "THaVarList.h"
+#include "THaCutList.h"
+#include "THaCut.h"
+#include "TROOT.h"
 
 #include <iostream>
 #include <cstring>
 #include <cstdlib>
 
+using namespace std;
+
 const Option_t* const THaFormula::kPRINTFULL  = "FULL";
 const Option_t* const THaFormula::kPRINTBRIEF = "BRIEF";
-
-ClassImp(THaFormula)
 
 //_____________________________________________________________________________
 //
@@ -28,8 +30,9 @@ ClassImp(THaFormula)
 
 //_____________________________________________________________________________
 THaFormula::THaFormula( const char* name, const char* expression, 
-			const THaVarList& lst ) 
-  : TFormula(), fVarList(&lst), fError(kFALSE)
+			const THaVarList* vlst, const THaCutList* clst )
+  : TFormula(), fVarDef(NULL), fVarList(vlst), fCutList(clst),
+    fError(kFALSE), fRegister(kTRUE)
 {
   // Create a formula 'expression' with name 'name' and symbolic variables 
   // from the list 'lst'.
@@ -65,30 +68,56 @@ Int_t THaFormula::Compile( const char* expression )
   // Return 0 on success, 1 if error in expression.
 
   fNcodes = 0;
+  fNval   = 0;
+  delete [] fVarDef;
+  fVarDef = new FVarDef_t[ kMAXCODES ];
+  memset( fVarDef, 0, kMAXCODES*sizeof(FVarDef_t));
+
   Int_t status = TFormula::Compile( expression );
 
   //*-*- Store formula in linked list of formula in ROOT
 
   if( status ) {
     fError = kTRUE;
-    gROOT->GetListOfFunctions()->Remove(this);
+    if( fRegister) gROOT->GetListOfFunctions()->Remove(this);
   } else {
     fError = kFALSE;
-    TObject* old = gROOT->GetListOfFunctions()->FindObject(GetName());
-    if (old) gROOT->GetListOfFunctions()->Remove(old);
-    gROOT->GetListOfFunctions()->Add(this);
+    if( fRegister ) {
+      TObject* old = gROOT->GetListOfFunctions()->FindObject(GetName());
+      if (old) gROOT->GetListOfFunctions()->Remove(old);
+      gROOT->GetListOfFunctions()->Add(this);
+    }
   }
   return status;
+}
+
+//_____________________________________________________________________________
+THaFormula::~THaFormula()
+{
+  // Destructor
+
+  delete [] fVarDef; fVarDef = 0;
 }
 
 //_____________________________________________________________________________
 Double_t THaFormula::DefinedValue( Int_t i )
 {
   // Get value of i-th variable in the formula
-
-  const THaVar* ptr = fCodes[i];
+  // If the i-th variable is a cut, return its last result
+  // (calculated at the last evaluation).
+  
+  FVarDef_t* def = fVarDef+i;
+  const void* ptr = def->code;
   if( !ptr ) return 0.0;
-  return ptr->GetValue( fIndex[i] );
+  switch( def->type ) {
+  case kVariable:
+    return reinterpret_cast<const THaVar*>(ptr)->GetValue( def->index );
+    break;
+  case kCut:
+    return reinterpret_cast<const THaCut*>(ptr)->GetResult();
+    break;
+  }
+  return 0.0;
 }  
 
 //_____________________________________________________________________________
@@ -108,13 +137,51 @@ Int_t THaFormula::DefinedVariable(TString& name)
   //   -3  variable name not defined
   //   -4  array requested, but defined variable is no array
   //   -5  array index out of bounds
-  //
+  //   -6  maximum number of variables exceeded
+
+  Int_t k = DefinedGlobalVariable( name );
+  if( k>=0 ) return k;
+  return DefinedCut( name );
+}
+
+//_____________________________________________________________________________
+Int_t THaFormula::DefinedCut( const TString& name )
+{
+  // Check if 'name' is a known cut. If so, enter it in the local list of 
+  // variables used in this formula.
+
+  // Cut names are obviously only valid if there is a list of existing cuts
+  if( fCutList ) {
+    const THaCut* pcut = fCutList->FindCut( name );
+    if( pcut ) {
+      if( fNcodes >= kMAXCODES ) return -6;
+      // See if this cut already used earlier in this new cut
+      FVarDef_t* def = fVarDef;
+      for( Int_t i=0; i<fNcodes; i++, def++ ) {
+	if( def->type == kCut && pcut == def->code )
+	  return i;
+      }
+      def->type = kCut;
+      def->code  = pcut;
+      def->index = 0;
+      fNpar = 0;
+      return fNcodes++;
+    }
+  }
+  return -3;
+}
+
+//_____________________________________________________________________________
+Int_t THaFormula::DefinedGlobalVariable( const TString& name )
+{
+  // Check if 'name' is a known global variable. If so, enter it in the
+  // local list of variables used in this formula.
 
   // No list of variables or too many variables in this formula?
   if( !fVarList ) 
     return -1;
   if( fNcodes >= kMAXCODES )
-    return -5;
+    return -6;
 
   // Parse name for array syntax
   THaArrayString var(name);
@@ -134,15 +201,21 @@ Int_t THaFormula::DefinedVariable(TString& name)
   if( var.IsArray() 
       && (index = obj->Index( var )) == kNPOS ) return -5;
 		    
-  // All ok: accept this variable
-  Int_t code = fNcodes++;
-  fCodes[code] = obj;
-  fIndex[code] = index;
+  // Check if this variable already used in this formula
+  FVarDef_t* def = fVarDef;
+  for( Int_t i=0; i<fNcodes; i++, def++ ) {
+    if( obj == def->code && index == def->index )
+      return i;
+  }
+  // If this is a new variable, add it to the list
+  def->type = kVariable;
+  def->code = obj;
+  def->index = index;
 
   // No parameters ever for a THaFormula
   fNpar = 0;
 
-  return code;
+  return fNcodes++;
 }
 
 //_____________________________________________________________________________
@@ -171,3 +244,6 @@ void THaFormula::Print( Option_t* option ) const
 }
 
 //_____________________________________________________________________________
+
+ClassImp(THaFormula)
+
