@@ -36,7 +36,7 @@ protected:
 
   void           ClearEvent();
   virtual Int_t  ReadDatabase( const TDatime& date );
-  virtual Int_t  DefineVariables( EMode mode );
+  virtual Int_t  DefineVariables( EMode mode = kDefine );
 
   //  THaBPM() {}
   //  THaBPM( const THaBPM& ) {}

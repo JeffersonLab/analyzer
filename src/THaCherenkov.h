@@ -47,7 +47,7 @@ protected:
   double tan_angle, sin_angle, cos_angle; // Rotation angle of the detector plane
 
           void   ClearEvent();
-  virtual Int_t  DefineVariables( EMode mode );
+  virtual Int_t  DefineVariables( EMode mode = kDefine );
           void   DeleteArrays();
   virtual Int_t  ReadDatabase( const TDatime& date );
 
