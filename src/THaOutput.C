@@ -309,7 +309,7 @@ Int_t THaOutput::LoadFile() {
       case fgTh2fiden:
   	  status = ParseTitle(sline);
           if (status != 2) {
-	    ErrFile(fgTh1fiden, sline);
+	    ErrFile(fgTh2fiden, sline);
             continue;
 	  }
 	  fH2dname.push_back(strvect[1]);
