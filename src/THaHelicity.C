@@ -33,6 +33,7 @@ ClassImp(THaHelicity)
 //____________________________________________________________________
 THaHelicity::THaHelicity( ) 
 {
+  fDetMap = 0;
   Init();
 }
 
