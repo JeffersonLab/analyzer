@@ -1,0 +1,107 @@
+
+Calibrating the ADC's:
+----------------------
+
+To use the signal amplitudes reported by PMT's, it is necessary to identify
+the pedestal of the ADC, and determine a mapping between ADC channel and
+the number of photons seen by the photo-multiplier tube.
+
+Current, this mapping is performed with an offset for the pedestal, and
+a linear coefficeint to scale the read-out.
+
+You can use 'id_pedestal.C' to determine these parameters.
+
+STEPS:
+------
+
+1. Use the analyzer to process a raw data file and create a TTree
+   containing the raw ADC distributions. For example, to for the A1 aerogel
+   detector on the Left HRS you might have the following lines in the
+   output control (often output.def) file:
+   
+   block L.aero1.*
+   block L.a1.*
+
+
+   and corresponding, add the line:
+
+   HRSL->AddDetector( new THaCherenkov("aero1", "Aerogel 1 n=1.015" ));
+
+   to the setup script (often setup.C).
+
+2. After loading the file containing the TTree (typically named "T" for the
+   analyzer), load the 'id_pedestals.C' file at the analyzer[] prompt:
+
+   analyzer [1] .L id_pedestals.C+
+
+   The '+' is present to compile the routines, since the code uses some
+   features of C++ that Cint cannot handle easily.
+
+3. Finally, run the code, using a select pattern for the detector of
+   interest. You will need a few pieces of information to make this work.
+
+   id_pedestals takes 4 required parameters, and 2 optional parameters:
+   
+   void id_pedestals(TTree* T, const char* expr, int minch, int maxch,
+		        Double_t goal = 500., Double_t MaxADC = 1000.,
+			Double_t MinADC = 10.)
+
+   REQUIRED:
+   --------
+       T  = is the TTree from which to extract the ADC information
+
+     expr = is the pattern used to extract the ADC values. It should be
+            similar to the pattern used to T->Draw(...) the ADC values, but
+            with a '%d' replacing the specific channel number.
+
+    minch = minimum channel (often 0) to calibrate
+
+    maxch = maximum channel number to calibrate
+    
+   OPTIONAL:
+   --------
+       goal = the final 'value' the first peak (after the pedestal) should
+              be calibrated to arrive at.
+
+     MaxADC = the maximum number of ADC channels ABOVE THE PEDESTAL the
+              first peak should be found at in the raw ADC distribution.
+              This can be set generously large, but it also determines the
+              bin size. If you are experiencing problems, try adjusting
+              this parameter.
+
+     MinADC = the minimum number of ADC channels ABOVE PEDESTAL the
+	      first peak might be found. Keep this small unless the routine
+	      gets stuck on a fluctuation on the pedestal's tail.
+
+   For each channel, a histogram of the ADC distribution after pedestal
+   subtraction will be displayed and the first peak fitted. After all
+   channels are complete, the pedestals and calibration parameters are
+   printed to the screen where they can be cut & pasted into the database.
+
+   Finally, an overall histogram of the channel vs. calibrated ADC
+   distribution is displayed.
+
+EXAMPLES:
+--------
+
+   a. To calibrate the ADC values readout for A1 on the Left HRS, with the
+      primary single-photoelectron peak at 1000:
+
+       analyzer [2] id_pedestals(T, "L.aero1.a[%d]",0,23,1000.,2000.);
+
+   b. The new S2 (S2m) detector has very small ADC amplitudes, around 50
+      above pedestal. So, MaxADC has to be set smaller than normal.
+
+       analyzer [3] id_pedestals(T, "L.s2.ra[%d]",0,15,500.,200);
+
+   c. S1 has much LARGER amplitudes than the other detectors, so modify
+      the expected ranges to match:
+
+       analyzer [8] id_pedestals(T, "L.s1.ra[%d]",0,5,1000.,4000.,50)
+
+
+Questions:
+--------- 
+
+Contact Rob Feuerbach (feuerbac@jlab.org) and I'll get back to as soon as I
+can.
