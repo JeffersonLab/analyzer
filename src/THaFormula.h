@@ -9,6 +9,7 @@
 
 #include "TFormula.h"
 #include "THaGlobals.h"
+#include "RVersion.h"
 
 class THaVarList;
 class THaCutList;
@@ -31,7 +32,11 @@ public:
   virtual Int_t       DefinedCut( const TString& variable );
   virtual Int_t       DefinedGlobalVariable( const TString& variable );
   virtual Double_t    Eval();
+#if ROOT_VERSION_CODE >= 197632 // 3.04/00 Dumb rootcint chokes on ROOT_VERSION macro
+  virtual Double_t    Eval( Double_t x, Double_t y=0.0, Double_t z=0.0, Double_t t=0.0 ) 
+#else
   virtual Double_t    Eval( Double_t x, Double_t y=0.0, Double_t z=0.0 ) 
+#endif
                           { return Eval(); }
           Bool_t      IsError() const { return fError; }
   virtual void        Print( Option_t* option="" ) const; // *MENU*
