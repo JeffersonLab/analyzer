@@ -11,7 +11,8 @@
 #include "THaBpm.h"
 #include "THaEvData.h"
 #include "THaDetMap.h"
-#include "THaVarList.h"
+#include "VarDef.h"
+#include "VarType.h"
 #include "TMath.h"
 
 #include <cstring>

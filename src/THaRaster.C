@@ -11,7 +11,8 @@
 #include "THaRaster.h"
 #include "THaEvData.h"
 #include "THaDetMap.h"
-#include "THaVarList.h"
+#include "VarDef.h"
+#include "VarType.h"
 #include <cstring>
 
 ClassImp(THaRaster)
