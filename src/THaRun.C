@@ -12,34 +12,23 @@
 
 #include "THaRun.h"
 #include "THaAnalysisObject.h"
+#include "THaEvData.h"
 #include "THaCodaData.h"
 #include "THaCodaFile.h"
 #include "TMath.h"
 #include <iostream>
 #include <cstring>
-#include <ctime>
 #include <cstdio>
 
 using namespace std;
 
 //_____________________________________________________________________________
-THaRun::THaRun() : TNamed(), fNumber(0), fDate(19950101,0), fDBRead(false),
-		   fBeamE(0.0), fBeamP(0.0), fBeamM(0.0), fBeamQ(0), fBeamdE(0.0),
-		   fTarget(0)
-{
-  // Default constructor
-
-  fCodaData = 0;
-  ClearEventRange();
-}
-
-//_____________________________________________________________________________
 THaRun::THaRun( const char* fname, const char* descr ) : 
   TNamed("", strlen(descr) ? descr : fname), fNumber(0), fFilename(fname),
-  fDate(19950101,0), fDBRead(false),
+  fDate(19950101,0), fAssumeDate(kFALSE), fDBRead(kFALSE), fIsInit(kFALSE),
   fBeamE(0.0), fBeamP(0.0), fBeamM(0.0), fBeamQ(0), fBeamdE(0.0), fTarget(0)
 {
-  // Normal constructor
+  // Normal & default constructor
 
   fCodaData = new THaCodaFile;  //Do not open the file yet
   ClearEventRange();
@@ -53,6 +42,7 @@ THaRun::THaRun( const THaRun& rhs ) : TNamed( rhs )
   fNumber     = rhs.fNumber;
   fFilename   = rhs.fFilename;
   fDate       = rhs.fDate;
+  fAssumeDate = rhs.fAssumeDate;
   fFirstEvent = rhs.fFirstEvent;
   fLastEvent  = rhs.fLastEvent;
   fCodaData   = new THaCodaFile;
@@ -74,6 +64,7 @@ THaRun& THaRun::operator=(const THaRun& rhs)
      TNamed::operator=(rhs);
      fNumber     = rhs.fNumber;
      fDate       = rhs.fDate;
+     fAssumeDate = rhs.fAssumeDate;
      fFilename   = rhs.fFilename;
      fFirstEvent = rhs.fFirstEvent;
      fLastEvent  = rhs.fLastEvent;
@@ -103,6 +94,82 @@ THaRun::~THaRun()
 Int_t THaRun::CloseFile()
 {
   return fCodaData ? fCodaData->codaClose() : 0;
+}
+
+//_____________________________________________________________________________
+Int_t THaRun::Init()
+{
+  // Initialize the run. This reads the run database, checks 
+  // whether the data source can be opened, and if so, initializes the
+  // run parameters (run number, time, etc.)
+
+  static const char* const here = "Init()";
+
+  // Open the data source. This will fail if the CODA file doesn't exist,
+  // a common source of problems.
+  Int_t retval = 0;
+  if( !IsOpen() ) {
+    retval = OpenFile();
+    if( retval ) {
+      Error( here, "Cannot open CODA file %s. Make sure the file exists.",
+	     GetFilename() );
+      return retval;
+    }
+  }
+
+  // Determine the date of this run
+  // If the user gave us a date via SetDate(), we're done; otherwise we
+  // need to search for an event with a timestamp. 
+  // For CODA files, we need a prestart event. We search for a maximum of 
+  // 1000 events, then give up.
+  if( !fAssumeDate ) {
+    THaEvData evdata;
+    const Int_t MAXEV = 1000;
+    Int_t nev = 0;
+    Int_t status = 0;
+    while (status != EOF && status != CODA_ERROR) {
+
+      status = ReadEvent();
+      if( status == S_EVFILE_TRUNC || status == CODA_ERROR ) {
+	Error( here, "Error %d reading CODA file %s. Check file permissions.",
+	       status, GetFilename());
+	return status;
+      }
+
+      // Decode the event
+      nev++;
+      evdata.LoadEvent( GetEvBuffer() );
+      if( evdata.IsPrestartEvent())
+	// Got a good event! Get out of here.
+	break;
+      if( nev < MAXEV )
+	continue;
+      else {
+	Error( here, "Cannot find a timestamp within the first %d events "
+	       "in CODA file %s.\nMake sure the file is not a continuation "
+	       " segment.", MAXEV, GetFilename());
+	return 255;
+      }
+    }
+    fDate.Set( evdata.GetRunTime() );
+    SetNumber( evdata.GetRunNum() );
+  }
+
+  // Close the data source to avoid conflicts
+  CloseFile();
+
+  // Extract additional run parameters (beam energy etc.) from the database
+  retval = ReadDatabase();
+  if( retval ) {
+    Error( here, "Error reading run database for run number %d, file %s, "
+	   "run date %s.\nMake sure the database file exists and contains "
+	   "all required parameters.",
+	   GetNumber(), GetFilename(), GetDate().AsString() );
+    return retval;
+  }
+
+  fIsInit = kTRUE;
+  return 0;
 }
 
 //_____________________________________________________________________________
@@ -255,18 +322,35 @@ void THaRun::SetBeam( Double_t E, Double_t M, Int_t Q, Double_t dE )
 }
 
 //_____________________________________________________________________________
+void THaRun::ClearDate()
+{
+  // Reset the run date to "undefined" (1.1.1995)
+
+  fDate.Set(19950101,0);
+  fAssumeDate = fIsInit = kFALSE;
+}
+
+//_____________________________________________________________________________
+void THaRun::SetDate( const TDatime& date )
+{
+  // Set the timestamp of this run to 'date'.
+
+  if( fDate != date ) {
+    fDate = date;
+    fIsInit = kFALSE;
+  }
+  fAssumeDate = kTRUE;
+}
+
+//_____________________________________________________________________________
 void THaRun::SetDate( UInt_t tloc )
 {
   // Set timestamp of this run to 'tloc' which is in Unix time
   // format (number of seconds since 01 Jan 1970).
 
-  // fDate.Set(tloc) only supported by ROOT>=3.01/06, so we 
-  // code it by hand for now.
-  // FIXME: use preprocessor ifdef? This is Unix-specific!
-  time_t t = tloc;
-  struct tm* tp = localtime(&t);
-  fDate.Set( tp->tm_year, tp->tm_mon+1, tp->tm_mday, 
-	     tp->tm_hour, tp->tm_min, tp->tm_sec );
+  // NB: only supported by ROOT>=3.01/06
+  TDatime date( tloc );
+  SetDate( date );
 }
 
 //_____________________________________________________________________________
@@ -278,6 +362,18 @@ void THaRun::SetNumber( Int_t number )
   char str[16];
   sprintf( str, "RUN_%u", number);
   SetName( str );
+}
+
+//_____________________________________________________________________________
+void THaRun::SetFilename( const char* name )
+{
+  // Set the name of the run. If the name changes, the run will become
+  // uninitialized.
+
+  if( name && fName != name )
+    fIsInit = kFALSE;
+
+  fName = name;
 }
 
 //_____________________________________________________________________________

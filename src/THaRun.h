@@ -17,10 +17,9 @@ class THaTarget;
 class THaRun : public TNamed {
   
 public:
-  THaRun();
-  THaRun( const char* filename, const char* description="" );
+  THaRun( const char* filename="", const char* description="" );
   THaRun( const THaRun& run );
-  THaRun& operator=( const THaRun& rhs );
+  virtual THaRun& operator=( const THaRun& rhs );
   virtual ~THaRun();
   
   virtual bool operator==( const THaRun& ) const;
@@ -30,9 +29,10 @@ public:
   virtual bool operator<=( const THaRun& ) const;
   virtual bool operator>=( const THaRun& ) const;
 
+  virtual void         ClearDate();
   virtual Int_t        CloseFile();
   virtual Int_t        Compare( const TObject* obj ) const;
-          bool         DBRead()         const { return fDBRead; }
+          Bool_t       DBRead()         const { return fDBRead; }
           Double_t     GetBeamE()       const { return fBeamE; }
           Double_t     GetBeamdE()      const { return fBeamdE; }
           Double_t     GetBeamM()       const { return fBeamM; }
@@ -45,6 +45,8 @@ public:
           UInt_t       GetLastEvent()   const { return fLastEvent; }
           const Int_t* GetEvBuffer()    const;
           THaTarget*   GetTarget()      const { return fTarget; }
+  virtual Int_t        Init();
+          Bool_t       IsInit()         const { return fIsInit; }
   virtual bool         IsOpen()         const;
   virtual Int_t        OpenFile();
   virtual Int_t        OpenFile( const char* filename );
@@ -53,9 +55,9 @@ public:
   virtual Int_t        ReadEvent();
           void         SetBeam( Double_t E, Double_t M, Int_t Q, 
 				Double_t dE = 0.0 );
-          void         SetDate( TDatime& date )        { fDate = date; }
+  virtual void         SetDate( const TDatime& date );
           void         SetDate( UInt_t tloc );
-          void         SetFilename( const char* name ) { fFilename = name; }
+  virtual void         SetFilename( const char* name );
           void         SetFirstEvent( UInt_t first )   { fFirstEvent = first; }
           void         SetLastEvent( UInt_t last )     { fLastEvent = last; }
           void         SetEventRange( UInt_t first, UInt_t last )
@@ -69,10 +71,12 @@ protected:
   Int_t         fNumber;       //  Run number
   TString       fFilename;     //  File name
   TDatime       fDate;         //  Run date and time
+  Bool_t        fAssumeDate;   //  True if run date explicitly set
   UInt_t        fFirstEvent;   //  First event to analyze
   UInt_t        fLastEvent;    //  Last event to analyze
   THaCodaData*  fCodaData;     //! CODA data associated with this run
-  bool          fDBRead;       //! True if database successfully read.
+  Bool_t        fDBRead;       //  True if database successfully read.
+  Bool_t        fIsInit;       //  True if run successfully initialized
 
   // The following comes from the run database
   Double_t      fBeamE;        //  Total nominal beam energy (GeV)
@@ -82,7 +86,7 @@ protected:
   Double_t      fBeamdE;       //  Beam energy uncertainty (GeV)
   THaTarget*    fTarget;       //! Pointer to target description
 
-  ClassDef(THaRun,3)   //Description of a run
+  ClassDef(THaRun,4)   //Description of a run
 };
 
 
