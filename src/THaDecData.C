@@ -73,6 +73,9 @@ void THaDecData::Clear( Option_t* opt )
   memset(bits, 0, MAXBIT*sizeof(UInt_t));
   evtypebits = 0;
   evtype     = 0;
+  ctimel     = 0;
+  ctimer     = 0;
+  pulser1    = 0;
   synchadc1  = 0;
   synchadc2  = 0;
   synchadc3  = 0;
@@ -106,6 +109,9 @@ Int_t THaDecData::SetupDecData( const TDatime* run_time, EMode mode )
   RVarDef vars[] = {
     { "evtypebits", "event type bit pattern",      "evtypebits" },  
     { "evtype",     "event type from bit pattern", "evtype" },  
+    { "ctimel",     "coincidence time on L-arm",   "ctimel" },  
+    { "ctimer",     "coincidence time on R-arm",   "ctimer" },  
+    { "pulser1",    "pulser in a TDC",             "pulser1" },  
     { "synchadc1",  "synch check adc 1",           "synchadc1" },       
     { "synchadc2",  "synch check adc 2",           "synchadc2" },       
     { "synchadc3",  "synch check adc 3",           "synchadc3" },       
@@ -158,9 +164,9 @@ Int_t THaDecData::SetupDecData( const TDatime* run_time, EMode mode )
       for (int i = 0; i < nvar; i++) {
 	if (strcmp(vars[i].name, strvect[0].c_str()) == 0) found = kTRUE;
       } 
-      // !found may be ok, but might be a typo error too, so I print to warn you.
-      if ( !found && THADEC_VERBOSE ) 
-	cout << "THaDecData: new variable "<<strvect[0]<<" is not global"<<endl;
+// !found may be ok, but might be a typo error too, so I print to warn you.
+//  if ( !found && THADEC_VERBOSE ) 
+//  cout << "THaDecData: new variable "<<strvect[0]<<" is not global"<<endl;
       Int_t crate = (Int_t)atoi(strvect[2].c_str());  // crate #
       if (strvect[1] == "crate") {  // Crate data ?
 	Int_t slot = (Int_t)atoi(strvect[3].c_str());
@@ -202,6 +208,11 @@ Int_t THaDecData::DefaultMap() {
    fCrateLoc.push_back(new BdataLoc("synchadc3", 3, (Int_t) 22, 0));
    fCrateLoc.push_back(new BdataLoc("synchadc4", 4, (Int_t) 17, 48));
    fCrateLoc.push_back(new BdataLoc("synchadc14", 14, (Int_t) 1, 5));
+
+// Coincidence time, etc
+   fCrateLoc.push_back(new BdataLoc("ctimel", 2, (Int_t) 3, 48));
+   fCrateLoc.push_back(new BdataLoc("ctimer", 1, (Int_t) 21, 4));
+   fCrateLoc.push_back(new BdataLoc("pulser1", 3, (Int_t) 3, 7));
 
 // 100 kHz time stamp in roc14, at 2 words beyond header=0xfca56000
    fCrateLoc.push_back(new BdataLoc("timestamp", 14, (UInt_t)0xfca56000, 2)); 
@@ -282,6 +293,11 @@ Int_t THaDecData::Decode(const THaEvData& evdata)
     if ( dataloc->ThisIs("synchadc3") ) synchadc3  = dataloc->Get();
     if ( dataloc->ThisIs("synchadc4") ) synchadc4  = dataloc->Get();
     if ( dataloc->ThisIs("synchadc14")) synchadc14 = dataloc->Get();
+
+// coincidence times
+    if ( dataloc->ThisIs("ctimel")) ctimel = 0.1*dataloc->Get();
+    if ( dataloc->ThisIs("ctimer")) ctimer = 0.1*dataloc->Get();
+
   }
 
   for (vector<BdataLoc *>::iterator p = fWordLoc.begin(); p != fWordLoc.end(); p++) {

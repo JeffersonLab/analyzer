@@ -67,6 +67,8 @@ private:
    Int_t nvar;
    Int_t *bits;
    UInt_t evtypebits, evtype;
+   Double_t ctimel, ctimer;
+   Double_t pulser1;
    UInt_t synchadc1, synchadc2, synchadc3, 
           synchadc4, synchadc14;
    UInt_t timestamp, timeroc1, timeroc2, timeroc3,  
