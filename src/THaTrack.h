@@ -5,8 +5,6 @@
 //
 // THaTrack
 //
-// A track in the focal plane
-//
 //////////////////////////////////////////////////////////////////////////
 
 #include "TObject.h"
@@ -18,6 +16,7 @@ class THaVertex;
 class THaSpectrometer;
 class THaTrackingDetector;
 class THaTrackID;
+class THaCluster;
 
 class THaTrack : public TObject {
 
@@ -27,19 +26,23 @@ public:
     fX(0.0), fY(0.0), fClusters(NULL), fPIDinfo(NULL), fVertex(NULL),
     fSpectrometer(NULL), fID(NULL), fFlag(0) {}
   THaTrack( Double_t p, Double_t theta, Double_t phi, Double_t x, Double_t y,
-	    const THaSpectrometer* s=NULL, TClonesArray* clusters=NULL,
-	    THaPIDinfo* pid=NULL, THaVertex* vertex=NULL, THaTrackID* id=NULL );
+	    const THaSpectrometer* s=NULL, THaPIDinfo* pid=NULL, 
+	    THaVertex* vertex=NULL, THaTrackID* id=NULL );
   virtual ~THaTrack();
 
-  void              Clear( Option_t* opt );
+  
+  Int_t             AddCluster( THaCluster* c );
+  void              Clear( Option_t* opt="" );
   THaTrackID*       GetID() const                  { return fID; }
   UInt_t            GetFlag() const                { return fFlag; }
   Double_t          GetP()  const                  { return fP; }
   Double_t          GetPx() const                  { return fPx; }
   Double_t          GetPy() const                  { return fPy; }
   Double_t          GetPz() const                  { return fPz; }
-  Double_t          GetX( Double_t z=0.0 ) const;
-  Double_t          GetY( Double_t z=0.0 ) const;
+  Double_t          GetX()  const                  { return fX; }
+  Double_t          GetY()  const                  { return fY; }
+  Double_t          GetX( Double_t z ) const;
+  Double_t          GetY( Double_t z ) const;
   Double_t          GetTheta() const               { return fTheta; }
   Double_t          GetPhi() const                 { return fPhi; }
   void              Print( Option_t* opt="" ) const;
@@ -49,7 +52,6 @@ public:
   void              SetPosition( Double_t x, Double_t y );
   void              Set( Double_t p, Double_t theta, Double_t phi, 
 			 Double_t x, Double_t y );
-  void              SetClusters( TClonesArray* c ) { fClusters = c; }
   void              SetCreator( THaTrackingDetector* d ) 
                                                    { fCreator = d; }
   void              SetPIDinfo(  THaPIDinfo* pid ) { fPIDinfo  = pid; }
@@ -58,7 +60,7 @@ public:
   void              SetVertex( THaVertex* v )      { fVertex   = v; }
 
   const THaTrackingDetector* GetCreator() const      { return fCreator; }
-        TClonesArray*        GetClusters() const     { return fClusters; }
+  const TList*               GetClusters() const     { return fClusters; }
   const THaSpectrometer*     GetSpectrometer() const { return fSpectrometer; }
   THaPIDinfo*                GetPIDinfo() const      { return fPIDinfo; }
   THaVertex*                 GetVertex() const       { return fVertex; }
@@ -74,7 +76,7 @@ protected:
   Double_t          fX;              // x position in focal plane (m)
   Double_t          fY;              // y position (m)
 
-  TClonesArray*               fClusters;     // clusters of this track
+  TList*                      fClusters;     // clusters of this track
   THaPIDinfo*                 fPIDinfo;      // particle ID information for this track
   THaVertex*                  fVertex;       // reconstructed vertex quantities
   const THaSpectrometer*      fSpectrometer; // spectrometer this track belongs to

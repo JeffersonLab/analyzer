@@ -7,7 +7,7 @@
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 
-//#include "THaCluster.h"
+#include "THaCluster.h"
 #include "TObject.h"
 
 class THaVDCHit;
@@ -15,12 +15,11 @@ class THaVDCPlane;
 //class THaVDCUVTrack;
 //class THaTrack;
 
-//class THaVDCCluster : public THaCluster {
-class THaVDCCluster : public TObject {
+class THaVDCCluster : public THaCluster {
 
 public:
   THaVDCCluster( THaVDCPlane* owner = NULL ) :
-    fSize(0), fPlane(owner), fSlope(0.0), fSigmaSlope(0.0), fInt(0.0),
+    fPlane(owner), fSlope(0.0), fSigmaSlope(0.0), fInt(0.0),
     fSigmaInt(0.0), fT0(0.0), fPivot(NULL) {}
   THaVDCCluster( const THaVDCCluster&);
   THaVDCCluster& operator=( const THaVDCCluster& );
@@ -36,12 +35,11 @@ public:
 
   // TObject functions redefined
   virtual void   Clear( Option_t* opt="" );
-  virtual Int_t  Compare( const TObject *obj ) const;
+  virtual Int_t  Compare( const TObject* obj ) const;
   virtual Bool_t IsSortable() const        { return kTRUE; }
-  virtual void   Print( Option_t* option="" ) const;
+  virtual void   Print( Option_t* opt="" ) const;
 
   //Get and Set Functions
-  Int_t          GetSize ()          const { return fSize; }
   THaVDCHit**    GetHits()                 { return fHits; } // Get array of pointers
   THaVDCHit *    GetHit(Int_t i)     const { return fHits[i]; }
   THaVDCPlane*   GetPlane()          const { return fPlane; }
@@ -63,7 +61,6 @@ protected:
   static const Int_t MAX_SIZE = 16;  // Assume no more than 20 hits per cluster
   static const Double_t kBig;
 
-  Int_t          fSize;              // Size of cluster (no. of hits)
   THaVDCHit*     fHits[MAX_SIZE];    // [fSize] Hits associated w/this cluster
   THaVDCPlane*   fPlane;             // Plane the cluster belongs to
   //  THaVDCUVTrack * fUVTrack;      // UV Track the cluster belongs to

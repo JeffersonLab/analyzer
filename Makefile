@@ -8,7 +8,7 @@ export DEBUG = 1
 
 #------------------------------------------------------------------------------
 
-VERSION = 0.65
+VERSION = 0.66
 
 #------------------------------------------------------------------------------
 
@@ -91,7 +91,7 @@ SRC           = src/THaFormula.C src/THaVar.C src/THaVarList.C src/THaCut.C \
 		src/THaAnalyzer.C src/THaPrintOption.C \
 		src/THaBeam.C src/THaBpm.C src/THaRaster.C src/THaEpicsData.C \
 		src/THaTrack.C src/THaPIDinfo.C src/THaParticleInfo.C \
-		src/THaMatrix.C src/THaArrayString.C \
+		src/THaCluster.C src/THaMatrix.C src/THaArrayString.C \
 		src/THaScintillator.C src/THaShower.C \
 		src/THaTotalShower.C src/THaCherenkov.C \
 		src/THaEvent.C src/THaRawEvent.C src/THaTrackID.C \

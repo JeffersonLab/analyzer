@@ -26,8 +26,7 @@ protected:
 
   virtual THaTrack* AddTrack( TClonesArray& tracks,
 			      Double_t p, Double_t theta, Double_t phi,
-			      Double_t x, Double_t y,
-			      TClonesArray* clusters = 0 );
+			      Double_t x, Double_t y );
 
   //Only derived classes may construct me
 

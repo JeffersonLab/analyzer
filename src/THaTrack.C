@@ -4,15 +4,18 @@
 //
 // THaTrack
 //
-// A track in the focal plane
+// A generic track.
 //
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaTrack.h"
+#include "THaCluster.h"
 #include "THaPIDinfo.h"
 #include "THaTrackID.h"
-
 //#include "THaVertex.h"
+#include "TList.h"
+#include "TClass.h"
+
 #include <iostream>
 
 ClassImp(THaTrack)
@@ -21,16 +24,16 @@ ClassImp(THaTrack)
 THaTrack::THaTrack( Double_t p, Double_t theta, Double_t phi, 
 		    Double_t x, Double_t y, 
 		    const THaSpectrometer* s, 
-		    TClonesArray* clusters,
 		    THaPIDinfo* pid, 
 		    THaVertex* vertex,
 		    THaTrackID* id )
-  : fP(p), fTheta(theta), fPhi(phi), fX(x), fY(y), fClusters(clusters),
+  : fP(p), fTheta(theta), fPhi(phi), fX(x), fY(y), fClusters(NULL),
     fPIDinfo(pid), fVertex(vertex), fSpectrometer(s), fID(id)
 {
   // Normal constructor with initialization
 
   CalcPxyz();
+  fClusters = new TList;
 }
 
 //_____________________________________________________________________________
@@ -38,7 +41,8 @@ THaTrack::~THaTrack()
 {
   // Destructor
 
-  delete fID;
+  delete fID;        fID       = NULL;
+  delete fClusters;  fClusters = NULL;
 }
 
 //_____________________________________________________________________________
@@ -70,6 +74,21 @@ THaTrack::~THaTrack()
 //  }
 
 //_____________________________________________________________________________
+Int_t THaTrack::AddCluster( THaCluster* cluster )
+{
+  // Add a cluster to the internal list
+
+  if( !cluster ) 
+    return 1;
+  TClass* c = cluster->IsA();
+  if( !c || !c->InheritsFrom("THaCluster") )
+    return 2;
+
+  fClusters->Add( cluster );
+  return 0;
+}
+
+//_____________________________________________________________________________
 void THaTrack::Clear( const Option_t* opt )
 {
   // Reset track quantities. 
@@ -82,6 +101,7 @@ void THaTrack::Clear( const Option_t* opt )
   fPhi   = 0.0;
   fX     = 0.0;
   fY     = 0.0;
+  fClusters->Clear( opt );
   if( fPIDinfo ) fPIDinfo->Clear( opt );
   //  if( fVertex )  fVertex->Clear( opt );
 }
@@ -125,6 +145,7 @@ void THaTrack::Print( Option_t* opt ) const
   cout << "x_fp     = " << fX   << " mm\n";
   cout << "y_fp     = " << fY   << " mm\n";
 
+  fClusters->Print( opt );
   if( fPIDinfo ) fPIDinfo->Print( opt );
   //  if( fVertex )  fVertex->Print( opt );
 }

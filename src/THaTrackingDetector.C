@@ -46,8 +46,7 @@ THaTrackingDetector::~THaTrackingDetector()
 //_____________________________________________________________________________
 THaTrack* THaTrackingDetector::AddTrack( TClonesArray& tracks,
 					 Double_t p, Double_t theta, 
-					 Double_t phi, Double_t x, Double_t y,
-					 TClonesArray* clusters )
+					 Double_t phi, Double_t x, Double_t y )
 {
   // Add a track with the given parameters to the array of tracks
   // Returns the index of the created track in the TClonesArray.
@@ -55,15 +54,15 @@ THaTrack* THaTrackingDetector::AddTrack( TClonesArray& tracks,
   Int_t i = tracks.GetLast()+1;
   THaPIDinfo* pid = 0;
   THaVertex*  vertex = 0;
-  THaSpectrometer* spectro = static_cast<THaSpectrometer*>( fApparatus );
+  THaSpectrometer* spect = static_cast<THaSpectrometer*>( fApparatus );
 
-  if( spectro ) {
+  if( spect ) {
 
     // Create new PIDinfo and vertex objects if necessary
 
-    UInt_t ndet      = spectro->GetNpidDetectors();
-    UInt_t npart     = spectro->GetNpidParticles();
-    TClonesArray& c  = *spectro->GetTrackPID();
+    UInt_t ndet      = spect->GetNpidDetectors();
+    UInt_t npart     = spect->GetNpidParticles();
+    TClonesArray& c  = *spect->GetTrackPID();
 
     // caution: c[i] creates an empty object at i if slot i was empty,
     // so use At(i) to check.
@@ -71,7 +70,7 @@ THaTrack* THaTrackingDetector::AddTrack( TClonesArray& tracks,
     if( i > c.GetLast() || !c.At(i) )  new( c[i] ) THaPIDinfo( ndet, npart );
     pid = static_cast<THaPIDinfo*>( c.At(i) );
   
-    //  TClonesArray& c2 = *spectro->GetVertices();
+    //  TClonesArray& c2 = *spect->GetVertices();
     //  if( !c2.At(i) )  new( c2[i] ) THaVertex();
     //vertex = static_cast<THaVertex*>( c2.At(i) );
 
@@ -82,8 +81,7 @@ THaTrack* THaTrackingDetector::AddTrack( TClonesArray& tracks,
 
   // Create the track
 
-  return new( tracks[i] ) THaTrack( p, theta, phi, x, y, 
-				    spectro, clusters, pid, vertex );
+  return new( tracks[i] ) THaTrack( p, theta, phi, x, y, spect, pid, vertex );
 
 }
 
