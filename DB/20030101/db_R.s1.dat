@@ -2,10 +2,10 @@
 Number of Right Scintillator 1 paddles -----------------------------------------
        6
 Crate,Slot,1st,Last ADC chans,Beg S1 chan --------------------------------------
-       1      25      48      53       1             - ADCs pads 7-12 (right)
-       1      25       0       5       7             - ADCs pads 1-6  (left)
-       1      16      32      37       1             - TDCs pads 7-12 (right)
-       1      16      16      21       7             - TDCs pads 1-6  (left)
+       1      25      48      53       1             - ADCs pads 1-6  (right)
+       1      25       0       5       7             - ADCs pads 7-12 (left)
+       1      16      32      37       1             - TDCs pads 1-6  (right)
+       1      16      16      21       7             - TDCs pads 7-12 (left)
       -1       0       0       0       0
 X,Y,Z coords (in cm) of S1 front plane in spectrom cs --------------------------
      0.0     0.0   138.1                             - Centimeters
