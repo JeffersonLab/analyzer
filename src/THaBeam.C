@@ -22,8 +22,6 @@ THaBeam::THaBeam( const char* name, const char* desc ) :
   // Constructor.
   // Protected. Can only be called by derived classes.
 
-
-  fDetectors    = new TList;
 }
 
 
