@@ -4,13 +4,13 @@ Number of Left Scintillator 1 paddles ------------------------------------------
 Crate,Slot,1st,Last ADC chans,Beg S1 chan --------------------------------------
        2      25      16      21       1             - ADCs pads 1-6  (right)
        2      25       0       5       7             - ADCs pads 7-12 (left)
-       2       3      16      21       1             - TDCs pads 1-6  (right)
-       2       3       0       5       7             - TDCs pads 7-12 (left)
+       2      23      16      21       1             - TDCs pads 1-6  (right)
+       2      23       0       5       7             - TDCs pads 7-12 (left)
       -1       0       0       0       0
-X,Y,Z coords (in cm) of S1 front plane in spectrom cs --------------------------
-   -12.9     0.0   128.73                            - Centimeters
-Half of X, half of Y, full Z sizes (in cm) of S1 -------------------------------
-    88.0    18.0     0.5                             - Centimeters
+X,Y,Z coords of S1 front plane in spectrom cs ----------------------------------
+   -0.129     0.0    1.2873                            - Meters
+Half of X, half of Y, full Z sizes of S1 ---------------------------------------
+    0.88    0.18     0.005                             - Meters
 Rotation angle of the S1 plane -------------------------------------------------
      0.0                                             - Degrees
 TDC time offsets of S1 TDC channels --------------------------------------------

@@ -4,13 +4,13 @@ Number of Left Scintillator 2 paddles ------------------------------------------
 Crate,Slot,1st,Last ADC chans,Beg S2 chan --------------------------------------
        2      25      22      27       1             - ADCs pads 1-6  (right)
        2      25       6      11       7             - ADCs pads 7-12 (left)
-       2       3      24      29       1             - TDCs pads 1-6  (right)
-       2       3       8      13       7             - TDCs pads 7-12 (left)
+       2      23      22      27       1             - TDCs pads 1-6  (right)
+       2      23       6      11       7             - TDCs pads 7-12 (left)
       -1       0       0       0       0
-X,Y,Z coords (in cm) of S2 front plane in spectrom cs --------------------------
-   -22.0     0.0  314.15                             - Centimeters
-Half of X, half of Y, full Z sizes (in cm) of S2 -------------------------------
-   111.0    32.0     0.5                             - Centimeters
+X,Y,Z coords of S2 front plane in spectrom cs ----------------------------------
+   -0.22     0.0     3.1415                          - Meters
+Half of X, half of Y, full Z sizes of S2 ---------------------------------------
+    1.11    0.32     0.005                           - Meters
 Rotation angle of the S2 plane -------------------------------------------------
      0.0                                             - Degrees
 TDC time offsets of S2 TDC channels --------------------------------------------

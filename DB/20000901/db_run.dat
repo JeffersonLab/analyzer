@@ -113,3 +113,19 @@ R.pcentral = 1.0148
 
 L.theta    = 16.842
 L.pcentral = 1.911
+
+
+--------[ 2000-10-09 06:00:00 ]
+
+ebeam      = 3.175
+
+R.pcentral = 1.4189
+R.theta    = -39.561
+L.pcentral = 3.1467
+L.theta    = 13.995
+
+--------[ 2000-10-09 15:05:00 ]
+
+L.pcentral = 2.372
+L.theta    = 18.622
+
