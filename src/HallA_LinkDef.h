@@ -95,7 +95,8 @@
 #pragma link C++ class THaDB+;
 #pragma link C++ class THaDetConfig+;
 #pragma link C++ class THaDBFile+;
-#pragma link C++ class THaCoincidenceTime+;
+#pragma link C++ class THaCoincTime+;
+#pragma link C++ class THaS2CoincTime+;
 #pragma link C++ class THaTrackProj+;
 #pragma link C++ class THaPostProcess+;
 #pragma link C++ class THaFilter+;
