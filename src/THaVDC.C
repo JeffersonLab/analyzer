@@ -136,11 +136,11 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   char w;
   bool good = false;
 
-  fTMatrixElems.erase( fTMatrixElems.begin(), fTMatrixElems.end());
-  fDMatrixElems.erase( fDMatrixElems.begin(), fDMatrixElems.end());
-  fPMatrixElems.erase( fPMatrixElems.begin(), fPMatrixElems.end());
-  fYMatrixElems.erase( fYMatrixElems.begin(), fYMatrixElems.end());
-  fFPMatrixElems.erase( fFPMatrixElems.begin(), fFPMatrixElems.end());
+  fTMatrixElems.clear();
+  fDMatrixElems.clear();
+  fPMatrixElems.clear();
+  fYMatrixElems.clear();
+  fFPMatrixElems.clear();
 
   // read in t000 and verify it
   ME.iszero = true;  ME.order = 0;
