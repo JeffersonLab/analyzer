@@ -101,7 +101,7 @@ public:
         return pm->second;
       }
     }
-    return 0;
+    return -1e32;  // Not found = -1e32 = undefined
   };
   THaString GetName() { return fName; };
 private:
