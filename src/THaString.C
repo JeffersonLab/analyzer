@@ -22,6 +22,10 @@
 
 using namespace std;
 
+// Make sure we have non-macro versions of tolower and toupper
+static int my__tolower(char c) { return tolower(c); }
+static int my__toupper(char c) { return toupper(c); }
+
 //_____________________________________________________________________________
 int THaString::CmpNoCase (const THaString& s) const
 {
@@ -71,7 +75,7 @@ THaString THaString::ToLower() const
   // Return copy of this string converted to lower case.
 
   THaString result(*this);
-  transform( begin(), end(), result.begin(), tolower );
+  transform( begin(), end(), result.begin(), my__tolower );
   return result;
 }
 
@@ -80,7 +84,7 @@ THaString THaString::ToUpper() const
 {
   // Return copy of this string converted to upper case.
   THaString result(*this);
-  transform( begin(), end(), result.begin(), toupper );
+  transform( begin(), end(), result.begin(), my__toupper );
   return result;
 }
 
