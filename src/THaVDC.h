@@ -92,7 +92,6 @@ protected:
   class THaMatrixElement {
   public:
     THaMatrixElement() : iszero(true), pw(3), order(0), v(0), poly(kPORDER) {}
-    THaMatrixElement& operator=( const THaMatrixElement& ) { return *this; }
 
     bool iszero;             // whether the element is zero
     std::vector<int> pw;     // exponents of matrix element
