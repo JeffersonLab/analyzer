@@ -40,8 +40,10 @@ public:
   virtual ~THaOdata() { delete [] data; };
   void AddBranches(TTree *T, std::string name) {
      std::string sname = "Ndata." + name;
-     T->Branch(sname.c_str(),&ndata,"ndata/I");
-     T->Branch(name.c_str(),data,"data[ndata]/D");
+     std::string leaf = sname;
+     T->Branch(sname.c_str(),&ndata,(leaf+"/I").c_str());
+     leaf = "data["+leaf+"]/D";
+     T->Branch(name.c_str(),data,leaf.c_str());
   }
   void Clear( Option_t* opt="" ) {
     ndata = 0; memset(data, 0, nsize*sizeof(Double_t)); 
