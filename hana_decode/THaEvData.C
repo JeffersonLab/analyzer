@@ -110,7 +110,7 @@ TString THaEvData::DevType(int crate, int slot) const {
   return " ";
 };
 
-Double_t THaEvData::GetTime() const {
+Double_t THaEvData::GetEvTime() const {
   return helicity->GetTime();
 };
 
