@@ -144,7 +144,7 @@ Int_t THaVDC::ReadDatabase( FILE* file, const TDatime& date )
 	}
 	if(ME.poly[p_cnt] != 0.0) {
 	  ME.iszero = false;
-	  ME.order = p_cnt;
+	  ME.order = p_cnt+1;
 	}
       }
     }
@@ -170,7 +170,7 @@ Int_t THaVDC::ReadDatabase( FILE* file, const TDatime& date )
 	}
 	if(ME.poly[p_cnt] != 0.0) {
 	  ME.iszero = false;
-	  ME.order = p_cnt;
+	  ME.order = p_cnt+1;
 	}
       }
     }
@@ -195,7 +195,7 @@ Int_t THaVDC::ReadDatabase( FILE* file, const TDatime& date )
 	}
 	if(ME.poly[p_cnt] != 0.0) {
 	  ME.iszero = false;
-	  ME.order = p_cnt;
+	  ME.order = p_cnt+1;
 	}
       }
     }
@@ -222,7 +222,7 @@ Int_t THaVDC::ReadDatabase( FILE* file, const TDatime& date )
 
       if(ME.poly[p_cnt] != 0.0) {
 	ME.iszero = false;
-	ME.order = p_cnt;
+	ME.order = p_cnt+1;
       }
     }
     
@@ -900,5 +900,6 @@ void THaVDC::FindBadTracks(TClonesArray& tracks)
   // get rid of the slots for the deleted tracks
   //tracks.Compress();
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////
