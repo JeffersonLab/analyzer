@@ -62,7 +62,7 @@ void THaSecondaryKine::Clear( Option_t* opt )
     = fPmiss_x = fPmiss_y = fPmiss_z = fEmiss = fMrecoil = fErecoil
     = fTX = fTB = fPX_cm = fTheta_x_cm = fPhi_x_cm = fTheta_b_cm
     = fPhi_b_cm = fTX_cm = fTB_cm = fTtot_cm = fMandelS = fMandelT
-    = fMandelU = kBig;
+    = fMandelU = fPrecoil_x = fPrecoil_y = fPrecoil_z = kBig;
   fX.SetXYZT(kBig,kBig,kBig,kBig); 
   fB.SetXYZT(kBig,kBig,kBig,kBig);
 }
@@ -94,6 +94,9 @@ Int_t THaSecondaryKine::DefineVariables( EMode mode )
                   "omega-Tx-Tb", "fEmiss" },
     { "Mrecoil",  "Invariant mass of recoil system (GeV)", "fMrecoil" },
     { "Erecoil",  "Total energy of recoil system (GeV)", "fErecoil" },
+    { "Prec_x",   "x-component of recoil system in lab (GeV/c)", "fPrecoil_x" },
+    { "Prec_y",   "y-component of recoil system in lab (GeV/c)", "fPrecoil_y" },
+    { "Prec_z",   "z-component of recoil system in lab (GeV/c)", "fPrecoil_z" },
     { "tx",       "Kinetic energy of detected particle (GeV)", "fTX" },
     { "tb",       "Kinetic energy of recoil system (GeV)", "fTB" },
     { "px_cm",    "Magnitude of X momentum in CM system (GeV)", "fPX_cm" },
@@ -219,6 +222,10 @@ Int_t THaSecondaryKine::Process( const THaEvData& evdata )
   // In production reactions, the "missing energy" is defined 
   // as the energy of the undetected recoil system:
   fErecoil = fB.E();
+
+  fPrecoil_x = fB.X();
+  fPrecoil_y = fB.Y();
+  fPrecoil_z = fB.Z();
 
   // Calculate some interesting quantities in the CM system of A'.
   // NB: If the target is initially at rest, the A'-vector (spatial part)

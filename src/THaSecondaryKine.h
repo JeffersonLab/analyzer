@@ -37,6 +37,9 @@ public:
   Double_t          GetEmiss()      const { return fEmiss; }
   Double_t          GetMrecoil()    const { return fMrecoil; }
   Double_t          GetErecoil()    const { return fErecoil; }
+  Double_t          GetPrecoil_x()  const { return fPrecoil_x; }
+  Double_t          GetPrecoil_y()  const { return fPrecoil_y; }
+  Double_t          GetPrecoil_z()  const { return fPrecoil_z; }
   Double_t          GetTX()         const { return fTX; }
   Double_t          GetTB()         const { return fTB; }
   Double_t          GetPX_cm()      const { return fPX_cm; }
@@ -76,6 +79,9 @@ protected:
   Double_t fEmiss;      // Missing energy (GeV), nuclear physics definition omega-Tx-Tb
   Double_t fMrecoil;    // Invariant mass of recoil system (GeV)
   Double_t fErecoil;    // Total energy of recoil system (GeV)
+  Double_t fPrecoil_x;  // x-component of recoil system mom in lab (GeV/c)
+  Double_t fPrecoil_y;  // y-component of recoil system mom in lab (GeV/c)
+  Double_t fPrecoil_z;  // z-component of recoil system mom in lab (GeV/c)
   Double_t fTX;         // Kinetic energy of detected particle (GeV)
   Double_t fTB;         // Kinetic energy of recoil system (GeV)
   Double_t fPX_cm;      // Magnitude of X momentum in CM system (GeV)
