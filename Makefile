@@ -169,7 +169,7 @@ SRC           = src/THaFormula.C src/THaVform.C src/THaVhist.C \
 		src/THaPostProcess.C src/THaFilter.C \
 		src/THaElossCorrection.C src/THaTrackEloss.C \
 		src/THaBeamModule.C src/THaBeamInfo.C src/THaEpicsEbeam.C \
-		src/THaBeamEloss.C
+		src/THaBeamEloss.C THaTrackOut.C
 
 ifdef ONLINE_ET
 SRC += src/THaOnlRun.C
