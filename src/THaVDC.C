@@ -87,16 +87,6 @@ Int_t THaVDC::SetupDetector( const TDatime& date )
   fErrorCutoff = 1e100;
 
   fIsInit = true;
-
-
-  // initialize global variables
-
-  RVarDef vars[] = {
-    { "ntracks", "Number of tracks", "fNtracks" },
-    { 0 }
-  };
-  DefineVariables( vars );
-
   return kOK;
 }
 
@@ -115,7 +105,7 @@ THaVDC::~THaVDC()
 }
 
 //______________________________________________________________________________
-Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t flag )
+Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 {
   // Construct tracks from pairs of upper and lower UV tracks and add 
   // them to 'tracks'
@@ -124,15 +114,16 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t flag )
   if( fDebug>0 ) {
     cout << "-----------------------------------------------\n";
     cout << "ConstructTracks: ";
-    if( flag == 0 )
+    if( mode == 0 )
       cout << "iterating";
-    if( flag == 1 )
+    if( mode == 1 )
       cout << "coarse tracking";
-    if( flag == 2 )
+    if( mode == 2 )
       cout << "fine tracking";
     cout << endl;
   }
 #endif
+  UInt_t theStage = ( mode == 1 ) ? kCoarse : kFine;
 
   fUVpairs->Clear();
 
@@ -332,6 +323,11 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t flag )
 	// FIXME: for debugging
 	n_oops++;
       }
+
+      UInt_t flag = theStage;
+      if( nPairs > 1 )
+	flag |= kMultiTrack;
+
       if( found ) {
 #ifdef WITH_DEBUG
 	if( fDebug>0 )
@@ -349,8 +345,9 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t flag )
 	  AddTrack(*tracks, 0.0, transTheta, transPhi, transX, transY);
 	theTrack->SetID( thisID );
 	theTrack->SetCreator( this );
+	flag |= kReassigned;
       }
-      theTrack->SetFlag(flag);
+      theTrack->SetFlag( flag );
     }
   }
 
@@ -365,7 +362,8 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t flag )
     for( int i = 0; i < tracks->GetLast()+1; i++ ) {
       THaTrack* theTrack = static_cast<THaTrack*>( tracks->At(i) );
       // Track created by this class and not updated?
-      if( (theTrack->GetCreator() == this) && (theTrack->GetFlag() < flag) ) {
+      if( (theTrack->GetCreator() == this) &&
+	  ((theTrack->GetFlag() & kStageMask) != theStage ) ) {
 #ifdef WITH_DEBUG
 	if( fDebug>0 )
 	  cout << "Track " << i << " deleted.\n";
@@ -374,6 +372,14 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t flag )
 	modified = true;
       }
     }
+    // Get rid of empty slots - they may cause trouble in the Event class and
+    // with global variables.
+    // Note that the PIDinfo and vertices arrays are not reordered.
+    // Therefore, PID and vertex information must always be retrieved from the
+    // track objects, not from the PID and vertex TClonesArrays.
+    // FIXME: Is this really what we want?
+    if( modified )
+      tracks->Compress();
   }
 
   return nTracks;
@@ -447,6 +453,7 @@ Int_t THaVDC::FineTrack( TClonesArray& tracks )
   fNtracks = ConstructTracks( &tracks, 2 );
 
 #ifdef WITH_DEBUG
+  // Wait for user to hit Return
   static char c;
   if( fDebug>1 ) {
     cin.clear();
