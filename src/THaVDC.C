@@ -812,8 +812,10 @@ void THaVDC::CorrectTimeOfFlight(TClonesArray& tracks)
   const static Double_t v = 3.0e-8;   // for now, assume that everything travels at c
 
   // get scintillator planes
-  THaDetector* s1 = fApparatus->GetDetector("s1");
-  THaDetector* s2 = fApparatus->GetDetector("s2");
+  THaScintillator* s1 = static_cast<THaScintillator*>
+    ( fApparatus->GetDetector("s1") );
+  THaScintillator* s2 = static_cast<THaScintillator*>
+    ( fApparatus->GetDetector("s2") );
 
   if( (s1 == NULL) || (s2 == NULL) )
     return;
@@ -866,7 +868,8 @@ void THaVDC::FindBadTracks(TClonesArray& tracks)
 {
   // Flag tracks that don't intercept S2 scintillator as bad
 
-  THaDetector* s2 = fApparatus->GetDetector("s2");
+  THaScintillator* s2 = static_cast<THaScintillator*>
+    ( fApparatus->GetDetector("s2") );
 
   if(s2 == NULL) {
     //cerr<<"Could not find s2 plane!!"<<endl;
