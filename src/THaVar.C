@@ -87,10 +87,11 @@ THaVar& THaVar::operator=( const THaVar& rhs )
     fType      = rhs.fType;
     fCount     = rhs.fCount;
     fOffset    = rhs.fOffset;
+    delete fMethod;
     if( rhs.fMethod )
       fMethod  = new TMethodCall( *rhs.fMethod );
     else
-      fMethod  = NULL;
+      fMethod = NULL;
   }
   return *this;
 }
@@ -107,10 +108,11 @@ void THaVar::Copy( TObject& rhs )
     ((THaVar&)rhs).fType      = fType;
     ((THaVar&)rhs).fCount     = fCount;
     ((THaVar&)rhs).fOffset    = fOffset;
+    delete ((THaVar&)rhs).fMethod;
     if( fMethod )
       ((THaVar&)rhs).fMethod  = new TMethodCall( *fMethod );
     else
-      ((THaVar&)rhs).fMethod  = NULL;
+      ((THaVar&)rhs).fMethod = NULL;
   }
 }
 

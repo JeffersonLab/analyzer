@@ -42,6 +42,7 @@ THaDetMap& THaDetMap::operator=( const THaDetMap& rhs )
 
   if ( this != &rhs ) {
     fNmodules = rhs.fNmodules;
+    delete [] fMap;
     fMap = (UShort_t*) new char[sizeof(UShort_t)*4*kDetMapSize];
     memcpy(fMap,rhs.fMap,sizeof(UShort_t)*4*fNmodules);
   }
