@@ -8,7 +8,11 @@ class THaIORun : public THaRun {
   // extend, to permit us to WRITE events
   // from the evbuffer to a file
  public:
-  THaIORun( const char* filename="", const char* description="", const char* mode="r" );
+  THaIORun( const char* filename="", const char* description="", 
+	    const char* mode="r" );
+  THaIORun( const THaRun& rhs );
+  THaIORun( const THaIORun& rhs );
+  THaIORun& operator=( const THaIORun& rhs );
   virtual ~THaIORun();
   
   virtual Int_t OpenFile();

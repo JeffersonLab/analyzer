@@ -7,6 +7,32 @@
 THaIORun::THaIORun( const char* filename, const char* description, const char* mode)
   : THaRun(filename,description), fIOmode(mode) { }
 
+//_____________________________________________________________________________
+THaIORun& THaIORun::operator=(const THaIORun& rhs)
+{
+  // Assignment operator.
+
+  if (this != &rhs) {
+     THaRun::operator=(rhs);
+     fIOmode = rhs.fIOmode;
+  }
+  return *this;
+}
+
+//______________________________________________________________________________
+THaIORun::THaIORun( const THaRun& rhs ) : 
+  THaRun(rhs), fIOmode("r")
+{
+  // Copy constructor
+}
+
+//______________________________________________________________________________
+THaIORun::THaIORun( const THaIORun& rhs ) : 
+  THaRun(rhs), fIOmode(rhs.fIOmode)
+{
+  // Copy constructor
+}
+
 //__________________________________________________________________________________
 Int_t THaIORun::OpenFile() {
   // Open CODA file for access set
