@@ -789,15 +789,7 @@ void THaAnalyzer::PrintCutSummary() const
     if( fVerbose>1 )
       gHaCuts->Print("STATS");
     if( fSummaryFileName.Length() > 0 ) {
-      TString filename(fSummaryFileName);
-      Ssiz_t pos, dot=-1;
-      while(( pos = filename.Index(".",dot+1)) != kNPOS ) dot=pos;
-      const char* tag = Form("_%d",fRun->GetNumber());
-      if( dot != -1 ) 
-	filename.Insert(dot,tag);
-      else
-	filename.Append(tag);
-      ofstream ostr(filename.Data());
+      ofstream ostr(fSummaryFileName);
       if( ostr ) {
 	// Write to file via cout
 	streambuf* cout_buf = cout.rdbuf();
