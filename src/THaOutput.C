@@ -76,11 +76,15 @@ Int_t THaOutput::Init( const char* filename )
   }
   if( !gHaVars ) return -2;
 
+  fTree = new TTree("T","Hall A Analyzer Output DST");
+
   Int_t err = LoadFile( filename );
   if( err == -1 )
     return 0;       // No error if file not found - then we're just a dummy
-  else if( err != 0 )
+  else if( err != 0 ) {
+    delete fTree; fTree = NULL;
     return -3;
+  }
 
   fNvar = fVarnames.size();  // this gets reassigned below
   fNform = fFormnames.size();
@@ -88,7 +92,6 @@ Int_t THaOutput::Init( const char* filename )
   fN2d = fH2dname.size();
 
   fForm = new Double_t[fNform];
-  fTree = new TTree("T","Hall A Analyzer Output DST");
 
   THaVar *pvar;
   string tinfo;
