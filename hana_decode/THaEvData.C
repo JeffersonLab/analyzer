@@ -566,7 +566,10 @@ int THaEvData::vme_decode(int roc, THaCrateMap* map, const int* evbuffer,
 	}
 	if (((*p)&mask) == head) {
           map->setSlotDone(slot);
-          if (map->getModel(roc,slot) == 1182) {   // LeCroy 1182 ADC
+
+	  int model = map->getModel(roc,slot);
+	  switch(model) {
+	  case 1182:    // LeCroy 1182 ADC
 	    for (chan=0; chan<8; chan++) {
               if( ++p >= pevlen ) goto SlotDone;  
               if(DEBUG) {
@@ -575,8 +578,8 @@ int THaEvData::vme_decode(int roc, THaCrateMap* map, const int* evbuffer,
               if( crateslot[idx(roc,slot)]->loadData("adc",chan,*p,*p)
                   == SD_ERR) goto err;
  	    }
-	  }
-          if (map->getModel(roc,slot) == 7510) {   // Struck 7510 ADC
+	    break;
+	  case 7510:    // Struck 7510 ADC
 	    nhit = ((*p)&0xfff)/8;
 	    if (DEBUG) cout << "nhit 7510 " << nhit << endl;
 	    for (chan=0; chan<8; chan++) {
@@ -591,8 +594,8 @@ int THaEvData::vme_decode(int roc, THaCrateMap* map, const int* evbuffer,
 		    == SD_ERR) goto err;
 	      }
 	    }
-	  }
-          if (map->getModel(roc,slot) == 3123) {  // VMIC 3123 ADC
+	    break;
+	  case 3123:    // VMIC 3123 ADC
 	    for (chan=0; chan<16; chan++) {
               if( ++p >= pevlen ) goto SlotDone;
               if(DEBUG) {
@@ -601,10 +604,10 @@ int THaEvData::vme_decode(int roc, THaCrateMap* map, const int* evbuffer,
               if( crateslot[idx(roc,slot)]->loadData("adc",chan,*p,*p) 
 		  == SD_ERR) goto err;
 	    }
-	  }
+	    break;
 // Note, although there may be scalers in physics events, the
 // "scaler events" dont come here.  See scaler_event_decode().
-          if (map->getModel(roc,slot) == 1151) {  // LeCroy 1151 scaler
+	  case 1151:    // LeCroy 1151 scaler
 	    for (chan=0; chan<16; chan++) {
               if( ++p >= pevlen ) goto SlotDone;
               if(DEBUG) {
@@ -613,10 +616,10 @@ int THaEvData::vme_decode(int roc, THaCrateMap* map, const int* evbuffer,
               if( crateslot[idx(roc,slot)]
 		  ->loadData("scaler",chan,*p,*p) == SD_ERR) goto err;
 	    }
-	  }
+	    break;
 // The CAEN 560 is a little tricky; sometimes only 1 channel was read,
 // so we don't increment ipt. (hmmm... could use time-dep crate map.)
-          if (map->getModel(roc,slot) == 560) {   // CAEN 560 scaler
+	  case 560:     // CAEN 560 scaler
             loc = p;
 	    for (chan=0; chan<16; chan++) {  
               if( ++loc >= pevlen ) goto SlotDone; 
@@ -626,8 +629,8 @@ int THaEvData::vme_decode(int roc, THaCrateMap* map, const int* evbuffer,
               if( crateslot[idx(roc,slot)]
 		  ->loadData("scaler",chan,*loc,*loc) == SD_ERR) goto err;
 	    }
-	  }
-          if (map->getModel(roc,slot) == 3801) {  // Struck 3801 scaler
+	    break;
+	  case 3801:    // Struck 3801 scaler
 	    for (chan=0; chan<32; chan++) {
               if( ++p >= pevlen) goto SlotDone;
               if(DEBUG) {
@@ -636,8 +639,8 @@ int THaEvData::vme_decode(int roc, THaCrateMap* map, const int* evbuffer,
               if( crateslot[idx(roc,slot)]->loadData("scaler",chan,*p,*p)
 	          == SD_ERR) goto err;
 	    }
-	  }
-          if (map->getModel(roc,slot) == 7353) {  // BRs hack for the trigger module
+	    break;
+	  case 7353:    // BRs hack for the trigger module
 	    chan=0;
             raw = (*p)&0xfff;
 	    if(DEBUG) {
@@ -645,9 +648,9 @@ int THaEvData::vme_decode(int roc, THaCrateMap* map, const int* evbuffer,
 	    }
 	    if( crateslot[idx(roc,slot)]->loadData("register",chan,raw,raw)
 		== SD_ERR) goto err;
-	  }
-          if (map->getModel(roc,slot) == 550) {  // CAEN 550 for RICH 
-                                        // ('slot' was called 'chan' in Fortran)
+	    break;
+	  case 550:     // CAEN 550 for RICH 
+	    // ('slot' was called 'chan' in Fortran)
             slotprime = 1+(((*p)&0xff0000)>>16);  
             if (DEBUG) cout << "Rich slot "<<slot<<" "
 			    <<slotprime<<" "<<loc<<" "<<hex<<*p<<dec<<endl; 
@@ -656,7 +659,7 @@ int THaEvData::vme_decode(int roc, THaCrateMap* map, const int* evbuffer,
               if (DEBUG) cout << "Rich ndat = "<<ndat<<endl;
 	      if (p+ndat>pstop) {
 		p=pstop;
-		// FIX ME : in this case a warning should apear
+		// FIXME : in this case a warning should apear
 		//          the buffer/data must be corrupted
 	      }
 	      else {
@@ -673,13 +676,42 @@ int THaEvData::vme_decode(int roc, THaCrateMap* map, const int* evbuffer,
 		p += ndat;
 	      }
 	    }
-	  }
+	    break;
+	  case 775:     // CAEN 775 TDC
+	  case 792:     // CAEN 792 QDC
+	    {
+	      ++p; 
+	      int nword=*p-2;
+	      ++p;
+	      bool is775 = (model == 775);
+	      for (int i=0;i<nword;i++) {
+		++p;
+		chan=((*p)&0x00ff0000)>>16;
+		raw=((*p)&0x00000fff);	      
+		if (is775) {
+		  if (crateslot[idx(roc,slot)]->loadData("tdc",chan,raw,raw)
+		      == SD_ERR) return HED_ERR;
+		} else {
+		  //	      if (map->getModel(roc,slot) == 792) {
+		  if (crateslot[idx(roc,slot)]->loadData("adc",chan,raw,raw)
+		      == SD_ERR) return HED_ERR;
+		}
+	      }
+	      ++p;
+	    }
+	    break;
+	  default:
+	    break;
+	  } //end switch(model)
+
           goto SlotDone;  
-	}
-      }
+
+	} //end if(mask==head)
+      } //end for(slot)
+
 SlotDone:
       if (DEBUG) cout<<"slot done, or skip word"<<endl;
-    }
+    } //end while(p++<pstop)
     goto exit;
 
 err:
