@@ -24,10 +24,11 @@ public:
 protected:
 
   enum EFlags { 
-    kStop = BIT(0)     // Wait for key press after every event
+    kStop  = BIT(0),    // Wait for key press after every event
+    kCount = BIT(1)     // Run for fCount events   
   };
 
-  THaDebugModule() : fNvars(0), fVars(NULL), fFlags(0) {}
+  THaDebugModule() : fNvars(0), fVars(NULL), fFlags(kStop) {}
   THaDebugModule( const THaDebugModule& ) {}
   THaDebugModule& operator=( const THaDebugModule& ) { return *this; }
 
@@ -35,6 +36,7 @@ protected:
   THaVar**        fVars;      // [fNvars] Array of pointers to variables 
   THaPrintOption  fVarString; // Set of strings with variable names
   Int_t           fFlags;     // Option flags
+  Int_t           fCount;     // Event counter
 
   ClassDef(THaDebugModule,0)  // Physics module for debugging
 };

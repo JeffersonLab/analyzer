@@ -22,7 +22,7 @@ ClassImp(THaDebugModule)
 //_____________________________________________________________________________
 THaDebugModule::THaDebugModule( const char* var_list ) :
   THaPhysicsModule("DebugModule","Global variable inspector"), 
-  fNvars(0), fVars(NULL), fVarString(var_list), fFlags(0)
+  fNvars(0), fVars(NULL), fVarString(var_list), fFlags(kStop), fCount(0)
 {
   // Normal constructor.
 }
@@ -53,8 +53,8 @@ THaAnalysisObject::EStatus THaDebugModule::Init( const TDatime& run_time )
     fVars = new THaVar*[ nopt ];
     for( Int_t i=0; i<nopt; i++ ) {
       const char* opt = fVarString.GetOption(i);
-      if( !strcmp( opt, "STOP" ))
-	fFlags |= kStop;
+      if( !strcmp( opt, "NOSTOP" ))
+	fFlags &= ~kStop;
       else {
 	if( THaVar* var = gHaVars->Find( opt ))
 	  fVars[fNvars++] = var;
@@ -77,14 +77,26 @@ Int_t THaDebugModule::Process()
     fVars[i]->Print();
   }
 
+  if( (fFlags & kCount) && --fCount <= 0 ) {
+    fFlags |= kStop;
+    fFlags &= ~kCount;
+  }
   if( fFlags & kStop ) {
-    // Wait for user to hit Return
-    cout << "RETURN: continue, Q: quit\n";
-    char c;
+    // Wait for user input
+    cout << "RETURN: continue, H: run 100 events, R: run to end, Q: quit\n";
+    char c, junk;
     cin.clear();
-    while( !cin.eof() && cin.get(c) && !strchr("\nqQ",c));
+    while( !cin.eof() && cin.get(c) && !strchr("\nqQhHrR",c));
+    if( c != '\n' ) while( !cin.eof() && cin.get() != '\n');
     if( tolower(c) == 'q' )
       return kTerminate;
+    else if( tolower(c) == 'h' ) {
+      fFlags |= kCount;
+      fFlags &= ~kStop;
+      fCount = 100;
+    }
+    else if( tolower(c) == 'r' )
+      fFlags &= ~kStop;
   }
 
   return 0;
