@@ -46,6 +46,52 @@ typedef vector<THaString*>::size_type Vsiz_s;
 Int_t THaOutput::fgVerbose = 1;
 
 //_____________________________________________________________________________
+class THaEpicsKey {
+// Utility class used by THaOutput to store a list of
+// 'keys' to access EPICS data 'string=num' assignments
+public:
+  THaEpicsKey(std::string &nm) : fName(nm) 
+     { fAssign.clear(); }
+  void AddAssign(std::string input) {
+// Add optional assignments.  The input must
+// be of the form "epicsvar=number" (no spaces !)
+// E.g. "Yes=1" "No=2", etc
+   typedef map<string, double>::value_type valType;
+   string::size_type pos;
+   string temp1,temp2;
+   pos = input.find("=");
+   if (pos != string::npos) {
+      temp1.assign(input.substr(0,pos));
+      temp2.assign(input.substr(pos+1,input.length()));
+// In case someone used "==" instead of "="
+      if (temp2.find("=") != string::npos) 
+            temp2.assign
+              (input.substr(pos+2,input.length()));
+      if (strlen(temp2.c_str()) > 0) {
+        double tdat = atof(temp2.c_str());
+        fAssign.insert(valType(temp1,tdat));
+      } else {  // In case of "epicsvar="
+        fAssign.insert(valType(temp1,0));
+     }
+   }
+  };
+  Bool_t IsString() { return (fAssign.size()>0); };
+  Double_t Eval(string input) {
+    if (fAssign.size() == 0) return 0;
+    for (std::map<std::string,Double_t>::iterator pm = fAssign.begin(); pm != fAssign.end(); pm++) {
+      if (input == pm->first) {
+        return pm->second;
+      }
+    }
+    return 0;
+  };
+  THaString GetName() { return fName; };
+private:
+  THaString fName;
+  std::map<std::string,Double_t> fAssign;
+};
+
+//_____________________________________________________________________________
 class THaScalerKey {
 // Utility class used by THaOutput to store a list
 // of 'keys' to access scaler data for output.
@@ -155,6 +201,10 @@ THaOutput::~THaOutput()
        itf != fCuts.end(); itf++) delete *itf;
   for (vector<THaVhist* >::iterator ith = fHistos.begin();
        ith != fHistos.end(); ith++) delete *ith;
+  for (vector<THaScalerKey* >::iterator isca = fScalerKey.begin();
+       isca != fScalerKey.end(); isca++) delete *isca;
+  for (vector<THaEpicsKey* >::iterator iep = fEpicsKey.begin();
+       iep != fEpicsKey.end(); iep++) delete *iep;
 }
 
 //_____________________________________________________________________________
@@ -309,7 +359,7 @@ Int_t THaOutput::Init( const char* filename )
     for(vector<THaString>::size_type i=0; i<fEpicsKey.size()+1; i++)
       fEpicsVar[i] = -1e32;
     for (UInt_t i = 0; i < fEpicsKey.size(); i++) {
-      THaString epicsbr = CleanEpicsName(fEpicsKey[i]);
+      THaString epicsbr = CleanEpicsName(fEpicsKey[i]->GetName());
       tinfo = epicsbr + "/D";
       fTree->Branch(epicsbr.c_str(), &fEpicsVar[i], 
         tinfo.c_str(), kNbout);
@@ -376,7 +426,12 @@ void THaOutput::BuildList(vector<THaString > vdata)
            fFirstEpics = kFALSE;
            return;
        } else {
-           fEpicsKey.push_back(vdata[0]);
+	  fEpicsKey.push_back(new THaEpicsKey(vdata[0]));
+          if (vdata.size() > 1) {
+            for (int k = 1; k < (int)vdata.size(); k++) {
+              fEpicsKey[fEpicsKey.size()-1]->AddAssign(vdata[k]);
+	    }
+	  }
        }
     } else {
        fFirstEpics = kTRUE;
@@ -564,12 +619,20 @@ Int_t THaOutput::ProcEpics(THaEvData *evdata)
     || !fEpicsTree ) return 0;
   fEpicsVar[fEpicsKey.size()] = -1e32;
   for (UInt_t i = 0; i < fEpicsKey.size(); i++) {
-    if (evdata->IsLoadedEpics(fEpicsKey[i].c_str())) {
-      fEpicsVar[i] = 
-         evdata->GetEpicsData(fEpicsKey[i].c_str());
+    if (evdata->IsLoadedEpics(fEpicsKey[i]->GetName().c_str())) {
+      if (fEpicsKey[i]->IsString()) {
+        fEpicsVar[i] = fEpicsKey[i]->Eval(
+          evdata->GetEpicsString(
+             fEpicsKey[i]->GetName().c_str()));
+      } else {
+        fEpicsVar[i] = 
+           evdata->GetEpicsData(
+              fEpicsKey[i]->GetName().c_str());
+      }
  // fill time stamp (once is ok since this is an EPICS event)
       fEpicsVar[fEpicsKey.size()] =
- 	 evdata->GetEpicsTime(fEpicsKey[i].c_str());
+ 	 evdata->GetEpicsTime(
+           fEpicsKey[i]->GetName().c_str());
     } else {
       fEpicsVar[i] = -1e32;  // data not yet found
     }
@@ -849,7 +912,7 @@ THaString THaOutput::StripBracket(THaString& var) const
 }
 
 //_____________________________________________________________________________
-THaString THaOutput::CleanEpicsName(THaString& input) const
+THaString THaOutput::CleanEpicsName(THaString input) const
 {
 // To clean up EPICS variable names that contain
 // bad characters like ":" and arithmetic operations
