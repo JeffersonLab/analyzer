@@ -186,7 +186,7 @@ Int_t THaFormula::DefinedGlobalVariable( const TString& name )
     return -6;
 
   // Parse name for array syntax
-  THaArrayString var(name);
+  THaArrayString var;
   if( var.IsError() ) return -2;
 
   // Find the variable with this name

@@ -76,7 +76,7 @@ int THaCrateMap::setModel(int crate, int slot, UShort_t mod,
   return CM_OK;
 }
 
-int THaCrateMap::SetModelSize( int crate, int slot, UShort_t model ) 
+int THaCrateMap::SetModelSize( int crate, int slot, UShort_t imodel ) 
 {
   // Set the max number of channels and data words for some known modules
   struct ModelPar_t { UShort_t model, nchan, ndata; };
@@ -96,7 +96,7 @@ int THaCrateMap::SetModelSize( int crate, int slot, UShort_t model )
   };
   const ModelPar_t* item = modelpar;
   while( item->model ) {
-    if( model == item->model ) {
+    if( imodel == item->model ) {
       nchan[crate][slot] = item->nchan;
       ndata[crate][slot] = item->ndata;
       return 1;

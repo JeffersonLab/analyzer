@@ -34,7 +34,7 @@ int THaUsrstrutils::getflag(const char *s) const
 char* THaUsrstrutils::getstr(const char *s) const
 {
   const char *pos,*val;
-  char *end;
+  const char *end;
   char *ret;
   int slen;
 

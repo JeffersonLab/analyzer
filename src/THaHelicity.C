@@ -31,6 +31,8 @@ using namespace std;
 
 ClassImp(THaHelicity)
 
+const Double_t THaHelicity::fgTdiff = 14050;
+
 //____________________________________________________________________
 THaHelicity::THaHelicity( ) 
 {

@@ -85,6 +85,8 @@ protected:
   enum { kPORDER = 7 };
 
   // private class for storing matrix element data
+  class THaMatrixElement;
+  friend class THaMatrixElement;
   class THaMatrixElement {
   public:
     THaMatrixElement() : iszero(true), pw(3), order(0), v(0), poly(kPORDER) {}

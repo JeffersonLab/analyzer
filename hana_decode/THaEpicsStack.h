@@ -41,6 +41,9 @@ private:
    static const int EPI_ERR = -1, EPI_OK = 1;
    static const int MAXEPS = 40;   // Number of variables stored per event
    static const int MAXSTACK = 10; // Max stack size (num of events stored here)
+
+   struct epicsDataStack;
+   friend struct epicsDataStack;
    struct epicsDataStack {     // Stack of recent epics data (each is an event)
       int event;               // The nearest CODA event number
       TString tag[MAXEPS];     // EPICS character tags, e.g. "IPM1H04A.XPOS"

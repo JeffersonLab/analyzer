@@ -53,7 +53,7 @@ private:
   static const Int_t fgNbits = 24;   
   static const Int_t fgLarm = 0;
   static const Int_t fgRarm = 1;
-  static const Double_t fgTdiff = 14050;
+  static const Double_t fgTdiff;
   Double_t *fTdavg, *fTdiff, *fT0;
   Double_t *fTlastquad, *fTtol;
   Int_t *fQrt, *fGate, *fFirstquad, *fEvtype;

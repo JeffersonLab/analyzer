@@ -44,9 +44,12 @@ public:
           void        SetCutList( const THaCutList* lst ) { fCutList = lst; }
 
 protected:
+
   enum { kMAXCODES = 100 };            //Max. number of global variables per formula
   enum EVariableType { kUndefined, kVariable, kCut };
 
+  struct FVarDef_t;
+  friend struct FVarDef_t;
   struct FVarDef_t {
     EVariableType type;                //Type of variable in the formula
     const void*   code;                //Pointer to the variable

@@ -59,6 +59,8 @@ protected:
     Int_t       count;
   };
   // Test and histogram blocks
+  struct Stage_t;
+  friend struct Stage_t;
   struct Stage_t {
     const char*   name;
     ESkipReason   skipkey;

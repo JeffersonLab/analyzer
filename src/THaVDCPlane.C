@@ -155,7 +155,7 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
   fMaxTime = 2200;
 
   // first read in the time offsets for the wires
-  float wire_offsets[nWires];
+  float* wire_offsets = new float[nWires];
 
   for (int i = 0; i < nWires; i++) {
     float offset = 0.0;
@@ -202,6 +202,7 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
     new((*fWires)[i]) THaVDCWire( i, fWBeg+i*fWSpac, wire_offsets[i], 
 				  fTTDConv );
 
+  delete [] wire_offsets;
   /*
   for (int i = 0; i < nWires; i++) {
 
