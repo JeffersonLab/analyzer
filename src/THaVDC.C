@@ -22,7 +22,7 @@
 #include "THaVDCTrackPair.h"
 #include "THaVDCHit.h"
 #include "THaScintillator.h"
-#include "THaApparatus.h"
+#include "THaSpectrometer.h"
 #include "TMath.h"
 #include "TClonesArray.h"
 #include "TList.h"
@@ -739,7 +739,7 @@ void THaVDC::CalcTargetCoords(THaTrack *track, const ECoordTypes mode)
 
   // calculate momentum
   dp = CalcTargetVar(fDMatrixElems, powers);
-  /*p = center_momentum * (1+dp); */ p = 0.0;
+  p  = static_cast<THaSpectrometer*>(fApparatus)->GetPcentral() * (1+dp);
 
   //FIXME: estimate x ??
   x = 0.0;
@@ -748,6 +748,10 @@ void THaVDC::CalcTargetCoords(THaTrack *track, const ECoordTypes mode)
   track->SetTarget(x, y, theta, phi);
   track->SetDp(dp);
   track->SetMomentum(p);
+  static_cast<THaSpectrometer*>(fApparatus)->
+    TransportToLab( p, theta, phi, track->GetPvect() );
+
+  //FIXME: set flag to indicate track valid
 }
 
 
