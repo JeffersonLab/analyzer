@@ -108,7 +108,7 @@ Int_t THaDetMap::AddModule( UShort_t crate, UShort_t slot,
 
   const ModuleType* md = module_list;
   while ( md->model && model != md->model ) md++;
-  m.model |= ( md->adc ? ADCBit : 0 ) | ( md->tdc ? TDCBit : 0 );
+  m.model |= ( md->adc ? kADCBit : 0 ) | ( md->tdc ? kTDCBit : 0 );
   
   return ++fNmodules;
 }
@@ -127,9 +127,9 @@ void THaDetMap::Print( Option_t* opt ) const
 	 << setw(5) << m->lo 
 	 << setw(5) << m->hi 
 	 << setw(5) << m->first
-	 << setw(5) << (m->model & ~(ADCBit | TDCBit))
-	 << setw(4) << ( m->model & ADCBit ? "ADC" : " " )
-	 << setw(4) << ( m->model & TDCBit ? "TDC" : " " )
+	 << setw(5) << (m->model & ~(kADCBit | kTDCBit))
+	 << setw(4) << ( IsADC(m) ? "ADC" : " " )
+	 << setw(4) << ( IsTDC(m) ? "TDC" : " " )
 	 << endl;
   }
 }

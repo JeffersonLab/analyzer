@@ -44,9 +44,9 @@ public:
           Module*   GetModule( UShort_t i ) const { return (Module*)fMap+i; }
           Int_t     GetSize() const { return static_cast<Int_t>(fNmodules); }
 
-	  UInt_t    GetModel( Module *d );
-	  Bool_t    IsADC(Module *d);
-	  Bool_t    IsTDC(Module *d);
+  static  UInt_t    GetModel( Module *d );
+  static  Bool_t    IsADC(Module *d);
+  static  Bool_t    IsTDC(Module *d);
 
   virtual void      Print( Option_t* opt="" ) const;
 
@@ -61,23 +61,23 @@ protected:
 
   Int_t        fMaplength;   // current size of the fMap array
   
-  static const UInt_t ADCBit = 0x1<<31;
-  static const UInt_t TDCBit = 0x1<<30;
-  static const UInt_t ModelMask = 0xffff0000;
+  static const UInt_t kADCBit = 0x1<<31;
+  static const UInt_t kTDCBit = 0x1<<30;
+  static const UInt_t kModelMask = 0xffff0000;
   
   ClassDef(THaDetMap,0)   //The standard detector map
 };
 
 inline Bool_t THaDetMap::IsADC(Module* d) {
-  return d->model & ADCBit;
+  return d->model & kADCBit;
 }
 
 inline Bool_t THaDetMap::IsTDC(Module* d) {
-  return d->model & TDCBit;
+  return d->model & kTDCBit;
 }
 
 inline UInt_t THaDetMap::GetModel(Module* d) {
-  return d->model & ModelMask;
+  return d->model & kModelMask;
 }
 
 
