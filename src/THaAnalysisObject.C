@@ -210,16 +210,18 @@ FILE* THaAnalysisObject::OpenFile( const char *name, const TDatime& date,
     vector<string>::iterator it = fnames.begin();
     do {
 #ifdef WITH_DEBUG
-      if( debug_flag>0 )
+      if( debug_flag>1 )
       	cout << "<" << here << ">: Opening database file " << *it;
 #endif
       // Open the database file
       fi = fopen( (*it).c_str(), filemode);
       
 #ifdef WITH_DEBUG
-      if( debug_flag>0 ) 
+      if( debug_flag>1 ) 
 	if( !fi ) cout << " ... failed" << endl;
 	else      cout << " ... ok" << endl;
+      else if( debug_flag>0 && fi )
+	cout << "<" << here << ">: Opened database file " << *it << endl;
 #endif
     } while ( !fi && ++it != fnames.end() );
   }
@@ -317,8 +319,9 @@ vector<string> THaAnalysisObject::GetDBFileList( const char* name,
   filename += "dat";
 
   // Build the searchlist of file names in the order:
-  // <date-dir>/filename DEFAULT/filename ./filename
+  // ./filename <dbdir/<date-dir>/filename <dbdir>/DEFAULT/filename <dbdir>/filename
 
+  fnames.push_back( filename );
   if( found ) {
     item = *thedir + "/" + *it + "/" + filename;
     fnames.push_back( item );
