@@ -67,8 +67,8 @@ THaEvent::~THaEvent()
   // Destructor. Clean up all my objects.
 
   // Delete all histograms that still actually exist
-  HistDef* hdef = fHistDef;
-  if( hdef ) {
+
+  if( HistDef* hdef = fHistDef ) {
     while( hdef->name ) {
       if( gROOT->FindObject( hdef->hname )) {
 	delete hdef->h1;
@@ -90,8 +90,7 @@ void THaEvent::Clear( Option_t* opt )
 {
   // Reset all histograms
 
-  HistDef* hdef = fHistDef;
-  if( hdef ) {
+  if( HistDef* hdef = fHistDef ) {
     while( hdef->name ) {
       if( hdef->h1 )
 	hdef->h1->Reset( opt );
@@ -155,8 +154,7 @@ Int_t THaEvent::HistFill()
 
   Int_t ndat = 0;
 
-  HistDef* hdef = fHistDef;
-  if( hdef ) {
+  if( HistDef* hdef = fHistDef ) {
     while( hdef->name ) {
       if( hdef->h1 && hdef->pvar ) {
 
@@ -192,8 +190,7 @@ Int_t THaEvent::HistInit()
 
   if( !gHaVars ) return -2;
 
-  HistDef* hdef = fHistDef;
-  if( hdef ) {
+  if( HistDef* hdef = fHistDef ) {
     while( hdef->name ) {
 
       // Create new histograms if necessary
@@ -291,8 +288,7 @@ Int_t THaEvent::Fill()
 
   Int_t nvar = 0;
   Int_t ncopy;
-  DataMap* datamap = fDataMap;
-  if( datamap ) {
+  if( DataMap* datamap = fDataMap ) {
     while( datamap->ncopy ) {
       if( datamap->src ) {
 	if( datamap->ncopy>0 )
@@ -303,7 +299,7 @@ Int_t THaEvent::Fill()
 	  memcpy( datamap->dest, datamap->src, ncopy * datamap->size );
 	else {
 	  // For pointer arrays, we need to copy the elements one by one
-	  // Type doesn't matter for memcpy.
+	  // Type doesn't matter for memcpy, but size does ;)
 	  for( int i=0; i<ncopy; i++ ) {
 	    const int** src  = static_cast<const int**>( datamap->src );
 	    int*        dest = static_cast<int*>( datamap->dest );
@@ -330,8 +326,7 @@ Int_t THaEvent::Init()
 
   if( !gHaVars ) return -2;
 
-  DataMap* datamap = fDataMap;
-  if( datamap ) {
+  if( DataMap* datamap = fDataMap ) {
     while( datamap->ncopy ) {
       if( THaVar* pvar = gHaVars->Find( datamap->name )) {
 	datamap->size = pvar->GetTypeSize();
@@ -526,8 +521,7 @@ void THaEvent::Reset( Option_t* opt )
   // event structure and histograms.
 
   // Force histgrams that no longer exist to be recreated
-  HistDef* hdef = fHistDef;
-  if( hdef ) {
+  if( HistDef* hdef = fHistDef ) {
     while( hdef->name ) {
       if( !gROOT->FindObject( hdef->hname ))
 	hdef->h1 = NULL;
