@@ -13,12 +13,16 @@
 class THaDetector;
 class THaEvData;
 class TDatime;
+struct VarDef;
+struct RVarDef;
 
 class THaApparatus : public TNamed {
   
 public:
   enum EStatus { kOK, kNotinit, kInitError };
-
+  enum EType   { kVarDef, kRVarDef };
+  enum EMode   { kDefine, kDelete };
+ 
   virtual ~THaApparatus();
   
   virtual Int_t        AddDetector( THaDetector* det );
@@ -44,6 +48,19 @@ protected:
   Int_t          fNmydets;      // Number of detectors defined in the constructor
   THaDetector**  fMydets;       // Array of pointers to the detectors defined by me
   EStatus        fStatus;       // Initialization status flag
+
+  virtual Int_t  DefineVariables( EMode mode = kDefine ) const   
+    { return kOK; }
+  Int_t          DefineVarsFromList( const VarDef* list, 
+				     EMode mode = kDefine ) const
+    { return DefineVarsFromList( list, kVarDef, mode ); }
+  Int_t          DefineVarsFromList( const RVarDef* list, 
+				     EMode mode = kDefine ) const
+    { return DefineVarsFromList( list, kRVarDef, mode ); }
+  Int_t          DefineVarsFromList( const void* list, 
+				     EType type, EMode mode ) const;
+  virtual Int_t  SetupApparatus( const TDatime& date )
+    { return DefineVariables(); }
 
   //Only derived classes may construct me  
   THaApparatus() : 

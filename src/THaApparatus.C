@@ -16,6 +16,10 @@
 #include "THaDetector.h"
 #include "TClass.h"
 #include "TDatime.h"
+#include "TString.h"
+#include "THaVarList.h"
+#include "THaGlobals.h"
+#include "VarDef.h"
 
 #ifdef WITH_DEBUG
 #include <iostream>
@@ -90,6 +94,53 @@ Int_t THaApparatus::Decode( const THaEvData& evdata )
 }
 
 //_____________________________________________________________________________
+Int_t THaApparatus::DefineVarsFromList( const void* list, 
+					EType type, EMode mode ) const
+{
+  // Add/delete variables defined in 'list' to/from the list of global 
+  // variables, using prefix of the current apparatus.
+  // Internal function that can be called during apparatus initialization.
+
+  TString prefix(fName);
+  prefix.Append(".");
+
+  if( !gHaVars ) {
+    TString here(ClassName()), action;
+    here.Append("::DefineVariables()");
+    if( mode == kDefine )
+      action = "defined";
+    else if( mode == kDelete )
+      action = "deleted";
+    Warning( here.Data(), 
+	     "No global variable list found. No variables %s.", 
+	     action.Data() );
+    return kInitError;
+  }
+
+  if( mode == kDefine ) {
+    if( type == kVarDef )
+      gHaVars->DefineVariables( (const VarDef*)list, 
+				prefix, ClassName() );
+    else if( type == kRVarDef )
+      gHaVars->DefineVariables( (const RVarDef*)list, this,
+				prefix, ClassName() );
+  }
+  else if( mode == kDelete ) {
+    if( type == kVarDef ) {
+      const VarDef* item;
+      while( (item = ((const VarDef*)list)++) && item->name )
+	gHaVars->RemoveName( item->name );
+    } else if( type == kRVarDef ) {
+      const RVarDef* item;
+      while( (item = ((const RVarDef*)list)++) && item->name )
+	gHaVars->RemoveName( item->name );
+    }
+  }
+
+  return kOK;
+}
+
+//_____________________________________________________________________________
 Int_t THaApparatus::Init()
 {
   // Initialize apparatus for current time. See Init(run_time) below.
@@ -139,6 +190,9 @@ Int_t THaApparatus::Init( const TDatime& run_time )
       }
     }
   }
+
+  if( fStatus == kOK )
+    fStatus = static_cast<EStatus>( SetupApparatus( run_time ));
 
   return fStatus;
 }
