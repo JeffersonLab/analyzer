@@ -15,6 +15,8 @@
 class THaParticleInfo;
 class THaPidDetector;
 class THaTrack;
+class TList;
+class THaCut;
 
 class THaSpectrometer : public THaApparatus {
   
@@ -26,7 +28,8 @@ public:
 					   const char* name,
 					   Double_t mass, Int_t charge = 0 );
   virtual Int_t            CalcPID();
-          void             Clear( Option_t* opt="") { fTracks->Clear("C"); }
+          void             Clear( Option_t* opt="") 
+  { fTracks->Clear("C"); fCoarseDone = kFALSE; }
   virtual void             DefinePidParticles();
   virtual Int_t            DefineVariables( EMode mode = kDefine );
   virtual Int_t            FindVertices( TClonesArray& tracks ) = 0;
@@ -40,6 +43,7 @@ public:
           TClonesArray*    GetTrackPID() const { return fTrackPID; }
   //          TClonesArray*    GetVertices() const { return fVertices; }
           Bool_t           IsPID() const       { return fPID; }
+  virtual Int_t            CoarseReconstruct();
   virtual Int_t            Reconstruct();
           void             SetGoldenTrack( THaTrack* t ) { fGoldenTrack = t; }
           void             SetPID( Bool_t b = kTRUE )    { fPID = b; }
@@ -70,7 +74,7 @@ public:
 
 protected:
 
-  static const Int_t kInitTrackMultiplicity = 3;
+  static const Int_t kInitTrackMultiplicity = 5;
 
   TClonesArray*   fTracks;                //Tracks 
   TClonesArray*   fTrackPID;              //PID info for the tracks
@@ -95,6 +99,8 @@ protected:
   Double_t        fSinPhSph, fCosPhSph;   // spherical coordinates
   Double_t        fPcentral;              //Central momentum (GeV)
   Double_t        fCollDist;              //Distance from collimator to target center (m)
+
+  Bool_t          fCoarseDone;    //Coarse Reconstruct done
 
   // only derived classes can construct me
   THaSpectrometer() {}

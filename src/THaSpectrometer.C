@@ -37,7 +37,7 @@ ClassImp(THaSpectrometer)
 THaSpectrometer::THaSpectrometer( const char* name, const char* desc ) : 
   THaApparatus( name,desc ), fGoldenTrack(NULL), 
   fPID(kFALSE), fThetaGeo(0.0), fPhiGeo(0.0), fPcentral(1.0), fCollDist(0.0),
-  fListInit(kFALSE)
+  fCoarseDone(kFALSE), fListInit(kFALSE)
 {
   // Constructor.
   // Protected. Can only be called by derived classes.
@@ -231,6 +231,57 @@ void THaSpectrometer::ListInit()
 }
 
 //_____________________________________________________________________________
+Int_t THaSpectrometer::CoarseReconstruct()
+{
+  // The Coarse processing step of Reconstruct is a separate callable
+  // routine so tests can be done after this stage.
+  // This code is called automatically by Reconstruct if not
+  // explicitly called earlier.
+
+  if( !fListInit ) ListInit();
+
+  TIter nextTrack( fTrackingDetectors );
+  TIter nextNonTrack( fNonTrackingDetectors );
+
+  // 1st step: Coarse tracking.  This should be quick and dirty.
+  // Any tracks found are put in the fTrack array.
+
+  nextTrack.Reset();
+  while( THaTrackingDetector* theTrackDetector =
+	 static_cast<THaTrackingDetector*>( nextTrack() )) {
+#ifdef WITH_DEBUG
+    if( fDebug>0 ) cout << "Call CoarseTrack() for " 
+			<< theTrackDetector->GetName() << "... ";
+#endif
+    theTrackDetector->CoarseTrack( *fTracks );
+#ifdef WITH_DEBUG
+    if( fDebug>0 ) cout << "done.\n";
+#endif
+  }
+
+  // 2nd step: Coarse processing.  Pass the coarse tracks to the remaining
+  // detectors for any processing that can be done at this stage.
+  // This may include clustering and preliminary PID.
+  // PID information is tacked onto the tracks as a THaPIDinfo object.
+
+  nextNonTrack.Reset();
+  while( THaNonTrackingDetector* theNonTrackDetector =
+	 static_cast<THaNonTrackingDetector*>( nextNonTrack() )) {
+#ifdef WITH_DEBUG
+    if( fDebug>0 ) cout << "Call CoarseProcess() for " 
+			<< theNonTrackDetector->GetName() << "... ";
+#endif
+    theNonTrackDetector->CoarseProcess( *fTracks );
+#ifdef WITH_DEBUG
+    if( fDebug>0 ) cout << "done.\n";
+#endif
+  }
+
+  fCoarseDone = kTRUE;
+  return 0;
+}
+
+//_____________________________________________________________________________
 Int_t THaSpectrometer::Reconstruct()
 {
   // This method implements a fairly generic algorithm for spectrometer
@@ -263,47 +314,10 @@ Int_t THaSpectrometer::Reconstruct()
   // Test blocks can be used to quit processing when appropriate.
   //
 
-  if( !fListInit ) ListInit();
+  if( !fCoarseDone ) CoarseReconstruct();
 
   TIter nextTrack( fTrackingDetectors );
   TIter nextNonTrack( fNonTrackingDetectors );
-  Clear();
-
-  // 1st step: Coarse tracking.  This should be quick and dirty.
-  // Any tracks found are put in the fTrack array.
-
-  while( THaTrackingDetector* theTrackDetector =
-	 static_cast<THaTrackingDetector*>( nextTrack() )) {
-#ifdef WITH_DEBUG
-    if( fDebug>0 ) cout << "Call CoarseTrack() for " 
-			<< theTrackDetector->GetName() << "... ";
-#endif
-    theTrackDetector->CoarseTrack( *fTracks );
-#ifdef WITH_DEBUG
-    if( fDebug>0 ) cout << "done.\n";
-#endif
-  }
-
-  // --evaluate test block--
-
-  // 2nd step: Coarse processing.  Pass the coarse tracks to the remaining
-  // detectors for any processing that can be done at this stage.
-  // This may include clustering and preliminary PID.
-  // PID information is tacked onto the tracks as a THaPIDinfo object.
-
-  while( THaNonTrackingDetector* theNonTrackDetector =
-	 static_cast<THaNonTrackingDetector*>( nextNonTrack() )) {
-#ifdef WITH_DEBUG
-    if( fDebug>0 ) cout << "Call CoarseProcess() for " 
-			<< theNonTrackDetector->GetName() << "... ";
-#endif
-    theNonTrackDetector->CoarseProcess( *fTracks );
-#ifdef WITH_DEBUG
-    if( fDebug>0 ) cout << "done.\n";
-#endif
-  }
-
-  // --evaluate test block--
 
   // 3rd step: Fine tracking.  Compute the tracks with high precision.
   // If coarse tracking was done, this step should simply "refine" the
@@ -321,8 +335,6 @@ Int_t THaSpectrometer::Reconstruct()
     if( fDebug>0 ) cout << "done.\n";
 #endif
   }
-
-  // --evaluate test block--
 
   // 4th step: Fine processing.  Pass the precise tracks to the
   // remaining detectors for any precision processing.
@@ -345,24 +357,15 @@ Int_t THaSpectrometer::Reconstruct()
 
   FindVertices( *fTracks );
 
-  // --evaluate test block--
-
-
   // Compute additional track properties (e.g. momentum, beta)
   // Find "Golden Track" if appropriate.
 
   TrackCalc();
 
-  // --evaluate test block--
-
-
   // Compute combined PID
 
   if( fPID ) CalcPID();
       
-  // --evaluate test block--
-
-
   return 0;
 }
 
