@@ -770,15 +770,7 @@ void THaVDC::CalcTargetCoords(THaTrack *track, const ECoordTypes mode)
   p  = static_cast<THaSpectrometer*>(fApparatus)->GetPcentral() * (1.0+dp);
 
   // pathlength matrix is for the Transport coord plane
-  Double_t powersT[kNUM_PRECOMP_POW][4];  // {(x), th, y, ph }
-  // calculate the powers we need
-  for(int i=0; i<kNUM_PRECOMP_POW; i++) {
-    powersT[i][0] = pow(track->GetX(), i);
-    powersT[i][1] = pow(track->GetTheta(), i);
-    powersT[i][2] = pow(track->GetY(), i);
-    powersT[i][3] = pow(track->GetPhi(), i);
-  }
-  pathl = CalcTarget2FPLen(fLMatrixElems, powersT);
+  pathl = CalcTarget2FPLen(fLMatrixElems, powers);
 
   //FIXME: estimate x ??
   x = 0.0;
