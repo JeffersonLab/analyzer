@@ -15,7 +15,7 @@ class THaCluster : public TObject {
 public:
   THaCluster() {}
   THaCluster( const THaCluster& rhs ) : 
-    TObject(rhs), fCenter(rhs.fCenter) {}
+    fCenter(rhs.fCenter) {}
   THaCluster& operator=( const THaCluster& );
   virtual ~THaCluster() {}
 
