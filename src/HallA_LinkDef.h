@@ -25,6 +25,7 @@
 #pragma link C++ class THaDecData+;
 #pragma link C++ class THaAnalysisObject+;
 #pragma link C++ class THaDetectorBase+;
+#pragma link C++ class THaPhysicsModule+;
 #pragma link C++ class THaDetector+;
 #pragma link C++ class THaSubDetector+;
 #pragma link C++ class THaSpectrometerDetector+;
