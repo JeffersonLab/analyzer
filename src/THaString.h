@@ -37,7 +37,7 @@ public:
   // Major functions
 
   int CmpNoCase (const THaString& s) const; // case insensitive compare
-  vector<THaString> Split() const;   // split on whitespace
+  std::vector<THaString> Split() const;   // split on whitespace
   UInt_t Hex() const;      // conversion to to unsigned interpreting as hex
   THaString ToLower() const; // conversion to lower case
   THaString ToUpper() const; // conversion to lower case
