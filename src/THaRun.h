@@ -66,7 +66,7 @@ protected:
   UInt_t        fFirstEvent;   //  First event to analyze
   UInt_t        fLastEvent;    //  Last event to analyze
   THaCodaFile*  fCodaFile;     //! CODA file associated with this run
-  bool          fDBRead;       //  True if database successfully read.
+  bool          fDBRead;       //! True if database successfully read.
 
   // The following comes from the run database
   Double_t      fBeamE;        //  Total nominal beam energy (GeV)
