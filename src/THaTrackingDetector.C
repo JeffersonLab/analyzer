@@ -45,7 +45,8 @@ THaTrackingDetector::~THaTrackingDetector()
 //_____________________________________________________________________________
 THaTrack* THaTrackingDetector::AddTrack( TClonesArray& tracks,
 					 Double_t x, Double_t y,
-					 Double_t theta, Double_t phi )
+					 Double_t theta, Double_t phi,
+					 THaTrackID* ID )
 {
   // Add a track with the given parameters to the array of tracks
   // Returns the index of the created track in the TClonesArray.
@@ -75,7 +76,7 @@ THaTrack* THaTrackingDetector::AddTrack( TClonesArray& tracks,
 
   // Create the track
 
-  return new( tracks[i] ) THaTrack( x, y, theta, phi, this, NULL, pid );
+  return new( tracks[i] ) THaTrack( x, y, theta, phi, this, ID, pid );
 
 }
 
