@@ -5,7 +5,8 @@
 # Also contains "directives" that control xscaler and simplify
 # the map, e.g. tying helicity scaler map to non-helicity scaler 
 # For documentation about this file, see
-# http://hallaweb.jlab.org/equipment/daq/THaScaler_map.html
+# http://hallaweb.jlab.org/equipment/daq/THaScaler.html (scroll to "scaler.map"
+# near the end of that web page).
 #
 # ------- Jan 10 2005
 # desc  hel crate slot start nchan  long-description
