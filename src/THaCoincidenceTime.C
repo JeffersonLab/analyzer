@@ -216,7 +216,7 @@ Int_t THaCoincidenceTime::Process( const THaEvData& evdata )
       Double_t m = fSpectro[i].pmass;
       Double_t p = tr->GetP();
       Double_t beta = p/TMath::Sqrt(p*p+m*m);
-#if ROOT_VERSION_CODE >= ROOT_VERSION(3,3,0)
+#if ROOT_VERSION_CODE >= ROOT_VERSION(3,4,0)
       Double_t c = TMath::C();
 #else
       Double_t c = 2.99792458e8;
