@@ -35,7 +35,6 @@
 #pragma link C++ class THaEvent;
 #pragma link C++ class THaEventHeader;
 #pragma link C++ class THaRawEvent;
-#pragma link C++ class THaBtestEvent;
 #pragma link C++ class THaAnalyzer;
 #pragma link C++ class THaPrintOption;
 #pragma link C++ class THaBeam;
