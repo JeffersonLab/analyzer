@@ -92,7 +92,9 @@ THaEvData::THaEvData() :
     if( fInstance > 1 )
       prefix.Append(Form("%d",fInstance));
     prefix.Append(".");
+#ifndef STANDALONE
     gHaVars->DefineVariables( vars, prefix, "THaEvData::THaEvData" );
+#endif
   } else
     Warning("THaEvData::THaEvData","No global variable list found. "
 	    "Variables not registered.");
