@@ -73,9 +73,8 @@ protected:
   Double_t      fBeamdE;       //  Beam energy uncertainty (GeV)
   THaTarget*    fTarget;       //  Pointer to target description
 
-  ClassDef(THaRun,1)   //Description of a run
+  ClassDef(THaRun,2)   //Description of a run
 };
 
 
 #endif
-
