@@ -279,7 +279,7 @@ TTD Lookup Table
 1      13       0          95              ~~~ u2cr2, u2sl2, u2cf2, u2cl2
 1      14       0          95                  u2cr3, u2sl3, u2cf3, u2cl3
 1      15       0          79                  u2cr4, u2sl4, u2cf4, u2cl4
-0.3348 1.02718  -0.0042426 -45.0               z, wbeg, wspac,, wangle (m)
+0.3327 1.02718  -0.0042426 -45.0               z, wbeg, wspac,, wangle (m)
 4.953e4                                        Drift velocity (m/s)
 TDC Offset Values
    1 1862.5    2 1862.5    3 1862.5    4 1862.5    5 1862.5    6 1862.5    7 1862.5    8 1862.5
@@ -416,7 +416,7 @@ TTD Lookup Table
 1      17       0         95               ~~~ v2cr2, v2sl2, v2cf2, v2cl
 1      18       0         95                   v2cr3, v2sl3, v2cf3, v2cl3
 1      19       0         79                   v2cr4, v2sl4, v2cf4, v2cl4
-0.3609 1.02718 -0.0042426 45.0                 z, wbeg, wspac, wangle (m)   
+0.3587 1.02718 -0.0042426 45.0                 z, wbeg, wspac, wangle (m)   
 4.948e4                                        Drift velocity (m/s)
 TDC Offset Values
    1 1863.3    2 1863.3    3 1863.3    4 1863.3    5 1863.3    6 1863.3    7 1863.3    8 1863.3
@@ -549,7 +549,7 @@ TTD Lookup Table
 1.51e+01 1.51e+01 1.51e+01 1.51e+01 1.51e+01 1.51e+01 1.51e+01 1.51e+01 1.51e+01 1.51e+01
 1.51e+01 1.51e+01 1.51e+01 1.51e+01 1.51e+01 1.51e+01 1.51e+01 1.51e+01 7.99e-44
 [ R.global ]
-0.3348 1                     Plane Spacing, TTD Converter
+0.3327 1                     Plane Spacing, TTD Converter
 matrix elements
 T 0 0 0 -1.0031E+00 -3.3291E-01 -4.3678E-02 -1.9383E-03  0.0000E+00  0.0000E+00   0.0000E+00
 Y 0 0 0 -7.7357E-03  1.7858E-03  1.6320E-03  0.0000E+00  0.0000E+00  0.0000E+00   0.0000E+00
