@@ -9,6 +9,8 @@
 
 #include "THaSpectrometer.h"
 
+class THaScintillator;
+
 class THaHRS : public THaSpectrometer {
   
 public:
@@ -17,9 +19,11 @@ public:
 
   virtual Int_t   FindVertices( TClonesArray& tracks );
   virtual Int_t   TrackCalc();
-
+  virtual Int_t   TrackTimes( TClonesArray* tracks );
+  
 protected:
-
+  THaScintillator *sc_ref;  // calculate time track hits this plane
+  
   ClassDef(THaHRS,0) //A Hall A High Resolution Spectrometer
 };
 

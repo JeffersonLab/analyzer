@@ -38,6 +38,10 @@
 //      method since Reconstruct() relies on the presence of the 
 //      standard detectors to some extent.)
 //
+//  For timing calculations, S1 is treated as the scintillator at the
+//  'reference distance', corresponding to the pathlength correction
+//  matrix.
+//
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaHRS.h"
@@ -45,6 +49,7 @@
 #include "THaTrack.h"
 #include "THaScintillator.h"
 #include "THaVDC.h"
+#include "THaTrackProj.h"
 
 #ifdef WITH_DEBUG
 #include <iostream>
@@ -61,6 +66,8 @@ THaHRS::THaHRS( const char* name, const char* description ) :
   AddDetector( new THaVDC("vdc", "Vertical Drift Chamber"));
   AddDetector( new THaScintillator("s1", "S1 scintillator"));
   AddDetector( new THaScintillator("s2", "S2 scintillator"));
+
+  sc_ref = static_cast<THaScintillator*>(GetDetector("s1"));
 }
 
 //_____________________________________________________________________________
@@ -95,6 +102,7 @@ Int_t THaHRS::FindVertices( TClonesArray& tracks )
 //_____________________________________________________________________________
 Int_t THaHRS::TrackCalc()
 {
+  TrackTimes( fTracks );
   // Find the "Golden Track". 
 
   if( GetNTracks() > 0 ) {
@@ -105,6 +113,85 @@ Int_t THaHRS::TrackCalc()
   } else
     fGoldenTrack = NULL;
 
+  return 0;
+}
+
+//_____________________________________________________________________________
+Int_t THaHRS::TrackTimes( TClonesArray* Tracks ) {
+  // Do the actual track-timing (beta) calculation.
+  // Use multiple scintillators to average together and get "best" time at S1.
+  //
+  // To be useful, a meaningful timing resolution should be assigned
+  // to each Scintillator object (part of the database).
+  
+  if ( !Tracks ) return -1;
+  
+  THaTrack *track=0;
+  Int_t ntrack = GetNTracks();
+
+  // linear regression to:  t = t0 + pathl/(beta*c)
+  //   where t0 is the time of the track at the reference plane (sc_ref).
+  //   t0 and beta are solved for.
+  //
+  for ( Int_t i=0; i < ntrack; i++ ) {
+    track = static_cast<THaTrack*>(Tracks->At(i));
+    THaTrackProj* tr_ref = static_cast<THaTrackProj*>
+      (sc_ref->GetTrackHits()->At(i));
+    
+    Double_t pathlref = tr_ref->GetPathLen();
+    
+    Double_t wgt_sum=0.,wx2=0.,wx=0.,wxy=0.,wy=0.;
+    Int_t ncnt=0;
+    
+    // linear regression to get beta and time at ref.
+    TIter nextSc( fNonTrackingDetectors );
+    THaNonTrackingDetector *det;
+    while ( ( det = static_cast<THaNonTrackingDetector*>(nextSc()) ) ) {
+      THaScintillator *sc = dynamic_cast<THaScintillator*>(det);
+      if ( !sc ) continue;
+
+      const THaTrackProj *trh = static_cast<THaTrackProj*>(sc->GetTrackHits()->At(i));
+      
+      Int_t pad = trh->GetChannel();
+      if (pad<0) continue;
+      Double_t pathl = (trh->GetPathLen()-pathlref);
+      Double_t time = (sc->GetTimes())[pad];
+      Double_t wgt = (sc->GetTuncer())[pad];
+      
+      if (pathl>.5*kBig || time>.5*kBig) continue;
+      if (wgt>0) wgt = 1./(wgt*wgt);
+      else continue;
+      
+      wgt_sum += wgt;
+      wx2 += wgt*pathl*pathl;
+      wx  += wgt*pathl;
+      wxy += wgt*pathl*time;
+      wy  += wgt*time;
+      ncnt++;
+    }
+
+    Double_t beta = kBig;
+    Double_t dbeta = kBig;
+    Double_t time = kBig;
+    Double_t dt = kBig;
+    
+    Double_t delta = wgt_sum*wx2-wx*wx;
+    
+    if (delta != 0.) {
+      time = (wx2*wy-wx*wxy)/delta;
+      dt = TMath::Sqrt(wx2/delta);
+      Double_t invbeta = (wgt_sum*wxy-wx*wy)/delta;
+      if (invbeta != 0.) {
+	beta = 1./(TMath::C()*invbeta);
+	dbeta = TMath::Sqrt(wgt_sum/delta)/(TMath::C()*invbeta*invbeta);
+      }
+    } 
+
+    track->SetBeta(beta);
+    track->SetdBeta(dbeta);
+    track->SetTime(time);
+    track->SetdTime(dt);
+  }
   return 0;
 }
 
