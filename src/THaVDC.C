@@ -485,7 +485,14 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
       if( nPairs > 1 )
 	flag |= kMultiTrack;
 
-      if( !found ) {
+      if( found ) {
+#ifdef WITH_DEBUG
+        if( fDebug>0 )
+          cout << "Track " << t << " modified.\n";
+#endif
+        delete thisID;
+        ++n_mod;
+      } else {
 #ifdef WITH_DEBUG
 	if( fDebug>0 )
 	  cout << "Track " << tracks->GetLast()+1 << " added.\n";
