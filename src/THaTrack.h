@@ -27,13 +27,13 @@ public:
     fX(0.0), fY(0.0), fClusters(NULL), fPIDinfo(NULL), fVertex(NULL),
     fSpectrometer(NULL), fID(NULL), fFlag(0) {}
   THaTrack( Double_t p, Double_t theta, Double_t phi, Double_t x, Double_t y,
-	    const THaSpectrometer* s=NULL, const TClonesArray* clusters=NULL,
+	    const THaSpectrometer* s=NULL, TClonesArray* clusters=NULL,
 	    THaPIDinfo* pid=NULL, THaVertex* vertex=NULL, THaTrackID* id=NULL );
   virtual ~THaTrack();
 
   void              Clear( Option_t* opt );
   THaTrackID*       GetID() const                  { return fID; }
-  Int_t             GetFlag() const                { return fFlag; }
+  UInt_t            GetFlag() const                { return fFlag; }
   Double_t          GetP()  const                  { return fP; }
   Double_t          GetPx() const                  { return fPx; }
   Double_t          GetPy() const                  { return fPy; }
@@ -44,7 +44,7 @@ public:
   Double_t          GetPhi() const                 { return fPhi; }
   void              Print( Option_t* opt="" ) const;
   void              SetID( THaTrackID* id )        { fID = id; }
-  void              SetFlag( Int_t flag )          { fFlag = flag; }
+  void              SetFlag( UInt_t flag )         { fFlag = flag; }
   void              SetMomentum( Double_t p, Double_t theta, Double_t phi );
   void              SetPosition( Double_t x, Double_t y );
   void              Set( Double_t p, Double_t theta, Double_t phi, 
@@ -58,7 +58,7 @@ public:
   void              SetVertex( THaVertex* v )      { fVertex   = v; }
 
   const THaTrackingDetector* GetCreator() const      { return fCreator; }
-  const TClonesArray*        GetClusters() const     { return fClusters; }
+        TClonesArray*        GetClusters() const     { return fClusters; }
   const THaSpectrometer*     GetSpectrometer() const { return fSpectrometer; }
   THaPIDinfo*                GetPIDinfo() const      { return fPIDinfo; }
   THaVertex*                 GetVertex() const       { return fVertex; }
@@ -71,16 +71,16 @@ protected:
   Double_t          fPz;             // z momentum component (GeV)
   Double_t          fTheta;          // Tangent of TRANSPORT Theta (x')
   Double_t          fPhi;            // Tangent of TRANSPORT Phi (y')
-  Double_t          fX;              // x position in focal plane (mm)
-  Double_t          fY;              // y position (mm)
+  Double_t          fX;              // x position in focal plane (m)
+  Double_t          fY;              // y position (m)
 
-  const TClonesArray*         fClusters;     // clusters of this track
+  TClonesArray*               fClusters;     // clusters of this track
   THaPIDinfo*                 fPIDinfo;      // particle ID information for this track
   THaVertex*                  fVertex;       // reconstructed vertex quantities
   const THaSpectrometer*      fSpectrometer; // spectrometer this track belongs to
   const THaTrackingDetector*  fCreator;      // Detector creating this track
   THaTrackID*                 fID;           // Track identifier
-  Int_t                       fFlag;         // Status flag
+  UInt_t                      fFlag;         // Status flag
 
   void              CalcPxyz();
 

@@ -21,7 +21,7 @@ ClassImp(THaTrack)
 THaTrack::THaTrack( Double_t p, Double_t theta, Double_t phi, 
 		    Double_t x, Double_t y, 
 		    const THaSpectrometer* s, 
-		    const TClonesArray* clusters,
+		    TClonesArray* clusters,
 		    THaPIDinfo* pid, 
 		    THaVertex* vertex,
 		    THaTrackID* id )
