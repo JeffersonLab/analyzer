@@ -17,7 +17,7 @@
 #include "TInterpreter.h"
 #include "THaVarList.h"
 #include "THaCutList.h"
-#include "THaEvData.h"
+#include "THaCodaDecoder.h"
 #include "THaString.h"
 #include "THaGlobals.h"
 #include "THaAnalyzer.h"
@@ -63,7 +63,7 @@ THaInterface::THaInterface( const char* appClassName, int* argc, char** argv,
   gHaScalers = new TList;
   gHaPhysics = new TList;
   // Use the standard CODA file decoder by default
-  gHaDecoder = THaEvData::Class();
+  gHaDecoder = THaCodaDecoder::Class();
 
   THaString ipath( HA_INCLUDEPATH );
   vector<THaString> ipv(ipath.Split());
