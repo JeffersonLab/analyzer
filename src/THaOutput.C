@@ -374,16 +374,17 @@ Int_t THaOutput::LoadFile( const char* filename )
       continue;
     }
     Int_t ikey = FindKey(strvect[0]);
+    THaString sname = StripBracket(strvect[1]);
     switch (ikey) {
       case kVar:
-  	  fVarnames.push_back(strvect[1]);
+  	  fVarnames.push_back(sname);
           break;
       case kForm:
           if (strvect.size() < 3) {
 	    ErrFile(ikey, sline);
             continue;
 	  }
-          fFormnames.push_back(strvect[1]);
+          fFormnames.push_back(sname);
           fFormdef.push_back(strvect[2]);
           break;
       case kH1:
@@ -391,7 +392,7 @@ Int_t THaOutput::LoadFile( const char* filename )
 	    ErrFile(ikey, sline);
             continue;
 	  }
-	  fH1dname.push_back(strvect[1]);
+	  fH1dname.push_back(sname);
           fH1dtit.push_back(stitle);
           fH1plot.push_back(sfvar1); 
           fH1dbin.push_back(n1);
@@ -405,7 +406,7 @@ Int_t THaOutput::LoadFile( const char* filename )
 	    ErrFile(ikey, sline);
 	    continue;
 	  }
-	  fH2dname.push_back(strvect[1]);
+	  fH2dname.push_back(sname);
           fH2dtit.push_back(stitle);  
           fH2plotx.push_back(sfvar1);  
           fH2ploty.push_back(sfvar2);  
@@ -419,7 +420,7 @@ Int_t THaOutput::LoadFile( const char* filename )
           fH2cutid.push_back(iscut);
           break;          
       case kBlock:
-	  BuildBlock(strvect[1]);
+	  BuildBlock(sname);
 	  break;
       default:
         cout << "Warning: keyword "<<strvect[0]<<" undefined "<<endl;
@@ -474,6 +475,32 @@ Int_t THaOutput::FindKey(const THaString& key) const
     }
   }
   return -1;
+}
+
+//_____________________________________________________________________________
+THaString THaOutput::StripBracket(THaString& var) const
+{
+// If the string contains "[anything]", we strip
+// it away and issue a warning.  In practice this
+// should not be fatal because your variable will 
+// still show up in the tree (e.g. L.s1.lt[4] will
+// show up together with L.s1.lt[0],... etc.).
+  Int_t pos1,pos2;
+  THaString open_brack = "[";
+  THaString close_brack = "]";
+  THaString result = "";
+  pos1 = var.find(open_brack,0);
+  pos2 = var.find(close_brack,0);
+  if ((pos1 != string::npos) &&
+      (pos2 != string::npos)) {
+      result = var.substr(0,pos1);
+      result += var.substr(pos2+1,var.length());    
+      cout << "THaOutput:WARNING:: Stripping away ";
+      cout << "unwanted brackets from "<<var<<endl;
+  } else {
+      result = var;
+  }
+  return result;
 }
 
 //_____________________________________________________________________________

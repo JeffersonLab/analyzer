@@ -90,6 +90,7 @@ protected:
 
    virtual Int_t LoadFile( const char* filename );
    virtual Int_t FindKey(const THaString& key) const;
+   virtual THaString StripBracket(THaString& var) const; 
    virtual void ErrFile(Int_t iden, const THaString& sline) const;
    virtual Int_t ParseTitle(const THaString& sline);
    virtual Int_t BuildBlock(const THaString& blockn);
