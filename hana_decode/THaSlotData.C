@@ -17,90 +17,93 @@
 /////////////////////////////////////////////////////////////////////
 
 #include "THaSlotData.h"
+#include <iostream>
 
-ClassImp(THaSlotData)
+using namespace std;
 
-  THaSlotData::THaSlotData() {  
-      didini = 0;
-      candel = 1;
-      maxc = 0;
-      maxd = 0;
-      ncharc = 0;
-      crate = -1;
-      slot = -1; 
-  };
+static const bool VERBOSE = true;
+
+  THaSlotData::THaSlotData() {
+      didini = false;
+      maxc = maxd = 0;
+      crate = slot = -1; 
+      numchanhit = numraw = 0;
+  }
   THaSlotData::THaSlotData(int cra, int slo) {
-      didini = 0;
-      candel = 1;
-      maxc = 0;
-      maxd = 0;
-      ncharc = 0;
+      didini = false;
+      maxc = maxd = 0;
       crate = cra;
       slot = slo;
-  };
+      numchanhit = numraw = 0;
+  }
   THaSlotData::~THaSlotData() {
-    if( didini && candel ) {
-       delete [] numHits;
-       delete [] chanlist;
-       delete [] chanindex;
-       delete [] rawData;
-       delete [] data;
-       candel = 0;
-    }
-  };
+    if( !didini ) return;
+    delete [] numHits;
+    delete [] chanlist;
+    delete [] chanindex;
+    delete [] rawData;
+    delete [] data;
+  }
 
- void THaSlotData::define(int cra, int slo) {  
+ void THaSlotData::define(int cra, int slo, UShort_t nchan, UShort_t ndata ) {
 // Must call define once if you are really going to use this slot.
 // Otherwise its an empty slot which does not use much memory.
       crate = cra;
       slot = slo;
-      didini = 1;
-      maxc = MAXCHAN;
-      maxd = MAXDATA;
-      ncharc = maxc*sizeof(int)/sizeof(char);
-      numHits = new int[MAXCHAN];
-      chanlist = new int[MAXDATA];
-      chanindex = new int[MAXCHAN];
-      rawData = new int[MAXDATA];
-      data = new int[MAXDATA];
-  };
+      didini = true;
+      maxc = nchan;
+      maxd = ndata;
+      numHits   = new UChar_t[maxc];
+      chanlist  = new UShort_t[maxc];
+      chanindex = new UShort_t[maxc];
+      rawData   = new int[maxd];
+      data      = new int[maxd];
+      numchanhit = numraw = 0;
+      memset(numHits,0,maxc*sizeof(UChar_t));
+  }
 
   int THaSlotData::loadData(const char* type, int chan, int dat, int raw) {
 // loadData loads the data into storage arrays.
 // Note, this algorithm relies on channels being read out
 // in a sequential, not random, order.
-      static int index;
-      if ((chan < 0) || (chan > MAXCHAN)) {
+    if( !didini ) return SD_ERR;
+      if (chan < 0 || chan >= maxc) {
 	if (VERBOSE) {
            cout << "THaSlotData: Warning in loadData: channel ";
-           cout <<dec<<chan<<" out of bounds, ignored."<<endl;
+           cout <<chan<<" out of bounds, ignored."<<endl;
 	}
         return SD_ERR;
       }
-      device = type;
-      int unique = 1;
-      if (numchanhit > 0) {
-         index = numchanhit-1;
-         if (index < maxd) {
-           if (chan == chanlist[index]) unique = 0;
-         }
+      if( numraw >= maxd || numchanhit >= maxc) {
+	if (VERBOSE) {
+	  cout << "THaSlotData: Warning in loadData: too many "
+	       << ((numraw >= maxd ) ? "data words" : "channels")
+	       << " for crate/slot = " 
+	       << crate << " " << slot << endl;
+	}
+	return SD_ERR;
       }
-      if(unique) {
-         if (chan >= 0 && chan < maxc) chanindex[chan] = numraw;
-         if (numchanhit >= 0 && numchanhit < maxd) chanlist[numchanhit++]=chan;
+      if( device.IsNull() ) device = type;
+      if( numchanhit == 0 || chan != chanlist[numchanhit-1] ) {
+	//New channel
+	chanindex[chan] = numraw;
+	chanlist[numchanhit++]=chan;
       }
-      if (numraw >= 0 && numraw < maxd) {
-         rawData[numraw] = raw;
-         data[numraw] = dat;
-         numraw++;
+      rawData[numraw] = raw;
+      data[numraw++]  = dat;
+      if( numHits[chan] == (UChar_t)~0 ) {
+	if( VERBOSE ) 
+	  cout << "THaSlotData: Warning in loadData: too many hits " 
+	       << "for module " << device << " in crate/slot = " 
+	       << dec << crate << " " << slot 
+	       << " chan = " << chan << endl;
+	return SD_ERR;
       }
-      if (chan >= 0 && chan < maxc) {
-         numHits[chan] = numHits[chan] + 1;
-      }         
+      numHits[chan]++;
       return SD_OK;
-  };
+  }
 
-  void THaSlotData::print() {
+  void THaSlotData::print() const {
      cout << "\n THaSlotData contents : " << endl;
      cout << "This is crate "<<dec<<crate<<" and slot "<<slot<<endl;
      cout << "Total Amount of Data : " << dec << getNumRaw() << endl;
@@ -119,7 +122,7 @@ ClassImp(THaSlotData)
      }
      for (i=k; i<getNumRaw(); i++) cout << getRawData(i) << "  ";
      first = true;
-     for (chan=0; chan<MAXCHAN; chan++) {
+     for (chan=0; chan<maxc; chan++) {
        if (getNumHits(chan) > 0) { 
          if (first) {
 	   cout << "\nThis is "<<devType()<<" Data : "<<endl;
@@ -138,33 +141,4 @@ ClassImp(THaSlotData)
      return;
   };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+ClassImp(THaSlotData)

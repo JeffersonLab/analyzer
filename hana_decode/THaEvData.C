@@ -25,27 +25,34 @@
 //
 /////////////////////////////////////////////////////////////////////
 
-#include <stdio.h>
-#include <iostream>
 #include "THaEvData.h"
 #include "THaHelicity.h"
+#include "THaFastBusWord.h"
+#include "THaCrateMap.h"
+#include "THaEpicsStack.h"
+#include "THaUsrstrutils.h"
+#include "THaBenchmark.h"
+#include "TError.h"
+#include <cstring>
+#include <cstdio>
+#include <iostream>
+
 #ifndef STANDALONE
 #include "THaVarList.h"
 #include "THaInterface.h"
 #endif
-#include "TError.h"
-#include <string>
-
-FILE *fdb;
 
 ClassImp(THaEvData)
 
 const int THaEvData::HED_OK  =  1;
 const int THaEvData::HED_ERR = -1;
 
+//_____________________________________________________________________________
+
 THaEvData::THaEvData() :
   first_load(true), first_scaler(true), first_decode(true),
-  numscaler_crate(0), run_num(0), run_type(0), run_time(0)
+  numscaler_crate(0), run_num(0), run_type(0), run_time(0), 
+  fNSlotUsed(0), fNSlotClear(0), fSlotUsed(0), fSlotClear(0)
 {
   buffer = 0;
   epics = new THaEpicsStack;
@@ -53,8 +60,8 @@ THaEvData::THaEvData() :
   for (int i=0; i<MAX_PSFACT; i++) psfact[i] = 0;
   crateslot = new THaSlotData[MAXROC*MAXSLOT];
   helicity = new THaHelicity;
-
-//  fdb = fopen("heldata","w");  
+  cmap = new THaCrateMap;
+  fb = new THaFastBusWord;
 
 #ifndef STANDALONE
 // Register global variables. 
@@ -74,20 +81,50 @@ THaEvData::THaEvData() :
   } else
     Warning("THaEvData::THaEvData","No global variable list found. "
 	    "Variables not registered.");
-#endif
 
-};
+#endif
+  fDoBench = true;
+  if( fDoBench ) {
+    fBench = new THaBenchmark;
+    fTopBench = new THaBenchmark;
+  } else
+    fBench = fTopBench = NULL;
+}
 
 
 THaEvData::~THaEvData() {
-  delete [] crateslot;  
-  delete epics;
-  delete helicity;
+  if( fDoBench ) {
+    Float_t a,b;
+    fTopBench->Summary(a,b);
+    fBench->Summary(a,b);
+  }
+  delete fBench;
+  delete fTopBench;
 #ifndef STANDALONE
   if( gHaVars )
     gHaVars->RemoveRegexp( "g.*" );
 #endif
-};
+  delete [] crateslot;  
+  delete epics;
+  delete helicity;
+  delete cmap;
+  delete fb;
+  delete [] fSlotUsed;
+  delete [] fSlotClear;
+}
+
+int THaEvData::GetPrescaleFactor(int trigger_type) const {
+// To get the prescale factors for trigger number "trigger_type"
+// (valid types are 1,2,3...)
+  if ( (trigger_type > 0) && (trigger_type <= MAX_PSFACT)) {
+    return psfact[trigger_type - 1];
+  }
+  if (VERBOSE) {
+    cout << "Warning:  Requested prescale factor for ";
+    cout << "un-prescalable trigger "<<dec<<trigger_type<<endl;
+  }
+  return 0;
+}
 
 void THaEvData::PrintSlotData(int crate, int slot) {
 // Print the contents of (crate, slot).
@@ -99,75 +136,52 @@ void THaEvData::PrintSlotData(int crate, int slot) {
       cout << "\nexceeds limits.  Cannot print"<<endl;
   }
   return;
-};     
+}     
 
-TString THaEvData::DevType(int crate, int slot) const {
+const char* THaEvData::DevType(int crate, int slot) const {
 // Device type in crate, slot
   if ( (crate >= 0) && (crate < MAXROC) && 
        (slot >= 0) && (slot < MAXSLOT) ) {
-      return crateslot[idx(crate,slot)].devType();
+    return crateslot[idx(crate,slot)].devType();
   }
   return " ";
-};
+}
 
 Double_t THaEvData::GetEvTime() const {
   return helicity->GetTime();
-};
+}
 
-int THaEvData::GetRocLength(int crate) const {
-  if (crate >= 0 && crate < MAXROC) return lenroc[crate];
-  return 0;
-};
 
-int THaEvData::GetPrescaleFactor(int trigger_type) const {
-// To get the prescale factors for trigger number "trigger_type"
-// (valid types are 1,2,3...)
-  if ( (trigger_type > 0) && (trigger_type <= MAX_PSFACT)) {
-        return psfact[trigger_type - 1];
-  };
-  if (VERBOSE) {
-       cout << "Warning:  Requested prescale factor for ";
-       cout << "un-prescalable trigger "<<dec<<trigger_type<<endl;
-  }
-  return 0;
-};
 
-int THaEvData::gendecode(const int* evbuffer, THaCrateMap& map) {
+int THaEvData::gendecode(const int* evbuffer, THaCrateMap* map) {
 // Main engine for decoding, called by public LoadEvent() methods
+  if( fDoBench) fTopBench->Start("gendecode");
+  int ret = HED_OK;
      buffer = evbuffer;
      if(DEBUG) dump(evbuffer);    
      if (first_decode) {
-       if (init_slotdata(map) == HED_ERR) return HED_ERR;
+       if (init_slotdata(map) == HED_ERR) goto err;
        first_decode = false;
      }
-     for (int roc=0; roc<MAXROC; roc++) {
-       lenroc[roc] = 0;
-       if (!map.crateUsed(roc)) continue;
-       for (int slot=0; slot<MAXSLOT; slot++) {
-          if (!map.slotUsed(roc,slot)) continue;
- 	  if (!map.slotClear(roc,slot)) continue;
-          crateslot[idx(roc,slot)].clearEvent();  // clear hit counters
-       }
-     }
-     for (int roc = 0; roc < MAXROC; roc++) {
-          n1roc[roc] = 0;
-          lenroc[roc] = 0;
-          irn[roc]=0;
-     }
+     if( fDoBench ) fBench->Start("clearEvent");
+     for( int i=0; i<fNSlotClear; i++ )
+       crateslot[ fSlotClear[i] ].clearEvent();
+     if( fDoBench ) fBench->Stop("clearEvent");
      evscaler = 0;
      event_length = evbuffer[0]+1;  
      event_type = evbuffer[1]>>16;
-     if(event_type <= 0) return HED_ERR;
+     if(event_type <= 0) goto err;
      if (event_type <= MAX_PHYS_EVTYPE) {
        event_num = evbuffer[4];
        recent_event = event_num;
-       return physics_decode(evbuffer, map);
+       ret = physics_decode(evbuffer, map);
+       goto exit;
      } else {
        event_num = 0;
        switch (event_type) {
 	 case SYNC_EVTYPE :
            evt_time = static_cast<UInt_t>(evbuffer[2]);
-           return HED_OK;
+           goto exit;
 	 case PRESTART_EVTYPE :
            run_time = static_cast<UInt_t>(evbuffer[2]);
            run_num  = evbuffer[3];
@@ -177,35 +191,43 @@ int THaEvData::gendecode(const int* evbuffer, THaCrateMap& map) {
 // now know the run time.  This won't happen for split files (no prestart).
            init_cmap();     
            init_slotdata(cmap);
-           return HED_OK;
+           goto exit;
 	 case GO_EVTYPE :
            evt_time = static_cast<UInt_t>(evbuffer[2]);
-           return HED_OK;
+           goto exit;
 	 case PAUSE_EVTYPE :
            evt_time = static_cast<UInt_t>(evbuffer[2]);
-           return HED_OK;
+           goto exit;
 	 case END_EVTYPE :
            evt_time = static_cast<UInt_t>(evbuffer[2]);
-           return HED_OK;
+	   goto exit;
          case EPICS_EVTYPE :
-           return epics_decode(evbuffer);
+           ret = epics_decode(evbuffer);
+	   goto exit;
          case PRESCALE_EVTYPE :
-           return prescale_decode(evbuffer);
+           ret = prescale_decode(evbuffer);
+	   goto exit;
          case TRIGGER_FILE :
- 	   return HED_OK;
          case DETMAP_FILE :
- 	   return HED_OK;
+ 	   goto exit;
          case SCALER_EVTYPE :
-           return scaler_event_decode(evbuffer,map);
+           ret = scaler_event_decode(evbuffer,map);
+	   goto exit;
          default:
-           return HED_ERR;
+           goto err;
        }
      }
-};
+ err:
+     ret = HED_ERR;
+     goto exit;
+ exit:
+     if( fDoBench ) fTopBench->Stop("gendecode");
+     return ret;
+}
      
 void THaEvData::PrintOut() {
    dump(buffer);
-};
+}
 
 
 void THaEvData::dump(const int* evbuffer) {
@@ -229,80 +251,66 @@ void THaEvData::dump(const int* evbuffer) {
       }
       cout << endl;
    }
-};
+}
 
-int THaEvData::physics_decode(const int* evbuffer, THaCrateMap& map) {
+int THaEvData::physics_decode(const int* evbuffer, THaCrateMap* map) {
      int status = HED_OK;
-     int i,roc,ipt,n1,numroc,lentot;
-     numroc = 0;
 // This decoding is for physics triggers only
      if (evbuffer[3] > MAX_PHYS_EVTYPE) return HED_ERR; 
-// Split up the ROCs
-     lentot = 0;
-     for (i=0; i<MAXROC; i++) {
-       // n1 = pointer to first word of ROC
-       if(i==0) {
-         n1 = evbuffer[2]+3;
-       } else {
-         n1 = n1roc[irn[i-1]]+lenroc[irn[i-1]]+1;
-       }
-       if( (n1+1) >= event_length ) break;
-       // irn = ROC number 
-       irn[i]=(evbuffer[n1+1]&0xff0000)>>16;
-       if(irn[i]<0 || irn[i]>=MAXROC) {
+     memset(rocdat,0,MAXROC*sizeof(RocDat_t));
+     // n1 = pointer to first word of ROC
+     int pos = evbuffer[2]+3;
+     int nroc = 0;
+     int irn[MAXROC];   // Lookup table i-th ROC found -> ROC number
+     while( pos+1 < event_length && nroc < MAXROC ) {
+       int len  = evbuffer[pos];
+       int iroc = (evbuffer[pos+1]&0xff0000)>>16;
+       if(iroc>=MAXROC) {
          if(VERBOSE) { 
   	   cout << "ERROR in THaEvData::physics_decode:";
-	   cout << "  illegal ROC number " <<dec<<irn[i]<<endl;
+	   cout << "  illegal ROC number " <<dec<<iroc<<endl;
 	 }
          return HED_ERR;
        }
-       if (i == 0) {
-         n1roc[irn[i]] = n1;
-         lenroc[irn[i]] = evbuffer[n1];
-         lentot = n1 + evbuffer[n1];
-       } else {
-         n1roc[irn[i]]=
-            n1roc[irn[i-1]]+lenroc[irn[i-1]]+1;
-         lenroc[irn[i]] = evbuffer[n1roc[irn[i]]];
-         lentot  = lentot + lenroc[irn[i]] + 1;
-       } 
-       numroc++;
-       if(DEBUG) {
-           cout << "Roc ptr " <<dec<<numroc<<"  "<<i+1<<"  ";
-           cout <<irn[i]<<"  "<<n1roc[irn[i]]<<"  "<<lenroc[irn[i]];
-           cout <<"  "<<lentot<<"  "<<event_length<<endl;
-       }
-       if (lentot >= event_length) break;
+// Save position and length of each found ROC data block
+       rocdat[iroc].pos  = pos;
+       rocdat[iroc].len  = len;
+       irn[nroc++] = iroc;
+       pos += len+1;
      }
 // Decode each ROC
-     for (roc=0; roc<numroc; roc++) {
-       ipt = n1roc[irn[roc]]+1;
-       int iptmax = n1roc[irn[roc]]+lenroc[irn[roc]];
-       if (map.isFastBus(irn[roc])) {
-            status = fastbus_decode(irn[roc],map,evbuffer,ipt,iptmax);
-            if(status == HED_ERR) return HED_ERR;
-         } else if (map.isVme(irn[roc])) {
-            status = vme_decode(irn[roc],map,evbuffer,ipt,iptmax);
-            if(status == HED_ERR) return HED_ERR;
-         } else if (map.isCamac(irn[roc])) {
-            status = camac_decode(irn[roc],map,evbuffer,ipt,iptmax);
-            if(status == HED_ERR) return HED_ERR;
-	 }
+// This is not part of the loop above because it may exit prematurely due to errors,
+// which would leave the rocdat[] array incomplete.
+     for( int i=0; i<nroc; i++ ) {
+       int iroc = irn[i];
+       const RocDat_t* proc = rocdat+iroc;
+       int ipt = proc->pos + 1;
+       int iptmax = proc->pos + proc->len;
+       if (map->isFastBus(iroc)) {
+	 status = fastbus_decode(iroc,map,evbuffer,ipt,iptmax);
+	 if(status == HED_ERR) return HED_ERR;
+       } else if (map->isVme(iroc)) {
+	 status = vme_decode(iroc,map,evbuffer,ipt,iptmax);
+	 if(status == HED_ERR) return HED_ERR;
+       } else if (map->isCamac(iroc)) {
+	 status = camac_decode(iroc,map,evbuffer,ipt,iptmax);
+	 if(status == HED_ERR) return HED_ERR;
+       }
      }
      if(helicity->Decode(*this) != 1) return HED_ERR;
      dhel = (Double_t)helicity->GetHelicity();
      dtimestamp = (Double_t)helicity->GetTime();
-//     fprintf(fdb,"%d   %d  %d\n",GetEvNum(),(Int_t)dtimestamp,(Int_t)dhel);
      return HED_OK;
-};
+}
 
 int THaEvData::AddEpicsTag(const TString& tag) {
 // Add EPICS variable to the list you want decoded
 // (though a reasonable list already exists by default).
   return epics->addEpicsTag(tag);
-};
+}
 
 int THaEvData::epics_decode(const int* evbuffer) {
+     if( fDoBench ) fBench->Start("epics_decode");
      static const int DEBUGL = 0;
      static const int MAX  = 5000;     
      static const int MAXEPV = 40;   
@@ -315,7 +323,7 @@ int THaEvData::epics_decode(const int* evbuffer) {
         char cbuff[MAX];
      } evbuff; 
      char wtag[MAXEPV],wval[MAXEPV];
-     int len = (sizeof(int)/sizeof(char))*(evbuffer[0]+1);  
+     int len = sizeof(int)*(evbuffer[0]+1);  
      int nlen = (len < MAX) ? len : MAX;   
      for (j=0; j < nlen; j++) evbuff.ibuff[j] = evbuffer[j];
      if(DEBUGL) cout << "epics_decode  --- length " <<dec<<nlen<<endl;
@@ -365,27 +373,27 @@ int THaEvData::epics_decode(const int* evbuffer) {
      }
      epics->bumpStack();
      if(DEBUGL) epics->print();
+     if( fDoBench ) fBench->Stop("epics_decode");
      return HED_OK;
 };
 
 int THaEvData::prescale_decode(const int* evbuffer) {
+     if( fDoBench ) fBench->Start("prescale_decode");
      const int MAX = 5000;
      const int HEAD_OFF = 4;
-     char temp1[20];
      int j,trig,data[MAX];
-     string pstr[] = { "ps1", "ps2", "ps3", "ps4",
-                       "ps5", "ps6", "ps7", "ps8",
-                       "ps9", "ps10", "ps11", "ps12" };
+     const char* pstr[] = { "ps1", "ps2", "ps3", "ps4",
+			    "ps5", "ps6", "ps7", "ps8",
+			    "ps9", "ps10", "ps11", "ps12" };
      int type = evbuffer[1]>>16;
      if (type != PRESCALE_EVTYPE) return HED_ERR;
-     int len = (sizeof(int)/sizeof(char))*(evbuffer[0]+1);  
+     int len = sizeof(int)*(evbuffer[0]+1);  
      int nlen = (len < MAX) ? len : MAX;   
      for (j=HEAD_OFF; j<nlen; j++) data[j-HEAD_OFF] = evbuffer[j];  
      THaUsrstrutils sut;
      sut.string_from_evbuffer(data);
      for(trig=0; trig<MAX_PSFACT; trig++) {
-        strcpy(temp1,pstr[trig].c_str());        
-        psfact[trig] = sut.getint(temp1);
+        psfact[trig] = sut.getint(pstr[trig]);
         int psmax = 65536; // 2^16 for trig > 3
 	if (trig < 4) psmax = 16777216;  // 2^24 for 1st 4 trigs
         if (trig > 7) psfact[trig] = 1;  // cannot prescale trig 9-12
@@ -393,52 +401,61 @@ int THaEvData::prescale_decode(const int* evbuffer) {
         if (psfact[trig] == 0) psfact[trig] = psmax;
         if (DEBUG) cout << "psfact[ "<<trig+1<< " ] = "<<psfact[trig]<<endl;
      }
+     if( fDoBench ) fBench->Stop("prescale_decode");
      return HED_OK;
 }
 
-int THaEvData::scaler_event_decode(const int* evbuffer, THaCrateMap& map) {
-      int roc;
+int THaEvData::scaler_event_decode(const int* evbuffer, THaCrateMap* map) 
+{
       int type = evbuffer[1]>>16;
       if (type != SCALER_EVTYPE) return HED_ERR;
+      if( fDoBench ) fBench->Start("scaler_event_decode");
       if (DEBUG) cout << "Scaler decoding"<<endl;
       if (first_scaler) {
         first_scaler = kFALSE;
         numscaler_crate = 0;
-	for (roc=0; roc<MAXROC; roc++) {
-          if (map.isScalerCrate(roc)) scaler_crate[numscaler_crate++] = roc;
+	for (int roc=0; roc<MAXROC; roc++) {
+          if (map->isScalerCrate(roc)) scaler_crate[numscaler_crate++] = roc;
 	}
       }
+      int ret = HED_OK;
       int ipt = -1;
       while (++ipt < event_length) {
-        roc = map.getScalerCrate(evbuffer[ipt]);
+	UInt_t headerword = evbuffer[ipt];
+        int roc = map->getScalerCrate(headerword);
         if (DEBUG) {
-	  cout << "ipt "<<dec<<ipt<<" evbuffer "<<hex<<evbuffer[ipt];
-  	  cout <<" evlen "<<dec<<event_length<<" roc "<<roc<<endl;
+	  cout << "ipt "<<ipt<<" evbuffer "<<hex<<headerword<<dec;
+  	  cout <<" evlen "<<event_length<<" roc "<<roc<<endl;
 	}
         if (!roc) continue;               
-        TString location = map.getScalerLoc(roc);
-        string temp = location.Data();
-        if (temp == "rscaler") scalerdef[roc] = "right";
-        if (temp == "lscaler") scalerdef[roc] = "left";
-        if (temp == "rcs") scalerdef[roc] = "rcs";
+	const char* location = map->getScalerLoc(roc);
+	if( scalerdef[roc] == "nothing" ) {
+	  if      (!strcmp(location,"rscaler")) scalerdef[roc] = "right";
+	  else if (!strcmp(location,"lscaler")) scalerdef[roc] = "left";
+	  else if (!strcmp(location,"rcs"))     scalerdef[roc] = "rcs";
+	}
 // If more locations added, put them here.  But scalerdef[] is not
 // needed if you know the roc#, you can call getScaler(roc,...)
-        int slot = (evbuffer[ipt]&0xf0000)>>16;
-        crateslot[idx(roc,slot)].clearEvent();
-        int numchan = evbuffer[ipt]&0xff;
+        int slot = (headerword&0xf0000)>>16; // 0<=slot<=15
+	crateslot[idx(roc,slot)].clearEvent();
+        int numchan = headerword&0xff;
         if (DEBUG) cout<<"slot "<<slot<<" numchan "<<numchan<<endl;
-          for (int chan=0; chan<numchan; chan++) {
-            ipt++; 
-            if ((slot >=0 ) && (slot < MAXSLOT)) {
-              int data = evbuffer[ipt];
-	      if (DEBUG) cout<<"scaler chan "<<chan<<" data "<<data<<endl;
-              if (crateslot[idx(roc,slot)].loadData(location.Data(),chan,data,data)
-                 == SD_ERR) return HED_ERR;
-	    }
+	int ics = idx(roc,slot);
+	for (int chan=0; chan<numchan; chan++) {
+	  ipt++; 
+	  int data = evbuffer[ipt];
+	  if (DEBUG) cout<<"scaler chan "<<chan<<" data "<<data<<endl;
+	  if ((crateslot+ics)->loadData(location,chan,data,data)
+	      == SD_ERR) goto err;
 	}
       }
-      return HED_OK;
-};
+      goto exit;
+ err:
+      ret = HED_ERR;
+ exit:
+      if( fDoBench ) fBench->Stop("scaler_event_decode");
+      return ret;
+}
 
 
 int THaEvData::GetScaler(const TString& spec, int slot, int chan) const {
@@ -451,7 +468,7 @@ int THaEvData::GetScaler(const TString& spec, int slot, int chan) const {
       if (spec == scalerdef[roc]) return GetScaler(roc, slot, chan);
     }
     return 0;
-};
+}
 
 int THaEvData::GetScaler(int roc, int slot, int chan) const {
 // Get scaler data by roc, slot, chan.
@@ -462,46 +479,49 @@ int THaEvData::GetScaler(int roc, int slot, int chan) const {
 	}
     }
     return 0;
-};
+}
 
 int THaEvData::GetHelicity() const {
     return (int)helicity->GetHelicity();
-};
+}
 
 int THaEvData::GetHelicity(const TString& spec) const {
     return (int)helicity->GetHelicity(spec);
-};
+}
 
 double THaEvData::GetEpicsData(const char* tag, int event) const {
 // EPICS data which is nearest CODA event# 'event'
      return epics->getData(tag, event);
-};
+}
 
 double THaEvData::GetEpicsData(const char* tag) const {
 // EPICS data, nearest to present CODA event.
      return GetEpicsData(tag, recent_event);
-};
+}
 
-int THaEvData::fastbus_decode(int roc, THaCrateMap& map,
+int THaEvData::fastbus_decode(int roc, THaCrateMap* map,
           const int* evbuffer, int istart, int istop) {
+    if( fDoBench ) fBench->Start("fastbus_decode");
     int slotold = -1;
-    int ipt = istart;
+    int ics = 0;
+    const int* p     = evbuffer+istart;
+    const int* pstop = evbuffer+istop;
     synchmiss = false;
     synchextra = false;
     buffmode = false;
-    if (DEBUG) cout << "Fastbus roc  "<<dec<<roc<<endl;
-    while ( ipt++ < istop ) {  
+    if (DEBUG) cout << "Fastbus roc  "<<roc<<endl;
+    while ( p++ < pstop ) {  
        if(DEBUG) {
-          cout << "evbuffer  " <<dec<<ipt<<"   ";
-          cout << hex << evbuffer[ipt] << endl;
+          cout << "evbuffer  " <<(p-evbuffer)<<"   ";
+          cout << hex << *p << dec << endl;
        }
-       int slot = fb.Slot(evbuffer[ipt]);
+       int slot = fb->Slot(*p);
        if (!slot) {
-         loadFlag(ipt,evbuffer);
+         loadFlag(p);
          continue;
        }
-       int model = map.getModel(roc,slot);
-       if (model == map.CM_ERR) continue;
+       int model = map->getModel(roc,slot);
+       if (model == THaCrateMap::CM_ERR) continue;
        if (!model) {
 	 if (VERBOSE) {
            cout << "Warning: Undefined module in data" << endl;
@@ -510,238 +530,278 @@ int THaEvData::fastbus_decode(int roc, THaCrateMap& map,
          continue;
        }
        if (DEBUG) {
-         cout<<"slot slotold model "<<dec<<slot;
+         cout<<"slot slotold model "<<slot;
          cout<<"  "<<slotold<<"  "<<model<<endl;
        }
        if (slot != slotold) {            
           slotold = slot;
-          if (fb.headExist(model)) {
-             int n = fb.Wdcnt(model,evbuffer[ipt]);
-             if (n == fb.FB_ERR) return HED_ERR;
-	     if (DEBUG) cout << "header, wdcnt = "<<dec<<n<<endl;
+	  ics = idx(roc,slot);
+          if (fb->HasHeader(model)) {
+             int n = fb->Wdcnt(model,*p);
+             if (n == THaFastBusWord::FB_ERR) {
+	       if( fDoBench ) fBench->Stop("fastbus_decode");
+	       return HED_ERR;
+	     }
+	     if (DEBUG) cout << "header, wdcnt = "<<n<<endl;
              if (n <= 1) continue;
-             ipt++;
+	     p++;
           }
        }
-       int chan = fb.Chan(model,evbuffer[ipt]);
-       int data = fb.Data(model,evbuffer[ipt]);
-       int raw = evbuffer[ipt];
+       int chan = fb->Chan(model,*p);
+       int data = fb->Data(model,*p);
        if (DEBUG) {
-	 cout << "chan "<<dec<<chan<<"  data "<<data<<"  ipt "<<ipt;
-         cout << "  raw  "<<hex<<raw<<"  device "<<fb.devType(model)<<endl;
+	 cout << "chan "<<chan<<"  data "<<data<<"  ipt "<<(p-evbuffer)
+	      << "  raw  "<<hex<<*p<<dec<<"  device "
+	      <<fb->devType(model)<<endl;
        }
-       if ((roc >= 0) && (roc < MAXROC)) {
-         if ((slot >=0) && (slot < MAXSLOT)) {
-            if(crateslot[idx(roc,slot)].loadData(fb.devType(model).Data(),chan,data,raw)
-              == SD_ERR) return HED_ERR;
-	 }
+       // At this point, roc and slot ranges have been checked
+       if((crateslot+ics)->loadData(fb->devType(model),chan,data,*p) 
+	  == SD_ERR) {
+	 if( fDoBench ) fBench->Stop("fastbus_decode");
+	 return HED_ERR;
        }
     }
+    if( fDoBench ) fBench->Stop("fastbus_decode");
     return HED_OK;
-};
+}
 
-int THaEvData::vme_decode(int roc, THaCrateMap& map, const int* evbuffer,
+int THaEvData::vme_decode(int roc, THaCrateMap* map, const int* evbuffer,
           int ipt, int istop)  {
-    int Nslot = map.getNslot(roc);
+    if( fDoBench ) fBench->Start("vme_decode");
+    int slot,chan,raw,data,slotprime,ndat,head,mask,nhit;
+    int Nslot = map->getNslot(roc);
+    int retval = HED_OK;
+    int ics = 0;
+    const int* p      = evbuffer+ipt;
+    const int* pstop  = evbuffer+istop;
+    const int* pevlen = evbuffer+event_length;
+    const int* loc;
+
     if (DEBUG) cout << "VME roc "<<dec<<roc<<" nslot "<<Nslot<<endl;
-    if (Nslot <= 0) return HED_ERR;
-    int slot,chan,raw,data,loc,slotprime,ndat;
-    map.setSlotDone();
-    TString location = map.getScalerLoc(roc);
-    scalerdef[roc] = location.Data();
-    if (map.isScalerCrate(roc) && GetRocLength(roc) >= 16) evscaler = 1;
-    while ( ipt++ < istop ) {
-      if(DEBUG) cout << "evbuff "<<dec<<ipt<<"  "<<hex<<evbuffer[ipt]<<endl;  
+    if (Nslot <= 0) goto err;
+    scalerdef[roc] = map->getScalerLoc(roc);
+    map->setSlotDone();
+    if (map->isScalerCrate(roc) && GetRocLength(roc) >= 16) evscaler = 1;
+    while ( p++ < pstop ) {
+      if(DEBUG) cout << "evbuff "<<(p-evbuffer)<<"  "<<hex<<*p<<dec<<endl;  
       for (slot=1; slot<=Nslot; slot++) {
-       if (!map.slotUsed(roc,slot)) continue;
-       if (map.slotDone(slot)) continue;
-       int head = map.getHeader(roc,slot);
-       int mask = map.getMask(roc,slot);
-       if(DEBUG) {
-         cout<<"slot head mask "<<dec<<slot<<"  ";
-         cout<<hex<<head<<"  "<<mask<<endl;
-       }
-       if ((evbuffer[ipt]&mask) == head) {
-          map.setSlotDone(slot);
-          if (map.getModel(roc,slot) == 1182) {   // LeCroy 1182 ADC
+	if (!map->slotUsed(roc,slot)) continue;
+	if (map->slotDone(slot)) continue;
+	head = map->getHeader(roc,slot);
+	mask = map->getMask(roc,slot);
+	ics = idx(roc,slot);
+	if(DEBUG) {
+	  cout<<"slot head mask "<<slot<<"  ";
+	  cout<<hex<<head<<"  "<<mask<<dec<<endl;
+	}
+	if (((*p)&mask) == head) {
+          map->setSlotDone(slot);
+          if (map->getModel(roc,slot) == 1182) {   // LeCroy 1182 ADC
 	    for (chan=0; chan<8; chan++) {
-              if (++ipt >= event_length) goto SlotDone;  
-              raw = evbuffer[ipt];
+              if( ++p >= pevlen ) goto SlotDone;  
               if(DEBUG) {
-                cout<<"1182 chan data "<<dec<<chan<<" 0x"<<hex<<raw<<endl;
+                cout<<"1182 chan data "<<chan<<" 0x"<<hex<<*p<<dec<<endl;
               }
-              if (crateslot[idx(roc,slot)].loadData("adc",chan,raw,raw)
-                  == SD_ERR) return HED_ERR;
+              if( (crateslot+ics)->loadData("adc",chan,*p,*p)
+                  == SD_ERR) goto err;
  	    }
 	  }
-          if (map.getModel(roc,slot) == 7510) {   // Struck 7510 ADC
-           int nhit = (evbuffer[ipt]&0xfff)/8;
-           if (DEBUG) cout << "nhit 7510 " << nhit << endl;
-	   for (chan=0; chan<8; chan++) {
-             for (int j=0; j<nhit/2; j++) {  // nhit must be even
-               if (++ipt >= event_length) goto SlotDone;
-               raw = evbuffer[ipt];
-               if(DEBUG)  cout<<"7510 raw  0x"<<hex<<raw<<endl;
-               if(crateslot[idx(roc,slot)].loadData
-                  ("adc",chan,(raw&0x0fff0000)>>16,raw) == 
-                     SD_ERR) return HED_ERR;
-               if (crateslot[idx(roc,slot)].loadData("adc",chan,(raw&0xfff),raw)
-                    == SD_ERR) return HED_ERR;
-             }
-	   }
+          if (map->getModel(roc,slot) == 7510) {   // Struck 7510 ADC
+	    nhit = ((*p)&0xfff)/8;
+	    if (DEBUG) cout << "nhit 7510 " << nhit << endl;
+	    for (chan=0; chan<8; chan++) {
+	      for (int j=0; j<nhit/2; j++) {  // nhit must be even
+		if( ++p >= pevlen ) goto SlotDone;
+		if(DEBUG)  cout<<"7510 raw  0x"<<hex<<*p<<dec<<endl;
+		if( (crateslot+ics)->loadData("adc",chan,((*p)&0x0fff0000)>>16,*p)
+		    ==  SD_ERR) goto err;
+		if( (crateslot+ics)->loadData("adc",chan,((*p)&0xfff),*p)
+		    == SD_ERR) goto err;
+	      }
+	    }
 	  }
-          if (map.getModel(roc,slot) == 3123) {  // VMIC 3123 ADC
+          if (map->getModel(roc,slot) == 3123) {  // VMIC 3123 ADC
 	    for (chan=0; chan<16; chan++) {
-              if (++ipt >= event_length) goto SlotDone;
-              raw = evbuffer[ipt];
+              if( ++p >= pevlen ) goto SlotDone;
               if(DEBUG) {
-                cout<<"3123 chan data "<<dec<<chan<<"  0x"<<hex<<raw<<endl;
+                cout<<"3123 chan data "<<chan<<"  0x"<<hex<<*p<<dec<<endl;
               }
-              if (crateslot[idx(roc,slot)].loadData("adc",chan,raw,raw)
-		   == SD_ERR) return HED_ERR;  
+              if( (crateslot+ics)->loadData("adc",chan,*p,*p) == SD_ERR) 
+		goto err;
 	    }
 	  }
 // Note, although there may be scalers in physics events, the
 // "scaler events" dont come here.  See scaler_event_decode().
-          if (map.getModel(roc,slot) == 1151) {  // LeCroy 1151 scaler
+          if (map->getModel(roc,slot) == 1151) {  // LeCroy 1151 scaler
 	    for (chan=0; chan<16; chan++) {
-              if (++ipt >= event_length) goto SlotDone;
-              raw = evbuffer[ipt];
+              if( ++p >= pevlen ) goto SlotDone;
               if(DEBUG) {
-                cout<<"1151 chan data "<<dec<<chan<<"  0x"<<hex<<raw<<endl;
+                cout<<"1151 chan data "<<chan<<"  0x"<<hex<<*p<<dec<<endl;
               }
-              if (crateslot[idx(roc,slot)].loadData("scaler",chan,raw,raw)
-	           == SD_ERR) return HED_ERR;  
+              if( (crateslot+ics)->loadData("scaler",chan,*p,*p) == SD_ERR) 
+		goto err;
 	    }
 	  }
 // The CAEN 560 is a little tricky; sometimes only 1 channel was read,
 // so we don't increment ipt. (hmmm... could use time-dep crate map.)
-          if (map.getModel(roc,slot) == 560) {   // CAEN 560 scaler
-            loc = ipt;
+          if (map->getModel(roc,slot) == 560) {   // CAEN 560 scaler
+            loc = p;
 	    for (chan=0; chan<16; chan++) {  
-              if (++loc >= event_length) goto SlotDone; 
-              raw = evbuffer[loc];
+              if( ++loc >= pevlen ) goto SlotDone; 
               if(DEBUG) {
-                cout<<"560 chan data "<<dec<<chan<<"  0x"<<hex<<raw<<endl;
+                cout<<"560 chan data "<<chan<<"  0x"<<hex<<*loc<<dec<<endl;
               }
-              if (crateslot[idx(roc,slot)].loadData("scaler",chan,raw,raw)
-		  == SD_ERR) return HED_ERR;  
+              if( (crateslot+ics)->loadData("scaler",chan,*loc,*loc)
+		  == SD_ERR) goto err;
 	    }
 	  }
-          if (map.getModel(roc,slot) == 3801) {  // Struck 3801 scaler
+          if (map->getModel(roc,slot) == 3801) {  // Struck 3801 scaler
 	    for (chan=0; chan<32; chan++) {
-              if (++ipt >= event_length) goto SlotDone;
-              raw = evbuffer[ipt];
+              if( ++p >= pevlen) goto SlotDone;
               if(DEBUG) {
-                cout<<"3801 chan data "<<dec<<chan<<"  0x"<<hex<<raw<<endl;
+                cout<<"3801 chan data "<<chan<<"  0x"<<hex<<*p<<dec<<endl;
               }
-              if (crateslot[idx(roc,slot)].loadData("scaler",chan,raw,raw)
-	          == SD_ERR) return HED_ERR;  
+              if( (crateslot+ics)->loadData("scaler",chan,*p,*p)
+	          == SD_ERR) goto err;
 	    }
 	  }
-          if (map.getModel(roc,slot) == 7353) {  // BRs hack for the trigger module
+          if (map->getModel(roc,slot) == 7353) {  // BRs hack for the trigger module
 	    chan=0;
-            raw = evbuffer[ipt]&0xfff;
+            raw = (*p)&0xfff;
 	    if(DEBUG) {
-	      cout<<"7353 chan data "<<dec<<chan<<"  0x"<<hex<<raw<<endl;
+	      cout<<"7353 chan data "<<chan<<"  0x"<<hex<<raw<<dec<<endl;
 	    }
-	    if (crateslot[idx(roc,slot)].loadData("register",chan,raw,raw)
-		== SD_ERR) return HED_ERR;  
+	    if( (crateslot+ics)->loadData("register",chan,raw,raw)
+		== SD_ERR) goto err;
 	  }
-          if (map.getModel(roc,slot) == 550) {  // CAEN 550 for RICH ('slot' was called 'chan' in Fortran)
-            loc = ipt; 
-            slotprime = 1+((evbuffer[loc]&0xff0000)>>16);  
-            if (DEBUG) cout << "Rich slot "<<slot<<" "<<slotprime<<" "<<loc<<" "<<hex<<evbuffer[loc]<<dec<<endl; 
+          if (map->getModel(roc,slot) == 550) {  // CAEN 550 for RICH 
+	                                         // ('slot' was called 'chan' in Fortran)
+            slotprime = 1+(((*p)&0xff0000)>>16);  
+            if (DEBUG) cout << "Rich slot "<<slot<<" "
+			    <<slotprime<<" "<<loc<<" "<<hex<<*p<<dec<<endl; 
             if (slot == slotprime) {    // They should agree, else problem.
-              ndat = (evbuffer[ipt]&0xfff);
+              ndat = (*p)&0xfff;
               if (DEBUG) cout << "Rich ndat = "<<ndat<<endl;
-	      if (ipt+ndat>istop) {
-		ipt=istop;
+	      if (p+ndat>pstop) {
+		p=pstop;
 		// FIX ME : in this case a warning should apear
 		//          the buffer/data must be corrupted
 	      }
 	      else {
-		for (loc = ipt+1; loc <= ipt+ndat; loc++) {
-		  chan = (evbuffer[loc]&0x7ff000)>>12;    
+		loc = p;
+		while( ++loc <= p+ndat ) {
+		  chan = ((*loc)&0x7ff000)>>12;    
 		  // channel number (was called 'wire' in Fortran)
-		  raw = (evbuffer[loc]&0xffffffff);
-		  data =  (evbuffer[loc]&0x0fff);           
+		  raw  = (*loc)&0xffffffff;
+		  data = (*loc)&0x0fff;           
 		  if (DEBUG) cout << "channel "<<chan<<"  raw data "<<raw<<endl;
-		  if (crateslot[idx(roc,slot)].loadData("adc",chan,data,raw) 
-		      == SD_ERR) {
-		    return HED_ERR;
-		  }
+		  if( (crateslot+ics)->loadData("adc",chan,data,raw) 
+		      == SD_ERR) goto err;
 		}
-		ipt=ipt+ndat;
+		p += ndat;
 	      }
 	    }
 	  }
           goto SlotDone;  
-       }
+	}
       }
 SlotDone:
       if (DEBUG) cout<<"slot done, or skip word"<<endl;
     }
-    return HED_OK;
-};
+    goto exit;
 
-int THaEvData::camac_decode(int roc, THaCrateMap& map, const int* evbuffer,
+err:
+    retval = HED_ERR;
+exit:
+    if( fDoBench ) fBench->Stop("vme_decode");
+    return retval;
+}
+
+int THaEvData::camac_decode(int roc, THaCrateMap* map, const int* evbuffer,
           int ipt, int istop) {
    if (VERBOSE) {
      cout << "Sorry, no CAMAC decoding yet !!" << endl;
    }
    return HED_OK;
-};
+}
 
-int THaEvData::loadFlag(int ipt, const int* evbuffer) {
+int THaEvData::loadFlag(const int* evbuffer) {
 // Looks for buffer mode and synch problems.  The latter are recoverable
 // but extremely rare, so I haven't bothered to write recovery a code yet, 
 // but at least this warns you. 
+  UInt_t word   = *evbuffer;
+  UInt_t upword = word & 0xffff0000;
   if (DEBUG) {
-    cout << "Flag data "<<dec<<ipt<<hex<<"  "<<evbuffer[ipt]<<endl;
+    cout << "Flag data "<<hex<<word<<dec<<endl;
   }
-  if((unsigned long)evbuffer[ipt] == 0xdc0000ff) synchmiss = true;
-  if((evbuffer[ipt]&0xffff0000) == 0xdcfe0000) {
+  if( word == 0xdc0000ff) synchmiss = true;
+  if( upword == 0xdcfe0000) {
     synchextra = true;
-    int slot = (evbuffer[ipt]&0xf800)>>11;
-    int nhit = (evbuffer[ipt]&0x7ff);
+    int slot = (word&0xf800)>>11;
+    int nhit = (word&0x7ff);
     if(VERBOSE) {
       cout << "THaEvData: WARNING: Fastbus slot ";
-      cout << dec << slot << "  has extra hits "<<nhit<<endl;
+      cout << slot << "  has extra hits "<<nhit<<endl;
     }
   }
-  if((evbuffer[ipt]&0xffff0000) == 0xfabc0000) {
-      datascan = evbuffer[ipt+3];
+  if( upword == 0xfabc0000) {
+      datascan = *(evbuffer+3);
       if(VERBOSE && (synchmiss || synchextra)) {
         cout << "THaEvData: WARNING: Synch problems !"<<endl;
-	cout << "Data scan word 0x"<<hex<<datascan<<endl;
+	cout << "Data scan word 0x"<<hex<<datascan<<dec<<endl;
       }
   }
-  if((evbuffer[ipt]&0xffff0000) == 0xfabb0000) buffmode = false;
-  if((evbuffer[ipt]&0xffffff00) == 0xfafbbf00) {
+  if( upword == 0xfabb0000) buffmode = false;
+  if((word&0xffffff00) == 0xfafbbf00) {
      buffmode = true;
-     synchflag = evbuffer[ipt]&0xff;
+     synchflag = word&0xff;
   }
   return HED_OK;
-};
+}
 
 // To initialize the crate map member if it is to be used.
 int THaEvData::init_cmap()  {
   if (DEBUG) cout << "Init crate map " << endl;
-  return cmap.init(GetRunTime());  
-};
+  if( cmap->init(GetRunTime()) == THaCrateMap::CM_ERR )
+    return HED_ERR;
+  return HED_OK;
+}
 
 // To initialize the THaSlotData member on first call to decoder
-int THaEvData::init_slotdata(const THaCrateMap& map)  {
+int THaEvData::init_slotdata(const THaCrateMap* map)  {
+  if( fDoBench ) fBench->Start("init_slotdata");
   if (DEBUG) cout << "Init slot data " << endl;
+  int nused = 0, nclear = 0;
   for (int crate=0; crate<MAXROC; crate++) {
-        scalerdef[crate] = "nothing";
-        if (!map.crateUsed(crate)) continue;
-   for (int slot=0; slot<MAXSLOT; slot++) {
-      if (!map.slotUsed(crate,slot)) continue;
-      crateslot[idx(crate,slot)].define(crate,slot);
-   }
+    scalerdef[crate] = "nothing";
+    if (!map->crateUsed(crate)) continue;
+    for (int slot=0; slot<MAXSLOT; slot++) {
+      if (!map->slotUsed(crate,slot)) continue;
+      crateslot[idx(crate,slot)].
+	define(crate,slot,
+	       map->getNchan(crate,slot),
+	       map->getNdata(crate,slot));
+      nused++;
+      if(map->slotClear(crate,slot)) nclear++;
+    }
   }
+  // Record the indices of the used and clearable slots
+  if( nused>0 ) {
+    delete [] fSlotUsed;
+    delete [] fSlotClear; fSlotClear = NULL;
+    fSlotUsed  = new UShort_t[nused];
+    if( nclear>0 ) fSlotClear = new UShort_t[nclear];
+    fNSlotUsed = 0; fNSlotClear = 0;
+    for (int crate=0; crate<MAXROC; crate++) {
+      if (!map->crateUsed(crate)) continue;
+      for (int slot=0; slot<MAXSLOT; slot++) {
+	if (!map->slotUsed(crate,slot)) continue;
+	fSlotUsed[ fNSlotUsed++ ] = idx(crate,slot);
+	if(map->slotClear(crate,slot)) 
+	  fSlotClear[ fNSlotClear++ ] = idx(crate,slot);
+      }
+    }
+  }
+  if( fDoBench ) fBench->Stop("init_slotdata");
   return HED_OK;
-};
-
+}

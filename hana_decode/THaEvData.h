@@ -7,15 +7,15 @@
 //
 /////////////////////////////////////////////////////////////////////
 
-class THaHelicity;
 
-#include "Rtypes.h"
-#include "THaFastBusWord.h"
-#include "THaEpicsStack.h"
+#include "TString.h"
 #include "THaSlotData.h"
-#include "THaCrateMap.h"
-#include "THaUsrstrutils.h"
-#include "THaCodaData.h"
+
+class THaBenchmark;
+class THaEpicsStack;
+class THaCrateMap;
+class THaFastBusWord;
+class THaHelicity;
 
 class THaEvData {
 
@@ -53,7 +53,7 @@ public:
      Bool_t InCrate(int crate, int i) const;
      int GetNumChan(int crate, int slot) const;    // Num unique channels hit
      int GetNextChan(int crate, int slot, int index) const; // List unique chan
-     TString DevType(int crate, int slot) const;
+     const char* DevType(int crate, int slot) const;
      int AddEpicsTag(const TString& tag);
 // User can GetScaler, alternativly to GetSlotData for scalers
 // spec = "left", "right", "rcs" for event type 140 scaler "events"
@@ -66,7 +66,7 @@ public:
      double GetEpicsData(const char* tag, int event) const;
      double GetEpicsData(const char* tag) const;    // get nearest present event.
 // Loads CODA data evbuffer using THaCrateMap passed as 2nd arg
-     int LoadEvent(const int* evbuffer, THaCrateMap& usermap);    
+     int LoadEvent(const int* evbuffer, THaCrateMap* usermap);    
 // Loads CODA data evbuffer using private crate map "cmap" (recommended)
      int LoadEvent(const int* evbuffer);          
      void PrintSlotData(int crate, int slot);
@@ -79,11 +79,13 @@ private:
      static const int DEBUG = 0;  // set =0 normally
      static const int MAXROC = 20;  
      static const int MAXSLOT = 27;  
-     int n1roc[MAXROC],lenroc[MAXROC],irn[MAXROC];
-     THaCrateMap cmap;
-     THaFastBusWord fb;
+     struct RocDat_t {           // ROC raw data descriptor
+       int pos;                  // position in evbuffer[]
+       int len;                  // length of data
+     } rocdat[MAXROC];
+     THaCrateMap* cmap;
+     THaFastBusWord* fb;
      THaSlotData* crateslot;  
-     THaSlotData emptyd;
      THaHelicity* helicity;
      THaEpicsStack* epics;
      bool first_load,first_scaler,first_decode;
@@ -114,19 +116,30 @@ private:
      Double_t dhel,dtimestamp;
      bool buffmode,synchmiss,synchextra;
      void dump(const int* evbuffer);                
-     int gendecode(const int* evbuffer, THaCrateMap& map);
-     int loadFlag(int ipt, const int* evbuffer);
+     int gendecode(const int* evbuffer, THaCrateMap* map);
+     int loadFlag(const int* evbuffer);
      int epics_decode(const int* evbuffer);
      int prescale_decode(const int* evbuffer);
-     int physics_decode(const int* evbuffer, THaCrateMap& map);
-     int fastbus_decode(int roc, THaCrateMap& map, const int* evbuffer, int p1, int p2);
-     int vme_decode(int roc, THaCrateMap& map, const int* evbuffer, int p1, int p2);
-     int camac_decode(int roc, THaCrateMap& map, const int* evbuffer, int p1, int p2);
-     int scaler_event_decode(const int* evbuffer, THaCrateMap& map);
+     int physics_decode(const int* evbuffer, THaCrateMap* map);
+     int fastbus_decode(int roc, THaCrateMap* map, const int* evbuffer, 
+			int p1, int p2);
+     int vme_decode(int roc, THaCrateMap* map, const int* evbuffer, 
+		    int p1, int p2);
+     int camac_decode(int roc, THaCrateMap* map, const int* evbuffer, 
+		      int p1, int p2);
+     int scaler_event_decode(const int* evbuffer, THaCrateMap* map);
      int init_cmap();      
-     int init_slotdata(const THaCrateMap& map);
+     int init_slotdata(const THaCrateMap* map);
      int idx(int crate, int slot) const;
      bool GoodIndex(int crate, int slot) const;
+
+     int       fNSlotUsed;   // Number of elements of crateslot[] actually used
+     int       fNSlotClear;  // Number of elements of crateslot[] to clear
+     UShort_t* fSlotUsed;    // [fNSlotUsed] Indices of crateslot[] used
+     UShort_t* fSlotClear;   // [fNSlotClear] Indices of crateslot[] to clear
+
+     bool fDoBench;
+     THaBenchmark *fBench, *fTopBench;
 
      ClassDef(THaEvData,0)  // Decoder for CODA event buffer
 
@@ -142,6 +155,11 @@ inline int THaEvData::idx( int crate, int slot) const {
 inline bool THaEvData::GoodIndex( int crate, int slot ) const {
   return ( (crate >= 0) && (crate < MAXROC) && 
 	   (slot >= 0) && (slot < MAXSLOT) );
+}
+
+inline int THaEvData::GetRocLength(int crate) const {
+  if (crate >= 0 && crate < MAXROC) return rocdat[crate].len;
+  return 0;
 }
 
 inline int THaEvData::GetNumHits(int crate, int slot, int chan) const {
@@ -189,7 +207,7 @@ inline int THaEvData::GetRawData(int i) const {
 inline int THaEvData::GetRawData(int crate, int i) const {
 // Raw words in evbuffer within crate #crate.
   if (crate < 0 || crate > MAXROC) return 0;
-  int index = n1roc[crate] + i;
+  int index = rocdat[crate].pos + i;
   if (index >= 0 && index < GetEvLength()) return buffer[index];
   return 0;
 };
@@ -198,8 +216,8 @@ inline Bool_t THaEvData::InCrate(int crate, int i) const {
 // To tell if the index "i" points to a word inside crate #crate.
   if (crate == 0) return kTRUE;     // Used for crawling through whole event.
   if (crate < 0 || crate > MAXROC) return kFALSE;
-  if (n1roc[crate] == 0 || lenroc[crate] == 0) return kFALSE;
-  return (i >= n1roc[crate] && i < n1roc[crate]+lenroc[crate]);
+  if (rocdat[crate].pos == 0 || rocdat[crate].len == 0) return kFALSE;
+  return (i >= rocdat[crate].pos && i < rocdat[crate].pos+rocdat[crate].len);
 };
 
 inline int THaEvData::GetNumChan(int crate, int slot) const {
@@ -250,7 +268,7 @@ bool THaEvData::IsSpecialEvent() const {
 };
 
 inline
-int THaEvData::LoadEvent(const int* evbuffer, THaCrateMap& cratemap) {
+int THaEvData::LoadEvent(const int* evbuffer, THaCrateMap* cratemap) {
 // Public interface to decode the event.  Note, LoadEvent()
 // MUST be called once per event BEFORE you can extract 
 // information about the event.
@@ -263,7 +281,7 @@ int THaEvData::LoadEvent(const int* evbuffer) {
 // This version of LoadEvent() uses private THaCrateMap cmap (recommended)
   if (first_load) {
       first_load = false;
-      if (init_cmap() == cmap.CM_ERR) return HED_ERR;
+      if (init_cmap() == HED_ERR) return HED_ERR;
   }
   return gendecode(evbuffer, cmap);
 };
