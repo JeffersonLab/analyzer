@@ -108,18 +108,18 @@ double THaEpicsStack::getLastData(const char* tag) const {
 }
 
 inline
-int THaEpicsStack::loadData(const char* tag, double val, int event) { 
+int THaEpicsStack::loadData(const char* tag, double val, int event) {
 // Load data into present stack position.
 // To be used by decoder only.
-     int i = findVar(tag);
-     if ( i == EPI_ERR ) return EPI_ERR;
-     epicsData[stack_point].event = event;
-     epicsData[stack_point].tag[i] = epics_var_list[i];
-     epicsData[stack_point].value[i] = val;
-     epicsData[stack_point].filled[i] = true;
-     return EPI_OK;
+  int i = findVar(tag);
+  if ( i == EPI_ERR ) return EPI_ERR;
+  epicsData[stack_point].event = event;
+  epicsData[stack_point].tag[i] = epics_var_list[i];
+  epicsData[stack_point].value[i] = val;
+  epicsData[stack_point].filled[i] = true;
+  return EPI_OK;
 }
-
+  
 #endif
 
 
