@@ -35,14 +35,14 @@ public:
   virtual Int_t        CloseFile();
   virtual Int_t        Compare( const TObject* obj ) const;
           Bool_t       DBRead()         const { return fDBRead; }
+          void         IncrNumAnalyzed( Int_t n=1 ) { fNumAnalyzed += n; }
           const char*  GetFilename()    const { return fFilename.Data(); }
           const TDatime& GetDate()      const { return fDate; }
+          UInt_t       GetNumAnalyzed() const { return fNumAnalyzed; }
           Int_t        GetNumber()      const { return fNumber; }
           Int_t        GetType()        const { return fType; }
           UInt_t       GetFirstEvent()  const { return fEvtRange[0]; }
           UInt_t       GetLastEvent()   const { return fEvtRange[1]; }
-          UInt_t       GetFirstAnalyzed() const { return fAnalyzed[0]; }
-          UInt_t       GetLastAnalyzed()  const { return fAnalyzed[1]; }
           const Int_t* GetEvBuffer()    const;
   THaRunParameters*    GetParameters()  const { return fParam; }
   virtual Bool_t       HasInfo( UInt_t bits ) const;
@@ -57,16 +57,12 @@ public:
   virtual void         SetDate( const TDatime& date );
           void         SetDate( UInt_t tloc );
   virtual void         SetFilename( const char* name );
-          void         SetFirstEvent( UInt_t first )   { fEvtRange[0] = first; }
-          void         SetLastEvent(  UInt_t last )    { fEvtRange[1] = last; }
+          void         SetFirstEvent( UInt_t n )    { fEvtRange[0] = n; }
+          void         SetLastEvent(  UInt_t n )    { fEvtRange[1] = n; }
           void         SetEventRange( UInt_t first, UInt_t last )
     { SetFirstEvent(first); SetLastEvent(last); }
-          void         SetFirstAnalyzed( UInt_t first ){ fAnalyzed[0] = first; }
-          void         SetLastAnalyzed(  UInt_t last ) { fAnalyzed[1] = last; }
-          void         SetAnalyzedRange( UInt_t first, UInt_t last )
-    { SetFirstAnalyzed(first); SetLastAnalyzed(last); }
   virtual void         SetNumber( Int_t number );
-          void         SetNscan( Int_t n )             { fMaxScan = n; }
+          void         SetNscan( Int_t n )          { fMaxScan = n; }
   virtual void         SetType( Int_t type );
   virtual Int_t        Update( const THaEvData* evdata );
 
@@ -80,8 +76,8 @@ protected:
   Int_t         fType;         //  Run type/mode/etc.
   TString       fFilename;     //  File name
   TDatime       fDate;         //  Run date and time
-  UInt_t        fEvtRange[2];  //  Event range to analyze
-  UInt_t        fAnalyzed[2];  //  Event range actually analyzed
+  UInt_t        fEvtRange[2];  //  Physics event range to analyze
+  UInt_t        fNumAnalyzed;  //  Number of physics events actually analyzed 
   Bool_t        fDBRead;       //  True if database successfully read.
   Bool_t        fIsInit;       //  True if run successfully initialized
   Bool_t        fAssumeDate;   //  True if run date explicitly set
@@ -92,7 +88,7 @@ protected:
   THaCodaData*  fCodaData;     //! CODA data associated with this run
   THaRunParameters* fParam;    //  Run parameters
 
-  virtual Int_t        ReadDatabase();
+  virtual Int_t ReadDatabase();
 
   ClassDef(THaRun,4)       // Control information for a run
 };

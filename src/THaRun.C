@@ -35,7 +35,7 @@ static const char* NOTINIT = "uninitialized run";
 //_____________________________________________________________________________
 THaRun::THaRun( const char* fname, const char* descr ) : 
   TNamed(NOTINIT, strlen(descr) ? descr : fname), 
-  fNumber(-1), fType(0), fFilename(fname), fDate(UNDEFDATE,0), 
+  fNumber(-1), fType(0), fFilename(fname), fDate(UNDEFDATE,0), fNumAnalyzed(0),
   fDBRead(kFALSE), fIsInit(kFALSE), fAssumeDate(kFALSE), fMaxScan(MAXSCAN),
   fDataSet(0), fDataRead(0), fDataRequired(kDate), fParam(0)
 {
@@ -43,23 +43,20 @@ THaRun::THaRun( const char* fname, const char* descr ) :
 
   fCodaData = new THaCodaFile;  //Specifying the file name would open the file
   ClearEventRange();
-  fAnalyzed[0] = fAnalyzed[1] = 0;
 }
 
 //_____________________________________________________________________________
 THaRun::THaRun( const THaRun& rhs ) : 
   TNamed( rhs ), fNumber(rhs.fNumber), fType(rhs.fType), 
-  fFilename(rhs.fFilename), fDate(rhs.fDate), fDBRead(rhs.fDBRead), 
-  fIsInit(rhs.fIsInit), fAssumeDate(rhs.fAssumeDate), fMaxScan(rhs.fMaxScan),
-  fDataSet(rhs.fDataSet), fDataRead(rhs.fDataRead), 
+  fFilename(rhs.fFilename), fDate(rhs.fDate), fNumAnalyzed(rhs.fNumAnalyzed),
+  fDBRead(rhs.fDBRead), fIsInit(rhs.fIsInit), fAssumeDate(rhs.fAssumeDate),
+  fMaxScan(rhs.fMaxScan), fDataSet(rhs.fDataSet), fDataRead(rhs.fDataRead), 
   fDataRequired(rhs.fDataRequired)
 {
   // Copy ctor
 
   fEvtRange[0] = rhs.fEvtRange[0];
   fEvtRange[1] = rhs.fEvtRange[1];
-  fAnalyzed[0] = rhs.fAnalyzed[0];
-  fAnalyzed[1] = rhs.fAnalyzed[1];
   fCodaData = new THaCodaFile;
   // NB: the run parameter object might inherit from THaRunParameters
   if( rhs.fParam ) {
@@ -82,8 +79,7 @@ THaRun& THaRun::operator=(const THaRun& rhs)
      fDate       = rhs.fDate;
      fEvtRange[0] = rhs.fEvtRange[0];
      fEvtRange[1] = rhs.fEvtRange[1];
-     fAnalyzed[0] = rhs.fAnalyzed[0];
-     fAnalyzed[1] = rhs.fAnalyzed[1];
+     fNumAnalyzed = rhs.fNumAnalyzed;
      fDBRead     = rhs.fDBRead;
      fIsInit     = rhs.fIsInit;
      fAssumeDate = rhs.fAssumeDate;
@@ -135,7 +131,7 @@ Int_t THaRun::Init()
   // whether the data source can be opened, and if so, initializes the
   // run parameters (run number, time, etc.)
 
-  static const char* const here = "Init()";
+  static const char* const here = "Init";
 
   // Make sure we have a run parameter structure. This object will 
   // allocate THaRunParameters automatically. If a derived class needs
@@ -163,6 +159,9 @@ Int_t THaRun::Init()
     }
   }
 
+  // Clear selected parameters (matters for re-init)
+  Clear("INIT");
+
   // If pre-scanning of the data file requested, read up to fMaxScan events
   // and extract run parameters from the data.
   if( fMaxScan > 0 ) {
@@ -182,9 +181,10 @@ Int_t THaRun::Init()
 
       // Inspect event and extract run parameters if appropriate
       Int_t st = Update( evdata );
+      //FIXME: debug
       if( st == 1 )
 	cout << "Prestart at " << nev << endl;
-      else if (st == 2 )
+      else if( st == 2 )
 	cout << "Prescales at " << nev << endl;
 
     }//end while
@@ -360,6 +360,29 @@ void THaRun::Print( Option_t* opt ) const
   cout << "File name:  " << fFilename.Data() << endl;
   cout << "Run number: " << fNumber << endl;
   cout << "Run date:   " << fDate.AsString() << endl;
+  cout << "Requested event range: " << fEvtRange[0] << "-"
+       << fEvtRange[1] << endl;
+
+  if( !strcmp(opt,"STARTINFO"))
+    return;
+
+  cout << "Analyzed events:       " << fNumAnalyzed << endl;
+  cout << "Max events for scan:   " << fMaxScan << endl;
+  cout << "Assume Date:           " << fAssumeDate << endl;
+  cout << "Database read:         " << fDBRead << endl;
+  cout << "Date set/read/req:     "
+       << HasInfo(kDate) << " " << HasInfoRead(kDate) << " "
+       << (Bool_t)((kDate & fDataRequired) == kDate) << endl;
+  cout << "Run num set/read/req:  "
+       << HasInfo(kRunNumber) << " " << HasInfoRead(kRunNumber) << " "
+       << (Bool_t)((kRunNumber & fDataRequired) == kRunNumber) << endl;
+  cout << "Run type set/read/req: "
+       << HasInfo(kRunType) << " " << HasInfoRead(kRunType) << " "
+       << (Bool_t)((kRunType & fDataRequired) == kRunType) << endl;
+  cout << "Prescales set/rd/req:  "
+       << HasInfo(kPrescales) << " " << HasInfoRead(kPrescales) << " "
+       << (Bool_t)((kPrescales & fDataRequired) == kPrescales) << endl;
+
   if( fParam )
     fParam->Print(opt);
 }
@@ -388,17 +411,23 @@ void THaRun::Clear( const Option_t* opt )
 {
   // Reset the run object.
 
-  fName = NOTINIT;
+  bool doing_init = !strcmp(opt,"INIT");
+
   fNumber = -1;
   fType = 0;
+  fNumAnalyzed = 0;
   fDBRead = fIsInit = kFALSE;
-  fMaxScan = MAXSCAN;
   fDataSet = fDataRead = 0;
-  fAnalyzed[0] = fAnalyzed[1] = 0;
   fParam->Clear(opt);
-  ClearDate();
-  ClearEventRange();
-  CloseFile();
+  if( doing_init ) {
+    if( !fAssumeDate )
+      ClearDate();
+  } else {
+    fName = NOTINIT;
+    fMaxScan = MAXSCAN;
+    ClearEventRange();
+    CloseFile();
+  }
 }
 
 //_____________________________________________________________________________
@@ -478,7 +507,7 @@ void THaRun::ClearEventRange()
 {
   // Reset the range of events to analyze
 
-  fEvtRange[0] = 0; 
+  fEvtRange[0] = 1;
   fEvtRange[1] = UINT_MAX;
 }
 
