@@ -20,6 +20,7 @@
 #include "THaApparatus.h"
 #include "THaNamedList.h"
 #include "THaCutList.h"
+#include "THaCut.h"
 #include "THaScalerGroup.h"
 #include "THaPhysicsModule.h"
 #include "evio.h"
@@ -35,7 +36,6 @@
 
 #include <iostream>
 #include <algorithm>
-#include <cstring>
 
 // FIXME: Debug
 #include "THaVarList.h"
@@ -50,22 +50,50 @@ THaAnalyzer::THaAnalyzer() :
 {
   // Default constructor.
 
-  // Set the default cut block names. These can be redefined via SetCutBlocks()
+  // Initialize descriptions of analysis stages
 
-  fNblocks = 3;
-  fCutBlockNames    = new TString[ fNblocks ];
-  fCutBlockNames[0] = "Decode";
-  fCutBlockNames[1] = "Reconstruct";
-  fCutBlockNames[2] = "Physics";
+  fStages = new Stage_t[ kMaxStage ];
+  struct StageDef_t {
+    EStage      key;
+    ESkipReason skipkey;
+    const char* name;
+  } stagedef[] = {
+    { kRawDecode,   kRawDecodeTest,   "RawDecode" },
+    { kDecode,      kDecodeTest,      "Decode" },
+    { kCoarseRecon, kCoarseReconTest, "CoarseReconstruct" },
+    { kReconstruct, kReconstructTest, "Reconstruct" },
+    { kPhysics,     kPhysicsTest,     "Physics" },
+    { kMaxStage }
+  };
+  StageDef_t* idef = stagedef;
+  while( idef->key != kMaxStage ) {
+    fStages[ idef->key ].name    = idef->name;
+    fStages[ idef->key ].skipkey = idef->skipkey;
+    idef++;
+  }
 
-  // FIXME: Set the default histogram block names.
+  // Initialize event skip statistics counters
+  fSkipCnt = new Skip_t[ kMaxSkip ];
+  struct SkipDef_t {
+    ESkipReason key;
+    const char* text;
+  } skipdef[] = {
+    { kEvFileTrunc,            "truncated event file" },
+    { kCodaErr,                "CODA error" },
+    { kRawDecodeTest,          "failed master cut after raw decoding" },
+    { kDecodeTest,             "failed master cut after Decode" },
+    { kCoarseReconTest,        "failed master cut after Coarse Reconstruct" },
+    { kReconstructTest,        "failed master cut after Reconstruct" },
+    { kPhysicsTest,            "failed master cut after Physics" },
+    { kMaxSkip }
+  };
+  SkipDef_t* jdef = skipdef;
+  while( jdef->key != kMaxSkip ) {
+    fSkipCnt[ jdef->key ].reason = jdef->text;
+    jdef++;
+  }
 
-  fHistBlockNames   = new TString[ fNblocks ];
-
-  fMasterCutNames   = new TString[ fNblocks ];
-  fCutBlocks        = new THaNamedList*[ fNblocks ];
-  fSkipCnt          = new Int_t[fMaxSkip];
-
+  // Global variables
   if( gHaVars ) {
     gHaVars->Define("nev", "Event number", fNev );
   }
@@ -78,10 +106,7 @@ THaAnalyzer::~THaAnalyzer()
   // they are defined by the caller.
 
   Close();
-  delete [] fCutBlocks;
-  delete [] fMasterCutNames;
-  delete [] fHistBlockNames;
-  delete [] fCutBlockNames;
+  delete [] fStages;
   delete [] fSkipCnt;
 
   if( gHaVars )
@@ -102,14 +127,52 @@ void THaAnalyzer::Close()
 
 //_____________________________________________________________________________
 inline
-Int_t THaAnalyzer::EvalCuts( Int_t n )
+bool THaAnalyzer::EvalStage( EStage n )
 {
-  // Evaluate cut block 'n' and return result of the "master cut".
+  // Fill histogram block for analysis stage 'n', then evaluate cut block.
+  // Return 'false' if master cut is not true, 'true' otherwise.
   // The result can be used to skip further processing of the current event.
-  // Call SetupCuts() before using!  This is an internal function.
+  // If event is skipped, increment associated statistics counter.
+  // Call InitCuts() before using!  This is an internal function.
 
-  gHaCuts->EvalBlock( fCutBlocks[n] );
-  return gHaCuts->Result( fMasterCutNames[n].Data(), THaCutList::kNoWarn );
+  Stage_t* theStage = fStages+n;
+
+  //  if( theStage->hist_list ) {
+    // Fill histograms
+  //  }
+
+  if( theStage->cut_list ) {
+    gHaCuts->EvalBlock( theStage->cut_list );
+    if( theStage->master_cut && 
+	!theStage->master_cut->GetResult() ) {
+      fSkipCnt[ theStage->skipkey ].count++;
+      return false;
+    }      
+  }
+  return true;
+}
+
+//_____________________________________________________________________________
+void THaAnalyzer::InitCuts()
+{
+  // Internal function that sets up structures to handle cuts more efficiently:
+  //
+  // - Find pointers to the THaNamedList lists that hold the cut blocks.
+  // - find pointer to each block's master cut
+
+  for( int i=0; i<kMaxStage; i++ ) {
+    Stage_t* theStage = fStages+i;
+    // If block not found, this will return NULL and work just fine later.
+    theStage->cut_list = gHaCuts->FindBlock( theStage->name );
+
+    if( theStage->cut_list ) {
+      TString master_cut( theStage->name );
+      master_cut.Append( '_' );
+      master_cut.Append( kMasterCutName );
+      theStage->master_cut = gHaCuts->FindCut( master_cut );
+    } else
+      theStage->master_cut = NULL;
+  }
 }
 
 //_____________________________________________________________________________
@@ -168,7 +231,7 @@ Int_t THaAnalyzer::Process( THaRun& run )
     fFile = new TFile( fOutFileName.Data(), "RECREATE" );
   } 
   // filename changed and file open? -> Close file and create a new one
-  else if ( fFile && strcmp( fFile->GetName(), fOutFileName.Data())) {
+  else if ( fFile && fOutFileName != fFile->GetName()) {
     Close();
     cout << "Creating new file: " << fOutFileName << endl;
     fFile = new TFile( fOutFileName.Data(), "RECREATE" );
@@ -190,7 +253,8 @@ Int_t THaAnalyzer::Process( THaRun& run )
   //--- Initialize counters
 
   fNev = 0;
-  memset(fSkipCnt, 0, fMaxSkip*sizeof(Int_t));
+  for( int i=0; i<kMaxSkip; i++ )
+    fSkipCnt[i].count = 0;
   UInt_t nev_physics = 0;
   UInt_t nlim = run.GetLastEvent();
   bool verbose = true, first = true;
@@ -216,9 +280,9 @@ Int_t THaAnalyzer::Process( THaRun& run )
 
     if (status != 0) {
       if (status == S_EVFILE_TRUNC) 
-          fSkipCnt[0]++;
+          fSkipCnt[kEvFileTrunc].count++;
       else if (status == CODA_ERROR) 
-          fSkipCnt[1]++;
+          fSkipCnt[kCodaErr].count++;
       continue;  // skip event
     } 
 
@@ -262,7 +326,7 @@ Int_t THaAnalyzer::Process( THaRun& run )
 	
 	if( !fCutFileName.IsNull() ) 
 	  gHaCuts->Load( fCutFileName );
-	SetupCuts();
+	InitCuts();
 
 	// fOutput must be initialized after all apparatuses are
 	// initialized and before adding anything to its tree.
@@ -299,6 +363,10 @@ Int_t THaAnalyzer::Process( THaRun& run )
       nev_physics++;
       if( nev_physics < run.GetFirstEvent() ) continue;
 
+      //--- Evaluate test block 0 "RawDecode"
+
+      if( !EvalStage(kRawDecode) ) continue;
+
       //--- Process all apparatuses that are defined in the global list gHaApps
       //    First Decode() everything, then Reconstruct()
 
@@ -308,36 +376,24 @@ Int_t THaAnalyzer::Process( THaRun& run )
 	theApparatus->Clear();
 	theApparatus->Decode( evdata );
       }
+      if( !EvalStage(kDecode) )  continue;
 
-      //--- Evaluate test block 1
+      //--- 2nd step: Coarse Reconstruct(). This is mostly VDC tracking.
 
-      if( EvalCuts(0) == 0 ) {
-          fSkipCnt[2]++;
-          continue;
+      next.Reset();
+      while( THaApparatus* theApparatus =
+	     static_cast<THaApparatus*>( next() )) {
+	theApparatus->CoarseReconstruct();
       }
+      if( !EvalStage(kCoarseRecon) )  continue;
 
-      //--- Fill histograms in block 1
-
-
-
-      //--- 2nd step: Reconstruct(). This is mostly VDC tracking.
-
+      //-- 3rd step: Fine (Full) Reconstruct().
       next.Reset();
       while( THaApparatus* theApparatus =
 	     static_cast<THaApparatus*>( next() )) {
 	theApparatus->Reconstruct();
       }
-
-      //--- Evaluate test block 2
-
-      if( EvalCuts(1) == 0 ) {
-           fSkipCnt[3]++;
-           continue;
-      }
-
-
-      //--- Fill histograms in block 2
-
+      if( !EvalStage(kReconstruct) )  continue;
 
       //--- Process the list of physics modules
 
@@ -355,14 +411,9 @@ Int_t THaAnalyzer::Process( THaRun& run )
       }
       if( fatal ) continue;
 
-      //--- Evaluate test block 3
+      //--- Evaluate test block 3 "Physics"
 
-      if( EvalCuts(2) == 0 ) {
-           fSkipCnt[4]++;
-           continue;
-      }
-
-      //--- Fill histograms in block 3
+      if( !EvalStage(kPhysics) )  continue;
 
       //--- If Event defined, fill it.
       if( fEvent ) {
@@ -413,11 +464,13 @@ Int_t THaAnalyzer::Process( THaRun& run )
   cout << "Processed " << fNev << " events, " 
        << nev_physics << " physics events.\n";
 
-  for (int i = 0; i < fMaxSkip; i++) {
-    if (fSkipCnt[i] != 0) 
-      cout << "Skipped " << fSkipCnt[i]
-	   << " events due to reason # " << i << endl;
+  for (int i = 0; i < kMaxSkip; i++) {
+    if (fSkipCnt[i].count != 0) 
+      cout << "Skipped " << fSkipCnt[i].count
+	   << " events due to " << fSkipCnt[i].reason << endl;
   }
+
+  // Print cut summary
 
   // Print scaler statistics
 
@@ -451,32 +504,4 @@ Int_t THaAnalyzer::Process( THaRun& run )
   gHaRun = NULL;
 
   return nev_physics;
-}
-
-//_____________________________________________________________________________
-void THaAnalyzer::SetCutBlockName( Int_t n, const char* name )
-{
-  if( n < 0 || n >= fNblocks ) return;
-  fCutBlockNames[n] = name;
-}
-
-//_____________________________________________________________________________
-void THaAnalyzer::SetupCuts()
-{
-  // Internal function that sets up structures to handle cuts more efficiently:
-  //
-  // - Generate the names of the "master cuts" for the current cut block names.
-  // If the "master cut" exists and is false, further processing of the 
-  // current event is skipped.
-  //
-  // - Find pointers to the THaNamedList lists that hold the cut blocks.
-  //
-
-  for( int i=0; i<fNblocks; i++ ) {
-    fMasterCutNames[i] = fCutBlockNames[i] + "_";
-    fMasterCutNames[i] += kMasterCutName;
-
-    // If block not found, this will return NULL and work just fine later.
-    fCutBlocks[i] = gHaCuts->FindBlock( fCutBlockNames[i] );
-  }
 }

@@ -24,10 +24,11 @@
 class THaEvent;
 class THaRun;
 class THaOutput;
-class THaNamedList;
+class TList;
 class TFile;
 class TIter;
 class TDatime;
+class THaCut;
 
 class THaAnalyzer {
 
@@ -35,13 +36,10 @@ public:
   THaAnalyzer( );
   virtual ~THaAnalyzer();
 
-  virtual const TString* GetCutBlockNames()  const { return fCutBlockNames; }
   virtual const char*    GetOutFileName()    const { return fOutFileName.Data(); }
   virtual const char*    GetCutFileName()    const { return fCutFileName.Data(); }
   virtual const char*    GetOdefFileName()   const { return fOdefFileName.Data(); }
-  virtual Int_t          GetNblocks()        const { return fNblocks; }
   virtual const TFile*   GetOutFile()        const { return fFile; }
-  virtual void           SetCutBlockName( Int_t n, const char* name );
   virtual void           SetEvent( THaEvent* event )     { fEvent = event; }
   virtual void           SetOutFile( const char* name )  { fOutFileName = name; }
   virtual void           SetCutFile( const char* name )  { fCutFileName = name; }
@@ -52,24 +50,38 @@ public:
   
 protected:
   static const char* const kMasterCutName;
-  static const Int_t fMaxSkip = 25;
 
+  enum EStage      { kRawDecode, kDecode, kCoarseRecon, kReconstruct, kPhysics,
+		     kMaxStage };
+  enum ESkipReason { kEvFileTrunc, kCodaErr, kRawDecodeTest, kDecodeTest, 
+		     kCoarseReconTest, kReconstructTest, kPhysicsTest, 
+		     kMaxSkip };
+  // Statistics counters and message texts
+  struct Skip_t {
+    const char* reason;
+    Int_t       count;
+  };
+  // Test and histogram blocks
+  struct Stage_t {
+    const char*   name;
+    ESkipReason   skipkey;
+    TList*        cut_list;
+    TList*        hist_list;
+    THaCut*       master_cut;
+  };
+    
   TFile*         fFile;            //The ROOT output file.
   THaOutput*     fOutput;          //Flexible ROOT output (tree, histograms)
   TString        fOutFileName;     //Name of output ROOT file.
   TString        fCutFileName;     //Name of cut definition file to load
   TString        fOdefFileName;    //Name of output definition file
   THaEvent*      fEvent;           //The event structure to be written to file.
-  Int_t          fNblocks;         //Number of analysis stages
-  TString*       fCutBlockNames;   //Array of cut block names
-  TString*       fHistBlockNames;  //Array of histogram block names
-  TString*       fMasterCutNames;  //Names of the "master cuts" for each cut block
-  THaNamedList** fCutBlocks;       //Array of pointers to the blocks of cuts
+  Stage_t*       fStages;          //Cuts/histograms for each analysis stage [kMaxStage]
   UInt_t         fNev;             //Current event number
-  Int_t*         fSkipCnt;         //Counters for reasons to skip events.
+  Skip_t*        fSkipCnt;         //Counters for reasons to skip events [kMaxSkip]
 
-  Int_t          EvalCuts( Int_t n );
-  virtual void   SetupCuts();
+  virtual bool   EvalStage( EStage n );
+  virtual void   InitCuts();
   virtual Int_t  InitModules( TIter& iter, TDatime& time, Int_t erroff,
 			      const char* baseclass = NULL );
 
