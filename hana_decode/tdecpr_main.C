@@ -10,6 +10,8 @@
 #include "TString.h"
 #include "evio.h"
 
+using namespace std;
+
 int main(int argc, char* argv[])
 {
 

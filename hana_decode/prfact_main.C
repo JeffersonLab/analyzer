@@ -8,6 +8,8 @@
 #include "TString.h"
 #include "evio.h"
 
+using namespace std;
+
 int main(int argc, char* argv[])
 {
 
@@ -31,7 +33,7 @@ int main(int argc, char* argv[])
 
 // Loop over a finite number of events
 
-   int NUMEVT=100;
+   int NUMEVT=100000;
    for (int i=0; i<NUMEVT; i++) {
 
      int status = datafile.codaRead();  

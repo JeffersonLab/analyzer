@@ -6,6 +6,8 @@
 #include "THaEtClient.h"
 #include <iostream.h>
 
+using namespace std;
+
 int main(int argc, char *argv[]) 
 {
 
@@ -45,7 +47,7 @@ int main(int argc, char *argv[])
 	   }
 
          }
-	 if (PRINTOUT) usleep(5000);
+	 //	 if (PRINTOUT) usleep(5000);
        }
        cout << "END, processes "<<NUMEVT<<" events,  sums "<<lensum<<"  "<<dummysum<<endl;
 

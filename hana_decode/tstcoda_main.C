@@ -7,6 +7,8 @@
 #include "THaEtClient.h"
 #include "TString.h"
 
+using namespace std;
+
 void usage();
 void do_something(int* data);
 
