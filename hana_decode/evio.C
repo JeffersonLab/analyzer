@@ -16,8 +16,11 @@
  *
  * Revision History:
  *   $Log$
- *   Revision 1.1  2001/11/14 21:02:51  ole
- *   Initial revision
+ *   Revision 1.2  2002/03/26 22:36:30  ole
+ *   Fix compliation warnings about signed/unsigned comparisons.
+ *
+ *   Revision 1.1.1.1  2001/11/14 21:02:51  ole
+ *   Initial import Release 0.61
  *
  *   Revision 1.1.1.1  2001/09/14 19:31:49  rom
  *   initial import of hana decoder (v 1.6)
@@ -195,9 +198,9 @@ int evOpen(const char *filename,const char *flags,int *handle)
     a->rw = EV_READ;
     if (a->file) {
       fread(header,sizeof(header),1,a->file); /* update: check nbytes return */
-      if (header[EV_HD_MAGIC] != EV_MAGIC) {
+      if (header[EV_HD_MAGIC] != (int)EV_MAGIC) {
 	temp = int_swap_byte(header[EV_HD_MAGIC]);
-	if(temp == EV_MAGIC)
+	if(temp == (int)EV_MAGIC)
 	  a->byte_swapped = 1;
 	else{ /* close file and free memory */
 	  fclose(a->file);
@@ -292,7 +295,7 @@ int evRead(int handle,int *buffer,int buflen)
   int *temp_ptr = (int *) NULL;
 
   a = (EVFILE *)handle;
-  if (a->magic != EV_MAGIC) return(S_EVFILE_BADHANDLE);
+  if (a->magic != (int)EV_MAGIC) return(S_EVFILE_BADHANDLE);
   if (a->left<=0) {
     error = evGetNewBuffer(a);
     if (error) return(error);
@@ -351,7 +354,7 @@ int evGetNewBuffer(EVFILE *a) {
   if (feof(a->file)) return(EOF);
   if (ferror(a->file)) return(ferror(a->file));
   if (nread != a->blksiz) return(errno);
-  if (a->buf[EV_HD_MAGIC] != EV_MAGIC) {
+  if (a->buf[EV_HD_MAGIC] != (int)EV_MAGIC) {
     /* fprintf(stderr,"evRead: bad header\n"); */
     return(S_EVFILE_BADFILE);
   }
@@ -381,7 +384,7 @@ int evWrite(int handle,int *buffer)
   EVFILE *a;
   int nleft,ncopy,error;
   a = (EVFILE *)handle;
-  if (a->magic != EV_MAGIC) {
+  if (a->magic != (int)EV_MAGIC) {
     return(S_EVFILE_BADHANDLE);
   }
 
@@ -447,7 +450,7 @@ int evIoctl(int handle,char *request,void *argp)
 {
   EVFILE *a;
   a = (EVFILE *)handle;
-  if (a->magic != EV_MAGIC) return(S_EVFILE_BADHANDLE);
+  if (a->magic != (int)EV_MAGIC) return(S_EVFILE_BADHANDLE);
   switch (*request) {
   case 'b': case 'B':
     if (a->rw != EV_WRITE) return(S_EVFILE_BADSIZEREQ);
@@ -489,7 +492,7 @@ int evClose(int handle)
   EVFILE *a;
   int status = 0, status2;
   a = (EVFILE *)handle;
-  if (a->magic != EV_MAGIC) return(S_EVFILE_BADHANDLE);
+  if (a->magic != (int)EV_MAGIC) return(S_EVFILE_BADHANDLE);
   if(a->rw == EV_WRITE) {
     status = evFlush(a);
   }

@@ -16,8 +16,11 @@
  *
  * Revision History:
  *   $Log$
- *   Revision 1.1  2001/11/14 21:02:51  ole
- *   Initial revision
+ *   Revision 1.2  2002/03/26 22:36:31  ole
+ *   Fix compliation warnings about signed/unsigned comparisons.
+ *
+ *   Revision 1.1.1.1  2001/11/14 21:02:51  ole
+ *   Initial import Release 0.61
  *
  *   Revision 1.1.1.1  2001/09/14 19:31:49  rom
  *   initial import of hana decoder (v 1.6)
@@ -89,10 +92,10 @@ int int_swap_byte(int input)
   char *buf,*temp_buf;
 
   len = sizeof(int);
-  buf = (char *)malloc(sizeof(int));
-  temp_buf = (char *)malloc(sizeof(int));
-  memcpy(temp_buf,&input,sizeof(int));
-  for(i=0;i<sizeof(int);i++)
+  buf = (char *)malloc(len);
+  temp_buf = (char *)malloc(len);
+  memcpy(temp_buf,&input,len);
+  for(i=0;i<len;i++)
     buf[i] = temp_buf[len-i-1];
   temp = *(int *)(buf);
   free(buf);free(temp_buf);
@@ -281,7 +284,7 @@ void swapped_memcpy(char *buffer,char *source,int size)
 	sg_tag  = (header2 >> 24) & (0x000000ff);
 	sg_type = (header2 >> 16) & (0x000000ff);
 	if(sg_type >= 0x20){  /* contains children */
-	  evStack_pushon((sg_size)*2,i,sg_type,sg_tag,(int)NULL,head);
+	  evStack_pushon((sg_size)*2,i,sg_type,sg_tag,0,head);
 	  lk.head_pos = i + 2;
 	  head->length += 1;
 	  i = i+ 2;
