@@ -92,6 +92,7 @@ protected:
    virtual Int_t FindKey(const THaString& key) const;
    virtual void ErrFile(Int_t iden, const THaString& sline) const;
    virtual Int_t ParseTitle(const THaString& sline);
+   virtual Int_t BuildBlock(const THaString& blockn);
    void Print() const;
 
    // Variables, Formulas, Histograms
@@ -117,7 +118,7 @@ protected:
   TTree *fTree; 
   bool fInit;
 
-  enum EId { kVar = 1, kForm, kH1, kH2 };
+  enum EId { kVar = 1, kForm, kH1, kH2, kBlock };
   static const Int_t kNbout = 4000;
 
 private:

@@ -25,9 +25,8 @@
 #include "TH2.h"
 #include "TTree.h"
 #include "TFile.h"
-
-ClassImp(THaOdata)
-ClassImp(THaOutput)
+#include "TRegexp.h"
+#include <algorithm>
 
 using namespace std;
 typedef vector<THaOdata*>::size_type Vsiz;
@@ -363,11 +362,26 @@ Int_t THaOutput::LoadFile()
 	  fH2dylo.push_back(xl2);
 	  fH2dyhi.push_back(xh2);
           break;
+      case kBlock:
+	  BuildBlock(strvect[1]);
+	  break;
       default:
         cout << "Warning: keyword "<<strvect[0]<<" undefined "<<endl;
     }
   }
   delete odef;
+
+  // sort thru fVarnames, removing identical entries
+  sort(fVarnames.begin(),fVarnames.end());
+  vector<THaString>::iterator Vi = fVarnames.begin();
+  while ( (Vi+1)!=fVarnames.end() ) {
+    if ( *Vi == *(Vi+1) ) {
+      fVarnames.erase(Vi+1);
+    } else {
+      Vi++;
+    }
+  }
+
 #ifdef CHECKOUT
   Print();
 #endif
@@ -390,6 +404,7 @@ Int_t THaOutput::FindKey(const THaString& key) const
     { "formula",  kForm },
     { "th1f",     kH1 },
     { "th2f",     kH2 },
+    { "block",    kBlock },
     { 0 }
   };
 
@@ -524,6 +539,37 @@ Int_t THaOutput::ParseTitle(const THaString& sline)
 }
 
 //_____________________________________________________________________________
+Int_t THaOutput::BuildBlock(const THaString& blockn)
+{
+  // From the block name, identify and save a specific grouping
+  // of global variables by adding them to the fVarnames list.
+  //
+  // For efficiency, at the end of building the list we should
+  // ensure that variables are listed only once.
+  //
+  // Eventually, we can have some specially named blocks,
+  // but for now we simply will use pattern matching, such that
+  //   block L.*
+  // would save all variables from the left spectrometer.
 
 
+  TRegexp re(blockn.c_str(),kTRUE);
+  TIter next(gHaVars);
+  TObject *obj;
 
+  Int_t nvars=0;
+  while ((obj = next())) {
+    TString s = obj->GetName();
+    if ( s.Index(re) != kNPOS ) {
+      s.Append('\0');
+      THaString vn(s.Data());
+      fVarnames.push_back(vn);
+      nvars++;
+    }
+  }
+  return nvars;
+}
+
+//_____________________________________________________________________________
+ClassImp(THaOdata)
+ClassImp(THaOutput)
