@@ -42,52 +42,61 @@ ifeq ($(ARCH),solarisCC5)
 # Solaris CC 5.0
 CXX           = CC
 ifdef DEBUG
-  CXXFLAGS    = -g
+  CXXFLG      = -g
   LDFLAGS     = -g
 else
-  CXXFLAGS    = -O
+  CXXFLG      = -O
   LDFLAGS     = -O
 endif
-CXXFLAGS     += -KPIC
+CXXFLG       += -KPIC
 LD            = CC
 SOFLAGS       = -G
+DEFINES       =
 endif
 
 ifeq ($(ARCH),linuxegcs)
 # Linux with egcs (>= RedHat 5.2)
 CXX           = g++
 ifdef DEBUG
-  CXXFLAGS    = -g -O0
+  CXXFLG      = -g -O0
   LDFLAGS     = -g -O0
 else
-  CXXFLAGS    = -O
+  CXXFLG      = -O
   LDFLAGS     = -O
 endif
-CXXFLAGS     += -Wall -Woverloaded-virtual -fPIC
+DEFINES       =
+CXXFLG       += -Wall -Woverloaded-virtual -fPIC
 LD            = g++
 SOFLAGS       = -shared
+
+GCC_MAJOR     := $(shell chmod +x ./gcc-version; ./gcc-version)
+GCC_MINOR     := $(shell ./gcc-version -m)
+ifeq ($(GCC_MAJOR),3)
+DEFINES       += -DHAS_SSTREAM
+endif
+
 endif
 
 ifeq ($(CXX),)
 $(error $(ARCH) invalid architecture)
 endif
 
-CXXFLAGS     += $(INCLUDES)
-LIBS         += $(ROOTLIBS) $(SYSLIBS)
-GLIBS        += $(ROOTGLIBS) $(SYSLIBS)
-
 MAKEDEPEND    = gcc
 
 ifdef WITH_DEBUG
-CXXFLAGS     += -DWITH_DEBUG
+DEFINES      += -DWITH_DEBUG
 endif
 
 ifdef PROFILE
-CXXFLAGS     += -pg
+CXXFLG       += -pg
 LDFLAGS      += -pg
 endif
 
-export ARCH LIBDIR
+CXXFLAGS     += $(CXXFLG) $(INCLUDES) $(DEFINES)
+LIBS         += $(ROOTLIBS) $(SYSLIBS)
+GLIBS        += $(ROOTGLIBS) $(SYSLIBS)
+
+export ARCH LIBDIR CXX LD SOFLAGS CXXFLG LDFLAGS DEFINES
 
 #------------------------------------------------------------------------------
 
@@ -201,7 +210,7 @@ haDict.C: $(HDR) src/HallA_LinkDef.h
 #	@$(SHELL) -ec '$(CXX) -MM $(CXXFLAGS) -c $< \
 #		| sed '\''s%\($*\)\.o[ :]*%\1.o $@ : %g'\'' > $@; \
 #		[ -s $@ ] || rm -f $@'
-	@$(SHELL) -ec '$(MAKEDEPEND) -MM $(INCLUDES) -c $< \
+	@$(SHELL) -ec '$(MAKEDEPEND) -MM $(INCLUDES) $(DEFINES) -c $< \
 		| sed '\''s%^.*\.o%$*\.o%g'\'' \
 		| sed '\''s%\($*\)\.o[ :]*%\1.o $@ : %g'\'' > $@; \
 		[ -s $@ ] || rm -f $@'
