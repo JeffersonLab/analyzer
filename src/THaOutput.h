@@ -115,6 +115,7 @@ protected:
   virtual Int_t ChkHistTitle(Int_t key, const THaString& sline);
   virtual Int_t BuildBlock(const THaString& blockn);
   virtual THaString StripBracket(THaString& var) const; 
+  std::vector<THaString> reQuote(std::vector<THaString> input) const;
   THaString CleanEpicsName(THaString var) const;
   void BuildList(std::vector<THaString > vdata);
   void AddScaler(THaString name, THaString bank, 

@@ -54,19 +54,22 @@ public:
      { fAssign.clear(); }
   void AddAssign(std::string input) {
 // Add optional assignments.  The input must
-// be of the form "epicsvar=number" (no spaces !)
-// E.g. "Yes=1" "No=2", etc
+// be of the form "epicsvar=number" 
+// epicsvar can be a string with spaces if
+// and only if its enclosed in single spaces.
+// E.g. "Yes=1" "No=2", "'RF On'", etc
    typedef map<string, double>::value_type valType;
    string::size_type pos;
-   string temp1,temp2;
-   pos = input.find("=");
+   string sdata,temp1,temp2;
+   sdata = findQuotes(input);
+   pos = sdata.find("=");
    if (pos != string::npos) {
-      temp1.assign(input.substr(0,pos));
-      temp2.assign(input.substr(pos+1,input.length()));
+      temp1.assign(sdata.substr(0,pos));
+      temp2.assign(sdata.substr(pos+1,sdata.length()));
 // In case someone used "==" instead of "="
       if (temp2.find("=") != string::npos) 
             temp2.assign
-              (input.substr(pos+2,input.length()));
+              (sdata.substr(pos+2,sdata.length()));
       if (strlen(temp2.c_str()) > 0) {
         double tdat = atof(temp2.c_str());
         fAssign.insert(valType(temp1,tdat));
@@ -74,6 +77,21 @@ public:
         fAssign.insert(valType(temp1,0));
      }
    }
+  };
+  string findQuotes(string input) {
+    string result,temp1;
+    string::size_type pos1,pos2;
+    result = input;
+    pos1 = input.find("'");
+    if (pos1 != string::npos) {
+     temp1.assign(input.substr(pos1+1,input.length()));
+     pos2 = temp1.find("'");
+     if (pos2 != string::npos) {
+      result.assign(temp1.substr(0,pos2));
+      result += temp1.substr(pos2+1,temp1.length());
+     }
+    }
+    return result;
   };
   Bool_t IsString() { return (fAssign.size()>0); };
   Double_t Eval(string input) {
@@ -428,8 +446,9 @@ void THaOutput::BuildList(vector<THaString > vdata)
        } else {
 	  fEpicsKey.push_back(new THaEpicsKey(vdata[0]));
           if (vdata.size() > 1) {
-            for (int k = 1; k < (int)vdata.size(); k++) {
-              fEpicsKey[fEpicsKey.size()-1]->AddAssign(vdata[k]);
+            std::vector<THaString> esdata = reQuote(vdata);
+            for (int k = 1; k < (int)esdata.size(); k++) {
+              fEpicsKey[fEpicsKey.size()-1]->AddAssign(esdata[k]);
 	    }
 	  }
        }
@@ -620,6 +639,7 @@ Int_t THaOutput::ProcEpics(THaEvData *evdata)
   fEpicsVar[fEpicsKey.size()] = -1e32;
   for (UInt_t i = 0; i < fEpicsKey.size(); i++) {
     if (evdata->IsLoadedEpics(fEpicsKey[i]->GetName().c_str())) {
+      //      cout << "EPICS name "<<fEpicsKey[i]->GetName()<<"    val "<< evdata->GetEpicsString(fEpicsKey[i]->GetName().c_str())<<endl;
       if (fEpicsKey[i]->IsString()) {
         fEpicsVar[i] = fEpicsKey[i]->Eval(
           evdata->GetEpicsString(
@@ -907,6 +927,44 @@ THaString THaOutput::StripBracket(THaString& var) const
 //      cout << "unwanted brackets from "<<var<<endl;
   } else {
       result = var;
+  }
+  return result;
+}
+
+//_____________________________________________________________________________
+std::vector<THaString> THaOutput::reQuote(std::vector<THaString> input) const {
+  // Specialist private function needed by EPICs line parser:
+  // The problem is that the line was split by white space, so
+  // a line like "'RF On'=42"  must be repackaged into
+  // one string, i.e. "'RF" and "On'=42" put back together.
+  std::vector<THaString> result;
+  result.clear();
+  int first_quote = 1;
+  int to_add = 0;
+  THaString temp1,temp2;
+  string::size_type pos1;
+  for (vector<THaString>::iterator str = input.begin(); str != input.end(); str++) {
+    temp1 = *str;
+    pos1 = temp1.find("'");
+    if (pos1 != THaString::npos) {
+      if (first_quote) {
+        temp2.assign(temp1.substr(pos1,temp1.length()));
+        first_quote = 0;
+        to_add = 1;
+      } else {
+        temp2 = temp2 + " " + temp1;
+        result.push_back(temp2);
+        temp2.clear();
+        first_quote = 1;
+        to_add = 0;
+      }
+    } else {
+      if (to_add) {
+	temp2 = temp2 + " " + temp1;
+      } else {
+        result.push_back(temp1);
+      }
+    }
   }
   return result;
 }
