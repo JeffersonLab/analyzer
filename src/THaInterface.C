@@ -15,7 +15,7 @@
 #include "TInterpreter.h"
 #include "THaVarList.h"
 #include "THaCutList.h"
-
+#include "THaEvData.h"
 #include "THaString.h"
 #include "ha_compiledata.h"
 
@@ -30,6 +30,7 @@ TList*      gHaApps    = NULL;  //List of Apparatuses
 TList*      gHaScalers = NULL;  //List of scaler groups
 TList*      gHaPhysics = NULL;  //List of physics modules
 THaRun*     gHaRun     = NULL;  //The currently active run
+TClass*     gHaDecoder = NULL;  //Class(!) of decoder to use
 
 THaInterface* THaInterface::fgAint = NULL;  //Pointer to this interface
 
@@ -57,6 +58,8 @@ THaInterface::THaInterface( const char* appClassName, int* argc, char** argv,
   gHaApps    = new TList;
   gHaScalers = new TList;
   gHaPhysics = new TList;
+  // Use the standard CODA file decoder by default
+  gHaDecoder = THaEvData::Class();
 
   THaString ipath( HA_INCLUDEPATH );
   vector<THaString> ipv(ipath.Split());

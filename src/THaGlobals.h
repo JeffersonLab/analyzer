@@ -9,5 +9,6 @@ R__EXTERN class TList*       gHaApps;      //List of apparatuses
 R__EXTERN class TList*       gHaScalers;   //List of scaler groups
 R__EXTERN class TList*       gHaPhysics;   //List of physics modules
 R__EXTERN class THaRun*      gHaRun;       //The currently active run
+R__EXTERN class TClass*      gHaDecoder;   //Class(!) of decoder to use
 
 #endif
