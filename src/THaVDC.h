@@ -32,6 +32,16 @@ public:
   virtual Double_t GetVDCAngle() { return fVDCAngle; }
   virtual Double_t GetSpacing()  { return fSpacing;  }
 
+  // Bits & and bit masks for THaTrack::fFlag status word
+  enum {
+    kStageMask     = 0x0003,  // Track processing stage bits
+    kInvalid       = 0x0000,  // Not processed
+    kCoarse        = 0x0001,  // Coarse track
+    kFine          = 0x0002,  // Fine track
+    kReassigned    = 0x0004,  // Track is a new track in Fine stage
+    kMultiTrack    = 0x0008   // Track was generated in the multitrack analysis
+  };
+
 protected:
 
   THaVDC() {}                    // Must construct with name
