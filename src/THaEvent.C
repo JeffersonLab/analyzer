@@ -50,14 +50,14 @@ ClassImp(THaEvent)
 
 const char* const THaEvent::kDefaultHistFile = "histdef.dat";
 
-//______________________________________________________________________________
+//_____________________________________________________________________________
 THaEvent::THaEvent() : 
   fInit(kFALSE), fDataMap(NULL), fHistDef(NULL)
 {
   // Create a THaEvent object.
 }
 
-//______________________________________________________________________________
+//_____________________________________________________________________________
 THaEvent::~THaEvent()
 {
   // Destructor. Clean up all my objects.
@@ -81,7 +81,7 @@ THaEvent::~THaEvent()
   delete [] fDataMap; fDataMap = NULL;
 }
 
-//______________________________________________________________________________
+//_____________________________________________________________________________
 void THaEvent::Clear( Option_t* opt )
 {
   // Reset all histograms
@@ -95,7 +95,7 @@ void THaEvent::Clear( Option_t* opt )
   }
 }
 
-//______________________________________________________________________________
+//_____________________________________________________________________________
 Int_t THaEvent::DefineHist( const char* varname, 
 			    const char* histname, const char* title,
 			    Int_t nbins, Axis_t xlo, Axis_t xhi )
@@ -143,7 +143,7 @@ Int_t THaEvent::DefineHist( const char* varname,
   return 0;
 }
 
-//______________________________________________________________________________
+//_____________________________________________________________________________
 Int_t THaEvent::HistFill()
 {
   // Fill the defined histograms with current event data.
@@ -177,7 +177,7 @@ Int_t THaEvent::HistFill()
   return ndat;
 }
 
-//______________________________________________________________________________
+//_____________________________________________________________________________
 Int_t THaEvent::HistInit()
 {
   // Set up histograms. 
@@ -269,7 +269,7 @@ Int_t THaEvent::HistInit()
   return 0;
 }
 
-//______________________________________________________________________________
+//_____________________________________________________________________________
 Int_t THaEvent::Fill()
 {
   // Copy global variables specified in the data map to the event structure.
@@ -397,7 +397,7 @@ Int_t THaEvent::Fill()
   return nvar;
 }
 
-//______________________________________________________________________________
+//_____________________________________________________________________________
 Int_t THaEvent::Init()
 {
   // Initialize fDataMap. Called automatically by Fill() as necessary.
@@ -425,7 +425,7 @@ Int_t THaEvent::Init()
   return 0;
 }
 
-//______________________________________________________________________________
+//_____________________________________________________________________________
 Int_t THaEvent::LoadHist( const char* filename )
 {
   // Load histogram defintions from file. 
@@ -533,7 +533,7 @@ Int_t THaEvent::LoadHist( const char* filename )
   return nbad;
 }
 
-//______________________________________________________________________________
+//_____________________________________________________________________________
 void THaEvent::PrintHist( Option_t* opt ) const
 {
   // Print current histogram definitions
@@ -589,7 +589,7 @@ void THaEvent::PrintHist( Option_t* opt ) const
   cout.flags( ios::right );
 }
 
-//______________________________________________________________________________
+//_____________________________________________________________________________
 void THaEvent::Reset( Option_t* opt )
 {
   // Reset pointers to global variables. Forces Init() to be executed
@@ -607,7 +607,7 @@ void THaEvent::Reset( Option_t* opt )
   }
 }
 
-//______________________________________________________________________________
+//_____________________________________________________________________________
 UInt_t THaEvent::IntDigits( Int_t n ) const
 { 
   //Get number of printable digits of integer n.
@@ -626,7 +626,7 @@ UInt_t THaEvent::IntDigits( Int_t n ) const
   return j;
 }
 
-//______________________________________________________________________________
+//_____________________________________________________________________________
 UInt_t THaEvent::FloatDigits( Float_t f ) const
 { 
   //Get number of printable digits of float f.
