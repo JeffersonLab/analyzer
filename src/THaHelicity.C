@@ -1,18 +1,28 @@
-//*-- Author :    Robert Michaels    Aug 2000
+//*-- Author :    Robert Michaels    Sept 2002
 
-//////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
 //
 // THaHelicity
 //
-// Helicity of the beam.  If the helicity flag arrives in-time, the flag
-// is simply an ADC value (high value = plus, pedestal value = minus).  
-// If the helicity flag is in delayed mode, it is more complicated.
-// Then we must calibrate time and use the time stamp info to deduce the 
-// helicity.  The code for the 'delayed' mode is not written yet.
-// Author Robert Michaels, August 2000
+// Helicity of the beam.  
+//    +1 = plus,  -1 = minus,  0 = unknown
+// 
+// For data prior to G0 mode, the helicity is determined
+// by an ADC value (high value = plus, pedestal value = minus).  
+// If the helicity flag is in delayed mode, then we must use the 
+// G0 helicity prediction algorithm and verify from the timestamp
+// whether the helicity window has changed.
 //
+// For data prior to Sept 1, 2002, you can set fgG0mode=0 and
+// this algorithm should work.  For data after Sept 1, 2002 we
+// use the G0 helicity scheme.  Set fgG0mode=1 and then set 
+// fgG0delay=8 or =0 according to the delay of helicity.
 //
-//////////////////////////////////////////////////////////////////////////
+// This class is used by THaEvData.  The helicity and timestamp
+// data are registered global variables.
+//
+////////////////////////////////////////////////////////////////////////
+
 
 #include "THaHelicity.h"
 #include "THaEvData.h"
@@ -20,81 +30,127 @@
 
 ClassImp(THaHelicity)
 
-//_____________________________________________________________________________
+//____________________________________________________________________
 THaHelicity::THaHelicity( ) 
 {
   Init();
 }
 
-//_____________________________________________________________________________
+//____________________________________________________________________
 THaHelicity::~THaHelicity( ) 
 {
-#ifndef STANDALONE
-  delete fDetMap;
-#endif
+  if (fDetMap) delete fDetMap;
+  if (fgG0mode) {
+    delete [] fQrt;
+    delete [] fGate;
+    delete [] fFirstquad;
+    delete [] fEvtype;
+    delete [] fTimestamp;
+    delete [] fTdavg;
+    delete [] fTdiff;
+    delete [] fT0;
+    delete [] fTlastquad;
+    delete [] fTtol;
+    delete [] present_reading;
+    delete [] q1_reading;
+    delete [] predicted_reading;
+    delete [] present_helicity;
+    delete [] saved_helicity;
+    delete [] q1_present_helicity;
+    delete [] quad_calibrated;
+    delete [] hbits;
+  }
 }
 
-//_____________________________________________________________________________
+//____________________________________________________________________
 int THaHelicity::GetHelicity() const 
 {
 // Get the helicity data for this event (1-DAQ mode).
 // By convention the return codes:   -1 = minus, +1 = plus, 0 = unknown
-     return GetHelicity("R");
+     return GetHelicity("L");
 }
 
-//_____________________________________________________________________________
-int THaHelicity::GetHelicity(const TString& spec) const 
-{
+//____________________________________________________________________
+int THaHelicity::GetHelicity(const TString& spec) const {
 // Get the helicity data for this event. 
-// spec must be "L"(left) or "R"(right) corresponding to 
+// spec should be "L"(left) or "R"(right) corresponding to 
 // which spectrometer read the helicity info.
-// By convention the return codes:   -1 = minus, +1 = plus, 0 = unknown
+// Otherwise you get Hel which is from one spectrometer 
+// internally chosen.
+// By convention the return codes:  
+//      -1 = minus,  +1 = plus,  0 = unknown
 
       if ((spec == "left") || (spec == "L")) return Lhel;
       if ((spec == "right") || (spec == "R")) return Rhel;
       return Hel;
 }
 
-//_____________________________________________________________________________
-void THaHelicity::Init()
-{
-  // Set up the detector map for this detector
-  // 
-  // These data might come from a database in the future.
-
-  static const int verbose = 0;
-
-#ifndef STANDALONE
-  fDetMap = new THaDetMap;
-  fDetMap->AddModule(1,25,60,61);    // There are several redundant channels
-  fDetMap->AddModule(2,25,14,15);    
-  fDetMap->AddModule(2,25,46,47);    
-  fDetMap->AddModule(14,6,0,1);
-  indices[0][0] = 60;
-  indices[0][1] = 61;
-  indices[1][0] = 14;
-  indices[1][1] = 15;
-#else
-  if(verbose) cout << "Warning:  Cannot run THaHelicity::Init() in STANDALONE mode"<<endl;
-#endif
-  
+//____________________________________________________________________
+void THaHelicity::Init() {
+  if (fgG0mode == 0) {
+// For non-G0 mode where we used ADC flags
+    fDetMap = new THaDetMap;
+    fDetMap->AddModule(1,25,60,61);  // Redundant channels
+    fDetMap->AddModule(2,25,14,15);    
+    fDetMap->AddModule(2,25,46,47);    
+    fDetMap->AddModule(14,6,0,1);
+    indices[0][0] = 60;
+    indices[0][1] = 61;
+    indices[1][0] = 14;
+    indices[1][1] = 15;
+  } else {
+    fQrt                = new Int_t[2];
+    fGate               = new Int_t[2];
+    fFirstquad          = new Int_t[2];
+    fEvtype             = new Int_t[2];
+    fTimestamp          = new Double_t[2];
+    fTdavg              = new Double_t[2];
+    fTdiff              = new Double_t[2];
+    fTtol               = new Double_t[2];
+    fT0                 = new Double_t[2];
+    fTlastquad          = new Double_t[2];
+    present_reading     = new Int_t[2];   
+    q1_reading          = new Int_t[2];   
+    predicted_reading   = new Int_t[2];
+    present_helicity    = new Int_t[2];
+    saved_helicity      = new Int_t[2];
+    quad_calibrated     = new Int_t[2]; 
+    q1_present_helicity = new Int_t[2];
+    hbits               = new Int_t[fgNbits];
+    fTdavg[0]  = fgTdiff;  // Avg time diff between qrt's
+    fTdavg[1]  = fgTdiff;    
+    fTtol[0]   = 20;   
+    fTtol[1]   = 20;       
+    fT0[0]     = 0;
+    fT0[1]     = 0;
+    fTlastquad[0] = 0;
+    fTlastquad[1] = 0;
+    fFirstquad[0] = 1;
+    fFirstquad[1] = 1;
+    memset(hbits, 0, fgNbits*sizeof(Int_t));
+    memset(q1_reading, 0, 2*sizeof(Int_t));
+    memset(predicted_reading, Unknown, 2*sizeof(Int_t));
+    memset(saved_helicity, Unknown, 2*sizeof(Int_t));
+    ClearEvent();
+    recovery_flag = 1;
+    iseed = 0;
+    iseed_earlier = 0;
+    inquad = 0;
+  }  
 }
 
-//_____________________________________________________________________________
-Int_t THaHelicity::Decode( const THaEvData& evdata ) 
-{
+//____________________________________________________________________
+Int_t THaHelicity::Decode( const THaEvData& evdata ) {
 // Decode Helicity  data.
 
-  ClearEvent();  
-  UShort_t k;
-  Int_t indx;
+ ClearEvent();  
 
-#ifndef STANDALONE
-  for( UShort_t i = 0; i < fDetMap->GetSize(); i++ ) {
-
-    THaDetMap::Module* d = fDetMap->GetModule( i );   
-
-    for( UShort_t j = 0; j < evdata.GetNumChan( d->crate, d->slot); j++) {
+ if (fgG0mode == 0) {  // Non-G0 helicity mode
+   UShort_t k;
+   Int_t indx;
+   for( UShort_t i = 0; i < fDetMap->GetSize(); i++ ) {
+     THaDetMap::Module* d = fDetMap->GetModule( i );   
+     for( UShort_t j = 0; j < evdata.GetNumChan( d->crate, d->slot); j++) {
       Int_t chan = evdata.GetNextChan( d->crate, d->slot, j );
       Double_t data = evdata.GetData (d->crate, d->slot, chan, 0);
       if( chan > d->hi || chan < d->lo ) continue;   
@@ -115,50 +171,358 @@ Int_t THaHelicity::Decode( const THaEvData& evdata )
        if (d->crate == 14) {
           if(chan == 0) timestamp = data;
        }
-    }
-  }
-  // Use 2 flags to make sure of helicity, for both L and R spectrom.
-  // helicity[0] is should be opposite of helicity[1].
-  Lhel = Minus;
-  if (Ladc_helicity[0] > HCUT) {
+     }
+   }
+// Use 2 flags to make sure of helicity, for both L and R spectrom.
+// helicity[0] is should be opposite of helicity[1].
+   Lhel = Minus;
+   if (Ladc_helicity[0] > HCUT) {
       Lhel = Plus;
       if (Ladc_helicity[1] > HCUT) Lhel = Unknown;
-  } else {
+   } else {
       if (Ladc_helicity[1] < HCUT) Lhel = Unknown;
-  } 
-  Rhel = Minus;
-  if (Radc_helicity[0] > HCUT) {
+   } 
+   Rhel = Minus;
+   if (Radc_helicity[0] > HCUT) {
       Rhel = Plus;
       if (Radc_helicity[1] > HCUT) Rhel = Unknown;
-  } else {
+   } else {
       if (Radc_helicity[1] < HCUT) Rhel = Unknown;
-  }
-  Hel = Rhel;   // R spectrometer flag is used if running 1-spectrom DAQ.
-  if (DEBUG) cout << "Helicity L,R "<<Lhel<<" "<<Rhel<<" time "<<timestamp<<endl;
-  return OK;
-#else
-  return -1;
-#endif
+   }
+   Hel = Rhel;   // R spectrometer flag is used if running 1-spectrom DAQ.
+   if (HELDEBUG >= 1) 
+      cout << "Helicity L,R "<<Lhel<<" "<<Rhel<<" time "<<timestamp<<endl;
+   return OK;
+
+ } else {   // G0 helicity mode:
+
+   for (Int_t spec = fgLarm; spec <= fgRarm; spec++) {
+      fArm = spec;  // fArm is global
+      ReadData ( evdata );    
+      QuadCalib ();      
+      LoadHelicity ();
+   }
+   Lhel = present_helicity[fgLarm];
+   Rhel = present_helicity[fgRarm];
+   Hel = Lhel;   // default helicity for 1-arm setup
+   if (HELDEBUG >= 1) cout << "G0 helicitites "<<Lhel<<"  "<<Rhel<<endl;
+ }
+ return OK;
 }
  
-//_____________________________________________________________________________
-void THaHelicity::ClearEvent()
-{
-  // Reset all local data to prepare for next event.
-  memset( Ladc_helicity, 0, NCHAN*sizeof(Double_t) );
-  memset( Radc_helicity, 0, NCHAN*sizeof(Double_t) );
+//____________________________________________________________________
+Double_t THaHelicity::GetTime() const {
+// Get the timestamp, a ~105 kHz clock.
+  if (fgG0mode == 0) return timestamp;
+  return fTimestamp[fgLarm];
+}
+
+//____________________________________________________________________
+void THaHelicity::ClearEvent() {
+// Reset data to prepare for next event.
+  
+  if (fgG0mode == 0) {
+     memset( Ladc_helicity, 0, NCHAN*sizeof(Double_t) );
+     memset( Radc_helicity, 0, NCHAN*sizeof(Double_t) );
+  } else {
+     memset(fQrt, 0, 2*sizeof(Int_t));
+     memset(fGate, 0, 2*sizeof(Int_t));
+     memset(fTimestamp, 0, 2*sizeof(Double_t));
+     memset(present_reading, Unknown, 2*sizeof(Int_t));
+     memset(present_helicity, Unknown, 2*sizeof(Int_t));
+  }
+}
+
+//____________________________________________________________________
+void THaHelicity::ReadData( const THaEvData& evdata ) {
+// Obtain the present data from the event for G0 helicity mode.
+
+   if (fgG0mode != 1) return;
+
+   int myroc, len, data, nscaler, header;
+   int numread, badread;
+   int ring_clock, ring_qrt, ring_helicity;
+   int ring_trig, ring_bcm, ring_l1a; 
+
+   if (fArm == fgLarm || fArm == fgRarm) {
+     if (fArm == fgLarm) myroc = 11;
+     if (fArm == fgRarm) myroc = 10;
+   } else {
+     return;
+   }
+   len = evdata.GetRocLength(myroc);
+   if (len <= 4) return;
+   data = evdata.GetRawData(myroc,3);   
+   present_reading[fArm] = (data & 0x10) >> 4;
+   fQrt[fArm] = (data & 0x20) >> 5;
+   fGate[fArm] = (data & 0x40) >> 6;
+   fTimestamp[fArm] = evdata.GetRawData(myroc,4);
+   data = evdata.GetRawData(myroc,5);
+   nscaler = data & 0x7;
+   fEvtype[fArm] = evdata.GetEvType();
+   if (HELDEBUG >= 2) {
+     cout << dec << "--> Data for spectrometer " << fArm << endl;
+     cout << "  evtype " << fEvtype[fArm];
+     cout << "  helicity " << present_reading[fArm];
+     cout << "  qrt " << fQrt[fArm];
+     cout << " gate " << fGate[fArm];
+     cout << "   time stamp " << fTimestamp[fArm] << endl;
+   }
+   if (nscaler <= 0) return;
+   int index = 6;
+   if (nscaler > 2) nscaler = 2;  // shouldn't be necessary
+// 32 channels of scaler data for two helicities.
+   if (HELDEBUG >= 3) cout << "Synch event ----> " << endl;
+   for (int ihel = 0; ihel < nscaler; ihel++) { 
+       header = evdata.GetRawData(myroc,index++);
+       if (HELDEBUG >= 3) {
+         cout << "Scaler for helicity = " << dec << ihel;
+         cout << "  unique header = " << hex << header << endl;
+       }
+       for (int ichan = 0; ichan < 32; ichan++) {
+	 data = evdata.GetRawData(myroc,index++);
+         if (HELDEBUG >= 3) {
+           cout << "channel # " << dec << ichan+1;
+           cout << "  (hex) data = " << hex << data << endl;
+	 }
+       }
+   }
+   numread = evdata.GetRawData(myroc,index++);
+   badread = evdata.GetRawData(myroc,index++);
+   if (HELDEBUG >= 3) 
+      cout << "FIFO num of last good read " << dec << numread << endl;
+// We hope badread=0 forever.  If not, two possibilities :
+//   a) Skip that run, or
+//   b) Cut out bad events and use ring buffer to recover.
+// See R. Michaels if these messages ever appear !!
+   if (badread != 0) {
+      cout << "NOTE: There are bad scaler readings !! " << endl;
+      cout << "FIFO num of last bad read " << endl;
+      cout << badread << endl;
+   }
+// Subset of scaler channels stored in a 30 Hz ring buffer.
+   int nring = 0;
+   while (index < len && nring == 0) {
+     header = evdata.GetRawData(myroc,index++);
+     if ((header & 0xffff0000) == 0xfb1b0000) {
+         nring = header & 0x3ff;
+     }
+   }
+   if (HELDEBUG >= 3) 
+     cout << "Num in ring buffer = " << dec << nring << endl;
+   for (int iring = 0; iring < nring; iring++) {
+     ring_clock = evdata.GetRawData(myroc,index++);
+     data = evdata.GetRawData(myroc,index++);
+     ring_qrt = (data & 0x10) >> 4;
+     ring_helicity = (data & 0x1);
+     ring_trig = evdata.GetRawData(myroc,index++);
+     ring_bcm = evdata.GetRawData(myroc,index++);
+     ring_l1a = evdata.GetRawData(myroc,index++);
+     if (HELDEBUG >= 3) {
+        cout << "buff [" << dec << iring << "] ";
+        cout << "  clock " << ring_clock << "  qrt " << ring_qrt;
+        cout << "  helicity " << ring_helicity;
+        cout << "  trigger " << ring_trig << "  bcm " << ring_bcm;
+        cout << "  L1a "<<ring_l1a<<endl;
+     }
+   }
+   return;
+}
+
+//____________________________________________________________________
+void THaHelicity::QuadCalib() {
+// Calibrate the helicity predictor shift register.
+   fTdiff[fArm] = fTimestamp[fArm] - fT0[fArm];
+   if (HELDEBUG >= 2) {
+     cout << "TimeCalib "<<fTimestamp[fArm]<<"  "<<fT0[fArm];
+     cout << "  "<<fTdiff[fArm]<<"  "<<fQrt[fArm]<<endl;
+   }
+   if (fFirstquad[fArm] == 0 &&
+       fTdiff[fArm] > (1.25*fTdavg[fArm] + fTtol[fArm])) {
+        cout << "WARN: THaHelicity: Skipped QRT.  Low rate ? " << endl;
+        if (HELDEBUG >= 2)
+          cout << fTdiff[fArm] << "  " << (Int_t)fTimestamp[fArm] << endl;
+        recovery_flag = 1;    // clear & recalibrate the predictor
+        quad_calibrated[fArm] = 0;
+        fFirstquad[fArm] = 1;
+   }
+   if (fQrt[fArm] == 1  && fFirstquad[fArm] == 1) {
+       fT0[fArm] = fTimestamp[fArm];
+       fFirstquad[fArm] = 0;
+   }
+   if ( ( fTdiff[fArm] > 0.95*fTdavg[fArm] )  &&
+	(( fQrt[fArm] == 1 ) ||
+// Use the event 9's since apparently some QRT's are missed.
+	  ( fEvtype[fArm] == 9 && fGate[fArm] == 0 )) ) {
+       if (HELDEBUG >= 2) cout << "found qrt "<<endl;
+       fT0[fArm] = fTimestamp[fArm];
+       q1_reading[fArm] = present_reading[fArm];
+       QuadHelicity();
+       q1_present_helicity[fArm] = present_helicity[fArm];
+       if (quad_calibrated[fArm] && !CompHel() ) {
+// This is ok if it doesn't happen too often.  You lose these events.
+          cout << "WARNING: THaHelicity: QuadCalib";
+          cout << " G0 prediction failed."<<endl;
+          recovery_flag = 1;    // clear & recalibrate the predictor
+          quad_calibrated[fArm] = 0;
+          fFirstquad[fArm] = 1;
+          present_helicity[fArm] = Unknown;
+       }
+   }
+   fTdiff[fArm] = fTimestamp[fArm] - fT0[fArm];
+   return;
 }
 
 
+//____________________________________________________________________
+void THaHelicity::LoadHelicity() {
+// Load the helicity in G0 mode.  
+// If fGate == 0, helicity remains 'Unknown'.
+
+ if ( !quad_calibrated[fArm]  || fGate[fArm] == 0 ) {
+       present_helicity[fArm] = Unknown;
+       return;
+ }
+ if (HELDEBUG >= 2) cout << "Loading helicity ##########"<<endl;
+// Look for pattern (+ - - +)  or (- + + -) to decide where in quad
+ if (fTdiff[fArm] < 0.4*fTdavg[fArm] && fQrt[fArm] == 1) {
+          inquad = 1;  
+ }
+ if (fTdiff[fArm] < 0.9*fTdavg[fArm] && fQrt[fArm] == 0 &&
+     present_reading[fArm] != q1_reading[fArm]) {
+          inquad = 2;  // same is inquad = 3
+ }
+ if (fTdiff[fArm] < 1.1*fTdavg[fArm] && fQrt[fArm] == 0 &&
+     present_reading[fArm] == q1_reading[fArm]) {
+          inquad = 4;  
+ }
+ if (inquad == 1 || inquad >= 4) {
+     present_helicity[fArm] = q1_present_helicity[fArm];
+ } else {
+     if (q1_present_helicity[fArm] == Plus) 
+            present_helicity[fArm] = Minus;
+     if (q1_present_helicity[fArm] == Minus) 
+            present_helicity[fArm] = Plus;
+ }
+ if (HELDEBUG >= 2) {
+    cout << dec << "Quad   "<<inquad;
+    cout << "   Time diff "<<fTdiff[fArm];
+    cout << "   Qrt  "<<fQrt[fArm];
+    cout << "   Helicity "<<present_helicity[fArm]<<endl;
+ }
+ return;
+}
+
+//____________________________________________________________________
+void THaHelicity::QuadHelicity() {
+// Load the helicity from the present reading for the
+// start of a quad.
+  int i, dummy;
+  static int nb;
+  if (recovery_flag) nb = 0;
+  recovery_flag = 0;
+  if (nb < fgNbits) {
+      hbits[nb] = present_reading[fArm];
+      nb++;
+      quad_calibrated[fArm] = 0;
+  } else if (nb == fgNbits) {   // Have finished loading
+      iseed_earlier = GetSeed();
+      iseed = iseed_earlier;
+      for (i = 0; i < fgNbits+1; i++) {
+          predicted_reading[fArm] = RanBit(0);
+          dummy = RanBit(1);
+      }
+      present_helicity[fArm] = predicted_reading[fArm];
+      for (i = 0; i < fgG0delay; i++)
+          present_helicity[fArm] = RanBit(1);
+      nb++;
+      saved_helicity[fArm] = present_helicity[fArm];
+      quad_calibrated[fArm] = 1;
+  } else {      
+      present_helicity[fArm] = saved_helicity[fArm];
+      if (fTimestamp[fArm] - fTlastquad[fArm] < 
+	 0.3 * fTdavg[fArm]) return;  // Don't calibrate twice same qrt.
+      predicted_reading[fArm] = RanBit(0);
+      present_helicity[fArm] = RanBit(1);
+      saved_helicity[fArm] = present_helicity[fArm];
+      fTlastquad[fArm] = fTimestamp[fArm];
+      if (HELDEBUG >= 1) {
+        cout << "quad helicities  " << dec;
+        cout << predicted_reading[fArm];           // -1, +1
+        cout << " ?=? " << present_reading[fArm];  //  0,  1
+        cout << "   pred-> " << present_helicity[fArm]<<endl;
+        if (CompHel()) cout << "HELICITY OK "<<endl;
+      }
+      quad_calibrated[fArm] = 1;
+
+  }
+  return;
+}
+
+//____________________________________________________________________
+Int_t THaHelicity::RanBit(int which) {
+// This is the random bit generator according to the G0
+// algorithm described in "G0 Helicity Digital Controls" by 
+// E. Stangland, R. Flood, H. Dong, July 2002.
+// Argument:                                                    
+//        which = 0 or 1                                        
+//     if 0 then iseed_earlier is modified                      
+//     if 1 then iseed is modified                              
+// Return value:                                                
+//        helicity (-1 or +1).
+
+  static int IB1 = 1;           // Bit 1
+  static int IB3 = 4;           // Bit 3
+  static int IB4 = 8;           // Bit 4
+  static int IB24 = 8388608;    // Bit 24 
+  static int MASK = IB1+IB3+IB4+IB24;
+
+  if (which == 0) {
+     if(iseed_earlier & IB24) {    
+         iseed_earlier = ((iseed_earlier^MASK)<<1) | IB1;
+         return Plus;
+     } else  { 
+         iseed_earlier <<= 1;
+         return Minus;
+     }
+  } else {
+     if(iseed & IB24) {    
+         iseed = ((iseed^MASK)<<1) | IB1;
+         return Plus;
+     } else  { 
+         iseed <<= 1;
+         return Minus;
+     }
+  }
+
+};
 
 
+//____________________________________________________________________
+UInt_t THaHelicity::GetSeed() {
+  int seedbits[fgNbits];
+  UInt_t ranseed = 0;
+  for (int i = 0; i < 20; i++) seedbits[23-i] = hbits[i];
+  seedbits[3] = hbits[20]^seedbits[23];
+  seedbits[2] = hbits[21]^seedbits[22]^seedbits[23];
+  seedbits[1] = hbits[22]^seedbits[21]^seedbits[22];
+  seedbits[0] = hbits[23]^seedbits[20]^seedbits[21]^seedbits[23];
+  for (int i=fgNbits-1; i >= 0; i--) ranseed = ranseed<<1|(seedbits[i]&1);
+  ranseed = ranseed&0xFFFFFF;
+  return ranseed;
+}
 
-
-
-
-
-
-
+//____________________________________________________________________
+Bool_t THaHelicity::CompHel() {
+// Compare the present reading to the predicted reading.
+// The raw data are 0's and 1's which compare to predictions of
+// -1 and +1.  A prediction of 0 occurs when there is no gate.
+  if (present_reading[fArm] == 0 && 
+      predicted_reading[fArm] == -1) return kTRUE;
+  if (present_reading[fArm] == 1 && 
+      predicted_reading[fArm] == 1) return kTRUE;
+  return kFALSE;
+}
 
 
 
