@@ -57,7 +57,8 @@ THaAnalyzer::THaAnalyzer() :
   fStages(NULL), fSkipCnt(NULL), fNev(0), fMarkInterval(1000), fCompress(1), 
   fDoBench(kFALSE), fBench(NULL), fVerbose(2), 
   fLocalEvent(kFALSE), fIsInit(kFALSE), fAnalysisStarted(kFALSE),
-  fUpdateRun(kTRUE), fOverwrite(kTRUE), fPrevEvent(NULL), fRun(NULL)
+  fUpdateRun(kTRUE), fOverwrite(kTRUE), fPrevEvent(NULL), fRun(NULL),
+  fEvData(NULL)
 {
   // Default constructor.
 
@@ -134,6 +135,7 @@ void THaAnalyzer::Close()
   
   if( gHaRun && *gHaRun == *fRun ) 
     gHaRun = NULL;
+  delete fEvData; fEvData = NULL;
   delete fOutput; fOutput = NULL;
   delete fFile;   fFile   = NULL;
   delete fRun;    fRun    = NULL;
@@ -351,7 +353,20 @@ Int_t THaAnalyzer::DoInit( THaRun* run )
     new_output = true;
   }
 
-  // Make sure the run is initizlized. 
+  //--- Create our decoder from the TClass specified by the user.
+  bool new_decoder = false;
+  if( !fEvData || fEvData->IsA() != gHaDecoder ) {
+    delete fEvData; fEvData = NULL;
+    if( gHaDecoder ) 
+      fEvData = static_cast<THaEvData*>(gHaDecoder->New());
+    if( !fEvData ) {
+      Error( here, "Failed to create decoder object. Something is very wrong." );
+      return 241;
+    }
+    new_decoder = true;
+  }
+
+  // Make sure the run is initialized. 
   if( !run->IsInit()) {
     retval = run->Init();
     if( retval )
@@ -360,7 +375,8 @@ Int_t THaAnalyzer::DoInit( THaRun* run )
 
   // Deal with the run.
   bool new_run   = ( !fRun || *fRun != *run );
-  bool need_init = ( !fIsInit || new_event || new_output || new_run );
+  bool need_init = ( !fIsInit || new_event || new_output || new_run ||
+		     new_decoder );
 
   // Warn user if trying to analyze the same run twice with overlapping
   // event ranges
@@ -548,20 +564,11 @@ Int_t THaAnalyzer::Process( THaRun* run )
     return status;
   }
   
-  //--- Create our decoder from the TClass specified by the user.
-  THaEvData* evdata = static_cast<THaEvData*>(gHaDecoder->New());
-  if( !evdata ) {
-    Error( here, "Failed to create decoder object. Something is very wrong." );
-    fBench->Stop("Total");
-    return -2;
-  }
-
   //--- Re-open the CODA file. Should succeed since this was tested in Init().
   if( (status = run->OpenFile()) ) {
     Error( here, "Failed to re-open the input file. "
 	   "Make sure the file still exists.");
     fBench->Stop("Total");
-    delete evdata;
     return -4;
   }
 
@@ -584,14 +591,14 @@ Int_t THaAnalyzer::Process( THaRun* run )
   bool fatal = false;
   bool first = true;
   fAnalysisStarted = kTRUE;
-  while ( !terminate && (status = ReadOneEvent( run, evdata )) != EOF && 
+  while ( !terminate && (status = ReadOneEvent( run, fEvData )) != EOF && 
 	  nev_physics < nlast ) {
 
     //--- Skip bad events.
     if( status )
       continue;
 
-    UInt_t evnum = evdata->GetEvNum();
+    UInt_t evnum = fEvData->GetEvNum();
 
     //--- Print marks periodically
     if( fVerbose>1 && evnum > 0 && (evnum % fMarkInterval == 0))  
@@ -599,10 +606,10 @@ Int_t THaAnalyzer::Process( THaRun* run )
 
     //--- Update run parameters
     if( fUpdateRun )
-      run->Update( evdata );
+      run->Update( fEvData );
 
     //=== Physics triggers ===
-    if( evdata->IsPhysicsTrigger()) {
+    if( fEvData->IsPhysicsTrigger()) {
       nev_physics++;
 
       // Skip physics events until we reach the first requested event
@@ -631,7 +638,7 @@ Int_t THaAnalyzer::Process( THaRun* run )
       while( THaApparatus* theApparatus =
 	     static_cast<THaApparatus*>( next() )) {
 	theApparatus->Clear();
-	theApparatus->Decode( *evdata );
+	theApparatus->Decode( *fEvData );
       }
       if( fDoBench ) fBench->Stop("Decode");
       if( !EvalStage(kDecode) )  continue;
@@ -664,7 +671,7 @@ Int_t THaAnalyzer::Process( THaRun* run )
       while( THaPhysicsModule* theModule =
 	     static_cast<THaPhysicsModule*>( next_physics() )) {
 	theModule->Clear();
-	Int_t err = theModule->Process( *evdata );
+	Int_t err = theModule->Process( *fEvData );
 	if( err == THaPhysicsModule::kTerminate )
 	  terminate = true;
 	else if ( err == THaPhysicsModule::kFatal ) {
@@ -682,12 +689,12 @@ Int_t THaAnalyzer::Process( THaRun* run )
       //--- If Event defined, fill it.
       if( fDoBench ) fBench->Begin("Output");
       if( fEvent ) {
-	fEvent->GetHeader()->Set( (UInt_t)evdata->GetEvNum(), 
-				  evdata->GetEvType(),
-				  evdata->GetEvLength(),
-				  evdata->GetEvTime(),
-				  evdata->GetHelicity(),
-				  evdata->GetRunNum()
+	fEvent->GetHeader()->Set( (UInt_t)fEvData->GetEvNum(), 
+				  fEvData->GetEvType(),
+				  fEvData->GetEvLength(),
+				  fEvData->GetEvTime(),
+				  fEvData->GetHelicity(),
+				  fEvData->GetRunNum()
 				  );
 	fEvent->Fill();
       }
@@ -699,7 +706,7 @@ Int_t THaAnalyzer::Process( THaRun* run )
     }
 
     //=== Scaler triggers ===
-    else if( evdata->IsScalerEvent()) {
+    else if( fEvData->IsScalerEvent()) {
       nev_analyzed++;
 
       //--- Loop over all defined scalers and execute LoadData()
@@ -708,14 +715,13 @@ Int_t THaAnalyzer::Process( THaRun* run )
       next_scaler.Reset();
       while( THaScalerGroup* theScaler =
 	     static_cast<THaScalerGroup*>( next_scaler() )) {
-	theScaler->LoadData( *evdata );
+	theScaler->LoadData( *fEvData );
       }
       if( fDoBench ) fBench->Begin("Scaler");
 
     } // End trigger type test
   }  // End of event loop
   
-  delete evdata;
   // Save final run parameters locally
   *fRun = *run;
 
