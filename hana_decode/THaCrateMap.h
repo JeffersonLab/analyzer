@@ -62,6 +62,7 @@ class THaCrateMap
      int init(UInt_t time);                         // Initialize by Unix time.
      int init();                                    // Let me initialize everything 
                                                     // (recommend to call this once)
+     int init_hc(UInt_t time);                      // Hard-coded crate-map
      void print() const;
 
      static const int CM_OK;

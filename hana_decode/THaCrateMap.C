@@ -19,6 +19,14 @@
 #include <iostream>
 #include <ctime>
 
+#ifndef STANDALONE
+#include "THaAnalysisObject.h"
+#endif
+
+#include "TDatime.h"
+#include "TError.h"
+
+#include <cstdio>
 #include <string>
 #include <iomanip>
 
@@ -164,7 +172,39 @@ void THaCrateMap::incrNslot(int crate) {
   }
 }
 
+int THaCrateMap::init(UInt_t tloc) {
+  // Modify the interface to be able to use a database file.
+  // The real work is done by the init(TString&) method
+  
+  TDatime date(tloc);
+  
+  TString db;
 
+#ifndef STANDALONE
+  FILE* fi = THaAnalysisObject::OpenFile("cratemap",date,"THaCrateMap::init","r",1);
+#else
+  FILE* fi = fopen("db_cratemap.dat","r");
+#endif
+  if ( fi ) {
+    // just build the string to parse later
+    int ch;
+    while ( (ch = fgetc(fi)) != EOF ) {
+      db += static_cast<char>(ch);
+    }
+    fclose(fi);
+  } else {
+    ::Error( "THaCrateMap::init(UInt_t)","Cannot open database file" );
+  }
+
+  if ( db.Length() <= 0 ) {
+    ::Error( "THaCrateMap::init(UInt_t)","Using hard-coded time-dependent crate-map" );
+    return init_hc(tloc);
+  }
+  
+  return init(db);
+}
+
+  
 // Initialization of the default crate map.  R. Michaels
 // I think I know where all crates and models are, so here I set it up.
 // Ideally this method would use a database, but for now we use a 
@@ -172,7 +212,7 @@ void THaCrateMap::incrNslot(int crate) {
 // time_period determined from the Unix time passed as argument.
 // The Unix time is obtained from Prestart event by the user class.
 
-int THaCrateMap::init(UInt_t tloc) {
+int THaCrateMap::init_hc(UInt_t tloc) {
   int crate, slot, month=0, year=0;
 // Default state: most recent.
   int prior_oct_2000 = 0;
