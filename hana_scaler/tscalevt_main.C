@@ -24,20 +24,29 @@
 #include "TRandom.h"
 #endif
 
+#define DEBUG 0
+
+#define SKIPEVENT 20     // How many scaler events to skip
+                         // (This reduces effect of clock granularity)
+#define MYROC     11     // Needed for the SKIPEVENT trick
 #define BCM_CUT1  3000   // cut on BCM (x1 gain) to require beam on.
 #define BCM_CUT3  10000  // cut on BCM (x3 gain) to require beam on.
 #define BCM_CUT10 30000  // cut on BCM (x10 gain) to require beam on.
-#define NBCM 6         // number of BCM signals 
+#define NBCM 6           // number of BCM signals 
 
 int main(int argc, char* argv[]) {
 
-   int trig;
+   int i,iev,evnum,trig,iskip,status;
+   Int_t clkp, clkm, lastclkp, lastclkm;
    Float_t sum,asy;
    TString filename = "run.dat";
    
    char bank[100] = "EvLeft";  // Event stream, Left HRS
    cout << "Analyzing CODA file  "<<filename<<endl;   
    cout << "Bank = "<<bank<<endl<<flush;
+
+   evnum = 10000000;
+   if (argc > 1) evnum = atoi(argv[1]);
 
    THaScaler *scaler = new THaScaler(bank);
 
@@ -50,12 +59,11 @@ int main(int argc, char* argv[]) {
    THaEvData evdata;
 
 // Pedestals.  Left, Right Arms.  u1,u3,u10,d1,d3,d10
-   Float_t bcmpedL[NBCM] = { 52.5, 44.1, 110.7, 0., 94.2, 227. };
+   Float_t bcmpedL[NBCM] = { 188.2, 146.2, 271.6, 37.8, 94.2, 260.2 };
    Float_t bcmpedR[NBCM] = { 53.0, 41.8, 104.1, 0., 101.6, 254.6 };
    Float_t bcmped[NBCM];
 
-   int i;
-   if (bank == "EvLeft") {
+   if (strcmp(bank,"EvLeft") == 0) {
      cout << "Using Left Arm BCM pedestals"<<endl;
      for (i = 0; i < NBCM; i++) {
        bcmped[i] = bcmpedL[i];
@@ -72,9 +80,9 @@ int main(int argc, char* argv[]) {
    TFile hfile("scaler.root","RECREATE","Scaler data in Hall A");
 
 // Define the ntuple here
-//                   0   1  2   3  4   5  6  7   8  9 10 11 12  13   
-   char rawrates[]="time:u1:u3:u10:d1:d3:d10:t1:t2:t3:t4:t5:clk:tacc:";
-//                      14 15   16  17  18   19  20   21  22  23  24  25
+//                   0   1  2   3  4   5  6  7   8  9 10 11  12   13   14
+   char rawrates[]="time:u1:u3:u10:d1:d3:d10:t1:t2:t3:t4:t5:clkp:clkm:tacc:";
+//                      15 16   17  18  19   20  21   22  23  24  25  26
    char asymmetries[]="au1:au3:au10:ad1:ad3:ad10:at1:at2:at3:at4:at5:aclk";
    int nlen = strlen(rawrates) + strlen(asymmetries);
    char *string_ntup = new char[nlen+1];
@@ -82,11 +90,14 @@ int main(int argc, char* argv[]) {
    strcat(string_ntup,asymmetries);
    TNtuple *ntup = new TNtuple("ascal","Scaler Rates",string_ntup);
 
-   Float_t farray_ntup[26];     // Note, dimension is same as size of string_ntup (i.e. nlen+1)
+   Float_t farray_ntup[27];     // Note, dimension is same as size of string_ntup (i.e. nlen+1)
 
+   status = 0;
+   iev = 0;
+   iskip = 0;
+   lastclkp = 0;
+   lastclkm = 0;
 
-   int status = 0;
-   
    while (status == 0) {
 
      status = coda->codaRead();
@@ -95,10 +106,19 @@ int main(int argc, char* argv[]) {
        goto quit;
      }
      evdata.LoadEvent(coda->getEvBuffer());
+
+// Dirty trick to average over larger time intervals (depending on 
+// SKIPEVENT) to reduce the fluctuations due to clock.  
+     if (evdata.GetRocLength(MYROC) > 16) iskip++;
+     if (SKIPEVENT != 0 && iskip < SKIPEVENT) continue;
+     iskip = 0;
+
      scaler->LoadData(evdata);
 
 // Not every trigger has new scaler data, so skip if not new.
      if ( !scaler->IsRenewed() ) continue;
+
+     if (iev++ > evnum) goto quit;
 
 // Fill the ntuple here
 
@@ -114,8 +134,13 @@ int main(int argc, char* argv[]) {
      for (trig = 1; trig <= 5; trig++) {
        farray_ntup[6+trig] = 0.5*(scaler->GetTrigRate(1,trig) + scaler->GetTrigRate(-1,trig));
      }
-     farray_ntup[12] = 0.5*(scaler->GetNormRate(1,"clock") + scaler->GetNormRate(-1,"clock"));
-     farray_ntup[13] = 0.5*(scaler->GetNormRate(1,"TS-accept") + 
+     clkp = scaler->GetNormData(1,"clock");
+     clkm = scaler->GetNormData(-1,"clock");
+     farray_ntup[12] = clkp - lastclkp;
+     farray_ntup[13] = clkm - lastclkm;
+     lastclkp = clkp;
+     lastclkm = clkm;
+     farray_ntup[14] = 0.5*(scaler->GetNormRate(1,"TS-accept") + 
                             scaler->GetNormRate(-1,"TS-accept"));
      string bcms[] = {"bcm_u1", "bcm_u3", "bcm_u10", "bcm_d1", "bcm_d3", "bcm_d10"};
      for (int ibcm = 0; ibcm < 6; ibcm++ ) {
@@ -126,7 +151,7 @@ int main(int argc, char* argv[]) {
 	  asy = (scaler->GetBcmRate(1,bcms[ibcm].c_str()) - 
                  scaler->GetBcmRate(-1,bcms[ibcm].c_str())) / sum;
        } 
-       farray_ntup[14+ibcm] = asy;
+       farray_ntup[15+ibcm] = asy;
      }
      for (trig = 1; trig <= 5; trig++) {
        asy = -999;
@@ -139,7 +164,7 @@ int main(int argc, char* argv[]) {
                  -  scaler->GetTrigRate(-1,trig)/scaler->GetBcmRate(-1,"bcm_u3")) / sum;
 	   }
        }
-       farray_ntup[19+trig] = asy;
+       farray_ntup[20+trig] = asy;
      }
      sum = scaler->GetPulser(1,"clock") + scaler->GetPulser(-1,"clock");
      asy = -999;
@@ -147,17 +172,23 @@ int main(int argc, char* argv[]) {
 	asy = (scaler->GetPulser(1,"clock") - 
                scaler->GetPulser(-1,"clock")) / sum;
      }
-     farray_ntup[25] = asy;
+     farray_ntup[26] = asy;
+
+     if (DEBUG) {
+        cout << "event type "<<evdata.GetEvType()<< "   event number "<<evdata.GetEvNum()<<endl;
+        scaler->Print();
+        if (farray_ntup[12] < 1000) cout << "Low clock"<<endl;
+        cout << " clock(+)  "<<scaler->GetNormRate(1,"clock");
+        cout << "   clock(-)  "<<scaler->GetNormRate(-1,"clock")<<endl;
+        if (farray_ntup[16]>0.005||farray_ntup[16]<-0.005) cout << "Big asy"<<endl;
+     }
 
      ntup->Fill(farray_ntup);
    }
 
 quit:
-   cout << "writing file "<<endl<<flush;
    hfile.Write();
-   cout << "closing file "<<endl<<flush;
    hfile.Close();
-   cout << "all done "<<endl<<flush;
    
    exit(0);
 
