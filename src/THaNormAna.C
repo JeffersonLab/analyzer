@@ -90,8 +90,20 @@ THaNormAna::THaNormAna( const char* name, const char* descript ) :
   alive = 0;
   hpos_alive = 0;
   hneg_alive = 0;
+  roc11_bcmu3 = 0;
+  roc11_bcmu10 = 0;
+  roc11_t1 = 0;
+  roc11_t2 = 0;
+  roc11_t3 = 0;
+  roc11_t4 = 0;
+  roc11_t5 = 0;
+  roc11_clk1024 = 0;
+  roc11_clk104k = 0;
   eventint = new Int_t[fgMaxEvInt];
   memset(eventint, 0, fgMaxEvInt*sizeof(Int_t));
+  norm_scaler = new Double_t[fgNumRoc * fgNumChan];   
+  for (int i = 0; i < fgNumRoc*fgNumChan; i++) norm_scaler[i] = 0;
+  InitRocScalers();
 }
 
 //_____________________________________________________________________________
@@ -102,6 +114,8 @@ THaNormAna::~THaNormAna()
   delete [] nhit;
   delete [] tdcdata;
   delete [] eventint;
+  for (vector<BRocScaler*>::iterator ir = fRocScaler.begin();
+       ir != fRocScaler.end(); ir++) delete *ir;
   SetupRawData( NULL, kDelete ); 
 
 }
@@ -113,10 +127,22 @@ Int_t THaNormAna::SetupRawData( const TDatime* run_time, EMode mode )
 
   RVarDef vars[] = {
     { "evtypebits", "event type bit pattern",      "evtypebits" },  
+    // This first part is based on event type 140 and is "older" code.
     { "bcmu3",   "bcm upstream with x3 gain",      "bcmu3" },
     { "alive",   "approx average livetime from scaler", "alive" },  
     { "hpos_alive", "helicity positive livetime", "hpos_alive" },  
     { "hneg_alive", "helicity negative livetime", "hneg_alive" },  
+
+    // Now we add roc11 data, it is "newer" code.
+    { "roc11_bcmu3", "ROC11 BCM upsgream, gain 3", "roc11_bcmu3" },  
+    { "roc11_bcmu10", "ROC11 BCM upsgream, gain 10", "roc11_bcmu10" },  
+    { "roc11_t1", "ROC11 trigger 1 counts", "roc11_t1" },  
+    { "roc11_t2", "ROC11 trigger 2 counts", "roc11_t2" },  
+    { "roc11_t3", "ROC11 trigger 3 counts", "roc11_t3" },  
+    { "roc11_t4", "ROC11 trigger 4 counts", "roc11_t4" },  
+    { "roc11_t5", "ROC11 trigger 5 counts", "roc11_t5" },  
+    { "roc11_clk1024", "ROC11 1024Hz clock", "roc11_clk1024" },  
+    { "roc11_clk104k", "ROC11 nom. 104Khz clock", "roc11_clk104k" },  
 
     { 0 }
   };
@@ -127,6 +153,20 @@ Int_t THaNormAna::SetupRawData( const TDatime* run_time, EMode mode )
   fIsSetup = ( mode == kDefine );
   
   return retval;
+}
+
+//_____________________________________________________________________________
+void THaNormAna::InitRocScalers()
+{ // setup the ROC scalers we want to decode.
+
+  fRocScaler.push_back(new BRocScaler(11,"trigger-1",0xabc30000, 0xabc50000, 0, &roc11_t1));
+  fRocScaler.push_back(new BRocScaler(11,"trigger-2",0xabc30000, 0xabc50000, 1, &roc11_t2));
+  fRocScaler.push_back(new BRocScaler(11,"trigger-3",0xabc30000, 0xabc50000, 2, &roc11_t3));
+  fRocScaler.push_back(new BRocScaler(11,"trigger-4",0xabc30000, 0xabc50000, 3, &roc11_t4));
+  fRocScaler.push_back(new BRocScaler(11,"trigger-5",0xabc30000, 0xabc50000, 4, &roc11_t5));
+  fRocScaler.push_back(new BRocScaler(11,"clock1024",0xabc30000, 0xabc50000, 7, &roc11_clk1024));
+  fRocScaler.push_back(new BRocScaler(11,"bcm_u3",0xabc30000, 0xabc50000, 6, &roc11_bcmu3));
+  fRocScaler.push_back(new BRocScaler(11,"bcm_u10",0xabc30000, 0xabc50000, 11, &roc11_bcmu10));
 }
 
 //_____________________________________________________________________________
@@ -253,7 +293,9 @@ THaAnalysisObject::EStatus THaNormAna::Init( const TDatime& run_time )
 
   fStatus = kNotinit;
   MakePrefix();
- 
+
+  // Grab the scalers.
+  // Of course these scalers are the event type 140 scaler data 
   THaAnalyzer* theAnalyzer = THaAnalyzer::GetInstance();
   TList* scalerList = theAnalyzer->GetScalers();
   TIter next(scalerList);
@@ -261,7 +303,7 @@ THaAnalysisObject::EStatus THaNormAna::Init( const TDatime& run_time )
     THaScaler *scaler = tscalgrp->GetScalerObj();
     THaString mybank("Left");
     if (mybank.CmpNoCase(scaler->GetName()) == 0) {
-         myscaler = scaler; 
+         myscaler = scaler;   // event type 140 data
          break;
     }
   }
@@ -271,7 +313,7 @@ THaAnalysisObject::EStatus THaNormAna::Init( const TDatime& run_time )
   // private THaScaler to process the data, but at 
   // present neither THaApparatus::Decode nor
   // a THaPhysicsModule::Process receive event type 140 
-  // However, its probably not too bad an idea to use
+  // However, it's probably not too bad an idea to use
   // the THaScaler from THaAnalyzer (see above) anyway.
   myscaler = new THaScaler("Left");
   if (myscaler) {
@@ -322,8 +364,8 @@ Int_t THaNormAna::Process(const THaEvData& evdata)
   if (evdata.IsPhysicsTrigger()) normdata->EvCount(helicity);
 
 // If you have ~1000 events you probably have seen 
-// prescale event; ok, this probably does not work for filesplitting
-// since prescale event only goes into first file (sigh).
+// prescale event; ok, this might not work for filesplitting
+// if prescale event only goes into first file (sigh).
   if (!fSetPrescale && evdata.GetEvNum() > 1000) {
     fSetPrescale = kTRUE;
 // CAREFUL, must GetPrescaleFactor(J) where J = 1,2,3 .. 
@@ -364,6 +406,8 @@ Int_t THaNormAna::Process(const THaEvData& evdata)
   TrigBits(helicity);
 
   LiveTime();
+
+  GetRocScalers(evdata);
 
   if (fDEBUG) Print();
 
@@ -437,6 +481,98 @@ Int_t THaNormAna::BcmCalib(const THaEvData& evdata) {
 }
 
 //_____________________________________________________________________________
+
+void THaNormAna::GetRocScalers(const THaEvData& evdata) {
+// Decode the ROC scalers.  See also InitRocScalers()
+
+  static Int_t ldebug = 0;   // put this =1 to get debug output.
+  static Int_t myroc[] = { 10, 11 };   
+  static Double_t XCORR_FACT = 1.00;  // not sure, I think its 1.015
+
+  Int_t len, data, helicity, gate, qrt, timestamp;
+  Int_t nscaler, header, found, index;
+
+  for (int i = 0; i < fgNumRoc*fgNumChan; i++) norm_scaler[i] = 0;
+
+  for (Int_t iroc = 0; iroc < 2; iroc++) {
+     len = evdata.GetRocLength(myroc[iroc]);
+     if (len <= 4) continue;
+     data = evdata.GetRawData(myroc[iroc],3);   
+     if (ldebug) cout<<"ROC "<<myroc[iroc]<<" data = "<<hex<<data<<dec<<endl;
+     helicity = (data & 0x10) >> 4;
+     qrt = (data & 0x20) >> 5;
+     gate = (data & 0x40) >> 6;
+     timestamp = evdata.GetRawData(myroc[iroc],4);
+     if (myroc[iroc] == 11) roc11_clk104k = timestamp;
+     if (ldebug) {
+       cout << "helicity " << helicity << "  qrt " << qrt;
+       cout << "  gate " << gate << "   time stamp " << timestamp << endl;
+     }
+     found = 0;
+     index = 5;
+     while ( !found ) {
+       data = evdata.GetRawData(myroc[iroc],index++);
+       if ( (data & 0xffff0000) == 0xfb0b0000) found = 1;
+       if (index >= len) break;
+     }
+     if (!found) continue;
+     nscaler = data & 0x7;
+     if (ldebug) cout << "nscaler in this event  " << nscaler << endl;
+     if (nscaler <= 0) continue;
+     if (nscaler != 2) {
+       cout << "Warning, nscaler !=2 "<<endl;
+       nscaler = 2;  // unnecessary (unless I change data structure)
+     }
+// 32 channels of scaler data for two helicities.
+     Int_t roc_offset = iroc;
+     if (roc_offset > fgNumRoc) roc_offset = fgNumRoc;
+     for (int ihel = 0; ihel < nscaler; ihel++) { 
+       header = evdata.GetRawData(myroc[iroc],index++);
+       if (ldebug) {
+         cout << "Scaler[" << ihel << "] = ";
+         cout << "  unique header = " << hex << header << endl;
+        // This header should be one of the 2 in ScalerMap, but not checked.
+        }
+       for (int ichan = 0; ichan < 32; ichan++) {
+	   data = evdata.GetRawData(myroc[iroc],index++);
+           norm_scaler[roc_offset*fgNumChan + ichan] += data;
+           if (ldebug) {       
+              cout << "channel # " << dec << ichan+1;
+              cout << "  (hex) data = " << hex << data;
+              cout << "    (dec) data = " << dec << data << endl;
+	   }
+       }
+     }
+     // Correct for the ~500 usec blanking of pockel cell (gate off).
+     for (int ichan = 0; ichan < 32; ichan++) 
+       norm_scaler[ichan] = XCORR_FACT * norm_scaler[ichan];
+     // Assign data to mapped channels
+     for (UInt_t idat = 0; idat < fRocScaler.size(); idat++) {
+       if (fRocScaler[idat]->roc == myroc[iroc]) {
+  	 Int_t index = roc_offset*fgNumChan + fRocScaler[idat]->chan;
+         if (index >= 0 && index < fgNumRoc*fgNumChan) {
+           *(fRocScaler[idat]->data) = norm_scaler[index];
+           if (ldebug) {
+             cout << "\nScaler Chan Name = "<<fRocScaler[idat]->chan_name<<endl;
+             cout << "chan# = "<<fRocScaler[idat]->chan;
+             Int_t sdata = (Int_t) (*(fRocScaler[idat]->data));
+             cout << "  data = 0x" << hex << sdata;
+	     cout << "   = (dec) "<< dec << sdata << endl;
+	   }
+	 }	    
+       }
+     }
+  }
+  if (ldebug) {
+    cout << "Check of Roc Scaler Data : "<<endl;
+    cout << "roc11 trig "<<roc11_t1<<"  "<<roc11_t2<<"  "<<roc11_t3;
+    cout << "   "<<roc11_t4<<"   "<<roc11_t5<<endl;
+    cout << "bcms "<< roc11_bcmu3<<"  "<<roc11_bcmu10<<endl;
+    cout << "clocks "<<roc11_clk1024<<"  "<<roc11_clk104k<<endl;
+  }
+
+}
+
 
 void THaNormAna::TrigBits( Int_t helicity ) {
 // Figure out which triggers got a hit.  These are 

@@ -23,6 +23,18 @@ using namespace std;
 class TH1;
 class THaScaler;
 
+class BRocScaler {
+// Container class of ROC scaler data in THaNormAna.  All data public, so
+// it is like a "struct".
+ public:
+  BRocScaler(Int_t ir, char *nm, Int_t headp, Int_t headn, Int_t ch, Double_t *d) : roc(ir), chan_name(nm), header_P(headp), header_N(headn), chan(ch) { data = d; }
+  Int_t roc;                 // roc num you want
+  char *chan_name;           // name of channel
+  Int_t header_P, header_N;  // headers of + & - helicity data
+  Int_t chan;                // channel in scaler
+  Double_t *data;            // pointer to data
+};
+
 class BNormData {
 // Container class used by THaNormAna
 public:
@@ -145,12 +157,19 @@ private:
    TBits  bits;
    THaScaler *myscaler;
    BNormData *normdata;
+   std::vector<BRocScaler*> fRocScaler;
    Bool_t fSetPrescale,fHelEnable,fDoBcmCalib;
    UInt_t evtypebits;    // trigger bit pattern
    Int_t *tdcdata, *nhit;   // tdc for trigger bit
    Double_t alive,hpos_alive,hneg_alive; // scaler livetime
    Double_t bcmu3;       // a BCM (rate)
    Int_t *eventint;      // event intervals for BCM calib
+   // scaler data from roc10 or 11 (counts)
+   Double_t roc11_bcmu3, roc11_bcmu10;
+   Double_t roc11_t1,roc11_t2,roc11_t3,roc11_t4,roc11_t5;
+   Double_t roc11_clk1024, roc11_clk104k;
+   Double_t *norm_scaler;
+   // current calibration:
    Double_t off_u1, off_u3, off_u10;
    Double_t off_d1, off_d3, off_d10;
    Double_t calib_u1, calib_u3, calib_u10;
@@ -160,11 +179,15 @@ private:
    std::vector<TH1* > hist;
    void TrigBits( Int_t helicity );
    void LiveTime();
+   void GetRocScalers(const THaEvData& );
    Int_t SetupRawData( const TDatime* runTime = NULL, EMode mode = kDefine );
+   void InitRocScalers();
    virtual Int_t BcmCalib( const THaEvData& );
    virtual void BookHist(); 
 
    static const int fgMaxEvInt = 100;
+   static const int fgNumRoc = 2;
+   static const int fgNumChan = 32;
 
    static const int fDEBUG = 0;
 
