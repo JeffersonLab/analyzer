@@ -127,6 +127,9 @@ Int_t THaElectronKine::Process( const THaEvData& evdata )
 Int_t THaElectronKine::ReadRunDatabase( const TDatime& date )
 {
   // Qeury the run database. Currently queries for the target mass.
+  //
+  // If the target mass wasn't set at the construction, then search for it
+  // in the rundatabase.
   // First searches for "<prefix>.MA", then, if not found, for "MA".
   // If still not found, use proton mass.
 
@@ -136,13 +139,15 @@ Int_t THaElectronKine::ReadRunDatabase( const TDatime& date )
   FILE* f = OpenRunDBFile( date );
   if( !f ) return kFileError;
 
-  TString name(fPrefix), tag("MA"); name += tag;
-  Int_t st = LoadDBvalue( f, date, name.Data(), fMA );
-  if( st )
-    LoadDBvalue( f, date, tag.Data(), fMA );
-
-  if( fMA == 0.0 ) fMA = 0.938;
-
+  if ( fMA <= 0.0 ) { 
+    TString name(fPrefix), tag("MA"); name += tag;
+    Int_t st = LoadDBvalue( f, date, name.Data(), fMA );
+    if( st )
+      LoadDBvalue( f, date, tag.Data(), fMA );
+    
+    if( fMA == 0.0 ) fMA = 0.938;
+  }
+  
   fclose(f);
   return 0;
 }

@@ -16,7 +16,7 @@ class THaElectronKine : public THaPhysicsModule {
   
 public:
   THaElectronKine( const char* name, const char* description,
-		   const char* spectro = "", Double_t mass = 0.0 );
+		   const char* spectro = "", Double_t mass = 0.0 /* GeV */ );
   virtual ~THaElectronKine();
   
   virtual void      Clear( Option_t* opt="" );
