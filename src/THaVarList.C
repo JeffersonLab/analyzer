@@ -59,8 +59,6 @@
 
 ClassImp(THaVarList)
 
-const char* const THaVarList::kHere = "Define()";
-
 //_____________________________________________________________________________
 void THaVarList::Clear( Option_t* opt )
 {
@@ -73,156 +71,116 @@ void THaVarList::Clear( Option_t* opt )
 }
 
 //_____________________________________________________________________________
-THaVar* THaVarList::Define( const char* name, const char* descript, 
-			    const Double_t* var, const Int_t* count )
+THaVar* THaVarList::DefineByType( const char* name, const char* descript, 
+				  const void* var, VarType type, 
+				  const Int_t* count )
 {
-  // Define a global variable to the list
-  // Duplicate names are not allowed; if a name exists, return NULL
+  // Define a global variable with given type.
+  // Duplicate names are not allowed; if a name already exists, return NULL
+
+  static const char* const here = "DefineByType()";
 
   THaVar* ptr = Find( name );
-  if( !ptr ) {
-    ptr = new THaVar( name, descript, var, count );
+  if( ptr ) {
+    Warning( here, "Variable %s already exists. Not redefined.", ptr->GetName() );
+    return NULL;
+  }
+
+  switch( type ) {
+  case kDouble:
+    ptr = new THaVar( name, descript, 
+		      static_cast<const Double_t*>( var ), count );
+    break;
+  case kFloat:
+    ptr = new THaVar( name, descript, 
+		      static_cast<const Float_t*>( var ), count );
+    break;
+  case kLong:
+    ptr = new THaVar( name, descript, 
+		      static_cast<const Long_t*>( var ), count );
+    break;
+  case kULong:
+    ptr = new THaVar( name, descript, 
+		      static_cast<const ULong_t*>( var ), count );
+    break;
+  case kInt:
+    ptr = new THaVar( name, descript, 
+		      static_cast<const Int_t*>( var ), count );
+    break;
+  case kUInt:
+    ptr = new THaVar( name, descript, 
+		      static_cast<const UInt_t*>( var ), count );
+    break;
+  case kShort:
+    ptr = new THaVar( name, descript, 
+		      static_cast<const Short_t*>( var ), count );
+    break;
+  case kUShort:
+    ptr = new THaVar( name, descript, 
+		      static_cast<const UShort_t*>( var ), count );
+    break;
+  case kChar:
+    ptr = new THaVar( name, descript, 
+		      static_cast<const Char_t*>( var ), count );
+    break;
+  case kByte:
+    ptr = new THaVar( name, descript, 
+		      static_cast<const Byte_t*>( var ), count );
+    break;
+  case kDoubleP:
+    ptr = new THaVar( name, descript, 
+		      static_cast<const Double_t**>( var ), count );
+    break;
+  case kFloatP:
+    ptr = new THaVar( name, descript, 
+		      static_cast<const Float_t**>( var ), count );
+    break;
+  case kLongP:
+    ptr = new THaVar( name, descript, 
+		      static_cast<const Long_t**>( var ), count );
+    break;
+  case kULongP:
+    ptr = new THaVar( name, descript, 
+		      static_cast<const ULong_t**>( var ), count );
+    break;
+  case kIntP:
+    ptr = new THaVar( name, descript, 
+		      static_cast<const Int_t**>( var ), count );
+    break;
+  case kUIntP:
+    ptr = new THaVar( name, descript, 
+		      static_cast<const UInt_t**>( var ), count );
+    break;
+  case kShortP:
+    ptr = new THaVar( name, descript, 
+		      static_cast<const Short_t**>( var ), count );
+    break;
+  case kUShortP:
+    ptr = new THaVar( name, descript, 
+		      static_cast<const UShort_t**>( var ), count );
+    break;
+  case kCharP:
+    ptr = new THaVar( name, descript, 
+		      static_cast<const Char_t**>( var ), count );
+    break;
+  case kByteP:
+    ptr = new THaVar( name, descript, 
+		      static_cast<const Byte_t**>( var ), count );
+    break;
+  default:
+    Warning( here, "Unknown data type for variable %s."
+	     "No variable defined.", name );
+    return NULL;
+    break;
+  }
+
+  if( ptr ) 
     AddLast( ptr );
-    return ptr;
-  } else
-    ExistsWarning( kHere, ptr->GetName());
+  else
+    Error( here, "Error allocating new variable %s. No variable defined.",
+	   name );
 
-  return NULL;
-}
-
-//_____________________________________________________________________________
-THaVar* THaVarList::Define( const char* name, const char* descript, 
-			    const Float_t* var, const Int_t* count )
-{
-  THaVar* ptr = Find( name );
-  if( !ptr ) {
-    ptr = new THaVar( name, descript, var, count );
-    AddLast( ptr );
-    return ptr;
-  } else
-    ExistsWarning( kHere, ptr->GetName());
-
-  return NULL;
-}
-
-//_____________________________________________________________________________
-THaVar* THaVarList::Define( const char* name, const char* descript, 
-			    const Long_t* var, const Int_t* count )
-{
-  THaVar* ptr = Find( name );
-  if( !ptr ) {
-    ptr = new THaVar( name, descript, var, count );
-    AddLast( ptr );
-    return ptr;
-  } else
-    ExistsWarning( kHere, ptr->GetName());
-
-  return NULL;
-}
-
-//_____________________________________________________________________________
-THaVar* THaVarList::Define( const char* name, const char* descript, 
-			    const ULong_t* var, const Int_t* count )
-{
-  THaVar* ptr = Find( name );
-  if( !ptr ) {
-    ptr = new THaVar( name, descript, var, count );
-    AddLast( ptr );
-    return ptr;
-  } else
-    ExistsWarning( kHere, ptr->GetName());
-
-  return NULL;
-}
-
-//_____________________________________________________________________________
-THaVar* THaVarList::Define( const char* name, const char* descript, 
-			    const Int_t* var, const Int_t* count )
-{
-  THaVar* ptr = Find( name );
-  if( !ptr ) {
-    ptr = new THaVar( name, descript, var, count );
-    AddLast( ptr );
-    return ptr;
-  } else
-    ExistsWarning( kHere, ptr->GetName());
-
-  return NULL;
-}
-
-//_____________________________________________________________________________
-THaVar* THaVarList::Define( const char* name, const char* descript, 
-			    const UInt_t* var, const Int_t* count )
-{
-  THaVar* ptr = Find( name );
-  if( !ptr ) {
-    ptr = new THaVar( name, descript, var, count );
-    AddLast( ptr );
-    return ptr;
-  } else
-    ExistsWarning( kHere, ptr->GetName());
-
-  return NULL;
-}
-
-//_____________________________________________________________________________
-THaVar* THaVarList::Define( const char* name, const char* descript, 
-			    const Short_t* var, const Int_t* count )
-{
-  THaVar* ptr = Find( name );
-  if( !ptr ) {
-    ptr = new THaVar( name, descript, var, count );
-    AddLast( ptr );
-    return ptr;
-  } else
-    ExistsWarning( kHere, ptr->GetName());
-
-  return NULL;
-}
-
-//_____________________________________________________________________________
-THaVar* THaVarList::Define( const char* name, const char* descript, 
-			    const UShort_t* var, const Int_t* count )
-{
-  THaVar* ptr = Find( name );
-  if( !ptr ) {
-    ptr = new THaVar( name, descript, var, count );
-    AddLast( ptr );
-    return ptr;
-  } else
-    ExistsWarning( kHere, ptr->GetName());
-
-  return NULL;
-}
-
-//_____________________________________________________________________________
-THaVar* THaVarList::Define( const char* name, const char* descript, 
-			    const Char_t* var, const Int_t* count )
-{
-  THaVar* ptr = Find( name );
-  if( !ptr ) {
-    ptr = new THaVar( name, descript, var, count );
-    AddLast( ptr );
-    return ptr;
-  } else
-    ExistsWarning( kHere, ptr->GetName());
-
-  return NULL;
-}
-
-//_____________________________________________________________________________
-THaVar* THaVarList::Define( const char* name, const char* descript, 
-			    const Byte_t* var, const Int_t* count )
-{
-  THaVar* ptr = Find( name );
-  if( !ptr ) {
-    ptr = new THaVar( name, descript, var, count );
-    AddLast( ptr );
-    return ptr;
-  } else
-    ExistsWarning( kHere, ptr->GetName());
-
-  return NULL;
+  return ptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -284,53 +242,9 @@ Int_t THaVarList::DefineVariables( const VarDef* list, const char* prefix,
 
     // Define this variable, using the indicated type
 
-    THaVar* var = NULL;
-    switch( item->type ) {
-    case kDouble:
-      var = Define( name, description, 
-		    static_cast<const Double_t*>( item->loc ), item->count );
-      break;
-    case kFloat:
-      var = Define( name, description,  
-		    static_cast<const Float_t*>( item->loc ), item->count );
-      break;
-    case kLong:
-      var = Define( name, description, 
-		    static_cast<const Long_t*>( item->loc ), item->count );
-      break;
-    case kULong:
-      var = Define( name, description, 
-		    static_cast<const ULong_t*>( item->loc ), item->count );
-      break;
-    case kInt:
-      var = Define( name, description, 
-		    static_cast<const Int_t*>( item->loc ), item->count );
-      break;
-    case kUInt:
-      var = Define( name, description, 
-		    static_cast<const UInt_t*>( item->loc ), item->count );
-      break;
-    case kShort:
-      var = Define( name, description, 
-		    static_cast<const Short_t*>( item->loc ), item->count );
-      break;
-    case kUShort:
-      var = Define( name, description, 
-		    static_cast<const UShort_t*>( item->loc ), item->count );
-      break;
-    case kChar:
-      var = Define( name, description, 
-		    static_cast<const Char_t*>( item->loc ), item->count );
-      break;
-    case kByte:
-      var = Define( name, description, 
-		    static_cast<const Byte_t*>( item->loc ), item->count );
-      break;
-    default:
-      Warning(errloc.Data(), "Unknown type for variable %s. "
-	      "Ignoring entry.", name );
-      break;
-    }
+    THaVar* var = DefineByType( name, description, item->loc, 
+				static_cast<VarType>( item->type ), 
+				item->count );
     if( var )
       ndef++;
     //error already printed by Define()
@@ -350,8 +264,7 @@ void THaVarList::ExistsWarning( const char* errloc, const char* name )
 {
   // Print warning that variable already exists. Internal function.
 
-  Warning(errloc, "Variable %s already exists. Not redefined.",
-	  name);
+  Warning(errloc, "Variable %s already exists. Not redefined.", name);
 }
       
 //_____________________________________________________________________________
