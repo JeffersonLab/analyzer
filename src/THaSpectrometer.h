@@ -7,11 +7,12 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-#include "TObjArray.h"
 #include "THaApparatus.h"
+#include "TObjArray.h"
 #include "TClonesArray.h"
+#include "TVector3.h"
+#include "TRotation.h"
 
-class THaSpectrometerDetector;
 class THaParticleInfo;
 class THaPidDetector;
 class THaTrack;
@@ -38,24 +39,31 @@ public:
           Int_t            GetNTracks()  const { return fTracks->GetLast()+1; }
           TClonesArray*    GetTracks()   const { return fTracks; }
           TClonesArray*    GetTrackPID() const { return fTrackPID; }
-          TClonesArray*    GetVertices() const { return fVertices; }
+  //          TClonesArray*    GetVertices() const { return fVertices; }
           Bool_t           IsPID() const       { return fPID; }
   virtual Int_t            Reconstruct();
           void             SetGoldenTrack( THaTrack* t ) { fGoldenTrack = t; }
           void             SetPID( Bool_t b = kTRUE )    { fPID = b; }
   virtual Int_t            TrackCalc() = 0;
-  // Coordinate transformations and vertex reconstruction
-  //
-  // to do:
-  // - TRANSPORT -> beam
-  // - beam -> TRANSPORT
-  // - vertex (replaces ESPACE's reaction_z)
-  // - "geographical" <-> spherical angles
-  // - spectrometer parameters (geometry, optics, materials)
-  //     angles, pointing offsets, central momentum, momentum acceptance(?), 
-  //     collimator distance, (matrix elements - already in VDC)
 
-  
+  // The following is specific to small-acceptance pointing spectrometers
+  // using spectrometer-specific coordinates such as TRANSPORT
+  const   TRotation&       GetToLabRot() const { return fToLabRot; }
+  const   TRotation&       GetToTraRot() const { return fToTraRot; }
+  const   TVector3&        GetPointingOffset() const { return fPointingOffset; }
+          Double_t         GetThetaGeo() const { return fThetaGeo; }
+          Double_t         GetPhiGeo()   const { return fPhiGeo; }
+          Double_t         GetThetaSph() const { return fThetaSph; }
+          Double_t         GetPhiSph()   const { return fPhiSph; }
+          Double_t         GetPcentral() const { return fPcentral; }
+          Double_t         GetCollDist() const { return fCollDist; }
+
+  virtual void             TrackToLab( THaTrack& track, TVector3& pvect ) const;
+  virtual void             TransportToLab( Double_t p, Double_t th, 
+					   Double_t ph, TVector3& pvect ) const;
+  virtual void             LabToTransport( TVector3& vertex, TVector3& pvect,
+					   TVector3& tvertex, 
+					   Double_t* ray ) const;
 
 protected:
 
@@ -63,14 +71,27 @@ protected:
 
   TClonesArray*   fTracks;                //Tracks 
   TClonesArray*   fTrackPID;              //PID info for the tracks
-  TClonesArray*   fVertices;              //Track vertices
+  //  TClonesArray*   fVertices;              //Track vertices
   TList*          fTrackingDetectors;     //Tracking detectors
   TList*          fNonTrackingDetectors;  //Non-tracking detectors
   TObjArray*      fPidDetectors;          //PID detectors
   TObjArray*      fPidParticles;          //Particles for which we want PID
   THaTrack*       fGoldenTrack;           //Golden track within fTracks
-
   Bool_t          fPID;                   //PID enabled
+
+  // The following is specific to small-acceptance pointing spectrometers
+  TRotation       fToLabRot;              //Rotation matrix from TRANSPORT to lab
+  TRotation       fToTraRot;              //Rotation matrix from lab to TRANSPORT
+  TVector3        fPointingOffset;        //Optical point in lab coordinate system
+  Double_t        fThetaGeo;              //In-plane geographic central angle (rad)
+  Double_t        fPhiGeo;                //Out-of-plane geographic central angle (rad)
+  Double_t        fThetaSph, fPhiSph;     //Central angles in spherical coords. (rad)
+  Double_t        fSinThGeo, fCosThGeo;   //Sine and cosine of central angles
+  Double_t        fSinPhGeo, fCosPhGeo;   // in geographical coordinates
+  Double_t        fSinThSph, fCosThSph;   //Sine and cosine of central angles in 
+  Double_t        fSinPhSph, fCosPhSph;   // spherical coordinates
+  Double_t        fPcentral;              //Central momentum (GeV)
+  Double_t        fCollDist;              //Distance from collimator to target center (m)
 
   // only derived classes can construct me
   THaSpectrometer() {}
@@ -86,7 +107,6 @@ private:
 
 
 //---------------- inlines ----------------------------------------------------
-
 inline Int_t THaSpectrometer::GetNpidParticles() const
 {
   return fPidParticles->GetLast()+1;
@@ -110,7 +130,6 @@ inline const THaPidDetector* THaSpectrometer::GetPidDetector( Int_t i ) const
 {
   return (const THaPidDetector*) fPidDetectors->At(i);
 }
-
 
 #endif
 

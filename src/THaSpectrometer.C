@@ -24,6 +24,7 @@
 #include "THaTrack.h"
 //#include "THaVertex.h"
 #include "TClass.h"
+#include "TVector3.h"
 #include "VarDef.h"
 
 #ifdef WITH_DEBUG
@@ -34,7 +35,9 @@ ClassImp(THaSpectrometer)
 
 //_____________________________________________________________________________
 THaSpectrometer::THaSpectrometer( const char* name, const char* desc ) : 
-  THaApparatus( name,desc ), fGoldenTrack(NULL), fListInit(kFALSE)
+  THaApparatus( name,desc ), fGoldenTrack(NULL), 
+  fPID(kFALSE), fThetaGeo(0.0), fPhiGeo(0.0), fPcentral(1.0), fCollDist(0.0),
+  fListInit(kFALSE)
 {
   // Constructor.
   // Protected. Can only be called by derived classes.
@@ -136,7 +139,7 @@ Int_t THaSpectrometer::CalcPID()
 //_____________________________________________________________________________
 void THaSpectrometer::Clear( Option_t* opt )
 {
-  // Delete contents of internal even-by-event arrays
+  // Delete contents of internal event-by-event arrays
 
   fTracks->Delete();
 }
@@ -363,4 +366,73 @@ Int_t THaSpectrometer::Reconstruct()
   return 0;
 }
 
+//_____________________________________________________________________________
+void THaSpectrometer::TrackToLab( THaTrack& track, TVector3& pvect ) const
+{
+  // Convert TRANSPORT coordinates of 'track' to momentum vector 'pvect'
+  // in the lab coordinate system (z = beam, y = up).
+  // Uses the spectrometer angles from the database (loaded during Init())
+  // for the transformation.
+  // 
+  // The track origin (vertex) is not calculated here because
+  // doing so requires knowledge of beam positions and and angles.
+  // Vertex calculations are done in a separate physics module.
 
+  TransportToLab( track.GetP(), track.GetTTheta(), track.GetTPhi(), pvect );
+}
+
+//_____________________________________________________________________________
+void THaSpectrometer::TransportToLab( Double_t p, Double_t th, Double_t ph,
+				      TVector3& pvect ) const
+{
+  // Convert TRANSPORT vector to lab vector.
+  // Inputs:
+  //  p:  TRANSPORT momentum (absolute)
+  //  th: Tangent of TRANSPORT theta
+  //  ph: Tangent of TRANSPORT phi
+  // Output:
+  //  pvect: Vector in lab frame (z = beam, y = up) in same units as p.
+  //
+  // Note: Simply vector transformation can be done trivially by multiplying
+  // with the appropriate rotation matrix, e.g.:
+  //  TVector3 lab_vector = spect->GetToLabRot() * transport_vector;
+
+  TVector3 v( th, ph, 1.0 );
+  v *= p/TMath::Sqrt( 1.0+th*th+ph*ph );
+  pvect = fToLabRot * v;
+}
+
+//_____________________________________________________________________________
+void THaSpectrometer::LabToTransport( TVector3& vertex, TVector3& pvect,
+				      TVector3& tvertex, Double_t* ray ) const
+{
+  // Convert lab coordinates to TRANSPORT coordinates in the spectrometer
+  // coordinate system.
+  // Inputs:
+  //  vertex:  Reaction point in lab system
+  //  pvect:   Momentum vector in lab
+  // Outputs:
+  //  tvertex: The vertex point in the TRANSPORT system, without any
+  //           coordinate projections applied
+  //  ray:     The TRANSPORT ray according to TRANSPORT conventions.
+  //           This is an array of size 6 with elements x, tan(theta),
+  //           y, tan(y), z, and delta.
+  //           z is set to 0, and accordingly x and y are the TRANSPORT 
+  //           coordinates in the z=0 plane. delta is computed with respect 
+  //           to the present spectrometer's central momentum.
+  //           Units are the same as of the input vectors.
+
+  tvertex = fToTraRot * ( vertex - fPointingOffset );
+  TVector3 pt = fToTraRot * pvect;
+  if( pt.Z() != 0.0 ) {
+    ray[1] = pt.X() / pt.Z();
+    ray[3] = pt.Y() / pt.Z();
+    // In the "ray", project the vertex to z=0
+    ray[0] = tvertex.X() - tvertex.Z() * ray[1];
+    ray[2] = tvertex.Y() - tvertex.Z() * ray[3];
+  } else
+    ray[0] = ray[1] = ray[2] = ray[3] = 0.0;
+  
+  ray[4] = 0.0;   // By definition for this ray, TRANSPORT z=0
+  ray[5] = pt.Mag() / fPcentral - 1.0;
+}
