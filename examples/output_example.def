@@ -69,10 +69,15 @@ variable   L.vdc.u2.nclust    # you can put a comment after '# '
 Variable   L.vdc.v1.nclust    # need >=1 space after #
 VARIable   L.vdc.v2.nclust    # Keywords are case insensitive,
 
+#block L.tr.*       # all L-arm tracking variables
 #block R.*          # all the variables in R-arm go to the tree
-#block R.s1.*
-#block R.s2.*
-#block R.tr.*
+
+block *.tr.*       # include all tracking results
+
+block EK_R.*       # grab the (uncorrected) Right-arm electron kinematics
+block ReactPt_R.*  # Vertex information, assuming ideal beam
+block ExTgtCor_R.*  # extended target correction
+block EKxc_R.*      # electron kinematics, including ext-target correction
 
 variable   D.ctimel
 variable   D.ctimer
@@ -82,28 +87,35 @@ variable   D.timeroc1
 variable   D.timeroc2
 variable   D.timeroc3
 
-variable   L.s1.lt    # note, this is an array
-variable   L.s1.rt    # variable appears in tree as
-variable   L.s2.lt    # e.g.  L.s2.lt.data[4], where 
-variable   L.s2.rt    # index of data goes from 0 to
-                      # Ndata.L.s1.lt
+variable   R.vdc.v1.nhit
+variable   R.vdc.v2.nhit
 
+#variable   L.s1.lt    # note, this is an array
+#variable   L.s1.rt    # variable appears in tree as
+#variable   L.s2.lt    # e.g.  L.s2.lt.data[4], where 
+#variable   L.s2.rt    # index of data goes from 0 to
+                       # Ndata.L.s1.lt
 
-formula    targetX  1.464*B.bpm4b.x-0.464*B.bpm4a.x
-FORMULA    targetY  1.464*B.bpm4b.y-0.464*B.bpm4a.y
+formula    s1l2  R.s1.lt[2]-R.s1.rt[2]
+formula    s1dif R.s1.lt-R.s1.rt
+formula    s1l4  R.s1.lt[4]
+formula    nvdcv1 R.vdc.v1.nhit
+
+formula    ekdiff EKxc_R.nu-EK_R.nu
+
+#formula    targetX  1.464*B.bpm4b.x-0.464*B.bpm4a.x
+#FORMULA    targetY  1.464*B.bpm4b.y-0.464*B.bpm4a.y
 
 # Histograms defined here.
 # Title must be in single quotes
 TH1F  rv1n  'R-arm vdc hits on V1'   L.vdc.v1.nhit  10 0 10
 th1f  rv1w  'R-arm vdc wiremap on V1'  R.vdc.v1.wire  200 0 500
-TH1F  rv1z  'R-arm vdc TDC on V1'  R.vdc.v1.rawtime  1000 0 5000
-TH2f  spotxy 'X-Y position at target' targetX targetY 100 -5 5 100 -5 5
+TH1F  rv1t  'R-arm vdc TDC on V1'  R.vdc.v1.rawtime  1000 0 5000
 
-# Here is a histogram with a cut R.s1.trx>0
+TH1F  sc4  'Paddle 4 in s1' R.s1.lt[4] 200 0 5000
+TH1F  sc4f 'Paddle 4 in s1 by formula' s1l4 200 0 5000
+
+# Here is a histogram with a cut: R.s1.trx>0
 TH1F  s1trx 'R-arm S1 trx (with cut)' R.s1.trx 100 -1 1 R.s1.trx>0
 
-
- 
-
-
-
+TH2F  deltaNu 'Nu with vs. without Ex.Target Corrections' EK_R.nu ekdiff 200 0. .5 100 -0.005 0.005
