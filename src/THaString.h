@@ -22,30 +22,26 @@
 #include <string>
 #include <vector>
 
-typedef unsigned UInt_t;  // take out when done debugging!!!!!!
+//typedef unsigned UInt_t;  // take out when done debugging!!!!!!
 
-class THaString : public string
-{
-
+class THaString : public string {
 public:
 
   // Constructors/destructors/operators
 
   THaString () {};
-  THaString (const string s): string(s) {};
+  THaString (const string& s): string(s) {};
   THaString (const char* c): string(c) {};
   virtual ~THaString() {};
 
   // Major functions
 
-  int CmpNoCase (const THaString& s); // case insensitive compare
-  vector<THaString> Split();   // split on whitespace
-  UInt_t Hex();      // conversion to to unsigned interpreting as hex
-  THaString ToLower (); // conversion to lower case
-  THaString ToUpper (); // conversion to lower case
+  int CmpNoCase (const THaString& s) const; // case insensitive compare
+  vector<THaString> Split() const;   // split on whitespace
+  UInt_t Hex() const;      // conversion to to unsigned interpreting as hex
+  THaString ToLower() const; // conversion to lower case
+  THaString ToUpper() const; // conversion to lower case
 
-private:
-  
   ClassDef(THaString, 0)   // Improved string class
 
 };
