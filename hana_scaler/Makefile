@@ -14,6 +14,7 @@ DCDIR=../hana_decode
 # xscaler --  xscaler++  Scaler GUI.  
 # tscalntup -- Read a CODA file and fills an ntuple with stuff
 # tscaldtime -- Reads CODA file, checks deadtime
+# tscalroc11 -- To read the ROC11 scalers (from event stream)
 # 
 # To understand how to use scaler classes, look at the 'main'
 # routines  tscalfile_main.C tscalasy_main.C tscalhist_main.C tscalonl_main.C
@@ -136,7 +137,7 @@ SCALER_OBJS += THaScalDict.o
 endif
 
 # Test code executibles
-PROGS = tscalfile tscalasy tscalhist tscalonl xscaler tscalntup tscaldtime
+PROGS = tscalfile tscalasy tscalhist tscalonl xscaler tscalntup tscaldtime tscalroc11
 
 # To compile the local test codes:
 # Set STANDALONE at top of makefile.  But comment it out if 
@@ -190,6 +191,11 @@ tscalntup: tscalntup_main.o $(SCALER_OBJS) $(SRC) $(HEAD) $(LIBDC)
 tscaldtime: tscaldtime_main.o $(SCALER_OBJS) $(SRC) $(HEAD) $(LIBDC) 
 	rm -f $@
 	$(CXX) $(CXXFLAGS) -o $@ tscaldtime_main.o $(SCALER_OBJS) $(ALL_LIBS)
+
+tscalroc11: tscalroc11_main.o $(SCALER_OBJS) $(SRC) $(HEAD) $(LIBDC)  
+	rm -f $@
+	$(CXX) $(CXXFLAGS) -o $@ tscalroc11_main.o $(SCALER_OBJS) $(ALL_LIBS) 
+
 
 
 # Dictionary
