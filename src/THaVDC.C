@@ -400,8 +400,8 @@ Int_t THaVDC::FineTrack( TClonesArray& tracks )
 
   fNtracks = ConstructTracks( &tracks, 2 );
 
-  int i;
-  cin >> i;
+  //  int i;
+  // cin >> i;
   return 0;
 }
 
