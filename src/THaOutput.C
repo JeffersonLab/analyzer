@@ -66,24 +66,50 @@ THaOutput::~THaOutput()
        od != fOdata.end(); od++) delete *od;
 }
 
+  
+  
 //_____________________________________________________________________________
 Int_t THaOutput::Init( const char* filename ) 
 {
   // Initialize output system. Required before anything can happen.
-
-  // Do not reinitialize
+  //
+  // Only re-attach to variables and re-compile cuts and formulas
+  // upon re-initialization (eg: continuing analysis with another file)
   if( fInit ) {
-    cout << "\nTHaOutput::Init: Info: THaOutput cannot be ";
-    cout << "re-initialized. Keeping existing definitions." << endl;
+    cout << "\nTHaOutput::Init: Info: THaOutput cannot be completely"
+	 << " re-initialized. Keeping existing definitions." << endl;
+    cout << "Global Variables are being re-attached and formula/cuts"
+	 << " are being re-compiled." << endl;
+    
+    // Assign pointers to desired global variables
+    if ( Attach() ) return -4;
+
+    // Re-compile the functions/cuts
+    for (Int_t iform=0; iform<fNform; iform++) {
+      fFormulas[iform]->Compile();
+      if (fFormulas[iform]->IsError()) {
+        cout << "THaOutput::Init: WARNING: Error in formula Re-Compilation: ";
+        cout << fFormulas[iform]->GetTitle() << endl;
+      }
+      
+    }
+    for (Int_t icut=0; icut<fNcut; icut++) {
+      fHistCut[icut]->Compile();
+      if (fHistCut[icut]->IsError()) {
+        cout << "THaOutput::Init: WARNING: Error in cut Re-Compilation: ";
+        cout << fHistCut[icut]->GetTitle() << endl;
+      }
+    }
 #ifdef CHECKOUT
     Print();
 #endif
     return 1;
   }
+    
   if( !gHaVars ) return -2;
-
+  
   fTree = new TTree("T","Hall A Analyzer Output DST");
-
+  
   Int_t err = LoadFile( filename );
   if( err == -1 )
     return 0;       // No error if file not found - then we're just a dummy
@@ -91,12 +117,15 @@ Int_t THaOutput::Init( const char* filename )
     delete fTree; fTree = NULL;
     return -3;
   }
-
+  
   fNvar = fVarnames.size();  // this gets reassigned below
   fNform = fFormnames.size();
   fN1d = fH1dname.size();
   fN2d = fH2dname.size();
-
+  
+  fArrayNames.clear();
+  fVNames.clear();
+  
   fForm = new Double_t[fNform];
   
   THaVar *pvar;
@@ -106,12 +135,14 @@ Int_t THaOutput::Init( const char* filename )
     pvar = gHaVars->Find(fVarnames[ivar].c_str());
     if (pvar) {
       if (pvar->IsArray()) {
-        fArrays.push_back( pvar );
-        fOdata.push_back(new THaOdata());
-        stemp1.push_back(fVarnames[ivar]);
+	fArrayNames.push_back(fVarnames[ivar]);
+	//        fArrays.push_back( pvar );
+	fOdata.push_back(new THaOdata());
+	stemp1.push_back(fVarnames[ivar]);
       } else {
-        fVariables.push_back( pvar );
-        stemp2.push_back(fVarnames[ivar]);
+	fVNames.push_back(fVarnames[ivar]);
+	//        fVariables.push_back( pvar );
+	stemp2.push_back(fVarnames[ivar]);
       }
     } else {
       cout << "\nTHaOutput::Init: WARNING: Global variable ";
@@ -150,27 +181,27 @@ Int_t THaOutput::Init( const char* filename )
   for (Int_t ihist = 0; ihist < fN1d; ihist++) {
     if (fH1cutid[ihist] != fgNocut) {
       fHistCut.push_back(new THaCut(fH1cut[ihist].c_str(), 
-           fH1cut[ihist].c_str(), (const char*)"haoutput"));
+				    fH1cut[ihist].c_str(), (const char*)"haoutput"));
       if (fHistCut[fNcut]->IsError()) {
-        cout << "THaOutput::Init: WARNING: Error in cut definition ";
-        cout << fH1cut[ihist] << endl;
+	cout << "THaOutput::Init: WARNING: Error in cut definition ";
+	cout << fH1cut[ihist] << endl;
       }
       fH1cutid[ihist] = fNcut;
       fNcut++;
     }
     for (Int_t iform = 0; iform < fNform; iform++) {
       if (fH1plot[ihist] == fFormnames[iform]) {
-        fH1vtype[ihist] = kForm;
+	fH1vtype[ihist] = kForm;
 	fH1form[ihist] = iform;  
       }
     } 
     pvar = gHaVars->Find(fH1plot[ihist].c_str());
     if (pvar != 0 && fH1vtype[ihist] != kForm) 
-        fH1vtype[ihist] = kVar;
-    fH1var.push_back(pvar);
+      fH1vtype[ihist] = kVar;
+    //    fH1var.push_back(pvar);
     fH1d.push_back( new TH1F (fH1dname[ihist].c_str(), 
-         fH1dtit[ihist].c_str(), 
-         fH1dbin[ihist], fH1dxlo[ihist], fH1dxhi[ihist]));
+			      fH1dtit[ihist].c_str(), 
+			      fH1dbin[ihist], fH1dxlo[ihist], fH1dxhi[ihist]));
   }
   fH2vtypex = new Int_t[fN2d];
   fH2vtypey = new Int_t[fN2d];
@@ -181,43 +212,127 @@ Int_t THaOutput::Init( const char* filename )
   memset(fH2formx, -1, fN2d*sizeof(Int_t));
   memset(fH2formy, -1, fN2d*sizeof(Int_t));
   for (Int_t ihist = 0; ihist < fN2d; ihist++) {
-   if (fH2cutid[ihist] != fgNocut) {
+    if (fH2cutid[ihist] != fgNocut) {
       fHistCut.push_back(new THaCut(fH2cut[ihist].c_str(), 
-           fH2cut[ihist].c_str(), (const char*)"haoutput"));
+				    fH2cut[ihist].c_str(), (const char*)"haoutput"));
       if (fHistCut[fNcut]->IsError()) {
-        cout << "THaOutput::Init: WARNING: Error in cut definition ";
-        cout << fH2cut[ihist] << endl;
+	cout << "THaOutput::Init: WARNING: Error in cut definition ";
+	cout << fH2cut[ihist] << endl;
       }
       fH2cutid[ihist] = fNcut;
       fNcut++;
     } 
     for (Int_t iform = 0; iform < fNform; iform++) {
       if (fH2plotx[ihist] == fFormnames[iform]) {
-        fH2vtypex[ihist] = kForm;
+	fH2vtypex[ihist] = kForm;
 	fH2formx[ihist] = iform;  
       }
       if (fH2ploty[ihist] == fFormnames[iform]) {
-        fH2vtypey[ihist] = kForm;
+	fH2vtypey[ihist] = kForm;
 	fH2formy[ihist] = iform;  
       }  
     }
     pvar = gHaVars->Find(fH2plotx[ihist].c_str());
     if (pvar != 0 && fH2vtypex[ihist] != kForm) 
-        fH2vtypex[ihist] = kVar;
-    fH2varx.push_back(pvar);
+      fH2vtypex[ihist] = kVar;
+    //    fH2varx.push_back(pvar);
     pvar = gHaVars->Find(fH2ploty[ihist].c_str());
     if (pvar != 0 && fH2vtypey[ihist] != kForm) 
-        fH2vtypey[ihist] = kVar;
-    fH2vary.push_back(pvar);
+      fH2vtypey[ihist] = kVar;
+    //    fH2vary.push_back(pvar);
     fH2d.push_back( new TH2F (fH2dname[ihist].c_str(), 
-         fH2dtit[ihist].c_str(), 
-	 fH2dbinx[ihist], fH2dxlo[ihist], fH2dxhi[ihist],
-	 fH2dbiny[ihist], fH2dylo[ihist], fH2dyhi[ihist]));
+			      fH2dtit[ihist].c_str(), 
+			      fH2dbinx[ihist], fH2dxlo[ihist], fH2dxhi[ihist],
+			      fH2dbiny[ihist], fH2dylo[ihist], fH2dyhi[ihist]));
   }
-  fInit = true;
+  
+  fInit = true; // the histograms and branches have been prepared
+  
+  // Assign pointers to desired global variables
+  if ( Attach() ) 
+    return -4;
+  
   return 0;
 }
  
+//_____________________________________________________________________________
+Int_t THaOutput::Attach() 
+{
+  // Get the pointers for the global variables
+  // Also, sets the size of the fVariables and fArrays vectors
+  // according to the size of the related names array
+  
+  if( !gHaVars ) return -2;
+
+  THaVar *pvar;
+  Int_t NAry = fArrayNames.size();
+  Int_t NVar = fVNames.size();
+
+  fVariables.resize(NVar);
+  fArrays.resize(NAry);
+  
+  // simple variable-type names
+  for (Int_t ivar = 0; ivar < NVar; ivar++) {
+    pvar = gHaVars->Find(fVNames[ivar].c_str());
+    if (pvar) {
+      if ( !pvar->IsArray() ) {
+	fVariables[ivar] = pvar;
+      } else {
+	cout << "\tTHaOutput::Attach: ERROR: Global variable " << fVNames[ivar]
+	     << " changed from simple to array!! Leaving empty space for variable"
+	     << endl;
+	fVariables[ivar] = 0;
+      }
+    } else {
+      cout << "\nTHaOutput::Attach: WARNING: Global variable ";
+      cout << fVarnames[ivar] << " NO LONGER exists (it did before). "<< endl;
+      cout << "This is not supposed to happend... "<<endl;
+    }
+  }
+
+  // arrays
+  for (Int_t ivar = 0; ivar < NAry; ivar++) {
+    pvar = gHaVars->Find(fArrayNames[ivar].c_str());
+    if (pvar) {
+      if ( pvar->IsArray() ) {
+	fArrays[ivar] = pvar;
+      } else {
+	cout << "\tTHaOutput::Attach: ERROR: Global variable " << fVNames[ivar]
+	     << " changed from ARRAY to Simple!! Leaving empty space for variable"
+	     << endl;
+	fArrays[ivar] = 0;
+      }
+    } else {
+      cout << "\nTHaOutput::Attach: WARNING: Global variable ";
+      cout << fVarnames[ivar] << " NO LONGER exists (it did before). "<< endl;
+      cout << "This is not supposed to happend... "<<endl;
+    }
+  }
+
+  // 1-D histograms
+
+  fH1var.resize(fN1d);
+  for (Int_t ihist = 0; ihist < fN1d; ihist++) {
+    pvar = gHaVars->Find(fH1plot[ihist].c_str());
+    fH1var[ihist] = pvar;
+  }
+
+  // 2-D histograms
+
+  fH2varx.resize(fN2d);
+  fH2vary.resize(fN2d);
+  
+  for (Int_t ihist = 0; ihist < fN2d; ihist++) {
+    pvar = gHaVars->Find(fH2plotx[ihist].c_str());
+    fH2varx[ihist] = pvar;
+    pvar = gHaVars->Find(fH2ploty[ihist].c_str());
+    fH2vary[ihist] = pvar;
+  }
+
+  return 0;
+  
+}  
+
 //_____________________________________________________________________________
 #ifdef IFCANWORK
 // Preferred method, but doesn't work, hence turned off with ifdef

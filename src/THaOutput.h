@@ -83,32 +83,35 @@ public:
   THaOutput();
   virtual ~THaOutput(); 
 
-   virtual Int_t Init( const char* filename="output.def" );
-   virtual Int_t Process();
-   virtual Int_t End();
-   virtual Bool_t TreeDefined() const { return fTree != 0; };
-   virtual TTree* GetTree() const { return fTree; };
+  virtual Int_t Init( const char* filename="output.def" );
+  virtual Int_t Process();
+  virtual Int_t End();
+  virtual Bool_t TreeDefined() const { return fTree != 0; };
+  virtual TTree* GetTree() const { return fTree; };
 #ifdef IFCANWORK
 // Preferred method, but doesn't work, hence turned off with ifdef
-   virtual Int_t AddToTree(char *name, TObject *tobj); 
+  virtual Int_t AddToTree(char *name, TObject *tobj); 
 #endif
 
+  
   static const Double_t kBig;
   
 
 protected:
 
-   virtual Int_t LoadFile( const char* filename );
-   virtual Int_t FindKey(const THaString& key) const;
-   virtual THaString StripBracket(THaString& var) const; 
-   virtual void ErrFile(Int_t iden, const THaString& sline) const;
-   virtual Int_t ParseTitle(const THaString& sline);
-   virtual Int_t BuildBlock(const THaString& blockn);
-   void Print() const;
+  virtual Int_t LoadFile( const char* filename );
+  virtual Int_t Attach();
+  virtual Int_t FindKey(const THaString& key) const;
+  virtual THaString StripBracket(THaString& var) const; 
+  virtual void ErrFile(Int_t iden, const THaString& sline) const;
+  virtual Int_t ParseTitle(const THaString& sline);
+  virtual Int_t BuildBlock(const THaString& blockn);
+  void Print() const;
 
    // Variables, Formulas, Histograms
 
-  std::vector<THaString> fVarnames;
+  std::vector<THaString> fVarnames;           // list contructed from file
+  std::vector<THaString> fArrayNames, fVNames; // list of actual working var/arrays
   std::vector<THaString> fFormnames, fFormdef;
   std::vector<THaString> fH1dname, fH1dtit, fH2dname, fH2dtit;
   std::vector<Int_t> fH1dbin, fH2dbinx, fH2dbiny;
