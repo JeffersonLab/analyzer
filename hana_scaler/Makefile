@@ -59,6 +59,7 @@ ARCH          = linuxegcs
 
   DEFINES    = -DSTANDALONE
   ifeq ($(ARCH),solarisCC5)
+    DEFINES   += -DSUNVERS 
   # Solaris CC 5.0
     CXX           = CC
     ifdef DEBUG
@@ -74,6 +75,7 @@ ARCH          = linuxegcs
     endif
 
     ifeq ($(ARCH),linuxegcs)
+    DEFINES   += -DLINUXVERS 
     # Linux with egcs (>= RedHat 5.2)
     CXX           = g++
     ifdef DEBUG
@@ -103,7 +105,6 @@ export OSNAME := $(shell uname)
 
 ifeq ($(OSNAME),SunOS)
 
-   SC_DEFINES     += -DSUNVERS
 #   GLIB = -lc -lgen -lw
    GLIB = 
    SLIB = -L/opt/SUNWspro/SC4.2/lib -lsunmath
@@ -137,8 +138,6 @@ endif
 endif
 
 ifeq ($(OSNAME),Linux)
-
-   SC_DEFINES   += -DLINUXVERS
 
    LIBS          = 
    GLIBS         = -L/usr/X11R6/lib -lXpm -lX11

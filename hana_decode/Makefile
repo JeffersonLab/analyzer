@@ -66,6 +66,7 @@ else
 
   DEFINES = -DSTANDALONE
   ifeq ($(ARCH),solarisCC5)
+     DEFINES      += -DSUNVERS
      # Solaris CC 5.0
      CXX           = CC
      LD            = CC
@@ -80,6 +81,7 @@ else
   endif
 
   ifeq ($(ARCH),linuxegcs)
+     DEFINES      += -DLINUXVERS
      # Linux with egcs (>= RedHat 5.2)
      CXX           = g++
      LD            = g++
@@ -108,7 +110,6 @@ export OSNAME := $(shell uname)
 
 ifeq ($(OSNAME),SunOS)
 
-   DC_DEFINES    += -DSUNVERS
    EVIO_LIB=libevio_sun.a
    GLIB =  -lm -lc -lgen -lw -lnsl -ldl
    SLIB = -L/opt/SUNWspro/SC4.2/lib -lF77 -lM77 -lsunmath
@@ -126,8 +127,6 @@ ifeq ($(OSNAME),SunOS)
 endif
 
 ifeq ($(OSNAME),Linux)
-
-   DC_DEFINES   += -DLINUXVERS 
 
    LIBS          =
    GLIBS         = -L/usr/X11R6/lib -lXpm -lX11
