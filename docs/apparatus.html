@@ -1,12 +1,13 @@
-<html>
-<head>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title>How to write an apparatus class for the Hall A C++ Analyzer</title>
 </head>
-<body background="/wallpaper.gif">
+<body background="/pics/wallpaper.gif">
 <h1>How to write an apparatus class for the C++ analyzer</h1>
 
 Ole Hansen<br>
-Rev 0.1, 01 May 2001
+Rev. 1.0, 14 June 2003
 <p>
 
 This document refers to version 0.55 or higher of the C++ analyzer.
@@ -24,11 +25,11 @@ If you want to <b>create a completely new</b> apparatus (i.e. one
 that does not resemble an existing one at all, like a new type of 
 spectrometer), your new apparatus class should inherit from
 <ul>
-  <li> <a href=../html/THaApparatus.html>THaApparatus</a> if
+  <li> <a href="http://hallaweb.jlab.org/root/html/THaApparatus.html">THaApparatus</a> if
        you want to create a generic apparatus such as a collection
        of beamline or target instrumentation; or
        <p>
-  <li> <a href=../html/THaSpectrometer.html>THaSpectrometer</a>
+  <li> <a href="http://hallaweb.jlab.org/root/html/THaSpectrometer.html">THaSpectrometer</a>
        if you want to create a new spectrometer that is capable of
        particle tracking and, possibly, PID.
 </ul>
@@ -50,21 +51,21 @@ this method is implemented.
 
 In the second case (spectrometer), you can take advantage of the infrastructure
 already implemented by the 
-<a href=../html/THaSpectrometer.html>THaSpectrometer</a> base class. 
+<a href="http://hallaweb.jlab.org/root/html/THaSpectrometer.html">THaSpectrometer</a> base class. 
 In particular, THaSpectrometer provides a fairly generic Reconstruct()
 method (see <a href=standard-analyzer.html>standard analyzer</a>).
 At the minimum, your spectrometer apparatus class must
 
 <ul>
   <li> provide a TrackCalc() method. TrackCalc() is called by
-     <a href=../html/THaSpectrometer.html#THaSpectrometer:Reconstruct>
+     <a href="http://hallaweb.jlab.org/root/html/THaSpectrometer.html#THaSpectrometer:Reconstruct">
      THaSpectrometer::Reconstruct()</a> to compute particle track 
      properties such as momentum and beta right after the FineProcess()
      stage of the analysis. This can be a dummy function if no such
      calculations are necessary;
      <p>
   <li> provide a FindVertices() method. FindVertices() is called by
-     <a href=../html/THaSpectrometer.html#THaSpectrometer:Reconstruct>
+     <a href="http://hallaweb.jlab.org/root/html/THaSpectrometer.html#THaSpectrometer:Reconstruct">
      THaSpectrometer::Reconstruct()</a> at the end of processing
      to reconstruct tracks to the target. This can be a dummy
      function if no such reconstruction is necessary;
@@ -77,8 +78,8 @@ will not be able to instantiate any objects of your class unless
 these methods are implemented.
 <p>
 Additionally, you can override any of the other virtual functions of 
-<a href=../html/THaApparatus.html>THaApparatus</a> and
-<a href=../html/THaSpectrometer.html>THaSpectrometer</a>. Some
+<a href="http://hallaweb.jlab.org/root/html/THaApparatus.html">THaApparatus</a> and
+<a href="http://hallaweb.jlab.org/root/html/THaSpectrometer.html">THaSpectrometer</a>. Some
 obvious candidates are
 <ul>
   <li>Reconstruct() to modify tracking-related computations;
@@ -98,7 +99,7 @@ apparatus, you can do so using the AddDetector() method (see
 <hr> 
 <address>
 <!-- hhmts start -->
-Last modified: Wed May  2 14:12:58 EDT 2001
+Last modified: Sat Jun 14 13:16:24 EDT 2003
 <!-- hhmts end -->
 </address>
 

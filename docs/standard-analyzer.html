@@ -1,109 +1,123 @@
-<html>
-<head>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title>Standard Analyzer</title>
 </head>
-<body background="/wallpaper.gif">
+<body background="/pics/wallpaper.gif">
 <h1>The Standard Analyzer</h1>
 
 Ole Hansen<br>
-Rev 0.2, 01 November 2001
+Rev 1.0, 14 June 2003
 <p>
 
-This document refers to version 0.60 or higher of the C++ analyzer.
+This document refers to version 1.0 or higher of the C++ analyzer.
 <p>
 <hr>
-<p>
-The following description is preliminary. 
 <p>
 The "standard analyzer" provides a generic event loop and analysis chain
 that will, hopefully, be sufficient for most physics analysis purposes.
 The event loop and high-level algorithm are implemented in
 the method
-<a href="../html/THaAnalyzer.html#THaAnalyzer:Process">
+<a href="http://hallaweb.jlab.org/root/html/THaAnalyzer.html#THaAnalyzer:Process">
 THaAnalyzer::Process()</a> of the class
-<a href="../html/THaAnalyzer.html">THaAnalyzer</a>.
+<a href="http://hallaweb.jlab.org/root/html/THaAnalyzer.html">THaAnalyzer</a>.
 The standard spectrometer processing algorithm is implemented in
 the method 
-<a href="../html/THaSpectrometer.html#THaSpectrometer:Reconstruct">
+<a href="http://hallaweb.jlab.org/root/html/THaSpectrometer.html#THaSpectrometer:Reconstruct">
 THaSpectrometer::Reconstruct()</a> of
-the class <a href="../html/THaSpectrometer.html">THaSpectrometer</a>.
+the class <a href="http://hallaweb.jlab.org/root/html/THaSpectrometer.html">THaSpectrometer</a>.
 <p>
-<a href="../html/THaAnalyzer.html#THaAnalyzer:Process">
+<a href="http://hallaweb.jlab.org/root/html/THaAnalyzer.html#THaAnalyzer:Process">
 THaAnalyzer::Process( THaRun& run )</a> carries out the following functions:
 <ul>
   <li>Open the CODA input file associated with the run using
-      <a href="../html/THaRun.html#THaRun:OpenFile">THaRun::OpenFile()</a>.<p>
+      <a href="http://hallaweb.jlab.org/root/html/THaRun.html#THaRun:OpenFile">THaRun::OpenFile()</a>.<p>
   <li>Open the ROOT output file if not already open. If the file
       is already open, but the filename has changed, close the
       old file and open a new one.<p>
-  <li>Create a ROOT tree to hold THaEvent objects.<p>
-  <li><a href="../html/THaEvent.html#THaEvent:Reset">Reset()</a>
+  <li>If no "Event" object has been set by the user, use
+      <a href="http://hallaweb.jlab.org/root/html/THaEvent.hmtl">THaEvent</a> by default.
+      This event contains standard bookkeeping information such as run and event number, event time stamp, beam helicity,
+      etc.<p>
+  <li><a href="http://hallaweb.jlab.org/root/html/THaEvent.html#THaEvent:Reset">Reset()</a>
       the Event object.<p>
-  <li>Loop over all events in the CODA file.
+  <li>Loop over all events in the CODA file.<p>
   <li>Skip events until the a prestart event is found.
-      Extract the time stamp of the prestart event and call
-      Init( time_stamp ) for every
-      <a href="../html/THaApparatus.hmtl">THaApparatus</a> object defined
-      in the gHaApps list and every
-      <a href="../html/THaScaler.html">THaScaler</a> object defined in
-      the gHaScalers list.
+      Extract the time stamp of the prestart event and call Init( time_stamp ) for every
+      <a href="http://hallaweb.jlab.org/root/html/THaApparatus.hmtl">THaApparatus</a> object defined
+      in the gHaApps list, every
+      <a href="http://hallaweb.jlab.org/root/html/THaPhysicsModule.hmtl">THaPhysicsModule</a> object defined
+      in the gHaPhysics list, and every 
+      <a href="http://hallaweb.jlab.org/root/html/THaScaler.html">THaScaler</a> object defined in
+      the gHaScalers list.<p>
+  <li>After initializing the modules (and thus setting up their global variables), load the tests
+      defined in the definition file
+      (<a href="http://hallaweb.jlab.org/root/html/THaAnalyzer.html#THaAnalyzer:SetCutFile">SetCutFile()</a>).<p>
+  <li>After loading the tests, load the output definitions
+      (<a href="http://hallaweb.jlab.org/root/html/THaOutput.html#THaOutput:Init">THaOutput::Init()</a>)
+      from the output definition file
+      (<a href="http://hallaweb.jlab.org/root/html/THaAnalyzer.html#THaAnalyzer:SetOdefFile">SetOdefFile()</a>).
+      This sets up a <a href="http://root.cern.ch/root/htmldoc/TTree.html">TTree</a> in the output file..<p>
   <li>After finding the prestart event and initializing the apparatuses and
       scalers, only analyze events in the event range of the run. 
       Distinguish between physics events and scaler events.
       For physics events, do<p>
       <ul>
 	<li>For each apparatus defined in gHaApps, call
-	    <a href="../html/THaApparatus.html#THaApparatus:Decode">
-	    THaApparatus::Decode()</a>.<p>
-	<li>For each apparatus, call Reconstruct().<p>
-	<li>If a Physics class has been defined for the analysis session,
-	    call its Fill() method.<p>
-	<li>If an Event structure has been defined, call
-	    its Fill() method
-	    (derived from <a
-	    href="../html/THaEvent.html#THaEvent:Fill">THaEvent::Fill()</a>).
-	    <p>
-	<li>If an output Tree has been defined, call
-	    <a href="http://root.cern.ch/root/htmldoc/TTree.html#TTree:Fill">
-	    TTree::Fill()</a>.<p>
+	    <a href="http://hallaweb.jlab.org/root/html/THaApparatus.html#THaApparatus:Decode">
+	    THaApparatus::Decode()</a>.
+	<li>For each apparatus, call
+	    <a href="http://hallaweb.jlab.org/root/html/THaApparatus.html#THaApparatus:CoarseReconstruct">CoarseReconstruct()</a>.
+	    If the apparatus does not implement CoarseReconstruct(), this call does nothing.
+	<li>For each apparatus, call
+	    <a href="http://hallaweb.jlab.org/root/html/THaApparatus.html#THaApparatus:Reconstruct">Reconstruct()</a>.
+	<li>For each defined physics module, call
+	    <a href="http://hallaweb.jlab.org/root/html/THaPhysicsModule.html#THaPhysicsModule:Process">Process()</a>.
+	<li>If an Event structure has been defined, call its Fill() method
+	    (derived from
+	    <a href="http://hallaweb.jlab.org/root/html/THaEvent.html#THaEvent:Fill">THaEvent::Fill()</a>).
+	<li>Fill the output tree and histograms by calling
+	    <a href="http://hallaweb.jlab.org/root/html/THaOutput.html#THaOutput:Process">THaOutput::Process()</a>.
       </ul>
-      For scaler events, do<p>
+      <p>For scaler events, do<p>
       <ul>
-	<li>For each <a href="../html/THaScaler.html">THaScaler</a>
+	<li>For each <a href="http://hallaweb.jlab.org/root/html/THaScaler.html">THaScaler</a>
 	    object defined in gHaScalers, call
-	    <a href="../html/THaScaler.html#THaScaler:LoadData">
+	    <a href="http://hallaweb.jlab.org/root/html/THaScaler.html#THaScaler:LoadData">
 	    THaScaler::LoadData()</a>.<p>
       </ul>
-  <li><a href="../html/THaRun.html#THaRun:CloseFile">Close</a>
+  <li><a href="http://hallaweb.jlab.org/root/html/THaRun.html#THaRun:CloseFile">Close</a>
       the CODA input file.<p>
   <li><a href="http://root.cern.ch/root/htmldoc/TFile.html#TFile:Write">
       Write()</a> the ROOT output file.
 </ul>
 If an apparatus is a
-<a href="../html/THaSpectrometer.html">THaSpectrometer</a>,
+<a href="http://hallaweb.jlab.org/root/html/THaSpectrometer.html">THaSpectrometer</a>,
 processing in the Reconstruct() stage is carried out by
-<a href="../html/THaSpectrometer.html#THaSpectrometer:Reconstruct">
+<a href="http://hallaweb.jlab.org/root/html/THaSpectrometer.html#THaSpectrometer:Reconstruct">
 THaSpectrometer::Reconstruct()</a> as follows:
 <ul>
   <li>Loop over all
-      <a href="../html/THaTrackingDetector.html">THaTrackingDetectors</a>
+      <a href="http://hallaweb.jlab.org/root/html/THaTrackingDetector.html">THaTrackingDetectors</a>
       and call their CoarseTrack() methods.<p>
   <li>Loop over all
-      <a href="../html/THaNonTrackingDetector.html">THaNonTrackingDetectors</a>
+      <a href="http://hallaweb.jlab.org/root/html/THaNonTrackingDetector.html">THaNonTrackingDetectors</a>
       and call their CoarseProcess() methods.<p>
   <li>Loop over all
-      <a href="../html/THaTrackingDetector.html">THaTrackingDetectors</a>
+      <a href="http://hallaweb.jlab.org/root/html/THaTrackingDetector.html">THaTrackingDetectors</a>
       and call their FineTrack() methods.<p>
   <li>Loop over all
-      <a href="../html/THaNonTrackingDetector.html">THaNonTrackingDetectors</a>
+      <a href="http://hallaweb.jlab.org/root/html/THaNonTrackingDetector.html">THaNonTrackingDetectors</a>
       and call their FineProcess() methods.<p>
   <li>Call TrackCalc(). This method usually calculates
       overall track properties such as the absolute momentum and beta
       and may also be used to identify the "Golden Track".<p>
-  <li>Call <a href="../html/THaSpectrometer.html#THaSpectrometer:CalcPID">
+<!--
+  <li>Call <a href="http://hallaweb.jlab.org/root/html/THaSpectrometer.html#THaSpectrometer:CalcPID">
       CalcPID()</a>. This method usually combines individual PID
       probabilities from the PID detectors to an overall PID probability
       for each particle type.<p>
+--!>
   <li>Call FindVertices(). This method usually reconstructs tracks to
       the target.
 </ul>
@@ -115,7 +129,7 @@ class (see <a href="apparatus.html">how to write an apparatus class</a>).
 <hr> 
 <address>
 <!-- hhmts start -->
-Last modified: Thu Nov  1 11:50:41 EST 2001
+Last modified: Sat Jun 14 14:38:43 EDT 2003
 <!-- hhmts end -->
 </address>
 

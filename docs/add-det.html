@@ -1,32 +1,34 @@
-<html>
-<head>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title>Adding and removing a detector</title>
 </head>
-<body background="/wallpaper.gif">
+<body background="/pics/wallpaper.gif">
 <h1>Adding and removing a detector</h1>
 
 Ole Hansen<br>
-Rev 0.1, 01 May 2001
+Rev 1.0, 14 June 2003
 <p>
 
-This document refers to version 0.55 or higher of the C++ analyzer.
+This document refers to version 1.0 or higher of the C++ analyzer.
 <p>
 <hr>
 <p>
 Suppose you have just written a new detector class and want to try it out.
-The easiest way to do so is via the <b>AddDetector()</b> method of the
-apparatus class. For example, your script could do the following:
+The easiest way to do so is via the
+<a href="http://hallaweb.jlab.org/root/html/THaApparatus.html#THaApparatus:AddDetector">AddDetector()</a>
+method of the apparatus class. For example, your script could do the following:
 <pre>
-   // Instantiate the electron HRS apparatus and add it to the list of
+   // Instantiate the Right Arm HRS apparatus and add it to the list of
    // apparatuses to be analyzed
-   THaApparatus* HRSE = new THaElectronHRS("Electron HRS");
-   gHaApps->Add( HRSE );
+   THaApparatus* HRSR = new THaHRS("R","Electron HRS");
+   gHaApps->Add( HRSR );
 
    // Create an instance of the new hyper scintillator detector
    THaDetector* hs = new THaHyperScintillator("hs","Hyper Scintillator");
 
-   // Add this detector to the Electron HRS
-   HRSE->AddDetector( hs );
+   // Add this detector to the Right Arm HRS
+   HRSR->AddDetector( hs );
 
    // ... do your analysis
 </pre>
@@ -40,8 +42,8 @@ detector, unless you have hardcoded everything (urgh).
 A detector added to an apparatus in this way will work like any other
 detector associated with the apparatus in the sense that its standard
 processing methods will be called in the correct order and with the
-correct arguments.  That is, Decode() and CrudeProcess()/FineProcess() or
-CrudeTrack()/FineTrack() will be called as expected.  The new detector
+correct arguments.  That is, Decode() and CoarseProcess()/FineProcess() or
+CoarseTrack()/FineTrack() will be called as expected.  The new detector
 may even call methods of other detectors within the same apparatus and
 access any global physics variables available, within the same restrictions
 that apply to detectors instantiated in the apparatus's constructor.
@@ -73,27 +75,22 @@ yourself:
    delete hs;
 </pre>
 <p>
-To make a detector more permanent, you should definitely add its
-instantiation to the apparatus's constructor. Usually, this is
-done in a protected Init() function that is called by all
-constructors. For example:
+To make a detector more permanent, you could add its
+instantiation to the apparatus's constructor. For example:
 <pre>
-void THaElectronHRS::Init()
+void THaMyHRS::THaMyHRS( const char* name, const char* description ) :
+  THaHRS( name, description )
 {
-  fNmydets    = 4;                             //<-- change
-  fMydets     = new THaDetector*[fNmydets];
-  fMydets[0]  = new THaVDC("dc","E-arm VDC");
-  fMydets[1]  = new THaScintillator("s1","E-arm S1");
-  fMydets[2]  = new THaShower("sh","E-arm Shower");
-  fMydets[3]  = new THaHyperScintllator("hs","Hyp Scint"); //<-- add
+  // Constructor. Defines the standard detectors for MyHRS.
+  // NB: The standard HRS detectors (VDC, S1, S2) are defined
+  // in the THaHRS constructor.
 
-  for( int i=0; i < fNmydets; i++ ) {
-    fMydets[i]->SetApparatus(this);
-    fDetectors->AddLast( fMydets[i] );
-  }
+  AddDetector( new THaHyperScintllator("hs","Hyp Scint"));
 }
 </pre>
-
+However, writing a new apparatus inheriting from THaHRS just to add your
+own detectors is not really necessary unless you need to do special processing
+that <b>requires</b> the presence of those detectors.
 
 <p>
 <p>
@@ -103,16 +100,15 @@ However, for the reasons mentioned above, this could cause trouble if
 other detectors or parts of the analysis algorithm (e.g. beta calculation)
 depend on the presence of the detector you want to remove. Because of this,
 there is no support for simple removal of a detector in the present 
-version of the analyzer.  We might add such a feature in the future.
+version of the analyzer.
 <p>
-A clean approach to this problem is to build a fine-grained class hierarchy
-for each apparatus.  The most basic form of an apparatus, then, includes
-only minimal instrumentation while more complex forms include
-more detectors and more refined methods with support for them.
-Of course, this approach has limits as the number of detectors and
-possible configurations grows.
+For this reason, the standard HRS includes
+only minimal instrumentation (VDC, S1, S2).  Normally, those
+detectors are always present, so there is no need to remove detectors.
+Additional detectors can usually just be added via AddDetector().
 <p>
-With the present analyzer, if you absolutely need to remove a detector from an
+With the present analyzer, if you feel that you
+absolutely need to remove a detector from an
 apparatus, you will need to write a new apparatus class (modeled after
 the existing one). You will need to ensure, by inspection, that none of 
 the remaining detectors and/or algorithms depend on the detector that 
@@ -121,7 +117,7 @@ you remove.
 <hr> 
 <address>
 <!-- hhmts start -->
-Last updated: Tue, 1 May 2001
+Last modified: Sat Jun 14 13:32:47 EDT 2003
 <!-- hhmts end -->
 </address>
 
