@@ -84,6 +84,7 @@ SRC           = src/THaFormula.C src/THaVar.C src/THaVarList.C src/THaCut.C \
 		src/THaDetMap.C src/THaApparatus.C src/THaDetector.C \
 		src/THaSpectrometer.C src/THaSpectrometerDetector.C \
 		src/THaHRS.C src/THaLeftHRS.C src/THaRightHRS.C \
+                src/THaDecData.C \
 		src/THaTrackingDetector.C src/THaNonTrackingDetector.C \
 		src/THaPidDetector.C src/THaSubDetector.C \
 		src/THaDetectorBase.C src/THaRTTI.C \
