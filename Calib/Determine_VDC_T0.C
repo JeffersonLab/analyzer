@@ -405,7 +405,7 @@ void show_hists() {
   }
 }
 
-// following routine taken from dobbs's scripts/calct0table.C
+// following routine modified from dobbs's scripts/calct0table.C
 int SaveNewT0Data(const TDatime &run_date, Double_t *new_t0, const char *planename)
 {
   char buff[kBUFLEN], db_filename[kBUFLEN], tag[kBUFLEN];
@@ -473,6 +473,7 @@ int SaveNewT0Data(const TDatime &run_date, Double_t *new_t0, const char *planena
       fprintf(db_out, " ");
   }
 
+  fseek(db_file, 0L, SEEK_CUR); // synchronized
   // run through the rest of the file
   while ( fgets (buff, kBUFLEN, db_file) != NULL) {
     if (db_out != db_file) fputs(buff, db_out);
