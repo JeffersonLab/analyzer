@@ -131,7 +131,8 @@ SRC           = src/THaFormula.C src/THaVform.C src/THaVhist.C \
 		src/THaElectronKine.C src/THaReactionPoint.C \
 		src/THaTwoarmVertex.C src/THaAvgVertex.C \
 		src/THaExtTarCor.C src/THaDebugModule.C src/THaTrackInfo.C \
-		src/THaGoldenTrack.C
+		src/THaGoldenTrack.C \
+		src/THaPrimaryKine.C src/THaSecondaryKine.C
 
 OBJ           = $(SRC:.C=.o)
 HDR           = $(SRC:.C=.h) src/THaGlobals.h src/VarDef.h src/VarType.h \

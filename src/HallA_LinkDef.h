@@ -86,5 +86,7 @@
 #pragma link C++ class THaTrackInfo+;
 #pragma link C++ class THaDebugModule+;
 #pragma link C++ class THaGoldenTrack+;
+#pragma link C++ class THaPrimaryKine+;
+#pragma link C++ class THaSecondaryKine+;
 
 #endif

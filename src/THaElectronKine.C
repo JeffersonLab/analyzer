@@ -4,151 +4,30 @@
 //
 // THaElectronKine
 //
-// Calculate standard electron kinematics for a single spectrometer.
+// Special case of THaPrimaryKine, with an electron as the 
+// primary particle.  Exists for convenience and backwards-compatibility.
 //
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaElectronKine.h"
-#include "THaTrackingModule.h"
-#include "THaTrackInfo.h"
-#include "THaRun.h"
-#include "VarDef.h"
-#include "TLorentzVector.h"
-#include "TVector3.h"
-#include "TMath.h"
 
 ClassImp(THaElectronKine)
 
+static const Double_t electron_mass = 0.511e-3;
+
 //_____________________________________________________________________________
 THaElectronKine::THaElectronKine( const char* name, const char* description,
-				  const char* spectro, Double_t mass ) :
-  THaPhysicsModule(name,description), fMA(mass), 
-  fSpectroName(spectro), fSpectro(NULL)
+				const char* spectro, Double_t target_mass ) :
+  THaPrimaryKine(name,description,spectro,electron_mass,target_mass)
 {
-  // Normal constructor.
-
+  // Normal constructor. 
 }
 
 //_____________________________________________________________________________
 THaElectronKine::~THaElectronKine()
 {
   // Destructor
-
-  DefineVariables( kDelete );
 }
 
-//_____________________________________________________________________________
-void THaElectronKine::Clear( Option_t* opt )
-{
-  // Clear all internal variables.
-
-  fQ2 = fOmega = fW2 = fXbj = fScatAngle = fEpsilon = fQ3mag
-    = fThetaQ = fPhiQ = 0.0;
-}
-
-//_____________________________________________________________________________
-Int_t THaElectronKine::DefineVariables( EMode mode )
-{
-  // Define/delete global variables.
-
-  if( mode == kDefine && fIsSetup ) return kOK;
-  fIsSetup = ( mode == kDefine );
-
-  RVarDef vars[] = {
-    { "Q2",      "4-momentum transfer squared (GeV^2)",     "fQ2" },
-    { "omega",   "Energy transfer (GeV)",                   "fOmega" },
-    { "nu",      "Energy transfer (GeV)",                   "fOmega" },
-    { "W2",      "Invariant mass of recoil system (GeV^2)", "fW2" }, 
-    { "x_bj",    "Bjorken x",                               "fXbj" },
-    { "angle",   "Scattering angle (rad)",                  "fScatAngle" },
-    { "epsilon", "Virtual photon polarization factor",      "fEpsilon" },
-    { "q3m",     "Magnitude of 3-momentum transfer",        "fQ3mag" },
-    { "th_q",    "Theta of 3-momentum vector (rad)",        "fThetaQ" },
-    { "ph_q",    "Phi of 3-momentum vector (rad)",          "fPhiQ" },
-    { 0 }
-  };
-  return DefineVarsFromList( vars, mode );
-}
-
-//_____________________________________________________________________________
-THaAnalysisObject::EStatus THaElectronKine::Init( const TDatime& run_time )
-{
-  // Initialize the module.
-  // Locate the spectrometer apparatus named in fSpectroName and save
-  // pointer to it.
-
-  // Standard initialization. Calls this object's DefineVariables().
-  if( THaPhysicsModule::Init( run_time ) != kOK )
-    return fStatus;
-
-  fSpectro = dynamic_cast<THaTrackingModule*>
-    ( FindModule( fSpectroName.Data(), "THaTrackingModule"));
-  return fStatus;
-}
-
-//_____________________________________________________________________________
-Int_t THaElectronKine::Process( const THaEvData& evdata )
-{
-  // Calculate electron kinematics for the Golden Track of the spectrometer
-
-  if( !IsOK() || !gHaRun ) return -1;
-
-  THaTrackInfo* trkifo = fSpectro->GetTrackInfo();
-  if( !trkifo ) return 1;
-
-  Double_t p_in  = gHaRun->GetBeamP();
-
-  TLorentzVector p0, p1, pA, pA1, q;
-  const Double_t me = 0.511e-3; // electron mass FIXME: variable?
-  const Double_t Mp = 0.938;    // proton mass (for x_bj)
-
-  p0.SetXYZM( 0.0, 0.0, p_in, me );        // FIXME: beam slopes?
-  p1.SetVectM( trkifo->GetPvect(), me );
-  pA.SetXYZM( 0.0, 0.0, 0.0, fMA );        // Assume target at rest
-
-  // Standard electron kinematics
-  q          = p0 - p1;
-  fQ2        = -q.M2();
-  fQ3mag     = q.Vect().Mag();
-  fOmega     = q.E();
-  pA1        = pA + q;
-  fW2        = pA1.M2();
-  fScatAngle = p0.Angle( p1.Vect() );
-  fEpsilon   = 1.0 / ( 1.0 + 2.0*q.Vect().Mag2()/fQ2*
-		       TMath::Power( TMath::Tan(fScatAngle/2.0), 2.0 ));
-  fThetaQ    = q.Theta();
-  fPhiQ      = q.Phi();
-  fXbj       = fQ2/(2.0*Mp*fOmega);
-
-  return 0;
-}
-
-//_____________________________________________________________________________
-Int_t THaElectronKine::ReadRunDatabase( const TDatime& date )
-{
-  // Qeury the run database. Currently queries for the target mass.
-  //
-  // If the target mass wasn't set at the construction, then search for it
-  // in the rundatabase.
-  // First searches for "<prefix>.MA", then, if not found, for "MA".
-  // If still not found, use proton mass.
-
-  Int_t err = THaPhysicsModule::ReadRunDatabase( date );
-  if( err ) return err;
-
-  FILE* f = OpenRunDBFile( date );
-  if( !f ) return kFileError;
-
-  if ( fMA <= 0.0 ) { 
-    TString name(fPrefix), tag("MA"); name += tag;
-    Int_t st = LoadDBvalue( f, date, name.Data(), fMA );
-    if( st )
-      LoadDBvalue( f, date, tag.Data(), fMA );
-    
-    if( fMA == 0.0 ) fMA = 0.938;
-  }
   
-  fclose(f);
-  return 0;
-}
   
