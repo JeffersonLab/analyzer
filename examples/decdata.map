@@ -1,0 +1,48 @@
+# Decoder data used by THaDecData class
+# R. Michaels, March 2002
+# Comments start with '#'
+#
+# Here is where to search for the variables of this class.
+# Syntax depends on whether crate/word = "crate" or "word".
+# If "crate", we are looking into crates by slot and channel.
+# if "word", we are looking at a position relative to a header.
+# Hence, either:
+# name     "crate"   crate-number    slot    channel
+# or:
+# name     "word"    crate-number    header  num-to-skip
+# For the latter case, if one specifies crate-number = 0, then the
+# entire event is searched for 'header' (which in this case must be unique).
+# If crate-number > 0, then only that crate is searched.
+#
+# If this file is not existing, THaDecData will use its own internal DefaultMap().
+
+# synch checking adcs
+synchadc1    crate     1       25      16
+synchadc2    crate     2       24      48
+synchadc3    crate     3       22       0
+synchadc4    crate     4       17      48
+synchadc14   crate    14        1       5
+
+# time stamps
+timestamp    word      0    fca56000   2
+timeroc1     word      1    fabc0004   4
+timeroc2     word      2    fabc0004   4
+timeroc3     word      3    fabc0004   4
+timeroc4     word      4    fabc0004   4
+timeroc14    word      14   fadcb0b4   1
+
+# trigger bit pattern
+bit1       crate      4    11      64
+bit2       crate      4    11      65
+bit3       crate      4    11      66
+bit4       crate      4    11      67
+bit5       crate      4    11      68
+bit6       crate      4    11      69
+bit7       crate      4    11      70
+bit8       crate      4    11      71
+
+
+
+
+
+ 
