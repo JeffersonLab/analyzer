@@ -233,11 +233,14 @@ Int_t THaOutput::Init( const char* filename )
 
   if (fEpicsKey.size() > 0) {
     fEpicsVar = new Double_t[fEpicsKey.size()+1];
+    for(vector<THaString>::size_type i=0; i<fEpicsKey.size()+1; i++)
+      fEpicsVar[i] = -1e32;
     for (UInt_t i = 0; i < fEpicsKey.size(); i++) {
-      tinfo = fEpicsKey[i] + "/D";
-      fTree->Branch(fEpicsKey[i].c_str(), &fEpicsVar[i], 
+      THaString epicsbr = CleanEpicsName(fEpicsKey[i]);
+      tinfo = epicsbr + "/D";
+      fTree->Branch(epicsbr.c_str(), &fEpicsVar[i], 
         tinfo.c_str(), kNbout);
-      fEpicsTree->Branch(fEpicsKey[i].c_str(), &fEpicsVar[i], 
+      fEpicsTree->Branch(epicsbr.c_str(), &fEpicsVar[i], 
         tinfo.c_str(), kNbout);
     }
     fEpicsTree->Branch("timestamp",&fEpicsVar[fEpicsKey.size()],
@@ -313,10 +316,10 @@ void THaOutput::BuildList(std::vector<THaString > vdata)
            cout << "Syntax is 'begin scaler right' for right bank."<<endl;
            return;
 	 }
-         fScalBank = vdata[2]; 
+         fScalBank = vdata[2].ToLower();  
          std::string desc = "Hall A Scalers on " + fScalBank;
          fScalTree.insert(make_pair(fScalBank,
-            new TTree(fScalBank.c_str(),desc.c_str())));
+          new TTree(fScalBank.ToUpper().c_str(),desc.c_str())));
          return;
        } else {
   	 fScalRC = kRate;
@@ -747,7 +750,6 @@ Int_t THaOutput::FindKey(const THaString& key) const
   return -1;
 }
 
-
 //_____________________________________________________________________________
 THaString THaOutput::StripBracket(THaString& var) const
 {
@@ -770,6 +772,32 @@ THaString THaOutput::StripBracket(THaString& var) const
       result = var;
   }
   return result;
+}
+
+//_____________________________________________________________________________
+THaString THaOutput::CleanEpicsName(THaString& input) const
+{
+// To clean up EPICS variable names that contain
+// bad characters like ":" and arithmetic operations
+// that confuse TTree::Draw().
+// Replace all 'badchar' with 'goodchar'
+
+  static const char badchar[]=":+-*/=";
+  static const string goodchar = "_";
+  int numbad = sizeof(badchar)/sizeof(char) - 1;
+
+  THaString output = input;
+
+  for (int i = 0; i < numbad; i++) {
+     string sbad(&badchar[i]);
+     sbad.erase(1,sbad.size());
+     string::size_type pos = input.find(sbad,0);
+     while (pos != string::npos) {
+       output.replace(pos,1,goodchar);
+       pos = input.find(sbad,pos+1);
+     }
+  }
+  return output;
 }
 
 
@@ -981,5 +1009,6 @@ void THaOutput::SetVerbosity( Int_t level )
 }
 
 //_____________________________________________________________________________
+ClassImp(THaScalerKey)
 ClassImp(THaOdata)
 ClassImp(THaOutput)
