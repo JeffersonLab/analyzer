@@ -30,7 +30,6 @@
 #include "THaCut.h"
 #include "THaScalerGroup.h"
 #include "THaPhysicsModule.h"
-#include "evio.h"
 #include "THaCodaData.h"
 #include "TList.h"
 #include "TTree.h"
@@ -54,9 +53,13 @@ const char* const THaAnalyzer::kMasterCutName = "master";
 //_____________________________________________________________________________
 THaAnalyzer::THaAnalyzer() :
   fFile(NULL), fOutput(NULL), fOdefFileName("output.def"), fEvent(0), fNev(0),
-  fCompress(1), fDoBench(kFALSE)
+  fMarkInterval(1000), fCompress(1), fDoBench(kFALSE), fVerbose(1), 
+  fLocalEvent(kFALSE), fIsInit(kFALSE), fPrevEvent(NULL), fRun(NULL)
 {
   // Default constructor.
+
+  // FIXME: make sure this object is a singleton since it uses/modifies
+  //  global objects (gHaVars, gHaRun etc.)
 
   // Initialize descriptions of analysis stages
 
@@ -112,8 +115,7 @@ THaAnalyzer::THaAnalyzer() :
 //_____________________________________________________________________________
 THaAnalyzer::~THaAnalyzer()
 {
-  // Destructor. Does not delete the fEvent object since
-  // they are defined by the caller.
+  // Destructor. 
 
   Close();
   delete fBench;
@@ -127,15 +129,23 @@ THaAnalyzer::~THaAnalyzer()
 //_____________________________________________________________________________
 void THaAnalyzer::Close()
 {
-  // Close output files and delete fOutput and fFile objects.
+  // Close output files and delete fOutput, fFile, and fRun objects.
+  // Also delete fEvent if it was allocated automatically by us.
   
   delete fOutput; fOutput = NULL;
   delete fFile;   fFile   = NULL;
+  delete fRun;    fRun    = NULL;
+  if( fLocalEvent ) {
+    delete fEvent; fEvent = fPrevEvent = NULL; 
+  }
+  gHaRun = NULL;
+  fNev = 0;
+  fIsInit = kFALSE;
+  fAnalysisStarted = kFALSE;
 }
 
 
 //_____________________________________________________________________________
-inline
 bool THaAnalyzer::EvalStage( EStage n )
 {
   // Fill histogram block for analysis stage 'n', then evaluate cut block.
@@ -223,6 +233,225 @@ Int_t THaAnalyzer::InitModules( TIter& next, TDatime& run_time, Int_t erroff,
 }
 
 //_____________________________________________________________________________
+Int_t THaAnalyzer::Init( THaRun& run )
+{
+  // Initialize the analyzer.
+
+  // This is a wrapper so we can conveniently control the benchmark counter
+  if( fDoBench ) fBench->Begin("Init");
+  Int_t retval = DoInit( run );
+  if( fDoBench ) fBench->Stop("Init");
+  return retval;
+}
+  
+//_____________________________________________________________________________
+Int_t THaAnalyzer::DoInit( THaRun& run )
+{
+  // Internal function called by Init(). This is where the actual work is done.
+
+  static const char* const here = "Init()";
+  Int_t retval = 0;
+
+  // Allocate the event structure. 
+  // Use the default (containing basic event header) unless the user has 
+  // specified a different one.
+  bool new_event = false;
+  // Event changed since a previous initialization?
+  if( fEvent != fPrevEvent ) {
+    if( fAnalysisStarted ) {
+      // Don't allow a new event in the middle of the analysis!
+      Error( here, "Cannot change event structure for continuing analysis. "
+	     "Close() this analysis, then Init() again." );
+      return 254;
+    } else if( fIsInit ) {
+      // If previously initialized, we might have to clean up first.
+      // If we had automatically allocated an event before, and now the 
+      // user specifies his/her own (fEvent != 0), then get rid of the 
+      // previous event. Otherwise keep the old event since it would just be
+      // re-created anyway.
+      if( !fLocalEvent || fEvent )
+	new_event = true;
+      if( fLocalEvent && fEvent ) {
+	delete fPrevEvent; fPrevEvent = NULL;
+	fLocalEvent = kFALSE;
+      }
+    }
+  }
+  if( !fEvent )  {
+    fEvent = new THaEvent;
+    fLocalEvent = kTRUE;
+    new_event = true;
+  }
+  fPrevEvent = fEvent;
+  fEvent->Reset();
+
+  // Allocate the output module. Recreate if necessary.  At this time, this is 
+  // always THaOutput, and the user cannot specify his/her own.
+  // A new event requires recreation of the output module because the event 
+  // occupies a dedicated branch in the output tree.
+  bool new_output = false;
+  if( !fOutput || new_event ) {
+    delete fOutput; 
+    fOutput = new THaOutput;
+    new_output = true;
+  }
+
+  // Make sure the run is initizlized. 
+  if( !run.IsInit()) {
+    retval = run.Init();
+    if( retval )
+      return retval;  //Error message printed by run class
+  } 
+
+  // Deal with the run. Possible scenarios:
+  // - First time init or re-init after Close():
+  //        Init the run, extract time, full init of modules & output.
+  // - Re-init without analysis (e.g. user changed his mind which run to
+  //   analyze):
+  //        Different run (or run modified):
+  //             Init run, extract time, if changed, re-init everything
+  //        else
+  //             no re-init
+  // - Re-init with prior analysis (continuing):
+  //        Same run:
+  //             no re-init 
+  //             warn if user tries to analyze same data twice
+  //        Different run:
+  //             Init run, extract time
+  //             Special values of time:
+  //               -"continuation" (e.g. 2nd segment) - do not re-init
+  //               (-"now" - use current time )
+  //
+
+  bool new_run   = ( !fRun || *fRun != run );
+  bool need_init = ( !fIsInit || new_event || new_output || new_run );
+
+  // Warn user if trying to analyze the same run twice with overlapping
+  // event ranges
+  if( fAnalysisStarted && !new_run && 
+      (fRun->GetLastEvent() >= run.GetFirstEvent() ||
+       run.GetLastEvent() >= fRun->GetFirstEvent() )) {
+    Warning( here, "You are analyzing the same run twice with ",
+	     "overlapping event ranges!\n"
+	     "prev: %d-%d, now: %d-%d",
+	     fRun->GetFirstEvent(), fRun->GetLastEvent(),
+	     run.GetFirstEvent(), run.GetLastEvent() );
+    cout << "Are you sure (y/n)?" << endl;
+    char c = 0;
+    while( c != 'y' && c != 'n' && c != EOF ) {
+      cin >> c;
+    }
+    if( c != 'y' ) 
+      return 240;
+  }
+
+  // Make sure we save a copy of the run in fRun.
+  // Note that run may derive from THaRun, so this is a bit tricky.
+  if( new_run ) {
+    delete fRun;
+    fRun = (THaRun*)run.IsA()->New();
+    if( !fRun )
+      return 252; // urgh
+    *fRun = run;  // Copy the run via its virtual operator=
+  }
+
+  // Print run info
+  if( fVerbose ) {
+    run.Print("STARTINFO");
+  }
+
+  // Clear counters unless we are continuing an analysis
+  if( !fAnalysisStarted ) {
+    for( int i=0; i<kMaxSkip; i++ )
+      fSkipCnt[i].count = 0;
+  }
+
+  //---- If previously initialized and nothing changed, we are done----
+  if( !need_init ) 
+    return 0;
+
+  // Obtain time of the run, the one parameter we really need 
+  // for initializing the modules
+  TDatime run_time = run.GetDate();
+
+  // Initialize all apparatuses, scalers, and physics modules.
+  // Quit if any errors.
+  TIter next( gHaApps );
+  TIter next_scaler( gHaScalers );
+  TIter next_physics( gHaPhysics );
+  if( !((retval = InitModules( next,         run_time, 20, "THaApparatus")) ||
+	(retval = InitModules( next_scaler,  run_time, 30, "THaScalerGroup")) ||
+	(retval = InitModules( next_physics, run_time, 40, "THaPhysicsModule"))
+	)) {
+	
+    // Set up cuts here, now that all global variables are available
+    if( fCutFileName.IsNull() ) {
+      // No test definitions -> make sure list is clear
+      gHaCuts->Clear();
+      fLoadedCutFileName = "";
+    } else {
+      if( fCutFileName != fLoadedCutFileName ) {
+	// New test definitions -> load them
+	gHaCuts->Load( fCutFileName );
+	fLoadedCutFileName = fCutFileName;
+      }
+      // Ensure all tests are up-to-date. Global variables may have changed.
+      gHaCuts->Compile();
+    }
+    // Initialize local pointers to test blocks and master cuts
+    InitCuts();
+
+    // fOutput must be initialized after all apparatuses are
+    // initialized and before adding anything to its tree.
+    if( (retval = fOutput->Init( fOdefFileName )) < 0 ) {
+      Error( here, "Error initializing THaOutput." );
+    } else if( retval == 1 ) 
+      retval = 0;  // Reinitialization ok, not an error
+    else {
+      // If initialized ok, but not re-initialized, make a branch for
+      // the event structure in the output tree
+      TTree* outputTree = fOutput->GetTree();
+      if( outputTree )
+	outputTree->Branch( "Event_Branch", fEvent->IsA()->GetName(), 
+			    &fEvent, 16000, 99 );
+    }
+  }
+
+  // If initialization succeeded, set status flags accordingly
+  if( retval == 0 ) {
+    fIsInit = kTRUE;
+  }
+  return retval;
+}
+
+//_____________________________________________________________________________
+Int_t THaAnalyzer::ReadOneEvent( THaRun& run, THaEvData& evdata )
+{
+  // Read one event from 'run' into 'evdata'.
+
+  if( fDoBench ) fBench->Begin("RawDecode");
+
+  // Find next event buffer in CODA file. Quit if error.
+  Int_t status = run.ReadEvent();
+  if (status != 0) {
+    if (status == S_EVFILE_TRUNC) 
+      fSkipCnt[kEvFileTrunc].count++;
+    else if (status == CODA_ERROR) 
+      fSkipCnt[kCodaErr].count++;
+    return status;
+  } 
+
+  // Decode the event
+  evdata.LoadEvent( run.GetEvBuffer() );
+
+  // Count good events
+  fNev++;    
+
+  if( fDoBench ) fBench->Stop("RawDecode");
+  return 0;
+}
+
+//_____________________________________________________________________________
 Int_t THaAnalyzer::Process( THaRun& run )
 {
   // Process the given run. Loop over all events in the event range and
@@ -231,12 +460,18 @@ Int_t THaAnalyzer::Process( THaRun& run )
   // If Event and Filename are defined, then fill the output tree with Event
   // and write the file.
 
-  static const char* const here = "Process()";
+  //  static const char* const here = "Process()";
 
-  Int_t status;
-  status = run.OpenFile();
-  if( status < 0 ) return status;
+  fBench->Reset();
+  fBench->Begin("Total");
 
+  //--- Initialization.
+  Int_t status = Init( run );
+  if( status != 0 ) {
+    fBench->Stop("Total");
+    return status;
+  }
+  
   //--- If output file is defined, open it.
  
   if( !fFile && !fOutFileName.IsNull() ) {
@@ -249,159 +484,46 @@ Int_t THaAnalyzer::Process( THaRun& run )
     cout << "Creating new file: " << fOutFileName << endl;
     fFile = new TFile( fOutFileName.Data(), "RECREATE" );
   }
+  // FIXME: case of no file and no file name?
+  // At least print some error
     
   if( !fFile || fFile->IsZombie() ) {
     Close();
-    run.CloseFile();
+    fBench->Stop("Total");
     return -10;
   }
   fFile->SetCompressionLevel(fCompress);
 
-  //--- Output tree and histograms
-
-  TTree* outputTree = NULL;
-  bool local_event = false;
-  if( !fEvent )  {
-    fEvent = new THaEvent;
-    local_event = true;
-  }
-  fEvent->Reset();
-
-  if( !fOutput ) fOutput = new THaOutput();
-
-  //--- Initialize counters
-
-  fNev = 0;
-  for( int i=0; i<kMaxSkip; i++ )
-    fSkipCnt[i].count = 0;
   UInt_t nev_physics = 0;
   UInt_t nlim = run.GetLastEvent();
-  bool verbose = true, first = true;
 
   THaEvData evdata;
   TIter next( gHaApps );
   TIter next_scaler( gHaScalers );
   TIter next_physics( gHaPhysics );
-  TDatime run_time;
+
+  // Re-open the CODA file. Should succeed since this was tested in Init().
+  if( (status = run.OpenFile()) )
+    return -11;
+
+  // Make the current run available globally - used by some modules
+  gHaRun = &run;
 
   //--- The main event loop.
-
-  fBench->Reset();
-  fBench->Begin("Total");
-  if( fDoBench ) fBench->Begin("Init");
-
-  status = 0;
   bool terminate = false;
   bool fatal = false;
   while ( !terminate && 
 	  (status != EOF && status != CODA_ERROR) && nev_physics < nlim ) {
 
-    if( fDoBench ) fBench->Begin("RawDecode");
-    status = run.ReadEvent();
-
-    if (status != 0) {
-      if (status == S_EVFILE_TRUNC) 
-          fSkipCnt[kEvFileTrunc].count++;
-      else if (status == CODA_ERROR) 
-          fSkipCnt[kCodaErr].count++;
-      continue;  // skip event
-    } 
-
-    fNev++;    
-    evdata.LoadEvent( run.GetEvBuffer() );
-    if( fDoBench ) fBench->Stop("RawDecode");
-
-    //--- Initialization
-
-    if ( first ) {
-      // Must get a prestart event before we can initialize
-      // because the prestart event contains the run time.
-      // FIXME: Isn't this is overly restrictive?
-
-      // If the date isn't set, look for a prestart event
-      if ( run.GetDate().GetYear()<1997 ) {
-	if( !evdata.IsPrestartEvent() ) continue;
-	else {
-	  run_time.Set( evdata.GetRunTime() );
-	  run.SetDate( run_time );
-	  run.SetNumber( evdata.GetRunNum() );
-	}
-      } else {
-	run_time = run.GetDate();
-      }
-      
-      run.ReadDatabase();
-      gHaRun = &run;
-
-      if( verbose ) {
-	cout << "Run Number: " << run.GetNumber() << endl;
-	cout << "Run Time  : " << run_time.AsString() << endl;
-	//	cout << "Run Type  : " << evdata.GetRunType() << endl;
-      }
-      first = false;
-
-      // Save run data to ROOT file
-      run.Write("Run_Data");
-
-      // Initialize all apparatuses, scalers, and physics modules.
-      // Quit if any errors.
-      Int_t retval = 0;
-      if( !((retval = InitModules( next,         run_time, 20, "THaApparatus")) ||
-	    (retval = InitModules( next_scaler,  run_time, 30, "THaScalerGroup")) ||
-	    (retval = InitModules( next_physics, run_time, 40, "THaPhysicsModule"))
-	    )) {
-	
-	// Set up cuts here, now that all global variables are available
-  	
-	if( fCutFileName.IsNull() ) {
-	  // No test definitions -> make sure list is clear
-	  gHaCuts->Clear();
-	  fLoadedCutFileName = "";
-	} else {
-	  if( fCutFileName != fLoadedCutFileName ) {
-	    // New test definitions -> load them
-	    gHaCuts->Load( fCutFileName );
-	    fLoadedCutFileName = fCutFileName;
-	  }
-	  // Ensure all tests are up-to-date. Global variables may have changed.
-	  gHaCuts->Compile();
-	}
-	// Initialize local pointers to test blocks and master cuts
-	InitCuts();
-
-	// fOutput must be initialized after all apparatuses are
-	// initialized and before adding anything to its tree.
-
-	if( (retval = fOutput->Init( fOdefFileName )) < 0 ) {
-	  Error( here, "Error initializing THaOutput." );
-	} else if( retval == 1 ) 
-	  retval = 0;  // Ignore re-initialization attempt
-	else {
-	  outputTree = fOutput->GetTree();
-	  if( fEvent && outputTree ) 
-	    outputTree->Branch( "Event_Branch", fEvent->IsA()->GetName(), 
-				&fEvent, 16000, 99 );
-	}
-      }
-      if( retval ) {
-	Close();
-	run.CloseFile();
-	if( local_event ) { delete fEvent; fEvent = NULL; }
-	return retval;
-      }
-
-      if( fDoBench ) fBench->Stop("Init");
+    //--- Read one event from "run" into "evdata". Skip the event if error.
+    if( ReadOneEvent( run, evdata )) 
       continue;
-
-    } //if(first)
-
-    // Print marks every 1000 events
-
-    if( verbose && (fNev%1000 == 0))  
+    
+    //--- Print marks periodically
+    if( fVerbose && (fNev % fMarkInterval == 0))  
       cout << dec << fNev << endl;
 
     //=== Physics triggers ===
-
     if( evdata.IsPhysicsTrigger()) {
 
       nev_physics++;
@@ -463,7 +585,7 @@ Int_t THaAnalyzer::Process( THaRun& run )
       if( fDoBench ) fBench->Stop("Physics");
       if( fatal ) continue;
 
-      //--- Evaluate test block 3 "Physics"
+      //--- Evaluate "Physics" test block
 
       if( !EvalStage(kPhysics) )  continue;
 
@@ -528,7 +650,7 @@ Int_t THaAnalyzer::Process( THaRun& run )
 
   // Print scaler statistics
 
-  first = true;
+  bool first = true;
   next_scaler.Reset();
   while( THaScalerGroup* theScaler =
 	 static_cast<THaScalerGroup*>( next_scaler() )) {
@@ -565,8 +687,9 @@ Int_t THaAnalyzer::Process( THaRun& run )
 
   if( fOutput ) fOutput->End();
   if( fFile ) {
-    fFile->Purge();  // get rid of excess object "cycles"
+    run.Write("Run_Data");  // Save run data to ROOT file
     fFile->Write();
+    fFile->Purge();         // get rid of excess object "cycles"
   }
 
   // Print cut summary (also to file if one given)
@@ -598,7 +721,6 @@ Int_t THaAnalyzer::Process( THaRun& run )
   }
 
   gHaRun = NULL;
-  if( local_event ) { delete fEvent; fEvent = NULL; }
   return nev_physics;
 }
 //_____________________________________________________________________________
