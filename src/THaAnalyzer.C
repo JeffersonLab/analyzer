@@ -990,9 +990,13 @@ Int_t THaAnalyzer::SlowControlAnalysis( Int_t code )
   // Ignores RawDecode results and requested event range, so EPICS
   // data are always analyzed continuously from the beginning of the run.
 
+  if( code == kFatal )
+    return code;
   if( fDoBench ) fBench->Begin("Output");
   if( fOutput ) fOutput->ProcEpics(fEvData);
   if( fDoBench ) fBench->Stop("Output");
+  if( code == kTerminate )
+    return code;
   return kOK;
 }
 
@@ -1008,6 +1012,8 @@ Int_t THaAnalyzer::ScalerAnalysis( Int_t code )
   // LoadData() works incrementally and must see the entire stream of 
   // scaler data starting from the beginning of the run.
 
+  if( code == kFatal )
+    return code;
   TIter next(fScalers);
   while( THaScalerGroup* theScaler =
 	 static_cast<THaScalerGroup*>( next() )) {
@@ -1020,6 +1026,8 @@ Int_t THaAnalyzer::ScalerAnalysis( Int_t code )
       if( fDoBench ) fBench->Stop("Output");
     }
   }
+  if( code == kTerminate )
+    return code;
   return kOK;
 }
 
