@@ -47,7 +47,7 @@ THaTrackingDetector::~THaTrackingDetector()
 THaTrack* THaTrackingDetector::AddTrack( TClonesArray& tracks,
 					 Double_t p, Double_t theta, 
 					 Double_t phi, Double_t x, Double_t y,
-					 const TClonesArray* clusters )
+					 TClonesArray* clusters )
 {
   // Add a track with the given parameters to the array of tracks
   // Returns the index of the created track in the TClonesArray.
