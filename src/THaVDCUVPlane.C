@@ -131,16 +131,27 @@ Int_t THaVDCUVPlane::MatchUVClusters()
     // Match clusters by time
     THaVDCCluster * p1Clust, * p2Clust; //Cluster from p1, p2 respectively
     THaVDCCluster * minClust; // Cluster in p2 with time closest to p1Clust
+    THaVDCHit *p1Pivot, *p2Pivot;
     Double_t minTimeDif;      // Time difference between p1Clust and minClust
     for (int i = 0; i < p1->GetNClusters(); i++) {
       
       p1Clust = p1->GetCluster(i);
+      p1Pivot = p1Clust->GetPivot();
+      if( !p1Pivot ) {
+	Warning( "THaVDCUVPlane", "Cluster without pivot in p1, %d!", i );
+	continue;
+      }
       minClust = NULL;
       minTimeDif = 1e307;  //Arbitrary large value
       for (int j = 0; j < p2->GetNClusters(); j++) {
 	p2Clust = p2->GetCluster(j);
-	Double_t timeDif = fabs(p1Clust->GetPivot()->GetTime() - 
-				p2Clust->GetPivot()->GetTime());
+	p2Pivot = p2Clust->GetPivot();
+	if( !p2Pivot ) {
+	  Warning( "THaVDCUVPlane", 
+		   "Cluster without pivot in p2, %d, %d!", i, j );
+	  continue;
+	}
+	Double_t timeDif = fabs(p1Pivot->GetTime() - p2Pivot->GetTime());
 	
 	if (timeDif < minTimeDif) {
 	  minTimeDif = timeDif;
