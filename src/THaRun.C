@@ -202,6 +202,7 @@ Int_t THaRun::ReadDatabase()
   fTarget = NULL;
   fDBRead = true;
 
+  fclose(f);
   return 0;
 }
   
