@@ -36,7 +36,7 @@ void THaSpectrometerDetector::DefineAxes(Double_t rotation_angle)
   // right now, we assume that all detectors except VDCs are 
   // perpendicular to the Transport frame
 
-  fXax.SetXYZ( TMath::Sin(rotation_angle), 0.0, TMath::Cos(rotation_angle) );
+  fXax.SetXYZ( TMath::Cos(rotation_angle), 0.0, TMath::Sin(rotation_angle) );
   fYax.SetXYZ( 0.0, 1.0, 0.0 );
   fZax = fXax.Cross(fYax);
 
