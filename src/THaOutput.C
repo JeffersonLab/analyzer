@@ -26,11 +26,13 @@
 #include "TTree.h"
 #include "TFile.h"
 #include "TRegexp.h"
+#include "TError.h"
 #include <algorithm>
 #include <fstream>
+#include <cstring>
 
 using namespace std;
-typedef vector<THaOdata*>::size_type Vsiz;
+typedef vector<THaOdata*>::size_type Vsiz_t;
 
 //_____________________________________________________________________________
 THaOutput::THaOutput() :
@@ -59,7 +61,7 @@ THaOutput::~THaOutput()
 }
 
 //_____________________________________________________________________________
-Int_t THaOutput::Init( ) 
+Int_t THaOutput::Init( const char* filename ) 
 {
   // Initialize output system. Required before anything can happen.
 
@@ -74,7 +76,7 @@ Int_t THaOutput::Init( )
   }
   if( !gHaVars ) return -2;
 
-  Int_t err = LoadFile();
+  Int_t err = LoadFile( filename );
   if( err == -1 )
     return 0;       // No error if file not found - then we're just a dummy
   else if( err != 0 )
@@ -108,7 +110,7 @@ Int_t THaOutput::Init( )
       cout << "There is probably a typo error... "<<endl;
     }
   }
-  for (Vsiz k = 0; k < fOdata.size(); k++)
+  for (Vsiz_t k = 0; k < fOdata.size(); k++)
     fTree->Branch(stemp1[k].c_str(), fOdata[k]->ClassName(),
 		  &fOdata[k]);
   fNvar = stemp2.size();
@@ -220,7 +222,7 @@ Int_t THaOutput::Process()
     pvar = fVariables[ivar];
     if (pvar) fVar[ivar] = pvar->GetValue();
   }
-  for (Vsiz k = 0; k < fOdata.size(); k++) { 
+  for (Vsiz_t k = 0; k < fOdata.size(); k++) { 
     fOdata[k]->Clear();
     pvar = fArrays[k];
     if ( pvar == 0) continue;
@@ -298,10 +300,17 @@ Int_t THaOutput::End()
 }
 
 //_____________________________________________________________________________
-Int_t THaOutput::LoadFile() 
+Int_t THaOutput::LoadFile( const char* filename ) 
 {
   // Process the file that defines the output
-  const THaString loadfile = "output.def";
+  
+  if( !filename || !strlen(filename) || strspn(filename," ") == 
+      strlen(filename) ) {
+    ::Error( "THaOutput::LoadFile()", "invalid file name, "
+	     "no output definition loaded" );
+    return -1;
+  }
+  THaString loadfile(filename);
   ifstream* odef = new ifstream(loadfile.c_str());
   if ( ! (*odef) ) {
     ErrFile(-1, loadfile);
@@ -378,13 +387,15 @@ Int_t THaOutput::LoadFile()
   delete odef;
 
   // sort thru fVarnames, removing identical entries
-  sort(fVarnames.begin(),fVarnames.end());
-  vector<THaString>::iterator Vi = fVarnames.begin();
-  while ( (Vi+1)!=fVarnames.end() ) {
-    if ( *Vi == *(Vi+1) ) {
-      fVarnames.erase(Vi+1);
-    } else {
-      Vi++;
+  if( fVarnames.size() > 1 ) {
+    sort(fVarnames.begin(),fVarnames.end());
+    vector<THaString>::iterator Vi = fVarnames.begin();
+    while ( (Vi+1)!=fVarnames.end() ) {
+      if ( *Vi == *(Vi+1) ) {
+	fVarnames.erase(Vi+1);
+      } else {
+	Vi++;
+      }
     }
   }
 
@@ -486,7 +497,7 @@ void THaOutput::Print() const
   for (Iter is = fFormdef.begin();
     is != fFormdef.end(); is++) cout << "Formula definition = "<<*is<<endl;
   cout << "\n=== Number of 1d histograms "<<fH1dname.size()<<endl;
-  for (Vsiz i = 0; i < fH1dname.size(); i++) {
+  for (Vsiz_t i = 0; i < fH1dname.size(); i++) {
     cout << "1d histo "<<i<<"   name "<<fH1dname[i];
     cout << "  title =  "<<fH1dtit[i]<<endl;
     cout << "   var = "<<fH1plot[i];
@@ -494,7 +505,7 @@ void THaOutput::Print() const
     cout << "   "<<fH1dxhi[i]<<endl;
   }
   cout << "\n=== Number of 2d histograms "<<fH2dname.size()<<endl;
-  for (Vsiz i = 0; i < fH2dname.size(); i++) {
+  for (Vsiz_t i = 0; i < fH2dname.size(); i++) {
     cout << "2d histo "<<i<<"   name "<<fH2dname[i]<<endl;
     cout << "  title =  "<<fH2dtit[i];
     cout << "  x var = "<<fH2plotx[i];

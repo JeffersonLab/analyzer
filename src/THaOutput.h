@@ -70,8 +70,8 @@ public:
   THaOutput();
   virtual ~THaOutput(); 
 
-   virtual Int_t Init( );
-   virtual Int_t Process( );
+   virtual Int_t Init( const char* filename="output.def" );
+   virtual Int_t Process();
    virtual Int_t End();
    virtual Bool_t TreeDefined() const { return fTree != 0; };
    virtual TTree* GetTree() const { return fTree; };
@@ -82,7 +82,7 @@ public:
 
 protected:
 
-   virtual Int_t LoadFile();
+   virtual Int_t LoadFile( const char* filename );
    virtual Int_t FindKey(const THaString& key) const;
    virtual void ErrFile(Int_t iden, const THaString& sline) const;
    virtual Int_t ParseTitle(const THaString& sline);
