@@ -29,18 +29,19 @@ typedef vector<const THaVar*>::const_iterator VIter_t;
 //_____________________________________________________________________________
 THaDebugModule::THaDebugModule( const char* var_list, const char* test ) :
   THaPhysicsModule("DebugModule",var_list), 
-  fVarString(var_list), fFlags(kStop), fCount(0), fTestName(test), fTest(0)
+  fVarString(var_list), fFlags(kStop), fCount(0), fTestExpr(test), fTest(0)
 {
   // Normal constructor.
 
   // Flag indicating that test pointer needs to be assigned
-  fIsSetup = fTestName.IsNull();
+  fIsSetup = fTestExpr.IsNull();
 }
 
 //_____________________________________________________________________________
 THaDebugModule::~THaDebugModule()
 {
   // Destructor
+  delete fTest;
 }
 
 //_____________________________________________________________________________
@@ -91,12 +92,12 @@ void THaDebugModule::Print( Option_t* opt ) const
   // Print details of the defined variables
 
   THaPhysicsModule::Print( opt );
-  if( IsOK() ) {
-    if( !fTestName.IsNull() ) {
+  if( fIsSetup ) {
+    if( !fTestExpr.IsNull() ) {
       if( fTest ) 
 	fTest->Print();
       else
-	cout << "Test name: " << fTestName << " (undefined)\n";
+	cout << "Test name: " << fTestExpr << " (undefined)\n";
     }
     cout << "Number of variables: " << fVars.size() << endl;
     VIter_t it = fVars.begin();
@@ -104,8 +105,8 @@ void THaDebugModule::Print( Option_t* opt ) const
       cout << (*it)->GetName() << "  ";
     cout << endl;
   } else {
-    if( !fTestName.IsNull()) 
-      cout << "Test name: " << fTestName << endl;
+    if( !fTestExpr.IsNull()) 
+      cout << "Test name: " << fTestExpr << endl;
     cout << "(Module not initialized)\n";
   }
 }
@@ -122,15 +123,19 @@ Int_t THaDebugModule::Process( const THaEvData& evdata )
 {
   // Print the variables for every event and wait for user input.
 
-  // We have to search for the test here because physics modules' Init() is
-  // called before the tests are loaded.
-
+  // We have to set up the test here because physics modules' Init() is
+  // called before the analyzer's tests are loaded, and we want to be
+  // able to use existing tests.
   if( !fIsSetup ) {
-    fTest = gHaCuts->FindCut( fTestName );
+    fTest = new THaCut( fName+"_Test", fTestExpr, fName+"_Block" );
+    // Expression error?
+    if( !fTest || fTest->IsZombie()) {
+      delete fTest; fTest = NULL;
+    }
     fIsSetup = true;
   }
   bool good = true;
-  if ( fTest && !fTest->GetResult()) good = false;
+  if ( fTest && !fTest->EvalCut()) good = false;
   
   // Print() the variables
   if( good && (fFlags & kQuiet) == 0) {

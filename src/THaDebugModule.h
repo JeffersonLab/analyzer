@@ -36,12 +36,12 @@ protected:
   THaPrintOption  fVarString; // Set of strings with variable names
   Int_t           fFlags;     // Option flags
   Int_t           fCount;     // Event counter
-  TString         fTestName;  // Name of test to evaluate before printing
+  TString         fTestExpr;  // Name of test to evaluate before printing
   THaCut*         fTest;      // Pointer to test object to evaulate
 
-private:
+  void    PrintEvNum( const THaEvData& ) const;
 
-  void PrintEvNum( const THaEvData& ) const;
+private:
 
   THaDebugModule();
   THaDebugModule( const THaDebugModule& );
