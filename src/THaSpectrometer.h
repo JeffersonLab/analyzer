@@ -26,7 +26,7 @@ public:
 					   const char* name,
 					   Double_t mass, Int_t charge = 0 );
   virtual Int_t            CalcPID();
-          void             Clear( Option_t* opt="" );
+          void             Clear( Option_t* opt="") { fTracks->Clear("C"); }
   virtual void             DefinePidParticles();
   virtual Int_t            DefineVariables( EMode mode = kDefine );
   virtual Int_t            FindVertices( TClonesArray& tracks ) = 0;

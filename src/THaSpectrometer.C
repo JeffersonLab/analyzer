@@ -137,14 +137,6 @@ Int_t THaSpectrometer::CalcPID()
 }
 
 //_____________________________________________________________________________
-void THaSpectrometer::Clear( Option_t* opt )
-{
-  // Delete contents of internal event-by-event arrays
-
-  fTracks->Delete();
-}
-
-//_____________________________________________________________________________
 void THaSpectrometer::DefinePidParticles()
 {
   // Define the default set of PID particles:
