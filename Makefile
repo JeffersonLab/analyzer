@@ -60,8 +60,8 @@ CXXFLG       += -KPIC
 LD            = CC
 LDCONFIG      =
 SOFLAGS       = -G
-SONAME        =
-DEFINES       =
+SONAME        = -h
+DEFINES       = -DSUNVERS
 endif
 
 ifeq ($(ARCH),linuxegcs)
@@ -74,7 +74,7 @@ else
   CXXFLG      = -O
   LDFLAGS     = -O
 endif
-DEFINES       =
+DEFINES       = -DLINUXVERS
 CXXFLG       += -Wall -Woverloaded-virtual -fPIC
 LD            = g++
 LDCONFIG      = /sbin/ldconfig -n $(LIBDIR)
@@ -204,17 +204,32 @@ endif
 		@echo "$@ done"
 
 $(LIBHALLA).$(SOVERSION):	$(LIBHALLA).$(VERSION)
+ifneq ($(strip $(LDCONFIG)),)
 		$(LDCONFIG)
+else
+		rm -f $@
+		ln -s $< $@
+endif
 
 $(LIBHALLA):	$(LIBHALLA).$(SOVERSION)
 		rm -f $@
 		ln -s $< $@
 
 $(LIBDC).$(SOVERSION):	$(LIBDC).$(VERSION)
+ifneq ($(strip $(LDCONFIG)),)
 		$(LDCONFIG)
+else
+		rm -f $@
+		ln -s $< $@
+endif
 
 $(LIBSCALER).$(SOVERSION):	$(LIBSCALER).$(VERSION)
+ifneq ($(strip $(LDCONFIG)),)
 		$(LDCONFIG)
+else
+		rm -f $@
+		ln -s $< $@
+endif
 
 $(LIBDC):	$(LIBDC).$(SOVERSION)
 		rm -f $@
