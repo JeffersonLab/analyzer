@@ -174,6 +174,7 @@ protected:
   virtual Int_t ChkHistTitle(Int_t key, const THaString& sline);
   virtual Int_t BuildBlock(const THaString& blockn);
   virtual THaString StripBracket(THaString& var) const; 
+  virtual THaString CleanEpicsName(THaString& var) const;
   void BuildList(std::vector<THaString > vdata);
   void AddScaler(THaString name, THaString bank, 
          Int_t helicity = 0, Int_t slot=-1, Int_t chan=-1); 
