@@ -12,9 +12,9 @@ Crate,Slot,1st,Last ADC chans,Beg S2 chan --------------------------------------
        1      16      30      30       12            - TDCs pad  12   (left)
       -1       0       0       0       0
 X,Y,Z coords (in cm) of S2 front plane in spectrom cs --------------------------
-     0.0     0.0  331.44                             - Centimeters
+     0.0     0.0  3.3144                             - Meters
 Half of X, half of Y, full Z sizes (in cm) of S2 -------------------------------
-   111.0    32.0     0.5                             - Centimeters
+   1.110    0.32     0.005                           - Meters
 Rotation angle of the S2 plane -------------------------------------------------
      0.0                                             - Degrees
 TDC time offsets of S2 TDC channels --------------------------------------------

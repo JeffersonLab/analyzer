@@ -8,9 +8,9 @@ Crate,Slot,1st,Last ADC chans,Beg S1 chan --------------------------------------
        1      16      16      21       7             - TDCs pads 7-12 (left)
       -1       0       0       0       0
 X,Y,Z coords (in cm) of S1 front plane in spectrom cs --------------------------
-     0.0     0.0   138.1                             - Centimeters
+     0.0     0.0   1.381                             - Meters
 Half of X, half of Y, full Z sizes (in cm) of S1 -------------------------------
-    88.0    18.0     0.5                             - Centimeters
+    0.88    0.18     0.005                           - Meters
 Rotation angle of the S1 plane -------------------------------------------------
      0.0                                             - Degrees
 TDC time offsets of S1 TDC channels --------------------------------------------
