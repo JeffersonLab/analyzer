@@ -87,7 +87,7 @@ CXXFLAGS     += -pg
 LDFLAGS      += -pg
 endif
 
-export ARCH
+export ARCH LIBDIR
 
 #------------------------------------------------------------------------------
 
@@ -133,7 +133,7 @@ OBJS          = $(OBJ) haDict.o
 LIBHALLA      = $(LIBDIR)/libHallA.so
 PROGRAMS      = analyzer
 
-all:            subdirs $(PROGRAMS)
+all:            $(PROGRAMS)
 
 src/ha_compiledata.h:
 		echo "#define HA_INCLUDEPATH \"$(INCDIRS)\"" > $@
@@ -145,20 +145,8 @@ $(LIBHALLA):	$(HDR) $(OBJS)
 		$(LD) $(LDFLAGS) $(SOFLAGS) -o $@ $(OBJS)
 		@echo "$@ done"
 
-$(LIBDIR)/libdc.so:	$(DCDIR)/libdc.so
-		cp $< $(LIBDIR)
-
-$(LIBDIR)/libscaler.so:	$(SCALERDIR)/libscaler.so
-		cp $< $(LIBDIR)
-
-$(DCDIR)/libdc.so:
-		$(MAKE) -C $(@D) $(@F)
-
-$(SCALERDIR)/libscaler.so:
-		$(MAKE) -C $(@D) $(@F)
-
-analyzer:	src/main.o $(LIBDIR)/libdc.so $(LIBDIR)/libscaler.so $(LIBHALLA)
-		$(LD) $(LDFLAGS) $^ $(HALLALIBS) $(GLIBS) -o $@
+analyzer:	src/main.o subdirs $(LIBHALLA)
+		$(LD) $(LDFLAGS) $< $(HALLALIBS) $(GLIBS) -o $@
 
 clean:
 		$(MAKE) -C $(DCDIR) clean

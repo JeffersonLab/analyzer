@@ -184,11 +184,17 @@ endif
 libscaler.a:	$(SCALER_OBJS) 
 	rm -f $@
 	ar crs $@ $^
+ifndef STANDALONE
+	cp $@ $(LIBDIR)
+endif
 
 libscaler.so:	$(SCALER_OBJS) 
 	rm -f $@
 	$(LD) $(LDFLAGS) $(SOFLAGS) -o $@ $^
+ifndef STANDALONE
 	-cp -f scaler.map ../DB
+	cp $@ $(LIBDIR)
+endif
 
 tscalfile: tscalfile_main.o $(SCALER_OBJS) $(SRC) $(HEAD) $(LIBDC)  
 	rm -f $@

@@ -213,10 +213,16 @@ endif
 libdc.a: $(DECODE_OBJS)
 	rm -f $@
 	ar crs $@ $^
+ifndef STANDALONE
+	cp $@ $(LIBDIR)
+endif
 
 libdc.so: $(DECODE_OBJS)
 	rm -f $@
 	$(LD) $(LDFLAGS) $(SOFLAGS) -o $@ $^
+ifndef STANDALONE
+	cp $@ $(LIBDIR)
+endif
 
 # Test programs for standalone tests of decoder.
 # Need a few objects from MAINDIR because of some links to those classes.
