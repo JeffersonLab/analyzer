@@ -11,12 +11,15 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "TROOT.h"
+#include "TClass.h"
+#include "TError.h"
 #include "THaInterface.h"
 #include "TInterpreter.h"
 #include "THaVarList.h"
 #include "THaCutList.h"
 #include "THaEvData.h"
 #include "THaString.h"
+#include "THaGlobals.h"
 #include "ha_compiledata.h"
 
 //#include "TGXW.h"
@@ -128,6 +131,34 @@ void THaInterface::PrintLogo()
 
    gInterpreter->PrintIntro();
 
+}
+
+//_____________________________________________________________________________
+TClass* THaInterface::GetDecoder()
+{
+  // Get class of the current decoder
+  return gHaDecoder;
+}
+
+//_____________________________________________________________________________
+TClass* THaInterface::SetDecoder( TClass* c )
+{
+  // Set the type of decoder to be used. Make sure the specified class
+  // actually inherits from the standard THaEvData decoder.
+  // Returns the decoder class (i.e. its argument) or NULL if error.
+
+  if( !c ) {
+    ::Error("THaInterface::SetDecoder", "argument is NULL");
+    return NULL;
+  }
+  if( !c->InheritsFrom("THaEvData")) {
+    ::Error("THaInterface::SetDecoder", 
+	    "decoder class must inherit from THaEvData");
+    return NULL;
+  }
+
+  gHaDecoder = c;
+  return gHaDecoder;
 }
 
 //_____________________________________________________________________________

@@ -8,12 +8,10 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "TRint.h"
-#include "THaGlobals.h"
+
+class TClass;
 
 class THaInterface : public TRint {
-
-protected:
-  static THaInterface*  fgAint;  //Pointer indicating that interface already exists
 
 public:
   THaInterface( const char* appClassName, int* argc, char** argv,
@@ -21,7 +19,13 @@ public:
 		Bool_t noLogo = kFALSE );
   virtual ~THaInterface();
 
-  virtual void          PrintLogo();
+  virtual void PrintLogo();
+
+  static TClass* GetDecoder();
+  static TClass* SetDecoder( TClass* c );
+
+protected:
+  static THaInterface*  fgAint;  //Pointer indicating that interface already exists
 
   ClassDef(THaInterface,0)  //Hall A Analyzer Interactive Interface
 };
