@@ -9,3 +9,4 @@ NEW
 *.so
 ha_compiledata.h
 .cvsignore
+*Dict.[Ch]
