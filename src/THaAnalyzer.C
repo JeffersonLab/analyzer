@@ -31,20 +31,17 @@
 #include "THaScalerGroup.h"
 #include "THaPhysicsModule.h"
 #include "THaCodaData.h"
+#include "THaBenchmark.h"
 #include "TList.h"
 #include "TTree.h"
 #include "TFile.h"
 #include "TClass.h"
-#include "THaBenchmark.h"
 #include "TDatime.h"
 #include "TClass.h"
 #include "TError.h"
 
 #include <fstream>
 #include <algorithm>
-
-// FIXME: Debug
-#include "THaVarList.h"
 
 using namespace std;
 
@@ -104,11 +101,6 @@ THaAnalyzer::THaAnalyzer() :
     jdef++;
   }
 
-  // Global variables
-  if( gHaVars ) {
-    gHaVars->Define("nev", "Event number", fNev );
-  }
-
   fBench = new THaBenchmark;
 }
 
@@ -122,8 +114,6 @@ THaAnalyzer::~THaAnalyzer()
   delete [] fStages;
   delete [] fSkipCnt;
 
-  if( gHaVars )
-    gHaVars->RemoveName("nev");
 }
 
 //_____________________________________________________________________________
@@ -158,6 +148,7 @@ bool THaAnalyzer::EvalStage( EStage n )
 
   const Stage_t* theStage = fStages+n;
 
+  //FIXME
   //  if( theStage->hist_list ) {
     // Fill histograms
   //  }
@@ -199,8 +190,8 @@ void THaAnalyzer::InitCuts()
 }
 
 //_____________________________________________________________________________
-Int_t THaAnalyzer::InitModules( TIter& next, TDatime& run_time, Int_t erroff,
-				const char* baseclass )
+Int_t THaAnalyzer::InitModules( const TList* module_list, TDatime& run_time, 
+				Int_t erroff, const char* baseclass )
 {
   // Initialize a list of THaAnalysisObjects for time 'run_time'.
   // If 'baseclass' given, ensure that each object in the list inherits 
@@ -208,13 +199,16 @@ Int_t THaAnalyzer::InitModules( TIter& next, TDatime& run_time, Int_t erroff,
 
   static const char* const here = "InitModules()";
 
+  if( !module_list )
+    return -3-erroff;
+  TIter next( module_list );
   bool fail = false;
   Int_t retval = 0;
   TObject* obj;
   while( !fail && (obj = next())) {
     if( baseclass && !obj->IsA()->InheritsFrom( baseclass )) {
-      Error( here, "Object %s (%s) is not a %s. Analyzer initialization failed.", 
-	     obj->GetName(), obj->GetTitle(), baseclass );
+      Error( here, "Object %s (%s) is not a %s. Analyzer initialization "
+	     "failed.", obj->GetName(), obj->GetTitle(), baseclass );
       retval = -2;
       fail = true;
     } else {
@@ -233,11 +227,13 @@ Int_t THaAnalyzer::InitModules( TIter& next, TDatime& run_time, Int_t erroff,
 }
 
 //_____________________________________________________________________________
-Int_t THaAnalyzer::Init( THaRun& run )
+Int_t THaAnalyzer::Init( THaRun* run )
 {
   // Initialize the analyzer.
 
   // This is a wrapper so we can conveniently control the benchmark counter
+  if( !run ) return -1;
+
   if( fDoBench ) fBench->Begin("Init");
   Int_t retval = DoInit( run );
   if( fDoBench ) fBench->Stop("Init");
@@ -245,7 +241,7 @@ Int_t THaAnalyzer::Init( THaRun& run )
 }
   
 //_____________________________________________________________________________
-Int_t THaAnalyzer::DoInit( THaRun& run )
+Int_t THaAnalyzer::DoInit( THaRun* run )
 {
   // Internal function called by Init(). This is where the actual work is done.
 
@@ -297,8 +293,8 @@ Int_t THaAnalyzer::DoInit( THaRun& run )
   }
 
   // Make sure the run is initizlized. 
-  if( !run.IsInit()) {
-    retval = run.Init();
+  if( !run->IsInit()) {
+    retval = run->Init();
     if( retval )
       return retval;  //Error message printed by run class
   } 
@@ -323,19 +319,19 @@ Int_t THaAnalyzer::DoInit( THaRun& run )
   //               (-"now" - use current time )
   //
 
-  bool new_run   = ( !fRun || *fRun != run );
+  bool new_run   = ( !fRun || *fRun != *run );
   bool need_init = ( !fIsInit || new_event || new_output || new_run );
 
   // Warn user if trying to analyze the same run twice with overlapping
   // event ranges
   if( fAnalysisStarted && !new_run && 
-      (fRun->GetLastEvent() >= run.GetFirstEvent() ||
-       run.GetLastEvent() >= fRun->GetFirstEvent() )) {
+      (fRun->GetLastEvent() >= run->GetFirstEvent() ||
+       run->GetLastEvent() >= fRun->GetFirstEvent() )) {
     Warning( here, "You are analyzing the same run twice with ",
 	     "overlapping event ranges!\n"
 	     "prev: %d-%d, now: %d-%d",
 	     fRun->GetFirstEvent(), fRun->GetLastEvent(),
-	     run.GetFirstEvent(), run.GetLastEvent() );
+	     run->GetFirstEvent(), run->GetLastEvent() );
     cout << "Are you sure (y/n)?" << endl;
     char c = 0;
     while( c != 'y' && c != 'n' && c != EOF ) {
@@ -349,15 +345,15 @@ Int_t THaAnalyzer::DoInit( THaRun& run )
   // Note that run may derive from THaRun, so this is a bit tricky.
   if( new_run ) {
     delete fRun;
-    fRun = (THaRun*)run.IsA()->New();
+    fRun = static_cast<THaRun*>(run->IsA()->New());
     if( !fRun )
       return 252; // urgh
-    *fRun = run;  // Copy the run via its virtual operator=
+    *fRun = *run;  // Copy the run via its virtual operator=
   }
 
   // Print run info
   if( fVerbose ) {
-    run.Print("STARTINFO");
+    run->Print("STARTINFO");
   }
 
   // Clear counters unless we are continuing an analysis
@@ -372,16 +368,13 @@ Int_t THaAnalyzer::DoInit( THaRun& run )
 
   // Obtain time of the run, the one parameter we really need 
   // for initializing the modules
-  TDatime run_time = run.GetDate();
+  TDatime run_time = run->GetDate();
 
   // Initialize all apparatuses, scalers, and physics modules.
   // Quit if any errors.
-  TIter next( gHaApps );
-  TIter next_scaler( gHaScalers );
-  TIter next_physics( gHaPhysics );
-  if( !((retval = InitModules( next,         run_time, 20, "THaApparatus")) ||
-	(retval = InitModules( next_scaler,  run_time, 30, "THaScalerGroup")) ||
-	(retval = InitModules( next_physics, run_time, 40, "THaPhysicsModule"))
+  if( !((retval = InitModules( gHaApps,    run_time, 20, "THaApparatus")) ||
+	(retval = InitModules( gHaScalers, run_time, 30, "THaScalerGroup")) ||
+	(retval = InitModules( gHaPhysics, run_time, 40, "THaPhysicsModule"))
 	)) {
 	
     // Set up cuts here, now that all global variables are available
@@ -425,14 +418,14 @@ Int_t THaAnalyzer::DoInit( THaRun& run )
 }
 
 //_____________________________________________________________________________
-Int_t THaAnalyzer::ReadOneEvent( THaRun& run, THaEvData& evdata )
+Int_t THaAnalyzer::ReadOneEvent( THaRun* run, THaEvData* evdata )
 {
   // Read one event from 'run' into 'evdata'.
 
   if( fDoBench ) fBench->Begin("RawDecode");
 
   // Find next event buffer in CODA file. Quit if error.
-  Int_t status = run.ReadEvent();
+  Int_t status = run->ReadEvent();
   if (status != 0) {
     if (status == S_EVFILE_TRUNC) 
       fSkipCnt[kEvFileTrunc].count++;
@@ -442,17 +435,18 @@ Int_t THaAnalyzer::ReadOneEvent( THaRun& run, THaEvData& evdata )
   } 
 
   // Decode the event
-  evdata.LoadEvent( run.GetEvBuffer() );
+  // FIXME: return code mixup with above
+  status = evdata->LoadEvent( run->GetEvBuffer() );
 
   // Count good events
   fNev++;    
 
   if( fDoBench ) fBench->Stop("RawDecode");
-  return 0;
+  return status;
 }
 
 //_____________________________________________________________________________
-Int_t THaAnalyzer::Process( THaRun& run )
+Int_t THaAnalyzer::Process( THaRun* run )
 {
   // Process the given run. Loop over all events in the event range and
   // analyze all apparatuses defined in the global apparatus list.
@@ -461,6 +455,9 @@ Int_t THaAnalyzer::Process( THaRun& run )
   // and write the file.
 
   //  static const char* const here = "Process()";
+
+  if( !run ) return -1;
+  if( !gHaDecoder ) return -2;
 
   fBench->Reset();
   fBench->Begin("Total");
@@ -495,39 +492,41 @@ Int_t THaAnalyzer::Process( THaRun& run )
   fFile->SetCompressionLevel(fCompress);
 
   UInt_t nev_physics = 0;
-  UInt_t nlim = run.GetLastEvent();
+  UInt_t nlim = run->GetLastEvent();
 
-  THaEvData evdata;
+  THaEvData* evdata = static_cast<THaEvData*>(gHaDecoder->New());
   TIter next( gHaApps );
   TIter next_scaler( gHaScalers );
   TIter next_physics( gHaPhysics );
 
   // Re-open the CODA file. Should succeed since this was tested in Init().
-  if( (status = run.OpenFile()) )
+  if( (status = run->OpenFile()) )
     return -11;
 
-  // Make the current run available globally - used by some modules
-  gHaRun = &run;
+  // Make the current run available globally - the run parameters are
+  // needed by some modules
+  gHaRun = run;
 
   //--- The main event loop.
   bool terminate = false;
   bool fatal = false;
-  while ( !terminate && 
-	  (status != EOF && status != CODA_ERROR) && nev_physics < nlim ) {
+  while ( !terminate && (status = ReadOneEvent( run, evdata )) != EOF &&
+	  status != CODA_ERROR && nev_physics < nlim ) {
 
-    //--- Read one event from "run" into "evdata". Skip the event if error.
-    if( ReadOneEvent( run, evdata )) 
-      continue;
-    
     //--- Print marks periodically
     if( fVerbose && (fNev % fMarkInterval == 0))  
       cout << dec << fNev << endl;
 
+    //--- Update run parameters
+    if( fUpdateRun )
+      run->Update( evdata );
+
     //=== Physics triggers ===
-    if( evdata.IsPhysicsTrigger()) {
+    if( evdata->IsPhysicsTrigger()) {
 
       nev_physics++;
-      if( nev_physics < run.GetFirstEvent() ) continue;
+      if( nev_physics < run->GetFirstEvent() ) continue;
+      //FIXME: update analyzed event range of run
 
       //--- Evaluate test block 0 "RawDecode"
 
@@ -541,7 +540,7 @@ Int_t THaAnalyzer::Process( THaRun& run )
       while( THaApparatus* theApparatus =
 	     static_cast<THaApparatus*>( next() )) {
 	theApparatus->Clear();
-	theApparatus->Decode( evdata );
+	theApparatus->Decode( *evdata );
       }
       if( fDoBench ) fBench->Stop("Decode");
       if( !EvalStage(kDecode) )  continue;
@@ -574,7 +573,7 @@ Int_t THaAnalyzer::Process( THaRun& run )
       while( THaPhysicsModule* theModule =
 	     static_cast<THaPhysicsModule*>( next_physics() )) {
 	theModule->Clear();
-	Int_t err = theModule->Process( evdata );
+	Int_t err = theModule->Process( *evdata );
 	if( err == THaPhysicsModule::kTerminate )
 	  terminate = true;
 	else if ( err == THaPhysicsModule::kFatal ) {
@@ -592,12 +591,12 @@ Int_t THaAnalyzer::Process( THaRun& run )
       //--- If Event defined, fill it.
       if( fDoBench ) fBench->Begin("Output");
       if( fEvent ) {
-	fEvent->GetHeader()->Set( (UInt_t)evdata.GetEvNum(), 
-				  evdata.GetEvType(),
-				  evdata.GetEvLength(),
-				  evdata.GetEvTime(),
-				  evdata.GetHelicity(),
-				  evdata.GetRunNum()
+	fEvent->GetHeader()->Set( (UInt_t)evdata->GetEvNum(), 
+				  evdata->GetEvType(),
+				  evdata->GetEvLength(),
+				  evdata->GetEvTime(),
+				  evdata->GetHelicity(),
+				  evdata->GetRunNum()
 				  );
 	fEvent->Fill();
       }
@@ -609,7 +608,7 @@ Int_t THaAnalyzer::Process( THaRun& run )
     }
 
     //=== Scaler triggers ===
-    else if( evdata.IsScalerEvent()) {
+    else if( evdata->IsScalerEvent()) {
 
       //--- Loop over all defined scalers and execute LoadData()
 
@@ -617,13 +616,14 @@ Int_t THaAnalyzer::Process( THaRun& run )
       next_scaler.Reset();
       while( THaScalerGroup* theScaler =
 	     static_cast<THaScalerGroup*>( next_scaler() )) {
-	theScaler->LoadData( evdata );
+	theScaler->LoadData( *evdata );
       }
       if( fDoBench ) fBench->Begin("Scaler");
 
     } // End trigger type test
   }  // End of event loop
   
+  delete evdata;
   fBench->Stop("Total");
 
   //--- Report statistics
@@ -679,7 +679,7 @@ Int_t THaAnalyzer::Process( THaRun& run )
 
   //--- Close the input file
 
-  run.CloseFile();
+  run->CloseFile();
 
   // Write the output file and clean up.
   // This writes the Tree as well as any objects (histograms etc.)
@@ -687,7 +687,7 @@ Int_t THaAnalyzer::Process( THaRun& run )
 
   if( fOutput ) fOutput->End();
   if( fFile ) {
-    run.Write("Run_Data");  // Save run data to ROOT file
+    run->Write("Run_Data");  // Save run data to ROOT file
     fFile->Write();
     fFile->Purge();         // get rid of excess object "cycles"
   }
@@ -699,7 +699,7 @@ Int_t THaAnalyzer::Process( THaRun& run )
       TString filename(fSummaryFileName);
       Ssiz_t pos, dot=-1;
       while(( pos = filename.Index(".",dot+1)) != kNPOS ) dot=pos;
-      const char* tag = Form("_%d",run.GetNumber());
+      const char* tag = Form("_%d",run->GetNumber());
       if( dot != -1 ) 
 	filename.Insert(dot,tag);
       else
@@ -710,7 +710,7 @@ Int_t THaAnalyzer::Process( THaRun& run )
 	streambuf* cout_buf = cout.rdbuf();
 	cout.rdbuf(ostr.rdbuf());
 	TDatime now;
-	cout << "Cut Summary for run " << run.GetNumber() 
+	cout << "Cut Summary for run " << run->GetNumber() 
 	     << " completed " << now.AsString() 
 	     << endl << endl;
 	gHaCuts->Print("STATS");
@@ -720,7 +720,8 @@ Int_t THaAnalyzer::Process( THaRun& run )
     }
   }
 
-  gHaRun = NULL;
+  //keep the last run available
+  //  gHaRun = NULL;
   return nev_physics;
 }
 //_____________________________________________________________________________

@@ -43,11 +43,10 @@ public:
   void           EnableBenchmarks( Bool_t b = kTRUE ) { fDoBench = b; }
 
   virtual void   Close();
-  virtual Int_t  Init( THaRun& run );
-  virtual Int_t  Process( THaRun& run );
-          Int_t  Process( THaRun* run ) { 
-	    if(!run) return -1; return Process(*run);
-	  }
+  virtual Int_t  Init( THaRun* run );
+          Int_t  Init( THaRun& run )    { return Init( &run ); }
+  virtual Int_t  Process( THaRun* run );
+          Int_t  Process( THaRun& run ) { return Process(&run); }
   
 protected:
   static const char* const kMasterCutName;
@@ -92,15 +91,16 @@ protected:
   Bool_t         fLocalEvent;      //True if fEvent allocated by this object
   Bool_t         fIsInit;          //True if Init() called successfully
   Bool_t         fAnalysisStarted; //True if Process() run and output file still open
+  Bool_t         fUpdateRun;       //If true, update run parameters during replay
   THaEvent*      fPrevEvent;       //Event structure found during Init()
   THaRun*        fRun;             //Current run
 
-  virtual Int_t  DoInit( THaRun& run );
+  virtual Int_t  DoInit( THaRun* run );
   virtual bool   EvalStage( EStage n );
   virtual void   InitCuts();
-  virtual Int_t  InitModules( TIter& iter, TDatime& time, Int_t erroff,
-			      const char* baseclass = NULL );
-  virtual Int_t  ReadOneEvent( THaRun& run, THaEvData& evdata );
+  virtual Int_t  InitModules( const TList* module_list, TDatime& time, 
+			      Int_t erroff, const char* baseclass = NULL );
+  virtual Int_t  ReadOneEvent( THaRun* run, THaEvData* evdata );
 
   ClassDef(THaAnalyzer,0)  //Hall A Analyzer Standard Event Loop
 };
