@@ -10,9 +10,7 @@
 #include "TObject.h"
 #include "Htypes.h"
 
-class TH1;
-class THaVar;
-class THaArrayString;
+class THaEvData;
 
 class THaEventHeader {
 
@@ -37,7 +35,6 @@ private:
 class THaEvent : public TObject {
 
 public:
-  static const char* const kDefaultHistFile;
 
   THaEvent();
   virtual ~THaEvent();
@@ -46,56 +43,20 @@ public:
                                 { fEvtHdr.Set( i, run, date ); }
   THaEventHeader*   GetHeader() { return &fEvtHdr; }
 
-  Int_t             DefineHist( const char* var, 
-				const char* histname, const char* title, 
-				Int_t nbins, Axis_t xlo, Axis_t xhi );
-  virtual void      Clear( Option_t *opt = "" );
-  virtual Int_t     Init();
-  virtual Int_t     Fill();
-  void              PrintHist( Option_t* opt="" ) const;
-  Int_t             LoadHist( const char* filename=kDefaultHistFile );
-  virtual void      Reset( Option_t *opt = "" );
+  virtual Int_t     Fill( THaEvData& evdata );
 
 protected:
 
-  Int_t             HistInit();
-  Int_t             HistFill();
-
   THaEventHeader    fEvtHdr;     // Event header
-
-  Bool_t            fInit;       //! Fill() initialized
-
-  struct DataMap {
-    Int_t        ncopy;          //! Number of elements to copy
-    const char*  name;           //! Global variable name
-    void*        dest;           //! Address of corresponding member variable
-    Int_t*       ncopyvar;       //! Variable holding value of ncopy (if ncopy=-1)
-    THaVar*      pvar;           //! Pointer to global variable object
-  };
-  DataMap*       fDataMap;       //! Map of global variables to copy
+  Int_t event_number, event_type, event_length, run_number;
+  Int_t helicity;
 
 private:
-  struct HistDef {
-    const char*  name;           //! Global variable name
-    const char*  hname;          //! Histogram name
-    const char*  title;          //! Histogram title
-    Int_t        nbins;          //! Number of bins
-    Axis_t       xlo;            //! Low edge
-    Axis_t       xhi;            //! High edge
-    TH1*         h1;             //! Pointer to histogram object
-    THaVar*      pvar;           //! Pointer to global variable object
-    Int_t        type;           //! Histogram type (0=C,1=S,2=F,3=D)
-    THaArrayString* parsed_name; //! Pointer to parsed name object
-  };
-  HistDef*       fHistDef;       //! Table of 1-d histogram definitions
 
-  //FIXME: These belong in a utility class
-  UInt_t         IntDigits( Int_t n ) const;
-  UInt_t         FloatDigits( Float_t f ) const;
-
-  ClassDef(THaEvent,2)  //Base class for event structure definition
+  ClassDef(THaEvent,2)  // Output event data.
 };
 
 
 #endif
+
 
