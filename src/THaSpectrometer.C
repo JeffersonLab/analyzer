@@ -448,16 +448,22 @@ Int_t THaSpectrometer::ReadRunDatabase( FILE* file, const TDatime& date )
   Double_t off_x = 0.0, off_y = 0.0, off_z = 0.0;
 
   TagDef tags[] = { 
-    { "theta",    &th }, 
+    { "theta",    &th, 1 }, 
     { "phi",      &ph },
-    { "pcentral", &fPcentral },
+    { "pcentral", &fPcentral, 3 },
     { "colldist", &fCollDist },
     { "off_x",    &off_x },
     { "off_y",    &off_y },
     { "off_z",    &off_z },
     { 0 }
   };
-  LoadDB( file, date, tags, fPrefix );
+  Int_t err = LoadDB( file, date, tags, fPrefix );
+  if( err ) {
+    Error( Here("ReadRunDatabase()"), "Required tag %s%s missing in the "
+	   "run database.\nSpectrometer initialization failed.",
+	   fPrefix, tags[err-1].name );
+    return kInitError;
+  }
 
   // Compute central angles in spherical coordinates and save trig. values
   // of angles for later use.
