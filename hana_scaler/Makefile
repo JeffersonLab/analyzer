@@ -1,7 +1,7 @@
 # Makefile for "hana" (C++ Hall A Analyzer) Scaler Package
-# R. Michaels, rom@jlab.org, Aug 2001  See also README !!
+# R. Michaels, rom@jlab.org, Jan 2003  See also README !!
 # Version of this release
-VERS=hana_scaler_1.4
+VERS=hana_scaler_2.0
 #
 # Goes with this version of decoder 
 DCDIR=../hana_decode
@@ -16,6 +16,7 @@ DCDIR=../hana_decode
 # tscaldtime -- Reads CODA file, checks deadtime
 # tscalroc11 -- To read the ROC11 scalers (from event stream)
 # tscalevt -- Analysis of ROC10/11 scalers. 
+# tscalring -- Similar to tscalroc11, but more detailed analysis.
 # 
 # To understand how to use scaler classes, look at the 'main'
 # routines  tscalfile_main.C tscalasy_main.C tscalhist_main.C tscalonl_main.C
@@ -105,8 +106,10 @@ ifeq ($(OSNAME),SunOS)
    CODA = /adaqfs/coda/2.2
    LIBET = $(CODA)/SunOS/lib/libet.so
    ONLIBS = $(LIBET) -lposix4 -lnsl -lsocket -lresolv
-#   ALL_LIBS =  $(ROOTGLIBS) $(LIBDC) $(GLIB)
-   ALL_LIBS =  $(ROOTGLIBS) $(LIBDC)
+   ALL_LIBS =  $(ROOTGLIBS) $(LIBDC) 
+ifndef STANDALONE
+   ALL_LIBS += libHallA.so
+endif
 
 endif
 
@@ -120,6 +123,9 @@ ifeq ($(OSNAME),HP-UX)
    SOFLAGS       = -G
    GLIB          = -lm -lc  
    ALL_LIBS      = $(GLIB) $(LIBDC) 
+ifndef STANDALONE
+   ALL_LIBS += libHallA.so
+endif
 
 endif
 
@@ -130,7 +136,6 @@ ifeq ($(OSNAME),Linux)
    LIBS          = 
    GLIBS         = -L/usr/X11R6/lib -lXpm -lX11
    ALL_LIBS      = $(ROOTGLIBS) $(LIBDC) 
-#   ALL_LIBS      = $(GLIBS) $(ROOTLIBS) $(ROOTGLIBS) $(LIBDC) 
 
 endif
 
@@ -154,9 +159,10 @@ SCALER_OBJS += THaScalDict.o
 endif
 
 # Test code executibles
-PROGS = tscalfile tscalasy tscalhist tscalonl xscaler 
-PROGS += tscalntup tscaldtime tscalroc11 tscalevt
-
+PROGS = tscalfile tscalasy tscalhist tscalonl 
+PROGS += tscalntup tscaldtime tscalroc11 tscalevt tscalring
+#PROGS += xscaler
+ 
 # To compile the local test codes:
 # Set STANDALONE at top of makefile.  But comment it out if 
 # to compile only the library libscaler.a for use with the main analyzer.
@@ -218,7 +224,9 @@ tscalevt: tscalevt_main.o $(SCALER_OBJS) $(SRC) $(HEAD) $(LIBDC)
 	rm -f $@
 	$(CXX) $(CXXFLAGS) -o $@ tscalevt_main.o $(SCALER_OBJS) $(ALL_LIBS) 
 
-
+tscalring: tscalring_main.o $(SCALER_OBJS) $(SRC) $(HEAD) $(LIBDC)  
+	rm -f $@
+	$(CXX) $(CXXFLAGS) -o $@ tscalring_main.o $(SCALER_OBJS) $(ALL_LIBS) 
 
 # Dictionary
 THaScalDict.C: $(HEAD) haScal_LinkDef.h
