@@ -69,28 +69,36 @@ void THaRawEvent::CreateVariableArrays( EBlock which )
     fR_U1_wire    = new Int_t   [ fMaxhit ];
     fR_U1_rawtime = new Int_t   [ fMaxhit ];
     fR_U1_time    = new Double_t[ fMaxhit ];
+    fR_U1_dist    = new Double_t[ fMaxhit ];
     fR_V1_wire    = new Int_t   [ fMaxhit ];
     fR_V1_rawtime = new Int_t   [ fMaxhit ];
     fR_V1_time    = new Double_t[ fMaxhit ];
+    fR_V1_dist    = new Double_t[ fMaxhit ];
     fR_U2_wire    = new Int_t   [ fMaxhit ];
     fR_U2_rawtime = new Int_t   [ fMaxhit ];
     fR_U2_time    = new Double_t[ fMaxhit ];
+    fR_U2_dist    = new Double_t[ fMaxhit ];
     fR_V2_wire    = new Int_t   [ fMaxhit ];
     fR_V2_rawtime = new Int_t   [ fMaxhit ];
     fR_V2_time    = new Double_t[ fMaxhit ];
+    fR_V2_dist    = new Double_t[ fMaxhit ];
     // Left HRS VDC
     fL_U1_wire    = new Int_t   [ fMaxhit ];
     fL_U1_rawtime = new Int_t   [ fMaxhit ];
     fL_U1_time    = new Double_t[ fMaxhit ];
+    fL_U1_dist    = new Double_t[ fMaxhit ];
     fL_V1_wire    = new Int_t   [ fMaxhit ];
     fL_V1_rawtime = new Int_t   [ fMaxhit ];
     fL_V1_time    = new Double_t[ fMaxhit ];
+    fL_V1_dist    = new Double_t[ fMaxhit ];
     fL_U2_wire    = new Int_t   [ fMaxhit ];
     fL_U2_rawtime = new Int_t   [ fMaxhit ];
     fL_U2_time    = new Double_t[ fMaxhit ];
+    fL_U2_dist    = new Double_t[ fMaxhit ];
     fL_V2_wire    = new Int_t   [ fMaxhit ];
     fL_V2_rawtime = new Int_t   [ fMaxhit ];
     fL_V2_time    = new Double_t[ fMaxhit ];
+    fL_V2_dist    = new Double_t[ fMaxhit ];
   }
   if( which == kClusters || which == kAll ) {
     // Right HRS VDC
@@ -148,28 +156,36 @@ void THaRawEvent::DeleteVariableArrays( EBlock which )
     delete [] fR_U1_wire ;
     delete [] fR_U1_rawtime ;
     delete [] fR_U1_time ;
+    delete [] fR_U1_dist ;
     delete [] fR_V1_wire ;
     delete [] fR_V1_rawtime ;
     delete [] fR_V1_time ;
+    delete [] fR_V1_dist ;
     delete [] fR_U2_wire ;
     delete [] fR_U2_rawtime ;
     delete [] fR_U2_time ;
+    delete [] fR_U2_dist ;
     delete [] fR_V2_wire ;
     delete [] fR_V2_rawtime ;
     delete [] fR_V2_time ;
+    delete [] fR_V2_dist ;
     // Left HRS VDC
     delete [] fL_U1_wire ;
     delete [] fL_U1_rawtime ;
     delete [] fL_U1_time ;
+    delete [] fL_U1_dist ;
     delete [] fL_V1_wire ;
     delete [] fL_V1_rawtime ;
     delete [] fL_V1_time ;
+    delete [] fL_V1_dist ;
     delete [] fL_U2_wire ;
     delete [] fL_U2_rawtime ;
     delete [] fL_U2_time ;
+    delete [] fL_U2_dist ;
     delete [] fL_V2_wire ;
     delete [] fL_V2_rawtime ;
     delete [] fL_V2_time ;
+    delete [] fL_V2_dist ;
   }
   if( which == kClusters || which == kAll ) {
     // Right HRS VDC
@@ -314,6 +330,7 @@ void THaRawEvent::SetupDatamap( EBlock which )
     {-1,      "R.vdc.u1.wire",     fR_U1_wire  },
     {-1,      "R.vdc.u1.rawtime",  fR_U1_rawtime, },
     {-1,      "R.vdc.u1.time",     fR_U1_time, },
+    {-1,      "R.vdc.u1.dist",     fR_U1_dist },
     { 1,      "R.vdc.u1.nclust",   &fR_U1_nclust },
     {-1,      "R.vdc.u1.clpos",    fR_U1_clpos },
     {-1,      "R.vdc.u1.slope",    fR_U1_slope },
@@ -322,6 +339,7 @@ void THaRawEvent::SetupDatamap( EBlock which )
     {-1,      "R.vdc.v1.wire",     fR_V1_wire  },
     {-1,      "R.vdc.v1.rawtime",  fR_V1_rawtime, },
     {-1,      "R.vdc.v1.time",     fR_V1_time  },
+    {-1,      "R.vdc.v1.dist",     fR_V1_dist },
     { 1,      "R.vdc.v1.nclust",   &fR_V1_nclust },
     {-1,      "R.vdc.v1.clpos",    fR_V1_clpos },
     {-1,      "R.vdc.v1.slope",    fR_V1_slope },
@@ -330,6 +348,7 @@ void THaRawEvent::SetupDatamap( EBlock which )
     {-1,      "R.vdc.u2.wire",     fR_U2_wire  },
     {-1,      "R.vdc.u2.rawtime",  fR_U2_rawtime, },
     {-1,      "R.vdc.u2.time",     fR_U2_time  },
+    {-1,      "R.vdc.u2.dist",     fR_U2_dist },
     { 1,      "R.vdc.u2.nclust",   &fR_U2_nclust },
     {-1,      "R.vdc.u2.clpos",    fR_U2_clpos },
     {-1,      "R.vdc.u2.slope",    fR_U2_slope },
@@ -338,6 +357,7 @@ void THaRawEvent::SetupDatamap( EBlock which )
     {-1,      "R.vdc.v2.wire",     fR_V2_wire  },
     {-1,      "R.vdc.v2.rawtime",  fR_V2_rawtime, },
     {-1,      "R.vdc.v2.time",     fR_V2_time  },
+    {-1,      "R.vdc.v2.dist",     fR_V2_dist },
     { 1,      "R.vdc.v2.nclust",   &fR_V2_nclust },
     {-1,      "R.vdc.v2.clpos",    fR_V2_clpos },
     {-1,      "R.vdc.v2.slope",    fR_V2_slope },
@@ -457,6 +477,7 @@ void THaRawEvent::SetupDatamap( EBlock which )
     {-1,      "L.vdc.u1.wire",     fL_U1_wire },
     {-1,      "L.vdc.u1.rawtime",  fL_U1_rawtime, },
     {-1,      "L.vdc.u1.time",     fL_U1_time },
+    {-1,      "L.vdc.u1.dist",     fL_U1_dist },
     { 1,      "L.vdc.u1.nclust",   &fL_U1_nclust },
     {-1,      "L.vdc.u1.clpos",    fL_U1_clpos },
     {-1,      "L.vdc.u1.slope",    fL_U1_slope },
@@ -465,6 +486,7 @@ void THaRawEvent::SetupDatamap( EBlock which )
     {-1,      "L.vdc.v1.wire",     fL_V1_wire },
     {-1,      "L.vdc.v1.rawtime",  fL_V1_rawtime, },
     {-1,      "L.vdc.v1.time",     fL_V1_time },
+    {-1,      "L.vdc.v1.dist",     fL_V1_dist },
     { 1,      "L.vdc.v1.nclust",   &fL_V1_nclust },
     {-1,      "L.vdc.v1.clpos",    fL_V1_clpos },
     {-1,      "L.vdc.v1.slope",    fL_V1_slope },
@@ -473,6 +495,7 @@ void THaRawEvent::SetupDatamap( EBlock which )
     {-1,      "L.vdc.u2.wire",     fL_U2_wire },
     {-1,      "L.vdc.u2.rawtime",  fL_U2_rawtime, },
     {-1,      "L.vdc.u2.time",     fL_U2_time },
+    {-1,      "L.vdc.u2.dist",     fL_U2_dist },
     { 1,      "L.vdc.u2.nclust",   &fL_U2_nclust },
     {-1,      "L.vdc.u2.clpos",    fL_U2_clpos },
     {-1,      "L.vdc.u2.slope",    fL_U2_slope },
@@ -481,6 +504,7 @@ void THaRawEvent::SetupDatamap( EBlock which )
     {-1,      "L.vdc.v2.wire",     fL_V2_wire },
     {-1,      "L.vdc.v2.rawtime",  fL_V2_rawtime, },
     {-1,      "L.vdc.v2.time",     fL_V2_time },
+    {-1,      "L.vdc.v2.dist",     fL_V2_dist },
     { 1,      "L.vdc.v2.nclust",   &fL_V2_nclust },
     {-1,      "L.vdc.v2.clpos",    fL_V2_clpos },
     {-1,      "L.vdc.v2.slope",    fL_V2_slope },
