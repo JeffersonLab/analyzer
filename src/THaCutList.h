@@ -13,7 +13,6 @@ class TList;
 class THaVarList;
 class THaPrintOption;
 class THaNamedList;
-class TString;
 class THaCut;
 
 // Utility class that provides the PrintOpt method
@@ -51,9 +50,7 @@ public:
   virtual void      Clear( Option_t* opt="" );
   virtual Int_t     Eval();
   virtual Int_t     EvalBlock( const char* block=kDefaultBlockName );
-  virtual Int_t     EvalBlock( const TString& block ) 
-    { return EvalBlock(block.Data()); }
-  virtual Int_t     EvalBlock( const THaNamedList* plist );
+  virtual Int_t     EvalBlock( const TList* plist );
   THaCut*           FindCut( const char* name ) const
     { return reinterpret_cast<THaCut*>(fCuts->FindObject( name )); }
   THaNamedList*     FindBlock( const char* block ) const
@@ -64,8 +61,6 @@ public:
           Int_t     GetSize()      const { return fCuts->GetSize(); }
   virtual void      Reset();
   virtual Int_t     Result( const char* cutname = "", EWarnMode mode=kWarn );
-          Int_t     Result( const TString& cutname, EWarnMode mode=kWarn ) 
-    { return Result(cutname.Data(),mode); }
   virtual Int_t     Remove( const char* cutname );
   virtual Int_t     RemoveBlock( const char* block=kDefaultBlockName );
   virtual void      SetList( THaVarList& lst ) { fVarList = &lst; }

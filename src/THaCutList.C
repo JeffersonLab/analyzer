@@ -319,7 +319,7 @@ Int_t THaCutList::EvalBlock( const char* block )
 
 //______________________________________________________________________________
 inline
-Int_t THaCutList::EvalBlock( const THaNamedList* plist )
+Int_t THaCutList::EvalBlock( const TList* plist )
 {
   // Evaluate all cuts in the given list in the order in which they were defined.
 
