@@ -393,13 +393,12 @@ void THaHelicity::QuadCalib() {
    }
    if (fFirstquad[fArm] == 0 &&
        fTdiff[fArm] > (1.25*fTdavg[fArm] + fTtol[fArm])) {
-        if (HELDEBUG >= 2)
-          cout << fTdiff[fArm] << "  " << (Int_t)fTimestamp[fArm] << endl;
 	// Try a recovery.  Use time to flip helicity by the number of
-	// missed quads, unless this is more than 30 (~1 sec).  
-        Int_t nqmiss = fTdiff[fArm]/fTdavg[fArm];
+	// missed quads, unless this are more than 30 (~1 sec).  
+        Int_t nqmiss = (Int_t)(fTdiff[fArm]/fTdavg[fArm]);
+        if (HELDEBUG >= 2)
+          cout << "Recovering large DT, nqmiss = "<<nqmiss<<endl;
         if (nqmiss < 30) {
-// cout << "THaHelicity::Recovering from large DT (>= 1 quad)"<<endl;
 	  for (Int_t i = 0; i < nqmiss; i++) QuadHelicity(1);
           fT0[fArm] = fT0[fArm] + nqmiss*fTdavg[fArm];
           fTdiff[fArm] = fTimestamp[fArm] - fT0[fArm];
