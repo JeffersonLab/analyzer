@@ -43,6 +43,7 @@
 #include "TSystem.h"
 #include "TROOT.h"
 #include "TMath.h"
+#include "THaRTTI.h"
 
 #include <fstream>
 #include <algorithm>
@@ -85,6 +86,10 @@ THaAnalyzer::THaAnalyzer() :
   }
   fgAnalyzer = this;
 
+  // Tell ROOT to delete us if the user quits ROOT
+  if( gSystem )
+    gSystem->RemoveOnExit(this);
+
   // Use the global lists of analysis objects.
   fApps    = gHaApps;
   fScalers = gHaScalers;
@@ -104,8 +109,22 @@ THaAnalyzer::~THaAnalyzer()
   delete fBench;
   delete [] fStages;
   delete [] fCounters;
-  if( fgAnalyzer == this )
+  if( fgAnalyzer == this ) {
     fgAnalyzer = NULL;
+    // Remove us from the system cleanup list if user deletes us manually
+    // This is tricky since TSystem lacks a function to access the list...
+    if( TROOT::Initialized() && gSystem ) {
+      THaRTTI rtti;
+      TString mvar("fOnExitList");
+      rtti.Find( gSystem->IsA(), mvar, gSystem );
+      if( rtti.IsValid() ) {
+	ULong_t loc = (ULong_t)gSystem + rtti.GetOffset();
+	TSeqCollection* c = *(TSeqCollection**)loc;
+	if(c)
+	  c->Remove(this);
+      }
+    }
+  }
 }
 
 //_____________________________________________________________________________
@@ -178,8 +197,10 @@ void THaAnalyzer::Close()
 
   delete fEvData; fEvData = NULL;
   delete fOutput; fOutput = NULL;
-  delete fFile;   fFile   = NULL;
-  delete fRun;    fRun    = NULL;
+  if( TROOT::Initialized() )
+    delete fFile;
+  fFile = NULL;
+  delete fRun; fRun = NULL;
   if( fLocalEvent ) {
     delete fEvent; fEvent = fPrevEvent = NULL; 
   }
