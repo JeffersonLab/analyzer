@@ -24,7 +24,8 @@ THaTrack::THaTrack( Double_t x, Double_t y, Double_t theta, Double_t phi,
 		    THaTrackingDetector* creator, 
 		    THaTrackID* id, THaPIDinfo* pid ) :
   fX(x), fY(y), fTheta(theta), fPhi(phi), fP(0.0), 
-  fPIDinfo(pid), fCreator(creator), fID(id), fFlag(0), fType(0)
+  fPIDinfo(pid), fCreator(creator), fVertexError(1.0,1.0,1.0),
+  fID(id), fFlag(0), fType(0)
 {
   // Normal constructor with initialization
 
@@ -72,6 +73,7 @@ void THaTrack::Clear( const Option_t* opt )
   if( fPIDinfo ) fPIDinfo->Clear( opt );
   fPvect.SetXYZ( 0.0, 0.0, 0.0 );
   fVertex.SetXYZ( 0.0, 0.0, 0.0 );
+  fVertexError.SetXYZ( 1.0, 1.0, 1.0 );
 }
 
 //_____________________________________________________________________________

@@ -33,7 +33,8 @@ public:
 
   THaTrack() : 
     fX(0.0), fY(0.0), fTheta(0.0), fPhi(0.0), fP(0.0), fClusters(NULL), 
-    fPIDinfo(NULL), fCreator(NULL), fID(NULL), fFlag(0), fType(0) {}
+    fPIDinfo(NULL), fCreator(NULL), fVertexError(1.0,1.0,1.0),
+    fID(NULL), fFlag(0), fType(0) {}
   THaTrack( Double_t x, Double_t y, Double_t theta, Double_t phi,
 	    TD* creator=NULL, THaTrackID* id=NULL, THaPIDinfo* pid=NULL );
   virtual ~THaTrack();
@@ -76,6 +77,7 @@ public:
 
   TVector3&         GetPvect()               { return fPvect; }
   TVector3&         GetVertex()              { return fVertex; }
+  TVector3&         GetVertexError()         { return fVertexError; }
 
   bool              HasDet()           const { return (fType&kHasDet); }
   bool              HasFP()            const { return (fType&kHasFP); }
@@ -106,6 +108,10 @@ public:
   { fVertex = vert; fType |= kHasVertex; }
   void              SetVertex( Double_t x, Double_t y, Double_t z )
   { fVertex.SetXYZ( x, y, z ); fType |= kHasVertex; }
+  void              SetVertexError( const TVector3& err ) 
+  { fVertexError = err; }
+  void              SetVertexError( Double_t x, Double_t y, Double_t z )
+  { fVertexError.SetXYZ( x, y, z ); }
 
 protected:
 
@@ -141,6 +147,7 @@ protected:
 
   TVector3          fPvect;  // Momentum vector at target in lab system (GeV)
   TVector3          fVertex; // Vertex location in lab (m) valid if fHasVertex
+  TVector3          fVertexError; // Uncertainties in fVertex coordinates.
 
   THaTrackID*       fID;     //! Track identifier
   UInt_t            fFlag;   // General status flag (for use by tracking det.)
