@@ -12,7 +12,7 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaAvgVertex.h"
-#include "THaSpectrometer.h"
+#include "THaTrackingModule.h"
 #include "THaTrack.h"
 #include "TMath.h"
 #include "VarDef.h"
@@ -24,8 +24,8 @@ ClassImp(THaAvgVertex)
 //_____________________________________________________________________________
 THaAvgVertex::THaAvgVertex( const char* name, const char* description,
 			    const char* spectro1, const char* spectro2 ) :
-  THaVertexModule(name,description),
-  fName1(spectro1), fSpectro1(NULL), fName2(spectro2), fSpectro2(NULL)
+  THaPhysicsModule(name,description),
+  fName1(spectro1), fName2(spectro2), fSpectro1(NULL), fSpectro2(NULL)
 {
   // Normal constructor.
 
@@ -59,9 +59,9 @@ Int_t THaAvgVertex::DefineVariables( EMode mode )
   fIsSetup = ( mode == kDefine );
 
   RVarDef vars[] = {
-    { "x",  "two-arm vertex x-position", "fVertex.fX" },
-    { "y",  "two-arm vertex y-position", "fVertex.fY" },
-    { "z",  "two-arm vertex z-position", "fVertex.fZ" },
+    { "x",  "two-arm average vertex x-position", "fVertex.fX" },
+    { "y",  "two-arm average vertex y-position", "fVertex.fY" },
+    { "z",  "two-arm average vertex z-position", "fVertex.fZ" },
     { 0 }
   };
   return DefineVarsFromList( vars, mode );
@@ -75,16 +75,16 @@ THaAnalysisObject::EStatus THaAvgVertex::Init( const TDatime& run_time )
   // pointer to it.
 
   // Standard initialization. Calls this object's DefineVariables().
-  if( THaVertexModule::Init( run_time ) != kOK )
+  if( THaPhysicsModule::Init( run_time ) != kOK )
     return fStatus;
 
-  fSpectro1 = static_cast<THaSpectrometer*>
-    ( FindModule( fName1.Data(), "THaSpectrometer"));
+  fSpectro1 = dynamic_cast<THaTrackingModule*>
+    ( FindModule( fName1.Data(), "THaTrackingModule"));
   if( !fSpectro1 )
     return fStatus;
 
-  fSpectro2 = static_cast<THaSpectrometer*>
-    ( FindModule( fName2.Data(), "THaSpectrometer"));
+  fSpectro2 = dynamic_cast<THaTrackingModule*>
+    ( FindModule( fName2.Data(), "THaTrackingModule"));
 
   return fStatus;
 }
@@ -99,9 +99,9 @@ Int_t THaAvgVertex::Process( const THaEvData& evdata )
   if( !IsOK() ) return -1;
 
   THaTrack* t[N];
-  t[0] = fSpectro1->GetGoldenTrack();
+  t[0] = fSpectro1->GetTrack();
   if( !t[0] || !t[0]->HasVertex()) return 1;
-  t[1] = fSpectro2->GetGoldenTrack();
+  t[1] = fSpectro2->GetTrack();
   if( !t[1] || !t[1]->HasVertex()) return 2;
 
   // Compute the weighted average of the vertex positions.

@@ -4,19 +4,17 @@
 //
 // THaVertexModule
 //
-// Abstract base class for a "vertex" processing module, which is a 
+// Base class for a "vertex" processing module, which is a 
 // specialized physics module.
 //
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaVertexModule.h"
 
-ClassImp(THaVertexModule)
+using namespace std;
 
 //_____________________________________________________________________________
-THaVertexModule::THaVertexModule( const char* name, 
-				  const char* description ) :
-  THaPhysicsModule(name,description)
+THaVertexModule::THaVertexModule()
 {
   // Normal constructor.
 
@@ -28,3 +26,6 @@ THaVertexModule::~THaVertexModule()
   // Destructor
 
 }
+
+//_____________________________________________________________________________
+ClassImp(THaVertexModule)

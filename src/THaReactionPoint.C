@@ -34,8 +34,8 @@ ClassImp(THaReactionPoint)
 //_____________________________________________________________________________
 THaReactionPoint::THaReactionPoint( const char* name, const char* description,
 				    const char* spectro, const char* beam ) :
-  THaVertexModule(name,description), fSpectroName(spectro), fSpectro(NULL), 
-  fBeamName(beam), fBeam(NULL)
+  THaPhysicsModule(name,description), fSpectroName(spectro), 
+  fBeamName(beam), fSpectro(NULL), fBeam(NULL)
 {
   // Normal constructor.
 
@@ -64,7 +64,7 @@ THaAnalysisObject::EStatus THaReactionPoint::Init( const TDatime& run_time )
   // pointer to it.
 
   // Standard initialization. Calls this object's DefineVariables().
-  if( THaVertexModule::Init( run_time ) != kOK )
+  if( THaPhysicsModule::Init( run_time ) != kOK )
     return fStatus;
 
   fSpectro = static_cast<THaSpectrometer*>

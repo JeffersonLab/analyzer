@@ -11,6 +11,8 @@
 #include "THaTrackInfo.h"
 #include "THaTrack.h"
 
+using namespace std;
+
 const Double_t THaTrackInfo::kBig = 1e38;
 
 //_____________________________________________________________________________
@@ -19,7 +21,6 @@ THaTrackInfo& THaTrackInfo::operator=( const THaTrackInfo& rhs )
   // Assignment operator
 
   if( this != &rhs ) {
-    TObject::operator=(rhs);
     fP     = rhs.fP;
     fDp    = rhs.fDp;
     fX     = rhs.fX;

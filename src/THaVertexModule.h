@@ -7,20 +7,20 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-#include "THaPhysicsModule.h"
+#include "TVector3.h"
 
-class TVector3;
-
-class THaVertexModule : public THaPhysicsModule {
+class THaVertexModule {
   
 public:
   virtual ~THaVertexModule();
   
-  virtual const TVector3& GetVertex() const = 0;
+  const TVector3&   GetVertex()  const { return fVertex; }
 
 protected:
 
-  THaVertexModule( const char* name, const char* description );
+  TVector3  fVertex;   // Vertex position (m) 
+
+  THaVertexModule();
 
   ClassDef(THaVertexModule,0)   //ABC for a vertex module
 

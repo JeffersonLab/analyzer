@@ -7,13 +7,13 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
+#include "THaPhysicsModule.h"
 #include "THaVertexModule.h"
-#include "TVector3.h"
 #include "TString.h"
 
-class THaSpectrometer;
+class THaTrackingModule;
 
-class THaAvgVertex : public THaVertexModule {
+class THaAvgVertex : public THaPhysicsModule, public THaVertexModule {
   
 public:
   THaAvgVertex( const char* name, const char* description,
@@ -25,7 +25,6 @@ public:
   Double_t          GetX()       const { return fVertex.X(); }
   Double_t          GetY()       const { return fVertex.Y(); }
   Double_t          GetZ()       const { return fVertex.Z(); }
-  const TVector3&   GetVertex()  const { return fVertex; }
 
   virtual EStatus   Init( const TDatime& run_time );
   virtual Int_t     Process( const THaEvData& );
@@ -33,12 +32,10 @@ public:
 
 protected:
 
-  TVector3                fVertex;     // Intersection point of the two Golden Tracks
-
   TString                 fName1;      // Name of spectrometer #1
-  const THaSpectrometer*  fSpectro1;   // Pointer to spectrometer #1 object
   TString                 fName2;      // Name of spectrometer #2
-  const THaSpectrometer*  fSpectro2;   // Pointer to spectrometer #2 object
+  THaTrackingModule*      fSpectro1;   // Pointer to spectrometer #1 object
+  THaTrackingModule*      fSpectro2;   // Pointer to spectrometer #2 object
 
   virtual Int_t DefineVariables( EMode mode = kDefine );
 

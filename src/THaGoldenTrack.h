@@ -39,7 +39,7 @@ protected:
   THaTrack*               fTrack;        // Pointer to Golden Track
 
   TString                 fSpectroName;  // Name of spectrometer
-  const THaSpectrometer*  fSpectro;      // Pointer to spectrometer object
+  THaSpectrometer*        fSpectro;      // Pointer to spectrometer object
 
   virtual Int_t DefineVariables( EMode mode = kDefine );
 

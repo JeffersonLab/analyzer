@@ -100,9 +100,7 @@ protected:
 					   EType type, EMode mode,
 					   const char* var_prefix="" ) const;
 
-  THaAnalysisObject* FindModule( const char* name, 
-				 const char* classname = "THaApparatus",
-				 TList* list = gHaApps );
+  THaAnalysisObject* FindModule( const char* name, const char* classname );
 
   virtual const char*  Here( const char* ) const;
           void         MakePrefix( const char* basename );
@@ -124,12 +122,13 @@ protected:
   // Only derived classes may construct
   THaAnalysisObject( const char* name, const char* description );
 
+  static TList* fgModules;    // List of all currently existing Analysis Modules
+
 private:
   // Support functions for reading database files
   static Int_t IsDBdate( const string& line, TDatime& date, bool warn=true );
   static Int_t IsDBtag ( const string& line, const char* tag, string& text );
 
-private:
   // Prevent default construction, copying, assignment
   THaAnalysisObject();
   THaAnalysisObject( const THaAnalysisObject& );

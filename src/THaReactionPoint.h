@@ -7,14 +7,14 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
+#include "THaPhysicsModule.h"
 #include "THaVertexModule.h"
 #include "TString.h"
-#include "TVector3.h"
 
 class THaSpectrometer;
 class THaBeam;
 
-class THaReactionPoint : public THaVertexModule {
+class THaReactionPoint : public THaPhysicsModule, public THaVertexModule {
   
 public:
   THaReactionPoint( const char* name, const char* description,
@@ -23,8 +23,6 @@ public:
   
   virtual void      Clear( Option_t* opt="" );
 
-  virtual const TVector3& GetVertex() const { return fVertex; }
-
   virtual EStatus   Init( const TDatime& run_time );
   virtual Int_t     Process( const THaEvData& );
           void      SetSpectrometer( const char* name );
@@ -32,12 +30,10 @@ public:
 
 protected:
 
-  TVector3                fVertex;       // Vertex of Golden Track
-
   TString                 fSpectroName;  // Name of spectrom. to consider
-  const THaSpectrometer*  fSpectro;      // Pointer to spectrometer object
   TString                 fBeamName;     // Name of beam position apparatus
-  const THaBeam*          fBeam;         // Pointer to beam position apparatus
+  THaSpectrometer*        fSpectro;      // Pointer to spectrometer object
+  THaBeam*                fBeam;         // Pointer to beam position apparatus
 
   ClassDef(THaReactionPoint,0)   //Single arm track-beam vertex module
 };

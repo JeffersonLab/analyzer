@@ -21,7 +21,6 @@
 #include "THaPidDetector.h"
 #include "THaPIDinfo.h"
 #include "THaTrack.h"
-#include "THaTrackInfo.h"
 #include "TClass.h"
 #include "TMath.h"
 #include "VarDef.h"
@@ -48,12 +47,13 @@ THaSpectrometer::THaSpectrometer( const char* name, const char* desc ) :
   fNonTrackingDetectors = new TList;
   fPidDetectors         = new TObjArray;
   fPidParticles         = new TObjArray;
-  fTrackInfo            = new THaTrackInfo;
 
   Clear();
   DefinePidParticles();
 
   fProperties |= kNeedsRunDB;
+
+  fTrkIfo.SetSpectrometer( this );
 }
 
 //_____________________________________________________________________________
@@ -70,7 +70,6 @@ THaSpectrometer::~THaSpectrometer()
   delete fTrackingDetectors;     fTrackingDetectors = 0;
   delete fTrackPID;              fTrackPID = 0;
   delete fTracks;                fTracks = 0;
-  delete fTrackInfo;             fTrackInfo = 0;
 
   DefineVariables( kDelete );
 }
@@ -145,7 +144,8 @@ void THaSpectrometer::Clear( Option_t* opt )
 
   THaApparatus::Clear(opt);
   fTracks->Clear("C"); 
-  fTrackInfo->Clear();
+  TrkIfoClear();
+  fGoldenTrack = NULL;
   fCoarseDone = kFALSE;
 }
 
@@ -204,6 +204,15 @@ Int_t THaSpectrometer::DefineVariables( EMode mode )
 }
 
 //_____________________________________________________________________________
+const TVector3& THaSpectrometer::GetVertex() const
+{
+  // Return vertex vector of the Golden Track.
+  // Overrides standard method of THaVertexModule.
+
+  return (fGoldenTrack) ? fGoldenTrack->GetVertex() : fVertex;
+}
+
+//_____________________________________________________________________________
 void THaSpectrometer::ListInit()
 {
   // Initialize lists of specialized detectors. 
@@ -231,11 +240,9 @@ void THaSpectrometer::ListInit()
   UInt_t ndet  = GetNpidDetectors();
   UInt_t npart = GetNpidParticles();
   TClonesArray& pid  = *fTrackPID;
-  //  TClonesArray& vert = *fVertices;
 
   for( int i = 0; i < kInitTrackMultiplicity; i++ ) {
     new( pid[i] )  THaPIDinfo( ndet, npart );
-    // new( vert[i] ) THaVertex();
   }
   
   fListInit = kTRUE;

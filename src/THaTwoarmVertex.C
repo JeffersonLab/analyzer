@@ -22,6 +22,7 @@
 
 #include "THaTwoarmVertex.h"
 #include "THaSpectrometer.h"
+#include "THaTrackInfo.h"
 #include "THaTrack.h"
 #include "THaMatrix.h"
 #include "TMath.h"
@@ -34,8 +35,8 @@ ClassImp(THaTwoarmVertex)
 //_____________________________________________________________________________
 THaTwoarmVertex::THaTwoarmVertex( const char* name, const char* description,
 				  const char* spectro1, const char* spectro2 ) :
-  THaVertexModule(name,description),
-  fName1(spectro1), fSpectro1(NULL), fName2(spectro2), fSpectro2(NULL)
+  THaPhysicsModule(name,description),
+  fName1(spectro1), fName2(spectro2), fSpectro1(NULL), fSpectro2(NULL)
 {
   // Normal constructor.
 
@@ -84,16 +85,16 @@ THaAnalysisObject::EStatus THaTwoarmVertex::Init( const TDatime& run_time )
   // pointer to it.
 
   // Standard initialization. Calls this object's DefineVariables().
-  if( THaVertexModule::Init( run_time ) != kOK )
+  if( THaPhysicsModule::Init( run_time ) != kOK )
     return fStatus;
 
-  fSpectro1 = static_cast<THaSpectrometer*>
-    ( FindModule( fName1.Data(), "THaSpectrometer"));
+  fSpectro1 = dynamic_cast<THaTrackingModule*>
+    ( FindModule( fName1.Data(), "THaTrackingModule"));
   if( !fSpectro1 )
     return fStatus;
 
-  fSpectro2 = static_cast<THaSpectrometer*>
-    ( FindModule( fName2.Data(), "THaSpectrometer"));
+  fSpectro2 = dynamic_cast<THaTrackingModule*>
+    ( FindModule( fName2.Data(), "THaTrackingModule"));
 
   return fStatus;
 }
@@ -105,19 +106,22 @@ Int_t THaTwoarmVertex::Process( const THaEvData& evdata )
 
   if( !IsOK() ) return -1;
 
-  THaTrack* t1 = fSpectro1->GetGoldenTrack();
-  if( !t1 || !t1->HasTarget()) return 1;
-  THaTrack* t2 = fSpectro2->GetGoldenTrack();
-  if( !t2 || !t2->HasTarget()) return 2;
+  THaTrackInfo* t1 = fSpectro1->GetTrackInfo();
+  if( !t1 || !t1->IsOK()) return 1;
+  THaTrackInfo* t2 = fSpectro2->GetTrackInfo();
+  if( !t2 || !t2->IsOK()) return 2;
+  THaSpectrometer* s1 = t1->GetSpectrometer();
+  THaSpectrometer* s2 = t2->GetSpectrometer();
+  if( !s1 || !s2 ) return 4;
 
   static const TVector3 yax( 0.0, 1.0, 0.0 );
 
-  TVector3 p1( 0.0, t1->GetTY(), 0.0 );
-  TVector3 p2( 0.0, t2->GetTY(), 0.0 );
-  p1 *= fSpectro1->GetToLabRot();
-  p1 += fSpectro1->GetPointingOffset();
-  p2 *= fSpectro2->GetToLabRot();
-  p2 += fSpectro2->GetPointingOffset();
+  TVector3 p1( 0.0, t1->GetY(), 0.0 );
+  TVector3 p2( 0.0, t2->GetY(), 0.0 );
+  p1 *= s1->GetToLabRot();
+  p1 += s1->GetPointingOffset();
+  p2 *= s2->GetToLabRot();
+  p2 += s2->GetPointingOffset();
   THaMatrix denom( t1->GetPvect(), yax, -t2->GetPvect() );
   Double_t det = denom.Determinant();
   // Oops, track planes are parallel?
@@ -136,10 +140,12 @@ Int_t THaTwoarmVertex::Process( const THaEvData& evdata )
     cout << "--o2\n"; p2.Dump(); 
     cout << "--p1\n"; (t1->GetPvect()).Dump(); 
     cout << "--p2\n"; (t2->GetPvect()).Dump(); 
-    if( t1->HasVertex() ){
-      cout << "--v1\n"; (t1->GetVertex()).Dump(); }
-    if( t2->HasVertex() ){
-      cout << "--v2\n"; (t2->GetVertex()).Dump(); }
+    THaTrack* tr1 = fSpectro1->GetTrack();
+    THaTrack* tr2 = fSpectro2->GetTrack();
+    if( tr1->HasVertex() ){
+      cout << "--v1\n"; (tr1->GetVertex()).Dump(); }
+    if( tr2->HasVertex() ){
+      cout << "--v2\n"; (tr2->GetVertex()).Dump(); }
     cout << "--twoarm\n";
     fVertex.Dump();
 

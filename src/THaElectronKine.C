@@ -9,8 +9,8 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaElectronKine.h"
-#include "THaSpectrometer.h"
-#include "THaTrack.h"
+#include "THaTrackingModule.h"
+#include "THaTrackInfo.h"
 #include "THaRun.h"
 #include "VarDef.h"
 #include "TLorentzVector.h"
@@ -81,8 +81,8 @@ THaAnalysisObject::EStatus THaElectronKine::Init( const TDatime& run_time )
   if( THaPhysicsModule::Init( run_time ) != kOK )
     return fStatus;
 
-  fSpectro = static_cast<THaSpectrometer*>
-    ( FindModule( fSpectroName.Data(), "THaSpectrometer"));
+  fSpectro = dynamic_cast<THaTrackingModule*>
+    ( FindModule( fSpectroName.Data(), "THaTrackingModule"));
   return fStatus;
 }
 
@@ -93,8 +93,8 @@ Int_t THaElectronKine::Process( const THaEvData& evdata )
 
   if( !IsOK() || !gHaRun ) return -1;
 
-  THaTrack* theTrack = fSpectro->GetGoldenTrack();
-  if( !theTrack ) return 1;
+  THaTrackInfo* trkifo = fSpectro->GetTrackInfo();
+  if( !trkifo ) return 1;
 
   Double_t p_in  = gHaRun->GetBeamP();
 
@@ -103,7 +103,7 @@ Int_t THaElectronKine::Process( const THaEvData& evdata )
   const Double_t Mp = 0.938;    // proton mass (for x_bj)
 
   p0.SetXYZM( 0.0, 0.0, p_in, me );        // FIXME: beam slopes?
-  p1.SetVectM( theTrack->GetPvect(), me );
+  p1.SetVectM( trkifo->GetPvect(), me );
   pA.SetXYZM( 0.0, 0.0, 0.0, fMA );        // Assume target at rest
 
   // Standard electron kinematics

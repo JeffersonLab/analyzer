@@ -10,8 +10,7 @@
 #include "THaPhysicsModule.h"
 #include "TString.h"
 
-class THaSpectrometer;
-class THaTrackInfo;
+class THaTrackingModule;
 
 class THaElectronKine : public THaPhysicsModule {
   
@@ -56,7 +55,7 @@ protected:
   virtual Int_t ReadRunDatabase( const TDatime& date );
 
   TString                 fSpectroName;  // Name of spectrometer to consider
-  const THaSpectrometer*  fSpectro;      // Pointer to spectrometer object
+  THaTrackingModule*      fSpectro;      // Pointer to spectrometer object
 
   ClassDef(THaElectronKine,0)   //Single arm kinematics module
 };

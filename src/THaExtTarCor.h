@@ -8,13 +8,14 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaPhysicsModule.h"
+#include "THaTrackingModule.h"
 #include "TString.h"
 
 class THaSpectrometer;
 class THaVertexModule;
 class THaTrackInfo;
 
-class THaExtTarCor : public THaPhysicsModule {
+class THaExtTarCor : public THaPhysicsModule, public THaTrackingModule {
   
 public:
   THaExtTarCor( const char* name, const char* description,
@@ -26,7 +27,6 @@ public:
   Double_t          GetDeltaP()  const { return fDeltaP; }
   Double_t          GetDeltaDp() const { return fDeltaDp; }
   Double_t          GetDeltaTh() const { return fDeltaTh; }
-  THaTrackInfo*     GetTrackInfo() { return fTrkIfo; }
 
   virtual EStatus   Init( const TDatime& run_time );
   virtual Int_t     Process( const THaEvData& );
@@ -37,16 +37,14 @@ protected:
   Double_t                fThetaCorr;    // Theta correction coefficient
   Double_t                fDeltaCorr;    // Delta correction coefficient
 
-  THaTrackInfo*           fTrkIfo;       // Corrected track data (single track)
-
   Double_t                fDeltaP;       // Size of momentum correction (GeV)
   Double_t                fDeltaDp;      // Size of delta correction
   Double_t                fDeltaTh;      // Size of angle corection (rad)
 
-  TString                 fSpectroName;  // Name of spectrometer
-  const THaSpectrometer*  fSpectro;      // Pointer to spectrometer object
+  TString                 fSpectroName;  // Name of spectrometer/tracking module
   TString                 fVertexName;   // Name of vertex module
-  const THaVertexModule*  fVertexModule; // Pointer to vertex module
+  THaTrackingModule*      fTrackModule;  // Pointer to tracking module
+  THaVertexModule*        fVertexModule; // Pointer to vertex module
 
   virtual Int_t DefineVariables( EMode mode = kDefine );
   virtual Int_t ReadRunDatabase( const TDatime& date );

@@ -37,6 +37,8 @@ ClassImp(THaAnalysisObject)
 using namespace std;
 typedef string::size_type ssiz_t;
 
+TList* THaAnalysisObject::fgModules = NULL;
+
 //_____________________________________________________________________________
 THaAnalysisObject::THaAnalysisObject( const char* name, 
 				      const char* description ) :
@@ -44,6 +46,9 @@ THaAnalysisObject::THaAnalysisObject( const char* name,
   fDebug(0), fIsInit(false), fIsSetup(false), fProperties(0)
 {
   // Constructor
+
+  if( !fgModules ) fgModules = new TList;
+  fgModules->Add( this );
 }
 
 //_____________________________________________________________________________
@@ -51,6 +56,10 @@ THaAnalysisObject::~THaAnalysisObject()
 {
   // Destructor
 
+  fgModules->Remove( this );
+  if( fgModules->GetSize() == 0 ) {
+    delete fgModules; fgModules = 0;
+  }
   delete [] fPrefix; fPrefix = 0;
 }
 
@@ -714,11 +723,10 @@ Int_t THaAnalysisObject::ReadRunDatabase( const TDatime& date )
 
 //_____________________________________________________________________________
 THaAnalysisObject* THaAnalysisObject::FindModule( const char* name,
-						  const char* classname,
-						  TList* list )
+						  const char* classname )
 {
-  // Locate the object 'name' in the list 'list' and check if it inherits 
-  // from both THaAnalysisObject and from 'classname' (if given), and whether 
+  // Locate the object 'name' in the global list of Analysis Modules 
+  // and check if it inherits from 'classname' (if given), and whether 
   // it is properly initialized.
   // By default, classname = "THaApparatus" and list = gHaApps.
   // Return pointer to valid object, else return NULL and set fStatus.
@@ -732,11 +740,7 @@ THaAnalysisObject* THaAnalysisObject::FindModule( const char* name,
     Error( Here(here), "No module name given." );
     return NULL;
   }
-  if( !list ) {
-    Error( Here(here), "No list of modules given." );
-    return NULL;
-  }
-  TObject* obj = list->FindObject( name );
+  TObject* obj = fgModules->FindObject( name );
   if( !obj ) {
     Error( Here(here), "Module %s does not exist.", name );
     return NULL;

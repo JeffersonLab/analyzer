@@ -56,8 +56,8 @@ ClassImp(THaExtTarCor)
 THaExtTarCor::THaExtTarCor( const char* name, const char* description,
 			    const char* spectro, const char* vertex ) :
   THaPhysicsModule(name,description), fThetaCorr(0.0), fDeltaCorr(0.0),
-  fTrkIfo(NULL), 
-  fSpectroName(spectro), fSpectro(NULL), fVertexName(vertex), fVertexModule(NULL)
+  fSpectroName(spectro), fVertexName(vertex), 
+  fTrackModule(NULL), fVertexModule(NULL)
 {
   // Normal constructor.
 
@@ -70,7 +70,6 @@ THaExtTarCor::~THaExtTarCor()
   // Destructor
 
   DefineVariables( kDelete );
-  delete fTrkIfo;
 }
 
 //_____________________________________________________________________________
@@ -78,7 +77,7 @@ void THaExtTarCor::Clear( Option_t* opt )
 {
   // Clear all event-by-event variables variables.
   
-  if( fTrkIfo ) fTrkIfo->Clear();
+  TrkIfoClear();
   fDeltaTh = fDeltaDp = fDeltaP = 0.0;
 }
 
@@ -91,21 +90,20 @@ THaAnalysisObject::EStatus THaExtTarCor::Init( const TDatime& run_time )
   // Also, if given, locate the vertex module given in fVertexName
   // and save pointer to it.
 
-  fSpectro = static_cast<THaSpectrometer*>
-    ( FindModule( fSpectroName.Data(), "THaSpectrometer"));
-  if( !fSpectro )
+  fTrackModule = dynamic_cast<THaTrackingModule*>
+    ( FindModule( fSpectroName.Data(), "THaTrackingModule"));
+  if( !fTrackModule )
     return fStatus;
 
-  if( fVertexName.Length() > 0 ) {
-    fVertexModule = static_cast<THaVertexModule*>
-      ( FindModule( fVertexName.Data(), "THaVertexModule", gHaPhysics));
-    if( !fVertexModule )
-      return fStatus;
-  }
+  // If no vertex module given, try to get the vertex info from the
+  // same module as the tracks, e.g. from a spectrometer
+  if( fVertexName.IsNull())  fVertexName = fSpectroName;
 
-  if( !fTrkIfo )
-    fTrkIfo = new THaTrackInfo();
-
+  fVertexModule = dynamic_cast<THaVertexModule*>
+    ( FindModule( fVertexName.Data(), "THaVertexModule" ));
+  if( !fVertexModule )
+    return fStatus;
+    
   // Standard initialization. Calls this object's DefineVariables().
   if( THaPhysicsModule::Init( run_time ) != kOK )
     return fStatus;
@@ -129,7 +127,7 @@ Int_t THaExtTarCor::DefineVariables( EMode mode )
     { "th",       "Tangent of target theta angle",  "fTheta"},
     { "ph",       "Tangent of target phi angle",    "fPhi"},    
     { "dp",       "Target delta",                   "fDp"},
-    { "p",        "Lab momentum x (GeV)",           "fP"},
+    { "p",        "Lab momentum (GeV)",             "fP"},
     { "px",       "Lab momentum x (GeV)",           "GetPx()"},
     { "py",       "Lab momentum y (GeV)",           "GetPy()"},
     { "pz",       "Lab momentum z (GeV)",           "GetPz()"},
@@ -155,22 +153,16 @@ Int_t THaExtTarCor::Process( const THaEvData& evdata )
 
   if( !IsOK() ) return -1;
 
-  THaTrack* theTrack = fSpectro->GetGoldenTrack();
+  THaTrack* theTrack = fTrackModule->GetTrack();
   if( !theTrack ) return 1;
 
-  if( !(theTrack->HasTarget() && (fVertexModule || theTrack->HasVertex() )))
-    return 2;
-
-  // Get the reaction point vector - either from the track
-  // or from an explicitly-specified vertex module
-  const TVector3* vertex;
-  if( fVertexModule )
-    vertex = &(fVertexModule->GetVertex());
-  else
-    vertex = &(theTrack->GetVertex());
+  THaTrackInfo* trkifo = fTrackModule->GetTrackInfo();
+  if( !trkifo || !trkifo->IsOK() ) return 2;
+  THaSpectrometer* spectro = trkifo->GetSpectrometer();
+  if( !spectro ) return 3;
 
   Double_t ray[6];
-  fSpectro->LabToTransport( *vertex, theTrack->GetPvect(), ray );
+  spectro->LabToTransport( fVertexModule->GetVertex(), trkifo->GetPvect(), ray );
   // Ignore junk
   if( TMath::Abs(ray[0]) > 0.1 || TMath::Abs(ray[1]) > 1.0 ||
       TMath::Abs(ray[2]) > 0.1 || TMath::Abs(ray[3]) > 1.0 ||
@@ -182,20 +174,20 @@ Int_t THaExtTarCor::Process( const THaEvData& evdata )
   Double_t x_tg = ray[0];
   fDeltaTh = fThetaCorr * x_tg;
   fDeltaDp = x_tg / fDeltaCorr;
-  Double_t theta = theTrack->GetTTheta() + fDeltaTh;
+  Double_t theta = trkifo->GetTheta() + fDeltaTh;
 
-  Double_t dp = theTrack->GetDp() + fDeltaDp;
-  Double_t p  = fSpectro->GetPcentral() * ( 1.0+dp );
+  Double_t dp = trkifo->GetDp() + fDeltaDp;
+  Double_t p  = spectro->GetPcentral() * ( 1.0+dp );
   fDeltaP = p - theTrack->GetP();
-  fSpectro->TransportToLab( p, theta, theTrack->GetTPhi(), pvect );
+  spectro->TransportToLab( p, theta, trkifo->GetPhi(), pvect );
 
   // Get a second-iteration value for x_tg based on the 
   // corrected momentum vector
-  fSpectro->LabToTransport( *vertex, pvect, ray );
+  spectro->LabToTransport( fVertexModule->GetVertex(), pvect, ray );
 
   // Save results in our TrackInfo
-  fTrkIfo->Set( p, dp, ray[0], theTrack->GetTY(), 
-		theta, theTrack->GetTPhi(), pvect );
+  fTrkIfo.Set( p, dp, ray[0], trkifo->GetY(), theta, trkifo->GetPhi(), pvect );
+  fTrkIfo.SetSpectrometer( spectro );
 
   return 0;
 }

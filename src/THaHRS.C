@@ -45,7 +45,6 @@
 #include "THaTrack.h"
 #include "THaScintillator.h"
 #include "THaVDC.h"
-#include "THaTrackInfo.h"
 
 #ifdef WITH_DEBUG
 #include <iostream>
@@ -101,7 +100,8 @@ Int_t THaHRS::TrackCalc()
   if( GetNTracks() > 0 ) {
     //FIXME: quick and dirty hack to get started ...
     fGoldenTrack = static_cast<THaTrack*>( fTracks->At(0) );
-    *fTrackInfo  = *fGoldenTrack;
+    fTrkIfo      = *fGoldenTrack;
+    fTrk         = fGoldenTrack;
   } else
     fGoldenTrack = NULL;
 
