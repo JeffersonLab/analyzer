@@ -34,7 +34,7 @@ ClassImp(THaReactionPoint)
 //_____________________________________________________________________________
 THaReactionPoint::THaReactionPoint( const char* name, const char* description,
 				    const char* spectro, const char* beam ) :
-  THaPhysicsModule(name,description), fSpectroName(spectro), fSpectro(NULL), 
+  THaVertexModule(name,description), fSpectroName(spectro), fSpectro(NULL), 
   fBeamName(beam), fBeam(NULL)
 {
   // Normal constructor.
@@ -49,6 +49,14 @@ THaReactionPoint::~THaReactionPoint()
 }
 
 //_____________________________________________________________________________
+void THaReactionPoint::Clear( Option_t* opt )
+{
+  // Clear all event-by-event variables variables.
+  
+  fVertex.SetXYZ( 0.0, 0.0, 0.0 );
+}
+
+//_____________________________________________________________________________
 THaAnalysisObject::EStatus THaReactionPoint::Init( const TDatime& run_time )
 {
   // Initialize the module.
@@ -56,7 +64,7 @@ THaAnalysisObject::EStatus THaReactionPoint::Init( const TDatime& run_time )
   // pointer to it.
 
   // Standard initialization. Calls this object's DefineVariables().
-  if( THaPhysicsModule::Init( run_time ) != kOK )
+  if( THaVertexModule::Init( run_time ) != kOK )
     return fStatus;
 
   fSpectro = static_cast<THaSpectrometer*>
@@ -106,6 +114,13 @@ Int_t THaReactionPoint::Process()
     THaMatrix nom( theTrack->GetPvect(), yax, beam_org-org );
     Double_t t = nom.Determinant() / det;
     theTrack->SetVertex( beam_org + t*beam_ray );
+
+    // FIXME: preliminary
+    if( theTrack == fSpectro->GetGoldenTrack() )
+      fVertex = theTrack->GetVertex();
+
+    // FIXME: calculate vertex coordinate errors here (need beam errors)
+
 
     // The following is more efficient but less general
     // and requires the tangents of the beam angles (TRANSPORT style)
