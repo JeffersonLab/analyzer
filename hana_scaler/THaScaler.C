@@ -303,6 +303,7 @@ Int_t THaScaler::LoadData(const THaEvData& evdata) {
     evstream = 1;
     if (evdata.GetRocLength(crate) < 16) return 0;  // No data.
   } 
+  if (evdata.GetRocLength(crate) == 0 ) return 0;   // No data.
   LoadPrevious();
   Clear();
   for (int slot = 0; slot < SCAL_NUMBANK; slot++) {
