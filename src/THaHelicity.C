@@ -415,13 +415,13 @@ void THaHelicity::QuadCalib() {
    }
    if (fEvtype[fArm] == 9) t9count[fArm] += 1;
    if (fQrt[fArm] == 1) t9count[fArm] = 0;
-   if (
-// The most solid predictor of a new helicity window.
-      (( fTdiff[fArm] > 0.8*fTdavg[fArm] )  &&
-	 ( fQrt[fArm] == 1 ) && fEvtype[fArm]==9) ||
-// But sometimes event type 9 may be missed.
-        (( fTdiff[fArm] > fTdavg[fArm] )  &&
-	 ( fQrt[fArm] == 1 )) ) {
+
+// The most solid predictor of a new helicity window:
+   // (RJF) Simply look for sufficient time to have passed with a fQrt signal.
+   // Do not worry about  evt9's for now, since that transition is redundant
+   // when a new Qrt is found. And frequently the evt9 came immediately
+   // BEFORE the Qrt.
+   if ( ( fTdiff[fArm] > 0.8*fTdavg[fArm] )  && ( fQrt[fArm] == 1 ) ) {
 // ||
 // On rare occassions QRT bit might be missing.  Then look for
 // evtype 9 w/ gate = 0 within the first 0.5 msec after 4th window.
