@@ -9,24 +9,20 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaPhysElectronKine.h"
-#include "THaGlobals.h"
 #include "THaSpectrometer.h"
 #include "THaTrack.h"
 #include "THaRun.h"
 #include "VarDef.h"
-#include "TClass.h"
 #include "TLorentzVector.h"
 #include "TVector3.h"
 #include "TMath.h"
 
 ClassImp(THaPhysElectronKine)
 
-const Double_t THaPhysElectronKine::kMp = 0.938;
-
 //_____________________________________________________________________________
 THaPhysElectronKine::THaPhysElectronKine( const char* name, 
 					  const char* description ) :
-  THaPhysicsModule(name,description), fMA(kMp), fSpectro(NULL)
+  THaPhysicsModule(name,description), fMA(0.0), fSpectro(NULL)
 {
   // Normal constructor.
 
@@ -41,46 +37,12 @@ THaPhysElectronKine::~THaPhysElectronKine()
 }
 
 //_____________________________________________________________________________
-THaAnalysisObject::EStatus THaPhysElectronKine::Init( const TDatime& run_time )
+void THaPhysElectronKine::Clear( Option_t* opt )
 {
-  // Initialize the kinematics module. 
-  // Locate the spectrometer apparatus named in fSpectroName and save
-  // pointer to it.
-  // Initialize our own global variables.
+  // Clear all internal variables.
 
-  static const char* const here = "Init()";
-
-  fSpectro = NULL;
-
-  //FIXME: read run database to get beam energy
-  //FIXME: also get pointers to class that provides energy corrections
-
-  if( THaPhysicsModule::Init( run_time ) )
-    return fStatus;
-
-  TObject* obj = gHaApps->FindObject( fSpectroName );
-  if( !obj ) {
-    Error( Here(here), "Object %s does not exist. "
-	   "%s initialization failed.", 
-	   fSpectroName.Data(), ClassName() );
-    return fStatus = kInitError;
-  }
-  if( !obj->IsA()->InheritsFrom( "THaSpectrometer" )) {
-    Error( Here(here), "Object %s (%s) is not a THaSpectrometer. "
-	   "%s initialization failed.", 
-	   obj->GetName(), obj->GetTitle(), ClassName() );
-    return fStatus = kInitError;
-  }
-  fSpectro = static_cast<THaSpectrometer*>( obj );
-  if( !fSpectro->IsOK() ) {
-    Error( Here(here), "Spectrometer %s (%s) not properly initialized. "
-	   "%s initialization failed.", 
-	   obj->GetName(), obj->GetTitle(), ClassName() );
-    fSpectro = NULL;
-    return fStatus = kInitError;
-  }
-    
-  return fStatus = kOK;
+  fQ2 = fOmega = fW2 = fXbj = fScatAngle = fEpsilon = fQ3mag
+    = fThetaQ = fPhiQ = 0.0;
 }
 
 //_____________________________________________________________________________
@@ -109,22 +71,27 @@ Int_t THaPhysElectronKine::DefineVariables( EMode mode )
 }
 
 //_____________________________________________________________________________
+THaAnalysisObject::EStatus THaPhysElectronKine::Init( const TDatime& run_time )
+{
+  // Initialize the module.
+  // Locate the spectrometer apparatus named in fSpectroName and save
+  // pointer to it.
+
+  // Standard initialization. Calls this object's DefineVariables().
+  if( THaPhysicsModule::Init( run_time ) != kOK )
+    return fStatus;
+
+  fSpectro = static_cast<THaSpectrometer*>
+    ( FindModule( fSpectroName.Data(), "THaSpectrometer"));
+  return fStatus;
+}
+
+//_____________________________________________________________________________
 Int_t THaPhysElectronKine::Process()
 {
   // Calculate electron kinematics for the Golden Track of the spectrometer
 
-  //FIXME: very preliminary test code
-  // Input: should come from tracks, hardcode for test
-  // Units are GeV.
-
-//    Double_t p_in   = 1.0;       // projectile momentum
-//    Double_t p_out  = 0.7334754797;   // scattered electron momentum
-//    Double_t th_out = 0.8510991511;     // Theta (rad) of scattered electron
-//    Double_t ph_out = 0.0;       // Phi (rad) of scattered electron
-//    Double_t me     = 0.511e-3;  // particle mass (electron)
-//    Double_t MA     = 0.938;     // target mass
-
-  if( !fSpectro || !gHaRun ) return -1;
+  if( !IsOK() || !gHaRun ) return -1;
 
   THaTrack* theTrack = fSpectro->GetGoldenTrack();
   if( !theTrack ) return 1;
@@ -135,10 +102,9 @@ Int_t THaPhysElectronKine::Process()
   const Double_t me = 0.511e-3; // electron mass FIXME: variable?
   const Double_t Mp = 0.938;    // proton mass (for x_bj)
 
-  p0.SetXYZM( 0.0, 0.0, p_in, me ); // FIXME: beam slopes?
+  p0.SetXYZM( 0.0, 0.0, p_in, me );        // FIXME: beam slopes?
   p1.SetVectM( theTrack->GetPvect(), me );
-  // Assume target at rest
-  pA.SetXYZM( 0.0, 0.0, 0.0, fMA );
+  pA.SetXYZM( 0.0, 0.0, 0.0, fMA );        // Assume target at rest
 
   // Standard electron kinematics
   q          = p0 - p1;
@@ -149,23 +115,28 @@ Int_t THaPhysElectronKine::Process()
   fW2        = pA1.M2();
   fScatAngle = p0.Angle( p1.Vect() );
   fEpsilon   = 1.0 / ( 1.0 + 2.0*q.Vect().Mag2()/fQ2*
-		       TMath::Power( TMath::Tan(fScatAngle/2.0), 2.0 )); 
+		       TMath::Power( TMath::Tan(fScatAngle/2.0), 2.0 ));
   fThetaQ    = q.Theta();
   fPhiQ      = q.Phi();
   fXbj       = fQ2/(2.0*Mp*fOmega);
 
-//    cout << "p0\n"; p0.Dump();
-//    cout << "p1\n"; p1.Dump();
-//    cout << "pA\n"; pA.Dump();
-//    cout << "pA1\n"; pA1.Dump();
-//    cout << "q\n"; q.Dump();
+  return 0;
+}
 
-//    cout << "Q2, q3m, w, W2, xbj, ang, eps, th_q, ph_q ="
-//         << "th_A, ph_A, p3A, q3m_cm = "
-//         << fQ2 << " " << fQ3mag << " " << fOmega << " " << fW2 << " "
-//         << fXbj << " " << fScatAngle << " " << fEpsilon << " " 
-//         << fThetaQ << " "<< fPhiQ
-//         << endl;
+//_____________________________________________________________________________
+Int_t THaPhysElectronKine::ReadRunDatabase( FILE* f, const TDatime& date )
+{
+  // Qeury the run database. Currently queries for the target mass.
+  // First searches for "<prefix>.MA", then, if not found, for "MA".
+  // If still not found, use proton mass.
+
+  fMA = 0.938;
+
+  TString name(fPrefix), tag("MA"); name += tag;
+  Int_t st = LoadDBvalue( f, date, name.Data(), fMA );
+  if( st )
+    LoadDBvalue( f, date, tag.Data(), fMA );
 
   return 0;
 }
+  
