@@ -97,26 +97,6 @@ THaVar& THaVar::operator=( const THaVar& rhs )
 }
 
 //_____________________________________________________________________________
-void THaVar::Copy( TObject& rhs )
-{
-  // Copy this object to rhs
-
-  TNamed::Copy(rhs);
-  if( rhs.IsA()->InheritsFrom("THaVar") ) {
-    ((THaVar&)rhs).fValueD    = fValueD;
-    ((THaVar&)rhs).fArrayData = fArrayData;
-    ((THaVar&)rhs).fType      = fType;
-    ((THaVar&)rhs).fCount     = fCount;
-    ((THaVar&)rhs).fOffset    = fOffset;
-    delete ((THaVar&)rhs).fMethod;
-    if( fMethod )
-      ((THaVar&)rhs).fMethod  = new TMethodCall( *fMethod );
-    else
-      ((THaVar&)rhs).fMethod = NULL;
-  }
-}
-
-//_____________________________________________________________________________
 THaVar::~THaVar()
 {
   // Destructor

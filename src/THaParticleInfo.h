@@ -20,7 +20,6 @@ public:
   THaParticleInfo& operator=( const THaParticleInfo& rhs );
   virtual ~THaParticleInfo() {}
 
-  virtual void      Copy( TObject& );
   Double_t          GetMass() const          { return fMass; }
   Double_t          GetMass2() const         { return fMass*fMass; }
   Double_t          GetCharge() const        { return fCharge; }

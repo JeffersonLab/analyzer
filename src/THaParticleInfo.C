@@ -42,15 +42,6 @@ THaParticleInfo& THaParticleInfo::operator=(const THaParticleInfo& rhs )
 }
 
 //_____________________________________________________________________________
-void THaParticleInfo::Copy( TObject& rhs )
-{
-  // Copy this object to rhs
-
-  THaParticleInfo& pi = static_cast<THaParticleInfo&>(rhs);
-  pi = *this;
-}
-
-//_____________________________________________________________________________
 void THaParticleInfo::Print( Option_t* opt ) const
 {
   // Print particle info

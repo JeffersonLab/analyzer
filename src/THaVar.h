@@ -116,8 +116,6 @@ public:
     TNamed(name,desc), fArrayData(name), fObject(obj), fType(type),
     fCount(count), fOffset(offset), fMethod(method) {}
 
-  virtual void    Copy( TObject& );
-
   virtual const char*  GetName() const { return fArrayData.GetName(); }
 
   Int_t           GetLen()       const;

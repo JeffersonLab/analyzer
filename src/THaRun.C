@@ -116,24 +116,6 @@ Int_t THaRun::Compare( const TObject* obj ) const
 }
 
 //_____________________________________________________________________________
-void THaRun::Copy( TObject& rhs )
-{
-  // Copy this THaRun to 'run'
-
-  THaRun& run = static_cast<THaRun&>(rhs);
-  run = *this;
-}
-
-//_____________________________________________________________________________
-//void THaRun::FillBuffer( char*& buffer )
-//  {
-//    // Encode THaRun into output buffer.
-
-//    TNamed::FillBuffer( buffer );
-//    fFilename.FillBuffer( buffer );
-//  }
-
-//_____________________________________________________________________________
 const Int_t* THaRun::GetEvBuffer() const
 { 
   // Return address of the eventbuffer allocated and filled 

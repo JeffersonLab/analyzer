@@ -30,7 +30,6 @@ public:
 
   operator const char*() const { return fName.Data(); }
 
-  void            Copy( THaArrayString& rhs ) { rhs = *this; }
   const Int_t*    GetDim()  const { return fDim; }
   Int_t           GetLen()  const { return fLen; }
   const char*     GetName() const { return fName.Data(); }

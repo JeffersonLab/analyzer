@@ -25,8 +25,6 @@ public:
   
   virtual Int_t        CloseFile();
   virtual Int_t        Compare( const TObject* obj ) const;
-  virtual void         Copy( TObject& obj );
-  //  virtual void         FillBuffer( char*& buffer );
           bool         DBRead()         const { return fDBRead; }
           Double_t     GetBeamE()       const { return fBeamE; }
           Double_t     GetBeamdE()      const { return fBeamdE; }
