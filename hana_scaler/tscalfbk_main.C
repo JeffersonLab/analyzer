@@ -6,6 +6,7 @@
 //--------------------------------------------------------
 
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <time.h>
 #include <signal.h>
@@ -19,6 +20,7 @@ int AsyAvg();
 void ApplyFeedBack();
 void LogMessage(const char* message); 
 string GetTime();
+float myatof(const char *cinput);
 extern "C" void signalhandler(int s);
 
 // file to store results
@@ -34,6 +36,12 @@ static int sleeptime = 10;   // typically 10
 static int nevt = 90;       // typically 90
 // to debug(>0) or not(0)
 static int debug = 0;
+// Feedback slope (must be calibrated, hopefully stable)
+static float fslope = 147;   // ppm/knob
+// Feedback script
+static string fbscript = "/adaqfs/home/adaq/qasy/feedback/apply_feedback";
+// Present value of feedback data
+static string fbdata = "/adaqfs/home/adaq/qasy/feedback/feedback.data";
 
 static int evcnt, goodevt;
 
@@ -104,9 +112,9 @@ void ApplyFeedBack() {
   //     signif_toosmall = significance too small
 
   double qasy_toobig, qasy_toosmall, signif_toosmall;
-  qasy_toobig = 40000;  // 40,000 ppm = 4% is huge (something wrong !)
+  qasy_toobig = 20000;  // 20,000 ppm = 2% is huge (something wrong !)
   qasy_toosmall = 50;   // 50 ppm is too small to apply feedback
-  signif_toosmall = 1;  // if < 1 sigma, too small to apply feedback
+  signif_toosmall = 2;  // if < 2 sigma, too small to apply feedback
 
   if (AsyAvg() == 1) {
     double absqasy = qasy_global;
@@ -123,10 +131,35 @@ void ApplyFeedBack() {
       LogMessage("No feedback applied; not significant.\n");
       goto out1;
     }
-    LogMessage("-->  FEEDBACK  APPLIED   (test mode) \n");
-
-    // do it
-
+    char command[100];
+    float acorr = 0;
+    if (fslope != 0) acorr = qasy_global / fslope;
+    if (acorr == 0) {
+      LogMessage("correction = 0\n");
+      goto out1;
+    }
+    ifstream fbdatafile;
+    fbdatafile.open(fbdata.c_str());
+    if (!fbdatafile) {
+      LogMessage("ERROR: ApplyFeedback:  No fbdata file \n");
+      goto out1;
+    }
+    string sinput;
+    float oldfdata = 0;
+    float newfdata = 0;    
+    while (getline(fbdatafile,sinput)) {
+      oldfdata = myatof(sinput.c_str());
+      if (debug) cout << "oldfdata = "<<oldfdata<<endl;
+    }
+    newfdata = oldfdata - acorr;
+    sprintf(command,"  1  %4.2f \n",newfdata);
+    string scommand = command;
+    string syscall = fbscript + scommand;
+    system(syscall.c_str());
+    LogMessage("-->  FEEDBACK  APPLIED.   System call: \n");
+    syscall += "\n";    
+    LogMessage(syscall.c_str());
+    
   }
 
 out1:
@@ -232,4 +265,29 @@ void signalhandler(int sig) {
   exit(1);
 }
 
-
+float myatof(const char *cinput) {
+// This does what atof is supposed to do.
+// Standard atof doesn't really work so I wrote my own.
+  string sinput = cinput;
+  float result = 0;
+  float sign = 1;
+  int pos = sinput.find("-");
+  if (pos == 0) sign = -1;
+  unsigned long iloc = -1;
+  iloc = sinput.find(".");
+  if (iloc == string::npos) {
+    result = atof(sinput.c_str());
+  } else {
+    string s1,s2;
+    s1 = sinput.substr(0,iloc);
+    s2 = sinput.substr(iloc+1,sinput.length());
+    int decsize = sinput.length()-iloc-1;
+    result = atof(s1.c_str());
+    if (decsize > 0) {
+      float power = 1;
+      for (int j = 0; j < decsize; j++) power *= 10;
+      result += atof(s2.c_str())/power;
+    } 
+  }     
+  return sign*result;
+}
