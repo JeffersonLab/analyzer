@@ -81,9 +81,9 @@ THaDetectorBase::EStatus THaBpm::Init( const TDatime& run_time )
   // Initialize detector map
 
   const THaDetMap::Module m[6] = {
-    { 14, 2, 0, 3 },  { 14, 2, 4, 7 },     // LeCroy
-    { 14, 3, 8, 11 }, { 14, 3, 12, 15 },   // VMIC
-    { 14, 4, 0, 3 },  { 14, 4, 4, 7 }      // Struck
+    { 14, 2, 0, 3, 0 },  { 14, 2, 4, 7, 0 },     // LeCroy
+    { 14, 3, 8, 11, 0 }, { 14, 3, 12, 15, 0 },   // VMIC
+    { 14, 4, 0, 3, 0 },  { 14, 4, 4, 7, 0 }      // Struck
   };
   int i = 2*(det-1)+bpm-1;
   fDetMap->AddModule( m[i].crate, m[i].slot, m[i].lo, m[i].hi );

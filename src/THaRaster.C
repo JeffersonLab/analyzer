@@ -69,10 +69,10 @@ THaDetectorBase::EStatus THaRaster::Init( const TDatime& run_time )
   // FIXME: Check this! This is what Chris Behre coded.
   // Caution: Must match chan_map in Decode().
   const THaDetMap::Module m[4] = {
-    { 14, 5, 0, 3 },     // Struck
-    { 14, 3, 0, 3 },     // VMIC
-    { 14, 2, 7, 7 },     // LeCroy #1
-    { 14, 2, 0, 2 }      // LeCroy #2       //Chris had 0-3, obviously wrong
+    { 14, 5, 0, 3, 0 },     // Struck
+    { 14, 3, 0, 3, 0 },     // VMIC
+    { 14, 2, 7, 7, 0 },     // LeCroy #1
+    { 14, 2, 0, 2, 0 }      // LeCroy #2       //Chris had 0-3, obviously wrong
   };
   int i = dev-1;
   fDeviceNo = i;
