@@ -54,7 +54,8 @@
 #include <cstring>
 #include "THaVar.h"
 #include "TMethodCall.h"
-#include "TSeqCollection.h"
+#include "TObjArray.h"
+#include "TClass.h"
 
 ClassImp(THaVar)
 
@@ -148,6 +149,27 @@ size_t THaVar::GetTypeSize( VarType itype )
 }
 
 //_____________________________________________________________________________
+const Int_t* THaVar::GetObjArrayLenPtr() const
+{
+  // Return pointer to length of object array.
+  // Result must be copied or used immediately.
+
+  static Int_t len = 0;
+
+  // Get pointer to the object
+  if( fObject == NULL )
+    return NULL;
+  const TSeqCollection* c = static_cast<const TSeqCollection*>( fObject );
+
+  // Get actual array size
+  if( c->IsA()->InheritsFrom("TObjArray") )
+    len = static_cast<const TObjArray*>(c)->GetLast()+1;
+  else
+    len = c->GetSize();
+  return &len;
+}
+  
+//_____________________________________________________________________________
 Double_t THaVar::GetValueFromObject( Int_t i ) const
 {
   // Retrieve variable from a ROOT object, either via a function call
@@ -160,9 +182,12 @@ Double_t THaVar::GetValueFromObject( Int_t i ) const
   if( fOffset != -1 ) {
     // Array: Get data from the TSeqCollection
 
-    // Get pointer to the object
-    const TSeqCollection* c = static_cast<const TSeqCollection*>( fObject );
-    obj = c->At(i);
+    // Check if index within bounds
+    if( i<0 || i >= *GetObjArrayLenPtr() )
+      return 0.0;
+
+    // Get the object from the collection
+    obj = static_cast<const TSeqCollection*>( fObject )->At(i);
 
     if( !fMethod ) {
       // No method ... get the data directly.

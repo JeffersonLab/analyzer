@@ -116,12 +116,10 @@ public:
 
   virtual const char*  GetName() const       { return fArrayData.GetName(); }
 
-  Int_t           GetLen() const             
-    { return fCount ? *fCount : fArrayData.GetLen(); }
+  Int_t           GetLen() const;
   Byte_t          GetNdim() const            
-    { return fCount ? 1 : fArrayData.GetNdim(); } 
-  const Int_t*    GetDim() const             
-    { return fCount ? fCount : fArrayData.GetDim(); }
+    { return ( fCount != NULL || fOffset != -1 ) ? 1 : fArrayData.GetNdim(); } 
+  const Int_t*    GetDim() const;
   VarType         GetType() const            { return fType; }
   size_t          GetTypeSize() const { return GetTypeSize( fType ); }
   static size_t   GetTypeSize( VarType type );
@@ -135,7 +133,7 @@ public:
   virtual Int_t   Index( const char* ) const;
   virtual Int_t   Index( const THaArrayString& ) const;
   Bool_t          IsArray() const            
-    { return fCount ? kTRUE : fArrayData.IsArray(); }
+    { return ( fCount != NULL || fOffset != -1 ) ? kTRUE : fArrayData.IsArray(); }
   Bool_t          IsBasic() const
     { return ( fOffset == -1 && fMethod == NULL ); }
   Bool_t          IsPointerArray() const 
@@ -183,6 +181,7 @@ public:
 protected:
   Double_t            GetValueAsDouble( Int_t i=0 ) const;
   Double_t            GetValueFromObject( Int_t i=0 ) const;
+  const Int_t*        GetObjArrayLenPtr() const;
 
   THaArrayString      fArrayData; //Variable name and array dimension(s), if any
   union {
@@ -307,6 +306,28 @@ Double_t THaVar::GetValueAsDouble( Int_t i ) const
     ;
   }
   return 0.0;
+}
+
+//_____________________________________________________________________________
+inline
+Int_t THaVar::GetLen() const
+{ 
+  if( fCount )
+    return *fCount;
+  if( fOffset != -1 )
+    return *GetObjArrayLenPtr();
+  return fArrayData.GetLen();
+}
+
+//_____________________________________________________________________________
+inline
+const Int_t* THaVar::GetDim() const
+{
+  if( fCount )
+    return fCount;
+  if( fOffset != - 1 )
+    return GetObjArrayLenPtr();
+  return fArrayData.GetDim();
 }
 
 #endif
