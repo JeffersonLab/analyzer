@@ -105,13 +105,13 @@ Int_t Determine_VDC_T0(Int_t TDC_Low=-500, Int_t TDC_High=500) {
   char tmpchar;
   cerr << "Save new offsets? " << endl;
   cin >> tmpchar;
-
+  
   if (tmpchar == 'y' || tmpchar == 'Y') {
     for (Int_t i=0; i<4; i++) {
       SaveNewT0Data(run->GetDate(),&(table_R[i*NWire]),Form("R.%s",vdc_planes[i]));
       SaveNewT0Data(run->GetDate(),&(table_L[i*NWire]),Form("L.%s",vdc_planes[i]));
     }
-    cerr << " Offsets saved..." << endl;
+    cerr << " Offsets saved... to *.dat.NEW files in current directory" << endl;
   }
 
   vdc_out->Write();
@@ -129,8 +129,6 @@ Double_t *Build_T0(const char *HRS, TTree *T) {
   
   if (strncmp(HRS,"R",1)==0) event_type=1;
   if (strncmp(HRS,"L",1)==0) event_type=3;
-  
-  Int_t NWireGrp=4;
   
   Double_t *t0_set = new Double_t[4*NWire];
   
@@ -336,7 +334,9 @@ Int_t Find_TDC0_2(TH1 *hist, Double_t &t0) {
   Double_t slope_min=0.;
   Int_t ch_save=0;
 
-  for (Int_t i=1; i<=nbins; i++) {
+  // start at the bin with the maximum content
+  Int_t maxbin = hist->GetMaximumBin();
+  for (Int_t i=maxbin+1; i<=nbins; i++) {
     if (i>1 && i<nbins) {
       slope = (hist->GetBinContent(i+1)-hist->GetBinContent(i-1))/(2.*dx);
     } else if (i==1) {
@@ -411,7 +411,7 @@ int SaveNewT0Data(const TDatime &run_date, Double_t *new_t0, const char *planena
   char buff[kBUFLEN], db_filename[kBUFLEN], tag[kBUFLEN];
   
   sprintf(db_filename, "%c.vdc.", planename[0]);
-  sprintf(buff,"db_%s.dat.NEW",db_filename);
+  sprintf(buff,"db_%sdat.NEW",db_filename);
   FILE *db_file = 0;
   FILE *db_out = fopen(buff,"r+"); // a new DB file to copy to the final home
   if (db_out) db_file = db_out;
@@ -431,12 +431,12 @@ int SaveNewT0Data(const TDatime &run_date, Double_t *new_t0, const char *planena
   sprintf(tag, "[ %s ]", planename);
   bool found = false;
   while (!found && fgets (buff, kBUFLEN, db_file) != NULL) {
+    if (db_out != db_file) fputs(buff, db_out);
     if(strlen(buff) > 0 && buff[strlen(buff)-1] == '\n')
       buff[strlen(buff)-1] = '\0';
 
     if(strcmp(buff, tag) == 0)
       found = true;
-    if (db_out != db_file) fputs(buff, db_out);
   }
   if( !found ) {
     cerr<<"Database entry "<<tag<<" not found!"<<endl;;
@@ -471,6 +471,11 @@ int SaveNewT0Data(const TDatime &run_date, Double_t *new_t0, const char *planena
       fprintf(db_out, "\n");
     else
       fprintf(db_out, " ");
+  }
+
+  // run through the rest of the file
+  while ( fgets (buff, kBUFLEN, db_file) != NULL) {
+    if (db_out != db_file) fputs(buff, db_out);
   }
 
   fclose(db_file);
