@@ -147,7 +147,7 @@ SRC           = src/THaFormula.C src/THaVform.C src/THaVhist.C \
 		src/THaRasteredBeam.C src/THaRaster.C\
 		src/THaBeamDet.C src/THaBPM.C src/THaUnRasteredBeam.C\
 		src/THaTrack.C src/THaPIDinfo.C src/THaParticleInfo.C \
-		src/THaCluster.C src/THaMatrix.C src/THaArrayString.C \
+		src/THaCluster.C src/THaArrayString.C \
 		src/THaScintillator.C src/THaShower.C \
 		src/THaTotalShower.C src/THaCherenkov.C \
 		src/THaEvent.C src/THaRawEvent.C src/THaTrackID.C \

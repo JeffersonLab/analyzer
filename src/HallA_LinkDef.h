@@ -63,7 +63,6 @@
 #pragma link C++ class THaPIDinfo+;
 #pragma link C++ class THaParticleInfo+;
 #pragma link C++ class THaCluster+;
-#pragma link C++ class THaMatrix+;
 #pragma link C++ class THaArrayString+;
 #pragma link C++ class THaCherenkov+;
 #pragma link C++ class THaTotalShower+;
