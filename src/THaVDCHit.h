@@ -6,6 +6,7 @@
 // THaVDCHit                                                                 //
 //                                                                           //
 // Class representing a single hit for the VDC                               //
+//                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 #include "TObject.h"
 
@@ -18,7 +19,7 @@ class THaVDCHit : public TObject {
 public:
   THaVDCHit( THaVDCWire* wire=NULL, Int_t rawtime=0, Double_t time=0.0 ) : 
     fWire(wire), fRawTime(rawtime), fTime(time), fDist(0.0) {}
-  virtual ~THaVDCHit();
+  virtual ~THaVDCHit() {}
 
   virtual Double_t ConvertTimeToDist(Double_t slope);
   Int_t  Compare ( const TObject * obj ) const;

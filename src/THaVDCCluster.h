@@ -6,6 +6,8 @@
 // THaVDCCluster                                                             //
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
+
+//#include "THaCluster.h"
 #include "TObject.h"
 
 class THaVDCHit;
@@ -13,6 +15,7 @@ class THaVDCPlane;
 //class THaVDCUVTrack;
 //class THaTrack;
 
+//class THaVDCCluster : public THaCluster {
 class THaVDCCluster : public TObject {
 
 public:
@@ -57,7 +60,7 @@ public:
   //    void SetTrack(THaTrack * track) {fTrack = track;} 
 
 protected:
-  static const Int_t MAX_SIZE = 20;  // Assume no more than 20 hits per cluster
+  static const Int_t MAX_SIZE = 16;  // Assume no more than 20 hits per cluster
   static const Double_t kBig;
 
   Int_t          fSize;              // Size of cluster (no. of hits)

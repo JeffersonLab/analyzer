@@ -60,7 +60,7 @@ void THaVDCCluster::AddHit(THaVDCHit * hit)
 
   if (fSize < MAX_SIZE) {
     fHits[fSize++] = hit;
-  } else {
+  } else if( fPlane && fPlane->GetDebug()>0 ) {
     Warning( "AddHit()", "Max cluster size reached.");
   }
 }

@@ -12,13 +12,6 @@ ClassImp(THaVDCHit)
 
 
 //_____________________________________________________________________________
-THaVDCHit::~THaVDCHit()
-{
-  // Destructor. 
-
-}
-
-//_____________________________________________________________________________
 Double_t THaVDCHit::ConvertTimeToDist(Double_t slope)
 {
   // Converts TDC time to drift distance
