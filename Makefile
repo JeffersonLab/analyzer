@@ -4,7 +4,7 @@
 export WITH_DEBUG = 1
 
 # Compile debug version
-export DEBUG = 1
+#export DEBUG = 1
 
 # Profiling with gprof
 # export PROFILE = 1
@@ -19,7 +19,7 @@ export DEBUG = 1
 SOVERSION  = 1.3
 PATCH   = 0
 VERSION = $(SOVERSION).$(PATCH)
-EXTVERS = -cvs
+EXTVERS =
 NAME    = analyzer-$(VERSION)
 
 #------------------------------------------------------------------------------
@@ -261,7 +261,7 @@ srcdist:
 		 $(NAME)/.exclude $(NAME)/ChangeLog $(NAME)/gcc-version \
 		 $(NAME)/src $(NAME)/examples \
 		 $(NAME)/DB $(NAME)/$(DCDIR) $(NAME)/$(SCALERDIR) \
-		 $(NAME)/Makefile $(NAME)/docs
+		 $(NAME)/Makefile $(NAME)/docs $(NAME)/Calib $(NAME)/contrib
 
 cvsdist:	srcdist
 		cp ../$(NAME).tar.gz ../$(NAME)-cvs.tar.gz
