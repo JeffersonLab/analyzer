@@ -297,10 +297,12 @@ Int_t THaRun::Compare( const TObject* obj ) const
   // Compare two THaRun objects via run numbers. Returns 0 when equal, 
   // -1 when 'this' is smaller and +1 when bigger (like strcmp).
 
-   if (this == obj) return 0;
-   if      ( fNumber < static_cast<const THaRun*>(obj)->fNumber ) return -1;
-   else if ( fNumber > static_cast<const THaRun*>(obj)->fNumber ) return  1;
-   return 0;
+  if (this == obj) return 0;
+  const THaRun* rhs = dynamic_cast<const THaRun*>(obj);
+  if( !rhs ) return -1;
+  if      ( fNumber < rhs->fNumber ) return -1;
+  else if ( fNumber > rhs->fNumber ) return  1;
+  return 0;
 }
 
 //_____________________________________________________________________________
@@ -333,15 +335,6 @@ Int_t THaRun::OpenFile()
     return -2;  // filename not set
 
   return fCodaData ? fCodaData->codaOpen( fFilename ) : -3;
-}
-
-//_____________________________________________________________________________
-Int_t THaRun::OpenFile( const char* filename )
-{
-  // Set the filename and then open CODA file.
-
-  SetFilename( filename );
-  return OpenFile();
 }
 
 //_____________________________________________________________________________
