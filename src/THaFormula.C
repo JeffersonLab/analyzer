@@ -116,6 +116,8 @@ Double_t THaFormula::DefinedValue( Int_t i )
   case kCut:
     return reinterpret_cast<const THaCut*>(ptr)->GetResult();
     break;
+  default:
+    return 0.0;
   }
   return 0.0;
 }  
