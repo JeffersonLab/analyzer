@@ -34,9 +34,9 @@ typedef vector<THaOdata*>::size_type Vsiz;
 
 //_____________________________________________________________________________
 THaOutput::THaOutput() :
-  fNform(0), fNvar(0), fNbout(0), fN1d(0), fN2d(0),
+  fNform(0), fNvar(0), fN1d(0), fN2d(0),
   fForm(0), fVar(0), fH1vtype(0), fH1form(0), fH2vtypex(0), fH2formx(0),
-  fH2vtypey(0), fH2formy(0), fTree(0)
+  fH2vtypey(0), fH2formy(0), fTree(0), fInit(false)
 {
   // Constructor
 }
@@ -63,10 +63,16 @@ Int_t THaOutput::Init( )
 {
   // Initialize output system. Required before anything can happen.
 
-  if ( !gHaVars ) return -2;
-
-  fNbout = 4000;  
-
+  // Do not reinitialize
+  if( fInit ) {
+    cout << "\nTHaOutput::Init: Info: THaOutput cannot be ";
+    cout << "re-initialized. Keeping existing definitions." << endl;
+#ifdef CHECKOUT
+    Print();
+#endif
+    return 1;
+  }
+  if( !gHaVars ) return -2;
 
   Int_t err = LoadFile();
   if( err == -1 )
@@ -79,9 +85,8 @@ Int_t THaOutput::Init( )
   fN1d = fH1dname.size();
   fN2d = fH2dname.size();
 
-  delete [] fForm; fForm = new Double_t[fNform];
-  if( fTree == 0 )
-    fTree = new TTree("T","Hall A Analyzer Output DST");
+  fForm = new Double_t[fNform];
+  fTree = new TTree("T","Hall A Analyzer Output DST");
 
   THaVar *pvar;
   vector<string> stemp1,stemp2;
@@ -106,10 +111,10 @@ Int_t THaOutput::Init( )
     fTree->Branch(stemp1[k].c_str(), fOdata[k]->ClassName(),
 		  &fOdata[k]);
   fNvar = stemp2.size();
-  delete [] fVar; fVar = new Double_t[fNvar];
+  fVar = new Double_t[fNvar];
   for (Int_t k = 0; k < fNvar; k++)
     fTree->Branch(stemp2[k].c_str(), &fVar[k], 
-		  stemp2[k].append("/D").c_str(), fNbout);
+		  stemp2[k].append("/D").c_str(), kNbout);
   for (Int_t iform = 0; iform < fNform; iform++) {
     fFormulas.push_back(new THaFormula(Form("f%d",iform),
 				       fFormdef[iform].c_str()));
@@ -121,9 +126,9 @@ Int_t THaOutput::Init( )
   }
   for (Int_t iform = 0; iform < fNform; iform++)
     fTree->Branch(fFormnames[iform].c_str(), &fForm[iform], 
-		  fFormnames[iform].append("/D").c_str(), fNbout);   
-  delete [] fH1vtype; fH1vtype = new Int_t[fN1d];
-  delete [] fH1form;  fH1form  = new Int_t[fN1d];
+		  fFormnames[iform].append("/D").c_str(), kNbout);   
+  fH1vtype = new Int_t[fN1d];
+  fH1form  = new Int_t[fN1d];
   memset(fH1vtype, -1, fN1d*sizeof(Int_t));
   memset(fH1form, -1, fN1d*sizeof(Int_t));
   for (Int_t ihist = 0; ihist < fN1d; ihist++) {
@@ -141,10 +146,10 @@ Int_t THaOutput::Init( )
          fH1dtit[ihist].c_str(), 
          fH1dbin[ihist], fH1dxlo[ihist], fH1dxhi[ihist]));
   }
-  delete [] fH2vtypex; fH2vtypex = new Int_t[fN2d];
-  delete [] fH2vtypey; fH2vtypey = new Int_t[fN2d];
-  delete [] fH2formx;  fH2formx  = new Int_t[fN2d];
-  delete [] fH2formy;  fH2formy  = new Int_t[fN2d];
+  fH2vtypex = new Int_t[fN2d];
+  fH2vtypey = new Int_t[fN2d];
+  fH2formx  = new Int_t[fN2d];
+  fH2formy  = new Int_t[fN2d];
   memset(fH2vtypex, -1, fN2d*sizeof(Int_t));
   memset(fH2vtypey, -1, fN2d*sizeof(Int_t));
   memset(fH2formx, -1, fN2d*sizeof(Int_t));
@@ -173,6 +178,7 @@ Int_t THaOutput::Init( )
 	 fH2dbinx[ihist], fH2dxlo[ihist], fH2dxhi[ihist],
 	 fH2dbiny[ihist], fH2dylo[ihist], fH2dyhi[ihist]));
   }
+  fInit = true;
   return 0;
 }
  

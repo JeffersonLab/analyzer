@@ -96,27 +96,29 @@ protected:
 
    // Variables, Formulas, Histograms
 
-   vector<THaString> fVarnames;
-   vector<THaString> fFormnames, fFormdef;
-   vector<THaString> fH1dname, fH1dtit, fH2dname, fH2dtit;
-   vector<Int_t> fH1dbin, fH2dbinx, fH2dbiny;
-   vector<Double_t> fH1dxlo, fH1dxhi;
-   vector<Double_t> fH2dxlo, fH2dxhi, fH2dylo, fH2dyhi;
-   Int_t fNform, fNvar, fNbout, fN1d, fN2d;
-   vector<THaFormula* > fFormulas;
-   vector<THaVar* > fVariables, fArrays;
-   Double_t *fForm, *fVar;
-   vector<TH1F* > fH1d;
-   vector<TH2F* > fH2d;
-   vector<THaString> fH1plot, fH2plotx, fH2ploty;
-   vector<THaVar* > fH1var, fH2varx, fH2vary;
-   Int_t *fH1vtype, *fH1form;
-   Int_t *fH2vtypex, *fH2formx;
-   Int_t *fH2vtypey, *fH2formy;
-   vector<THaOdata* > fOdata;
-   TTree *fTree; 
+  vector<THaString> fVarnames;
+  vector<THaString> fFormnames, fFormdef;
+  vector<THaString> fH1dname, fH1dtit, fH2dname, fH2dtit;
+  vector<Int_t> fH1dbin, fH2dbinx, fH2dbiny;
+  vector<Double_t> fH1dxlo, fH1dxhi;
+  vector<Double_t> fH2dxlo, fH2dxhi, fH2dylo, fH2dyhi;
+  Int_t fNform, fNvar, fN1d, fN2d;
+  vector<THaFormula* > fFormulas;
+  vector<THaVar* > fVariables, fArrays;
+  Double_t *fForm, *fVar;
+  vector<TH1F* > fH1d;
+  vector<TH2F* > fH2d;
+  vector<THaString> fH1plot, fH2plotx, fH2ploty;
+  vector<THaVar* > fH1var, fH2varx, fH2vary;
+  Int_t *fH1vtype, *fH1form;
+  Int_t *fH2vtypex, *fH2formx;
+  Int_t *fH2vtypey, *fH2formy;
+  vector<THaOdata* > fOdata;
+  TTree *fTree; 
+  bool fInit;
 
   enum EId { kVar = 1, kForm, kH1, kH2 };
+  static const Int_t kNbout = 4000;
 
 private:
 
