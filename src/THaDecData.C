@@ -104,7 +104,8 @@ void THaDecData::Clear( Option_t* opt )
 //_____________________________________________________________________________
 Int_t THaDecData::SetupDecData( const TDatime* run_time, EMode mode )
 {
-  // Register global variables.
+  // Register global variables, open decdata map file, and parse it.
+  // If mode == kDelete, remove global variables.
 
   Int_t retval = 0;
 
@@ -131,14 +132,14 @@ Int_t THaDecData::SetupDecData( const TDatime* run_time, EMode mode )
     { "misc4",      "misc data 4",                 "misc4" },
     { 0 }
   };
+  nvar = sizeof(vars)/sizeof(VarDef);
+
   if( mode != kDefine || !fIsSetup )
     retval = DefineVarsFromList( vars, mode );
 
   fIsSetup = ( mode == kDefine );
   if( mode != kDefine )
     return retval;
-
-  nvar = sizeof(vars)/sizeof(VarDef);
 
 // Set up the locations in raw data corresponding to variables of this class. 
 // Each element of a BdataLoc is one channel or word.  Since a channel 
