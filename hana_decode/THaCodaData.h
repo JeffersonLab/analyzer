@@ -20,7 +20,7 @@
 #include "TString.h"
 #define CODA_ERROR -1     // Generic error return code
 #define CODA_OK  0        // Means return is ok.
-#define MAXEVLEN 80000    // Maximum size of events
+#define MAXEVLEN 100005   // Maximum size of events
 #define CODA_VERBOSE 1    // Errors explained verbosely (recommended)
 #define CODA_DEBUG  0     // Lots of printout (recommend to set = 0)
 
