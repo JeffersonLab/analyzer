@@ -84,6 +84,24 @@ Int_t THaApparatus::Begin( THaRunBase* run )
 }
 
 //_____________________________________________________________________________
+void THaApparatus::Clear( Option_t* opt )
+{
+  // Call the Clear() method for all detectors defined for this apparatus.
+
+  TIter next(fDetectors);
+  while( THaDetector* theDetector = static_cast<THaDetector*>( next() )) {
+#ifdef WITH_DEBUG
+    if( fDebug>1 ) cout << "Clearing " << theDetector->GetName()
+			<< "... " << flush;
+#endif
+    theDetector->Clear(opt);
+#ifdef WITH_DEBUG
+    if( fDebug>1 ) cout << "done.\n" << flush;
+#endif
+  }
+}
+
+//_____________________________________________________________________________
 Int_t THaApparatus::Decode( const THaEvData& evdata )
 {
   // Call the Decode() method for all detectors defined for this apparatus.
@@ -91,12 +109,12 @@ Int_t THaApparatus::Decode( const THaEvData& evdata )
   TIter next(fDetectors);
   while( THaDetector* theDetector = static_cast<THaDetector*>( next() )) {
 #ifdef WITH_DEBUG
-    if( fDebug>0 ) cout << "Decoding " << theDetector->GetName()
+    if( fDebug>1 ) cout << "Decoding " << theDetector->GetName()
 			<< "... " << flush;
 #endif
     theDetector->Decode( evdata );
 #ifdef WITH_DEBUG
-    if( fDebug>0 ) cout << "done.\n" << flush;
+    if( fDebug>1 ) cout << "done.\n" << flush;
 #endif
   }
   return 0;

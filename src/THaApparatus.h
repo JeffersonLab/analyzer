@@ -20,6 +20,7 @@ public:
   
   virtual Int_t        AddDetector( THaDetector* det );
   virtual Int_t        Begin( THaRunBase* r=0 );
+  virtual void         Clear( Option_t* opt="" );
   virtual Int_t        Decode( const THaEvData& );
   virtual Int_t        End( THaRunBase* r=0 );
           Int_t        GetNumDets()   const      { return fDetectors->GetSize(); }
