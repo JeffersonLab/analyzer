@@ -72,8 +72,8 @@ ifeq ($(ARCH),linuxegcs)
 # Linux with egcs (>= RedHat 5.2)
 CXX           = g++
 ifdef DEBUG
-  CXXFLAGS    = -g
-  LDFLAGS     = -g
+  CXXFLAGS    = -g -O0
+  LDFLAGS     = -g -O0
 else
   CXXFLAGS    = -O
   LDFLAGS     = -O
