@@ -50,10 +50,10 @@ public:
   // Access functions for reading tag/value pairs from database files
   static  Int_t   LoadDBvalue( FILE* file, const TDatime& date, 
 			       const char* tag, Double_t& value );
-  static   Int_t  LoadDB( FILE* file, const TDatime& date, 
+  static  Int_t   LoadDB( FILE* file, const TDatime& date, 
 			  const TagDef* tags, const char* prefix="" );
 
-  // Angle transformation utility functions
+  // Geometry utility functions
   static  void    GeoToSph( Double_t  th_geo, Double_t  ph_geo,
 			    Double_t& th_sph, Double_t& ph_sph );
   static  void    SphToGeo( Double_t  th_sph, Double_t  ph_sph,
@@ -72,15 +72,18 @@ protected:
      { return kOK; }
 
           Int_t        DefineVarsFromList( const VarDef* list, 
-					   EMode mode = kDefine ) const
-     { return DefineVarsFromList( list, kVarDef, mode ); }
+					   EMode mode = kDefine,
+					   const char* var_prefix="" ) const
+     { return DefineVarsFromList( list, kVarDef, mode, var_prefix ); }
 
           Int_t        DefineVarsFromList( const RVarDef* list, 
-					   EMode mode = kDefine ) const
-     { return DefineVarsFromList( list, kRVarDef, mode ); }
+					   EMode mode = kDefine,
+					   const char* var_prefix="" ) const
+     { return DefineVarsFromList( list, kRVarDef, mode, var_prefix ); }
  
           Int_t        DefineVarsFromList( const void* list, 
-					   EType type, EMode mode ) const;
+					   EType type, EMode mode,
+					   const char* var_prefix="" ) const;
 
   THaAnalysisObject* FindModule( const char* name, 
 				 const char* classname = "THaApparatus",

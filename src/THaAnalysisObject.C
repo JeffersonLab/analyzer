@@ -54,7 +54,8 @@ THaAnalysisObject::~THaAnalysisObject()
 
 //_____________________________________________________________________________
 Int_t THaAnalysisObject::DefineVarsFromList( const void* list, 
-					     EType type, EMode mode ) const
+					     EType type, EMode mode,
+					     const char* var_prefix ) const
 {
   // Add/delete variables defined in 'list' to/from the list of global 
   // variables, using prefix of the current apparatus.
@@ -78,7 +79,7 @@ Int_t THaAnalysisObject::DefineVarsFromList( const void* list,
 				fPrefix, Here(ClassName()) );
     else if( type == kRVarDef )
       gHaVars->DefineVariables( (const RVarDef*)list, this,
-				fPrefix, Here(ClassName()) );
+				fPrefix, Here(ClassName()), var_prefix );
   }
   else if( mode == kDelete ) {
     if( type == kVarDef ) {
