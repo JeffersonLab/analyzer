@@ -7,7 +7,7 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-#define THAOMAX 100
+#define THAOMAX 400
 #include "TObject.h"
 #include "THaString.h"
 #include "TTree.h"
