@@ -1,0 +1,248 @@
+
+1.)    List of files contributed by B.Reitz
+
+THaRaster.h
+THaBPM.h
+THaUnRasteredBeam.h
+HallA_LinkDef.h
+THaBeamDet.h
+THaRasteredBeam.h
+
+THaRaster.C
+THaUnRasteredBeam.C
+THaBPM.C
+THaRasteredBeam.C
+THaBeamDet.C
+
+Other usefull files:
+
+beam_db.dat             database for B.Reitz's beam apparatus/detectors
+                        (one has to create aprobiate soft links to this file)
+
+check_bpm_calib.C       to verify the BPM calibration constants are okay (bulls eye scan needed)
+get_bpm_calib.C         to extract BPM calibration constants (bulls eye scan needed)
+get_bpm_pedestals.C     to extract BPM pedestals (special coda run needed)
+get_rast_const.C        to extract transformation coefficients between raster currents and position 
+
+
+harp_results.txt        results of the harp scan analysis (needed to run 
+                        bpm_calib scripts)
+
+
+2.)      Details about the database file:
+
+The database elements for all beamline detectors can be stored in 
+principle in one file, however the root analyzer expects different 
+database files for the different detectors. One way to cope with this
+feature is to put everything in a single file (beam_db.dat) and 
+create soft links for all detectors, like in the following example:
+
+ln -s beam_db.dat db_rb.Raster.dat 
+ln -s beam_db.dat db_urb.BPMA.dat 
+ln -s beam_db.dat db_urb.BPMB.dat 
+
+Of course you can also have three files, which only need to have
+the necessary blocks. (
+
+The database file is an ASCII file, which is read in line-by-line.
+There are several blocks containing relevant information in a fixed 
+format. Between the blocks one can add comments as wanted, but not 
+in the blocks itself.
+
+A block starts with a line containing a keyword in square brackets
+(no leading spaces or other leading characters are allowed).
+
+The following blocks are known and needed:
+
+
+I.)
+
+[xy_detmap]
+               1      2          1            23          0 3       1881
+              -1       0         0            0           0 0       0
+
+Where xy is the name of the beamline detector as defined in the 
+beam apparatus (currently i am using Raster, BPMA and BPMB, caution
+it is case sensitive).
+Next line(s) are the detectormap lines in espace style:
+
+- first detector channel
+- ROC number
+- Crate number
+- Slot number
+- first channel on digitizing module
+- last channel on digitizing module
+- type of digitizing module
+
+=> ask Bob Michaels or the experimentors to get these numbers
+   they are also hidden in the detectormap which is inserted in the 
+   coda file
+
+Lines are read in, until the first detector channel is negative.
+
+II.)
+
+[Raster]
+-23.0 18.3 18.3   0 0 1633   1643
+-7.345
+-2.214
+0.0
+0. 0. 1. 1. 0. 0.
+0. 0. 1. 1. 0. 0.
+0. 0. 1. 1. 0. 0.
+
+First line gives:
+z-position of the raster magnets in meters (not used) [Arun Saha, Surveys]
+x-frequency of the raster magnets in khz (currently not used) 
+y-frequency of the raster magnets in khz (currently not used)
+            [Bob Michaels, Bill Gunning should know what was used. 
+             18.3/18.3 is typical for circular raster,
+             22.4/18.3 or 18.3/22.4 is typical for a traditional square raster] 
+2* pedestals for magnet current in x (y) (currently not used, since accounted for below)
+2* pedestals for derivative of magnet current in x (y)   (currently not used, to 
+            get those, one has to plot  histograms of raster.rawslope1(2), the pedestal
+            is defined as the point right in the middle of the two peaks)
+
+2nd - 4th line:
+z position of 1st and 2nd beamline detector and the target. (Those are the planes 
+at which the x and y position of the beam is calculated at) 
+One should use the surveyed position of the two bpms and 0. as nominal interaction
+point. Although the provided tools do not correct for the fact, that bpms and harps 
+are not exactly at the same z-position. Therefore dont be surprised if you see 
+the position of the two harps insteed, it doesnt make a difference within the resolution
+of these devices.
+
+5th - 7th line:
+linear transformation from raster currents (in ADC channels) to the x/y position 
+in the three previously defined planes (in meters)
+
+a line like   B1 B2 A11 A22 A12 A21  means
+
+x_HCS = B1 + A11 * x_raster + A12 * y_raster
+y_HCS = B2 + A21 * x_raster + A22 * y_raster
+
+There is a script: get_raster_coeff.C as an example to extract this trafo. 
+This transformation changes at least from run to run, if the beam was tuned during
+a run even more frequent. Currently I do not support the latter case with the 
+root analyzer. This will be added, as soon as the general database support is a little more 
+stable. (Espace already supports time dependend trafos even within a run)
+
+III.)
+
+[BPMA]
+-7.345 0.01887  1.1 1.1
+0 0 0 0
+-1.0269  1.0300  1.0846 0.95947  -4.09371E-04  3.91314E-04
+
+(Of course there is a similar block for BPMB)
+First line: z-position of the device (in meters)
+            calibration constant (historically set to 0.01887 to produce reasonable 
+            big numbers in the rotated coordinate system. One can change this number, but has 
+            to repeat the calibration of the other numbers afterwards)
+            phase difference between x(y) position determined by device and real position
+            (currently not used)
+Second line: pedestals for the four antennas. Dont bother to much if you dont know them.
+            The bulls eye scan can mostly compensate wrong values here. If you change them,
+            you have to repeat the calibration of the numbers in the last line.
+	    You need a special bpm_pedestal run to measure them (see comments in 
+            get_bpm_pedestals.C e.g., this script would also analyze such a run )
+Third line: Linear transformation from BPM coordinates to HCS coordinates, in the above 
+            example:
+
+            x_HCS [meter] = -1.0269 rot1 + 1.0300  rot2 - 4.09371E-04
+            y_HCS [meter] =  1.0846 rot1 + 0.95947 rot2 + 3.91314E-04
+
+            To obtain this transformation you need an analyzed bulls eye scan.
+            The script get_bpm_calib.C will then extract those numbers for both BPM's
+
+
+3.)       How to use all this stuff:
+
+I.)   get a template for the beamline database file
+II.)  make sure that the detector map entries are correct
+III.) make sure that the z-positions of the BPMs/target are up to date in the database
+IV.)  during the experiment: perform a bpm_pedestal run:
+
+//   1.   MCC hast to follow the following procedure
+//   1.1    Open BPM window "BPM Diagnostics - SEE"
+//   1.2    From there pull down the "Expert Screens" and open "Gain Control"
+//   1.3    For IOCSE10, use the pull down window and change from "auto gain"
+//          to "forced gain". Then change the Forced Gain values x and y to zero.
+//   2.   CODA has to run in pedestal mode
+
+V.)   run get_bpm_pedestals.C in the root analyzer (you might have to modify some details)
+      it should print out the new pedestals at the end. Load the database into an editor
+      and change them (2nd line of the [BPMx] blocks)
+
+VI.)  Next step is a so called bulls eye scan. Therefore you need unrastered beam.
+      Ask MCC to steer the beam to the nominal center of the target (caution you should 
+      not do this with a target requiring rastered beam, use carbon, BeO, optics, or in the 
+      worst case empty instead). Wait until beam is stable and perform a harp scan and 
+      a coda run right next to each other. Ask MCC then to steer the beam to positions 
+      around the nominal center, covering at least the area the raster will cover,
+      and repeat harp and coda runs.
+
+      Analyze the harp scans, making sure you use the latest survey results to get
+      the corrected beam position. (To analyze harp runs follow the instructions on the 
+      web. They are not in the scope of the root analyzer)
+
+      Put those results into a table, together with the run number of the corresponding
+      coda run. This will look like:
+
+$ more harp_results.txt 
+1154 62  -1747.0  131.0  1665.00  339.9   517.00  101.0  1012.00  315.5 1493.90   730.23  -.44  -.13
+1155 64  -1614.0  124.0  2829.00  343.6   693.00   96.0  2908.00  329.9 1688.46  2942.09  -.45   .02
+1156 65  -3256.0  124.0  2889.00  346.5 -1422.00   98.0  2993.00  331.2 -630.64  3037.88  -.36   .02
+....
+
+      With Coda RunID, Harp RunID, positions (and sigmas) at 1H04a (~BPMA), 1H04b (~BPMB) and 
+      the extrapolated position and angle at the pivot point (z=0) in [um]
+
+      The script get_bpm_calib.C can now be used. It reads in this table, analyzes the 
+      coda runs and finally prints out the coefficients, which one has to copy into the 
+      database (3rd line of the [BPMx] section.)
+
+VII.) You can check if this worked out by running check_bpm_calib.C. It again analyzes the 
+      runs of the bulls-eye scan and plots the reconstructed positions versus the results 
+      of the harp analysis.
+
+VIII.)  If your experiment takes data with unrastered beam you are done now. Simply use 
+      this database and the THaUnRasteredBeam Apparatus to obtain the beam position and 
+      direction. It will give those two parameters for each event, and will automatically
+      take care of drifts and or (slow) changes of them.
+      !!! This will not work with rastered beam, even worse by doing so you would use a 
+      beam position which is off, and the offset might even depend on other kinematical
+      variables, or is at least not randomly.
+
+IX.)  If your experiment takes data with rastered beam:
+      The BPMs are unluckily to slow to measure the position of the beam at the time 
+      when the electron actually hits the target, they have a shift in the order of us.
+      The Raster magnets have a much smaller phase difference, and can be used directly,
+      however the relation between the current in the raster and actual beam deflection
+      and beam position depends on beam energy and on beam tuning. Therefore this 
+      calibration has to be redone for all data individually. In principle it can change
+      even within one coda run, if MCC had to do retuning while the experiment did not 
+      stop data taking. This latter case is currently not supported, but will be added in 
+      a later version of the root analyzer. However it is recommended to get a new 
+      beam_db.dat file for each run, where the [Raster] block is adjusted accordingly.
+      This already implies, that one has to go through the data in a two step analysis.
+
+      Use a generic beam_db.dat file and run a script similar to get_rast_consts.C.
+      It uses the THaUnRasteredBeam Apparatus to get the centroid and the size of the 
+      raster using the BPMs, and the THaRasteredBeam Apparatus to get the centroid and 
+      width of the current in the raster for one coda run. Out of those values it 
+      calculates the diagonal matrix elements and offsets for the raster to position
+      transformation, which are printed and need to be put into the database file 
+      for that run. (If someone automizes this procedure, let me know ;)
+ 
+      Now you can replay the coda run again, this time using the THaRasteredBeam
+      Apparatus (with the individual database file) to get the phase correct event-by-event 
+      beam position and using all Apparatus (like HRS ...) and physics packages needed 
+      for a complete analysis.
+
+      For online analysis the procedure seems rather complicated. Probably the 
+      best way is to use the THaIdealBeam Apparatus instead, which always puts 
+      the beam position to its nominal value, and use the more sophisticated 
+      analysis for offline purposes later on.
+
+ 

@@ -1,0 +1,59 @@
+# sample output.def file for the Rastered and UnRastered
+# beamline apparatus's (will work for all bpm/raster devices
+# with a lecroy adc like readout, and the raster adcs being
+# in phase with the beam at target
+#
+# histograms to measure pedestals (only needed for the
+# bpms, and even their, they are only of minor importants
+# do not worry if you do not have a measurement, as long 
+# as you have a bulls eye scan, wrong pedestals are mostly
+# corrected by the harp to bpm calibration)
+#
+TH1F bpmaraw1 'BPMA Antenna 1' urb.BPMA.rawcur.1 10000 0 10000
+TH1F bpmaraw2 'BPMA Antenna 2' urb.BPMA.rawcur.2 10000 0 10000
+TH1F bpmaraw3 'BPMA Antenna 3' urb.BPMA.rawcur.3 10000 0 10000
+TH1F bpmaraw4 'BPMA Antenna 4' urb.BPMA.rawcur.4 10000 0 10000
+TH1F bpmbraw1 'BPMB Antenna 1' urb.BPMB.rawcur.1 10000 0 10000
+TH1F bpmbraw2 'BPMB Antenna 2' urb.BPMB.rawcur.2 10000 0 10000
+TH1F bpmbraw3 'BPMB Antenna 3' urb.BPMB.rawcur.3 10000 0 10000
+TH1F bpmbraw4 'BPMB Antenna 4' urb.BPMB.rawcur.4 10000 0 10000
+
+TH1F rastraw1 'Raster Current 1' rb.Raster.rawcur.x 10000 0 10000
+TH1F rastraw2 'Raster Current 2' rb.Raster.rawcur.y 10000 0 10000
+TH1F rastslope1 'Raster Derv.Current 1' rb.Raster.rawslope.x 10000 0 10000
+TH1F rastslope2 'Raster Derv.Current 2' rb.Raster.rawslope.y 10000 0 10000
+#
+# the following four are needed to get calibration for the 
+# BPMs
+#
+TH1F bpmarot1 'BPMA Rot 1' urb.BPMA.rotpos1 4000 -0.1 0.1
+TH1F bpmarot2 'BPMA Rot 2' urb.BPMA.rotpos2 4000 -0.1 0.1
+TH1F bpmbrot1 'BPMB Rot 1' urb.BPMB.rotpos1 4000 -0.1 0.1
+TH1F bpmbrot2 'BPMB Rot 2' urb.BPMB.rotpos2 4000 -0.1 0.1
+#
+# finally those are needed to calibrate lecroy type raster
+# against the bpms
+#
+TH1F bpma_x 'BPMA x' urb.BPMA.x 4000 -0.1 0.1
+TH1F bpma_y 'BPMA y' urb.BPMA.y 4000 -0.1 0.1
+TH1F bpma_z 'BPMA z' urb.BPMA.z 4000 -0.1 0.1
+
+TH1F bpmb_x 'BPMB x' urb.BPMB.x 4000 -0.1 0.1
+TH1F bpmb_y 'BPMB y' urb.BPMB.y 4000 -0.1 0.1
+TH1F bpmb_z 'BPMB z' urb.BPMB.z 4000 -0.1 0.1
+
+TH1F beam_x 'x at target' urb.x 4000 -0.1 0.1
+TH1F beam_y 'y at target' urb.y 4000 -0.1 0.1
+TH1F beam_z 'z at target' urb.z 4000 -0.1 0.1
+
+
+#
+# those are nice to see and check things out
+#
+TH2F bpma_xy 'BPMA y vs x'  urb.BPMA.x urb.BPMA.y 100 -0.01 0.01 100 -0.01 0.01
+TH2F bpmb_xy 'BPMB y vs x'  urb.BPMB.x urb.BPMB.y 100 -0.01 0.01 100 -0.01 0.01
+# and to have all freedom, you can put all stuff into variables:
+# also nice to see if it finally worked out:
+block urb.*
+block rb.*
+
