@@ -36,6 +36,8 @@ public:
   void            SetStatus( Int_t i ) { fStatus = i; }
   virtual void    Print( Option_t* opt="" ) const;
 
+  Double_t        GetProjectedDistance( pUV here, pUV there, Double_t spacing );
+
 protected:
 
   pUV             fLowerTrack;     // Lower UV track
@@ -43,7 +45,6 @@ protected:
   Double_t        fError;          // Measure of goodness of match of the tracks
   Int_t           fStatus;         // Status flag
 
-  Double_t        GetProjectedDistance( pUV here, pUV there, Double_t spacing );
 
   ClassDef(THaVDCTrackPair,0)      // A pair of VDC UV tracks
 };

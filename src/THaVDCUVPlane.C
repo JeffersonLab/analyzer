@@ -121,6 +121,7 @@ Int_t THaVDCUVPlane::MatchUVClusters()
 
   } else { 
     // At least one plane has multiple clusters
+    // FIXME: This is a crucial part of the algorithm. Really the right approach?
     // Cope with different numbers of clusters per plane by ensuring that
     // p1 has more clusters than p2
     THaVDCPlane *p1, *p2; // Plane 1 and plane 2

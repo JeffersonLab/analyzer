@@ -25,8 +25,6 @@ public:
 
   virtual ~THaVDCUVTrack() {}
 
-  virtual THaVDCUVTrack* FindPartner (TClonesArray& trackList, Int_t length);
-
   // Get and Set Functions  
   THaVDCCluster* GetUCluster() const { return fUClust; }
   THaVDCCluster* GetVCluster() const { return fVClust; }
