@@ -28,36 +28,36 @@ public:
   virtual Int_t   FindClusters();             // Hits -> clusters  
   virtual Int_t   FitTracks();                // Clusters -> tracks
 
-  //sort hits?
-  
   //Get and Set functions
-  Int_t          GetNClusters()  { return fClusters->GetLast()+1; }
-  TClonesArray*  GetClusters()   { return fClusters; }
-  THaVDCCluster* GetCluster(Int_t i) 
+  Int_t          GetNClusters() const { return fClusters->GetLast()+1; }
+  TClonesArray*  GetClusters()  const { return fClusters; }
+  THaVDCCluster* GetCluster(Int_t i) const
   { return (THaVDCCluster*)fClusters->At(i); } 
 
-  Int_t          GetNWires()     { return fWires->GetLast()+1; }
-  TClonesArray*  GetWires()      { return fWires; }
-  THaVDCWire*    GetWire(Int_t i){ return (THaVDCWire*)fWires->At(i);}
+  Int_t          GetNWires()    const { return fWires->GetLast()+1; }
+  TClonesArray*  GetWires()     const { return fWires; }
+  THaVDCWire*    GetWire(Int_t i) const
+  { return (THaVDCWire*)fWires->At(i);}
 
-  Int_t          GetNHits()      { return fHits->GetLast()+1; }
-  TClonesArray*  GetHits()       { return fHits; }
-  THaVDCHit*     GetHit(Int_t i) { return (THaVDCHit*)fHits->At(i); }
+  Int_t          GetNHits()     const { return fHits->GetLast()+1; }
+  TClonesArray*  GetHits()      const { return fHits; }
+  THaVDCHit*     GetHit(Int_t i) const
+  { return (THaVDCHit*)fHits->At(i); }
 
-  Int_t    GetNWiresHit()        { return fNWiresHit; } 
+  Int_t    GetNWiresHit() const  { return fNWiresHit; } 
 
-  Double_t GetZ()                { return fZ; }
-  Double_t GetWBeg()             { return fWBeg; }
-  Double_t GetWSpac()            { return fWSpac; }
-  Double_t GetWAngle()           { return fWAngle; }
-  Double_t GetTDCRes()           { return fTDCRes; }
-  Double_t GetDriftVel()         { return fDriftVel; }
+  Double_t GetZ()        const   { return fZ; }
+  Double_t GetWBeg()     const   { return fWBeg; }
+  Double_t GetWSpac()    const   { return fWSpac; }
+  Double_t GetWAngle()   const   { return fWAngle; }
+  Double_t GetTDCRes()   const   { return fTDCRes; }
+  Double_t GetDriftVel() const   { return fDriftVel; }
 
 /*    void SetZ(Double_t z)          {fZ     = z;    } */
 /*    void SetWBeg(Double_t wbeg)    {fWBeg  = wbeg; } */
 /*    void SetWSpac(Double_t wspac)  {fWSpac = wspac;} */
 /*    void SetWAngle(Double_t wangle){fWAngle = wangle;} */
-  void SetUVPlane(THaVDCUVPlane * plane) {fUVPlane = plane;}
+  //  void SetUVPlane(THaVDCUVPlane * plane) {fUVPlane = plane;}
 
 protected:
 
@@ -68,12 +68,11 @@ protected:
   
   Int_t fNWiresHit;  // Number of wires that were hit
 
-  THaVDCUVPlane* fUVPlane;// Ptr to UV plane owning this plane
-
   // The following parameters are read from database.
  
   Int_t fNMaxGap;            // Max gap in a cluster
   Int_t fMinTime, fMaxTime;  // Min and Max limits of TDC times for clusters
+  Int_t fFlags;              // Analysis control flags
 
   Double_t fZ;        // Z coordinate of planes in U1 coord sys (m)
   Double_t fWBeg;     // Position of 1-st wire in E-arm coord sys (m)
@@ -82,6 +81,8 @@ protected:
                       // decreasing wire number (rad)
   Double_t fTDCRes;   // TDC Resolution ( s / channel)
   Double_t fDriftVel; // Drift velocity in the wire plane (m/s)
+
+  THaDetectorBase* fVDC;  // VDC detector to which this plane belongs
 
   void  Clear();
 

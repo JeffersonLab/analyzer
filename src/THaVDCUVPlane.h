@@ -7,11 +7,11 @@
 ///////////////////////////////////////////////////////////////////////////////
 #include "THaSubDetector.h"
 #include "THaVDCPlane.h"
-#include "THaVDC.h"
 
 #include "TClonesArray.h"
 
 class THaVDCUVTrack;
+class THaVDC;
 
 class THaVDCUVPlane : public THaSubDetector {
 
@@ -36,9 +36,6 @@ public:
   THaVDCUVTrack* GetUVTrack( Int_t i ) const 
     { return (THaVDCUVTrack*)fUVTracks->At(i); }
   Double_t       GetVUWireAngle() const { return fVUWireAngle; }
-  
-  //void SetVDC(THaVDC * vdc) {fVDC = vdc; }
-  
 
 protected:
 

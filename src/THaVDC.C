@@ -48,6 +48,9 @@ THaVDC::THaVDC( const char* name, const char* description,
   }
 
   fUVpairs = new TClonesArray( "THaVDCTrackPair", 20 );
+
+  // Default behavior for now
+  SetBit( kOnlyFastest | kHardTDCcut );
 }
 
 //_____________________________________________________________________________
@@ -288,6 +291,14 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
     partner->SetTheta(detTheta);
     partner->SetPhi(detPhi);
 
+#ifdef WITH_DEBUG
+    if( fDebug>2 )
+      cout << "Global track parameters: " 
+	   << mu << " " << mv << " " 
+	   << detTheta << " " << detPhi 
+	   << endl;
+#endif
+
     // If the 'tracks' array was given, add THaTracks to it 
     // (or modify existing ones).
     if (tracks) {
@@ -302,8 +313,20 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
       Double_t transTheta = (detTheta + fTan_vdc) / (1.0 - detTheta * fTan_vdc);
       Double_t transPhi = detPhi / (fCos_vdc - detTheta * fSin_vdc);
 
+#ifdef WITH_DEBUG
+      if( fDebug>2 )
+	cout << "Detector coordinates: "
+	     << transX << " " << transY << " " << transZ << " "
+	     << transTheta << " " << transPhi << endl;
+#endif
       // Project these results into the transport plane (transZ = 0)
       ProjToTransPlane(transX, transY, transZ, transTheta, transPhi);
+#ifdef WITH_DEBUG
+      if( fDebug>2 )
+	cout << "Projected coordinates: "
+	     << transX << " " << transY << " " << transZ << " "
+	     << transTheta << " " << transPhi << endl;
+#endif
 
       // Decide whether this is a new track or an old track 
       // that is being updated
@@ -440,6 +463,9 @@ Int_t THaVDC::FineTrack( TClonesArray& tracks )
   // Calculate exact track position and angle using drift time information.
   // Assumes that CoarseTrack has been called (ie - clusters are matched)
   
+  if( TestBit(kCoarseOnly) )
+    return 0;
+
   fLower->FineTrack();
   fUpper->FineTrack();
 

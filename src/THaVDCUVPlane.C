@@ -29,13 +29,10 @@ THaVDCUVPlane::THaVDCUVPlane( const char* name, const char* description,
   // Create the U and V planes
   // FIXME: 'this' pointer is stored twice in the planes
   fU = new THaVDCPlane( "u", "U plane", this );
-  fU->SetUVPlane(this);
   fV = new THaVDCPlane( "v", "V plane", this );
-  fV->SetUVPlane(this);
 
   // Create the UV tracks array
   fUVTracks = new TClonesArray("THaVDCUVTrack", 10); // 10 is arbitrary
-
 }
 
 

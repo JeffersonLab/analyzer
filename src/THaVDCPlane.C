@@ -12,6 +12,7 @@
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "THaVDC.h"
 #include "THaVDCPlane.h"
 #include "THaVDCWire.h"
 #include "THaVDCUVPlane.h"
@@ -32,13 +33,16 @@ ClassImp(THaVDCPlane)
 //_____________________________________________________________________________
 THaVDCPlane::THaVDCPlane( const char* name, const char* description,
 			  THaDetectorBase* parent )
-  : THaSubDetector(name,description,parent)
+  : THaSubDetector(name,description,parent), fVDC(NULL)
 {
   // Constructor
 
   // Since TCloneArrays can resize, the size here is fairly unimportant
   fHits     = new TClonesArray("THaVDCHit", 20 );
   fClusters = new TClonesArray("THaVDCCluster", 5 );
+
+  if( fDetector )
+    fVDC = static_cast<THaSubDetector*>(fDetector)->GetDetector();
 }
 
 //_____________________________________________________________________________
@@ -122,7 +126,7 @@ Int_t THaVDCPlane::ReadDatabase( FILE* file, const TDatime& date )
   fWBeg = wbeg;     
   fWSpac = wspac;
   fWAngle = wangle * degrad; // Convert to radians
-  //TODO: Read from file
+  // FIXME: Read from file
   fTDCRes = 5.0e-10;  // 0.5 ns/chan = 5e-10 s /chan
 
   // Load drift velocity (will be used to initialize Crude Time to Distance
@@ -145,7 +149,8 @@ Int_t THaVDCPlane::ReadDatabase( FILE* file, const TDatime& date )
   fWires = new TClonesArray("THaVDCWire", nWires);
 
   // Define time-to-drift-distance converter
-
+  // Currently, we use the analytic converter. 
+  // FIXME: Let user choose this via a parameter
   THaVDCAnalyticTTDConv* ttdConv = new THaVDCAnalyticTTDConv(driftVel);
 
   // Now initialize wires (those wires... too lazy to initialize themselves!)
@@ -231,7 +236,17 @@ Int_t THaVDCPlane::Decode( const THaEvData& evData)
 
   if (!evData.IsPhysicsTrigger()) return -1;
   
+  Int_t nextHit = 0;
   Int_t wireOffset = 0;
+
+  bool only_fastest_hit, no_negative;
+  if( fVDC ) {
+    // If true, add only the first (earliest) hit for each wire
+    only_fastest_hit = fVDC->TestBit(THaVDC::kOnlyFastest);
+    // If true, ignore negativ drift times completely
+    no_negative      = fVDC->TestBit(THaVDC::kIgnoreNegDrift);
+  } else
+    only_fastest_hit = no_negative = false;
 
   // Loop over all detector modules for this wire plane
   for (Int_t i = 0; i < fDetMap->GetSize(); i++) {
@@ -247,22 +262,35 @@ Int_t THaVDCPlane::Decode( const THaEvData& evData)
 	continue; //Not part of this detector
       } 
       // Wire numbers and channels go in the same order ... 
-      Int_t wireNum = wireOffset + chan;
+      Int_t wireNum    = wireOffset + chan;
+      THaVDCWire* wire = GetWire(wireNum);
 
       // Get number of hits for this channel and loop through hits
       Int_t nHits = evData.GetNumHits(d->crate, d->slot, chan);
    
+      Int_t max_data = -1;
       for (Int_t hit = 0; hit < nHits; hit++) {
 	
 	// Now get the TDC data for this hit
-	Int_t        data    = evData.GetData(d->crate, d->slot, chan, hit);
-	THaVDCWire*  wire    = GetWire(wireNum);
-	Int_t        nextHit = GetNHits();
-	new( (*fHits)[nextHit] ) 
-	  THaVDCHit( wire, data, fTDCRes * (wire->GetTOffset() - data));
-
+	Int_t data = evData.GetData(d->crate, d->slot, chan, hit);
+	if( only_fastest_hit ) {
+	  if( data > max_data )
+	    max_data = data;
+	} else {
+	  Double_t time = fTDCRes * (wire->GetTOffset() - data);
+	  if( !no_negative || time > 0.0 )
+	    new( (*fHits)[nextHit++] )  THaVDCHit( wire, data, time );
+	}
+	  
       } // End hit loop
 
+      if( only_fastest_hit ) {
+	Double_t time = fTDCRes * (wire->GetTOffset() - max_data);
+	// FIXME: This is tricky ... could be that the next slower hit was good
+	if( !no_negative || time > 0.0 )
+	  new( (*fHits)[nextHit++] ) 
+	    THaVDCHit( wire, max_data, time );
+      }
     } // End channel index loop
     wireOffset += (d->hi - d->lo + 1);
   } // End slot loop
@@ -278,105 +306,121 @@ Int_t THaVDCPlane::Decode( const THaEvData& evData)
 
 
 //_____________________________________________________________________________
-Int_t THaVDCPlane::FindClusters(  )
+Int_t THaVDCPlane::FindClusters()
 {
   // Reconstruct clusters in a VDC plane
   // Assumes that the wires are numbered such that increasing wire numbers
-  //   correspond to decreasing physical position
+  // correspond to decreasing physical position.
   // Ignores possibility of overlapping clusters
 
-  Int_t pwireNum = -10;      // Previous wire number
-  Int_t wireNum  = 0;        // Current wire number
-  Int_t ndif  = 0;           // Difference between wire numbers
-  Int_t time = 0;            // TDC time for a wire hit
-//    Int_t minTime = 0;         // Smallest TDC time for a given cluster
-  Int_t nHits = GetNHits();  // Number of hits in the plane
-  THaVDCCluster * clust = NULL; // Current cluster
-  THaVDCHit * hit = NULL;    // current hit
+  //FIXME: Requires ROOT 3.02. Below is a non-equivalent workaround.
+  //  bool hard_cut = fVDC->TestBits(THaVDC::kTDCbits) == kHardTDCcut;
+  //  bool soft_cut = fVDC->TestBits(kTDCbits) == kSoftTDCcut;
+  bool hard_cut, soft_cut;
+  if( fVDC ) {
+    hard_cut = fVDC->TestBit(THaVDC::kHardTDCcut);
+    soft_cut = fVDC->TestBit(THaVDC::kSoftTDCcut);
+  } else
+    hard_cut = soft_cut = false;
+  Double_t maxdist = 0.0;
+  if( soft_cut ) {
+    maxdist = static_cast<THaVDCUVPlane*>(fDetector)->GetSpacing() / 2.0;
+    if( maxdist == 0.0 )
+      soft_cut = false;
+  }
+
+  Int_t pwireNum = -10;         // Previous wire number
+  Int_t wireNum  =   0;         // Current wire number
+  Int_t ndif     =   0;         // Difference between wire numbers
+  Int_t nHits    = GetNHits();  // Number of hits in the plane
+  THaVDCCluster* clust = NULL;  // Current cluster
+  THaVDCHit* hit;               // current hit
+
+//    Int_t minTime = 0;        // Smallest TDC time for a given cluster
 //    THaVDCHit * minHit = NULL; // Hit with the smallest TDC time for 
                              // a given cluster
   //  const Double_t sqrt2 = 0.707106781186547462;
 
+  Int_t nextClust = GetNClusters();  // Should be zero
+
   for ( int i = 0; i < nHits; i++ ) {
     //Loop through all TDC  hits
+    if( !(hit = GetHit(i)))
+      continue;
 
-    // Get a hit 
-    hit = GetHit(i);
+    // Time within sanity cuts?
+    if( hard_cut ) {
+      Int_t rawtime = hit->GetRawTime();
+      if( rawtime < fMinTime || rawtime > fMaxTime) 
+	continue;
+    }
+    if( soft_cut ) {
+      Double_t ratio = hit->GetTime() * fDriftVel / maxdist;
+      if( ratio < -0.5 || ratio > 1.5 )
+	continue;
+    }
 
-    time = hit->GetRawTime();
-    if ( fMinTime < time && time < fMaxTime  ) {
-      // If within time range
-      
-      wireNum = hit->GetWire()->GetNum();  
+    wireNum = hit->GetWire()->GetNum();  
 
-      if ( wireNum != pwireNum ) {
-	// Ignore multiple hits per wire
+    // Ignore multiple hits per wire
+    if ( wireNum == pwireNum )
+      continue;
 
-	// Keep track of how many wire were hit
-	fNWiresHit++;
+    // Keep track of how many wire were hit
+    fNWiresHit++;
+    ndif = wireNum - pwireNum;
+    if (ndif < 0) {
+      // Scream Bloody Murder
+      printf("THaVDCPlane::FindCluster()-Wire Ordering Error\n");
+      return 0;
+    }
 
-	ndif = wireNum - pwireNum;
+    pwireNum = wireNum;
+    if ( ndif > fNMaxGap+1 ) {
+      // Found a new cluster
+      if (clust) {
+	// Estimate the track parameters for this cluster
+	// (Pivot, intercept, and slope)
+	clust->EstTrackParameters();
+      }
+      // Make a new THaVDCCluster (using space from fCluster array)  
+      clust = new ( (*fClusters)[nextClust++] ) THaVDCCluster(this);
+    } 
+    //Add hit to the cluster
+    clust->AddHit(hit);
 
-	if (ndif < 0) {
-	  // Scream Bloody Murder
-  	  printf("THaVDCPlane::FindCluster()-Wire Ordering Error\n");
-	  return 0;
-	    
-	}
-
-	pwireNum = wireNum;
-	if ( ndif > fNMaxGap+1 ) {
-	  // Found a new cluster
-
-	  if (clust) {
-	    // Estimate the track parameters for this cluster
-	    // (Pivot, intercept, and slope)
-	    clust->EstTrackParameters();
-	    
-	  }
-	  // Make a new THaVDCCluster (using space from fCluster array)  
-	  Int_t nextClust = GetNClusters();
-	  clust = new ( (*fClusters)[nextClust] ) THaVDCCluster();
-	  clust->SetPlane(this);
-	  
-	} 
-
-	clust->AddHit(hit);  //Add hit to the cluster
-      } 
-
-    }      
   } // End looping through hits
 
   // Estimate track parameters for the last cluster found
   if (clust) {
     clust->EstTrackParameters(); 
   }
-  return GetNClusters();  // return the number of clusters found
 
+  return GetNClusters();  // return the number of clusters found
 }
 
 //_____________________________________________________________________________
 Int_t THaVDCPlane::FitTracks()
 {    
-  // Find where tracks cross the plane by determining the center of each 
-  // cluster
+  // Fit tracks to cluster positions and drift distances.
   
-  THaVDCCluster * clust = NULL;
+  THaVDCCluster* clust;
   Int_t nClust = GetNClusters();
   for (int i = 0; i < nClust; i++) {
-    clust = (THaVDCCluster*)(*fClusters)[i];
+    if( !(clust = static_cast<THaVDCCluster*>( (*fClusters)[i] )))
+      continue;
 
-    // Make an estimate at drift distances, intercept, and slope
-    //  printf("Cluster %d\n", i);
-
+    // Convert drift times to distances. 
+    // The conversion algorithm is determined at wire initialization time,
+    // i.e. currently in the ReadDatabase() function of this class.
+    // Current best estimates of the track parameters will be passed to
+    // the converter.
     clust->ConvertTimeToDist();
+
+    // Fit drift distances to get intercept, slope.
     clust->FitTrack();
-    
-
   }
-
   return 0;
-
 }
 
 ///////////////////////////////////////////////////////////////////////////////

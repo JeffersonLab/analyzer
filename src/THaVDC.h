@@ -32,14 +32,25 @@ public:
   virtual Double_t GetVDCAngle() { return fVDCAngle; }
   virtual Double_t GetSpacing()  { return fSpacing;  }
 
-  // Bits & and bit masks for THaTrack::fFlag status word
+  // Bits & and bit masks for THaTrack
   enum {
-    kStageMask     = 0x0003,  // Track processing stage bits
+    kStageMask     = BIT(14) | BIT(15),  // Track processing stage bits
     kInvalid       = 0x0000,  // Not processed
-    kCoarse        = 0x0001,  // Coarse track
-    kFine          = 0x0002,  // Fine track
-    kReassigned    = 0x0004,  // Track is a new track in Fine stage
-    kMultiTrack    = 0x0008   // Track was generated in the multitrack analysis
+    kCoarse        = BIT(14), // Coarse track
+    kFine          = BIT(15), // Fine track
+    kReassigned    = BIT(16), // Track is a new track in Fine stage
+    kMultiTrack    = BIT(17)  // Track was generated in the multitrack analysis
+  };
+
+  // Bits and bit masks for this object
+  enum {
+    kOnlyFastest    = BIT(14), // Only use fastest hit for each wire (highest TDC)
+    kTDCbits        = BIT(15) | BIT(16),  // Mask for TDC mode bits
+    kHardTDCcut     = BIT(15), // Use hard TDC cuts (fMinTime, fMaxTime)
+    kSoftTDCcut     = BIT(16), // Use soft TDC cut (reasonable estimated drifts)
+    kIgnoreNegDrift = BIT(17), // Completely ignore negative drift times
+
+    kCoarseOnly     = BIT(23) // Do only coarse tracking
   };
 
 protected:
