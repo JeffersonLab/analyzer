@@ -596,6 +596,10 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
     *fRun = *run;  // Copy the run via its virtual operator=
   }
 
+  // Make the current run available globally - the run parameters are
+  // needed by some modules
+  gHaRun = fRun;
+
   // Print run info
   if( fVerbose>0 ) {
     fRun->Print("STARTINFO");
