@@ -728,7 +728,8 @@ void THaVDC::CalcFocalPlaneCoords(const THaVDCUVTrack *the_track,
   y = the_track->GetY() + tan_rho*phi*the_track->GetX()*cos_rho;
   
   // then calculate the rotating transport frame coordinates
-  r_x = the_track->GetX() * cos_rho * (1.0 + theta*tan_rho);
+  //r_x = the_track->GetX() * cos_rho * (1.0 + theta*tan_rho);
+  r_x = x;
 
   // calculate the focal-plane matrix elements
   if(mode == kTransport)
@@ -785,22 +786,21 @@ void THaVDC::CalcTargetCoords(THaTrack *the_track, const ECoordTypes mode)
   }
 
   // calculate the matrices we need
-  CalcMatrix(x_fp,fDMatrixElems);
-  CalcMatrix(x_fp,fTMatrixElems);
-  CalcMatrix(x_fp,fYMatrixElems);
-  CalcMatrix(x_fp,fPMatrixElems);
+  CalcMatrix(x_fp, fDMatrixElems);
+  CalcMatrix(x_fp, fTMatrixElems);
+  CalcMatrix(x_fp, fYMatrixElems);
+  CalcMatrix(x_fp, fPMatrixElems);
 
   // calculate the coordinates at the target
   theta = CalcTargetVar(fTMatrixElems, powers);
-  phi = CalcTargetVar(fPMatrixElems,powers);
-  y = CalcTargetVar(fYMatrixElems,powers);
+  phi = CalcTargetVar(fPMatrixElems, powers);
+  y = CalcTargetVar(fYMatrixElems, powers);
 
   // calculate momentum
-  dp = CalcTargetVar(fDMatrixElems,powers);
+  dp = CalcTargetVar(fDMatrixElems, powers);
   /*p = center_momentum * (1+dp); */ p = 0.0;
 
-  // estimate x
-  //x = PolyInv(-1.0, 1.0, 0.00005, dp, disp_order, fDisp); 
+  // estimate x ??
   x = 0.0;
 
   // set the values we just calculated
@@ -809,79 +809,24 @@ void THaVDC::CalcTargetCoords(THaTrack *the_track, const ECoordTypes mode)
   the_track->SetMomentum(p, the_track->GetTheta(), the_track->GetPhi());
 }
 
-/*
-//_____________________________________________________________________________
-double THaVDC::PolyInv(const double x1, const double x2, const double xacc, 
-		       const double y, const int norder, const vector<double> &a)
-{
-  // finds x such that y = poly(norder, a x)
-
-  double fmid = y-DoPoly(norder,a,x2);
-  double f = y-DoPoly(norder,a,x1);
-  double retval, dx, xmid;
-
-  if(f*fmid > 0) {
-  // err1 
-    return 0.0;
-  }
-
-  if(f < 0) {
-    retval = x1;
-    dx = x2-x1;
-  } else {
-    retval = x2;
-    dx = x1-x2;
-  }
-
-  for(int j=0; j<50; j++) {
-    dx *= 0.5;
-    xmid = retval+dx;
-    fmid = y-DoPoly(norder,a,xmid);
-    if(fmid<0)
-      retval=xmid;
-    if((fabs(dx)<xacc) || (fmid==0))
-      return retval;
-  }
-  
-  //err2 
-  return 0.0;
-}
-*/
 
 //_____________________________________________________________________________
 void THaVDC::CalcMatrix(const double x, vector<THaMatrixElement> &matrix)
 {
   // calculates the values of the matrix elements for a given location
-  /* FIXME: probably cleaner to roll DoPoly() into this function */
-
+  // by evaluating a polynomial in x of order it->order with 
+  // coefficients given by it->poly
 
   for(vector<THaMatrixElement>::iterator it=matrix.begin();
       it!=matrix.end(); it++) {
-    if((*it).iszero)
-      (*it).v = 0.0;
-    else
-      (*it).v = DoPoly(-(*it).order, (*it).poly, x);
+    it->v = 0.0;
+
+    if(it->iszero == false) {
+      for(int i=it->order-1; i>=1; i--)
+	it->v = x * (it->v + it->poly[i]);
+      it->v += it->poly[0];
+    }
   }
-}
-
-
-//_____________________________________________________________________________
-double THaVDC::DoPoly(const int n, const vector<double> &a, const double x)
-{
-  // calculates polynomials for matrix elements
-
-  double retval=0.0;
-
-  if(n>0) {
-    for(int i=n-1;i>=0;i--)
-      retval = x*(retval+a[i]);
-  } else if(n<0) {
-    for(int i=-n-1;i>=1;i--)
-      retval = x*(retval+a[i]);
-    retval += a[0];
-  }
-
-  return retval;
 }
 
 //_____________________________________________________________________________
@@ -891,13 +836,12 @@ double THaVDC::CalcTargetVar(const vector<THaMatrixElement> &matrix,
   // calculates the value of a variable at the target
 
   double retval=0.0;
-
   for(vector<THaMatrixElement>::const_iterator it=matrix.begin();
       it!=matrix.end(); it++) 
-    if((*it).v != 0.0)
-      retval += (*it).v * powers[(*it).pw[0]][0]
-	                * powers[(*it).pw[1]][1]
-	                * powers[(*it).pw[2]][2];
+    if(it->v != 0.0)
+      retval += it->v * powers[it->pw[0]][0]
+	              * powers[it->pw[1]][1]
+	              * powers[it->pw[2]][2];
 
   return retval;
 }

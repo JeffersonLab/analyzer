@@ -86,7 +86,6 @@ protected:
     
   enum {
       kPORDER = 7
-    //kMAX_MATRIX_ELEMS = 200
   };
 
   // private class for storing matrix element data
@@ -95,15 +94,12 @@ protected:
     THaMatrixElement() : iszero(true), pw(3), 
                           order(0), v(0), poly(kPORDER) {}
     THaMatrixElement& operator=( const THaMatrixElement& ) { return *this; }
-    //bool operator==(const THaMatrixElement& rhs) const { return w == rhs.w; }
-    //bool operator<(const THaMatrixElement& rhs) const { return w < rhs.w; }
 
     bool iszero;             // whether the element is zero
-    //char w;                  // which tensor it belongs to (D,T,P,Y)
     vector<int> pw;          // exponents of matrix element
                              //   e.g. D100 = { 1, 0, 0 }
     int  order;
-    double v;                // its channel value
+    double v;                // its computed value
     vector<double> poly;     // the associated polynomial
   };
 
