@@ -8,7 +8,7 @@ export DEBUG = 1
 
 #------------------------------------------------------------------------------
 
-VERSION = 0.61
+VERSION = 0.65
 
 #------------------------------------------------------------------------------
 
@@ -137,7 +137,7 @@ realclean:	clean
 
 srcdist:	realclean
 		tar czvf ../v$(VERSION).tar.gz \
-			src examples $(DCDIR) $(SCALERDIR) \
+			src examples DB $(DCDIR) $(SCALERDIR) \
 			Makefile RELEASE_NOTES*
 
 haDict.C: $(HDR) src/HallA_LinkDef.h
