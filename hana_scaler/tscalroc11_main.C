@@ -31,6 +31,8 @@
 #include "TRandom.h"
 #endif
 
+using namespace std;
+
 int loadHelicity();
 int ranBit(unsigned int& seed);   
 unsigned int getSeed();
@@ -57,9 +59,9 @@ unsigned int iseed_earlier;    // iseed for predicted_reading
 int main(int argc, char* argv[]) {
    int helicity, qrt, gate, timestamp;
    int len, data, status, nscaler, header;
-   int numread, badread, i;
+   int numread, badread, i, found, index;
    int ring_clock, ring_qrt, ring_helicity;
-   int ring_trig, ring_bcm, ring_l1a; 
+   int ring_trig, ring_bcm, ring_l1a, ring_v2fh; 
    int sum_clock, sum_trig, sum_bcm, sum_l1a;
    int inquad, nrread, q1_helicity;
    int ring_data[MAXRING], rloc;
@@ -120,7 +122,14 @@ int main(int argc, char* argv[]) {
      qrt = (data & 0x20) >> 5;
      gate = (data & 0x40) >> 6;
      timestamp = evdata.GetRawData(MYROC,4);
-     data = evdata.GetRawData(MYROC,5);
+     found = 0;
+     index = 5;
+     while ( !found ) {
+       data = evdata.GetRawData(MYROC,index++);
+       if ( (data & 0xffff0000) == 0xfb0b0000) found = 1;
+       if (index >= len) break;
+     }
+     if (!found) break;
      nscaler = data & 0x7;
      if (PRINTOUT) {
        cout << hex << "helicity " << helicity << "  qrt " << qrt;
@@ -128,7 +137,7 @@ int main(int argc, char* argv[]) {
        cout << "nscaler in this event  " << nscaler << endl;
      }
      if (nscaler <= 0) continue;
-     int index = 6;
+
      if (nscaler > 2) nscaler = 2;  // shouldn't be necessary
 // 32 channels of scaler data for two helicities.
      if (PRINTOUT) cout << "Synch event ----> " << endl;
@@ -162,7 +171,8 @@ int main(int argc, char* argv[]) {
        }
      }
      if (PRINTOUT) cout << "Num in ring buffer = " << dec << nring << endl;
-// The following assumes three are 5 pieces of data per 'iring'
+// The following assumes three are 6 pieces of data per 'iring'
+// This was true after Jan 10, 2003.
      for (int iring = 0; iring < nring; iring++) {
        ring_clock = evdata.GetRawData(MYROC,index++);
        data = evdata.GetRawData(MYROC,index++);
@@ -184,6 +194,7 @@ int main(int argc, char* argv[]) {
        ring_trig = evdata.GetRawData(MYROC,index++);
        ring_bcm  = evdata.GetRawData(MYROC,index++);
        ring_l1a  = evdata.GetRawData(MYROC,index++);
+       ring_v2fh = evdata.GetRawData(MYROC,index++);
        sum_clock = sum_clock + ring_clock;
        sum_trig  = sum_trig + ring_trig; 
        sum_bcm   = sum_bcm + ring_bcm; 
@@ -220,6 +231,7 @@ int main(int argc, char* argv[]) {
           cout << "  helicity " << ring_helicity;
           cout << "  trigger " << ring_trig << "  bcm " << ring_bcm;
           cout << "  L1a "<<ring_l1a<<endl;
+          cout << "  ring_v2fh (helicity in v2f) "<<ring_v2fh<<endl;
           cout << "  inquad "<<inquad<<endl;
           cout << "  sums:  "<<endl;
           cout << "  clock "<<sum_clock<<"   trig "<<sum_trig<<endl;
