@@ -214,14 +214,14 @@ libdc.a: $(DECODE_OBJS)
 	rm -f $@
 	ar crs $@ $^
 ifndef STANDALONE
-	cp $@ $(LIBDIR)
+	cp -p $@ $(LIBDIR)
 endif
 
 libdc.so: $(DECODE_OBJS)
 	rm -f $@
 	$(LD) $(LDFLAGS) $(SOFLAGS) -o $@ $^
 ifndef STANDALONE
-	cp $@ $(LIBDIR)
+	cp -p $@ $(LIBDIR)
 endif
 
 # Test programs for standalone tests of decoder.
