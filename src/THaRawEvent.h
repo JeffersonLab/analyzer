@@ -65,7 +65,7 @@ public:
   Int_t    fR_U2_nclust;         // Number of clusters
   Int_t    fR_V2_nhit;           // VDC plane V2:  Number of hits
   Int_t    fR_V2_nclust;         // Number of clusters
-  Int_t    fR_TR_n;              // Number of reconstructed VDC tracks (0 or 1)
+  Int_t    fR_TR_n;              // Number of reconstructed VDC tracks
 
   // S1
   Int_t    fR_S1L_nthit;         // Scint 1: Number of Left pad-s TDC times
@@ -178,7 +178,7 @@ public:
   Int_t    fL_U2_nclust;         // Number of clusters
   Int_t    fL_V2_nhit;           // VDC plane V2:  Number of hits
   Int_t    fL_V2_nclust;         // Number of clusters
-  Int_t    fL_TR_n;              // Number of reconstructed VDC tracks (0 or 1)
+  Int_t    fL_TR_n;              // Number of reconstructed VDC tracks
 
   // S1
   Int_t    fL_S1L_nthit;         // Scint 1: Number of Left pad-s TDC times
@@ -247,10 +247,20 @@ public:
   Int_t*    fR_V2_clsiz;          //[fR_V2_nclust]  Sizes of clusters (in wires)
   Double_t* fR_TR_x;              //[fR_TR_n] X coordinate (in cm) of track in E-arm cs
   Double_t* fR_TR_y;              //[fR_TR_n] Y coordinate (in cm) of track in E-arm cs
-  Double_t* fR_TR_th;             //[fR_TR_n] Tangent of Thetta angle of track in E-arm cs
+  Double_t* fR_TR_th;             //[fR_TR_n] Tangent of Theta angle of track in E-arm cs
   Double_t* fR_TR_ph;             //[fR_TR_n] Tangent of Phi angle of track in E-arm cs
   Double_t* fR_TR_p;              //[fR_TR_n] Track momentum (GeV)
   UInt_t*   fR_TR_flag;           //[fR_TR_n] Track status flag
+
+  Double_t* fR_TR_rx;             //[fR_TR_n] X coordinate (in cm) of track in rotating cs
+  Double_t* fR_TR_ry;             //[fR_TR_n] Y coordinate (in cm) of track in rotating cs
+  Double_t* fR_TR_rth;            //[fR_TR_n] Tangent of Theta angle of track in rotating cs
+  Double_t* fR_TR_rph;            //[fR_TR_n] Tangent of Phi angle of track in rotating cs
+
+  Double_t* fR_TG_y;              //[fR_TR_n] Y coordinate (in cm) of track in E-arm cs
+  Double_t* fR_TG_th;             //[fR_TR_n] Tangent of Thtta angle of track in E-arm cs
+  Double_t* fR_TG_ph;             //[fR_TR_n] Tangent of Phi angle of track in E-arm cs
+  Double_t* fR_TG_dp;             //[fR_TR_n] Deviation of momentum from central mmmentum
 
   // Left HRS VDC variable size arrays 
   Int_t*    fL_U1_wire;           //[fL_U1_nhit] Hit wires numbers
@@ -283,10 +293,20 @@ public:
   Int_t*    fL_V2_clsiz;          //[fL_V2_nclust]  Sizes of clusters (in wires
   Double_t* fL_TR_x;              //[fL_TR_n] X coordinate (in m) of track in E-arm cs
   Double_t* fL_TR_y;              //[fL_TR_n] Y coordinate (in m) of track in E-arm cs
-  Double_t* fL_TR_th;             //[fL_TR_n] Tangent of Thetta angle of track in E-arm cs
+  Double_t* fL_TR_th;             //[fL_TR_n] Tangent of Theta angle of track in E-arm cs
   Double_t* fL_TR_ph;             //[fL_TR_n] Tangent of Phi angle of track in E-arm cs
   Double_t* fL_TR_p;              //[fL_TR_n] Track momentum (GeV)
   UInt_t*   fL_TR_flag;           //[fL_TR_n] Track status flag
+
+  Double_t* fL_TR_rx;             //[fL_TR_n] X coordinate (in m) of track in rotating cs
+  Double_t* fL_TR_ry;             //[fL_TR_n] Y coordinate (in m) of track in rotating cs
+  Double_t* fL_TR_rth;            //[fL_TR_n] Tangent of Theta angle of track in rotating cs
+  Double_t* fL_TR_rph;            //[fL_TR_n] Tangent of Phi angle of track in rotating cs
+
+  Double_t* fL_TG_y;              //[fL_TR_n] Y coordinate (in m) of track in E-arm cs
+  Double_t* fL_TG_th;             //[fL_TR_n] Tangent of Theta angle of track in E-arm cs
+  Double_t* fL_TG_ph;             //[fL_TR_n] Tangent of Phi angle of track in E-arm cs
+  Double_t* fL_TG_dp;             //[fL_TR_n] Deviation of momentum from center
 
 protected:
   void CreateVariableArrays( EBlock which = kAll );
@@ -294,7 +314,7 @@ protected:
   void SetupDatamap( EBlock which = kAll );
   void InitCounters();
 
-  ClassDef(THaRawEvent,3)  //THaRawEvent structure
+  ClassDef(THaRawEvent,4)  //THaRawEvent structure
 };
 
 

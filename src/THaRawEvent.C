@@ -136,6 +136,16 @@ void THaRawEvent::CreateVariableArrays( EBlock which )
     fR_TR_ph    = new Double_t[ fMaxtrk ];
     fR_TR_p     = new Double_t[ fMaxtrk ];
     fR_TR_flag  = new UInt_t  [ fMaxtrk ];
+
+    fR_TR_rx    = new Double_t[ fMaxtrk ];
+    fR_TR_ry    = new Double_t[ fMaxtrk ];
+    fR_TR_rth   = new Double_t[ fMaxtrk ];
+    fR_TR_rph   = new Double_t[ fMaxtrk ];
+
+    fR_TG_y     = new Double_t[ fMaxtrk ];
+    fR_TG_th    = new Double_t[ fMaxtrk ];
+    fR_TG_ph    = new Double_t[ fMaxtrk ];
+    fR_TG_dp    = new Double_t[ fMaxtrk ];
     // Left HRS VDC
     fL_TR_x     = new Double_t[ fMaxtrk ];
     fL_TR_y     = new Double_t[ fMaxtrk ];
@@ -143,6 +153,16 @@ void THaRawEvent::CreateVariableArrays( EBlock which )
     fL_TR_ph    = new Double_t[ fMaxtrk ];
     fL_TR_p     = new Double_t[ fMaxtrk ];
     fL_TR_flag  = new UInt_t  [ fMaxtrk ];
+
+    fL_TR_rx    = new Double_t[ fMaxtrk ];
+    fL_TR_ry    = new Double_t[ fMaxtrk ];
+    fL_TR_rth   = new Double_t[ fMaxtrk ];
+    fL_TR_rph   = new Double_t[ fMaxtrk ];
+
+    fL_TG_y     = new Double_t[ fMaxtrk ];
+    fL_TG_th    = new Double_t[ fMaxtrk ];
+    fL_TG_ph    = new Double_t[ fMaxtrk ];
+    fL_TG_dp    = new Double_t[ fMaxtrk ];
   }
 }
 
@@ -223,6 +243,16 @@ void THaRawEvent::DeleteVariableArrays( EBlock which )
     delete [] fR_TR_ph;
     delete [] fR_TR_p;
     delete [] fR_TR_flag;
+
+    delete [] fR_TR_rx;
+    delete [] fR_TR_ry;
+    delete [] fR_TR_rth;
+    delete [] fR_TR_rph;
+
+    delete [] fR_TG_y;
+    delete [] fR_TG_th;
+    delete [] fR_TG_ph;
+    delete [] fR_TG_dp;
     // Left HRS VDC
     delete [] fL_TR_x;
     delete [] fL_TR_y;
@@ -230,6 +260,16 @@ void THaRawEvent::DeleteVariableArrays( EBlock which )
     delete [] fL_TR_ph;
     delete [] fL_TR_p;
     delete [] fL_TR_flag;
+
+    delete [] fL_TR_rx;
+    delete [] fL_TR_ry;
+    delete [] fL_TR_rth;
+    delete [] fL_TR_rph;
+
+    delete [] fL_TG_y;
+    delete [] fL_TG_th;
+    delete [] fL_TG_ph;
+    delete [] fL_TG_dp;
   }
 }
 
@@ -370,6 +410,16 @@ void THaRawEvent::SetupDatamap( EBlock which )
     {-1,      "R.tr.p",            fR_TR_p },
     {-1,      "R.tr.flag",         fR_TR_flag },
     
+    {-1,      "R.tr.r_x",            fR_TR_rx },
+    {-1,      "R.tr.r_y",            fR_TR_ry },
+    {-1,      "R.tr.r_th",           fR_TR_rth },
+    {-1,      "R.tr.r_ph",           fR_TR_rph },
+
+    {-1,      "R.tr.tg_y",            fR_TG_y },
+    {-1,      "R.tr.tg_th",           fR_TG_th },
+    {-1,      "R.tr.tg_ph",           fR_TG_ph },
+    {-1,      "R.tr.tg_dp",            fR_TG_dp },
+
     // S1
     { 1,      "R.s1.nlthit",       &fR_S1L_nthit },
     { -1,     "R.s1.lt",           fR_S1L_tdc },
@@ -516,6 +566,16 @@ void THaRawEvent::SetupDatamap( EBlock which )
     {-1,      "L.tr.ph",           fL_TR_ph },
     {-1,      "L.tr.p",            fL_TR_p },
     {-1,      "L.tr.flag",         fL_TR_flag },
+
+    {-1,      "L.tr.r_x",            fL_TR_rx },
+    {-1,      "L.tr.r_y",            fL_TR_ry },
+    {-1,      "L.tr.r_th",           fL_TR_rth },
+    {-1,      "L.tr.r_ph",           fL_TR_rph },
+
+    {-1,      "L.tr.tg_y",            fL_TG_y },
+    {-1,      "L.tr.tg_th",           fL_TG_th },
+    {-1,      "L.tr.tg_ph",           fL_TG_ph },
+    {-1,      "L.tr.tg_dp",           fL_TG_dp },
 
     // S1
     { 1,      "L.s1.nlthit",       &fL_S1L_nthit },
