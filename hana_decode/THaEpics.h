@@ -14,8 +14,6 @@
 #include <vector>
 #include "Rtypes.h"
 
-using namespace std;
-
 class EpicsChan {
 // utility class of one epics channel
 public:
@@ -30,8 +28,8 @@ public:
   };
   Double_t GetData() const { return dvalue; };
   Int_t GetEvNum() const   { return evnum;  };
-  string GetTag() const    { return tag;    };
-  string GetDate() const   { return dtime;  };
+  std::string GetTag() const    { return tag;    };
+  std::string GetDate() const   { return dtime;  };
   Double_t GetTimeStamp() const { return timestamp; };
   void MakeTime() {
     // time is a continuous parameter.  funny things happen
@@ -42,17 +40,17 @@ public:
 	   t1,t2,&day,&hour,&min,&sec,t3,t4);
     timestamp = 3600*24*day + 3600*hour + 60*min + sec;
   }  
-  string GetString() const { return svalue; };
-  string GetUnits() const  { return units;  };
+  std::string GetString() const { return svalue; };
+  std::string GetUnits() const  { return units;  };
     
 private:
-  string tag,dtime;
+  std::string tag,dtime;
   Int_t evnum;
-  string svalue, units;
+  std::string svalue, units;
   Double_t dvalue,timestamp;
 };
 
-typedef map< string, vector<EpicsChan> >::value_type epVal;
+typedef std::map< std::string, std::vector<EpicsChan> >::value_type epVal;
 
 class THaEpics {
 
@@ -63,7 +61,7 @@ public:
 // Get tagged value nearest 'event'
    Double_t GetData (const char* tag, int event=0) const;
 // Get tagged string value nearest 'event'
-   string GetString (const char* tag, int event=0) const;
+   std::string GetString (const char* tag, int event=0) const;
    Double_t GetTimeStamp(const char* tag, int event=0) const;
    int LoadData (const int* evbuffer, int event=0);  // load the data
    Bool_t IsLoaded(const char* tag) const;
@@ -71,9 +69,9 @@ public:
 
 private:
 
-   map< string, vector<EpicsChan> > epicsData;
-   vector<EpicsChan> GetChan(const char *tag) const;
-   Int_t FindEvent(const vector<EpicsChan> ep, int event) const;
+   std::map< std::string, std::vector<EpicsChan> > epicsData;
+   std::vector<EpicsChan> GetChan(const char *tag) const;
+   Int_t FindEvent(const std::vector<EpicsChan> ep, int event) const;
 
    ClassDef(THaEpics,0)  // EPICS data 
 

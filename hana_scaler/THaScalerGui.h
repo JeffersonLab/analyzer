@@ -38,8 +38,6 @@
 class THaScaler;
 class THaScalerBank;
 
-using namespace std;
-
 class THaScalerGui : public TGMainFrame {
 
 public:
@@ -57,7 +55,7 @@ private:
    map<Int_t, TGTextEntry *> fDataEntry;
    map<Int_t, TNtuple*> fDataHistory;
    TTimer *timer;
-   vector < THaScalerBank* > scalerbanks;
+   std::vector < THaScalerBank* > scalerbanks;
    TGCheckButton *fRateSelect, *fCountSelect;
    TRootHelpDialog *fHelpDialog;
    Bool_t ProcessMessage(Long_t , Long_t , Long_t);
@@ -69,7 +67,7 @@ private:
    void clearNtuples();
    void TestInput();          // Test function
    void Help();
-   string bankgroup;
+   std::string bankgroup;
    int *yboxsize;
    int *occupied;
 
