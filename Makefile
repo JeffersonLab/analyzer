@@ -122,7 +122,7 @@ export ARCH LIBDIR CXX LD SOFLAGS CXXFLG LDFLAGS DEFINES
 SRC           = src/THaFormula.C src/THaVform.C src/THaVhist.C \
 		src/THaVar.C src/THaVarList.C src/THaCut.C \
 		src/THaNamedList.C src/THaCutList.C src/THaInterface.C \
-		src/THaRun.C \
+		src/THaRun.C src/THaRunParameters.C \
 		src/THaDetMap.C src/THaApparatus.C src/THaDetector.C \
 		src/THaSpectrometer.C src/THaSpectrometerDetector.C \
 		src/THaHRS.C \
