@@ -4,10 +4,12 @@
 
 # Dummy values for checkout runs
 ebeam      = 1.
-R.theta    = 16.
+R.theta    = -16.
 R.pcentral = 0.8
 L.theta    = 16.
 L.pcentral = 0.8
+# 3He target
+MA         = 2.808414571
 
 R.sh.config = 1249
 R.ps.config = 1249
@@ -15,7 +17,7 @@ R.ps.config = 1249
 --------[ 2003-01-06 00:00:00 ]
 
 ebeam      = 1.04686
-R.theta    = 16.
+R.theta    = -16.
 R.pcentral = 1.056
 L.theta    = 16.
 L.pcentral = 1.056
@@ -65,7 +67,7 @@ L.pcentral = 0.675
 ebeam      = 4.0178
 R.pcentral = 1.84
 L.pcentral = 1.84
-R.theta    = 25.
+R.theta    = -25.
 L.theta    = 25.
 
 --------[ 2003-01-11 00:00:00 ]
@@ -106,7 +108,7 @@ L.pcentral = 3.2
 
 ebeam      = 5.02
 R.pcentral = 2.625
-R.theta    = 32.0
+R.theta    = -32.0
 
 --------[ 2003-01-21 17:00:00 ]
 
@@ -163,7 +165,7 @@ R.pcentral = 2.199
 
 ebeam      = 3.028
 L.theta    = 25.0
-R.theta    = 25.0
+R.theta    = -25.0
 L.pcentral = 1.3338
 R.pcentral = 1.3338
 
@@ -212,14 +214,14 @@ R.pcentral = 2.150
 
 ebeam      = 5.009
 L.theta    = 32.0
-R.theta    = 32.0
+R.theta    = -32.0
 L.pcentral = 2.379
 R.pcentral = 2.379
 
 --------[ 2003-02-14 00:00:00 ]
 
 L.theta    = 15.
-R.theta    = 47.657
+R.theta    = -47.657
 L.pcentral = 2.0
 R.pcentral = 2.379
 
