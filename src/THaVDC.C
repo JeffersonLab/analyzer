@@ -13,6 +13,7 @@
 #include "THaVDCUVPlane.h"
 #include "THaVDCUVTrack.h"
 #include "THaVDCCluster.h"
+#include "VarDef.h"
 
 #include <cstring>
 
@@ -20,8 +21,8 @@ ClassImp(THaVDC)
 
 //_____________________________________________________________________________
 THaVDC::THaVDC( const char* name, const char* description,
-		THaApparatus* apparatus )
-  : THaTrackingDetector(name,description,apparatus)
+		THaApparatus* apparatus ) :
+  THaTrackingDetector(name,description,apparatus), fNtracks(0)
 {
   // Constructor
 
@@ -56,6 +57,9 @@ THaDetectorBase::EStatus THaVDC::Init( const TDatime& date )
 Int_t THaVDC::SetupDetector( const TDatime& date )
 {
 
+  if( fIsSetup ) return kOK;
+  fIsSetup = true;
+
   // TODO: Get these values from database file
   const Double_t degrad = TMath::Pi()/180.0;
   fVDCAngle = -45.0887 *  degrad;  //Convert to radians
@@ -65,6 +69,16 @@ Int_t THaVDC::SetupDetector( const TDatime& date )
   fSpacing  = 0.3348; // Dist between similar wire planes (eg u1->u2) (m)
 
   fIsInit = true;
+
+
+  // initialize global variables
+
+  RVarDef vars[] = {
+    { "ntracks", "Number of tracks", "fNtracks" },
+    { 0 }
+  };
+  DefineVariables( vars );
+
   return kOK;
 }
 
@@ -121,7 +135,6 @@ Int_t THaVDC::MatchUVTracks()
   }   
 
   return nTracks;
-
 }
 
 //______________________________________________________________________________
@@ -235,8 +248,7 @@ Int_t THaVDC::CoarseTrack( TClonesArray& tracks )
   fLower->CoarseTrack();
   fUpper->CoarseTrack();
 
-  ConstructTracks(&tracks);
-   
+  fNtracks = ConstructTracks(&tracks);
 
   return 0;
 }
@@ -257,7 +269,7 @@ Int_t THaVDC::FineTrack( TClonesArray& tracks )
     fUpper->FineTrack();
   }
 
-  ConstructTracks(&tracks);
+  fNtracks = ConstructTracks(&tracks);
 
   return 0;
 }

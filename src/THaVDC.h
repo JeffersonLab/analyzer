@@ -50,6 +50,7 @@ protected:
   Double_t fCos_vdc;     // for efficiency
   Double_t fTan_vdc;
   Double_t fSpacing;     // Spacing between U1 and U2 (m)
+  Int_t    fNtracks;     // Number of tracks found in ConstructTracks
 
           void  Clear()  {}
   virtual Int_t ConstructTracks( TClonesArray * tracks = NULL );

@@ -177,10 +177,16 @@ Int_t THaVDCPlane::SetupDetector( const TDatime& date )
   RVarDef vars[] = {
     { "nhit",   "Number of hits",             "GetNHits()" },
     { "wire",   "Active wire numbers",        "fHits.THaVDCHit.GetWireNum()" },
+    { "rawtime","Raw TDC values of wires",    "fHits.THaVDCHit.fRawTime" },
     { "time",   "TDC values of active wires", "fHits.THaVDCHit.fTime" },
+    { "dist",   "Drift distances",            "fHits.THaVDCHit.fDist" },
     { "nclust", "Number of clusters",         "GetNClusters()" },
-    { "clpos",  "Cluster positions",          "fClusters.THaVDCCluster.fInt" },
     { "clsiz",  "Cluster sizes",              "fClusters.THaVDCCluster.fSize" },
+    { "clpivot","Cluster pivot wire num",     "fClusters.THaVDCCluster.GetPivotWireNum()" },
+    { "clpos",  "Cluster intercepts",         "fClusters.THaVDCCluster.fInt" },
+    { "slope",  "Cluster slopes",             "fClusters.THaVDCCluster.fSlope" },
+    { "sigsl",  "Cluster slope sigmas",       "fClusters.THaVDCCluster.fSigmaSlope" },
+    { "sigpos", "Cluster position sigmas",    "fClusters.THaVDCCluster.fSigmaInt" },
     { 0 }
   };
   DefineVariables( vars );
