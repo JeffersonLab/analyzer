@@ -427,7 +427,6 @@ void THaHelicity::QuadHelicity() {
 // Load the helicity from the present reading for the
 // start of a quad.
   int i, dummy;
-  static int nb;
   if (recovery_flag) nb = 0;
   recovery_flag = 0;
   if (nb < fgNbits) {

@@ -62,6 +62,7 @@ private:
   Int_t *q1_present_helicity, *quad_calibrated;
   Int_t *hbits;
   Int_t recovery_flag;
+  int nb;
   UInt_t iseed, iseed_earlier, inquad;
   Int_t fArm;  // Which spectrometer = fgLarm or fgRarm
 
