@@ -88,7 +88,7 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
 
   // Use default values until ready to read from database
   
-  static const char* const here = "ReadDatabase()";
+  static const char* const here = "ReadDatabase";
   const int LEN = 100;
   char buff[LEN];
   
@@ -116,37 +116,38 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
   
   //Found the entry for this plane, so read data
   Int_t nWires = 0;    // Number of wires to create
-  Int_t crate, slot, lo, hi;
+  Int_t prev_first = 0, prev_nwires = 0;
   // Set up the detector map
   fDetMap->Clear();
-  for (int i = 0; i < 4; i++) {
+  for(int i=0; i<4; i++) {
+    Int_t crate, slot, lo, hi;
     // Get crate, slot, low channel and high channel from file
-    fscanf(file, "%d%d%d%d", &crate, &slot, &lo, &hi);
+    fgets( buff, LEN, file );
+    if( sscanf( buff, "%d%d%d%d", &crate, &slot, &lo, &hi ) != 4 ) {
+      if( *buff ) buff[strlen(buff)-1] = 0; //delete trailing newline
+      Error( Here(here), "Error reading detector map line: %s", buff );
+      fclose(file);
+      return kInitError;
+    }
+    Int_t first = prev_first + prev_nwires;
     // Add module to the detector map
-    fDetMap->AddModule(crate, slot, lo, hi);
-    nWires += (hi - lo + 1); //More wires
-    fgets(buff, LEN, file);  //Read to end of line
+    fDetMap->AddModule(crate, slot, lo, hi, first);
+    prev_first = first;
+    prev_nwires = (hi - lo + 1);
+    nWires += prev_nwires;
   }
   // Load z, wire beginning postion, wire spacing, and wire angle
-  const Double_t degrad = TMath::Pi()/180.0;
-  float z, wbeg, wspac, wangle;
-  fscanf (file, "%f%f%f%f", &z, &wbeg, &wspac, &wangle);
-  fgets(buff, LEN, file);  //Read to end of line
-  fZ = z;
-  fWBeg = wbeg;     
-  fWSpac = wspac;
-  fWAngle = wangle * degrad; // Convert to radians
+  fscanf (file, "%lf%lf%lf%lf", &fZ, &fWBeg, &fWSpac, &fWAngle);
+  fgets(buff, LEN, file); // Read to end of line
+  fWAngle *= TMath::Pi()/180.0; // Convert to radians
   // FIXME: Read from file
   fTDCRes = 5.0e-10;  // 0.5 ns/chan = 5e-10 s /chan
 
   // Load drift velocity (will be used to initialize Crude Time to Distance
   // converter)
-  float driftVel;
-  fscanf(file, "%f", &driftVel);
+  fscanf(file, "%lf", &fDriftVel);
   fgets(buff, LEN, file); // Read to end of line
   fgets(buff, LEN, file); // Skip line
-
-  fDriftVel = driftVel;
 
   fNWiresHit = 0;
   
@@ -157,10 +158,13 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
 
   // first read in the time offsets for the wires
   float* wire_offsets = new float[nWires];
+  int*   wire_nums    = new int[nWires];
 
   for (int i = 0; i < nWires; i++) {
+    int wnum = 0;
     float offset = 0.0;
-    fscanf(file, " %*d %f", &offset);
+    fscanf(file, " %d %f", &wnum, &offset);
+    wire_nums[i] = wnum-1; // Wire numbers in file start at 1
     wire_offsets[i] = offset;
   }
 
@@ -193,27 +197,20 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
   // Currently, we use the analytic converter. 
   // FIXME: Let user choose this via a parameter
   delete fTTDConv;
-  fTTDConv = new THaVDCAnalyticTTDConv(driftVel);
+  fTTDConv = new THaVDCAnalyticTTDConv(fDriftVel);
 
   //THaVDCLookupTTDConv* ttdConv = new THaVDCLookupTTDConv(fT0, fNumBins, fTable);
 
   // Now initialize wires (those wires... too lazy to initialize themselves!)
   // Caution: This may not correspond at all to actual wire channels!
-  for (int i = 0; i < nWires; i++)
-    new((*fWires)[i]) THaVDCWire( i, fWBeg+i*fWSpac, wire_offsets[i], 
-				  fTTDConv );
-
-  delete [] wire_offsets;
-  /*
   for (int i = 0; i < nWires; i++) {
-
-    float offset = 0.0;
-    fscanf(file, " %*d %f", &offset);
-
-    // Construct the new THaVDCWire (using space in the TClonesArray obj)
-    new((*fWires)[i]) THaVDCWire( i, fWBeg+i*fWSpac, offset, ttdConv );
+    THaVDCWire* wire = new((*fWires)[i]) 
+      THaVDCWire( i, fWBeg+i*fWSpac, wire_offsets[i], fTTDConv );
+    if( wire_nums[i] < 0 )
+      wire->SetFlag(1);
   }
-  */
+  delete [] wire_offsets;
+  delete [] wire_nums;
 
   fOrigin.SetXYZ( 0.0, 0.0, fZ );
   if( fDetector )
@@ -291,7 +288,6 @@ Int_t THaVDCPlane::Decode( const THaEvData& evData)
   if (!evData.IsPhysicsTrigger()) return -1;
   
   Int_t nextHit = 0;
-  Int_t wireOffset = 0;
 
   bool only_fastest_hit, no_negative;
   if( fVDC ) {
@@ -316,9 +312,9 @@ Int_t THaVDCPlane::Decode( const THaEvData& evData)
 	continue; //Not part of this detector
 
       // Wire numbers and channels go in the same order ... 
-      Int_t wireNum    = wireOffset + chan;
+      Int_t wireNum  = d->first + chan - d->lo;
       THaVDCWire* wire = GetWire(wireNum);
-      if( !wire ) continue;  // oops: junk from decoder?
+      if( !wire || wire->GetFlag() != 0 ) continue;
 
       // Get number of hits for this channel and loop through hits
       Int_t nHits = evData.GetNumHits(d->crate, d->slot, chan);
@@ -347,7 +343,6 @@ Int_t THaVDCPlane::Decode( const THaEvData& evData)
 	    THaVDCHit( wire, max_data, time );
       }
     } // End channel index loop
-    wireOffset += (d->hi - d->lo + 1);
   } // End slot loop
 
   // Sort the hits in order of increasing wire number and (for the same wire
