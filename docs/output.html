@@ -213,6 +213,11 @@ TH1F  Land1 'Test of and 1' L.s1.lt 100 0 2000 AND:L.s1.lt<1200
 # Access via T->Draw("hac_bcm_average")
 # and E->Draw("hac_bcm_average")
 # and E->Draw("hac_bcm_average:timestamp")
+# Notice that slia:DataValid appears in the
+# tree as slia_DataValid (i.e. ":" is replaced
+# by "_") and the value is 71 if slia:DataValid
+# was "Yes" (case senstive!), 422 if "No" and 
+# 0 otherwise.
 
 begin epics
    hac_bcm_average
@@ -220,6 +225,8 @@ begin epics
    IPM1H04A.YPOS
    IPM1H04B.XPOS
    IPM1H04B.YPOS
+   slia:DataValid  Yes=71 No=422
+   hla:DataValid   Fred=2 No=21 
 end epics
 
 
