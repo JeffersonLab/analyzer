@@ -458,10 +458,11 @@ Int_t THaSpectrometer::ReadRunDatabase( FILE* file, const TDatime& date )
     { 0 }
   };
   Int_t err = LoadDB( file, date, tags, fPrefix );
-  if( err ) {
-    Error( Here("ReadRunDatabase()"), "Required tag %s%s missing in the "
-	   "run database.\nSpectrometer initialization failed.",
-	   fPrefix, tags[err-1].name );
+  if( err ) {    
+    if( err>0 )
+      Error( Here("ReadRunDatabase()"), "Required tag %s%s missing in the "
+	     "run database.\nSpectrometer initialization failed.",
+	     fPrefix, tags[err-1].name );
     return kInitError;
   }
 
