@@ -170,22 +170,22 @@ PROGS += tscalntup tscaldtime tscalroc11 tscalevt tscalring
 
 ifdef STANDALONE
 CXXFLAGS += -DSTANDALONE
-  all: $(PROGS) ../libscaler.a
+  all: $(PROGS) libscaler.a
 else
  ifdef BUILD_SHARED
-   all:  ../libscaler.so
+   all:  libscaler.so
  else
-   all:  ../libscaler.a
+   all:  libscaler.a
  endif
 endif
 
 # Library for main analyzer
 
-../libscaler.a:	$(SCALER_OBJS) 
+libscaler.a:	$(SCALER_OBJS) 
 	rm -f $@
 	ar crs $@ $^
 
-../libscaler.so:	$(SCALER_OBJS) 
+libscaler.so:	$(SCALER_OBJS) 
 	rm -f $@
 	$(LD) $(LDFLAGS) $(SOFLAGS) -o $@ $^
 	-cp -f scaler.map ../DB

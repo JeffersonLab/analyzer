@@ -195,9 +195,9 @@ DEPS = $(patsubst %.c,%.d,$(SRC:.C=.d))
 DECODE_OBJS = $(patsubst %.c,%.o,$(SRC:%.C=%.o)) THaDecDict.o
 
 ifdef BUILD_SHARED
-  all:  ../libdc.so
+  all:  libdc.so
 else
-  all:  ../libdc.a
+  all:  libdc.a
 endif
 
 # To compile local test codes:  Uncomment "export STANDALONE = 1" at top of Makefile
@@ -210,17 +210,13 @@ endif
 
 # Library for main analyzer
 
-../libdc.a: $(DECODE_OBJS)
-	rm -f $@
-	ar crs $@ $^
-
-../libdc.so: $(DECODE_OBJS)
-	rm -f $@
-	$(LD) $(LDFLAGS) $(SOFLAGS) -o $@ $^
-
 libdc.a: $(DECODE_OBJS)
 	rm -f $@
 	ar crs $@ $^
+
+libdc.so: $(DECODE_OBJS)
+	rm -f $@
+	$(LD) $(LDFLAGS) $(SOFLAGS) -o $@ $^
 
 # Test programs for standalone tests of decoder.
 # Need a few objects from MAINDIR because of some links to those classes.
