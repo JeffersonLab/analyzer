@@ -36,6 +36,7 @@ public:
   
   virtual Int_t     AddModule( UShort_t crate, UShort_t slot, 
 			       UShort_t chan_lo, UShort_t chan_hi );
+  virtual void      Clear() { fNmodules = 0; }
           Module*   GetModule( UShort_t i ) const { return (Module*)fMap+i; }
           Int_t     GetSize() const { return static_cast<Int_t>(fNmodules); }
   virtual void      Print( Option_t* opt="" ) const;
