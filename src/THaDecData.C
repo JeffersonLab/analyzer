@@ -21,7 +21,7 @@
 //
 //    2. Next we build a list of "BdataLoc" objects which store information
 //       about where the data are located.  These data are either directly
-//       related to the variables of this class (e.g. timeroc2 is a a raw
+//       related to the variables of this class (e.g. timeroc2 is a raw
 //       data word) or one must analyze them to obtain a variable.
 //
 //    3. The BdataLoc objects may be defined by decdata.map which has an
@@ -201,7 +201,7 @@ Int_t THaDecData::DefaultMap() {
    fCrateLoc.push_back(new BdataLoc("synchadc4", 4, (Int_t) 17, 48));
    fCrateLoc.push_back(new BdataLoc("synchadc14", 14, (Int_t) 1, 5));
 
-// 100 kHz time stamp in roc14, at 1 word beyond header=0xfca56000
+// 100 kHz time stamp in roc14, at 2 words beyond header=0xfca56000
    fCrateLoc.push_back(new BdataLoc("timestamp", 14, (UInt_t)0xfca56000, 2)); 
 
 // vxWorks time stamps
