@@ -203,7 +203,7 @@ srcdist:
 		ln -s $(PWD) ../$(NAME)
 		gtar czv -C .. -f ../$(NAME).tar.gz -X .exclude \
 		 -V "JLab/Hall A C++ Analysis Software "$(VERSION)" `date -I`"\
-		 $(NAME)/.exclude $(NAME)/ChangeLog \
+		 $(NAME)/.exclude $(NAME)/ChangeLog $(NAME)/gcc-version \
 		 $(NAME)/src $(NAME)/examples \
 		 $(NAME)/DB $(NAME)/$(DCDIR) $(NAME)/$(SCALERDIR) \
 		 $(NAME)/Makefile $(NAME)/docs
