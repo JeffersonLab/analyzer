@@ -71,7 +71,7 @@ public:
      int LoadEvent(const int* evbuffer);          
      void PrintSlotData(int crate, int slot) const;
      void PrintOut() const { dump(buffer); }
-     static void hexdump(const char* cbuff, unsigned int len);
+     static void hexdump(const char* cbuff, size_t len);
 
      static const int HED_OK, HED_ERR;
 
@@ -144,7 +144,7 @@ private:
      THaCrateMap* fMap;      // Pointer to active crate map
 
      bool fDoBench;
-     THaBenchmark *fBench, *fTopBench;
+     THaBenchmark *fBench;
 
      ClassDef(THaEvData,0)  // Decoder for CODA event buffer
 

@@ -94,20 +94,17 @@ THaEvData::THaEvData() :
   fDoBench = BENCH;
   if( fDoBench ) {
     fBench = new THaBenchmark;
-    fTopBench = new THaBenchmark;
   } else
-    fBench = fTopBench = NULL;
+    fBench = NULL;
 }
 
 
 THaEvData::~THaEvData() {
   if( fDoBench ) {
     Float_t a,b;
-    fTopBench->Summary(a,b);
     fBench->Summary(a,b);
   }
   delete fBench;
-  delete fTopBench;
 #ifndef STANDALONE
   if( gHaVars )
     gHaVars->RemoveRegexp( "g.*" );
@@ -160,7 +157,6 @@ Double_t THaEvData::GetEvTime() const {
 
 int THaEvData::gendecode(const int* evbuffer, THaCrateMap* map) {
 // Main engine for decoding, called by public LoadEvent() methods
-  if( fDoBench) fTopBench->Start("gendecode");
   int ret = HED_OK;
   fMap = map;
      buffer = evbuffer;
@@ -171,7 +167,7 @@ int THaEvData::gendecode(const int* evbuffer, THaCrateMap* map) {
        if (init_slotdata(map) == HED_ERR) goto err;
        first_decode = false;
      }
-     if( fDoBench ) fBench->Start("clearEvent");
+     if( fDoBench ) fBench->Begin("clearEvent");
      for( int i=0; i<fNSlotClear; i++ )
        crateslot[fSlotClear[i]]->clearEvent();
      if( fDoBench ) fBench->Stop("clearEvent");
@@ -186,7 +182,7 @@ int THaEvData::gendecode(const int* evbuffer, THaCrateMap* map) {
        goto exit;
      } else {
        if( fDoBench && event_type != SCALER_EVTYPE ) 
-	 fBench->Start("ctrl_evt_decode");
+	 fBench->Begin("ctrl_evt_decode");
        event_num = 0;
        switch (event_type) {
 	 case SYNC_EVTYPE :
@@ -232,7 +228,6 @@ int THaEvData::gendecode(const int* evbuffer, THaCrateMap* map) {
      goto exit;
  exit:
      if( fDoBench ) fBench->Stop("ctrl_evt_decode");
-     if( fDoBench ) fTopBench->Stop("gendecode");
      return ret;
 }
      
@@ -260,7 +255,7 @@ void THaEvData::dump(const int* evbuffer) const {
 }
 
 int THaEvData::physics_decode(const int* evbuffer, THaCrateMap* map) {
-     if( fDoBench ) fBench->Start("physics_decode");
+     if( fDoBench ) fBench->Begin("physics_decode");
      int status = HED_OK;
 // This decoding is for physics triggers only
      if (evbuffer[3] > MAX_PHYS_EVTYPE) return HED_ERR; 
@@ -319,7 +314,7 @@ int THaEvData::AddEpicsTag(const TString& tag) {
 
 //FIXME: This should be part of the EPICS object
 int THaEvData::epics_decode(const int* evbuffer) {
-     if( fDoBench ) fBench->Start("epics_decode");
+     if( fDoBench ) fBench->Begin("epics_decode");
      static const size_t DEBUGL = 0, MAX  = 5000, MAXEPV = 40;
      const char *line, *date;
      const char* cbuff = (const char*)evbuffer;
@@ -422,7 +417,7 @@ int THaEvData::scaler_event_decode(const int* evbuffer, THaCrateMap* map)
 {
       int type = evbuffer[1]>>16;
       if (type != SCALER_EVTYPE) return HED_ERR;
-      if( fDoBench ) fBench->Start("scaler_event_decode");
+      if( fDoBench ) fBench->Begin("scaler_event_decode");
       if (DEBUG) cout << "Scaler decoding"<<endl;
       if (first_scaler) {
         first_scaler = kFALSE;
@@ -510,7 +505,7 @@ double THaEvData::GetEpicsData(const char* tag) const {
 
 int THaEvData::fastbus_decode(int roc, THaCrateMap* map,
           const int* evbuffer, int istart, int istop) {
-    if( fDoBench ) fBench->Start("fastbus_decode");
+    if( fDoBench ) fBench->Begin("fastbus_decode");
     int slotold = -1;
     const int* p     = evbuffer+istart;
     const int* pstop = evbuffer+istop;
@@ -574,7 +569,7 @@ int THaEvData::fastbus_decode(int roc, THaCrateMap* map,
 
 int THaEvData::vme_decode(int roc, THaCrateMap* map, const int* evbuffer,
           int ipt, int istop)  {
-    if( fDoBench ) fBench->Start("vme_decode");
+    if( fDoBench ) fBench->Begin("vme_decode");
     int slot,chan,raw,data,slotprime,ndat,head,mask,nhit;
     int Nslot = map->getNslot(roc);
     int retval = HED_OK;
