@@ -30,10 +30,13 @@ HALLALIBS     = -L. -lHallA -ldc -lscaler
 
 SUBDIRS       = $(DCDIR) $(SCALERDIR)
 
+HA_DIR       := $(shell pwd)
+INCDIRS       = $(addprefix $(HA_DIR)/, src $(SUBDIRS))
+
 LIBS          = 
 GLIBS         = 
 
-INCLUDES      = $(ROOTCFLAGS) $(addprefix -I, $(SUBDIRS) )
+INCLUDES      = $(ROOTCFLAGS) $(addprefix -I, $(INCDIRS) )
 
 ifeq ($(ARCH),solarisCC5)
 # Solaris CC 5.0
@@ -122,7 +125,9 @@ SRC           = src/THaFormula.C src/THaVar.C src/THaVarList.C src/THaCut.C \
 		src/THaGoldenTrack.C
 
 OBJ           = $(SRC:.C=.o)
-HDR           = $(SRC:.C=.h) src/THaGlobals.h src/VarDef.h src/VarType.h
+HDR           = $(SRC:.C=.h) src/THaGlobals.h src/VarDef.h src/VarType.h \
+		src/ha_compiledata.h
+
 DEP           = $(SRC:.C=.d)
 OBJS          = $(OBJ) haDict.o
 
@@ -130,6 +135,9 @@ LIBHALLA      = libHallA.so
 PROGRAMS      = analyzer
 
 all:            subdirs $(PROGRAMS)
+
+src/ha_compiledata.h:
+		echo "#define HA_INCLUDEPATH \"$(INCDIRS)\"" > $@
 
 $(LIBHALLA):	$(OBJS)
 		$(LD) $(LDFLAGS) $(SOFLAGS) -o $@ $^
@@ -154,7 +162,7 @@ libscaler.so:
 clean:
 		$(MAKE) -C $(DCDIR) clean
 		$(MAKE) -C $(SCALERDIR) clean
-		rm -f *.so *.a $(PROGRAMS) *.o *Dict.* *~
+		rm -f *.so *.a $(PROGRAMS) *.o *Dict.* *~ src/ha_compiledata.h
 		cd src; rm -f *.o *~
 
 realclean:	clean

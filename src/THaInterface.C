@@ -17,6 +17,9 @@
 #include "THaVarList.h"
 #include "THaCutList.h"
 
+#include "THaString.h"
+#include "ha_compiledata.h"
+
 //#include "TGXW.h"
 //#include "TVirtualX.h"
 
@@ -56,6 +59,11 @@ THaInterface::THaInterface( const char* appClassName, int* argc, char** argv,
   gHaScalers = new TList;
   gHaPhysics = new TList;
 
+  THaString ipath( HA_INCLUDEPATH );
+  vector<THaString> ipv(ipath.Split());
+  for (int i=0; i<ipv.size(); i++)
+    gInterpreter->AddIncludePath( ipv[i].c_str() );
+  
   fgAint = this;
 }
 
