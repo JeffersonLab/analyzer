@@ -26,8 +26,8 @@ public:
 protected:
 
   virtual THaTrack* AddTrack( TClonesArray& tracks,
-			      Double_t p, Double_t theta, Double_t phi,
-			      Double_t x, Double_t y );
+			      Double_t x, Double_t y, 
+			      Double_t theta, Double_t phi );
 
   //Only derived classes may construct me
 

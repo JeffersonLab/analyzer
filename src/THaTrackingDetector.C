@@ -19,7 +19,6 @@
 #include "TClonesArray.h"
 #include "THaTrackingDetector.h"
 #include "THaPIDinfo.h"
-//#include "THaVertex.h"
 #include "THaTrack.h"
 #include "THaSpectrometer.h"
 #include "TError.h"
@@ -45,15 +44,14 @@ THaTrackingDetector::~THaTrackingDetector()
 
 //_____________________________________________________________________________
 THaTrack* THaTrackingDetector::AddTrack( TClonesArray& tracks,
-					 Double_t p, Double_t theta, 
-					 Double_t phi, Double_t x, Double_t y )
+					 Double_t x, Double_t y,
+					 Double_t theta, Double_t phi )
 {
   // Add a track with the given parameters to the array of tracks
   // Returns the index of the created track in the TClonesArray.
 
   Int_t i = tracks.GetLast()+1;
   THaPIDinfo* pid = 0;
-  THaVertex*  vertex = 0;
   THaSpectrometer* spect = static_cast<THaSpectrometer*>( fApparatus );
 
   if( spect ) {
@@ -70,10 +68,6 @@ THaTrack* THaTrackingDetector::AddTrack( TClonesArray& tracks,
     if( i > c.GetLast() || !c.At(i) )  new( c[i] ) THaPIDinfo( ndet, npart );
     pid = static_cast<THaPIDinfo*>( c.At(i) );
   
-    //  TClonesArray& c2 = *spect->GetVertices();
-    //  if( !c2.At(i) )  new( c2[i] ) THaVertex();
-    //vertex = static_cast<THaVertex*>( c2.At(i) );
-
   } else {
     ::Warning("THaTrackingDetector::AddTrack", "No spectrometer defined for "
 	      "detector %s. Track has no PID and vertex info.", GetName());
@@ -81,7 +75,7 @@ THaTrack* THaTrackingDetector::AddTrack( TClonesArray& tracks,
 
   // Create the track
 
-  return new( tracks[i] ) THaTrack( p, theta, phi, x, y, spect, pid, vertex );
+  return new( tracks[i] ) THaTrack( x, y, theta, phi, this, NULL, pid );
 
 }
 

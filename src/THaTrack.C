@@ -21,18 +21,14 @@
 ClassImp(THaTrack)
 
 //_____________________________________________________________________________
-THaTrack::THaTrack( Double_t p, Double_t theta, Double_t phi, 
-		    Double_t x, Double_t y, 
-		    THaSpectrometer* s, 
-		    THaPIDinfo* pid, 
-		    THaVertex* vertex,
-		    THaTrackID* id )
-  : fP(p), fTheta(theta), fPhi(phi), fX(x), fY(y), fClusters(NULL),
-    fPIDinfo(pid), fVertex(vertex), fSpectrometer(s), fID(id)
+THaTrack::THaTrack( Double_t x, Double_t y, Double_t theta, Double_t phi, 
+		    THaTrackingDetector* creator, 
+		    THaTrackID* id, THaPIDinfo* pid ) :
+  fX(x), fY(y), fTheta(theta), fPhi(phi), fP(0.0), 
+  fPIDinfo(pid), fCreator(creator), fID(id), fFlag(0)
 {
   // Normal constructor with initialization
 
-  CalcPxyz();
   fClusters = new TList;
 }
 
@@ -96,16 +92,12 @@ void THaTrack::Clear( const Option_t* opt )
   // Reset track quantities. 
 
   fP     = 0.0;
-  fPx    = 0.0;
-  fPy    = 0.0;
-  fPz    = 0.0;
   fTheta = 0.0;
   fPhi   = 0.0;
   fX     = 0.0;
   fY     = 0.0;
   fClusters->Clear( opt );
   if( fPIDinfo ) fPIDinfo->Clear( opt );
-  //  if( fVertex )  fVertex->Clear( opt );
 }
 
 //_____________________________________________________________________________
@@ -149,7 +141,6 @@ void THaTrack::Print( Option_t* opt ) const
 
   fClusters->Print( opt );
   if( fPIDinfo ) fPIDinfo->Print( opt );
-  //  if( fVertex )  fVertex->Print( opt );
 }
 
 

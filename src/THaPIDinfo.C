@@ -9,6 +9,7 @@
 #include "THaPIDinfo.h"
 #include "THaTrack.h"
 #include "THaSpectrometer.h"
+#include "THaTrackingDetector.h"
 
 #include <iostream>
 
@@ -36,7 +37,9 @@ THaPIDinfo::THaPIDinfo( const THaTrack* track )
   // the size of the detector and particle arrays of the track's spectrometer.
 
   const THaSpectrometer* sp;
-  if( track && (sp = track->GetSpectrometer()) ) {
+  const THaTrackingDetector* td;
+  if( track && (td = track->GetCreator()) &&
+      (sp = static_cast<THaSpectrometer*>(td->GetApparatus())) ) {
     fNdet  = sp->GetNpidDetectors();
     fNpart = sp->GetNpidParticles();
     SetupArrays( fNdet, fNpart );

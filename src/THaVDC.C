@@ -245,7 +245,7 @@ Int_t THaVDC::SetupDetector( const TDatime& date )
   return kOK;
 }
 
-//______________________________________________________________________________
+//_____________________________________________________________________________
 THaVDC::~THaVDC()
 {
   // Destructor. Delete subdetectors and remove variables from global list.
@@ -259,7 +259,7 @@ THaVDC::~THaVDC()
   delete fUVpairs;
 }
 
-//______________________________________________________________________________
+//_____________________________________________________________________________
 Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 {
   // Construct tracks from pairs of upper and lower UV tracks and add 
@@ -479,12 +479,12 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
       if( nPairs > 1 )
 	flag |= kMultiTrack;
 
-      if(!found) {
+      if( !found ) {
 #ifdef WITH_DEBUG
 	if( fDebug>0 )
 	  cout << "Track " << tracks->GetLast()+1 << " added.\n";
 #endif
-	theTrack = AddTrack(*tracks, 0.0, 0.0, 0.0, 0.0, 0.0);
+	theTrack = AddTrack(*tracks, 0.0, 0.0, 0.0, 0.0 );
 	theTrack->SetID( thisID );
 	theTrack->SetCreator( this );
 	theTrack->AddCluster( track );
@@ -536,7 +536,7 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
   return nTracks;
 }
 
-//______________________________________________________________________________
+//_____________________________________________________________________________
 void THaVDC::ProjToTransPlane(Double_t& x, Double_t& y, Double_t& z, 
 			      Double_t& th, Double_t& ph)
 {
@@ -550,7 +550,7 @@ void THaVDC::ProjToTransPlane(Double_t& x, Double_t& y, Double_t& z,
 
 }
 
-//______________________________________________________________________________
+//_____________________________________________________________________________
 Int_t THaVDC::Decode( const THaEvData& evdata )
 {
   // Decode data from VDC planes
@@ -562,7 +562,7 @@ Int_t THaVDC::Decode( const THaEvData& evdata )
   return 0;
 }
 
-//______________________________________________________________________________
+//_____________________________________________________________________________
 Int_t THaVDC::CoarseTrack( TClonesArray& tracks )
 {
  
@@ -585,7 +585,7 @@ Int_t THaVDC::CoarseTrack( TClonesArray& tracks )
   return 0;
 }
 
-//______________________________________________________________________________
+//_____________________________________________________________________________
 Int_t THaVDC::FineTrack( TClonesArray& tracks )
 {
   // Calculate exact track position and angle using drift time information.
@@ -621,7 +621,7 @@ Int_t THaVDC::FineTrack( TClonesArray& tracks )
   return 0;
 }
 
-//______________________________________________________________________________
+//_____________________________________________________________________________
 Int_t THaVDC::FindVertices( TClonesArray& tracks )
 {
   // Calculate the target location and momentum at the target
@@ -679,7 +679,7 @@ void THaVDC::CalcFocalPlaneCoords(const THaVDCUVTrack *the_track,
 		       (1.0-the_track->GetTheta()*tan_rho_loc);
 
   // set the values we calculated
-  new_track->Set(0.0, theta, phi, x, y);
+  new_track->Set(x, y, theta, phi);
   new_track->SetR(r_x, r_y, r_theta, r_phi);
 
 }
@@ -736,7 +736,7 @@ void THaVDC::CalcTargetCoords(THaTrack *the_track, const ECoordTypes mode)
   // set the values we just calculated
   the_track->SetTarget(x, y, theta, phi);
   the_track->SetDp(dp);
-  the_track->SetMomentum(p, the_track->GetTheta(), the_track->GetPhi());
+  the_track->SetMomentum(p);
 }
 
 
@@ -800,7 +800,7 @@ void THaVDC::CorrectTimeOfFlight(TClonesArray &tracks)
     TList *clusters = track->GetClusters();
     
     // calculate the correction, since it's on a per track basis
-    Double_t s1_dist, s2_dist, vdc_dist, dist, tdelta;
+    Double_t s1_dist, vdc_dist, dist, tdelta;
     if(!s1->CalcPathLen(track, s1_dist))
       s1_dist = 0.0;
     if(!this->CalcPathLen(track, vdc_dist))
