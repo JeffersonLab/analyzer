@@ -16,6 +16,9 @@
  *
  * Revision History:
  *   $Log$
+ *   Revision 1.5  2004/06/12 20:04:41  ole
+ *   Add forgotten "using namespace std". This is C++ code now.
+ *
  *   Revision 1.4  2003/09/10 18:36:05  ole
  *   Fix compilation warnings.
  *
@@ -66,7 +69,7 @@
 #include <memory.h>
 #include <cerrno>
 
-
+using namespace std;
 
 typedef struct _stack
 {
