@@ -40,14 +40,6 @@ void THaSpectrometerDetector::DefineAxes(Double_t rotation_angle)
   fYax.SetXYZ( 0.0, 1.0, 0.0 );
   fZax = fXax.Cross(fYax);
 
-  //cout<<"Z: "<<fZax.X()<<" "<<fZax.Y()<<" "<<fZax.Z()<<endl;
-
-  fDenom.ResizeTo( 3, 3 );
-  fNom.ResizeTo( 3, 3 );
-  fDenom.SetColumn( fXax, 0 );
-  fDenom.SetColumn( fYax, 1 );
-  fNom.SetColumn( fXax, 0 );
-  fNom.SetColumn( fYax, 1 );
 }
 
 //_____________________________________________________________________________
@@ -63,17 +55,11 @@ bool THaSpectrometerDetector::CalcTrackIntercept(THaTrack* theTrack,
   Double_t norm = TMath::Sqrt(1.0 + theTrack->GetTheta()*theTrack->GetTheta() +
 			      theTrack->GetPhi()*theTrack->GetPhi());
   TVector3 t_hat( theTrack->GetTheta()/norm, theTrack->GetPhi()/norm, 1.0/norm );
-  fDenom.SetColumn( -t_hat, 2 );
-  fNom.SetColumn( t0-fOrigin, 2 );
 
-  // first get the distance...
-  Double_t det = fDenom.Determinant();
-  if( fabs(det) < 1e-5 ) 
-    return false;  // No useful solution for this track
-  t = fNom.Determinant() / det;
-
-  // ...then the intersection point
-  TVector3 v = t0 + t*t_hat - fOrigin;
+  TVector3 v;
+  if( !IntersectPlaneWithRay( fXax, fYax, fOrigin, t0, t_hat, t, v ))
+    return false;
+  v -= fOrigin;
   xcross = v.Dot(fXax);
   ycross = v.Dot(fYax);
 

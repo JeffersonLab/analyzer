@@ -19,6 +19,7 @@ class TList;
 struct VarDef;
 struct RVarDef;
 struct TagDef;
+class TVector3;
 
 class THaAnalysisObject : public TNamed {
   
@@ -69,6 +70,14 @@ public:
 			    Double_t& th_sph, Double_t& ph_sph );
   static  void    SphToGeo( Double_t  th_sph, Double_t  ph_sph,
 			    Double_t& th_geo, Double_t& ph_geo );
+
+  static  Bool_t  IntersectPlaneWithRay( const TVector3& xax,
+					 const TVector3& yax,
+					 const TVector3& org,
+					 const TVector3& ray_start,
+					 const TVector3& ray_vect,
+					 Double_t& length,
+					 TVector3& intersect );
 
 protected:
 

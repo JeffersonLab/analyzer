@@ -24,7 +24,6 @@
 #include "THaSpectrometer.h"
 #include "THaTrackInfo.h"
 #include "THaTrack.h"
-#include "THaMatrix.h"
 #include "TMath.h"
 #include "VarDef.h"
 
@@ -122,18 +121,18 @@ Int_t THaTwoarmVertex::Process( const THaEvData& evdata )
   p1 += s1->GetPointingOffset();
   p2 *= s2->GetToLabRot();
   p2 += s2->GetPointingOffset();
-  THaMatrix denom( t1->GetPvect(), yax, -t2->GetPvect() );
-  Double_t det = denom.Determinant();
-  // Oops, track planes are parallel?
-  if( TMath::Abs(det) < 1e-5 ) 
-    return 3;
-  THaMatrix nom( t1->GetPvect(), yax, p2-p1 );
-  Double_t t = nom.Determinant() / det;
-  fVertex = p2 + t*t2->GetPvect();
+  Double_t t;
+  if( !IntersectPlaneWithRay( t1->GetPvect(), yax, p1, 
+			      p2, t2->GetPvect(), t, fVertex ))
+    return 3; // Oops, track planes are parallel?
   fVertexOK = kTRUE;
+
+#ifdef WITH_DEBUG
   if( fDebug<2 )
+#endif
     fVertex.SetY( 0.0 );
 
+#ifdef WITH_DEBUG
   //DEBUG code
   else {
     cout << "============Two-arm vertex:===========" << endl;
@@ -151,16 +150,14 @@ Int_t THaTwoarmVertex::Process( const THaEvData& evdata )
     fVertex.Dump();
 
     // consistency check
-    THaMatrix d2( t2->GetPvect(), yax, -t1->GetPvect() );
-    det = d2.Determinant();
-    if( TMath::Abs(det) < 1e-5 ) 
+    TVector3 v2;
+    if(!IntersectPlaneWithRay( t2->GetPvect(), yax, p2, 
+			       p1, t1->GetPvect(), t, v2 ))
       return 3;
-    THaMatrix n2( t2->GetPvect(), yax, p1-p2 );
-    t = n2.Determinant() / det;
-    TVector3 v2 = p1 + t*t1->GetPvect();
     cout << "--twoarm_alt\n";
     v2.Dump();
   }
+#endif
   return 0;
 }
   

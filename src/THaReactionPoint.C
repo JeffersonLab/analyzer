@@ -26,7 +26,6 @@
 #include "THaSpectrometer.h"
 #include "THaTrack.h"
 #include "THaBeam.h"
-#include "THaMatrix.h"
 #include "TMath.h"
 
 ClassImp(THaReactionPoint)
@@ -97,7 +96,9 @@ Int_t THaReactionPoint::Process( const THaEvData& evdata )
     beam_ray = fBeam->GetDirection();
   }
   static const TVector3 yax( 0.0, 1.0, 0.0 );
-  TVector3 org; 
+  TVector3 org, v; 
+  Double_t t;
+
   for( Int_t i = 0; i<ntracks; i++ ) {
     THaTrack* theTrack = static_cast<THaTrack*>( tracks->At(i) );
     // Ignore junk tracks
@@ -106,14 +107,10 @@ Int_t THaReactionPoint::Process( const THaEvData& evdata )
     org.SetY( theTrack->GetTY() );
     org *= fSpectro->GetToLabRot();
     org += fSpectro->GetPointingOffset();
-    THaMatrix denom( theTrack->GetPvect(), yax, -beam_ray );
-    Double_t det = denom.Determinant();
-    // Oops, track and beam parallel?
-    if( TMath::Abs(det) < 1e-5 ) 
-      continue;
-    THaMatrix nom( theTrack->GetPvect(), yax, beam_org-org );
-    Double_t t = nom.Determinant() / det;
-    theTrack->SetVertex( beam_org + t*beam_ray );
+    if( !IntersectPlaneWithRay( theTrack->GetPvect(), yax, org, 
+				beam_org, beam_ray, t, v ))
+      continue; // Oops, track and beam parallel?
+    theTrack->SetVertex(v);
 
     // FIXME: preliminary
     if( theTrack == fSpectro->GetGoldenTrack() ) {

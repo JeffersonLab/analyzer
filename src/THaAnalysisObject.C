@@ -21,6 +21,7 @@
 #include "TROOT.h"
 #include "TMath.h"
 #include "TError.h"
+#include "TVector3.h"
 
 #include <cstring>
 #include <cctype>
@@ -422,6 +423,53 @@ void THaAnalysisObject::SphToGeo( Double_t  th_sph, Double_t  ph_sph,
   }
   ph_geo = acos( sqrt( st*st*cp*cp + ct*ct ));
   if( ph_sph/twopi - floor(ph_sph/twopi) > 0.5 ) ph_geo =- ph_geo;
+}
+
+//_____________________________________________________________________________
+Bool_t THaAnalysisObject::IntersectPlaneWithRay( const TVector3& xax,
+						 const TVector3& yax,
+						 const TVector3& org,
+						 const TVector3& ray_start,
+						 const TVector3& ray_vect,
+						 Double_t& length,
+						 TVector3& intersect )
+{
+  // Find intersection point of plane (given by 'xax', 'yax', 'org') with
+  // ray (given by 'ray_start', 'ray_vect'). 
+  // Returns true if intersection found, else false (ray parallel to plane).
+  // Output is in 'length' and 'intersect', where
+  //   intersect = ray_start + length*ray_vect
+  // 'length' and 'intersect' must be provided by the caller.
+
+  // Calculate explicitly for speed.
+
+  Double_t nom[9], den[9];
+  nom[0] = den[0] = xax.X();
+  nom[3] = den[3] = xax.Y();
+  nom[6] = den[6] = xax.Z();
+  nom[1] = den[1] = yax.X();
+  nom[4] = den[4] = yax.Y();
+  nom[7] = den[7] = yax.Z();
+  den[2] = -ray_vect.X();
+  den[5] = -ray_vect.Y();
+  den[8] = -ray_vect.Z();
+
+  Double_t det1 = den[0]*(den[4]*den[8]-den[7]*den[5])
+    -den[3]*(den[1]*den[8]-den[7]*den[2])
+    +den[6]*(den[1]*den[5]-den[4]*den[2]);
+  if( fabs(det1) < 1e-5 )
+    return false;
+
+  nom[2] = ray_start.X()-org.X();
+  nom[5] = ray_start.Y()-org.Y();
+  nom[8] = ray_start.Z()-org.Z();
+  Double_t det2 = nom[0]*(nom[4]*nom[8]-nom[7]*nom[5])
+    -nom[3]*(nom[1]*nom[8]-nom[7]*nom[2])
+    +nom[6]*(nom[1]*nom[5]-nom[4]*nom[2]);
+
+  length = det2/det1;
+  intersect = ray_start + length*ray_vect;
+  return true;
 }
 
 //_____________________________________________________________________________
