@@ -22,10 +22,6 @@
 
 using namespace std;
 
-// Make sure we have non-macro versions of tolower and toupper
-static int my__tolower(char c) { return tolower(c); }
-static int my__toupper(char c) { return toupper(c); }
-
 //_____________________________________________________________________________
 int THaString::CmpNoCase (const THaString& s) const
 {
@@ -58,7 +54,6 @@ vector<THaString> THaString::Split() const
   return v;
 }
 
-
 //_____________________________________________________________________________
 UInt_t THaString::Hex() const
 {
@@ -75,7 +70,8 @@ THaString THaString::ToLower() const
   // Return copy of this string converted to lower case.
 
   THaString result(*this);
-  transform( begin(), end(), result.begin(), my__tolower );
+  // The bizarre cast here is needed for newer gccs
+  transform( begin(), end(), result.begin(), (int(*)(int))tolower );
   return result;
 }
 
@@ -84,8 +80,25 @@ THaString THaString::ToUpper() const
 {
   // Return copy of this string converted to upper case.
   THaString result(*this);
-  transform( begin(), end(), result.begin(), my__toupper );
+  transform( begin(), end(), result.begin(), (int(*)(int))toupper );
   return result;
+}
+
+//_____________________________________________________________________________
+void THaString::Lower()
+{
+  // Convert this string to lower case
+
+  transform( begin(), end(), begin(), (int(*)(int))tolower );
+  return;
+}
+
+//_____________________________________________________________________________
+void THaString::Upper()
+{
+  // Convert this string to upper case
+  transform( begin(), end(), begin(), (int(*)(int))toupper );
+  return;
 }
 
 //_____________________________________________________________________________
