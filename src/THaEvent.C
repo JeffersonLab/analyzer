@@ -307,17 +307,22 @@ Int_t THaEvent::Fill()
 	  ncopy = datamap->ncopy;
 	else if( datamap->ncopyvar )
 	  ncopy = *datamap->ncopyvar;
-	else
+	else {
 	  ncopy = pvar->GetLen();
+	  if( ncopy == THaVar::kInvalidInt ) 
+	    continue;
+	}
 	Int_t       type = pvar->GetType();
 	size_t      size = pvar->GetTypeSize();
 	const void* src  = pvar->GetValuePointer();
+	if( !src ) continue;
 	if( pvar->IsBasic() ) {
 	  if( type >= kDoubleP ) {
 	    // Pointers to pointers - get the pointer they currently point to
 	    void** loc = (void**)src;
 	           src = (const void*)(*loc);
 	  }
+	  if( !src ) continue;
 	  if( !pvar->IsPointerArray() )
 	    memcpy( datamap->dest, src, ncopy*size );
 	  else {
@@ -336,44 +341,46 @@ Int_t THaEvent::Fill()
 	  // Note: Function return values are either Long_t or Double_t,
 	  // regardless of the actual return value of the function.
 	  // This is a ROOT limitation.
-	  for( int i=0; i<ncopy; i++ ) {
+	  for( int i=0, j=0; i<ncopy; i++, j++ ) {
 	    Double_t val = pvar->GetValue(i);
-	    switch( pvar->GetType() ) {
+	    if( val == THaVar::kInvalid )
+	      continue;
+	    switch( type ) {
 	    case kDouble: case kDoubleP:
-	      *(((Double_t*)datamap->dest)+i) = val;
+	      *(((Double_t*)datamap->dest)+j) = val;
 	      break;
 	    case kFloat:  case kFloatP:
-	      *(((Float_t*)datamap->dest)+i)  = static_cast<Float_t>(val);
+	      *(((Float_t*)datamap->dest)+j)  = static_cast<Float_t>(val);
 	      break;
 	    case kInt:    case kIntP:
-	      *(((Int_t*)datamap->dest)+i)    = static_cast<Int_t>(val);
+	      *(((Int_t*)datamap->dest)+j)    = static_cast<Int_t>(val);
 	      break;
 	    case kUInt:   case kUIntP:
-	      *(((UInt_t*)datamap->dest)+i)   = static_cast<UInt_t>(val);
+	      *(((UInt_t*)datamap->dest)+j)   = static_cast<UInt_t>(val);
 	      break;
 	    case kShort:  case kShortP:
-	      *(((Short_t*)datamap->dest)+i)  = static_cast<Short_t>(val);
+	      *(((Short_t*)datamap->dest)+j)  = static_cast<Short_t>(val);
 	      break;
 	    case kUShort: case kUShortP:
-	      *(((UShort_t*)datamap->dest)+i) = static_cast<UShort_t>(val);
+	      *(((UShort_t*)datamap->dest)+j) = static_cast<UShort_t>(val);
 	      break;
 	    case kLong:   case kLongP:
-	      *(((Long_t*)datamap->dest)+i)   = static_cast<Long_t>(val);
+	      *(((Long_t*)datamap->dest)+j)   = static_cast<Long_t>(val);
 	      break;
 	    case kULong:  case kULongP:
-	      *(((ULong_t*)datamap->dest)+i)  = static_cast<ULong_t>(val);
+	      *(((ULong_t*)datamap->dest)+j)  = static_cast<ULong_t>(val);
 	      break;
 	    case kChar:   case kCharP:
-	      *(((Char_t*)datamap->dest)+i)   = static_cast<Char_t>(val);
+	      *(((Char_t*)datamap->dest)+j)   = static_cast<Char_t>(val);
 	      break;
 	    case kByte:   case kByteP:
-	      *(((Byte_t*)datamap->dest)+i)   = static_cast<Byte_t>(val);
+	      *(((Byte_t*)datamap->dest)+j)   = static_cast<Byte_t>(val);
 	      break;
 	    default:
 	      Warning( here, "Unknown type for variable %s "
 		 "Not filled.", pvar->GetName() );
+	      j--; nvar--;
 	      break;
-	      ;      
 	    }
 	  }
 	}
