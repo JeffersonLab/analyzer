@@ -8,11 +8,13 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "TNamed.h"
+#include "THaGlobals.h"
 #include <vector>
 #include <string>
 #include <cstdio>
 
 class TDatime;
+class TList;
 struct VarDef;
 struct RVarDef;
 struct TagDef;
@@ -80,6 +82,10 @@ protected:
           Int_t        DefineVarsFromList( const void* list, 
 					   EType type, EMode mode ) const;
 
+  THaAnalysisObject* FindModule( const char* name, 
+				 const char* classname = "THaApparatus",
+				 TList* list = gHaApps );
+
   virtual const char*  Here( const char* ) const;
           void         MakePrefix( const char* basename );
   virtual void         MakePrefix() = 0;
@@ -98,7 +104,7 @@ protected:
 
   //Only derived classes may construct me
   THaAnalysisObject() : fPrefix(NULL), fStatus(kNotinit), 
-    fDebug(0), fIsInit(false), fIsSetup(false) {}
+    fDebug(0), fIsInit(false), fIsSetup(false) { Clear(); }
   THaAnalysisObject( const char* name, const char* description );
 
 private:
