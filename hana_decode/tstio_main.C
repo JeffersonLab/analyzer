@@ -4,6 +4,7 @@
 #include <iostream>
 #include "THaCodaFile.h"
 #include "THaEvData.h"
+#include "evio.h"
 #include "THaSlotData.h"
 #include "TString.h"
 

@@ -12,6 +12,7 @@
 #include "THaSlotData.h"
 #include "THaGenDetTest.h"
 #include "TString.h"
+#include "evio.h"
 
 
 int main(int argc, char* argv[])
