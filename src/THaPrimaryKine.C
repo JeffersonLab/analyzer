@@ -13,10 +13,11 @@
 
 #include "THaPrimaryKine.h"
 #include "THaTrackingModule.h"
-#include "THaTrackInfo.h"
 #include "THaRun.h"
 #include "VarDef.h"
 #include "TMath.h"
+
+using namespace std;
 
 ClassImp(THaPrimaryKine)
 
@@ -45,7 +46,7 @@ void THaPrimaryKine::Clear( Option_t* opt )
   // Clear all internal variables.
 
   fQ2 = fOmega = fW2 = fXbj = fScatAngle = fEpsilon = fQ3mag
-    = fThetaQ = fPhiQ = 0.0;
+    = fThetaQ = fPhiQ = kBig;
   fDataValid = false;
 }
 
@@ -110,7 +111,7 @@ Int_t THaPrimaryKine::Process( const THaEvData& evdata )
   // Standard electron kinematics
   fQ         = fP0 - fP1;
   fQ2        = -fQ.M2();
-  fQ3mag     = fQ.Vect().Mag();
+  fQ3mag     = fQ.P();
   fOmega     = fQ.E();
   fA1        = fA + fQ;
   fW2        = fA1.M2();
