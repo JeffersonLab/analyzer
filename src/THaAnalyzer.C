@@ -45,14 +45,10 @@ ClassImp(THaAnalyzer)
 const char* const THaAnalyzer::kMasterCutName = "master";
 
 //_____________________________________________________________________________
-THaAnalyzer::THaAnalyzer()
+THaAnalyzer::THaAnalyzer() :
+  fFile(NULL), fOutput(NULL), fEvent(0), fNev(0)
 {
   // Default constructor.
-
-  fEvent = 0;
-  fNev = 0;
-  fFile = 0;
-  fOutput = 0;
 
   // Set the default cut block names. These can be redefined via SetCutBlocks()
 
@@ -139,7 +135,7 @@ Int_t THaAnalyzer::InitModules( TIter& next, TDatime& run_time, Int_t erroff,
       THaAnalysisObject* theModule = static_cast<THaAnalysisObject*>( obj );
       theModule->Init( run_time );
       if( !theModule->IsOK() ) {
-	Error( here, "Error initizlizing module %s (%s). "
+	Error( here, "Error initializing module %s (%s). "
 	       "Analyzer initialization failed.", 
 	       obj->GetName(), obj->GetTitle() );
 	retval = -1;
@@ -213,7 +209,10 @@ Int_t THaAnalyzer::Process( THaRun& run )
   bench.Start("Statistics");
 
   status = 0;
-  while ( (status != EOF && status != CODA_ERROR) && nev_physics < nlim ) {
+  bool terminate = false;
+  bool fatal = false;
+  while ( !terminate && 
+	  (status != EOF && status != CODA_ERROR) && nev_physics < nlim ) {
 
     status = run.ReadEvent();
 
@@ -341,8 +340,15 @@ Int_t THaAnalyzer::Process( THaRun& run )
       while( THaPhysicsModule* theModule =
 	     static_cast<THaPhysicsModule*>( next_physics() )) {
 	theModule->Clear();
-	theModule->Process();
+	Int_t err = theModule->Process();
+	if( err == THaPhysicsModule::kTerminate )
+	  terminate = true;
+	else if ( err == THaPhysicsModule::kFatal ) {
+	  terminate = fatal = true;
+	  break;
+	}
       }
+      if( fatal ) continue;
 
       //--- Evaluate test block 3
 
@@ -393,6 +399,10 @@ Int_t THaAnalyzer::Process( THaRun& run )
     cout << "End of file";
   else if ( nev_physics == nlim )
     cout << "Event limit reached.";
+  else if ( fatal )
+    cout << "Fatal processing error.";
+  else if ( terminate )
+    cout << "Terminated during processing.";
   cout << endl;
 
   cout << "Processed " << fNev << " events, " 

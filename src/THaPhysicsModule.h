@@ -19,6 +19,9 @@ public:
 
   virtual Int_t Process() = 0;
 
+  // Special return codes for Process()
+  enum ESpecialRetval { kFatal     = -16768,
+			kTerminate = -16767 };
 protected:
 
   //Only derived classes may construct me
