@@ -400,6 +400,16 @@ void THaAnalysisObject::SetNameTitle( const char* name, const char* title )
 }
 
 //_____________________________________________________________________________
+void THaAnalysisObject::SetConfig( const char* label )
+{
+  // Set the "configuration" to select in the database.
+  // In text-based database files, this will make the database reader
+  // seek to a section header [ config=label ] if the module supports it.
+
+  fConfig = label;
+}
+
+//_____________________________________________________________________________
 void THaAnalysisObject::GeoToSph( Double_t  th_geo, Double_t  ph_geo,
 				  Double_t& th_sph, Double_t& ph_sph )
 {

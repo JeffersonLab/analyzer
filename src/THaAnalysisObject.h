@@ -33,6 +33,7 @@ public:
   virtual ~THaAnalysisObject();
   
   virtual const char*  GetDBFileName() const     { return GetPrefix(); }
+          const char*  GetConfig() const         { return fConfig.Data(); }
           Int_t        GetDebug() const          { return fDebug; }
           const char*  GetPrefix() const         { return fPrefix; }
   virtual void         Clear( Option_t* opt="" ) {}
@@ -40,6 +41,7 @@ public:
   virtual EStatus      Init( const TDatime& run_time );
           Bool_t       IsInit() const            { return IsOK(); }
           Bool_t       IsOK() const              { return (fStatus == kOK); }
+          void         SetConfig( const char* label );
   virtual void         SetDebug( Int_t level )   { fDebug = level; }
   virtual void         SetName( const char* name );
   virtual void         SetNameTitle( const char* name, const char* title );
