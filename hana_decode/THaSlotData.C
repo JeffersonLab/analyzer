@@ -78,7 +78,7 @@ int THaSlotData::loadData(const char* type, int chan, int dat, int raw) {
     }
     return SD_ERR;
   }
-  if( numraw >= maxd || numchanhit >= maxc) {
+  if( numraw >= maxd || numchanhit > maxc) {
     if (VERBOSE) {
       cout << "THaSlotData: Warning in loadData: too many "
 	   << ((numraw >= maxd ) ? "data words" : "channels")
