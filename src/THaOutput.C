@@ -53,7 +53,7 @@ THaOutput::~THaOutput()
 Int_t THaOutput::Init( ) 
 {
   Int_t iform,ivar,ihist;
-  char tinfo[20], cname[100];
+  string tinfo,cname;
   fNbout = 4000;  
   fKeyint.clear();
   fKeyint.insert( make_pair (THaString("variable"), fgVariden));
@@ -77,7 +77,6 @@ Int_t THaOutput::Init( )
   for (ivar = 0; ivar < fNvar; ivar++) {
     pvar = gHaVars->Find(fVarnames[ivar].c_str());
     if (pvar) {
-      strcpy(tinfo,fVarnames[ivar].c_str());  strcat(tinfo,"/D");
       if (pvar->IsArray()) {
         fArrays.push_back( pvar );
         fOdata.push_back(new THaOdata());
@@ -99,11 +98,12 @@ Int_t THaOutput::Init( )
   fNvar = stemp2.size();
   fVar = new Double_t[fNvar];
   for (Int_t k = 0; k < fNvar; k++) {
-     fTree->Branch(stemp2[k].c_str(), &fVar[k], tinfo, fNbout);
+    tinfo = stemp2[k]+"/D";
+    fTree->Branch(stemp2[k].c_str(), &fVar[k], tinfo.c_str(), fNbout);
   }
   for (iform = 0; iform < fNform; iform++) {
-    sprintf(cname,"f%d",iform);
-    fFormulas.push_back(new THaFormula(cname,fFormdef[iform].c_str()));
+    cname = Form("f%d",iform);
+    fFormulas.push_back(new THaFormula(cname.c_str(),fFormdef[iform].c_str()));
     if (fFormulas[iform]->IsError()) {
       cout << "THaOutput::Init: WARNING: Error in formula ";
       cout << fFormnames[iform] << endl;
@@ -111,8 +111,8 @@ Int_t THaOutput::Init( )
     }
   }
   for (iform = 0; iform < fNform; iform++) {
-    strcpy(tinfo,fFormnames[iform].c_str());  strcat(tinfo,"/D");
-    fTree->Branch(fFormnames[iform].c_str(), &fForm[iform], tinfo, fNbout);   
+    tinfo = fFormnames[iform] + "/D";
+    fTree->Branch(fFormnames[iform].c_str(), &fForm[iform], tinfo.c_str(), fNbout);   
   }
   fH1vtype = new Int_t[fN1d];
   fH1form  = new Int_t[fN1d];

@@ -42,7 +42,7 @@ public:
   void Clear() { ndata = 0; memset(data, 0, nsize*sizeof(Double_t)); };
   Int_t Fill(Int_t i, Double_t dat) {
      if (i >= 0 && i < nsize-1) {
-        if (i > ndata) ndata = i+1;
+        if (i >= ndata) ndata = i+1;
         data[i] = dat;
         return 1;
      }
