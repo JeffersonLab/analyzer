@@ -26,6 +26,21 @@ THaIdealBeam::THaIdealBeam( const char* name, const char* description )
 }
 
 //_____________________________________________________________________________
+THaAnalysisObject::EStatus THaIdealBeam::Init( const TDatime& run_time )
+{
+  // Module initialization: get run parameters, then read databases. Calls
+  // our ReadRunDatabase below and sets our fixed position & direction.
+
+  if( THaBeam::Init(run_time) )
+    return fStatus;
+
+  // Copy our beam data to our beam info variables. This can be done here
+  // instead of in Reconstruct() because the info is constant.
+  Update();
+  return kOK;
+}
+
+//_____________________________________________________________________________
 Int_t THaIdealBeam::ReadRunDatabase( const TDatime& date )
 {
   // Query the run database for the position and direction information.
