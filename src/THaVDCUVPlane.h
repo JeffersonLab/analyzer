@@ -12,6 +12,7 @@
 
 class THaVDCUVTrack;
 class THaVDC;
+class THaEvData;
 
 class THaVDCUVPlane : public THaSubDetector {
 

@@ -20,6 +20,7 @@
 #include "THaVDCHit.h"
 #include "THaDetMap.h"
 #include "THaVDCAnalyticTTDConv.h"
+#include "THaEvData.h"
 #include "TString.h"
 #include "TClass.h"
 #include "TMath.h"

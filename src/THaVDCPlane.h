@@ -8,9 +8,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "THaSubDetector.h"
-#include "THaEvData.h"
 #include "TClonesArray.h"
 
+class THaEvData;
 class THaVDCWire;
 class THaVDCUVPlane;
 class THaVDCCluster;
