@@ -246,7 +246,7 @@ version:
 	cp Makefile ./$(VERS) 
 	cp README ./$(VERS)
 	tar cvf $(VERS).tar ./$(VERS)
-         
+
 clean:
 	rm -f *.o core *~ THaScalDict* *.out *.tar $(PROGS)
 

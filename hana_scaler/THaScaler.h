@@ -105,7 +105,6 @@ struct rcsreply {
 
 class THaNormScaler;
 class THaScalerBank;
-class THaScalerDB;
 class BscaLoc;
 class THaCodaFile;
 class THaEvData;
@@ -202,7 +201,6 @@ protected:
    THaScalerBank *evleft, *evright;
    THaNormScaler *nplus,*nminus,*norm;
    multimap< string, BscaLoc > bmap;
-   THaScalerDB *database;
    void AddBank(THaScalerBank *bk);
    string bankgroup;
    THaCodaFile *fcodafile;

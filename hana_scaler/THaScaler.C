@@ -216,9 +216,10 @@ Int_t THaScaler::Init(const char* thetime )
   cratenum_evright = 10;   // Synchronous readout from roc10
   header_evright = 0xceb00000;  
 
-  database = new THaScalerDB();
-
-  if ( !database->extract_db(date_want, bmap) ) return SCAL_ERROR;
+  THaScalerDB* database = new THaScalerDB();
+  bool fail = (!database->extract_db(date_want, bmap));
+  delete database;
+  if( fail ) return SCAL_ERROR;
 
   int status;
   status = InitMap(bankgroup);
@@ -367,13 +368,6 @@ Int_t THaScaler::ExtractRaw(int* data) {
   len  = data[0] + 1;
   max = fcodafile->getBuffSize();
   ndat = len < max ? len : max;
-// Sanity check:  If ndat > 10000 this is crazy (normally ~300).
-  if (ndat > 10000) {
-     cout << "THaScaler:: WARNING:  The event length is crazy."<<endl;
-     cout << "Skipping corrupted scaler event."<<endl;
-     Clear();
-     return 0;
-  }
   for (i = 0; i < ndat; i++) {
     if (((data[i]&0xfff00000) == (unsigned long)header) &&
     ((data[i]&0x0000ff00) == 0) ) { // found this crate's data
