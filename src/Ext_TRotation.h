@@ -1,8 +1,10 @@
 // The following is a workaround for older versions of ROOT which
 // do not provide the function TRotation::SetZAxis
 
+#include "TRotation.h"
+
 #if ROOT_VERSION_CODE < ROOT_VERSION(3,5,4) && !defined(Ext_TRotation)
-#define Ext_TRotation
+#define ROOT_Ext_TRotation
 
 class Ext_TRotation : public TRotation
 {
