@@ -441,7 +441,8 @@ void THaHelicity::QuadHelicity() {
           dummy = RanBit(1);
       }
       present_helicity[fArm] = predicted_reading[fArm];
-      for (i = 0; i < fgG0delay; i++)
+// Delay by fgG0delay windows which is fgG0delay/4 quads
+      for (i = 0; i < fgG0delay/4; i++)
           present_helicity[fArm] = RanBit(1);
       nb++;
       saved_helicity[fArm] = present_helicity[fArm];
