@@ -26,10 +26,7 @@ Double_t THaBeamInfo::GetE() const
   if( !fBeam )
     return kBig;
 
-  THaRunParameters* rp = fBeam->GetRunParameters();
-  if( !rp )
-    return kBig;
-  Double_t m = rp->GetBeamM();
+  Double_t m = GetM();
   Double_t p = GetP();
   return TMath::Sqrt( p*p + m*m );
 }
