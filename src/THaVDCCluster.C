@@ -19,7 +19,7 @@ ClassImp(THaVDCCluster)
 
 const Double_t THaVDCCluster::kBig = 1e307;  // Arbitrary large value
 
-//______________________________________________________________________________
+//_____________________________________________________________________________
 THaVDCCluster::THaVDCCluster( const THaVDCCluster& rhs ) :
   fSize(rhs.fSize), fPlane(rhs.fPlane), fSlope(rhs.fSlope), 
   fSigmaSlope(rhs.fSigmaSlope), fInt(rhs.fInt), fSigmaInt(rhs.fSigmaInt), 
@@ -31,7 +31,7 @@ THaVDCCluster::THaVDCCluster( const THaVDCCluster& rhs ) :
     fHits[i] = rhs.fHits[i];
 }
 
-//______________________________________________________________________________
+//_____________________________________________________________________________
 THaVDCCluster& THaVDCCluster::operator=( const THaVDCCluster& rhs )
 {
   // Assignment operator
@@ -53,7 +53,7 @@ THaVDCCluster& THaVDCCluster::operator=( const THaVDCCluster& rhs )
   return *this;
 }
 
-//______________________________________________________________________________
+//_____________________________________________________________________________
 void THaVDCCluster::AddHit(THaVDCHit * hit)
 {
   //Add a hit to the cluster
@@ -65,7 +65,7 @@ void THaVDCCluster::AddHit(THaVDCHit * hit)
   }
 }
 
-//______________________________________________________________________________
+//_____________________________________________________________________________
 void THaVDCCluster::Clear( const Option_t* opt )
 {
   // Clear the contents of the cluster
@@ -79,7 +79,7 @@ void THaVDCCluster::Clear( const Option_t* opt )
 
 }
 
-//______________________________________________________________________________
+//_____________________________________________________________________________
 void THaVDCCluster::ClearFit()
 {
   // Clear fit results only
@@ -90,7 +90,7 @@ void THaVDCCluster::ClearFit()
   fSigmaInt   = kBig;
 }
 
-//______________________________________________________________________________
+//_____________________________________________________________________________
 Int_t THaVDCCluster::Compare( const TObject* obj ) const
 {
   // Compare this cluster to another via the wire number of the pivot.
@@ -108,7 +108,7 @@ Int_t THaVDCCluster::Compare( const TObject* obj ) const
   return 0;
 }
 
-//______________________________________________________________________________
+//_____________________________________________________________________________
 void THaVDCCluster::EstTrackParameters()
 {
   // Estimate Track Parameters
@@ -140,7 +140,7 @@ void THaVDCCluster::EstTrackParameters()
   fSlope = dy / dx;
 }
 
-//______________________________________________________________________________
+//_____________________________________________________________________________
 void THaVDCCluster::ConvertTimeToDist()
 {
 
@@ -151,7 +151,7 @@ void THaVDCCluster::ConvertTimeToDist()
   
 }
 
-//______________________________________________________________________________
+//_____________________________________________________________________________
 void THaVDCCluster::FitTrack( EMode mode )
 {
   // Fit track to drift distances. Supports three modes:
@@ -165,7 +165,7 @@ void THaVDCCluster::FitTrack( EMode mode )
   FitSimpleTrack();
 }
 
-//______________________________________________________________________________
+//_____________________________________________________________________________
 void THaVDCCluster::FitSimpleTrack()
 {
   // Perform linear fit on drift times. Calculates slope, intercept, and errors.
@@ -257,8 +257,7 @@ void THaVDCCluster::FitSimpleTrack()
 
 }
 
-//______________________________________________________________________________
-inline
+//_____________________________________________________________________________
 Int_t THaVDCCluster::GetPivotWireNum() const
 {
   // Get wire number of cluster pivot (hit with smallest drift distance)
@@ -266,7 +265,7 @@ Int_t THaVDCCluster::GetPivotWireNum() const
   return fPivot ? fPivot->GetWireNum() : -1;
 }
 
-//______________________________________________________________________________
+//_____________________________________________________________________________
 void THaVDCCluster::Print( Option_t* opt ) const
 {
   // Print contents of cluster
@@ -320,4 +319,4 @@ void THaVDCCluster::Print( Option_t* opt ) const
 
 }
 
-////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////

@@ -58,7 +58,8 @@ const char* const myName = "D";
 ClassImp(THaDecData)
 
 //_____________________________________________________________________________
-THaDecData::THaDecData( const char* descript ) : THaApparatus( myName, descript )
+THaDecData::THaDecData( const char* descript ) : 
+  THaApparatus( myName, descript )
 {
   fNmydets    = 0;
   bits        = new Int_t[MAXBIT];
@@ -66,7 +67,8 @@ THaDecData::THaDecData( const char* descript ) : THaApparatus( myName, descript 
   Clear();
 }
 
-void THaDecData::Clear() 
+//_____________________________________________________________________________
+void THaDecData::Clear( Option_t* opt ) 
 {
   memset(bits, 0, MAXBIT*sizeof(UInt_t));
   evtypebits = 0;
@@ -302,7 +304,7 @@ Int_t THaDecData::Decode(const THaEvData& evdata)
 }
 
 //_____________________________________________________________________________
-void THaDecData::Dump() {
+void THaDecData::Print( Option_t* opt ) const {
 // Dump the data for purpose of debugging.
   cout << "Dump of THaDecData "<<endl;
   cout << "event pattern bits : ";

@@ -56,7 +56,7 @@ protected:
   Double_t fSin_vu;           // Sine of the difference between the V wire
                               // angle and the U wire angle
 
-  void Clear()  { fUVTracks->Clear(); }
+  void Clear( Option_t* opt="" )  { fUVTracks->Clear(); }
 
   // For CoarseTrack
   void FindClusters()        // Find clusters in U & V planes

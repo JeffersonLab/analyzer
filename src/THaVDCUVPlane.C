@@ -19,7 +19,7 @@
 ClassImp(THaVDCUVPlane)
 
 
-//______________________________________________________________________________
+//_____________________________________________________________________________
 THaVDCUVPlane::THaVDCUVPlane( const char* name, const char* description,
 			      THaDetectorBase* parent )
   : THaSubDetector(name,description,parent)
@@ -36,7 +36,7 @@ THaVDCUVPlane::THaVDCUVPlane( const char* name, const char* description,
 }
 
 
-//______________________________________________________________________________
+//_____________________________________________________________________________
 THaVDCUVPlane::~THaVDCUVPlane()
 {
   // Destructor. Delete planes and track array.
@@ -64,7 +64,7 @@ THaDetectorBase::EStatus THaVDCUVPlane::Init( const TDatime& date )
   return fStatus;
 }
 
-//______________________________________________________________________________
+//_____________________________________________________________________________
 Int_t THaVDCUVPlane::SetupDetector( const TDatime& date )
 {
   // Initialize the UV plane object.
@@ -87,7 +87,7 @@ Int_t THaVDCUVPlane::SetupDetector( const TDatime& date )
   return kOK;
 }
 
-//______________________________________________________________________________
+//_____________________________________________________________________________
 Int_t THaVDCUVPlane::MatchUVClusters()
 {
   // Match clusters in the U plane with cluster in the V plane
@@ -178,7 +178,7 @@ Int_t THaVDCUVPlane::MatchUVClusters()
   return GetNUVTracks();
 }
 
-//______________________________________________________________________________
+//_____________________________________________________________________________
 Int_t THaVDCUVPlane::CalcUVTrackCoords()
 {
   // Compute track info (x, y, theta, phi) for the tracks based on
@@ -215,7 +215,7 @@ Int_t THaVDCUVPlane::CalcUVTrackCoords()
   return nUVTracks;
 }
 
-//______________________________________________________________________________
+//_____________________________________________________________________________
 Int_t THaVDCUVPlane::Decode( const THaEvData& evData )
 {
   // Convert raw data into good stuff
@@ -229,7 +229,7 @@ Int_t THaVDCUVPlane::Decode( const THaEvData& evData )
   return 0;
 }
 
-//______________________________________________________________________________
+//_____________________________________________________________________________
 Int_t THaVDCUVPlane::CoarseTrack( )
 {
   // Coarse computation of tracks
@@ -246,7 +246,7 @@ Int_t THaVDCUVPlane::CoarseTrack( )
   return 0;
 }
 
-//______________________________________________________________________________
+//_____________________________________________________________________________
 Int_t THaVDCUVPlane::FineTrack( )
 {
   // High precision computation of tracks
@@ -261,4 +261,4 @@ Int_t THaVDCUVPlane::FineTrack( )
 }
 
 
-////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////

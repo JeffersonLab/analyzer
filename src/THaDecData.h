@@ -43,7 +43,7 @@ public:
    Int_t NumHits() { return rdata.size(); };
    UInt_t Get(Int_t i) { if (i >= 0 && rdata.size() > (unsigned int)i) return rdata[i]; return 0; };
    UInt_t Get() { if (rdata.size() > (unsigned int)0) return rdata[0]; return 0; };  
-   Bool_t ThisIs(char* aname) { return (strstr(name,aname) != NULL); };
+   Bool_t ThisIs(const char* aname) { return (strstr(name,aname) != NULL); };
    ~BdataLoc() { delete name; }
 private:
    Bool_t loaded_once;
@@ -75,8 +75,8 @@ private:
    vector < BdataLoc* > fCrateLoc;   // Raw Data locations by crate, slot, channel
    vector < BdataLoc* > fWordLoc;    // Raw Data locations relative to header word
 
-   void Clear();
-   void Dump();
+   virtual void Clear( Option_t* opt="" );
+   virtual void Print( Option_t* opt="" ) const;
    Int_t DefaultMap();
    void TrigBits(Int_t ibit, BdataLoc *dataloc);
    vector<string> vsplit(const string& s);

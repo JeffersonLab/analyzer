@@ -74,7 +74,7 @@ protected:
   Int_t    fNumIter;        // Number of iterations for FineTrack()
   Double_t fErrorCutoff;    // Cut on track matching error
 
-          void  Clear()  {}
+  virtual void  Clear( Option_t* opt="" )  {}
   virtual Int_t ConstructTracks( TClonesArray * tracks = NULL, Int_t flag = 0 );
 
   void ProjToTransPlane(Double_t& x, Double_t& y, Double_t& z, 

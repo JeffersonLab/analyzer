@@ -134,8 +134,7 @@ Int_t THaSpectrometer::CalcPID()
 }
 
 //_____________________________________________________________________________
-inline
-void THaSpectrometer::Clear()
+void THaSpectrometer::Clear( Option_t* opt )
 {
   // Delete contents of internal even-by-event arrays
 

@@ -84,7 +84,7 @@ protected:
 
   THaDetectorBase* fVDC;  // VDC detector to which this plane belongs
 
-  void  Clear();
+  virtual void  Clear( Option_t* opt="" );
 
   virtual void  MakePrefix();
   virtual Int_t ReadDatabase( FILE* file, const TDatime& date );
