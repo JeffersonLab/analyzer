@@ -15,7 +15,9 @@ class THaTrackID : public TObject {
 public:
   THaTrackID() {}
   THaTrackID( const THaTrackID& rhs ) : TObject(rhs) {}
-  THaTrackID& operator=( const THaTrackID& );
+  THaTrackID& operator=( const THaTrackID& rhs )
+  { TObject::operator=(rhs); return *this; }
+
   virtual ~THaTrackID() {}
 
   virtual Bool_t  operator==( const THaTrackID& ) = 0;

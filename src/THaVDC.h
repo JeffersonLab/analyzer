@@ -51,11 +51,11 @@ protected:
   Double_t fTan_vdc;
   Double_t fSpacing;     // Spacing between U1 and U2 (m)
   Int_t    fNtracks;     // Number of tracks found in ConstructTracks
+  Int_t    fNumIter;     // Number of iterations for FineTrack()
 
           void  Clear()  {}
   virtual Int_t ConstructTracks( TClonesArray * tracks = NULL, Int_t flag = 0 );
-  virtual Int_t MatchUVTracks();  // Match UV tracks from upper UV plane
-                                  // with ones from lower UV plane
+  virtual Int_t MatchUVTracks( Int_t flag );  
 
   void ProjToTransPlane(Double_t& x, Double_t& y, Double_t& z, 
 			Double_t& th, Double_t& ph);

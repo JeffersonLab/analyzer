@@ -14,9 +14,8 @@
 
 ClassImp(THaVDCUVTrack)
 
-
 //______________________________________________________________________________
-THaVDCUVTrack * THaVDCUVTrack::FindPartner(TClonesArray& trackList, Int_t length)
+THaVDCUVTrack* THaVDCUVTrack::FindPartner(TClonesArray& trackList, Int_t length)
 {
   // Find the UV Track in tracklist which is closest to the projected position
   // of this track in the other plane
@@ -53,8 +52,11 @@ THaVDCUVTrack * THaVDCUVTrack::FindPartner(TClonesArray& trackList, Int_t length
   THaVDCUVTrack* minTrack;
   for (int i = 0; i < length; i++) {
     THaVDCUVTrack* track = static_cast<THaVDCUVTrack*>( trackList[i] );
-    Double_t dist = (track->fX - px) * (track->fX - px) + 
-      (track->fY - py) * (track->fY - py);
+    Double_t dist  = track->GetX() - px;
+    dist *= dist;
+    Double_t dist2 = track->GetY() - py;
+    dist2 *= dist2;
+    dist += dist2;
     if (dist < minDist) {
       minDist = dist;
       minTrack = track;

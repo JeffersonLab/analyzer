@@ -31,27 +31,27 @@ public:
   //sort hits?
   
   //Get and Set functions
-  Int_t GetNClusters()         { return fClusters->GetLast()+1;  }
-  TClonesArray * GetClusters() { return fClusters; }
+  Int_t          GetNClusters()  { return fClusters->GetLast()+1; }
+  TClonesArray*  GetClusters()   { return fClusters; }
   THaVDCCluster* GetCluster(Int_t i) 
-    { return (THaVDCCluster*)(*fClusters)[i]; } 
+  { return (THaVDCCluster*)fClusters->At(i); } 
 
-  Int_t GetNWires()            { return fWires->GetLast()+1;  }
-  TClonesArray * GetWires()    { return fWires; }
-  THaVDCWire * GetWire(Int_t i){ return (THaVDCWire *)(*fWires)[i];}
+  Int_t          GetNWires()     { return fWires->GetLast()+1; }
+  TClonesArray*  GetWires()      { return fWires; }
+  THaVDCWire*    GetWire(Int_t i){ return (THaVDCWire*)fWires->At(i);}
 
-  Int_t GetNHits()             { return fHits->GetLast()+1; }
-  TClonesArray * GetHits()     { return fHits; }
-  THaVDCHit * GetHit(Int_t i)  { return (THaVDCHit *)(*fHits)[i];}
+  Int_t          GetNHits()      { return fHits->GetLast()+1; }
+  TClonesArray*  GetHits()       { return fHits; }
+  THaVDCHit*     GetHit(Int_t i) { return (THaVDCHit*)fHits->At(i); }
 
-  Int_t GetNWiresHit()         { return fNWiresHit; } 
+  Int_t    GetNWiresHit()        { return fNWiresHit; } 
 
-  Double_t GetZ()              { return fZ;       }
-  Double_t GetWBeg()           { return fWBeg;    }
-  Double_t GetWSpac()          { return fWSpac;   }
-  Double_t GetWAngle()         { return fWAngle;  }
-  Double_t GetTDCRes()         { return fTDCRes;  }
-  Double_t GetDriftVel()       { return fDriftVel;}
+  Double_t GetZ()                { return fZ; }
+  Double_t GetWBeg()             { return fWBeg; }
+  Double_t GetWSpac()            { return fWSpac; }
+  Double_t GetWAngle()           { return fWAngle; }
+  Double_t GetTDCRes()           { return fTDCRes; }
+  Double_t GetDriftVel()         { return fDriftVel; }
 
 /*    void SetZ(Double_t z)          {fZ     = z;    } */
 /*    void SetWBeg(Double_t wbeg)    {fWBeg  = wbeg; } */
@@ -62,13 +62,13 @@ public:
 protected:
 
   //Use TClonesArray::GetLast()+1 to get the number of wires, hits, & clusters 
-  TClonesArray * fWires;     // Wires
-  TClonesArray * fHits;      // Fired wires 
-  TClonesArray * fClusters;  // Clusters
+  TClonesArray*  fWires;     // Wires
+  TClonesArray*  fHits;      // Fired wires 
+  TClonesArray*  fClusters;  // Clusters
   
   Int_t fNWiresHit;  // Number of wires that were hit
 
-  THaVDCUVPlane * fUVPlane;// Ptr to UV plane owning this plane
+  THaVDCUVPlane* fUVPlane;// Ptr to UV plane owning this plane
 
   // The following parameters are read from database.
  

@@ -2,7 +2,8 @@
 //                                                                           //
 // THaVDCUVPlane                                                             //
 //                                                                           //
-// Class for the UV planes in the VDC                                        //
+// Class for a UV-Plane in the VDC.  Each UV-Plane consists of two planes    //
+//                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "THaVDC.h"
@@ -95,9 +96,11 @@ Int_t THaVDCUVPlane::MatchUVClusters()
   // Match clusters in the U plane with cluster in the V plane
   // Creates THaVDCUVTrack object for each pair
 
+  Int_t nu = fU->GetNClusters();
+  Int_t nv = fV->GetNClusters();
 
   // Need at least one cluster per plane in order to match
-  if (fU->GetNClusters() < 1 || fV->GetNClusters() < 1) {
+  if ( nu < 1 || nv < 1) {
     return 0;
   }
   
@@ -108,11 +111,11 @@ Int_t THaVDCUVPlane::MatchUVClusters()
   // 2) Multiple clusters per plane
 
   // One cluster per plane case
-  if (fU->GetNClusters() == 1 && fV->GetNClusters() == 1) {
+  if ( nu == 1 && nv == 1) {
     uvTrack = new ( (*fUVTracks)[0] ) THaVDCUVTrack();
     uvTrack->SetUVPlane(this);
 
-    // Set the UV tracks U & V clusters
+    // Set the U & V clusters
     uvTrack->SetUCluster( fU->GetCluster(0) );
     uvTrack->SetVCluster( fV->GetCluster(0) );
 
@@ -121,7 +124,7 @@ Int_t THaVDCUVPlane::MatchUVClusters()
     // Cope with different numbers of clusters per plane by ensuring that
     // p1 has more clusters than p2
     THaVDCPlane *p1, *p2; // Plane 1 and plane 2
-    if (fU->GetNClusters() > fV->GetNClusters()) { 
+    if ( nu > nv ) { 
       // More U clusters than V clusters
       p1 = fU;
       p2 = fV;
@@ -130,9 +133,9 @@ Int_t THaVDCUVPlane::MatchUVClusters()
       p2 = fU;
     }       
     // Match clusters by time
-    THaVDCCluster * p1Clust, * p2Clust; //Cluster from p1, p2 respectively
-    THaVDCCluster * minClust; // Cluster in p2 with time closest to p1Clust
-    THaVDCHit *p1Pivot, *p2Pivot;
+    THaVDCCluster *p1Clust, *p2Clust; //Cluster from p1, p2 respectively
+    THaVDCCluster *minClust;     //Cluster in p2 with time closest to p1Clust
+    THaVDCHit     *p1Pivot, *p2Pivot;
     Double_t minTimeDif;      // Time difference between p1Clust and minClust
     for (int i = 0; i < p1->GetNClusters(); i++) {
       
@@ -178,40 +181,37 @@ Int_t THaVDCUVPlane::MatchUVClusters()
 }
 
 //______________________________________________________________________________
-Int_t THaVDCUVPlane::ConstructUVTracks()
+Int_t THaVDCUVPlane::CalcUVTrackCoords()
 {
-  // Compute track info (x, y, theta, phi) for the tracks
-  // Uses transport coordinate system
+  // Compute track info (x, y, theta, phi) for the tracks based on
+  // information contained in the clusters of the tracks and on 
+  // geometry information from this UV plane.
+  //
+  // Uses TRANSPORT coordinates. 
   
   Int_t nUVTracks = GetNUVTracks();
   for (int i = 0; i < nUVTracks; i++) {
 
-    THaVDCUVTrack * track = GetUVTrack(i);
-    THaVDCCluster * uClust = track->GetUCluster();
-    THaVDCCluster * vClust = track->GetVCluster();
+    THaVDCUVTrack* track  = GetUVTrack(i);
+    THaVDCCluster* uClust = track->GetUCluster();
+    THaVDCCluster* vClust = track->GetVCluster();
     
-    Double_t u  = uClust->GetIntercept(); //Get intercept for U plane     
-    Double_t vInt  = vClust->GetIntercept(); //Get intercept for V plane  
-    Double_t dz = fSpacing;  //Get space between U&V planes
-  
-    Double_t mu = uClust->GetSlope();    // Change in u / change in z_det
-    Double_t mv = vClust->GetSlope();    // Change in v / change in z_det
+    Double_t u    = uClust->GetIntercept(); // Intercept for U plane
+    Double_t vInt = vClust->GetIntercept(); // Intercept for V plane
+    Double_t dz   = fSpacing;               // Space between U&V planes
+    Double_t mu   = uClust->GetSlope();     // Change in u / change in z_det
+    Double_t mv   = vClust->GetSlope();     // Change in v / change in z_det
     
     // Project vInt into the u plane
     Double_t v = vInt - mv * dz;
 
     // Now calculate track parameters in the detector cs
- 
-    Double_t detX = (u*fSin_v - v*fSin_u) / fSin_vu;
-    Double_t detY = (v*fCos_u - u*fCos_v) / fSin_vu;
-
+    Double_t detX     = (u*fSin_v - v*fSin_u) / fSin_vu;
+    Double_t detY     = (v*fCos_u - u*fCos_v) / fSin_vu;
     Double_t detTheta = (mu*fSin_v - mv*fSin_u) / fSin_vu;
-    Double_t detPhi = (mv*fCos_u - mu*fCos_v) / fSin_vu;
+    Double_t detPhi   = (mv*fCos_u - mu*fCos_v) / fSin_vu;
 
-    track->SetX(detX);
-    track->SetY(detY);
-    track->SetTheta(detTheta);
-    track->SetPhi(detPhi);
+    track->Set( detX, detY, detTheta, detPhi );
   }
 
   return nUVTracks;
@@ -243,7 +243,7 @@ Int_t THaVDCUVPlane::CoarseTrack( )
   MatchUVClusters();
 
   // Construct UV tracks
-  ConstructUVTracks();
+  CalcUVTrackCoords();
 
   return 0;
 }
@@ -257,7 +257,7 @@ Int_t THaVDCUVPlane::FineTrack( )
   FitTracks();
 
   // Reconcstruct the UV tracks, based on the refined cluster positions
-  ConstructUVTracks();
+  CalcUVTrackCoords();
 
   return 0;
 }

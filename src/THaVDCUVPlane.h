@@ -4,7 +4,6 @@
 //                                                                           //
 // THaVDCUVPlane                                                             //
 //                                                                           //
-// Class for a UV-Plane in the VDC.  Each UV-Plane consists of two planes    //
 ///////////////////////////////////////////////////////////////////////////////
 #include "THaSubDetector.h"
 #include "THaVDCPlane.h"
@@ -28,19 +27,21 @@ public:
   virtual EStatus Init( const TDatime& date );
 
   // Get and Set Functions
-  THaVDCPlane * GetUPlane() { return fU; }
-  THaVDCPlane * GetVPlane() { return fV; } 
-  Int_t GetNUVTracks () { return fUVTracks->GetLast()+1; }
-  TClonesArray * GetUVTracks () { return fUVTracks; }
-  THaVDCUVTrack * GetUVTrack(Int_t i) { return (THaVDCUVTrack*)(*fUVTracks)[i]; }
-  THaVDC* GetVDC() { return static_cast<THaVDC*>(fDetector); }
-  Double_t GetSpacing() { return fSpacing;}
-  Double_t GetVUWireAngle() { return fVUWireAngle; }
+  THaVDCPlane*   GetUPlane()      const { return fU; }
+  THaVDCPlane*   GetVPlane()      const { return fV; } 
+  Int_t          GetNUVTracks()   const { return fUVTracks->GetLast()+1; }
+  TClonesArray*  GetUVTracks()    const { return fUVTracks; }
+  THaVDC*        GetVDC()         const { return (THaVDC*)fDetector; }
+  Double_t       GetSpacing()     const { return fSpacing;}
+  THaVDCUVTrack* GetUVTrack( Int_t i ) const 
+    { return (THaVDCUVTrack*)fUVTracks->At(i); }
+  Double_t       GetVUWireAngle() const { return fVUWireAngle; }
   
   //void SetVDC(THaVDC * vdc) {fVDC = vdc; }
   
 
 protected:
+
   THaVDCPlane*  fU;           // The U plane
   THaVDCPlane*  fV;           // The V plane
 
@@ -64,13 +65,13 @@ protected:
   void FindClusters()        // Find clusters in U & V planes
     { fU->FindClusters(); fV->FindClusters(); }
   Int_t MatchUVClusters();   // Match U plane clusters 
-                                     //  with V plane clusters
+                             //  with V plane clusters
   // For FineTrack
   void FitTracks()      // Fit data to recalculate cluster position
     { fU->FitTracks(); fV->FitTracks(); }
 
   // For Both
-  Int_t ConstructUVTracks();
+  Int_t CalcUVTrackCoords(); // Compute UV track coords in detector cs
   
   virtual Int_t SetupDetector( const TDatime& date );
 

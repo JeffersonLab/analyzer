@@ -17,7 +17,9 @@
 #include "THaVDCTrackID.h"
 #include "VarDef.h"
 
-#include <cstring>
+// FIXME: Debug
+#include "THaGlobals.h"
+#include "THaVarList.h"
 
 ClassImp(THaVDC)
 
@@ -62,14 +64,15 @@ Int_t THaVDC::SetupDetector( const TDatime& date )
   if( fIsSetup ) return kOK;
   fIsSetup = true;
 
-  // TODO: Get these values from database file
+  // FIXME: Get these values from database file
   const Double_t degrad = TMath::Pi()/180.0;
   fVDCAngle = -45.0887 *  degrad;  //Convert to radians
   fSin_vdc = TMath::Sin(fVDCAngle);
   fCos_vdc = TMath::Cos(fVDCAngle);
   fTan_vdc = TMath::Tan(fVDCAngle);
-  fSpacing  = 0.3348; // Dist between similar wire planes (eg u1->u2) (m)
-
+  fSpacing = 0.3348; // Dist between similar wire planes (eg u1->u2) (m)
+  fNumIter = 1;      // Number of iterations for FineTrack()
+ 
   fIsInit = true;
 
 
@@ -97,9 +100,9 @@ THaVDC::~THaVDC()
 }
 
 //______________________________________________________________________________
-Int_t THaVDC::MatchUVTracks()
+Int_t THaVDC::MatchUVTracks( Int_t flag )
 {
-  // Match UV tracks from upper UV plane with ones from lower UV plane 
+  // Match UV tracks from upper UV plane with ones from lower UV plane.
   // Have lower plane find partners
 
   //FIXME: Improve algorithm
@@ -118,21 +121,28 @@ Int_t THaVDC::MatchUVTracks()
   // Have upper plane find partners, and compare results with lower plane
   //  printf("\tfinding partners for upper tracks...\n");
   for (int i = 0; i < nUpperTracks; i++) {
-    THaVDCUVTrack * track = fUpper->GetUVTrack(i);
+    THaVDCUVTrack* track = fUpper->GetUVTrack(i);
 
     if (!track)
       printf ("!-Error Matching UV Tracks!  No Upper Track %d\n", i);
 
-    THaVDCUVTrack * partner = track->FindPartner(*fLower->GetUVTracks(), 
-						 nLowerTracks);
+    THaVDCUVTrack* partner = track->FindPartner(*fLower->GetUVTracks(), 
+						nLowerTracks);
     if (!partner)
       printf("!-Error Matching UV Tracks! No partner for track %d\n", i);
 
     if (track == partner->GetPartner()) {
       nTracks++;
     } else {
-      // Handle special cases where tracks don't "agree" on who their
+      // FIXME: Handle special cases where tracks don't "agree" on who their
       // partners ought to be
+      // FIXME: Debug
+//        THaVar* v = gHaVars->Find("nev");
+//        UInt_t nev = (UInt_t) v->GetValue();
+//        Warning( Here("MatchUVTracks()"), "Tracks do not partner (%d %d %d) "
+//  	       "Event %d, Stage: %s",
+//  	       i, nUpperTracks, nLowerTracks, nev, 
+//  	       (flag == 1) ? "Coarse" : "Fine"  );
     }
   }   
 
@@ -145,7 +155,7 @@ Int_t THaVDC::ConstructTracks( TClonesArray * tracks, Int_t flag )
   // Construct tracks from pairs of upper and lower UV tracks and add 
   // them to 'tracks'
 
-  int nTracks = MatchUVTracks(); 
+  int nTracks = MatchUVTracks( flag );
 
   // How many tracks already there?
   int n_exist, n_mod = 0;
@@ -155,7 +165,7 @@ Int_t THaVDC::ConstructTracks( TClonesArray * tracks, Int_t flag )
 
   // Now compute global track values and get transport coordinates for tracks
 
-  THaVDCUVTrack * track, * partner;
+  THaVDCUVTrack *track, *partner;
   // Note that i is a counter for the number of successfully matched UV tracks
   // and j is a counter for ALL UV tracks, including ones which were not 
   // successfully matched
@@ -178,17 +188,21 @@ Int_t THaVDC::ConstructTracks( TClonesArray * tracks, Int_t flag )
 
     // First slopes
     Double_t du, dv, mu, mv;
-    du = partner->GetUCluster()->GetIntercept() - 
-      track->GetUCluster()->GetIntercept();
-    dv = partner->GetVCluster()->GetIntercept() - 
-      track->GetVCluster()->GetIntercept();
+    THaVDCCluster 
+      *tu = track->GetUCluster(), 
+      *tv = track->GetVCluster(), 
+      *pu = partner->GetUCluster(),
+      *pv = partner->GetVCluster();
+
+    du = pu->GetIntercept() - tu->GetIntercept();
+    dv = pv->GetIntercept() - tv->GetIntercept();
     mu = du / fSpacing;
     mv = dv / fSpacing;
 
-    track->GetUCluster()->SetSlope(mu);
-    track->GetVCluster()->SetSlope(mv);
-    partner->GetUCluster()->SetSlope(mu);
-    partner->GetVCluster()->SetSlope(mv);
+    tu->SetSlope(mu);
+    tv->SetSlope(mv);
+    pu->SetSlope(mu);
+    pv->SetSlope(mv);
 
     // Now update angles
     Double_t dx = partner->GetX() - track->GetX();
@@ -312,8 +326,8 @@ Int_t THaVDC::FineTrack( TClonesArray& tracks )
   fLower->FineTrack();
   fUpper->FineTrack();
 
-  Int_t numIter = 1;
-  for (Int_t i = 0; i < numIter; i++) {
+  // FIXME: Is angle information given to T2D converter?
+  for (Int_t i = 0; i < fNumIter; i++) {
     ConstructTracks();
     fLower->FineTrack();
     fUpper->FineTrack();
