@@ -44,7 +44,7 @@ private:
   Int_t    fHelicity;         // Beam helicity
   Int_t    fRun;              // Run number
 
-  ClassDef(THaEventHeader,2)  //THaEvent Header
+  ClassDef(THaEventHeader,3)  //THaEvent Header
 };
 
 
