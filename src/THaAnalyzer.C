@@ -1256,6 +1256,9 @@ Int_t THaAnalyzer::Process( THaRunBase* run )
   // that are defined in the current directory.
 
   if( fDoBench ) fBench->Begin("Output");
+  // Ensure that we are in the output file's current directory
+  // ... someone might have pulled the rug from under our feet
+  if( fFile )   fFile->cd();
   if( fOutput ) fOutput->End();
   if( fFile ) {
     fRun->Write("Run_Data");  // Save run data to ROOT file
