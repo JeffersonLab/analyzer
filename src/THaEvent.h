@@ -70,8 +70,8 @@ protected:
     const char*  name;           //! Global variable name
     void*        dest;           //! Address of corresponding member variable
     Int_t*       ncopyvar;       //! Variable holding value of ncopy (if ncopy=-1)
-    size_t       size;           //! Size per element (bytes)
-    const void*  src;            //! Address of global variable
+    Int_t        size;           //! Size per element (bytes)
+    const void*  src;            //! Address of global variable data
   };
   DataMap*       fDataMap;       //! Map of global variables to copy
 

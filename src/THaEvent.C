@@ -148,7 +148,6 @@ Int_t THaEvent::DefineHist( const char* varname,
   return 0;
 }
 
-#include <iostream>
 //______________________________________________________________________________
 Int_t THaEvent::HistFill()
 {
@@ -229,31 +228,31 @@ Int_t THaEvent::HistInit()
 	// the corresponding global variable
 
 	switch( pvar->GetType() ) {
-	case kDouble:
+	case kDouble: case kDoubleP:
 	  hdef->h1 = new TH1D( hdef->hname, hdef->title, 
 			       hdef->nbins, hdef->xlo, hdef->xhi );
 	  hdef->type = 3;
 	  break;
 	
-	case kFloat:
-	case kLong:
-	case kULong:
-	case kInt:
-	case kUInt:
-	case kUShort:
+	case kFloat:  case kFloatP:
+	case kLong:   case kLongP:
+	case kULong:  case kULongP:
+	case kInt:    case kIntP:
+	case kUInt:   case kUIntP:
+	case kUShort: case kUShortP:
 	  hdef->h1 = new TH1F( hdef->hname, hdef->title, 
 			       hdef->nbins, hdef->xlo, hdef->xhi );
 	  hdef->type = 2;
 	  break;
 	
-	case kShort:
-	case kByte:
+	case kShort: case kShortP:
+	case kByte:  case kByteP:
 	  hdef->h1 = new TH1S( hdef->hname, hdef->title, 
 			       hdef->nbins, hdef->xlo, hdef->xhi );
 	  hdef->type = 1;
 	  break;
 
-	case kChar:
+	case kChar:  case kCharP:
 	  hdef->h1 = new TH1C( hdef->hname, hdef->title, 
 			       hdef->nbins, hdef->xlo, hdef->xhi );
 	  hdef->type = 0;
@@ -300,7 +299,17 @@ Int_t THaEvent::Fill()
 	  ncopy = datamap->ncopy;
 	else
 	  ncopy = *datamap->ncopyvar;
-	memcpy( datamap->dest, datamap->src, ncopy * datamap->size );
+	if( datamap->size > 0 ) 
+	  memcpy( datamap->dest, datamap->src, ncopy * datamap->size );
+	else {
+	  // For pointer arrays, we need to copy the elements one by one
+	  // Type doesn't matter for memcpy.
+	  for( int i=0; i<ncopy; i++ ) {
+	    const int** src  = static_cast<const int**>( datamap->src );
+	    int*        dest = static_cast<int*>( datamap->dest );
+	    memcpy( dest+i, *(src+i), -datamap->size );
+	  }
+	}
 	nvar += ncopy;
       }
       datamap++;
@@ -327,6 +336,8 @@ Int_t THaEvent::Init()
       if( THaVar* pvar = gHaVars->Find( datamap->name )) {
 	datamap->size = pvar->GetTypeSize();
 	datamap->src  = pvar->GetValuePointer();
+	if( pvar->IsPointerArray() )
+	  datamap->size *= -1;       // negative size indicates pointer array
       } else {
 	Warning("Init()", "Global variable %s not found. "
 		"Will be filled with zero.", datamap->name );
