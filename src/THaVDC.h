@@ -106,7 +106,9 @@ protected:
   std::vector<THaMatrixElement> fTMatrixElems;
   std::vector<THaMatrixElement> fDMatrixElems;
   std::vector<THaMatrixElement> fPMatrixElems;
+  std::vector<THaMatrixElement> fPTAMatrixElems; // involves abs(theta_fp)
   std::vector<THaMatrixElement> fYMatrixElems;
+  std::vector<THaMatrixElement> fYTAMatrixElems; // involves abs(theta_fp)
   std::vector<THaMatrixElement> fFPMatrixElems;  // matrix elements used in
                                             // focal plane transformations
                                             // { T, Y, P }
@@ -121,9 +123,9 @@ protected:
 		 const double y, const int norder, 
 		 const std::vector<double> &a);
   Double_t CalcTargetVar(const std::vector<THaMatrixElement> &matrix, 
-			 const double powers[][4]);
+			 const double powers[][5]);
   Double_t CalcTarget2FPLen(const std::vector<THaMatrixElement>& matrix,
-			    const Double_t powers[][4]);
+			    const Double_t powers[][5]);
   Int_t ReadDatabase( const TDatime& date );
 
   virtual void  Clear( Option_t* opt="" )  {}

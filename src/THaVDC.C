@@ -149,7 +149,9 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   fTMatrixElems.clear();
   fDMatrixElems.clear();
   fPMatrixElems.clear();
+  fPTAMatrixElems.clear();
   fYMatrixElems.clear();
+  fYTAMatrixElems.clear();
   fLMatrixElems.clear();
   
   fFPMatrixElems.clear();
@@ -163,13 +165,15 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   power["D"] = 3;  // focal-plane to target tensors
   power["T"] = 3;
   power["Y"] = 3;
+  power["YTA"] = 4;
   power["P"] = 3;
+  power["PTA"] = 4;
   power["L"] = 4;  // pathlength from z=0 (target) to focal plane (meters)
   power["XF"] = 5; // forward: target to focal-plane (I think)
   power["TF"] = 5;
   power["PF"] = 5;
   power["YF"] = 5;
-
+  
   map<string,vector<THaMatrixElement>*> matrix_map;
   matrix_map["t"] = &fFPMatrixElems;
   matrix_map["y"] = &fFPMatrixElems;
@@ -177,7 +181,9 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   matrix_map["D"] = &fDMatrixElems;
   matrix_map["T"] = &fTMatrixElems;
   matrix_map["Y"] = &fYMatrixElems;
+  matrix_map["YTA"] = &fYTAMatrixElems;
   matrix_map["P"] = &fPMatrixElems;
+  matrix_map["PTA"] = &fPTAMatrixElems;
   matrix_map["L"] = &fLMatrixElems;
 
   map <string,int> fp_map;
@@ -478,7 +484,7 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
     Double_t dv = pv->GetIntercept() - tv->GetIntercept();
     Double_t mu = du / fSpacing;
     Double_t mv = dv / fSpacing;
-
+    
     tu->SetSlope(mu);
     tv->SetSlope(mv);
     pu->SetSlope(mu);
@@ -544,11 +550,12 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 	if( theStage == kFine ) 
 	  flag |= kReassigned;
       }
+      
 
       theTrack->SetD(track->GetX(), track->GetY(), track->GetTheta(), 
 		     track->GetPhi());
       theTrack->SetFlag( flag );
-
+      
       // calculate the TRANSPORT coordinates
       CalcFocalPlaneCoords(theTrack, kRotatingTransport);
     }
@@ -730,7 +737,7 @@ void THaVDC::CalcTargetCoords(THaTrack *track, const ECoordTypes mode)
   const Int_t kNUM_PRECOMP_POW = 10;
 
   Double_t x_fp, y_fp, th_fp, ph_fp;
-  Double_t powers[kNUM_PRECOMP_POW][4];  // {(x), th, y, ph }
+  Double_t powers[kNUM_PRECOMP_POW][5];  // {(x), th, y, ph, abs(th) }
   Double_t x, y, theta, phi, dp, p, pathl;
 
   // first select the coords to use
@@ -752,18 +759,21 @@ void THaVDC::CalcTargetCoords(THaTrack *track, const ECoordTypes mode)
     powers[i][1] = pow(th_fp, i);
     powers[i][2] = pow(y_fp, i);
     powers[i][3] = pow(ph_fp, i);
+    powers[i][4] = pow(abs(th_fp),i);
   }
 
   // calculate the matrices we need
   CalcMatrix(x_fp, fDMatrixElems);
   CalcMatrix(x_fp, fTMatrixElems);
   CalcMatrix(x_fp, fYMatrixElems);
+  CalcMatrix(x_fp, fYTAMatrixElems);
   CalcMatrix(x_fp, fPMatrixElems);
+  CalcMatrix(x_fp, fPTAMatrixElems);
 
   // calculate the coordinates at the target
   theta = CalcTargetVar(fTMatrixElems, powers);
-  phi = CalcTargetVar(fPMatrixElems, powers);
-  y = CalcTargetVar(fYMatrixElems, powers);
+  phi = CalcTargetVar(fPMatrixElems, powers)+CalcTargetVar(fPTAMatrixElems,powers);
+  y = CalcTargetVar(fYMatrixElems, powers)+CalcTargetVar(fYTAMatrixElems,powers);
 
   // calculate momentum
   dp = CalcTargetVar(fDMatrixElems, powers);
@@ -808,24 +818,31 @@ void THaVDC::CalcMatrix( const Double_t x, vector<THaMatrixElement>& matrix )
 
 //_____________________________________________________________________________
 Double_t THaVDC::CalcTargetVar(const vector<THaMatrixElement>& matrix,
-			       const Double_t powers[][4])
+			       const Double_t powers[][5])
 {
   // calculates the value of a variable at the target
-  // the x-dependence is already in the matrix, so only 1-3 used
+  // the x-dependence is already in the matrix, so only 1-3 (or np) used
   Double_t retval=0.0;
+  Double_t v=0;
   for( vector<THaMatrixElement>::const_iterator it=matrix.begin();
        it!=matrix.end(); it++ ) 
-    if(it->v != 0.0)
-      retval += it->v * powers[it->pw[0]][1] 
-	              * powers[it->pw[1]][2]
-	              * powers[it->pw[2]][3];
+    if(it->v != 0.0) {
+      v = it->v;
+      unsigned int np = it->pw.size(); // generalize for extra matrix elems.
+      for (unsigned int i=0; i<np; i++)
+	v *= powers[it->pw[i]][i+1];
+      retval += v;
+  //      retval += it->v * powers[it->pw[0]][1] 
+  //	              * powers[it->pw[1]][2]
+  //	              * powers[it->pw[2]][3];
+    }
 
   return retval;
 }
 
 //_____________________________________________________________________________
 Double_t THaVDC::CalcTarget2FPLen(const vector<THaMatrixElement>& matrix,
-				  const Double_t powers[][4])
+				  const Double_t powers[][5])
 {
   // calculates distance from the nominal target position (z=0)
   // to the transport plane
@@ -995,9 +1012,33 @@ void THaVDC::Print(const Option_t* opt) const {
     printf("\n");
   }
 
+  printf("Transport Matrix:  YTA-terms (abs(theta))\n");
+  for (vsiz_t i=0; i<fYTAMatrixElems.size(); i++) {
+    const THaMatrixElement& m = fYTAMatrixElems[i];
+    for (vsiz_t j=0; j<m.pw.size(); j++) {
+      printf("  %2d",m.pw[j]);
+    }
+    for (int j=0; j<m.order; j++) {
+      printf("  %g",m.poly[j]);
+    }
+    printf("\n");
+  }
+
   printf("Transport Matrix:  P-terms\n");
   for (vsiz_t i=0; i<fPMatrixElems.size(); i++) {
     const THaMatrixElement& m = fPMatrixElems[i];
+    for (vsiz_t j=0; j<m.pw.size(); j++) {
+      printf("  %2d",m.pw[j]);
+    }
+    for (int j=0; j<m.order; j++) {
+      printf("  %g",m.poly[j]);
+    }
+    printf("\n");
+  }
+
+  printf("Transport Matrix:  PTA-terms\n");
+  for (vsiz_t i=0; i<fPTAMatrixElems.size(); i++) {
+    const THaMatrixElement& m = fPTAMatrixElems[i];
     for (vsiz_t j=0; j<m.pw.size(); j++) {
       printf("  %2d",m.pw[j]);
     }
