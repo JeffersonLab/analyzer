@@ -9,12 +9,12 @@
 
 #include "TObject.h"
 #include "TVector3.h"
+#include "THaPIDinfo.h"
 
 class TClonesArray;
-class THaPIDinfo;
 class THaTrackingDetector;
-class THaTrackID;
 class THaCluster;
+class THaTrackID;
 
 class THaTrack : public TObject {
 
@@ -32,17 +32,21 @@ public:
   typedef THaTrackingDetector TD;
 
   THaTrack() : 
-    fX(0.0), fY(0.0), fTheta(0.0), fPhi(0.0), fP(0.0), fClusters(NULL), 
+    fX(0.0), fY(0.0), fTheta(0.0), fPhi(0.0), fP(0.0), fNclusters(0),
     fPIDinfo(NULL), fCreator(NULL), fVertexError(1.0,1.0,1.0),
     fID(NULL), fFlag(0), fType(0) {}
   THaTrack( Double_t x, Double_t y, Double_t theta, Double_t phi,
-	    TD* creator=NULL, THaTrackID* id=NULL, THaPIDinfo* pid=NULL );
+	    TD* creator=NULL, THaTrackID* id=NULL, THaPIDinfo* pid=NULL ) :
+    fX(x), fY(y), fTheta(theta), fPhi(phi), fP(0.0), fNclusters(0),
+    fPIDinfo(pid), fCreator(creator), fVertexError(1.0,1.0,1.0),
+    fID(id), fFlag(0), fType(0) { if(pid) pid->Clear(); }
   virtual ~THaTrack();
 
   Int_t             AddCluster( THaCluster* c );
   void              Clear( Option_t* opt="" );
   TD*               GetCreator()       const { return fCreator; }
-  TList*            GetClusters()      const { return fClusters; }
+  Int_t             GetNclusters()     const { return fNclusters; }
+  THaCluster*       GetCluster( Int_t i )    { return fClusters[i]; }
   UInt_t            GetFlag()          const { return fFlag; }
   UInt_t            GetType()          const { return fType; }
   THaTrackID*       GetID()            const { return fID; }
@@ -115,6 +119,8 @@ public:
 
 protected:
 
+  enum { kMAXCL = 4 };
+
   // Focal plane coordinates (TRANSPORT system projected to z=0)
   Double_t          fX;              // x position in TRANSPORT plane (m)
   Double_t          fY;              // y position in TRANSPORT plane (m)
@@ -122,7 +128,8 @@ protected:
   Double_t          fPhi;            // Tangent of TRANSPORT Phi (y')
   Double_t          fP;              // Track momentum (GeV)
 
-  TList*            fClusters;       //! Clusters of this track
+  Int_t             fNclusters;      //! Number of clusters
+  THaCluster*       fClusters[kMAXCL]; //! Clusters of this track
   THaPIDinfo*       fPIDinfo;        //! Particle ID information for this track
   TD*               fCreator;        //! Detector creating this track
 
