@@ -6,14 +6,10 @@
 
 #include "THaVDCHit.h"
 #include "THaVDCTimeToDistConv.h"
-#include "TClass.h"
 
-#include "THaVDCLookupTTDConv.h"
 #include <iostream>
-#include <math.h>
 
 ClassImp(THaVDCHit)
-
 
 //_____________________________________________________________________________
 Double_t THaVDCHit::ConvertTimeToDist(Double_t slope)
@@ -21,7 +17,7 @@ Double_t THaVDCHit::ConvertTimeToDist(Double_t slope)
   // Converts TDC time to drift distance
   // Takes the (estimated) slope of the track as an argument
   
-  THaVDCTimeToDistConv * ttdConv = NULL;
+  THaVDCTimeToDistConv* ttdConv = NULL;
   
   // Make sure that the hit has a wire
   if (fWire) 
