@@ -19,6 +19,8 @@
 #include "TTree.h"
 #include "TFile.h"
 
+using namespace std;
+
 ClassImp(THaOdata)
 ClassImp(THaOutput)
 
@@ -205,9 +207,11 @@ Int_t THaOutput::Process()
     pvar = fArrays[k];
     if ( pvar == 0) continue;
     for (Int_t i = 0; i < pvar->GetLen(); i++) {
-       if (fOdata[k]->Fill(i,pvar->GetValue(i)) != 1) 
-	 cout << "THaOutput::ERROR: storing too much variable sized data: " 
-	      << pvar->GetName() <<endl;
+      if (fOdata[k]->Fill(i,pvar->GetValue(i)) != 1) {
+	cout << "THaOutput::ERROR: storing too much variable sized data: " 
+	     << pvar->GetName() <<endl;
+	break;
+      }
     }
   }
   for (Int_t ihist = 0; ihist < fN1d; ihist++) {
