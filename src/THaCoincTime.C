@@ -14,21 +14,21 @@
 
 #include <iostream>
 
-#include "TLorentzVector.h"
-#include "TVector3.h"
+//#include "TLorentzVector.h"
+//#include "TVector3.h"
 #include "TMath.h"
 
 #include "THaCoincTime.h"
 
 #include "THaTrack.h"
-#include "THaScintillator.h"
+//#include "THaScintillator.h"
 #include "THaDetMap.h"
 #include "THaSpectrometer.h"
 #include "THaEvData.h"
-#include "THaTrackProj.h"
+//#include "THaTrackProj.h"
 
 #include "VarDef.h"
-#include "THaString.h"
+//#include "THaString.h"
 #include "THaDB.h"
 
 using namespace std;
@@ -73,8 +73,14 @@ THaCoincTime::THaCoincTime( const char* name,
 THaCoincTime::~THaCoincTime()
 {
   // Destructor
+  RemoveVariables();
   delete fDetMap;
-  DefineVariables( kDelete );
+  delete [] fVxTime1;
+  delete [] fVxTime2;
+  delete [] fTrInd1;
+  delete [] fTrInd2;
+  delete [] fDiffT2by1;
+  delete [] fDiffT1by2;
 }
 
 //_____________________________________________________________________________
@@ -135,9 +141,14 @@ THaAnalysisObject::EStatus THaCoincTime::Init( const TDatime& run_time )
   if( THaPhysicsModule::Init( run_time ) != kOK )
     return fStatus;
 
-  fSpect1 = dynamic_cast<THaSpectrometer*>( FindModule( fSpectN1.Data(), "THaSpectrometer"));
-  fSpect2 = dynamic_cast<THaSpectrometer*>( FindModule( fSpectN2.Data(), "THaSpectrometer"));
+  fSpect1 = dynamic_cast<THaSpectrometer*>
+    ( FindModule( fSpectN1, "THaSpectrometer"));
+  fSpect2 = dynamic_cast<THaSpectrometer*>
+    ( FindModule( fSpectN2, "THaSpectrometer"));
   
+  if( !fSpect1 || !fSpect2 )
+    fStatus = kInitError;
+
   return fStatus;
 }
 
@@ -245,7 +256,7 @@ Int_t THaCoincTime::ReadDB( const TDatime& date )
 
   if (!gHaDB) return kInitError;
 
-  THaString detnm;
+  //  THaString detnm;
   
   // clear out the detector map before reading a new one
   fDetMap->Clear();
@@ -272,8 +283,10 @@ Int_t THaCoincTime::ReadDB( const TDatime& date )
     };
     TString pref("CT." + fTdcLabels[i] + ".");
     if (! gHaDB->LoadValues(pref,list,date) ) {
-      Warning( Here(here),"Cannot read calibration constants for %s. Using defaults of 50ps/ch and 0seconds offset.",fTdcLabels[i].Data());
-      fTdcRes[i] = 50.e-12;
+      Warning( Here(here),"Cannot read calibration constants for %s. "
+	       "Using defaults of 50ps/ch and 0seconds offset.",
+	       fTdcLabels[i].Data());
+      fTdcRes[i] = 50e-12;
       fTdcOff[i]=0.;
     }
   }
