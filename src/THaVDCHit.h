@@ -21,21 +21,21 @@ public:
   virtual ~THaVDCHit();
 
   virtual Double_t ConvertTimeToDist(Double_t slope);
-  Int_t Compare ( const TObject * obj ) const;
+  Int_t  Compare ( const TObject * obj ) const;
   Bool_t IsSortable () const { return kTRUE; }
   
   // Get and Set Functions
-  THaVDCWire* GetWire() { return fWire; }
-  Int_t GetWireNum() { return fWire ? fWire->GetNum() : -1; }
-  Int_t GetRawTime() { return fRawTime; }
-  Double_t GetTime() { return fTime; }
-  Double_t GetDist() { return fDist; }
-  Double_t GetPos()  { return fWire->GetPos(); } //Position of hit wire
+  THaVDCWire* GetWire() const { return fWire; }
+  Int_t    GetWireNum() const { return fWire ? fWire->GetNum() : -1; }
+  Int_t    GetRawTime() const { return fRawTime; }
+  Double_t GetTime()    const { return fTime; }
+  Double_t GetDist()    const { return fDist; }
+  Double_t GetPos()     const { return fWire->GetPos(); } //Position of hit wire
 
-  void SetWire(THaVDCWire * wire) { fWire = wire; }
-  void SetRawTime(Int_t time)    { fRawTime = time; }
-  void SetTime(Double_t time)    { fTime = time; }
-  void SetDist(Double_t dist) { fDist = dist; }
+  void     SetWire(THaVDCWire * wire) { fWire = wire; }
+  void     SetRawTime(Int_t time)     { fRawTime = time; }
+  void     SetTime(Double_t time)     { fTime = time; }
+  void     SetDist(Double_t dist)     { fDist = dist; }
   
 protected:
   THaVDCWire* fWire;     // Wire on which the hit occurred
