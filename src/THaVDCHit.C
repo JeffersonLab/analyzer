@@ -8,6 +8,10 @@
 #include "THaVDCTimeToDistConv.h"
 #include "TClass.h"
 
+#include "THaVDCLookupTTDConv.h"
+#include <iostream>
+#include <math.h>
+
 ClassImp(THaVDCHit)
 
 
@@ -27,10 +31,11 @@ Double_t THaVDCHit::ConvertTimeToDist(Double_t slope)
     // If a time to distance algorithm exists
     // Use it to convert the TDC time to the drift distance
     fDist = ttdConv->ConvertTimeToDist(fTime, slope);
+
     return fDist;
   }
   else
-    printf("!-THaVDCHit::ConvertTimeToDist-No Time to dist algorithm available.\n");
+    cerr<<"!-THaVDCHit::ConvertTimeToDist-No Time to dist algorithm available\n"<<endl;
   
   return 0.0;
 

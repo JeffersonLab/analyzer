@@ -152,7 +152,7 @@ Int_t THaVDCPlane::ReadDatabase( FILE* file, const TDatime& date )
   fWires = new TClonesArray("THaVDCWire", nWires);
 
   // first read in the time offsets for the wires
-  vector<float> wire_offsets(nWires);
+  float wire_offsets[nWires];
 
   for (int i = 0; i < nWires; i++) {
     float offset = 0.0;
@@ -162,33 +162,36 @@ Int_t THaVDCPlane::ReadDatabase( FILE* file, const TDatime& date )
 
   // now read in the time-to-drift-distance lookup table
   // data (if it exists)
+  fgets(buff, LEN, file); // read to the end of line
   fgets(buff, LEN, file);
-  if(strncmp(buff, "TDC Lookup Table", 16) == 0) {
+  if(strncmp(buff, "TTD Lookup Table", 16) == 0) {
     // if it exists, read the data in
     fscanf(file, "%le", &fT0);
     fscanf(file, "%d", &fNumBins);
     
+    cout<<fT0<<" "<<fNumBins<<endl;
+
     // this object is responsible for the memory management 
     // of the lookup table
     fTable = new Float_t[fNumBins];
-    for(int i=0; i<nWires; i++)
+    for(int i=0; i<fNumBins; i++) {
       fscanf(file, "%e", &(fTable[i]));
-
+    }
   } else {
     // if not, set some reasonable defaults and rewind the file
     fT0 = 0.0;
     fNumBins = 0;
     fTable = NULL;
-
+    cout<<"Could not find lookup table header: "<<buff<<endl;
     fseek(file, -strlen(buff), SEEK_CUR);
   }
 
   // Define time-to-drift-distance converter
   // Currently, we use the analytic converter. 
   // FIXME: Let user choose this via a parameter
-  //THaVDCAnalyticTTDConv* ttdConv = new THaVDCAnalyticTTDConv(driftVel);
+  THaVDCAnalyticTTDConv* ttdConv = new THaVDCAnalyticTTDConv(driftVel);
 
-  THaVDCLookupTTDConv* ttdConv = new THaVDCLookupTTDConv(fT0, fNumBins, fTable);
+  //THaVDCLookupTTDConv* ttdConv = new THaVDCLookupTTDConv(fT0, fNumBins, fTable);
 
   // Now initialize wires (those wires... too lazy to initialize themselves!)
   // Caution: This may not correspond at all to actual wire channels!

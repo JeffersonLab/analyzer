@@ -43,7 +43,12 @@ protected:
   Float_t *fTable;  // time-to-distance lookup table
                     // note that the table is allocated outside of the class
 
-  
+  // Coefficients for a polynomial yielding correction parameters
+  // For now, hard code these values from db_eh845
+  // Eventually, this need to be read directly from the database
+  Double_t fA1tdcCor[4];
+  Double_t fA2tdcCor[4];
+ 
   // FIXME: these should be loaded from DB
   Double_t fLongestDist;
   Double_t fTimeRes;
