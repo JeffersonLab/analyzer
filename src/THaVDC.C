@@ -24,10 +24,11 @@
 #include "THaVDCTrackPair.h"
 #include "VarDef.h"
 
-// FIXME: Debug
+#ifdef WITH_DEBUG
 #include "THaGlobals.h"
 #include "THaVarList.h"
 #include <iostream>
+#endif
 
 ClassImp(THaVDC)
 
@@ -119,26 +120,36 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t flag )
   // Construct tracks from pairs of upper and lower UV tracks and add 
   // them to 'tracks'
 
-  cout << "-----------------------------------------------\n";
-  cout << "ConstructTracks: ";
-  if( flag == 0 )
-    cout << "iterating";
-  if( flag == 1 )
-    cout << "coarse tracking";
-  if( flag == 2 )
-    cout << "fine tracking";
-  cout << endl;
+#ifdef WITH_DEBUG
+  if( fDebug>0 ) {
+    cout << "-----------------------------------------------\n";
+    cout << "ConstructTracks: ";
+    if( flag == 0 )
+      cout << "iterating";
+    if( flag == 1 )
+      cout << "coarse tracking";
+    if( flag == 2 )
+      cout << "fine tracking";
+    cout << endl;
+  }
+#endif
 
   fUVpairs->Clear();
 
   Int_t nUpperTracks = fUpper->GetNUVTracks();
   Int_t nLowerTracks = fLower->GetNUVTracks();
 
-  cout << "nUpper/nLower = " << nUpperTracks << "  " << nLowerTracks << endl;
+#ifdef WITH_DEBUG
+  if( fDebug>0 )
+    cout << "nUpper/nLower = " << nUpperTracks << "  " << nLowerTracks << endl;
+#endif
 
   // No tracks at all -> can't have any tracks
   if( nUpperTracks == 0 && nLowerTracks == 0 ) {
-    cout << "No tracks.\n";
+#ifdef WITH_DEBUG
+    if( fDebug>0 )
+      cout << "No tracks.\n";
+#endif
     return 0;
   }
 
@@ -151,7 +162,10 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t flag )
   if( nUpperTracks == 0 || nLowerTracks == 0 ) {
     //FIXME: Put missing cluster recovery code here
     //For now, do nothing
-    cout << "missing cluster " << nUpperTracks << " " << nUpperTracks << endl;
+#ifdef WITH_DEBUG
+    if( fDebug>0 ) 
+      cout << "missing cluster " << nUpperTracks << " " << nUpperTracks << endl;
+#endif
     return 0;
   }
 
@@ -180,7 +194,10 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t flag )
     }
   }
       
-  cout << nPairs << " pairs.\n";
+#ifdef WITH_DEBUG
+  if( fDebug>0 )
+    cout << nPairs << " pairs.\n";
+#endif
 
   // Initialize some counters
   int n_exist, n_mod = 0;
@@ -198,13 +215,16 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t flag )
     if( !(thePair = static_cast<THaVDCTrackPair*>( fUVpairs->At(i) )) )
       continue;
 
-    //FIXME: debug
-    cout << "Pair " << i << ":  " 
-	 << thePair->GetUpper()->GetUCluster()->GetPivotWireNum() << " "
-	 << thePair->GetUpper()->GetVCluster()->GetPivotWireNum() << " "
-	 << thePair->GetLower()->GetUCluster()->GetPivotWireNum() << " "
-	 << thePair->GetLower()->GetVCluster()->GetPivotWireNum() << " "
-	 << thePair->GetError() << endl;
+#ifdef WITH_DEBUG
+    if( fDebug>0 ) {
+      cout << "Pair " << i << ":  " 
+	   << thePair->GetUpper()->GetUCluster()->GetPivotWireNum() << " "
+	   << thePair->GetUpper()->GetVCluster()->GetPivotWireNum() << " "
+	   << thePair->GetLower()->GetUCluster()->GetPivotWireNum() << " "
+	   << thePair->GetLower()->GetVCluster()->GetPivotWireNum() << " "
+	   << thePair->GetError() << endl;
+    }
+#endif
     // Stop if track matching error too big
     if( thePair->GetError() > fErrorCutoff )
       break;
@@ -216,16 +236,26 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t flag )
       continue;
 
     //FIXME: debug
-    cout << "dUpper/dLower = " 
-	 << thePair->GetProjectedDistance( track,partner,fSpacing) << "  "
-	 << thePair->GetProjectedDistance( partner,track,-fSpacing);
+#ifdef WITH_DEBUG
+    if( fDebug>0 ) {
+      cout << "dUpper/dLower = " 
+	   << thePair->GetProjectedDistance( track,partner,fSpacing) << "  "
+	   << thePair->GetProjectedDistance( partner,track,-fSpacing);
+    }
+#endif
 
     // Skip pairs where any of the tracks already has a partner
     if( track->GetPartner() || partner->GetPartner() ) {
-      cout << " ... skipped.\n";
+#ifdef WITH_DEBUG
+      if( fDebug>0 )
+	cout << " ... skipped.\n";
+#endif
       continue;
     }
-    cout << " ... good.\n";
+#ifdef WITH_DEBUG
+    if( fDebug>0 )
+      cout << " ... good.\n";
+#endif
 
     // Make the tracks of this pair each other's partners. This prevents
     // tracks from being associated with more than one valid pair.
@@ -303,12 +333,18 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t flag )
 	n_oops++;
       }
       if( found ) {
-	cout << "Track " << t << " modified.\n";
+#ifdef WITH_DEBUG
+	if( fDebug>0 )
+	  cout << "Track " << t << " modified.\n";
+#endif
 	theTrack->Set( 0.0, transTheta, transPhi, transX, transY );
 	delete thisID;
 	++n_mod;
       } else {
-	cout << "Track " << tracks->GetLast()+1 << " added.\n";
+#ifdef WITH_DEBUG
+	if( fDebug>0 )
+	  cout << "Track " << tracks->GetLast()+1 << " added.\n";
+#endif
 	theTrack = 
 	  AddTrack(*tracks, 0.0, transTheta, transPhi, transX, transY);
 	theTrack->SetID( thisID );
@@ -318,7 +354,10 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t flag )
     }
   }
 
-  cout << nTracks << " good tracks.\n";
+#ifdef WITH_DEBUG
+  if( fDebug>0 )
+    cout << nTracks << " good tracks.\n";
+#endif
 
   // Delete tracks that were not updated
   if( tracks && n_exist > n_mod ) {
@@ -327,7 +366,10 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t flag )
       THaTrack* theTrack = static_cast<THaTrack*>( tracks->At(i) );
       // Track created by this class and not updated?
       if( (theTrack->GetCreator() == this) && (theTrack->GetFlag() < flag) ) {
-	cout << "Track " << i << " deleted.\n";
+#ifdef WITH_DEBUG
+	if( fDebug>0 )
+	  cout << "Track " << i << " deleted.\n";
+#endif
 	tracks->RemoveAt(i);
 	modified = true;
       }
@@ -367,10 +409,14 @@ Int_t THaVDC::Decode( const THaEvData& evdata )
 Int_t THaVDC::CoarseTrack( TClonesArray& tracks )
 {
  
+#ifdef WITH_DEBUG
   static int nev = 0;
-  nev++;
-  cout << "=========================================\n";
-  cout << "Event: " << nev << endl;
+  if( fDebug>0 ) {
+    nev++;
+    cout << "=========================================\n";
+    cout << "Event: " << nev << endl;
+  }
+#endif
 
   // Quickly calculate tracks in upper and lower UV planes
   fLower->CoarseTrack();
@@ -400,8 +446,14 @@ Int_t THaVDC::FineTrack( TClonesArray& tracks )
 
   fNtracks = ConstructTracks( &tracks, 2 );
 
-  //  int i;
-  // cin >> i;
+#ifdef WITH_DEBUG
+  static char c;
+  if( fDebug>1 ) {
+    cin.clear();
+    while( !cin.eof() && cin.get(c) && c != '\n');
+  }
+#endif
+
   return 0;
 }
 
