@@ -21,8 +21,7 @@ THaCodaData::THaCodaData() {
 };
 
 THaCodaData::~THaCodaData() { 
-// Dont delete evbuffer because client may have deleted it.  
-// Anyway, the code usually quits after this object is deleted.
+   delete evbuffer;
 };
 
 
