@@ -106,6 +106,10 @@ TString THaEvData::DevType(int crate, int slot) const {
   return " ";
 };
 
+Double_t THaEvData::GetTime() const {
+  return helicity->GetTime();
+};
+
 int THaEvData::GetRocLength(int crate) const {
   if (crate >= 0 && crate < MAXROC) return lenroc[crate];
   return 0;
@@ -157,20 +161,27 @@ int THaEvData::gendecode(const int* evbuffer, THaCrateMap& map) {
      } else {
        event_num = 0;
        switch (event_type) {
+	 case SYNC_EVTYPE :
+           evt_time = static_cast<UInt_t>(evbuffer[2]);
+           return HED_OK;
 	 case PRESTART_EVTYPE :
            run_time = static_cast<UInt_t>(evbuffer[2]);
            run_num  = evbuffer[3];
            run_type = evbuffer[4];
+	   evt_time = run_time;
 // Usually prestart is the first 'event'.  Re-initialize crate map since we
 // now know the run time.  This won't happen for split files (no prestart).
            init_cmap();     
            init_slotdata(cmap);
            return HED_OK;
 	 case GO_EVTYPE :
+           evt_time = static_cast<UInt_t>(evbuffer[2]);
            return HED_OK;
 	 case PAUSE_EVTYPE :
+           evt_time = static_cast<UInt_t>(evbuffer[2]);
            return HED_OK;
 	 case END_EVTYPE :
+           evt_time = static_cast<UInt_t>(evbuffer[2]);
            return HED_OK;
          case EPICS_EVTYPE :
            return epics_decode(evbuffer);

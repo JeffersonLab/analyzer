@@ -22,12 +22,15 @@ class THaEvData {
 public:
      THaEvData();              
      virtual ~THaEvData();
-     int GetEvType()   const { return event_type; };
-     int GetEvLength() const { return event_length; };
-     int GetEvNum()    const { return event_num; };
-     int GetRunNum()   const { return run_num; };
-     UInt_t GetRunTime()  const { return run_time; };
-     int GetRunType()  const { return run_type; };
+     int GetEvType()   const { return event_type; }
+     int GetEvLength() const { return event_length; }
+     int GetEvNum()    const { return event_num; }
+     int GetRunNum()   const { return run_num; }
+     // Run time/date. Time of prestart event (UNIX time).
+     UInt_t GetRunTime() const { return run_time; }
+     // Event time from 100 kHz helicity clock.
+     Double_t GetEvTime() const;
+     int GetRunType()  const { return run_type; }
      int GetRocLength(int crate) const;   // Get the ROC length
      int GetPrescaleFactor(int trigger) const;  // Obtain prescale factor
      bool IsPhysicsTrigger() const;    // physics trigger (event types 1-14)
@@ -92,6 +95,7 @@ private:
      int psfact[MAX_PSFACT];
 // Hall A Trigger Types
      static const int MAX_PHYS_EVTYPE  = 14;  // Types up to this are physics
+     static const int SYNC_EVTYPE      = 16;
      static const int PRESTART_EVTYPE  = 17;
      static const int GO_EVTYPE        = 18;
      static const int PAUSE_EVTYPE     = 19;
@@ -104,7 +108,8 @@ private:
      const Int_t *buffer;
      Int_t event_type,event_length,event_num,run_num,evscaler;
      Int_t run_type;     // CODA run type from prestart event
-     UInt_t run_time;     // CODA run time (Unix time) from prestart event
+     UInt_t run_time;    // CODA run time (Unix time) from prestart event
+     UInt_t evt_time;    // Event time (Unix time). Not supported by CODA.
      Int_t recent_event,synchflag,datascan;
      Double_t dhel,dtimestamp;
      bool buffmode,synchmiss,synchextra;
