@@ -14,6 +14,7 @@
 #include "THaPrimaryKine.h"
 #include "THaTrackingModule.h"
 #include "THaRun.h"
+#include "THaRunParameters.h"
 #include "VarDef.h"
 #include "TMath.h"
 
@@ -100,7 +101,7 @@ Int_t THaPrimaryKine::Process( const THaEvData& evdata )
   THaTrackInfo* trkifo = fSpectro->GetTrackInfo();
   if( !trkifo ) return 1;
 
-  Double_t p_in  = gHaRun->GetBeamP();
+  Double_t p_in  = gHaRun->GetParameters()->GetBeamP();
 
   const Double_t Mp = 0.938;    // proton mass (for x_bj)
 
