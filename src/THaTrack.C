@@ -10,138 +10,71 @@
 
 #include "THaTrack.h"
 #include "THaCluster.h"
-#include "THaPIDinfo.h"
 #include "THaTrackID.h"
-//#include "THaVertex.h"
-#include "TList.h"
-#include "TClass.h"
-
 #include <iostream>
 
-ClassImp(THaTrack)
-
-//_____________________________________________________________________________
-THaTrack::THaTrack( Double_t x, Double_t y, Double_t theta, Double_t phi, 
-		    THaTrackingDetector* creator, 
-		    THaTrackID* id, THaPIDinfo* pid ) :
-  fX(x), fY(y), fTheta(theta), fPhi(phi), fP(0.0), 
-  fPIDinfo(pid), fCreator(creator), fID(id), fFlag(0)
-{
-  // Normal constructor with initialization
-
-  fClusters = new TList;
-}
+using namespace std;
 
 //_____________________________________________________________________________
 THaTrack::~THaTrack()
 {
-  // Destructor
+  // Destructor. Delete the track ID associated with this track.
 
-  delete fID;        fID       = NULL;
-  delete fClusters;  fClusters = NULL;
-}
-
-//_____________________________________________________________________________
-//  THaTrack::THaTrack( const THaTrack& rhs ) : TNamed( rhs )
-//  {
-//    fNumber     = rhs.fNumber;
-//    fFilename   = rhs.fFilename;
-//    fFirstEvent = rhs.fFirstEvent;
-//    fLastEvent  = rhs.fLastEvent;
-//    fDate       = rhs.fDate;
-//    fCodaFile   = new THaCodaFile;
-//  }
-
-//____________________________________________________________________________
-//  THaTrack& THaTrack::operator=(const THaTrack& rhs)
-//  {
-//    // THaTrack assignment operator.
-
-//    if (this != &rhs) {
-//       TNamed::operator=(rhs);
-//       fNumber     = rhs.fNumber;
-//       fFilename   = rhs.fFilename;
-//       fFirstEvent = rhs.fFirstEvent;
-//       fLastEvent  = rhs.fLastEvent;
-//       fDate       = rhs.fDate;
-//       fCodaFile   = new THaCodaFile;
-//    }
-//    return *this;
-//  }
-
-//_____________________________________________________________________________
-Int_t THaTrack::AddCluster( THaCluster* cluster )
-{
-  // Add a cluster to the internal list
-
-#ifdef WITH_DEBUG
-  if( !cluster )
-    return 1;
-  TClass* c = cluster->IsA();
-  if( !c || !c->InheritsFrom("THaCluster") )
-    return 2;
-#endif
-
-  fClusters->Add( cluster );
-  return 0;
+  delete fID;
 }
 
 //_____________________________________________________________________________
 void THaTrack::Clear( const Option_t* opt )
 {
-  // Reset track quantities. 
+  // If *opt == 'F' then reset all track quantities, else just
+  // delete memory managed by this track.
+  // (We need this behavior so we can Clear("C") the track TClonesArray
+  // without the overhead of clearing everything.)
 
-  fP     = 0.0;
-  fTheta = 0.0;
-  fPhi   = 0.0;
-  fX     = 0.0;
-  fY     = 0.0;
-  fClusters->Clear( opt );
-  if( fPIDinfo ) fPIDinfo->Clear( opt );
+  if( opt && (*opt == 'F') ) {
+    fP = fDp = fTheta = fPhi = fX = fY = 0.0;
+    fRX = fRY = fRTheta = fRPhi = 0.0;
+    fTX = fTY = fTTheta = fTPhi = 0.0;
+    fDX = fDY = fDTheta = fDPhi = 0.0;
+    fNclusters = fFlag = fType = 0;
+    if( fPIDinfo ) fPIDinfo->Clear( opt );
+    fPvect.SetXYZ( 0.0, 0.0, 0.0 );
+    fVertex.SetXYZ( 0.0, 0.0, 0.0 );
+    fVertexError.SetXYZ( 1.0, 1.0, 1.0 );
+  }
+  delete fID; fID = NULL;
 }
 
 //_____________________________________________________________________________
-//  Int_t THaTrack::Compare( THaTrack* obj )
-//  {
-//    // Compare two THaTrack objects. Returns 0 when equal, 
-//    // -1 when 'this' is smaller and +1 when bigger (like strcmp).
+Int_t THaTrack::AddCluster( THaCluster* c )
+{
+  // Add a cluster to the internal list of pointers.
+  // (Clusters are memory-managed by tracking detectors, not by tracks.)
 
-//     if (this == obj) return 0;
-//     if      ( fNumber < obj->fNumber ) return -1;
-//     else if ( fNumber > obj->fNumber ) return  1;
-//     return 0;
-//  }
+  if( fNclusters >= kMAXCL )
+    return 1;
 
-//_____________________________________________________________________________
-//  inline
-//  void THaTrack::Copy( THaTrack& track )
-//  {
-//    track = *this;
-//  }
-
-//_____________________________________________________________________________
-//  void THaTrack::FillBuffer( char*& buffer )
-//  {
-//    // Encode THaTrack into output buffer.
-
-//    TNamed::FillBuffer( buffer );
-//    fFilename.FillBuffer( buffer );
-//  }
-
+  fClusters[ fNclusters++ ] = c;
+  return 0;
+}
+   
 //_____________________________________________________________________________
 void THaTrack::Print( Option_t* opt ) const
 {
   // Print track parameters
   TObject::Print( opt );
   cout << "Momentum = " << fP << " GeV/c\n";
+  cout << "x_fp     = " << fX   << " m\n";
+  cout << "y_fp     = " << fY   << " m\n";
   cout << "Theta    = " << fTheta << " rad\n";
   cout << "Phi      = " << fPhi << " rad\n";
-  cout << "x_fp     = " << fX   << " mm\n";
-  cout << "y_fp     = " << fY   << " mm\n";
 
-  fClusters->Print( opt );
+  for( int i=0; i<fNclusters; i++ )
+    fClusters[i]->Print();
   if( fPIDinfo ) fPIDinfo->Print( opt );
 }
 
+//_____________________________________________________________________________
 
+ClassImp(THaTrack)
 

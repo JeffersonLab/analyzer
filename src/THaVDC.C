@@ -22,7 +22,7 @@
 #include "THaVDCTrackPair.h"
 #include "THaVDCHit.h"
 #include "THaScintillator.h"
-#include "THaApparatus.h"
+#include "THaSpectrometer.h"
 #include "TMath.h"
 #include "TClonesArray.h"
 #include "TList.h"
@@ -31,12 +31,10 @@
 #include "TROOT.h"
 
 #ifdef WITH_DEBUG
-#include "THaGlobals.h"
-#include "THaVarList.h"
 #include <iostream>
 #endif
 
-ClassImp(THaVDC)
+using namespace std;
 
 //_____________________________________________________________________________
 THaVDC::THaVDC( const char* name, const char* description,
@@ -57,12 +55,13 @@ THaVDC::THaVDC( const char* name, const char* description,
 
   // Default behavior for now
   SetBit( kOnlyFastest | kHardTDCcut );
+
 }
 
 //_____________________________________________________________________________
-THaDetectorBase::EStatus THaVDC::Init( const TDatime& date )
+THaAnalysisObject::EStatus THaVDC::Init( const TDatime& date )
 {
-  // Initialize VDC. Calls its own Init(), then initializes subdetectors.
+  // Initialize VDC. Calls standard Init(), then initializes subdetectors.
 
   if( IsZombie() || !fUpper || !fLower )
     return fStatus = kInitError;
@@ -77,8 +76,13 @@ THaDetectorBase::EStatus THaVDC::Init( const TDatime& date )
 }
 
 //_____________________________________________________________________________
-Int_t THaVDC::ReadDatabase( FILE* file, const TDatime& date )
+Int_t THaVDC::ReadDatabase( const TDatime& date )
 {
+  // Read VDC database
+
+  FILE* file = OpenFile( date );
+  if( !file ) return kFileError;
+
   // load global VDC parameters
   static const char* const here = "ReadDatabase()";
   const int LEN = 100;
@@ -113,6 +117,7 @@ Int_t THaVDC::ReadDatabase( FILE* file, const TDatime& date )
   }
   if( !found ) {
     Error(Here(here), "Database entry %s not found!", tag2.Data() );
+    fclose(file);
     return kInitError;
   }
 
@@ -130,6 +135,12 @@ Int_t THaVDC::ReadDatabase( FILE* file, const TDatime& date )
   THaMatrixElement ME;
   char w;
   bool good = false;
+
+  fTMatrixElems.clear();
+  fDMatrixElems.clear();
+  fPMatrixElems.clear();
+  fYMatrixElems.clear();
+  fFPMatrixElems.clear();
 
   // read in t000 and verify it
   ME.iszero = true;  ME.order = 0;
@@ -153,6 +164,7 @@ Int_t THaVDC::ReadDatabase( FILE* file, const TDatime& date )
     fFPMatrixElems.push_back(ME);
   else {
     Error(Here(here), "Could not read in Matrix Element T000!");
+    fclose(file);
     return kInitError;
   }
   fscanf(file, "%*c");
@@ -179,6 +191,7 @@ Int_t THaVDC::ReadDatabase( FILE* file, const TDatime& date )
     fFPMatrixElems.push_back(ME);
   else {
     Error(Here(here), "Could not read in Matrix Element Y000!");
+    fclose(file);
     return kInitError;
   }
   fscanf(file, "%*c");
@@ -204,6 +217,7 @@ Int_t THaVDC::ReadDatabase( FILE* file, const TDatime& date )
     fFPMatrixElems.push_back(ME);
   else {
     Error(Here(here), "Could not read in Matrix Element P000!");
+    fclose(file);
     return kInitError;
   }
   fscanf(file, "%*c");
@@ -217,6 +231,7 @@ Int_t THaVDC::ReadDatabase( FILE* file, const TDatime& date )
       if(!fscanf(file, "%le", &ME.poly[p_cnt])) {
 	Error(Here(here), "Could not read in Matrix Element %c%d%d%d!",
 	      w, ME.pw[0], ME.pw[1], ME.pw[2]);
+	fclose(file);
 	return kInitError;
       }
 
@@ -242,16 +257,8 @@ Int_t THaVDC::ReadDatabase( FILE* file, const TDatime& date )
     if(feof(file) || ferror(file))
       break;
   }
-  return kOK;
-}
 
-//_____________________________________________________________________________
-Int_t THaVDC::SetupDetector( const TDatime& date )
-{
-
-  if( fIsSetup ) return kOK;
-  fIsSetup = true;
-
+  // Compute derived quantities and set some hardcoded parameters
   const Float_t degrad = TMath::Pi()/180.0;
   fTan_vdc  = fFPMatrixElems[T000].poly[0];
   fVDCAngle = TMath::ATan(fTan_vdc);
@@ -276,6 +283,7 @@ Int_t THaVDC::SetupDetector( const TDatime& date )
   // FIXME: Set geometry data (fOrigin). Currently fOrigin = (0,0,0).
 
   fIsInit = true;
+  fclose(file);
   return kOK;
 }
 
@@ -289,7 +297,6 @@ THaVDC::~THaVDC()
 
   delete fLower;
   delete fUpper;
-  //  fUVpairs->Delete();
   delete fUVpairs;
 }
 
@@ -518,21 +525,21 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 	if( fDebug>0 )
 	  cout << "Track " << tracks->GetLast()+1 << " added.\n";
 #endif
-	theTrack = AddTrack(*tracks, 0.0, 0.0, 0.0, 0.0 );
-	theTrack->SetID( thisID );
-	theTrack->SetCreator( this );
+	theTrack = AddTrack(*tracks, 0.0, 0.0, 0.0, 0.0, thisID );
+	//	theTrack->SetID( thisID );
+	//	theTrack->SetCreator( this );
 	theTrack->AddCluster( track );
 	theTrack->AddCluster( partner );
-	flag |= kReassigned;
+	if( theStage == kFine ) 
+	  flag |= kReassigned;
       }
 
       theTrack->SetD(track->GetX(), track->GetY(), track->GetTheta(), 
 		     track->GetPhi());
-
-      // calculate the transport coordinates
-      CalcFocalPlaneCoords(theTrack, kRotatingTransport);
-
       theTrack->SetFlag( flag );
+
+      // calculate the TRANSPORT coordinates
+      CalcFocalPlaneCoords(theTrack, kRotatingTransport);
     }
   }
 
@@ -748,7 +755,7 @@ void THaVDC::CalcTargetCoords(THaTrack *track, const ECoordTypes mode)
 
   // calculate momentum
   dp = CalcTargetVar(fDMatrixElems, powers);
-  /*p = center_momentum * (1+dp); */ p = 0.0;
+  p  = static_cast<THaSpectrometer*>(fApparatus)->GetPcentral() * (1.0+dp);
 
   //FIXME: estimate x ??
   x = 0.0;
@@ -757,6 +764,9 @@ void THaVDC::CalcTargetCoords(THaTrack *track, const ECoordTypes mode)
   track->SetTarget(x, y, theta, phi);
   track->SetDp(dp);
   track->SetMomentum(p);
+  static_cast<THaSpectrometer*>(fApparatus)->
+    TransportToLab( p, theta, phi, track->GetPvect() );
+
 }
 
 
@@ -802,8 +812,10 @@ void THaVDC::CorrectTimeOfFlight(TClonesArray& tracks)
   const static Double_t v = 3.0e-8;   // for now, assume that everything travels at c
 
   // get scintillator planes
-  THaDetector* s1 = fApparatus->GetDetector("s1");
-  THaDetector* s2 = fApparatus->GetDetector("s2");
+  THaScintillator* s1 = static_cast<THaScintillator*>
+    ( fApparatus->GetDetector("s1") );
+  THaScintillator* s2 = static_cast<THaScintillator*>
+    ( fApparatus->GetDetector("s2") );
 
   if( (s1 == NULL) || (s2 == NULL) )
     return;
@@ -817,7 +829,6 @@ void THaVDC::CorrectTimeOfFlight(TClonesArray& tracks)
   //cerr<<"num tracks: "<<n_exist<<endl;
   for( Int_t t = 0; t < n_exist; t++ ) {
     THaTrack* track = static_cast<THaTrack*>( tracks.At(t) );
-    TList* clusters = track->GetClusters();
     
     // calculate the correction, since it's on a per track basis
     Double_t s1_dist, vdc_dist, dist, tdelta;
@@ -838,11 +849,11 @@ void THaVDC::CorrectTimeOfFlight(TClonesArray& tracks)
     //cout<<"time correction: "<<tdelta<<endl;
 
     // apply the correction
-    Int_t n_clust = clusters->GetSize();
+    Int_t n_clust = track->GetNclusters();
     for( Int_t i = 0; i < n_clust; i++ ) {
       THaVDCUVTrack* the_uvtrack = 
-	static_cast<THaVDCUVTrack*>( clusters->At(i) );
-      if(the_uvtrack == NULL)
+	static_cast<THaVDCUVTrack*>( track->GetCluster(i) );
+      if( !the_uvtrack )
 	continue;
       
       //FIXME: clusters guaranteed to be nonzero?
@@ -857,7 +868,8 @@ void THaVDC::FindBadTracks(TClonesArray& tracks)
 {
   // Flag tracks that don't intercept S2 scintillator as bad
 
-  THaDetector* s2 = fApparatus->GetDetector("s2");
+  THaScintillator* s2 = static_cast<THaScintillator*>
+    ( fApparatus->GetDetector("s2") );
 
   if(s2 == NULL) {
     //cerr<<"Could not find s2 plane!!"<<endl;
@@ -896,3 +908,4 @@ void THaVDC::FindBadTracks(TClonesArray& tracks)
 
 
 ////////////////////////////////////////////////////////////////////////////////
+ClassImp(THaVDC)

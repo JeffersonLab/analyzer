@@ -15,9 +15,7 @@
 #include "THaScalerBank.h"
 #include "THaScalerDB.h"
 
-#ifndef ROOTPRE3
-ClassImp(THaNormScaler)
-#endif
+using namespace std;
 
 THaNormScaler::THaNormScaler() : THaScalerBank(" ") {
 }
@@ -140,11 +138,7 @@ Int_t THaNormScaler::GetData(Int_t chan, Int_t histor) {
     return THaScalerBank::GetData(chan, histor);
 };
 
-
-
-
-
-
-
-
+#ifndef ROOTPRE3
+ClassImp(THaNormScaler)
+#endif
 

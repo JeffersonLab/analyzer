@@ -139,7 +139,7 @@ THaTotalShower::~THaTotalShower()
 }
 
 //_____________________________________________________________________________
-THaDetectorBase::EStatus THaTotalShower::Init( const TDatime& run_time )
+THaAnalysisObject::EStatus THaTotalShower::Init( const TDatime& run_time )
 {
   // Set up total shower counter. This function 
   // reads the total shower parameters from a local database file 
@@ -148,8 +148,6 @@ THaDetectorBase::EStatus THaTotalShower::Init( const TDatime& run_time )
 
   if( IsZombie() || !fShower || !fPreShower )
     return fStatus = kInitError;
-
-  MakePrefix();
 
   EStatus status;
   if( (status = THaPidDetector::Init( run_time )) ||
@@ -161,7 +159,7 @@ THaDetectorBase::EStatus THaTotalShower::Init( const TDatime& run_time )
 }
 
 //_____________________________________________________________________________
-Int_t THaTotalShower::ReadDatabase( FILE* fi, const TDatime& date )
+Int_t THaTotalShower::ReadDatabase( const TDatime& date )
 {
   // Read this detector's parameters from the database file 'fi'.
   // This function is called by THaDetectorBase::Init() once at the
@@ -171,21 +169,24 @@ Int_t THaTotalShower::ReadDatabase( FILE* fi, const TDatime& date )
   const int LEN = 100;
   char line[LEN];
 
-  rewind( fi );
+  FILE* fi = OpenFile( date );
+  if( !fi ) return kFileError;
+
   fgets ( line, LEN, fi ); fgets ( line, LEN, fi );          
   fscanf ( fi, "%f%f", &fMaxDx, &fMaxDy );  // Max diff of shower centers
 
   fIsInit = true;
+  fclose(fi);
   return kOK;
 }
 
 //_____________________________________________________________________________
-Int_t THaTotalShower::SetupDetector( const TDatime& date )
+Int_t THaTotalShower::DefineVariables( EMode mode )
 {
   // Initialize global variables and lookup table for decoder
 
-  if( fIsSetup ) return kOK;
-  fIsSetup = true;
+  if( mode == kDefine && fIsSetup ) return kOK;
+  fIsSetup = ( mode == kDefine );
 
   // Register global variables
 
@@ -194,9 +195,7 @@ Int_t THaTotalShower::SetupDetector( const TDatime& date )
     { "id", "ID of Psh&Sh coincidence (1==good)", "fID" },
     { 0 }
   };
-  DefineVariables( vars );
-
-  return kOK;
+  return DefineVarsFromList( vars, mode );
 }
 
 //_____________________________________________________________________________

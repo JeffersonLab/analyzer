@@ -11,7 +11,8 @@ export DEBUG = 1
 
 #------------------------------------------------------------------------------
 
-VERSION = 0.80
+VERSION = 1.0-rc3
+NAME    = analyzer-$(VERSION)
 
 #------------------------------------------------------------------------------
 
@@ -22,18 +23,20 @@ ROOTCFLAGS   := $(shell root-config --cflags)
 ROOTLIBS     := $(shell root-config --libs)
 ROOTGLIBS    := $(shell root-config --glibs)
 
-DCDIR         = hana_decode
-DCLIB         = -L. -ldc
-SCALERDIR     = hana_scaler
-SCALERLIB     = -L. -lscaler
-HALLALIBS     = -L. -lHallA -ldc -lscaler
 
 SUBDIRS       = $(DCDIR) $(SCALERDIR)
+
+HA_DIR       := $(shell pwd)
+INCDIRS       = $(addprefix $(HA_DIR)/, src $(SUBDIRS))
+DCDIR         = hana_decode
+SCALERDIR     = hana_scaler
+LIBDIR        = $(HA_DIR)/.
+HALLALIBS     = -L$(LIBDIR) -lHallA -ldc -lscaler
 
 LIBS          = 
 GLIBS         = 
 
-INCLUDES      = $(ROOTCFLAGS) -I$(DCDIR) -I$(SCALERDIR)
+INCLUDES      = $(ROOTCFLAGS) $(addprefix -I, $(INCDIRS) )
 
 ifeq ($(ARCH),solarisCC5)
 # Solaris CC 5.0
@@ -54,8 +57,8 @@ ifeq ($(ARCH),linuxegcs)
 # Linux with egcs (>= RedHat 5.2)
 CXX           = g++
 ifdef DEBUG
-  CXXFLAGS    = -g
-  LDFLAGS     = -g
+  CXXFLAGS    = -g -O0
+  LDFLAGS     = -g -O0
 else
   CXXFLAGS    = -O
   LDFLAGS     = -O
@@ -93,13 +96,17 @@ SRC           = src/THaFormula.C src/THaVar.C src/THaVarList.C src/THaCut.C \
 		src/THaRun.C \
 		src/THaDetMap.C src/THaApparatus.C src/THaDetector.C \
 		src/THaSpectrometer.C src/THaSpectrometerDetector.C \
-		src/THaHRS.C src/THaLeftHRS.C src/THaRightHRS.C \
+		src/THaHRS.C \
                 src/THaDecData.C src/THaOutput.C src/THaString.C \
 		src/THaTrackingDetector.C src/THaNonTrackingDetector.C \
 		src/THaPidDetector.C src/THaSubDetector.C \
-		src/THaDetectorBase.C src/THaRTTI.C \
+		src/THaAnalysisObject.C src/THaDetectorBase.C src/THaRTTI.C \
+		src/THaPhysicsModule.C src/THaVertexModule.C \
+		src/THaTrackingModule.C \
 		src/THaAnalyzer.C src/THaPrintOption.C \
-		src/THaBeam.C src/THaBpm.C src/THaRaster.C src/THaEpicsData.C \
+		src/THaBeam.C src/THaIdealBeam.C \
+		src/THaRasteredBeam.C src/THaRaster.C\
+		src/THaBeamDet.C src/THaBPM.C src/THaUnRasteredBeam.C\
 		src/THaTrack.C src/THaPIDinfo.C src/THaParticleInfo.C \
 		src/THaCluster.C src/THaMatrix.C src/THaArrayString.C \
 		src/THaScintillator.C src/THaShower.C \
@@ -109,40 +116,55 @@ SRC           = src/THaFormula.C src/THaVar.C src/THaVarList.C src/THaCut.C \
 		src/THaVDCPlane.C src/THaVDCUVPlane.C src/THaVDCUVTrack.C \
 		src/THaVDCWire.C src/THaVDCHit.C src/THaVDCCluster.C \
 		src/THaVDCTimeToDistConv.C src/THaVDCTrackID.C \
-                src/THaVDCAnalyticTTDConv.C src/THaVDCT0CalTable.C \
-		src/THaVDCTrackPair.C
+                src/THaVDCAnalyticTTDConv.C \
+		src/THaVDCTrackPair.C src/THaScalerGroup.C \
+		src/THaElectronKine.C src/THaReactionPoint.C \
+		src/THaTwoarmVertex.C src/THaAvgVertex.C \
+		src/THaExtTarCor.C src/THaDebugModule.C src/THaTrackInfo.C \
+		src/THaGoldenTrack.C
 
 OBJ           = $(SRC:.C=.o)
-HDR           = $(SRC:.C=.h) src/THaGlobals.h src/VarDef.h src/VarType.h
-DEP           = $(SRC:.C=.d)
+HDR           = $(SRC:.C=.h) src/THaGlobals.h src/VarDef.h src/VarType.h \
+		src/ha_compiledata.h
+
+DEP           = $(SRC:.C=.d) src/main.d
 OBJS          = $(OBJ) haDict.o
 
-LIBHALLA      = libHallA.so
+LIBHALLA      = $(LIBDIR)/libHallA.so
 PROGRAMS      = analyzer
 
-all:            subdirs $(PROGRAMS)
+all:            subdirs $(LIBDIR)/libdc.so $(LIBDIR)/libscaler.so $(LIBHALLA) \
+		$(PROGRAMS)
 
-$(LIBHALLA):	$(OBJS)
-		$(LD) $(LDFLAGS) $(SOFLAGS) -o $@ $^
-		@echo "$@ done"
-
-analyzer:	src/main.o $(LIBHALLA) libdc.so libscaler.so
-		$(LD) $(LDFLAGS) src/main.o $(HALLALIBS) $(GLIBS) -o $@
-
-libdc.so:
-		$(MAKE) -C $(DCDIR)
-
-libscaler.so:
-		$(MAKE) -C $(SCALERDIR)
-		-ln -s ../$(SCALERDIR)/scaler.map DB/
+src/ha_compiledata.h:
+		echo "#define HA_INCLUDEPATH \"$(INCDIRS)\"" > $@
 
 subdirs:
 		set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i; done
 
+$(LIBHALLA):	$(HDR) $(OBJS)
+		$(LD) $(LDFLAGS) $(SOFLAGS) -o $@ $(OBJS)
+		@echo "$@ done"
+
+$(LIBDIR)/libdc.so:	$(DCDIR)/libdc.so
+		cp $< $(LIBDIR)
+
+$(LIBDIR)/libscaler.so:	$(SCALERDIR)/libscaler.so
+		cp $< $(LIBDIR)
+
+$(DCDIR)/libdc.so:
+		$(MAKE) -C $(@D) $(@F)
+
+$(SCALERDIR)/libscaler.so:
+		$(MAKE) -C $(@D) $(@F)
+
+analyzer:	src/main.o
+		$(LD) $(LDFLAGS) $^ $(HALLALIBS) $(GLIBS) -o $@
+
 clean:
 		$(MAKE) -C $(DCDIR) clean
 		$(MAKE) -C $(SCALERDIR) clean
-		rm -f *.so *.a $(PROGRAMS) *.o *Dict.* *~
+		rm -f *.so *.a $(PROGRAMS) *.o *Dict.* *~ src/ha_compiledata.h
 		cd src; rm -f *.o *~
 
 realclean:	clean
@@ -150,20 +172,30 @@ realclean:	clean
 		$(MAKE) -C $(SCALERDIR) realclean
 		find . -name "*.d" -exec rm {} \;
 
-srcdist:	realclean
-		gtar czvf ../v$(VERSION).tar.gz -X .exclude \
-			.exclude src examples DB $(DCDIR) $(SCALERDIR) \
-			Makefile RELEASE_NOTES* 
+srcdist:
+		rm -f ../$(NAME)
+		ln -s $(PWD) ../$(NAME)
+		gtar czv -C .. -f ../$(NAME).tar.gz -X .exclude \
+		 -V "JLab/Hall A C++ Analysis Software "$(VERSION)" `date -I`"\
+		 $(NAME)/.exclude $(NAME)/ChangeLog \
+		 $(NAME)/src $(NAME)/examples \
+		 $(NAME)/DB $(NAME)/$(DCDIR) $(NAME)/$(SCALERDIR) \
+		 $(NAME)/Makefile $(NAME)/RELEASE_NOTES $(NAME)/docs
 
 cvsdist:	srcdist
-		gunzip ../v$(VERSION).tar.gz
-		gtar rvf ../v$(VERSION).tar CVS */CVS
-		gzip ../v$(VERSION).tar
+		cp ../$(NAME).tar.gz ../$(NAME)-cvs.tar.gz
+		gunzip -f ../$(NAME)-cvs.tar.gz
+		gtar rv -C .. -f ../$(NAME)-cvs.tar \
+		 `find . -type d -name CVS 2>/dev/null | sed "s%^\.%$(NAME)%"`\
+		 `find . -type f -name .cvsignore 2>/dev/null | sed "s%^\./%$(NAME)/%"`
+		gzip -f ../$(NAME)-cvs.tar
 
 haDict.C: $(HDR) src/HallA_LinkDef.h
 	@echo "Generating dictionary haDict..."
 	$(ROOTSYS)/bin/rootcint -f $@ -c $(INCLUDES) $(HDR) \
 		src/HallA_LinkDef.h
+
+.PHONY: all clean realclean srcdist cvsdist subdirs
 
 
 ###--- DO NOT CHANGE ANYTHING BELOW THIS LINE UNLESS YOU KNOW WHAT 
@@ -175,7 +207,7 @@ haDict.C: $(HDR) src/HallA_LinkDef.h
 %.o:	%.C
 	$(CXX) $(CXXFLAGS) -o $@ -c $<
 
-%.d:	%.C
+%.d:	%.C src/ha_compiledata.h
 	@echo Creating dependencies for $<
 #	@$(SHELL) -ec '$(CXX) -MM $(CXXFLAGS) -c $< \
 #		| sed '\''s%\($*\)\.o[ :]*%\1.o $@ : %g'\'' > $@; \

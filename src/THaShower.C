@@ -36,7 +36,7 @@ THaShower::THaShower( const char* name, const char* description,
 }
 
 //_____________________________________________________________________________
-Int_t THaShower::ReadDatabase( FILE* fi, const TDatime& date )
+Int_t THaShower::ReadDatabase( const TDatime& date )
 {
   // Read this detector's parameters from the database file 'fi'.
   // This function is called by THaDetectorBase::Init() once at the
@@ -46,32 +46,49 @@ Int_t THaShower::ReadDatabase( FILE* fi, const TDatime& date )
   static const char* const here = "ReadDatabase()";
   const int LEN = 100;
   char buf[LEN];
-  Int_t nelem, nrows, nclbl;
+  Int_t nelem, ncols, nrows, nclbl;
 
   // Read data from database
 
-  rewind( fi );
+  FILE* fi = OpenFile( date );
+  if( !fi ) return kFileError;
+
   // Blocks, rows, max blocks per cluster
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );          
-  fscanf ( fi, "%d%d%d", &nelem, &nrows, &nclbl );  
+  fscanf ( fi, "%d%d", &ncols, &nrows );  
 
+  nelem = ncols * nrows;
+  nclbl = TMath::Min( 3, nrows ) * TMath::Min( 3, ncols );
   // Reinitialization only possible for same basic configuration 
   if( fIsInit && (nelem != fNelem || nclbl != fNclublk) ) {
     Error( Here(here), "Cannot re-initalize with different number of blocks or "
 	   "blocks per cluster. Detector not re-initialized." );
+    fclose(fi);
     return kInitError;
   }
 
-  if( nelem <= 0 || nrows <= 0 || nclbl <= 0 ) {
-    Error( Here(here), "Illegal number of blocks, rows, or blocks per cluster: "
-	   "%d %d %d", nelem, nrows, nclbl );
+  if( nrows <= 0 || ncols <= 0 || nclbl <= 0 ) {
+    Error( Here(here), "Illegal number of rows or columns: "
+	   "%d %d", nrows, ncols );
+    fclose(fi);
     return kInitError;
   }
   fNelem = nelem;
   fNrows = nrows;
   fNclublk = nclbl;
 
+  // Clear out the old detector map before reading a new one
+  UShort_t mapsize = fDetMap->GetSize();
+  delete [] fNChan;
+  if( fChanMap ) {
+    for( UShort_t i = 0; i<mapsize; i++ )
+      delete [] fChanMap[i];
+  }
+  delete [] fChanMap;
+  fDetMap->Clear();
+
   // Read detector map
+
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
   while (1) {
     Int_t crate, slot, first, last;
@@ -81,23 +98,19 @@ Int_t THaShower::ReadDatabase( FILE* fi, const TDatime& date )
     if( fDetMap->AddModule( crate, slot, first, last ) < 0 ) {
       Error( Here(here), "Too many DetMap modules (maximum allowed - %d).", 
 	    THaDetMap::kDetMapSize);
+      fclose(fi);
       return kInitError;
     }
   }
 
-  // Set up channel map
-  UShort_t mapsize = fDetMap->GetSize();
+  // Set up the new channel map
+  mapsize = fDetMap->GetSize();
   if( mapsize == 0 ) {
     Error( Here(here), "No modules defined in detector map.");
+    fclose(fi);
     return kInitError;
   }
 
-  delete [] fNChan;
-  if( fChanMap ) {
-    for( UShort_t i = 0; i<mapsize; i++ )
-      delete [] fChanMap[i];
-  }
-  delete [] fChanMap;
   fNChan = new UShort_t[ mapsize ];
   fChanMap = new UShort_t*[ mapsize ];
   for( UShort_t i=0; i < mapsize; i++ ) {
@@ -108,9 +121,10 @@ Int_t THaShower::ReadDatabase( FILE* fi, const TDatime& date )
     else {
       Error( Here(here), "No channels defined for module %d.", i);
       delete [] fNChan; fNChan = NULL;
-      for( UShort_t j=0; j<=i; j++ )
-	delete [] fChanMap[i];
+      for( UShort_t j=0; j<i; j++ )
+	delete [] fChanMap[j];
       delete [] fChanMap; fChanMap = NULL;
+      fclose(fi);
       return kInitError;
     }
   }
@@ -138,6 +152,8 @@ Int_t THaShower::ReadDatabase( FILE* fi, const TDatime& date )
   sin_angle = TMath::Sin(angle*degrad);
   cos_angle = TMath::Cos(angle*degrad);
 
+  DefineAxes(angle*degrad);
+
   // Dimension arrays
   if( !fIsInit ) {
     fBlockX = new Float_t[ fNelem ];
@@ -155,32 +171,52 @@ Int_t THaShower::ReadDatabase( FILE* fi, const TDatime& date )
     fIsInit = true;
   }
 
-  // Read calibration and geometry info
-  for (int j=0; j<fNelem; j++) 
-    fscanf (fi,"%f",fBlockX+j);                      // Blk centers Xpositions
+  fscanf ( fi, "%f%f", &x, &y );                     // Block 1 center position
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  for (int j=0; j<fNelem; j++) 
-    fscanf (fi,"%f",fBlockY+j);                      // Blk centers Ypositions
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  for (int j=0; j<fNelem; j++) 
-    fscanf (fi,"%f",fPed+j);                         // Pedestals of channels
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  for (int j=0; j<fNelem; j++) 
-    fscanf (fi, "%f",fGain+j);                       // Coefficients of chans
+  Float_t dx, dy;
+  fscanf ( fi, "%f%f", &dx, &dy );                   // Block spacings in x and y
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
   fscanf ( fi, "%f", &fEmin );                       // Emin thresh for center
   fgets ( buf, LEN, fi );
 
+  // Read calibrations.
+  // Before doing this, search for any date tags that follow, and start reading from
+  // the best matching tag if any are found. If none found, but we have a configuration
+  // string, search for it.
+  if( SeekDBdate( fi, date ) == 0 && fConfig.Length() > 0 && 
+      SeekDBconfig( fi, fConfig.Data() ));
+
+  fgets ( buf, LEN, fi );  
+  // Crude protection against a missed date/config tag
+  if( buf[0] == '[' ) fgets ( buf, LEN, fi );
+
+  // Read ADC pedestals and gains (in order of logical channel number)
+  for (int j=0; j<fNelem; j++)
+    fscanf (fi,"%f",fPed+j);
+  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
+  for (int j=0; j<fNelem; j++) 
+    fscanf (fi, "%f",fGain+j);
+
+
+  // Compute block positions
+  for( int c=0; c<ncols; c++ ) {
+    for( int r=0; r<nrows; r++ ) {
+      int k = nrows*c + r;
+      fBlockX[k] = x + r*dx;                         // Units are meters
+      fBlockY[k] = y + c*dy;
+    }
+  }
+  fclose(fi);
   return kOK;
 }
 
 //_____________________________________________________________________________
-Int_t THaShower::SetupDetector( const TDatime& date )
+Int_t THaShower::DefineVariables( EMode mode )
 {
   // Initialize global variables
 
-  if( fIsSetup ) return kOK;
-  fIsSetup = true;
+  if( mode == kDefine && fIsSetup ) return kOK;
+  fIsSetup = ( mode == kDefine );
 
   // Register variables in global list
 
@@ -202,9 +238,7 @@ Int_t THaShower::SetupDetector( const TDatime& date )
     { "try",    "track y-position in det plane",      "fTRY" },
     { 0 }
   };
-  DefineVariables( vars );
-
-  return kOK;
+  return DefineVarsFromList( vars, mode );
 }
 
 //_____________________________________________________________________________
@@ -275,9 +309,9 @@ Int_t THaShower::Decode( const THaEvData& evdata )
   // ( in MeV ), and copy the data into the following local data structure:
   //
   // fNhits           -  Number of hits on shower;
-  // fA[0]...[95]     -  Array of ADC values of shower blocks;
-  // fA_p[0]...[95]   -  Array of ADC minus ped values of shower blocks;
-  // fA_c[0]...[95]   -  Array of corrected ADC values of shower blocks;
+  // fA[]             -  Array of ADC values of shower blocks;
+  // fA_p[]           -  Array of ADC minus ped values of shower blocks;
+  // fA_c[]           -  Array of corrected ADC values of shower blocks;
   // fAsum_p          -  Sum of shower blocks ADC minus pedestal values;
   // fAsum_c          -  Sum of shower blocks corrected ADC values;
 
@@ -297,7 +331,7 @@ Int_t THaShower::Decode( const THaEvData& evdata )
       Int_t data = evdata.GetData( d->crate, d->slot, chan, 0 );
 
       // Copy the data to the local variables.
-      Int_t k = *(*(fChanMap+i)+chan) - 1;
+      Int_t k = *(*(fChanMap+i)+(chan-d->lo)) - 1;
 #ifdef WITH_DEBUG
       if( k<0 || k>=fNelem ) 
 	Warning( Here("Decode()"), "Bad array index: %d. Your channel map is "
@@ -340,7 +374,6 @@ Int_t THaShower::CoarseProcess( TClonesArray& tracks )
   fNclust = 0;
   short mult = 0, nr, nc, ir, ic, dr, dc;
   int nmax = -1;
-  Int_t Ncol = fNelem/fNrows;
   double  emax = fEmin;                     // Min threshold of energy in center
   for ( int  i = 0; i < fNelem; i++) {      // Find the block with max energy:
     double  ei = fA_c[i];                   // Energy in next block
@@ -351,13 +384,8 @@ Int_t THaShower::CoarseProcess( TClonesArray& tracks )
   }
   if ( nmax >= 0 ) {
     double  sxe = 0, sye = 0;               // Sums of xi*ei and yi*ei
-    if ( fNelem == 80 ) {                   // For Shower-80:
-      nc = nmax/fNrows;                     // Column of the block with max engy
-      nr = nmax - nc*fNrows;                // Row of the block with max energy
-    } else {                                // For Shower-96:
-      nr = nmax/Ncol;                       // Row of the block with max energy
-      nc = nmax - nr*Ncol;                  // Column of the block with max engy
-    }
+    nc = nmax/fNrows;                       // Column of the block with max engy
+    nr = nmax%fNrows;                       // Row of the block with max energy
                                             // Add the block to cluster (center)
     fNblk[mult]   = nmax;                   // Add number of the block (center)
     fEblk[mult++] = emax;                   // Add energy in the block (center)
@@ -366,13 +394,8 @@ Int_t THaShower::CoarseProcess( TClonesArray& tracks )
     for ( int  i = 0; i < fNelem; i++) {    // Detach surround blocks:
       double  ei = fA_c[i];                 // Energy in next block
       if ( ei>0 && i!=nmax ) {              // Some energy out of cluster center
-	if ( fNelem == 80 ) {               // For Shower-80:
-	  ic = i/fNrows;                    // Column of next block
-	  ir = i - ic*fNrows;               // Row of next block
-	} else {                            // For Shower-96:
-	  ir = i/Ncol;                      // Row of next block
-	  ic = i - ir*Ncol;                 // Column of next block
-	}
+	ic = i/fNrows;                      // Column of next block
+	ir = i%fNrows;                      // Row of next block
 	dr = nr - ir;                       // Distance on row up to center
 	dc = nc - ic;                       // Distance on column up to center
 	if ( -2<dr&&dr<2&&-2<dc&&dc<2 ) {   // Surround block:

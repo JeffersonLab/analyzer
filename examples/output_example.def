@@ -1,0 +1,120 @@
+# Analyzer output definition file used by THaOutput class.
+# R. Michaels, Sept 2002
+# Comments start with '# ' 
+#
+# There are at present 3 places where output is defined
+# in the C++ analyzer, and this is one of them.
+# The other two are THaRun (run-dependent info) and
+# THaEvent (event-dependent info), which provide quantities 
+# like run number and event number that you always need.
+# In this place, the "outdef" file, one can define
+# global variables, formulas, and histograms, as well
+# as cuts on histograms.  The results of the formulas appear 
+# in the tree with the formula-name given.
+#
+# Syntax of file  -- by example:
+#
+# variable   L.vdc.u2.nclust
+# variable   R.s1.lt
+# formula    targetX  1.464*B.bpm4b.x-0.464*B.bpm4a.x
+# TH1F  rv1n  'R-arm vdc hits on V1'   R.vdc.v1.nhit 100 0 10
+# TH1F  rv1w  'R-arm vdc wiremap on V1'  R.vdc.v1.wire 100 0 500
+# TH1F  tgtx  'Target X position'   targetX 100 -2 2 
+# TH2F  t12  'Time stamps on roc1 vs roc2'  D.timeroc1  D.timeroc2
+#       100 0 1000 100 0 1000
+# TH1F  s1trx 'R-arm S1 trx (with cut)' R.s1.trx 100 -1 1 R.s1.trx>0
+# (note, the cut R.s1.trx>0 appears optionally at the end).
+#
+# where the keywords are as follows :
+# (the keywords are case-insensitive, the rest of the line is not)
+#
+#   variable  -- indicates that a global variable is to
+#                be added to the tree.  The next string is
+#                the name of the variable.  You can see a list
+#                of variables by typing gHaVars->Print() at
+#                the analyzer's root shell prompt.
+#                A variable can also be an array, e.g. R.s1.lt  
+#                Then the values in the tree will be R.s1.lt.data[0], 
+#                R.s1.lt.data[1], etc, up to the array size which
+#                is Ndata.R.s1.lt
+#  
+#    formula  -- indicates a THaFormula to add to the output.
+#                The next word (e.g. targetX in the above example)
+#                will be the "name" of the formula result in the tree.
+#                The 3rd string is the formula to evaluate.  It
+#                must involve valid global variables.  It cannot
+#                involve arrays or results of other formulas (yet).
+#
+#    TH1F or TH2F  -- this defines histograms (1D or 2D).
+#               The next word is the name of the TH1F object.
+#               The following string (must be in single quotes) is 
+#               the title of the histogram.  Finally the variables
+#               or formulas names that are put into the histogram 
+#               are listed.  The code figures out if it is a variable
+#               or formula.  If the variable is an array, all elements
+#               will be put in the histogram, event-by-event.
+#
+#    block  -- To put ALL the variables from a block into tree.
+#              Example "block L.*"  --> all left-arm variables.
+#                      "block R.*"  --> all right-arm variables.
+#                      "block D.*"  --> All THaDecData variables.
+
+
+# ------------------------------------
+
+# Here are variables and formulas that appear in the tree.
+
+variable   L.vdc.u1.nclust
+variable   L.vdc.u2.nclust    # you can put a comment after '# '
+Variable   L.vdc.v1.nclust    # need >=1 space after #
+VARIable   L.vdc.v2.nclust    # Keywords are case insensitive,
+
+#block L.tr.*       # all L-arm tracking variables
+#block R.*          # all the variables in R-arm go to the tree
+
+block *.tr.*       # include all tracking results
+
+block EK_R.*       # grab the (uncorrected) Right-arm electron kinematics
+block ReactPt_R.*  # Vertex information, assuming ideal beam
+block ExTgtCor_R.*  # extended target correction
+block EKxc_R.*      # electron kinematics, including ext-target correction
+
+variable   D.ctimel
+variable   D.ctimer
+variable   D.pulser1
+
+variable   D.timeroc1
+variable   D.timeroc2
+variable   D.timeroc3
+
+variable   R.vdc.v1.nhit
+variable   R.vdc.v2.nhit
+
+#variable   L.s1.lt    # note, this is an array
+#variable   L.s1.rt    # variable appears in tree as
+#variable   L.s2.lt    # e.g.  L.s2.lt.data[4], where 
+#variable   L.s2.rt    # index of data goes from 0 to
+                       # Ndata.L.s1.lt
+
+formula    s1l2  R.s1.lt[2]-R.s1.rt[2]
+formula    s1l4  R.s1.lt[4]
+formula    nvdcv1 R.vdc.v1.nhit
+
+formula    ekdiff EKxc_R.nu-EK_R.nu
+
+#formula    targetX  1.464*B.bpm4b.x-0.464*B.bpm4a.x
+#FORMULA    targetY  1.464*B.bpm4b.y-0.464*B.bpm4a.y
+
+# Histograms defined here.
+# Title must be in single quotes
+TH1F  rv1n  'R-arm vdc hits on V1'   L.vdc.v1.nhit  10 0 10
+th1f  rv1w  'R-arm vdc wiremap on V1'  R.vdc.v1.wire  200 0 500
+TH1F  rv1t  'R-arm vdc TDC on V1'  R.vdc.v1.rawtime  1000 0 5000
+
+TH1F  sc4  'Paddle 4 in s1' R.s1.lt[4] 200 0 5000
+TH1F  sc4f 'Paddle 4 in s1 by formula' s1l4 200 0 5000
+
+# Here is a histogram with a cut: R.s1.trx>0
+TH1F  s1trx 'R-arm S1 trx (with cut)' R.s1.trx 100 -1 1 R.s1.trx>0
+
+TH2F  deltaNu 'Nu with vs. without Ex.Target Corrections' EK_R.nu ekdiff 200 0. .5 100 -0.005 0.005

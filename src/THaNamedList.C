@@ -16,7 +16,7 @@
 #include <iostream>
 #include <cstring>
 
-ClassImp(THaNamedList)
+using namespace std;
 
 
 //_____________________________________________________________________________
@@ -95,3 +95,6 @@ void THaNamedList::SetNameTitle( const Text_t* name, const Text_t* title )
   if( strlen(fNamed->GetName()) == 0 )
     fNamed->SetNameTitle( name, title );
 }
+
+//_____________________________________________________________________________
+ClassImp(THaNamedList)

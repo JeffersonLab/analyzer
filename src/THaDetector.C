@@ -51,8 +51,8 @@ void THaDetector::SetApparatus( THaApparatus* apparatus )
 //_____________________________________________________________________________
 void THaDetector::MakePrefix()
 {
-  // Set up name prefix for global variables. Internal function called by
-  // constructor.
+  // Set up name prefix for global variables. Internal function called 
+  // during initialization.
 
   const char* basename = NULL;
   if( fApparatus )

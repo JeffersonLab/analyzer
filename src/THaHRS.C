@@ -4,7 +4,15 @@
 //
 // THaHRS
 //
-// Abstract base class for the Hall A high-resolution spectrometers (HRS).
+// The standard Hall A High Resolution Spectrometers (HRS).
+// Contains three standard detectors,
+//    VDC
+//    Scintillator S1
+//    Scintillator S2
+//
+// The usual name of this object is either "R" or "L", for Left 
+// and Right HRS, respectively.
+//
 // Defines the functions FindVertices() and TrackCalc(), which are common
 // to both the LeftHRS and the RightHRS.
 //
@@ -34,12 +42,32 @@
 
 #include "THaHRS.h"
 #include "THaTrackingDetector.h"
+#include "THaTrack.h"
+#include "THaScintillator.h"
+#include "THaVDC.h"
 
 #ifdef WITH_DEBUG
 #include <iostream>
 #endif
 
-ClassImp(THaHRS)
+using namespace std;
+
+//_____________________________________________________________________________
+THaHRS::THaHRS( const char* name, const char* description ) :
+  THaSpectrometer( name, description )
+{
+  // Constructor. Defines the standard detectors for the HRS.
+
+  AddDetector( new THaVDC("vdc", "Vertical Drift Chamber"));
+  AddDetector( new THaScintillator("s1", "S1 scintillator"));
+  AddDetector( new THaScintillator("s2", "S2 scintillator"));
+}
+
+//_____________________________________________________________________________
+THaHRS::~THaHRS()
+{
+  // Destructor
+}
 
 //_____________________________________________________________________________
 Int_t THaHRS::FindVertices( TClonesArray& tracks )
@@ -67,7 +95,18 @@ Int_t THaHRS::FindVertices( TClonesArray& tracks )
 //_____________________________________________________________________________
 Int_t THaHRS::TrackCalc()
 {
+  // Find the "Golden Track". 
+
+  if( GetNTracks() > 0 ) {
+    //FIXME: quick and dirty hack to get started ...
+    fGoldenTrack = static_cast<THaTrack*>( fTracks->At(0) );
+    fTrkIfo      = *fGoldenTrack;
+    fTrk         = fGoldenTrack;
+  } else
+    fGoldenTrack = NULL;
+
   return 0;
 }
 
-
+//_____________________________________________________________________________
+ClassImp(THaHRS)

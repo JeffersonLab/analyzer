@@ -116,15 +116,12 @@ public:
     TNamed(name,desc), fArrayData(name), fObject(obj), fType(type),
     fCount(count), fOffset(offset), fMethod(method) {}
 
-  virtual void    Copy( TObject& );
-
   virtual const char*  GetName() const { return fArrayData.GetName(); }
 
   Int_t           GetLen()       const;
   Byte_t          GetNdim()      const            
     { return ( fCount != NULL || fOffset != -1 ) ? 1 : fArrayData.GetNdim(); } 
   const Int_t*    GetDim()       const;
-  Int_t           GetSize()      const { return GetLen(); }
   VarType         GetType()      const { return fType; }
   size_t          GetTypeSize()  const { return GetTypeSize( fType ); }
   static size_t   GetTypeSize( VarType type );
@@ -135,8 +132,6 @@ public:
   const void*     GetValuePointer()        const { return fValueP; }
 
   virtual ULong_t Hash() const { return fArrayData.Hash(); }
-  virtual Bool_t  HasSameSize( const THaVar& rhs ) const;
-  virtual Bool_t  HasSameSize( const THaVar* rhs ) const;
   virtual Int_t   Index( const char* ) const;
   virtual Int_t   Index( const THaArrayString& ) const;
   Bool_t          IsArray() const            
@@ -239,16 +234,20 @@ protected:
 inline
 Double_t THaVar::GetValueAsDouble( Int_t i ) const
 {
-  // Get value of global variable converted to Double_t.
-  // If index i is given, return array element i.
-  // The index is NOT checked to be within the allowed range.
-
   //  if( ( fValueP == NULL ) || 
   //    ( fType>=kDoubleP  && *fDoubleDD == NULL ) ||
   //    ( fType>=kDouble2P && (*fDouble3D)[i] == NULL ))
   //  return 0.0;
   if( !IsBasic() )
     return GetValueFromObject( i );
+
+#ifdef WITH_DEBUG
+  if( i<0 || i>=GetLen() ) {
+    Warning("GetValue()", "Whoa! Index out of range, variable %s, index %d",
+	    GetName(), i );
+    return kInvalid;
+  }
+#endif
 
   switch( fType ) {
   case kDouble: 

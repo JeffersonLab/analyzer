@@ -1,0 +1,180 @@
+//*-- Author :    Ole Hansen   26-Mar-03
+
+//////////////////////////////////////////////////////////////////////////
+//
+// THaDebugModule
+//
+// Diagnostic class to help troubleshoot physics modules.
+// Prints one or more global variables for every event.
+//
+//////////////////////////////////////////////////////////////////////////
+
+#include "THaDebugModule.h"
+#include "THaVar.h"
+#include "THaVarList.h"
+#include "THaCutList.h"
+#include "THaCut.h"
+#include "THaGlobals.h"
+#include "THaEvData.h"
+#include "TRegexp.h"
+
+#include <cstring>
+#include <cctype>
+#include <iostream>
+
+using namespace std;
+
+typedef vector<const THaVar*>::const_iterator VIter_t;
+
+//_____________________________________________________________________________
+THaDebugModule::THaDebugModule( const char* var_list, const char* test ) :
+  THaPhysicsModule("DebugModule",var_list), 
+  fVarString(var_list), fFlags(kStop), fCount(0), fTestExpr(test), fTest(0)
+{
+  // Normal constructor.
+
+  // Flag indicating that test pointer needs to be assigned
+  fIsSetup = fTestExpr.IsNull();
+}
+
+//_____________________________________________________________________________
+THaDebugModule::~THaDebugModule()
+{
+  // Destructor
+  delete fTest;
+}
+
+//_____________________________________________________________________________
+THaAnalysisObject::EStatus THaDebugModule::Init( const TDatime& run_time )
+{
+  // Initialize the module.
+
+  if( THaPhysicsModule::Init( run_time ))
+    return fStatus;
+
+  fVars.clear();
+
+  Int_t nopt = fVarString.GetNOptions();
+  if( nopt > 0 ) {
+    if( !gHaVars )
+      return fStatus = kInitError;
+    TIter next( gHaVars );
+    TObject* obj;
+    for( Int_t i=0; i<nopt; i++ ) {
+      const char* opt = fVarString.GetOption(i);
+      if( !strcmp(opt,"NOSTOP") )
+	fFlags &= ~kStop;
+      else {
+	// Regexp matching
+	bool found = false;
+	TRegexp re( opt, kTRUE);
+	next.Reset();
+	while( (obj = next()) ) {
+	  TString s = obj->GetName();
+	  if( s.Index(re) != kNPOS ) {
+	    found = true;
+	    fVars.push_back( static_cast<const THaVar*>(obj) );
+	  }
+	}
+	if( !found ) {
+	  Warning( Here("Init()"), 
+		   "Global variable %s not found. Skipped.", opt );
+	}
+      }
+    }
+  }
+  return fStatus = kOK;
+}
+
+//_____________________________________________________________________________
+void THaDebugModule::Print( Option_t* opt ) const
+{
+  // Print details of the defined variables
+
+  THaPhysicsModule::Print( opt );
+  if( fIsSetup ) {
+    if( !fTestExpr.IsNull() ) {
+      if( fTest ) 
+	fTest->Print();
+      else
+	cout << "Test name: " << fTestExpr << " (undefined)\n";
+    }
+    cout << "Number of variables: " << fVars.size() << endl;
+    VIter_t it = fVars.begin();
+    for( ; it != fVars.end(); it++ )
+      cout << (*it)->GetName() << "  ";
+    cout << endl;
+  } else {
+    if( !fTestExpr.IsNull()) 
+      cout << "Test name: " << fTestExpr << endl;
+    cout << "(Module not initialized)\n";
+  }
+}
+
+//_____________________________________________________________________________
+void THaDebugModule::PrintEvNum( const THaEvData& evdata ) const
+{
+  // Print current event number
+  cout << "======>>>>>> Event " << (UInt_t)evdata.GetEvNum() << endl;
+}
+
+//_____________________________________________________________________________
+Int_t THaDebugModule::Process( const THaEvData& evdata )
+{
+  // Print the variables for every event and wait for user input.
+
+  // We have to set up the test here because physics modules' Init() is
+  // called before the analyzer's tests are loaded, and we want to be
+  // able to use existing tests.
+  if( !fIsSetup ) {
+    fTest = new THaCut( fName+"_Test", fTestExpr, fName+"_Block" );
+    // Expression error?
+    if( !fTest || fTest->IsZombie()) {
+      delete fTest; fTest = NULL;
+    }
+    fIsSetup = true;
+  }
+  bool good = true;
+  if ( fTest && !fTest->EvalCut()) good = false;
+  
+  // Print() the variables
+  if( good && (fFlags & kQuiet) == 0) {
+    PrintEvNum( evdata );
+    VIter_t it = fVars.begin();
+    for( ; it != fVars.end(); it++ ) {
+      (*it)->Print();
+    }
+  }
+
+  if( (fFlags & kCount) && --fCount <= 0 ) {
+    fFlags |= kStop;
+    fFlags &= ~kCount;
+    if( !good ) PrintEvNum( evdata );
+    good = true;
+  }
+  if( (fFlags & kStop) && good ) {
+    // Wait for user input
+    cout << "RETURN: continue, H: run 100 events, R: run to end, F: finish quietly, Q: quit\n";
+    char c;
+    cin.clear();
+    while( !cin.eof() && cin.get(c) && !strchr("\nqQhHrRfF",c));
+    if( c != '\n' ) while( !cin.eof() && cin.get() != '\n');
+    if( tolower(c) == 'q' )
+      return kTerminate;
+    else if( tolower(c) == 'h' ) {
+      fFlags |= kCount;
+      fFlags &= ~kStop;
+      fCount = 100;
+    }
+    else if( tolower(c) == 'r' )
+      fFlags &= ~kStop;
+    else if( tolower(c) == 'f' ) {
+      fFlags &= ~kStop;
+      fFlags |= kQuiet;
+    }
+  }
+
+  return 0;
+}
+
+ClassImp(THaDebugModule)

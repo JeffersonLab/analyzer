@@ -48,10 +48,8 @@ export MAINDIR = ../src
 # Use this if profiling (note: it slows down the code)
 # export PROFILE = 1
 
-export DEBUG = 1
+# export DEBUG = 1
 
-ARCH          = linuxegcs
-#ARCH          = solarisCC5
 
 ROOTCFLAGS   := $(shell root-config --cflags)
 ROOTLIBS     := $(shell root-config --libs)
@@ -60,45 +58,48 @@ ROOTGLIBS    := $(shell root-config --glibs)
 INCLUDES      = $(ROOTCFLAGS) 
 
 ifndef STANDALONE
-INCLUDES += -I$(MAINDIR)
+   INCLUDES += -I$(MAINDIR)
+else
+   ARCH          = linuxegcs
+  # ARCH          = solarisCC5
 endif
 
 ifeq ($(ARCH),solarisCC5)
-# Solaris CC 5.0
-CXX           = CC
-LD            = CC
-SOFLAGS       = -G
-ifdef DEBUG
-  CXXFLAGS    = -g -KPIC
-  LDFLAGS     = -g
-else
-  CXXFLAGS    = -O -KPIC
-  LDFLAGS     = -O
-endif
+  # Solaris CC 5.0
+   CXX           = CC
+   LD            = CC
+   SOFLAGS       = -G
+   ifdef DEBUG
+      CXXFLAGS    = -g -KPIC
+      LDFLAGS     = -g
+   else
+      CXXFLAGS    = -O -KPIC
+      LDFLAGS     = -O
+   endif
 endif
 
 ifeq ($(ARCH),linuxegcs)
-# Linux with egcs (>= RedHat 5.2)
-CXX           = g++
-LD            = g++
-SOFLAGS       = -shared
-ifdef DEBUG
-  CXXFLAGS    = -g -Wall -Woverloaded-virtual -fPIC
-  LDFLAGS     = -g
-else
-  CXXFLAGS    = -O -Wall -Woverloaded-virtual -fPIC
-  LDFLAGS     = -O
-endif
+  # Linux with egcs (>= RedHat 5.2)
+   CXX           = g++
+   LD            = g++
+   SOFLAGS       = -shared
+   ifdef DEBUG
+      CXXFLAGS    = -g -O0 -Wall -Woverloaded-virtual -fPIC
+      LDFLAGS     = -g -O0
+   else
+      CXXFLAGS    = -O2 -Wall -Woverloaded-virtual -fPIC
+      LDFLAGS     = -O2
+   endif
 endif
 
 ifeq ($(CXX),)
-$(error $(ARCH) invalid architecture)
+   $(error $(ARCH) invalid architecture)
 endif
 
 MAKEDEPEND    = g++
 
 ifdef WITH_DEBUG
-CXXFLAGS     += -DWITH_DEBUG
+   CXXFLAGS     += -DWITH_DEBUG
 endif
 
 export OSNAME := $(shell uname)
@@ -118,12 +119,7 @@ ifeq ($(OSNAME),SunOS)
    LIBET = $(CODA)/SunOS/lib/libet.so
    ONLIBS = $(LIBET) -lposix4 -lnsl -lsocket -lresolv
    LIBS = $(EVIO_LIB) $(GLIB)
-   ifdef ONLINE_ET
-     ALL_LIBS = $(LIBS) $(ONLIBS) 
-# ... finished, what ET needs.
-   else
-     ALL_LIBS = $(LIBS) 
-   endif
+   ALL_LIBS = $(LIBS) 
 
 endif
 
@@ -151,23 +147,26 @@ ifeq ($(OSNAME),Linux)
    ALL_LIBS      = $(EVIO_LIB) $(GLIBS) $(ROOTLIBS) $(ROOTGLIBS)
 
 # ONLIBS is needed for ET
-  ET_AC_FLAGS = -D_REENTRANT -D_POSIX_PTHREAD_SEMANTICS
-  ET_CFLAGS = -02 -fPIC -I. $(ET_AC_FLAGS) -DLINUXVERS
+   ET_AC_FLAGS = -D_REENTRANT -D_POSIX_PTHREAD_SEMANTICS
+   ET_CFLAGS = -02 -fPIC -I. $(ET_AC_FLAGS) -DLINUXVERS
 # CODA environment variable must be set.  Examples are
 #   CODA = /adaqfs/coda/2.2        (in adaq cluster)
 #   CODA = /data7/user/coda/2.2    (on haplix cluster)
-  LIBET = $(CODA)/Linux/lib/libet.so
-  ONLIBS = $(LIBET) -lieee -lpthread -ldl -lresolv
+   LIBET = $(CODA)/Linux/lib/libet.so
+   ONLIBS = $(LIBET) -lieee -lpthread -ldl -lresolv
 
-  ifdef ONLINE_ET
-     ALL_LIBS += $(ONLIBS)
-  endif
-
-  ifdef PROFILE
-     CXXFLAGS += -pg
-  endif
+   ifdef PROFILE
+      CXXFLAGS += -pg
+   endif
 
 endif
+
+# ... finished, what ET needs.
+ifdef ONLINE_ET
+  CXXFLAGS   += -DONLINE_ET
+  ALL_LIBS   += $(ONLIBS)
+endif
+
 
 CXXFLAGS     += $(INCLUDES)
 LIBS         += $(ROOTLIBS) $(SYSLIBS)
@@ -179,14 +178,9 @@ GLIBS        += $(ROOTGLIBS) $(SYSLIBS)
 
 SRC = THaUsrstrutils.C THaCrateMap.C THaCodaData.C THaHelicity.C \
       THaEpicsStack.C THaFastBusWord.C THaCodaFile.C THaSlotData.C \
-      THaEvData.C 
-      
-HEAD = $(SRC:.C=.h)
-DEPS = $(SRC:.C=.d)
-DECODE_OBJS = $(SRC:.C=.o)
+      THaEvData.C evio.C
 
 PROGS = tstio tdecpr tdecex prfact 
-
 # If you want to use the ET system at Jlab.
 ifdef ONLINE_ET
   SRC += THaEtClient.C
@@ -194,10 +188,16 @@ ifdef ONLINE_ET
   PROGS += tstcoda
 endif
 
+HEAD := $(SRC:.C=.h)
+# sources without headers:
+SRC += swap_util.C swapped_intcpy.c
+DEPS = $(patsubst %.c,%.d,$(SRC:.C=.d))
+DECODE_OBJS = $(patsubst %.c,%.o,$(SRC:%.C=%.o)) THaDecDict.o
+
 ifdef BUILD_SHARED
-  all:  ../libdc.so
+  all:  libdc.so
 else
-  all:  ../libdc.a
+  all:  libdc.a
 endif
 
 # To compile local test codes:  Uncomment "export STANDALONE = 1" at top of Makefile
@@ -210,17 +210,13 @@ endif
 
 # Library for main analyzer
 
-../libdc.a: $(DECODE_OBJS) evio.o swap_util.o swapped_intcpy.o THaDecDict.o
+libdc.a: $(DECODE_OBJS)
 	rm -f $@
 	ar crs $@ $^
 
-../libdc.so: $(DECODE_OBJS) evio.o swap_util.o swapped_intcpy.o THaDecDict.o
+libdc.so: $(DECODE_OBJS)
 	rm -f $@
 	$(LD) $(LDFLAGS) $(SOFLAGS) -o $@ $^
-
-libdc.a: $(DECODE_OBJS) evio.o swap_util.o swapped_intcpy.o THaDecDict.o
-	rm -f $@
-	ar crs $@ $^
 
 # Test programs for standalone tests of decoder.
 # Need a few objects from MAINDIR because of some links to those classes.
@@ -230,27 +226,27 @@ else
    MAINOBJS = $(MAINDIR)/libHallA.so
 endif
 
-tstio: tstio_main.o $(DECODE_OBJS) THaDecDict.o $(SRC) $(EVIO_LIB) $(MAINOBJS)
+tstio: tstio_main.o $(DECODE_OBJS) $(SRC) $(EVIO_LIB) $(MAINOBJS)
 	rm -f $@
-	$(CXX) $(CXXFLAGS) -o $@ tstio_main.o $(DECODE_OBJS) THaDecDict.o $(ALL_LIBS) $(MAINOBJS)
+	$(CXX) $(CXXFLAGS) -o $@ tstio_main.o $(DECODE_OBJS) $(ALL_LIBS) $(MAINOBJS)
 
-tdecpr: $(DECODE_OBJS) THaDecDict.o $(SRC) tdecpr_main.o $(HEAD) $(SRC) $(EVIO_LIB) $(MAINOBJS)
+tdecpr: $(DECODE_OBJS) $(SRC) tdecpr_main.o $(HEAD) $(SRC) $(EVIO_LIB) $(MAINOBJS)
 	rm -f $@
-	$(CXX) $(CXXFLAGS) -o $@ tdecpr_main.o $(DECODE_OBJS) THaDecDict.o $(ALL_LIBS) $(MAINOBJS)
+	$(CXX) $(CXXFLAGS) -o $@ tdecpr_main.o $(DECODE_OBJS) $(ALL_LIBS) $(MAINOBJS)
 
-tdecex: $(DECODE_OBJS) THaDecDict.o $(SRC) tdecex_main.o THaGenDetTest.o $(HEAD) THaGenDetTest.h $(SRC) $(DECODE_OBJS) THaDecDict.o $(EVIO_LIBS) $(MAINOBJS)  
+tdecex: $(DECODE_OBJS) $(SRC) tdecex_main.o THaGenDetTest.o $(HEAD) THaGenDetTest.h $(SRC) $(DECODE_OBJS) $(EVIO_LIBS) $(MAINOBJS)  
 	rm -f $@
-	$(CXX) $(CXXFLAGS) -o $@ tdecex_main.o THaGenDetTest.o $(DECODE_OBJS) THaDecDict.o $(ALL_LIBS) $(MAINOBJS)
+	$(CXX) $(CXXFLAGS) -o $@ tdecex_main.o THaGenDetTest.o $(DECODE_OBJS) $(ALL_LIBS) $(MAINOBJS)
 
-etclient: etclient_main.o $(DECODE_OBJS) THaDecDict.o $(MAINOBJS)
-	$(CXX) $(CXXFLAGS) -o $@ etclient_main.o $(DECODE_OBJS) THaDecDict.o $(ALL_LIBS) $(MAINOBJS)
+etclient: etclient_main.o $(DECODE_OBJS) $(MAINOBJS)
+	$(CXX) $(CXXFLAGS) -o $@ etclient_main.o $(DECODE_OBJS) $(ALL_LIBS) $(MAINOBJS)
 
-prfact: $(DECODE_OBJS) THaDecDict.o $(SRC) prfact_main.o $(HEAD) $(EVIO_LIB) $(MAINOBJS)
+prfact: $(DECODE_OBJS) $(SRC) prfact_main.o $(HEAD) $(EVIO_LIB) $(MAINOBJS)
 	rm -f $@
-	$(CXX) $(CXXFLAGS) -o $@ prfact_main.o $(DECODE_OBJS) THaDecDict.o $(ALL_LIBS) $(MAINOBJS)
+	$(CXX) $(CXXFLAGS) -o $@ prfact_main.o $(DECODE_OBJS) $(ALL_LIBS) $(MAINOBJS)
 
-tstcoda: tstcoda_main.o THaCodaFile.o THaEtClient.o THaCodaData.o THaCodaFile.h THaEtClient.h THaCodaData.h $(DECODE_OBJS) THaDecDict.o $(MAINOBJS)
-	$(CXX) $(CXXFLAGS) -o $@ tstcoda_main.o $(DECODE_OBJS) THaDecDict.o $(ALL_LIBS) $(MAINOBJS)
+tstcoda: tstcoda_main.o THaCodaFile.o THaEtClient.o THaCodaData.o THaCodaFile.h THaEtClient.h THaCodaData.h $(DECODE_OBJS) $(MAINOBJS)
+	$(CXX) $(CXXFLAGS) -o $@ tstcoda_main.o $(DECODE_OBJS) $(ALL_LIBS) $(MAINOBJS)
 
 
 # Below is the evio library, which comes rather directly 
@@ -264,12 +260,12 @@ libevio_linux.a:  evio.o swap_util.o swapped_intcpy.o
 	rm -f $@
 	ar cr $@ evio.o swap_util.o swapped_intcpy.o
 
-libevio_hpux.a:  evio.o swap_util.o swapped_intcpy.o
-	rm -f $@
-	ar cr $@ evio.o swap_util.o swapped_intcpy.o
+#libevio_hpux.a:  evio.o swap_util.o swapped_intcpy.o
+#	rm -f $@
+#	ar cr $@ evio.o swap_util.o swapped_intcpy.o
 
-evio.o: evio.C
-	$(CXX) -c  $<
+#evio.o: evio.C
+#	$(CXX) -c  $<
 
 # swap_util.o: swap_util.C
 # 	$(CXX) -c  $<
@@ -279,7 +275,7 @@ swapped_intcpy.o: swapped_intcpy.c
 
 # Dictionary
 
-THaDecDict.C: haDecode_LinkDef.h
+THaDecDict.C: $(HEAD) haDecode_LinkDef.h
 	@echo "Generating Decoder Dictionary..."
 	$(ROOTSYS)/bin/rootcint -f THaDecDict.C -c $(CXXFLAGS) $(INCLUDES) $(HEAD) haDecode_LinkDef.h
 
@@ -298,7 +294,7 @@ version:
 	cp README* ./$(VERS)
 	cp ChangeLog ./$(VERS)
 	tar cvf $(VERS).tar ./$(VERS)
-         
+
 clean:  clean_evio
 	rm -f *.o *.a core *~ THaDecDict* *.out *.tar $(PROGS)
 
@@ -326,11 +322,3 @@ clean_evio:
 		[ -s $@ ] || rm -f $@'
 
 -include $(DEPS)
-
-
-
-
-
-
-
-

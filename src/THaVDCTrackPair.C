@@ -15,7 +15,7 @@
 
 #include <iostream>
 
-ClassImp(THaVDCTrackPair)
+using namespace std;
 
 //_____________________________________________________________________________
 THaVDCTrackPair& THaVDCTrackPair::operator=( const THaVDCTrackPair& rhs )
@@ -96,3 +96,6 @@ void THaVDCTrackPair::Print( Option_t* opt ) const
 
   cout << fError << endl;
 }
+
+///////////////////////////////////////////////////////////////////////////////
+ClassImp(THaVDCTrackPair)

@@ -14,6 +14,8 @@
 #include <string>
 #include "THaScaler.h"
 
+using namespace std;
+
 int main(int argc, char* argv[]) {
 
    const Double_t calib_u3  = 4114;  // calibrations (an example)

@@ -72,10 +72,6 @@ protected:
   // For Both
   Int_t CalcUVTrackCoords(); // Compute UV track coords in detector cs
   
-  // Prevent copying and assignment
-  THaVDCUVPlane( const THaVDCUVPlane& ) {}
-  THaVDCUVPlane& operator=( const THaVDCUVPlane& ) { return *this; }
-  
   ClassDef(THaVDCUVPlane,0)             // VDCUVPlane class
 };
 

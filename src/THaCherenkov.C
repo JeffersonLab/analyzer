@@ -21,14 +21,14 @@ ClassImp(THaCherenkov)
 
 //_____________________________________________________________________________
 THaCherenkov::THaCherenkov( const char* name, const char* description,
-			THaApparatus* apparatus )
+			    THaApparatus* apparatus )
   : THaPidDetector(name,description,apparatus), fFirstChan(NULL)
 {
   // Constructor
 }
 
 //_____________________________________________________________________________
-Int_t THaCherenkov::ReadDatabase( FILE* fi, const TDatime& date )
+Int_t THaCherenkov::ReadDatabase( const TDatime& date )
 {
   // Read this detector's parameters from the database file 'fi'.
   // This function is called by THaDetectorBase::Init() once at the
@@ -38,6 +38,9 @@ Int_t THaCherenkov::ReadDatabase( FILE* fi, const TDatime& date )
   static const char* const here = "ReadDatabase()";
 
   // Read database
+
+  FILE* fi = OpenFile( date );
+  if( !fi ) return kFileError;
 
   const int LEN = 100;
   char buf[LEN];
@@ -50,6 +53,7 @@ Int_t THaCherenkov::ReadDatabase( FILE* fi, const TDatime& date )
   if( fIsInit && nelem != fNelem ) {
     Error( Here(here), "Cannot re-initalize with different number of mirrors. "
 	   "(was: %d, now: %d). Detector not re-initialized.", fNelem, nelem );
+    fclose(fi);
     return kInitError;
   }
   fNelem = nelem;
@@ -60,6 +64,7 @@ Int_t THaCherenkov::ReadDatabase( FILE* fi, const TDatime& date )
   int i = 0;
   delete [] fFirstChan;
   fFirstChan = new UShort_t[ THaDetMap::kDetMapSize ];
+  fDetMap->Clear();
   while (1) {
     Int_t crate, slot, first, last, first_chan;
     fscanf ( fi,"%d%d%d%d%d", 
@@ -70,6 +75,7 @@ Int_t THaCherenkov::ReadDatabase( FILE* fi, const TDatime& date )
       Error( Here(here), "Too many DetMap modules (maximum allowed - %d).", 
 	     THaDetMap::kDetMapSize);
       delete [] fFirstChan; fFirstChan = NULL;
+      fclose(fi);
       return kInitError;
     }
     fFirstChan[i++] = first_chan;
@@ -92,6 +98,8 @@ Int_t THaCherenkov::ReadDatabase( FILE* fi, const TDatime& date )
   tan_angle = TMath::Tan(angle*degrad);
   sin_angle = TMath::Sin(angle*degrad);
   cos_angle = TMath::Cos(angle*degrad);
+
+  DefineAxes(angle*degrad);
 
   // Dimension arrays
   if( !fIsInit ) {
@@ -121,16 +129,17 @@ Int_t THaCherenkov::ReadDatabase( FILE* fi, const TDatime& date )
     fscanf( fi, "%f", fGain+i);                   // ADC gains
   fgets ( buf, LEN, fi );
 
+  fclose(fi);
   return kOK;
 }
 
 //_____________________________________________________________________________
-Int_t THaCherenkov::SetupDetector( const TDatime& date )
+Int_t THaCherenkov::DefineVariables( EMode mode )
 {
   // Initialize global variables
 
-  if( fIsSetup ) return kOK;
-  fIsSetup = true;
+  if( mode == kDefine && fIsSetup ) return kOK;
+  fIsSetup = ( mode == kDefine );
 
   RVarDef vars[] = {
     { "nthit",  "Number of Left paddles TDC times",  "fNThit" },
@@ -146,9 +155,7 @@ Int_t THaCherenkov::SetupDetector( const TDatime& date )
     { "try",    "y-position of track in det plane",  "fTRY" },
     { 0 }
   };
-  DefineVariables( vars );
-
-  return fStatus = kOK;
+  return DefineVarsFromList( vars, mode );
 }
 
 //_____________________________________________________________________________

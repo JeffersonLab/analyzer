@@ -1,4 +1,3 @@
-
 #ifndef ROOT_THaAnalyzer
 #define ROOT_THaAnalyzer
 
@@ -6,30 +5,19 @@
 //
 // THaAnalyzer
 // 
-// THaAnalyzer is the base class for a "Hall A analyzer" class.
-// An analyzer defines the basic actions to perform during analysis.
-// THaAnalyzer is the default analyzer that is used if no user class is
-// defined.  It performs a standard analysis consisting of
-//
-//   1. Decoding/Calibrating
-//   2. Track Reconstruction
-//   3. Physics variable processing
-//
-// At the end of each step, testing and histogramming are done for
-// the appropriate block defined in the global test/histogram lists.
-//
 //////////////////////////////////////////////////////////////////////////
 
 #include "TString.h"
-#include "THaCutList.h"
-#include "THaGlobals.h"
 
-class THaPhysics;
 class THaEvent;
 class THaRun;
 class THaOutput;
-class THaNamedList;
+class TList;
+class TIter;
 class TFile;
+class TDatime;
+class THaCut;
+class THaBenchmark;
 
 class THaAnalyzer {
 
@@ -37,39 +25,69 @@ public:
   THaAnalyzer( );
   virtual ~THaAnalyzer();
 
-  virtual const TString* GetCutBlockNames()  const { return fCutBlockNames; }
-  virtual const char*    GetFilename()       const { return fOutFile.Data(); }
-  virtual Int_t          GetNblocks()        const { return fNblocks; }
-  virtual const TFile*   GetOutFile()        const { return fFile; }
-  virtual void           SetCutBlocks( Int_t n, const char* name );
-  virtual void           SetCutBlocks( const TString* names );
-  virtual void           SetCutBlocks( const char** names );
-  virtual void           SetEvent( THaEvent* event )    { fEvent = event; }
-  virtual void           SetPhysics( THaPhysics* phys ) { fPhysics = phys; }
-  virtual void           SetOutFile( const char* name ) { fOutFile = name; }
+  const char*    GetOutFileName()    const   { return fOutFileName.Data(); }
+  const char*    GetCutFileName()    const   { return fCutFileName.Data(); }
+  const char*    GetOdefFileName()   const   { return fOdefFileName.Data(); }
+  const char*    GetSummaryFileName() const  { return fSummaryFileName.Data(); }
+  const TFile*   GetOutFile()        const   { return fFile; }
+  Int_t          GetCompressionLevel() const { return fCompress; }
+  void           SetEvent( THaEvent* event )     { fEvent = event; }
+  void           SetOutFile( const char* name )  { fOutFileName = name; }
+  void           SetCutFile( const char* name )  { fCutFileName = name; }
+  void           SetOdefFile( const char* name ) { fOdefFileName = name; }
+  void           SetSummaryFile( const char* name ) { fSummaryFileName = name; }
+  void           SetCompressionLevel( Int_t level ) { fCompress = level; }
+  void           EnableBenchmarks( Bool_t b = kTRUE ) { fDoBench = b; }
 
-  virtual void           Close();
-  virtual Int_t          Process( THaRun& run );
+  virtual void   Close();
+  virtual Int_t  Process( THaRun& run );
+          Int_t  Process( THaRun* run ) { 
+	    if(!run) return -1; return Process(*run);
+	  }
   
 protected:
   static const char* const kMasterCutName;
-  static const Int_t fMaxSkip = 25;
 
+  enum EStage      { kRawDecode, kDecode, kCoarseRecon, kReconstruct, kPhysics,
+		     kMaxStage };
+  enum ESkipReason { kEvFileTrunc, kCodaErr, kRawDecodeTest, kDecodeTest, 
+		     kCoarseReconTest, kReconstructTest, kPhysicsTest, 
+		     kMaxSkip };
+  // Statistics counters and message texts
+  struct Skip_t {
+    const char* reason;
+    Int_t       count;
+  };
+  // Test and histogram blocks
+  struct Stage_t;
+  friend struct Stage_t;
+  struct Stage_t {
+    const char*   name;
+    ESkipReason   skipkey;
+    TList*        cut_list;
+    TList*        hist_list;
+    THaCut*       master_cut;
+  };
+    
   TFile*         fFile;            //The ROOT output file.
   THaOutput*     fOutput;          //Flexible ROOT output (tree, histograms)
-  TString        fOutFile;         //Name of output ROOT file.
-  THaPhysics*    fPhysics;         //The physics quantities for this analysis.
+  TString        fOutFileName;     //Name of output ROOT file.
+  TString        fCutFileName;     //Name of cut definition file to load
+  TString        fLoadedCutFileName;//Name of last loaded cut definition file
+  TString        fOdefFileName;    //Name of output definition file
+  TString        fSummaryFileName; //Name of file to write analysis summary to
   THaEvent*      fEvent;           //The event structure to be written to file.
-  Int_t          fNblocks;         //Number of analysis stages
-  TString*       fCutBlockNames;   //Array of cut block names
-  TString*       fHistBlockNames;  //Array of histogram block names
-  TString*       fMasterCutNames;  //Names of the "master cuts" for each cut block
-  THaNamedList** fCutBlocks;       //Array of pointers to the blocks of cuts
+  Stage_t*       fStages;          //Cuts/histograms for each analysis stage [kMaxStage]
+  Skip_t*        fSkipCnt;         //Counters for reasons to skip events [kMaxSkip]
   UInt_t         fNev;             //Current event number
-  Int_t          *fSkipCnt;        //Counters for reasons to skip events.
+  Int_t          fCompress;        //Compression level for ROOT output file
+  Bool_t         fDoBench;         //Collect detailed timing statistics
+  THaBenchmark*  fBench;           //Counters for timing statistics
 
-  Int_t          EvalCuts( Int_t n );
-  virtual void   SetupCuts();
+  virtual bool   EvalStage( EStage n );
+  virtual void   InitCuts();
+  virtual Int_t  InitModules( TIter& iter, TDatime& time, Int_t erroff,
+			      const char* baseclass = NULL );
 
   ClassDef(THaAnalyzer,0)  //Hall A Analyzer Standard Event Loop
 };

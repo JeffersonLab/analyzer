@@ -11,7 +11,7 @@
 //
 // Set up the equipment to be analyzed.
 
-   THaApparatus* HRSL = new THaLeftHRS("Left arm HRS");
+   THaApparatus* HRSL = new THaHRS("L","Left arm HRS");
    gHaApps->Add( HRSL );
 
    THaScaler* scaler;

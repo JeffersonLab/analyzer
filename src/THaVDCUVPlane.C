@@ -14,8 +14,8 @@
 #include "THaVDCHit.h"
 #include "TMath.h"
 
-//#include <string.h>
-//#include <stdio.h>
+#include <cstring>
+#include <cstdio>
 
 ClassImp(THaVDCUVPlane)
 
@@ -44,7 +44,6 @@ THaVDCUVPlane::~THaVDCUVPlane()
 
   delete fU;
   delete fV;
-  fUVTracks->Delete();
   delete fUVTracks;
 }
 
@@ -235,7 +234,12 @@ Int_t THaVDCUVPlane::FineTrack( )
   // Refine cluster position
   FitTracks();
 
-  // Reconcstruct the UV tracks, based on the refined cluster positions
+  // FIXME: The fit may fail, so we might want to call a function here
+  // that deletes UV tracks whose clusters have bad fits, or with
+  // clusters that are too small (e.g. 1 hit), etc. 
+  // Right now, we keep them, preferring efficiency over precision.
+
+  // Reconstruct the UV tracks, based on the refined cluster positions
   CalcUVTrackCoords();
 
   return 0;

@@ -69,6 +69,7 @@ Int_t THaFormula::Compile( const char* expression )
 
   fNcodes = 0;
   fNval   = 0;
+  fAlreadyFound.ResetAllBits();
   delete [] fVarDef;
   fVarDef = new FVarDef_t[ kMAXCODES ];
   memset( fVarDef, 0, kMAXCODES*sizeof(FVarDef_t));
@@ -116,6 +117,8 @@ Double_t THaFormula::DefinedValue( Int_t i )
   case kCut:
     return reinterpret_cast<const THaCut*>(ptr)->GetResult();
     break;
+  default:
+    return 0.0;
   }
   return 0.0;
 }  
@@ -199,7 +202,7 @@ Int_t THaFormula::DefinedGlobalVariable( const TString& name )
   // Subscript(s) within bounds?
   Int_t index = 0;
   if( var.IsArray() 
-      && (index = obj->Index( var )) == kNPOS ) return -5;
+      && (index = obj->Index( var )) <0 ) return -5;
 		    
   // Check if this variable already used in this formula
   FVarDef_t* def = fVarDef;

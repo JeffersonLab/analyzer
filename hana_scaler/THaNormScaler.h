@@ -34,22 +34,22 @@ class THaNormScaler : public THaScalerBank
 public:
 
    THaNormScaler();
-   THaNormScaler(string name);
+   THaNormScaler(std::string name);
    virtual ~THaNormScaler();
 
-   Int_t Init(Int_t crate, multimap<string, BscaLoc>& bmap);
-   Int_t GetData(string name, Int_t histor);
+   Int_t Init(Int_t crate, std::multimap<std::string, BscaLoc>& bmap);
+   Int_t GetData(std::string name, Int_t histor);
    Int_t GetData(Int_t chan, Int_t histor);
    Int_t GetTrig(Int_t trig, Int_t histor);
-   string GetChanName(int index);
+   std::string GetChanName(int index);
 
 private:
 
    Int_t crate,helicity;
    char* ctrig;
-   map<string, Int_t> name_to_array;
-   map<Int_t, string> array_to_name;
-   vector<string> chan_name;
+   std::map<std::string, Int_t> name_to_array;
+   std::map<Int_t, std::string> array_to_name;
+   std::vector<std::string> chan_name;
 
 #ifndef ROOTPRE3
 ClassDef(THaNormScaler,0)  // Normalization scaler, used by THaScaler

@@ -30,7 +30,6 @@ protected:
 
   //Only derived classes may construct me
 
-  THaNonTrackingDetector() {}
   THaNonTrackingDetector( const char* name, const char* description,
 			  THaApparatus* a = NULL);
 

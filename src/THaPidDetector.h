@@ -27,7 +27,6 @@ protected:
 
   //Only derived classes may construct me
 
-  THaPidDetector() {}
   THaPidDetector( const char* name, const char* description,
 		  THaApparatus* a = NULL );
 

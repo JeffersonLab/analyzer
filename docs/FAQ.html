@@ -1,0 +1,151 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>Hall A C++ Analyzer FAQ</title>
+</head>
+
+<body>
+<h1>Hall A C++ Analyzer Frequently Asked Questions</h1>
+
+5 June 2003
+<p>
+
+<pre>
+Building and Installing
+~~~~~~~~~~~~~~~~~~~~~~~
+Q: How do I compile and install the analyzer on ifarml1/2/3?
+
+A: Download the source tarball, unpack, set up ROOT and gcc, and compile:
+
+   % lynx -source http://hallaweb.jlab.org/root/download/analyzer-1.0.tar.gz > analyzer-1.0.tar.gz
+   % tar xzvf analyzer-1.0.tar.gz 
+   % cd analyzer-1.0
+   % use root/3.03-06-gcc3.0.4
+   % use gcc/3.0.4
+   % make -j4
+   ( ... go drink a coffee ... )
+ 
+   To run the analyzer, you will also need to set up LD_LIBRARY_PATH:
+
+   % setenv LD_LIBRARY_PATH `pwd`:${LD_LIBRARY_PATH}
+
+   Start the analyzer:
+
+   % ./analyzer
+
+   To "install" the analyzer, just add the build directory to your PATH
+   as well as LD_LIBRARY_PATH.
+
+--------------------------------------------------------------------
+Q: Why does it build and start up so slowly?
+
+A: Because disk space on iframl1/2/3 is located on busy file servers.
+   Things get a bit faster if you work on the local scratch disk 
+   /local/scratch, but not much.  To get the speed you deserve, 
+   move to your own standalone desktop machine or the Hall A counting 
+   house machines.  You will be surprised.
+
+--------------------------------------------------------------------
+Q: The source used to compile fine, but then I switched to a different
+   version of ROOT/gcc/Linux, moved stuff around, etc., and now I get a
+   bizarre error like
+
+     Creating dependencies for src/THaVDCCluster.C
+     make: *** No rule to make target `src/THaVDCLookupTTDConv.h', 
+         needed by `src/THaVDCHit.d'.  Stop.
+
+A: Dependency files (.d) are out of date. To clean things up, do this:
+
+   % find . -name '*.d' -exec rm {} \;
+   % make realclean
+
+   Then rebuild the analyzer.
+
+--------------------------------------------------------------------
+Q: How do I get the latest CVS version?
+
+A: Do this at your own risk. The CVS version may sometimes not even
+   compile, and likely will contain untested and undocumented features.
+
+   setenv CVS_RSH ssh
+   cvs -d :ext:cvs.jlab.org:/group/halla/analysis/cvs checkout analyzer
+
+   If you want a specific version or branch, add "-r tag" after "checkout",
+   for instance
+
+   cvs -d :ext:cvs.jlab.org:/group/halla/analysis/cvs checkout -r Release-100 analyzer
+
+--------------------------------------------------------------------
+Q: How do I build the analyzer on a non-Linux Unix platform?
+
+A: Currently only Solaris with the Sun Workshop compiler is officially 
+   supported. (This is the environment on ifarms1.) To switch to
+   Solaris, simply change the definition of "ARCH" in the top-level
+   Makefile from "linuxegcs" to "solarisCC5".
+
+   On other platforms (e.g. Tru64, IRIX, HP-UX), you must add
+   appropriate compiler names and flags in the ARCH section of
+   all the Makefiles. You will need ROOT compiled on your system,
+   and you need to compile the analyzer with the same compiler that
+   was used to compile your ROOT.
+
+   We will add official support for other Unix platforms as time
+   permits and demand justifies.
+
+--------------------------------------------------------------------
+Q: Is Windows supported?
+
+A: Not at this time, but support is planned at some point.
+
+--------------------------------------------------------------------
+
+
+Running the Analyzer
+~~~~~~~~~~~~~~~~~~~~
+
+--------------------------------------------------------------------
+Q: Why is the display behaving poorly after quitting the analyzer/ROOT?
+
+A: ROOT doesn't always return the terminal to a sane state. Use the "reset"
+   command to regain control of the screen.
+
+--------------------------------------------------------------------
+Q: Where is the database?
+
+A: The calibration and optics database currently reside under the directory
+   pointed to by the DB_DIR environment variable (primary) or analyzer/DB
+   directory (fallback) directory, organized with date-based granularity.
+
+   In general, a separate dated directory is needed for each configuration
+   (detector map and calibration set). Each detector system has its own file
+   which contains the detector's CRATE/SLOT/CHANNEL map, geometry, placement
+   and alignment data, as well as calibration constants. The files are
+   fairly well commented, and you are referrred to them for more information.	
+
+   Tools are being written such that the Analyzer can perform calibrations
+   natively, but at the moment the constants are copied from ESPACE
+   databases and reformatted. A MySql database is also implemented, but is
+   still undergoing refinement.
+
+--------------------------------------------------------------------
+Q: Why are there these very large values (greater than 1.e30)?
+
+A: These are due to "undefined" values being used in the calculation that
+   could not be circumvented. You will want to cut these entries from your
+   results.
+
+--------------------------------------------------------------------
+Q: ESPACE can do XXX. How do I do it in the analyzer?
+
+A: There are a number of items that ESPACE can do that the analyzer is
+   not yet capable of. However, this list is shrinking, and the
+   flexibility of the analyzer we believe greatly out-weighs this
+   temporary short-coming.
+
+   A document is being built to help ESPACE users "migrate" to using
+   the Analyzer, showing what variables or commands must be used to
+   recover the same items in ESPACE.
+</pre>
+</body>
+</html>
+

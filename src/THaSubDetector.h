@@ -30,7 +30,6 @@ protected:
 
 //Only derived classes may construct me
 
-  THaSubDetector() : fDetector(0) {}     
   THaSubDetector( const char* name, const char* description,
 		  THaDetectorBase* detector );  
 

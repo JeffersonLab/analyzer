@@ -9,6 +9,8 @@
 #include <string>
 #include "THaScaler.h"
 
+using namespace std;
+
 int main(int argc, char* argv[]) {
 
    cout << "Enter name of CODA file ->" << endl;

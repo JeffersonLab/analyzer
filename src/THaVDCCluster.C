@@ -15,15 +15,16 @@
 
 #include <iostream>
 
-ClassImp(THaVDCCluster)
+using namespace std;
 
-const Double_t THaVDCCluster::kBig = 1e307;  // Arbitrary large value
+const Double_t THaVDCCluster::kBig = 1e38;  // Arbitrary large value
 
 //_____________________________________________________________________________
 THaVDCCluster::THaVDCCluster( const THaVDCCluster& rhs ) :
   fSize(rhs.fSize), fPlane(rhs.fPlane), fSlope(rhs.fSlope), 
   fSigmaSlope(rhs.fSigmaSlope), fInt(rhs.fInt), fSigmaInt(rhs.fSigmaInt), 
-  fT0(rhs.fT0), fPivot(rhs.fPivot)
+  fT0(rhs.fT0), fPivot(rhs.fPivot), fTimeCorrection(rhs.fTimeCorrection),
+  fFitOK(rhs.fFitOK)
 {
   // Copy constructor
 
@@ -46,7 +47,8 @@ THaVDCCluster& THaVDCCluster::operator=( const THaVDCCluster& rhs )
     fSigmaInt   = rhs.fSigmaInt;
     fT0         = rhs.fT0;
     fPivot      = rhs.fPivot;
-
+    fTimeCorrection = rhs.fTimeCorrection;
+    fFitOK      = rhs.fFitOK;
     for( int i = 0; i < fSize; i++ )
       fHits[i] = rhs.fHits[i];
   }
@@ -84,10 +86,12 @@ void THaVDCCluster::ClearFit()
 {
   // Clear fit results only
   
-  fSlope      = 0.0;
+  fSlope      = kBig;
   fSigmaSlope = kBig;
-  fInt        = 0.0;
+  fInt        = kBig;
   fSigmaInt   = kBig;
+  fT0         = 0.0;
+  fFitOK      = false;
 }
 
 //_____________________________________________________________________________
@@ -116,6 +120,10 @@ void THaVDCCluster::EstTrackParameters()
   // Estimates the slope based on the distance between the first and last
   // wires to be hit in the U (or V) and detector Z directions
 
+  fFitOK = false;
+  if( fSize == 0 )
+    return;
+  
   // Find pivot
   Int_t time = 0, minTime = 0;  // Raw TDC times
   for (int i = 0; i < fSize; i++) {
@@ -132,12 +140,15 @@ void THaVDCCluster::EstTrackParameters()
   // Now find the slope (this is a very coarse approximation)
   //   X = Drift Distance (m)
   //   Y = Position of Wires (m)
+  if( fSize > 1 ) {
+    Double_t conv = fPlane->GetDriftVel();  // m/s
+    Double_t dx = conv * (fHits[0]->GetTime() + fHits[fSize-1]->GetTime());
+    Double_t dy = fHits[0]->GetPos() - fHits[fSize-1]->GetPos();
+    fSlope = dy / dx;
+  } else
+    fSlope = 1.0;
 
-  Double_t conv = fPlane->GetDriftVel();  // m/s
-  Double_t dx = conv * (fHits[0]->GetTime() + fHits[fSize-1]->GetTime());
-  Double_t dy = fHits[0]->GetPos() - fHits[fSize-1]->GetPos();
-
-  fSlope = dy / dx;
+  fFitOK = true;
 }
 
 //_____________________________________________________________________________
@@ -175,10 +186,10 @@ void THaVDCCluster::FitSimpleTrack()
   //   X = Drift Distance
   //   Y = Position of Wires
 
-  if( fSize < 3 ) {
-    ClearFit();
+  fFitOK = false;
+  if( fSize < 3 )
     return;  // Too few hits to get meaningful results
-  }
+             // Do keep current values of slope and intercept
 
   Double_t N = fSize;  //Ensure that floating point calculations are used
   Double_t m, sigmaM;  // Slope, St. Dev. in slope
@@ -203,7 +214,7 @@ void THaVDCCluster::FitSimpleTrack()
     yArr[i] = fHits[i]->GetPos();
   }
   
-  Int_t nSignCombos = 2; //Number of different sign combinations
+  const Int_t nSignCombos = 2; //Number of different sign combinations
   for (int i = 0; i < nSignCombos; i++) {
 
     Double_t sumX  = 0.0;   //Drift distances
@@ -251,10 +262,10 @@ void THaVDCCluster::FitSimpleTrack()
       fSigmaInt = sigmaB;
     }
   }
-  
+  fFitOK = true;
+
   delete[] xArr;
   delete[] yArr;
-
 }
 
 //_____________________________________________________________________________
@@ -313,9 +324,10 @@ void THaVDCCluster::Print( Option_t* opt ) const
   cout << "Slope(err), Int(err), t0: " 
        << fSlope << " (" << fSigmaSlope << "), "
        << fInt   << " (" << fSigmaInt   << "), "
-       << fT0
+       << fT0    << " fit ok: " << fFitOK
        << endl;
 
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+ClassImp(THaVDCCluster)

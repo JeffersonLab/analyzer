@@ -1,155 +1,289 @@
-//*-- Author :    Chris  Behre   July 2000
-
-//////////////////////////////////////////////////////////////////////////
-//
-// THaRaster
-// 
-// Decodes the Raster Data for Hall A
-//
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+//                                                                           //
+// THaRaster                                                                 //
+//                                                                           //
+// Class for a beam raster device                                            //
+// measuring two magnet currents                                             //
+// which are proportional to the horizontal/vertical beam displacement       //
+// the two planes are assumed to be decoupled                                //
+// there is no phase shift between the current and the actual beam position  //
+//                                                                           //
+///////////////////////////////////////////////////////////////////////////////
 
 #include "THaRaster.h"
 #include "THaEvData.h"
 #include "THaDetMap.h"
 #include "VarDef.h"
 #include "VarType.h"
-#include <cstring>
+#include "TMath.h"
+#include <iostream>
 
-ClassImp(THaRaster)
+using namespace std;
 
-//______________________________________________________________________________
-THaRaster::THaRaster( const char* name, const char* description, 
-		      const char* device, THaApparatus* apparatus )
-  : THaDetector(name,description,apparatus), fDevice("struck")
+//_____________________________________________________________________________
+THaRaster::THaRaster( const char* name, const char* description,
+				  THaApparatus* apparatus ) :
+  THaBeamDet(name,description,apparatus), fFirstChan(NULL), fRawPos(2), fRawSlope(2),fRasterFreq(2),fSlopePedestal(2),fRasterPedestal(2)
 {
-  // Constructor with name, description and Detector type
-  // This will allow processing of runs from older detector configurations.
+  // Constructor
+  fRaw2Pos[0].ResizeTo(3,2);
+  fRaw2Pos[1].ResizeTo(3,2);
+  fRaw2Pos[2].ResizeTo(3,2);
 
-  if( device && strlen(device) > 0 ) {
-    fDevice = device;
-    fDevice.ToLower();
-  }
 }
 
-//______________________________________________________________________________
-THaDetectorBase::EStatus THaRaster::Init( const TDatime& run_time )
+
+//_____________________________________________________________________________
+// ReadDatabase:  if detectors cant be added to detmap 
+//                or entry for bpms is missing           -> kInitError
+//                otherwise                              -> kOk
+//                CAUTION: i do not check for incomplete or 
+//                         inconsistent data
+//
+Int_t THaRaster::ReadDatabase( const TDatime& date )
 {
-  // Initialize detector.  "run_time" is currently ignored.
+  static const char* const here = "ReadDatabase()";
 
-  static const char* const here = "Init()";
-
-  if( IsInit() ) {
-    Warning( Here(here), "Detector already initialized. Doing nothing." );
-    return fStatus;
-  }
-
-  MakePrefix();
-
-  // Which device are we using?
-  // I guess the choice should be time-dependent since the raster configuration
-  // is known for each experiment, but for now we rely on the user to tell us
-  // which device we need to decode.
-
-  int dev = 0;
-
-  if( fDevice == "struck" )
-    dev = 1;  
-  else if( fDevice == "vmic" ) 
-    dev = 2;
-  else if( fDevice == "lecroy" ) 
-    dev = 3;
-  else {
-    Warning( Here(here), "No such device: %s. Raster initialization failed.",
-	     fDevice.Data() ); 
-    return fStatus;
-  }
+  const int LEN=100;
+  char buf[LEN];
+  char *filestatus;
+  char keyword[LEN];
   
-  // Initialize detector map
+  FILE* fi = OpenFile( date );
+  if( !fi ) return kFileError;
 
-  // FIXME: Check this! This is what Chris Behre coded.
-  // Caution: Must match chan_map in Decode().
-  const THaDetMap::Module m[4] = {
-    { 14, 5, 0, 3, 0 },     // Struck
-    { 14, 3, 0, 3, 0 },     // VMIC
-    { 14, 2, 7, 7, 0 },     // LeCroy #1
-    { 14, 2, 0, 2, 0 }      // LeCroy #2       //Chris had 0-3, obviously wrong
-  };
-  int i = dev-1;
-  fDeviceNo = i;
-  fDetMap->AddModule( m[i].crate, m[i].slot, m[i].lo, m[i].hi );
+  // okay, this needs to be changed, but since i dont want to re- or pre-invent 
+  // the wheel, i will keep it ugly and read in my own configuration file with 
+  // a very fixed syntax: 
 
-  // Special case: LeCroy has two entries
+  sprintf(keyword,"[%s_detmap]",GetName());
+  Int_t n=strlen(keyword);
 
-  if( i == 2 )
-    fDetMap->AddModule( m[i+1].crate, m[i+1].slot, m[i+1].lo, m[i+1].hi );
+  do {
+    filestatus=fgets( buf, LEN, fi);
+  } while ((filestatus!=NULL)&&(strncmp(buf,keyword,n)!=0));
+  if (filestatus==NULL) {
+    Error( Here("ReadDataBase()"), "Unexpected end of raster configuration file");
+    fclose(fi);
+    return kInitError;
+  }
 
-  // Register raster variables in global list
+  // again that is not really nice, but since it will be changed anyhow:
+  // i dont check each time for end of file, needs to be improved
 
+  Int_t i=0;
+  delete [] fFirstChan;
+  fFirstChan=new UShort_t[ THaDetMap::kDetMapSize ];
+  fDetMap->Clear();
+  int first_chan, crate, dummy, slot, first, last, modulid;
+
+  do {
+    fgets( buf, LEN, fi);
+    sscanf(buf,"%d %d %d %d %d %d %d",&first_chan, &crate, &dummy, &slot, &first, &last, &modulid);
+    if (first_chan>=0) {
+      if ( fDetMap->AddModule (crate, slot, first, last )<0) {
+	Error( Here(here), "Couldnt add Raster to DetMap. Good bye, blue sky, good bye!");
+	delete [] fFirstChan; 
+	fFirstChan = NULL;
+	fclose(fi);
+	return kInitError;
+      }
+      else {
+	fFirstChan[i++]=first_chan;
+      }
+    }
+  } while (first_chan>=0);
+  sprintf(keyword,"[%s]",GetName());
+  n=strlen(keyword);
+  do {
+    filestatus=fgets( buf, LEN, fi);
+  } while ((filestatus!=NULL)&&(strncmp(buf,keyword,n)!=0));
+  if (filestatus==NULL) {
+    Error( Here("ReadDataBase()"), "Unexpected end of raster configuration file");
+    fclose(fi);
+    return kInitError;
+  }
+  double dummy1,dummy2,dummy3,dummy4,dummy5,dummy6,dummy7;
+  fgets( buf, LEN, fi);
+  sscanf(buf,"%lf%lf%lf%lf%lf%lf%lf",&dummy1,&dummy2,&dummy3,&dummy4,&dummy5,&dummy6,&dummy7);
+  fRasterFreq(0)=dummy2;
+  fRasterFreq(1)=dummy3;
+
+  fRasterPedestal(0)=dummy4;
+  fRasterPedestal(1)=dummy5;
+
+  fSlopePedestal(0)=dummy6;
+  fSlopePedestal(1)=dummy7;
+
+  fgets( buf, LEN, fi);
+  sscanf(buf,"%lf",&dummy1);
+  fPosOff[0].SetZ(dummy1);
+  fgets( buf, LEN, fi);
+  sscanf(buf,"%lf",&dummy1);
+  fPosOff[1].SetZ(dummy1);
+  fgets( buf, LEN, fi);
+  sscanf(buf,"%lf",&dummy1);
+  fPosOff[2].SetZ(dummy1);
+
+  fgets( buf, LEN, fi);
+  sscanf(buf,"%lf%lf%lf%lf%lf%lf",&dummy1,&dummy2,&dummy3,&dummy4,&dummy5,&dummy6);
+  fRaw2Pos[0](0,0)=dummy3;
+  fRaw2Pos[0](1,1)=dummy4;
+  fRaw2Pos[0](0,1)=dummy5;
+  fRaw2Pos[0](1,0)=dummy6;
+  fPosOff[0].SetX(dummy1);
+  fPosOff[0].SetY(dummy2);
+
+  fgets( buf, LEN, fi);
+  sscanf(buf,"%lf%lf%lf%lf%lf%lf",&dummy1,&dummy2,&dummy3,&dummy4,&dummy5,&dummy6);
+  fRaw2Pos[1](0,0)=dummy3;
+  fRaw2Pos[1](1,1)=dummy4;
+  fRaw2Pos[1](0,1)=dummy5;
+  fRaw2Pos[1](1,0)=dummy6;
+  fPosOff[1].SetX(dummy1);
+  fPosOff[1].SetY(dummy2);
+
+  fgets( buf, LEN, fi);
+  sscanf(buf,"%lf%lf%lf%lf%lf%lf",&dummy1,&dummy2,&dummy3,&dummy4,&dummy5,&dummy6);
+  fRaw2Pos[2](0,0)=dummy3;
+  fRaw2Pos[2](1,1)=dummy4;
+  fRaw2Pos[2](0,1)=dummy5;
+  fRaw2Pos[2](1,0)=dummy6;
+  fPosOff[2].SetX(dummy1);
+  fPosOff[2].SetY(dummy2);
+
+  fclose(fi);
+  return kOK;
+}
+
+//_____________________________________________________________________________
+Int_t THaRaster::DefineVariables( EMode mode )
+{
+  // Initialize global variables and lookup table for decoder
+
+  if( mode == kDefine && fIsSetup ) return kOK;
+  fIsSetup = ( mode == kDefine );
+
+  // Register variables in global list
+  
   RVarDef vars[] = {
-    { "Xcur", "X-axis current",    "fXcur" },
-    { "Ycur", "Y-axis current",    "fYcur" },
-    { "Xder", "X-axis derivative", "fXder" },
-    { "Yder", "Y-axis derivative", "fYder" },
+    { "rawcur.x", "current in horizontal raster", "GetRawPosX()" },
+    { "rawcur.y", "current in vertical raster", "GetRawPosY()"},
+    { "rawslope.x", "derivative of current in horizontal raster", "GetRawSlopeX()" },
+    { "rawslope.y", "derivative of current in vertical raster", "GetRawSlopeY()"},
+    { "bpma.x", "reconstructed x-position at 1st bpm", "GetPosBPMAX()"},
+    { "bpma.y", "reconstructed y-position at 1st bpm", "GetPosBPMAY()"},
+    { "bpma.z", "reconstructed z-position at 1st bpm", "GetPosBPMAZ()"},
+    { "bpmb.x", "reconstructed x-position at 2nd bpm", "GetPosBPMBX()"},
+    { "bpmb.y", "reconstructed y-position at 2nd bpm", "GetPosBPMBY()"},
+    { "bpmb.z", "reconstructed z-position at 2nd bpm", "GetPosBPMBZ()"},
+    { "target.x", "reconstructed x-position at nom. interaction point", "GetPosTarX()"},
+    { "target.y", "reconstructed y-position at nom. interaction point", "GetPosTarY()"},
+    { "target.z", "reconstructed z-position at nom. interaction point", "GetPosTarZ()"},
+    { "target.dir.x", "reconstructed x-component of beam direction", "fDirection.fX"},
+    { "target.dir.y", "reconstructed y-component of beam direction", "fDirection.fY"},
+    { "target.dir.z", "reconstructed z-component of beam direction", "fDirection.fZ"},
     { 0 }
   };
-  DefineVariables( vars );
+    
+  return DefineVarsFromList( vars, mode );
 
-  // Initialize decoder channel map
-  //FIXME: Check this! 
-
-  Float_t* const tmp[NCHAN] = { 
-    &fXcur, &fYcur, &fXder, &fYder, 0, 0, 0, 0,  // Struck
-    &fXcur, &fXder, &fYder, &fYcur, 0, 0, 0, 0,  // VMIC
-    &fYcur, &fXder, &fYder, 0, 0, 0, 0, &fXcur   // LeCroy  // Chris had fXcur on 6
-  };                                                // but must be 7 (see fDetMap!)
-  memcpy( fChanMap, tmp, NCHAN*sizeof(Float_t*));
-
-  return fStatus = kOK;
 }
 
-//______________________________________________________________________________
+//_____________________________________________________________________________
 THaRaster::~THaRaster()
 {
   // Destructor. Remove variables from global list.
 
-  RemoveVariables();
+  if( fIsSetup )
+    RemoveVariables();
+
 }
 
-//______________________________________________________________________________
+//_____________________________________________________________________________
+inline 
+void THaRaster::ClearEvent()
+{
+  // Reset per-event data.
+  fRawPos(0)=-1;
+  fRawPos(1)=-1;
+  fRawSlope(0)=-1;
+  fRawSlope(1)=-1;
+  fPosition[0].SetXYZ(0.,0.,-10000.);
+  fPosition[1].SetXYZ(0.,0.,-10000.);
+  fPosition[2].SetXYZ(0.,0.,-10000.);
+  fDirection.SetXYZ(0.,0.,1.);
+  fNfired=0;
+}
+
+//_____________________________________________________________________________
 Int_t THaRaster::Decode( const THaEvData& evdata )
 {
-  // Decode raster data.
-  // 
 
-  Int_t nhit = 0;
-  Int_t device_offset = 8*fDeviceNo;
+  // clears the event structure
+  // loops over all modules defined in the detector map
+  // copies raw data into local variables
+  // pedestal subtraction is not foreseen for the raster
 
-  // Reset event-by-event variables.
 
   ClearEvent();
-  
-  // Loop over all modules defined for this detector
 
-  for( UShort_t i = 0; i < fDetMap->GetSize(); i++ ) {
+  for (Int_t i = 0; i < fDetMap->GetSize(); i++ ){
     THaDetMap::Module* d = fDetMap->GetModule( i );
-    // Loop over all channels that have a hit.
-    for( UShort_t j = 0; j < evdata.GetNumChan( d->crate, d->slot); j++) {
-      Int_t chan = evdata.GetNextChan( d->crate, d->slot, j );
-      if( chan > d->hi || chan < d->lo ) continue;    // Not one of my channels.
 
-      // Get the data. Rasters are assumed to have only single hits (hit=0).
-
-      Int_t data = evdata.GetData( d->crate, d->slot, chan, 0 );
-      nhit++;
-
-  // Copy the data to the local variables.
-      Float_t* pdat = fChanMap[ device_offset+chan ];
-      if( pdat ) 
-	*pdat = static_cast<Float_t>( data );
-      else
-	Warning( "Decode()", "Invalid channel: %d for detector: %s. "
-		 "Data ignored.", chan, fDevice.Data() );
+    for (Int_t j=0; j< evdata.GetNumChan( d->crate, d->slot ); j++) {
+      Int_t chan = evdata.GetNextChan( d->crate, d->slot, j);
+      if ((chan>=d->lo)&&(chan<=d->hi)) {
+	Int_t data = evdata.GetData( d->crate, d->slot, chan, 0 );
+	Int_t k = fFirstChan[i] + chan - d->lo -1;
+	if (k<2) {
+	  fRawPos(k)= data;
+	  fNfired++;
+	}
+	else if (k<4) {
+	  fRawSlope(k-2)= data;
+	  fNfired++;
+	}
+	else {
+	  Warning( Here("Decode()"), "Illegal detector channel: %d", k );
+	}
+      }
     }
   }
-  return nhit;
+
+  if (fNfired!=4) {
+      Warning( Here("Decode()"), "Number of fired Channels out of range. Setting beam position to nominal values");
+  }
+  return 0;
 }
+
+//____________________________________________________
+
+Int_t THaRaster::Process( )
+{
+
+  for ( Int_t i = 0; i<3; i++) {
+    
+    //      fPosition[i] = fRaw2Pos[i]*fRawPos+fPosOff[i] ;
+    //    this is how i wish it would look like,
+    //    but unluckily multiplications between tmatrix and tvector
+    //    are not defined, as well as adding a tvector and a tvector3
+    //    so i have to do it by hand instead ):
+
+    TVector dum(fRawPos);
+    dum*=fRaw2Pos[i];
+    fPosition[i].SetXYZ( dum(0)+fPosOff[i](0),
+			 dum(1)+fPosOff[i](1),
+			 dum(2)+fPosOff[i](2)  );
+
+  }
+  
+  fDirection = fPosition[1] - fPosition[0];
+  
+  return 0 ;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+ClassImp(THaRaster)
+

@@ -1,0 +1,63 @@
+# Demo cuts for E01-012 analysis
+#
+
+Block: RawDecode
+
+evtyp1            g.evtyp==1        #  Event type 1 (=HRSR main trigger)
+poshel            g.helicity==1
+neghel            g.helicity==-1
+goodhel           poshel||neghel
+RawDecode_master  evtyp1
+
+Block: Decode
+
+NoisyU1           R.vdc.u1.nhit>50
+NoisyV1           R.vdc.v1.nhit>50
+NoisyU2           R.vdc.u2.nhit>50
+NoisyV2           R.vdc.v2.nhit>50
+NoisyVDC          NoisyU1||NoisyV1||NoisyU2||NoisyV2
+#EnoughShowerHits  R.sh.nhit>10
+#Decode_master     !NoisyVDC
+
+Block: CoarseReconstruct
+
+NoTrack           R.tr.n==0
+JustOneTrack      R.tr.n==1
+MultiTrack        R.tr.n>1
+CleanU1           R.vdc.u1.nclust==1
+CleanV1           R.vdc.v1.nclust==1
+CleanU2           R.vdc.u2.nclust==1
+CleanV2           R.vdc.v2.nclust==1
+NoClustU1         R.vdc.u1.nclust==0
+NoClustV1         R.vdc.v1.nclust==0
+NoClustU2         R.vdc.u2.nclust==0
+NoClustV2         R.vdc.v2.nclust==0
+MultiU1           R.vdc.u1.nclust>1
+MultiV1           R.vdc.v1.nclust>1
+MultiU2           R.vdc.u2.nclust>1
+MultiV2           R.vdc.v2.nclust>1
+CleanClust        CleanU1&&CleanV1&&CleanU2&&CleanV2
+MissingCluster    NoClustU1||NoClustV1||NoClustU2||NoClustV2
+NoClusterAtAll    NoClustU1&&NoClustV1&&NoClustU2&&NoClustV2
+NoneMissing       (NoClustU1+NoClustV1+NoClustU2+NoClustV2)==0
+OneMissing        (NoClustU1+NoClustV1+NoClustU2+NoClustV2)==1
+TwoMissing        (NoClustU1+NoClustV1+NoClustU2+NoClustV2)==2
+ThreeMissing      (NoClustU1+NoClustV1+NoClustU2+NoClustV2)==3
+AllMissing        (NoClustU1+NoClustV1+NoClustU2+NoClustV2)==4
+MultiCluster      MultiU1||MultiV1||MultiU2||MultiV2
+AllMulti          MultiU1&&MultiV1&&MultiU2&&MultiV2
+PairMulti         (MultiU1&&MultiV1)||(MultiU2&&MultiV2)
+PairMissing       (NoClustU1&&NoClustV1)||(NoClustU2&&NoClustV2)
+CoordinateMissing (NoClustU1&&NoClustU2)||(NoClustV1&&NoClustV2)
+MaybeRecoverable  MissingCluster&&!CoordinateMissing
+TwoMissCoord      TwoMissing&&CoordinateMissing
+TwoMissPair       TwoMissing&&PairMissing
+#CoarseReconstruct_master  CleanClust&&!NoTrack
+
+Block: Reconstruct
+
+GoodShower        R.sh.e>100.
+GoodCherenkov     R.cer.asum_c>200.
+ElectronPID       GoodShower&&GoodCherenkov
+CleanEvent        CleanClust&&JustOneTrack
+#Reconstruct_master CleanEvent

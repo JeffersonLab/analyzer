@@ -12,22 +12,26 @@
 
 #include "TROOT.h"
 #include "THaInterface.h"
-#include "THaAnalyzer.h"
 #include "TInterpreter.h"
 #include "THaVarList.h"
 #include "THaCutList.h"
 
+#include "THaString.h"
+#include "ha_compiledata.h"
+
 //#include "TGXW.h"
 //#include "TVirtualX.h"
+
+using namespace std;
 
 THaVarList* gHaVars    = NULL;  //List of symbolic analyzer variables
 THaCutList* gHaCuts    = NULL;  //List of global analyzer cuts/tests
 TList*      gHaApps    = NULL;  //List of Apparatuses
 TList*      gHaScalers = NULL;  //List of scaler groups
+TList*      gHaPhysics = NULL;  //List of physics modules
+THaRun*     gHaRun     = NULL;  //The currently active run
 
 THaInterface* THaInterface::fgAint = NULL;  //Pointer to this interface
-
-ClassImp(THaInterface)
 
 //_____________________________________________________________________________
 THaInterface::THaInterface( const char* appClassName, int* argc, char** argv, 
@@ -52,7 +56,13 @@ THaInterface::THaInterface( const char* appClassName, int* argc, char** argv,
   gHaCuts    = new THaCutList( gHaVars );
   gHaApps    = new TList;
   gHaScalers = new TList;
+  gHaPhysics = new TList;
 
+  THaString ipath( HA_INCLUDEPATH );
+  vector<THaString> ipv(ipath.Split());
+  for (vector<THaString>::size_type i=0; i<ipv.size(); i++)
+    gInterpreter->AddIncludePath( ipv[i].c_str() );
+  
   fgAint = this;
 }
 
@@ -60,6 +70,7 @@ THaInterface::THaInterface( const char* appClassName, int* argc, char** argv,
 THaInterface::~THaInterface()
 {
   if( fgAint == this ) {
+    delete gHaPhysics;
     delete gHaScalers;
     delete gHaApps;
     delete gHaVars;
@@ -90,7 +101,7 @@ void THaInterface::PrintLogo()
      mille = iyear;
    char* root_date = Form("%s %d %4d",months[imonth-1],iday,mille);
 
-   const char* halla_version = "0.80";
+   const char* halla_version = "1.00 RC3";
    //   const char* halla_date = Form("%d %s %4d",24,months[2-1],2003);
 
    Printf("  ************************************************");
@@ -115,4 +126,7 @@ void THaInterface::PrintLogo()
    gInterpreter->PrintIntro();
 
 }
+
+//_____________________________________________________________________________
+ClassImp(THaInterface)
 

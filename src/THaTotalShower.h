@@ -46,12 +46,8 @@ protected:
   Int_t      fID;          // ID of Presh and Shower coincidence
 
   void           ClearEvent() { fE = 0.0; fID = 0; }
-  virtual Int_t  ReadDatabase( FILE* file, const TDatime& date );
-  virtual Int_t  SetupDetector( const TDatime& date );
-
-  THaTotalShower() {}                 // Must construct with name
-  THaTotalShower( const THaTotalShower& ) {}
-  THaTotalShower& operator=( const THaTotalShower& ) { return *this; }
+  virtual Int_t  ReadDatabase( const TDatime& date );
+  virtual Int_t  DefineVariables( EMode mode );
 
 private:
   void           Setup( const char* name,  const char* desc, 

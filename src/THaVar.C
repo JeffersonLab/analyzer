@@ -57,7 +57,7 @@
 #include "TObjArray.h"
 #include "TClass.h"
 
-ClassImp(THaVar)
+using namespace std;
 
 const Int_t    THaVar::kInvalidInt = -1;
 const Double_t THaVar::kInvalid    = 1e38;
@@ -97,61 +97,11 @@ THaVar& THaVar::operator=( const THaVar& rhs )
 }
 
 //_____________________________________________________________________________
-void THaVar::Copy( TObject& rhs )
-{
-  // Copy this object to rhs
-
-  TNamed::Copy(rhs);
-  if( rhs.IsA()->InheritsFrom("THaVar") ) {
-    ((THaVar&)rhs).fValueD    = fValueD;
-    ((THaVar&)rhs).fArrayData = fArrayData;
-    ((THaVar&)rhs).fType      = fType;
-    ((THaVar&)rhs).fCount     = fCount;
-    ((THaVar&)rhs).fOffset    = fOffset;
-    delete ((THaVar&)rhs).fMethod;
-    if( fMethod )
-      ((THaVar&)rhs).fMethod  = new TMethodCall( *fMethod );
-    else
-      ((THaVar&)rhs).fMethod = NULL;
-  }
-}
-
-//_____________________________________________________________________________
 THaVar::~THaVar()
 {
   // Destructor
 
   delete fMethod;
-}
-
-//_____________________________________________________________________________
-Bool_t THaVar::HasSameSize( const THaVar& rhs ) const
-{
-  // Compare the size of this variable to that of 'rhs'.
-  // Scalars always agree. Arrays agree if either they are of the same fixed 
-  // size, or their count variables are identical, or they belong to the
-  // same object array.
-
-  Bool_t is_array = IsArray();
-  if( is_array != rhs.IsArray())         // Must be same type
-    return kFALSE;
-  if( !is_array )                        // Scalars always agree
-    return kTRUE;
-  if( fCount )                           // Variable size arrays
-    return ( fCount == rhs.fCount );
-  if( fOffset != -1 )                    // Object arrays
-    return ( fObject == rhs.fObject );
-  return                                 // All other arrays
-    ( fArrayData.GetNdim() == rhs.fArrayData.GetNdim() &&
-      fArrayData.GetLen()  == rhs.fArrayData.GetLen() );
-}
-
-//_____________________________________________________________________________
-Bool_t THaVar::HasSameSize( const THaVar* rhs ) const
-{
-  if( !rhs )
-    return kFALSE;
-  return HasSameSize( *rhs );
 }
 
 //_____________________________________________________________________________
@@ -322,10 +272,10 @@ Int_t THaVar::Index( const THaArrayString& elem ) const
     return *elem.GetDim();
   }
 
-  Byte_t ndim = fArrayData.GetNdim();
+  Byte_t ndim = GetNdim();
   if( ndim != elem.GetNdim() ) return -2;
 
-  const Int_t *subs = elem.GetDim(), *adim = fArrayData.GetDim();
+  const Int_t *subs = elem.GetDim(), *adim = GetDim();
 
   Int_t index = subs[0];
   for( Byte_t i = 0; i<ndim; i++ ) {
@@ -333,7 +283,7 @@ Int_t THaVar::Index( const THaArrayString& elem ) const
     if( i>0 )
       index = index*adim[i] + subs[i];
   }
-  if( index >= fArrayData.GetLen() || index > kMaxInt ) return -1;
+  if( index >= GetLen() || index > kMaxInt ) return -1;
   return index;
 }
 
@@ -401,3 +351,7 @@ void THaVar::SetNameTitle( const char* name, const char* descript )
   TNamed::SetNameTitle( name, descript );
   fArrayData = name;
 }
+
+//_____________________________________________________________________________
+ClassImp(THaVar)
+

@@ -22,10 +22,9 @@
 /////////////////////////////////////////////////////////////////////
 
 #include "THaScalerDB.h"
+#include <errno.h>
 
-#ifndef ROOTPRE3
-ClassImp(THaScalerDB)
-#endif
+using namespace std;
 
 THaScalerDB::THaScalerDB() { }
 THaScalerDB::~THaScalerDB() { }
@@ -34,23 +33,44 @@ bool THaScalerDB::extract_db(const Bdate& bdate, multimap< string, BscaLoc >& bm
 // Input: Bdate = time (day,month,year) when database is valid
 // Output: BscaLoc = scaler map (loaded by this function).
 // Return : true if successful, else false.
-   char *dbdir=NULL;
-   bmap.clear();
-   ifstream mapfile("scaler.map");
-   if (!mapfile && (dbdir=getenv("DB_DIR"))) {
-     string mapfn(dbdir);
-     mapfn.append("/scaler.map");
-     mapfile.open(mapfn.c_str());
-   }
-   if (!mapfile) {
-     cout << "ERROR: THaScalerDB: scaler.map file does not exist !!"<<endl;
-     cout << "You must have scaler.map in present working directory,"<<endl;
-     cout << "or in $DB_DIR directory." << endl;
-     cout << "Download  http://hallaweb.jlab.org/adaq/scaler.map"<<endl;
-     cout << "    or"<<endl;
-     cout << "jlabs1:/group/halla/www/hallaweb/html/adaq/scaler.map"<<endl;
+// Search order for scaler.map:
+//   $DB_DIR/DEFAULT $DB_DIR ./DB/DEFAULT ./DB ./db/DEFAULT ./db DEFAULT .
+  const string scalmap("scaler.map");
+  char* dbdir=getenv("DB_DIR");
+  int ndir = 6;
+  if( dbdir ) ndir += 2;
+  vector<string> fname(ndir);
+  int i = 0;
+  fname[i++] = scalmap; // always look in current directory first
+  if( dbdir ) {
+    string dbpath(dbdir);
+    dbpath.append("/");
+    fname[i++] = dbpath + "DEFAULT/" + scalmap;
+    fname[i++] = dbpath + scalmap;
+  }
+  fname[i++] = "DB/DEFAULT/" + scalmap;
+  fname[i++] = "DB/" + scalmap;
+  fname[i++] = "db/DEFAULT/" + scalmap;
+  fname[i++] = "db/" + scalmap;
+  fname[i++] = "DEFAULT/" + scalmap;
+  i = 0;
+  ifstream mapfile;
+  do {
+    mapfile.clear(); // needed to forget the previous 'misses'
+    mapfile.open(fname[i].c_str());
+  } while( (!mapfile) && (++i)<ndir );
+  if ( !mapfile ) {
+     cerr << "ERROR: THaScalerDB: scaler.map file does not exist !!"<<endl;
+     cerr << "You must have scaler.map in present working directory,"<<endl;
+     cerr << "or in $DB_DIR directory." << endl;
+     cerr << "Download  http://hallaweb.jlab.org/adaq/scaler.map"<<endl;
+     cerr << "    or"<<endl;
+     cerr << "jlabs1:/group/halla/www/hallaweb/html/adaq/scaler.map"<<endl;
      return false;
-   }
+  } else {
+    cout << "Opened scaler map file " << fname[i] << endl;
+  }
+   bmap.clear();
    const char key[]="DATE";
    string comment = "#";
    Bdate bd;
@@ -66,7 +86,7 @@ bool THaScalerDB::extract_db(const Bdate& bdate, multimap< string, BscaLoc >& bm
    bdloc.clear();
    bslvec.clear();
    bool newdate = false;
-   while (getline(mapfile,sinput)) {
+   while ( getline(mapfile,sinput) ) {
       j = sinput.find(key,0);
       strvect.clear();
       strvect = vsplit(sinput);   
@@ -248,14 +268,6 @@ vector<string> THaScalerDB::vsplit(const string& s) {
   return ret;
 };
 
-
-
-
-
-
-
-
-
-
-
-
+#ifndef ROOTPRE3
+ClassImp(THaScalerDB)
+#endif

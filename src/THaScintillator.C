@@ -14,7 +14,6 @@
 #include "VarType.h"
 #include "THaTrack.h"
 #include "TClonesArray.h"
-#include "TDatime.h"
 #include "TMath.h"
 
 // #include <iostream>
@@ -31,7 +30,24 @@ THaScintillator::THaScintillator( const char* name, const char* description,
 }
 
 //_____________________________________________________________________________
-Int_t THaScintillator::ReadDatabase( FILE* fi, const TDatime& date )
+THaAnalysisObject::EStatus THaScintillator::Init( const TDatime& date )
+{
+  // Extra initialization for scintillators: set up DataDest map
+
+  if( THaNonTrackingDetector::Init( date ) )
+    return fStatus;
+
+  const DataDest tmp[NDEST] = {
+    { &fRTNhit, &fRANhit, fRT, fRT_c, fRA, fRA_p, fRA_c, fROff, fRPed, fRGain },
+    { &fLTNhit, &fLANhit, fLT, fLT_c, fLA, fLA_p, fLA_c, fLOff, fLPed, fLGain }
+  };
+  memcpy( fDataDest, tmp, NDEST*sizeof(DataDest) );
+
+  return fStatus = kOK;
+}
+
+//_____________________________________________________________________________
+Int_t THaScintillator::ReadDatabase( const TDatime& date )
 {
   // Read this detector's parameters from the database file 'fi'.
   // This function is called by THaDetectorBase::Init() once at the
@@ -45,7 +61,9 @@ Int_t THaScintillator::ReadDatabase( FILE* fi, const TDatime& date )
 
   // Read data from database 
 
-  rewind( fi );
+  FILE* fi = OpenFile( date );
+  if( !fi ) return kFileError;
+
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
   fscanf ( fi, "%d", &nelem );                        // Number of  paddles
 
@@ -53,6 +71,7 @@ Int_t THaScintillator::ReadDatabase( FILE* fi, const TDatime& date )
   if( fIsInit && nelem != fNelem ) {
     Error( Here(here), "Cannot re-initalize with different number of paddles. "
 	   "(was: %d, now: %d). Detector not re-initialized.", fNelem, nelem );
+    fclose(fi);
     return kInitError;
   }
   fNelem = nelem;
@@ -63,6 +82,7 @@ Int_t THaScintillator::ReadDatabase( FILE* fi, const TDatime& date )
   int i = 0;
   delete [] fFirstChan;
   fFirstChan = new UShort_t[ THaDetMap::kDetMapSize ];
+  fDetMap->Clear();
   while (1) {
     Int_t crate, slot, first, last, first_chan;
     fscanf ( fi,"%d%d%d%d%d", 
@@ -73,6 +93,7 @@ Int_t THaScintillator::ReadDatabase( FILE* fi, const TDatime& date )
       Error( Here(here), "Too many DetMap modules (maximum allowed - %d).", 
 	     THaDetMap::kDetMapSize);
       delete [] fFirstChan; fFirstChan = NULL;
+      fclose(fi);
       return kInitError;
     }
     fFirstChan[i++] = first_chan;
@@ -94,7 +115,7 @@ Int_t THaScintillator::ReadDatabase( FILE* fi, const TDatime& date )
   sin_angle = TMath::Sin(angle*degrad);
   cos_angle = TMath::Cos(angle*degrad);
 
-  DefineAxes(0.0);
+  DefineAxes(angle*degrad);
 
   // Dimension arrays
   if( !fIsInit ) {
@@ -141,22 +162,17 @@ Int_t THaScintillator::ReadDatabase( FILE* fi, const TDatime& date )
     fscanf (fi,"%f",fRGain+i);                  // Right Pads ADC Coeff-s
   fgets ( buf, LEN, fi );
 
+  fclose(fi);
   return kOK;
 }
 
 //_____________________________________________________________________________
-Int_t THaScintillator::SetupDetector( const TDatime& date )
+Int_t THaScintillator::DefineVariables( EMode mode )
 {
   // Initialize global variables and lookup table for decoder
 
-  if( fIsSetup ) return kOK;
-  fIsSetup = true;
-
-  const DataDest tmp[NDEST] = {
-    { &fLTNhit, &fLANhit, fLT, fLT_c, fLA, fLA_p, fLA_c, fLOff, fLPed, fLGain },
-    { &fRTNhit, &fRANhit, fRT, fRT_c, fRA, fRA_p, fRA_c, fROff, fRPed, fRGain }
-  };
-  memcpy( fDataDest, tmp, NDEST*sizeof(DataDest) );
+  if( mode == kDefine && fIsSetup ) return kOK;
+  fIsSetup = ( mode == kDefine );
 
   // Register variables in global list
 
@@ -179,9 +195,7 @@ Int_t THaScintillator::SetupDetector( const TDatime& date )
     { "try",    "y-position of track in det plane",  "fTRY" },
     { 0 }
   };
-  DefineVariables( vars );
-
-  return kOK;
+  return DefineVarsFromList( vars, mode );
 }
 
 //_____________________________________________________________________________

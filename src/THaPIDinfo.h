@@ -23,7 +23,7 @@ public:
   THaPIDinfo( const THaTrack* track );
   virtual ~THaPIDinfo();
 
-  virtual void      Clear( Option_t* opt );
+  virtual void      Clear( Option_t* opt="" );
   virtual void      CombinePID();
           Double_t  GetProb( UInt_t detector, UInt_t particle ) const;
           Double_t  GetCombinedProb( UInt_t particle ) const;

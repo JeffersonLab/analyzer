@@ -22,8 +22,6 @@
 
 using namespace std;
 
-ClassImp(THaString)
-
 //_____________________________________________________________________________
 int THaString::CmpNoCase (const THaString& s) const
 {
@@ -56,7 +54,6 @@ vector<THaString> THaString::Split() const
   return v;
 }
 
-
 //_____________________________________________________________________________
 UInt_t THaString::Hex() const
 {
@@ -73,7 +70,8 @@ THaString THaString::ToLower() const
   // Return copy of this string converted to lower case.
 
   THaString result(*this);
-  transform( begin(), end(), result.begin(), tolower );
+  // The bizarre cast here is needed for newer gccs
+  transform( begin(), end(), result.begin(), (int(*)(int))tolower );
   return result;
 }
 
@@ -82,14 +80,26 @@ THaString THaString::ToUpper() const
 {
   // Return copy of this string converted to upper case.
   THaString result(*this);
-  transform( begin(), end(), result.begin(), toupper );
+  transform( begin(), end(), result.begin(), (int(*)(int))toupper );
   return result;
 }
 
+//_____________________________________________________________________________
+void THaString::Lower()
+{
+  // Convert this string to lower case
 
+  transform( begin(), end(), begin(), (int(*)(int))tolower );
+  return;
+}
 
+//_____________________________________________________________________________
+void THaString::Upper()
+{
+  // Convert this string to upper case
+  transform( begin(), end(), begin(), (int(*)(int))toupper );
+  return;
+}
 
-
-
-
-
+//_____________________________________________________________________________
+ClassImp(THaString)

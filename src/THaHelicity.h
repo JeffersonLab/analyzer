@@ -41,7 +41,7 @@ private:
   void ReadData ( const THaEvData& evdata);
   void QuadCalib();
   void LoadHelicity();
-  void QuadHelicity();
+  void QuadHelicity(Int_t cond=0);
   Int_t RanBit(Int_t i);
   UInt_t GetSeed();
   Bool_t CompHel();
@@ -53,7 +53,7 @@ private:
   static const Int_t fgNbits = 24;   
   static const Int_t fgLarm = 0;
   static const Int_t fgRarm = 1;
-  static const Double_t fgTdiff = 14050;
+  static const Double_t fgTdiff;
   Double_t *fTdavg, *fTdiff, *fT0;
   Double_t *fTlastquad, *fTtol;
   Int_t *fQrt, *fGate, *fFirstquad, *fEvtype;

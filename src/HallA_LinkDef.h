@@ -8,6 +8,8 @@
 #pragma link C++ global gHaCuts;
 #pragma link C++ global gHaApps;
 #pragma link C++ global gHaScalers;
+#pragma link C++ global gHaPhysics;
+#pragma link C++ global gHaRun;
 
 #pragma link C++ class THaVar+;
 #pragma link C++ class THaVarList+;
@@ -21,10 +23,12 @@
 #pragma link C++ class THaApparatus+;
 #pragma link C++ class THaSpectrometer+;
 #pragma link C++ class THaHRS+;
-#pragma link C++ class THaLeftHRS+;
-#pragma link C++ class THaRightHRS+;
 #pragma link C++ class THaDecData+;
+#pragma link C++ class THaAnalysisObject+;
 #pragma link C++ class THaDetectorBase+;
+#pragma link C++ class THaPhysicsModule+;
+#pragma link C++ class THaVertexModule+;
+#pragma link C++ class THaTrackingModule+;
 #pragma link C++ class THaDetector+;
 #pragma link C++ class THaSubDetector+;
 #pragma link C++ class THaSpectrometerDetector+;
@@ -41,10 +45,13 @@
 #pragma link C++ class THaAnalyzer+;
 #pragma link C++ class THaPrintOption+;
 #pragma link C++ class THaBeam+;
-#pragma link C++ class THaBpm+;
+#pragma link C++ class THaBeamDet+;
+#pragma link C++ class THaIdealBeam+;
+#pragma link C++ class THaRasteredBeam+;
+#pragma link C++ class THaUnRasteredBeam+;
 #pragma link C++ class THaRaster+;
+#pragma link C++ class THaBPM+;
 #pragma link C++ class THaShower+;
-#pragma link C++ class THaEpicsData+;
 #pragma link C++ class THaTrack+;
 #pragma link C++ class THaTrackID+;
 #pragma link C++ class THaPIDinfo+;
@@ -62,14 +69,20 @@
 #pragma link C++ class THaVDCWire+;
 #pragma link C++ class THaVDCUVTrack+;
 #pragma link C++ class THaVDCTimeToDistConv+;
-#pragma link C++ class THaVDCT0CalTable+;
 #pragma link C++ class THaVDCAnalyticTTDConv+;
 #pragma link C++ class THaVDCTrackID+;
 #pragma link C++ class THaVDCTrackPair+;
 #pragma link C++ class THaRTTI+;
-//#pragma link C++ class THaVDCLookupTTDConv+;
 #pragma link C++ class THaRawEvent+;
 #pragma link C++ class THaVDCEvent+;
+#pragma link C++ class THaScalerGroup+;
+#pragma link C++ class THaElectronKine+;
+#pragma link C++ class THaReactionPoint+;
+#pragma link C++ class THaTwoarmVertex+;
+#pragma link C++ class THaAvgVertex+;
+#pragma link C++ class THaExtTarCor+;
+#pragma link C++ class THaTrackInfo+;
+#pragma link C++ class THaDebugModule+;
+#pragma link C++ class THaGoldenTrack+;
 
 #endif
-

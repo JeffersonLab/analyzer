@@ -24,6 +24,7 @@
 #include <vector>
 #include <map>
 #include <iterator>
+#include <iostream>
 #define ADB_DEBUG 0
 
 class Bdate {
@@ -48,7 +49,10 @@ public:
           break;
     }
   }
-  void Print() {cout << "(D,M,Y) = "<<day<<" "<<month<<" "<<year<<endl;};
+  void Print() { 
+    using namespace std;
+    cout << "(D,M,Y) = "<<day<<" "<<month<<" "<<year<<endl;
+  }
   friend bool operator==(Bdate a, Bdate b) {
     return a.day==b.day && a.month==b.month && a.year==b.year;
   };
@@ -82,9 +86,9 @@ public:
   bool first;
   int helicity,crate,slot;
 #ifndef __CINT__
-  vector<int> startchan,numchan;
-  string short_desc;
-  string long_desc;
+  std::vector<int> startchan,numchan;
+  std::string short_desc;
+  std::string long_desc;
 #endif
   bool valid() {   // This object is valid if properly loaded.
     for (int i = 0; i < DB_NINT-1; i++) {
@@ -137,16 +141,18 @@ public:
 
    THaScalerDB();
    virtual ~THaScalerDB();
-   bool extract_db(const Bdate& bdate, multimap< string, BscaLoc >& bmap);
+   bool extract_db(const Bdate& bdate, 
+		   std::multimap< std::string, BscaLoc >& bmap);
 
 private:
 
    bool found_date;
-   void compress_bslvect(vector<BscaLoc>& bslvec);
-   bool insert_map(Bdate& bdate, vector<BscaLoc>& bslvec, map<Bdate, vector<BscaLoc> >& bdloc);
-   void print_dmap(map<Bdate, vector<BscaLoc> >& bdloc);
-   vector<string> vsplit(const string& s);
-   void print_bmap(multimap<string, BscaLoc >& bmap);
+   void compress_bslvect(std::vector<BscaLoc>& bslvec);
+   bool insert_map(Bdate& bdate, std::vector<BscaLoc>& bslvec, 
+		   std::map<Bdate, std::vector<BscaLoc> >& bdloc);
+   void print_dmap( std::map<Bdate, std::vector<BscaLoc> >& bdloc);
+   std::vector<std::string> vsplit(const std::string& s);
+   void print_bmap(std::multimap<std::string, BscaLoc >& bmap);
 
 #ifndef ROOTPRE3
 ClassDef(THaScalerDB,0)  // Text-based time-dependent database for scaler locations.

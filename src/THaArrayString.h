@@ -18,19 +18,14 @@ public:
   THaArrayString() : fNdim(0), fDim(NULL), fLen(-1), fStatus(kNotinit) {}
   THaArrayString( const char* string ) 
     : fName(string), fDim(NULL), fLen(-1)   { Parse(); }
-  THaArrayString( TString& string ) 
-    : fName(string), fDim(NULL), fLen(-1)   { Parse(); }
   THaArrayString( const THaArrayString& );
   THaArrayString& operator=( const THaArrayString& );
-  THaArrayString& operator=( TString& rhs ) 
-  { return operator=(rhs.Data()); }
   THaArrayString& operator=( const char* rhs )
   { Parse( rhs ); return *this; }
   virtual ~THaArrayString()           { delete [] fDim; }
 
   operator const char*() const { return fName.Data(); }
 
-  void            Copy( THaArrayString& rhs ) { rhs = *this; }
   const Int_t*    GetDim()  const { return fDim; }
   Int_t           GetLen()  const { return fLen; }
   const char*     GetName() const { return fName.Data(); }

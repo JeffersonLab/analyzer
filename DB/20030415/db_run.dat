@@ -1,0 +1,12 @@
+# Run database for E97-110 (small angle GDH) 15 Apr - 30 Jun 03
+
+--------[ 2003-04-15 00:00:00 ]
+
+# Dummy values for checkout
+ebeam      = 1.
+R.theta    = -16.
+R.pcentral = 0.8
+L.theta    = 16.
+L.pcentral = 0.8
+
+

@@ -2,24 +2,24 @@
 Number of Right Scintillator 1 paddles -----------------------------------------
        6
 Crate,Slot,1st,Last ADC chans,Beg S1 chan --------------------------------------
-       1      25      48      53       1             - ADCs pads 7-12 (right)
-       1      25       0       5       7             - ADCs pads 1-6  (left)
-       1      16      32      37       1             - TDCs pads 7-12 (right)
-       1      16      16      21       7             - TDCs pads 1-6  (left)
+       1      25      48      53       1             - ADCs pads 1-6  (right)
+       1      25       0       5       7             - ADCs pads 7-12 (left)
+       1      16      32      37       1             - TDCs pads 1-6  (right)
+       1      16      16      21       7             - TDCs pads 7-12 (left)
       -1       0       0       0       0
 X,Y,Z coords (in cm) of S1 front plane in spectrom cs --------------------------
-     0.0     0.0   138.1                             - Centimeters
+     0.0     0.0   1.381                             - Meters
 Half of X, half of Y, full Z sizes (in cm) of S1 -------------------------------
-    88.0    18.0     0.5                             - Centimeters
+    0.88    0.18     0.005                           - Meters
 Rotation angle of the S1 plane -------------------------------------------------
      0.0                                             - Degrees
 TDC time offsets of S1 TDC channels --------------------------------------------
- -1041.0  -991.8 -1109.0 -1180.0 -1086.0 -1129.0     - Left Paddles
-  -997.0 -1135.0 -1049.0 -1037.0  -944.2  -919.0     - Right Paddles
+  -840.94 -808.68 -916.71 -983.75 -922.88 -962.05    - Left Paddles
+  -700.60 -868.30 -772.88 -751.23 -691.73 -670.71    - Right Paddles
 Pedestal values of S1 ADC channels ---------------------------------------------
-   410.0   479.0   871.0   395.0   631.0   410.0     - Left Paddles
-   370.0   389.0   467.0   472.0   453.0   602.0     - Right Paddles
-Amplitude transformation coefficients of S1 ADC channels -----------------------
-   0.499   0.394   0.514   0.449   0.577   0.466     - Left Paddles
-   0.417   0.474   0.467   0.450   0.438   0.462     - Right Paddles
+   406.0   463.0   427.0   388.0   624.0   410.0     - Left Paddles
+   346.0   425.0   422.0   479.0   437.0   583.0     - Right Paddles
+Gains of S1 ADC channels -------------------------------------------------------
+   0.431   0.522   0.362   0.507   0.514   0.552     - Left Paddles
+   0.417   0.458   0.523   0.443   0.582   0.571     - Right Paddles
 ################################################################################

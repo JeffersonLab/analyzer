@@ -13,7 +13,7 @@
 //
 /////////////////////////////////////////////////////////////////////
 
-#include "TObject.h"
+#include "TString.h"
 #include <iostream>
 #include <cstdlib>
 #include <cstdio>
@@ -44,7 +44,7 @@ class THaUsrstrutils
    char *getstr(char *s) - Return ptr to string value associated with
                            the keyword.  Return null if keyword not present.
 			   return null string if keyword has no value.
-			   Caller must free the string.
+			   Caller must delete the string.
 	     
     string_from_evbuffer(int evbuffer) - load the confuguration 
                          string using event buffer 'evbuffer'
@@ -92,29 +92,40 @@ class THaUsrstrutils
 
 public:
 
-   static const int MAX;
-   static const unsigned long LONGMAX;
+  static const int MAX;
+  static const unsigned long LONGMAX;
 
-   THaUsrstrutils();
-   virtual ~THaUsrstrutils();
-   int getflag(char *s);
-   char *getstr(char *s);
-   unsigned int getint(char *s);
-   void string_from_evbuffer(int *evbuffer);
-   void string_from_evbuffer(int *evbuffer, int nlen);
-   void string_from_file(char *ffile_name);
+  THaUsrstrutils() {}
+  virtual ~THaUsrstrutils() {}
+  int getflag(const char *s) const;
+  char *getstr(const char *s) const;
+  unsigned int getint(const char *s) const;
+  void string_from_evbuffer(const int *evbuffer, int nlen=MAX);
+  void string_from_file(const char *ffile_name);
 
 protected:
 
-   int max_size_string;
-   char *file_configusrstr;
-   void getflagpos(char *s,char **pos_ret,char **val_ret);
-   void getflagpos_instring(char *constr, char *s,char **pos_ret,char **val_ret);
+  int max_size_string;
+  TString configstr;
+  void getflagpos(const char *s, const char **pos_ret, 
+		  const char **val_ret) const;
+  static void getflagpos_instring(const char *constr, const char *s,
+				  const char **pos_ret, const char **val_ret);
 
    ClassDef(THaUsrstrutils,0)   //  User string utilities, DAQ parsing code.
 
 };
      
+//=============== inline functions ================================
+
+inline
+void THaUsrstrutils::getflagpos(const char *s, const char **pos_ret,
+				const char **val_ret) const
+{
+  getflagpos_instring(configstr,s,pos_ret,val_ret);
+  return;
+}
+
 #endif  /* _USRSTRUTILS_INCLUDED */
 
 

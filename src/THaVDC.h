@@ -44,7 +44,7 @@ public:
     kFine          = BIT(15), // Fine track
     kReassigned    = BIT(16), // Track is a new track in Fine stage
     kMultiTrack    = BIT(17), // Track was generated in the multitrack analysis
-    kBadTrack      = BIT(18)  // Track prematurely exists the spectrometer or similar
+    kBadTrack      = BIT(18)  // Track prematurely exits the spectrometer or similar
   };
 
   // Bits and bit masks for this object
@@ -59,10 +59,6 @@ public:
   };
 
 protected:
-
-  THaVDC() {}                    // Must construct with name
-  THaVDC( const THaVDC& ) {}
-  THaVDC& operator=( const THaVDC& ) { return *this; }
 
   THaVDCUVPlane* fLower;    // Lower UV plane
   THaVDCUVPlane* fUpper;    // Upper UV plane
@@ -84,61 +80,51 @@ protected:
                             // the s1 plane
 
   // declarations for target vertex reconstruction
-  enum ECoordTypes {
-    kTransport,
-    kRotatingTransport
-  };
-
-  enum EFPMatrixElemTags {
-    T000 = 0,
-    Y000,
-    P000
-  };
-    
-  enum {
-    kPORDER = 7
-  };
+  enum ECoordTypes { kTransport, kRotatingTransport };
+  enum EFPMatrixElemTags { T000 = 0, Y000, P000 };
+  enum { kPORDER = 7 };
 
   // private class for storing matrix element data
+  class THaMatrixElement;
+  friend class THaMatrixElement;
   class THaMatrixElement {
   public:
     THaMatrixElement() : iszero(true), pw(3), order(0), v(0), poly(kPORDER) {}
     THaMatrixElement& operator=( const THaMatrixElement& ) { return *this; }
 
     bool iszero;             // whether the element is zero
-    vector<int> pw;          // exponents of matrix element
+    std::vector<int> pw;     // exponents of matrix element
                              //   e.g. D100 = { 1, 0, 0 }
     int  order;
     double v;                // its computed value
-    vector<double> poly;     // the associated polynomial
+    std::vector<double> poly;// the associated polynomial
   };
 
   // initial matrix elements
-  vector<THaMatrixElement> fTMatrixElems;
-  vector<THaMatrixElement> fDMatrixElems;
-  vector<THaMatrixElement> fPMatrixElems;
-  vector<THaMatrixElement> fYMatrixElems;
-  vector<THaMatrixElement> fFPMatrixElems;  // matrix elements used in
+  std::vector<THaMatrixElement> fTMatrixElems;
+  std::vector<THaMatrixElement> fDMatrixElems;
+  std::vector<THaMatrixElement> fPMatrixElems;
+  std::vector<THaMatrixElement> fYMatrixElems;
+  std::vector<THaMatrixElement> fFPMatrixElems;  // matrix elements used in
                                             // focal plane transformations
                                             // { T, Y, P }
 
   void CalcFocalPlaneCoords( THaTrack* track, const ECoordTypes mode);
   void CalcTargetCoords(THaTrack *the_track, const ECoordTypes mode);
-  void CalcMatrix(const double x, vector<THaMatrixElement> &matrix);
-  double DoPoly(const int n, const vector<double> &a, const double x);
+  void CalcMatrix(const double x, std::vector<THaMatrixElement> &matrix);
+  double DoPoly(const int n, const std::vector<double> &a, const double x);
   double PolyInv(const double x1, const double x2, const double xacc, 
-		 const double y, const int norder, const vector<double> &a);
-  double CalcTargetVar(const vector<THaMatrixElement> &matrix, 
+		 const double y, const int norder, 
+		 const std::vector<double> &a);
+  double CalcTargetVar(const std::vector<THaMatrixElement> &matrix, 
 		       const double powers[][3]);
-  Int_t ReadDatabase( FILE* file, const TDatime& date );
+  Int_t ReadDatabase( const TDatime& date );
 
   virtual void  Clear( Option_t* opt="" )  {}
   virtual Int_t ConstructTracks( TClonesArray * tracks = NULL, Int_t flag = 0 );
 
   void CorrectTimeOfFlight(TClonesArray& tracks);
   void FindBadTracks(TClonesArray &tracks);
-
-  virtual Int_t SetupDetector( const TDatime& date );
 
   ClassDef(THaVDC,0)             // VDC class
 }; 

@@ -15,6 +15,7 @@ class THaVDCWire;
 class THaVDCUVPlane;
 class THaVDCCluster;
 class THaVDCHit;
+class THaVDCTimeToDistConv;
 
 class THaVDCPlane : public THaSubDetector {
 
@@ -91,18 +92,16 @@ protected:
   Int_t fNumBins;   // size of lookup table
   Float_t *fTable;  // time-to-distance lookup table
 
+  THaVDCTimeToDistConv* fTTDConv;  // Time-to-distance converter for this plane's wires
+
   THaDetectorBase* fVDC;  // VDC detector to which this plane belongs
 
   virtual void  Clear( Option_t* opt="" );
 
   virtual void  MakePrefix();
-  virtual Int_t ReadDatabase( FILE* file, const TDatime& date );
-  virtual Int_t SetupDetector( const TDatime& date );
+  virtual Int_t ReadDatabase( const TDatime& date );
+  virtual Int_t DefineVariables( EMode mode );
 
-  // Prevent copying and assignment
-  THaVDCPlane( const THaVDCPlane& ) {}
-  THaVDCPlane& operator=( const THaVDCPlane& ) { return *this; }
- 
   ClassDef(THaVDCPlane,0)             // VDCPlane class
 };
 

@@ -27,6 +27,7 @@
 #include "THaGlobals.h"
 #include "TROOT.h"
 #include "TMath.h"
+#include "TClass.h"
 
 #include <cstring>
 #include <cstdlib>
@@ -43,6 +44,7 @@ ClassImp(THaEvent)
 THaEvent::THaEvent() : fInit(kFALSE), fDataMap(NULL)
 {
   // Create a THaEvent object.
+  Class()->IgnoreTObjectStreamer();
 }
 
 //_____________________________________________________________________________

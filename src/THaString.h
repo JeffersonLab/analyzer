@@ -36,11 +36,13 @@ public:
 
   // Major functions
 
-  int CmpNoCase (const THaString& s) const; // case insensitive compare
+  int       CmpNoCase (const THaString& s) const; // case insensitive compare
   std::vector<THaString> Split() const;   // split on whitespace
-  UInt_t Hex() const;      // conversion to to unsigned interpreting as hex
-  THaString ToLower() const; // conversion to lower case
-  THaString ToUpper() const; // conversion to lower case
+  UInt_t    Hex() const;      // conversion to unsigned interpreting as hex
+  THaString ToLower() const;  // return lower case copy
+  THaString ToUpper() const;  // return upper case copy
+  void      Lower();          // convert this string to lower case
+  void      Upper();          // convert this tring to upper case
 
   ClassDef(THaString, 0)   // Improved string class
 

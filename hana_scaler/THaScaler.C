@@ -60,9 +60,7 @@
 
 #include <iostream>
 
-#ifndef ROOTPRE3
-ClassImp(THaScaler)
-#endif
+using namespace std;
 
 THaScaler::THaScaler() {}
 
@@ -216,9 +214,10 @@ Int_t THaScaler::Init(const char* thetime )
   cratenum_evright = 10;   // Synchronous readout from roc10
   header_evright = 0xceb00000;  
 
-  database = new THaScalerDB();
-
-  if ( !database->extract_db(date_want, bmap) ) return SCAL_ERROR;
+  THaScalerDB* database = new THaScalerDB();
+  bool fail = (!database->extract_db(date_want, bmap));
+  delete database;
+  if( fail ) return SCAL_ERROR;
 
   int status;
   status = InitMap(bankgroup);
@@ -637,7 +636,7 @@ void THaScaler::PrintSummary() {
   cout << "Scaler bank  " << bankgroup << endl;
   Double_t time_sec = GetPulser("clock")/clockrate;
   if (time_sec == 0) {
-    cout << "THaScaler: WARNING:  Time of run = ZERO (??)\n"<<endl;
+    cout << "THaScaler: WARNING:  Time of run = ZERO (\?\?)\n"<<endl;
     return;
   } 
   Double_t time_min = time_sec/60;  
@@ -989,3 +988,8 @@ Int_t THaScaler::Load()
   new_load = kTRUE;
   return 0;
 };
+
+#ifndef ROOTPRE3
+ClassImp(THaScaler)
+#endif
+

@@ -5,43 +5,7 @@
 //                                                                           //
 // THaCherenkov                                                              //
 //                                                                           //
-///////////////////////////////////////////////////////////////////////////////
-//                                                                           //
-// Names, associated with Decoded parameters of Cherenkov detector.          //
-// Variables are set in THaCherenkov::Decode()                               //
-//                                                                           //
-//   Name      InVariable OutVariable     Description                        //
-// - ~~~~- - - ~~~~~~~~~~-~~~~~~~~~~~- - -~~~~~~~~~~~- - - - - - - - - - - - //
-//"e.ar.nthit"  fNTHIT    fE_AR_nthit     Number of mirrors with TDC > 0;    //
-//"e.ar.t1"     fT[0]     fE_AR_tdc[0]    TDC time of channel 1;             //
-// ...          ...       ...             ...                                //
-//"e.ar.t26"    fT[25]    fE_AR_tdc[25]   TDC time of channel 26;            //
-//"e.ar.t_c1"   fT_c[0]   fE_AR_tdc_c[0]  Corrected TDC time of chan 1;      //
-// ...          ...       ...             ...                                //
-//"e.ar.t_c26"  fT_c[25]  fE_AR_tdc_c[25] Corrected TDC time of chan 26;     //
-//"e.ar.nahit"  fNAHIT    fE_AR_nahit     Number of mirrors with ADC > 0;    //
-//"e.ar.a1"     fA[0]     fE_AR_adc[0]    ADC value of channel 1;            //
-// ...          ...       ...             ...                                //
-//"e.ar.a26"    fA[25]    fE_AR_adc[25]   ADC value of channel 26;           //
-//"e.ar.a_p1"   fA_p[0]   fE_AR_adc_p[0]  ADC minus ped value of chan 1;     //
-// ...          ...       ...             ...                                //
-//"e.ar.a_p26"  fA_p[25]  fE_AR_adc_p[25] ADC minus ped value of chan 26;    //
-//"e.ar.a_c1"   fA_c[0]   fE_AR_adc_c[0]  Corrected ADC value of chan 1;     //
-// ...          ...       ...             ...                                //
-//"e.ar.a_c26"  fA_c[25]  fE_AR_adc_c[25] Corrected ADC value of chan 26;    //
-//"e.ar.asum_p" fASUM_p   fE_AR_asum_p    Sum of chs ADC minus ped values;   //
-//"e.ar.asum_c" fASUM_c   fE_AR_asum_c    Sum of channels corrected ADCs.    //
-//                                                                           //
-// ------------------------------------------------------------------------- //
-//                                                                           //
-// Names associated with parameters calculated in                            //
-// THaCherenkov::CoarseProcess().                                            //
-// Units of measurements are centimeters for coordinates.                    //
-//                                                                           //
-//   Name      InVariable   OutVariable     Description                      //
-// - ~~~~- - - ~~~~~~~~~~- -~~~~~~~~~~~- - -~~~~~~~~~~~- - - - - - - - - -   //
-//"e.ar.trx"    fTRX      fE_AR_trx       X coord of track in det plane      //
-//"e.ar.try"    fTRY      fE_AR_try       Y coord of track in det plane      //
+// Generic Cherenkov detector.                                               //
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -84,14 +48,10 @@ protected:
   // Useful derived quantities
   double tan_angle, sin_angle, cos_angle; // Rotation angle of the detector plane
 
-  void           ClearEvent();
-  void           DeleteArrays();
-  virtual Int_t  ReadDatabase( FILE* file, const TDatime& date );
-  virtual Int_t  SetupDetector( const TDatime& date );
-
-  THaCherenkov() {}
-  THaCherenkov( const THaCherenkov& ) {}
-  THaCherenkov& operator=( const THaCherenkov& ) { return *this; }
+          void   ClearEvent();
+  virtual Int_t  DefineVariables( EMode mode );
+          void   DeleteArrays();
+  virtual Int_t  ReadDatabase( const TDatime& date );
 
   ClassDef(THaCherenkov,0)    //Generic Cherenkov class
 };

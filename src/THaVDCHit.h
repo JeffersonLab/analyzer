@@ -5,14 +5,11 @@
 //                                                                           //
 // THaVDCHit                                                                 //
 //                                                                           //
-// Class representing a single hit for the VDC                               //
-//                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
+
 #include "TObject.h"
-
 #include "THaVDCWire.h"
-#include <stdio.h>
-
+#include <cstdio>
 
 class THaVDCHit : public TObject {
 
@@ -22,7 +19,7 @@ public:
   virtual ~THaVDCHit() {}
 
   virtual Double_t ConvertTimeToDist(Double_t slope);
-  Int_t  Compare ( const TObject * obj ) const;
+  Int_t  Compare ( const TObject* obj ) const;
   Bool_t IsSortable () const { return kTRUE; }
   
   // Get and Set Functions
@@ -47,7 +44,7 @@ protected:
   THaVDCHit( const THaVDCHit& ) {}
   THaVDCHit& operator=( const THaVDCHit& ) { return *this; }
   
-  ClassDef(THaVDCHit,0)             // VDCHit class
+  ClassDef(THaVDCHit,1)             // VDCHit class
 };
 
 ////////////////////////////////////////////////////////////////////////////////

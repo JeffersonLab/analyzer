@@ -16,21 +16,15 @@
 //
 /////////////////////////////////////////////////////////////////////
 
-
-#define MAXEPS 40    // Number of variables stored per event
-#define MAXSTACK 10  // Max stack size (num of events stored here)
-#include "Rtypes.h"
 #include "TString.h"
-#include <stdlib.h>
-#include <iostream>
+#include <cstdlib>
 
-class THaEpicsStack 
-{
+class THaEpicsStack {
 
 public:
 
-   THaEpicsStack();
-   virtual ~THaEpicsStack();
+   THaEpicsStack() { init(); }
+   virtual ~THaEpicsStack() {}
    double getData (const char* tag) const;      // get recent value corr. to tag
    double getData (const char* tag, int event) const;    // value nearest 'event'
    double getData (int stack_position, int var_index) const;     // data by index
@@ -44,8 +38,12 @@ public:
 
 private:
 
-   static const int EPI_ERR = -1;
-   static const int EPI_OK = 1;
+   static const int EPI_ERR = -1, EPI_OK = 1;
+   static const int MAXEPS = 40;   // Number of variables stored per event
+   static const int MAXSTACK = 10; // Max stack size (num of events stored here)
+
+   struct epicsDataStack;
+   friend struct epicsDataStack;
    struct epicsDataStack {     // Stack of recent epics data (each is an event)
       int event;               // The nearest CODA event number
       TString tag[MAXEPS];     // EPICS character tags, e.g. "IPM1H04A.XPOS"
@@ -63,6 +61,68 @@ private:
 
 };
 
+//=============== inline functions ================================
+
+inline
+int THaEpicsStack::findVar(const char* tag) const {
+     for (int i=0; i<nepics_strings; i++)
+       if (strstr(tag,epics_var_list[i].Data()) != NULL)
+         return i;
+     return EPI_ERR;
+}
+
+inline
+int THaEpicsStack::loadData(const char* tag, const char* val, int event) {
+  return loadData(tag,std::atof(val),event);     
+}
+
+inline
+void THaEpicsStack::bumpStack() {
+// This is used by only by decoder to increment the stack.
+  stack_point++;
+  if (stack_point > stack_size) stack_size = stack_point;
+  if (stack_point >= MAXSTACK) stack_point=0;
+  for (int i=0; i<MAXEPS; i++) epicsData[stack_point].filled[i]=false;
+}
+
+inline
+double THaEpicsStack::getData(const char* tag) const {
+  return getLastData(tag);
+}
+
+inline
+double THaEpicsStack::getData(int stack, int idx) const {
+// Get data from stack position 'stack'
+     if (( stack < 0) || (stack >= MAXSTACK)) return -999999;
+     if (( idx < 0 ) || (idx >= MAXEPS)) return -999999; 
+     return getLastFilled(stack,idx);
+};
+
+inline
+double THaEpicsStack::getLastData(const char* tag) const {
+// Return the value previous to the present stack point.
+// This assumes the stack_point is bumped after event was
+// loaded by decoder, and it points to the next place to fill.
+  int i = findVar(tag);
+  if (i == EPI_ERR) return 0;
+  if (stack_point == 0)
+    return getLastFilled(MAXSTACK-1,i);
+  return getLastFilled(stack_point-1,i);
+}
+
+inline
+int THaEpicsStack::loadData(const char* tag, double val, int event) {
+// Load data into present stack position.
+// To be used by decoder only.
+  int i = findVar(tag);
+  if ( i == EPI_ERR ) return EPI_ERR;
+  epicsData[stack_point].event = event;
+  epicsData[stack_point].tag[i] = epics_var_list[i];
+  epicsData[stack_point].value[i] = val;
+  epicsData[stack_point].filled[i] = true;
+  return EPI_OK;
+}
+  
 #endif
 
 

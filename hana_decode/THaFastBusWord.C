@@ -14,29 +14,23 @@
 #include "THaFastBusWord.h"
 #include <iostream>
 
-ClassImp(THaFastBusWord)
+using namespace std;
 
-THaFastBusWord::THaFastBusWord() {
-    init();
-};
-
-THaFastBusWord::~THaFastBusWord() {
-};
+const UShort_t THaFastBusWord::FB_ERR = ~(UShort_t)0;
 
 // Definition of fastbus modules.
 void THaFastBusWord::init() {
-    int imod,idx;
-    FB_ERR = -1;  //definition
+    UShort_t imod,idx;
     for(imod=0; imod<MAXMODULE; imod++) module_type[imod]=0;
     module_type[0] = 1877;
     module_type[1] = 1881;
     module_type[2] = 1875;
     for (imod=0; imod<MAXMODULE; imod++) {
       idx = module_type[imod]-modoff;
-      if (idx >=0 && idx < MAXIDX) {
-         modindex[idx] = imod;
+      if (idx < MAXIDX) {
+	modindex[idx] = imod;
       } else {
-  	 cout << "Warning, no mapping of module index for "<<idx<<endl;
+	cout << "Warning, no mapping of module index for "<<idx<<endl;
       }
       switch (module_type[imod]) {
         case 1877:
@@ -80,72 +74,6 @@ void THaFastBusWord::init() {
             module_info[imod].devtype = "";
        }
     }
-};
+}
 
-// returns fastbus slot
-   int THaFastBusWord::Slot(int word)
-   {
-     int slot = (word&slotmask)>>slotshift; 
-     if (slot > MAXSLOT) return 0;
-     return slot;
-   };
-
-// returns fastbus channel
-   int THaFastBusWord::Chan(int model, int word)
-   {
-      static int imod;
-      imod = modindex[(model-modoff)&MAXIDX]&MAXMODULE;
-      return ( ( word & module_info[imod].chanmask )
-                 >> module_info[imod].chanshift );
-   };
-
-// returns word count of header
-   int THaFastBusWord::Wdcnt(int model, int word)
-   {
-      static int imod;
-      imod = modindex[(model-modoff)&MAXIDX]&MAXMODULE;
-      if (!headExist(model)) return FB_ERR;
-      return ( word & module_info[imod].wdcntmask );
-   };
-
-
-// returns fastbus data
-   int THaFastBusWord::Data(int model, int word)
-   {
-      static int imod;
-      imod = modindex[(model-modoff)&MAXIDX]&MAXMODULE;
-      return ( word & module_info[imod].datamask);
-   };
-
-// returns fastbus opt;
-   int THaFastBusWord::Opt(int model, int word)
-   {
-      static int imod;
-      imod = modindex[(model-modoff)&MAXIDX]&MAXMODULE;
-      return ( ( word & module_info[imod].optmask )
-                 >> module_info[imod].optshift);
-   };  
-
-// answers if the model has a header
-   bool THaFastBusWord::headExist(int model)
-   {
-      static int imod;
-      imod = modindex[(model-modoff)&MAXIDX]&MAXMODULE;
-      return module_info[imod].headexists;
-   };
-
-
-// returns device type
-   TString THaFastBusWord::devType(int model)
-   {
-      static int imod;
-      imod = modindex[(model-modoff)&MAXIDX]&MAXMODULE;
-      return module_info[imod].devtype;
-   };
-
-
-
-
-
-
-
+ClassImp(THaFastBusWord)

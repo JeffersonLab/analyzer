@@ -1,3 +1,11 @@
 CVS
-src/old
-src/new
+old
+new
+OLD
+NEW
+.#*
+*.o
+*.d
+*.so
+ha_compiledata.h
+.cvsignore

@@ -7,67 +7,34 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-#include "TNamed.h"
+#include "THaAnalysisObject.h"
 #include "TList.h"
 
 class THaDetector;
 class THaEvData;
-class TDatime;
-struct VarDef;
-struct RVarDef;
 
-class THaApparatus : public TNamed {
+class THaApparatus : public THaAnalysisObject {
   
 public:
-  enum EStatus { kOK, kNotinit, kInitError };
-  enum EType   { kVarDef, kRVarDef };
-  enum EMode   { kDefine, kDelete };
- 
   virtual ~THaApparatus();
   
   virtual Int_t        AddDetector( THaDetector* det );
   virtual Int_t        Decode( const THaEvData& );
-          Int_t        GetDebug() const          { return fDebug; }
           Int_t        GetNumDets()   const      { return fDetectors->GetSize(); }
-          Int_t        GetNumMyDets() const      { return fNmydets; }
           THaDetector* GetDetector( const char* name );
-          Int_t        Init();
-  virtual Int_t        Init( const TDatime& run_time );
-          Bool_t       IsOK() const              { return (fStatus == kOK); }
-          Bool_t       IsInit() const            { return IsOK(); }
+  virtual EStatus      Init( const TDatime& run_time );
   virtual void         Print( Option_t* opt="" ) const 
                                                  { fDetectors->Print(opt); }
+  virtual Int_t        CoarseReconstruct() { return 0; }
   virtual Int_t        Reconstruct() = 0;
   virtual void         SetDebugAll( Int_t level );
-          void         SetDebug( Int_t level )   { fDebug = level; }
-          EStatus      Status() const            { return fStatus; }
 
 protected:
-  Int_t          fDebug;        // Debug level
   TList*         fDetectors;    // List of all detectors for this apparatus
-  Int_t          fNmydets;      // Number of detectors defined in the constructor
-  THaDetector**  fMydets;       // Array of pointers to the detectors defined by me
-  EStatus        fStatus;       // Initialization status flag
 
-  virtual Int_t  DefineVariables( EMode mode = kDefine )
-    { return kOK; }
-  Int_t          DefineVarsFromList( const VarDef* list, 
-				     EMode mode = kDefine )
-    { return DefineVarsFromList( list, kVarDef, mode ); }
-  Int_t          DefineVarsFromList( const RVarDef* list, 
-				     EMode mode = kDefine )
-    { return DefineVarsFromList( list, kRVarDef, mode ); }
-  Int_t          DefineVarsFromList( const void* list, 
-				     EType type, EMode mode );
-  virtual Int_t  SetupApparatus( const TDatime& date )
-    { return DefineVariables(); }
-
-  //Only derived classes may construct me  
-  THaApparatus() : 
-    fDebug(0), fDetectors(0), fNmydets(0), fMydets(0), fStatus(kNotinit) {}
   THaApparatus( const char* name, const char* description );
-  THaApparatus( const THaApparatus& ) {};
-  THaApparatus& operator=( const THaApparatus& ) { return *this; }
+
+  virtual void MakePrefix() { THaAnalysisObject::MakePrefix( NULL ); }
 
   ClassDef(THaApparatus,0)   //A generic apparatus (collection of detectors)
 };

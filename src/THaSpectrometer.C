@@ -14,7 +14,6 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-#include "TClonesArray.h"
 #include "THaSpectrometer.h"
 #include "THaParticleInfo.h"
 #include "THaTrackingDetector.h"
@@ -22,26 +21,28 @@
 #include "THaPidDetector.h"
 #include "THaPIDinfo.h"
 #include "THaTrack.h"
-//#include "THaVertex.h"
 #include "TClass.h"
+#include "TMath.h"
 #include "VarDef.h"
+#include <cmath>
 
 #ifdef WITH_DEBUG
 #include <iostream>
 #endif
 
-ClassImp(THaSpectrometer)
+using namespace std;
 
 //_____________________________________________________________________________
 THaSpectrometer::THaSpectrometer( const char* name, const char* desc ) : 
-  THaApparatus( name,desc ), fListInit(kFALSE)
+  THaApparatus( name,desc ), fGoldenTrack(NULL), 
+  fPID(kFALSE), fThetaGeo(0.0), fPhiGeo(0.0), fPcentral(1.0), fCollDist(0.0),
+  fCoarseDone(kFALSE), fListInit(kFALSE)
 {
   // Constructor.
   // Protected. Can only be called by derived classes.
 
   fTracks     = new TClonesArray( "THaTrack",   kInitTrackMultiplicity );
   fTrackPID   = new TClonesArray( "THaPIDinfo", kInitTrackMultiplicity );
-  //  fVertices   = new TClonesArray( "THaVertex",  kInitTrackMultiplicity );
   fTrackingDetectors    = new TList;
   fNonTrackingDetectors = new TList;
   fPidDetectors         = new TObjArray;
@@ -49,6 +50,10 @@ THaSpectrometer::THaSpectrometer( const char* name, const char* desc ) :
 
   Clear();
   DefinePidParticles();
+
+  fProperties |= kNeedsRunDB;
+
+  fTrkIfo.SetSpectrometer( this );
 }
 
 //_____________________________________________________________________________
@@ -63,7 +68,6 @@ THaSpectrometer::~THaSpectrometer()
   delete fPidDetectors;          fPidDetectors = 0;
   delete fNonTrackingDetectors;  fNonTrackingDetectors = 0;
   delete fTrackingDetectors;     fTrackingDetectors = 0;
-  //  delete fVertices;              fVertices = 0;
   delete fTrackPID;              fTrackPID = 0;
   delete fTracks;                fTracks = 0;
 
@@ -136,9 +140,14 @@ Int_t THaSpectrometer::CalcPID()
 //_____________________________________________________________________________
 void THaSpectrometer::Clear( Option_t* opt )
 {
-  // Delete contents of internal even-by-event arrays
+  // Clear the spectrometer data for next event.
 
-  fTracks->Delete();
+  THaApparatus::Clear(opt);
+  fTracks->Clear("C"); 
+  TrkIfoClear();
+  VertexClear();
+  fGoldenTrack = NULL;
+  fCoarseDone = kFALSE;
 }
 
 //_____________________________________________________________________________
@@ -160,6 +169,9 @@ Int_t THaSpectrometer::DefineVariables( EMode mode )
   // Define/delete standard variables for a spectrometer (tracks etc.)
   // Can be overridden or extended by derived (actual) apparatuses
 
+  if( mode == kDefine && fIsSetup ) return kOK;
+  fIsSetup = ( mode == kDefine );
+
   RVarDef vars[] = {
     { "tr.n",    "Number of tracks",             "GetNTracks()" },
     { "tr.x",    "Track x coordinate (m)",       "fTracks.THaTrack.fX" },
@@ -179,11 +191,32 @@ Int_t THaSpectrometer::DefineVariables( EMode mode )
     { "tr.tg_y", "Target y coordinate",          "fTracks.THaTrack.fTY"},
     { "tr.tg_th", "Tangent of target theta angle", "fTracks.THaTrack.fTTheta"},
     { "tr.tg_ph", "Tangent of target phi angle",   "fTracks.THaTrack.fTPhi"},    
-    { "tr.tg_dp", "Target delta",          "fTracks.THaTrack.fDp"},
+    { "tr.tg_dp", "Target delta",                "fTracks.THaTrack.fDp"},
+    { "tr.px",    "Lab momentum x (GeV)",        "fTracks.THaTrack.GetLabPx()"},
+    { "tr.py",    "Lab momentum y (GeV)",        "fTracks.THaTrack.GetLabPy()"},
+    { "tr.pz",    "Lab momentum z (GeV)",        "fTracks.THaTrack.GetLabPz()"},
+    { "tr.vx",    "Vertex x (m)",                "fTracks.THaTrack.GetVertexX()"},
+    { "tr.vy",    "Vertex y (m)",                "fTracks.THaTrack.GetVertexY()"},
+    { "tr.vz",    "Vertex z (m)",                "fTracks.THaTrack.GetVertexZ()"},
     { 0 }
   };
 
   return DefineVarsFromList( vars, mode );
+}
+
+//_____________________________________________________________________________
+const TVector3& THaSpectrometer::GetVertex() const
+{
+  // Return vertex vector of the Golden Track.
+  // Overrides standard method of THaVertexModule.
+
+  return (fGoldenTrack) ? fGoldenTrack->GetVertex() : fVertex;
+}
+
+//_____________________________________________________________________________
+Bool_t THaSpectrometer::HasVertex() const
+{
+  return (fGoldenTrack) ? fGoldenTrack->HasVertex() : kFALSE;
 }
 
 //_____________________________________________________________________________
@@ -214,14 +247,63 @@ void THaSpectrometer::ListInit()
   UInt_t ndet  = GetNpidDetectors();
   UInt_t npart = GetNpidParticles();
   TClonesArray& pid  = *fTrackPID;
-  //  TClonesArray& vert = *fVertices;
 
   for( int i = 0; i < kInitTrackMultiplicity; i++ ) {
     new( pid[i] )  THaPIDinfo( ndet, npart );
-    // new( vert[i] ) THaVertex();
   }
   
   fListInit = kTRUE;
+}
+
+//_____________________________________________________________________________
+Int_t THaSpectrometer::CoarseReconstruct()
+{
+  // The Coarse processing step of Reconstruct is a separate callable
+  // routine so tests can be done after this stage.
+  // This code is called automatically by Reconstruct if not
+  // explicitly called earlier.
+
+  if( !fListInit ) ListInit();
+
+  TIter nextTrack( fTrackingDetectors );
+  TIter nextNonTrack( fNonTrackingDetectors );
+
+  // 1st step: Coarse tracking.  This should be quick and dirty.
+  // Any tracks found are put in the fTrack array.
+
+  nextTrack.Reset();
+  while( THaTrackingDetector* theTrackDetector =
+	 static_cast<THaTrackingDetector*>( nextTrack() )) {
+#ifdef WITH_DEBUG
+    if( fDebug>0 ) cout << "Call CoarseTrack() for " 
+			<< theTrackDetector->GetName() << "... ";
+#endif
+    theTrackDetector->CoarseTrack( *fTracks );
+#ifdef WITH_DEBUG
+    if( fDebug>0 ) cout << "done.\n";
+#endif
+  }
+
+  // 2nd step: Coarse processing.  Pass the coarse tracks to the remaining
+  // detectors for any processing that can be done at this stage.
+  // This may include clustering and preliminary PID.
+  // PID information is tacked onto the tracks as a THaPIDinfo object.
+
+  nextNonTrack.Reset();
+  while( THaNonTrackingDetector* theNonTrackDetector =
+	 static_cast<THaNonTrackingDetector*>( nextNonTrack() )) {
+#ifdef WITH_DEBUG
+    if( fDebug>0 ) cout << "Call CoarseProcess() for " 
+			<< theNonTrackDetector->GetName() << "... ";
+#endif
+    theNonTrackDetector->CoarseProcess( *fTracks );
+#ifdef WITH_DEBUG
+    if( fDebug>0 ) cout << "done.\n";
+#endif
+  }
+
+  fCoarseDone = kTRUE;
+  return 0;
 }
 
 //_____________________________________________________________________________
@@ -257,47 +339,10 @@ Int_t THaSpectrometer::Reconstruct()
   // Test blocks can be used to quit processing when appropriate.
   //
 
-  if( !fListInit ) ListInit();
+  if( !fCoarseDone ) CoarseReconstruct();
 
   TIter nextTrack( fTrackingDetectors );
   TIter nextNonTrack( fNonTrackingDetectors );
-  Clear();
-
-  // 1st step: Coarse tracking.  This should be quick and dirty.
-  // Any tracks found are put in the fTrack array.
-
-  while( THaTrackingDetector* theTrackDetector =
-	 static_cast<THaTrackingDetector*>( nextTrack() )) {
-#ifdef WITH_DEBUG
-    if( fDebug>0 ) cout << "Call CoarseTrack() for " 
-			<< theTrackDetector->GetName() << "... ";
-#endif
-    theTrackDetector->CoarseTrack( *fTracks );
-#ifdef WITH_DEBUG
-    if( fDebug>0 ) cout << "done.\n";
-#endif
-  }
-
-  // --evaluate test block--
-
-  // 2nd step: Coarse processing.  Pass the coarse tracks to the remaining
-  // detectors for any processing that can be done at this stage.
-  // This may include clustering and preliminary PID.
-  // PID information is tacked onto the tracks as a THaPIDinfo object.
-
-  while( THaNonTrackingDetector* theNonTrackDetector =
-	 static_cast<THaNonTrackingDetector*>( nextNonTrack() )) {
-#ifdef WITH_DEBUG
-    if( fDebug>0 ) cout << "Call CoarseProcess() for " 
-			<< theNonTrackDetector->GetName() << "... ";
-#endif
-    theNonTrackDetector->CoarseProcess( *fTracks );
-#ifdef WITH_DEBUG
-    if( fDebug>0 ) cout << "done.\n";
-#endif
-  }
-
-  // --evaluate test block--
 
   // 3rd step: Fine tracking.  Compute the tracks with high precision.
   // If coarse tracking was done, this step should simply "refine" the
@@ -315,8 +360,6 @@ Int_t THaSpectrometer::Reconstruct()
     if( fDebug>0 ) cout << "done.\n";
 #endif
   }
-
-  // --evaluate test block--
 
   // 4th step: Fine processing.  Pass the precise tracks to the
   // remaining detectors for any precision processing.
@@ -339,25 +382,155 @@ Int_t THaSpectrometer::Reconstruct()
 
   FindVertices( *fTracks );
 
-  // --evaluate test block--
-
-
   // Compute additional track properties (e.g. momentum, beta)
   // Find "Golden Track" if appropriate.
 
   TrackCalc();
 
-  // --evaluate test block--
-
-
   // Compute combined PID
 
   if( fPID ) CalcPID();
       
-  // --evaluate test block--
-
-
   return 0;
 }
 
+//_____________________________________________________________________________
+void THaSpectrometer::TrackToLab( THaTrack& track, TVector3& pvect ) const
+{
+  // Convert TRANSPORT coordinates of 'track' to momentum vector 'pvect'
+  // in the lab coordinate system (z = beam, y = up).
+  // Uses the spectrometer angles from the database (loaded during Init())
+  // for the transformation.
+  // 
+  // The track origin (vertex) is not calculated here because
+  // doing so requires knowledge of beam positions and and angles.
+  // Vertex calculations are done in a separate physics module.
+
+  TransportToLab( track.GetP(), track.GetTTheta(), track.GetTPhi(), pvect );
+}
+
+//_____________________________________________________________________________
+void THaSpectrometer::TransportToLab( Double_t p, Double_t th, Double_t ph,
+				      TVector3& pvect ) const
+{
+  // Convert TRANSPORT vector to lab vector.
+  // Inputs:
+  //  p:  TRANSPORT momentum (absolute)
+  //  th: Tangent of TRANSPORT theta
+  //  ph: Tangent of TRANSPORT phi
+  // Output:
+  //  pvect: Vector in lab frame (z = beam, y = up) in same units as p.
+  //
+  // Note: Simple vector transformation can be done trivially by multiplying
+  // with the appropriate rotation matrix, e.g.:
+  //  TVector3 lab_vector = spect->GetToLabRot() * transport_vector;
+
+  TVector3 v( th, ph, 1.0 );
+  v *= p/TMath::Sqrt( 1.0+th*th+ph*ph );
+  pvect = fToLabRot * v;
+}
+
+//_____________________________________________________________________________
+void THaSpectrometer::LabToTransport( const TVector3& vertex, 
+				      const TVector3& pvect,
+				      TVector3& tvertex, Double_t* ray ) const
+{
+  // Convert lab coordinates to TRANSPORT coordinates in the spectrometer
+  // coordinate system.
+  // Inputs:
+  //  vertex:  Reaction point in lab system
+  //  pvect:   Momentum vector in lab
+  // Outputs:
+  //  tvertex: The vertex point in the TRANSPORT system, without any
+  //           coordinate projections applied
+  //  ray:     The TRANSPORT ray according to TRANSPORT conventions.
+  //           This is an array of size 6 with elements x, tan(theta),
+  //           y, tan(y), z, and delta.
+  //           z is set to 0, and accordingly x and y are the TRANSPORT 
+  //           coordinates in the z=0 plane. delta is computed with respect 
+  //           to the present spectrometer's central momentum.
+  //           Units are the same as of the input vectors.
+
+  tvertex = fToTraRot * ( vertex - fPointingOffset );
+  TVector3 pt = fToTraRot * pvect;
+  if( pt.Z() != 0.0 ) {
+    ray[1] = pt.X() / pt.Z();
+    ray[3] = pt.Y() / pt.Z();
+    // In the "ray", project the vertex to z=0
+    ray[0] = tvertex.X() - tvertex.Z() * ray[1];
+    ray[2] = tvertex.Y() - tvertex.Z() * ray[3];
+  } else
+    ray[0] = ray[1] = ray[2] = ray[3] = 0.0;
+  
+  ray[4] = 0.0;   // By definition for this ray, TRANSPORT z=0
+  ray[5] = pt.Mag() / fPcentral - 1.0;
+}
+
+//_____________________________________________________________________________
+Int_t THaSpectrometer::ReadRunDatabase( const TDatime& date )
+{
+  // Query the run database for parameters specific to this spectrometer
+  // (central angles, momentum, offsets, drift, etc.)
+  
+  Int_t err = THaApparatus::ReadRunDatabase( date );
+  if( err ) return err;
+
+  FILE* file = OpenRunDBFile( date );
+  if( !file ) return kFileError;
+
+  static const Double_t degrad = TMath::Pi()/180.0;
+  Double_t th = 0.0, ph = 0.0;
+  Double_t off_x = 0.0, off_y = 0.0, off_z = 0.0;
+
+  const TagDef tags[] = { 
+    { "theta",    &th, 1 }, 
+    { "phi",      &ph },
+    { "pcentral", &fPcentral, 3 },
+    { "colldist", &fCollDist },
+    { "off_x",    &off_x },
+    { "off_y",    &off_y },
+    { "off_z",    &off_z },
+    { 0 }
+  };
+  err = LoadDB( file, date, tags, fPrefix );
+  if( err ) {    
+    if( err>0 )
+      Error( Here("ReadRunDatabase()"), "Required tag %s%s missing in the "
+	     "run database.\nSpectrometer initialization failed.",
+	     fPrefix, tags[err-1].name );
+    fclose(file);
+    return kInitError;
+  }
+
+  // Compute central angles in spherical coordinates and save trig. values
+  // of angles for later use.
+  // Note: negative theta corresponds to beam RIGHT.
+  // phi should be close to zero unless this is a true out-of-plane spectrometer.
+  fThetaGeo = degrad*th; fPhiGeo = degrad*ph;
+  GeoToSph( fThetaGeo, fPhiGeo, fThetaSph, fPhiSph );
+  fSinThGeo = sin( fThetaGeo ); fCosThGeo = cos( fThetaGeo );
+  fSinPhGeo = sin( fPhiGeo );   fCosPhGeo = cos( fPhiGeo );
+  Double_t st, ct, sp, cp;
+  st = fSinThSph = sin( fThetaSph ); ct = fCosThSph = cos( fThetaSph );
+  sp = fSinPhSph = sin( fPhiSph );   cp = fCosPhSph = cos( fPhiSph );
+
+  // Compute the rotation from TRANSPORT to lab and vice versa.
+  // If 'bend_down' is true, the spectrometer bends downwards.
+  bool bend_down = false;
+  Double_t norm = sqrt(ct*ct + st*st*cp*cp);
+  TVector3 nx( st*st*sp*cp/norm, -norm, st*ct*sp/norm );
+  TVector3 ny( ct/norm,          0.0,   -st*cp/norm   );
+  TVector3 nz( st*cp,            st*sp, ct            );
+  if( bend_down ) { nx *= -1.0; ny *= -1.0; }
+  fToLabRot.RotateAxes( nx, ny, nz );
+  fToTraRot = fToLabRot.Inverse();
+
+  fPointingOffset.SetXYZ( off_x, off_y, off_z );
+
+  fclose(file);
+  return kOK;
+}
+
+//_____________________________________________________________________________
+ClassImp(THaSpectrometer)
 

@@ -31,6 +31,8 @@ using namespace std;
 
 ClassImp(THaHelicity)
 
+const Double_t THaHelicity::fgTdiff = 14050;
+
 //____________________________________________________________________
 THaHelicity::THaHelicity( ) 
 {
@@ -268,6 +270,7 @@ void THaHelicity::ClearEvent() {
      memset(present_helicity, Unknown, 2*sizeof(Int_t));
      memset(validTime, 0, 2*sizeof(Int_t));
      memset(validHel, 0, 2*sizeof(Int_t));
+     memset(fEvtype, 0, 2*sizeof(Int_t));
   }
 }
 
@@ -282,12 +285,13 @@ void THaHelicity::ReadData( const THaEvData& evdata ) {
    int ring_clock, ring_qrt, ring_helicity;
    int ring_trig, ring_bcm, ring_l1a, ring_v2fh; 
 
-   if (fArm == fgLarm || fArm == fgRarm) {
-     if (fArm == fgLarm) myroc = 11;
-     if (fArm == fgRarm) myroc = 10;
-   } else {
+   if (fArm == fgLarm )
+     myroc = 11;
+   else if (fArm == fgRarm) 
+     myroc = 10;
+   else
      return;
-   }
+
    len = evdata.GetRocLength(myroc);
    if (len <= 4) return;
    data = evdata.GetRawData(myroc,3);   
@@ -389,12 +393,21 @@ void THaHelicity::QuadCalib() {
    }
    if (fFirstquad[fArm] == 0 &&
        fTdiff[fArm] > (1.25*fTdavg[fArm] + fTtol[fArm])) {
-        cout << "WARN: THaHelicity: Skipped QRT.  Low rate ? " << endl;
+	// Try a recovery.  Use time to flip helicity by the number of
+	// missed quads, unless this are more than 30 (~1 sec).  
+        Int_t nqmiss = (Int_t)(fTdiff[fArm]/fTdavg[fArm]);
         if (HELDEBUG >= 2)
-          cout << fTdiff[fArm] << "  " << (Int_t)fTimestamp[fArm] << endl;
-        recovery_flag = 1;    // clear & recalibrate the predictor
-        quad_calibrated[fArm] = 0;
-        fFirstquad[fArm] = 1;
+          cout << "Recovering large DT, nqmiss = "<<nqmiss<<endl;
+        if (nqmiss < 30) {
+	  for (Int_t i = 0; i < nqmiss; i++) QuadHelicity(1);
+          fT0[fArm] = fT0[fArm] + nqmiss*fTdavg[fArm];
+          fTdiff[fArm] = fTimestamp[fArm] - fT0[fArm];
+        } else { 
+          cout << "WARN: THaHelicity: Skipped QRT.  Low rate ? " << endl;
+          recovery_flag = 1;    // clear & recalibrate the predictor
+          quad_calibrated[fArm] = 0;
+          fFirstquad[fArm] = 1;
+        }
    }
    if (fQrt[fArm] == 1  && fFirstquad[fArm] == 1) {
        fT0[fArm] = fTimestamp[fArm];
@@ -402,11 +415,20 @@ void THaHelicity::QuadCalib() {
    }
    if (fEvtype[fArm] == 9) t9count[fArm] += 1;
    if (fQrt[fArm] == 1) t9count[fArm] = 0;
-   if ( (( fTdiff[fArm] > 0.7*fTdavg[fArm] )  &&
-	 ( fQrt[fArm] == 1 ))  ||
-        (( fTdiff[fArm] > 0.9*fTdavg[fArm] )  &&
-// Use the event 9's since apparently some QRT's are missed.
-     ( fEvtype[fArm] == 9 && fGate[fArm] == 0 && t9count[fArm] > 3 )) ) {
+   if (
+// The most solid predictor of a new helicity window.
+      (( fTdiff[fArm] > 0.8*fTdavg[fArm] )  &&
+	 ( fQrt[fArm] == 1 ) && fEvtype[fArm]==9) ||
+// But sometimes event type 9 may be missed.
+        (( fTdiff[fArm] > fTdavg[fArm] )  &&
+	 ( fQrt[fArm] == 1 )) ) {
+// ||
+// On rare occassions QRT bit might be missing.  Then look for
+// evtype 9 w/ gate = 0 within the first 0.5 msec after 4th window.
+// However this doesn't work well because of time fluctuations,
+// so I leave it out for now.  Missing QRT is hopefully rare.
+//        (( fTdiff[fArm] > 1.003*fTdavg[fArm] )  &&
+//     ( fEvtype[fArm] == 9 && fGate[fArm] == 0 && t9count[fArm] > 3 )) ) {
        if (HELDEBUG >= 2) cout << "found qrt "<<endl;
        fT0[fArm] = fTimestamp[fArm];
        q1_reading[fArm] = present_reading[fArm];
@@ -416,8 +438,10 @@ void THaHelicity::QuadCalib() {
 // This is ok if it doesn't happen too often.  You lose these events.
           cout << "WARNING: THaHelicity: QuadCalib";
           cout << " G0 prediction failed."<<endl;
-//cout << "info " << fQrt[fArm] << "  "<<fTdiff[fArm];
-//cout<<"  "<<fGate[fArm]<<"  "<<fEvtype[fArm]<<endl;
+          if (HELDEBUG >= 3) {
+            cout << "Qrt " << fQrt[fArm] << "  Tdiff "<<fTdiff[fArm];
+            cout<<"  gate "<<fGate[fArm]<<" evtype "<<fEvtype[fArm]<<endl;
+	  }
           recovery_flag = 1;    // clear & recalibrate the predictor
           quad_calibrated[fArm] = 0;
           fFirstquad[fArm] = 1;
@@ -470,7 +494,7 @@ void THaHelicity::LoadHelicity() {
 }
 
 //____________________________________________________________________
-void THaHelicity::QuadHelicity() {
+void THaHelicity::QuadHelicity(Int_t cond) {
 // Load the helicity from the present reading for the
 // start of a quad.
   int i, dummy;
@@ -496,8 +520,10 @@ void THaHelicity::QuadHelicity() {
       quad_calibrated[fArm] = 1;
   } else {      
       present_helicity[fArm] = saved_helicity[fArm];
-      if (fTimestamp[fArm] - fTlastquad[fArm] < 
-	 0.3 * fTdavg[fArm]) return;  // Don't calibrate twice same qrt.
+      if (cond == 0) {
+        if (fTimestamp[fArm] - fTlastquad[fArm] < 
+	   0.3 * fTdavg[fArm]) return;  // Don't calibrate twice same qrt.
+      }
       predicted_reading[fArm] = RanBit(0);
       present_helicity[fArm] = RanBit(1);
       saved_helicity[fArm] = present_helicity[fArm];

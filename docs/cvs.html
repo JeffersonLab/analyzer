@@ -1,0 +1,33 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>How to access the C++ analyzer CVS repository</title>
+</head>
+
+<body background="/wallpaper.gif">
+<h1>How to access the C++ analyzer CVS repository</h1>
+
+Anyone with a JLab account has read-only access to the CVS repository.
+Access is available both for on-site and off-site users.
+To check out the current version, issue the following commands:
+
+<pre>
+export CVS_RSH=ssh
+cvs -d :ext:cvs.jlab.org:/group/halla/analysis/cvs checkout analyzer
+</pre>
+
+This will create a directory called <tt>"analyzer"</tt> containing your working
+copy of the CVS tree. 
+<p>
+For more information on CVS, see <a href=http://www.cvshome.org>the CVS
+home page</a>. Excellent documentation can be found in the
+<a href=http://cvsbook.red-bean.com>CVS Book</a>.
+<p>
+Contact <a href="mailto:ole@jlab.org">Ole Hansen</a> if you would like
+to be added to the list of people with write access to the repository.
+<hr>
+<address><a href="mailto:ole@jlab.org">Ole Hansen &lt;ole@jlab.org&gt;</a></address>
+<!-- hhmts start -->
+Last modified: Sat Jun 14 13:33:25 EDT 2003
+<!-- hhmts end -->
+</body> </html>

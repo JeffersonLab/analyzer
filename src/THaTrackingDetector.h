@@ -11,6 +11,7 @@
 
 class TClonesArray;
 class THaTrack;
+class THaTrackID;
 
 class THaTrackingDetector : public THaSpectrometerDetector {
   
@@ -27,11 +28,11 @@ protected:
 
   virtual THaTrack* AddTrack( TClonesArray& tracks,
 			      Double_t x, Double_t y, 
-			      Double_t theta, Double_t phi );
+			      Double_t theta, Double_t phi,
+			      THaTrackID* ID = NULL );
 
   //Only derived classes may construct me
 
-  THaTrackingDetector() {}
   THaTrackingDetector( const char* name, const char* description,
 		       THaApparatus* a = NULL );
 

@@ -1,0 +1,209 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>Quick Start Guide to the Hall A C++ Analyzer</title>
+</head>
+
+<body>
+<h1>A QuickStart Guide to using the Hall A C++ Analyzer Release 1.0</h1>
+
+<pre>
+HOW DO I USE THE ANALYZER?
+
+Building and Installing (taken from RELEASE_NOTES)
+~~~~~~~~~~~~~~~~~~~~~~~
+The distribution is by default configured for Linux. To change to
+the Solaris/CC5 environment see explanation in the Makefile.
+
+Before compiling, make sure that your have set ROOTSYS correctly
+and $ROOTSYS/bin is in your PATH.
+
+WARNING: Some bugs have been observed when using the analyzer with versions
+    of ROOT prior to 3.02-00. It is recommended to version 3.02-07 or later.
+    Also, it is important to be certain that ROOT was compiled with the
+    same (or at least compatible) version of gcc you are planning to use.
+
+On the ifarm machines, issue the command
+        use root/3.02-07
+to configure ROOT and set the PATH.
+
+To compile, run the Makefile with GNU make (tested with make 3.78-1).
+Usually, you just need to type "gmake".
+
+Before running, it is useful to set the appropriate environment variables
+such that the executables, libraries, and databases are found. This can be
+done (while in the analyzer directory) as:
+
+(bash)
+	export LD_LIBRARY_PATH=`pwd`:$ROOTSYS/lib:$LD_LIBRARY_PATH
+	export PATH=`pwd`:$PATH
+	export DB_DIR=`pwd`/DB
+
+OR
+(tcsh)
+	setenv LD_LIBRARY_PATH `pwd`:$ROOTSYS/lib:$LD_LIBRARY_PATH
+	setenv PATH `pwd`:$PATH
+	setenv DB_DIR `pwd`/DB
+	rehash
+
+(i.e. make sure the current directory is in the LD_LIBRARY_PATH and PATH,
+as well setting the DB_DIR path).
+
+To start the analyzer, just execute:
+
+ > analyzer
+
+and you should get a new canvas, and have the prompt:
+
+   analyzer[0] 
+
+
+Running the Analyzer
+~~~~~~~~~~~~~~~~~~~~
+
+In the examples directory are files to demonstrate how to use
+the analyzer. They are:
+
+
+  doit.C             - Drives the setup.C macro and displays some results.
+                       This is what might normally be done by hand.
+
+  setup.C            - example analysis macro (uses next 2 files)
+  cuts_example.def   - text file which defines many example cuts
+  output_example.def - text file specifying global variable to output
+                       into the 'T' tree.
+
+  To start the analyzer to use the macro, you can do at the shell prompt:
+
+    analyzer doit.C
+
+
+  or, if done in separate steps:
+
+    analyzer        
+    .x doit.C        # from inside the analyzer
+
+
+  Global Variables
+  ~~~~~~~~~~~~~~~~
+
+  Each detector, physics module, or apparatus can contain and report
+  "global variables" which can be used to define cuts, evaluate formulas,
+  and fill histograms. A complete list can be reported after starting and
+  initializing the analyzer via:
+
+    gHaVars->Print()        //   and
+    gHaVars->PrintFull()
+  
+  where a pattern to match the variable name to may be given:
+
+  Example:
+    gHaVars->Print()
+
+	OBJ: THaVar     nev     Event number
+	OBJ: THaVar     R.tr.n  Number of tracks
+	OBJ: THaVar     R.tr.x  Track x coordinate (m)
+	OBJ: THaVar     R.tr.y  Track x coordinate (m)
+        ...etc...
+
+    gHaVars->PrintFull("R.s1.l*")
+        
+	OBJ: THaVar     R.s1.lt TDC values left side
+	(Float_t*)[*6]  0  1.59e+03  0  0  0  0
+	OBJ: THaVar     R.s1.lt_c       Corrected TDC values left side
+	(Float_t*)[*6]  0  2.4e+03  0  0  0  0
+	OBJ: THaVar     R.s1.la ADC values left side
+	(Float_t*)[*6]  0  2.09e+03  0  0  0  0
+	OBJ: THaVar     R.s1.la_p       Corrected ADC values left side
+	(Float_t*)[*6]  0  1.62e+03  0  0  0  0
+	OBJ: THaVar     R.s1.la_c       Corrected ADC values left side
+	(Float_t*)[*6]  0  848  0  0  0  0
+
+  Analysis Cuts
+  ~~~~~~~~~~~~~
+  Cuts can steer the analysis, as well as perform basic accounting of
+  event topologies. The cuts are defined in a user-specified file,
+  eg:
+    analyzer->SetCutFile("cuts_example.def")
+
+  The cuts are divided into "Block"'s, with each block corresponding to a
+  stage in the analysis and the stage that the cut is evaluated after. The
+  format is each line has two entries separated by white space. Comments
+  start at a '#' character and continue through the line.
+
+  A special cut named "Block-name"_master can be defined, and if false
+  causes the analysis to stop processing the current event, and move on to
+  the next event.
+
+  Example (contents of cuts definition file):
+	Block: RawDecode
+
+	evtyp1            g.evtyp==1      # Event type 1 (=HRSR main trigger)
+	evtyp3            g.evtyp==3      # Event type 3 (=HRSL main trigger)
+	poshel            g.helicity==1
+	neghel            g.helicity==-1
+	goodhel           poshel||neghel
+	evprime           evtyp1||evtyp3
+	RawDecode_master  evprime         # only decode primary trigger events
+
+      
+
+  Tree Output
+  ~~~~~~~~~~~
+
+  Output from the analyzer can be saved in a couple of basic methods. The
+  simplest is to use the THaAnalyzer::SetOdefFile(const char* name)
+  method.
+  eg:
+    analyzer->SetOdefFile("output_example.def")
+
+  This file defines a list of global variables to save for each event, as
+  well as formulas to evaluate and histograms to fill.
+  For every event, the Global Variables can be processed and saved to a ROOT
+  TTree object (very similar to an HBook Ntuple in this implementation).
+
+  Example (contents of output definition file):
+	block L.tr.*       # Pattern matching from global variables.
+			   # All L-arm tracking variables
+	variable   L.vdc.u2.nclust  # Single global variable
+	variable   R.s1.lt          # Array of values R.s1.lt[i]
+	                            # for i = 0,1,...Ndata.R.s1.lt
+
+
+  Examining the Output
+  ~~~~~~~~~~~~~~~~~~~~
+
+  After creating the tree, you can interactively examine the results of the
+  filled histograms with TTree::Draw (command line interface) or
+  TTree::StartViewer (GUI interface). The names of the entries correspond
+  to what was specified in the output definition file.
+
+  Example (at the analyzer [ ] prompt):
+
+    T->Draw("L.tr.n");                // draw number of tracks in Left arm
+              
+    T->Draw("R.tr.tg_dp","abs(R.tr.tg_dp)<.1");  // HRS-R delta-p with cut
+              
+    T->StartViewer();                 // start interactive GUI Tree-viewer
+
+
+  For more information on drawing/processing trees, you are refered to the
+  example scripts and the ROOT documentation (http://root.cern.ch).
+
+  Exitting/Resuming a Session
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  Type ".q" to quit the analyzer. The Tree can be accessed later by
+  re-opening the file via (assuming the output file is "Afile.root"):  
+
+    analyzer Afile.root
+
+  or, from within the analyzer:
+
+    TFile* oldfile = new TFile("Afile.root");
+
+
+</pre>
+</body>
+</html>
+

@@ -23,7 +23,6 @@ public:
 
   virtual Int_t    Compare( const TObject* obj) const    
     { return fNamed->Compare(obj); }
-  virtual void     Copy(TObject& named)         { fNamed->Copy(named); }
   virtual void     FillBuffer(char*& buffer)    { fNamed->FillBuffer(buffer); }
           const Text_t*  GetName() const        { return fNamed->GetName(); }
           const Text_t*  GetTitle() const       { return fNamed->GetTitle(); }

@@ -16,6 +16,12 @@
  *
  * Revision History:
  *   $Log$
+ *   Revision 1.3  2003/06/16 17:07:25  ole
+ *   Move Release-070 branch onto the CVS trunk.
+ *
+ *   Revision 1.2.2.1  2003/04/27 04:33:19  ole
+ *   Fix warnings about uninitialized variables.
+ *
  *   Revision 1.2  2002/03/26 22:36:31  ole
  *   Fix compliation warnings about signed/unsigned comparisons.
  *
@@ -200,7 +206,7 @@ void swapped_memcpy(char *buffer,char *source,int size)
   evStack  *head, *p;
   LK_AHEAD lk;
   int      int_len, short_len, long_len;
-  int      i, j, depth, current_type;
+  int      i, j, depth, current_type = 0;
   int      header1, header2;
   int      ev_size, ev_tag, ev_num, ev_type;
   int      bk_size, bk_tag, bk_num, bk_type;
