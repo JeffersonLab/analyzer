@@ -12,21 +12,29 @@
 #include "THaDebugModule.h"
 #include "THaVar.h"
 #include "THaVarList.h"
+#include "THaCutList.h"
+#include "THaCut.h"
 #include "THaGlobals.h"
+#include "THaEvData.h"
 #include "TRegexp.h"
 
 #include <cstring>
 #include <cctype>
 #include <iostream>
 
-ClassImp(THaDebugModule)
+using namespace std;
+
+typedef vector<const THaVar*>::const_iterator VIter_t;
 
 //_____________________________________________________________________________
-THaDebugModule::THaDebugModule( const char* var_list ) :
-  THaPhysicsModule("DebugModule","Global variable inspector"), 
-  fVarString(var_list), fFlags(kStop), fCount(0)
+THaDebugModule::THaDebugModule( const char* var_list, const char* test ) :
+  THaPhysicsModule("DebugModule",var_list), 
+  fVarString(var_list), fFlags(kStop), fCount(0), fTestName(test), fTest(0)
 {
   // Normal constructor.
+
+  // Flag indicating that test pointer needs to be assigned
+  fIsSetup = fTestName.IsNull();
 }
 
 //_____________________________________________________________________________
@@ -59,11 +67,12 @@ THaAnalysisObject::EStatus THaDebugModule::Init( const TDatime& run_time )
 	// Regexp matching
 	bool found = false;
 	TRegexp re( opt, kTRUE);
+	next.Reset();
 	while( (obj = next()) ) {
 	  TString s = obj->GetName();
 	  if( s.Index(re) != kNPOS ) {
 	    found = true;
-	    fVars.push_back( static_cast<THaVar*>(obj) );
+	    fVars.push_back( static_cast<const THaVar*>(obj) );
 	  }
 	}
 	if( !found ) {
@@ -77,25 +86,73 @@ THaAnalysisObject::EStatus THaDebugModule::Init( const TDatime& run_time )
 }
 
 //_____________________________________________________________________________
-Int_t THaDebugModule::Process()
+void THaDebugModule::Print( Option_t* opt ) const
 {
-  // Print() the variables
+  // Print details of the defined variables
 
-  vector<THaVar*>::iterator it = fVars.begin();
-  for( ; it != fVars.end(); it++ ) {
-    (*it)->Print();
+  THaPhysicsModule::Print( opt );
+  if( IsOK() ) {
+    if( !fTestName.IsNull() ) {
+      if( fTest ) 
+	fTest->Print();
+      else
+	cout << "Test name: " << fTestName << " (undefined)\n";
+    }
+    cout << "Number of variables: " << fVars.size() << endl;
+    VIter_t it = fVars.begin();
+    for( ; it != fVars.end(); it++ )
+      cout << (*it)->GetName() << "  ";
+    cout << endl;
+  } else {
+    if( !fTestName.IsNull()) 
+      cout << "Test name: " << fTestName << endl;
+    cout << "(Module not initialized)\n";
+  }
+}
+
+//_____________________________________________________________________________
+void THaDebugModule::PrintEvNum( const THaEvData& evdata ) const
+{
+  // Print current event number
+  cout << "======>>>>>> Event " << (UInt_t)evdata.GetEvNum() << endl;
+}
+
+//_____________________________________________________________________________
+Int_t THaDebugModule::Process( const THaEvData& evdata )
+{
+  // Print the variables for every event and wait for user input.
+
+  // We have to search for the test here because physics modules' Init() is
+  // called before the tests are loaded.
+
+  if( !fIsSetup ) {
+    fTest = gHaCuts->FindCut( fTestName );
+    fIsSetup = true;
+  }
+  bool good = true;
+  if ( fTest && !fTest->GetResult()) good = false;
+  
+  // Print() the variables
+  if( good && (fFlags & kQuiet) == 0) {
+    PrintEvNum( evdata );
+    VIter_t it = fVars.begin();
+    for( ; it != fVars.end(); it++ ) {
+      (*it)->Print();
+    }
   }
 
   if( (fFlags & kCount) && --fCount <= 0 ) {
     fFlags |= kStop;
     fFlags &= ~kCount;
+    if( !good ) PrintEvNum( evdata );
+    good = true;
   }
-  if( fFlags & kStop ) {
+  if( (fFlags & kStop) && good ) {
     // Wait for user input
-    cout << "RETURN: continue, H: run 100 events, R: run to end, Q: quit\n";
+    cout << "RETURN: continue, H: run 100 events, R: run to end, F: finish quietly, Q: quit\n";
     char c;
     cin.clear();
-    while( !cin.eof() && cin.get(c) && !strchr("\nqQhHrR",c));
+    while( !cin.eof() && cin.get(c) && !strchr("\nqQhHrRfF",c));
     if( c != '\n' ) while( !cin.eof() && cin.get() != '\n');
     if( tolower(c) == 'q' )
       return kTerminate;
@@ -106,7 +163,13 @@ Int_t THaDebugModule::Process()
     }
     else if( tolower(c) == 'r' )
       fFlags &= ~kStop;
+    else if( tolower(c) == 'f' ) {
+      fFlags &= ~kStop;
+      fFlags |= kQuiet;
+    }
   }
 
   return 0;
 }
+
+ClassImp(THaDebugModule)
