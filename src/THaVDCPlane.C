@@ -160,8 +160,7 @@ Int_t THaVDCPlane::ReadDatabase( FILE* file, const TDatime& date )
     fscanf(file, " %*d %f", &offset);
 
     // Constuct the new THaVDCWire (using space in the TClonesArray obj)
-    THaVDCWire * wire = new((*fWires)[i]) 
-      THaVDCWire( i, fWBeg+i*fWSpac, offset, ttdConv );
+    new((*fWires)[i]) THaVDCWire( i, fWBeg+i*fWSpac, offset, ttdConv );
   }
 
   fIsInit = true;
@@ -245,7 +244,7 @@ Int_t THaVDCPlane::Decode( const THaEvData& evData)
 	Int_t        data    = evData.GetData(d->crate, d->slot, chan, hit);
 	THaVDCWire*  wire    = GetWire(wireNum);
 	Int_t        nextHit = GetNHits();
-	THaVDCHit*   newHit  = new( (*fHits)[nextHit] ) 
+	new( (*fHits)[nextHit] ) 
 	  THaVDCHit( wire, data, fTDCRes * (wire->GetTOffset() - data));
 
       } // End hit loop

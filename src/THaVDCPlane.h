@@ -74,6 +74,7 @@ protected:
  
   Int_t fNMaxGap;            // Max gap in a cluster
   Int_t fMinTime, fMaxTime;  // Min and Max limits of TDC times for clusters
+  Int_t fMaxHit, fMaxClust;  // Max number of hits, clusters
 
   Double_t fZ;        // Z coordinate of planes in U1 coord sys (m)
   Double_t fWBeg;     // Position of 1-st wire in E-arm coord sys (m)
