@@ -45,6 +45,7 @@ void THaAvgVertex::Clear( Option_t* opt )
 {
   // Clear all internal variables.
 
+  THaPhysicsModule::Clear(opt);
   VertexClear();
   //  fZerror = 0.0;
 }

@@ -55,6 +55,7 @@ void THaTwoarmVertex::Clear( Option_t* opt )
 {
   // Clear all internal variables.
 
+  THaPhysicsModule::Clear(opt);
   VertexClear();
 }
 
@@ -158,6 +159,7 @@ Int_t THaTwoarmVertex::Process( const THaEvData& evdata )
     v2.Dump();
   }
 #endif
+  fDataValid = true;
   return 0;
 }
   

@@ -53,6 +53,7 @@ void THaReactionPoint::Clear( Option_t* opt )
 {
   // Clear all event-by-event variables.
   
+  THaPhysicsModule::Clear(opt);
   VertexClear();
 }
 

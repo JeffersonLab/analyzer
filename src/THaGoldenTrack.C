@@ -116,6 +116,7 @@ Int_t THaGoldenTrack::Process( const THaEvData& evdata )
     }
   }
 
+  fDataValid = true;
   return 0;
 }
 

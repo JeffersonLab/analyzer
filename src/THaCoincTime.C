@@ -91,6 +91,7 @@ void THaCoincTime::Clear( Option_t* opt )
 {
   // Clear all internal variables
   // some overkill, but is event-independent (back to a known state)
+  THaPhysicsModule::Clear(opt);
   memset(fVxTime1,0,fSz1*sizeof(*fVxTime1));
   memset(fVxTime2,0,fSz2*sizeof(*fVxTime2));
   memset(fdTdc,0,2*sizeof(*fdTdc));
@@ -418,6 +419,7 @@ Int_t THaCoincTime::Process( const THaEvData& evdata )
     }
   }
   
+  fDataValid = true;
   return 0;
 }
   

@@ -21,8 +21,10 @@ public:
 		  const char* spectro="" );
   virtual ~THaGoldenTrack();
   
-  virtual void      Clear( Option_t* opt="" ) 
-  { fTrkIfo.Clear(opt); fIndex = -1; fTrack = NULL; }
+  virtual void      Clear( Option_t* opt="" ) { 
+    THaPhysicsModule::Clear(opt);
+    fTrkIfo.Clear(opt); fIndex = -1; fTrack = NULL;
+  }
 
   THaTrack*         GetTrack()     const { return fTrack; }
   const THaTrackInfo* GetTrackInfo() const { return &fTrkIfo; }
