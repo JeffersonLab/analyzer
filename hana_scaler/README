@@ -2,7 +2,7 @@
    HANA SCALER PACKAGE
    ====================
 
-Robert Michaels, Jefferson Lab, Aug 2001
+Robert Michaels, Jefferson Lab, Jan 2003
 
 For documentation, see
 
@@ -35,8 +35,7 @@ The basic steps to obtain scaler data:
          scaler.LoadData(evdata);  // evdata is a THaEvData object
 
       (Important: Loading from THaEvData only works if its THaCrateMap 
-       is initialized correctly.  I need to work on the time-dependent
-       crate map.)
+       is initialized correctly, see THaCrateMap::Init().)
 
    4. Now you may access data via the methods in THaScaler.h
       If you know the slot and channel, simply
@@ -56,6 +55,9 @@ The basic steps to obtain scaler data:
    5. In my implementation of THaAnalyzer, I call THaScaler::
       PrintSummary() at the end of analysis.
 
+--> The best way to learn how to use the code is to look at
+    the examples:  See the *main*.C codes !!
+
 ---------------------------------------------------------------
 There are three ways to implement scalers in the root/C++ 
 analysis scheme:
@@ -67,14 +69,11 @@ analysis scheme:
    2. You can run the standard analyzer and use the above 
       standalone codes as 'root macros'.  To execute the 
       the scaler codes interactively from root shell, you must
-      use root version >= 3.x which has STL support.  For earlier
-      versions of root, compile with ROOTPRE3=1 in Makefile and
-      then you can only use the standalone codes.
+      use root version >= 3.x which has STL support.  
 
    3. In THaAnalyzer.C  and perhaps some other classes one
       can incorporate the scalers, compiled into the code. 
-      Example of this is haplix7:/home/rom/haAna/ana_0.6b2/
-      THaAnalyzer.C
+      I have some examples of this in my version of THaAnalyzer.C
 
 
 ---------------------------------------------------------------
@@ -89,8 +88,8 @@ How to run standalone:
      version libdc_local.a is shipped with the scaler 
      package.  It does not rely on any symbols of the 
      main analyzer. However, if this library is not 
-     binary compatible with your system see section 
-     on making event decoder library.
+     binary compatible with your system see section below 
+     on making event decoder library.  
 
   2. Next compile the hana_scaler software with the line
      "export STANDALONE = 1" uncommented in Makefile.
@@ -104,29 +103,32 @@ THaScalerGui:
 
 ---------------------------------------------------------------
 How to make a standalone event decoder library 
+You can grab the event decoder from 
+http://www.jlab.org/~rom/hana_decode_2.0.tar  (or whatever the version is)
+or you can grab it from the analyzer's CVS repository.
 
     The directory structure of the C++ analyzer is normally
 
                   
-           /ana_VERS
+           /analyzer
                     \
                      \
-                      /hana_scaler_VERS
+                      /hana_scaler
                      |
                      |
-                      /hana_decoder_VERS
+                      /hana_decoder
 
      i.e. the hana_scaler and hana_decoder are two directories
-     under /ana_VERS.  To make hana_decoder_VERS standalone
-     library (which means independent of anything in /ana_VERS) 
+     under /analyzer.  To make hana_decoder standalone library 
+     (which means independent of anything in the analyzer) 
      compile with the line "export STANDALONE = 1" in the Makefile 
      of hana_decoder_VERS.  Then copy it to hana_scaler_VERS
 
-          cp libdc.a ../hana_scaler_VERS/libdc_local.a
+          cp libdc.a ../hana_scaler/libdc_local.a
 
      then you may compile hana_scaler standalone too.
 
-
+    
 
                      
 
