@@ -348,6 +348,29 @@ Int_t THaShower::Decode( const THaEvData& evdata )
       }
     }
   }
+
+  if ( fDebug > 3 ) {
+    printf("\nShower Detector %s:\n",GetPrefix());
+    int ncol=3;
+    for (int i=0; i<ncol; i++) {
+      printf("  Block  ADC  ADC_p  ");
+    }
+    printf("\n");
+    
+    for (int i=0; i<(fNelem+ncol-1)/ncol; i++ ) {
+      for (int c=0; c<ncol; c++) {
+	int ind = c*fNelem/ncol+i;
+	if (ind < fNelem) {
+	  printf("  %3d  %5.0f  %5.0f  ",ind+1,fA[ind],fA_p[ind]);
+	} else {
+	  //	  printf("\n");
+	  break;
+	}
+      }
+      printf("\n");
+    }
+  }
+
   return fNhits;
 }
 

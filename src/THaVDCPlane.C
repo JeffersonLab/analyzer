@@ -355,6 +355,29 @@ Int_t THaVDCPlane::Decode( const THaEvData& evData)
 
   fHits->Sort();
 
+  if ( fDebug > 3 ) {
+    printf("\nVDC %s:\n",GetPrefix());
+    int ncol=4;
+    for (int i=0; i<ncol; i++) {
+      printf("     Wire    TDC  ");
+    }
+    printf("\n");
+    
+    for (int i=0; i<(nextHit+ncol-1)/ncol; i++ ) {
+      for (int c=0; c<ncol; c++) {
+	int ind = c*nextHit/ncol+i;
+	if (ind < nextHit) {
+	  THaVDCHit* hit = static_cast<THaVDCHit*>((*fHits)[ind]);
+	  printf("     %3d    %5d ",hit->GetWireNum(),hit->GetRawTime());
+	} else {
+	  //	  printf("\n");
+	  break;
+	}
+      }
+      printf("\n");
+    }
+  }
+
   return 0;
 
 }
