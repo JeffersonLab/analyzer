@@ -14,9 +14,14 @@ class THaPhysicsModule : public THaAnalysisObject {
 public:
   virtual ~THaPhysicsModule();
   
-          bool  IsSingleTrack() const { return !IsMultiTrack(); }
-          bool  IsMultiTrack()  const { return fMultiTrk; }
-          bool  DataValid()     const { return fDataValid; }
+  virtual void  Clear( Option_t* opt="" ) { 
+    THaAnalysisObject::Clear(opt); 
+    fDataValid = false;
+  }
+
+  bool  IsSingleTrack() const { return !IsMultiTrack(); }
+  bool  IsMultiTrack()  const { return fMultiTrk; }
+  bool  DataValid()     const { return fDataValid; }
 
   virtual Int_t Process( const THaEvData& ) = 0;
 
@@ -27,6 +32,8 @@ protected:
 
   THaPhysicsModule( const char* name, const char* description );
   virtual void MakePrefix();
+
+  void PrintInitError( const char* here );
 
   bool  fMultiTrk;               // Flag for multi-track mode
   bool  fDataValid;              // Data valid

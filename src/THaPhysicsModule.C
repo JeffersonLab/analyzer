@@ -47,5 +47,11 @@ void THaPhysicsModule::MakePrefix()
 }
 
 //_____________________________________________________________________________
+void THaPhysicsModule::PrintInitError( const char* here )
+{
+  Error( Here(here), "Cannot set. Module already initialized." );
+}
+
+//_____________________________________________________________________________
 
 ClassImp(THaPhysicsModule)
