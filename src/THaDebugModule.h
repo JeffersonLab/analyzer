@@ -35,7 +35,7 @@ protected:
   THaPrintOption  fVarString; // Set of strings with variable/cut names
   Int_t           fFlags;     // Option flags
   Int_t           fCount;     // Event counter
-  TString         fTestExpr;  // Name of test to evaluate before printing
+  TString         fTestExpr;  // Definition of test to evaluate before printing
   THaCut*         fTest;      // Pointer to test object to evaulate
 
   void    PrintEvNum( const THaEvData& ) const;
