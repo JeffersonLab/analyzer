@@ -17,6 +17,9 @@ class TMethodCall;
 class THaVar : public TNamed {
   
 public:
+  static const Int_t    kInvalidInt;
+  static const Double_t kInvalid;
+
   THaVar() : 
     fValueP(NULL), fType(kDouble), fCount(NULL), fOffset(-1), 
     fMethod(NULL) {}
@@ -69,6 +72,7 @@ public:
 	  const Int_t* count = NULL ) :
     TNamed(name,descript), fArrayData(name), fValueDD(&var), fType(kDoubleP),
     fCount(count), fOffset(-1), fMethod(NULL) {}
+
   THaVar( const char* name, const char* descript, const Float_t*& var,
 	  const Int_t* count = NULL ) :
     TNamed(name,descript), fArrayData(name), fValueFF(&var), fType(kFloatP),
@@ -114,16 +118,16 @@ public:
 
   virtual void    Copy( TObject& );
 
-  virtual const char*  GetName() const       { return fArrayData.GetName(); }
+  virtual const char*  GetName() const { return fArrayData.GetName(); }
 
-  Int_t           GetLen() const;
-  Byte_t          GetNdim() const            
+  Int_t           GetLen()       const;
+  Byte_t          GetNdim()      const            
     { return ( fCount != NULL || fOffset != -1 ) ? 1 : fArrayData.GetNdim(); } 
-  const Int_t*    GetDim() const;
-  VarType         GetType() const            { return fType; }
-  size_t          GetTypeSize() const { return GetTypeSize( fType ); }
+  const Int_t*    GetDim()       const;
+  VarType         GetType()      const { return fType; }
+  size_t          GetTypeSize()  const { return GetTypeSize( fType ); }
   static size_t   GetTypeSize( VarType type );
-  const char*     GetTypeName() const { return GetTypeName( fType ); }
+  const char*     GetTypeName()  const { return GetTypeName( fType ); }
   static const char* GetTypeName( VarType type );
 
   Double_t        GetValue( Int_t i = 0 )  const { return GetValueAsDouble(i); }
@@ -305,7 +309,7 @@ Double_t THaVar::GetValueAsDouble( Int_t i ) const
   default:
     ;
   }
-  return 0.0;
+  return kInvalid;
 }
 
 //_____________________________________________________________________________
@@ -314,8 +318,10 @@ Int_t THaVar::GetLen() const
 { 
   if( fCount )
     return *fCount;
-  if( fOffset != -1 )
-    return *GetObjArrayLenPtr();
+  if( fOffset != -1 ) {
+    const Int_t* pi = GetObjArrayLenPtr();
+    return pi ? *pi : kInvalidInt;
+  }
   return fArrayData.GetLen();
 }
 

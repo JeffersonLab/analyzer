@@ -59,6 +59,9 @@
 
 ClassImp(THaVar)
 
+const Int_t    THaVar::kInvalidInt = -1;
+const Double_t THaVar::kInvalid    = 1e38;
+
 //_____________________________________________________________________________
 THaVar::THaVar( const THaVar& rhs ) :
   TNamed( rhs ), fArrayData(rhs.fArrayData), fValueD(rhs.fValueD),
@@ -98,15 +101,17 @@ void THaVar::Copy( TObject& rhs )
   // Copy this object to rhs
 
   TNamed::Copy(rhs);
-  ((THaVar&)rhs).fValueD    = fValueD;
-  ((THaVar&)rhs).fArrayData = fArrayData;
-  ((THaVar&)rhs).fType      = fType;
-  ((THaVar&)rhs).fCount     = fCount;
-  ((THaVar&)rhs).fOffset    = fOffset;
-  if( fMethod )
-    ((THaVar&)rhs).fMethod  = new TMethodCall( *fMethod );
-  else
-    ((THaVar&)rhs).fMethod  = NULL;
+  if( rhs.IsA()->InheritsFrom("THaVar") ) {
+    ((THaVar&)rhs).fValueD    = fValueD;
+    ((THaVar&)rhs).fArrayData = fArrayData;
+    ((THaVar&)rhs).fType      = fType;
+    ((THaVar&)rhs).fCount     = fCount;
+    ((THaVar&)rhs).fOffset    = fOffset;
+    if( fMethod )
+      ((THaVar&)rhs).fMethod  = new TMethodCall( *fMethod );
+    else
+      ((THaVar&)rhs).fMethod  = NULL;
+  }
 }
 
 //_____________________________________________________________________________
@@ -159,6 +164,7 @@ const Int_t* THaVar::GetObjArrayLenPtr() const
   // Get pointer to the object
   if( fObject == NULL )
     return NULL;
+
   const TSeqCollection* c = static_cast<const TSeqCollection*>( fObject );
 
   // Get actual array size
@@ -176,25 +182,28 @@ Double_t THaVar::GetValueFromObject( Int_t i ) const
   // or from a TSeqCollection
 
   if( fObject == NULL )
-    return 0.0;
+    return kInvalid;
 
   void* obj;
   if( fOffset != -1 ) {
     // Array: Get data from the TSeqCollection
 
     // Check if index within bounds
-    if( i<0 || i >= *GetObjArrayLenPtr() )
-      return 0.0;
+    const Int_t* pi = GetObjArrayLenPtr(); 
+    if( i<0 || !pi || i >= *pi )
+      return kInvalid;
 
     // Get the object from the collection
     obj = static_cast<const TSeqCollection*>( fObject )->At(i);
+    if( !obj )
+      return kInvalid;
 
     if( !fMethod ) {
       // No method ... get the data directly.
       // Compute location using the offset.
       ULong_t loc = (ULong_t)obj + fOffset;
       if( !loc || (fType >= kDoubleP && (*(void**)loc == NULL )) )
-	return 0.0;
+	return kInvalid;
       switch( fType ) {
       case kDouble: 
 	return *((Double_t*)loc);
@@ -239,7 +248,7 @@ Double_t THaVar::GetValueFromObject( Int_t i ) const
       default:
 	;
       }
-      return 0.0;
+      return kInvalid;
     }
 
   } else {
@@ -249,8 +258,7 @@ Double_t THaVar::GetValueFromObject( Int_t i ) const
 
     if( !fMethod )
       // Oops
-      return 0.0;
-
+      return kInvalid;
     obj = const_cast<void*>(fObject);
   }
 
