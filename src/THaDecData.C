@@ -43,11 +43,16 @@
 // 
 //////////////////////////////////////////////////////////////////////////
 
+//#define WITH_DEBUG 1
+
 #include "THaDecData.h"
+#include "THaVarList.h"
+#include "THaVar.h"
 #include "THaGlobals.h"
 #include "THaEvData.h"
 #include "THaDetMap.h"
 #include "TDatime.h"
+#include "TH1.h"
 #include "VarDef.h"
 #include <fstream>
 #include <iostream>
@@ -66,6 +71,7 @@ THaDecData::THaDecData( const char* name, const char* descript ) :
 //_____________________________________________________________________________
 THaDecData::~THaDecData()
 {
+
   // Dtor. Remove global variables.
 
   SetupDecData( NULL, kDelete ); 
@@ -92,6 +98,12 @@ void THaDecData::Clear( Option_t* opt )
   timeroc3   = 0;
   timeroc4   = 0;
   timeroc14  = 0;
+  rftime1    = 0;
+  rftime2    = 0;
+  edtpl      = 0;
+  edtpr      = 0;
+  lenroc12   = 0;
+  lenroc16   = 0;
   misc1      = 0;
   misc2      = 0;
   misc3      = 0;
@@ -125,7 +137,13 @@ Int_t THaDecData::SetupDecData( const TDatime* run_time, EMode mode )
     { "timeroc3",   "time stamp roc 3",            "timeroc3" },         
     { "timeroc4",   "time stamp roc 4",            "timeroc4" },         
     { "timeroc14",  "time stamp roc 14",           "timeroc14" },         
-    { "misc1",      "misc data 1",                 "misc1" },                      
+    { "rftime1",    "RF time copy 1",              "rftime1" },         
+    { "rftime2",    "RF time copy 2",              "rftime2" },         
+    { "edtpl",      "EDT pulser on L-arm",         "edtpl" },   
+    { "edtpr",      "EDT pulser on R-arm",         "edtpr" },   
+    { "lenroc12",   "ROC12 event length",         "lenroc12" },   
+    { "lenroc16",   "ROC16 event length",         "lenroc16" },   
+    { "misc1",      "misc data 1",                 "misc1" },       
     { "misc2",      "misc data 2",                 "misc2" },                     
     { "misc3",      "misc data 3",                 "misc3" },                      
     { "misc4",      "misc data 4",                 "misc4" },
@@ -167,8 +185,13 @@ Int_t THaDecData::SetupDecData( const TDatime* run_time, EMode mode )
 #endif
       decdatafile.clear();  // Forget previous failures before attempt
       decdatafile.open((*it).c_str());
-      
+
 #ifdef WITH_DEBUG
+      if (decdatafile) {
+	cout << "Opening file "<<*it<<endl;
+      } else {
+        cout << "cannot open file "<<*it<<endl;
+      }
       if( fDebug>0 ) 
 	if( !decdatafile ) cout << " ... failed" << endl;
 	else               cout << " ... ok" << endl;
@@ -186,6 +209,9 @@ Int_t THaDecData::SetupDecData( const TDatime* run_time, EMode mode )
   string sinput;
   const string comment = "#";
   while (getline(decdatafile, sinput)) {
+#ifdef WITH_DEBUG
+    cout << "sinput "<<sinput<<endl;
+#endif
     vector<string> strvect( vsplit(sinput) );
     if (strvect.size() < 5 || strvect[0] == comment) continue;
     Bool_t found = kFALSE;
@@ -210,6 +236,49 @@ Int_t THaDecData::SetupDecData( const TDatime* run_time, EMode mode )
 }
 
 //_____________________________________________________________________________
+Int_t THaDecData::End( THaRunBase* run ) 
+{
+  WriteHist();
+  return 0;
+}
+
+//_____________________________________________________________________________
+  void THaDecData::WriteHist()
+{
+  //  cout << "Writing Bob Dec Data histos"<<endl<<flush;
+  for (UInt_t i = 0; i < hist.size(); i++) hist[i]->Write();
+}
+
+//_____________________________________________________________________________
+  void THaDecData::BookHist()
+{
+  // VDC efficiencies
+
+  hist.push_back(new TH1F("Lu1nhit","Num Hits Left U1",50,-1,49));
+  hist.push_back(new TH1F("Lu2nhit","Num Hits Left U2",50,-1,49));
+  hist.push_back(new TH1F("Lv1nhit","Num Hits Left V1",50,-1,49));
+  hist.push_back(new TH1F("Lv2nhit","Num Hits Left V2",50,-1,49));
+  hist.push_back(new TH1F("Ru1nhit","Num Hits Right U1",50,-1,49));
+  hist.push_back(new TH1F("Ru2nhit","Num Hits Right U2",50,-1,49));
+  hist.push_back(new TH1F("Rv1nhit","Num Hits Right V1",50,-1,49));
+  hist.push_back(new TH1F("Rv2nhit","Num Hits Right V2",50,-1,49));
+
+  hist.push_back(new TH1F("Lu1eff","Left arm U1 efficiency",400,0,400));
+  hist.push_back(new TH1F("Lu2eff","Left arm U2 efficiency",400,0,400));
+  hist.push_back(new TH1F("Lv1eff","Left arm V1 efficiency",400,0,400));
+  hist.push_back(new TH1F("Lv2eff","Left arm V2 efficiency",400,0,400));
+  hist.push_back(new TH1F("Ru1eff","Right arm U1 efficiency",400,0,400));
+  hist.push_back(new TH1F("Ru2eff","Right arm U2 efficiency",400,0,400));
+  hist.push_back(new TH1F("Rv1eff","Right arm V1 efficiency",400,0,400));
+  hist.push_back(new TH1F("Rv2eff","Right arm V2 efficiency",400,0,400));
+
+  hist.push_back(new TH1F("Lenroc12","Event length in ROC12",500,0,5000));
+  hist.push_back(new TH1F("Lenroc16","Event length in ROC16",500,0,5000));
+
+}
+
+
+//_____________________________________________________________________________
 THaAnalysisObject::EStatus THaDecData::Init( const TDatime& run_time ) 
 {
   // Custom Init() method. Since this apparatus has no detectors, we
@@ -217,6 +286,8 @@ THaAnalysisObject::EStatus THaDecData::Init( const TDatime& run_time )
 
   fStatus = kNotinit;
   MakePrefix();
+  cnt1 = 0;
+  BookHist();
   return fStatus = static_cast<EStatus>( SetupDecData( &run_time ) );
 }
 
@@ -238,8 +309,8 @@ Int_t THaDecData::DefaultMap() {
    fCrateLoc.push_back(new BdataLoc("synchadc14", 14, (Int_t) 1, 5));
 
 // Coincidence time, etc
-   fCrateLoc.push_back(new BdataLoc("ctimel", 2, (Int_t) 3, 48));
-   fCrateLoc.push_back(new BdataLoc("ctimer", 1, (Int_t) 21, 4));
+   fCrateLoc.push_back(new BdataLoc("ctimel", 4, (Int_t) 21, 48));
+   fCrateLoc.push_back(new BdataLoc("ctimer", 2, (Int_t) 16, 32));
    fCrateLoc.push_back(new BdataLoc("pulser1", 3, (Int_t) 3, 7));
 
 // 100 kHz time stamp in roc14, at 2 words beyond header=0xfca56000
@@ -254,11 +325,19 @@ Int_t THaDecData::DefaultMap() {
    fWordLoc.push_back(new BdataLoc("timeroc3", 3, (UInt_t)0xfabc0004, 4));
    fWordLoc.push_back(new BdataLoc("timeroc4", 4, (UInt_t)0xfabc0004, 4));
    fWordLoc.push_back(new BdataLoc("timeroc14", 14, (UInt_t)0xfadcb0b4, 1));
-   
+
+// RF time
+   fCrateLoc.push_back(new BdataLoc("rftime1", 2, (Int_t) 16, 50));
+   fCrateLoc.push_back(new BdataLoc("rftime2", 2, (Int_t) 16, 51));
+
+// EDTM pulser
+   fCrateLoc.push_back(new BdataLoc("edtpl", 3, (Int_t) 9, 81));
+   fCrateLoc.push_back(new BdataLoc("edtpr", 2, (Int_t) 12, 48));
+
 // Bit pattern for trigger definition
 
    for (UInt_t i = 0; i < bits.GetNbits(); i++) {
-     fCrateLoc.push_back(new BdataLoc(Form("bit%d",i+1), 4, (Int_t) 11, 64+i));
+     fCrateLoc.push_back(new BdataLoc(Form("bit%d",i+1), 3, (Int_t) 5, 64+i));
    }
 
 // Anything else you want here...
@@ -272,6 +351,17 @@ Int_t THaDecData::Decode(const THaEvData& evdata)
 {
   Int_t i;
   Clear();
+
+  static int jtst = 0;
+  jtst++;  
+  if (jtst > 400) jtst = 0;
+  //  float dd = 40*jtst + 100;
+
+  lenroc12 = evdata.GetRocLength(12);
+  lenroc16 = evdata.GetRocLength(16);
+
+  hist[16]->Fill(lenroc12);
+  hist[17]->Fill(lenroc16);
 
 // For each raw data registerd in fCrateLoc, get the data if it belongs to a 
 // combination (crate, slot, chan).
@@ -321,8 +411,16 @@ Int_t THaDecData::Decode(const THaEvData& evdata)
     if ( dataloc->ThisIs("synchadc14")) synchadc14 = dataloc->Get();
 
 // coincidence times
-    if ( dataloc->ThisIs("ctimel")) ctimel = 0.1*dataloc->Get();
-    if ( dataloc->ThisIs("ctimer")) ctimer = 0.1*dataloc->Get();
+    if ( dataloc->ThisIs("ctimel")) ctimel = dataloc->Get();
+    if ( dataloc->ThisIs("ctimer")) ctimer = dataloc->Get();
+
+// RF time
+    if ( dataloc->ThisIs("rftime1") ) rftime1  = dataloc->Get();
+    if ( dataloc->ThisIs("rftime2") ) rftime2  = dataloc->Get();
+
+// EDTM pulser
+    if ( dataloc->ThisIs("edtpl") ) edtpl  = dataloc->Get();
+    if ( dataloc->ThisIs("edtpr") ) edtpr  = dataloc->Get();
 
   }
 
@@ -340,10 +438,115 @@ Int_t THaDecData::Decode(const THaEvData& evdata)
   }
 
 // debug 
-//  Dump();
+//    Print();
+
+  VdcEff();
 
   return 0;
 }
+
+
+//_____________________________________________________________________________
+void THaDecData::VdcEff( )
+{ // Check the VDC efficiency
+
+  Int_t local_debug = 0;
+  Int_t i,j,k,n,ipl,nhit,awire,found;
+  THaVar *pvar;
+  static string VdcVars[] = {"L.vdc.u1.wire", "L.vdc.v1.wire", 
+           "L.vdc.u2.wire", "L.vdc.v2.wire", "R.vdc.u1.wire", 
+	   "R.vdc.v1.wire", "R.vdc.u2.wire", "R.vdc.v2.wire"};
+
+  static Int_t cnt = 0;
+  static Int_t nwire = 400;
+  Int_t wire[nwire];
+  static Double_t xcnt[8*400],eff[8*400];
+  Double_t xeff;    
+  static Bool_t first = kTRUE;
+  if (first) {
+    memset(eff,0,nwire*sizeof(Double_t));
+    memset(xcnt,0,nwire*sizeof(Double_t));
+    first = kFALSE;
+  }
+
+  if (local_debug) 
+    cout << "\n *************** \n Vdc Effic "<<endl;
+
+  for (ipl = 0; ipl < 8; ipl++) {
+
+     nhit = 0;
+     pvar = gHaVars->Find(VdcVars[ipl].c_str());
+     if (local_debug)
+      cout << "plane "<<ipl<<"  "<<VdcVars[ipl]<<" $$$ "<<pvar<<endl;
+     if (!pvar) continue;
+     memset(wire,0,nwire);
+
+     n = pvar->GetLen();
+     nhit = n;
+     hist[ipl]->Fill(nhit);
+     if (n < 0) n = 0;
+     if (n > nwire) n = nwire;
+     if (local_debug)
+       cout << "nwire "<<n<<"  "<<nwire<<"  "<<nhit<<endl;
+
+     for (i = 0; i < n; i++) {
+       wire[i] = (Int_t) pvar->GetValue(i);
+       if (local_debug)
+         cout << "wire "<<i<<"  "<<wire[i]<<endl;
+     }
+
+// The following does not assume what wire[] is ordered.
+     for (i = 0; i < n-1; i++) {
+       for (j = i+1; j < n; j++) {
+         if (((wire[i]-wire[j])==2) ||
+             ((wire[j]-wire[i])==2)) {
+	   awire = (Int_t)(wire[i]+wire[j])/2;
+           if (local_debug) 
+	     cout << "wire eff "<<i<<"  "<<j<<"  "<<awire<<endl;
+           if (awire>0 && awire<nwire) {
+             xcnt[ipl*nwire+awire] = xcnt[ipl*nwire+awire] + 1;
+             found = 0;
+             for (k = 0; k < n; k++) {
+               if (k == i || k == j) continue;
+               if (wire[k] == awire) {
+		 found = 1; 
+                 break;
+	       }
+             }
+             if (found) {
+	       eff[ipl*nwire+awire] = eff[ipl*nwire+awire] + 1;
+             } else {
+               eff[ipl*nwire+awire] = eff[ipl*nwire+awire] + 0;
+	     }
+	   }
+
+	 }
+       }
+     }
+
+     if ((cnt++%500) == 0) {
+
+       hist[ipl+8]->Reset();
+       for (i = 0; i < nwire; i++) {
+
+         xeff = -1;
+         if (xcnt[ipl*nwire+i] != 0) {
+	   xeff = eff[ipl*nwire+i]/xcnt[ipl*nwire+i];
+	 }
+         if (local_debug) 
+	   cout << "Efficiency "<<i<<"  "<<xcnt[ipl*nwire+i]<<"  "<<xeff<<endl;
+         if (xeff > 0) hist[ipl+8]->Fill(i,xeff);
+       }
+     }
+
+  }
+  if ((cnt < 2000 && cnt++ % 100 == 0) ||
+      (cnt++ % 5000 == 0)) WriteHist();
+
+  //  if ((cnt%10)==0) Print();
+
+}
+
 
 //_____________________________________________________________________________
 void THaDecData::Print( Option_t* opt ) const {
@@ -358,6 +561,8 @@ void THaDecData::Print( Option_t* opt ) const {
   cout << synchadc3 <<"  "<<synchadc4<<"   "<<synchadc14<<endl;
   cout <<" time stamps "<<timestamp<<"  "<<timeroc1<<"  "<<timeroc2<<"  ";
   cout << timeroc3<<"  "<<timeroc4<<"  "<<timeroc14<<endl<<endl;
+  cout << "RF timing "<<rftime1<<"  "<<rftime2<<endl;
+  cout << "EDTM pulser "<<edtpl<<"  "<<edtpr<<endl;
 }
 
 
