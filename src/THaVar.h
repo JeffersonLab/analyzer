@@ -241,6 +241,14 @@ Double_t THaVar::GetValueAsDouble( Int_t i ) const
   if( !IsBasic() )
     return GetValueFromObject( i );
 
+#ifdef WITH_DEBUG
+  if( i<0 || i>=GetLen() ) {
+    Warning("GetValue()", "Whoa! Index out of range, variable %s, index %d",
+	    GetName(), i );
+    return kInvalid;
+  }
+#endif
+
   switch( fType ) {
   case kDouble: 
     return fValueD[i];
