@@ -273,7 +273,7 @@ Int_t THaAnalyzer::Process( THaRun& run )
 	  retval = 0;  // Ignore re-initialization attempt
 	else {
 	  outputTree = fOutput->GetTree();
-	  if( fEvent ) 
+	  if( fEvent && outputTree ) 
 	    outputTree->Branch( "Event_Branch", fEvent->IsA()->GetName(), 
 				&fEvent, 16000, 99 );
 	}
