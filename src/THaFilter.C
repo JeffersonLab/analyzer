@@ -15,8 +15,8 @@
 using namespace std;
 
 //_____________________________________________________________________________
-THaFilter::THaFilter( const char *cutname, const char* filename ) :
-  fCutName(cutname), fFileName(filename), fCodaOut(NULL), fCut(NULL)
+THaFilter::THaFilter( const char *cutexpr, const char* filename ) :
+  fCutExpr(cutexpr), fFileName(filename), fCodaOut(NULL), fCut(NULL)
 {
   // Constructor
 }
@@ -29,6 +29,7 @@ THaFilter::~THaFilter()
   // own Close() from there.
 
   Close();
+  delete fCut;
   delete fCodaOut;
 }
 
@@ -60,10 +61,14 @@ Int_t THaFilter::Init(const TDatime& date)
     Error("Init","Cannot open CODA file %s for writing.",fFileName.Data());
     return -3;
   }      
-  fCut = gHaCuts->FindCut(fCutName);
-  if (!fCut) {
-    Warning("Init","Cut %s does not exist. Filter is inactive.",
-	    fCutName.Data());
+
+  // Set up our cut
+  fCut = new THaCut( "Filter_Test", fCutExpr, "PostProcess" );
+  // Expression error?
+  if( !fCut || fCut->IsZombie()) {
+    delete fCut; fCut = NULL;
+    Warning("Init","Illegal cut expression: %s.\nFilter is inactive.",
+	    fCutExpr.Data());
   } else {
     fIsInit = 1;
   }
@@ -77,7 +82,7 @@ Int_t THaFilter::Process( const THaEvData* evdata, const THaRunBase* run,
   // Process event. Write the event to output CODA file if and only if
   // the event passes the filter cut.
 
-  if (!fIsInit || !fCut->GetResult()) 
+  if (!fIsInit || !fCut->EvalCut()) 
     return 0;
   
   // write out the event

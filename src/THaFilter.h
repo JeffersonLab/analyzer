@@ -12,18 +12,20 @@ class THaRunBase;
 
 class THaFilter : public THaPostProcess {
  public:
-  THaFilter( const char *cutname, const char* filename );
+  THaFilter( const char *cutexpr, const char* filename );
   virtual ~THaFilter();
   
   virtual Int_t Init(const TDatime&);
   virtual Int_t Process( const THaEvData*, const THaRunBase*, Int_t code );
   virtual Int_t Close();
 
+  THaCut* GetCut() const { return fCut; }
+
  protected:
-  TString   fCutName;
-  TString   fFileName;
-  THaCodaFile* fCodaOut;
-  THaCut*   fCut;
+  TString   fCutExpr;    // Definition of cut to use for filtering events
+  TString   fFileName;   // Name of CODA output file
+  THaCodaFile* fCodaOut; // The CODA output file
+  THaCut*   fCut;        // Pointer to cut used for filtering
   
  public:
   ClassDef(THaFilter,0)
