@@ -159,7 +159,7 @@ void THaSpectrometer::DefinePidParticles()
   fPidParticles->Delete();    //make sure array is empty
 
   AddPidParticle( "pi", "pion",   0.139, 0 );
-  AddPidParticle( "k",  "kaon",   0.440, 0 );
+  AddPidParticle( "k",  "kaon",   0.4936, 0 );
   AddPidParticle( "p",  "proton", 0.938, 1 );
 }
 
