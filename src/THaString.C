@@ -20,7 +20,7 @@
 #include <algorithm>
 #include <cctype>
 
-ClassImp(THaString)
+using namespace std;
 
 //_____________________________________________________________________________
 int THaString::CmpNoCase (const THaString& s) const
@@ -84,10 +84,5 @@ THaString THaString::ToUpper() const
   return result;
 }
 
-
-
-
-
-
-
-
+//_____________________________________________________________________________
+ClassImp(THaString)
