@@ -433,7 +433,7 @@ int THaCrateMap::init(TString the_map)
   
   // be certain the_map ends with a '\0' so we can make a stringstream from it
   the_map += '\0';
-  ISSTREAM s(the_map);
+  ISSTREAM s(the_map.Data());
   
   int linecnt = 0;
   string line;
