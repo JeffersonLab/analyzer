@@ -52,8 +52,8 @@ void THaRawEvent::Clear( Option_t* opt )
 
   size_t len = reinterpret_cast<const char*>( &fL_S2_try )
     + sizeof( fL_S2_try )
-    - reinterpret_cast<const char*>( &fB_X4a );
-  memset( fB_X4a, 0, len );
+    - reinterpret_cast<const char*>( &fR_U1_nhit );
+  memset( &fR_U1_nhit, 0, len );
 
 }
 
@@ -368,16 +368,10 @@ void THaRawEvent::SetupDatamap( EBlock which )
   CreateVariableArrays( which );
 
   // Note: Before you freak out here, recall that string literals
-  // are always of storage class "static". So, the pointers to
-  // const char* are not dangling when datamap goes out of scope.
+  // are always of storage class "static". So, the const char*
+  // pointers are not dangling when datamap goes out of scope.
 
   const DataMap datamap[] = {
-
-    //=== Beamline
-
-    { 2*NBPM, "B.bpm4a.x",         fB_X4a },
-    { 2*NBPM, "B.bpm4b.x",         fB_X4b },
-    { 4,      "B.rast.Xcur",       &fB_Xcur },
 
     //=== Right HRS
 
@@ -475,70 +469,6 @@ void THaRawEvent::SetupDatamap( EBlock which )
     { -1,     "R.s2.ra_c",         fR_S2R_adc_c },
     { 1,      "R.s2.trx",          &fR_S2_trx },   
     { 1,      "R.s2.try",          &fR_S2_try },
-
-    // Aerogel
-    { 1,      "R.aero1.nthit",     &fR_AR_nthit },
-    { -1,     "R.aero1.t",         fR_AR_tdc },
-    { -1,     "R.aero1.t_c",       fR_AR_tdc_c },
-    { 1,      "R.aero1.nahit",     &fR_AR_nahit },
-    { -1,     "R.aero1.a",         fR_AR_adc },
-    { -1,     "R.aero1.a_p",       fR_AR_adc_p },
-    { -1,     "R.aero1.a_c",       fR_AR_adc_c },
-    { 1,      "R.aero1.asum_p",    &fR_AR_asum_p },
-    { 1,      "R.aero1.asum_c",    &fR_AR_asum_c },
-    { 1,      "R.aero1.trx",       &fR_AR_trx },   
-    { 1,      "R.aero1.try",       &fR_AR_try },
-
-    // Cherenkov
-    { 1,      "R.cer.nthit",       &fR_CH_nthit },
-    { -1,     "R.cer.t",           fR_CH_tdc },
-    { -1,     "R.cer.t_c",         fR_CH_tdc_c },
-    { 1,      "R.cer.nahit",       &fR_CH_nahit },
-    { -1,     "R.cer.a",           fR_CH_adc },
-    { -1,     "R.cer.a_p",         fR_CH_adc_p },
-    { -1,     "R.cer.a_c",         fR_CH_adc_c },
-    { 1,      "R.cer.asum_p",      &fR_CH_asum_p },
-    { 1,      "R.cer.asum_c",      &fR_CH_asum_c },
-    { 1,      "R.cer.trx",         &fR_CH_trx },   
-    { 1,      "R.cer.try",         &fR_CH_try },
-
-    // Preshower
-    { 1,      "R.ps.nhit",         &fR_PSH_nhit },
-    { -1,     "R.ps.a",            fR_PSH_adc },
-    { -1,     "R.ps.a_p",          fR_PSH_adc_p },
-    { -1,     "R.ps.a_c",          fR_PSH_adc_c },
-    { 1,      "R.ps.asum_p",       &fR_PSH_asum_p },
-    { 1,      "R.ps.asum_c",       &fR_PSH_asum_c },
-    { 1,      "R.ps.nclust",       &fR_PSH_nclust },
-    { 1,      "R.ps.e",            &fR_PSH_e },
-    { 1,      "R.ps.x",            &fR_PSH_x },
-    { 1,      "R.ps.y",            &fR_PSH_y },
-    { 1,      "R.ps.mult",         &fR_PSH_mult },
-    { 6,      "R.ps.nblk",         fR_PSH_nblk },
-    { 6,      "R.ps.eblk",         fR_PSH_eblk },
-    { 1,      "R.ps.trx",          &fR_PSH_trx },   
-    { 1,      "R.ps.try",          &fR_PSH_try },
-
-    // Shower
-    { 1,      "R.sh.nhit",         &fR_SHR_nhit },
-    { -1,     "R.sh.a",            fR_SHR_adc },
-    { -1,     "R.sh.a_p",          fR_SHR_adc_p },
-    { -1,     "R.sh.a_c",          fR_SHR_adc_c },
-    { 1,      "R.sh.asum_p",       &fR_SHR_asum_p },
-    { 1,      "R.sh.asum_c",       &fR_SHR_asum_c },
-    { 1,      "R.sh.nclust",       &fR_SHR_nclust },
-    { 1,      "R.sh.e",            &fR_SHR_e },
-    { 1,      "R.sh.x",            &fR_SHR_x },
-    { 1,      "R.sh.y",            &fR_SHR_y },
-    { 1,      "R.sh.mult",         &fR_SHR_mult },
-    { 9,      "R.sh.nblk",         fR_SHR_nblk },
-    { 9,      "R.sh.eblk",         fR_SHR_eblk },
-    { 1,      "R.sh.trx",          &fR_SHR_trx },   
-    { 1,      "R.sh.try",          &fR_SHR_try },
-
-    // Total Shower
-    { 1,      "R.ts.e",            &fR_TSH_e },
-    { 1,      "R.ts.id",           &fR_TSH_id },
 
     //=== Left HRS
 
