@@ -17,14 +17,15 @@
 
 #include "THaString.h"
 #include <strstream>
+#include <algorithm>
+#include <cctype>
 
 using namespace std;
 
 ClassImp(THaString)
 
 //_____________________________________________________________________________
-int 
-THaString::CmpNoCase (const THaString& s)
+int THaString::CmpNoCase (const THaString& s) const
 {
   // Case insensitive compare.  Returns -1 if "less", 0 if equal, 1 if
   // "greater".
@@ -32,20 +33,18 @@ THaString::CmpNoCase (const THaString& s)
   string::const_iterator p =  begin();
   string::const_iterator p2 = s.begin();
 
-  while (p != this->end() && p2 != s.end())
-    {
-      if (toupper(*p) != toupper(*p2))
-	return (toupper(*p) < toupper(*p2)) ? -1 : 1;
-      ++p;
-      ++p2;
-    }
+  while (p != end() && p2 != s.end()) {
+    if (toupper(*p) != toupper(*p2))
+      return (toupper(*p) < toupper(*p2)) ? -1 : 1;
+    ++p;
+    ++p2;
+  }
 
   return (s.size() == size()) ? 0 : (size() < s.size()) ? -1 : 1;
 }
 
 //_____________________________________________________________________________
-vector<THaString> 
-THaString::Split()
+vector<THaString> THaString::Split() const
 {
   // Split on whitespace.
   istrstream ist(c_str());
@@ -59,8 +58,7 @@ THaString::Split()
 
 
 //_____________________________________________________________________________
-UInt_t 
-THaString::Hex()
+UInt_t THaString::Hex() const
 {
   // Conversion to unsigned interpreting as hex.
   istrstream ist(c_str());
@@ -69,32 +67,22 @@ THaString::Hex()
   return in;
 }
 
-THaString 
-THaString::ToLower ()
+//_____________________________________________________________________________
+THaString THaString::ToLower() const
 {
-  // Conversion to lower case.
-  THaString::const_iterator p = begin();
-  THaString result("");
-  while (p != end()) 
-    {
-      result += tolower(*p);
-      ++p;
-    }
+  // Return copy of this string converted to lower case.
+
+  THaString result(*this);
+  transform( begin(), end(), result.begin(), tolower );
   return result;
 }
 
 //_____________________________________________________________________________
-THaString 
-THaString::ToUpper ()
+THaString THaString::ToUpper() const
 {
- // Conversion to lower case.
-  THaString::const_iterator p = begin();
-  THaString result("");
-  while (p != end()) 
-    {
-      result += toupper(*p);
-      ++p;
-    }
+  // Return copy of this string converted to upper case.
+  THaString result(*this);
+  transform( begin(), end(), result.begin(), toupper );
   return result;
 }
 
