@@ -11,6 +11,7 @@
 //
 // author:  R. Michaels    Sept 2002
 //
+//
 //////////////////////////////////////////////////////////////////////////
 
 #define CHECKOUT 1
@@ -18,6 +19,8 @@
 #include "THaOutput.h"
 #include "TObject.h"
 #include "THaFormula.h"
+#include "THaVform.h"
+#include "THaVhist.h"
 #include "THaVarList.h"
 #include "THaVar.h"
 #include "THaGlobals.h"
@@ -35,14 +38,14 @@
 
 using namespace std;
 typedef vector<THaOdata*>::size_type Vsiz_t;
+typedef vector<THaVform*>::size_type Vsiz_f;
+typedef vector<THaVhist*>::size_type Vsiz_h;
+typedef vector<THaString*>::size_type Vsiz_s;
 
-const Double_t THaOutput::kBig = 1.e38;
 
 //_____________________________________________________________________________
 THaOutput::THaOutput() :
-  fNform(0), fNvar(0), fN1d(0), fN2d(0), fNcut(0),
-  fForm(0), fVar(0), fH1vtype(0), fH1form(0), fH2vtypex(0), fH2formx(0),
-  fH2vtypey(0), fH2formy(0), fTree(0), fInit(false)
+   fNvar(0), fTree(0), fInit(false)
 {
   // Constructor
 }
@@ -52,22 +55,18 @@ THaOutput::~THaOutput()
 {
   // Destructor
 
-  // FIXME: Does this really clean up everything?
   delete fTree;
-  delete [] fForm;
   delete [] fVar;
-  delete [] fH1vtype;
-  delete [] fH1form;
-  delete [] fH2vtypex;
-  delete [] fH2formx;
-  delete [] fH2vtypey;
-  delete [] fH2formy;
   for (std::vector<THaOdata* >::iterator od = fOdata.begin();
        od != fOdata.end(); od++) delete *od;
+  for (std::vector<THaVform* >::iterator itf = fFormulas.begin();
+       itf != fFormulas.end(); itf++) delete *itf;
+  for (std::vector<THaVform* >::iterator itf = fCuts.begin();
+       itf != fCuts.end(); itf++) delete *itf;
+  for (std::vector<THaVhist* >::iterator ith = fHistos.begin();
+       ith != fHistos.end(); ith++) delete *ith;
 }
 
-  
-  
 //_____________________________________________________________________________
 Int_t THaOutput::Init( const char* filename ) 
 {
@@ -81,68 +80,42 @@ Int_t THaOutput::Init( const char* filename )
     cout << "Global Variables are being re-attached and formula/cuts"
 	 << " are being re-compiled." << endl;
     
-    // Assign pointers to desired global variables
+    // Assign pointers and recompile stuff reliant on pointers.
+
     if ( Attach() ) return -4;
 
-    // Re-compile the functions/cuts
-    for (Int_t iform=0; iform<fNform; iform++) {
-      fFormulas[iform]->Compile();
-      if (fFormulas[iform]->IsError()) {
-        cout << "THaOutput::Init: WARNING: Error in formula Re-Compilation: ";
-        cout << fFormulas[iform]->GetTitle() << endl;
-      }
-      
-    }
-    for (Int_t icut=0; icut<fNcut; icut++) {
-      fHistCut[icut]->Compile();
-      if (fHistCut[icut]->IsError()) {
-        cout << "THaOutput::Init: WARNING: Error in cut Re-Compilation: ";
-        cout << fHistCut[icut]->GetTitle() << endl;
-      }
-    }
 #ifdef CHECKOUT
     Print();
 #endif
     return 1;
   }
-    
+
   if( !gHaVars ) return -2;
-  
+
   fTree = new TTree("T","Hall A Analyzer Output DST");
-  
+
   Int_t err = LoadFile( filename );
   if( err == -1 )
-    return 0;       // No error if file not found - then we're just a dummy
+    return 0;       // No error if file not found, but please
+                    // read the instructions.
   else if( err != 0 ) {
     delete fTree; fTree = NULL;
     return -3;
   }
-  
+
   fNvar = fVarnames.size();  // this gets reassigned below
-  fNform = fFormnames.size();
-  fN1d = fH1dname.size();
-  fN2d = fH2dname.size();
-  
   fArrayNames.clear();
   fVNames.clear();
-  
-  fForm = new Double_t[fNform];
-  
+
   THaVar *pvar;
-  string tinfo;
-  vector<string> stemp1,stemp2;
   for (Int_t ivar = 0; ivar < fNvar; ivar++) {
     pvar = gHaVars->Find(fVarnames[ivar].c_str());
     if (pvar) {
       if (pvar->IsArray()) {
 	fArrayNames.push_back(fVarnames[ivar]);
-	//        fArrays.push_back( pvar );
-	fOdata.push_back(new THaOdata());
-	stemp1.push_back(fVarnames[ivar]);
+        fOdata.push_back(new THaOdata());
       } else {
 	fVNames.push_back(fVarnames[ivar]);
-	//        fVariables.push_back( pvar );
-	stemp2.push_back(fVarnames[ivar]);
       }
     } else {
       cout << "\nTHaOutput::Init: WARNING: Global variable ";
@@ -150,111 +123,108 @@ Int_t THaOutput::Init( const char* filename )
       cout << "There is probably a typo error... "<<endl;
     }
   }
-  for (Vsiz_t k = 0; k < fOdata.size(); k++)
-    fOdata[k]->AddBranches(fTree, stemp1[k]);
-  fNvar = stemp2.size();
-  fVar = new Double_t[fNvar];
-  for (Int_t k = 0; k < fNvar; k++) {
-    tinfo = stemp2[k] + "/D";
-    fTree->Branch(stemp2[k].c_str(), &fVar[k], tinfo.c_str(), kNbout);
-  }
-  for (Int_t iform = 0; iform < fNform; iform++) {
+  string tinfo;
+  Int_t status;
+  for (Vsiz_f iform = 0; iform < fFormnames.size(); iform++) {
     tinfo = Form("f%d",iform);
-    fFormulas.push_back(new THaFormula(tinfo.c_str(),
-				       fFormdef[iform].c_str()));
-    if (fFormulas[iform]->IsError()) {
+    fFormulas.push_back(new THaVform("formula",
+        fFormnames[iform].c_str(), fFormdef[iform].c_str()));
+    status = fFormulas[iform]->Init();
+    if ( status != 0) {
       cout << "THaOutput::Init: WARNING: Error in formula ";
       cout << fFormnames[iform] << endl;
       cout << "There is probably a typo error... " << endl;
+      fFormulas[iform]->ErrPrint(status);
+//    fFormulas[iform]->LongPrint();  // for debug
+    } else {
+      fFormulas[iform]->SetOutput(fTree);
+// If formula has array ELEMENTS explicitly we add them to tree.
+// Reason is that TTree::Draw() may otherwise fail with ERROR 26 
+      vector<THaString> avar = fFormulas[iform]->GetArrays();
+      for (Vsiz_s k = 0; k < avar.size(); k++) {
+        THaString svar = StripBracket(avar[k]);
+        pvar = gHaVars->Find(svar.c_str());
+        if (pvar) {
+          if (pvar->IsArray()) {
+            fArrayNames.push_back(svar);
+            fOdata.push_back(new THaOdata());
+          } else {
+   	    fVNames.push_back(svar);
+	  }
+	}
+      }
     }
   }
-  for (Int_t iform = 0; iform < fNform; iform++) {
-    tinfo = fFormnames[iform] + "/D";
-    fTree->Branch(fFormnames[iform].c_str(), &fForm[iform], 
-		  tinfo.c_str(), kNbout);
+  for (Vsiz_t k = 0; k < fOdata.size(); k++)
+    fOdata[k]->AddBranches(fTree, fArrayNames[k]);
+  fNvar = fVNames.size();
+  fVar = new Double_t[fNvar];
+  for (Int_t k = 0; k < fNvar; k++) {
+    tinfo = fVNames[k] + "/D";
+    fTree->Branch(fVNames[k].c_str(), &fVar[k], tinfo.c_str(), kNbout);
   }
-  fH1vtype = new Int_t[fN1d];
-  fH1form  = new Int_t[fN1d];
-  memset(fH1vtype, -1, fN1d*sizeof(Int_t));
-  memset(fH1form, -1, fN1d*sizeof(Int_t));
-  fNcut = 0;
-  for (Int_t ihist = 0; ihist < fN1d; ihist++) {
-    if (fH1cutid[ihist] != fgNocut) {
-      fHistCut.push_back(new THaCut(fH1cut[ihist].c_str(), 
-				    fH1cut[ihist].c_str(), (const char*)"haoutput"));
-      if (fHistCut[fNcut]->IsError()) {
-	cout << "THaOutput::Init: WARNING: Error in cut definition ";
-	cout << fH1cut[ihist] << endl;
-      }
-      fH1cutid[ihist] = fNcut;
-      fNcut++;
+  for (Vsiz_f icut = 0; icut < fCutnames.size(); icut++) {
+    fCuts.push_back(new THaVform("cut",
+        fCutnames[icut].c_str(), fCutdef[icut].c_str()));
+    status = fCuts[icut]->Init(); 
+    if ( status != 0 ) {
+      cout << "THaOutput::Init: WARNING: Error in formula ";
+      cout << fCutnames[icut] << endl;
+      cout << "There is probably a typo error... " << endl;
+      fCuts[icut]->ErrPrint(status);
+    } else {
+      fCuts[icut]->SetOutput(fTree);
     }
-    for (Int_t iform = 0; iform < fNform; iform++) {
-      if (fH1plot[ihist] == fFormnames[iform]) {
-	fH1vtype[ihist] = kForm;
-	fH1form[ihist] = iform;  
-      }
-    } 
-    pvar = gHaVars->Find(fH1plot[ihist].c_str());
-    if (pvar != 0 && fH1vtype[ihist] != kForm) 
-      fH1vtype[ihist] = kVar;
-    //    fH1var.push_back(pvar);
-    fH1d.push_back( new TH1F (fH1dname[ihist].c_str(), 
-			      fH1dtit[ihist].c_str(), 
-			      fH1dbin[ihist], fH1dxlo[ihist], fH1dxhi[ihist]));
+//    fCuts[icut]->LongPrint();  // for debug
   }
-  fH2vtypex = new Int_t[fN2d];
-  fH2vtypey = new Int_t[fN2d];
-  fH2formx  = new Int_t[fN2d];
-  fH2formy  = new Int_t[fN2d];
-  memset(fH2vtypex, -1, fN2d*sizeof(Int_t));
-  memset(fH2vtypey, -1, fN2d*sizeof(Int_t));
-  memset(fH2formx, -1, fN2d*sizeof(Int_t));
-  memset(fH2formy, -1, fN2d*sizeof(Int_t));
-  for (Int_t ihist = 0; ihist < fN2d; ihist++) {
-    if (fH2cutid[ihist] != fgNocut) {
-      fHistCut.push_back(new THaCut(fH2cut[ihist].c_str(), 
-				    fH2cut[ihist].c_str(), (const char*)"haoutput"));
-      if (fHistCut[fNcut]->IsError()) {
-	cout << "THaOutput::Init: WARNING: Error in cut definition ";
-	cout << fH2cut[ihist] << endl;
+  for (Vsiz_h ihist = 0; ihist < fHistos.size(); ihist++) {
+// After initializing formulas and cuts, must sort through
+// histograms and potentially reassign variables.  
+// A histogram variable or cut is either a string (which can 
+// encode a formula) or an externally defined THaVform. 
+    sfvarx = fHistos[ihist]->GetVarX();
+    sfvary = fHistos[ihist]->GetVarY();
+    for (Vsiz_f iform = 0; iform < fFormulas.size(); iform++) {
+      THaString stemp(fFormulas[iform]->GetName());
+      if (sfvarx.CmpNoCase(stemp) == 0) { 
+	fHistos[ihist]->SetX(fFormulas[iform]);
       }
-      fH2cutid[ihist] = fNcut;
-      fNcut++;
-    } 
-    for (Int_t iform = 0; iform < fNform; iform++) {
-      if (fH2plotx[ihist] == fFormnames[iform]) {
-	fH2vtypex[ihist] = kForm;
-	fH2formx[ihist] = iform;  
+      if (sfvary.CmpNoCase(stemp) == 0) { 
+	fHistos[ihist]->SetY(fFormulas[iform]);
       }
-      if (fH2ploty[ihist] == fFormnames[iform]) {
-	fH2vtypey[ihist] = kForm;
-	fH2formy[ihist] = iform;  
-      }  
     }
-    pvar = gHaVars->Find(fH2plotx[ihist].c_str());
-    if (pvar != 0 && fH2vtypex[ihist] != kForm) 
-      fH2vtypex[ihist] = kVar;
-    //    fH2varx.push_back(pvar);
-    pvar = gHaVars->Find(fH2ploty[ihist].c_str());
-    if (pvar != 0 && fH2vtypey[ihist] != kForm) 
-      fH2vtypey[ihist] = kVar;
-    //    fH2vary.push_back(pvar);
-    fH2d.push_back( new TH2F (fH2dname[ihist].c_str(), 
-			      fH2dtit[ihist].c_str(), 
-			      fH2dbinx[ihist], fH2dxlo[ihist], fH2dxhi[ihist],
-			      fH2dbiny[ihist], fH2dylo[ihist], fH2dyhi[ihist]));
+    if (fHistos[ihist]->HasCut()) {
+      scut   = fHistos[ihist]->GetCutStr();
+      for (Vsiz_f icut = 0; icut < fCuts.size(); icut++) {
+        THaString stemp(fCuts[icut]->GetName());
+        if (scut.CmpNoCase(stemp) == 0) { 
+	  fHistos[ihist]->SetCut(fCuts[icut]);
+        }
+      }
+    }
+    fHistos[ihist]->Init();
   }
-  
-  fInit = true; // the histograms and branches have been prepared
-  
-  // Assign pointers to desired global variables
+
+
+#ifdef CHECKOUT
+  Print();
+#endif
+
+  fInit = true;
+
   if ( Attach() ) 
     return -4;
-  
+
+  for (Vsiz_f icut=0; icut<fCuts.size(); icut++) 
+      fCuts[icut]->SetOutput(fTree);
+
+  for (Vsiz_f iform=0; iform<fFormulas.size(); iform++) 
+      fFormulas[iform]->SetOutput(fTree);
+
   return 0;
 }
- 
+
+
 //_____________________________________________________________________________
 Int_t THaOutput::Attach() 
 {
@@ -286,7 +256,7 @@ Int_t THaOutput::Attach()
     } else {
       cout << "\nTHaOutput::Attach: WARNING: Global variable ";
       cout << fVarnames[ivar] << " NO LONGER exists (it did before). "<< endl;
-      cout << "This is not supposed to happend... "<<endl;
+      cout << "This is not supposed to happen... "<<endl;
     }
   }
 
@@ -305,66 +275,36 @@ Int_t THaOutput::Attach()
     } else {
       cout << "\nTHaOutput::Attach: WARNING: Global variable ";
       cout << fVarnames[ivar] << " NO LONGER exists (it did before). "<< endl;
-      cout << "This is not supposed to happend... "<<endl;
+      cout << "This is not supposed to happen... "<<endl;
     }
   }
 
-  // 1-D histograms
+  // Reattach formulas, cuts, histos
 
-  fH1var.resize(fN1d);
-  for (Int_t ihist = 0; ihist < fN1d; ihist++) {
-    pvar = gHaVars->Find(fH1plot[ihist].c_str());
-    fH1var[ihist] = pvar;
+  for (Vsiz_f iform=0; iform<fFormulas.size(); iform++) {
+    fFormulas[iform]->ReAttach();
   }
 
-  // 2-D histograms
+  for (Vsiz_f icut=0; icut<fCuts.size(); icut++) {
+    fCuts[icut]->ReAttach(); 
+  }
 
-  fH2varx.resize(fN2d);
-  fH2vary.resize(fN2d);
-  
-  for (Int_t ihist = 0; ihist < fN2d; ihist++) {
-    pvar = gHaVars->Find(fH2plotx[ihist].c_str());
-    fH2varx[ihist] = pvar;
-    pvar = gHaVars->Find(fH2ploty[ihist].c_str());
-    fH2vary[ihist] = pvar;
+  for (Vsiz_h ihist = 0; ihist < fHistos.size(); ihist++) {
+    fHistos[ihist]->ReAttach();
   }
 
   return 0;
-  
-}  
 
-//_____________________________________________________________________________
-#ifdef IFCANWORK
-// Preferred method, but doesn't work, hence turned off with ifdef
-Int_t THaOutput::AddToTree(char *name, TObject *tobj) 
-{
-  // Add a TObject to the tree
-  // I would have preferred to use this method, but it did not work !!
-  // Instead, it works to add a TObject like this for THaOutput *fOut :
-  // if (fOut->TreeDefined()) fOut->GetTree()->Branch(...etc)
-  if (fTree != 0 && tobj != 0) {
-    fTree->Branch(name,tobj->ClassName(),&tobj);
-    return 0;
-  }
-  return -1;
 }
-#endif
+
 
 //_____________________________________________________________________________
 Int_t THaOutput::Process() 
 {
-  static int iev = 0;
-  iev++;
-  for (Int_t iform = 0; iform < fNform; iform++) {
-    if (fFormulas[iform])
-      if ( !fFormulas[iform]->IsError() ) {
-        fForm[iform] = fFormulas[iform]->Eval();
-      } else {
-	fForm[iform] = kBig;
-      }
-    else
-      fForm[iform] = kBig;
-  } 
+  for (Vsiz_f iform = 0; iform < fFormulas.size(); iform++) 
+    if (fFormulas[iform]) fFormulas[iform]->Process();
+  for (Vsiz_f icut = 0; icut < fCuts.size(); icut++) 
+    if (fCuts[icut]) fCuts[icut]->Process();
   THaVar *pvar;
   for (Int_t ivar = 0; ivar < fNvar; ivar++) {
     pvar = fVariables[ivar];
@@ -380,69 +320,8 @@ Int_t THaOutput::Process()
 	      << pvar->GetName() <<endl;
     }
   }
-  for (Int_t ihist = 0; ihist < fN1d; ihist++) {
-    if (fH1cutid[ihist] != fgNocut) {  // histogram cut condition
-      if ( !fHistCut[fH1cutid[ihist]]->IsError() ) {
-        if ( !fHistCut[fH1cutid[ihist]]->EvalCut() ) continue; 
-      }
-    }     
-    if (fH1vtype[ihist] == kForm) {
-      if (fH1form[ihist] >= 0) {
-        fH1d[ihist]->Fill(fForm[fH1form[ihist]]);
-      }
-    } else {
-      pvar = fH1var[ihist];    
-      if (pvar) {
-        if (pvar->IsArray()) {
-           for (Int_t i = 0; i < pvar->GetLen(); i++) {
-             fH1d[ihist]->Fill(pvar->GetValue(i));
-	   }
-        } else {
-           fH1d[ihist]->Fill(pvar->GetValue());
-        }
-      }
-    }
-  }
-  for (Int_t ihist = 0; ihist < fN2d; ihist++) {
-    if (fH2cutid[ihist] != fgNocut) {  // histogram cut condition
-      if ( !fHistCut[fH2cutid[ihist]]->IsError() ) {
-        if ( !fHistCut[fH2cutid[ihist]]->EvalCut() ) continue; 
-      }
-    }   
-    Float_t x = 0;  Float_t y = 0;
-    if (fH2vtypex[ihist] == kForm) {
-      if (fH2formx[ihist] >= 0) {
-        x = fForm[fH2formx[ihist]];
-      }
-    } else {
-      pvar = fH2varx[ihist];    
-      if (pvar) {
-	// FIXME: Put this check into Init()?
-        if (pvar->IsArray()) {
-          cout << "WARNING: 2d histos w/ arrays not supported"<<endl;
-          x = 0; // cannot handle arrays yet
-        } else {
-          x = pvar->GetValue();
-        }
-      }
-    }
-    if (fH2vtypey[ihist] == kForm) {
-      if (fH2formy[ihist] >= 0) {
-        y = fForm[fH2formy[ihist]];
-      }
-    } else {
-      pvar = fH2vary[ihist];    
-      if (pvar) {
-        if (pvar->IsArray()) {
-          cout << "WARNING: 2d histos w/ arrays not supported"<<endl;
-          y = 0; // cannot handle arrays yet
-        } else {
-          y = pvar->GetValue();
-        }
-      }
-    }
-    fH2d[ihist]->Fill(x,y);
-  }
+  for (Vsiz_h ihist = 0; ihist < fHistos.size(); ihist++) 
+    fHistos[ihist]->Process();
   if (fTree != 0) fTree->Fill();  
   return 0;
 }
@@ -451,9 +330,8 @@ Int_t THaOutput::Process()
 Int_t THaOutput::End() 
 {
   if (fTree != 0) fTree->Write();
-  Int_t ihist;
-  for (ihist = 0; ihist < fN1d; ihist++) fH1d[ihist]->Write();
-  for (ihist = 0; ihist < fN2d; ihist++) fH2d[ihist]->Write();
+  for (Vsiz_h ihist = 0; ihist < fHistos.size(); ihist++) 
+      fHistos[ihist]->End();
   return 0;
 }
 
@@ -462,6 +340,7 @@ Int_t THaOutput::LoadFile( const char* filename )
 {
   // Process the file that defines the output
   
+  Int_t idx;
   if( !filename || !strlen(filename) || strspn(filename," ") == 
       strlen(filename) ) {
     ::Error( "THaOutput::LoadFile()", "invalid file name, "
@@ -508,38 +387,33 @@ Int_t THaOutput::LoadFile( const char* filename )
           fFormnames.push_back(sname);
           fFormdef.push_back(strvect[2]);
           break;
-      case kH1:
-          if( ParseTitle(sline) != 1) {
+      case kCut:
+          if (strvect.size() < 3) {
 	    ErrFile(ikey, sline);
             continue;
 	  }
-	  fH1dname.push_back(sname);
-          fH1dtit.push_back(stitle);
-          fH1plot.push_back(sfvar1); 
-          fH1dbin.push_back(n1);
-	  fH1dxlo.push_back(xl1);
-	  fH1dxhi.push_back(xh1);
-          fH1cut.push_back(scut);
-          fH1cutid.push_back(iscut);
-          break;    
-      case kH2:                    
-   	  if( ParseTitle(sline) != 2 ) {
+          fCutnames.push_back(sname);
+          fCutdef.push_back(strvect[2]);
+          break;
+      case kH1f:
+      case kH1d:
+      case kH2f:
+      case kH2d:
+          if( ChkHistTitle(ikey, sline) != 1) {
 	    ErrFile(ikey, sline);
-	    continue;
+            continue;
 	  }
-	  fH2dname.push_back(sname);
-          fH2dtit.push_back(stitle);  
-          fH2plotx.push_back(sfvar1);  
-          fH2ploty.push_back(sfvar2);  
-          fH2dbinx.push_back(n1);
-	  fH2dxlo.push_back(xl1);
-	  fH2dxhi.push_back(xh1);
-          fH2dbiny.push_back(n2);
-	  fH2dylo.push_back(xl2);
-	  fH2dyhi.push_back(xh2);
-          fH2cut.push_back(scut);
-          fH2cutid.push_back(iscut);
-          break;          
+          fHistos.push_back(
+	     new THaVhist(strvect[0],sname,stitle));
+          idx = (long)fHistos.size()-1;
+// Tentatively assign variables and cuts as strings. 
+// Later will check if they are actually THaVform's.
+          fHistos[idx]->SetX(nx, xlo, xhi, sfvarx);
+          if (ikey == kH2f || ikey == kH2d) {
+            fHistos[idx]->SetY(ny, ylo, yhi, sfvary);
+	  }
+          if (iscut != fgNocut) fHistos[idx]->SetCut(scut);
+          break;
       case kBlock:
 	  BuildBlock(sname);
 	  break;
@@ -562,9 +436,6 @@ Int_t THaOutput::LoadFile( const char* filename )
     }
   }
 
-#ifdef CHECKOUT
-  Print();
-#endif
   return 0;
 }
 
@@ -582,8 +453,11 @@ Int_t THaOutput::FindKey(const THaString& key) const
   static const KeyMap keymap[] = { 
     { "variable", kVar },
     { "formula",  kForm },
-    { "th1f",     kH1 },
-    { "th2f",     kH2 },
+    { "cut",      kCut },
+    { "th1f",     kH1f },
+    { "th1d",     kH1d },
+    { "th2f",     kH2f },
+    { "th2d",     kH2d },
     { "block",    kBlock },
     { 0 }
   };
@@ -602,11 +476,9 @@ Int_t THaOutput::FindKey(const THaString& key) const
 THaString THaOutput::StripBracket(THaString& var) const
 {
 // If the string contains "[anything]", we strip
-// it away and issue a warning.  In practice this
-// should not be fatal because your variable will 
-// still show up in the tree (e.g. L.s1.lt[4] will
-// show up together with L.s1.lt[0],... etc.).
-  UInt_t pos1,pos2;
+// it away.  In practice this should not be fatal 
+// because your variable will still show up in the tree.
+  Int_t pos1,pos2;
   THaString open_brack = "[";
   THaString close_brack = "]";
   THaString result = "";
@@ -616,13 +488,14 @@ THaString THaOutput::StripBracket(THaString& var) const
       (pos2 != string::npos)) {
       result = var.substr(0,pos1);
       result += var.substr(pos2+1,var.length());    
-      cout << "THaOutput:WARNING:: Stripping away ";
-      cout << "unwanted brackets from "<<var<<endl;
+//      cout << "THaOutput:WARNING:: Stripping away";
+//      cout << "unwanted brackets from "<<var<<endl;
   } else {
       result = var;
   }
   return result;
 }
+
 
 //_____________________________________________________________________________
 void THaOutput::ErrFile(Int_t iden, const THaString& sline) const
@@ -644,21 +517,26 @@ void THaOutput::ErrFile(Int_t iden, const THaString& sline) const
        cerr << "    variable  variable-name"<<endl;
        cerr << "Example: "<<endl;
        cerr << "    variable   R.vdc.v2.nclust"<<endl;;
+     case kCut:
      case kForm:
-       cerr << "For formulas, the syntax is: "<<endl;
-       cerr << "    formula  formula-name  formula-expression"<<endl;
+       cerr << "For formulas or cuts, the syntax is: "<<endl;
+       cerr << "    formula(or cut)  formula-name  formula-expression"<<endl;
        cerr << "Example: "<<endl;
        cerr << "    formula targetX 1.464*B.bpm4b.x-0.464*B.bpm4a.x"<<endl;
-     case kH1:
+     case kH1f:
+     case kH1d:
        cerr << "For 1D histograms, the syntax is: "<<endl;
-       cerr << "  TH1F name  'title' variable nbin xlo xhi [cut-expr]"<<endl;          cerr << "Example: "<<endl;
+       cerr << "  TH1F(or TH1D) name  'title' ";
+       cerr << "variable nbin xlo xhi [cut-expr]"<<endl;
+       cerr << "Example: "<<endl;
        cerr << "  TH1F  tgtx 'target X' targetX 100 -2 2"<<endl;
        cerr << "(Title in single quotes.  Variable can be a formula)"<<endl;
        cerr << "optionally can impose THaCut expression 'cut-expr'"<<endl;
        break;
-     case kH2:
+     case kH2f:
+     case kH2d:
        cerr << "For 2D histograms, the syntax is: "<<endl;
-       cerr << "  TH2F  name  'title'  var1  var2";
+       cerr << "  TH2F(or TH2D)  name  'title'  varx  vary";
        cerr << "  nbinx xlo xhi  nbiny ylo yhi [cut-expr]"<<endl;
        cerr << "Example: "<<endl;
        cerr << "  TH2F t12 't1 vs t2' D.timeroc1  D.timeroc2";
@@ -678,47 +556,37 @@ void THaOutput::Print() const
   // Printout the definitions
   typedef vector<THaString>::const_iterator Iter;
   cout << "\n=== Number of variables "<<fVarnames.size()<<endl;
-  for (Iter is = fVarnames.begin();
-    is != fVarnames.end(); is++) cout << " Variable = "<<*is<<endl;
-  cout << "\n=== Number of formulas "<<fFormnames.size()<<endl;
-  for (Iter is = fFormnames.begin();
-    is != fFormnames.end(); is++) cout << "Formula name = "<<*is<<endl;
-  cout << "\n=== Formula definitions "<<fFormdef.size()<<endl;
-  for (Iter is = fFormdef.begin();
-    is != fFormdef.end(); is++) cout << "Formula definition = "<<*is<<endl;
-  cout << "\n=== Number of 1d histograms "<<fH1dname.size()<<endl;
-  for (Vsiz_t i = 0; i < fH1dname.size(); i++) {
-    cout << "1d histo "<<i<<"   name "<<fH1dname[i];
-    cout << "  title =  "<<fH1dtit[i]<<endl;
-    cout << "   var = "<<fH1plot[i];
-    cout << "   binning "<<fH1dbin[i]<<"   "<<fH1dxlo[i];
-    cout << "   "<<fH1dxhi[i]<<endl;
-    if (fH1cutid[i] != fgNocut) cout << "Cut condition " << fH1cut[i] << endl;
+  for (Vsiz_s i = 0; i < fVarnames.size(); i++) {
+    cout << "Variable # "<<i<<" =  "<<fVarnames[i]<<endl;
   }
-  cout << "\n=== Number of 2d histograms "<<fH2dname.size()<<endl;
-  for (Vsiz_t i = 0; i < fH2dname.size(); i++) {
-    cout << "2d histo "<<i<<"   name "<<fH2dname[i]<<endl;
-    cout << "  title =  "<<fH2dtit[i];
-    cout << "  x var = "<<fH2plotx[i];
-    cout << "  y var = "<<fH2ploty[i]<<endl;
-    cout << "  x binning "<<fH2dbinx[i]<<"   "<<fH2dxlo[i];
-    cout << "   "<<fH2dxhi[i]<<endl;
-    cout << "  y binning "<<fH2dbiny[i]<<"   "<<fH2dylo[i];
-    cout << "   "<<fH2dyhi[i]<<endl;
-    if (fH2cutid[i] != fgNocut) cout << "Cut condition " << fH2cut[i] << endl;
+  cout << "\n=== Number of formulas "<<fFormulas.size()<<endl;
+  for (Vsiz_f i = 0; i < fFormulas.size(); i++) {
+    cout << "Formula # "<<i<<endl;
+    fFormulas[i]->ShortPrint();
+  }
+  cout << "\n=== Number of cuts "<<fCuts.size()<<endl;
+  for (Vsiz_f i = 0; i < fCuts.size(); i++) {
+    cout << "Cut # "<<i<<endl;
+    fCuts[i]->ShortPrint();
+  }
+  cout << "\n=== Number of histograms "<<fHistos.size()<<endl;
+  for (Vsiz_h i = 0; i < fHistos.size(); i++) {
+    cout << "Histogram # "<<i<<endl;
+    fHistos[i]->Print();
   }
   cout << endl << endl;
 }
 
 //_____________________________________________________________________________
-Int_t THaOutput::ParseTitle(const THaString& sline)
+Int_t THaOutput::ChkHistTitle(Int_t iden, const THaString& sline)
 {
-  // Parse the string that defines the histogram.  The title must be
-  // enclosed in single quotes (e.g. 'my title').  Ret value 'result'
-  // means:  -1 == error,  1 == ok 1D histogram,  2 == ok 2D histogram
+// Parse the string that defines the histogram.  
+// The title must be enclosed in single quotes (e.g. 'my title').  
+// Ret value 'result' means:  -1 == error,  1 == everything ok.
   Int_t result = -1;
-  stitle = "";   sfvar1 = "";  sfvar2  = "";
+  stitle = "";   sfvarx = "";  sfvary  = "";
   iscut = fgNocut;  scut = "";
+  nx = 0; ny = 0; xlo = 0; xhi = 0; ylo = 0; yhi = 0;
   THaString::size_type pos1 = sline.find_first_of("'");
   THaString::size_type pos2 = sline.find_last_of("'");
   if (pos1 != THaString::npos && pos2 > pos1) {
@@ -727,32 +595,37 @@ Int_t THaOutput::ParseTitle(const THaString& sline)
   THaString ctemp = sline.substr(pos2+1,sline.size()-pos2);
   vector<THaString> stemp = ctemp.Split();
   if (stemp.size() > 1) {
-     sfvar1 = stemp[0];
+     sfvarx = stemp[0];
      Int_t ssize = stemp.size();
      if (ssize == 4 || ssize == 5) {
-       sscanf(stemp[1].c_str(),"%d",&n1);
-       sscanf(stemp[2].c_str(),"%f",&xl1);
-       sscanf(stemp[3].c_str(),"%f",&xh1);
+       sscanf(stemp[1].c_str(),"%d",&nx);
+       sscanf(stemp[2].c_str(),"%f",&xlo);
+       sscanf(stemp[3].c_str(),"%f",&xhi);
        if (ssize == 5) {
          iscut = 1; scut = stemp[4];
        }
        result = 1;
      }
      if (ssize == 8 || ssize == 9) {
-       sfvar2 = stemp[1];
-       sscanf(stemp[2].c_str(),"%d",&n1);
-       sscanf(stemp[3].c_str(),"%f",&xl1);
-       sscanf(stemp[4].c_str(),"%f",&xh1);
-       sscanf(stemp[5].c_str(),"%d",&n2);
-       sscanf(stemp[6].c_str(),"%f",&xl2);
-       sscanf(stemp[7].c_str(),"%f",&xh2);
+       sfvary = stemp[1];
+       sscanf(stemp[2].c_str(),"%d",&nx);
+       sscanf(stemp[3].c_str(),"%f",&xlo);
+       sscanf(stemp[4].c_str(),"%f",&xhi);
+       sscanf(stemp[5].c_str(),"%d",&ny);
+       sscanf(stemp[6].c_str(),"%f",&ylo);
+       sscanf(stemp[7].c_str(),"%f",&yhi);
        if (ssize == 9) {
          iscut = 1; scut = stemp[8]; 
        }
        result = 2;
      }
   }
-  return result;
+  if (result != 1 && result != 2) return -1;
+  if ((iden == kH1f || iden == kH1d) && 
+       result == 1) return 1;  // ok
+  if ((iden == kH2f || iden == kH2d) && 
+       result == 2) return 1;  // ok
+  return -1;
 }
 
 //_____________________________________________________________________________
