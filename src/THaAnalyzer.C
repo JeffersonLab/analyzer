@@ -265,11 +265,10 @@ Int_t THaAnalyzer::Process( THaRun& run )
         cout << "Error initializing THaOutput " << endl;
       }
       outputTree = fOutput->GetTree();
-      if( fEvent ) {
+      if( fEvent && outputTree ) {
 	outputTree->Branch( "Event_Branch", fEvent->IsA()->GetName(), &fEvent,
 			    16000, 99 );
       }
-
       if( fail ) {
         delete fOutput;
         delete fFile;
