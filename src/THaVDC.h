@@ -53,7 +53,7 @@ protected:
   Int_t    fNtracks;     // Number of tracks found in ConstructTracks
 
           void  Clear()  {}
-  virtual Int_t ConstructTracks( TClonesArray * tracks = NULL );
+  virtual Int_t ConstructTracks( TClonesArray * tracks = NULL, Int_t flag = 0 );
   virtual Int_t MatchUVTracks();  // Match UV tracks from upper UV plane
                                   // with ones from lower UV plane
 

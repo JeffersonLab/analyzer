@@ -5,21 +5,12 @@
 //
 // THaTrackingDetector.h
 //
-// Abstract base class for a generic Hall A tracking detector. 
-//
-// This is a special THaSpectrometerDetector that is capable of
-// finding particle tracks used for momentum analysis and target 
-// reconstruction. This is usually a VDC.
-//
-// Note: The FPP is NOT a "tracking detector" in this scheme because,
-// with the present FPP algorithms, it is not used for calculating the 
-// fp coordinates. 
-//
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaSpectrometerDetector.h"
 
 class TClonesArray;
+class THaTrack;
 
 class THaTrackingDetector : public THaSpectrometerDetector {
   
@@ -33,10 +24,10 @@ public:
 
 protected:
 
-  virtual Int_t    AddTrack( TClonesArray& tracks,
-			     Double_t p, Double_t theta, Double_t phi,
-			     Double_t x, Double_t y,
-			     const TClonesArray* clusters = 0 );
+  virtual THaTrack* AddTrack( TClonesArray& tracks,
+			      Double_t p, Double_t theta, Double_t phi,
+			      Double_t x, Double_t y,
+			      const TClonesArray* clusters = 0 );
 
   //Only derived classes may construct me
 

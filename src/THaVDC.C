@@ -8,11 +8,13 @@
 #include "THaGlobals.h"
 #include "THaEvData.h"
 #include "THaDetMap.h"
+#include "THaTrack.h"
 #include "TMath.h"
 
 #include "THaVDCUVPlane.h"
 #include "THaVDCUVTrack.h"
 #include "THaVDCCluster.h"
+#include "THaVDCTrackID.h"
 #include "VarDef.h"
 
 #include <cstring>
@@ -100,7 +102,7 @@ Int_t THaVDC::MatchUVTracks()
   // Match UV tracks from upper UV plane with ones from lower UV plane 
   // Have lower plane find partners
 
-  //TODO: Improve algorithm
+  //FIXME: Improve algorithm
 
   Int_t nUpperTracks = fUpper->GetNUVTracks();
   Int_t nLowerTracks = fLower->GetNUVTracks();
@@ -138,12 +140,18 @@ Int_t THaVDC::MatchUVTracks()
 }
 
 //______________________________________________________________________________
-Int_t THaVDC::ConstructTracks( TClonesArray * tracks)
+Int_t THaVDC::ConstructTracks( TClonesArray * tracks, Int_t flag )
 {
   // Construct tracks from pairs of upper and lower UV tracks and add 
   // them to 'tracks'
 
   int nTracks = MatchUVTracks(); 
+
+  // How many tracks already there?
+  int n_exist, n_mod = 0;
+  int n_oops=0;
+  if( tracks )
+    n_exist = tracks->GetLast()+1;
 
   // Now compute global track values and get transport coordinates for tracks
 
@@ -193,7 +201,7 @@ Int_t THaVDC::ConstructTracks( TClonesArray * tracks)
     partner->SetTheta(detTheta);
     partner->SetPhi(detPhi);
 
-    if (tracks != NULL) {
+    if (tracks) {
       // Calculate Transport coordinates from detector coordinates
 
       // Note: If not in the focal plane of the spectrometer, transX and transZ
@@ -205,12 +213,55 @@ Int_t THaVDC::ConstructTracks( TClonesArray * tracks)
       Double_t transTheta = (detTheta + fTan_vdc) / (1.0 - detTheta * fTan_vdc);
       Double_t transPhi = detPhi / (fCos_vdc - detTheta * fSin_vdc);
 
-      // Now, project these results into the transport plane (transZ = 0)
+      // Project these results into the transport plane (transZ = 0)
       ProjToTransPlane(transX, transY, transZ, transTheta, transPhi);
 
-      AddTrack(*tracks, 0.0, transTheta, transPhi, transX, transY);
+      // Decide whether this is a new track or an old track 
+      // that is being updated
+      THaVDCTrackID* thisID = new THaVDCTrackID(track,partner);
+      THaTrack* theTrack = NULL;
+      bool found = false;
+      for( int t = 0; t < n_exist; t++ ) {
+	theTrack = static_cast<THaTrack*>( tracks->At(t) );
+	// Note that the second test is only ever true for tracks 
+	// crated by this class
+	if( theTrack && *thisID == *theTrack->GetID() ) {
+	  found = true;
+	  break;
+	}
+	// FIXME: for debugging
+	n_oops++;
+      }
+      if( found ) {
+	theTrack->Set( 0.0, transTheta, transPhi, transX, transY );
+	delete thisID;
+	++n_mod;
+      } else {
+	theTrack = 
+	  AddTrack(*tracks, 0.0, transTheta, transPhi, transX, transY);
+	theTrack->SetID( thisID );
+	theTrack->SetCreator( this );
+      }
+      theTrack->SetFlag(flag);
     }
   }
+
+  // Delete tracks that were not updated
+  if( tracks && n_exist > n_mod ) {
+    bool modified = false;
+    for( int i = 0; i < tracks->GetLast()+1; i++ ) {
+      THaTrack* theTrack = static_cast<THaTrack*>( tracks->At(i) );
+      if( (theTrack->GetCreator() == this) && (theTrack->GetFlag() < flag) ) {
+	tracks->RemoveAt(i);
+	modified = true;
+      }
+    }
+    // Pack the array in case any tracks were removed
+    // FIXME: Check if this causes trouble elsewhere
+    if( modified )
+      tracks->Compress();
+  }
+
   return nTracks;
 }
 
@@ -248,7 +299,8 @@ Int_t THaVDC::CoarseTrack( TClonesArray& tracks )
   fLower->CoarseTrack();
   fUpper->CoarseTrack();
 
-  fNtracks = ConstructTracks(&tracks);
+  // Build tracks and mark them as level 1
+  fNtracks = ConstructTracks( &tracks, 1 );
 
   return 0;
 }
@@ -269,7 +321,7 @@ Int_t THaVDC::FineTrack( TClonesArray& tracks )
     fUpper->FineTrack();
   }
 
-  fNtracks = ConstructTracks(&tracks);
+  fNtracks = ConstructTracks( &tracks, 2 );
 
   return 0;
 }
