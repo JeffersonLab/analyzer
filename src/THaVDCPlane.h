@@ -15,6 +15,7 @@ class THaVDCWire;
 class THaVDCUVPlane;
 class THaVDCCluster;
 class THaVDCHit;
+class THaVDCTimeToDistConv;
 
 class THaVDCPlane : public THaSubDetector {
 
@@ -90,6 +91,8 @@ protected:
   Double_t fT0;     // calculated zero time 
   Int_t fNumBins;   // size of lookup table
   Float_t *fTable;  // time-to-distance lookup table
+
+  THaVDCTimeToDistConv* fTTDConv;  // Time-to-distance converter for this plane's wires
 
   THaDetectorBase* fVDC;  // VDC detector to which this plane belongs
 

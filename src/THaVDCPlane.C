@@ -112,6 +112,7 @@ Int_t THaVDCPlane::ReadDatabase( FILE* file, const TDatime& date )
   Int_t nWires = 0;    // Number of wires to create
   Int_t crate, slot, lo, hi;
   // Set up the detector map
+  fDetMap->Clear();
   for (int i = 0; i < 4; i++) {
     // Get crate, slot, low channel and high channel from file
     fscanf(file, "%d%d%d%d", &crate, &slot, &lo, &hi);
@@ -168,6 +169,7 @@ Int_t THaVDCPlane::ReadDatabase( FILE* file, const TDatime& date )
     
     // this object is responsible for the memory management 
     // of the lookup table
+    delete [] fTable;
     fTable = new Float_t[fNumBins];
     for(int i=0; i<fNumBins; i++) {
       fscanf(file, "%e", &(fTable[i]));
@@ -184,7 +186,8 @@ Int_t THaVDCPlane::ReadDatabase( FILE* file, const TDatime& date )
   // Define time-to-drift-distance converter
   // Currently, we use the analytic converter. 
   // FIXME: Let user choose this via a parameter
-  THaVDCAnalyticTTDConv* ttdConv = new THaVDCAnalyticTTDConv(driftVel);
+  delete fTTDConv;
+  fTTDConv = new THaVDCAnalyticTTDConv(driftVel);
 
   //THaVDCLookupTTDConv* ttdConv = new THaVDCLookupTTDConv(fT0, fNumBins, fTable);
 
@@ -192,7 +195,7 @@ Int_t THaVDCPlane::ReadDatabase( FILE* file, const TDatime& date )
   // Caution: This may not correspond at all to actual wire channels!
   for (int i = 0; i < nWires; i++)
     new((*fWires)[i]) THaVDCWire( i, fWBeg+i*fWSpac, wire_offsets[i], 
-				  ttdConv );
+				  fTTDConv );
 
   /*
   for (int i = 0; i < nWires; i++) {
@@ -249,21 +252,21 @@ THaVDCPlane::~THaVDCPlane()
 
   if( fIsSetup )
     RemoveVariables();
-  fWires->Delete();
-  fHits->Clear();
-  fClusters->Delete();
   delete fWires;
   delete fHits;
   delete fClusters;
+  delete fTTDConv;
+  delete [] fTable;
 }
 
 //_____________________________________________________________________________
+inline
 void THaVDCPlane::Clear( Option_t* opt )
 {    
   // Clears the contents of the and hits and clusters
   fNWiresHit = 0;
   fHits->Clear();
-  fClusters->Delete();
+  fClusters->Clear();
 }
 
 //_____________________________________________________________________________
@@ -301,12 +304,13 @@ Int_t THaVDCPlane::Decode( const THaEvData& evData)
       // Use channel index to loop through channels that have hits
 
       Int_t chan = evData.GetNextChan(d->crate, d->slot, chNdx);
-      if (chan < d->lo || chan > d->hi) {
+      if (chan < d->lo || chan > d->hi) 
 	continue; //Not part of this detector
-      } 
+
       // Wire numbers and channels go in the same order ... 
       Int_t wireNum    = wireOffset + chan;
       THaVDCWire* wire = GetWire(wireNum);
+      if( !wire ) continue;  // oops: junk from decoder?
 
       // Get number of hits for this channel and loop through hits
       Int_t nHits = evData.GetNumHits(d->crate, d->slot, chan);
@@ -421,11 +425,11 @@ Int_t THaVDCPlane::FindClusters()
     pwireNum = wireNum;
     if ( ndif > fNMaxGap+1 ) {
       // Found a new cluster
-      if (clust) {
+      if (clust) 
 	// Estimate the track parameters for this cluster
 	// (Pivot, intercept, and slope)
 	clust->EstTrackParameters();
-      }
+
       // Make a new THaVDCCluster (using space from fCluster array)  
       clust = new ( (*fClusters)[nextClust++] ) THaVDCCluster(this);
     } 
@@ -435,9 +439,8 @@ Int_t THaVDCPlane::FindClusters()
   } // End looping through hits
 
   // Estimate track parameters for the last cluster found
-  if (clust) {
+  if (clust)
     clust->EstTrackParameters(); 
-  }
 
   return GetNClusters();  // return the number of clusters found
 }
