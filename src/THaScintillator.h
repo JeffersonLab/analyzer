@@ -20,7 +20,7 @@ public:
   virtual EStatus    Init( const TDatime& run_time );
   virtual Int_t      CoarseProcess( TClonesArray& tracks );
   virtual Int_t      FineProcess( TClonesArray& tracks );
-
+  
 protected:
 
   // Mapping
@@ -49,6 +49,10 @@ protected:
   Float_t*   fRA;         // [fNelem] Array of Right paddles ADC amplitudes
   Float_t*   fRA_p;       // [fNelem] Array of Right paddles ADC minus ped values
   Float_t*   fRA_c;       // [fNelem] Array of Right paddles corrected ADC ampl-s
+
+  Int_t      fNhit;       // Number of paddles with complete TDC hits (l&r)
+  Int_t*     fHitPad;     // [fNhit] list of paddles with complete TDC hits
+
   Float_t    fTRX;        // x position of track cross point (cm)
   Float_t    fTRY;        // y position of track cross point (cm)
 

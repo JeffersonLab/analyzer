@@ -16,8 +16,11 @@
 #include "TClonesArray.h"
 #include "TMath.h"
 
-// #include <iostream>
+#include <iostream>
 #include <cstring>
+#include <cstdio>
+
+using namespace std;
 
 ClassImp(THaScintillator)
 
@@ -139,6 +142,8 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
     fRA_p = new Float_t[ fNelem ];
     fRA_c = new Float_t[ fNelem ];
 
+    fHitPad = new Int_t[ fNelem ];
+    
     fIsInit = true;
   }
 
@@ -193,6 +198,8 @@ Int_t THaScintillator::DefineVariables( EMode mode )
     { "ra_c",   "Corrected ADC values right side",   "fRA_c" },
     { "trx",    "x-position of track in det plane",  "fTRX" },
     { "try",    "y-position of track in det plane",  "fTRY" },
+    { "nthit",  "Number of paddles with l&r TDCs",   "fNhit" },
+    { "t_pads", "Paddles with l&r coincidence TDCs", "fHitPad" },
     { 0 }
   };
   return DefineVarsFromList( vars, mode );
@@ -231,6 +238,9 @@ void THaScintillator::DeleteArrays()
   delete [] fLPed;    fLPed    = NULL;
   delete [] fROff;    fROff    = NULL;
   delete [] fLOff;    fLOff    = NULL;
+  
+  delete [] fHitPad;  fHitPad  = NULL;
+  
   delete [] fFirstChan; fFirstChan = NULL;
 }
 
@@ -257,6 +267,8 @@ void THaScintillator::ClearEvent()
   memset( fRA_c, 0, lf );                 // Right paddles corrected ADCs
   fTRX = 0.0;                             // Xcoord of track point on scint plane
   fTRY = 0.0;                             // Ycoord of track point on scint plane
+  fNhit = 0;
+  memset( fHitPad, 0, fNelem*sizeof(fHitPad[0]) );
 }
 
 //_____________________________________________________________________________
@@ -314,6 +326,15 @@ Int_t THaScintillator::Decode( const THaEvData& evdata )
       }
     }
   }
+  if (fDebug) {
+    printf("\n\nEvent %d   Trigger %d Scintillator %s\n:",evdata.GetEvNum(),evdata.GetEvType(),GetPrefix());
+    printf("   paddle  Left(TDC    ADC   ADC_p)   Right(TDC   ADC   ADC_p)\n");
+    for ( int i=0; i<fNelem; i++ ) {
+      printf("     %2d     %5.0f    %5.0f  %5.0f     %5.0f    %5.0f  %5.0f\n",
+	     i+1,fLT[i],fLA[i],fLA_p[i],fRT[i],fRA[i],fRA_p[i]);
+    }
+  }
+  
   return fLTNhit+fRTNhit;
 }
 
@@ -333,7 +354,6 @@ Int_t THaScintillator::CoarseProcess( TClonesArray& tracks )
   // reconstructed in THaVDC::CoarseTrack() are used.
 
   int ne_track = tracks.GetLast()+1;   // Number of reconstructed in Earm tracks
-
   if ( ne_track > 0 ) {
     THaTrack* theTrack = static_cast<THaTrack*>( tracks[0] );
     double fpe_x       = theTrack->GetX();
@@ -344,8 +364,16 @@ Int_t THaScintillator::CoarseProcess( TClonesArray& tracks )
     fTRX = ( fpe_x + fpe_th * fOrigin.Z() ) / 
       ( cos_angle * (1.0 + fpe_th * tan_angle ) );
     fTRY = fpe_y + fpe_ph * fOrigin.Z() - fpe_ph * sin_angle * fTRX;
-   }
+  }
 
+  // count the number of paddles with complete TDC hits
+  fNhit = 0;
+  for (int i=0; i<fNelem; i++) {
+    if (fLT[i]>0 && fRT[i]>0) {
+      fHitPad[fNhit++] = i;
+    }
+  }
+  
   return 0;
 }
 
@@ -357,5 +385,5 @@ Int_t THaScintillator::FineProcess( TClonesArray& tracks )
 
   return 0;
 }
-
+  
 ////////////////////////////////////////////////////////////////////////////////
