@@ -5,6 +5,13 @@
 //
 // THaOutput
 //
+// Defines the tree and histogram output for THaAnalyzer.  
+// This class reads a file 'output.def' (an example is in /examples)
+// to define which global variables, including arrays, and formulas
+// (THaFormula's), and histograms go to the ROOT output.
+//
+// author:  R. Michaels    Sept 2002
+//
 //////////////////////////////////////////////////////////////////////////
 
 #define THAOMAX 50
