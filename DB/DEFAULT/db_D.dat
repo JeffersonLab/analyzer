@@ -41,7 +41,9 @@ bit6       crate      4    11      69
 bit7       crate      4    11      70
 bit8       crate      4    11      71
 
-
+# coincidence timing
+ctimel     crate      2     3      48
+ctimer     crate      1    21       4
 
 
 
