@@ -1,0 +1,112 @@
+Hall A C++ Analyzer Software Development Kit
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+For Analyzer 1.1 and 1.2
+6 December 2003
+
+This package contains a examples of user code for the C++ Analyzer.
+It is a good starting point for building experiment-specific 
+module libraries. 
+
+The following examples are included. These are examples for illustration
+purposes only. They don't do particularly valuable work, but do contain
+examples of possibly useful programming techniques.
+
+UserModule:	      new Physics Module
+UserScintillator:     a THaScintillator extended by user code
+UserDetector:	      new detector
+UserApparatus:	      new apparatus
+
+db_u1.dat:	      database for UserDetector with name "u1"
+db_R.s1.dat:	      dto. for UserScintillator with name "s1" contained in
+		      apparatus named "R" (right HRS), based on standard R.s1
+
+Makefile:	      Makefile, configured to build all four example modules
+		      and to create a user library named libUser.so.
+
+User_LinkDef.h:	      ROOT dictionary link file, required to build the CINT
+		      dictionary. Even though you will not get compilation
+		      errors, your library will not load if your classes 
+		      are not completely listed in this file at build time.
+
+Incorporating your own code
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Write header (.h) and implementation (.cxx) files as needed, along the lines
+  of the provided examples. The module(s) can have any name(s) you like,
+  but for every implementation file there must be a corresponding header file.
+  You may define more than one class per header/implementation file.
+- Adapt the Makefile. At the minimum:
+  * Change SRC to specify your own .cxx files
+  * Change PACKAGE to give your library a clear and meaningful name 
+    (don't want dozens of libUser.so containing mystery code)
+- Rename User_LinkDef.h to <PACKAGE>_LinkDef.h and modify to specify your own
+  class name(s). All classes defined with ClassDef macros MUST be listed here.
+
+Of course, you can delete the User* files once you don't need them for
+guidance any more. They are not required for building a user library.
+
+Before building, verify that ANALYZER is set and points to the root
+of the C++ Analyzer installation that you want to build against.
+$ANALYZER should contain the header files in either $ANALYZER/include
+or $ANALYZER/{src,hana_decode,hana_scaler}. Normally, all you have to do is
+to set $ANALYZER; the Makefile will determine the include directories 
+automatically.
+
+To build, just type
+
+   make
+
+In addition,
+
+   make clean       -> clean up object files
+   make realclean   -> clean up object and dependency files
+   make srcdist	    -> make a tarball of your source code
+
+
+If all goes well, you a shared library callled lib$PACKAGE.so will
+be created, e.g. libUser.so.
+
+You can add your own "install" target to the Makefile if you like, 
+for example to copy the library to a library directory such as
+$EXPERIMENT/lib.
+
+Using your library
+~~~~~~~~~~~~~~~~~~
+
+Somewhere in your analysis macro/script, or interactively on the CINT
+command line, issue the following command:
+
+gSystem->Load("libUser.so")
+
+Of course, replace "libUser.so" the actual path to and name of your library,
+for instance "$EXPERIMENT/lib/libKaon.so". You don't need to specify
+a path if the location of the library is in your LD_LIBRARY_PATH.
+
+Once the library is loaded, your classes will be available like any other
+ROOT and Analyzer classes. For example, you can inspect their interface
+using
+
+.class UserModule
+
+create instances,
+
+UserModule* m = new UserModule("u","User Module")
+
+and add them to the analysis chain,
+
+gHaPhysics->Add(m)
+
+For modules/detectors etc. that need database files, be sure to
+put appropriate files in your database directory.
+
+Compatibility
+~~~~~~~~~~~~~
+The examples have been tested with C++ Analyzer 1.1 and 1.2.
+They do not work out of the box with Analyzer 1.0, but the required changes 
+are minor. Database files need explicit timestamps if used with Analyzer 1.1
+(see comments in the example db*.dat files).
+
+
+
+
+  

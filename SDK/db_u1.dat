@@ -1,0 +1,12 @@
+# Example database for the UserDetector.
+# The following can be freely formatted.
+# One may use validity time stamps here as required:
+# [ 1995-01-01 13:45:00 ]
+# and use the same incremental validity scheme as with the run database
+# (NB: Analyzer 1.1.4 and earlier _requires_ at least one timestamp)
+
+detmap_1 = 3 2 0 4 0
+nelem = 5
+angle = 0.0
+pedestals = 15. 22. 14.5 11.2 17.6
+gains = 3.3 3.22 3.54 4.05 3.42
