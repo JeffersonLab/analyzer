@@ -18,6 +18,7 @@ public:
 	  const THaVarList* vlst = gHaVars, const THaCutList* clst = gHaCuts );
   virtual ~THaCut() {}
 
+          void         ClearResult()        { fLastResult = kFALSE; }
   virtual Int_t        DefinedVariable( TString& variable );
   virtual Bool_t       EvalCut();
           Bool_t       GetResult()    const { return fLastResult; }
@@ -25,9 +26,9 @@ public:
           UInt_t       GetNCalled()   const { return fNCalled; }
           UInt_t       GetNPassed()   const { return fNPassed; }
   virtual void         Print( Option_t *opt="" ) const;
-  virtual void         Reset() { fLastResult=kFALSE; fNCalled=fNPassed=0; }
+  virtual void         Reset();
+  virtual void         SetBlockname( const Text_t* name );
   virtual void         SetName( const Text_t* name );
-  virtual void         SetBlockname( const Text_t* name ) { fBlockname = name; }
   virtual void         SetNameTitle( const Text_t *name, const Text_t *title );
 
 protected:
@@ -49,6 +50,16 @@ Bool_t THaCut::EvalCut()
   fLastResult = ( Eval() > 0.5 );
   if( fLastResult ) fNPassed++;
   return fLastResult;
+}
+
+//_____________________________________________________________________________
+inline
+void THaCut::Reset()
+{ 
+  // Reset cut result and statistics counters
+
+  ClearResult();
+  fNCalled = fNPassed = 0;
 }
 
 #endif

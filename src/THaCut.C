@@ -1,4 +1,4 @@
-//*-- Author :    Ole Hansen   03/05/2000
+//*-- Author :    Ole Hansen   03-May-2000
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -14,7 +14,6 @@
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
-#include <cstdlib>
 #include <cstring>
 
 
@@ -136,6 +135,16 @@ void THaCut::Print( Option_t* option ) const
       cout << "  (0.00%)\n";
 
   }
+}
+
+//_____________________________________________________________________________
+void THaCut::SetBlockname( const Text_t* name )
+{
+  // Set name of block (=group of cuts) for this cut.
+  // The block name is used only for informational purposes within the 
+  // THaCut class.
+
+  fBlockname = name;
 }
 
 //_____________________________________________________________________________
