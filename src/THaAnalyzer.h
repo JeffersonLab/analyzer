@@ -65,6 +65,7 @@ protected:
   TString*       fHistBlockNames;  //Array of histogram block names
   TString*       fMasterCutNames;  //Names of the "master cuts" for each cut block
   THaNamedList** fCutBlocks;       //Array of pointers to the blocks of cuts
+  UInt_t         fNev;             //Current event number
 
           Int_t          EvalCuts( Int_t n );
   virtual void           SetupCuts();

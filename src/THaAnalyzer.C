@@ -34,6 +34,9 @@
 #include <algorithm>
 #include <cstring>
 
+// FIXME: Debug
+#include "THaVarList.h"
+
 ClassImp(THaAnalyzer)
 
 const char* const THaAnalyzer::kMasterCutName = "master";
@@ -47,6 +50,7 @@ THaAnalyzer::THaAnalyzer()
   fPhysics = 0;
   fFile = 0;
   fTree = 0;
+  fNev = 0;
 
   // Set the default cut block names. These can be redefined via SetCutBlocks()
 
@@ -62,6 +66,10 @@ THaAnalyzer::THaAnalyzer()
 
   fMasterCutNames   = new TString[ fNblocks ];
   fCutBlocks        = new THaNamedList*[ fNblocks ];
+
+  if( gHaVars ) {
+    gHaVars->Define("nev", "Event number", fNev );
+  }
 }
 
 //_____________________________________________________________________________
@@ -75,6 +83,9 @@ THaAnalyzer::~THaAnalyzer()
   delete [] fMasterCutNames;
   delete [] fHistBlockNames;
   delete [] fCutBlockNames;
+
+  if( gHaVars )
+    gHaVars->RemoveName("nev");
 }
 
 //_____________________________________________________________________________
@@ -147,7 +158,8 @@ Int_t THaAnalyzer::Process( THaRun& run )
 
   //--- Initialize counters
 
-  UInt_t nev = 0, nev_physics = 0;
+  fNev = 0;
+  UInt_t nev_physics = 0;
   UInt_t nlim = run.GetLastEvent();
   bool verbose = true, first = true;
 
@@ -164,7 +176,7 @@ Int_t THaAnalyzer::Process( THaRun& run )
   bench.Start("Statistics");
 
   while( (status = run.ReadEvent()) == 0 && nev_physics < nlim ) {
-    nev++;
+    fNev++;
     evdata.LoadEvent( run.GetEvBuffer() );
 
     //--- Initialization
@@ -234,8 +246,8 @@ Int_t THaAnalyzer::Process( THaRun& run )
 
     // Print marks every 1000 events
 
-    if( verbose && (nev%1000 == 0))  
-      cout << dec << nev << endl;
+    if( verbose && (fNev%1000 == 0))  
+      cout << dec << fNev << endl;
 
     //=== Physics triggers ===
 
@@ -328,7 +340,7 @@ Int_t THaAnalyzer::Process( THaRun& run )
     cout << "ERROR: ReadEvent() status = " << status;
   cout << endl;
 
-  cout << "Processed " << nev << " events, " 
+  cout << "Processed " << fNev << " events, " 
        << nev_physics << " physics events.\n";
 
   // Print scaler statistics
