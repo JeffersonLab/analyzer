@@ -197,7 +197,7 @@ haDict.C: $(HDR) src/HallA_LinkDef.h
 %.o:	%.C
 	$(CXX) $(CXXFLAGS) -o $@ -c $<
 
-%.d:	%.C
+%.d:	%.C src/ha_compiledata.h
 	@echo Creating dependencies for $<
 #	@$(SHELL) -ec '$(CXX) -MM $(CXXFLAGS) -c $< \
 #		| sed '\''s%\($*\)\.o[ :]*%\1.o $@ : %g'\'' > $@; \
