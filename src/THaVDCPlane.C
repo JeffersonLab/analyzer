@@ -7,7 +7,7 @@
 // Here:                                                                     //
 //        Units of measurements:                                             //
 //        For cluster position (center) and size  -  wires;                  //
-//        For X, Y, and Z coordinates of track    -  centimeters;            //
+//        For X, Y, and Z coordinates of track    -  meters;                 //
 //        For Theta and Phi angles of track       -  in tangents.            //
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
