@@ -390,7 +390,7 @@ Int_t THaVarList::DefineVariables( const VarDef* list, const char* prefix,
   while( item->name ) {
 
     const char* description = item->desc;
-    if( !description || strlen(description) == 0 )
+    if( !description || !*description )
       description = item->name;
 
     size_t len = strlen( item->name ), slen = 0, plen = 0;
@@ -488,8 +488,7 @@ Int_t THaVarList::DefineVariables( const RVarDef* list, const TObject* obj,
     if( prefix )
       name.Prepend(prefix);
 
-    TString desc( (item->desc || strlen(item->desc) == 0 ) ? 
-		  item->desc : name.Data() );
+    TString desc( (item->desc && *item->desc ) ? item->desc : name.Data() );
 
     // Process the variable definition
     char* c = ::Compress( item->def );
@@ -500,7 +499,7 @@ Int_t THaVarList::DefineVariables( const RVarDef* list, const TObject* obj,
 	       "Variable not defined.", name.Data(), desc.Data() );
       continue;
     }
-    if( var_prefix && strlen(var_prefix) )
+    if( var_prefix && *var_prefix )
       def.Prepend( var_prefix );
 
     THaVar* var = DefineByRTTI( name, desc, def, obj, cl, errloc );
@@ -541,14 +540,14 @@ void THaVarList::PrintFull( Option_t* option ) const
   // Supports selection of subsets of variables via 'option'.
   // E.g.: option="var*" prints only variables whose names start with "var".
 
+  if( !option )  option = "";
   TRegexp re(option,kTRUE);
   TIter next(this);
   TObject* object;
-  Int_t nch = strlen(option);
 
   while ((object = next())) {
     TString s = object->GetName();
-    if (nch && strcmp(option,object->GetName()) && s.Index(re) == kNPOS) 
+    if (*option && strcmp(option,object->GetName()) && s.Index(re) == kNPOS) 
       continue;
     object->Print("FULL");
   }
