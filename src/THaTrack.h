@@ -46,6 +46,10 @@ public:
   Double_t          GetTheta() const               { return fTheta; }
   Double_t          GetPhi() const                 { return fPhi; }
 
+  Double_t       GetDX()        const { return fDX; }
+  Double_t       GetDY()        const { return fDY; }
+  Double_t       GetDTheta()    const { return fDTheta; }
+  Double_t       GetDPhi()      const { return fDPhi; } 
   Double_t       GetRX()        const { return fRX; }
   Double_t       GetRY()        const { return fRY; }
   Double_t       GetRTheta()    const { return fRTheta; }
@@ -64,6 +68,8 @@ public:
   void              Set( Double_t p, Double_t theta, Double_t phi, 
 			 Double_t x, Double_t y );
   void              SetR( Double_t x, Double_t y,
+			  Double_t theta, Double_t phi );
+  void              SetD( Double_t x, Double_t y,
 			  Double_t theta, Double_t phi );
   void              SetTarget( Double_t x, Double_t y,
 			  Double_t theta, Double_t phi );
@@ -106,6 +112,12 @@ protected:
   Double_t fTY;     // y position at target
   Double_t fTTheta; // deviation of velocity in x direction
   Double_t fTPhi;   // deviation of velocity in y direction
+
+  // coordinates in the detector system
+  Double_t fDX;     // x position in DCS
+  Double_t fDY;     // y position in DCS
+  Double_t fDTheta; // Tangent of DCS Theta 
+  Double_t fDPhi;   // Tangent of DCS Phi 
 
   Double_t fDp;     // dp/p_center -- fractional change in momentum
   //Double_t fPmom; == fP (MeV/c)
@@ -182,6 +194,17 @@ void THaTrack::Set( Double_t p, Double_t theta, Double_t phi,
 {
   SetMomentum( p, theta, phi );
   SetPosition( x, y );
+}
+
+//_____________________________________________________________________________
+inline
+void THaTrack::SetD( Double_t x, Double_t y, Double_t theta, Double_t phi )
+{
+  // set the coordinates in the rotated focal-plane frame
+  fDX = x;
+  fDY = y;
+  fDTheta = theta;
+  fDPhi = phi;
 }
 
 //_____________________________________________________________________________
