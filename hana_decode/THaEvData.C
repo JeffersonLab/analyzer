@@ -42,7 +42,7 @@
 
 #ifndef STANDALONE
 #include "THaVarList.h"
-#include "THaInterface.h"
+#include "THaGlobals.h"
 #endif
 
 using namespace std;
