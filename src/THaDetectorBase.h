@@ -9,6 +9,8 @@
 
 #include "TNamed.h"
 #include "TVector3.h"
+#include "THaTrack.h"
+#include "THaMatrix.h"
 #include <cstdio>
 
 class THaDetMap;
@@ -47,6 +49,11 @@ public:
 			    const char *filemode = "r", 
 			    const int debug_flag = 1);
 
+  bool CheckIntercept(THaTrack *track);
+  bool CalcInterceptCoords(THaTrack *track, Double_t &x, Double_t &y);
+  bool CalcPathLen(THaTrack *track, Double_t &t);
+
+
 protected:
 
   // Mapping
@@ -57,8 +64,15 @@ protected:
 
   // Geometry 
   TVector3        fOrigin;    // Origin of detector plane in detector coordinates
-  Float_t         fSize[3];   // Detector size in x,y,z (cm)
+  Float_t         fSize[3];   // Detector size in x,y,z (cm) - x,y are half-widths
   
+  // Extra Geometry for calculating intercepts
+  TVector3  fXax;                  // X axis of the detector plane
+  TVector3  fYax;                  // Y axis of the detector plane
+  TVector3  fZax;                  // Normal to the detector plane
+  THaMatrix fDenom;                // Denominator matrix for intercept calc
+  THaMatrix fNom;                  // Nominator matrix for intercept calc
+
   // General status variables
   char*           fPrefix;    // Name prefix for global variables
   EStatus         fStatus;    // Flag indicating status of initialization
@@ -77,6 +91,10 @@ protected:
     { return kOK; }
   virtual Int_t   RemoveVariables() const;
   virtual Int_t   SetupDetector( const TDatime& date )   { return kOK; }
+  virtual void    DefineAxes(Double_t rotation_angle);
+
+  bool CalcTrackIntercept(THaTrack *track, Double_t &t, Double_t &ycross, 
+			  Double_t &xcross);
 
   //Only derived classes may construct me
   THaDetectorBase() : fDetMap(NULL), fPrefix(NULL), fStatus(kNotinit), 
