@@ -4,11 +4,11 @@
 #include "THaPostProcess.h"
 #include "TString.h"
 
-class THaIORun;
+class THaCodaFile;
 class THaCut;
 class TString;
 class TDatime;
-
+class THaRunBase;
 
 class THaFilter : public THaPostProcess {
  public:
@@ -16,13 +16,13 @@ class THaFilter : public THaPostProcess {
   virtual ~THaFilter();
   
   virtual Int_t Init(const TDatime&);
-  virtual Int_t Process( const THaEvData*, const THaRun*, Int_t code );
+  virtual Int_t Process( const THaEvData*, const THaRunBase*, Int_t code );
   virtual Int_t Close();
 
  protected:
   TString   fCutName;
   TString   fFileName;
-  THaIORun* fRun;
+  THaCodaFile* fCodaOut;
   THaCut*   fCut;
   
  public:

@@ -5,18 +5,18 @@
 #include <iostream>
 
 #include "THaFilter.h"
-
+#include "THaCodaFile.h"
 #include "TError.h"
 #include "TString.h"
 #include "THaCutList.h"
 #include "THaCut.h"
-#include "THaIORun.h"
+#include "THaRunBase.h"
 
 using namespace std;
 
 //_____________________________________________________________________________
 THaFilter::THaFilter( const char *cutname, const char* filename ) :
-  fCutName(cutname), fFileName(filename), fRun(NULL), fCut(NULL)
+  fCutName(cutname), fFileName(filename), fCodaOut(NULL), fCut(NULL)
 {
   // Constructor
 }
@@ -29,6 +29,7 @@ THaFilter::~THaFilter()
   // own Close() from there.
 
   Close();
+  delete fCodaOut;
 }
 
 //_____________________________________________________________________________
@@ -36,10 +37,9 @@ Int_t THaFilter::Close()
 {
   // Close this filter. Closes output file if open.
 
+  if( !fCodaOut ) return 0;
   cout << "Flushing and Closing " << fFileName << endl;
-  if ( fRun->IsOpen() )
-    return fRun->CloseFile();
-  return 0;
+  return fCodaOut->codaClose();
 }
 
 //_____________________________________________________________________________
@@ -50,20 +50,19 @@ Int_t THaFilter::Init(const TDatime& date)
   if (fIsInit)
     return 0;
 
-  fRun = new THaIORun(fFileName,"filtered file","w");
-  if (!fRun) {
-    Error("THaFilter::Process","Cannot create run %s for cut %s",
-	  fFileName.Data(),fCutName.Data());
+  fCodaOut = new THaCodaFile;
+  if (!fCodaOut) {
+    Error("Init","Cannot create CODA output file object. "
+	  "Something is very wrong." );
     return -2;
   }
-  if ( fRun->OpenFile() ) {
-    Error("THaFilter::Process","Cannot open file %s.",
-	  fFileName.Data(),fCutName.Data());
+  if ( fCodaOut->codaOpen(fFileName, "w", 1) ) {
+    Error("Init","Cannot open CODA file %s for writing.",fFileName.Data());
     return -3;
   }      
   fCut = gHaCuts->FindCut(fCutName);
   if (!fCut) {
-    Warning("THaFilter::Process","Cut %s does not exist. Filter is inactive.",
+    Warning("Init","Cut %s does not exist. Filter is inactive.",
 	    fCutName.Data());
   } else {
     fIsInit = 1;
@@ -72,20 +71,17 @@ Int_t THaFilter::Init(const TDatime& date)
 }
 
 //_____________________________________________________________________________
-Int_t THaFilter::Process( const THaEvData* evdata, const THaRun* run,
+Int_t THaFilter::Process( const THaEvData* evdata, const THaRunBase* run,
 			  Int_t code ) 
 {
   // Process event. Write the event to output CODA file if and only if
   // the event passes the filter cut.
 
-  if (!fIsInit) return 0;
+  if (!fIsInit || !fCut->GetResult()) 
+    return 0;
   
-  if ( fCut->GetResult() ) {
-    // write out the event
-    Int_t *buff = const_cast<Int_t*>(run->GetEvBuffer());
-    return fRun->PutEvent(buff);
-  }
-  return 0;
+  // write out the event
+  return  fCodaOut->codaWrite(run->GetEvBuffer());
 }
 
 //_____________________________________________________________________________
