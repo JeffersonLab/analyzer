@@ -1,0 +1,48 @@
+To Calibrate the TDC offsets for the VDC's:
+
+1) Analyze at least 100k single or coincidence electron-beam events,
+   preferably from a white-spectrum run such that the complete focal-plane
+   is populated. Be certain to save the following variables in the TTree:
+
+variable D.evtype
+
+variable R.vdc.u1.rawtime
+variable R.vdc.u1.wire
+variable R.vdc.u2.rawtime
+variable R.vdc.u2.wire
+variable R.vdc.v1.rawtime
+variable R.vdc.v1.wire
+variable R.vdc.v2.rawtime
+variable R.vdc.v2.wire
+variable L.vdc.u1.rawtime
+variable L.vdc.u1.wire
+variable L.vdc.u2.rawtime
+variable L.vdc.u2.wire
+variable L.vdc.v1.rawtime
+variable L.vdc.v1.wire
+variable L.vdc.v2.rawtime
+variable L.vdc.v2.wire
+
+2) After opening the root-file, load and run the 'Determine_VDC_T0.C'
+   script:
+
+.x Determine_VDC_T0.C+
+
+   The wires channels are grouped together in bunches of 4 to ensure
+   sufficient statistics. This can be changed via the variable NWireGrp in
+   the script.
+
+   A new set of Database files, named *.vdc.dat.NEW, will be created in the
+   current directory.
+
+   A file call "VDC_out.root" is made, which will contain the histograms:
+    t0_R, t0_L   -- contain the calculated T0 offsets
+    L_u1, L_u2, L_v1, L_v2,
+    R_u1, R_u2, R_v1, R_v2  -- rawtime vs. wire distribution (uncorrected)
+
+
+3) After checking the database, move them into the repository, and remove
+   the ".NEW" from the name. 
+
+
+Questions? Contact   Robert Feuerbach  (feuerbac@jlab.org)
