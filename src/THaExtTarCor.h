@@ -11,9 +11,7 @@
 #include "THaTrackingModule.h"
 #include "TString.h"
 
-class THaSpectrometer;
 class THaVertexModule;
-class THaTrackInfo;
 
 class THaExtTarCor : public THaPhysicsModule, public THaTrackingModule {
   
