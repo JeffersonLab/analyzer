@@ -159,6 +159,7 @@ void THaCrateMap::incrNslot(int crate) {
      int prior_jan_2001 = 0;
      int after_may_2001 = 1;   
      int after_sep_2002 = 1;  // most recent
+     int after_jun_2003 = 0;
 
      if (tloc == 0) {
 //       cout << "Initializing crate map for the time='now'."<<endl;
@@ -173,6 +174,7 @@ void THaCrateMap::incrNslot(int crate) {
        if (year >= 2001 && month > 5) after_may_2001 = 1; 
        if (year < 2002 || (year == 2002 && month < 9)) 
                 after_sep_2002 = 0;
+       if (year >= 2003 && month > 6) after_jun_2003 = 1;
      } 
      if (prior_oct_2000) prior_jan_2001 = 1;
      for(crate=0; crate<MAXROC; crate++) {
@@ -234,6 +236,10 @@ void THaCrateMap::incrNslot(int crate) {
        for(slot= 4; slot<=10; slot++) setModel(4,slot,1877);
        setModel(4,22,1881);
        setModel(4,23,1877);
+       if ( after_jun_2003 ) {
+	 setModel(4,20,1881);
+	 setModel(4,21,1875);
+       }
      } else {
        for(slot= 2; slot<= 7; slot++) setModel(4,slot,1881);
        for(slot= 8; slot<=11; slot++) setModel(4,slot,1877);
