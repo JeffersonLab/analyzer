@@ -51,6 +51,7 @@ Int_t THaShower::ReadDatabase( FILE* fi, const TDatime& date )
   // Read data from database
 
   rewind( fi );
+
   // Blocks, rows, max blocks per cluster
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );          
   fscanf ( fi, "%d%d", &ncols, &nrows );  
@@ -165,26 +166,27 @@ Int_t THaShower::ReadDatabase( FILE* fi, const TDatime& date )
   Float_t dx, dy;
   fscanf ( fi, "%f%f", &dx, &dy );                   // Block spacings in x and y
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-
-  // Read calibrations
-  // Transpose the calibration arrays since they are given in "natural order"
-  // in the ASCII file.
-  // (The shower block numbers count along columns first, then rows,
-  // but the data come in along rows when reading the file. Transposing the
-  // table in the file would result in a very wide table since the number
-  // of columns is large and the number of rows (transverse direction) small.)
-  for (int j=0; j<fNelem; j++) {
-    int t = nrows*(j%ncols) + j/ncols;
-    fscanf (fi,"%f",fPed+t);                         // Pedestals of channels
-  }
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  for (int j=0; j<fNelem; j++) {
-    int t = nrows*(j%ncols) + j/ncols;
-    fscanf (fi, "%f",fGain+t);                       // Coefficients of chans
-  }
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );  
   fscanf ( fi, "%f", &fEmin );                       // Emin thresh for center
   fgets ( buf, LEN, fi );
+
+  // Read calibrations.
+  // Before doing this, search for any date tags that follow, and start reading from
+  // the best matching tag if any are found. If none found, but we have a configuration
+  // string, search for it.
+  if( SeekDBdate( fi, date ) == 0 && fConfig.Length() > 0 && 
+      SeekDBconfig( fi, fConfig.Data() ));
+
+  fgets ( buf, LEN, fi );  
+  // Crude protection against a missed date/config tag
+  if( buf[0] == '[' ) fgets ( buf, LEN, fi );
+
+  // Read ADC pedestals and gains (in order of logical channel number)
+  for (int j=0; j<fNelem; j++)
+    fscanf (fi,"%f",fPed+j);
+  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
+  for (int j=0; j<fNelem; j++) 
+    fscanf (fi, "%f",fGain+j);
+
 
   // Compute block positions
   for( int c=0; c<ncols; c++ ) {
