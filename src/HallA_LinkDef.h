@@ -95,6 +95,9 @@
 #pragma link C++ class THaDBFile+;
 #pragma link C++ class THaCoincidenceTime+;
 #pragma link C++ class THaTrackProj+;
+#pragma link C++ class THaPostProcess+;
+#pragma link C++ class THaFilter+;
+#pragma link C++ class THaIORun+;
 
 #ifdef ONLINE_ET
 #pragma link C++ class THaOnlRun+;
