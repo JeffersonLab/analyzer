@@ -13,10 +13,6 @@
 class THaElossCorrection : public THaPhysicsModule {
   
 public:
-  THaElossCorrection( const char* name, const char* description,
-		      const char* input = "", 
-		      Double_t particle_mass = 0.511e-3 /* GeV/c^2 */,
-		      Int_t hadron_charge = 1 );
   virtual ~THaElossCorrection();
   
   virtual void      Clear( Option_t* opt="" );
@@ -60,6 +56,11 @@ protected:
   // Setup functions
   virtual Int_t DefineVariables( EMode mode = kDefine );
   virtual Int_t ReadRunDatabase( const TDatime& date );
+
+  THaElossCorrection( const char* name, const char* description,
+		      const char* input = "", 
+		      Double_t particle_mass = 0.511e-3 /* GeV/c^2 */,
+		      Int_t hadron_charge = 1 );
 
 private:
   // Energy loss library functions
