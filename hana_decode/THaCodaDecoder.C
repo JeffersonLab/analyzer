@@ -696,6 +696,28 @@ int THaCodaDecoder::vme_decode(int roc, THaCrateMap* map, const int* evbuffer,
 	      ++p;
 	    }
 	    break;
+	  case 767:   // CAEN 767 MultiHit TDC
+	    {
+	      p++;
+	      int nword=0;
+	      while (((*p)&0x00600000)==0) {
+		chan=((*p)&0x7f000000)>>24;
+		raw=((*p)&0x000fffff);	      
+		if (crateslot[idx(roc,slot)]->loadData("adc",chan,raw,raw)
+		    == SD_ERR) return HED_ERR;
+		p++;
+		nword++;
+	      } 
+	      if (((*p)&0x00600000)!=0x00200000) {
+		return HED_ERR;
+	      } else {
+		if (((*p)&0xffff)!=nword) {
+		  if (DEBUG) cout<<"WC mismatch "<<nword<<" "<<hex<<(*p)<<endl;
+		  return HED_ERR;
+		}
+	      }	      
+	    }
+	    break;
 	  default:
 	    break;
 	  } //end switch(model)
