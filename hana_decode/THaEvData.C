@@ -57,16 +57,15 @@ TBits THaEvData::fgInstances;
 //_____________________________________________________________________________
 
 THaEvData::THaEvData() :
-  first_load(true), first_scaler(true), first_decode(true),
+  helicity(0), first_load(true), first_scaler(true), first_decode(true),
   numscaler_crate(0), buffer(0), run_num(0), run_type(0), run_time(0), 
-  fNSlotUsed(0), fNSlotClear(0), fMap(0)
+  dhel(0.0), fNSlotUsed(0), fNSlotClear(0), fMap(0)
 {
   fInstance = fgInstances.FirstNullBit();
   fgInstances.SetBitNumber(fInstance);
   fInstance++;
   epics = new THaEpicsStack;
   crateslot = new THaSlotData*[MAXROC*MAXSLOT];
-  helicity = new THaHelicity;
   cmap = new THaCrateMap;
   fb = new THaFastBusWord;
   fSlotUsed  = new UShort_t[MAXROC*MAXSLOT];
@@ -168,7 +167,7 @@ const char* THaEvData::DevType(int crate, int slot) const {
 }
 
 Double_t THaEvData::GetEvTime() const {
-  return helicity->GetTime();
+  return helicity ? helicity->GetTime() : 0.0;
 }
 
 int THaEvData::gendecode(const int* evbuffer, THaCrateMap* map) {
@@ -303,8 +302,8 @@ int THaEvData::physics_decode(const int* evbuffer, THaCrateMap* map) {
      }
      if( fDoBench ) fBench->Stop("physics_decode");
 // Decode each ROC
-// This is not part of the loop above because it may exit prematurely due to errors,
-// which would leave the rocdat[] array incomplete.
+// This is not part of the loop above because it may exit prematurely due 
+// to errors, which would leave the rocdat[] array incomplete.
      for( int i=0; i<nroc; i++ ) {
        int iroc = irn[i];
        const RocDat_t* proc = rocdat+iroc;
@@ -321,9 +320,15 @@ int THaEvData::physics_decode(const int* evbuffer, THaCrateMap* map) {
 	 if(status == HED_ERR) return HED_ERR;
        }
      }
-     if(helicity->Decode(*this) != 1) return HED_ERR;
-     dhel = (Double_t)helicity->GetHelicity();
-     dtimestamp = (Double_t)helicity->GetTime();
+     if( HelicityEnabled()) {
+       if( !helicity ) {
+	 helicity = new THaHelicity;
+	 if( !helicity ) return HED_ERR;
+       }
+       if(helicity->Decode(*this) != 1) return HED_ERR;
+       dhel = (Double_t)helicity->GetHelicity();
+       dtimestamp = (Double_t)helicity->GetTime();
+     }
      return HED_OK;
 }
 
@@ -506,11 +511,11 @@ int THaEvData::GetScaler(int roc, int slot, int chan) const {
 }
 
 int THaEvData::GetHelicity() const {
-  return (int)helicity->GetHelicity();
+  return helicity ? (int)helicity->GetHelicity() : 0;
 }
 
 int THaEvData::GetHelicity(const TString& spec) const {
-  return (int)helicity->GetHelicity(spec);
+  return helicity ? (int)helicity->GetHelicity(spec) : 0;
 }
 
 double THaEvData::GetEpicsData(const char* tag, int event) const {
@@ -839,12 +844,26 @@ void THaEvData::SetRunTime( UInt_t tloc )
 {
   // Set run time and re-initialize crate map (and possibly other
   // database parameters for the new time.
-
   if( run_time == tloc ) 
     return;
   run_time = tloc;
   init_cmap();     
   init_slotdata(fMap);
+}
+
+void THaEvData::EnableHelicity( Bool_t enable ) 
+{
+  // Enable/disable helicity decoding
+  if( enable )
+    SetBit(kHelicityEnabled);
+  else
+    ResetBit(kHelicityEnabled);
+}
+
+Bool_t THaEvData::HelicityEnabled() const
+{
+  // Test if helicity decoding enabled
+  return TestBit(kHelicityEnabled);
 }
 
 void THaEvData::hexdump(const char* cbuff, size_t nlen)

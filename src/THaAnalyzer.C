@@ -149,12 +149,62 @@ void THaAnalyzer::Close()
 
 
 //_____________________________________________________________________________
+void THaAnalyzer::EnableHelicity( Bool_t enable ) 
+{
+  // Enable/disable helicity decoding
+  if( enable )
+    SetBit(kHelicityEnabled);
+  else
+    ResetBit(kHelicityEnabled);
+}
+
+//_____________________________________________________________________________
+Bool_t THaAnalyzer::HelicityEnabled() const
+{
+  // Test if helicity decoding enabled
+  return TestBit(kHelicityEnabled);
+}
+
+//_____________________________________________________________________________
 void THaAnalyzer::Print( Option_t* opt ) const
 {
   // Report status of the analyzer.
 
   if( fRun )
     fRun->Print();
+}
+
+//_____________________________________________________________________________
+void THaAnalyzer::PrintSummary( const THaRun* run ) const
+{
+  // Print summary of cuts etc.
+
+  if( gHaCuts->GetSize() > 0 ) {
+    gHaCuts->Print("STATS");
+    if( fSummaryFileName.Length() > 0 ) {
+      TString filename(fSummaryFileName);
+      Ssiz_t pos, dot=-1;
+      while(( pos = filename.Index(".",dot+1)) != kNPOS ) dot=pos;
+      const char* tag = Form("_%d",run->GetNumber());
+      if( dot != -1 ) 
+	filename.Insert(dot,tag);
+      else
+	filename.Append(tag);
+      ofstream ostr(filename.Data());
+      if( ostr ) {
+	// Write to file via cout
+	streambuf* cout_buf = cout.rdbuf();
+	cout.rdbuf(ostr.rdbuf());
+	TDatime now;
+	cout << "Cut Summary for run " << run->GetNumber() 
+	     << " completed " << now.AsString() 
+	     << endl << endl;
+	gHaCuts->Print("STATS");
+	cout.rdbuf(cout_buf);
+	ostr.close();
+      }
+    }
+  }
 }
 
 //_____________________________________________________________________________
@@ -511,39 +561,6 @@ Int_t THaAnalyzer::ReadOneEvent( THaRun* run, THaEvData* evdata )
 }
 
 //_____________________________________________________________________________
-void THaAnalyzer::PrintSummary( const THaRun* run ) const
-{
-  // Print summary of cuts etc.
-
-  if( gHaCuts->GetSize() > 0 ) {
-    gHaCuts->Print("STATS");
-    if( fSummaryFileName.Length() > 0 ) {
-      TString filename(fSummaryFileName);
-      Ssiz_t pos, dot=-1;
-      while(( pos = filename.Index(".",dot+1)) != kNPOS ) dot=pos;
-      const char* tag = Form("_%d",run->GetNumber());
-      if( dot != -1 ) 
-	filename.Insert(dot,tag);
-      else
-	filename.Append(tag);
-      ofstream ostr(filename.Data());
-      if( ostr ) {
-	// Write to file via cout
-	streambuf* cout_buf = cout.rdbuf();
-	cout.rdbuf(ostr.rdbuf());
-	TDatime now;
-	cout << "Cut Summary for run " << run->GetNumber() 
-	     << " completed " << now.AsString() 
-	     << endl << endl;
-	gHaCuts->Print("STATS");
-	cout.rdbuf(cout_buf);
-	ostr.close();
-      }
-    }
-  }
-}
-
-//_____________________________________________________________________________
 Int_t THaAnalyzer::Process( THaRun* run )
 {
   // Process the given run. Loop over all events in the event range and
@@ -581,6 +598,9 @@ Int_t THaAnalyzer::Process( THaRun* run )
   // Make the current run available globally - the run parameters are
   // needed by some modules
   gHaRun = run;
+
+  // Enable/disable helicity decoding as requested
+  fEvData->EnableHelicity( HelicityEnabled() );
 
   //--- The main event loop.
   TIter next( gHaApps );

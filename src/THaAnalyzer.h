@@ -28,6 +28,7 @@ public:
   virtual ~THaAnalyzer();
 
   void           EnableBenchmarks( Bool_t b = kTRUE ) { fDoBench = b; }
+  void           EnableHelicity( Bool_t b = kTRUE );
   void           EnableRunUpdate( Bool_t b = kTRUE )  { fUpdateRun = b; }
   void           EnableOverwrite( Bool_t b = kTRUE )  { fOverwrite = b; }
   const char*    GetOutFileName()    const   { return fOutFileName.Data(); }
@@ -37,6 +38,7 @@ public:
   const TFile*   GetOutFile()        const   { return fFile; }
   Int_t          GetCompressionLevel() const { return fCompress; }
   Bool_t         HasStarted()          const { return fAnalysisStarted; }
+  Bool_t         HelicityEnabled() const;
   void           SetEvent( THaEvent* event )     { fEvent = event; }
   void           SetOutFile( const char* name )  { fOutFileName = name; }
   void           SetCutFile( const char* name )  { fCutFileName = name; }
@@ -107,11 +109,15 @@ protected:
   virtual void   InitCuts();
   virtual Int_t  InitModules( const TList* module_list, TDatime& time, 
 			      Int_t erroff, const char* baseclass = NULL );
+  //FIXME: BCI: no need for evdata arg
   virtual Int_t  ReadOneEvent( THaRun* run, THaEvData* evdata );
   virtual void   PrintSummary( const THaRun* run ) const;
 
   static THaAnalyzer* fgAnalyzer;  //Pointer to instance of this class
 
+  //FIXME: BCI: use member variable? or put all flags into fBits?
+  enum { kHelicityEnabled = BIT(14) };
+  
 private:
   THaAnalyzer( const THaAnalyzer& );
   THaAnalyzer& operator=( const THaAnalyzer& );
