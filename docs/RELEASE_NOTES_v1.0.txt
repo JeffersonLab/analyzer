@@ -1,145 +1,62 @@
-Hall A C++ Analyzer version 0.60 ALPHA
---------------------------------------
+Hall A C++ Analyzer version 0.65
+--------------------------------
 
-31 October 2001
+01 April 2002
 
 Disclaimer
 ~~~~~~~~~~
-This is ALPHA software. Use at your own risk. Don't be surprised if
-things don't work as expected.  The program structure is still in flux
-and subject to changes that might make new code incompatible with previous 
-versions.  Little effort has been made so far to make things foolproof.
+This is BETA software. Use at your own risk. The program structure is
+still somewhat in flux and subject to changes that might make new code
+incompatible with previous versions.  Little effort has been made so
+far to make things foolproof.
 
-What's new in this version (a lot!)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+What's new
+~~~~~~~~~~
 
-- Full set of apparatuses, including Left and Right HRS, each with its
-  own VDC and detectors.  Available apparatuses are:
+- A new set of VDC classes that incorporate drift-time fitting and
+  multitrack analysis, and generate high-precision tracking information. 
+  This VDC code produces results similar, but not identical to
+  ESPACE. Some differences are due to the different time-to-distance
+  conversion algorithm used. This will be studied in detail in the
+  next few weeks. 
 
-  THaHRS: (base class for an actual HRS):
+  Some of the coding for these classes was done in the summer of 2001 
+  by Hall A ERULF summer student Jonathan Robbins.
 
-     THaLeftHRS:         VDC, S1, S2
+- An extension to the global variable system that allow definitions of
+  variables using ROOT RTTI information.  This has several major
+  advantages over the previous way to define variables. In particular,
+  the data type of variables and the dimension of arrays is determined 
+  automatically, and it is possible to define variables on data stored in
+  object arrays (derived from TSeqCollection, e.g. TList, TClonesArray)
+  and on certain object member functions (e.g. GetSize()). 
+  Some limitations apply; see the documentation on the Web for details.
 
-     THaRightHRS:        VDC, S1, S2, Aerogel, Gas Cherenkov, 
-			 Total Shower
+- (R. Michaels) A new multipurpose apparatus called THaDecData that contains
+  miscellaneous decoder data and can be used for quick testing of arbitrary
+  signals connected to the DAQ hardware.
 
-     THaBeam:            BPM 4A, BPM 4B, Raster, EpicsData
+Notes
+~~~~~
 
-  Since there now is a base class, THaHRS, the actual implementations of the
-  spectrometers, THaLeft/RightHRS, are extremely simple and very easy to
-  modify to accommodate different detector configurations.
+- The VDC class is now able produce multiple tracks per event (THaTrack) 
+  in the tracks TClonesArray. These tracks always occupy indices 0 through
+  tracks->GetLast(). The number of tracks is tracks->GetLast()+1, which
+  is available as global variables "R.tr.n" and "L.tr.n".
 
-- Full set of detectors, capable of multiple instantiation (= one class
-  can be used to create objects for several different physical detectors).
-  Available detectors are:
+- Detector classes have not yet been updated to analyze all tracks
+  given to them. Many detectors calculate the position where a track
+  crosses the detector plane. This information is still calculated,
+  but now usually refers to the first of possibly several tracks.
 
-  THaSpectrometerDetector:
+- The multitrack VDC analysis has not been debugged thoroughly and
+  has a number of known weaknesses. Do not expect particularly reliable
+  results for multitrack events yet. Improving multitrack analysis is
+  one of the priorities for the next release.
 
-     THaVDC:              Hall A VDC (two UV planes of 368 wires each).
-                          This class is still the basic version from 
-                          Analyzer v0.55 and is of limited precision. It 
-                          only uses wire numbers to find the track, and 
-                          can only find one track.  No fitting of drift times
-                          is performed. Still, it is perfectly suitable for
-                          detector checkout.
-     THaScintillator:     Generic scintillator (L-S1, L-S2, R-S1, R-S2, etc.)
-     THaCherenkov:        Generic Cherenkov (L/R aerogel, L/R gas Cherenkov)
-     THaShower:           Generic shower-type detector (preshower or shower)
-     THaTotalShower:      Combination of two shower detectors (preshower and
-                          shower)
-
-     THaRICH:             The Hall A RICH (very preliminary code)
-
-  THaDetector:
-
-      THaBpm:             Hall A beam position monitor
-      THaRaster:          Hall A beam raster readout
-      THaEpicsData:       Simple interface to some beamline-related 
-                          EPICS (slow control) data
-
-
-- Significant changes to the detector class hierarchy and public interface,
-  especially related to the detector initialization.
-
-  There is now support for subdetectors (THaSubDetector). Both the main
-  detectors (THaDetector) and subdetectors derive from a common base
-  class (THaDetectorBase).
-
-  Detectors are initialized at the beginning of the analysis (in prior
-  versions, they were initialized in the constructor). Initialization
-  occurs via the new Init() method. Init() takes an optional argument
-  of type "const TDatime&" which specifies the time of the current run.
-  Detectors are expected to retrieve appropriate time-dependent database
-  information accordingly.
-
-  For convenience, a generic Init() method is provided in THaDetectorBase,
-  which attempts to open an ASCII database file for the current detector.
-  The name of the database file is derived from the detector name.
-  There is primitive support for time dependence in that database files
-  may be places in subdirectories with a 8-character all-digit name 
-  that is interpreted as YYYYMMDD, where YYYY is the year, MM the month, 
-  and DD the day as of which the data in the directory are valid.
-
-  Detectors that want to use the generic Init() function should implement
-  the methods ReadDatabase(FILE*,const TDatime&) and/or 
-  SetupDetector(const TDatime&).
-
-  This release comes with two very preliminary sets of database files in 
-  subdirectories DB/19970101 and DB/20010101.  The former is probably
-  correct for data taken in 1997, the latter for data from 2001
-  (experiments E94-104 (photopion), E99-117 (A1n), and E97-103 (g2n)).
-  Calibration and geometry data (positions, offsets, pedestals, gains)
-  contained in these database files are not well checked and are little more
-  than ballpark figures.  To get more precise data, if you need them,
-  you need to carry out a calibration yourself, or extract the relevant
-  data from an ESPACE database file. Better database info will be included
-  in the next release.
-
-- Support for arrays of global variables and global variables
-  of types other than Double_t.  Both fixed- and variable-size
-  arrays are supported.
-
-  This greatly simplifies the design of detector classes as member variables 
-  containing information of interest can be of any (basic) type, and array 
-  elements no longer need to be declared one-by-one.
-
-- Utility functions to simplify definition of global variables in
-  detector classes.  In any detector class, global variables can be
-  defined with a single call to DefineVariables( VarDef* ). The argument is
-  and array of type VarDef that can be filled with a tidy, compact C-style 
-  initializer.  All variable definitions belonging to a detector can be 
-  deleted with a single call to RemoveVariables().
-
-- Improved decoder hana_decode_1.6.
-
-- Support for scalers via Bob's scaler package hana_scaler_1.4.
-
-  Scalers should be defined in the analysis macro and placed in
-  the global list gHaScalers.  See the example setup*.C scripts
-  (see "Example Scripts" below).  All scaler banks contained in this list 
-  will be updated throughout the run, and results will be printed at the 
-  end of the analysis.
-
-- Cleaned-up file/tree output (THaEvent).  THaEvent has been turned into
-  a base class that provides basic output functionality and should not be
-  modified.  The contents of the output tree should be defined in a class
-  derived from THaEvent. This release includes one example, THaRawEvent,
-  that contains all variables from the detectors defined in THaLeftHRS and 
-  THaRightHRS. 
+- There is no target reconstruction yet. This is another priority for the
+  next release.
   
-- Basic support for histograms of global variables in THaEvent. One can
-  define 1-d histograms that are filled at the end of the analysis chain.
-  Any global variable can be histogrammed, including arrays. An appropriate
-  histogram class (TH1D, TH1F, TH1S, or TH1C) is chosen automatically based
-  on the type of the variable. Histograms of array variables are filled
-  with all array elements for each event.   Histograms can be defined
-  either with calls to THaEvent::DefineHist or loaded from a plaintext
-  file via THaEvent::LoadHist( const char* filename ).  The default
-  file name is "histdef.dat". An example "histdef.dat" is included.
-  Currently, no cuts can be applied to these histograms.
-
-- Updated demo scripts (see "Example Scripts" below).
-
 
 System requirements
 ~~~~~~~~~~~~~~~~~~~
@@ -181,17 +98,19 @@ ARCH = solarisCC5
 This affects the following three Makefiles:
 
 Makefile
-hana_decode_1.6/Makefile
-hana_scaler_1.4/Makefile
+hana_decode/Makefile
+hana_scaler/Makefile
 
 A "configure" script to automate the platform detection will be included in
-the next release.
+a future release.
 
 Before compiling, make sure that your have set ROOTSYS correctly
 and $ROOTSYS/bin is in your PATH.
 
 On the ifarm machines, issue the command
-	use root/3.01-03
+	use root/3.01-06
+or
+        use root/3.02-07
 to configure ROOT and set the PATH.
 
 To compile, run the Makefile with GNU make (tested with make 3.78-1).
