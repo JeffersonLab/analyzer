@@ -42,6 +42,9 @@ static float fslope = 147;   // ppm/knob
 static string fbscript = "/adaqfs/home/adaq/qasy/feedback/apply_feedback";
 // Present value of feedback data
 static string fbdata = "/adaqfs/home/adaq/qasy/feedback/feedback.data";
+// Min and max IA feedback
+static double minia = 0;
+static double maxia = 10;
 
 static int evcnt, goodevt;
 
@@ -152,6 +155,8 @@ void ApplyFeedBack() {
       if (debug) cout << "oldfdata = "<<oldfdata<<endl;
     }
     newfdata = oldfdata - acorr;
+    if (newfdata < minia) newfdata = minia;
+    if (newfdata > maxia) newfdata = maxia;
     sprintf(command,"  1  %4.2f \n",newfdata);
     string scommand = command;
     string syscall = fbscript + scommand;
