@@ -183,18 +183,14 @@ Int_t THaSecondaryKine::Process( const THaEvData& evdata )
   // momentum is the standard nuclear physics convention.
   TVector3 p_miss = -bq;
   fPmiss   = p_miss.Mag();  //=fB.P()
-  fPmiss1  = fB.P();       //FIXME: TEST
   //The missing momentum components in the q coordinate system.
   fPmiss_x = p_miss.X();
   fPmiss_y = p_miss.Y();
   fPmiss_z = p_miss.Z();
 
   // Invariant mass of the recoil system. Sometimes called "missing mass",
-  // see below. The invariant mass calculated here equals fEmiss + MB(rest).
+  // see below. This invariant mass equals MB(ground state) + excitation energy
   fMrecoil = fB.M();
-  //FIXME: TEST, consistency check
-  fMrecoil1 = TMath::Power(omega+fPrimary->GetTargetMass()-fX.E(),2.0)-
-    fB.Vect().Mag2();
 
   // Kinetic energies of X and B
   fTX = fX.E() - fMX;
@@ -204,6 +200,11 @@ Int_t THaSecondaryKine::Process( const THaEvData& evdata )
   // Standard nuclear physics definition of missing energy: 
   // binding energy of X in the target (= excitation energy of the 
   // recoil system)
+  // Caution: because TB is defined in terms of Mrecoil and not 
+  // MB(ground state), this Emiss includes the excitation energy
+  // of the recoil nucleus. To exclude the excitation energy, compute:
+  //    Emiss' = omega - TX - Erecoil + MB(ground state)
+  // where MB(ground state) is an external parameter set by the user.
   fEmiss = omega - fTX - fTB;
 
   // In production reactions, the "missing energy" is defined 
@@ -255,7 +256,6 @@ Int_t THaSecondaryKine::Process( const THaEvData& evdata )
   fMandelS = (*pQ+*pA).M2();
   fMandelT = (*pQ-fX).M2();
   fMandelU = (*pQ-fB).M2();
-  fMandelU1= (*pA-fX).M2(); // FIXME: TEST
 
   fDataValid = true;
   return 0;

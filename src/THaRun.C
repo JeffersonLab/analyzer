@@ -419,6 +419,9 @@ void THaRun::Clear( const Option_t* opt )
   fDBRead = fIsInit = kFALSE;
   fDataSet = fDataRead = 0;
   fParam->Clear(opt);
+  if ( fAssumeDate )
+    SetDate(fDate);
+  
   if( doing_init ) {
     if( !fAssumeDate )
       ClearDate();

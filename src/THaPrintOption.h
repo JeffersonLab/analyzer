@@ -7,7 +7,7 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-#include "TString.h"
+class TString;
 
 Option_t* const kPRINTLINE  = "LINE";
 Option_t* const kPRINTSTATS = "STATS";

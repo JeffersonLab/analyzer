@@ -311,20 +311,24 @@ Int_t THaVhist::BookHisto(Int_t hfirst, Int_t hlast)
   if (fNbinX == 0) cerr << "THaVhist:WARNING: fNbinX = 0."<<endl;
 
   string sname = fName;
+  string stitle = fTitle;
+  bool doing_array = (fSize>1);
   for (Int_t i = hfirst; i < fSize; i++) {
-    if (fEye == 0 && fSize > 1) 
+    if (fEye == 0 && doing_array) {
        sname = fName + Form("%d",i); 
+       stitle = fTitle + Form(" %d",i);
+    }
     if (fEye == 1 && i > hfirst) continue;
     if (fType.CmpNoCase("th1f") == 0) {
        fH1.push_back(new TH1F(sname.c_str(), 
-	     fTitle.c_str(), fNbinX, fXlo, fXhi));
+	     stitle.c_str(), fNbinX, fXlo, fXhi));
     }
     if (fType.CmpNoCase("th1d") == 0) {
        fH1.push_back(new TH1D(sname.c_str(), 
-	     fTitle.c_str(), fNbinX, fXlo, fXhi));
+	     stitle.c_str(), fNbinX, fXlo, fXhi));
     }
     if (fType.CmpNoCase("th2f") == 0) { 
-      fH1.push_back(new TH2F(sname.c_str(), fTitle.c_str(), 
+      fH1.push_back(new TH2F(sname.c_str(), stitle.c_str(), 
        	  fNbinX, fXlo, fXhi, fNbinY, fYlo, fYhi));
       if (fNbinY == 0) {
       // Booking a 2D histo with zero Y bins is suspicious.
@@ -333,7 +337,7 @@ Int_t THaVhist::BookHisto(Int_t hfirst, Int_t hlast)
       }
     }
     if (fType.CmpNoCase("th2d") == 0) {
-      fH1.push_back(new TH2D(sname.c_str(), fTitle.c_str(), 
+      fH1.push_back(new TH2D(sname.c_str(), stitle.c_str(), 
 	  fNbinX, fXlo, fXhi, fNbinY, fYlo, fYhi));
       if (fNbinY == 0) {
         cerr << "THaVhist:WARNING:: ";

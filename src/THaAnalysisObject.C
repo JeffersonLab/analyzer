@@ -158,7 +158,8 @@ THaAnalysisObject::EStatus THaAnalysisObject::Init( const TDatime& date )
   // 
   // This implementation will change once the real database is  available.
 
-  fStatus = kInitError;
+  Int_t status = kOK;
+  const char* fnam = "run.";
 
   // Generate the name prefix for global variables. Do this here, not in
   // the constructor, so we can use a virtual function - detectors and
@@ -167,37 +168,37 @@ THaAnalysisObject::EStatus THaAnalysisObject::Init( const TDatime& date )
 
   // Open the run database and call the reader. If database cannot be opened,
   // fail only if this object needs the run database
-  //  FILE* fi = OpenFile( "run", date, Here("OpenFile()"));
-  //  if( fi ) {
-
   // Call this object's actual database reader
-  Int_t status = ReadRunDatabase(date);
+  status = ReadRunDatabase(date);
   if( status && (status != kFileError || (fProperties & kNeedsRunDB) != 0))
-    return fStatus;
+    goto err;
 
   // Read the database for this object.
   // Don't bother if this object has not implemented its own database reader.
 
   // Note: requires ROOT >= 3.01 because of TClass::GetMethodAllAny()
   if( IsA()->GetMethodAllAny("ReadDatabase")
-      != gROOT->GetClass("THaAnalysisObject")->GetMethodAllAny("ReadDatabase") ) {
+      != gROOT->GetClass("THaAnalysisObject")->GetMethodAllAny("ReadDatabase")){
 
     // Call this object's actual database reader
-    if( ReadDatabase(date) )
-      return fStatus;
+    fnam = fPrefix;
+    if( (status = ReadDatabase(date)) )
+      goto err;
   } 
-#ifdef WITH_DEBUG
   else if ( fDebug>0 ) {
     cout << "Info: Skipping database call for object " << GetName() 
 	 << " since no ReadDatabase function defined.\n";
   }
-#endif
 
   // Define this object's variables.
-  if( DefineVariables(kDefine) )
-    return fStatus;
-  
-  return fStatus = kOK;
+  status = DefineVariables(kDefine);
+  goto exit;
+
+ err:
+  if( status == kFileError )
+    Error(Here("OpenFile"),"Cannot open database file db_%sdat",fnam);
+ exit:
+  return fStatus = (EStatus)status;
 }
 
 //_____________________________________________________________________________
@@ -207,29 +208,37 @@ FILE* THaAnalysisObject::OpenFile( const char *name, const TDatime& date,
 {
   // Open database file and return a pointer to the C-style file descriptor.
 
+  // Ensure input is sane
+  if( !name || !*name )
+    return NULL;
+  if( !here )
+    here="";
+  if( !filemode )
+    filemode="r";
+
+  // Get list of database file candidates and try to open them in turn
   FILE* fi = NULL;
   vector<string> fnames( GetDBFileList(name, date, here) );
   if( !fnames.empty() ) {
     vector<string>::iterator it = fnames.begin();
     do {
-#ifdef WITH_DEBUG
       if( debug_flag>1 )
       	cout << "<" << here << ">: Opening database file " << *it;
-#endif
       // Open the database file
       fi = fopen( (*it).c_str(), filemode);
       
-#ifdef WITH_DEBUG
       if( debug_flag>1 ) 
 	if( !fi ) cout << " ... failed" << endl;
 	else      cout << " ... ok" << endl;
       else if( debug_flag>0 && fi )
 	cout << "<" << here << ">: Opened database file " << *it << endl;
-#endif
+      // continue until we succeed
     } while ( !fi && ++it != fnames.end() );
   }
-  if( !fi )
-    cerr<<"<"<<here<<">: Cannot open database file for prefix "<<name<<endl;
+  if( !fi && debug_flag>0 ) {
+    ::Error(here,"Cannot open database file db_%s%sdat",name,
+	    (name[strlen(name)-1]=='.'?"":"."));
+  }
 
   return fi;
 }
@@ -354,7 +363,7 @@ void THaAnalysisObject::MakePrefix( const char* basename )
   //   fPrefix = GetName() + "."
 
   delete [] fPrefix;
-  if( basename && strlen(basename) > 0 ) {
+  if( basename && *basename ) {
     fPrefix = new char[ strlen(basename) + strlen(GetName()) + 3 ];
     strcpy( fPrefix, basename );
     strcat( fPrefix, "." );
@@ -372,7 +381,7 @@ void THaAnalysisObject::SetName( const char* name )
 {
   // Set/change the name of the object.
 
-  if( !name || strlen(name) == 0 ) {
+  if( !name || !*name ) {
     Warning( Here("SetName()"),
 	     "Cannot set an empty object name. Name not set.");
     return;
@@ -388,6 +397,16 @@ void THaAnalysisObject::SetNameTitle( const char* name, const char* title )
 
   SetName( name );
   SetTitle( title );
+}
+
+//_____________________________________________________________________________
+void THaAnalysisObject::SetConfig( const char* label )
+{
+  // Set the "configuration" to select in the database.
+  // In text-based database files, this will make the database reader
+  // seek to a section header [ config=label ] if the module supports it.
+
+  fConfig = label;
 }
 
 //_____________________________________________________________________________
@@ -748,9 +767,9 @@ Int_t THaAnalysisObject::SeekDBconfig( FILE* file, const char* tag,
   // Useful for segmenting databases (esp. VDC) for different
   // experimental configurations.
 
-  if( !file || !tag || !strlen(tag) ) return 0;
+  if( !file || !tag || !*tag ) return 0;
   string _label("[");
-  if( label && strlen(label)>0 ) {
+  if( label && *label ) {
     _label.append(label);  _label.append("=");
   }
   ssiz_t llen = _label.size();
@@ -819,7 +838,7 @@ THaAnalysisObject* THaAnalysisObject::FindModule( const char* name,
 
   EStatus save_status = fStatus;
   fStatus = kInitError;
-  if( !name || strlen(name) == 0 ) {
+  if( !name || !*name ) {
     Error( Here(here), "No module name given." );
     return NULL;
   }
@@ -833,7 +852,7 @@ THaAnalysisObject* THaAnalysisObject::FindModule( const char* name,
 	   obj->GetName(), obj->GetTitle(), anaobj );
     return NULL;
   }
-  if( classname && strlen(classname) > 0 && strcmp(classname,anaobj) &&
+  if( classname && *classname && strcmp(classname,anaobj) &&
       !obj->IsA()->InheritsFrom( classname )) {
     Error( Here(here), "Module %s (%s) is not a %s.",
 	   obj->GetName(), obj->GetTitle(), classname );
@@ -848,4 +867,3 @@ THaAnalysisObject* THaAnalysisObject::FindModule( const char* name,
   fStatus = save_status;
   return aobj;
 }
-

@@ -94,7 +94,7 @@ void THaTotalShower::Setup( const char* name,
     sname = shower_name;
   
   char* desc = new char[ 50+strlen(description) ];
-  if( description && strlen(description)>0 )
+  if( description && *description )
     strcpy( desc, description );
   else {
     strcpy( desc, "Total shower counter" );

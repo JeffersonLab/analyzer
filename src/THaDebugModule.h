@@ -11,7 +11,6 @@
 #include "THaPrintOption.h"
 #include <vector>
 
-class THaVar;
 class THaCut;
 
 class THaDebugModule : public THaPhysicsModule {
@@ -32,14 +31,15 @@ protected:
     kQuiet = BIT(2)     // Run quietly (don't print variables)
   };
 
-  std::vector<const THaVar*> fVars; // Array of pointers to variables 
-  THaPrintOption  fVarString; // Set of strings with variable names
+  std::vector<const TObject*> fVars; // Array of pointers to variables 
+  THaPrintOption  fVarString; // Set of strings with variable/cut names
   Int_t           fFlags;     // Option flags
   Int_t           fCount;     // Event counter
   TString         fTestExpr;  // Name of test to evaluate before printing
   THaCut*         fTest;      // Pointer to test object to evaulate
 
   void    PrintEvNum( const THaEvData& ) const;
+  Int_t   ParseList();
 
 private:
 

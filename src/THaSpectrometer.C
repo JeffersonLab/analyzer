@@ -366,6 +366,12 @@ Int_t THaSpectrometer::Reconstruct()
 #endif
   }
 
+  // Reconstruct tracks to target/vertex
+  // This usually also determines the track momentum
+
+  FindVertices( *fTracks );
+
+
   // 4th step: Fine processing.  Pass the precise tracks to the
   // remaining detectors for any precision processing.
   // PID likelihoods should be calculated here.
@@ -383,11 +389,7 @@ Int_t THaSpectrometer::Reconstruct()
 #endif
   }
 
-  // Reconstruct tracks to target/vertex
-
-  FindVertices( *fTracks );
-
-  // Compute additional track properties (e.g. momentum, beta)
+  // Compute additional track properties (e.g. beta)
   // Find "Golden Track" if appropriate.
 
   TrackCalc();

@@ -155,7 +155,7 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
     fTWalkPar = new Double_t[ fNTWalkPar ];
 
     fHitPad = new Int_t[ fNelem ];   
-    fTime   = new Double_t[ fNelem ];   // analysis indexed by HIT, not paddle
+    fTime   = new Double_t[ fNelem ]; // analysis indexed by paddle (yes, inefficient)
     fdTime  = new Double_t[ fNelem ];
     fAmpl   = new Double_t[ fNelem ];
     
@@ -478,7 +478,7 @@ Int_t THaScintillator::Decode( const THaEvData& evdata )
     }
   }
   if ( fDebug > 3 ) {
-    printf("\n\nEvent %d   Trigger %d Scintillator %s\n:",evdata.GetEvNum(),evdata.GetEvType(),GetPrefix());
+    printf("\nScintillator %s:\n",GetPrefix());
     printf("   paddle  Left(TDC    ADC   ADC_p)   Right(TDC   ADC   ADC_p)\n");
     for ( int i=0; i<fNelem; i++ ) {
       printf("     %2d     %5.0f    %5.0f  %5.0f     %5.0f    %5.0f  %5.0f\n",

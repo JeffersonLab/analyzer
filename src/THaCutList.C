@@ -142,15 +142,15 @@ Int_t THaCutList::Define( const char* cutname, const char* expr,
 
   static const char* here = "THaCutList::Define";
 
-  if( !cutname || !strlen(cutname) || (strspn(cutname," ")==strlen(cutname)) ) {
+  if( !cutname || !*cutname || (strspn(cutname," ")==strlen(cutname)) ) {
     Error( here, "empty cut name, cut not created" );
     return -4;
   }
-  if( !expr || !strlen(expr) || (strspn(expr," ")==strlen(expr)) ) {
+  if( !expr || !*expr || (strspn(expr," ")==strlen(expr)) ) {
     Error( here, "empty expression string, cut not created: %s", cutname );
     return -5;
   }
-  if( !block || !strlen(block) || (strspn(block," ")==strlen(block)) ) {
+  if( !block || !*block || (strspn(block," ")==strlen(block)) ) {
     Error( here, "empty block name, cut not created: %s %s", cutname, expr );
     return -6;
   }
@@ -235,8 +235,7 @@ Int_t THaCutList::Load( const char* filename )
   static const char* const here   = "THaCutList::Load";
   static const char* const whtspc = " \t";
 
-  if( !filename || !strlen(filename) || strspn(filename," ") == 
-      strlen(filename) ) {
+  if( !filename || !*filename || strspn(filename," ") == strlen(filename) ) {
     Error( here, "invalid file name, no cuts loaded" );
     return -1;
   }

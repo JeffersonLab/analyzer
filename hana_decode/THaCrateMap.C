@@ -175,13 +175,17 @@ void THaCrateMap::incrNslot(int crate) {
 int THaCrateMap::init(UInt_t tloc) {
   // Modify the interface to be able to use a database file.
   // The real work is done by the init(TString&) method
-  
+
+  // Only print warning/error messages exactly once
+  static bool first = true;
+  static const char* const here = "THaCrateMap::init";
+
   TDatime date(tloc);
   
   TString db;
 
 #ifndef STANDALONE
-  FILE* fi = THaAnalysisObject::OpenFile("cratemap",date,"THaCrateMap::init","r",1);
+  FILE* fi = THaAnalysisObject::OpenFile("cratemap",date,here,"r",0);
 #else
   FILE* fi = fopen("db_cratemap.dat","r");
 #endif
@@ -192,15 +196,15 @@ int THaCrateMap::init(UInt_t tloc) {
       db += static_cast<char>(ch);
     }
     fclose(fi);
-  } else {
-    ::Error( "THaCrateMap::init(UInt_t)","Cannot open database file" );
   }
 
   if ( db.Length() <= 0 ) {
-    ::Error( "THaCrateMap::init(UInt_t)","Using hard-coded time-dependent crate-map" );
+    if( first )
+      ::Warning( here, "Using hard-coded time-dependent crate-map" );
+    first = false;
     return init_hc(tloc);
   }
-  
+  first = false;
   return init(db);
 }
 

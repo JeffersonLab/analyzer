@@ -174,12 +174,65 @@ void THaAnalyzer::Close()
 
 
 //_____________________________________________________________________________
+void THaAnalyzer::EnableHelicity( Bool_t enable ) 
+{
+  // Enable/disable helicity decoding
+  if( enable )
+    SetBit(kHelicityEnabled);
+  else
+    ResetBit(kHelicityEnabled);
+}
+
+//_____________________________________________________________________________
+Bool_t THaAnalyzer::HelicityEnabled() const
+{
+  // Test if helicity decoding enabled
+  return TestBit(kHelicityEnabled);
+}
+
+//_____________________________________________________________________________
 void THaAnalyzer::Print( Option_t* opt ) const
 {
   // Report status of the analyzer.
 
   if( fRun )
     fRun->Print();
+}
+
+//_____________________________________________________________________________
+void THaAnalyzer::PrintSummary( const THaRun* run ) const
+{
+  // Print summary of cuts etc.
+  // Only print to screen if fVerbose>1, but always print to
+  // the summary file if a summary file is requested.
+
+  if( gHaCuts->GetSize() > 0 ) {
+    if( fVerbose>1 )
+      gHaCuts->Print("STATS");
+    if( fSummaryFileName.Length() > 0 ) {
+      TString filename(fSummaryFileName);
+      Ssiz_t pos, dot=-1;
+      while(( pos = filename.Index(".",dot+1)) != kNPOS ) dot=pos;
+      const char* tag = Form("_%d",run->GetNumber());
+      if( dot != -1 ) 
+	filename.Insert(dot,tag);
+      else
+	filename.Append(tag);
+      ofstream ostr(filename.Data());
+      if( ostr ) {
+	// Write to file via cout
+	streambuf* cout_buf = cout.rdbuf();
+	cout.rdbuf(ostr.rdbuf());
+	TDatime now;
+	cout << "Cut Summary for run " << run->GetNumber() 
+	     << " completed " << now.AsString() 
+	     << endl << endl;
+	gHaCuts->Print("STATS");
+	cout.rdbuf(cout_buf);
+	ostr.close();
+      }
+    }
+  }
 }
 
 //_____________________________________________________________________________
@@ -545,39 +598,6 @@ Int_t THaAnalyzer::ReadOneEvent( THaRun* run, THaEvData* evdata )
 }
 
 //_____________________________________________________________________________
-void THaAnalyzer::PrintSummary( const THaRun* run ) const
-{
-  // Print summary of cuts etc.
-
-  if( gHaCuts->GetSize() > 0 ) {
-    gHaCuts->Print("STATS");
-    if( fSummaryFileName.Length() > 0 ) {
-      TString filename(fSummaryFileName);
-      Ssiz_t pos, dot=-1;
-      while(( pos = filename.Index(".",dot+1)) != kNPOS ) dot=pos;
-      const char* tag = Form("_%d",run->GetNumber());
-      if( dot != -1 ) 
-	filename.Insert(dot,tag);
-      else
-	filename.Append(tag);
-      ofstream ostr(filename.Data());
-      if( ostr ) {
-	// Write to file via cout
-	streambuf* cout_buf = cout.rdbuf();
-	cout.rdbuf(ostr.rdbuf());
-	TDatime now;
-	cout << "Cut Summary for run " << run->GetNumber() 
-	     << " completed " << now.AsString() 
-	     << endl << endl;
-	gHaCuts->Print("STATS");
-	cout.rdbuf(cout_buf);
-	ostr.close();
-      }
-    }
-  }
-}
-
-//_____________________________________________________________________________
 Int_t THaAnalyzer::Process( THaRun* run )
 {
   // Process the given run. Loop over all events in the event range and
@@ -616,13 +636,28 @@ Int_t THaAnalyzer::Process( THaRun* run )
   // needed by some modules
   gHaRun = run;
 
+  // Enable/disable helicity decoding as requested
+  fEvData->EnableHelicity( HelicityEnabled() );
+  // Decode scalers only if gHaScalers is not empty
+  fEvData->EnableScalers( (gHaScalers->GetSize()>0) );
+
+  // Informational messages
+  if( fVerbose>1 ) {
+    cout << "Decoder: helicity " 
+	 << (fEvData->HelicityEnabled() ? "enabled" : "disabled")
+	 << endl;
+    cout << "Decoder: scalers " 
+	 << (fEvData->ScalersEnabled() ? "enabled" : "disabled")
+	 << endl;
+    cout << endl << "Starting analysis" << endl;
+  }
+  if( fVerbose>2 && run->GetFirstEvent()>1 )
+    cout << "Skipping " << run->GetFirstEvent() << " events" << endl;
+
   //--- The main event loop.
   TIter next( gHaApps );
   TIter next_scaler( gHaScalers );
   TIter next_physics( gHaPhysics );
-
-  if( fVerbose>2 && run->GetFirstEvent()>1 )
-    cout << "Skipping " << run->GetFirstEvent() << " events\n";
 
   fNev = 0;
   UInt_t nev_physics = 0, nev_analyzed = 0;
@@ -812,44 +847,47 @@ Int_t THaAnalyzer::Process( THaRun* run )
 
     cout << "Processed " << fNev << " events, " 
 	 << nev_analyzed << " data events, " 
-	 << nev_physics << " physics events.\n";
+	 << nev_physics << " physics events. " << endl;
 
-    for (int i = 0; i < fMaxSkip; i++) {
-      if (fSkipCnt[i].count != 0) 
-	cout << "Skipped " << fSkipCnt[i].count
-	     << " events due to " << fSkipCnt[i].reason << endl;
+    if( fVerbose>1 ) {
+      for (int i = 0; i < fMaxSkip; i++) {
+	if (fSkipCnt[i].count != 0) 
+	  cout << "Skipped " << fSkipCnt[i].count
+	       << " events due to " << fSkipCnt[i].reason << endl;
+      }
+
+      // Print scaler statistics
+
+      first = true;
+      next_scaler.Reset();
+      while( THaScalerGroup* theScaler =
+	     static_cast<THaScalerGroup*>( next_scaler() )) {
+	if( !first ) 
+	  cout << endl;
+	else
+	  first = false;
+	theScaler->PrintSummary();
+      }
+      if( !first ) cout << endl;
     }
-
-    // Print scaler statistics
-
-    first = true;
-    next_scaler.Reset();
-    while( THaScalerGroup* theScaler =
-	   static_cast<THaScalerGroup*>( next_scaler() )) {
-      if( !first ) 
-	cout << endl;
-      else
-	first = false;
-      theScaler->PrintSummary();
-    }
-    if( !first ) cout << endl;
-    
-    // Print timing statistics
-
-    if( fDoBench ) {
-      fBench->Print("Prestart");
-      fBench->Print("Init");
-      fBench->Print("RawDecode");
-      fBench->Print("Decode");
-      fBench->Print("Reconstruct");
-      fBench->Print("Physics");
-      fBench->Print("Output");
-      fBench->Print("Cuts");
-      fBench->Print("Scaler");
-    }
-    fBench->Print("Total");
   }
 
+  // Print timing statistics, if benchmarking enabled
+
+  if( fDoBench ) {
+    fBench->Print("Prestart");
+    fBench->Print("Init");
+    fBench->Print("RawDecode");
+    fBench->Print("Decode");
+    fBench->Print("Reconstruct");
+    fBench->Print("Physics");
+    fBench->Print("Output");
+    fBench->Print("Cuts");
+    fBench->Print("Scaler");
+  }
+  if( fVerbose>1 || fDoBench )
+    fBench->Print("Total");
+  
   //--- Close the input file
   run->CloseFile();
 
@@ -865,8 +903,7 @@ Int_t THaAnalyzer::Process( THaRun* run )
   }
 
   // Print cut summary (also to file if one given)
-  if( fVerbose>0 )
-    PrintSummary(run);
+  PrintSummary(run);
 
   //keep the last run available
   //  gHaRun = NULL;

@@ -10,8 +10,6 @@
 #include "TString.h"
 //#include "TError.h"
 
-#include <cstring>
-
 ClassImp(THaSubDetector)
 
 //_____________________________________________________________________________
@@ -23,7 +21,7 @@ THaSubDetector::THaSubDetector( const char* name, const char* description,
 
   static const char* const here = "THaSubDetector()";
 
-  if( !name || strlen(name) == 0 ) {
+  if( !name || !*name ) {
     Error( Here(here), "Must construct subdetector with valid name! "
 	   "Object construction failed." );
     MakeZombie();

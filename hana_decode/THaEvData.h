@@ -75,6 +75,10 @@ public:
      void PrintSlotData(int crate, int slot) const;
      void PrintOut() const { dump(buffer); }
      void SetRunTime( UInt_t tloc );
+     void EnableHelicity( Bool_t enable=kTRUE );
+     Bool_t HelicityEnabled() const;
+     void EnableScalers( Bool_t enable=kTRUE );
+     Bool_t ScalersEnabled() const;
 
      UInt_t GetInstance() const { return fInstance; }
      static UInt_t GetInstances() { return fgInstances.CountBits(); }
@@ -84,6 +88,12 @@ public:
 
      enum { HED_OK = 0, HED_ERR = -127};
      enum { MAX_PSFACT = 12 };
+
+protected:
+  // Control bits in TObject::fBits used by decoders
+     enum { kHelicityEnabled = BIT(14),
+	    kScalersEnabled  = BIT(15)
+     };
 
 private:
      static const int MAXROC = 20;  

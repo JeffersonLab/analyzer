@@ -57,16 +57,16 @@ TBits THaEvData::fgInstances;
 //_____________________________________________________________________________
 
 THaEvData::THaEvData() :
-  first_load(true), first_scaler(true), first_decode(true),
+  helicity(0), first_load(true), first_scaler(true), first_decode(true),
   numscaler_crate(0), buffer(0), run_num(0), run_type(0), run_time(0), 
-  recent_event(0), fNSlotUsed(0), fNSlotClear(0), fMap(0)
+  recent_event(0),
+  dhel(0.0), dtimestamp(0.0), fNSlotUsed(0), fNSlotClear(0), fMap(0)
 {
   fInstance = fgInstances.FirstNullBit();
   fgInstances.SetBitNumber(fInstance);
   fInstance++;
   epics = new THaEpics;
   crateslot = new THaSlotData*[MAXROC*MAXSLOT];
-  helicity = new THaHelicity;
   cmap = new THaCrateMap;
   fb = new THaFastBusWord;
   fSlotUsed  = new UShort_t[MAXROC*MAXSLOT];
@@ -104,6 +104,9 @@ THaEvData::THaEvData() :
     fBench = new THaBenchmark;
   } else
     fBench = NULL;
+
+  // Enable scalers by default
+  EnableScalers();
 }
 
 
@@ -167,7 +170,7 @@ const char* THaEvData::DevType(int crate, int slot) const {
 }
 
 Double_t THaEvData::GetEvTime() const {
-  return helicity->GetTime();
+  return helicity ? helicity->GetTime() : 0.0;
 }
 
 int THaEvData::gendecode(const int* evbuffer, THaCrateMap* map) {
@@ -195,56 +198,51 @@ int THaEvData::gendecode(const int* evbuffer, THaCrateMap* map) {
        event_num = evbuffer[4];
        recent_event = event_num;
        ret = physics_decode(evbuffer, map);
-       goto exit;
      } else {
        if( fDoBench && event_type != SCALER_EVTYPE ) 
 	 fBench->Begin("ctrl_evt_decode");
        event_num = 0;
        switch (event_type) {
-	 case SYNC_EVTYPE :
-           evt_time = static_cast<UInt_t>(evbuffer[2]);
-           goto exit;
 	 case PRESTART_EVTYPE :
-// Usually prestart is the first 'event'.  Call SetRunTime() to re-initialize the
-// crate map since we now know the run time.  
+// Usually prestart is the first 'event'.  Call SetRunTime() to re-initialize 
+// the crate map since we now know the run time.  
 // This won't happen for split files (no prestart). For such files, 
 // the user should call SetRunTime() explicitly.
            SetRunTime(static_cast<UInt_t>(evbuffer[2]));
            run_num  = evbuffer[3];
            run_type = evbuffer[4];
 	   evt_time = run_time;
-           goto exit;
-	 case GO_EVTYPE :
-           evt_time = static_cast<UInt_t>(evbuffer[2]);
-           goto exit;
-	 case PAUSE_EVTYPE :
-           evt_time = static_cast<UInt_t>(evbuffer[2]);
-           goto exit;
-	 case END_EVTYPE :
-           evt_time = static_cast<UInt_t>(evbuffer[2]);
-	   goto exit;
+	   break;
          case EPICS_EVTYPE :
            ret = epics_decode(evbuffer);
-	   goto exit;
+	   break;
          case PRESCALE_EVTYPE :
            ret = prescale_decode(evbuffer);
-	   goto exit;
+	   break;
          case TRIGGER_FILE :
          case DETMAP_FILE :
- 	   goto exit;
+	   break;
          case SCALER_EVTYPE :
-           ret = scaler_event_decode(evbuffer,map);
+	   if( ScalersEnabled() )
+	     ret = scaler_event_decode(evbuffer,map);
 	   goto exit;
+	 case SYNC_EVTYPE :
+	 case GO_EVTYPE :
+	 case PAUSE_EVTYPE :
+	 case END_EVTYPE :
+           evt_time = static_cast<UInt_t>(evbuffer[2]);
+	   break;
          default:
-           ret = HED_OK;
-           goto exit;
+	   // Ignore unknown event types. Clients will only analyze
+	   // known event types anyway.
+           break;
        }
+       if( fDoBench ) fBench->Stop("ctrl_evt_decode");
      }
+     goto exit;
  err:
      ret = HED_ERR;
-     goto exit;
  exit:
-     if( fDoBench ) fBench->Stop("ctrl_evt_decode");
      return ret;
 }
      
@@ -300,8 +298,8 @@ int THaEvData::physics_decode(const int* evbuffer, THaCrateMap* map) {
      }
      if( fDoBench ) fBench->Stop("physics_decode");
 // Decode each ROC
-// This is not part of the loop above because it may exit prematurely due to errors,
-// which would leave the rocdat[] array incomplete.
+// This is not part of the loop above because it may exit prematurely due 
+// to errors, which would leave the rocdat[] array incomplete.
      for( int i=0; i<nroc; i++ ) {
        int iroc = irn[i];
        const RocDat_t* proc = rocdat+iroc;
@@ -318,9 +316,15 @@ int THaEvData::physics_decode(const int* evbuffer, THaCrateMap* map) {
 	 if(status == HED_ERR) return HED_ERR;
        }
      }
-     if(helicity->Decode(*this) != 1) return HED_ERR;
-     dhel = (Double_t)helicity->GetHelicity();
-     dtimestamp = (Double_t)helicity->GetTime();
+     if( HelicityEnabled()) {
+       if( !helicity ) {
+	 helicity = new THaHelicity;
+	 if( !helicity ) return HED_ERR;
+       }
+       if(helicity->Decode(*this) != 1) return HED_ERR;
+       dhel = (Double_t)helicity->GetHelicity();
+       dtimestamp = (Double_t)helicity->GetTime();
+     }
      return HED_OK;
 }
 
@@ -359,6 +363,7 @@ int THaEvData::prescale_decode(const int* evbuffer) {
 
 int THaEvData::scaler_event_decode(const int* evbuffer, THaCrateMap* map) 
 {
+  // Decode scalers
       int type = evbuffer[1]>>16;
       if (type != SCALER_EVTYPE) return HED_ERR;
       if( fDoBench ) fBench->Begin("scaler_event_decode");
@@ -405,9 +410,9 @@ int THaEvData::scaler_event_decode(const int* evbuffer, THaCrateMap* map)
 	  if (DEBUG) cout<<"scaler chan "<<chan<<" data "<<data<<endl;
 	  if (crateslot[ics]->loadData(location,chan,data,data)
 	      == SD_ERR) {
-             cout << "THaEvData::scaler_event_decode(): ERROR:";
-             cout << " crateslot loadData for slot "<<slot<<endl;
-	  }
+            cerr << "THaEvData::scaler_event_decode(): ERROR:";
+            cerr << " crateslot loadData for slot "<<slot<<endl;
+ 	  }
 	}
       }
       if( fDoBench ) fBench->Stop("scaler_event_decode");
@@ -435,11 +440,11 @@ int THaEvData::GetScaler(int roc, int slot, int chan) const {
 }
 
 int THaEvData::GetHelicity() const {
-  return (int)helicity->GetHelicity();
+  return helicity ? (int)helicity->GetHelicity() : 0;
 }
 
 int THaEvData::GetHelicity(const TString& spec) const {
-  return (int)helicity->GetHelicity(spec);
+  return helicity ? (int)helicity->GetHelicity(spec) : 0;
 }
 
 Bool_t THaEvData::IsLoadedEpics(const char* tag) const {
@@ -469,17 +474,25 @@ int THaEvData::fastbus_decode(int roc, THaCrateMap* map,
     synchmiss = false;
     synchextra = false;
     buffmode = false;
+    int xctr = 0;
+    int nspflag = 0;
     if (DEBUG) cout << "Fastbus roc  "<<roc<<endl;
     while ( p++ < pstop ) {  
+       xctr++;
        if(DEBUG) {
           cout << "evbuffer  " <<(p-evbuffer)<<"   ";
           cout << hex << *p << dec << endl;
        }
        int slot = fb->Slot(*p);
        if (!slot) {
+         if ((*p & 0xffff0000)==0xfabc0000) {
+	   xctr = 0;
+           nspflag = (*p & 0xff);  // number of special flags.
+	 }
          loadFlag(p);
          continue;
        }
+       if (nspflag > 0 && xctr <= nspflag) continue;  // skip special flags
        int model = map->getModel(roc,slot);
        if (model == THaCrateMap::CM_ERR) continue;
        if (!model) {
@@ -776,12 +789,41 @@ void THaEvData::SetRunTime( UInt_t tloc )
 {
   // Set run time and re-initialize crate map (and possibly other
   // database parameters for the new time.
-
   if( run_time == tloc ) 
     return;
   run_time = tloc;
   init_cmap();     
   init_slotdata(fMap);
+}
+
+void THaEvData::EnableHelicity( Bool_t enable ) 
+{
+  // Enable/disable helicity decoding
+  if( enable )
+    SetBit(kHelicityEnabled);
+  else
+    ResetBit(kHelicityEnabled);
+}
+
+Bool_t THaEvData::HelicityEnabled() const
+{
+  // Test if helicity decoding enabled
+  return TestBit(kHelicityEnabled);
+}
+
+void THaEvData::EnableScalers( Bool_t enable ) 
+{
+  // Enable/disable scaler decoding
+  if( enable )
+    SetBit(kScalersEnabled);
+  else
+    ResetBit(kScalersEnabled);
+}
+
+Bool_t THaEvData::ScalersEnabled() const
+{
+  // Test if helicity decoding enabled
+  return TestBit(kScalersEnabled);
 }
 
 void THaEvData::hexdump(const char* cbuff, size_t nlen)

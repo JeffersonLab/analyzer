@@ -28,9 +28,6 @@ VERS = hana_decode_1.6
 # independently of the rest of the analyzer.  Normally this is commented out.
 # export STANDALONE = 1
 
-# To build a shared library, uncomment the following line
-export BUILD_SHARED = 1
-
 # MAINDIR is the source of headers for main code.
 # Also need objects from MAINDIR for standalone test executibles,
 # but NOT for making library.
@@ -179,14 +176,18 @@ ifdef ONLINE_ET
   PROGS += tstcoda
 endif
 
-HEAD := $(SRC:.C=.h)
+RCHEAD := $(SRC:.C=.h) THaBenchmark.h
+HEAD = $(RCHEAD)
+ifdef ONLINE_ET
+  HEAD += et.h
+endif
 # sources without headers:
 SRC += swap_util.C swapped_intcpy.c
 DEPS = $(patsubst %.c,%.d,$(SRC:.C=.d))
 DECODE_OBJS = $(patsubst %.c,%.o,$(SRC:%.C=%.o)) THaDecDict.o
 
-ifdef BUILD_SHARED
-  all:  libdc.so
+ifndef STANDALONE
+  all:  $(LIBDIR)/libdc.so.$(VERSION)
 else
   all:  libdc.a
 endif
@@ -209,9 +210,16 @@ endif
 
 libdc.so: $(DECODE_OBJS)
 	rm -f $@
+ifeq ($(strip $(SONAME)),)
 	$(LD) $(LDFLAGS) $(SOFLAGS) -o $@ $^
+else
+	$(LD) $(LDFLAGS) $(SOFLAGS) $(SONAME)libdc.so.$(SOVERSION) -o $@ $^
+endif
+
 ifndef STANDALONE
-	cp -p $@ $(LIBDIR)
+$(LIBDIR)/libdc.so.$(VERSION): libdc.so
+	rm -f $@ $(LIBDIR)/libdc.so.$(SOVERSION)
+	cp -p $< $@
 endif
 
 # Test programs for standalone tests of decoder.
@@ -275,9 +283,9 @@ swapped_intcpy.o: swapped_intcpy.c
 
 # Dictionary
 
-THaDecDict.C: $(HEAD) haDecode_LinkDef.h
+THaDecDict.C: $(RCHEAD) haDecode_LinkDef.h
 	@echo "Generating Decoder Dictionary..."
-	$(ROOTSYS)/bin/rootcint -f THaDecDict.C -c $(CXXFLAGS) $(HEAD) haDecode_LinkDef.h
+	$(ROOTSYS)/bin/rootcint -f THaDecDict.C -c $(CXXFLAGS) $^
 
 # create a tar file of ./$(VERS)/* (all code)
 
@@ -304,6 +312,11 @@ realclean:  clean
 clean_evio:
 	rm -f evio.o swap_util.o swapped_intcpy.o
 
+install:	all
+	mkdir -p $(ANALYZER)/src/hana_decode
+	cp -puvf $(SRC) $(HEAD) haDecode_LinkDef.h Makefile $(ANALYZER)/src/hana_decode
+	cp -puvf $(HEAD) $(ANALYZER)/include
+	-cp -puvf libdc.so $(ANALYZER)/$(PLATFORM)
 ###
 
 .SUFFIXES:

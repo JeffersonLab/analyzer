@@ -82,7 +82,7 @@ void THaNamedList::SetName( const Text_t* name )
   // This avoids problems with hash tables.
   // Should probably be changed to provide a means of rehashing.
 
-  if( strlen(fNamed->GetName()) == 0 )
+  if( !*fNamed->GetName() )
     fNamed->SetName( name );
 }
 
@@ -92,7 +92,7 @@ void THaNamedList::SetNameTitle( const Text_t* name, const Text_t* title )
   // Set name and title of the object, but only if the name is not yet 
   // initialized
 
-  if( strlen(fNamed->GetName()) == 0 )
+  if( !*fNamed->GetName() )
     fNamed->SetNameTitle( name, title );
 }
 

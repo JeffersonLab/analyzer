@@ -7,7 +7,7 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-#define THAOMAX 100
+#define THAOMAX 400
 #include "TObject.h"
 #include "THaString.h"
 #include "TTree.h"
@@ -163,6 +163,8 @@ public:
   virtual Bool_t TreeDefined() const { return fTree != 0; };
   virtual TTree* GetTree() const { return fTree; };
 
+  static void SetVerbosity( Int_t level );
+  
 protected:
 
   virtual Int_t LoadFile( const char* filename );
@@ -211,6 +213,8 @@ private:
   Int_t nx,ny,iscut, fScalRC;
   Float_t xlo,xhi,ylo,yhi;
   Bool_t fOpenEpics,fOpenScal,fFirstEpics,fFirstScal;
+
+  static Int_t fgVerbose;
 
   ClassDef(THaOutput,0)  
 };

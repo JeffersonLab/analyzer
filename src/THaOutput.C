@@ -14,8 +14,6 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-#define CHECKOUT 1
-
 #include "THaOutput.h"
 #include "TObject.h"
 #include "THaFormula.h"
@@ -45,6 +43,7 @@ typedef vector<THaVform*>::size_type Vsiz_f;
 typedef vector<THaVhist*>::size_type Vsiz_h;
 typedef vector<THaString*>::size_type Vsiz_s;
 
+Int_t THaOutput::fgVerbose = 1;
 
 //_____________________________________________________________________________
 THaOutput::THaOutput() :
@@ -92,9 +91,8 @@ Int_t THaOutput::Init( const char* filename )
 
     if ( Attach() ) return -4;
 
-#ifdef CHECKOUT
     Print();
-#endif
+
     return 1;
   }
 
@@ -149,8 +147,10 @@ Int_t THaOutput::Init( const char* filename )
       cout << "THaOutput::Init: WARNING: Error in formula ";
       cout << fFormnames[iform] << endl;
       cout << "There is probably a typo error... " << endl;
-      fFormulas[iform]->ErrPrint(status);
-//    fFormulas[iform]->LongPrint();  // for debug
+      if( fgVerbose<=2 )
+	fFormulas[iform]->ErrPrint(status);
+      else
+	fFormulas[iform]->LongPrint();  // for debug
     } else {
       fFormulas[iform]->SetOutput(fTree);
 // Add variables (i.e. those var's used by the formula) to tree.
@@ -190,7 +190,8 @@ Int_t THaOutput::Init( const char* filename )
     } else {
       fCuts[icut]->SetOutput(fTree);
     }
-//    fCuts[icut]->LongPrint();  // for debug
+    if( fgVerbose>2 )
+      fCuts[icut]->LongPrint();  // for debug
   }
   for (Vsiz_h ihist = 0; ihist < fHistos.size(); ihist++) {
 // After initializing formulas and cuts, must sort through
@@ -244,9 +245,7 @@ Int_t THaOutput::Init( const char* filename )
     }
   }
 
-#ifdef CHECKOUT
   Print();
-#endif
 
   fInit = true;
 
@@ -598,9 +597,8 @@ Int_t THaOutput::LoadFile( const char* filename )
   // Process the file that defines the output
   
   Int_t idx;
-  if( !filename || !strlen(filename) || strspn(filename," ") == 
-      strlen(filename) ) {
-    ::Error( "THaOutput::LoadFile()", "invalid file name, "
+  if( !filename || !*filename || strspn(filename," ") == strlen(filename) ) {
+    ::Error( "THaOutput::LoadFile", "invalid file name, "
 	     "no output definition loaded" );
     return -1;
   }
@@ -819,28 +817,63 @@ void THaOutput::ErrFile(Int_t iden, const THaString& sline) const
 //_____________________________________________________________________________
 void THaOutput::Print() const
 {
-  // Printout the definitions
+  // Printout the definitions. Amount printed depends on verbosity
+  // level, set with SetVerbosity().
   typedef vector<THaString>::const_iterator Iter;
-  cout << "\n=== Number of variables "<<fVarnames.size()<<endl;
-  for (Vsiz_s i = 0; i < fVarnames.size(); i++) {
-    cout << "Variable # "<<i<<" =  "<<fVarnames[i]<<endl;
+  if( fgVerbose > 0 ) {
+    if( fVarnames.size() == 0 && fFormulas.size() == 0 &&
+	fCuts.size() == 0 && fHistos.size() == 0 ) {
+      ::Warning("THaOutput", "no output defined");
+    } else {
+      cout << endl << "THaOutput definitions: " << endl;
+      if( fVarnames.size()>0 ) {
+	cout << "=== Number of variables "<<fVarnames.size()<<endl;
+	if( fgVerbose > 1 ) {
+	  cout << endl;
+	  for (Vsiz_s i = 0; i < fVarnames.size(); i++) {
+	    cout << "Variable # "<<i<<" =  "<<fVarnames[i]<<endl;
+	  }
+	}
+      }
+      if( fFormulas.size()>0 ) {
+	cout << "=== Number of formulas "<<fFormulas.size()<<endl;
+	if( fgVerbose > 1 ) {
+	  cout << endl;
+	  for (Vsiz_f i = 0; i < fFormulas.size(); i++) {
+	    cout << "Formula # "<<i<<endl;
+	    if( fgVerbose>2 )
+	      fFormulas[i]->LongPrint();
+	    else
+	      fFormulas[i]->ShortPrint();
+	  }
+	}
+      }
+      if( fCuts.size()>0 ) {
+	cout << "=== Number of cuts "<<fCuts.size()<<endl;
+	if( fgVerbose > 1 ) {
+	  cout << endl;
+	  for (Vsiz_f i = 0; i < fCuts.size(); i++) {
+	    cout << "Cut # "<<i<<endl;
+	    if( fgVerbose>2 )
+	      fCuts[i]->LongPrint();
+	    else
+	      fCuts[i]->ShortPrint();
+	  }
+	}
+      }
+      if( fHistos.size()>0 ) {
+	cout << "=== Number of histograms "<<fHistos.size()<<endl;
+	if( fgVerbose > 1 ) {
+	  cout << endl;
+	  for (Vsiz_h i = 0; i < fHistos.size(); i++) {
+	    cout << "Histogram # "<<i<<endl;
+	    fHistos[i]->Print();
+	  }
+	}
+      }
+      cout << endl;
+    }
   }
-  cout << "\n=== Number of formulas "<<fFormulas.size()<<endl;
-  for (Vsiz_f i = 0; i < fFormulas.size(); i++) {
-    cout << "Formula # "<<i<<endl;
-    fFormulas[i]->ShortPrint();
-  }
-  cout << "\n=== Number of cuts "<<fCuts.size()<<endl;
-  for (Vsiz_f i = 0; i < fCuts.size(); i++) {
-    cout << "Cut # "<<i<<endl;
-    fCuts[i]->ShortPrint();
-  }
-  cout << "\n=== Number of histograms "<<fHistos.size()<<endl;
-  for (Vsiz_h i = 0; i < fHistos.size(); i++) {
-    cout << "Histogram # "<<i<<endl;
-    fHistos[i]->Print();
-  }
-  cout << endl << endl;
 }
 
 //_____________________________________________________________________________
@@ -924,6 +957,14 @@ Int_t THaOutput::BuildBlock(const THaString& blockn)
     }
   }
   return nvars;
+}
+
+//_____________________________________________________________________________
+void THaOutput::SetVerbosity( Int_t level )
+{
+  // Set verbosity level for debug messages
+
+  fgVerbose = level;
 }
 
 //_____________________________________________________________________________

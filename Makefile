@@ -14,7 +14,12 @@ export DEBUG = 1
 # export ONLINE_ET = 1
 #------------------------------------------------------------------------------
 
-VERSION = 1.2-cvs
+# VERSION should be numerical only - it becomes the shared lib soversion
+# EXTVERS (optional) describes the build, e.g. "dbg", "et", "gcc33" etc.
+SOVERSION  = 1.2
+PATCH   = 0
+VERSION = $(SOVERSION).$(PATCH)
+EXTVERS = -cvs
 NAME    = analyzer-$(VERSION)
 
 #------------------------------------------------------------------------------
@@ -33,7 +38,7 @@ HA_DIR       := $(shell pwd)
 INCDIRS       = $(addprefix $(HA_DIR)/, src $(SUBDIRS))
 DCDIR         = hana_decode
 SCALERDIR     = hana_scaler
-LIBDIR        = $(HA_DIR)/.
+LIBDIR        = $(shell pwd)
 HALLALIBS     = -L$(LIBDIR) -lHallA -ldc -lscaler
 
 LIBS          = 
@@ -53,7 +58,9 @@ else
 endif
 CXXFLG       += -KPIC
 LD            = CC
+LDCONFIG      =
 SOFLAGS       = -G
+SONAME        =
 DEFINES       =
 endif
 
@@ -70,7 +77,9 @@ endif
 DEFINES       =
 CXXFLG       += -Wall -Woverloaded-virtual -fPIC
 LD            = g++
+LDCONFIG      = ldconfig -n $(LIBDIR)
 SOFLAGS       = -shared
+SONAME        = -Wl,-soname=
 
 GCC_MAJOR     := $(shell chmod +x ./gcc-version; ./gcc-version)
 GCC_MINOR     := $(shell ./gcc-version -m)
@@ -115,7 +124,7 @@ CXXFLAGS     += $(CXXFLG) $(INCLUDES) $(DEFINES)
 LIBS         += $(ROOTLIBS) $(SYSLIBS)
 GLIBS        += $(ROOTGLIBS) $(SYSLIBS)
 
-export ARCH LIBDIR CXX LD SOFLAGS CXXFLG LDFLAGS DEFINES
+export ARCH LIBDIR CXX LD SOFLAGS SONAME CXXFLG LDFLAGS DEFINES VERSION SOVERSION
 
 #------------------------------------------------------------------------------
 
@@ -169,6 +178,8 @@ DEP           = $(SRC:.C=.d) src/main.d
 OBJS          = $(OBJ) haDict.o
 
 LIBHALLA      = $(LIBDIR)/libHallA.so
+LIBDC         = $(LIBDIR)/libdc.so
+LIBSCALER     = $(LIBDIR)/libscaler.so
 PROGRAMS      = analyzer
 
 all:            subdirs
@@ -176,16 +187,41 @@ all:            subdirs
 
 src/ha_compiledata.h:	Makefile
 		echo "#define HA_INCLUDEPATH \"$(INCDIRS)\"" > $@
-		echo "#define HA_VERSION \"$(VERSION)\"" >> $@
+		echo "#define HA_VERSION \"$(VERSION)$(EXTVERS)\"" >> $@
 
 subdirs:
 		set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i; done
 
-$(LIBHALLA):	$(HDR) $(OBJS)
+$(LIBHALLA).$(VERSION):	$(HDR) $(OBJS)
+ifeq ($(strip $(SONAME)),)
 		$(LD) $(LDFLAGS) $(SOFLAGS) -o $@ $(OBJS)
+else
+		$(LD) $(LDFLAGS) $(SOFLAGS) $(SONAME)$(notdir $(LIBHALLA).$(SOVERSION)) -o $@ $(OBJS)
+endif
 		@echo "$@ done"
 
-analyzer:	src/main.o $(LIBDIR)/libdc.so $(LIBDIR)/libscaler.so $(LIBHALLA)
+$(LIBHALLA).$(SOVERSION):	$(LIBHALLA).$(VERSION)
+		$(LDCONFIG)
+
+$(LIBHALLA):	$(LIBHALLA).$(SOVERSION)
+		rm -f $@
+		ln -s $< $@
+
+$(LIBDC).$(SOVERSION):	$(LIBDC).$(VERSION)
+		$(LDCONFIG)
+
+$(LIBSCALER).$(SOVERSION):	$(LIBSCALER).$(VERSION)
+		$(LDCONFIG)
+
+$(LIBDC):	$(LIBDC).$(SOVERSION)
+		rm -f $@
+		ln -s $< $@
+
+$(LIBSCALER):	$(LIBSCALER).$(SOVERSION)
+		rm -f $@
+		ln -s $< $@
+
+analyzer:	src/main.o $(LIBDC) $(LIBSCALER) $(LIBHALLA)
 		$(LD) $(LDFLAGS) $< $(HALLALIBS) $(GLIBS) -o $@
 
 clean:

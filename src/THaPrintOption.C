@@ -11,11 +11,12 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
+#include "TString.h"
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 #include "THaPrintOption.h"
 
@@ -99,8 +100,8 @@ THaPrintOption& THaPrintOption::operator=( const TString& rhs)
   // Initialize object with a string
 
   delete [] fString; fString = 0;
-  if( strlen( rhs.Data() )) {
-    fString = new char[ strlen(rhs.Data())+1 ];
+  if( rhs.Length() ) {
+    fString = new char[ rhs.Length()+1 ];
     strcpy( fString, rhs.Data() );
   }
   Parse();
@@ -128,7 +129,7 @@ void THaPrintOption::Parse()
 
   static const char* const delim = ", ";       // token delimiters
 
-  if( !fString || !strlen(fString) ) return;
+  if( !fString || !*fString ) return;
   delete [] fTokenStr; fTokenStr = 0;
   delete [] fTokens; fTokens = 0;
   delete [] fParam; fParam = 0;

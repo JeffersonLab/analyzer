@@ -169,7 +169,7 @@ SCALER_OBJS = $(SRC:.C=.o) THaScalDict.o
 PROGS = tscalfile tscalasy tscalhist tscalonl 
 PROGS += tscalntup tscaldtime tscalroc11 tscalevt tscalring
 #PROGS += xscaler
- 
+
 # To compile the local test codes:
 # Set STANDALONE at top of makefile.  But comment it out if 
 # to compile only the library libscaler.a for use with the main analyzer.
@@ -178,7 +178,8 @@ ifdef STANDALONE
   all: $(PROGS) libscaler.a
 else
  ifdef BUILD_SHARED
-   all:  libscaler.so
+#   all:  libscaler.so
+   all:  $(LIBDIR)/libscaler.so.$(VERSION)
  else
    all:  libscaler.a
  endif
@@ -195,10 +196,17 @@ endif
 
 libscaler.so:	$(SCALER_OBJS) 
 	rm -f $@
+ifeq ($(strip $(SONAME)),)
 	$(LD) $(LDFLAGS) $(SOFLAGS) -o $@ $^
+else
+	$(LD) $(LDFLAGS) $(SOFLAGS) $(SONAME)libscaler.so.$(SOVERSION) -o $@ $^
+endif
+
 ifndef STANDALONE
+$(LIBDIR)/libscaler.so.$(VERSION): libscaler.so
 	-cp -f scaler.map ../DB
-	cp -p $@ $(LIBDIR)
+	rm -f $@ $(LIBDIR)/libscaler.so.$(SOVERSION)
+	cp -p $< $@
 endif
 
 tscalfile: tscalfile_main.o $(SCALER_OBJS) $(SRC) $(HEAD) $(LIBDC)  
@@ -244,8 +252,7 @@ tscalring: tscalring_main.o $(SCALER_OBJS) $(SRC) $(HEAD) $(LIBDC)
 # Dictionary
 THaScalDict.C: $(HEAD) haScal_LinkDef.h
 	@echo "Generating Scaler Package Dictionary..."
-	$(ROOTSYS)/bin/rootcint -f THaScalDict.C -c $(INCLUDES) $(HEAD) \
-		haScal_LinkDef.h
+	$(ROOTSYS)/bin/rootcint -f THaScalDict.C -c $(INCLUDES) $^
 
 tarfile: clean version
 	tar cvf $(VERS).tar ./hana_scaler
@@ -266,6 +273,11 @@ clean:
 realclean:  clean
 	rm -f *.d
 
+install:	all
+	mkdir -p $(ANALYZER)/src/hana_scaler
+	cp -puvf $(SRC) $(HEAD) haScal_LinkDef.h Makefile $(ANALYZER)/src/hana_scaler
+	cp -puvf $(HEAD) $(ANALYZER)/include
+	-cp -puvf libscaler.so $(ANALYZER)/$(PLATFORM)
 ###
 
 .SUFFIXES:
