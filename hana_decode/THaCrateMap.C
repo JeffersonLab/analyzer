@@ -286,7 +286,7 @@ ClassImp(THaCrateMap)
                 prior_oct_2000 = 1; 
        if (year < 2001) prior_jan_2001 = 1;  
        if (year >= 2001 && month > 5) after_may_2001 = 1; 
-       if (year < 2002 || (year >= 2002 && month < 9)) 
+       if (year < 2002 || (year == 2002 && month < 9)) 
                 after_sep_2002 = 0;
      } 
      if (prior_oct_2000) prior_jan_2001 = 1;
