@@ -110,7 +110,7 @@ Int_t THaAnalyzer::EvalCuts( Int_t n )
 {
   // Evaluate cut block 'n' and return result of the "master cut".
   // The result can be used to skip further processing of the current event.
-  // Call SetupCuts() befure using!  This is an internal function.
+  // Call SetupCuts() before using!  This is an internal function.
 
   gHaCuts->EvalBlock( fCutBlocks[n] );
   return gHaCuts->Result( fMasterCutNames[n].Data(), THaCutList::kNoWarn );
@@ -301,6 +301,7 @@ Int_t THaAnalyzer::Process( THaRun& run )
       next.Reset();
       while( THaApparatus* theApparatus =
 	     static_cast<THaApparatus*>( next() )) {
+	theApparatus->Clear();
 	theApparatus->Decode( evdata );
       }
 
@@ -339,6 +340,7 @@ Int_t THaAnalyzer::Process( THaRun& run )
       next_physics.Reset();
       while( THaPhysicsModule* theModule =
 	     static_cast<THaPhysicsModule*>( next_physics() )) {
+	theModule->Clear();
 	theModule->Process();
       }
 
