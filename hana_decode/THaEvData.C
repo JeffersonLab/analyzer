@@ -838,6 +838,8 @@ void THaEvData::SetRunTime( UInt_t tloc )
   // Set run time and re-initialize crate map (and possibly other
   // database parameters for the new time.
 
+  if( run_time == tloc ) 
+    return;
   run_time = tloc;
   init_cmap();     
   init_slotdata(fMap);
