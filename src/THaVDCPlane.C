@@ -43,6 +43,7 @@ THaVDCPlane::THaVDCPlane( const char* name, const char* description,
   // Since TCloneArrays can resize, the size here is fairly unimportant
   fHits     = new TClonesArray("THaVDCHit", 20 );
   fClusters = new TClonesArray("THaVDCCluster", 5 );
+  fWires    = new TClonesArray("THaVDCWire", 368 );
 
   if( fDetector )
     fVDC = static_cast<THaSubDetector*>(fDetector)->GetDetector();
@@ -147,9 +148,6 @@ Int_t THaVDCPlane::ReadDatabase( FILE* file, const TDatime& date )
   fNMaxGap = 1;
   fMinTime = 800;
   fMaxTime = 2200;
-
-  // Create TClonesArray objects for wires, hits,  and clusters
-  fWires = new TClonesArray("THaVDCWire", nWires);
 
   // first read in the time offsets for the wires
   float wire_offsets[nWires];
