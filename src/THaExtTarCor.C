@@ -208,6 +208,9 @@ Int_t THaExtTarCor::ReadRunDatabase( FILE* f, const TDatime& date )
   // First try tags "<prefix>.theta_corr" and "<prefix>.delta_corr", then
   // global names "theta_corr" and "delta_corr".
 
+  Int_t err = THaPhysicsModule::ReadRunDatabase( f, date );
+  if( err ) return err;
+
   const Double_t DEL_COR = 5.18;
   fThetaCorr = 0.61;
   fDeltaCorr = DEL_COR;

@@ -52,6 +52,8 @@ THaSpectrometer::THaSpectrometer( const char* name, const char* desc ) :
 
   Clear();
   DefinePidParticles();
+
+  fProperties |= kNeedsRunDB;
 }
 
 //_____________________________________________________________________________
@@ -442,6 +444,9 @@ Int_t THaSpectrometer::ReadRunDatabase( FILE* file, const TDatime& date )
   // Query the run database for parameters specific to this spectrometer
   // (central angles, momentum, offsets, drift, etc.)
 
+  Int_t err = THaApparatus::ReadRunDatabase( file, date );
+  if( err ) return err;
+
   static const Double_t degrad = TMath::Pi()/180.0;
   Double_t th = 0.0, ph = 0.0;
   Double_t off_x = 0.0, off_y = 0.0, off_z = 0.0;
@@ -456,7 +461,7 @@ Int_t THaSpectrometer::ReadRunDatabase( FILE* file, const TDatime& date )
     { "off_z",    &off_z },
     { 0 }
   };
-  Int_t err = LoadDB( file, date, tags, fPrefix );
+  err = LoadDB( file, date, tags, fPrefix );
   if( err ) {    
     if( err>0 )
       Error( Here("ReadRunDatabase()"), "Required tag %s%s missing in the "

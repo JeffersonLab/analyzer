@@ -130,6 +130,9 @@ Int_t THaElectronKine::ReadRunDatabase( FILE* f, const TDatime& date )
   // First searches for "<prefix>.MA", then, if not found, for "MA".
   // If still not found, use proton mass.
 
+  Int_t err = THaPhysicsModule::ReadRunDatabase( f, date );
+  if( err ) return err;
+
   fMA = 0.938;
 
   TString name(fPrefix), tag("MA"); name += tag;

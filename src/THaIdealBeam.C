@@ -24,6 +24,9 @@ Int_t THaIdealBeam::ReadRunDatabase( FILE* file, const TDatime& date )
   //        <prefix>.theta (deg)
   //        <prefix>.phi   (deg)
 
+  Int_t err = THaBeam::ReadRunDatabase( file, date );
+  if( err ) return err;
+
   static const Double_t degrad = TMath::Pi()/180.0;
 
   Double_t x = 0.0, y = 0.0, th = 0.0, ph = 0.0;
