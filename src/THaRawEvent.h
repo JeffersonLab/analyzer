@@ -29,10 +29,14 @@ protected:
   static const int SHBL = 96;    // # shower blocks
   static const int NVDC = 8;     // Number of global variables per VDC
 
+  enum EBlock { kAll, kHits, kClusters, kTracks };
+
   Int_t fMaxhit;                 //! Size of variable VDC hit arrays
   Int_t fMaxclu;                 //! Size of variable VDC cluster arrays
+  Int_t fMaxtrk;                 //! Size of variable VDC track arrays
   THaVar* fNhitVar[NVDC];        //! Global variable holding VDC Nhits
   THaVar* fNcluVar[NVDC];        //! Global variable holding VDC Nclusters
+  THaVar* fNtrkVar[2];           //! Global variables holding number of VDC tracks
 
   //=== Beamline
 
@@ -58,11 +62,6 @@ protected:
   Int_t    fR_V2_nhit;           // VDC plane V2:  Number of hits
   Int_t    fR_V2_nclust;         // Number of clusters
   Int_t    fR_TR_n;              // Number of reconstructed VDC tracks (0 or 1)
-  Double_t fR_TR_x;              // X coordinate (in m) of track in E-arm cs
-  Double_t fR_TR_y;              // Y coordinate (in m) of track in E-arm cs
-  Double_t fR_TR_th;             // Tangent of Thetta angle of track in E-arm cs
-  Double_t fR_TR_ph;             // Tangent of Phi angle of track in E-arm cs
-  Double_t fR_TR_p;              // Track momentum (GeV)
 
   // S1
   Int_t    fR_S1L_nthit;         // Scint 1: Number of Left pad-s TDC times
@@ -176,11 +175,6 @@ protected:
   Int_t    fL_V2_nhit;           // VDC plane V2:  Number of hits
   Int_t    fL_V2_nclust;         // Number of clusters
   Int_t    fL_TR_n;              // Number of reconstructed VDC tracks (0 or 1)
-  Double_t fL_TR_x;              // X coordinate (in cm) of track in E-arm cs
-  Double_t fL_TR_y;              // Y coordinate (in cm) of track in E-arm cs
-  Double_t fL_TR_th;             // Tangent of Thetta angle of track in E-arm cs
-  Double_t fL_TR_ph;             // Tangent of Phi angle of track in E-arm cs
-  Double_t fL_TR_p;              // Track momentum (GeV)
 
   // S1
   Int_t    fL_S1L_nthit;         // Scint 1: Number of Left pad-s TDC times
@@ -235,6 +229,11 @@ protected:
   Double_t* fR_V2_time;           //[fR_V2_nhit] Corresponding TDC times
   Double_t* fR_V2_clpos;          //[fR_V2_nclust]  Centers of clusters (m)
   Int_t*    fR_V2_clsiz;          //[fR_V2_nclust]  Sizes of clusters (in wires)
+  Double_t* fR_TR_x;              //[fR_TR_n] X coordinate (in cm) of track in E-arm cs
+  Double_t* fR_TR_y;              //[fR_TR_n] Y coordinate (in cm) of track in E-arm cs
+  Double_t* fR_TR_th;             //[fR_TR_n] Tangent of Thetta angle of track in E-arm cs
+  Double_t* fR_TR_ph;             //[fR_TR_n] Tangent of Phi angle of track in E-arm cs
+  Double_t* fR_TR_p;              //[fR_TR_n] Track momentum (GeV)
 
   // Left HRS VDC variable size arrays 
   Int_t*    fL_U1_wire;           //[fL_U1_nhit] Hit wires numbers
@@ -252,11 +251,16 @@ protected:
   Int_t*    fL_V2_wire;           //[fL_V2_nhit] Hit wires numbers
   Double_t* fL_V2_time;           //[fL_V2_nhit] Corresponding TDC times
   Double_t* fL_V2_clpos;          //[fL_V2_nclust]  Centers of clusters (m)
-  Int_t*    fL_V2_clsiz;          //[fL_V2_nclust]  Sizes of clusters (in wires)
+  Int_t*    fL_V2_clsiz;          //[fL_V2_nclust]  Sizes of clusters (in wires
+  Double_t* fL_TR_x;              //[fL_TR_n] X coordinate (in m) of track in E-arm cs
+  Double_t* fL_TR_y;              //[fL_TR_n] Y coordinate (in m) of track in E-arm cs
+  Double_t* fL_TR_th;             //[fL_TR_n] Tangent of Thetta angle of track in E-arm cs
+  Double_t* fL_TR_ph;             //[fL_TR_n] Tangent of Phi angle of track in E-arm cs
+  Double_t* fL_TR_p;              //[fL_TR_n] Track momentum (GeV)
 
-  void CreateVariableArrays();
-  void DeleteVariableArrays();
-  void SetupDatamap();
+  void CreateVariableArrays( EBlock which = kAll );
+  void DeleteVariableArrays( EBlock which = kAll );
+  void SetupDatamap( EBlock which = kAll );
   void InitCounters();
 
   ClassDef(THaRawEvent,3)  //THaRawEvent structure

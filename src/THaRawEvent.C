@@ -22,11 +22,11 @@
 ClassImp(THaRawEvent)
 
 //______________________________________________________________________________
-THaRawEvent::THaRawEvent() : THaEvent(), fMaxhit(50), fMaxclu(10)
+  THaRawEvent::THaRawEvent() : THaEvent(), fMaxhit(50), fMaxclu(10), fMaxtrk(5)
 {
   // Create a THaRawEvent object.
 
-  SetupDatamap();
+  SetupDatamap( kAll );
   Clear();
 }
 
@@ -37,7 +37,7 @@ THaRawEvent::~THaRawEvent()
 
   // Note fDataMap is deleted by the base class destructor!
 
-  DeleteVariableArrays();
+  DeleteVariableArrays( kAll );
 }
 
 //______________________________________________________________________________
@@ -50,93 +50,135 @@ void THaRawEvent::Clear( Option_t* opt )
   // Clear the base class (i.e. histograms & event header)
   THaEvent::Clear( opt );
 
-  size_t len = reinterpret_cast<const char*>( &fL_S2_try ) + sizeof(Float_t) - 
-    reinterpret_cast<const char*>( &fB_X4a );
+  size_t len = reinterpret_cast<const char*>( &fL_S2_try )
+    + sizeof( fL_S2_try )
+    - reinterpret_cast<const char*>( &fB_X4a );
   memset( fB_X4a, 0, len );
 
 }
 
 //______________________________________________________________________________
-void THaRawEvent::CreateVariableArrays()
+void THaRawEvent::CreateVariableArrays( EBlock which )
 {
   // Set up the variable-size arrays for the VDCs. 
   // Required heap memory ~4kB with the defaults fMaxhit=50, fMaxclu=10.
 
-  // Left HRS VDC
-  fR_U1_wire  = new Int_t   [ fMaxhit ];
-  fR_U1_time  = new Double_t[ fMaxhit ];
-  fR_U1_clpos = new Double_t[ fMaxclu ];
-  fR_U1_clsiz = new Int_t   [ fMaxclu ];
-  fR_V1_wire  = new Int_t   [ fMaxhit ];
-  fR_V1_time  = new Double_t[ fMaxhit ];
-  fR_V1_clpos = new Double_t[ fMaxclu ];
-  fR_V1_clsiz = new Int_t   [ fMaxclu ];
-  fR_U2_wire  = new Int_t   [ fMaxhit ];
-  fR_U2_time  = new Double_t[ fMaxhit ];
-  fR_U2_clpos = new Double_t[ fMaxclu ];
-  fR_U2_clsiz = new Int_t   [ fMaxclu ];
-  fR_V2_wire  = new Int_t   [ fMaxhit ];
-  fR_V2_time  = new Double_t[ fMaxhit ];
-  fR_V2_clpos = new Double_t[ fMaxclu ];
-  fR_V2_clsiz = new Int_t   [ fMaxclu ];
 
-  // Right HRS VDC
-  fL_U1_wire  = new Int_t   [ fMaxhit ];
-  fL_U1_time  = new Double_t[ fMaxhit ];
-  fL_U1_clpos = new Double_t[ fMaxclu ];
-  fL_U1_clsiz = new Int_t   [ fMaxclu ];
-  fL_V1_wire  = new Int_t   [ fMaxhit ];
-  fL_V1_time  = new Double_t[ fMaxhit ];
-  fL_V1_clpos = new Double_t[ fMaxclu ];
-  fL_V1_clsiz = new Int_t   [ fMaxclu ];
-  fL_U2_wire  = new Int_t   [ fMaxhit ];
-  fL_U2_time  = new Double_t[ fMaxhit ];
-  fL_U2_clpos = new Double_t[ fMaxclu ];
-  fL_U2_clsiz = new Int_t   [ fMaxclu ];
-  fL_V2_wire  = new Int_t   [ fMaxhit ];
-  fL_V2_time  = new Double_t[ fMaxhit ];
-  fL_V2_clpos = new Double_t[ fMaxclu ];
-  fL_V2_clsiz = new Int_t   [ fMaxclu ];
+  if( which == kHits || which == kAll ) {
+    // Right HRS VDC
+    fR_U1_wire  = new Int_t   [ fMaxhit ];
+    fR_U1_time  = new Double_t[ fMaxhit ];
+    fR_V1_wire  = new Int_t   [ fMaxhit ];
+    fR_V1_time  = new Double_t[ fMaxhit ];
+    fR_U2_wire  = new Int_t   [ fMaxhit ];
+    fR_U2_time  = new Double_t[ fMaxhit ];
+    fR_V2_wire  = new Int_t   [ fMaxhit ];
+    fR_V2_time  = new Double_t[ fMaxhit ];
+    // Left HRS VDC
+    fL_U1_wire  = new Int_t   [ fMaxhit ];
+    fL_U1_time  = new Double_t[ fMaxhit ];
+    fL_V1_wire  = new Int_t   [ fMaxhit ];
+    fL_V1_time  = new Double_t[ fMaxhit ];
+    fL_U2_wire  = new Int_t   [ fMaxhit ];
+    fL_U2_time  = new Double_t[ fMaxhit ];
+    fL_V2_wire  = new Int_t   [ fMaxhit ];
+    fL_V2_time  = new Double_t[ fMaxhit ];
+  }
+  if( which == kClusters || which == kAll ) {
+    // Right HRS VDC
+    fR_U1_clpos = new Double_t[ fMaxclu ];
+    fR_U1_clsiz = new Int_t   [ fMaxclu ];
+    fR_V1_clpos = new Double_t[ fMaxclu ];
+    fR_V1_clsiz = new Int_t   [ fMaxclu ];
+    fR_U2_clpos = new Double_t[ fMaxclu ];
+    fR_U2_clsiz = new Int_t   [ fMaxclu ];
+    fR_V2_clpos = new Double_t[ fMaxclu ];
+    fR_V2_clsiz = new Int_t   [ fMaxclu ];
+    // Left HRS VDC
+    fL_U1_clpos = new Double_t[ fMaxclu ];
+    fL_U1_clsiz = new Int_t   [ fMaxclu ];
+    fL_V1_clpos = new Double_t[ fMaxclu ];
+    fL_V1_clsiz = new Int_t   [ fMaxclu ];
+    fL_U2_clpos = new Double_t[ fMaxclu ];
+    fL_U2_clsiz = new Int_t   [ fMaxclu ];
+    fL_V2_clpos = new Double_t[ fMaxclu ];
+    fL_V2_clsiz = new Int_t   [ fMaxclu ];
+  }
+  if( which == kTracks || which == kAll ) {
+    // Right HRS VDC
+    fR_TR_x     = new Double_t[ fMaxtrk ];
+    fR_TR_y     = new Double_t[ fMaxtrk ];
+    fR_TR_th    = new Double_t[ fMaxtrk ];
+    fR_TR_ph    = new Double_t[ fMaxtrk ];
+    fR_TR_p     = new Double_t[ fMaxtrk ];
+    // Left HRS VDC
+    fL_TR_x     = new Double_t[ fMaxtrk ];
+    fL_TR_y     = new Double_t[ fMaxtrk ];
+    fL_TR_th    = new Double_t[ fMaxtrk ];
+    fL_TR_ph    = new Double_t[ fMaxtrk ];
+    fL_TR_p     = new Double_t[ fMaxtrk ];
+  }
 }
 
 //______________________________________________________________________________
-void THaRawEvent::DeleteVariableArrays()
+void THaRawEvent::DeleteVariableArrays( EBlock which )
 {
   // Delete variable arrays.
 
-  delete [] fR_U1_wire ;
-  delete [] fR_U1_time ;
-  delete [] fR_U1_clpos;
-  delete [] fR_U1_clsiz;
-  delete [] fR_V1_wire ;
-  delete [] fR_V1_time ;
-  delete [] fR_V1_clpos;
-  delete [] fR_V1_clsiz;
-  delete [] fR_U2_wire ;
-  delete [] fR_U2_time ;
-  delete [] fR_U2_clpos;
-  delete [] fR_U2_clsiz;
-  delete [] fR_V2_wire ;
-  delete [] fR_V2_time ;
-  delete [] fR_V2_clpos;
-  delete [] fR_V2_clsiz;
-
-  delete [] fL_U1_wire ;
-  delete [] fL_U1_time ;
-  delete [] fL_U1_clpos;
-  delete [] fL_U1_clsiz;
-  delete [] fL_V1_wire ;
-  delete [] fL_V1_time ;
-  delete [] fL_V1_clpos;
-  delete [] fL_V1_clsiz;
-  delete [] fL_U2_wire ;
-  delete [] fL_U2_time ;
-  delete [] fL_U2_clpos;
-  delete [] fL_U2_clsiz;
-  delete [] fL_V2_wire ;
-  delete [] fL_V2_time ;
-  delete [] fL_V2_clpos;
-  delete [] fL_V2_clsiz;
+  if( which == kHits || which == kAll ) {
+    // Right HRS VDC
+    delete [] fR_U1_wire ;
+    delete [] fR_U1_time ;
+    delete [] fR_V1_wire ;
+    delete [] fR_V1_time ;
+    delete [] fR_U2_wire ;
+    delete [] fR_U2_time ;
+    delete [] fR_V2_wire ;
+    delete [] fR_V2_time ;
+    // Left HRS VDC
+    delete [] fL_U1_wire ;
+    delete [] fL_U1_time ;
+    delete [] fL_V1_wire ;
+    delete [] fL_V1_time ;
+    delete [] fL_U2_wire ;
+    delete [] fL_U2_time ;
+    delete [] fL_V2_wire ;
+    delete [] fL_V2_time ;
+  }
+  if( which == kClusters || which == kAll ) {
+    // Right HRS VDC
+    delete [] fR_U1_clpos;
+    delete [] fR_U1_clsiz;
+    delete [] fR_V1_clpos;
+    delete [] fR_V1_clsiz;
+    delete [] fR_U2_clpos;
+    delete [] fR_U2_clsiz;
+    delete [] fR_V2_clpos;
+    delete [] fR_V2_clsiz;
+    // Left HRS VDC
+    delete [] fL_U1_clpos;
+    delete [] fL_U1_clsiz;
+    delete [] fL_V1_clpos;
+    delete [] fL_V1_clsiz;
+    delete [] fL_U2_clpos;
+    delete [] fL_U2_clsiz;
+    delete [] fL_V2_clpos;
+    delete [] fL_V2_clsiz;
+  }
+  if( which == kTracks || which == kAll ) {
+    // Right HRS VDC
+    delete [] fR_TR_x;
+    delete [] fR_TR_y;
+    delete [] fR_TR_th;
+    delete [] fR_TR_ph;
+    delete [] fR_TR_p;
+    // Left HRS VDC
+    delete [] fL_TR_x;
+    delete [] fL_TR_y;
+    delete [] fL_TR_th;
+    delete [] fL_TR_ph;
+    delete [] fL_TR_p;
+  }
 }
 
 //______________________________________________________________________________
@@ -150,7 +192,7 @@ Int_t THaRawEvent::Fill()
   if( !fInit )
     InitCounters();
 
-  Int_t maxhit = -1, maxclu = -1, n;
+  Int_t maxhit = -1, maxclu = -1, maxtrk = -1, n;
   for( int i = 0; i < NVDC; i++ ) {
     if( fNhitVar[i] && (n = static_cast<Int_t>(fNhitVar[i]->GetValue()))
 	> maxhit )
@@ -159,11 +201,26 @@ Int_t THaRawEvent::Fill()
 	> maxclu )
       maxclu = n;
   }
-  if( maxhit > fMaxhit || maxclu > fMaxclu ) {
-    DeleteVariableArrays();
+  for( int i = 0; i < 2; i++ ) {
+    if( fNtrkVar[i] && (n = static_cast<Int_t>(fNtrkVar[i]->GetValue()))
+	> maxtrk )
+      maxtrk = n;
+  }
+
+  if( maxhit > fMaxhit ) {
+    DeleteVariableArrays( kHits );
     fMaxhit = TMath::Max( 2*fMaxhit, maxhit );
+    SetupDatamap( kHits );
+  }
+  if( maxclu > fMaxclu ) {
+    DeleteVariableArrays( kClusters );
     fMaxclu = TMath::Max( 2*fMaxclu, maxclu );
-    SetupDatamap();
+    SetupDatamap( kClusters );
+  }
+  if( maxtrk > fMaxtrk ) {
+    DeleteVariableArrays( kTracks );
+    fMaxtrk = TMath::Max( 2*fMaxtrk, maxtrk );
+    SetupDatamap( kTracks );
   }
 
   return THaEvent::Fill();
@@ -190,15 +247,17 @@ void THaRawEvent::InitCounters()
   fNcluVar[5] = gHaVars->Find( "L.vdc.v1.nclust" );
   fNcluVar[6] = gHaVars->Find( "L.vdc.u2.nclust" );
   fNcluVar[7] = gHaVars->Find( "L.vdc.v2.nclust" );
+  fNtrkVar[0] = gHaVars->Find( "R.tr.n" );
+  fNtrkVar[1] = gHaVars->Find( "L.tr.n" );
 }
 
 //______________________________________________________________________________
-void THaRawEvent::SetupDatamap()
+void THaRawEvent::SetupDatamap( EBlock which )
 {
   // Set up the data map, which relates global variable names to
   // THaRawEvent member variables.
 
-  CreateVariableArrays();
+  CreateVariableArrays( which );
 
   // Note: Before you freak out here, recall that string literals
   // are always of storage class "static". So, the pointers to
@@ -216,35 +275,35 @@ void THaRawEvent::SetupDatamap()
 
     // VDC
     { 1,      "R.vdc.u1.nhit",     &fR_U1_nhit },
-    {-1,      "R.vdc.u1.wire",     fR_U1_wire,    &fR_U1_nhit },
-    {-1,      "R.vdc.u1.time",     fR_U1_time,    &fR_U1_nhit },
+    {-1,      "R.vdc.u1.wire",     fR_U1_wire  },
+    {-1,      "R.vdc.u1.time",     fR_U1_time, },
     { 1,      "R.vdc.u1.nclust",   &fR_U1_nclust },
-    {-1,      "R.vdc.u1.clpos",    fR_U1_clpos,   &fR_U1_nclust },
-    {-1,      "R.vdc.u1.clsiz",    fR_U1_clsiz,   &fR_U1_nclust },
+    {-1,      "R.vdc.u1.clpos",    fR_U1_clpos },
+    {-1,      "R.vdc.u1.clsiz",    fR_U1_clsiz },
     { 1,      "R.vdc.v1.nhit",     &fR_V1_nhit },
-    {-1,      "R.vdc.v1.wire",     fR_V1_wire,    &fR_V1_nhit },
-    {-1,      "R.vdc.v1.time",     fR_V1_time,    &fR_V1_nhit },
+    {-1,      "R.vdc.v1.wire",     fR_V1_wire  },
+    {-1,      "R.vdc.v1.time",     fR_V1_time  },
     { 1,      "R.vdc.v1.nclust",   &fR_V1_nclust },
-    {-1,      "R.vdc.v1.clpos",    fR_V1_clpos,   &fR_V1_nclust },
-    {-1,      "R.vdc.v1.clsiz",    fR_V1_clsiz,   &fR_V1_nclust },
+    {-1,      "R.vdc.v1.clpos",    fR_V1_clpos },
+    {-1,      "R.vdc.v1.clsiz",    fR_V1_clsiz },
     { 1,      "R.vdc.u2.nhit",     &fR_U2_nhit },
-    {-1,      "R.vdc.u2.wire",     fR_U2_wire,    &fR_U2_nhit },
-    {-1,      "R.vdc.u2.time",     fR_U2_time,    &fR_U2_nhit },
+    {-1,      "R.vdc.u2.wire",     fR_U2_wire  },
+    {-1,      "R.vdc.u2.time",     fR_U2_time  },
     { 1,      "R.vdc.u2.nclust",   &fR_U2_nclust },
-    {-1,      "R.vdc.u2.clpos",    fR_U2_clpos,   &fR_U2_nclust },
-    {-1,      "R.vdc.u2.clsiz",    fR_U2_clsiz,   &fR_U2_nclust },
+    {-1,      "R.vdc.u2.clpos",    fR_U2_clpos },
+    {-1,      "R.vdc.u2.clsiz",    fR_U2_clsiz },
     { 1,      "R.vdc.v2.nhit",     &fR_V2_nhit },
-    {-1,      "R.vdc.v2.wire",     fR_V2_wire,    &fR_V2_nhit },
-    {-1,      "R.vdc.v2.time",     fR_V2_time,    &fR_V2_nhit },
+    {-1,      "R.vdc.v2.wire",     fR_V2_wire  },
+    {-1,      "R.vdc.v2.time",     fR_V2_time  },
     { 1,      "R.vdc.v2.nclust",   &fR_V2_nclust },
-    {-1,      "R.vdc.v2.clpos",    fR_V2_clpos,   &fR_V2_nclust },
-    {-1,      "R.vdc.v2.clsiz",    fR_V2_clsiz,   &fR_V2_nclust },
-    { 1,      "R.vdc.ntracks",     &fR_TR_n },
-    { 1,      "R.vdc.x",           &fR_TR_x },
-    { 1,      "R.vdc.y",           &fR_TR_y },
-    { 1,      "R.vdc.th",          &fR_TR_th },
-    { 1,      "R.vdc.ph",          &fR_TR_ph },
-    { 1,      "R.vdc.p",           &fR_TR_p },
+    {-1,      "R.vdc.v2.clpos",    fR_V2_clpos },
+    {-1,      "R.vdc.v2.clsiz",    fR_V2_clsiz },
+    { 1,      "R.tr.n",            &fR_TR_n },
+    {-1,      "R.tr.x",            fR_TR_x },
+    {-1,      "R.tr.y",            fR_TR_y },
+    {-1,      "R.tr.th",           fR_TR_th },
+    {-1,      "R.tr.ph",           fR_TR_ph },
+    {-1,      "R.tr.p",            fR_TR_p },
     
     // S1
     { 1,      "R.s1.nlthit",       &fR_S1L_nthit },
@@ -350,35 +409,35 @@ void THaRawEvent::SetupDatamap()
 
     // VDC
     { 1,      "L.vdc.u1.nhit",     &fL_U1_nhit },
-    {-1,      "L.vdc.u1.wire",     fL_U1_wire,    &fL_U1_nhit },
-    {-1,      "L.vdc.u1.time",     fL_U1_time,    &fL_U1_nhit },
+    {-1,      "L.vdc.u1.wire",     fL_U1_wire },
+    {-1,      "L.vdc.u1.time",     fL_U1_time },
     { 1,      "L.vdc.u1.nclust",   &fL_U1_nclust },
-    {-1,      "L.vdc.u1.clpos",    fL_U1_clpos,   &fL_U1_nclust },
-    {-1,      "L.vdc.u1.clsiz",    fL_U1_clsiz,   &fL_U1_nclust },
+    {-1,      "L.vdc.u1.clpos",    fL_U1_clpos },
+    {-1,      "L.vdc.u1.clsiz",    fL_U1_clsiz },
     { 1,      "L.vdc.v1.nhit",     &fL_V1_nhit },
-    {-1,      "L.vdc.v1.wire",     fL_V1_wire,    &fL_V1_nhit },
-    {-1,      "L.vdc.v1.time",     fL_V1_time,    &fL_V1_nhit },
+    {-1,      "L.vdc.v1.wire",     fL_V1_wire },
+    {-1,      "L.vdc.v1.time",     fL_V1_time },
     { 1,      "L.vdc.v1.nclust",   &fL_V1_nclust },
-    {-1,      "L.vdc.v1.clpos",    fL_V1_clpos,   &fL_V1_nclust },
-    {-1,      "L.vdc.v1.clsiz",    fL_V1_clsiz,   &fL_V1_nclust },
+    {-1,      "L.vdc.v1.clpos",    fL_V1_clpos },
+    {-1,      "L.vdc.v1.clsiz",    fL_V1_clsiz },
     { 1,      "L.vdc.u2.nhit",     &fL_U2_nhit },
-    {-1,      "L.vdc.u2.wire",     fL_U2_wire,    &fL_U2_nhit },
-    {-1,      "L.vdc.u2.time",     fL_U2_time,    &fL_U2_nhit },
+    {-1,      "L.vdc.u2.wire",     fL_U2_wire },
+    {-1,      "L.vdc.u2.time",     fL_U2_time },
     { 1,      "L.vdc.u2.nclust",   &fL_U2_nclust },
-    {-1,      "L.vdc.u2.clpos",    fL_U2_clpos,   &fL_U2_nclust },
-    {-1,      "L.vdc.u2.clsiz",    fL_U2_clsiz,   &fL_U2_nclust },
+    {-1,      "L.vdc.u2.clpos",    fL_U2_clpos },
+    {-1,      "L.vdc.u2.clsiz",    fL_U2_clsiz },
     { 1,      "L.vdc.v2.nhit",     &fL_V2_nhit },
-    {-1,      "L.vdc.v2.wire",     fL_V2_wire,    &fL_V2_nhit },
-    {-1,      "L.vdc.v2.time",     fL_V2_time,    &fL_V2_nhit },
+    {-1,      "L.vdc.v2.wire",     fL_V2_wire },
+    {-1,      "L.vdc.v2.time",     fL_V2_time },
     { 1,      "L.vdc.v2.nclust",   &fL_V2_nclust },
-    {-1,      "L.vdc.v2.clpos",    fL_V2_clpos,   &fL_V2_nclust },
-    {-1,      "L.vdc.v2.clsiz",    fL_V2_clsiz,   &fL_V2_nclust },
-    { 1,      "L.vdc.ntracks",     &fL_TR_n },
-    { 1,      "L.vdc.x",           &fL_TR_x },
-    { 1,      "L.vdc.y",           &fL_TR_y },
-    { 1,      "L.vdc.th",          &fL_TR_th },
-    { 1,      "L.vdc.ph",          &fL_TR_ph },
-    { 1,      "L.vdc.p",           &fL_TR_p },
+    {-1,      "L.vdc.v2.clpos",    fL_V2_clpos },
+    {-1,      "L.vdc.v2.clsiz",    fL_V2_clsiz },
+    { 1,      "L.tr.n",            &fL_TR_n },
+    {-1,      "L.tr.x",            fL_TR_x },
+    {-1,      "L.tr.y",            fL_TR_y },
+    {-1,      "L.tr.th",           fL_TR_th },
+    {-1,      "L.tr.ph",           fL_TR_ph },
+    {-1,      "L.tr.p",            fL_TR_p },
 
     // S1
     { 1,      "L.s1.nlthit",       &fL_S1L_nthit },
