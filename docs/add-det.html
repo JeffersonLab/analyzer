@@ -1,0 +1,136 @@
+<html>
+<head>
+<title>Adding and removing a detector</title>
+</head>
+<body background="/wallpaper.gif">
+<h1>Adding and removing a detector</h1>
+
+Ole Hansen<br>
+Rev 0.1, 01 May 2001
+<p>
+
+This document refers to version 0.55 or higher of the C++ analyzer.
+<p>
+<hr>
+<p>
+Suppose you have just written a new detector class and want to try it out.
+The easiest way to do so is via the <b>AddDetector()</b> method of the
+apparatus class. For example, your script could do the following:
+<pre>
+   // Instantiate the electron HRS apparatus and add it to the list of
+   // apparatuses to be analyzed
+   THaApparatus* HRSE = new THaElectronHRS("Electron HRS");
+   gHaApps->Add( HRSE );
+
+   // Create an instance of the new hyper scintillator detector
+   THaDetector* hs = new THaHyperScintillator("hs","Hyper Scintillator");
+
+   // Add this detector to the Electron HRS
+   HRSE->AddDetector( hs );
+
+   // ... do your analysis
+</pre>
+That's it! No need to compile anything (except your new detector class, 
+of course).  This looks awfully simple, in fact too good to be true! Welcome
+to the power of object-oriented programming.
+<p>
+Of course, you must add appropriate database entires for your
+detector, unless you have hardcoded everything (urgh).
+<p>
+A detector added to an apparatus in this way will work like any other
+detector associated with the apparatus in the sense that its standard
+processing methods will be called in the correct order and with the
+correct arguments.  That is, Decode() and CrudeProcess()/FineProcess() or
+CrudeTrack()/FineTrack() will be called as expected.  The new detector
+may even call methods of other detectors within the same apparatus and
+access any global physics variables available, within the same restrictions
+that apply to detectors instantiated in the apparatus's constructor.
+<p>
+There is no real limitation to using this method as compared to 
+instantiating a detector in the apparatus's constructor. It should work with
+any detector objects, including tracking detectors.
+However, AddDetector() should not be used to add
+detectors whose methods or global physics variables are to be used
+by any default detectors of the apparatus.  The reason is simply that
+other detectors should not rely on detectors being present that
+are defined "manually" by the user in the steering script. It is easy
+to forget to define such a detector or to comment out the instantiation.
+Of course, well-written code should test for the detector's presence and
+should not crash, but correct behavior is not guaranteed in that case.
+In brief, detectors that other detectors need to be present should be
+instantiated in the apparatus's constructor.
+<p>
+How to clean up? Normally, no need to bother. In a simple analysis
+session, you will probably exit ROOT after the analysis anyway and
+everything will be automatically deleted. If you do want to clean up
+yourself:
+<pre>
+   // Be careful not to delete the detector before deleting the apparatus!
+   // Otherwise the analyzer will crash - guaranteed.
+   // Exiting ROOT will do this automatically anyway, so usually don't 
+   // bother with it.
+   gHaApps->Delete();  // Deletes only default detectors of the apparatuses.
+   delete hs;
+</pre>
+<p>
+To make a detector more permanent, you should definitely add its
+instantiation to the apparatus's constructor. Usually, this is
+done in a protected Init() function that is called by all
+constructors. For example:
+<pre>
+void THaElectronHRS::Init()
+{
+  fNmydets    = 4;                             //<-- change
+  fMydets     = new THaDetector*[fNmydets];
+  fMydets[0]  = new THaVDC("dc","E-arm VDC");
+  fMydets[1]  = new THaScintillator("s1","E-arm S1");
+  fMydets[2]  = new THaShower("sh","E-arm Shower");
+  fMydets[3]  = new THaHyperScintllator("hs","Hyp Scint"); //<-- add
+
+  for( int i=0; i < fNmydets; i++ ) {
+    fMydets[i]->SetApparatus(this);
+    fDetectors->AddLast( fMydets[i] );
+  }
+}
+</pre>
+
+
+<p>
+<p>
+How about <b>removing</b> a detector from a standard apparatus? 
+This is not as trivial. Of course, one could provide a RemoveDetector() method.
+However, for the reasons mentioned above, this could cause trouble if
+other detectors or parts of the analysis algorithm (e.g. beta calculation)
+depend on the presence of the detector you want to remove. Because of this,
+there is no support for simple removal of a detector in the present 
+version of the analyzer.  We might add such a feature in the future.
+<p>
+A clean approach to this problem is to build a fine-grained class hierarchy
+for each apparatus.  The most basic form of an apparatus, then, includes
+only minimal instrumentation while more complex forms include
+more detectors and more refined methods with support for them.
+Of course, this approach has limits as the number of detectors and
+possible configurations grows.
+<p>
+With the present analyzer, if you absolutely need to remove a detector from an
+apparatus, you will need to write a new apparatus class (modeled after
+the existing one). You will need to ensure, by inspection, that none of 
+the remaining detectors and/or algorithms depend on the detector that 
+you remove.
+<p>
+<hr> 
+<address>
+<!-- hhmts start -->
+Last updated: Tue, 1 May 2001
+<!-- hhmts end -->
+</address>
+
+
+<p><font size=-1>
+Maintained by <a 
+href="mailto:ole@jlab.org">Ole Hansen</a></font>
+
+
+
+</body>
+</html>

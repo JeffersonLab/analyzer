@@ -1,0 +1,112 @@
+<html>
+<head>
+<title>How to use the C++ Analyzer cut/test classes</title>
+</head>
+<body background="/wallpaper.gif">
+<h1>How to use the cut/test classes</h1>
+
+Ole Hansen<br>
+Rev 0.2, 25 April 2001<p>
+
+As of version 0.3, the analyzer 
+contains a simple but fully functional set of classes
+that support dynamic definition of cuts using symbolic variables.  
+
+The relevant 
+classes are
+<ul>
+  <li> <a href="../html/THaCutList.html">THaCutList</a> -- Define and evaluate
+      cuts. Automatically manages cuts with the help of internal lists.
+  <li> <a href="../html/THaVarList.html">THaVarList</a> -- Manage "global"
+      symbolic variables.
+  <li> <a href="../html/THaCut.html">THaCut</a> -- Definition of a 
+      single cut. This is a low-level class which should normally only
+      be used internally by THaCutList.
+  <li> <a href="../html/THaVar.html">THaVar</a> -- Definition of a 
+      single symbolic variable. This is a low-level class which should 
+      normally only be used internally by THaVarList.
+</ul>
+The interactive interface to the analyzer, 
+<a href="../html/THaInterface.html">THaInterface</a>, automatically creates 
+an instance of <a href="../html/THaVarList.html">THaVarList</a> and
+<a href="../html/THaCutList.html">THaCutList</a> upon startup. These
+are called the "global variable list" and "global cut list", respecively. 
+They are accessible via the global variables gHaVars and gHaCuts from anywhere
+in the analyzer (if you #include "THaInterface.h").
+
+Here is a sample session to demonstrate the use of these classes:
+<pre>
+analyzer [0] double xvar=10             // Define a variable xvar
+analyzer [1] gHaVars->Add("x",xvar)     // Add xvar to global var list, name it "x"
+analyzer [2] gHaVars->Print()           // Show all global vars defined
+  ( 1 )  10
+  OBJ: THaVar     x       x
+
+analyzer [3] gHaCuts->Define("cut1","x>0")      // Define a cut named "cut1"
+                                                // that is true if x>0.
+analyzer [4] gHaCuts->Define("cut2","abs(x)>5") // dto., but |x|>5
+analyzer [5] gHaCuts->Print()                   // List all defined cuts
+                   cut1 : x>0 Ndim= 1, Npar= 0, Noper= 3
+  ...
+  Block: BLK_Default  curval:0
+                   cut2 : abs(x)>5 Ndim= 1, Npar= 0, Noper= 4
+  ...
+  Block: BLK_Default  curval:0
+
+analyzer [6] gHaCuts->Eval()                   // Evaluate all defined cuts
+analyzer [7] gHaCuts->Print()
+                   cut1 : x>0 Ndim= 1, Npar= 0, Noper= 3
+  ...
+  Block: BLK_Default  curval:1
+                   cut2 : abs(x)>5 Ndim= 1, Npar= 0, Noper= 4
+  ...
+  Block: BLK_Default  curval:1
+
+(Note the value of "curvar" of each of the cuts. Both are true since both
+conditions are true for x=10).
+
+analyzer [8] xvar=2                           // Give xvar a new value
+analyzer [9] gHaCuts->Eval()                  // Evaluate the cuts again
+analyzer [10] gHaCuts->Print()
+                   cut1 : x>0 Ndim= 1, Npar= 0, Noper= 3
+  ...
+  Block: BLK_Default  curval:1
+                   cut2 : abs(x)>5 Ndim= 1, Npar= 0, Noper= 4
+  ...
+  Block: BLK_Default  curval:0
+
+(Note that cut2 is now false since |x| is less than 5.)
+
+analyzer [11] gHaCuts->Result("cut2")        // Retrieve result of cut2
+                                             // NOTE: This does not re-evaluate the cut
+  (Bool_t)0
+analyzer [11] gHaCuts->Result("cut1")
+  (Bool_t)1
+</pre>
+<p>
+<a href="../html/THaCutList.html">THaCutList</a> supports the concept
+of "blocks" of cuts which can be evaluated as a unit. Blocks are used by the
+standard analyzer to do efficient testing at the end of each step of
+the analysis (Decode/Reconstruct/Physics). 
+<p>
+Each detector class should add any internal variables of interest to the
+global variable list gHaVars in the constructor and remove those variables
+from the list in the destructor. For an example, see 
+<a href="../html/THaScintillator.html">THaScintillator</a>.
+
+<hr> 
+<address>
+<!-- hhmts start -->
+Last modified: Tue May  8 14:21:16 EDT 2001
+<!-- hhmts end -->
+</address>
+
+
+<p><font size=-1>
+Maintained by <a 
+href="mailto:ole@jlab.org">Ole Hansen</a></font>
+
+
+
+</body>
+</html>
