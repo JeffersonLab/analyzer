@@ -53,8 +53,23 @@
 #include <iostream>
 #include <cstring>
 #include "THaVar.h"
+#include "TMethodCall.h"
+#include "TSeqCollection.h"
 
 ClassImp(THaVar)
+
+//_____________________________________________________________________________
+THaVar::THaVar( const THaVar& rhs ) :
+  TNamed( rhs ), fArrayData(rhs.fArrayData), fValueD(rhs.fValueD),
+  fType(rhs.fType), fCount(rhs.fCount), fOffset(rhs.fOffset)
+{
+  // Copy constructor
+
+  if( rhs.fMethod )
+    fMethod = new TMethodCall( *rhs.fMethod );
+  else
+    fMethod = NULL;
+}
 
 //_____________________________________________________________________________
 THaVar& THaVar::operator=( const THaVar& rhs )
@@ -67,6 +82,11 @@ THaVar& THaVar::operator=( const THaVar& rhs )
     fArrayData = rhs.fArrayData;
     fType      = rhs.fType;
     fCount     = rhs.fCount;
+    fOffset    = rhs.fOffset;
+    if( rhs.fMethod )
+      fMethod  = new TMethodCall( *rhs.fMethod );
+    else
+      fMethod  = NULL;
   }
   return *this;
 }
@@ -81,33 +101,146 @@ void THaVar::Copy( TObject& rhs )
   ((THaVar&)rhs).fArrayData = fArrayData;
   ((THaVar&)rhs).fType      = fType;
   ((THaVar&)rhs).fCount     = fCount;
+  ((THaVar&)rhs).fOffset    = fOffset;
+  if( fMethod )
+    ((THaVar&)rhs).fMethod  = new TMethodCall( *fMethod );
+  else
+    ((THaVar&)rhs).fMethod  = NULL;
 }
 
 //_____________________________________________________________________________
-const char* THaVar::GetTypeName() const
+THaVar::~THaVar()
+{
+  // Destructor
+
+  delete fMethod;
+}
+
+//_____________________________________________________________________________
+const char* THaVar::GetTypeName( VarType itype )
 {
   static const char* const type[] = { 
     "Double_t", "Float_t", "Long_t", "ULong_t", "Int_t", "UInt_t", "Short_t", 
-    "UShort_t", "Char_t", "Byte_t", 
+    "UShort_t", "Char_t", "Byte_t", "TObject",
     "Double_t*", "Float_t*", "Long_t*", "ULong_t*", "Int_t*", "UInt_t*", 
-    "Short_t*", "UShort_t*", "Char_t*", "Byte_t*" };
+    "Short_t*", "UShort_t*", "Char_t*", "Byte_t*", "TObject*",
+    "Double_t**", "Float_t**", "Long_t**", "ULong_t**", "Int_t**", "UInt_t**", 
+    "Short_t**", "UShort_t**", "Char_t**", "Byte_t**", "TObject**" };
 
-  return type[fType];
+  return type[itype];
 }
 
 //_____________________________________________________________________________
-size_t THaVar::GetTypeSize() const
+size_t THaVar::GetTypeSize( VarType itype )
 {
   static const size_t size[] = { 
     sizeof(Double_t), sizeof(Float_t), sizeof(Long_t), sizeof(ULong_t), 
     sizeof(Int_t), sizeof(UInt_t), sizeof(Short_t), sizeof(UShort_t), 
-    sizeof(Char_t), sizeof(Byte_t),
+    sizeof(Char_t), sizeof(Byte_t), 0, 
     sizeof(Double_t), sizeof(Float_t), sizeof(Long_t), sizeof(ULong_t), 
     sizeof(Int_t), sizeof(UInt_t), sizeof(Short_t), sizeof(UShort_t), 
-    sizeof(Char_t), sizeof(Byte_t) };
+    sizeof(Char_t), sizeof(Byte_t), 0,
+    sizeof(Double_t), sizeof(Float_t), sizeof(Long_t), sizeof(ULong_t),
+    sizeof(Int_t), sizeof(UInt_t), sizeof(Short_t), sizeof(UShort_t), 
+    sizeof(Char_t), sizeof(Byte_t), 0  };
 
-  return size[fType];
+  return size[itype];
 }
+
+//_____________________________________________________________________________
+Double_t THaVar::GetValueFromObject( Int_t i ) const
+{
+  // Retrieve variable from a ROOT object, either via a function call
+  // or from a TSeqCollection
+
+  if( fObject == NULL )
+    return 0.0;
+
+  void* obj;
+  if( fOffset != -1 ) {
+    // Array: Get data from the TSeqCollection
+
+    // Get pointer to the object
+    const TSeqCollection* c = static_cast<const TSeqCollection*>( fObject );
+    obj = c->At(i);
+
+    if( !fMethod ) {
+      // No method ... get the data directly.
+      // Compute location using the offset.
+      ULong_t loc = (ULong_t)obj + fOffset;
+      if( !loc || (fType >= kDoubleP && (*(void**)loc == NULL )) )
+	return 0.0;
+      switch( fType ) {
+      case kDouble: 
+	return *((Double_t*)loc);
+      case kFloat:
+	return static_cast<Double_t>( *(((Float_t*)loc))  );
+      case kLong:
+	return static_cast<Double_t>( *(((Long_t*)loc))   );
+      case kULong:
+	return static_cast<Double_t>( *(((ULong_t*)loc))  );
+      case kInt:
+	return static_cast<Double_t>( *(((Int_t*)loc))    );
+      case kUInt:
+	return static_cast<Double_t>( *(((UInt_t*)loc))   );
+      case kShort:
+	return static_cast<Double_t>( *(((Short_t*)loc))  );
+      case kUShort:
+	return static_cast<Double_t>( *(((UShort_t*)loc)) );
+      case kChar:
+	return static_cast<Double_t>( *(((Char_t*)loc))   );
+      case kByte:
+	return static_cast<Double_t>( *(((Byte_t*)loc))   );
+      case kDoubleP: 
+	return **((Double_t**)loc);
+      case kFloatP:
+	return static_cast<Double_t>( **(((Float_t**)loc))  );
+      case kLongP:
+	return static_cast<Double_t>( **(((Long_t**)loc))   );
+      case kULongP:
+	return static_cast<Double_t>( **(((ULong_t**)loc))  );
+      case kIntP:
+	return static_cast<Double_t>( **(((Int_t**)loc))    );
+      case kUIntP:
+	return static_cast<Double_t>( **(((UInt_t**)loc))   );
+      case kShortP:
+	return static_cast<Double_t>( **(((Short_t**)loc))  );
+      case kUShortP:
+	return static_cast<Double_t>( **(((UShort_t**)loc)) );
+      case kCharP:
+	return static_cast<Double_t>( **(((Char_t**)loc))   );
+      case kByteP:
+	return static_cast<Double_t>( **(((Byte_t**)loc))   );
+      default:
+	;
+      }
+      return 0.0;
+    }
+
+  } else {
+
+    // No array, so it must be a function call. Everything else
+    // is handled the standard way
+
+    if( !fMethod )
+      // Oops
+      return 0.0;
+
+    obj = const_cast<void*>(fObject);
+  }
+
+  if( fType != kDouble && fType != kFloat ) {
+    // Integer data
+    Long_t result;
+    fMethod->Execute( obj, result );
+    return static_cast<Double_t>( result );
+  } else {
+    // Floating-point data
+    Double_t result;
+    fMethod->Execute( obj, result );
+    return result;
+  }
+}  
 
 //_____________________________________________________________________________
 Int_t THaVar::Index( const THaArrayString& elem ) const
@@ -147,8 +280,9 @@ Int_t THaVar::Index( const char* s ) const
   // 's' must be either a single integer subscript (for a 1-d array) 
   // or a comma-separated list of subscripts (for multi-dimensional arrays).
   //
-  // NOTE: This method is vastly less efficient than THaVar::Index( THaArraySring& )
-  // above because the string has to be parsed first.
+  // NOTE: This method is vastly less efficient than 
+  // THaVar::Index( THaArraySring& ) above because the string has 
+  // to be parsed first.
   //
   // Return -1 if subscript(s) out of bound(s) or -2 if incompatible arrays.
 
@@ -180,59 +314,7 @@ void THaVar::Print(Option_t* option) const
   if( fCount ) cout << "*";
   cout << GetLen() << "]";
   for( int i=0; i<GetLen(); i++ ) {
-    cout << "  ";
-    if( IsPointerArray() && (!fValueDD || !fValueDD[i]) ) {
-      cout << "???";
-      continue;
-    }
-    switch( fType ) {
-    case kDouble:
-      cout << fValueD[i]; break;
-    case kFloat:
-      cout << fValueF[i]; break;
-    case kLong:
-      cout << fValueL[i]; break;
-    case kULong:
-      cout << fValueX[i]; break;
-    case kInt:
-      cout << fValueI[i]; break;
-    case kUInt:
-      cout << fValueU[i]; break;
-    case kShort:
-      cout << fValueS[i]; break;
-    case kUShort:
-      cout << fValueW[i]; break;
-    case kChar:
-      cout << static_cast<Short_t>(fValueC[i]);  // cast to force numeric output
-      break;
-    case kByte:
-      cout << static_cast<UShort_t>(fValueB[i]); 
-      break;
-    case kDoubleP:
-      cout << *fValueDD[i]; break;
-    case kFloatP:
-      cout << *fValueFF[i]; break;
-    case kLongP:
-      cout << *fValueLL[i]; break;
-    case kULongP:
-      cout << *fValueXX[i]; break;
-    case kIntP:
-      cout << *fValueII[i]; break;
-    case kUIntP:
-      cout << *fValueUU[i]; break;
-    case kShortP:
-      cout << *fValueSS[i]; break;
-    case kUShortP:
-      cout << *fValueWW[i]; break;
-    case kCharP:
-      cout << static_cast<Short_t>(*fValueCC[i]);  // cast to force numeric output
-      break;
-    case kByteP:
-      cout << static_cast<UShort_t>(*fValueBB[i]); 
-      break;
-    default:
-      break;
-    }
+    cout << "  " << GetValue(i);
   }
   cout << endl;
 }

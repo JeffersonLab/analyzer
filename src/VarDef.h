@@ -5,7 +5,7 @@
 //
 // VarDef
 //
-// Structure for calls to THaVarList::DefineVariables() and derived
+// Structures for calls to THaVarList::DefineVariables() and derived
 // functions.
 //
 //////////////////////////////////////////////////////////////////////////
@@ -17,6 +17,12 @@ struct VarDef {
   Int_t            size;     // Size of array (0/1 = scalar)
   const void*      loc;      // Location of data
   const Int_t*     count;    // Optional: Actual size of variable size array
+};
+
+struct RVarDef {
+  const char*      name;     // Variable name
+  const char*      desc;     // Variable description
+  const char*      def;      // Definition of data (data member or method name)
 };
 
 #endif

@@ -61,5 +61,6 @@
 #pragma link C++ class THaVDCTimeToDistConv;
 #pragma link C++ class THaVDCT0CalTable;
 #pragma link C++ class THaVDCAnalyticTTDConv;
+#pragma link C++ class THaRTTI;
 
 #endif

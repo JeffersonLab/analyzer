@@ -86,7 +86,7 @@ SRC           = src/THaFormula.C src/THaVar.C src/THaVarList.C src/THaCut.C \
 		src/THaHRS.C src/THaLeftHRS.C src/THaRightHRS.C \
 		src/THaTrackingDetector.C src/THaNonTrackingDetector.C \
 		src/THaPidDetector.C src/THaSubDetector.C \
-		src/THaDetectorBase.C \
+		src/THaDetectorBase.C src/THaRTTI.C \
 		src/THaAnalyzer.C src/THaPrintOption.C \
 		src/THaBeam.C src/THaBpm.C src/THaRaster.C src/THaEpicsData.C \
 		src/THaTrack.C src/THaPIDinfo.C src/THaParticleInfo.C \

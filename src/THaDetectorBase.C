@@ -77,6 +77,26 @@ Int_t THaDetectorBase::DefineVariables( const VarDef* list ) const
 }
 
 //_____________________________________________________________________________
+Int_t THaDetectorBase::DefineVariables( const RVarDef* list ) const
+{
+  // Add variables defined in 'list' to the list of global variables,
+  // using prefix of the current detector.
+  // Internal function called by detector initialization methods.
+  // This form uses ROOT object/RTTI-based definitions.
+
+  Int_t retval = 0;
+
+  if( gHaVars ) {
+    retval = gHaVars->DefineVariables( list, this, 
+				       fPrefix, Here(ClassName()) );
+  } else
+    Warning( Here("DefineVariables()"), 
+		  "No global variable list found. No variables defined.");
+			      
+  return retval;
+}
+
+//_____________________________________________________________________________
 const char* THaDetectorBase::Here( const char* here ) const
 {
   // Return a string consisting of 'here' followed by fPrefix.

@@ -16,6 +16,7 @@ class THaEvData;
 class THaApparatus;
 class TDatime;
 struct VarDef;
+struct RVarDef;
 
 class THaDetectorBase : public TNamed {
   
@@ -60,6 +61,7 @@ protected:
   bool            fIsSetup;   // Flag indicating that SetupDetector called.
 
   virtual Int_t   DefineVariables( const VarDef* list ) const;
+  virtual Int_t   DefineVariables( const RVarDef* list ) const;
   virtual const char* Here( const char* ) const;
   void            MakePrefix( const char* basename );
   virtual void    MakePrefix() = 0;
