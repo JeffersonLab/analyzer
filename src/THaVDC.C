@@ -2,6 +2,12 @@
 //                                                                           //
 // THaVDC                                                                    //
 //                                                                           //
+// High precision wire chamber class.                                        //
+//                                                                           //
+// Units used:                                                               //
+//        For X, Y, and Z coordinates of track    -  meters                  //
+//        For Theta and Phi angles of track       -  tan(angle)              //
+//                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "THaVDC.h"
@@ -10,16 +16,18 @@
 #include "THaDetMap.h"
 #include "THaTrack.h"
 #include "TMath.h"
-
+#include "TClonesArray.h"
 #include "THaVDCUVPlane.h"
 #include "THaVDCUVTrack.h"
 #include "THaVDCCluster.h"
 #include "THaVDCTrackID.h"
+#include "THaVDCTrackPair.h"
 #include "VarDef.h"
 
 // FIXME: Debug
 #include "THaGlobals.h"
 #include "THaVarList.h"
+#include <iostream>
 
 ClassImp(THaVDC)
 
@@ -31,12 +39,14 @@ THaVDC::THaVDC( const char* name, const char* description,
   // Constructor
 
   // Create Upper and Lower UV planes
-  fLower = new THaVDCUVPlane( "uv1", "Lower UV Plane", this );
-  fUpper = new THaVDCUVPlane( "uv2", "Upper UV Plane", this );
+  fLower   = new THaVDCUVPlane( "uv1", "Lower UV Plane", this );
+  fUpper   = new THaVDCUVPlane( "uv2", "Upper UV Plane", this );
   if( !fLower || !fUpper || fLower->IsZombie() || fUpper->IsZombie() ) {
     Error( Here("THaVDC()"), "Failed to created subdetectors." );
     MakeZombie();
   }
+
+  fUVpairs = new TClonesArray( "THaVDCTrackPair", 20 );
 }
 
 //_____________________________________________________________________________
@@ -71,8 +81,10 @@ Int_t THaVDC::SetupDetector( const TDatime& date )
   fCos_vdc = TMath::Cos(fVDCAngle);
   fTan_vdc = TMath::Tan(fVDCAngle);
   fSpacing = 0.3348; // Dist between similar wire planes (eg u1->u2) (m)
+
   fNumIter = 1;      // Number of iterations for FineTrack()
- 
+  fErrorCutoff = 1e100;
+
   fIsInit = true;
 
 
@@ -97,96 +109,136 @@ THaVDC::~THaVDC()
 
   delete fLower;
   delete fUpper;
+  //  fUVpairs->Delete();
+  delete fUVpairs;
 }
 
 //______________________________________________________________________________
-Int_t THaVDC::MatchUVTracks( Int_t flag )
-{
-  // Match UV tracks from upper UV plane with ones from lower UV plane.
-  // Have lower plane find partners
-
-  //FIXME: Improve algorithm
-
-  Int_t nUpperTracks = fUpper->GetNUVTracks();
-  Int_t nLowerTracks = fLower->GetNUVTracks();
-
-  if (nUpperTracks == 0 || nLowerTracks == 0)
-    return 0;  // Can't have any tracks
-
-  Int_t nTracks = 0;  // Number of particle tracks through the detector
-  //  printf("\tfinding partners for lower tracks...\n");
-  for (int i = 0; i < nLowerTracks; i++)
-    fLower->GetUVTrack(i)->FindPartner(*fUpper->GetUVTracks(), nUpperTracks);
-
-  // Have upper plane find partners, and compare results with lower plane
-  //  printf("\tfinding partners for upper tracks...\n");
-  for (int i = 0; i < nUpperTracks; i++) {
-    THaVDCUVTrack* track = fUpper->GetUVTrack(i);
-
-    if (!track)
-      printf ("!-Error Matching UV Tracks!  No Upper Track %d\n", i);
-
-    THaVDCUVTrack* partner = track->FindPartner(*fLower->GetUVTracks(), 
-						nLowerTracks);
-    if (!partner)
-      printf("!-Error Matching UV Tracks! No partner for track %d\n", i);
-
-    if (track == partner->GetPartner()) {
-      nTracks++;
-    } else {
-      // FIXME: Handle special cases where tracks don't "agree" on who their
-      // partners ought to be
-      // FIXME: Debug
-//        THaVar* v = gHaVars->Find("nev");
-//        UInt_t nev = (UInt_t) v->GetValue();
-//        Warning( Here("MatchUVTracks()"), "Tracks do not partner (%d %d %d) "
-//  	       "Event %d, Stage: %s",
-//  	       i, nUpperTracks, nLowerTracks, nev, 
-//  	       (flag == 1) ? "Coarse" : "Fine"  );
-    }
-  }   
-
-  return nTracks;
-}
-
-//______________________________________________________________________________
-Int_t THaVDC::ConstructTracks( TClonesArray * tracks, Int_t flag )
+Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t flag )
 {
   // Construct tracks from pairs of upper and lower UV tracks and add 
   // them to 'tracks'
 
-  int nTracks = MatchUVTracks( flag );
+  cout << "-----------------------------------------------\n";
+  cout << "ConstructTracks: ";
+  if( flag == 0 )
+    cout << "iterating";
+  if( flag == 1 )
+    cout << "coarse tracking";
+  if( flag == 2 )
+    cout << "fine tracking";
+  cout << endl;
 
-  // How many tracks already there?
+  fUVpairs->Clear();
+
+  Int_t nUpperTracks = fUpper->GetNUVTracks();
+  Int_t nLowerTracks = fLower->GetNUVTracks();
+
+  cout << "nUpper/nLower = " << nUpperTracks << "  " << nLowerTracks << endl;
+
+  // No tracks at all -> can't have any tracks
+  if( nUpperTracks == 0 && nLowerTracks == 0 ) {
+    cout << "No tracks.\n";
+    return 0;
+  }
+
+  Int_t nTracks = 0;  // Number of valid particle tracks through the detector
+  Int_t nPairs  = 0;  // Number of UV track pairs to consider
+
+  // One plane has no tracks, the other does 
+  // -> maybe recoverable with loss of precision
+  // FIXME: Only do this if missing cluster recovery flag set
+  if( nUpperTracks == 0 || nLowerTracks == 0 ) {
+    //FIXME: Put missing cluster recovery code here
+    //For now, do nothing
+    cout << "missing cluster " << nUpperTracks << " " << nUpperTracks << endl;
+    return 0;
+  }
+
+  THaVDCUVTrack *track, *partner;
+  THaVDCTrackPair *thePair;
+
+  for( int i = 0; i < nLowerTracks; i++ ) {
+    track = fLower->GetUVTrack(i);
+    if( !track ) 
+      continue;
+
+    for( int j = 0; j < nUpperTracks; j++ ) {
+      partner = fUpper->GetUVTrack(j);
+      if( !partner ) 
+	continue;
+
+      // Create new UV track pair.
+      thePair = new( (*fUVpairs)[nPairs++] ) THaVDCTrackPair( track, partner );
+
+      // Explicitly mark these UV tracks as unpartnered
+      track->SetPartner( NULL );
+      partner->SetPartner( NULL );
+
+      // Compute goodness of match parameter
+      thePair->Analyze( fSpacing );
+    }
+  }
+      
+  cout << nPairs << " pairs.\n";
+
+  // Initialize some counters
   int n_exist, n_mod = 0;
   int n_oops=0;
+  // How many tracks already exist in the global track array?
   if( tracks )
     n_exist = tracks->GetLast()+1;
 
-  // Now compute global track values and get transport coordinates for tracks
+  // Sort pairs in order of ascending goodness of match
+  fUVpairs->Sort();
 
-  THaVDCUVTrack *track, *partner;
-  // Note that i is a counter for the number of successfully matched UV tracks
-  // and j is a counter for ALL UV tracks, including ones which were not 
-  // successfully matched
-  for (int i = 0, j = 0; i < nTracks; i++,j++) {
-    track = fLower->GetUVTrack(j);
-    if (!track)
-      continue; // No track?  Bail!
-    partner = track->GetPartner();
-    if(!partner)
-      continue; //No partner? Bail!
+  // Mark pairs as partners, starting with the best matches,
+  // until all tracks are marked.
+  for( int i = 0; i < nPairs; i++ ) {
+    if( !(thePair = static_cast<THaVDCTrackPair*>( fUVpairs->At(i) )) )
+      continue;
 
-    // For now, a valid track is one with two UV tracks pointing at each other
-    while (track != partner->GetPartner()) {
-      j++;
-      track = fLower->GetUVTrack(j);
-      partner = track->GetPartner();
+    //FIXME: debug
+    cout << "Pair " << i << ":  " 
+	 << thePair->GetUpper()->GetUCluster()->GetPivotWireNum() << " "
+	 << thePair->GetUpper()->GetVCluster()->GetPivotWireNum() << " "
+	 << thePair->GetLower()->GetUCluster()->GetPivotWireNum() << " "
+	 << thePair->GetLower()->GetVCluster()->GetPivotWireNum() << " "
+	 << thePair->GetError() << endl;
+    // Stop if track matching error too big
+    if( thePair->GetError() > fErrorCutoff )
+      break;
+
+    // Get the tracks of the pair
+    track   = thePair->GetLower();
+    partner = thePair->GetUpper();
+    if( !track || !partner ) 
+      continue;
+
+    //FIXME: debug
+    cout << "dUpper/dLower = " 
+	 << thePair->GetProjectedDistance( track,partner,fSpacing) << "  "
+	 << thePair->GetProjectedDistance( partner,track,-fSpacing);
+
+    // Skip pairs where any of the tracks already has a partner
+    if( track->GetPartner() || partner->GetPartner() ) {
+      cout << " ... skipped.\n";
+      continue;
     }
- 
-    // Replace local slopes and angles with global ones
+    cout << " ... good.\n";
 
-    // First slopes
+    // Make the tracks of this pair each other's partners. This prevents
+    // tracks from being associated with more than one valid pair.
+    track->SetPartner( partner );
+    partner->SetPartner( track );
+    thePair->SetStatus(1);
+
+    nTracks++;
+
+    // Compute global track values and get TRANSPORT coordinates for tracks.
+    // Replace local slopes and angles with global ones.
+
+    // Slopes
     Double_t du, dv, mu, mv;
     THaVDCCluster 
       *tu = track->GetUCluster(), 
@@ -204,7 +256,7 @@ Int_t THaVDC::ConstructTracks( TClonesArray * tracks, Int_t flag )
     pu->SetSlope(mu);
     pv->SetSlope(mv);
 
-    // Now update angles
+    // Angles
     Double_t dx = partner->GetX() - track->GetX();
     Double_t dy = partner->GetY() - track->GetY();
     Double_t detTheta = dx / fSpacing;
@@ -215,6 +267,8 @@ Int_t THaVDC::ConstructTracks( TClonesArray * tracks, Int_t flag )
     partner->SetTheta(detTheta);
     partner->SetPhi(detPhi);
 
+    // If the 'tracks' array was given, add THaTracks to it 
+    // (or modify existing ones).
     if (tracks) {
       // Calculate Transport coordinates from detector coordinates
 
@@ -235,7 +289,8 @@ Int_t THaVDC::ConstructTracks( TClonesArray * tracks, Int_t flag )
       THaVDCTrackID* thisID = new THaVDCTrackID(track,partner);
       THaTrack* theTrack = NULL;
       bool found = false;
-      for( int t = 0; t < n_exist; t++ ) {
+      int t;
+      for( t = 0; t < n_exist; t++ ) {
 	theTrack = static_cast<THaTrack*>( tracks->At(t) );
 	// This test is true if an existing track has exactly the same clusters
 	// as the current one (defined by track/partner)
@@ -248,10 +303,12 @@ Int_t THaVDC::ConstructTracks( TClonesArray * tracks, Int_t flag )
 	n_oops++;
       }
       if( found ) {
+	cout << "Track " << t << " modified.\n";
 	theTrack->Set( 0.0, transTheta, transPhi, transX, transY );
 	delete thisID;
 	++n_mod;
       } else {
+	cout << "Track " << tracks->GetLast()+1 << " added.\n";
 	theTrack = 
 	  AddTrack(*tracks, 0.0, transTheta, transPhi, transX, transY);
 	theTrack->SetID( thisID );
@@ -261,6 +318,8 @@ Int_t THaVDC::ConstructTracks( TClonesArray * tracks, Int_t flag )
     }
   }
 
+  cout << nTracks << " good tracks.\n";
+
   // Delete tracks that were not updated
   if( tracks && n_exist > n_mod ) {
     bool modified = false;
@@ -268,6 +327,7 @@ Int_t THaVDC::ConstructTracks( TClonesArray * tracks, Int_t flag )
       THaTrack* theTrack = static_cast<THaTrack*>( tracks->At(i) );
       // Track created by this class and not updated?
       if( (theTrack->GetCreator() == this) && (theTrack->GetFlag() < flag) ) {
+	cout << "Track " << i << " deleted.\n";
 	tracks->RemoveAt(i);
 	modified = true;
       }
@@ -307,6 +367,11 @@ Int_t THaVDC::Decode( const THaEvData& evdata )
 Int_t THaVDC::CoarseTrack( TClonesArray& tracks )
 {
  
+  static int nev = 0;
+  nev++;
+  cout << "=========================================\n";
+  cout << "Event: " << nev << endl;
+
   // Quickly calculate tracks in upper and lower UV planes
   fLower->CoarseTrack();
   fUpper->CoarseTrack();
@@ -335,6 +400,8 @@ Int_t THaVDC::FineTrack( TClonesArray& tracks )
 
   fNtracks = ConstructTracks( &tracks, 2 );
 
+  int i;
+  cin >> i;
   return 0;
 }
 
