@@ -12,7 +12,7 @@
 #include "TString.h"
 
 class THaTrackingModule;
-class THaBeam;
+class THaBeamModule;
 typedef TLorentzVector FourVect;
 
 class THaPrimaryKine : public THaPhysicsModule {
@@ -81,7 +81,7 @@ protected:
   TString                 fSpectroName;  // Name of spectrometer to consider
   TString                 fBeamName;     // Name of beam position apparatus
   THaTrackingModule*      fSpectro;      // Pointer to spectrometer object
-  THaBeam*                fBeam;         // Pointer to beam position apparatus
+  THaBeamModule*          fBeam;         // Pointer to beam position apparatus
 
   ClassDef(THaPrimaryKine,0)   //Single arm kinematics module
 };

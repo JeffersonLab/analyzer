@@ -103,7 +103,7 @@ THaAnalysisObject::EStatus THaPrimaryKine::Init( const TDatime& run_time )
 
   // Optional beam apparatus
   if( fBeamName.Length() > 0 ) {
-    fBeam = dynamic_cast<THaBeam*>
+    fBeam = dynamic_cast<THaBeamModule*>
       ( FindModule( fBeamName.Data(), "THaBeamModule") );
     if( !fBeam )
       return fStatus;
