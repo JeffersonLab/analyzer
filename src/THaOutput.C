@@ -21,6 +21,7 @@
 #include "THaVarList.h"
 #include "THaVar.h"
 #include "THaGlobals.h"
+#include "THaCut.h"
 #include "TH1.h"
 #include "TH2.h"
 #include "TTree.h"
@@ -30,6 +31,7 @@
 #include <algorithm>
 #include <fstream>
 #include <cstring>
+#include <iostream>
 
 using namespace std;
 typedef vector<THaOdata*>::size_type Vsiz_t;
@@ -114,8 +116,7 @@ Int_t THaOutput::Init( const char* filename )
     }
   }
   for (Vsiz_t k = 0; k < fOdata.size(); k++)
-    fTree->Branch(stemp1[k].c_str(), fOdata[k]->ClassName(),
-		  &fOdata[k]);
+    fOdata[k]->AddBranches(fTree, stemp1[k]);
   fNvar = stemp2.size();
   fVar = new Double_t[fNvar];
   for (Int_t k = 0; k < fNvar; k++) {
@@ -141,7 +142,18 @@ Int_t THaOutput::Init( const char* filename )
   fH1form  = new Int_t[fN1d];
   memset(fH1vtype, -1, fN1d*sizeof(Int_t));
   memset(fH1form, -1, fN1d*sizeof(Int_t));
+  fNcut = 0;
   for (Int_t ihist = 0; ihist < fN1d; ihist++) {
+    if (fH1cutid[ihist] != fgNocut) {
+      fHistCut.push_back(new THaCut(fH1cut[ihist].c_str(), 
+           fH1cut[ihist].c_str(), (const char*)"haoutput"));
+      if (fHistCut[fNcut]->IsError()) {
+        cout << "THaOutput::Init: WARNING: Error in cut definition ";
+        cout << fH1cut[ihist] << endl;
+      }
+      fH1cutid[ihist] = fNcut;
+      fNcut++;
+    }
     for (Int_t iform = 0; iform < fNform; iform++) {
       if (fH1plot[ihist] == fFormnames[iform]) {
         fH1vtype[ihist] = kForm;
@@ -165,6 +177,16 @@ Int_t THaOutput::Init( const char* filename )
   memset(fH2formx, -1, fN2d*sizeof(Int_t));
   memset(fH2formy, -1, fN2d*sizeof(Int_t));
   for (Int_t ihist = 0; ihist < fN2d; ihist++) {
+   if (fH2cutid[ihist] != fgNocut) {
+      fHistCut.push_back(new THaCut(fH2cut[ihist].c_str(), 
+           fH2cut[ihist].c_str(), (const char*)"haoutput"));
+      if (fHistCut[fNcut]->IsError()) {
+        cout << "THaOutput::Init: WARNING: Error in cut definition ";
+        cout << fH2cut[ihist] << endl;
+      }
+      fH2cutid[ihist] = fNcut;
+      fNcut++;
+    } 
     for (Int_t iform = 0; iform < fNform; iform++) {
       if (fH2plotx[ihist] == fFormnames[iform]) {
         fH2vtypex[ihist] = kForm;
@@ -173,8 +195,8 @@ Int_t THaOutput::Init( const char* filename )
       if (fH2ploty[ihist] == fFormnames[iform]) {
         fH2vtypey[ihist] = kForm;
 	fH2formy[ihist] = iform;  
-      }
-    } 
+      }  
+    }
     pvar = gHaVars->Find(fH2plotx[ihist].c_str());
     if (pvar != 0 && fH2vtypex[ihist] != kForm) 
         fH2vtypex[ihist] = kVar;
@@ -236,6 +258,11 @@ Int_t THaOutput::Process()
     }
   }
   for (Int_t ihist = 0; ihist < fN1d; ihist++) {
+    if (fH1cutid[ihist] != fgNocut) {  // histogram cut condition
+      if ( !fHistCut[fH1cutid[ihist]]->IsError() ) {
+        if ( !fHistCut[fH1cutid[ihist]]->EvalCut() ) continue; 
+      }
+    }     
     if (fH1vtype[ihist] == kForm) {
       if (fH1form[ihist] >= 0) {
         fH1d[ihist]->Fill(fForm[fH1form[ihist]]);
@@ -254,6 +281,11 @@ Int_t THaOutput::Process()
     }
   }
   for (Int_t ihist = 0; ihist < fN2d; ihist++) {
+    if (fH2cutid[ihist] != fgNocut) {  // histogram cut condition
+      if ( !fHistCut[fH2cutid[ihist]]->IsError() ) {
+        if ( !fHistCut[fH2cutid[ihist]]->EvalCut() ) continue; 
+      }
+    }   
     Float_t x = 0;  Float_t y = 0;
     if (fH2vtypex[ihist] == kForm) {
       if (fH2formx[ihist] >= 0) {
@@ -363,12 +395,14 @@ Int_t THaOutput::LoadFile( const char* filename )
           fH1dbin.push_back(n1);
 	  fH1dxlo.push_back(xl1);
 	  fH1dxhi.push_back(xh1);
+          fH1cut.push_back(scut);
+          fH1cutid.push_back(iscut);
           break;    
-      case kH2:
-	if( ParseTitle(sline) != 2 ) {
-	  ErrFile(ikey, sline);
-	  continue;
-	}
+      case kH2:                    
+   	  if( ParseTitle(sline) != 2 ) {
+	    ErrFile(ikey, sline);
+	    continue;
+	  }
 	  fH2dname.push_back(strvect[1]);
           fH2dtit.push_back(stitle);  
           fH2plotx.push_back(sfvar1);  
@@ -379,7 +413,9 @@ Int_t THaOutput::LoadFile( const char* filename )
           fH2dbiny.push_back(n2);
 	  fH2dylo.push_back(xl2);
 	  fH2dyhi.push_back(xh2);
-          break;
+          fH2cut.push_back(scut);
+          fH2cutid.push_back(iscut);
+          break;          
       case kBlock:
 	  BuildBlock(strvect[1]);
 	  break;
@@ -445,8 +481,8 @@ void THaOutput::ErrFile(Int_t iden, const THaString& sline) const
   if (iden == -1) {
     cerr << "THaOutput::LoadFile ERROR: file " << sline;
     cerr << " does not exist." << endl;
-    cerr << "You must have an output definition file ";
-    cerr << "to use class THaOutput."<<endl;
+    cerr << "To use THaOutput, you must have an";
+    cerr << " output definition file ";
     cerr << "(see ./examples/output.def)"<<endl;
     return;
   }
@@ -465,19 +501,20 @@ void THaOutput::ErrFile(Int_t iden, const THaString& sline) const
        cerr << "    formula targetX 1.464*B.bpm4b.x-0.464*B.bpm4a.x"<<endl;
      case kH1:
        cerr << "For 1D histograms, the syntax is: "<<endl;
-       cerr << "  TH1F name  'title'  variable nbin xlo xhi"<<endl;
-       cerr << "Example: "<<endl;
+       cerr << "  TH1F name  'title' variable nbin xlo xhi [cut-expr]"<<endl;          cerr << "Example: "<<endl;
        cerr << "  TH1F  tgtx 'target X' targetX 100 -2 2"<<endl;
        cerr << "(Title in single quotes.  Variable can be a formula)"<<endl;
+       cerr << "optionally can impose THaCut expression 'cut-expr'"<<endl;
        break;
      case kH2:
        cerr << "For 2D histograms, the syntax is: "<<endl;
        cerr << "  TH2F  name  'title'  var1  var2";
-       cerr << "  nbinx xlo xhi  nbiny ylo yhi"<<endl;
+       cerr << "  nbinx xlo xhi  nbiny ylo yhi [cut-expr]"<<endl;
        cerr << "Example: "<<endl;
        cerr << "  TH2F t12 't1 vs t2' D.timeroc1  D.timeroc2";
        cerr << "  100 0 20000 100 0 35000"<<endl;
        cerr << "(Title in single quotes.  Variable can be a formula)"<<endl;
+       cerr << "optionally can impose THaCut expression 'cut-expr'"<<endl;
        break;
      default:
        cerr << "See the documentation or ask Bob Michaels"<<endl;
@@ -506,6 +543,7 @@ void THaOutput::Print() const
     cout << "   var = "<<fH1plot[i];
     cout << "   binning "<<fH1dbin[i]<<"   "<<fH1dxlo[i];
     cout << "   "<<fH1dxhi[i]<<endl;
+    if (fH1cutid[i] != fgNocut) cout << "Cut condition " << fH1cut[i] << endl;
   }
   cout << "\n=== Number of 2d histograms "<<fH2dname.size()<<endl;
   for (Vsiz_t i = 0; i < fH2dname.size(); i++) {
@@ -517,6 +555,7 @@ void THaOutput::Print() const
     cout << "   "<<fH2dxhi[i]<<endl;
     cout << "  y binning "<<fH2dbiny[i]<<"   "<<fH2dylo[i];
     cout << "   "<<fH2dyhi[i]<<endl;
+    if (fH2cutid[i] != fgNocut) cout << "Cut condition " << fH2cut[i] << endl;
   }
   cout << endl << endl;
 }
@@ -529,6 +568,7 @@ Int_t THaOutput::ParseTitle(const THaString& sline)
   // means:  -1 == error,  1 == ok 1D histogram,  2 == ok 2D histogram
   Int_t result = -1;
   stitle = "";   sfvar1 = "";  sfvar2  = "";
+  iscut = fgNocut;  scut = "";
   THaString::size_type pos1 = sline.find_first_of("'");
   THaString::size_type pos2 = sline.find_last_of("'");
   if (pos1 != THaString::npos && pos2 > pos1) {
@@ -538,13 +578,17 @@ Int_t THaOutput::ParseTitle(const THaString& sline)
   vector<THaString> stemp = ctemp.Split();
   if (stemp.size() > 1) {
      sfvar1 = stemp[0];
-     if (stemp.size() == 4) {
+     Int_t ssize = stemp.size();
+     if (ssize == 4 || ssize == 5) {
        sscanf(stemp[1].c_str(),"%d",&n1);
        sscanf(stemp[2].c_str(),"%f",&xl1);
        sscanf(stemp[3].c_str(),"%f",&xh1);
+       if (ssize == 5) {
+         iscut = 1; scut = stemp[4];
+       }
        result = 1;
      }
-     if (stemp.size() == 8) {
+     if (ssize == 8 || ssize == 9) {
        sfvar2 = stemp[1];
        sscanf(stemp[2].c_str(),"%d",&n1);
        sscanf(stemp[3].c_str(),"%f",&xl1);
@@ -552,6 +596,9 @@ Int_t THaOutput::ParseTitle(const THaString& sline)
        sscanf(stemp[5].c_str(),"%d",&n2);
        sscanf(stemp[6].c_str(),"%f",&xl2);
        sscanf(stemp[7].c_str(),"%f",&xh2);
+       if (ssize == 9) {
+         iscut = 1; scut = stemp[8]; 
+       }
        result = 2;
      }
   }

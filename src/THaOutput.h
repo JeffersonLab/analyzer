@@ -10,15 +10,16 @@
 #define THAOMAX 100
 #include "TObject.h"
 #include "THaString.h"
+#include "TTree.h"
 #include <vector>
 
 class THaFormula;
 class THaVar;
 class TH1F;
 class TH2F;
-class TTree;
+class THaCut;
 
-class THaOdata : public TObject {
+class THaOdata {
 // Utility class used by THaOutput to store arrays 
 // up to size 'nsize' for tree output.
 public:
@@ -34,9 +35,14 @@ public:
       }
       ndata = rhs.ndata; memcpy( data, rhs.data, nsize*sizeof(Double_t));
     }
-    return *this; 
+    return *this;   
   }
   virtual ~THaOdata() { delete [] data; };
+  void AddBranches(TTree *T, std::string name) {
+     std::string sname = "Ndata." + name;
+     T->Branch(sname.c_str(),&ndata,"ndata/I");
+     T->Branch(name.c_str(),data,"data[ndata]/D");
+  }
   void Clear( Option_t* opt="" ) {
     ndata = 0; memset(data, 0, nsize*sizeof(Double_t)); 
   }
@@ -55,7 +61,7 @@ public:
     return 1;
   }
   Int_t       ndata;   // Number of array elements
-  Int_t       nsize;   //!Maximum number of elements
+  Int_t       nsize;   // Maximum number of elements
   Double_t*   data;    // [ndata] Array data
 
 private:
@@ -97,7 +103,7 @@ protected:
   std::vector<Int_t> fH1dbin, fH2dbinx, fH2dbiny;
   std::vector<Double_t> fH1dxlo, fH1dxhi;
   std::vector<Double_t> fH2dxlo, fH2dxhi, fH2dylo, fH2dyhi;
-  Int_t fNform, fNvar, fN1d, fN2d;
+  Int_t fNform, fNvar, fN1d, fN2d, fNcut;
   std::vector<THaFormula* > fFormulas;
   std::vector<THaVar* > fVariables, fArrays;
   Double_t *fForm, *fVar;
@@ -105,6 +111,9 @@ protected:
   std::vector<TH2F* > fH2d;
   std::vector<THaString> fH1plot, fH2plotx, fH2ploty;
   std::vector<THaVar* > fH1var, fH2varx, fH2vary;
+  std::vector<THaString> fH1cut, fH2cut;
+  std::vector<Int_t> fH1cutid, fH2cutid;
+  std::vector<THaCut* > fHistCut;
   Int_t *fH1vtype, *fH1form;
   Int_t *fH2vtypex, *fH2formx;
   Int_t *fH2vtypey, *fH2formy;
@@ -114,6 +123,7 @@ protected:
 
   enum EId { kVar = 1, kForm, kH1, kH2, kBlock };
   static const Int_t kNbout = 4000;
+  static const Int_t fgNocut = -1;
 
 private:
 
@@ -121,8 +131,8 @@ private:
    THaOutput(const THaOutput& output) {}
    THaOutput& operator=(const THaOutput& output) { return *this; }
 
-   THaString stitle, sfvar1, sfvar2;
-   Int_t n1,n2;
+   THaString stitle, sfvar1, sfvar2, scut;
+   Int_t n1,n2,iscut;
    float xl1,xl2,xh1,xh2;
 
    ClassDef(THaOutput,0)  
