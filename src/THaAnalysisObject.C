@@ -19,6 +19,7 @@
 #include "TClass.h"
 #include "TDatime.h"
 #include "TROOT.h"
+#include "TMath.h"
 
 #include <cstring>
 #include <cctype>
@@ -29,6 +30,7 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <cmath>
 
 ClassImp(THaAnalysisObject)
 
@@ -135,11 +137,9 @@ THaAnalysisObject::EStatus THaAnalysisObject::Init( const TDatime& date )
   // Common Init function for THaAnalysisObjects.
   //
   // Check if this object or any base classes have defined a custom 
-  // ReadDatabase() method. If so, open the database file called "db_<fPrefix>dat" 
-  // and, if successful,  call ReadDatabase().
+  // ReadDatabase() method. If so, open the database file called 
+  // "db_<fPrefix>dat" and, if successful, call ReadDatabase().
   // 
-  // Returns immediately with a warning if the object is already initialized.
-  //
   // This implementation will change once the real database is  available.
 
   Int_t status;
@@ -356,11 +356,11 @@ void THaAnalysisObject::MakePrefix( const char* basename )
 //_____________________________________________________________________________
 void THaAnalysisObject::SetName( const char* name )
 {
-  // Set/change the name of the detector.
+  // Set/change the name of the object.
 
   if( !name || strlen(name) == 0 ) {
     Warning( Here("SetName()"),
-	     "Cannot set an empty detector name. Name not set.");
+	     "Cannot set an empty object name. Name not set.");
     return;
   }
   TNamed::SetName( name );
@@ -370,10 +370,50 @@ void THaAnalysisObject::SetName( const char* name )
 //_____________________________________________________________________________
 void THaAnalysisObject::SetNameTitle( const char* name, const char* title )
 {
-  // Set/change the name of the detector.
+  // Set name and title of the object.
 
   SetName( name );
   SetTitle( title );
 }
 
+//_____________________________________________________________________________
+void THaAnalysisObject::GeoToSph( Double_t  th_geo, Double_t  ph_geo,
+				  Double_t& th_sph, Double_t& ph_sph )
+{
+  // Convert geographical to spherical angles. Units are rad.
+  // th_geo and ph_geo can be anything.
+  // th_sph is in [0,pi], ph_sph in [-pi,pi].
+
+  static const Double_t twopi = 2.0*TMath::Pi();
+  Double_t ct = cos(th_geo), cp = cos(ph_geo);
+  register Double_t tmp = ct*cp;
+  th_sph = acos( tmp );
+  tmp = sqrt(1.0 - tmp*tmp);
+  ph_sph = (fabs(tmp) < 1e-6 ) ? 0.0 : acos( sqrt(1.0-ct*ct)*cp/tmp );
+  if( th_geo/twopi-floor(th_geo/twopi) > 0.5 ) ph_sph = TMath::Pi() - ph_sph;
+  if( ph_geo/twopi-floor(ph_geo/twopi) > 0.5 ) ph_sph = -ph_sph;
+}
+
+//_____________________________________________________________________________
+void THaAnalysisObject::SphToGeo( Double_t  th_sph, Double_t  ph_sph,
+				  Double_t& th_geo, Double_t& ph_geo )
+{
+  // Convert spherical to geographical angles. Units are rad.
+  // th_sph and ph_sph can be anything, although th_sph outside
+  // [0,pi] is not really meaningful.
+  // th_geo is in [-pi,pi] and ph_sph in [-pi/2,pi/2]
+
+  static const Double_t twopi = 2.0*TMath::Pi();
+  Double_t ct = cos(th_sph), st = sin(th_sph), cp = cos(ph_sph);
+  if( fabs(ct) > 1e-6 ) {
+    th_geo = atan( st/ct*cp );
+    if( cp>0.0 && th_geo<0.0 )      th_geo += TMath::Pi();
+    else if( cp<0.0 && th_geo>0.0 ) th_geo -= TMath::Pi();
+  } else {
+    th_geo = TMath::Pi()/2.0;
+    if( cp<0.0 ) th_geo = -th_geo;
+  }
+  ph_geo = acos( sqrt( st*st*cp*cp + ct*ct ));
+  if( ph_sph/twopi - floor(ph_sph/twopi) > 0.5 ) ph_geo =- ph_geo;
+}
 

@@ -42,6 +42,11 @@ public:
 			    const char* here = "OpenFile()",
 			    const char* filemode = "r", 
 			    const int debug_flag = 1);
+  // Angle transformation utility functions
+  static  void    GeoToSph( Double_t  th_geo, Double_t  ph_geo,
+			    Double_t& th_sph, Double_t& ph_sph );
+  static  void    SphToGeo( Double_t  th_sph, Double_t  ph_sph,
+			    Double_t& th_geo, Double_t& ph_geo );
 
 protected:
 
@@ -86,5 +91,7 @@ protected:
 
   ClassDef(THaAnalysisObject,0)   //ABC for a data analysis object
 };
+
+//____________ inline functions _______________________________________________
 
 #endif
