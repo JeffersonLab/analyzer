@@ -77,8 +77,18 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
   fNrows = nrows;
   fNclublk = nclbl;
 
-  // Read detector map
+  // Clear out the old detector map before reading a new one
+  UShort_t mapsize = fDetMap->GetSize();
+  delete [] fNChan;
+  if( fChanMap ) {
+    for( UShort_t i = 0; i<mapsize; i++ )
+      delete [] fChanMap[i];
+  }
+  delete [] fChanMap;
   fDetMap->Clear();
+
+  // Read detector map
+
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
   while (1) {
     Int_t crate, slot, first, last;
@@ -93,20 +103,14 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
     }
   }
 
-  // Set up channel map
-  UShort_t mapsize = fDetMap->GetSize();
+  // Set up the new channel map
+  mapsize = fDetMap->GetSize();
   if( mapsize == 0 ) {
     Error( Here(here), "No modules defined in detector map.");
     fclose(fi);
     return kInitError;
   }
 
-  delete [] fNChan;
-  if( fChanMap ) {
-    for( UShort_t i = 0; i<mapsize; i++ )
-      delete [] fChanMap[i];
-  }
-  delete [] fChanMap;
   fNChan = new UShort_t[ mapsize ];
   fChanMap = new UShort_t*[ mapsize ];
   for( UShort_t i=0; i < mapsize; i++ ) {
