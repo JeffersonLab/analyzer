@@ -9,8 +9,8 @@
 # near the end of that web page).
 #
 # ------- Jan 10 2005
-# desc  hel crate slot start nchan  long-description
 DATE 10 1 2005
+# directives 
 xscaler-tabs Left 0:s1LR 1:s1 2:s2 3:nplus 4:nminus 5:norm
 xscaler-layout Left 0:4x4 1:2x4 2:8x4 3:8x4 4:8x4 5:8x4
 xscaler-pageslot Left 0:s1L 1:s1 2:s2 3:slot3 4:slot5 5:slot4 
@@ -43,6 +43,7 @@ slot-offset EvRight 0:0 -1:1 1:-1
 slot-offset Left -1:1 1:-1 
 slot-offset Right -1:1 1:-1 
 #
+# desc  hel crate slot start nchan  long-description
 s1L       0    7   0     0    6   S1 Scintillator Left PMTs on Right Arm
 s1R       0    7   0     8    6   S1 Scintillator Right PMTs on Right Arm
 s1        0    7   0    16    6   S1 Paddles (Left.and.Right PMT) on Right Arm
@@ -61,6 +62,7 @@ bcm_d3    0    7   8     9    1   Beam current, downstream cavity, gain = 3
 bcm_d10   0    7   8    10    1   Beam current, downstream cavity, gain = 10
 mlut1     0    7   8    24    1   MLU formed T1 (not main trigger)
 strobe    0    7   8    19    1   Strobe for S-ray trigger
+#
 s1L       0    8   0     0    6   S1 Scintillator Left PMTs on Left Arm
 s1R       0    8   0     8    6   S1 Scintillator Right PMTs on Left Arm
 s1        0    8   1     0    6   S1 Paddles (Left.and.Right PMT) on Left Arm
