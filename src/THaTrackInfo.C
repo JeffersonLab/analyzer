@@ -10,6 +10,8 @@
 
 #include "THaTrackInfo.h"
 #include "THaTrack.h"
+#include "THaSpectrometer.h"
+#include "THaTrackingDetector.h"
 
 using namespace std;
 
@@ -29,24 +31,28 @@ THaTrackInfo& THaTrackInfo::operator=( const THaTrackInfo& rhs )
     fPhi   = rhs.fPhi;
     fPvect = rhs.fPvect;
     fOK    = rhs.fOK;
+    fSpectro = rhs.fSpectro;
   }
   return *this;
 }
 
 //_____________________________________________________________________________
-THaTrackInfo& THaTrackInfo::operator=( const THaTrack& rhs )
+THaTrackInfo& THaTrackInfo::operator=( const THaTrack& track )
 {
   // Assignment to a track
 
-  fP     = rhs.GetP();
-  fDp    = rhs.GetDp();
-  fX     = rhs.GetTX();
-  fY     = rhs.GetTY();
-  fTheta = rhs.GetTTheta();
-  fPhi   = rhs.GetTPhi();
-  fPvect = const_cast<THaTrack&>(rhs).GetPvect();
+  fP     = track.GetP();
+  fDp    = track.GetDp();
+  fX     = track.GetTX();
+  fY     = track.GetTY();
+  fTheta = track.GetTTheta();
+  fPhi   = track.GetTPhi();
+  fPvect = const_cast<THaTrack&>(track).GetPvect();
   fOK    = 1;
-  
+  THaTrackingDetector* td = track.GetCreator();
+  if( td )
+    fSpectro = static_cast<THaSpectrometer*>(td->GetApparatus());
+
   return *this;
 }
 
