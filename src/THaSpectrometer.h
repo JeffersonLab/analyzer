@@ -8,7 +8,6 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaApparatus.h"
-#include "TObjArray.h"
 #include "TClonesArray.h"
 #include "TVector3.h"
 #include "TRotation.h"
@@ -96,6 +95,8 @@ protected:
   // only derived classes can construct me
   THaSpectrometer() {}
   THaSpectrometer( const char* name, const char* description );
+
+  virtual Int_t   ReadRunDatabase( FILE* file, const TDatime& date );
 
 private:
   Bool_t          fListInit;      //Detector lists initialized

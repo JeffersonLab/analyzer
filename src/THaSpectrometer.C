@@ -14,7 +14,6 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-#include "TClonesArray.h"
 #include "THaSpectrometer.h"
 #include "THaParticleInfo.h"
 #include "THaTrackingDetector.h"
@@ -24,8 +23,9 @@
 #include "THaTrack.h"
 //#include "THaVertex.h"
 #include "TClass.h"
-#include "TVector3.h"
+#include "TMath.h"
 #include "VarDef.h"
+#include <cmath>
 
 #ifdef WITH_DEBUG
 #include <iostream>
@@ -393,7 +393,7 @@ void THaSpectrometer::TransportToLab( Double_t p, Double_t th, Double_t ph,
   // Output:
   //  pvect: Vector in lab frame (z = beam, y = up) in same units as p.
   //
-  // Note: Simply vector transformation can be done trivially by multiplying
+  // Note: Simple vector transformation can be done trivially by multiplying
   // with the appropriate rotation matrix, e.g.:
   //  TVector3 lab_vector = spect->GetToLabRot() * transport_vector;
 
@@ -435,4 +435,54 @@ void THaSpectrometer::LabToTransport( TVector3& vertex, TVector3& pvect,
   
   ray[4] = 0.0;   // By definition for this ray, TRANSPORT z=0
   ray[5] = pt.Mag() / fPcentral - 1.0;
+}
+
+//_____________________________________________________________________________
+Int_t THaSpectrometer::ReadRunDatabase( FILE* file, const TDatime& date )
+{
+  // Query the run database for parameters specific to this spectrometer
+  // (central angles, momentum, offsets, drift, etc.)
+
+  static const Double_t degrad = TMath::Pi()/180.0;
+  Double_t th = 0.0, ph = 0.0;
+  Double_t off_x = 0.0, off_y = 0.0, off_z = 0.0;
+
+  TagDef tags[] = { 
+    { "theta",    &th }, 
+    { "phi",      &ph },
+    { "pcentral", &fPcentral },
+    { "colldist", &fCollDist },
+    { "off_x",    &off_x },
+    { "off_y",    &off_y },
+    { "off_z",    &off_z },
+    { 0 }
+  };
+  LoadRunDB( file, date, tags, fPrefix );
+
+  // Compute central angles in spherical coordinates and save trig. values
+  // of angles for later use.
+  // Note: negative theta corresponds to beam RIGHT.
+  // phi should be close to zero unless this is a true out-of-plane spectrometer.
+  fThetaGeo = degrad*th; fPhiGeo = degrad*ph;
+  GeoToSph( fThetaGeo, fPhiGeo, fThetaSph, fPhiSph );
+  fSinThGeo = sin( fThetaGeo ); fCosThGeo = cos( fThetaGeo );
+  fSinPhGeo = sin( fPhiGeo );   fCosPhGeo = cos( fPhiGeo );
+  Double_t st, ct, sp, cp;
+  st = fSinThSph = sin( fThetaSph ); ct = fCosThSph = cos( fThetaSph );
+  sp = fSinPhSph = sin( fPhiSph );   cp = fCosPhSph = cos( fPhiSph );
+
+  // Compute the rotation from TRANSPORT to lab and vice versa.
+  // If 'bend_down' is true, the spectrometer bends downwards.
+  bool bend_down = false;
+  Double_t norm = sqrt(ct*ct + st*st*cp*cp);
+  TVector3 nx( st*st*sp*cp/norm, -norm, st*ct*sp/norm );
+  TVector3 ny( ct/norm,          0.0,   -st*cp/norm   );
+  TVector3 nz( st*cp,            st*sp, ct            );
+  if( bend_down ) { nx *= -1.0; ny *= -1.0; }
+  fToLabRot.RotateAxes( nx, ny, nz );
+  fToTraRot = fToLabRot.Inverse();
+
+  fPointingOffset.SetXYZ( off_x, off_y, off_z );
+
+  return kOK;
 }
