@@ -128,44 +128,34 @@ THaVar* THaVarList::DefineByType( const char* name, const char* descript,
 		      static_cast<const Byte_t*>( var ), count );
     break;
   case kDoubleP:
-    ptr = new THaVar( name, descript, 
-		      static_cast<const Double_t**>( var ), count );
+    ptr = new THaVar( name, descript, (const Double_t**)var, count );
     break;
   case kFloatP:
-    ptr = new THaVar( name, descript, 
-		      static_cast<const Float_t**>( var ), count );
+    ptr = new THaVar( name, descript, (const Float_t**)var, count );
     break;
   case kLongP:
-    ptr = new THaVar( name, descript, 
-		      static_cast<const Long_t**>( var ), count );
+    ptr = new THaVar( name, descript, (const Long_t**)var, count );
     break;
   case kULongP:
-    ptr = new THaVar( name, descript, 
-		      static_cast<const ULong_t**>( var ), count );
+    ptr = new THaVar( name, descript, (const ULong_t**)var, count );
     break;
   case kIntP:
-    ptr = new THaVar( name, descript, 
-		      static_cast<const Int_t**>( var ), count );
+    ptr = new THaVar( name, descript, (const Int_t**)var, count );
     break;
   case kUIntP:
-    ptr = new THaVar( name, descript, 
-		      static_cast<const UInt_t**>( var ), count );
+    ptr = new THaVar( name, descript, (const UInt_t**)var, count );
     break;
   case kShortP:
-    ptr = new THaVar( name, descript, 
-		      static_cast<const Short_t**>( var ), count );
+    ptr = new THaVar( name, descript, (const Short_t**)var, count );
     break;
   case kUShortP:
-    ptr = new THaVar( name, descript, 
-		      static_cast<const UShort_t**>( var ), count );
+    ptr = new THaVar( name, descript, (const UShort_t**)var, count );
     break;
   case kCharP:
-    ptr = new THaVar( name, descript, 
-		      static_cast<const Char_t**>( var ), count );
+    ptr = new THaVar( name, descript, (const Char_t**)var, count );
     break;
   case kByteP:
-    ptr = new THaVar( name, descript, 
-		      static_cast<const Byte_t**>( var ), count );
+    ptr = new THaVar( name, descript, (const Byte_t**)var, count );
     break;
   default:
     Warning( here, "Unknown data type for variable %s."

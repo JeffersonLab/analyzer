@@ -301,7 +301,7 @@ Int_t THaEvent::Fill()
 	  // For pointer arrays, we need to copy the elements one by one
 	  // Type doesn't matter for memcpy, but size does ;)
 	  for( int i=0; i<ncopy; i++ ) {
-	    const int** src  = static_cast<const int**>( datamap->src );
+	    const int** src  = (const int**)datamap->src;
 	    int*        dest = static_cast<int*>( datamap->dest );
 	    memcpy( dest+i, *(src+i), -datamap->size );
 	  }
