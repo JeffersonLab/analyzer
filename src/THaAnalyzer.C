@@ -19,7 +19,7 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaAnalyzer.h"
-#include "THaRun.h"
+#include "THaRunBase.h"
 #include "THaEvent.h"
 #include "THaOutput.h"
 #include "THaEvData.h"
@@ -424,7 +424,7 @@ Int_t THaAnalyzer::InitModules( const TList* module_list, TDatime& run_time,
 }
 
 //_____________________________________________________________________________
-Int_t THaAnalyzer::Init( THaRun* run )
+Int_t THaAnalyzer::Init( THaRunBase* run )
 {
   // Initialize the analyzer.
 
@@ -438,7 +438,7 @@ Int_t THaAnalyzer::Init( THaRun* run )
 }
   
 //_____________________________________________________________________________
-Int_t THaAnalyzer::DoInit( THaRun* run )
+Int_t THaAnalyzer::DoInit( THaRunBase* run )
 {
   // Internal function called by Init(). This is where the actual work is done.
 
@@ -563,7 +563,7 @@ Int_t THaAnalyzer::DoInit( THaRun* run )
 
   // Warn user if trying to analyze the same run twice with overlapping
   // event ranges
-  // FIXME: generalize event range business
+  // FIXME: generalize event range business?
   if( fAnalysisStarted && !new_run && 
       ((fRun->GetLastEvent()  >= run->GetFirstEvent() &&
         fRun->GetFirstEvent() <  run->GetLastEvent()) ||
@@ -585,10 +585,10 @@ Int_t THaAnalyzer::DoInit( THaRun* run )
   }
 
   // Make sure we save a copy of the run in fRun.
-  // Note that the run may be derived from THaRun, so this is a bit tricky.
+  // Note that the run may be derived from THaRunBase, so this is a bit tricky.
   if( new_run ) {
     delete fRun;
-    fRun = static_cast<THaRun*>(run->IsA()->New());
+    fRun = static_cast<THaRunBase*>(run->IsA()->New());
     if( !fRun )
       return 252; // urgh
     *fRun = *run;  // Copy the run via its virtual operator=
@@ -1112,7 +1112,7 @@ Int_t THaAnalyzer::MainAnalysis()
 }
 
 //_____________________________________________________________________________
-Int_t THaAnalyzer::Process( THaRun* run )
+Int_t THaAnalyzer::Process( THaRunBase* run )
 {
   // Process the given run. Loop over all events in the event range and
   // analyze all apparatuses defined in the global apparatus list.
@@ -1139,8 +1139,8 @@ Int_t THaAnalyzer::Process( THaRun* run )
     return status;
   }
   
-  //--- Re-open the CODA file. Should succeed since this was tested in Init().
-  if( (status = fRun->OpenFile()) ) {
+  //--- Re-open the data source. Should succeed since this was tested in Init().
+  if( (status = fRun->Open()) ) {
     Error( here, "Failed to re-open the input file. "
 	   "Make sure the file still exists.");
     fBench->Stop("Total");
@@ -1237,7 +1237,7 @@ Int_t THaAnalyzer::Process( THaRun* run )
   EndAnalysis();
 
   //--- Close the input file
-  fRun->CloseFile();
+  fRun->Close();
 
   // Save final run parameters in run object of caller, if any
   *run = *fRun;

@@ -20,7 +20,7 @@ struct VarDef;
 struct RVarDef;
 struct TagDef;
 class TVector3;
-class THaRun;
+class THaRunBase;
 
 class THaAnalysisObject : public TNamed {
   
@@ -33,9 +33,9 @@ public:
   
   virtual ~THaAnalysisObject();
   
-  virtual Int_t        Begin( THaRun* r=0 );
+  virtual Int_t        Begin( THaRunBase* r=0 );
   virtual void         Clear( Option_t* opt="" );
-  virtual Int_t        End( THaRun* r=0 );
+  virtual Int_t        End( THaRunBase* r=0 );
   virtual const char*  GetDBFileName() const;
           const char*  GetConfig() const         { return fConfig.Data(); }
           Int_t        GetDebug() const          { return fDebug; }

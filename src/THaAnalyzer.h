@@ -11,7 +11,7 @@
 #include "TString.h"
 
 class THaEvent;
-class THaRun;
+class THaRunBase;
 class THaOutput;
 class TList;
 class TIter;
@@ -30,10 +30,10 @@ public:
 
   virtual Int_t  AddPostProcess( THaPostProcess* module );
   virtual void   Close();
-  virtual Int_t  Init( THaRun* run );
-          Int_t  Init( THaRun& run )    { return Init( &run ); }
-  virtual Int_t  Process( THaRun* run=NULL );
-          Int_t  Process( THaRun& run ) { return Process(&run); }
+  virtual Int_t  Init( THaRunBase* run );
+          Int_t  Init( THaRunBase& run )    { return Init( &run ); }
+  virtual Int_t  Process( THaRunBase* run=NULL );
+          Int_t  Process( THaRunBase& run ) { return Process(&run); }
   virtual void   Print( Option_t* opt="" ) const;
 
   void           EnableBenchmarks( Bool_t b = kTRUE );
@@ -124,7 +124,7 @@ protected:
   Int_t          fCountMode;       //Event counting mode (see ECountMode)
   THaBenchmark*  fBench;           //Counters for timing statistics
   THaEvent*      fPrevEvent;       //Event structure from last Init()
-  THaRun*        fRun;             //Copy of current run
+  THaRunBase*    fRun;             //Copy of current run
   THaEvData*     fEvData;          //Instance of decoder used by us
   TList*         fApps;            //List of apparatuses
   TList*         fPhysics;         //List of physics modules
@@ -149,7 +149,7 @@ protected:
 
   // Main analysis functions
   virtual Int_t  BeginAnalysis();
-  virtual Int_t  DoInit( THaRun* run );
+  virtual Int_t  DoInit( THaRunBase* run );
   virtual Int_t  EndAnalysis();
   virtual Int_t  MainAnalysis();
   virtual Int_t  PhysicsAnalysis( Int_t code );

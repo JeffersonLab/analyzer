@@ -22,6 +22,8 @@
 #pragma link C++ class THaHashList+;
 #pragma link C++ class THaInterface+;
 #pragma link C++ class THaRun+;
+#pragma link C++ class THaRunBase+;
+#pragma link C++ class THaCodaRun+;
 #pragma link C++ class THaRunParameters+;
 #pragma link C++ class THaApparatus+;
 #pragma link C++ class THaSpectrometer+;
@@ -97,7 +99,6 @@
 #pragma link C++ class THaTrackProj+;
 #pragma link C++ class THaPostProcess+;
 #pragma link C++ class THaFilter+;
-#pragma link C++ class THaIORun+;
 
 #ifdef ONLINE_ET
 #pragma link C++ class THaOnlRun+;

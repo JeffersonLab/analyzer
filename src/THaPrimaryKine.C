@@ -13,7 +13,7 @@
 
 #include "THaPrimaryKine.h"
 #include "THaTrackingModule.h"
-#include "THaRun.h"
+#include "THaRunBase.h"
 #include "THaRunParameters.h"
 #include "VarDef.h"
 #include "TMath.h"

@@ -32,7 +32,7 @@ THaCutList* gHaCuts    = NULL;  //List of global analyzer cuts/tests
 TList*      gHaApps    = NULL;  //List of Apparatuses
 TList*      gHaScalers = NULL;  //List of scaler groups
 TList*      gHaPhysics = NULL;  //List of physics modules
-THaRun*     gHaRun     = NULL;  //The currently active run
+THaRunBase* gHaRun     = NULL;  //The currently active run
 TClass*     gHaDecoder = NULL;  //Class(!) of decoder to use
 
 THaInterface* THaInterface::fgAint = NULL;  //Pointer to this interface

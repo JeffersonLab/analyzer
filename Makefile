@@ -131,7 +131,8 @@ export ARCH LIBDIR CXX LD SOFLAGS SONAME CXXFLG LDFLAGS DEFINES VERSION SOVERSIO
 SRC           = src/THaFormula.C src/THaVform.C src/THaVhist.C \
 		src/THaVar.C src/THaVarList.C src/THaCut.C \
 		src/THaNamedList.C src/THaCutList.C src/THaInterface.C \
-		src/THaRun.C src/THaRunParameters.C \
+		src/THaRunBase.C src/THaCodaRun.C src/THaRun.C \
+		src/THaRunParameters.C \
 		src/THaDetMap.C src/THaApparatus.C src/THaDetector.C \
 		src/THaSpectrometer.C src/THaSpectrometerDetector.C \
 		src/THaHRS.C \
@@ -164,8 +165,7 @@ SRC           = src/THaFormula.C src/THaVform.C src/THaVhist.C \
 		src/THaDB.C src/THaDBFile.C \
                 src/THaCoincidenceTime.C \
                 src/THaTrackProj.C \
-		src/THaPostProcess.C src/THaFilter.C \
-		src/THaIORun.C
+		src/THaPostProcess.C src/THaFilter.C
 
 ifdef ONLINE_ET
 SRC += src/THaOnlRun.C

@@ -66,7 +66,7 @@ THaAnalysisObject::~THaAnalysisObject()
 }
 
 //_____________________________________________________________________________
-Int_t THaAnalysisObject::Begin( THaRun* run )
+Int_t THaAnalysisObject::Begin( THaRunBase* run )
 {
   // Method usually called right before the start of the event loop
   // for 'run'. Begin() is similar to Init(), but since there is a default
@@ -159,7 +159,7 @@ Int_t THaAnalysisObject::DefineVarsFromList( const void* list,
 }
 
 //_____________________________________________________________________________
-Int_t THaAnalysisObject::End( THaRun* run )
+Int_t THaAnalysisObject::End( THaRunBase* run )
 {
   // Method usually called right after the end of the event loop for 'run'.
   // May be used by modules to clean up, compute averages, write summaries, etc.

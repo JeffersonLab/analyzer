@@ -3,7 +3,7 @@
 
 #include "TObject.h"
 
-class THaRun;
+class THaRunBase;
 class THaEvData;
 class TDatime;
 class TList;
@@ -13,7 +13,7 @@ class THaPostProcess : public TObject {
   THaPostProcess();
   virtual ~THaPostProcess();
   virtual Int_t Init(const TDatime& )=0;
-  virtual Int_t Process( const THaEvData*, const THaRun*, Int_t code )=0;
+  virtual Int_t Process( const THaEvData*, const THaRunBase*, Int_t code )=0;
   virtual Int_t Close()=0;
  protected:
   Int_t fIsInit;
