@@ -14,7 +14,6 @@
 #include "VarType.h"
 #include "THaTrack.h"
 #include "TClonesArray.h"
-#include "TDatime.h"
 #include "TMath.h"
 
 // #include <iostream>
@@ -28,6 +27,23 @@ THaScintillator::THaScintillator( const char* name, const char* description,
   THaNonTrackingDetector(name,description,apparatus), fFirstChan(NULL)
 {
   // Constructor
+}
+
+//_____________________________________________________________________________
+THaAnalysisObject::EStatus THaScintillator::Init( const TDatime& date )
+{
+  // Extra initialization for scintillators: set up DataDest map
+
+  if( THaNonTrackingDetector::Init( date ) )
+    return fStatus;
+
+  const DataDest tmp[NDEST] = {
+    { &fLTNhit, &fLANhit, fLT, fLT_c, fLA, fLA_p, fLA_c, fLOff, fLPed, fLGain },
+    { &fRTNhit, &fRANhit, fRT, fRT_c, fRA, fRA_p, fRA_c, fROff, fRPed, fRGain }
+  };
+  memcpy( fDataDest, tmp, NDEST*sizeof(DataDest) );
+
+  return fStatus = kOK;
 }
 
 //_____________________________________________________________________________
@@ -145,18 +161,12 @@ Int_t THaScintillator::ReadDatabase( FILE* fi, const TDatime& date )
 }
 
 //_____________________________________________________________________________
-Int_t THaScintillator::SetupDetector( const TDatime& date )
+Int_t THaScintillator::DefineVariables( EMode mode )
 {
   // Initialize global variables and lookup table for decoder
 
-  if( fIsSetup ) return kOK;
-  fIsSetup = true;
-
-  const DataDest tmp[NDEST] = {
-    { &fLTNhit, &fLANhit, fLT, fLT_c, fLA, fLA_p, fLA_c, fLOff, fLPed, fLGain },
-    { &fRTNhit, &fRANhit, fRT, fRT_c, fRA, fRA_p, fRA_c, fROff, fRPed, fRGain }
-  };
-  memcpy( fDataDest, tmp, NDEST*sizeof(DataDest) );
+  if( mode == kDefine && fIsSetup ) return kOK;
+  fIsSetup = ( mode == kDefine );
 
   // Register variables in global list
 
@@ -179,9 +189,7 @@ Int_t THaScintillator::SetupDetector( const TDatime& date )
     { "try",    "y-position of track in det plane",  "fTRY" },
     { 0 }
   };
-  DefineVariables( vars );
-
-  return kOK;
+  return DefineVarsFromList( vars, mode );
 }
 
 //_____________________________________________________________________________

@@ -31,8 +31,6 @@
 #include "TROOT.h"
 
 #ifdef WITH_DEBUG
-#include "THaGlobals.h"
-#include "THaVarList.h"
 #include <iostream>
 #endif
 
@@ -57,12 +55,13 @@ THaVDC::THaVDC( const char* name, const char* description,
 
   // Default behavior for now
   SetBit( kOnlyFastest | kHardTDCcut );
+
 }
 
 //_____________________________________________________________________________
-THaDetectorBase::EStatus THaVDC::Init( const TDatime& date )
+THaAnalysisObject::EStatus THaVDC::Init( const TDatime& date )
 {
-  // Initialize VDC. Calls its own Init(), then initializes subdetectors.
+  // Initialize VDC. Calls standard Init(), then initializes subdetectors.
 
   if( IsZombie() || !fUpper || !fLower )
     return fStatus = kInitError;
@@ -242,16 +241,8 @@ Int_t THaVDC::ReadDatabase( FILE* file, const TDatime& date )
     if(feof(file) || ferror(file))
       break;
   }
-  return kOK;
-}
 
-//_____________________________________________________________________________
-Int_t THaVDC::SetupDetector( const TDatime& date )
-{
-
-  if( fIsSetup ) return kOK;
-  fIsSetup = true;
-
+  // Compute derived quantities and set some hardcoded parameters
   const Float_t degrad = TMath::Pi()/180.0;
   fTan_vdc  = fFPMatrixElems[T000].poly[0];
   fVDCAngle = TMath::ATan(fTan_vdc);

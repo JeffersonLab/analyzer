@@ -47,7 +47,7 @@ protected:
 
   void           ClearEvent() { fE = 0.0; fID = 0; }
   virtual Int_t  ReadDatabase( FILE* file, const TDatime& date );
-  virtual Int_t  SetupDetector( const TDatime& date );
+  virtual Int_t  DefineVariables( EMode mode );
 
   THaTotalShower() {}                 // Must construct with name
   THaTotalShower( const THaTotalShower& ) {}

@@ -15,24 +15,16 @@
 #include "THaApparatus.h"
 #include "THaDetector.h"
 #include "TClass.h"
-#include "TDatime.h"
-#include "TString.h"
-#include "THaVarList.h"
-#include "THaGlobals.h"
-#include "VarDef.h"
 
 #ifdef WITH_DEBUG
 #include <iostream>
 #endif
 
-class THaEvData;
-
 ClassImp(THaApparatus)
 
 //_____________________________________________________________________________
 THaApparatus::THaApparatus( const char* name, const char* description ) : 
-  TNamed(name,description), fDebug(0), fNmydets(0), fMydets(0), 
-  fStatus(kNotinit)
+  THaAnalysisObject(name,description), fNmydets(0), fMydets(0)
 {
   // Constructor
   
@@ -94,87 +86,28 @@ Int_t THaApparatus::Decode( const THaEvData& evdata )
 }
 
 //_____________________________________________________________________________
-Int_t THaApparatus::DefineVarsFromList( const void* list, 
-					EType type, EMode mode )
+THaAnalysisObject::EStatus THaApparatus::Init( const TDatime& run_time )
 {
-  // Add/delete variables defined in 'list' to/from the list of global 
-  // variables, using prefix of the current apparatus.
-  // Internal function that can be called during apparatus initialization.
-
-  TString prefix(fName);
-  prefix.Append(".");
-
-  if( !gHaVars ) {
-    TString here(ClassName()), action;
-    here.Append("::DefineVariables()");
-    if( mode == kDefine )
-      action = "defined";
-    else if( mode == kDelete )
-      action = "deleted";
-    Warning( here.Data(), 
-	     "No global variable list found. No variables %s.", 
-	     action.Data() );
-    return kInitError;
-  }
-
-  if( mode == kDefine ) {
-    if( type == kVarDef )
-      gHaVars->DefineVariables( (const VarDef*)list, 
-				prefix, ClassName() );
-    else if( type == kRVarDef )
-      gHaVars->DefineVariables( (const RVarDef*)list, this,
-				prefix, ClassName() );
-  }
-  else if( mode == kDelete ) {
-    if( type == kVarDef ) {
-      const VarDef* item;
-      const VarDef* theList = (const VarDef*)list;
-      while( (item = theList++) && item->name ) {
-	TString name(prefix);
-	name.Append( item->name );
-	gHaVars->RemoveName( name );
-      }
-    } else if( type == kRVarDef ) {
-      const RVarDef* item;
-      const RVarDef* theList = (const RVarDef*)list;
-      while( (item = theList++) && item->name ) {
-	TString name(prefix);
-	name.Append( item->name );
-	gHaVars->RemoveName( name );
-      }
-    }
-  }
-
-  return kOK;
-}
-
-//_____________________________________________________________________________
-Int_t THaApparatus::Init()
-{
-  // Initialize apparatus for current time. See Init(run_time) below.
-
-  TDatime now;
-  return Init(now);
-}
-
-//_____________________________________________________________________________
-Int_t THaApparatus::Init( const TDatime& run_time )
-{
-  // Default method for initializing an apparatus. Call Init() for all
-  // defined detectors in turn. Pass run_time argument.
+  // Default method for initializing an apparatus. 
+  // First, call default THaAnalysisObject::Init(), which
+  //  - Creates the fPrefix for this apparatus.
+  //  - Opens database file and reads database for this apparatus, if custom 
+  //    ReadDatabase() defined.
+  //  - Sets up global variables for this apparatus via DefineVariables().
+  // Then, call Init() for all defined detectors in turn. Pass run_time argument.
   // Return kOK if all detectors initialized correctly, or kInitError
   // if any detector failed to initialize. Init() will be called for
   // all detectors, even if one or more detectors fail.
-  // 
 
-  static const char* const here = "Init()";
-  fStatus = kOK;
+  if( THaAnalysisObject::Init( run_time ) )
+    return fStatus;
+
   TIter next(fDetectors);
   TObject* obj;
 
   while( (obj = next()) ) {
     if( !obj->IsA()->InheritsFrom("THaDetector")) {
-      Error( here, "Detector %s (\"%s\") is not a THaDetector. "
+      Error( Here("Init()"), "Detector %s (\"%s\") is not a THaDetector. "
 	     "Initialization of apparatus %s (\"%s\") failed.", 
 	     obj->GetName(), obj->GetTitle(), GetName(), GetTitle());
       fStatus = kInitError;
@@ -190,7 +123,7 @@ Int_t THaApparatus::Init( const TDatime& run_time )
       if( fDebug>0 ) cout << "done.\n" << flush;
 #endif
       if( !theDetector->IsOK() ) {
-	Error( here, "While initializing apparatus %s (\"%s\") "
+	Error( Here("Init()"), "While initializing apparatus %s (\"%s\") "
 	      "got error %d from detector %s (\"%s\")", 
 	      GetName(), GetTitle(), theDetector->Status(),
 	      theDetector->GetName(), theDetector->GetTitle());
@@ -198,9 +131,6 @@ Int_t THaApparatus::Init( const TDatime& run_time )
       }
     }
   }
-
-  if( fStatus == kOK )
-    fStatus = static_cast<EStatus>( SetupApparatus( run_time ));
 
   return fStatus;
 }

@@ -58,9 +58,9 @@ public:
    THaDecData( const char* description="" );
    virtual ~THaDecData() { SetupDecData( NULL, kDelete ); }
 
-   virtual Int_t  Init( const TDatime& run_time );
-   virtual Int_t  Reconstruct();
-   virtual Int_t  Decode( const THaEvData& );
+   virtual EStatus Init( const TDatime& run_time );
+   virtual Int_t   Reconstruct();
+   virtual Int_t   Decode( const THaEvData& );
 
 private:
    char *cbit;

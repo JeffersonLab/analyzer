@@ -139,7 +139,7 @@ THaTotalShower::~THaTotalShower()
 }
 
 //_____________________________________________________________________________
-THaDetectorBase::EStatus THaTotalShower::Init( const TDatime& run_time )
+THaAnalysisObject::EStatus THaTotalShower::Init( const TDatime& run_time )
 {
   // Set up total shower counter. This function 
   // reads the total shower parameters from a local database file 
@@ -148,8 +148,6 @@ THaDetectorBase::EStatus THaTotalShower::Init( const TDatime& run_time )
 
   if( IsZombie() || !fShower || !fPreShower )
     return fStatus = kInitError;
-
-  MakePrefix();
 
   EStatus status;
   if( (status = THaPidDetector::Init( run_time )) ||
@@ -180,12 +178,12 @@ Int_t THaTotalShower::ReadDatabase( FILE* fi, const TDatime& date )
 }
 
 //_____________________________________________________________________________
-Int_t THaTotalShower::SetupDetector( const TDatime& date )
+Int_t THaTotalShower::DefineVariables( EMode mode )
 {
   // Initialize global variables and lookup table for decoder
 
-  if( fIsSetup ) return kOK;
-  fIsSetup = true;
+  if( mode == kDefine && fIsSetup ) return kOK;
+  fIsSetup = ( mode == kDefine );
 
   // Register global variables
 
@@ -194,9 +192,7 @@ Int_t THaTotalShower::SetupDetector( const TDatime& date )
     { "id", "ID of Psh&Sh coincidence (1==good)", "fID" },
     { 0 }
   };
-  DefineVariables( vars );
-
-  return kOK;
+  return DefineVarsFromList( vars, mode );
 }
 
 //_____________________________________________________________________________

@@ -125,12 +125,12 @@ Int_t THaCherenkov::ReadDatabase( FILE* fi, const TDatime& date )
 }
 
 //_____________________________________________________________________________
-Int_t THaCherenkov::SetupDetector( const TDatime& date )
+Int_t THaCherenkov::DefineVariables( EMode mode )
 {
   // Initialize global variables
 
-  if( fIsSetup ) return kOK;
-  fIsSetup = true;
+  if( mode == kDefine && fIsSetup ) return kOK;
+  fIsSetup = ( mode == kDefine );
 
   RVarDef vars[] = {
     { "nthit",  "Number of Left paddles TDC times",  "fNThit" },
@@ -146,9 +146,7 @@ Int_t THaCherenkov::SetupDetector( const TDatime& date )
     { "try",    "y-position of track in det plane",  "fTRY" },
     { 0 }
   };
-  DefineVariables( vars );
-
-  return fStatus = kOK;
+  return DefineVarsFromList( vars, mode );
 }
 
 //_____________________________________________________________________________

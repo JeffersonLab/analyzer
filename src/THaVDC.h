@@ -138,8 +138,6 @@ protected:
   void CorrectTimeOfFlight(TClonesArray& tracks);
   void FindBadTracks(TClonesArray &tracks);
 
-  virtual Int_t SetupDetector( const TDatime& date );
-
   ClassDef(THaVDC,0)             // VDC class
 }; 
 

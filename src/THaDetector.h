@@ -26,8 +26,6 @@ public:
 protected:
   THaApparatus*  fApparatus;        // Apparatus containing this detector
 
-  virtual const char* GetDBFileName() const { return GetPrefix(); }
-
 //Only derived classes may construct me
 
   THaDetector() : fApparatus(NULL) {}     

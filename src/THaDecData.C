@@ -183,7 +183,7 @@ Int_t THaDecData::SetupDecData( const TDatime* run_time, EMode mode )
 }
 
 //_____________________________________________________________________________
-Int_t THaDecData::Init( const TDatime& run_time ) 
+THaAnalysisObject::EStatus THaDecData::Init( const TDatime& run_time ) 
 {
   // Custom Init() method. Since this apparatus has no detectors, we
   // skip the detector initialization.

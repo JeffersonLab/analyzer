@@ -175,12 +175,12 @@ Int_t THaShower::ReadDatabase( FILE* fi, const TDatime& date )
 }
 
 //_____________________________________________________________________________
-Int_t THaShower::SetupDetector( const TDatime& date )
+Int_t THaShower::DefineVariables( EMode mode )
 {
   // Initialize global variables
 
-  if( fIsSetup ) return kOK;
-  fIsSetup = true;
+  if( mode == kDefine && fIsSetup ) return kOK;
+  fIsSetup = ( mode == kDefine );
 
   // Register variables in global list
 
@@ -202,9 +202,7 @@ Int_t THaShower::SetupDetector( const TDatime& date )
     { "try",    "track y-position in det plane",      "fTRY" },
     { 0 }
   };
-  DefineVariables( vars );
-
-  return kOK;
+  return DefineVarsFromList( vars, mode );
 }
 
 //_____________________________________________________________________________

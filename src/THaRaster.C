@@ -32,7 +32,7 @@ THaRaster::THaRaster( const char* name, const char* description,
 }
 
 //______________________________________________________________________________
-THaDetectorBase::EStatus THaRaster::Init( const TDatime& run_time )
+THaAnalysisObject::EStatus THaRaster::Init( const TDatime& run_time )
 {
   // Initialize detector.  "run_time" is currently ignored.
 
@@ -43,7 +43,8 @@ THaDetectorBase::EStatus THaRaster::Init( const TDatime& run_time )
     return fStatus;
   }
 
-  MakePrefix();
+  if( THaDetector::Init( run_time ) )
+    return fStatus;
 
   // Which device are we using?
   // I guess the choice should be time-dependent since the raster configuration
@@ -61,7 +62,7 @@ THaDetectorBase::EStatus THaRaster::Init( const TDatime& run_time )
   else {
     Warning( Here(here), "No such device: %s. Raster initialization failed.",
 	     fDevice.Data() ); 
-    return fStatus;
+    return fStatus = kInitError;
   }
   
   // Initialize detector map
@@ -83,17 +84,6 @@ THaDetectorBase::EStatus THaRaster::Init( const TDatime& run_time )
   if( i == 2 )
     fDetMap->AddModule( m[i+1].crate, m[i+1].slot, m[i+1].lo, m[i+1].hi );
 
-  // Register raster variables in global list
-
-  RVarDef vars[] = {
-    { "Xcur", "X-axis current",    "fXcur" },
-    { "Ycur", "Y-axis current",    "fYcur" },
-    { "Xder", "X-axis derivative", "fXder" },
-    { "Yder", "Y-axis derivative", "fYder" },
-    { 0 }
-  };
-  DefineVariables( vars );
-
   // Initialize decoder channel map
   //FIXME: Check this! 
 
@@ -105,6 +95,24 @@ THaDetectorBase::EStatus THaRaster::Init( const TDatime& run_time )
   memcpy( fChanMap, tmp, NCHAN*sizeof(Float_t*));
 
   return fStatus = kOK;
+}
+
+//_____________________________________________________________________________
+Int_t THaRaster::DefineVariables( EMode mode )
+{
+  // Define global variables
+
+  if( mode == kDefine && fIsSetup ) return kOK;
+  fIsSetup = ( mode == kDefine );
+
+  RVarDef vars[] = {
+    { "Xcur", "X-axis current",    "fXcur" },
+    { "Ycur", "Y-axis current",    "fYcur" },
+    { "Xder", "X-axis derivative", "fXder" },
+    { "Yder", "Y-axis derivative", "fYder" },
+    { 0 }
+  };
+  return DefineVarsFromList( vars, mode );
 }
 
 //______________________________________________________________________________

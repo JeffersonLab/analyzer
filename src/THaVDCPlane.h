@@ -97,7 +97,7 @@ protected:
 
   virtual void  MakePrefix();
   virtual Int_t ReadDatabase( FILE* file, const TDatime& date );
-  virtual Int_t SetupDetector( const TDatime& date );
+  virtual Int_t DefineVariables( EMode mode );
 
   // Prevent copying and assignment
   THaVDCPlane( const THaVDCPlane& ) {}

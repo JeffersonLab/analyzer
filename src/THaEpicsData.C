@@ -30,19 +30,13 @@ THaEpicsData::THaEpicsData( const char* name, const char* description,
 }
 
 //______________________________________________________________________________
-THaDetectorBase::EStatus THaEpicsData::Init( const TDatime& run_time )
+THaAnalysisObject::EStatus THaEpicsData::Init( const TDatime& run_time )
 {
   // Initialize. 
   // After 30-Nov-2000, use IPM1H04A/B instead of IPM1H03A/B for the positions.
 
-  static const char* const here = "Init()";
-
-  if( IsInit() ) {
-    Warning( Here(here), "Detector already initialized. Doing nothing." );
+  if( THaDetector::Init( run_time ) )
     return fStatus;
-  }
-
-  MakePrefix();
 
   //FIXME: Get from database
   Int_t date = run_time.GetDate();
@@ -60,8 +54,17 @@ THaDetectorBase::EStatus THaEpicsData::Init( const TDatime& run_time )
   }
   fEpicsTags[4] = "hac_bcm_average";
     
-    
-  // Register our variables in global list
+  return fStatus = kOK;
+}
+
+
+//_____________________________________________________________________________
+Int_t THaEpicsData::DefineVariables( EMode mode )
+{
+  // Define global variables
+
+  if( mode == kDefine && fIsSetup ) return kOK;
+  fIsSetup = ( mode == kDefine );
 
   RVarDef vars[] = {
     { "Xposa",  "EPICS Xa position", "fXposa" },
@@ -71,11 +74,8 @@ THaDetectorBase::EStatus THaEpicsData::Init( const TDatime& run_time )
     { "avgcur", "EPICS avg current", "favgcur" },
     { 0 }
   };
-  DefineVariables( vars );
-
-  return fStatus = kOK;
+  return DefineVarsFromList( vars, mode );
 }
-
 
 //______________________________________________________________________________
 THaEpicsData::~THaEpicsData()

@@ -1,4 +1,3 @@
-
 #ifndef ROOT_THaAnalyzer
 #define ROOT_THaAnalyzer
 

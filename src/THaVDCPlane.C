@@ -217,12 +217,12 @@ Int_t THaVDCPlane::ReadDatabase( FILE* file, const TDatime& date )
 }
 
 //_____________________________________________________________________________
-Int_t THaVDCPlane::SetupDetector( const TDatime& date )
+Int_t THaVDCPlane::DefineVariables( EMode mode )
 {
   // initialize global variables
 
   if( fIsSetup ) return kOK;
-  fIsSetup = true;
+  fIsSetup = ( mode == kDefine );
 
   // Register variables in global list
 
@@ -241,9 +241,8 @@ Int_t THaVDCPlane::SetupDetector( const TDatime& date )
     { "sigpos", "Cluster position sigmas",    "fClusters.THaVDCCluster.fSigmaInt" },
     { 0 }
   };
-  DefineVariables( vars );
+  return DefineVarsFromList( vars, mode );
 
-  return kOK;
 }
 
 //_____________________________________________________________________________

@@ -41,7 +41,7 @@ THaBpm::~THaBpm()
 }
 
 //_____________________________________________________________________________
-THaDetectorBase::EStatus THaBpm::Init( const TDatime& run_time )
+THaAnalysisObject::EStatus THaBpm::Init( const TDatime& run_time )
 {
   // Initialize detector.  "run_time" currently ignored.
   // Lot's of hardcoded constants here that need to come from a database
@@ -54,7 +54,8 @@ THaDetectorBase::EStatus THaBpm::Init( const TDatime& run_time )
     return fStatus;
   }
 
-  MakePrefix();
+  if( THaDetector::Init( run_time ) )
+    return fStatus;
 
   // Which BPM are we?
 
@@ -75,7 +76,7 @@ THaDetectorBase::EStatus THaBpm::Init( const TDatime& run_time )
   if( !det || !bpm ) {
     Warning( Here(here), "No such device: %s. BPM initialization failed.",
 	     fDevice.Data() ); 
-    return fStatus;
+    return fStatus = kInitError;
   }
   
   // Initialize detector map
@@ -200,8 +201,16 @@ THaDetectorBase::EStatus THaBpm::Init( const TDatime& run_time )
   kDysub3 = fcwyt*fs2wyt/2 - fccwyt*fswyt;
   kDy     = 6*kDysub1 - fcwyt*kDysub2 + fswyt*kDysub3;
 
+  return fStatus = kOK;
+}
 
+//_____________________________________________________________________________
+Int_t THaBpm::DefineVariables( EMode mode )
+{
   // Define global variables
+
+  if( mode == kDefine && fIsSetup ) return kOK;
+  fIsSetup = ( mode == kDefine );
 
   RVarDef vars[] = {
     { "x",  "Corrected x-axis data", "fX" },
@@ -210,9 +219,7 @@ THaDetectorBase::EStatus THaBpm::Init( const TDatime& run_time )
     { "Yy", "Curve parameters y",    "fYy" },
     { 0 }
   };
-  DefineVariables( vars );
-
-  return fStatus = kOK;
+  return DefineVarsFromList( vars, mode );
 }
 
 //_____________________________________________________________________________

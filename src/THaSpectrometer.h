@@ -42,6 +42,18 @@ public:
   virtual Int_t            Reconstruct();
           void             SetPID( Bool_t b = kTRUE ) { fPID = b; }
   virtual Int_t            TrackCalc() = 0;
+  // Coordinate transformations and vertex reconstruction
+  //
+  // to do:
+  // - TRANSPORT -> beam
+  // - beam -> TRANSPORT
+  // - vertex (replaces ESPACE's reaction_z)
+  // - "geographical" <-> spherical angles
+  // - spectrometer parameters (geometry, optics, materials)
+  //     angles, pointing offsets, central momentum, momentum acceptance(?), 
+  //     collimator distance, (matrix elements - already in VDC)
+
+  
 
 protected:
 

@@ -21,6 +21,7 @@ public:
   virtual ~THaBpm();
 
   virtual Int_t        Decode( const THaEvData& );
+  virtual Int_t        DefineVariables( EMode mode );
   virtual EStatus      Init( const TDatime& run_time );
 
 protected:
