@@ -25,6 +25,10 @@ THaScalerGroup::THaScalerGroup( const char* bank ) :
   // Constructor.
 
   fScaler = new THaScaler( bank );
+  if( !fScaler || fScaler->IsZombie() ) {
+    MakeZombie();
+    return;
+  }
 
   TString description(bank);
   description += " scaler group";
@@ -41,7 +45,7 @@ THaScalerGroup::THaScalerGroup( const char* bank ) :
     name = "ER";
   else if( name == "rcs" )
     name = "RCSS";
-  
+    
   SetNameTitle( name, description );
 }
 
@@ -50,7 +54,7 @@ THaAnalysisObject::EStatus THaScalerGroup::Init( const TDatime& date )
 {
   // Initialize the scaler group.
 
-  if( !fScaler ) return (fStatus = kInitError);
+  if( IsZombie() || !fScaler ) return (fStatus = kInitError);
 
   Int_t status = fScaler->Init( date );
   if( status == SCAL_ERROR )
@@ -60,3 +64,15 @@ THaAnalysisObject::EStatus THaScalerGroup::Init( const TDatime& date )
 
   return fStatus;
 }
+
+//_____________________________________________________________________________
+THaScalerGroup::~THaScalerGroup()
+{
+  // Destructor
+
+  if( fIsSetup )
+    RemoveVariables();
+
+  delete fScaler;
+}
+

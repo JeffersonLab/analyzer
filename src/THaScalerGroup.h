@@ -17,7 +17,7 @@ class THaScalerGroup : public THaAnalysisObject {
 public:
 
   THaScalerGroup( const char* Bankgroup );
-  virtual ~THaScalerGroup() {}
+  virtual ~THaScalerGroup();
 
   virtual EStatus Init( const TDatime& date );
 
