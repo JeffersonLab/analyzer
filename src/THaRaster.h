@@ -53,8 +53,8 @@ protected:
   virtual Int_t  ReadDatabase( const TDatime& date );
   virtual Int_t  DefineVariables( EMode mode );
 
-  THaRaster() {}
-  THaRaster( const THaRaster& ) {}
+  //  THaRaster() {}
+  //  THaRaster( const THaRaster& ) {}
   THaRaster& operator=( const THaRaster& ) { return *this; }
 
 

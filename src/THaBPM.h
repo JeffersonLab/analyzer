@@ -38,8 +38,8 @@ protected:
   virtual Int_t  ReadDatabase( const TDatime& date );
   virtual Int_t  DefineVariables( EMode mode );
 
-  THaBPM() {}
-  THaBPM( const THaBPM& ) {}
+  //  THaBPM() {}
+  //  THaBPM( const THaBPM& ) {}
   THaBPM& operator=( const THaBPM& ) { return *this; }
 
 

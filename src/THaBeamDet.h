@@ -22,7 +22,7 @@ public:
  protected:
 
   // Only derived classes can construct me
-  THaBeamDet() {}
+  //  THaBeamDet() {}
   THaBeamDet( const char* name, const char* description ="" ,
               THaApparatus* a = NULL ) :
     THaDetector( name, description , a) {}
