@@ -24,6 +24,7 @@
 #include "TSystem.h"
 #include "TGLayout.h"
 #include "TGLabel.h"
+#include "TGDimension.h"
 #include "TGButton.h"
 #include "TGTextBuffer.h"
 #include "TGTextEntry.h"
@@ -37,10 +38,13 @@
 class THaScaler;
 class THaScalerBank;
 
+using namespace std;
+
 class THaScalerGui : public TGMainFrame {
 
 public:
-   THaScalerGui(const TGWindow *p, UInt_t width, UInt_t height, string bankgr);
+
+   THaScalerGui(const TGWindow *p, UInt_t width, UInt_t height, std::string bankgr);
    virtual ~THaScalerGui();
    Int_t InitPlots();    // Initialize plots (xscaler style)
 

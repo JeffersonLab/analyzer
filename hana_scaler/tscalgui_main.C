@@ -17,9 +17,13 @@
 #include "TPaveLabel.h"
 #include "THaScalerGui.h"
 
+using namespace std;
+
 extern void InitGui();
 VoidFuncPtr_t initfuncs[] = { InitGui, 0 };
 TROOT root("Scalers","Hall A Scaler GUI", initfuncs);
+void usage();
+
 
 int main(int argc, char **argv) {
 
@@ -28,12 +32,13 @@ int main(int argc, char **argv) {
    if (argc > 1) {
      bank = argv[1];
      if (bank != "Left" && bank != "LEFT" && bank != "Right" && bank != "RIGHT") {
-         cout << "Error, undefined bank.  Must be `Left' or `Right'"<<endl;
-         cout << "exiting... "<<endl;
+         usage();
          return 1;
      }
    } else {
-     bank = "RCS";       // RCS is default
+     bank = "Left";       // Left is default
+     cout << "Since you provided no argument, we assume you"<<endl;
+     cout << "want to use the "<<bank<<" spectrometer."<<endl;
    }
 
    TApplication theApp("App", &argc, argv);
@@ -43,7 +48,12 @@ int main(int argc, char **argv) {
    return 0;
 }
 
-
+void usage() {
+  cout << endl << "Usage:  ./xscaler [bank]"<<endl;
+  cout << "where bank = `Left' or `Right'"<<endl;
+  cout << "and default bank is `Left' (i.e. if no arg)"<<endl;
+  cout << "try again !"<<endl<<endl;
+}
 
 
 
