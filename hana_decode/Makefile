@@ -58,48 +58,48 @@ ROOTGLIBS    := $(shell root-config --glibs)
 INCLUDES      = $(ROOTCFLAGS) 
 
 ifndef STANDALONE
-INCLUDES += -I$(MAINDIR)
+   INCLUDES += -I$(MAINDIR)
 else
-ARCH          = linuxegcs
-#ARCH          = solarisCC5
+   ARCH          = linuxegcs
+  # ARCH          = solarisCC5
 endif
 
 ifeq ($(ARCH),solarisCC5)
-# Solaris CC 5.0
-CXX           = CC
-LD            = CC
-SOFLAGS       = -G
-ifdef DEBUG
-  CXXFLAGS    = -g -KPIC
-  LDFLAGS     = -g
-else
-  CXXFLAGS    = -O -KPIC
-  LDFLAGS     = -O
-endif
+  # Solaris CC 5.0
+   CXX           = CC
+   LD            = CC
+   SOFLAGS       = -G
+   ifdef DEBUG
+      CXXFLAGS    = -g -KPIC
+      LDFLAGS     = -g
+   else
+      CXXFLAGS    = -O -KPIC
+      LDFLAGS     = -O
+   endif
 endif
 
 ifeq ($(ARCH),linuxegcs)
-# Linux with egcs (>= RedHat 5.2)
-CXX           = g++
-LD            = g++
-SOFLAGS       = -shared
-ifdef DEBUG
-  CXXFLAGS    = -g -O0 -Wall -Woverloaded-virtual -fPIC
-  LDFLAGS     = -g -O0
-else
-  CXXFLAGS    = -O2 -Wall -Woverloaded-virtual -fPIC
-  LDFLAGS     = -O2
-endif
+  # Linux with egcs (>= RedHat 5.2)
+   CXX           = g++
+   LD            = g++
+   SOFLAGS       = -shared
+   ifdef DEBUG
+      CXXFLAGS    = -g -O0 -Wall -Woverloaded-virtual -fPIC
+      LDFLAGS     = -g -O0
+   else
+      CXXFLAGS    = -O2 -Wall -Woverloaded-virtual -fPIC
+      LDFLAGS     = -O2
+   endif
 endif
 
 ifeq ($(CXX),)
-$(error $(ARCH) invalid architecture)
+   $(error $(ARCH) invalid architecture)
 endif
 
 MAKEDEPEND    = g++
 
 ifdef WITH_DEBUG
-CXXFLAGS     += -DWITH_DEBUG
+   CXXFLAGS     += -DWITH_DEBUG
 endif
 
 export OSNAME := $(shell uname)
@@ -119,12 +119,7 @@ ifeq ($(OSNAME),SunOS)
    LIBET = $(CODA)/SunOS/lib/libet.so
    ONLIBS = $(LIBET) -lposix4 -lnsl -lsocket -lresolv
    LIBS = $(EVIO_LIB) $(GLIB)
-   ifdef ONLINE_ET
-     ALL_LIBS = $(LIBS) $(ONLIBS) 
-# ... finished, what ET needs.
-   else
-     ALL_LIBS = $(LIBS) 
-   endif
+   ALL_LIBS = $(LIBS) 
 
 endif
 
@@ -152,23 +147,26 @@ ifeq ($(OSNAME),Linux)
    ALL_LIBS      = $(EVIO_LIB) $(GLIBS) $(ROOTLIBS) $(ROOTGLIBS)
 
 # ONLIBS is needed for ET
-  ET_AC_FLAGS = -D_REENTRANT -D_POSIX_PTHREAD_SEMANTICS
-  ET_CFLAGS = -02 -fPIC -I. $(ET_AC_FLAGS) -DLINUXVERS
+   ET_AC_FLAGS = -D_REENTRANT -D_POSIX_PTHREAD_SEMANTICS
+   ET_CFLAGS = -02 -fPIC -I. $(ET_AC_FLAGS) -DLINUXVERS
 # CODA environment variable must be set.  Examples are
 #   CODA = /adaqfs/coda/2.2        (in adaq cluster)
 #   CODA = /data7/user/coda/2.2    (on haplix cluster)
-  LIBET = $(CODA)/Linux/lib/libet.so
-  ONLIBS = $(LIBET) -lieee -lpthread -ldl -lresolv
+   LIBET = $(CODA)/Linux/lib/libet.so
+   ONLIBS = $(LIBET) -lieee -lpthread -ldl -lresolv
 
-  ifdef ONLINE_ET
-     ALL_LIBS += $(ONLIBS)
-  endif
-
-  ifdef PROFILE
-     CXXFLAGS += -pg
-  endif
+   ifdef PROFILE
+      CXXFLAGS += -pg
+   endif
 
 endif
+
+# ... finished, what ET needs.
+ifdef ONLINE_ET
+  CXXFLAGS   += -DONLINE_ET
+  ALL_LIBS   += $(ONLIBS)
+endif
+
 
 CXXFLAGS     += $(INCLUDES)
 LIBS         += $(ROOTLIBS) $(SYSLIBS)
@@ -328,11 +326,3 @@ clean_evio:
 		[ -s $@ ] || rm -f $@'
 
 -include $(DEPS)
-
-
-
-
-
-
-
-
