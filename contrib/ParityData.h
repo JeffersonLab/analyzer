@@ -19,6 +19,7 @@
 using namespace std;
 
 class TH1;
+class THaScaler;
 
 class BdataLoc {
 // Utility class used by ParityData.
@@ -129,6 +130,9 @@ private:
    Double_t xstrip4a,ystrip4a;
    Double_t xstrip4b,ystrip4b;
 
+   // Scalers
+   THaScaler *lscaler,*rscaler;
+
    // Q^2 and missing mass on left (L) and right (R) HRS.
    Double_t q2L,mmL,q2R,mmR;
 
@@ -143,6 +147,7 @@ private:
    Int_t InitCalib();
    Int_t DoBpm();
    Int_t DoKine();
+   Int_t ProfileXY();
    void TrigBits(UInt_t ibit, BdataLoc *dataloc);
    static std::vector<std::string> vsplit(const std::string& s);
    Int_t SetupParData( const TDatime* runTime = NULL, EMode mode = kDefine );

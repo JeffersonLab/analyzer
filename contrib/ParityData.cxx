@@ -25,12 +25,18 @@
 
 //#define WITH_DEBUG 1
 
+//#define DUMP_SCALER
+
 #include "ParityData.h"
 #include "THaVarList.h"
 #include "THaVar.h"
 #include "THaGlobals.h"
 #include "THaEvData.h"
 #include "THaDetMap.h"
+#include "THaScalerGroup.h"
+#include "THaScaler.h"
+#include "THaAnalyzer.h"
+#include "THaString.h"
 #include "TDatime.h"
 #include "TH1.h"
 #include "VarDef.h"
@@ -48,6 +54,8 @@ typedef vector<BdataLoc*>::iterator Iter_t;
 ParityData::ParityData( const char* name, const char* descript ) : 
   THaApparatus( name, descript )
 {
+  lscaler = 0;
+  rscaler = 0;
   trigcnt = new Int_t[12];
   cped = new Double_t[NCAV];
   cfb  = new Double_t[NCAV];
@@ -301,7 +309,24 @@ THaAnalysisObject::EStatus ParityData::Init( const TDatime& run_time )
   MakePrefix();
   BookHist();
   InitCalib();
-  return fStatus = static_cast<EStatus>( SetupParData( &run_time ) );
+  fStatus = static_cast<EStatus>( SetupParData( &run_time ) );
+  // Get scalers.  They must be initialized in the
+  // analyzer. 
+  THaAnalyzer* theAnalyzer = THaAnalyzer::GetInstance();
+  TList* scalerList = theAnalyzer->GetScalers();
+  TIter next(scalerList);
+  while( THaScalerGroup* tscalgrp = static_cast<THaScalerGroup*>( next() )) {
+    THaScaler *scaler = tscalgrp->GetScalerObj();
+    THaString lbank("Left");
+    if (lbank.CmpNoCase(scaler->GetName()) == 0) {
+         lscaler = scaler; 
+    }
+    THaString rbank("Right");
+    if (rbank.CmpNoCase(scaler->GetName()) == 0) {
+         rscaler = scaler; 
+    }
+  }
+  return fStatus;
 }
 
 
@@ -409,6 +434,8 @@ Int_t ParityData::DefaultMap() {
    fCrateLoc.push_back(new BdataLoc("haptdcr1", 1, 16, 16));
    fCrateLoc.push_back(new BdataLoc("haptdcr2", 1, 16, 18));
 
+   fCrateLoc.push_back(new BdataLoc("profampl", 3, 25, 4));
+   fCrateLoc.push_back(new BdataLoc("profampr", 1, 25, 4));
 
    return 0;
 }
@@ -464,6 +491,9 @@ Int_t ParityData::Decode(const THaEvData& evdata)
     if ( dataloc->ThisIs("haptdcr1") ) haptdcr1  = dataloc->Get();
     if ( dataloc->ThisIs("haptdcr2") ) haptdcr2  = dataloc->Get();
 
+    if ( dataloc->ThisIs("profampl") ) profampl  = dataloc->Get();
+    if ( dataloc->ThisIs("profampr") ) profampl  = dataloc->Get();
+
   }
 
   // Striplines
@@ -484,10 +514,11 @@ Int_t ParityData::Decode(const THaEvData& evdata)
                  cav_chan0+i, 0);          ;
   }
 
-
   DoBpm();
 
   DoKine();
+
+  ProfileXY();
 
   if (PARDATA_PRINT) Print();
 
@@ -656,6 +687,36 @@ Int_t ParityData::DoKine( ) {
 
 }
 
+
+//_____________________________________________________________________________
+Int_t ParityData::ProfileXY() {
+// Profile scanner data is from scalers.
+
+  if (lscaler == 0 || rscaler == 0) return 0;
+
+  // L-arm X,Y in 31st & up (slot 4, index 30+)
+  profxl = lscaler->GetScalerRate(4,30);
+  profyl = lscaler->GetScalerRate(4,31);
+
+  // r-arm X,Y in 31st & up (slot 8, index 30+)
+  profxr = rscaler->GetScalerRate(8,30);
+  profyr = rscaler->GetScalerRate(8,31);
+
+#ifdef DUMP_SCALER
+  cout << "\n\nLeft Scaler Dump"<<endl;
+  //  lscaler->Print();
+  lscaler->PrintSummary();
+
+  cout << "\n\nRight Scaler Dump"<<endl;
+  //  rscaler->Print();
+  rscaler->PrintSummary();
+
+  cout << "\n\n ================ X,Y  Left  "<<hex<<profxl<<"  "<<profyl<<"  Right "<<profxr<<"  "<<profyr<<dec<<endl;
+#endif
+
+  return 0;
+
+}
 
 //_____________________________________________________________________________
 void ParityData::Print( Option_t* opt ) const {
