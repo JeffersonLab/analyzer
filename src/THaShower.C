@@ -305,9 +305,9 @@ Int_t THaShower::Decode( const THaEvData& evdata )
   // ( in MeV ), and copy the data into the following local data structure:
   //
   // fNhits           -  Number of hits on shower;
-  // fA[0]...[95]     -  Array of ADC values of shower blocks;
-  // fA_p[0]...[95]   -  Array of ADC minus ped values of shower blocks;
-  // fA_c[0]...[95]   -  Array of corrected ADC values of shower blocks;
+  // fA[]             -  Array of ADC values of shower blocks;
+  // fA_p[]           -  Array of ADC minus ped values of shower blocks;
+  // fA_c[]           -  Array of corrected ADC values of shower blocks;
   // fAsum_p          -  Sum of shower blocks ADC minus pedestal values;
   // fAsum_c          -  Sum of shower blocks corrected ADC values;
 
@@ -327,7 +327,7 @@ Int_t THaShower::Decode( const THaEvData& evdata )
       Int_t data = evdata.GetData( d->crate, d->slot, chan, 0 );
 
       // Copy the data to the local variables.
-      Int_t k = *(*(fChanMap+i)+chan) - 1;
+      Int_t k = *(*(fChanMap+i)+(chan-d->lo)) - 1;
 #ifdef WITH_DEBUG
       if( k<0 || k>=fNelem ) 
 	Warning( Here("Decode()"), "Bad array index: %d. Your channel map is "
