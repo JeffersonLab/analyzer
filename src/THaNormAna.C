@@ -321,8 +321,9 @@ Int_t THaNormAna::Process(const THaEvData& evdata)
 
   if (evdata.IsPhysicsTrigger()) normdata->EvCount(helicity);
 
-// If you have ~1000 events you certainly 
-// have seen prescale event; kludgy but works.
+// If you have ~1000 events you probably have seen 
+// prescale event; ok, this probably does not work for filesplitting
+// since prescale event only goes into first file (sigh).
   if (!fSetPrescale && evdata.GetEvNum() > 1000) {
     fSetPrescale = kTRUE;
 // CAREFUL, must GetPrescaleFactor(J) where J = 1,2,3 .. 
