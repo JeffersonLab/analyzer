@@ -26,17 +26,18 @@ THaVDCUVTrack * THaVDCUVTrack::FindPartner(TClonesArray& trackList, Int_t length
 
   if (length == 1) {
     //Only one track, so it must be the partner
-    fPartner = (THaVDCUVTrack*)trackList[0];
+    fPartner = static_cast<THaVDCUVTrack*>( trackList[0] );
     return fPartner; 
   }
 
   Double_t px; //Projected x
   Double_t py; //Projected y
   // Get distance between upper and lower uv planes
-  Double_t detZ = fUVPlane->GetVDC()->GetSpacing(); 
+  THaVDC* vdc = fUVPlane->GetVDC(); 
+  Double_t detZ = vdc->GetSpacing(); 
 
   // First, determine which UV plane this track belongs to
-  if (fUVPlane ==  fUVPlane->GetVDC()->GetLower()) { 
+  if (fUVPlane == vdc->GetLower()) { 
     // Lower UV Track, so project into upper UV plane
     px = fX + detZ * fTheta;
     py = fY + detZ * fPhi;
@@ -49,9 +50,9 @@ THaVDCUVTrack * THaVDCUVTrack::FindPartner(TClonesArray& trackList, Int_t length
   //Now find the track in trackList which is closest to the projected coordinates
   Double_t minDist = 1e307; // Arbitrary very large value
  
-  THaVDCUVTrack * minTrack;
+  THaVDCUVTrack* minTrack;
   for (int i = 0; i < length; i++) {
-    THaVDCUVTrack * track = (THaVDCUVTrack *)trackList[i];
+    THaVDCUVTrack* track = static_cast<THaVDCUVTrack*>( trackList[i] );
     Double_t dist = (track->fX - px) * (track->fX - px) + 
       (track->fY - py) * (track->fY - py);
     if (dist < minDist) {
