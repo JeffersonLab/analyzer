@@ -1,0 +1,63 @@
+#ifndef ROOT_THaVDCTrackID
+#define ROOT_THaVDCTrackID
+
+///////////////////////////////////////////////////////////////////////////////
+//                                                                           //
+// THaVDCTrackID                                                             //
+//                                                                           //
+///////////////////////////////////////////////////////////////////////////////
+#include "THaTrackID.h"
+
+class THaVDCUVTrack;
+
+class THaVDCTrackID : public THaTrackID {
+
+public:
+  THaVDCTrackID() : THaTrackID(),
+    fLowerU(0), fLowerV(0), fUpperU(0), fUpperV(0) {}
+  THaVDCTrackID( Int_t lowerU, Int_t lowerV,
+		 Int_t upperU, Int_t upperV ) : THaTrackID(),
+    fLowerU(lowerU), fLowerV(lowerV), fUpperU(upperU), fUpperV(upperV) {}
+  THaVDCTrackID( const THaVDCUVTrack* lower, const THaVDCUVTrack* upper );
+  THaVDCTrackID( const THaVDCTrackID& );
+  THaVDCTrackID& operator=( const THaVDCTrackID& );
+  
+  virtual ~THaVDCTrackID() {}
+
+  virtual Bool_t  operator==( const THaTrackID& );
+  virtual Bool_t  operator!=( const THaTrackID& );
+  virtual void    Print( Option_t* opt="" ) const;
+
+protected:
+
+  Int_t           fLowerU;         // Lower U plane pivot wire number
+  Int_t           fLowerV;         // Lower V plane pivot wire number
+  Int_t           fUpperU;         // Upper U plane pivot wire number
+  Int_t           fUpperV;         // Upper V plane pivot wire number
+
+  ClassDef(THaVDCTrackID,0)      // Track ID class
+};
+
+//__________________ inlines __________________________________________________
+inline
+Bool_t THaVDCTrackID::operator==( const THaTrackID& RHS )
+{
+  if( IsA() != RHS.IsA() ) return kFALSE;
+  const THaVDCTrackID& rhs = static_cast<const THaVDCTrackID&>(RHS);
+  return ( (fLowerU == rhs.fLowerU) && (fLowerV == rhs.fLowerV) &&
+	   (fUpperU == rhs.fUpperU) && (fUpperV == rhs.fUpperV) );
+}
+
+//__________________ inlines __________________________________________________
+inline
+Bool_t THaVDCTrackID::operator!=( const THaTrackID& RHS )
+{
+  if( IsA() != RHS.IsA() ) return kTRUE;
+  const THaVDCTrackID& rhs = static_cast<const THaVDCTrackID&>(RHS);
+  return ( (fLowerU != rhs.fLowerU) || (fLowerV != rhs.fLowerV) ||
+	   (fUpperU != rhs.fUpperU) || (fUpperV != rhs.fUpperV) );
+}
+
+//////////////////////////////////////////////////////////////////////////////
+
+#endif
