@@ -1,5 +1,5 @@
-Hall A C++ Analyzer version 1.00
---------------------------------
+Hall A C++ Analyzer version 1.0
+-------------------------------
 
 12 June 2003
 
@@ -132,6 +132,9 @@ to address some of the items below and is currently being tested.
   These calculations currently have to be done externally in 
   a ROOT analysis macro.
 
+- Most physics modules only operate on the Golden Track of a 
+  given spectrometer.
+
 - There is no code yet to analyze the FPP.
 
 - Arrays cannot be used in formula and histogram definitions
@@ -153,7 +156,7 @@ to address some of the items below and is currently being tested.
   defined in separate definition files, even if the definitions are
   very similar (i.e. only differ by the apparatus name).
 
-- Only one cut and output definition file can be loaded at the beginning
+- Only one cut and one output definition file can be loaded at the beginning
   of the analysis.
 
 - The cut definition file is not checked for the correct order of the
