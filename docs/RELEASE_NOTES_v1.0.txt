@@ -137,6 +137,15 @@ to address some of the items below and is currently being tested.
 
 - There is no code yet to analyze the FPP.
 
+- The decoded beam helicity may differ occasionally from that decoded
+  by ESPACE due to different prediction algorithms. The differences
+  are small (typically at the 1e-4 level or less), depending on the
+  quality of the raw data.
+
+- Only the G0 beam helicity scheme is currently supported.
+  Helicity information from runs before 2003 must be decoded
+  separately (e.g. using THaDecData).
+
 - Arrays cannot be used in formula and histogram definitions
   for the output. Arrays must be written in unmodified form to the output
   tree. The tree can then be post-processed with an analysis macro.

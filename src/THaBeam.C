@@ -26,6 +26,14 @@ THaBeam::THaBeam( const char* name, const char* desc ) :
 
 
 //_____________________________________________________________________________
+THaBeam::~THaBeam()
+{
+  // Destructor
+
+  RemoveVariables();
+}
+
+//_____________________________________________________________________________
 Int_t THaBeam::DefineVariables( EMode mode )
 {
   // Initialize global variables and lookup table for decoder
@@ -46,3 +54,4 @@ Int_t THaBeam::DefineVariables( EMode mode )
   return DefineVarsFromList( vars, mode );
 
 }
+

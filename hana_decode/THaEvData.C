@@ -51,6 +51,9 @@ static const int VERBOSE = 1;
 static const int DEBUG   = 0;
 static const int BENCH   = 0;
 
+// Instances of this object
+TBits THaEvData::fgInstances;
+
 //_____________________________________________________________________________
 
 THaEvData::THaEvData() :
@@ -58,6 +61,9 @@ THaEvData::THaEvData() :
   numscaler_crate(0), buffer(0), run_num(0), run_type(0), run_time(0), 
   recent_event(0), fNSlotUsed(0), fNSlotClear(0), fMap(0)
 {
+  fInstance = fgInstances.FirstNullBit();
+  fgInstances.SetBitNumber(fInstance);
+  fInstance++;
   epics = new THaEpics;
   crateslot = new THaSlotData*[MAXROC*MAXSLOT];
   helicity = new THaHelicity;
@@ -82,7 +88,12 @@ THaEvData::THaEvData() :
       { "timestamp", "Timestamp",      kDouble, 0, &dtimestamp },
       { 0 }
     };
-    gHaVars->DefineVariables( vars, "g.", "THaEvData::THaEvData" );
+    TString prefix("g");
+    // Allow global variable clash if there are several instances of us
+    if( fInstance > 1 )
+      prefix.Append(Form("%d",fInstance));
+    prefix.Append(".");
+    gHaVars->DefineVariables( vars, prefix, "THaEvData::THaEvData" );
   } else
     Warning("THaEvData::THaEvData","No global variable list found. "
 	    "Variables not registered.");
@@ -103,8 +114,13 @@ THaEvData::~THaEvData() {
   }
   delete fBench;
 #ifndef STANDALONE
-  if( gHaVars )
-    gHaVars->RemoveRegexp( "g.*" );
+  if( gHaVars ) {
+    TString prefix("g");
+    if( fInstance > 1 )
+      prefix.Append(Form("%d",fInstance));
+    prefix.Append(".*");
+    gHaVars->RemoveRegexp( prefix );
+  }
 #endif
   // We must delete every array element since not all may be in fSlotUsed.
   for( int i=0; i<MAXROC*MAXSLOT; i++ )
@@ -116,6 +132,8 @@ THaEvData::~THaEvData() {
   delete fb;
   delete [] fSlotUsed;
   delete [] fSlotClear;
+  fInstance--;
+  fgInstances.SetBitNumber(fInstance,kFALSE);
 }
 
 int THaEvData::GetPrescaleFactor(int trigger_type) const {
@@ -187,14 +205,14 @@ int THaEvData::gendecode(const int* evbuffer, THaCrateMap* map) {
            evt_time = static_cast<UInt_t>(evbuffer[2]);
            goto exit;
 	 case PRESTART_EVTYPE :
-           run_time = static_cast<UInt_t>(evbuffer[2]);
+// Usually prestart is the first 'event'.  Call SetRunTime() to re-initialize the
+// crate map since we now know the run time.  
+// This won't happen for split files (no prestart). For such files, 
+// the user should call SetRunTime() explicitly.
+           SetRunTime(static_cast<UInt_t>(evbuffer[2]));
            run_num  = evbuffer[3];
            run_type = evbuffer[4];
 	   evt_time = run_time;
-// Usually prestart is the first 'event'.  Re-initialize crate map since we
-// now know the run time.  This won't happen for split files (no prestart).
-           init_cmap();     
-           init_slotdata(map);
            goto exit;
 	 case GO_EVTYPE :
            evt_time = static_cast<UInt_t>(evbuffer[2]);
@@ -271,6 +289,7 @@ int THaEvData::physics_decode(const int* evbuffer, THaCrateMap* map) {
   	   cout << "ERROR in THaEvData::physics_decode:";
 	   cout << "  illegal ROC number " <<dec<<iroc<<endl;
 	 }
+	 if( fDoBench ) fBench->Stop("physics_decode");
          return HED_ERR;
        }
 // Save position and length of each found ROC data block
@@ -657,8 +676,8 @@ exit:
     return retval;
 }
 
-int THaEvData::camac_decode(int roc, THaCrateMap* map, const int* evbuffer,
-          int ipt, int istop) {
+int THaEvData::camac_decode(int roc, THaCrateMap* map, const int* evbuffer, 
+			    int ipt, int istop) {
    if (VERBOSE) {
      cout << "Sorry, no CAMAC decoding yet !!" << endl;
    }
@@ -751,6 +770,18 @@ int THaEvData::init_slotdata(const THaCrateMap* map)
     }
   }
   return HED_OK;
+}
+
+void THaEvData::SetRunTime( UInt_t tloc )
+{
+  // Set run time and re-initialize crate map (and possibly other
+  // database parameters for the new time.
+
+  if( run_time == tloc ) 
+    return;
+  run_time = tloc;
+  init_cmap();     
+  init_slotdata(fMap);
 }
 
 void THaEvData::hexdump(const char* cbuff, size_t nlen)

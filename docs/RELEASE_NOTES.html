@@ -1,0 +1,100 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>Release Notes Hall A C++ Analyzer v1.1</title>
+</head>
+
+<body background="wallpaper.gif">
+<h2>Hall A C++ Analyzer version 1.1</h2>
+
+17 November 2003
+<p>
+After several months of development of testing, the Hall A software team is pleased
+to present the next version of the Hall A C++ Analyzer. You should find
+this version more powerful and more user-friendly than the previous
+release. This version is largely backwards compatible with version 1.0.
+<hr>
+
+<h3>What's new</h3>
+Compared to release 1.0, the following features have been added:
+<ul>
+  <li>New physics modules: coincidence kinematics, coincidence time
+  <li>Time-of-flight and beta calculation between scintillator planes
+  <li>Vector formulas and histograms and other improvements to the output module
+  <li>Support for the ET system as a data source (THaOnlRun)
+  <li>Runs without prestart events (ET, continuation segments) can now be analyzed
+  <li>Prescale factors are extracted and saved
+  <li>Many usability improvements to the event loop class THaAnalyzer and run
+      object class THaRun (Init()/Print() methods, status flags, event counters, etc.)
+  <li>Standardized database interface (available, but not used yet)
+  <li>Support for using a custom decoder (other file formats, simulation input)
+</ul>
+
+<h3>Removed Limitations</h3>
+Known limitations are documented in the <a href="RELEASE_NOTES_v1.0.txt">Release
+Notes for version 1.0</a>.
+The following limitations have been removed:
+<ul>
+  <li>Scintillator time walk corrections are now calculated and used
+      in the ToF, beta, and coincidence time computations.
+  <li>Physics modules (or equivalent) are now available for
+      <ul>
+	<li>Secondary particle kinematics
+	<li>Beta & time-of-flight
+	<li>Coincidence time
+      </ul>
+  <li>Beam helicity schemes other than G0 are supported, although
+      switching to a different scheme requires recompilation of the
+      THaHelicity class with different preprocessor flags.
+  <li>Arrays can now be used in formula and histogram definitions.
+      An array of histograms now can be defined with a single command.
+  <li>Several cut (but not yet output) definition files can be loaded before
+      starting the analysis.
+  <li>Second and subsequent segments of split data files can now be
+      analyzed with proper setup of THaRun objects.
+</ul>      
+
+<h3>Compatibility</h3>
+Version 1.1 is essentially source-compatible with version 1.0, but
+not binary-compatible. Modules developed for version 1.0
+should not require any source code changes, but must be recompiled.
+
+<h3>System requirements</h3>
+<ul>
+  <li>Linux with gcc/g++; or Solaris with the Sun Workshop compiler
+  <li>ROOT 3.02 or higher
+  <li>GNU make
+  <li>Decent hardware (at least 300MHz CPU, 128MB RAM).
+</ul>
+The following platforms have been explicitly tested:
+<ul>
+  <li>RedHat Linux 9 with default compiler (gcc 3.2.2) and ROOT 3.05/04
+  <li>RedHat Linux 7.2 with gcc-3.2.3 and ROOT 3.05/07 (ifarml1/2/3).
+  <li>RedHat Linux 6.2 with default compiler (egcs-2.91.66) and ROOT 3.02/00.
+  <li>Solaris 8 with Sun Workshop compiler suite 6, C++ 5.3 (ifarms1).
+</ul>
+Most other recent Linux and Solaris installations should work as well.
+Other Unix platforms require (probably fairly simple) changes to the Makefiles.
+
+<h3>Building and installing the program</h3>
+Please see <a href="install.html">docs/install.html</a>
+
+<h3>Running the program / How to analyze data</h3>
+Please see <a href="quickstart.html">docs/quickstart.html</a> and
+the <a href="index.html">main documentation page</a>.
+
+<h3>Example Scripts</h3>
+Example scripts can be found in the "examples" and "examples/BPM" subdirectories.
+
+<h3>Documentation</h3>
+Further documentation is available in the "docs" subdirectory and
+at the <a href="http://hallaweb.jlab.org/root/">project home page</a>.
+
+<p>
+<hr>
+<address><a href="mailto:ole@jlab.org">Ole Hansen &lt;ole@jlab.org&gt;</a></address>
+<!-- hhmts start -->
+Last modified: Tue Nov 18 12:42:42 EST 2003
+<!-- hhmts end -->
+</body> 
+</html>

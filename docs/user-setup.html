@@ -1,0 +1,67 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>Preparing for a new experiment</title>
+</head>
+
+<body background="wallpaper.gif">
+<h1>Preparing for a new experiment</h1>
+
+Setting up offline analysis for a new experiment typically 
+involves the following steps:
+<ul>
+  <li>Determine the experimental configuration (spectrometers,
+      detectors, beamline) to be analyzed and identify the corresponding 
+      analysis modules.
+  <li>Create a database for the new experiment, using the
+      start date of the data taking as the time-stamp for new
+      new entries (see <a href="database.html">database overview</a>).
+      At the minimum the database should contain up-to-date
+      detector map entries for every detector and rough starting
+      values for the spectrometer reconstruction matrix elements
+      and VDC timing offsets. Often this information can be
+      carried over from a previous experiment with only minor
+      modifications. Also, enter any other calibrations and geometry
+      data that are available, even if approximate.
+  <li>In the database, create initial run database values.
+      These are typically the starting beam energy and spectrometer
+      momentum and angle settings. If the experiment is already completed,
+      extract the history of these settings from logs and enter them
+      into the database. These values affect the kinematics calculations;
+      they are not important for detector checkout.
+  <li>Determine which physics calculations are needed for the
+      offline analysis and identify corresponding Physics Modules.
+  <li>Identify desired output histograms and tree variables.
+      Create an output definition file. The file 
+      $ANALYZER/examples/output_example.def contains
+      most of the necessary documentation.
+  <li>If desired, create a definition file for logicals.
+      An example generating detailed VDC statistics is
+      given in $ANALYZER/examples/cuts_example.def.
+  <li>Write a CINT
+      script that sets up the configuration identified in 
+      Step 1 and the physics analysis decided on
+      in Step 4. Often, a script from a
+      previous experiment, or one of the examples in
+      the directory $ANALYZER/examples, can serve as a guide.
+      The script usually also locates raw data files, creates
+      one or more THaRun objects, configures various
+      options of the event loop object THaAnalyzer, and
+      starts the replay. In particular, the names of the output
+      file, the output definition file, and the logicals definition
+      file must be given to THaAnalyzer.
+  <li>Identify the plots that you wish to generate from the analysis
+      results and write a script to create them. This may be part
+      of the script created in the previous step. 
+      Note that there is no need to quit the Analyzer and start a new
+      session or another program after completion of the analysis; all of
+      ROOT's visualization tools are available from within the Analyzer.
+</ul>
+
+<hr>
+<address><a href="mailto:ole@jlab.org">Ole Hansen &lt;ole@jlab.org&gt;</a></address>
+<!-- hhmts start -->
+Last modified: Mon Nov 17 11:21:21 EST 2003
+<!-- hhmts end -->
+</body> </html>
+

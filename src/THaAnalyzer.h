@@ -99,7 +99,8 @@ protected:
   Bool_t         fUpdateRun;       //If true, update run parameters during replay
   Bool_t         fOverwrite;       //If true, overwrite any existing output files
   THaEvent*      fPrevEvent;       //Event structure found during Init()
-  THaRun*        fRun;             //Current run
+  THaRun*        fRun;             //Copy of current run
+  THaEvData*     fEvData;          //Instance of decoder used by us
 
   virtual Int_t  DoInit( THaRun* run );
   virtual bool   EvalStage( EStage n );

@@ -47,7 +47,7 @@ protected:
 
   void           ClearEvent() { fE = 0.0; fID = 0; }
   virtual Int_t  ReadDatabase( const TDatime& date );
-  virtual Int_t  DefineVariables( EMode mode );
+  virtual Int_t  DefineVariables( EMode mode = kDefine );
 
 private:
   void           Setup( const char* name,  const char* desc, 

@@ -4,7 +4,7 @@
 export WITH_DEBUG = 1
 
 # Compile debug version
-export DEBUG = 1
+#export DEBUG = 1
 
 # Profiling with gprof
 # export PROFILE = 1
@@ -151,7 +151,7 @@ SRC           = src/THaFormula.C src/THaVform.C src/THaVhist.C \
 		src/THaTwoarmVertex.C src/THaAvgVertex.C \
 		src/THaExtTarCor.C src/THaDebugModule.C src/THaTrackInfo.C \
 		src/THaGoldenTrack.C \
-		src/THaPrimaryKine.C \
+		src/THaPrimaryKine.C src/THaSecondaryKine.C \
 		src/THaDB.C src/THaDBFile.C \
                 src/THaCoincidenceTime.C \
                 src/THaTrackProj.C
@@ -203,10 +203,10 @@ srcdist:
 		ln -s $(PWD) ../$(NAME)
 		gtar czv -C .. -f ../$(NAME).tar.gz -X .exclude \
 		 -V "JLab/Hall A C++ Analysis Software "$(VERSION)" `date -I`"\
-		 $(NAME)/.exclude $(NAME)/ChangeLog \
+		 $(NAME)/.exclude $(NAME)/ChangeLog $(NAME)/gcc-version \
 		 $(NAME)/src $(NAME)/examples \
 		 $(NAME)/DB $(NAME)/$(DCDIR) $(NAME)/$(SCALERDIR) \
-		 $(NAME)/Makefile $(NAME)/RELEASE_NOTES $(NAME)/docs
+		 $(NAME)/Makefile $(NAME)/docs
 
 cvsdist:	srcdist
 		cp ../$(NAME).tar.gz ../$(NAME)-cvs.tar.gz

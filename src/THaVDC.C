@@ -327,10 +327,7 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
 //_____________________________________________________________________________
 THaVDC::~THaVDC()
 {
-  // Destructor. Delete subdetectors and remove variables from global list.
-
-  if( fIsSetup )
-    RemoveVariables();
+  // Destructor. Delete subdetectors.
 
   delete fLower;
   delete fUpper;
@@ -967,7 +964,9 @@ void THaVDC::FindBadTracks(TClonesArray& tracks)
   //tracks.Compress();
 }
 
+//_____________________________________________________________________________
 void THaVDC::Print(const Option_t* opt) const {
+  THaTrackingDetector::Print(opt);
   // Print out the optics matrices, to verify they make sense
   printf("Matrix FP (t000, y000, p000)\n");
   typedef vector<THaMatrixElement>::size_type vsiz_t;

@@ -1,0 +1,59 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>Database organization</title>
+</head>
+
+<body background="wallpaper.gif">
+<h1>Database organization</h1>
+
+Version 1.1 of the C++ Analyzer uses simple ASCII text files
+to store database information. There is one file for each 
+analysis module. The name of each file is composed as follows:
+<pre>
+  db_< apparatus-name >.< detector-name >.dat
+</pre>
+For example, a Cherenkov detector named "a1" which is part of the
+Left HRS spectrometer, named "L", would be associated with 
+a database file named db_L.a1.dat.
+<p>
+
+There is one special file, named db_run.dat, the contains the
+"run database", a collection of run-specific parameters
+such as beam energy and spectrometer momentum and angle settings.
+<p>
+
+All of the above database files should be stored in a location
+that can be modified by the user, for instance in ~/DB.
+<b>The environment variable DB_DIR
+must be defined to point to this top-level database
+directory.</b> Since database parameters change with time, database files
+are organized in time-dependent subdirectories within $DB_DIR.
+The name of each subdirectory has the form YYYYMMDD, where YYYY,
+MM, and DD represent the year, month, and day, respectively, of the 
+date that is the start of the validity of the entries. Upon initialization,
+the Analyzer locates the most appropriate time-dependent subdirectory based on
+the contents of $DB_DIR and the time-stamp of the run to be replayed.
+Often there is only one time-dependent subdirectory per experiment, but
+if significant changes occur during an experiment, it may be appropriate to
+create several directories.
+A finer division of time-dependent information
+can be provided by timestamps within each database file. This
+is especially true for the run database file which frequently
+will have many time-stamped sections.
+<p>
+
+For example, an experiment running in April and May of 2004 could
+create a database subdirectory ~/DB/20040401 and set
+DB_DIR=~/DB. Other files supporting the replay
+of this experiment would reside in an experiment-specific
+directory, usually $EXPERIMENT.
+
+
+<hr>
+<address><a href="mailto:ole@jlab.org">Ole Hansen &lt;ole@jlab.org&gt;</a></address>
+<!-- hhmts start -->
+Last modified: Mon Nov 17 11:23:37 EST 2003
+<!-- hhmts end -->
+</body> </html>
+

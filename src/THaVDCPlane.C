@@ -229,7 +229,7 @@ Int_t THaVDCPlane::DefineVariables( EMode mode )
 {
   // initialize global variables
 
-  if( fIsSetup ) return kOK;
+  if( mode == kDefine && fIsSetup ) return kOK;
   fIsSetup = ( mode == kDefine );
 
   // Register variables in global list
