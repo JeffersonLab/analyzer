@@ -46,6 +46,11 @@ ClassImp(THaScalerGui)
 
 THaScalerGui::THaScalerGui(const TGWindow *p, UInt_t w, UInt_t h, string b) : TGMainFrame(p, w, h) { 
   bankgroup = b;
+  scaler = new THaScaler(bankgroup.c_str());
+  if (scaler->Init() == -1) {
+    cout << "ERROR: Cannot initialize THaScaler member"<<endl;
+  }
+  scalerbanks = scaler->GetScalerBanks();
   if (InitPlots() == -1) {
     cout << "ERROR: Cannot initialize a THaScalerGui"<<endl;
     exit(0);
@@ -59,10 +64,6 @@ THaScalerGui::~THaScalerGui() {
 
 Int_t THaScalerGui::InitPlots() {
 // Initialize plots (xscaler style)
-  if (Init(bankgroup.c_str()) == -1) {
-    cout << "Error initializing bankgroup = " << bankgroup << endl;
-    return -1;
-  }
   timer = new TTimer(this, UPDATE_TIME);
   yboxsize = new Int_t[SCAL_NUMBANK];
   occupied = new Int_t[SCAL_NUMBANK];
@@ -94,7 +95,7 @@ Int_t THaScalerGui::InitPlots() {
              nrow = 8;  isnorm = 1;
              if (ipage >=0 && ipage < SCAL_NUMBANK) yboxsize[ipage] = YBOXBIG;
      }
-     if (crate == cratenum_rcs) {
+     if (scaler->GetCrate() == 9) {
              nrow = 8;  isnorm = 0;
              if (ipage >=0 && ipage < SCAL_NUMBANK) yboxsize[ipage] = YBOXBIG;
      }
@@ -227,7 +228,7 @@ Int_t THaScalerGui::InitPlots() {
   Layout();
   SetWindowName("HALL  A   SCALER   DATA");
   SetIconName("Scalers");
-  if (crate != cratenum_rcs) {
+  if (scaler->GetCrate() != 9) {
        Resize(900,YBOXSMALL);
   } else {
        Resize(900,YBOXBIG);
@@ -297,7 +298,7 @@ void THaScalerGui::updateValues() {
   static map< Int_t, TNtuple* >::iterator ntu;
 #ifndef TESTONLY
 // FIXME: A major problem with LoadDataOnline(): mapping of slots to headers was "hard coded".
-  if (LoadDataOnline() == SCAL_ERROR) {
+  if (scaler->LoadDataOnline() == SCAL_ERROR) {
       cout << "Error loading data online"<<endl;
       return;
   }
@@ -335,8 +336,8 @@ void THaScalerGui::updateValues() {
           rate = base + 1000*row + 100*col;
           count = rate + 1e5;
 #else
-          count = (float)GetScaler(slot, chan);
-          rate  = (float)GetScalerRate(slot, chan);
+          count = (float)scaler->GetScaler(slot, chan);
+          rate  = (float)scaler->GetScalerRate(slot, chan);
 #endif
           switch (showselect) {
              case SHOWRATE:
@@ -370,7 +371,7 @@ void THaScalerGui::updateValues() {
 };
 
 void THaScalerGui::setRcsNames(int ipage, THaScalerBank *scbank) {
-  if (crate != cratenum_rcs) return;
+  if (scaler->GetCrate() != 9) return;
   int i;
   static char cname[10];
   if (ipage == 0) {

@@ -34,10 +34,13 @@
 #include "TRootHelpDialog.h"
 #include "THaScaler.h"
 
-class THaScalerGui : public TGMainFrame, public THaScaler {
+class THaScaler;
+class THaScalerBank;
+
+class THaScalerGui : public TGMainFrame {
 
 public:
-   THaScalerGui(const TGWindow *p, UInt_t width, UInt_t height, string bankgroup);
+   THaScalerGui(const TGWindow *p, UInt_t width, UInt_t height, string bankgr);
    virtual ~THaScalerGui();
    Int_t InitPlots();    // Initialize plots (xscaler style)
 
@@ -50,16 +53,19 @@ private:
    map<Int_t, TGTextEntry *> fDataEntry;
    map<Int_t, TNtuple*> fDataHistory;
    TTimer *timer;
+   vector < THaScalerBank* > scalerbanks;
    TGCheckButton *fRateSelect, *fCountSelect;
    TRootHelpDialog *fHelpDialog;
    Bool_t ProcessMessage(Long_t , Long_t , Long_t);
    Bool_t HandleTimer(TTimer *t);
    void updateValues();
    void popPlot(int index);
+   THaScaler *scaler;
    void setRcsNames(int ipage, THaScalerBank *bank);
    void clearNtuples();
    void TestInput();          // Test function
    void Help();
+   string bankgroup;
    int *yboxsize;
    int *occupied;
 
