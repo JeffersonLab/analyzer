@@ -94,6 +94,8 @@ Int_t THaScintillator::ReadDatabase( FILE* fi, const TDatime& date )
   sin_angle = TMath::Sin(angle*degrad);
   cos_angle = TMath::Cos(angle*degrad);
 
+  DefineAxes(0.0);
+
   // Dimension arrays
   if( !fIsInit ) {
     // Calibration data
