@@ -5,18 +5,6 @@
 //
 // THaAnalyzer
 // 
-// THaAnalyzer is the base class for a "Hall A analyzer" class.
-// An analyzer defines the basic actions to perform during analysis.
-// THaAnalyzer is the default analyzer that is used if no user class is
-// defined.  It performs a standard analysis consisting of
-//
-//   1. Decoding/Calibrating
-//   2. Track Reconstruction
-//   3. Physics variable processing
-//
-// At the end of each step, testing and histogramming are done for
-// the appropriate block defined in the global test/histogram lists.
-//
 //////////////////////////////////////////////////////////////////////////
 
 #include "TString.h"
@@ -25,10 +13,11 @@ class THaEvent;
 class THaRun;
 class THaOutput;
 class TList;
-class TFile;
 class TIter;
+class TFile;
 class TDatime;
 class THaCut;
+class THaBenchmark;
 
 class THaAnalyzer {
 
@@ -36,17 +25,25 @@ public:
   THaAnalyzer( );
   virtual ~THaAnalyzer();
 
-  virtual const char*    GetOutFileName()    const { return fOutFileName.Data(); }
-  virtual const char*    GetCutFileName()    const { return fCutFileName.Data(); }
-  virtual const char*    GetOdefFileName()   const { return fOdefFileName.Data(); }
-  virtual const TFile*   GetOutFile()        const { return fFile; }
-  virtual void           SetEvent( THaEvent* event )     { fEvent = event; }
-  virtual void           SetOutFile( const char* name )  { fOutFileName = name; }
-  virtual void           SetCutFile( const char* name )  { fCutFileName = name; }
-  virtual void           SetOdefFile( const char* name ) { fOdefFileName = name; }
+  const char*    GetOutFileName()    const   { return fOutFileName.Data(); }
+  const char*    GetCutFileName()    const   { return fCutFileName.Data(); }
+  const char*    GetOdefFileName()   const   { return fOdefFileName.Data(); }
+  const char*    GetSummaryFileName() const  { return fSummaryFileName.Data(); }
+  const TFile*   GetOutFile()        const   { return fFile; }
+  Int_t          GetCompressionLevel() const { return fCompress; }
+  void           SetEvent( THaEvent* event )     { fEvent = event; }
+  void           SetOutFile( const char* name )  { fOutFileName = name; }
+  void           SetCutFile( const char* name )  { fCutFileName = name; }
+  void           SetOdefFile( const char* name ) { fOdefFileName = name; }
+  void           SetSummaryFile( const char* name ) { fSummaryFileName = name; }
+  void           SetCompressionLevel( Int_t level ) { fCompress = level; }
+  void           EnableBenchmarks( Bool_t b = kTRUE ) { fDoBench = b; }
 
-  virtual void           Close();
-  virtual Int_t          Process( THaRun& run );
+  virtual void   Close();
+  virtual Int_t  Process( THaRun& run );
+          Int_t  Process( THaRun* run ) { 
+	    if(!run) return -1; return Process(*run);
+	  }
   
 protected:
   static const char* const kMasterCutName;
@@ -75,10 +72,14 @@ protected:
   TString        fOutFileName;     //Name of output ROOT file.
   TString        fCutFileName;     //Name of cut definition file to load
   TString        fOdefFileName;    //Name of output definition file
+  TString        fSummaryFileName; //Name of file to write analysis summary to
   THaEvent*      fEvent;           //The event structure to be written to file.
   Stage_t*       fStages;          //Cuts/histograms for each analysis stage [kMaxStage]
-  UInt_t         fNev;             //Current event number
   Skip_t*        fSkipCnt;         //Counters for reasons to skip events [kMaxSkip]
+  UInt_t         fNev;             //Current event number
+  Int_t          fCompress;        //Compression level for ROOT output file
+  Bool_t         fDoBench;         //Collect detailed timing statistics
+  THaBenchmark*  fBench;           //Counters for timing statistics
 
   virtual bool   EvalStage( EStage n );
   virtual void   InitCuts();

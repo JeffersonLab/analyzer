@@ -4,10 +4,17 @@
 //
 // THaAnalyzer
 //
-// Base class for a "Hall A analyzer" class and default "analyzer".
-// Performs standard analysis: Decode, Reconstruct, Process.
-// If user has defined an Event class, executes its Fill() method
-// and writes it to the output file.
+// THaAnalyzer is the base class for a "Hall A analyzer" class.
+// An analyzer defines the basic actions to perform during analysis.
+// THaAnalyzer is the default analyzer that is used if no user class is
+// defined.  It performs a standard analysis consisting of
+//
+//   1. Decoding/Calibrating
+//   2. Track Reconstruction
+//   3. Physics variable processing
+//
+// At the end of each step, testing and histogramming are done for
+// the appropriate block defined in the global test/histogram lists.
 //
 //////////////////////////////////////////////////////////////////////////
 
@@ -29,31 +36,32 @@
 #include "TTree.h"
 #include "TFile.h"
 #include "TClass.h"
-#include "TBenchmark.h"
+#include "THaBenchmark.h"
 #include "TDatime.h"
 #include "TClass.h"
 #include "TError.h"
 
-#include <iostream>
+#include <fstream>
 #include <algorithm>
 
 // FIXME: Debug
 #include "THaVarList.h"
 
-ClassImp(THaAnalyzer)
+using namespace std;
 
 const char* const THaAnalyzer::kMasterCutName = "master";
 
 //_____________________________________________________________________________
 THaAnalyzer::THaAnalyzer() :
-  fFile(NULL), fOutput(NULL), fOdefFileName("output.def"), fEvent(0), fNev(0)
+  fFile(NULL), fOutput(NULL), fOdefFileName("output.def"), fEvent(0), fNev(0),
+  fCompress(1), fDoBench(kFALSE)
 {
   // Default constructor.
 
   // Initialize descriptions of analysis stages
 
   fStages = new Stage_t[ kMaxStage ];
-  struct StageDef_t {
+  const struct StageDef_t {
     EStage      key;
     ESkipReason skipkey;
     const char* name;
@@ -65,7 +73,7 @@ THaAnalyzer::THaAnalyzer() :
     { kPhysics,     kPhysicsTest,     "Physics" },
     { kMaxStage }
   };
-  StageDef_t* idef = stagedef;
+  const StageDef_t* idef = stagedef;
   while( idef->key != kMaxStage ) {
     fStages[ idef->key ].name    = idef->name;
     fStages[ idef->key ].skipkey = idef->skipkey;
@@ -74,7 +82,7 @@ THaAnalyzer::THaAnalyzer() :
 
   // Initialize event skip statistics counters
   fSkipCnt = new Skip_t[ kMaxSkip ];
-  struct SkipDef_t {
+  const struct SkipDef_t {
     ESkipReason key;
     const char* text;
   } skipdef[] = {
@@ -87,7 +95,7 @@ THaAnalyzer::THaAnalyzer() :
     { kPhysicsTest,            "failed master cut after Physics" },
     { kMaxSkip }
   };
-  SkipDef_t* jdef = skipdef;
+  const SkipDef_t* jdef = skipdef;
   while( jdef->key != kMaxSkip ) {
     fSkipCnt[ jdef->key ].reason = jdef->text;
     jdef++;
@@ -97,6 +105,8 @@ THaAnalyzer::THaAnalyzer() :
   if( gHaVars ) {
     gHaVars->Define("nev", "Event number", fNev );
   }
+
+  fBench = new THaBenchmark;
 }
 
 //_____________________________________________________________________________
@@ -106,6 +116,7 @@ THaAnalyzer::~THaAnalyzer()
   // they are defined by the caller.
 
   Close();
+  delete fBench;
   delete [] fStages;
   delete [] fSkipCnt;
 
@@ -116,12 +127,10 @@ THaAnalyzer::~THaAnalyzer()
 //_____________________________________________________________________________
 void THaAnalyzer::Close()
 {
-  // Close output file and delete ROOT tree if they were created.
+  // Close output files and delete fOutput and fFile objects.
   
-  delete fOutput;
-  delete fFile;  
-  fOutput = 0;
-  fFile = 0;
+  delete fOutput; fOutput = NULL;
+  delete fFile;   fFile   = NULL;
 }
 
 
@@ -135,7 +144,9 @@ bool THaAnalyzer::EvalStage( EStage n )
   // If event is skipped, increment associated statistics counter.
   // Call InitCuts() before using!  This is an internal function.
 
-  Stage_t* theStage = fStages+n;
+  if( fDoBench ) fBench->Begin("Cuts");
+
+  const Stage_t* theStage = fStages+n;
 
   //  if( theStage->hist_list ) {
     // Fill histograms
@@ -146,9 +157,11 @@ bool THaAnalyzer::EvalStage( EStage n )
     if( theStage->master_cut && 
 	!theStage->master_cut->GetResult() ) {
       fSkipCnt[ theStage->skipkey ].count++;
+      if( fDoBench ) fBench->Stop("Cuts");
       return false;
     }      
   }
+  if( fDoBench ) fBench->Stop("Cuts");
   return true;
 }
 
@@ -237,12 +250,12 @@ Int_t THaAnalyzer::Process( THaRun& run )
     fFile = new TFile( fOutFileName.Data(), "RECREATE" );
   }
     
-  if( fFile && fFile->IsZombie() ) {
-    delete fFile;
+  if( !fFile || fFile->IsZombie() ) {
+    Close();
     run.CloseFile();
     return -10;
   }
-  //  fFile->SetCompressionLevel(0);
+  fFile->SetCompressionLevel(fCompress);
 
   //--- Output tree and histograms
 
@@ -267,8 +280,9 @@ Int_t THaAnalyzer::Process( THaRun& run )
 
   //--- The main event loop.
 
-  TBenchmark bench;
-  bench.Start("Statistics");
+  fBench->Reset();
+  fBench->Begin("Total");
+  if( fDoBench ) fBench->Begin("Init");
 
   status = 0;
   bool terminate = false;
@@ -276,6 +290,7 @@ Int_t THaAnalyzer::Process( THaRun& run )
   while ( !terminate && 
 	  (status != EOF && status != CODA_ERROR) && nev_physics < nlim ) {
 
+    if( fDoBench ) fBench->Begin("RawDecode");
     status = run.ReadEvent();
 
     if (status != 0) {
@@ -286,8 +301,9 @@ Int_t THaAnalyzer::Process( THaRun& run )
       continue;  // skip event
     } 
 
-    fNev++;
+    fNev++;    
     evdata.LoadEvent( run.GetEvBuffer() );
+    if( fDoBench ) fBench->Stop("RawDecode");
 
     //--- Initialization
 
@@ -310,8 +326,7 @@ Int_t THaAnalyzer::Process( THaRun& run )
       }
       first = false;
 
-      // save run data to ROOT file
-      // FIXME: give this different name?
+      // Save run data to ROOT file
       run.Write("Run_Data");
 
       // Initialize all apparatuses, scalers, and physics modules.
@@ -343,11 +358,13 @@ Int_t THaAnalyzer::Process( THaRun& run )
 	}
       }
       if( retval ) {
-        delete fOutput;
-        delete fFile;
+	Close();
 	run.CloseFile();
 	return retval;
       }
+
+      if( fDoBench ) fBench->Stop("Init");
+      continue;
 
     } //if(first)
 
@@ -370,38 +387,45 @@ Int_t THaAnalyzer::Process( THaRun& run )
       //--- Process all apparatuses that are defined in the global list gHaApps
       //    First Decode() everything, then Reconstruct()
 
+      if( fDoBench ) fBench->Begin("Decode");
       next.Reset();
       while( THaApparatus* theApparatus =
 	     static_cast<THaApparatus*>( next() )) {
 	theApparatus->Clear();
 	theApparatus->Decode( evdata );
       }
+      if( fDoBench ) fBench->Stop("Decode");
       if( !EvalStage(kDecode) )  continue;
 
       //--- 2nd step: Coarse Reconstruct(). This is mostly VDC tracking.
 
+      if( fDoBench ) fBench->Begin("Reconstruct");
       next.Reset();
       while( THaApparatus* theApparatus =
 	     static_cast<THaApparatus*>( next() )) {
 	theApparatus->CoarseReconstruct();
       }
+      if( fDoBench ) fBench->Stop("Reconstruct");
       if( !EvalStage(kCoarseRecon) )  continue;
 
       //-- 3rd step: Fine (Full) Reconstruct().
+      if( fDoBench ) fBench->Begin("Reconstruct");
       next.Reset();
       while( THaApparatus* theApparatus =
 	     static_cast<THaApparatus*>( next() )) {
 	theApparatus->Reconstruct();
       }
+      if( fDoBench ) fBench->Stop("Reconstruct");
       if( !EvalStage(kReconstruct) )  continue;
 
       //--- Process the list of physics modules
 
+      if( fDoBench ) fBench->Begin("Physics");
       next_physics.Reset();
       while( THaPhysicsModule* theModule =
 	     static_cast<THaPhysicsModule*>( next_physics() )) {
 	theModule->Clear();
-	Int_t err = theModule->Process();
+	Int_t err = theModule->Process( evdata );
 	if( err == THaPhysicsModule::kTerminate )
 	  terminate = true;
 	else if ( err == THaPhysicsModule::kFatal ) {
@@ -409,6 +433,7 @@ Int_t THaAnalyzer::Process( THaRun& run )
 	  break;
 	}
       }
+      if( fDoBench ) fBench->Stop("Physics");
       if( fatal ) continue;
 
       //--- Evaluate test block 3 "Physics"
@@ -416,8 +441,9 @@ Int_t THaAnalyzer::Process( THaRun& run )
       if( !EvalStage(kPhysics) )  continue;
 
       //--- If Event defined, fill it.
+      if( fDoBench ) fBench->Begin("Output");
       if( fEvent ) {
-	fEvent->GetHeader()->Set( evdata.GetEvNum(), 
+	fEvent->GetHeader()->Set( (UInt_t)evdata.GetEvNum(), 
 				  evdata.GetEvType(),
 				  evdata.GetEvLength(),
 				  evdata.GetEvTime(),
@@ -429,6 +455,7 @@ Int_t THaAnalyzer::Process( THaRun& run )
 
       //---  Process output
       if( fOutput ) fOutput->Process();
+      if( fDoBench ) fBench->Stop("Output");
 
     }
 
@@ -437,16 +464,18 @@ Int_t THaAnalyzer::Process( THaRun& run )
 
       //--- Loop over all defined scalers and execute LoadData()
 
+      if( fDoBench ) fBench->Begin("Scaler");
       next_scaler.Reset();
       while( THaScalerGroup* theScaler =
 	     static_cast<THaScalerGroup*>( next_scaler() )) {
 	theScaler->LoadData( evdata );
       }
+      if( fDoBench ) fBench->Begin("Scaler");
 
     } // End trigger type test
   }  // End of event loop
   
-  bench.Stop("Statistics");
+  fBench->Stop("Total");
 
   //--- Report statistics
 
@@ -470,8 +499,6 @@ Int_t THaAnalyzer::Process( THaRun& run )
 	   << " events due to " << fSkipCnt[i].reason << endl;
   }
 
-  // Print cut summary
-
   // Print scaler statistics
 
   first = true;
@@ -488,7 +515,18 @@ Int_t THaAnalyzer::Process( THaRun& run )
 
   // Print timing statistics
 
-  bench.Print("Statistics");
+  if( fDoBench ) {
+    fBench->Print("Prestart");
+    fBench->Print("Init");
+    fBench->Print("RawDecode");
+    fBench->Print("Decode");
+    fBench->Print("Reconstruct");
+    fBench->Print("Physics");
+    fBench->Print("Output");
+    fBench->Print("Cuts");
+    fBench->Print("Scaler");
+  }
+  fBench->Print("Total");
 
   //--- Close the input file
 
@@ -499,9 +537,43 @@ Int_t THaAnalyzer::Process( THaRun& run )
   // that are defined in the current directory.
 
   if( fOutput ) fOutput->End();
-  if( fFile ) fFile->Write();
+  if( fFile ) {
+    fFile->Purge();  // get rid of excess object "cycles"
+    fFile->Write();
+  }
+
+  // Print cut summary (also to file if one given)
+  if( gHaCuts->GetSize() > 0 ) {
+    gHaCuts->Print("STATS");
+    if( fSummaryFileName.Length() > 0 ) {
+      TString filename(fSummaryFileName);
+      Ssiz_t pos, dot=-1;
+      while(( pos = filename.Index(".",dot+1)) != kNPOS ) dot=pos;
+      const char* tag = Form("_%d",run.GetNumber());
+      if( dot != -1 ) 
+	filename.Insert(dot,tag);
+      else
+	filename.Append(tag);
+      ofstream ostr(filename.Data());
+      if( ostr ) {
+	// Write to file via cout
+	streambuf* cout_buf = cout.rdbuf();
+	cout.rdbuf(ostr.rdbuf());
+	TDatime now;
+	cout << "Cut Summary for run " << run.GetNumber() 
+	     << " completed " << now.AsString() 
+	     << endl << endl;
+	gHaCuts->Print("STATS");
+	cout.rdbuf(cout_buf);
+	ostr.close();
+      }
+    }
+  }
 
   gHaRun = NULL;
-
   return nev_physics;
 }
+//_____________________________________________________________________________
+
+ClassImp(THaAnalyzer)
+
