@@ -68,7 +68,7 @@ THaTrack* THaTrackingDetector::AddTrack( TClonesArray& tracks,
     // caution: c[i] creates an empty object at i if slot i was empty,
     // so use At(i) to check.
 
-    if( !c.At(i) )  new( c[i] ) THaPIDinfo( ndet, npart );
+    if( i > c.GetLast() || !c.At(i) )  new( c[i] ) THaPIDinfo( ndet, npart );
     pid = static_cast<THaPIDinfo*>( c.At(i) );
   
     //  TClonesArray& c2 = *spectro->GetVertices();
