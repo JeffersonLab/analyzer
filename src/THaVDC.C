@@ -387,8 +387,8 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 #endif
 
   // Initialize some counters
-  int n_exist, n_mod = 0;
-  int n_oops=0;
+  int n_exist = 0, n_mod = 0;
+  int n_oops = 0;
   // How many tracks already exist in the global track array?
   if( tracks )
     n_exist = tracks->GetLast()+1;
@@ -728,7 +728,7 @@ void THaVDC::CalcTargetCoords(THaTrack *track, const ECoordTypes mode)
     y_fp = track->GetY();
     th_fp = track->GetTheta();
     ph_fp = track->GetPhi();
-  } else if(mode == kRotatingTransport) {
+  } else {//if(mode == kRotatingTransport) {
     x_fp = track->GetRX();
     y_fp = track->GetRY();
     th_fp = track->GetRTheta();
