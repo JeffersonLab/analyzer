@@ -881,13 +881,13 @@ Bool_t THaEvData::ScalersEnabled() const
   return TestBit(kScalersEnabled);
 }
 
-void THaEvData::SetOrigPS(Int_t event_type)
+void THaEvData::SetOrigPS(Int_t evtyp)
 {
   fgTrigSupPS = true;  // default after Nov 2003
-  if (event_type == PRESCALE_EVTYPE) {
+  if (evtyp == PRESCALE_EVTYPE) {
     fgTrigSupPS = false;
     return;
-  } else if (event_type != TS_PRESCALE_EVTYPE) {
+  } else if (evtyp != TS_PRESCALE_EVTYPE) {
     cout << "SetOrigPS::Warn: PS factors";
     cout << " originate only from evtype ";
     cout << PRESCALE_EVTYPE << "  or ";

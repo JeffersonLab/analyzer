@@ -509,19 +509,19 @@ int THaCrateMap::init(TString the_map)
     
     if ( line.find_first_not_of(" \t") == string::npos ) continue; // nothing useful
    
-    char crate_type[21];
+    char ctype[21];
     
     // set the next CRATE number and type
-    if ( sscanf(line.c_str(),"==== Crate %d type %20s",&crate,crate_type) == 2 ) {
-      if ( setCrateType(crate,crate_type) != CM_OK ) 
+    if ( sscanf(line.c_str(),"==== Crate %d type %20s",&crate,ctype) == 2 ) {
+      if ( setCrateType(crate,ctype) != CM_OK ) 
 	return CM_ERR;
 
       // for a scaler crate, get the 'name' or location as well
       if ( crate_code[crate] == kScaler ) {
-	if (sscanf(line.c_str(),"==== Crate %*d type %*s %20s",crate_type) != 1) {
+	if (sscanf(line.c_str(),"==== Crate %*d type %*s %20s",ctype) != 1) {
 	  return CM_ERR;
 	}
-	TString scaler_name(crate_type);
+	TString scaler_name(ctype);
 	scaler_name.ReplaceAll("\"",""); // drop extra quotes
 	setScalerLoc(crate,scaler_name);
       }
@@ -534,22 +534,23 @@ int THaCrateMap::init(TString the_map)
     // that order.
     
     // Default values:
-    int model, clear=1;
-    unsigned int mask=0, header=0, nchan=MAXCHAN, ndata=MAXDATA;
+    int imodel, clear=1;
+    unsigned int mask=0, iheader=0, ichan=MAXCHAN, idata=MAXDATA;
     int nread;
     // must read at least the slot and model numbers
     if ( crate>=0 &&
-	 (nread=sscanf(line.c_str(),"%d %d %d %x %x %d %d",
-		       &slot,&model,&clear,&header,&mask,&nchan,&ndata)) >=2 ) {
+	 (nread=
+	  sscanf(line.c_str(),"%d %d %d %x %x %d %d",
+		 &slot,&imodel,&clear,&iheader,&mask,&ichan,&idata)) >=2 ) {
       if (nread>=6)
-	setModel(crate,slot,model,nchan,ndata);
+	setModel(crate,slot,imodel,ichan,idata);
       else
-	setModel(crate,slot,model);
+	setModel(crate,slot,imodel);
       
       if (nread>=3) 
 	setClear(crate,slot,clear);
       if (nread>=4) 
-	setHeader(crate,slot,header);
+	setHeader(crate,slot,iheader);
       if (nread>=5)
 	setMask(crate,slot,mask);
       
