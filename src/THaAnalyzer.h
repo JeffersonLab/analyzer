@@ -7,6 +7,7 @@
 // 
 //////////////////////////////////////////////////////////////////////////
 
+#include "TObject.h"
 #include "TString.h"
 
 class THaEvent;
@@ -20,18 +21,22 @@ class THaCut;
 class THaBenchmark;
 class THaEvData;
 
-class THaAnalyzer {
+class THaAnalyzer : public TObject {
 
 public:
   THaAnalyzer();
   virtual ~THaAnalyzer();
 
+  void           EnableBenchmarks( Bool_t b = kTRUE ) { fDoBench = b; }
+  void           EnableRunUpdate( Bool_t b = kTRUE )  { fUpdateRun = b; }
+  void           EnableOverwrite( Bool_t b = kTRUE )  { fOverwrite = b; }
   const char*    GetOutFileName()    const   { return fOutFileName.Data(); }
   const char*    GetCutFileName()    const   { return fCutFileName.Data(); }
   const char*    GetOdefFileName()   const   { return fOdefFileName.Data(); }
   const char*    GetSummaryFileName() const  { return fSummaryFileName.Data(); }
   const TFile*   GetOutFile()        const   { return fFile; }
   Int_t          GetCompressionLevel() const { return fCompress; }
+  Bool_t         HasStarted()          const { return fAnalysisStarted; }
   void           SetEvent( THaEvent* event )     { fEvent = event; }
   void           SetOutFile( const char* name )  { fOutFileName = name; }
   void           SetCutFile( const char* name )  { fCutFileName = name; }
@@ -40,14 +45,14 @@ public:
   void           SetCompressionLevel( Int_t level ) { fCompress = level; }
   void           SetMarkInterval( UInt_t interval ) { fMarkInterval = interval; }
   void           SetVerbosity( Int_t level )        { fVerbose = level; }
-  void           EnableBenchmarks( Bool_t b = kTRUE ) { fDoBench = b; }
 
   virtual void   Close();
   virtual Int_t  Init( THaRun* run );
           Int_t  Init( THaRun& run )    { return Init( &run ); }
-  virtual Int_t  Process( THaRun* run );
+  virtual Int_t  Process( THaRun* run=NULL );
           Int_t  Process( THaRun& run ) { return Process(&run); }
-  
+  virtual void   Print( Option_t* opt="" ) const;
+
 protected:
   static const char* const kMasterCutName;
 
@@ -78,11 +83,11 @@ protected:
   TString        fCutFileName;     //Name of cut definition file to load
   TString        fLoadedCutFileName;//Name of last loaded cut definition file
   TString        fOdefFileName;    //Name of output definition file
-  TString        fSummaryFileName; //Name of file to write analysis summary to
+  TString        fSummaryFileName; //Name of test/cut statistics output file
   THaEvent*      fEvent;           //The event structure to be written to file.
   Stage_t*       fStages;          //Cuts/histograms for each analysis stage [kMaxStage]
   Skip_t*        fSkipCnt;         //Counters for reasons to skip events [kMaxSkip]
-  UInt_t         fNev;             //Current event number
+  UInt_t         fNev;             //Number of events read during most recent replay
   UInt_t         fMarkInterval;    //Interval for printing event numbers
   Int_t          fCompress;        //Compression level for ROOT output file
   Bool_t         fDoBench;         //Collect detailed timing statistics
@@ -92,6 +97,7 @@ protected:
   Bool_t         fIsInit;          //True if Init() called successfully
   Bool_t         fAnalysisStarted; //True if Process() run and output file still open
   Bool_t         fUpdateRun;       //If true, update run parameters during replay
+  Bool_t         fOverwrite;       //If true, overwrite any existing output files
   THaEvent*      fPrevEvent;       //Event structure found during Init()
   THaRun*        fRun;             //Current run
 
@@ -101,8 +107,16 @@ protected:
   virtual Int_t  InitModules( const TList* module_list, TDatime& time, 
 			      Int_t erroff, const char* baseclass = NULL );
   virtual Int_t  ReadOneEvent( THaRun* run, THaEvData* evdata );
+  virtual void   PrintSummary( const THaRun* run ) const;
 
+  static THaAnalyzer* fgAnalyzer;  //Pointer to instance of this class
+
+private:
+  THaAnalyzer( const THaAnalyzer& );
+  THaAnalyzer& operator=( const THaAnalyzer& );
+  
   ClassDef(THaAnalyzer,0)  //Hall A Analyzer Standard Event Loop
+
 };
 
 

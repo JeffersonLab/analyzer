@@ -39,6 +39,7 @@
 #include "TDatime.h"
 #include "TClass.h"
 #include "TError.h"
+#include "TSystem.h"
 
 #include <fstream>
 #include <algorithm>
@@ -47,19 +48,27 @@ using namespace std;
 
 const char* const THaAnalyzer::kMasterCutName = "master";
 
+// Pointer to single instance of this object
+THaAnalyzer* THaAnalyzer::fgAnalyzer = NULL;
+
 //_____________________________________________________________________________
 THaAnalyzer::THaAnalyzer() :
-  fFile(NULL), fOutput(NULL), fOdefFileName("output.def"), fEvent(0), fNev(0),
-  fMarkInterval(1000), fCompress(1), fDoBench(kFALSE), fVerbose(1), 
-  fLocalEvent(kFALSE), fIsInit(kFALSE), fPrevEvent(NULL), fRun(NULL)
+  fFile(NULL), fOutput(NULL), fOdefFileName("output.def"), fEvent(NULL),
+  fStages(NULL), fSkipCnt(NULL), fNev(0), fMarkInterval(1000), fCompress(1), 
+  fDoBench(kFALSE), fBench(NULL), fVerbose(2), 
+  fLocalEvent(kFALSE), fIsInit(kFALSE), fAnalysisStarted(kFALSE),
+  fUpdateRun(kTRUE), fOverwrite(kTRUE), fPrevEvent(NULL), fRun(NULL)
 {
   // Default constructor.
 
-  // FIXME: make sure this object is a singleton since it uses/modifies
-  //  global objects (gHaVars, gHaRun etc.)
+  if( fgAnalyzer ) {
+    Error("THaAnalyzer", "only one instance of THaAnalyzer allowed.");
+    MakeZombie();
+    return;
+  }
+  fgAnalyzer = this;
 
   // Initialize descriptions of analysis stages
-
   fStages = new Stage_t[ kMaxStage ];
   const struct StageDef_t {
     EStage      key;
@@ -113,7 +122,8 @@ THaAnalyzer::~THaAnalyzer()
   delete fBench;
   delete [] fStages;
   delete [] fSkipCnt;
-
+  if( fgAnalyzer == this )
+    fgAnalyzer = NULL;
 }
 
 //_____________________________________________________________________________
@@ -122,18 +132,28 @@ void THaAnalyzer::Close()
   // Close output files and delete fOutput, fFile, and fRun objects.
   // Also delete fEvent if it was allocated automatically by us.
   
+  if( gHaRun && *gHaRun == *fRun ) 
+    gHaRun = NULL;
   delete fOutput; fOutput = NULL;
   delete fFile;   fFile   = NULL;
   delete fRun;    fRun    = NULL;
   if( fLocalEvent ) {
     delete fEvent; fEvent = fPrevEvent = NULL; 
   }
-  gHaRun = NULL;
   fNev = 0;
   fIsInit = kFALSE;
   fAnalysisStarted = kFALSE;
 }
 
+
+//_____________________________________________________________________________
+void THaAnalyzer::Print( Option_t* opt ) const
+{
+  // Report status of the analyzer.
+
+  if( fRun )
+    fRun->Print();
+}
 
 //_____________________________________________________________________________
 bool THaAnalyzer::EvalStage( EStage n )
@@ -148,22 +168,22 @@ bool THaAnalyzer::EvalStage( EStage n )
 
   const Stage_t* theStage = fStages+n;
 
-  //FIXME
+  //FIXME: support stage-wise blocks of histograms
   //  if( theStage->hist_list ) {
     // Fill histograms
   //  }
 
+  bool ret = true;
   if( theStage->cut_list ) {
     gHaCuts->EvalBlock( theStage->cut_list );
     if( theStage->master_cut && 
 	!theStage->master_cut->GetResult() ) {
       fSkipCnt[ theStage->skipkey ].count++;
-      if( fDoBench ) fBench->Stop("Cuts");
-      return false;
+      ret = false;
     }      
   }
   if( fDoBench ) fBench->Stop("Cuts");
-  return true;
+  return ret;
 }
 
 //_____________________________________________________________________________
@@ -245,8 +265,47 @@ Int_t THaAnalyzer::DoInit( THaRun* run )
 {
   // Internal function called by Init(). This is where the actual work is done.
 
-  static const char* const here = "Init()";
+  static const char* const here = "Init";
   Int_t retval = 0;
+
+  //--- Open the output file if necessary so that Trees and Histograms
+  //    are created on disk.
+ 
+  // File previously created and name changed?
+  if( fFile && fOutFileName != fFile->GetName()) {
+    if( fAnalysisStarted ) {
+      Error( here, "Cannot change output file name after analysis has been "
+	     "started. Close() first, then Init() or Process() again." );
+      return -11;
+    }
+    Close();
+  }
+  if( !fFile ) {
+    if( fOutFileName.IsNull() ) {
+      Error( here, "Must specify an output file. Set it with SetOutFile()." );
+      return -12;
+    }
+    // File exists?
+    if( gSystem->AccessPathName(fOutFileName) == kFALSE ) { //sic
+      if( !fOverwrite ) {
+	Error( here, "Output file %s already exists. Choose a different "
+	       "file name or enable overwriting with EnableOverwrite().",
+	       fOutFileName.Data() );
+	return -13;
+      }
+      cout << "Overwriting existing";
+    } else
+      cout << "Creating new";
+    cout << " output file: " << fOutFileName << endl;
+    fFile = new TFile( fOutFileName.Data(), "RECREATE" );
+  }
+  if( !fFile || fFile->IsZombie() ) {
+    Error( here, "failed to create output file %s. Check file/directory "
+	   "permissions.", fOutFileName.Data() );
+    Close();
+    return -10;
+  }
+  fFile->SetCompressionLevel(fCompress);
 
   // Allocate the event structure. 
   // Use the default (containing basic event header) unless the user has 
@@ -299,37 +358,21 @@ Int_t THaAnalyzer::DoInit( THaRun* run )
       return retval;  //Error message printed by run class
   } 
 
-  // Deal with the run. Possible scenarios:
-  // - First time init or re-init after Close():
-  //        Init the run, extract time, full init of modules & output.
-  // - Re-init without analysis (e.g. user changed his mind which run to
-  //   analyze):
-  //        Different run (or run modified):
-  //             Init run, extract time, if changed, re-init everything
-  //        else
-  //             no re-init
-  // - Re-init with prior analysis (continuing):
-  //        Same run:
-  //             no re-init 
-  //             warn if user tries to analyze same data twice
-  //        Different run:
-  //             Init run, extract time
-  //             Special values of time:
-  //               -"continuation" (e.g. 2nd segment) - do not re-init
-  //               (-"now" - use current time )
-  //
-
+  // Deal with the run.
   bool new_run   = ( !fRun || *fRun != *run );
   bool need_init = ( !fIsInit || new_event || new_output || new_run );
 
   // Warn user if trying to analyze the same run twice with overlapping
   // event ranges
+  // FIXME: generalize event range business
+  // FIXME: skip this in batch mode
   if( fAnalysisStarted && !new_run && 
-      (fRun->GetLastEvent() >= run->GetFirstEvent() ||
-       run->GetLastEvent() >= fRun->GetFirstEvent() )) {
-    Warning( here, "You are analyzing the same run twice with ",
-	     "overlapping event ranges!\n"
-	     "prev: %d-%d, now: %d-%d",
+      ((fRun->GetLastEvent()  >= run->GetFirstEvent() &&
+        fRun->GetFirstEvent() <  run->GetLastEvent()) ||
+       (fRun->GetFirstEvent() <= run->GetLastEvent() &&
+	fRun->GetLastEvent()  >  run->GetFirstEvent()) )) {
+    Warning( here, "You are analyzing the same run twice with "
+	     "overlapping event ranges! prev: %d-%d, now: %d-%d",
 	     fRun->GetFirstEvent(), fRun->GetLastEvent(),
 	     run->GetFirstEvent(), run->GetLastEvent() );
     cout << "Are you sure (y/n)?" << endl;
@@ -337,12 +380,12 @@ Int_t THaAnalyzer::DoInit( THaRun* run )
     while( c != 'y' && c != 'n' && c != EOF ) {
       cin >> c;
     }
-    if( c != 'y' ) 
+    if( c != 'y' && c != 'Y' ) 
       return 240;
   }
 
   // Make sure we save a copy of the run in fRun.
-  // Note that run may derive from THaRun, so this is a bit tricky.
+  // Note that the run may be derived from THaRun, so this is a bit tricky.
   if( new_run ) {
     delete fRun;
     fRun = static_cast<THaRun*>(run->IsA()->New());
@@ -352,7 +395,7 @@ Int_t THaAnalyzer::DoInit( THaRun* run )
   }
 
   // Print run info
-  if( fVerbose ) {
+  if( fVerbose>0 ) {
     run->Print("STARTINFO");
   }
 
@@ -426,23 +469,56 @@ Int_t THaAnalyzer::ReadOneEvent( THaRun* run, THaEvData* evdata )
 
   // Find next event buffer in CODA file. Quit if error.
   Int_t status = run->ReadEvent();
-  if (status != 0) {
+  if (status != S_SUCCESS) {
     if (status == S_EVFILE_TRUNC) 
       fSkipCnt[kEvFileTrunc].count++;
     else if (status == CODA_ERROR) 
       fSkipCnt[kCodaErr].count++;
-    return status;
-  } 
+  } else {
 
-  // Decode the event
-  // FIXME: return code mixup with above
-  status = evdata->LoadEvent( run->GetEvBuffer() );
+    // Decode the event
+    // FIXME: return code mixup with above
+    status = evdata->LoadEvent( run->GetEvBuffer() );
 
-  // Count good events
-  fNev++;    
+    // Count good events
+    fNev++;
+  }
 
   if( fDoBench ) fBench->Stop("RawDecode");
   return status;
+}
+
+//_____________________________________________________________________________
+void THaAnalyzer::PrintSummary( const THaRun* run ) const
+{
+  // Print summary of cuts etc.
+
+  if( gHaCuts->GetSize() > 0 ) {
+    gHaCuts->Print("STATS");
+    if( fSummaryFileName.Length() > 0 ) {
+      TString filename(fSummaryFileName);
+      Ssiz_t pos, dot=-1;
+      while(( pos = filename.Index(".",dot+1)) != kNPOS ) dot=pos;
+      const char* tag = Form("_%d",run->GetNumber());
+      if( dot != -1 ) 
+	filename.Insert(dot,tag);
+      else
+	filename.Append(tag);
+      ofstream ostr(filename.Data());
+      if( ostr ) {
+	// Write to file via cout
+	streambuf* cout_buf = cout.rdbuf();
+	cout.rdbuf(ostr.rdbuf());
+	TDatime now;
+	cout << "Cut Summary for run " << run->GetNumber() 
+	     << " completed " << now.AsString() 
+	     << endl << endl;
+	gHaCuts->Print("STATS");
+	cout.rdbuf(cout_buf);
+	ostr.close();
+      }
+    }
+  }
 }
 
 //_____________________________________________________________________________
@@ -454,68 +530,72 @@ Int_t THaAnalyzer::Process( THaRun* run )
   // If Event and Filename are defined, then fill the output tree with Event
   // and write the file.
 
-  //  static const char* const here = "Process()";
+  static const char* const here = "Process()";
 
-  if( !run ) return -1;
-  if( !gHaDecoder ) return -2;
-
+  if( !run ) {
+    if( fRun )
+      run = fRun;
+    else
+      return -1;
+  }
   fBench->Reset();
   fBench->Begin("Total");
 
-  //--- Initialization.
+  //--- Initialization. Creates fFile, fOutput, and fEvent if necessary.
   Int_t status = Init( run );
   if( status != 0 ) {
     fBench->Stop("Total");
     return status;
   }
   
-  //--- If output file is defined, open it.
- 
-  if( !fFile && !fOutFileName.IsNull() ) {
-    cout << "Creating new file: " << fOutFileName << endl;
-    fFile = new TFile( fOutFileName.Data(), "RECREATE" );
-  } 
-  // filename changed and file open? -> Close file and create a new one
-  else if ( fFile && fOutFileName != fFile->GetName()) {
-    Close();
-    cout << "Creating new file: " << fOutFileName << endl;
-    fFile = new TFile( fOutFileName.Data(), "RECREATE" );
-  }
-  // FIXME: case of no file and no file name?
-  // At least print some error
-    
-  if( !fFile || fFile->IsZombie() ) {
-    Close();
-    fBench->Stop("Total");
-    return -10;
-  }
-  fFile->SetCompressionLevel(fCompress);
-
-  UInt_t nev_physics = 0;
-  UInt_t nlim = run->GetLastEvent();
-
+  //--- Create our decoder from the TClass specified by the user.
   THaEvData* evdata = static_cast<THaEvData*>(gHaDecoder->New());
-  TIter next( gHaApps );
-  TIter next_scaler( gHaScalers );
-  TIter next_physics( gHaPhysics );
+  if( !evdata ) {
+    Error( here, "Failed to create decoder object. Something is very wrong." );
+    fBench->Stop("Total");
+    return -2;
+  }
 
-  // Re-open the CODA file. Should succeed since this was tested in Init().
-  if( (status = run->OpenFile()) )
-    return -11;
+  //--- Re-open the CODA file. Should succeed since this was tested in Init().
+  if( (status = run->OpenFile()) ) {
+    Error( here, "Failed to re-open the input file. "
+	   "Make sure the file still exists.");
+    fBench->Stop("Total");
+    delete evdata;
+    return -4;
+  }
 
   // Make the current run available globally - the run parameters are
   // needed by some modules
   gHaRun = run;
 
   //--- The main event loop.
+  TIter next( gHaApps );
+  TIter next_scaler( gHaScalers );
+  TIter next_physics( gHaPhysics );
+
+  if( fVerbose>2 && run->GetFirstEvent()>1 )
+    cout << "Skipping " << run->GetFirstEvent() << " events\n";
+
+  fNev = 0;
+  UInt_t nev_physics = 0, nev_analyzed = 0;
+  UInt_t nlast = run->GetLastEvent();
   bool terminate = false;
   bool fatal = false;
-  while ( !terminate && (status = ReadOneEvent( run, evdata )) != EOF &&
-	  status != CODA_ERROR && nev_physics < nlim ) {
+  bool first = true;
+  fAnalysisStarted = kTRUE;
+  while ( !terminate && (status = ReadOneEvent( run, evdata )) != EOF && 
+	  nev_physics < nlast ) {
+
+    //--- Skip bad events.
+    if( status )
+      continue;
+
+    UInt_t evnum = evdata->GetEvNum();
 
     //--- Print marks periodically
-    if( fVerbose && (fNev % fMarkInterval == 0))  
-      cout << dec << fNev << endl;
+    if( fVerbose>1 && evnum > 0 && (evnum % fMarkInterval == 0))  
+      cout << dec << evnum << endl;
 
     //--- Update run parameters
     if( fUpdateRun )
@@ -523,10 +603,21 @@ Int_t THaAnalyzer::Process( THaRun* run )
 
     //=== Physics triggers ===
     if( evdata->IsPhysicsTrigger()) {
-
       nev_physics++;
-      if( nev_physics < run->GetFirstEvent() ) continue;
-      //FIXME: update analyzed event range of run
+
+      // Skip physics events until we reach the first requested event
+      if( nev_physics < run->GetFirstEvent())
+	continue;
+      if( first ) {
+	first = false;
+	if( fVerbose>2 )
+	  cout << "Starting physics analysis at event " 
+	       << nev_physics << endl;
+      }
+      nev_analyzed++;
+
+      // Update counters in the run object
+      run->IncrNumAnalyzed();
 
       //--- Evaluate test block 0 "RawDecode"
 
@@ -609,6 +700,7 @@ Int_t THaAnalyzer::Process( THaRun* run )
 
     //=== Scaler triggers ===
     else if( evdata->IsScalerEvent()) {
+      nev_analyzed++;
 
       //--- Loop over all defined scalers and execute LoadData()
 
@@ -624,61 +716,66 @@ Int_t THaAnalyzer::Process( THaRun* run )
   }  // End of event loop
   
   delete evdata;
+  // Save final run parameters locally
+  *fRun = *run;
+
   fBench->Stop("Total");
 
   //--- Report statistics
 
-  cout << dec;
-  if( status == EOF )
-    cout << "End of file";
-  else if ( nev_physics == nlim )
-    cout << "Event limit reached.";
-  else if ( fatal )
-    cout << "Fatal processing error.";
-  else if ( terminate )
-    cout << "Terminated during processing.";
-  cout << endl;
+  if( fVerbose>0 ) {
+    cout << dec;
+    if( status == EOF )
+      cout << "End of file";
+    else if ( nev_physics == nlast )
+      cout << "Event limit reached.";
+    else if ( fatal )
+      cout << "Fatal processing error.";
+    else if ( terminate )
+      cout << "Terminated during processing.";
+    cout << endl;
 
-  cout << "Processed " << fNev << " events, " 
-       << nev_physics << " physics events.\n";
+    cout << "Processed " << fNev << " events, " 
+	 << nev_analyzed << " data events, " 
+	 << nev_physics << " physics events.\n";
 
-  for (int i = 0; i < kMaxSkip; i++) {
-    if (fSkipCnt[i].count != 0) 
-      cout << "Skipped " << fSkipCnt[i].count
-	   << " events due to " << fSkipCnt[i].reason << endl;
+    for (int i = 0; i < kMaxSkip; i++) {
+      if (fSkipCnt[i].count != 0) 
+	cout << "Skipped " << fSkipCnt[i].count
+	     << " events due to " << fSkipCnt[i].reason << endl;
+    }
+
+    // Print scaler statistics
+
+    first = true;
+    next_scaler.Reset();
+    while( THaScalerGroup* theScaler =
+	   static_cast<THaScalerGroup*>( next_scaler() )) {
+      if( !first ) 
+	cout << endl;
+      else
+	first = false;
+      theScaler->PrintSummary();
+    }
+    if( !first ) cout << endl;
+    
+    // Print timing statistics
+
+    if( fDoBench ) {
+      fBench->Print("Prestart");
+      fBench->Print("Init");
+      fBench->Print("RawDecode");
+      fBench->Print("Decode");
+      fBench->Print("Reconstruct");
+      fBench->Print("Physics");
+      fBench->Print("Output");
+      fBench->Print("Cuts");
+      fBench->Print("Scaler");
+    }
+    fBench->Print("Total");
   }
-
-  // Print scaler statistics
-
-  bool first = true;
-  next_scaler.Reset();
-  while( THaScalerGroup* theScaler =
-	 static_cast<THaScalerGroup*>( next_scaler() )) {
-    if( !first ) 
-      cout << endl;
-    else
-      first = false;
-    theScaler->PrintSummary();
-  }
-  if( !first ) cout << endl;
-
-  // Print timing statistics
-
-  if( fDoBench ) {
-    fBench->Print("Prestart");
-    fBench->Print("Init");
-    fBench->Print("RawDecode");
-    fBench->Print("Decode");
-    fBench->Print("Reconstruct");
-    fBench->Print("Physics");
-    fBench->Print("Output");
-    fBench->Print("Cuts");
-    fBench->Print("Scaler");
-  }
-  fBench->Print("Total");
 
   //--- Close the input file
-
   run->CloseFile();
 
   // Write the output file and clean up.
@@ -688,37 +785,13 @@ Int_t THaAnalyzer::Process( THaRun* run )
   if( fOutput ) fOutput->End();
   if( fFile ) {
     run->Write("Run_Data");  // Save run data to ROOT file
-    fFile->Write();
+    //    fFile->Write();//already done by fOutput->End()
     fFile->Purge();         // get rid of excess object "cycles"
   }
 
   // Print cut summary (also to file if one given)
-  if( gHaCuts->GetSize() > 0 ) {
-    gHaCuts->Print("STATS");
-    if( fSummaryFileName.Length() > 0 ) {
-      TString filename(fSummaryFileName);
-      Ssiz_t pos, dot=-1;
-      while(( pos = filename.Index(".",dot+1)) != kNPOS ) dot=pos;
-      const char* tag = Form("_%d",run->GetNumber());
-      if( dot != -1 ) 
-	filename.Insert(dot,tag);
-      else
-	filename.Append(tag);
-      ofstream ostr(filename.Data());
-      if( ostr ) {
-	// Write to file via cout
-	streambuf* cout_buf = cout.rdbuf();
-	cout.rdbuf(ostr.rdbuf());
-	TDatime now;
-	cout << "Cut Summary for run " << run->GetNumber() 
-	     << " completed " << now.AsString() 
-	     << endl << endl;
-	gHaCuts->Print("STATS");
-	cout.rdbuf(cout_buf);
-	ostr.close();
-      }
-    }
-  }
+  if( fVerbose>0 )
+    PrintSummary(run);
 
   //keep the last run available
   //  gHaRun = NULL;
