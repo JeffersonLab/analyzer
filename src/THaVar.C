@@ -272,10 +272,10 @@ Int_t THaVar::Index( const THaArrayString& elem ) const
     return *elem.GetDim();
   }
 
-  Byte_t ndim = fArrayData.GetNdim();
+  Byte_t ndim = GetNdim();
   if( ndim != elem.GetNdim() ) return -2;
 
-  const Int_t *subs = elem.GetDim(), *adim = fArrayData.GetDim();
+  const Int_t *subs = elem.GetDim(), *adim = GetDim();
 
   Int_t index = subs[0];
   for( Byte_t i = 0; i<ndim; i++ ) {
@@ -283,7 +283,7 @@ Int_t THaVar::Index( const THaArrayString& elem ) const
     if( i>0 )
       index = index*adim[i] + subs[i];
   }
-  if( index >= fArrayData.GetLen() || index > kMaxInt ) return -1;
+  if( index >= GetLen() || index > kMaxInt ) return -1;
   return index;
 }
 
