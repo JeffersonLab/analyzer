@@ -9,31 +9,27 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-#include "TNamed.h"
-#include "TDatime.h"
+#include "THaCodaRun.h"
 
-#include "THaRun.h"
-
-class THaCodaData;
-
-class THaOnlRun : public THaRun {
+class THaOnlRun : public THaCodaRun {
   
-protected:
-  TString  fComputer;   // computer where DAQ is running, e.g. 'adaql2'
-  TString  fSession;    // SESSION = unique ID of DAQ, usually an env. var., e.g 'onla'
-  UInt_t   fMode;       // mode (0=wait forever for data, 1=time out, recommend 1)
-  UInt_t   fOpened;     // status
-
 public:
   THaOnlRun();
   THaOnlRun(const char* computer, const char* session, UInt_t mode);
-  THaOnlRun& operator=( const THaOnlRun& rhs );
   THaOnlRun( const THaOnlRun& rhs );
+  virtual THaOnlRun& operator=( const THaRunBase& rhs );
 
-  virtual  Int_t  OpenFile();
-           Int_t  OpenFile( const char* computer, const char* session, UInt_t mode);
+  virtual  Int_t  Open();
+  virtual  Int_t  OpenConnection( const char* computer, const char* session, 
+				  UInt_t mode);
   
-  ClassDef(THaOnlRun,0)   //Description of an online run using ET system
+protected:
+  TString  fComputer;   // computer where DAQ is running, e.g. 'adaql2'
+  TString  fSession;    // SESSION = unique ID of DAQ, usually an env. var., 
+                        // e.g 'onla'
+  UInt_t   fMode;       // mode (0=wait forever for data, 1=time out, recommend 1)
+
+  ClassDef(THaOnlRun,1)   //Description of an online run using ET system
 };
 
 #endif

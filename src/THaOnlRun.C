@@ -13,85 +13,101 @@
 
 #include "THaOnlRun.h"
 
-#include <iostream>
-#include "THaCodaData.h"
 #include "THaEtClient.h"
+#include "TClass.h"
+#include "TError.h"
 
 using namespace std;
 
 //______________________________________________________________________________
-THaOnlRun::THaOnlRun() : THaRun()
+THaOnlRun::THaOnlRun() : THaCodaRun()
 {
   // Default constructor
-  fDate.Set();  // NOW is the correct date
-  delete fCodaData;
+
+  // NOW is the correct time
+  TDatime now;
+  SetDate(now);
+  // Use ET client as data source
   fCodaData = new THaEtClient();
   fMode = 1;
-  ClearEventRange();
 }
 
 //______________________________________________________________________________
 THaOnlRun::THaOnlRun( const char* computer, const char* session, UInt_t mode) :
-  THaRun(session), fComputer(computer), fSession(session), fMode(mode)
+  THaCodaRun(session), fComputer(computer), fSession(session), fMode(mode)
 {
   // Normal constructor
 
-  fDate.Set();  // NOW is the correct date
-  delete fCodaData;
+  // NOW is the correct time
+  TDatime now;
+  SetDate(now);
+
+  // Use ET client as data source
   fCodaData = new THaEtClient();
-  ClearEventRange();
 }
 
 //______________________________________________________________________________
 THaOnlRun::THaOnlRun( const THaOnlRun& rhs ) : 
-  THaRun(rhs), fComputer(rhs.fComputer), fSession(rhs.fSession),
-  fMode(rhs.fMode), fOpened(0)
+  THaCodaRun(rhs), fComputer(rhs.fComputer), fSession(rhs.fSession),
+  fMode(rhs.fMode)
 {
   // Copy constructor
-  delete fCodaData;
+
+  // NOW is the correct time
+  TDatime now;
+  SetDate(now);
+
   fCodaData = new THaEtClient();
 }
 
 //_____________________________________________________________________________
-THaOnlRun& THaOnlRun::operator=(const THaOnlRun& rhs)
+THaOnlRun& THaOnlRun::operator=(const THaRunBase& rhs)
 {
   // Assignment operator.
 
   if (this != &rhs) {
-     THaRun::operator=(rhs);
-     delete fCodaData;
+     THaCodaRun::operator=(rhs);
+     if( rhs.InheritsFrom("THaOnlRun") ) {
+       fComputer = static_cast<const THaOnlRun&>(rhs).fComputer;
+       fSession  = static_cast<const THaOnlRun&>(rhs).fSession;
+       fMode     = static_cast<const THaOnlRun&>(rhs).fMode;
+     }
+     //     delete fCodaData; //already done in THaCodaRun
      fCodaData = new THaEtClient;
-     fComputer = rhs.fComputer;
-     fSession  = rhs.fSession;
-     fMode     = rhs.fMode;
-     fOpened   = 0;
   }
   return *this;
 }
 
+
 //______________________________________________________________________________
-Int_t THaOnlRun::OpenFile()
+Int_t THaOnlRun::Open()
 {
   // Open ET connection. 
 
   if (fComputer.IsNull() || fSession.IsNull()) {
-      return -2;   // must set computer and session, at least;
+    Error( "Open", "Computer and Session must be set. "
+	   "Cannot open ET run." );
+    return -2;   // must set computer and session, at least;
   } 
 
-  return fCodaData->codaOpen(fComputer, fSession, fMode);
-
+  Int_t st = fCodaData->codaOpen(fComputer, fSession, fMode);
+  if( st == 0 )
+    fOpened = kTRUE;
+  return st;
 }
 
 //______________________________________________________________________________
-Int_t THaOnlRun::OpenFile( const char* computer, const char* session, UInt_t mode )
+Int_t THaOnlRun::OpenConnection( const char* computer, const char* session, 
+				 UInt_t mode )
 {
-// Set the computer name, session name, and mode, then open the 'file'.
-// It isn't really a file.  It is an ET connection.
+  // Set the computer name, session name, and mode, then open the 'file'.
+  // It isn't really a file.  It is an ET connection.
 
   fComputer = computer;
   fSession = session;
   fMode = mode;
-  return OpenFile();
+  return Open();
 }
 
+//______________________________________________________________________________
 ClassImp(THaOnlRun)
