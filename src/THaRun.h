@@ -23,6 +23,19 @@ public:
   THaRun& operator=( const THaRun& rhs );
   virtual ~THaRun();
   
+  bool operator==( const THaRun& rhs ) const { return (fNumber == rhs.fNumber);}
+  bool operator!=( const THaRun& rhs ) const { return (fNumber != rhs.fNumber);}
+  bool operator<( const THaRun& rhs )  const { return (fNumber < rhs.fNumber); }
+  bool operator>( const THaRun& rhs )  const { return (fNumber > rhs.fNumber); }
+  bool operator<=( const THaRun& rhs ) const { return (fNumber <= rhs.fNumber);}
+  bool operator>=( const THaRun& rhs ) const { return (fNumber >= rhs.fNumber);}
+  bool operator==( Int_t run_number )  const { return (fNumber == run_number); }
+  bool operator!=( Int_t run_number )  const { return (fNumber != run_number); }
+  bool operator<( Int_t run_number )   const { return (fNumber < run_number); }
+  bool operator>( Int_t run_number )   const { return (fNumber > run_number); }
+  bool operator<=( Int_t run_number )  const { return (fNumber <= run_number); }
+  bool operator>=( Int_t run_number )  const { return (fNumber >= run_number); }
+
   virtual Int_t        CloseFile();
   virtual Int_t        Compare( const TObject* obj ) const;
           bool         DBRead()         const { return fDBRead; }
@@ -55,10 +68,10 @@ public:
           void         SetTarget( THaTarget* tgt )     { fTarget = tgt; }
           void         ClearEventRange() 
     { fFirstEvent = 0; fLastEvent = UINT_MAX; }
-  virtual void         SetNumber( UInt_t number );
+  virtual void         SetNumber( Int_t number );
 
 protected:
-  UInt_t        fNumber;       //  Run number
+  Int_t         fNumber;       //  Run number
   TString       fFilename;     //  File name
   TDatime       fDate;         //  Run date and time
   UInt_t        fFirstEvent;   //  First event to analyze
@@ -74,7 +87,7 @@ protected:
   Double_t      fBeamdE;       //  Beam energy uncertainty (GeV)
   THaTarget*    fTarget;       //! Pointer to target description
 
-  ClassDef(THaRun,2)   //Description of a run
+  ClassDef(THaRun,3)   //Description of a run
 };
 
 

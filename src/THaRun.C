@@ -226,7 +226,7 @@ void THaRun::SetDate( UInt_t tloc )
 }
 
 //_____________________________________________________________________________
-void THaRun::SetNumber( UInt_t number )
+void THaRun::SetNumber( Int_t number )
 {
   // Change/set the number of the Run.
 
