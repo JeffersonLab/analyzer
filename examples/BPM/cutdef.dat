@@ -1,0 +1,10 @@
+# Test cut file
+#
+
+Block: Decode
+
+evt15     g.evtype<6
+
+Block: Reconstruct
+
+

@@ -1,0 +1,46 @@
+! this is bodos database for bpm and raster stuff, could be done much nicer
+! do not change the ordering, without proper knowledge
+! do not add comments between the [identifier] and the necessary lines
+! comments are only allowed after one block finishes and before the next
+! block starts with its [identifier]
+[BPMA_detmap]
+               1      2          1            23          0 3       1881
+	      -1       0         0            0           0 0       0
+[BPMB_detmap]
+               1      2          1            23          4 7       1881
+	      -1       0         0            0           0 0       0
+[Raster_detmap]
+               1      2          1            23          8 11      1881
+	      -1       0         0            0           0 0       0
+! lines for the raster, z-pos, freq x and y, pedestal for derivative
+[Raster]
+-23.0 18.3 18.3   0 0 1633   1643
+! Rastered beam
+! z-pos for first bpm
+! z-pos for second bpm
+! z-pos for reference point (should be zero = target)
+! last three lines are offx/y,amplx/y,slopex/y for bpma,bpmb,target
+! those last three lines are very time dependent, the need to be 
+! adjusted for each run, eventually even more often
+[rb]
+0.0
+-0.00424315 -0.00609547 1.69101e-06 2.99353e-06 0. 0.
+-0.00345476 -0.00708183 1.98025e-06 3.74246e-06 0. 0.
+-0.00316058 -0.00764891 2.13365e-06 4.15626e-06 0. 0.
+! bpma lines
+! z-pos, calib-const,phase-difference to raster
+! 4 pedestals
+! linear trafo (2*2 matrix and offset vector)
+[BPMA]
+-7.345 0.01887  1.1 1.1
+563  518  426  444 
+-0.743119 0.783722 0.785047 0.732265 -0.000714758 0.00053602
+! ditto for bpmb
+[BPMB]
+-2.214 0.01887 1.1 1.1
+ 483  421  550  520 
+-0.655908 0.665157 0.703904 0.658149 0.000310796 -0.00039267
+! this is the end ...
+! not of the world, but of this file
+! Have fun and dont be distracted by the nice weather outside
+
