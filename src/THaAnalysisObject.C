@@ -552,7 +552,21 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 }
 
 //_____________________________________________________________________________
-Int_t THaAnalysisObject::SeekDBdate( FILE* file, const TDatime& date )
+static bool IsTag( const char* buf )
+{
+  // Return true if the string in 'buf' matches regexp "[ \t]*\[.*\].*",
+  // i.e. it is a tag. Internal function.
+
+  register const char* p = buf;
+  while( isspace(*p)) p++;
+  if( *p != '[' ) return false;
+  while( *p && *p != ']' ) p++;
+  return ( *p == ']' );
+}
+
+//_____________________________________________________________________________
+Int_t THaAnalysisObject::SeekDBdate( FILE* file, const TDatime& date,
+				     bool end_on_tag )
 {
   // Starting from the current position in file 'f', look for a 
   // date tag matching time stamp 'date'. Position the file on the
@@ -560,6 +574,8 @@ Int_t THaAnalysisObject::SeekDBdate( FILE* file, const TDatime& date )
   // the original position in the file. 
   // Return zero if not found, 1 otherwise.
   // Date tags must be in SQL format: [ yyyy-mm-dd hh:mi:ss ].
+  // If 'end_on_tag' is true, end the search at the next non-date tag;
+  // otherwise, search through end of file.
   // Useful for sub-segmenting database files.
   
   static const char* const here = "THaAnalysisObject::SeekDBdateTag";
@@ -572,14 +588,14 @@ Int_t THaAnalysisObject::SeekDBdate( FILE* file, const TDatime& date )
 
   errno = 0;
   long pos = ftell(file);
-  long foundpos = -1;
-  bool found = false;
   if( pos == -1 ) {
     if( errno ) 
       perror(here);
     return 0;
   }
-  while( !errno && fgets( buf, LEN, file)) {
+  long foundpos = -1;
+  bool found = false, quit = false;
+  while( !errno && !quit && fgets( buf, LEN, file)) {
     size_t len = strlen(buf);
     if( len<2 || buf[0] == '#' ) continue;
     if( buf[len-1] == '\n') buf[len-1] = 0; //delete trailing newline
@@ -589,7 +605,8 @@ Int_t THaAnalysisObject::SeekDBdate( FILE* file, const TDatime& date )
       prevdate = tagdate;
       foundpos = ftell(file);
       found = true;
-    }	
+    } else if( end_on_tag && IsTag(buf))
+      quit = true;
   }
   if( errno ) {
     perror(here);
@@ -601,7 +618,8 @@ Int_t THaAnalysisObject::SeekDBdate( FILE* file, const TDatime& date )
 
 //_____________________________________________________________________________
 Int_t THaAnalysisObject::SeekDBconfig( FILE* file, const char* tag, 
-				       const char* label )
+				       const char* label,
+				       bool end_on_tag )
 {
   // Starting from the current position in 'file', look for the
   // configuration 'tag'. Position the file on the
@@ -612,37 +630,48 @@ Int_t THaAnalysisObject::SeekDBconfig( FILE* file, const char* tag,
   // Configuration tags have the form [ config=tag ].
   // If 'label' is given explicitly, it replaces 'config' in the tag string,
   // for example label="version" will search for [ version=tag ].
+  // If 'label' is empty (""), search for just [ tag ].
+  // 
+  // If 'end_on_tag' is true, quit if any non-matching tag found,
+  // i.e. anything matching "*[*]*" except "[config=anything]".
   //
   // Useful for segmenting databases (esp. VDC) for different
   // experimental configurations.
 
-  if( !file || !tag || !strlen(tag) || !label || strlen(label)==0 ) return 0;
-  string _label("[");  _label.append(label);  _label.append("=");
+  if( !file || !tag || !strlen(tag) ) return 0;
+  string _label("[");
+  if( label && strlen(label)>0 ) {
+    _label.append(label);  _label.append("=");
+  }
   ssiz_t llen = _label.size();
 
-  bool found = false;
+  bool found = false, quit = false;;
   const int LEN = 256;
   char buf[LEN];
 
   errno = 0;
   long pos = ftell(file);
   if( pos != -1 ) {
-    while( !found && fgets( buf, LEN, file)) {
+    while( !errno && !found && !quit && fgets( buf, LEN, file)) {
       size_t len = strlen(buf);
       if( len<2 || buf[0] == '#' ) continue;      //skip comments
       if( buf[len-1] == '\n') buf[len-1] = 0;     //delete trailing newline
       char* cbuf = ::Compress(buf);
       string line(cbuf); delete [] cbuf;
       ssiz_t lbrk = line.find(_label);
-      if( lbrk == string::npos || lbrk >= line.size()-llen ) continue;
-      ssiz_t rbrk = line.find(']',lbrk+llen);
-      if( rbrk == string::npos ) continue;
-      if( line.substr(lbrk+llen,rbrk-lbrk-llen) != tag ) continue;
-      found = true;
+      if( lbrk != string::npos && lbrk < line.size()-llen ) {
+	ssiz_t rbrk = line.find(']',lbrk+llen);
+	if( rbrk == string::npos ) continue;
+	if( line.substr(lbrk+llen,rbrk-lbrk-llen) == tag ) {
+	  found = true;
+	  break;
+	}
+      } else if( end_on_tag && IsTag(buf) )
+	quit = true;
     }
   }
   if( errno ) {
-    perror( "THaAnalysisObject::SeekDBversionTag" );
+    perror( "THaAnalysisObject::SeekDBconfig" );
     found = false;
   }
   if( !found && pos >= 0 )

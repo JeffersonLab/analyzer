@@ -58,9 +58,11 @@ public:
 			       const char* tag, TString& text );
   static  Int_t   LoadDB( FILE* file, const TDatime& date, 
 			  const TagDef* tags, const char* prefix="" );
-  static  Int_t   SeekDBdate( FILE* file, const TDatime& date );
+  static  Int_t   SeekDBdate( FILE* file, const TDatime& date,
+			      bool end_on_tag = false );
   static  Int_t   SeekDBconfig( FILE* file, const char* tag,
-				const char* label = "config" );
+				const char* label = "config",
+				bool end_on_tag = false );
 
   // Geometry utility functions
   static  void    GeoToSph( Double_t  th_geo, Double_t  ph_geo,
