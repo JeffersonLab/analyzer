@@ -21,6 +21,8 @@
 #include "THaNamedList.h"
 #include "THaCutList.h"
 #include "THaScaler.h"
+#include "evio.h"
+#include "THaCodaData.h"
 #include "TList.h"
 #include "TTree.h"
 #include "TFile.h"
@@ -66,6 +68,7 @@ THaAnalyzer::THaAnalyzer()
 
   fMasterCutNames   = new TString[ fNblocks ];
   fCutBlocks        = new THaNamedList*[ fNblocks ];
+  fSkipCnt          = new Int_t[fMaxSkip];
 
   if( gHaVars ) {
     gHaVars->Define("nev", "Event number", fNev );
@@ -83,6 +86,7 @@ THaAnalyzer::~THaAnalyzer()
   delete [] fMasterCutNames;
   delete [] fHistBlockNames;
   delete [] fCutBlockNames;
+  delete [] fSkipCnt;
 
   if( gHaVars )
     gHaVars->RemoveName("nev");
@@ -159,6 +163,7 @@ Int_t THaAnalyzer::Process( THaRun& run )
   //--- Initialize counters
 
   fNev = 0;
+  memset(fSkipCnt, 0, fMaxSkip*sizeof(Int_t));
   UInt_t nev_physics = 0;
   UInt_t nlim = run.GetLastEvent();
   bool verbose = true, first = true;
@@ -175,7 +180,19 @@ Int_t THaAnalyzer::Process( THaRun& run )
   TBenchmark bench;
   bench.Start("Statistics");
 
-  while( (status = run.ReadEvent()) == 0 && nev_physics < nlim ) {
+  status = 0;
+  while ( (status != EOF && status != CODA_ERROR) && nev_physics < nlim ) {
+
+    status = run.ReadEvent();
+
+    if (status != 0) {
+      if (status == S_EVFILE_TRUNC) 
+          fSkipCnt[0]++;
+      else if (status == CODA_ERROR) 
+          fSkipCnt[1]++;
+      continue;  // skip event
+    } 
+
     fNev++;
     evdata.LoadEvent( run.GetEvBuffer() );
 
@@ -252,6 +269,7 @@ Int_t THaAnalyzer::Process( THaRun& run )
     //=== Physics triggers ===
 
     if( evdata.IsPhysicsTrigger()) {
+
       nev_physics++;
       if( nev_physics < run.GetFirstEvent() ) continue;
 
@@ -266,7 +284,10 @@ Int_t THaAnalyzer::Process( THaRun& run )
 
       //--- Evaluate test block 1
 
-      if( EvalCuts(0) == 0 ) continue;
+      if( EvalCuts(0) == 0 ) {
+          fSkipCnt[2]++;
+          continue;
+      }
 
       //--- Fill histograms in block 1
 
@@ -282,7 +303,10 @@ Int_t THaAnalyzer::Process( THaRun& run )
 
       //--- Evaluate test block 2
 
-      if( EvalCuts(1) == 0 ) continue;
+      if( EvalCuts(1) == 0 ) {
+           fSkipCnt[3]++;
+           continue;
+      }
 
 
       //--- Fill histograms in block 2
@@ -295,7 +319,10 @@ Int_t THaAnalyzer::Process( THaRun& run )
 
       //--- Evaluate test block 3
 
-      if( EvalCuts(2) == 0 ) continue;
+      if( EvalCuts(2) == 0 ) {
+           fSkipCnt[4]++;
+           continue;
+      }
 
       //--- Fill histograms in block 3
 
@@ -315,7 +342,7 @@ Int_t THaAnalyzer::Process( THaRun& run )
 
     //=== Scaler triggers ===
 
-    else if( evdata.IsScalerEvent()) {
+    if( evdata.IsScalerEvent()) {
 
       //--- Loop over all defined scalers and execute LoadData()
 
@@ -336,12 +363,15 @@ Int_t THaAnalyzer::Process( THaRun& run )
     cout << "End of file";
   else if ( nev_physics == nlim )
     cout << "Event limit reached.";
-  else 
-    cout << "ERROR: ReadEvent() status = " << status;
   cout << endl;
 
   cout << "Processed " << fNev << " events, " 
        << nev_physics << " physics events.\n";
+
+  for (int i = 0; i < fMaxSkip; i++) {
+    if (fSkipCnt[i] != 0) cout << "Skipped " << fSkipCnt[i]
+             << " events due to reason # " << i << endl;
+  }
 
   // Print scaler statistics
 

@@ -54,6 +54,7 @@ public:
   
 protected:
   static const char* const kMasterCutName;
+  static const Int_t fMaxSkip = 25;
 
   TString        fOutFile;         //Name of output ROOT file.
   THaPhysics*    fPhysics;         //The physics quantities for this analysis.
@@ -66,12 +67,19 @@ protected:
   TString*       fMasterCutNames;  //Names of the "master cuts" for each cut block
   THaNamedList** fCutBlocks;       //Array of pointers to the blocks of cuts
   UInt_t         fNev;             //Current event number
+  Int_t          *fSkipCnt;        //Counters for reasons to skip events.
 
-          Int_t          EvalCuts( Int_t n );
-  virtual void           SetupCuts();
+  Int_t          EvalCuts( Int_t n );
+  virtual void   SetupCuts();
 
   ClassDef(THaAnalyzer,0)  //Hall A Analyzer Standard Event Loop
 };
 
 
 #endif
+
+
+
+
+
+
