@@ -115,6 +115,7 @@ Int_t THaVhist::Init( )
   fInitStat = 0;
   Int_t status;
   string sname;
+
   if (fNbinX == 0) {
      cerr << "THaVhist:ERROR:: Histogram "<<fName<<" has no bins."<<endl;
      fInitStat = kNoBinX;
@@ -444,10 +445,10 @@ void THaVhist::ErrPrint() const
   cerr << "THaVhist::ERROR:: Invalid histogram."<<endl;
   cerr << "Offending line:"<<endl;
   cerr << fType << "  " << fName << "  '" << fTitle<< "'  ";
-  cerr << fNbinX << "  " << GetVarX();
+  cerr << GetVarX() << "   "  << fNbinX;
   cerr << "  " << fXlo << "  " << fXhi;
   if (fNbinY != 0) {
-    cerr << fNbinY << "  " << GetVarY();
+    cerr << GetVarY() << "  " << fNbinY;
     cerr << "  " << fYlo << "  " << fYhi;
   }
   if (HasCut()) cerr << " "<<fScut;
