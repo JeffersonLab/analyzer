@@ -29,11 +29,10 @@ using namespace std;
 
 THaVform::THaVform( const char *type, const char* name, const char* formula,
 		    const THaVarList* vlst, const THaCutList* clst )
-  : THaFormula("[0]", "[0]", vlst, clst)
+  : THaFormula("[0]", "[0]", vlst, clst), fType(type)
 {
 // The title "[0]" and expression "[0]" will be over-written
 // depending on the type of THaVform.
-  fType = THaString(type);
   SetName(name);
   THaString stemp1 = StripPrefix(formula); 
   SetTitle(stemp1.c_str());
@@ -66,7 +65,9 @@ void THaVform::Create(const THaVform &rhs)
   fNvar = rhs.fNvar;
   fVarPtr = rhs.fVarPtr;
   fObjSize = rhs.fObjSize;
-  fOdata = rhs.fOdata;
+  delete fOdata; fOdata = NULL;
+  if( rhs.fOdata )
+    fOdata = new THaOdata(*rhs.fOdata);
   fVarName = rhs.fVarName;
   fVarStat = rhs.fVarStat;
   fVectSform = rhs.fVectSform;
@@ -81,12 +82,10 @@ void THaVform::Create(const THaVform &rhs)
 void THaVform::Uncreate() 
 {
   if (fOdata) delete fOdata;
-  if( TROOT::Initialized() ) {
-    for (std::vector<THaCut*>::iterator itc = fCut.begin();
-	 itc != fCut.end(); itc++) delete *itc;
-    for (std::vector<THaFormula*>::iterator itf = fFormula.begin();
-	 itf != fFormula.end(); itf++) delete *itf;
-  }
+  for (std::vector<THaCut*>::iterator itc = fCut.begin();
+       itc != fCut.end(); itc++) delete *itc;
+  for (std::vector<THaFormula*>::iterator itf = fFormula.begin();
+       itf != fFormula.end(); itf++) delete *itf;
   fCut.clear();
   fFormula.clear();
 }
@@ -220,19 +219,20 @@ Int_t THaVform::Init()
 
   if (IsEye()) return 0;
 
-  fStitle = THaString(GetTitle());
+  fStitle = GetTitle();
   Int_t status = 0;
 
   for (Int_t i = 0; i < fNvar; i++) {
     if (fVarStat[i] == kVAType) {  // This obj is a var. sized array.
       if (StripBracket(fStitle) == fVarName[i]) {  
  	 status = 0;
-         fVarPtr = gHaVars->Find(fVarName[i].c_str());
+         fVarPtr = fVarList->Find(fVarName[i].c_str());
          if (fVarPtr) {
            fType = "VarArray";
            fObjSize = fVarPtr->GetLen();
            if (fPrefix == kNoPrefix) {
-              fOdata = new THaOdata();
+	      delete fOdata;
+	      fOdata = new THaOdata();
 	   } else {
 	      fObjSize = 1;
 	   }
@@ -245,7 +245,7 @@ Int_t THaVform::Init()
   }
 
   if (!IsCut() && !IsFormula()) return kIllTyp;
-  if (!gHaVars) return kNoGlo;
+  if (!fVarList) return kNoGlo;
 
 // Check that all fixed arrays have the same size.
 
@@ -257,14 +257,14 @@ Int_t THaVform::Init()
       return kIllMix;
     }
     if (fVarStat[i] != kFAType ) continue; 
-    pvar1 = gHaVars->Find(fVarName[i].c_str());
+    pvar1 = fVarList->Find(fVarName[i].c_str());
     fVarPtr = pvar1; // Store one pointer to be able to get the size 
                      // later since it may change. This works since all
                      // elements were verified to be the same size.
     if (i == fNvar) continue;
     for (Int_t j = i+1; j < fNvar; j++) {
       if (fVarStat[j] != kFAType ) continue; 
-      pvar2 = gHaVars->Find(fVarName[j].c_str());
+      pvar2 = fVarList->Find(fVarName[j].c_str());
       if (!pvar1 || !pvar2) {
         status = kArrZer;
         cout << "THaVform:ERROR: Trying to use zero pointer."<<endl;
@@ -313,7 +313,7 @@ void THaVform::ReAttach( )
 // THaCut's and THaFormula's to reattach to variables.
   for (Int_t i = 0; i < fNvar; i++) {
     if (fVarStat[i] != kFAType ) continue; 
-    fVarPtr = gHaVars->Find(fVarName[i].c_str());
+    fVarPtr = fVarList->Find(fVarName[i].c_str());
     break;
   }
   for (std::vector<THaCut*>::iterator itc = fCut.begin();
@@ -346,7 +346,6 @@ Int_t THaVform::MakeFormula(Int_t flo, Int_t fhi)
   // kIllPre = ambiguity of whether this is a cut.
 
   Int_t status = 0;
-  char cname[50],temp[50];
 
   if (flo < 0) flo = 0;
   if (flo >= fhi) return 0;
@@ -365,14 +364,13 @@ Int_t THaVform::MakeFormula(Int_t flo, Int_t fhi)
   if (fPrefix == kNoPrefix) {
 
    for (Int_t i = flo; i < fhi; i++) { 
-     strcpy(cname,GetName());
-     sprintf(temp,"-%d",i);
-     strcat(cname,temp);
+     string cname = Form("%s-%d",GetName(),i);
      if (IsCut()) {
-        fCut.push_back(new THaCut(cname,fVectSform[i].c_str(),
-               (const char*)"thavcut"));
+        fCut.push_back(new THaCut(cname.c_str(),fVectSform[i].c_str(),
+				  "thavcut"));
      } else if (IsFormula()) {
-        fFormula.push_back(new THaFormula(cname,fVectSform[i].c_str()));
+        fFormula.push_back(new THaFormula(cname.c_str(),
+					  fVectSform[i].c_str()));
      }
    }
 
@@ -417,7 +415,8 @@ Int_t THaVform::MakeFormula(Int_t flo, Int_t fhi)
       sform += fVectSform[i];
       if (i < (long)fVectSform.size()-1) sform += soper;
     }
-    strcpy(cname,GetName());
+
+    string cname(GetName());
 
     if (IsCut()) {
       if ((long)fCut.size() != 0) {  // drop what was there before
@@ -425,9 +424,9 @@ Int_t THaVform::MakeFormula(Int_t flo, Int_t fhi)
              itc != fCut.end(); itc++) delete *itc;
          fCut.clear();
       }
-      strcat(cname,"cut");
-      fCut.push_back(new THaCut(cname,sform.c_str(), 
-           (const char*)"thavsform"));
+      cname += "cut";
+      fCut.push_back(new THaCut(cname.c_str(),sform.c_str(), 
+				"thavsform"));
     } else if (IsFormula()) {
       if ((long)fFormula.size() != 0) {  // drop what was there before
          for (std::vector<THaFormula* >::iterator itf = 
@@ -435,8 +434,8 @@ Int_t THaVform::MakeFormula(Int_t flo, Int_t fhi)
                delete *itf;
          fFormula.clear();
       }
-      strcat(cname,"form");
-      fFormula.push_back(new THaFormula(cname,sform.c_str()));
+      cname += "form";
+      fFormula.push_back(new THaFormula(cname.c_str(),sform.c_str()));
     }
 
   }
