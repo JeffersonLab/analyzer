@@ -129,11 +129,9 @@ Int_t THaShower::ReadDatabase( FILE* fi, const TDatime& date )
   Float_t x,y,z;
   fscanf ( fi, "%f%f%f", &x, &y, &z );               // Detector's X,Y,Z coord
   fOrigin.SetXYZ( x, y, z );
-  fOrigin *= 0.01;                                   // Use units of meters
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
   fscanf ( fi, "%f%f%f", fSize, fSize+1, fSize+2 );  // Sizes of det in X,Y,Z
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  fSize[0] *= 0.01; fSize[1] *= 0.01; fSize[2] *= 0.01; // Use units of meters
 
   Float_t angle;
   fscanf ( fi, "%f", &angle );                       // Rotation angle of det
@@ -142,6 +140,8 @@ Int_t THaShower::ReadDatabase( FILE* fi, const TDatime& date )
   tan_angle = TMath::Tan(angle*degrad);
   sin_angle = TMath::Sin(angle*degrad);
   cos_angle = TMath::Cos(angle*degrad);
+
+  DefineAxes(angle*degrad);
 
   // Dimension arrays
   if( !fIsInit ) {
@@ -190,7 +190,7 @@ Int_t THaShower::ReadDatabase( FILE* fi, const TDatime& date )
   for( int c=0; c<ncols; c++ ) {
     for( int r=0; r<nrows; r++ ) {
       int k = nrows*c + r;
-      fBlockX[k] = x + r*dx;
+      fBlockX[k] = x + r*dx;                         // Units are meters
       fBlockY[k] = y + c*dy;
     }
   }
