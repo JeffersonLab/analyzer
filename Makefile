@@ -98,7 +98,8 @@ SRC           = src/THaFormula.C src/THaVar.C src/THaVarList.C src/THaCut.C \
 		src/THaVDCPlane.C src/THaVDCUVPlane.C src/THaVDCUVTrack.C \
 		src/THaVDCWire.C src/THaVDCHit.C src/THaVDCCluster.C \
 		src/THaVDCTimeToDistConv.C src/THaVDCTrackID.C \
-                src/THaVDCAnalyticTTDConv.C src/THaVDCT0CalTable.C
+                src/THaVDCAnalyticTTDConv.C src/THaVDCT0CalTable.C \
+		src/THaVDCTrackPair.C
 
 OBJ           = $(SRC:.C=.o)
 HDR           = $(SRC:.C=.h) src/THaGlobals.h src/VarDef.h src/VarType.h
