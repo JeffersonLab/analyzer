@@ -7,26 +7,41 @@
 # For documentation about this file, see
 # http://hallaweb.jlab.org/equipment/daq/THaScaler_map.html
 #
-# ------- Nov 16 2004
+# ------- Jan 10 2005
 # desc  hel crate slot start nchan  long-description
-DATE 17 11 2004
-xscaler-tabs Left 0:s1L 1:s1R 2:s1 3:s2 4:nplus 5:nminus 6:norm
-xscaler-layout Left 0:3x4 1:3x4 2:3x4 3:8x4 4:8x4 5:8x4 6:8x4
-xscaler-pagename Left 0:'S1 Scintillators Left PMTs on Left Arm'
-xscaler-pagename Left 1:'S1 Scintillators Right PMTs on Left Arm'
-xscaler-pagename Left 2:'S1 Paddles (Left.and.Right PMT) on Left Arm'
-xscaler-pagename Left 3:'S2m Scintillator on Left Arm'
-xscaler-pagename Left 4:'L-HRS Normalization Scaler ++ gated by helicity PLUS'
-xscaler-pagename Left 5:'L-HRS Normalization Scaler -- gated by helicity MINUS'
-xscaler-pagename Left 6:'L-HRS Normalization Scaler (NOT gated by helicity)'
+DATE 10 1 2005
+xscaler-tabs Left 0:s1LR 1:s1 2:s2 3:nplus 4:nminus 5:norm
+xscaler-layout Left 0:4x4 1:2x4 2:8x4 3:8x4 4:8x4 5:8x4
+xscaler-pageslot Left 0:s1L 1:s1 2:s2 3:slot3 4:slot5 5:slot4 
+xscaler-pagename Left 0:'S1 Scintillators Left, Right PMTs on Left Arm'
+xscaler-pagename Left 1:'S1 Paddles (Left.and.Right PMT) on Left Arm'
+xscaler-pagename Left 2:'S2m Scintillator on Left Arm'
+xscaler-pagename Left 3:'L-HRS Normalization Scaler ++ gated by helicity PLUS'
+xscaler-pagename Left 4:'L-HRS Normalization Scaler -- gated by helicity MINUS'
+xscaler-pagename Left 5:'L-HRS Normalization Scaler (NOT gated by helicity)'
 xscaler-server Left IP:129.57.192.30 port:5022
-xscaler-clock Left chan:88 rate:1024
+xscaler-clock Left slot:4 chan:7 rate:1024
+#
+xscaler-tabs Right 0:s1LR 1:s1 2:s2 3:gasC 4:nplus 5:nminus 6:norm
+xscaler-layout Right 0:4x4 1:2x4 2:8x4 3:3x4 4:8x4 5:8x4 6:8x4
+xscaler-pageslot Right 0:s1L 1:s1 2:s2 3:gasC 4:slot7 5:slot9 6:slot8 
+xscaler-pagename Right 0:'S1 Scintillators Left, Right PMTs on Right Arm'
+xscaler-pagename Right 1:'S1 Paddles (Left.and.Right PMT) on Right Arm'
+xscaler-pagename Right 2:'S2m Scintillator on Right Arm'
+xscaler-pagename Right 3:'Gas Cerenkov PMT on Right Arm'
+xscaler-pagename Right 4:'R-HRS Normalization Scaler ++ gated by helicity PLUS'
+xscaler-pagename Right 5:'R-HRS Normalization Scaler -- gated by helicity MINUS'
+xscaler-pagename Right 6:'R-HRS Normalization Scaler (NOT gated by helicity)'
+xscaler-server Right IP:129.57.192.28 port:5021
+xscaler-clock Right slot:8 chan:7 rate:1024
+#
 crate-tied EvLeft 0:8 -1:8 1:8
 crate-tied EvRight 0:7 -1:7 1:7
 slot-offset EvLeft 0:0 -1:1 1:-1
 slot-offset EvRight 0:0 -1:1 1:-1
 slot-offset Left -1:1 1:-1 
 slot-offset Right -1:1 1:-1 
+#
 s1L       0    7   0     0    6   S1 Scintillator Left PMTs on Right Arm
 s1R       0    7   0     8    6   S1 Scintillator Right PMTs on Right Arm
 s1        0    7   0    16    6   S1 Paddles (Left.and.Right PMT) on Right Arm
