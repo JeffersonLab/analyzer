@@ -36,6 +36,8 @@ public:
   virtual Double_t GetVDCAngle() { return fVDCAngle; }
   virtual Double_t GetSpacing()  { return fSpacing;  }
 
+  virtual void Print(const Option_t* opt) const;
+
   // Bits & and bit masks for THaTrack
   enum {
     kStageMask     = BIT(14) | BIT(15),  // Track processing stage bits
@@ -109,15 +111,19 @@ protected:
                                             // focal plane transformations
                                             // { T, Y, P }
 
+  std::vector<THaMatrixElement> fLMatrixElems;   // Path-length corrections (meters)
+
   void CalcFocalPlaneCoords( THaTrack* track, const ECoordTypes mode);
   void CalcTargetCoords(THaTrack *the_track, const ECoordTypes mode);
   void CalcMatrix(const double x, std::vector<THaMatrixElement> &matrix);
-  double DoPoly(const int n, const std::vector<double> &a, const double x);
-  double PolyInv(const double x1, const double x2, const double xacc, 
+  Double_t DoPoly(const int n, const std::vector<double> &a, const double x);
+  Double_t PolyInv(const double x1, const double x2, const double xacc, 
 		 const double y, const int norder, 
 		 const std::vector<double> &a);
-  double CalcTargetVar(const std::vector<THaMatrixElement> &matrix, 
-		       const double powers[][3]);
+  Double_t CalcTargetVar(const std::vector<THaMatrixElement> &matrix, 
+			 const double powers[][4]);
+  Double_t CalcTarget2FPLen(const vector<THaMatrixElement>& matrix,
+			    const Double_t powers[][4]);
   Int_t ReadDatabase( const TDatime& date );
 
   virtual void  Clear( Option_t* opt="" )  {}

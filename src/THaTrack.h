@@ -78,11 +78,17 @@ public:
   Double_t          GetVertexX()       const { return fVertex.X(); }
   Double_t          GetVertexY()       const { return fVertex.Y(); }
   Double_t          GetVertexZ()       const { return fVertex.Z(); }
-
+  Double_t          GetPathLen()       const { return fPathl; }
+  
   TVector3&         GetPvect()               { return fPvect; }
   TVector3&         GetVertex()              { return fVertex; }
   TVector3&         GetVertexError()         { return fVertexError; }
 
+  Double_t          GetTime()          const { return fTime; } // at refplane (s)
+  Double_t          GetdTime()         const { return fdTime; } // (s)
+  Double_t          GetBeta()          const { return fBeta; } // from scint.
+  Double_t          GetdBeta()         const { return fdBeta; }
+  
   bool              HasDet()           const { return (fType&kHasDet); }
   bool              HasFP()            const { return (fType&kHasFP); }
   bool              HasRot()           const { return (fType&kHasRot); }
@@ -96,6 +102,7 @@ public:
   void              SetType( UInt_t flag )    { fType = flag; }
   void              SetMomentum( Double_t p ) { fP    = p; }
   void              SetDp( Double_t dp )      { fDp   = dp; }
+
   void              Set( Double_t x, Double_t y, Double_t theta, Double_t phi )
   { fX = x; fY = y; fTheta = theta; fPhi = phi; fType |= kHasFP; }
   void              SetR( Double_t x, Double_t y,
@@ -104,6 +111,12 @@ public:
 			  Double_t theta, Double_t phi );
   void              SetTarget( Double_t x, Double_t y,
 			       Double_t theta, Double_t phi );
+
+  void              SetPathLen( Double_t pathl ) { fPathl = pathl; /* meters */ }
+  void              SetTime( Double_t time ) { fTime = time; /* seconds */ } 
+  void              SetdTime( Double_t dt ) { fdTime = dt; /* seconds */ }
+  void              SetBeta( Double_t beta ) { fBeta = beta; }
+  void              SetdBeta( Double_t db ) { fdBeta = db; }
 
   void              SetCreator( TD* d )                { fCreator = d; }
   void              SetPIDinfo( THaPIDinfo* pid )      { fPIDinfo = pid; }
@@ -156,11 +169,18 @@ protected:
   TVector3          fVertex; // Vertex location in lab (m) valid if fHasVertex
   TVector3          fVertexError; // Uncertainties in fVertex coordinates.
 
+  Double_t          fPathl;  // pathlength from target (z=0) (meters)
+
+  Double_t          fTime;   // time of track at focal plane (s)
+  Double_t          fdTime;  // uncertainty in fTime
+  Double_t          fBeta;   // beta of track
+  Double_t          fdBeta;  // uncertainty in fBeta
+  
   THaTrackID*       fID;     //! Track identifier
   UInt_t            fFlag;   // General status flag (for use by tracking det.)
   UInt_t            fType;   // Flag indicating which vectors reconstructed
 
-  ClassDef(THaTrack,1)       // A generic particle track
+  ClassDef(THaTrack,2)       // A generic particle track
 };
 
 //__________________ inlines __________________________________________________

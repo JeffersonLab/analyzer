@@ -29,6 +29,10 @@
 #include "VarDef.h"
 //#include <algorithm>
 #include "TROOT.h"
+#include "THaString.h"
+#include <map>
+#include <cstdio>
+#include <cstdlib>
 
 #ifdef WITH_DEBUG
 #include <iostream>
@@ -85,7 +89,7 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
 
   // load global VDC parameters
   static const char* const here = "ReadDatabase()";
-  const int LEN = 100;
+  const int LEN = 200;
   char buff[LEN];
   
   // Build the search tag and find it in the file. Search tags
@@ -133,7 +137,7 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   // the 3 focal plane matrix elements come first, followed by
   // the other backwards elements, starting with D000
   THaMatrixElement ME;
-  char w;
+  char w[20];
   bool good = false;
 
   fTMatrixElems.clear();
@@ -141,12 +145,13 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   fPMatrixElems.clear();
   fYMatrixElems.clear();
   fFPMatrixElems.clear();
-
+  fLMatrixElems.clear();
+  
   // read in t000 and verify it
   ME.iszero = true;  ME.order = 0;
   // Read matrix element signature
-  if( fscanf(file, "%c %d %d %d", &w, &ME.pw[0], &ME.pw[1], &ME.pw[2]) == 4) {
-    if( w == 't' && ME.pw[0] == 0 && ME.pw[1] == 0 && ME.pw[2] == 0 ) {
+  if( fscanf(file, "%s %d %d %d", w, &ME.pw[0], &ME.pw[1], &ME.pw[2]) == 4) {
+    if( w[0] == 't' && ME.pw[0] == 0 && ME.pw[1] == 0 && ME.pw[2] == 0 ) {
       good = true;
       for(int p_cnt=0; p_cnt<kPORDER; p_cnt++) {
 	if(!fscanf(file, "%le", &ME.poly[p_cnt])) {
@@ -163,7 +168,7 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   if( good ) 
     fFPMatrixElems.push_back(ME);
   else {
-    Error(Here(here), "Could not read in Matrix Element T000!");
+    Error(Here(here), "Could not read in Matrix Element t 0 0 0 !");
     fclose(file);
     return kInitError;
   }
@@ -172,8 +177,8 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   // read in y000 and verify it
   ME.iszero = true;  ME.order = 0; good = false;
   // Read matrix element signature
-  if( fscanf(file, "%c %d %d %d", &w, &ME.pw[0], &ME.pw[1], &ME.pw[2]) == 4) {
-    if( w == 'y' && ME.pw[0] == 0 && ME.pw[1] == 0 && ME.pw[2] == 0 ) {
+  if( fscanf(file, "%s %d %d %d", w, &ME.pw[0], &ME.pw[1], &ME.pw[2]) == 4) {
+    if( w[0] == 'y' && ME.pw[0] == 0 && ME.pw[1] == 0 && ME.pw[2] == 0 ) {
       good = true;
       for(int p_cnt=0; p_cnt<kPORDER; p_cnt++) {
 	if(!fscanf(file, "%le", &ME.poly[p_cnt])) {
@@ -190,7 +195,7 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   if( good )
     fFPMatrixElems.push_back(ME);
   else {
-    Error(Here(here), "Could not read in Matrix Element Y000!");
+    Error(Here(here), "Could not read in Matrix Element y 0 0 0 !");
     fclose(file);
     return kInitError;
   }
@@ -198,8 +203,8 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
 
   // read in p000 and verify it
   ME.iszero = true;  ME.order = 0; good = false;
-  if( fscanf(file, "%c %d %d %d", &w, &ME.pw[0], &ME.pw[1], &ME.pw[2]) == 4) {
-    if( w == 'p' && ME.pw[0] == 0 && ME.pw[1] == 0 && ME.pw[2] == 0 ) {
+  if( fscanf(file, "%s %d %d %d", w, &ME.pw[0], &ME.pw[1], &ME.pw[2]) == 4) {
+    if( w[0] == 'p' && ME.pw[0] == 0 && ME.pw[1] == 0 && ME.pw[2] == 0 ) {
       good = true;
       for(int p_cnt=0; p_cnt<kPORDER; p_cnt++) {
 	if(!fscanf(file, "%le", &ME.poly[p_cnt])) {
@@ -216,44 +221,73 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   if( good )
     fFPMatrixElems.push_back(ME);
   else {
-    Error(Here(here), "Could not read in Matrix Element P000!");
+    Error(Here(here), "Could not read in Matrix Element p 0 0 0 !");
     fclose(file);
     return kInitError;
   }
   fscanf(file, "%*c");
 
-  // Read in as many of the matrix elements as there are
-  while(fscanf(file, "%c %d %d %d", &w, &ME.pw[0], 
-	       &ME.pw[1], &ME.pw[2]) == 4) {
+  map<string,int> power;
+  power["t"] = 3;  // transport to focal-plane tensors
+  power["y"] = 3;
+  power["p"] = 3;
+  power["D"] = 3;  // focal-plane to target tensors
+  power["T"] = 3;
+  power["Y"] = 3;
+  power["P"] = 3;
+  power["L"] = 4;  // pathlength from z=0 (target) to focal plane (meters)
+  power["XF"] = 5; // forward: target to focal-plane (I think)
+  power["TF"] = 5;
+  power["PF"] = 5;
+  power["YF"] = 5;
 
+  map <string,vector<THaMatrixElement>* > matrix_map;
+  matrix_map["D"] = &fDMatrixElems;
+  matrix_map["T"] = &fTMatrixElems;
+  matrix_map["Y"] = &fYMatrixElems;
+  matrix_map["P"] = &fPMatrixElems;
+  matrix_map["L"] = &fLMatrixElems;
+
+  // Read in as many of the matrix elements as there are.
+  // Read in line-by-line, so as to be able to handle tensors of
+  // different orders.
+  while( fgets(buff, LEN, file) && sscanf(buff,"%s",w)==1 ) {
+    int pos, p_cnt;
+    THaString line(buff);
+    vector<THaString> line_spl = line.Split();
+    
+    int npow = power[w];
+    ME.pw.resize(npow);
     ME.iszero = true;  ME.order = 0;
-    for(int p_cnt=0; p_cnt<kPORDER; p_cnt++) {
-      if(!fscanf(file, "%le", &ME.poly[p_cnt])) {
-	Error(Here(here), "Could not read in Matrix Element %c%d%d%d!",
-	      w, ME.pw[0], ME.pw[1], ME.pw[2]);
-	fclose(file);
-	return kInitError;
-      }
 
-      if(ME.poly[p_cnt] != 0.0) {
+    for (pos=1; pos<=npow && pos<line_spl.size(); pos++) {
+      ME.pw[pos-1] = atoi(line_spl[pos].c_str());
+    }
+    
+    for ( p_cnt=0; pos<line_spl.size() && p_cnt<kPORDER; pos++,p_cnt++ ) {
+      ME.poly[p_cnt] = atof(line_spl[pos].c_str());
+      if (ME.poly[p_cnt] != 0.0) {
 	ME.iszero = false;
 	ME.order = p_cnt+1;
       }
     }
     
-    // Add this matrix element to the appropriate array
-    switch(w) {
-    case 'D': fDMatrixElems.push_back(ME); break;
-    case 'T': fTMatrixElems.push_back(ME); break;
-    case 'Y': fYMatrixElems.push_back(ME); break;
-    case 'P': fPMatrixElems.push_back(ME); break;
-    default:
-      Error(Here(here), "Invalid Matrix Element specifier: %c!", w);
-      break;
+    if (p_cnt < 1) {
+	Error(Here(here), "Could not read in Matrix Element %s%d%d%d!",
+	      w, ME.pw[0], ME.pw[1], ME.pw[2]);
+	Error(Here(here), "Line looks like: %s",line.c_str());
+	fclose(file);
+	return kInitError;
     }
+    
+    // Add this matrix element to the appropriate array
 
-    fscanf(file, "%*c");
-
+    vector<THaMatrixElement> *mat = matrix_map[w];
+    if (mat)
+      mat->push_back(ME);
+    else if ( fDebug > 0 )
+      Warning(Here(here), "Not storing matrix for: %s !", w);
+    
     if(feof(file) || ferror(file))
       break;
   }
@@ -280,6 +314,8 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   else
     fCentralDist = s1->GetOrigin().Z();
 
+  CalcMatrix(1.,fLMatrixElems); // tensor without explicit polynomial in x_fp
+  
   // FIXME: Set geometry data (fOrigin). Currently fOrigin = (0,0,0).
 
   fIsInit = true;
@@ -719,8 +755,8 @@ void THaVDC::CalcTargetCoords(THaTrack *track, const ECoordTypes mode)
   const Int_t kNUM_PRECOMP_POW = 10;
 
   Double_t x_fp, y_fp, th_fp, ph_fp;
-  Double_t powers[kNUM_PRECOMP_POW][3];  // {th, y, ph}
-  Double_t x, y, theta, phi, dp, p;
+  Double_t powers[kNUM_PRECOMP_POW][4];  // {(x), th, y, ph }
+  Double_t x, y, theta, phi, dp, p, pathl;
 
   // first select the coords to use
   if(mode == kTransport) {
@@ -737,9 +773,10 @@ void THaVDC::CalcTargetCoords(THaTrack *track, const ECoordTypes mode)
 
   // calculate the powers we need
   for(int i=0; i<kNUM_PRECOMP_POW; i++) {
-    powers[i][0] = pow(th_fp, i);
-    powers[i][1] = pow(y_fp, i);
-    powers[i][2] = pow(ph_fp, i);
+    powers[i][0] = pow(x_fp, i);
+    powers[i][1] = pow(th_fp, i);
+    powers[i][2] = pow(y_fp, i);
+    powers[i][3] = pow(ph_fp, i);
   }
 
   // calculate the matrices we need
@@ -757,6 +794,8 @@ void THaVDC::CalcTargetCoords(THaTrack *track, const ECoordTypes mode)
   dp = CalcTargetVar(fDMatrixElems, powers);
   p  = static_cast<THaSpectrometer*>(fApparatus)->GetPcentral() * (1.0+dp);
 
+  pathl = CalcTarget2FPLen(fLMatrixElems, powers);
+
   //FIXME: estimate x ??
   x = 0.0;
 
@@ -764,6 +803,8 @@ void THaVDC::CalcTargetCoords(THaTrack *track, const ECoordTypes mode)
   track->SetTarget(x, y, theta, phi);
   track->SetDp(dp);
   track->SetMomentum(p);
+  track->SetPathLen(pathl);
+  
   static_cast<THaSpectrometer*>(fApparatus)->
     TransportToLab( p, theta, phi, track->GetPvect() );
 
@@ -791,9 +832,27 @@ void THaVDC::CalcMatrix( const Double_t x, vector<THaMatrixElement>& matrix )
 
 //_____________________________________________________________________________
 Double_t THaVDC::CalcTargetVar(const vector<THaMatrixElement>& matrix,
-			       const Double_t powers[][3])
+			       const Double_t powers[][4])
 {
   // calculates the value of a variable at the target
+  // the x-dependence is already in the matrix, so only 1-3 used
+  Double_t retval=0.0;
+  for( vector<THaMatrixElement>::const_iterator it=matrix.begin();
+       it!=matrix.end(); it++ ) 
+    if(it->v != 0.0)
+      retval += it->v * powers[it->pw[0]][1] 
+	              * powers[it->pw[1]][2]
+	              * powers[it->pw[2]][3];
+
+  return retval;
+}
+
+//_____________________________________________________________________________
+Double_t THaVDC::CalcTarget2FPLen(const vector<THaMatrixElement>& matrix,
+				  const Double_t powers[][4])
+{
+  // calculates distance from the nominal target position (z=0)
+  // to the transport plane
 
   Double_t retval=0.0;
   for( vector<THaMatrixElement>::const_iterator it=matrix.begin();
@@ -801,7 +860,8 @@ Double_t THaVDC::CalcTargetVar(const vector<THaMatrixElement>& matrix,
     if(it->v != 0.0)
       retval += it->v * powers[it->pw[0]][0]
 	              * powers[it->pw[1]][1]
-	              * powers[it->pw[2]][2];
+	              * powers[it->pw[2]][2]
+	              * powers[it->pw[3]][3];
 
   return retval;
 }
@@ -906,6 +966,82 @@ void THaVDC::FindBadTracks(TClonesArray& tracks)
   //tracks.Compress();
 }
 
+void THaVDC::Print(const Option_t* opt) const {
+  // Print out the optics matrices, to verify they make sense
+  printf("Matrix FP (t000, y000, p000)\n");
+  for (int i=0; i<fFPMatrixElems.size(); i++) {
+    const THaMatrixElement& m = fFPMatrixElems[i];
+    for (int j=0; j<m.pw.size(); j++) {
+      printf("  %2d",m.pw[j]);
+    }
+    for (int j=0; j<m.order; j++) {
+      printf("  %g",m.poly[j]);
+    }
+    printf("\n");
+  }
+
+  printf("Transport Matrix:  D-terms\n");
+  for (int i=0; i<fDMatrixElems.size(); i++) {
+    const THaMatrixElement& m = fDMatrixElems[i];
+    for (int j=0; j<m.pw.size(); j++) {
+      printf("  %2d",m.pw[j]);
+    }
+    for (int j=0; j<m.order; j++) {
+      printf("  %g",m.poly[j]);
+    }
+    printf("\n");
+  }
+
+  printf("Transport Matrix:  T-terms\n");
+  for (int i=0; i<fTMatrixElems.size(); i++) {
+    const THaMatrixElement& m = fTMatrixElems[i];
+    for (int j=0; j<m.pw.size(); j++) {
+      printf("  %2d",m.pw[j]);
+    }
+    for (int j=0; j<m.order; j++) {
+      printf("  %g",m.poly[j]);
+    }
+    printf("\n");
+  }
+
+  printf("Transport Matrix:  Y-terms\n");
+  for (int i=0; i<fYMatrixElems.size(); i++) {
+    const THaMatrixElement& m = fYMatrixElems[i];
+    for (int j=0; j<m.pw.size(); j++) {
+      printf("  %2d",m.pw[j]);
+    }
+    for (int j=0; j<m.order; j++) {
+      printf("  %g",m.poly[j]);
+    }
+    printf("\n");
+  }
+
+  printf("Transport Matrix:  P-terms\n");
+  for (int i=0; i<fPMatrixElems.size(); i++) {
+    const THaMatrixElement& m = fPMatrixElems[i];
+    for (int j=0; j<m.pw.size(); j++) {
+      printf("  %2d",m.pw[j]);
+    }
+    for (int j=0; j<m.order; j++) {
+      printf("  %g",m.poly[j]);
+    }
+    printf("\n");
+  }
+
+  printf("Matrix L\n");
+  for (int i=0; i<fLMatrixElems.size(); i++) {
+    const THaMatrixElement& m = fLMatrixElems[i];
+    for (int j=0; j<m.pw.size(); j++) {
+      printf("  %2d",m.pw[j]);
+    }
+    for (int j=0; j<m.order; j++) {
+      printf("  %g",m.poly[j]);
+    }
+    printf("\n");
+  }
+
+  return;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 ClassImp(THaVDC)
