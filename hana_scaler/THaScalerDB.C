@@ -206,10 +206,8 @@ SDB_chanDesc THaScalerDB::GetChanDesc(Int_t crate, std::string desc, Int_t helic
   if ( IsHelicityTied(crate, helicity) ) lhelicity = 0;
   SDB_chanKey sk(lcrate, lhelicity, desc);
   SDB_chanDesc cdesc(-1,"empty");  // empty so far
-  //#ifdef THING1
   std::map< SDB_chanKey, SDB_chanDesc>::iterator pm = chanmap.find(sk);
   if (pm != chanmap.end()) cdesc = pm->second; 
-  //#endif
   return cdesc;
 }
 
