@@ -13,7 +13,6 @@
 
 #include "THaAnalyzer.h"
 #include "THaRun.h"
-//#include "THaPhysics.h"
 #include "THaEvent.h"
 #include "THaOutput.h"
 #include "THaEvData.h"
@@ -22,6 +21,7 @@
 #include "THaNamedList.h"
 #include "THaCutList.h"
 #include "THaScaler.h"
+#include "THaPhysicsModule.h"
 #include "evio.h"
 #include "THaCodaData.h"
 #include "TList.h"
@@ -50,7 +50,6 @@ THaAnalyzer::THaAnalyzer()
   // Default constructor.
 
   fEvent = 0;
-  fPhysics = 0;
   fNev = 0;
   fFile = 0;
   fOutput = 0;
@@ -79,7 +78,7 @@ THaAnalyzer::THaAnalyzer()
 //_____________________________________________________________________________
 THaAnalyzer::~THaAnalyzer()
 {
-  // Destructor. Does not delete the fPhysics and fEvent objects since
+  // Destructor. Does not delete the fEvent object since
   // they are defined by the caller.
 
   Close();
@@ -122,7 +121,7 @@ Int_t THaAnalyzer::Process( THaRun& run )
 {
   // Process the given run. Loop over all events in the event range and
   // analyze all apparatuses defined in the global apparatus list.
-  // Fill Physics and Event structures if they are defined.
+  // Fill Event structure if it is defined.
   // If Event and Filename are defined, then fill the output tree with Event
   // and write the file.
 
@@ -171,6 +170,7 @@ Int_t THaAnalyzer::Process( THaRun& run )
   THaEvData evdata;
   TIter next( gHaApps );
   TIter next_scaler( gHaScalers );
+  TIter next_physics( gHaPhysics );
   TDatime run_time;
 
   //--- The main event loop.
@@ -257,6 +257,24 @@ Int_t THaAnalyzer::Process( THaRun& run )
 	}
       }
 
+      // Initialize physics modules. Quit on error.
+      // Similar to apparatuses and scalers.
+
+      while( !fail && (obj = next_physics())) {
+	if( !obj->IsA()->InheritsFrom("THaPhysicsModule")) {
+	  Error( here, "Physics module %s is not a THaPhysicsModule. "
+		 "Analyzer initialization failed.", obj->GetName() );
+	  retval = -40;
+	  fail = true;
+	} else {
+	  THaPhysicsModule* theModule = static_cast<THaPhysicsModule*>( obj );
+	  if( theModule->Init( run_time ) != 0 ) {
+	    retval = -41;
+	    fail = true;
+	  }
+	}
+      }
+
       // fOutput must be initialized after all apparatuses are
       // initialized and before adding anything to its tree.
 
@@ -329,10 +347,13 @@ Int_t THaAnalyzer::Process( THaRun& run )
       //--- Fill histograms in block 2
 
 
-      //--- If Physics class defined, fill it (i.e. compute physics quantities).
+      //--- Process the list of physics modules
 
-      //    if( fPhysics ) {
-      //      fPhysics->Fill();
+      next_physics.Reset();
+      while( THaPhysicsModule* theModule =
+	     static_cast<THaPhysicsModule*>( next_physics() )) {
+	theModule->Process();
+      }
 
       //--- Evaluate test block 3
 

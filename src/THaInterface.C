@@ -24,6 +24,7 @@ THaVarList* gHaVars    = NULL;  //List of symbolic analyzer variables
 THaCutList* gHaCuts    = NULL;  //List of global analyzer cuts/tests
 TList*      gHaApps    = NULL;  //List of Apparatuses
 TList*      gHaScalers = NULL;  //List of scaler groups
+TList*      gHaPhysics = NULL;  //List of physics modules
 
 THaInterface* THaInterface::fgAint = NULL;  //Pointer to this interface
 
@@ -52,6 +53,7 @@ THaInterface::THaInterface( const char* appClassName, int* argc, char** argv,
   gHaCuts    = new THaCutList( *gHaVars );
   gHaApps    = new TList;
   gHaScalers = new TList;
+  gHaPhysics = new TList;
 
   fgAint = this;
 }
@@ -60,6 +62,7 @@ THaInterface::THaInterface( const char* appClassName, int* argc, char** argv,
 THaInterface::~THaInterface()
 {
   if( fgAint == this ) {
+    delete gHaPhysics;
     delete gHaScalers;
     delete gHaApps;
     delete gHaVars;
@@ -90,8 +93,8 @@ void THaInterface::PrintLogo()
      mille = iyear;
    char* root_date = Form("%d %s %4d",iday,months[imonth-1],mille);
 
-   const char* halla_version = "0.70beta1";
-   const char* halla_date = Form("%d %s %4d",30,months[8-1],2002);
+   const char* halla_version = "0.70beta2";
+   const char* halla_date = Form("%d %s %4d",24,months[2-1],2003);
 
    Printf("  ************************************************");
    Printf("  *                                              *");

@@ -23,7 +23,6 @@
 #include "THaCutList.h"
 #include "THaGlobals.h"
 
-class THaPhysics;
 class THaEvent;
 class THaRun;
 class THaOutput;
@@ -44,7 +43,6 @@ public:
   virtual void           SetCutBlocks( const TString* names );
   virtual void           SetCutBlocks( const char** names );
   virtual void           SetEvent( THaEvent* event )    { fEvent = event; }
-  virtual void           SetPhysics( THaPhysics* phys ) { fPhysics = phys; }
   virtual void           SetOutFile( const char* name ) { fOutFile = name; }
 
   virtual void           Close();
@@ -57,7 +55,6 @@ protected:
   TFile*         fFile;            //The ROOT output file.
   THaOutput*     fOutput;          //Flexible ROOT output (tree, histograms)
   TString        fOutFile;         //Name of output ROOT file.
-  THaPhysics*    fPhysics;         //The physics quantities for this analysis.
   THaEvent*      fEvent;           //The event structure to be written to file.
   Int_t          fNblocks;         //Number of analysis stages
   TString*       fCutBlockNames;   //Array of cut block names
