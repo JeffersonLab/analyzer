@@ -202,6 +202,14 @@ double THaEvData::GetEpicsData(const char* tag, int event) const {
   return 0;
 }
 
+std::string THaEvData::GetEpicsString(const char* tag, int event) const {
+  if (VERBOSE) {
+    cout << "THaEvData: Warning: GetEpicsString called ";
+    cout << "for non-Coda class" << endl;
+  }
+  return 0;
+}
+
 double THaEvData::GetEpicsTime(const char* tag, int event) const {
   if (VERBOSE) {
     cout << "THaEvData: Warning: GetEpicsTime called ";

@@ -33,6 +33,7 @@ class THaCodaDecoder : public THaEvData {
 // EPICS data which is nearest CODA event# 'event'.  Tag is EPICS variable, e.g. 'IPM1H04B.XPOS'
   double GetEpicsData(const char* tag, int event=0) const;
   double GetEpicsTime(const char* tag, int event=0) const;
+  std::string GetEpicsString(const char* tag, int event=0) const;
 
   virtual void SetRunTime(UInt_t tloc);
 

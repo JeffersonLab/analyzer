@@ -455,6 +455,12 @@ double THaCodaDecoder::GetEpicsData(const char* tag, int event) const {
   return epics->GetData(tag, event);
 }
 
+string THaCodaDecoder::GetEpicsString(const char* tag, int event) const {
+// EPICS string data which is nearest CODA event# 'event'
+// event == 0 --> get latest data
+  return epics->GetString(tag, event);
+}
+
 double THaCodaDecoder::GetEpicsTime(const char* tag, int event) const {
 // EPICS time stamp
 // event == 0 --> get latest data

@@ -72,6 +72,7 @@ public:
      // THaEvData doesn't do Epics, go see THaCodaDetector
      virtual double GetEpicsData(const char* tag, int event=0) const;
      virtual double GetEpicsTime(const char* tag, int event=0) const;
+     virtual std::string GetEpicsString(const char* tag, int event=0) const;
      virtual Bool_t IsLoadedEpics(const char* tag) const;
 
 // Loads CODA data evbuffer using THaCrateMap passed as 2nd arg
