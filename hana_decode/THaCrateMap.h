@@ -58,9 +58,11 @@ class THaCrateMap
      bool slotClear(int crate, int slot) const;     // Decide if not clear ea event
      void setSlotDone(int slot);                    // Used to speed up decoder
      void setSlotDone();                            // Used to speed up decoder
+     int init(TString the_map);                     // Initialize from text-block
      int init(UInt_t time);                         // Initialize by Unix time.
      int init();                                    // Let me initialize everything 
                                                     // (recommend to call this once)
+     int init_hc(UInt_t time);                      // Hard-coded crate-map
      void print() const;
 
      static const int CM_OK;
