@@ -282,12 +282,13 @@ void THaHelicity::ReadData( const THaEvData& evdata ) {
    int ring_clock, ring_qrt, ring_helicity;
    int ring_trig, ring_bcm, ring_l1a, ring_v2fh; 
 
-   if (fArm == fgLarm || fArm == fgRarm) {
-     if (fArm == fgLarm) myroc = 11;
-     if (fArm == fgRarm) myroc = 10;
-   } else {
+   if (fArm == fgLarm )
+     myroc = 11;
+   else if (fArm == fgRarm) 
+     myroc = 10;
+   else
      return;
-   }
+
    len = evdata.GetRocLength(myroc);
    if (len <= 4) return;
    data = evdata.GetRawData(myroc,3);   
