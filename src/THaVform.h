@@ -61,8 +61,8 @@ public:
   Bool_t IsEye() const;
 // Get the size (dimension) of this object 
   Int_t GetSize() { return fObjSize; };
-// Get array elements from formula
-  std::vector<THaString> GetArrays(); 
+// Get names of variable that are used by this formula.
+  std::vector<THaString> GetVars(); 
   
 protected:
 

@@ -194,13 +194,13 @@ void THaVform::ErrPrint(Int_t err)
 
 
 //_____________________________________________________________________________
-vector<THaString> THaVform::GetArrays() 
+vector<THaString> THaVform::GetVars() 
 {
-  // Return all variables that are array elements.
+// Get names of variable that are used by this formula.
   vector<THaString> result;
   result.clear();
   for (Int_t i = 0; i < fNvar; i++) {
-    if (fVarStat[i] == kAElem) result.push_back(fVarName[i]);
+    result.push_back(fVarName[i]);
   }
   return result;
 }
@@ -560,7 +560,7 @@ Int_t THaVform::Process()
 	    if (fOdata->Fill(i,fVarPtr->GetValue(i)) != 1) {
 	      cout << "THaVform::ERROR: storing too much";
 	      cout << " variable sized data: ";
-	      cout << fVarPtr->GetName() <<endl;
+	      cout << fVarPtr->GetName() <<"  "<<fVarPtr->GetLen()<<endl;
 	    }
 	  }
 	}

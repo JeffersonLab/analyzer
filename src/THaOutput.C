@@ -153,9 +153,9 @@ Int_t THaOutput::Init( const char* filename )
 //    fFormulas[iform]->LongPrint();  // for debug
     } else {
       fFormulas[iform]->SetOutput(fTree);
-// If formula has array ELEMENTS explicitly we add them to tree.
+// Add variables (i.e. those var's used by the formula) to tree.
 // Reason is that TTree::Draw() may otherwise fail with ERROR 26 
-      vector<THaString> avar = fFormulas[iform]->GetArrays();
+      vector<THaString> avar = fFormulas[iform]->GetVars();
       for (Vsiz_s k = 0; k < avar.size(); k++) {
         THaString svar = StripBracket(avar[k]);
         pvar = gHaVars->Find(svar.c_str());
@@ -567,7 +567,7 @@ Int_t THaOutput::Process()
     for (Int_t i = 0; i < pvar->GetLen(); i++) {
        if (fOdata[k]->Fill(i,pvar->GetValue(i)) != 1) 
 	 cout << "THaOutput::ERROR: storing too much variable sized data: " 
-	      << pvar->GetName() <<endl;
+	      << pvar->GetName() <<"  "<<pvar->GetLen()<<endl;
     }
   }
   for (Vsiz_h ihist = 0; ihist < fHistos.size(); ihist++) 
