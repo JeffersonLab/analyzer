@@ -214,6 +214,10 @@ Int_t THaAnalyzer::Process( THaRun& run )
       run.SetNumber( evdata.GetRunNum() );
       first = false;
 
+      // save run data to ROOT file
+      // FIXME: give this different name?
+      run.Write("Run Data");
+      
       // Initialize apparatuses. Make sure that every object in
       // gHaApps really is an apparatus.  Quit if any errors.
       
