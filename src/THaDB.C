@@ -13,6 +13,8 @@ using namespace std;
 
 THaDB* gHaDB = NULL;
 
+typedef string::size_type ssiz_t;
+
 //_____________________________________________________________________________
 
 THaDB::THaDB()
@@ -57,18 +59,23 @@ THaDetConfig::THaDetConfig(string line) {
   // not the advertised adjustable range and specifiers listed for the routine
   // in the det_map configuration file.
 
-  // '!' is a comment character, commenting out the rest of a line
+  // '!' and '#' are comment characters, commenting out the rest of a line
   // the format of a line is:
   // DET_NAME  FIRST_WIR  ROC  CRATE  SLOT  CHANNEL_LO  CHANNEL_HI  SLOT_MODEL
 
   // look only at complete lines
 
-  string::size_type pos=0,pos2;
-  
+  ssiz_t l = line.find_first_of("!#");
+  if ( l != string::npos ) line.erase(l);
+
+  ssiz_t pos=0,pos2;
+
   // replace '-' and ':' with ' '
   while ( (pos = line.find_first_of(":-\t")) != string::npos ) {
     line.replace(pos,1," ");
   }
+
+  // if it is an entirely blank line, just leave
   
   // look through the string, grab out the fields
   string data;
@@ -90,12 +97,16 @@ THaDetConfig::THaDetConfig(string line) {
     pos = pos2;
   }
 
-  if ( v.size() != 8 ) {
-    cerr << "Error reading Detector Configuration! The line is: " << endl << line << endl;
+  if ( v.size()>0 && v.size() != 8 ) {
+    cerr << "Error reading Detector Configuration! The line is: " << endl
+	 << line << endl;
+    v.clear();
+  }
+  if (v.size()==0) {
     name = "JUNK";
     return;
   }
-
+  
   
   name = v[0];
   wir = atoi(v[1].c_str());
