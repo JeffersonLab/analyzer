@@ -14,11 +14,16 @@ class THaVertexModule {
 public:
   virtual ~THaVertexModule();
   
-  const TVector3&   GetVertex()  const { return fVertex; }
+  virtual const TVector3&   GetVertex()      const { return fVertex; }
+  virtual const TVector3&   GetVertexError() const { return fVertexError; }
+  virtual       Bool_t      HasVertex()      const { return fVertexOK; }
+  virtual       void        VertexClear();
 
 protected:
 
-  TVector3  fVertex;   // Vertex position (m) 
+  TVector3  fVertex;      // Vertex position (m) 
+  TVector3  fVertexError; // Uncertainties in fVertex coordinates
+  Bool_t    fVertexOK;
 
   THaVertexModule();
 

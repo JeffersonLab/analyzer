@@ -56,7 +56,7 @@ void THaTwoarmVertex::Clear( Option_t* opt )
 {
   // Clear all internal variables.
 
-  fVertex.SetXYZ(0.0,0.0,0.0); 
+  VertexClear();
 }
 
 //_____________________________________________________________________________
@@ -130,6 +130,7 @@ Int_t THaTwoarmVertex::Process( const THaEvData& evdata )
   THaMatrix nom( t1->GetPvect(), yax, p2-p1 );
   Double_t t = nom.Determinant() / det;
   fVertex = p2 + t*t2->GetPvect();
+  fVertexOK = kTRUE;
   if( fDebug<2 )
     fVertex.SetY( 0.0 );
 

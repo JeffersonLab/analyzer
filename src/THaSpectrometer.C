@@ -145,6 +145,7 @@ void THaSpectrometer::Clear( Option_t* opt )
   THaApparatus::Clear(opt);
   fTracks->Clear("C"); 
   TrkIfoClear();
+  VertexClear();
   fGoldenTrack = NULL;
   fCoarseDone = kFALSE;
 }
@@ -210,6 +211,12 @@ const TVector3& THaSpectrometer::GetVertex() const
   // Overrides standard method of THaVertexModule.
 
   return (fGoldenTrack) ? fGoldenTrack->GetVertex() : fVertex;
+}
+
+//_____________________________________________________________________________
+Bool_t THaSpectrometer::HasVertex() const
+{
+  return (fGoldenTrack) ? fGoldenTrack->HasVertex() : kFALSE;
 }
 
 //_____________________________________________________________________________

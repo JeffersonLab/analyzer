@@ -43,7 +43,8 @@ public:
           Int_t            GetNTracks()  const { return fTracks->GetLast()+1; }
           TClonesArray*    GetTracks()   const { return fTracks; }
           TClonesArray*    GetTrackPID() const { return fTrackPID; }
-  const   TVector3&        GetVertex()   const;
+  virtual const TVector3&  GetVertex()   const;
+  virtual Bool_t           HasVertex() const;
 
           Bool_t           IsPID() const       { return fPID; }
   virtual Int_t            CoarseReconstruct();

@@ -13,7 +13,7 @@
 
 #include "THaAvgVertex.h"
 #include "THaTrackingModule.h"
-#include "THaTrack.h"
+#include "THaTrackInfo.h"
 #include "TMath.h"
 #include "VarDef.h"
 
@@ -45,7 +45,7 @@ void THaAvgVertex::Clear( Option_t* opt )
 {
   // Clear all internal variables.
 
-  fVertex.SetXYZ(0.0,0.0,0.0); 
+  VertexClear();
   //  fZerror = 0.0;
 }
 
@@ -59,9 +59,9 @@ Int_t THaAvgVertex::DefineVariables( EMode mode )
   fIsSetup = ( mode == kDefine );
 
   RVarDef vars[] = {
-    { "x",  "two-arm average vertex x-position", "fVertex.fX" },
-    { "y",  "two-arm average vertex y-position", "fVertex.fY" },
-    { "z",  "two-arm average vertex z-position", "fVertex.fZ" },
+    { "x",  "average vertex x-position", "fVertex.fX" },
+    { "y",  "average vertex y-position", "fVertex.fY" },
+    { "z",  "average vertex z-position", "fVertex.fZ" },
     { 0 }
   };
   return DefineVarsFromList( vars, mode );
@@ -78,13 +78,13 @@ THaAnalysisObject::EStatus THaAvgVertex::Init( const TDatime& run_time )
   if( THaPhysicsModule::Init( run_time ) != kOK )
     return fStatus;
 
-  fSpectro1 = dynamic_cast<THaTrackingModule*>
-    ( FindModule( fName1.Data(), "THaTrackingModule"));
+  fSpectro1 = dynamic_cast<THaVertexModule*>
+    ( FindModule( fName1.Data(), "THaVertexModule"));
   if( !fSpectro1 )
     return fStatus;
 
-  fSpectro2 = dynamic_cast<THaTrackingModule*>
-    ( FindModule( fName2.Data(), "THaTrackingModule"));
+  fSpectro2 = dynamic_cast<THaVertexModule*>
+    ( FindModule( fName2.Data(), "THaVertexModule"));
 
   return fStatus;
 }
@@ -96,13 +96,11 @@ Int_t THaAvgVertex::Process( const THaEvData& evdata )
 
   static const int N = 2;  // consider two tracks
 
-  if( !IsOK() ) return -1;
+  THaVertexModule* t[N] = { fSpectro1, fSpectro2 }; 
 
-  THaTrack* t[N];
-  t[0] = fSpectro1->GetTrack();
-  if( !t[0] || !t[0]->HasVertex()) return 1;
-  t[1] = fSpectro2->GetTrack();
-  if( !t[1] || !t[1]->HasVertex()) return 2;
+  if( !IsOK() ) return -1;
+  if( !t[0]->HasVertex() ) return 1;
+  if( !t[1]->HasVertex() ) return 2;
 
   // Compute the weighted average of the vertex positions.
   // Use the uncertainty in each vertex z as the weight for each vertex.
@@ -124,6 +122,7 @@ Int_t THaAvgVertex::Process( const THaEvData& evdata )
     // requires beam info to get x/y uncertainties right
     //    fZerror  = 1.0/TMath::Sqrt(sigsum);
   }
+  fVertexOK = kTRUE;
 
   return 0;
 }

@@ -11,8 +11,6 @@
 #include "THaVertexModule.h"
 #include "TString.h"
 
-class THaTrackingModule;
-
 class THaAvgVertex : public THaPhysicsModule, public THaVertexModule {
   
 public:
@@ -34,8 +32,8 @@ protected:
 
   TString                 fName1;      // Name of spectrometer #1
   TString                 fName2;      // Name of spectrometer #2
-  THaTrackingModule*      fSpectro1;   // Pointer to spectrometer #1 object
-  THaTrackingModule*      fSpectro2;   // Pointer to spectrometer #2 object
+  THaVertexModule*        fSpectro1;   // Pointer to spectrometer #1 object
+  THaVertexModule*        fSpectro2;   // Pointer to spectrometer #2 object
 
   virtual Int_t DefineVariables( EMode mode = kDefine );
 

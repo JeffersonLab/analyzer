@@ -51,9 +51,9 @@ THaReactionPoint::~THaReactionPoint()
 //_____________________________________________________________________________
 void THaReactionPoint::Clear( Option_t* opt )
 {
-  // Clear all event-by-event variables variables.
+  // Clear all event-by-event variables.
   
-  fVertex.SetXYZ( 0.0, 0.0, 0.0 );
+  VertexClear();
 }
 
 //_____________________________________________________________________________
@@ -116,9 +116,10 @@ Int_t THaReactionPoint::Process( const THaEvData& evdata )
     theTrack->SetVertex( beam_org + t*beam_ray );
 
     // FIXME: preliminary
-    if( theTrack == fSpectro->GetGoldenTrack() )
+    if( theTrack == fSpectro->GetGoldenTrack() ) {
       fVertex = theTrack->GetVertex();
-
+      fVertexOK = kTRUE;
+    }
     // FIXME: calculate vertex coordinate errors here (need beam errors)
 
 
