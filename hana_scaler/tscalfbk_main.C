@@ -276,18 +276,24 @@ float myatof(const char *cinput) {
   string sinput = cinput;
   float result = 0;
   float sign = 1;
+  result = atof(sinput.c_str());
   int pos = sinput.find("-");
-  if (pos == 0) sign = -1;
-  unsigned long iloc = -1;
+  if (pos == 0) {
+     sign = -1;
+     result = atof(sinput.substr(1,sinput.length()).c_str());
+  }      
+  unsigned long iloc;
   iloc = sinput.find(".");
   if (iloc == string::npos) {
-    result = atof(sinput.c_str());
+    return result;
   } else {
     string s1,s2;
-    s1 = sinput.substr(0,iloc);
+    int i1 = 0;
+    if (sign == -1) i1 = 1;
+    s1 = sinput.substr(i1,iloc-i1);
+    result = atof(s1.c_str());
     s2 = sinput.substr(iloc+1,sinput.length());
     int decsize = sinput.length()-iloc-1;
-    result = atof(s1.c_str());
     if (decsize > 0) {
       float power = 1;
       for (int j = 0; j < decsize; j++) power *= 10;
@@ -295,4 +301,5 @@ float myatof(const char *cinput) {
     } 
   }     
   return sign*result;
-}
+};
+
