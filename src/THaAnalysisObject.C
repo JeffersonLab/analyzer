@@ -535,3 +535,30 @@ Int_t THaAnalysisObject::LoadRunDBvalue( FILE* file, const TDatime& date,
   }
   return found ? 0 : 1;
 }
+
+//_____________________________________________________________________________
+Int_t THaAnalysisObject::LoadRunDB( FILE* f, const TDatime& date,
+				    const TagDef* tags, const char* prefix )
+{
+  // Load a list of parameters from the run database according to 
+  // the contents of the 'tags' structure (see VarDef.h).
+
+  if( !tags ) return -1;
+  const Int_t LEN = 256;
+  Int_t np = strlen(prefix);
+  if( np > LEN-2 ) return -2;
+  char tag[LEN];
+
+  const TagDef* item = tags;
+  while( item->name ) {
+    if( item->var ) {
+      tag[0] = 0;
+      strncat(tag,prefix,LEN-1);
+      strncat(tag,item->name,LEN-np-1);
+      if( LoadRunDBvalue( f, date, tag, *(item->var)) && item->fatal )
+	return item->fatal;
+    }
+    item++;
+  }
+  return 0;
+}

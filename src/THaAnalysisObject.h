@@ -15,6 +15,7 @@
 class TDatime;
 struct VarDef;
 struct RVarDef;
+struct TagDef;
 
 class THaAnalysisObject : public TNamed {
   
@@ -47,6 +48,8 @@ public:
   // Support functions for reading run database files
   static  Int_t   LoadRunDBvalue( FILE* file, const TDatime& date, 
 				  const char* tag, Double_t& value );
+  static   Int_t  LoadRunDB( FILE* file, const TDatime& date, 
+			     const TagDef* tags, const char* prefix="" );
 
   // Angle transformation utility functions
   static  void    GeoToSph( Double_t  th_geo, Double_t  ph_geo,
@@ -92,6 +95,7 @@ protected:
   // Support function for reading database files
   static vector<string> GetDBFileList( const char* name, const TDatime& date,
 				       const char* here = "GetDBFileList()" );
+
   //Only derived classes may construct me
   THaAnalysisObject() : fPrefix(NULL), fStatus(kNotinit), 
     fDebug(0), fIsInit(false), fIsSetup(false) {}
