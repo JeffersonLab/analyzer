@@ -71,16 +71,16 @@ THaOutput::~THaOutput()
   if (fVar) delete [] fVar;
   if (fEpicsVar) delete [] fEpicsVar;
   if( alive ) {
-    for (std::map<string, TTree*>::iterator mt = fScalTree.begin();
+    for (map<string, TTree*>::iterator mt = fScalTree.begin();
 	 mt != fScalTree.end(); mt++) delete mt->second;
   }
-  for (std::vector<THaOdata* >::iterator od = fOdata.begin();
+  for (vector<THaOdata* >::iterator od = fOdata.begin();
        od != fOdata.end(); od++) delete *od;
-  for (std::vector<THaVform* >::iterator itf = fFormulas.begin();
+  for (vector<THaVform* >::iterator itf = fFormulas.begin();
        itf != fFormulas.end(); itf++) delete *itf;
-  for (std::vector<THaVform* >::iterator itf = fCuts.begin();
+  for (vector<THaVform* >::iterator itf = fCuts.begin();
        itf != fCuts.end(); itf++) delete *itf;
-  for (std::vector<THaVhist* >::iterator ith = fHistos.begin();
+  for (vector<THaVhist* >::iterator ith = fHistos.begin();
        ith != fHistos.end(); ith++) delete *ith;
 }
 
@@ -248,7 +248,7 @@ Int_t THaOutput::Init( const char* filename )
   }
   for (UInt_t i = 0; i < fScalerKey.size(); i++) {
     fScalerKey[i]->AddBranches(fTree);
-    for (std::map<string, TTree*>::iterator mt = fScalTree.begin();
+    for (map<string, TTree*>::iterator mt = fScalTree.begin();
 	 mt != fScalTree.end(); mt++) {
            THaString thisbank(mt->first);
            TTree *sctree = mt->second;
@@ -274,7 +274,7 @@ Int_t THaOutput::Init( const char* filename )
   return 0;
 }
 
-void THaOutput::BuildList(std::vector<THaString > vdata) 
+void THaOutput::BuildList(vector<THaString > vdata) 
 {
   // Build list of EPICS variables and
   // SCALER variables to add to output.
@@ -317,8 +317,9 @@ void THaOutput::BuildList(std::vector<THaString > vdata)
            return;
 	 }
          fScalBank = vdata[2].ToLower();  
-         std::string desc = "Hall A Scalers on " + fScalBank;
-         fScalTree.insert(make_pair(fScalBank,
+         string desc = "Hall A Scalers on " + fScalBank;
+	 string scalbank(fScalBank.c_str());
+         fScalTree.insert(make_pair(scalbank,
           new TTree(fScalBank.ToUpper().c_str(),desc.c_str())));
          return;
        } else {
@@ -597,7 +598,7 @@ Int_t THaOutput::End()
   if (fEpicsTree != 0) fEpicsTree->Write();
   if( fgVerbose>1 )
     cout << "End:: fScalTree size "<<fScalTree.size()<<endl;
-  for (std::map<string, TTree*>::iterator mt = fScalTree.begin();
+  for (map<string, TTree*>::iterator mt = fScalTree.begin();
        mt != fScalTree.end(); mt++) {
       TTree* tree = mt->second;
       if (tree) tree->Write();
