@@ -21,6 +21,7 @@ public:
   virtual Int_t     Fill();
 
 protected:
+
   static const int NBPM = 6;     // BPM channels
   static const int NPAD = 6;     // # scint paddles
   static const int RA1M = 26;    // # right aerogel 1 mirrors
@@ -31,6 +32,9 @@ protected:
 
   enum EBlock { kAll, kHits, kClusters, kTracks };
 
+  // made data members public, since they need to be accessed
+  // for data analysis
+public:
   Int_t fMaxhit;                 //! Size of variable VDC hit arrays
   Int_t fMaxclu;                 //! Size of variable VDC cluster arrays
   Int_t fMaxtrk;                 //! Size of variable VDC track arrays
@@ -142,7 +146,7 @@ protected:
   Float_t  fR_PSH_trx;           // X coord of track cross point with Psh plane
   Float_t  fR_PSH_try;           // Y coord of track cross point with Psh plane
 
-  // Shower
+  // Shower 
   Int_t    fR_SHR_nhit;          // E-arm Shower: Number of ADC hits
   Float_t  fR_SHR_adc[SHBL];     // Array of ADC amplitudes of blocks
   Float_t  fR_SHR_adc_p[SHBL];   // Array of ADC minus peds values of blocks
@@ -284,6 +288,7 @@ protected:
   Double_t* fL_TR_p;              //[fL_TR_n] Track momentum (GeV)
   UInt_t*   fL_TR_flag;           //[fL_TR_n] Track status flag
 
+protected:
   void CreateVariableArrays( EBlock which = kAll );
   void DeleteVariableArrays( EBlock which = kAll );
   void SetupDatamap( EBlock which = kAll );
