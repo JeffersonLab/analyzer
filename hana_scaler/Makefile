@@ -188,6 +188,7 @@ endif
 ../libscaler.so:	$(SCALER_OBJS) 
 	rm -f $@
 	$(LD) $(LDFLAGS) $(SOFLAGS) -o $@ $^
+	-cp -f scaler.map ../DB
 
 tscalfile: tscalfile_main.o $(SCALER_OBJS) $(SRC) $(HEAD) $(LIBDC)  
 	rm -f $@

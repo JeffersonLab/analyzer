@@ -33,7 +33,7 @@ SUBDIRS       = $(DCDIR) $(SCALERDIR)
 LIBS          = 
 GLIBS         = 
 
-INCLUDES      = $(ROOTCFLAGS) -I$(DCDIR) -I$(SCALERDIR)
+INCLUDES      = $(ROOTCFLAGS) $(addprefix -I, $(SUBDIRS) )
 
 ifeq ($(ARCH),solarisCC5)
 # Solaris CC 5.0
@@ -138,6 +138,10 @@ $(LIBHALLA):	$(OBJS)
 analyzer:	src/main.o $(LIBHALLA) libdc.so libscaler.so
 		$(LD) $(LDFLAGS) src/main.o $(HALLALIBS) $(GLIBS) -o $@
 
+subdirs:
+		set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i; done
+
+# The libdc.so and libscaler.so rules are not used in default 'make':
 libdc.so:
 		$(MAKE) -C $(DCDIR)
 
@@ -146,8 +150,6 @@ libscaler.so:
 		rm -f DB/scaler.map
 		cp $(SCALERDIR)/scaler.map DB/
 
-subdirs:
-		set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i; done
 
 clean:
 		$(MAKE) -C $(DCDIR) clean
