@@ -34,7 +34,7 @@ ClassImp(THaSpectrometer)
 
 //_____________________________________________________________________________
 THaSpectrometer::THaSpectrometer( const char* name, const char* desc ) : 
-  THaApparatus( name,desc ), fListInit(kFALSE)
+  THaApparatus( name,desc ), fGoldenTrack(NULL), fListInit(kFALSE)
 {
   // Constructor.
   // Protected. Can only be called by derived classes.

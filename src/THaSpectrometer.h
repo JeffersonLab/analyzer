@@ -14,7 +14,7 @@
 class THaSpectrometerDetector;
 class THaParticleInfo;
 class THaPidDetector;
-//class THaTrack;
+class THaTrack;
 
 class THaSpectrometer : public THaApparatus {
   
@@ -30,6 +30,7 @@ public:
   virtual void             DefinePidParticles();
   virtual Int_t            DefineVariables( EMode mode = kDefine );
   virtual Int_t            FindVertices( TClonesArray& tracks ) = 0;
+          THaTrack*        GetGoldenTrack()   const { return fGoldenTrack; }
           Int_t            GetNpidParticles() const;
           Int_t            GetNpidDetectors() const;
   const   THaParticleInfo* GetPidParticleInfo( Int_t i ) const;
@@ -40,7 +41,8 @@ public:
           TClonesArray*    GetVertices() const { return fVertices; }
           Bool_t           IsPID() const       { return fPID; }
   virtual Int_t            Reconstruct();
-          void             SetPID( Bool_t b = kTRUE ) { fPID = b; }
+          void             SetGoldenTrack( THaTrack* t ) { fGoldenTrack = t; }
+          void             SetPID( Bool_t b = kTRUE )    { fPID = b; }
   virtual Int_t            TrackCalc() = 0;
   // Coordinate transformations and vertex reconstruction
   //
@@ -66,12 +68,13 @@ protected:
   TList*          fNonTrackingDetectors;  //Non-tracking detectors
   TObjArray*      fPidDetectors;          //PID detectors
   TObjArray*      fPidParticles;          //Particles for which we want PID
+  THaTrack*       fGoldenTrack;           //Golden track within fTracks
 
   Bool_t          fPID;                   //PID enabled
 
-  THaSpectrometer() {}     // only derived classes can construct me
+  // only derived classes can construct me
+  THaSpectrometer() {}
   THaSpectrometer( const char* name, const char* description );
-
 
 private:
   Bool_t          fListInit;      //Detector lists initialized

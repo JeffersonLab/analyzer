@@ -34,6 +34,7 @@
 
 #include "THaHRS.h"
 #include "THaTrackingDetector.h"
+#include "THaTrack.h"
 
 #ifdef WITH_DEBUG
 #include <iostream>
@@ -67,6 +68,14 @@ Int_t THaHRS::FindVertices( TClonesArray& tracks )
 //_____________________________________________________________________________
 Int_t THaHRS::TrackCalc()
 {
+  // Find the "Golden Track". 
+
+  if( GetNTracks() > 0 )
+    //FIXME: quick and dirty hack to get started ...
+    fGoldenTrack = static_cast<THaTrack*>( fTracks->At(0) );
+  else
+    fGoldenTrack = NULL;
+
   return 0;
 }
 
