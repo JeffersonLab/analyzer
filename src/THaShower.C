@@ -46,15 +46,17 @@ Int_t THaShower::ReadDatabase( FILE* fi, const TDatime& date )
   static const char* const here = "ReadDatabase()";
   const int LEN = 100;
   char buf[LEN];
-  Int_t nelem, nrows, nclbl;
+  Int_t nelem, ncols, nrows, nclbl;
 
   // Read data from database
 
   rewind( fi );
   // Blocks, rows, max blocks per cluster
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );          
-  fscanf ( fi, "%d%d%d", &nelem, &nrows, &nclbl );  
+  fscanf ( fi, "%d%d", &ncols, &nrows );  
 
+  nelem = ncols * nrows;
+  nclbl = TMath::Min( 3, nrows ) * TMath::Min( 3, ncols );
   // Reinitialization only possible for same basic configuration 
   if( fIsInit && (nelem != fNelem || nclbl != fNclublk) ) {
     Error( Here(here), "Cannot re-initalize with different number of blocks or "
@@ -62,9 +64,9 @@ Int_t THaShower::ReadDatabase( FILE* fi, const TDatime& date )
     return kInitError;
   }
 
-  if( nelem <= 0 || nrows <= 0 || nclbl <= 0 ) {
-    Error( Here(here), "Illegal number of blocks, rows, or blocks per cluster: "
-	   "%d %d %d", nelem, nrows, nclbl );
+  if( nrows <= 0 || ncols <= 0 || nclbl <= 0 ) {
+    Error( Here(here), "Illegal number of rows or columns: "
+	   "%d %d", nrows, ncols );
     return kInitError;
   }
   fNelem = nelem;
@@ -127,9 +129,11 @@ Int_t THaShower::ReadDatabase( FILE* fi, const TDatime& date )
   Float_t x,y,z;
   fscanf ( fi, "%f%f%f", &x, &y, &z );               // Detector's X,Y,Z coord
   fOrigin.SetXYZ( x, y, z );
+  fOrigin *= 0.01;                                   // Use units of meters
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
   fscanf ( fi, "%f%f%f", fSize, fSize+1, fSize+2 );  // Sizes of det in X,Y,Z
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
+  fSize[0] *= 0.01; fSize[1] *= 0.01; fSize[2] *= 0.01; // Use units of meters
 
   Float_t angle;
   fscanf ( fi, "%f", &angle );                       // Rotation angle of det
@@ -156,22 +160,40 @@ Int_t THaShower::ReadDatabase( FILE* fi, const TDatime& date )
     fIsInit = true;
   }
 
-  // Read calibration and geometry info
-  for (int j=0; j<fNelem; j++) 
-    fscanf (fi,"%f",fBlockX+j);                      // Blk centers Xpositions
+  fscanf ( fi, "%f%f", &x, &y );                     // Block 1 center position
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  for (int j=0; j<fNelem; j++) 
-    fscanf (fi,"%f",fBlockY+j);                      // Blk centers Ypositions
+  Float_t dx, dy;
+  fscanf ( fi, "%f%f", &dx, &dy );                   // Block spacings in x and y
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  for (int j=0; j<fNelem; j++) 
-    fscanf (fi,"%f",fPed+j);                         // Pedestals of channels
+
+  // Read calibrations
+  // Transpose the calibration arrays since they are given in "natural order"
+  // in the ASCII file.
+  // (The shower block numbers count along columns first, then rows,
+  // but the data come in along rows when reading the file. Transposing the
+  // table in the file would result in a very wide table since the number
+  // of columns is large and the number of rows (transverse direction) small.)
+  for (int j=0; j<fNelem; j++) {
+    int t = nrows*(j%ncols) + j/ncols;
+    fscanf (fi,"%f",fPed+t);                         // Pedestals of channels
+  }
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  for (int j=0; j<fNelem; j++) 
-    fscanf (fi, "%f",fGain+j);                       // Coefficients of chans
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
+  for (int j=0; j<fNelem; j++) {
+    int t = nrows*(j%ncols) + j/ncols;
+    fscanf (fi, "%f",fGain+t);                       // Coefficients of chans
+  }
+  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );  
   fscanf ( fi, "%f", &fEmin );                       // Emin thresh for center
   fgets ( buf, LEN, fi );
 
+  // Compute block positions
+  for( int c=0; c<ncols; c++ ) {
+    for( int r=0; r<nrows; r++ ) {
+      int k = nrows*c + r;
+      fBlockX[k] = x + r*dx;
+      fBlockY[k] = y + c*dy;
+    }
+  }
   return kOK;
 }
 
