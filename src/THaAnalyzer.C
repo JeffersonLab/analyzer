@@ -238,18 +238,20 @@ Int_t THaAnalyzer::Process( THaRun& run )
 
       run_time.Set( evdata.GetRunTime() );
       run.SetDate( run_time );
+      run.SetNumber( evdata.GetRunNum() );
+      run.ReadDatabase();
+      gHaRun = &run;
 
       if( verbose ) {
-	cout << "Run Number: " << evdata.GetRunNum() << endl;
+	cout << "Run Number: " << run.GetNumber() << endl;
 	cout << "Run Time  : " << run_time.AsString() << endl;
 	//	cout << "Run Type  : " << evdata.GetRunType() << endl;
       }
-      run.SetNumber( evdata.GetRunNum() );
       first = false;
 
       // save run data to ROOT file
       // FIXME: give this different name?
-      run.Write("Run Data");
+      run.Write("Run_Data");
 
       // Initialize all apparatuses, scalers, and physics modules.
       // Quit if any errors.
@@ -427,6 +429,8 @@ Int_t THaAnalyzer::Process( THaRun& run )
 
   if( fOutput ) fOutput->End();
   if( fFile ) fFile->Write();
+
+  gHaRun = NULL;
 
   return nev_physics;
 }
