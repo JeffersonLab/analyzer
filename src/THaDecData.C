@@ -40,7 +40,15 @@
 //       channels, imitate the way 'bits' leads to 'evtypebits'.
 //
 // R. Michaels, March 2002
-// 
+//
+// OR  (NEW as of April 2004:  R.J. Feuerbach)
+//       If you are simply interested in the readout of a channel, create
+//       a name for it and give the location in the map file and a
+//       global variable will be automatically created to monitor that channel.
+//     Unfortunately, this leads to a limitation of using arrays as opposed
+//     to variable-sized vector for the readout. Currently limited to 16 hits
+//     per channel per event.
+//
 //////////////////////////////////////////////////////////////////////////
 
 //#define WITH_DEBUG 1
@@ -104,10 +112,6 @@ void THaDecData::Clear( Option_t* opt )
   edtpr      = 0;
   lenroc12   = 0;
   lenroc16   = 0;
-  misc1      = 0;
-  misc2      = 0;
-  misc3      = 0;
-  misc4      = 0;
   for( Iter_t p = fWordLoc.begin();  p != fWordLoc.end(); p++)  (*p)->Clear();
   for( Iter_t p = fCrateLoc.begin(); p != fCrateLoc.end(); p++) (*p)->Clear();
 }
@@ -143,21 +147,25 @@ Int_t THaDecData::SetupDecData( const TDatime* run_time, EMode mode )
     { "edtpr",      "EDT pulser on R-arm",         "edtpr" },   
     { "lenroc12",   "ROC12 event length",         "lenroc12" },   
     { "lenroc16",   "ROC16 event length",         "lenroc16" },   
-    { "misc1",      "misc data 1",                 "misc1" },       
-    { "misc2",      "misc data 2",                 "misc2" },                     
-    { "misc3",      "misc data 3",                 "misc3" },                      
-    { "misc4",      "misc data 4",                 "misc4" },
     { 0 }
   };
-  Int_t nvar = sizeof(vars)/sizeof(VarDef);
+  Int_t nvar = sizeof(vars)/sizeof(RVarDef);
 
   if( mode != kDefine || !fIsSetup )
     retval = DefineVarsFromList( vars, mode );
 
   fIsSetup = ( mode == kDefine );
-  if( mode != kDefine )
-    return retval;
 
+  if( mode != kDefine ) {   // cleanup the dynamically built list
+    for (unsigned int i=0; i<fCrateLoc.size(); i++)
+      DefineChannel(fCrateLoc[i],mode);
+
+    for (unsigned int i=0; i<fWordLoc.size(); i++)
+      DefineChannel(fWordLoc[i],mode);
+
+    return retval;
+  }
+  
 // Set up the locations in raw data corresponding to variables of this class. 
 // Each element of a BdataLoc is one channel or word.  Since a channel 
 // may be a multihit device, the BdataLoc stores data in a vector.
@@ -216,25 +224,44 @@ Int_t THaDecData::SetupDecData( const TDatime* run_time, EMode mode )
     if (strvect.size() < 5 || strvect[0] == comment) continue;
     Bool_t found = kFALSE;
     for (int i = 0; i < nvar; i++) {
-      if (strvect[0] == vars[i].name) found = kTRUE;
+      if (vars[i].name && strvect[0] == vars[i].name) found = kTRUE;
     }
 // !found may be ok, but might be a typo error too, so I print to warn you.
-//  if ( !found && THADEC_VERBOSE ) 
-//  cout << "THaDecData: new variable "<<strvect[0]<<" is not global"<<endl;
+    if ( !found && THADEC_VERBOSE ) 
+      cout << "THaDecData: new variable "<<strvect[0]<<" will become global"<<endl;
     Int_t crate = (Int_t)atoi(strvect[2].c_str());  // crate #
+    BdataLoc *b = 0;
     if (strvect[1] == "crate") {  // Crate data ?
       Int_t slot = (Int_t)atoi(strvect[3].c_str());
       Int_t chan = (Int_t)atoi(strvect[4].c_str());
-      fCrateLoc.push_back(new BdataLoc(strvect[0].c_str(), crate, slot, chan)); 
+      b = new BdataLoc(strvect[0].c_str(), crate, slot, chan); 
+      fCrateLoc.push_back(b);
     } else {         // Data is relative to a header
       UInt_t header = header_str_to_base16(strvect[3].c_str());
       Int_t skip = (Int_t)atoi(strvect[4].c_str());
-      fWordLoc.push_back(new BdataLoc(strvect[0].c_str(), crate, header, skip));
+      b = new BdataLoc(strvect[0].c_str(), crate, header, skip);
+      fWordLoc.push_back(b);
+    }
+
+    if (!found) {
+      // a new variable to add to our dynamic list
+      DefineChannel(b,mode);
     }
   }
   return retval;
 }
 
+//_____________________________________________________________________________
+BdataLoc* THaDecData::DefineChannel(BdataLoc *b, EMode mode, const char* desc) {
+  string nm(fPrefix + b->name);
+  if (mode==kDefine) {
+    if (gHaVars) gHaVars->Define(nm.c_str(),desc,b->rdata[0],&(b->ndata));
+  } else {
+    if (gHaVars) gHaVars->RemoveName(nm.c_str());
+  }
+  return b;
+}
+  
 //_____________________________________________________________________________
 Int_t THaDecData::End( THaRunBase* run ) 
 {
