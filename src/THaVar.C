@@ -125,6 +125,36 @@ THaVar::~THaVar()
 }
 
 //_____________________________________________________________________________
+Bool_t THaVar::CompareSize( const THaVar& rhs ) const
+{
+  // Compare the size of this variable to that of 'rhs'.
+  // Scalars always agree. Arrays agree if either they are of the same fixed 
+  // size, or their count variables are identical, or they belong to the
+  // same object array.
+
+  Bool_t is_array = IsArray();
+  if( is_array != rhs.IsArray())         // Must be same type
+    return kFALSE;
+  if( !is_array )                        // Scalars always agree
+    return kTRUE;
+  if( fCount )                           // Variable size arrays
+    return ( fCount == rhs.fCount );
+  if( fOffset != -1 )                    // Object arrays
+    return ( fObject == rhs.fObject );
+  return                                 // All other arrays
+    ( fArrayData.GetNdim() == rhs.fArrayData.GetNdim() &&
+      fArrayData.GetLen()  == rhs.fArrayData.GetLen() );
+}
+
+//_____________________________________________________________________________
+Bool_t THaVar::CompareSize( const THaVar* rhs ) const
+{
+  if( !rhs )
+    return kFALSE;
+  return CompareSize( *rhs );
+}
+
+//_____________________________________________________________________________
 const char* THaVar::GetTypeName( VarType itype )
 {
   static const char* const type[] = { 

@@ -120,6 +120,8 @@ public:
 
   virtual const char*  GetName() const { return fArrayData.GetName(); }
 
+  Bool_t          CompareSize( const THaVar& rhs ) const;
+  Bool_t          CompareSize( const THaVar* rhs ) const;
   Int_t           GetLen()       const;
   Byte_t          GetNdim()      const            
     { return ( fCount != NULL || fOffset != -1 ) ? 1 : fArrayData.GetNdim(); } 
