@@ -149,99 +149,15 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   fgets(buff, LEN, file); // Skip comment line
 
   THaMatrixElement ME;
-  char w[20];
-  bool good = false;
 
   fTMatrixElems.clear();
   fDMatrixElems.clear();
   fPMatrixElems.clear();
   fYMatrixElems.clear();
-  fFPMatrixElems.clear();
   fLMatrixElems.clear();
   
-  // NOTE: the matrix elements should be stored such that
-  // the 3 focal plane matrix elements come first, followed by
-  // the other backwards elements, starting with D000
-
-  // read in t000 and verify it
-  ME.iszero = true;  ME.order = 0;
-  // Read matrix element signature
-  if( fscanf(file, "%s %d %d %d", w, &ME.pw[0], &ME.pw[1], &ME.pw[2]) == 4) {
-    if( w[0] == 't' && ME.pw[0] == 0 && ME.pw[1] == 0 && ME.pw[2] == 0 ) {
-      good = true;
-      for(int p_cnt=0; p_cnt<kPORDER; p_cnt++) {
-	if(!fscanf(file, "%le", &ME.poly[p_cnt])) {
-	  good = false;
-	  break;
-	}
-	if(ME.poly[p_cnt] != 0.0) {
-	  ME.iszero = false;
-	  ME.order = p_cnt+1;
-	}
-      }
-    }
-  }
-  if( good ) 
-    fFPMatrixElems.push_back(ME);
-  else {
-    Error(Here(here), "Could not read in Matrix Element t 0 0 0 !");
-    fclose(file);
-    return kInitError;
-  }
-  fscanf(file, "%*c");
-
-  // read in y000 and verify it
-  ME.iszero = true;  ME.order = 0; good = false;
-  // Read matrix element signature
-  if( fscanf(file, "%s %d %d %d", w, &ME.pw[0], &ME.pw[1], &ME.pw[2]) == 4) {
-    if( w[0] == 'y' && ME.pw[0] == 0 && ME.pw[1] == 0 && ME.pw[2] == 0 ) {
-      good = true;
-      for(int p_cnt=0; p_cnt<kPORDER; p_cnt++) {
-	if(!fscanf(file, "%le", &ME.poly[p_cnt])) {
-	  good = false;
-	  break;
-	}
-	if(ME.poly[p_cnt] != 0.0) {
-	  ME.iszero = false;
-	  ME.order = p_cnt+1;
-	}
-      }
-    }
-  }
-  if( good )
-    fFPMatrixElems.push_back(ME);
-  else {
-    Error(Here(here), "Could not read in Matrix Element y 0 0 0 !");
-    fclose(file);
-    return kInitError;
-  }
-  fscanf(file, "%*c");
-
-  // read in p000 and verify it
-  ME.iszero = true;  ME.order = 0; good = false;
-  if( fscanf(file, "%s %d %d %d", w, &ME.pw[0], &ME.pw[1], &ME.pw[2]) == 4) {
-    if( w[0] == 'p' && ME.pw[0] == 0 && ME.pw[1] == 0 && ME.pw[2] == 0 ) {
-      good = true;
-      for(int p_cnt=0; p_cnt<kPORDER; p_cnt++) {
-	if(!fscanf(file, "%le", &ME.poly[p_cnt])) {
-	  good = false;
-	  break;
-	}
-	if(ME.poly[p_cnt] != 0.0) {
-	  ME.iszero = false;
-	  ME.order = p_cnt+1;
-	}
-      }
-    }
-  }
-  if( good )
-    fFPMatrixElems.push_back(ME);
-  else {
-    Error(Here(here), "Could not read in Matrix Element p 0 0 0 !");
-    fclose(file);
-    return kInitError;
-  }
-  fscanf(file, "%*c");
+  fFPMatrixElems.clear();
+  fFPMatrixElems.resize(3);
 
   typedef vector<THaString>::size_type vsiz_t;
   map<string,vsiz_t> power;
@@ -258,29 +174,48 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   power["PF"] = 5;
   power["YF"] = 5;
 
-  map <string,vector<THaMatrixElement>* > matrix_map;
+  map<string,vector<THaMatrixElement>*> matrix_map;
+  matrix_map["t"] = &fFPMatrixElems;
+  matrix_map["y"] = &fFPMatrixElems;
+  matrix_map["p"] = &fFPMatrixElems;
   matrix_map["D"] = &fDMatrixElems;
   matrix_map["T"] = &fTMatrixElems;
   matrix_map["Y"] = &fYMatrixElems;
   matrix_map["P"] = &fPMatrixElems;
   matrix_map["L"] = &fLMatrixElems;
 
+  map <string,int> fp_map;
+  fp_map["t"] = 0;
+  fp_map["y"] = 1;
+  fp_map["p"] = 2;
+
   // Read in as many of the matrix elements as there are.
   // Read in line-by-line, so as to be able to handle tensors of
   // different orders.
-  while( fgets(buff, LEN, file) && sscanf(buff,"%s",w)==1 ) {
-    vsiz_t pos, p_cnt;
+  while( fgets(buff, LEN, file) ) {
+
+    // Split the line into whitespace-separated fields
     THaString line(buff);
     vector<THaString> line_spl = line.Split();
-    
+
+    // Stop if the line does not start with a string referring to
+    // a known type of matrix element. In particular, this will
+    // stop on a subsequent timestamp or configuration tag starting with "["
+    if(line_spl.empty())
+      continue; //ignore empty lines
+    const char* w = line_spl[0].c_str();
     vsiz_t npow = power[w];
+    if( npow == 0 ) 
+      break;
+
+    // Looks like a good line, go parse it.
     ME.pw.resize(npow);
     ME.iszero = true;  ME.order = 0;
-
+    vsiz_t pos;
     for (pos=1; pos<=npow && pos<line_spl.size(); pos++) {
       ME.pw[pos-1] = atoi(line_spl[pos].c_str());
     }
-    
+    vsiz_t p_cnt;
     for ( p_cnt=0; pos<line_spl.size() && p_cnt<kPORDER; pos++,p_cnt++ ) {
       ME.poly[p_cnt] = atof(line_spl[pos].c_str());
       if (ME.poly[p_cnt] != 0.0) {
@@ -288,7 +223,6 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
 	ME.order = p_cnt+1;
       }
     }
-    
     if (p_cnt < 1) {
 	Error(Here(here), "Could not read in Matrix Element %s%d%d%d!",
 	      w, ME.pw[0], ME.pw[1], ME.pw[2]);
@@ -296,21 +230,30 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
 	fclose(file);
 	return kInitError;
     }
+    // Don't bother with all-zero matrix elements
+    if( ME.iszero )
+      continue;
     
     // Add this matrix element to the appropriate array
-
     vector<THaMatrixElement> *mat = matrix_map[w];
-    if (mat)
-      mat->push_back(ME);
+    if (mat) {
+      // Special checks for focal plane matrix elements
+      if( mat == &fFPMatrixElems ) {
+	if( ME.pw[0] == 0 && ME.pw[1] == 0 && ME.pw[2] == 0 )
+	  (*mat)[fp_map[w]] = ME;
+	else
+	  Warning(Here(here), "Bad focal plane matrix element %s", buff);
+      } else
+	// All other matrix elements are just appended to the respective array
+	mat->push_back(ME);
+    } 
     else if ( fDebug > 0 )
       Warning(Here(here), "Not storing matrix for: %s !", w);
     
-    if(feof(file) || ferror(file))
-      break;
   }
 
   // Compute derived quantities and set some hardcoded parameters
-  const Float_t degrad = TMath::Pi()/180.0;
+  const Double_t degrad = TMath::Pi()/180.0;
   fTan_vdc  = fFPMatrixElems[T000].poly[0];
   fVDCAngle = TMath::ATan(fTan_vdc);
   fSin_vdc  = TMath::Sin(fVDCAngle);
@@ -836,7 +779,7 @@ void THaVDC::CalcMatrix( const Double_t x, vector<THaMatrixElement>& matrix )
        it!=matrix.end(); it++ ) {
     it->v = 0.0;
 
-    if(it->iszero == false) {
+    if(it->order > 0) {
       for(int i=it->order-1; i>=1; i--)
 	it->v = x * (it->v + it->poly[i]);
       it->v += it->poly[0];
