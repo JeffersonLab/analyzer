@@ -55,6 +55,8 @@ public:
           Int_t  Process( THaRun& run ) { return Process(&run); }
   virtual void   Print( Option_t* opt="" ) const;
 
+  static THaAnalyzer* GetInstance() { return fgAnalyzer; }
+
 protected:
   static const char* const kMasterCutName;
 
