@@ -65,6 +65,18 @@ Int_t THaApparatus::AddDetector( THaDetector* pdet )
 }
 
 //_____________________________________________________________________________
+Int_t THaApparatus::Begin( THaRunBase* run )
+{
+  // Default Begin() for an apparatus: Begin() all our detectors
+
+  TIter next(fDetectors);
+  while( THaAnalysisObject* obj = static_cast<THaAnalysisObject*>(next()) ) {
+    obj->Begin(run);
+  }
+  return 0;
+}
+
+//_____________________________________________________________________________
 Int_t THaApparatus::Decode( const THaEvData& evdata )
 {
   // Call the Decode() method for all detectors defined for this apparatus.
@@ -79,6 +91,18 @@ Int_t THaApparatus::Decode( const THaEvData& evdata )
 #ifdef WITH_DEBUG
     if( fDebug>0 ) cout << "done.\n" << flush;
 #endif
+  }
+  return 0;
+}
+
+//_____________________________________________________________________________
+Int_t THaApparatus::End( THaRunBase* run )
+{
+  // Default End() for an apparatus: End() all our detectors
+
+  TIter next(fDetectors);
+  while( THaAnalysisObject* obj = static_cast<THaAnalysisObject*>(next()) ) {
+    obj->End(run);
   }
   return 0;
 }
