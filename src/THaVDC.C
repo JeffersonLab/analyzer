@@ -24,6 +24,7 @@
 #include "TClonesArray.h"
 #include "TList.h"
 #include "VarDef.h"
+//#include <algorithm>
 
 #ifdef WITH_DEBUG
 #include "THaGlobals.h"
@@ -71,6 +72,172 @@ THaDetectorBase::EStatus THaVDC::Init( const TDatime& date )
   return fStatus;
 }
 
+//_____________________________________________________________________________
+Int_t THaVDC::ReadDatabase( FILE* file, const TDatime& date )
+{
+  // load global VDC parameters
+  static const char* const here = "ReadDatabase()";
+  const int LEN = 100;
+  char buff[LEN];
+  
+  // Build the search tag and find it in the file. Search tags
+  // are of form [ <prefix> ], e.g. [ R.vdc.u1 ].
+  TString tag(fPrefix); tag.Resize(2); tag.Append("global"); 
+  tag.Prepend("["); tag.Append("]"); 
+  TString line, tag2(tag);
+  tag.ToLower();
+
+  bool found = false;
+  while (!found && fgets (buff, LEN, file) != NULL) {
+    char* buf = ::Compress(buff);  //strip blanks
+    //cout<<buf;
+
+    if( strlen(buf) > 0 && buf[ strlen(buf)-1 ] == '\n' )
+      buf[ strlen(buf)-1 ] = 0;    //delete trailing newline
+    line = buf; line.ToLower();
+ 
+    //cout<<line.Data()<<endl;
+    if ( tag == line ) 
+      found = true;
+    delete [] buf;
+  }
+  if( !found ) {
+    Error(Here(here), "Database entry %s not found!", tag2.Data() );
+    return kInitError;
+  }
+
+  // we found the entry we needed, so we need to read in the data
+
+  // read in some basic constants first
+  fscanf(file, "%lf", &fSpacing);
+  fgets(buff, LEN, file); // Skip rest of line
+
+  cout<<"VDC Angle: "<<fVDCAngle<<"  plane spacing: "<<fSpacing<<endl;
+
+  fgets(buff, LEN, file); // Skip line
+
+  // now, read in the focal plane transfer elements
+  // NOTE: the matrix elements should be stored such that
+  // T000, Y000, and P000 are first, in that order, then come the
+  // rest of them beginning with D000
+  /** FIXME: need to simplify input code **/
+  char w;
+  int i,j,k;
+  vector<double> poly(kPORDER);
+  THaMatrixElement temp_elem;
+  
+  // read in T000 and verify it
+  if( (fscanf(file, "%c %d %d %d", &w, &i, &j, &k) != 4) ||
+      (w!='T') || (i!=0) || (j!=0) || (k!=0) ) {
+    Error(Here(here), "Matrix Element T000 not found!");
+    return kInitError;
+  }
+  for(int p_cnt=0; p_cnt<kPORDER; p_cnt++)
+    if(!fscanf(file, "%le", &poly[p_cnt])) {
+      Error(Here(here), "Could not read in Matrix Element T000!");
+      return kInitError;
+    }
+  // assign data
+  temp_elem.pw[0] = i; temp_elem.pw[1] = j; temp_elem.pw[2] = k;
+  temp_elem.poly = poly;
+    for(int j=0; j<kPORDER; j++)
+      if(poly[j] != 0.0) {
+	temp_elem.iszero = false;
+	temp_elem.order = j;
+      }
+  fFPMatrixElems.push_back(temp_elem);
+
+  // read in Y000 and verify it
+  fscanf(file, "%*c");
+  if( (fscanf(file, "%c %d %d %d", &w, &i, &j, &k) != 4) ||
+      (w!='Y') || (i!=0) || (j!=0) || (k!=0) ) {
+    Error(Here(here), "Matrix Element Y000 not found!");
+    return kInitError;
+  }
+  for(int p_cnt=0; p_cnt<kPORDER; p_cnt++)
+    if(!fscanf(file, "%le", &poly[p_cnt])) {
+      Error(Here(here), "Could not read in Matrix Element Y000!");
+      return kInitError;
+    }
+  // assign data
+  temp_elem.pw[0] = i; temp_elem.pw[1] = j; temp_elem.pw[2] = k;
+  temp_elem.poly = poly;
+    for(int j=0; j<kPORDER; j++)
+      if(poly[j] != 0.0) {
+	temp_elem.iszero = false;
+	temp_elem.order = j;
+      }
+  fFPMatrixElems.push_back(temp_elem);
+
+
+  // read in P000 and verify it
+  fscanf(file, "%*c");
+  if( (fscanf(file, "%c %d %d %d", &w, &i, &j, &k) != 4) ||
+      (w!='P') || (i!=0) || (j!=0) || (k!=0) ) {
+    Error(Here(here), "Matrix Element P000 not found!");
+    return kInitError;
+  }
+  for(int p_cnt=0; p_cnt<kPORDER; p_cnt++)
+    if(!fscanf(file, "%le", &poly[p_cnt])) {
+      Error(Here(here), "Could not read in Matrix Element P000!");
+      return kInitError;
+    }
+  // assign data
+  temp_elem.pw[0] = i; temp_elem.pw[1] = j; temp_elem.pw[2] = k;
+  temp_elem.poly = poly;
+    for(int j=0; j<kPORDER; j++)
+      if(poly[j] != 0.0) {
+	temp_elem.iszero = false;
+	temp_elem.order = j;
+      }
+  fFPMatrixElems.push_back(temp_elem);
+  
+  // now, read in as many of the matrix elements as there are
+  fscanf(file, "%*c");
+  while(fscanf(file, "%c %d %d %d", &w, &i, &j, &k) == 4) {
+
+    for(int p_cnt=0; p_cnt<kPORDER; p_cnt++)
+      if(!fscanf(file, "%le", &poly[p_cnt])) {
+	Error(Here(here), "Could not read in Matrix Element %c%d%d%d!",
+	      w, i, j, k);
+	return kInitError;
+      }
+    
+    temp_elem.pw[0] = i;
+    temp_elem.pw[1] = j;
+    temp_elem.pw[2] = k;
+    temp_elem.poly = poly;
+
+    cout<<w<<" "<<i<<" "<<j<<" "<<k<<" ";
+    for(int i=0; i<kPORDER; i++)
+      cout<<poly[i]<<" ";
+    cout<<endl;
+
+    // calculate some fields
+    for(int j=0; j<kPORDER; j++)
+      if(poly[j] != 0.0) {
+	temp_elem.iszero = false;
+	temp_elem.order = j;
+      }
+
+    /* decide which list of matrix elements to add it to */
+    switch(w) {
+    case 'D': fDMatrixElems.push_back(temp_elem); break;
+    case 'T': fTMatrixElems.push_back(temp_elem); break;
+    case 'Y': fYMatrixElems.push_back(temp_elem); break;
+    case 'P': fPMatrixElems.push_back(temp_elem); break;
+    default:
+     	Error(Here(here), "Invalid Matrix Element specifier: %c!", w);
+	break;
+    }
+
+    fscanf(file, "%*c");
+
+    if(feof(file) || ferror(file))
+      break;
+  }
+  return kOK;
+}
 
 //_____________________________________________________________________________
 Int_t THaVDC::SetupDetector( const TDatime& date )
@@ -80,12 +247,18 @@ Int_t THaVDC::SetupDetector( const TDatime& date )
   fIsSetup = true;
 
   // FIXME: Get these values from database file
-  const Double_t degrad = TMath::Pi()/180.0;
-  fVDCAngle = -45.0887 *  degrad;  //Convert to radians
-  fSin_vdc = TMath::Sin(fVDCAngle);
-  fCos_vdc = TMath::Cos(fVDCAngle);
-  fTan_vdc = TMath::Tan(fVDCAngle);
-  fSpacing = 0.3348; // Dist between similar wire planes (eg u1->u2) (m)
+  //const Double_t degrad = TMath::Pi()/180.0;
+  //fVDCAngle *= degrad;
+  //fVDCAngle = -45.0887 *  degrad;  //Convert to radians
+  //fTan_vdc  = fT000.poly[0];   // tan(angle) stored as matrix element
+  fTan_vdc = fFPMatrixElems[0].poly[0];
+  fVDCAngle = TMath::ATan(fTan_vdc);
+  fSin_vdc  = TMath::Sin(fVDCAngle);
+  fCos_vdc  = TMath::Cos(fVDCAngle);
+  //fTan_vdc = TMath::Tan(fVDCAngle);
+  //fSpacing = 0.3348; // Dist between similar wire planes (eg u1->u2) (m)
+
+  cout<<"Calculated VDC Angle: "<<(fVDCAngle*180.0)/TMath::Pi()<<endl;
 
   fNumIter = 1;      // Number of iterations for FineTrack()
   fErrorCutoff = 1e100;
@@ -306,6 +479,7 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
     // If the 'tracks' array was given, add THaTracks to it 
     // (or modify existing ones).
     if (tracks) {
+      /*
       // Calculate Transport coordinates from detector coordinates
 
       // Note: If not in the focal plane of the spectrometer, transX and transZ
@@ -331,6 +505,7 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 	     << transX << " " << transY << " " << transZ << " "
 	     << transTheta << " " << transPhi << endl;
 #endif
+      */
 
       // Decide whether this is a new track or an old track 
       // that is being updated
@@ -355,6 +530,7 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
       if( nPairs > 1 )
 	flag |= kMultiTrack;
 
+      /*
       if( found ) {
 #ifdef WITH_DEBUG
 	if( fDebug>0 )
@@ -376,6 +552,25 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 	theTrack->AddCluster( partner );
 	flag |= kReassigned;
       }
+      */
+      if(!found) {
+#ifdef WITH_DEBUG
+	if( fDebug>0 )
+	  cout << "Track " << tracks->GetLast()+1 << " added.\n";
+#endif
+	theTrack = 
+	  //	  AddTrack(*tracks, 0.0, transTheta, transPhi, transX, transY);
+	  AddTrack(*tracks, 0.0, 0.0, 0.0, 0.0, 0.0);
+	theTrack->SetID( thisID );
+	theTrack->SetCreator( this );
+	theTrack->AddCluster( track );
+	theTrack->AddCluster( partner );
+	flag |= kReassigned;
+      }
+
+      // calculate the transport coordinates
+      CalcFocalPlaneCoords(track, theTrack, kRotatingTransport);
+
       theTrack->SetFlag( flag );
     }
   }
@@ -496,5 +691,215 @@ Int_t THaVDC::FineTrack( TClonesArray& tracks )
   return 0;
 }
 
+//______________________________________________________________________________
+Int_t THaVDC::FindVertices( TClonesArray& tracks )
+{
+  // Calculate the target location and momentum at the target
+  // assumes that CoarseTrack() and FineTrack() have both been called
+
+  int n_exist = tracks.GetLast()+1;
+  for(int t = 0; t < n_exist; t++ ) {
+    THaTrack *theTrack = static_cast<THaTrack*>( tracks.At(t) );
+    CalcTargetCoords(theTrack, kRotatingTransport);
+  }
+
+  return 0;
+}
+
+//_____________________________________________________________________________
+void THaVDC::CalcFocalPlaneCoords(const THaVDCUVTrack *the_track, 
+				  THaTrack *new_track, const ECoordTypes mode)
+{
+  // calculates focal plane coordinates from detector coordinates
+
+  double tan_rho, cos_rho, tan_rho_loc, cos_rho_loc;
+  double x, y, theta, phi;
+  double r_x, r_y, r_theta, r_phi;
+  
+  // tan rho (for the central ray) is stored as a matrix element 
+  tan_rho = fFPMatrixElems[0].poly[0];
+  cos_rho = 1.0/sqrt(1.0+tan_rho*tan_rho);
+
+  // first calculate the transport frame coordinates
+  theta = (the_track->GetTheta()+tan_rho) /
+          (1.0-the_track->GetTheta()*tan_rho);
+  x = the_track->GetX() * cos_rho * (1.0 + theta * tan_rho);
+  phi = the_track->GetPhi() / (1.0-the_track->GetTheta()*tan_rho) / cos_rho;
+  y = the_track->GetY() + tan_rho*phi*the_track->GetX()*cos_rho;
+  
+  // then calculate the rotating transport frame coordinates
+  r_x = the_track->GetX() * cos_rho * (1.0 + theta*tan_rho);
+
+  // calculate the focal-plane matrix elements
+  if(mode == kTransport)
+    CalcMatrix(x, fFPMatrixElems);
+  else if (mode == kRotatingTransport)
+    CalcMatrix(r_x, fFPMatrixElems);
+
+  r_y = y - fFPMatrixElems[1].v;  // Y000
+
+  // Calculate now the tan(rho) and cos(rho) of the local rotation angle.
+  tan_rho_loc = fFPMatrixElems[0].v;   // T000
+  cos_rho_loc = 1.0/sqrt(1.0+tan_rho_loc*tan_rho_loc);
+  
+  r_phi = (the_track->GetPhi() - fFPMatrixElems[2].v /* P000 */ ) / 
+          (1.0-the_track->GetTheta()*tan_rho_loc) / cos_rho_loc;
+  r_theta = (the_track->GetTheta()+tan_rho_loc) /
+		       (1.0-the_track->GetTheta()*tan_rho_loc);
+
+  // set the values we calculated
+  new_track->Set(0.0, theta, phi, x, y);
+  new_track->SetR(r_x, r_y, r_theta, r_phi);
+
+}
+
+//_____________________________________________________________________________
+void THaVDC::CalcTargetCoords(THaTrack *the_track, const ECoordTypes mode)
+{
+  // calculates target coordinates from focal plane coordinates
+
+  const int kNUM_PRECOMP_POW = 10;
+
+  double x_fp, y_fp, th_fp, ph_fp;
+  double powers[kNUM_PRECOMP_POW][3];  // {th, y, ph}
+  double x, y, theta, phi, dp, p;
+
+  // first select the coords to use
+  if(mode == kTransport) {
+    x_fp = the_track->GetX();
+    y_fp = the_track->GetY();
+    th_fp = the_track->GetTheta();
+    ph_fp = the_track->GetPhi();
+  } else if(mode == kRotatingTransport) {
+    x_fp = the_track->GetRX();
+    y_fp = the_track->GetRY();
+    th_fp = the_track->GetRTheta();
+    ph_fp = the_track->GetRPhi();  
+  }
+
+  // calculate the powers we need
+  for(int i=0; i<kNUM_PRECOMP_POW; i++) {
+    powers[i][0] = pow(th_fp, i);
+    powers[i][1] = pow(y_fp, i);
+    powers[i][2] = pow(ph_fp, i);
+  }
+
+  // calculate the matrices we need
+  CalcMatrix(x_fp,fDMatrixElems);
+  CalcMatrix(x_fp,fTMatrixElems);
+  CalcMatrix(x_fp,fYMatrixElems);
+  CalcMatrix(x_fp,fPMatrixElems);
+
+  // calculate the coordinates at the target
+  theta = CalcTargetVar(fTMatrixElems, powers);
+  phi = CalcTargetVar(fPMatrixElems,powers);
+  y = CalcTargetVar(fYMatrixElems,powers);
+
+  // calculate momentum
+  dp = CalcTargetVar(fDMatrixElems,powers);
+  /*p = center_momentum * (1+dp); */ p = 0.0;
+
+  // estimate x
+  //x = PolyInv(-1.0, 1.0, 0.00005, dp, disp_order, fDisp); 
+  x = 0.0;
+
+  // set the values we just calculated
+  the_track->SetTarget(x, y, theta, phi);
+  the_track->SetDp(dp);
+  the_track->SetMomentum(p, the_track->GetTheta(), the_track->GetPhi());
+}
+
+/*
+//_____________________________________________________________________________
+double THaVDC::PolyInv(const double x1, const double x2, const double xacc, 
+		       const double y, const int norder, const vector<double> &a)
+{
+  // finds x such that y = poly(norder, a x)
+
+  double fmid = y-DoPoly(norder,a,x2);
+  double f = y-DoPoly(norder,a,x1);
+  double retval, dx, xmid;
+
+  if(f*fmid > 0) {
+  // err1 
+    return 0.0;
+  }
+
+  if(f < 0) {
+    retval = x1;
+    dx = x2-x1;
+  } else {
+    retval = x2;
+    dx = x1-x2;
+  }
+
+  for(int j=0; j<50; j++) {
+    dx *= 0.5;
+    xmid = retval+dx;
+    fmid = y-DoPoly(norder,a,xmid);
+    if(fmid<0)
+      retval=xmid;
+    if((fabs(dx)<xacc) || (fmid==0))
+      return retval;
+  }
+  
+  //err2 
+  return 0.0;
+}
+*/
+
+//_____________________________________________________________________________
+void THaVDC::CalcMatrix(const double x, vector<THaMatrixElement> &matrix)
+{
+  // calculates the values of the matrix elements for a given location
+  /* FIXME: probably cleaner to roll DoPoly() into this function */
+
+
+  for(vector<THaMatrixElement>::iterator it=matrix.begin();
+      it!=matrix.end(); it++) {
+    if((*it).iszero)
+      (*it).v = 0.0;
+    else
+      (*it).v = DoPoly(-(*it).order, (*it).poly, x);
+  }
+}
+
+
+//_____________________________________________________________________________
+double THaVDC::DoPoly(const int n, const vector<double> &a, const double x)
+{
+  // calculates polynomials for matrix elements
+
+  double retval=0.0;
+
+  if(n>0) {
+    for(int i=n-1;i>=0;i--)
+      retval = x*(retval+a[i]);
+  } else if(n<0) {
+    for(int i=-n-1;i>=1;i--)
+      retval = x*(retval+a[i]);
+    retval += a[0];
+  }
+
+  return retval;
+}
+
+//_____________________________________________________________________________
+double THaVDC::CalcTargetVar(const vector<THaMatrixElement> &matrix,
+			     const double powers[][3])
+{
+  // calculates the value of a variable at the target
+
+  double retval=0.0;
+
+  for(vector<THaMatrixElement>::const_iterator it=matrix.begin();
+      it!=matrix.end(); it++) 
+    if((*it).v != 0.0)
+      retval += (*it).v * powers[(*it).pw[0]][0]
+	                * powers[(*it).pw[1]][1]
+	                * powers[(*it).pw[2]][2];
+
+  return retval;
+}
 
 ////////////////////////////////////////////////////////////////////////////////

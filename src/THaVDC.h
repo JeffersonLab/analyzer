@@ -8,10 +8,12 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "THaTrackingDetector.h"
+#include <vector>
 
 class THaVDCUVPlane;
 class THaTrack;
 class TClonesArray;
+class THaVDCUVTrack;
 
 class THaVDC : public THaTrackingDetector {
 
@@ -24,6 +26,7 @@ public:
   virtual Int_t Decode( const THaEvData& );
   virtual Int_t CoarseTrack( TClonesArray& tracks );
   virtual Int_t FineTrack( TClonesArray& tracks );
+  virtual Int_t FindVertices( TClonesArray& tracks );
   virtual EStatus Init( const TDatime& date );
 
   // Get and Set Functions
@@ -74,6 +77,55 @@ protected:
 
   Int_t    fNumIter;        // Number of iterations for FineTrack()
   Double_t fErrorCutoff;    // Cut on track matching error
+
+  // declarations for target vertex reconstruction
+  typedef enum {
+    kTransport,
+    kRotatingTransport
+  } ECoordTypes;
+    
+  enum {
+      kPORDER = 7
+    //kMAX_MATRIX_ELEMS = 200
+  };
+
+  // private class for storing matrix element data
+  class THaMatrixElement {
+  public:
+    THaMatrixElement() : iszero(true), pw(3), 
+                          order(0), v(0), poly(kPORDER) {}
+    THaMatrixElement& operator=( const THaMatrixElement& ) { return *this; }
+    //bool operator==(const THaMatrixElement& rhs) const { return w == rhs.w; }
+    //bool operator<(const THaMatrixElement& rhs) const { return w < rhs.w; }
+
+    bool iszero;             // whether the element is zero
+    //char w;                  // which tensor it belongs to (D,T,P,Y)
+    vector<int> pw;          // exponents of matrix element
+                             //   e.g. D100 = { 1, 0, 0 }
+    int  order;
+    double v;                // its channel value
+    vector<double> poly;     // the associated polynomial
+  };
+
+  // initial matrix elements
+  vector<THaMatrixElement> fTMatrixElems;
+  vector<THaMatrixElement> fDMatrixElems;
+  vector<THaMatrixElement> fPMatrixElems;
+  vector<THaMatrixElement> fYMatrixElems;
+  vector<THaMatrixElement> fFPMatrixElems;  // matrix elements used in
+                                            // focal plane transformations
+                                            // { T, Y, P }
+
+  void CalcFocalPlaneCoords(const THaVDCUVTrack *the_track, 
+			    THaTrack *new_track, const ECoordTypes mode);
+  void CalcTargetCoords(THaTrack *the_track, const ECoordTypes mode);
+  void CalcMatrix(const double x, vector<THaMatrixElement> &matrix);
+  double DoPoly(const int n, const vector<double> &a, const double x);
+  double PolyInv(const double x1, const double x2, const double xacc, 
+		 const double y, const int norder, const vector<double> &a);
+  double CalcTargetVar(const vector<THaMatrixElement> &matrix, 
+		       const double powers[][3]);
+  Int_t ReadDatabase( FILE* file, const TDatime& date );
 
   virtual void  Clear( Option_t* opt="" )  {}
   virtual Int_t ConstructTracks( TClonesArray * tracks = NULL, Int_t flag = 0 );
