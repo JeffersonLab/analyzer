@@ -64,6 +64,8 @@ THaHelicity::~THaHelicity( )
     delete [] q1_present_helicity;
     delete [] quad_calibrated;
     delete [] hbits;
+    delete [] validTime;
+    delete [] validHel;
   }
 }
 
