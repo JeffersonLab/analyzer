@@ -214,18 +214,22 @@ protected:
 
   // Right HRS VDC variable size arrays 
   Int_t*    fR_U1_wire;           //[fR_U1_nhit] Hit wires numbers
+  Int_t*    fR_U1_rawtime;        //[fR_V1_nhit] Raw TDC times
   Double_t* fR_U1_time;           //[fR_U1_nhit] Corresponding TDC times
   Double_t* fR_U1_clpos;          //[fR_U1_nclust] Centers of clusters (m)
   Int_t*    fR_U1_clsiz;          //[fR_U1_nclust]  Sizes of clusters (in wires)
   Int_t*    fR_V1_wire;           //[fR_V1_nhit] Hit wires numbers
+  Int_t*    fR_V1_rawtime;        //[fR_V1_nhit] Raw TDC times
   Double_t* fR_V1_time;           //[fR_V1_nhit] Corresponding TDC times
   Double_t* fR_V1_clpos;          //[fR_V1_nclust]  Centers of clusters (m)
   Int_t*    fR_V1_clsiz;          //[fR_V1_nclust]  Sizes of clusters (in wires)
   Int_t*    fR_U2_wire;           //[fR_U2_nhit] Hit wires numbers
+  Int_t*    fR_U2_rawtime;        //[fR_V1_nhit] Raw TDC times
   Double_t* fR_U2_time;           //[fR_U2_nhit] Corresponding TDC times
   Double_t* fR_U2_clpos;          //[fR_U2_nclust]  Centers of clusters (m)
   Int_t*    fR_U2_clsiz;          //[fR_U2_nclust]  Sizes of clusters (in wires)
   Int_t*    fR_V2_wire;           //[fR_V2_nhit] Hit wires numbers
+  Int_t*    fR_V2_rawtime;        //[fR_V1_nhit] Raw TDC times
   Double_t* fR_V2_time;           //[fR_V2_nhit] Corresponding TDC times
   Double_t* fR_V2_clpos;          //[fR_V2_nclust]  Centers of clusters (m)
   Int_t*    fR_V2_clsiz;          //[fR_V2_nclust]  Sizes of clusters (in wires)
@@ -234,21 +238,26 @@ protected:
   Double_t* fR_TR_th;             //[fR_TR_n] Tangent of Thetta angle of track in E-arm cs
   Double_t* fR_TR_ph;             //[fR_TR_n] Tangent of Phi angle of track in E-arm cs
   Double_t* fR_TR_p;              //[fR_TR_n] Track momentum (GeV)
+  UInt_t*   fR_TR_flag;           //[fR_TR_n] Track status flag
 
   // Left HRS VDC variable size arrays 
   Int_t*    fL_U1_wire;           //[fL_U1_nhit] Hit wires numbers
+  Int_t*    fL_U1_rawtime;        //[fL_U1_nhit] Raw TDC times
   Double_t* fL_U1_time;           //[fL_U1_nhit] Corresponding TDC times
   Double_t* fL_U1_clpos;          //[fL_U1_nclust] Centers of clusters (m)
   Int_t*    fL_U1_clsiz;          //[fL_U1_nclust]  Sizes of clusters (in wires)
   Int_t*    fL_V1_wire;           //[fL_V1_nhit] Hit wires numbers
+  Int_t*    fL_V1_rawtime;        //[fL_V1_nhit] Raw TDC times
   Double_t* fL_V1_time;           //[fL_V1_nhit] Corresponding TDC times
   Double_t* fL_V1_clpos;          //[fL_V1_nclust]  Centers of clusters (m)
   Int_t*    fL_V1_clsiz;          //[fL_V1_nclust]  Sizes of clusters (in wires)
   Int_t*    fL_U2_wire;           //[fL_U2_nhit] Hit wires numbers
+  Int_t*    fL_U2_rawtime;        //[fL_U2_nhit] Raw TDC times
   Double_t* fL_U2_time;           //[fL_U2_nhit] Corresponding TDC times
   Double_t* fL_U2_clpos;          //[fL_U2_nclust]  Centers of clusters (m)
   Int_t*    fL_U2_clsiz;          //[fL_U2_nclust]  Sizes of clusters (in wires)
   Int_t*    fL_V2_wire;           //[fL_V2_nhit] Hit wires numbers
+  Int_t*    fL_V2_rawtime;        //[fL_V2_nhit] Raw TDC times
   Double_t* fL_V2_time;           //[fL_V2_nhit] Corresponding TDC times
   Double_t* fL_V2_clpos;          //[fL_V2_nclust]  Centers of clusters (m)
   Int_t*    fL_V2_clsiz;          //[fL_V2_nclust]  Sizes of clusters (in wires
@@ -257,6 +266,7 @@ protected:
   Double_t* fL_TR_th;             //[fL_TR_n] Tangent of Thetta angle of track in E-arm cs
   Double_t* fL_TR_ph;             //[fL_TR_n] Tangent of Phi angle of track in E-arm cs
   Double_t* fL_TR_p;              //[fL_TR_n] Track momentum (GeV)
+  UInt_t*   fL_TR_flag;           //[fL_TR_n] Track status flag
 
   void CreateVariableArrays( EBlock which = kAll );
   void DeleteVariableArrays( EBlock which = kAll );

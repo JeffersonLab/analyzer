@@ -66,23 +66,31 @@ void THaRawEvent::CreateVariableArrays( EBlock which )
 
   if( which == kHits || which == kAll ) {
     // Right HRS VDC
-    fR_U1_wire  = new Int_t   [ fMaxhit ];
-    fR_U1_time  = new Double_t[ fMaxhit ];
-    fR_V1_wire  = new Int_t   [ fMaxhit ];
-    fR_V1_time  = new Double_t[ fMaxhit ];
-    fR_U2_wire  = new Int_t   [ fMaxhit ];
-    fR_U2_time  = new Double_t[ fMaxhit ];
-    fR_V2_wire  = new Int_t   [ fMaxhit ];
-    fR_V2_time  = new Double_t[ fMaxhit ];
+    fR_U1_wire    = new Int_t   [ fMaxhit ];
+    fR_U1_rawtime = new Int_t   [ fMaxhit ];
+    fR_U1_time    = new Double_t[ fMaxhit ];
+    fR_V1_wire    = new Int_t   [ fMaxhit ];
+    fR_V1_rawtime = new Int_t   [ fMaxhit ];
+    fR_V1_time    = new Double_t[ fMaxhit ];
+    fR_U2_wire    = new Int_t   [ fMaxhit ];
+    fR_U2_rawtime = new Int_t   [ fMaxhit ];
+    fR_U2_time    = new Double_t[ fMaxhit ];
+    fR_V2_wire    = new Int_t   [ fMaxhit ];
+    fR_V2_rawtime = new Int_t   [ fMaxhit ];
+    fR_V2_time    = new Double_t[ fMaxhit ];
     // Left HRS VDC
-    fL_U1_wire  = new Int_t   [ fMaxhit ];
-    fL_U1_time  = new Double_t[ fMaxhit ];
-    fL_V1_wire  = new Int_t   [ fMaxhit ];
-    fL_V1_time  = new Double_t[ fMaxhit ];
-    fL_U2_wire  = new Int_t   [ fMaxhit ];
-    fL_U2_time  = new Double_t[ fMaxhit ];
-    fL_V2_wire  = new Int_t   [ fMaxhit ];
-    fL_V2_time  = new Double_t[ fMaxhit ];
+    fL_U1_wire    = new Int_t   [ fMaxhit ];
+    fL_U1_rawtime = new Int_t   [ fMaxhit ];
+    fL_U1_time    = new Double_t[ fMaxhit ];
+    fL_V1_wire    = new Int_t   [ fMaxhit ];
+    fL_V1_rawtime = new Int_t   [ fMaxhit ];
+    fL_V1_time    = new Double_t[ fMaxhit ];
+    fL_U2_wire    = new Int_t   [ fMaxhit ];
+    fL_U2_rawtime = new Int_t   [ fMaxhit ];
+    fL_U2_time    = new Double_t[ fMaxhit ];
+    fL_V2_wire    = new Int_t   [ fMaxhit ];
+    fL_V2_rawtime = new Int_t   [ fMaxhit ];
+    fL_V2_time    = new Double_t[ fMaxhit ];
   }
   if( which == kClusters || which == kAll ) {
     // Right HRS VDC
@@ -111,12 +119,14 @@ void THaRawEvent::CreateVariableArrays( EBlock which )
     fR_TR_th    = new Double_t[ fMaxtrk ];
     fR_TR_ph    = new Double_t[ fMaxtrk ];
     fR_TR_p     = new Double_t[ fMaxtrk ];
+    fR_TR_flag  = new UInt_t  [ fMaxtrk ];
     // Left HRS VDC
     fL_TR_x     = new Double_t[ fMaxtrk ];
     fL_TR_y     = new Double_t[ fMaxtrk ];
     fL_TR_th    = new Double_t[ fMaxtrk ];
     fL_TR_ph    = new Double_t[ fMaxtrk ];
     fL_TR_p     = new Double_t[ fMaxtrk ];
+    fL_TR_flag  = new UInt_t  [ fMaxtrk ];
   }
 }
 
@@ -128,21 +138,29 @@ void THaRawEvent::DeleteVariableArrays( EBlock which )
   if( which == kHits || which == kAll ) {
     // Right HRS VDC
     delete [] fR_U1_wire ;
+    delete [] fR_U1_rawtime ;
     delete [] fR_U1_time ;
     delete [] fR_V1_wire ;
+    delete [] fR_V1_rawtime ;
     delete [] fR_V1_time ;
     delete [] fR_U2_wire ;
+    delete [] fR_U2_rawtime ;
     delete [] fR_U2_time ;
     delete [] fR_V2_wire ;
+    delete [] fR_V2_rawtime ;
     delete [] fR_V2_time ;
     // Left HRS VDC
     delete [] fL_U1_wire ;
+    delete [] fL_U1_rawtime ;
     delete [] fL_U1_time ;
     delete [] fL_V1_wire ;
+    delete [] fL_V1_rawtime ;
     delete [] fL_V1_time ;
     delete [] fL_U2_wire ;
+    delete [] fL_U2_rawtime ;
     delete [] fL_U2_time ;
     delete [] fL_V2_wire ;
+    delete [] fL_V2_rawtime ;
     delete [] fL_V2_time ;
   }
   if( which == kClusters || which == kAll ) {
@@ -172,12 +190,14 @@ void THaRawEvent::DeleteVariableArrays( EBlock which )
     delete [] fR_TR_th;
     delete [] fR_TR_ph;
     delete [] fR_TR_p;
+    delete [] fR_TR_flag;
     // Left HRS VDC
     delete [] fL_TR_x;
     delete [] fL_TR_y;
     delete [] fL_TR_th;
     delete [] fL_TR_ph;
     delete [] fL_TR_p;
+    delete [] fL_TR_flag;
   }
 }
 
@@ -276,24 +296,28 @@ void THaRawEvent::SetupDatamap( EBlock which )
     // VDC
     { 1,      "R.vdc.u1.nhit",     &fR_U1_nhit },
     {-1,      "R.vdc.u1.wire",     fR_U1_wire  },
+    {-1,      "R.vdc.u1.rawtime",  fR_U1_rawtime, },
     {-1,      "R.vdc.u1.time",     fR_U1_time, },
     { 1,      "R.vdc.u1.nclust",   &fR_U1_nclust },
     {-1,      "R.vdc.u1.clpos",    fR_U1_clpos },
     {-1,      "R.vdc.u1.clsiz",    fR_U1_clsiz },
     { 1,      "R.vdc.v1.nhit",     &fR_V1_nhit },
     {-1,      "R.vdc.v1.wire",     fR_V1_wire  },
+    {-1,      "R.vdc.v1.rawtime",  fR_V1_rawtime, },
     {-1,      "R.vdc.v1.time",     fR_V1_time  },
     { 1,      "R.vdc.v1.nclust",   &fR_V1_nclust },
     {-1,      "R.vdc.v1.clpos",    fR_V1_clpos },
     {-1,      "R.vdc.v1.clsiz",    fR_V1_clsiz },
     { 1,      "R.vdc.u2.nhit",     &fR_U2_nhit },
     {-1,      "R.vdc.u2.wire",     fR_U2_wire  },
+    {-1,      "R.vdc.u2.rawtime",  fR_U2_rawtime, },
     {-1,      "R.vdc.u2.time",     fR_U2_time  },
     { 1,      "R.vdc.u2.nclust",   &fR_U2_nclust },
     {-1,      "R.vdc.u2.clpos",    fR_U2_clpos },
     {-1,      "R.vdc.u2.clsiz",    fR_U2_clsiz },
     { 1,      "R.vdc.v2.nhit",     &fR_V2_nhit },
     {-1,      "R.vdc.v2.wire",     fR_V2_wire  },
+    {-1,      "R.vdc.v2.rawtime",  fR_V2_rawtime, },
     {-1,      "R.vdc.v2.time",     fR_V2_time  },
     { 1,      "R.vdc.v2.nclust",   &fR_V2_nclust },
     {-1,      "R.vdc.v2.clpos",    fR_V2_clpos },
@@ -304,6 +328,7 @@ void THaRawEvent::SetupDatamap( EBlock which )
     {-1,      "R.tr.th",           fR_TR_th },
     {-1,      "R.tr.ph",           fR_TR_ph },
     {-1,      "R.tr.p",            fR_TR_p },
+    {-1,      "R.tr.flag",         fR_TR_flag },
     
     // S1
     { 1,      "R.s1.nlthit",       &fR_S1L_nthit },
@@ -410,24 +435,28 @@ void THaRawEvent::SetupDatamap( EBlock which )
     // VDC
     { 1,      "L.vdc.u1.nhit",     &fL_U1_nhit },
     {-1,      "L.vdc.u1.wire",     fL_U1_wire },
+    {-1,      "L.vdc.u1.rawtime",  fL_U1_rawtime, },
     {-1,      "L.vdc.u1.time",     fL_U1_time },
     { 1,      "L.vdc.u1.nclust",   &fL_U1_nclust },
     {-1,      "L.vdc.u1.clpos",    fL_U1_clpos },
     {-1,      "L.vdc.u1.clsiz",    fL_U1_clsiz },
     { 1,      "L.vdc.v1.nhit",     &fL_V1_nhit },
     {-1,      "L.vdc.v1.wire",     fL_V1_wire },
+    {-1,      "L.vdc.v1.rawtime",  fL_V1_rawtime, },
     {-1,      "L.vdc.v1.time",     fL_V1_time },
     { 1,      "L.vdc.v1.nclust",   &fL_V1_nclust },
     {-1,      "L.vdc.v1.clpos",    fL_V1_clpos },
     {-1,      "L.vdc.v1.clsiz",    fL_V1_clsiz },
     { 1,      "L.vdc.u2.nhit",     &fL_U2_nhit },
     {-1,      "L.vdc.u2.wire",     fL_U2_wire },
+    {-1,      "L.vdc.u2.rawtime",  fL_U2_rawtime, },
     {-1,      "L.vdc.u2.time",     fL_U2_time },
     { 1,      "L.vdc.u2.nclust",   &fL_U2_nclust },
     {-1,      "L.vdc.u2.clpos",    fL_U2_clpos },
     {-1,      "L.vdc.u2.clsiz",    fL_U2_clsiz },
     { 1,      "L.vdc.v2.nhit",     &fL_V2_nhit },
     {-1,      "L.vdc.v2.wire",     fL_V2_wire },
+    {-1,      "L.vdc.v2.rawtime",  fL_V2_rawtime, },
     {-1,      "L.vdc.v2.time",     fL_V2_time },
     { 1,      "L.vdc.v2.nclust",   &fL_V2_nclust },
     {-1,      "L.vdc.v2.clpos",    fL_V2_clpos },
@@ -438,6 +467,7 @@ void THaRawEvent::SetupDatamap( EBlock which )
     {-1,      "L.tr.th",           fL_TR_th },
     {-1,      "L.tr.ph",           fL_TR_ph },
     {-1,      "L.tr.p",            fL_TR_p },
+    {-1,      "L.tr.flag",         fL_TR_flag },
 
     // S1
     { 1,      "L.s1.nlthit",       &fL_S1L_nthit },
