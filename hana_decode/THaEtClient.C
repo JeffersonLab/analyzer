@@ -27,7 +27,8 @@
 #include <netdb.h>
 #include "TString.h"
 
-ClassImp(THaEtClient)
+
+using namespace std;
 
 THaEtClient::THaEtClient(int smode)
 {
@@ -311,10 +312,9 @@ int THaEtClient::codaOpen(const TString& computer, int smode)
   return codaOpen( computer, mysession, smode );
 }
 
+bool THaEtClient::isOpen() const { 
+  return (notopened==1&&didclose==0);
+}
 
 
-
-
-
-
-
+ClassImp(THaEtClient)

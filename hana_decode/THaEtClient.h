@@ -54,6 +54,7 @@ public:
     int *getEvBuffer()         // Gets next event buffer after codaRead()
       { return evbuffer; }
     int codaRead();            // codaRead() must be called once per event
+    virtual bool isOpen() const;
 
 private:
 

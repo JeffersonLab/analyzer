@@ -36,6 +36,7 @@ public:
    virtual int codaRead()=0; 
    virtual int *getEvBuffer() { return evbuffer; }
    virtual int getBuffSize() const { return MAXEVLEN; }
+   virtual bool isOpen() const = 0;
 
 private:
 
