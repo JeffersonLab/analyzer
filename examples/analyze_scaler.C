@@ -151,8 +151,8 @@
 
 // Here we loop over scalers.  
 // Note, it is not necessary to check if  evdata.IsScalerEvent()  because that is done
-// for you and is fast; also because the "EvLeft" are found in physics triggers which
-// are not "scaler events".
+// for you and is fast; also because the "EvLeft" are found in physics triggers.  But
+// they are also scaler events.
 
       next_scaler.Reset();
       while( !fail && (obj = next_scaler())) {
