@@ -34,6 +34,27 @@ cin>>filename;
 
 // e.g. "/data/reitz/misc/raw/e01012_1442.dat"
 
+Double_t kappax=1.0;
+Double_t kappay=-1.0;
+
+ cout<<"Enter horizontal scaling factor ( 1.0 for E94017) <<endl;
+ cin<<kappax;
+ cout<<"Enter vertical scaling factor ( -1.0 for E94017) <<endl;
+ cin<<kappay;
+
+ // there is an intrinsic sign ambiguity for the raster correction,
+ // which is furthermore not necessarily the same for the horizontal 
+ // and vertical deflection. In the first half of 2004 (hypernuclei
+ // and pentaquark), using the fastbus modules in the right arm
+ // the horizontal sign is plus, the vertical sign is minus
+ // for other experiments it might be different
+ // allways check on a few runs, which sign actually improves the 
+ // data quality
+ // these factors can also be used to correct for the fact that with 
+ // the triangular raster due to bandwidth limitations we cant 
+ // measure the absolute size of the raster precisely 
+
+
 THaRun* run = new THaRun( filename );
 
 // Define the analysis parameters
@@ -94,20 +115,23 @@ beam_y->Draw();
 Double_t tay=beam_y->GetMean();
 Double_t dtay=beam_y->GetRMS();
 
-Double_t bpma_ofx= bax-rax*dbax/drax ; 
-Double_t bpma_slx= dbax/drax ; 
-Double_t bpma_ofy= bay-ray*dbay/dray; 
-Double_t bpma_sly= dbay/dray; 
 
-Double_t bpmb_ofx= bbx-rax*dbbx/drax ; 
-Double_t bpmb_slx= dbbx/drax ; 
-Double_t bpmb_ofy= bby-ray*dbby/dray; 
-Double_t bpmb_sly= dbby/dray; 
+Double_t bpma_ofx= bax-rax*dbax/drax*kappax ; 
+Double_t bpma_slx= dbax/drax*kappax ; 
+Double_t bpma_ofy= bay-ray*dbay/dray*kappay; 
+Double_t bpma_sly= dbay/dray*kappay; 
 
-Double_t tar_ofx= tax-rax*dtax/drax ; 
-Double_t tar_slx= dtax/drax ; 
-Double_t tar_ofy= tay-ray*dtay/dray; 
-Double_t tar_sly= dtay/dray; 
+Double_t bpmb_ofx= bbx-rax*dbbx/drax*kappax ; 
+Double_t bpmb_slx= dbbx/drax*kappax ; 
+Double_t bpmb_ofy= bby-ray*dbby/dray*kappay; 
+Double_t bpmb_sly= dbby/dray*kappay; 
+
+Double_t tar_ofx= tax-rax*dtax/drax*kappax ; 
+Double_t tar_slx= dtax/drax*kappax ; 
+Double_t tar_ofy= tay-ray*dtay/dray*kappay; 
+Double_t tar_sly= dtay/dray*kappay; 
+
+
 
 cout<<" Raster Constants: (please modify database accordingly)"<<endl;
 cout<<bpma_ofx<<" "<<bpma_ofy<<" "<<bpma_slx<<" "<<bpma_sly<<" 0. 0."<<endl;
