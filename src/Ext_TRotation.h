@@ -1,8 +1,8 @@
 // The following is a workaround for older versions of ROOT which
 // do not provide the function TRotation::SetZAxis
 
-#if ROOT_VERSION_CODE<ROOT_VERSION(3,5,4) && !defined(Need_TRotation_SetZAxis)
-#define Need_TRotation_SetZAxis
+#if ROOT_VERSION_CODE < ROOT_VERSION(3,5,4) && !defined(Ext_TRotation)
+#define Ext_TRotation
 
 class Ext_TRotation : public TRotation
 {
