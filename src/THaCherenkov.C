@@ -21,7 +21,7 @@ ClassImp(THaCherenkov)
 
 //_____________________________________________________________________________
 THaCherenkov::THaCherenkov( const char* name, const char* description,
-			THaApparatus* apparatus )
+			    THaApparatus* apparatus )
   : THaPidDetector(name,description,apparatus), fFirstChan(NULL)
 {
   // Constructor
@@ -93,6 +93,8 @@ Int_t THaCherenkov::ReadDatabase( FILE* fi, const TDatime& date )
   tan_angle = TMath::Tan(angle*degrad);
   sin_angle = TMath::Sin(angle*degrad);
   cos_angle = TMath::Cos(angle*degrad);
+
+  DefineAxes(angle*degrad);
 
   // Dimension arrays
   if( !fIsInit ) {
