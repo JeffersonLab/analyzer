@@ -23,8 +23,6 @@
 #pragma link C++ class THaApparatus+;
 #pragma link C++ class THaSpectrometer+;
 #pragma link C++ class THaHRS+;
-#pragma link C++ class THaLeftHRS+;
-#pragma link C++ class THaRightHRS+;
 #pragma link C++ class THaDecData+;
 #pragma link C++ class THaAnalysisObject+;
 #pragma link C++ class THaDetectorBase+;

@@ -103,7 +103,6 @@ protected:
   Bool_t          fCoarseDone;    //Coarse Reconstruct done
 
   // only derived classes can construct me
-  THaSpectrometer() {}
   THaSpectrometer( const char* name, const char* description );
 
   virtual Int_t   ReadRunDatabase( const TDatime& date );

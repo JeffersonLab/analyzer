@@ -21,7 +21,6 @@ public:
   virtual Int_t        AddDetector( THaDetector* det );
   virtual Int_t        Decode( const THaEvData& );
           Int_t        GetNumDets()   const      { return fDetectors->GetSize(); }
-          Int_t        GetNumMyDets() const      { return fNmydets; }
           THaDetector* GetDetector( const char* name );
   virtual EStatus      Init( const TDatime& run_time );
   virtual void         Print( Option_t* opt="" ) const 
@@ -32,16 +31,17 @@ public:
 
 protected:
   TList*         fDetectors;    // List of all detectors for this apparatus
-  Int_t          fNmydets;      // Number of detectors defined in the constructor
-  THaDetector**  fMydets;       // Array of pointers to the detectors defined by me
 
   //Only derived classes may construct me  
-  THaApparatus() : fDetectors(NULL), fNmydets(0), fMydets(0) {}
   THaApparatus( const char* name, const char* description );
-  THaApparatus( const THaApparatus& ) {};
-  THaApparatus& operator=( const THaApparatus& ) { return *this; }
 
   virtual void MakePrefix() { THaAnalysisObject::MakePrefix( NULL ); }
+
+private:
+  // Prevent default construction, copying, assignment
+  THaApparatus();
+  THaApparatus( const THaApparatus& );
+  THaApparatus& operator=( const THaApparatus& );
 
   ClassDef(THaApparatus,0)   //A generic apparatus (collection of detectors)
 };

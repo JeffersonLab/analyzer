@@ -24,7 +24,7 @@ ClassImp(THaApparatus)
 
 //_____________________________________________________________________________
 THaApparatus::THaApparatus( const char* name, const char* description ) : 
-  THaAnalysisObject(name,description), fNmydets(0), fMydets(0)
+  THaAnalysisObject(name,description)
 {
   // Constructor
   
@@ -34,14 +34,12 @@ THaApparatus::THaApparatus( const char* name, const char* description ) :
 //_____________________________________________________________________________
 THaApparatus::~THaApparatus()
 {
-  // Destructor. Delete all detectors that I have defined.
+  // Destructor. Delete all detectors currently associated with this
+  // apparatus, including any that were added via AddDetector.
+  
+  fDetectors->Delete();
+  delete fDetectors;
 
-  delete fDetectors;   //Does not delete any user detectors
-
-  for( int i=0; i<fNmydets; i++ ) {
-    delete fMydets[i];
-  }
-  delete [] fMydets;
 }
 
 //_____________________________________________________________________________
