@@ -29,6 +29,7 @@ public:
   virtual bool operator<=( const THaRun& ) const;
   virtual bool operator>=( const THaRun& ) const;
 
+  virtual void         Clear( Option_t* opt="" );
   virtual void         ClearDate();
           void         ClearEventRange();
   virtual Int_t        CloseFile();
@@ -40,9 +41,12 @@ public:
           Int_t        GetType()        const { return fType; }
           UInt_t       GetFirstEvent()  const { return fEvtRange[0]; }
           UInt_t       GetLastEvent()   const { return fEvtRange[1]; }
+          UInt_t       GetFirstAnalyzed() const { return fAnalyzed[0]; }
+          UInt_t       GetLastAnalyzed()  const { return fAnalyzed[1]; }
           const Int_t* GetEvBuffer()    const;
   THaRunParameters*    GetParameters()  const { return fParam; }
   virtual Bool_t       HasInfo( UInt_t bits ) const;
+  virtual Bool_t       HasInfoRead( UInt_t bits ) const;
   virtual Int_t        Init();
           Bool_t       IsInit()         const { return fIsInit; }
   virtual bool         IsOpen()         const;
@@ -54,10 +58,15 @@ public:
           void         SetDate( UInt_t tloc );
   virtual void         SetFilename( const char* name );
           void         SetFirstEvent( UInt_t first )   { fEvtRange[0] = first; }
-          void         SetLastEvent( UInt_t last )     { fEvtRange[1] = last; }
+          void         SetLastEvent(  UInt_t last )    { fEvtRange[1] = last; }
           void         SetEventRange( UInt_t first, UInt_t last )
     { SetFirstEvent(first); SetLastEvent(last); }
+          void         SetFirstAnalyzed( UInt_t first ){ fAnalyzed[0] = first; }
+          void         SetLastAnalyzed(  UInt_t last ) { fAnalyzed[1] = last; }
+          void         SetAnalyzedRange( UInt_t first, UInt_t last )
+    { SetFirstAnalyzed(first); SetLastAnalyzed(last); }
   virtual void         SetNumber( Int_t number );
+          void         SetNscan( Int_t n )             { fMaxScan = n; }
   virtual void         SetType( Int_t type );
   virtual Int_t        Update( const THaEvData* evdata );
 

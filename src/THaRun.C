@@ -30,10 +30,11 @@ using namespace std;
 
 static const int MAXSCAN = 5000;
 static const int UNDEFDATE = 19950101;
+static const char* NOTINIT = "uninitialized run";
 
 //_____________________________________________________________________________
 THaRun::THaRun( const char* fname, const char* descr ) : 
-  TNamed("uninitialized run", strlen(descr) ? descr : fname), 
+  TNamed(NOTINIT, strlen(descr) ? descr : fname), 
   fNumber(-1), fType(0), fFilename(fname), fDate(UNDEFDATE,0), 
   fDBRead(kFALSE), fIsInit(kFALSE), fAssumeDate(kFALSE), fMaxScan(MAXSCAN),
   fDataSet(0), fDataRead(0), fDataRequired(kDate), fParam(0)
@@ -42,8 +43,7 @@ THaRun::THaRun( const char* fname, const char* descr ) :
 
   fCodaData = new THaCodaFile;  //Specifying the file name would open the file
   ClearEventRange();
-  fAnalyzed[0] = 0;
-  fAnalyzed[1] = 0;
+  fAnalyzed[0] = fAnalyzed[1] = 0;
 }
 
 //_____________________________________________________________________________
@@ -113,17 +113,19 @@ THaRun::~THaRun()
 }
 
 //_____________________________________________________________________________
-Int_t THaRun::CloseFile()
-{
-  return fCodaData ? fCodaData->codaClose() : 0;
-}
-
-//_____________________________________________________________________________
 Bool_t THaRun::HasInfo( UInt_t bits ) const
 {
   // Test if all the bits set in 'bits' are also set in fDataSet. 
   // 'bits' should consist of the bits defined in EInfoType.
   return ((bits & fDataSet) == bits);
+}
+
+//_____________________________________________________________________________
+Bool_t THaRun::HasInfoRead( UInt_t bits ) const
+{
+  // Test if all the bits set in 'bits' are also set in fDataRead. 
+  // 'bits' should consist of the bits defined in EInfoType.
+  return ((bits & fDataRead) == bits);
 }
 
 //_____________________________________________________________________________
@@ -254,12 +256,6 @@ Int_t THaRun::Update( const THaEvData* evdata )
 }
 
 //_____________________________________________________________________________
-bool THaRun::IsOpen() const
-{
-  return fCodaData ? fCodaData->isOpen() : false;
-}
-
-//_____________________________________________________________________________
 bool THaRun::operator==( const THaRun& rhs ) const
 {
   return (fNumber == rhs.fNumber);
@@ -317,6 +313,18 @@ const Int_t* THaRun::GetEvBuffer() const
 }
 
 //_____________________________________________________________________________
+Int_t THaRun::CloseFile()
+{
+  return fCodaData ? fCodaData->codaClose() : 0;
+}
+
+//_____________________________________________________________________________
+bool THaRun::IsOpen() const
+{
+  return fCodaData ? fCodaData->isOpen() : false;
+}
+
+//_____________________________________________________________________________
 Int_t THaRun::OpenFile()
 {
   // Open CODA file for read-only access.
@@ -334,6 +342,14 @@ Int_t THaRun::OpenFile( const char* filename )
 
   SetFilename( filename );
   return OpenFile();
+}
+
+//_____________________________________________________________________________
+Int_t THaRun::ReadEvent()
+{
+  // Read one event from CODA file.
+
+  return fCodaData ? fCodaData->codaRead() : -255;
 }
 
 //_____________________________________________________________________________
@@ -368,11 +384,21 @@ Int_t THaRun::ReadDatabase()
 }
   
 //_____________________________________________________________________________
-Int_t THaRun::ReadEvent()
+void THaRun::Clear( const Option_t* opt )
 {
-  // Read one event from CODA file.
+  // Reset the run object.
 
-  return fCodaData ? fCodaData->codaRead() : -255;
+  fName = NOTINIT;
+  fNumber = -1;
+  fType = 0;
+  fDBRead = fIsInit = kFALSE;
+  fMaxScan = MAXSCAN;
+  fDataSet = fDataRead = 0;
+  fAnalyzed[0] = fAnalyzed[1] = 0;
+  fParam->Clear(opt);
+  ClearDate();
+  ClearEventRange();
+  CloseFile();
 }
 
 //_____________________________________________________________________________

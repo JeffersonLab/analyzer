@@ -20,6 +20,7 @@ public:
   virtual THaRunParameters& operator=( const THaRunParameters& rhs );
   virtual ~THaRunParameters();
   
+  virtual void   Clear( Option_t* opt="" );
   const char*    GetBeamName()    const { return fBeamName.Data(); }
   Double_t       GetBeamE()       const { return fBeamE; }
   Double_t       GetBeamdE()      const { return fBeamdE; }

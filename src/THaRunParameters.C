@@ -14,7 +14,9 @@
 using namespace std;
 
 //_____________________________________________________________________________
-THaRunParameters::THaRunParameters()
+THaRunParameters::THaRunParameters() :
+  fBeamE(0), fBeamP(0), fBeamM(0), fBeamQ(0), fBeamdE(0), fBeamPol(0),
+  fTgtM(0), fTgtPol(0), fIsPol(kFALSE)
 {
   // Default constructor
 
@@ -61,6 +63,17 @@ THaRunParameters& THaRunParameters::operator=(const THaRunParameters& rhs)
 THaRunParameters::~THaRunParameters()
 {
   // Destructor
+}
+
+//_____________________________________________________________________________
+void THaRunParameters::Clear( Option_t* opt )
+{
+  // Clear run parameters
+  fBeamName = fTgtName = fRunName = "";
+  fBeamE = fBeamP = fBeamM = fBeamdE = fBeamPol = fTgtM = fTgtPol = 0;
+  fBeamQ = 0;
+  fIsPol = kFALSE;
+  fPrescale.Reset();
 }
 
 //_____________________________________________________________________________
