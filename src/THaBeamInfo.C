@@ -9,10 +9,8 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaBeamInfo.h"
-#include "THaRunBase.h"
+#include "THaBeam.h"
 #include "THaRunParameters.h"
-#include "THaGlobals.h"
-#include "TMath.h"
 
 using namespace std;
 
@@ -25,9 +23,10 @@ Double_t THaBeamInfo::GetE() const
   // current beam momentum and mass, not necessarily the same as
   // the nominal beam energy in the run database.
 
-  if( !gHaRun )
+  if( !fBeam )
     return kBig;
-  THaRunParameters* rp = gHaRun->GetParameters();
+
+  THaRunParameters* rp = fBeam->GetRunParameters();
   if( !rp )
     return kBig;
   Double_t m = rp->GetBeamM();
@@ -40,9 +39,9 @@ Double_t THaBeamInfo::GetM() const
 {
   // Return mass of beam particles
 
-  if( !gHaRun )
+  if( !fBeam )
     return kBig;
-  THaRunParameters* rp = gHaRun->GetParameters();
+  THaRunParameters* rp = fBeam->GetRunParameters();
   if( !rp )
     return kBig;
   return rp->GetBeamM();
@@ -53,9 +52,9 @@ Double_t THaBeamInfo::GetQ() const
 {
   // Return charge of beam particles (electrons: -1)
 
-  if( !gHaRun )
+  if( !fBeam )
     return kBig;
-  THaRunParameters* rp = gHaRun->GetParameters();
+  THaRunParameters* rp = fBeam->GetRunParameters();
   if( !rp )
     return kBig;
   return rp->GetBeamQ();
@@ -66,9 +65,9 @@ Double_t THaBeamInfo::GetdE() const
 {
   // Return beam energy uncertainty
 
-  if( !gHaRun )
+  if( !fBeam )
     return kBig;
-  THaRunParameters* rp = gHaRun->GetParameters();
+  THaRunParameters* rp = fBeam->GetRunParameters();
   if( !rp )
     return kBig;
   return rp->GetBeamdE();
