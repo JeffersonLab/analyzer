@@ -149,6 +149,8 @@ THaDetectorBase::EStatus THaTotalShower::Init( const TDatime& run_time )
   if( IsZombie() || !fShower || !fPreShower )
     return fStatus = kInitError;
 
+  MakePrefix();
+
   EStatus status;
   if( (status = THaPidDetector::Init( run_time )) ||
       (status = fShower->Init( run_time )) ||

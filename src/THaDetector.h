@@ -26,13 +26,15 @@ public:
 protected:
   THaApparatus*  fApparatus;        // Apparatus containing this detector
 
+  virtual const char* GetDBFileName() const { return GetPrefix(); }
+
 //Only derived classes may construct me
 
   THaDetector() : fApparatus(NULL) {}     
   THaDetector( const char* name, const char* description, 
 	       THaApparatus* apparatus = NULL );  
 
-  void MakePrefix();
+  virtual void MakePrefix();
 
   ClassDef(THaDetector,0)   //Abstract base class for a Hall A detector
 };

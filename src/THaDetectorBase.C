@@ -115,8 +115,12 @@ THaDetectorBase::EStatus THaDetectorBase::Init( const TDatime& date )
   // available.
 
   Int_t status;
-
   fStatus = kNotinit;
+
+  // Generate the name prefix for global variables. Do this here, not in
+  // the constructor, so we can use a virtual function - detectors and
+  // especially subdetectors may have their own idea what prefix they like.
+  MakePrefix();
 
   // Open database file. Don't bother if this object has not implemented
   // its own database reader.
@@ -157,6 +161,9 @@ THaDetectorBase::EStatus THaDetectorBase::Init( const TDatime& date )
 FILE* THaDetectorBase::OpenFile( const TDatime& date )
 {
   // Open database file.
+
+  // FIXME: Try to write this in a system-independent way. Avoid direct Unix 
+  // system calls, call ROOT's OS interface instead.
 
   static const char* const here = "OpenFile()";
   char *buf = NULL, *dbdir = NULL;
@@ -242,9 +249,12 @@ FILE* THaDetectorBase::OpenFile( const TDatime& date )
   }
   if( !getcwd(buf,size)) goto error;
 
+  // Construct the database file name. It is of the form db_<prefix>.dat.
+  // Subdetectors use the same files as their parent detectors!
   filename = "db_";
-  filename.append(GetPrefix());
+  filename.append(GetDBFileName());
   filename.append("dat");
+
 #ifdef WITH_DEBUG
   if( fDebug>0 ) {
     cout << "<THaDetectorBase::" << Here("OpenFile()") 
@@ -276,7 +286,7 @@ void THaDetectorBase::MakePrefix( const char* basename )
 
   delete [] fPrefix;
   if( basename && strlen(basename) > 0 ) {
-    fPrefix = new char[ strlen(basename) + strlen(GetName()) + 3];
+    fPrefix = new char[ strlen(basename) + strlen(GetName()) + 3 ];
     strcpy( fPrefix, basename );
     strcat( fPrefix, "." );
     strcat( fPrefix, GetName() );

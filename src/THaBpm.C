@@ -53,6 +53,8 @@ THaDetectorBase::EStatus THaBpm::Init( const TDatime& run_time )
     return fStatus;
   }
 
+  MakePrefix();
+
   // Which BPM are we?
 
   int det = 0, bpm = 0;

@@ -42,6 +42,8 @@ THaDetectorBase::EStatus THaRaster::Init( const TDatime& run_time )
     return fStatus;
   }
 
+  MakePrefix();
+
   // Which device are we using?
   // I guess the choice should be time-dependent since the raster configuration
   // is known for each experiment, but for now we rely on the user to tell us

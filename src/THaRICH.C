@@ -49,13 +49,14 @@ THaDetectorBase::EStatus THaRICH::Init( const TDatime& run_time )
   // Set up the detector map for this detector
   // These data will come from a database in the future.
 
+  MakePrefix();
+
   for (int i = 1; i < 17; i++) {
     if( fDetMap->AddModule(16,i,0,480) < 0 ) {
       Error("Init()", "Detector map is full. RICH not initialized.");
       return fStatus = kInitError;
     }
   }
-
 
   ReadRICH();
 

@@ -26,7 +26,6 @@ THaDetector::THaDetector( const char* name, const char* description,
     MakeZombie();
     return;
   }
-  MakePrefix();
 }
 
 //_____________________________________________________________________________
@@ -47,7 +46,6 @@ void THaDetector::SetApparatus( THaApparatus* apparatus )
     return;
   }
   fApparatus = apparatus;
-  MakePrefix();
 }
 
 //_____________________________________________________________________________

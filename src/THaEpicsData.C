@@ -42,6 +42,8 @@ THaDetectorBase::EStatus THaEpicsData::Init( const TDatime& run_time )
     return fStatus;
   }
 
+  MakePrefix();
+
   //FIXME: Get from database
   Int_t date = run_time.GetDate();
 

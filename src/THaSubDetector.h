@@ -25,13 +25,16 @@ public:
 protected:
   THaDetectorBase* fDetector;   // (Sub)detector containing this subdetector
 
+  virtual const char* GetDBFileName() const 
+    { return fDetector ? fDetector->GetDBFileName() : GetPrefix(); }
+
 //Only derived classes may construct me
 
   THaSubDetector() : fDetector(0) {}     
   THaSubDetector( const char* name, const char* description,
 		  THaDetectorBase* detector );  
 
-  void MakePrefix();
+  virtual void MakePrefix();
 
   ClassDef(THaSubDetector,0)   //ABC for a subdetector
 };

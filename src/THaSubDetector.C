@@ -7,9 +7,10 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaSubDetector.h"
-#include "TError.h"
+#include "TString.h"
+//#include "TError.h"
 
-#include <string.h>
+#include <cstring>
 
 ClassImp(THaSubDetector)
 
@@ -23,16 +24,11 @@ THaSubDetector::THaSubDetector( const char* name, const char* description,
   static const char* const here = "THaSubDetector()";
 
   if( !name || strlen(name) == 0 ) {
-    Error( here, "Must construct subdetector with valid name! "
+    Error( Here(here), "Must construct subdetector with valid name! "
 	   "Object construction failed." );
     MakeZombie();
     return;
   }
-  if( fDetector )
-    MakePrefix();
-  else
-    Warning( Here(here), "No detector defined for this subdetector! "
-	     "Fix your code!" );
 }
 
 //_____________________________________________________________________________
@@ -63,7 +59,6 @@ void THaSubDetector::SetDetector( THaDetectorBase* detector )
     return;
   }    
   fDetector = detector;
-  MakePrefix();
 }
 
 //_____________________________________________________________________________
@@ -71,10 +66,18 @@ void THaSubDetector::MakePrefix()
 {
   // Set up name prefix for global variables. 
   // Internal function called by constructors of derived classes.
+  // Subdetector prefixes are of form "<detector_prefix><subdetector_name>.",
+  // e.g. R.vdc.u1.
 
-  const char* basename = NULL;
-  if( fDetector )
-    basename = fDetector->GetName();
-  THaDetectorBase::MakePrefix( basename );
+  TString basename;
+  if( fDetector ) {
+    basename = fDetector->GetPrefix();
+    Ssiz_t len = basename.Length();
+    if( len>0 )
+      basename.Replace(len-1,1,"");  // delete trailing dot
+  } else
+    Warning( Here("MakePrefix()"), "No detector defined for this subdetector! "
+	     "Fix your code!" );
 
+  THaDetectorBase::MakePrefix( basename.Data() );
 }
