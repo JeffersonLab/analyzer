@@ -131,11 +131,11 @@ Int_t THaVDC::ReadDatabase( FILE* file, const TDatime& date )
   char w;
   bool good = false;
 
-  // read in T000 and verify it
+  // read in t000 and verify it
   ME.iszero = true;  ME.order = 0;
   // Read matrix element signature
   if( fscanf(file, "%c %d %d %d", &w, &ME.pw[0], &ME.pw[1], &ME.pw[2]) == 4) {
-    if( w == 'T' && ME.pw[0] == 0 && ME.pw[1] == 0 && ME.pw[2] == 0 ) {
+    if( w == 't' && ME.pw[0] == 0 && ME.pw[1] == 0 && ME.pw[2] == 0 ) {
       good = true;
       for(int p_cnt=0; p_cnt<kPORDER; p_cnt++) {
 	if(!fscanf(file, "%le", &ME.poly[p_cnt])) {
@@ -157,11 +157,11 @@ Int_t THaVDC::ReadDatabase( FILE* file, const TDatime& date )
   }
   fscanf(file, "%*c");
 
-  // read in Y000 and verify it
-  ME.iszero = true;  ME.order = 0;
+  // read in y000 and verify it
+  ME.iszero = true;  ME.order = 0; good = false;
   // Read matrix element signature
   if( fscanf(file, "%c %d %d %d", &w, &ME.pw[0], &ME.pw[1], &ME.pw[2]) == 4) {
-    if( w == 'Y' && ME.pw[0] == 0 && ME.pw[1] == 0 && ME.pw[2] == 0 ) {
+    if( w == 'y' && ME.pw[0] == 0 && ME.pw[1] == 0 && ME.pw[2] == 0 ) {
       good = true;
       for(int p_cnt=0; p_cnt<kPORDER; p_cnt++) {
 	if(!fscanf(file, "%le", &ME.poly[p_cnt])) {
@@ -183,10 +183,10 @@ Int_t THaVDC::ReadDatabase( FILE* file, const TDatime& date )
   }
   fscanf(file, "%*c");
 
-  // read in P000 and verify it
-  ME.iszero = true;  ME.order = 0;
+  // read in p000 and verify it
+  ME.iszero = true;  ME.order = 0; good = false;
   if( fscanf(file, "%c %d %d %d", &w, &ME.pw[0], &ME.pw[1], &ME.pw[2]) == 4) {
-    if( w == 'P' && ME.pw[0] == 0 && ME.pw[1] == 0 && ME.pw[2] == 0 ) {
+    if( w == 'p' && ME.pw[0] == 0 && ME.pw[1] == 0 && ME.pw[2] == 0 ) {
       good = true;
       for(int p_cnt=0; p_cnt<kPORDER; p_cnt++) {
 	if(!fscanf(file, "%le", &ME.poly[p_cnt])) {
