@@ -45,7 +45,6 @@ THaEvData::THaEvData() :
   first_load(true), first_scaler(true), first_decode(true),
   numscaler_crate(0), run_num(0), run_type(0), run_time(0)
 {
-  buffer = new Int_t[MAXEVLEN];
   epics = new THaEpicsStack;
   epics->setupDefaultList();
   for (int i=0; i<MAX_PSFACT; i++) psfact[i] = 0;
@@ -366,9 +365,8 @@ int THaEvData::prescale_decode(const int* evbuffer) {
      for(trig=0; trig<MAX_PSFACT; trig++) {
         strcpy(temp1,pstr[trig].c_str());        
         psfact[trig] = sut.getint(temp1);
-        int psmax;
+        int psmax = 65536; // 2^16 for trig > 3
 	if (trig < 4) psmax = 16777216;  // 2^24 for 1st 4 trigs
-        if (trig > 3) psmax = 65536;     // 2^16 for next 4.
         if (trig > 7) psfact[trig] = 1;  // cannot prescale trig 9-12
         psfact[trig] = psfact[trig] % psmax;
         if (psfact[trig] == 0) psfact[trig] = psmax;

@@ -100,7 +100,7 @@ private:
      static const int DETMAP_FILE      = 135;
      static const int TRIGGER_FILE     = 136;
      static const int SCALER_EVTYPE    = 140;
-     Int_t *buffer;
+     const Int_t *buffer;
      Int_t event_type,event_length,event_num,run_num,evscaler;
      Int_t run_type;     // CODA run type from prestart event
      UInt_t run_time;     // CODA run time (Unix time) from prestart event
