@@ -169,7 +169,7 @@ SCALER_OBJS = $(SRC:.C=.o) THaScalDict.o
 PROGS = tscalfile tscalasy tscalhist tscalonl 
 PROGS += tscalntup tscaldtime tscalroc11 tscalevt tscalring
 #PROGS += xscaler
- 
+
 # To compile the local test codes:
 # Set STANDALONE at top of makefile.  But comment it out if 
 # to compile only the library libscaler.a for use with the main analyzer.
@@ -178,7 +178,8 @@ ifdef STANDALONE
   all: $(PROGS) libscaler.a
 else
  ifdef BUILD_SHARED
-   all:  libscaler.so
+#   all:  libscaler.so
+   all:  $(LIBDIR)/libscaler.so.$(VERSION)
  else
    all:  libscaler.a
  endif
@@ -195,10 +196,17 @@ endif
 
 libscaler.so:	$(SCALER_OBJS) 
 	rm -f $@
+ifeq ($(strip $(SONAME)),)
 	$(LD) $(LDFLAGS) $(SOFLAGS) -o $@ $^
+else
+	$(LD) $(LDFLAGS) $(SOFLAGS) $(SONAME)libscaler.so.$(SOVERSION) -o $@ $^
+endif
+
 ifndef STANDALONE
+$(LIBDIR)/libscaler.so.$(VERSION): libscaler.so
 	-cp -f scaler.map ../DB
-	cp -p $@ $(LIBDIR)
+	rm -f $@ $(LIBDIR)/libscaler.so.$(SOVERSION)
+	cp -p $< $@
 endif
 
 tscalfile: tscalfile_main.o $(SCALER_OBJS) $(SRC) $(HEAD) $(LIBDC)  
