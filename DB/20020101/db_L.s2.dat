@@ -1,0 +1,38 @@
+######################### LEFT SCINTILLATOR PLANE 2 ############################
+# Number of Left Scintillator 2 paddles ----------------------------------------
+       6
+# Crate,Slot,1st,Last ADC chans,Beg S2 chan ------------------------------------
+       2      25      22      27       1             - ADCs pads 1-6  (right)
+       2      25       6      11       7             - ADCs pads 7-12 (left)
+       2       3      24      29       1             - TDCs pads 1-6  (right)
+       2       3       8      13       7             - TDCs pads 7-12 (left)
+      -1       0       0       0       0
+# X,Y,Z coords of S2 front plane in spectrom cs --------------------------------
+   -0.22     0.0    3.1415                           - Meters
+# Half of X, half of Y, full Z sizes of S2 -------------------------------------
+   1.11    0.32     0.005                            - Meters
+# Rotation angle of the S2 plane -----------------------------------------------
+     0.0                                             - Degrees
+# TDC time offsets of S2 TDC channels ------------------------------------------
+ -475.0 -576.2 -428.2 -398.6 -396.6 -429.7     - Left Paddles 
+ -563.4 -443.3 -569.9 -648.4 -617.7 -520.7     - Right Paddles
+# Pedestal values of S2 ADC channels -------------------------------------------
+   623    663    597    579    555    491            - Left Paddles
+   695    749    507    531    491    491            - Right Paddles
+# Amplitude coeff for average of 1000 ------------------------------------------
+  0.776   0.586   0.641   0.470   0.621   0.493      - Left Paddles
+  0.734   0.859   0.858   0.779   0.481   0.354      - Right Paddles
+# Timing Resolution of the TDCs (s)---------------------------------------------
+   0.1e-9
+# Transmission speed through scintillator (meters/second) ----------------------
+   1.48106e+08
+# Attenuation length of scintillator (inverse meters) --------------------------
+   0.7
+# Timewalk correction parameters : typical ADC for MIP (reference pt) ----------
+   2000
+# Timewalk coefficients (1 for each PMT) -- seconds*1/sqrt(ADC) ----------------
+   3.79796e-08 3.88410e-08 5.18897e-08 5.29268e-08 4.60061e-08 2.80422e-08
+   3.03706e-08 3.13096e-08 3.74473e-08 3.37401e-08 4.41700e-08 3.44018e-08
+# Trigger-timing offsets -- seconds offset per paddle
+  0. 0. 0. 0. 0. 0.
+################################################################################

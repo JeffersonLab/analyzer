@@ -1,0 +1,14 @@
+#---- Coincidence timing information
+# Contains just the detector map for now
+# Format for the map
+# Crate, Slot, First, Last physical TDC chans, First Log chan, model,
+#        timing resolution (s), label
+#   label = for future use, such that multiple spectrometers can be
+#           used flexibly. Format of the name is Spec2_by_Spec1, where
+#           Spec1 provides the start and Spec2 provides the stop.
+#
+# Crate  Slot  Ch1   ChFinal    Model   TDCres      Label
+# ----   ----  ----  -------   ------  --------  ----------
+    2      3    48     48       1875    0.1e-9     R_by_L
+    1     21     4      4       1875    0.1e-9     L_by_R
+   -1
