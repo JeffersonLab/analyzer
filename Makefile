@@ -4,14 +4,15 @@
 export WITH_DEBUG = 1
 
 # Compile debug version
-export DEBUG = 1
+#export DEBUG = 1
 
 # Profiling with gprof
 # export PROFILE = 1
 
 #------------------------------------------------------------------------------
 
-VERSION = 1.00RC2
+VERSION = 1.0-rc2
+NAME    = analyzer-$(VERSION)
 
 #------------------------------------------------------------------------------
 
@@ -170,15 +171,20 @@ realclean:	clean
 		$(MAKE) -C $(SCALERDIR) realclean
 		find . -name "*.d" -exec rm {} \;
 
-srcdist:	realclean
-		gtar czvf ../v$(VERSION).tar.gz -X .exclude \
-			.exclude src examples DB $(DCDIR) $(SCALERDIR) \
-			Makefile RELEASE_NOTES* 
+srcdist:
+		rm -f ../$(NAME)
+		ln -s $(PWD) ../$(NAME)
+		gtar czv -C .. -f ../$(NAME).tar.gz -X .exclude \
+		 -V "JLab/Hall A C++ Analysis Software "$(VERSION)" `date -I`"\
+		 $(NAME)/.exclude $(NAME)/src $(NAME)/examples \
+		 $(NAME)/DB $(NAME)/$(DCDIR) $(NAME)/$(SCALERDIR) \
+		 $(NAME)/Makefile $(NAME)/RELEASE_NOTES $(NAME)/docs
 
 cvsdist:	srcdist
-		gunzip ../v$(VERSION).tar.gz
-		gtar rvf ../v$(VERSION).tar CVS */CVS
-		gzip ../v$(VERSION).tar
+		gunzip -f ../$(NAME).tar.gz
+		gtar rv -C .. -f ../$(NAME).tar \
+		 `find . -type d -name CVS 2>/dev/null | sed "s%^\.%$(NAME)%"`
+		gzip -f ../$(NAME).tar
 
 haDict.C: $(HDR) src/HallA_LinkDef.h
 	@echo "Generating dictionary haDict..."

@@ -1,6 +1,8 @@
 CVS
-src/old
-src/new
-src/OLD
-src/NEW
+old
+new
+OLD
+NEW
 .#*
+*.o
+*.d
