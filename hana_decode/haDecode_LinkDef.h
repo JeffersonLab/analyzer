@@ -13,6 +13,7 @@
 #pragma link C++ class THaHelicity+;
 #pragma link C++ class THaSlotData+;
 #pragma link C++ class THaUsrstrutils+;
+#pragma link C++ class THaCodaDecoder+;
 
 #ifdef ONLINE_ET
 #pragma link C++ class THaEtClient+;

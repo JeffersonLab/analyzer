@@ -32,10 +32,12 @@ public:
      // Run time/date. Time of prestart event (UNIX time).
      UInt_t GetRunTime() const { return run_time; }
      // Event time from 100 kHz helicity clock.
-     Double_t GetEvTime() const;
+     virtual Double_t GetEvTime() const;
      int GetRunType()  const { return run_type; }
      int GetRocLength(int crate) const;   // Get the ROC length
-     int GetPrescaleFactor(int trigger) const;  // Obtain prescale factor
+
+     // KCR: in THaCodaDecoder
+     virtual int GetPrescaleFactor(int trigger) const;  // Obtain prescale factor
      bool IsPhysicsTrigger() const;    // physics trigger (event types 1-14)
      bool IsScalerEvent() const;       // scalers from datastream
      bool IsPrestartEvent() const;     // prestart event
@@ -57,24 +59,31 @@ public:
      int GetNumChan(int crate, int slot) const;    // Num unique channels hit
      int GetNextChan(int crate, int slot, int index) const; // List unique chan
      const char* DevType(int crate, int slot) const;
+
+     // KCR: Scaler stuff is in THaCodaDecoder
 // User can GetScaler, alternativly to GetSlotData for scalers
 // spec = "left", "right", "rcs" for event type 140 scaler "events"
 // spec = "evleft" or "evright" for L,R scalers injected into datastream.
-     int GetScaler(const TString& spec, int slot, int chan) const;   
-     int GetScaler(int roc, int slot, int chan) const;         
-     int GetHelicity() const;         // Returns Beam Helicity (-1,0,+1)  '0' is 'unknown'
-     int GetHelicity(const TString& spec) const;  // Beam Helicity for spec="left","right"
-// EPICS data which is nearest CODA event# 'event'.  Tag is EPICS variable, e.g. 'IPM1H04B.XPOS'
-     double GetEpicsData(const char* tag, int event=0) const;
-     double GetEpicsTime(const char* tag, int event=0) const;
-     Bool_t IsLoadedEpics(const char* tag) const;
+     virtual int GetScaler(const TString& spec, int slot, int chan) const;   
+     virtual int GetScaler(int roc, int slot, int chan) const;         
+     virtual int GetHelicity() const;         // Returns Beam Helicity (-1,0,+1)  '0' is 'unknown'
+     virtual int GetHelicity(const TString& spec) const;  // Beam Helicity for spec="left","right"
+
+     // THaEvData doesn't do Epics, go see THaCodaDetector
+     virtual double GetEpicsData(const char* tag, int event=0) const;
+     virtual double GetEpicsTime(const char* tag, int event=0) const;
+     virtual Bool_t IsLoadedEpics(const char* tag) const;
+
 // Loads CODA data evbuffer using THaCrateMap passed as 2nd arg
-     int LoadEvent(const int* evbuffer, THaCrateMap* usermap);    
+// KCR: NOTE this is not implemented here.  All derived classes must
+//      define and implement their own version.
+     virtual int LoadEvent(const int* evbuffer, THaCrateMap* usermap) = 0;    
+
 // Loads CODA data evbuffer using private crate map "cmap" (recommended)
      int LoadEvent(const int* evbuffer);          
-     void PrintSlotData(int crate, int slot) const;
-     void PrintOut() const { dump(buffer); }
-     void SetRunTime( UInt_t tloc );
+     virtual void PrintSlotData(int crate, int slot) const;
+     virtual void PrintOut() const;
+     virtual void SetRunTime( UInt_t tloc );
      void EnableHelicity( Bool_t enable=kTRUE );
      Bool_t HelicityEnabled() const;
      void EnableScalers( Bool_t enable=kTRUE );
@@ -90,6 +99,7 @@ public:
 
      enum { HED_OK = 0, HED_ERR = -127};
      enum { MAX_PSFACT = 12 };
+  
 
 protected:
   // Control bits in TObject::fBits used by decoders
@@ -97,7 +107,6 @@ protected:
 	    kScalersEnabled  = BIT(15)
      };
 
-private:
      static const int MAXROC = 20;  
      static const int MAXSLOT = 27;  
 
@@ -113,50 +122,48 @@ private:
      static const int DETMAP_FILE      = 135;
      static const int TRIGGER_FILE     = 136;
      static const int SCALER_EVTYPE    = 140;
-
+     
      struct RocDat_t {           // ROC raw data descriptor
        int pos;                  // position in evbuffer[]
        int len;                  // length of data
      } rocdat[MAXROC];
      THaCrateMap* cmap;          // default crate map
-     THaFastBusWord* fb;
+     //     THaFastBusWord* fb;
      THaSlotData** crateslot;  
+
+     // KCR: helicity really doesnt belong here, I'm gonna think about it.
      THaHelicity* helicity;
-     THaEpics* epics;
+
+     bool first_load, first_decode;//first_scaler;
+     //TString scalerdef[MAXROC];
+     //     int numscaler_crate;
+     //     int scaler_crate[MAXROC];        // stored from cratemap for fast ref.
+     //int psfact[MAX_PSFACT];
+
      bool fgTrigSupPS;
-     bool first_load,first_scaler,first_decode;
-     TString scalerdef[MAXROC];
-     int numscaler_crate;
-     int scaler_crate[MAXROC];        // stored from cratemap for fast ref.
-     int psfact[MAX_PSFACT];
+
 // Hall A Trigger Types
      const Int_t *buffer;
+
+     // KCR: evscaler is weird.  It doesn't really belong here, but theres
+     //      the one inline function that reads from it, so I'll leave it.
      Int_t event_type,event_length,event_num,run_num,evscaler;
      Int_t run_type;     // CODA run type from prestart event
      UInt_t run_time;    // CODA run time (Unix time) from prestart event
      UInt_t evt_time;    // Event time (Unix time). Not supported by CODA.
-     Int_t recent_event,synchflag,datascan;
+                         //  KCR: Actually, this isnt ever read from.
+     Int_t recent_event;//,synchflag,datascan;
      Double_t dhel,dtimestamp;
+     //
+
      bool buffmode,synchmiss,synchextra;
-     void dump(const int* evbuffer) const;
-     int gendecode(const int* evbuffer, THaCrateMap* map);
-     int loadFlag(const int* evbuffer);
-     int epics_decode(const int* evbuffer);
-     int prescale_decode(const int* evbuffer);
-     int physics_decode(const int* evbuffer, THaCrateMap* map);
-     int fastbus_decode(int roc, THaCrateMap* map, const int* evbuffer, 
-			int p1, int p2);
-     int vme_decode(int roc, THaCrateMap* map, const int* evbuffer, 
-		    int p1, int p2);
-     int camac_decode(int roc, THaCrateMap* map, const int* evbuffer, 
-		      int p1, int p2);
-     int scaler_event_decode(const int* evbuffer, THaCrateMap* map);
-     int init_cmap();      
-     int init_slotdata(const THaCrateMap* map);
      int idx(int crate, int slot) const;
      int idx(int crate, int slot);
-     void makeidx(int crate, int slot);
      bool GoodIndex(int crate, int slot) const;
+
+     int init_cmap();
+     int init_slotdata(const THaCrateMap* map);
+     void makeidx(int crate, int slot);
 
      int       fNSlotUsed;   // Number of elements of crateslot[] actually used
      int       fNSlotClear;  // Number of elements of crateslot[] to clear
@@ -170,6 +177,7 @@ private:
 
      UInt_t fInstance;          //My instance
      static TBits fgInstances;  //number of instances of this object
+     //
 
      ClassDef(THaEvData,0)  // Decoder for CODA event buffer
 
@@ -241,6 +249,8 @@ inline int THaEvData::GetRawData(int i) const {
   return 0;
 };
 
+// KCR: WOAH.  No lo puedo hacer.  
+//      Something has to be done about buffer, fast.
 inline int THaEvData::GetRawData(int crate, int i) const {
 // Raw words in evbuffer within crate #crate.
   if (crate < 0 || crate > MAXROC) return 0;
@@ -309,22 +319,13 @@ bool THaEvData::IsSpecialEvent() const {
 };
 
 inline
-int THaEvData::LoadEvent(const int* evbuffer, THaCrateMap* cratemap) {
-// Public interface to decode the event.  Note, LoadEvent()
-// MUST be called once per event BEFORE you can extract 
-// information about the event.
-// This version of LoadEvent() uses externally provided THaCrateMap
-    return gendecode(evbuffer, cratemap);
-};
-                     
-inline
 int THaEvData::LoadEvent(const int* evbuffer) {
 // This version of LoadEvent() uses private THaCrateMap cmap (recommended)
   if (first_load) {
       first_load = false;
       if (init_cmap() == HED_ERR) return HED_ERR;
   }
-  return gendecode(evbuffer, cmap);
+  return LoadEvent(evbuffer, cmap);
 };
 
 #endif 
