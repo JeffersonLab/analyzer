@@ -1,140 +1,27 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html><head>
 <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-<title>Hall A C++ Analyzer cut/test classes</title>
+<title>Using cuts to control data analysis</title>
 </head>
 <body background="wallpaper.gif">
-<h1>Dynamically defined logical expressions (tests/cuts)</h1>
+<h1>Using tests/cuts</h1>
 
 Ole Hansen<br>
-Rev 1.0, 14 June 2003<p>
+Rev 1.1, 15 April 2004<p>
 
-<h3>Overview</h3>
-An important feature of the C+ analyzer is the ability to define arithmetic and logical expressions
-dynamically (on the fly) without the need to recompile any code.
-Underlying both types of expressions are "global variables" that are represented by the 
-<a href="http://hallaweb.jlab.org/root/html/THaVar.html">THaVar</a> class
-and collected in the global variable list
-<a href="http://hallaweb.jlab.org/root/html/THaVarList.html">THaVarList</a>.
-Each analysis module (detector, apparatus, physics module) normally adds
-internal variables of interest to the global variable list gHaVars as part of its
-<a href="detector.html#init">initialization</a>
-and removes those variables from the list in its destructor. For an example, see 
-<a href="http://hallaweb.jlab.org/root/html/THaScintillator.html">THaScintillator</a>.
-In this way, analysis results are conveniently available for use in expressions
-and by <a href="http://hallaweb.jlab.org/root/html/THaOutput.html">THaOutput</a>.
-<p>
-Arithmetic expressions are supported by the
-<a href="http://hallaweb.jlab.org/root/html/THaFormula.html">THaFormula</a> class, while
-tests/cuts are special cases of THaFormulas which evaluate to either 1 or 0 (true or false)
-and are represented by the
-<a href="http://hallaweb.jlab.org/root/html/THaCut.html">THaCut</a> class.
-In the C++ analyzer, THaFormulas are primarily used in the
-<a href="http://hallaweb.jlab.org/root/html/THaOutput.html">THaOutput</a> system, while
-THaCuts are used for two purposes: (1) in THaOutput as conditions on histograms; and (2)
-to control the flow of the data analysis in the <a href="standard-analyzer.html">standard
-analysis algorithm</a>. The latter is supported by a special global list of tests,
-<a href="http://hallaweb.jlab.org/root/html/THaCutList.html">THaCutList</a>, 
-<a href="http://hallaweb.jlab.org/root/html/THaCutList.html">THaCutList</a> supports the concept
-of "blocks" of cuts which can be evaluated as a unit. Blocks are evaluated
-at the end of each stage of the analysis (Decode/Reconstruct/Physics). 
-<p>
-The interactive interface to the analyzer, 
-<a href="http://hallaweb.jlab.org/root/html/THaInterface.html">THaInterface</a>, automatically creates 
-an instance of <a href="http://hallaweb.jlab.org/root/html/THaVarList.html">THaVarList</a> and
-<a href="http://hallaweb.jlab.org/root/html/THaCutList.html">THaCutList</a> upon startup. These
-are called the "global variable list" and "global cut list", respecively. 
-They are accessible via the global variables gHaVars and gHaCuts from anywhere in the analyzer
-if you #include "<a href="http://hallaweb.jlab.org/root/html/THaGlobals.h">THaGlobals.h</a>.
-
-<h3>Examples</h3>
-A short tutorial on using the test/cut classes along with the global variable system follows.
-As mentioned, the relevant classes are:
-<ul>
-  <li> <a href="http://hallaweb.jlab.org/root/html/THaCutList.html">THaCutList</a> -- Define and evaluate
-      cuts. Automatically manages cuts with the help of internal lists.
-  <li> <a href="http://hallaweb.jlab.org/root/html/THaVarList.html">THaVarList</a> -- Manage "global"
-      symbolic variables.
-  <li> <a href="http://hallaweb.jlab.org/root/html/THaCut.html">THaCut</a> -- Definition of a 
-      single cut. This is a low-level class which should normally only
-      be used internally by THaCutList.
-  <li> <a href="http://hallaweb.jlab.org/root/html/THaVar.html">THaVar</a> -- Definition of a 
-      single symbolic variable. This is a low-level class which should 
-      normally only be used internally by THaVarList.
-</ul>
-Here is a sample session to demonstrate the use of these classes:
-<pre>
-analyzer [0] double xvar=10             // Define a variable xvar
-analyzer [1] gHaVars->Define("x",xvar)  // Add xvar to global var list, name it "x"
-analyzer [2] gHaVars->PrintFull()       // Show all global vars defined including their current values
-  OBJ: THaVar     x     x
-  (Double_t)[1]  10
-
-analyzer [3] gHaCuts->Define("cut1","x>0")      // Define a cut named "cut1" that is true if x>0.
-analyzer [4] gHaCuts->Define("cut2","abs(x)>5") // dto., but |x|>5
-analyzer [5] gHaCuts->Print()                   // List all defined cuts
-  Name  Def       T  Block    Called     Passed
-  -------------------------------------------------
-  cut1  x>0       0  Default  0          0 (0.0%)
-  cut2  abs(x)>5  0  Default  0          0 (0.0%)
-
-analyzer [6] gHaCuts->Eval()                   // Evaluate all defined cuts
-analyzer [7] gHaCuts->Print()
-  Name  Def       T  Block    Called     Passed
-  -------------------------------------------------
-  cut1  x>0       1  Default  1          1 (100%)
-  cut2  abs(x)>5  1  Default  1          1 (100%)
-
-(Note the current value ("T") of each of the cuts. Both are true since both
-conditions are true for x=10).
-
-analyzer [8] xvar=2                           // Give xvar a new value
-analyzer [9] gHaCuts->Eval()                  // Evaluate the cuts again
-analyzer [10] gHaCuts->Print()
-  Name  Def       T  Block    Called     Passed
-  -------------------------------------------------
-  cut1  x>0       1  Default  2          2 (100%)
-  cut2  abs(x)>5  0  Default  2          1 (50%)
-
-(Note that cut2 is now false since |x| is less than 5.)
-
-analyzer [11] gHaCuts->Result("cut2")        // Retrieve result of cut2
-                                             // NB: This does not re-evaluate the cut
-  (Int_t)0
-analyzer [11] gHaCuts->Result("cut1")
-  (Int_t)1
-</pre>
-<p>
-Tests may refer to other tests already defined in gHaCuts. When evaluating
-cuts containing other tests, the referenced tests are not re-evaluated, but the result of
-their last evaluation is used (as in the call to
-<a href="http://hallaweb.jlab.org/root/html/THaCutList.html#THaCutList:Result">THaCutList::Result()</a>
-above). This ensures that the test statistics (i.e. number of calls/number of passes) remain consistent
-when evaluating all the tests for an event. Here's an example, continuing from above:
-<pre>
-analyzer [12] gHaCuts->Define("cut3","cut1&&!cut2") // Define cut based on two previously-defined cuts
-analyzer [13] gHaCuts->Eval()                       // Evaluate defined cuts again
-analyzer [14] gHaCuts->Print()
-  Name  Def          T  Block    Called     Passed
-  ----------------------------------------------------
-  cut1  x>0          1  Default  3          3 (100%)
-  cut2  abs(x)>5     0  Default  3          1 (33.3%)
-  cut3  cut1&&!cut2  1  Default  1          1 (100%)
-</pre>
-
-<h3>Using tests to control the analysis</h3>
-To define tests to be evaluated at each stage of the analysis, the definitions
-of the cuts are placed in a plain-text input file, the "cut definition file".
+<h3>Controlling data analysis flow with cuts</h3>
+To define tests/cuts to be evaluated at each stage of the analysis, test definitions
+are placed in a plain-text input file, the "cut definition file".
 The file name must be given to the analyzer via a call to
 <a href="http://hallaweb.jlab.org/root/html/THaAnalyzer.html#THaAnalyzer:SetCutFile">SetCutFile()</a>.
 Example:
 <pre>
 analyzer [24] THaAnalyzer* analyzer = new THaAnalyzer;
-analyzer [25] analyzer->SetCutFile("cuts.def")
+analyzer [25] analyzer->SetCutFile("demo.cuts")
 </pre>
 The format of the file is illustrated in the following example:
 <pre>
-# Demo cut definition file
+# Demo cut definition file demo.cuts
 #
 Block: RawDecode
 
@@ -154,22 +41,34 @@ NoisyVDC          NoisyU1||NoisyV1||NoisyU2||NoisyV2
 EnoughShowerHits  R.sh.nhit>10
 Decode_master     !NoisyVDC
 </pre>
+If a test with the name "blockname"_master is defined (example "Decode_master"),
+then if this test is false for a given event, further analysis of that event will be skipped.
+<p>
+A summary of the test results is printed to the screen at the end of the analysis.
+A copy of the printout ("cut summary") can be written to a file if the name of the file
+is set via a call to
+<a href="http://hallaweb.jlab.org/root/html/THaAnalyzer.html#THaAnalyzer:SetSummaryFile">SetSummaryFile()</a>
+before starting the analysis.
+<p>
 See the "examples" directory and the <a href="quickstart.html">Quickstart Guide</a> for more examples.
 <p>
-Notes:
+Notes on the format of the definition file:
 <ul>
   <li>Comments start with "#" or "//". Inline
       comments are allowed. Empty lines (all whitespace) are ignored. 
   <li>Blocks of tests are introduced with a line containing "Block: name".
       The block names must correspond to the predefined names of the analysis stages.
       Each block will be evaluated at the end of the respective stage.
-      The following stages are defined:
+      The following stages are defined in the standard analyzer
+      <a href="http://hallaweb.jlab.org/root/html/THaAnalyzer.html">THaAnalyzer</a>:
       <ul>
 	<li>"RawDecode": After
 	    <a href="http://hallaweb.jlab.org/root/html/THaEvData.html#THaEvData:LoadEvent">THaEvData::LoadEvent()</a>.
 	<li>"Decode": After Decode() of all detectors in all apparatuses.
-	<li>"CoarseReconstruct": After CoarseReconstruct() of all apparatuses.
-	<li>"Reconstruct": After Reconstruct() of all apparatuses.
+	<li>"CoarseTracking": After CoarseTrack() of all detectors of all apparatuses.
+	<li>"CoarseReconstruct": After CoarseProcess() of all detectors of all apparatuses.
+	<li>"Tracking": After FineTrack() of all detectors of all apparatuses.
+	<li>"Reconstruct": After FineProcess() of all detectors of all apparatuses.
 	<li>"Physics": After Process() of all physics modules, i.e. right before writing the output.
       </ul>
   <li>Test definitions start with the name of the test (which may not contain any
@@ -180,29 +79,29 @@ Notes:
   <li>Tests will be defined exactly in the order in which they appear in the file.
       Within each block, tests will be evaluated exactly in the order in which they are defined.
       The blocks will be evaluated in the order the analysis stages occur.
+  <li>At present, the program does not check whether variables used in a certain test block
+      are actually valid when the block is evaluated. The user must ensure that his/her test
+      definitions make sense. For instance, variables filled by Physics Modules,
+      such as "R.gold.dp", will not be valid in any test block other than "Physics".
+      In particular they will be invalid (usually = 1e38) in the "Reconstruct" test block.
 </ul>
 See also
 <a href="http://hallaweb.jlab.org/root/html/THaCutList.html#THaCutList:Load">THaCutList::Load()</a>.
-<p>
-If a test with the name "blockname"_master is defined (example "Decode_master"),
-then if this test is false for a given event, further analysis of that event will be skipped.
-<p>
-A summary of the test results is printed to the screen at the end of the analysis.
-A copy of the printout ("cut summary") can be written to a file if the name of the file
-is set via a call to
-<a href="http://hallaweb.jlab.org/root/html/THaAnalyzer.html#THaAnalyzer:SetSummaryFile">SetSummaryFile()</a>
-before starting the analysis.
 
 <h3>Using tests as conditions in THaOutput</h3>
 Tests defined in the cut definition file as well as separately-defined tests can be used as conditions
 for filling histograms.
 <!-- Results of tests can also be included in the output tree. --!>
 For details, please see the <a href="output.html">documentation of THaOutput</a>.
+
+<h3>Programming information</h3>
+Technical details about the test/cut classes and how to use them directly can be
+found the <a href="test-lowlevel.html">test/cut programming documentation</a>.
 <p><p>
 <hr> 
 <address>
 <!-- hhmts start -->
-Last modified: Mon Jun 16 13:36:35 EDT 2003
+Last modified: Thu Apr 15 12:17:23 EDT 2004
 <!-- hhmts end -->
 </address>
 
