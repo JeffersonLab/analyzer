@@ -342,8 +342,10 @@ Int_t THaShower::Decode( const THaEvData& evdata )
 	fA[k]   = data;                   // ADC value
 	fA_p[k] = data - fPed[k];         // ADC minus ped
 	fA_c[k] = fA_p[k] * fGain[k];     // ADC corrected
-	fAsum_p += fA_p[k];               // Sum of ADC minus ped
-	fAsum_c += fA_c[k];               // Sum of ADC corrected
+	if( fA_p[k] > 0.0 )
+	  fAsum_p += fA_p[k];             // Sum of ADC minus ped
+	if( fA_c[k] > 0.0 )
+	  fAsum_c += fA_c[k];             // Sum of ADC corrected
 	fNhits++;
       }
     }

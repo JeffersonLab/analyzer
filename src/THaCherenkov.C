@@ -242,8 +242,11 @@ Int_t THaCherenkov::Decode( const THaEvData& evdata )
 	fA[k]   = data;
 	fA_p[k] = data - fPed[k];
 	fA_c[k] = fA_p[k] * fGain[k];
-	fASUM_p += fA_p[k];
-	fASUM_c += fA_c[k];
+	// only add channels with signals to the sums
+	if( fA_p[k] > 0.0 )
+	  fASUM_p += fA_p[k];
+	if( fA_c[k] > 0.0 )
+	  fASUM_c += fA_c[k];
 	fNAhit++;
       } else {
 	fT[k]   = data;
