@@ -17,7 +17,7 @@ export WITH_DEBUG = 1
 # VERSION should be numerical only - it becomes the shared lib soversion
 # EXTVERS (optional) describes the build, e.g. "dbg", "et", "gcc33" etc.
 SOVERSION  = 1.3
-PATCH   = 0
+PATCH   = 1
 VERSION = $(SOVERSION).$(PATCH)
 EXTVERS =
 NAME    = analyzer-$(VERSION)
@@ -158,7 +158,6 @@ SRC           = src/THaFormula.C src/THaVform.C src/THaVhist.C \
                 src/THaVDCAnalyticTTDConv.C \
 		src/THaVDCTrackPair.C src/THaScalerGroup.C \
 		src/THaElectronKine.C src/THaReactionPoint.C \
-		src/THaReacPointFoil.C \
 		src/THaTwoarmVertex.C src/THaAvgVertex.C \
 		src/THaExtTarCor.C src/THaDebugModule.C src/THaTrackInfo.C \
 		src/THaGoldenTrack.C \
