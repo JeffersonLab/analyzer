@@ -27,7 +27,7 @@ public:
    Int_t  crate, slot, chan;   // where to look in crates
    UInt_t header;              // header (unique either in data or in crate)
    Int_t ntoskip;              // how far to skip beyond header
-   vector<UInt_t > rdata;      // raw data.  (It is vector to accom. multihit chan.)
+   std::vector<UInt_t > rdata;      // raw data.  (It is vector to accom. multihit chan.)
 // c'tor for (crate,slot,channel) selection
    BdataLoc ( const char* nm, Int_t cra, Int_t slo, Int_t cha ) :
       search_choice(0), crate(cra), slot(slo), chan(cha), 
@@ -74,15 +74,15 @@ private:
    UInt_t timestamp, timeroc1, timeroc2, timeroc3,  
           timeroc4, timeroc14;
    UInt_t misc1, misc2, misc3, misc4;
-   vector < BdataLoc* > fCrateLoc;   // Raw Data locations by crate, slot, channel
-   vector < BdataLoc* > fWordLoc;    // Raw Data locations relative to header word
+   std::vector < BdataLoc* > fCrateLoc;   // Raw Data locations by crate, slot, channel
+   std::vector < BdataLoc* > fWordLoc;    // Raw Data locations relative to header word
 
    virtual void Clear( Option_t* opt="" );
    virtual void Print( Option_t* opt="" ) const;
    Int_t DefaultMap();
    void TrigBits(Int_t ibit, BdataLoc *dataloc);
-   vector<string> vsplit(const string& s);
-   UInt_t header_str_to_base16(string hdr);
+   std::vector<std::string> vsplit(const std::string& s);
+   UInt_t header_str_to_base16(std::string hdr);
    Int_t SetupDecData( const TDatime* runTime = NULL, EMode mode = kDefine );
 
    static const int THADEC_VERBOSE = 1;

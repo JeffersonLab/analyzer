@@ -12,9 +12,10 @@
 #include "THaVDCUVTrack.h"
 #include "THaVDCCluster.h"
 #include "THaVDCHit.h"
+#include "TMath.h"
 
-#include <string.h>
-#include <stdio.h>
+//#include <string.h>
+//#include <stdio.h>
 
 ClassImp(THaVDCUVPlane)
 
@@ -152,7 +153,7 @@ Int_t THaVDCUVPlane::MatchUVClusters()
 		   "Cluster without pivot in p2, %d, %d!", i, j );
 	  continue;
 	}
-	Double_t timeDif = fabs(p1Pivot->GetTime() - p2Pivot->GetTime());
+	Double_t timeDif = TMath::Abs(p1Pivot->GetTime() - p2Pivot->GetTime());
 	
 	if (timeDif < minTimeDif) {
 	  minTimeDif = timeDif;

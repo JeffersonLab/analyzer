@@ -51,6 +51,8 @@
 #include "VarDef.h"
 #include <stdio.h>
 
+using namespace std;
+
 extern FILE *fp;
 
 const char* const myName = "D";

@@ -18,6 +18,8 @@
 #include "THaString.h"
 #include <strstream>
 
+using namespace std;
+
 ClassImp(THaString)
 
 //_____________________________________________________________________________

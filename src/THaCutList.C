@@ -20,7 +20,8 @@
 #include <iomanip>
 #include <algorithm>
 #include <cstring>
-#include <strstream.h>
+#include <strstream>
+#include <iostream>
 
 ClassImp(THaCutList)
 

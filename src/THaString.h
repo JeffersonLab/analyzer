@@ -24,7 +24,7 @@
 
 typedef unsigned UInt_t;  // take out when done debugging!!!!!!
 
-class THaString : public string
+class THaString : public std::string
 {
 
 public:
@@ -32,14 +32,14 @@ public:
   // Constructors/destructors/operators
 
   THaString () {};
-  THaString (const string s): string(s) {};
-  THaString (const char* c): string(c) {};
+  THaString (const std::string s): std::string(s) {};
+  THaString (const char* c): std::string(c) {};
   virtual ~THaString() {};
 
   // Major functions
 
   int CmpNoCase (const THaString& s); // case insensitive compare
-  vector<THaString> Split();   // split on whitespace
+  std::vector<THaString> Split();   // split on whitespace
   UInt_t Hex();      // conversion to to unsigned interpreting as hex
   THaString ToLower (); // conversion to lower case
   THaString ToUpper (); // conversion to lower case
