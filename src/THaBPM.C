@@ -4,7 +4,7 @@
 //                                                                           //
 // Class for a BPM                                                           //
 // measuring signals from four antennas                                      //
-// and  the position at the BPM (without phase correction)          //
+// and  the position at the BPM (without phase correction)                   //
 // works with standard ADCs (lecroy like types)                              //
 // is good for unrastered beam, or to get average positions                  //
 //                                                                           //
