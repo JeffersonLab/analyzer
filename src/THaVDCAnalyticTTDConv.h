@@ -18,8 +18,7 @@ public:
 
   virtual ~THaVDCAnalyticTTDConv();
 
-  virtual Double_t ConvertTimeToDist(Double_t time, Double_t tanTheta,
-				     Double_t *ddist=0);
+  virtual Double_t ConvertTimeToDist(Double_t time, Double_t tanTheta);
 
 
   // Get and Set Functions 
@@ -40,9 +39,7 @@ protected:
   // Eventually, this need to be read directly from the database
   Double_t fA1tdcCor[4];
   Double_t fA2tdcCor[4];
-
-  Double_t fdtime;      // uncertainty in the measured time
-
+  
   ClassDef(THaVDCAnalyticTTDConv,0)             // VDC Analytic TTD Conv class
 };
 

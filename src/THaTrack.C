@@ -15,8 +15,6 @@
 
 using namespace std;
 
-const Double_t THaTrack::kBig = 1e38;
-
 //_____________________________________________________________________________
 THaTrack::~THaTrack()
 {
@@ -43,7 +41,6 @@ void THaTrack::Clear( const Option_t* opt )
     fPvect.SetXYZ( 0.0, 0.0, 0.0 );
     fVertex.SetXYZ( 0.0, 0.0, 0.0 );
     fVertexError.SetXYZ( 1.0, 1.0, 1.0 );
-    fChi2 = kBig; fNDoF = 0.0;
   }
   delete fID; fID = NULL;
 }

@@ -48,18 +48,4 @@ void THaVDCUVTrack::CalcDetCoords()
 
 }
 
-//_____________________________________________________________________________
-void THaVDCUVTrack::CalcChisquare(Double_t& chi2, Int_t& nhits) const
-{
-  // Accumulate the chi2 from the clusters making up this track,
-  // adding their terms to the chi2 and nhits.
-  //
-  //  The global slope and intercept, derived from the entire track,
-  //  must already have been set for each cluster
-  //   (as done in THaVDC::ConstructTracks)
-  //
-  fUClust->CalcChisquare(chi2,nhits);
-  fVClust->CalcChisquare(chi2,nhits);
-}
-  
 ////////////////////////////////////////////////////////////////////////////////

@@ -34,12 +34,12 @@ public:
   THaTrack() : 
     fX(0.0), fY(0.0), fTheta(0.0), fPhi(0.0), fP(0.0), fNclusters(0),
     fPIDinfo(NULL), fCreator(NULL), fVertexError(1.0,1.0,1.0),
-    fID(NULL), fFlag(0), fType(0), fChi2(kBig), fNDoF(0.0) {}
+    fID(NULL), fFlag(0), fType(0) {}
   THaTrack( Double_t x, Double_t y, Double_t theta, Double_t phi,
 	    TD* creator=NULL, THaTrackID* id=NULL, THaPIDinfo* pid=NULL ) :
     fX(x), fY(y), fTheta(theta), fPhi(phi), fP(0.0), fNclusters(0),
     fPIDinfo(pid), fCreator(creator), fVertexError(1.0,1.0,1.0),
-    fID(id), fFlag(0), fType(0), fChi2(kBig), fNDoF(0.0) { if(pid) pid->Clear(); }
+    fID(id), fFlag(0), fType(0) { if(pid) pid->Clear(); }
   virtual ~THaTrack();
 
   Int_t             AddCluster( THaCluster* c );
@@ -59,9 +59,6 @@ public:
   Double_t          GetX( Double_t z ) const { return fX + z*fTheta; }
   Double_t          GetY( Double_t z ) const { return fY + z*fPhi; }
 
-  Double_t          GetChi2()          const { return fChi2; }
-  Double_t          GetNDoF()          const { return fNDoF; }
-  
   Double_t          GetDX()            const { return fDX; }
   Double_t          GetDY()            const { return fDY; }
   Double_t          GetDTheta()        const { return fDTheta; }
@@ -120,8 +117,6 @@ public:
   void              SetdTime( Double_t dt ) { fdTime = dt; /* seconds */ }
   void              SetBeta( Double_t beta ) { fBeta = beta; }
   void              SetdBeta( Double_t db ) { fdBeta = db; }
-
-  void              SetChi2( Double_t chi2, Double_t ndof ) { fChi2=chi2; fNDoF=ndof; }
 
   void              SetCreator( TD* d )                { fCreator = d; }
   void              SetPIDinfo( THaPIDinfo* pid )      { fPIDinfo = pid; }
@@ -185,12 +180,7 @@ protected:
   UInt_t            fFlag;   // General status flag (for use by tracking det.)
   UInt_t            fType;   // Flag indicating which vectors reconstructed
 
-  Double_t          fChi2;   // good-ness of track
-  Double_t          fNDoF;   // number of hits on the track contributing to chi2
-
-  static const Double_t kBig;
-  
-  ClassDef(THaTrack,3)       // A generic particle track
+  ClassDef(THaTrack,2)       // A generic particle track
 };
 
 //__________________ inlines __________________________________________________

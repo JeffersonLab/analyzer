@@ -292,11 +292,11 @@ Int_t THaVform::Init()
  	 status = 0;
          fVarPtr = fVarList->Find(fVarName[i].c_str());
          if (fVarPtr) {
+           fType = "VarArray";
+           fObjSize = fVarPtr->GetLen();
            if (fPrefix == kNoPrefix) {
 	      delete fOdata;
 	      fOdata = new THaOdata();
-	      fType = "VarArray";
-	      fObjSize = fVarPtr->GetLen();
 	   } else {
 	      fObjSize = 1;
 	   }
@@ -355,9 +355,9 @@ Int_t THaVform::Init()
   if (status != 0) return status;
 
   if (fVarPtr) {
+    fObjSize = fVarPtr->GetLen();
     if (fPrefix == kNoPrefix) {
        fOdata = new THaOdata();
-       fObjSize = fVarPtr->GetLen();
     } else {
        fObjSize = 1;
     }
@@ -414,17 +414,17 @@ Int_t THaVform::MakeFormula(Int_t flo, Int_t fhi)
 
   if (fPrefix == kNoPrefix) {
 
-    for (Int_t i = flo; i < fhi; i++) { 
-      string cname = Form("%s-%d",GetName(),i);
-      if (IsCut()) {
+   for (Int_t i = flo; i < fhi; i++) { 
+     string cname = Form("%s-%d",GetName(),i);
+     if (IsCut()) {
         fCut.push_back(new THaCut(cname.c_str(),fVectSform[i].c_str(),
 				  "thavcut"));
-      } else if (IsFormula()) {
+     } else if (IsFormula()) {
         fFormula.push_back(new THaFormula(cname.c_str(),
 					  fVectSform[i].c_str()));
-      }
-    }
-    
+     }
+   }
+
   } else {  // The formula had a prefix like "OR:" 
             // This THaVform is therefore a scaler.
 
@@ -568,10 +568,8 @@ Int_t THaVform::SetOutput(TTree *tree)
 {
   if (IsEye()) return 0;
   string mydata = string(GetName());
-  // these cases should be exclusive:
   if (fOdata) fOdata->AddBranches(tree, mydata);
-  // if it is a scaler, save it as a scaler
-  if ( (!IsVarray() && fObjSize <= 1) ) {
+  if (!IsVarray() && fObjSize <= 1) {
     THaString tinfo;
     tinfo = mydata + "/D";
     THaString tmp = mydata;
@@ -592,8 +590,7 @@ Int_t THaVform::Process()
   fData = 0;
   if (IsEye()) return 0;  
 
-  if (fVarPtr) {
-    //  if (IsVarray()) {
+  if (IsVarray()) {
 
     switch (fPrefix) {
 
@@ -620,21 +617,24 @@ Int_t THaVform::Process()
 	  }
 	}
     }
+
   }
-  else if (IsFormula()) {
-      if ((long)fFormula.size() != 0) {
-	if ( !fFormula[0]->IsError() ) {
-	  fData = fFormula[0]->Eval();
-	}
+
+  if (IsFormula()) {
+    if ((long)fFormula.size() != 0) {
+      if ( !fFormula[0]->IsError() ) {
+        fData = fFormula[0]->Eval();
       }
-      for (Int_t i = 0; i < (long)fFormula.size(); i++) {
-	if ( fOdata != 0 && !fFormula[i]->IsError()) {
-	  fOdata->Fill(i,fFormula[i]->Eval());
-	}
+    }
+    for (Int_t i = 0; i < (long)fFormula.size(); i++) {
+      if ( fOdata != 0 && !fFormula[i]->IsError()) {
+         fOdata->Fill(i,fFormula[i]->Eval());
       }
-      return 0;
+    }
+    return 0;
   }
-  else if (IsCut()) {
+
+  if (IsCut()) {
     fData = 0;
     if ((long)fCut.size() != 0) {
       if (!fCut[0]->IsError()) {

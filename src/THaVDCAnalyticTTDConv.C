@@ -30,8 +30,6 @@ THaVDCAnalyticTTDConv::THaVDCAnalyticTTDConv( Double_t vel)
   fA2tdcCor[1] =  1.3e-3;
   fA2tdcCor[2] = 1.06e-4;
   fA2tdcCor[3] = 0.0;
-  
-  fdtime    = 2.e-9; // 2ns -> 100 microns
 }
 
 
@@ -44,9 +42,8 @@ THaVDCAnalyticTTDConv::~THaVDCAnalyticTTDConv()
 }
 
 //______________________________________________________________________________
-Double_t THaVDCAnalyticTTDConv::ConvertTimeToDist(Double_t time,
-						  Double_t tanTheta,
-						  Double_t *ddist)
+Double_t THaVDCAnalyticTTDConv::ConvertTimeToDist(Double_t time, 
+						  Double_t tanTheta)
 {
   // Drift Velocity in m/s
   // time in s
@@ -75,21 +72,26 @@ Double_t THaVDCAnalyticTTDConv::ConvertTimeToDist(Double_t time,
   // 1. Cluster t0 (offset applied to entire cluster)
   // 2. Time of flight to scintillators
   Double_t dist = fDriftVel * time;
-  Double_t unc  = fDriftVel * fdtime;  // watch uncertainty in the timing
+
   if (dist < 0) {
     // something screwy is going on
-  } else if (dist < a1 ) { 
+    return dist;
+  }
+
+
+  if (dist < a1 ) { 
     //    dist = fDriftVel * time * (1 + 1 / (a1/a2 + 1));
     dist *= ( 1 + a2 / a1);
-    unc *=  ( 1 + a2 / a1);
-  }  else {
+  }
+  else {
     dist +=  a2;
   }
 
-  if (ddist) *ddist = unc;
 //    printf("D(%e) = %e\nUncorrected D = %e\n", time, dist,  fDriftVel * time);
 
   return dist;
+  
+  
   
 }
 
