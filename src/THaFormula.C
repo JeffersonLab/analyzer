@@ -147,7 +147,7 @@ Int_t THaFormula::DefinedVariable(TString& name)
   //   -6  maximum number of variables exceeded
 
 #if ROOT_VERSION_CODE >= ROOT_VERSION(4,0,0)
-  action = 0;
+  action = kDefinedVariable;
 #endif
   Int_t k = DefinedGlobalVariable( name );
   if( k>=0 ) return k;
