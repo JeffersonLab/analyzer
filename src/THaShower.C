@@ -370,7 +370,6 @@ Int_t THaShower::CoarseProcess( TClonesArray& tracks )
   fNclust = 0;
   short mult = 0, nr, nc, ir, ic, dr, dc;
   int nmax = -1;
-  Int_t Ncol = fNelem/fNrows;
   double  emax = fEmin;                     // Min threshold of energy in center
   for ( int  i = 0; i < fNelem; i++) {      // Find the block with max energy:
     double  ei = fA_c[i];                   // Energy in next block
@@ -381,13 +380,8 @@ Int_t THaShower::CoarseProcess( TClonesArray& tracks )
   }
   if ( nmax >= 0 ) {
     double  sxe = 0, sye = 0;               // Sums of xi*ei and yi*ei
-    if ( fNelem == 80 ) {                   // For Shower-80:
-      nc = nmax/fNrows;                     // Column of the block with max engy
-      nr = nmax - nc*fNrows;                // Row of the block with max energy
-    } else {                                // For Shower-96:
-      nr = nmax/Ncol;                       // Row of the block with max energy
-      nc = nmax - nr*Ncol;                  // Column of the block with max engy
-    }
+    nc = nmax/fNrows;                       // Column of the block with max engy
+    nr = nmax%fNrows;                       // Row of the block with max energy
                                             // Add the block to cluster (center)
     fNblk[mult]   = nmax;                   // Add number of the block (center)
     fEblk[mult++] = emax;                   // Add energy in the block (center)
@@ -396,13 +390,8 @@ Int_t THaShower::CoarseProcess( TClonesArray& tracks )
     for ( int  i = 0; i < fNelem; i++) {    // Detach surround blocks:
       double  ei = fA_c[i];                 // Energy in next block
       if ( ei>0 && i!=nmax ) {              // Some energy out of cluster center
-	if ( fNelem == 80 ) {               // For Shower-80:
-	  ic = i/fNrows;                    // Column of next block
-	  ir = i - ic*fNrows;               // Row of next block
-	} else {                            // For Shower-96:
-	  ir = i/Ncol;                      // Row of next block
-	  ic = i - ir*Ncol;                 // Column of next block
-	}
+	ic = i/fNrows;                      // Column of next block
+	ir = i%fNrows;                      // Row of next block
 	dr = nr - ir;                       // Distance on row up to center
 	dc = nc - ic;                       // Distance on column up to center
 	if ( -2<dr&&dr<2&&-2<dc&&dc<2 ) {   // Surround block:
