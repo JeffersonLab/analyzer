@@ -200,12 +200,20 @@ end epics
 # T->Draw("right_trigger_1")  from default list
 # T->Draw("right_P_trigger_1") helicity plus ("P") 
 # T->Draw("right_M_trigger_1") helicity minus ("M") 
-# also right->Draw("trigger_1"), etc. appear.
+# also RIGHT->Draw("trigger_1"), etc. appear.
 # Implictly the values are RATES (Hz) unless one
 # specifies the "counts" flag.
 # "myclk 8 7"  is a rate from slot 8 chan 7 and
 # appears as T->Draw("myclk").
 # "myclkc 8 7 counts" are raw counts, slot 8, chan 7.
+# For some earlier version of the analyzer you 
+# might see "right" "left" in the list of trees
+# and these don't work for later versions of ROOT (sorry).
+# Workaround is to find it with FindObject():
+# root [0] TTree *R = (TTree*)gROOT.FindObject("right")
+# root [1] R->Print();  // no error now
+# For later versions of the analyzer this is fixed
+# and the trees are RIGHT and LEFT (capital letters).
 
 begin scalers left
    default
