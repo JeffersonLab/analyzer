@@ -11,9 +11,9 @@
 
 #include "THaBeam.h"
 #include "VarDef.h"
-
-ClassImp(THaBeam)
-
+#include "THaRunBase.h"
+#include "THaRunParameters.h"
+#include "THaGlobals.h"
 
 //_____________________________________________________________________________
 THaBeam::THaBeam( const char* name, const char* desc ) : 
@@ -22,6 +22,7 @@ THaBeam::THaBeam( const char* name, const char* desc ) :
   // Constructor.
   // Protected. Can only be called by derived classes.
 
+  fBeamIfo.SetBeam( this );
 }
 
 
@@ -33,6 +34,30 @@ THaBeam::~THaBeam()
   RemoveVariables();
 }
 
+//_____________________________________________________________________________
+THaAnalysisObject::EStatus THaBeam::Init( const TDatime& run_time )
+{
+  // Init method for a beam apparatus. Calls the standard THaApparatus
+  // initialization and, in addition, finds pointer to the current 
+  // run parameters.
+
+  if( !gHaRun || !gHaRun->IsInit() ) {
+    Error( Here("Init"), "Current run not initialized. "
+	   "Failed to initialize beam apparatus %s (\"%s\"). ",
+	   GetName(), GetTitle() );
+    return fStatus = kInitError;
+  }
+  fRunParam = gHaRun->GetParameters();
+  if( !fRunParam ) {
+    Error( Here("Init"), "Current run has no parameters?!? "
+	   "Failed to initialize beam apparatus %s (\"%s\"). ",
+	   GetName(), GetTitle() );
+    return fStatus = kInitError;
+  }
+
+  return THaApparatus::Init(run_time);
+}
+  
 //_____________________________________________________________________________
 Int_t THaBeam::DefineVariables( EMode mode )
 {
@@ -52,6 +77,9 @@ Int_t THaBeam::DefineVariables( EMode mode )
   };
     
   return DefineVarsFromList( vars, mode );
-
 }
+
+//_____________________________________________________________________________
+ClassImp(THaBeam)
+
 
