@@ -16,6 +16,8 @@ public:
   THaCut() : THaFormula(), fLastResult(kFALSE), fNCalled(0), fNPassed(0) {}
   THaCut( const char* name, const char* expression, const char* block, 
 	  const THaVarList* vlst = gHaVars, const THaCutList* clst = gHaCuts );
+  THaCut( const THaCut& rhs );
+  THaCut& operator=( const THaCut& rhs );
   virtual ~THaCut() {}
 
           void         ClearResult()        { fLastResult = kFALSE; }

@@ -62,6 +62,33 @@ THaFormula::THaFormula( const char* name, const char* expression,
 }
 
 //_____________________________________________________________________________
+THaFormula::THaFormula( const THaFormula& rhs ) :
+  TFormula(rhs), fNcodes(rhs.fNcodes), fVarList(rhs.fVarList),
+  fCutList(rhs.fCutList), fError(rhs.fError), fRegister(rhs.fRegister)
+{
+  // Copy ctor
+  fVarDef = new FVarDef_t[ kMAXCODES ];
+  memcpy( fVarDef, rhs.fVarDef, kMAXCODES*sizeof(FVarDef_t));
+}
+
+//_____________________________________________________________________________
+THaFormula& THaFormula::operator=( const THaFormula& rhs )
+{
+  if( this != &rhs ) {
+    TFormula::operator=(rhs);
+    fNcodes = rhs.fNcodes;
+    fVarList = rhs.fVarList;
+    fCutList = rhs.fCutList;
+    fError = rhs.fError;
+    fRegister = rhs.fRegister;
+    delete fVarDef;
+    fVarDef = new FVarDef_t[ kMAXCODES ];
+    memcpy( fVarDef, rhs.fVarDef, kMAXCODES*sizeof(FVarDef_t));
+  }
+  return *this;
+}
+
+//_____________________________________________________________________________
 Int_t THaFormula::Compile( const char* expression )
 {
   // Parse the given expression, or, if empty, parse the title.

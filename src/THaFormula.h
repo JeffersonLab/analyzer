@@ -25,6 +25,8 @@ public:
     fCutList(NULL), fError(kFALSE), fRegister(kTRUE) {}
   THaFormula( const char* name, const char* formula, 
 	      const THaVarList* vlst=gHaVars, const THaCutList* clst=gHaCuts );
+  THaFormula( const THaFormula& rhs );
+  THaFormula& operator=( const THaFormula& rhs );
   virtual             ~THaFormula();
   virtual Int_t       Compile( const char* expression="" );
   virtual Double_t    DefinedValue( Int_t i );

@@ -62,6 +62,27 @@ THaCut::THaCut( const char* name, const char* expression, const char* block,
 }
 
 //_____________________________________________________________________________
+THaCut::THaCut( const THaCut& rhs ) :
+  THaFormula(rhs), fLastResult(rhs.fLastResult), fBlockname(rhs.fBlockname),
+  fNCalled(rhs.fNCalled), fNPassed(rhs.fNPassed)
+{
+  // Copy ctor
+}
+
+//_____________________________________________________________________________
+THaCut& THaCut::operator=( const THaCut& rhs )
+{
+  if( this != &rhs ) {
+    THaFormula::operator=(rhs);
+    fLastResult = rhs.fLastResult;
+    fBlockname  = rhs.fBlockname;
+    fNCalled    = rhs.fNCalled;
+    fNPassed    = rhs.fNPassed;
+  }
+  return *this;
+}
+
+//_____________________________________________________________________________
 Int_t THaCut::DefinedVariable(TString& name)
 {
   // Check if 'name' is in the list of existing cuts. 
