@@ -537,7 +537,7 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 		     track->GetPhi());
 
       // calculate the transport coordinates
-      CalcFocalPlaneCoords(track, theTrack, kRotatingTransport);
+      CalcFocalPlaneCoords(theTrack, kRotatingTransport);
 
       theTrack->SetFlag( flag );
     }
@@ -575,20 +575,6 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
   }
 
   return nTracks;
-}
-
-//_____________________________________________________________________________
-void THaVDC::ProjToTransPlane(Double_t& x, Double_t& y, Double_t& z, 
-			      Double_t& th, Double_t& ph)
-{
-  // Project coordinates in the transport coordinate system to the
-  // transport (transZ = 0) plane
-  Double_t detX = x / fCos_vdc;
-
-  x += fSin_vdc * th * detX;
-  y += fSin_vdc * ph * detX;
-  z = 0;
-
 }
 
 //_____________________________________________________________________________
@@ -678,13 +664,14 @@ Int_t THaVDC::FindVertices( TClonesArray& tracks )
 }
 
 //_____________________________________________________________________________
-void THaVDC::CalcFocalPlaneCoords(const THaVDCUVTrack *the_track, 
-				  THaTrack *new_track, const ECoordTypes mode)
+void THaVDC::CalcFocalPlaneCoords( THaTrack* track, const ECoordTypes mode )
 {
   // calculates focal plane coordinates from detector coordinates
 
   Double_t tan_rho, cos_rho, tan_rho_loc, cos_rho_loc;
+  // TRANSPORT coordinates (projected to z=0)
   Double_t x, y, theta, phi;
+  // Rotating TRANSPORT coordinates
   Double_t r_x, r_y, r_theta, r_phi;
   
   // tan rho (for the central ray) is stored as a matrix element 
@@ -692,21 +679,20 @@ void THaVDC::CalcFocalPlaneCoords(const THaVDCUVTrack *the_track,
   cos_rho = 1.0/sqrt(1.0+tan_rho*tan_rho);
 
   // first calculate the transport frame coordinates
-  theta = (the_track->GetTheta()+tan_rho) /
-          (1.0-the_track->GetTheta()*tan_rho);
-  x = the_track->GetX() * cos_rho * (1.0 + theta * tan_rho);
-  phi = the_track->GetPhi() / (1.0-the_track->GetTheta()*tan_rho) / cos_rho;
-  y = the_track->GetY() + tan_rho*phi*the_track->GetX()*cos_rho;
+  theta = (track->GetDTheta()+tan_rho) /
+    (1.0-track->GetDTheta()*tan_rho);
+  x = track->GetDX() * cos_rho * (1.0 + theta * tan_rho);
+  phi = track->GetDPhi() / (1.0-track->GetDTheta()*tan_rho) / cos_rho;
+  y = track->GetDY() + tan_rho*phi*track->GetDX()*cos_rho;
   
   // then calculate the rotating transport frame coordinates
-  //r_x = the_track->GetX() * cos_rho * (1.0 + theta*tan_rho);
   r_x = x;
 
   // calculate the focal-plane matrix elements
   if(mode == kTransport)
-    CalcMatrix(x, fFPMatrixElems);
+    CalcMatrix( x, fFPMatrixElems );
   else if (mode == kRotatingTransport)
-    CalcMatrix(r_x, fFPMatrixElems);
+    CalcMatrix( r_x, fFPMatrixElems );
 
   r_y = y - fFPMatrixElems[Y000].v;  // Y000
 
@@ -714,19 +700,19 @@ void THaVDC::CalcFocalPlaneCoords(const THaVDCUVTrack *the_track,
   tan_rho_loc = fFPMatrixElems[T000].v;   // T000
   cos_rho_loc = 1.0/sqrt(1.0+tan_rho_loc*tan_rho_loc);
   
-  r_phi = (the_track->GetPhi() - fFPMatrixElems[P000].v /* P000 */ ) / 
-          (1.0-the_track->GetTheta()*tan_rho_loc) / cos_rho_loc;
-  r_theta = (the_track->GetTheta()+tan_rho_loc) /
-		       (1.0-the_track->GetTheta()*tan_rho_loc);
+  r_phi = (track->GetDPhi() - fFPMatrixElems[P000].v /* P000 */ ) / 
+    (1.0-track->GetDTheta()*tan_rho_loc) / cos_rho_loc;
+  r_theta = (track->GetDTheta()+tan_rho_loc) /
+    (1.0-track->GetDTheta()*tan_rho_loc);
 
   // set the values we calculated
-  new_track->Set(x, y, theta, phi);
-  new_track->SetR(r_x, r_y, r_theta, r_phi);
+  track->Set(x, y, theta, phi);
+  track->SetR(r_x, r_y, r_theta, r_phi);
 
 }
 
 //_____________________________________________________________________________
-void THaVDC::CalcTargetCoords(THaTrack *the_track, const ECoordTypes mode)
+void THaVDC::CalcTargetCoords(THaTrack *track, const ECoordTypes mode)
 {
   // calculates target coordinates from focal plane coordinates
 
@@ -738,15 +724,15 @@ void THaVDC::CalcTargetCoords(THaTrack *the_track, const ECoordTypes mode)
 
   // first select the coords to use
   if(mode == kTransport) {
-    x_fp = the_track->GetX();
-    y_fp = the_track->GetY();
-    th_fp = the_track->GetTheta();
-    ph_fp = the_track->GetPhi();
+    x_fp = track->GetX();
+    y_fp = track->GetY();
+    th_fp = track->GetTheta();
+    ph_fp = track->GetPhi();
   } else if(mode == kRotatingTransport) {
-    x_fp = the_track->GetRX();
-    y_fp = the_track->GetRY();
-    th_fp = the_track->GetRTheta();
-    ph_fp = the_track->GetRPhi();  
+    x_fp = track->GetRX();
+    y_fp = track->GetRY();
+    th_fp = track->GetRTheta();
+    ph_fp = track->GetRPhi();  
   }
 
   // calculate the powers we need
@@ -775,9 +761,9 @@ void THaVDC::CalcTargetCoords(THaTrack *the_track, const ECoordTypes mode)
   x = 0.0;
 
   // set the values we just calculated
-  the_track->SetTarget(x, y, theta, phi);
-  the_track->SetDp(dp);
-  the_track->SetMomentum(p);
+  track->SetTarget(x, y, theta, phi);
+  track->SetDp(dp);
+  track->SetMomentum(p);
 }
 
 

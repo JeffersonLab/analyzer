@@ -122,8 +122,7 @@ protected:
                                             // focal plane transformations
                                             // { T, Y, P }
 
-  void CalcFocalPlaneCoords(const THaVDCUVTrack *the_track, 
-			    THaTrack *new_track, const ECoordTypes mode);
+  void CalcFocalPlaneCoords( THaTrack* track, const ECoordTypes mode);
   void CalcTargetCoords(THaTrack *the_track, const ECoordTypes mode);
   void CalcMatrix(const double x, vector<THaMatrixElement> &matrix);
   double DoPoly(const int n, const vector<double> &a, const double x);
@@ -135,9 +134,6 @@ protected:
 
   virtual void  Clear( Option_t* opt="" )  {}
   virtual Int_t ConstructTracks( TClonesArray * tracks = NULL, Int_t flag = 0 );
-
-  void ProjToTransPlane(Double_t& x, Double_t& y, Double_t& z, 
-			Double_t& th, Double_t& ph);
 
   void CorrectTimeOfFlight(TClonesArray& tracks);
   void FindBadTracks(TClonesArray &tracks);
