@@ -19,7 +19,8 @@
 #include <iomanip>
 #include <algorithm>
 #include <cstring>
-#include <strstream.h>
+#include <cstdio>
+#include <cctype>
 
 using namespace std;
 
@@ -156,19 +157,26 @@ Int_t THaCutList::Define( const char* cutname, const char* expr,
 }
 
 //______________________________________________________________________________
+static inline bool IsEnd( const char* s )
+{
+  // True if s points to a comment ("#" or "//") or zero.
+  // Utility function used by Load().
+
+  return ( !*s || *s == '#' || (*s == '/' && *(s+1) == '/' ));
+}
+
+//______________________________________________________________________________
 Int_t THaCutList::Load( const char* filename )
 {
   // Read cut definitions from a file and create the cuts. If no filename is
   // given, the file ./cutdef.dat is used.
   //
-  // Lines starting with # are treated as comments. Blank lines and leading 
-  // spaces are ignored.
+  // Lines starting with # or "//" are treated as comments. 
+  // Blank lines and leading spaces are ignored.
   //
-  // A valid cut definition consists of two tags, a cut name and the 
-  // corresponding expression.  The tags are separated by whitespace.  
-  // Any characters following the cut expression are ignored and can be 
-  // used for comments.  Expressions can be enclosed in double quotes ("") 
-  // to include spaces for better readability.
+  // A valid cut definition consists of two fields, a cut name and the 
+  // corresponding expression.  The fields are separated by whitespace.  
+  // Comments following the cut expression are ignored.
   //
   // Block names can be set using "Block:" as the cut name (without quotes)
   // followed by the name of the block.
@@ -182,8 +190,8 @@ Int_t THaCutList::Load( const char* filename )
   // cut1  x+y<10
   //
   // Block: Target_cuts
-  // cut2  "x<10 || x>20"
-  // zcut  (z^2-2)>0      This text is ignored
+  // cut2  x<10 || x>20   // Comment goes here
+  // zcut  (z^2-2)>0      # This text is ignored
   //
   // A return value of 0 indicates success. Negative values indicate severe 
   // errors (e.g. file not found, read error).  Positive numbers indicate the 
@@ -209,9 +217,10 @@ Int_t THaCutList::Load( const char* filename )
 
   // Read the file line by line
 
-  unsigned line_size = 256;
+  const unsigned LEN = 256;
+  unsigned line_size = LEN;
   char* line  = new char[ line_size ];
-  char block[ 256 ];
+  char block[ LEN ];
   strcpy( block, kDefaultBlockName );
   Int_t nlines_read = 0, nlines_ok = 0;
 
@@ -221,11 +230,11 @@ Int_t THaCutList::Load( const char* filename )
 
     // Buffer too small?
 
-    if( ifile.gcount() == line_size-1 ) {
+    if( (unsigned)ifile.gcount() == line_size-1 ) {
       ifile.clear();
       ifile.seekg( pos );
       delete [] line;
-      line_size *= 2;
+      line_size += LEN;
       line = new char[ line_size ];
       continue;
     }
@@ -233,40 +242,32 @@ Int_t THaCutList::Load( const char* filename )
     // Blank line or comment?
 
     size_t i = strspn( line, whtspc );
-    char c = line[i];
-    if( c == '#' || c == '\0' ) continue;
+    if( IsEnd(line+i) ) continue;
 
     // Valid line ... start processing
 
     nlines_read++;
-    char* arg1 = strtok( line+i, whtspc );
-    if( !arg1 ) continue;
 
-    // Permit spaces in the second argument if it is enclosed it quotes
+    // Extract first argument (cut name or "Block:")
+    const char* arg1 = line+i, *arg2 = 0;
+    while( line[i] && !isspace(line[i]) ) i++;
+    if( line[i] == '\0' ) goto noexpr;
+    line[i++] = '\0';
 
-    char* arg2 = strchr( arg1+strlen(arg1)+1, '"' );
-    if( arg2 ) {
-      char* pc = strchr( arg2+1, '"' );
-      if( pc ) {
-	arg2++;
-	*pc = 0;
-      } else {
-	Error( here, "unbalanced quotes, cut not loaded: %s %s", 
-	       arg1, arg2 );
-	continue;
-      }
-    } else {
-      arg2 = strtok( 0, whtspc );
-      if( !arg2 ) {
-	Warning( here, "ignoring cutname without expression, %s", arg1 );
-	continue;
-      }
-    }
+    // Extract second argument (expression or block name)
+    while( isspace(line[i])) i++;
+    if( IsEnd(line+i) ) goto noexpr;
+    arg2 = line+i;
+
+    i++;
+    while( !IsEnd(line+i) ) i++;
+    while( isspace(line[i-1]) ) i--;
+    line[i] = '\0';
 
     // Set block name
 
     if( !strcmp( arg1, "Block:" ) ) {
-      if( strlen(arg2) > 255 ) {
+      if( strlen(arg2) >= LEN ) {
 	Error( here, "block name too long, aborting: %s", arg2 );
 	return -3;
       }
@@ -277,13 +278,19 @@ Int_t THaCutList::Load( const char* filename )
 
     // Define the cut. Errors are reported by Define()
 
-    if( strlen(arg1) > 255 ) {
+    if( strlen(arg1) >= LEN ) {
       Error( here, "cut name too long, cut not loaded: %s %s", 
 	     arg1, arg2 );
       continue;
     }
 
     if( !Define( arg1, arg2, block ) ) nlines_ok++;
+    continue;
+
+  noexpr:    
+    Warning( here, "ignoring label without expression, %s", arg1 );
+    continue;
+
   }
 
   ifile.close();
@@ -407,7 +414,7 @@ void THaCutList::Clear( Option_t* option )
 }
 
 //______________________________________________________________________________
-UInt_t THaCutList::IntDigits( Int_t n ) const
+UInt_t THaCutList::IntDigits( Int_t n )
 { 
   //Get number of printable digits of integer n.
   //Internal utility function.
@@ -426,8 +433,7 @@ UInt_t THaCutList::IntDigits( Int_t n ) const
 }
 
 //______________________________________________________________________________
-void THaCutList::MakePrintOption( THaPrintOption& opt, 
-				  const TList* plist ) const
+void THaCutList::MakePrintOption( THaPrintOption& opt, const TList* plist )
 { 
   // If the print option is either "LINE" or "STATS", determine the widths 
   // of the text fields of all the cuts in the given list and append them
@@ -444,11 +450,11 @@ void THaCutList::MakePrintOption( THaPrintOption& opt,
       width[2] = max( width[2], strlen(pcut->GetBlockname()) );
       width[3] = max( width[3], IntDigits( (Int_t)pcut->GetNPassed() ) );
     }
-    UInt_t len = strlen(opt.GetOption(0))+4*NF+1;
+    UInt_t len = strlen(opt.GetOption(0))+5*NF+1;
     char* newopt = new char[ len ];
-    ostrstream ostr( newopt, len );
-    ostr << opt.GetOption(0);
-    for( int i=0; i<NF; i++ ) ostr << "," << width[i];
+    int k = sprintf(newopt,"%s",opt.GetOption(0));
+    for( int i=0; i<NF; i++ )  
+      k += sprintf(newopt+k,",%d",width[i]);
     opt = newopt;
     delete [] newopt;
   }

@@ -75,11 +75,11 @@ protected:
                                 //Elements of this table are THaNamedLists of THaCuts
   const THaVarList* fVarList;   //Pointer to list of variables
 
-          UInt_t    IntDigits( Int_t n ) const;
-  virtual void      PrintHeader( const THaPrintOption& opt ) const;
-  virtual void      MakePrintOption( THaPrintOption& opt, 
-				     const TList* plist ) const;
+  static  UInt_t    IntDigits( Int_t n );
+  static  void      MakePrintOption( THaPrintOption& opt, 
+				     const TList* plist );
 
+  virtual void      PrintHeader( const THaPrintOption& opt ) const;
 
   ClassDef(THaCutList,0)  //HashList with support for blocks of objects
 };
