@@ -25,7 +25,7 @@
 #include "THaReactionPoint.h"
 #include "THaSpectrometer.h"
 #include "THaTrack.h"
-//#include "THaBeam.h"
+#include "THaBeam.h"
 #include "THaMatrix.h"
 #include "TMath.h"
 
@@ -93,8 +93,8 @@ Int_t THaReactionPoint::Process()
 
   TVector3 beam_org, beam_ray( 0.0, 0.0, 1.0 );
   if( fBeam ) {
-//      beam_org = fBeam->GetPosition();
-//      beam_ray = fBeam->GetDirection();
+    beam_org = fBeam->GetPosition();
+    beam_ray = fBeam->GetDirection();
   }
   static const TVector3 yax( 0.0, 1.0, 0.0 );
   TVector3 org; 
