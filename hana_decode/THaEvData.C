@@ -475,13 +475,12 @@ int THaEvData::scaler_event_decode(const int* evbuffer, THaCrateMap* map)
 	  int data = evbuffer[ipt];
 	  if (DEBUG) cout<<"scaler chan "<<chan<<" data "<<data<<endl;
 	  if (crateslot[ics]->loadData(location,chan,data,data)
-	      == SD_ERR) goto err;
+	      == SD_ERR) {
+            cerr << "THaEvData::scaler_event_decode(): ERROR:";
+            cerr << " crateslot loadData for slot "<<slot<<endl;
+ 	  }
 	}
       }
-      goto exit;
- err:
-      ret = HED_ERR;
- exit:
       if( fDoBench ) fBench->Stop("scaler_event_decode");
       return ret;
 }
