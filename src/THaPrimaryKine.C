@@ -101,11 +101,10 @@ Int_t THaPrimaryKine::Process( const THaEvData& evdata )
 
   Double_t p_in  = gHaRun->GetBeamP();
 
-  const Double_t me = 0.511e-3; // electron mass FIXME: variable?
   const Double_t Mp = 0.938;    // proton mass (for x_bj)
 
-  fP0.SetXYZM( 0.0, 0.0, p_in, me );        // FIXME: beam slopes?
-  fP1.SetVectM( trkifo->GetPvect(), me );
+  fP0.SetXYZM( 0.0, 0.0, p_in, fM );        // FIXME: beam slopes?
+  fP1.SetVectM( trkifo->GetPvect(), fM );
   fA.SetXYZM( 0.0, 0.0, 0.0, fMA );         // Assume target at rest
 
   // Standard electron kinematics
