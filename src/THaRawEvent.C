@@ -104,28 +104,36 @@ void THaRawEvent::CreateVariableArrays( EBlock which )
     // Right HRS VDC
     fR_U1_clpos   = new Double_t[ fMaxclu ];
     fR_U1_slope   = new Double_t[ fMaxclu ];
+    fR_U1_clpiv   = new Int_t   [ fMaxclu ];
     fR_U1_clsiz   = new Int_t   [ fMaxclu ];
     fR_V1_clpos   = new Double_t[ fMaxclu ];
     fR_V1_slope   = new Double_t[ fMaxclu ];
+    fR_V1_clpiv   = new Int_t   [ fMaxclu ];
     fR_V1_clsiz   = new Int_t   [ fMaxclu ];
     fR_U2_clpos   = new Double_t[ fMaxclu ];
     fR_U2_slope   = new Double_t[ fMaxclu ];
+    fR_U2_clpiv   = new Int_t   [ fMaxclu ];
     fR_U2_clsiz   = new Int_t   [ fMaxclu ];
     fR_V2_clpos   = new Double_t[ fMaxclu ];
     fR_V2_slope   = new Double_t[ fMaxclu ];
+    fR_V2_clpiv   = new Int_t   [ fMaxclu ];
     fR_V2_clsiz   = new Int_t   [ fMaxclu ];
     // Left HRS VDC
     fL_U1_clpos   = new Double_t[ fMaxclu ];
     fL_U1_slope   = new Double_t[ fMaxclu ];
+    fL_U1_clpiv   = new Int_t   [ fMaxclu ];
     fL_U1_clsiz   = new Int_t   [ fMaxclu ];
     fL_V1_clpos   = new Double_t[ fMaxclu ];
     fL_V1_slope   = new Double_t[ fMaxclu ];
+    fL_V1_clpiv   = new Int_t   [ fMaxclu ];
     fL_V1_clsiz   = new Int_t   [ fMaxclu ];
     fL_U2_clpos   = new Double_t[ fMaxclu ];
     fL_U2_slope   = new Double_t[ fMaxclu ];
+    fL_U2_clpiv   = new Int_t   [ fMaxclu ];
     fL_U2_clsiz   = new Int_t   [ fMaxclu ];
     fL_V2_clpos   = new Double_t[ fMaxclu ];
     fL_V2_slope   = new Double_t[ fMaxclu ];
+    fL_V2_clpiv   = new Int_t   [ fMaxclu ];
     fL_V2_clsiz   = new Int_t   [ fMaxclu ];
   }
   if( which == kTracks || which == kAll ) {
@@ -210,28 +218,36 @@ void THaRawEvent::DeleteVariableArrays( EBlock which )
   if( which == kClusters || which == kAll ) {
     // Right HRS VDC
     delete [] fR_U1_clpos;
+    delete [] fR_U1_clpiv;
     delete [] fR_U1_slope;
     delete [] fR_U1_clsiz;
     delete [] fR_V1_clpos;
+    delete [] fR_V1_clpiv;
     delete [] fR_V1_slope;
     delete [] fR_V1_clsiz;
     delete [] fR_U2_clpos;
+    delete [] fR_U2_clpiv;
     delete [] fR_U2_slope;
     delete [] fR_U2_clsiz;
     delete [] fR_V2_clpos;
+    delete [] fR_V2_clpiv;
     delete [] fR_V2_slope;
     delete [] fR_V2_clsiz;
     // Left HRS VDC
     delete [] fL_U1_clpos;
+    delete [] fL_U1_clpiv;
     delete [] fL_U1_slope;
     delete [] fL_U1_clsiz;
     delete [] fL_V1_clpos;
+    delete [] fL_V1_clpiv;
     delete [] fL_V1_slope;
     delete [] fL_V1_clsiz;
     delete [] fL_U2_clpos;
+    delete [] fL_U2_clpiv;
     delete [] fL_U2_slope;
     delete [] fL_U2_clsiz;
     delete [] fL_V2_clpos;
+    delete [] fL_V2_clpiv;
     delete [] fL_V2_slope;
     delete [] fL_V2_clsiz;
   }
@@ -373,6 +389,7 @@ void THaRawEvent::SetupDatamap( EBlock which )
     {-1,      "R.vdc.u1.dist",     fR_U1_dist },
     { 1,      "R.vdc.u1.nclust",   &fR_U1_nclust },
     {-1,      "R.vdc.u1.clpos",    fR_U1_clpos },
+    {-1,      "R.vdc.u1.clpivot",    fR_U1_clpiv },
     {-1,      "R.vdc.u1.slope",    fR_U1_slope },
     {-1,      "R.vdc.u1.clsiz",    fR_U1_clsiz },
     { 1,      "R.vdc.v1.nhit",     &fR_V1_nhit },
@@ -382,6 +399,7 @@ void THaRawEvent::SetupDatamap( EBlock which )
     {-1,      "R.vdc.v1.dist",     fR_V1_dist },
     { 1,      "R.vdc.v1.nclust",   &fR_V1_nclust },
     {-1,      "R.vdc.v1.clpos",    fR_V1_clpos },
+    {-1,      "R.vdc.v1.clpivot",    fR_V1_clpiv },
     {-1,      "R.vdc.v1.slope",    fR_V1_slope },
     {-1,      "R.vdc.v1.clsiz",    fR_V1_clsiz },
     { 1,      "R.vdc.u2.nhit",     &fR_U2_nhit },
@@ -391,6 +409,7 @@ void THaRawEvent::SetupDatamap( EBlock which )
     {-1,      "R.vdc.u2.dist",     fR_U2_dist },
     { 1,      "R.vdc.u2.nclust",   &fR_U2_nclust },
     {-1,      "R.vdc.u2.clpos",    fR_U2_clpos },
+    {-1,      "R.vdc.u2.clpivot",    fR_U2_clpiv },
     {-1,      "R.vdc.u2.slope",    fR_U2_slope },
     {-1,      "R.vdc.u2.clsiz",    fR_U2_clsiz },
     { 1,      "R.vdc.v2.nhit",     &fR_V2_nhit },
@@ -400,6 +419,7 @@ void THaRawEvent::SetupDatamap( EBlock which )
     {-1,      "R.vdc.v2.dist",     fR_V2_dist },
     { 1,      "R.vdc.v2.nclust",   &fR_V2_nclust },
     {-1,      "R.vdc.v2.clpos",    fR_V2_clpos },
+    {-1,      "R.vdc.v2.clpivot",    fR_V2_clpiv },
     {-1,      "R.vdc.v2.slope",    fR_V2_slope },
     {-1,      "R.vdc.v2.clsiz",    fR_V2_clsiz },
     { 1,      "R.tr.n",            &fR_TR_n },
@@ -530,6 +550,7 @@ void THaRawEvent::SetupDatamap( EBlock which )
     {-1,      "L.vdc.u1.dist",     fL_U1_dist },
     { 1,      "L.vdc.u1.nclust",   &fL_U1_nclust },
     {-1,      "L.vdc.u1.clpos",    fL_U1_clpos },
+    {-1,      "L.vdc.u1.clpivot",    fL_U1_clpiv },
     {-1,      "L.vdc.u1.slope",    fL_U1_slope },
     {-1,      "L.vdc.u1.clsiz",    fL_U1_clsiz },
     { 1,      "L.vdc.v1.nhit",     &fL_V1_nhit },
@@ -539,6 +560,7 @@ void THaRawEvent::SetupDatamap( EBlock which )
     {-1,      "L.vdc.v1.dist",     fL_V1_dist },
     { 1,      "L.vdc.v1.nclust",   &fL_V1_nclust },
     {-1,      "L.vdc.v1.clpos",    fL_V1_clpos },
+    {-1,      "L.vdc.v1.clpivot",    fL_V1_clpiv },
     {-1,      "L.vdc.v1.slope",    fL_V1_slope },
     {-1,      "L.vdc.v1.clsiz",    fL_V1_clsiz },
     { 1,      "L.vdc.u2.nhit",     &fL_U2_nhit },
@@ -548,6 +570,7 @@ void THaRawEvent::SetupDatamap( EBlock which )
     {-1,      "L.vdc.u2.dist",     fL_U2_dist },
     { 1,      "L.vdc.u2.nclust",   &fL_U2_nclust },
     {-1,      "L.vdc.u2.clpos",    fL_U2_clpos },
+    {-1,      "L.vdc.u2.clpivot",    fL_U2_clpiv },
     {-1,      "L.vdc.u2.slope",    fL_U2_slope },
     {-1,      "L.vdc.u2.clsiz",    fL_U2_clsiz },
     { 1,      "L.vdc.v2.nhit",     &fL_V2_nhit },
@@ -557,6 +580,7 @@ void THaRawEvent::SetupDatamap( EBlock which )
     {-1,      "L.vdc.v2.dist",     fL_V2_dist },
     { 1,      "L.vdc.v2.nclust",   &fL_V2_nclust },
     {-1,      "L.vdc.v2.clpos",    fL_V2_clpos },
+    {-1,      "L.vdc.v2.clpivot",    fL_V2_clpiv },
     {-1,      "L.vdc.v2.slope",    fL_V2_slope },
     {-1,      "L.vdc.v2.clsiz",    fL_V2_clsiz },
     { 1,      "L.tr.n",            &fL_TR_n },

@@ -223,6 +223,7 @@ public:
   Double_t* fR_U1_dist;           //[fR_U1_nhit] Drift distances
   Double_t* fR_U1_clpos;          //[fR_U1_nclust] Centers of clusters (m)
   Double_t* fR_U1_slope;          //[fR_U1_nclust] Cluster slopes
+  Int_t*    fR_U1_clpiv;          //[fR_U1_nclust] Pivot wire number
   Int_t*    fR_U1_clsiz;          //[fR_U1_nclust]  Sizes of clusters (in wires)
   Int_t*    fR_V1_wire;           //[fR_V1_nhit] Hit wires numbers
   Int_t*    fR_V1_rawtime;        //[fR_V1_nhit] Raw TDC times
@@ -230,6 +231,7 @@ public:
   Double_t* fR_V1_dist;           //[fR_V1_nhit] Drift distances
   Double_t* fR_V1_clpos;          //[fR_V1_nclust]  Centers of clusters (m)
   Double_t* fR_V1_slope;          //[fR_V1_nclust] Cluster slopes
+  Int_t*    fR_V1_clpiv;          //[fR_V1_nclust]  Pivot wire number
   Int_t*    fR_V1_clsiz;          //[fR_V1_nclust]  Sizes of clusters (in wires)
   Int_t*    fR_U2_wire;           //[fR_U2_nhit] Hit wires numbers
   Int_t*    fR_U2_rawtime;        //[fR_U2_nhit] Raw TDC times
@@ -237,6 +239,7 @@ public:
   Double_t* fR_U2_dist;           //[fR_U2_nhit] Drift distances
   Double_t* fR_U2_clpos;          //[fR_U2_nclust]  Centers of clusters (m)
   Double_t* fR_U2_slope;          //[fR_U2_nclust] Cluster slopes
+  Int_t*    fR_U2_clpiv;          //[fR_U2_nclust]  Pivot wire number
   Int_t*    fR_U2_clsiz;          //[fR_U2_nclust]  Sizes of clusters (in wires)
   Int_t*    fR_V2_wire;           //[fR_V2_nhit] Hit wires numbers
   Int_t*    fR_V2_rawtime;        //[fR_V2_nhit] Raw TDC times
@@ -244,6 +247,7 @@ public:
   Double_t* fR_V2_dist;           //[fR_V2_nhit] Drift distances
   Double_t* fR_V2_clpos;          //[fR_V2_nclust]  Centers of clusters (m)
   Double_t* fR_V2_slope;          //[fR_V2_nclust] Cluster slopes
+  Int_t*    fR_V2_clpiv;          //[fR_V2_nclust]  Pivot wire number
   Int_t*    fR_V2_clsiz;          //[fR_V2_nclust]  Sizes of clusters (in wires)
   Double_t* fR_TR_x;              //[fR_TR_n] X coordinate (in cm) of track in E-arm cs
   Double_t* fR_TR_y;              //[fR_TR_n] Y coordinate (in cm) of track in E-arm cs
@@ -269,6 +273,7 @@ public:
   Double_t* fL_U1_dist;           //[fL_U1_nhit] Drift distances
   Double_t* fL_U1_clpos;          //[fL_U1_nclust] Centers of clusters (m)
   Double_t* fL_U1_slope;          //[fL_U1_nclust] Cluster slopes
+  Int_t*    fL_U1_clpiv;          //[fL_U1_nclust] Pivot wire of cluster
   Int_t*    fL_U1_clsiz;          //[fL_U1_nclust]  Sizes of clusters (in wires)
   Int_t*    fL_V1_wire;           //[fL_V1_nhit] Hit wires numbers
   Int_t*    fL_V1_rawtime;        //[fL_V1_nhit] Raw TDC times
@@ -276,6 +281,7 @@ public:
   Double_t* fL_V1_dist;           //[fL_V1_nhit] Drift distances
   Double_t* fL_V1_clpos;          //[fL_V1_nclust]  Centers of clusters (m)
   Double_t* fL_V1_slope;          //[fL_V1_nclust] Cluster slopes
+  Int_t*    fL_V1_clpiv;          //[fL_V1_nclust]  Pivot wire of cluster
   Int_t*    fL_V1_clsiz;          //[fL_V1_nclust]  Sizes of clusters (in wires)
   Int_t*    fL_U2_wire;           //[fL_U2_nhit] Hit wires numbers
   Int_t*    fL_U2_rawtime;        //[fL_U2_nhit] Raw TDC times
@@ -283,6 +289,7 @@ public:
   Double_t* fL_U2_dist;           //[fL_U2_nhit] Drift distances
   Double_t* fL_U2_clpos;          //[fL_U2_nclust]  Centers of clusters (m)
   Double_t* fL_U2_slope;          //[fL_U2_nclust] Cluster slopes
+  Int_t*    fL_U2_clpiv;          //[fL_U2_nclust]  Pivot wire of cluster
   Int_t*    fL_U2_clsiz;          //[fL_U2_nclust]  Sizes of clusters (in wires)
   Int_t*    fL_V2_wire;           //[fL_V2_nhit] Hit wires numbers
   Int_t*    fL_V2_rawtime;        //[fL_V2_nhit] Raw TDC times
@@ -290,7 +297,8 @@ public:
   Double_t* fL_V2_dist;           //[fL_V2_nhit] Drift distances
   Double_t* fL_V2_clpos;          //[fL_V2_nclust]  Centers of clusters (m)
   Double_t* fL_V2_slope;          //[fL_V2_nclust] Cluster slopes
-  Int_t*    fL_V2_clsiz;          //[fL_V2_nclust]  Sizes of clusters (in wires
+  Int_t*    fL_V2_clpiv;          //[fL_V2_nclust]  Pivot wire of cluster
+  Int_t*    fL_V2_clsiz;          //[fL_V2_nclust]  Sizes of clusters (in wires)
   Double_t* fL_TR_x;              //[fL_TR_n] X coordinate (in m) of track in E-arm cs
   Double_t* fL_TR_y;              //[fL_TR_n] Y coordinate (in m) of track in E-arm cs
   Double_t* fL_TR_th;             //[fL_TR_n] Tangent of Theta angle of track in E-arm cs
@@ -314,7 +322,7 @@ protected:
   void SetupDatamap( EBlock which = kAll );
   void InitCounters();
 
-  ClassDef(THaRawEvent,4)  //THaRawEvent structure
+  ClassDef(THaRawEvent,5)  //THaRawEvent structure
 };
 
 
