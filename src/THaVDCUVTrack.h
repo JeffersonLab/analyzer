@@ -40,6 +40,7 @@ public:
   void SetUVPlane( THaVDCUVPlane* plane)   { fUVPlane = plane;}
   void SetTrack( THaTrack* track)          { fTrack = track; }
   void SetPartner( THaVDCUVTrack* partner) { fPartner = partner;}
+
   void SetX( Double_t x )                  { fX = x;}
   void SetY( Double_t y )                  { fY = y;}
   void SetTheta( Double_t theta )          { fTheta = theta;}
@@ -48,6 +49,7 @@ public:
   { fX = x; fY = y; fTheta = theta; fPhi = phi; }
   void Set( Double_t x, Double_t y, Double_t theta, Double_t phi,
 	    TVector3& offset );
+
 
 protected:
   THaVDCCluster* fUClust;       // Cluster in the U plane
