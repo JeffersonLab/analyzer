@@ -8,7 +8,7 @@ void swapped_intcpy( char* des, char* src, int size )
   do {
     asm ("movl %0,%%eax" :: "g" (*s) : "eax" );
     asm ("bswap %%eax" ::: "eax");
-    asm ("movl %%eax,%0" : "=g" (*d));
+    asm ("movl %%eax,%0" : "=g" (*d) :: "eax" );
     s++; d++; i--;
   } while( i>=0 );
 #else
