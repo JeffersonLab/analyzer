@@ -180,12 +180,13 @@ Int_t THaS2CoincTime::Process( const THaEvData& evdata )
 	Double_t s2t = s2times->GetValue(pad);
 	
 	Double_t beta = p/TMath::Sqrt(p*p+sp->Mass*sp->Mass);
-#if ROOT_VERSION_CODE >= ROOT_VERSION(3,3,0)
+#if ROOT_VERSION_CODE >= ROOT_VERSION(3,4,0)
 	Double_t c = TMath::C();
 #else
 	Double_t c = 2.99792458e8;
 #endif
-	sp->Vxtime[i] = s2t - (trpath->GetValue(i)+s2trpath->GetValue(i))/(beta*c);
+	sp->Vxtime[i] = s2t - 
+	  (trpath->GetValue(i)+s2trpath->GetValue(i))/(beta*c);
       } else {
 	sp->Vxtime[i] = (i+1)*kBig;
       }
