@@ -629,7 +629,7 @@ void THaScaler::PrintSummary() {
   cout << "Scaler bank  " << bankgroup << endl;
   Double_t time_sec = GetPulser("clock")/clockrate;
   if (time_sec == 0) {
-    cout << "THaScaler: WARNING:  Time of run = ZERO (??)\n"<<endl;
+    cout << "THaScaler: WARNING:  Time of run = ZERO (\?\?)\n"<<endl;
     return;
   } 
   Double_t time_min = time_sec/60;  
