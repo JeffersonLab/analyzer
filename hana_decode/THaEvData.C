@@ -47,9 +47,6 @@
 
 using namespace std;
 
-const int THaEvData::HED_OK  =  1;
-const int THaEvData::HED_ERR = -1;
-
 static const int VERBOSE = 1;
 static const int DEBUG   = 0;
 static const int BENCH   = 0;

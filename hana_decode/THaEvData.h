@@ -8,6 +8,7 @@
 /////////////////////////////////////////////////////////////////////
 
 
+#include "TObject.h"
 #include "TString.h"
 #include "THaSlotData.h"
 #include "evio.h"
@@ -18,7 +19,7 @@ class THaCrateMap;
 class THaFastBusWord;
 class THaHelicity;
 
-class THaEvData {
+class THaEvData : public TObject {
 
 public:
      THaEvData();              
@@ -72,16 +73,17 @@ public:
      int LoadEvent(const int* evbuffer);          
      void PrintSlotData(int crate, int slot) const;
      void PrintOut() const { dump(buffer); }
+
+// Utility function for hexdumping any sort of data
      static void hexdump(const char* cbuff, size_t len);
 
-     static const int HED_OK, HED_ERR;
+     enum { HED_OK = 1, HED_ERR = -1};
+     enum { MAX_PSFACT = 12 };
 
 private:
-
      static const int MAXROC = 20;  
      static const int MAXSLOT = 27;  
 
-     static const int MAX_PSFACT = 12;
      static const int MAX_PHYS_EVTYPE  = 14;  // Types up to this are physics
      static const int SYNC_EVTYPE      = 16;
      static const int PRESTART_EVTYPE  = 17;
