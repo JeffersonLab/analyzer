@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
 
    if (argc > 1) {
      bank = argv[1];
-     if (bank != "Left" && bank != "LEFT" && bank != "Right" && bank != "RIGHT" && bank != "DVCS_CALO" ) {
+     if (bank != "Left" && bank != "LEFT" && bank != "Right" && bank != "RIGHT" && bank != "DVCS_CALO" && bank != "SRC" ) {
          usage();
          return 1;
      }

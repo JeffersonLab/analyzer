@@ -102,6 +102,8 @@ THaScaler::THaScaler( const char* bankgr ) {
   rcs3    = new THaScalerBank("rcs3");   AddBank(rcs3);
   dvcscalo1  = new THaScalerBank("dvcscalo1");   AddBank(dvcscalo1);
   dvcscalo2  = new THaScalerBank("dvcscalo2");   AddBank(dvcscalo2);
+  src1    = new THaScalerBank("src1");   AddBank(src1);
+  src2    = new THaScalerBank("src2");   AddBank(src2);
   edtm    = new THaScalerBank("edtm");   AddBank(edtm);
   nplus   = new THaNormScaler("nplus");  AddBank(nplus);
   nminus  = new THaNormScaler("nminus"); AddBank(nminus);
@@ -133,6 +135,8 @@ THaScaler::~THaScaler() {
   delete rcs3;
   delete dvcscalo1;
   delete dvcscalo2;
+  delete src1;
+  delete src2;
   delete edtm;
   delete nplus;
   delete nminus;
@@ -214,6 +218,8 @@ Int_t THaScaler::Init(const char* thetime )
   cratenum_rcs = 9;
   header_calo = 0xd0c00000;
   cratenum_calo = 9;
+  header_src = 0xcae00000;
+  cratenum_src = 12;
   cratenum_evleft = 11;   // Synchronous readout from roc11
   header_evleft = 0xabc00000;  
   cratenum_evright = 10;   // Synchronous readout from roc10
@@ -282,6 +288,13 @@ Int_t THaScaler::InitMap(string bankgrp) {
     vme_server = SERVER_CALO;
     vme_port = PORT_CALO;
     clockrate = 105000;
+  }
+  if (bankgrp == "SRC" || bankgrp == "src" ) {
+    crate = cratenum_src; 
+    header = header_src;
+    vme_server = SERVER_SRC;
+    vme_port = PORT_SRC;
+    clockrate = 1024;
   }
 
   if (crate == -1) {
@@ -741,6 +754,10 @@ Int_t THaScaler::GetScaler(const char* det, const char* pm, Int_t chan,
       return dvcscalo1->GetData(chan,histor);   
   } else if (detector == "dvcscalo2" || detector == "DVCSCALO2") {
       return dvcscalo2->GetData(chan,histor);   
+  } else if (detector == "src1" || detector == "SRC1") {
+      return src1->GetData(chan,histor);   
+  } else if (detector == "src2" || detector == "SRC2") {
+      return src2->GetData(chan,histor);   
   } else if (detector == "edtm" || detector == "EDTM") {
       return edtm->GetData(chan,histor);   
   }

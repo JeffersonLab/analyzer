@@ -32,6 +32,7 @@
 //      Right = Right HRS scalers, asynchronous event type 140   
 //      RCS = RCS scalers, asynchronous event type 140
 //      DVCS = DVCS scalers, asynch. event type 140
+//      SRC = SRC scalers, asynch. event type 140
 //      EvLeft = (rel. new) Left HRS synchronously, typ. every 100 events.
 //      EvRight = Right HRS synchronous readout.
 //    The synchronous readouts have definite time relationship to other events.
@@ -64,11 +65,13 @@
 #define SERVER_RIGHT "129.57.192.28"   /* hallavme2.jlab.org */
 #define SERVER_RCS   "129.57.192.50"   /* ts2 crate in RCS setup */
 #define SERVER_CALO  "129.57.192.51"   /* DVCS Calo crate */
+#define SERVER_SRC   "129.57.164.100"  /* SRC scaler crate */
 /* Port number of VME servers */
 #define PORT_LEFT  5022
 #define PORT_RIGHT 5021
 #define PORT_RCS   5022
 #define PORT_CALO  5064
+#define PORT_SRC   5088
 #define MAXBLK   20
 #define MSGSIZE  50
 /* structure for requests from this client to HRS VME server */
@@ -202,6 +205,7 @@ protected:
    THaScalerBank *s0,*misc1,*misc2,*misc3,*misc4;
    THaScalerBank *leadgl,*rcs1,*rcs2,*rcs3,*edtm;
    THaScalerBank *dvcscalo1, *dvcscalo2;
+   THaScalerBank *src1, *src2;
    THaScalerBank *evleft, *evright;
    THaNormScaler *nplus,*nminus,*norm;
    std::multimap< std::string, BscaLoc > bmap;
@@ -210,9 +214,9 @@ protected:
    THaCodaFile *fcodafile;
    Bool_t coda_open;
    UInt_t header_left, header_right, header_rcs, header_calo;
-   UInt_t header_evleft, header_evright;
+   UInt_t header_evleft, header_evright, header_src;
    Int_t cratenum_left, cratenum_right, cratenum_rcs, cratenum_calo;
-   Int_t cratenum_evleft, cratenum_evright;
+   Int_t cratenum_evleft, cratenum_evright, cratenum_src;
    Int_t header, crate;
    std::string vme_server;
    int vme_port;

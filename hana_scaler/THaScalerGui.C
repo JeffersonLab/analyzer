@@ -88,6 +88,8 @@ Int_t THaScalerGui::InitPlots() {
 
 // skip displaying "norm" for dvcs (it is dvcscalo1).  This is ugly.
      if(scaler->GetCrate()==9 && (strcmp(scbank->location.short_desc.c_str(),"norm") == 0)) continue;
+// skip displaying "norm" for src (it is src1).  Same problem as above
+     if(scaler->GetCrate()==12 && (strcmp(scbank->location.short_desc.c_str(),"norm") == 0)) continue;
 
      TGCompositeFrame *tgcf = fTab->AddTab(scbank->name.c_str());
 #ifdef CHGCOLORS
@@ -106,7 +108,7 @@ Int_t THaScalerGui::InitPlots() {
              nrow = 8;  isnorm = 1;
              if (ipage >=0 && ipage < SCAL_NUMBANK) yboxsize[ipage] = YBOXBIG;
      }
-     if (scaler->GetCrate() == 9) {
+     if (scaler->GetCrate() == 9 || scaler->GetCrate() == 12) {
              nrow = 8;  isnorm = 0;
              if (ipage >=0 && ipage < SCAL_NUMBANK) yboxsize[ipage] = YBOXBIG;
      }
@@ -123,15 +125,27 @@ Int_t THaScalerGui::InitPlots() {
      } else {
 // FIXME: Preferred that the page name come from THaScalerBank, but did not for norm scalers.
        if (strcmp(scbank->location.short_desc.c_str(),"norm") == 0) {
-         fLpage = new TGLabel(tgcf, new TGString("Normalization Data   (NOT gated by helicity)"),labelgc);
+         if (bankgroup == "Right" || bankgroup == "right") {
+           fLpage = new TGLabel(tgcf, new TGString("R-HRS Normalization Data  (NOT gated by helicity)"),labelgc);
+	 } else {
+           fLpage = new TGLabel(tgcf, new TGString("L-HRS Normalization Data  (NOT gated by helicity)"),labelgc);
+	 }
          tgcf->AddFrame(fLpage,fLayout);
        }
        if (strcmp(scbank->location.short_desc.c_str(),"nplus") == 0) {
-         fLpage = new TGLabel(tgcf, new TGString("Normalization Data ++ gated by helicity PLUS"),labelgc);
+         if (bankgroup == "Right" || bankgroup == "right") {
+           fLpage = new TGLabel(tgcf, new TGString("R-HRS Normalization Data ++ gated by helicity PLUS"),labelgc);
+	 } else {
+           fLpage = new TGLabel(tgcf, new TGString("L-HRS Normalization Data ++ gated by helicity PLUS"),labelgc);
+	 }
          tgcf->AddFrame(fLpage,fLayout);
        }
        if (strcmp(scbank->location.short_desc.c_str(),"nminus") == 0) {
-         fLpage = new TGLabel(tgcf, new TGString("Normalization Data -- gated by helicity MINUS"),labelgc);
+         if (bankgroup == "Right" || bankgroup == "right") {
+           fLpage = new TGLabel(tgcf, new TGString("R-HRS Normalization Data -- gated by helicity MINUS"),labelgc);
+	 } else {
+           fLpage = new TGLabel(tgcf, new TGString("L-HRS Normalization Data -- gated by helicity MINUS"),labelgc);
+	 }
          tgcf->AddFrame(fLpage,fLayout);
        }
      }
@@ -239,7 +253,7 @@ Int_t THaScalerGui::InitPlots() {
   Layout();
   SetWindowName("HALL  A   SCALER   DATA");
   SetIconName("Scalers");
-  if (scaler->GetCrate() != 9) {
+  if (scaler->GetCrate() != 9 && scaler->GetCrate() != 12) {
        Resize(900,YBOXSMALL);
   } else {
        Resize(900,YBOXBIG);
@@ -284,7 +298,7 @@ Bool_t THaScalerGui::ProcessMessage(Long_t msg, Long_t parm1, Long_t) {
 
 void THaScalerGui::Help() {
   fHelpDialog = new TRootHelpDialog(this,"BRIEF  HELP  INSTRUCTIONS",350,250);
-  fHelpDialog->SetText("xscaler++ treats the data from one bank\nof scalers (e.g. L-arm, R-arm, DVCS Calo bank, etc).\nUsage:\nxscaler [bankgroup]\nTo view a recent history of updates, press on\nthe button corresponding to the channel and\na canvas will pop up.\nClick ``Show Rates'' or ``Show Counts'' to switch\nbetween rate display and accumulated counts.\n\nSupport: Robert Michaels, JLab Hall A\nDocumentation:\nhallaweb.jlab.org/equipment/daq/THaScaler.html");
+  fHelpDialog->SetText("xscaler++ treats the data from one bank\nof scalers (e.g. L-arm, R-arm, DVCS Calo, SRC bank, etc).\nUsage:\nxscaler [bankgroup]\nTo view a recent history of updates, press on\nthe button corresponding to the channel and\na canvas will pop up.\nClick ``Show Rates'' or ``Show Counts'' to switch\nbetween rate display and accumulated counts.\n\nSupport: Robert Michaels, JLab Hall A\nDocumentation:\nhallaweb.jlab.org/equipment/daq/THaScaler.html");
   fHelpDialog->Popup();
 };
 
