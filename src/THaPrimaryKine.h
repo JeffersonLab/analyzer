@@ -24,7 +24,6 @@ public:
 		  Double_t target_mass = 0.0 /* GeV */ );
   THaPrimaryKine( const char* name, const char* description,
 		  const char* spectro, const char* beam,
-		  Double_t particle_mass = 0.0, /* GeV */
 		  Double_t target_mass = 0.0 /* GeV */ );
   virtual ~THaPrimaryKine();
   

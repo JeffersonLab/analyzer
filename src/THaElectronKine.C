@@ -27,9 +27,10 @@ THaElectronKine::THaElectronKine( const char* name, const char* description,
 THaElectronKine::THaElectronKine( const char* name, const char* description,
 				  const char* spectro, const char* beam,
 				  Double_t target_mass ) :
-  THaPrimaryKine(name,description,spectro,beam,electron_mass,target_mass)
+  THaPrimaryKine(name,description,spectro,beam,target_mass)
 {
   // Constructor with specification of optional beam apparatus
+  SetMass( electron_mass );
 }
 
 //_____________________________________________________________________________

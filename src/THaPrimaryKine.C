@@ -30,19 +30,20 @@ THaPrimaryKine::THaPrimaryKine( const char* name, const char* description,
   THaPhysicsModule(name,description), fM(particle_mass), 
   fMA(target_mass), fSpectroName(spectro), fSpectro(NULL), fBeam(NULL)
 {
-  // Standard constructor.
+  // Standard constructor. Must specify particle mass. Incident particles
+  // are assumed to be long z_lab.
 
 }
 
 //_____________________________________________________________________________
 THaPrimaryKine::THaPrimaryKine( const char* name, const char* description,
 				const char* spectro, const char* beam, 
-				Double_t particle_mass,	Double_t target_mass ) 
-  : THaPhysicsModule(name,description), fM(particle_mass), 
-    fMA(target_mass), fSpectroName(spectro), fBeamName(beam), 
-    fSpectro(NULL), fBeam(NULL)
+				Double_t target_mass ) 
+  : THaPhysicsModule(name,description), fM(-1.0), fMA(target_mass), 
+    fSpectroName(spectro), fBeamName(beam), fSpectro(NULL), fBeam(NULL)
 {
-  // Constructor with specification of optional beam apparatus
+  // Constructor with specification of optional beam module.
+  // Particle mass will normally come from the beam module.
 
 }
 
@@ -95,17 +96,30 @@ THaAnalysisObject::EStatus THaPrimaryKine::Init( const TDatime& run_time )
   // Locate the spectrometer apparatus named in fSpectroName and save
   // pointer to it.
 
+  fSpectro = dynamic_cast<THaTrackingModule*>
+    ( FindModule( fSpectroName.Data(), "THaTrackingModule"));
+  if( !fSpectro )
+    return fStatus;
+
+  // Optional beam apparatus
+  if( fBeamName.Length() > 0 ) {
+    fBeam = dynamic_cast<THaBeam*>
+      ( FindModule( fBeamName.Data(), "THaBeamModule") );
+    if( !fBeam )
+      return fStatus;
+    if( fM <= 0.0 )
+      fM = fBeam->GetBeamInfo()->GetM();
+  }
+
   // Standard initialization. Calls this object's DefineVariables().
   if( THaPhysicsModule::Init( run_time ) != kOK )
     return fStatus;
 
-  fSpectro = dynamic_cast<THaTrackingModule*>
-    ( FindModule( fSpectroName.Data(), "THaTrackingModule"));
-
-  // Optional beam apparatus
-  if( fBeamName.Length() > 0 )
-    fBeam = dynamic_cast<THaBeam*>( FindModule( fBeamName.Data(), "THaBeam") );
-  
+  if( fM <= 0.0 ) {
+    Error( Here("Init"), "Particle mass not defined. Module "
+	   "initialization failed" );
+    fStatus = kInitError;
+  }
   return fStatus;
 }
 
@@ -119,22 +133,16 @@ Int_t THaPrimaryKine::Process( const THaEvData& evdata )
   THaTrackInfo* trkifo = fSpectro->GetTrackInfo();
   if( !trkifo || !trkifo->IsOK() ) return 1;
 
-  // FIXME: allow for beam energy loss
-  Double_t p_in  = gHaRun->GetParameters()->GetBeamP();
-
   // Determine 4-momentum of incident particle. 
-  // If a beam apparatus given, use it to set the beam direction.
+  // If a beam module given, use it to get the beam momentum. This 
+  // module may apply corrections for beam energy loss, variations, etc.
   if( fBeam ) {
-    if( fBeam->GetDirection().Mag2() > 0.0 ) {
-      TVector3 p_beam = fBeam->GetDirection();
-      p_beam.SetMag(p_in);
-      fP0.SetVectM( p_beam, fM );
-    } else
-      // Oops, beam direction vector is zero?
-      return 2;
-  } else
+    fP0.SetVectM( fBeam->GetBeamInfo()->GetPvect(), fM );
+  } else {
     // If no beam given, assume beam along z_lab
+    Double_t p_in  = gHaRun->GetParameters()->GetBeamP();
     fP0.SetXYZM( 0.0, 0.0, p_in, fM );
+  }
 
   fP1.SetVectM( trkifo->GetPvect(), fM );
   fA.SetXYZM( 0.0, 0.0, 0.0, fMA );         // Assume target at rest
