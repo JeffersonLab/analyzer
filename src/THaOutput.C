@@ -233,6 +233,7 @@ Int_t THaOutput::Init( const char* filename )
 
   if (fEpicsKey.size() > 0) {
     fEpicsVar = new Double_t[fEpicsKey.size()+1];
+    memset (fEpicsVar, -1e32, fEpicsKey.size());
     for (UInt_t i = 0; i < fEpicsKey.size(); i++) {
       tinfo = fEpicsKey[i] + "/D";
       fTree->Branch(fEpicsKey[i].c_str(), &fEpicsVar[i], 
