@@ -2,12 +2,12 @@
 //                                                                           //
 // THaVDCHit                                                                 //
 //                                                                           //
+// Class representing a single hit for the VDC                               //
+//                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "THaVDCHit.h"
 #include "THaVDCTimeToDistConv.h"
-
-#include <iostream>
 
 ClassImp(THaVDCHit)
 
@@ -17,28 +17,21 @@ Double_t THaVDCHit::ConvertTimeToDist(Double_t slope)
   // Converts TDC time to drift distance
   // Takes the (estimated) slope of the track as an argument
   
-  THaVDCTimeToDistConv* ttdConv = NULL;
+  THaVDCTimeToDistConv* ttdConv = (fWire) ? fWire->GetTTDConv() : NULL;
   
-  // Make sure that the hit has a wire
-  if (fWire) 
-    ttdConv = fWire->GetTTDConv();
-
-  if (ttdConv) {
-    // If a time to distance algorithm exists
-    // Use it to convert the TDC time to the drift distance
-    fDist = ttdConv->ConvertTimeToDist(fTime, slope);
-
-    return fDist;
-  }
-  else
-    cerr<<"!-THaVDCHit::ConvertTimeToDist-No Time to dist algorithm available\n"<<endl;
+  if (ttdConv) 
+    // If a time to distance algorithm exists, use it to convert the TDC time 
+    // to the drift distance
+    return fDist = ttdConv->ConvertTimeToDist(fTime, slope);
   
+  Error("ConvertTimeToDist()", "No Time to dist algorithm available");
   return 0.0;
 
 }
 
 //_____________________________________________________________________________
-Int_t THaVDCHit::Compare( const TObject * obj ) const {
+Int_t THaVDCHit::Compare( const TObject* obj ) const 
+{
   // Used to sort hits
   // A hit is "less than" another hit if it occurred on a lower wire number.
   // Also, for hits on the same wire, the first hit on the wire (the one with
@@ -47,14 +40,14 @@ Int_t THaVDCHit::Compare( const TObject * obj ) const {
   // wire number and, for each wire, will be in the order in which they hit
   // the wire
 
-  if( !obj || IsA() != obj->IsA() )
+  if( !obj || IsA() != obj->IsA() || !fWire )
     return -1;
 
   const THaVDCHit* hit = static_cast<const THaVDCHit*>( obj );
  
   Int_t myWireNum = fWire->GetNum();
   Int_t hitWireNum = hit->GetWire()->GetNum();
-  // Compare wire numberes
+  // Compare wire numbers
   if (myWireNum < hitWireNum) return -1;
   if (myWireNum > hitWireNum) return  1;
   if (myWireNum == hitWireNum) {
