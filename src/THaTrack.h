@@ -8,6 +8,7 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "TObject.h"
+#include "TVector3.h"
 
 class TClonesArray;
 class THaPIDinfo;
@@ -29,38 +30,40 @@ public:
 
   Int_t             AddCluster( THaCluster* c );
   void              Clear( Option_t* opt="" );
-  TD*               GetCreator()       const       { return fCreator; }
-  TList*            GetClusters()      const       { return fClusters; }
-  UInt_t            GetFlag()          const       { return fFlag; }
-  THaTrackID*       GetID()            const       { return fID; }
-  Double_t          GetP()             const       { return fP; }
-  Double_t          GetPhi()           const       { return fPhi; }
-  THaPIDinfo*       GetPIDinfo()       const       { return fPIDinfo; }
-  Double_t          GetTheta()         const       { return fTheta; }
-  Double_t          GetX()             const       { return fX; }
-  Double_t          GetY()             const       { return fY; }
-  Double_t          GetX( Double_t z ) const       { return fX + z*fTheta; }
-  Double_t          GetY( Double_t z ) const       { return fY + z*fPhi; }
+  TD*               GetCreator()       const { return fCreator; }
+  TList*            GetClusters()      const { return fClusters; }
+  UInt_t            GetFlag()          const { return fFlag; }
+  THaTrackID*       GetID()            const { return fID; }
+  Double_t          GetP()             const { return fP; }
+  Double_t          GetPhi()           const { return fPhi; }
+  THaPIDinfo*       GetPIDinfo()       const { return fPIDinfo; }
+  Double_t          GetTheta()         const { return fTheta; }
+  Double_t          GetX()             const { return fX; }
+  Double_t          GetY()             const { return fY; }
+  Double_t          GetX( Double_t z ) const { return fX + z*fTheta; }
+  Double_t          GetY( Double_t z ) const { return fY + z*fPhi; }
 
-  Double_t       GetDX()        const { return fDX; }
-  Double_t       GetDY()        const { return fDY; }
-  Double_t       GetDTheta()    const { return fDTheta; }
-  Double_t       GetDPhi()      const { return fDPhi; } 
-  Double_t       GetRX()        const { return fRX; }
-  Double_t       GetRY()        const { return fRY; }
-  Double_t       GetRTheta()    const { return fRTheta; }
-  Double_t       GetRPhi()      const { return fRPhi; } 
-  Double_t       GetTX()        const { return fTX; }
-  Double_t       GetTY()        const { return fTY; }
-  Double_t       GetTTheta()    const { return fTTheta; }
-  Double_t       GetTPhi()      const { return fTPhi; }
-  Double_t       GetDp()        const { return fDp; }
+  Double_t          GetDX()            const { return fDX; }
+  Double_t          GetDY()            const { return fDY; }
+  Double_t          GetDTheta()        const { return fDTheta; }
+  Double_t          GetDPhi()          const { return fDPhi; } 
+  Double_t          GetRX()            const { return fRX; }
+  Double_t          GetRY()            const { return fRY; }
+  Double_t          GetRTheta()        const { return fRTheta; }
+  Double_t          GetRPhi()          const { return fRPhi; } 
+  Double_t          GetTX()            const { return fTX; }
+  Double_t          GetTY()            const { return fTY; }
+  Double_t          GetTTheta()        const { return fTTheta; }
+  Double_t          GetTPhi()          const { return fTPhi; }
+  Double_t          GetDp()            const { return fDp; }
+
+  TVector3&         GetPvect()               { return fPvect; }
 
   void              Print( Option_t* opt="" ) const;
 
-  void              SetID( THaTrackID* id )        { fID = id; }
-  void              SetFlag( UInt_t flag )         { fFlag = flag; }
-  void              SetMomentum( Double_t p )      { fP       = p; }
+  void              SetID( THaTrackID* id )   { fID = id; }
+  void              SetFlag( UInt_t flag )    { fFlag = flag; }
+  void              SetMomentum( Double_t p ) { fP = p; }
   void              SetPosition( Double_t x, Double_t y );
   void              Set( Double_t x, Double_t y, Double_t theta, Double_t phi )
   { fX = x; fY = y; fTheta = theta; fPhi = phi; }
@@ -72,8 +75,9 @@ public:
 			  Double_t theta, Double_t phi );
   void              SetDp(Double_t dp) { fDp = dp; }
 
-  void              SetCreator( TD* d )            { fCreator = d; }
-  void              SetPIDinfo(  THaPIDinfo* pid ) { fPIDinfo  = pid; }
+  void              SetCreator( TD* d )               { fCreator = d; }
+  void              SetPIDinfo( THaPIDinfo* pid )     { fPIDinfo = pid; }
+  void              SetPvect( const TVector3& pvect ) { fPvect = pvect; }
 
 protected:
 
@@ -83,21 +87,21 @@ protected:
   Double_t          fPhi;            // Tangent of TRANSPORT Phi (y')
   Double_t          fP;              // Track momentum (GeV)
 
-  TList*            fClusters;       // Clusters of this track
-  THaPIDinfo*       fPIDinfo;        // Particle ID information for this track
-  TD*               fCreator;        // Detector creating this track
+  TList*            fClusters;       //! Clusters of this track
+  THaPIDinfo*       fPIDinfo;        //! Particle ID information for this track
+  TD*               fCreator;        //! Detector creating this track
 
   // coordinates in the rotated TRANSPORT system
-  Double_t fRX;     // x position in focal plane
-  Double_t fRY;     // y position in focal plane
+  Double_t fRX;     // x position in focal plane (m)
+  Double_t fRY;     // y position in focal plane (m)
   Double_t fRTheta; // Tangent of TRANSPORT Theta (x')
   Double_t fRPhi;   // Tangent of TRANSPORT Phi (y')
 
   // coordinates in the target system
-  Double_t fTX;     // x position at target
-  Double_t fTY;     // y position at target
-  Double_t fTTheta; // deviation of velocity in x direction
-  Double_t fTPhi;   // deviation of velocity in y direction
+  Double_t fTX;     // x position at target (m)
+  Double_t fTY;     // y position at target (m)
+  Double_t fTTheta; // Tangent of TRANSPORT Theta (out-of-plane angle) at target
+  Double_t fTPhi;   // Tangent of TRANSPORT Phi (in-plane angle) at target
 
   // coordinates in the detector system
   Double_t fDX;     // x position in DCS
@@ -106,13 +110,13 @@ protected:
   Double_t fDPhi;   // Tangent of DCS Phi 
 
   Double_t fDp;     // dp/p_center -- fractional change in momentum
-  //Double_t fPmom; == fP (MeV/c)
 
+  THaTrackID*       fID;     //! Track identifier
+  UInt_t            fFlag;   // Status flag
 
-  THaTrackID*       fID;             // Track identifier
-  UInt_t            fFlag;           // Status flag
+  TVector3          fPvect;  // Momentum vector at target in lab system (GeV)
 
-  ClassDef(THaTrack,0)               // A generic particle track
+  ClassDef(THaTrack,2)       // A generic particle track
 };
 
 //__________________ inlines __________________________________________________
