@@ -51,6 +51,7 @@ THaHelicity::~THaHelicity( )
     delete [] fT0;
     delete [] fTlastquad;
     delete [] fTtol;
+    delete [] t9count;
     delete [] present_reading;
     delete [] q1_reading;
     delete [] predicted_reading;
@@ -109,6 +110,7 @@ void THaHelicity::Init() {
     fTtol               = new Double_t[2];
     fT0                 = new Double_t[2];
     fTlastquad          = new Double_t[2];
+    t9count             = new Int_t[2];
     present_reading     = new Int_t[2];   
     q1_reading          = new Int_t[2];   
     predicted_reading   = new Int_t[2];
@@ -128,6 +130,7 @@ void THaHelicity::Init() {
     fFirstquad[0] = 1;
     fFirstquad[1] = 1;
     memset(hbits, 0, fgNbits*sizeof(Int_t));
+    memset(t9count, 0, 2*sizeof(Int_t));
     memset(q1_reading, 0, 2*sizeof(Int_t));
     memset(predicted_reading, Unknown, 2*sizeof(Int_t));
     memset(saved_helicity, Unknown, 2*sizeof(Int_t));
@@ -334,7 +337,7 @@ void THaHelicity::QuadCalib() {
 // Calibrate the helicity predictor shift register.
    fTdiff[fArm] = fTimestamp[fArm] - fT0[fArm];
    if (HELDEBUG >= 2) {
-     cout << "TimeCalib "<<fTimestamp[fArm]<<"  "<<fT0[fArm];
+     cout << "QuadCalib "<<fTimestamp[fArm]<<"  "<<fT0[fArm];
      cout << "  "<<fTdiff[fArm]<<"  "<<fQrt[fArm]<<endl;
    }
    if (fFirstquad[fArm] == 0 &&
@@ -350,10 +353,13 @@ void THaHelicity::QuadCalib() {
        fT0[fArm] = fTimestamp[fArm];
        fFirstquad[fArm] = 0;
    }
-   if ( ( fTdiff[fArm] > 0.95*fTdavg[fArm] )  &&
-	(( fQrt[fArm] == 1 ) ||
+   if (fEvtype[fArm] == 9) t9count[fArm] += 1;
+   if (fQrt[fArm] == 1) t9count[fArm] = 0;
+   if ( (( fTdiff[fArm] > 0.7*fTdavg[fArm] )  &&
+	 ( fQrt[fArm] == 1 ))  ||
+        (( fTdiff[fArm] > 0.9*fTdavg[fArm] )  &&
 // Use the event 9's since apparently some QRT's are missed.
-	  ( fEvtype[fArm] == 9 && fGate[fArm] == 0 )) ) {
+     ( fEvtype[fArm] == 9 && fGate[fArm] == 0 && t9count[fArm] > 3 )) ) {
        if (HELDEBUG >= 2) cout << "found qrt "<<endl;
        fT0[fArm] = fTimestamp[fArm];
        q1_reading[fArm] = present_reading[fArm];
@@ -363,6 +369,8 @@ void THaHelicity::QuadCalib() {
 // This is ok if it doesn't happen too often.  You lose these events.
           cout << "WARNING: THaHelicity: QuadCalib";
           cout << " G0 prediction failed."<<endl;
+//cout << "info " << fQrt[fArm] << "  "<<fTdiff[fArm];
+//cout<<"  "<<fGate[fArm]<<"  "<<fEvtype[fArm]<<endl;
           recovery_flag = 1;    // clear & recalibrate the predictor
           quad_calibrated[fArm] = 0;
           fFirstquad[fArm] = 1;
