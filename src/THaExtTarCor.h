@@ -26,6 +26,7 @@ public:
   Double_t          GetDeltaP()  const { return fDeltaP; }
   Double_t          GetDeltaDp() const { return fDeltaDp; }
   Double_t          GetDeltaTh() const { return fDeltaTh; }
+  THaTrackInfo*     GetTrackInfo() { return fTrkIfo; }
 
   virtual EStatus   Init( const TDatime& run_time );
   virtual Int_t     Process();
