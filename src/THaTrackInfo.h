@@ -66,6 +66,7 @@ public:
     fP = p; fDp = dp; fX = x; fY = y; fTheta = th; fPhi = ph; fPvect = pvect; 
     fOK = 1;
   }
+  void SetP( Double_t p );
   void SetSpectrometer( THaSpectrometer* s ) { fSpectro = s; }
 
 protected:
@@ -85,6 +86,19 @@ private:
 
   ClassDef(THaTrackInfo,1)  // Track information
 };
+
+//_____________________________________________________________________________
+inline
+void THaTrackInfo::SetP( Double_t p )
+{
+  // Set momentum to new value. Changes p, dp, and pvect
+
+  Double_t p0 = fP / (1.0+fDp);
+  fP = p;
+  fPvect.SetMag(p);
+  if( p0 != 0.0 )
+    fDp = fP/p0 - 1.0;
+}
 
 #endif
 
