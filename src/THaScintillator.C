@@ -155,7 +155,7 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
     fTWalkPar = new Double_t[ fNTWalkPar ];
 
     fHitPad = new Int_t[ fNelem ];   
-    fTime   = new Double_t[ fNelem ];   // analysis indexed by HIT, not paddle
+    fTime   = new Double_t[ fNelem ]; // analysis indexed by paddle (yes, inefficient)
     fdTime  = new Double_t[ fNelem ];
     fAmpl   = new Double_t[ fNelem ];
     
