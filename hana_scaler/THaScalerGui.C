@@ -10,7 +10,7 @@
 /////////////////////////////////////////////////////////////////////
 
 // Test mode (generate fake data)
-#define TESTONLY    1
+// #define TESTONLY    1
 // Some GUI geometry sizes (16 vs 32 channel)
 #define YBOXSMALL    460
 #define YBOXBIG      700
@@ -98,6 +98,11 @@ Int_t THaScalerGui::InitFromDB() {
 
 Int_t THaScalerGui::InitPlots() {
 // Initialize plots (xscaler style)
+  if (!scaler) {
+    cout << "THaScalerGui::ERROR: no scaler defined... cannot init."<<endl;
+    return -1;
+  }
+  InitPages();
   yboxsize = new Int_t[SCAL_NUMBANK];
   occupied = new Int_t[SCAL_NUMBANK];
   memset(occupied, 0, SCAL_NUMBANK*sizeof(Int_t));
@@ -110,20 +115,13 @@ Int_t THaScalerGui::InitPlots() {
   TGTab *fTab = new TGTab(this, 600, 800);
   TGLayoutHints *fLayout = new TGLayoutHints(kLHintsNormal | kLHintsExpandX, 10, 10, 10, 10);
   TGLayoutHints *fLayout2 = new TGLayoutHints(kLHintsNormal ,10, 10, 10, 10);
-  if (!scaler) {
-    cout << "THaScalerGui::ERROR: no scaler defined... cannot init."<<endl;
-    return -1;
-  }
   if (!scaler->GetDataBase()) {
     cout << "THaScalerGui::WARNING: no database.  Will use defaults..."<<endl;
   }
   Int_t crate = scaler->GetCrate();
   std::string sdirect;
-  if (scaler->GetDataBase())  
-    npages = scaler->GetDataBase()->GetNumDirectives(crate, "xscaler-layout"); 
-  if (npages == 0) npages = 10;  // reasonable default
   for (Int_t ipage = 0; ipage < npages; ipage++) {
-    Int_t slot = ipage;
+    Int_t slot = slotmap[ipage];
     char cpage[100]; sprintf(cpage,"%d",ipage);
     std::string spage = cpage;
     sdirect = "none";
@@ -149,7 +147,7 @@ Int_t THaScalerGui::InitPlots() {
     TGLabel *fLpage;
     std::string pagename = "none";
     if (scaler->GetDataBase()) 
-      pagename = scaler->GetDataBase()->GetStringDirectives(crate, "xscaler-pagename", spage);
+      pagename = scaler->GetDataBase()->GetStringDirectives(crate, "xscaler-pagename", (std::string)cpage);
     if (pagename == "none") pagename = spage;
     fLpage = new TGLabel(tgcf, new TGString(pagename.c_str()),labelgc);
     tgcf->AddFrame(fLpage,fLayout);
@@ -173,14 +171,7 @@ Int_t THaScalerGui::InitPlots() {
           if (scaler->GetDataBase()) 
             buttonname = scaler->GetDataBase()->GetShortName(crate,slot,chan);
           if (buttonname == "none") {
-            buttonname = scaler->GetDataBase()->GetShortName(crate,slot,31);
-            if (buttonname == "none") {
-              sprintf(cbutton,"%d ==>",ncol*row+col+1);
-  	    } else {
-              sprintf(cbutton,buttonname.c_str());
-              sprintf(nname,"-%d",chan);
-              strcat(cbutton,nname);
-	    }
+            sprintf(cbutton,"%d ==>",ncol*row+col+1);
           } else {
             sprintf(cbutton,buttonname.c_str());
 	  }
@@ -233,7 +224,6 @@ Int_t THaScalerGui::InitPlots() {
   MapWindow(); 
   Resize(900,yboxsize[0]);
   lastsize = yboxsize[0];
-  InitPages();
   return 0;
 };
 
@@ -242,6 +232,9 @@ void THaScalerGui::InitPages() {
   static char value[50];
   slotmap.clear();
   if (!scaler) return;
+  if (scaler->GetDataBase())  
+    npages = scaler->GetDataBase()->GetNumDirectives(crate, "xscaler-layout"); 
+  if (npages == 0) npages = 10;  // reasonable default
   for (ipage = 0; ipage < npages; ipage++) {
     slot = ipage;
     if ( scaler->GetDataBase()) {
