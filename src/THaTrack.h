@@ -20,10 +20,20 @@ class THaTrack : public TObject {
 
 public:
 
+  // Bits for fType
+  enum {
+    kHasDet        = BIT(0),  // Detector coordinates set
+    kHasFP         = BIT(1),  // Focal plane coordinates set 
+    kHasRot        = BIT(2),  // Rotating TRANSPORT coordinates set
+    kHasTarget     = BIT(3),  // Target coordinates reconstructed
+    kHasVertex     = BIT(4)   // Vertex reconstructed
+  };
+
   typedef THaTrackingDetector TD;
 
-  THaTrack() : fX(0.0), fY(0.0), fTheta(0.0), fPhi(0.0), fP(0.0),
-    fClusters(NULL), fPIDinfo(NULL), fCreator(NULL), fID(NULL), fFlag(0) {}
+  THaTrack() : 
+    fX(0.0), fY(0.0), fTheta(0.0), fPhi(0.0), fP(0.0), fClusters(NULL), 
+    fPIDinfo(NULL), fCreator(NULL), fID(NULL), fFlag(0), fType(0) {}
   THaTrack( Double_t x, Double_t y, Double_t theta, Double_t phi,
 	    TD* creator=NULL, THaTrackID* id=NULL, THaPIDinfo* pid=NULL );
   virtual ~THaTrack();
@@ -33,6 +43,7 @@ public:
   TD*               GetCreator()       const { return fCreator; }
   TList*            GetClusters()      const { return fClusters; }
   UInt_t            GetFlag()          const { return fFlag; }
+  UInt_t            GetType()          const { return fType; }
   THaTrackID*       GetID()            const { return fID; }
   Double_t          GetP()             const { return fP; }
   Double_t          GetPhi()           const { return fPhi; }
@@ -56,31 +67,46 @@ public:
   Double_t          GetTTheta()        const { return fTTheta; }
   Double_t          GetTPhi()          const { return fTPhi; }
   Double_t          GetDp()            const { return fDp; }
+  Double_t          GetLabPx()         const { return fPvect.X(); }
+  Double_t          GetLabPy()         const { return fPvect.Y(); }
+  Double_t          GetLabPz()         const { return fPvect.Z(); }
+  Double_t          GetVertexX()       const { return fVertex.X(); }
+  Double_t          GetVertexY()       const { return fVertex.Y(); }
+  Double_t          GetVertexZ()       const { return fVertex.Z(); }
 
   TVector3&         GetPvect()               { return fPvect; }
+  TVector3&         GetVertex()              { return fVertex; }
+
+  bool              HasDet()           const { return (fType&kHasDet); }
+  bool              HasFP()            const { return (fType&kHasFP); }
+  bool              HasRot()           const { return (fType&kHasRot); }
+  bool              HasTarget()        const { return (fType&kHasTarget); }
+  bool              HasVertex()        const { return (fType&kHasVertex); }
 
   void              Print( Option_t* opt="" ) const;
 
-  void              SetID( THaTrackID* id )   { fID = id; }
+  void              SetID( THaTrackID* id )   { fID   = id; }
   void              SetFlag( UInt_t flag )    { fFlag = flag; }
-  void              SetMomentum( Double_t p ) { fP = p; }
-  void              SetPosition( Double_t x, Double_t y );
+  void              SetType( UInt_t flag )    { fType = flag; }
+  void              SetMomentum( Double_t p ) { fP    = p; }
+  void              SetDp( Double_t dp )      { fDp   = dp; }
   void              Set( Double_t x, Double_t y, Double_t theta, Double_t phi )
-  { fX = x; fY = y; fTheta = theta; fPhi = phi; }
+  { fX = x; fY = y; fTheta = theta; fPhi = phi; fType |= kHasFP; }
   void              SetR( Double_t x, Double_t y,
 			  Double_t theta, Double_t phi );
   void              SetD( Double_t x, Double_t y,
 			  Double_t theta, Double_t phi );
   void              SetTarget( Double_t x, Double_t y,
-			  Double_t theta, Double_t phi );
-  void              SetDp(Double_t dp) { fDp = dp; }
+			       Double_t theta, Double_t phi );
 
-  void              SetCreator( TD* d )               { fCreator = d; }
-  void              SetPIDinfo( THaPIDinfo* pid )     { fPIDinfo = pid; }
-  void              SetPvect( const TVector3& pvect ) { fPvect = pvect; }
+  void              SetCreator( TD* d )                { fCreator = d; }
+  void              SetPIDinfo( THaPIDinfo* pid )      { fPIDinfo = pid; }
+  void              SetPvect( const TVector3& pvect )  { fPvect   = pvect; }
+  void              SetVertex( const TVector3& vertx ) { fVertex  = vertx; }
 
 protected:
 
+  // Focal plane coordinates (TRANSPORT system projected to z=0)
   Double_t          fX;              // x position in TRANSPORT plane (m)
   Double_t          fY;              // y position in TRANSPORT plane (m)
   Double_t          fTheta;          // Tangent of TRANSPORT Theta (x')
@@ -112,22 +138,16 @@ protected:
   Double_t fDp;     // dp/p_center -- fractional change in momentum
 
   THaTrackID*       fID;     //! Track identifier
-  UInt_t            fFlag;   // Status flag
+  UInt_t            fFlag;   // General status flag (for use by tracking det.)
+  UInt_t            fType;   // Flag indicating which vectors reconstructed
 
   TVector3          fPvect;  // Momentum vector at target in lab system (GeV)
+  TVector3          fVertex; // Vertex location in lab (m) valid if fHasVertex
 
   ClassDef(THaTrack,1)       // A generic particle track
 };
 
 //__________________ inlines __________________________________________________
-inline
-void THaTrack::SetPosition( Double_t x, Double_t y )
-{
-  fX = x;
-  fY = y;
-}
-
-//_____________________________________________________________________________
 inline
 void THaTrack::SetD( Double_t x, Double_t y, Double_t theta, Double_t phi )
 {
@@ -136,6 +156,7 @@ void THaTrack::SetD( Double_t x, Double_t y, Double_t theta, Double_t phi )
   fDY = y;
   fDTheta = theta;
   fDPhi = phi;
+  fType |= kHasDet;
 }
 
 //_____________________________________________________________________________
@@ -147,6 +168,7 @@ void THaTrack::SetR( Double_t x, Double_t y, Double_t theta, Double_t phi )
   fRY = y;
   fRTheta = theta;
   fRPhi = phi;
+  fType |= kHasRot;
 }
 
 //_____________________________________________________________________________
@@ -158,6 +180,7 @@ void THaTrack::SetTarget( Double_t x, Double_t y, Double_t theta, Double_t phi )
   fTY = y;
   fTTheta = theta;
   fTPhi = phi;
+  fType |= kHasTarget;
 }
 
 #endif
