@@ -18,8 +18,9 @@ class THaVDCCluster : public TObject {
 
 public:
   THaVDCCluster( THaVDCPlane* owner = NULL ) :
-    fSize(0), fPlane(owner), fSlope(0.0), fSigmaSlope(0.0), fInt(0.0),
-    fSigmaInt(0.0), fT0(0.0), fPivot(NULL), fTimeCorrection(0.0) {}
+    fSize(0), fPlane(owner), fSlope(kBig), fSigmaSlope(kBig), fInt(kBig),
+    fSigmaInt(kBig), fT0(0.0), fPivot(NULL), fTimeCorrection(0.0), fFitOK(false)
+  {}
   THaVDCCluster( const THaVDCCluster&);
   THaVDCCluster& operator=( const THaVDCCluster& );
   virtual ~THaVDCCluster() {}
@@ -50,7 +51,9 @@ public:
   THaVDCHit*     GetPivot()          const { return fPivot; }
   Int_t          GetPivotWireNum()   const;
   Double_t       GetTimeCorrection() const { return fTimeCorrection; }
-  
+
+  bool           IsFitOK()           const { return fFitOK; }
+
   void           SetPlane( THaVDCPlane* plane )     { fPlane = plane; }
   void           SetIntercept( Double_t intercept ) { fInt = intercept; }
   void           SetSlope( Double_t slope)          { fSlope = slope;}
@@ -60,7 +63,7 @@ public:
   //    void SetTrack(THaTrack * track) {fTrack = track;} 
 
 protected:
-  static const Int_t MAX_SIZE = 16;  // Assume no more than 20 hits per cluster
+  static const Int_t MAX_SIZE = 16;  // Assume no more than 16 hits per cluster
   static const Double_t kBig;
 
   Int_t          fSize;              // Size of cluster (no. of hits)
@@ -74,9 +77,9 @@ protected:
   Double_t       fInt, fSigmaInt;    // Intercept and error
   Double_t       fT0;                // Fitted common timing offset
   THaVDCHit*     fPivot;             // Pivot - hit with smallest drift time
-
   Double_t       fTimeCorrection;    // correction to be applied when fitting
                                      // drift times
+  bool           fFitOK;             // Flag indicating that fit results valid
 
   virtual void   FitSimpleTrack();
 
