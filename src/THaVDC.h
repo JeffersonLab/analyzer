@@ -18,6 +18,7 @@ class THaVDC : public THaTrackingDetector {
 public:
   THaVDC( const char* name, const char* description = "",
 	  THaApparatus* a = NULL );
+
   virtual ~THaVDC();
 
   virtual Int_t Decode( const THaEvData& );
