@@ -10,6 +10,7 @@
 
 #include "TString.h"
 #include "THaSlotData.h"
+#include "evio.h"
 
 class THaBenchmark;
 class THaEpicsStack;
