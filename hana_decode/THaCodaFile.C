@@ -89,8 +89,8 @@ using namespace std;
   };
 
 
-  int THaCodaFile::codaWrite(int *evbuf) {
-// codaWrite: Writes data to file
+  int THaCodaFile::codaWrite(const int *evbuf) {
+// codaWrite: Writes data from 'evbuf' to file
      int status;
      if ( handle ) {
        status = evWrite(handle, evbuf);

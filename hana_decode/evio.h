@@ -21,7 +21,7 @@ typedef struct evfilestruct {
 extern int evOpen(const char* filename, const char* flags, int *handle);
 extern int evRead(int handle, int *buffer, int buflen);
 extern int evGetNewBuffer(EVFILE *a);
-extern int evWrite(int handle,int *buffer);
+extern int evWrite(int handle,const int *buffer);
 extern int evFlush(EVFILE *a);
 extern int evIoctl(int handle,char *request,void *argp);
 extern int evClose(int handle);

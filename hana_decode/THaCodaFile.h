@@ -32,7 +32,7 @@ public:
   int codaOpen(const char* filename, const char* rw, int mode=1);
   int codaClose();
   int codaRead(); 
-  int codaWrite(int* evbuffer);
+  int codaWrite(const int* evbuffer);
   int *getEvBuffer();     
   int filterToFile(const char* output_file); // filter to an output file
   void addEvTypeFilt(int evtype_to_filt);    // add an event type to list

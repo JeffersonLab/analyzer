@@ -16,6 +16,10 @@
  *
  * Revision History:
  *   $Log$
+ *   Revision 1.6  2004/03/26 16:11:33  ole
+ *   Make buffer argument for CODA write functions const since the buffer
+ *   is never modified, just written out.
+ *
  *   Revision 1.5  2002/09/13 18:59:36  rom
  *   fix bug (apparently recent) in malloc for fn in evOpen
  *
@@ -382,13 +386,13 @@ int evGetNewBuffer(EVFILE *a) {
 }
 
 #ifndef VXWORKS
-int evwrite_(int *handle,int *buffer)
+int evwrite_(int *handle,const int *buffer)
 {
   return(evWrite(*handle,buffer));
 }
 #endif
 
-int evWrite(int handle,int *buffer)
+int evWrite(int handle,const int *buffer)
 {
   EVFILE *a;
   int nleft,ncopy,error;
