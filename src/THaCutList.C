@@ -132,7 +132,7 @@ Int_t THaCutList::Define( const char* cutname, const char* expr,
 
   // Create new cut using the given expression. Bail out if error.
 
-  THaCut* pcut = new THaCut( cutname, expr, block, lst );
+  THaCut* pcut = new THaCut( cutname, expr, block, lst, this );
   if( !pcut ) return -2;
   if( pcut->IsError() ) { 
     Error( here, "expression error, cut not created: %s %s block: %s",

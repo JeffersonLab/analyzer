@@ -29,7 +29,8 @@ ClassImp(THaFormula)
 //_____________________________________________________________________________
 THaFormula::THaFormula( const char* name, const char* expression, 
 			const THaVarList& lst ) 
-  : TFormula(), fVarList(&lst), fError(kFALSE)
+  : TFormula(), fCodes(NULL), fIndex(NULL), fVarList(&lst), fError(kFALSE),
+    fRegister(kTRUE)
 {
   // Create a formula 'expression' with name 'name' and symbolic variables 
   // from the list 'lst'.
@@ -65,20 +66,39 @@ Int_t THaFormula::Compile( const char* expression )
   // Return 0 on success, 1 if error in expression.
 
   fNcodes = 0;
+  fNval   = 0;
+  delete [] fCodes;
+  delete [] fIndex;
+  fCodes = new const THaVar*[ kMAXCODES ];
+  fIndex = new Int_t[ kMAXCODES ];
+  memset( fCodes, 0, kMAXCODES*sizeof(THaVar*));
+  memset( fIndex, 0, kMAXCODES*sizeof(Int_t));
+
   Int_t status = TFormula::Compile( expression );
 
   //*-*- Store formula in linked list of formula in ROOT
 
   if( status ) {
     fError = kTRUE;
-    gROOT->GetListOfFunctions()->Remove(this);
+    if( fRegister) gROOT->GetListOfFunctions()->Remove(this);
   } else {
     fError = kFALSE;
-    TObject* old = gROOT->GetListOfFunctions()->FindObject(GetName());
-    if (old) gROOT->GetListOfFunctions()->Remove(old);
-    gROOT->GetListOfFunctions()->Add(this);
+    if( fRegister ) {
+      TObject* old = gROOT->GetListOfFunctions()->FindObject(GetName());
+      if (old) gROOT->GetListOfFunctions()->Remove(old);
+      gROOT->GetListOfFunctions()->Add(this);
+    }
   }
   return status;
+}
+
+//_____________________________________________________________________________
+THaFormula::~THaFormula()
+{
+  // Destructor
+
+  delete [] fIndex; fIndex = 0;
+  delete [] fCodes; fCodes = 0;
 }
 
 //_____________________________________________________________________________
@@ -108,13 +128,13 @@ Int_t THaFormula::DefinedVariable(TString& name)
   //   -3  variable name not defined
   //   -4  array requested, but defined variable is no array
   //   -5  array index out of bounds
-  //
+  //   -6  maximum number of variables exceeded
 
   // No list of variables or too many variables in this formula?
   if( !fVarList ) 
     return -1;
   if( fNcodes >= kMAXCODES )
-    return -5;
+    return -6;
 
   // Parse name for array syntax
   THaArrayString var(name);
@@ -134,7 +154,11 @@ Int_t THaFormula::DefinedVariable(TString& name)
   if( var.IsArray() 
       && (index = obj->Index( var )) == kNPOS ) return -5;
 		    
-  // All ok: accept this variable
+  // Check if this variable already used in this formula
+  for( Int_t i=0; i<fNcodes; i++ )
+    if( obj == fCodes[i] && index == fIndex[i] )
+      return i;
+  // If this is a new variable, add it to the list
   Int_t code = fNcodes++;
   fCodes[code] = obj;
   fIndex[code] = index;
