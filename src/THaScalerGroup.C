@@ -19,8 +19,7 @@
 ClassImp(THaScalerGroup)
 
 //_____________________________________________________________________________
-THaScalerGroup::THaScalerGroup( const char* bank ) : 
-  THaAnalysisObject()
+THaScalerGroup::THaScalerGroup( const char* bank ) : THaAnalysisObject("","")
 {
   // Constructor.
 

@@ -38,6 +38,23 @@ using namespace std;
 typedef string::size_type ssiz_t;
 
 //_____________________________________________________________________________
+THaAnalysisObject::THaAnalysisObject( const char* name, 
+				      const char* description ) :
+  TNamed(name,description), fPrefix(NULL), fStatus(kNotinit), 
+  fDebug(0), fIsInit(false), fIsSetup(false), fProperties(0)
+{
+  // Constructor
+}
+
+//_____________________________________________________________________________
+THaAnalysisObject::~THaAnalysisObject()
+{
+  // Destructor
+
+  delete [] fPrefix; fPrefix = 0;
+}
+
+//_____________________________________________________________________________
 Int_t THaAnalysisObject::DefineVarsFromList( const void* list, 
 					     EType type, EMode mode,
 					     const char* var_prefix ) const

@@ -24,6 +24,28 @@
 
 #include "THaPhysicsModule.h"
 
-ClassImp(THaPhysicsModule)
+using namespace std;
 
 //_____________________________________________________________________________
+THaPhysicsModule::THaPhysicsModule( const char* name, 
+				    const char* description ) :
+  THaAnalysisObject(name,description), fMultiTrk(false)
+{
+  // Constructor
+}
+
+//_____________________________________________________________________________
+THaPhysicsModule::~THaPhysicsModule()
+{
+  // Destructor
+}
+
+//_____________________________________________________________________________
+void THaPhysicsModule::MakePrefix() 
+{ 
+  THaAnalysisObject::MakePrefix( NULL ); 
+}
+
+//_____________________________________________________________________________
+
+ClassImp(THaPhysicsModule)
