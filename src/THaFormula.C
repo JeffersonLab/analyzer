@@ -201,7 +201,7 @@ Int_t THaFormula::DefinedGlobalVariable( const TString& name )
   // Subscript(s) within bounds?
   Int_t index = 0;
   if( var.IsArray() 
-      && (index = obj->Index( var )) == kNPOS ) return -5;
+      && (index = obj->Index( var )) <0 ) return -5;
 		    
   // Check if this variable already used in this formula
   FVarDef_t* def = fVarDef;
