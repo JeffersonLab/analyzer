@@ -45,6 +45,17 @@ public:
   Double_t          GetY( Double_t z ) const;
   Double_t          GetTheta() const               { return fTheta; }
   Double_t          GetPhi() const                 { return fPhi; }
+
+  Double_t       GetRX()        const { return fRX; }
+  Double_t       GetRY()        const { return fRY; }
+  Double_t       GetRTheta()    const { return fRTheta; }
+  Double_t       GetRPhi()      const { return fRPhi; } 
+  Double_t       GetTX()        const { return fTX; }
+  Double_t       GetTY()        const { return fTY; }
+  Double_t       GetTTheta()    const { return fTTheta; }
+  Double_t       GetTPhi()      const { return fTPhi; }
+  Double_t       GetDp()        const { return fDp; }
+
   void              Print( Option_t* opt="" ) const;
   void              SetID( THaTrackID* id )        { fID = id; }
   void              SetFlag( UInt_t flag )         { fFlag = flag; }
@@ -52,6 +63,12 @@ public:
   void              SetPosition( Double_t x, Double_t y );
   void              Set( Double_t p, Double_t theta, Double_t phi, 
 			 Double_t x, Double_t y );
+  void              SetR( Double_t x, Double_t y,
+			  Double_t theta, Double_t phi );
+  void              SetTarget( Double_t x, Double_t y,
+			  Double_t theta, Double_t phi );
+  void              SetDp(Double_t dp) { fDp = dp; }
+
   void              SetCreator( THaTrackingDetector* d ) 
                                                    { fCreator = d; }
   void              SetPIDinfo(  THaPIDinfo* pid ) { fPIDinfo  = pid; }
@@ -71,10 +88,28 @@ protected:
   Double_t          fPx;             // x momentum component (GeV)
   Double_t          fPy;             // y momentum component (GeV)
   Double_t          fPz;             // z momentum component (GeV)
+
+  // FIXME: should these coordinates all have their own structures?
   Double_t          fTheta;          // Tangent of TRANSPORT Theta (x')
   Double_t          fPhi;            // Tangent of TRANSPORT Phi (y')
   Double_t          fX;              // x position in focal plane (m)
   Double_t          fY;              // y position (m)
+
+  // coordinates in the rotated TRANSPORT system
+  Double_t fRX;     // x position in focal plane
+  Double_t fRY;     // y position in focal plane
+  Double_t fRTheta; // Tangent of TRANSPORT Theta (x')
+  Double_t fRPhi;   // Tangent of TRANSPORT Phi (y')
+
+  // coordinates in the target system
+  Double_t fTX;     // x position at target
+  Double_t fTY;     // y position at target
+  Double_t fTTheta; // deviation of velocity in x direction
+  Double_t fTPhi;   // deviation of velocity in y direction
+
+  Double_t fDp;     // dp/p_center -- fractional change in momentum
+  //Double_t fPmom; == fP (MeV/c)
+
 
   TList*            fClusters;       // clusters of this track
   THaPIDinfo*       fPIDinfo;        // particle ID information for this track
@@ -149,4 +184,25 @@ void THaTrack::Set( Double_t p, Double_t theta, Double_t phi,
   SetPosition( x, y );
 }
 
+//_____________________________________________________________________________
+inline
+void THaTrack::SetR( Double_t x, Double_t y, Double_t theta, Double_t phi )
+{
+  // set the coordinates in the rotated focal-plane frame
+  fRX = x;
+  fRY = y;
+  fRTheta = theta;
+  fRPhi = phi;
+}
+
+//_____________________________________________________________________________
+inline
+void THaTrack::SetTarget( Double_t x, Double_t y, Double_t theta, Double_t phi )
+{
+  // set the coordinates in the target frame
+  fTX = x;
+  fTY = y;
+  fTTheta = theta;
+  fTPhi = phi;
+}
 #endif
