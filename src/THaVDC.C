@@ -88,7 +88,7 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   if( !file ) return kFileError;
 
   // load global VDC parameters
-  static const char* const here = "ReadDatabase()";
+  static const char* const here = "ReadDatabase";
   const int LEN = 200;
   char buff[LEN];
   
@@ -148,8 +148,6 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
 
   fgets(buff, LEN, file); // Skip comment line
 
-  THaMatrixElement ME;
-
   fTMatrixElems.clear();
   fDMatrixElems.clear();
   fPMatrixElems.clear();
@@ -193,9 +191,13 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   // Read in line-by-line, so as to be able to handle tensors of
   // different orders.
   while( fgets(buff, LEN, file) ) {
-
-    // Split the line into whitespace-separated fields
     THaString line(buff);
+    // Erase trailing newline
+    if( line.size() > 0 && line[line.size()-1] == '\n' ) {
+      line.erase(line.size()-1,1);
+      buff[line.size()-1] = 0;
+    }
+    // Split the line into whitespace-separated fields    
     vector<THaString> line_spl = line.Split();
 
     // Stop if the line does not start with a string referring to
@@ -209,6 +211,7 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
       break;
 
     // Looks like a good line, go parse it.
+    THaMatrixElement ME;
     ME.pw.resize(npow);
     ME.iszero = true;  ME.order = 0;
     vsiz_t pos;
@@ -239,18 +242,34 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
     if (mat) {
       // Special checks for focal plane matrix elements
       if( mat == &fFPMatrixElems ) {
-	if( ME.pw[0] == 0 && ME.pw[1] == 0 && ME.pw[2] == 0 )
-	  (*mat)[fp_map[w]] = ME;
-	else
-	  Warning(Here(here), "Bad focal plane matrix element %s", buff);
-      } else
+	if( ME.pw[0] == 0 && ME.pw[1] == 0 && ME.pw[2] == 0 ) {
+	  THaMatrixElement& m = (*mat)[fp_map[w]];
+	  if( m.order > 0 ) {
+	    Warning(Here(here), "Duplicate definition of focal plane "
+		    "matrix element: %s. Using first definition.", buff);
+	  } else
+	    m = ME;
+	} else
+	  Warning(Here(here), "Bad coefficients of focal plane matrix "
+		  "element %s", buff);
+      } 
+      else {
 	// All other matrix elements are just appended to the respective array
-	mat->push_back(ME);
-    } 
+	// but ensure that they are defined only once!
+	bool match = false;
+	for( vector<THaMatrixElement>::iterator it = mat->begin();
+	     it != mat->end() && !(match = it->match(ME)); it++ );
+	if( match ) {
+	  Warning(Here(here), "Duplicate definition of "
+		  "matrix element: %s. Using first definition.", buff);
+	} else
+	  mat->push_back(ME);
+      }
+    }
     else if ( fDebug > 0 )
       Warning(Here(here), "Not storing matrix for: %s !", w);
     
-  }
+  } //while(fgets)
 
   // Compute derived quantities and set some hardcoded parameters
   const Double_t degrad = TMath::Pi()/180.0;
@@ -1001,6 +1020,20 @@ void THaVDC::Print(const Option_t* opt) const {
   }
 
   return;
+}
+
+//_____________________________________________________________________________
+bool THaVDC::THaMatrixElement::match(const THaMatrixElement& rhs) const
+{
+  // Compare coefficients of this matrix element to another
+
+  if( pw.size() != rhs.pw.size() )
+    return false;
+  for( vector<int>::size_type i=0; i<pw.size(); i++ ) {
+    if( pw[i] != rhs.pw[i] )
+      return false;
+  }
+  return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
