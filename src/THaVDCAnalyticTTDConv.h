@@ -3,7 +3,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //
-// THaVDCAnalyticTTDConv                                                        //
+// THaVDCAnalyticTTDConv                                                     //
 //                                                                           //
 // Uses a drift velocity (um/ns) to convert time (ns) into distance (cm)     //
 //                                                                           //

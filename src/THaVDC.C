@@ -447,20 +447,19 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
     nTracks++;
 
     // Compute global track values and get TRANSPORT coordinates for tracks.
-    // Replace local slopes and angles with global ones.
+    // Replace local cluster slopes with global ones, 
+    // which have higher precision.
 
-    // Slopes
-    Double_t du, dv, mu, mv;
     THaVDCCluster 
       *tu = track->GetUCluster(), 
       *tv = track->GetVCluster(), 
       *pu = partner->GetUCluster(),
       *pv = partner->GetVCluster();
 
-    du = pu->GetIntercept() - tu->GetIntercept();
-    dv = pv->GetIntercept() - tv->GetIntercept();
-    mu = du / fSpacing;
-    mv = dv / fSpacing;
+    Double_t du = pu->GetIntercept() - tu->GetIntercept();
+    Double_t dv = pv->GetIntercept() - tv->GetIntercept();
+    Double_t mu = du / fSpacing;
+    Double_t mv = dv / fSpacing;
 
     tu->SetSlope(mu);
     tv->SetSlope(mv);
@@ -645,8 +644,8 @@ Int_t THaVDC::FineTrack( TClonesArray& tracks )
 //_____________________________________________________________________________
 Int_t THaVDC::FindVertices( TClonesArray& tracks )
 {
-  // Calculate the target location and momentum at the target
-  // assumes that CoarseTrack() and FineTrack() have both been called
+  // Calculate the target location and momentum at the target.
+  // Assumes that CoarseTrack() and FineTrack() have both been called.
 
   Int_t n_exist = tracks.GetLast()+1;
   for( Int_t t = 0; t < n_exist; t++ ) {
@@ -754,7 +753,7 @@ void THaVDC::CalcTargetCoords(THaTrack *track, const ECoordTypes mode)
   //FIXME: estimate x ??
   x = 0.0;
 
-  // set the values we just calculated
+  // Save the target quantities with the tracks
   track->SetTarget(x, y, theta, phi);
   track->SetDp(dp);
   track->SetMomentum(p);

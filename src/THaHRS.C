@@ -44,10 +44,7 @@ ClassImp(THaHRS)
 //_____________________________________________________________________________
 Int_t THaHRS::FindVertices( TClonesArray& tracks )
 {
-  // takes fitted tracks and reconstructs their target coordinates
-
-
-  // first calculate the focal plane coordinates
+  // Reconstruct target coordinates for all tracks found in the focal plane.
 
   TIter nextTrack( fTrackingDetectors );
 

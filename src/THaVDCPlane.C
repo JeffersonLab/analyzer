@@ -208,8 +208,6 @@ Int_t THaVDCPlane::ReadDatabase( FILE* file, const TDatime& date )
   }
   */
 
-  // Read in TTD Lookup Table
-  
   fOrigin.SetXYZ( 0.0, 0.0, fZ );
   if( fDetector )
     fOrigin += fDetector->GetOrigin();

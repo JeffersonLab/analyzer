@@ -16,16 +16,23 @@ ClassImp(THaVDCUVTrack)
 void THaVDCUVTrack::CalcDetCoords()
 {
   // Convert U,V coordinates of our two clusters to the detector coordinate
-  // system.
+  // system. 
+  //
+  // Note that the slopes of our clusters may have been replaced
+  // with global angles computed in a higher-level class. 
+  // See, for example, THaVDC::ConstructTracks()
+  // 
+  // This routine requires several parameters from the THaVDCUVPlane that
+  // this track belongs to. fUVPlane must be set!
 
-  Double_t dz   = fUVPlane->GetSpacing();  // Space between U and V planes
-  Double_t u    = fUClust->GetIntercept(); // Intercept for U plane
-  Double_t vInt = fVClust->GetIntercept(); // Intercept for V plane
-  Double_t mu   = fUClust->GetSlope();     // Change in u / change in z_det
-  Double_t mv   = fVClust->GetSlope();     // Change in v / change in z_det
+  Double_t dz = fUVPlane->GetSpacing();  // Space between U and V planes
+  Double_t u  = fUClust->GetIntercept(); // Intercept for U plane
+  Double_t v0 = fVClust->GetIntercept(); // Intercept for V plane
+  Double_t mu = fUClust->GetSlope();     // Slope of U cluster
+  Double_t mv = fVClust->GetSlope();     // Slope of V cluster
     
-  // Project vInt into the u plane
-  Double_t v = vInt - mv * dz;
+  // Project v0 into the u plane
+  Double_t v = v0 - mv * dz;
 
   // Now calculate track parameters in the detector cs
   Double_t detX     = (u*fUVPlane->fSin_v - v*fUVPlane->fSin_u) / 
