@@ -102,29 +102,26 @@ Int_t THaOutput::Init( )
       cout << "There is probably a typo error... "<<endl;
     }
   }
-  for (Vsiz k = 0; k < fOdata.size(); k++) {
-    fTree->Branch(stemp1[k].c_str(), fOdata[k]->IsA()->GetName(),
+  for (Vsiz k = 0; k < fOdata.size(); k++)
+    fTree->Branch(stemp1[k].c_str(), fOdata[k]->ClassName(),
 		  &fOdata[k]);
-  } 
   fNvar = stemp2.size();
   delete [] fVar; fVar = new Double_t[fNvar];
-  for (Int_t k = 0; k < fNvar; k++) {
-    string tinfo = stemp2[k]+"/D";
-    fTree->Branch(stemp2[k].c_str(), &fVar[k], tinfo.c_str(), fNbout);
-  }
+  for (Int_t k = 0; k < fNvar; k++)
+    fTree->Branch(stemp2[k].c_str(), &fVar[k], 
+		  stemp2[k].append("/D").c_str(), fNbout);
   for (Int_t iform = 0; iform < fNform; iform++) {
-    string cname = Form("f%d",iform);
-    fFormulas.push_back(new THaFormula(cname.c_str(),fFormdef[iform].c_str()));
+    fFormulas.push_back(new THaFormula(Form("f%d",iform),
+				       fFormdef[iform].c_str()));
     if (fFormulas[iform]->IsError()) {
       cout << "THaOutput::Init: WARNING: Error in formula ";
       cout << fFormnames[iform] << endl;
       cout << "There is probably a typo error... " << endl;
     }
   }
-  for (Int_t iform = 0; iform < fNform; iform++) {
-    string tinfo = fFormnames[iform] + "/D";
-    fTree->Branch(fFormnames[iform].c_str(), &fForm[iform], tinfo.c_str(), fNbout);   
-  }
+  for (Int_t iform = 0; iform < fNform; iform++)
+    fTree->Branch(fFormnames[iform].c_str(), &fForm[iform], 
+		  fFormnames[iform].append("/D").c_str(), fNbout);   
   delete [] fH1vtype; fH1vtype = new Int_t[fN1d];
   delete [] fH1form;  fH1form  = new Int_t[fN1d];
   memset(fH1vtype, -1, fN1d*sizeof(Int_t));
@@ -189,7 +186,7 @@ Int_t THaOutput::AddToTree(char *name, TObject *tobj)
   // Instead, it works to add a TObject like this for THaOutput *fOut :
   // if (fOut->TreeDefined()) fOut->GetTree()->Branch(...etc)
   if (fTree != 0 && tobj != 0) {
-    fTree->Branch(name,tobj->IsA()->GetName(),&tobj);
+    fTree->Branch(name,tobj->ClassName(),&tobj);
     return 0;
   }
   return -1;
@@ -378,10 +375,11 @@ Int_t THaOutput::FindKey(const THaString& key) const
   // case-insensitive keyword "key" if it exists
   
   // Map of keywords to internal logical type numbers
-  static const struct KeyMap {
+  struct KeyMap {
     const char* name;
-    Int_t keyval;
-  } keymap[] = { 
+    EId keyval;
+  };
+  static const KeyMap keymap[] = { 
     { "variable", kVar },
     { "formula",  kForm },
     { "th1f",     kH1 },
