@@ -698,6 +698,13 @@ Int_t THaAnalyzer::Process( THaRun* run )
 
     }
 
+    //=== EPICS data ===
+    else if( evdata->IsEpicsEvent()) {
+
+      if ( fOutput ) fOutput->ProcEpics(evdata);
+
+    }
+
     //=== Scaler triggers ===
     else if( evdata->IsScalerEvent()) {
       nev_analyzed++;
@@ -709,6 +716,7 @@ Int_t THaAnalyzer::Process( THaRun* run )
       while( THaScalerGroup* theScaler =
 	     static_cast<THaScalerGroup*>( next_scaler() )) {
 	theScaler->LoadData( *evdata );
+	if ( fOutput ) fOutput->ProcScaler(theScaler);
       }
       if( fDoBench ) fBench->Begin("Scaler");
 
