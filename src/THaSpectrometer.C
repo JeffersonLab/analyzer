@@ -162,12 +162,13 @@ Int_t THaSpectrometer::DefineVariables( EMode mode )
   // Can be overridden or extended by derived (actual) apparatuses
 
   RVarDef vars[] = {
-    { "ntracks", "Number of tracks",             "GetNTracks()" },
-    { "x",       "Track x coordinate (cm)",      "fTracks.THaTrack.fX" },
-    { "y",       "Track x coordinate (cm)",      "fTracks.THaTrack.fY" },
-    { "theta",   "Tangent of track theta angle", "fTracks.THaTrack.fTheta" },
-    { "phi",     "Tangent of track phi angle",   "fTracks.THaTrack.fPhi" },
-    { "p",       "Track momentum (GeV)",         "fTracks.THaTrack.fP" },
+    { "tr.n",    "Number of tracks",             "GetNTracks()" },
+    { "tr.x",    "Track x coordinate (m)",       "fTracks.THaTrack.fX" },
+    { "tr.y",    "Track x coordinate (m)",       "fTracks.THaTrack.fY" },
+    { "tr.th",   "Tangent of track theta angle", "fTracks.THaTrack.fTheta" },
+    { "tr.ph",   "Tangent of track phi angle",   "fTracks.THaTrack.fPhi" },
+    { "tr.p",    "Track momentum (GeV)",         "fTracks.THaTrack.fP" },
+    { "tr.flag", "Track status flag",            "fTracks.THaTrack.fFlag" },
     { 0 }
   };
 
