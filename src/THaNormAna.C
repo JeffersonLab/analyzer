@@ -15,6 +15,10 @@
 //    an approximate average livetime.
 // 5. Number of triggers from bit pattern.
 //
+// This class requires scalers to be enabled
+// in the analyzer.  For scalers, see 
+// http://hallaweb.jlab.org/equipment/daq/THaScaler.html
+//
 // At present the run summary is just a printout,
 // eventually one could write to a database.
 // This needs some work (hopefully a student will do it).
@@ -534,7 +538,7 @@ void THaNormAna::LiveTime() {
 
 // Livetime by trigger type and by helicity:
 // These are exact and physically meaningful, in
-// contract to "average livetime" below.
+// contrast to "average livetime" below.
 
       if (normdata->GetPrescale(itrig) > 0 && numtrig > 0) {
         livetime = normdata->GetTrigCount(itrig,helicity)*
