@@ -26,15 +26,23 @@ class THaSpectrometer : public THaApparatus, public THaTrackingModule,
 public:
   virtual ~THaSpectrometer();
   
+  // Main functions
+  virtual void             Clear( Option_t* opt="");
+  virtual Int_t            CoarseTrack();
+  virtual Int_t            CoarseReconstruct();
+  virtual Int_t            Track();
+  virtual Int_t            Reconstruct();
+  virtual Int_t            CalcPID();
+  virtual Int_t            FindVertices( TClonesArray& tracks ) = 0;
+  virtual Int_t            TrackCalc() = 0;
+
+  // Auxiliary functions
   virtual Int_t            AddDetector( THaDetector* det );
   virtual Int_t            AddPidParticle( const char* shortname, 
 					   const char* name,
 					   Double_t mass, Int_t charge = 0 );
-  virtual Int_t            CalcPID();
-  virtual void             Clear( Option_t* opt="");
   virtual void             DefinePidParticles();
   virtual Int_t            DefineVariables( EMode mode = kDefine );
-  virtual Int_t            FindVertices( TClonesArray& tracks ) = 0;
           THaTrack*        GetGoldenTrack() const { return fGoldenTrack; }
           Int_t            GetNpidParticles() const;
           Int_t            GetNpidDetectors() const;
@@ -46,12 +54,10 @@ public:
   virtual const TVector3&  GetVertex()   const;
   virtual Bool_t           HasVertex() const;
 
+          Bool_t           IsDone( UInt_t stage ) const;
           Bool_t           IsPID() const       { return fPID; }
-  virtual Int_t            CoarseReconstruct();
-  virtual Int_t            Reconstruct();
           void             SetGoldenTrack( THaTrack* t ) { fGoldenTrack = t; }
           void             SetPID( Bool_t b = kTRUE )    { fPID = b; }
-  virtual Int_t            TrackCalc() = 0;
 
   // The following is specific to small-acceptance pointing spectrometers
   // using spectrometer-specific coordinates such as TRANSPORT
@@ -75,6 +81,12 @@ public:
           void             LabToTransport( const TVector3& vertex, 
 					   const TVector3& pvect, 
 					   Double_t* ray ) const;
+  enum EStagesDone {
+    kCoarseTrack = BIT(0),
+    kCoarseRecon = BIT(1),
+    kTracking    = BIT(2),
+    kReconstruct = BIT(3)
+  };
 
 protected:
 
@@ -103,7 +115,7 @@ protected:
   Double_t        fPcentral;              //Central momentum (GeV)
   Double_t        fCollDist;              //Distance from collimator to target center (m)
 
-  Bool_t          fCoarseDone;    //Coarse Reconstruct done
+  UInt_t          fStagesDone;            //Bitfield of completed analysis stages
 
   // only derived classes can construct me
   THaSpectrometer( const char* name, const char* description );
@@ -142,6 +154,13 @@ inline const THaParticleInfo* THaSpectrometer::GetPidParticleInfo( Int_t i )
 inline const THaPidDetector* THaSpectrometer::GetPidDetector( Int_t i ) const
 {
   return (const THaPidDetector*) fPidDetectors->At(i);
+}
+
+//_____________________________________________________________________________
+inline 
+Bool_t THaSpectrometer::IsDone( UInt_t stage ) const
+{
+  return ((fStagesDone & stage) != 0);
 }
 
 //_____________________________________________________________________________
