@@ -26,6 +26,7 @@
 #include <string>
 #include "THaCodaFile.h"
 #include "THaEvData.h"
+#include "THaCodaDecoder.h"
 #include "THaScaler.h"
 #ifndef __CINT__
 #include "TROOT.h"
@@ -175,7 +176,7 @@ int main(int argc, char* argv[]) {
    TNtuple *rnt = new TNtuple("aring","Ring values", ring_rates);
    Float_t *farray2 = new Float_t[16];
    THaCodaFile *coda = new THaCodaFile(TString(filename.c_str()));
-   THaEvData evdata;
+   THaCodaDecoder *evdata = new THaCodaDecoder();
    inquad = 0;
    q1_helicity = 0;
    rloc = 0;
@@ -190,12 +191,12 @@ int main(int argc, char* argv[]) {
    while (status == 0) {
      status = coda->codaRead();
      if (status != 0) break;
-     evdata.LoadEvent(coda->getEvBuffer());
-     len = evdata.GetRocLength(myroc);
+     evdata->LoadEvent(coda->getEvBuffer());
+     len = evdata->GetRocLength(myroc);
      if (nevents > 0 && iev++ > nevents) goto finish;
      if (len <= 4) continue;
-     if (evdata.GetEvType() == 140) continue;
-     scaler->LoadData(evdata);  
+     if (evdata->GetEvType() == 140) continue;
+     scaler->LoadData(*evdata);  
      if ( !scaler->IsRenewed() ) continue;
      memset(farray_ntup, 0, (nlen+1)*sizeof(Float_t));
 // Having loaded the scaler object, we pull out what we can from it.
@@ -273,14 +274,14 @@ int main(int argc, char* argv[]) {
 //  
 //  Next we ignore the scaler object and obtain data directly from the event.
 //  
-     data = evdata.GetRawData(myroc,3);   
+     data = evdata->GetRawData(myroc,3);   
      helicity = (data & 0x10) >> 4;
      qrt = (data & 0x20) >> 5;
      gate = (data & 0x40) >> 6;
-     timestamp = evdata.GetRawData(myroc,4);
-     data = evdata.GetRawData(myroc,5);
+     timestamp = evdata->GetRawData(myroc,4);
+     data = evdata->GetRawData(myroc,5);
      nscaler = data & 0x7;
-//     if (evdata.GetEvType() == 9) cout << "Ev  9   qrt "<<qrt<<"  helicity "<<helicity<<"  gate "<<gate<<"  timestamp "<<timestamp<<endl;
+//     if (evdata->GetEvType() == 9) cout << "Ev  9   qrt "<<qrt<<"  helicity "<<helicity<<"  gate "<<gate<<"  timestamp "<<timestamp<<endl;
      if (PRINTOUT) {
        cout << hex << "helicity " << helicity << "  qrt " << qrt;
        cout << " gate " << gate << "   time stamp " << timestamp << endl;
@@ -292,21 +293,21 @@ int main(int argc, char* argv[]) {
 // 32 channels of scaler data for two helicities.
      if (PRINTOUT) cout << "Synch event ----> " << endl;
      for (int ihel = 0; ihel < nscaler; ihel++) { 
-       header = evdata.GetRawData(myroc,index++);
+       header = evdata->GetRawData(myroc,index++);
        if (PRINTOUT) {
          cout << "Scaler for helicity = " << dec << ihel;
          cout << "  unique header = " << hex << header << endl;
        }
        for (int ichan = 0; ichan < 32; ichan++) {
-	   data = evdata.GetRawData(myroc,index++);
+	   data = evdata->GetRawData(myroc,index++);
            if (PRINTOUT) {       
               cout << "channel # " << dec << ichan+1;
               cout << "  (hex) data = " << hex << data << endl;
 	   }
        }
      }         
-     numread = evdata.GetRawData(myroc,index++);
-     badread = evdata.GetRawData(myroc,index++);
+     numread = evdata->GetRawData(myroc,index++);
+     badread = evdata->GetRawData(myroc,index++);
      if (PRINTOUT) cout << "FIFO num of last good read " << dec << numread << endl;
      if (badread != 0) {
        cout << "DISASTER: There are bad readings " << endl;
@@ -315,7 +316,7 @@ int main(int argc, char* argv[]) {
 // Ring buffer analysis: analyze subset of scaler channels in 30 Hz ring buffer.
      int nring = 0;
      while (index < len && nring == 0) {
-       header = evdata.GetRawData(myroc,index++);
+       header = evdata->GetRawData(myroc,index++);
        if ((header & 0xffff0000) == 0xfb1b0000) {
            nring = header & 0x3ff;
        }
@@ -323,8 +324,8 @@ int main(int argc, char* argv[]) {
      if (PRINTOUT) cout << "Num in ring buffer = " << dec << nring << endl;
 // The following assumes three are (now 6) pieces of data per 'iring'
      for (int iring = 0; iring < nring; iring++) {
-       ring_clock = evdata.GetRawData(myroc,index++);
-       data = evdata.GetRawData(myroc,index++);
+       ring_clock = evdata->GetRawData(myroc,index++);
+       data = evdata->GetRawData(myroc,index++);
        ring_qrt = (data & 0x10) >> 4;
        ring_helicity = (data & 0x1);
        present_reading = ring_helicity;
@@ -347,11 +348,11 @@ int main(int argc, char* argv[]) {
        } else {
          helicity_now = 1 - q1_helicity;
        }
-       ring_trig = evdata.GetRawData(myroc,index++);
-       ring_bcm  = evdata.GetRawData(myroc,index++);
-       ring_l1a  = evdata.GetRawData(myroc,index++);
+       ring_trig = evdata->GetRawData(myroc,index++);
+       ring_bcm  = evdata->GetRawData(myroc,index++);
+       ring_l1a  = evdata->GetRawData(myroc,index++);
 #ifdef READ6
-       ring_hel2  = evdata.GetRawData(myroc,index++);
+       ring_hel2  = evdata->GetRawData(myroc,index++);
 #else
        ring_hel2  = -99;
 #endif
@@ -364,7 +365,7 @@ int main(int argc, char* argv[]) {
        jstat = incrementSums(helicity_now, prev_clock, prev_trig, 
                              prev_bcm, prev_l1a);
        if (jstat == 1) {
-         farray2[0] = (Float_t) evdata.GetEvNum();
+         farray2[0] = (Float_t) evdata->GetEvNum();
          farray2[1] = rsum_clk[0];
          farray2[2] = rsum_clk[1];
          farray2[3] = rsum_clk[0] + rsum_clk[1];

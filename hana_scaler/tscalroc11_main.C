@@ -21,6 +21,7 @@
 #include <iostream>
 #include "THaCodaFile.h"
 #include "THaEvData.h"
+#include "THaCodaDecoder.h"
 #ifndef __CINT__
 #include "TROOT.h"
 #include "TFile.h"
@@ -103,7 +104,7 @@ int main(int argc, char* argv[]) {
    TNtuple *ntup = new TNtuple("ascal","Scaler Rates",string_ntup);
    Float_t farray_ntup[17];  // Dimension = size of string_ntup (i.e. nlen+1)
    THaCodaFile *coda = new THaCodaFile(TString(argv[1]));
-   THaEvData evdata;
+   THaCodaDecoder *evdata = new THaCodaDecoder();
    inquad = 0;
    q1_helicity = 0;
    rloc = 0;
@@ -114,18 +115,18 @@ int main(int argc, char* argv[]) {
    while (status == 0) {
      status = coda->codaRead();
      if (status != 0) break;
-     evdata.LoadEvent(coda->getEvBuffer());
-     len = evdata.GetRocLength(MYROC);
+     evdata->LoadEvent(coda->getEvBuffer());
+     len = evdata->GetRocLength(MYROC);
      if (len <= 4) continue;
-     data = evdata.GetRawData(MYROC,3);   
+     data = evdata->GetRawData(MYROC,3);   
      helicity = (data & 0x10) >> 4;
      qrt = (data & 0x20) >> 5;
      gate = (data & 0x40) >> 6;
-     timestamp = evdata.GetRawData(MYROC,4);
+     timestamp = evdata->GetRawData(MYROC,4);
      found = 0;
      index = 5;
      while ( !found ) {
-       data = evdata.GetRawData(MYROC,index++);
+       data = evdata->GetRawData(MYROC,index++);
        if ( (data & 0xffff0000) == 0xfb0b0000) found = 1;
        if (index >= len) break;
      }
@@ -142,21 +143,21 @@ int main(int argc, char* argv[]) {
 // 32 channels of scaler data for two helicities.
      if (PRINTOUT) cout << "Synch event ----> " << endl;
      for (int ihel = 0; ihel < nscaler; ihel++) { 
-       header = evdata.GetRawData(MYROC,index++);
+       header = evdata->GetRawData(MYROC,index++);
        if (PRINTOUT) {
          cout << "Scaler for helicity = " << dec << ihel;
          cout << "  unique header = " << hex << header << endl;
        }
        for (int ichan = 0; ichan < 32; ichan++) {
-	   data = evdata.GetRawData(MYROC,index++);
+	   data = evdata->GetRawData(MYROC,index++);
            if (PRINTOUT) {       
               cout << "channel # " << dec << ichan+1;
               cout << "  (hex) data = " << hex << data << endl;
 	   }
        }
      }         
-     numread = evdata.GetRawData(MYROC,index++);
-     badread = evdata.GetRawData(MYROC,index++);
+     numread = evdata->GetRawData(MYROC,index++);
+     badread = evdata->GetRawData(MYROC,index++);
      if (PRINTOUT) cout << "FIFO num of last good read " << dec << numread << endl;
      if (badread != 0) {
        cout << "DISASTER: There are bad readings " << endl;
@@ -165,7 +166,7 @@ int main(int argc, char* argv[]) {
 // Subset of scaler channels stored in a 30 Hz ring buffer.
      int nring = 0;
      while (index < len && nring == 0) {
-       header = evdata.GetRawData(MYROC,index++);
+       header = evdata->GetRawData(MYROC,index++);
        if ((header & 0xffff0000) == 0xfb1b0000) {
            nring = header & 0x3ff;
        }
@@ -174,8 +175,8 @@ int main(int argc, char* argv[]) {
 // The following assumes three are 6 pieces of data per 'iring'
 // This was true after Jan 10, 2003.
      for (int iring = 0; iring < nring; iring++) {
-       ring_clock = evdata.GetRawData(MYROC,index++);
-       data = evdata.GetRawData(MYROC,index++);
+       ring_clock = evdata->GetRawData(MYROC,index++);
+       data = evdata->GetRawData(MYROC,index++);
        ring_qrt = (data & 0x10) >> 4;
        ring_helicity = (data & 0x1);
        present_reading = ring_helicity;
@@ -191,10 +192,10 @@ int main(int argc, char* argv[]) {
        } else {
          inquad++;
        }
-       ring_trig = evdata.GetRawData(MYROC,index++);
-       ring_bcm  = evdata.GetRawData(MYROC,index++);
-       ring_l1a  = evdata.GetRawData(MYROC,index++);
-       ring_v2fh = evdata.GetRawData(MYROC,index++);
+       ring_trig = evdata->GetRawData(MYROC,index++);
+       ring_bcm  = evdata->GetRawData(MYROC,index++);
+       ring_l1a  = evdata->GetRawData(MYROC,index++);
+       ring_v2fh = evdata->GetRawData(MYROC,index++);
        sum_clock = sum_clock + ring_clock;
        sum_trig  = sum_trig + ring_trig; 
        sum_bcm   = sum_bcm + ring_bcm; 

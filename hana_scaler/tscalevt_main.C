@@ -13,6 +13,7 @@
 #include "THaScaler.h"
 #include "THaCodaFile.h"
 #include "THaEvData.h"
+#include "THaCodaDecoder.h"
 
 #ifndef __CINT__
 #include "TROOT.h"
@@ -58,7 +59,7 @@ int main(int argc, char* argv[]) {
    }
 
    THaCodaFile *coda = new THaCodaFile(filename);
-   THaEvData evdata;
+   THaCodaDecoder *evdata = new THaCodaDecoder();
 
 // Pedestals.  Left, Right Arms.  u1,u3,u10,d1,d3,d10
    Float_t bcmpedL[NBCM] = { 188.2, 146.2, 271.6, 37.8, 94.2, 260.2 };
@@ -107,15 +108,15 @@ int main(int argc, char* argv[]) {
        cout << "coda status nonzero.  assume EOF"<<endl;
        goto quit;
      }
-     evdata.LoadEvent(coda->getEvBuffer());
+     evdata->LoadEvent(coda->getEvBuffer());
 
 // Dirty trick to average over larger time intervals (depending on 
 // SKIPEVENT) to reduce the fluctuations due to clock.  
-     if (evdata.GetRocLength(MYROC) > 16) iskip++;
+     if (evdata->GetRocLength(MYROC) > 16) iskip++;
      if (SKIPEVENT != 0 && iskip < SKIPEVENT) continue;
      iskip = 0;
 
-     scaler->LoadData(evdata);
+     scaler->LoadData(*evdata);
 
 // Not every trigger has new scaler data, so skip if not new.
      if ( !scaler->IsRenewed() ) continue;
@@ -177,7 +178,7 @@ int main(int argc, char* argv[]) {
      farray_ntup[26] = asy;
 
      if (DEBUG) {
-        cout << "event type "<<evdata.GetEvType()<< "   event number "<<evdata.GetEvNum()<<endl;
+        cout << "event type "<<evdata->GetEvType()<< "   event number "<<evdata->GetEvNum()<<endl;
         scaler->Print();
         if (farray_ntup[12] < 1000) cout << "Low clock"<<endl;
         cout << " clock(+)  "<<scaler->GetNormRate(1,"clock");
