@@ -22,6 +22,7 @@
 #include "TString.h"
 #include "TClass.h"
 #include "TMath.h"
+#include "VarDef.h"
 
 #include <cstring>
 
@@ -35,13 +36,9 @@ THaVDCPlane::THaVDCPlane( const char* name, const char* description,
 {
   // Constructor
 
-  // Initial allocations for hit and cluster arrays.
-  fMaxHit   = 20;
-  fMaxClust = 5;
-
   // Since TCloneArrays can resize, the size here is fairly unimportant
-  fHits     = new TClonesArray("THaVDCHit", fMaxHit );
-  fClusters = new TClonesArray("THaVDCCluster", fMaxClust );
+  fHits     = new TClonesArray("THaVDCHit", 20 );
+  fClusters = new TClonesArray("THaVDCCluster", 5 );
 }
 
 //_____________________________________________________________________________
@@ -175,7 +172,18 @@ Int_t THaVDCPlane::SetupDetector( const TDatime& date )
   if( fIsSetup ) return kOK;
   fIsSetup = true;
 
-  
+  // Register variables in global list
+
+  RVarDef vars[] = {
+    { "nhit",   "Number of hits",             "GetNHits()" },
+    { "wire",   "Active wire numbers",        "fHits.THaVDCHit.GetWireNum()" },
+    { "time",   "TDC values of active wires", "fHits.THaVDCHit.fTime" },
+    { "nclust", "Number of clusters",         "GetNClusters()" },
+    { "clpos",  "Cluster positions",          "fClusters.THaVDCCluster.fInt" },
+    { "clsiz",  "Cluster sizes",              "fClusters.THaVDCCluster.fSize" },
+    { 0 }
+  };
+  DefineVariables( vars );
 
   return kOK;
 }
