@@ -29,22 +29,25 @@ public:
   Double_t GetTime()    const { return fTime; }
   Double_t GetDist()    const { return fDist; }
   Double_t GetPos()     const { return fWire->GetPos(); } //Position of hit wire
+  Double_t GetdDist()   const { return fdDist; }
 
   void     SetWire(THaVDCWire * wire) { fWire = wire; }
   void     SetRawTime(Int_t time)     { fRawTime = time; }
   void     SetTime(Double_t time)     { fTime = time; }
   void     SetDist(Double_t dist)     { fDist = dist; }
-  
+  void     SetdDist(Double_t ddist)   { fdDist = ddist; }
+
 protected:
   THaVDCWire* fWire;     // Wire on which the hit occurred
   Int_t       fRawTime;  // TDC value (channels)
   Double_t    fTime;     // Time corrected for time offset of wire (s)
   Double_t    fDist;     // (Perpendicular) Drift Distance
+  Double_t    fdDist;    // uncertainty in fDist (for chi2 calc)
   
   THaVDCHit( const THaVDCHit& ) {}
   THaVDCHit& operator=( const THaVDCHit& ) { return *this; }
   
-  ClassDef(THaVDCHit,1)             // VDCHit class
+  ClassDef(THaVDCHit,2)             // VDCHit class
 };
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -324,7 +324,7 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
   // them to 'tracks'
 
 #ifdef WITH_DEBUG
-  if( fDebug>0 ) {
+  if( fDebug>1 ) {
     cout << "-----------------------------------------------\n";
     cout << "ConstructTracks: ";
     if( mode == 0 )
@@ -344,14 +344,14 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
   Int_t nLowerTracks = fLower->GetNUVTracks();
 
 #ifdef WITH_DEBUG
-  if( fDebug>0 )
+  if( fDebug>1 )
     cout << "nUpper/nLower = " << nUpperTracks << "  " << nLowerTracks << endl;
 #endif
 
   // No tracks at all -> can't have any tracks
   if( nUpperTracks == 0 && nLowerTracks == 0 ) {
 #ifdef WITH_DEBUG
-    if( fDebug>0 )
+    if( fDebug>1 )
       cout << "No tracks.\n";
 #endif
     return 0;
@@ -367,7 +367,7 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
     //FIXME: Put missing cluster recovery code here
     //For now, do nothing
 #ifdef WITH_DEBUG
-    if( fDebug>0 ) 
+    if( fDebug>1 ) 
       cout << "missing cluster " << nUpperTracks << " " << nUpperTracks << endl;
 #endif
     return 0;
@@ -399,7 +399,7 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
   }
       
 #ifdef WITH_DEBUG
-  if( fDebug>0 )
+  if( fDebug>1 )
     cout << nPairs << " pairs.\n";
 #endif
 
@@ -421,7 +421,7 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
       continue;
 
 #ifdef WITH_DEBUG
-    if( fDebug>0 ) {
+    if( fDebug>1 ) {
       cout << "Pair " << i << ":  " 
 	   << thePair->GetUpper()->GetUCluster()->GetPivotWireNum() << " "
 	   << thePair->GetUpper()->GetVCluster()->GetPivotWireNum() << " "
@@ -442,7 +442,7 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 
     //FIXME: debug
 #ifdef WITH_DEBUG
-    if( fDebug>0 ) {
+    if( fDebug>1 ) {
       cout << "dUpper/dLower = " 
 	   << thePair->GetProjectedDistance( track,partner,fSpacing) << "  "
 	   << thePair->GetProjectedDistance( partner,track,-fSpacing);
@@ -452,13 +452,13 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
     // Skip pairs where any of the tracks already has a partner
     if( track->GetPartner() || partner->GetPartner() ) {
 #ifdef WITH_DEBUG
-      if( fDebug>0 )
+      if( fDebug>1 )
 	cout << " ... skipped.\n";
 #endif
       continue;
     }
 #ifdef WITH_DEBUG
-    if( fDebug>0 )
+    if( fDebug>1 )
       cout << " ... good.\n";
 #endif
 
@@ -532,14 +532,14 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 
       if( found ) {
 #ifdef WITH_DEBUG
-        if( fDebug>0 )
+        if( fDebug>1 )
           cout << "Track " << t << " modified.\n";
 #endif
         delete thisID;
         ++n_mod;
       } else {
 #ifdef WITH_DEBUG
-	if( fDebug>0 )
+	if( fDebug>1 )
 	  cout << "Track " << tracks->GetLast()+1 << " added.\n";
 #endif
 	theTrack = AddTrack(*tracks, 0.0, 0.0, 0.0, 0.0, thisID );
@@ -556,13 +556,19 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 		     track->GetPhi());
       theTrack->SetFlag( flag );
       
+      Double_t chi2=0;
+      Int_t nhits=0;
+      track->CalcChisquare(chi2,nhits);
+      partner->CalcChisquare(chi2,nhits);
+      theTrack->SetChi2(chi2,nhits-4);
+
       // calculate the TRANSPORT coordinates
       CalcFocalPlaneCoords(theTrack, kRotatingTransport);
     }
   }
 
 #ifdef WITH_DEBUG
-  if( fDebug>0 )
+  if( fDebug>1 )
     cout << nTracks << " good tracks.\n";
 #endif
 
@@ -575,7 +581,7 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
       if( (theTrack->GetCreator() == this) &&
 	  ((theTrack->GetFlag() & kStageMask) != theStage ) ) {
 #ifdef WITH_DEBUG
-	if( fDebug>0 )
+	if( fDebug>1 )
 	  cout << "Track " << i << " deleted.\n";
 #endif
 	tracks->RemoveAt(i);
@@ -613,7 +619,7 @@ Int_t THaVDC::CoarseTrack( TClonesArray& tracks )
  
 #ifdef WITH_DEBUG
   static int nev = 0;
-  if( fDebug>0 ) {
+  if( fDebug>1 ) {
     nev++;
     cout << "=========================================\n";
     cout << "Event: " << nev << endl;

@@ -35,6 +35,8 @@ public:
   Double_t       GetTheta()    const { return fTheta; }
   Double_t       GetPhi()      const { return fPhi; } 
 
+  void CalcChisquare(Double_t &chi2, Int_t &nhits) const;
+
   void SetUCluster( THaVDCCluster* clust)  { fUClust = clust;}
   void SetVCluster( THaVDCCluster* clust)  { fVClust = clust;}
   void SetUVPlane( THaVDCUVPlane* plane)   { fUVPlane = plane;}

@@ -637,7 +637,7 @@ void THaDecData::TrigBits(UInt_t ibit, BdataLoc *dataloc) {
   bits.ResetBitNumber(ibit);
 
   static const UInt_t cutlo = 400;
-  static const UInt_t cuthi = 1200;
+  static const UInt_t cuthi = 1400;
   
   for (int ihit = 0; ihit < dataloc->NumHits(); ihit++) {
     if (dataloc->Get(ihit) > cutlo && dataloc->Get(ihit) < cuthi) {
