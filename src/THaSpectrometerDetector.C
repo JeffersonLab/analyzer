@@ -7,9 +7,6 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaSpectrometerDetector.h"
-#include "THaDetMap.h"
-
-#include <iostream>
 
 ClassImp(THaSpectrometerDetector)
 
