@@ -83,6 +83,7 @@
 #pragma link C++ class THaScalerGroup+;
 #pragma link C++ class THaElectronKine+;
 #pragma link C++ class THaReactionPoint+;
+#pragma link C++ class THaReacPointFoil+;
 #pragma link C++ class THaTwoarmVertex+;
 #pragma link C++ class THaAvgVertex+;
 #pragma link C++ class THaExtTarCor+;

@@ -158,6 +158,7 @@ SRC           = src/THaFormula.C src/THaVform.C src/THaVhist.C \
                 src/THaVDCAnalyticTTDConv.C \
 		src/THaVDCTrackPair.C src/THaScalerGroup.C \
 		src/THaElectronKine.C src/THaReactionPoint.C \
+		src/THaReacPointFoil.C \
 		src/THaTwoarmVertex.C src/THaAvgVertex.C \
 		src/THaExtTarCor.C src/THaDebugModule.C src/THaTrackInfo.C \
 		src/THaGoldenTrack.C \
