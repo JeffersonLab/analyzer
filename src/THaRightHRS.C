@@ -35,9 +35,9 @@ THaRightHRS::THaRightHRS( const char* description )
 
   fNmydets    = 3;
   fMydets     = new THaDetector*[fNmydets];
-  fMydets[0]  = new THaVDC("vdc","R-arm VDC");
-  fMydets[1]  = new THaScintillator("s1","R-arm S1");
-  fMydets[2]  = new THaScintillator("s2","R-arm S2");
+  fMydets[0]  = new THaScintillator("s1","R-arm S1");
+  fMydets[1]  = new THaScintillator("s2","R-arm S2");
+  fMydets[2]  = new THaVDC("vdc","R-arm VDC");
 
   for( int i=0; i<fNmydets; i++ ) {
     fMydets[i]->SetApparatus(this);

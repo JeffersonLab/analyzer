@@ -28,9 +28,9 @@ THaLeftHRS::THaLeftHRS( const char* description )
 
   fNmydets    = 3;
   fMydets     = new THaDetector*[fNmydets];
-  fMydets[0]  = new THaVDC("vdc","L-arm VDC");
-  fMydets[1]  = new THaScintillator("s1","L-arm S1");
-  fMydets[2]  = new THaScintillator("s2","L-arm S2");
+  fMydets[0]  = new THaScintillator("s1","L-arm S1");
+  fMydets[1]  = new THaScintillator("s2","L-arm S2");
+  fMydets[2]  = new THaVDC("vdc","L-arm VDC");
 
   for( int i=0; i<fNmydets; i++ ) {
     fMydets[i]->SetApparatus(this);
