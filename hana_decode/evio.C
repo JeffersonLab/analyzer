@@ -16,6 +16,10 @@
  *
  * Revision History:
  *   $Log$
+ *   Revision 1.7  2004/05/09 21:43:28  ole
+ *   Remove non-standard malloc.h include.
+ *   Change C includes to C++ naming (stdlib.h -> cstdlib etc.)
+ *
  *   Revision 1.6  2004/03/26 16:11:33  ole
  *   Make buffer argument for CODA write functions const since the buffer
  *   is never modified, just written out.
@@ -99,15 +103,13 @@
 
 #ifdef VXWORKS
 #include <vxWorks.h>
-#include <stdlib.h>
 #endif
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <malloc.h>
-#include <string.h>
-#include <ctype.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cerrno>
+#include <cstring>
+#include <cctype>
 
 #include "evio.h"
 
