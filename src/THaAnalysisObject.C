@@ -561,7 +561,7 @@ Int_t THaAnalysisObject::LoadDBvalue( FILE* file, const TDatime& date,
   errno = 0;
   rewind(file);
 
-  bool found = false, ignore = true;
+  bool found = false, ignore = false;
   while( fgets( buf, LEN, file) != NULL) {
     size_t len = strlen(buf);
     if( len<2 || buf[0] == '#' ) continue;
