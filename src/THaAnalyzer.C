@@ -367,7 +367,9 @@ Int_t THaAnalyzer::DoInit( THaRun* run )
   }
 
   // Make sure the run is initialized. 
+  bool run_init = false;
   if( !run->IsInit()) {
+    run_init = true;
     retval = run->Init();
     if( retval )
       return retval;  //Error message printed by run class
@@ -376,7 +378,7 @@ Int_t THaAnalyzer::DoInit( THaRun* run )
   // Deal with the run.
   bool new_run   = ( !fRun || *fRun != *run );
   bool need_init = ( !fIsInit || new_event || new_output || new_run ||
-		     new_decoder );
+		     new_decoder || run_init );
 
   // Warn user if trying to analyze the same run twice with overlapping
   // event ranges
@@ -428,6 +430,10 @@ Int_t THaAnalyzer::DoInit( THaRun* run )
   // Obtain time of the run, the one parameter we really need 
   // for initializing the modules
   TDatime run_time = run->GetDate();
+
+  // Tell the decoder the run time. This will trigger decoder
+  // initialization (reading of crate map data etc.)
+  fEvData->SetRunTime( run_time.Convert());
 
   // Initialize all apparatuses, scalers, and physics modules.
   // Quit if any errors.
@@ -694,7 +700,7 @@ Int_t THaAnalyzer::Process( THaRun* run )
 				  fEvData->GetEvLength(),
 				  fEvData->GetEvTime(),
 				  fEvData->GetHelicity(),
-				  fEvData->GetRunNum()
+				  run->GetNumber()
 				  );
 	fEvent->Fill();
       }
