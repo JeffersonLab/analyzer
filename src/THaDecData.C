@@ -485,7 +485,7 @@ void THaDecData::VdcEff( )
 	   "R.vdc.v1.wire", "R.vdc.u2.wire", "R.vdc.v2.wire"};
 
   static Int_t cnt = 0;
-  static Int_t nwire = 400;
+  const Int_t nwire = 400;
   Int_t wire[nwire];
   static Double_t xcnt[8*400],eff[8*400];
   Double_t xeff;    
