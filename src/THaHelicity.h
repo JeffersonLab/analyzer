@@ -5,6 +5,7 @@
 // Helicity of the beam.  See implementation for description.
 // 
 // author: R. Michaels, Sept 2002
+// updated: Sept 2004
 //
 ////////////////////////////////////////////////////////////////////////
 
@@ -14,11 +15,7 @@
 
 class THaEvData;
 
-#define NCHAN 6
 #include <iostream>
-#ifndef STANDALONE
-#include "THaDetMap.h"
-#endif
 #include "TString.h"
 
 class THaHelicity  {
@@ -32,7 +29,9 @@ public:
   Int_t GetHelicity(const TString& spec) const;  // Get from spec "left" or "right"
   Double_t GetTime() const;   // Returns timestamp (~105 kHz)
   Int_t Decode( const THaEvData& evdata );
-  void   ClearEvent();
+  void ClearEvent();
+// The user may set the state of this class (see implementation)
+  void SetState(int mode, int delay, int sign, int spec, int redund);
 
 private:
 
@@ -46,10 +45,19 @@ private:
   UInt_t GetSeed();
   Bool_t CompHel();
 
+// These variables define the state of this object ---------
 // The fgG0mode flag turns G0 mode on (1) or off (0)
-// Variables in this section pertain to G0 helicity mode.
-  static const Int_t fgG0mode = 0;
-  static const Int_t fgG0delay = 8;  // delay of helicity (# windows)
+// G0 mode is the delayed helicity mode, else it is in-time.
+  Int_t fgG0mode;
+  Int_t fgG0delay;  // delay of helicity (# windows)
+// Overall sign (as determined by Moller)
+  Int_t fSign;
+// Which spectrometer do we believe ?
+  Int_t fWhichSpec;  // = fgLarm or fgRarm
+// Check redundancy ? (yes=1, no=0)
+  Int_t fCheckRedund;
+// ---- end of state variables -----------------
+
   static const Int_t fgNbits = 24;   
   static const Int_t fgLarm = 0;
   static const Int_t fgRarm = 1;
@@ -68,11 +76,13 @@ private:
   Int_t recovery_flag;
   int nb;
   UInt_t iseed, iseed_earlier, inquad;
-  Int_t fArm;  // Which spectrometer = fgLarm or fgRarm
+  Int_t fArm;  // Spectrometer = fgLarm or fgRarm
 
-// The following variables used for data NOT in G0 helicity mode.
-  Double_t  Ladc_helicity[NCHAN];     
-  Double_t  Radc_helicity[NCHAN];     
+// ADC data for helicity and gate (redundant).
+  Double_t  Ladc_helicity, Ladc_gate;
+  Double_t  Radc_helicity, Radc_gate;
+  Int_t  Ladc_hbit, Radc_hbit;
+
   Int_t     Lhel,Rhel,Hel;
   Double_t  timestamp;                         
   static const Int_t OK       =  1;
@@ -81,18 +91,10 @@ private:
   static const Int_t Minus    = -1;    
   static const Int_t Unknown  =  0;    
   static const Int_t HELDEBUG =  0;
-// STANDALONE restriction is not too bad since it only affects
-// old data prior to G0 mode.  But you can't run STANDALONE then.
-#ifndef STANDALONE
-  THaDetMap*  fDetMap;
-#else
-  Int_t fDetMap;  
-#endif
-  Int_t  indices[2][2];
-
   static const Int_t HELVERBOSE = 1;
 
-  void   Init();
+  void   InitG0();
+  void   InitMemory();
 
   ClassDef(THaHelicity,0)       // Beam helicity information.
 };
