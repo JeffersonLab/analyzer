@@ -89,6 +89,8 @@ Int_t THaVDC::SetupDetector( const TDatime& date )
   fNumIter = 1;      // Number of iterations for FineTrack()
   fErrorCutoff = 1e100;
 
+  // FIXME: Set geometry data (fOrigin) 
+
   fIsInit = true;
   return kOK;
 }
@@ -201,7 +203,8 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
     n_exist = tracks->GetLast()+1;
 
   // Sort pairs in order of ascending goodness of match
-  fUVpairs->Sort();
+  if( nPairs > 1 )
+    fUVpairs->Sort();
 
   // Mark pairs as partners, starting with the best matches,
   // until all tracks are marked.

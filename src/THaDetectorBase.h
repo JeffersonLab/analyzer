@@ -29,6 +29,7 @@ public:
   Int_t           GetDebug() const                { return fDebug; }
   Int_t           GetNelem() const                { return fNelem; }
   virtual const char* GetDBFileName() const = 0;
+  const TVector3& GetOrigin() const               { return fOrigin; }
   const char*     GetPrefix() const               { return fPrefix; }
   const Float_t*  GetSize() const                 { return fSize; }
   EStatus         Init();

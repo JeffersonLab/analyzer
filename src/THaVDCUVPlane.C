@@ -50,31 +50,30 @@ THaVDCUVPlane::~THaVDCUVPlane()
 //_____________________________________________________________________________
 THaDetectorBase::EStatus THaVDCUVPlane::Init( const TDatime& date )
 {
-  // Initialize VDC. Calls its own Init(), then initializes subdetectors.
+  // Initialize the UV plane object.
+  // Calls its own Init(), then initializes subdetectors, then calculates
+  // some local geometry data.
 
   if( IsZombie() || !fV || !fU )
     return fStatus = kInitError;
 
+  if( fDetector )
+    fOrigin = fDetector->GetOrigin();
+
   EStatus status;
-  if( (status = fU->Init( date )) ||
-      (status = fV->Init( date )) ||
-      (status = THaSubDetector::Init( date )))
+  if( (status = THaSubDetector::Init( date )) ||
+      (status = fU->Init( date )) ||
+      (status = fV->Init( date )))
     return fStatus = status;
 
-  return fStatus;
-}
+  fSpacing = fV->GetZ() - fU->GetZ();  // Space between U & V planes
 
-//_____________________________________________________________________________
-Int_t THaVDCUVPlane::SetupDetector( const TDatime& date )
-{
-  // Initialize the UV plane object.
-
-  // FIXME: read from database
+  TVector3 z( 0.0, 0.0, fU->GetZ() );
+  fOrigin += z; 
 
   //Double_t vdcAngle = fVDC->GetVDCAngle();  // Get angle of the VDC
   Double_t uwAngle  = fU->GetWAngle();      // Get U plane Wire angle
   Double_t vwAngle  = fV->GetWAngle();      // Get V plane Wire angle
-  fSpacing = fV->GetZ() - fU->GetZ();  // Space between U & V planes
   fVUWireAngle = vwAngle - uwAngle;    // Difference between vwAngle and
                                        // uwAngle
   // Precompute and store values for efficiency
@@ -84,7 +83,7 @@ Int_t THaVDCUVPlane::SetupDetector( const TDatime& date )
   fCos_v   = TMath::Cos( vwAngle );
   fSin_vu  = TMath::Sin( fVUWireAngle );
 
-  return kOK;
+  return fStatus = kOK;
 }
 
 //_____________________________________________________________________________

@@ -165,6 +165,10 @@ Int_t THaVDCPlane::ReadDatabase( FILE* file, const TDatime& date )
     new((*fWires)[i]) THaVDCWire( i, fWBeg+i*fWSpac, offset, ttdConv );
   }
 
+  fOrigin.SetXYZ( 0.0, 0.0, fZ );
+  if( fDetector )
+    fOrigin += fDetector->GetOrigin();
+
   fIsInit = true;
   return kOK;
 }
