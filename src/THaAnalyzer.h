@@ -27,6 +27,7 @@
 class THaPhysics;
 class THaEvent;
 class THaRun;
+class THaOutput;
 class THaNamedList;
 class TFile;
 class TTree;
@@ -41,7 +42,6 @@ public:
   virtual const char*    GetFilename()       const { return fOutFile.Data(); }
   virtual Int_t          GetNblocks()        const { return fNblocks; }
   virtual const TFile*   GetOutFile()        const { return fFile; }
-  virtual const TTree*   GetTree()           const { return fTree; }
   virtual void           SetCutBlocks( Int_t n, const char* name );
   virtual void           SetCutBlocks( const TString* names );
   virtual void           SetCutBlocks( const char** names );
@@ -56,11 +56,11 @@ protected:
   static const char* const kMasterCutName;
   static const Int_t fMaxSkip = 25;
 
+  TFile*         fFile;            //The ROOT output file.
+  THaOutput*     fOutput;          //Flexible ROOT output (tree, histograms)
   TString        fOutFile;         //Name of output ROOT file.
   THaPhysics*    fPhysics;         //The physics quantities for this analysis.
   THaEvent*      fEvent;           //The event structure to be written to file.
-  TFile*         fFile;            //The ROOT output file
-  TTree*         fTree;            //ROOT tree for event data
   Int_t          fNblocks;         //Number of analysis stages
   TString*       fCutBlockNames;   //Array of cut block names
   TString*       fHistBlockNames;  //Array of histogram block names

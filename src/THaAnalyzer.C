@@ -15,6 +15,7 @@
 #include "THaRun.h"
 //#include "THaPhysics.h"
 #include "THaEvent.h"
+#include "THaOutput.h"
 #include "THaEvData.h"
 #include "THaGlobals.h"
 #include "THaApparatus.h"
@@ -50,9 +51,9 @@ THaAnalyzer::THaAnalyzer()
 
   fEvent = 0;
   fPhysics = 0;
-  fFile = 0;
-  fTree = 0;
   fNev = 0;
+  fFile = 0;
+  fOutput = 0;
 
   // Set the default cut block names. These can be redefined via SetCutBlocks()
 
@@ -96,11 +97,13 @@ THaAnalyzer::~THaAnalyzer()
 void THaAnalyzer::Close()
 {
   // Close output file and delete ROOT tree if they were created.
-
-  delete fFile; //closes file
+  
+  delete fOutput;
+  delete fFile;  
+  fOutput = 0;
   fFile = 0;
-  fTree = 0;  //Tree already deleted when file was deleted (FIXME: check this!)
 }
+
 
 //_____________________________________________________________________________
 inline
@@ -125,7 +128,8 @@ Int_t THaAnalyzer::Process( THaRun& run )
 
   static const char* const here = "Process()";
 
-  Int_t status = run.OpenFile();
+  Int_t status;
+  status = run.OpenFile();
   if( status < 0 ) return status;
 
   //--- If output file is defined, open it.
@@ -148,17 +152,9 @@ Int_t THaAnalyzer::Process( THaRun& run )
   }
   //  fFile->SetCompressionLevel(0);
 
-  //--- Set up a Tree to hold the output
+  //--- Output tree and histograms
 
-  if( !fTree ) {
-    fTree = new TTree("T", "Output DST");
-    if( fEvent ) {
-      fTree->Branch( "Event Branch", fEvent->IsA()->GetName(), &fEvent,
-		     16000, 99 );
-    }
-  }
-
-  if( fEvent) fEvent->Reset();
+  if ( !fOutput ) fOutput = new THaOutput();
 
   //--- Initialize counters
 
@@ -217,7 +213,7 @@ Int_t THaAnalyzer::Process( THaRun& run )
       // save run data to ROOT file
       // FIXME: give this different name?
       run.Write("Run Data");
-      
+
       // Initialize apparatuses. Make sure that every object in
       // gHaApps really is an apparatus.  Quit if any errors.
       
@@ -257,9 +253,20 @@ Int_t THaAnalyzer::Process( THaRun& run )
 	  }
 	}
       }
+
+      // fOutput must be initialized after all apparati are
+      // initialized and before adding anything to its tree.
+
+      if (fOutput->Init() < 0) {
+        cout << "ERROR: THaAnalyzer::Process: ";
+        cout << "Error initializing THaOutput " << endl;
+      }
+      if (fOutput->TreeDefined()) 
+       fOutput->GetTree()->Branch("event",fEvent->IsA()->GetName(),&fEvent);
+
       if( fail ) {
-	delete fTree;
-	delete fFile;
+        delete fOutput;
+        delete fFile;
 	run.CloseFile();
 	return retval;
       }
@@ -330,17 +337,14 @@ Int_t THaAnalyzer::Process( THaRun& run )
 
       //--- Fill histograms in block 3
 
-      //    }
       //--- If Event class defined, fill it.
 
       if( fEvent ) {
 	fEvent->SetHeader( evdata.GetEvNum(), evdata.GetRunNum(), 0 );
-	fEvent->Fill();
+	fEvent->Fill( evdata );
       }
 
-      //---  Fill the output tree if there is one.
-
-      if( fTree ) fTree->Fill();
+      if( fOutput ) fOutput->Process();
 
     } 
 
@@ -403,6 +407,7 @@ Int_t THaAnalyzer::Process( THaRun& run )
   // This writes the Tree as well as any objects (histograms etc.)
   // that are defined in the current directory.
 
+  if( fOutput ) fOutput->End();
   if( fFile ) fFile->Write();
 
   return nev_physics;
