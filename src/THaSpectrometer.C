@@ -527,9 +527,16 @@ Int_t THaSpectrometer::ReadRunDatabase( const TDatime& date )
   TVector3 ny( ct/norm,          0.0,   -st*cp/norm   );
   TVector3 nz( st*cp,            st*sp, ct            );
   if( bend_down ) { nx *= -1.0; ny *= -1.0; }
+#if ROOT_VERSION_CODE >= ROOT_VERSION(3,5,0)
   fToLabRot.SetToIdentity().RotateAxes( nx, ny, nz );
+#else
+  if( !fToLabRot.IsIdentity()) {
+    TRotation tmp; //Identity
+    fToLabRot = tmp;
+  }
+  fToLabRot.RotateAxes( nx, ny, nz );
+#endif
   fToTraRot = fToLabRot.Inverse();
-
   fPointingOffset.SetXYZ( off_x, off_y, off_z );
 
   fclose(file);

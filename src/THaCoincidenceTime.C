@@ -101,7 +101,17 @@ THaAnalysisObject::EStatus THaCoincidenceTime::Init( const TDatime& run_time )
   if (!fSpectro.back().spec) fSpectro.pop_back();
 
   fNSpectro = fSpectro.size();
+#if ROOT_VERSION_CODE >= ROOT_VERSION(3,3,0)
   fNtimes = static_cast<Int_t>(TMath::Factorial(fNSpectro)+.5);
+#else
+  Double_t x=1;
+  Int_t n = fNSpectro;
+  if( n>0 ) {
+    Int_t b=0;
+    do { b++; x *= b; } while(b!=n);
+  }
+  fNtimes = static_cast<Int_t>(x);
+#endif
 
   if (!fIsInit) {
     fGoldTr = new THaTrack*[fSpectro.size()];
@@ -206,8 +216,12 @@ Int_t THaCoincidenceTime::Process( const THaEvData& evdata )
       Double_t m = fSpectro[i].pmass;
       Double_t p = tr->GetP();
       Double_t beta = p/TMath::Sqrt(p*p+m*m);
-      
-      fVxTime[i] = tr->GetTime() - tr->GetPathLen()/(beta*TMath::C());
+#if ROOT_VERSION_CODE >= ROOT_VERSION(3,3,0)
+      Double_t c = TMath::C();
+#else
+      Double_t c = 2.99792458e8;
+#endif
+      fVxTime[i] = tr->GetTime() - tr->GetPathLen()/(beta*c);
     } else {
       fVxTime[i] = i*kBig;
       continue;

@@ -22,6 +22,9 @@
 #include <cstring>
 #include <cstdio>
 #include <climits>
+#if ROOT_VERSION_CODE < ROOT_VERSION(3,1,6)
+#include <ctime>
+#endif
 
 using namespace std;
 
@@ -176,10 +179,10 @@ Int_t THaRun::Init()
       }
 
       // Inspect event and extract run parameters if appropriate
-      status = Update( evdata );
-      if( status == 1 )
+      Int_t st = Update( evdata );
+      if( st == 1 )
 	cout << "Prestart at " << nev << endl;
-      else if (status == 2 )
+      else if (st == 2 )
 	cout << "Prescales at " << nev << endl;
 
     }//end while
@@ -401,8 +404,14 @@ void THaRun::SetDate( UInt_t tloc )
   // Set timestamp of this run to 'tloc' which is in Unix time
   // format (number of seconds since 01 Jan 1970).
 
-  // NB: requires ROOT>=3.01/06
+#if ROOT_VERSION_CODE >= ROOT_VERSION(3,1,6)
   TDatime date( tloc );
+#else
+  time_t t = tloc;
+  struct tm* tp = localtime(&t);
+  date.Set( tp->tm_year, tp->tm_mon+1, tp->tm_mday,
+	    tp->tm_hour, tp->tm_min, tp->tm_sec );
+#endif
   SetDate( date );
 }
 
