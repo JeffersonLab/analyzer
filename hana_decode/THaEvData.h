@@ -70,15 +70,29 @@ public:
 // Loads CODA data evbuffer using private crate map "cmap" (recommended)
      int LoadEvent(const int* evbuffer);          
      void PrintSlotData(int crate, int slot) const;
-     void PrintOut() const;
-     static const int HED_OK;
-     static const int HED_ERR;
+     void PrintOut() const { dump(buffer); }
+     static void hexdump(const char* cbuff, int len);
+
+     static const int HED_OK, HED_ERR;
 
 private:
 
-     static const int DEBUG = 0;  // set =0 normally
      static const int MAXROC = 20;  
      static const int MAXSLOT = 27;  
+
+     static const int MAX_PSFACT = 12;
+     static const int MAX_PHYS_EVTYPE  = 14;  // Types up to this are physics
+     static const int SYNC_EVTYPE      = 16;
+     static const int PRESTART_EVTYPE  = 17;
+     static const int GO_EVTYPE        = 18;
+     static const int PAUSE_EVTYPE     = 19;
+     static const int END_EVTYPE       = 20;
+     static const int EPICS_EVTYPE     = 131;
+     static const int PRESCALE_EVTYPE  = 133;
+     static const int DETMAP_FILE      = 135;
+     static const int TRIGGER_FILE     = 136;
+     static const int SCALER_EVTYPE    = 140;
+
      struct RocDat_t {           // ROC raw data descriptor
        int pos;                  // position in evbuffer[]
        int len;                  // length of data
@@ -92,21 +106,8 @@ private:
      TString scalerdef[MAXROC];
      int numscaler_crate;
      int scaler_crate[MAXROC];        // stored from cratemap for fast ref.
-     static const int VERBOSE =  1;   // 1 = verbose warnings, recommended.
-     static const int MAX_PSFACT = 12;
      int psfact[MAX_PSFACT];
 // Hall A Trigger Types
-     static const int MAX_PHYS_EVTYPE  = 14;  // Types up to this are physics
-     static const int SYNC_EVTYPE      = 16;
-     static const int PRESTART_EVTYPE  = 17;
-     static const int GO_EVTYPE        = 18;
-     static const int PAUSE_EVTYPE     = 19;
-     static const int END_EVTYPE       = 20;
-     static const int EPICS_EVTYPE     = 131;
-     static const int PRESCALE_EVTYPE  = 133;
-     static const int DETMAP_FILE      = 135;
-     static const int TRIGGER_FILE     = 136;
-     static const int SCALER_EVTYPE    = 140;
      const Int_t *buffer;
      Int_t event_type,event_length,event_num,run_num,evscaler;
      Int_t run_type;     // CODA run type from prestart event

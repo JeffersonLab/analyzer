@@ -35,7 +35,9 @@
 #include "TError.h"
 #include <cstring>
 #include <cstdio>
+#include <cctype>
 #include <iostream>
+#include <iomanip>
 
 #ifndef STANDALONE
 #include "THaVarList.h"
@@ -46,6 +48,10 @@ ClassImp(THaEvData)
 
 const int THaEvData::HED_OK  =  1;
 const int THaEvData::HED_ERR = -1;
+
+static const int  VERBOSE = 1;
+static const int  DEBUG   = 0;
+static const bool BENCH   = false;
 
 //_____________________________________________________________________________
 
@@ -85,7 +91,7 @@ THaEvData::THaEvData() :
 	    "Variables not registered.");
 
 #endif
-  fDoBench = true;
+  fDoBench = BENCH;
   if( fDoBench ) {
     fBench = new THaBenchmark;
     fTopBench = new THaBenchmark;
@@ -179,6 +185,8 @@ int THaEvData::gendecode(const int* evbuffer, THaCrateMap* map) {
        ret = physics_decode(evbuffer, map);
        goto exit;
      } else {
+       if( fDoBench && event_type != SCALER_EVTYPE ) 
+	 fBench->Start("ctrl_evt_decode");
        event_num = 0;
        switch (event_type) {
 	 case SYNC_EVTYPE :
@@ -223,15 +231,11 @@ int THaEvData::gendecode(const int* evbuffer, THaCrateMap* map) {
      ret = HED_ERR;
      goto exit;
  exit:
+     if( fDoBench ) fBench->Stop("ctrl_evt_decode");
      if( fDoBench ) fTopBench->Stop("gendecode");
      return ret;
 }
      
-void THaEvData::PrintOut() const {
-   dump(buffer);
-}
-
-
 void THaEvData::dump(const int* evbuffer) const {
    int len = evbuffer[0]+1;  
    int type = evbuffer[1]>>16;
@@ -256,6 +260,7 @@ void THaEvData::dump(const int* evbuffer) const {
 }
 
 int THaEvData::physics_decode(const int* evbuffer, THaCrateMap* map) {
+     if( fDoBench ) fBench->Start("physics_decode");
      int status = HED_OK;
 // This decoding is for physics triggers only
      if (evbuffer[3] > MAX_PHYS_EVTYPE) return HED_ERR; 
@@ -280,6 +285,7 @@ int THaEvData::physics_decode(const int* evbuffer, THaCrateMap* map) {
        irn[nroc++] = iroc;
        pos += len+1;
      }
+     if( fDoBench ) fBench->Stop("physics_decode");
 // Decode each ROC
 // This is not part of the loop above because it may exit prematurely due to errors,
 // which would leave the rocdat[] array incomplete.
@@ -313,65 +319,62 @@ int THaEvData::AddEpicsTag(const TString& tag) {
 
 int THaEvData::epics_decode(const int* evbuffer) {
      if( fDoBench ) fBench->Start("epics_decode");
-     static const int DEBUGL = 0;
-     static const int MAX  = 5000;     
-     static const int MAXEPV = 40;   
-     int j,m,pos1,pos2,neword;
-     bool foundVar = false;
-     bool startNum = false;
-     bool stopNum = false;
-     union cidata {
-        int ibuff[MAX];
-        char cbuff[MAX];
-     } evbuff; 
-     char wtag[MAXEPV],wval[MAXEPV];
+     static const int DEBUGL = 0, MAX  = 5000, MAXEPV = 40;
+     const char *pos1, *pos2;
+     const char* cbuff = (const char*)evbuffer;
+     char wtag[MAXEPV+1],wval[MAXEPV+1],date[MAXEPV+1];
+
      int len = sizeof(int)*(evbuffer[0]+1);  
      int nlen = (len < MAX) ? len : MAX;   
-     for (j=0; j < nlen; j++) evbuff.ibuff[j] = evbuffer[j];
-     if(DEBUGL) cout << "epics_decode  --- length " <<dec<<nlen<<endl;
-     neword = 0;
-     pos1 = 0;
-     for(j = 0; j < nlen; j++) {
-       if(DEBUGL) cout << "cbuff["<<j<<"]= "<<evbuff.cbuff[j]<<endl;
-       pos2 = j;
-       if (!foundVar) {
-	  if (evbuff.cbuff[j] == ' ' || evbuff.cbuff[j] == '\n') {
-             pos1 = j+1;
-             continue;
-	  }
-          if (pos2 >= pos1 && pos2-pos1 < MAXEPV-1) {
-             for (m = 0; m <= pos2-pos1; m++) wtag[m] = evbuff.cbuff[pos1+m];
-             wtag[m+1] = '\0'; 
-          } else {
-             cout << "THaEvData:epics_decode: WARNING: truncation of epics tag"<<endl;
-          }
-          if(DEBUGL) cout << "checking tag " << m << " " << wtag << endl;
-          if (epics->findVar(wtag) >= 0) {
-	     if(DEBUGL) cout << "Valid epics variable found ! " << endl;
-             pos1 = j+1;
-             foundVar = true;   
-             startNum = false;
-             stopNum = false;
-          }
+     if(DEBUGL) {
+       cout << "epics_decode  --- length " <<nlen<<endl;
+       hexdump(cbuff,nlen);
+     }
+     // Extract date time stamp
+     pos1 = cbuff+16;
+     pos2 = pos1; while( *pos2 != '\n' && *pos2 != 0 ) pos2++;
+     int m = pos2-pos1;
+     if( m>0 ) {
+       m = TMath::Min(m,MAXEPV);
+       strncpy(date,pos1,m);
+     } date[m] = 0;
+     // Extract EPICS tags
+     bool found = false, doing_tag = true;
+     pos1 = pos2+1;
+     while( pos1 < cbuff+nlen ) {
+       while( isspace(*pos1) && ++pos1 < cbuff+nlen );
+       if( pos1 >= cbuff+nlen ) break;
+       if( doing_tag )
+	 while( !isspace(*++pos2) && pos2 < cbuff+nlen );
+       else
+	 while( *++pos2 != '\n' && pos2 < cbuff+nlen );
+       if( pos2 >= cbuff+nlen ) break;
+       m = pos2-pos1;
+       if( doing_tag ) {
+	 if ( m>0 ) strncpy(wtag,pos1,TMath::Min(m,MAXEPV));
+	 wtag[m] = 0; 
+	 if( m>MAXEPV )
+	   cout << "THaEvData:epics_decode: WARNING: truncation of epics tag "
+		<< wtag << endl;
+	 if(DEBUGL) cout << "checking tag " << wtag << " ... ";
+	 found = (epics->findVar(wtag) >= 0);
+	 if(DEBUGL) cout << ((found) ? "found!" : "no") << endl;
+	 doing_tag = false;
        } else {
-          if (evbuff.cbuff[j] == ' ' || evbuff.cbuff[j] == '\n') {
-             if ( startNum ) stopNum = true;
-	  } else {
-             startNum = true;
-             if (pos2 >= pos1 && pos2-pos1 < MAXEPV-1) {
-               for (m = 0; m <= pos2-pos1; m++) wval[m] = evbuff.cbuff[pos1+m];
-               wval[m+1] = '\0'; 
-             } else {
-                cout << "THaEvData:epics_decode: WARNING: truncation of epics val"<<endl;
-            }
-	  }
-          if (stopNum) {
-             if (DEBUGL) cout << "loading data "<<wtag<<"  val = "<<wval<<endl;
-             epics->loadData(wtag,wval,recent_event);
-  	     pos1 = j+1;      // found end of number
-             foundVar = false;
-	  }
-       } 
+	 if( found ) {
+	   if ( m>0 ) strncpy(wval,pos1,TMath::Min(m,MAXEPV));
+	   wval[m] = 0; 
+	   if( m>MAXEPV ) {
+	     cout << "THaEvData:epics_decode: WARNING: truncation of epics val"
+		  << wval << endl;
+	   } else {
+	     if (DEBUGL) cout << "loading data "<<wtag<<"  val = "<<wval<<endl;
+	     epics->loadData(wtag,wval,recent_event);
+	   }
+	 }
+	 doing_tag = true;
+       }
+       pos1 = pos2+1;
      }
      epics->bumpStack();
      if(DEBUGL) epics->print();
@@ -380,7 +383,6 @@ int THaEvData::epics_decode(const int* evbuffer) {
 };
 
 int THaEvData::prescale_decode(const int* evbuffer) {
-     if( fDoBench ) fBench->Start("prescale_decode");
      const int MAX = 5000;
      const int HEAD_OFF = 4;
      int j,trig,data[MAX];
@@ -403,7 +405,6 @@ int THaEvData::prescale_decode(const int* evbuffer) {
         if (psfact[trig] == 0) psfact[trig] = psmax;
         if (DEBUG) cout << "psfact[ "<<trig+1<< " ] = "<<psfact[trig]<<endl;
      }
-     if( fDoBench ) fBench->Stop("prescale_decode");
      return HED_OK;
 }
 
@@ -807,4 +808,23 @@ int THaEvData::init_slotdata(const THaCrateMap* map)
     }
   }
   return HED_OK;
+}
+
+void THaEvData::hexdump(const char* cbuff, int nlen)
+{
+  // Hexdump buffer 'cbuff' of length 'nlen'
+  const int NW = 16; const char* p = cbuff;
+  while( p<cbuff+nlen ) {
+    cout << dec << setw(4) << setfill('0') << (int)(p-cbuff) << " ";
+    int nelem = TMath::Min(NW,cbuff+nlen-p);
+    for(int i=0; i<NW; i++) {
+      UInt_t c = (i<nelem) ? *(const unsigned char*)(p+i) : 0;
+      cout << " " << hex << setfill('0') << setw(2) << c << dec;
+    } cout << "  ";
+    for(int i=0; i<NW; i++) {
+      char c = (i<nelem) ? *(p+i) : 0;
+      if(isalnum(c)||c==' ') cout << c; else cout << ".";
+    } cout << endl;
+    p += NW;
+  }
 }
