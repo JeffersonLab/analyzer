@@ -105,7 +105,8 @@ THaAnalysisObject::EStatus THaExtTarCor::Init( const TDatime& run_time )
       return fStatus;
   }
 
-  fTrkIfo = new THaTrackInfo();
+  if( !fTrkIfo )
+    fTrkIfo = new THaTrackInfo();
 
   // Standard initialization. Calls this object's DefineVariables().
   if( THaPhysicsModule::Init( run_time ) != kOK )

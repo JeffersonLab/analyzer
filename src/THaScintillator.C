@@ -79,6 +79,7 @@ Int_t THaScintillator::ReadDatabase( FILE* fi, const TDatime& date )
   int i = 0;
   delete [] fFirstChan;
   fFirstChan = new UShort_t[ THaDetMap::kDetMapSize ];
+  fDetMap->Clear();
   while (1) {
     Int_t crate, slot, first, last, first_chan;
     fscanf ( fi,"%d%d%d%d%d", 

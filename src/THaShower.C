@@ -72,6 +72,7 @@ Int_t THaShower::ReadDatabase( FILE* fi, const TDatime& date )
   fNclublk = nclbl;
 
   // Read detector map
+  fDetMap->Clear();
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
   while (1) {
     Int_t crate, slot, first, last;
