@@ -1,4 +1,4 @@
-//*-- Author :    Ole Hansen   12/05/2000
+//*-- Author :    Ole Hansen   12-May-2000
 
 //////////////////////////////////////////////////////////////////////////
 //
@@ -1211,7 +1211,12 @@ Int_t THaAnalyzer::Process( THaRunBase* run )
     if( fUpdateRun )
       fRun->Update( fEvData );
 
-    //--- Perform actual analysis
+    //--- Clear all tests/cuts
+    if( fDoBench ) fBench->Begin("Cuts");
+    gHaCuts->ClearAll();
+    if( fDoBench ) fBench->Stop("Cuts");
+
+    //--- Perform the analysis
     Int_t err = MainAnalysis();
     switch( err ) {
     case kOK:
