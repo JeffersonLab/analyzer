@@ -357,6 +357,8 @@ Int_t THaVform::MakeFormula(Int_t flo, Int_t fhi)
     fhi = fgVFORM_HUGE;
   }
   if (fhi > (long)fVectSform.size()) GetForm(fhi);
+  // and if the above line doesn't repair fhi...
+  if (fhi > (long)fVectSform.size()) return 0;
 
   if (fPrefix == kNoPrefix) {
 
@@ -447,9 +449,9 @@ THaString THaVform::StripPrefix(const char* expr)
   THaString result,stitle;
   vector<THaString> sprefix;
   vector<Int_t> ipflg;
-  fgAndStr = "AND";
-  fgOrStr  = "OR";
-  fgSumStr = "SUM";
+  fgAndStr = "AND:";
+  fgOrStr  = "OR:";
+  fgSumStr = "SUM:";
   sprefix.push_back(fgAndStr);  ipflg.push_back(kAnd);
   sprefix.push_back(fgOrStr);   ipflg.push_back(kOr);
   sprefix.push_back(fgSumStr);  ipflg.push_back(kSum);
@@ -470,7 +472,7 @@ THaString THaVform::StripPrefix(const char* expr)
          cout << "THaVform:ERROR:: Cannot have >1 prefix."<<endl;
        }
        fPrefix = ipflg[i];
-       pos = pos + sprefix[i].length() + 1;
+       pos = pos + sprefix[i].length();
        result = stitle.substr(pos,pos+stitle.length());
      }
   }
