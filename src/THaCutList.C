@@ -14,6 +14,7 @@
 #include "THaCutList.h"
 #include "THaPrintOption.h"
 #include "TError.h"
+#include "TList.h"
 
 #include <iostream>
 #include <fstream>
@@ -69,6 +70,37 @@ THaCutList::~THaCutList()
   fBlocks->Delete();
   delete fCuts;
   delete fBlocks;
+}
+
+//______________________________________________________________________________
+void THaCutList::Compile()
+{
+  // Compile all cuts in the list.
+  // Since cuts are compiled when Define() them, this routine typically only 
+  // needs to be called when global variable pointers need to be updated.
+
+  TList* bad_cuts = NULL;
+  bool have_bad = false;
+
+  TIter next( fCuts );
+  while( THaCut* pcut = static_cast<THaCut*>( next() )) {
+    pcut->Compile();
+    if( pcut->IsError() ) { 
+      Error( "Compile()", "expression error, cut removed: %s %s block: %s",
+	     pcut->GetName(), pcut->GetTitle(), pcut->GetBlockname() );
+      if( !bad_cuts ) bad_cuts = new TList;
+      bad_cuts->Add( new TNamed( *pcut ));
+      have_bad = true;
+    }
+  }
+  if( have_bad ) {
+    TIter next_bad( bad_cuts );
+    while( TNamed* pbad = static_cast<TNamed*>( next_bad() )) {
+      Remove( pbad->GetName() );
+    }
+    bad_cuts->Delete();
+  }
+  delete bad_cuts;
 }
 
 //______________________________________________________________________________

@@ -47,6 +47,7 @@ public:
 			    const THaVarList* lst, 
 			    const char* block=kDefaultBlockName );
   virtual Int_t     Load( const char* filename=kDefaultCutFile );
+  virtual void      Compile();
   virtual void      Clear( Option_t* opt="" );
   virtual Int_t     Eval();
   virtual Int_t     EvalBlock( const char* block=kDefaultBlockName );
