@@ -25,6 +25,7 @@ THaCutList* gHaCuts    = NULL;  //List of global analyzer cuts/tests
 TList*      gHaApps    = NULL;  //List of Apparatuses
 TList*      gHaScalers = NULL;  //List of scaler groups
 TList*      gHaPhysics = NULL;  //List of physics modules
+THaRun*     gHaRun     = NULL;  //The currently active run
 
 THaInterface* THaInterface::fgAint = NULL;  //Pointer to this interface
 
@@ -93,7 +94,7 @@ void THaInterface::PrintLogo()
      mille = iyear;
    char* root_date = Form("%d %s %4d",iday,months[imonth-1],mille);
 
-   const char* halla_version = "0.70beta2";
+   const char* halla_version = "0.70beta3";
    const char* halla_date = Form("%d %s %4d",24,months[2-1],2003);
 
    Printf("  ************************************************");
