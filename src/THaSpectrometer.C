@@ -198,6 +198,11 @@ Int_t THaSpectrometer::DefineVariables( EMode mode )
     { "tr.vx",    "Vertex x (m)",                "fTracks.THaTrack.GetVertexX()"},
     { "tr.vy",    "Vertex y (m)",                "fTracks.THaTrack.GetVertexY()"},
     { "tr.vz",    "Vertex z (m)",                "fTracks.THaTrack.GetVertexZ()"},
+    { "tr.pathl", "Pathlength from tg to fp (m)","fTracks.THaTrack.GetPathLen()"},
+    { "tr.time",  "Time of track@Ref Plane (s)", "fTracks.THaTrack.GetTime()"},
+    { "tr.dtime", "uncer of time (s)",           "fTracks.THaTrack.GetdTime()"},
+    { "tr.beta",  "Beta of track",               "fTracks.THaTrack.GetBeta()"},
+    { "tr.dbeta", "uncer of beta",               "fTracks.THaTrack.GetdBeta()"},
     { 0 }
   };
 
