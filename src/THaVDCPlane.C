@@ -27,8 +27,9 @@
 
 #include <cstring>
 #include <vector>
+#include <iostream>
 
-ClassImp(THaVDCPlane)
+using namespace std;
 
 
 //_____________________________________________________________________________
@@ -475,3 +476,4 @@ Int_t THaVDCPlane::FitTracks()
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+ClassImp(THaVDCPlane)

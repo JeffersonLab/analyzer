@@ -20,7 +20,7 @@
 #include <iostream>
 #endif
 
-ClassImp(THaApparatus)
+using namespace std;
 
 //_____________________________________________________________________________
 THaApparatus::THaApparatus( const char* name, const char* description ) : 
@@ -146,3 +146,5 @@ void THaApparatus::SetDebugAll( Int_t level )
   }
 }
 
+//_____________________________________________________________________________
+ClassImp(THaApparatus)

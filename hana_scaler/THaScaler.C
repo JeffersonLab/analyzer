@@ -60,9 +60,7 @@
 
 #include <iostream>
 
-#ifndef ROOTPRE3
-ClassImp(THaScaler)
-#endif
+using namespace std;
 
 THaScaler::THaScaler() {}
 
@@ -983,3 +981,8 @@ Int_t THaScaler::Load()
   new_load = kTRUE;
   return 0;
 };
+
+#ifndef ROOTPRE3
+ClassImp(THaScaler)
+#endif
+

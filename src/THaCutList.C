@@ -15,6 +15,7 @@
 #include "THaPrintOption.h"
 #include "TError.h"
 
+#include <iostream>
 #include <fstream>
 #include <iomanip>
 #include <algorithm>

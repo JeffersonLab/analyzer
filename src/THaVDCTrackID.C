@@ -16,7 +16,7 @@
 #include <iomanip>
 #include <cstring>
 
-ClassImp(THaVDCTrackID)
+using namespace std;
 
 //_____________________________________________________________________________
 THaVDCTrackID::THaVDCTrackID( const THaVDCUVTrack* lower,
@@ -76,3 +76,5 @@ void THaVDCTrackID::Print( Option_t* opt ) const
        << setw(5) << fUpperV
        << endl;
 }
+///////////////////////////////////////////////////////////////////////////////
+ClassImp(THaVDCTrackID)

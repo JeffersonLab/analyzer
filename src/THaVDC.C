@@ -34,7 +34,7 @@
 #include <iostream>
 #endif
 
-ClassImp(THaVDC)
+using namespace std;
 
 //_____________________________________________________________________________
 THaVDC::THaVDC( const char* name, const char* description,
@@ -908,3 +908,4 @@ void THaVDC::FindBadTracks(TClonesArray& tracks)
 
 
 ////////////////////////////////////////////////////////////////////////////////
+ClassImp(THaVDC)

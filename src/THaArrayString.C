@@ -31,7 +31,7 @@
 #include "THaArrayString.h"
 #include "TMath.h"
 
-ClassImp(THaArrayString);
+using namespace std;
 
 //_____________________________________________________________________________
 THaArrayString::THaArrayString( const THaArrayString& rhs )
@@ -268,3 +268,5 @@ void THaArrayString::Print( Option_t *option )
   }
   cout << endl;
 }
+//_____________________________________________________________________________
+ClassImp(THaArrayString);

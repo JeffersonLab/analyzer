@@ -50,7 +50,7 @@
 #include <iostream>
 #endif
 
-ClassImp(THaHRS)
+using namespace std;
 
 //_____________________________________________________________________________
 THaHRS::THaHRS( const char* name, const char* description ) :
@@ -108,4 +108,5 @@ Int_t THaHRS::TrackCalc()
   return 0;
 }
 
-
+//_____________________________________________________________________________
+ClassImp(THaHRS)

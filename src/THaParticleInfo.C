@@ -11,7 +11,7 @@
 #include "THaParticleInfo.h"
 #include <iostream>
 
-ClassImp(THaParticleInfo)
+using namespace std;
 
 //_____________________________________________________________________________
 THaParticleInfo::THaParticleInfo()
@@ -52,4 +52,6 @@ void THaParticleInfo::Print( Option_t* opt ) const
 }
 
 
+//_____________________________________________________________________________
 
+ClassImp(THaParticleInfo)

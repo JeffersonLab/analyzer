@@ -19,7 +19,7 @@
 #include <ctime>
 #include <cstdio>
 
-ClassImp(THaRun)
+using namespace std;
 
 //_____________________________________________________________________________
 THaRun::THaRun() : TNamed(), fNumber(0), fDBRead(false),
@@ -235,3 +235,6 @@ void THaRun::SetNumber( UInt_t number )
   sprintf( str, "RUN_%u", number);
   SetName( str );
 }
+
+//_____________________________________________________________________________
+ClassImp(THaRun)

@@ -30,7 +30,7 @@
 
 #include <iostream>
 
-ClassImp(THaTwoarmVertex)
+using namespace std;
 
 //_____________________________________________________________________________
 THaTwoarmVertex::THaTwoarmVertex( const char* name, const char* description,
@@ -164,3 +164,5 @@ Int_t THaTwoarmVertex::Process( const THaEvData& evdata )
   return 0;
 }
   
+///////////////////////////////////////////////////////////////////////////////
+ClassImp(THaTwoarmVertex)

@@ -91,29 +91,30 @@ protected:
     THaMatrixElement& operator=( const THaMatrixElement& ) { return *this; }
 
     bool iszero;             // whether the element is zero
-    vector<int> pw;          // exponents of matrix element
+    std::vector<int> pw;     // exponents of matrix element
                              //   e.g. D100 = { 1, 0, 0 }
     int  order;
     double v;                // its computed value
-    vector<double> poly;     // the associated polynomial
+    std::vector<double> poly;// the associated polynomial
   };
 
   // initial matrix elements
-  vector<THaMatrixElement> fTMatrixElems;
-  vector<THaMatrixElement> fDMatrixElems;
-  vector<THaMatrixElement> fPMatrixElems;
-  vector<THaMatrixElement> fYMatrixElems;
-  vector<THaMatrixElement> fFPMatrixElems;  // matrix elements used in
+  std::vector<THaMatrixElement> fTMatrixElems;
+  std::vector<THaMatrixElement> fDMatrixElems;
+  std::vector<THaMatrixElement> fPMatrixElems;
+  std::vector<THaMatrixElement> fYMatrixElems;
+  std::vector<THaMatrixElement> fFPMatrixElems;  // matrix elements used in
                                             // focal plane transformations
                                             // { T, Y, P }
 
   void CalcFocalPlaneCoords( THaTrack* track, const ECoordTypes mode);
   void CalcTargetCoords(THaTrack *the_track, const ECoordTypes mode);
-  void CalcMatrix(const double x, vector<THaMatrixElement> &matrix);
-  double DoPoly(const int n, const vector<double> &a, const double x);
+  void CalcMatrix(const double x, std::vector<THaMatrixElement> &matrix);
+  double DoPoly(const int n, const std::vector<double> &a, const double x);
   double PolyInv(const double x1, const double x2, const double xacc, 
-		 const double y, const int norder, const vector<double> &a);
-  double CalcTargetVar(const vector<THaMatrixElement> &matrix, 
+		 const double y, const int norder, 
+		 const std::vector<double> &a);
+  double CalcTargetVar(const std::vector<THaMatrixElement> &matrix, 
 		       const double powers[][3]);
   Int_t ReadDatabase( const TDatime& date );
 

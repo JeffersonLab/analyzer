@@ -41,9 +41,9 @@ public:
    Int_t ntoskip;              // how far to skip beyond header
 
 private:
-   const string name;          // name of the variable in global list.
+   const std::string name;          // name of the variable in global list.
    Int_t  search_choice;       // whether to search in crates or rel. to header
-   vector<UInt_t> rdata;       // raw data.  (It is vector to accom. multihit chan.)
+   std::vector<UInt_t> rdata;       // raw data.  (It is vector to accom. multihit chan.)
    Bool_t loaded_once;
    BdataLoc();
    BdataLoc(const BdataLoc& dataloc);
@@ -71,14 +71,14 @@ private:
    UInt_t timestamp, timeroc1, timeroc2, timeroc3,  
           timeroc4, timeroc14;
    UInt_t misc1, misc2, misc3, misc4;
-   vector < BdataLoc* > fCrateLoc;   // Raw Data locations by crate, slot, channel
-   vector < BdataLoc* > fWordLoc;    // Raw Data locations relative to header word
+   std::vector < BdataLoc* > fCrateLoc;   // Raw Data locations by crate, slot, channel
+   std::vector < BdataLoc* > fWordLoc;    // Raw Data locations relative to header word
 
    virtual void Clear( Option_t* opt="" );
    virtual void Print( Option_t* opt="" ) const;
    Int_t DefaultMap();
    void TrigBits(UInt_t ibit, BdataLoc *dataloc);
-   static vector<string> vsplit(const string& s);
+   static std::vector<std::string> vsplit(const std::string& s);
    Int_t SetupDecData( const TDatime* runTime = NULL, EMode mode = kDefine );
    static UInt_t header_str_to_base16(const char* hdr);
 

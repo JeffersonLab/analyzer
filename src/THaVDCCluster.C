@@ -15,7 +15,7 @@
 
 #include <iostream>
 
-ClassImp(THaVDCCluster)
+using namespace std;
 
 const Double_t THaVDCCluster::kBig = 1e38;  // Arbitrary large value
 
@@ -330,3 +330,4 @@ void THaVDCCluster::Print( Option_t* opt ) const
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+ClassImp(THaVDCCluster)

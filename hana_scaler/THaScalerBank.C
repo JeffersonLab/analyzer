@@ -17,9 +17,7 @@
 #include "THaScaler.h"
 #include "THaScalerBank.h"
 
-#ifndef ROOTPRE3
-ClassImp(THaScalerBank)
-#endif
+using namespace std;
 
 THaScalerBank::THaScalerBank(string myname) {
    didinit = 0;
@@ -127,15 +125,7 @@ void THaScalerBank::Print() {
    }
 };
 
-
-
-
-
-
-
-
-
-
-
-
+#ifndef ROOTPRE3
+ClassImp(THaScalerBank)
+#endif
 

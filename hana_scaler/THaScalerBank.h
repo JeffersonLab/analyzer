@@ -30,21 +30,21 @@ class THaScalerBank
 {
 public:
 
-   THaScalerBank(string myname);
+   THaScalerBank(std::string myname);
    virtual ~THaScalerBank();
 
-   string name;
+   std::string name;
    Int_t didinit;
    Int_t size,header;
    Int_t ndata;
    Int_t *data;
    BscaLoc location;
-   virtual Int_t Init(Int_t crate, multimap<string, BscaLoc>& bmap);
+   virtual Int_t Init(Int_t crate, std::multimap<std::string, BscaLoc>& bmap);
    virtual Int_t Load(int *data);
    virtual void Clear();
    Int_t GetData(Int_t index, Int_t histor);
    virtual void Print();
-   virtual string GetChanName(Int_t index);
+   virtual std::string GetChanName(Int_t index);
    virtual void SetChanName(Int_t index, char* name);
    THaScalerBank& operator=(const THaScalerBank &bk);
 
@@ -52,7 +52,7 @@ private:
 
    THaScalerBank(const THaScalerBank &bk);   // users cannot copy
    virtual void LoadPrevious();
-   vector<string> chan_name;
+   std::vector<std::string> chan_name;
 
 
 #ifndef ROOTPRE3

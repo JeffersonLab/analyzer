@@ -30,7 +30,7 @@
 #include <iostream>
 #endif
 
-ClassImp(THaSpectrometer)
+using namespace std;
 
 //_____________________________________________________________________________
 THaSpectrometer::THaSpectrometer( const char* name, const char* desc ) : 
@@ -530,3 +530,7 @@ Int_t THaSpectrometer::ReadRunDatabase( const TDatime& date )
   fclose(file);
   return kOK;
 }
+
+//_____________________________________________________________________________
+ClassImp(THaSpectrometer)
+

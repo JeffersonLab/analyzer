@@ -13,7 +13,7 @@
 #include "THaTrackID.h"
 #include <iostream>
 
-ClassImp(THaTrack)
+using namespace std;
 
 //_____________________________________________________________________________
 THaTrack::~THaTrack()
@@ -74,5 +74,7 @@ void THaTrack::Print( Option_t* opt ) const
   if( fPIDinfo ) fPIDinfo->Print( opt );
 }
 
+//_____________________________________________________________________________
 
+ClassImp(THaTrack)
 

@@ -24,9 +24,7 @@
 #include "THaScalerDB.h"
 #include <errno.h>
 
-#ifndef ROOTPRE3
-ClassImp(THaScalerDB)
-#endif
+using namespace std;
 
 THaScalerDB::THaScalerDB() { }
 THaScalerDB::~THaScalerDB() { }
@@ -269,14 +267,6 @@ vector<string> THaScalerDB::vsplit(const string& s) {
   return ret;
 };
 
-
-
-
-
-
-
-
-
-
-
-
+#ifndef ROOTPRE3
+ClassImp(THaScalerDB)
+#endif

@@ -44,7 +44,7 @@
 #include "THaInterface.h"
 #endif
 
-ClassImp(THaEvData)
+using namespace std;
 
 const int THaEvData::HED_OK  =  1;
 const int THaEvData::HED_ERR = -1;
@@ -833,3 +833,6 @@ void THaEvData::hexdump(const char* cbuff, size_t nlen)
     p += NW;
   }
 }
+
+ClassImp(THaEvData)
+

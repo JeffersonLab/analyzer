@@ -20,7 +20,7 @@
 #include "evio.h"
 #include "TString.h"
 
-ClassImp(THaCodaFile)
+using namespace std;
 
 //Constructors 
 
@@ -313,13 +313,4 @@ void THaCodaFile::staterr(const TString& tried_to, int status) {
   };
 
 
-
-
-
-
-
-
-
-
-
-
+ClassImp(THaCodaFile)

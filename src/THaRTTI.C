@@ -18,7 +18,7 @@
 #include "TDataMember.h"
 #include <iostream>
 
-ClassImp(THaRTTI)
+using namespace std;
 
 //_____________________________________________________________________________
 Int_t THaRTTI::Find( TClass* cl, TString& var, 
@@ -234,3 +234,5 @@ void THaRTTI::Print( Option_t* opt ) const
     }
   }
 }
+//_____________________________________________________________________________
+ClassImp(THaRTTI)

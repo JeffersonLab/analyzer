@@ -96,7 +96,7 @@ int THaSlotData::loadData(const char* type, int chan, int dat, int raw) {
   // Grow data arrays if really necessary (rare)
   if( numraw >= allocd ) {
     UShort_t old_allocd = allocd;
-    allocd = TMath::Min(2*allocd,maxd);
+    allocd *= 2; if( allocd > maxd ) allocd = maxd;
     int* tmp = new int[allocd];
     memcpy(tmp,data,old_allocd*sizeof(int));
     delete [] data; data = tmp;

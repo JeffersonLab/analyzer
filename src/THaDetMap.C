@@ -9,11 +9,11 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaDetMap.h"
-#include <iostream.h>
-#include <iomanip.h>
+#include <iostream>
+#include <iomanip>
 #include <cstring>
 
-ClassImp(THaDetMap)
+using namespace std;
 
 const int THaDetMap::kDetMapSize;
 
@@ -90,3 +90,7 @@ void THaDetMap::Print( Option_t* opt ) const
 	 << endl;
   }
 }
+
+//_____________________________________________________________________________
+ClassImp(THaDetMap)
+

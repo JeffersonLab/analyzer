@@ -16,10 +16,9 @@
 #include "VarDef.h"
 #include "VarType.h"
 #include "TMath.h"
-#include <iostream.h>
+#include <iostream>
 
-
-ClassImp(THaRaster)
+using namespace std;
 
 //_____________________________________________________________________________
 THaRaster::THaRaster( const char* name, const char* description,
@@ -286,3 +285,5 @@ Int_t THaRaster::Process( )
 
 
 ////////////////////////////////////////////////////////////////////////////////
+ClassImp(THaRaster)
+

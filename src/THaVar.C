@@ -57,7 +57,7 @@
 #include "TObjArray.h"
 #include "TClass.h"
 
-ClassImp(THaVar)
+using namespace std;
 
 const Int_t    THaVar::kInvalidInt = -1;
 const Double_t THaVar::kInvalid    = 1e38;
@@ -351,3 +351,7 @@ void THaVar::SetNameTitle( const char* name, const char* descript )
   TNamed::SetNameTitle( name, descript );
   fArrayData = name;
 }
+
+//_____________________________________________________________________________
+ClassImp(THaVar)
+

@@ -53,7 +53,7 @@ public:
   static  Int_t   LoadDBvalue( FILE* file, const TDatime& date, 
 			       const char* tag, Double_t& value );
   static  Int_t   LoadDBvalue( FILE* file, const TDatime& date, 
-			       const char* tag, string& text );
+			       const char* tag, std::string& text );
   static  Int_t   LoadDBvalue( FILE* file, const TDatime& date, 
 			       const char* tag, TString& text );
   static  Int_t   LoadDB( FILE* file, const TDatime& date, 
@@ -116,8 +116,9 @@ protected:
      { return DefineVariables( kDelete ); }
 
   // Support function for reading database files
-  static vector<string> GetDBFileList( const char* name, const TDatime& date,
-				       const char* here = "GetDBFileList()" );
+  static std::vector<std::string> 
+    GetDBFileList( const char* name, const TDatime& date,
+		   const char* here = "GetDBFileList()" );
 
   // Only derived classes may construct
   THaAnalysisObject( const char* name, const char* description );
@@ -126,8 +127,10 @@ protected:
 
 private:
   // Support functions for reading database files
-  static Int_t IsDBdate( const string& line, TDatime& date, bool warn=true );
-  static Int_t IsDBtag ( const string& line, const char* tag, string& text );
+  static Int_t IsDBdate( const std::string& line, TDatime& date, 
+			 bool warn=true );
+  static Int_t IsDBtag ( const std::string& line, const char* tag, 
+			 std::string& text );
 
   // Prevent default construction, copying, assignment
   THaAnalysisObject();

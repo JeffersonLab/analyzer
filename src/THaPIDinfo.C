@@ -13,7 +13,7 @@
 
 #include <iostream>
 
-ClassImp(THaPIDinfo)
+using namespace std;
 
 
 //_____________________________________________________________________________
@@ -142,3 +142,5 @@ void THaPIDinfo::SetSize( UInt_t ndet, UInt_t npart )
   fNpart = npart;
 }  
 
+//_____________________________________________________________________________
+ClassImp(THaPIDinfo)

@@ -153,7 +153,7 @@ public:
 
    const char* GetName() const { return bankgroup.c_str(); }
    const Int_t GetCrate() const { return crate; }
-   vector < THaScalerBank* > GetScalerBanks() { return scalerbanks; }
+   std::vector < THaScalerBank* > GetScalerBanks() { return scalerbanks; }
 
 // Get scaler data from slot #slot and channel #chan (slot >= 0, chan >= 0)
 // Get counts by history, histor = 1 = previous event, 0 = present.
@@ -191,18 +191,18 @@ public:
    
 protected:
 
-   Int_t InitMap(string bankgroup);
-   map < string, THaScalerBank* > scalerbankmap;
-   vector < THaScalerBank* > scalerbanks;
+   Int_t InitMap(std::string bankgroup);
+   std::map < std::string, THaScalerBank* > scalerbankmap;
+   std::vector < THaScalerBank* > scalerbanks;
    THaScalerBank *s1L,*s2L,*s1R,*s2R,*s1,*s2;
    THaScalerBank *gasC,*a1L,*a2L,*a1R,*a2R;
    THaScalerBank *s0,*misc1,*misc2,*misc3,*misc4;
    THaScalerBank *leadgl,*rcs1,*rcs2,*rcs3,*edtm;
    THaScalerBank *evleft, *evright;
    THaNormScaler *nplus,*nminus,*norm;
-   multimap< string, BscaLoc > bmap;
+   std::multimap< std::string, BscaLoc > bmap;
    void AddBank(THaScalerBank *bk);
-   string bankgroup;
+   std::string bankgroup;
    THaCodaFile *fcodafile;
    Bool_t coda_open;
    UInt_t header_left, header_right, header_rcs;
@@ -210,7 +210,7 @@ protected:
    Int_t cratenum_left, cratenum_right, cratenum_rcs;
    Int_t cratenum_evleft, cratenum_evright;
    Int_t header, crate;
-   string vme_server;
+   std::string vme_server;
    int vme_port;
    Bool_t found_crate,first_loop;
    Bool_t did_init, new_load;
@@ -222,7 +222,7 @@ protected:
    Int_t ExtractRaw(int* data);
    Int_t Load();
    Int_t *rawdata;
-   UInt_t header_str_to_base16(string header);
+   UInt_t header_str_to_base16(std::string header);
    Double_t calib_u1,calib_u3,calib_u10,calib_d1,calib_d3,calib_d10;
    Double_t off_u1,off_u3,off_u10,off_d1,off_d3,off_d10;
    Double_t GetTimeDiff(Int_t helicity);

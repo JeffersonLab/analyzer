@@ -9,7 +9,7 @@
 #include "THaCluster.h"
 #include <iostream>
 
-ClassImp(THaCluster)
+using namespace std;
 
 //_____________________________________________________________________________
 THaCluster& THaCluster::operator=( const THaCluster& rhs )
@@ -41,3 +41,4 @@ void THaCluster::Print( Option_t* opt ) const
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+ClassImp(THaCluster)
