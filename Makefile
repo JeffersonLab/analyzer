@@ -14,7 +14,7 @@ export WITH_DEBUG = 1
 # export ONLINE_ET = 1
 #------------------------------------------------------------------------------
 
-VERSION = 1.1.2
+VERSION = 1.1.3
 NAME    = analyzer-$(VERSION)
 
 #------------------------------------------------------------------------------
@@ -162,9 +162,8 @@ SRC += src/THaOnlRun.C
 endif
 
 OBJ           = $(SRC:.C=.o)
-HDR           = $(SRC:.C=.h) src/THaGlobals.h src/VarDef.h src/VarType.h \
-		src/ha_compiledata.h
-
+RCHDR         = $(SRC:.C=.h) src/THaGlobals.h
+HDR           = $(RCHDR) src/VarDef.h src/VarType.h src/ha_compiledata.h
 DEP           = $(SRC:.C=.d) src/main.d
 OBJS          = $(OBJ) haDict.o
 
@@ -174,8 +173,9 @@ PROGRAMS      = analyzer
 all:            subdirs
 		set -e; for i in $(PROGRAMS); do $(MAKE) $$i; done
 
-src/ha_compiledata.h:
+src/ha_compiledata.h:	Makefile
 		echo "#define HA_INCLUDEPATH \"$(INCDIRS)\"" > $@
+		echo "#define HA_VERSION \"$(VERSION)\"" >> $@
 
 subdirs:
 		set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i; done
@@ -216,10 +216,9 @@ cvsdist:	srcdist
 		 `find . -type f -name .cvsignore 2>/dev/null | sed "s%^\./%$(NAME)/%"`
 		gzip -f ../$(NAME)-cvs.tar
 
-haDict.C: $(HDR) src/HallA_LinkDef.h
+haDict.C: $(RCHDR) src/HallA_LinkDef.h
 	@echo "Generating dictionary haDict..."
-	$(ROOTSYS)/bin/rootcint -f $@ -c $(INCLUDES) $(DEFINES) $(HDR) \
-		src/HallA_LinkDef.h
+	$(ROOTSYS)/bin/rootcint -f $@ -c $(INCLUDES) $(DEFINES) $^
 
 .PHONY: all clean realclean srcdist cvsdist subdirs
 
