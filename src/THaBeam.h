@@ -14,14 +14,14 @@
 class THaBeam : public THaApparatus {
   
 public:
-  virtual ~THaBeam() {}
+  virtual ~THaBeam();
   
   virtual const TVector3& GetPosition()  const { return fPosition; }
   virtual const TVector3& GetDirection() const { return fDirection; }
 
 protected:
 
-  virtual Int_t  DefineVariables( EMode mode );
+  virtual Int_t  DefineVariables( EMode mode = kDefine );
 
   TVector3  fPosition;   // Beam position at the target (usually z=0) (meters)
   TVector3  fDirection;  // Beam direction vector (arbitrary units)
