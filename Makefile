@@ -4,7 +4,7 @@
 export WITH_DEBUG = 1
 
 # Compile debug version
-export DEBUG = 1
+#export DEBUG = 1
 
 # Profiling with gprof
 # export PROFILE = 1
@@ -206,7 +206,7 @@ srcdist:
 		 $(NAME)/.exclude $(NAME)/ChangeLog \
 		 $(NAME)/src $(NAME)/examples \
 		 $(NAME)/DB $(NAME)/$(DCDIR) $(NAME)/$(SCALERDIR) \
-		 $(NAME)/Makefile $(NAME)/RELEASE_NOTES $(NAME)/docs
+		 $(NAME)/Makefile $(NAME)/docs
 
 cvsdist:	srcdist
 		cp ../$(NAME).tar.gz ../$(NAME)-cvs.tar.gz
