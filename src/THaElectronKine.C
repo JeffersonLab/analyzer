@@ -87,7 +87,7 @@ THaAnalysisObject::EStatus THaElectronKine::Init( const TDatime& run_time )
 }
 
 //_____________________________________________________________________________
-Int_t THaElectronKine::Process()
+Int_t THaElectronKine::Process( const THaEvData& evdata )
 {
   // Calculate electron kinematics for the Golden Track of the spectrometer
 

@@ -99,7 +99,7 @@ THaAnalysisObject::EStatus THaTwoarmVertex::Init( const TDatime& run_time )
 }
 
 //_____________________________________________________________________________
-Int_t THaTwoarmVertex::Process()
+Int_t THaTwoarmVertex::Process( const THaEvData& evdata )
 {
   // Calculate the intersection point.
 

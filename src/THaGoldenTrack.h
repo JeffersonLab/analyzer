@@ -29,7 +29,7 @@ public:
   Int_t             GetIndex()     const { return fIndex; }
 
   virtual EStatus   Init( const TDatime& run_time );
-  virtual Int_t     Process();
+  virtual Int_t     Process( const THaEvData& evdata );
           void      SetSpectrometer( const char* name );
 
 protected:

@@ -34,7 +34,7 @@ public:
   Double_t          GetTargetMass() const { return fMA; }
 
   virtual EStatus   Init( const TDatime& run_time );
-  virtual Int_t     Process();
+  virtual Int_t     Process( const THaEvData& );
           void      SetSpectrometer( const char* name );
 
 protected:

@@ -13,6 +13,7 @@
 #include <string>
 #include <cstdio>
 
+class THaEvData;
 class TDatime;
 class TList;
 struct VarDef;

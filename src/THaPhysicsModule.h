@@ -17,7 +17,7 @@ public:
           bool  IsSingleTrack() const { return !IsMultiTrack(); }
           bool  IsMultiTrack()  const { return fMultiTrk; }
 
-  virtual Int_t Process() = 0;
+  virtual Int_t Process( const THaEvData& ) = 0;
 
   // Special return codes for Process()
   enum ESpecialRetval { kFatal     = -16768,

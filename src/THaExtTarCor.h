@@ -29,7 +29,7 @@ public:
   THaTrackInfo*     GetTrackInfo() { return fTrkIfo; }
 
   virtual EStatus   Init( const TDatime& run_time );
-  virtual Int_t     Process();
+  virtual Int_t     Process( const THaEvData& );
           void      SetModuleNames( const char* spectro, const char* vertex="" );
 
 protected:

@@ -28,7 +28,7 @@ public:
   const TVector3&   GetVertex()  const { return fVertex; }
 
   virtual EStatus   Init( const TDatime& run_time );
-  virtual Int_t     Process();
+  virtual Int_t     Process( const THaEvData& );
           void      SetSpectrometers( const char* name1, const char* name2 );
 
 protected:

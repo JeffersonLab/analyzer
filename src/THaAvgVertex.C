@@ -90,7 +90,7 @@ THaAnalysisObject::EStatus THaAvgVertex::Init( const TDatime& run_time )
 }
 
 //_____________________________________________________________________________
-Int_t THaAvgVertex::Process()
+Int_t THaAvgVertex::Process( const THaEvData& evdata )
 {
   // Calculate the average vertex coordinates and uncertainties.
 
