@@ -5,16 +5,16 @@
 //                                                                           //
 // THaVDCUVTrack                                                             //
 //                                                                           //
-// Class for UV Tracks                                                       //
 ///////////////////////////////////////////////////////////////////////////////
-#include <TObject.h>
-#include <TClonesArray.h>
+
+#include "THaCluster.h"
+#include "TVector3.h"
 
 class THaVDCCluster;
 class THaVDCUVPlane;
 class THaTrack;
 
-class THaVDCUVTrack : public TObject {
+class THaVDCUVTrack : public THaCluster {
 
 private:
 
@@ -38,7 +38,7 @@ public:
   void SetUCluster( THaVDCCluster* clust)  { fUClust = clust;}
   void SetVCluster( THaVDCCluster* clust)  { fVClust = clust;}
   void SetUVPlane( THaVDCUVPlane* plane)   { fUVPlane = plane;}
-  void SetTrack( THaTrack* track);
+  void SetTrack( THaTrack* track)          { fTrack = track; }
   void SetPartner( THaVDCUVTrack* partner) { fPartner = partner;}
   void SetX( Double_t x )                  { fX = x;}
   void SetY( Double_t y )                  { fY = y;}
@@ -46,6 +46,8 @@ public:
   void SetPhi( Double_t phi )              { fPhi = phi;} 
   void Set( Double_t x, Double_t y, Double_t theta, Double_t phi )
   { fX = x; fY = y; fTheta = theta; fPhi = phi; }
+  void Set( Double_t x, Double_t y, Double_t theta, Double_t phi,
+	    TVector3& offset );
 
 protected:
   THaVDCCluster* fUClust;       // Cluster in the U plane
@@ -60,12 +62,24 @@ protected:
   Double_t fTheta; // Angle between z-axis and projection of track into xz plane
   Double_t fPhi;   // Angle between z-axis and projection of track into yz plane
   
+  // Hide copy ctor and op=
   THaVDCUVTrack( const THaVDCUVTrack& ) {}
   THaVDCUVTrack& operator=( const THaVDCUVTrack& ) { return *this; }
 
-  
   ClassDef(THaVDCUVTrack,0)             // VDCUVTrack class
 };
+
+//-------------------- inlines -------------------------------------------------
+inline
+void THaVDCUVTrack::Set( Double_t x, Double_t y, Double_t theta, Double_t phi,
+			 TVector3& offset )
+{
+  // Set coordinates for this track. Also set absolute position vector.
+
+  Set( x, y, theta, phi );
+  fCenter.SetXYZ( x, y, 0.0 );
+  fCenter += offset;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 

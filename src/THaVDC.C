@@ -15,13 +15,14 @@
 #include "THaEvData.h"
 #include "THaDetMap.h"
 #include "THaTrack.h"
-#include "TMath.h"
-#include "TClonesArray.h"
 #include "THaVDCUVPlane.h"
 #include "THaVDCUVTrack.h"
 #include "THaVDCCluster.h"
 #include "THaVDCTrackID.h"
 #include "THaVDCTrackPair.h"
+#include "TMath.h"
+#include "TClonesArray.h"
+#include "TList.h"
 #include "VarDef.h"
 
 #ifdef WITH_DEBUG
@@ -89,7 +90,7 @@ Int_t THaVDC::SetupDetector( const TDatime& date )
   fNumIter = 1;      // Number of iterations for FineTrack()
   fErrorCutoff = 1e100;
 
-  // FIXME: Set geometry data (fOrigin) 
+  // FIXME: Set geometry data (fOrigin). Currently fOrigin = (0,0,0).
 
   fIsInit = true;
   return kOK;
@@ -371,6 +372,8 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 	  AddTrack(*tracks, 0.0, transTheta, transPhi, transX, transY);
 	theTrack->SetID( thisID );
 	theTrack->SetCreator( this );
+	theTrack->AddCluster( track );
+	theTrack->AddCluster( partner );
 	flag |= kReassigned;
       }
       theTrack->SetFlag( flag );

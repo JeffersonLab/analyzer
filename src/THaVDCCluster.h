@@ -7,7 +7,6 @@
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "THaCluster.h"
 #include "TObject.h"
 
 class THaVDCHit;
@@ -15,11 +14,11 @@ class THaVDCPlane;
 //class THaVDCUVTrack;
 //class THaTrack;
 
-class THaVDCCluster : public THaCluster {
+class THaVDCCluster : public TObject {
 
 public:
   THaVDCCluster( THaVDCPlane* owner = NULL ) :
-    fPlane(owner), fSlope(0.0), fSigmaSlope(0.0), fInt(0.0),
+    fPlane(owner), fSize(0), fSlope(0.0), fSigmaSlope(0.0), fInt(0.0),
     fSigmaInt(0.0), fT0(0.0), fPivot(NULL) {}
   THaVDCCluster( const THaVDCCluster&);
   THaVDCCluster& operator=( const THaVDCCluster& );
@@ -43,6 +42,7 @@ public:
   THaVDCHit**    GetHits()                 { return fHits; } // Get array of pointers
   THaVDCHit *    GetHit(Int_t i)     const { return fHits[i]; }
   THaVDCPlane*   GetPlane()          const { return fPlane; }
+  Int_t          GetSize ()          const { return fSize; }
   Double_t       GetSlope()          const { return fSlope; }
   Double_t       GetSigmaSlope()     const { return fSigmaSlope; }
   Double_t       GetIntercept()      const { return fInt; }
@@ -63,6 +63,7 @@ protected:
 
   THaVDCHit*     fHits[MAX_SIZE];    // [fSize] Hits associated w/this cluster
   THaVDCPlane*   fPlane;             // Plane the cluster belongs to
+  Int_t          fSize;              // Size of cluster (no. of hits)
   //  THaVDCUVTrack * fUVTrack;      // UV Track the cluster belongs to
   //  THaTrack * fTrack;             // Track the cluster belongs to
 

@@ -21,7 +21,7 @@ const Double_t THaVDCCluster::kBig = 1e307;  // Arbitrary large value
 
 //_____________________________________________________________________________
 THaVDCCluster::THaVDCCluster( const THaVDCCluster& rhs ) :
-  THaCluster(rhs), fPlane(rhs.fPlane), fSlope(rhs.fSlope), 
+  fPlane(rhs.fPlane), fSize(rhs.fSize), fSlope(rhs.fSlope), 
   fSigmaSlope(rhs.fSigmaSlope), fInt(rhs.fInt), fSigmaInt(rhs.fSigmaInt), 
   fT0(rhs.fT0), fPivot(rhs.fPivot)
 {
@@ -36,8 +36,9 @@ THaVDCCluster& THaVDCCluster::operator=( const THaVDCCluster& rhs )
 {
   // Assignment operator
 
-  THaCluster::operator=( rhs );
+  TObject::operator=( rhs );
   if( this != &rhs ) {
+    fSize       = rhs.fSize;
     fPlane      = rhs.fPlane;
     fSlope      = rhs.fSlope;
     fSigmaSlope = rhs.fSigmaSlope;
@@ -69,7 +70,6 @@ void THaVDCCluster::Clear( const Option_t* opt )
 {
   // Clear the contents of the cluster
 
-  THaCluster::Clear( opt );
   ClearFit();
   fPivot = NULL;
   fPlane = NULL;
@@ -269,7 +269,6 @@ void THaVDCCluster::Print( Option_t* opt ) const
 {
   // Print contents of cluster
 
-  THaCluster::Print( opt );
   if( fPlane )
     cout << "Plane: " << fPlane->GetPrefix() << endl;
   cout << "Size: " << fSize << endl;

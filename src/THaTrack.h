@@ -26,7 +26,7 @@ public:
     fX(0.0), fY(0.0), fClusters(NULL), fPIDinfo(NULL), fVertex(NULL),
     fSpectrometer(NULL), fID(NULL), fFlag(0) {}
   THaTrack( Double_t p, Double_t theta, Double_t phi, Double_t x, Double_t y,
-	    const THaSpectrometer* s=NULL, THaPIDinfo* pid=NULL, 
+	    THaSpectrometer* s=NULL, THaPIDinfo* pid=NULL, 
 	    THaVertex* vertex=NULL, THaTrackID* id=NULL );
   virtual ~THaTrack();
 
@@ -59,11 +59,11 @@ public:
                                                    { fSpectrometer = s; }
   void              SetVertex( THaVertex* v )      { fVertex   = v; }
 
-  const THaTrackingDetector* GetCreator() const      { return fCreator; }
-  const TList*               GetClusters() const     { return fClusters; }
-  const THaSpectrometer*     GetSpectrometer() const { return fSpectrometer; }
-  THaPIDinfo*                GetPIDinfo() const      { return fPIDinfo; }
-  THaVertex*                 GetVertex() const       { return fVertex; }
+  THaTrackingDetector* GetCreator()    const       { return fCreator; }
+  TList*             GetClusters()     const       { return fClusters; }
+  THaSpectrometer*   GetSpectrometer() const       { return fSpectrometer; }
+  THaPIDinfo*        GetPIDinfo()      const       { return fPIDinfo; }
+  THaVertex*         GetVertex()       const       { return fVertex; }
 
 protected:
 
@@ -76,13 +76,13 @@ protected:
   Double_t          fX;              // x position in focal plane (m)
   Double_t          fY;              // y position (m)
 
-  TList*                      fClusters;     // clusters of this track
-  THaPIDinfo*                 fPIDinfo;      // particle ID information for this track
-  THaVertex*                  fVertex;       // reconstructed vertex quantities
-  const THaSpectrometer*      fSpectrometer; // spectrometer this track belongs to
-  const THaTrackingDetector*  fCreator;      // Detector creating this track
-  THaTrackID*                 fID;           // Track identifier
-  UInt_t                      fFlag;         // Status flag
+  TList*            fClusters;       // clusters of this track
+  THaPIDinfo*       fPIDinfo;        // particle ID information for this track
+  THaVertex*        fVertex;         // reconstructed vertex quantities
+  THaSpectrometer*  fSpectrometer;   // spectrometer this track belongs to
+  THaTrackingDetector* fCreator;     // Detector creating this track
+  THaTrackID*       fID;             // Track identifier
+  UInt_t            fFlag;           // Status flag
 
   void              CalcPxyz();
 

@@ -74,13 +74,13 @@ protected:
   Int_t fMinTime, fMaxTime;  // Min and Max limits of TDC times for clusters
   Int_t fFlags;              // Analysis control flags
 
-  Double_t fZ;        // Z coordinate of planes in U1 coord sys (m)
-  Double_t fWBeg;     // Position of 1-st wire in E-arm coord sys (m)
-  Double_t fWSpac;    // Wires spacing and direction (m)
-  Double_t fWAngle;   // Angle between dispersive direction and direction of 
-                      // decreasing wire number (rad)
-  Double_t fTDCRes;   // TDC Resolution ( s / channel)
-  Double_t fDriftVel; // Drift velocity in the wire plane (m/s)
+  Double_t fZ;            // Z coordinate of planes in U1 coord sys (m)
+  Double_t fWBeg;         // Position of 1-st wire in E-arm coord sys (m)
+  Double_t fWSpac;        // Wires spacing and direction (m)
+  Double_t fWAngle;       // Angle between dispersive direction and direction of 
+                          // decreasing wire number (rad)
+  Double_t fTDCRes;       // TDC Resolution ( s / channel)
+  Double_t fDriftVel;     // Drift velocity in the wire plane (m/s)
 
   THaDetectorBase* fVDC;  // VDC detector to which this plane belongs
 

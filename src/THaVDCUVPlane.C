@@ -208,7 +208,7 @@ Int_t THaVDCUVPlane::CalcUVTrackCoords()
     Double_t detTheta = (mu*fSin_v - mv*fSin_u) / fSin_vu;
     Double_t detPhi   = (mv*fCos_u - mu*fCos_v) / fSin_vu;
 
-    track->Set( detX, detY, detTheta, detPhi );
+    track->Set( detX, detY, detTheta, detPhi, fOrigin );
   }
 
   return nUVTracks;

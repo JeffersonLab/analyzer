@@ -23,7 +23,7 @@ ClassImp(THaTrack)
 //_____________________________________________________________________________
 THaTrack::THaTrack( Double_t p, Double_t theta, Double_t phi, 
 		    Double_t x, Double_t y, 
-		    const THaSpectrometer* s, 
+		    THaSpectrometer* s, 
 		    THaPIDinfo* pid, 
 		    THaVertex* vertex,
 		    THaTrackID* id )
@@ -78,11 +78,13 @@ Int_t THaTrack::AddCluster( THaCluster* cluster )
 {
   // Add a cluster to the internal list
 
-  if( !cluster ) 
+#ifdef WITH_DEBUG
+  if( !cluster )
     return 1;
   TClass* c = cluster->IsA();
   if( !c || !c->InheritsFrom("THaCluster") )
     return 2;
+#endif
 
   fClusters->Add( cluster );
   return 0;
