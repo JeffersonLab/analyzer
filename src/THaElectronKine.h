@@ -1,9 +1,9 @@
-#ifndef ROOT_THaPhysElectronKine
-#define ROOT_THaPhysElectronKine
+#ifndef ROOT_THaElectronKine
+#define ROOT_THaElectronKine
 
 //////////////////////////////////////////////////////////////////////////
 //
-// THaPhysElectronKine
+// THaElectronKine
 //
 //////////////////////////////////////////////////////////////////////////
 
@@ -12,11 +12,11 @@
 
 class THaSpectrometer;
 
-class THaPhysElectronKine : public THaPhysicsModule {
+class THaElectronKine : public THaPhysicsModule {
   
 public:
-  THaPhysElectronKine( const char* name, const char* description );
-  virtual ~THaPhysElectronKine();
+  THaElectronKine( const char* name, const char* description );
+  virtual ~THaElectronKine();
   
   virtual void      Clear( Option_t* opt="" );
 
@@ -50,9 +50,9 @@ protected:
 
   Double_t          fMA;           // Effective mass of target
 
-  THaPhysElectronKine() : fMA(0.0), fSpectro(NULL) {}
-  THaPhysElectronKine( const THaPhysElectronKine& ) {}
-  THaPhysElectronKine& operator=( const THaPhysElectronKine& ) 
+  THaElectronKine() : fMA(0.0), fSpectro(NULL) {}
+  THaElectronKine( const THaElectronKine& ) {}
+  THaElectronKine& operator=( const THaElectronKine& ) 
     { return *this; }
 
   virtual Int_t DefineVariables( EMode mode = kDefine );
@@ -61,12 +61,12 @@ protected:
   TString                 fSpectroName;  // Name of spectrom. to consider
   const THaSpectrometer*  fSpectro;      // Pointer to spectrometer object
 
-  ClassDef(THaPhysElectronKine,0)   //Single arm kinematics module
+  ClassDef(THaElectronKine,0)   //Single arm kinematics module
 };
 
 //_________ inlines __________________________________________________________
 
-inline void THaPhysElectronKine::SetSpectrometer( const char* name ) {
+inline void THaElectronKine::SetSpectrometer( const char* name ) {
   fSpectroName = name; 
 }
 

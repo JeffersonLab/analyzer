@@ -1,9 +1,9 @@
-#ifndef ROOT_THaPhysVertex
-#define ROOT_THaPhysVertex
+#ifndef ROOT_THaReactionPoint
+#define ROOT_THaReactionPoint
 
 //////////////////////////////////////////////////////////////////////////
 //
-// THaPhysVertex
+// THaReactionPoint
 //
 //////////////////////////////////////////////////////////////////////////
 
@@ -13,12 +13,12 @@
 class THaSpectrometer;
 class THaBeam;
 
-class THaPhysVertex : public THaPhysicsModule {
+class THaReactionPoint : public THaPhysicsModule {
   
 public:
-  THaPhysVertex( const char* name, const char* description,
-		 const char* spectro="", const char* beam="" );
-  virtual ~THaPhysVertex();
+  THaReactionPoint( const char* name, const char* description,
+		    const char* spectro="", const char* beam="" );
+  virtual ~THaReactionPoint();
   
   virtual EStatus   Init( const TDatime& run_time );
   virtual Int_t     Process();
@@ -27,27 +27,27 @@ public:
 
 protected:
 
-  THaPhysVertex() : fSpectro(NULL), fBeam(NULL) {}
-  THaPhysVertex( const THaPhysVertex& ) {}
-  THaPhysVertex& operator=( const THaPhysVertex& ) { return *this; }
+  THaReactionPoint() : fSpectro(NULL), fBeam(NULL) {}
+  THaReactionPoint( const THaReactionPoint& ) {}
+  THaReactionPoint& operator=( const THaReactionPoint& ) { return *this; }
 
   TString                 fSpectroName;  // Name of spectrom. to consider
   const THaSpectrometer*  fSpectro;      // Pointer to spectrometer object
   TString                 fBeamName;     // Name of beam position apparatus
   const THaBeam*          fBeam;         // Pointer to beam position apparatus
 
-  ClassDef(THaPhysVertex,0)   //Single arm kinematics module
+  ClassDef(THaReactionPoint,0)   //Single arm track-beam vertex module
 };
 
 //_________ inlines __________________________________________________________
 inline 
-void THaPhysVertex::SetSpectrometer( const char* name ) {
+void THaReactionPoint::SetSpectrometer( const char* name ) {
   fSpectroName = name; 
 }
 
 //_____________________________________________________________________________
 inline
-void THaPhysVertex::SetBeam( const char* name ) {
+void THaReactionPoint::SetBeam( const char* name ) {
   fBeamName = name; 
 }
 

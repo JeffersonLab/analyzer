@@ -2,13 +2,13 @@
 
 //////////////////////////////////////////////////////////////////////////
 //
-// THaPhysElectronKine
+// THaElectronKine
 //
-// Calculate electron kinematics
+// Calculate standard electron kinematics for a single spectrometer.
 //
 //////////////////////////////////////////////////////////////////////////
 
-#include "THaPhysElectronKine.h"
+#include "THaElectronKine.h"
 #include "THaSpectrometer.h"
 #include "THaTrack.h"
 #include "THaRun.h"
@@ -17,11 +17,11 @@
 #include "TVector3.h"
 #include "TMath.h"
 
-ClassImp(THaPhysElectronKine)
+ClassImp(THaElectronKine)
 
 //_____________________________________________________________________________
-THaPhysElectronKine::THaPhysElectronKine( const char* name, 
-					  const char* description ) :
+THaElectronKine::THaElectronKine( const char* name, 
+				  const char* description ) :
   THaPhysicsModule(name,description), fMA(0.0), fSpectro(NULL)
 {
   // Normal constructor.
@@ -29,7 +29,7 @@ THaPhysElectronKine::THaPhysElectronKine( const char* name,
 }
 
 //_____________________________________________________________________________
-THaPhysElectronKine::~THaPhysElectronKine()
+THaElectronKine::~THaElectronKine()
 {
   // Destructor
 
@@ -37,7 +37,7 @@ THaPhysElectronKine::~THaPhysElectronKine()
 }
 
 //_____________________________________________________________________________
-void THaPhysElectronKine::Clear( Option_t* opt )
+void THaElectronKine::Clear( Option_t* opt )
 {
   // Clear all internal variables.
 
@@ -46,7 +46,7 @@ void THaPhysElectronKine::Clear( Option_t* opt )
 }
 
 //_____________________________________________________________________________
-Int_t THaPhysElectronKine::DefineVariables( EMode mode )
+Int_t THaElectronKine::DefineVariables( EMode mode )
 {
   // Define/delete standard variables for a spectrometer (tracks etc.)
   // Can be overridden or extended by derived (actual) apparatuses
@@ -71,7 +71,7 @@ Int_t THaPhysElectronKine::DefineVariables( EMode mode )
 }
 
 //_____________________________________________________________________________
-THaAnalysisObject::EStatus THaPhysElectronKine::Init( const TDatime& run_time )
+THaAnalysisObject::EStatus THaElectronKine::Init( const TDatime& run_time )
 {
   // Initialize the module.
   // Locate the spectrometer apparatus named in fSpectroName and save
@@ -87,7 +87,7 @@ THaAnalysisObject::EStatus THaPhysElectronKine::Init( const TDatime& run_time )
 }
 
 //_____________________________________________________________________________
-Int_t THaPhysElectronKine::Process()
+Int_t THaElectronKine::Process()
 {
   // Calculate electron kinematics for the Golden Track of the spectrometer
 
@@ -124,7 +124,7 @@ Int_t THaPhysElectronKine::Process()
 }
 
 //_____________________________________________________________________________
-Int_t THaPhysElectronKine::ReadRunDatabase( FILE* f, const TDatime& date )
+Int_t THaElectronKine::ReadRunDatabase( FILE* f, const TDatime& date )
 {
   // Qeury the run database. Currently queries for the target mass.
   // First searches for "<prefix>.MA", then, if not found, for "MA".
