@@ -120,7 +120,7 @@ Int_t THaRTTI::Find( TClass* cl, TString& var,
     subscript = subscript(i,subscript.Length()-i);
     atype = kFixed;
 
-  } else if( array_index && (strlen(array_index) > 0) && m->IsaPointer() ) {
+  } else if( array_index && *array_index && m->IsaPointer() ) {
     // If no explicit dimensions given, but the variable is a pointer
     // and there is an array subscript given in the comment ( // [fN] ), 
     // then we have a variable-size array.  The subscript variable in the

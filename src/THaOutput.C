@@ -340,8 +340,7 @@ Int_t THaOutput::LoadFile( const char* filename )
   // Process the file that defines the output
   
   Int_t idx;
-  if( !filename || !strlen(filename) || strspn(filename," ") == 
-      strlen(filename) ) {
+  if( !filename || !*filename || strspn(filename," ") == strlen(filename) ) {
     ::Error( "THaOutput::LoadFile", "invalid file name, "
 	     "no output definition loaded" );
     return -1;

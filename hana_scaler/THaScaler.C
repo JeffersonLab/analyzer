@@ -56,7 +56,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <string>
-#include <cstring>
 
 #include <iostream>
 
@@ -70,7 +69,7 @@ THaScaler::THaScaler( const char* bankgr ) {
 // by database THaScalerDB.
 // 'bankgr' is group of scaler banks, "Left"(L-arm), "Right"(R-arm), "RCS"
 //     or "EvLeft" or "EvRight" for synchronous readout
-  if( !bankgr || strlen(bankgr) == 0 ) {
+  if( !bankgr || !*bankgr ) {
     MakeZombie();
     return;
   }

@@ -101,12 +101,12 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
   bool found = false;
   while (!found && fgets (buff, LEN, file) != NULL) {
     char* buf = ::Compress(buff);  //strip blanks
-    if( strlen(buf) > 0 && buf[ strlen(buf)-1 ] == '\n' )
-      buf[ strlen(buf)-1 ] = 0;    //delete trailing newline
-    line = buf; line.ToLower();
+    line = buf;
+    delete [] buf;
+    if( line.EndsWith("\n") ) line.Chop();  //delete trailing newline
+    line.ToLower();
     if ( tag == line ) 
       found = true;
-    delete [] buf;
   }
   if( !found ) {
     Error(Here(here), "Database entry \"%s\" not found!", tag2.Data() );

@@ -209,7 +209,7 @@ FILE* THaAnalysisObject::OpenFile( const char *name, const TDatime& date,
   // Open database file and return a pointer to the C-style file descriptor.
 
   // Ensure input is sane
-  if( !name || strlen(name) == 0 )
+  if( !name || !*name )
     return NULL;
   if( !here )
     here="";
@@ -363,7 +363,7 @@ void THaAnalysisObject::MakePrefix( const char* basename )
   //   fPrefix = GetName() + "."
 
   delete [] fPrefix;
-  if( basename && strlen(basename) > 0 ) {
+  if( basename && *basename ) {
     fPrefix = new char[ strlen(basename) + strlen(GetName()) + 3 ];
     strcpy( fPrefix, basename );
     strcat( fPrefix, "." );
@@ -381,7 +381,7 @@ void THaAnalysisObject::SetName( const char* name )
 {
   // Set/change the name of the object.
 
-  if( !name || strlen(name) == 0 ) {
+  if( !name || !*name ) {
     Warning( Here("SetName()"),
 	     "Cannot set an empty object name. Name not set.");
     return;
@@ -767,9 +767,9 @@ Int_t THaAnalysisObject::SeekDBconfig( FILE* file, const char* tag,
   // Useful for segmenting databases (esp. VDC) for different
   // experimental configurations.
 
-  if( !file || !tag || !strlen(tag) ) return 0;
+  if( !file || !tag || !*tag ) return 0;
   string _label("[");
-  if( label && strlen(label)>0 ) {
+  if( label && *label ) {
     _label.append(label);  _label.append("=");
   }
   ssiz_t llen = _label.size();
@@ -838,7 +838,7 @@ THaAnalysisObject* THaAnalysisObject::FindModule( const char* name,
 
   EStatus save_status = fStatus;
   fStatus = kInitError;
-  if( !name || strlen(name) == 0 ) {
+  if( !name || !*name ) {
     Error( Here(here), "No module name given." );
     return NULL;
   }
@@ -852,7 +852,7 @@ THaAnalysisObject* THaAnalysisObject::FindModule( const char* name,
 	   obj->GetName(), obj->GetTitle(), anaobj );
     return NULL;
   }
-  if( classname && strlen(classname) > 0 && strcmp(classname,anaobj) &&
+  if( classname && *classname && strcmp(classname,anaobj) &&
       !obj->IsA()->InheritsFrom( classname )) {
     Error( Here(here), "Module %s (%s) is not a %s.",
 	   obj->GetName(), obj->GetTitle(), classname );

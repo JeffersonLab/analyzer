@@ -9,8 +9,6 @@
 #include "THaDetector.h"
 #include "THaApparatus.h"
 
-#include <cstring>
-
 ClassImp(THaDetector)
 
 //_____________________________________________________________________________
@@ -20,7 +18,7 @@ THaDetector::THaDetector( const char* name, const char* description,
 {
   // Constructor
 
-  if( !name || strlen(name) == 0 ) {
+  if( !name || !*name ) {
     Error( "THaDetector()", "Must construct detector with valid name! "
 	   "Object construction failed." );
     MakeZombie();
