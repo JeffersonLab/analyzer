@@ -35,6 +35,8 @@ protected:
   THaSpectrometer*        fSpectro;      // Pointer to spectrometer object
   THaBeam*                fBeam;         // Pointer to beam position apparatus
 
+  virtual Int_t DefineVariables( EMode mode = kDefine );
+
   ClassDef(THaReactionPoint,0)   //Single arm track-beam vertex module
 };
 

@@ -45,6 +45,7 @@ THaReactionPoint::~THaReactionPoint()
 {
   // Destructor
 
+  DefineVariables( kDelete );
 }
 
 //_____________________________________________________________________________
@@ -53,6 +54,23 @@ void THaReactionPoint::Clear( Option_t* opt )
   // Clear all event-by-event variables.
   
   VertexClear();
+}
+
+//_____________________________________________________________________________
+Int_t THaReactionPoint::DefineVariables( EMode mode )
+{
+  // Define/delete analysis variables
+
+  if( mode == kDefine && fIsSetup ) return kOK;
+  fIsSetup = ( mode == kDefine );
+
+  RVarDef vars[] = {
+    { "x",  "vertex x-position", "fVertex.fX" },
+    { "y",  "vertex y-position", "fVertex.fY" },
+    { "z",  "vertex z-position", "fVertex.fZ" },
+    { 0 }
+  };
+  return DefineVarsFromList( vars, mode );
 }
 
 //_____________________________________________________________________________
