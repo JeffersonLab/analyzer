@@ -43,7 +43,8 @@ public:
     kCoarse        = BIT(14), // Coarse track
     kFine          = BIT(15), // Fine track
     kReassigned    = BIT(16), // Track is a new track in Fine stage
-    kMultiTrack    = BIT(17)  // Track was generated in the multitrack analysis
+    kMultiTrack    = BIT(17), // Track was generated in the multitrack analysis
+    kBadTrack      = BIT(18)  // Track prematurely exists the spectrometer or similar
   };
 
   // Bits and bit masks for this object
@@ -78,11 +79,21 @@ protected:
   Int_t    fNumIter;        // Number of iterations for FineTrack()
   Double_t fErrorCutoff;    // Cut on track matching error
 
+  Double_t fCentralDist;    // the path length of the central ray from
+                            // the origin of the transport coordinates to 
+                            // the s1 plane
+
   // declarations for target vertex reconstruction
   typedef enum {
     kTransport,
     kRotatingTransport
   } ECoordTypes;
+
+  typedef enum {
+    T000 = 0,
+    Y000,
+    P000
+  } EFPMatrixElemTags;
     
   enum {
       kPORDER = 7
@@ -91,8 +102,7 @@ protected:
   // private class for storing matrix element data
   class THaMatrixElement {
   public:
-    THaMatrixElement() : iszero(true), pw(3), 
-                          order(0), v(0), poly(kPORDER) {}
+    THaMatrixElement() : iszero(true), pw(3), order(0), v(0), poly(kPORDER) {}
     THaMatrixElement& operator=( const THaMatrixElement& ) { return *this; }
 
     bool iszero;             // whether the element is zero
@@ -128,6 +138,9 @@ protected:
 
   void ProjToTransPlane(Double_t& x, Double_t& y, Double_t& z, 
 			Double_t& th, Double_t& ph);
+
+  void CorrectTimeOfFlight(TClonesArray& tracks);
+  void FindBadTracks(TClonesArray &tracks);
 
   virtual Int_t SetupDetector( const TDatime& date );
 

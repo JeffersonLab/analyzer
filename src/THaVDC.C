@@ -20,11 +20,15 @@
 #include "THaVDCCluster.h"
 #include "THaVDCTrackID.h"
 #include "THaVDCTrackPair.h"
+#include "THaVDCHit.h"
+#include "THaScintillator.h"
+#include "THaApparatus.h"
 #include "TMath.h"
 #include "TClonesArray.h"
 #include "TList.h"
 #include "VarDef.h"
 //#include <algorithm>
+#include "TROOT.h"
 
 #ifdef WITH_DEBUG
 #include "THaGlobals.h"
@@ -112,114 +116,83 @@ Int_t THaVDC::ReadDatabase( FILE* file, const TDatime& date )
   fscanf(file, "%lf", &fSpacing);
   fgets(buff, LEN, file); // Skip rest of line
 
-  cout<<"VDC Angle: "<<fVDCAngle<<"  plane spacing: "<<fSpacing<<endl;
-
   fgets(buff, LEN, file); // Skip line
 
   // now, read in the focal plane transfer elements
   // NOTE: the matrix elements should be stored such that
-  // T000, Y000, and P000 are first, in that order, then come the
-  // rest of them beginning with D000
-  /** FIXME: need to simplify input code **/
-  char w;
-  int i,j,k;
-  vector<double> poly(kPORDER);
+  // the 3 focal plane matrix elements come first, then come
+  // the other backwards elements, starting with D000
   THaMatrixElement temp_elem;
+  char w;
   
+  // initialize some values
+  temp_elem.pw[0] = 0;  temp_elem.pw[1] = 0;  temp_elem.pw[2] = 0;
+
   // read in T000 and verify it
-  if( (fscanf(file, "%c %d %d %d", &w, &i, &j, &k) != 4) ||
-      (w!='T') || (i!=0) || (j!=0) || (k!=0) ) {
-    Error(Here(here), "Matrix Element T000 not found!");
-    return kInitError;
-  }
-  for(int p_cnt=0; p_cnt<kPORDER; p_cnt++)
-    if(!fscanf(file, "%le", &poly[p_cnt])) {
+  temp_elem.iszero = true;  temp_elem.order = 0;
+  for(int p_cnt=0; p_cnt<kPORDER; p_cnt++) {
+    if(!fscanf(file, "%le", &temp_elem.poly[p_cnt])) {
       Error(Here(here), "Could not read in Matrix Element T000!");
       return kInitError;
     }
-  // assign data
-  temp_elem.pw[0] = i; temp_elem.pw[1] = j; temp_elem.pw[2] = k;
-  temp_elem.poly = poly;
-    for(int j=0; j<kPORDER; j++)
-      if(poly[j] != 0.0) {
-	temp_elem.iszero = false;
-	temp_elem.order = j;
-      }
+
+    if(temp_elem.poly[p_cnt] != 0.0) {
+      temp_elem.iszero = false;
+      temp_elem.order = p_cnt;
+    }
+  }
   fFPMatrixElems.push_back(temp_elem);
 
   // read in Y000 and verify it
-  fscanf(file, "%*c");
-  if( (fscanf(file, "%c %d %d %d", &w, &i, &j, &k) != 4) ||
-      (w!='Y') || (i!=0) || (j!=0) || (k!=0) ) {
-    Error(Here(here), "Matrix Element Y000 not found!");
-    return kInitError;
-  }
-  for(int p_cnt=0; p_cnt<kPORDER; p_cnt++)
-    if(!fscanf(file, "%le", &poly[p_cnt])) {
+  temp_elem.iszero = true;  temp_elem.order = 0;
+  for(int p_cnt=0; p_cnt<kPORDER; p_cnt++) {
+    if(!fscanf(file, "%le", &temp_elem.poly[p_cnt])) {
       Error(Here(here), "Could not read in Matrix Element Y000!");
       return kInitError;
     }
-  // assign data
-  temp_elem.pw[0] = i; temp_elem.pw[1] = j; temp_elem.pw[2] = k;
-  temp_elem.poly = poly;
-    for(int j=0; j<kPORDER; j++)
-      if(poly[j] != 0.0) {
-	temp_elem.iszero = false;
-	temp_elem.order = j;
-      }
+
+    if(temp_elem.poly[p_cnt] != 0.0) {
+      temp_elem.iszero = false;
+      temp_elem.order = p_cnt;
+    }
+  }
   fFPMatrixElems.push_back(temp_elem);
 
-
   // read in P000 and verify it
-  fscanf(file, "%*c");
-  if( (fscanf(file, "%c %d %d %d", &w, &i, &j, &k) != 4) ||
-      (w!='P') || (i!=0) || (j!=0) || (k!=0) ) {
-    Error(Here(here), "Matrix Element P000 not found!");
-    return kInitError;
-  }
-  for(int p_cnt=0; p_cnt<kPORDER; p_cnt++)
-    if(!fscanf(file, "%le", &poly[p_cnt])) {
+  temp_elem.iszero = true;  temp_elem.order = 0;
+  for(int p_cnt=0; p_cnt<kPORDER; p_cnt++) {
+    if(!fscanf(file, "%le", &temp_elem.poly[p_cnt])) {
       Error(Here(here), "Could not read in Matrix Element P000!");
       return kInitError;
     }
-  // assign data
-  temp_elem.pw[0] = i; temp_elem.pw[1] = j; temp_elem.pw[2] = k;
-  temp_elem.poly = poly;
-    for(int j=0; j<kPORDER; j++)
-      if(poly[j] != 0.0) {
-	temp_elem.iszero = false;
-	temp_elem.order = j;
-      }
+
+    if(temp_elem.poly[p_cnt] != 0.0) {
+      temp_elem.iszero = false;
+      temp_elem.order = p_cnt;
+    }
+  }
   fFPMatrixElems.push_back(temp_elem);
-  
+
+
   // now, read in as many of the matrix elements as there are
   fscanf(file, "%*c");
-  while(fscanf(file, "%c %d %d %d", &w, &i, &j, &k) == 4) {
+  while(fscanf(file, "%c %d %d %d", &w, &temp_elem.pw[0], 
+	       &temp_elem.pw[1], &temp_elem.pw[2]) == 4) {
 
-    for(int p_cnt=0; p_cnt<kPORDER; p_cnt++)
-      if(!fscanf(file, "%le", &poly[p_cnt])) {
+    temp_elem.iszero = true;  temp_elem.order = 0;
+    for(int p_cnt=0; p_cnt<kPORDER; p_cnt++) {
+      if(!fscanf(file, "%le", &temp_elem.poly[p_cnt])) {
 	Error(Here(here), "Could not read in Matrix Element %c%d%d%d!",
-	      w, i, j, k);
+	      w, temp_elem.pw[0], temp_elem.pw[1], temp_elem.pw[2]);
 	return kInitError;
       }
-    
-    temp_elem.pw[0] = i;
-    temp_elem.pw[1] = j;
-    temp_elem.pw[2] = k;
-    temp_elem.poly = poly;
 
-    cout<<w<<" "<<i<<" "<<j<<" "<<k<<" ";
-    for(int i=0; i<kPORDER; i++)
-      cout<<poly[i]<<" ";
-    cout<<endl;
-
-    // calculate some fields
-    for(int j=0; j<kPORDER; j++)
-      if(poly[j] != 0.0) {
+      if(temp_elem.poly[p_cnt] != 0.0) {
 	temp_elem.iszero = false;
-	temp_elem.order = j;
+	temp_elem.order = p_cnt;
       }
-
+    }
+    
     /* decide which list of matrix elements to add it to */
     switch(w) {
     case 'D': fDMatrixElems.push_back(temp_elem); break;
@@ -246,22 +219,25 @@ Int_t THaVDC::SetupDetector( const TDatime& date )
   if( fIsSetup ) return kOK;
   fIsSetup = true;
 
-  // FIXME: Get these values from database file
-  //const Double_t degrad = TMath::Pi()/180.0;
-  //fVDCAngle *= degrad;
-  //fVDCAngle = -45.0887 *  degrad;  //Convert to radians
-  //fTan_vdc  = fT000.poly[0];   // tan(angle) stored as matrix element
-  fTan_vdc = fFPMatrixElems[0].poly[0];
+  const Float_t degrad = TMath::Pi()/180.0;
+  fTan_vdc = fFPMatrixElems[T000].poly[0];
   fVDCAngle = TMath::ATan(fTan_vdc);
   fSin_vdc  = TMath::Sin(fVDCAngle);
   fCos_vdc  = TMath::Cos(fVDCAngle);
-  //fTan_vdc = TMath::Tan(fVDCAngle);
-  //fSpacing = 0.3348; // Dist between similar wire planes (eg u1->u2) (m)
 
-  cout<<"Calculated VDC Angle: "<<(fVDCAngle*180.0)/TMath::Pi()<<endl;
+  DefineAxes((90.0 - fVDCAngle)*degrad);
 
   fNumIter = 1;      // Number of iterations for FineTrack()
   fErrorCutoff = 1e100;
+
+  // figure out the track length from the origin to the s1 plane
+  // since we take the VDC to be the origin of the coordinate
+  // space, this is actually pretty simple
+  const THaDetector *s1 = fApparatus->GetDetector("s1");
+  if(s1 == NULL)
+    fCentralDist = 0;
+  else
+    fCentralDist = s1->GetOrigin().Z();
 
   // FIXME: Set geometry data (fOrigin). Currently fOrigin = (0,0,0).
 
@@ -479,33 +455,6 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
     // If the 'tracks' array was given, add THaTracks to it 
     // (or modify existing ones).
     if (tracks) {
-      /*
-      // Calculate Transport coordinates from detector coordinates
-
-      // Note: If not in the focal plane of the spectrometer, transX and transZ
-      // need to include a term for the detector z position
-      Double_t transX = track->GetX() * fCos_vdc;
-      Double_t transY = track->GetY();
-      Double_t transZ = -track->GetX() * fSin_vdc;
-
-      Double_t transTheta = (detTheta + fTan_vdc) / (1.0 - detTheta * fTan_vdc);
-      Double_t transPhi = detPhi / (fCos_vdc - detTheta * fSin_vdc);
-
-#ifdef WITH_DEBUG
-      if( fDebug>2 )
-	cout << "Detector coordinates: "
-	     << transX << " " << transY << " " << transZ << " "
-	     << transTheta << " " << transPhi << endl;
-#endif
-      // Project these results into the transport plane (transZ = 0)
-      ProjToTransPlane(transX, transY, transZ, transTheta, transPhi);
-#ifdef WITH_DEBUG
-      if( fDebug>2 )
-	cout << "Projected coordinates: "
-	     << transX << " " << transY << " " << transZ << " "
-	     << transTheta << " " << transPhi << endl;
-#endif
-      */
 
       // Decide whether this is a new track or an old track 
       // that is being updated
@@ -530,43 +479,21 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
       if( nPairs > 1 )
 	flag |= kMultiTrack;
 
-      /*
-      if( found ) {
-#ifdef WITH_DEBUG
-	if( fDebug>0 )
-	  cout << "Track " << t << " modified.\n";
-#endif
-	theTrack->Set( 0.0, transTheta, transPhi, transX, transY );
-	delete thisID;
-	++n_mod;
-      } else {
-#ifdef WITH_DEBUG
-	if( fDebug>0 )
-	  cout << "Track " << tracks->GetLast()+1 << " added.\n";
-#endif
-	theTrack = 
-	  AddTrack(*tracks, 0.0, transTheta, transPhi, transX, transY);
-	theTrack->SetID( thisID );
-	theTrack->SetCreator( this );
-	theTrack->AddCluster( track );
-	theTrack->AddCluster( partner );
-	flag |= kReassigned;
-      }
-      */
       if(!found) {
 #ifdef WITH_DEBUG
 	if( fDebug>0 )
 	  cout << "Track " << tracks->GetLast()+1 << " added.\n";
 #endif
-	theTrack = 
-	  //	  AddTrack(*tracks, 0.0, transTheta, transPhi, transX, transY);
-	  AddTrack(*tracks, 0.0, 0.0, 0.0, 0.0, 0.0);
+	theTrack = AddTrack(*tracks, 0.0, 0.0, 0.0, 0.0, 0.0);
 	theTrack->SetID( thisID );
 	theTrack->SetCreator( this );
 	theTrack->AddCluster( track );
 	theTrack->AddCluster( partner );
 	flag |= kReassigned;
       }
+
+      theTrack->SetD(track->GetX(), track->GetY(), track->GetTheta(), 
+		     track->GetPhi());
 
       // calculate the transport coordinates
       CalcFocalPlaneCoords(track, theTrack, kRotatingTransport);
@@ -670,6 +597,9 @@ Int_t THaVDC::FineTrack( TClonesArray& tracks )
   fLower->FineTrack();
   fUpper->FineTrack();
 
+  //FindBadTracks(tracks);
+  //CorrectTimeOfFlight(tracks);
+
   // FIXME: Is angle information given to T2D converter?
   for (Int_t i = 0; i < fNumIter; i++) {
     ConstructTracks();
@@ -717,7 +647,7 @@ void THaVDC::CalcFocalPlaneCoords(const THaVDCUVTrack *the_track,
   double r_x, r_y, r_theta, r_phi;
   
   // tan rho (for the central ray) is stored as a matrix element 
-  tan_rho = fFPMatrixElems[0].poly[0];
+  tan_rho = fFPMatrixElems[T000].poly[0];
   cos_rho = 1.0/sqrt(1.0+tan_rho*tan_rho);
 
   // first calculate the transport frame coordinates
@@ -737,13 +667,13 @@ void THaVDC::CalcFocalPlaneCoords(const THaVDCUVTrack *the_track,
   else if (mode == kRotatingTransport)
     CalcMatrix(r_x, fFPMatrixElems);
 
-  r_y = y - fFPMatrixElems[1].v;  // Y000
+  r_y = y - fFPMatrixElems[Y000].v;  // Y000
 
   // Calculate now the tan(rho) and cos(rho) of the local rotation angle.
-  tan_rho_loc = fFPMatrixElems[0].v;   // T000
+  tan_rho_loc = fFPMatrixElems[T000].v;   // T000
   cos_rho_loc = 1.0/sqrt(1.0+tan_rho_loc*tan_rho_loc);
   
-  r_phi = (the_track->GetPhi() - fFPMatrixElems[2].v /* P000 */ ) / 
+  r_phi = (the_track->GetPhi() - fFPMatrixElems[P000].v /* P000 */ ) / 
           (1.0-the_track->GetTheta()*tan_rho_loc) / cos_rho_loc;
   r_theta = (the_track->GetTheta()+tan_rho_loc) /
 		       (1.0-the_track->GetTheta()*tan_rho_loc);
@@ -844,6 +774,100 @@ double THaVDC::CalcTargetVar(const vector<THaMatrixElement> &matrix,
 	              * powers[it->pw[2]][2];
 
   return retval;
+}
+
+//_____________________________________________________________________________
+void THaVDC::CorrectTimeOfFlight(TClonesArray &tracks)
+{
+  const static Double_t v = 3.0e-8;   // for now, assume that everything travels at c
+
+  // get scintillator planes
+  THaDetector *s1 = fApparatus->GetDetector("s1");
+  THaDetector *s2 = fApparatus->GetDetector("s2");
+
+  if( (s1 == NULL) || (s2 == NULL) )
+    return;
+
+  // adjusts caluculated times so that the time of flight to S1
+  // is the same as a track going through the middle of the VDC
+  // (i.e. x_det = 0) at a 45 deg angle (theta_t and phi_t = 0)
+  // assumes that at least the coarse tracking has been performed
+
+  int n_exist = tracks.GetLast()+1;
+  //cerr<<"num tracks: "<<n_exist<<endl;
+  for(int t = 0; t < n_exist; t++ ) {
+    THaTrack *track = static_cast<THaTrack*>( tracks.At(t) );
+    TList *clusters = track->GetClusters();
+    
+    // calculate the correction, since it's on a per track basis
+    Double_t s1_dist, s2_dist, vdc_dist, dist, tdelta;
+    if(!s1->CalcPathLen(track, s1_dist))
+      s1_dist = 0.0;
+    if(!this->CalcPathLen(track, vdc_dist))
+      vdc_dist = 0.0;
+
+    // since the z=0 of the transport coords is inclined with respect
+    // to the VDC plane, the VDC correction depends on the location of
+    // the track
+    if( track->GetX() < 0 )
+      dist = s1_dist + vdc_dist;
+    else
+      dist = s1_dist - vdc_dist;
+    
+    tdelta = ( fCentralDist - dist) / v;
+    //cout<<"time correction: "<<tdelta<<endl;
+
+    // apply the correction
+    int n_clust = clusters->GetSize();
+    for(int i = 0; i < n_clust; i++ ) {
+      THaVDCUVTrack *the_uvtrack = static_cast<THaVDCUVTrack*>( clusters->At(i) );
+      if(the_uvtrack == NULL)
+	continue;
+      
+      the_uvtrack->GetUCluster()->SetTimeCorrection(tdelta);
+      the_uvtrack->GetVCluster()->SetTimeCorrection(tdelta);
+    }
+  }
+}
+
+//_____________________________________________________________________________
+void THaVDC::FindBadTracks(TClonesArray &tracks)
+{
+  THaDetector *s2 = fApparatus->GetDetector("s2");
+
+  if(s2 == NULL) {
+    //cerr<<"Could not find s2 plane!!"<<endl;
+    return;
+  }
+
+  int n_exist = tracks.GetLast()+1;
+  for(int t = 0; t < n_exist; t++ ) {
+    THaTrack *track = static_cast<THaTrack*>( tracks.At(t) );
+    double x2, y2;
+
+    // project the current x and y positions into the s2 plane
+    if(!s2->CalcInterceptCoords(track, x2, y2)) {
+      x2 = 0.0;
+      y2 = 0.0;
+    } 
+
+    // if the tracks go out of the bounds of the s2 plane,
+    // toss the track out
+    if( (TMath::Abs(x2 - s2->GetOrigin().X()) > s2->GetSize()[0]) ||
+	(TMath::Abs(y2 - s2->GetOrigin().Y()) > s2->GetSize()[1]) ) {
+
+      // for now, we just flag the tracks as bad
+      track->SetFlag( track->GetFlag() | kBadTrack );
+
+      //tracks.RemoveAt(t);
+#ifdef WITH_DEBUG
+      //cout << "Track " << t << " deleted.\n";
+#endif  
+    }
+  }
+
+  // get rid of the slots for the deleted tracks
+  //tracks.Compress();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

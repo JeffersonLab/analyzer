@@ -199,7 +199,7 @@ void THaVDCCluster::FitSimpleTrack()
     if (fHits[i] == fPivot) {
       pivotNum = i;
     }
-    xArr[i] = fHits[i]->GetDist();
+    xArr[i] = fHits[i]->GetDist() + fTimeCorrection;
     yArr[i] = fHits[i]->GetPos();
   }
   

@@ -49,11 +49,13 @@ public:
   Double_t       GetSigmaIntercept() const { return fSigmaInt; }
   THaVDCHit*     GetPivot()          const { return fPivot; }
   Int_t          GetPivotWireNum()   const;
+  Double_t       GetTimeCorrection() const { return fTimeCorrection; }
   
   void           SetPlane( THaVDCPlane* plane )     { fPlane = plane; }
   void           SetIntercept( Double_t intercept ) { fInt = intercept; }
   void           SetSlope( Double_t slope)          { fSlope = slope;}
   void           SetPivot( THaVDCHit* piv)          { fPivot = piv; }
+  void           SetTimeCorrection(Double_t deltat) { fTimeCorrection = deltat; }
   //    void SetUVTrack(THaVDCUVTrack * uvtrack) {fUVTrack = uvtrack;} 
   //    void SetTrack(THaTrack * track) {fTrack = track;} 
 
@@ -72,6 +74,9 @@ protected:
   Double_t       fInt, fSigmaInt;    // Intercept and error
   Double_t       fT0;                // Fitted common timing offset
   THaVDCHit*     fPivot;             // Pivot - hit with smallest drift time
+
+  Double_t       fTimeCorrection;    // correction to be applied when fitting
+                                     // drift times
 
   virtual void   FitSimpleTrack();
 
