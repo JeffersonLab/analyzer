@@ -48,10 +48,6 @@
 #include "TVector3.h"
 #include "VarDef.h"
 
-#include <iostream>
-
-ClassImp(THaExtTarCor)
-
 //_____________________________________________________________________________
 THaExtTarCor::THaExtTarCor( const char* name, const char* description,
 			    const char* spectro, const char* vertex ) :
@@ -75,8 +71,9 @@ THaExtTarCor::~THaExtTarCor()
 //_____________________________________________________________________________
 void THaExtTarCor::Clear( Option_t* opt )
 {
-  // Clear all event-by-event variables variables.
+  // Clear all event-by-event variables.
   
+  THaPhysicsModule::Clear(opt);
   TrkIfoClear();
   fDeltaTh = fDeltaDp = fDeltaP = 0.0;
 }
@@ -95,6 +92,8 @@ THaAnalysisObject::EStatus THaExtTarCor::Init( const TDatime& run_time )
   if( !fTrackModule )
     return fStatus;
 
+  fTrkIfo.SetSpectrometer( fTrackModule->GetTrackInfo()->GetSpectrometer() );
+
   // If no vertex module given, try to get the vertex info from the
   // same module as the tracks, e.g. from a spectrometer
   if( fVertexName.IsNull())  fVertexName = fSpectroName;
@@ -105,8 +104,7 @@ THaAnalysisObject::EStatus THaExtTarCor::Init( const TDatime& run_time )
     return fStatus;
     
   // Standard initialization. Calls this object's DefineVariables().
-  if( THaPhysicsModule::Init( run_time ) != kOK )
-    return fStatus;
+  THaPhysicsModule::Init( run_time );
 
   return fStatus;
 }
@@ -153,16 +151,14 @@ Int_t THaExtTarCor::Process( const THaEvData& evdata )
 
   if( !IsOK() ) return -1;
 
-  THaTrack* theTrack = fTrackModule->GetTrack();
-  if( !theTrack ) return 1;
-
   THaTrackInfo* trkifo = fTrackModule->GetTrackInfo();
-  if( !trkifo || !trkifo->IsOK() ) return 2;
+  if( !trkifo->IsOK() ) return 2;
   THaSpectrometer* spectro = trkifo->GetSpectrometer();
   if( !spectro ) return 3;
 
   Double_t ray[6];
-  spectro->LabToTransport( fVertexModule->GetVertex(), trkifo->GetPvect(), ray );
+  spectro->LabToTransport( fVertexModule->GetVertex(), 
+			   trkifo->GetPvect(), ray );
   // Ignore junk
   if( TMath::Abs(ray[0]) > 0.1 || TMath::Abs(ray[1]) > 1.0 ||
       TMath::Abs(ray[2]) > 0.1 || TMath::Abs(ray[3]) > 1.0 ||
@@ -178,7 +174,7 @@ Int_t THaExtTarCor::Process( const THaEvData& evdata )
 
   Double_t dp = trkifo->GetDp() + fDeltaDp;
   Double_t p  = spectro->GetPcentral() * ( 1.0+dp );
-  fDeltaP = p - theTrack->GetP();
+  fDeltaP = p - trkifo->GetP();
   spectro->TransportToLab( p, theta, trkifo->GetPhi(), pvect );
 
   // Get a second-iteration value for x_tg based on the 
@@ -187,8 +183,8 @@ Int_t THaExtTarCor::Process( const THaEvData& evdata )
 
   // Save results in our TrackInfo
   fTrkIfo.Set( p, dp, ray[0], trkifo->GetY(), theta, trkifo->GetPhi(), pvect );
-  fTrkIfo.SetSpectrometer( spectro );
 
+  fDataValid = true;
   return 0;
 }
 
@@ -230,3 +226,6 @@ Int_t THaExtTarCor::ReadRunDatabase( const TDatime& date )
   return kOK;
 }
   
+//_____________________________________________________________________________
+ClassImp(THaExtTarCor)
+
