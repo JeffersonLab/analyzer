@@ -173,7 +173,7 @@ Int_t THaScaler::InitData(std::string bankgroup, const Bdate& date_want) {
              0,7,8,9,1,2,3,4,5,6,10,11 },
     { "dvcs",  0xd0c00000, 9, 140, 0, 105000, "129.57.192.51",  5064, 
              0,1,2,3,4,5,6,7,8,9,10,11 },
-    // N20: header 0xbba...,  crate=6 (our choice), and we don't know about clock yet.
+    // N20: header 0xbba...,  crate=6 (our choice), 
     { "N20",  0xbba00000, 6, 140, 1, 2048, "129.57.192.51",  5064, 
              0,1,2,3,4,5,6,7,8,9,10,11 },
     // Data that are part of the event stream
@@ -227,7 +227,7 @@ Int_t THaScaler::InitData(std::string bankgroup, const Bdate& date_want) {
         crate = it->bank_cratenum;
         evstr_type = it->evstr_type;
         normslot[0] = it->normslot;
-        clockrate = it->bank_clockrate;
+        if (use_clock) clockrate = it->bank_clockrate;
         vme_server = it->bank_IP;
         vme_port = it->bank_port;
         for (int i = 0; i < SCAL_NUMBANK; i++) onlmap.push_back(it->bank_onlmap[i]);
