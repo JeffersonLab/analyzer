@@ -15,6 +15,7 @@
 #include "THaPrintOption.h"
 #include "TError.h"
 #include "TList.h"
+#include "TString.h"
 
 #include <iostream>
 #include <fstream>
@@ -414,18 +415,21 @@ void THaCutList::MakePrintOption( THaPrintOption& opt, const TList* plist )
     UInt_t width[NF] = { 0, 0, 0, 0 };
     TIter next( plist );
     while( THaCut* pcut = (THaCut*)next() ) {
-      width[0] = max( width[0], strlen(pcut->GetName()) );
-      width[1] = max( width[1], strlen(pcut->GetTitle()) );
-      width[2] = max( width[2], strlen(pcut->GetBlockname()) );
-      width[3] = max( width[3], IntDigits( (Int_t)pcut->GetNPassed() ) );
+      width[0] = max( width[0], static_cast<UInt_t>
+		      (strlen(pcut->GetName())) );
+      width[1] = max( width[1], static_cast<UInt_t>
+		      (strlen(pcut->GetTitle())) );
+      width[2] = max( width[2], static_cast<UInt_t>
+		      (strlen(pcut->GetBlockname())) );
+      width[3] = max( width[3], IntDigits( static_cast<Int_t>
+					   (pcut->GetNPassed()) ));
     }
-    UInt_t len = strlen(opt.GetOption(0))+5*NF+1;
-    char* newopt = new char[ len ];
-    int k = sprintf(newopt,"%s",opt.GetOption(0));
-    for( int i=0; i<NF; i++ )  
-      k += sprintf(newopt+k,",%d",width[i]);
+    TString newopt = opt.GetOption(0);
+    for( int i=0; i<NF; i++ ) {
+      newopt += ",";
+      newopt += width[i];
+    }
     opt = newopt;
-    delete [] newopt;
   }
 }
 
