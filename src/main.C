@@ -5,13 +5,19 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaInterface.h"
+#include <iostream>
+
+using namespace std;
 
 int main(int argc, char **argv)
 {
   // Create a ROOT-style interactive interface
 
-  TRint *theApp = new THaInterface( "The Hall A analyzer", &argc, argv );
+  TApplication *theApp = 
+    new THaInterface( "The Hall A analyzer", &argc, argv );
   theApp->Run(kTRUE);
+
+  cout << endl;
 
   delete theApp;
 
