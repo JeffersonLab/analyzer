@@ -149,6 +149,7 @@ haDict.C: $(HDR) src/HallA_LinkDef.h
 #		| sed '\''s%\($*\)\.o[ :]*%\1.o $@ : %g'\'' > $@; \
 #		[ -s $@ ] || rm -f $@'
 	@$(SHELL) -ec '$(MAKEDEPEND) -MM $(INCLUDES) -c $< \
+		| sed '\''s%^.*\.o%$*\.o%g'\'' \
 		| sed '\''s%\($*\)\.o[ :]*%\1.o $@ : %g'\'' > $@; \
 		[ -s $@ ] || rm -f $@'
 
