@@ -45,6 +45,7 @@ public:
           UInt_t       GetLastEvent()   const { return fLastEvent; }
           const Int_t* GetEvBuffer()    const;
           THaTarget*   GetTarget()      const { return fTarget; }
+  virtual bool         IsOpen()         const;
   virtual Int_t        OpenFile();
   virtual Int_t        OpenFile( const char* filename );
   virtual void         Print( Option_t* opt="" ) const;

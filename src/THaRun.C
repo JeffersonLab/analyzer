@@ -23,9 +23,9 @@
 using namespace std;
 
 //_____________________________________________________________________________
-THaRun::THaRun() : TNamed(), fNumber(0), fDBRead(false),
+THaRun::THaRun() : TNamed(), fNumber(0), fDate(19950101,0), fDBRead(false),
 		   fBeamE(0.0), fBeamP(0.0), fBeamM(0.0), fBeamQ(0), fBeamdE(0.0),
-		   fTarget(0), fDate(19950101,0)		   
+		   fTarget(0)
 {
   // Default constructor
 
@@ -36,9 +36,8 @@ THaRun::THaRun() : TNamed(), fNumber(0), fDBRead(false),
 //_____________________________________________________________________________
 THaRun::THaRun( const char* fname, const char* descr ) : 
   TNamed("", strlen(descr) ? descr : fname), fNumber(0), fFilename(fname),
-  fDBRead(false),
-  fBeamE(0.0), fBeamP(0.0), fBeamM(0.0), fBeamQ(0), fBeamdE(0.0), fTarget(0),
-  fDate(19950101,0)  
+  fDate(19950101,0), fDBRead(false),
+  fBeamE(0.0), fBeamP(0.0), fBeamM(0.0), fBeamQ(0), fBeamdE(0.0), fTarget(0)
 {
   // Normal constructor
 
@@ -104,6 +103,12 @@ THaRun::~THaRun()
 Int_t THaRun::CloseFile()
 {
   return fCodaData ? fCodaData->codaClose() : 0;
+}
+
+//_____________________________________________________________________________
+bool THaRun::IsOpen() const
+{
+  return fCodaData ? fCodaData->isOpen() : false;
 }
 
 //_____________________________________________________________________________
