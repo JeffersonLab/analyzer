@@ -8,15 +8,10 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaApparatus.h"
+#include "TBits.h"
 #include <vector>
-#include <map>
 #include <string>
-#include <fstream>
-#include <iostream>
-#include <iterator>
 #include <cstring>
-
-#define MAXBIT   8
 
 class BdataLoc {
 // Utility class used by THaDecData.
@@ -67,7 +62,7 @@ public:
    virtual Int_t   Decode( const THaEvData& );
 
 private:
-   Int_t *bits;
+   TBits  bits;
    UInt_t evtypebits, evtype;
    Double_t ctimel, ctimer;
    Double_t pulser1;
@@ -82,7 +77,7 @@ private:
    virtual void Clear( Option_t* opt="" );
    virtual void Print( Option_t* opt="" ) const;
    Int_t DefaultMap();
-   void TrigBits(Int_t ibit, BdataLoc *dataloc);
+   void TrigBits(UInt_t ibit, BdataLoc *dataloc);
    static vector<string> vsplit(const string& s);
    Int_t SetupDecData( const TDatime* runTime = NULL, EMode mode = kDefine );
    static UInt_t header_str_to_base16(const char* hdr);

@@ -49,6 +49,7 @@
 #include "THaDetMap.h"
 #include "TDatime.h"
 #include "VarDef.h"
+#include <fstream>
 
 using namespace std;
 
@@ -58,7 +59,6 @@ typedef vector<BdataLoc*>::iterator Iter_t;
 THaDecData::THaDecData( const char* name, const char* descript ) : 
   THaApparatus( name, descript )
 {
-  bits        = new Int_t[MAXBIT];
   Clear();
 }
 
@@ -70,13 +70,11 @@ THaDecData::~THaDecData()
   SetupDecData( NULL, kDelete ); 
   for( Iter_t p = fWordLoc.begin();  p != fWordLoc.end(); p++ )  delete *p;
   for( Iter_t p = fCrateLoc.begin(); p != fCrateLoc.end(); p++ ) delete *p;
-  delete [] bits;
 }
 
 //_____________________________________________________________________________
 void THaDecData::Clear( Option_t* opt ) 
 {
-  memset(bits, 0, MAXBIT*sizeof(Int_t));
   evtypebits = 0;
   evtype     = 0;
   ctimel     = 0;
@@ -255,7 +253,7 @@ Int_t THaDecData::DefaultMap() {
    
 // Bit pattern for trigger definition
 
-   for (Int_t i = 0; i < MAXBIT; i++) {
+   for (UInt_t i = 0; i < bits.GetNbits(); i++) {
      fCrateLoc.push_back(new BdataLoc(Form("bit%d",i+1), 4, (Int_t) 11, 64+i));
    }
 
@@ -307,7 +305,7 @@ Int_t THaDecData::Decode(const THaEvData& evdata)
     BdataLoc *dataloc = *p;
 
 // bit pattern of triggers
-    for (Int_t i = 0; i < MAXBIT; i++) {
+    for (UInt_t i = 0; i < bits.GetNbits(); i++) {
       if ( dataloc->ThisIs(Form("bit%d",i+1)) ) TrigBits(i+1,dataloc);
     }
 
@@ -348,7 +346,8 @@ void THaDecData::Print( Option_t* opt ) const {
 // Dump the data for purpose of debugging.
   cout << "Dump of THaDecData "<<endl;
   cout << "event pattern bits : ";
-  for (int i = 0; i < MAXBIT; i++) cout << " "<<i<<" = "<< bits[i]<<"  | ";
+  for (UInt_t i = 0; i < bits.GetNbits(); i++) 
+    cout << " "<<i<<" = "<< bits.TestBitNumber(i)<<"  | ";
   cout << endl;
   cout << "event types,  CODA = "<<evtype<<"   bit pattern = "<<evtypebits<<endl;
   cout << "synch adcs "<<"  "<<synchadc1<<"  "<<synchadc2<<"  ";
@@ -394,19 +393,19 @@ UInt_t THaDecData::header_str_to_base16(const char* hdr) {
 };
 
 //_____________________________________________________________________________
-void THaDecData::TrigBits(Int_t ibit, BdataLoc *dataloc) {
+void THaDecData::TrigBits(UInt_t ibit, BdataLoc *dataloc) {
 // Figure out which triggers got a hit.  These are multihit TDCs, so we
 // need to sort out which hit we want to take by applying cuts.
 
-  if (ibit < 0 || ibit >= MAXBIT) return;
-  bits[ibit] = 0;
+  if( ibit >= kBitsPerByte*sizeof(UInt_t) ) return; //Limit of evtypebits
+  bits.ResetBitNumber(ibit);
 
   static const UInt_t cutlo = 400;
   static const UInt_t cuthi = 1200;
   
   for (int ihit = 0; ihit < dataloc->NumHits(); ihit++) {
     if (dataloc->Get(ihit) > cutlo && dataloc->Get(ihit) < cuthi) {
-      bits[ibit] = 1;
+      bits.SetBitNumber(ibit);
       evtypebits |= BIT(ibit);
     }
   }
