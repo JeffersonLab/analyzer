@@ -57,7 +57,7 @@ TBits THaEvData::fgInstances;
 //_____________________________________________________________________________
 
 THaEvData::THaEvData() :
-  helicity(0), first_load(true), first_scaler(true), first_decode(true),
+  helicity(0), first_load(true), first_scaler(true), first_decode(true), fgTrigSupPS(true),
   numscaler_crate(0), buffer(0), run_num(0), run_type(0), run_time(0), 
   recent_event(0),
   dhel(0.0), dtimestamp(0.0), fNSlotUsed(0), fNSlotClear(0), fMap(0)
@@ -217,6 +217,7 @@ int THaEvData::gendecode(const int* evbuffer, THaCrateMap* map) {
            ret = epics_decode(evbuffer);
 	   break;
          case PRESCALE_EVTYPE :
+         case TS_PRESCALE_EVTYPE :
            ret = prescale_decode(evbuffer);
 	   break;
          case TRIGGER_FILE :
@@ -336,17 +337,37 @@ int THaEvData::epics_decode(const int* evbuffer) {
 };
 
 int THaEvData::prescale_decode(const int* evbuffer) {
-     const int MAX = 5000;
-     const int HEAD_OFF = 4;
-     int j,trig,data[MAX];
-     const char* pstr[] = { "ps1", "ps2", "ps3", "ps4",
-			    "ps5", "ps6", "ps7", "ps8",
-			    "ps9", "ps10", "ps11", "ps12" };
-     int type = evbuffer[1]>>16;
-     if (type != PRESCALE_EVTYPE) return HED_ERR;
+// Decodes prescale factors from either
+// TS_PRESCALE_EVTYPE(default) = PS factors 
+// read from Trig. Super. registors (since 11/03)
+//   - or -
+// PRESCALE_EVTYPE = PS factors from traditional
+//     "prescale.dat" file.
+// To cause THaEvData select one or the other,
+// use SetOrigPS() method.
+
+   const int MAX = 5000;
+   const int HEAD_OFF1 = 2;
+   const int HEAD_OFF2 = 4;
+   int j,trig,data[MAX];
+   int type = evbuffer[1]>>16;
+// TS registers -->
+   if (fgTrigSupPS && type == TS_PRESCALE_EVTYPE) {
+     for (j = 0; j < 8; j++) {
+      int lenbuf = evbuffer[0]+1;
+      int k = j + HEAD_OFF1;
+      if (k < lenbuf) psfact[j] = evbuffer[k];
+      if (DEBUG) cout << "%% TS psfact "<<dec<<j<<"  "<<psfact[j]<<endl;
+     }        
+   } 
+// "prescale.dat" -->
+   const char* pstr[] = { "ps1", "ps2", "ps3", "ps4",
+			"ps5", "ps6", "ps7", "ps8",
+		       "ps9", "ps10", "ps11", "ps12" };
+   if (!fgTrigSupPS && type == PRESCALE_EVTYPE) {  
      int len = sizeof(int)*(evbuffer[0]+1);  
      int nlen = (len < MAX) ? len : MAX;   
-     for (j=HEAD_OFF; j<nlen; j++) data[j-HEAD_OFF] = evbuffer[j];  
+     for (j=HEAD_OFF2; j<nlen; j++) data[j-HEAD_OFF2] = evbuffer[j];  
      THaUsrstrutils sut;
      sut.string_from_evbuffer(data);
      for(trig=0; trig<MAX_PSFACT; trig++) {
@@ -356,9 +377,11 @@ int THaEvData::prescale_decode(const int* evbuffer) {
         if (trig > 7) psfact[trig] = 1;  // cannot prescale trig 9-12
         psfact[trig] = psfact[trig] % psmax;
         if (psfact[trig] == 0) psfact[trig] = psmax;
-        if (DEBUG) cout << "psfact[ "<<trig+1<< " ] = "<<psfact[trig]<<endl;
+        if (DEBUG) cout << "** psfact[ "<<trig+1<< " ] = "<<psfact[trig]<<endl;
      }
-     return HED_OK;
+   }
+// Ok in any case
+   return HED_OK;  
 }
 
 int THaEvData::scaler_event_decode(const int* evbuffer, THaCrateMap* map) 
@@ -856,6 +879,33 @@ Bool_t THaEvData::ScalersEnabled() const
 {
   // Test if helicity decoding enabled
   return TestBit(kScalersEnabled);
+}
+
+void THaEvData::SetOrigPS(Int_t event_type)
+{
+  fgTrigSupPS = true;  // default after Nov 2003
+  if (event_type == PRESCALE_EVTYPE) {
+    fgTrigSupPS = false;
+    return;
+  } else if (event_type != TS_PRESCALE_EVTYPE) {
+    cout << "SetOrigPS::Warn: PS factors";
+    cout << " originate only from evtype ";
+    cout << PRESCALE_EVTYPE << "  or ";
+    cout << TS_PRESCALE_EVTYPE << endl;
+  }
+}
+
+TString THaEvData::GetOrigPS() const
+{
+  TString answer = "PS from ";
+  if (fgTrigSupPS) {
+    answer += " Trig Sup evtype ";
+    answer.Append(Form("%d",TS_PRESCALE_EVTYPE));
+  } else {
+    answer += " PS evtype ";
+    answer.Append(Form("%d",PRESCALE_EVTYPE));
+  }
+  return answer;
 }
 
 void THaEvData::hexdump(const char* cbuff, size_t nlen)

@@ -79,6 +79,8 @@ public:
      Bool_t HelicityEnabled() const;
      void EnableScalers( Bool_t enable=kTRUE );
      Bool_t ScalersEnabled() const;
+     void SetOrigPS( Int_t event_type ); 
+     TString GetOrigPS() const;
 
      UInt_t GetInstance() const { return fInstance; }
      static UInt_t GetInstances() { return fgInstances.CountBits(); }
@@ -105,6 +107,7 @@ private:
      static const int GO_EVTYPE        = 18;
      static const int PAUSE_EVTYPE     = 19;
      static const int END_EVTYPE       = 20;
+     static const int TS_PRESCALE_EVTYPE  = 120;
      static const int EPICS_EVTYPE     = 131;
      static const int PRESCALE_EVTYPE  = 133;
      static const int DETMAP_FILE      = 135;
@@ -120,6 +123,7 @@ private:
      THaSlotData** crateslot;  
      THaHelicity* helicity;
      THaEpics* epics;
+     bool fgTrigSupPS;
      bool first_load,first_scaler,first_decode;
      TString scalerdef[MAXROC];
      int numscaler_crate;
@@ -291,7 +295,11 @@ bool THaEvData::IsEpicsEvent() const {
 
 inline
 bool THaEvData::IsPrescaleEvent() const {
-  return (event_type == PRESCALE_EVTYPE);
+  if (fgTrigSupPS) {
+    return (event_type == TS_PRESCALE_EVTYPE);
+  } else {
+    return (event_type == PRESCALE_EVTYPE);
+  }
 };
 
 inline

@@ -31,6 +31,11 @@ int main(int argc, char* argv[])
       
    THaEvData evdata;
 
+   // Can tell evdata whether to use evtype 
+   // 133 or 120 for prescale data.  Default is 120.
+   evdata.SetOrigPS(133);   // args are 120 or 133
+   cout << "Origin of PS data "<<evdata.GetOrigPS()<<endl;
+
 // Loop over a finite number of events
 
    int NUMEVT=100000;
