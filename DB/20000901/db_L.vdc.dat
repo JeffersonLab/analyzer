@@ -258,7 +258,7 @@ TTD Lookup Table
 2      15       0      95                  ~~~ u2cr2, u2sl2, u2cf2, u2cl2
 2      16       0      95                      u2cr3, u2sl3, u2cf3, u2cl3
 2      17       0      79                      u2cr4, u2sl4, u2cf4, u2cl4
-0.3327 1.02718 -.0042426 -45.0                 z, wbeg, wspac, wangle (m)
+0.3327 1.02793 -.0042426 -45.0                 z, wbeg, wspac, wangle (m)
 49.73e3                                        Drift velocity (m/s)
 TDC Offset Values
    1 1760.1    2 1742.9    3 1754.6    4 1752.4    5 1774.4    6 1764.4    7 1779.7    8 1782.3
@@ -385,7 +385,7 @@ TTD Lookup Table
 2      19       0      95                  ~~~ v2cr2, v2sl2, v2cf2, v2cl
 2      20       0      95                      v2cr3, v2sl3, v2cf3, v2cl3
 2      21       0      79                      v2cr4, v2sl4, v2cf4, v2cl4
-0.3587 1.02718 -.0042426 45.0                  z, wbeg, wspac, wangle       
+0.3587 1.02793 -.0042426 45.0                  z, wbeg, wspac, wangle       
 49.19e3                                        Drift velocity (m/s)
 TDC Offset Values   
    1 1758.1    2 1704.0    3 1753.9    4 1784.7    5 1432.5    6 1785.6    7 1785.9    8 1788.2

@@ -113,7 +113,7 @@ TDC Offset Values
 2      15       0      95                  ~~~ u2cr2, u2sl2, u2cf2, u2cl2
 2      16       0      95                      u2cr3, u2sl3, u2cf3, u2cl3
 2      17       0      79                      u2cr4, u2sl4, u2cf4, u2cl4
-0.3348 1.02718 -.0042426 -45.0                 z, wbeg, wspac,, wangle
+0.3348 1.02793 -.0042426 -45.0                 z, wbeg, wspac,, wangle
 49.73e3                                        Drift velocity (m/s)
 TDC Offset Values
    1 1689.0    2 1689.0    3 1689.0    4 1689.0    5 1689.0    6 1689.0    7 1689.0    8 1689.0
@@ -167,7 +167,7 @@ TDC Offset Values
 2      19       0      95                  ~~~ v2cr2, v2sl2, v2cf2, v2cl
 2      20       0      95                      v2cr3, v2sl3, v2cf3, v2cl3
 2      21       0      79                      v2cr4, v2sl4, v2cf4, v2cl4
-0.3609 1.02718 -.0042426 45.0                  z, wbeg, wspac, wangle       
+0.3609 1.02793 -.0042426 45.0                  z, wbeg, wspac, wangle       
 49.19e3                                        Drift velocity (m/s)
 TDC Offset Values   
    1 1689.2    2 1689.2    3 1689.2    4 1689.2    5 1689.2    6 1689.2    7 1689.2    8 1689.2
