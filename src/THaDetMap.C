@@ -127,7 +127,9 @@ void THaDetMap::Print( Option_t* opt ) const
 	 << setw(5) << m->lo 
 	 << setw(5) << m->hi 
 	 << setw(5) << m->first
-	 << setw(5) << m->model
+	 << setw(5) << (m->model & ~(ADCBit | TDCBit))
+	 << setw(4) << ( m->model & ADCBit ? "ADC" : " " )
+	 << setw(4) << ( m->model & TDCBit ? "TDC" : " " )
 	 << endl;
   }
 }
