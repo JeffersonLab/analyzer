@@ -35,7 +35,6 @@
 #include <string>
 #include <vector>
 #include <iomanip>
-#include <strstream.h>
 
 ClassImp(THaEventHeader)
 ClassImp(THaEvent)

@@ -56,7 +56,7 @@ THaVhist::~THaVhist()
 void THaVhist::CheckValidity( ) 
 {
   fProc = kTRUE;
-  if (fEye == 0 && fSize != fH1.size()) {
+  if (fEye == 0 && fSize != static_cast<Int_t>(fH1.size())) {
      fProc = kFALSE;
      ErrPrint();
      cerr << "THaVhist:ERROR:: Inconsistent sizes."<<endl;
@@ -197,6 +197,7 @@ Int_t THaVhist::Init( )
 
   BookHisto(0, fSize);
 
+  return fInitStat;
 }
 
 //_____________________________________________________________________________
@@ -213,7 +214,7 @@ void THaVhist::ReAttach( )
 Bool_t THaVhist::FindEye(THaString& var) {
 // If the variable is "[I]" it is an "Eye" variable.
 // This means we will simply use I = 0,1,2, to fill that axis.
-  Int_t pos, pos1,pos2;
+  string::size_type pos, pos1,pos2;
   THaString eye = "[I]";
   pos1 = var.find(eye.ToUpper(),0);
   pos2 = var.find(eye.ToLower(),0);
@@ -425,7 +426,7 @@ Int_t THaVhist::CheckCut(Int_t index)
 { 
  // Check the cut.  Returns 1 if cut condition passed.
    if ( !fCut ) return 1;
-   return fCut->GetData(index);
+   return int(fCut->GetData(index));
 }
 
 //_____________________________________________________________________________

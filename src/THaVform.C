@@ -323,7 +323,7 @@ void THaVform::ReAttach( )
 
 
 //_____________________________________________________________________________
-Int_t THaVform::Clear() 
+void THaVform::Clear( Option_t* opt ) 
 {
   fNvar = 0;
   fVarPtr = 0;
@@ -331,7 +331,7 @@ Int_t THaVform::Clear()
   fVarName.clear();
   fVarStat.clear();
   fVectSform.clear();
-  return 0;
+  return;
 
 }
 
@@ -443,7 +443,7 @@ Int_t THaVform::MakeFormula(Int_t flo, Int_t fhi)
 //_____________________________________________________________________________
 THaString THaVform::StripPrefix(const char* expr)
 {
-  Int_t pos,pos1,pos2;
+  string::size_type pos,pos1,pos2;
   THaString result,stitle;
   vector<THaString> sprefix;
   vector<Int_t> ipflg;
@@ -493,7 +493,7 @@ THaString THaVform::StripBracket(THaString& var) const
 {
 // If the string contains "[anything]", we strip
 // it away.
-  Int_t pos1,pos2;
+  string::size_type pos1,pos2;
   THaString open_brack = "[";
   THaString close_brack = "]";
   THaString result = "";
@@ -698,7 +698,7 @@ void THaVform::GetForm(Int_t size)
 
   THaString open_brack="[";
   THaString close_brack="]";
-  Int_t pos,pos1,pos2;
+  string::size_type pos,pos1,pos2;
   vector<Int_t> ipos;
 
   char num[10]; 

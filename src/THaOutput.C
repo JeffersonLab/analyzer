@@ -478,7 +478,7 @@ THaString THaOutput::StripBracket(THaString& var) const
 // If the string contains "[anything]", we strip
 // it away.  In practice this should not be fatal 
 // because your variable will still show up in the tree.
-  Int_t pos1,pos2;
+  string::size_type pos1,pos2;
   THaString open_brack = "[";
   THaString close_brack = "]";
   THaString result = "";

@@ -68,7 +68,6 @@ Int_t THaBPM::ReadDatabase( const TDatime& date )
   // again that is not really nice, but since it will be changed anyhow:
   // i dont check each time for end of file, needs to be improved
 
-  Int_t i = 0;
   fDetMap->Clear();
   int first_chan, crate, dummy, slot, first, last, modulid;
   do {

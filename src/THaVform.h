@@ -79,7 +79,7 @@ protected:
   static const Int_t fgVFORM_HUGE = 10000;
   THaString fgAndStr, fgOrStr, fgSumStr;
 
-  Int_t Clear();
+  void  Clear( Option_t* opt="" );
   Int_t MakeFormula(Int_t flo, Int_t fhi);
   THaString StripPrefix(const char* formula);
   THaString StripBracket(THaString& var) const; 

@@ -16,6 +16,9 @@
  *
  * Revision History:
  *   $Log$
+ *   Revision 1.4  2003/09/10 18:36:05  ole
+ *   Fix compilation warnings.
+ *
  *   Revision 1.3  2003/06/16 17:07:25  ole
  *   Move Release-070 branch onto the CVS trunk.
  *
@@ -57,11 +60,11 @@
  *	  
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <memory.h>
-#include <errno.h>
+#include <cerrno>
 
 
 
@@ -210,7 +213,7 @@ void swapped_memcpy(char *buffer,char *source,int size)
   int      header1, header2;
   int      ev_size, ev_tag, ev_num, ev_type;
   int      bk_size, bk_tag, bk_num, bk_type;
-  int      sg_size, sg_tag, sg_num, sg_type;
+  int      sg_size, sg_tag, sg_type;
   short    pk_size, pk_tag, pack;
   char     temp[4],temp2[2];
 
