@@ -19,7 +19,7 @@ class THaVDCCluster : public TObject {
 public:
   THaVDCCluster( THaVDCPlane* owner = NULL ) :
     fSize(0), fPlane(owner), fSlope(0.0), fSigmaSlope(0.0), fInt(0.0),
-    fSigmaInt(0.0), fT0(0.0), fPivot(NULL) {}
+    fSigmaInt(0.0), fT0(0.0), fPivot(NULL), fTimeCorrection(0.0) {}
   THaVDCCluster( const THaVDCCluster&);
   THaVDCCluster& operator=( const THaVDCCluster& );
   virtual ~THaVDCCluster() {}
