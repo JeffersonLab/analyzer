@@ -25,6 +25,8 @@
 #include "TLorentzVector.h"
 #include "TVector3.h"
 #include "TMath.h"
+#include "TRotation.h"
+#include "TRotation_SetZAxis.h"
 
 using namespace std;
 
@@ -170,7 +172,12 @@ Int_t THaSecondaryKine::Process( const THaEvData& evdata )
   // lies in the scattering plane (defined by q and e') and points
   // in the direction of e', so the out-of-plane angle lies within
   // -90<phi_xq<90deg if X is detected on the downstream/forward side of q.
-  TRotation rot_to_q;
+#ifdef Need_TRotation_SetZAxis
+  Ext_TRotation
+#else
+  TRotation
+#endif
+    rot_to_q;
   rot_to_q.SetZAxis( pQ->Vect(), pP1->Vect()).Invert();
   TVector3 xq = fX.Vect();
   TVector3 bq = fB.Vect();
@@ -230,7 +237,12 @@ Int_t THaSecondaryKine::Process( const THaEvData& evdata )
   // CM vectors of X and B. 
   // Express X and B in the frame where q is along the z-axis 
   // - the typical head-on collision picture.
-  TRotation rot_to_A1;
+#ifdef Need_TRotation_SetZAxis
+  Ext_TRotation
+#else
+  TRotation
+#endif
+    rot_to_A1;
   rot_to_A1.SetZAxis( pA1->Vect(), pP1->Vect()).Invert();
   TVector3 x_cm_vect = fX.Vect();
   x_cm_vect *= rot_to_A1;
