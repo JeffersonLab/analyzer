@@ -516,7 +516,7 @@ Int_t THaScaler::LoadDataOnline(const char* server, int port) {
        printf("ERROR: THaScaler: reading from scaler server\n");
        exit(0);
     }
-    while (nRead < sizeof(vmeReply)) {
+    while ((unsigned int)nRead < sizeof(vmeReply)) {
        nRead1 = read (sFd, ((char *) &vmeReply)+nRead,
                     sizeof(vmeReply)-nRead);
        if(nRead1 < 0) {
