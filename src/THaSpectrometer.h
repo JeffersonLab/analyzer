@@ -29,7 +29,7 @@ public:
           void             Clear( Option_t* opt="" );
   virtual void             DefinePidParticles();
   virtual Int_t            DefineVariables( EMode mode = kDefine );
-  virtual Int_t            FindVertices() = 0;
+  virtual Int_t            FindVertices( TClonesArray& tracks ) = 0;
           Int_t            GetNpidParticles() const;
           Int_t            GetNpidDetectors() const;
   const   THaParticleInfo* GetPidParticleInfo( Int_t i ) const;

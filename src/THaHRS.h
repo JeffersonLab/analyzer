@@ -14,7 +14,7 @@ class THaHRS : public THaSpectrometer {
 public:
   virtual ~THaHRS() {}
 
-  virtual Int_t   FindVertices();
+  virtual Int_t   FindVertices( TClonesArray& tracks );
   virtual Int_t   TrackCalc();
 
 protected:

@@ -168,6 +168,14 @@ Int_t THaSpectrometer::DefineVariables( EMode mode )
     { "tr.ph",   "Tangent of track phi angle",   "fTracks.THaTrack.fPhi" },
     { "tr.p",    "Track momentum (GeV)",         "fTracks.THaTrack.fP" },
     { "tr.flag", "Track status flag",            "fTracks.THaTrack.fFlag" },
+    { "tr.r_x",  "Rotated x coordinate (m)",     "fTracks.THaTrack.fRX" },
+    { "tr.r_y",  "Rotated y coordinate (m)",     "fTracks.THaTrack.fRY" },
+    { "tr.r_th", "Rotated tangent of theta",     "fTracks.THaTrack.fRTheta" },
+    { "tr.r_ph", "Rotated tangent of phi",       "fTracks.THaTrack.fRPhi" },
+    { "tr.tg_y", "Target y coordinate",          "fTracks.THaTrack.fTY"},
+    { "tr.tg_th", "Tangent of target theta angle", "fTracks.THaTrack.fTTheta"},
+    { "tr.tg_ph", "Tangent of target phi angle",   "fTracks.THaTrack.fTPhi"},    
+    { "tr.tg_dp", "Target delta",          "fTracks.THaTrack.fDp"},
     { 0 }
   };
 
@@ -324,6 +332,24 @@ Int_t THaSpectrometer::Reconstruct()
 #endif
   }
 
+  // Reconstruct tracks to target/vertex
+  //FindVertices( tracks );
+  nextTrack.Reset();
+  while( THaTrackingDetector* theTrackDetector =
+	 static_cast<THaTrackingDetector*>( nextTrack() )) {
+#ifdef WITH_DEBUG
+    if( fDebug>0 ) cout << "Call FineTrack() for " 
+			<< theTrackDetector->GetName() << "... ";
+#endif
+    theTrackDetector->FindVertices( tracks );
+#ifdef WITH_DEBUG
+    if( fDebug>0 ) cout << "done.\n";
+#endif
+  }
+
+  // --evaluate test block--
+
+
   // Compute additional track properties (e.g. momentum, beta)
   // Find "Golden Track" if appropriate.
 
@@ -336,13 +362,6 @@ Int_t THaSpectrometer::Reconstruct()
 
   if( fPID ) CalcPID();
       
-  // --evaluate test block--
-
-
-  // Reconstruct tracks to target/vertex
-
-  FindVertices();
-
   // --evaluate test block--
 
 

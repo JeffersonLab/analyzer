@@ -33,12 +33,18 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaHRS.h"
+#include <math.h>
 
 ClassImp(THaHRS)
 
 //_____________________________________________________________________________
-Int_t THaHRS::FindVertices()
+Int_t THaHRS::FindVertices( TClonesArray& tracks )
 {
+  // takes fitted tracks and reconstructs their target coordinates
+
+
+  // first calculate the focal plane coordinates
+
   return 0;
 }
 
@@ -47,3 +53,5 @@ Int_t THaHRS::TrackCalc()
 {
   return 0;
 }
+
+

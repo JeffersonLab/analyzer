@@ -19,6 +19,7 @@ public:
   
   virtual Int_t    CoarseTrack( TClonesArray& tracks ) = 0;
   virtual Int_t    FineTrack( TClonesArray& tracks )  = 0;
+  virtual Int_t    FindVertices( TClonesArray& tracks ) = 0;
           Bool_t   IsTracking() { return kTRUE; }
           Bool_t   IsPid()      { return kFALSE; }
 
