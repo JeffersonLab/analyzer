@@ -178,7 +178,11 @@ ifdef ONLINE_ET
   PROGS += tstcoda
 endif
 
-HEAD := $(SRC:.C=.h)
+RCHEAD := $(SRC:.C=.h) THaBenchmark.h
+HEAD = $(RCHEAD)
+ifdef ONLINE_ET
+  HEAD += et.h
+endif
 # sources without headers:
 SRC += swap_util.C swapped_intcpy.c
 DEPS = $(patsubst %.c,%.d,$(SRC:.C=.d))
@@ -270,9 +274,9 @@ swapped_intcpy.o: swapped_intcpy.c
 
 # Dictionary
 
-THaDecDict.C: $(HEAD) haDecode_LinkDef.h
+THaDecDict.C: $(RCHEAD) haDecode_LinkDef.h
 	@echo "Generating Decoder Dictionary..."
-	$(ROOTSYS)/bin/rootcint -f THaDecDict.C -c $(CXXFLAGS) $(HEAD) haDecode_LinkDef.h
+	$(ROOTSYS)/bin/rootcint -f THaDecDict.C -c $(CXXFLAGS) $^
 
 # create a tar file of ./$(VERS)/* (all code)
 
@@ -299,6 +303,11 @@ realclean:  clean
 clean_evio:
 	rm -f evio.o swap_util.o swapped_intcpy.o
 
+install:	all
+	mkdir -p $(ANALYZER)/src/hana_decode
+	cp -puvf $(SRC) $(HEAD) haDecode_LinkDef.h Makefile $(ANALYZER)/src/hana_decode
+	cp -puvf $(HEAD) $(ANALYZER)/include
+	-cp -puvf libdc.so $(ANALYZER)/$(PLATFORM)
 ###
 
 .SUFFIXES:

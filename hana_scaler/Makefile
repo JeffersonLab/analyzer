@@ -244,8 +244,7 @@ tscalring: tscalring_main.o $(SCALER_OBJS) $(SRC) $(HEAD) $(LIBDC)
 # Dictionary
 THaScalDict.C: $(HEAD) haScal_LinkDef.h
 	@echo "Generating Scaler Package Dictionary..."
-	$(ROOTSYS)/bin/rootcint -f THaScalDict.C -c $(INCLUDES) $(HEAD) \
-		haScal_LinkDef.h
+	$(ROOTSYS)/bin/rootcint -f THaScalDict.C -c $(INCLUDES) $^
 
 tarfile: clean version
 	tar cvf $(VERS).tar ./hana_scaler
@@ -266,6 +265,11 @@ clean:
 realclean:  clean
 	rm -f *.d
 
+install:	all
+	mkdir -p $(ANALYZER)/src/hana_scaler
+	cp -puvf $(SRC) $(HEAD) haScal_LinkDef.h Makefile $(ANALYZER)/src/hana_scaler
+	cp -puvf $(HEAD) $(ANALYZER)/include
+	-cp -puvf libscaler.so $(ANALYZER)/$(PLATFORM)
 ###
 
 .SUFFIXES:
