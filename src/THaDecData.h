@@ -5,43 +5,6 @@
 //
 // THaDecData
 //
-// Hall A miscellaneous decoder data, which typically does not 
-// belong to a detector class.
-// Provides global data to analyzer, and
-// a place to rapidly add new channels.
-//
-// Normally the user should have a file "decdata.map" in their pwd
-// to define the locations of raw data for this class (only).
-// But if this file is not found, we define a default mapping, which
-// was valid at least at one point in history.
-//
-// The scheme is as follows:
-//
-//    1. In Init() we define a list of global variables which are tied
-//       to the variables of this class.  E.g. "timeroc2".
-//
-//    2. Next we build a list of "BdataLoc" objects which store information
-//       about where the data are located.  These data are either directly
-//       related to the variables of this class (e.g. timeroc2 is a a raw
-//       data word) or one must analyze them to obtain a variable.
-//
-//    3. The BdataLoc objects may be defined by decdata.map which has an
-//       obvious notation (see ~/examples/decdata.map).  The entries are either 
-//       locations in crates or locations relative to a unique header.
-//       If decdata.map is not in the pwd where you run analyzer, then this
-//       class uses its own internal DefaultMap().
-//
-//    4. The BdataLoc objects pertain to one data channel (e.g. a fastbus
-//       channel) and and may be multihit.
-//
-//    5. To add a new variable, if it is on a single-hit channel, you may
-//       imitate 'synchadc1' if you know the (crate,slot,chan), and 
-//       imitate 'timeroc2' if you know the (crate,header,no-to-skip).
-//       If your variable is more complicated and relies on several 
-//       channels, imitate the way 'bits' leads to 'evtypebits'.
-//
-// R. Michaels, March 2002
-// 
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaApparatus.h"
@@ -93,9 +56,9 @@ class THaDecData : public THaApparatus {
   
 public:
    THaDecData( const char* description="" );
-   virtual ~THaDecData() {}
+   virtual ~THaDecData() { SetupDecData( NULL, kDelete ); }
 
-   virtual Int_t  Init();  
+   virtual Int_t  Init( const TDatime& run_time );
    virtual Int_t  Reconstruct();
    virtual Int_t  Decode( const THaEvData& );
 
@@ -111,7 +74,6 @@ private:
    UInt_t misc1, misc2, misc3, misc4;
    vector < BdataLoc* > fCrateLoc;   // Raw Data locations by crate, slot, channel
    vector < BdataLoc* > fWordLoc;    // Raw Data locations relative to header word
-   Bool_t kFirst;
 
    void Clear();
    void Dump();
@@ -119,6 +81,7 @@ private:
    void TrigBits(Int_t ibit, BdataLoc *dataloc);
    vector<string> vsplit(const string& s);
    UInt_t header_str_to_base16(string hdr);
+   Int_t SetupDecData( const TDatime* runTime = NULL, EMode mode = kDefine );
 
    static const int THADEC_VERBOSE = 1;
 

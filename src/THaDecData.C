@@ -4,10 +4,42 @@
 //
 // THaDecData
 //
-// The Hall A miscellaneous decoder data.
-// Here are some useful global data, and a place to rapidly add new channels.
+// Hall A miscellaneous decoder data, which typically does not 
+// belong to a detector class.
+// Provides global data to analyzer, and
+// a place to rapidly add new channels.
 //
-// See THaDecData.h (header) for more documentation.
+// Normally the user should have a file "decdata.map" in their pwd
+// to define the locations of raw data for this class (only).
+// But if this file is not found, we define a default mapping, which
+// was valid at least at one point in history.
+//
+// The scheme is as follows:
+//
+//    1. In Init() we define a list of global variables which are tied
+//       to the variables of this class.  E.g. "timeroc2".
+//
+//    2. Next we build a list of "BdataLoc" objects which store information
+//       about where the data are located.  These data are either directly
+//       related to the variables of this class (e.g. timeroc2 is a a raw
+//       data word) or one must analyze them to obtain a variable.
+//
+//    3. The BdataLoc objects may be defined by decdata.map which has an
+//       obvious notation (see ~/examples/decdata.map).  The entries are either 
+//       locations in crates or locations relative to a unique header.
+//       If decdata.map is not in the pwd where you run analyzer, then this
+//       class uses its own internal DefaultMap().
+//
+//    4. The BdataLoc objects pertain to one data channel (e.g. a fastbus
+//       channel) and and may be multihit.
+//
+//    5. To add a new variable, if it is on a single-hit channel, you may
+//       imitate 'synchadc1' if you know the (crate,slot,chan), and 
+//       imitate 'timeroc2' if you know the (crate,header,no-to-skip).
+//       If your variable is more complicated and relies on several 
+//       channels, imitate the way 'bits' leads to 'evtypebits'.
+//
+// R. Michaels, March 2002
 // 
 //////////////////////////////////////////////////////////////////////////
 
@@ -15,8 +47,8 @@
 #include "THaGlobals.h"
 #include "THaEvData.h"
 #include "THaDetMap.h"
-#include "THaVarList.h"
-#include "THaVar.h"
+//#include "THaVar.h"
+#include "VarDef.h"
 #include <stdio.h>
 
 extern FILE *fp;
@@ -31,7 +63,6 @@ THaDecData::THaDecData( const char* descript ) : THaApparatus( myName, descript 
   fNmydets    = 0;
   bits        = new Int_t[MAXBIT];
   cbit        = new char[50];
-  kFirst      = kTRUE;
   Clear();
 }
 
@@ -65,81 +96,94 @@ void THaDecData::Clear()
   }
 }
 
-//_-___________________________________________________________________________
-Int_t THaDecData::Init() {
-// Register global variables. 
-  nvar = 0;
-  VarDef vars[] = {
-    { "evtypebits",     "event type bit pattern",   kInt,  0, &evtypebits },  
-    { "evtype", "event type from bit pattern",  kInt,  0, &evtype },  
-    { "synchadc1",  "synch check adc 1",  kUInt,   0, &synchadc1 },       
-    { "synchadc2",  "synch check adc 2",  kUInt,   0, &synchadc2 },       
-    { "synchadc3",  "synch check adc 3",  kUInt,   0, &synchadc3 },       
-    { "synchadc4",  "synch check adc 4",  kUInt,   0, &synchadc4 },       
-    { "synchadc14", "synch check adc 14", kUInt,   0, &synchadc14 },
-    { "times100k",  "100kHz time stamp",  kUInt,   0, &timestamp },       
-    { "timeroc1", "time stamp roc 1",  kUInt,   0, &timeroc1 },         
-    { "timeroc2", "time stamp roc 2",  kUInt,   0, &timeroc2 },         
-    { "timeroc3", "time stamp roc 3",  kUInt,   0, &timeroc3 },         
-    { "timeroc4", "time stamp roc 4",  kUInt,   0, &timeroc4 },         
-    { "timeroc14", "time stamp roc 14",  kUInt,   0, &timeroc14 },         
-    { "misc1", "misc data 1",  kUInt,   0, &misc1 },                      
-    { "misc2", "misc data 2",  kUInt,   0, &misc2 },                     
-    { "misc3", "misc data 3",  kUInt,   0, &misc3 },                      
-    { "misc4", "misc data 4",  kUInt,   0, &misc4 }
+//_____________________________________________________________________________
+Int_t THaDecData::SetupDecData( const TDatime* run_time, EMode mode )
+{
+  // Register global variables.
+
+  RVarDef vars[] = {
+    { "evtypebits", "event type bit pattern",      "evtypebits" },  
+    { "evtype",     "event type from bit pattern", "evtype" },  
+    { "synchadc1",  "synch check adc 1",           "synchadc1" },       
+    { "synchadc2",  "synch check adc 2",           "synchadc2" },       
+    { "synchadc3",  "synch check adc 3",           "synchadc3" },       
+    { "synchadc4",  "synch check adc 4",           "synchadc4" },       
+    { "synchadc14", "synch check adc 14",          "synchadc14" },
+    { "times100k",  "100kHz time stamp",           "timestamp" },       
+    { "timeroc1",   "time stamp roc 1",            "timeroc1" },         
+    { "timeroc2",   "time stamp roc 2",            "timeroc2" },         
+    { "timeroc3",   "time stamp roc 3",            "timeroc3" },         
+    { "timeroc4",   "time stamp roc 4",            "timeroc4" },         
+    { "timeroc14",  "time stamp roc 14",           "timeroc14" },         
+    { "misc1",      "misc data 1",                 "misc1" },                      
+    { "misc2",      "misc data 2",                 "misc2" },                     
+    { "misc3",      "misc data 3",                 "misc3" },                      
+    { "misc4",      "misc data 4",                 "misc4" },
+    { 0 }
   };
-  if ( gHaVars ) {
-    nvar = sizeof(vars)/sizeof(VarDef);
-    gHaVars->DefineVariables( vars, "g.", "THaDecData::Init" );
-  } else {
-    Warning("THaDecData::Init","No global variable list found. "
-            "Variables not registered.");
-  }
+  Int_t retval = DefineVarsFromList( vars, mode );
+
+  if( mode != kDefine )
+    return retval;
+
+  nvar = sizeof(vars)/sizeof(VarDef);
 
 // Set up the locations in raw data corresponding to variables of this class. 
 // Each element of a BdataLoc is one channel or word.  Since a channel 
 // may be a multihit device, the BdataLoc stores data in a vector.
 
-    fCrateLoc.clear();   
-    fWordLoc.clear();   
+  fCrateLoc.clear();   
+  fWordLoc.clear();   
 
-    ifstream decdatafile ("decdata.map");
-    if ( !decdatafile ) {
-        if (THADEC_VERBOSE) {
-          cout << "WARNING:: THaDecData: File decdata.map not found."<<endl;
-          cout << "An example of this file should be in ./examples directory."<<endl;
-          cout << "Will proceed with default mapping for THaDecData."<<endl;
-          return DefaultMap();
-        }
+  ifstream decdatafile ("decdata.map");
+  if ( !decdatafile ) {
+    if (THADEC_VERBOSE) {
+      cout << "WARNING:: THaDecData: File decdata.map not found."<<endl;
+      cout << "An example of this file should be in ./examples directory."<<endl;
+      cout << "Will proceed with default mapping for THaDecData."<<endl;
+      return DefaultMap();
     }
-    string sinput;
-    vector<string> strvect;
-    string comment = "#";
-    while (getline(decdatafile, sinput)) {
-      strvect.clear();
-      strvect = vsplit(sinput);
-      if (strvect[0] != comment && strvect.size() > 4) {
-        Bool_t found = kFALSE;
-        for (int i = 0; i < nvar; i++) {
-	  if (strcmp(vars[i].name, strvect[0].c_str()) == 0) found = kTRUE;
-        } 
-// !found may be ok, but might be a typo error too, so I print to warn you.
-        if ( !found && THADEC_VERBOSE ) 
-          cout << "THaDecData: new variable "<<strvect[0]<<" is not global"<<endl;
-        Int_t crate = (Int_t)atoi(strvect[2].c_str());  // crate #
-        if (strvect[1] == "crate") {  // Crate data ?
-           Int_t slot = (Int_t)atoi(strvect[3].c_str());
-           Int_t chan = (Int_t)atoi(strvect[4].c_str());
-           fCrateLoc.push_back(new BdataLoc(strvect[0].c_str(), crate, slot, chan)); 
-        } else {         // Data is relative to a header
-           UInt_t header = header_str_to_base16(strvect[3]);
-           Int_t skip = (Int_t)atoi(strvect[4].c_str());
-           fWordLoc.push_back(new BdataLoc(strvect[0].c_str(), crate, header, skip));
-	}
+  }
+
+  string sinput;
+  vector<string> strvect;
+  string comment = "#";
+  while (getline(decdatafile, sinput)) {
+    strvect.clear();
+    strvect = vsplit(sinput);
+    if (strvect[0] != comment && strvect.size() > 4) {
+      Bool_t found = kFALSE;
+      for (int i = 0; i < nvar; i++) {
+	if (strcmp(vars[i].name, strvect[0].c_str()) == 0) found = kTRUE;
+      } 
+      // !found may be ok, but might be a typo error too, so I print to warn you.
+      if ( !found && THADEC_VERBOSE ) 
+	cout << "THaDecData: new variable "<<strvect[0]<<" is not global"<<endl;
+      Int_t crate = (Int_t)atoi(strvect[2].c_str());  // crate #
+      if (strvect[1] == "crate") {  // Crate data ?
+	Int_t slot = (Int_t)atoi(strvect[3].c_str());
+	Int_t chan = (Int_t)atoi(strvect[4].c_str());
+	fCrateLoc.push_back(new BdataLoc(strvect[0].c_str(), crate, slot, chan)); 
+      } else {         // Data is relative to a header
+	UInt_t header = header_str_to_base16(strvect[3]);
+	Int_t skip = (Int_t)atoi(strvect[4].c_str());
+	fWordLoc.push_back(new BdataLoc(strvect[0].c_str(), crate, header, skip));
       }
     }
-    return 0;
+  }
+  return retval;
 }
+
+//_____________________________________________________________________________
+Int_t THaDecData::Init( const TDatime& run_time ) 
+{
+  // Custom Init() method. Since this apparatus has no detectors, we
+  // skip the detector initialization.
+
+  return fStatus = static_cast<EStatus>( SetupDecData( &run_time ) );
+}
+
+//_____________________________________________________________________________
 
 
 Int_t THaDecData::DefaultMap() {
@@ -181,7 +225,6 @@ Int_t THaDecData::DefaultMap() {
 // Anything else you want here...
 
    return 0;
-
 }
 
 
@@ -189,10 +232,6 @@ Int_t THaDecData::DefaultMap() {
 Int_t THaDecData::Decode(const THaEvData& evdata)
 {
   Int_t i;
-  if (kFirst) {
-    Init();
-    kFirst = kFALSE;
-  }
   Clear();
 
 // For each raw data registerd in fCrateLoc, get the data if it belongs to a 
