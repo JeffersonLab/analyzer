@@ -4,13 +4,13 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-#include "TROOT.h"
+//#include "TROOT.h"
 #include "THaInterface.h"
 
-extern void InitGui();
-VoidFuncPtr_t initfuncs[] = { InitGui, 0 };
+//extern void InitGui();
+//VoidFuncPtr_t initfuncs[] = { InitGui, 0 };
 
-TROOT root( "Analyzer", "The Hall A Analyzer Interactive Interface", initfuncs );
+//TROOT root( "Analyzer", "The Hall A Analyzer Interactive Interface", initfuncs );
 
 int main(int argc, char **argv)
 {
