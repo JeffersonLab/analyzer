@@ -2,6 +2,8 @@
 //                                                                           //
 // THaVDCCluster                                                             //
 //                                                                           //
+// A group of VDC hits and routines for linear fitting of drift distances.   //
+//                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "THaVDCCluster.h"
@@ -9,9 +11,13 @@
 #include "THaVDCPlane.h"
 #include "THaVDCUVTrack.h"
 #include "THaTrack.h"
+#include "TClass.h"
+
+#include <iostream>
 
 ClassImp(THaVDCCluster)
 
+const Double_t THaVDCCluster::kBig = 1e307;  // Arbitrary large value
 
 //______________________________________________________________________________
 THaVDCCluster::THaVDCCluster( const THaVDCCluster& rhs ) :
@@ -62,16 +68,44 @@ void THaVDCCluster::AddHit(THaVDCHit * hit)
 //______________________________________________________________________________
 void THaVDCCluster::Clear( const Option_t* opt )
 {
-  // Clears the contents of the cluster
+  // Clear the contents of the cluster
 
-  fSize  = 0;                    // Size of cluster
-  fSlope = fSigmaSlope = 0.0;    // Slope and error in slope of track
-  fInt   = fSigmaInt =   0.0;    // Intercept and error of track
-  fPivot = NULL;                 // Pivot
+  ClearFit();
+  fSize  = 0;
+  fPivot = NULL;
   fPlane = NULL;
-//    fUVTrack = NULL;               // UVTrack the cluster belongs to
-//    fTrack = NULL;                 // Track the cluster belongs to
+//    fUVTrack = NULL;
+//    fTrack = NULL;
 
+}
+
+//______________________________________________________________________________
+void THaVDCCluster::ClearFit()
+{
+  // Clear fit results only
+  
+  fSlope      = 0.0;
+  fSigmaSlope = kBig;
+  fInt        = 0.0;
+  fSigmaInt   = kBig;
+}
+
+//______________________________________________________________________________
+Int_t THaVDCCluster::Compare( const TObject* obj ) const
+{
+  // Compare this cluster to another via the wire number of the pivot.
+  // Returns -1 if comparison cannot be made (unlike class, no pivot).
+
+  if( !obj || IsA() != obj->IsA() )
+    return -1;
+
+  const THaVDCCluster* rhs = static_cast<const THaVDCCluster*>( obj );
+  if( GetPivotWireNum() < rhs->GetPivotWireNum() )
+    return -1;
+  if( GetPivotWireNum() > rhs->GetPivotWireNum() )
+    return +1;
+
+  return 0;
 }
 
 //______________________________________________________________________________
@@ -118,10 +152,15 @@ void THaVDCCluster::ConvertTimeToDist()
 }
 
 //______________________________________________________________________________
-void THaVDCCluster::FitTrack()
+void THaVDCCluster::FitTrack( EMode mode )
 {
-  // Fit track to drift distances, allowing for a common timing offset (t0).
-  // Not yet implemented. Identical to FitSimpleTrack.
+  // Fit track to drift distances. Supports three modes:
+  // 
+  // kSimple:  Linear fit, ignore t0 and multihits
+  // kT0:      Fit t0, but ignore mulithits
+  // kFull:    Analyze multihits and fit t0
+  // 
+  // kT0 and kFull are not yet implemented. Identical to kSimple.
 
   FitSimpleTrack();
 }
@@ -129,14 +168,17 @@ void THaVDCCluster::FitTrack()
 //______________________________________________________________________________
 void THaVDCCluster::FitSimpleTrack()
 {
-  // Calculate slope, intercept and errors
+  // Perform linear fit on drift times. Calculates slope, intercept, and errors.
+  // Assume t0 = 0.
 
   // For this function,
   //   X = Drift Distance
   //   Y = Position of Wires
 
-  if (fSize < 3)
+  if( fSize < 3 ) {
+    ClearFit();
     return;  // Too few hits to get meaningful results
+  }
 
   Double_t N = fSize;  //Ensure that floating point calculations are used
   Double_t m, sigmaM;  // Slope, St. Dev. in slope
@@ -161,17 +203,6 @@ void THaVDCCluster::FitSimpleTrack()
     yArr[i] = fHits[i]->GetPos();
   }
   
-//    printf("Looking for best fit for:\n");
-//    printf("X:");
-//    for (int i = 0; i < fSize; i++)
-//      printf(" %f", xArr[i]);
-//    printf("\nY:");
-//    for (int i = 0; i < fSize; i++)
-//      printf(" %f", yArr[i]);
-//    printf("\n");
-
-//    printf("Coarse: y = %f * x + %f\n", fSlope, fInt);
-
   Int_t nSignCombos = 2; //Number of different sign combinations
   for (int i = 0; i < nSignCombos; i++) {
 
@@ -196,8 +227,7 @@ void THaVDCCluster::FitSimpleTrack()
       sumXY += x * y;
     }
 
-    //These formulas should be available in any statistics book
-
+    // Standard formulae
     m  = (N * sumXY - sumX * sumY) / (N * sumXX - sumX * sumX);
     b  = (sumXX * sumY - sumX * sumXY) / (N * sumXX - sumX * sumX);
 
@@ -212,7 +242,7 @@ void THaVDCCluster::FitSimpleTrack()
     sigmaM = sigmaY * sqrt ( N / ( N * sumXX - sumX * sumX) );
     sigmaB = sigmaY * sqrt (sumXX / ( N * sumXX - sumX * sumX) );
     
-    // Now have to pick the best value
+    // Pick the best value
     if (i == 0 || sigmaY < bestFit) {
       bestFit = sigmaY;
       fSlope = m;
@@ -220,10 +250,7 @@ void THaVDCCluster::FitSimpleTrack()
       fInt = b;
       fSigmaInt = sigmaB;
     }
-//      printf("Found: y = %f * x + %f, sigmaY = %f\n", m, b, sigmaY);
-
   }
-//    printf("Best Fit: y = %f * x + %f\n", fSlope, fInt);
   
   delete[] xArr;
   delete[] yArr;
@@ -231,12 +258,66 @@ void THaVDCCluster::FitSimpleTrack()
 }
 
 //______________________________________________________________________________
+inline
 Int_t THaVDCCluster::GetPivotWireNum() const
 {
-  // Get wire number of cluster pivot (hit with smallest drift distance
+  // Get wire number of cluster pivot (hit with smallest drift distance)
 
   return fPivot ? fPivot->GetWireNum() : -1;
 }
 
-////////////////////////////////////////////////////////////////////////////////
+//______________________________________________________________________________
+void THaVDCCluster::Print( Option_t* opt ) const
+{
+  // Print contents of cluster
 
+  TObject::Print( opt );
+  if( fPlane )
+    cout << "Plane: " << fPlane->GetPrefix() << endl;
+  cout << "Size: " << fSize << endl;
+
+  cout << "Wire numbers:";
+  for( int i = 0; i < fSize; i++ ) {
+    cout << " " << fHits[i]->GetWireNum();
+    if( fHits[i] == fPivot )
+      cout << "*";
+  }
+  cout << endl;
+  cout << "Wire raw times:";
+  for( int i = 0; i < fSize; i++ ) {
+    cout << " " << fHits[i]->GetRawTime();
+    if( fHits[i] == fPivot )
+      cout << "*";
+  }
+  cout << endl;
+  cout << "Wire times:";
+  for( int i = 0; i < fSize; i++ ) {
+    cout << " " << fHits[i]->GetTime();
+    if( fHits[i] == fPivot )
+      cout << "*";
+  }
+  cout << endl;
+  cout << "Wire positions:";
+  for( int i = 0; i < fSize; i++ ) {
+    cout << " " << fHits[i]->GetPos();
+    if( fHits[i] == fPivot )
+      cout << "*";
+  }
+  cout << endl;
+  cout << "Wire drifts:";
+  for( int i = 0; i < fSize; i++ ) {
+    cout << " " << fHits[i]->GetDist();
+    if( fHits[i] == fPivot )
+      cout << "*";
+  }
+  cout << endl;
+
+  cout << "Slope(err), Int(err), t0: " 
+       << fSlope << " (" << fSigmaSlope << "), "
+       << fInt   << " (" << fSigmaInt   << "), "
+       << fT0
+       << endl;
+
+}
+
+////////////////////////////////////////////////////////////////////////////////
