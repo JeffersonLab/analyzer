@@ -27,6 +27,7 @@
 #include "THaHelicity.h"
 #include "THaEvData.h"
 #include <string.h>
+using namespace std;
 
 ClassImp(THaHelicity)
 
@@ -71,7 +72,20 @@ int THaHelicity::GetHelicity() const
 {
 // Get the helicity data for this event (1-DAQ mode).
 // By convention the return codes:   -1 = minus, +1 = plus, 0 = unknown
-     return GetHelicity("L");
+     int lhel,rhel;
+     lhel = -2;
+     rhel = -2;
+     if (validHel[fgRarm]) rhel = GetHelicity("R");
+     if (validHel[fgLarm]) lhel = GetHelicity("L");
+     if (lhel > -2 && rhel > -2) {
+       if (lhel != rhel) {
+	 cout << "THaHelicity::GetHelicity: Inconsistent helicity";
+         cout << " between spectrometers."<<endl;
+       }
+     }
+     if (lhel > -2) return lhel;
+     if (rhel > -2) return rhel;
+     return 0;
 }
 
 //____________________________________________________________________
@@ -124,6 +138,8 @@ void THaHelicity::Init() {
     quad_calibrated     = new Int_t[2]; 
     q1_present_helicity = new Int_t[2];
     hbits               = new Int_t[fgNbits];
+    validTime           = new Int_t[2];
+    validHel            = new Int_t[2];
     fTdavg[0]  = fgTdiff;  // Avg time diff between qrt's
     fTdavg[1]  = fgTdiff;    
     fTtol[0]   = 20;   
@@ -229,7 +245,9 @@ Int_t THaHelicity::Decode( const THaEvData& evdata ) {
 Double_t THaHelicity::GetTime() const {
 // Get the timestamp, a ~105 kHz clock.
   if (fgG0mode == 0) return timestamp;
-  return fTimestamp[fgLarm];
+  if (validTime[fgLarm]) return fTimestamp[fgLarm];
+  if (validTime[fgRarm]) return fTimestamp[fgRarm];
+  return 0;
 }
 
 //____________________________________________________________________
@@ -245,6 +263,8 @@ void THaHelicity::ClearEvent() {
      memset(fTimestamp, 0, 2*sizeof(Double_t));
      memset(present_reading, Unknown, 2*sizeof(Int_t));
      memset(present_helicity, Unknown, 2*sizeof(Int_t));
+     memset(validTime, 0, 2*sizeof(Int_t));
+     memset(validHel, 0, 2*sizeof(Int_t));
   }
 }
 
@@ -255,9 +275,9 @@ void THaHelicity::ReadData( const THaEvData& evdata ) {
    if (fgG0mode != 1) return;
 
    int myroc, len, data, nscaler, header;
-   int numread, badread;
+   int numread, badread, found, index;
    int ring_clock, ring_qrt, ring_helicity;
-   int ring_trig, ring_bcm, ring_l1a; 
+   int ring_trig, ring_bcm, ring_l1a, ring_v2fh; 
 
    if (fArm == fgLarm || fArm == fgRarm) {
      if (fArm == fgLarm) myroc = 11;
@@ -272,8 +292,20 @@ void THaHelicity::ReadData( const THaEvData& evdata ) {
    fQrt[fArm] = (data & 0x20) >> 5;
    fGate[fArm] = (data & 0x40) >> 6;
    fTimestamp[fArm] = evdata.GetRawData(myroc,4);
-   data = evdata.GetRawData(myroc,5);
-   nscaler = data & 0x7;
+   validTime[fArm] = 1;
+   found = 0;
+   index = 5;
+   while ( !found ) {
+     data = evdata.GetRawData(myroc,index++);
+     if ( (data & 0xffff0000) == 0xfb0b0000) found = 1;
+     if (index >= len) break;
+   }
+   if ( found ) {
+     nscaler = data & 0x7;
+   } else {
+     if (HELDEBUG >= 1) cout << "WARNING: Cannot find scalers."<<endl;
+     nscaler = 0;
+   }
    fEvtype[fArm] = evdata.GetEvType();
    if (HELDEBUG >= 2) {
      cout << dec << "--> Data for spectrometer " << fArm << endl;
@@ -284,7 +316,6 @@ void THaHelicity::ReadData( const THaEvData& evdata ) {
      cout << "   time stamp " << fTimestamp[fArm] << endl;
    }
    if (nscaler <= 0) return;
-   int index = 6;
    if (nscaler > 2) nscaler = 2;  // shouldn't be necessary
 // 32 channels of scaler data for two helicities.
    if (HELDEBUG >= 3) cout << "Synch event ----> " << endl;
@@ -333,12 +364,13 @@ void THaHelicity::ReadData( const THaEvData& evdata ) {
      ring_trig = evdata.GetRawData(myroc,index++);
      ring_bcm = evdata.GetRawData(myroc,index++);
      ring_l1a = evdata.GetRawData(myroc,index++);
+     ring_v2fh = evdata.GetRawData(myroc,index++);
      if (HELDEBUG >= 3) {
         cout << "buff [" << dec << iring << "] ";
-        cout << "  clock " << ring_clock << "  qrt " << ring_qrt;
-        cout << "  helicity " << ring_helicity;
-        cout << "  trigger " << ring_trig << "  bcm " << ring_bcm;
-        cout << "  L1a "<<ring_l1a<<endl;
+        cout << "  clck " << ring_clock << "  qrt " << ring_qrt;
+        cout << "  hel " << ring_helicity;
+        cout << "  trig " << ring_trig << "  bcm " << ring_bcm;
+        cout << "  L1a "<<ring_l1a<<"  v2fh "<<ring_v2fh<<endl;
      }
    }
    return;
@@ -399,6 +431,7 @@ void THaHelicity::LoadHelicity() {
 // Load the helicity in G0 mode.  
 // If fGate == 0, helicity remains 'Unknown'.
 
+ if ( quad_calibrated[fArm] ) validHel[fArm] = 1;
  if ( !quad_calibrated[fArm]  || fGate[fArm] == 0 ) {
        present_helicity[fArm] = Unknown;
        return;

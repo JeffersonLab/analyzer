@@ -58,6 +58,7 @@ private:
   Double_t *fTlastquad, *fTtol;
   Int_t *fQrt, *fGate, *fFirstquad, *fEvtype;
   Double_t *fTimestamp;
+  Int_t *validTime, *validHel;
   Int_t *t9count;
   Int_t *present_reading, *predicted_reading; 
   Int_t *q1_reading, *present_helicity, *saved_helicity;
