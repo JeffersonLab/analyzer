@@ -86,6 +86,13 @@ public:
 					 Double_t& length,
 					 TVector3& intersect );
 
+  static Int_t    DefineVarsFromList( const void* list, 
+				      EType type, EMode mode,
+				      const char* var_prefix,
+				      const TObject* obj, 
+				      const char* prefix, 
+				      const char* here );
+
 protected:
 
   enum EProperties { kNeedsRunDB = BIT(0) };

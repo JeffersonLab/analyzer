@@ -110,13 +110,28 @@ Int_t THaAnalysisObject::DefineVarsFromList( const void* list,
   // variables, using prefix of the current apparatus.
   // Internal function that can be called during initialization.
 
+  return DefineVarsFromList( list, type, mode, var_prefix, this, 
+			     fPrefix, Here(ClassName()) );
+}
+
+//_____________________________________________________________________________
+Int_t THaAnalysisObject::DefineVarsFromList( const void* list, 
+					     EType type, EMode mode,
+					     const char* var_prefix,
+					     const TObject* obj,
+					     const char* prefix,
+					     const char* here )
+{
+  // Actual implementation of the variable definition utility function.
+  // Static function that can be used by classes other than THaAnalysisObjects
+
   if( !gHaVars ) {
     TString action;
     if( mode == kDefine )
       action = "defined";
     else if( mode == kDelete )
       action = "deleted";
-    Warning( Here("DefineVariables()"), 
+    ::Warning( "DefineVariables", 
 	     "No global variable list found. No variables %s.", 
 	     action.Data() );
     return kInitError;
@@ -124,18 +139,17 @@ Int_t THaAnalysisObject::DefineVarsFromList( const void* list,
 
   if( mode == kDefine ) {
     if( type == kVarDef )
-      gHaVars->DefineVariables( (const VarDef*)list, 
-				fPrefix, Here(ClassName()) );
+      gHaVars->DefineVariables( (const VarDef*)list, prefix, here );
     else if( type == kRVarDef )
-      gHaVars->DefineVariables( (const RVarDef*)list, this,
-				fPrefix, Here(ClassName()), var_prefix );
+      gHaVars->DefineVariables( (const RVarDef*)list, obj,
+				prefix, here, var_prefix );
   }
   else if( mode == kDelete ) {
     if( type == kVarDef ) {
       const VarDef* item;
       const VarDef* theList = (const VarDef*)list;
       while( (item = theList++) && item->name ) {
-	TString name(fPrefix);
+	TString name(prefix);
 	name.Append( item->name );
 	gHaVars->RemoveName( name );
       }
@@ -143,7 +157,7 @@ Int_t THaAnalysisObject::DefineVarsFromList( const void* list,
       const RVarDef* item;
       const RVarDef* theList = (const RVarDef*)list;
       while( (item = theList++) && item->name ) {
-	TString name(fPrefix);
+	TString name(prefix);
 	name.Append( item->name );
 	gHaVars->RemoveName( name );
       }
