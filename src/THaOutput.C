@@ -303,10 +303,10 @@ void THaOutput::BuildList(std::vector<THaString > vdata)
            cout << "Syntax is 'begin scaler right' for right bank."<<endl;
            return;
 	 }
-         fScalBank = vdata[2]; 
+         fScalBank = vdata[2].ToLower();  
          std::string desc = "Hall A Scalers on " + fScalBank;
          fScalTree.insert(make_pair(fScalBank,
-            new TTree(fScalBank.c_str(),desc.c_str())));
+          new TTree(fScalBank.ToUpper().c_str(),desc.c_str())));
          return;
        } else {
   	 fScalRC = kRate;
