@@ -2,6 +2,12 @@
   ChangeLog for Bob Michaels' Hall A C++ Decoder
   ==============================================	
 
+ **  Mods Jan 2003
+
+     Fix some index bugs in THaEvData.
+     Make STANDALONE mode more transparent.
+	
+	
  **  Modification to CVS, Jan 2002
 
       Added support for RCS and synchronous readout of scalers.
