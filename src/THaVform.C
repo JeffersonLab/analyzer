@@ -81,12 +81,10 @@ void THaVform::Create(const THaVform &rhs)
 void THaVform::Uncreate() 
 {
   if (fOdata) delete fOdata;
-  if( TROOT::Initialized() ) {
-    for (std::vector<THaCut*>::iterator itc = fCut.begin();
-	 itc != fCut.end(); itc++) delete *itc;
-    for (std::vector<THaFormula*>::iterator itf = fFormula.begin();
-	 itf != fFormula.end(); itf++) delete *itf;
-  }
+  for (std::vector<THaCut*>::iterator itc = fCut.begin();
+       itc != fCut.end(); itc++) delete *itc;
+  for (std::vector<THaFormula*>::iterator itf = fFormula.begin();
+       itf != fFormula.end(); itf++) delete *itf;
   fCut.clear();
   fFormula.clear();
 }
