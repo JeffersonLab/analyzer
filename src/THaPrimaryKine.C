@@ -15,6 +15,7 @@
 #include "THaTrackingModule.h"
 #include "THaRunBase.h"
 #include "THaRunParameters.h"
+#include "THaBeam.h"
 #include "VarDef.h"
 #include "TMath.h"
 
@@ -27,9 +28,21 @@ THaPrimaryKine::THaPrimaryKine( const char* name, const char* description,
 				const char* spectro, Double_t particle_mass,
 				Double_t target_mass ) :
   THaPhysicsModule(name,description), fM(particle_mass), 
-  fMA(target_mass), fSpectroName(spectro), fSpectro(NULL)
+  fMA(target_mass), fSpectroName(spectro), fSpectro(NULL), fBeam(NULL)
 {
-  // Normal constructor. 
+  // Standard constructor.
+
+}
+
+//_____________________________________________________________________________
+THaPrimaryKine::THaPrimaryKine( const char* name, const char* description,
+				const char* spectro, const char* beam, 
+				Double_t particle_mass,	Double_t target_mass ) 
+  : THaPhysicsModule(name,description), fM(particle_mass), 
+    fMA(target_mass), fSpectroName(spectro), fBeamName(beam), 
+    fSpectro(NULL), fBeam(NULL)
+{
+  // Constructor with specification of optional beam apparatus
 
 }
 
@@ -88,6 +101,11 @@ THaAnalysisObject::EStatus THaPrimaryKine::Init( const TDatime& run_time )
 
   fSpectro = dynamic_cast<THaTrackingModule*>
     ( FindModule( fSpectroName.Data(), "THaTrackingModule"));
+
+  // Optional beam apparatus
+  if( fBeamName.Length() > 0 )
+    fBeam = dynamic_cast<THaBeam*>( FindModule( fBeamName.Data(), "THaBeam") );
+  
   return fStatus;
 }
 
@@ -101,13 +119,28 @@ Int_t THaPrimaryKine::Process( const THaEvData& evdata )
   THaTrackInfo* trkifo = fSpectro->GetTrackInfo();
   if( !trkifo || !trkifo->IsOK() ) return 1;
 
+  // FIXME: allow for beam energy loss
   Double_t p_in  = gHaRun->GetParameters()->GetBeamP();
 
-  const Double_t Mp = 0.938;    // proton mass (for x_bj)
+  // Determine 4-momentum of incident particle. 
+  // If a beam apparatus given, use it to set the beam direction.
+  if( fBeam ) {
+    if( fBeam->GetDirection().Mag2() > 0.0 ) {
+      TVector3 p_beam = fBeam->GetDirection();
+      p_beam.SetMag(p_in);
+      fP0.SetVectM( p_beam, fM );
+    } else
+      // Oops, beam direction vector is zero?
+      return 2;
+  } else
+    // If no beam given, assume beam along z_lab
+    fP0.SetXYZM( 0.0, 0.0, p_in, fM );
 
-  fP0.SetXYZM( 0.0, 0.0, p_in, fM );        // FIXME: beam slopes?
   fP1.SetVectM( trkifo->GetPvect(), fM );
   fA.SetXYZM( 0.0, 0.0, 0.0, fMA );         // Assume target at rest
+
+  // proton mass (for x_bj)
+  const Double_t Mp = 0.938;
 
   // Standard electron kinematics
   fQ         = fP0 - fP1;
@@ -200,4 +233,13 @@ void THaPrimaryKine::SetSpectrometer( const char* name )
     fSpectroName = name; 
   else
     PrintInitError("SetSpectrometer()");
+}
+
+//_____________________________________________________________________________
+void THaPrimaryKine::SetBeam( const char* name ) 
+{
+  if( !IsInit())
+    fBeamName = name; 
+  else
+    PrintInitError("SetBeam()");
 }

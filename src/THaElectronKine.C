@@ -17,10 +17,19 @@ static const Double_t electron_mass = 0.511e-3;
 
 //_____________________________________________________________________________
 THaElectronKine::THaElectronKine( const char* name, const char* description,
-				const char* spectro, Double_t target_mass ) :
+				  const char* spectro, Double_t target_mass ) :
   THaPrimaryKine(name,description,spectro,electron_mass,target_mass)
 {
-  // Normal constructor. 
+  // Standard constructor. 
+}
+
+//_____________________________________________________________________________
+THaElectronKine::THaElectronKine( const char* name, const char* description,
+				  const char* spectro, const char* beam,
+				  Double_t target_mass ) :
+  THaPrimaryKine(name,description,spectro,beam,electron_mass,target_mass)
+{
+  // Constructor with specification of optional beam apparatus
 }
 
 //_____________________________________________________________________________

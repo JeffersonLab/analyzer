@@ -12,6 +12,7 @@
 #include "TString.h"
 
 class THaTrackingModule;
+class THaBeam;
 typedef TLorentzVector FourVect;
 
 class THaPrimaryKine : public THaPhysicsModule {
@@ -19,6 +20,10 @@ class THaPrimaryKine : public THaPhysicsModule {
 public:
   THaPrimaryKine( const char* name, const char* description,
 		  const char* spectro = "",
+		  Double_t particle_mass = 0.0, /* GeV */
+		  Double_t target_mass = 0.0 /* GeV */ );
+  THaPrimaryKine( const char* name, const char* description,
+		  const char* spectro, const char* beam,
 		  Double_t particle_mass = 0.0, /* GeV */
 		  Double_t target_mass = 0.0 /* GeV */ );
   virtual ~THaPrimaryKine();
@@ -49,6 +54,7 @@ public:
           void      SetMass( Double_t m );
           void      SetTargetMass( Double_t m );
           void      SetSpectrometer( const char* name );
+          void      SetBeam( const char* name );
 
 protected:
 
@@ -67,8 +73,8 @@ protected:
   FourVect          fA1;           // Recoil system 4-momentum
   FourVect          fQ;            // Momentum transfer 4-vector
 
-  Double_t          fM;            // Mass of particle (GeV/c^2)
-  Double_t          fMA;           // Effective mass of target (GeV/c^2)
+  Double_t          fM;            // Mass of incident particle (GeV/c^2)
+  Double_t          fMA;           // Target mass (GeV/c^2)
 
   virtual Int_t DefineVariables( EMode mode = kDefine );
   virtual Int_t ReadRunDatabase( const TDatime& date );
@@ -76,7 +82,9 @@ protected:
   void PrintInitError( const char* here );
 
   TString                 fSpectroName;  // Name of spectrometer to consider
+  TString                 fBeamName;     // Name of beam position apparatus
   THaTrackingModule*      fSpectro;      // Pointer to spectrometer object
+  THaBeam*                fBeam;         // Pointer to beam position apparatus
 
   ClassDef(THaPrimaryKine,0)   //Single arm kinematics module
 };
