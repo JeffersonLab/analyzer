@@ -126,9 +126,13 @@ void THaUsrstrutils::string_from_evbuffer(int *evbuffer)
         int ibuff[MAX];
         char cbuff[MAX];
      } evbuff; 
-     int nmax = (max_size_string < MAX) ? max_size_string : MAX;
-     for (int j=0; j<nmax; j++) evbuff.ibuff[j] = evbuffer[j];
-     string strbuff = evbuff.cbuff;
+     int nmax;
+     nmax = (max_size_string < MAX) ? max_size_string : MAX;
+     for (int j=0; j < nmax; j++) evbuff.ibuff[j] = evbuffer[j];
+     string strbuff;
+     char *ctmp = new char[sizeof(evbuff.cbuff)+1];
+     memcpy(ctmp, evbuff.cbuff, sizeof(evbuff.cbuff));
+     strbuff = ctmp;
      int pos1 = 1;
      int iamlost = 0;
      int ifound = 0;
@@ -136,7 +140,10 @@ void THaUsrstrutils::string_from_evbuffer(int *evbuffer)
        pos1 = strbuff.find("\n",pos1+1);
        int pos2 = strbuff.rfind("\n",pos1-1);
        int pos3 = strbuff.rfind(";",pos1);
-       if (iamlost++ > MAX) return;         // should not happen...
+       if (iamlost++ > MAX) {
+             delete ctmp;
+             return;         // should not happen...
+       }
        if (DEBUG) {
          cout << "strbuff = " << strbuff << endl;
          cout << "strbuff pos " <<pos1<<" "<<pos2<<" "<<pos3<<endl;
@@ -161,6 +168,7 @@ void THaUsrstrutils::string_from_evbuffer(int *evbuffer)
         file_configusrstr = (char *) malloc(1);
         file_configusrstr[0] = '\0';
      }
+     delete ctmp;
      return;
 };
       
