@@ -16,6 +16,9 @@
  *
  * Revision History:
  *   $Log$
+ *   Revision 1.3  2002/08/30 15:02:44  ole
+ *   Remove leading spaces from file name in evOpen
+ *
  *   Revision 1.2  2002/03/26 22:36:30  ole
  *   Fix compliation warnings about signed/unsigned comparisons.
  *
@@ -180,21 +183,16 @@ int evopen_(const char *filename,const char *flags,int *handle,int fnlen,int fle
 
 int evOpen(const char *filename,const char *flags,int *handle)
 {
-  EVFILE *a;
-  // char *cp;
+  EVFILE* a = evGetStructure(); /* allocate control structure or quit */
+  if (!a) return(S_EVFILE_ALLOCFAIL);
   int header[EV_HDSIZ];
   int temp, blk_size = 0;
-  a = evGetStructure();		/* allocate control structure or quit */
-  if (!a) return(S_EVFILE_ALLOCFAIL);
-  //  while (*filename==' ') filename++; /* remove leading spaces */
-  //     for (cp=filename;*cp!=NULL;cp++) {
-  //     if ((*cp==' ') || !(isprint((int) *cp))) {
-  //     *cp='\0';
-  //    }
-  //  }
+  char* fn = (char*)malloc(strlen(filename+1));
+  strcpy(fn,filename);
+  while (*fn==' ') fn++; /* remove leading spaces */
   switch (*flags)
-  case 'r': case 'R': {
-    a->file = fopen(filename,"r");
+  case '\0': case 'r': case 'R': {
+    a->file = fopen(fn,"r"); free(fn);
     a->rw = EV_READ;
     if (a->file) {
       fread(header,sizeof(header),1,a->file); /* update: check nbytes return */
@@ -237,7 +235,7 @@ int evOpen(const char *filename,const char *flags,int *handle)
     }
     break;
   case 'w': case 'W':
-    a->file = fopen(filename,"w");
+    a->file = fopen(fn,"w"); free(fn);
     a->rw = EV_WRITE;
     if (a->file) {
       a->buf = (int *) malloc(EVBLOCKSIZE*4);
@@ -260,6 +258,7 @@ int evOpen(const char *filename,const char *flags,int *handle)
     break;
   default:
     free(a);
+    free(fn);
     return(S_EVFILE_UNKOPTION);
   }
   if (a->file) {
