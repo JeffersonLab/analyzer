@@ -26,7 +26,7 @@
 
 #define DEBUG 0
 
-#define SKIPEVENT 20     // How many scaler events to skip
+#define SKIPEVENT 0     // How many scaler events to skip
                          // (This reduces effect of clock granularity)
 #define MYROC     11     // Needed for the SKIPEVENT trick
 #define BCM_CUT1  3000   // cut on BCM (x1 gain) to require beam on.
