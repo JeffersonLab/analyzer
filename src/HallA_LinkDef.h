@@ -77,6 +77,7 @@
 #pragma link C++ class THaAvgVertex+;
 #pragma link C++ class THaExtTarCor+;
 #pragma link C++ class THaTrackInfo+;
+#pragma link C++ class THaDebugModule+;
 
 #endif
 
