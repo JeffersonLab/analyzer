@@ -92,8 +92,7 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   const int LEN = 200;
   char buff[LEN];
   
-  // Build the search tag and find it in the file. Search tags
-  // are of form [ <prefix> ], e.g. [ R.vdc.u1 ].
+  // Look for the section [<prefix>.global] in the file, e.g. [ R.global ]
   TString tag(fPrefix);
   Ssiz_t pos = tag.Index("."); 
   if( pos != kNPOS )
@@ -108,13 +107,11 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   bool found = false;
   while (!found && fgets (buff, LEN, file) != NULL) {
     char* buf = ::Compress(buff);  //strip blanks
-    //cout<<buf;
 
     if( strlen(buf) > 0 && buf[ strlen(buf)-1 ] == '\n' )
       buf[ strlen(buf)-1 ] = 0;    //delete trailing newline
     line = buf; line.ToLower();
  
-    //cout<<line.Data()<<endl;
     if ( tag == line ) 
       found = true;
     delete [] buf;
@@ -125,17 +122,32 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
     return kInitError;
   }
 
-  // We found the entry, now read the data
+  // We found the section, now read the data
 
   // read in some basic constants first
   fscanf(file, "%lf", &fSpacing);
   fgets(buff, LEN, file); // Skip rest of line
-  fgets(buff, LEN, file); // Skip line
-
+ 
   // Read in the focal plane transfer elements
-  // NOTE: the matrix elements should be stored such that
-  // the 3 focal plane matrix elements come first, followed by
-  // the other backwards elements, starting with D000
+  // For fine-tuning of these data, we seek to a matching time stamp, or
+  // if no time stamp found, to a "configuration" section. Examples:
+  // 
+  // [ 2002-10-10 15:30:00 ]
+  // comment line goes here
+  // t 0 0 0  ...
+  // y 0 0 0  ... etc.
+  //
+  // or
+  // 
+  // [ config=highmom ]
+  // comment line
+  // t 0 0 0  ... etc.
+  //
+  if( SeekDBdate( file, date ) == 0 && fConfig.Length() > 0 && 
+      SeekDBconfig( file, fConfig.Data() ));
+
+  fgets(buff, LEN, file); // Skip comment line
+
   THaMatrixElement ME;
   char w[20];
   bool good = false;
@@ -147,6 +159,10 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   fFPMatrixElems.clear();
   fLMatrixElems.clear();
   
+  // NOTE: the matrix elements should be stored such that
+  // the 3 focal plane matrix elements come first, followed by
+  // the other backwards elements, starting with D000
+
   // read in t000 and verify it
   ME.iszero = true;  ME.order = 0;
   // Read matrix element signature
