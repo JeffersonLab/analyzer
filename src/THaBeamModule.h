@@ -9,14 +9,17 @@
 
 #include "THaBeamInfo.h"
 
+struct RVarDef;
+
 class THaBeamModule {
-  
+
 public:
   virtual ~THaBeamModule();
   
   THaBeamInfo*  GetBeamInfo()  { return &fBeamIfo; }
 
   void BeamIfoClear() { fBeamIfo.Clear(); }
+  static const RVarDef* GetRVarDef();
 
 protected:
 
