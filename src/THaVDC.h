@@ -6,16 +6,12 @@
 // THaVDC                                                                    //
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
-//                                                                           //
-//        For X, Y, and Z coordinates of track    -  meters                  //
-//        For Theta and Phi angles of track       -  tan(angle)              //
-//                                                                           //
-///////////////////////////////////////////////////////////////////////////////
 
 #include "THaTrackingDetector.h"
 
 class THaVDCUVPlane;
 class THaTrack;
+class TClonesArray;
 
 class THaVDC : public THaTrackingDetector {
 
@@ -42,20 +38,23 @@ protected:
   THaVDC( const THaVDC& ) {}
   THaVDC& operator=( const THaVDC& ) { return *this; }
 
-  THaVDCUVPlane* fLower; // Lower UV plane
-  THaVDCUVPlane* fUpper; // Upper UV plane
+  THaVDCUVPlane* fLower;    // Lower UV plane
+  THaVDCUVPlane* fUpper;    // Upper UV plane
 
-  Double_t fVDCAngle;    // Angle from the VDC coord sys to transport cs (rad)
-  Double_t fSin_vdc;     // Store trig properties of the VDC angle for 
-  Double_t fCos_vdc;     // for efficiency
-  Double_t fTan_vdc;
-  Double_t fSpacing;     // Spacing between U1 and U2 (m)
-  Int_t    fNtracks;     // Number of tracks found in ConstructTracks
-  Int_t    fNumIter;     // Number of iterations for FineTrack()
+  TClonesArray*  fUVpairs;  // Pairs of matched UV tracks (THaVDCTrackPair obj)
+
+  Double_t fVDCAngle;       // Angle from the VDC cs to TRANSPORT cs (rad)
+  Double_t fSin_vdc;        // Sine of VDC angle
+  Double_t fCos_vdc;        // Cosine of VDC angle
+  Double_t fTan_vdc;        // Tangent of VDC angle
+  Double_t fSpacing;        // Spacing between U1 and U2 (m)
+  Int_t    fNtracks;        // Number of tracks found in ConstructTracks
+
+  Int_t    fNumIter;        // Number of iterations for FineTrack()
+  Double_t fErrorCutoff;    // Cut on track matching error
 
           void  Clear()  {}
   virtual Int_t ConstructTracks( TClonesArray * tracks = NULL, Int_t flag = 0 );
-  virtual Int_t MatchUVTracks( Int_t flag );  
 
   void ProjToTransPlane(Double_t& x, Double_t& y, Double_t& z, 
 			Double_t& th, Double_t& ph);
