@@ -29,11 +29,10 @@ using namespace std;
 
 THaVform::THaVform( const char *type, const char* name, const char* formula,
 		    const THaVarList* vlst, const THaCutList* clst )
-  : THaFormula("[0]", "[0]", vlst, clst)
+  : THaFormula("[0]", "[0]", vlst, clst), fType(type)
 {
 // The title "[0]" and expression "[0]" will be over-written
 // depending on the type of THaVform.
-  fType = THaString(type);
   SetName(name);
   THaString stemp1 = StripPrefix(formula); 
   SetTitle(stemp1.c_str());
@@ -220,19 +219,20 @@ Int_t THaVform::Init()
 
   if (IsEye()) return 0;
 
-  fStitle = THaString(GetTitle());
+  fStitle = GetTitle();
   Int_t status = 0;
 
   for (Int_t i = 0; i < fNvar; i++) {
     if (fVarStat[i] == kVAType) {  // This obj is a var. sized array.
       if (StripBracket(fStitle) == fVarName[i]) {  
  	 status = 0;
-         fVarPtr = gHaVars->Find(fVarName[i].c_str());
+         fVarPtr = fVarList->Find(fVarName[i].c_str());
          if (fVarPtr) {
            fType = "VarArray";
            fObjSize = fVarPtr->GetLen();
            if (fPrefix == kNoPrefix) {
-              fOdata = new THaOdata();
+	      delete fOdata;
+	      fOdata = new THaOdata();
 	   } else {
 	      fObjSize = 1;
 	   }
@@ -245,7 +245,7 @@ Int_t THaVform::Init()
   }
 
   if (!IsCut() && !IsFormula()) return kIllTyp;
-  if (!gHaVars) return kNoGlo;
+  if (!fVarList) return kNoGlo;
 
 // Check that all fixed arrays have the same size.
 
@@ -257,14 +257,14 @@ Int_t THaVform::Init()
       return kIllMix;
     }
     if (fVarStat[i] != kFAType ) continue; 
-    pvar1 = gHaVars->Find(fVarName[i].c_str());
+    pvar1 = fVarList->Find(fVarName[i].c_str());
     fVarPtr = pvar1; // Store one pointer to be able to get the size 
                      // later since it may change. This works since all
                      // elements were verified to be the same size.
     if (i == fNvar) continue;
     for (Int_t j = i+1; j < fNvar; j++) {
       if (fVarStat[j] != kFAType ) continue; 
-      pvar2 = gHaVars->Find(fVarName[j].c_str());
+      pvar2 = fVarList->Find(fVarName[j].c_str());
       if (!pvar1 || !pvar2) {
         status = kArrZer;
         cout << "THaVform:ERROR: Trying to use zero pointer."<<endl;
@@ -313,7 +313,7 @@ void THaVform::ReAttach( )
 // THaCut's and THaFormula's to reattach to variables.
   for (Int_t i = 0; i < fNvar; i++) {
     if (fVarStat[i] != kFAType ) continue; 
-    fVarPtr = gHaVars->Find(fVarName[i].c_str());
+    fVarPtr = fVarList->Find(fVarName[i].c_str());
     break;
   }
   for (std::vector<THaCut*>::iterator itc = fCut.begin();
