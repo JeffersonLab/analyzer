@@ -77,7 +77,7 @@ endif
 DEFINES       =
 CXXFLG       += -Wall -Woverloaded-virtual -fPIC
 LD            = g++
-LDCONFIG      = ldconfig -n $(LIBDIR)
+LDCONFIG      = /sbin/ldconfig -n $(LIBDIR)
 SOFLAGS       = -shared
 SONAME        = -Wl,-soname=
 
