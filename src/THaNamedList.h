@@ -29,6 +29,7 @@ public:
           const Text_t*  GetTitle() const       { return fNamed->GetTitle(); }
   virtual ULong_t  Hash() const                 { return fNamed->Hash(); }
           Bool_t   IsSortable() const           { return kTRUE; }
+  virtual void     PrintOpt( Option_t* opt="" ) const;
   virtual void     SetName(const Text_t *name); // *MENU*
   virtual void     SetNameTitle(const Text_t *name, const Text_t *title);
   virtual void     SetTitle(const Text_t *title="") 

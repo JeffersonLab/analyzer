@@ -16,6 +16,20 @@ class THaNamedList;
 class TString;
 class THaCut;
 
+// Utility class that provides the PrintOpt method
+class THaHashList : public THashList {
+public:
+  THaHashList(Int_t capacity = TCollection::kInitHashTableCapacity, Int_t rehash = 0) :
+    THashList(capacity,rehash) {}
+  THaHashList(TObject* parent, Int_t capacity = TCollection::kInitHashTableCapacity, 
+	    Int_t rehash = 0) :
+    THashList(parent,capacity,rehash) {}
+  virtual ~THaHashList() {}
+
+  virtual void PrintOpt( Option_t* opt ) const;
+  ClassDef(THaHashList,1) //A hash list with a PrintOpt method
+};
+  
 class THaCutList {
 
 public:
@@ -61,8 +75,8 @@ public:
 				Option_t* option="" ) const;
 
 protected:
-  THashList*        fCuts;      //Hash list holding all cuts
-  THashList*        fBlocks;    //Hash list holding blocks of cuts.
+  THaHashList*      fCuts;      //Hash list holding all cuts
+  THaHashList*      fBlocks;    //Hash list holding blocks of cuts.
                                 //Elements of this table are THaNamedLists of THaCuts
   const THaVarList* fVarList;   //Pointer to list of variables
 

@@ -9,7 +9,6 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-#include "THashList.h"
 #include "THaCut.h"
 #include "THaNamedList.h"
 #include "THaCutList.h"
@@ -22,10 +21,20 @@
 #include <cstring>
 #include <strstream.h>
 
-ClassImp(THaCutList)
-
 const char* const THaCutList::kDefaultBlockName = "Default";
 const char* const THaCutList::kDefaultCutFile   = "cutdef.dat";
+
+//_____________________________________________________________________________
+void THaHashList::PrintOpt( Option_t* opt ) const
+{
+  // Print all objects in the list. Pass option 'opt' through to each object
+  // being printed. (This is the old ROOT 2,x behavior).
+
+  TIter next(this);
+  TObject* object;
+  while((object = next()))
+    object->Print(opt);
+}
 
 //______________________________________________________________________________
 THaCutList::THaCutList()
@@ -34,8 +43,8 @@ THaCutList::THaCutList()
   // later with SetList() or pass the list as an argument to Define().
   // Allowing this constructor is not very safe ...
 
-  fCuts   = new THashList();
-  fBlocks = new THashList();
+  fCuts   = new THaHashList();
+  fBlocks = new THaHashList();
   fVarList = 0;
 }
 
@@ -44,8 +53,8 @@ THaCutList::THaCutList( const THaVarList& lst ) : fVarList(&lst)
 {
   // Normal constructor. Create the main lists and set the variable list.
 
-  fCuts   = new THashList();
-  fBlocks = new THashList();
+  fCuts   = new THaHashList();
+  fBlocks = new THaHashList();
 }
 
 //______________________________________________________________________________
@@ -462,11 +471,11 @@ void THaCutList::Print( Option_t* option ) const
       bool is_stats = !strcmp( opt.GetOption(0), kPRINTSTATS );
       if(  is_stats && strlen( plist->GetName() ) )
 	cout << "BLOCK: " << plist->GetName() << endl;
-      plist->Print( opt.Data() );
+      plist->PrintOpt( opt.Data() );
       if ( is_stats ) cout << endl;
     }
   } else
-    fCuts->Print( opt.Data() );
+    fCuts->PrintOpt( opt.Data() );
 }
 
 //______________________________________________________________________________
@@ -480,7 +489,7 @@ void THaCutList::PrintBlock( const char* block, Option_t* option ) const
   if( !strcmp(opt.GetOption(0),"") ) opt = kPRINTLINE;
   MakePrintOption( opt, plist );
   PrintHeader( opt );
-  plist->Print( opt.Data() );
+  plist->PrintOpt( opt.Data() );
 }
 
 //______________________________________________________________________________
@@ -519,3 +528,7 @@ void THaCutList::PrintHeader( const THaPrintOption& opt ) const
   cout << line << endl;
   delete [] line;
 }
+
+//______________________________________________________________________________
+ClassImp(THaCutList)
+ClassImp(THaHashList)
