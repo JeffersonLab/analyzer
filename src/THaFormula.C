@@ -186,7 +186,12 @@ Int_t THaFormula::DefinedGlobalVariable( const TString& name )
     return -6;
 
   // Parse name for array syntax
-  THaArrayString var;
+  // TString is NOT by default a null-terminated string,
+  // so we jump through some hoops to properly build the THaArrayString
+  TString nm(name);
+  nm.Append('\0'); // now it is effectively null terminated
+
+  THaArrayString var(nm.Data());
   if( var.IsError() ) return -2;
 
   // Find the variable with this name
