@@ -185,7 +185,13 @@ Int_t THaSpectrometer::DefineVariables( EMode mode )
     { "tr.tg_y", "Target y coordinate",          "fTracks.THaTrack.fTY"},
     { "tr.tg_th", "Tangent of target theta angle", "fTracks.THaTrack.fTTheta"},
     { "tr.tg_ph", "Tangent of target phi angle",   "fTracks.THaTrack.fTPhi"},    
-    { "tr.tg_dp", "Target delta",          "fTracks.THaTrack.fDp"},
+    { "tr.tg_dp", "Target delta",                "fTracks.THaTrack.fDp"},
+    { "tr.px",    "Lab momentum x (GeV)",        "fTracks.THaTrack.GetLabPx()"},
+    { "tr.py",    "Lab momentum y (GeV)",        "fTracks.THaTrack.GetLabPy()"},
+    { "tr.pz",    "Lab momentum z (GeV)",        "fTracks.THaTrack.GetLabPz()"},
+    { "tr.vx",    "Vertex x (m)",                "fTracks.THaTrack.GetVertexX()"},
+    { "tr.vy",    "Vertex y (m)",                "fTracks.THaTrack.GetVertexY()"},
+    { "tr.vz",    "Vertex z (m)",                "fTracks.THaTrack.GetVertexZ()"},
     { 0 }
   };
 
@@ -448,7 +454,7 @@ Int_t THaSpectrometer::ReadRunDatabase( FILE* file, const TDatime& date )
   Double_t th = 0.0, ph = 0.0;
   Double_t off_x = 0.0, off_y = 0.0, off_z = 0.0;
 
-  TagDef tags[] = { 
+  const TagDef tags[] = { 
     { "theta",    &th, 1 }, 
     { "phi",      &ph },
     { "pcentral", &fPcentral, 3 },
