@@ -28,6 +28,9 @@ class THaCrateMap
 
 
  public:
+     static const UShort_t MAXCHAN;
+     static const UShort_t MAXDATA;
+
      THaCrateMap() {}                               // Construct, but not initialized
      virtual ~THaCrateMap() {}
      bool isFastBus(int crate) const;               // True if fastbus crate;
@@ -69,8 +72,6 @@ class THaCrateMap
 
      static const int MAXROC = 20;
      static const int MAXSLOT = 27;
-     static const UShort_t MAXCHAN = 100;
-     static const UShort_t MAXDATA = 1024;
      TString crate_type[MAXROC];
      ECrateCode crate_code[MAXROC];
      int nslot[MAXROC];               // Number of slots used

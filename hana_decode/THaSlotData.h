@@ -28,6 +28,9 @@ class THaSlotData {
 
 public:
 
+       static const int DEFNCHAN;  // Default number of channels
+       static const int DEFNDATA; // Default number of data words
+
        THaSlotData();
        THaSlotData(int crate, int slot);
        virtual ~THaSlotData();
@@ -49,8 +52,6 @@ public:
 
 private:
 
-       static const int DEFNCHAN = 100;  // Default number of channels
-       static const int DEFNDATA = 1024; // Default number of data words
        int crate;
        int slot;
        TString device;

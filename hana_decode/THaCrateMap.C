@@ -21,6 +21,8 @@
 
 using namespace std;
 
+const UShort_t THaCrateMap::MAXCHAN = 100;
+const UShort_t THaCrateMap::MAXDATA = 1024;
 const int THaCrateMap::CM_OK = 1;
 const int THaCrateMap::CM_ERR = -1;
 
