@@ -206,6 +206,8 @@ FILE* THaAnalysisObject::OpenFile( const char *name, const TDatime& date,
   vector<string>::iterator it;
   string item, cwd, filename;
   Int_t item_date;
+  const string defaultdir("DEFAULT");
+  bool have_defaultdir = false, retried = false, found = false;
 
   // Save current directory name
 
@@ -228,8 +230,10 @@ FILE* THaAnalysisObject::OpenFile( const char *name, const TDatime& date,
 
   // If any subdirectories named "YYYYMMDD" exist, where YYYY, MM, and DD are
   // digits, assume that they contain time-dependent database files. Select 
-  // the directory matching the timestamp 'date' of the current run. Otherwise, 
-  // use the current directory to look for database files.
+  // the directory matching the timestamp 'date' of the current run. 
+  // If no such directories exist, or none is valid for the give date, 
+  // but "DEFAULT" exists, use it. 
+  // Otherwise, use the current directory to look for database files.
 
   // Get names of all subdirectories matching the YYYYMMDD pattern
 
@@ -242,14 +246,14 @@ FILE* THaAnalysisObject::OpenFile( const char *name, const TDatime& date,
 	if( !isdigit(item[pos])) break;
       if( pos==8 )
 	time_dirs.push_back( item );
-    }
+    } else if ( item == defaultdir )
+      have_defaultdir = true;
   }
   if( errno )  goto error;
   closedir(dir);
 
   // If any found, select the one that corresponds to the given date.
   if( time_dirs.size() > 0 ) {
-    bool found = false;
     sort( time_dirs.begin(), time_dirs.end() );
     for( it = time_dirs.begin(); it != time_dirs.end(); it++ ) {
       item_date = atoi((*it).c_str());
@@ -268,15 +272,19 @@ FILE* THaAnalysisObject::OpenFile( const char *name, const TDatime& date,
     }
     // If there are YYYMMDD subdirectories, one of them must be valid for the
     // given date.
-    if( !found ) {
+    if( !found && !have_defaultdir ) {
       cerr<<here<<"Time-dependent database subdirectories exist, but "
-	  <<"none is valid for the requested date: "<<date.AsString()<<endl;
+    	  <<"none is valid for the requested date: "<<date.AsString()<<endl;
       goto exit;
     }
-    if( chdir( (*it).c_str()) ) {
+    if( found && chdir( (*it).c_str()) ) {
       cerr<<here<<": cannot open database directory"<<(*it).c_str()<<endl;
       goto exit;
     }
+  }
+  if( !found && have_defaultdir && chdir( defaultdir.c_str()) ) {
+    cerr<<here<<": cannot open database directory"<<defaultdir.c_str()<<endl;
+    goto exit;
   }
   if( !getcwd(buf,size)) goto error;
 
@@ -286,13 +294,29 @@ FILE* THaAnalysisObject::OpenFile( const char *name, const TDatime& date,
   filename.append(name);
   filename.append("dat");
 
+ retry:
 #ifdef WITH_DEBUG
   if( debug_flag>0 ) {
     cout << "<THaAnalysisObject::" << here 
-	 << ">: Opening database file " << buf << "/" << filename << endl;
+	 << ">: Opening database file " << buf << "/" << filename;
   }
 #endif
+  // Open the database file
   fi = fopen( filename.c_str(), filemode);
+
+  // If database cannot be opened, but "DEFAULT" exists, and we are not already in 
+  // "DEFAULT", try opening the file in "DEFAULT" before failing.
+#ifdef WITH_DEBUG
+  if( debug_flag>0 ) 
+    if( !fi ) cout << " ... failed" << endl;
+    else      cout << " ... ok" << endl;
+#endif
+  if( !fi && !retried && found && have_defaultdir && chdir( ".." ) == 0
+      && chdir( defaultdir.c_str()) == 0 ) {
+    if( !getcwd(buf,size)) goto error;
+    retried = true;
+    goto retry;
+  }
   if( !fi )
     cerr<<here<<": Cannot open database file "<<buf<<filename.c_str()<<"."<<endl;
   goto exit;
