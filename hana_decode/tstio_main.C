@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include "THaCodaFile.h"
+#include "THaCodaDecoder.h"
 #include "THaEvData.h"
 #include "evio.h"
 #include "THaSlotData.h"

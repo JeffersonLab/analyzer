@@ -8,7 +8,7 @@
 
 #include <iostream>
 #include "THaCodaFile.h"
-#include "THaEvData.h"
+#include "THaCodaDecoder.h"
 #include "THaSlotData.h"
 #include "THaGenDetTest.h"
 #include "TString.h"
@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
         cout << "... exiting." << endl;
         exit(0);
    }
-   THaEvData evdata;
+   THaEvData *evdata = new THaCodaDecoder();
    THaGenDetTest mydetector;
    mydetector.init();
 
@@ -58,7 +58,7 @@ int main(int argc, char* argv[])
            exit(0);
         }
      }
-     evdata.LoadEvent( datafile.getEvBuffer() );   
+     evdata->LoadEvent( datafile.getEvBuffer() );   
      mydetector.process_event(evdata);
 
    }  //  end of event loop

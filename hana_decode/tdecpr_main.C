@@ -6,7 +6,7 @@
 
 #include <iostream>
 #include "THaCodaFile.h"
-#include "THaEvData.h"
+#include "THaCodaDecoder.h"
 #include "TString.h"
 #include "evio.h"
 
@@ -29,7 +29,7 @@ int main(int argc, char* argv[])
         exit(0);
    }
       
-   THaEvData evdata;
+   THaEvData *evdata = new THaCodaDecoder();
 
 // Loop over events
  
@@ -53,15 +53,15 @@ int main(int argc, char* argv[])
 // evdata uses its private crate map (recommended).
 // Alternatively you could use load_evbuffer(int* evbuffer, haCrateMap& map)
      
-     evdata.LoadEvent( datafile.getEvBuffer() );   
+     evdata->LoadEvent( datafile.getEvBuffer() );   
 
-     cout << "\nEvent type   " << dec << evdata.GetEvType() << endl;
-     cout << "Event number " << evdata.GetEvNum()  << endl;
-     cout << "Event length " << evdata.GetEvLength() << endl;
-     if (evdata.IsPhysicsTrigger() ) { // triggers 1-14
+     cout << "\nEvent type   " << dec << evdata->GetEvType() << endl;
+     cout << "Event number " << evdata->GetEvNum()  << endl;
+     cout << "Event length " << evdata->GetEvLength() << endl;
+     if (evdata->IsPhysicsTrigger() ) { // triggers 1-14
         cout << "Physics trigger " << endl;
      }
-     if(evdata.IsScalerEvent()) cout << "Scaler `event' " << endl;
+     if(evdata->IsScalerEvent()) cout << "Scaler `event' " << endl;
 
 // Now we want data from a particular crate and slot.
 // E.g. crates are 1,2,3,13,14,15 (roc numbers), Slots are 1,2,3... 
@@ -73,39 +73,39 @@ int main(int argc, char* argv[])
 //  Here are raw 32-bit CODA words for this crate and slot
       cout << "Raw Data Dump for crate "<<dec<<crate<<" slot "<<slot<<endl; 
       int hit;
-      for(hit=0; hit<evdata.GetNumRaw(crate,slot); hit++) {
+      for(hit=0; hit<evdata->GetNumRaw(crate,slot); hit++) {
         cout<<dec<<"raw["<<hit<<"] =   ";
-        cout<<hex<<evdata.GetRawData(crate,slot,hit)<<endl;  
+        cout<<hex<<evdata->GetRawData(crate,slot,hit)<<endl;  
       }
 // You can alternatively let evdata print out the contents of a crate and slot:
-      evdata.PrintSlotData(crate,slot);
+      evdata->PrintSlotData(crate,slot);
 
-      if (evdata.IsPhysicsTrigger()) {
+      if (evdata->IsPhysicsTrigger()) {
 // Below are interpreted data, device types are ADC, TDC, or scaler.
 // One needs to know the channel number within the device
         int channel = 7;    // for example
         cout << "Device type = ";
-        cout << evdata.DevType(crate,slot) << endl;
-        for (hit=0; hit<evdata.GetNumHits(crate,slot,channel); hit++) {
+        cout << evdata->DevType(crate,slot) << endl;
+        for (hit=0; hit<evdata->GetNumHits(crate,slot,channel); hit++) {
 	   cout << "Channel " <<dec<<channel<<" hit # "<<hit<<"  ";
-           cout << "data = " << evdata.GetData(crate,slot,channel,hit)<<endl;
+           cout << "data = " << evdata->GetData(crate,slot,channel,hit)<<endl;
         }
 // Helicity data
-        cout << "Helicity on left spectrometer "<<evdata.GetHelicity("left")<<endl;
-        cout << "Helicity on right spectrometer "<<evdata.GetHelicity("right")<<endl;
-        cout << "Helicity "<<evdata.GetHelicity()<<endl;
+        cout << "Helicity on left spectrometer "<<evdata->GetHelicity("left")<<endl;
+        cout << "Helicity on right spectrometer "<<evdata->GetHelicity("right")<<endl;
+        cout << "Helicity "<<evdata->GetHelicity()<<endl;
       }
 
 // Scalers:  Although the getData methods works if you happen
 // to know what crate & slot contain scaler data, here is
-// another way to get scalers directly from evdata.
+// another way to get scalers directly from evdata
 
       for (slot=0; slot<5; slot++) {
         cout << "\n scaler slot -> " << dec << slot << endl;; 
         for (int chan=0; chan<16; chan++) {
 	  cout << "Scaler chan " <<  chan << "  ";
-          cout << evdata.GetScaler("left",slot,chan);
-          cout << "  "  << evdata.GetScaler(7,slot,chan) << endl;
+          cout << evdata->GetScaler("left",slot,chan);
+          cout << "  "  << evdata->GetScaler(7,slot,chan) << endl;
 	}
       }
  

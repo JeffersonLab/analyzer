@@ -4,7 +4,7 @@
 // 
 #include <iostream>
 #include "THaCodaFile.h"
-#include "THaEvData.h"
+#include "THaCodaDecoder.h"
 #include "TString.h"
 #include "evio.h"
 
@@ -29,7 +29,7 @@ int main(int argc, char* argv[])
         exit(0);
    }
       
-   THaEvData evdata;
+   THaEvData *evdata = new THaCodaDecoder();
 
 // Loop over a finite number of events
 
@@ -49,17 +49,17 @@ int main(int argc, char* argv[])
         }
      }
 
-     evdata.LoadEvent( datafile.getEvBuffer() );   
+     evdata->LoadEvent( datafile.getEvBuffer() );
 
-     if(evdata.IsEpicsEvent()) {
+     if(evdata->IsEpicsEvent()) {
 
        cout << "Some epics data --> "<<endl;
        cout << "hac_bcm_average "<<
-	 evdata.GetEpicsData("hac_bcm_average")<<endl;
+	 evdata->GetEpicsData("hac_bcm_average")<<endl;
        cout << "IPM1H04A.XPOS  "<<
-         evdata.GetEpicsData("IPM1H04A.XPOS")<<endl;
+         evdata->GetEpicsData("IPM1H04A.XPOS")<<endl;
        cout << "IPM1H04A.YPOS  "<<
-         evdata.GetEpicsData("IPM1H04A.YPOS")<<endl;
+         evdata->GetEpicsData("IPM1H04A.YPOS")<<endl;
 
      }
 

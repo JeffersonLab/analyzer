@@ -4,7 +4,7 @@
 // 
 #include <iostream>
 #include "THaCodaFile.h"
-#include "THaEvData.h"
+#include "THaCodaDecoder.h"
 #include "TString.h"
 #include "evio.h"
 
@@ -29,12 +29,12 @@ int main(int argc, char* argv[])
         exit(0);
    }
       
-   THaEvData evdata;
+   THaEvData *evdata = new THaCodaDecoder();
 
    // Can tell evdata whether to use evtype 
    // 133 or 120 for prescale data.  Default is 120.
-   evdata.SetOrigPS(133);   // args are 120 or 133
-   cout << "Origin of PS data "<<evdata.GetOrigPS()<<endl;
+   evdata->SetOrigPS(133);   // args are 120 or 133
+   cout << "Origin of PS data "<<evdata->GetOrigPS()<<endl;
 
 // Loop over a finite number of events
 
@@ -54,14 +54,14 @@ int main(int argc, char* argv[])
         }
      }
 
-     evdata.LoadEvent( datafile.getEvBuffer() );   
+     evdata->LoadEvent( datafile.getEvBuffer() );   
 
-     if(evdata.IsPrescaleEvent()) {
+     if(evdata->IsPrescaleEvent()) {
        cout <<"\n Prescale factors from CODA file = " << filename << endl;
        cout <<"\n Trigger      Prescale Factor"<< endl;
        for (int trig=1; trig<=8; trig++) {
 	 cout <<"   "<<dec<<trig<<"             ";
-         int ps = evdata.GetPrescaleFactor(trig);
+         int ps = evdata->GetPrescaleFactor(trig);
          int psmax;
 	 if (trig <= 4) psmax = 16777216;  // 2^24
          if (trig >= 5) psmax = 65536;     // 2^16
