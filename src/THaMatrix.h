@@ -28,8 +28,13 @@ public:
   THaMatrix( const TMatrix& a, TMatrix::EMatrixCreatorsOp2 op, 
 	     const TMatrix& b)
     : TMatrix( a, op, b) {}
+#if ROOT_VERSION_CODE >= 262144 // 4.00/00
+  THaMatrix( const TMatrixFLazy& lazy_constructor) 
+    : TMatrix( lazy_constructor) {}
+#else
   THaMatrix( const TLazyMatrix& lazy_constructor) 
     : TMatrix( lazy_constructor) {}
+#endif
   THaMatrix( const TVector2& col0, const TVector2& col1 );
   THaMatrix( const TVector3& col0, const TVector3& col1, 
 	     const TVector3& col2 );

@@ -124,7 +124,11 @@ Double_t THaFormula::DefinedValue( Int_t i )
 }  
 
 //_____________________________________________________________________________
+#if ROOT_VERSION_CODE >= ROOT_VERSION(4,0,0)
+Int_t THaFormula::DefinedVariable(TString& name, Int_t& action)
+#else
 Int_t THaFormula::DefinedVariable(TString& name)
+#endif
 {
   // Check if name is in the list of global objects
 
@@ -142,6 +146,9 @@ Int_t THaFormula::DefinedVariable(TString& name)
   //   -5  array index out of bounds
   //   -6  maximum number of variables exceeded
 
+#if ROOT_VERSION_CODE >= ROOT_VERSION(4,0,0)
+  action = 0;
+#endif
   Int_t k = DefinedGlobalVariable( name );
   if( k>=0 ) return k;
   return DefinedCut( name );

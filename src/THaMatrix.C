@@ -57,9 +57,15 @@ void THaMatrix::SetColumn( const TVector& v, Int_t col )
     Error( "SetColumn", "column number out of range");
     return;
   }
+#if ROOT_VERSION_CODE >= ROOT_VERSION(4,0,0)
+  Float_t* cp = GetMatrixArray();
+  for( Int_t i = 0;  i < fNrows; i++ )
+    cp[i*fNcols+col] = v(i);
+#else
   Real_t* cp = fIndex[col];
   for( Int_t i = 0; i < fNrows; i++, cp++ )
     *cp = v(i);
+#endif
 }
 
 //_____________________________________________________________________________
@@ -75,9 +81,15 @@ void THaMatrix::SetColumn( const TVector2& v, Int_t col )
     Error( "SetColumn", "column number out of range");
     return;
   }
+#if ROOT_VERSION_CODE >= ROOT_VERSION(4,0,0)
+  Float_t* cp = GetMatrixArray();
+  cp[col]        = v.X();
+  cp[fNcols+col] = v.Y();
+#else
   Real_t* cp = fIndex[col];
   *(cp)   = v.X();
   *(cp+1) = v.Y();
+#endif
 }
   
 //_____________________________________________________________________________
@@ -93,10 +105,17 @@ void THaMatrix::SetColumn( const TVector3& v, Int_t col )
     Error( "SetColumn", "column number out of range");
     return;
   }
+#if ROOT_VERSION_CODE >= ROOT_VERSION(4,0,0)
+  Float_t* cp = GetMatrixArray();
+  cp[col]          = v.X();
+  cp[fNcols+col]   = v.Y();
+  cp[2*fNcols+col] = v.Z();
+#else
   Real_t* cp = fIndex[col];
   *(cp)   = v.X();
   *(cp+1) = v.Y();
   *(cp+2) = v.Z();
+#endif
 }
 
 //_____________________________________________________________________________

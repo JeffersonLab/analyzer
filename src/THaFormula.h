@@ -28,7 +28,11 @@ public:
   virtual             ~THaFormula();
   virtual Int_t       Compile( const char* expression="" );
   virtual Double_t    DefinedValue( Int_t i );
+#if ROOT_VERSION_CODE >= 262144 // 4.00/00
+  virtual Int_t       DefinedVariable( TString& variable, Int_t& action );
+#else
   virtual Int_t       DefinedVariable( TString& variable );
+#endif
   virtual Int_t       DefinedCut( const TString& variable );
   virtual Int_t       DefinedGlobalVariable( const TString& variable );
   virtual Double_t    Eval();
