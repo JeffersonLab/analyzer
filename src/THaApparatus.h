@@ -22,6 +22,8 @@ public:
   virtual Int_t        Decode( const THaEvData& );
           Int_t        GetNumDets()   const      { return fDetectors->GetSize(); }
           THaDetector* GetDetector( const char* name );
+  const   TList*       GetDetectors() { return fDetectors; } // for inspection
+
   virtual EStatus      Init( const TDatime& run_time );
   virtual void         Print( Option_t* opt="" ) const 
                                                  { fDetectors->Print(opt); }
