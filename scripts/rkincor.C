@@ -83,7 +83,9 @@ c1->Update();
 
 c2 = new TCanvas("c2", "Corrected dp - first peak");
 h3->Fit("gaus");
+h3->GetXaxis()->SetTitle("Delta");
 h3->Draw();
+
  TF1 *xf = h3->GetFunction("gaus");
  cout<<"chi-squared         = "<<xf->GetChisquare()<<endl;
  cout<<"reduced chi-squared = "
@@ -94,7 +96,9 @@ c2->Update();
 
 c12 = new TCanvas("c12", "Fortran Corrected dp - first peak");
 h13->Fit("gaus");
+h13->GetXaxis()->SetTitle("Delta");
 h13->Draw();
+
  TF1 *xf = h13->GetFunction("gaus");
  cout<<"chi-squared         = "<<xf->GetChisquare()<<endl;
  cout<<"reduced chi-squared = "

@@ -25,6 +25,7 @@ cout<<"  rotated diff(e)rences"<<endl;
 
 cout<<"  ta(r)get values"<<endl;
 cout<<"  t(a)rget two-d"<<endl;
+cout<<"  tar(g)et cross-correlations"<<endl;
 cout<<"  target di(f)erences"<<endl;
 input[0] = '\0';
 fgets(input, kBUFLEN, stdin);
@@ -48,6 +49,7 @@ t->Draw("CR_TR_y", "abs(CR_TR_y)<0.15");
 c2->Update();
 t->SetLineColor(kRed);
 t->Draw("FR_TR_y", "abs(FR_TR_y)<0.15", "same");
+
 t->SetLineColor(kBlack);
 c2->Update();
 
@@ -181,10 +183,10 @@ c33->Update();
  case 'R':
 
 c51 = new TCanvas("c51", "delta");
-t->Draw("CR_TG_dp", "abs(CR_TG_dp+0.025)<0.025", "", 75000);
+t->Draw("CR_TG_dp", "abs(CR_TG_dp+0.025)<0.025");
 c51->Update(); 
 t->SetLineColor(kRed); 
-t->Draw("FR_TG_dp", "abs(FR_TG_dp+0.025)<0.025", "same", 75000); 
+t->Draw("FR_TG_dp", "abs(FR_TG_dp+0.025)<0.025", "same"); 
 t->SetLineColor(kBlack);
 c51->Update();
 
@@ -214,6 +216,24 @@ c54->Update();
 
  break;
 
+ case 'g':
+ case 'G':
+   c250 = new TCanvas("c250", "New Delta v. Old Delta");
+   t->Draw("FR_TG_dp:CR_TG_dp", "abs(CR_TG_dp+0.025)<0.025&&abs(FR_TG_dp+0.025)<0.025");
+   c250->Update();
+
+   c251 = new TCanvas("c251", "New Y v. Old Y");
+   t->Draw("FR_TG_y:CR_TG_y", "abs(CR_TG_y)<0.06&&abs(FR_TG_y)<0.06");
+   c251->Update();
+
+   c252 = new TCanvas("c252", "New Theta v. Old Theta");
+   t->Draw("FR_TG_th:CR_TG_th", "abs(CR_TG_th+0.05)<0.2&&abs(FR_TG_th+0.05)<0.2");
+   c252->Update();
+
+   c253 = new TCanvas("c253", "New Phi v. Old Phi");
+   t->Draw("FR_TG_ph:CR_TG_ph", "abs(CR_TG_ph)<0.1&&abs(FR_TG_ph)<0.1");
+   c253->Update();
+   break;
 
  case 'a':
  case 'A':
@@ -231,90 +251,90 @@ c56 = new TCanvas("c56", "Target Theta v. Phi - Peak 0");
  c56->Divide(1,2);
  c56->cd(1);
  t->Draw("CR_TG_th:CR_TG_ph", 
-	 "abs(CR_TG_th)<0.1&&abs(CR_TG_ph)<0.1&&abs(CR_TG_y+0.006)<0.003");
+	 "abs(CR_TG_th)<0.1&&abs(CR_TG_ph)<0.1&&abs(CR_TG_y)<0.003");
  c56->cd(2);
  t->Draw("FR_TG_th:FR_TG_ph", 
-	 "abs(FR_TG_th)<0.1&&abs(FR_TG_ph)<0.1&&abs(FR_TG_y+0.006)<0.003");
+	 "abs(FR_TG_th)<0.1&&abs(FR_TG_ph)<0.1&&abs(FR_TG_y)<0.003");
 c56->Update();
 
 c57 = new TCanvas("c57", "Target Theta v. Phi - Peak 1");
  c57->Divide(1,2);
  c57->cd(1);
  t->Draw("CR_TG_th:CR_TG_ph", 
-	 "abs(CR_TG_th)<0.1&&abs(CR_TG_ph)<0.1&&abs(CR_TG_y+0.006+1*0.010)<0.003");
+	 "abs(CR_TG_th)<0.1&&abs(CR_TG_ph)<0.1&&abs(CR_TG_y+1*0.0125)<0.003");
  c57->cd(2);
  t->Draw("FR_TG_th:FR_TG_ph", 
-	 "abs(FR_TG_th)<0.1&&abs(FR_TG_ph)<0.1&&abs(FR_TG_y+0.006+1*0.010)<0.003");
+	 "abs(FR_TG_th)<0.1&&abs(FR_TG_ph)<0.1&&abs(FR_TG_y+1*0.0125)<0.003");
 c57->Update();
 
 c58 = new TCanvas("c58", "Target Theta v. Phi - Peak 2");
  c58->Divide(1,2);
  c58->cd(1);
  t->Draw("CR_TG_th:CR_TG_ph", 
-	 "abs(CR_TG_th)<0.1&&abs(CR_TG_ph)<0.1&&abs(CR_TG_y+0.006+2*0.010)<0.003");
+	 "abs(CR_TG_th)<0.1&&abs(CR_TG_ph)<0.1&&abs(CR_TG_y+2*0.0125)<0.003");
  c58->cd(2);
  t->Draw("FR_TG_th:FR_TG_ph", 
-	 "abs(FR_TG_th)<0.1&&abs(FR_TG_ph)<0.1&&abs(FR_TG_y+0.006+2*0.010)<0.003");
+	 "abs(FR_TG_th)<0.1&&abs(FR_TG_ph)<0.1&&abs(FR_TG_y+2*0.0125)<0.003");
 c58->Update();
 
 c59 = new TCanvas("c59", "Target Theta v. Phi - Peak 3");
  c59->Divide(1,2);
  c59->cd(1);
  t->Draw("CR_TG_th:CR_TG_ph", 
-	 "abs(CR_TG_th)<0.1&&abs(CR_TG_ph)<0.1&&abs(CR_TG_y+0.006+3*0.010)<0.003");
+	 "abs(CR_TG_th)<0.1&&abs(CR_TG_ph)<0.1&&abs(CR_TG_y+3*0.0125)<0.003");
  c59->cd(2);
  t->Draw("FR_TG_th:FR_TG_ph", 
-	 "abs(FR_TG_th)<0.1&&abs(FR_TG_ph)<0.1&&abs(FR_TG_y+0.006+3*0.010)<0.003");
+	 "abs(FR_TG_th)<0.1&&abs(FR_TG_ph)<0.1&&abs(FR_TG_y+3*0.0125)<0.003");
 c59->Update();
 
 c100 = new TCanvas("c100", "Target Theta v. Phi - Peak 4");
  c100->Divide(1,2);
  c100->cd(1);
  t->Draw("CR_TG_th:CR_TG_ph", 
-	 "abs(CR_TG_th)<0.1&&abs(CR_TG_ph)<0.1&&abs(CR_TG_y+0.006+4*0.010)<0.003");
+	 "abs(CR_TG_th)<0.1&&abs(CR_TG_ph)<0.1&&abs(CR_TG_y+4*0.0125)<0.003");
  c100->cd(2);
  t->Draw("FR_TG_th:FR_TG_ph", 
-	 "abs(FR_TG_th)<0.1&&abs(FR_TG_ph)<0.1&&abs(FR_TG_y+0.006+4*0.010)<0.003");
+	 "abs(FR_TG_th)<0.1&&abs(FR_TG_ph)<0.1&&abs(FR_TG_y+4*0.0125)<0.003");
 c100->Update();
 
 c101 = new TCanvas("c100", "Target Theta v. Phi - Peak -1");
  c101->Divide(1,2);
  c101->cd(1);
  t->Draw("CR_TG_th:CR_TG_ph", 
-	 "abs(CR_TG_th)<0.1&&abs(CR_TG_ph)<0.1&&abs(CR_TG_y+0.006-1*0.010)<0.003");
+	 "abs(CR_TG_th)<0.1&&abs(CR_TG_ph)<0.1&&abs(CR_TG_y-1*0.0125)<0.003");
  c101->cd(2);
  t->Draw("FR_TG_th:FR_TG_ph", 
-	 "abs(FR_TG_th)<0.1&&abs(FR_TG_ph)<0.1&&abs(FR_TG_y+0.006-1*0.010)<0.003");
+	 "abs(FR_TG_th)<0.1&&abs(FR_TG_ph)<0.1&&abs(FR_TG_y-1*0.0125)<0.003");
 c101->Update();
 
 c102 = new TCanvas("c102", "Target Theta v. Phi - Peak -2");
  c102->Divide(1,2);
  c102->cd(1);
  t->Draw("CR_TG_th:CR_TG_ph", 
-	 "abs(CR_TG_th)<0.1&&abs(CR_TG_ph)<0.1&&abs(CR_TG_y+0.006-2*0.010)<0.003");
+	 "abs(CR_TG_th)<0.1&&abs(CR_TG_ph)<0.1&&abs(CR_TG_y-2*0.0125)<0.003");
  c102->cd(2);
  t->Draw("FR_TG_th:FR_TG_ph", 
-	 "abs(FR_TG_th)<0.1&&abs(FR_TG_ph)<0.1&&abs(FR_TG_y+0.006-2*0.010)<0.003");
+	 "abs(FR_TG_th)<0.1&&abs(FR_TG_ph)<0.1&&abs(FR_TG_y-2*0.0125)<0.003");
 c102->Update();
 
 c103 = new TCanvas("c103", "Target Theta v. Phi - Peak -3");
  c103->Divide(1,2);
  c103->cd(1);
  t->Draw("CR_TG_th:CR_TG_ph", 
-	 "abs(CR_TG_th)<0.1&&abs(CR_TG_ph)<0.1&&abs(CR_TG_y+0.006-3*0.010)<0.003");
+	 "abs(CR_TG_th)<0.1&&abs(CR_TG_ph)<0.1&&abs(CR_TG_y-3*0.0125)<0.003");
  c103->cd(2);
  t->Draw("FR_TG_th:FR_TG_ph", 
-	 "abs(FR_TG_th)<0.1&&abs(FR_TG_ph)<0.1&&abs(FR_TG_y+0.006-3*0.010)<0.003");
+	 "abs(FR_TG_th)<0.1&&abs(FR_TG_ph)<0.1&&abs(FR_TG_y-3*0.0125)<0.003");
 c103->Update();
 
 c104 = new TCanvas("c104", "Target Theta v. Phi - Peak -4");
  c104->Divide(1,2);
  c104->cd(1);
  t->Draw("CR_TG_th:CR_TG_ph", 
-	 "abs(CR_TG_th)<0.1&&abs(CR_TG_ph)<0.1&&abs(CR_TG_y+0.006-4*0.010)<0.003");
+	 "abs(CR_TG_th)<0.1&&abs(CR_TG_ph)<0.1&&abs(CR_TG_y-4*0.0125)<0.003");
  c104->cd(2);
  t->Draw("FR_TG_th:FR_TG_ph", 
-	 "abs(FR_TG_th)<0.1&&abs(FR_TG_ph)<0.1&&abs(FR_TG_y+0.006-4*0.010)<0.003");
+	 "abs(FR_TG_th)<0.1&&abs(FR_TG_ph)<0.1&&abs(FR_TG_y-4*0.0125)<0.003");
 c104->Update();
 
 c105 = new TCanvas("c105", "Target Theta v. Delta");
@@ -329,14 +349,13 @@ c106 = new TCanvas("c106", "Target Theta v. Delta - Peak 0");
  c106->Divide(1,2);
  c106->cd(1);
  t->Draw("CR_TG_dp:CR_TG_ph", 
-	 "abs(CR_TG_ph)<0.05&&abs(CR_TG_dp+0.025)<0.025&&abs(CR_TG_y+0.006)<0.003");
+	 "abs(CR_TG_ph)<0.05&&abs(CR_TG_dp+0.025)<0.025&&abs(CR_TG_y)<0.003");
  c106->cd(2);
  t->Draw("FR_TG_dp:FR_TG_ph", 
-	 "abs(FR_TG_ph)<0.05&&abs(FR_TG_dp+0.025)<0.025&&abs(CR_TG_y+0.006)<0.003");
+	 "abs(FR_TG_ph)<0.05&&abs(FR_TG_dp+0.025)<0.025&&abs(CR_TG_y)<0.003");
 c106->Update();
 
  break;
-
 
  case 'f':
  case 'F':
@@ -355,7 +374,7 @@ xdhist->Fit("gaus");
 c60->Update();
 
 c61 = new TCanvas("c61", "New Target Y - Old Target Y");
-t->Draw("CR_TG_y-FR_TG_y", "(CR_TG_y-FR_TG_y)>-0.01&&(CR_TG_y-FR_TG_y)<0.01");
+t->Draw("CR_TG_y-FR_TG_y", "(CR_TG_y-FR_TG_y)>-0.02&&(CR_TG_y-FR_TG_y)<0.02");
 TH1F *ydhist = (TH1F*)gPad->GetPrimitive("htemp");
 ydhist->Fit("gaus");
  TF1 *yf = ydhist->GetFunction("gaus");
@@ -368,7 +387,7 @@ c61->Update();
 
 c62 = new TCanvas("c62", "New Target Theta - Old Target Theta");
 t->Draw("CR_TG_th-FR_TG_th", 
-	"(CR_TG_th-FR_TG_th)>-0.02&&(CR_TG_th-FR_TG_th)<0.02");
+	"(CR_TG_th-FR_TG_th)>-0.05&&(CR_TG_th-FR_TG_th)<0.05");
 TH1F *tdhist = (TH1F*)gPad->GetPrimitive("htemp");
 tdhist->Fit("gaus");
  TF1 *tf = tdhist->GetFunction("gaus");
@@ -490,7 +509,7 @@ c93->Update();
  case 'e':
  case 'E':
 c94 = new TCanvas("c94", "New X - Old X");
-t->Draw("CR_TR_rx-FR_TR_rx", "(CR_TR_rx-FR_TR_rx)>-0.02&&(CR_TR_rx-FR_TR_rx)<0.02");
+t->Draw("CR_TR_rx-FR_TR_rx", "(CR_TR_rx-FR_TR_rx)>-0.002&&(CR_TR_rx-FR_TR_rx)<0.002");
 TH1F *xdhist = (TH1F*)gPad->GetPrimitive("htemp");
 xdhist->Fit("gaus");
  TF1 *xf = xdhist->GetFunction("gaus");
@@ -502,7 +521,7 @@ xdhist->Fit("gaus");
 c94->Update();
 
 c95 = new TCanvas("c95", "New Y - Old Y");
-t->Draw("CR_TR_ry-FR_TR_ry", "(CR_TR_ry-FR_TR_ry)>-0.02&&(CR_TR_ry-FR_TR_ry)<0.02");
+t->Draw("CR_TR_ry-FR_TR_ry", "(CR_TR_ry-FR_TR_ry)>-0.002&&(CR_TR_ry-FR_TR_ry)<0.002");
 TH1F *ydhist = (TH1F*)gPad->GetPrimitive("htemp");
 ydhist->Fit("gaus");
  TF1 *yf = ydhist->GetFunction("gaus");
@@ -515,7 +534,7 @@ c95->Update();
 
 c96 = new TCanvas("c96", "New Theta - Old Theta");
 t->Draw("CR_TR_rth-FR_TR_rth", 
-	"(CR_TR_rth-FR_TR_rth)>-0.05&&(CR_TR_rth-FR_TR_rth)<0.05");
+	"(CR_TR_rth-FR_TR_rth)>-0.005&&(CR_TR_rth-FR_TR_rth)<0.005");
 TH1F *tdhist = (TH1F*)gPad->GetPrimitive("htemp");
 tdhist->Fit("gaus");
  TF1 *tf = tdhist->GetFunction("gaus");
@@ -528,7 +547,7 @@ c96->Update();
 
 c97 = new TCanvas("c97", "New Phi - Old Phi");
 t->Draw("CR_TR_rph-FR_TR_rph", 
-	"(CR_TR_rph-FR_TR_rph)>-0.01&&(CR_TR_rph-FR_TR_rph)<0.01");
+	"(CR_TR_rph-FR_TR_rph)>-0.005&&(CR_TR_rph-FR_TR_rph)<0.005");
 TH1F *pdhist = (TH1F*)gPad->GetPrimitive("htemp");
 pdhist->Fit("gaus");
  TF1 *pf = pdhist->GetFunction("gaus");

@@ -25,6 +25,7 @@ cout<<"  rotated diff(e)rences"<<endl;
 
 cout<<"  ta(r)get values"<<endl;
 cout<<"  t(a)rget two-d"<<endl;
+cout<<"  tar(g)et cross-correlations"<<endl;
 cout<<"  target di(f)erences"<<endl;
 input[0] = '\0';
 fgets(input, kBUFLEN, stdin);
@@ -48,6 +49,7 @@ t->Draw("CL_TR_y", "abs(CL_TR_y)<0.15");
 c2->Update();
 t->SetLineColor(kRed);
 t->Draw("FL_TR_y", "abs(FL_TR_y)<0.15", "same");
+
 t->SetLineColor(kBlack);
 c2->Update();
 
@@ -128,7 +130,7 @@ c23->Update();
  case 'd':
  case 'D':
 c30 = new TCanvas("c30", "New X - Old X");
-t->Draw("CL_TR_x-FL_TR_x", "(CL_TR_x-FL_TR_x)>-0.01&&(CL_TR_x-FL_TR_x)<0.01");
+t->Draw("CL_TR_x-FL_TR_x", "(CL_TR_x-FL_TR_x)>-0.005&&(CL_TR_x-FL_TR_x)<0.005");
 TH1F *xdhist = (TH1F*)gPad->GetPrimitive("htemp");
 xdhist->Fit("gaus");
  TF1 *xf = xdhist->GetFunction("gaus");
@@ -140,7 +142,7 @@ xdhist->Fit("gaus");
 c30->Update();
 
 c31 = new TCanvas("c31", "New Y - Old Y");
-t->Draw("CL_TR_y-FL_TR_y", "(CL_TR_y-FL_TR_y)>-0.01&&(CL_TR_y-FL_TR_y)<0.01");
+t->Draw("CL_TR_y-FL_TR_y", "(CL_TR_y-FL_TR_y)>-0.005&&(CL_TR_y-FL_TR_y)<0.005");
 TH1F *ydhist = (TH1F*)gPad->GetPrimitive("htemp");
 ydhist->Fit("gaus");
  TF1 *yf = ydhist->GetFunction("gaus");
@@ -181,10 +183,10 @@ c33->Update();
  case 'R':
 
 c51 = new TCanvas("c51", "delta");
-t->Draw("CL_TG_dp", "abs(CL_TG_dp+0.025)<0.025", "", 75000);
+t->Draw("CL_TG_dp", "abs(CL_TG_dp+0.025)<0.025");
 c51->Update(); 
 t->SetLineColor(kRed); 
-t->Draw("FL_TG_dp", "abs(FL_TG_dp+0.025)<0.025", "same", 75000); 
+t->Draw("FL_TG_dp", "abs(FL_TG_dp+0.025)<0.025", "same"); 
 t->SetLineColor(kBlack);
 c51->Update();
 
@@ -214,6 +216,24 @@ c54->Update();
 
  break;
 
+ case 'g':
+ case 'G':
+   c250 = new TCanvas("c250", "New Delta v. Old Delta");
+   t->Draw("FL_TG_dp:CL_TG_dp", "abs(CL_TG_dp+0.025)<0.025&&abs(FL_TG_dp+0.025)<0.025");
+   c250->Update();
+
+   c251 = new TCanvas("c251", "New Y v. Old Y");
+   t->Draw("FL_TG_y:CL_TG_y", "abs(CL_TG_y)<0.06&&abs(FL_TG_y)<0.06");
+   c251->Update();
+
+   c252 = new TCanvas("c252", "New Theta v. Old Theta");
+   t->Draw("FL_TG_th:CL_TG_th", "abs(CL_TG_th+0.05)<0.2&&abs(FL_TG_th+0.05)<0.2");
+   c252->Update();
+
+   c253 = new TCanvas("c253", "New Phi v. Old Phi");
+   t->Draw("FL_TG_ph:CL_TG_ph", "abs(CL_TG_ph)<0.1&&abs(FL_TG_ph)<0.1");
+   c253->Update();
+   break;
 
  case 'a':
  case 'A':
@@ -246,7 +266,7 @@ c57 = new TCanvas("c57", "Target Theta v. Phi - Peak 1");
  t->Draw("FL_TG_th:FL_TG_ph", 
 	 "abs(FL_TG_th)<0.1&&abs(FL_TG_ph)<0.1&&abs(FL_TG_y+1*0.0125)<0.003");
 c57->Update();
-/*
+
 c58 = new TCanvas("c58", "Target Theta v. Phi - Peak 2");
  c58->Divide(1,2);
  c58->cd(1);
@@ -336,7 +356,6 @@ c106 = new TCanvas("c106", "Target Theta v. Delta - Peak 0");
 c106->Update();
 
  break;
-
 
  case 'f':
  case 'F':
@@ -490,7 +509,7 @@ c93->Update();
  case 'e':
  case 'E':
 c94 = new TCanvas("c94", "New X - Old X");
-t->Draw("CL_TR_rx-FL_TR_rx", "(CL_TR_rx-FL_TR_rx)>-0.02&&(CL_TR_rx-FL_TR_rx)<0.02");
+t->Draw("CL_TR_rx-FL_TR_rx", "(CL_TR_rx-FL_TR_rx)>-0.005&&(CL_TR_rx-FL_TR_rx)<0.005");
 TH1F *xdhist = (TH1F*)gPad->GetPrimitive("htemp");
 xdhist->Fit("gaus");
  TF1 *xf = xdhist->GetFunction("gaus");
@@ -502,7 +521,7 @@ xdhist->Fit("gaus");
 c94->Update();
 
 c95 = new TCanvas("c95", "New Y - Old Y");
-t->Draw("CL_TR_ry-FL_TR_ry", "(CL_TR_ry-FL_TR_ry)>-0.02&&(CL_TR_ry-FL_TR_ry)<0.02");
+t->Draw("CL_TR_ry-FL_TR_ry", "(CL_TR_ry-FL_TR_ry)>-0.005&&(CL_TR_ry-FL_TR_ry)<0.005");
 TH1F *ydhist = (TH1F*)gPad->GetPrimitive("htemp");
 ydhist->Fit("gaus");
  TF1 *yf = ydhist->GetFunction("gaus");
@@ -515,7 +534,7 @@ c95->Update();
 
 c96 = new TCanvas("c96", "New Theta - Old Theta");
 t->Draw("CL_TR_rth-FL_TR_rth", 
-	"(CL_TR_rth-FL_TR_rth)>-0.05&&(CL_TR_rth-FL_TR_rth)<0.05");
+	"(CL_TR_rth-FL_TR_rth)>-0.02&&(CL_TR_rth-FL_TR_rth)<0.02");
 TH1F *tdhist = (TH1F*)gPad->GetPrimitive("htemp");
 tdhist->Fit("gaus");
  TF1 *tf = tdhist->GetFunction("gaus");
