@@ -136,12 +136,12 @@ Int_t THaElectronKine::ReadRunDatabase( const TDatime& date )
   FILE* f = OpenRunDBFile( date );
   if( !f ) return kFileError;
 
-  fMA = 0.938;
-
   TString name(fPrefix), tag("MA"); name += tag;
   Int_t st = LoadDBvalue( f, date, name.Data(), fMA );
   if( st )
     LoadDBvalue( f, date, tag.Data(), fMA );
+
+  if( fMA == 0.0 ) fMA = 0.938;
 
   fclose(f);
   return 0;
