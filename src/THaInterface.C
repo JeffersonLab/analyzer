@@ -101,7 +101,7 @@ void THaInterface::PrintLogo()
      mille = iyear;
    char* root_date = Form("%s %d %4d",months[imonth-1],iday,mille);
 
-   const char* halla_version = "1.0";
+   const char* halla_version = "1.0.1";
    //   const char* halla_date = Form("%d %s %4d",24,months[2-1],2003);
 
    Printf("  ************************************************");
