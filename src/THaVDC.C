@@ -223,9 +223,10 @@ Int_t THaVDC::ConstructTracks( TClonesArray * tracks, Int_t flag )
       bool found = false;
       for( int t = 0; t < n_exist; t++ ) {
 	theTrack = static_cast<THaTrack*>( tracks->At(t) );
-	// Note that the second test is only ever true for tracks 
-	// crated by this class
-	if( theTrack && *thisID == *theTrack->GetID() ) {
+	// This test is true if an existing track has exactly the same clusters
+	// as the current one (defined by track/partner)
+	if( theTrack && theTrack->GetCreator() == this &&
+	    *thisID == *theTrack->GetID() ) {
 	  found = true;
 	  break;
 	}
@@ -251,15 +252,12 @@ Int_t THaVDC::ConstructTracks( TClonesArray * tracks, Int_t flag )
     bool modified = false;
     for( int i = 0; i < tracks->GetLast()+1; i++ ) {
       THaTrack* theTrack = static_cast<THaTrack*>( tracks->At(i) );
+      // Track created by this class and not updated?
       if( (theTrack->GetCreator() == this) && (theTrack->GetFlag() < flag) ) {
 	tracks->RemoveAt(i);
 	modified = true;
       }
     }
-    // Pack the array in case any tracks were removed
-    // FIXME: Check if this causes trouble elsewhere
-    if( modified )
-      tracks->Compress();
   }
 
   return nTracks;
