@@ -186,7 +186,7 @@ Int_t THaOutput::Process() {
     if ( pvar == 0) continue;
     for (Int_t i = 0; i < pvar->GetLen(); i++) {
        if (fOdata[k]->Fill(i,pvar->GetValue(i)) != 1) 
-       cout << "THaOutPut::ERROR: storing variable size data"<<endl;
+	 cout << "THaOutput::ERROR: storing too much variable sized data: " << pvar->GetName() <<endl;
     }
   }
   for (Int_t ihist = 0; ihist < fN1d; ihist++) {
