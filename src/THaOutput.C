@@ -38,7 +38,7 @@ typedef vector<THaOdata*>::size_type Vsiz_t;
 
 //_____________________________________________________________________________
 THaOutput::THaOutput() :
-  fNform(0), fNvar(0), fN1d(0), fN2d(0),
+  fNform(0), fNvar(0), fN1d(0), fN2d(0), fNcut(0),
   fForm(0), fVar(0), fH1vtype(0), fH1form(0), fH2vtypex(0), fH2formx(0),
   fH2vtypey(0), fH2formy(0), fTree(0), fInit(false)
 {
@@ -60,6 +60,8 @@ THaOutput::~THaOutput()
   delete [] fH2formx;
   delete [] fH2vtypey;
   delete [] fH2formy;
+  for (std::vector<THaOdata* >::iterator od = fOdata.begin();
+       od != fOdata.end(); od++) delete *od;
 }
 
 //_____________________________________________________________________________
