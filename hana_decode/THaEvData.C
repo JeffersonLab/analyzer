@@ -537,17 +537,25 @@ int THaEvData::fastbus_decode(int roc, THaCrateMap* map,
     synchmiss = false;
     synchextra = false;
     buffmode = false;
+    int xctr = 0;
+    int nspflag = 0;
     if (DEBUG) cout << "Fastbus roc  "<<roc<<endl;
     while ( p++ < pstop ) {  
+       xctr++;
        if(DEBUG) {
           cout << "evbuffer  " <<(p-evbuffer)<<"   ";
           cout << hex << *p << dec << endl;
        }
        int slot = fb->Slot(*p);
        if (!slot) {
+         if ((*p & 0xffff0000)==0xfabc0000) {
+	   xctr = 0;
+           nspflag = (*p & 0xff);  // number of special flags.
+	 }
          loadFlag(p);
          continue;
        }
+       if (nspflag > 0 && xctr <= nspflag) continue;  // skip special flags
        int model = map->getModel(roc,slot);
        if (model == THaCrateMap::CM_ERR) continue;
        if (!model) {
