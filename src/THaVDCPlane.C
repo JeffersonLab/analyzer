@@ -34,7 +34,8 @@ ClassImp(THaVDCPlane)
 //_____________________________________________________________________________
 THaVDCPlane::THaVDCPlane( const char* name, const char* description,
 			  THaDetectorBase* parent )
-  : THaSubDetector(name,description,parent), fVDC(NULL)
+  : THaSubDetector(name,description,parent), fTable(NULL), fTTDConv(NULL),
+    fVDC(NULL)
 {
   // Constructor
 
