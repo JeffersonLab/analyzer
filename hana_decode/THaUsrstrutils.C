@@ -125,8 +125,12 @@ void THaUsrstrutils::string_from_evbuffer(const int *evbuffer, int nlen )
      // They will skip lines that have text before the comment char ";".
      TRegexp re1("\n[^;]*\n[^;]*");
      TRegexp re2("^[^;]*\n[^;]*");
+     TRegexp re3("\n[^;]*$");
+     TRegexp re4("^[^;]*$");
      if( (pos1 = re1.Index(strbuff,&ext)) != kNPOS ||
-	 (pos1 = re2.Index(strbuff,&ext)) != kNPOS ) {
+	 (pos1 = re2.Index(strbuff,&ext)) != kNPOS || 
+	 (pos1 = re3.Index(strbuff,&ext)) != kNPOS ||
+	 (pos1 = re4.Index(strbuff,&ext)) != kNPOS ) {
        strbuff = strbuff(pos1,ext); //note: may contain a leading \n, stripped below
        const char* p = strbuff.Data();
        while(isspace(*p)) p++;   //Removes leading \n's too
