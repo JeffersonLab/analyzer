@@ -4,7 +4,7 @@
 export WITH_DEBUG = 1
 
 # Compile debug version
-#export DEBUG = 1
+export DEBUG = 1
 
 # Profiling with gprof
 # export PROFILE = 1
@@ -150,15 +150,17 @@ analyzer:	src/main.o $(LIBHALLA) libdc.so libscaler.so
 subdirs:
 		set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i; done
 
-# The libdc.so and libscaler.so rules are not used in default 'make':
-libdc.so:
-		$(MAKE) -C $(DCDIR)
+libdc.so:	$(DCDIR)/libdc.so
+		cp $< .
 
-libscaler.so:
-		$(MAKE) -C $(SCALERDIR)
-		rm -f DB/scaler.map
-		cp $(SCALERDIR)/scaler.map DB/
+libscaler.so:	$(SCALERDIR)/libscaler.so
+		cp $< .
 
+$(DCDIR)/libdc.so:
+		$(MAKE) -C $(@D) $(@F)
+
+$(SCALERDIR)/libscaler.so:
+		$(MAKE) -C $(@D) $(@F)
 
 clean:
 		$(MAKE) -C $(DCDIR) clean
