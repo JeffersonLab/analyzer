@@ -1,35 +1,29 @@
 #ifndef HALLA_THaFilter
 #define HALLA_THaFilter
 
-// a class to handle event filtering
-// Each filter has an associated global 'cut' variable
-// to test against
+#include "THaPostProcess.h"
+#include "TString.h"
 
 class THaIORun;
-class TList;
 class THaCut;
 class TString;
 class TDatime;
 
-#include "TString.h"
-#include "THaPostProcess.h"
 
 class THaFilter : public THaPostProcess {
  public:
   THaFilter( const char *cutname, const char* filename );
-  virtual ~THaFilter() { CleanUp(); }
+  virtual ~THaFilter();
   
-  Int_t Init(const TDatime&);
-  Int_t Process( const THaRun* run, int force=0 );
-  Int_t CleanUp();
+  virtual Int_t Init(const TDatime&);
+  virtual Int_t Process( const THaEvData*, const THaRun*, Int_t code );
+  virtual Int_t Close();
 
  protected:
-  TString fCutName;
-  TString fFileName;
+  TString   fCutName;
+  TString   fFileName;
   THaIORun* fRun;
-  int fRunStat;
-  THaCut*  fCut;
-  int fCutStat;
+  THaCut*   fCut;
   
  public:
   ClassDef(THaFilter,0)
