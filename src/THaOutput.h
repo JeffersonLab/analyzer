@@ -9,20 +9,14 @@
 
 #define THAOMAX 100
 #include "TObject.h"
-#include "THaGlobals.h"
-#include "THaVar.h"
 #include "THaString.h"
-#include "TTree.h"
-#include "TNamed.h"
 #include <vector>
-#include <string>
-#include <fstream>
-#include <iostream>
-#include <iterator>
 
 class THaFormula;
+class THaVar;
 class TH1F;
 class TH2F;
+class TTree;
 
 class THaOdata : public TObject {
 // Utility class used by THaOutput to store arrays 

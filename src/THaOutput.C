@@ -28,6 +28,7 @@
 #include "TFile.h"
 #include "TRegexp.h"
 #include <algorithm>
+#include <fstream>
 
 using namespace std;
 typedef vector<THaOdata*>::size_type Vsiz;
@@ -472,7 +473,7 @@ void THaOutput::ErrFile(Int_t iden, const THaString& sline) const
 void THaOutput::Print() const
 {
   // Printout the definitions
-  typedef vector<const THaString>::iterator Iter;
+  typedef vector<THaString>::const_iterator Iter;
   cout << "\n=== Number of variables "<<fVarnames.size()<<endl;
   for (Iter is = fVarnames.begin();
     is != fVarnames.end(); is++) cout << " Variable = "<<*is<<endl;
