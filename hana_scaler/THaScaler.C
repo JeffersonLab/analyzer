@@ -366,6 +366,13 @@ Int_t THaScaler::ExtractRaw(int* data) {
   len  = data[0] + 1;
   max = fcodafile->getBuffSize();
   ndat = len < max ? len : max;
+// Sanity check:  If ndat > 10000 this is crazy (normally ~300).
+  if (ndat > 10000) {
+     cout << "THaScaler:: WARNING:  The event length is crazy."<<endl;
+     cout << "Skipping corrupted scaler event."<<endl;
+     Clear();
+     return 0;
+  }
   for (i = 0; i < ndat; i++) {
     if (((data[i]&0xfff00000) == (unsigned long)header) &&
     ((data[i]&0x0000ff00) == 0) ) { // found this crate's data
