@@ -243,9 +243,11 @@ Int_t THaHelicity::Decode( const THaEvData& evdata ) {
       QuadCalib ();      
       LoadHelicity ();
    }
-   Lhel = present_helicity[fgLarm];
-   Rhel = present_helicity[fgRarm];
-   Hel = Lhel;   // default helicity for 1-arm setup
+
+   // Minus sign required according to Moller measurement
+   Lhel = -1 * present_helicity[fgLarm];
+   Rhel = -1 * present_helicity[fgRarm];
+   Hel = -1 * Lhel;   // default helicity for 1-arm setup
    if (HELDEBUG >= 1) cout << "G0 helicitites "<<Lhel<<"  "<<Rhel<<endl;
  }
  return OK;
@@ -415,10 +417,9 @@ void THaHelicity::QuadCalib() {
 	    fT0[fArm] += fTdavg[fArm];
 	    q1_present_helicity[fArm] = present_helicity[fArm];
 	    if (HELDEBUG>=2) {
-	      cout << "QuadCalibQrt "<<fNqrt[fArm]<<"  "<<'M'
-		   <<"  "<<'M'<<" "<<q1_reading[fArm]<<" "
-		   <<q1_present_helicity[fArm]<<"  "<<fTimestamp[fArm]<<"  "
-		   <<fT0[fArm]<<"  "<<fTdiff[fArm]<<" Missing"<<endl;
+	      printf("QuadCalibQrt %5d  M  M %1d %2d  %10.0f  %10.0f  %10.0f Missing\n",
+		     fNqrt[fArm],q1_reading[fArm],q1_present_helicity[fArm],
+		     fTimestamp[fArm],fT0[fArm],fTdiff[fArm]);
 	    }
 
 	  }
@@ -481,10 +482,10 @@ void THaHelicity::QuadCalib() {
           present_helicity[fArm] = Unknown;
        }
        if (HELDEBUG>=2) {
-	 cout << "QuadCalibQrt "<<fNqrt[fArm]<<"  "<<fEvtype[fArm]
-	      <<"  "<<fQrt[fArm]<<" "<<q1_reading[fArm]<<" "
-	      <<q1_present_helicity[fArm]<<"  "<<fTimestamp[fArm]<<"  "
-	      <<fT0[fArm]<<"  "<<fTdiff[fArm]<<endl;
+	 printf("QuadCalibQrt %5d  %1d  %1d %1d %2d  %10.0f  %10.0f  %10.0f\n",
+		fNqrt[fArm],fEvtype[fArm],fQrt[fArm],q1_reading[fArm],
+		q1_present_helicity[fArm],fTimestamp[fArm],fT0[fArm],
+		fTdiff[fArm]);
        }
    }
    fTdiff[fArm] = fTimestamp[fArm] - fT0[fArm];
