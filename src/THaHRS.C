@@ -50,6 +50,7 @@
 #include "THaScintillator.h"
 #include "THaVDC.h"
 #include "THaTrackProj.h"
+#include "THaTriggerTime.h"
 
 #ifdef WITH_DEBUG
 #include <iostream>
@@ -62,7 +63,7 @@ THaHRS::THaHRS( const char* name, const char* description ) :
   THaSpectrometer( name, description )
 {
   // Constructor. Defines the standard detectors for the HRS.
-
+  AddDetector( new THaTriggerTime("trg","Trigger-based time offset"));
   AddDetector( new THaVDC("vdc", "Vertical Drift Chamber"));
   AddDetector( new THaScintillator("s1", "S1 scintillator"));
   AddDetector( new THaScintillator("s2", "S2 scintillator"));
@@ -87,12 +88,12 @@ Int_t THaHRS::FindVertices( TClonesArray& tracks )
   while( THaTrackingDetector* theTrackDetector =
 	 static_cast<THaTrackingDetector*>( nextTrack() )) {
 #ifdef WITH_DEBUG
-    if( fDebug>0 ) cout << "Call FineTrack() for " 
+    if( fDebug>1 ) cout << "Call FineTrack() for " 
 			<< theTrackDetector->GetName() << "... ";
 #endif
     theTrackDetector->FindVertices( tracks );
 #ifdef WITH_DEBUG
-    if( fDebug>0 ) cout << "done.\n";
+    if( fDebug>1 ) cout << "done.\n";
 #endif
   }
 

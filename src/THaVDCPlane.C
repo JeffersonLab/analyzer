@@ -25,6 +25,8 @@
 #include "TClass.h"
 #include "TMath.h"
 #include "VarDef.h"
+#include "THaApparatus.h"
+#include "THaTriggerTime.h"
 
 #include <cstring>
 #include <vector>
@@ -37,7 +39,7 @@ using namespace std;
 THaVDCPlane::THaVDCPlane( const char* name, const char* description,
 			  THaDetectorBase* parent )
   : THaSubDetector(name,description,parent), fTable(NULL), fTTDConv(NULL),
-    fVDC(NULL)
+    fVDC(NULL), fglTrg(NULL)
 {
   // Constructor
 
@@ -218,6 +220,21 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
 
   fIsInit = true;
   fclose(file);
+
+  // finally, find the timing-offset to apply on an event-by-event basis
+  // How do I find my way to the parent apparatus?
+  THaDetectorBase *sdet = GetDetector();
+  while ( sdet && dynamic_cast<THaSubDetector*>(sdet) ) 
+    sdet = static_cast<THaSubDetector*>(sdet)->GetDetector();
+  // so, sdet should be a 'THADetector' now, and we can find the apparatus
+  THaApparatus* app = (sdet ? static_cast<THaDetector*>(sdet)->GetApparatus() : 0);
+  if (!app) Error(Here(here),"Subdet->Det->App chain is incorrect!");
+
+  TString nm = app->GetPrefix();
+  nm += "trg";
+  fglTrg = dynamic_cast<THaTriggerTime*>(app->GetDetector(nm.Data()));
+  if (!fglTrg) Warning(Here(here),"Expected %s to be prepared before VDCs. Event-dependent time offsets NOT used!!",nm.Data());
+  
   return kOK;
 }
 
@@ -282,10 +299,14 @@ Int_t THaVDCPlane::Decode( const THaEvData& evData)
   // TODO: Make sure the wires are numbered in order, even if the channels
   //       aren't
               
-
   Clear();  //Clear the last event
 
   if (!evData.IsPhysicsTrigger()) return -1;
+
+  // the event's T0-shift, due to the trigger-type
+  // only an issue when adding in un-retimed trigger types
+  Double_t evtT0=0;
+  if ( fglTrg && fglTrg->Decode(evData)==kOK ) evtT0 = fglTrg->TimeOffset();
   
   Int_t nextHit = 0;
 
@@ -320,27 +341,27 @@ Int_t THaVDCPlane::Decode( const THaEvData& evData)
       Int_t nHits = evData.GetNumHits(d->crate, d->slot, chan);
    
       Int_t max_data = -1;
+      Double_t toff = wire->GetTOffset();
+
       for (Int_t hit = 0; hit < nHits; hit++) {
 	
 	// Now get the TDC data for this hit
 	Int_t data = evData.GetData(d->crate, d->slot, chan, hit);
+
+	Double_t time = fTDCRes * ( toff - data ) - evtT0;
 	if( only_fastest_hit ) {
-	  if( data > max_data )
+	  if( (!no_negative || time > 0) && data > max_data )
 	    max_data = data;
 	} else {
-	  Double_t time = fTDCRes * (wire->GetTOffset() - data);
 	  if( !no_negative || time > 0.0 )
 	    new( (*fHits)[nextHit++] )  THaVDCHit( wire, data, time );
 	}
 	  
       } // End hit loop
 
-      if( only_fastest_hit ) {
-	Double_t time = fTDCRes * (wire->GetTOffset() - max_data);
-	// FIXME: This is tricky ... could be that the next slower hit was good
-	if( !no_negative || time > 0.0 )
-	  new( (*fHits)[nextHit++] ) 
-	    THaVDCHit( wire, max_data, time );
+      if( only_fastest_hit && max_data>0 ) {
+	Double_t time = fTDCRes * ( toff - max_data) - evtT0;
+	new( (*fHits)[nextHit++] ) THaVDCHit( wire, max_data, time );
       }
     } // End channel index loop
   } // End slot loop
@@ -423,7 +444,7 @@ Int_t THaVDCPlane::FindClusters()
 
     // Time within sanity cuts?
     if( hard_cut ) {
-      Int_t rawtime = hit->GetRawTime();
+      Double_t rawtime = hit->GetRawTime();
       if( rawtime < fMinTime || rawtime > fMaxTime) 
 	continue;
     }

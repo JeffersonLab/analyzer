@@ -16,6 +16,7 @@ class THaVDCUVPlane;
 class THaVDCCluster;
 class THaVDCHit;
 class THaVDCTimeToDistConv;
+class THaTriggerTime;
 
 class THaVDCPlane : public THaSubDetector {
 
@@ -95,7 +96,9 @@ protected:
   THaVDCTimeToDistConv* fTTDConv;  // Time-to-distance converter for this plane's wires
 
   THaDetectorBase* fVDC;  // VDC detector to which this plane belongs
-
+  
+  THaTriggerTime* fglTrg; //! time-offset global variable. Needed at the decode stage
+  
   virtual void  Clear( Option_t* opt="" );
 
   virtual void  MakePrefix();
