@@ -18,7 +18,7 @@ class THaVDCCluster : public TObject {
 
 public:
   THaVDCCluster( THaVDCPlane* owner = NULL ) :
-    fPlane(owner), fSize(0), fSlope(0.0), fSigmaSlope(0.0), fInt(0.0),
+    fSize(0), fPlane(owner), fSlope(0.0), fSigmaSlope(0.0), fInt(0.0),
     fSigmaInt(0.0), fT0(0.0), fPivot(NULL) {}
   THaVDCCluster( const THaVDCCluster&);
   THaVDCCluster& operator=( const THaVDCCluster& );
@@ -61,9 +61,9 @@ protected:
   static const Int_t MAX_SIZE = 16;  // Assume no more than 20 hits per cluster
   static const Double_t kBig;
 
+  Int_t          fSize;              // Size of cluster (no. of hits)
   THaVDCHit*     fHits[MAX_SIZE];    // [fSize] Hits associated w/this cluster
   THaVDCPlane*   fPlane;             // Plane the cluster belongs to
-  Int_t          fSize;              // Size of cluster (no. of hits)
   //  THaVDCUVTrack * fUVTrack;      // UV Track the cluster belongs to
   //  THaTrack * fTrack;             // Track the cluster belongs to
 
