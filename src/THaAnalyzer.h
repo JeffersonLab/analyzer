@@ -38,8 +38,12 @@ public:
 
   void           EnableBenchmarks( Bool_t b = kTRUE );
   void           EnableHelicity( Bool_t b = kTRUE );
-  void           EnableRunUpdate( Bool_t b = kTRUE );
+  void           EnableOtherEvents( Bool_t b = kTRUE );
   void           EnableOverwrite( Bool_t b = kTRUE );
+  void           EnablePhysicsEvents( Bool_t b = kTRUE );
+  void           EnableRunUpdate( Bool_t b = kTRUE );
+  void           EnableScalers( Bool_t b = kTRUE );
+  void           EnableSlowControl( Bool_t b = kTRUE );
   const char*    GetOutFileName()      const  { return fOutFileName.Data(); }
   const char*    GetCutFileName()      const  { return fCutFileName.Data(); }
   const char*    GetOdefFileName()     const  { return fOdefFileName.Data(); }
@@ -52,7 +56,12 @@ public:
   TList*         GetScalers()          const  { return fScalers; }
   TList*         GetPostProcess()      const  { return fPostProcess; }
   Bool_t         HasStarted()          const  { return fAnalysisStarted; }
-  Bool_t         HelicityEnabled()     const  { return fHelicityEnabled; }
+  Bool_t         HelicityEnabled()     const  { return fDoHelicity; }
+  Bool_t         PhysicsEnabled()      const  { return fDoPhysics; }
+  Bool_t         OtherEventsEnabled()  const  { return fDoOtherEvents; }
+  Bool_t         ScalersEnabled()      const  { return fDoScalers; }
+  Bool_t         SlowControlEnabled()  const  { return fDoSlowControl; }
+  virtual Int_t  SetCountMode( Int_t mode );
   void           SetEvent( THaEvent* event )     { fEvent = event; }
   void           SetOutFile( const char* name )  { fOutFileName = name; }
   void           SetCutFile( const char* name )  { fCutFileName = name; }
@@ -68,8 +77,6 @@ public:
   enum ERetVal { kOK, kSkip, kTerminate, kFatal };
 
 protected:
-  static const char* const kMasterCutName;
-
   // Test and histogram blocks
   enum { 
     kRawDecode = 0, kDecode, kCoarseTrack, kCoarseRecon, 
@@ -86,7 +93,7 @@ protected:
   // Statistics counters and message texts
   enum { 
     kNevRead = 0, kNevGood, kNevPhysics, kNevScaler, kNevEpics, kNevOther,
-    kNevAnalyzed, kNevAccepted,
+    kNevPostProcess, kNevAnalyzed, kNevAccepted,
     kEvFileTrunc, kCodaErr, kRawDecodeTest, kDecodeTest, kCoarseTrackTest, 
     kCoarseReconTest, kTrackTest, kReconstructTest, kPhysicsTest 
   };
@@ -96,6 +103,8 @@ protected:
     UInt_t      count;
   };
     
+  enum ECountMode { kCountPhysics, kCountAll, kCountRaw };
+
   TFile*         fFile;            //The ROOT output file.
   THaOutput*     fOutput;          //Flexible ROOT output (tree, histograms)
   TString        fOutFileName;     //Name of output ROOT file.
@@ -104,14 +113,15 @@ protected:
   TString        fOdefFileName;    //Name of output definition file
   TString        fSummaryFileName; //Name of test/cut statistics output file
   THaEvent*      fEvent;           //The event structure to be written to file.
-  Int_t          fMaxStage;        //Number of analysis stages
-  Int_t          fMaxCount;        //Number of counters
-  Stage_t*       fStages;          //[fMaxStage] Parameters for analysis stages
-  Counter_t*     fCounters;        //[fMaxCount] Statistics counters
+  Int_t          fNStages;         //Number of analysis stages
+  Int_t          fNCounters;       //Number of counters
+  Stage_t*       fStages;          //[fNStages] Parameters for analysis stages
+  Counter_t*     fCounters;        //[fNCounters] Statistics counters
   UInt_t         fNev;             //Number of events read during most recent replay
   UInt_t         fMarkInterval;    //Interval for printing event numbers
   Int_t          fCompress;        //Compression level for ROOT output file
   Int_t          fVerbose;         //Verbosity level
+  Int_t          fCountMode;       //Event counting mode (see ECountMode)
   THaBenchmark*  fBench;           //Counters for timing statistics
   THaEvent*      fPrevEvent;       //Event structure from last Init()
   THaRun*        fRun;             //Copy of current run
@@ -127,10 +137,14 @@ protected:
   Bool_t         fLocalEvent;      // fEvent allocated by this object
   Bool_t         fUpdateRun;       // Update run parameters during replay
   Bool_t         fOverwrite;       // Overwrite existing output files
-  Bool_t         fHelicityEnabled; // Enable helicity decoding
   Bool_t         fDoBench;         // Collect detailed timing statistics
+  Bool_t         fDoHelicity;      // Enable helicity decoding
+  Bool_t         fDoPhysics;       // Enable physics event processing
+  Bool_t         fDoOtherEvents;   // Enable other event processing
+  Bool_t         fDoScalers;       // Enable scaler processing
+  Bool_t         fDoSlowControl;   // Enable slow control processing
 
-  // Variables used in PhysicsAnalysis()
+  // Variables used by analysis functions
   Bool_t         fFirstPhysics;    // Status flag for physics analysis
 
   // Main analysis functions
@@ -163,8 +177,11 @@ protected:
 
   static THaAnalyzer* fgAnalyzer;  //Pointer to instance of this class
 
-  
-private:
+  // In-class constants
+  static const char* const kMasterCutName;
+  static const char* const kDefaultOdefFile;
+
+  private:
   THaAnalyzer( const THaAnalyzer& );
   THaAnalyzer& operator=( const THaAnalyzer& );
   

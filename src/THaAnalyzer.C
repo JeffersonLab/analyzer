@@ -51,6 +51,8 @@
 using namespace std;
 
 const char* const THaAnalyzer::kMasterCutName = "master";
+const char* const THaAnalyzer::kDefaultOdefFile = "output.def";
+
 const int MAXSTAGE = 100;   // Sanity limit on number of stages
 const int MAXCOUNTER = 200; // Sanity limit on number of counters
 
@@ -58,20 +60,20 @@ const int MAXCOUNTER = 200; // Sanity limit on number of counters
 THaAnalyzer* THaAnalyzer::fgAnalyzer = NULL;
 
 //FIXME: 
-// disabling of EPICS, scalers
-// event range selection - in PhysicsAnalysis or MainAnalysis?
-// scalers/EPICS completion?
+// do we need to "close" scalers/EPICS analysis if we reach the event limit?
 
 //_____________________________________________________________________________
 THaAnalyzer::THaAnalyzer() :
-  fFile(NULL), fOutput(NULL), fOdefFileName("output.def"), fEvent(NULL),
-  fMaxStage(0), fMaxCount(0),
+  fFile(NULL), fOutput(NULL), fOdefFileName(kDefaultOdefFile), fEvent(NULL),
+  fNStages(0), fNCounters(0),
   fStages(NULL), fCounters(NULL), fNev(0), fMarkInterval(1000), fCompress(1), 
-  fVerbose(2), fBench(NULL), fPrevEvent(NULL), fRun(NULL), fEvData(NULL), 
-  fApps(NULL), fPhysics(NULL), fScalers(NULL), fPostProcess(NULL),
-  fIsInit(kFALSE), fAnalysisStarted(kFALSE), fLocalEvent(kFALSE),
-  fUpdateRun(kTRUE), fOverwrite(kTRUE), fHelicityEnabled(kFALSE),
-  fDoBench(kFALSE)
+  fVerbose(2), fCountMode(kCountPhysics), fBench(NULL), fPrevEvent(NULL), 
+  fRun(NULL), fEvData(NULL), fApps(NULL), fPhysics(NULL), fScalers(NULL), 
+  fPostProcess(NULL),
+  fIsInit(kFALSE), fAnalysisStarted(kFALSE), fLocalEvent(kFALSE), 
+  fUpdateRun(kTRUE), fOverwrite(kTRUE), fDoBench(kFALSE), 
+  fDoHelicity(kFALSE), fDoPhysics(kTRUE), fDoOtherEvents(kTRUE),
+  fDoScalers(kTRUE), fDoSlowControl(kTRUE)
 {
   // Default constructor.
 
@@ -152,7 +154,7 @@ Int_t THaAnalyzer::AddPostProcess( THaPostProcess* module )
 void THaAnalyzer::ClearCounters()
 {
   // Clear statistics counters
-  for( int i=0; i<fMaxCount; i++ ) {
+  for( int i=0; i<fNCounters; i++ ) {
     fCounters[i].count = 0;
   }
 }
@@ -194,14 +196,14 @@ THaAnalyzer::Stage_t* THaAnalyzer::DefineStage( const Stage_t* item )
     Error("DefineStage", "Too many analysis stages.");
     return NULL;
   }
-  if( item->key >= fMaxStage ) {
+  if( item->key >= fNStages ) {
     Int_t newmax = item->key+1;
     Stage_t* tmp = new Stage_t[newmax];
-    memcpy(tmp,fStages,fMaxStage*sizeof(Stage_t));
-    memset(tmp+fMaxStage,0,(newmax-fMaxStage)*sizeof(Stage_t));
+    memcpy(tmp,fStages,fNStages*sizeof(Stage_t));
+    memset(tmp+fNStages,0,(newmax-fNStages)*sizeof(Stage_t));
     delete [] fStages;
     fStages = tmp;
-    fMaxStage = newmax;
+    fNStages = newmax;
   }
   return (Stage_t*)memcpy(fStages+item->key,item,sizeof(Stage_t));
 }
@@ -215,14 +217,14 @@ THaAnalyzer::Counter_t* THaAnalyzer::DefineCounter( const Counter_t* item )
     Error("DefineCounters", "Too many statistics counters.");
     return NULL;
   }
-  if( item->key >= fMaxCount ) {
+  if( item->key >= fNCounters ) {
     Int_t newmax = item->key+1;
     Counter_t* tmp = new Counter_t[newmax];
-    memcpy(tmp,fCounters,fMaxCount*sizeof(Counter_t));
-    memset(tmp+fMaxCount,0,(newmax-fMaxCount)*sizeof(Counter_t));
+    memcpy(tmp,fCounters,fNCounters*sizeof(Counter_t));
+    memset(tmp+fNCounters,0,(newmax-fNCounters)*sizeof(Counter_t));
     delete [] fCounters;
     fCounters = tmp;
-    fMaxCount = newmax;
+    fNCounters = newmax;
   }
   return (Counter_t*)memcpy(fCounters+item->key,item,sizeof(Counter_t));
 }
@@ -236,7 +238,7 @@ void THaAnalyzer::EnableBenchmarks( Bool_t b )
 //_____________________________________________________________________________
 void THaAnalyzer::EnableHelicity( Bool_t b )
 {
-  fHelicityEnabled = b;
+  fDoHelicity = b;
 }
 
 //_____________________________________________________________________________
@@ -246,9 +248,33 @@ void THaAnalyzer::EnableRunUpdate( Bool_t b )
 }
 
 //_____________________________________________________________________________
+void THaAnalyzer::EnableOtherEvents( Bool_t b )
+{
+  fDoOtherEvents = b;
+}
+
+//_____________________________________________________________________________
 void THaAnalyzer::EnableOverwrite( Bool_t b )
 {
   fOverwrite = b;
+}
+
+//_____________________________________________________________________________
+void THaAnalyzer::EnablePhysicsEvents( Bool_t b )
+{
+  fDoPhysics = b;
+}
+
+//_____________________________________________________________________________
+void THaAnalyzer::EnableScalers( Bool_t b )
+{
+  fDoScalers = b;
+}
+
+//_____________________________________________________________________________
+void THaAnalyzer::EnableSlowControl( Bool_t b )
+{
+  fDoSlowControl = b;
 }
 
 //_____________________________________________________________________________
@@ -290,7 +316,7 @@ void THaAnalyzer::InitStages()
   // Derived classes can override this method to define their own
   // stages or additional stages. This should be done with caution.
 
-  if( fMaxStage>0 )  return;
+  if( fNStages>0 )  return;
   const Stage_t stagedef[] = {
     { kRawDecode,   kRawDecodeTest,   "RawDecode" },
     { kDecode,      kDecodeTest,      "Decode" },
@@ -311,7 +337,7 @@ void THaAnalyzer::InitCounters()
   // Allocate statistics counters. 
   // See notes for InitStages() for additional information.
 
-  if( fMaxCount>0 )  return;
+  if( fNCounters>0 )  return;
   const Counter_t counterdef[] = {
     { kNevRead,            "events read" },
     { kNevGood,            "events decoded" },
@@ -319,6 +345,7 @@ void THaAnalyzer::InitCounters()
     { kNevScaler,          "scaler events" },
     { kNevEpics,           "slow control events" },
     { kNevOther,           "other event types" },
+    { kNevPostProcess,     "events post-processed" },
     { kNevAnalyzed,        "physics events analyzed" },
     { kNevAccepted,        "events accepted" },
     { kEvFileTrunc,        "event file truncated" },
@@ -344,7 +371,7 @@ void THaAnalyzer::InitCuts()
   // - Find pointers to the THaNamedList lists that hold the cut blocks.
   // - find pointer to each block's master cut
 
-  for( int i=0; i<fMaxStage; i++ ) {
+  for( int i=0; i<fNStages; i++ ) {
     Stage_t* theStage = fStages+i;
     // If block not found, this will return NULL and work just fine later.
     theStage->cut_list = gHaCuts->FindBlock( theStage->name );
@@ -677,6 +704,26 @@ Int_t THaAnalyzer::ReadOneEvent()
 }
 
 //_____________________________________________________________________________
+Int_t THaAnalyzer::SetCountMode( Int_t mode )
+{
+  // Set event counting mode. The default mode is kCountPhysics.
+  // If mode >= 0 and mode is one of kCountAll, kCountPhysics, or kCountRaw, 
+  // then set the mode. If mode >= 0 but unknown, return -mode.
+  // If mode < 0, don't change the mode but return the current count mode.
+  //
+  // Changing the counting mode should only be necessary in special cases.
+
+  if( mode < 0 )
+    return fCountMode;
+
+  if( mode != kCountAll && mode != kCountPhysics && mode != kCountRaw )
+    return -mode;
+
+  fCountMode = mode;
+  return mode;
+}
+
+//_____________________________________________________________________________
 void THaAnalyzer::Print( Option_t* opt ) const
 {
   // Report status of the analyzer.
@@ -691,14 +738,14 @@ void THaAnalyzer::PrintCounters() const
 {
   // Print statistics counters
   UInt_t w = 0;
-  for (int i = 0; i < fMaxCount; i++) {
+  for (int i = 0; i < fNCounters; i++) {
     if( GetCount(i) > w )
       w = GetCount(i);
   }
   w = IntDigits(w);
 
   bool first = true;
-  for (int i = 0; i < fMaxCount; i++) {
+  for (int i = 0; i < fNCounters; i++) {
     const char* text = fCounters[i].description;
     if( GetCount(i) != 0 && text && *text ) {
       if( first ) {
@@ -816,8 +863,7 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
     return code;
 
   //--- Skip physics events until we reach the first requested event
-  
-  if( fNev < fRun->GetFirstEvent())
+  if( fNev < fRun->GetFirstEvent() )
     return kSkip;
 
   if( fFirstPhysics ) {
@@ -835,8 +881,7 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
 
   if( fDoBench ) fBench->Begin("Decode");
   TIter next(fApps);
-  while( THaApparatus* theApparatus =
-	 static_cast<THaApparatus*>( next() )) {
+  while( THaApparatus* theApparatus = static_cast<THaApparatus*>( next() )) {
     theApparatus->Clear();
     theApparatus->Decode( *fEvData );
   }
@@ -887,8 +932,7 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
 
   if( fDoBench ) fBench->Begin("Reconstruct");
   next.Reset();
-  while( THaApparatus* theApparatus =
-	 static_cast<THaApparatus*>( next() )) {
+  while( THaApparatus* theApparatus = static_cast<THaApparatus*>( next() )) {
     theApparatus->Reconstruct();
   }
   if( fDoBench ) fBench->Stop("Reconstruct");
@@ -941,7 +985,9 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
 //_____________________________________________________________________________
 Int_t THaAnalyzer::SlowControlAnalysis( Int_t code )
 {
-  // Analyze slow control (EPICS) data
+  // Analyze slow control (EPICS) data and write then to output.
+  // Ignores RawDecode results and requested event range, so EPICS
+  // data are always analyzed continuously from the beginning of the run.
 
   if( fDoBench ) fBench->Begin("Output");
   if( fOutput ) fOutput->ProcEpics(fEvData);
@@ -952,7 +998,14 @@ Int_t THaAnalyzer::SlowControlAnalysis( Int_t code )
 //_____________________________________________________________________________
 Int_t THaAnalyzer::ScalerAnalysis( Int_t code )
 {
-  //--- Loop over all defined scalers and execute LoadData()
+  //--- Loop over all defined scalers and execute THaScaler::LoadData()
+  //    Also, output scaler data to output file.
+  //
+  // NB: we ignore 'code' and fNev and always return kOK. In this way,
+  //scalers are always analyzed even if RawDecode tests fail and/or the event 
+  // is before the first requested event number. This is necessary because 
+  // LoadData() works incrementally and must see the entire stream of 
+  // scaler data starting from the beginning of the run.
 
   TIter next(fScalers);
   while( THaScalerGroup* theScaler =
@@ -975,7 +1028,7 @@ Int_t THaAnalyzer::OtherAnalysis( Int_t code )
   // Analysis of other events (i.e. events that are not physics, scaler, or
   // slow control events).
   //
-  // Currently does nothing
+  // This default version does nothing. Returns 'code'.
 
   return code;
 }
@@ -985,7 +1038,9 @@ Int_t THaAnalyzer::PostProcess( Int_t code )
 {
   // Post-processing via generic PostProcess modules
   // May be used for event filtering etc.
-  // 'code' is the status of the preceding analysis
+  // 'code' (status of the preceding analysis) is passed to the
+  // THaPostProcess::Process() function for optional evaluation,
+  // e.g. skipping events that fail analysis stage cuts.
 
   if( fDoBench ) fBench->Begin("PostProcess");
 
@@ -1018,29 +1073,34 @@ Int_t THaAnalyzer::MainAnalysis()
 
   //=== Physics triggers ===
   if( fEvData->IsPhysicsTrigger()) {
-    fNev++;
+    if( !fDoPhysics )  goto done;
     Incr(kNevPhysics);
     retval = PhysicsAnalysis(retval);
   }
   //=== EPICS data ===
   else if( fEvData->IsEpicsEvent()) {
+    if( !fDoSlowControl ) goto done;
     Incr(kNevEpics);
     retval = SlowControlAnalysis(retval);
   }
   //=== Scaler triggers ===
   else if( fEvData->IsScalerEvent()) {
+    if( !fDoScalers ) goto done;
     Incr(kNevScaler);
     retval = ScalerAnalysis(retval);
   } 
   //=== Other events ===
   else {
+    if( !fDoOtherEvents ) goto done;
     Incr(kNevOther);
     retval = OtherAnalysis(retval);
 
   } // End trigger type test
 
+ done:
   //=== Post-processing (e.g. event filtering) ===
   if( fPostProcess ) {
+    Incr(kNevPostProcess);
     retval = PostProcess(retval);
   }
 
@@ -1093,8 +1153,8 @@ Int_t THaAnalyzer::Process( THaRun* run )
 
   // Enable/disable helicity decoding as requested
   fEvData->EnableHelicity( HelicityEnabled() );
-  // Decode scalers only if fScalers is not empty
-  fEvData->EnableScalers( (fScalers->GetSize()>0) );
+  // Decode scalers only if requested and fScalers is not empty
+  fEvData->EnableScalers( ScalersEnabled() && (fScalers->GetSize()>0) );
 
   // Informational messages
   if( fVerbose>1 ) {
@@ -1124,6 +1184,24 @@ Int_t THaAnalyzer::Process( THaRun* run )
       continue;
 
     UInt_t evnum = fEvData->GetEvNum();
+
+    // Count events according to the requested mode
+    // Whether or not to ignore events prior to fRun->GetFirstEvent()
+    // is up to the analysis routines.
+    switch(fCountMode) {
+    case kCountPhysics:
+      if( fEvData->IsPhysicsTrigger() )
+	fNev++;
+      break;
+    case kCountAll:
+      fNev++;
+      break;
+    case kCountRaw:
+      fNev = evnum;
+      break;
+    default:
+      break;
+    }
 
     //--- Print marks periodically
     if( fVerbose>1 && evnum > 0 && (evnum % fMarkInterval == 0))
