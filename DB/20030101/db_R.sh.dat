@@ -10,9 +10,9 @@ Translation table from ADC hardware channel to logical channel number (historica
   25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48
  49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73
   74 75 76 77 78 79 80
-x,y,z coords (in cm) of Shower front plane in spectrom cs
+x,y,z coords of Shower front plane in spectrom cs
      0.0     0.0   3.725                          - Meters
-Half of X, half of Y, full Z sizes (in cm) of Shower
+Half of X, half of Y, full Z sizes of Shower
     1.20   0.375   0.35                           - Meters
 Rotation angle of the Shower plane
      0.0                                          - Degrees

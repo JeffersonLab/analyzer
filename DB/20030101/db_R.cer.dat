@@ -5,9 +5,9 @@ Crate,Slot,1st,Last chans,Beg Cher chan ----------------------------------------
        1      25      32      41       1          - ADC
        1      15      32      41       1          - TDC
       -1       0       0       0       0
-X,Y,Z coords (in cm) of Cherenkov front plane in spectrom cs -------------------
+X,Y,Z coords of Cherenkov front plane in spectrom cs ---------------------------
      0.0     0.0   1.99                           - Meters
-Half of X, half of Y, full Z sizes (in cm) of Gas Cherenkov --------------------
+Half of X, half of Y, full Z sizes of Gas Cherenkov ----------------------------
      1.0    0.40   1.0                            - Meters
 Rotation angle of the Gas Cherenkov plane --------------------------------------
      0.0                                          - Degrees

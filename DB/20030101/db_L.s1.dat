@@ -7,9 +7,9 @@ Crate,Slot,1st,Last ADC chans,Beg S1 chan --------------------------------------
        3       3      16      21       1             - TDCs pads 1-6  (right)
        3       3       0       5       7             - TDCs pads 7-12 (left)
       -1       0       0       0       0
-X,Y,Z coords (in m) of S1 front plane in spectrom cs ---------------------------
+X,Y,Z coords of S1 front plane in spectrom cs ----------------------------------
    -0.129     0.0   1.2873                           - Meters
-Half of X, half of Y, full Z sizes (in m) of S1 --------------------------------
+Half of X, half of Y, full Z sizes of S1 ---------------------------------------
     0.88    0.18     0.005                           - Meters
 Rotation angle of the S1 plane -------------------------------------------------
      0.0                                             - Degrees
