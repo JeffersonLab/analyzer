@@ -37,10 +37,11 @@ protected:
   Int_t    fFlag;                      //Flag for errors (e.g. Bad wire)
   Double_t fPos;                       //Position within the plane
   Double_t fTOffset;                      //Timing Offset
-  THaVDCTimeToDistConv* fTTDConv;     //Time to Distance Converter
+  THaVDCTimeToDistConv* fTTDConv;     //!Time to Distance Converter
 
-  THaVDCWire( const THaVDCWire& ) {}
-  THaVDCWire& operator=( const THaVDCWire& ) { return *this; }
+private:
+  THaVDCWire( const THaVDCWire& );
+  THaVDCWire& operator=( const THaVDCWire& );
  
   ClassDef(THaVDCWire,1)             // VDCWire class
 };
