@@ -10,6 +10,8 @@
 
 #include "THaTrack.h"
 #include "THaPIDinfo.h"
+#include "THaTrackID.h"
+
 //#include "THaVertex.h"
 #include <iostream>
 
@@ -21,13 +23,22 @@ THaTrack::THaTrack( Double_t p, Double_t theta, Double_t phi,
 		    const THaSpectrometer* s, 
 		    const TClonesArray* clusters,
 		    THaPIDinfo* pid, 
-		    THaVertex* vertex )
+		    THaVertex* vertex,
+		    THaTrackID* id )
   : fP(p), fTheta(theta), fPhi(phi), fX(x), fY(y), fClusters(clusters),
-    fPIDinfo(pid), fVertex(vertex), fSpectrometer(s)
+    fPIDinfo(pid), fVertex(vertex), fSpectrometer(s), fID(id)
 {
   // Normal constructor with initialization
 
   CalcPxyz();
+}
+
+//_____________________________________________________________________________
+THaTrack::~THaTrack()
+{
+  // Destructor
+
+  delete fID;
 }
 
 //_____________________________________________________________________________
