@@ -158,7 +158,8 @@ THaAnalysisObject::EStatus THaAnalysisObject::Init( const TDatime& date )
   // 
   // This implementation will change once the real database is  available.
 
-  fStatus = kInitError;
+  Int_t status = kOK;
+  const char* fnam = "run.";
 
   // Generate the name prefix for global variables. Do this here, not in
   // the constructor, so we can use a virtual function - detectors and
@@ -167,24 +168,22 @@ THaAnalysisObject::EStatus THaAnalysisObject::Init( const TDatime& date )
 
   // Open the run database and call the reader. If database cannot be opened,
   // fail only if this object needs the run database
-  //  FILE* fi = OpenFile( "run", date, Here("OpenFile()"));
-  //  if( fi ) {
-
   // Call this object's actual database reader
-  Int_t status = ReadRunDatabase(date);
+  status = ReadRunDatabase(date);
   if( status && (status != kFileError || (fProperties & kNeedsRunDB) != 0))
-    return fStatus;
+    goto err;
 
   // Read the database for this object.
   // Don't bother if this object has not implemented its own database reader.
 
   // Note: requires ROOT >= 3.01 because of TClass::GetMethodAllAny()
   if( IsA()->GetMethodAllAny("ReadDatabase")
-      != gROOT->GetClass("THaAnalysisObject")->GetMethodAllAny("ReadDatabase") ) {
+      != gROOT->GetClass("THaAnalysisObject")->GetMethodAllAny("ReadDatabase")){
 
     // Call this object's actual database reader
-    if( ReadDatabase(date) )
-      return fStatus;
+    fnam = fPrefix;
+    if( (status = ReadDatabase(date)) )
+      goto err;
   } 
   else if ( fDebug>0 ) {
     cout << "Info: Skipping database call for object " << GetName() 
@@ -192,10 +191,14 @@ THaAnalysisObject::EStatus THaAnalysisObject::Init( const TDatime& date )
   }
 
   // Define this object's variables.
-  if( DefineVariables(kDefine) )
-    return fStatus;
-  
-  return fStatus = kOK;
+  status = DefineVariables(kDefine);
+  goto exit;
+
+ err:
+  if( status == kFileError )
+    Error(Here("OpenFile"),"Cannot open database file db_%sdat",fnam);
+ exit:
+  return fStatus = (EStatus)status;
 }
 
 //_____________________________________________________________________________
