@@ -101,7 +101,7 @@ SRC           = src/THaFormula.C src/THaVar.C src/THaVarList.C src/THaCut.C \
 		src/THaTrackingDetector.C src/THaNonTrackingDetector.C \
 		src/THaPidDetector.C src/THaSubDetector.C \
 		src/THaAnalysisObject.C src/THaDetectorBase.C src/THaRTTI.C \
-		src/THaPhysicsModule.C src/THaVertexModule.C \
+		src/THaPhysicsModule.C src/THaVertexModule.C src/THaTrackingModule.C \
 		src/THaAnalyzer.C src/THaPrintOption.C \
 		src/THaBeam.C src/THaIdealBeam.C \
 		src/THaRasteredBeam.C src/THaRaster.C\

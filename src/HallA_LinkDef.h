@@ -28,6 +28,7 @@
 #pragma link C++ class THaDetectorBase+;
 #pragma link C++ class THaPhysicsModule+;
 #pragma link C++ class THaVertexModule+;
+#pragma link C++ class THaTrackingModule+;
 #pragma link C++ class THaDetector+;
 #pragma link C++ class THaSubDetector+;
 #pragma link C++ class THaSpectrometerDetector+;
