@@ -27,8 +27,11 @@ protected:
 public:
   THaOnlRun();
   THaOnlRun(const char* computer, const char* session, UInt_t mode);
+  THaOnlRun& operator=( const THaOnlRun& rhs );
+  THaOnlRun( const THaOnlRun& rhs );
+
   virtual  Int_t  OpenFile();
-  virtual  Int_t  OpenFile( const char* computer, const char* session, UInt_t mode);
+           Int_t  OpenFile( const char* computer, const char* session, UInt_t mode);
   
   ClassDef(THaOnlRun,0)   //Description of an online run using ET system
 };

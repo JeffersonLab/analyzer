@@ -24,6 +24,7 @@ THaOnlRun::THaOnlRun() : THaRun()
 {
   // Default constructor
   fDate.Set();  // NOW is the correct date
+  delete fCodaData;
   fCodaData = new THaEtClient();
   fMode = 1;
   ClearEventRange();
@@ -36,8 +37,36 @@ THaOnlRun::THaOnlRun( const char* computer, const char* session, UInt_t mode) :
   // Normal constructor
 
   fDate.Set();  // NOW is the correct date
+  delete fCodaData;
   fCodaData = new THaEtClient();
   ClearEventRange();
+}
+
+//______________________________________________________________________________
+THaOnlRun::THaOnlRun( const THaOnlRun& rhs ) : 
+  THaRun(rhs), fComputer(rhs.fComputer), fSession(rhs.fSession),
+  fMode(rhs.fMode), fOpened(0)
+{
+  // Copy constructor
+  delete fCodaData;
+  fCodaData = new THaEtClient();
+}
+
+//_____________________________________________________________________________
+THaOnlRun& THaOnlRun::operator=(const THaOnlRun& rhs)
+{
+  // Assignment operator.
+
+  if (this != &rhs) {
+     THaRun::operator=(rhs);
+     delete fCodaData;
+     fCodaData = new THaEtClient;
+     fComputer = rhs.fComputer;
+     fSession  = rhs.fSession;
+     fMode     = rhs.fMode;
+     fOpened   = 0;
+  }
+  return *this;
 }
 
 //______________________________________________________________________________
