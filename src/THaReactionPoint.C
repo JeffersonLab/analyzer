@@ -72,9 +72,9 @@ THaAnalysisObject::EStatus THaReactionPoint::Init( const TDatime& run_time )
   if( !fSpectro )
     return fStatus;
 
-  //  if( fBeamName.Length() > 0 )
-  //    fBeam = static_cast<THaBeam*>( FindModule( fBeamName.Data(), "THaBeam"));
-
+  if( fBeamName.Length() > 0 )
+    fBeam = static_cast<THaBeam*>( FindModule( fBeamName.Data(), "THaBeam") );
+  
   return fStatus;
 }
 
