@@ -154,7 +154,7 @@ Int_t THaAnalyzer::Process( THaRun& run )
     fTree = new TTree("T", "Output DST");
     if( fEvent ) {
       fTree->Branch( "Event Branch", fEvent->IsA()->GetName(), &fEvent,
-		     64000, 1 );
+		     16000, 99 );
     }
   }
 
