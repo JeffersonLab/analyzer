@@ -1,72 +1,78 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html><head>
 <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-<title>Release Notes Hall A C++ Analyzer v1.2</title>
+<title>Release Notes Hall A C++ Analyzer v1.3</title>
 </head>
 
 <body background="wallpaper.gif">
-<h2>Hall A C++ Analyzer version 1.2</h2>
+<h2>Hall A C++ Analyzer version 1.3</h2>
 
-12 April 2004
+11 June 2004
 <p>
-The Hall A software team is pleased
-to present the next version of the Hall A C++ Analyzer. You should find
-this version more powerful and more user-friendly than the previous
-release. Also, it includes fixes to a large number of small bugs that
-were discovered during the first production running in Dec 2003-Jan 2004.
+The Hall A software team is pleased to present version 1.3 of the
+Hall A C++ Analyzer. The main improvement in this version is the
+addition of a beam data interface for the physics modules, which
+allows physics modules to apply corrections to those data or
+to re-compute them. Additionally,
+a first version of energy loss correction modules as well as
+other useful physics modules are included. 
 <hr>
 
 <h3>What's new</h3>
-Compared to Release 1.1, the following features have been added:
+Compared to Release 1.2, the following features have been added:
 <ul>
-  <li>Scaler and EPICS (slow control) data can be included in the output ROOT file
-  <li>Raw CODA events can be written to a CODA output file subject to cuts
-      (event filtering)
-  <li>New Begin() and End() methods for THaAnalysisObjects that are called
-      at start and end of replay, respectively. Apparatuses call these
-      methods for all detectors defined for the apparatus.
-  <li>Additional optional test blocks "CoarseTracking" and "Tracking" (=FineTrack)
-  <li>Improved coincidence time module THaCoincTime
-  <li>Improved low-level DAQ module THaDecData
-  <li>Scaler, EPICS and helicity decoding/processing can be enabled/disabled
-      explicitly
-  <li>The matrix elements section of the VDC database can be segmented into
-      different configurations.
-  <li>Shared libraries use version numbers
-  <li>Analyzer macros can now use STL vector and string classes
-  <li>Restructured THaAnalyzer class, greatly simplifying extensions and/or
-      modifications of the event loop
-  <li>Many small bug fixes and usability improvements throughout the code
+  <li>Energy loss corrections (both for tracks and for the beam)
+      have been implemented. This is still somewhat preliminary.
+  <li>Physics modules can import and export beam information in a similar
+      way as track and vertex information.
+  <li>The electron kinematics module now optionally accepts beam
+      information (i.e. incident momentum vector) for improved resolution
+      with rastered beam.
+  <li>Events that belong to more than one event class (physics events
+      that are also scaler events, for example) can be properly analyzed.
+  <li>All output files are now explicitly closed when terminating the analyzer.
+      Previously, filtered files sometimes were not flushed completely.
+  <li>New module THaNormAna allows dead-time and charge analysis.
+      This is still somewhat preliminary.
+  <li>New module THaEpicsEbeam allows extraction of the beam energy from
+      an EPICS variable. This is an experimental feature.
+  <li>Many small bug fixes throughout the code.
+  <li>Support for ROOT version 4.
 </ul>
 
 <h3>Removed Limitations</h3>
-Known limitations are documented in the <a href="RELEASE_NOTES_v1.0.txt">Release
+Known limitations are documented in
+the <a href="RELEASE_NOTES_v1.0.txt">Release
 Notes for version 1.0</a>.
-The following limitations have been removed in Release 1.2:
+The following limitations have been removed in Release 1.3:
 <ul>
-  <li>EPICS history should now be recorded correctly. All EPICS variables
-      encountered in the CODA file are now decoded and made available.
+  <li>Energy loss corrections are now possible. Handling complex
+      target geometries, however, is not well supported yet.
 </ul>
 
 <h3>Compatibility</h3>
-Version 1.2 is essentially source-compatible with version 1.1, but
-not binary-compatible. Modules developed for version 1.1
+Version 1.3 is essentially source-compatible with version 1.2, but
+not binary-compatible. Modules developed for version 1.2
 should not require any source code changes, but must be recompiled.
 
 <h3>System requirements</h3>
 <ul>
-  <li>Linux with gcc/g++; or Solaris with the Sun Workshop compiler
+  <li>Linux with gcc/g++; or Solaris with the Sun Workshop compiler.
   <li>ROOT 3.02 or higher
   <li>GNU make
   <li>Decent hardware (at least 300MHz CPU, 128MB RAM).
 </ul>
 The following platforms have been explicitly tested:
 <ul>
-  <li>RedHat Enterprise Linux 3WS with default compiler (gcc 3.2.3) and ROOT 3.10/02
+  <li>RedHat Enterprise Linux 3WS with default compiler (gcc 3.2.3)
+      and ROOT 3.10/02 and ROOT 4.00/04.
   <li>RedHat Linux 9 with default compiler (gcc 3.2.2) and ROOT 3.05/04
 </ul>
 Most other recent Linux and Solaris installations should work as well.
 Other Unix platforms require (probably fairly simple) changes to the Makefiles.
+The analyzer has been reported to work on IRIX and Mac OS X; those
+ports will be included in a future release. We have no plans to
+support Windows.
 
 <h3>Building and installing the program</h3>
 Please see <a href="install.html">docs/install.html</a>
@@ -86,7 +92,7 @@ at the <a href="http://hallaweb.jlab.org/root/">project home page</a>.
 <hr>
 <address><a href="mailto:ole@jlab.org">Ole Hansen &lt;ole@jlab.org&gt;</a></address>
 <!-- hhmts start -->
-Last modified: Thu Apr 15 11:25:30 EDT 2004
+Last modified: Sat Jun 12 12:20:14 EDT 2004
 <!-- hhmts end -->
 </body> 
 </html>
