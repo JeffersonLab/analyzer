@@ -71,6 +71,7 @@ THaScaler::THaScaler( const char* bankgr ) {
 // The arg (string like "s1R") must match the scaler.map file used
 // by database THaScalerDB.
 // 'bankgr' is group of scaler banks, "Left"(L-arm), "Right"(R-arm), "RCS"
+//     or "EvLeft" or "EvRight" for synchronous readout
   if( !bankgr || strlen(bankgr) == 0 ) {
     MakeZombie();
     return;
@@ -78,6 +79,7 @@ THaScaler::THaScaler( const char* bankgr ) {
   bankgroup = bankgr;
   did_init = kFALSE;
   coda_open = kFALSE;
+  new_load = kFALSE;
   fcodafile = new THaCodaFile;
   rawdata = new Int_t[2*SCAL_NUMBANK*SCAL_NUMCHAN];
   memset(rawdata,0,2*SCAL_NUMBANK*SCAL_NUMCHAN*sizeof(Int_t));
@@ -209,6 +211,10 @@ Int_t THaScaler::Init(const char* thetime )
   }
   header_rcs = 0xbbc00000;
   cratenum_rcs = 9;
+  cratenum_evleft = 11;   // Synchronous readout from roc11
+  header_evleft = 0xabc00000;  
+  cratenum_evright = 10;   // Synchronous readout from roc10
+  header_evright = 0xceb00000;  
 
   database = new THaScalerDB();
 
@@ -233,18 +239,31 @@ Int_t THaScaler::InitMap(string bankgrp) {
 // Initialize the map between data and channels
 
   crate = -1;
-  if ( bankgrp == "Left" || bankgrp == "left" || bankgrp == "L" ) {
+  if ( bankgrp == "Left" || bankgrp == "left" || bankgrp == "L" ) { // "Ev Type 140"
     crate = cratenum_left; 
     header = header_left;
     vme_server = SERVER_LEFT;
     vme_port = PORT_LEFT;
   }
-  if ( bankgrp == "Right" || bankgrp == "right" || bankgrp == "R" ) {
+  if ( bankgrp == "Right" || bankgrp == "right" || bankgrp == "R" ) { // "Ev Type 140"
     crate = cratenum_right; 
     header = header_right;
     vme_server = SERVER_RIGHT;
     vme_port = PORT_RIGHT;
   }
+  if ( bankgrp == "EvLeft" || bankgrp == "evleft" ) {  // synchronous readout
+    crate = cratenum_evleft; 
+    header = header_evleft;
+    vme_server = "0";
+    vme_port = 0;
+  }
+  if ( bankgrp == "EvRight" || bankgrp == "evright" ) { // synchronous readout
+    crate = cratenum_evright; 
+    header = header_evright;
+    vme_server = "0";
+    vme_port = 0;
+  }
+
 // Want to add another scaler bank ?  Imitate 'rcs'
   if (bankgrp == "RCS" || bankgrp == "rcs" ) {
     crate = cratenum_rcs; 
@@ -257,7 +276,8 @@ Int_t THaScaler::InitMap(string bankgrp) {
   if (crate == -1) {
     if (SCAL_VERBOSE) {
       cout << "THaScaler:: Warning: Undefined crate"<<endl;
-      cout << "Need to Init for 'Left', 'Right', or 'RCS' crate"<<endl;
+      cout << "Need to Init for 'Left', 'Right', 'RCS' crate"<<endl;
+      cout << "Or 'EvLeft' or 'EvRight'  for synch. readout crates"<<endl;
     }
     return SCAL_ERROR;
   }
@@ -277,15 +297,26 @@ Int_t THaScaler::InitPlots() {
 
 Int_t THaScaler::LoadData(const THaEvData& evdata) {
 // Load data from THaEvData object.  Return of 0 is ok.
+  new_load = kFALSE;
   if (CheckInit() == SCAL_ERROR) return SCAL_ERROR;
-  if ( !evdata.IsScalerEvent() ) return 0;
+  Int_t evstream = 0;
+  if ( crate == cratenum_evleft || crate == cratenum_evright ) {
+    evstream = 1;
+    if (evdata.GetRocLength(crate) < 16) return 0;  // No data.
+  } else {
+     if ( !evdata.IsScalerEvent() ) return 0;  // Is evtype 140 ?
+  }
   LoadPrevious();
   Clear();
   for (int slot = 0; slot < SCAL_NUMBANK; slot++) {
      for (int chan = 0; chan < SCAL_NUMCHAN; chan++) {
         int k = slot*SCAL_NUMCHAN + chan;
-        rawdata[k] = evdata.GetScaler(crate, slot, chan);
-     }
+        if (evstream) {
+          rawdata[k] = evdata.GetData(crate, slot, chan, 0);
+	} else {
+          rawdata[k] = evdata.GetScaler(crate, slot, chan);
+	} 
+    }
   }       
   Load();
   return 0;
@@ -299,6 +330,7 @@ Int_t THaScaler::LoadDataCodaFile(const char* filename) {
 
 Int_t THaScaler::LoadDataCodaFile(TString filename) { 
 // from CODA file 'filename'.  We'll open it for you. Return of 0 is ok.
+  new_load = kFALSE;
   if (CheckInit() == SCAL_ERROR) return SCAL_ERROR;
   if ( !coda_open ) {
      fcodafile->codaOpen(filename);
@@ -310,6 +342,7 @@ Int_t THaScaler::LoadDataCodaFile(TString filename) {
 Int_t THaScaler::LoadDataCodaFile(THaCodaFile *codafile) {
 // Load data from a CODA file, assumed to be already opened. 
 // Return of 0 means end of data, return of 1 means there is more data.
+  new_load = kFALSE;
   if (CheckInit() == SCAL_ERROR) return SCAL_ERROR;
   int codastat, extstat;
   found_crate = kFALSE;
@@ -366,6 +399,7 @@ Int_t THaScaler::LoadDataHistoryFile(int run_num) {
 
 Int_t THaScaler::LoadDataHistoryFile(const char* filename, int run_num) {
 // Load data from scaler history file 'filename' for run number run_num
+  new_load = kFALSE;
   if (CheckInit() == SCAL_ERROR) return SCAL_ERROR;
   ClearAll();
   ifstream hfile(filename);
@@ -420,6 +454,7 @@ Int_t THaScaler::LoadDataOnline() {
 
 Int_t THaScaler::LoadDataOnline(const char* server, int port) {
 // Load data from VME 'server' and 'port'.
+  new_load = kFALSE;
   if (CheckInit() == SCAL_ERROR) return SCAL_ERROR;
 
   int   sFd;      //  socket file descriptor 
@@ -592,6 +627,8 @@ void THaScaler::PrintSummary() {
     cout << "Therefore, no results\n"<<endl;
     return;
   }
+  printf("\n ----------------   Scaler Summary   ---------------- \n");
+  cout << "Scaler bank  " << bankgroup << endl;
   Double_t time_sec = GetPulser("clock")/clockrate;
   if (time_sec == 0) {
     cout << "THaScaler: WARNING:  Time of run = ZERO (??)\n"<<endl;
@@ -604,8 +641,6 @@ void THaScaler::PrintSummary() {
   Double_t curr_d1  = ((Double_t)GetBcm("bcm_d1")/time_sec - off_d1)/calib_d1;
   Double_t curr_d3  = ((Double_t)GetBcm("bcm_d3")/time_sec - off_d3)/calib_d3;
   Double_t curr_d10 = ((Double_t)GetBcm("bcm_d10")/time_sec - off_d10)/calib_d10;
-  printf("\n ----------------   Scaler Summary   ---------------- \n");
-  cout << "Scaler bank  " << bankgroup << endl;
   printf("Time of run  %7.2f min \n",time_min);
   printf("Triggers:     1 = %d    2 = %d    3 = %d   4 = %d    5 = %d\n",
          GetTrig(1),GetTrig(2),GetTrig(3),GetTrig(4),GetTrig(5));
@@ -945,5 +980,6 @@ Int_t THaScaler::Load()
     }
     bk++;
   }
+  new_load = kTRUE;
   return 0;
 };

@@ -27,6 +27,14 @@
 //      slot  = slot of scaler channels (1 module in VME)
 //      channel = individual channel of scaler data
 //
+//    Possible bank groups 
+//      Left = Left HRS scalers, event type 140 inserted asynchronously
+//      Right = Right HRS scalers, asynchronous event type 140   
+//      RCS = RCS scalers, asynchronous event type 140
+//      EvLeft = (rel. new) Left HRS synchronously, typ. every 100 events.
+//      EvRight = Right HRS synchronous readout.
+//    The synchronous readouts have definite time relationship to other events.
+//
 //    Procedure to add a new scaler channel or bank:
 //      1. Imitate, e.g. 'edtm'
 //      2. Constructor to create a new THaScalerBank and call AddBank.
@@ -51,9 +59,9 @@
 #define SCAL_VERBOSE      1  // verbose warnings (0 = silent, recommend = 1)
 
 // VME scaler servers 
-#define SERVER_LEFT  "129.57.164.11"   /* halladaq4.jlab.org */
-#define SERVER_RIGHT "129.57.164.8"    /* halladaq1.jlab.org */
-#define SERVER_RCS   "192.168.2.3"     /* ts2 crate in RCS setup */
+#define SERVER_LEFT  "129.57.192.30"   /* hallavme4.jlab.org */
+#define SERVER_RIGHT "129.57.192.28"   /* hallavme2.jlab.org */
+#define SERVER_RCS   "192.57.192.50"   /* ts2 crate in RCS setup */
 /* Port number of VME servers */
 #define PORT_LEFT  5022
 #define PORT_RIGHT 5021
@@ -109,6 +117,7 @@ public:
 
 // Constructors.
 // 'Bankgroup' is collection of scalers, "Left"(L-arm), "Right"(R-arm), "RCS"
+//  "EvLeft" = event stream, Left HRS,  "EvRight" = event stream, Right HRS.
 
 //   THaScaler();
    THaScaler( const char* Bankgroup );
@@ -144,6 +153,8 @@ public:
    virtual void PrintSummary();  // Print out a summary of important scalers.
 
    const char* GetName() const { return bankgroup.c_str(); }
+   const Int_t GetCrate() const { return crate; }
+   vector < THaScalerBank* > GetScalerBanks() { return scalerbanks; }
 
 // Get scaler data from slot #slot and channel #chan (slot >= 0, chan >= 0)
 // Get counts by history, histor = 1 = previous event, 0 = present.
@@ -177,6 +188,7 @@ public:
    Double_t GetPulserRate(Int_t helicity, const char* which);   
    Double_t GetNormRate(Int_t helicity, const char* which);
    Double_t GetNormRate(Int_t helicity, Int_t chan);
+   Bool_t IsRenewed() const { return new_load; }  // kTRUE if obj has new data
    
 protected:
 
@@ -187,6 +199,7 @@ protected:
    THaScalerBank *gasC,*a1L,*a2L,*a1R,*a2R;
    THaScalerBank *s0,*misc1,*misc2,*misc3,*misc4;
    THaScalerBank *leadgl,*rcs1,*rcs2,*rcs3,*edtm;
+   THaScalerBank *evleft, *evright;
    THaNormScaler *nplus,*nminus,*norm;
    multimap< string, BscaLoc > bmap;
    THaScalerDB *database;
@@ -195,12 +208,14 @@ protected:
    THaCodaFile *fcodafile;
    Bool_t coda_open;
    UInt_t header_left, header_right, header_rcs;
+   UInt_t header_evleft, header_evright;
    Int_t cratenum_left, cratenum_right, cratenum_rcs;
+   Int_t cratenum_evleft, cratenum_evright;
    Int_t header, crate;
    string vme_server;
    int vme_port;
    Bool_t found_crate,first_loop;
-   Bool_t did_init;
+   Bool_t did_init, new_load;
    Double_t clockrate;
    Int_t CheckInit();
    void Clear(Option_t* opt="");
