@@ -203,47 +203,6 @@ the analyzer. They are:
     TFile* oldfile = new TFile("Afile.root");
 
 
-Running the Analyzer - FAQ
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-1) Why is the display behaving poorly after quitting the analyzer/ROOT?
-
-   ROOT doesn't always return the terminal to a sane state. Use the "reset"
-   command to regain control of the screen.
-
-2) Where is the database?
-
-   The calibration and optics database currently reside under the directory
-   pointed to by the DB_DIR environment variable (primary) or analyzer/DB
-   directory (fallback) directory, organized with date-based granularity.
-
-   In general, a separate dated directory is needed for each configuration
-   (detector map and calibration set). Each detector system has its own file
-   which contains the detector's CRATE/SLOT/CHANNEL map, geometry, placement
-   and alignment data, as well as calibration constants. The files are
-   fairly well commented, and you are referrred to them for more information.	
-
-   Tools are being written such that the Analyzer can perform calibrations
-   natively, but at the moment the constants are copied from ESPACE
-   databases and reformatted. A MySql database is also implemented, but is
-   still undergoing refinement.
-
-3) Why are there these very large values (greater than 1.e30)?
-
-   These are due to "undefined" values being used in the calculation that
-   could not be circumvented. You will want to cut these entries from your
-   results.
-
-4) ESPACE can do XXX. How do I do it in the analyzer?
-
-   There are a number of items that ESPACE can do that the analyzer is
-   not yet capable of. However, this list is shrinking, and the
-   flexibility of the analyzer we believe greatly out-weighs this
-   temporary short-coming.
-
-   A document is being built to help ESPACE users "migrate" to using
-   the Analyzer, showing what variables or commands must be used to
-   recover the same items in ESPACE.
 </pre>
 </body>
 </html>

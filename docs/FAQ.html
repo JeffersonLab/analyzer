@@ -1,8 +1,16 @@
-Hall A C++ Analyzer Frequently Asked Questions
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>Hall A C++ Analyzer FAQ</title>
+</head>
+
+<body>
+<h1>Hall A C++ Analyzer Frequently Asked Questions</h1>
+
 5 June 2003
+<p>
 
-
+<pre>
 Building and Installing
 ~~~~~~~~~~~~~~~~~~~~~~~
 Q: How do I compile and install the analyzer on ifarml1/2/3?
@@ -90,3 +98,54 @@ Q: Is Windows supported?
 A: Not at this time, but support is planned at some point.
 
 --------------------------------------------------------------------
+
+
+Running the Analyzer
+~~~~~~~~~~~~~~~~~~~~
+
+--------------------------------------------------------------------
+Q: Why is the display behaving poorly after quitting the analyzer/ROOT?
+
+A: ROOT doesn't always return the terminal to a sane state. Use the "reset"
+   command to regain control of the screen.
+
+--------------------------------------------------------------------
+Q: Where is the database?
+
+A: The calibration and optics database currently reside under the directory
+   pointed to by the DB_DIR environment variable (primary) or analyzer/DB
+   directory (fallback) directory, organized with date-based granularity.
+
+   In general, a separate dated directory is needed for each configuration
+   (detector map and calibration set). Each detector system has its own file
+   which contains the detector's CRATE/SLOT/CHANNEL map, geometry, placement
+   and alignment data, as well as calibration constants. The files are
+   fairly well commented, and you are referrred to them for more information.	
+
+   Tools are being written such that the Analyzer can perform calibrations
+   natively, but at the moment the constants are copied from ESPACE
+   databases and reformatted. A MySql database is also implemented, but is
+   still undergoing refinement.
+
+--------------------------------------------------------------------
+Q: Why are there these very large values (greater than 1.e30)?
+
+A: These are due to "undefined" values being used in the calculation that
+   could not be circumvented. You will want to cut these entries from your
+   results.
+
+--------------------------------------------------------------------
+Q: ESPACE can do XXX. How do I do it in the analyzer?
+
+A: There are a number of items that ESPACE can do that the analyzer is
+   not yet capable of. However, this list is shrinking, and the
+   flexibility of the analyzer we believe greatly out-weighs this
+   temporary short-coming.
+
+   A document is being built to help ESPACE users "migrate" to using
+   the Analyzer, showing what variables or commands must be used to
+   recover the same items in ESPACE.
+</pre>
+</body>
+</html>
+
