@@ -11,8 +11,10 @@
 // #pragma link C++ class THaScalerGui+;
 
 #ifdef __MAKECINT__
+#ifdef LINUXVERS
 #pragma link C++ class std::map<std::string,int>;
 #pragma link C++ class std::map<int,std::string>;
+#endif
 #endif
 
 #endif
