@@ -6,13 +6,10 @@
 #include <string>
 #include "TString.h"
 
-#include "THaCalDB.h"
+#include "THaDB.h"
 #include "THaDetMap.h"
 
 using namespace std;
-
-ClassImp(THaCalDB)
-
 
 THaDB* gHaDB = NULL;
 
@@ -142,5 +139,8 @@ ostream& operator<<(ostream& s, const THaDetConfig& d) {
 
   
 ////////////////////////////////////////////////////////////////////////////////
+
+ClassImp(THaDB)
+
 
   
