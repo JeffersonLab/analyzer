@@ -95,7 +95,7 @@ THaAnalysisObject::EStatus THaExtTarCor::Init( const TDatime& run_time )
 
   if( fVertexName.Length() > 0 ) 
     fVertexModule = static_cast<THaVertexModule*>
-      ( FindModule( fVertexName.Data(), "THaVertexModule"));
+      ( FindModule( fVertexName.Data(), "THaVertexModule", gHaPhysics));
 
   return fStatus;
 }
