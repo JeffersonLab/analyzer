@@ -96,7 +96,7 @@ SRC           = src/THaFormula.C src/THaVar.C src/THaVarList.C src/THaCut.C \
 		src/THaTrackingDetector.C src/THaNonTrackingDetector.C \
 		src/THaPidDetector.C src/THaSubDetector.C \
 		src/THaAnalysisObject.C src/THaDetectorBase.C src/THaRTTI.C \
-		src/THaPhysicsModule.C \
+		src/THaPhysicsModule.C src/THaVertexModule.C \
 		src/THaAnalyzer.C src/THaPrintOption.C \
 		src/THaBeam.C src/THaBpm.C src/THaRaster.C src/THaEpicsData.C \
 		src/THaTrack.C src/THaPIDinfo.C src/THaParticleInfo.C \
@@ -111,7 +111,8 @@ SRC           = src/THaFormula.C src/THaVar.C src/THaVarList.C src/THaCut.C \
                 src/THaVDCAnalyticTTDConv.C src/THaVDCT0CalTable.C \
 		src/THaVDCTrackPair.C src/THaScalerGroup.C \
 		src/THaElectronKine.C src/THaReactionPoint.C \
-		src/THaTwoarmVertex.C
+		src/THaTwoarmVertex.C src/THaAvgVertex.C \
+		src/THaExtTarCor.C
 
 OBJ           = $(SRC:.C=.o)
 HDR           = $(SRC:.C=.h) src/THaGlobals.h src/VarDef.h src/VarType.h

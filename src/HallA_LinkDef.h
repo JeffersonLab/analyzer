@@ -28,6 +28,7 @@
 #pragma link C++ class THaAnalysisObject+;
 #pragma link C++ class THaDetectorBase+;
 #pragma link C++ class THaPhysicsModule+;
+#pragma link C++ class THaVertexModule+;
 #pragma link C++ class THaDetector+;
 #pragma link C++ class THaSubDetector+;
 #pragma link C++ class THaSpectrometerDetector+;
@@ -77,6 +78,8 @@
 #pragma link C++ class THaElectronKine+;
 #pragma link C++ class THaReactionPoint+;
 #pragma link C++ class THaTwoarmVertex+;
+#pragma link C++ class THaAvgVertex+;
+#pragma link C++ class THaExtTarCor+;
 
 #endif
 
