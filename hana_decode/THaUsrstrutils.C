@@ -12,7 +12,8 @@
 
 #include "THaUsrstrutils.h"
 #include "TMath.h"
-#include <string>
+#include "TRegexp.h"
+#include <cctype>
 
 using namespace std;
 
@@ -117,34 +118,23 @@ void THaUsrstrutils::string_from_evbuffer(const int *evbuffer, int nlen )
      char* ctemp = new char[bufsize+1];
      memcpy(ctemp,evbuffer,bufsize);
      ctemp[bufsize] = 0;  // terminate C-string for sure
-     string strbuff = ctemp;
+     TString strbuff = ctemp;
      delete [] ctemp;
-     int pos1 = 1;
-     int iamlost = 0;
-     int ifound = 0;
-     while (pos1 > 0) {
-       pos1 = strbuff.find("\n",pos1+1);
-       int pos2 = strbuff.rfind("\n",pos1-1);
-       int pos3 = strbuff.rfind(";",pos1);
-       if (iamlost++ > MAX) {
-             return;         // should not happen...
+     Ssiz_t pos1 = 0, pos2, ext, len=strbuff.Length();
+     TRegexp re(" *;.*\n");
+     bool found = false;
+     while( pos1<len ) {
+       pos2 = re.Index( strbuff, &ext, pos1 );
+       if( pos2 == kNPOS ) {
+	 found = true;
+	 strbuff.Remove(0,pos1);
+	 break;
        }
-       if (DEBUG) {
-         cout << "strbuff = " << strbuff << endl;
-         cout << "strbuff pos " <<pos1<<" "<<pos2<<" "<<pos3<<endl;
-       }
-       int tncomm = strbuff.find(";",pos2);
-       if (DEBUG) cout << "next comment  " << tncomm << endl;
-       if (pos2 > pos3) {
-          ifound = 1;
-          strbuff.assign(strbuff,pos2+1,tncomm);
-          if (DEBUG) cout << "strbuff (pos2 > pos3) = " << strbuff << endl;
-          break;
-       }
+       pos1 = pos2+ext;
      }
-     if(ifound) {
-       const char* p = strbuff.c_str();
-       while(isspace(*p)) p++;
+     if(found) {
+       const char* p = strbuff.Data();
+       while(isspace(*p)) p++;   //Removes leading \n too
        configstr = p;
        if (DEBUG) cout << "configstr = \n"<<configstr<<endl;
      } else {
