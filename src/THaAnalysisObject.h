@@ -45,11 +45,11 @@ public:
 			    const char* filemode = "r", 
 			    const int debug_flag = 1);
 
-  // Support functions for reading run database files
-  static  Int_t   LoadRunDBvalue( FILE* file, const TDatime& date, 
-				  const char* tag, Double_t& value );
-  static   Int_t  LoadRunDB( FILE* file, const TDatime& date, 
-			     const TagDef* tags, const char* prefix="" );
+  // Access functions for reading tag/value pairs from database files
+  static  Int_t   LoadDBvalue( FILE* file, const TDatime& date, 
+			       const char* tag, Double_t& value );
+  static   Int_t  LoadDB( FILE* file, const TDatime& date, 
+			  const TagDef* tags, const char* prefix="" );
 
   // Angle transformation utility functions
   static  void    GeoToSph( Double_t  th_geo, Double_t  ph_geo,
@@ -102,9 +102,9 @@ protected:
   THaAnalysisObject( const char* name, const char* description );
 
 private:
-  // Support fucntions for reading run database
-  static Int_t IsRunDBdate( const string& line, TDatime& date );
-  static Int_t IsRunDBtag ( const string& line, const char* tag, Double_t& value );
+  // Support fucntions for reading database files
+  static Int_t IsDBdate( const string& line, TDatime& date );
+  static Int_t IsDBtag ( const string& line, const char* tag, Double_t& value );
 
   ClassDef(THaAnalysisObject,0)   //ABC for a data analysis object
 };

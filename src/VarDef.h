@@ -8,7 +8,7 @@
 // Structures for calls to THaVarList::DefineVariables() and derived
 // functions.
 // 
-// Also defines structure for THaAnalysisModule::LoadRunDB().
+// Also defines structure for THaAnalysisModule::LoadDB().
 //
 //////////////////////////////////////////////////////////////////////////
 
@@ -29,7 +29,7 @@ struct RVarDef {
 
 struct TagDef {
   const char*      name;     // Tag name
-  Double_t*        var;      // Destination variable
+  Double_t*        var;      // Destination of result (MUST be Double_t!)
   Int_t            fatal;    // Error to return if tag not found (0=ignore)
 };
 

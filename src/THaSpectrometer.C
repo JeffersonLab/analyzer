@@ -457,7 +457,7 @@ Int_t THaSpectrometer::ReadRunDatabase( FILE* file, const TDatime& date )
     { "off_z",    &off_z },
     { 0 }
   };
-  LoadRunDB( file, date, tags, fPrefix );
+  LoadDB( file, date, tags, fPrefix );
 
   // Compute central angles in spherical coordinates and save trig. values
   // of angles for later use.

@@ -178,27 +178,28 @@ void THaRun::Print( Option_t* opt ) const
 Int_t THaRun::ReadDatabase()
 {
   // Qeury the run database for the beam and target parameters for the 
-  // date/time of this run.  The run should have been set, otherwise
+  // date/time of this run.  The run date should have been set, otherwise
   // the time when the run object was created (usually shortly before the 
-  // current time) will be used.
-  // Return 0 if success.
+  // current time) will be used, which is often not meaningful.
+  //
+  // Return 0 if success, <0 if file error, >0 if not all required data found.
 
 #define OPEN THaAnalysisObject::OpenFile
-#define READ THaAnalysisObject::LoadRunDBvalue
+#define READ THaAnalysisObject::LoadDBvalue
 
   FILE* f = OPEN( "run", fDate, "THaRun::ReadDatabase()" );
   if( !f ) return -1;
-  Int_t iq;
+  Int_t iq, st;
   Double_t E, M = 0.511e-3, Q = -1.0, dE = 0.0;
 
-  if( READ( f, fDate, "Ebeam", E ) ) return -1;  // Beam energy is required
+  if( (st = READ( f, fDate, "Ebeam", E )) ) return st; // Beam energy required
   READ( f, fDate, "mbeam", M );
   READ( f, fDate, "qbeam", Q );
   READ( f, fDate, "dEbeam", dE );
   iq = int(Q);
   SetBeam( E, M, iq, dE );
 
-  // FIXME: Read target parameters and 
+  // FIXME: Read target parameters and create structure.
   fTarget = NULL;
   fDBRead = true;
 

@@ -442,21 +442,21 @@ void THaAnalysisObject::SphToGeo( Double_t  th_sph, Double_t  ph_sph,
 }
 
 //_____________________________________________________________________________
-Int_t THaAnalysisObject::IsRunDBdate( const string& line, TDatime& date )
+Int_t THaAnalysisObject::IsDBdate( const string& line, TDatime& date )
 {
-  // Check if 'line' contains a valid run database time stamp. If so, 
+  // Check if 'line' contains a valid database time stamp. If so, 
   // parse the line, set 'date' to the extracted time stamp, and return 1.
   // Else return 0;
-  // Time stamps must have the format [ yyyy-mm-dd:hh:mm:ss ].
+  // Time stamps must be in SQL format: [ yyyy-mm-dd hh:mi:ss ]
 
   string::size_type lbrk = line.find('[');
   if( lbrk == string::npos || lbrk >= line.size()-12 ) return 0;
   string::size_type rbrk = line.find(']',lbrk);
   if( rbrk <= lbrk+11 ) return 0;
   Int_t yy, mm, dd, hh, mi, ss;
-  if( sscanf( line.substr(lbrk+1,rbrk-lbrk-1).c_str(), "%d-%d-%d:%d:%d:%d",
+  if( sscanf( line.substr(lbrk+1,rbrk-lbrk-1).c_str(), "%d-%d-%d %d:%d:%d",
 	      &yy, &mm, &dd, &hh, &mi, &ss) != 6) {
-    ::Warning("THaAnalysisObject::IsRunDBdate()", 
+    ::Warning("THaAnalysisObject::IsDBdate()", 
 	      "Invalid date tag %s", line.c_str());
     return 0;
   }
@@ -465,13 +465,13 @@ Int_t THaAnalysisObject::IsRunDBdate( const string& line, TDatime& date )
 }
 
 //_____________________________________________________________________________
-Int_t THaAnalysisObject::IsRunDBtag( const string& line, const char* tag,
-				     Double_t& value )
+Int_t THaAnalysisObject::IsDBtag( const string& line, const char* tag,
+				  Double_t& value )
 {
   // Check if 'line' is a tag = value pair and whether the tag equals 'tag'. 
   // If tag = value, but tag not found, return -1. If tag found, 
   // parse the line, set 'value' to the extracted value, and return +1.
-  // Tags are not case sensitive.
+  // Tags are NOT case sensitive.
 
   string::size_type pos = line.find('=');
   if( pos == string::npos ) return 0;
@@ -490,15 +490,15 @@ Int_t THaAnalysisObject::IsRunDBtag( const string& line, const char* tag,
 }
 
 //_____________________________________________________________________________
-Int_t THaAnalysisObject::LoadRunDBvalue( FILE* file, const TDatime& date, 
-					 const char* tag, Double_t& value )
+Int_t THaAnalysisObject::LoadDBvalue( FILE* file, const TDatime& date, 
+				      const char* tag, Double_t& value )
 {
-  // Load a data value tagged with 'tag' from the run database 'file'.
+  // Load a data value tagged with 'tag' from the database 'file'.
   // Lines before the first valid time stamp or starting with "#" are ignored.
   // If 'tag' is found, then the most recent value seen (based on time stamps
   // and position within the file) is returned.
   // Values with time stamps later than 'date' are ignored.
-  // This allows incremental organization of the run database where
+  // This allows incremental organization of the database where
   // only changes are recorded with time stamps.
   // Values are always treated as doubles.
   // Return 0 if success, >0 if tag not found, <0 if file error.
@@ -519,26 +519,26 @@ Int_t THaAnalysisObject::LoadRunDBvalue( FILE* file, const TDatime& date,
     if( len<2 || buf[0] == '#' ) continue;
     line = buf;
     Int_t status;
-    if( !ignore && (status = IsRunDBtag( line, tag, value )) != 0) {
+    if( !ignore && (status = IsDBtag( line, tag, value )) != 0) {
       if( status > 0 ) {
 	found = true;
 	prevdate = tagdate;
 	// ignore is not set to true here so that the _last_, not the first,
 	// of multiple identical tags is evaluated.
       }
-    } else if( IsRunDBdate( line, tagdate ) != 0 )
+    } else if( IsDBdate( line, tagdate ) != 0 )
       ignore = ( tagdate>date || tagdate<prevdate );
   }
   if( errno ) {
-    perror( "THaAnalysisObject::LoadRunDBvalue()" );
+    perror( "THaAnalysisObject::LoadDBvalue()" );
     return -1;
   }
   return found ? 0 : 1;
 }
 
 //_____________________________________________________________________________
-Int_t THaAnalysisObject::LoadRunDB( FILE* f, const TDatime& date,
-				    const TagDef* tags, const char* prefix )
+Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
+				 const TagDef* tags, const char* prefix )
 {
   // Load a list of parameters from the run database according to 
   // the contents of the 'tags' structure (see VarDef.h).
@@ -552,10 +552,8 @@ Int_t THaAnalysisObject::LoadRunDB( FILE* f, const TDatime& date,
   const TagDef* item = tags;
   while( item->name ) {
     if( item->var ) {
-      tag[0] = 0;
-      strncat(tag,prefix,LEN-1);
-      strncat(tag,item->name,LEN-np-1);
-      if( LoadRunDBvalue( f, date, tag, *(item->var)) && item->fatal )
+      tag[0] = 0; strncat(tag,prefix,LEN-1); strncat(tag,item->name,LEN-np-1);
+      if( LoadDBvalue( f, date, tag, *(item->var)) && item->fatal )
 	return item->fatal;
     }
     item++;
