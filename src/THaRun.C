@@ -172,11 +172,11 @@ Int_t THaRun::Init()
     while( nev<fMaxScan && !HasInfo(wanted_info) && 
 	   (status = ReadEvent()) == S_SUCCESS ) {
 
-      // Decode events
+      // Decode events. Skip bad events.
       nev++;
       if( evdata->LoadEvent( GetEvBuffer()) != THaEvData::HED_OK ) {
-	Error( here, "Error decoding event buffer.");
-	return 128;
+	Warning( here, "Error decoding event buffer at event %d", nev );
+	continue;
       }
 
       // Inspect event and extract run parameters if appropriate
