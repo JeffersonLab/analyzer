@@ -50,8 +50,6 @@ export MAINDIR = ../src
 
 # export DEBUG = 1
 
-ARCH          = linuxegcs
-#ARCH          = solarisCC5
 
 ROOTCFLAGS   := $(shell root-config --cflags)
 ROOTLIBS     := $(shell root-config --libs)
@@ -61,6 +59,9 @@ INCLUDES      = $(ROOTCFLAGS)
 
 ifndef STANDALONE
 INCLUDES += -I$(MAINDIR)
+else
+ARCH          = linuxegcs
+#ARCH          = solarisCC5
 endif
 
 ifeq ($(ARCH),solarisCC5)
@@ -179,20 +180,21 @@ GLIBS        += $(ROOTGLIBS) $(SYSLIBS)
 
 SRC = THaUsrstrutils.C THaCrateMap.C THaCodaData.C THaHelicity.C \
       THaEpicsStack.C THaFastBusWord.C THaCodaFile.C THaSlotData.C \
-      THaEvData.C 
-
-HEAD = $(SRC:.C=.h)
-DEPS = $(SRC:.C=.d)
-DECODE_OBJS = $(SRC:.C=.o)
+      THaEvData.C evio.C
 
 PROGS = tstio tdecpr tdecex prfact 
-
 # If you want to use the ET system at Jlab.
 ifdef ONLINE_ET
   SRC += THaEtClient.C
   PROGS += etclient
   PROGS += tstcoda
 endif
+
+HEAD := $(SRC:.C=.h)
+# sources without headers:
+SRC += swap_util.C swapped_intcpy.c
+DEPS = $(patsubst %.c,%.d,$(SRC:.C=.d))
+DECODE_OBJS = $(patsubst %.c,%.o,$(SRC:%.C=%.o)) THaDecDict.o
 
 ifdef BUILD_SHARED
   all:  ../libdc.so
@@ -210,15 +212,15 @@ endif
 
 # Library for main analyzer
 
-../libdc.a: $(DECODE_OBJS) evio.o swap_util.o swapped_intcpy.o THaDecDict.o
+../libdc.a: $(DECODE_OBJS)
 	rm -f $@
 	ar crs $@ $^
 
-../libdc.so: $(DECODE_OBJS) evio.o swap_util.o swapped_intcpy.o THaDecDict.o
+../libdc.so: $(DECODE_OBJS)
 	rm -f $@
 	$(LD) $(LDFLAGS) $(SOFLAGS) -o $@ $^
 
-libdc.a: $(DECODE_OBJS) evio.o swap_util.o swapped_intcpy.o THaDecDict.o
+libdc.a: $(DECODE_OBJS)
 	rm -f $@
 	ar crs $@ $^
 
@@ -230,27 +232,27 @@ else
    MAINOBJS = $(MAINDIR)/libHallA.so
 endif
 
-tstio: tstio_main.o $(DECODE_OBJS) THaDecDict.o $(SRC) $(EVIO_LIB) $(MAINOBJS)
+tstio: tstio_main.o $(DECODE_OBJS) $(SRC) $(EVIO_LIB) $(MAINOBJS)
 	rm -f $@
-	$(CXX) $(CXXFLAGS) -o $@ tstio_main.o $(DECODE_OBJS) THaDecDict.o $(ALL_LIBS) $(MAINOBJS)
+	$(CXX) $(CXXFLAGS) -o $@ tstio_main.o $(DECODE_OBJS) $(ALL_LIBS) $(MAINOBJS)
 
-tdecpr: $(DECODE_OBJS) THaDecDict.o $(SRC) tdecpr_main.o $(HEAD) $(SRC) $(EVIO_LIB) $(MAINOBJS)
+tdecpr: $(DECODE_OBJS) $(SRC) tdecpr_main.o $(HEAD) $(SRC) $(EVIO_LIB) $(MAINOBJS)
 	rm -f $@
-	$(CXX) $(CXXFLAGS) -o $@ tdecpr_main.o $(DECODE_OBJS) THaDecDict.o $(ALL_LIBS) $(MAINOBJS)
+	$(CXX) $(CXXFLAGS) -o $@ tdecpr_main.o $(DECODE_OBJS) $(ALL_LIBS) $(MAINOBJS)
 
-tdecex: $(DECODE_OBJS) THaDecDict.o $(SRC) tdecex_main.o THaGenDetTest.o $(HEAD) THaGenDetTest.h $(SRC) $(DECODE_OBJS) THaDecDict.o $(EVIO_LIBS) $(MAINOBJS)  
+tdecex: $(DECODE_OBJS) $(SRC) tdecex_main.o THaGenDetTest.o $(HEAD) THaGenDetTest.h $(SRC) $(DECODE_OBJS) $(EVIO_LIBS) $(MAINOBJS)  
 	rm -f $@
-	$(CXX) $(CXXFLAGS) -o $@ tdecex_main.o THaGenDetTest.o $(DECODE_OBJS) THaDecDict.o $(ALL_LIBS) $(MAINOBJS)
+	$(CXX) $(CXXFLAGS) -o $@ tdecex_main.o THaGenDetTest.o $(DECODE_OBJS) $(ALL_LIBS) $(MAINOBJS)
 
-etclient: etclient_main.o $(DECODE_OBJS) THaDecDict.o $(MAINOBJS)
-	$(CXX) $(CXXFLAGS) -o $@ etclient_main.o $(DECODE_OBJS) THaDecDict.o $(ALL_LIBS) $(MAINOBJS)
+etclient: etclient_main.o $(DECODE_OBJS) $(MAINOBJS)
+	$(CXX) $(CXXFLAGS) -o $@ etclient_main.o $(DECODE_OBJS) $(ALL_LIBS) $(MAINOBJS)
 
-prfact: $(DECODE_OBJS) THaDecDict.o $(SRC) prfact_main.o $(HEAD) $(EVIO_LIB) $(MAINOBJS)
+prfact: $(DECODE_OBJS) $(SRC) prfact_main.o $(HEAD) $(EVIO_LIB) $(MAINOBJS)
 	rm -f $@
-	$(CXX) $(CXXFLAGS) -o $@ prfact_main.o $(DECODE_OBJS) THaDecDict.o $(ALL_LIBS) $(MAINOBJS)
+	$(CXX) $(CXXFLAGS) -o $@ prfact_main.o $(DECODE_OBJS) $(ALL_LIBS) $(MAINOBJS)
 
-tstcoda: tstcoda_main.o THaCodaFile.o THaEtClient.o THaCodaData.o THaCodaFile.h THaEtClient.h THaCodaData.h $(DECODE_OBJS) THaDecDict.o $(MAINOBJS)
-	$(CXX) $(CXXFLAGS) -o $@ tstcoda_main.o $(DECODE_OBJS) THaDecDict.o $(ALL_LIBS) $(MAINOBJS)
+tstcoda: tstcoda_main.o THaCodaFile.o THaEtClient.o THaCodaData.o THaCodaFile.h THaEtClient.h THaCodaData.h $(DECODE_OBJS) $(MAINOBJS)
+	$(CXX) $(CXXFLAGS) -o $@ tstcoda_main.o $(DECODE_OBJS) $(ALL_LIBS) $(MAINOBJS)
 
 
 # Below is the evio library, which comes rather directly 
@@ -268,8 +270,8 @@ libevio_linux.a:  evio.o swap_util.o swapped_intcpy.o
 #	rm -f $@
 #	ar cr $@ evio.o swap_util.o swapped_intcpy.o
 
-evio.o: evio.C
-	$(CXX) -c  $<
+#evio.o: evio.C
+#	$(CXX) -c  $<
 
 # swap_util.o: swap_util.C
 # 	$(CXX) -c  $<

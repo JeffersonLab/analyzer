@@ -41,10 +41,11 @@ export BUILD_SHARED = 1
 
 LIBDC=libdc_local.a
 
-export DEBUG = 1
-
+ifdef STANDALONE
+# export DEBUG = 1
 ARCH          = linuxegcs
 #ARCH          = solarisCC5
+endif
 
 ROOTCFLAGS   := $(shell root-config --cflags)
 ROOTLIBS     := $(shell root-config --libs)
