@@ -22,6 +22,7 @@
 #pragma link C++ class THaHRS;
 #pragma link C++ class THaLeftHRS;
 #pragma link C++ class THaRightHRS;
+#pragma link C++ class THaDecData;
 #pragma link C++ class THaDetectorBase;
 #pragma link C++ class THaDetector;
 #pragma link C++ class THaSubDetector;
@@ -34,6 +35,7 @@
 #pragma link C++ class THaEvent;
 #pragma link C++ class THaEventHeader;
 #pragma link C++ class THaRawEvent;
+#pragma link C++ class THaBtestEvent;
 #pragma link C++ class THaAnalyzer;
 #pragma link C++ class THaPrintOption;
 #pragma link C++ class THaBeam;
