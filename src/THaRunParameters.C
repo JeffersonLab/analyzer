@@ -9,6 +9,7 @@
 #include "THaRunParameters.h"
 #include "THaAnalysisObject.h"
 #include "TDatime.h"
+#include "TError.h"
 #include "TMath.h"
 #include <iostream>
 
@@ -111,10 +112,8 @@ void THaRunParameters::Print( Option_t* opt ) const
 //_____________________________________________________________________________
 Int_t THaRunParameters::ReadDatabase( const TDatime& date )
 {
-  // Qeury the run database for the beam and target parameters for the 
-  // date/time of this run.  The run date should have been set, otherwise
-  // the time when the run object was created (usually shortly before the 
-  // current time) will be used, which is often not meaningful.
+  // Query the run database for the beam and target parameters at the 
+  // specified date/time.
   //
   // Return 0 if success, <0 if file error, >0 if not all required data found.
 
@@ -128,8 +127,12 @@ Int_t THaRunParameters::ReadDatabase( const TDatime& date )
   Int_t iq, st;
   Double_t E, M = 0.511e-3, Q = -1.0, dE = 0.0;
 
-  if( (st = READ( f, date, "Ebeam", E )) ) 
-    return st;                      // Beam energy required
+  if( (st = READ( f, date, "Ebeam", E )) ) {
+    // Beam energy required
+    Error( "ReadDatabase", "Beam energy missing in run database. "
+	   "Run parameter initialization failed." );
+    return st;
+  }
   READ( f, date, "mbeam", M );
   READ( f, date, "qbeam", Q );
   READ( f, date, "dEbeam", dE );
