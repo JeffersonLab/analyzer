@@ -104,6 +104,9 @@ THaEvData::THaEvData() :
     fBench = new THaBenchmark;
   } else
     fBench = NULL;
+
+  // Enable scalers by default
+  EnableScalers();
 }
 
 
@@ -195,58 +198,51 @@ int THaEvData::gendecode(const int* evbuffer, THaCrateMap* map) {
        event_num = evbuffer[4];
        recent_event = event_num;
        ret = physics_decode(evbuffer, map);
-       goto exit;
      } else {
        if( fDoBench && event_type != SCALER_EVTYPE ) 
 	 fBench->Begin("ctrl_evt_decode");
        event_num = 0;
        switch (event_type) {
-	 case SYNC_EVTYPE :
-           evt_time = static_cast<UInt_t>(evbuffer[2]);
-           goto exit;
 	 case PRESTART_EVTYPE :
-// Usually prestart is the first 'event'.  Call SetRunTime() to re-initialize the
-// crate map since we now know the run time.  
+// Usually prestart is the first 'event'.  Call SetRunTime() to re-initialize 
+// the crate map since we now know the run time.  
 // This won't happen for split files (no prestart). For such files, 
 // the user should call SetRunTime() explicitly.
            SetRunTime(static_cast<UInt_t>(evbuffer[2]));
            run_num  = evbuffer[3];
            run_type = evbuffer[4];
 	   evt_time = run_time;
-           goto exit;
-	 case GO_EVTYPE :
-           evt_time = static_cast<UInt_t>(evbuffer[2]);
-           goto exit;
-	 case PAUSE_EVTYPE :
-           evt_time = static_cast<UInt_t>(evbuffer[2]);
-           goto exit;
-	 case END_EVTYPE :
-           evt_time = static_cast<UInt_t>(evbuffer[2]);
-	   goto exit;
+	   break;
          case EPICS_EVTYPE :
            ret = epics_decode(evbuffer);
-	   goto exit;
+	   break;
          case PRESCALE_EVTYPE :
            ret = prescale_decode(evbuffer);
-	   goto exit;
+	   break;
          case TRIGGER_FILE :
          case DETMAP_FILE :
- 	   goto exit;
+	   break;
          case SCALER_EVTYPE :
-           ret = scaler_event_decode(evbuffer,map);
+	   if( ScalersEnabled() )
+	     ret = scaler_event_decode(evbuffer,map);
 	   goto exit;
+	 case SYNC_EVTYPE :
+	 case GO_EVTYPE :
+	 case PAUSE_EVTYPE :
+	 case END_EVTYPE :
+           evt_time = static_cast<UInt_t>(evbuffer[2]);
+	   break;
          default:
 	   // Ignore unknown event types. Clients will only analyze
 	   // known event types anyway.
-           ret = HED_OK;
-           goto exit;
+           break;
        }
+       if( fDoBench ) fBench->Stop("ctrl_evt_decode");
      }
+     goto exit;
  err:
      ret = HED_ERR;
-     goto exit;
  exit:
-     if( fDoBench ) fBench->Stop("ctrl_evt_decode");
      return ret;
 }
      
@@ -441,6 +437,7 @@ int THaEvData::prescale_decode(const int* evbuffer) {
 
 int THaEvData::scaler_event_decode(const int* evbuffer, THaCrateMap* map) 
 {
+  // Decode scalers
       int type = evbuffer[1]>>16;
       if (type != SCALER_EVTYPE) return HED_ERR;
       if( fDoBench ) fBench->Begin("scaler_event_decode");
@@ -872,6 +869,21 @@ Bool_t THaEvData::HelicityEnabled() const
 {
   // Test if helicity decoding enabled
   return TestBit(kHelicityEnabled);
+}
+
+void THaEvData::EnableScalers( Bool_t enable ) 
+{
+  // Enable/disable scaler decoding
+  if( enable )
+    SetBit(kScalersEnabled);
+  else
+    ResetBit(kScalersEnabled);
+}
+
+Bool_t THaEvData::ScalersEnabled() const
+{
+  // Test if helicity decoding enabled
+  return TestBit(kScalersEnabled);
 }
 
 void THaEvData::hexdump(const char* cbuff, size_t nlen)
