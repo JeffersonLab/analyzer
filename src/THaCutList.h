@@ -71,12 +71,11 @@ public:
 				Option_t* option="" ) const;
 
 protected:
-  THaHashList*      fCuts;      //Hash list holding all cuts
-  THaHashList*      fBlocks;    //Hash list holding blocks of cuts.
-                                //Elements of this table are THaNamedLists of THaCuts
-  const THaVarList* fVarList;   //Pointer to list of variables
+  THaHashList*      fCuts;    //Hash list holding all cuts
+  THaHashList*      fBlocks;  //Hash list holding blocks of cuts.
+                              //Elements of this table are THaNamedLists of THaCuts
+  const THaVarList* fVarList; //Pointer to list of variables
 
-  static  UInt_t    IntDigits( Int_t n );
   static  void      MakePrintOption( THaPrintOption& opt, 
 				     const TList* plist );
 
@@ -84,5 +83,8 @@ protected:
 
   ClassDef(THaCutList,0)  //HashList with support for blocks of objects
 };
+
+// Global utitlity function
+UInt_t IntDigits( Int_t n );
 
 #endif

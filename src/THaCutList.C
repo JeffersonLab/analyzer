@@ -446,10 +446,9 @@ void THaCutList::Clear( Option_t* option )
 }
 
 //______________________________________________________________________________
-UInt_t THaCutList::IntDigits( Int_t n )
+UInt_t IntDigits( Int_t n )
 { 
   //Get number of printable digits of integer n.
-  //Internal utility function.
 
   if( n == 0 ) return 1;
   int j = 0;
