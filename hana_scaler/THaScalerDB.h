@@ -17,9 +17,8 @@
 //
 /////////////////////////////////////////////////////////////////////
 
-//#include "Rtypes.h"
-#include "TObject.h"
-#include <fstream>
+#include "Rtypes.h"
+//#include "TObject.h"
 #include <string>
 #include <vector>
 #include <map>
@@ -49,10 +48,7 @@ public:
           break;
     }
   }
-  void Print() { 
-    using namespace std;
-    cout << "(D,M,Y) = "<<day<<" "<<month<<" "<<year<<endl;
-  }
+  void Print() const;
   friend bool operator==(Bdate a, Bdate b) {
     return a.day==b.day && a.month==b.month && a.year==b.year;
   };

@@ -23,8 +23,14 @@
 
 #include "THaScalerDB.h"
 #include <errno.h>
+#include <fstream>
 
 using namespace std;
+
+void Bdate::Print() const
+{ 
+  cout << "(D,M,Y) = "<<day<<" "<<month<<" "<<year<<endl;
+}
 
 THaScalerDB::THaScalerDB() { }
 THaScalerDB::~THaScalerDB() { }
