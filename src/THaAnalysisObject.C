@@ -186,12 +186,10 @@ THaAnalysisObject::EStatus THaAnalysisObject::Init( const TDatime& date )
     if( ReadDatabase(date) )
       return fStatus;
   } 
-#ifdef WITH_DEBUG
   else if ( fDebug>0 ) {
     cout << "Info: Skipping database call for object " << GetName() 
 	 << " since no ReadDatabase function defined.\n";
   }
-#endif
 
   // Define this object's variables.
   if( DefineVariables(kDefine) )
@@ -207,29 +205,37 @@ FILE* THaAnalysisObject::OpenFile( const char *name, const TDatime& date,
 {
   // Open database file and return a pointer to the C-style file descriptor.
 
+  // Ensure input is sane
+  if( !name || strlen(name) == 0 )
+    return NULL;
+  if( !here )
+    here="";
+  if( !filemode )
+    filemode="r";
+
+  // Get list of database file candidates and try to open them in turn
   FILE* fi = NULL;
   vector<string> fnames( GetDBFileList(name, date, here) );
   if( !fnames.empty() ) {
     vector<string>::iterator it = fnames.begin();
     do {
-#ifdef WITH_DEBUG
       if( debug_flag>1 )
       	cout << "<" << here << ">: Opening database file " << *it;
-#endif
       // Open the database file
       fi = fopen( (*it).c_str(), filemode);
       
-#ifdef WITH_DEBUG
       if( debug_flag>1 ) 
 	if( !fi ) cout << " ... failed" << endl;
 	else      cout << " ... ok" << endl;
       else if( debug_flag>0 && fi )
 	cout << "<" << here << ">: Opened database file " << *it << endl;
-#endif
+      // continue until we succeed
     } while ( !fi && ++it != fnames.end() );
   }
-  if( !fi )
-    cerr<<"<"<<here<<">: Cannot open database file for prefix "<<name<<endl;
+  if( !fi && debug_flag>0 ) {
+    ::Error(here,"Cannot open database file db_%s%sdat",name,
+	    (name[strlen(name)-1]=='.'?"":"."));
+  }
 
   return fi;
 }
@@ -848,4 +854,3 @@ THaAnalysisObject* THaAnalysisObject::FindModule( const char* name,
   fStatus = save_status;
   return aobj;
 }
-
