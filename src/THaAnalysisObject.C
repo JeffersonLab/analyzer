@@ -15,6 +15,7 @@
 
 #include "THaAnalysisObject.h"
 #include "THaVarList.h"
+#include "THaString.h"
 #include "TClass.h"
 #include "TDatime.h"
 #include "TROOT.h"
@@ -482,10 +483,8 @@ Int_t THaAnalysisObject::IsDBtag( const string& line, const char* tag,
   string::size_type pos2 = line.substr(0,pos).find_last_not_of(" \t");
   if( pos2 == string::npos ) return -1;
   // Ignore case
-  string t1(line.substr(pos1,pos2-pos1+1)), t2(tag);
-  transform( t1.begin(), t1.end(), t1.begin(), tolower );
-  transform( t2.begin(), t2.end(), t2.begin(), tolower );
-  if( t1 != t2 ) return -1;
+  THaString t1(line.substr(pos1,pos2-pos1+1));
+  if( t1.CmpNoCase(tag) != 0 ) return -1;
   value = std::atof( line.substr(pos+1).c_str() );
   return 1;
 }
