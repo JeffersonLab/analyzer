@@ -26,7 +26,7 @@
 #include "TVector3.h"
 #include "TMath.h"
 #include "TRotation.h"
-#include "TRotation_SetZAxis.h"
+#include "Ext_TRotation.h"
 
 using namespace std;
 
@@ -172,7 +172,7 @@ Int_t THaSecondaryKine::Process( const THaEvData& evdata )
   // lies in the scattering plane (defined by q and e') and points
   // in the direction of e', so the out-of-plane angle lies within
   // -90<phi_xq<90deg if X is detected on the downstream/forward side of q.
-#ifdef Need_TRotation_SetZAxis
+#ifdef Ext_TRotation
   Ext_TRotation
 #else
   TRotation
@@ -237,7 +237,7 @@ Int_t THaSecondaryKine::Process( const THaEvData& evdata )
   // CM vectors of X and B. 
   // Express X and B in the frame where q is along the z-axis 
   // - the typical head-on collision picture.
-#ifdef Need_TRotation_SetZAxis
+#ifdef Ext_TRotation
   Ext_TRotation
 #else
   TRotation
