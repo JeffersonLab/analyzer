@@ -93,11 +93,6 @@ protected:
   FourVect fX;          // Detected secondary particle 4-momentum
   FourVect fB;          // Recoil system 4-momentum
 
-  //FIXME: TEST
-  Double_t fPmiss1;
-  Double_t fMrecoil1;
-  Double_t fMandelU1;
-
   Double_t fMX;         // Mass of secondary particle (GeV)
 
   virtual Int_t DefineVariables( EMode mode = kDefine );
