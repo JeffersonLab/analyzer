@@ -1,103 +1,23 @@
 #ifndef THaScaler_
 #define THaScaler_
 
-
 /////////////////////////////////////////////////////////////////////
 //
 //   THaScaler
 //
 //   Scaler Data in Hall A at Jlab.  
 //  
-//   The usage covers several implementations:
-//
-//   1. Works within context of full analyzer, or standalone.
-//   2. Time dependent channel mapping to account for movement
-//      of channels or addition of new channels.
-//   3. Source of data is either THaEvData, CODA file, online,
-//      or scaler-history-file, depending on context.
-//   4. Optional displays of rates, counts, history.
-//   5. Derived classes may be written to determine derived
-//      quantities like charge, deadtime, and helicity correlations.
-//      Examples provided separately.
-//
-//   Terminology:
-//      bankgroup = group of scaler banks, e.g. Left Spectrometer crate.
-//      bank  = group of scalers, e.g. S1L PMTs.
-//      normalization scaler =  bank assoc. with normalization (charge, etc)
-//      slot  = slot of scaler channels (1 module in VME)
-//      channel = individual channel of scaler data
-//
-//    Possible bank groups 
-//      Left = Left HRS scalers, event type 140 inserted asynchronously
-//      Right = Right HRS scalers, asynchronous event type 140   
-//      RCS = RCS scalers, asynchronous event type 140
-//      DVCS = DVCS scalers, asynch. event type 140
-//      SRC = SRC scalers, asynch. event type 140
-//      EvLeft = (rel. new) Left HRS synchronously, typ. every 100 events.
-//      EvRight = Right HRS synchronous readout.
-//    The synchronous readouts have definite time relationship to other events.
-//
-//    Procedure to add a new scaler channel or bank:
-//      1. Imitate, e.g. 'edtm'
-//      2. Constructor to create a new THaScalerBank and call AddBank.
-//      3. However, if the scaler is a subset of the normalization
-//         scaler it must be treated differently:
-//         a) Nothing to THaScaler
-//         b) Add to the 'chan_name' vector in C'tor of THaNormScaler
-//      4. Corresponding changes to destructors, and declaration in headers.
-//      5. Add appropriate line to GetScaler(char* detector...) method
-//         if not normalization scaler.
-//      6. Add the line for the channel or bank to 'scaler.map' file
-//         with same short name as used in C'tor.
+//   See comments in implementation.
 //
 //   author  Robert Michaels (rom@jlab.org)
 //
 /////////////////////////////////////////////////////////////////////
 
+#define SCAL_NUMCHAN     32
 #define SCAL_NUMBANK     12
-#define SCAL_CLOCKRATE 1024
 #define SCAL_EVTYPE     140
 #define SCAL_ERROR       -1
 #define SCAL_VERBOSE      1  // verbose warnings (0 = silent, recommend = 1)
-
-// VME scaler servers 
-#define SERVER_LEFT  "129.57.192.30"   /* hallavme4.jlab.org */
-#define SERVER_RIGHT "129.57.192.28"   /* hallavme2.jlab.org */
-#define SERVER_RCS   "129.57.192.50"   /* ts2 crate in RCS setup */
-#define SERVER_CALO  "129.57.192.51"   /* DVCS Calo crate */
-#define SERVER_SRC   "129.57.164.100"  /* SRC scaler crate */
-/* Port number of VME servers */
-#define PORT_LEFT  5022
-#define PORT_RIGHT 5021
-#define PORT_RCS   5022
-#define PORT_CALO  5064
-#define PORT_SRC   5088
-#define MAXBLK   20
-#define MSGSIZE  50
-/* structure for requests from this client to HRS VME server */
-struct request { 
-   int reply;
-   long ibuf[16*MAXBLK]; 
-   char message[MSGSIZE];
-   int clearflag; int checkend;
-};
-/* But RCS is different... */
-#define RCSMAXBLK 10
-#define RCSMSG 1024
-struct rcsrequest { 
-   int reply;
-   char message[RCSMSG];
-};
-struct rcsreply {
-  long ibuf[16*RCSMAXBLK];
-  int  endrunflag;
-  char message[RCSMSG];
-};
-#define SERVER_WORK_PRIORITY 100
-#define SERVER_STACK_SIZE 10000
-#define MAX_QUEUED_CONNECTIONS 5
-#define SOCK_ADDR_SIZE  sizeof(struct sockaddr_in))
-#define REPLY_MSG_SIZE 1000
 
 #include "TObject.h"
 #include "TString.h"
@@ -109,22 +29,19 @@ struct rcsreply {
 #include <fstream>
 #include <time.h>
 
-class THaNormScaler;
-class THaScalerBank;
-class BscaLoc;
+class Bdate;
+class THaScalerDB;
 class THaCodaFile;
 class THaEvData;
-
 class TDatime;
 
 class THaScaler : public TObject {
 public:
 
 // Constructors.
-// 'Bankgroup' is collection of scalers, "Left"(L-arm), "Right"(R-arm), "RCS"
+// 'Bankgroup' is collection of scalers, "Left"(L-arm), "Right"(R-arm)
 //  "EvLeft" = event stream, Left HRS,  "EvRight" = event stream, Right HRS.
 
-//   THaScaler();
    THaScaler( const char* Bankgroup );
    virtual ~THaScaler();
 
@@ -132,8 +49,6 @@ public:
 // 'Time' is the Day-Month-Year to look up scaler map related to data taking.
 // European format of Time: '21-05-1999' --> 21st of May 1999.
 // 'Time' can also be "now"
-//   Int_t Init( const char* Bankgroup ); // default time = "now"
-//   Int_t Init( const char* Time, const char* Bankgroup ); 
    Int_t Init( const char* date = "now" ); // default time = "now"
    Int_t Init( const TDatime& date );      // default time = current time
 
@@ -149,27 +64,25 @@ public:
    Int_t LoadDataHistoryFile(int run_num); // default file "scaler_history.dat"
    Int_t LoadDataHistoryFile(const char* filename, int run_num);
 // Online 'server' may be Name or IP of VME cpu, or
-// 'server' may also be a mnemonic like "Left", "Right", "RCS", etc
+// 'server' may also be a mnemonic like "Left", "Right", etc
    Int_t LoadDataOnline();    // server and port is known for 'Bankgroup'
    Int_t LoadDataOnline(const char* server, int port); 
 
-   virtual Int_t InitPlots();    // Initialize plots (xscaler style)
    virtual void Print( Option_t* opt="" ) const;   // Prints data contents
    virtual void PrintSummary();  // Print out a summary of important scalers.
 
-   const char* GetName() const { return bankgroup.c_str(); }
-   const Int_t GetCrate() const { return crate; }
-   std::vector < THaScalerBank* > GetScalerBanks() { return scalerbanks; }
+   const char* GetName() const { return bankgroup.c_str(); };
+   const Int_t GetCrate() const { return crate; };
 
 // Get scaler data from slot #slot and channel #chan (slot >= 0, chan >= 0)
 // Get counts by history, histor = 1 = previous event, 0 = present.
-   Int_t GetScaler(Int_t bank, Int_t chan, Int_t histor=0);
+   Int_t GetScaler(Int_t slot, Int_t chan, Int_t histor=0);
+
 // Get accumulated COUNTS on detector and channel
-// detector = "s1", "s2", "gasC", "a1", "a2", "leadgl", "rcs1-3", "edtm" 
+// detector = "s1", "s2", "gasC", "a1", "a2", "leadgl", "edtm" 
    Int_t GetScaler(const char* detector, Int_t chan);  // if no L/R distinction.
 // PMT = "left", "right", "LR" (LR means left.AND.right)
-   Int_t GetScaler(const char* detector, const char* PMT, Int_t chan, 
-     Int_t histor=0);  
+   Int_t GetScaler(const char* detector, const char* PMT, Int_t chan, Int_t histor=0);  
    Int_t GetTrig(Int_t trigger);   // counts for trig# 1,2,3,4,5,etc
 // Beam current, which= 'bcm_u1','bcm_d1','bcm_u3','bcm_d3','bcm_u10','bcm_d10'
    Int_t GetBcm(const char* which); 
@@ -194,56 +107,49 @@ public:
    Double_t GetNormRate(Int_t helicity, const char* which);
    Double_t GetNormRate(Int_t helicity, Int_t chan);
    Bool_t IsRenewed() const { return new_load; }  // kTRUE if obj has new data
+   void SetIpAddress(std::string ipaddress);  // set IP for online data
+   void SetPort(Int_t port);                    // set PORT# for online data
+   void SetClockLoc(Int_t slot, Int_t chan);  // set clock location
+   void SetClockRate(Double_t clkrate);       // set clock rate
+   Int_t GetSlot(std::string which, Int_t helicity=0);
+   Int_t GetChan(std::string which, Int_t helicity=0, Int_t chan=0);
+   THaScalerDB* GetDataBase() { return database; };
    
 protected:
 
-   Int_t InitMap(std::string bankgroup);
-   std::map < std::string, THaScalerBank* > scalerbankmap;
-   std::vector < THaScalerBank* > scalerbanks;
-   THaScalerBank *s1L,*s2L,*s1R,*s2R,*s1,*s2;
-   THaScalerBank *gasC,*a1L,*a2L,*a1R,*a2R;
-   THaScalerBank *s0,*misc1,*misc2,*misc3,*misc4;
-   THaScalerBank *leadgl,*rcs1,*rcs2,*rcs3,*edtm;
-   THaScalerBank *dvcscalo1, *dvcscalo2;
-   THaScalerBank *src1, *src2;
-   THaScalerBank *evleft, *evright;
-   THaNormScaler *nplus,*nminus,*norm;
-   std::multimap< std::string, BscaLoc > bmap;
-   void AddBank(THaScalerBank *bk);
    std::string bankgroup;
    THaCodaFile *fcodafile;
+   std::vector<Int_t> onlmap;
+   THaScalerDB *database;
+   std::map<std::string, Int_t> normmap;
+   Int_t *rawdata;
    Bool_t coda_open;
-   UInt_t header_left, header_right, header_rcs, header_calo;
-   UInt_t header_evleft, header_evright, header_src;
-   Int_t cratenum_left, cratenum_right, cratenum_rcs, cratenum_calo;
-   Int_t cratenum_evleft, cratenum_evright, cratenum_src;
-   Int_t header, crate;
+   Int_t header, crate, evstr_type;
    std::string vme_server;
-   int vme_port;
+   int vme_port, clkslot, clkchan;
    Bool_t found_crate,first_loop;
-   Bool_t did_init, new_load;
+   Bool_t did_init, new_load, one_load;
+   Int_t *normslot;
    Double_t clockrate;
+   Int_t InitData(std::string bankgroup, const Bdate& bd);
    Int_t CheckInit();
    void Clear(Option_t* opt="");
    void ClearAll();
    void LoadPrevious();
-   Int_t ExtractRaw(int* data);
-   Int_t Load();
-   Int_t *rawdata;
+   Int_t ExtractRaw(const Int_t* data, int len=0);
+   void DumpRaw(Int_t flag=0);
    UInt_t header_str_to_base16(std::string header);
    Double_t calib_u1,calib_u3,calib_u10,calib_d1,calib_d3,calib_d10;
    Double_t off_u1,off_u3,off_u10,off_d1,off_d3,off_d10;
    Double_t GetTimeDiff(Int_t helicity);
+   void SetupNormMap();
+   static const Int_t fDebug = 0;
 
 private:
 
    THaScaler();
    THaScaler(const THaScaler &bk);
    THaScaler& operator=(const THaScaler &bk);
-
-#ifndef ROOTPRE3
-ClassDef(THaScaler,0)  // Scaler data
-#endif
 
 };
 

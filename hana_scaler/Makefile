@@ -1,7 +1,7 @@
 # Makefile for "hana" (C++ Hall A Analyzer) Scaler Package
-# R. Michaels, rom@jlab.org, Jan 2003  See also README !!
+# R. Michaels, rom@jlab.org, Jan 2005  See also README 
 # Version of this release
-VERS=hana_scaler_2.0
+VERS=hana_scaler_4.0
 #
 # Goes with this version of decoder 
 DCDIR=../hana_decode
@@ -23,10 +23,6 @@ DCDIR=../hana_decode
 # etc corresponding to the above executibles. 
 # See also documentation at
 # http://hallaweb.jlab.org/equipment/daq/THaScaler.html
-
-# If you are using a version of root earlier than 3.x, the STL headers
-# cause rootcint to choke, but can run as standalone execs (STANDALONE=1).
-# export ROOTPRE3 = 1
 
 # To compile the test execs or not.  If not (default) it just makes library.
 # export STANDALONE = 1
@@ -121,32 +117,12 @@ endif
 
 endif
 
-# Note, HP-UX not officially supported.
-ifeq ($(OSNAME),HP-UX)
-
-   CXX           = g++
-   CXXFLG        =  -O -DHPVERS -I$(DCDIR)
-   LD            = g++
-   LDFLAGS       = -g -D
-   SOFLAGS       = -G
-   GLIB          = -lm -lc  
-   ALL_LIBS      = $(GLIB) $(LIBDC) 
-ifndef STANDALONE
-   ALL_LIBS += libHallA.so
-endif
-
-endif
-
 ifeq ($(OSNAME),Linux)
 
    LIBS          = 
    GLIBS         = -L/usr/X11R6/lib -lXpm -lX11
    ALL_LIBS      = $(ROOTGLIBS) $(LIBDC) 
 
-endif
-
-ifdef ROOTPRE3
-  SC_DEFINES  += -DROOTPRE3
 endif
 
 DEFINES      += $(SC_DEFINES)
@@ -156,8 +132,9 @@ GLIBS        += $(ROOTGLIBS) $(SYSLIBS)
 
 #----------------------------------------------------------------------------
 # The following sources comprise the package of scaler classes by R. Michaels.
-#SRC = THaScaler.C THaNormScaler.C THaScalerBank.C THaScalerDB.C THaScalerGui.C
-SRC = THaScaler.C THaNormScaler.C THaScalerBank.C THaScalerDB.C
+# Normally leave THaScalerGui commented out (it is for xscaler)
+#SRC = THaScaler.C THaScalerDB.C THaScalerGui.C
+SRC = THaScaler.C THaScalerDB.C
 
 HEAD = $(SRC:.C=.h)
 DEPS = $(SRC:.C=.d)

@@ -2,20 +2,24 @@
 //
 //   THaScalerDB
 //
-//   A text-based time-dependent database needed for scalers.
-//   In addition to class THaScalerDB, we have a couple small 
-//   utility classes which hold date and crate information.
+//   A text-based time-dependent database for scaler
+//   "crate maps" and "directives".
 //
-//   If an MYSQL database becomes available, it can replace
-//   this one.
+//   The "crate map" defines the correspondence
+//   between  the following two groups of info:
+//   SDB_chanKey = 
+//     [description of channel, i.e. detector name,
+//        crate #, helicity]
+//   -- and --
+//   SDB_chanDesc = 
+//     [slot and channel info]
 //
-//   Notes to casual users:  If this 'alpha' version works, all 
-//   you need to know is about the main class THaScaler and the 
-//   database file scaler.map, which are quite transparent.  
-//   But if this class 'breaks', complain to me, I'll fix it.
-//   One may imagine a user's typo errors in scaler.map causing
-//   problems.  The 'pattern recognition' of scaler.map is not 
-//   fool-proof.
+//   (the chanKey is internal to a detector, 
+//    the chanDesc refers to physical scaler units)
+//
+//   "directives" are other info one can obtain
+//   from the map file, e.g. clock speed or
+//   IP address of server (see GetDirectives()).
 //
 //   author  Robert Michaels (rom@jlab.org)
 //
@@ -27,29 +31,40 @@
 
 using namespace std;
 
-void Bdate::Print() const
-{ 
-  cout << "(D,M,Y) = "<<day<<" "<<month<<" "<<year<<endl;
+THaScalerDB::THaScalerDB() { Init(); }
+THaScalerDB::~THaScalerDB() { 
+    if (direct) delete direct;
 }
 
-THaScalerDB::THaScalerDB() { }
-THaScalerDB::~THaScalerDB() { }
+void THaScalerDB::Init() {
+    direct = new SDB_directive();
+    fgnfar=10;
+    sdate="DATE";
+    scomment="#";
+    crate_strtoi.clear();
+    directnames.clear();
+    directnames.push_back("xscaler");
+    directnames.push_back("helicity");
+    directnames.push_back("crate");
+    directnames.push_back("slot");
+}
 
-bool THaScalerDB::extract_db(const Bdate& bdate, multimap< string, BscaLoc >& bmap) {
-// Input: Bdate = time (day,month,year) when database is valid
-// Output: BscaLoc = scaler map (loaded by this function).
+bool THaScalerDB::extract_db(const Bdate& bdate) {
+// Load the database.  
+// Input: Bdate = time (day,month,year) when database wanted
 // Return : true if successful, else false.
 // Search order for scaler.map:
 //   $DB_DIR/DEFAULT $DB_DIR ./DB/DEFAULT ./DB ./db/DEFAULT ./db DEFAULT .
-  const string scalmap("scaler.map");
+  const std::string scalmap("scaler.map");
   char* dbdir=getenv("DB_DIR");
-  int ndir = 6;
+  Int_t ndir = 6;
   if( dbdir ) ndir += 2;
-  vector<string> fname(ndir);
-  int i = 0;
+  std::string filename;
+  std::vector<std::string> fname(ndir);
+  Int_t i = 0;
   fname[i++] = scalmap; // always look in current directory first
   if( dbdir ) {
-    string dbpath(dbdir);
+    std::string dbpath(dbdir);
     dbpath.append("/");
     fname[i++] = dbpath + "DEFAULT/" + scalmap;
     fname[i++] = dbpath + scalmap;
@@ -63,11 +78,14 @@ bool THaScalerDB::extract_db(const Bdate& bdate, multimap< string, BscaLoc >& bm
   ifstream mapfile;
   do {
     mapfile.clear(); // needed to forget the previous 'misses'
-    mapfile.open(fname[i].c_str());
+    filename = fname[i];
+    mapfile.open(filename.c_str());
   } while( (!mapfile) && (++i)<ndir );
-  if ( !mapfile ) {
-     cerr << "ERROR: THaScalerDB: scaler.map file does not exist !!"<<endl;
-     cerr << "You must have scaler.map in present working directory,"<<endl;
+  if ( !mapfile ) {  
+// Bad but not fatal. Without a scaler.map one can
+// still "GetScaler" by crate, slot, chan.
+     cerr << "WARNING: THaScalerDB: scaler.map file does not exist !!"<<endl;
+     cerr << "You should have scaler.map in present working directory,"<<endl;
      cerr << "or in $DB_DIR directory." << endl;
      cerr << "Download  http://hallaweb.jlab.org/adaq/scaler.map"<<endl;
      cerr << "    or"<<endl;
@@ -76,191 +94,331 @@ bool THaScalerDB::extract_db(const Bdate& bdate, multimap< string, BscaLoc >& bm
   } else {
     cout << "Opened scaler map file " << fname[i] << endl;
   }
-   bmap.clear();
-   const char key[]="DATE";
-   string comment = "#";
-   Bdate bd;
-   vector<Bdate> tm;
-   BscaLoc bloc;
-   map < Bdate, vector<BscaLoc> > bdloc;
-   vector<BscaLoc> bslvec;
-   //   pair < string, BscaLoc > strlocpair;
-   typedef multimap< string, BscaLoc >::value_type valType;
-   int j,k;
-   string sinput;
-   vector<string> strvect;
-   bdloc.clear();
-   bslvec.clear();
-   bool newdate = false;
-   while ( getline(mapfile,sinput) ) {
-      j = sinput.find(key,0);
-      strvect.clear();
-      strvect = vsplit(sinput);   
-      if (j >= 0) {     
-        if (newdate) {
-           if ( !insert_map(bd,bslvec,bdloc) ) return false;
-        }
-        bslvec.clear();
-        j = k = 0;
-        for (vector<string>::iterator p = strvect.begin(); 
-            p != strvect.end(); p++) 
-            if (j++ > 0) bd.load(k++,atoi(p->c_str()));
-        tm.push_back(bd);
-        newdate = true;
-      } else {
-        if ((long)strvect.size() >= bloc.nint() && strvect[0] != comment) {
-           bloc.clear();
-           bloc.short_desc = strvect[0];
-           string slong = strvect[bloc.nint()];
-           for (j = bloc.nint()+1; j < (long)strvect.size(); j++) slong += " "+strvect[j];
-           bloc.long_desc = slong;
-           j = k = 0;
-           for (vector<string>::iterator p = strvect.begin(); 
-      	      p != strvect.end(); p++) {
-               if (j++ > 0) bloc.load(k++,atoi(p->c_str()));
-           }
-           bslvec.push_back(bloc);
-	}        
-      }
-   }
-   if ( !insert_map(bd,bslvec,bdloc) ) return false;
-   if (ADB_DEBUG) print_dmap(bdloc);
-   Bdate dmax(1,1,1990);   
-   for (vector<Bdate>::iterator p = tm.begin();
-      p != tm.end(); p++) {
-         if ( (*p <= bdate) && (dmax <= *p) ) {
-            found_date = true;
-            dmax = *p;
-         }
-   }
-   if(ADB_DEBUG) cout << "date found y,m,d "<<dmax.year<<" "<<dmax.month<<" "<<dmax.day<<endl;
-   if (!found_date) {
+  std::string sinput;
+  std::vector<std::string> strvect;
+  bool found_date = false;
+
+// 1st pass: find the date, 2nd pass: load maps
+  Bdate bd;  Bdate dfound(1,1,1990);   
+  while ( getline(mapfile,sinput) ) {
+    if (GetLineType(sinput) == "DATE") {
+     bd.load(vsplit(sinput));
+     if (dfound <= bd && bd <= bdate) {
+       found_date = true;  dfound = bd;
+     }
+    }
+  }
+
+  if (found_date) { 
+    dfound.Print();
+    mapfile.close(); mapfile.clear(); 
+    mapfile.open(filename.c_str());
+    if (ADB_DEBUG) dfound.Print();
+    while ( getline(mapfile,sinput) ) {
+     if (GetLineType(sinput) == "DATE") {
+       bd.load(vsplit(sinput));
+       if (ADB_DEBUG) bd.Print();
+       if (bd == dfound) {
+	while ( getline(mapfile,sinput) ) { // load until next DATE
+          std::string linetype = GetLineType(sinput);
+          if ( linetype == "DATE" ) goto finish1;  
+          if ( linetype == "COMMENT") continue;
+          if (linetype == "MAP") {
+              LoadMap(sinput);  continue;
+	  }
+	  LoadDirective(linetype); // otherwise its a "directive"
+	}
+       }
+     }
+    }
+   } else {
       cout << "Warning: THaScalerDB: Did not find data in database"<<endl;
       return false;
    }
-   map< Bdate, vector<BscaLoc> >::iterator pm = bdloc.find(dmax);
-     if (pm != bdloc.end()) {
-        bslvec = pm->second;
-        compress_bslvect(bslvec);
-        for (vector<BscaLoc>::iterator p = bslvec.begin();
-             p != bslvec.end(); p++) {
-	  //           strlocpair.first = p->short_desc;
-	  //           strlocpair.second = *p;      
-           bmap.insert(valType(p->short_desc,*p));
-        }
-     } else {
-        return false;
-     }
-     if (ADB_DEBUG) print_bmap(bmap);
-     return true;
+
+finish1:
+
+  if (ADB_DEBUG) {
+      PrintChanMap();
+      PrintDirectives();
+  }
+  return true;
+
 };
 
 
-bool THaScalerDB::insert_map(Bdate& bdate, vector<BscaLoc>& bslvec, map<Bdate, vector<BscaLoc> >& bdloc) {
-// Insert an element into the map bdloc
-  typedef map<Bdate, vector<BscaLoc> >::value_type valType;
-  //  pair < Bdate, vector<BscaLoc> > bdlocpair;
-  //  bdlocpair.first = bdate;
-  //  bdlocpair.second = bslvec;
-  pair<map<Bdate,vector<BscaLoc> >::iterator,bool> p = 
-    bdloc.insert(valType(bdate,bslvec));
-    //bdlocpair);
-  return p.second; 
+void THaScalerDB::PrintChanMap() {
+  Int_t i = 0;
+  cout << "Print of Channel Map.  Size = "<<chanmap.size()<<endl;
+  for (std::map< SDB_chanKey, SDB_chanDesc>::iterator pm = chanmap.begin();
+      pm != chanmap.end(); pm++) {
+      i++;
+      SDB_chanKey ck = pm->first;
+      SDB_chanDesc cd = pm->second;
+      cout << "Chan Key ["<<i<<"] = ";
+      ck.Print();
+      cout << "\nChan Desc ["<<i<<"] = ";
+      cd.Print();
+      cout << "-----------------------------------"<<endl;
+  }
+};
+
+void THaScalerDB::PrintDirectives() {
+  if (direct) direct->Print();
+};
+
+
+std::string THaScalerDB::GetLineType(std::string sline) {
+// Decide if the line is a date, comment, directive, or a map field.
+   if ((Int_t)sline.length() == 0) return "COMMENT";
+   if ((Int_t)sline.length() == AmtSpace(sline)) return "COMMENT";
+   UInt_t pos1 = FindNoCase(sline,sdate);
+   UInt_t pos2 = FindNoCase(sline,scomment);
+   if (pos1 != std::string::npos) { // date was found
+     if (pos2 != std::string::npos) {  // comment found
+       if (pos2 < pos1) return "COMMENT";
+     }
+     return "DATE";
+   }
+// Directives line, even if after a comment (#)
+// as long as not too far after (fgnfar)
+   std::string result;
+   if (pos2 == std::string::npos || pos2 < fgnfar) {
+    for (UInt_t i=0; i<directnames.size(); i++) {
+     pos1 = FindNoCase(sline, directnames[i]);
+     if (pos1 != std::string::npos) {
+      result.assign(sline.substr(pos1,sline.length()));;
+      return result;
+     }
+    }
+   }
+// Not a directive but has a comment near start.
+   if (pos2 != std::string::npos && pos2 < fgnfar) return "COMMENT";
+// otherwise its a map line
+   return "MAP";
 }
 
-void THaScalerDB::print_dmap(map<Bdate, vector<BscaLoc> >& bdloc) {
-// Print out the map between dates and scaler locations.
-   int j = 0;
-   cout << "Map between dates and scaler loc, size = "<<bdloc.size()<<endl;
-   for (map< Bdate, vector<BscaLoc> >::iterator pm = bdloc.begin();
-     pm != bdloc.end() ;  pm++) {
-       Bdate bd = pm->first;
-       vector<BscaLoc> bslvec = pm->second;
-       j++;
-       cout << "---- Element "<<j<<endl;
-       cout << "Bdate "<<bd.year<<" "<<bd.month<<" "<<bd.day<<endl;
-       for (vector<BscaLoc>::iterator p = bslvec.begin(); 
-         p != bslvec.end(); p++) {
-         cout << "short descr "<<p->short_desc<<endl;
-           for (int k = 0; k < (long)p->startchan.size(); k++) {
-	     cout << "   start channel "<<p->startchan[k];
-             cout << "   numchan "<<p->numchan[k]<<endl;
-           }
-       }
-   }
-};
+SDB_chanDesc THaScalerDB::GetChanDesc(Int_t crate, std::string desc, Int_t helicity) {  
+// If crate is tied to the map of another crate.
+  Int_t lcrate = TiedCrate(crate, helicity);
+  Int_t lhelicity = helicity;
+// If this helicity is tied to helicity=0 map, we use helicity=0.
+  if ( IsHelicityTied(crate, helicity) ) lhelicity = 0;
+  SDB_chanKey sk(lcrate, lhelicity, desc);
+  SDB_chanDesc cdesc(-1,"empty");  // empty so far
+  //#ifdef THING1
+  std::map< SDB_chanKey, SDB_chanDesc>::iterator pm = chanmap.find(sk);
+  if (pm != chanmap.end()) cdesc = pm->second; 
+  //#endif
+  return cdesc;
+}
 
-void THaScalerDB::print_bmap(multimap<string, BscaLoc >& bmap) {
-// Print out the map between names and scaler locations.
-   int j = 0;
-   cout << "Map between names and scaler loc,  size = "<<bmap.size()<<endl;
-   for (multimap< string, BscaLoc >::iterator pm = bmap.begin();
-     pm != bmap.end() ;  pm++) {
-       cout << "Element "<<j++;
-       cout << "  Name = "<<pm->first<<endl;
-       BscaLoc bloc = pm->second;
-       cout << "BscaLoc: short descr "<<bloc.short_desc<<endl;
-       cout << "  long desc = "<<bloc.long_desc<<endl;
-       cout << "  crate = "<<bloc.crate<<endl;
-       cout << "  slot = "<<bloc.slot<<endl;
-       cout << "  helicity = "<<bloc.helicity<<endl;
-       cout << "  size of startchan, numchan "<<bloc.startchan.size()<<endl;
-       for (int k = 0; k < (long)bloc.startchan.size(); k++) {
-	   cout << "   start channel "<<bloc.startchan[k];
-           cout << "   numchan "<<bloc.numchan[k]<<endl;
-       }
-   }
-};
+std::string THaScalerDB::GetLongDesc(Int_t crate, std::string desc, Int_t helicity) {  
+// Returns the slot in a scaler corresp. to the
+// channel in the detector described by "desc".
+   SDB_chanDesc cdesc = GetChanDesc(crate, desc, helicity);
+   return cdesc.GetDesc();
+}
 
-void THaScalerDB::compress_bslvect(vector<BscaLoc>& bslvec) {
-// Compress vector of scaler locations to handle repeated scaler.map entries
-  int i,j,k;
-  vector<BscaLoc> duplicate; 
-  vector<int> delpt;   
-  for (i = 0; i < (long)bslvec.size()-1; i++) {
-    for (j = i+1; j < (long)bslvec.size(); j++) {  // loop over all pairs
-      if (bslvec[i] == bslvec[j]) {          // identical channel
-        int dupl = 0;
-        for (vector<BscaLoc>::iterator pm = duplicate.begin(); 
-	pm != duplicate.end(); pm++) {  // see if already a duplicate
-           if (*pm == bslvec[i]) {
-  	      pm->startchan.push_back(bslvec[i].startchan[0]);
-              pm->numchan.push_back(bslvec[i].numchan[0]);
-  	      pm->startchan.push_back(bslvec[j].startchan[0]);
-              pm->numchan.push_back(bslvec[j].numchan[0]);
-              dupl = 1;
-	   } 
+Int_t THaScalerDB::GetSlot(Int_t crate, std::string desc, Int_t helicity) {  
+// Returns the slot in a scaler corresp. to the
+// channel in the detector described by "desc".
+   SDB_chanDesc cdesc = GetChanDesc(crate, desc, helicity);
+   return cdesc.GetSlot() + GetSlotOffset(crate, helicity);
+}
+
+Int_t THaScalerDB::GetChan(Int_t crate, std::string desc, Int_t helicity, Int_t chan) {  
+// Returns the channel in a scaler corresp. to the
+// channel in the detector described by "desc".
+   SDB_chanDesc cdesc = GetChanDesc(crate, desc, helicity);
+   return cdesc.GetChan(chan);
+}
+
+bool THaScalerDB::LoadMap(std::string sinput) 
+{  
+  typedef std::map<SDB_chanKey, SDB_chanDesc>::value_type valType;
+  pair<std::map<SDB_chanKey, SDB_chanDesc>::iterator, bool> pin;
+  SDB_chanDesc sd;
+
+  std::vector<std::string> vstring = vsplit(sinput);
+  if (vstring.size() < 6) return false;
+  std::string long_desc = "";
+  if (vstring.size() >= 7) {
+    for (UInt_t i = 6; i < vstring.size(); i++) {
+      long_desc = long_desc + vstring[i] + " ";
+    }
+  }
+  std::string sdesc = vstring[0];
+  Int_t helicity = atoi(vstring[1].c_str());
+  Int_t crate = atoi(vstring[2].c_str());
+  Int_t slot = atoi(vstring[3].c_str());
+  Int_t first_chan = atoi(vstring[4].c_str());
+  Int_t nchan = atoi(vstring[5].c_str());
+
+  channame.insert(make_pair(make_pair(make_pair(crate, slot), first_chan),sdesc));
+  SDB_chanKey sk(crate, helicity, sdesc);
+  std::map<SDB_chanKey, SDB_chanDesc>::iterator pm = chanmap.find(sk);
+  if (pm != chanmap.end()) {  // key already exists
+    sd = pm->second;
+    sd.LoadNextChan(first_chan, nchan);
+  } else {   // new map entry
+    SDB_chanDesc sd_new(slot, long_desc);
+    sd_new.LoadNextChan(first_chan, nchan);
+    pin = chanmap.insert(valType(sk, sd_new)); 
+    return pin.second;
+  }
+  return true;
+}
+
+bool THaScalerDB::LoadDirective(std::string sinput) 
+{
+  if (!direct) return false;
+  std::vector<std::string> vstring = vsplit(sinput);
+  if (vstring.size() < 3) return false;
+  std::string sname = vstring[0];
+  Int_t crate = CrateToInt(vstring[1]);
+  vector<std::string> sdir;
+  std::string sword,sloadword;
+  UInt_t pos1,pos2;
+  UInt_t index = 2;
+  while (index < vstring.size()) {
+    sword = vstring[index];
+    index++;
+    sloadword = sword;
+    pos1 = sword.find("'",0);
+    if (pos1 != string::npos) {
+      sloadword = sword.substr(0,pos1) + sword.substr(pos1+1,sword.length());
+      pos2 = sloadword.find("'",0);
+      if (pos2 != std::string::npos) {
+        sloadword = sloadword.substr(pos2,sloadword.length());
+        goto load1;
+      }
+      for (UInt_t j = index; j < vstring.size(); j++) {
+        index++;
+        sword = vstring[j];
+        pos2 = sword.find("'",0);
+        if (pos2 != std::string::npos) {
+	  sloadword = sloadword + " " + sword.substr(0,pos2);
+          goto load1;
+	} else {
+          sloadword = sloadword + " " + sword;
 	}
-        if (dupl) continue;
-        bslvec[i].startchan.push_back(bslvec[j].startchan[0]);
-        bslvec[i].numchan.push_back(bslvec[j].numchan[0]);
-	duplicate.push_back(bslvec[i]);
-        delpt.push_back(i);  
-        delpt.push_back(j);
       }
     }
+load1:
+    sdir.push_back(sloadword);
   }
-  k = 0;
-  vector<BscaLoc> bslcopy;
-  for (vector<BscaLoc>::iterator p = bslvec.begin(); 
-    p != bslvec.end(); p++) {
-    int del = 0;
-    for (vector<int>::iterator pm = delpt.begin();
-       pm != delpt.end(); pm++) {
-         if (*pm == k) del = 1;
-    }
-    k++;
-    if (!del) bslcopy.push_back(*p);
-  }
-  for (vector<BscaLoc>::iterator p = duplicate.begin(); 
-     p != duplicate.end(); p++) bslcopy.push_back(*p);
-  bslvec = bslcopy;
-};
+  if (direct) direct->Load(sname, crate, sdir); 
+  return true;
+}
 
-vector<string> THaScalerDB::vsplit(const string& s) {
+std::string THaScalerDB::GetShortName(Int_t crate, Int_t slot, Int_t chan) {
+  std::pair<std::pair<Int_t, Int_t>, Int_t> cs = make_pair(make_pair(crate, slot), chan);
+  if (channame.find(cs) == channame.end()) return "none";
+  return channame[cs];
+}
+
+std::string THaScalerDB::GetStringDirectives(Int_t crate, std::string directive, std::string key) 
+{
+  if (!direct) return "";
+  return direct->GetDirective(crate, directive, key);
+}
+
+Int_t THaScalerDB::GetNumDirectives(Int_t crate, std::string directive)
+{
+  if (!direct) return 0;
+  return direct->GetDirectiveSize(crate, directive);
+}
+
+Int_t THaScalerDB::GetIntDirectives(Int_t crate, std::string directive, std::string key)
+{
+  if (!direct) return 0;
+  string sdir = direct->GetDirective(crate, directive, key);
+  return atoi(sdir.c_str());
+}
+
+void THaScalerDB::LoadCrateToInt(const char *bank, Int_t icr) {
+// Load the correspondence of crate string to integer
+    string scr(bank);
+    std::string scrate = "";
+    for (std::string::const_iterator p = 
+       scr.begin(); p != scr.end(); p++) {
+          scrate += tolower(*p);
+    } 
+    crate_strtoi.insert(make_pair(scrate, icr));
+}
+
+Int_t THaScalerDB::CrateToInt(const std::string& scr) {
+// Find integer representation of crate "scrate".  
+  std::string scrate = "";
+  for (std::string::const_iterator p = 
+     scr.begin(); p != scr.end(); p++) {
+        scrate += tolower(*p);   
+  } 
+  std::map<std::string, Int_t>::iterator si = crate_strtoi.find(scrate);
+  if (si != crate_strtoi.end()) return crate_strtoi[scrate];
+  return 0;
+} 
+
+// The following 3 routines involve tying one combination of
+// (crate, helicity) to another crate's helicity=0 data with a
+// different slot#.  What is "tied" is the scaler.map data to
+// avoid long & repetitive file.  Example: crate 11 and 8 are
+// the same map, and helicities -1 & +1 are tied to 0.
+
+Bool_t THaScalerDB::IsHelicityTied(Int_t crate, Int_t helicity) {
+// Does this (crate, helicity) get tied to a helicity=0 slot ?
+  if (!direct) return kFALSE;
+  if (direct->GetDirective(crate, "slot-offset", helicity) == "none") 
+      return kFALSE;
+  return kTRUE;
+}
+
+Int_t THaScalerDB::TiedCrate(Int_t crate, Int_t helicity) {
+// Find the crate that this (crate, helicity) is tied to.
+  if (!direct) return crate;
+  std::string sdir = 
+        direct->GetDirective(crate, "crate-tied", helicity);
+  if (sdir == "none") return crate;
+  return atoi(sdir.c_str());
+}
+
+Int_t THaScalerDB::GetSlotOffset(Int_t crate, Int_t helicity) {
+// Find the slot offset relative to helicity=0 data.
+  if (!direct) return 0;
+  std::string sdir = 
+        direct->GetDirective(crate, "slot-offset", helicity);
+  if (sdir == "none") return 0;
+  return atoi(sdir.c_str());
+}
+
+UInt_t THaScalerDB::FindNoCase(const std::string sdata, const std::string skey) 
+{
+// Find iterator of word "sdata" where "skey" starts.  Case insensitive.
+  std::string sdatalc, skeylc;
+  sdatalc = "";  skeylc = "";
+  for (std::string::const_iterator p = 
+   sdata.begin(); p != sdata.end(); p++) {
+      sdatalc += tolower(*p);
+  } 
+  for (std::string::const_iterator p = 
+   skey.begin(); p != skey.end(); p++) {
+      skeylc += tolower(*p);
+  } 
+  return sdatalc.find(skeylc,0);
+}
+
+Int_t THaScalerDB::AmtSpace(const std::string& s) {
+  typedef std::string::size_type string_size;
+  Int_t nsp = 0;  string_size i = 0;
+  while (i++ != s.size()) if(isspace(s[i])) nsp++;
+  return nsp;
+}
+
+std::vector<std::string> THaScalerDB::vsplit(const std::string& s) {
 // split a string into whitespace-separated strings
-  vector<string> ret;
-  typedef string::size_type string_size;
+  std::vector<std::string> ret;
+  typedef std::string::size_type string_size;
   string_size i = 0;
   while ( i != s.size()) {
     while (i != s.size() && isspace(s[i])) ++i;
@@ -274,6 +432,4 @@ vector<string> THaScalerDB::vsplit(const string& s) {
   return ret;
 };
 
-#ifndef ROOTPRE3
 ClassImp(THaScalerDB)
-#endif

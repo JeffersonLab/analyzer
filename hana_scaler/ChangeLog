@@ -21,3 +21,20 @@
 	problems in Ole's released version.
 
 	scaler.map  - updated.
+
+	Jan 26, 2005
+
+        1. scaler.map modifications.  
+          a) Parsing of "DATE" is more intelligent.
+          b) Can tie scalers of different helicities or crates together
+             (fewer repititious lines in scaler.map file)
+          c) New feature of "directives" (backward compatible since
+             old code will ignore them).  Accomplishes 1b and 4 below.
+
+        3. Obsoleted THaNormScaler and THaScalerBank classes
+	   (simplifies the code).
+
+        4) THaScalerGui (used by xscaler) driven by scaler.map
+           but with sensible defaults of scaler.map absent.
+      
+

@@ -1,24 +1,17 @@
 #ifndef THaScalerDB_
 #define THaScalerDB_
 
-
 /////////////////////////////////////////////////////////////////////
 //
 //   THaScalerDB
 //
-//   A text-based time-dependent database needed for scaler
-//   crate maps.  In addition to class THaScalerDB, we put
-//   here a couple small utility classes which hold date and
-//   crate information.
-//   If an MYSQL database becomes available, it can replace
-//   this code.
+//   Scaler database.  See implementation for comments.
 //
 //   author  Robert Michaels (rom@jlab.org)
 //
 /////////////////////////////////////////////////////////////////////
 
 #include "Rtypes.h"
-//#include "TObject.h"
 #include <string>
 #include <vector>
 #include <map>
@@ -27,28 +20,32 @@
 #define ADB_DEBUG 0
 
 class Bdate {
-// A utility class of date information.
+// Utility class of date information.
 public:
-  Bdate(int d, int m, int y) : day(d), month(m), year(y) { }
-  Bdate() : day(0), month(0), year(0) { }
+  Int_t day,month,year;
+  Bdate(Int_t d=0, Int_t m=0, Int_t y=0) : day(d), month(m), year(y) { }
   ~Bdate() { }
-  void load(int d, int m, int y) {
+  void load(Int_t d, Int_t m, Int_t y) {
      day = d;  month = m;  year = y;
   };
-  int day,month,year;
-  void load(int i, int data) {  // load data by index
-    switch (i) {
-      case 0:
-  	  day   = data;   break;
-      case 1: 
-          month = data;   break;
-      case 2:
-          year  = data;   break;
-      default:
-          break;
-    }
-  }
-  void Print() const;
+  void load(std::vector<std::string> strvect) {
+    day   = atoi(strvect[1].c_str());
+    month = atoi(strvect[2].c_str());
+    year  = atoi(strvect[3].c_str());
+  };
+  void Print() const { 
+     std::cout << "\nBdate :  day = "<<day;
+     std::cout << "  month = "<<month<<"   year = "<<year<<std::endl;
+  };
+  Bdate::Bdate(const Bdate& rhs) {
+    day = rhs.day; month = rhs.month; year = rhs.year;
+  }; 
+  Bdate &Bdate::operator=(const Bdate &rhs) {
+   if ( &rhs != this ) {
+     day = rhs.day; month = rhs.month; year = rhs.year;
+   }
+   return *this;
+  };
   friend bool operator==(Bdate a, Bdate b) {
     return a.day==b.day && a.month==b.month && a.year==b.year;
   };
@@ -70,66 +67,164 @@ public:
   };
 };
 
-class BscaLoc {
-// A utility class to hold scaler location info
-#define DB_NINT 6  // num data stored here, plus 1 
-private:
-  int validbits;
+class SDB_chanKey {
+// Utility class to hold channel description
+// Used as the key for maps
 public:
-  BscaLoc() { clear(); };
-  ~BscaLoc() { }
-  int nint() { return DB_NINT; };
-  bool first;
-  int helicity,crate,slot;
-#ifndef __CINT__
-  std::vector<int> startchan,numchan;
-  std::string short_desc;
-  std::string long_desc;
-#endif
-  bool valid() {   // This object is valid if properly loaded.
-    for (int i = 0; i < DB_NINT-1; i++) {
-       if ( !(validbits&(1<<i)) ) return false;
-    } 
-    return true;
+  SDB_chanKey(Int_t cr, Int_t hel, std::string desc):crate(cr),helicity(hel),description(desc){ };
+  ~SDB_chanKey() { }
+  void Print() const { 
+     std::cout << "\nSDB_chanKey:  crate = "<<crate;
+     std::cout << "  hel = "<<helicity<<"   desc = "<<description<<std::endl;
+  };
+  SDB_chanKey::SDB_chanKey(const SDB_chanKey& rhs) {
+    crate = rhs.crate;
+    helicity = rhs.helicity;
+    description = rhs.description;
+  }; 
+  SDB_chanKey &SDB_chanKey::operator=(const SDB_chanKey &rhs) {
+    if ( &rhs != this ) {
+       crate = rhs.crate;
+       helicity = rhs.helicity;
+       description = rhs.description;
+    }
+    return *this;
+  };
+  friend bool operator==(const SDB_chanKey a, const SDB_chanKey b) {
+    return (a.crate==b.crate && a.helicity==b.helicity && a.description==b.description);
+  };
+  friend bool operator<(const SDB_chanKey a, const SDB_chanKey b) {  
+    if (a == b) return false;
+    if (a.crate == b.crate && a.helicity == b.helicity) return (a.description < b.description);
+    if (a.crate == b.crate) return (a.helicity < b.helicity);
+    return (a.crate < b.crate);
+  };
+private:
+  Int_t crate, helicity;
+  std::string description;
+};
+
+class SDB_chanDesc {
+// Utility class to hold description of a channel
+public:
+  SDB_chanDesc(Int_t sl=0, std::string desc=""):slot(sl),description(desc) { };
+  ~SDB_chanDesc() { }
+  SDB_chanDesc::SDB_chanDesc(const SDB_chanDesc& rhs) {
+      slot = rhs.slot; 
+      description = rhs.description;
+      scalerchan = rhs.scalerchan;
+  }; 
+  SDB_chanDesc &SDB_chanDesc::operator=(const SDB_chanDesc &rhs) {
+    if ( &rhs != this ) {
+      slot = rhs.slot; 
+      description = rhs.description;
+      scalerchan = rhs.scalerchan;
+    }
+    return *this;
+  };
+  void Print() const { 
+     std::cout << "\nSDB_chanDesc:  slot = "<<slot;
+     std::cout << "   desc = "<<description<<std::endl;
+     std::cout << "num of chan = "<<scalerchan.size()<<std::endl;
+     for (UInt_t i = 0; i < scalerchan.size(); i++) {
+      std::cout << "scalerchan["<<i<<"] = "<<scalerchan[i]<<std::endl;
+     }
+  };
+  void LoadNextChan(Int_t start, Int_t num) {
+    for (Int_t i = start; i < start+num; i++) {
+      scalerchan.push_back(i);
+    }
   }
-  void setvalid() {
-    for(int i = 0; i < DB_NINT-1; i++) validbits |= (1<<i); 
+  Int_t GetSlot() { return slot; };
+  std::string GetDesc() { return description; };
+  Int_t GetChan(Int_t ichan) { 
+    if (ichan >= 0 && ichan < (Int_t)scalerchan.size()) 
+      return scalerchan[ichan];
+    return 0;
+  }
+private:
+  Int_t slot;
+  std::vector<Int_t> scalerchan;
+  std::string description;
+};
+ 
+class SDB_directive {
+// Utility class to hold directives
+public:
+  SDB_directive() { };
+  ~SDB_directive() { }
+  std::string GetDirective(Int_t crate, std::string key, Int_t isubkey) {
+    char ckey[50];
+    sprintf(ckey,"%d",isubkey);
+    std::string skey(ckey);
+    return GetDirective(crate, key, skey);
   };
-  void clear() {
-    validbits = 0; startchan.clear(); numchan.clear();
+  std::string GetDirective(Int_t crate, std::string key, std::string subkey) {
+    std::string none = "none";
+    std::pair<Int_t, std::string> pkey = make_pair(crate, key);
+    std::map<std::pair<Int_t, std::string>, std::map<std::string, std::string> >::iterator pm = directives.find(pkey);
+    if (pm == directives.end()) return none;
+    std::map<std::string, std::string> stemp = pm->second;
+    std::map<std::string, std::string>::iterator ps = stemp.find(subkey);
+    if (ps == stemp.end()) return none;
+    return ps->second;
   };
-  void load(int i, int data) {  // load data by index
-    if (i >= 0 && i < DB_NINT-1) validbits |= (1<<i);
-    switch (i) {
-      case 0:
-  	  helicity = data; break;
-      case 1:
-  	  crate = data; break;
-      case 2: 
-          slot = data; break;
-      case 3:
-	if (startchan.size() == 0) {
-           startchan.push_back(data);
-        } else {
-	   startchan[0] = data; 
-	}
-        break;
-      case 4:
-	if (numchan.size() == 0) {
-           numchan.push_back(data);
-        } else {
-	   numchan[0] = data; 
-	}
-        break;
-      default:
-          break;
+  Int_t GetDirectiveSize(Int_t crate, std::string key) {
+    std::pair<Int_t, std::string> pkey = make_pair(crate, key);
+    std::map<std::pair<Int_t, std::string>, std::map<std::string, std::string> >::iterator pm = directives.find(pkey);
+    if (pm == directives.end()) return 0;
+    std::map<std::string, std::string> stemp = pm->second;
+    return stemp.size();
+  }  
+  void Load(std::string key, Int_t crate, std::vector<std::string>& direct) {
+    std::map<std::string, std::string> stemp;
+    bool ok = false;
+    for (std::vector<std::string>::iterator str = direct.begin(); str != direct.end(); str++) {
+      std::string sdir = *str;
+      if (ParseDir(sdir)) {
+         stemp.insert(make_pair(skey, sdata));
+        ok = true;
+      }
+    }
+    if (ok) {
+      std::pair<Int_t, std::string> pkey = make_pair(crate, key);
+      std::map<std::pair<Int_t, std::string>, std::map<std::string, std::string> >::iterator pm = directives.find(pkey);
+      if (pm != directives.end()) {
+         (pm->second).insert(make_pair(skey, sdata));
+      } else {
+         directives.insert(make_pair(make_pair(crate,key), stemp));
+      }
     }
   };
-  friend bool operator==(BscaLoc a, BscaLoc b) {
-    return (a.short_desc==b.short_desc && a.crate==b.crate &&
-            a.slot==b.slot);
-  };
+  void Print() {
+    std::cout << std::endl << " -- Directives -- "<<std::endl;
+    for (std::map<std::pair<Int_t, std::string>, std::map<std::string, std::string> >::iterator dm = directives.begin(); dm != directives.end(); dm++) {
+      std::pair<Int_t, std::string> is = dm->first;
+      std::cout << "key i = "<<is.first<<"    string = "<<is.second<<std::endl;
+      std::map<std::string, std::string> ss = dm->second;
+      for (std::map<std::string, std::string>::iterator dss = ss.begin(); dss != ss.end(); dss++) {
+	std::cout << "string map = "<<dss->first<<"  "<<dss->second<<std::endl;
+      }
+    }
+  };     
+private:
+  SDB_directive(const SDB_directive &sd);
+  SDB_directive& operator=(const SDB_directive &sd);
+  std::map<std::pair<Int_t, std::string>, std::map<std::string, std::string> > directives;
+  bool ParseDir(std::string sdir) {
+    skey = "";
+    sdata = "";
+    std::string::size_type pos1;
+    pos1 = sdir.find(":");
+    if (pos1 != std::string::npos) {
+      skey.assign(sdir.substr(0,pos1));
+      sdata.assign(sdir.substr(pos1+1,sdir.length()));
+    }
+    return true;
+  }
+  std::string skey, sdata;
 };
+
 
 class THaScalerDB 
 {
@@ -137,44 +232,45 @@ public:
 
    THaScalerDB();
    virtual ~THaScalerDB();
-   bool extract_db(const Bdate& bdate, 
-		   std::multimap< std::string, BscaLoc >& bmap);
+   bool extract_db(const Bdate& bdate);
+   std::string GetLongDesc(Int_t crate, std::string desc, Int_t helicity=0);
+   UInt_t FindNoCase(const std::string s1, const std::string s2);
+   Int_t GetSlot(Int_t crate, std::string desc, Int_t helicity=0);
+   Int_t GetChan(Int_t crate, std::string desc, Int_t helicity=0, Int_t chan=0);
+   std::string GetShortName(Int_t crate, Int_t slot, Int_t chan);
+   Int_t GetNumDirectives(Int_t craet, std::string directive);
+   Int_t GetIntDirectives(Int_t crate, std::string directive, std::string key);
+   std::string GetStringDirectives(Int_t crate, std::string directive, std::string key);
+   void LoadCrateToInt(const char *bank, Int_t cr);
+   Int_t CrateToInt(const std::string& scrate);
+   void PrintChanMap();
+   void PrintDirectives();
 
 private:
 
+   THaScalerDB(const THaScalerDB &bk);
+   THaScalerDB& operator=(const THaScalerDB &bk);
    bool found_date;
-   void compress_bslvect(std::vector<BscaLoc>& bslvec);
-   bool insert_map(Bdate& bdate, std::vector<BscaLoc>& bslvec, 
-		   std::map<Bdate, std::vector<BscaLoc> >& bdloc);
-   void print_dmap( std::map<Bdate, std::vector<BscaLoc> >& bdloc);
+   UInt_t fgnfar;
+   std::string scomment, sdate;
+   std::vector<std::string> directnames;
+   std::map< SDB_chanKey, SDB_chanDesc > chanmap;
+   std::map< std::string, Int_t > crate_strtoi;
+   std::map< std::pair<std::pair<Int_t, Int_t>, Int_t>, std::string > channame;
+   SDB_directive *direct;
+   bool LoadMap(std::string sinput);
+   bool LoadDirective(std::string sinput);
+   std::string GetLineType(const std::string sline);
+   void Init();
+   SDB_chanDesc GetChanDesc(Int_t crate, std::string desc, Int_t helicity=0);
+   Bool_t IsHelicityTied(Int_t crate, Int_t helicity);
+   Int_t TiedCrate(Int_t crate, Int_t helicity);
+   Int_t GetSlotOffset(Int_t crate, Int_t helicity);
+   Int_t AmtSpace(const std::string& s);
    std::vector<std::string> vsplit(const std::string& s);
-   void print_bmap(std::multimap<std::string, BscaLoc >& bmap);
 
-#ifndef ROOTPRE3
-ClassDef(THaScalerDB,0)  // Text-based time-dependent database for scaler locations.
-#endif
-
+ClassDef(THaScalerDB,0)  // Text-based time-dependent database for scaler map and directives
 
 };
 
 #endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
