@@ -120,21 +120,22 @@ void THaUsrstrutils::string_from_evbuffer(const int *evbuffer, int nlen )
      ctemp[bufsize] = 0;  // terminate C-string for sure
      TString strbuff = ctemp;
      delete [] ctemp;
-     Ssiz_t pos1 = 0, pos2, ext, len=strbuff.Length();
-     TRegexp re(" *;.*\n");
      bool found = false;
-     while( pos1<len ) {
-       pos2 = re.Index( strbuff, &ext, pos1 );
-       if( pos2 == kNPOS ) {
+     if( strbuff.Index(";") == kNPOS && strbuff.Index("\n") != kNPOS )
+       found = true;
+     else {
+       Ssiz_t pos1, ext;
+       // Note: This expression designed to provide backwards-compatibility.
+       // It will skip lines that have text before the comment char ";".
+       TRegexp re("\n[^;]*\n[^;]*");
+       if( (pos1 = re.Index(strbuff,&ext,0)) != kNPOS ) {
 	 found = true;
-	 strbuff.Remove(0,pos1);
-	 break;
+	 strbuff = strbuff(pos1,ext); //note: contains at least one leading \n
        }
-       pos1 = pos2+ext;
      }
      if(found) {
        const char* p = strbuff.Data();
-       while(isspace(*p)) p++;   //Removes leading \n too
+       while(isspace(*p)) p++;   //Removes leading \n's too
        configstr = p;
        if (DEBUG) cout << "configstr = \n"<<configstr<<endl;
      } else {
