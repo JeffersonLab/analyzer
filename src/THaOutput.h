@@ -15,6 +15,7 @@
 #include <map>
 #include <iterator>
 #include <iostream>
+#include <string> 
 
 class THaFormula;
 class THaVar;
@@ -135,7 +136,7 @@ protected:
   std::vector<THaString>  fEpicsKey;
   std::vector<THaScalerKey*> fScalerKey;
   TTree *fTree, *fEpicsTree; 
-  std::map<string, TTree*> fScalTree;
+  std::map<std::string, TTree*> fScalTree;
   bool fInit;
 
   enum EId {kVar = 1, kForm, kCut, kH1f, kH1d, kH2f, kH2d, kBlock,
