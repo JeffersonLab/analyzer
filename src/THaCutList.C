@@ -27,7 +27,7 @@
 using namespace std;
 
 const char* const THaCutList::kDefaultBlockName = "Default";
-const char* const THaCutList::kDefaultCutFile   = "cutdef.dat";
+const char* const THaCutList::kDefaultCutFile   = "default.cuts";
 
 //_____________________________________________________________________________
 void THaHashList::PrintOpt( Option_t* opt ) const
@@ -64,7 +64,7 @@ THaCutList::THaCutList( const THaVarList* lst ) : fVarList(lst)
 //______________________________________________________________________________
 THaCutList::~THaCutList()
 {
-  // Default destructor. Delete all dynamic cuts. 
+  // Default destructor. Deletes all cuts and lists.
 
   fCuts->Clear();
   fBlocks->Delete();
@@ -73,10 +73,39 @@ THaCutList::~THaCutList()
 }
 
 //______________________________________________________________________________
+void THaCutList::Clear( Option_t* option )
+{
+  // Remove all cuts and all blocks
+
+  fBlocks->Delete();
+  fCuts->Delete();
+}
+
+//______________________________________________________________________________
+void THaCutList::ClearAll( Option_t* opt )
+{
+  // Clear the results of all defined cuts
+
+  TIter next( fCuts );
+  while( THaCut* pcut = static_cast<THaCut*>( next() ))
+    pcut->ClearResult();
+}
+
+//______________________________________________________________________________
+void THaCutList::ClearBlock( const char* block, Option_t* opt )
+{
+  // Clear the results of the defined cuts in the named block
+
+  TIter next( FindBlock(block) );
+  while( THaCut* pcut = static_cast<THaCut*>( next() ))
+    pcut->ClearResult();
+}
+
+//______________________________________________________________________________
 void THaCutList::Compile()
 {
   // Compile all cuts in the list.
-  // Since cuts are compiled when Define() them, this routine typically only 
+  // Since cuts are compiled when we Define() them, this routine typically only 
   // needs to be called when global variable pointers need to be updated.
 
   TList* bad_cuts = NULL;
@@ -86,7 +115,7 @@ void THaCutList::Compile()
   while( THaCut* pcut = static_cast<THaCut*>( next() )) {
     pcut->Compile();
     if( pcut->IsError() ) { 
-      Error( "Compile()", "expression error, cut removed: %s %s block: %s",
+      Error( "Compile", "expression error, cut removed: %s %s block: %s",
 	     pcut->GetName(), pcut->GetTitle(), pcut->GetBlockname() );
       if( !bad_cuts ) bad_cuts = new TList;
       bad_cuts->Add( new TNamed( *pcut ));
@@ -187,6 +216,45 @@ Int_t THaCutList::Define( const char* cutname, const char* expr,
   fCuts->AddLast( pcut );
   plist->AddLast( pcut );
   return 0;
+}
+
+//______________________________________________________________________________
+Int_t THaCutList::Eval()
+{
+  // Evaluate all tests in all blocks.  Because of possible dependences between
+  // blocks, each block is evaluated separately in the order in which the blocks
+  // were defined.
+
+  Int_t i = 0;
+  TIter next( fBlocks );
+  while( THaNamedList* plist = static_cast<THaNamedList*>( next() ))
+    i += EvalBlock( plist );
+
+  return i;
+}
+
+//______________________________________________________________________________
+Int_t THaCutList::EvalBlock( const TList* plist )
+{
+  // Evaluate all cuts in the given list in the order in which they were defined.
+
+  if( !plist ) return -1;
+  Int_t i = 0;
+  TIter next( plist );
+  while( THaCut* pcut = static_cast<THaCut*>( next() )) {
+    pcut->EvalCut();
+    i++;
+  }
+  return i;
+}
+
+//______________________________________________________________________________
+Int_t THaCutList::EvalBlock( const char* block )
+{
+  // Evaluate all tests in the given block in the order in which they were defined.
+  // If no argument is given, the default block is evaluated.
+
+  return EvalBlock( FindBlock( block ) );
 }
 
 //______________________________________________________________________________
@@ -334,136 +402,6 @@ Int_t THaCutList::Load( const char* filename )
 }
 
 //______________________________________________________________________________
-Int_t THaCutList::Eval()
-{
-  // Evaluate all tests in all blocks.  Because of possible dependences between
-  // blocks, each block is evaluated separately in the order in which the blocks
-  // were defined.
-
-  Int_t i = 0;
-  TIter next( fBlocks );
-  while( THaNamedList* plist = static_cast<THaNamedList*>( next() ))
-    i += EvalBlock( plist );
-
-  return i;
-}
-
-//______________________________________________________________________________
-Int_t THaCutList::EvalBlock( const char* block )
-{
-  // Evaluate all tests in the given block in the order in which they were defined.
-  // If no argument is given, the default block is evaluated.
-
-  return EvalBlock( FindBlock( block ) );
-}
-
-//______________________________________________________________________________
-inline
-Int_t THaCutList::EvalBlock( const TList* plist )
-{
-  // Evaluate all cuts in the given list in the order in which they were defined.
-
-  if( !plist ) return -1;
-  Int_t i = 0;
-  TIter next( plist );
-  while( THaCut* pcut = static_cast<THaCut*>( next() )) {
-    pcut->EvalCut();
-    i++;
-  }
-  return i;
-}
-
-//______________________________________________________________________________
-void THaCutList::Reset()
-{
-  // Reset all cut and block counters to zero
-
-  TIter next( fCuts );
-  while( THaCut* pcut = static_cast<THaCut*>( next() ))
-    pcut->Reset();
-}
-
-//______________________________________________________________________________
-Int_t THaCutList::Result( const char* cutname, EWarnMode mode )
-{
-  // Return result of the last evaluation of the named cut
-  // (0 if false, 1 if true).
-  // If cut does not exist, return -1. Also, print warning if mode=kWarn.
-
-  THaCut* pcut = static_cast<THaCut*>( fCuts->FindObject( cutname ));
-  if( !pcut ) {
-    if( mode == kWarn )
-      Warning("Result()", "No such cut: %s", cutname );
-    return -1;
-  }
-  return static_cast<Int_t>( pcut->GetResult() );
-}
-
-//______________________________________________________________________________
-Int_t THaCutList::Remove( const char* cutname )
-{
-  // Remove the named cut completely
-
-  THaCut* pcut = static_cast<THaCut*>( fCuts->FindObject( cutname ));
-  if ( !pcut ) return 0;
-  const char* block = pcut->GetBlockname();
-  THaNamedList* plist = static_cast<THaNamedList*>(fBlocks->FindObject( block ));
-  if ( plist ) plist->Remove( pcut );
-  fCuts->Remove( pcut );
-  delete pcut;
-  return 1;
-}
-
-//______________________________________________________________________________
-Int_t THaCutList::RemoveBlock( const char* block )
-{
-  // Remove all cuts contained in the named block.
-
-  THaNamedList* plist = FindBlock( block );
-  if( !plist ) return -1;
-  Int_t i = 0;
-  TObjLink* lnk = plist->FirstLink();
-  while( lnk ) {
-    THaCut* pcut = static_cast<THaCut*>( lnk->GetObject() );
-    if( pcut ) i++;
-    lnk = lnk->Next();
-    fCuts->Remove( pcut );
-  }
-  plist->Delete();   // this should delete all pcuts
-  fBlocks->Remove( plist );
-  delete plist;
-
-  return i;
-}
-
-//______________________________________________________________________________
-void THaCutList::Clear( Option_t* option )
-{
-  // Remove all cuts and all blocks
-
-  fBlocks->Delete();
-  fCuts->Delete();
-}
-
-//______________________________________________________________________________
-UInt_t IntDigits( Int_t n )
-{ 
-  //Get number of printable digits of integer n.
-
-  if( n == 0 ) return 1;
-  int j = 0;
-  if( n<0 ) {
-    j++;
-    n *= -1;
-  }
-  while( n>0 ) {
-    n /= 10;
-    j++;
-  }
-  return j;
-}
-
-//______________________________________________________________________________
 void THaCutList::MakePrintOption( THaPrintOption& opt, const TList* plist )
 { 
   // If the print option is either "LINE" or "STATS", determine the widths 
@@ -565,6 +503,97 @@ void THaCutList::PrintHeader( const THaPrintOption& opt ) const
   line[len] = '\0';
   cout << line << endl;
   delete [] line;
+}
+
+//______________________________________________________________________________
+void THaCutList::Reset()
+{
+  // Reset all cut and block counters to zero
+
+  TIter next( fCuts );
+  while( THaCut* pcut = static_cast<THaCut*>( next() ))
+    pcut->Reset();
+}
+
+//______________________________________________________________________________
+Int_t THaCutList::Result( const char* cutname, EWarnMode mode )
+{
+  // Return result of the last evaluation of the named cut
+  // (0 if false, 1 if true).
+  // If cut does not exist, return -1. Also, print warning if mode=kWarn.
+
+  THaCut* pcut = static_cast<THaCut*>( fCuts->FindObject( cutname ));
+  if( !pcut ) {
+    if( mode == kWarn )
+      Warning("Result", "No such cut: %s", cutname );
+    return -1;
+  }
+  return static_cast<Int_t>( pcut->GetResult() );
+}
+
+//______________________________________________________________________________
+Int_t THaCutList::Remove( const char* cutname )
+{
+  // Remove the named cut completely
+
+  THaCut* pcut = static_cast<THaCut*>( fCuts->FindObject( cutname ));
+  if ( !pcut ) return 0;
+  const char* block = pcut->GetBlockname();
+  THaNamedList* plist = static_cast<THaNamedList*>(fBlocks->FindObject( block ));
+  if ( plist ) plist->Remove( pcut );
+  fCuts->Remove( pcut );
+  delete pcut;
+  return 1;
+}
+
+//______________________________________________________________________________
+Int_t THaCutList::RemoveBlock( const char* block )
+{
+  // Remove all cuts contained in the named block.
+
+  THaNamedList* plist = FindBlock( block );
+  if( !plist ) return -1;
+  Int_t i = 0;
+  TObjLink* lnk = plist->FirstLink();
+  while( lnk ) {
+    THaCut* pcut = static_cast<THaCut*>( lnk->GetObject() );
+    if( pcut ) i++;
+    lnk = lnk->Next();
+    fCuts->Remove( pcut );
+  }
+  plist->Delete();   // this should delete all pcuts
+  fBlocks->Remove( plist );
+  delete plist;
+
+  return i;
+}
+
+//______________________________________________________________________________
+void THaCutList::SetList( THaVarList* lst )
+{
+  // Set the pointer to the list of global variables to be used by default.
+  // Other variable lists can be used for individual cut definitions.
+
+  fVarList = lst;
+}
+
+//______________________________________________________________________________
+UInt_t IntDigits( Int_t n )
+{ 
+  //Get number of printable digits of integer n.
+  //Global utility function.
+
+  if( n == 0 ) return 1;
+  int j = 0;
+  if( n<0 ) {
+    j++;
+    n *= -1;
+  }
+  while( n>0 ) {
+    n /= 10;
+    j++;
+  }
+  return j;
 }
 
 //______________________________________________________________________________
