@@ -75,6 +75,7 @@
 #pragma link C++ class THaVDCEvent+;
 #pragma link C++ class THaScalerGroup+;
 #pragma link C++ class THaPhysElectronKine+;
+#pragma link C++ class THaPhysVertex+;
 
 #endif
 

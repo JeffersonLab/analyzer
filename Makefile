@@ -110,7 +110,7 @@ SRC           = src/THaFormula.C src/THaVar.C src/THaVarList.C src/THaCut.C \
 		src/THaVDCTimeToDistConv.C src/THaVDCTrackID.C \
                 src/THaVDCAnalyticTTDConv.C src/THaVDCT0CalTable.C \
 		src/THaVDCTrackPair.C src/THaScalerGroup.C \
-		src/THaPhysElectronKine.C
+		src/THaPhysElectronKine.C src/THaPhysVertex.C
 
 OBJ           = $(SRC:.C=.o)
 HDR           = $(SRC:.C=.h) src/THaGlobals.h src/VarDef.h src/VarType.h
