@@ -38,8 +38,8 @@ THaAnalysisObject::EStatus THaScintillator::Init( const TDatime& date )
     return fStatus;
 
   const DataDest tmp[NDEST] = {
-    { &fLTNhit, &fLANhit, fLT, fLT_c, fLA, fLA_p, fLA_c, fLOff, fLPed, fLGain },
-    { &fRTNhit, &fRANhit, fRT, fRT_c, fRA, fRA_p, fRA_c, fROff, fRPed, fRGain }
+    { &fRTNhit, &fRANhit, fRT, fRT_c, fRA, fRA_p, fRA_c, fROff, fRPed, fRGain },
+    { &fLTNhit, &fLANhit, fLT, fLT_c, fLA, fLA_p, fLA_c, fLOff, fLPed, fLGain }
   };
   memcpy( fDataDest, tmp, NDEST*sizeof(DataDest) );
 
