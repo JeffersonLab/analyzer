@@ -28,13 +28,14 @@ static string whichbcm = "bcm_u3";
 // cut on beam current
 static int bcmcut = 2000;  // This is ~0.5 uA on bcm_bu3
 // interval of time between scaler readings
-static int sleeptime = 20;   // typically 20
+static int sleeptime = 10;   // typically 10
 // number of events to accumulate for feedback
-// (so nevt*sleeptime = feedback interval ~ 3 min)
-static int evcnt, goodevt;
-static int nevt = 100;  // typically 100
+// (Note, nevt*sleeptime = feedback interval ~ 15 min)
+static int nevt = 90;       // typically 90
 // to debug(>0) or not(0)
 static int debug = 0;
+
+static int evcnt, goodevt;
 
 // asy data
 double *asy;
@@ -53,6 +54,8 @@ int main(int argc, char* argv[]) {
       cout << "Error initializing scalers"<<endl;  return 1;
    }
 
+   if (debug >= 4) cout << "time = "<<GetTime()<<endl;
+
    char sleepcommand[100];
    sprintf(sleepcommand,"sleep %d",sleeptime);
 
@@ -67,9 +70,6 @@ int main(int argc, char* argv[]) {
 
      system(sleepcommand);
 
-     // temp
-     if (evcnt > 100) break;
-
    }
 
    return 0;
@@ -79,6 +79,7 @@ int main(int argc, char* argv[]) {
 void AsyAccum() {
   // Accumulate charge asymmetries
    double bcm = scaler->GetBcmRate(whichbcm.c_str());  
+   if (debug >= 2) cout << "bcm "<<bcm<<endl;
    if (bcm > bcmcut) {
      double sum = scaler->GetBcmRate(1,whichbcm.c_str()) + 
                   scaler->GetBcmRate(-1,whichbcm.c_str());
@@ -103,7 +104,7 @@ void ApplyFeedBack() {
   //     signif_toosmall = significance too small
 
   double qasy_toobig, qasy_toosmall, signif_toosmall;
-  qasy_toobig = 10000;  // 10,000 ppm = 1% is huge (something wrong !)
+  qasy_toobig = 40000;  // 40,000 ppm = 4% is huge (something wrong !)
   qasy_toosmall = 50;   // 50 ppm is too small to apply feedback
   signif_toosmall = 1;  // if < 1 sigma, too small to apply feedback
 
@@ -203,11 +204,16 @@ string GetTime() {
   year =  1900 + btm->tm_year;  
   month = 1 + btm->tm_mon;  
   day = btm->tm_mday;
-  hour = btm->tm_hour - 5;
+  if (btm->tm_hour >= 0 && btm->tm_hour < 5) {
+      hour = btm->tm_hour + 19;
+  } else {
+      hour = btm->tm_hour - 5;
+  }
   min = btm->tm_min;  
   char result[100];
   sprintf(result,"Date(m-d-y)H:M = %d-%d-%d  %d:%d ",
         month,day,year,hour,min);
+  if (debug >= 2) cout << result << endl;
   string sresult = result;
   return sresult;
 }
@@ -220,7 +226,7 @@ void LogMessage(const char* message) {
 
 void signalhandler(int sig) {  
 // To deal with the signal "kill -31 pid"
-  cout << "Got kill signal.  Applying feedback last time "<<endl<<flush;
+  if (debug) cout << "Got kill signal.  Applying feedback last time "<<endl<<flush;
   if (AsyAvg() == 1) ApplyFeedBack();
   fclose(fd);
   exit(1);
