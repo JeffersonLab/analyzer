@@ -106,8 +106,10 @@ const char* THaDetectorBase::Here( const char* here ) const
 
   static char buf[256];
   strcpy( buf, "\"" );
-  strcat( buf, fPrefix );
-  *(buf+strlen(buf)-1) = 0;   // Delete trailing dot of prefix
+  if(fPrefix != NULL) {
+    strcat( buf, fPrefix );
+    *(buf+strlen(buf)-1) = 0;   // Delete trailing dot of prefix
+  }
   strcat( buf, "\"::" );
   strcat( buf, here );
   return buf;
@@ -178,14 +180,18 @@ THaDetectorBase::EStatus THaDetectorBase::Init( const TDatime& date )
 }
 
 //_____________________________________________________________________________
-FILE* THaDetectorBase::OpenFile( const TDatime& date )
+FILE* THaDetectorBase::OpenFile( const char *name, const TDatime& date,
+				 const char *here = "OpenFile()",
+				 const char *filemode = "r", 
+				 const int debug_flag = 1
+				 )
 {
   // Open database file.
 
   // FIXME: Try to write this in a system-independent way. Avoid direct Unix 
   // system calls, call ROOT's OS interface instead.
 
-  static const char* const here = "OpenFile()";
+  //static const char* const here = "OpenFile()";
   char *buf = NULL, *dbdir = NULL;
   struct dirent* result;
   DIR* dir;
@@ -258,12 +264,12 @@ FILE* THaDetectorBase::OpenFile( const TDatime& date )
     // If there are YYYMMDD subdirectories, one of them must be valid for the
     // given date.
     if( !found ) {
-      Error( Here(here), "Time-dependent database subdirectories exist, but "
-	     "none is valid for the requested date: %s", date.AsString() );
+      cerr<<here<<"Time-dependent database subdirectories exist, but "
+	  <<"none is valid for the requested date: "<<date.AsString()<<endl;
       goto exit;
     }
     if( chdir( (*it).c_str()) ) {
-      Error( Here(here), "%s: cannot open database directory", (*it).c_str());
+      cerr<<here<<": cannot open database directory"<<(*it).c_str()<<endl;
       goto exit;
     }
   }
@@ -272,23 +278,22 @@ FILE* THaDetectorBase::OpenFile( const TDatime& date )
   // Construct the database file name. It is of the form db_<prefix>.dat.
   // Subdetectors use the same files as their parent detectors!
   filename = "db_";
-  filename.append(GetDBFileName());
+  filename.append(name);
   filename.append("dat");
 
 #ifdef WITH_DEBUG
-  if( fDebug>0 ) {
-    cout << "<THaDetectorBase::" << Here("OpenFile()") 
+  if( debug_flag>0 ) {
+    cout << "<THaDetectorBase::" << here 
 	 << ">: Opening database file " << buf << "/" << filename << endl;
   }
 #endif
-  fi = fopen( filename.c_str(),"r");
+  fi = fopen( filename.c_str(), filemode);
   if( !fi )
-    Error( Here(here), "Cannot open database file %s/%s.", 
-	   buf, filename.c_str() );
+    cerr<<here<<": Cannot open database file "<<buf<<filename.c_str()<<"."<<endl;
   goto exit;
 
  error:
-  perror(Here(here));
+  perror(here);
 
  exit:
   if( cwd.length() > 0 ) 

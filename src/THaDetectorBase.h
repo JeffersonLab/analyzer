@@ -42,6 +42,11 @@ public:
   virtual void    SetName( const char* name );
   virtual void    SetNameTitle( const char* name, const char* title );
 
+  static  FILE*   OpenFile( const char *name, const TDatime& date,
+			    const char *here = "OpenFile()",
+			    const char *filemode = "r", 
+			    const int debug_flag = 1);
+
 protected:
 
   // Mapping
@@ -66,13 +71,14 @@ protected:
   virtual const char* Here( const char* ) const;
   void            MakePrefix( const char* basename );
   virtual void    MakePrefix() = 0;
-  virtual FILE*   OpenFile( const TDatime& date );
+  virtual FILE*   OpenFile( const TDatime& date )
+    { return OpenFile(GetDBFileName(), date, Here("OpenFile()")); }
   virtual Int_t   ReadDatabase( FILE* file, const TDatime& date )
     { return kOK; }
   virtual Int_t   RemoveVariables() const;
   virtual Int_t   SetupDetector( const TDatime& date )   { return kOK; }
 
-//Only derived classes may construct me
+  //Only derived classes may construct me
   THaDetectorBase() : fDetMap(NULL), fPrefix(NULL), fStatus(kNotinit), 
     fDebug(0), fIsInit(false), fIsSetup(false) {}
   THaDetectorBase( const char* name, const char* description );
