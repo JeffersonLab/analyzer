@@ -104,6 +104,7 @@ void THaRunParameters::Print( Option_t* opt ) const
 #if ROOT_VERSION_CODE >= ROOT_VERSION(3,3,0)
       cout << fPrescale[i];
 #else
+      // const version of operator[] missing in ROOT < 3.3
       cout << const_cast<THaRunParameters*>(this)->fPrescale[i];
 #endif
       if( i != np-1 )
