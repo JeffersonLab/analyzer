@@ -58,8 +58,6 @@ protected:
   THaRaster& operator=( const THaRaster& ) { return *this; }
 
 
-  UShort_t* fFirstChan;     // Beginning channels for each detmap module
-
   TVector  fRawPos;        // current in Raster ADCs for position
   TVector  fRawSlope;      // current in Raster ADCs for the derivative
 

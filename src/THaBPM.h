@@ -43,8 +43,6 @@ protected:
   THaBPM& operator=( const THaBPM& ) { return *this; }
 
 
-  UShort_t* fFirstChan;     // Beginning channels for each detmap module
-
   TVector  fRawSignal;     // induced signal of the antennas
   TVector  fPedestals;
   TVector  fCorSignal;     // pedestal subtracted signal

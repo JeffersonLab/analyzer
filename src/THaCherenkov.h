@@ -24,8 +24,6 @@ public:
           Float_t    GetAsum() const { return fASUM_c; }
 
 protected:
-  // Mapping
-  UShort_t*  fFirstChan;  // Beginning channels for each detmap module
 
   // Calibration
   Float_t*   fOff;        // [fNelem] TDC offsets (chan)

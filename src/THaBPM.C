@@ -23,7 +23,7 @@ ClassImp(THaBPM)
 //_____________________________________________________________________________
 THaBPM::THaBPM( const char* name, const char* description,
 				  THaApparatus* apparatus ) :
-  THaBeamDet(name,description,apparatus), fFirstChan(NULL),
+  THaBeamDet(name,description,apparatus),
   fRawSignal(4),fPedestals(4),fCorSignal(4),fRotPos(2),fRot2HCSPos(2,2)
 {
   // Constructor
@@ -69,23 +69,16 @@ Int_t THaBPM::ReadDatabase( const TDatime& date )
   // i dont check each time for end of file, needs to be improved
 
   Int_t i = 0;
-  delete [] fFirstChan;
-  fFirstChan=new UShort_t[ THaDetMap::kDetMapSize ];
   fDetMap->Clear();
   int first_chan, crate, dummy, slot, first, last, modulid;
   do {
     fgets( buf, LEN, fi);
     sscanf(buf,"%d %d %d %d %d %d %d",&first_chan, &crate, &dummy, &slot, &first, &last, &modulid);
     if (first_chan>=0) {
-      if ( fDetMap->AddModule (crate, slot, first, last )<0) {
+      if ( fDetMap->AddModule (crate, slot, first, last, first_chan )<0) {
 	Error( Here(here), "Couldnt add BPM to DetMap. Good bye, blue sky, good bye!");
-	delete [] fFirstChan; 
-	fFirstChan = NULL;
 	fclose(fi);
 	return kInitError;
-      }
-      else {
-	fFirstChan[i++]=first_chan;
       }
     }
   } while (first_chan>=0);
@@ -211,7 +204,7 @@ Int_t THaBPM::Decode( const THaEvData& evdata )
       Int_t chan = evdata.GetNextChan( d->crate, d->slot, j);
       if ((chan>=d->lo)&&(chan<=d->hi)) {
 	Int_t data = evdata.GetData( d->crate, d->slot, chan, 0 );
-	Int_t k = fFirstChan[i] + chan - d->lo -1;
+	Int_t k = d->first + chan - d->lo -1;
 	if ((k<4)&&(fRawSignal(k)==-1)) {
 	  fRawSignal(k)= data;
 	  fNfired++;

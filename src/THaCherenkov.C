@@ -22,7 +22,7 @@ ClassImp(THaCherenkov)
 //_____________________________________________________________________________
 THaCherenkov::THaCherenkov( const char* name, const char* description,
 			    THaApparatus* apparatus )
-  : THaPidDetector(name,description,apparatus), fFirstChan(NULL)
+  : THaPidDetector(name,description,apparatus)
 {
   // Constructor
 }
@@ -62,26 +62,24 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
   // is for ADCs, and the second half, for TDCs
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
   int i = 0;
-  delete [] fFirstChan;
-  fFirstChan = new UShort_t[ THaDetMap::kDetMapSize ];
   fDetMap->Clear();
   while (1) {
-    Int_t crate, slot, first, last, first_chan;
-    fscanf ( fi,"%d%d%d%d%d", 
-	     &crate, &slot, &first, &last, &first_chan );
+    Int_t crate, slot, first, last, first_chan,model;
+    int pos;
     fgets ( buf, LEN, fi );
+    sscanf( buf, "%d%d%d%d%d%n", &crate, &slot, &first, &last, &first_chan, &pos );
+    model=atoi(buf+pos); // if there is no model number given, set to zero
+
     if( crate < 0 ) break;
-    if( fDetMap->AddModule( crate, slot, first, last ) < 0 ) {
+    if( fDetMap->AddModule( crate, slot, first, last, first_chan, model ) < 0 ) {
       Error( Here(here), "Too many DetMap modules (maximum allowed - %d).", 
 	     THaDetMap::kDetMapSize);
-      delete [] fFirstChan; fFirstChan = NULL;
       fclose(fi);
       return kInitError;
     }
-    fFirstChan[i++] = first_chan;
   }
   fgets ( buf, LEN, fi );
-
+  
   // Read geometry
 
   Float_t x,y,z;
@@ -183,7 +181,6 @@ void THaCherenkov::DeleteArrays()
   delete [] fGain;   fGain   = NULL;
   delete [] fPed;    fPed    = NULL;
   delete [] fOff;    fOff    = NULL;
-  delete [] fFirstChan; fFirstChan = NULL;
 }
 
 //_____________________________________________________________________________
@@ -219,8 +216,8 @@ Int_t THaCherenkov::Decode( const THaEvData& evdata )
   // Loop over all modules defined for Cherenkov detector
   for( Int_t i = 0; i < fDetMap->GetSize(); i++ ) {
     THaDetMap::Module* d = fDetMap->GetModule( i );
-    bool adc = (i < fDetMap->GetSize()/2);
-
+    bool adc = (d->model ? fDetMap->IsADC(d) : i < fDetMap->GetSize()/2 );
+    
     // Loop over all channels that have a hit.
     for( Int_t j = 0; j < evdata.GetNumChan( d->crate, d->slot ); j++) {
 
@@ -231,7 +228,7 @@ Int_t THaCherenkov::Decode( const THaEvData& evdata )
       Int_t data = evdata.GetData( d->crate, d->slot, chan, 0 );
 
       // Get the detector channel number, starting at 0
-      Int_t k = fFirstChan[i] + chan - d->lo - 1;
+      Int_t k = d->first + chan - d->lo - 1;
 
 #ifdef WITH_DEBUG
       if( k<0 || k>= fNelem ) {
