@@ -155,7 +155,7 @@ Int_t THaElossCorrection::Process( const THaEvData& evdata )
   Double_t E_out = TMath::Sqrt(p_out*p_out + fM*fM);
   if( !fTestMode )
     CalcEloss(trkifo);  //update fEloss
-  Double_t p_in = TMath::Sqrt(p_out*p_out + E_out*E_out + 2.0*E_out*fEloss);
+  Double_t p_in = TMath::Sqrt(p_out*p_out + fEloss*fEloss + 2.0*E_out*fEloss);
   
   // Apply the correction
   fTrkIfo.SetP(p_in);
@@ -332,7 +332,7 @@ Double_t THaElossCorrection::ElossElectron( Double_t beta, Double_t z_med,
 
 
   Double_t BETA2,BETA3,PLAS,EKIN,TAU,FTAU;
-  Double_t BETH,DENS,ESTP,EXEN;
+  Double_t BETH,DENS,ESTP,EXEN,GAMMA;
 
   //---- Constant factor corresponding to 2*pi*N_a*(r_e)^2*m_e*c^2
   //     Its units are MeV.cm2/g          
@@ -355,6 +355,7 @@ Double_t THaElossCorrection::ElossElectron( Double_t beta, Double_t z_med,
 
   BETA2 = beta * beta;
   BETA3 = 1.0 - BETA2;
+  GAMMA = 1.0/TMath::Sqrt(BETA3);
 
   //---- Reduced Bethe-Bloch stopping power
 
@@ -362,7 +363,7 @@ Double_t THaElossCorrection::ElossElectron( Double_t beta, Double_t z_med,
   if( EXEN == 0.0 )
     return 0.0;
 
-  EKIN = EMAS * ( (1.0/TMath::Sqrt(BETA3)) - 1.0 );
+  EKIN = EMAS * ( GAMMA - 1.0 );
   TAU  = EKIN / EMAS;
   FTAU = 1.0+(TAU*TAU/8.0)-((2.0*TAU+1.0)*log2);
   BETH = 2.0 * TMath::Log(1e6*EKIN/EXEN) + BETA3 * FTAU;
@@ -371,7 +372,7 @@ Double_t THaElossCorrection::ElossElectron( Double_t beta, Double_t z_med,
   //---- Reduced density correction
 
   PLAS = 28.8084 * TMath::Sqrt(d_med*z_med/a_med);
-  DENS = 2.0*TMath::Log(PLAS)-TMath::Log(BETA3) - 2.0*TMath::Log(EXEN) - 1.0;
+  DENS = 2.0*(TMath::Log(PLAS)+TMath::Log(beta*GAMMA)-TMath::Log(EXEN))-1.0;
   if(DENS < 0.0) DENS = 0.0;
 
   //---- Total electron stopping power
@@ -554,6 +555,11 @@ Double_t THaElossCorrection::ExEnerg( Double_t z_med, Double_t d_med )
 
   else if( TMath::Abs(z_med-13.0)<0.1 )
     EXEN = 166.0;
+
+//---- Copper
+
+  else if( TMath::Abs(z_med-29.0)<0.1 )
+    EXEN = 322.0;
 
 //---- Titanium
 
