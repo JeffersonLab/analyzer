@@ -16,6 +16,9 @@
  *
  * Revision History:
  *   $Log$
+ *   Revision 1.5  2002/09/13 18:59:36  rom
+ *   fix bug (apparently recent) in malloc for fn in evOpen
+ *
  *   Revision 1.4  2002/09/09 18:11:02  ole
  *   Trim whitespace from beginning and end of filename in evOpen routine.
  *
@@ -190,7 +193,7 @@ int evOpen(const char *filename,const char *flags,int *handle)
   if (!a) return(S_EVFILE_ALLOCFAIL);
   int header[EV_HDSIZ];
   int temp, blk_size = 0;
-  char* fn = (char*)malloc(strlen(filename+1));
+  char* fn = (char*)malloc(strlen(filename)+1);
   strcpy(fn,filename);
   /* remove leading whitespace */
   while(isspace(*fn)) fn++; 
