@@ -32,6 +32,7 @@
 #include <iostream>
 #include <cmath>
 #include <cstdlib>
+#include <cstdio>
 
 ClassImp(THaAnalysisObject)
 
@@ -39,6 +40,8 @@ using namespace std;
 typedef string::size_type ssiz_t;
 
 TList* THaAnalysisObject::fgModules = NULL;
+
+const Double_t THaAnalysisObject::kBig = 1.e38;
 
 //_____________________________________________________________________________
 THaAnalysisObject::THaAnalysisObject( const char* name, 
@@ -620,7 +623,19 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
   while( item->name ) {
     if( item->var ) {
       tag[0] = 0; strncat(tag,prefix,LEN-1); strncat(tag,item->name,LEN-np-1);
-      if( LoadDBvalue( f, date, tag, *(item->var)) && item->fatal )
+      Int_t ret=0;
+      switch ( item->type ) {
+      case kDouble:
+	ret = LoadDBvalue( f, date, tag, *((Double_t*)item->var)); break;
+      default:
+	cerr << "THaAnalysisObject::LoadDB  "
+	     << "READING of VarType " << item->type << " for item " << tag
+	     << " (see VarType.h) not implemented at this point !!! \n"
+	     << endl;
+	ret = -1;
+      }
+
+      if (ret && item->fatal )
 	return item->fatal;
     }
     item++;
@@ -691,6 +706,24 @@ Int_t THaAnalysisObject::SeekDBdate( FILE* file, const TDatime& date,
   }
   fseek( file, (found ? foundpos: pos), SEEK_SET );
   return found;
+}
+
+//_____________________________________________________________________________
+char* THaAnalysisObject::ReadComment( FILE* fp, char *buf, const int len )
+  // Read blank and comment lines ( those starting non-starting with a
+  //  space (' '), returning the comment.
+  // If the line is data, then nothing is done and NULL is returned
+  // (so one can search for the next data line with:
+  //   while ( ReadComment(fp, buf, len) );
+{
+  int ch = fgetc(fp);  // peak ahead one character
+  ungetc(ch,fp);
+
+  if (ch == EOF || ch == ' ')
+    return NULL; // a real line of data
+  
+  char *s= fgets(buf,len,fp); // read the comment
+  return s;
 }
 
 //_____________________________________________________________________________

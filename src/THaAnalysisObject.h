@@ -28,6 +28,8 @@ public:
   enum EType   { kVarDef, kRVarDef };
   enum EMode   { kDefine, kDelete };
 
+  static const Double_t kBig; // = 1.e38; // default junk value
+  
   virtual ~THaAnalysisObject();
   
   virtual const char*  GetDBFileName() const     { return GetPrefix(); }
@@ -91,7 +93,7 @@ protected:
   bool            fIsSetup;   // Flag indicating that Setup called.
   TString         fConfig;    // Configuration to use from database
   UInt_t          fProperties;// Properties of this object (see EProperties)
-
+  
   virtual Int_t        DefineVariables( EMode mode = kDefine )
      { return kOK; }
 
@@ -128,6 +130,8 @@ protected:
   static std::vector<std::string> 
     GetDBFileList( const char* name, const TDatime& date,
 		   const char* here = "GetDBFileList()" );
+  
+  static char* ReadComment( FILE* fp, char* buf, const int len );
 
   // Only derived classes may construct
   THaAnalysisObject( const char* name, const char* description );
