@@ -26,20 +26,18 @@ THaVDCCluster::THaVDCCluster( THaVDCPlane* owner )
 THaVDCCluster::~THaVDCCluster()
 {
   // Destructor.
-  Clear();
 }
 
 //______________________________________________________________________________
 void THaVDCCluster::AddHit(THaVDCHit * hit)
 {
   //Add a hit to the cluster
-  if (fSize < MAX_SIZE) {
-    fHits[fSize] = hit;
-    fSize++;
-//    } else 
-//      printf("THaVDCCluster::AddHit - Max Cluster Size reached.\n");
-  }
 
+  if (fSize < MAX_SIZE) {
+    fHits[fSize++] = hit;
+  } else {
+    Warning( "AddHit()", "Max cluster size reached.");
+  }
 }
 
 //______________________________________________________________________________
@@ -201,6 +199,14 @@ void THaVDCCluster::Clear( const Option_t* opt )
 //    fUVTrack = NULL;               // UVTrack the cluster belongs to
 //    fTrack = NULL;                 // Track the cluster belongs to
 
+}
+
+//______________________________________________________________________________
+Int_t THaVDCCluster::GetPivotWireNum() const
+{
+  // Get wire number of cluster pivot (hit with smallest drift distance
+
+  return fPivot ? fPivot->GetWireNum() : 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

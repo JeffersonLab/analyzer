@@ -9,10 +9,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 #include "TObject.h"
 
-
-#define MAX_SIZE 20  //Assume no more than 20 hits per cluster
-
-class THaVDCHit;     
+class THaVDCHit;
 class THaVDCPlane;
 class THaVDCUVTrack;
 class THaTrack;
@@ -27,18 +24,19 @@ public:
   virtual void EstTrackParameters();
   virtual void ConvertTimeToDist();
   virtual void FitTrack();
-  virtual void Clear( const Option_t* opt="" );
+  virtual void Clear( Option_t* opt="" );
     
   //Get and Set Functions
-  Int_t GetSize () {return fSize;}
-  THaVDCHit** GetHits() {return fHits;} // Get array of pointers
-  THaVDCHit * GetHit(Int_t i) {return fHits[i]; }
-  THaVDCPlane* GetPlane() {return fPlane;}
-  Double_t GetSlope() {return fSlope;}
-  Double_t GetSigmaSlope() {return fSigmaSlope;}
-  Double_t GetIntercept() {return fInt;}
-  Double_t GetSigmaIntercept() {return fSigmaInt;}
-  THaVDCHit*  GetPivot() {return fPivot;}
+  Int_t        GetSize ()          const { return fSize; }
+  THaVDCHit**  GetHits()                 { return fHits; } // Get array of pointers
+  THaVDCHit *  GetHit(Int_t i)     const { return fHits[i]; }
+  THaVDCPlane* GetPlane()          const { return fPlane; }
+  Double_t     GetSlope()          const { return fSlope; }
+  Double_t     GetSigmaSlope()     const { return fSigmaSlope; }
+  Double_t     GetIntercept()      const { return fInt; }
+  Double_t     GetSigmaIntercept() const { return fSigmaInt; }
+  THaVDCHit*   GetPivot()          const { return fPivot; }
+  Int_t        GetPivotWireNum()   const;
   
   void SetPlane(THaVDCPlane * plane) {fPlane = plane;}
 /*    void SetUVTrack(THaVDCUVTrack * uvtrack) {fUVTrack = uvtrack;} */
@@ -48,6 +46,8 @@ public:
   void SetPivot (THaVDCHit * piv){fPivot = piv; }
 
 protected:
+  static const int MAX_SIZE = 20;  //Assume no more than 20 hits per cluster
+
   Int_t fSize;                     //Size of cluster (no. of hits)
   THaVDCHit * fHits[MAX_SIZE];     //Ptr to hits associated with the cluster
   THaVDCPlane * fPlane;            //Plane the cluster belongs to
