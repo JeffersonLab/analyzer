@@ -236,7 +236,7 @@ end epics
 
 begin epics
    FB_A:use_RF 'RF On'=14 'RF Off'=52
-   slia:DataValid  Yes=1 No=0  
+   slia:DataValid  Yes=1 No=-1 
 end epics
 
 # The rule is that everything between single
@@ -248,6 +248,10 @@ end epics
 # must contain single quotes.  The other strings
 # could contain single quotes, but it is not
 # necessary (e.g. slia:DataValid 'Yes'=1).
+#
+# Strongly recommend to avoid an assignment to zero
+# since zero is the default if nothing is found.
+# E.g. No=0 is unwise, and No=-1 is better.
 
 # Examples of *GOOD* syntax:
 
@@ -255,7 +259,7 @@ begin epics
    hac_bcm_average
    IPM1H04A.XPOS
    FB_A:use_RF 'RF On'=14 'RF Off'=52
-   slia:DataValid  Yes=1 No=0 
+   slia:DataValid  Yes=1 No=-1     
    hla:DataValid   Fred=2 'No'=22 Yes==452
 end epics 
 
