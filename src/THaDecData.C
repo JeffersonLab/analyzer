@@ -155,6 +155,8 @@ Int_t THaDecData::SetupDecData( const TDatime* run_time, EMode mode )
   TDatime date;
   if( run_time ) date = *run_time;
   vector<string> fnames = GetDBFileList( name, date, Here(here));
+  // always look for 'decdata.map' in the current directory first.
+  fnames.insert(fnames.begin(),string("decdata.map"));
   if( !fnames.empty() ) {
     vector<string>::iterator it = fnames.begin();
     do {
