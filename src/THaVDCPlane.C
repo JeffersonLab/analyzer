@@ -169,8 +169,6 @@ Int_t THaVDCPlane::ReadDatabase( FILE* file, const TDatime& date )
     fscanf(file, "%le", &fT0);
     fscanf(file, "%d", &fNumBins);
     
-    cout<<fT0<<" "<<fNumBins<<endl;
-
     // this object is responsible for the memory management 
     // of the lookup table
     fTable = new Float_t[fNumBins];
