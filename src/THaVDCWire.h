@@ -15,8 +15,9 @@ class THaVDCWire : public TObject {
 
 public:
 
-  THaVDCWire() :
-    fNum(0), fFlag(0), fPos(0.0), fTOffset(0.0), fTTDConv(NULL) {}
+  THaVDCWire( Int_t num=0, Double_t pos=0.0, Double_t offset=0.0,
+	      THaVDCTimeToDistConv* ttd=NULL ) :
+    fNum(num), fFlag(0), fPos(pos), fTOffset(offset), fTTDConv(ttd) {}
   virtual ~THaVDCWire();
 
   // Get and Set Functions

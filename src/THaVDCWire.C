@@ -14,10 +14,8 @@ ClassImp(THaVDCWire)
 //_____________________________________________________________________________
 THaVDCWire::~THaVDCWire()
 {
-  // Destructor. 
-  // Delete the Time to Distance Converter
-  delete fTTDConv;  fTTDConv = NULL;
-
+  // Destructor. Does not delete time-to-distance converter since it
+  // has been allocated by the plane object.
 }
 
 

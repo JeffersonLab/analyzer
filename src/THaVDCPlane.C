@@ -144,26 +144,21 @@ Int_t THaVDCPlane::ReadDatabase( FILE* file, const TDatime& date )
   // Create TClonesArray objects for wires, hits,  and clusters
   fWires = new TClonesArray("THaVDCWire", nWires);
 
-  // Now initialize wires (those wires... too lazy to initialize themselves!)
-  // Caution: This may not correspond at all to actual wire channels!
+  // Define time-to-drift-distance converter
 
   THaVDCAnalyticTTDConv* ttdConv = new THaVDCAnalyticTTDConv(driftVel);
 
-  float offset = 0;
+  // Now initialize wires (those wires... too lazy to initialize themselves!)
+  // Caution: This may not correspond at all to actual wire channels!
+
   for (int i = 0; i < nWires; i++) {
 
+    float offset = 0.0;
+    fscanf(file, " %*d %f", &offset);
+
     // Constuct the new THaVDCWire (using space in the TClonesArray obj)
-    THaVDCWire * wire = new((*fWires)[i]) THaVDCWire();
-
-    int junk;
-
-    wire->SetNum(i);                   //Set number of wire
-    wire->SetPos(fWBeg + i * fWSpac);  //Set position of wire
-    fscanf(file, " %d %f", &junk, &offset);
-
-    wire->SetTOffset(offset);          //Use TOffset from file
-    //Set a Time to Distance converter
-    wire->SetTTDConv(ttdConv);
+    THaVDCWire * wire = new((*fWires)[i]) 
+      THaVDCWire( i, fWBeg+i*fWSpac, offset, ttdConv );
   }
 
   fIsInit = true;
