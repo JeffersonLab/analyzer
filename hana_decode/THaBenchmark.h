@@ -2,7 +2,7 @@
 //
 // THaBenchmark utility class
 //
-// Fixes bug in ROOT's benchmark class
+// Provides start/stop mode for ROOT's TBenchmark class
 //_____________________________________________________________________________
 
 #include "TBenchmark.h"
@@ -13,7 +13,7 @@ public:
   THaBenchmark() {}
   virtual ~THaBenchmark() {}
 
-  virtual void Start(const char *name) {
+  virtual void Begin(const char *name) {
     if (!fNbench)
       TBenchmark::Start(name);
     else {
