@@ -80,6 +80,10 @@ ClassImp(THaCodaFile)
     if ( handle ) {
        status = evRead(handle, evbuffer, MAXEVLEN);
        staterr("read",status);
+       if (status != S_SUCCESS) {
+           status = CODA_ERROR;
+           return status;
+       }
     } else {
       if(CODA_VERBOSE) {
          cout << "codaRead ERROR: tried to access a file with handle = 0" << endl;
@@ -262,7 +266,7 @@ void THaCodaFile::staterr(const TString& tried_to, int status) {
     switch (status) {
       case S_EVFILE_TRUNC :
 	 cout << "THaCodaFile ERROR:  Truncated event on file read" << endl;
-         cout << "Evbuffer size is too small.  Job aborted." << endl;
+         cout << "Evbuffer size is too small. " << endl;
       case S_EVFILE_BADBLOCK : 
         cout << "Bad block number encountered " << endl;
         break;
