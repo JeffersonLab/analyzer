@@ -84,19 +84,19 @@ protected:
                             // the s1 plane
 
   // declarations for target vertex reconstruction
-  typedef enum {
+  enum ECoordTypes {
     kTransport,
     kRotatingTransport
-  } ECoordTypes;
+  };
 
-  typedef enum {
+  enum EFPMatrixElemTags {
     T000 = 0,
     Y000,
     P000
-  } EFPMatrixElemTags;
+  };
     
   enum {
-      kPORDER = 7
+    kPORDER = 7
   };
 
   // private class for storing matrix element data

@@ -44,14 +44,14 @@ public:
   virtual void    SetName( const char* name );
   virtual void    SetNameTitle( const char* name, const char* title );
 
-  static  FILE*   OpenFile( const char *name, const TDatime& date,
-			    const char *here = "OpenFile()",
-			    const char *filemode = "r", 
+  static  FILE*   OpenFile( const char* name, const TDatime& date,
+			    const char* here = "OpenFile()",
+			    const char* filemode = "r", 
 			    const int debug_flag = 1);
 
-  bool CheckIntercept(THaTrack *track);
-  bool CalcInterceptCoords(THaTrack *track, Double_t &x, Double_t &y);
-  bool CalcPathLen(THaTrack *track, Double_t &t);
+  bool CheckIntercept(THaTrack* track);
+  bool CalcInterceptCoords(THaTrack* track, Double_t& x, Double_t& y);
+  bool CalcPathLen(THaTrack* track, Double_t& t);
 
 
 protected:
@@ -93,8 +93,8 @@ protected:
   virtual Int_t   SetupDetector( const TDatime& date )   { return kOK; }
   virtual void    DefineAxes(Double_t rotation_angle);
 
-  bool CalcTrackIntercept(THaTrack *track, Double_t &t, Double_t &ycross, 
-			  Double_t &xcross);
+  bool CalcTrackIntercept(THaTrack* track, Double_t& t, Double_t& ycross, 
+			  Double_t& xcross);
 
   //Only derived classes may construct me
   THaDetectorBase() : fDetMap(NULL), fPrefix(NULL), fStatus(kNotinit), 

@@ -49,7 +49,7 @@ THaVDC::THaVDC( const char* name, const char* description,
   fLower   = new THaVDCUVPlane( "uv1", "Lower UV Plane", this );
   fUpper   = new THaVDCUVPlane( "uv2", "Upper UV Plane", this );
   if( !fLower || !fUpper || fLower->IsZombie() || fUpper->IsZombie() ) {
-    Error( Here("THaVDC()"), "Failed to created subdetectors." );
+    Error( Here("THaVDC()"), "Failed to create subdetectors." );
     MakeZombie();
   }
 
@@ -73,7 +73,7 @@ THaDetectorBase::EStatus THaVDC::Init( const TDatime& date )
       (status = fUpper->Init( date )) )
     return fStatus = status;
 
-  return fStatus;
+  return fStatus = kOK;
 }
 
 //_____________________________________________________________________________
@@ -86,8 +86,14 @@ Int_t THaVDC::ReadDatabase( FILE* file, const TDatime& date )
   
   // Build the search tag and find it in the file. Search tags
   // are of form [ <prefix> ], e.g. [ R.vdc.u1 ].
-  TString tag(fPrefix); tag.Resize(2); tag.Append("global"); 
-  tag.Prepend("["); tag.Append("]"); 
+  TString tag(fPrefix);
+  Ssiz_t pos = tag.Index("."); 
+  if( pos != kNPOS )
+    tag = tag(0,pos+1);
+  else
+    tag.Append(".");
+  tag.Prepend("[");
+  tag.Append("global]"); 
   TString line, tag2(tag);
   tag.ToLower();
 
@@ -110,98 +116,97 @@ Int_t THaVDC::ReadDatabase( FILE* file, const TDatime& date )
     return kInitError;
   }
 
-  // we found the entry we needed, so we need to read in the data
+  // We found the entry, now read the data
 
   // read in some basic constants first
   fscanf(file, "%lf", &fSpacing);
   fgets(buff, LEN, file); // Skip rest of line
-
   fgets(buff, LEN, file); // Skip line
 
-  // now, read in the focal plane transfer elements
+  // Read in the focal plane transfer elements
   // NOTE: the matrix elements should be stored such that
-  // the 3 focal plane matrix elements come first, then come
+  // the 3 focal plane matrix elements come first, followed by
   // the other backwards elements, starting with D000
-  THaMatrixElement temp_elem;
-  char w;
+  THaMatrixElement ME;
   
   // initialize some values
-  temp_elem.pw[0] = 0;  temp_elem.pw[1] = 0;  temp_elem.pw[2] = 0;
+  ME.pw[0] = ME.pw[1] = ME.pw[2] = 0;
 
   // read in T000 and verify it
-  temp_elem.iszero = true;  temp_elem.order = 0;
+  ME.iszero = true;  ME.order = 0;
   for(int p_cnt=0; p_cnt<kPORDER; p_cnt++) {
-    if(!fscanf(file, "%le", &temp_elem.poly[p_cnt])) {
+    if(!fscanf(file, "%le", &ME.poly[p_cnt])) {
       Error(Here(here), "Could not read in Matrix Element T000!");
       return kInitError;
     }
 
-    if(temp_elem.poly[p_cnt] != 0.0) {
-      temp_elem.iszero = false;
-      temp_elem.order = p_cnt;
+    if(ME.poly[p_cnt] != 0.0) {
+      ME.iszero = false;
+      ME.order = p_cnt;
     }
   }
-  fFPMatrixElems.push_back(temp_elem);
+  fFPMatrixElems.push_back(ME);
 
   // read in Y000 and verify it
-  temp_elem.iszero = true;  temp_elem.order = 0;
+  ME.iszero = true;  ME.order = 0;
   for(int p_cnt=0; p_cnt<kPORDER; p_cnt++) {
-    if(!fscanf(file, "%le", &temp_elem.poly[p_cnt])) {
+    if(!fscanf(file, "%le", &ME.poly[p_cnt])) {
       Error(Here(here), "Could not read in Matrix Element Y000!");
       return kInitError;
     }
 
-    if(temp_elem.poly[p_cnt] != 0.0) {
-      temp_elem.iszero = false;
-      temp_elem.order = p_cnt;
+    if(ME.poly[p_cnt] != 0.0) {
+      ME.iszero = false;
+      ME.order = p_cnt;
     }
   }
-  fFPMatrixElems.push_back(temp_elem);
+  fFPMatrixElems.push_back(ME);
 
   // read in P000 and verify it
-  temp_elem.iszero = true;  temp_elem.order = 0;
+  ME.iszero = true;  ME.order = 0;
   for(int p_cnt=0; p_cnt<kPORDER; p_cnt++) {
-    if(!fscanf(file, "%le", &temp_elem.poly[p_cnt])) {
+    if(!fscanf(file, "%le", &ME.poly[p_cnt])) {
       Error(Here(here), "Could not read in Matrix Element P000!");
       return kInitError;
     }
 
-    if(temp_elem.poly[p_cnt] != 0.0) {
-      temp_elem.iszero = false;
-      temp_elem.order = p_cnt;
+    if(ME.poly[p_cnt] != 0.0) {
+      ME.iszero = false;
+      ME.order = p_cnt;
     }
   }
-  fFPMatrixElems.push_back(temp_elem);
+  fFPMatrixElems.push_back(ME);
 
 
-  // now, read in as many of the matrix elements as there are
+  // Read in as many of the matrix elements as there are
   fscanf(file, "%*c");
-  while(fscanf(file, "%c %d %d %d", &w, &temp_elem.pw[0], 
-	       &temp_elem.pw[1], &temp_elem.pw[2]) == 4) {
+  char w;
+  while(fscanf(file, "%c %d %d %d", &w, &ME.pw[0], 
+	       &ME.pw[1], &ME.pw[2]) == 4) {
 
-    temp_elem.iszero = true;  temp_elem.order = 0;
+    ME.iszero = true;  ME.order = 0;
     for(int p_cnt=0; p_cnt<kPORDER; p_cnt++) {
-      if(!fscanf(file, "%le", &temp_elem.poly[p_cnt])) {
+      if(!fscanf(file, "%le", &ME.poly[p_cnt])) {
 	Error(Here(here), "Could not read in Matrix Element %c%d%d%d!",
-	      w, temp_elem.pw[0], temp_elem.pw[1], temp_elem.pw[2]);
+	      w, ME.pw[0], ME.pw[1], ME.pw[2]);
 	return kInitError;
       }
 
-      if(temp_elem.poly[p_cnt] != 0.0) {
-	temp_elem.iszero = false;
-	temp_elem.order = p_cnt;
+      if(ME.poly[p_cnt] != 0.0) {
+	ME.iszero = false;
+	ME.order = p_cnt;
       }
     }
     
-    /* decide which list of matrix elements to add it to */
+    // Add this matrix element to the appropriate array
     switch(w) {
-    case 'D': fDMatrixElems.push_back(temp_elem); break;
-    case 'T': fTMatrixElems.push_back(temp_elem); break;
-    case 'Y': fYMatrixElems.push_back(temp_elem); break;
-    case 'P': fPMatrixElems.push_back(temp_elem); break;
+    case 'D': fDMatrixElems.push_back(ME); break;
+    case 'T': fTMatrixElems.push_back(ME); break;
+    case 'Y': fYMatrixElems.push_back(ME); break;
+    case 'P': fPMatrixElems.push_back(ME); break;
     default:
-     	Error(Here(here), "Invalid Matrix Element specifier: %c!", w);
-	break;
+      Error(Here(here), "Invalid Matrix Element specifier: %c!", w);
+      break;
     }
 
     fscanf(file, "%*c");
@@ -220,7 +225,7 @@ Int_t THaVDC::SetupDetector( const TDatime& date )
   fIsSetup = true;
 
   const Float_t degrad = TMath::Pi()/180.0;
-  fTan_vdc = fFPMatrixElems[T000].poly[0];
+  fTan_vdc  = fFPMatrixElems[T000].poly[0];
   fVDCAngle = TMath::ATan(fTan_vdc);
   fSin_vdc  = TMath::Sin(fVDCAngle);
   fCos_vdc  = TMath::Cos(fVDCAngle);
@@ -231,9 +236,10 @@ Int_t THaVDC::SetupDetector( const TDatime& date )
   fErrorCutoff = 1e100;
 
   // figure out the track length from the origin to the s1 plane
+
   // since we take the VDC to be the origin of the coordinate
   // space, this is actually pretty simple
-  const THaDetector *s1 = fApparatus->GetDetector("s1");
+  const THaDetector* s1 = fApparatus->GetDetector("s1");
   if(s1 == NULL)
     fCentralDist = 0;
   else
@@ -627,9 +633,9 @@ Int_t THaVDC::FindVertices( TClonesArray& tracks )
   // Calculate the target location and momentum at the target
   // assumes that CoarseTrack() and FineTrack() have both been called
 
-  int n_exist = tracks.GetLast()+1;
-  for(int t = 0; t < n_exist; t++ ) {
-    THaTrack *theTrack = static_cast<THaTrack*>( tracks.At(t) );
+  Int_t n_exist = tracks.GetLast()+1;
+  for( Int_t t = 0; t < n_exist; t++ ) {
+    THaTrack* theTrack = static_cast<THaTrack*>( tracks.At(t) );
     CalcTargetCoords(theTrack, kRotatingTransport);
   }
 
@@ -642,9 +648,9 @@ void THaVDC::CalcFocalPlaneCoords(const THaVDCUVTrack *the_track,
 {
   // calculates focal plane coordinates from detector coordinates
 
-  double tan_rho, cos_rho, tan_rho_loc, cos_rho_loc;
-  double x, y, theta, phi;
-  double r_x, r_y, r_theta, r_phi;
+  Double_t tan_rho, cos_rho, tan_rho_loc, cos_rho_loc;
+  Double_t x, y, theta, phi;
+  Double_t r_x, r_y, r_theta, r_phi;
   
   // tan rho (for the central ray) is stored as a matrix element 
   tan_rho = fFPMatrixElems[T000].poly[0];
@@ -689,11 +695,11 @@ void THaVDC::CalcTargetCoords(THaTrack *the_track, const ECoordTypes mode)
 {
   // calculates target coordinates from focal plane coordinates
 
-  const int kNUM_PRECOMP_POW = 10;
+  const Int_t kNUM_PRECOMP_POW = 10;
 
-  double x_fp, y_fp, th_fp, ph_fp;
-  double powers[kNUM_PRECOMP_POW][3];  // {th, y, ph}
-  double x, y, theta, phi, dp, p;
+  Double_t x_fp, y_fp, th_fp, ph_fp;
+  Double_t powers[kNUM_PRECOMP_POW][3];  // {th, y, ph}
+  Double_t x, y, theta, phi, dp, p;
 
   // first select the coords to use
   if(mode == kTransport) {
@@ -730,7 +736,7 @@ void THaVDC::CalcTargetCoords(THaTrack *the_track, const ECoordTypes mode)
   dp = CalcTargetVar(fDMatrixElems, powers);
   /*p = center_momentum * (1+dp); */ p = 0.0;
 
-  // estimate x ??
+  //FIXME: estimate x ??
   x = 0.0;
 
   // set the values we just calculated
@@ -741,14 +747,14 @@ void THaVDC::CalcTargetCoords(THaTrack *the_track, const ECoordTypes mode)
 
 
 //_____________________________________________________________________________
-void THaVDC::CalcMatrix(const double x, vector<THaMatrixElement> &matrix)
+void THaVDC::CalcMatrix( const Double_t x, vector<THaMatrixElement>& matrix )
 {
   // calculates the values of the matrix elements for a given location
   // by evaluating a polynomial in x of order it->order with 
   // coefficients given by it->poly
 
-  for(vector<THaMatrixElement>::iterator it=matrix.begin();
-      it!=matrix.end(); it++) {
+  for( vector<THaMatrixElement>::iterator it=matrix.begin();
+       it!=matrix.end(); it++ ) {
     it->v = 0.0;
 
     if(it->iszero == false) {
@@ -760,14 +766,14 @@ void THaVDC::CalcMatrix(const double x, vector<THaMatrixElement> &matrix)
 }
 
 //_____________________________________________________________________________
-double THaVDC::CalcTargetVar(const vector<THaMatrixElement> &matrix,
-			     const double powers[][3])
+Double_t THaVDC::CalcTargetVar(const vector<THaMatrixElement>& matrix,
+			       const Double_t powers[][3])
 {
   // calculates the value of a variable at the target
 
-  double retval=0.0;
-  for(vector<THaMatrixElement>::const_iterator it=matrix.begin();
-      it!=matrix.end(); it++) 
+  Double_t retval=0.0;
+  for( vector<THaMatrixElement>::const_iterator it=matrix.begin();
+       it!=matrix.end(); it++ ) 
     if(it->v != 0.0)
       retval += it->v * powers[it->pw[0]][0]
 	              * powers[it->pw[1]][1]
@@ -777,13 +783,13 @@ double THaVDC::CalcTargetVar(const vector<THaMatrixElement> &matrix,
 }
 
 //_____________________________________________________________________________
-void THaVDC::CorrectTimeOfFlight(TClonesArray &tracks)
+void THaVDC::CorrectTimeOfFlight(TClonesArray& tracks)
 {
   const static Double_t v = 3.0e-8;   // for now, assume that everything travels at c
 
   // get scintillator planes
-  THaDetector *s1 = fApparatus->GetDetector("s1");
-  THaDetector *s2 = fApparatus->GetDetector("s2");
+  THaDetector* s1 = fApparatus->GetDetector("s1");
+  THaDetector* s2 = fApparatus->GetDetector("s2");
 
   if( (s1 == NULL) || (s2 == NULL) )
     return;
@@ -793,17 +799,17 @@ void THaVDC::CorrectTimeOfFlight(TClonesArray &tracks)
   // (i.e. x_det = 0) at a 45 deg angle (theta_t and phi_t = 0)
   // assumes that at least the coarse tracking has been performed
 
-  int n_exist = tracks.GetLast()+1;
+  Int_t n_exist = tracks.GetLast()+1;
   //cerr<<"num tracks: "<<n_exist<<endl;
-  for(int t = 0; t < n_exist; t++ ) {
-    THaTrack *track = static_cast<THaTrack*>( tracks.At(t) );
-    TList *clusters = track->GetClusters();
+  for( Int_t t = 0; t < n_exist; t++ ) {
+    THaTrack* track = static_cast<THaTrack*>( tracks.At(t) );
+    TList* clusters = track->GetClusters();
     
     // calculate the correction, since it's on a per track basis
     Double_t s1_dist, vdc_dist, dist, tdelta;
     if(!s1->CalcPathLen(track, s1_dist))
       s1_dist = 0.0;
-    if(!this->CalcPathLen(track, vdc_dist))
+    if(!CalcPathLen(track, vdc_dist))
       vdc_dist = 0.0;
 
     // since the z=0 of the transport coords is inclined with respect
@@ -818,12 +824,14 @@ void THaVDC::CorrectTimeOfFlight(TClonesArray &tracks)
     //cout<<"time correction: "<<tdelta<<endl;
 
     // apply the correction
-    int n_clust = clusters->GetSize();
-    for(int i = 0; i < n_clust; i++ ) {
-      THaVDCUVTrack *the_uvtrack = static_cast<THaVDCUVTrack*>( clusters->At(i) );
+    Int_t n_clust = clusters->GetSize();
+    for( Int_t i = 0; i < n_clust; i++ ) {
+      THaVDCUVTrack* the_uvtrack = 
+	static_cast<THaVDCUVTrack*>( clusters->At(i) );
       if(the_uvtrack == NULL)
 	continue;
       
+      //FIXME: clusters guaranteed to be nonzero?
       the_uvtrack->GetUCluster()->SetTimeCorrection(tdelta);
       the_uvtrack->GetVCluster()->SetTimeCorrection(tdelta);
     }
@@ -831,19 +839,21 @@ void THaVDC::CorrectTimeOfFlight(TClonesArray &tracks)
 }
 
 //_____________________________________________________________________________
-void THaVDC::FindBadTracks(TClonesArray &tracks)
+void THaVDC::FindBadTracks(TClonesArray& tracks)
 {
-  THaDetector *s2 = fApparatus->GetDetector("s2");
+  // Flag tracks that don't intercept S2 scintillator as bad
+
+  THaDetector* s2 = fApparatus->GetDetector("s2");
 
   if(s2 == NULL) {
     //cerr<<"Could not find s2 plane!!"<<endl;
     return;
   }
 
-  int n_exist = tracks.GetLast()+1;
-  for(int t = 0; t < n_exist; t++ ) {
-    THaTrack *track = static_cast<THaTrack*>( tracks.At(t) );
-    double x2, y2;
+  Int_t n_exist = tracks.GetLast()+1;
+  for( Int_t t = 0; t < n_exist; t++ ) {
+    THaTrack* track = static_cast<THaTrack*>( tracks.At(t) );
+    Double_t x2, y2;
 
     // project the current x and y positions into the s2 plane
     if(!s2->CalcInterceptCoords(track, x2, y2)) {

@@ -43,9 +43,7 @@ THaDetectorBase::THaDetectorBase( const char* name,
 {
   // Normal constructor. Creates an empty detector map.
 
-  fSize[0] = 0.0;
-  fSize[1] = 0.0;
-  fSize[2] = 0.0;
+  fSize[0] = fSize[1] = fSize[2] = 0.0;
   fDetMap = new THaDetMap;
 }
 
@@ -390,9 +388,9 @@ void THaDetectorBase::DefineAxes(Double_t rotation_angle)
 }
 
 //_____________________________________________________________________________
-bool THaDetectorBase::CalcTrackIntercept(THaTrack *theTrack, 
-					 Double_t &t, Double_t &xcross, 
-					 Double_t &ycross)
+bool THaDetectorBase::CalcTrackIntercept(THaTrack* theTrack, 
+					 Double_t& t, Double_t& xcross, 
+					 Double_t& ycross)
 {
   // projects a given track on to the plane of the detector
   // xcross and ycross are the x and y coords of this intersection
@@ -408,7 +406,7 @@ bool THaDetectorBase::CalcTrackIntercept(THaTrack *theTrack,
   // first get the distance...
   Double_t det = fDenom.Determinant();
   if( fabs(det) < 1e-5 ) 
-      return false;  // No useful solution for this track
+    return false;  // No useful solution for this track
   t = fNom.Determinant() / det;
 
   // ...then the intersection point
@@ -427,14 +425,14 @@ bool THaDetectorBase::CheckIntercept(THaTrack *track)
 }
 
 //_____________________________________________________________________________
-bool THaDetectorBase::CalcInterceptCoords(THaTrack *track, Double_t &x, Double_t &y)
+bool THaDetectorBase::CalcInterceptCoords(THaTrack* track, Double_t& x, Double_t& y)
 {
   Double_t t;
   return CalcTrackIntercept(track, t, x, y);
 }
 
 //_____________________________________________________________________________
-bool THaDetectorBase::CalcPathLen(THaTrack *track, Double_t &t)
+bool THaDetectorBase::CalcPathLen(THaTrack* track, Double_t& t)
 {
   Double_t x, y;
   return CalcTrackIntercept(track, t, x, y);
