@@ -27,6 +27,7 @@ THaRawEvent::THaRawEvent() : THaEvent()
   // Set up the variable-size arrays for the VDCs. This is easy
   // since they have definite maximum sizes. Required heap memory ~4kB.
 
+#if 0
   const int maxhit = THaVDC::MAXHIT;
   const int maxclu = THaVDC::MAXCLU;
 
@@ -65,6 +66,7 @@ THaRawEvent::THaRawEvent() : THaEvent()
   fL_V2_time  = new Float_t[ maxhit ];
   fL_V2_clpos = new Float_t[ maxclu ];
   fL_V2_clsiz = new Int_t  [ maxclu ];
+#endif
 
   // Set up the data map, which relates global variable names to
   // THaRawEvent member variables.
@@ -83,6 +85,7 @@ THaRawEvent::THaRawEvent() : THaEvent()
 
     //=== Right HRS
 
+#if 0
     // VDC
     { 1,      "R.vdc.u1.nhit",     &fR_U1_nhit },
     {-1,      "R.vdc.u1.wire",     fR_U1_wire,    &fR_U1_nhit },
@@ -110,6 +113,7 @@ THaRawEvent::THaRawEvent() : THaEvent()
     {-1,      "R.vdc.v2.clsiz",    fR_V2_clsiz,   &fR_V2_nclust },
     { 1,      "R.vdc.ntracks",     &fR_TR_n },
     { 5,      "R.vdc.x",           &fR_TR_x },
+#endif
     
     // S1
     { 1,      "R.s1.nlthit",       &fR_S1L_nthit },
@@ -213,6 +217,7 @@ THaRawEvent::THaRawEvent() : THaEvent()
 
     //=== Left HRS
 
+#if 0
     // VDC
     { 1,      "L.vdc.u1.nhit",     &fL_U1_nhit },
     {-1,      "L.vdc.u1.wire",     fL_U1_wire,    &fL_U1_nhit },
@@ -240,6 +245,7 @@ THaRawEvent::THaRawEvent() : THaEvent()
     {-1,      "L.vdc.v2.clsiz",    fL_V2_clsiz,   &fL_V2_nclust },
     { 1,      "L.vdc.ntracks",     &fL_TR_n },
     { 5,      "L.vdc.x",           &fL_TR_x },
+#endif
 
     // S1
     { 1,      "L.s1.nlthit",       &fL_S1L_nthit },
@@ -296,6 +302,7 @@ THaRawEvent::~THaRawEvent()
 
   // Note fDataMap is deleted by the base class destructor!
 
+#if 0
   delete [] fR_U1_wire ;
   delete [] fR_U1_time ;
   delete [] fR_U1_clpos;
@@ -329,6 +336,7 @@ THaRawEvent::~THaRawEvent()
   delete [] fL_V2_time ;
   delete [] fL_V2_clpos;
   delete [] fL_V2_clsiz;
+#endif
 }
 
 //______________________________________________________________________________
@@ -341,7 +349,8 @@ void THaRawEvent::Clear( Option_t* opt )
   // Clear the base class (i.e. histograms & event header)
   THaEvent::Clear( opt );
 
-  size_t len = reinterpret_cast<const char*>( &fR_U1_wire ) - 
+  //  size_t len = reinterpret_cast<const char*>( &fR_U1_wire ) - 
+  size_t len = reinterpret_cast<const char*>( &fL_S2_try ) + sizeof(Float_t) - 
     reinterpret_cast<const char*>( &fB_X4a );
   memset( fB_X4a, 0, len );
 

@@ -40,7 +40,6 @@
 #pragma link C++ class THaBpm;
 #pragma link C++ class THaRaster;
 #pragma link C++ class THaShower;
-#pragma link C++ class THaVDC;
 #pragma link C++ class THaEpicsData;
 #pragma link C++ class THaTrack;
 #pragma link C++ class THaPIDinfo;
@@ -52,5 +51,15 @@
 #pragma link C++ class THaArrayString;
 #pragma link C++ class THaCherenkov;
 #pragma link C++ class THaTotalShower;
+#pragma link C++ class THaVDC;
+#pragma link C++ class THaVDCUVPlane;
+#pragma link C++ class THaVDCPlane;
+#pragma link C++ class THaVDCCluster;
+#pragma link C++ class THaVDCHit;
+#pragma link C++ class THaVDCWire;
+#pragma link C++ class THaVDCUVTrack;
+#pragma link C++ class THaVDCTimeToDistConv;
+#pragma link C++ class THaVDCT0CalTable;
+#pragma link C++ class THaVDCAnalyticTTDConv;
 
 #endif

@@ -3,6 +3,9 @@
 # Compile extra debugging code (slight performance impact)
 export WITH_DEBUG = 1
 
+# Compile debug version
+export DEBUG = 1
+
 #------------------------------------------------------------------------------
 
 VERSION = 0.61
@@ -30,18 +33,30 @@ INCLUDES      = $(ROOTCFLAGS) -I$(DCDIR) -I$(SCALERDIR)
 ifeq ($(ARCH),solarisCC5)
 # Solaris CC 5.0
 CXX           = CC
-CXXFLAGS      = -O -KPIC
+ifdef DEBUG
+  CXXFLAGS    = -g
+  LDFLAGS     = -g
+else
+  CXXFLAGS    = -O
+  LDFLAGS     = -O
+endif
+CXXFLAGS     += -KPIC
 LD            = CC
-LDFLAGS       = -O
 SOFLAGS       = -G
 endif
 
 ifeq ($(ARCH),linuxegcs)
 # Linux with egcs (>= RedHat 5.2)
 CXX           = g++
-CXXFLAGS      = -O -Wall -Woverloaded-virtual -fPIC
+ifdef DEBUG
+  CXXFLAGS    = -g
+  LDFLAGS     = -g
+else
+  CXXFLAGS    = -O
+  LDFLAGS     = -O
+endif
+CXXFLAGS     += -Wall -Woverloaded-virtual -fPIC
 LD            = g++
-LDFLAGS       = -O
 SOFLAGS       = -shared
 endif
 
@@ -53,7 +68,7 @@ CXXFLAGS     += $(INCLUDES)
 LIBS         += $(ROOTLIBS) $(SYSLIBS)
 GLIBS        += $(ROOTGLIBS) $(SYSLIBS)
 
-MAKEDEPEND    = g++
+MAKEDEPEND    = gcc
 
 ifdef WITH_DEBUG
 CXXFLAGS     += -DWITH_DEBUG
@@ -76,10 +91,15 @@ SRC           = src/THaFormula.C src/THaVar.C src/THaVarList.C src/THaCut.C \
 		src/THaBeam.C src/THaBpm.C src/THaRaster.C src/THaEpicsData.C \
 		src/THaTrack.C src/THaPIDinfo.C src/THaParticleInfo.C \
 		src/THaMatrix.C src/THaArrayString.C \
-		src/THaVDC.C src/THaScintillator.C src/THaShower.C \
+		src/THaScintillator.C src/THaShower.C \
 		src/THaTotalShower.C src/THaCherenkov.C \
 		src/THaRICH.C src/THaRICHClusterList.C \
-		src/THaEvent.C src/THaRawEvent.C
+		src/THaEvent.C src/THaRawEvent.C \
+		src/THaVDC.C \
+		src/THaVDCPlane.C src/THaVDCUVPlane.C src/THaVDCUVTrack.C \
+		src/THaVDCWire.C src/THaVDCHit.C src/THaVDCCluster.C \
+		src/THaVDCTimeToDistConv.C \
+                src/THaVDCAnalyticTTDConv.C src/THaVDCT0CalTable.C
 
 OBJ           = $(SRC:.C=.o)
 HDR           = $(SRC:.C=.h) src/THaGlobals.h src/VarDef.h src/VarType.h
@@ -108,25 +128,17 @@ clean:
 		$(MAKE) -C $(DCDIR) clean
 		$(MAKE) -C $(SCALERDIR) clean
 		rm -f *.so *.a $(PROGRAMS) *.o *Dict.* *~
-		cd src; rm -f *.o *Dict.* *~ 
+		cd src; rm -f *.o *~
 
 realclean:	clean
 		$(MAKE) -C $(DCDIR) realclean
 		$(MAKE) -C $(SCALERDIR) realclean
 		find . -name "*.d" -exec rm {} \;
-		find work -type l -exec rm {} \;
 
 srcdist:	realclean
 		tar czvf ../v$(VERSION).tar.gz \
-			$(SRC) $(HDR) src/main.C src/HallA_LinkDef.h \
-			$(DCDIR) $(SCALERDIR) examples work \
-			Makefile RELEASE_NOTES
-
-workdir:	all
-		cd work; rm -f analyzer scaler.map *.so; \
-		ln -s ../analyzer .; ln -s ../$(SCALERDIR)/scaler.map .; \
-		ln -s ../$(LIBHALLA) .; ln -s ../libdc.so .; \
-		ln -s ../libscaler.so .
+			src examples $(DCDIR) $(SCALERDIR) \
+			Makefile RELEASE_NOTES*
 
 haDict.C: $(HDR) src/HallA_LinkDef.h
 	@echo "Generating dictionary haDict..."
@@ -156,3 +168,4 @@ haDict.C: $(HDR) src/HallA_LinkDef.h
 ###
 
 -include $(DEP)
+

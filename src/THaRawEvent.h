@@ -39,6 +39,7 @@ protected:
 
   //=== Right HRS raw data
 
+#if 0
   // VDC (except variable size arrays)
   Int_t    fR_U1_nhit;           // VDC plane U1:  Number of hits
   Int_t    fR_U1_nclust;         // Number of clusters
@@ -54,6 +55,7 @@ protected:
   Float_t  fR_TR_z;              // Z coordinate (in cm) of track in E-arm cs
   Float_t  fR_TR_th;             // Tangent of Thetta angle of track in E-arm cs
   Float_t  fR_TR_ph;             // Tangent of Phi angle of track in E-arm cs
+#endif
 
   // S1
   Int_t    fR_S1L_nthit;         // Scint 1: Number of Left pad-s TDC times
@@ -157,6 +159,7 @@ protected:
 
   //=== Left HRS raw data
 
+#if 0
   // VDC (except variable size arrays)
   Int_t    fL_U1_nhit;           // VDC plane U1:  Number of hits
   Int_t    fL_U1_nclust;         // Number of clusters
@@ -172,6 +175,7 @@ protected:
   Float_t  fL_TR_z;              // Z coordinate (in cm) of track in E-arm cs
   Float_t  fL_TR_th;             // Tangent of Thetta angle of track in E-arm cs
   Float_t  fL_TR_ph;             // Tangent of Phi angle of track in E-arm cs
+#endif
 
   // S1
   Int_t    fL_S1L_nthit;         // Scint 1: Number of Left pad-s TDC times
@@ -209,6 +213,7 @@ protected:
   Float_t  fL_S2_trx;            // X coord of track cross point with S2 plane
   Float_t  fL_S2_try;            // Y coord of track cross point with S2 plane
 
+#if 0
   // Right HRS VDC variable size arrays 
   Int_t*   fR_U1_wire;           //[fR_U1_nhit] Hit wires numbers
   Float_t* fR_U1_time;           //[fR_U1_nhit] Corresponding TDC times
@@ -244,6 +249,7 @@ protected:
   Float_t* fL_V2_time;           //[fL_V2_nhit] Corresponding TDC times
   Float_t* fL_V2_clpos;          //[fL_V2_nclust]  Centers of clusters (in wires)
   Int_t*   fL_V2_clsiz;          //[fL_V2_nclust]  Sizes of clusters (in wires)
+#endif
 
   ClassDef(THaRawEvent,2)  //THaRawEvent structure
 };
