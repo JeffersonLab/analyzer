@@ -105,6 +105,11 @@ TString THaEvData::DevType(int crate, int slot) const {
   return " ";
 };
 
+int THaEvData::GetRocLength(int crate) const {
+  if (crate >= 0 && crate < MAXROC) return lenroc[crate];
+  return 0;
+};
+
 int THaEvData::GetPrescaleFactor(int trigger_type) const {
 // To get the prescale factors for trigger number "trigger_type"
 // (valid types are 1,2,3...)
@@ -126,6 +131,7 @@ int THaEvData::gendecode(const int* evbuffer, THaCrateMap& map) {
        first_decode = false;
      }
      for (int roc=0; roc<MAXROC; roc++) {
+       lenroc[roc] = 0;
        if (!map.crateUsed(roc)) continue;
        for (int slot=0; slot<MAXSLOT; slot++) {
           if (!map.slotUsed(roc,slot)) continue;
@@ -133,6 +139,7 @@ int THaEvData::gendecode(const int* evbuffer, THaCrateMap& map) {
           crateslot[idx(roc,slot)].clearEvent();  // clear hit counters
        }
      }
+     evscaler = 0;
      event_length = evbuffer[0]+1;  
      event_type = evbuffer[1]>>16;
      if(event_type <= 0) return HED_ERR;
@@ -147,6 +154,10 @@ int THaEvData::gendecode(const int* evbuffer, THaCrateMap& map) {
            run_time = static_cast<UInt_t>(evbuffer[2]);
            run_num  = evbuffer[3];
            run_type = evbuffer[4];
+// Usually prestart is the first 'event'.  Re-initialize crate map since we
+// now know the run time.  This won't happen for split files (no prestart).
+           init_cmap();     
+           init_slotdata(cmap);
            return HED_OK;
 	 case GO_EVTYPE :
            return HED_OK;
@@ -389,6 +400,7 @@ int THaEvData::scaler_event_decode(const int* evbuffer, THaCrateMap& map) {
         string temp = location.Data();
         if (temp == "rscaler") scalerdef[roc] = "right";
         if (temp == "lscaler") scalerdef[roc] = "left";
+        if (temp == "rcs") scalerdef[roc] = "rcs";
 // If more locations added, put them here.  But scalerdef[] is not
 // needed if you know the roc#, you can call getScaler(roc,...)
         int slot = (evbuffer[ipt]&0xf0000)>>16;
@@ -411,7 +423,9 @@ int THaEvData::scaler_event_decode(const int* evbuffer, THaCrateMap& map) {
 
 int THaEvData::GetScaler(const TString& spec, int slot, int chan) const {
 // Get scaler data by spectrometer, slot, and channel
-// spec = "left" or "right"
+// spec = "left" or "right" for the "scaler events" (type 140)
+// and spec = "evleft" and "evright" for scalers
+// that are part of the event (ev) readout.
     for(int cra=0; cra<numscaler_crate; cra++) {       
       int roc = scaler_crate[cra];
       if (spec == scalerdef[roc]) return GetScaler(roc, slot, chan);
@@ -510,6 +524,9 @@ int THaEvData::vme_decode(int roc, THaCrateMap& map, const int* evbuffer,
     if (Nslot <= 0) return HED_ERR;
     int slot,chan,raw,data,loc,slotprime,ndat;
     map.setSlotDone();
+    TString location = map.getScalerLoc(roc);
+    scalerdef[roc] = location.Data();
+    if (map.isScalerCrate(roc) && GetRocLength(roc) >= 16) evscaler = 1;
     while ( ipt++ < istop ) {
       if(DEBUG) cout << "evbuff "<<dec<<ipt<<"  "<<hex<<evbuffer[ipt]<<endl;  
       for (slot=1; slot<=Nslot; slot++) {
@@ -688,7 +705,7 @@ int THaEvData::loadFlag(int ipt, const int* evbuffer) {
 // To initialize the crate map member if it is to be used.
 int THaEvData::init_cmap()  {
   if (DEBUG) cout << "Init crate map " << endl;
-  return cmap.init();  
+  return cmap.init(GetRunTime());  
 };
 
 // To initialize the THaSlotData member on first call to decoder

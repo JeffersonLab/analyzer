@@ -16,6 +16,8 @@
 
 
 #include "THaCrateMap.h"
+#include <iostream>
+#include <time.h>
 
 ClassImp(THaCrateMap)
 
@@ -37,7 +39,8 @@ ClassImp(THaCrateMap)
 
    bool THaCrateMap::isVme(int crate) const {
       if ((crate >= 0) && (crate<MAXROC)) {
-        if (crate_type[crate] == "vme") {
+        if (crate_type[crate] == "vme" ||
+            crate_type[crate] == "scaler" ) {
           return true;
         }
       }
@@ -253,17 +256,36 @@ ClassImp(THaCrateMap)
        }
    };
 
+   int THaCrateMap::init() {
+       return init(0);
+   };
 
 // Initialization of the default crate map.  R. Michaels
 // I think I know where all crates and models are, so here I set it up.
-// Ideally this method would use a database, but for how we hard-code it.
-// This obviously needs a time-dependent database !!!  See comments below.
+// Ideally this method would use a database, but for now we use a 
+// crude mechanism to determine time dependence.  
+// time_period determined from the Unix time passed as argument.
+// The Unix time is obtained from Prestart event by the user class.
 
-   int THaCrateMap::init() {
-     int crate, slot;
-     int prior_jan_2001 = 0;      // kluge to make time-dependent.
-     int prior_oct_2000 = 0;      //  "        "        "
-     int after_may_2001 = 1;
+   int THaCrateMap::init(UInt_t tloc) {
+     int crate, slot, month=0, year=0;
+// Default state: most recent.
+     int prior_oct_2000 = 0;
+     int prior_jan_2001 = 0;
+     int after_may_2001 = 1;   // most recent 
+
+     if (tloc == 0) {
+//       cout << "Initializing crate map for the time='now'."<<endl;
+     } else {
+       time_t t = tloc;
+       struct tm* tp = localtime(&t);
+       year = 1900 + tp->tm_year;
+       month = tp->tm_mon+1;
+       if (year < 2000 || (year < 2001 && month < 10)) prior_oct_2000 = 1; 
+       if (year < 2001) prior_jan_2001 = 1;  
+       if (year < 2001 || year < 2002 && month < 6) after_may_2001 = 0; 
+     } 
+     if (prior_oct_2000) prior_jan_2001 = 1;
      for(crate=0; crate<MAXROC; crate++) {
         nslot[crate] = 0;
         crate_used[crate] = false;
@@ -275,7 +297,6 @@ ClassImp(THaCrateMap)
            slot_clear[crate][slot] = true;
         }
      }
-     if (prior_oct_2000) prior_jan_2001 = 1;
 // ROC1
      setCrateType(1,"fastbus");
      for(slot=3; slot<=19; slot++) setModel(1,slot,1877);  
@@ -346,6 +367,26 @@ ClassImp(THaCrateMap)
      for(slot=0; slot<=8; slot++) setClear(8,slot,false);
      setHeader(8,1,0xabc00000);
      setMask(8,1,0xfff00000);
+// crate 9, the RCS scalers
+     setCrateType(9,"scaler");
+     setScalerLoc(9,"rcs");
+     for(slot=1; slot<=3; slot++) {
+        setModel(9,slot,3801);
+        setHeader(9,slot,0xbbc00000+(slot-1)*0x10000);
+        setMask(9,slot,0xffff0000);
+     }
+// ROC11, the synchronous event readout of scalers
+     setCrateType(11,"scaler");
+     setScalerLoc(11,"evleft");
+     setModel(11,1,3801);
+     setHeader(11,1,0xabc30000);
+     setMask(11,1,0xffff0000);
+     setModel(11,2,3801);
+     setHeader(11,2,0xabc40000);
+     setMask(11,2,0xffff0000);
+     setModel(11,3,3801);
+     setHeader(11,3,0xabc50000);
+     setMask(11,3,0xffff0000);
 // ROC12
      setCrateType(12,"vme");
      for (slot = 1; slot <= 24; slot++) { // actually ADCs (2 per 12 slots)

@@ -27,6 +27,7 @@ public:
      int GetRunNum()   const { return run_num; };
      UInt_t GetRunTime()  const { return run_time; };
      int GetRunType()  const { return run_type; };
+     int GetRocLength(int crate) const;   // Get the ROC length
      int GetPrescaleFactor(int trigger) const;  // Obtain prescale factor
      bool IsPhysicsTrigger() const;    // physics trigger (event types 1-14)
      bool IsScalerEvent() const;       // scalers from datastream
@@ -47,7 +48,9 @@ public:
      TString DevType(int crate, int slot) const;
      int AddEpicsTag(const TString& tag);
 // User can GetScaler, alternativly to GetSlotData for scalers
-     int GetScaler(const TString& spec, int slot, int chan) const; // spec="left","right" 
+// spec = "left", "right", "rcs" for event type 140 scaler "events"
+// spec = "evleft" or "evright" for L,R scalers injected into datastream.
+     int GetScaler(const TString& spec, int slot, int chan) const;   
      int GetScaler(int roc, int slot, int chan) const;         
      int GetHelicity() const;         // Returns Beam Helicity (-1,0,+1)  '0' is 'unknown'
      int GetHelicity(const TString& spec) const;  // Beam Helicity for spec="left","right"
@@ -92,7 +95,7 @@ private:
      static const int DETMAP_FILE      = 135;
      static const int TRIGGER_FILE     = 136;
      static const int SCALER_EVTYPE    = 140;
-     Int_t event_type,event_length,event_num,run_num;
+     Int_t event_type,event_length,event_num,run_num,evscaler;
      Int_t run_type;     // CODA run type from prestart event
      UInt_t run_time;     // CODA run time (Unix time) from prestart event
      Int_t recent_event,synchflag,datascan;
@@ -185,7 +188,9 @@ bool THaEvData::IsPhysicsTrigger() const {
 
 inline
 bool THaEvData::IsScalerEvent() const {
-  return (event_type == SCALER_EVTYPE);
+// Either 'event type 140' or events with the synchronous readout of scalers (roc11, etc)
+// A scaler event can also be a physics event.
+  return (event_type == SCALER_EVTYPE || evscaler == 1);
 };
 
 inline
