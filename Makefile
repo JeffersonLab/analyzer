@@ -176,7 +176,8 @@ srcdist:
 		ln -s $(PWD) ../$(NAME)
 		gtar czv -C .. -f ../$(NAME).tar.gz -X .exclude \
 		 -V "JLab/Hall A C++ Analysis Software "$(VERSION)" `date -I`"\
-		 $(NAME)/.exclude $(NAME)/src $(NAME)/examples \
+		 $(NAME)/.exclude $(NAME)/ChangeLog \
+		 $(NAME)/src $(NAME)/examples \
 		 $(NAME)/DB $(NAME)/$(DCDIR) $(NAME)/$(SCALERDIR) \
 		 $(NAME)/Makefile $(NAME)/RELEASE_NOTES $(NAME)/docs
 
@@ -184,7 +185,8 @@ cvsdist:	srcdist
 		cp ../$(NAME).tar.gz ../$(NAME)-cvs.tar.gz
 		gunzip -f ../$(NAME)-cvs.tar.gz
 		gtar rv -C .. -f ../$(NAME)-cvs.tar \
-		 `find . -type d -name CVS 2>/dev/null | sed "s%^\.%$(NAME)%"`
+		 `find . -type d -name CVS 2>/dev/null | sed "s%^\.%$(NAME)%"`\
+		 `find . -type f -name .cvsignore 2>/dev/null | sed "s%^\./%$(NAME)/%"`
 		gzip -f ../$(NAME)-cvs.tar
 
 haDict.C: $(HDR) src/HallA_LinkDef.h

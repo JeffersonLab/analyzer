@@ -6,3 +6,5 @@ NEW
 .#*
 *.o
 *.d
+ha_compiledata.h
+.cvsignore
