@@ -268,6 +268,7 @@ void THaHelicity::ClearEvent() {
      memset(present_helicity, Unknown, 2*sizeof(Int_t));
      memset(validTime, 0, 2*sizeof(Int_t));
      memset(validHel, 0, 2*sizeof(Int_t));
+     memset(fEvtype, 0, 2*sizeof(Int_t));
   }
 }
 

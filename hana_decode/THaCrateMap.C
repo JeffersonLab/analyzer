@@ -178,7 +178,7 @@ void THaCrateMap::incrNslot(int crate) {
      for(crate=0; crate<MAXROC; crate++) {
         nslot[crate] = 0;
         crate_used[crate] = false;
-        crate_type[crate] = "unknown";
+	setCrateType(crate,"unknown"); //   crate_type[crate] = "unknown";
         for(slot=0; slot<MAXSLOT; slot++) {
            slot_used[crate][slot] = false;
            model[crate][slot] = 0;
