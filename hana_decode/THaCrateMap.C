@@ -119,6 +119,7 @@ int THaCrateMap::SetModelSize( int crate, int slot, UShort_t imodel )
     { 3800, 32, 32 },   // Struck 3800 scaler
     { 3801, 32, 32 },   // Struck 3801 scaler
     { 7510, 8, 1024 },   // Struck 7510 ADC (multihit)
+    { 767, 128, 1024 },  // CAEN 767 multihit TDC
     { 0 }
   };
   const ModelPar_t* item = modelpar;
@@ -441,7 +442,14 @@ int THaCrateMap::init_hc(UInt_t tloc) {
     setHeader(16,slot,0xcd000000+((slot-1)<<16));
     setMask(16,slot,0xff0f0000);
   }
-  
+  // ROC17 (Nilangas BB wirechambers)
+  setCrateType(17,"vme");
+  for (slot = 1; slot <= 10; slot++) {
+    setModel(17,slot,767);
+    setHeader(17,slot,0x00400000+((slot-1)<<27));
+    setMask(17,slot,0xf8600000);
+  }
+ 
   return CM_OK;
 }
 
