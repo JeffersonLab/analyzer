@@ -72,7 +72,20 @@ int THaHelicity::GetHelicity() const
 {
 // Get the helicity data for this event (1-DAQ mode).
 // By convention the return codes:   -1 = minus, +1 = plus, 0 = unknown
-     return GetHelicity("R");
+     int lhel,rhel;
+     lhel = -2;
+     rhel = -2;
+     if (validHel[fgRarm]) rhel = GetHelicity("R");
+     if (validHel[fgLarm]) lhel = GetHelicity("L");
+     if (lhel > -2 && rhel > -2) {
+       if (lhel != rhel) {
+	 cout << "THaHelicity::GetHelicity: Inconsistent helicity";
+         cout << " between spectrometers."<<endl;
+       }
+     }
+     if (lhel > -2) return lhel;
+     if (rhel > -2) return rhel;
+     return 0;
 }
 
 //____________________________________________________________________
@@ -125,6 +138,8 @@ void THaHelicity::Init() {
     quad_calibrated     = new Int_t[2]; 
     q1_present_helicity = new Int_t[2];
     hbits               = new Int_t[fgNbits];
+    validTime           = new Int_t[2];
+    validHel            = new Int_t[2];
     fTdavg[0]  = fgTdiff;  // Avg time diff between qrt's
     fTdavg[1]  = fgTdiff;    
     fTtol[0]   = 20;   
@@ -230,7 +245,9 @@ Int_t THaHelicity::Decode( const THaEvData& evdata ) {
 Double_t THaHelicity::GetTime() const {
 // Get the timestamp, a ~105 kHz clock.
   if (fgG0mode == 0) return timestamp;
-  return fTimestamp[fgLarm];
+  if (validTime[fgLarm]) return fTimestamp[fgLarm];
+  if (validTime[fgRarm]) return fTimestamp[fgRarm];
+  return 0;
 }
 
 //____________________________________________________________________
@@ -246,6 +263,8 @@ void THaHelicity::ClearEvent() {
      memset(fTimestamp, 0, 2*sizeof(Double_t));
      memset(present_reading, Unknown, 2*sizeof(Int_t));
      memset(present_helicity, Unknown, 2*sizeof(Int_t));
+     memset(validTime, 0, 2*sizeof(Int_t));
+     memset(validHel, 0, 2*sizeof(Int_t));
   }
 }
 
@@ -273,6 +292,7 @@ void THaHelicity::ReadData( const THaEvData& evdata ) {
    fQrt[fArm] = (data & 0x20) >> 5;
    fGate[fArm] = (data & 0x40) >> 6;
    fTimestamp[fArm] = evdata.GetRawData(myroc,4);
+   validTime[fArm] = 1;
    found = 0;
    index = 5;
    while ( !found ) {
@@ -411,6 +431,7 @@ void THaHelicity::LoadHelicity() {
 // Load the helicity in G0 mode.  
 // If fGate == 0, helicity remains 'Unknown'.
 
+ if ( quad_calibrated[fArm] ) validHel[fArm] = 1;
  if ( !quad_calibrated[fArm]  || fGate[fArm] == 0 ) {
        present_helicity[fArm] = Unknown;
        return;
