@@ -12,8 +12,7 @@
 class THaIdealBeam : public THaBeam {
 
 public:
-  THaIdealBeam( const char* name, const char* description ) :
-    THaBeam( name, description ) {}
+  THaIdealBeam( const char* name, const char* description );
 
   virtual ~THaIdealBeam() {}
   

@@ -16,6 +16,16 @@
 ClassImp(THaIdealBeam)
 
 //_____________________________________________________________________________
+THaIdealBeam::THaIdealBeam( const char* name, const char* description )
+  : THaBeam( name, description )
+{
+  // Constructor. Sets default beam position to (0,0,0) and direction to
+  // (0,0,1) (along z-axis)
+
+  fDirection.SetXYZ(0.0,0.0,1.0);
+}
+
+//_____________________________________________________________________________
 Int_t THaIdealBeam::ReadRunDatabase( const TDatime& date )
 {
   // Query the run database for the position and direction information.
@@ -23,6 +33,9 @@ Int_t THaIdealBeam::ReadRunDatabase( const TDatime& date )
   //        <prefix>.y     (m)
   //        <prefix>.theta (deg)
   //        <prefix>.phi   (deg)
+  //
+  // If no tags exist, position and direction will be set to (0,0,0) 
+  // and (0,0,1), respectively.
 
   Int_t err = THaBeam::ReadRunDatabase( date );
   if( err ) return err;
