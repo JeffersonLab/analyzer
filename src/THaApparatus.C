@@ -45,11 +45,18 @@ THaApparatus::~THaApparatus()
 //_____________________________________________________________________________
 Int_t THaApparatus::AddDetector( THaDetector* pdet )
 {
-  // Add a detector to the internal list.  This method is useful for
-  // quick testing of a new detector class that one doesn't want to
-  // include permanently in an Apparatus yet.
-  // The detector object must be allocated and deleted by the caller.
-  // Duplicate detector names are not allowed.
+  // Add a detector to this apparatus. This is the standard way to 
+  // configure an apparatus for data analysis.
+  //
+  // The name of each detector is important as it defines the names
+  // of all releated global variables, output variables, cuts, database
+  // file names and entries, etc. Consequently, duplicate detector 
+  // names are not allowed. Note that some apparatuses require 
+  // specific names for certain standard detectors, e.g. "s1" for the
+  // first scintillator plane in the HRS, etc.
+  //
+  // The detector object must be allocated by the caller, but will be
+  // deleted by the apparatus.
 
   
   THaDetector* pfound = 
