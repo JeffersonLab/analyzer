@@ -36,6 +36,8 @@
 using namespace std;
 typedef vector<THaOdata*>::size_type Vsiz_t;
 
+const Double_t THaOutput::kBig = 1.e38;
+
 //_____________________________________________________________________________
 THaOutput::THaOutput() :
   fNform(0), fNvar(0), fN1d(0), fN2d(0), fNcut(0),
@@ -96,7 +98,7 @@ Int_t THaOutput::Init( const char* filename )
   fN2d = fH2dname.size();
 
   fForm = new Double_t[fNform];
-
+  
   THaVar *pvar;
   string tinfo;
   vector<string> stemp1,stemp2;
@@ -242,8 +244,12 @@ Int_t THaOutput::Process()
     if (fFormulas[iform])
       if ( !fFormulas[iform]->IsError() ) {
         fForm[iform] = fFormulas[iform]->Eval();
+      } else {
+	fForm[iform] = kBig;
       }
-  }
+    else
+      fForm[iform] = kBig;
+  } 
   THaVar *pvar;
   for (Int_t ivar = 0; ivar < fNvar; ivar++) {
     pvar = fVariables[ivar];
@@ -485,7 +491,7 @@ THaString THaOutput::StripBracket(THaString& var) const
 // should not be fatal because your variable will 
 // still show up in the tree (e.g. L.s1.lt[4] will
 // show up together with L.s1.lt[0],... etc.).
-  Int_t pos1,pos2;
+  UInt_t pos1,pos2;
   THaString open_brack = "[";
   THaString close_brack = "]";
   THaString result = "";

@@ -88,6 +88,9 @@ public:
    virtual Int_t AddToTree(char *name, TObject *tobj); 
 #endif
 
+  static const Double_t kBig;
+  
+
 protected:
 
    virtual Int_t LoadFile( const char* filename );
@@ -142,11 +145,3 @@ private:
 };
 
 #endif
-
-
-
-
-
-
-
-
