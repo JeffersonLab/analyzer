@@ -237,7 +237,10 @@ int THaEvData::gendecode(const int* evbuffer, THaCrateMap* map) {
            ret = scaler_event_decode(evbuffer,map);
 	   goto exit;
          default:
-           goto err;
+	   // Ignore unknown event types. Clients will only analyze
+	   // known event types anyway.
+           ret = HED_OK;
+           goto exit;
        }
      }
  err:
