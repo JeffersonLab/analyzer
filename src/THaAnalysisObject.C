@@ -68,6 +68,14 @@ THaAnalysisObject::~THaAnalysisObject()
 //_____________________________________________________________________________
 Int_t THaAnalysisObject::Begin( THaRun* run )
 {
+  // Method usually called right before the start of the event loop
+  // for 'run'. Begin() is similar to Init(), but since there is a default
+  // Init() implementing standard database and global variable setup,
+  // Begin() can be used to implement start-of-run setup tasks for each
+  // module cleanly without interfering with the standard Init() prodecure.
+  //
+  // The default Begin() method does nothing.
+
   return 0;
 }
 
@@ -153,6 +161,11 @@ Int_t THaAnalysisObject::DefineVarsFromList( const void* list,
 //_____________________________________________________________________________
 Int_t THaAnalysisObject::End( THaRun* run )
 {
+  // Method usually called right after the end of the event loop for 'run'.
+  // May be used by modules to clean up, compute averages, write summaries, etc.
+  //
+  // The default End() method does nothing.
+
   return 0;
 }
 
