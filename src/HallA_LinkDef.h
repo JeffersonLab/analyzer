@@ -8,6 +8,7 @@
 #pragma link C++ global gHaCuts;
 #pragma link C++ global gHaApps;
 #pragma link C++ global gHaScalers;
+#pragma link C++ global gHaPhysics;
 
 #pragma link C++ class THaVar+;
 #pragma link C++ class THaVarList+;
@@ -72,6 +73,7 @@
 #pragma link C++ class THaRawEvent+;
 #pragma link C++ class THaVDCEvent+;
 #pragma link C++ class THaScalerGroup+;
+//#pragma link C++ class THaPhysElectronKine+;
 
 #endif
 
