@@ -601,14 +601,26 @@ Int_t THaAnalyzer::Process( THaRun* run )
 
   // Enable/disable helicity decoding as requested
   fEvData->EnableHelicity( HelicityEnabled() );
+  // Decode scalers only if gHaScalers is not empty
+  fEvData->EnableScalers( (gHaScalers->GetSize()>0) );
+
+  // Informational messages
+  if( fVerbose>1 ) {
+    cout << "Decoder: helicity " 
+	 << (fEvData->HelicityEnabled() ? "enabled" : "disabled")
+	 << endl;
+    cout << "Decoder: scalers " 
+	 << (fEvData->ScalersEnabled() ? "enabled" : "disabled")
+	 << endl;
+    cout << endl << "Starting analysis" << endl;
+  }
+  if( fVerbose>2 && run->GetFirstEvent()>1 )
+    cout << "Skipping " << run->GetFirstEvent() << " events" << endl;
 
   //--- The main event loop.
   TIter next( gHaApps );
   TIter next_scaler( gHaScalers );
   TIter next_physics( gHaPhysics );
-
-  if( fVerbose>2 && run->GetFirstEvent()>1 )
-    cout << "Skipping " << run->GetFirstEvent() << " events\n";
 
   fNev = 0;
   UInt_t nev_physics = 0, nev_analyzed = 0;
@@ -769,29 +781,31 @@ Int_t THaAnalyzer::Process( THaRun* run )
 
     cout << "Processed " << fNev << " events, " 
 	 << nev_analyzed << " data events, " 
-	 << nev_physics << " physics events.\n";
+	 << nev_physics << " physics events. " << endl;
 
-    for (int i = 0; i < kMaxSkip; i++) {
-      if (fSkipCnt[i].count != 0) 
-	cout << "Skipped " << fSkipCnt[i].count
-	     << " events due to " << fSkipCnt[i].reason << endl;
+    if( fVerbose>1 ) {
+      for (int i = 0; i < kMaxSkip; i++) {
+	if (fSkipCnt[i].count != 0) 
+	  cout << "Skipped " << fSkipCnt[i].count
+	       << " events due to " << fSkipCnt[i].reason << endl;
+      }
+
+      // Print scaler statistics
+
+      first = true;
+      next_scaler.Reset();
+      while( THaScalerGroup* theScaler =
+	     static_cast<THaScalerGroup*>( next_scaler() )) {
+	if( !first ) 
+	  cout << endl;
+	else
+	  first = false;
+	theScaler->PrintSummary();
+      }
+      if( !first ) cout << endl;
     }
-
-    // Print scaler statistics
-
-    first = true;
-    next_scaler.Reset();
-    while( THaScalerGroup* theScaler =
-	   static_cast<THaScalerGroup*>( next_scaler() )) {
-      if( !first ) 
-	cout << endl;
-      else
-	first = false;
-      theScaler->PrintSummary();
-    }
-    if( !first ) cout << endl;
     
-    // Print timing statistics
+    // Print timing statistics, if benchmarking enabled
 
     if( fDoBench ) {
       fBench->Print("Prestart");
@@ -822,7 +836,7 @@ Int_t THaAnalyzer::Process( THaRun* run )
   }
 
   // Print cut summary (also to file if one given)
-  if( fVerbose>0 )
+  if( fVerbose>1 )
     PrintSummary(run);
 
   //keep the last run available
