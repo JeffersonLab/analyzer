@@ -152,10 +152,12 @@ Int_t THaDebugModule::Process( const THaEvData& evdata )
   // able to use existing tests.
   if( !fIsSetup ) {
     ParseList();
-    fTest = new THaCut( fName+"_Test", fTestExpr, fName+"_Block" );
-    // Expression error?
-    if( !fTest || fTest->IsZombie()) {
-      delete fTest; fTest = NULL;
+    if( !fTestExpr.IsNull()) {
+      fTest = new THaCut( fName+"_Test", fTestExpr, fName+"_Block" );
+      // Expression error?
+      if( !fTest || fTest->IsZombie()) {
+	delete fTest; fTest = NULL;
+      }
     }
     fIsSetup = true;
   }
