@@ -21,9 +21,9 @@ ClassImp(THaElectronKine)
 
 //_____________________________________________________________________________
 THaElectronKine::THaElectronKine( const char* name, const char* description,
-				  const char* name ) :
-  THaPhysicsModule(name,description), fMA(0.0), 
-  fSpectroName(name), fSpectro(NULL)
+				  const char* spectro, Double_t mass ) :
+  THaPhysicsModule(name,description), fMA(mass), 
+  fSpectroName(spectro), fSpectro(NULL)
 {
   // Normal constructor.
 
@@ -49,8 +49,7 @@ void THaElectronKine::Clear( Option_t* opt )
 //_____________________________________________________________________________
 Int_t THaElectronKine::DefineVariables( EMode mode )
 {
-  // Define/delete standard variables for a spectrometer (tracks etc.)
-  // Can be overridden or extended by derived (actual) apparatuses
+  // Define/delete global variables.
 
   if( mode == kDefine && fIsSetup ) return kOK;
   fIsSetup = ( mode == kDefine );
