@@ -265,12 +265,13 @@ Int_t THaAnalyzer::Process( THaRun& run )
 
 	if( (retval = fOutput->Init()) < 0 ) {
 	  Error( here, "Error initializing THaOutput." );
-	} else {
+	} else if( retval == 1 ) 
+	  retval = 0;  // Ignore re-initialization attempt
+	else {
 	  outputTree = fOutput->GetTree();
-	  if( fEvent ) {
+	  if( fEvent ) 
 	    outputTree->Branch( "Event_Branch", fEvent->IsA()->GetName(), 
 				&fEvent, 16000, 99 );
-	  }
 	}
       }
       if( retval ) {
@@ -409,8 +410,9 @@ Int_t THaAnalyzer::Process( THaRun& run )
        << nev_physics << " physics events.\n";
 
   for (int i = 0; i < fMaxSkip; i++) {
-    if (fSkipCnt[i] != 0) cout << "Skipped " << fSkipCnt[i]
-             << " events due to reason # " << i << endl;
+    if (fSkipCnt[i] != 0) 
+      cout << "Skipped " << fSkipCnt[i]
+	   << " events due to reason # " << i << endl;
   }
 
   // Print scaler statistics
