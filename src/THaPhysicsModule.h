@@ -16,6 +16,7 @@ public:
   
           bool  IsSingleTrack() const { return !IsMultiTrack(); }
           bool  IsMultiTrack()  const { return fMultiTrk; }
+          bool  DataValid()     const { return fDataValid; }
 
   virtual Int_t Process( const THaEvData& ) = 0;
 
@@ -27,7 +28,8 @@ protected:
   THaPhysicsModule( const char* name, const char* description );
   virtual void MakePrefix();
 
-  bool  fMultiTrk;               //Flag for multi-track mode
+  bool  fMultiTrk;               // Flag for multi-track mode
+  bool  fDataValid;              // Data valid
 
   ClassDef(THaPhysicsModule,1)   //ABC for a physics/kinematics module
 };

@@ -29,7 +29,7 @@ using namespace std;
 //_____________________________________________________________________________
 THaPhysicsModule::THaPhysicsModule( const char* name, 
 				    const char* description ) :
-  THaAnalysisObject(name,description), fMultiTrk(false)
+  THaAnalysisObject(name,description), fMultiTrk(false), fDataValid(false)
 {
   // Constructor
 }
