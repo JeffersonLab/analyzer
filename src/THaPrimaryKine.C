@@ -99,7 +99,7 @@ Int_t THaPrimaryKine::Process( const THaEvData& evdata )
   if( !IsOK() || !gHaRun ) return -1;
 
   THaTrackInfo* trkifo = fSpectro->GetTrackInfo();
-  if( !trkifo ) return 1;
+  if( !trkifo || !trkifo->IsOK() ) return 1;
 
   Double_t p_in  = gHaRun->GetParameters()->GetBeamP();
 

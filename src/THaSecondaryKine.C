@@ -141,7 +141,10 @@ Int_t THaSecondaryKine::Process( const THaEvData& evdata )
 
   // Tracking information from the secondary spectrometer
   THaTrackInfo* trkifo = fSpectro->GetTrackInfo();
-  if( !trkifo ) return 1;
+  if( !trkifo || !trkifo->IsOK() ) return 1;
+
+  // Require valid input data
+  if( !fPrimary->DataValid() ) return 2;
 
   // Measured momentum of secondary particle X in lab
   const TVector3& pX3 = trkifo->GetPvect();
