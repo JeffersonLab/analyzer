@@ -67,6 +67,7 @@ public:
 // Loads CODA data evbuffer using private crate map "cmap" (recommended)
      int LoadEvent(const int* evbuffer);          
      void PrintSlotData(int crate, int slot);
+     void PrintOut();
      static const int HED_OK;
      static const int HED_ERR;
 
@@ -263,3 +264,13 @@ int THaEvData::LoadEvent(const int* evbuffer) {
 };
 
 #endif 
+
+
+
+
+
+
+
+
+
+

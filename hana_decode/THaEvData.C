@@ -188,6 +188,10 @@ int THaEvData::gendecode(const int* evbuffer, THaCrateMap& map) {
      }
 };
      
+void THaEvData::PrintOut() {
+   dump(buffer);
+};
+
 
 void THaEvData::dump(const int* evbuffer) {
    int len = evbuffer[0]+1;  
