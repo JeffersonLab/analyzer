@@ -18,7 +18,7 @@
 
 #include "Rtypes.h"
 #include "TString.h"
-#define CODA_ERROR -1     // Generic error return code
+#define CODA_ERROR -128   // Generic error return code
 #define CODA_OK  0        // Means return is ok.
 #define MAXEVLEN 100005   // Maximum size of events
 #define CODA_VERBOSE 1    // Errors explained verbosely (recommended)

@@ -77,7 +77,7 @@ public:
 // Utility function for hexdumping any sort of data
      static void hexdump(const char* cbuff, size_t len);
 
-     enum { HED_OK = 1, HED_ERR = -1};
+     enum { HED_OK = 0, HED_ERR = -127};
      enum { MAX_PSFACT = 12 };
 
 private:
