@@ -812,7 +812,6 @@ THaAnalysisObject* THaAnalysisObject::FindModule( const char* name,
   // Locate the object 'name' in the global list of Analysis Modules 
   // and check if it inherits from 'classname' (if given), and whether 
   // it is properly initialized.
-  // By default, classname = "THaApparatus" and list = gHaApps.
   // Return pointer to valid object, else return NULL and set fStatus.
 
   static const char* const here = "FindModule()";

@@ -13,7 +13,7 @@
 #include <string>
 #include <cstdio>
 
-class THaEvData;
+class THaEvData; //needed by derived classes
 class TDatime;
 class TList;
 struct VarDef;
