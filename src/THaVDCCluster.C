@@ -191,7 +191,7 @@ void THaVDCCluster::FitTrack()
 void THaVDCCluster::Clear( const Option_t* opt )
 {
   // Clears the contents of the cluster
-  for (int i = 0; i < fSize; i++)
+  for (int i = 0; i < MAX_SIZE; i++)
     fHits[i] = NULL;
   fSize  = 0;                    // Size of cluster
   fSlope = fSigmaSlope = 0.0;    // Slope and error in slope of track
