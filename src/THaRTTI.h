@@ -37,7 +37,9 @@ public:
   const char*  GetSubscript()   const { return fSubscript.Data(); }
   VarType      GetType()        const { return fType; }
   Bool_t       IsArray()        const { return (fArrayType != kScalar); }
-  Bool_t       IsObject()       const { return (fType == kObject); }
+  Bool_t       IsObject()       const { return (fType == kObject || 
+						fType == kObjectP ||
+						fType == kObject2P ); }
   Bool_t       IsPointer()      const;
   Bool_t       IsValid()        const { return (fOffset != -1); }
   virtual void Print( Option_t* opt="" ) const;
