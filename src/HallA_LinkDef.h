@@ -42,6 +42,7 @@
 #pragma link C++ class THaShower;
 #pragma link C++ class THaEpicsData;
 #pragma link C++ class THaTrack;
+#pragma link C++ class THaTrackID;
 #pragma link C++ class THaPIDinfo;
 #pragma link C++ class THaParticleInfo;
 #pragma link C++ class THaMatrix;
@@ -58,6 +59,8 @@
 #pragma link C++ class THaVDCTimeToDistConv;
 #pragma link C++ class THaVDCT0CalTable;
 #pragma link C++ class THaVDCAnalyticTTDConv;
+#pragma link C++ class THaVDCTrackID;
 #pragma link C++ class THaRTTI;
 
 #endif
+

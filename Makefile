@@ -93,11 +93,11 @@ SRC           = src/THaFormula.C src/THaVar.C src/THaVarList.C src/THaCut.C \
 		src/THaMatrix.C src/THaArrayString.C \
 		src/THaScintillator.C src/THaShower.C \
 		src/THaTotalShower.C src/THaCherenkov.C \
-		src/THaEvent.C src/THaRawEvent.C \
+		src/THaEvent.C src/THaRawEvent.C src/THaTrackID.C \
 		src/THaVDC.C \
 		src/THaVDCPlane.C src/THaVDCUVPlane.C src/THaVDCUVTrack.C \
 		src/THaVDCWire.C src/THaVDCHit.C src/THaVDCCluster.C \
-		src/THaVDCTimeToDistConv.C \
+		src/THaVDCTimeToDistConv.C src/THaVDCTrackID.C \
                 src/THaVDCAnalyticTTDConv.C src/THaVDCT0CalTable.C
 
 OBJ           = $(SRC:.C=.o)
