@@ -100,6 +100,8 @@ THaScaler::THaScaler( const char* bankgr ) {
   rcs1    = new THaScalerBank("rcs1");   AddBank(rcs1);
   rcs2    = new THaScalerBank("rcs2");   AddBank(rcs2);
   rcs3    = new THaScalerBank("rcs3");   AddBank(rcs3);
+  dvcscalo1  = new THaScalerBank("dvcscalo1");   AddBank(dvcscalo1);
+  dvcscalo2  = new THaScalerBank("dvcscalo2");   AddBank(dvcscalo2);
   edtm    = new THaScalerBank("edtm");   AddBank(edtm);
   nplus   = new THaNormScaler("nplus");  AddBank(nplus);
   nminus  = new THaNormScaler("nminus"); AddBank(nminus);
@@ -129,6 +131,8 @@ THaScaler::~THaScaler() {
   delete rcs1;
   delete rcs2;
   delete rcs3;
+  delete dvcscalo1;
+  delete dvcscalo2;
   delete edtm;
   delete nplus;
   delete nminus;
@@ -208,6 +212,8 @@ Int_t THaScaler::Init(const char* thetime )
   }
   header_rcs = 0xbbc00000;
   cratenum_rcs = 9;
+  header_calo = 0xd0c00000;
+  cratenum_calo = 9;
   cratenum_evleft = 11;   // Synchronous readout from roc11
   header_evleft = 0xabc00000;  
   cratenum_evright = 10;   // Synchronous readout from roc10
@@ -262,13 +268,20 @@ Int_t THaScaler::InitMap(string bankgrp) {
     vme_port = 0;
   }
 
-// Want to add another scaler bank ?  Imitate 'rcs'
+// Want to add another scaler bank ?  Imitate 'rcs' or (better) 'dvcs'
   if (bankgrp == "RCS" || bankgrp == "rcs" ) {
     crate = cratenum_rcs; 
     header = header_rcs;
     vme_server = SERVER_RCS;
     vme_port = PORT_RCS;
     clockrate = 10000;
+  }
+  if (bankgrp == "DVCS_CALO" || bankgrp == "dvcs_calo" ) {
+    crate = cratenum_calo; 
+    header = header_calo;
+    vme_server = SERVER_CALO;
+    vme_port = PORT_CALO;
+    clockrate = 105000;
   }
 
   if (crate == -1) {
@@ -464,6 +477,7 @@ Int_t THaScaler::LoadDataOnline(const char* server, int port) {
 
   int   sFd;      //  socket file descriptor 
   int i, k, slot, nchan, ntot, sca;
+  int nRead, nRead1;
   struct request myRequest;           //  request to send to server 
   struct request vmeReply;            //  reply from server
   struct rcsrequest rcsRequest;
@@ -490,17 +504,26 @@ Int_t THaScaler::LoadDataOnline(const char* server, int port) {
   }
 
 // send request to server, read reply
-  if ( crate != cratenum_rcs ) { 
+  if ( bankgroup != "rcs" ) { 
     myRequest.reply = 1;
     if(write(sFd, (char *)&myRequest, sizeof(myRequest)) == -1) {
        cout << "ERROR: THaScaler: LoadDataOnline: Cannot write "<<endl;
        cout << "request to VME server"<<endl;
        return SCAL_ERROR;
     }
-    if (read (sFd, (char *)&vmeReply, sizeof(vmeReply)) < 0) {
-       cout << "ERROR: THaScaler: LoadDataOnline: Error reading "<<endl;
-       cout << " from VME server"<<endl;
-       return SCAL_ERROR;
+    nRead  =read (sFd, (char *)&vmeReply, sizeof(vmeReply));
+    if(nRead < 0) {
+       printf("ERROR: THaScaler: reading from scaler server\n");
+       exit(0);
+    }
+    while (nRead < sizeof(vmeReply)) {
+       nRead1 = read (sFd, ((char *) &vmeReply)+nRead,
+                    sizeof(vmeReply)-nRead);
+       if(nRead1 < 0) {
+	 cout << "Error from reading from scaler server\n"<<endl;
+         return SCAL_ERROR;
+       }
+       nRead += nRead1;
     }
   } else {
     rcsRequest.reply = 1;
@@ -520,7 +543,7 @@ Int_t THaScaler::LoadDataOnline(const char* server, int port) {
   LoadPrevious();
   Clear();
 
-  if (crate != cratenum_rcs) {
+  if (bankgroup != "rcs") {
     for (k = 0 ; k < 16*MAXBLK; k++) {
        vmeReply.ibuf[k] = ntohl(vmeReply.ibuf[k]);
     }
@@ -538,27 +561,30 @@ Int_t THaScaler::LoadDataOnline(const char* server, int port) {
       return SCAL_ERROR;
     }
     nchan = 0;
-    if (crate != cratenum_rcs) {
+    if (bankgroup != "rcs") {
        if (vmeReply.message[slot]=='0') nchan = 16;
        if (vmeReply.message[slot]=='1') nchan = 32;
     } else {  
        if (slot < 3) nchan = 32;  // assume only 3 slots for RCS, each 32 channels.
     }
     if (nchan == 0) goto onldone;
-// FIXME: Kluge for R-arm until I figure out something better. Use 'jslot' to force correct order.
+// FIXME: Kluge for R-arm until I figure out something better. Use 'jslot' to force correct order.  
     if (vme_port == PORT_RIGHT) {
-       if (slot == 1) jslot = 2;  // because ceb1 skipped
-       if (slot == 2) jslot = 3;
-       if (slot == 3) jslot = 5;  // because ceb4 skipped
-       if (slot == 4) jslot = 6;
-       if (slot == 5) jslot = 7;
-       if (slot == 6) jslot = 8;
-       if (slot == 7) jslot = 9;
+       if (slot == 1) jslot = 7; 
+       if (slot == 2) jslot = 8;
+       if (slot == 3) jslot = 9; 
+       if (slot == 4) jslot = 1;
+       if (slot == 5) jslot = 2;
+       if (slot == 6) jslot = 3;
+       if (slot == 7) jslot = 4;
+       if (slot == 8) jslot = 5;
+       if (slot == 9) jslot = 6;
     }
     for (k = 0; k < nchan; k++) {
       i = jslot*SCAL_NUMCHAN + k;
       if (i < SCAL_NUMBANK*SCAL_NUMCHAN && ntot < 16*MAXBLK) {
- 	 if (crate != cratenum_rcs) {
+ 	 if (bankgroup != "rcs") {
+	   // note, it was already "ntohl" above
             rawdata[i] = vmeReply.ibuf[ntot++];
 	 } else {
 	   if (ntot < 16*RCSMAXBLK) rawdata[i] = rcsReply.ibuf[ntot++];
@@ -579,7 +605,7 @@ onldone:
      for (k = 0; k < ntot/16; k++) {
        sca = 2*k;
        for (i = 0; i < 2; i++) {
- 	  if (crate != cratenum_rcs) {
+ 	  if (bankgroup != "rcs") {
              printf ("%3d :  %8d %8d %8d %8d %8d %8d %8d %8d \n",8*(sca+i)+1,
              (int)vmeReply.ibuf[(sca+i)*8],(int)vmeReply.ibuf[(sca+i)*8+1],
              (int)vmeReply.ibuf[(sca+i)*8+2],(int)vmeReply.ibuf[(sca+i)*8+3],
@@ -711,6 +737,10 @@ Int_t THaScaler::GetScaler(const char* det, const char* pm, Int_t chan,
       return rcs2->GetData(chan,histor);   
   } else if (detector == "rcs3" || detector == "RCS3") {
       return rcs3->GetData(chan,histor);   
+  } else if (detector == "dvcscalo1" || detector == "DVCSCALO1") {
+      return dvcscalo1->GetData(chan,histor);   
+  } else if (detector == "dvcscalo2" || detector == "DVCSCALO2") {
+      return dvcscalo2->GetData(chan,histor);   
   } else if (detector == "edtm" || detector == "EDTM") {
       return edtm->GetData(chan,histor);   
   }

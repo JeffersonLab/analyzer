@@ -40,6 +40,8 @@
 #include "THaScalerBank.h"
 #include "THaNormScaler.h"
 
+using namespace std;
+
 #ifndef ROOTPRE3
 ClassImp(THaScalerGui)
 #endif
@@ -81,7 +83,12 @@ Int_t THaScalerGui::InitPlots() {
        p != scalerbanks.end(); p++) {
      THaScalerBank *scbank = *p;
      if ( !scbank->location.valid() ) continue;
-     setRcsNames(ipage, scbank);
+     //    setRcsNames(ipage, scbank);
+     setCaloNames(ipage, scbank);
+
+// skip displaying "norm" for dvcs (it is dvcscalo1).  This is ugly.
+     if(scaler->GetCrate()==9 && (strcmp(scbank->location.short_desc.c_str(),"norm") == 0)) continue;
+
      TGCompositeFrame *tgcf = fTab->AddTab(scbank->name.c_str());
 #ifdef CHGCOLORS
      tgcf->ChangeBackground(FRAME1_COLOR);
@@ -89,6 +96,10 @@ Int_t THaScalerGui::InitPlots() {
 // FIXME: Better layout decisions (e.g. no strcmp's).
      int nrow = 3;  int isnorm = 0;
      if (ipage >=0 && ipage < SCAL_NUMBANK) yboxsize[ipage] = YBOXSMALL;
+     if ( strcmp(scbank->location.short_desc.c_str(),"s2") == 0) {
+         nrow = 8;
+         if (ipage >= 0 && ipage < SCAL_NUMBANK) yboxsize[ipage] = YBOXBIG;
+     }
      if ( (strcmp(scbank->location.short_desc.c_str(),"norm") == 0) ||
           (strcmp(scbank->location.short_desc.c_str(),"nplus") == 0) ||
           (strcmp(scbank->location.short_desc.c_str(),"nminus") == 0) ) {
@@ -273,7 +284,7 @@ Bool_t THaScalerGui::ProcessMessage(Long_t msg, Long_t parm1, Long_t) {
 
 void THaScalerGui::Help() {
   fHelpDialog = new TRootHelpDialog(this,"BRIEF  HELP  INSTRUCTIONS",350,250);
-  fHelpDialog->SetText("xscaler++ treats the data from one bank\nof scalers (e.g. L-arm, R-arm, RCS bank, etc).\nUsage:\nxscaler [bankgroup]\nif bankgroup not specified it assumes RCS\notherwise bankgroup=`Left' or `Right'\nTo view a recent history of updates, press on\nthe button corresponding to the channel and\na canvas will pop up.\nClick ``Show Rates'' or ``Show Counts'' to switch\nbetween rate display and accumulated counts.\n\nSupport: Robert Michaels, JLab Hall A\nDocumentation:\nhallaweb.jlab.org/equipment/daq/THaScaler.html");
+  fHelpDialog->SetText("xscaler++ treats the data from one bank\nof scalers (e.g. L-arm, R-arm, DVCS Calo bank, etc).\nUsage:\nxscaler [bankgroup]\nTo view a recent history of updates, press on\nthe button corresponding to the channel and\na canvas will pop up.\nClick ``Show Rates'' or ``Show Counts'' to switch\nbetween rate display and accumulated counts.\n\nSupport: Robert Michaels, JLab Hall A\nDocumentation:\nhallaweb.jlab.org/equipment/daq/THaScaler.html");
   fHelpDialog->Popup();
 };
 
@@ -401,6 +412,28 @@ void THaScalerGui::setRcsNames(int ipage, THaScalerBank *scbank) {
       } else {
           sprintf(cname,"gsum%d",i+9);
       }
+      scbank->SetChanName(i,cname);
+    }
+  }
+};
+
+void THaScalerGui::setCaloNames(int ipage, THaScalerBank *scbank) {
+  if (scaler->GetCrate() != 9) return;
+  int i;
+  static char cname[10];
+  if (ipage == 0) {
+    for (i = 0; i < 32; i++) {
+      if (i+1 < 10) {
+          sprintf(cname,"calo0%d",i+1);
+      } else {
+          sprintf(cname,"calo%d",i+1);
+      }
+      scbank->SetChanName(i,cname);
+    }
+  }
+  if (ipage == 1) {
+    for (i = 0; i < 32; i++) {
+      sprintf(cname,"calo%d",i+33);
       scbank->SetChanName(i,cname);
     }
   }

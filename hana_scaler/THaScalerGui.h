@@ -32,8 +32,10 @@
 #include "TTimer.h"
 #include "TNtuple.h"
 #include "TCanvas.h"
+#include "TCut.h"
 #include "TRootHelpDialog.h"
 #include "THaScaler.h"
+#include <map>
 
 class THaScaler;
 class THaScalerBank;
@@ -52,8 +54,8 @@ private:
    TGTab *fTab;
    TGCompositeFrame *tgcf;
    TGTextBuffer *fDataBuff;
-   map<Int_t, TGTextEntry *> fDataEntry;
-   map<Int_t, TNtuple*> fDataHistory;
+   std::map<Int_t, TGTextEntry *> fDataEntry;
+   std::map<Int_t, TNtuple*> fDataHistory;
    TTimer *timer;
    std::vector < THaScalerBank* > scalerbanks;
    TGCheckButton *fRateSelect, *fCountSelect;
@@ -64,6 +66,7 @@ private:
    void popPlot(int index);
    THaScaler *scaler;
    void setRcsNames(int ipage, THaScalerBank *bank);
+   void setCaloNames(int ipage, THaScalerBank *bank);
    void clearNtuples();
    void TestInput();          // Test function
    void Help();
