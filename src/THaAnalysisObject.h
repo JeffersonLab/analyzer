@@ -8,6 +8,8 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "TNamed.h"
+#include <vector>
+#include <string>
 
 class TDatime;
 struct VarDef;
@@ -73,6 +75,9 @@ protected:
      { return kOK; }
   virtual Int_t        RemoveVariables()
      { return DefineVariables( kDelete ); }
+
+  static vector<string> GetDBFileList( const char* name, const TDatime& date,
+				       const char* here = "GetDBFileList()" );
 
   //Only derived classes may construct me
   THaAnalysisObject() : fPrefix(NULL), fStatus(kNotinit), 

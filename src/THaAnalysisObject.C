@@ -28,9 +28,7 @@
 #include <algorithm>
 #include <string>
 #include <vector>
-#ifdef WITH_DEBUG
 #include <iostream>
-#endif
 
 ClassImp(THaAnalysisObject)
 
@@ -187,57 +185,86 @@ THaAnalysisObject::EStatus THaAnalysisObject::Init( const TDatime& date )
 
 //_____________________________________________________________________________
 FILE* THaAnalysisObject::OpenFile( const char *name, const TDatime& date,
-				   const char *here = "OpenFile()",
-				   const char *filemode = "r", 
-				   const int debug_flag = 1
-				   )
+				   const char *here, const char *filemode, 
+				   const int debug_flag )
 {
-  // Open database file.
+  // Open database file and return a pointer to the C-style file descriptor.
 
   // FIXME: Try to write this in a system-independent way. Avoid direct Unix 
   // system calls, call ROOT's OS interface instead.
 
-  char *buf = NULL, *dbdir = NULL;
+  FILE* fi = NULL;
+  vector<string> fnames;
+
+  fnames = GetDBFileList( name, date, here );
+  if( !fnames.empty() ) {
+    vector<string>::iterator it = fnames.begin();
+    do {
+#ifdef WITH_DEBUG
+      if( debug_flag>0 ) {
+	cout << "<" << here << ">: Opening database file " << *it;
+      }
+#endif
+      // Open the database file
+      fi = fopen( (*it).c_str(), filemode);
+      
+#ifdef WITH_DEBUG
+      if( debug_flag>0 ) 
+	if( !fi ) cout << " ... failed" << endl;
+	else      cout << " ... ok" << endl;
+#endif
+    } while ( !fi && ++it != fnames.end() );
+  }
+  if( !fi )
+    cerr<<"<"<<here<<">: Cannot open database file for prefix "<<name<<endl;
+
+  return fi;
+}
+
+//_____________________________________________________________________________
+vector<string> THaAnalysisObject::GetDBFileList( const char* name, 
+						 const TDatime& date,
+						 const char* here )
+{
+  // Return the database file searchlist as a vector of strings.
+  // The file names are relative to the current directory.
+
+  // FIXME: Try to write this in a system-independent way. Avoid direct Unix 
+  // system calls, call ROOT's OS interface instead.
+
+  char *dbdir = NULL;
   struct dirent* result;
   DIR* dir;
-  size_t size, pos;
-  FILE* fi = NULL;
-  vector<string> time_dirs;
-  vector<string>::iterator it;
-  string item, cwd, filename;
+  size_t pos;
+  vector<string> time_dirs, dnames, fnames;
+  vector<string>::iterator it, thedir;
+  string item, filename;
   Int_t item_date;
   const string defaultdir("DEFAULT");
-  bool have_defaultdir = false, retried = false, found = false;
+  bool have_defaultdir = false, found = false;
 
-  // Save current directory name
+  // Build search list of directories
+  if( (dbdir = getenv("DB_DIR")))
+    dnames.push_back( dbdir );
+  dnames.push_back( "DB" );
+  dnames.push_back( "db" );
+  dnames.push_back( "." );
 
-  errno = 0;
-  size = pathconf(".",_PC_PATH_MAX);
-  if( size<=0 || errno ) goto error;
-  buf = new char[ size ];
-  if( !buf || !getcwd( buf, size )) goto error;
-  cwd = buf;
+  // Try to open the database directories in the search list.
+  // The first directory that can be opened is taken to be the database
+  // directory. Subsequent directories are ignored.
+  
+  it = dnames.begin();
+  while( !(dir = opendir( (*it).c_str() )) && (++it != dnames.end()) );
 
-  // If environment variable DB_DIR defined, look for database files there,
-  // otherwise look in subdirectories "DB" and "db" in turn, then look in the
-  // current directory, whichever is found first.
+  // None of the directories can be opened?
+  if( it == dnames.end() ) goto error;
 
-  if( (dbdir = getenv("DB_DIR")) && chdir( dbdir ))
-    goto error;
-  else if ( (chdir("DB") == 0) || (chdir("db") == 0) ) {
-    ;
-  }
+  // Pointer to database directory string
+  thedir = it;
 
-  // If any subdirectories named "YYYYMMDD" exist, where YYYY, MM, and DD are
-  // digits, assume that they contain time-dependent database files. Select 
-  // the directory matching the timestamp 'date' of the current run. 
-  // If no such directories exist, or none is valid for the give date, 
-  // but "DEFAULT" exists, use it. 
-  // Otherwise, use the current directory to look for database files.
-
-  // Get names of all subdirectories matching the YYYYMMDD pattern
-
-  if( !(dir = opendir("."))) goto error;
+  // In the database directory, get the names of all subdirectories matching 
+  // a YYYYMMDD pattern.
   errno = 0;
   while( (result = readdir(dir)) ) {
     item = result->d_name;
@@ -252,7 +279,7 @@ FILE* THaAnalysisObject::OpenFile( const char *name, const TDatime& date,
   if( errno )  goto error;
   closedir(dir);
 
-  // If any found, select the one that corresponds to the given date.
+  // Search a date-coded subdirectory that corresponds to the requested date.
   if( time_dirs.size() > 0 ) {
     sort( time_dirs.begin(), time_dirs.end() );
     for( it = time_dirs.begin(); it != time_dirs.end(); it++ ) {
@@ -270,66 +297,36 @@ FILE* THaAnalysisObject::OpenFile( const char *name, const TDatime& date,
 	break;
       }
     }
-    // If there are YYYMMDD subdirectories, one of them must be valid for the
-    // given date.
-    if( !found && !have_defaultdir ) {
-      cerr<<here<<"Time-dependent database subdirectories exist, but "
-    	  <<"none is valid for the requested date: "<<date.AsString()<<endl;
-      goto exit;
-    }
-    if( found && chdir( (*it).c_str()) ) {
-      cerr<<here<<": cannot open database directory"<<(*it).c_str()<<endl;
-      goto exit;
-    }
   }
-  if( !found && have_defaultdir && chdir( defaultdir.c_str()) ) {
-    cerr<<here<<": cannot open database directory"<<defaultdir.c_str()<<endl;
-    goto exit;
-  }
-  if( !getcwd(buf,size)) goto error;
 
   // Construct the database file name. It is of the form db_<prefix>.dat.
   // Subdetectors use the same files as their parent detectors!
   filename = "db_";
-  filename.append(name);
-  filename.append("dat");
+  filename += name;
+  // Make sure that "name" ends with a dot. If not, add one.
+  if( filename[ filename.length()-1 ] != '.' )
+    filename += '.';
+  filename += "dat";
 
- retry:
-#ifdef WITH_DEBUG
-  if( debug_flag>0 ) {
-    cout << "<THaAnalysisObject::" << here 
-	 << ">: Opening database file " << buf << "/" << filename;
-  }
-#endif
-  // Open the database file
-  fi = fopen( filename.c_str(), filemode);
+  // Build the searchlist of file names in the order:
+  // <date-dir>/filename DEFAULT/filename ./filename
 
-  // If database cannot be opened, but "DEFAULT" exists, and we are not already in 
-  // "DEFAULT", try opening the file in "DEFAULT" before failing.
-#ifdef WITH_DEBUG
-  if( debug_flag>0 ) 
-    if( !fi ) cout << " ... failed" << endl;
-    else      cout << " ... ok" << endl;
-#endif
-  if( !fi && !retried && found && have_defaultdir && chdir( ".." ) == 0
-      && chdir( defaultdir.c_str()) == 0 ) {
-    if( !getcwd(buf,size)) goto error;
-    retried = true;
-    goto retry;
+  if( found ) {
+    item = *thedir + "/" + *it + "/" + filename;
+    fnames.push_back( item );
   }
-  if( !fi )
-    cerr<<here<<": Cannot open database file "<<buf<<filename.c_str()<<"."<<endl;
+  if( have_defaultdir ) {
+    item = *thedir + "/" + defaultdir + "/" + filename;
+    fnames.push_back( item );
+  }
+  fnames.push_back( *thedir + "/" + filename );
   goto exit;
 
  error:
   perror(here);
 
  exit:
-  if( cwd.length() > 0 ) 
-    chdir( cwd.c_str() );
-  delete [] buf;
-  return fi;
-
+  return fnames;
 }
 
 //_____________________________________________________________________________
