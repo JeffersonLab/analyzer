@@ -42,10 +42,8 @@ protected:
   Double_t    fTime;     // Time corrected for time offset of wire (s)
   Double_t    fDist;     // (Perpendicular) Drift Distance
   
-  
   THaVDCHit( const THaVDCHit& ) {}
   THaVDCHit& operator=( const THaVDCHit& ) { return *this; }
-
   
   ClassDef(THaVDCHit,0)             // VDCHit class
 };

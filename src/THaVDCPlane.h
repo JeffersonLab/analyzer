@@ -65,13 +65,12 @@ protected:
   TClonesArray * fWires;     // Wires
   TClonesArray * fHits;      // Fired wires 
   TClonesArray * fClusters;  // Clusters
-
+  
   Int_t fNWiresHit;  // Number of wires that were hit
 
   THaVDCUVPlane * fUVPlane;// Ptr to UV plane owning this plane
 
-// The following data are read from database in function THaVDCPlane::Init(),
-// if personal database file "db_VDC.dat" exists in current directory
+  // The following parameters are read from database.
  
   Int_t fNMaxGap;            // Max gap in a cluster
   Int_t fMinTime, fMaxTime;  // Min and Max limits of TDC times for clusters
@@ -84,15 +83,16 @@ protected:
   Double_t fTDCRes;   // TDC Resolution ( s / channel)
   Double_t fDriftVel; // Drift velocity in the wire plane (m/s)
 
-  void Clear();
- 
-  THaVDCPlane( const THaVDCPlane& ) {}
-  THaVDCPlane& operator=( const THaVDCPlane& ) { return *this; }
- 
+  void  Clear();
+
   virtual void  MakePrefix();
   virtual Int_t ReadDatabase( FILE* file, const TDatime& date );
   virtual Int_t SetupDetector( const TDatime& date );
 
+  // Prevent copying and assignment
+  THaVDCPlane( const THaVDCPlane& ) {}
+  THaVDCPlane& operator=( const THaVDCPlane& ) { return *this; }
+ 
   ClassDef(THaVDCPlane,0)             // VDCPlane class
 };
 

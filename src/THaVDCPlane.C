@@ -35,10 +35,13 @@ THaVDCPlane::THaVDCPlane( const char* name, const char* description,
 {
   // Constructor
 
-  // Since TCloneArrays can resize, the size here is fairly unimportant
-  fHits  = new TClonesArray("THaVDCHit", 50);
-  fClusters = new TClonesArray("THaVDCCluster", 10);
+  // Initial allocations for hit and cluster arrays.
+  fMaxHit   = 20;
+  fMaxClust = 5;
 
+  // Since TCloneArrays can resize, the size here is fairly unimportant
+  fHits     = new TClonesArray("THaVDCHit", fMaxHit );
+  fClusters = new TClonesArray("THaVDCCluster", fMaxClust );
 }
 
 //_____________________________________________________________________________
@@ -173,7 +176,7 @@ Int_t THaVDCPlane::SetupDetector( const TDatime& date )
   if( fIsSetup ) return kOK;
   fIsSetup = true;
 
-
+  
 
   return kOK;
 }
@@ -362,6 +365,5 @@ Int_t THaVDCPlane::FitTracks()
   return 0;
 
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
