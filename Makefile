@@ -132,6 +132,7 @@ libdc.so:
 
 libscaler.so:
 		$(MAKE) -C $(SCALERDIR)
+		-ln -s ../$(SCALERDIR)/scaler.map DB/
 
 clean:
 		$(MAKE) -C $(DCDIR) clean
