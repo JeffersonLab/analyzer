@@ -15,6 +15,8 @@ class THaVDC;
 
 class THaVDCUVPlane : public THaSubDetector {
 
+  friend class THaVDCUVTrack;
+
 public:
 
   THaVDCUVPlane( const char* name="", const char* description="",

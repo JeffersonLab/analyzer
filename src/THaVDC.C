@@ -467,22 +467,16 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
     pu->SetSlope(mu);
     pv->SetSlope(mv);
 
-    // Angles
-    Double_t dx = partner->GetX() - track->GetX();
-    Double_t dy = partner->GetY() - track->GetY();
-    Double_t detTheta = dx / fSpacing;
-    Double_t detPhi   = dy / fSpacing;
-
-    track->SetTheta(detTheta);
-    track->SetPhi(detPhi);
-    partner->SetTheta(detTheta);
-    partner->SetPhi(detPhi);
+    // Recalculate the UV track's detector coordinates using the global
+    // U,V slopes.
+    track->CalcDetCoords();
+    partner->CalcDetCoords();
 
 #ifdef WITH_DEBUG
     if( fDebug>2 )
       cout << "Global track parameters: " 
 	   << mu << " " << mv << " " 
-	   << detTheta << " " << detPhi 
+	   << track->GetTheta() << " " << track->GetPhi()
 	   << endl;
 #endif
 

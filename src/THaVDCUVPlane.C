@@ -188,29 +188,10 @@ Int_t THaVDCUVPlane::CalcUVTrackCoords()
   
   Int_t nUVTracks = GetNUVTracks();
   for (int i = 0; i < nUVTracks; i++) {
-
     THaVDCUVTrack* track  = GetUVTrack(i);
-    THaVDCCluster* uClust = track->GetUCluster();
-    THaVDCCluster* vClust = track->GetVCluster();
-    
-    Double_t u    = uClust->GetIntercept(); // Intercept for U plane
-    Double_t vInt = vClust->GetIntercept(); // Intercept for V plane
-    Double_t dz   = fSpacing;               // Space between U&V planes
-    Double_t mu   = uClust->GetSlope();     // Change in u / change in z_det
-    Double_t mv   = vClust->GetSlope();     // Change in v / change in z_det
-    
-    // Project vInt into the u plane
-    Double_t v = vInt - mv * dz;
-
-    // Now calculate track parameters in the detector cs
-    Double_t detX     = (u*fSin_v - v*fSin_u) / fSin_vu;
-    Double_t detY     = (v*fCos_u - u*fCos_v) / fSin_vu;
-    Double_t detTheta = (mu*fSin_v - mv*fSin_u) / fSin_vu;
-    Double_t detPhi   = (mv*fCos_u - mu*fCos_v) / fSin_vu;
-
-    track->Set( detX, detY, detTheta, detPhi, fOrigin );
+    if( track )
+      track->CalcDetCoords();
   }
-
   return nUVTracks;
 }
 

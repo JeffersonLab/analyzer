@@ -16,14 +16,14 @@ class THaTrack;
 
 class THaVDCUVTrack : public THaCluster {
 
-private:
-
 public:
   THaVDCUVTrack() :
     fUClust(NULL), fVClust(NULL), fUVPlane(NULL), fTrack(NULL), fPartner(NULL),
     fX(0.0), fY(0.0), fTheta(0.0), fPhi(0.0) {}
 
   virtual ~THaVDCUVTrack() {}
+
+  void CalcDetCoords();
 
   // Get and Set Functions  
   THaVDCCluster* GetUCluster() const { return fUClust; }
@@ -48,7 +48,7 @@ public:
   void Set( Double_t x, Double_t y, Double_t theta, Double_t phi )
   { fX = x; fY = y; fTheta = theta; fPhi = phi; }
   void Set( Double_t x, Double_t y, Double_t theta, Double_t phi,
-	    TVector3& offset );
+	    const TVector3& offset );
 
 
 protected:
@@ -74,7 +74,7 @@ protected:
 //-------------------- inlines -------------------------------------------------
 inline
 void THaVDCUVTrack::Set( Double_t x, Double_t y, Double_t theta, Double_t phi,
-			 TVector3& offset )
+			 const TVector3& offset )
 {
   // Set coordinates for this track. Also set absolute position vector.
 
