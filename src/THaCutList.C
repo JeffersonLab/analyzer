@@ -21,6 +21,8 @@
 #include <cstring>
 #include <strstream.h>
 
+using namespace std;
+
 const char* const THaCutList::kDefaultBlockName = "Default";
 const char* const THaCutList::kDefaultCutFile   = "cutdef.dat";
 
@@ -37,7 +39,7 @@ void THaHashList::PrintOpt( Option_t* opt ) const
 }
 
 //______________________________________________________________________________
-THaCutList::THaCutList()
+THaCutList::THaCutList() : fVarList(NULL)
 {
   // Default constructor. No variable list is defined. Either define it
   // later with SetList() or pass the list as an argument to Define().
@@ -45,11 +47,10 @@ THaCutList::THaCutList()
 
   fCuts   = new THaHashList();
   fBlocks = new THaHashList();
-  fVarList = 0;
 }
 
 //______________________________________________________________________________
-THaCutList::THaCutList( const THaVarList& lst ) : fVarList(&lst)
+THaCutList::THaCutList( const THaVarList* lst ) : fVarList(lst)
 {
   // Normal constructor. Create the main lists and set the variable list.
 
@@ -94,12 +95,12 @@ Int_t THaCutList::Define( const char* cutname, const char* expr,
     Error( "Define", "no variable list set, cut not created" );
     return -1;
   }
-  return Define( cutname, expr, *fVarList, block );
+  return Define( cutname, expr, fVarList, block );
 }
 
 //______________________________________________________________________________
 Int_t THaCutList::Define( const char* cutname, const char* expr, 
-			  const THaVarList& lst, const char* block )
+			  const THaVarList* lst, const char* block )
 {
   // Define a new cut with given name in given block with variables from
   // given list.  See description of Define() above.

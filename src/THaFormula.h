@@ -11,6 +11,7 @@
 #include "THaGlobals.h"
 
 class THaVarList;
+class THaCutList;
 class THaVar;
 
 class THaFormula : public TFormula {
@@ -19,28 +20,37 @@ public:
   static const Option_t* const kPRINTFULL;
   static const Option_t* const kPRINTBRIEF;
 
-  THaFormula() : TFormula(), fCodes(NULL), fIndex(NULL),
-		 fNcodes(0), fVarList(NULL), fError(kFALSE), fRegister(kTRUE) {}
+  THaFormula() : TFormula(), fNcodes(0), fVarDef(NULL), fVarList(NULL), 
+    fCutList(NULL), fError(kFALSE), fRegister(kTRUE) {}
   THaFormula( const char* name, const char* formula, 
-	      const THaVarList& lst = *gHaVars );
+	      const THaVarList* vlst=gHaVars, const THaCutList* clst=gHaCuts );
   virtual             ~THaFormula();
   virtual Int_t       Compile( const char* expression="" );
   virtual Double_t    DefinedValue( Int_t i );
   virtual Int_t       DefinedVariable( TString& variable );
+  virtual Int_t       DefinedCut( const TString& variable );
+  virtual Int_t       DefinedGlobalVariable( const TString& variable );
   virtual Double_t    Eval();
   virtual Double_t    Eval( Double_t x, Double_t y=0.0, Double_t z=0.0 ) 
                           { return Eval(); }
           Bool_t      IsError() const { return fError; }
   virtual void        Print( Option_t* option="" ) const; // *MENU*
-          void        SetList( const THaVarList& lst )  { fVarList = &lst; }
+          void        SetList( const THaVarList* lst )    { fVarList = lst; }
+          void        SetCutList( const THaCutList* lst ) { fCutList = lst; }
 
 protected:
   enum { kMAXCODES = 100 };            //Max. number of global variables per formula
+  enum EVariableType { kUndefined, kVariable, kCut };
 
-  const THaVar**    fCodes;            //Global objects referenced in formula
-  Int_t*            fIndex;            //Linear index into array variable (0=scalar)
+  struct FVarDef_t {
+    EVariableType type;                //Type of variable in the formula
+    const void*   code;                //Pointer to the variable
+    Int_t         index;               //Linear index into array variable (0=scalar)
+  };  
   Int_t             fNcodes;           //Number of global variables referenced in formula
+  FVarDef_t*        fVarDef;           //Array of variable definitions
   const THaVarList* fVarList;          //Pointer to list of variables
+  const THaCutList* fCutList;          //Pointer to list of cuts
   Bool_t            fError;            //Flag indicating error in expression
   Bool_t            fRegister;         //If true, register this formula in ROOT's global list
 

@@ -8,34 +8,40 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
+#include "THaCut.h"
+#include "THaPrintOption.h"
+
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
 #include <cstdlib>
 #include <cstring>
 
-#include "THaCut.h"
-#include "THaPrintOption.h"
-#include "THaCutList.h"
-#include "THaVar.h"
 
 using namespace std;
 
 //_____________________________________________________________________________
 THaCut::THaCut( const char* name, const char* expression, const char* block, 
-		const THaVarList& lst, const THaCutList* cutlist ) :
-  THaFormula(), fLastResult(kFALSE), fBlockname(block), fNCalled(0), fNPassed(0), 
-  fCutList(cutlist), fIsCut(NULL)
+		const THaVarList* vlst, const THaCutList* clst ) :
+  THaFormula(), fLastResult(kFALSE), fBlockname(block), fNCalled(0), fNPassed(0)
 {
   // Create a cut 'name' according to 'expression'. 
-  // The cut may use global variables from the list 'lst' and other,
-  // previously defined cuts from 'cutlist'.
-  
-  // We have to duplicate the TFormula constructor code here because of
-  // the call to Compile().
+  // The cut may use global variables from the list 'vlst' and other,
+  // previously defined cuts from 'clst'.
+  //  
+  // Unlike the behavior of THaFormula, THaCuts do NOT store themselves in 
+  // ROOT's list of formulas. Otherwise existing cuts used in new cut expressions 
+  // will get reparsed instead of queried. As a result, existing cuts can only
+  // be used by other cuts, not by formulas.
+
+  // Sadly, we have to duplicate the TFormula constructor code here because of
+  // the call to Compile(), which in turn calls our virtual function 
+  // DefinedVariable().
 
   SetName(name);
-  SetList(lst);
+  SetList(vlst);
+  SetCutList(clst);
+  fRegister = kFALSE;
 
   //eliminate blanks in expression
   Int_t nch = strlen(expression);
@@ -57,48 +63,6 @@ THaCut::THaCut( const char* name, const char* expression, const char* block,
 }
 
 //_____________________________________________________________________________
-Int_t THaCut::Compile( const char* expression )
-{
-  // Parse the given expression, or, if empty, parse the title.
-  // Return 0 on success, 1 if error in expression.
-  //
-  // Unlike the behavior of THaFormula, THaCuts do NOT store themselves in 
-  // ROOT's list of formulas. Otherwise existing cuts used in new cut expressions 
-  // will get reparsed instead of queried. As a result, existing cuts can only
-  // be used by other cuts, not by formulas.
-
-  delete [] fIsCut; 
-  fIsCut = new Bool_t[kMAXCODES];
-  memset( fIsCut, 0, kMAXCODES*sizeof(Bool_t));
-
-  fRegister = kFALSE;  // Do not register this object in ROOT's list of functions
-  return THaFormula::Compile( expression );
-}
-
-//_____________________________________________________________________________
-THaCut::~THaCut()
-{
-  // Destructor
-
-  delete [] fIsCut; fIsCut = 0;
-}
-
-//_____________________________________________________________________________
-Double_t THaCut::DefinedValue( Int_t i )
-{
-  // Get value of i-th variable in the formula
-  // If the i-th variable is another cut, return its last result
-  // (calculated at the last evaluation).
-  
-  const THaVar* ptr = fCodes[i];
-  if( !ptr ) return 0.0;
-  if( fIsCut[i] )
-    return reinterpret_cast<const THaCut*>(ptr)->GetResult();
-  
-  return ptr->GetValue( fIndex[i] );
-}  
-
-//_____________________________________________________________________________
 Int_t THaCut::DefinedVariable(TString& name)
 {
   // Check if 'name' is in the list of existing cuts. 
@@ -115,29 +79,9 @@ Int_t THaCut::DefinedVariable(TString& name)
   //   -5  array index out of bounds
   //   -6  maximum number of variables exceeded
 
-  fIsCut[ fNcodes ] = 0;
-
-  // Other cut names are obviously only valid if there is a list of
-  // existing cuts
-  if( fCutList ) {
-    const THaCut* pcut = fCutList->FindCut( name );
-    if( pcut ) {
-      if( fNcodes >= kMAXCODES ) return -6;
-      // See if this cut already used earlier in this new cut
-      for( Int_t i=0; i<fNcodes; i++ ) {
-	if( fIsCut[i] && pcut == reinterpret_cast<const THaCut*>(fCodes[i]) )
-	  return i;
-      }
-      Int_t code = fNcodes++;
-      fIsCut[ code ] = 1;
-      // okok, this is stretching it, but why not? (saves lots of space)
-      fCodes[ code ] = reinterpret_cast<const THaVar*>(pcut);
-      fNpar = 0;
-      return code;
-    }
-  }
-  // Either no cut list or cut not found -> check if it is a global variable
-  return THaFormula::DefinedVariable( name );
+  Int_t k = DefinedCut( name );
+  if( k>=0 ) return k;
+  return DefinedGlobalVariable( name );
 }
 
 //_____________________________________________________________________________

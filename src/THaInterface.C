@@ -51,7 +51,7 @@ THaInterface::THaInterface( const char* appClassName, int* argc, char** argv,
 
   SetPrompt("analyzer [%d] ");
   gHaVars    = new THaVarList;
-  gHaCuts    = new THaCutList( *gHaVars );
+  gHaCuts    = new THaCutList( gHaVars );
   gHaApps    = new TList;
   gHaScalers = new TList;
   gHaPhysics = new TList;

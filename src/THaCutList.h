@@ -38,13 +38,13 @@ public:
   enum EWarnMode { kWarn, kNoWarn };
 
   THaCutList();
-  THaCutList( const THaVarList& lst );
+  THaCutList( const THaVarList* lst );
   virtual    ~THaCutList();
 
   virtual Int_t     Define( const char* cutname, const char* expr, 
 			    const char* block=kDefaultBlockName );
   virtual Int_t     Define( const char* cutname, const char* expr,
-			    const THaVarList& lst, 
+			    const THaVarList* lst, 
 			    const char* block=kDefaultBlockName );
   virtual Int_t     Load( const char* filename=kDefaultCutFile );
   virtual void      Clear( Option_t* opt="" );
@@ -63,7 +63,7 @@ public:
   virtual Int_t     Result( const char* cutname = "", EWarnMode mode=kWarn );
   virtual Int_t     Remove( const char* cutname );
   virtual Int_t     RemoveBlock( const char* block=kDefaultBlockName );
-  virtual void      SetList( THaVarList& lst ) { fVarList = &lst; }
+  virtual void      SetList( THaVarList* lst ) { fVarList = lst; }
   virtual void      Print( Option_t* option="" ) const;
   virtual void      PrintCut( const char* cutname, Option_t* option="" ) const;
   virtual void      PrintBlock( const char* block=kDefaultBlockName, 
