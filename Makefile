@@ -12,14 +12,17 @@ export WITH_DEBUG = 1
 # Include libraries for reading from the ET ring
 #  (only for adaq? machines with the Coda libraries )
 #export ONLINE_ET = 1
+#export CODA=/adaqfs/coda/2.5
+
 #------------------------------------------------------------------------------
 
 # VERSION should be numerical only - it becomes the shared lib soversion
 # EXTVERS (optional) describes the build, e.g. "dbg", "et", "gcc33" etc.
 SOVERSION  = 1.2
-PATCH   = 3
+PATCH   = 4
 VERSION = $(SOVERSION).$(PATCH)
-EXTVERS = 
+#EXTVERS = -et
+EXTVERS =
 NAME    = analyzer-$(VERSION)
 
 #------------------------------------------------------------------------------
