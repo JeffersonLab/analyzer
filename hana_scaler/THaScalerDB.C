@@ -34,11 +34,18 @@ bool THaScalerDB::extract_db(const Bdate& bdate, multimap< string, BscaLoc >& bm
 // Input: Bdate = time (day,month,year) when database is valid
 // Output: BscaLoc = scaler map (loaded by this function).
 // Return : true if successful, else false.
+   char *dbdir=NULL;
    bmap.clear();
    ifstream mapfile("scaler.map");
+   if (!mapfile && (dbdir=getenv("DB_DIR"))) {
+     string mapfn(dbdir);
+     mapfn.append("/scaler.map");
+     mapfile.open(mapfn.c_str());
+   }
    if (!mapfile) {
      cout << "ERROR: THaScalerDB: scaler.map file does not exist !!"<<endl;
-     cout << "You must have scaler.map in present working directory."<<endl;
+     cout << "You must have scaler.map in present working directory,"<<endl;
+     cout << "or in $DB_DIR directory." << endl;
      cout << "Download  http://hallaweb.jlab.org/adaq/scaler.map"<<endl;
      cout << "    or"<<endl;
      cout << "jlabs1:/group/halla/www/hallaweb/html/adaq/scaler.map"<<endl;
