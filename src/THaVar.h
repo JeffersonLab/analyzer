@@ -17,7 +17,7 @@ class THaVar : public TNamed {
 public:
   THaVar() : fValueP(NULL), fType(kDouble), fCount(NULL) {}
   THaVar( const THaVar& rhs ) :
-    TNamed( rhs ), fValueD(rhs.fValueD), fArrayData(rhs.fArrayData),
+    TNamed( rhs ), fArrayData(rhs.fArrayData), fValueD(rhs.fValueD),
     fType(rhs.fType), fCount(rhs.fCount) {}
   THaVar& operator=( const THaVar& );
   virtual ~THaVar() {}
@@ -272,7 +272,8 @@ inline
 Double_t THaVar::GetValueAsDouble( Int_t i ) const
 {
   if( IsPointerArray() && (!fValueDD || !fValueDD[i] ))
-      return 0.0;
+    return 0.0;
+
   switch( fType ) {
   case kDouble: 
     return fValueD[i];
