@@ -12,7 +12,6 @@
 
 #include "TROOT.h"
 #include "THaInterface.h"
-#include "THaAnalyzer.h"
 #include "TInterpreter.h"
 #include "THaVarList.h"
 #include "THaCutList.h"
@@ -61,7 +60,7 @@ THaInterface::THaInterface( const char* appClassName, int* argc, char** argv,
 
   THaString ipath( HA_INCLUDEPATH );
   vector<THaString> ipv(ipath.Split());
-  for (int i=0; i<ipv.size(); i++)
+  for (vector<THaString>::size_type i=0; i<ipv.size(); i++)
     gInterpreter->AddIncludePath( ipv[i].c_str() );
   
   fgAint = this;
@@ -102,7 +101,7 @@ void THaInterface::PrintLogo()
      mille = iyear;
    char* root_date = Form("%s %d %4d",months[imonth-1],iday,mille);
 
-   const char* halla_version = "0.70beta4";
+   const char* halla_version = "1.00 RC1";
    //   const char* halla_date = Form("%d %s %4d",24,months[2-1],2003);
 
    Printf("  ************************************************");
