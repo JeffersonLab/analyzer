@@ -23,7 +23,6 @@ protected:
   TVector3  fDirection;  // Beam direction vector (arbitrary units)
 
   // Only derived classes can construct me
-  THaBeam() {}
   THaBeam( const char* name, const char* description ) :
     THaApparatus( name, description ) {}
 
