@@ -5,66 +5,80 @@
 </head>
 
 <body>
-<h1>A QuickStart Guide to using the Hall A C++ Analyzer Release 1.0</h1>
+<h1>A QuickStart Guide to using the Hall A C++ Analyzer</h1>
 
-<pre>
 HOW DO I USE THE ANALYZER?
-
-Building and Installing (taken from RELEASE_NOTES)
-~~~~~~~~~~~~~~~~~~~~~~~
+<p>
+<h3>Building and Installing</h3>
+Don't build the Analyzer yourself! Just log into the Hall A counting house
+analysis computers (adaql3-5, adaqs2-3), e.g. as adaq, and type
+<pre>
+   analyzer
+</pre>
+Usually, all you have left to do is to set up an appropriate database for
+the data you wish to analyze.
+<p>
+If you do want to (or need to) build the program yourself, here are brief
+instructions.
+<p>
 The distribution is by default configured for Linux. To change to
 the Solaris/CC5 environment see explanation in the Makefile.
-
+<p>
 Before compiling, make sure that your have set ROOTSYS correctly
 and $ROOTSYS/bin is in your PATH.
-
+<p>
 WARNING: Some bugs have been observed when using the analyzer with versions
     of ROOT prior to 3.02-00. It is recommended to version 3.02-07 or later.
     Also, it is important to be certain that ROOT was compiled with the
     same (or at least compatible) version of gcc you are planning to use.
 
-On the ifarm machines, issue the command
-        use root/3.02-07
+On the ifarml machines, issue the commands
+<pre>
+  use root/3.05-07
+  use gcc/3.2.3
+</pre>
 to configure ROOT and set the PATH.
-
+<p>
 To compile, run the Makefile with GNU make (tested with make 3.78-1).
 Usually, you just need to type "gmake".
-
+<p>
 Before running, it is useful to set the appropriate environment variables
 such that the executables, libraries, and databases are found. This can be
 done (while in the analyzer directory) as:
-
+<p>
+<pre>
 (bash)
-	export LD_LIBRARY_PATH=`pwd`:$ROOTSYS/lib:$LD_LIBRARY_PATH
+        export LD_LIBRARY_PATH=`pwd`:$ROOTSYS/lib:$LD_LIBRARY_PATH
 	export PATH=`pwd`:$PATH
 	export DB_DIR=`pwd`/DB
-
+</pre>
 OR
+<pre>
 (tcsh)
 	setenv LD_LIBRARY_PATH `pwd`:$ROOTSYS/lib:$LD_LIBRARY_PATH
 	setenv PATH `pwd`:$PATH
 	setenv DB_DIR `pwd`/DB
 	rehash
-
+</pre>
 (i.e. make sure the current directory is in the LD_LIBRARY_PATH and PATH,
 as well setting the DB_DIR path).
-
+<p>
 To start the analyzer, just execute:
-
+<pre>
  > analyzer
-
-and you should get a new canvas, and have the prompt:
-
+</pre>
+and you should get the prompt:
+<pre>
    analyzer[0] 
+</pre>
+<p>
 
-
-Running the Analyzer
-~~~~~~~~~~~~~~~~~~~~
+<h3>Running the Analyzer</h3>
 
 In the examples directory are files to demonstrate how to use
 the analyzer. They are:
 
-
+<pre>
   doit.C             - Drives the setup.C macro and displays some results.
                        This is what might normally be done by hand.
 
@@ -72,32 +86,29 @@ the analyzer. They are:
   cuts_example.def   - text file which defines many example cuts
   output_example.def - text file specifying global variable to output
                        into the 'T' tree.
-
-  To start the analyzer to use the macro, you can do at the shell prompt:
-
+</pre>
+ To start the analyzer to use the macro, you can do at the shell prompt:
+<pre>
     analyzer doit.C
-
-
-  or, if done in separate steps:
-
+</pre>
+or, if done in separate steps:
+<pre>
     analyzer        
     .x doit.C        # from inside the analyzer
+</pre>
+<p>
+<h3>Global Variables</h3>
 
-
-  Global Variables
-  ~~~~~~~~~~~~~~~~
-
-  Each detector, physics module, or apparatus can contain and report
-  "global variables" which can be used to define cuts, evaluate formulas,
-  and fill histograms. A complete list can be reported after starting and
-  initializing the analyzer via:
-
+Each detector, physics module, or apparatus can contain and report
+"global variables" which can be used to define cuts, evaluate formulas,
+and fill histograms. A complete list can be reported after starting and
+initializing the analyzer via:
+<pre>
     gHaVars->Print()        //   and
     gHaVars->PrintFull()
-  
-  where a pattern to match the variable name to may be given:
-
-  Example:
+</pre>
+where a pattern to match the variable name to may be given: Example:
+<pre>
     gHaVars->Print()
 
 	OBJ: THaVar     nev     Event number
@@ -118,25 +129,29 @@ the analyzer. They are:
 	(Float_t*)[*6]  0  1.62e+03  0  0  0  0
 	OBJ: THaVar     R.s1.la_c       Corrected ADC values left side
 	(Float_t*)[*6]  0  848  0  0  0  0
+</pre>
+<p>
+<h3>Analysis Cuts</h3>
 
-  Analysis Cuts
-  ~~~~~~~~~~~~~
-  Cuts can steer the analysis, as well as perform basic accounting of
-  event topologies. The cuts are defined in a user-specified file,
-  eg:
-    analyzer->SetCutFile("cuts_example.def")
+Cuts can steer the analysis, as well as perform basic accounting of
+event topologies. The cuts are defined in a user-specified file,
+eg:
+<pre>
+  analyzer->SetCutFile("cuts_example.def")
+</pre>
 
   The cuts are divided into "Block"'s, with each block corresponding to a
   stage in the analysis and the stage that the cut is evaluated after. The
   format is each line has two entries separated by white space. Comments
   start at a '#' character and continue through the line.
-
+<p>
   A special cut named "Block-name"_master can be defined, and if false
   causes the analysis to stop processing the current event, and move on to
   the next event.
-
+<p>
   Example (contents of cuts definition file):
-	Block: RawDecode
+<pre>
+    Block: RawDecode
 
 	evtyp1            g.evtyp==1      # Event type 1 (=HRSR main trigger)
 	evtyp3            g.evtyp==3      # Event type 3 (=HRSL main trigger)
@@ -145,65 +160,70 @@ the analyzer. They are:
 	goodhel           poshel||neghel
 	evprime           evtyp1||evtyp3
 	RawDecode_master  evprime         # only decode primary trigger events
+</pre>
+<p>      
 
-      
-
-  Tree Output
-  ~~~~~~~~~~~
+<h3>Tree Output</h3>
 
   Output from the analyzer can be saved in a couple of basic methods. The
   simplest is to use the THaAnalyzer::SetOdefFile(const char* name)
   method.
   eg:
+<pre>
     analyzer->SetOdefFile("output_example.def")
+</pre>
 
   This file defines a list of global variables to save for each event, as
   well as formulas to evaluate and histograms to fill.
   For every event, the Global Variables can be processed and saved to a ROOT
   TTree object (very similar to an HBook Ntuple in this implementation).
-
+<p>
   Example (contents of output definition file):
-	block L.tr.*       # Pattern matching from global variables.
+<pre>
+        block L.tr.*       # Pattern matching from global variables.
 			   # All L-arm tracking variables
 	variable   L.vdc.u2.nclust  # Single global variable
 	variable   R.s1.lt          # Array of values R.s1.lt[i]
-	                            # for i = 0,1,...Ndata.R.s1.lt
+</pre>	                            # for i = 0,1,...Ndata.R.s1.lt
+<p>
 
+<h3>Examining the Output</h3>
 
-  Examining the Output
-  ~~~~~~~~~~~~~~~~~~~~
 
   After creating the tree, you can interactively examine the results of the
   filled histograms with TTree::Draw (command line interface) or
   TTree::StartViewer (GUI interface). The names of the entries correspond
   to what was specified in the output definition file.
-
+<p>
   Example (at the analyzer [ ] prompt):
-
+<pre>
     T->Draw("L.tr.n");                // draw number of tracks in Left arm
               
     T->Draw("R.tr.tg_dp","abs(R.tr.tg_dp)<.1");  // HRS-R delta-p with cut
               
     T->StartViewer();                 // start interactive GUI Tree-viewer
-
+</pre>
 
   For more information on drawing/processing trees, you are referred to the
   example scripts and the ROOT documentation (http://root.cern.ch).
-
-  Exiting/Resuming a Session
-  ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+<p>
+<h3>Exiting/Resuming a Session</h3>
 
   Type ".q" to quit the analyzer. The Tree can be accessed later by
   re-opening the file via (assuming the output file is "Afile.root"):  
-
+<pre>
     analyzer Afile.root
-
-  or, from within the analyzer:
-
-    TFile* oldfile = new TFile("Afile.root");
-
-
 </pre>
+  or, from within the analyzer:
+<pre>
+    TFile* oldfile = new TFile("Afile.root");
+</pre>
+
+<address><a href="mailto:feuerbac@jlab.org">Robert Feuerbach &lt;feuerbac@jlab.org&gt;</a>
+</address>
+<!-- hhmts start -->
+Last modified: Mon Nov 17 12:54:25 EST 2003
+<!-- hhmts end -->
 </body>
 </html>
 

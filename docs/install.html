@@ -9,14 +9,22 @@
 
 <hr>
 <h3>General</h3>
-Currently, the C++ Analyzer is distributed only as source code. You will need to compile it yourself.
-Precompiled versions are problematic because of the large number of possible combinations of ROOT versions
-and compilers, which are not compatible at the binary level.
+The C++ Analyzer is intended to be a general-purpose programming framework similar to ROOT.
+As with ROOT, it should ideally not be necessary to compile the Analyzer yourself. A precompiled version
+should be available to you, either already installed or ready for download. Any experiment-specific
+extensions of the Analyzer that do need to be compiled would be placed in a separate shared library
+built against the preinstalled Analyzer.
 <p>
-Once the analyzer code has become stable, we will provide a pre-installed set of shared libraries
-on the Hall A counting house Linux cluster and possibly on /apps. These libraries would be matched with a certain
-version of ROOT also pre-installed on those locations.
-
+Unfortunately, precompiled versions are problematic because of the large number of possible
+combinations of ROOT versions and compilers, which are often not compatible at the binary level.
+Currently, we provide a preinstalled version of the Analyzer for the Hall A counting house
+analysis computers (adaql3-5, adaqs2-3). More information can be found in a
+<a href="preinstalled.html">separate document</a>.
+We do not offer binaries for download at this time, but we are planning to do so in the near future.
+<p>
+If you wish to build the Analyzer yourself for local use, please <a href="#download">download</a> the latest
+source distribution and follow the instructions below.
+<p>
 <hr>
 <h3>System Requirements</h3>
 <ul>
@@ -40,18 +48,19 @@ The following software must be installed and set up prior to unpacking and compi
 </ul>
 
 <hr>
+<a name="download"></a>
 <h3>Getting the analyzer source code</h3>
 Source distributions can be downloaded from
 <a href="http://hallaweb.jlab.org/root/download/">here</a>.
 Unpack the archive as follows:
 <pre>
-  % tar xzf analyzer-1.0.tar.gz
+  % tar xzf analyzer-1.1.tar.gz
 OR
-  % gunzip -c analyzer-1.0.tar.gz | tar xf -
+  % gunzip -c analyzer-1.1.tar.gz | tar xf -
 </pre>
-The sources will be unpacked into the subdirectory "analyzer-1.0". Go there
+The sources will be unpacked into the subdirectory "analyzer-1.1". Go there
 <pre>
-  % cd analyzer-1.0
+  % cd analyzer-1.1
 </pre>
 
 <hr>
@@ -85,13 +94,12 @@ On other Unices, you will have to provide an appropriate "ARCH" section in each 
 
 <b>Building on ifarml1/2/3</b>
 <p>
-Download the source tarball, unpack, set up ROOT and gcc, and compile:
+<a href="#download">Download</a> the source tarball, unpack, set up ROOT and gcc, and compile:
 <pre>
-   % lynx -source http://hallaweb.jlab.org/root/download/analyzer-1.0.tar.gz > analyzer-1.0.tar.gz
-   % tar xzvf analyzer-1.0.tar.gz 
-   % cd analyzer-1.0
-   % use root/3.03-06-gcc3.0.4
-   % use gcc/3.0.4
+   % tar xzvf analyzer-1.1.tar.gz 
+   % cd analyzer-1.1
+   % use root/3.05-07
+   % use gcc/3.2.3
    % make -j4
    ( ... go drink a coffee ... )
 
@@ -114,22 +122,22 @@ Only if this fails you are likely to have a real problem with the source code.
 <hr>
 <h3>Installation</h3>
 To run the analyzer in an arbitrary directory, a number of environment variables need to be set up.
-Assuming you built the Analyzer in ~/analyzer-1.0, the setup would be as follows:
+Assuming you built the Analyzer in ~/analyzer-1.1, the setup would be as follows:
 <pre>
 For bash (Linux default):
 
-  % export LD_LIBRARY_PATH=~/analyzer-1.0:$ROOTSYS/lib
-  % export DB_DIR=~/analyzer-1.0/DB
-  % export PATH=~/analyzer-1.0:$PATH
+  % export LD_LIBRARY_PATH=~/analyzer-1.1:$ROOTSYS/lib
+  % export DB_DIR=~/analyzer-1.1/DB
+  % export PATH=~/analyzer-1.1:$PATH
 
 For tcsh (JLab Computer Center default):
 
-  % setenv LD_LIBRARY_PATH ~/analyzer-1.0:${ROOTSYS}/lib
-  % setenv DB_DIR ~/analyzer-1.0/DB
-  % set path = ( ~/analyzer-1.0 $path )
+  % setenv LD_LIBRARY_PATH ~/analyzer-1.1:${ROOTSYS}/lib
+  % setenv DB_DIR ~/analyzer-1.1/DB
+  % set path = ( ~/analyzer-1.1 $path )
 
 </pre>
-Instead of adding the build directory to PATH, you could link ~/analyzer-1.0/analyzer to your
+Instead of adding the build directory to PATH, you could link ~/analyzer-1.1/analyzer to your
 working directory. 
 <p>
 You probably want to put these definitions in your login script: ~/.bash_profile or ~/.login.
@@ -151,16 +159,15 @@ You should see the startup message:
   *            W E L C O M E  to  the            *
   *       H A L L A   C++  A N A L Y Z E R       *
   *                                              *
-  *        Release   1.00 RC3        Jun 18 2003 *
-  *  Based on ROOT  3.05/04           May 8 2003 *
-  *             Development version              *
+  *        Release   1.1             Nov 17 2003 *
+  *  Based on ROOT  3.05/07          Sep 30 2003 *
   *                                              *
   *            For information visit             *
   *        http://hallaweb.jlab.org/root/        *
   *                                              *
   ************************************************
 
-CINT/ROOT C/C++ Interpreter version 5.15.83, Apr 6 2003
+CINT/ROOT C/C++ Interpreter version 5.15.94, June 30 2003
 Type ? for help. Commands must be C++ statements.
 Enclose multiple statements between { }.
 analyzer [0]
@@ -176,6 +183,6 @@ subdirectory of the distribution.  Documentation of them can be found in the
 <hr>
 <address><a href="mailto:ole@jlab.org">Ole Hansen &lt;ole@jlab.org&gt;</a></address>
 <!-- hhmts start -->
-Last modified: Thu Jun 19 13:23:09 EDT 2003
+Last modified: Mon Nov 17 12:31:36 EST 2003
 <!-- hhmts end -->
 </body> </html>
