@@ -94,6 +94,8 @@ public:
   virtual Bool_t TreeDefined() const { return fTree != 0; };
   virtual TTree* GetTree() const { return fTree; };
 
+  static void SetVerbosity( Int_t level );
+  
 protected:
 
   virtual Int_t LoadFile( const char* filename );
@@ -132,6 +134,8 @@ private:
   THaString stitle, sfvarx, sfvary, scut;
   Int_t nx,ny,iscut;
   Float_t xlo,xhi,ylo,yhi;
+
+  static Int_t fgVerbose;
 
   ClassDef(THaOutput,0)  
 };
