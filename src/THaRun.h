@@ -19,7 +19,7 @@ class THaRun : public TNamed {
 public:
   THaRun( const char* filename="", const char* description="" );
   THaRun( const THaRun& run );
-  virtual THaRun& operator=( const THaRun& rhs );
+  THaRun& operator=( const THaRun& rhs );
   virtual ~THaRun();
   
   virtual bool operator==( const THaRun& ) const;
@@ -51,7 +51,6 @@ public:
           Bool_t       IsInit()         const { return fIsInit; }
   virtual bool         IsOpen()         const;
   virtual Int_t        OpenFile();
-  virtual Int_t        OpenFile( const char* filename );
   virtual void         Print( Option_t* opt="" ) const;
   virtual Int_t        ReadEvent();
   virtual void         SetDate( const TDatime& date );
