@@ -181,10 +181,11 @@ srcdist:
 		 $(NAME)/Makefile $(NAME)/RELEASE_NOTES $(NAME)/docs
 
 cvsdist:	srcdist
-		gunzip -f ../$(NAME).tar.gz
-		gtar rv -C .. -f ../$(NAME).tar \
+		cp ../$(NAME).tar.gz ../$(NAME)-cvs.tar.gz
+		gunzip -f ../$(NAME)-cvs.tar.gz
+		gtar rv -C .. -f ../$(NAME)-cvs.tar \
 		 `find . -type d -name CVS 2>/dev/null | sed "s%^\.%$(NAME)%"`
-		gzip -f ../$(NAME).tar
+		gzip -f ../$(NAME)-cvs.tar
 
 haDict.C: $(HDR) src/HallA_LinkDef.h
 	@echo "Generating dictionary haDict..."
