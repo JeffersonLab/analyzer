@@ -26,7 +26,7 @@ protected:
 
   THaTrackingModule();
 
-  ClassDef(THaTrackingModule,0)   //ABC for a vertex module
+  ClassDef(THaTrackingModule,0)   // ABC for a tracking module
 
 };
 
