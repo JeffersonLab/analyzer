@@ -230,8 +230,7 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
   THaApparatus* app = (sdet ? static_cast<THaDetector*>(sdet)->GetApparatus() : 0);
   if (!app) Error(Here(here),"Subdet->Det->App chain is incorrect!");
 
-  TString nm = app->GetPrefix();
-  nm += "trg";
+  TString nm = "trg";  // inside an apparatus, the apparatus name is assumed
   fglTrg = dynamic_cast<THaTriggerTime*>(app->GetDetector(nm.Data()));
   if (!fglTrg) Warning(Here(here),"Expected %s to be prepared before VDCs. Event-dependent time offsets NOT used!!",nm.Data());
   
