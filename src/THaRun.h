@@ -53,9 +53,9 @@ protected:
   TDatime       fDate;         //Run date and time
   UInt_t        fFirstEvent;   //First event to analyze
   UInt_t        fLastEvent;    //Last event to analyze
-  THaCodaFile*  fCodaFile;     //CODA file associated wih this run
+  THaCodaFile*  fCodaFile;     //!CODA file associated wih this run
 
-  ClassDef(THaRun,0)   //Description of a run
+  ClassDef(THaRun,1)   //Description of a run
 };
 
 
