@@ -62,11 +62,11 @@ void THaVDCCluster::EstTrackParameters()
   fInt = fPivot->GetPos();
 
   // Now find the slope (this is a very coarse approximation)
-  //   X = Drift Distance
-  //   Y = Position of Wires
+  //   X = Drift Distance (m)
+  //   Y = Position of Wires (m)
 
-  Double_t conv = fPlane->GetTDCRes() * fPlane->GetDriftVel();
-  Double_t dx = conv * (fHits[0]->GetRawTime() + fHits[fSize-1]->GetPos());
+  Double_t conv = fPlane->GetDriftVel();  // m/s
+  Double_t dx = conv * (fHits[0]->GetTime() + fHits[fSize-1]->GetTime());
   Double_t dy = fHits[0]->GetPos() - fHits[fSize-1]->GetPos();
 
   fSlope = dy / dx;
