@@ -21,6 +21,7 @@ struct RVarDef;
 struct TagDef;
 class TVector3;
 class THaRunBase;
+class THaOutput;
 
 class THaAnalysisObject : public TNamed {
   
@@ -49,6 +50,9 @@ public:
   virtual void         SetName( const char* name );
   virtual void         SetNameTitle( const char* name, const char* title );
           EStatus      Status() const            { return fStatus; }
+
+  virtual Int_t        InitOutput( THaOutput * );
+          Bool_t       IsOKOut()                 { return fOKOut; }
 
   // Static function to provide easy access to database files
   // from CINT scripts etc.
@@ -105,7 +109,8 @@ protected:
   bool            fIsSetup;   // Flag indicating that Setup called.
   TString         fConfig;    // Configuration to use from database
   UInt_t          fProperties;// Properties of this object (see EProperties)
-  
+  Bool_t          fOKOut;     // Flag indicating object-output prepared
+
   virtual Int_t        DefineVariables( EMode mode = kDefine );
           Int_t        DefineVarsFromList( const VarDef* list, 
 					   EMode mode = kDefine,

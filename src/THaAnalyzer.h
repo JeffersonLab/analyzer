@@ -171,6 +171,8 @@ protected:
   virtual void   InitStages();
   virtual Int_t  InitModules( const TList* module_list, TDatime& time, 
 			      Int_t erroff, const char* baseclass = NULL );
+  virtual Int_t  InitOutput( const TList* module_list, Int_t erroff,
+			     const char* baseclass = NULL );
   virtual void   PrintCounters() const;
   virtual void   PrintScalers() const;
   virtual void   PrintCutSummary() const;

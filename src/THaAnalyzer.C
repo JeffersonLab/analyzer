@@ -668,12 +668,61 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
     }
   }
 
+  if ( retval == 0 ) {
+    if ( ! fOutput ) {
+      Error( here, "Error initializing THaOutput for objects(again!)" );
+      retval = -5;
+    } else {
+      // call the apparatuses again, to permit them to write more
+      // complex output directly to the TTree
+      (retval = InitOutput( fApps, 20, "THaApparatus")) ||
+	(retval = InitOutput( fPhysics, 40, "THaPhysicsModule"));
+    }
+  }
+  
   // If initialization succeeded, set status flags accordingly
   if( retval == 0 ) {
     fIsInit = kTRUE;
   }
   return retval;
 }
+
+//_____________________________________________________________________________
+Int_t THaAnalyzer::InitOutput( const TList* module_list,
+			       Int_t erroff, const char* baseclass )
+{
+  // Initialize a list of THaAnalysisObject's for output
+  // If 'baseclass' given, ensure that each object in the list inherits 
+  // from 'baseclass'.
+  static const char* const here = "InitOutput()";
+
+  if( !module_list )
+    return -3-erroff;
+  TIter next( module_list );
+  bool fail = false;
+  Int_t retval = 0;
+  TObject* obj;
+  while( !fail && (obj = next())) {
+    if( baseclass && !obj->IsA()->InheritsFrom( baseclass )) {
+      Error( here, "Object %s (%s) is not a %s. Analyzer initialization "
+             "failed.", obj->GetName(), obj->GetTitle(), baseclass );
+      retval = -2;
+      fail = true;
+    } else {
+      THaAnalysisObject* theModule = dynamic_cast<THaAnalysisObject*>( obj );
+      theModule->InitOutput( fOutput );
+      if( !theModule->IsOKOut() ) {
+        Error( here, "Error initializing output for  %s (%s). "
+               "Analyzer initialization failed.", 
+               obj->GetName(), obj->GetTitle() );
+        retval = -1;
+        fail = true;
+      }
+    }
+  }
+  return (retval == 0) ? 0 : retval - erroff;
+}
+
 
 //_____________________________________________________________________________
 Int_t THaAnalyzer::ReadOneEvent()
