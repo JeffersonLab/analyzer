@@ -420,6 +420,24 @@ THaAnalysisObject::EStatus THaAnalysisObject::Init( const TDatime& date )
 }
 
 //_____________________________________________________________________________
+Int_t THaAnalysisObject::InitOutput( THaOutput *output )
+{
+  // This method is called from THaAnalyzer::DoInit,
+  // after THaOutput is initialized.
+  // The TTree to work with can be retrieved like:
+  // TTree *tree = output->GetTree()
+  //
+  // tree is the TTree to append the branches to
+  //
+  // construct all branches here. Set kOKOut=true if
+  // all is okay, and return 0
+  //
+  // anything else will trigger error messages.
+  fOKOut = true;
+  return kOK;
+}
+
+//_____________________________________________________________________________
 void THaAnalysisObject::MakePrefix( const char* basename )
 {
   // Set up name prefix for global variables. 
