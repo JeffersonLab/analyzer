@@ -66,7 +66,7 @@ THaDetMap::~THaDetMap()
 //_____________________________________________________________________________
 Int_t THaDetMap::AddModule( UShort_t crate, UShort_t slot, 
 			    UShort_t chan_lo, UShort_t chan_hi,
-			    UInt_t first, UInt_t model )
+			    UInt_t first, UInt_t model, Int_t refindex )
 {
   struct ModuleType {
     UInt_t model;
@@ -83,6 +83,7 @@ Int_t THaDetMap::AddModule( UShort_t crate, UShort_t slot,
     { 1182, 1, 0 },
     {  792, 1, 0 },
     {  775, 0, 1 },
+    {  767, 0, 1 },
     { 0 }
   };
 
@@ -107,6 +108,7 @@ Int_t THaDetMap::AddModule( UShort_t crate, UShort_t slot,
   m.hi    = chan_hi;
   m.first = first;
   m.model = model;
+  m.refindex = refindex;
 
   const ModuleType* md = module_list;
   while ( md->model && model != md->model ) md++;
