@@ -1,0 +1,15 @@
+//*-- Author :    Ole Hansen   04-Apr-03
+
+//////////////////////////////////////////////////////////////////////////
+//
+// THaTrackInfo
+//
+// Utility class/structure for holding track information.
+//
+//////////////////////////////////////////////////////////////////////////
+
+#include "THaTrackInfo.h"
+
+const Double_t THaTrackInfo::kBig = 1e38;
+
+ClassImp(THaTrackInfo)

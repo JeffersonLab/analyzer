@@ -43,16 +43,14 @@
 #include "THaVertexModule.h"
 #include "THaSpectrometer.h"
 #include "THaTrack.h"
+#include "THaTrackInfo.h"
 #include "TMath.h"
 #include "TVector3.h"
 #include "VarDef.h"
 
 #include <iostream>
 
-ClassImp(THaTrackInfo)
 ClassImp(THaExtTarCor)
-
-const Double_t THaTrackInfo::kBig = 1e38;
 
 //_____________________________________________________________________________
 THaExtTarCor::THaExtTarCor( const char* name, const char* description,
