@@ -37,6 +37,8 @@ export BUILD_SHARED = 1
 # It's probably good enough.  If not, see README.
 LIBDC=libdc_local.a
 
+export DEBUG = 1
+
 ARCH          = linuxegcs
 #ARCH          = solarisCC5
 
@@ -49,18 +51,30 @@ INCLUDES      = $(ROOTCFLAGS) -I$(DCDIR)
 ifeq ($(ARCH),solarisCC5)
 # Solaris CC 5.0
 CXX           = CC
-CXXFLAGS      = -O -KPIC
+ifdef DEBUG
+  CXXFLAGS    = -g
+  LDFLAGS     = -g
+else
+  CXXFLAGS    = -O
+  LDFLAGS     = -O
+endif
+CXXFLAGS     += -KPIC
 LD            = CC
-LDFLAGS       = -O
 SOFLAGS       = -G
 endif
 
 ifeq ($(ARCH),linuxegcs)
 # Linux with egcs (>= RedHat 5.2)
 CXX           = g++
-CXXFLAGS      = -O -Wall -Woverloaded-virtual -fPIC
+ifdef DEBUG
+  CXXFLAGS    = -g
+  LDFLAGS     = -g
+else
+  CXXFLAGS    = -O
+  LDFLAGS     = -O
+endif
+CXXFLAGS     += -Wall -Woverloaded-virtual -fPIC
 LD            = g++
-LDFLAGS       = -O
 SOFLAGS       = -shared
 endif
 

@@ -48,6 +48,8 @@ export MAINDIR = ../src
 # Use this if profiling (note: it slows down the code)
 # export PROFILE = 1
 
+export DEBUG = 1
+
 ARCH          = linuxegcs
 #ARCH          = solarisCC5
 
@@ -60,19 +62,29 @@ INCLUDES      = $(ROOTCFLAGS) -I$(MAINDIR)
 ifeq ($(ARCH),solarisCC5)
 # Solaris CC 5.0
 CXX           = CC
-CXXFLAGS      = -O -KPIC
 LD            = CC
-LDFLAGS       = -O
 SOFLAGS       = -G
+ifdef DEBUG
+  CXXFLAGS    = -g -KPIC
+  LDFLAGS     = -g
+else
+  CXXFLAGS    = -O -KPIC
+  LDFLAGS     = -O
+endif
 endif
 
 ifeq ($(ARCH),linuxegcs)
 # Linux with egcs (>= RedHat 5.2)
 CXX           = g++
-CXXFLAGS      = -O -Wall -Woverloaded-virtual -fPIC
 LD            = g++
-LDFLAGS       = -O
 SOFLAGS       = -shared
+ifdef DEBUG
+  CXXFLAGS    = -g -Wall -Woverloaded-virtual -fPIC
+  LDFLAGS     = -g
+else
+  CXXFLAGS    = -O -Wall -Woverloaded-virtual -fPIC
+  LDFLAGS     = -O
+endif
 endif
 
 ifeq ($(CXX),)
@@ -252,14 +264,14 @@ libevio_hpux.a:  evio.o swap_util.o swapped_intcpy.o
 	rm -f $@
 	ar cr $@ evio.o swap_util.o swapped_intcpy.o
 
-evio.o: evio.C
-	$(CXX) -c  $<
+# evio.o: evio.C
+# 	$(CXX) -c  $<
 
-swap_util.o: swap_util.C
-	$(CXX) -c  $<
+# swap_util.o: swap_util.C
+# 	$(CXX) -c  $<
 
 swapped_intcpy.o: swapped_intcpy.c
-	$(CC) -c  $<
+	$(CC) $(CXXFLAGS) -c  $<
 
 # Dictionary
 
