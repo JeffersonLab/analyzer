@@ -41,6 +41,7 @@ public:
   void addEvTypeFilt(int evtype_to_filt);    // add an event type to list
   void addEvListFilt(int event_to_filt);     // add an event num to list
   void setMaxEvFilt(int max_event);          // max num events to filter
+  virtual bool isOpen() const;
 
 private:
 

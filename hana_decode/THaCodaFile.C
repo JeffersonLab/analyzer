@@ -117,6 +117,10 @@ using namespace std;
   }
 
 
+  bool THaCodaFile::isOpen() const { 
+    return (handle!=0);
+  }
+
   int THaCodaFile::filterToFile(const TString& output_file) {
 // A call to filterToFile filters from present file to output_file
 // using filter criteria defined by evtypes, evlist, and max_to_filt 
@@ -296,6 +300,8 @@ void THaCodaFile::staterr(const TString& tried_to, int status) {
   };
 
   void THaCodaFile::init(const TString& fname) {
+    if( fname != filename )
+      codaClose();
     handle = 0;
     filename = fname;
   };
