@@ -25,7 +25,7 @@
 //
 /////////////////////////////////////////////////////////////////////
 
-
+#include <stdio.h>
 #include <iostream>
 #include "THaEvData.h"
 #include "THaHelicity.h"
@@ -35,6 +35,8 @@
 #endif
 #include "TError.h"
 #include <string>
+
+FILE *fdb;
 
 ClassImp(THaEvData)
 
@@ -51,6 +53,8 @@ THaEvData::THaEvData() :
   for (int i=0; i<MAX_PSFACT; i++) psfact[i] = 0;
   crateslot = new THaSlotData[MAXROC*MAXSLOT];
   helicity = new THaHelicity;
+
+//  fdb = fopen("heldata","w");  
 
 #ifndef STANDALONE
 // Register global variables. 
@@ -288,6 +292,7 @@ int THaEvData::physics_decode(const int* evbuffer, THaCrateMap& map) {
      if(helicity->Decode(*this) != 1) return HED_ERR;
      dhel = (Double_t)helicity->GetHelicity();
      dtimestamp = (Double_t)helicity->GetTime();
+//     fprintf(fdb,"%d   %d  %d\n",GetEvNum(),(Int_t)dtimestamp,(Int_t)dhel);
      return HED_OK;
 };
 
@@ -404,8 +409,7 @@ int THaEvData::scaler_event_decode(const int* evbuffer, THaCrateMap& map) {
 	}
       }
       int ipt = -1;
-      while (ipt++ < event_length) {
-        if (ipt >= event_length) break;
+      while (++ipt < event_length) {
         roc = map.getScalerCrate(evbuffer[ipt]);
         if (DEBUG) {
 	  cout << "ipt "<<dec<<ipt<<" evbuffer "<<hex<<evbuffer[ipt];
@@ -486,7 +490,7 @@ int THaEvData::fastbus_decode(int roc, THaCrateMap& map,
     synchextra = false;
     buffmode = false;
     if (DEBUG) cout << "Fastbus roc  "<<dec<<roc<<endl;
-    while ( ipt++ < istop ) {
+    while ( ipt++ < istop ) {  
        if(DEBUG) {
           cout << "evbuffer  " <<dec<<ipt<<"   ";
           cout << hex << evbuffer[ipt] << endl;
@@ -499,7 +503,10 @@ int THaEvData::fastbus_decode(int roc, THaCrateMap& map,
        int model = map.getModel(roc,slot);
        if (model == map.CM_ERR) continue;
        if (!model) {
-	 if (VERBOSE) cout << "Warning: Undefined module in data" << endl;
+	 if (VERBOSE) {
+           cout << "Warning: Undefined module in data" << endl;
+           cout << "roc " << roc << "   slot " << slot << endl;
+	 }
          continue;
        }
        if (DEBUG) {
@@ -558,7 +565,7 @@ int THaEvData::vme_decode(int roc, THaCrateMap& map, const int* evbuffer,
           map.setSlotDone(slot);
           if (map.getModel(roc,slot) == 1182) {   // LeCroy 1182 ADC
 	    for (chan=0; chan<8; chan++) {
-              if (ipt++ >= event_length) goto SlotDone;
+              if (++ipt >= event_length) goto SlotDone;  
               raw = evbuffer[ipt];
               if(DEBUG) {
                 cout<<"1182 chan data "<<dec<<chan<<" 0x"<<hex<<raw<<endl;
@@ -572,7 +579,7 @@ int THaEvData::vme_decode(int roc, THaCrateMap& map, const int* evbuffer,
            if (DEBUG) cout << "nhit 7510 " << nhit << endl;
 	   for (chan=0; chan<8; chan++) {
              for (int j=0; j<nhit/2; j++) {  // nhit must be even
-               if (ipt++ >= event_length) goto SlotDone;
+               if (++ipt >= event_length) goto SlotDone;
                raw = evbuffer[ipt];
                if(DEBUG)  cout<<"7510 raw  0x"<<hex<<raw<<endl;
                if(crateslot[idx(roc,slot)].loadData
@@ -585,7 +592,7 @@ int THaEvData::vme_decode(int roc, THaCrateMap& map, const int* evbuffer,
 	  }
           if (map.getModel(roc,slot) == 3123) {  // VMIC 3123 ADC
 	    for (chan=0; chan<16; chan++) {
-              if (ipt++ >= event_length) goto SlotDone;
+              if (++ipt >= event_length) goto SlotDone;
               raw = evbuffer[ipt];
               if(DEBUG) {
                 cout<<"3123 chan data "<<dec<<chan<<"  0x"<<hex<<raw<<endl;
@@ -598,7 +605,7 @@ int THaEvData::vme_decode(int roc, THaCrateMap& map, const int* evbuffer,
 // "scaler events" dont come here.  See scaler_event_decode().
           if (map.getModel(roc,slot) == 1151) {  // LeCroy 1151 scaler
 	    for (chan=0; chan<16; chan++) {
-              if (ipt++ >= event_length) goto SlotDone;
+              if (++ipt >= event_length) goto SlotDone;
               raw = evbuffer[ipt];
               if(DEBUG) {
                 cout<<"1151 chan data "<<dec<<chan<<"  0x"<<hex<<raw<<endl;
@@ -612,7 +619,7 @@ int THaEvData::vme_decode(int roc, THaCrateMap& map, const int* evbuffer,
           if (map.getModel(roc,slot) == 560) {   // CAEN 560 scaler
             loc = ipt;
 	    for (chan=0; chan<16; chan++) {  
-              if (loc++ >= event_length) goto SlotDone;
+              if (++loc >= event_length) goto SlotDone; 
               raw = evbuffer[loc];
               if(DEBUG) {
                 cout<<"560 chan data "<<dec<<chan<<"  0x"<<hex<<raw<<endl;
@@ -623,7 +630,7 @@ int THaEvData::vme_decode(int roc, THaCrateMap& map, const int* evbuffer,
 	  }
           if (map.getModel(roc,slot) == 3801) {  // Struck 3801 scaler
 	    for (chan=0; chan<32; chan++) {
-              if (ipt++ >= event_length) goto SlotDone;
+              if (++ipt >= event_length) goto SlotDone;
               raw = evbuffer[ipt];
               if(DEBUG) {
                 cout<<"3801 chan data "<<dec<<chan<<"  0x"<<hex<<raw<<endl;
