@@ -26,6 +26,7 @@ THaRasteredBeam::THaRasteredBeam( const char* name, const char* description ) :
 }
 
 
+//_____________________________________________________________________________
 Int_t THaRasteredBeam::Reconstruct()
 {
 
@@ -47,7 +48,8 @@ Int_t THaRasteredBeam::Reconstruct()
     fDirection = theBeamDet->GetDirection();
   }
   else {
-    Error( Here("Reconstruct()"), "Beamline Detectors Missing in Detector List" );
+    Error( Here("Reconstruct"), 
+	   "Beamline Detectors Missing in Detector List" );
   }
 
 
@@ -56,6 +58,8 @@ Int_t THaRasteredBeam::Reconstruct()
 	 static_cast<THaBeamDet*>( nextDet() )) {
     theBeamDet->Process();
   }
+
+  Update();
 
   return 0;
 

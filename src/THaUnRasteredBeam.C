@@ -26,8 +26,9 @@ ClassImp(THaUnRasteredBeam)
 
 //_____________________________________________________________________________
 
-THaUnRasteredBeam::THaUnRasteredBeam( const char* name, const char* description ) :
-    THaBeam( name, description ) 
+THaUnRasteredBeam::THaUnRasteredBeam( const char* name, 
+				      const char* description )
+  : THaBeam( name, description ) 
 {
 
 
@@ -36,6 +37,7 @@ THaUnRasteredBeam::THaUnRasteredBeam( const char* name, const char* description 
 }
 
 
+//_____________________________________________________________________________
 Int_t THaUnRasteredBeam::Reconstruct()
 {
 
@@ -54,7 +56,8 @@ Int_t THaUnRasteredBeam::Reconstruct()
       theBeamDet->Process();
       p[i] = theBeamDet->GetPosition();
     } else {
-      Error( Here("Reconstruct()"), "Beamline Detectors Missing in Detector List" );
+      Error( Here("Reconstruct"), 
+	     "Beamline Detectors Missing in Detector List" );
     }
   }
 
@@ -67,6 +70,8 @@ Int_t THaUnRasteredBeam::Reconstruct()
   fDirection = p[1]-p[0];
 
   fPosition = p[1] + (p[1](2)/(p[0](2)-p[1](2))) * fDirection ;
+
+  Update();
 
   return 0;
 
