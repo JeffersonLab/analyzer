@@ -18,7 +18,7 @@ public:
   THaRunParameters();
   // Derived classes must implement operator= and copy ctor!
   THaRunParameters( const THaRunParameters& run );
-  THaRunParameters& operator=( const THaRunParameters& rhs );
+  virtual THaRunParameters& operator=( const THaRunParameters& rhs );
   virtual ~THaRunParameters();
   
   virtual void   Clear( Option_t* opt="" );
