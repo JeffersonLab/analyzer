@@ -10,6 +10,7 @@
 #include "THaAnalysisObject.h"
 #include "TDatime.h"
 #include "TMath.h"
+#include <iostream>
 
 using namespace std;
 
@@ -80,6 +81,31 @@ void THaRunParameters::Clear( Option_t* opt )
 void THaRunParameters::Print( Option_t* opt ) const
 {
   // Print run parameters
+
+  cout << "Run parameters: " << fRunName << endl;
+  cout << " Beam: " << fBeamName <<endl;
+  cout << "  Energy      = " << fBeamE << " +/- " << fBeamdE << " GeV\n";
+  cout << "  Momentum    = " << fBeamP << " GeV/c\n";
+  cout << "  Mass/Charge = " << fBeamM << "/" << fBeamQ << " GeV/c^2\n";
+  if( fIsPol ) {
+    cout << "  Polarization= " << 100.*fBeamPol << "%\n";
+  }
+  cout << " Target: " << fTgtName << endl;
+  cout << "  Mass:       = " << fTgtM << " GeV/c^2\n";
+  if( fIsPol ) {
+    cout << "  Polarization= " << 100.*fTgtPol << "%\n";
+  }
+  cout << " DAQ:\n";
+  Int_t np = fPrescale.GetSize();
+  if( np > 0 ){
+    cout << "  Prescale factors: (1-"<<np<<")\n   ";
+    for( int i=0; i<np; i++ ) {
+      cout << fPrescale[i];
+      if( i != np-1 )
+	cout << "/";
+    }
+    cout << endl;
+  }
 }
 
 //_____________________________________________________________________________
