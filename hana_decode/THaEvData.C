@@ -739,12 +739,13 @@ int THaEvData::loadFlag(const int* evbuffer) {
   if( word == 0xdc0000ff) synchmiss = true;
   if( upword == 0xdcfe0000) {
     synchextra = true;
-    int slot = (word&0xf800)>>11;
-    int nhit = (word&0x7ff);
-    if(VERBOSE) {
-      cout << "THaEvData: WARNING: Fastbus slot ";
-      cout << slot << "  has extra hits "<<nhit<<endl;
-    }
+    // This warning seems to be unnecessary and confusing
+//     if(VERBOSE) {
+//       int slot = (word&0xf800)>>11;
+//       int nhit = (word&0x7ff);
+//       cout << "THaEvData: WARNING: Fastbus slot ";
+//       cout << slot << " has "<<nhit<<" extra hits\n";
+//    }
   }
   if( upword == 0xfabc0000) {
       datascan = *(evbuffer+3);
