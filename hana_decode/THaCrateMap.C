@@ -157,7 +157,7 @@ void THaCrateMap::incrNslot(int crate) {
 // Default state: most recent.
      int prior_oct_2000 = 0;
      int prior_jan_2001 = 0;
-     int after_may_2001 = 0;   
+     int after_may_2001 = 1;   
      int after_sep_2002 = 1;  // most recent
 
      if (tloc == 0) {
