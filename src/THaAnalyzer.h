@@ -36,14 +36,16 @@ public:
   virtual ~THaAnalyzer();
 
   virtual const TString* GetCutBlockNames()  const { return fCutBlockNames; }
-  virtual const char*    GetFilename()       const { return fOutFile.Data(); }
+  virtual const char*    GetOutFileName()    const { return fOutFileName.Data(); }
+  virtual const char*    GetCutFileName()    const { return fCutFileName.Data(); }
+  virtual const char*    GetOdefFileName()   const { return fOdefFileName.Data(); }
   virtual Int_t          GetNblocks()        const { return fNblocks; }
   virtual const TFile*   GetOutFile()        const { return fFile; }
-  virtual void           SetCutBlocks( Int_t n, const char* name );
-  virtual void           SetCutBlocks( const TString* names );
-  virtual void           SetCutBlocks( const char** names );
-  virtual void           SetEvent( THaEvent* event )    { fEvent = event; }
-  virtual void           SetOutFile( const char* name ) { fOutFile = name; }
+  virtual void           SetCutBlockName( Int_t n, const char* name );
+  virtual void           SetEvent( THaEvent* event )     { fEvent = event; }
+  virtual void           SetOutFile( const char* name )  { fOutFileName = name; }
+  virtual void           SetCutFile( const char* name )  { fCutFileName = name; }
+  virtual void           SetOdefFile( const char* name ) { fOdefFileName = name; }
 
   virtual void           Close();
   virtual Int_t          Process( THaRun& run );
@@ -54,7 +56,9 @@ protected:
 
   TFile*         fFile;            //The ROOT output file.
   THaOutput*     fOutput;          //Flexible ROOT output (tree, histograms)
-  TString        fOutFile;         //Name of output ROOT file.
+  TString        fOutFileName;     //Name of output ROOT file.
+  TString        fCutFileName;     //Name of cut definition file to load
+  TString        fOdefFileName;    //Name of output definition file
   THaEvent*      fEvent;           //The event structure to be written to file.
   Int_t          fNblocks;         //Number of analysis stages
   TString*       fCutBlockNames;   //Array of cut block names

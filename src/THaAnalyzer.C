@@ -46,7 +46,7 @@ const char* const THaAnalyzer::kMasterCutName = "master";
 
 //_____________________________________________________________________________
 THaAnalyzer::THaAnalyzer() :
-  fFile(NULL), fOutput(NULL), fEvent(0), fNev(0)
+  fFile(NULL), fOutput(NULL), fOdefFileName("output.def"), fEvent(0), fNev(0)
 {
   // Default constructor.
 
@@ -163,15 +163,15 @@ Int_t THaAnalyzer::Process( THaRun& run )
 
   //--- If output file is defined, open it.
  
-  if( !fFile && !fOutFile.IsNull() ) {
-    cout << "Creating new file: " << fOutFile << endl;
-    fFile = new TFile( fOutFile.Data(), "RECREATE" );
+  if( !fFile && !fOutFileName.IsNull() ) {
+    cout << "Creating new file: " << fOutFileName << endl;
+    fFile = new TFile( fOutFileName.Data(), "RECREATE" );
   } 
   // filename changed and file open? -> Close file and create a new one
-  else if ( fFile && strcmp( fFile->GetName(), fOutFile.Data())) {
+  else if ( fFile && strcmp( fFile->GetName(), fOutFileName.Data())) {
     Close();
-    cout << "Creating new file: " << fOutFile << endl;
-    fFile = new TFile( fOutFile.Data(), "RECREATE" );
+    cout << "Creating new file: " << fOutFileName << endl;
+    fFile = new TFile( fOutFileName.Data(), "RECREATE" );
   }
     
   if( fFile && fFile->IsZombie() ) {
@@ -194,8 +194,6 @@ Int_t THaAnalyzer::Process( THaRun& run )
   UInt_t nev_physics = 0;
   UInt_t nlim = run.GetLastEvent();
   bool verbose = true, first = true;
-
-  SetupCuts();
 
   THaEvData evdata;
   TIter next( gHaApps );
@@ -260,10 +258,16 @@ Int_t THaAnalyzer::Process( THaRun& run )
 	    (retval = InitModules( next_physics, run_time, 40, "THaPhysicsModule"))
 	    )) {
 	
-      // fOutput must be initialized after all apparatuses are
-      // initialized and before adding anything to its tree.
+	// Set up cuts here, now that all global variables are available
+	
+	if( !fCutFileName.IsNull() ) 
+	  gHaCuts->Load( fCutFileName );
+	SetupCuts();
 
-	if( (retval = fOutput->Init()) < 0 ) {
+	// fOutput must be initialized after all apparatuses are
+	// initialized and before adding anything to its tree.
+
+	if( (retval = fOutput->Init( fOdefFileName )) < 0 ) {
 	  Error( here, "Error initializing THaOutput." );
 	} else if( retval == 1 ) 
 	  retval = 0;  // Ignore re-initialization attempt
@@ -450,24 +454,10 @@ Int_t THaAnalyzer::Process( THaRun& run )
 }
 
 //_____________________________________________________________________________
-void THaAnalyzer::SetCutBlocks( Int_t n, const char* name )
+void THaAnalyzer::SetCutBlockName( Int_t n, const char* name )
 {
   if( n < 0 || n >= fNblocks ) return;
   fCutBlockNames[n] = name;
-}
-
-//_____________________________________________________________________________
-void THaAnalyzer::SetCutBlocks( const TString* name )
-{
-  for( int i=0; i<fNblocks; i-- )
-    fCutBlockNames[i] = name[i];
-}
-
-//_____________________________________________________________________________
-void THaAnalyzer::SetCutBlocks( const char** name )
-{
-  for( int i=0; i<fNblocks; i-- )
-    fCutBlockNames[i] = name[i];
 }
 
 //_____________________________________________________________________________
@@ -486,6 +476,7 @@ void THaAnalyzer::SetupCuts()
     fMasterCutNames[i] = fCutBlockNames[i] + "_";
     fMasterCutNames[i] += kMasterCutName;
 
+    // If block not found, this will return NULL and work just fine later.
     fCutBlocks[i] = gHaCuts->FindBlock( fCutBlockNames[i] );
   }
 }
