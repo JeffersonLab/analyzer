@@ -73,6 +73,7 @@ protected:
   THaOutput*     fOutput;          //Flexible ROOT output (tree, histograms)
   TString        fOutFileName;     //Name of output ROOT file.
   TString        fCutFileName;     //Name of cut definition file to load
+  TString        fLoadedCutFileName;//Name of last loaded cut definition file
   TString        fOdefFileName;    //Name of output definition file
   TString        fSummaryFileName; //Name of file to write analysis summary to
   THaEvent*      fEvent;           //The event structure to be written to file.

@@ -260,7 +260,13 @@ Int_t THaAnalyzer::Process( THaRun& run )
   //--- Output tree and histograms
 
   TTree* outputTree = NULL;
-  if( fEvent) fEvent->Reset();
+  bool local_event = false;
+  if( !fEvent )  {
+    fEvent = new THaEvent;
+    local_event = true;
+  }
+  fEvent->Reset();
+
   if( !fOutput ) fOutput = new THaOutput();
 
   //--- Initialize counters
@@ -338,9 +344,21 @@ Int_t THaAnalyzer::Process( THaRun& run )
 	    )) {
 	
 	// Set up cuts here, now that all global variables are available
-	
-	if( !fCutFileName.IsNull() ) 
-	  gHaCuts->Load( fCutFileName );
+  	
+	if( fCutFileName.IsNull() ) {
+	  // No test definitions -> make sure list is clear
+	  gHaCuts->Clear();
+	  fLoadedCutFileName = "";
+	} else {
+	  if( fCutFileName != fLoadedCutFileName ) {
+	    // New test definitions -> load them
+	    gHaCuts->Load( fCutFileName );
+	    fLoadedCutFileName = fCutFileName;
+	  }
+	  // Ensure all tests are up-to-date. Global variables may have changed.
+	  gHaCuts->Compile();
+	}
+	// Initialize local pointers to test blocks and master cuts
 	InitCuts();
 
 	// fOutput must be initialized after all apparatuses are
@@ -360,6 +378,7 @@ Int_t THaAnalyzer::Process( THaRun& run )
       if( retval ) {
 	Close();
 	run.CloseFile();
+	if( local_event ) { delete fEvent; fEvent = NULL; }
 	return retval;
       }
 
@@ -571,6 +590,7 @@ Int_t THaAnalyzer::Process( THaRun& run )
   }
 
   gHaRun = NULL;
+  if( local_event ) { delete fEvent; fEvent = NULL; }
   return nev_physics;
 }
 //_____________________________________________________________________________
