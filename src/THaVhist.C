@@ -42,9 +42,9 @@
 
 using namespace std;
 
-static const char kMyFX = 1<<8;
-static const char kMyFY = 1<<9;
-static const char kMyCut = 1<<10;
+static const Int_t kMyFX = 1<<8;
+static const Int_t kMyFY = 1<<9;
+static const Int_t kMyCut = 1<<10;
 
 //_____________________________________________________________________________
 THaVhist::~THaVhist() 
