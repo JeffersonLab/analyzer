@@ -21,23 +21,20 @@
 #include "THaCodaData.h"
 #include "TArrayI.h"
 
-class TString;
-
 class THaCodaFile : public THaCodaData {
 
 public:
 
   THaCodaFile();
-  THaCodaFile(const TString& filename);
-  THaCodaFile(const TString& filename, const TString& rw);
+  THaCodaFile(const char* filename, const char* rw="r");
   ~THaCodaFile();
-  int codaOpen(const TString& filename, int mode=1);
-  int codaOpen(const TString& filename, const TString& rw, int mode=1);
+  int codaOpen(const char* filename, int mode=1);
+  int codaOpen(const char* filename, const char* rw, int mode=1);
   int codaClose();
   int codaRead(); 
   int codaWrite(int* evbuffer);
   int *getEvBuffer();     
-  int filterToFile(const TString& output_file); // filter to an output file
+  int filterToFile(const char* output_file); // filter to an output file
   void addEvTypeFilt(int evtype_to_filt);    // add an event type to list
   void addEvListFilt(int event_to_filt);     // add an event num to list
   void setMaxEvFilt(int max_event);          // max num events to filter
@@ -47,9 +44,9 @@ private:
 
   THaCodaFile(const THaCodaFile &fn);
   THaCodaFile& operator=(const THaCodaFile &fn);
-  void init(const TString& fname);
+  void init(const char* fname="");
   void initFilter();
-  void staterr(const TString& tried_to, int status);  // Can cause job to exit(0)
+  void staterr(const char* tried_to, int status);  // Can cause job to exit(0)
   int ffirst;
   int max_to_filt,handle;
   int maxflist,maxftype;

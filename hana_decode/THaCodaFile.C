@@ -17,46 +17,39 @@
 #include "THaCodaFile.h"
 #include <iostream>
 #include <cstdlib>
+#include <cstring>
 #include "evio.h"
-#include "TString.h"
 
 using namespace std;
 
 //Constructors 
 
-  THaCodaFile::THaCodaFile() {       // do nothing (must open file separately)
-       ffirst = 0;
-       init(" no name ");
+  THaCodaFile::THaCodaFile() : ffirst(0), handle(0) {       
+    // Default constructor. Do nothing (must open file separately).
   }
-  THaCodaFile::THaCodaFile(const TString& fname) {
-       ffirst = 0;
-       init(fname);
-       int status = codaOpen(fname.Data(),"r");       // read only 
-       staterr("open",status);
-  }
-  THaCodaFile::THaCodaFile(const TString& fname, const TString& readwrite) {
-       ffirst = 0;
-       init(fname);
-       int status = codaOpen(fname.Data(),readwrite.Data());  // pass read or write flag
-       staterr("open",status);
+  THaCodaFile::THaCodaFile(const char* fname, const char* readwrite) :
+    ffirst(0), handle(0) {
+    // Standard constructor
+    int status = codaOpen(fname,readwrite);  // pass read or write flag
+    staterr("open",status);
   }
 
-//Destructor
   THaCodaFile::~THaCodaFile () {
+    //Destructor
        int status = codaClose();
        staterr("close",status);
   };       
 
-  int THaCodaFile::codaOpen(const TString& fname, int mode) {  
+  int THaCodaFile::codaOpen(const char* fname, int mode) {  
        init(fname);
-       int status = evOpen(fname.Data(),"r",&handle);
+       int status = evOpen(fname,"r",&handle);
        staterr("open",status);
        return status;
   };
 
-  int THaCodaFile::codaOpen(const TString& fname, const TString& readwrite, int mode) {  
+  int THaCodaFile::codaOpen(const char* fname, const char* readwrite, int mode) {  
       init(fname);
-      int status = evOpen(fname.Data(),readwrite.Data(),&handle);
+      int status = evOpen(fname,readwrite,&handle);
       staterr("open",status);
       return status;
   };
@@ -69,7 +62,7 @@ using namespace std;
       handle = 0;
       return status;
     }
-    return CODA_OK;
+    return S_SUCCESS;
   }
 
 
@@ -81,7 +74,7 @@ using namespace std;
        status = evRead(handle, evbuffer, MAXEVLEN);
        staterr("read",status);
        if (status != S_SUCCESS) {
-           status = CODA_ERROR;
+	 //           status = CODA_ERROR; //don't clobber the return code!
            return status;
        }
     } else {
@@ -90,7 +83,7 @@ using namespace std;
          cout << "You need to call codaOpen(filename)" << endl;
          cout << "or use the constructor with (filename) arg" << endl;
       }
-      status = CODA_ERROR;
+      status = S_EVFILE_BADHANDLE;
     }
     return status;
   };
@@ -104,7 +97,7 @@ using namespace std;
        staterr("write",status);
      } else {
        cout << "codaWrite ERROR: tried to access file with handle = 0" << endl;
-       status = CODA_ERROR;
+       status = S_EVFILE_BADHANDLE;
      }
      return status;
    };
@@ -121,14 +114,14 @@ using namespace std;
     return (handle!=0);
   }
 
-  int THaCodaFile::filterToFile(const TString& output_file) {
+  int THaCodaFile::filterToFile(const char* output_file) {
 // A call to filterToFile filters from present file to output_file
 // using filter criteria defined by evtypes, evlist, and max_to_filt 
 // which are loaded by public methods of this class.  If no conditions 
 // were loaded, it makes a copy of the input file (i.e. no filtering).
 
        int i;
-       if(output_file == filename) {
+       if(filename == output_file) {
 	 if(CODA_VERBOSE) {
            cout << "filterToFile: ERROR: ";
            cout << "Input and output files cannot be same " << endl;
@@ -137,7 +130,7 @@ using namespace std;
          return CODA_ERROR;
        }
        FILE *fp;
-       if ((fp = fopen(output_file.Data(),"r")) != NULL) {
+       if ((fp = fopen(output_file,"r")) != NULL) {
           if(CODA_VERBOSE) {
   	    cout << "filterToFile:  ERROR:  ";
             cout << "Output file `" << output_file << "' exists " << endl;
@@ -147,7 +140,7 @@ using namespace std;
           fclose(fp);
           return CODA_ERROR;
        }
-       THaCodaFile* fout = new THaCodaFile(output_file.Data(),"w"); 
+       THaCodaFile* fout = new THaCodaFile(output_file,"w"); 
        int nfilt = 0;
 
        while (codaRead() == S_SUCCESS) {
@@ -255,13 +248,13 @@ Finish:
 
 
 
-void THaCodaFile::staterr(const TString& tried_to, int status) {
+void THaCodaFile::staterr(const char* tried_to, int status) {
 // staterr gives the non-expert user a reasonable clue
 // of what the status returns from evio mean.
 // Note: severe errors can cause job to exit(0)
 // and the user has to pay attention to why.
     if (status == S_SUCCESS) return;  // everything is fine.
-    if (tried_to == "open") {
+    if (tried_to && !strcmp(tried_to,"open")) {
        cout << "THaCodaFile: ERROR opening file = " << filename << endl;
        cout << "Most likely errors are: " << endl;
        cout << "   1.  You mistyped the name of file ?" << endl;
@@ -299,11 +292,12 @@ void THaCodaFile::staterr(const TString& tried_to, int status) {
       }
   };
 
-  void THaCodaFile::init(const TString& fname) {
-    if( fname != filename )
+  void THaCodaFile::init(const char* fname) {
+    if( filename != fname ) {
       codaClose();
+      filename = fname;
+    }
     handle = 0;
-    filename = fname;
   };
 
   void THaCodaFile::initFilter() {
