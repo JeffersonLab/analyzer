@@ -45,8 +45,8 @@ public:
 			    const int debug_flag = 1);
 
   // Support functions for reading run database files
-  static  Int_t   LoadRunDBvalue( FILE* file, TDatime& date, const char* tag,
-				  Double_t& value );
+  static  Int_t   LoadRunDBvalue( FILE* file, const TDatime& date, 
+				  const char* tag, Double_t& value );
 
   // Angle transformation utility functions
   static  void    GeoToSph( Double_t  th_geo, Double_t  ph_geo,

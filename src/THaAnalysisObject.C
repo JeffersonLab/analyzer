@@ -490,7 +490,7 @@ Int_t THaAnalysisObject::IsRunDBtag( const string& line, const char* tag,
 }
 
 //_____________________________________________________________________________
-Int_t THaAnalysisObject::LoadRunDBvalue( FILE* file, TDatime& date, 
+Int_t THaAnalysisObject::LoadRunDBvalue( FILE* file, const TDatime& date, 
 					 const char* tag, Double_t& value )
 {
   // Load a data value tagged with 'tag' from the run database 'file'.
