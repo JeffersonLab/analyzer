@@ -192,16 +192,13 @@ FILE* THaAnalysisObject::OpenFile( const char *name, const TDatime& date,
   // system calls, call ROOT's OS interface instead.
 
   FILE* fi = NULL;
-  vector<string> fnames;
-
-  fnames = GetDBFileList( name, date, here );
+  vector<string> fnames( GetDBFileList(name, date, here) );
   if( !fnames.empty() ) {
     vector<string>::iterator it = fnames.begin();
     do {
 #ifdef WITH_DEBUG
-      if( debug_flag>0 ) {
-	cout << "<" << here << ">: Opening database file " << *it;
-      }
+      if( debug_flag>0 )
+      	cout << "<" << here << ">: Opening database file " << *it;
 #endif
       // Open the database file
       fi = fopen( (*it).c_str(), filemode);
