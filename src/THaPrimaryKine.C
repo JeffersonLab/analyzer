@@ -59,9 +59,9 @@ void THaPrimaryKine::Clear( Option_t* opt )
 {
   // Clear all internal variables.
 
+  THaPhysicsModule::Clear(opt);
   fQ2 = fOmega = fW2 = fXbj = fScatAngle = fEpsilon = fQ3mag
     = fThetaQ = fPhiQ = kBig;
-  fDataValid = false;
 }
 
 //_____________________________________________________________________________
@@ -202,12 +202,6 @@ Int_t THaPrimaryKine::ReadRunDatabase( const TDatime& date )
   return 0;
 }
   
-//_____________________________________________________________________________
-void THaPrimaryKine::PrintInitError( const char* here )
-{
-  Error( Here(here), "Cannot set. Module already initialized." );
-}
-
 //_____________________________________________________________________________
 void THaPrimaryKine::SetMass( Double_t m ) 
 {

@@ -79,8 +79,6 @@ protected:
   virtual Int_t DefineVariables( EMode mode = kDefine );
   virtual Int_t ReadRunDatabase( const TDatime& date );
 
-  void PrintInitError( const char* here );
-
   TString                 fSpectroName;  // Name of spectrometer to consider
   TString                 fBeamName;     // Name of beam position apparatus
   THaTrackingModule*      fSpectro;      // Pointer to spectrometer object

@@ -58,6 +58,7 @@ void THaSecondaryKine::Clear( Option_t* opt )
 {
   // Clear all internal variables.
 
+  THaPhysicsModule::Clear(opt);
   fTheta_xq = fPhi_xq = fTheta_bq = fPhi_bq = fXangle = fPmiss
     = fPmiss_x = fPmiss_y = fPmiss_z = fEmiss = fMrecoil = fErecoil
     = fTX = fTB = fPX_cm = fTheta_x_cm = fPhi_x_cm = fTheta_b_cm
@@ -65,7 +66,6 @@ void THaSecondaryKine::Clear( Option_t* opt )
     = fMandelU = kBig;
   fX.SetXYZT(kBig,kBig,kBig,kBig); 
   fB.SetXYZT(kBig,kBig,kBig,kBig);
-  fDataValid = false;
 }
 
 //_____________________________________________________________________________
@@ -303,12 +303,6 @@ Int_t THaSecondaryKine::ReadRunDatabase( const TDatime& date )
   return 0;
 }
   
-//_____________________________________________________________________________
-void THaSecondaryKine::PrintInitError( const char* here )
-{
-  Error( Here(here), "Cannot set. Module already initialized." );
-}
-
 //_____________________________________________________________________________
 void THaSecondaryKine::SetMX( Double_t m ) 
 {
