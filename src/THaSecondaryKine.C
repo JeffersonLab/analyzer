@@ -25,7 +25,6 @@
 #include "TLorentzVector.h"
 #include "TVector3.h"
 #include "TMath.h"
-#include "TRotation.h"
 #include "Ext_TRotation.h"
 
 using namespace std;
@@ -151,7 +150,7 @@ Int_t THaSecondaryKine::Process( const THaEvData& evdata )
   // Measured momentum of secondary particle X in lab
   const TVector3& pX3 = trkifo->GetPvect();
   // 4-momentum of X
-  TLorentzVector fX( pX3, TMath::Sqrt( fMX*fMX + pX3*pX3 ));
+  fX.SetVectM( pX3, fMX );
 
   // 4-momenta of the the primary interaction
   const TLorentzVector* pA  = fPrimary->GetA();  // Initial target
@@ -161,7 +160,7 @@ Int_t THaSecondaryKine::Process( const THaEvData& evdata )
   Double_t omega      = fPrimary->GetOmega(); // Energy xfer
 
   // 4-momentum of undetected recoil system B
-  TLorentzVector fB = *pA1 - fX;
+  fB = *pA1 - fX;
 
   // Angle of X with scattered primary particle
   fXangle = fX.Angle( pP1->Vect());
@@ -172,7 +171,7 @@ Int_t THaSecondaryKine::Process( const THaEvData& evdata )
   // lies in the scattering plane (defined by q and e') and points
   // in the direction of e', so the out-of-plane angle lies within
   // -90<phi_xq<90deg if X is detected on the downstream/forward side of q.
-#ifdef Ext_TRotation
+#ifdef ROOT_Ext_TRotation
   Ext_TRotation
 #else
   TRotation
@@ -237,7 +236,7 @@ Int_t THaSecondaryKine::Process( const THaEvData& evdata )
   // CM vectors of X and B. 
   // Express X and B in the frame where q is along the z-axis 
   // - the typical head-on collision picture.
-#ifdef Ext_TRotation
+#ifdef ROOT_Ext_TRotation
   Ext_TRotation
 #else
   TRotation
