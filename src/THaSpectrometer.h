@@ -17,6 +17,7 @@ class THaPidDetector;
 class THaTrack;
 class TList;
 class THaCut;
+class THaTrackInfo;
 
 class THaSpectrometer : public THaApparatus {
   
@@ -28,12 +29,12 @@ public:
 					   const char* name,
 					   Double_t mass, Int_t charge = 0 );
   virtual Int_t            CalcPID();
-          void             Clear( Option_t* opt="") 
-  { fTracks->Clear("C"); fCoarseDone = kFALSE; }
+  virtual void             Clear( Option_t* opt="");
   virtual void             DefinePidParticles();
   virtual Int_t            DefineVariables( EMode mode = kDefine );
   virtual Int_t            FindVertices( TClonesArray& tracks ) = 0;
-          THaTrack*        GetGoldenTrack()   const { return fGoldenTrack; }
+          THaTrack*        GetGoldenTrack() const { return fGoldenTrack; }
+          THaTrackInfo*    GetTrackInfo()   const { return fTrackInfo; }
           Int_t            GetNpidParticles() const;
           Int_t            GetNpidDetectors() const;
   const   THaParticleInfo* GetPidParticleInfo( Int_t i ) const;
@@ -41,7 +42,7 @@ public:
           Int_t            GetNTracks()  const { return fTracks->GetLast()+1; }
           TClonesArray*    GetTracks()   const { return fTracks; }
           TClonesArray*    GetTrackPID() const { return fTrackPID; }
-  //          TClonesArray*    GetVertices() const { return fVertices; }
+
           Bool_t           IsPID() const       { return fPID; }
   virtual Int_t            CoarseReconstruct();
   virtual Int_t            Reconstruct();
@@ -78,12 +79,12 @@ protected:
 
   TClonesArray*   fTracks;                //Tracks 
   TClonesArray*   fTrackPID;              //PID info for the tracks
-  //  TClonesArray*   fVertices;              //Track vertices
   TList*          fTrackingDetectors;     //Tracking detectors
   TList*          fNonTrackingDetectors;  //Non-tracking detectors
   TObjArray*      fPidDetectors;          //PID detectors
   TObjArray*      fPidParticles;          //Particles for which we want PID
   THaTrack*       fGoldenTrack;           //Golden track within fTracks
+  THaTrackInfo*   fTrackInfo;             //Track info of Golden Track (for physics modules)
   Bool_t          fPID;                   //PID enabled
 
   // The following is specific to small-acceptance pointing spectrometers

@@ -45,6 +45,7 @@
 #include "THaTrack.h"
 #include "THaScintillator.h"
 #include "THaVDC.h"
+#include "THaTrackInfo.h"
 
 #ifdef WITH_DEBUG
 #include <iostream>
@@ -61,6 +62,12 @@ THaHRS::THaHRS( const char* name, const char* description ) :
   AddDetector( new THaVDC("vdc", "Vertical Drift Chamber"));
   AddDetector( new THaScintillator("s1", "S1 scintillator"));
   AddDetector( new THaScintillator("s2", "S2 scintillator"));
+}
+
+//_____________________________________________________________________________
+THaHRS::~THaHRS()
+{
+  // Destructor
 }
 
 //_____________________________________________________________________________
@@ -91,10 +98,11 @@ Int_t THaHRS::TrackCalc()
 {
   // Find the "Golden Track". 
 
-  if( GetNTracks() > 0 )
+  if( GetNTracks() > 0 ) {
     //FIXME: quick and dirty hack to get started ...
     fGoldenTrack = static_cast<THaTrack*>( fTracks->At(0) );
-  else
+    *fTrackInfo  = *fGoldenTrack;
+  } else
     fGoldenTrack = NULL;
 
   return 0;

@@ -21,7 +21,7 @@
 #include "THaPidDetector.h"
 #include "THaPIDinfo.h"
 #include "THaTrack.h"
-//#include "THaVertex.h"
+#include "THaTrackInfo.h"
 #include "TClass.h"
 #include "TMath.h"
 #include "VarDef.h"
@@ -44,11 +44,11 @@ THaSpectrometer::THaSpectrometer( const char* name, const char* desc ) :
 
   fTracks     = new TClonesArray( "THaTrack",   kInitTrackMultiplicity );
   fTrackPID   = new TClonesArray( "THaPIDinfo", kInitTrackMultiplicity );
-  //  fVertices   = new TClonesArray( "THaVertex",  kInitTrackMultiplicity );
   fTrackingDetectors    = new TList;
   fNonTrackingDetectors = new TList;
   fPidDetectors         = new TObjArray;
   fPidParticles         = new TObjArray;
+  fTrackInfo            = new THaTrackInfo;
 
   Clear();
   DefinePidParticles();
@@ -68,9 +68,9 @@ THaSpectrometer::~THaSpectrometer()
   delete fPidDetectors;          fPidDetectors = 0;
   delete fNonTrackingDetectors;  fNonTrackingDetectors = 0;
   delete fTrackingDetectors;     fTrackingDetectors = 0;
-  //  delete fVertices;              fVertices = 0;
   delete fTrackPID;              fTrackPID = 0;
   delete fTracks;                fTracks = 0;
+  delete fTrackInfo;             fTrackInfo = 0;
 
   DefineVariables( kDelete );
 }
@@ -136,6 +136,17 @@ Int_t THaSpectrometer::CalcPID()
     }
   }    
   return 0;
+}
+
+//_____________________________________________________________________________
+void THaSpectrometer::Clear( Option_t* opt )
+{
+  // Clear the spectrometer data for next event.
+
+  THaApparatus::Clear(opt);
+  fTracks->Clear("C"); 
+  fTrackInfo->Clear();
+  fCoarseDone = kFALSE;
 }
 
 //_____________________________________________________________________________
