@@ -14,7 +14,7 @@ export DEBUG = 1
 # export ONLINE_ET = 1
 #------------------------------------------------------------------------------
 
-VERSION = 1.2-cvs
+VERSION = 1.1-rc1
 NAME    = analyzer-$(VERSION)
 
 #------------------------------------------------------------------------------
@@ -151,7 +151,7 @@ SRC           = src/THaFormula.C src/THaVform.C src/THaVhist.C \
 		src/THaTwoarmVertex.C src/THaAvgVertex.C \
 		src/THaExtTarCor.C src/THaDebugModule.C src/THaTrackInfo.C \
 		src/THaGoldenTrack.C \
-		src/THaPrimaryKine.C \
+		src/THaPrimaryKine.C src/THaSecondaryKine.C \
 		src/THaDB.C src/THaDBFile.C \
                 src/THaCoincidenceTime.C \
                 src/THaTrackProj.C

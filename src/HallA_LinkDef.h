@@ -88,6 +88,7 @@
 #pragma link C++ class THaDebugModule+;
 #pragma link C++ class THaGoldenTrack+;
 #pragma link C++ class THaPrimaryKine+;
+#pragma link C++ class THaSecondaryKine+;
 #pragma link C++ class THaDB+;
 #pragma link C++ class THaDetConfig+;
 #pragma link C++ class THaDBFile+;
