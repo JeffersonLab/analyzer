@@ -9,6 +9,7 @@
 
 #include "TObject.h"
 #include "TVector3.h"
+class THaTrack;
 
 class THaTrackInfo : public TObject {
 public:
@@ -22,11 +23,17 @@ public:
 
   THaTrackInfo( Double_t p, Double_t dp, Double_t x, Double_t y, Double_t th,
 		Double_t ph, const TVector3& pvect ) :
-    fP(p), fDp(dp), fX(x), fY(y), fTheta(th), fPhi(ph), fPvect(pvect), fOK(1) {}
+    fP(p), fDp(dp), fX(x), fY(y), fTheta(th), fPhi(ph), fPvect(pvect), fOK(1) 
+  {}
 
+  THaTrackInfo( const THaTrackInfo& t ) :
+    fP(t.fP), fDp(t.fDp), fX(t.fX), fY(t.fY), fTheta(t.fTheta), 
+    fPhi(t.fPhi), fPvect(t.fPvect), fOK(t.fOK) {}
+  THaTrackInfo& operator=( const THaTrackInfo& );
+  THaTrackInfo& operator=( const THaTrack& );
   virtual ~THaTrackInfo() {}
 
-  void      Clear() { 
+  void      Clear( Option_t* opt="" ) { 
     fPhi = fTheta = fY = fX = fDp = fP = kBig; fPvect.SetXYZ(kBig,kBig,kBig); 
     fOK = 0; 
   }
