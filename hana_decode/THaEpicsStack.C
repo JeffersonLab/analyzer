@@ -14,16 +14,9 @@
 /////////////////////////////////////////////////////////////////////
 
 #include "THaEpicsStack.h"
-#include <cstdlib>
+#include <iostream>
 
-ClassImp(THaEpicsStack)
-
-THaEpicsStack::THaEpicsStack() {
-    init();
-};
-
-THaEpicsStack::~THaEpicsStack() {
-};
+using namespace std;
 
 void THaEpicsStack::init() {
    int i,j;
@@ -73,53 +66,8 @@ void THaEpicsStack::setupDefaultList() {
      addEpicsTag("MBSY3C_energy");
      addEpicsTag("halla_MeV");
 
-};
+}
 
-int THaEpicsStack::findVar(const char* tag) const {
-     int i;
-     for (i=0; i<nepics_strings; i++) {
-       if (strstr(tag,epics_var_list[i].Data()) != NULL) {
-         return i;
-       }
-     }
-     return EPI_ERR;
-};
-
-int THaEpicsStack::loadData(const char* tag, const char* val, int event) {
-     return loadData(tag,std::atof(val),event);     
-};
-
-int THaEpicsStack::loadData(const char* tag, double val, int event) { 
-// Load data into present stack position.
-// To be used by decoder only.
-     int i = findVar(tag);
-     if ( i == EPI_ERR ) return EPI_ERR;
-     if ( (i < 0) || (i >= MAXEPS) ) return EPI_ERR;
-     epicsData[stack_point].event = event;
-     epicsData[stack_point].tag[i] = epics_var_list[i];
-     epicsData[stack_point].value[i] = val;
-     epicsData[stack_point].filled[i] = true;
-     if (stack_point >= stack_size) stack_size = stack_point+1;
-     return EPI_OK;
-};
-
-void THaEpicsStack::bumpStack() {
-// This is used by only by decoder to increment the stack.
-    stack_point++;
-    if (stack_point >= MAXSTACK) stack_point=0;
-    for (int i=0; i<MAXEPS; i++) epicsData[stack_point].filled[i]=false;
-};
-
-double THaEpicsStack::getData(const char* tag) const {
-    return getLastData(tag);
-};
-
-double THaEpicsStack::getData(int stack, int idx) const {
-// Get data from stack position 'stack'
-     if (( stack < 0) || (stack >= MAXSTACK)) return -999999;
-     if (( idx < 0 ) || (idx >= MAXEPS)) return -999999; 
-     return getLastFilled(stack,idx);
-};
 
 double THaEpicsStack::getData(const char* tag, int event) const {
 // Get the EPICS data closest to event# 'event'
@@ -130,7 +78,7 @@ double THaEpicsStack::getData(const char* tag, int event) const {
     k = -1;
     for (i = 0; i < stack_size; i++) {
        diff = event - epicsData[i].event;
-       if (diff < 0) diff = -1*diff;
+       if (diff < 0) diff = -diff;
        if ((diff < min) && (epicsData[i].filled[j])) {
             min = diff;
             k = i;
@@ -138,53 +86,36 @@ double THaEpicsStack::getData(const char* tag, int event) const {
     }
     if (k >= 0) return epicsData[k].value[j];
     return 0;    
-};
-
-double THaEpicsStack::getLastData(const char* tag) const {
-// Return the value previous to the present stack point.
-// This assumes the stack_point is bumped after event was
-// loaded by decoder, and it points to the next place to fill.
-     int i,point;
-     i = findVar(tag);
-     if (i == EPI_ERR) return 0;
-     if (stack_point == 0) {
-         point = MAXSTACK-1;
-     } else {
-         point = stack_point-1;
-     }
-     return getLastFilled(point,i);
-};
+}
 
 double THaEpicsStack::getLastFilled(int point, int ival) const {
-     int j;
-     if (ival < 0 || ival >= MAXEPS) return 0;
-     if (epicsData[point].filled[ival]) return epicsData[point].value[ival];
-     for (j = 0; j<MAXSTACK-1; j++) {
-       j = point - 1;
-       if (j < 0) j = j + MAXSTACK;
-       if (j >= 0 && j < MAXSTACK) {
-         if (epicsData[j].filled[ival]) return epicsData[j].value[ival];
-       }
-     }
-     return 0;
-};
+  if (ival < 0 || ival >= MAXEPS) return 0.0;
+  if (epicsData[point].filled[ival]) return epicsData[point].value[ival];
+  for (int j = 0; j<MAXSTACK-1; j++) {
+    if (--point < 0) {
+      if(stack_size<MAXSTACK) break;
+      point = MAXSTACK-1;
+    }
+    if (epicsData[point].filled[ival]) return epicsData[point].value[ival];
+  }
+  return 0.0;
+}
 
 void THaEpicsStack::print() {
-     int i,j;
      cout << "Number of EPICS variables";
      cout << " registered "<<dec<<nepics_strings<<endl;
-     for (i = 0; i < nepics_strings; i++) {
+     for (int i = 0; i < nepics_strings; i++) {
        cout << "Registered variable "<<epics_var_list[i].Data()<<endl;
      }
      cout << "Loaded data stack size "<<stack_size<<endl;
-     for (i = 0; i < stack_size; i++) {
+     for (int i = 0; i < stack_size; i++) {
        cout << "Data at stack point "<<i<<endl;
-       for (j = 0; j < nepics_strings; j++) {
+       for (int j = 0; j < nepics_strings; j++) {
          cout << "Event number "<<epicsData[i].event;
-         cout << "  Tag "<<epicsData[i].tag[j].Data();
+         cout << "  Tag "<<epicsData[i].tag[j];
          cout << "  Value "<<getData(i,j)<<endl;
        }
      }
-};
+}
 
-
+ClassImp(THaEpicsStack)
