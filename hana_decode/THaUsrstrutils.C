@@ -151,7 +151,7 @@ void THaUsrstrutils::string_from_evbuffer(int *evbuffer)
        }
      }
      if(ifound) {
-        file_configusrstr = (char *)malloc(strbuff.size()*sizeof(char));
+        file_configusrstr = new char[strbuff.size()+100];
         strcpy(file_configusrstr,strbuff.c_str());
         while(*file_configusrstr && isspace(*file_configusrstr)) {
 	   file_configusrstr++;
