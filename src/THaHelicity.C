@@ -393,12 +393,22 @@ void THaHelicity::QuadCalib() {
    }
    if (fFirstquad[fArm] == 0 &&
        fTdiff[fArm] > (1.25*fTdavg[fArm] + fTtol[fArm])) {
-        cout << "WARN: THaHelicity: Skipped QRT.  Low rate ? " << endl;
         if (HELDEBUG >= 2)
           cout << fTdiff[fArm] << "  " << (Int_t)fTimestamp[fArm] << endl;
-        recovery_flag = 1;    // clear & recalibrate the predictor
-        quad_calibrated[fArm] = 0;
-        fFirstquad[fArm] = 1;
+	// Try a recovery.  Use time to flip helicity by the number of
+	// missed quads, unless this is more than 30 (~1 sec).  
+        Int_t nqmiss = fTdiff[fArm]/fTdavg[fArm];
+        if (nqmiss < 30) {
+// cout << "THaHelicity::Recovering from large DT (>= 1 quad)"<<endl;
+	  for (Int_t i = 0; i < nqmiss; i++) QuadHelicity(1);
+          fT0[fArm] = fT0[fArm] + nqmiss*fTdavg[fArm];
+          fTdiff[fArm] = fTimestamp[fArm] - fT0[fArm];
+        } else { 
+          cout << "WARN: THaHelicity: Skipped QRT.  Low rate ? " << endl;
+          recovery_flag = 1;    // clear & recalibrate the predictor
+          quad_calibrated[fArm] = 0;
+          fFirstquad[fArm] = 1;
+        }
    }
    if (fQrt[fArm] == 1  && fFirstquad[fArm] == 1) {
        fT0[fArm] = fTimestamp[fArm];
@@ -485,7 +495,7 @@ void THaHelicity::LoadHelicity() {
 }
 
 //____________________________________________________________________
-void THaHelicity::QuadHelicity() {
+void THaHelicity::QuadHelicity(Int_t cond) {
 // Load the helicity from the present reading for the
 // start of a quad.
   int i, dummy;
@@ -511,8 +521,10 @@ void THaHelicity::QuadHelicity() {
       quad_calibrated[fArm] = 1;
   } else {      
       present_helicity[fArm] = saved_helicity[fArm];
-      if (fTimestamp[fArm] - fTlastquad[fArm] < 
-	 0.3 * fTdavg[fArm]) return;  // Don't calibrate twice same qrt.
+      if (cond == 0) {
+        if (fTimestamp[fArm] - fTlastquad[fArm] < 
+	   0.3 * fTdavg[fArm]) return;  // Don't calibrate twice same qrt.
+      }
       predicted_reading[fArm] = RanBit(0);
       present_helicity[fArm] = RanBit(1);
       saved_helicity[fArm] = present_helicity[fArm];

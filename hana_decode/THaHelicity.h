@@ -41,7 +41,7 @@ private:
   void ReadData ( const THaEvData& evdata);
   void QuadCalib();
   void LoadHelicity();
-  void QuadHelicity();
+  void QuadHelicity(Int_t cond=0);
   Int_t RanBit(Int_t i);
   UInt_t GetSeed();
   Bool_t CompHel();
