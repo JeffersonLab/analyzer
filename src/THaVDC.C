@@ -509,21 +509,21 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 	if( fDebug>0 )
 	  cout << "Track " << tracks->GetLast()+1 << " added.\n";
 #endif
-	theTrack = AddTrack(*tracks, 0.0, 0.0, 0.0, 0.0 );
-	theTrack->SetID( thisID );
-	theTrack->SetCreator( this );
+	theTrack = AddTrack(*tracks, 0.0, 0.0, 0.0, 0.0, thisID );
+	//	theTrack->SetID( thisID );
+	//	theTrack->SetCreator( this );
 	theTrack->AddCluster( track );
 	theTrack->AddCluster( partner );
-	flag |= kReassigned;
+	if( theStage == kFine ) 
+	  flag |= kReassigned;
       }
 
       theTrack->SetD(track->GetX(), track->GetY(), track->GetTheta(), 
 		     track->GetPhi());
-
-      // calculate the transport coordinates
-      CalcFocalPlaneCoords(theTrack, kRotatingTransport);
-
       theTrack->SetFlag( flag );
+
+      // calculate the TRANSPORT coordinates
+      CalcFocalPlaneCoords(theTrack, kRotatingTransport);
     }
   }
 
@@ -739,7 +739,7 @@ void THaVDC::CalcTargetCoords(THaTrack *track, const ECoordTypes mode)
 
   // calculate momentum
   dp = CalcTargetVar(fDMatrixElems, powers);
-  p  = static_cast<THaSpectrometer*>(fApparatus)->GetPcentral() * (1+dp);
+  p  = static_cast<THaSpectrometer*>(fApparatus)->GetPcentral() * (1.0+dp);
 
   //FIXME: estimate x ??
   x = 0.0;
@@ -751,7 +751,6 @@ void THaVDC::CalcTargetCoords(THaTrack *track, const ECoordTypes mode)
   static_cast<THaSpectrometer*>(fApparatus)->
     TransportToLab( p, theta, phi, track->GetPvect() );
 
-  //FIXME: set flag to indicate track valid
 }
 
 

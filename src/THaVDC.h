@@ -44,7 +44,7 @@ public:
     kFine          = BIT(15), // Fine track
     kReassigned    = BIT(16), // Track is a new track in Fine stage
     kMultiTrack    = BIT(17), // Track was generated in the multitrack analysis
-    kBadTrack      = BIT(18)  // Track prematurely exists the spectrometer or similar
+    kBadTrack      = BIT(18)  // Track prematurely exits the spectrometer or similar
   };
 
   // Bits and bit masks for this object
@@ -84,20 +84,9 @@ protected:
                             // the s1 plane
 
   // declarations for target vertex reconstruction
-  enum ECoordTypes {
-    kTransport,
-    kRotatingTransport
-  };
-
-  enum EFPMatrixElemTags {
-    T000 = 0,
-    Y000,
-    P000
-  };
-    
-  enum {
-    kPORDER = 7
-  };
+  enum ECoordTypes { kTransport, kRotatingTransport };
+  enum EFPMatrixElemTags { T000 = 0, Y000, P000 };
+  enum { kPORDER = 7 };
 
   // private class for storing matrix element data
   class THaMatrixElement {
