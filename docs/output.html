@@ -1,130 +1,338 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<html><head>
-<META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-<title>Defining output</title>
-</head>
-<body background="/pics/wallpaper.gif">
-<h1>The THaOutput module</h1>
-Output from the analyzer is defined by the contents of a plain-text
-"output definition file". The name of the file must be given to the analyzer
-by a call to
-<a href="http://hallaweb.jlab.org/root/html/THaAnalyzer.html#THaAnalyzer:SetOdefFile">SetOdefFile()</a>.
-before starting the analysis. Example:
+<HTML>
+<HEAD>
+  <TITLE>THaOutput to control analyzer output</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF" TEXT="#0000a0" LINK="#ff0000" VLINK="#ff8000">
+<P>
+<STRONG><FONT COLOR="Magenta">
+<H1 align=center>
+THaOutput &nbsp; for &nbsp; Analysis &nbsp; Output</font></EM></STRONG>
+</FONT>
+<br><br>
+</H1>
+<P>
+<FONT COLOR="Black">
+<P Align=Left>
+<P>
+Bob Michaels, &nbsp; &nbsp; June 2003</FONT>
+<P>
+e-mail: &nbsp; &nbsp;rom@jlab.org
+<P>
+<FONT COLOR="Black">This file :
+&nbsp;hallaweb.jlab.org/root/THaOutput.html
+  <HR>
+</FONT>
+<P>
+
+
+<P ALIGN=Left>
+<FONT COLOR="Magenta">FEATURES</FONT>
+<P>
+Class THaOutput can be used to control the output
+of the 
+<A HREF="http://hallaweb.jlab.org/root/index.html">
+new Root/C++ analyzer </A>.  &nbsp; The output is
+defined by an output definition file, e.g. what
+is specified when you do 'analyzer->SetOdefFile("output.def");'
+&nbsp; and has the following elements.
+</FONT>
+<FONT Color="Black">
+<UL>
+<LI>  Global variables written to the tree.  Can include
+      arrays -- fixed or variable size.  To see a list of
+      variables, type 'gHaVars->Print()' at the analyzer prompt.
+<LI>  Blocks of variables, e.g. L.* is everything in Left Spectrometer.
+<LI>  Formulas involving variables.  These can be vectors.
+<LI>  Cuts.  They appear in tree as 0 (false) or 1 (true).  
+      Also can be vectors.
+<LI>  Histograms.  These can involve variables and/or formula, as
+      well as optional cuts.  The histograms can be vectors depending
+      on the rules for dimensionality.
+</LI>
+</UL>
+</FONT>
+
+<P ALIGN=Left>
+<FONT COLOR="Magenta">SYNTAX &nbsp; of "output.def" &nbsp; FILE</FONT>
+<FONT Color="Black">
 <pre>
-analyzer [24] THaAnalyzer* analyzer = new THaAnalyzer;
-analyzer [25] analyzer->SetOdefFile("examples/output.def")
-</pre>
-The format of the file is illustrated below:
-<pre>
-# Analyzer output definition file used by THaOutput class.
-# R. Michaels, Sept 2002
-# Comments start with '# ' 
-#
-# There are at present 3 places where output is defined
-# in the C++ analyzer, and this is one of them.
-# The other two are THaRun (run-dependent info) and
-# THaEvent (event-dependent info), which provide quantities 
-# like run number and event number that you always need.
-# In this place, the "outdef" file, one can define
-# global variables, formulas, and histograms, as well
-# as cuts on histograms.  The results of the formulas appear 
-# in the tree with the formula name given.
-#
-# Syntax of file  -- by example:
-#
-# variable   L.vdc.u2.nclust
-# variable   R.s1.lt
-# formula    targetX  1.464*B.bpm4b.x-0.464*B.bpm4a.x
-# TH1F  rv1n  'R-arm vdc hits on V1'   R.vdc.v1.nhit 100 0 10
-# TH1F  rv1w  'R-arm vdc wiremap on V1'  R.vdc.v1.wire 100 0 500
-# TH1F  tgtx  'Target X position'   targetX 100 -2 2 
-# TH2F  t12  'Time stamps on roc1 vs roc2'  D.timeroc1  D.timeroc2
-#       100 0 1000 100 0 1000
-# TH1F  s1trx 'R-arm S1 trx (with cut)' R.s1.trx 100 -1 1 R.s1.trx>0
-# (note, the cut R.s1.trx>0 appears optionally at the end).
-#
-# where the keywords are as follows :
-# (the keywords are case-insensitive, the rest of the line is not)
-#
-#   variable  -- indicates that a global variable is to
-#                be added to the tree.  The next string is
-#                the name of the variable.  You can see a list
-#                of variables by typing gHaVars->Print() at
-#                the analyzer's root shell prompt.
-#                A variable can also be an array, e.g. R.s1.lt  
-#                Then the values in the tree will be R.s1.lt.data[0], 
-#                R.s1.lt.data[1], etc, up to the array size which
-#                is Ndata.R.s1.lt
-#  
-#    formula  -- indicates a THaFormula to add to the output.
-#                The next word (e.g. targetX in the above example)
-#                will be the "name" of the formula result in the tree.
-#                The 3rd string is the formula to evaluate.  It
-#                must involve valid global variables.  It cannot
-#                involve arrays or results of other formulas (yet).
-#
-#    TH1F or TH2F  -- this defines histograms (1D or 2D).
-#               The next word is the name of the TH1F object.
-#               The following string (must be in single quotes) is 
-#               the title of the histogram.  Finally the variables
-#               or formulas names that are put into the histogram 
-#               are listed.  The code figures out if it is a variable
-#               or formula.  If the variable is an array, all elements
-#               will be put in the histogram, event-by-event.
-#
-#    block  -- To put ALL the variables from a block into tree.
-#              Example "block L.*"  --> all left-arm variables.
-#                      "block R.*"  --> all right-arm variables.
-#                      "block D.*"  --> All THaDecData variables.
+Each line of "output.def" is of the form
 
+     <FONT Color="Red">  "keyword  rest-of-line"  </FONT>
 
-# ------------------------------------
+where the keywords are as follows :
+(keywords are case-insensitive, the rest of the line is not)
 
-# Here are variables and formulas that appear in the tree.
+   VARIABLE  -- indicates that a global variable is to
+               be added to the tree.  The next string is
+               the name of the variable.  You can see a list
+               of variables by typing gHaVars->Print() at
+               the analyzer's root shell prompt.
+               A variable can also be an array, e.g. R.s1.lt  
+               Then the values in the tree will be R.s1.lt.data[0], 
+               R.s1.lt.data[1], etc, up to the array size which
+               is Ndata.R.s1.lt
+  
+   BLOCK   --  An entire block of variables are written to the
+               output.  E.g. "L.*" writes all Left HRS variables.
 
-variable   L.vdc.u1.nclust
-variable   L.vdc.u2.nclust    # you can put a comment after '# '
-Variable   L.vdc.v1.nclust    # need >=1 space after #
-VARIable   L.vdc.v2.nclust    # Keywords are case insensitive,
+   FORMULA -- indicates a THaFormula to add to the output.
+              The next word will be the "name" of the formula result 
+              in the tree. The 3rd string is the formula to evaluate.  
+              Note, it cannot have spaces in it.
+              Formulas can be vectors if the arrays are fixed size.
 
-#block R.*          # all the variables in R-arm go to the tree
-#block R.s1.*
-#block R.s2.*
-#block R.tr.*
+   CUT --     Like a formula, but the data are 0 (false) or 1 (true)
 
-variable   D.ctimel
-variable   D.ctimer
-variable   D.pulser1
-
-variable   D.timeroc1
-variable   D.timeroc2
-variable   D.timeroc3
-
-variable   L.s1.lt    # note, this is an array
-variable   L.s1.rt    # variable appears in tree as
-variable   L.s2.lt    # e.g.  L.s2.lt.data[4], where 
-variable   L.s2.rt    # index of data goes from 0 to
-                      # Ndata.L.s1.lt
-
-
-formula    targetX  1.464*B.bpm4b.x-0.464*B.bpm4a.x
-FORMULA    targetY  1.464*B.bpm4b.y-0.464*B.bpm4a.y
-
-# Histograms defined here.
-# Title must be in single quotes
-TH1F  rv1n  'R-arm vdc hits on V1'   L.vdc.v1.nhit  10 0 10
-th1f  rv1w  'R-arm vdc wiremap on V1'  R.vdc.v1.wire  200 0 500
-TH1F  rv1z  'R-arm vdc TDC on V1'  R.vdc.v1.rawtime  1000 0 5000
-TH2f  spotxy 'X-Y position at target' targetX targetY 100 -5 5 100 -5 5
-
-# Here is a histogram with a cut R.s1.trx>0
-TH1F  s1trx 'R-arm S1 trx (with cut)' R.s1.trx 100 -1 1 R.s1.trx>0
+   TH1F, TH2F, TH1D, TH2D  -- defines histograms (1D or 2D).
+               The next word is the name of the object.
+               The following string (must be in single quotes) is  
+               the title of the histogram.  Next, the variables
+               or formulas names that are put into the histogram 
+               are listed together with bin info: nbin, xlo, xhi and if 2D
+               the same bin info for y.  Optional cuts can be specified 
+               at the end of the line.  See examples below.  
 
 </pre>
-</body>
-</html>
 
- 
+<P ALIGN=Left>
+<FONT COLOR="Magenta">LEARN &nbsp; BY &nbsp; EXAMPLE</FONT>
+<pre>
+# --------  Example output.def  --------------------------
+
+# Variables appear in the tree.
+
+variable L.s1.lt[4]
+variable L.s1.rt
+
+# The 'block' variables:  All data in Right HRS go to tree.
+block R.*
+
+# Formulas can be scalers or vectors.  
+# Lt4a is a scaler.
+formula Lt4a 5.*L.s1.lt[4]
+# Lt4b is a vector.  Access by Lt4b[0], Lt4b[1],... 
+formula Lt4b 5.*L.s1.lt
+# Tsm is a vector
+formula Tsm 4*L.s1.lt+2*L.s1.rt+3*L.s1.lt[4]
+#   Tsm[0] = 4*L.s1.lt[0]+2*L.s1.rt[0]+3*L.s1.lt[4]
+#   Tsm[1] = 4*L.s1.lt[1]+2*L.s1.rt[1]+3*L.s1.lt[4]
+#   etc...
+
+# Cuts can be defined globally and used in histograms.
+# Cut C1 is a scaler.  Data is 0 or 1.
+cut C1 L.s1.lt[4]>1350
+# Cut C2 is a vector.  Access as C2[0], C2[1],...
+cut C2 L.s1.lt>1160
+
+# Histograms can involve formulas, variables, and cuts.
+# th1f, th1d, th2f, th2d supported.
+# Formulas and cuts may be global, or defined in the line.
+# Histograms are vector or scalers whose dimensionality is 
+# determined by the dimensionality of its components.
+# 1. dim(X)>=0 && dim(Y)==0 && dim(Cut)==0  --> Data in 1 histo,
+#             and if dim(X)>1 all components go into 1 histo.
+# 2. dim(X)>1 && (dim(Y)>1 || dim(Cut)>1) --> vector of histos
+#     appear in output, the dim's must match and the indices track.
+# The "eye" variable [I] becomes an index that tracks the
+# index of the accompanying variable.  L.s1.lt[I] is synonymous
+# with L.s1.lt.
+# Prefixes SUM:, OR:, and AND: supported.
+# SUM:  the sum of variables or sum of a vector formula.
+# AND:, OR:  logical "and","or" of cut conditions.
+
+TH1F  rv1n  'L-arm vdc hits on V1'  L.vdc.v1.nhit  10 0 10
+th1f  rv1w  'L-arm vdc wiremap on V1'  L.vdc.v1.wire  200 0 400
+TH1F  rv1z  'L-arm vdc TDC on V1'  L.vdc.v1.rawtime  200 0 2500
+TH1d  hLt4  'Lt4a formula' Lt4a 100 0 9000
+th1d  hLta  'Lt4b formula' Lt4b 100 0 9000
+TH1F  Lt4c0 'Lt4 from var, no cut' L.s1.lt[4] 100 -1 2000
+TH1F  Lt4c1 'Lt4 from var, cut' L.s1.lt[4] 100 -1 2000 L.s1.lt[4]>1300.
+TH1F  Lt4c2 'Lt4 from var, cut C1' L.s1.lt[4] 100 -1 2000 C1
+TH1F  Lt4c3 'Lt4 from formula, cut C1' Lt4a 100 -1 9000 C1
+TH1F  Lts1 'L.s1.rt (all elements)' L.s1.rt 100 -1 2000
+# Since Lt4b and C2 are vectors, get histograms Ltv0, Ltv1, ... Ltv5
+TH1F  Ltv  'Vector formula, cut C2' Lt4b 100 -1 20000 C2
+# The "eye" variable as R. Feuerbach requested
+TH2F  a1eye 'Eye test 1' [I] L.s1.lt 14 0 7 100 0 2000
+TH2F  a2eye 'Eye test 2' [i] L.s1.lt[I] 14 0 7 100 0 2000  # same as above
+TH2F  a3eye 'Eye test 3' [I] Lt4b 14 0 7 100 0 9000
+TH2F  a4eye 'Eye test 4' [I] Lt4b 14 0 7 100 0 9000 L.s1.lt>1300
+TH2F  a5eye 'Eye test 5' [I] Lt4b 14 0 7 100 0 9000 C2
+# Prefixes (SUM:  OR:  AND:)
+TH1F  Lsum1 'Test of sum 1' SUM:L.s1.lt 100 0 15000 
+TH2f  Lsum2 'Test of sum 2' SUM:L.s1.rt SUM:L.s1.rt 100 0 15000 100 0 2000
+TH1F  Lor1  'Test of or 1' L.s1.lt[4] 100 0 2000 OR:L.s1.lt>1000
+TH1F  Lor2  'Test of or 2' L.s1.lt 100 0 2000 OR:L.s1.lt>1000
+TH1F  Land1 'Test of and 1' L.s1.lt 100 0 2000 AND:L.s1.lt<1200
 
 
+# For reference, here is a collection of things that do NOT work.
 
+# Cannot define formula in terms of variable sized arrays.
+# Exception: 'formula Lv1w L.vdc.v1.wire' results in Lv1w[0], Lv1w[1]...
+# formula Lw2 L.vdc.v1.wire[2]     # error
+# formula Lw3 3*L.vdc.v1.wire      # error
+# A cut defined by a formula does NOT work. Perhaps in future.
+# cut C4 Lta>1160
+# Cannot use prefix like SUM: inside a formula.
+# TH1F Lnot 'Invalid test1' 3*SUM:L.s1.lt 100 0 20000
+# If Lta is a formula, then cut = Lta>1160 is illegal.
+# Must instead write the formula explicitly.
+# TH1F  Lte  'Lta vector formula, cut 3' Lta 100 -1 2000 Lta>1160
+</pre>
+<P>
+<STRONG>
+<FONT COLOR="Magenta">&nbsp;EXPECTED &nbsp; RESULTS</FONT>
+</STRONG>
+<P>
+
+Below is a table showing examples of lines in the
+output definition file (output.def) and the 
+corresponding expected output.
+
+<P>
+<TABLE BORDER CELLPADDING="2">
+  <CAPTION>
+  <STRONG><FONT COLOR="Black">
+    Behavior of Output
+  </FONT></STRONG>
+  </CAPTION>
+  <TR>
+    <TD>
+      &nbsp;&nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp; &nbsp;&nbsp;
+      <FONT Color="Red">output.def &nbsp; line</FONT>
+      &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;
+      &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;
+      &nbsp;
+    </TD>
+    <TD>
+      &nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp;
+      <FONT Color="Red">Example &nbsp; How &nbsp; to &nbsp;
+      Access </FONT> &nbsp;&nbsp;
+      &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+    </TD>
+    <TD>
+      &nbsp;&nbsp; &nbsp; &nbsp;&nbsp; &nbsp;&nbsp; 
+      <FONT Color = "Red">Comments </FONT>
+      &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp;
+    </TD>
+  </TR>
+  <TR>
+    <TD>
+      &nbsp; &nbsp; VARIABLE &nbsp;L.s1.lt[4]
+    </TD>
+    <TD>
+      &nbsp;&nbsp; T->Draw("L.s1.lt[4]")
+    </TD>
+    <TD>
+      &nbsp;
+    </TD>
+  </TR>
+  <TR>
+    <TD>
+      &nbsp; &nbsp; VARIABLE &nbsp; L.s1.rt
+    </TD>
+    <TD>
+      &nbsp;&nbsp; Tree has L.s1.lt[i], i = 0,1,...Ndata.L.s1.lt
+    </TD>
+    <TD>
+      &nbsp;&nbsp; Array
+    </TD>
+  </TR>
+  <TR>
+    <TD>
+      &nbsp;&nbsp; BLOCK &nbsp; R.*
+    </TD>
+    <TD>
+      &nbsp;&nbsp; T->Draw("R.s1.lt[0]"), etc.
+    </TD>
+    <TD>
+      &nbsp;&nbsp; All variables in Right (R) HRS.
+    </TD>
+  </TR>
+  <TR>
+    <TD>
+      &nbsp; &nbsp; FORMULA Lt4a 5*L.s1.lt[4]
+    </TD>
+    <TD>
+      &nbsp; &nbsp; T->Draw("Lt4a")
+    </TD>
+    <TD>
+      &nbsp; Scaler Formula
+    </TD>
+  </TR>
+  <TR>
+    <TD>
+      &nbsp; &nbsp; FORMULA &nbsp; Lt4b &nbsp; 5*L.s1.lt
+    </TD>
+    <TD>
+      &nbsp; &nbsp; Tree has Lt4b[i], i = 0,1,...Ndata.Lt4b
+    </TD>
+    <TD>
+      &nbsp; Vector Formula
+    </TD>
+  </TR>
+  <TR>
+    <TD>
+      &nbsp; &nbsp; CUT &nbsp; C1 &nbsp; L.s1.lt[4]>1350
+    </TD>
+    <TD>
+      &nbsp; &nbsp; T->Draw("C1")
+    </TD>
+    <TD>
+      &nbsp; Scaler Cut 
+    </TD>
+  </TR>
+  <TR>
+    <TD>
+      &nbsp; &nbsp; CUT &nbsp; C2 &nbsp; L.s1.lt>1350
+    </TD>
+    <TD>
+      &nbsp; &nbsp; Tree has C2[i], i = 0,1,...Ndata.C2
+    </TD>
+    <TD>
+      &nbsp; Vector Cut 
+    </TD>
+  </TR>
+  <TR>
+    <TD>
+      &nbsp; &nbsp; TH1F &nbsp; rs &nbsp; 'Scint' 
+          R.s1.lt 100 0 2000
+    </TD>
+    <TD>
+      &nbsp; &nbsp; rs->Draw()
+    </TD>
+    <TD>
+      &nbsp; Histogram (all elements of R.s1.lt[] in 1 histo)
+    </TD>
+  </TR>
+  <TR>
+    <TD>
+      &nbsp; &nbsp; TH1F &nbsp; rs4 &nbsp; 'Scint' 
+         R.s1.lt[4] 100 0 2000 R.s1.lt[4]>500
+    </TD>
+    <TD>
+      &nbsp; &nbsp; rs4->Draw()
+    </TD>
+    <TD>
+      &nbsp; Cut R.s1.lt[4]>500 is optional
+    </TD>
+  </TR>
+  <TR>
+    <TD>
+      &nbsp; &nbsp; TH1F &nbsp; rv &nbsp; 'Scint' 
+         R.s1.lt 200 0 2000 R.s1.lt>500
+    </TD>
+    <TD>
+      &nbsp; &nbsp; rv0->Draw(), rv1->Draw, ... rv5->Draw()
+    </TD>
+    <TD>
+      &nbsp; Vector Histogram (size 6)
+    </TD>
+  </TR>
+
+</TABLE>
+
+
+</BODY></HTML>
