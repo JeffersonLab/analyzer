@@ -15,6 +15,8 @@
 #pragma link C++ class THaVarList+;
 #pragma link C++ class THaNamedList+;
 #pragma link C++ class THaFormula+;
+#pragma link C++ class THaVform+;
+#pragma link C++ class THaVhist+;
 #pragma link C++ class THaCut+;
 #pragma link C++ class THaCutList+;
 #pragma link C++ class THaHashList+;
