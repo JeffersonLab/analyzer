@@ -1072,33 +1072,32 @@ Int_t THaAnalyzer::MainAnalysis()
     rawfail = true;
   }
 
+  bool evdone = false;
   //=== Physics triggers ===
-  if( fEvData->IsPhysicsTrigger()) {
-    if( !fDoPhysics )  goto done;
+  if( fEvData->IsPhysicsTrigger() && fDoPhysics ) {
     Incr(kNevPhysics);
     retval = PhysicsAnalysis(retval);
+    evdone = true;
   }
   //=== EPICS data ===
-  else if( fEvData->IsEpicsEvent()) {
-    if( !fDoSlowControl ) goto done;
+  if( fEvData->IsEpicsEvent() && fDoSlowControl ) {
     Incr(kNevEpics);
     retval = SlowControlAnalysis(retval);
+    evdone = true;
   }
   //=== Scaler triggers ===
-  else if( fEvData->IsScalerEvent()) {
-    if( !fDoScalers ) goto done;
+  if( fEvData->IsScalerEvent() && fDoScalers ) {
     Incr(kNevScaler);
     retval = ScalerAnalysis(retval);
+    evdone = true;
   } 
   //=== Other events ===
-  else {
-    if( !fDoOtherEvents ) goto done;
+  if( !evdone && fDoOtherEvents ) {
     Incr(kNevOther);
     retval = OtherAnalysis(retval);
 
   } // End trigger type test
 
- done:
   //=== Post-processing (e.g. event filtering) ===
   if( fPostProcess ) {
     Incr(kNevPostProcess);
