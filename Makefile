@@ -137,9 +137,14 @@ realclean:	clean
 		find . -name "*.d" -exec rm {} \;
 
 srcdist:	realclean
-		tar czvf ../v$(VERSION).tar.gz \
-			src examples DB $(DCDIR) $(SCALERDIR) \
-			Makefile RELEASE_NOTES*
+		gtar czvf ../v$(VERSION).tar.gz -X .exclude \
+			.exclude src examples DB $(DCDIR) $(SCALERDIR) \
+			Makefile RELEASE_NOTES* 
+
+cvsdist:	srcdist
+		gunzip ../v$(VERSION).tar.gz
+		gtar rvf ../v$(VERSION).tar CVS */CVS
+		gzip ../v$(VERSION).tar
 
 haDict.C: $(HDR) src/HallA_LinkDef.h
 	@echo "Generating dictionary haDict..."
