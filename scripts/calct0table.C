@@ -259,6 +259,7 @@ void CalcT0Table(const char *treefile, const char *planename)
     return;
   }
 
+  // calculate statistics about the new t0s
   t0_mean = 0.0;
   for(int i=0; i<kNumWires; i++)
     t0_mean += abs(old_t0[i] - t0_table[i]);

@@ -10,11 +10,12 @@ const int kBUFLEN = 150;
 
 const Double_t kLongestDist = 15.12; // (mm)
 const Double_t kTimeRes = 0.5e-9;    // (s)
+//const Double_t kTimeRes = 1.0e-9;    // (s)
 
 const int kTrue = 1;
 const int kFalse = 0;
 
-Double_t CalcT0(int num_bins, TH1F *hist)
+Double_t CalcT0(int num_bins)
 {
   // Calculate TOffset, based on the contents of the Calibration Table
   // Start from left
@@ -56,7 +57,6 @@ Double_t CalcT0(int num_bins, TH1F *hist)
       
     }
   }
-
   // Now fit a line to the bins between left and right
   
   Double_t sumX  = 0.0;   //Counts
@@ -84,75 +84,6 @@ Double_t CalcT0(int num_bins, TH1F *hist)
   return T0;
 }
 
-int SaveNewTTDData(TDatime &run_date, const char *planename, Double_t new_t0,
-		   Int_t new_num_bins, Int_t table_start, 
-		   vector<Float_t> new_table)
-{
-  char buff[kBUFLEN], db_filename[kBUFLEN], tag[kBUFLEN];
-
-  sprintf(db_filename, "%c.vdc.", planename[0]);
-
-  FILE *db_file = THaDetectorBase::OpenFile(db_filename, run_date, 
-					    "OpenFile()", "r+");
-
-  // Build the search tag and find it in the file. Search tags
-  // are of form [ <prefix> ], e.g. [ R.vdc.u1 ].
-  sprintf(tag, "[ %s ]", planename);
-  bool found = false;
-  while (!found && fgets (buff, kBUFLEN, db_file) != NULL) {
-    if(strlen(buff) > 0 && buff[strlen(buff)-1] == '\n')
-      buff[strlen(buff)-1] = '\0';
-
-    if(strcmp(buff, tag) == 0)
-      found = true;
-  }
-  if( !found ) {
-    cerr<<"Database entry "<<tag<<" not found!"<<endl;
-    return kFalse;
-  }
-  
-  // read in other info until we get to the stuff we want
-  while(fgets(buff, kBUFLEN, db_file)) {
-    // check for signs that we've run into the section
-    // for a different plane
-    if(buff[0] == '[') {
-      cerr<<"Could not find lookup table info."<<endl;
-      return kFalse;
-    }
-    
-    // check for the lookup table header
-    if(strncmp(buff, "TDC Lookup Table", 16) == 0)
-      break;
-  }
-
-  if(feof(db_file) != 0) {
-    cerr<<"Could not find lookup table in database."<<endl;
-    return kFalse;
-  }
-  if(ferror(db_file) != 0) {
-    cerr<<"Error reading database file."<<endl;
-    return kFalse;
-  }
-
-  // save the header info
-  fprintf(db_file, "%7.3e\n", new_t0);
-  fprintf(db_file, "%d\n", new_num_bins);
-
-  // save the new table
-  for(int i=table_start; i<=new_num_bins; ++i) {
-    fprintf(db_file, "%7.4f", new_table[i]);
-    //fprintf(db_file, "%7.2e", new_table[i]);
-
-    if((i-table_start+1)%10 == 0)
-      fprintf(db_file, "\n");
-    else
-      fprintf(db_file, " ");
-  }
-
-  fclose(db_file);
-
-  return kTrue;
-}
 
 void GetTTDData(const char *planename, THaRawEvent *event, Int_t &hits,
 		Int_t **rawtimes, Double_t **times)
@@ -195,17 +126,8 @@ void GetTTDData(const char *planename, THaRawEvent *event, Int_t &hits,
   }
 }
 
-/*
-  Creates a dynamically sized TTD lookup table based on
-  a low and high time supplied
 
-  hist_center is a rawtime and used to pick out the relevant events
-  planename should be a string like "L.u1.vdc"
-  nentries is the number of entries in the supplied treefile to
-    use in making the table. a value of 0 means to use all of the
-    availible entries
- */
-void CalcTTDTable(const char *treefile, const char *planename, 
+void CalcTTDHists(const char *treefile, const char *planename, 
 		  Double_t low, Double_t high, Int_t hist_center,
 		  Int_t nentries=0, Double_t K=1.0)
 {
@@ -219,6 +141,7 @@ void CalcTTDTable(const char *treefile, const char *planename,
     cerr<<"Could not read run header info. Exiting."<<endl;
     return;
   }
+
 
   TDatime run_date = the_run->GetDate();
   Int_t num_items=0;
@@ -235,6 +158,9 @@ void CalcTTDTable(const char *treefile, const char *planename,
   // make an array big enough to hold all of the time entries
   if(nentries==0)
     nentries = (Int_t)T->GetEntries();
+
+  vector<Float_t> timelist(10*nentries);
+  
 
   // deal with all the data points
   for(Int_t i=0; i<nentries; i++) {
@@ -256,7 +182,7 @@ void CalcTTDTable(const char *treefile, const char *planename,
 	if(abs(rawtimes[j] - hist_center) < 400) {
 	  // save the calculated time
 	  hist->Fill(times[j]);
-	  /**timelist[num_items] = times[j];**/
+	  timelist[num_items] = times[j];
 	  num_items++;
 	}
       }
@@ -264,58 +190,61 @@ void CalcTTDTable(const char *treefile, const char *planename,
     }
   }
 
-  //hist->Draw();
-  //gPad->Update();
 
   // figure out the adjusted t0 from the data
-  Int_t t0 = (int)CalcT0(num_bins, hist);
+  Int_t t0 = (int)CalcT0(num_bins);
   cout<<"calculated t0 = "<<t0<<endl;
 
   // create lookup table
   table[0] = hist->GetBinContent(1);
   for(Int_t i=t0; i<num_bins; i++) {
-    table[i] = table[i-1] + K*hist->GetBinContent(i+1);
+    if(i>0)
+      table[i] = table[i-1] + K*hist->GetBinContent(i+1);
+    else
+      table[i] = K*hist->GetBinContent(i+1);
+
+    if(i>0)
+      cout<<(table[i] - table[i-1])<<endl;
   }
 
   // autocalculate the scale factor, if the user'd like
   K = kLongestDist/table[num_bins-1];
   cout<<"K estimate: "<<K<<endl;
 
-  char input[kBUFLEN];
-  cout<<"Do you want to use this value? [y/n] ";
-  input[0] = '\0';
-  fgets(input, kBUFLEN, stdin);
-  
-  if(input[0] == 'y') {
-    for(Int_t i=t0; i<num_bins; i++) 
-      table[i] *= K;
+  for(Int_t i=t0; i<num_bins; i++) 
+    table[i] *= K;
    
-    cout<<"Done."<<endl;
+
+  // plot correspondance
+  TH2F *t2dhist = new TH2F("t2dhist", "Time v. Dist", num_bins, low, high,
+  			   320, 0, 16);
+  //TH2F *t2dhist = new TH2F("t2dhist", "Time v. Dist", num_bins, low, high,
+  //			   num_bins, 0, 16);
+  //TH1F *ddhist = new TH1F("ddhist", "Drift Distance Spectrum", 
+  //			  num_bins/2, 0, 16);
+  TH1F *ddhist = new TH1F("ddhist", "Drift Distance Spectrum", 160, 0, 16);
+  for(int i=0; i<num_items; ++i) {
+    double dist = table[(int)((timelist[i]-low)/kTimeRes)];
+    t2dhist->Fill(timelist[i], dist);
+    ddhist->Fill(dist);
   }
 
-  // ask whether to replace the values in the database
-  cout<<"Do you want to rebuild the database using these values? [y/n] ";
-  input[0] = '\0';
-  fgets(input, kBUFLEN, stdin);
-
-  if(input[0] != 'y') {
-    cout<<"Exiting without rebuilding database."<<endl;
-    goto cleanup;
-  }
-
-  cout<<"Rebuilding database..."<<endl;
-
-  // write the new lookup table to the database.
-  if(SaveNewTTDData(run_date, planename, ((double)t0*kTimeRes) + low, 
-		    num_bins-(t0+1), t0, table))
-    cout<<"Done."<<endl;
-  else
-    cout<<"Failed."<<endl;
+  c2 = new TCanvas("c2", "Dist");
+  ddhist->DrawCopy("E1");
   
+  c1 = new TCanvas("c1", "Time v. Dist");
+  t2dhist->DrawCopy();
+  c1->Update();
+  
+  c2->Update();
 
  cleanup:
+  delete hist;
+  delete ddhist;
+  delete t2dhist;
   delete event;
   delete f;
 
   return;
 }
+
