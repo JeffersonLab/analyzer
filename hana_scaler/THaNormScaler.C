@@ -94,10 +94,11 @@ Int_t THaNormScaler::Init(Int_t mycrate, multimap<string, BscaLoc>& bmap) {
     }
  }
  location.clear();
- if (maxc > minc) {
+ if (lslot >= 0) {
     location.crate = mycrate;
     location.slot = lslot;
     location.helicity = helicity;
+    minc = 0;
     location.startchan.push_back(minc);
     location.numchan.push_back(maxc-minc+1);
     location.setvalid();
