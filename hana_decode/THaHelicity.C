@@ -40,7 +40,9 @@ THaHelicity::THaHelicity( )
 //____________________________________________________________________
 THaHelicity::~THaHelicity( ) 
 {
+#ifndef STANDALONE
   if (fDetMap) delete fDetMap;
+#endif
   if (fgG0mode) {
     delete [] fQrt;
     delete [] fGate;
@@ -91,11 +93,13 @@ int THaHelicity::GetHelicity(const TString& spec) const {
 void THaHelicity::Init() {
   if (fgG0mode == 0) {
 // For non-G0 mode where we used ADC flags
+#ifndef STANDALONE
     fDetMap = new THaDetMap;
     fDetMap->AddModule(1,25,60,61);  // Redundant channels
     fDetMap->AddModule(2,25,14,15);    
     fDetMap->AddModule(2,25,46,47);    
     fDetMap->AddModule(14,6,0,1);
+#endif
     indices[0][0] = 60;
     indices[0][1] = 61;
     indices[1][0] = 14;
@@ -152,6 +156,7 @@ Int_t THaHelicity::Decode( const THaEvData& evdata ) {
  if (fgG0mode == 0) {  // Non-G0 helicity mode
    UShort_t k;
    Int_t indx;
+#ifndef STANDALONE
    for( UShort_t i = 0; i < fDetMap->GetSize(); i++ ) {
      THaDetMap::Module* d = fDetMap->GetModule( i );   
      for( UShort_t j = 0; j < evdata.GetNumChan( d->crate, d->slot); j++) {
@@ -177,6 +182,12 @@ Int_t THaHelicity::Decode( const THaEvData& evdata ) {
        }
      }
    }
+#else
+   cout << "Error: Cannot analyze pre-G0-mode data STANDALONE."<<endl;
+//  Must recompile with STANDALONE commented out in Makefile.
+//  Then run with rest of analyzer.
+//  This is not too bad since the analyzer will mostly live in the G0 era.
+#endif
 // Use 2 flags to make sure of helicity, for both L and R spectrom.
 // helicity[0] is should be opposite of helicity[1].
    Lhel = Minus;

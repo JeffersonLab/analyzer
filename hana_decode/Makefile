@@ -57,7 +57,11 @@ ROOTCFLAGS   := $(shell root-config --cflags)
 ROOTLIBS     := $(shell root-config --libs)
 ROOTGLIBS    := $(shell root-config --glibs)
 
-INCLUDES      = $(ROOTCFLAGS) -I$(MAINDIR)
+INCLUDES      = $(ROOTCFLAGS) 
+
+ifndef STANDALONE
+INCLUDES += -I$(MAINDIR)
+endif
 
 ifeq ($(ARCH),solarisCC5)
 # Solaris CC 5.0
@@ -264,8 +268,8 @@ libevio_hpux.a:  evio.o swap_util.o swapped_intcpy.o
 	rm -f $@
 	ar cr $@ evio.o swap_util.o swapped_intcpy.o
 
-# evio.o: evio.C
-# 	$(CXX) -c  $<
+evio.o: evio.C
+	$(CXX) -c  $<
 
 # swap_util.o: swap_util.C
 # 	$(CXX) -c  $<

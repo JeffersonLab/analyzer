@@ -68,7 +68,9 @@
     This allows to compile the test executibles and builds a library
     libdc.a which is independent of the rest of the analyzer; something
     you would want to do if you ran the THaScaler class package as a
-    standalone package.
+    standalone package.  To run scaler analysis you'll need to copy
+    this library:  "cp libdc.a ../hana_scaler/libdc_local.a" because
+    the THaScaler Makefile is looking for "libdc_local.a".
 
 
  III.  Contents of this Distribution

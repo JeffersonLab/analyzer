@@ -16,7 +16,9 @@ class THaEvData;
 
 #define NCHAN 6
 #include <iostream>
+#ifndef STANDALONE
 #include "THaDetMap.h"
+#endif
 #include "TString.h"
 
 class THaHelicity  {
@@ -77,7 +79,13 @@ private:
   static const Int_t Minus    = -1;    
   static const Int_t Unknown  =  0;    
   static const Int_t HELDEBUG =  0;
+// STANDALONE restriction is not too bad since it only affects
+// old data prior to G0 mode.  But you can't run STANDALONE then.
+#ifndef STANDALONE
   THaDetMap*  fDetMap;
+#else
+  Int_t fDetMap;  
+#endif
   Int_t  indices[2][2];
 
   static const Int_t HELVERBOSE = 1;
