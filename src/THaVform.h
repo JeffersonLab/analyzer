@@ -30,6 +30,7 @@ public:
   THaVform( const char *type, const char* name, const char* formula,
       const THaVarList* vlst=gHaVars, const THaCutList* clst=gHaCuts );
   virtual  ~THaVform();
+  THaVform(const THaVform& vform);
   THaVform& operator=(const THaVform& vform);
 
 // Over-rides base class DefinedGlobalVariables
@@ -79,7 +80,6 @@ protected:
   static const Int_t fgVFORM_HUGE = 10000;
   THaString fgAndStr, fgOrStr, fgSumStr;
 
-  void  Clear( Option_t* opt="" );
   Int_t MakeFormula(Int_t flo, Int_t fhi);
   THaString StripPrefix(const char* formula);
   THaString StripBracket(THaString& var) const; 
@@ -99,7 +99,6 @@ protected:
   Int_t fPrefix;
 
 private:
-  THaVform(const THaVform& vform) {}
 
   ClassDef(THaVform,0)  // Vector of formulas or a var-sized array
 };

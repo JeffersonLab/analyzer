@@ -29,15 +29,55 @@ using namespace std;
 
 THaVform::THaVform( const char *type, const char* name, const char* formula,
 		    const THaVarList* vlst, const THaCutList* clst )
-  : THaFormula("[0]", "[0]", vlst, clst), fType(type)
+  : THaFormula("[0]", "[0]", vlst, clst), fNvar(0), fObjSize(0),
+    fData(0.0), fType(type), fVarPtr(NULL), fOdata(NULL), fPrefix(kNoPrefix)
 {
 // The title "[0]" and expression "[0]" will be over-written
 // depending on the type of THaVform.
   SetName(name);
   THaString stemp1 = StripPrefix(formula); 
   SetTitle(stemp1.c_str());
-  Clear();
   Compile();  
+}
+
+//_____________________________________________________________________________
+THaVform::THaVform( const THaVform& rhs ) :
+  THaFormula(rhs), fNvar(rhs.fNvar), fObjSize(rhs.fObjSize), fData(rhs.fData),
+  fType(rhs.fType), fgAndStr(rhs.fgAndStr), fgOrStr(rhs.fgOrStr), 
+  fgSumStr(rhs.fgSumStr), fVarName(rhs.fVarName), fVarStat(rhs.fVarStat),
+  fSarray(rhs.fSarray), fVectSform(rhs.fVectSform), fStitle(rhs.fStitle),
+  fVarPtr(rhs.fVarPtr), fOdata(NULL), fPrefix(rhs.fPrefix)
+{
+  // Copy ctor
+
+  for (vector<THaCut*>::const_iterator itc = rhs.fCut.begin();
+       itc != rhs.fCut.end(); itc++) {
+    if( *itc ) {
+#if ROOT_VERSION_CODE >= ROOT_VERSION(3,10,0)
+      fCut.push_back(new THaCut(**itc));
+#else
+      // work around buggy TFormula copy constructor
+      THaCut* c = new THaCut;
+      *c = **itc;
+      fCut.push_back(c);
+#endif
+    }
+  }
+  for (vector<THaFormula*>::const_iterator itf = rhs.fFormula.begin();
+       itf != rhs.fFormula.end(); itf++) {
+    if( *itf ) {
+#if ROOT_VERSION_CODE >= ROOT_VERSION(3,10,0)
+      fFormula.push_back(new THaFormula(**itf));
+#else
+      // work around buggy TFormula copy constructor
+      THaFormula* f = new THaFormula;
+      *f = **itf;
+      fFormula.push_back(f);
+#endif
+    }
+  }
+  if( rhs.fOdata )
+    fOdata = new THaOdata(*rhs.fOdata);
 }
 
 //_____________________________________________________________________________
@@ -60,12 +100,11 @@ THaVform &THaVform::operator=(const THaVform &fv)
 //_____________________________________________________________________________
 void THaVform::Create(const THaVform &rhs) 
 {
-  THaFormula::THaFormula(rhs.GetName(), rhs.GetTitle());
+  THaFormula::operator=(rhs);
   fType = rhs.fType;
   fNvar = rhs.fNvar;
   fVarPtr = rhs.fVarPtr;
   fObjSize = rhs.fObjSize;
-  delete fOdata; fOdata = NULL;
   if( rhs.fOdata )
     fOdata = new THaOdata(*rhs.fOdata);
   fVarName = rhs.fVarName;
@@ -74,17 +113,42 @@ void THaVform::Create(const THaVform &rhs)
   fgAndStr = rhs.fgAndStr;
   fgOrStr = rhs.fgOrStr;
   fgSumStr = rhs.fgSumStr;
-  fCut = rhs.fCut;
-  fFormula = rhs.fFormula;
+  for (vector<THaCut*>::const_iterator itc = rhs.fCut.begin();
+       itc != rhs.fCut.end(); itc++) {
+    if( *itc ) {
+#if ROOT_VERSION_CODE >= ROOT_VERSION(3,10,0)
+      fCut.push_back(new THaCut(**itc));
+#else
+    // work around buggy TFormula copy constructor
+      THaCut* c = new THaCut;
+      *c = **itc;
+      fCut.push_back(c);
+#endif
+    }
+  }
+  for (vector<THaFormula*>::const_iterator itf = rhs.fFormula.begin();
+       itf != rhs.fFormula.end(); itf++) {
+    if( *itf ) {
+#if ROOT_VERSION_CODE >= ROOT_VERSION(3,10,0)
+      fFormula.push_back(new THaFormula(**itf));
+#else
+    // work around buggy TFormula copy constructor
+      THaFormula* f = new THaFormula;
+      *f = **itf;
+      fFormula.push_back(f);
+#endif
+    }
+  }
 }
 
 //_____________________________________________________________________________
 void THaVform::Uncreate() 
 {
   if (fOdata) delete fOdata;
-  for (std::vector<THaCut*>::iterator itc = fCut.begin();
+  fOdata = NULL;
+  for (vector<THaCut*>::iterator itc = fCut.begin();
        itc != fCut.end(); itc++) delete *itc;
-  for (std::vector<THaFormula*>::iterator itf = fFormula.begin();
+  for (vector<THaFormula*>::iterator itf = fFormula.begin();
        itf != fFormula.end(); itf++) delete *itf;
   fCut.clear();
   fFormula.clear();
@@ -100,12 +164,12 @@ void THaVform::LongPrint()
       cout << "Var # "<<i<<"    name = "<<
       fVarName[i]<<"   stat = "<<fVarStat[i]<<endl;
   }
-  for (std::vector<THaFormula*>::iterator itf = fFormula.begin();
+  for (vector<THaFormula*>::iterator itf = fFormula.begin();
        itf != fFormula.end(); itf++) {
        cout << "Formula full printout --> "<<endl;
        (*itf)->Print(kPRINTFULL);
   }
-  for (std::vector<THaCut*>::iterator itc = fCut.begin();
+  for (vector<THaCut*>::iterator itc = fCut.begin();
        itc != fCut.end(); itc++) {
        cout << "Cut full printout --> "<<endl;
        (*itc)->Print(kPRINTFULL);
@@ -316,26 +380,13 @@ void THaVform::ReAttach( )
     fVarPtr = fVarList->Find(fVarName[i].c_str());
     break;
   }
-  for (std::vector<THaCut*>::iterator itc = fCut.begin();
+  for (vector<THaCut*>::iterator itc = fCut.begin();
        itc != fCut.end(); itc++) (*itc)->Compile();
-  for (std::vector<THaFormula*>::iterator itf = fFormula.begin();
+  for (vector<THaFormula*>::iterator itf = fFormula.begin();
        itf != fFormula.end(); itf++) (*itf)->Compile();
   return;
 }
 
-
-//_____________________________________________________________________________
-void THaVform::Clear( Option_t* opt ) 
-{
-  fNvar = 0;
-  fVarPtr = 0;
-  fOdata = 0;
-  fVarName.clear();
-  fVarStat.clear();
-  fVectSform.clear();
-  return;
-
-}
 
 //_____________________________________________________________________________
 Int_t THaVform::MakeFormula(Int_t flo, Int_t fhi)
@@ -420,7 +471,7 @@ Int_t THaVform::MakeFormula(Int_t flo, Int_t fhi)
 
     if (IsCut()) {
       if ((long)fCut.size() != 0) {  // drop what was there before
-         for (std::vector<THaCut* >::iterator itc = fCut.begin();
+         for (vector<THaCut* >::iterator itc = fCut.begin();
              itc != fCut.end(); itc++) delete *itc;
          fCut.clear();
       }
@@ -429,7 +480,7 @@ Int_t THaVform::MakeFormula(Int_t flo, Int_t fhi)
 				"thavsform"));
     } else if (IsFormula()) {
       if ((long)fFormula.size() != 0) {  // drop what was there before
-         for (std::vector<THaFormula* >::iterator itf = 
+         for (vector<THaFormula* >::iterator itf = 
            fFormula.begin(); itf != fFormula.end(); itf++) 
                delete *itf;
          fFormula.clear();
