@@ -107,9 +107,12 @@ int main(int argc, char* argv[]) {
    int iev = 0;
    
    while (status) {
+     iev++;
      status = scaler->LoadDataCodaFile(filename);   // load data for 'filename'
      if (!status) goto quit;
+      
      Double_t time = scaler->GetPulser("clock")/1024;
+
      if ( iev > 0 && (iev < 10 || ((iev % 10) == 0)) ) cout << "iev = " << iev << endl;
 
 // Optional printout
