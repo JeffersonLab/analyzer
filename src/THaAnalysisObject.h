@@ -20,6 +20,7 @@ struct VarDef;
 struct RVarDef;
 struct TagDef;
 class TVector3;
+class THaRun;
 
 class THaAnalysisObject : public TNamed {
   
@@ -32,17 +33,19 @@ public:
   
   virtual ~THaAnalysisObject();
   
-  virtual const char*  GetDBFileName() const     { return GetPrefix(); }
+  virtual Int_t        Begin( THaRun* r=0 );
+  virtual void         Clear( Option_t* opt="" );
+  virtual Int_t        End( THaRun* r=0 );
+  virtual const char*  GetDBFileName() const;
           const char*  GetConfig() const         { return fConfig.Data(); }
           Int_t        GetDebug() const          { return fDebug; }
           const char*  GetPrefix() const         { return fPrefix; }
-  virtual void         Clear( Option_t* opt="" ) {}
           EStatus      Init();
   virtual EStatus      Init( const TDatime& run_time );
           Bool_t       IsInit() const            { return IsOK(); }
           Bool_t       IsOK() const              { return (fStatus == kOK); }
           void         SetConfig( const char* label );
-  virtual void         SetDebug( Int_t level )   { fDebug = level; }
+  virtual void         SetDebug( Int_t level );
   virtual void         SetName( const char* name );
   virtual void         SetNameTitle( const char* name, const char* title );
           EStatus      Status() const            { return fStatus; }
@@ -96,19 +99,13 @@ protected:
   TString         fConfig;    // Configuration to use from database
   UInt_t          fProperties;// Properties of this object (see EProperties)
   
-  virtual Int_t        DefineVariables( EMode mode = kDefine )
-     { return kOK; }
-
+  virtual Int_t        DefineVariables( EMode mode = kDefine );
           Int_t        DefineVarsFromList( const VarDef* list, 
 					   EMode mode = kDefine,
-					   const char* var_prefix="" ) const
-     { return DefineVarsFromList( list, kVarDef, mode, var_prefix ); }
-
+					   const char* var_prefix="" ) const;
           Int_t        DefineVarsFromList( const RVarDef* list, 
 					   EMode mode = kDefine,
-					   const char* var_prefix="" ) const
-     { return DefineVarsFromList( list, kRVarDef, mode, var_prefix ); }
- 
+					   const char* var_prefix="" ) const;
           Int_t        DefineVarsFromList( const void* list, 
 					   EType type, EMode mode,
 					   const char* var_prefix="" ) const;
@@ -118,15 +115,11 @@ protected:
   virtual const char*  Here( const char* ) const;
           void         MakePrefix( const char* basename );
   virtual void         MakePrefix() = 0;
-  virtual FILE*        OpenFile( const TDatime& date )
-     { return OpenFile(GetDBFileName(), date, Here("OpenFile()"), "r", fDebug); }
-  virtual FILE*        OpenRunDBFile( const TDatime& date )
-     { return OpenFile("run", date, Here("OpenFile()"), "r", fDebug); }
-  virtual Int_t        ReadDatabase( const TDatime& date )
-     { return kOK; }
+  virtual FILE*        OpenFile( const TDatime& date );
+  virtual FILE*        OpenRunDBFile( const TDatime& date );
+  virtual Int_t        ReadDatabase( const TDatime& date );
   virtual Int_t        ReadRunDatabase( const TDatime& date );
-  virtual Int_t        RemoveVariables()
-     { return DefineVariables( kDelete ); }
+  virtual Int_t        RemoveVariables();
 
   // Support function for reading database files
   static std::vector<std::string> 

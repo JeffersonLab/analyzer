@@ -34,8 +34,6 @@
 #include <cstdlib>
 #include <cstdio>
 
-ClassImp(THaAnalysisObject)
-
 using namespace std;
 typedef string::size_type ssiz_t;
 
@@ -67,6 +65,39 @@ THaAnalysisObject::~THaAnalysisObject()
   delete [] fPrefix; fPrefix = 0;
 }
 
+//_____________________________________________________________________________
+Int_t THaAnalysisObject::Begin( THaRun* run )
+{
+  return 0;
+}
+
+//_____________________________________________________________________________
+void THaAnalysisObject::Clear( Option_t* opt )
+{
+}
+
+//_____________________________________________________________________________
+Int_t THaAnalysisObject::DefineVariables( EMode mode )
+{ 
+  // Default method for defining global variables. Currently does nothing.
+
+  return kOK;
+}
+
+//_____________________________________________________________________________
+Int_t THaAnalysisObject::DefineVarsFromList( const VarDef* list, EMode mode,
+					     const char* var_prefix ) const
+{ 
+  return DefineVarsFromList( list, kVarDef, mode, var_prefix );
+}
+
+//_____________________________________________________________________________
+Int_t THaAnalysisObject::DefineVarsFromList( const RVarDef* list, EMode mode,
+					     const char* var_prefix ) const
+{ 
+  return DefineVarsFromList( list, kRVarDef, mode, var_prefix );
+}
+ 
 //_____________________________________________________________________________
 Int_t THaAnalysisObject::DefineVarsFromList( const void* list, 
 					     EType type, EMode mode,
@@ -120,127 +151,53 @@ Int_t THaAnalysisObject::DefineVarsFromList( const void* list,
 }
 
 //_____________________________________________________________________________
-const char* THaAnalysisObject::Here( const char* here ) const
+Int_t THaAnalysisObject::End( THaRun* run )
 {
-  // Return a string consisting of 'here' followed by fPrefix.
-  // Used for generating diagnostic messages.
-  // The return value points to an internal static buffer that
-  // one should not try to delete ;)
-
-  static char buf[256];
-  strcpy( buf, "\"" );
-  if(fPrefix != NULL) {
-    strcat( buf, fPrefix );
-    *(buf+strlen(buf)-1) = 0;   // Delete trailing dot of prefix
-  }
-  strcat( buf, "\"::" );
-  strcat( buf, here );
-  return buf;
+  return 0;
 }
 
 //_____________________________________________________________________________
-THaAnalysisObject::EStatus THaAnalysisObject::Init()
+THaAnalysisObject* THaAnalysisObject::FindModule( const char* name,
+						  const char* classname )
 {
-  // Initialize this object for current time. See Init(date) below.
+  // Locate the object 'name' in the global list of Analysis Modules 
+  // and check if it inherits from 'classname' (if given), and whether 
+  // it is properly initialized.
+  // Return pointer to valid object, else return NULL and set fStatus.
 
-  TDatime now;
-  return Init(now);
-}
+  static const char* const here = "FindModule()";
+  static const char* const anaobj = "THaAnalysisObject";
 
-//_____________________________________________________________________________
-THaAnalysisObject::EStatus THaAnalysisObject::Init( const TDatime& date )
-{
-  // Common Init function for THaAnalysisObjects.
-  //
-  // Check if this object or any base classes have defined a custom 
-  // ReadDatabase() method. If so, open the database file called 
-  // "db_<fPrefix>dat" and, if successful, call ReadDatabase().
-  // 
-  // This implementation will change once the real database is  available.
-
-  Int_t status = kOK;
-  const char* fnam = "run.";
-
-  // Generate the name prefix for global variables. Do this here, not in
-  // the constructor, so we can use a virtual function - detectors and
-  // especially subdetectors may have their own idea what prefix they like.
-  MakePrefix();
-
-  // Open the run database and call the reader. If database cannot be opened,
-  // fail only if this object needs the run database
-  // Call this object's actual database reader
-  status = ReadRunDatabase(date);
-  if( status && (status != kFileError || (fProperties & kNeedsRunDB) != 0))
-    goto err;
-
-  // Read the database for this object.
-  // Don't bother if this object has not implemented its own database reader.
-
-  // Note: requires ROOT >= 3.01 because of TClass::GetMethodAllAny()
-  if( IsA()->GetMethodAllAny("ReadDatabase")
-      != gROOT->GetClass("THaAnalysisObject")->GetMethodAllAny("ReadDatabase")){
-
-    // Call this object's actual database reader
-    fnam = fPrefix;
-    if( (status = ReadDatabase(date)) )
-      goto err;
-  } 
-  else if ( fDebug>0 ) {
-    cout << "Info: Skipping database call for object " << GetName() 
-	 << " since no ReadDatabase function defined.\n";
-  }
-
-  // Define this object's variables.
-  status = DefineVariables(kDefine);
-  goto exit;
-
- err:
-  if( status == kFileError )
-    Error(Here("OpenFile"),"Cannot open database file db_%sdat",fnam);
- exit:
-  return fStatus = (EStatus)status;
-}
-
-//_____________________________________________________________________________
-FILE* THaAnalysisObject::OpenFile( const char *name, const TDatime& date,
-				   const char *here, const char *filemode, 
-				   const int debug_flag )
-{
-  // Open database file and return a pointer to the C-style file descriptor.
-
-  // Ensure input is sane
-  if( !name || !*name )
+  EStatus save_status = fStatus;
+  fStatus = kInitError;
+  if( !name || !*name ) {
+    Error( Here(here), "No module name given." );
     return NULL;
-  if( !here )
-    here="";
-  if( !filemode )
-    filemode="r";
-
-  // Get list of database file candidates and try to open them in turn
-  FILE* fi = NULL;
-  vector<string> fnames( GetDBFileList(name, date, here) );
-  if( !fnames.empty() ) {
-    vector<string>::iterator it = fnames.begin();
-    do {
-      if( debug_flag>1 )
-      	cout << "<" << here << ">: Opening database file " << *it;
-      // Open the database file
-      fi = fopen( (*it).c_str(), filemode);
-      
-      if( debug_flag>1 ) 
-	if( !fi ) cout << " ... failed" << endl;
-	else      cout << " ... ok" << endl;
-      else if( debug_flag>0 && fi )
-	cout << "<" << here << ">: Opened database file " << *it << endl;
-      // continue until we succeed
-    } while ( !fi && ++it != fnames.end() );
   }
-  if( !fi && debug_flag>0 ) {
-    ::Error(here,"Cannot open database file db_%s%sdat",name,
-	    (name[strlen(name)-1]=='.'?"":"."));
+  TObject* obj = fgModules->FindObject( name );
+  if( !obj ) {
+    Error( Here(here), "Module %s does not exist.", name );
+    return NULL;
   }
-
-  return fi;
+  if( !obj->IsA()->InheritsFrom( anaobj )) {
+    Error( Here(here), "Module %s (%s) is not a %s.",
+	   obj->GetName(), obj->GetTitle(), anaobj );
+    return NULL;
+  }
+  if( classname && *classname && strcmp(classname,anaobj) &&
+      !obj->IsA()->InheritsFrom( classname )) {
+    Error( Here(here), "Module %s (%s) is not a %s.",
+	   obj->GetName(), obj->GetTitle(), classname );
+    return NULL;
+  }
+  THaAnalysisObject* aobj = static_cast<THaAnalysisObject*>( obj );
+  if( !aobj->IsOK() ) {
+    Error( Here(here), "Module %s (%s) not initialized.",
+	   obj->GetName(), obj->GetTitle() );
+    return NULL;
+  }
+  fStatus = save_status;
+  return aobj;
 }
 
 //_____________________________________________________________________________
@@ -353,6 +310,94 @@ vector<string> THaAnalysisObject::GetDBFileList( const char* name,
 }
 
 //_____________________________________________________________________________
+const char* THaAnalysisObject::GetDBFileName() const
+{
+  return GetPrefix();
+}
+
+//_____________________________________________________________________________
+const char* THaAnalysisObject::Here( const char* here ) const
+{
+  // Return a string consisting of 'here' followed by fPrefix.
+  // Used for generating diagnostic messages.
+  // The return value points to an internal static buffer that
+  // one should not try to delete ;)
+
+  static char buf[256];
+  strcpy( buf, "\"" );
+  if(fPrefix != NULL) {
+    strcat( buf, fPrefix );
+    *(buf+strlen(buf)-1) = 0;   // Delete trailing dot of prefix
+  }
+  strcat( buf, "\"::" );
+  strcat( buf, here );
+  return buf;
+}
+
+//_____________________________________________________________________________
+THaAnalysisObject::EStatus THaAnalysisObject::Init()
+{
+  // Initialize this object for current time. See Init(date) below.
+
+  TDatime now;
+  return Init(now);
+}
+
+//_____________________________________________________________________________
+THaAnalysisObject::EStatus THaAnalysisObject::Init( const TDatime& date )
+{
+  // Common Init function for THaAnalysisObjects.
+  //
+  // Check if this object or any base classes have defined a custom 
+  // ReadDatabase() method. If so, open the database file called 
+  // "db_<fPrefix>dat" and, if successful, call ReadDatabase().
+  // 
+  // This implementation will change once the real database is  available.
+
+  Int_t status = kOK;
+  const char* fnam = "run.";
+
+  // Generate the name prefix for global variables. Do this here, not in
+  // the constructor, so we can use a virtual function - detectors and
+  // especially subdetectors may have their own idea what prefix they like.
+  MakePrefix();
+
+  // Open the run database and call the reader. If database cannot be opened,
+  // fail only if this object needs the run database
+  // Call this object's actual database reader
+  status = ReadRunDatabase(date);
+  if( status && (status != kFileError || (fProperties & kNeedsRunDB) != 0))
+    goto err;
+
+  // Read the database for this object.
+  // Don't bother if this object has not implemented its own database reader.
+
+  // Note: requires ROOT >= 3.01 because of TClass::GetMethodAllAny()
+  if( IsA()->GetMethodAllAny("ReadDatabase")
+      != gROOT->GetClass("THaAnalysisObject")->GetMethodAllAny("ReadDatabase")){
+
+    // Call this object's actual database reader
+    fnam = fPrefix;
+    if( (status = ReadDatabase(date)) )
+      goto err;
+  } 
+  else if ( fDebug>0 ) {
+    cout << "Info: Skipping database call for object " << GetName() 
+	 << " since no ReadDatabase function defined.\n";
+  }
+
+  // Define this object's variables.
+  status = DefineVariables(kDefine);
+  goto exit;
+
+ err:
+  if( status == kFileError )
+    Error(Here("OpenFile"),"Cannot open database file db_%sdat",fnam);
+ exit:
+  return fStatus = (EStatus)status;
+}
+
+//_____________________________________________________________________________
 void THaAnalysisObject::MakePrefix( const char* basename )
 {
   // Set up name prefix for global variables. 
@@ -374,6 +419,114 @@ void THaAnalysisObject::MakePrefix( const char* basename )
     strcpy( fPrefix, GetName() );
     strcat( fPrefix, "." );
   }
+}
+
+//_____________________________________________________________________________
+FILE* THaAnalysisObject::OpenFile( const char *name, const TDatime& date,
+				   const char *here, const char *filemode, 
+				   const int debug_flag )
+{
+  // Open database file and return a pointer to the C-style file descriptor.
+
+  // Ensure input is sane
+  if( !name || !*name )
+    return NULL;
+  if( !here )
+    here="";
+  if( !filemode )
+    filemode="r";
+
+  // Get list of database file candidates and try to open them in turn
+  FILE* fi = NULL;
+  vector<string> fnames( GetDBFileList(name, date, here) );
+  if( !fnames.empty() ) {
+    vector<string>::iterator it = fnames.begin();
+    do {
+      if( debug_flag>1 )
+      	cout << "<" << here << ">: Opening database file " << *it;
+      // Open the database file
+      fi = fopen( (*it).c_str(), filemode);
+      
+      if( debug_flag>1 ) 
+	if( !fi ) cout << " ... failed" << endl;
+	else      cout << " ... ok" << endl;
+      else if( debug_flag>0 && fi )
+	cout << "<" << here << ">: Opened database file " << *it << endl;
+      // continue until we succeed
+    } while ( !fi && ++it != fnames.end() );
+  }
+  if( !fi && debug_flag>0 ) {
+    ::Error(here,"Cannot open database file db_%s%sdat",name,
+	    (name[strlen(name)-1]=='.'?"":"."));
+  }
+
+  return fi;
+}
+
+//_____________________________________________________________________________
+FILE* THaAnalysisObject::OpenFile( const TDatime& date )
+{ 
+  // Default method for opening database file
+
+  return OpenFile(GetDBFileName(), date, Here("OpenFile()"), "r", fDebug);
+}
+
+//_____________________________________________________________________________
+FILE* THaAnalysisObject::OpenRunDBFile( const TDatime& date )
+{ 
+  // Default method for opening run database file
+
+  return OpenFile("run", date, Here("OpenFile()"), "r", fDebug);
+}
+
+//_____________________________________________________________________________
+char* THaAnalysisObject::ReadComment( FILE* fp, char *buf, const int len )
+{
+  // Read blank and comment lines ( those starting non-starting with a
+  //  space (' '), returning the comment.
+  // If the line is data, then nothing is done and NULL is returned
+  // (so one can search for the next data line with:
+  //   while ( ReadComment(fp, buf, len) );
+  int ch = fgetc(fp);  // peak ahead one character
+  ungetc(ch,fp);
+
+  if (ch == EOF || ch == ' ')
+    return NULL; // a real line of data
+  
+  char *s= fgets(buf,len,fp); // read the comment
+  return s;
+}
+
+//_____________________________________________________________________________
+Int_t THaAnalysisObject::ReadDatabase( const TDatime& date )
+{
+  // Default database reader. Currently does nothing.
+
+  return kOK;
+}
+
+//_____________________________________________________________________________
+Int_t THaAnalysisObject::ReadRunDatabase( const TDatime& date )
+{
+  // Default run database reader. Reads one value, <prefix>.config, into 
+  // fConfig.
+
+  FILE* file = OpenRunDBFile( date );
+  if( !file ) return kFileError;
+
+  string name(fPrefix); name.append("config");
+  LoadDBvalue( file, date, name.c_str(), fConfig );
+
+  fclose(file);
+  return kOK;
+}
+
+//_____________________________________________________________________________
+Int_t THaAnalysisObject::RemoveVariables()
+{
+  // Default method for removing global variables of this object
+
+  return DefineVariables( kDelete );
 }
 
 //_____________________________________________________________________________
@@ -410,46 +563,14 @@ void THaAnalysisObject::SetConfig( const char* label )
 }
 
 //_____________________________________________________________________________
-void THaAnalysisObject::GeoToSph( Double_t  th_geo, Double_t  ph_geo,
-				  Double_t& th_sph, Double_t& ph_sph )
+void THaAnalysisObject::SetDebug( Int_t level )
 {
-  // Convert geographical to spherical angles. Units are rad.
-  // th_geo and ph_geo can be anything.
-  // th_sph is in [0,pi], ph_sph in [-pi,pi].
+  // Set debug level
 
-  static const Double_t twopi = 2.0*TMath::Pi();
-  Double_t ct = cos(th_geo), cp = cos(ph_geo);
-  register Double_t tmp = ct*cp;
-  th_sph = acos( tmp );
-  tmp = sqrt(1.0 - tmp*tmp);
-  ph_sph = (fabs(tmp) < 1e-6 ) ? 0.0 : acos( sqrt(1.0-ct*ct)*cp/tmp );
-  if( th_geo/twopi-floor(th_geo/twopi) > 0.5 ) ph_sph = TMath::Pi() - ph_sph;
-  if( ph_geo/twopi-floor(ph_geo/twopi) > 0.5 ) ph_sph = -ph_sph;
+  fDebug = level;
 }
 
-//_____________________________________________________________________________
-void THaAnalysisObject::SphToGeo( Double_t  th_sph, Double_t  ph_sph,
-				  Double_t& th_geo, Double_t& ph_geo )
-{
-  // Convert spherical to geographical angles. Units are rad.
-  // th_sph and ph_sph can be anything, although th_sph outside
-  // [0,pi] is not really meaningful.
-  // th_geo is in [-pi,pi] and ph_sph in [-pi/2,pi/2]
-
-  static const Double_t twopi = 2.0*TMath::Pi();
-  Double_t ct = cos(th_sph), st = sin(th_sph), cp = cos(ph_sph);
-  if( fabs(ct) > 1e-6 ) {
-    th_geo = atan( st/ct*cp );
-    if( cp>0.0 && th_geo<0.0 )      th_geo += TMath::Pi();
-    else if( cp<0.0 && th_geo>0.0 ) th_geo -= TMath::Pi();
-  } else {
-    th_geo = TMath::Pi()/2.0;
-    if( cp<0.0 ) th_geo = -th_geo;
-  }
-  ph_geo = acos( sqrt( st*st*cp*cp + ct*ct ));
-  if( ph_sph/twopi - floor(ph_sph/twopi) > 0.5 ) ph_geo =- ph_geo;
-}
-
+//---------- Geometry functions -----------------------------------------------
 //_____________________________________________________________________________
 Bool_t THaAnalysisObject::IntersectPlaneWithRay( const TVector3& xax,
 						 const TVector3& yax,
@@ -497,6 +618,48 @@ Bool_t THaAnalysisObject::IntersectPlaneWithRay( const TVector3& xax,
   return true;
 }
 
+//_____________________________________________________________________________
+void THaAnalysisObject::GeoToSph( Double_t  th_geo, Double_t  ph_geo,
+				  Double_t& th_sph, Double_t& ph_sph )
+{
+  // Convert geographical to spherical angles. Units are rad.
+  // th_geo and ph_geo can be anything.
+  // th_sph is in [0,pi], ph_sph in [-pi,pi].
+
+  static const Double_t twopi = 2.0*TMath::Pi();
+  Double_t ct = cos(th_geo), cp = cos(ph_geo);
+  register Double_t tmp = ct*cp;
+  th_sph = acos( tmp );
+  tmp = sqrt(1.0 - tmp*tmp);
+  ph_sph = (fabs(tmp) < 1e-6 ) ? 0.0 : acos( sqrt(1.0-ct*ct)*cp/tmp );
+  if( th_geo/twopi-floor(th_geo/twopi) > 0.5 ) ph_sph = TMath::Pi() - ph_sph;
+  if( ph_geo/twopi-floor(ph_geo/twopi) > 0.5 ) ph_sph = -ph_sph;
+}
+
+//_____________________________________________________________________________
+void THaAnalysisObject::SphToGeo( Double_t  th_sph, Double_t  ph_sph,
+				  Double_t& th_geo, Double_t& ph_geo )
+{
+  // Convert spherical to geographical angles. Units are rad.
+  // th_sph and ph_sph can be anything, although th_sph outside
+  // [0,pi] is not really meaningful.
+  // th_geo is in [-pi,pi] and ph_sph in [-pi/2,pi/2]
+
+  static const Double_t twopi = 2.0*TMath::Pi();
+  Double_t ct = cos(th_sph), st = sin(th_sph), cp = cos(ph_sph);
+  if( fabs(ct) > 1e-6 ) {
+    th_geo = atan( st/ct*cp );
+    if( cp>0.0 && th_geo<0.0 )      th_geo += TMath::Pi();
+    else if( cp<0.0 && th_geo>0.0 ) th_geo -= TMath::Pi();
+  } else {
+    th_geo = TMath::Pi()/2.0;
+    if( cp<0.0 ) th_geo = -th_geo;
+  }
+  ph_geo = acos( sqrt( st*st*cp*cp + ct*ct ));
+  if( ph_sph/twopi - floor(ph_sph/twopi) > 0.5 ) ph_geo =- ph_geo;
+}
+
+//---------- Database utility functions ---------------------------------------
 //_____________________________________________________________________________
 Int_t THaAnalysisObject::IsDBdate( const string& line, TDatime& date,
 				   bool warn )
@@ -548,6 +711,56 @@ Int_t THaAnalysisObject::IsDBtag( const string& line, const char* tag,
   pos2 = rhs.find_last_not_of(" \t");
   text = rhs.substr(pos1,pos2);
   return 1;
+}
+
+//_____________________________________________________________________________
+static bool IsTag( const char* buf )
+{
+  // Return true if the string in 'buf' matches regexp "[ \t]*\[.*\].*",
+  // i.e. it is a tag. Internal function.
+
+  register const char* p = buf;
+  while( isspace(*p)) p++;
+  if( *p != '[' ) return false;
+  while( *p && *p != ']' ) p++;
+  return ( *p == ']' );
+}
+
+//_____________________________________________________________________________
+Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
+				 const TagDef* tags, const char* prefix )
+{
+  // Load a list of parameters from the run database according to 
+  // the contents of the 'tags' structure (see VarDef.h).
+
+  if( !tags ) return -1;
+  const Int_t LEN = 256;
+  Int_t np = strlen(prefix);
+  if( np > LEN-2 ) return -2;
+  char tag[LEN];
+
+  const TagDef* item = tags;
+  while( item->name ) {
+    if( item->var ) {
+      tag[0] = 0; strncat(tag,prefix,LEN-1); strncat(tag,item->name,LEN-np-1);
+      Int_t ret=0;
+      switch ( item->type ) {
+      case kDouble:
+	ret = LoadDBvalue( f, date, tag, *((Double_t*)item->var)); break;
+      default:
+	cerr << "THaAnalysisObject::LoadDB  "
+	     << "READING of VarType " << item->type << " for item " << tag
+	     << " (see VarType.h) not implemented at this point !!! \n"
+	     << endl;
+	ret = -1;
+      }
+
+      if (ret && item->fatal )
+	return item->fatal;
+    }
+    item++;
+  }
+  return 0;
 }
 
 //_____________________________________________________________________________
@@ -626,126 +839,6 @@ Int_t THaAnalysisObject::LoadDBvalue( FILE* file, const TDatime& date,
 }
 
 //_____________________________________________________________________________
-Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
-				 const TagDef* tags, const char* prefix )
-{
-  // Load a list of parameters from the run database according to 
-  // the contents of the 'tags' structure (see VarDef.h).
-
-  if( !tags ) return -1;
-  const Int_t LEN = 256;
-  Int_t np = strlen(prefix);
-  if( np > LEN-2 ) return -2;
-  char tag[LEN];
-
-  const TagDef* item = tags;
-  while( item->name ) {
-    if( item->var ) {
-      tag[0] = 0; strncat(tag,prefix,LEN-1); strncat(tag,item->name,LEN-np-1);
-      Int_t ret=0;
-      switch ( item->type ) {
-      case kDouble:
-	ret = LoadDBvalue( f, date, tag, *((Double_t*)item->var)); break;
-      default:
-	cerr << "THaAnalysisObject::LoadDB  "
-	     << "READING of VarType " << item->type << " for item " << tag
-	     << " (see VarType.h) not implemented at this point !!! \n"
-	     << endl;
-	ret = -1;
-      }
-
-      if (ret && item->fatal )
-	return item->fatal;
-    }
-    item++;
-  }
-  return 0;
-}
-
-//_____________________________________________________________________________
-static bool IsTag( const char* buf )
-{
-  // Return true if the string in 'buf' matches regexp "[ \t]*\[.*\].*",
-  // i.e. it is a tag. Internal function.
-
-  register const char* p = buf;
-  while( isspace(*p)) p++;
-  if( *p != '[' ) return false;
-  while( *p && *p != ']' ) p++;
-  return ( *p == ']' );
-}
-
-//_____________________________________________________________________________
-Int_t THaAnalysisObject::SeekDBdate( FILE* file, const TDatime& date,
-				     bool end_on_tag )
-{
-  // Starting from the current position in file 'f', look for a 
-  // date tag matching time stamp 'date'. Position the file on the
-  // line immediately following the tag. If no tag found, return to
-  // the original position in the file. 
-  // Return zero if not found, 1 otherwise.
-  // Date tags must be in SQL format: [ yyyy-mm-dd hh:mi:ss ].
-  // If 'end_on_tag' is true, end the search at the next non-date tag;
-  // otherwise, search through end of file.
-  // Useful for sub-segmenting database files.
-  
-  static const char* const here = "THaAnalysisObject::SeekDBdateTag";
-
-  if( !file ) return 0;
-  const int LEN = 256;
-  char buf[LEN];
-  TDatime tagdate(950101,0), prevdate(950101,0);
-  const bool kNoWarn = false;
-
-  errno = 0;
-  long pos = ftell(file);
-  if( pos == -1 ) {
-    if( errno ) 
-      perror(here);
-    return 0;
-  }
-  long foundpos = -1;
-  bool found = false, quit = false;
-  while( !errno && !quit && fgets( buf, LEN, file)) {
-    size_t len = strlen(buf);
-    if( len<2 || buf[0] == '#' ) continue;
-    if( buf[len-1] == '\n') buf[len-1] = 0; //delete trailing newline
-    string line(buf);
-    if( IsDBdate( line, tagdate, kNoWarn )
-	&& tagdate<=date && tagdate>=prevdate ) {
-      prevdate = tagdate;
-      foundpos = ftell(file);
-      found = true;
-    } else if( end_on_tag && IsTag(buf))
-      quit = true;
-  }
-  if( errno ) {
-    perror(here);
-    found = false;
-  }
-  fseek( file, (found ? foundpos: pos), SEEK_SET );
-  return found;
-}
-
-//_____________________________________________________________________________
-char* THaAnalysisObject::ReadComment( FILE* fp, char *buf, const int len )
-  // Read blank and comment lines ( those starting non-starting with a
-  //  space (' '), returning the comment.
-  // If the line is data, then nothing is done and NULL is returned
-  // (so one can search for the next data line with:
-  //   while ( ReadComment(fp, buf, len) );
-{
-  int ch = fgetc(fp);  // peak ahead one character
-  ungetc(ch,fp);
-
-  if (ch == EOF || ch == ' ')
-    return NULL; // a real line of data
-  
-  char *s= fgets(buf,len,fp); // read the comment
-  return s;
-}
-
-//_____________________________________________________________________________
 Int_t THaAnalysisObject::SeekDBconfig( FILE* file, const char* tag, 
 				       const char* label,
 				       bool end_on_tag )
@@ -809,61 +902,57 @@ Int_t THaAnalysisObject::SeekDBconfig( FILE* file, const char* tag,
 }
 
 //_____________________________________________________________________________
-Int_t THaAnalysisObject::ReadRunDatabase( const TDatime& date )
+Int_t THaAnalysisObject::SeekDBdate( FILE* file, const TDatime& date,
+				     bool end_on_tag )
 {
-  // Default run database reader. Reads one value, <prefix>.config, into 
-  // fConfig.
+  // Starting from the current position in file 'f', look for a 
+  // date tag matching time stamp 'date'. Position the file on the
+  // line immediately following the tag. If no tag found, return to
+  // the original position in the file. 
+  // Return zero if not found, 1 otherwise.
+  // Date tags must be in SQL format: [ yyyy-mm-dd hh:mi:ss ].
+  // If 'end_on_tag' is true, end the search at the next non-date tag;
+  // otherwise, search through end of file.
+  // Useful for sub-segmenting database files.
+  
+  static const char* const here = "THaAnalysisObject::SeekDBdateTag";
 
-  FILE* file = OpenRunDBFile( date );
-  if( !file ) return kFileError;
+  if( !file ) return 0;
+  const int LEN = 256;
+  char buf[LEN];
+  TDatime tagdate(950101,0), prevdate(950101,0);
+  const bool kNoWarn = false;
 
-  string name(fPrefix); name.append("config");
-  LoadDBvalue( file, date, name.c_str(), fConfig );
-
-  fclose(file);
-  return kOK;
+  errno = 0;
+  long pos = ftell(file);
+  if( pos == -1 ) {
+    if( errno ) 
+      perror(here);
+    return 0;
+  }
+  long foundpos = -1;
+  bool found = false, quit = false;
+  while( !errno && !quit && fgets( buf, LEN, file)) {
+    size_t len = strlen(buf);
+    if( len<2 || buf[0] == '#' ) continue;
+    if( buf[len-1] == '\n') buf[len-1] = 0; //delete trailing newline
+    string line(buf);
+    if( IsDBdate( line, tagdate, kNoWarn )
+	&& tagdate<=date && tagdate>=prevdate ) {
+      prevdate = tagdate;
+      foundpos = ftell(file);
+      found = true;
+    } else if( end_on_tag && IsTag(buf))
+      quit = true;
+  }
+  if( errno ) {
+    perror(here);
+    found = false;
+  }
+  fseek( file, (found ? foundpos: pos), SEEK_SET );
+  return found;
 }
 
 //_____________________________________________________________________________
-THaAnalysisObject* THaAnalysisObject::FindModule( const char* name,
-						  const char* classname )
-{
-  // Locate the object 'name' in the global list of Analysis Modules 
-  // and check if it inherits from 'classname' (if given), and whether 
-  // it is properly initialized.
-  // Return pointer to valid object, else return NULL and set fStatus.
+ClassImp(THaAnalysisObject)
 
-  static const char* const here = "FindModule()";
-  static const char* const anaobj = "THaAnalysisObject";
-
-  EStatus save_status = fStatus;
-  fStatus = kInitError;
-  if( !name || !*name ) {
-    Error( Here(here), "No module name given." );
-    return NULL;
-  }
-  TObject* obj = fgModules->FindObject( name );
-  if( !obj ) {
-    Error( Here(here), "Module %s does not exist.", name );
-    return NULL;
-  }
-  if( !obj->IsA()->InheritsFrom( anaobj )) {
-    Error( Here(here), "Module %s (%s) is not a %s.",
-	   obj->GetName(), obj->GetTitle(), anaobj );
-    return NULL;
-  }
-  if( classname && *classname && strcmp(classname,anaobj) &&
-      !obj->IsA()->InheritsFrom( classname )) {
-    Error( Here(here), "Module %s (%s) is not a %s.",
-	   obj->GetName(), obj->GetTitle(), classname );
-    return NULL;
-  }
-  THaAnalysisObject* aobj = static_cast<THaAnalysisObject*>( obj );
-  if( !aobj->IsOK() ) {
-    Error( Here(here), "Module %s (%s) not initialized.",
-	   obj->GetName(), obj->GetTitle() );
-    return NULL;
-  }
-  fStatus = save_status;
-  return aobj;
-}
