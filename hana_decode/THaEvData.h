@@ -177,7 +177,7 @@ inline int THaEvData::GetRawData(int crate, int slot, int chan, int hit) const {
 inline int THaEvData::GetRawData(int i) const {
 // Raw words in evbuffer at location #i.
   if ( !buffer ) return 0;   // oops, you didn't LoadEvent
-  if (i >= 0 || i < GetEvLength()) return buffer[i];
+  if (i >= 0 && i < GetEvLength()) return buffer[i];
   return 0;
 };
 
@@ -185,7 +185,7 @@ inline int THaEvData::GetRawData(int crate, int i) const {
 // Raw words in evbuffer within crate #crate.
   if (crate < 0 || crate > MAXROC) return 0;
   int index = n1roc[crate] + i;
-  if (index >= 0 || index < GetEvLength()) return buffer[index];
+  if (index >= 0 && index < GetEvLength()) return buffer[index];
   return 0;
 };
 
