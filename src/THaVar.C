@@ -125,7 +125,7 @@ THaVar::~THaVar()
 }
 
 //_____________________________________________________________________________
-Bool_t THaVar::CompareSize( const THaVar& rhs ) const
+Bool_t THaVar::HasSameSize( const THaVar& rhs ) const
 {
   // Compare the size of this variable to that of 'rhs'.
   // Scalars always agree. Arrays agree if either they are of the same fixed 
@@ -147,11 +147,11 @@ Bool_t THaVar::CompareSize( const THaVar& rhs ) const
 }
 
 //_____________________________________________________________________________
-Bool_t THaVar::CompareSize( const THaVar* rhs ) const
+Bool_t THaVar::HasSameSize( const THaVar* rhs ) const
 {
   if( !rhs )
     return kFALSE;
-  return CompareSize( *rhs );
+  return HasSameSize( *rhs );
 }
 
 //_____________________________________________________________________________
