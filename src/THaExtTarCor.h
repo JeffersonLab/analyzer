@@ -34,11 +34,6 @@ public:
 
 protected:
 
-  THaExtTarCor() : fThetaCorr(0.0), fDeltaCorr(0.0), fTrkIfo(NULL),
-		   fSpectro(NULL), fVertexModule(NULL) {}
-  THaExtTarCor( const THaExtTarCor& ) {}
-  THaExtTarCor& operator=( const THaExtTarCor& ) { return *this; }
-
   Double_t                fThetaCorr;    // Theta correction coefficient
   Double_t                fDeltaCorr;    // Delta correction coefficient
 
@@ -56,7 +51,7 @@ protected:
   virtual Int_t DefineVariables( EMode mode = kDefine );
   virtual Int_t ReadRunDatabase( const TDatime& date );
 
-  ClassDef(THaExtTarCor,1)   //Extended target corrections module
+  ClassDef(THaExtTarCor,0)   //Extended target corrections module
 };
 
 //_________ inlines __________________________________________________________

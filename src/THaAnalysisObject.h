@@ -27,7 +27,7 @@ public:
   enum EType   { kVarDef, kRVarDef };
   enum EMode   { kDefine, kDelete };
 
-  virtual ~THaAnalysisObject() { delete [] fPrefix; fPrefix = 0; }
+  virtual ~THaAnalysisObject();
   
   virtual const char*  GetDBFileName() const     { return GetPrefix(); }
           Int_t        GetDebug() const          { return fDebug; }
@@ -121,18 +121,19 @@ protected:
   static vector<string> GetDBFileList( const char* name, const TDatime& date,
 				       const char* here = "GetDBFileList()" );
 
-  //Only derived classes may construct me
-  THaAnalysisObject() : fPrefix(NULL), fStatus(kNotinit), 
-    fDebug(0), fIsInit(false), fIsSetup(false), fProperties(0) {}
-  THaAnalysisObject( const char* name, const char* description ) :
-    TNamed(name,description), fPrefix(NULL), fStatus(kNotinit), 
-    fDebug(0), fIsInit(false), fIsSetup(false), fProperties(0) {}
-
+  // Only derived classes may construct
+  THaAnalysisObject( const char* name, const char* description );
 
 private:
   // Support functions for reading database files
   static Int_t IsDBdate( const string& line, TDatime& date, bool warn=true );
   static Int_t IsDBtag ( const string& line, const char* tag, string& text );
+
+private:
+  // Prevent default construction, copying, assignment
+  THaAnalysisObject();
+  THaAnalysisObject( const THaAnalysisObject& );
+  THaAnalysisObject& operator=( const THaAnalysisObject& );
 
   ClassDef(THaAnalysisObject,0)   //ABC for a data analysis object
 };

@@ -34,10 +34,6 @@ public:
 
 protected:
 
-  THaGoldenTrack() : fIndex(-1), fTrack(NULL), fSpectro(NULL) {}
-  THaGoldenTrack( const THaGoldenTrack& ) {}
-  THaGoldenTrack& operator=( const THaGoldenTrack& ) { return *this; }
-
   THaTrackInfo            fTrkIfo;       // Data of Golden Track
   Int_t                   fIndex;        // Index of the Golden Track
   THaTrack*               fTrack;        // Pointer to Golden Track

@@ -33,10 +33,6 @@ public:
 
 protected:
 
-  THaTwoarmVertex() : fSpectro1(NULL), fSpectro2(NULL) {}
-  THaTwoarmVertex( const THaTwoarmVertex& ) {}
-  THaTwoarmVertex& operator=( const THaTwoarmVertex& ) { return *this; }
-
   TVector3                fVertex;     // Intersection point of the two Golden Tracks
 
   TString                 fName1;      // Name of spectrometer #1

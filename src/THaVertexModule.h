@@ -20,11 +20,7 @@ public:
 
 protected:
 
-  //Only derived classes may construct me
-  THaVertexModule() {}
   THaVertexModule( const char* name, const char* description );
-  THaVertexModule( const THaVertexModule& ) {}
-  THaVertexModule& operator=( const THaVertexModule& ) { return *this; }
 
   ClassDef(THaVertexModule,0)   //ABC for a vertex module
 

@@ -33,12 +33,6 @@ protected:
 
   virtual void MakePrefix() { THaAnalysisObject::MakePrefix( NULL ); }
 
-private:
-
-  THaScalerGroup() : fScaler(NULL) {}
-  THaScalerGroup( const THaScalerGroup &bk ) {}
-  THaScalerGroup& operator=( const THaScalerGroup &bk ) { return *this; }
-  
   ClassDef(THaScalerGroup,0)  // Scaler data
 };
 

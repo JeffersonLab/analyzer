@@ -13,7 +13,7 @@ class THaHRS : public THaSpectrometer {
   
 public:
   THaHRS( const char* name, const char* description );
-  virtual ~THaHRS() {}
+  virtual ~THaHRS();
 
   virtual Int_t   FindVertices( TClonesArray& tracks );
   virtual Int_t   TrackCalc();

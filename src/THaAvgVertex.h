@@ -33,10 +33,6 @@ public:
 
 protected:
 
-  THaAvgVertex() : fSpectro1(NULL), fSpectro2(NULL) {}
-  THaAvgVertex( const THaAvgVertex& ) {}
-  THaAvgVertex& operator=( const THaAvgVertex& ) { return *this; }
-
   TVector3                fVertex;     // Intersection point of the two Golden Tracks
 
   TString                 fName1;      // Name of spectrometer #1

@@ -32,16 +32,9 @@ public:
 protected:
   TList*         fDetectors;    // List of all detectors for this apparatus
 
-  //Only derived classes may construct me  
   THaApparatus( const char* name, const char* description );
 
   virtual void MakePrefix() { THaAnalysisObject::MakePrefix( NULL ); }
-
-private:
-  // Prevent default construction, copying, assignment
-  THaApparatus();
-  THaApparatus( const THaApparatus& );
-  THaApparatus& operator=( const THaApparatus& );
 
   ClassDef(THaApparatus,0)   //A generic apparatus (collection of detectors)
 };

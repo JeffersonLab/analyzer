@@ -32,10 +32,6 @@ public:
 
 protected:
 
-  THaReactionPoint() : fSpectro(NULL), fBeam(NULL) {}
-  THaReactionPoint( const THaReactionPoint& ) {}
-  THaReactionPoint& operator=( const THaReactionPoint& ) { return *this; }
-
   TVector3                fVertex;       // Vertex of Golden Track
 
   TString                 fSpectroName;  // Name of spectrom. to consider

@@ -11,6 +11,7 @@
 #include "TString.h"
 
 class THaSpectrometer;
+class THaTrackInfo;
 
 class THaElectronKine : public THaPhysicsModule {
   
@@ -51,15 +52,10 @@ protected:
 
   Double_t          fMA;           // Effective mass of target
 
-  THaElectronKine() : fMA(0.0), fSpectro(NULL) {}
-  THaElectronKine( const THaElectronKine& ) {}
-  THaElectronKine& operator=( const THaElectronKine& ) 
-    { return *this; }
-
   virtual Int_t DefineVariables( EMode mode = kDefine );
   virtual Int_t ReadRunDatabase( const TDatime& date );
 
-  TString                 fSpectroName;  // Name of spectrom. to consider
+  TString                 fSpectroName;  // Name of spectrometer to consider
   const THaSpectrometer*  fSpectro;      // Pointer to spectrometer object
 
   ClassDef(THaElectronKine,0)   //Single arm kinematics module

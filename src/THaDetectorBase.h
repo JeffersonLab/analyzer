@@ -35,14 +35,7 @@ protected:
   TVector3        fOrigin;    // Origin of detector plane in detector coordinates (m)
   Float_t         fSize[3];   // Detector size in x,y,z (m) - x,y are half-widths
   
-  //Only derived classes may construct me
   THaDetectorBase( const char* name, const char* description );
-
-private:
-  // Prevent default construction, copying, assignment
-  THaDetectorBase();
-  THaDetectorBase( const THaDetectorBase& );
-  THaDetectorBase& operator=( const THaDetectorBase& );
 
   ClassDef(THaDetectorBase,0)   //ABC for a detector or subdetector
 };
