@@ -199,7 +199,7 @@ inline Bool_t THaEvData::InCrate(int crate, int i) const {
   if (crate == 0) return kTRUE;     // Used for crawling through whole event.
   if (crate < 0 || crate > MAXROC) return kFALSE;
   if (n1roc[crate] == 0 || lenroc[crate] == 0) return kFALSE;
-  return (i >= n1roc[crate] && i < n1roc[crate]+lenroc[crate]);
+  return (i > n1roc[crate] && i <= n1roc[crate]+lenroc[crate]);
 };
 
 inline int THaEvData::GetNumChan(int crate, int slot) const {
