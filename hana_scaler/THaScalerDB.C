@@ -56,9 +56,10 @@ bool THaScalerDB::extract_db(const Bdate& bdate, multimap< string, BscaLoc >& bm
   i = 0;
   ifstream mapfile;
   do {
+    mapfile.clear(); // needed to forget the previous 'misses'
     mapfile.open(fname[i].c_str());
-  } while( (! mapfile.is_open() ) && (++i)<ndir );
-  if (! mapfile.is_open() ) {
+  } while( (!mapfile) && (++i)<ndir );
+  if ( !mapfile ) {
      cerr << "ERROR: THaScalerDB: scaler.map file does not exist !!"<<endl;
      cerr << "You must have scaler.map in present working directory,"<<endl;
      cerr << "or in $DB_DIR directory." << endl;
@@ -85,7 +86,7 @@ bool THaScalerDB::extract_db(const Bdate& bdate, multimap< string, BscaLoc >& bm
    bdloc.clear();
    bslvec.clear();
    bool newdate = false;
-   while (getline(mapfile,sinput)) {
+   while ( getline(mapfile,sinput) ) {
       j = sinput.find(key,0);
       strvect.clear();
       strvect = vsplit(sinput);   

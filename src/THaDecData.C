@@ -165,6 +165,7 @@ Int_t THaDecData::SetupDecData( const TDatime* run_time, EMode mode )
 	cout << "<" << Here(here) << ">: Opening database file " << *it;
       }
 #endif
+      decdatafile.clear();  // Forget previous failures before attempt
       decdatafile.open((*it).c_str());
       
 #ifdef WITH_DEBUG
