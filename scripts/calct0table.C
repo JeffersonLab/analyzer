@@ -67,14 +67,13 @@ Double_t CalcT0(int *table)
   return T0;
 }
 
-int LoadOldT0Data(TDatime *run_date, Double_t *old_t0, const char *planename)
+int LoadOldT0Data(TDatime &run_date, Double_t *old_t0, const char *planename)
 {
   char buff[kBUFLEN], db_filename[kBUFLEN], tag[kBUFLEN];
 
-  //TDatime *thedate = new TDatime(2000, 9, 1, 0, 0, 0);
   sprintf(db_filename, "%c.vdc.", planename[0]);
 
-  FILE *db_file = THaDetectorBase::OpenFile(db_filename, *run_date);
+  FILE *db_file = THaDetectorBase::OpenFile(db_filename, run_date);
 
   // Build the search tag and find it in the file. Search tags
   // are of form [ <prefix> ], e.g. [ R.vdc.u1 ].
@@ -108,14 +107,13 @@ int LoadOldT0Data(TDatime *run_date, Double_t *old_t0, const char *planename)
   return kTrue;
 }
 
-int SaveNewT0Data(TDatime *run_date, Double_t *new_t0, const char *planename)
+int SaveNewT0Data(TDatime &run_date, Double_t *new_t0, const char *planename)
 {
   char buff[kBUFLEN], db_filename[kBUFLEN], tag[kBUFLEN];
 
-  //TDatime *thedate = new TDatime(2000, 9, 1, 0, 0, 0);
   sprintf(db_filename, "%c.vdc.", planename[0]);
 
-  FILE *db_file = THaDetectorBase::OpenFile(db_filename, *run_date, 
+  FILE *db_file = THaDetectorBase::OpenFile(db_filename, run_date, 
 					    "OpenFile()", "r+");
 
   // Build the search tag and find it in the file. Search tags
@@ -211,14 +209,15 @@ void CalcT0Table(const char *treefile, const char *planename)
   TTree *tt = (TTree *)f->Get("T");      // tree name in file
   THaRawEvent *event = new THaRawEvent();// the format the data was stored in
 
-  TDatime *run_date = new TDatime();
-  tt->SetBranchAddress("Date Info", &run_date);
-  tt->GetEntry(0);
-  cout<<run_date->GetDate()<<endl;
-  return;
+  // read in header info
+  THaRun *the_run = (THaRun *)f->Get("Run Data");
+  if(the_run == NULL) {
+    cerr<<"Could not read run header info. Exiting."<<endl;
+    return;
+  }
 
+  TDatime run_date = the_run->GetDate();
   Int_t num_items=0;
-  // dynamically built table
   Int_t calibration_table[kNumWires][kNumBins];
 
   Double_t t0_table[kNumBins];   // new t0s we calculate
@@ -252,7 +251,6 @@ void CalcT0Table(const char *treefile, const char *planename)
   // their differences with previously computed values
   for(int i=0; i<kNumWires; i++) 
     t0_table[i] = CalcT0(calibration_table[i]);
-
 
   // load current values from disk
   if(!LoadOldT0Data(run_date, old_t0, planename)) {
