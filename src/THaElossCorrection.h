@@ -10,12 +10,15 @@
 #include "THaPhysicsModule.h"
 #include "TString.h"
 
+class THaVertexModule;
+
 class THaElossCorrection : public THaPhysicsModule {
   
 public:
   virtual ~THaElossCorrection();
   
   virtual void      Clear( Option_t* opt="" );
+  virtual EStatus   Init( const TDatime& run_time );
 
   Double_t          GetMass()       const { return fM; }
   Double_t          GetEloss()      const { return fEloss; }
@@ -25,15 +28,19 @@ public:
           void      SetTestMode( Bool_t enable=kTRUE,
 				 Double_t eloss_value=0.0 /* GeV */ );
           void      SetMedium( Double_t Z, Double_t A,
-			       Double_t density     /* g/cm^3 */,
-			       Double_t pathlength  /* cm */ );
+			       Double_t density  /* g/cm^3 */ );
+          void      SetPathlength( Double_t pathlength /* m */ );
+          void      SetPathlength( const char* vertex_module,
+				   Double_t z_ref /* m */, Double_t scale = 1.0 );
 
   static  Double_t  ElossElectron( Double_t beta, Double_t z_med,
-				   Double_t a_med, Double_t d_med, 
-				   Double_t pathlength );
+				   Double_t a_med, 
+				   Double_t d_med /* g/cm^3 */, 
+				   Double_t pathlength /* m */ );
   static  Double_t  ElossHadron( Int_t Z_hadron, Double_t beta, 
 				 Double_t z_med, Double_t a_med, 
-				 Double_t d_med, Double_t pathlength );
+				 Double_t d_med /* g/cm^3 */, 
+				 Double_t pathlength /* m */ );
 
 protected:
 
@@ -47,11 +54,16 @@ protected:
   Double_t           fZmed;        // Effective Z of medium 
   Double_t           fAmed;        // Effective A of medium
   Double_t           fDensity;     // Density of medium (g/cm^3)
-  Double_t           fPathlength;  // Pathlength through medium (cm)
+  Double_t           fPathlength;  // Pathlength through medium (m)
+  Double_t           fZref;        // Reference z-pos for variable pathlength calc (m)
+  Double_t           fScale;       // Scale factor for variable pathlength calc
 
   Bool_t             fTestMode;    // If true, use fixed value for fEloss
   Bool_t             fElectronMode;// Particle is electron or positron
+  Bool_t             fExtPathMode; // If true, obtain pathlength from vertex module
   TString            fInputName;   // Name of input module
+  TString            fVertexName;  // Name of vertex module for var pathlength, if any
+  THaVertexModule*   fVertexModule;// Pointer to vertex module
 
   // Setup functions
   virtual Int_t DefineVariables( EMode mode = kDefine );

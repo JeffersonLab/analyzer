@@ -28,7 +28,7 @@ protected:
   THaBeamModule*    fBeamModule; // Pointer to beam module
 
   // Function for updating fEloss based on input beamifo.
-  virtual void  CalcEloss( THaBeamInfo* beamifo );
+  virtual void      CalcEloss( THaBeamInfo* beamifo );
 
   // Setup functions
   virtual Int_t DefineVariables( EMode mode = kDefine );

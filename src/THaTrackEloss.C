@@ -15,6 +15,7 @@
 #include "THaSpectrometer.h"
 #include "THaTrack.h"
 #include "THaTrackInfo.h"
+#include "THaVertexModule.h"
 #include "TMath.h"
 #include "TVector3.h"
 #include "VarDef.h"
@@ -139,13 +140,21 @@ Int_t THaTrackEloss::Process( const THaEvData& evdata )
   Double_t p_out = fTrkIfo.GetP(); 
   if( p_out <= 0.0 ) return 4; //oops
   Double_t E_out = TMath::Sqrt(p_out*p_out + fM*fM);
-  if( !fTestMode )
-    CalcEloss(trkifo);  //update fEloss
+  if( !fTestMode ) {
+    // calculate pathlength for this event if we have a vertex module
+    if( fExtPathMode ) {
+      if( !fVertexModule->HasVertex() )
+	return 1;
+      fPathlength = 
+	TMath::Abs(fVertexModule->GetVertex().Z() - fZref) * fScale;
+    }
+    //update fEloss
+    CalcEloss(trkifo); 
+  }
   Double_t p_in = TMath::Sqrt(p_out*p_out + fEloss*fEloss + 2.0*E_out*fEloss);
   
   // Apply the correction
   fTrkIfo.SetP(p_in);
-
 
   fDataValid = true;
   return 0;

@@ -10,6 +10,7 @@
 #include "THaSpectrometer.h"
 #include "THaTrack.h"
 #include "THaTrackInfo.h"
+#include "THaVertexModule.h"
 #include "TMath.h"
 #include "TVector3.h"
 #include "VarDef.h"
@@ -24,8 +25,10 @@ THaElossCorrection::THaElossCorrection( const char* name,
 					Double_t particle_mass,
 					Int_t hadron_charge ) :
   THaPhysicsModule(name,description), fZ(hadron_charge),
-  fZmed(0.0), fAmed(0.0), fDensity(0.0), fPathlength(0.0),
-  fTestMode(kFALSE), fInputName(input_tracks)
+  fZmed(0.0), fAmed(0.0), fDensity(0.0), fPathlength(0.0), 
+  fZref(0.0), fScale(0.0),
+  fTestMode(kFALSE), fExtPathMode(kFALSE), fInputName(input_tracks),
+  fVertexModule(NULL)
 {
   // Normal constructor.
 
@@ -52,6 +55,24 @@ void THaElossCorrection::Clear( Option_t* opt )
 }
 
 //_____________________________________________________________________________
+THaAnalysisObject::EStatus THaElossCorrection::Init( const TDatime& run_time )
+{
+  // Initialize the module.
+
+  if( fExtPathMode ) {
+    fVertexModule = dynamic_cast<THaVertexModule*>
+      ( FindModule( fVertexName.Data(), "THaVertexModule" ));
+    if( !fVertexModule )
+      return fStatus;
+  }
+
+  // Continue with standard initialization
+  THaPhysicsModule::Init( run_time );
+
+  return fStatus;
+}
+
+//_____________________________________________________________________________
 Int_t THaElossCorrection::DefineVariables( EMode mode )
 {
   // Define/delete global variables.
@@ -60,11 +81,12 @@ Int_t THaElossCorrection::DefineVariables( EMode mode )
   fIsSetup = ( mode == kDefine );
 
   // Locally computed data
-  const RVarDef var2[] = {
+  const RVarDef var[] = {
     { "eloss", "Calculated energy loss correction (GeV)", "fEloss" },
+    { "pathl", "Pathlength thru medium for this event",   "fPathlength" },
     { 0 }
   };
-  DefineVarsFromList( var2, mode );
+  DefineVarsFromList( var, mode );
 
   return 0;
 }
@@ -72,7 +94,7 @@ Int_t THaElossCorrection::DefineVariables( EMode mode )
 //_____________________________________________________________________________
 Int_t THaElossCorrection::ReadRunDatabase( const TDatime& date )
 {
-  // Qeury the run database for the module parameters.
+  // Query the run database for the module parameters.
 
   Int_t err = THaPhysicsModule::ReadRunDatabase( date );
   if( err ) return err;
@@ -90,6 +112,10 @@ Int_t THaElossCorrection::ReadRunDatabase( const TDatime& date )
     { "pathlength",  &fPathlength, 6 },
     { 0 }
   };
+  // Ignore pathlength if variable pathlength mode
+  if( fExtPathMode )
+    tags[5].name = 0;
+
   // Ignore database entries if parameter already set
   TagDef* item = tags;
   while( item->name ) {
@@ -109,7 +135,7 @@ Int_t THaElossCorrection::ReadRunDatabase( const TDatime& date )
 			     "pathlength through medium" };
     const char* here = Here("ReadRunDatabase");
     if( err>0 && err<=6 )
-      Error( here, "Required database entry %s missing "
+      Error( here, "Required database entry \"%s\" missing "
 	     "in the run database. Module not initialized", errmsg[err-1] );
     else
       Error( here, "Error reading run database. Module not initialized" );
@@ -130,6 +156,7 @@ void THaElossCorrection::SetInputModule( const char* name )
   else
     PrintInitError("SetInputModule");
 }
+
 //_____________________________________________________________________________
 void THaElossCorrection::SetMass( Double_t m ) 
 {
@@ -157,16 +184,44 @@ void THaElossCorrection::SetTestMode( Bool_t enable, Double_t eloss_value )
 
 //_____________________________________________________________________________
 void THaElossCorrection::SetMedium( Double_t Z, Double_t A,
-				    Double_t density, Double_t pathlength ) 
+				    Double_t density ) 
 {
-  // Set material thickness
+  // Set parameters of the medium in which the energy loss occurs
   if( !IsInit() ) {
     fZmed = Z;
     fAmed = A;
     fDensity = density;
-    fPathlength = pathlength;
   } else
-    PrintInitError("SetMass");
+    PrintInitError("SetMedium");
+}
+
+//_____________________________________________________________________________
+void THaElossCorrection::SetPathlength( Double_t pathlength ) 
+{
+  // Use fixed pathlength for energy loss calculations
+
+  if( !IsInit() ) {
+    fPathlength = pathlength;
+    fExtPathMode = kFALSE;
+  } else
+    PrintInitError("SetPathlength");
+}
+
+//_____________________________________________________________________________
+void THaElossCorrection::SetPathlength( const char* vertex_module,
+					Double_t z_ref, Double_t scale ) 
+{
+  // Use variable pathlength for eloss calculations. 
+  // The pathlength is calculated for every event as
+  //   path = abs(z_vertex - z_ref) * scale
+
+  if( !IsInit() ) {
+    fZref       = z_ref;
+    fScale      = scale;
+    fVertexName = vertex_module;
+    fExtPathMode = kTRUE;
+  } else
+    PrintInitError("SetPathlength");
 }
 
 //-----------------------------------------------------------------------
@@ -223,7 +278,7 @@ Double_t THaElossCorrection::ElossElectron( Double_t beta, Double_t z_med,
   //           z_med     effective charge of the medium
   //           a_med     effective atomic mass          (AMU)
   //           d_med     medium density                 (g/cm^3)
-  //      pathlength     flight path through medium     (cm)
+  //      pathlength     flight path through medium     (m)
   //
   //  z_med = sum(i)(w(i)*z(i))/sum(i)w(i)
   //            w(i) is the abundacy of element i in the medium
@@ -256,6 +311,8 @@ Double_t THaElossCorrection::ElossElectron( Double_t beta, Double_t z_med,
   if( beta <= 0.0 || beta >= 1.0 || z_med == 0.0 ||
       a_med == 0.0 || pathlength == 0.0 )
     return 0.0;
+
+  pathlength *= 1e2;  // internal units are cm
 
   BETA2 = beta * beta;
   BETA3 = 1.0 - BETA2;
@@ -315,7 +372,7 @@ Double_t THaElossCorrection:: ElossHadron( Int_t Z_hadron, Double_t beta,
   //           z_med     effective charge of the medium
   //           a_med     effective atomic mass          (AMU)
   //           d_med     medium density                 (g/cm^3)
-  //      pathlength     flight path through medium     (cm)
+  //      pathlength     flight path through medium     (m)
   //
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
   //
@@ -348,6 +405,8 @@ Double_t THaElossCorrection:: ElossHadron( Int_t Z_hadron, Double_t beta,
   if( Z_hadron == 0 || beta <= 0.0 || beta >= 1.0 || z_med == 0.0 ||
       a_med == 0.0 || pathlength == 0.0 )
     return 0.0;
+
+  pathlength *= 1e2;  // internal units are cm
 
   BETA2 = beta * beta;
   GAMA2 = 1.0 / (1.0 - BETA2);

@@ -12,6 +12,7 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaBeamEloss.h"
+#include "THaVertexModule.h"
 #include "TMath.h"
 #include "TVector3.h"
 #include "VarDef.h"
@@ -128,6 +129,13 @@ Int_t THaBeamEloss::Process( const THaEvData& evdata )
   if( p_in <= 0.0 ) return 4; //oops
   Double_t E_in = TMath::Sqrt(p_in*p_in + fM*fM);
   if( !fTestMode ) {
+    // calculate pathlength for this event if we have a vertex module
+    if( fExtPathMode ) {
+      if( !fVertexModule->HasVertex() )
+	return 1;
+      fPathlength = 
+	TMath::Abs(fVertexModule->GetVertex().Z() - fZref) * fScale;
+    }
     //update fEloss
     CalcEloss(beamifo);
   }

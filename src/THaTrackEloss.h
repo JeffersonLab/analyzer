@@ -30,7 +30,7 @@ protected:
   THaTrackingModule* fTrackModule; // Pointer to tracking module
 
   // Function for updating fEloss based on input trkifo.
-  virtual void  CalcEloss( THaTrackInfo* trkifo );
+  virtual void       CalcEloss( THaTrackInfo* trkifo );
 
   // Setup functions
   virtual Int_t DefineVariables( EMode mode = kDefine );
