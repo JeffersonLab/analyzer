@@ -26,7 +26,6 @@
 //      5. etc, etc. (see the online DAQ documentation)
 //   Public routines allow to fetch these data.
 //
-//   author  Robert Michaels (rom@jlab.org)
 //
 /////////////////////////////////////////////////////////////////////
 
