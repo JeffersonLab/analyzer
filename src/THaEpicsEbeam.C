@@ -4,8 +4,8 @@
 //
 // THaEpicsEbeam
 //
-// Abstract apparatus class that provides position and direction of
-// a particle beam, usually event by event.
+// A physics module that provides beam energy/momentum based on
+// EPCIS information
 // 
 //////////////////////////////////////////////////////////////////////////
 
@@ -16,9 +16,11 @@
 
 //_____________________________________________________________________________
 THaEpicsEbeam::THaEpicsEbeam( const char* name, const char* description,
-			      const char* beam, const char* epics_var ) : 
+			      const char* beam, const char* epics_var,
+			      Double_t scale_factor ) : 
   THaPhysicsModule( name,description ), fEcorr(0.0), fEpicsIsMomentum(kFALSE),
-  fBeamName(beam), fEpicsVar(epics_var), fBeamModule(NULL)
+  fScaleFactor(scale_factor), fBeamName(beam), fEpicsVar(epics_var), 
+  fBeamModule(NULL)
 {
   // Constructor.
 }
@@ -79,8 +81,8 @@ Int_t THaEpicsEbeam::DefineVariables( EMode mode )
 //_____________________________________________________________________________
 Int_t THaEpicsEbeam::Process( const THaEvData& evdata )
 {
-  // Obtain actual beam energy from EPICS (if defined) and 
-  // calculate new beam paremeters
+  // Obtain actual beam energy from EPICS (if available) and 
+  // calculate new beam parameters
 
   if( !IsOK() ) return -1;
 
@@ -94,6 +96,8 @@ Int_t THaEpicsEbeam::Process( const THaEvData& evdata )
   // If requested EPICS variable not loaded, do nothing
   if( evdata.IsLoadedEpics(fEpicsVar) ) {
     Double_t e = evdata.GetEpicsData(fEpicsVar);
+    // the scale factor must convert the EPICS value to GeV
+    e *= fScaleFactor;
     Double_t m = fBeamIfo.GetM();
     Double_t p;
     if( fEpicsIsMomentum ) {
@@ -136,6 +140,16 @@ void THaEpicsEbeam::SetEpicsIsMomentum( Bool_t mode )
   // If mode=kTRUE, interpret EPICS data as momentum rather than energy
   if( !IsInit())
     fEpicsIsMomentum = mode; 
+  else
+    PrintInitError("SetEpicsIsMomentum");
+}
+
+//_____________________________________________________________________________
+void THaEpicsEbeam::SetScaleFactor( Double_t factor ) 
+{
+  // If mode=kTRUE, interpret EPICS data as momentum rather than energy
+  if( !IsInit())
+    fScaleFactor = factor;
   else
     PrintInitError("SetEpicsIsMomentum");
 }
