@@ -194,7 +194,7 @@ Int_t THaScaler::Init(const char* thetime )
   Bdate date_want(day,month,year);    // date when we want data.
 
 // date of detector swap (Hall A specfic, assumed never to repeat)
-  Bdate dswap(9,15,2000);   
+  Bdate dswap(15,9,2000);   
 
   if (date_want < dswap) {
     header_left = 0xceb00000;
