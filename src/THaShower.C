@@ -109,8 +109,8 @@ Int_t THaShower::ReadDatabase( FILE* fi, const TDatime& date )
     else {
       Error( Here(here), "No channels defined for module %d.", i);
       delete [] fNChan; fNChan = NULL;
-      for( UShort_t j=0; j<=i; j++ )
-	delete [] fChanMap[i];
+      for( UShort_t j=0; j<i; j++ )
+	delete [] fChanMap[j];
       delete [] fChanMap; fChanMap = NULL;
       return kInitError;
     }
