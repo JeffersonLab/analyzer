@@ -236,7 +236,7 @@ end epics
 
 begin epics
    FB_A:use_RF 'RF On'=14 'RF Off'=52
-   slia:DataValid  Yes=1 No=0   # avoid quotes !!
+   slia:DataValid  Yes=1 No=0  
 end epics
 
 # The rule is that everything between single
@@ -244,11 +244,10 @@ end epics
 # if found in the datastream, gets assigned 
 # the numerical value after the equal sign.  
 # So, if the string "RF On" is found, you get
-# 14 in the tree.  The things in single quotes
-# MUST have white space.  Strings like "Yes"
-# with no white space CANNOT have single quotes.  
-# I could fix this so that "'Yes'" works the
-# same as "Yes" but its probably not worth it.
+# 14 in the tree.  The strings with white space
+# must contain single quotes.  The other strings
+# could contain single quotes, but it is not
+# necessary (e.g. slia:DataValid 'Yes'=1).
 
 # Examples of *GOOD* syntax:
 
@@ -257,14 +256,13 @@ begin epics
    IPM1H04A.XPOS
    FB_A:use_RF 'RF On'=14 'RF Off'=52
    slia:DataValid  Yes=1 No=0 
-   hla:DataValid   Fred=2 No=22 Yes==452
+   hla:DataValid   Fred=2 'No'=22 Yes==452
 end epics 
 
 # Examples of *BAD* syntax:
 
 begin epics
    Joe Momma    # erroneous space
-   rValid 'Yes'=1   # Lacks white space in 'Yes'
    FB_A:use_RF 'RF On=14  # missing a quote
    slia:DataValid  Yes = 1 # erroneous space 
    hla:DataValid   Fred= 2 # erroneous space 
