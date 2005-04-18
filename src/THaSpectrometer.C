@@ -180,6 +180,8 @@ Int_t THaSpectrometer::DefineVariables( EMode mode )
     { "tr.ph",   "Tangent of track phi angle",   "fTracks.THaTrack.fPhi" },
     { "tr.p",    "Track momentum (GeV)",         "fTracks.THaTrack.fP" },
     { "tr.flag", "Track status flag",            "fTracks.THaTrack.fFlag" },
+    { "tr.chi2", "Track's chi2 from hits",       "fTracks.THaTrack.fChi2" },
+    { "tr.ndof", "Track's NDoF",                 "fTracks.THaTrack.fNDoF" },
     { "tr.d_x",  "Detector x coordinate (m)",    "fTracks.THaTrack.fDX" },
     { "tr.d_y",  "Detector y coordinate (m)",    "fTracks.THaTrack.fDY" },
     { "tr.d_th", "Detector tangent of theta",    "fTracks.THaTrack.fDTheta" },
@@ -275,12 +277,12 @@ Int_t THaSpectrometer::CoarseTrack()
   while( THaTrackingDetector* theTrackDetector =
 	 static_cast<THaTrackingDetector*>( next() )) {
 #ifdef WITH_DEBUG
-    if( fDebug>0 ) cout << "Call CoarseTrack() for " 
+    if( fDebug>1 ) cout << "Call CoarseTrack() for " 
 			<< theTrackDetector->GetName() << "... ";
 #endif
     theTrackDetector->CoarseTrack( *fTracks );
 #ifdef WITH_DEBUG
-    if( fDebug>0 ) cout << "done.\n";
+    if( fDebug>1 ) cout << "done.\n";
 #endif
   }
 
@@ -303,12 +305,12 @@ Int_t THaSpectrometer::CoarseReconstruct()
   while( THaNonTrackingDetector* theNonTrackDetector =
 	 static_cast<THaNonTrackingDetector*>( next() )) {
 #ifdef WITH_DEBUG
-    if( fDebug>0 ) cout << "Call CoarseProcess() for " 
+    if( fDebug>1 ) cout << "Call CoarseProcess() for " 
 			<< theNonTrackDetector->GetName() << "... ";
 #endif
     theNonTrackDetector->CoarseProcess( *fTracks );
 #ifdef WITH_DEBUG
-    if( fDebug>0 ) cout << "done.\n";
+    if( fDebug>1 ) cout << "done.\n";
 #endif
   }
 
@@ -330,12 +332,12 @@ Int_t THaSpectrometer::Track()
   while( THaTrackingDetector* theTrackDetector =
 	 static_cast<THaTrackingDetector*>( next() )) {
 #ifdef WITH_DEBUG
-    if( fDebug>0 ) cout << "Call FineTrack() for " 
+    if( fDebug>1 ) cout << "Call FineTrack() for " 
 			<< theTrackDetector->GetName() << "... ";
 #endif
     theTrackDetector->FineTrack( *fTracks );
 #ifdef WITH_DEBUG
-    if( fDebug>0 ) cout << "done.\n";
+    if( fDebug>1 ) cout << "done.\n";
 #endif
   }
 
@@ -383,12 +385,12 @@ Int_t THaSpectrometer::Reconstruct()
   while( THaNonTrackingDetector* theNonTrackDetector =
 	 static_cast<THaNonTrackingDetector*>( next() )) {
 #ifdef WITH_DEBUG
-    if( fDebug>0 ) cout << "Call FineProcess() for " 
+    if( fDebug>1 ) cout << "Call FineProcess() for " 
 			<< theNonTrackDetector->GetName() << "... ";
 #endif
     theNonTrackDetector->FineProcess( *fTracks );
 #ifdef WITH_DEBUG
-    if( fDebug>0 ) cout << "done.\n";
+    if( fDebug>1 ) cout << "done.\n";
 #endif
   }
 

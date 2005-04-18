@@ -253,6 +253,8 @@ Int_t THaVDCPlane::DefineVariables( EMode mode )
     { "rawtime","Raw TDC values of wires",    "fHits.THaVDCHit.fRawTime" },
     { "time",   "TDC values of active wires", "fHits.THaVDCHit.fTime" },
     { "dist",   "Drift distances",            "fHits.THaVDCHit.fDist" },
+    { "ddist",  "Drft dist uncertainty",      "fHits.THaVDCHit.fdDist" },
+    { "trdist", "Dist. from track",           "fHits.THaVDCHit.ftrDist" },
     { "nclust", "Number of clusters",         "GetNClusters()" },
     { "clsiz",  "Cluster sizes",              "fClusters.THaVDCCluster.fSize" },
     { "clpivot","Cluster pivot wire num",     "fClusters.THaVDCCluster.GetPivotWireNum()" },
@@ -260,6 +262,9 @@ Int_t THaVDCPlane::DefineVariables( EMode mode )
     { "slope",  "Cluster slopes",             "fClusters.THaVDCCluster.fSlope" },
     { "sigsl",  "Cluster slope sigmas",       "fClusters.THaVDCCluster.fSigmaSlope" },
     { "sigpos", "Cluster position sigmas",    "fClusters.THaVDCCluster.fSigmaInt" },
+    { "clchi2", "Cluster chi2",               "fClusters.THaVDCCluster.fChi2" },
+    { "clndof", "Cluster NDoF",               "fClusters.THaVDCCluster.fNDoF" },
+    { "cltcor","Cluster Time correction",    "fClusters.THaVDCCluster.fTimeCorrection" },
     { 0 }
   };
   return DefineVarsFromList( vars, mode );

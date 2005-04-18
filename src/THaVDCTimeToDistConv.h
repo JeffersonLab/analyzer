@@ -17,7 +17,8 @@ public:
   THaVDCTimeToDistConv() {}
   virtual ~THaVDCTimeToDistConv();
 
-  virtual Double_t ConvertTimeToDist(Double_t time, Double_t tanTheta) = 0;
+  virtual Double_t ConvertTimeToDist(Double_t time, Double_t tanTheta,
+				     Double_t *ddist=0) = 0;
 
 protected:
 

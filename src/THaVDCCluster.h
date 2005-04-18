@@ -19,7 +19,8 @@ class THaVDCCluster : public TObject {
 public:
   THaVDCCluster( THaVDCPlane* owner = NULL ) :
     fSize(0), fPlane(owner), fSlope(kBig), fSigmaSlope(kBig), fInt(kBig),
-    fSigmaInt(kBig), fT0(0.0), fPivot(NULL), fTimeCorrection(0.0), fFitOK(false)
+    fSigmaInt(kBig), fT0(0.0), fPivot(NULL), fTimeCorrection(0.0), fFitOK(false),
+    fChi2(kBig),fNDoF(0.0)
   {}
   THaVDCCluster( const THaVDCCluster&);
   THaVDCCluster& operator=( const THaVDCCluster& );
@@ -32,6 +33,8 @@ public:
   virtual void   ConvertTimeToDist();
   virtual void   FitTrack( EMode mode = kSimple );
   virtual void   ClearFit();
+  virtual void   CalcChisquare(Double_t& chi2, Int_t& nhits) const;
+
 
   // TObject functions redefined
   virtual void   Clear( Option_t* opt="" );
@@ -51,7 +54,7 @@ public:
   THaVDCHit*     GetPivot()          const { return fPivot; }
   Int_t          GetPivotWireNum()   const;
   Double_t       GetTimeCorrection() const { return fTimeCorrection; }
-
+  
   bool           IsFitOK()           const { return fFitOK; }
 
   void           SetPlane( THaVDCPlane* plane )     { fPlane = plane; }
@@ -80,8 +83,12 @@ protected:
   Double_t       fTimeCorrection;    // correction to be applied when fitting
                                      // drift times
   bool           fFitOK;             // Flag indicating that fit results valid
+  Double_t       fChi2;              // chi2 for the cluster
+  Double_t       fNDoF;              // NDoF in local chi2 calculation
 
+  virtual void   CalcDist();         // calculate the track to wire distances
   virtual void   FitSimpleTrack();
+  virtual void   FitSimpleTrackWgt(); // present for testing
 
   ClassDef(THaVDCCluster,0)          // A group of VDC hits
 };

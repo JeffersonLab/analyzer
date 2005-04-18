@@ -11,6 +11,8 @@
 
 ClassImp(THaVDCHit)
 
+const Double_t THaVDCHit::kBig = 1.e38; // Arbitrary large value
+
 //_____________________________________________________________________________
 Double_t THaVDCHit::ConvertTimeToDist(Double_t slope)
 {
@@ -19,10 +21,12 @@ Double_t THaVDCHit::ConvertTimeToDist(Double_t slope)
   
   THaVDCTimeToDistConv* ttdConv = (fWire) ? fWire->GetTTDConv() : NULL;
   
-  if (ttdConv) 
+  if (ttdConv) {
     // If a time to distance algorithm exists, use it to convert the TDC time 
     // to the drift distance
-    return fDist = ttdConv->ConvertTimeToDist(fTime, slope);
+    fDist = ttdConv->ConvertTimeToDist(fTime, slope, &fdDist);
+    return fDist;
+  }
   
   Error("ConvertTimeToDist()", "No Time to dist algorithm available");
   return 0.0;
