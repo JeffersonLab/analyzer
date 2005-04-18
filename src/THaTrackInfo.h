@@ -72,10 +72,10 @@ public:
 protected:
   Double_t  fP;         // Track momentum (GeV)
   Double_t  fDp;        // TRANSPORT delta
-  Double_t  fX;         // TRANSPORT x (m)
-  Double_t  fY;         // TRANSPORT y (m)
-  Double_t  fTheta;     // Tangent of TRANSPORT theta
-  Double_t  fPhi;       // Tangent of TRANSPORT phi
+  Double_t  fX;         // TRANSPORT x at target (m)
+  Double_t  fY;         // TRANSPORT y at target (m)
+  Double_t  fTheta;     // Tangent of TRANSPORT theta at target
+  Double_t  fPhi;       // Tangent of TRANSPORT phi at target
   TVector3  fPvect;     // Momentum vector in lab (GeV)
   Int_t     fOK;        // Data ok (0:no 1:yes)
 
