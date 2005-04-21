@@ -49,8 +49,9 @@ bool THaSpectrometerDetector::CalcTrackIntercept(THaTrack* theTrack,
 {
   // projects a given track on to the plane of the detector
   // xcross and ycross are the x and y coords of this intersection
-  // t is the distance from the origin of the track to the given plane
-
+  // t is the distance from the origin of the track to the given plane.
+  // 
+  // If a hit is NOT found, then t, xcross, and ycross are unchanged.
   TVector3 t0( theTrack->GetX(), theTrack->GetY(), 0.0 );
   Double_t norm = TMath::Sqrt(1.0 + theTrack->GetTheta()*theTrack->GetTheta() +
 			      theTrack->GetPhi()*theTrack->GetPhi());
