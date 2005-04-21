@@ -12,9 +12,11 @@
 #include "VarDef.h"
 #include "VarType.h"
 #include "THaTrack.h"
+#include "THaTrackProj.h"
 #include "TClonesArray.h"
 #include "TDatime.h"
 #include "TMath.h"
+
 #include <cstring>
 
 ClassImp(THaCherenkov)
@@ -25,6 +27,7 @@ THaCherenkov::THaCherenkov( const char* name, const char* description,
   : THaPidDetector(name,description,apparatus)
 {
   // Constructor
+  fTrackProj = new TClonesArray( "THaTrackProj", 5 );
 }
 
 //_____________________________________________________________________________
@@ -149,8 +152,9 @@ Int_t THaCherenkov::DefineVariables( EMode mode )
     { "a_c",    "Corrected ADC values",              "fA_c" },
     { "asum_p", "Sum of ADC minus pedestal values",  "fASUM_p" },
     { "asum_c", "Sum of corrected ADC amplitudes",   "fASUM_c" },
-    { "trx",    "x-position of track in det plane",  "fTRX" },
-    { "try",    "y-position of track in det plane",  "fTRY" },
+    { "trx",    "x-position of track in det plane",  "fTrackProj.THaTrackProj.fX" },
+    { "try",    "y-position of track in det plane",  "fTrackProj.THaTrackProj.fY" },
+    { "trpath", "TRCS pathlen of track to det plane","fTrackProj.THaTrackProj.fPathl" },
     { 0 }
   };
   return DefineVarsFromList( vars, mode );
@@ -199,8 +203,7 @@ void THaCherenkov::ClearEvent()
   memset( fA_c, 0, lf );                  // Corrected ADC amplitudes of chans
   fASUM_p = 0.0;                          // Sum of ADC minus pedestal values
   fASUM_c = 0.0;                          // Sum of corrected ADC amplitudes
-  fTRX = 0.0;                             // Xcrd of track point on Aero plane
-  fTRY = 0.0;                             // Ycrd of track point on Aero plane
+  fTrackProj->Clear();
 }
 
 //_____________________________________________________________________________
@@ -284,31 +287,24 @@ Int_t THaCherenkov::Decode( const THaEvData& evdata )
 //_____________________________________________________________________________
 Int_t THaCherenkov::CoarseProcess( TClonesArray& tracks )
 {
-  // Reconstruct coordinates of particle track cross point with Cherenkov plane,
-  // and copy the data into the following local data structure:
+  // Reconstruct coordinates of where a particle track crosses
+  // the Cherenkov plane, and copy the point into the fTrackProj array.
   //
-  // fTRX  -  X-coordinate of particle track cross point with Cherenkov plane
-  // fTRY  -  Y-coordinate of particle track cross point with Cherenkov plane
-  //
-  // Units of measurements are centimeters.
-
   // Calculation of coordinates of particle track cross point with Cherenkov
   // plane in the detector coordinate system. For this, parameters of track 
   // reconstructed in THaVDC::CrudeTrack() are used.
 
-  int ne_track = tracks.GetLast()+1;   // Number of reconstructed in Earm tracks
+  int n_track = tracks.GetLast()+1;   // Number of reconstructed tracks
 
-  if ( ne_track == 1 ) {
-    THaTrack* theTrack = static_cast<THaTrack*>( tracks[0] );
-    double fpe_x       = theTrack->GetX();
-    double fpe_y       = theTrack->GetY();
-    double fpe_th      = theTrack->GetTheta();
-    double fpe_ph      = theTrack->GetPhi();
-
-    fTRX = ( fpe_x + fpe_th * fOrigin.Z() ) / 
-      ( cos_angle * (1 + fpe_th * tan_angle) );
-    fTRY = fpe_y + fpe_ph * fOrigin.Z() 
-      - fpe_ph * sin_angle * fTRX;
+  for ( int i=0; i<n_track; i++ ) {
+    THaTrack* theTrack = static_cast<THaTrack*>( tracks[i] );
+    Double_t pathl=kBig, xc=kBig, yc=kBig;
+    Double_t dx=0.; // unused
+    Int_t pad=-1;   // unused
+    
+    CalcTrackIntercept(theTrack, pathl, xc, yc);
+    // if it hit or not, store the information (defaults if no hit)
+    new ( (*fTrackProj)[i] ) THaTrackProj(xc,yc,pathl,dx,pad,this);
   }
 
   return 0;
@@ -318,9 +314,28 @@ Int_t THaCherenkov::CoarseProcess( TClonesArray& tracks )
 Int_t THaCherenkov::FineProcess( TClonesArray& tracks )
 {
   // Fine Cherenkov processing.
-  // Not implemented. Does nothing, returns 0.
+  // Redo the track-matching, since tracks might have been thrown out
+  // during the FineTracking stage.
+  fTrackProj->Clear();
+  int n_track = tracks.GetLast()+1;   // Number of reconstructed tracks
+
+  for ( int i=0; i<n_track; i++ ) {
+    THaTrack* theTrack = static_cast<THaTrack*>( tracks[i] );
+    Double_t pathl=kBig, xc=kBig, yc=kBig;
+    Double_t dx=0.; // unused
+    Int_t pad=-1;   // unused
+    
+    CalcTrackIntercept(theTrack, pathl, xc, yc);
+    // if it hit or not, store the information (defaults if no hit)
+    new ( (*fTrackProj)[i] ) THaTrackProj(xc,yc,pathl,dx,pad,this);
+  }
 
   return 0;
 }
 
+//_____________________________________________________________________________
+Int_t THaCherenkov::GetNTracks() const
+{
+  return fTrackProj->GetLast()+1;
+}
 ///////////////////////////////////////////////////////////////////////////////
