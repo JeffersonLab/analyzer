@@ -59,80 +59,16 @@ THaCodaDecoder::THaCodaDecoder() :
   first_scaler(true),
   numscaler_crate(0)
 {
-  //  fInstance = fgInstances.FirstNullBit();
-  //fgInstances.SetBitNumber(fInstance);
-  //fInstance++;
   epics = new THaEpics;
-  //crateslot = new THaSlotData*[MAXROC*MAXSLOT];
-  //cmap = new THaCrateMap;
   fb = new THaFastBusWord;
-  //fSlotUsed  = new UShort_t[MAXROC*MAXSLOT];
-  //fSlotClear = new UShort_t[MAXROC*MAXSLOT];
   memset(psfact,0,MAX_PSFACT*sizeof(int));
-  //memset(crateslot,0,MAXROC*MAXSLOT*sizeof(THaSlotData*));
-  //run_time = time(0); // default run_time is NOW
-#ifndef STANDALONE
-// Register global variables. 
-//  if( gHaVars ) {
-//    VarDef vars[] = {
-//      { "runnum",    "Run number",     kInt,    0, &run_num },
-//      { "runtype",   "CODA run type",  kInt,    0, &run_type },
-//      { "runtime",   "CODA run time",  kUInt,   0, &run_time },
-//      { "evnum",     "Event number",   kInt,    0, &event_num },
-//      { "evtyp",     "Event type",     kInt,    0, &event_type },
-//      { "evlen",     "Event Length",   kInt,    0, &event_length },
-//      { "helicity",  "Beam helicity",  kDouble, 0, &dhel },
-//      { "timestamp", "Timestamp",      kDouble, 0, &dtimestamp },
-//      { 0 }
-//    };
-//    TString prefix("g");
-    // Allow global variable clash if there are several instances of us
-  //    if( fInstance > 1 )
-  //      prefix.Append(Form("%d",fInstance));
-  //    prefix.Append(".");
-  //  gHaVars->DefineVariables( vars, prefix, "THaCodaDecoder::THaCodaDecoder" );
-  //  } else
-  //  Warning("THaCodaDecoder::THaCodaDecoder","No global variable list found. "
-  //	    "Variables not registered.");
 
-#endif
-  //  fDoBench = BENCH;
-  //if( fDoBench ) {
-  //  fBench = new THaBenchmark;
-  //} else
-  //  fBench = NULL;
-
-  // Enable scalers by default
   EnableScalers();
 }
 
 THaCodaDecoder::~THaCodaDecoder() {
-  //  if( fDoBench ) {
-  //  Float_t a,b;
-  //  fBench->Summary(a,b);
-  // }
-  //delete fBench;
-#ifndef STANDALONE
-  //if( gHaVars ) {
-  //  TString prefix("g");
-  //  if( fInstance > 1 )
-  //    prefix.Append(Form("%d",fInstance));
-  //  prefix.Append(".*");
-  //  gHaVars->RemoveRegexp( prefix );
-  //}
-#endif
-  // We must delete every array element since not all may be in fSlotUsed.
-  //for( int i=0; i<MAXROC*MAXSLOT; i++ )
-  //  delete crateslot[i];
-  //delete [] crateslot;  
   delete epics;
-  //delete helicity;
-  //delete cmap;
   delete fb;
-  //delete [] fSlotUsed;
-  //delete [] fSlotClear;
-  //fInstance--;
-  //fgInstances.SetBitNumber(fInstance,kFALSE);
 }
 
 int THaCodaDecoder::GetPrescaleFactor(int trigger_type) const {
@@ -251,6 +187,7 @@ void THaCodaDecoder::dump(const int* evbuffer) const {
       }
       cout << endl;
    }
+   cout<<dec<<endl;
 }
 
 int THaCodaDecoder::physics_decode(const int* evbuffer, THaCrateMap* map) {
@@ -555,9 +492,11 @@ int THaCodaDecoder::vme_decode(int roc, THaCrateMap* map, const int* evbuffer,
     map->setSlotDone();
     if (map->isScalerCrate(roc) && GetRocLength(roc) >= 16) evscaler = 1;
     while ( p++ < pstop ) {
-      if(DEBUG) cout << "evbuff "<<(p-evbuffer)<<"  "<<hex<<*p<<dec<<endl;  
-      for (slot=1; slot<=Nslot; slot++) {
-	if (!map->slotUsed(roc,slot)) continue;
+      if(DEBUG) cout << "evbuff "<<(p-evbuffer)<<"  "<<hex<<*p<<dec<<endl;
+      // look through all slots, since Nslot only gives number of occupied slots,
+      // not the highest-numbered occupied slot.
+      for (slot=1; slot<=MAXSLOT; slot++) {
+	if (!map->slotUsed(roc,slot)) continue; 
 	if (map->slotDone(slot)) continue;
 	head = map->getHeader(roc,slot);
 	mask = map->getMask(roc,slot);
@@ -699,6 +638,84 @@ int THaCodaDecoder::vme_decode(int roc, THaCrateMap* map, const int* evbuffer,
 		}
 	      }
 	      ++p;
+	    }
+	    break;
+	  case 6401:      // JLab F1 normal resolution mode
+	  case 3201:      // JLab F1 high resolution mode
+	    {
+	      // CAUTION: this routine does re-number the channels
+	      // compared to the labelled numbering scheme on the board itself.
+	      // According to the labelling and internal numbering scheme,
+	      // the F1 module has odd numbered channels on one connector
+	      // and even numbered channels on the other.
+	      // However we usually put neighboring blocks/wires into the same 
+              // cable, connector etc.
+	      // => hana therefore uses a numbering scheme different from the module
+	      //
+	      // In normal resolution mode, the scheme is:
+	      //    connector 1:  ch 0 - 15
+	      //    conncetor 2:  ch 16 - 31
+	      //    connector 33: ch 32 - 47
+	      //    connector 34: ch 48 - 63
+	      //
+	      // In high-resolution mode, only two connectors are used since
+	      // two adjacent channels are internally combined and read out as the
+	      // internally-even numbered channels.
+	      // this is kind of inconvenient for the rest of the software
+	      // => hana therefore uses a numbering scheme different from the module
+	      //    connector 1:  unused
+	      //    connector 2:  ch 0 - 15
+	      //    connector 33: unused
+	      //    connector 34: ch 16 - 31
+	      //
+	      // In both modes:
+	      // it is assumed that we only get data from one single trigger
+	      // if the F1 is run in multiblock mode (buffered mode) 
+	      // this might not be the case anymore - but this will be interesting anyhow
+	      // triggertime and eventnumber are not yet read out, they will again
+              // be usefull when multiblock mode (buffered mode) is used
+	      const int F1_HIT_OFLW = 1<<24; // bad
+	      const int F1_OUT_OFLW = 1<<25; // bad
+	      const int F1_RES_LOCK = 1<<26; // good
+	      const int DATA_CHK = F1_HIT_OFLW | F1_OUT_OFLW | F1_RES_LOCK;
+	      const int DATA_MARKER = 1<<23;
+
+	      // skip the first header word
+	      p++;
+	      while ((p < pevlen) && ((*p)&0xf8000000)==(head&0xf8000000)) {
+		if ( ((*p) & DATA_CHK) != F1_RES_LOCK ) {
+		  cout << "Warning: F1 TDC " << hex << (*p) << dec;
+		  if ( (*p) & F1_HIT_OFLW ) {
+		    cout << " Hit-FIFO overflow";
+		  }
+		  if ( (*p) & F1_OUT_OFLW ) {
+		    cout << " Output FIFO overflow";
+		  }
+		  if ( ! ((*p) & F1_RES_LOCK ) ) {
+		    cout << " Resolution lock failure!";
+		  }
+		  cout << endl;
+		}
+		
+		if ( !( (*p) & DATA_MARKER ) ) {
+		  // header/trailer word, to be ignored
+		} else {
+		  int chn = ((*p)>>16) & 0x3f;  // internal channel number
+
+		  if (model==6401) {        // normal resolution
+		    // do the reordering of the channels, for contiguous groups
+		    // odd numbered TDC channels from the board -> +16
+		    chan = (chn & 0x20) + 16*(chn & 0x01) + ((chn & 0x1e)>>1);
+		  } else if (model==3201) { // high resolution
+		    // drop last bit for channel renumbering
+		    chan=(chn >> 1);
+		  }
+		  raw= (*p) & 0xffff;
+		  if (crateslot[idx(roc,slot)]->loadData("tdc",chan,raw,raw)
+		      == SD_ERR) return HED_ERR;
+		}
+		p++;
+	      }
 	    }
 	    break;
 	  case 767:   // CAEN 767 MultiHit TDC
