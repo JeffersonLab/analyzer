@@ -28,6 +28,8 @@
 // Update time (msec) of TTImer
 #define UPDATE_TIME 4000
 
+#include <vector>
+#include <string>
 #include "THaScalerGui.h"
 #include "THaScaler.h"
 #include "THaScalerDB.h"
@@ -168,8 +170,11 @@ Int_t THaScalerGui::InitPlots() {
           TGTextButton *fButton1;
           char cbutton[100];
 	  std::string buttonname = "none";
-          if (scaler->GetDataBase()) 
-            buttonname = scaler->GetDataBase()->GetShortName(crate,slot,chan);
+          if (scaler->GetDataBase()) { 
+            std::vector<std::string> strb = 
+               scaler->GetDataBase()->GetShortNames(crate,slot,chan);
+  	    buttonname = strb[0];
+	  }
           if (buttonname == "none") {
             sprintf(cbutton,"%d ==>",ncol*row+col+1);
           } else {
