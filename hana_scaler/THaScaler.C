@@ -305,9 +305,11 @@ void THaScaler::SetupNormMap() {
   clkslot = GetSlot("clock");
   clkchan = GetChan("clock");
   for (Int_t ichan = 0; ichan < SCAL_NUMCHAN; ichan++) {
-    std::string chan_name = database->GetShortName(crate, normslot[0], ichan);
-    if (chan_name != "none") {
-      normmap.insert(make_pair(chan_name, ichan));
+    std::vector<std::string> chan_name = database->GetShortNames(crate, normslot[0], ichan);
+    for (int i = 0; i < chan_name.size(); i++) {
+      if (chan_name[i] != "none") {
+        normmap.insert(make_pair(chan_name[i], ichan));
+      }
     }
   }
 }
@@ -754,8 +756,9 @@ Int_t THaScaler::GetNormData(Int_t helicity, const char* which, Int_t histor) {
   if (helicity == -1) index = 1;
   if (helicity ==  1) index = 2;
   if (normslot[index] < 0) return 0;
-  if (normmap.find(which) == normmap.end()) return 0;
-  return GetScaler(normslot[index],normmap[which],histor);
+  std::multimap<std::string, Int_t>::iterator pm = normmap.find(which);
+  if (pm == normmap.end()) return 0;
+  return GetScaler(normslot[index],pm->second,histor);
 };
 
 Int_t THaScaler::GetNormData(Int_t helicity, Int_t chan, Int_t histor) {

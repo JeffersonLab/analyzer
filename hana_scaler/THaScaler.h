@@ -121,8 +121,8 @@ protected:
    std::string bankgroup;
    THaCodaFile *fcodafile;
    std::vector<Int_t> onlmap;
-   THaScalerDB *database;
-   std::map<std::string, Int_t> normmap;
+   THaScalerDB *database; 
+   std::multimap<std::string, Int_t> normmap;
    Int_t *rawdata;
    Bool_t coda_open;
    Int_t header, crate, evstr_type;

@@ -237,7 +237,7 @@ public:
    UInt_t FindNoCase(const std::string s1, const std::string s2);
    Int_t GetSlot(Int_t crate, std::string desc, Int_t helicity=0);
    Int_t GetChan(Int_t crate, std::string desc, Int_t helicity=0, Int_t chan=0);
-   std::string GetShortName(Int_t crate, Int_t slot, Int_t chan);
+   std::vector<std::string> GetShortNames(Int_t crate, Int_t slot, Int_t chan);
    Int_t GetNumDirectives(Int_t craet, std::string directive);
    Int_t GetIntDirectives(Int_t crate, std::string directive, std::string key);
    std::string GetStringDirectives(Int_t crate, std::string directive, std::string key);
@@ -256,7 +256,7 @@ private:
    std::vector<std::string> directnames;
    std::map< SDB_chanKey, SDB_chanDesc > chanmap;
    std::map< std::string, Int_t > crate_strtoi;
-   std::map< std::pair<std::pair<Int_t, Int_t>, Int_t>, std::string > channame;
+   std::map< std::pair<std::pair<Int_t, Int_t>, Int_t>, std::vector< std::string> > channame;
    SDB_directive *direct;
    bool LoadMap(std::string sinput);
    bool LoadDirective(std::string sinput);

@@ -253,7 +253,15 @@ bool THaScalerDB::LoadMap(std::string sinput)
   Int_t first_chan = atoi(vstring[4].c_str());
   Int_t nchan = atoi(vstring[5].c_str());
 
-  channame.insert(make_pair(make_pair(make_pair(crate, slot), first_chan),sdesc));
+  std::pair<std::pair<Int_t, Int_t>, Int_t> cs = make_pair(make_pair(crate, slot), first_chan);
+  if (channame.find(cs) == channame.end()) {
+    vector<std::string> cnewstr;
+    cnewstr.clear();
+    cnewstr.push_back(sdesc);
+    channame.insert(make_pair(make_pair(make_pair(crate, slot), first_chan),cnewstr));
+  } else {
+    channame[cs].push_back(sdesc);
+  }
   SDB_chanKey sk(crate, helicity, sdesc);
   std::map<SDB_chanKey, SDB_chanDesc>::iterator pm = chanmap.find(sk);
   if (pm != chanmap.end()) {  // key already exists
@@ -310,14 +318,18 @@ load1:
   return true;
 }
 
-std::string THaScalerDB::GetShortName(Int_t crate, Int_t slot, Int_t chan) {
+std::vector<std::string> THaScalerDB::GetShortNames(Int_t crate, Int_t slot, Int_t chan) {
   Int_t slot0 = GetSlot(crate, "TS-accept", 0);
   Int_t slotm = GetSlot(crate, "TS-accept", -1);
   Int_t slotp = GetSlot(crate, "TS-accept", 1);
   if ( slot == slotm && IsHelicityTied(crate, -1) ) slot = slot0;
   if ( slot == slotp && IsHelicityTied(crate,  1) ) slot = slot0;
   std::pair<std::pair<Int_t, Int_t>, Int_t> cs = make_pair(make_pair(crate, slot), chan);
-  if (channame.find(cs) == channame.end()) return "none";
+  if (channame.find(cs) == channame.end()) {
+    std::vector<std::string> null_result;
+    null_result.push_back("none");
+    return null_result;
+  }
   return channame[cs];
 }
 
