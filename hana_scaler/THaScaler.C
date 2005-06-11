@@ -173,8 +173,8 @@ Int_t THaScaler::InitData(std::string bankgroup, const Bdate& date_want) {
              0,7,8,9,1,2,3,4,5,6,10,11 },
     { "dvcs",  0xd0c00000, 9, 140, 0, 105000, "129.57.192.51",  5064, 
              0,1,2,3,4,5,6,7,8,9,10,11 },
-    // N20: header 0xbba...,  crate=6 (our choice), 
-    { "N20",  0xbba00000, 6, 140, 1, 2048, "129.57.192.51",  5064, 
+    // bbite: header 0xbba...,  crate=6 (our choice), 
+    { "bbite", 0xbba00000, 6, 140, 1, 60, "129.57.192.51",  5064, 
              0,1,2,3,4,5,6,7,8,9,10,11 },
     // Data that are part of the event stream
     { "evleft",  0xabc00000, 11, 1, 4, 1024, "none",  0, 0,0,0,0,0,0,0,0,0,0,0,0},
@@ -197,8 +197,8 @@ Int_t THaScaler::InitData(std::string bankgroup, const Bdate& date_want) {
      if ( database->FindNoCase(bankgroup,"dvcs") != std::string::npos) {
           bank_to_find = "dvcs"; 
      }
-     if ( database->FindNoCase(bankgroup,"N20") != std::string::npos) {
-          bank_to_find = "N20"; 
+     if ( database->FindNoCase(bankgroup,"bbite") != std::string::npos) {
+          bank_to_find = "bbite"; 
      }
      if ( database->FindNoCase(bankgroup,"evleft") != std::string::npos) {
           bank_to_find = "evleft"; 
@@ -248,7 +248,7 @@ Int_t THaScaler::InitData(std::string bankgroup, const Bdate& date_want) {
   if (fDebug) {
     cout << "Set up bank "<<bank_to_find<<endl;
     cout << "crate "<<crate<<"   header 0x"<<hex<<header<<dec<<endl;
-    cout << "default normalization slot "<<normslot<<endl;
+    cout << "default normalization slot "<<normslot[0]<<endl;
     cout << "evstr_type "<<evstr_type<<"  clock rate "<<clockrate<<endl;
     cout << "vme: "<<vme_server<<"  "<<vme_port<<endl;
     cout << "online map: "<<endl;
@@ -304,6 +304,9 @@ void THaScaler::SetupNormMap() {
   normslot[2] = GetSlot("TS-accept",  1);
   clkslot = GetSlot("clock");
   clkchan = GetChan("clock");
+  if (normslot[0] < 0) normslot[0] = GetSlot("clock");
+  if (normslot[1] < 0) normslot[1] = GetSlot("clock",-1);
+  if (normslot[2] < 0) normslot[2] = GetSlot("clock", 1);
   for (Int_t ichan = 0; ichan < SCAL_NUMCHAN; ichan++) {
     std::vector<std::string> chan_name = database->GetShortNames(crate, normslot[0], ichan);
     for (int i = 0; i < chan_name.size(); i++) {

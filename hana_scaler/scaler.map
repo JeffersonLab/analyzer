@@ -44,6 +44,8 @@ slot-offset Left -1:1 1:-1
 slot-offset Right -1:1 1:-1 
 #
 # desc  hel crate slot start nchan  long-description
+clock     0    6   1     7    1   bigbite clock locatin
+#
 s1L       0    7   0     0    6   S1 Scintillator Left PMTs on Right Arm
 s1R       0    7   0     8    6   S1 Scintillator Right PMTs on Right Arm
 s1        0    7   0    16    6   S1 Paddles (Left.and.Right PMT) on Right Arm
