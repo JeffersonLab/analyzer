@@ -145,7 +145,8 @@ int THaEpics::LoadData(const int* evbuffer, int evnum)
        // Here we parse the line
        if(DEBUGL) cout << "epics line : "<<line<<endl;
        wtag[0] = 0; wval[0] = 0;
-       size_t n, m, slen = strlen(line);
+       int n;
+       size_t m, slen = strlen(line);
        if( sscanf(line,fmt,wtag,&n) < 1 ) continue;
        // Get the value string _including_ spaces and 
        // excluding the trailing newline

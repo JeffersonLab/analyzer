@@ -47,7 +47,7 @@
 using namespace std;
 
 static const int VERBOSE = 1;
-static const int DEBUG   = 0;
+static const int DEBUG   = 1;
 static const int BENCH   = 0;
 
 // Instances of this object
@@ -296,7 +296,7 @@ void THaEvData::hexdump(const char* cbuff, size_t nlen)
   const int NW = 16; const char* p = cbuff;
   while( p<cbuff+nlen ) {
     cout << dec << setw(4) << setfill('0') << (size_t)(p-cbuff) << " ";
-    int nelem = TMath::Min(NW,cbuff+nlen-p);
+    int nelem = TMath::Min((Long_t)NW,(Long_t)(cbuff+nlen-p));
     for(int i=0; i<NW; i++) {
       UInt_t c = (i<nelem) ? *(const unsigned char*)(p+i) : 0;
       cout << " " << hex << setfill('0') << setw(2) << c << dec;
