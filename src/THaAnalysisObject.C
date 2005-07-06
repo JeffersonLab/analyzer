@@ -749,7 +749,7 @@ Int_t THaAnalysisObject::IsDBtag( const string& line, const char* tag,
   string rhs = line.substr(pos+1);
   pos1 = rhs.find_first_not_of(" \t");
   pos2 = rhs.find_last_not_of(" \t");
-  text = rhs.substr(pos1,pos2);
+  text = rhs.substr(pos1,pos2-pos1+1);
   return 1;
 }
 
