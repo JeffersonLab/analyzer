@@ -52,7 +52,7 @@ public:
 
   virtual void      Print( Option_t* opt="" ) const;
 
-  static const int kDetMapSize = 100;  //Maximum size of the map (sanity check)
+  static const int kDetMapSize = 300;  //Maximum size of the map (sanity check)
 
 protected:
   UShort_t     fNmodules;    //Number of modules (=crate,slot) with data
