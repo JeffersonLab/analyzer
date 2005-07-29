@@ -13,7 +13,7 @@
 //      unrastered beam to fill global variables of the beamline)
 // 
 //////////////////////////////////////////////////////////////////////////
-
+#include <iostream>
 #include "THaUnRasteredBeam.h"
 #include "THaBPM.h"
 #include "TMath.h"
@@ -21,19 +21,32 @@
 #include "VarDef.h"
 #include "TVector.h"
 
+using namespace std;
 
 ClassImp(THaUnRasteredBeam)
 
 //_____________________________________________________________________________
 
 THaUnRasteredBeam::THaUnRasteredBeam( const char* name, 
-				      const char* description )
-  : THaBeam( name, description ) 
+				      const char* description,
+				      Int_t runningsum_depth )
+  : THaBeam( name, description ) , fRunningSumDepth(runningsum_depth)
 {
 
 
   AddDetector( new THaBPM("BPMA","1st bpm",this) );
   AddDetector( new THaBPM("BPMB","2nd bpm",this) );
+
+  if (fRunningSumDepth>1) {
+    fRunningSumWrap = false ; 
+    fRunningSumNext = 0 ;
+    fRSPosition.clear();
+    fRSDirection.clear();
+    fRSPosition.resize(fRunningSumDepth);
+    fRSDirection.resize(fRunningSumDepth);
+  } else {
+    fRunningSumDepth=0;
+  }
 }
 
 
@@ -67,13 +80,56 @@ Int_t THaUnRasteredBeam::Reconstruct()
     theBeamDet->Process();
   }
 
-  fDirection = p[1]-p[0];
+  if (fRunningSumDepth !=0 ) {
 
-  fPosition = p[1] + (p[1](2)/(p[0](2)-p[1](2))) * fDirection ;
 
+    if (fRunningSumWrap) {
+      fRSAvPos = fRSAvPos - ( ( 1./fRunningSumDepth) * fRSPosition.at(fRunningSumNext) );
+      fRSAvDir = fRSAvDir - ( ( 1./fRunningSumDepth) * fRSDirection.at(fRunningSumNext) );
+
+    }      
+
+    fRSDirection.at(fRunningSumNext) = p[1]-p[0] ;
+    fRSPosition.at(fRunningSumNext)  = p[1] + 
+      (p[1](2)/(p[0](2)-p[1](2))) * fRSDirection.at(fRunningSumNext) ;
+
+    if (fRunningSumWrap) {
+      fRSAvPos = fRSAvPos + ( ( 1./fRunningSumDepth) * fRSPosition.at(fRunningSumNext) );
+      fRSAvDir = fRSAvDir +  ( ( 1./fRunningSumDepth) * fRSDirection.at(fRunningSumNext) );
+    } else {
+      if (fRunningSumNext==0) { 
+	fRSAvPos = fRSPosition.at(fRunningSumNext);
+	fRSAvDir = fRSDirection.at(fRunningSumNext);
+      } else {
+	fRSAvPos = ((double)fRunningSumNext/(fRunningSumNext+1.))*fRSAvPos 
+	  + ( (1./(fRunningSumNext+1)) * fRSPosition.at(fRunningSumNext) );
+	fRSAvDir = ((double)fRunningSumNext/(fRunningSumNext+1.))*fRSAvDir 
+	  + ( (1./(fRunningSumNext+1)) * fRSDirection.at(fRunningSumNext) );
+      }
+    }
+    fRunningSumNext++;
+    if (fRunningSumNext==fRunningSumDepth) {
+      fRunningSumNext = 0;
+      fRunningSumWrap = true ;
+    }
+    fDirection = fRSAvDir;
+    fPosition =  fRSAvPos;
+
+  } else {
+
+    fDirection = p[1]-p[0];
+    fPosition = p[1] + (p[1](2)/(p[0](2)-p[1](2))) * fDirection ;
+
+  }
   Update();
 
   return 0;
 
 }
 
+//_____________________________________________________________________________
+void  THaUnRasteredBeam::ClearRunningSum()
+{
+  fRunningSumNext = 0 ;
+  fRunningSumWrap = false ;
+}
