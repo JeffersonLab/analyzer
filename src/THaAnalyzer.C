@@ -1238,6 +1238,10 @@ Int_t THaAnalyzer::Process( THaRunBase* run )
   UInt_t nlast = fRun->GetLastEvent();
   fAnalysisStarted = kTRUE;
   BeginAnalysis();
+  if( fFile ) {
+    fRun->Write("Run_Data");  // Save run data to first ROOT file
+  }
+
   while ( !terminate && (status = ReadOneEvent()) != EOF && 
 	  fNev < nlast ) {
 
@@ -1316,6 +1320,10 @@ Int_t THaAnalyzer::Process( THaRunBase* run )
   if( fDoBench ) fBench->Begin("Output");
   // Ensure that we are in the output file's current directory
   // ... someone might have pulled the rug from under our feet
+  
+  // get the CURRENT file, since splitting might have occurred
+  if( fOutput && fOutput->GetTree() )
+    fFile = fOutput->GetTree()->GetCurrentFile();
   if( fFile )   fFile->cd();
   if( fOutput ) fOutput->End();
   if( fFile ) {
