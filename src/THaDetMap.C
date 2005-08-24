@@ -84,6 +84,8 @@ Int_t THaDetMap::AddModule( UShort_t crate, UShort_t slot,
     {  792, 1, 0 },
     {  775, 0, 1 },
     {  767, 0, 1 },
+    { 3201, 0, 1 },
+    { 6401, 0, 1 },
     { 0 }
   };
 
