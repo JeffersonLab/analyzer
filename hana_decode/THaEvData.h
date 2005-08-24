@@ -108,7 +108,7 @@ protected:
 	    kScalersEnabled  = BIT(15)
      };
 
-     static const int MAXROC = 20;  
+     static const int MAXROC = 32;  
      static const int MAXSLOT = 27;  
 
      static const int MAX_PHYS_EVTYPE  = 14;  // Types up to this are physics

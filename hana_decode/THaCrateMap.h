@@ -72,7 +72,7 @@ class THaCrateMap
 
      enum ECrateCode { kUnknown, kFastbus, kVME, kScaler, kCamac };
 
-     static const int MAXROC = 20;
+     static const int MAXROC = 32;
      static const int MAXSLOT = 27;
      TString crate_type[MAXROC];
      ECrateCode crate_code[MAXROC];
