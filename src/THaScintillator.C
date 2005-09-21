@@ -206,11 +206,41 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   
   // otherwise, gHaDB is unavailable, use the old file database
   
+  // Read in the timing/adc calibration constants
+  // For fine-tuning of these data, we seek to a matching time stamp, or
+  // if no time stamp found, to a "configuration" section. Examples:
+  // 
+  // [ 2002-10-10 15:30:00 ]
+  // #comment line goes here
+  // <left TDC offsets>
+  // <right TDC offsets>
+  // <left ADC peds>
+  // <rigth ADC peds>
+  // <left ADC coeff>
+  // <right ADC coeff>
+  //
+  // if below aren't present, 'default' values are used
+  // <TDC resolution: seconds/channel>
+  // <speed-of-light in medium m/s>
+  // <attenuation length m^-1>
+  // <ADC of MIP>
+  // <number of timewalk parameters>
+  // <timewalk paramters>
+  //
+  //
+  // or
+  // 
+  // [ config=highmom ]
+  // comment line
+  // ...etc.
+  //
+  if( SeekDBdate( fi, date ) == 0 && fConfig.Length() > 0 && 
+      SeekDBconfig( fi, fConfig.Data() ));
+
   while ( ReadComment( fi, buf, LEN ) );
   // Read calibration data
   for (i=0;i<fNelem;i++) 
     fscanf(fi,"%lf",fLOff+i);                    // Left Pads TDC offsets
-
   fgets ( buf, LEN, fi );   // finish line
   while ( ReadComment( fi, buf, LEN ) );
   for (i=0;i<fNelem;i++) 
@@ -236,31 +266,32 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
 
   while ( ReadComment( fi, buf, LEN ) );
   // Here on down, look ahead line-by-line
+  // stop reading if a '[' is found on a line (corresponding to the next date-tag)
   // read in TDC resolution (s/channel)
-  if ( ! fgets(buf, LEN, fi) ) goto exit;
+  if ( ! fgets(buf, LEN, fi) || strchr(buf,'[') ) goto exit;
   sscanf(buf,"%lf",&fTdc2T);
   fResolution = 3.*fTdc2T;      // guess at timing resolution
 
   while ( ReadComment( fi, buf, LEN ) );
   // Speed of light in the scintillator material
-  if ( !fgets(buf, LEN, fi) ) goto exit;
+  if ( !fgets(buf, LEN, fi) ||  strchr(buf,'[') ) goto exit;
   sscanf(buf,"%lf",&fCn);
   
   // Attenuation length (inverse meters)
   while ( ReadComment( fi, buf, LEN ) );
-  if ( !fgets ( buf, LEN, fi ) ) goto exit;
+  if ( !fgets ( buf, LEN, fi ) ||  strchr(buf,'[') ) goto exit;
   sscanf(buf,"%lf",&fAttenuation);
   
   while ( ReadComment( fi, buf, LEN ) );
   // Time-walk correction parameters
-  if ( !fgets(buf, LEN, fi) ) goto exit;
+  if ( !fgets(buf, LEN, fi) ||  strchr(buf,'[') ) goto exit;
   sscanf(buf,"%lf",&fAdcMIP);
   
   while ( ReadComment( fi, buf, LEN ) );
   // timewalk parameters
   {
     int cnt=0;
-    while ( cnt<fNTWalkPar && fgets( buf, LEN, fi ) ) {
+    while ( cnt<fNTWalkPar && fgets( buf, LEN, fi ) && ! strchr(buf,'[') ) {
       char *ptr = buf;
       int pos=0;
       while ( cnt < fNTWalkPar && sscanf(ptr,"%lf%n",&fTWalkPar[cnt],&pos)>0 ) {
@@ -274,7 +305,7 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   // trigger timing offsets
   {
     int cnt=0;
-    while ( cnt<fNelem && fgets( buf, LEN, fi ) ) {
+    while ( cnt<fNelem && fgets( buf, LEN, fi ) && ! strchr(buf,'[') ) {
       char *ptr = buf;
       int pos=0;
       while ( cnt < fNelem && sscanf(ptr,"%lf%n",&fTrigOff[cnt],&pos)>0 ) {
@@ -335,6 +366,7 @@ Int_t THaScintillator::DefineVariables( EMode mode )
     { "y_adc",  "y-position from amplitudes (m)",    "fYa" },
     { "time",   "Time of hit at plane (s)",          "fTime" },
     { "dtime",  "Est. uncertainty of time (s)",      "fdTime" },
+    { "dedx",   "dEdX-like deposited in paddle",     "fAmpl" },
     { "troff",  "Trigger offset for paddles",        "fTrigOff"},
     { "trn",    "Number of tracks for hits",         "GetNTracks()" },
     { "trx",    "x-position of track in det plane",  "fTrackProj.THaTrackProj.fX" },
@@ -584,7 +616,9 @@ Int_t THaScintillator::CoarseProcess( TClonesArray& tracks )
     // rough calculation of position from ADC reading
     if (fLA_c[i]>0&&fRA_c[i]>0) {
       fYa[i] = TMath::Log(fLA_c[i]/fRA_c[i])/(2.*fAttenuation);
-      fAmpl[i] = TMath::Sqrt(fLA_c[i]*fRA_c[i]*TMath::Exp(fAttenuation*2*fSize[1]));
+      // rough dE/dX-like quantity, not correcting for track angle
+      fAmpl[i] = TMath::Sqrt(fLA_c[i]*fRA_c[i]*TMath::Exp(fAttenuation*2*fSize[1]))
+	/ fSize[2];
     }
   }
   
