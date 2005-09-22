@@ -71,7 +71,10 @@ protected:
   FourVect          fA;            // Target 4-momentum
   FourVect          fA1;           // Recoil system 4-momentum
   FourVect          fQ;            // Momentum transfer 4-vector
-
+  Double_t          fQx;           // components of fQ for simplicity in output
+  Double_t          fQy;
+  Double_t          fQz;
+  
   Double_t          fM;            // Mass of incident particle (GeV/c^2)
   Double_t          fMA;           // Target mass (GeV/c^2)
 

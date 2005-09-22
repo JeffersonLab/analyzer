@@ -76,7 +76,6 @@ Int_t THaPrimaryKine::DefineVariables( EMode mode )
   RVarDef vars[] = {
     { "Q2",      "4-momentum transfer squared (GeV^2)",     "fQ2" },
     { "omega",   "Energy transfer (GeV)",                   "fOmega" },
-    { "nu",      "Energy transfer (GeV)",                   "fOmega" },
     { "W2",      "Invariant mass of recoil system (GeV^2)", "fW2" }, 
     { "x_bj",    "Bjorken x",                               "fXbj" },
     { "angle",   "Scattering angle (rad)",                  "fScatAngle" },
@@ -84,6 +83,10 @@ Int_t THaPrimaryKine::DefineVariables( EMode mode )
     { "q3m",     "Magnitude of 3-momentum transfer",        "fQ3mag" },
     { "th_q",    "Theta of 3-momentum vector (rad)",        "fThetaQ" },
     { "ph_q",    "Phi of 3-momentum vector (rad)",          "fPhiQ" },
+    { "nu",      "Energy transfer (GeV)",                   "fOmega" },
+    { "q_x",     "x-cmp of Photon vector in the lab",       "fQx" },
+    { "q_y",     "y-cmp of Photon vector in the lab",       "fQy" },
+    { "q_z",     "z-cmp of Photon vector in the lab",       "fQz" },
     { 0 }
   };
   return DefineVarsFromList( vars, mode );
@@ -163,6 +166,8 @@ Int_t THaPrimaryKine::Process( const THaEvData& evdata )
   fThetaQ    = fQ.Theta();
   fPhiQ      = fQ.Phi();
   fXbj       = fQ2/(2.0*Mp*fOmega);
+
+  fQx = fQ.X();   fQy = fQ.Y();   fQz = fQ.Z(); 
 
   fDataValid = true;
   return 0;
