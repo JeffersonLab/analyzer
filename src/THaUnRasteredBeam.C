@@ -84,27 +84,27 @@ Int_t THaUnRasteredBeam::Reconstruct()
 
 
     if (fRunningSumWrap) {
-      fRSAvPos = fRSAvPos - ( ( 1./fRunningSumDepth) * fRSPosition.at(fRunningSumNext) );
-      fRSAvDir = fRSAvDir - ( ( 1./fRunningSumDepth) * fRSDirection.at(fRunningSumNext) );
+      fRSAvPos = fRSAvPos - ( ( 1./fRunningSumDepth) * fRSPosition[fRunningSumNext] );
+      fRSAvDir = fRSAvDir - ( ( 1./fRunningSumDepth) * fRSDirection[fRunningSumNext]);
 
     }      
 
-    fRSDirection.at(fRunningSumNext) = p[1]-p[0] ;
-    fRSPosition.at(fRunningSumNext)  = p[1] + 
-      (p[1](2)/(p[0](2)-p[1](2))) * fRSDirection.at(fRunningSumNext) ;
+    fRSDirection[fRunningSumNext] = p[1]-p[0] ;
+    fRSPosition[fRunningSumNext]  = p[1] + 
+      (p[1](2)/(p[0](2)-p[1](2))) * fRSDirection[fRunningSumNext] ;
 
     if (fRunningSumWrap) {
-      fRSAvPos = fRSAvPos + ( ( 1./fRunningSumDepth) * fRSPosition.at(fRunningSumNext) );
-      fRSAvDir = fRSAvDir +  ( ( 1./fRunningSumDepth) * fRSDirection.at(fRunningSumNext) );
+      fRSAvPos = fRSAvPos + ( ( 1./fRunningSumDepth) * fRSPosition[fRunningSumNext] );
+      fRSAvDir = fRSAvDir +  (( 1./fRunningSumDepth) * fRSDirection[fRunningSumNext]);
     } else {
       if (fRunningSumNext==0) { 
-	fRSAvPos = fRSPosition.at(fRunningSumNext);
-	fRSAvDir = fRSDirection.at(fRunningSumNext);
+	fRSAvPos = fRSPosition[fRunningSumNext];
+	fRSAvDir = fRSDirection[fRunningSumNext];
       } else {
 	fRSAvPos = ((double)fRunningSumNext/(fRunningSumNext+1.))*fRSAvPos 
-	  + ( (1./(fRunningSumNext+1)) * fRSPosition.at(fRunningSumNext) );
+	  + ( (1./(fRunningSumNext+1)) * fRSPosition[fRunningSumNext] );
 	fRSAvDir = ((double)fRunningSumNext/(fRunningSumNext+1.))*fRSAvDir 
-	  + ( (1./(fRunningSumNext+1)) * fRSDirection.at(fRunningSumNext) );
+	  + ( (1./(fRunningSumNext+1)) * fRSDirection[fRunningSumNext] );
       }
     }
     fRunningSumNext++;
