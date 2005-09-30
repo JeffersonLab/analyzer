@@ -13,6 +13,7 @@
 #include "THaSlotData.h"
 #include "TBits.h"
 #include "evio.h"
+#include <string>
 
 class THaBenchmark;
 class THaEpics;
