@@ -765,7 +765,7 @@ void THaVDC::CalcTargetCoords(THaTrack *track, const ECoordTypes mode)
     powers[i][1] = pow(th_fp, i);
     powers[i][2] = pow(y_fp, i);
     powers[i][3] = pow(ph_fp, i);
-    powers[i][4] = pow(abs(th_fp),i);
+    powers[i][4] = pow(TMath::Abs(th_fp),i);
   }
 
   // calculate the matrices we need
