@@ -18,16 +18,16 @@ typedef struct evfilestruct {
 } EVFILE;
 
 
-extern int evOpen(const char* filename, const char* flags, int *handle);
-extern int evRead(int handle, int *buffer, int buflen);
+extern int evOpen(const char* filename, const char* flags, void **handle);
+extern int evRead(void* handle, int *buffer, int buflen);
 extern int evGetNewBuffer(EVFILE *a);
-extern int evWrite(int handle,const int *buffer);
+extern int evWrite(void* handle,const int *buffer);
 extern int evFlush(EVFILE *a);
-extern int evIoctl(int handle,char *request,void *argp);
-extern int evClose(int handle);
-extern int evOpenSearch(int handle, int *b_handle);
-extern int evSearch(int handle, int b_handle, int evn, int *buffer, int buflen, int *size);
-extern int evCloseSearch(int b_handle);
+extern int evIoctl(void* handle,char *request,void *argp);
+extern int evClose(void* handle);
+extern int evOpenSearch(void* handle, void **b_handle);
+extern int evSearch(void* handle, void* b_handle, int evn, int *buffer, int buflen, int *size);
+extern int evCloseSearch(void* b_handle);
 
 // The following was originally defined in evio.cpp (seems like it
 // should have been in the original evio.h, but was not).
