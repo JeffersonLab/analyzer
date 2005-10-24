@@ -101,7 +101,8 @@ int THaSlotData::loadData(const char* type, int chan, int dat, int raw) {
   if (chan < 0 || chan >= maxc) {
     if (VERBOSE) {
       cout << "THaSlotData: Warning in loadData: channel ";
-      cout <<chan<<" out of bounds, ignored."<<endl;
+      cout <<chan<<" out of bounds, ignored,"
+	   << " on crate " << crate << " slot "<< slot << endl;
     }
     return SD_ERR;
   }
