@@ -26,6 +26,8 @@
 
 ClassImp(THaShower)
 
+using namespace std;
+
 //_____________________________________________________________________________
 THaShower::THaShower( const char* name, const char* description,
 		      THaApparatus* apparatus ) :
@@ -129,12 +131,28 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
     }
   }
   // Read channel map
+  //
+  // Loosen the formatting restrictions: remove from each line the portion
+  // after a '#', and do the pattern matching to the remaining string
   fgets ( buf, LEN, fi );
+
+  // get the line and end it at a '#' symbol
+  *buf = '\0';
+  char *ptr=buf;
+  int nchar=0;
   for ( UShort_t i = 0; i < mapsize; i++ ) {
-    for ( UShort_t j = 0; j < fNChan[i]; j++ )
-      fscanf (fi, "%hu", *(fChanMap+i)+j );
-    fgets ( buf, LEN, fi );
+    for ( UShort_t j = 0; j < fNChan[i]; j++ ) {
+      while ( !strpbrk(ptr,"0123456789") ) {
+	fgets ( buf, LEN, fi );
+	if ( ptr = strchr(buf,'#') ) (*ptr) = '\0';
+	ptr = buf;
+	nchar=0;
+      }
+      sscanf (ptr, "%hu%n", *(fChanMap+i)+j, &nchar );
+      ptr += nchar;
+    }
   }
+  
   fgets ( buf, LEN, fi );
 
   Float_t x,y,z;
