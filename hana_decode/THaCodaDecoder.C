@@ -681,8 +681,7 @@ int THaCodaDecoder::vme_decode(int roc, THaCrateMap* map, const int* evbuffer,
 	      const int DATA_MARKER = 1<<23;
 
 	      // skip the first header word
-	      p++;
-	      while ((p < pevlen) && ((*p)&0xf8000000)==(head&0xf8000000)) {
+	      while (((p++) < pevlen) && ((*p)&0xf8000000)==(head&0xf8000000)) {
 		if ( ((*p) & DATA_CHK) != F1_RES_LOCK ) {
 		  cout << "Warning: F1 TDC " << hex << (*p) << dec;
 		  if ( (*p) & F1_HIT_OFLW ) {
@@ -714,7 +713,6 @@ int THaCodaDecoder::vme_decode(int roc, THaCrateMap* map, const int* evbuffer,
 		  if (crateslot[idx(roc,slot)]->loadData("tdc",chan,raw,raw)
 		      == SD_ERR) return HED_ERR;
 		}
-		p++;
 	      }
 	    }
 	    break;
