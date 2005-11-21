@@ -111,7 +111,9 @@ int THaSlotData::loadData(const char* type, int chan, int dat, int raw) {
       cout << "THaSlotData: Warning in loadData: too many "
 	   << ((numraw >= maxd ) ? "data words" : "channels")
 	   << " for crate/slot = " 
-	   << crate << " " << slot << endl;
+	   << crate << " " << slot;
+      cout << ": " << (numraw>=maxd ? numraw : numchanhit) << " seen." 
+	   << endl;
     }
     return SD_ERR;
   }
