@@ -175,7 +175,7 @@ void THaCodaDecoder::dump(const int* evbuffer) const {
    cout << "  length " << len << "  type " << type << endl;
    int ipt = 0;
    for (int j=0; j<(len/5); j++) {
-       cout << dec << "\n evbuffer[" << ipt << "] = ";
+     cout << dec << "\n evbuffer[" << ipt << "] = ";
        for (int k=j; k<j+5; k++) {
 	   cout << hex << evbuffer[ipt++] << " ";
        }
@@ -508,6 +508,7 @@ int THaCodaDecoder::vme_decode(int roc, THaCrateMap* map, const int* evbuffer,
           map->setSlotDone(slot);
 
 	  int model = map->getModel(roc,slot);
+	  if (DEBUG) cout<<"model " << model << flush;
 	  switch(model) {
 	  case 1182:    // LeCroy 1182 ADC
 	    for (chan=0; chan<8; chan++) {
@@ -680,26 +681,31 @@ int THaCodaDecoder::vme_decode(int roc, THaCrateMap* map, const int* evbuffer,
 	      const int DATA_CHK = F1_HIT_OFLW | F1_OUT_OFLW | F1_RES_LOCK;
 	      const int DATA_MARKER = 1<<23;
 
-	      // skip the first header word
-	      while (((p++) < pevlen) && ((*p)&0xf8000000)==(head&0xf8000000)) {
-		if ( ((*p) & DATA_CHK) != F1_RES_LOCK ) {
-		  cout << "Warning: F1 TDC " << hex << (*p) << dec;
-		  if ( (*p) & F1_HIT_OFLW ) {
+	      // look at all the data
+	      loc = p;
+	      while ((loc <= pevlen) && ((*loc)&0xf8000000)==(head&0xf8000000)) {
+		if ( ((*loc) & DATA_CHK) != F1_RES_LOCK ) {
+		  cout << "Warning: F1 TDC " << hex << (*loc) << dec;
+		  if ( (*loc) & F1_HIT_OFLW ) {
 		    cout << " Hit-FIFO overflow";
 		  }
-		  if ( (*p) & F1_OUT_OFLW ) {
+		  if ( (*loc) & F1_OUT_OFLW ) {
 		    cout << " Output FIFO overflow";
 		  }
-		  if ( ! ((*p) & F1_RES_LOCK ) ) {
+		  if ( ! ((*loc) & F1_RES_LOCK ) ) {
 		    cout << " Resolution lock failure!";
 		  }
 		  cout << endl;
 		}
 		
-		if ( !( (*p) & DATA_MARKER ) ) {
+		if ( !( (*loc) & DATA_MARKER ) ) {
 		  // header/trailer word, to be ignored
+		  if(DEBUG) {
+		    cout<< "[" << (loc-evbuffer) << "] header/trailer  0x"<<hex<<*loc<<dec<<endl;
+		  }
 		} else {
-		  int chn = ((*p)>>16) & 0x3f;  // internal channel number
+		  cout<< "[" << (loc-evbuffer) << "] data            0x"<<hex<<*loc<<dec<<endl;
+		  int chn = ((*loc)>>16) & 0x3f;  // internal channel number
 
 		  if (model==6401) {        // normal resolution
 		    // do the reordering of the channels, for contiguous groups
@@ -709,10 +715,26 @@ int THaCodaDecoder::vme_decode(int roc, THaCrateMap* map, const int* evbuffer,
 		    // drop last bit for channel renumbering
 		    chan=(chn >> 1);
 		  }
-		  raw= (*p) & 0xffff;
+		  raw= (*loc) & 0xffff;
+		  if(DEBUG) {
+		    cout<<" int_chn chan data "<<dec<<chn<<"  "<<chan
+			<<"  0x"<<hex<<raw<<dec<<endl;
+		  }
 		  if (crateslot[idx(roc,slot)]->loadData("tdc",chan,raw,raw)
-		      == SD_ERR) return HED_ERR;
+		      == SD_ERR) {
+		    if (DEBUG) {
+		      cout<<"Error found loadData tdc roc/slot/chan data"
+			  <<dec<< roc << "  " << slot << "  " << chan 
+			  <<"  0x"<<hex<<raw<<endl;
+		      return HED_ERR;
+		    }
+		  }
 		}
+		loc++;
+	      }
+	      p=loc-1;  // point to the previous position, so loop goes to current loc
+	      if (DEBUG) {
+		cout << "Exiting at [" <<dec<<(loc-evbuffer) <<"]  0x"<<hex<<*loc<<dec<<endl;
 	      }
 	    }
 	    break;
