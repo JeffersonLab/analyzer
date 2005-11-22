@@ -182,7 +182,8 @@ void THaAnalyzer::Close()
   if( TROOT::Initialized() )
     delete fFile;
   fFile = NULL;
-  delete fRun; fRun = NULL;
+  fRun = NULL;
+  //  delete fRun; fRun = NULL;
   if( fLocalEvent ) {
     delete fEvent; fEvent = fPrevEvent = NULL; 
   }
@@ -587,14 +588,16 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
     }
   }
 
+  // Why do we want a real copy? Just keep a pointer to it
   // Make sure we save a copy of the run in fRun.
   // Note that the run may be derived from THaRunBase, so this is a bit tricky.
   if( new_run ) {
-    delete fRun;
-    fRun = static_cast<THaRunBase*>(run->IsA()->New());
-    if( !fRun )
-      return 252; // urgh
-    *fRun = *run;  // Copy the run via its virtual operator=
+    fRun = run;
+//     delete fRun;
+//     fRun = static_cast<THaRunBase*>(run->IsA()->New());
+//     if( !fRun )
+//       return 252; // urgh
+//     *fRun = *run;  // Copy the run via its virtual operator=
   }
 
   // Make the current run available globally - the run parameters are

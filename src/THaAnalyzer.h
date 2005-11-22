@@ -124,7 +124,7 @@ protected:
   Int_t          fCountMode;       //Event counting mode (see ECountMode)
   THaBenchmark*  fBench;           //Counters for timing statistics
   THaEvent*      fPrevEvent;       //Event structure from last Init()
-  THaRunBase*    fRun;             //Copy of current run
+  THaRunBase*    fRun;             //Pointer to current run
   THaEvData*     fEvData;          //Instance of decoder used by us
   TList*         fApps;            //List of apparatuses
   TList*         fPhysics;         //List of physics modules
