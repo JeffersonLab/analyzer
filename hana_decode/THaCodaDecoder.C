@@ -700,11 +700,11 @@ int THaCodaDecoder::vme_decode(int roc, THaCrateMap* map, const int* evbuffer,
 		
 		if ( !( (*loc) & DATA_MARKER ) ) {
 		  // header/trailer word, to be ignored
-		  if(DEBUG) {
+		  if(DEBUG)
 		    cout<< "[" << (loc-evbuffer) << "] header/trailer  0x"<<hex<<*loc<<dec<<endl;
-		  }
 		} else {
-		  cout<< "[" << (loc-evbuffer) << "] data            0x"<<hex<<*loc<<dec<<endl;
+		  if (DEBUG)
+		    cout<< "[" << (loc-evbuffer) << "] data            0x"<<hex<<*loc<<dec<<endl;
 		  int chn = ((*loc)>>16) & 0x3f;  // internal channel number
 
 		  if (model==6401) {        // normal resolution
