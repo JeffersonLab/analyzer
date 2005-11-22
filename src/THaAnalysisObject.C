@@ -45,7 +45,8 @@ const Double_t THaAnalysisObject::kBig = 1.e38;
 THaAnalysisObject::THaAnalysisObject( const char* name, 
 				      const char* description ) :
   TNamed(name,description), fPrefix(NULL), fStatus(kNotinit), 
-  fDebug(0), fIsInit(false), fIsSetup(false), fProperties(0)
+  fDebug(0), fIsInit(false), fIsSetup(false), fProperties(0),
+  fOKOut(false)
 {
   // Constructor
 
