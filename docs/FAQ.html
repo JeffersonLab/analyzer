@@ -1,13 +1,13 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html><head>
 <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-<title>Hall A C++ Analyzer FAQ</title>
+<title>Podd (the Hall A C++ Analyzer) FAQ</title>
 </head>
 
 <body>
-<h1>Hall A C++ Analyzer Frequently Asked Questions</h1>
+<h1>Podd (the Hall A C++ Analyzer) Frequently Asked Questions</h1>
 
-18 June 2003
+02 Dec 2005
 <p>
 
 <pre>
@@ -21,6 +21,14 @@ A: Because disk space on iframl1/2/3 is located on busy file servers.
    /local/scratch, but not much.  To get the speed you deserve, 
    move to your own standalone desktop machine or the Hall A counting 
    house machines.  You will be surprised.
+
+--------------------------------------------------------------------
+Q: I just changed one header file, why is compilation so slow?
+
+A: ROOT needs to build a dictionary in order to use Podd's classes;
+   this dictionary is rebuilt in entirety whenever a header file for
+   one of those classes is changed. Depending upon you machine, this
+   could take a minute or two.
 
 --------------------------------------------------------------------
 Q: I get bizarre compilation warnings like
