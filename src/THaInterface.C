@@ -82,11 +82,11 @@ THaInterface::~THaInterface()
     // Clean up the analyzer object if defined
     delete THaAnalyzer::GetInstance();
     // Delete all global lists and objects contained in them
-    delete gHaPhysics;
-    delete gHaScalers;
-    delete gHaApps;
-    delete gHaVars;
-    delete gHaCuts;
+    delete gHaPhysics;   gHaPhysics=0;
+    delete gHaScalers;   gHaScalers=0;
+    delete gHaApps;         gHaApps=0;
+    delete gHaVars;         gHaVars=0;
+    delete gHaCuts;         gHaCuts=0;
     fgAint = NULL;
   }
 }
