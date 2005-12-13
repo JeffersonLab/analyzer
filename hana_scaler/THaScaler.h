@@ -152,6 +152,9 @@ private:
    THaScaler(const THaScaler &bk);
    THaScaler& operator=(const THaScaler &bk);
 
+ public:
+   ClassDef(THaScaler,0)
+
 };
 
 #endif
