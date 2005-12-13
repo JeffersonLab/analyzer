@@ -46,7 +46,7 @@ THaAnalysisObject::THaAnalysisObject( const char* name,
 				      const char* description ) :
   TNamed(name,description), fPrefix(NULL), fStatus(kNotinit), 
   fDebug(0), fIsInit(false), fIsSetup(false), fProperties(0),
-  fOKOut(false)
+  fOKOut(false), fInitDate(19950101,0)
 {
   // Constructor
 
@@ -55,15 +55,24 @@ THaAnalysisObject::THaAnalysisObject( const char* name,
 }
 
 //_____________________________________________________________________________
+THaAnalysisObject::THaAnalysisObject( ) : fPrefix(NULL), fIsSetup(false) {
+  // only for ROOT I/O
+}
+
+//_____________________________________________________________________________
 THaAnalysisObject::~THaAnalysisObject()
 {
   // Destructor
 
-  fgModules->Remove( this );
-  if( fgModules->GetSize() == 0 ) {
-    delete fgModules; fgModules = 0;
+  if (fgModules) {
+    fgModules->Remove( this );
+    if( fgModules->GetSize() == 0 ) {
+      delete fgModules; fgModules = 0;
+    }
   }
-  delete [] fPrefix; fPrefix = 0;
+  if (fPrefix) {
+    delete [] fPrefix; fPrefix = 0;
+  }
 }
 
 //_____________________________________________________________________________
@@ -131,11 +140,11 @@ Int_t THaAnalysisObject::DefineVarsFromList( const void* list,
     if( mode == kDefine )
       action = "defined";
     else if( mode == kDelete )
-      action = "deleted";
+      action = "deleted (this is safe when exitting)";
     ::Warning( "DefineVariables", 
 	     "No global variable list found. No variables %s.", 
 	     action.Data() );
-    return kInitError;
+    return (mode==kDefine ? kInitError : kOK);
   }
 
   if( mode == kDefine ) {
@@ -377,6 +386,8 @@ THaAnalysisObject::EStatus THaAnalysisObject::Init( const TDatime& date )
   // 
   // This implementation will change once the real database is  available.
 
+  fInitDate = date;
+  
   Int_t status = kOK;
   const char* fnam = "run.";
 

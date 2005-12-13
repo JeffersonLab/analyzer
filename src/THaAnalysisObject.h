@@ -9,12 +9,13 @@
 
 #include "TNamed.h"
 #include "THaGlobals.h"
+#include <TDatime.h>
+
 #include <vector>
 #include <string>
 #include <cstdio>
 
 class THaEvData; //needed by derived classes
-class TDatime;
 class TList;
 struct VarDef;
 struct RVarDef;
@@ -32,6 +33,8 @@ public:
 
   static const Double_t kBig; // = 1.e38; // default junk value
   
+  THaAnalysisObject();  // only for ROOT I/O
+  
   virtual ~THaAnalysisObject();
   
   virtual Int_t        Begin( THaRunBase* r=0 );
@@ -45,6 +48,9 @@ public:
   virtual EStatus      Init( const TDatime& run_time );
           Bool_t       IsInit() const            { return IsOK(); }
           Bool_t       IsOK() const              { return (fStatus == kOK); }
+
+	  TDatime      GetInitDate() const       { return fInitDate; }
+
           void         SetConfig( const char* label );
   virtual void         SetDebug( Int_t level );
   virtual void         SetName( const char* name );
@@ -111,6 +117,8 @@ protected:
   UInt_t          fProperties;// Properties of this object (see EProperties)
   Bool_t          fOKOut;     // Flag indicating object-output prepared
 
+  TDatime         fInitDate;  // Date passed to Init
+  
   virtual Int_t        DefineVariables( EMode mode = kDefine );
           Int_t        DefineVarsFromList( const VarDef* list, 
 					   EMode mode = kDefine,
@@ -153,11 +161,10 @@ private:
 			 std::string& text );
 
   // Prevent default construction, copying, assignment
-  THaAnalysisObject();
   THaAnalysisObject( const THaAnalysisObject& );
   THaAnalysisObject& operator=( const THaAnalysisObject& );
 
-  ClassDef(THaAnalysisObject,0)   //ABC for a data analysis object
+  ClassDef(THaAnalysisObject,1)   //ABC for a data analysis object
 };
 
 //____________ inline functions _______________________________________________
