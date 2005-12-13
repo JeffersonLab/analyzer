@@ -740,24 +740,26 @@ int THaCodaDecoder::vme_decode(int roc, THaCrateMap* map, const int* evbuffer,
 	    break;
 	  case 767:   // CAEN 767 MultiHit TDC
 	    {
-	      p++;
+	      loc = p;
+	      loc++;  // skip first word (header)
 	      int nword=0;
-	      while (((*p)&0x00600000)==0) {
-		chan=((*p)&0x7f000000)>>24;
-		raw=((*p)&0x000fffff);	      
+	      while ( (loc <= pevlen)&& ((*loc)&0x00600000)==0) {
+		chan=((*loc)&0x7f000000)>>24;
+		raw=((*loc)&0x000fffff);	      
 		if (crateslot[idx(roc,slot)]->loadData("adc",chan,raw,raw)
 		    == SD_ERR) return HED_ERR;
-		p++;
+		loc++;
 		nword++;
-	      } 
-	      if (((*p)&0x00600000)!=0x00200000) {
+	      }
+	      if (((*loc)&0x00600000)!=0x00200000) {
 		return HED_ERR;
 	      } else {
-		if (((*p)&0xffff)!=nword) {
+		if (((*loc)&0xffff)!=nword) {
 		  if (DEBUG) cout<<"WC mismatch "<<nword<<" "<<hex<<(*p)<<endl;
 		  return HED_ERR;
 		}
-	      }	      
+	      }
+	      p = loc-1; // so p++ will point to the first word that didn't match
 	    }
 	    break;
 	  default:
