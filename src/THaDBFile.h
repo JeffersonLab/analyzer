@@ -164,7 +164,8 @@ class THaDBFile : public THaDB {
   bool CopyDB(std::istream& from, std::ostream& to, std::streampos pos=-1);
   
  public:
-  ClassDef(THaDBFile,0)
+  ClassDef(THaDBFile,0) //  An ASCII file-based implementation of THaDB
+
 
 };
 

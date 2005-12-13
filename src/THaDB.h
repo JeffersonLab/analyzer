@@ -123,7 +123,7 @@ class THaDB : public TObject {
   
  public:
   
-  ClassDef(THaDB,0)
+  ClassDef(THaDB,0) // ABC for a key- and date-based database
 };
 
 class THaDetConfig {
