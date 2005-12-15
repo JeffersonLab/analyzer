@@ -27,7 +27,6 @@ public:
   virtual void      SetDetector( THaDetectorBase* );
 
 protected:
-  TRef fDetector;        // (Sub)detector containing this subdetector
 
   virtual const char* GetDBFileName() const 
     { return GetDetector() ? GetDetector()->GetDBFileName() : GetPrefix(); }
@@ -39,7 +38,12 @@ protected:
 
   virtual void MakePrefix();
 
-  ClassDef(THaSubDetector,0)   //ABC for a subdetector
+ private:
+  TRef fDetector;        // (Sub)detector containing this subdetector
+                         //  Use GetDetector instead to find the parent
+
+ public:
+  ClassDef(THaSubDetector,1)   //ABC for a subdetector
 };
 
 #endif
