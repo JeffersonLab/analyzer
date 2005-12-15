@@ -292,7 +292,7 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
 
   // since we take the VDC to be the origin of the coordinate
   // space, this is actually pretty simple
-  const THaDetector* s1 = fApparatus->GetDetector("s1");
+  const THaDetector* s1 = GetApparatus()->GetDetector("s1");
   if(s1 == NULL)
     fCentralDist = 0;
   else
@@ -781,9 +781,10 @@ void THaVDC::CalcTargetCoords(THaTrack *track, const ECoordTypes mode)
   phi = CalcTargetVar(fPMatrixElems, powers)+CalcTargetVar(fPTAMatrixElems,powers);
   y = CalcTargetVar(fYMatrixElems, powers)+CalcTargetVar(fYTAMatrixElems,powers);
 
+  THaSpectrometer *app = static_cast<THaSpectrometer*>(GetApparatus());
   // calculate momentum
   dp = CalcTargetVar(fDMatrixElems, powers);
-  p  = static_cast<THaSpectrometer*>(fApparatus)->GetPcentral() * (1.0+dp);
+  p  = app->GetPcentral() * (1.0+dp);
 
   // pathlength matrix is for the Transport coord plane
   pathl = CalcTarget2FPLen(fLMatrixElems, powers);
@@ -797,8 +798,7 @@ void THaVDC::CalcTargetCoords(THaTrack *track, const ECoordTypes mode)
   track->SetMomentum(p);
   track->SetPathLen(pathl);
   
-  static_cast<THaSpectrometer*>(fApparatus)->
-    TransportToLab( p, theta, phi, track->GetPvect() );
+  app->TransportToLab( p, theta, phi, track->GetPvect() );
 
 }
 
@@ -872,9 +872,9 @@ void THaVDC::CorrectTimeOfFlight(TClonesArray& tracks)
 
   // get scintillator planes
   THaScintillator* s1 = static_cast<THaScintillator*>
-    ( fApparatus->GetDetector("s1") );
+    ( GetApparatus()->GetDetector("s1") );
   THaScintillator* s2 = static_cast<THaScintillator*>
-    ( fApparatus->GetDetector("s2") );
+    ( GetApparatus()->GetDetector("s2") );
 
   if( (s1 == NULL) || (s2 == NULL) )
     return;
@@ -928,7 +928,7 @@ void THaVDC::FindBadTracks(TClonesArray& tracks)
   // Flag tracks that don't intercept S2 scintillator as bad
 
   THaScintillator* s2 = static_cast<THaScintillator*>
-    ( fApparatus->GetDetector("s2") );
+    ( GetApparatus()->GetDetector("s2") );
 
   if(s2 == NULL) {
     //cerr<<"Could not find s2 plane!!"<<endl;

@@ -37,6 +37,20 @@ THaScintillator::THaScintillator( const char* name, const char* description,
 }
 
 //_____________________________________________________________________________
+THaScintillator::THaScintillator( ) :
+  THaNonTrackingDetector()
+{
+  // Constructor
+  fTWalkPar = NULL;
+  fTrackProj = NULL;
+  fRA_c = fRA_p = fRA = fLA_c = fLA_p = fLA = NULL;
+  fRT_c = fRT = fLT_c = fLT = NULL;
+  fRGain = fLGain = fRPed = fLPed = fROff = fLOff = NULL;
+  fTrigOff = fTime = fdTime = fYt = fYa = NULL;
+  fHitPad = NULL;
+}
+
+//_____________________________________________________________________________
 THaAnalysisObject::EStatus THaScintillator::Init( const TDatime& date )
 {
   // Extra initialization for scintillators: set up DataDest map
@@ -388,6 +402,10 @@ THaScintillator::~THaScintillator()
     RemoveVariables();
   if( fIsInit )
     DeleteArrays();
+  if (fTrackProj) {
+    fTrackProj->Clear();
+    delete fTrackProj; fTrackProj = 0;
+  }
 }
 
 //_____________________________________________________________________________

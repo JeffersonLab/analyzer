@@ -22,6 +22,12 @@ THaSpectrometerDetector::THaSpectrometerDetector( const char* name,
 }
 
 //______________________________________________________________________________
+THaSpectrometerDetector::THaSpectrometerDetector( )
+{
+  // Constructor for ROOT I/O only
+}
+
+//______________________________________________________________________________
 THaSpectrometerDetector::~THaSpectrometerDetector()
 {
   // Destructor

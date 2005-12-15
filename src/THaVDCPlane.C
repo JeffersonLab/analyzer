@@ -48,8 +48,9 @@ THaVDCPlane::THaVDCPlane( const char* name, const char* description,
   fClusters = new TClonesArray("THaVDCCluster", 5 );
   fWires    = new TClonesArray("THaVDCWire", 368 );
 
-  if( fDetector )
-    fVDC = static_cast<THaSubDetector*>(fDetector)->GetDetector();
+  THaDetectorBase *det = GetDetector();
+  if( det )
+    fVDC = static_cast<THaSubDetector*>(det)->GetDetector();
 }
 
 //_____________________________________________________________________________
@@ -59,18 +60,21 @@ void THaVDCPlane::MakePrefix()
   // names such as "R.vdc.uv1.u.x", but rather "R.vdc.u1.x".
 
   TString basename;
-  THaDetectorBase* parent = NULL;
-  if( fDetector && fDetector->IsA()->InheritsFrom("THaSubDetector") )
-    parent = static_cast<THaSubDetector*>(fDetector)->GetDetector();
+  THaDetectorBase
+    *parent = NULL,
+    *det = GetDetector();
+
+  if( det && det->IsA()->InheritsFrom("THaSubDetector") )
+    parent = static_cast<THaSubDetector*>(det)->GetDetector();
   if( parent )
     basename = parent->GetPrefix();
   if( fName.Contains("u") )
     basename.Append("u");
   else if ( fName.Contains("v") )
     basename.Append("v");
-  if( fDetector && strstr( fDetector->GetName(), "uv1" ))
+  if( det && strstr( det->GetName(), "uv1" ))
     basename.Append("1.");
-  else if( fDetector && strstr( fDetector->GetName(), "uv2" ))
+  else if( det && strstr( det->GetName(), "uv2" ))
     basename.Append("2.");
   if( basename.Length() == 0 )
     basename = fName + ".";
@@ -215,15 +219,16 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
   delete [] wire_nums;
 
   fOrigin.SetXYZ( 0.0, 0.0, fZ );
-  if( fDetector )
-    fOrigin += fDetector->GetOrigin();
+
+  THaDetectorBase *sdet = GetDetector();
+  if( sdet )
+    fOrigin += sdet->GetOrigin();
 
   fIsInit = true;
   fclose(file);
 
   // finally, find the timing-offset to apply on an event-by-event basis
   // How do I find my way to the parent apparatus?
-  THaDetectorBase *sdet = GetDetector();
   while ( sdet && dynamic_cast<THaSubDetector*>(sdet) ) 
     sdet = static_cast<THaSubDetector*>(sdet)->GetDetector();
   // so, sdet should be a 'THADetector' now, and we can find the apparatus
@@ -422,7 +427,7 @@ Int_t THaVDCPlane::FindClusters()
     hard_cut = soft_cut = false;
   Double_t maxdist = 0.0;
   if( soft_cut ) {
-    maxdist = static_cast<THaVDCUVPlane*>(fDetector)->GetSpacing() / 2.0;
+    maxdist = static_cast<THaVDCUVPlane*>(GetDetector())->GetSpacing() / 2.0;
     if( maxdist == 0.0 )
       soft_cut = false;
   }

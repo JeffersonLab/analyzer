@@ -38,6 +38,7 @@ public:
   
   friend class THaScCalib;
 
+  THaScintillator();  // for ROOT I/O
 protected:
 
   // Calibration
@@ -118,7 +119,7 @@ protected:
   virtual  Double_t TimeWalkCorrection(const Int_t& paddle,
 					   const ESide side);
 
-  ClassDef(THaScintillator,0)   // Generic scintillator class
+  ClassDef(THaScintillator,1)   // Generic scintillator class
 };
 
 ////////////////////////////////////////////////////////////////////////////////

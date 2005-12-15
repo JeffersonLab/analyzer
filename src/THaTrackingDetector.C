@@ -36,10 +36,16 @@ THaTrackingDetector::THaTrackingDetector( const char* name,
 }
 
 //_____________________________________________________________________________
+THaTrackingDetector::THaTrackingDetector( )
+  : THaSpectrometerDetector( )
+{
+  // Constructor for ROOT I/O only
+}
+
+//_____________________________________________________________________________
 THaTrackingDetector::~THaTrackingDetector()
 {
   // Destructor
-
 }
 
 //_____________________________________________________________________________
@@ -53,7 +59,7 @@ THaTrack* THaTrackingDetector::AddTrack( TClonesArray& tracks,
 
   Int_t i = tracks.GetLast()+1;
   THaPIDinfo* pid = 0;
-  THaSpectrometer* spect = static_cast<THaSpectrometer*>( fApparatus );
+  THaSpectrometer* spect = static_cast<THaSpectrometer*>( GetApparatus() );
 
   if( spect ) {
 

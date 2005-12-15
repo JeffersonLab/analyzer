@@ -8,7 +8,7 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaAnalysisObject.h"
-#include "TList.h"
+#include <TList.h>
 
 class THaDetector;
 class THaEvData;
@@ -38,10 +38,11 @@ protected:
   TList*         fDetectors;    // List of all detectors for this apparatus
 
   THaApparatus( const char* name, const char* description );
+  THaApparatus( );
 
   virtual void MakePrefix() { THaAnalysisObject::MakePrefix( NULL ); }
 
-  ClassDef(THaApparatus,0)   //A generic apparatus (collection of detectors)
+  ClassDef(THaApparatus,1)   //A generic apparatus (collection of detectors)
 };
 
 //_____________________________________________________________________________

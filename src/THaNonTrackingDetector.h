@@ -19,6 +19,8 @@ class TClonesArray;
 class THaNonTrackingDetector : public THaSpectrometerDetector {
   
 public:
+  THaNonTrackingDetector(); // only for ROOT I/O
+
   virtual ~THaNonTrackingDetector();
   
   virtual Int_t    CoarseProcess( TClonesArray& tracks ) = 0;
@@ -28,12 +30,12 @@ public:
 
 protected:
 
-  //Only derived classes may construct me
+  //Only derived classes may construct me for real
 
   THaNonTrackingDetector( const char* name, const char* description,
 			  THaApparatus* a = NULL);
 
-  ClassDef(THaNonTrackingDetector,0)  //ABC for a non-tracking spectrometer detector
+  ClassDef(THaNonTrackingDetector,1)  //ABC for a non-tracking spectrometer detector
 };
 
 #endif

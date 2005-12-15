@@ -24,6 +24,7 @@ public:
           Bool_t   IsTracking() { return kTRUE; }
           Bool_t   IsPid()      { return kFALSE; }
 
+	  THaTrackingDetector();   // for ROOT I/O only
 protected:
 
   virtual THaTrack* AddTrack( TClonesArray& tracks,
@@ -36,7 +37,7 @@ protected:
   THaTrackingDetector( const char* name, const char* description,
 		       THaApparatus* a = NULL );
 
-  ClassDef(THaTrackingDetector,0)   //ABC for a Hall A tracking detector
+  ClassDef(THaTrackingDetector,1)   //ABC for a Hall A tracking detector
 };
 
 #endif

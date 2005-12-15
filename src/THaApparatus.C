@@ -32,14 +32,21 @@ THaApparatus::THaApparatus( const char* name, const char* description ) :
 }
 
 //_____________________________________________________________________________
+THaApparatus::THaApparatus( ) : fDetectors(NULL)
+{
+  // only for ROOT I/O
+}
+  
+//_____________________________________________________________________________
 THaApparatus::~THaApparatus()
 {
   // Destructor. Delete all detectors currently associated with this
   // apparatus, including any that were added via AddDetector.
-  
-  fDetectors->Delete();
-  delete fDetectors;
 
+  if (fDetectors) {
+    fDetectors->Delete();
+    delete fDetectors; fDetectors=0;
+  }
 }
 
 //_____________________________________________________________________________

@@ -13,20 +13,24 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaDetectorBase.h"
+#include <TRef.h>
 
 class THaSubDetector : public THaDetectorBase {
   
 public:
   virtual ~THaSubDetector();
   
-  THaDetectorBase*  GetDetector() const            { return fDetector; }
+  THaDetectorBase*  GetDetector() const            {
+    return static_cast<THaDetectorBase*>(fDetector.GetObject());
+  }
+  
   virtual void      SetDetector( THaDetectorBase* );
 
 protected:
-  THaDetectorBase* fDetector;   // (Sub)detector containing this subdetector
+  TRef fDetector;        // (Sub)detector containing this subdetector
 
   virtual const char* GetDBFileName() const 
-    { return fDetector ? fDetector->GetDBFileName() : GetPrefix(); }
+    { return GetDetector() ? GetDetector()->GetDBFileName() : GetPrefix(); }
 
 //Only derived classes may construct me
 

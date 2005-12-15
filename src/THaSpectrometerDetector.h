@@ -29,6 +29,7 @@ public:
 					Double_t& x, Double_t& y );
           bool     CalcPathLen( THaTrack* track, Double_t& t );
 
+  THaSpectrometerDetector();       // for ROOT I/O only
 
 protected:
 
@@ -46,7 +47,7 @@ protected:
   THaSpectrometerDetector( const char* name, const char* description,
 			   THaApparatus* a = NULL );
 
-  ClassDef(THaSpectrometerDetector,0)   //ABC for a spectrometer detector
+  ClassDef(THaSpectrometerDetector,1)   //ABC for a spectrometer detector
 };
 
 #endif

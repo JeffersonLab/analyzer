@@ -27,6 +27,11 @@ THaDetector::THaDetector( const char* name, const char* description,
 }
 
 //_____________________________________________________________________________
+THaDetector::THaDetector( ) : fApparatus(0) {
+  // for ROOT I/O only
+}
+
+//_____________________________________________________________________________
 THaDetector::~THaDetector()
 {
   // Destructor
@@ -53,8 +58,9 @@ void THaDetector::MakePrefix()
   // during initialization.
 
   const char* basename = NULL;
-  if( fApparatus )
-    basename = fApparatus->GetName();
+  THaApparatus *app = GetApparatus();
+  if( app )
+    basename = app->GetName();
   THaDetectorBase::MakePrefix( basename );
 
 }

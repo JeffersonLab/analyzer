@@ -16,7 +16,9 @@ class THaDetectorBase : public THaAnalysisObject {
   
 public:
   virtual ~THaDetectorBase();
-  
+
+  THaDetectorBase(); // only for ROOT I/O
+
   virtual Int_t            Decode( const THaEvData& ) = 0;
           Int_t            GetNelem()  const    { return fNelem; }
           const TVector3&  GetOrigin() const    { return fOrigin; }
@@ -37,7 +39,7 @@ protected:
   
   THaDetectorBase( const char* name, const char* description );
 
-  ClassDef(THaDetectorBase,0)   //ABC for a detector or subdetector
+  ClassDef(THaDetectorBase,1)   //ABC for a detector or subdetector
 };
 
 #endif

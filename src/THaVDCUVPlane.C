@@ -57,8 +57,8 @@ THaDetectorBase::EStatus THaVDCUVPlane::Init( const TDatime& date )
   if( IsZombie() || !fV || !fU )
     return fStatus = kInitError;
 
-  if( fDetector )
-    fOrigin = fDetector->GetOrigin();
+  if( GetDetector() )
+    fOrigin = GetDetector()->GetOrigin();
 
   EStatus status;
   if( (status = THaSubDetector::Init( date )) ||

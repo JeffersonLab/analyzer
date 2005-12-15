@@ -30,11 +30,15 @@ THaDetectorBase::THaDetectorBase( const char* name,
 }
 
 //_____________________________________________________________________________
+THaDetectorBase::THaDetectorBase() : fDetMap(0) {
+  // for ROOT I/O only
+}
+
+//_____________________________________________________________________________
 THaDetectorBase::~THaDetectorBase()
 {
   // Destructor
-
-  delete fDetMap;
+  if (fDetMap) delete fDetMap;
 }
 
 //_____________________________________________________________________________

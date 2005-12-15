@@ -68,8 +68,9 @@ void THaSubDetector::MakePrefix()
   // e.g. R.vdc.u1.
 
   TString basename;
-  if( fDetector ) {
-    basename = fDetector->GetPrefix();
+  THaDetectorBase *det = GetDetector();
+  if( det ) {
+    basename = det->GetPrefix();
     Ssiz_t len = basename.Length();
     if( len>0 )
       basename.Replace(len-1,1,"");  // delete trailing dot

@@ -21,6 +21,14 @@ THaNonTrackingDetector::THaNonTrackingDetector( const char* name,
 }
 
 //______________________________________________________________________________
+THaNonTrackingDetector::THaNonTrackingDetector( )
+  : THaSpectrometerDetector( )
+{
+  // for ROOT I/O only
+
+}
+
+//______________________________________________________________________________
 THaNonTrackingDetector::~THaNonTrackingDetector()
 {
   // Destructor

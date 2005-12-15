@@ -12,19 +12,24 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaDetectorBase.h"
+#include <TRef.h>
+#include "THaApparatus.h"
 
-class THaApparatus;
+//class THaApparatus;
 
 class THaDetector : public THaDetectorBase {
   
 public:
   virtual ~THaDetector();
+  THaApparatus*  GetApparatus() const   {
+    return static_cast<THaApparatus*>(fApparatus.GetObject());
+  }
   
-  THaApparatus*  GetApparatus() const   { return fApparatus; }
   virtual void   SetApparatus( THaApparatus* );
 
+  THaDetector();  // for ROOT I/O only
 protected:
-  THaApparatus*  fApparatus;        // Apparatus containing this detector
+  TRef  fApparatus;          // Apparatus containing this detector
 
 //Only derived classes may construct me
 
@@ -33,7 +38,7 @@ protected:
 
   virtual void MakePrefix();
 
-  ClassDef(THaDetector,0)   //Abstract base class for a Hall A detector
+  ClassDef(THaDetector,1)   //Abstract base class for a Hall A detector
 };
 
 #endif

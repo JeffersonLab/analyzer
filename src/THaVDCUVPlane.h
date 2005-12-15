@@ -34,7 +34,7 @@ public:
   THaVDCPlane*   GetVPlane()      const { return fV; } 
   Int_t          GetNUVTracks()   const { return fUVTracks->GetLast()+1; }
   TClonesArray*  GetUVTracks()    const { return fUVTracks; }
-  THaVDC*        GetVDC()         const { return (THaVDC*)fDetector; }
+  THaVDC*        GetVDC()         const { return (THaVDC*)GetDetector(); }
   Double_t       GetSpacing()     const { return fSpacing;}
   THaVDCUVTrack* GetUVTrack( Int_t i ) const 
     { return (THaVDCUVTrack*)fUVTracks->At(i); }
