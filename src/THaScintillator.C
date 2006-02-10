@@ -528,7 +528,8 @@ Int_t THaScintillator::Decode( const THaEvData& evdata )
     }
   }
   if ( fDebug > 3 ) {
-    printf("\nScintillator %s:\n",GetPrefix());
+    printf("\n\nEvent %d   Trigger %d Scintillator %s\n:",
+	   evdata.GetEvNum(), evdata.GetEvType(), GetPrefix() );
     printf("   paddle  Left(TDC    ADC   ADC_p)   Right(TDC   ADC   ADC_p)\n");
     for ( int i=0; i<fNelem; i++ ) {
       printf("     %2d     %5.0f    %5.0f  %5.0f     %5.0f    %5.0f  %5.0f\n",
