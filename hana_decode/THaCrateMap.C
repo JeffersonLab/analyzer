@@ -120,6 +120,9 @@ int THaCrateMap::SetModelSize( int crate, int slot, UShort_t imodel )
     { 3801, 32, 32 },   // Struck 3801 scaler
     { 7510, 8, 1024 },   // Struck 7510 ADC (multihit)
     { 767, 128, 1024 },  // CAEN 767 multihit TDC
+    { 6401, 64, 1024 },  // JLab F1 TDC normal resolution
+    { 3201, 32, 512 },  // JLab F1 TDC high resolution
+    { 792, 32, 32 },  // CAEN V792 QDC
     { 0 }
   };
   const ModelPar_t* item = modelpar;
@@ -449,6 +452,18 @@ int THaCrateMap::init_hc(UInt_t tloc) {
     setHeader(17,slot,0x00400000+((slot-1)<<27));
     setMask(17,slot,0xf8600000);
   }
+  // ROC18 (Bodos N20 setup)
+  setCrateType(18,"vme");
+  setModel(18,1,792);
+  setHeader(18,1,0xda00adc0);
+  setMask(18,1,0xfffffff);
+  setModel(18,2,792);
+  setHeader(18,2,0xda00adc1);
+  setMask(18,2,0xfffffff);
+  setModel(18,7,6401);
+  setHeader(18,7,0x38000000);
+  setMask(18,7,0xf8800000);
+  
  
   return CM_OK;
 }
@@ -561,7 +576,6 @@ int THaCrateMap::init(TString the_map)
 	setHeader(crate,slot,iheader);
       if (nread>=5)
 	setMask(crate,slot,mask);
-      
       continue;
     }
     
