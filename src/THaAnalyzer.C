@@ -68,7 +68,7 @@ THaAnalyzer::THaAnalyzer() :
   fFile(NULL), fOutput(NULL), fOdefFileName(kDefaultOdefFile), fEvent(NULL),
   fNStages(0), fNCounters(0),
   fStages(NULL), fCounters(NULL), fNev(0), fMarkInterval(1000), fCompress(1), 
-  fVerbose(2), fCountMode(kCountPhysics), fBench(NULL), fPrevEvent(NULL), 
+  fVerbose(2), fCountMode(kCountRaw), fBench(NULL), fPrevEvent(NULL), 
   fRun(NULL), fEvData(NULL), fApps(NULL), fPhysics(NULL), fScalers(NULL), 
   fPostProcess(NULL),
   fIsInit(kFALSE), fAnalysisStarted(kFALSE), fLocalEvent(kFALSE), 
@@ -565,10 +565,11 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
   bool need_init = ( !fIsInit || new_event || new_output || new_run ||
 		     new_decoder || run_init );
 
+#if 0
   // Warn user if trying to analyze the same run twice with overlapping
-  // event ranges
+  // event ranges.  Broken for split files now, so disable warning.
   // FIXME: generalize event range business?
-  if( fAnalysisStarted && !new_run && 
+  if( fAnalysisStarted && !new_run && fCountMode!=kCountRaw &&
       ((fRun->GetLastEvent()  >= run->GetFirstEvent() &&
         fRun->GetFirstEvent() <  run->GetLastEvent()) ||
        (fRun->GetFirstEvent() <= run->GetLastEvent() &&
@@ -587,18 +588,18 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
 	return 240;
     }
   }
+#endif
 
   // Why do we want a real copy? Just keep a pointer to it
   // Make sure we save a copy of the run in fRun.
   // Note that the run may be derived from THaRunBase, so this is a bit tricky.
-  if( new_run ) {
-    fRun = run;
-//     delete fRun;
-//     fRun = static_cast<THaRunBase*>(run->IsA()->New());
-//     if( !fRun )
-//       return 252; // urgh
-//     *fRun = *run;  // Copy the run via its virtual operator=
-  }
+  //  if( new_run ) {
+  if (fRun) delete fRun;
+  fRun = static_cast<THaRunBase*>(run->IsA()->New());
+  if( !fRun )
+    return 252; // urgh
+  *fRun = *run;  // Copy the run via its virtual operator=
+  //  }
 
   // Make the current run available globally - the run parameters are
   // needed by some modules
