@@ -957,35 +957,36 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
 
   //-- Coarse processing
 
-  if( fDoBench ) fBench->Begin("Reconstruct");
+  if( fDoBench ) fBench->Begin("CoarseTracking");
   next.Reset();
   while( TObject* obj = next() ) {
     THaSpectrometer* theSpectro = dynamic_cast<THaSpectrometer*>(obj);
     if( theSpectro )
       theSpectro->CoarseTrack();
   }
-  if( fDoBench ) fBench->Stop("Reconstruct");
+  if( fDoBench ) fBench->Stop("CoarseTracking");
   if( !EvalStage(kCoarseTrack) )  return kSkip;
   
 
+  if( fDoBench ) fBench->Begin("CoarseReconstruct");
   next.Reset();
   while( THaApparatus* theApparatus =
 	 static_cast<THaApparatus*>( next() )) {
     theApparatus->CoarseReconstruct();
   }
-  if( fDoBench ) fBench->Stop("Reconstruct");
+  if( fDoBench ) fBench->Stop("CoarseReconstruct");
   if( !EvalStage(kCoarseRecon) )  return kSkip;
 
   //-- Fine (Full) Reconstruct().
 
-  if( fDoBench ) fBench->Begin("Reconstruct");
+  if( fDoBench ) fBench->Begin("Tracking");
   next.Reset();
   while( TObject* obj = next() ) {
     THaSpectrometer* theSpectro = dynamic_cast<THaSpectrometer*>(obj);
     if( theSpectro )
       theSpectro->Track();
   }
-  if( fDoBench ) fBench->Stop("Reconstruct");
+  if( fDoBench ) fBench->Stop("Tracking");
   if( !EvalStage(kTracking) )  return kSkip;
   
 
@@ -1367,6 +1368,9 @@ Int_t THaAnalyzer::Process( THaRunBase* run )
     fBench->Print("Init");
     fBench->Print("RawDecode");
     fBench->Print("Decode");
+    fBench->Print("CoarseTracking");
+    fBench->Print("CoarseReconstruct");
+    fBench->Print("Tracking");    
     fBench->Print("Reconstruct");
     fBench->Print("Physics");
     fBench->Print("Output");
