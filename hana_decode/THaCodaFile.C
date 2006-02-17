@@ -288,7 +288,7 @@ void THaCodaFile::staterr(const char* tried_to, int status) {
 	}
         break;
       default:
-        cout << "Error status  0x" << hex << status << endl;
+        cout << "Error status  0x" << hex << status << dec << endl;
       }
   };
 
