@@ -15,19 +15,20 @@
 #include "TClass.h"
 #include "TError.h"
 #include <iostream>
-#include <cstring>
 
 using namespace std;
 
-static const int MAXSCAN = 5000;
+static const int   fgMaxScan   = 5000;
+static const char* fgThisClass = "THaRun";
 
 //_____________________________________________________________________________
 THaRun::THaRun( const char* fname, const char* description ) : 
-  THaCodaRun(description), fFilename(fname), fMaxScan(MAXSCAN)
+  THaCodaRun(description), fFilename(fname), fMaxScan(fgMaxScan)
 {
   // Normal & default constructor
 
   fCodaData = new THaCodaFile;  //Specifying the file name would open the file
+  FindSegmentNumber();
 }
 
 //_____________________________________________________________________________
@@ -37,6 +38,7 @@ THaRun::THaRun( const THaRun& rhs ) :
   // Copy ctor
 
   fCodaData = new THaCodaFile;
+  FindSegmentNumber();
 }
 
 //_____________________________________________________________________________
@@ -49,16 +51,96 @@ THaRun& THaRun::operator=(const THaRunBase& rhs)
 
   if (this != &rhs) {
      THaCodaRun::operator=(rhs);
-     if( rhs.InheritsFrom("THaRun") ) {
-       fFilename   = static_cast<const THaRun&>(rhs).fFilename;
-       fMaxScan    = static_cast<const THaRun&>(rhs).fMaxScan;
-     } else {
-       fMaxScan    = MAXSCAN;
-     }
      //     delete fCodaData; //already done in THaRunBase
      fCodaData   = new THaCodaFile;
+     if( rhs.InheritsFrom(fgThisClass) ) {
+       fFilename   = static_cast<const THaRun&>(rhs).fFilename;
+       fMaxScan    = static_cast<const THaRun&>(rhs).fMaxScan;
+       FindSegmentNumber();
+     } else {
+       fMaxScan    = fgMaxScan;
+       fSegment    = 0;
+     }
   }
   return *this;
+}
+
+//_____________________________________________________________________________
+bool THaRun::operator==( const THaRunBase& rhs ) const
+{
+  if( THaCodaRun::operator!=(rhs) )
+    return false;
+
+  if(rhs.InheritsFrom(fgThisClass) &&
+     fSegment != static_cast<const THaRun&>(rhs).fSegment )
+    return false;
+
+  return true;
+}
+
+//_____________________________________________________________________________
+bool THaRun::operator!=( const THaRunBase& rhs ) const
+{
+  if( THaCodaRun::operator==(rhs) )
+    return false;
+
+  if(rhs.InheritsFrom(fgThisClass) &&
+     fSegment == static_cast<const THaRun&>(rhs).fSegment )
+    return false;
+
+  return true;
+}
+
+//_____________________________________________________________________________
+bool THaRun::operator<( const THaRunBase& rhs ) const
+{
+  if( THaCodaRun::operator<(rhs) )
+    return true;
+
+  if( THaCodaRun::operator==(rhs) && rhs.InheritsFrom(fgThisClass) &&
+      fSegment < static_cast<const THaRun&>(rhs).fSegment )
+    return true;
+
+  return false;
+}
+
+//_____________________________________________________________________________
+bool THaRun::operator>( const THaRunBase& rhs ) const
+{
+  if( THaCodaRun::operator>(rhs) )
+    return true;
+
+  if( THaCodaRun::operator==(rhs) && rhs.InheritsFrom(fgThisClass) &&
+      fSegment > static_cast<const THaRun&>(rhs).fSegment )
+    return true;
+
+  return false;
+}
+
+//_____________________________________________________________________________
+bool THaRun::operator<=( const THaRunBase& rhs ) const
+{
+  if( THaCodaRun::operator<(rhs) )
+    return true;
+
+  if( THaCodaRun::operator==(rhs) && rhs.InheritsFrom(fgThisClass) &&
+      fSegment <= static_cast<const THaRun&>(rhs).fSegment )
+    return true;
+
+  return false;
+}
+
+//_____________________________________________________________________________
+bool THaRun::operator>=( const THaRunBase& rhs ) const
+{
+  if( THaCodaRun::operator>(rhs) )
+    return true;
+
+  if( THaCodaRun::operator==(rhs) && rhs.InheritsFrom(fgThisClass) &&
+      fSegment >= static_cast<const THaRun&>(rhs).fSegment )
+    return true;
+
+  return false;
 }
 
 //_____________________________________________________________________________
@@ -73,13 +155,41 @@ void THaRun::Clear( const Option_t* opt )
 {
   // Reset the run object.
 
-  bool doing_init = !strcmp(opt,"INIT");
+  TString sopt(opt);
+  bool doing_init = (sopt == "INIT");
 
-  THaCodaRun::Clear(opt);
+  // Reset the entire run object EXCEPT when initializing a continuation
+  // segment of a run. 
+  // NB: Segment files in Hall A do not have header info, and so it would be 
+  // difficult to initialize them on their own. Continuation segment run objects
+  // should be created as copies of the initialized first segment, followed by
+  // setting the file name.
 
-  if( !doing_init ) {
-    fMaxScan = MAXSCAN;
-  }
+  if( !doing_init || fSegment==0 )
+    THaCodaRun::Clear(opt);
+
+  if( !doing_init )
+    fMaxScan = fgMaxScan;
+
+  // Disable scanning for continuation segments - Hall A continuation runs
+  // have no headers.
+  if( fSegment>0 )
+    fMaxScan = 0;
+}
+
+//_____________________________________________________________________________
+Int_t THaRun::Compare( const TObject* obj ) const
+{
+  // Compare a THaRun object to another run. Returns 0 when equal, 
+  // -1 when 'this' is smaller and +1 when bigger (like strcmp).
+  // Used by ROOT containers.
+
+  if (this == obj) return 0;
+  const THaRunBase* rhs = dynamic_cast<const THaRunBase*>(obj);
+  if( !rhs ) return -1;
+  if( *this < *rhs )       return -1;
+  else if( *this > *rhs )  return  1;
+  return 0;
 }
 
 //_____________________________________________________________________________
@@ -104,9 +214,9 @@ Int_t THaRun::Open()
 void THaRun::Print( Option_t* opt ) const
 {
   THaCodaRun::Print( opt );
-  cout << "Max # scan: " << fMaxScan  << endl;
-  cout << "CODA file:  " << fFilename << endl;
-
+  cout << "Max # scan:     " << fMaxScan  << endl;
+  cout << "CODA file:      " << fFilename << endl;
+  cout << "Segment number: " << fSegment  << endl;
 }
 
 //_____________________________________________________________________________
@@ -159,18 +269,31 @@ Int_t THaRun::ReadInitInfo()
 }
 
 //_____________________________________________________________________________
-void THaRun::SetFilename( const char* name )
+Int_t THaRun::SetFilename( const char* name )
 {
   // Set the name of the raw data file.
-  // If the name changes, the run will become uninitialized and the input
-  // will be closed.
+  // If the name changes, the existing input, if any, will be closed.
+  // Return -1 if illegal name, 1 if name not changed, 0 otherwise.
 
-  if( !name || fFilename != name ) {
-    Close();
-    fIsInit = kFALSE;
+  static const char* const here = "SetFilename";
+
+  if( !name ) {
+    Error( here, "Illegal file name." );
+    return -1;
   }
 
+  if( fFilename == name )
+    return 1;
+
+  Close();
   fFilename = name;
+  FindSegmentNumber();
+
+  // The run becomes uninitialized only if this is not a continuation segment
+  if( fSegment == 0 )
+    fIsInit = kFALSE;
+
+  return 0;
 }
 
 //_____________________________________________________________________________
@@ -179,6 +302,23 @@ void THaRun::SetNscan( UInt_t n )
   // Set number of events to prescan during Init(). Default is 5000.
 
   fMaxScan = n;
+}
+
+//_____________________________________________________________________________
+Int_t THaRun::FindSegmentNumber()
+{
+  // Determine the segment number, if any. For Hall A CODA disk files, we can 
+  // safely assume that the suffix of the file name will tell us.
+  // Internal function.
+
+  Ssiz_t dot = fFilename.Last('.');
+  if( dot != kNPOS ) {
+    TString s = fFilename(dot+1,fFilename.Length()-dot-1);
+    fSegment = s.Atoi();
+  } else
+    fSegment = 0;
+
+  return fSegment;
 }
 
 //_____________________________________________________________________________
