@@ -13,7 +13,6 @@
 #include "THaEvData.h"
 #include "TClass.h"
 #include <iostream>
-#include <cstring>
 #include <climits>
 #if ROOT_VERSION_CODE < ROOT_VERSION(3,1,6)
 #include <ctime>
@@ -168,7 +167,8 @@ void THaRunBase::Clear( const Option_t* opt )
 {
   // Reset the run object.
 
-  bool doing_init = !strcmp(opt,"INIT");
+  TString sopt(opt);
+  bool doing_init = (sopt == "INIT");
 
   fNumber = -1;
   fType = 0;
@@ -315,7 +315,8 @@ void THaRunBase::Print( Option_t* opt ) const
   cout << "Requested event range: " << fEvtRange[0] << "-"
        << fEvtRange[1] << endl;
 
-  if( !strcmp(opt,"STARTINFO"))
+  TString sopt(opt);
+  if( sopt == "STARTINFO" )
     return;
 
   cout << "Analyzed events:       " << fNumAnalyzed << endl;
@@ -410,6 +411,7 @@ void THaRunBase::SetDate( UInt_t tloc )
 #else
   time_t t = tloc;
   struct tm* tp = localtime(&t);
+  TDatime date;
   date.Set( tp->tm_year, tp->tm_mon+1, tp->tm_mday,
 	    tp->tm_hour, tp->tm_min, tp->tm_sec );
 #endif
