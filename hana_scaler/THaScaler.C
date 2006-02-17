@@ -25,6 +25,9 @@
 //
 //   author  Robert Michaels (rom@jlab.org)
 //
+//   Modifications
+//   Jan 2, 2005    RWM      Added GeN scalers 
+//
 /////////////////////////////////////////////////////////////////////
 
 #include "THaScaler.h"
@@ -168,21 +171,22 @@ Int_t THaScaler::InitData(std::string bankgroup, const Bdate& date_want) {
   static const DataMap datamap[] = {
     // Event type 140's
     { "Left",  0xabc00000, 8, 140, 4, 1024, "129.57.192.30",  5022, 
-      { 0,1,2,3,4,5,6,7,8,9,10,11 } },
+             0,1,2,3,4,5,6,7,8,9,10,11 },
     { "Right", 0xceb00000, 7, 140, 8, 1024, "129.57.192.28",  5021, 
-      { 0,7,8,9,1,2,3,4,5,6,10,11 } },
+             0,7,8,9,1,2,3,4,5,6,10,11 },
     { "dvcs",  0xd0c00000, 9, 140, 0, 105000, "129.57.192.51",  5064, 
-      { 0,1,2,3,4,5,6,7,8,9,10,11 } },
-    // bbite: header 0xbba...,  crate=6 (our choice), 
-    { "bbite", 0xbba00000, 6, 140, 1, 60, "129.57.192.51",  5064, 
-      { 0,1,2,3,4,5,6,7,8,9,10,11 } },
+             0,1,2,3,4,5,6,7,8,9,10,11 },
+    // normslot is defined here (5th arg) in addition to scaler.map (sorry)
+    { "gen",  0xb0d00000, 9, 140, 2, 105000, "129.57.192.5",  5022, 
+             0,1,2,3,4,5,6,7,8,9,10,11 },
+    // N20: header 0xbba...,  crate=6 (our choice), 
+    { "N20",  0xbba00000, 6, 140, 1, 2048, "129.57.192.51",  5064, 
+             0,1,2,3,4,5,6,7,8,9,10,11 },
     // Data that are part of the event stream
-    { "evleft",  0xabc00000, 11, 1, 4, 1024, "none",  0,
-      { 0,0,0,0,0,0,0,0,0,0,0,0} },
-    { "evright", 0xceb00000, 10, 1, 8, 1024, "none",  0,
-      { 0,0,0,0,0,0,0,0,0,0,0,0} },
+    { "evleft",  0xabc00000, 11, 1, 4, 1024, "none",  0, 0,0,0,0,0,0,0,0,0,0,0,0},
+    { "evright", 0xceb00000, 10, 1, 8, 1024, "none",  0, 0,0,0,0,0,0,0,0,0,0,0,0},
    // Add new scaler bank here...
-    { 0, 0, 0, 0, 0, 0, "none",  0, { 0,0,0,0,0,0,0,0,0,0,0,0} }
+    { 0 }
   };
 
 
@@ -199,8 +203,11 @@ Int_t THaScaler::InitData(std::string bankgroup, const Bdate& date_want) {
      if ( database->FindNoCase(bankgroup,"dvcs") != std::string::npos) {
           bank_to_find = "dvcs"; 
      }
-     if ( database->FindNoCase(bankgroup,"bbite") != std::string::npos) {
-          bank_to_find = "bbite"; 
+     if ( database->FindNoCase(bankgroup,"gen") != std::string::npos) {
+          bank_to_find = "gen"; 
+     }
+     if ( database->FindNoCase(bankgroup,"N20") != std::string::npos) {
+          bank_to_find = "N20"; 
      }
      if ( database->FindNoCase(bankgroup,"evleft") != std::string::npos) {
           bank_to_find = "evleft"; 
@@ -250,7 +257,7 @@ Int_t THaScaler::InitData(std::string bankgroup, const Bdate& date_want) {
   if (fDebug) {
     cout << "Set up bank "<<bank_to_find<<endl;
     cout << "crate "<<crate<<"   header 0x"<<hex<<header<<dec<<endl;
-    cout << "default normalization slot "<<normslot[0]<<endl;
+    cout << "default normalization slot "<<normslot<<endl;
     cout << "evstr_type "<<evstr_type<<"  clock rate "<<clockrate<<endl;
     cout << "vme: "<<vme_server<<"  "<<vme_port<<endl;
     cout << "online map: "<<endl;
@@ -306,12 +313,9 @@ void THaScaler::SetupNormMap() {
   normslot[2] = GetSlot("TS-accept",  1);
   clkslot = GetSlot("clock");
   clkchan = GetChan("clock");
-  if (normslot[0] < 0) normslot[0] = GetSlot("clock");
-  if (normslot[1] < 0) normslot[1] = GetSlot("clock",-1);
-  if (normslot[2] < 0) normslot[2] = GetSlot("clock", 1);
   for (Int_t ichan = 0; ichan < SCAL_NUMCHAN; ichan++) {
     std::vector<std::string> chan_name = database->GetShortNames(crate, normslot[0], ichan);
-    for (unsigned int i = 0; i < chan_name.size(); i++) {
+    for (int i = 0; i < chan_name.size(); i++) {
       if (chan_name[i] != "none") {
         normmap.insert(make_pair(chan_name[i], ichan));
       }
@@ -548,6 +552,10 @@ struct request {
   serverSockAddr.sin_port = htons(port);
   serverSockAddr.sin_addr.s_addr = inet_addr(server);
 
+  if (lprint) {
+    cout << "Connecting to server "<<server<<"  at port "<<port<<endl;
+  }
+
 // connect to server 
   if(connect (sFd, (struct sockaddr *) &serverSockAddr, sizeof(serverSockAddr)) == -1) {
       cout << "ERROR: THaScaler: LoadDataOnline: Cannot connect "<<endl;
@@ -578,6 +586,8 @@ struct request {
   }
 
   close (sFd);
+
+  if (lprint) cout << "Read "<<nRead<<"  bytes from server "<<endl;
 
   LoadPrevious();
   Clear();
