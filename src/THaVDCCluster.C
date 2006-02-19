@@ -175,10 +175,10 @@ void THaVDCCluster::CalcDist()
   // Calculate and store the distance of the fitted-track to the wires.
   //  We can then inspect the quality of the fits
   for (int j = 0; j < fSize; j++) {
-    Double_t x = fHits[j]->GetDist() + fTimeCorrection;
+//    Double_t x = fHits[j]->GetDist() + fTimeCorrection;
     Double_t y = fHits[j]->GetPos();
 
-    Double_t Y = fSlope * x + fInt;
+//    Double_t Y = fSlope * x + fInt;
     if (fSlope!=0.) {
       Double_t X = (y-fInt)/fSlope;
       fHits[j]->SetFitDist(TMath::Abs(X));

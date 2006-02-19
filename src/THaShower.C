@@ -144,7 +144,7 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
     for ( UShort_t j = 0; j < fNChan[i]; j++ ) {
       while ( !strpbrk(ptr,"0123456789") ) {
 	fgets ( buf, LEN, fi );
-	if ( ptr = strchr(buf,'#') ) (*ptr) = '\0';
+	if( (ptr = strchr(buf,'#')) ) *ptr = '\0';
 	ptr = buf;
 	nchar=0;
       }
