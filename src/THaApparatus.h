@@ -29,7 +29,8 @@ public:
 
   virtual EStatus      Init( const TDatime& run_time );
   virtual void         Print( Option_t* opt="" ) const 
-                                                 { fDetectors->Print(opt); }
+                                                 { THaAnalysisObject::Print(opt);
+                                                   fDetectors->Print(opt); }
   virtual Int_t        CoarseReconstruct() { return 0; }
   virtual Int_t        Reconstruct() = 0;
   virtual void         SetDebugAll( Int_t level );
