@@ -19,7 +19,7 @@ export DEBUG = 1
 SOVERSION  = 1.4
 PATCH   = 0
 VERSION = $(SOVERSION).$(PATCH)
-EXTVERS = -cvs
+EXTVERS = -GEn
 NAME    = analyzer-$(VERSION)
 
 #------------------------------------------------------------------------------
