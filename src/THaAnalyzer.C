@@ -454,12 +454,16 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
  
   // File previously created and name changed?
   if( fFile && fOutFileName != fFile->GetName()) {
+    // But -- we are analyzing split runs (so multiple initializations)
+    // and the tree's file has split too (so fFile has changed automatically)
+#if 0
     if( fAnalysisStarted ) {
       Error( here, "Cannot change output file name after analysis has been "
 	     "started. Close() first, then Init() or Process() again." );
       return -11;
     }
     Close();
+#endif
   }
   if( !fFile ) {
     if( fOutFileName.IsNull() ) {
