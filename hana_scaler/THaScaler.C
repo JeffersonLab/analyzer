@@ -171,22 +171,22 @@ Int_t THaScaler::InitData(std::string bankgroup, const Bdate& date_want) {
   static const DataMap datamap[] = {
     // Event type 140's
     { "Left",  0xabc00000, 8, 140, 4, 1024, "129.57.192.30",  5022, 
-             0,1,2,3,4,5,6,7,8,9,10,11 },
+      { 0,1,2,3,4,5,6,7,8,9,10,11 } },
     { "Right", 0xceb00000, 7, 140, 8, 1024, "129.57.192.28",  5021, 
-             0,7,8,9,1,2,3,4,5,6,10,11 },
+      { 0,7,8,9,1,2,3,4,5,6,10,11 } },
     { "dvcs",  0xd0c00000, 9, 140, 0, 105000, "129.57.192.51",  5064, 
-             0,1,2,3,4,5,6,7,8,9,10,11 },
+      { 0,1,2,3,4,5,6,7,8,9,10,11 } },
     // normslot is defined here (5th arg) in addition to scaler.map (sorry)
     { "gen",  0xb0d00000, 9, 140, 2, 105000, "129.57.192.5",  5022, 
-             0,1,2,3,4,5,6,7,8,9,10,11 },
+      { 0,1,2,3,4,5,6,7,8,9,10,11 } },
     // N20: header 0xbba...,  crate=6 (our choice), 
     { "N20",  0xbba00000, 6, 140, 1, 2048, "129.57.192.51",  5064, 
-             0,1,2,3,4,5,6,7,8,9,10,11 },
+      { 0,1,2,3,4,5,6,7,8,9,10,11 } },
     // Data that are part of the event stream
-    { "evleft",  0xabc00000, 11, 1, 4, 1024, "none",  0, 0,0,0,0,0,0,0,0,0,0,0,0},
-    { "evright", 0xceb00000, 10, 1, 8, 1024, "none",  0, 0,0,0,0,0,0,0,0,0,0,0,0},
+    { "evleft",  0xabc00000, 11, 1, 4, 1024, "none",  0, { 0,0,0,0,0,0,0,0,0,0,0,0} },
+    { "evright", 0xceb00000, 10, 1, 8, 1024, "none",  0, { 0,0,0,0,0,0,0,0,0,0,0,0} },
    // Add new scaler bank here...
-    { 0 }
+    { 0, 0, 0, 0, 0, 0, "none",  0, { 0,0,0,0,0,0,0,0,0,0,0,0} }
   };
 
 
@@ -315,7 +315,7 @@ void THaScaler::SetupNormMap() {
   clkchan = GetChan("clock");
   for (Int_t ichan = 0; ichan < SCAL_NUMCHAN; ichan++) {
     std::vector<std::string> chan_name = database->GetShortNames(crate, normslot[0], ichan);
-    for (int i = 0; i < chan_name.size(); i++) {
+    for (unsigned int i = 0; i < chan_name.size(); i++) {
       if (chan_name[i] != "none") {
         normmap.insert(make_pair(chan_name[i], ichan));
       }

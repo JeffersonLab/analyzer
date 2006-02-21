@@ -144,7 +144,7 @@ protected:
    Double_t off_u1,off_u3,off_u10,off_d1,off_d3,off_d10;
    Double_t GetTimeDiff(Int_t helicity);
    void SetupNormMap();
-   static const Int_t fDebug = 1;
+   static const Int_t fDebug = 0;
 
 private:
 
@@ -152,6 +152,8 @@ private:
    THaScaler(const THaScaler &bk);
    THaScaler& operator=(const THaScaler &bk);
 
+ public:
+   ClassDef(THaScaler,0)
 };
 
 #endif
