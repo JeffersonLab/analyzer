@@ -445,15 +445,6 @@ void GenHelicity::ReadData( const THaEvData& evdata ) {
    len = evdata.GetRocLength(myroc);
    if (len <= 4) return;
 
-//    cout << "From roc " << myroc << ": length " << len << endl;
-//    for (Int_t i = 0; i < 80 && i < len; ++i)
-//      {
-//        cout << hex << evdata.GetRawData (myroc, i) << dec << "  ";
-//        if (i % 10 == 9)
-// 	 cout << endl;
-//      }
-//    cout << endl;
-
    Int_t ihel;
    Int_t itime;
    if (fHelHeader[fArm] == 0)
@@ -584,9 +575,16 @@ void GenHelicity::QuadCalib() {
   // a Qrt does NOT contain the qrt flag?
    int delayed_qrt = 1; 
 
+   if (fEvtype[fArm] == 9) {
+       t9count[fArm] += 1;
+       if ( delayed_qrt && fQrt[fArm] ) {
+	 // don't record this time     
+       } else {
+	 fT9[fArm] = fTimestamp[fArm]; // this sets the timing reference.
+       }
+   }
+   
    if (fGate[fArm] == 0) return;
-   ///////////////////// DEBUG /////////////////////////
-   if (fEvtype[fArm] == 9) return;
 
    fTdiff[fArm] = fTimestamp[fArm] - fT0[fArm];
    if (HELDEBUG >= 2) {
@@ -628,15 +626,7 @@ void GenHelicity::QuadCalib() {
        fT0[fArm] = fTimestamp[fArm];
        fFirstquad[fArm] = 0;
    }
-   if (fEvtype[fArm] == 9) {
-       t9count[fArm] += 1;
-       if ( delayed_qrt && fQrt[fArm] ) {
-	 // don't record this time     
-       } else {
-	 fT9[fArm] = fTimestamp[fArm]; // this sets the timing reference.
-       }
-   }
-   
+
    if (fQrt[fArm] == 1) t9count[fArm] = 0;
 
 // The most solid predictor of a new helicity window:
@@ -681,7 +671,8 @@ void GenHelicity::QuadCalib() {
        if (quad_calibrated[fArm] && !CompHel() ) {
 // This is ok if it doesn't happen too often.  You lose these events.
           cout << "WARNING: GenHelicity: QuadCalib";
-          cout << " G0 prediction failed."<<endl;
+          cout << " G0 prediction failed at timestamp " << fTimestamp[fArm] 
+	       <<endl;
 	  cout << "GenHelicity::HELICITY ASSIGNMENT IN PREVIOUS " 
 	       << fgG0delay
 	       << " WINDOWS MAY BE INCORRECT" << endl;
@@ -725,7 +716,8 @@ void GenHelicity::LoadHelicity() {
    if (present_reading[fArm] != q1_reading[fArm])
      {
        cout << "GenHelicity::WARNING::  Invalid bit pattern !! "
-	    << "present_reading != q1_reading while QRT == 1." << endl;
+	    << "present_reading != q1_reading while QRT == 1 at timestamp " 
+	    << fTimestamp[fArm]<< endl;
        cout << "GenHelicity::HELICITY ASSIGNMENT MAY BE INCORRECT" << endl;
      }
  }
@@ -743,7 +735,8 @@ void GenHelicity::LoadHelicity() {
      cout << "GenHelicity::WARNING::  Quad assignment impossible !! "
 	  << " qrt = " << fQrt[fArm]
 	  << " present read = " << present_reading[fArm]
-	  << " Q1 read = " << q1_reading[fArm] << endl;
+	  << " Q1 read = " << q1_reading[fArm] 
+	  << " at timestamp " << fTimestamp[fArm]<< endl;
      cout << "GenHelicity::HELICITY SET TO UNKNOWN" << endl;
    }
  else if (inquad == 1 || inquad >= 4) {
@@ -769,7 +762,8 @@ void GenHelicity::LoadHelicity() {
        (inquad == 4 && fTdiff[fArm] < 0.7 * fTdavg[fArm]))))
    {
      cout << "GenHelicity::WARNING::  Quad assignment inconsistent with timing !! "
-	  << "quad = " << inquad << " tdiff = " << fTdiff[fArm] << endl;
+	  << "quad = " << inquad << " tdiff = " << fTdiff[fArm] 
+	  << " at timestamp " << fTimestamp[fArm]<< endl;
      cout << "GenHelicity::HELICITY ASSIGNMENT MAY BE INCORRECT" << endl;
    }
    
