@@ -121,6 +121,7 @@ private:
   Int_t *fQuad;
   Double_t *fTimestamp;
   Double_t *fLastTimestamp;
+  Double_t *fTimeLastQ1;
   Int_t *validTime, *validHel;
   Int_t *t9count;
   Int_t *present_reading, *predicted_reading; 

@@ -44,8 +44,8 @@ GenHelicity::GenHelicity( ) :
   fTdavg(NULL), fTdiff(NULL), fT0(NULL), fT9(NULL), 
   fT0T9(NULL), fTlastquad(NULL),
   fTtol(NULL), fQrt(NULL), fGate(NULL), fFirstquad(NULL), fEvtype(NULL),
-  fQuad(NULL),
-  fTimestamp(NULL), fLastTimestamp(NULL),
+  fQuad(NULL), 
+  fTimestamp(NULL), fLastTimestamp(NULL), fTimeLastQ1(NULL),
   validTime(NULL), validHel(NULL), t9count(NULL),
   present_reading(NULL), predicted_reading(NULL), q1_reading(NULL),
   present_helicity(NULL), saved_helicity(NULL), q1_present_helicity(NULL),
@@ -67,6 +67,7 @@ GenHelicity::~GenHelicity( )
   if (fQuad) delete [] fQuad;
   if (fTimestamp) delete [] fTimestamp;
   if (fLastTimestamp) delete [] fLastTimestamp;
+  if (fTimeLastQ1) delete [] fTimeLastQ1;
   if (fTdavg) delete [] fTdavg;
   if (fTdiff) delete [] fTdiff;
   if (fT0) delete [] fT0;
@@ -165,6 +166,7 @@ void GenHelicity::InitMemory() {
   fQuad               = new Int_t[2];
   fTimestamp          = new Double_t[2];
   fLastTimestamp      = new Double_t[2];
+  fTimeLastQ1         = new Double_t[2];
   fTdavg              = new Double_t[2];
   fTdiff              = new Double_t[2];
   fTtol               = new Double_t[2];
@@ -584,19 +586,21 @@ void GenHelicity::QuadCalib() {
        }
    }
    
-   if (fGate[fArm] == 0) return;
+   if (fEvtype[fArm] != 9 && fGate[fArm] == 0) return;
 
    fTdiff[fArm] = fTimestamp[fArm] - fT0[fArm];
    if (HELDEBUG >= 2) {
      cout << "QuadCalib "<<fTimestamp[fArm]<<"  "<<fT0[fArm];
-     cout << "  "<<fTdiff[fArm]<<"  "<<fQrt[fArm]<<endl;
+     cout << "  "<<fTdiff[fArm]
+	  << " " << fEvtype[fArm]
+	  <<"  "<<fQrt[fArm]<<endl;
    }
    if (fFirstquad[fArm] == 0 &&
        fTdiff[fArm] > (1.25*fTdavg[fArm] + fTtol[fArm])) {
 	// Try a recovery.  Use time to flip helicity by the number of
 	// missed quads, unless this are more than 30 (~1 sec).  
         Int_t nqmiss = (Int_t)(fTdiff[fArm]/fTdavg[fArm]);
-        if (HELDEBUG >= 2)
+        if (1||HELDEBUG >= 2)
           cout << "Recovering large DT, nqmiss = "<<nqmiss<<endl;
         if (nqmiss < 30) {
 	  for (Int_t i = 0; i < nqmiss; i++) {
@@ -605,9 +609,20 @@ void GenHelicity::QuadCalib() {
 
  	    q1_reading[fArm] = predicted_reading[fArm] == -1 ? 0 : 1;
 
-	    fT0[fArm] += fTdavg[fArm];
+	    if (fQrt[fArm] == 1 && fT9[fArm] > 0 
+		&& fTimestamp[fArm] - fT9[fArm] < 8*fTdavg[fArm])
+	      {
+		fT0[fArm] = TMath::Floor((fTimestamp[fArm]-fT9[fArm])/(.25*fTdavg[fArm]))
+		  *(.25*fTdavg[fArm]) + fT9[fArm];
+		fT0T9[fArm] = true;
+	      }
+	    else
+	      {
+		fT0[fArm] += fTdavg[fArm];
+		fT0T9[fArm] = false;
+	      }
 	    q1_present_helicity[fArm] = present_helicity[fArm];
-	    if (HELDEBUG>=2) {
+	    if (1||HELDEBUG>=2) {
 	      printf("QuadCalibQrt %5d  M  M %1d %2d  %10.0f  %10.0f  %10.0f Missing\n",
 		     fNqrt[fArm],q1_reading[fArm],q1_present_helicity[fArm],
 		     fTimestamp[fArm],fT0[fArm],fTdiff[fArm]);
@@ -624,8 +639,26 @@ void GenHelicity::QuadCalib() {
    }
    if (fQrt[fArm] == 1  && fFirstquad[fArm] == 1) {
        fT0[fArm] = fTimestamp[fArm];
+       fT0T9[fArm] = false;
        fFirstquad[fArm] = 0;
    }
+
+   // Check for QRT at anomalous separations
+
+   if (fEvtype[fArm] == 9 && fQrt[fArm] == 1)
+     {
+       if (fTimeLastQ1[fArm] > 0)
+	 {
+	   Double_t q1tdiff = fTimestamp[fArm] - fTimeLastQ1[fArm];
+	   if (q1tdiff < .9 * fTdavg[fArm] ||
+	       (q1tdiff > 1.1 * fTdavg[fArm] && q1tdiff < 1.9 * fTdavg[fArm]))
+	     cout << "WARNING: GenHelicity: QRT==1 timing error --"
+		  << " Last time = " << fTimeLastQ1[fArm]
+		  << " This time = " << fTimestamp[fArm] << endl
+		  << "HELICITY SIGNALS MAY BE CORRUPT" << endl;
+	 }
+       fTimeLastQ1[fArm] = fTimestamp[fArm];
+     }
 
    if (fQrt[fArm] == 1) t9count[fArm] = 0;
 
