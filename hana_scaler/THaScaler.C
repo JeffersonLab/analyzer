@@ -257,7 +257,7 @@ Int_t THaScaler::InitData(std::string bankgroup, const Bdate& date_want) {
   if (fDebug) {
     cout << "Set up bank "<<bank_to_find<<endl;
     cout << "crate "<<crate<<"   header 0x"<<hex<<header<<dec<<endl;
-    cout << "default normalization slot "<<normslot<<endl;
+    cout << "default normalization slot "<<normslot[0]<<endl;
     cout << "evstr_type "<<evstr_type<<"  clock rate "<<clockrate<<endl;
     cout << "vme: "<<vme_server<<"  "<<vme_port<<endl;
     cout << "online map: "<<endl;
@@ -802,7 +802,12 @@ Int_t THaScaler::GetChan(string detector, Int_t helicity, Int_t chan) {
 Double_t THaScaler::GetScalerRate(Int_t slot, Int_t chan) {
 // Rates on scaler data, for slot #slot, channel #chan
   Double_t rate,etime;
-  etime = GetTimeDiff(0);
+  if (slot == normslot[1] || slot == normslot[2] ) {
+    if (slot == normslot[1]) etime = GetTimeDiff(-1);
+    if (slot == normslot[2]) etime = GetTimeDiff(1);
+  } else {
+    etime = GetTimeDiff(0);
+  }
   if (etime > 0) { 
       rate = ( GetScaler(slot, chan, 0) -
                GetScaler(slot, chan, 1) ) / etime;
@@ -906,7 +911,7 @@ Double_t THaScaler::GetTimeDiff(Int_t helicity) {
     return etime;
   }
   if (clockrate == 0) return 0;
-  if (clkslot != -1 && clkchan != -1) {
+  if (helicity==0 && clkslot != -1 && clkchan != -1) {
     return ((GetScaler(clkslot, clkchan, 0) -
              GetScaler(clkslot, clkchan, 1)) /
   	          clockrate);
