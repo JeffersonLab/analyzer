@@ -183,6 +183,8 @@ Int_t THaScaler::InitData(std::string bankgroup, const Bdate& date_want) {
     { "N20",  0xbba00000, 6, 140, 1, 2048, "129.57.192.51",  5064, 
       { 0,1,2,3,4,5,6,7,8,9,10,11 } },
     // Data that are part of the event stream
+    { "evgen",  0xb0d00000, 23, 1, 2, 105000, "none",  0, 
+             {0,1,2,3,4,5,6,7,8,9,10,11} },
     { "evleft",  0xabc00000, 11, 1, 4, 1024, "none",  0, { 0,0,0,0,0,0,0,0,0,0,0,0} },
     { "evright", 0xceb00000, 10, 1, 8, 1024, "none",  0, { 0,0,0,0,0,0,0,0,0,0,0,0} },
    // Add new scaler bank here...
@@ -205,6 +207,9 @@ Int_t THaScaler::InitData(std::string bankgroup, const Bdate& date_want) {
      }
      if ( database->FindNoCase(bankgroup,"gen") != std::string::npos) {
           bank_to_find = "gen"; 
+     }
+     if ( database->FindNoCase(bankgroup,"evgen") != std::string::npos) {
+          bank_to_find = "evgen"; 
      }
      if ( database->FindNoCase(bankgroup,"N20") != std::string::npos) {
           bank_to_find = "N20"; 
@@ -345,7 +350,7 @@ Int_t THaScaler::LoadData(const THaEvData& evdata) {
 // Load data from THaEvData object.  Return of 0 is ok.
 // Note: GetEvBuffer is no faster than evdata.Get...
   static int ldebug = 0;
-  static Int_t data[2*SCAL_NUMBANK*SCAL_NUMCHAN];
+  static Int_t data[2*SCAL_NUMBANK*SCAL_NUMCHAN+100];
   new_load = kFALSE;
   Int_t nlen = 0;
   if (evstr_type == 1) {  // data in the event stream (physics triggers)
@@ -356,6 +361,8 @@ Int_t THaScaler::LoadData(const THaEvData& evdata) {
     nlen = evdata.GetEvLength();
   }
   if (ldebug) cout << "Loading evdata, bank =  "<<bankgroup<<"  "<<evstr_type<<"  "<<crate<<"  "<<evdata.GetEvType()<<"   "<<nlen<<endl;
+  Int_t maxlen = sizeof(data)/sizeof(Int_t);
+  if (nlen > maxlen) nlen = maxlen;
   for (Int_t i = 0; i < nlen; i++) {
     if (evstr_type == 1) {
       data[i] = evdata.GetRawData(crate, i);
