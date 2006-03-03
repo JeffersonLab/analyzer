@@ -600,7 +600,7 @@ void GenHelicity::QuadCalib() {
 	// Try a recovery.  Use time to flip helicity by the number of
 	// missed quads, unless this are more than 30 (~1 sec).  
         Int_t nqmiss = (Int_t)(fTdiff[fArm]/fTdavg[fArm]);
-        if (1||HELDEBUG >= 2)
+        if (HELDEBUG >= 2)
           cout << "Recovering large DT, nqmiss = "<<nqmiss<<endl;
         if (nqmiss < 30) {
 	  for (Int_t i = 0; i < nqmiss; i++) {
@@ -622,7 +622,7 @@ void GenHelicity::QuadCalib() {
 		fT0T9[fArm] = false;
 	      }
 	    q1_present_helicity[fArm] = present_helicity[fArm];
-	    if (1||HELDEBUG>=2) {
+	    if (HELDEBUG>=2) {
 	      printf("QuadCalibQrt %5d  M  M %1d %2d  %10.0f  %10.0f  %10.0f Missing\n",
 		     fNqrt[fArm],q1_reading[fArm],q1_present_helicity[fArm],
 		     fTimestamp[fArm],fT0[fArm],fTdiff[fArm]);
