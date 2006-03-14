@@ -108,8 +108,9 @@ void THaHelicityDet::SetROC (int arm, int roc,
 			     int helheader, int helindex,
 			     int timeheader, int timeindex)
 {
-  fHelicity.SetROC (arm, roc, helheader, helindex, timeheader, timeindex);
-  fRoc[arm] = roc;                  // ROC 
+  fHelicity.SetROC (arm, roc, helheader, helindex, 
+		    timeheader, timeindex);
+  fROC[arm] = roc;                  // ROC
   fHelHeader[arm] = helheader;      // Header for helicity bit
   fHelIndex[arm] = helindex;        // Index from header
   fTimeHeader[arm] = timeheader;    // Header for timestamp
@@ -127,6 +128,24 @@ void THaHelicityDet::SetState(int mode, int delay,
   fSpec = spec;    // Which spectrometer do we believe ?
   fCheck = redund; // Do we check redundancy (yes=1, no=0)
 }
+
+//____________________________________________________________________
+void THaHelicityDet::SetRTimeROC (int arm, 
+			       int roct2, int t2header, int t2index, 
+			       int roct3, int t3header, int t3index)
+{
+  // Set parameters for reading redundant time info.
+
+  fHelicity.SetRTimeROC (arm, roct2, t2header, t2index,
+			 roct3, t3header, t3index);
+  fRTimeROC2[arm] = roct2;                  // ROC 
+  fRTimeHeader2[arm] = t2header;    // Header for timestamp
+  fRTimeIndex2[arm] = t2index;      // Index from header
+  fRTimeROC3[arm] = roct3;                  // ROC 
+  fRTimeHeader3[arm] = t3header;    // Header for timestamp
+  fRTimeIndex3[arm] = t3index;      // Index from header
+}
+  
 
 //____________________________________________________________________
 void THaHelicityDet::Print(Option_t *option) const

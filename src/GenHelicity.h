@@ -84,18 +84,23 @@ public:
   void SetROC (int arm, int roc,
 	       int helheader, int helindex,
 	       int timeheader, int timeindex);
+  void SetRTimeROC (int arm, 
+		    int roct2, int t2header, int t2index, 
+		    int roct3, int t3header, int t3index);
 
 private:
 
   GenHelicity( const GenHelicity& ) {}
   GenHelicity& operator=( const GenHelicity& ) { return *this; }
   void ReadData ( const THaEvData& evdata);
+  void TimingEvent(); // Check for and process timing events
   void QuadCalib();
   void LoadHelicity();
   void QuadHelicity(Int_t cond=0);
   Int_t RanBit(Int_t i);
   UInt_t GetSeed();
   Bool_t CompHel();
+  Int_t FindWord (const THaEvData& evdata, const Int_t roc, const Int_t header, const Int_t index) const;
 
 // These variables define the state of this object ---------
 // The fgG0mode flag turns G0 mode on (1) or off (0)
@@ -154,19 +159,41 @@ private:
   // the ROC (0 = first word of ROC), otherwise it's from the header
   // (0 = first word after header).
 
-  Int_t fRoc[2];                 // ROC for left, right arm
+  Int_t fROC[2];                 // ROC for left, right arm
   Int_t fHelHeader[2];           // Header for helicity bit
   Int_t fHelIndex[2];            // Index from header
   Int_t fTimeHeader[2];          // Header for timestamp
   Int_t fTimeIndex[2];           // Index from header
+  // Redundant clocks
+  Int_t fRTimeROC2[2];                  // ROC 
+  Int_t fRTimeHeader2[2];    // Header for timestamp
+  Int_t fRTimeIndex2[2];      // Index from header
+  Int_t fRTimeROC3[2];                  // ROC 
+  Int_t fRTimeHeader3[2];    // Header for timestamp
+  Int_t fRTimeIndex3[2];      // Index from header
+
+  // Following members are used by TimingEvent():
+  
+  Int_t* fTET9Index;           // Count of T9s (missing and found) since QRT==1
+  Int_t* fTELastEvtQrt;        // QRT of last event
+  Double_t* fTELastEvtTime;    // Timestamp of last event
+  Double_t* fTELastTime;       // Time of last timing event (before this)
+  Int_t* fTEPresentReadingQ1;  // present_reading at last QRT==1 timing event
+  Int_t* fTEStartup;           // Nonzero if starting up
+  Double_t* fTETime;           // Time of timing event (this or most recent)
+  Bool_t* fTEType9;            // True if timing event was T9
 
   static const Int_t OK       =  1;
   static const Int_t HCUT     = 5000;  
   static const Int_t Plus     =  1;    
   static const Int_t Minus    = -1;    
   static const Int_t Unknown  =  0;    
+  // HELDEBUG = 1 for messages about unusual helicity bit handling,
+  // e.g. handling missing quadruples
+  // = 2 for messages relating to scalers
+  // = 3 for verbose debugging output
   static const Int_t HELDEBUG =  0;
-  static const Int_t HELVERBOSE = 1;
+  static const Int_t HELVERBOSE = 0;
 
   void   InitG0();
   void   InitMemory();
@@ -175,3 +202,4 @@ private:
 };
 
 #endif 
+

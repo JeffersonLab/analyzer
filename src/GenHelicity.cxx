@@ -49,12 +49,26 @@ GenHelicity::GenHelicity( ) :
   validTime(NULL), validHel(NULL), t9count(NULL),
   present_reading(NULL), predicted_reading(NULL), q1_reading(NULL),
   present_helicity(NULL), saved_helicity(NULL), q1_present_helicity(NULL),
-  quad_calibrated(NULL), hbits(NULL), fNqrt(NULL)
+  quad_calibrated(NULL), hbits(NULL), fNqrt(NULL),
+  fTET9Index(NULL),
+  fTELastEvtQrt(NULL),
+  fTELastEvtTime(NULL),
+  fTELastTime(NULL),
+  fTEPresentReadingQ1(NULL),
+  fTEStartup(NULL),
+  fTETime(NULL),
+  fTEType9(NULL)
 {
   InitMemory();
-  SetState(0, 0, -1, fgRarm, 0);  // reasonable default state.
-  SetROC (fgLarm, 11, 0, 3, 0, 4); // likewise
-  SetROC (fgRarm, 10, 0, 3, 0, 4); // likewise
+  // reasonable default state for GEN.
+  SetROC (fgRarm, 11, 0, 3, 0, 4); // likewise
+  SetState (1, 8, -1, fgRarm, 0);  // G0 mode; 8 window delay; sign -1;
+                                  // right arm; no redund
+  SetROC (fgRarm, 28, 0xfadcb0b9, 2, 0xfabc0007, 6); // "Right arm" is ROC
+                                   //            28; headers and indices
+   // Redundant clocks: 2 words after std clock, and same location i
+   // as std clock but in ROC 23:
+  SetRTimeROC (1, 28, 0xfabc0007, 8, 23, 0xfabc0007, 6);
 }
 
 //____________________________________________________________________
@@ -87,6 +101,14 @@ GenHelicity::~GenHelicity( )
   if (hbits) delete [] hbits;
   if (validTime) delete [] validTime;
   if (validHel) delete [] validHel;
+  if (fTET9Index) delete [] fTET9Index;
+  if (fTELastEvtQrt) delete [] fTELastEvtQrt;
+  if (fTELastEvtTime) delete [] fTELastEvtTime;
+  if (fTELastTime) delete [] fTELastTime;
+  if (fTEPresentReadingQ1) delete [] fTEPresentReadingQ1;
+  if (fTEStartup) delete [] fTEStartup;
+  if (fTETime) delete [] fTETime;
+  if (fTEType9) delete [] fTEType9;
 }
 
 //____________________________________________________________________
@@ -141,19 +163,35 @@ void GenHelicity::SetState(int mode, int delay,
 
 //____________________________________________________________________
 void GenHelicity::SetROC (int arm, int roc,
-			    int helheader, int helindex,
-			    int timeheader, int timeindex)
+			  int helheader, int helindex,
+			  int timeheader, int timeindex)
 {
 // Set parameters for ROC readout.  Note, if a header is zero the
 // index is taken to be from the start of the ROC (0 = first word of ROC), 
 // otherwise it's from the header (0 = first word after header).
 
-  fRoc[arm] = roc;                  // ROC 
+  fROC[arm] = roc;                  // ROC 
   fHelHeader[arm] = helheader;      // Header for helicity bit
   fHelIndex[arm] = helindex;        // Index from header
   fTimeHeader[arm] = timeheader;    // Header for timestamp
   fTimeIndex[arm] = timeindex;      // Index from header
 }
+
+//____________________________________________________________________
+void GenHelicity::SetRTimeROC (int arm, 
+			       int roct2, int t2header, int t2index, 
+			       int roct3, int t3header, int t3index)
+{
+  // Set parameters for reading redundant time info.
+
+  fRTimeROC2[arm] = roct2;                  // ROC 
+  fRTimeHeader2[arm] = t2header;    // Header for timestamp
+  fRTimeIndex2[arm] = t2index;      // Index from header
+  fRTimeROC3[arm] = roct3;                  // ROC 
+  fRTimeHeader3[arm] = t3header;    // Header for timestamp
+  fRTimeIndex3[arm] = t3index;      // Index from header
+}
+  
 
 //____________________________________________________________________
 void GenHelicity::InitMemory() {
@@ -184,6 +222,14 @@ void GenHelicity::InitMemory() {
   quad_calibrated     = new Int_t[2]; 
   q1_present_helicity = new Int_t[2];
   hbits               = new Int_t[fgNbits];
+  fTET9Index       = new   Int_t[2];
+  fTELastEvtQrt       = new   Int_t[2];
+  fTELastEvtTime      = new   Double_t[2];
+  fTELastTime         = new   Double_t[2];
+  fTEPresentReadingQ1 = new   Int_t[2];
+  fTEStartup          = new   Int_t[2];
+  fTETime             = new   Double_t[2];
+  fTEType9            = new   Bool_t[2];
 }
 
 //____________________________________________________________________
@@ -213,6 +259,14 @@ void GenHelicity::InitG0() {
   iseed = 0;
   iseed_earlier = 0;
   inquad = 0;
+  memset (fTET9Index, 0, 2 * sizeof (Int_t));
+  memset (fTELastEvtQrt, -1, 2 * sizeof (Int_t));
+  memset (fTELastEvtTime, -1, 2 * sizeof (Double_t));
+  memset (fTELastTime, -1, 2 * sizeof (Double_t));
+  memset (fTEPresentReadingQ1, -1, 2 * sizeof (Int_t));
+  memset (fTEStartup, 3, 2 * sizeof (Int_t));
+  memset (fTETime, -1, 2 * sizeof (Double_t));
+  memset (fTEType9, 0, 2 * sizeof (Bool_t));
 }
 
 //____________________________________________________________________
@@ -252,7 +306,7 @@ Int_t GenHelicity::Decode( const THaEvData& evdata ) {
         if ( !evdata.GetNumHits(roc,slot,chan ))continue;
         adc_data = evdata.GetData(roc,slot,chan,0);
 
-        if (HELDEBUG >= 1) {
+        if (HELDEBUG >= 3) {
 	  cout << "crate "<<roc<<"   slot "<<slot<<"   chan "<<chan<<"   data "<<adc_data<<"   ";
           if (adc_data > HCUT) cout << "  above cut !";
           cout << endl;
@@ -298,7 +352,7 @@ Int_t GenHelicity::Decode( const THaEvData& evdata ) {
     if (Ladc_gate == Plus) Ladc_helicity = Ladc_hbit;
     if (Radc_gate == Plus) Radc_helicity = Radc_hbit;
     
-    if (HELDEBUG) {
+    if (HELDEBUG >= 3) {
       cout << "ADC helicity info "<<endl;
       cout << "L-arm gate "<<Ladc_gate<<"  helic. bit "<<Ladc_hbit;
       cout << "    resulting helicity "<<Ladc_helicity<<endl;
@@ -340,16 +394,16 @@ Int_t GenHelicity::Decode( const THaEvData& evdata ) {
    }
 
    if (fWhichSpec == fgLarm) { // pick a spectrometer
-       myroc = fRoc[fgLarm];
+       myroc = fROC[fgLarm];
        Hel = fSign * Lhel;  // Sign determined by Moller measurement
    } else {
-       myroc = fRoc[fgRarm];
+       myroc = fROC[fgRarm];
        Hel = fSign * Rhel;  // Sign determined by Moller measurement
    }
 
    validHel[fWhichSpec] = 1;
    validTime[fWhichSpec] = 1;
-   if (HELDEBUG) { 
+   if (HELDEBUG >= 3) { 
      cout << "In-time helicity check for roc "<<myroc<<endl;
      //cout << "Raw word 0x"<<hex<<data<<dec;
      cout << "  Gate "<<fGate[fWhichSpec]<<"  qrt "<<fQrt[fWhichSpec];
@@ -377,6 +431,7 @@ Int_t GenHelicity::Decode( const THaEvData& evdata ) {
    for (Int_t spec = fgLarm; spec <= fgRarm; spec++) {
       fArm = spec;  // fArm is global
       ReadData ( evdata );    
+      TimingEvent ();
       QuadCalib ();      
       LoadHelicity ();
    }
@@ -389,7 +444,7 @@ Int_t GenHelicity::Decode( const THaEvData& evdata ) {
    } else {
      Hel = Rhel;  
    }
-   if (HELDEBUG >= 1) cout << "G0 helicitites "<<Lhel<<"  "<<Rhel<<endl;
+   if (HELDEBUG >= 3) cout << "G0 helicities "<<Lhel<<"  "<<Rhel<<endl;
 
  }
 
@@ -440,7 +495,7 @@ void GenHelicity::ReadData( const THaEvData& evdata ) {
    int found, index;
 
    if (fArm == fgLarm || fArm == fgRarm) 
-     myroc = fRoc[fArm];
+     myroc = fROC[fArm];
    else
      return;
 
@@ -449,35 +504,17 @@ void GenHelicity::ReadData( const THaEvData& evdata ) {
 
    Int_t ihel;
    Int_t itime;
-   if (fHelHeader[fArm] == 0)
-     ihel = 3;
-   else
+   ihel = FindWord (evdata, myroc, fHelHeader[fArm], fHelIndex[fArm]);
+   if (ihel < 0)
      {
-       for (ihel = 0; 
-	    ihel < len && evdata.GetRawData (myroc, ihel) != fHelHeader[fArm];
-	    ++ihel)
-	 {}
-       ihel += fHelIndex[fArm];
-       if (ihel >= len)
-	 {
-	   cout << "GenHelicity WARNING: Cannot find helicity" << endl;
-	   return;
-	 }
+       cout << "GenHelicity WARNING: Cannot find helicity" << endl;
+       return;
      }
-   if (fTimeHeader[fArm] == 0)
-     itime = 4;
-   else
+   itime = FindWord (evdata, myroc, fTimeHeader[fArm], fTimeIndex[fArm]);
+   if (itime < 0)
      {
-       for (itime = 0; 
-	    itime < len && evdata.GetRawData (myroc, itime) != fTimeHeader[fArm];
-	    ++itime)
-	 {}
-       itime += fTimeIndex[fArm];
-       if (itime >= len)
-	 {
-	   cout << "GenHelicity WARNING: Cannot find timestamp" << endl;
-	   return;
-	 }
+       cout << "GenHelicity WARNING: Cannot find timestamp" << endl;
+       return;
      }
 
    data = evdata.GetRawData(myroc,ihel);   
@@ -485,6 +522,42 @@ void GenHelicity::ReadData( const THaEvData& evdata ) {
    fQrt[fArm] = (data & 0x20) >> 5;
    fGate[fArm] = (data & 0x40) >> 6;
    fTimestamp[fArm] = evdata.GetRawData(myroc,itime);
+
+   // Look for redundant clock info and patch up time if it appears wrong
+   static Double_t oldt1 = -1;
+   static Double_t oldt2 = -1;
+   static Double_t oldt3 = -1;
+   if (fRTimeROC2[fArm] > 0 && fRTimeROC3[fArm] > 0)
+     {
+       Int_t itime2 = FindWord (evdata, fRTimeROC2[fArm], fRTimeHeader2[fArm], fRTimeIndex2[fArm]);
+       Int_t itime3 = FindWord (evdata, fRTimeROC3[fArm], fRTimeHeader3[fArm], fRTimeIndex3[fArm]);
+       if (itime2 >= 0 && itime3 >= 0)
+	 {
+	   Double_t t1 = fTimestamp[fArm];
+	   Double_t t2 = evdata.GetRawData (fRTimeROC2[fArm], itime2);
+	   Double_t t3 = evdata.GetRawData (fRTimeROC3[fArm], itime3);
+	   Double_t t2t1 = oldt1 + t2 - oldt2;
+	   Double_t t3t1 = oldt1 + t3 - oldt3;
+	   // We believe t1 unless it disagrees with t2 and t2 agrees with t3
+	   if (oldt1 >= 0 && abs (t1-t2t1) > 3 && abs (t2t1-t3t1) <= 3)
+	     {
+	       if (HELDEBUG >= 1)
+		 cout << "WARNING GenHelicity: Clock 1 disagrees with 2, 3; using 2: " << t1 << " " << t2t1 << " " << t3t1 << endl;
+	       fTimestamp[fArm] = t2t1;
+	     }
+	   if (HELDEBUG >= 3)
+	     {
+	       cout << "Clocks: " << t1 
+		    << " " << t2 << "->" << t2t1 
+		    << " " << t3 << "->" << t3t1 
+		    << endl;
+	     }
+	   oldt1 = fTimestamp[fArm];
+	   oldt2 = t2;
+	   oldt3 = t3;
+	 }
+     }
+       
    validTime[fArm] = 1;
    found = 0;
    index = 5;
@@ -496,11 +569,11 @@ void GenHelicity::ReadData( const THaEvData& evdata ) {
    if ( found ) {
      nscaler = data & 0x7;
    } else {
-     if (HELDEBUG >= 1) cout << "WARNING: Cannot find scalers."<<endl;
+     if (HELDEBUG >= 2) cout << "WARNING: Cannot find scalers."<<endl;
      nscaler = 0;
    }
    fEvtype[fArm] = evdata.GetEvType();
-   if (HELDEBUG >= 2) {
+   if (HELDEBUG >= 3) {
      cout << dec << "--> Data for spectrometer " << fArm << endl;
      cout << "  evtype " << fEvtype[fArm];
      cout << "  helicity " << present_reading[fArm];
@@ -511,16 +584,16 @@ void GenHelicity::ReadData( const THaEvData& evdata ) {
    if (nscaler <= 0) return;
    if (nscaler > 2) nscaler = 2;  // shouldn't be necessary
 // 32 channels of scaler data for two helicities.
-   if (HELDEBUG >= 3) cout << "Synch event ----> " << endl;
+   if (HELDEBUG >= 2) cout << "Synch event ----> " << endl;
    for (int ihel = 0; ihel < nscaler; ihel++) { 
        header = evdata.GetRawData(myroc,index++);
-       if (HELDEBUG >= 3) {
+       if (HELDEBUG >= 2) {
          cout << "Scaler for helicity = " << dec << ihel;
          cout << "  unique header = " << hex << header << endl;
        }
        for (int ichan = 0; ichan < 32; ichan++) {
 	 data = evdata.GetRawData(myroc,index++);
-         if (HELDEBUG >= 3) {
+         if (HELDEBUG >= 2) {
            cout << "channel # " << dec << ichan+1;
            cout << "  (hex) data = " << hex << data << endl;
 	 }
@@ -528,7 +601,7 @@ void GenHelicity::ReadData( const THaEvData& evdata ) {
    }
    fNumread = evdata.GetRawData(myroc,index++);
    fBadread = evdata.GetRawData(myroc,index++);
-   if (HELDEBUG >= 3) 
+   if (HELDEBUG >= 2) 
       cout << "FIFO num of last good read " << dec << fNumread << endl;
 // We hope fBadread=0 forever.  If not, two possibilities :
 //   a) Skip that run, or
@@ -547,7 +620,7 @@ void GenHelicity::ReadData( const THaEvData& evdata ) {
          nring = header & 0x3ff;
      }
    }
-   if (HELDEBUG >= 3) 
+   if (HELDEBUG >= 2) 
      cout << "Num in ring buffer = " << dec << nring << endl;
    for (int iring = 0; iring < nring; iring++) {
      fRing_clock = evdata.GetRawData(myroc,index++);
@@ -558,7 +631,7 @@ void GenHelicity::ReadData( const THaEvData& evdata ) {
      fRing_bcm = evdata.GetRawData(myroc,index++);
      fRing_l1a = evdata.GetRawData(myroc,index++);
      fRing_v2fh = evdata.GetRawData(myroc,index++);
-     if (HELDEBUG >= 3) {
+     if (HELDEBUG >= 2) {
         cout << "buff [" << dec << iring << "] ";
         cout << "  clck " << fRing_clock << "  qrt " << fRing_qrt;
         cout << "  hel " << fRing_helicity;
@@ -567,6 +640,85 @@ void GenHelicity::ReadData( const THaEvData& evdata ) {
      }
    }
    return;
+}
+
+//____________________________________________________________________
+void GenHelicity::TimingEvent() 
+{
+  // Check for and process timing events
+  // A timing event is a T9, *or* if enough time elapses without a
+  // T9, it's any event with QRT==1 following an event with QRT==0.
+
+  if (fEvtype[fArm] == 9)
+    {
+      fTEType9[fArm] = true;
+      fTETime[fArm] = fTimestamp[fArm];
+    }
+  else if (fQrt[fArm] && !fTELastEvtQrt[fArm]
+	   && fTimestamp[fArm] - fTELastTime[fArm] > 8 * fTdavg[fArm])
+    {
+      // After a while we give up on finding T9s and instead take
+      // either the average timestamp of the first QRT==1 we find
+      // and the previous event (if that's not to far in the past)
+      // or just the timestamp of the QRT==1 event (if it is).
+      // This is lousy accuracy but better than nothing.
+      fTEType9[fArm] = false;
+      fTETime[fArm] = (fTimestamp[fArm] - fTELastEvtTime[fArm]) < 0.5 * fTdavg[fArm] ? 
+	(fTimestamp[fArm] + fTELastEvtTime[fArm]) * 0.5 :
+	fTimestamp[fArm];
+    }
+  else
+    {
+      fTELastEvtQrt[fArm] = fQrt[fArm];
+      fTELastEvtTime[fArm] = fTimestamp[fArm];
+      return;
+    }
+
+  // Now check for anomalies.
+
+  if (fTELastTime[fArm] > 0)
+    {
+      // Look for missed timing events
+      Double_t tdiff = fTETime[fArm] - fTELastTime[fArm];
+      Int_t nt9miss = (Int_t) (tdiff / 3508 - 0.5);
+      fTET9Index[fArm] += nt9miss;
+      if (fTET9Index[fArm] > 3)
+	{
+	  fTEPresentReadingQ1[fArm] = -1;
+	  fTET9Index[fArm] = fTET9Index[fArm] % 4;
+	}
+      if (fTEType9[fArm] &&
+	  fabs (tdiff - (nt9miss + 1) * 3508) > 3 * (nt9miss + 1))
+	cout << "WARNING GenHelicity: Weird time difference between timing events: " << tdiff 
+	     << " at " << fTETime[fArm] << endl;
+    }
+  ++fTET9Index[fArm];
+  if (fQrt[fArm] == 1)
+    {
+      if (fTET9Index[fArm] != 4 && !fTEStartup[fArm])
+	cout << "WARNING GenHelicity: QRT wrong spacing: " << fTET9Index[fArm] 
+	     << " at " << fTETime[fArm] << endl;
+      fTET9Index[fArm] = 0;
+      fTEPresentReadingQ1[fArm] = present_reading[fArm];
+      fTEStartup[fArm] = 0;
+    }
+  else
+    {
+      if (fTEStartup[fArm]) --fTEStartup[fArm];
+      if (fTEPresentReadingQ1[fArm] > -1)
+	if ((present_reading[fArm] == fTEPresentReadingQ1[fArm] && 
+	     (fTET9Index[fArm] == 1 || fTET9Index[fArm] == 2))
+	    || (present_reading[fArm] != fTEPresentReadingQ1[fArm] && 
+		fTET9Index[fArm] == 3))
+	  cout << "WARNING GenHelicity: Wrong helicity pattern: " << fTEPresentReadingQ1[fArm] 
+	       << " in window 1, " << present_reading[fArm] 
+	       << " in window " << (fTET9Index[fArm]+1) 
+	       << " at " << fTETime[fArm] << endl;
+    }
+  // Now push back information
+  fTELastTime[fArm] = fTETime[fArm];
+  fTELastEvtQrt[fArm] = fQrt[fArm];
+  fTELastEvtTime[fArm] = fTimestamp[fArm];
 }
 
 //____________________________________________________________________
@@ -589,7 +741,7 @@ void GenHelicity::QuadCalib() {
    if (fEvtype[fArm] != 9 && fGate[fArm] == 0) return;
 
    fTdiff[fArm] = fTimestamp[fArm] - fT0[fArm];
-   if (HELDEBUG >= 2) {
+   if (HELDEBUG >= 3) {
      cout << "QuadCalib "<<fTimestamp[fArm]<<"  "<<fT0[fArm];
      cout << "  "<<fTdiff[fArm]
 	  << " " << fEvtype[fArm]
@@ -600,8 +752,11 @@ void GenHelicity::QuadCalib() {
 	// Try a recovery.  Use time to flip helicity by the number of
 	// missed quads, unless this are more than 30 (~1 sec).  
         Int_t nqmiss = (Int_t)(fTdiff[fArm]/fTdavg[fArm]);
-        if (HELDEBUG >= 2)
-          cout << "Recovering large DT, nqmiss = "<<nqmiss<<endl;
+        if (HELDEBUG >= 1)
+          cout << "Recovering large DT, nqmiss = "<<nqmiss
+	       << " at timestamp " << fTimestamp[fArm]
+	       << " tdiff " << fTdiff[fArm]
+	       <<endl;
         if (nqmiss < 30) {
 	  for (Int_t i = 0; i < nqmiss; i++) {
 	    fNqrt[fArm]++;
@@ -622,7 +777,7 @@ void GenHelicity::QuadCalib() {
 		fT0T9[fArm] = false;
 	      }
 	    q1_present_helicity[fArm] = present_helicity[fArm];
-	    if (HELDEBUG>=2) {
+	    if (HELDEBUG>=1) {
 	      printf("QuadCalibQrt %5d  M  M %1d %2d  %10.0f  %10.0f  %10.0f Missing\n",
 		     fNqrt[fArm],q1_reading[fArm],q1_present_helicity[fArm],
 		     fTimestamp[fArm],fT0[fArm],fTdiff[fArm]);
@@ -675,7 +830,7 @@ void GenHelicity::QuadCalib() {
 // so I leave it out for now.  Missing QRT is hopefully rare.
 //        (( fTdiff[fArm] > 1.003*fTdavg[fArm] )  &&
 //     ( fEvtype[fArm] == 9 && fGate[fArm] == 0 && t9count[fArm] > 3 )) ) {
-       if (HELDEBUG >= 2) cout << "found qrt "<<endl;
+       if (HELDEBUG >= 3) cout << "found qrt "<<endl;
 
        // If we have T9 within recent time: Update fT0 to match the
        // nearest/closest last evt9 (extrapolated from the last
@@ -718,7 +873,7 @@ void GenHelicity::QuadCalib() {
           fFirstquad[fArm] = 1;
           present_helicity[fArm] = Unknown;
        }
-       if (HELDEBUG>=2) {
+       if (HELDEBUG>=3) {
 	 printf("QuadCalibQrt %5d  %1d  %1d %1d %2d  %10.0f  %10.0f  %10.0f\n",
 		fNqrt[fArm],fEvtype[fArm],fQrt[fArm],q1_reading[fArm],
 		q1_present_helicity[fArm],fTimestamp[fArm],fT0[fArm],
@@ -846,7 +1001,7 @@ void GenHelicity::QuadHelicity(Int_t cond) {
       present_helicity[fArm] = RanBit(1);
       saved_helicity[fArm] = present_helicity[fArm];
       fTlastquad[fArm] = fTimestamp[fArm];
-      if (HELDEBUG >= 1) {
+      if (HELDEBUG >= 3) {
         cout << "quad helicities  " << dec;
         cout << predicted_reading[fArm];           // -1, +1
         cout << " ?=? " << present_reading[fArm];  //  0,  1
@@ -926,11 +1081,23 @@ Bool_t GenHelicity::CompHel() {
   return kFALSE;
 }
 
+//____________________________________________________________________
+Int_t GenHelicity::FindWord (const THaEvData& evdata, const Int_t roc, const Int_t header, const Int_t index) const
+{
+  Int_t len = evdata.GetRocLength (roc);
+  if (len <= 4) return -1;
 
-
-
-
-
-
-
-
+  Int_t i;
+  if (header == 0)
+    i = index;
+  else
+    {
+      for (i = 0; 
+	   i < len && evdata.GetRawData (roc, i) != header;
+	   ++i)
+	{}
+      i += index;
+    }
+  if (i >= len) return -1;
+  return i;
+}
