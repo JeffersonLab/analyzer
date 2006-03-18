@@ -14,6 +14,7 @@
 class THaTrackingModule {
   
 public:
+  THaTrackingModule(); // needed public for ROOT I/O
   virtual ~THaTrackingModule();
   
   THaTrackInfo*  GetTrackInfo()  { return &fTrkIfo; }
@@ -25,8 +26,6 @@ protected:
 
   THaTrackInfo  fTrkIfo;          // Track information
   TRef          fTrk;             // Pointer to associated track
-
-  THaTrackingModule();
 
   ClassDef(THaTrackingModule,1)   // ABC for a tracking module
 

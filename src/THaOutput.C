@@ -250,7 +250,7 @@ Int_t THaOutput::Init( const char* filename )
   if( !gHaVars ) return -2;
 
   fTree = new TTree("T","Hall A Analyzer Output DST");
-
+  fTree->SetAutoSave(200000000);
   fOpenEpics  = kFALSE;
   fOpenScal   = kFALSE;
   fFirstEpics = kTRUE; 
