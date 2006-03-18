@@ -200,23 +200,26 @@ Int_t GenDecData::SetupRawData( const TDatime* run_time, EMode mode )
   if( mode != kDefine || !fIsSetup )
     retval = DefineVarsFromList( vars, mode );
 
+  // For the dynamically built list, make sure all is deleted BEFORE
+  // building the list anew.
+  if (gHaVars) {
+    for (unsigned int i=0; i<fCrateLoc.size(); i++) {
+      string nm = GetPrefix();
+      nm += fCrateLoc[i]->name;
+      gHaVars->RemoveName(nm.c_str());
+    }
+    for (unsigned int i=0; i<fWordLoc.size(); i++) {
+      string nm = GetPrefix();
+      nm += fWordLoc[i]->name;
+      gHaVars->RemoveName(nm.c_str());
+    }
+  }
+
   fIsSetup = ( mode == kDefine );
   
-  if( mode != kDefine ) {   // cleanup the dynamically built list
-    if (gHaVars) {
-      for (unsigned int i=0; i<fCrateLoc.size(); i++) {
-        string nm = GetPrefix();
-        nm += fCrateLoc[i]->name;
-        gHaVars->RemoveName(nm.c_str());
-      }
-      for (unsigned int i=0; i<fWordLoc.size(); i++) {
-        string nm = GetPrefix();
-        nm += fWordLoc[i]->name;
-        gHaVars->RemoveName(nm.c_str());
-      }
-    }
+  if ( mode != kDefine ) 
     return retval;
-  }
+  
 
 // Set up the locations in raw data corresponding to variables of this class. 
 // Each element of a BdataLoc2 is one channel or word.  Since a channel 
