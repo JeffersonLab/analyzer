@@ -7,7 +7,8 @@
 # List only the implementation files (*.cxx). For every implementation file
 # there must be a corresponding header file (*.h).
 
-SRC  = GenDecData.cxx GenBeam.cxx GenBPM.cxx GenHelicity.cxx GenRaster.cxx
+SRC  = GenDecData.cxx GenBeam.cxx GenBPM.cxx GenHelicity.cxx GenRaster.cxx \
+        GenHelicityDet.cxx
 
 # Name of your package. 
 # The shared library that will be built will get the name lib$(PACKAGE).so
