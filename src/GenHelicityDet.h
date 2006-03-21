@@ -60,6 +60,9 @@ public:
   void SetROC (int arm, int roc,
 	       int helheader, int helindex,
 	       int timeheader, int timeindex);
+  void SetRTimeROC (int arm, 
+		    int roct2, int t2header, int t2index, 
+		    int roct3, int t3header, int t3index);
 
 private:
 
@@ -80,6 +83,13 @@ private:
   Int_t fHelIndex[2];            // Index from header
   Int_t fTimeHeader[2];          // Header for timestamp
   Int_t fTimeIndex[2];           // Index from header
+  // Redundant clocks
+  Int_t fRTimeROC2[2];                  // ROC 
+  Int_t fRTimeHeader2[2];    // Header for timestamp
+  Int_t fRTimeIndex2[2];      // Index from header
+  Int_t fRTimeROC3[2];                  // ROC 
+  Int_t fRTimeHeader3[2];    // Header for timestamp
+  Int_t fRTimeIndex3[2];      // Index from header
 
   ClassDef(GenHelicityDet,0)       // Beam helicity information.
 };

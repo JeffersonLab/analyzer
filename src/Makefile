@@ -22,7 +22,7 @@ LINKDEF = $(PACKAGE)_LinkDef.h
 # Change as necessary,
 
 # Compile debug version
-#export DEBUG = 1
+# export DEBUG = 1
 
 # Architecture to compile for
 ARCH          = linuxegcs
@@ -83,8 +83,8 @@ ifdef DEBUG
   CXXFLAGS    = -g -O0
   LDFLAGS     = -g -O0
 else
-  CXXFLAGS    = -O
-  LDFLAGS     = -O
+  CXXFLAGS    = -O -g
+  LDFLAGS     = -O -g
 endif
 CXXFLAGS     += -Wall -Woverloaded-virtual -fPIC
 LD            = g++

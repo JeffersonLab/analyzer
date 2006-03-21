@@ -130,6 +130,24 @@ void GenHelicityDet::SetState(int mode, int delay,
 }
 
 //____________________________________________________________________
+void GenHelicityDet::SetRTimeROC (int arm, 
+			       int roct2, int t2header, int t2index, 
+			       int roct3, int t3header, int t3index)
+{
+  // Set parameters for reading redundant time info.
+
+  fHelicity.SetRTimeROC (arm, roct2, t2header, t2index,
+			 roct3, t3header, t3index);
+  fRTimeROC2[arm] = roct2;                  // ROC 
+  fRTimeHeader2[arm] = t2header;    // Header for timestamp
+  fRTimeIndex2[arm] = t2index;      // Index from header
+  fRTimeROC3[arm] = roct3;                  // ROC 
+  fRTimeHeader3[arm] = t3header;    // Header for timestamp
+  fRTimeIndex3[arm] = t3index;      // Index from header
+}
+  
+
+//____________________________________________________________________
 void GenHelicityDet::Print(Option_t *option) const
 {
   cout << "\n\n====================== \n";
