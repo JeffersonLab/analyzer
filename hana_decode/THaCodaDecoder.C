@@ -272,11 +272,20 @@ int THaCodaDecoder::prescale_decode(const int* evbuffer) {
    int j,trig,data[MAX];
    int type = evbuffer[1]>>16;
 // TS registers -->
-   if (fgTrigSupPS && type == TS_PRESCALE_EVTYPE) {
+   if (/* fgTrigSupPS && */ type == TS_PRESCALE_EVTYPE) {
+     // this is more authoritative
      for (j = 0; j < 8; j++) {
       int lenbuf = evbuffer[0]+1;
       int k = j + HEAD_OFF1;
-      if (k < lenbuf) psfact[j] = evbuffer[k];
+      int ps = 0;
+      if (k < lenbuf) {
+	ps = evbuffer[k];
+	if (psfact[j]!=0 && ps != psfact[j]) {
+	  Warning("prescale_decode","Mismatch in prescale factor: Trig %d  oldps %d   TS_PRESCALE %d. Setting to TS_PRESCALE",
+		  j+1,psfact[j],ps);
+	}
+      }
+      psfact[j]=ps;
       if (DEBUG) cout << "%% TS psfact "<<dec<<j<<"  "<<psfact[j]<<endl;
      }        
    } 
@@ -284,20 +293,28 @@ int THaCodaDecoder::prescale_decode(const int* evbuffer) {
    const char* pstr[] = { "ps1", "ps2", "ps3", "ps4",
 			"ps5", "ps6", "ps7", "ps8",
 		       "ps9", "ps10", "ps11", "ps12" };
-   if (!fgTrigSupPS && type == PRESCALE_EVTYPE) {  
+   if ( /* !fgTrigSupPS && */ type == PRESCALE_EVTYPE) {  
      int len = sizeof(int)*(evbuffer[0]+1);  
      int nlen = (len < MAX) ? len : MAX;   
      for (j=HEAD_OFF2; j<nlen; j++) data[j-HEAD_OFF2] = evbuffer[j];  
      THaUsrstrutils sut;
      sut.string_from_evbuffer(data);
      for(trig=0; trig<MAX_PSFACT; trig++) {
-        psfact[trig] = sut.getint(pstr[trig]);
+        int ps =  sut.getint(pstr[trig]);
         int psmax = 65536; // 2^16 for trig > 3
 	if (trig < 4) psmax = 16777216;  // 2^24 for 1st 4 trigs
-        if (trig > 7) psfact[trig] = 1;  // cannot prescale trig 9-12
-        psfact[trig] = psfact[trig] % psmax;
-        if (psfact[trig] == 0) psfact[trig] = psmax;
-        if (DEBUG) cout << "** psfact[ "<<trig+1<< " ] = "<<psfact[trig]<<endl;
+        if (trig > 7) ps = 1;  // cannot prescale trig 9-12
+        ps = ps % psmax;
+	if (psfact[j] && ps != psfact[j]) {
+	  Warning("prescale_decode","Mismatch in prescale factor: Trig %d  oldps %d   prescale.dat %d, Keeping old value",
+		  j+1,psfact[j],ps);
+	}
+	// are they setup? less authoritative side
+	if (ps==0) ps=psmax;
+	if (psfact[trig]==0) {
+	  psfact[trig] = ps;
+	}
+	if (DEBUG) cout << "** psfact[ "<<trig+1<< " ] = "<<psfact[trig]<<endl;
      }
    }
 // Ok in any case
@@ -757,6 +774,10 @@ int THaCodaDecoder::vme_decode(int roc, THaCrateMap* map, const int* evbuffer,
 		if (((*loc)&0xffff)!=nword) {
 		  if (DEBUG) cout<<"WC mismatch "<<nword<<" "<<hex<<(*p)<<endl;
 		  return HED_ERR;
+		  //    Replace the above line with this to 
+		  //    disable tossing out the event
+		  //    when we get a bad thing.
+		  //	return HED_OK;
 		}
 	      }
 	      p = loc-1; // so p++ will point to the first word that didn't match
