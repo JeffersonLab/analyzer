@@ -61,7 +61,7 @@ THaCodaDecoder::THaCodaDecoder() :
 {
   epics = new THaEpics;
   fb = new THaFastBusWord;
-  memset(psfact,0,MAX_PSFACT*sizeof(int));
+  memset(psfact,0,MAX_PSFACT*sizeof(*psfact));
 
   EnableScalers();
 }
