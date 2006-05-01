@@ -244,6 +244,10 @@ void GenHelicity::InitG0() {
   fT0[1]     = 0;
   fT9[0]     = 0;
   fT9[1]     = 0;
+  fTimestamp[0] = 0;
+  fTimestamp[1] = 0;
+  fLastTimestamp[0] = 0;
+  fLastTimestamp[1] = 0;
   fTlastquad[0] = 0;
   fTlastquad[1] = 0;
   fFirstquad[0] = 1;
