@@ -307,11 +307,15 @@ bool THaEvData::IsEpicsEvent() const {
 
 inline
 bool THaEvData::IsPrescaleEvent() const {
+  return (event_type == TS_PRESCALE_EVTYPE ||
+	  event_type == PRESCALE_EVTYPE);
+#if 0
   if (fgTrigSupPS) {
     return (event_type == TS_PRESCALE_EVTYPE);
   } else {
     return (event_type == PRESCALE_EVTYPE);
   }
+#endif
 };
 
 inline
