@@ -15,8 +15,10 @@ DCDIR=../hana_decode
 # tscalntup -- Read CODA file (evtype 140), fills an ntuple w/ stuff
 # tscaldtime -- Reads CODA file, checks deadtime
 # tscalroc11 -- To read the ROC11 scalers (from 'physics' triggers)
+# tscalroc23 -- To read the ROC23 scalers ('physics' trig). GeN specific.
 # tscalevt -- Analysis of ROC10/11 scalers. 
 # tscalring -- Similar to tscalroc11, but more detailed analysis.
+# tscalring23 -- Similar to tscalroc23, but more detailed analysis.
 # 
 # To understand how to use scaler classes, look at the 'main'
 # routines  tscalfile_main.C tscalasy_main.C tscalhist_main.C tscalonl_main.C
@@ -133,7 +135,7 @@ GLIBS        += $(ROOTGLIBS) $(SYSLIBS)
 #----------------------------------------------------------------------------
 # The following sources comprise the package of scaler classes by R. Michaels.
 # Normally leave THaScalerGui commented out (it is for xscaler)
-#SRC = THaScaler.C THaScalerDB.C THaScalerGui.C
+#SRC = THaScaler.C THaScalerDB.C THaScalerGui.C 
 SRC = THaScaler.C THaScalerDB.C
 
 HEAD = $(SRC:.C=.h)
@@ -143,7 +145,8 @@ SCALER_OBJS = $(SRC:.C=.o) THaScalDict.o
 
 # Test code executibles
 PROGS = tscalfile tscalasy tscalhist tscalonl 
-PROGS += tscalntup tscaldtime tscalroc11 tscalevt tscalring
+PROGS += tscalntup tscaldtime tscalroc11 tscalroc23 
+PROGS += tscalevt tscalring tscalroc23
 #PROGS += xscaler
 
 # To compile the local test codes:
@@ -217,6 +220,10 @@ tscalroc11: tscalroc11_main.o $(SCALER_OBJS) $(SRC) $(HEAD) $(LIBDC)
 	rm -f $@
 	$(CXX) $(CXXFLAGS) -o $@ tscalroc11_main.o $(SCALER_OBJS) $(ALL_LIBS) 
 
+tscalroc23: tscalroc23_main.o $(SCALER_OBJS) $(SRC) $(HEAD) $(LIBDC)  
+	rm -f $@
+	$(CXX) $(CXXFLAGS) -o $@ tscalroc23_main.o $(SCALER_OBJS) $(ALL_LIBS) 
+
 tscalevt: tscalevt_main.o $(SCALER_OBJS) $(SRC) $(HEAD) $(LIBDC)  
 	rm -f $@
 	$(CXX) $(CXXFLAGS) -o $@ tscalevt_main.o $(SCALER_OBJS) $(ALL_LIBS) 
@@ -224,6 +231,10 @@ tscalevt: tscalevt_main.o $(SCALER_OBJS) $(SRC) $(HEAD) $(LIBDC)
 tscalring: tscalring_main.o $(SCALER_OBJS) $(SRC) $(HEAD) $(LIBDC)  
 	rm -f $@
 	$(CXX) $(CXXFLAGS) -o $@ tscalring_main.o $(SCALER_OBJS) $(ALL_LIBS) 
+
+tscalring23: tscalring23_main.o $(SCALER_OBJS) $(SRC) $(HEAD) $(LIBDC)  
+	rm -f $@
+	$(CXX) $(CXXFLAGS) -o $@ tscalring23_main.o $(SCALER_OBJS) $(ALL_LIBS) 
 
 # Dictionary
 THaScalDict.C: $(HEAD) haScal_LinkDef.h

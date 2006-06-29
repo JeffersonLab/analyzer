@@ -25,6 +25,9 @@
 //
 //   author  Robert Michaels (rom@jlab.org)
 //
+//   Modifications
+//   Jan 2, 2005    RWM      Added GeN scalers 
+//
 /////////////////////////////////////////////////////////////////////
 
 #include "THaScaler.h"
@@ -173,14 +176,17 @@ Int_t THaScaler::InitData(std::string bankgroup, const Bdate& date_want) {
       { 0,7,8,9,1,2,3,4,5,6,10,11 } },
     { "dvcs",  0xd0c00000, 9, 140, 0, 105000, "129.57.192.51",  5064, 
       { 0,1,2,3,4,5,6,7,8,9,10,11 } },
-    // bbite: header 0xbba...,  crate=6 (our choice), 
-    { "bbite", 0xbba00000, 6, 140, 1, 60, "129.57.192.51",  5064, 
+    // normslot is defined here (5th arg) in addition to scaler.map (sorry)
+    { "gen",  0xb0d00000, 9, 140, 2, 105000, "129.57.192.5",  5022, 
+      { 0,1,2,3,4,5,6,7,8,9,10,11 } },
+    // N20: header 0xbba...,  crate=6 (our choice), 
+    { "N20",  0xbba00000, 6, 140, 1, 2048, "129.57.192.51",  5064, 
       { 0,1,2,3,4,5,6,7,8,9,10,11 } },
     // Data that are part of the event stream
-    { "evleft",  0xabc00000, 11, 1, 4, 1024, "none",  0,
-      { 0,0,0,0,0,0,0,0,0,0,0,0} },
-    { "evright", 0xceb00000, 10, 1, 8, 1024, "none",  0,
-      { 0,0,0,0,0,0,0,0,0,0,0,0} },
+    { "evgen",  0xb0d00000, 23, 1, 2, 105000, "none",  0, 
+             {0,1,2,3,4,5,6,7,8,9,10,11} },
+    { "evleft",  0xabc00000, 11, 1, 4, 1024, "none",  0, { 0,0,0,0,0,0,0,0,0,0,0,0} },
+    { "evright", 0xceb00000, 10, 1, 8, 1024, "none",  0, { 0,0,0,0,0,0,0,0,0,0,0,0} },
    // Add new scaler bank here...
     { 0, 0, 0, 0, 0, 0, "none",  0, { 0,0,0,0,0,0,0,0,0,0,0,0} }
   };
@@ -199,8 +205,14 @@ Int_t THaScaler::InitData(std::string bankgroup, const Bdate& date_want) {
      if ( database->FindNoCase(bankgroup,"dvcs") != std::string::npos) {
           bank_to_find = "dvcs"; 
      }
-     if ( database->FindNoCase(bankgroup,"bbite") != std::string::npos) {
-          bank_to_find = "bbite"; 
+     if ( database->FindNoCase(bankgroup,"gen") != std::string::npos) {
+          bank_to_find = "gen"; 
+     }
+     if ( database->FindNoCase(bankgroup,"evgen") != std::string::npos) {
+          bank_to_find = "evgen"; 
+     }
+     if ( database->FindNoCase(bankgroup,"N20") != std::string::npos) {
+          bank_to_find = "N20"; 
      }
      if ( database->FindNoCase(bankgroup,"evleft") != std::string::npos) {
           bank_to_find = "evleft"; 
@@ -306,9 +318,6 @@ void THaScaler::SetupNormMap() {
   normslot[2] = GetSlot("TS-accept",  1);
   clkslot = GetSlot("clock");
   clkchan = GetChan("clock");
-  if (normslot[0] < 0) normslot[0] = GetSlot("clock");
-  if (normslot[1] < 0) normslot[1] = GetSlot("clock",-1);
-  if (normslot[2] < 0) normslot[2] = GetSlot("clock", 1);
   for (Int_t ichan = 0; ichan < SCAL_NUMCHAN; ichan++) {
     std::vector<std::string> chan_name = database->GetShortNames(crate, normslot[0], ichan);
     for (unsigned int i = 0; i < chan_name.size(); i++) {
@@ -341,7 +350,7 @@ Int_t THaScaler::LoadData(const THaEvData& evdata) {
 // Load data from THaEvData object.  Return of 0 is ok.
 // Note: GetEvBuffer is no faster than evdata.Get...
   static int ldebug = 0;
-  static Int_t data[2*SCAL_NUMBANK*SCAL_NUMCHAN];
+  static Int_t data[2*SCAL_NUMBANK*SCAL_NUMCHAN+100];
   new_load = kFALSE;
   Int_t nlen = 0;
   if (evstr_type == 1) {  // data in the event stream (physics triggers)
@@ -352,6 +361,8 @@ Int_t THaScaler::LoadData(const THaEvData& evdata) {
     nlen = evdata.GetEvLength();
   }
   if (ldebug) cout << "Loading evdata, bank =  "<<bankgroup<<"  "<<evstr_type<<"  "<<crate<<"  "<<evdata.GetEvType()<<"   "<<nlen<<endl;
+  Int_t maxlen = sizeof(data)/sizeof(Int_t);
+  if (nlen > maxlen) nlen = maxlen;
   for (Int_t i = 0; i < nlen; i++) {
     if (evstr_type == 1) {
       data[i] = evdata.GetRawData(crate, i);
@@ -548,6 +559,10 @@ struct request {
   serverSockAddr.sin_port = htons(port);
   serverSockAddr.sin_addr.s_addr = inet_addr(server);
 
+  if (lprint) {
+    cout << "Connecting to server "<<server<<"  at port "<<port<<endl;
+  }
+
 // connect to server 
   if(connect (sFd, (struct sockaddr *) &serverSockAddr, sizeof(serverSockAddr)) == -1) {
       cout << "ERROR: THaScaler: LoadDataOnline: Cannot connect "<<endl;
@@ -578,6 +593,8 @@ struct request {
   }
 
   close (sFd);
+
+  if (lprint) cout << "Read "<<nRead<<"  bytes from server "<<endl;
 
   LoadPrevious();
   Clear();
@@ -792,7 +809,12 @@ Int_t THaScaler::GetChan(string detector, Int_t helicity, Int_t chan) {
 Double_t THaScaler::GetScalerRate(Int_t slot, Int_t chan) {
 // Rates on scaler data, for slot #slot, channel #chan
   Double_t rate,etime;
-  etime = GetTimeDiff(0);
+  if (slot == normslot[1] || slot == normslot[2] ) {
+    if (slot == normslot[1]) etime = GetTimeDiff(-1);
+    if (slot == normslot[2]) etime = GetTimeDiff(1);
+  } else {
+    etime = GetTimeDiff(0);
+  }
   if (etime > 0) { 
       rate = ( GetScaler(slot, chan, 0) -
                GetScaler(slot, chan, 1) ) / etime;
@@ -896,7 +918,7 @@ Double_t THaScaler::GetTimeDiff(Int_t helicity) {
     return etime;
   }
   if (clockrate == 0) return 0;
-  if (clkslot != -1 && clkchan != -1) {
+  if (helicity==0 && clkslot != -1 && clkchan != -1) {
     return ((GetScaler(clkslot, clkchan, 0) -
              GetScaler(clkslot, clkchan, 1)) /
   	          clockrate);

@@ -154,7 +154,6 @@ private:
 
  public:
    ClassDef(THaScaler,0)
-
 };
 
 #endif
