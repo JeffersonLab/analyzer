@@ -68,7 +68,7 @@ THaAnalyzer::THaAnalyzer() :
   fFile(NULL), fOutput(NULL), fOdefFileName(kDefaultOdefFile), fEvent(NULL),
   fNStages(0), fNCounters(0),
   fStages(NULL), fCounters(NULL), fNev(0), fMarkInterval(1000), fCompress(1), 
-  fVerbose(2), fCountMode(kCountPhysics), fBench(NULL), fPrevEvent(NULL), 
+  fVerbose(2), fCountMode(kCountRaw), fBench(NULL), fPrevEvent(NULL), 
   fRun(NULL), fEvData(NULL), fApps(NULL), fPhysics(NULL), fScalers(NULL), 
   fPostProcess(NULL),
   fIsInit(kFALSE), fAnalysisStarted(kFALSE), fLocalEvent(kFALSE), 
@@ -453,12 +453,16 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
  
   // File previously created and name changed?
   if( fFile && fOutFileName != fFile->GetName()) {
+    // But -- we are analyzing split runs (so multiple initializations)
+    // and the tree's file has split too (so fFile has changed automatically)
+#if 0
     if( fAnalysisStarted ) {
       Error( here, "Cannot change output file name after analysis has been "
 	     "started. Close() first, then Init() or Process() again." );
       return -11;
     }
     Close();
+#endif
   }
   if( !fFile ) {
     if( fOutFileName.IsNull() ) {
@@ -544,7 +548,8 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
     if( gHaDecoder ) 
       fEvData = static_cast<THaEvData*>(gHaDecoder->New());
     if( !fEvData ) {
-      Error( here, "Failed to create decoder object. Something is very wrong." );
+      Error( here, "Failed to create decoder object. "
+	     "Something is very wrong..." );
       return 241;
     }
     new_decoder = true;
@@ -564,10 +569,11 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
   bool need_init = ( !fIsInit || new_event || new_output || new_run ||
 		     new_decoder || run_init );
 
+#if 0
   // Warn user if trying to analyze the same run twice with overlapping
-  // event ranges
+  // event ranges.  Broken for split files now, so disable warning.
   // FIXME: generalize event range business?
-  if( fAnalysisStarted && !new_run && 
+  if( fAnalysisStarted && !new_run && fCountMode!=kCountRaw &&
       ((fRun->GetLastEvent()  >= run->GetFirstEvent() &&
         fRun->GetFirstEvent() <  run->GetLastEvent()) ||
        (fRun->GetFirstEvent() <= run->GetLastEvent() &&
@@ -586,6 +592,7 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
 	return 240;
     }
   }
+#endif
 
   // Make sure we save a copy of the run in fRun.
   // Note that the run may be derived from THaRunBase, so this is a bit tricky.
@@ -649,9 +656,9 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
     // fOutput must be initialized after all apparatuses are
     // initialized and before adding anything to its tree.
 
-    // first, make sure we are in the output file, but remember the previous state.
-    // This makes a difference if another ROOT-file is opened to read in
-    // simulated or old data
+    // first, make sure we are in the output file, but remember the previous 
+    // state. This makes a difference if another ROOT-file is opened to read 
+    // in simulated or old data
     TDirectory *olddir = gDirectory;
     fFile->cd();
     
@@ -953,35 +960,36 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
 
   //-- Coarse processing
 
-  if( fDoBench ) fBench->Begin("Reconstruct");
+  if( fDoBench ) fBench->Begin("CoarseTracking");
   next.Reset();
   while( TObject* obj = next() ) {
     THaSpectrometer* theSpectro = dynamic_cast<THaSpectrometer*>(obj);
     if( theSpectro )
       theSpectro->CoarseTrack();
   }
-  if( fDoBench ) fBench->Stop("Reconstruct");
+  if( fDoBench ) fBench->Stop("CoarseTracking");
   if( !EvalStage(kCoarseTrack) )  return kSkip;
   
 
+  if( fDoBench ) fBench->Begin("CoarseReconstruct");
   next.Reset();
   while( THaApparatus* theApparatus =
 	 static_cast<THaApparatus*>( next() )) {
     theApparatus->CoarseReconstruct();
   }
-  if( fDoBench ) fBench->Stop("Reconstruct");
+  if( fDoBench ) fBench->Stop("CoarseReconstruct");
   if( !EvalStage(kCoarseRecon) )  return kSkip;
 
   //-- Fine (Full) Reconstruct().
 
-  if( fDoBench ) fBench->Begin("Reconstruct");
+  if( fDoBench ) fBench->Begin("Tracking");
   next.Reset();
   while( TObject* obj = next() ) {
     THaSpectrometer* theSpectro = dynamic_cast<THaSpectrometer*>(obj);
     if( theSpectro )
       theSpectro->Track();
   }
-  if( fDoBench ) fBench->Stop("Reconstruct");
+  if( fDoBench ) fBench->Stop("Tracking");
   if( !EvalStage(kTracking) )  return kSkip;
   
 
@@ -1363,6 +1371,9 @@ Int_t THaAnalyzer::Process( THaRunBase* run )
     fBench->Print("Init");
     fBench->Print("RawDecode");
     fBench->Print("Decode");
+    fBench->Print("CoarseTracking");
+    fBench->Print("CoarseReconstruct");
+    fBench->Print("Tracking");    
     fBench->Print("Reconstruct");
     fBench->Print("Physics");
     fBench->Print("Output");
