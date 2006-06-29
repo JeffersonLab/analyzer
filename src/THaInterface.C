@@ -23,6 +23,9 @@
 #include "THaAnalyzer.h"
 #include "ha_compiledata.h"
 
+#include "TTree.h"
+
+
 //#include "TGXW.h"
 //#include "TVirtualX.h"
 
@@ -64,6 +67,11 @@ THaInterface::THaInterface( const char* appClassName, int* argc, char** argv,
   gHaPhysics = new TList;
   // Use the standard CODA file decoder by default
   gHaDecoder = THaCodaDecoder::Class();
+
+  // Set the maximum size for a file written by Podd contained by the TTree
+  //  putting it to 1.5 GB, down from the default 1.9 GB since something odd
+  //  happens for larger files
+  TTree::SetMaxTreeSize(1500000000);
 
   THaString ipath( HA_INCLUDEPATH );
   vector<THaString> ipv(ipath.Split());
