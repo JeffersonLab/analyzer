@@ -15,6 +15,7 @@
 #include "THaApparatus.h"
 #include "THaDetector.h"
 #include "TClass.h"
+#include "TList.h"
 
 #ifdef WITH_DEBUG
 #include <iostream>
@@ -140,6 +141,23 @@ Int_t THaApparatus::End( THaRunBase* run )
 }
 
 //_____________________________________________________________________________
+THaDetector* THaApparatus::GetDetector( const char* name )
+{
+  // Find the named detector and return a pointer to it. 
+  // This is useful for specialized processing.
+
+  return reinterpret_cast<THaDetector*>( fDetectors->FindObject( name ));
+}
+
+//_____________________________________________________________________________
+Int_t THaApparatus::GetNumDets() const
+{ 
+  // Return number of detectors of the apparatus
+
+  return fDetectors->GetSize();
+}
+
+//_____________________________________________________________________________
 THaAnalysisObject::EStatus THaApparatus::Init( const TDatime& run_time )
 {
   // Default method for initializing an apparatus. 
@@ -187,6 +205,21 @@ THaAnalysisObject::EStatus THaApparatus::Init( const TDatime& run_time )
   }
 
   return fStatus;
+}
+
+//_____________________________________________________________________________
+void THaApparatus::MakePrefix()
+{
+  THaAnalysisObject::MakePrefix( NULL );
+}
+
+//_____________________________________________________________________________
+void THaApparatus::Print( Option_t* opt ) const
+{ 
+  // Print info about the apparatus and all its detectors
+
+  THaAnalysisObject::Print(opt);
+  fDetectors->Print(opt);
 }
 
 //_____________________________________________________________________________
