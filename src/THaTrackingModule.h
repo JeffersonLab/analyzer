@@ -8,27 +8,25 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaTrackInfo.h"
-#include "THaTrack.h"
-#include <TRef.h>
+class THaTrack;
 
 class THaTrackingModule {
   
 public:
+  THaTrackingModule(); // needed public for ROOT I/O
   virtual ~THaTrackingModule();
   
-  THaTrackInfo*  GetTrackInfo()  { return &fTrkIfo; }
-  THaTrack*      GetTrack()      { return static_cast<THaTrack*>(fTrk.GetObject()); }
+  THaTrackInfo*  GetTrackInfo() { return &fTrkIfo; }
+  THaTrack*      GetTrack()     { return fTrk; }
 
   void TrkIfoClear();
 
 protected:
 
-  THaTrackInfo  fTrkIfo;          // Track information
-  TRef          fTrk;             // Pointer to associated track
+  THaTrackInfo  fTrkIfo;          //  Track information
+  THaTrack*     fTrk;             //! Pointer to associated track
 
-  THaTrackingModule();
-
-  ClassDef(THaTrackingModule,1)   // ABC for a tracking module
+  ClassDef(THaTrackingModule,2)   // ABC for a tracking module
 
 };
 
