@@ -17,14 +17,13 @@ class THaVDCPlane;
 class THaVDCCluster : public TObject {
 
 public:
-  THaVDCCluster( THaVDCPlane* owner = NULL ) :
+  THaVDCCluster( THaVDCPlane* owner ) :
     fSize(0), fPlane(owner), fSlope(kBig), fSigmaSlope(kBig), fInt(kBig),
-    fSigmaInt(kBig), fT0(0.0), fPivot(NULL), fTimeCorrection(0.0), fFitOK(false),
-    fChi2(kBig),fNDoF(0.0)
-  {}
+    fSigmaInt(kBig), fT0(0.0), fSigmaT0(kBig), fPivot(NULL), fTimeCorrection(0.0),
+    fFitOK(false), fLocalSlope(kBig), fChi2(kBig), fNDoF(0.0)  {}
   THaVDCCluster( const THaVDCCluster&);
   THaVDCCluster& operator=( const THaVDCCluster& );
-  virtual ~THaVDCCluster() {}
+  virtual ~THaVDCCluster();
 
   enum EMode { kSimple, kT0, kFull };
 
@@ -48,6 +47,7 @@ public:
   THaVDCPlane*   GetPlane()          const { return fPlane; }
   Int_t          GetSize ()          const { return fSize; }
   Double_t       GetSlope()          const { return fSlope; }
+  Double_t       GetLocalSlope()     const { return fLocalSlope; }
   Double_t       GetSigmaSlope()     const { return fSigmaSlope; }
   Double_t       GetIntercept()      const { return fInt; }
   Double_t       GetSigmaIntercept() const { return fSigmaInt; }
@@ -75,14 +75,15 @@ protected:
   //  THaVDCUVTrack * fUVTrack;      // UV Track the cluster belongs to
   //  THaTrack * fTrack;             // Track the cluster belongs to
 
-  //Local Track Parameters 
+  //Track Parameters 
   Double_t       fSlope, fSigmaSlope;// Slope and error in slope
   Double_t       fInt, fSigmaInt;    // Intercept and error
-  Double_t       fT0;                // Fitted common timing offset
+  Double_t       fT0, fSigmaT0;      // Fitted common timing offset and error
   THaVDCHit*     fPivot;             // Pivot - hit with smallest drift time
   Double_t       fTimeCorrection;    // correction to be applied when fitting
                                      // drift times
   bool           fFitOK;             // Flag indicating that fit results valid
+  Double_t       fLocalSlope;        // Local slope, from FitTrack()
   Double_t       fChi2;              // chi2 for the cluster
   Double_t       fNDoF;              // NDoF in local chi2 calculation
 

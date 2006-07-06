@@ -34,7 +34,7 @@ public:
   virtual THaVDCUVPlane* GetLower() { return fLower; }
 
   virtual Double_t GetVDCAngle() { return fVDCAngle; }
-  virtual Double_t GetSpacing()  { return fSpacing;  }
+  virtual Double_t GetSpacing()  { return fUSpacing;  }
 
   virtual void Print(const Option_t* opt) const;
 
@@ -71,7 +71,8 @@ protected:
   Double_t fSin_vdc;        // Sine of VDC angle
   Double_t fCos_vdc;        // Cosine of VDC angle
   Double_t fTan_vdc;        // Tangent of VDC angle
-  Double_t fSpacing;        // Spacing between U1 and U2 (m)
+  Double_t fUSpacing;       // Spacing between U1 and U2 (m)
+  Double_t fVSpacing;       // Spacing between V1 and V2 (m)
   Int_t    fNtracks;        // Number of tracks found in ConstructTracks
 
   Int_t    fNumIter;        // Number of iterations for FineTrack()
@@ -128,7 +129,6 @@ protected:
 			    const Double_t powers[][5]);
   Int_t ReadDatabase( const TDatime& date );
 
-  virtual void  Clear( Option_t* opt="" )  {}
   virtual Int_t ConstructTracks( TClonesArray * tracks = NULL, Int_t flag = 0 );
 
   void CorrectTimeOfFlight(TClonesArray& tracks);

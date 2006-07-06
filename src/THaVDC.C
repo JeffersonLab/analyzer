@@ -76,6 +76,10 @@ THaAnalysisObject::EStatus THaVDC::Init( const TDatime& date )
       (status = fUpper->Init( date )) )
     return fStatus = status;
 
+  // Get the spacing between the VDC planes from the planes' geometry
+  fUSpacing = fUpper->GetUPlane()->GetZ() - fLower->GetUPlane()->GetZ();
+  fVSpacing = fUpper->GetVPlane()->GetZ() - fLower->GetVPlane()->GetZ();
+
   return fStatus = kOK;
 }
 
@@ -123,7 +127,8 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   // We found the section, now read the data
 
   // read in some basic constants first
-  fscanf(file, "%lf", &fSpacing);
+  //  fscanf(file, "%lf", &fSpacing);
+  // fSpacing is calculated from the actual z-positions in Init()
   fgets(buff, LEN, file); // Skip rest of line
  
   // Read in the focal plane transfer elements
@@ -283,7 +288,9 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   fSin_vdc  = TMath::Sin(fVDCAngle);
   fCos_vdc  = TMath::Cos(fVDCAngle);
 
-  DefineAxes((90.0 - fVDCAngle)*degrad);
+  // Define the VDC coordinate axes in the "detector system". By definition,
+  // the detector system is identical to the VDC origin in the Hall A HRS.
+  DefineAxes(0.0*degrad);
 
   fNumIter = 1;      // Number of iterations for FineTrack()
   fErrorCutoff = 1e100;
@@ -394,7 +401,7 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
       partner->SetPartner( NULL );
 
       // Compute goodness of match parameter
-      thePair->Analyze( fSpacing );
+      thePair->Analyze( fUSpacing );
     }
   }
       
@@ -444,8 +451,8 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 #ifdef WITH_DEBUG
     if( fDebug>1 ) {
       cout << "dUpper/dLower = " 
-	   << thePair->GetProjectedDistance( track,partner,fSpacing) << "  "
-	   << thePair->GetProjectedDistance( partner,track,-fSpacing);
+	   << thePair->GetProjectedDistance( track,partner,fUSpacing) << "  "
+	   << thePair->GetProjectedDistance( partner,track,-fUSpacing);
     }
 #endif
 
@@ -482,9 +489,9 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 
     Double_t du = pu->GetIntercept() - tu->GetIntercept();
     Double_t dv = pv->GetIntercept() - tv->GetIntercept();
-    Double_t mu = du / fSpacing;
-    Double_t mv = dv / fSpacing;
-    
+    Double_t mu = du / fUSpacing;
+    Double_t mv = dv / fVSpacing;
+
     tu->SetSlope(mu);
     tv->SetSlope(mv);
     pu->SetSlope(mu);
