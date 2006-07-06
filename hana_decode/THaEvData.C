@@ -88,7 +88,7 @@ THaEvData::THaEvData() :
       { 0 }
     };
     TString prefix("g");
-    // Allow global variable clash if there are several instances of us
+    // Prevent global variable clash if there are several instances of us
     if( fInstance > 1 )
       prefix.Append(Form("%d",fInstance));
     prefix.Append(".");
