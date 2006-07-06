@@ -38,14 +38,20 @@ public:
   virtual Int_t       DefinedCut( const TString& variable );
   virtual Int_t       DefinedGlobalVariable( const TString& variable );
   virtual Double_t    Eval();
-#if ROOT_VERSION_CODE >= 197632 // 3.04/00 Dumb rootcint chokes on ROOT_VERSION macro
-  virtual Double_t    Eval( Double_t x, Double_t y=0.0, Double_t z=0.0, Double_t t=0.0 ) const
+#if ROOT_VERSION_CODE > 262660 // 4.02/04  Dumb rootcint chokes on ROOT_VERSION macro
+  // The ROOT team strikes again - this one is really BAD
+  virtual Double_t    Eval( Double_t x, Double_t y=0.0, 
+			    Double_t z=0.0, Double_t t=0.0 ) const
+    // hack this-pointer to be non-const - courtesy of ROOT team
+  { return const_cast<THaFormula*>(this)->Eval(); }
+#else
+#if ROOT_VERSION_CODE >= 197632 // 3.04/00
+  virtual Double_t    Eval( Double_t x, Double_t y=0.0, Double_t z=0.0, Double_t t=0.0 ) 
 #else
   virtual Double_t    Eval( Double_t x, Double_t y=0.0, Double_t z=0.0 )
 #endif
-    { // not nice to undo the 'const'-ness, but it's the same thing ROOT does...
-      return const_cast<THaFormula*>(this)->Eval();
-    }
+  { return Eval(); }
+#endif
           Bool_t      IsError() const { return fError; }
   virtual void        Print( Option_t* option="" ) const; // *MENU*
           void        SetList( const THaVarList* lst )    { fVarList = lst; }
