@@ -1,0 +1,38 @@
+#ifndef THaVDCSimDecoder_
+#define THaVDCSimDecoder_
+
+/////////////////////////////////////////////////////////////////////
+//
+//   THaVDCSimDecoder
+//
+/////////////////////////////////////////////////////////////////////
+
+#include "THaEvData.h"
+#include "TClonesArray.h"
+#include "THaAnalysisObject.h"
+#include "TList.h"
+
+class THaCrateMap;
+
+class THaVDCSimDecoder : public THaEvData {
+ public:
+  THaVDCSimDecoder();
+  virtual ~THaVDCSimDecoder();
+
+  Int_t  LoadEvent( const int*evbuffer, THaCrateMap* usermap );
+
+  void   Clear( Option_t* opt="" );
+  Int_t  GetNTracks() const;
+  Int_t  DefineVariables( THaAnalysisObject::EMode mode = 
+			  THaAnalysisObject::kDefine );
+
+ protected:
+
+  TList   fTracks;    // Monte Carlo tracks
+
+  bool    fIsSetup;
+
+  ClassDef(THaVDCSimDecoder,0) // Decoder for simulated VDC data
+};
+
+#endif
