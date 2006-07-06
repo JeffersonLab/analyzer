@@ -758,6 +758,9 @@ Int_t THaAnalyzer::ReadOneEvent()
     Incr(kNevRead);
     break;
 
+  case EOF:
+    // Just exit on EOF - don't count it
+    break;
   case S_EVFILE_TRUNC:
     Incr(kEvFileTrunc);
     break;
