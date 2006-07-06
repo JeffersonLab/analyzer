@@ -263,13 +263,16 @@ Int_t THaVDCPlane::DefineVariables( EMode mode )
     { "nclust", "Number of clusters",         "GetNClusters()" },
     { "clsiz",  "Cluster sizes",              "fClusters.THaVDCCluster.fSize" },
     { "clpivot","Cluster pivot wire num",     "fClusters.THaVDCCluster.GetPivotWireNum()" },
-    { "clpos",  "Cluster intercepts",         "fClusters.THaVDCCluster.fInt" },
-    { "slope",  "Cluster slopes",             "fClusters.THaVDCCluster.fSlope" },
-    { "sigsl",  "Cluster slope sigmas",       "fClusters.THaVDCCluster.fSigmaSlope" },
-    { "sigpos", "Cluster position sigmas",    "fClusters.THaVDCCluster.fSigmaInt" },
+    { "clpos",  "Cluster intercepts (m)",     "fClusters.THaVDCCluster.fInt" },
+    { "slope",  "Cluster best slope",         "fClusters.THaVDCCluster.fSlope" },
+    { "lslope", "Cluster local (fitted) slope","fClusters.THaVDCCluster.fLocalSlope" },
+    { "t0",     "Timing offset (s)",          "fClusters.THaVDCCluster.fT0" },
+    { "sigsl",  "Cluster slope error",        "fClusters.THaVDCCluster.fSigmaSlope" },
+    { "sigpos", "Cluster position error (m)", "fClusters.THaVDCCluster.fSigmaInt" },
+    { "sigt0",  "Timing offset error (s)",    "fClusters.THaVDCCluster.fSigmaT0" },
     { "clchi2", "Cluster chi2",               "fClusters.THaVDCCluster.fChi2" },
     { "clndof", "Cluster NDoF",               "fClusters.THaVDCCluster.fNDoF" },
-    { "cltcor","Cluster Time correction",    "fClusters.THaVDCCluster.fTimeCorrection" },
+    { "cltcor", "Cluster Time correction",    "fClusters.THaVDCCluster.fTimeCorrection" },
     { 0 }
   };
   return DefineVarsFromList( vars, mode );
@@ -357,19 +360,33 @@ Int_t THaVDCPlane::Decode( const THaEvData& evData)
 	// Now get the TDC data for this hit
 	Int_t data = evData.GetData(d->crate, d->slot, chan, hit);
 
-	Double_t time = fTDCRes * ( toff - data ) - evtT0;
-	if( only_fastest_hit ) {
-	  if( (!no_negative || time > 0) && data > max_data )
-	    max_data = data;
-	} else {
-	  if( !no_negative || time > 0.0 )
+	// Convert the TDC value to the drift time.
+	// Being perfectionist, we apply a 1/2 channel correction to the raw 
+	// TDC data to compensate for the fact that the TDC truncates, not
+	// rounds, the data.
+	Double_t xdata = static_cast<Double_t>(data) + 0.5;
+	Double_t time = fTDCRes * (toff - xdata) - evtT0;
+
+	// If requested, ignore hits with negative drift times 
+	// (due to noise or miscalibration). Use with care.
+	// If only fastest hit requested, find maximum TDC value and record the
+	// hit after the hit loop is done (see below). 
+	// Otherwise just record all hits.
+	if( !no_negative || time > 0.0 ) {	  
+	  if( only_fastest_hit ) {
+	    if( data > max_data )
+	      max_data = data;
+	  } else
 	    new( (*fHits)[nextHit++] )  THaVDCHit( wire, data, time );
 	}
 	  
       } // End hit loop
 
+      // If we are only interested in the hit with the largest TDC value 
+      // (shortest drift time), it is recorded here.
       if( only_fastest_hit && max_data>0 ) {
-	Double_t time = fTDCRes * ( toff - max_data) - evtT0;
+	Double_t xdata = static_cast<Double_t>(max_data) + 0.5;
+	Double_t time = fTDCRes * (toff - xdata) - evtT0;
 	new( (*fHits)[nextHit++] ) THaVDCHit( wire, max_data, time );
       }
     } // End channel index loop
