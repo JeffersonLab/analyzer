@@ -145,7 +145,7 @@ Int_t THaScaler::Init(const char* thetime )
   return 0;
 };
 
-Int_t THaScaler::InitData(std::string bankgroup, const Bdate& date_want) {
+Int_t THaScaler::InitData(string bankgroup, const Bdate& date_want) {
 // Initialize data of the class for this bankgroup for the date wanted.
 // While in principle this should come from a "database", it basically
 // never changes.  However, to add a new scaler bank, imitate what is
@@ -163,7 +163,7 @@ Int_t THaScaler::InitData(std::string bankgroup, const Bdate& date_want) {
     Int_t normslot;             // slot of normalization data (database can
                                 // overwrite this)
     Double_t bank_clockrate;    // clock rate
-    std::string bank_IP;        // IP address of server for online data
+    string bank_IP;             // IP address of server for online data
     Int_t bank_port;            // port number of server
     Int_t bank_onlmap[SCAL_NUMBANK]; // map of channels for online server
   };
@@ -192,32 +192,32 @@ Int_t THaScaler::InitData(std::string bankgroup, const Bdate& date_want) {
   };
 
 
-   std::string bank_to_find = "unknown";
+   string bank_to_find = "unknown";
    if (database) {
-     if ( database->FindNoCase(bankgroup,"Left") != std::string::npos  
+     if ( database->FindNoCase(bankgroup,"Left") != string::npos  
         || bankgroup == "L" ) {
           bank_to_find = "Left"; 
      }
-     if ( database->FindNoCase(bankgroup,"Right") != std::string::npos  
+     if ( database->FindNoCase(bankgroup,"Right") != string::npos  
         || bankgroup == "R" ) {
           bank_to_find = "Right"; 
      }
-     if ( database->FindNoCase(bankgroup,"dvcs") != std::string::npos) {
+     if ( database->FindNoCase(bankgroup,"dvcs") != string::npos) {
           bank_to_find = "dvcs"; 
      }
-     if ( database->FindNoCase(bankgroup,"gen") != std::string::npos) {
+     if ( database->FindNoCase(bankgroup,"gen") != string::npos) {
           bank_to_find = "gen"; 
      }
-     if ( database->FindNoCase(bankgroup,"evgen") != std::string::npos) {
+     if ( database->FindNoCase(bankgroup,"evgen") != string::npos) {
           bank_to_find = "evgen"; 
      }
-     if ( database->FindNoCase(bankgroup,"N20") != std::string::npos) {
+     if ( database->FindNoCase(bankgroup,"N20") != string::npos) {
           bank_to_find = "N20"; 
      }
-     if ( database->FindNoCase(bankgroup,"evleft") != std::string::npos) {
+     if ( database->FindNoCase(bankgroup,"evleft") != string::npos) {
           bank_to_find = "evleft"; 
      }
-     if ( database->FindNoCase(bankgroup,"evright") != std::string::npos) {
+     if ( database->FindNoCase(bankgroup,"evright") != string::npos) {
           bank_to_find = "evright"; 
      }
 
@@ -286,7 +286,7 @@ Int_t THaScaler::InitData(std::string bankgroup, const Bdate& date_want) {
   return 0;
 };
 
-void THaScaler::SetIpAddress(std::string ipaddress) 
+void THaScaler::SetIpAddress(string ipaddress) 
 { // Set IP address used by online code 
   vme_server = ipaddress;
 }
@@ -319,7 +319,7 @@ void THaScaler::SetupNormMap() {
   clkslot = GetSlot("clock");
   clkchan = GetChan("clock");
   for (Int_t ichan = 0; ichan < SCAL_NUMCHAN; ichan++) {
-    std::vector<std::string> chan_name = database->GetShortNames(crate, normslot[0], ichan);
+    vector<string> chan_name = database->GetShortNames(crate, normslot[0], ichan);
     for (unsigned int i = 0; i < chan_name.size(); i++) {
       if (chan_name[i] != "none") {
         normmap.insert(make_pair(chan_name[i], ichan));
@@ -725,8 +725,8 @@ Int_t THaScaler::GetScaler(const char* det, const char* pm, Int_t chan,
   string PMT = pm;
   if ( !did_init | !one_load ) return 0;
   if ( !database ) return 0;
-  if ( database->FindNoCase(PMT,"Left") != std::string::npos ) detector += "L";
-  if ( database->FindNoCase(PMT,"Right") != std::string::npos ) detector += "R";
+  if ( database->FindNoCase(PMT,"Left") != string::npos ) detector += "L";
+  if ( database->FindNoCase(PMT,"Right") != string::npos ) detector += "R";
   Int_t slot = GetSlot(detector);
   if (slot == -1) return 0;
   return GetScaler(slot,GetChan(detector,0,chan),histor);
@@ -778,7 +778,7 @@ Int_t THaScaler::GetNormData(Int_t helicity, const char* which, Int_t histor) {
   if (helicity == -1) index = 1;
   if (helicity ==  1) index = 2;
   if (normslot[index] < 0) return 0;
-  std::multimap<std::string, Int_t>::iterator pm = normmap.find(which);
+  multimap<string, Int_t>::iterator pm = normmap.find(which);
   if (pm == normmap.end()) return 0;
   return GetScaler(normslot[index],pm->second,histor);
 };

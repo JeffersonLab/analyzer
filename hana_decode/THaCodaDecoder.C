@@ -479,7 +479,8 @@ int THaCodaDecoder::fastbus_decode(int roc, THaCrateMap* map,
        if (DEBUG) {
 	 printf("roc %2d  slot %3d  chan %3d  data %5d  ipt %3d"
 		"  raw %8x  device %s\n",
-		roc, slot, chan, data, (p-evbuffer), *p, fb->devType(model));
+		roc, slot, chan, data, static_cast<int>(p-evbuffer), 
+		*p, fb->devType(model));
        }
        // At this point, roc and slot ranges have been checked
        if( crateslot[idx(roc,slot)]->loadData(fb->devType(model),chan,data,*p) 

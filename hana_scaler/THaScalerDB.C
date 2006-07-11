@@ -55,16 +55,16 @@ bool THaScalerDB::extract_db(const Bdate& bdate) {
 // Return : true if successful, else false.
 // Search order for scaler.map:
 //   $DB_DIR/DEFAULT $DB_DIR ./DB/DEFAULT ./DB ./db/DEFAULT ./db DEFAULT .
-  const std::string scalmap("scaler.map");
+  const string scalmap("scaler.map");
   char* dbdir=getenv("DB_DIR");
   Int_t ndir = 6;
   if( dbdir ) ndir += 2;
-  std::string filename;
-  std::vector<std::string> fname(ndir);
+  string filename;
+  vector<string> fname(ndir);
   Int_t i = 0;
   fname[i++] = scalmap; // always look in current directory first
   if( dbdir ) {
-    std::string dbpath(dbdir);
+    string dbpath(dbdir);
     dbpath.append("/");
     fname[i++] = dbpath + "DEFAULT/" + scalmap;
     fname[i++] = dbpath + scalmap;
@@ -94,8 +94,8 @@ bool THaScalerDB::extract_db(const Bdate& bdate) {
   } else {
     cout << "Opened scaler map file " << fname[i] << endl;
   }
-  std::string sinput;
-  std::vector<std::string> strvect;
+  string sinput;
+  vector<string> strvect;
   bool found_date = false;
 
 // 1st pass: find the date, 2nd pass: load maps
@@ -120,7 +120,7 @@ bool THaScalerDB::extract_db(const Bdate& bdate) {
        if (ADB_DEBUG) bd.Print();
        if (bd == dfound) {
 	while ( getline(mapfile,sinput) ) { // load until next DATE
-          std::string linetype = GetLineType(sinput);
+          string linetype = GetLineType(sinput);
           if ( linetype == "DATE" ) goto finish1;  
           if ( linetype == "COMMENT") continue;
           if (linetype == "MAP") {
@@ -150,7 +150,7 @@ finish1:
 void THaScalerDB::PrintChanMap() {
   Int_t i = 0;
   cout << "Print of Channel Map.  Size = "<<chanmap.size()<<endl;
-  for (std::map< SDB_chanKey, SDB_chanDesc>::iterator pm = chanmap.begin();
+  for (map< SDB_chanKey, SDB_chanDesc>::iterator pm = chanmap.begin();
       pm != chanmap.end(); pm++) {
       i++;
       SDB_chanKey ck = pm->first;
@@ -168,37 +168,37 @@ void THaScalerDB::PrintDirectives() {
 };
 
 
-std::string THaScalerDB::GetLineType(std::string sline) {
+string THaScalerDB::GetLineType(string sline) {
 // Decide if the line is a date, comment, directive, or a map field.
    if ((Int_t)sline.length() == 0) return "COMMENT";
    if ((Int_t)sline.length() == AmtSpace(sline)) return "COMMENT";
-   UInt_t pos1 = FindNoCase(sline,sdate);
-   UInt_t pos2 = FindNoCase(sline,scomment);
-   if (pos1 != std::string::npos) { // date was found
-     if (pos2 != std::string::npos) {  // comment found
+   string::size_type pos1 = FindNoCase(sline,sdate);
+   string::size_type pos2 = FindNoCase(sline,scomment);
+   if (pos1 != string::npos) { // date was found
+     if (pos2 != string::npos) {  // comment found
        if (pos2 < pos1) return "COMMENT";
      }
      return "DATE";
    }
 // Directives line, even if after a comment (#)
 // as long as not too far after (fgnfar)
-   std::string result;
-   if (pos2 == std::string::npos || pos2 < fgnfar) {
+   string result;
+   if (pos2 == string::npos || pos2 < fgnfar) {
     for (UInt_t i=0; i<directnames.size(); i++) {
      pos1 = FindNoCase(sline, directnames[i]);
-     if (pos1 != std::string::npos) {
+     if (pos1 != string::npos) {
       result.assign(sline.substr(pos1,sline.length()));;
       return result;
      }
     }
    }
 // Not a directive but has a comment near start.
-   if (pos2 != std::string::npos && pos2 < fgnfar) return "COMMENT";
+   if (pos2 != string::npos && pos2 < fgnfar) return "COMMENT";
 // otherwise its a map line
    return "MAP";
 }
 
-SDB_chanDesc THaScalerDB::GetChanDesc(Int_t crate, std::string desc, Int_t helicity) {  
+SDB_chanDesc THaScalerDB::GetChanDesc(Int_t crate, string desc, Int_t helicity) {  
 // If crate is tied to the map of another crate.
   Int_t lcrate = TiedCrate(crate, helicity);
   Int_t lhelicity = helicity;
@@ -206,56 +206,56 @@ SDB_chanDesc THaScalerDB::GetChanDesc(Int_t crate, std::string desc, Int_t helic
   if ( IsHelicityTied(crate, helicity) ) lhelicity = 0;
   SDB_chanKey sk(lcrate, lhelicity, desc);
   SDB_chanDesc cdesc(-1,"empty");  // empty so far
-  std::map< SDB_chanKey, SDB_chanDesc>::iterator pm = chanmap.find(sk);
+  map< SDB_chanKey, SDB_chanDesc>::iterator pm = chanmap.find(sk);
   if (pm != chanmap.end()) cdesc = pm->second; 
   return cdesc;
 }
 
-std::string THaScalerDB::GetLongDesc(Int_t crate, std::string desc, Int_t helicity) {  
+string THaScalerDB::GetLongDesc(Int_t crate, string desc, Int_t helicity) {  
 // Returns the slot in a scaler corresp. to the
 // channel in the detector described by "desc".
    SDB_chanDesc cdesc = GetChanDesc(crate, desc, helicity);
    return cdesc.GetDesc();
 }
 
-Int_t THaScalerDB::GetSlot(Int_t crate, std::string desc, Int_t helicity) {  
+Int_t THaScalerDB::GetSlot(Int_t crate, string desc, Int_t helicity) {  
 // Returns the slot in a scaler corresp. to the
 // channel in the detector described by "desc".
    SDB_chanDesc cdesc = GetChanDesc(crate, desc, helicity);
    return cdesc.GetSlot() + GetSlotOffset(crate, helicity);
 }
 
-Int_t THaScalerDB::GetChan(Int_t crate, std::string desc, Int_t helicity, Int_t chan) {  
+Int_t THaScalerDB::GetChan(Int_t crate, string desc, Int_t helicity, Int_t chan) {  
 // Returns the channel in a scaler corresp. to the
 // channel in the detector described by "desc".
    SDB_chanDesc cdesc = GetChanDesc(crate, desc, helicity);
    return cdesc.GetChan(chan);
 }
 
-bool THaScalerDB::LoadMap(std::string sinput) 
+bool THaScalerDB::LoadMap(string sinput) 
 {  
-  typedef std::map<SDB_chanKey, SDB_chanDesc>::value_type valType;
-  pair<std::map<SDB_chanKey, SDB_chanDesc>::iterator, bool> pin;
+  typedef map<SDB_chanKey, SDB_chanDesc>::value_type valType;
+  pair<map<SDB_chanKey, SDB_chanDesc>::iterator, bool> pin;
   SDB_chanDesc sd;
 
-  std::vector<std::string> vstring = vsplit(sinput);
+  vector<string> vstring = vsplit(sinput);
   if (vstring.size() < 6) return false;
-  std::string long_desc = "";
+  string long_desc = "";
   if (vstring.size() >= 7) {
     for (UInt_t i = 6; i < vstring.size(); i++) {
       long_desc = long_desc + vstring[i] + " ";
     }
   }
-  std::string sdesc = vstring[0];
+  string sdesc = vstring[0];
   Int_t helicity = atoi(vstring[1].c_str());
   Int_t crate = atoi(vstring[2].c_str());
   Int_t slot = atoi(vstring[3].c_str());
   Int_t first_chan = atoi(vstring[4].c_str());
   Int_t nchan = atoi(vstring[5].c_str());
 
-  std::pair<std::pair<Int_t, Int_t>, Int_t> cs = make_pair(make_pair(crate, slot), first_chan);
+  pair<pair<Int_t, Int_t>, Int_t> cs = make_pair(make_pair(crate, slot), first_chan);
   if (channame.find(cs) == channame.end()) {
-    vector<std::string> cnewstr;
+    vector<string> cnewstr;
     cnewstr.clear();
     cnewstr.push_back(sdesc);
     channame.insert(make_pair(make_pair(make_pair(crate, slot), first_chan),cnewstr));
@@ -263,7 +263,7 @@ bool THaScalerDB::LoadMap(std::string sinput)
     channame[cs].push_back(sdesc);
   }
   SDB_chanKey sk(crate, helicity, sdesc);
-  std::map<SDB_chanKey, SDB_chanDesc>::iterator pm = chanmap.find(sk);
+  map<SDB_chanKey, SDB_chanDesc>::iterator pm = chanmap.find(sk);
   if (pm != chanmap.end()) {  // key already exists
     sd = pm->second;
     sd.LoadNextChan(first_chan, nchan);
@@ -276,17 +276,17 @@ bool THaScalerDB::LoadMap(std::string sinput)
   return true;
 }
 
-bool THaScalerDB::LoadDirective(std::string sinput) 
+bool THaScalerDB::LoadDirective(string sinput) 
 {
   if (!direct) return false;
-  std::vector<std::string> vstring = vsplit(sinput);
+  vector<string> vstring = vsplit(sinput);
   if (vstring.size() < 3) return false;
-  std::string sname = vstring[0];
+  string sname = vstring[0];
   Int_t crate = CrateToInt(vstring[1]);
-  vector<std::string> sdir;
-  std::string sword,sloadword;
-  UInt_t pos1,pos2;
-  UInt_t index = 2;
+  vector<string> sdir;
+  string sword,sloadword;
+  string::size_type pos1,pos2;
+  string::size_type index = 2;
   while (index < vstring.size()) {
     sword = vstring[index];
     index++;
@@ -295,15 +295,15 @@ bool THaScalerDB::LoadDirective(std::string sinput)
     if (pos1 != string::npos) {
       sloadword = sword.substr(0,pos1) + sword.substr(pos1+1,sword.length());
       pos2 = sloadword.find("'",0);
-      if (pos2 != std::string::npos) {
+      if (pos2 != string::npos) {
         sloadword = sloadword.substr(pos2,sloadword.length());
         goto load1;
       }
-      for (UInt_t j = index; j < vstring.size(); j++) {
+      for (string::size_type j = index; j < vstring.size(); j++) {
         index++;
         sword = vstring[j];
         pos2 = sword.find("'",0);
-        if (pos2 != std::string::npos) {
+        if (pos2 != string::npos) {
 	  sloadword = sloadword + " " + sword.substr(0,pos2);
           goto load1;
 	} else {
@@ -318,34 +318,34 @@ load1:
   return true;
 }
 
-std::vector<std::string> THaScalerDB::GetShortNames(Int_t crate, Int_t slot, Int_t chan) {
+vector<string> THaScalerDB::GetShortNames(Int_t crate, Int_t slot, Int_t chan) {
   Int_t slot0 = GetSlot(crate, "TS-accept", 0);
   Int_t slotm = GetSlot(crate, "TS-accept", -1);
   Int_t slotp = GetSlot(crate, "TS-accept", 1);
   if ( slot == slotm && IsHelicityTied(crate, -1) ) slot = slot0;
   if ( slot == slotp && IsHelicityTied(crate,  1) ) slot = slot0;
-  std::pair<std::pair<Int_t, Int_t>, Int_t> cs = make_pair(make_pair(crate, slot), chan);
+  pair<pair<Int_t, Int_t>, Int_t> cs = make_pair(make_pair(crate, slot), chan);
   if (channame.find(cs) == channame.end()) {
-    std::vector<std::string> null_result;
+    vector<string> null_result;
     null_result.push_back("none");
     return null_result;
   }
   return channame[cs];
 }
 
-std::string THaScalerDB::GetStringDirectives(Int_t crate, std::string directive, std::string key) 
+string THaScalerDB::GetStringDirectives(Int_t crate, string directive, string key) 
 {
   if (!direct) return "";
   return direct->GetDirective(crate, directive, key);
 }
 
-Int_t THaScalerDB::GetNumDirectives(Int_t crate, std::string directive)
+Int_t THaScalerDB::GetNumDirectives(Int_t crate, string directive)
 {
   if (!direct) return 0;
   return direct->GetDirectiveSize(crate, directive);
 }
 
-Int_t THaScalerDB::GetIntDirectives(Int_t crate, std::string directive, std::string key)
+Int_t THaScalerDB::GetIntDirectives(Int_t crate, string directive, string key)
 {
   if (!direct) return 0;
   string sdir = direct->GetDirective(crate, directive, key);
@@ -355,22 +355,22 @@ Int_t THaScalerDB::GetIntDirectives(Int_t crate, std::string directive, std::str
 void THaScalerDB::LoadCrateToInt(const char *bank, Int_t icr) {
 // Load the correspondence of crate string to integer
     string scr(bank);
-    std::string scrate = "";
-    for (std::string::const_iterator p = 
+    string scrate = "";
+    for (string::const_iterator p = 
        scr.begin(); p != scr.end(); p++) {
           scrate += tolower(*p);
     } 
     crate_strtoi.insert(make_pair(scrate, icr));
 }
 
-Int_t THaScalerDB::CrateToInt(const std::string& scr) {
+Int_t THaScalerDB::CrateToInt(const string& scr) {
 // Find integer representation of crate "scrate".  
-  std::string scrate = "";
-  for (std::string::const_iterator p = 
+  string scrate = "";
+  for (string::const_iterator p = 
      scr.begin(); p != scr.end(); p++) {
         scrate += tolower(*p);   
   } 
-  std::map<std::string, Int_t>::iterator si = crate_strtoi.find(scrate);
+  map<string, Int_t>::iterator si = crate_strtoi.find(scrate);
   if (si != crate_strtoi.end()) return crate_strtoi[scrate];
   return 0;
 } 
@@ -392,7 +392,7 @@ Bool_t THaScalerDB::IsHelicityTied(Int_t crate, Int_t helicity) {
 Int_t THaScalerDB::TiedCrate(Int_t crate, Int_t helicity) {
 // Find the crate that this (crate, helicity) is tied to.
   if (!direct) return crate;
-  std::string sdir = 
+  string sdir = 
         direct->GetDirective(crate, "crate-tied", helicity);
   if (sdir == "none") return crate;
   return atoi(sdir.c_str());
@@ -401,39 +401,40 @@ Int_t THaScalerDB::TiedCrate(Int_t crate, Int_t helicity) {
 Int_t THaScalerDB::GetSlotOffset(Int_t crate, Int_t helicity) {
 // Find the slot offset relative to helicity=0 data.
   if (!direct) return 0;
-  std::string sdir = 
+  string sdir = 
         direct->GetDirective(crate, "slot-offset", helicity);
   if (sdir == "none") return 0;
   return atoi(sdir.c_str());
 }
 
-UInt_t THaScalerDB::FindNoCase(const std::string sdata, const std::string skey) 
+string::size_type THaScalerDB::FindNoCase(const string sdata, 
+					  const string skey) 
 {
 // Find iterator of word "sdata" where "skey" starts.  Case insensitive.
-  std::string sdatalc, skeylc;
+  string sdatalc, skeylc;
   sdatalc = "";  skeylc = "";
-  for (std::string::const_iterator p = 
+  for (string::const_iterator p = 
    sdata.begin(); p != sdata.end(); p++) {
       sdatalc += tolower(*p);
   } 
-  for (std::string::const_iterator p = 
+  for (string::const_iterator p = 
    skey.begin(); p != skey.end(); p++) {
       skeylc += tolower(*p);
   } 
   return sdatalc.find(skeylc,0);
 }
 
-Int_t THaScalerDB::AmtSpace(const std::string& s) {
-  typedef std::string::size_type string_size;
+Int_t THaScalerDB::AmtSpace(const string& s) {
+  typedef string::size_type string_size;
   Int_t nsp = 0;  string_size i = 0;
   while (i++ != s.size()) if(isspace(s[i])) nsp++;
   return nsp;
 }
 
-std::vector<std::string> THaScalerDB::vsplit(const std::string& s) {
+vector<string> THaScalerDB::vsplit(const string& s) {
 // split a string into whitespace-separated strings
-  std::vector<std::string> ret;
-  typedef std::string::size_type string_size;
+  vector<string> ret;
+  typedef string::size_type string_size;
   string_size i = 0;
   while ( i != s.size()) {
     while (i != s.size() && isspace(s[i])) ++i;

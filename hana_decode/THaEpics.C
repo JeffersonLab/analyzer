@@ -125,8 +125,10 @@ int THaEpics::LoadData(const int* evbuffer, int evnum)
      float dval;
      static char fmt[16];
      static bool first = true;
-     if( first ) 
-         { sprintf(fmt,"%%%ds %%n",MAXEPV); first = false; }
+     if( first ) { 
+       sprintf(fmt,"%%%us %%n",static_cast<unsigned int>(MAXEPV)); 
+       first = false; 
+     }
      size_t len = sizeof(int)*(evbuffer[0]+1);  
      size_t nlen = TMath::Min(len,MAX);
      // Nothing to do?

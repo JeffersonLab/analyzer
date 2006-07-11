@@ -234,13 +234,15 @@ public:
    virtual ~THaScalerDB();
    bool extract_db(const Bdate& bdate);
    std::string GetLongDesc(Int_t crate, std::string desc, Int_t helicity=0);
-   UInt_t FindNoCase(const std::string s1, const std::string s2);
+   std::string::size_type FindNoCase(const std::string s1, 
+				     const std::string s2);
    Int_t GetSlot(Int_t crate, std::string desc, Int_t helicity=0);
    Int_t GetChan(Int_t crate, std::string desc, Int_t helicity=0, Int_t chan=0);
    std::vector<std::string> GetShortNames(Int_t crate, Int_t slot, Int_t chan);
    Int_t GetNumDirectives(Int_t craet, std::string directive);
    Int_t GetIntDirectives(Int_t crate, std::string directive, std::string key);
-   std::string GetStringDirectives(Int_t crate, std::string directive, std::string key);
+   std::string GetStringDirectives(Int_t crate, std::string directive, 
+				   std::string key);
    void LoadCrateToInt(const char *bank, Int_t cr);
    Int_t CrateToInt(const std::string& scrate);
    void PrintChanMap();
