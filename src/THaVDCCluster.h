@@ -17,7 +17,7 @@ class THaVDCPlane;
 class THaVDCCluster : public TObject {
 
 public:
-  THaVDCCluster( THaVDCPlane* owner ) :
+  THaVDCCluster( THaVDCPlane* owner = NULL ) :
     fSize(0), fPlane(owner), fSlope(kBig), fSigmaSlope(kBig), fInt(kBig),
     fSigmaInt(kBig), fT0(0.0), fSigmaT0(kBig), fPivot(NULL), fTimeCorrection(0.0),
     fFitOK(false), fLocalSlope(kBig), fChi2(kBig), fNDoF(0.0)  {}
