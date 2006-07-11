@@ -96,12 +96,9 @@ Int_t THaCut::DefinedVariable(TString& name)
 
   //  Return codes:
   //  >=0  serial number of variable or cut found
-  //   -1  no list of variables defined
+  //   -1  variable not found
   //   -2  error parsing variable name
-  //   -3  variable name not defined
-  //   -4  array requested, but defined variable is no array
-  //   -5  array index out of bounds
-  //   -6  maximum number of variables exceeded
+  //   -3  error parsing variable name, error already printed
 
 #if ROOT_VERSION_CODE >= ROOT_VERSION(4,0,0)
   action = kDefinedVariable;

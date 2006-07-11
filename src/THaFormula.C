@@ -165,13 +165,10 @@ Int_t THaFormula::DefinedVariable(TString& name)
   //  global object is stored 
   //
   //  Return codes:
-  //  >=0  serial number of variable found
-  //   -1  no list of variables defined
+  //  >=0  serial number of variable or cut found
+  //   -1  variable not found
   //   -2  error parsing variable name
-  //   -3  variable name not defined
-  //   -4  array requested, but defined variable is no array
-  //   -5  array index out of bounds
-  //   -6  maximum number of variables exceeded
+  //   -3  error parsing variable name, error already printed
 
 #if ROOT_VERSION_CODE >= ROOT_VERSION(4,0,0)
   action = kDefinedVariable;
@@ -191,7 +188,7 @@ Int_t THaFormula::DefinedCut( const TString& name )
   if( fCutList ) {
     const THaCut* pcut = fCutList->FindCut( name );
     if( pcut ) {
-      if( fNcodes >= kMAXCODES ) return -6;
+      if( fNcodes >= kMAXCODES ) return -1;
       // See if this cut already used earlier in this new cut
       FVarDef_t* def = fVarDef;
       for( Int_t i=0; i<fNcodes; i++, def++ ) {
@@ -205,7 +202,7 @@ Int_t THaFormula::DefinedCut( const TString& name )
       return fNcodes++;
     }
   }
-  return -3;
+  return -1;
 }
 
 //_____________________________________________________________________________
@@ -215,28 +212,26 @@ Int_t THaFormula::DefinedGlobalVariable( const TString& name )
   // local list of variables used in this formula.
 
   // No list of variables or too many variables in this formula?
-  if( !fVarList ) 
+  if( !fVarList || fNcodes >= kMAXCODES )
     return -1;
-  if( fNcodes >= kMAXCODES )
-    return -6;
 
   // Parse name for array syntax
   THaArrayString var(name);
-  if( var.IsError() ) return -2;
+  if( var.IsError() ) return -1;
 
   // Find the variable with this name
   const THaVar* obj = fVarList->Find( var.GetName() );
   if( !obj ) 
-    return -3;
+    return -1;
 
   // Error if array requested but the corresponding variable is not an array
   if( var.IsArray() && !obj->IsArray() )
-    return -4;
+    return -2;
 
   // Subscript(s) within bounds?
   Int_t index = 0;
   if( var.IsArray() 
-      && (index = obj->Index( var )) <0 ) return -5;
+      && (index = obj->Index( var )) <0 ) return -2;
 		    
   // Check if this variable already used in this formula
   FVarDef_t* def = fVarDef;
