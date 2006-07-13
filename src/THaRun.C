@@ -81,14 +81,7 @@ bool THaRun::operator==( const THaRunBase& rhs ) const
 //_____________________________________________________________________________
 bool THaRun::operator!=( const THaRunBase& rhs ) const
 {
-  if( THaCodaRun::operator==(rhs) )
-    return false;
-
-  if(rhs.InheritsFrom(fgThisClass) &&
-     fSegment == static_cast<const THaRun&>(rhs).fSegment )
-    return false;
-
-  return true;
+  return ! (*this==(rhs));
 }
 
 //_____________________________________________________________________________
