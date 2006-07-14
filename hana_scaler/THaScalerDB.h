@@ -37,10 +37,10 @@ public:
      std::cout << "\nBdate :  day = "<<day;
      std::cout << "  month = "<<month<<"   year = "<<year<<std::endl;
   };
-  Bdate::Bdate(const Bdate& rhs) {
+  Bdate(const Bdate& rhs) {
     day = rhs.day; month = rhs.month; year = rhs.year;
   }; 
-  Bdate &Bdate::operator=(const Bdate &rhs) {
+  Bdate &operator=(const Bdate &rhs) {
    if ( &rhs != this ) {
      day = rhs.day; month = rhs.month; year = rhs.year;
    }
@@ -77,12 +77,12 @@ public:
      std::cout << "\nSDB_chanKey:  crate = "<<crate;
      std::cout << "  hel = "<<helicity<<"   desc = "<<description<<std::endl;
   };
-  SDB_chanKey::SDB_chanKey(const SDB_chanKey& rhs) {
+  SDB_chanKey(const SDB_chanKey& rhs) {
     crate = rhs.crate;
     helicity = rhs.helicity;
     description = rhs.description;
   }; 
-  SDB_chanKey &SDB_chanKey::operator=(const SDB_chanKey &rhs) {
+  SDB_chanKey &operator=(const SDB_chanKey &rhs) {
     if ( &rhs != this ) {
        crate = rhs.crate;
        helicity = rhs.helicity;
@@ -109,12 +109,12 @@ class SDB_chanDesc {
 public:
   SDB_chanDesc(Int_t sl=0, std::string desc=""):slot(sl),description(desc) { };
   ~SDB_chanDesc() { }
-  SDB_chanDesc::SDB_chanDesc(const SDB_chanDesc& rhs) {
+  SDB_chanDesc(const SDB_chanDesc& rhs) {
       slot = rhs.slot; 
       description = rhs.description;
       scalerchan = rhs.scalerchan;
   }; 
-  SDB_chanDesc &SDB_chanDesc::operator=(const SDB_chanDesc &rhs) {
+  SDB_chanDesc &operator=(const SDB_chanDesc &rhs) {
     if ( &rhs != this ) {
       slot = rhs.slot; 
       description = rhs.description;
