@@ -807,20 +807,22 @@ Int_t THaScaler::GetChan(string detector, Int_t helicity, Int_t chan) {
 };
 
 Double_t THaScaler::GetScalerRate(Int_t slot, Int_t chan) {
-// Rates on scaler data, for slot #slot, channel #chan
-  Double_t rate,etime;
-  if (slot == normslot[1] || slot == normslot[2] ) {
-    if (slot == normslot[1]) etime = GetTimeDiff(-1);
-    if (slot == normslot[2]) etime = GetTimeDiff(1);
-  } else {
+// Return rates on scaler data, for slot #slot, channel #chan
+  Double_t etime;
+  if (slot == normslot[1])
+    etime = GetTimeDiff(-1);
+  else if (slot == normslot[2]) 
+    etime = GetTimeDiff(1);
+  else
     etime = GetTimeDiff(0);
-  }
-  if (etime > 0) { 
-      rate = ( GetScaler(slot, chan, 0) -
-               GetScaler(slot, chan, 1) ) / etime;
-      return rate;
-  }
-  return 0;
+
+  if (etime <= 0.0)
+    return 0.0;
+
+  Double_t rate = 
+    ( GetScaler(slot,chan,0)-GetScaler(slot,chan,1) ) / etime;
+
+  return rate;
 };
 
 Double_t THaScaler::GetScalerRate(const char* detector, Int_t chan) {
