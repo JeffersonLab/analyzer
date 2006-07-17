@@ -120,10 +120,10 @@ Int_t THaS2CoincTime::Process( const THaEvData& evdata )
   // Use the Beta of the assumed particle type.
   struct Spec_short {
     THaSpectrometer *Sp;
-    Int_t &Ntr;
-    Double_t *(&Vxtime);
-    Int_t &Sz;
-    Double_t &Mass;
+    Int_t *Ntr;
+    Double_t **Vxtime;
+    Int_t *Sz;
+    Double_t Mass;
     THaVar* trpads;
     THaVar* s2trpath;
     THaVar* s2times;
@@ -131,23 +131,23 @@ Int_t THaS2CoincTime::Process( const THaEvData& evdata )
   };
 
   Spec_short SpList[] = {
-    { fSpect1, fNTr1, fVxTime1, fSz1, fpmass1, fTrPads1, fS2TrPath1, fS2Times1, fTrPath1 },
-    { fSpect2, fNTr2, fVxTime2, fSz2, fpmass2, fTrPads2, fS2TrPath2, fS2Times2, fTrPath2 },
-    { 0, fNTr1, fVxTime1, fSz1, fpmass1, 0, 0, 0, 0 } // references so need something
+    { fSpect1, &fNTr1, &fVxTime1, &fSz1, fpmass1, fTrPads1, fS2TrPath1, fS2Times1, fTrPath1 },
+    { fSpect2, &fNTr2, &fVxTime2, &fSz2, fpmass2, fTrPads2, fS2TrPath2, fS2Times2, fTrPath2 },
+    { 0 }
   }; 
   
-  for (Spec_short* sp=SpList; sp->Sp; sp++) {
-    sp->Ntr = sp->Sp->GetNTracks();
-    if (sp->Ntr <=0) continue;   // no tracks, skip
+  for (Spec_short* sp=SpList; sp->Sp != NULL; sp++) {
+    *(sp->Ntr) = sp->Sp->GetNTracks();
+    if (*(sp->Ntr) <=0) continue;   // no tracks, skip
     
     if (sp->Ntr > sp->Sz) {  // expand array if necessary
 #if CAN_RESIZE
-      delete [] sp->Vxtime;
-      sp->Sz = sp->Ntr+5;
-      sp->Vxtime = new Double_t[sp->Sz];
+      delete [] *(sp->Vxtime);
+      *(sp->Sz) = *(sp->Ntr)+5;
+      *(sp->Vxtime) = new Double_t[sp->Sz];
 #else
-      Warning(Here("Process()"), "Using only first %d out of %d tracks in spectrometer.", sp->Sz, sp->Ntr);
-      sp->Ntr=sp->Sz; // only look at the permitted number of tracks
+      Warning(Here("Process()"), "Using only first %d out of %d tracks in spectrometer.", *(sp->Sz), *(sp->Ntr));
+      *(sp->Ntr)=*(sp->Sz); // only look at the permitted number of tracks
 #endif      
     }
 
@@ -159,7 +159,7 @@ Int_t THaS2CoincTime::Process( const THaEvData& evdata )
     
     if (!tr_pads || !s2trpath || !s2times || !trpath) continue;
     
-    for ( Int_t i=0; i<sp->Ntr; i++ ) {
+    for ( Int_t i=0; i<*(sp->Ntr); i++ ) {
       THaTrack* tr = dynamic_cast<THaTrack*>(tracks->At(i));
 #ifdef DEBUG
       // this should be safe to assume -- only THaTrack's go into the tracks array
@@ -174,7 +174,7 @@ Int_t THaS2CoincTime::Process( const THaEvData& evdata )
       if ( tr && (p=tr->GetP())>0. ) {
 	int pad = static_cast<int>(tr_pads->GetValue(i));
 	if (pad<0) {
-	  sp->Vxtime[i] = (i+1)*kBig;
+	  *(sp->Vxtime[i]) = (i+1)*kBig; //FIXME: huh?
 	  continue;
 	}
 	Double_t s2t = s2times->GetValue(pad);
@@ -185,10 +185,10 @@ Int_t THaS2CoincTime::Process( const THaEvData& evdata )
 #else
 	Double_t c = 2.99792458e8;
 #endif
-	sp->Vxtime[i] = s2t - 
+	*(sp->Vxtime[i]) = s2t - 
 	  (trpath->GetValue(i)+s2trpath->GetValue(i))/(beta*c);
       } else {
-	sp->Vxtime[i] = (i+1)*kBig;
+	*(sp->Vxtime[i]) = (i+1)*kBig; //FIXME: arithmetic on kBig?!?
       }
     }
   }

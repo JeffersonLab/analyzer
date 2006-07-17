@@ -332,35 +332,35 @@ Int_t THaCoincTime::Process( const THaEvData& evdata )
   // for each track in each spectrometer
   // Use the Beta of the assumed particle type.
   struct Spec_short {
-    THaSpectrometer *Sp;
-    Int_t &Ntr;
-    Double_t *(&Vxtime);
-    Int_t &Sz;
-    Double_t &Mass;
+    THaSpectrometer* Sp;
+    Int_t*           Ntr;
+    Double_t**       Vxtime;
+    Int_t*           Sz;
+    Double_t         Mass;
   };
 
   Spec_short SpList[] = {
-    { fSpect1, fNTr1, fVxTime1, fSz1, fpmass1 },
-    { fSpect2, fNTr2, fVxTime2, fSz2, fpmass2 },
-    { 0, fNTr1, fVxTime1, fSz1, fpmass1 } // references so need something
+    { fSpect1, &fNTr1, &fVxTime1, &fSz1, fpmass1 },
+    { fSpect2, &fNTr2, &fVxTime2, &fSz2, fpmass2 },
+    { 0 }
   }; 
   
-  for (Spec_short* sp=SpList; sp->Sp; sp++) {
-    sp->Ntr = sp->Sp->GetNTracks();
-    if (sp->Ntr > sp->Sz) {  // expand array if necessary
+  for (Spec_short* sp=SpList; sp->Sp != NULL; sp++) {
+    *(sp->Ntr) = sp->Sp->GetNTracks();
+    if (*(sp->Ntr) > *(sp->Sz)) {  // expand array if necessary
     // disable the automatic array re-sizing for now
 #if CAN_RESIZE
-      delete [] sp->Vxtime;
-      sp->Sz = sp->Ntr+5;
-      sp->Vxtime = new Double_t[sp->Sz];
+      delete [] *(sp->Vxtime);
+      *(sp->Sz) = *(sp->Ntr)+5;
+      *(sp->Vxtime) = new Double_t[*(sp->Sz)];
 #else
-      Warning(Here("Process()"), "Using only first %d out of %d tracks in spectrometer.", sp->Sz, sp->Ntr);
-      sp->Ntr=sp->Sz; // only look at the permitted number of tracks
+      Warning(Here("Process()"), "Using only first %d out of %d tracks in spectrometer.", *(sp->Sz), *(sp->Ntr));
+      *(sp->Ntr) = *(sp->Sz); // only look at the permitted number of tracks
 #endif
     }
 
     TClonesArray* tracks = sp->Sp->GetTracks();
-    for ( Int_t i=0; i<sp->Ntr && i<sp->Sz; i++ ) {
+    for ( Int_t i=0; i<*(sp->Ntr) && i<*(sp->Sz); i++ ) {
       THaTrack* tr = dynamic_cast<THaTrack*>(tracks->At(i));
 #ifdef DEBUG
       // this should be safe to assume -- only THaTrack's go into the tracks array
@@ -378,9 +378,9 @@ Int_t THaCoincTime::Process( const THaEvData& evdata )
 #else
 	Double_t c = 2.99792458e8;
 #endif
-	sp->Vxtime[i] = tr->GetTime() - tr->GetPathLen()/(beta*c);
+	*(sp->Vxtime[i]) = tr->GetTime() - tr->GetPathLen()/(beta*c);
       } else {
-	sp->Vxtime[i] = (i+1)*kBig;
+	*(sp->Vxtime[i]) = (i+1)*kBig;  //FIXME: seriously i+1 times kBig??
       }
     }
   }
