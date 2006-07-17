@@ -122,7 +122,7 @@ protected:
    THaCodaFile *fcodafile;
    std::vector<Int_t> onlmap;
    THaScalerDB *database; 
-   std::multimap<std::string, Int_t> normmap;
+   std::multimap<std::string, int> normmap;
    Int_t *rawdata;
    Bool_t coda_open;
    Int_t header, crate, evstr_type;

@@ -145,7 +145,7 @@ Int_t THaScaler::Init(const char* thetime )
   return 0;
 };
 
-Int_t THaScaler::InitData(string bankgroup, const Bdate& date_want) {
+Int_t THaScaler::InitData(string bankgrp, const Bdate& date_want) {
 // Initialize data of the class for this bankgroup for the date wanted.
 // While in principle this should come from a "database", it basically
 // never changes.  However, to add a new scaler bank, imitate what is
@@ -194,30 +194,30 @@ Int_t THaScaler::InitData(string bankgroup, const Bdate& date_want) {
 
    string bank_to_find = "unknown";
    if (database) {
-     if ( database->FindNoCase(bankgroup,"Left") != string::npos  
-        || bankgroup == "L" ) {
+     if ( database->FindNoCase(bankgrp,"Left") != string::npos  
+        || bankgrp == "L" ) {
           bank_to_find = "Left"; 
      }
-     if ( database->FindNoCase(bankgroup,"Right") != string::npos  
-        || bankgroup == "R" ) {
+     if ( database->FindNoCase(bankgrp,"Right") != string::npos  
+        || bankgrp == "R" ) {
           bank_to_find = "Right"; 
      }
-     if ( database->FindNoCase(bankgroup,"dvcs") != string::npos) {
+     if ( database->FindNoCase(bankgrp,"dvcs") != string::npos) {
           bank_to_find = "dvcs"; 
      }
-     if ( database->FindNoCase(bankgroup,"gen") != string::npos) {
+     if ( database->FindNoCase(bankgrp,"gen") != string::npos) {
           bank_to_find = "gen"; 
      }
-     if ( database->FindNoCase(bankgroup,"evgen") != string::npos) {
+     if ( database->FindNoCase(bankgrp,"evgen") != string::npos) {
           bank_to_find = "evgen"; 
      }
-     if ( database->FindNoCase(bankgroup,"N20") != string::npos) {
+     if ( database->FindNoCase(bankgrp,"N20") != string::npos) {
           bank_to_find = "N20"; 
      }
-     if ( database->FindNoCase(bankgroup,"evleft") != string::npos) {
+     if ( database->FindNoCase(bankgrp,"evleft") != string::npos) {
           bank_to_find = "evleft"; 
      }
-     if ( database->FindNoCase(bankgroup,"evright") != string::npos) {
+     if ( database->FindNoCase(bankgrp,"evright") != string::npos) {
           bank_to_find = "evright"; 
      }
 
@@ -320,9 +320,9 @@ void THaScaler::SetupNormMap() {
   clkchan = GetChan("clock");
   for (Int_t ichan = 0; ichan < SCAL_NUMCHAN; ichan++) {
     vector<string> chan_name = database->GetShortNames(crate, normslot[0], ichan);
-    for (unsigned int i = 0; i < chan_name.size(); i++) {
+    for (int i = 0; i < chan_name.size(); i++) {
       if (chan_name[i] != "none") {
-        normmap.insert(make_pair(chan_name[i], ichan));
+        normmap.insert(multimap<string,int>::value_type(chan_name[i], ichan));
       }
     }
   }
