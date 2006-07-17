@@ -297,6 +297,10 @@ void THaRun::SetNscan( UInt_t n )
   fMaxScan = n;
 }
 
+#if ROOT_VERSION_CODE < ROOT_VERSION(5,8,0)
+#include <cstdlib>
+#endif
+
 //_____________________________________________________________________________
 Int_t THaRun::FindSegmentNumber()
 {
@@ -307,7 +311,12 @@ Int_t THaRun::FindSegmentNumber()
   Ssiz_t dot = fFilename.Last('.');
   if( dot != kNPOS ) {
     TString s = fFilename(dot+1,fFilename.Length()-dot-1);
+#if ROOT_VERSION_CODE < ROOT_VERSION(5,8,0)
+    fSegment = atoi(s.Data());
+#else
+    // NB: This ignores whitespace. Shouldn't matter though.
     fSegment = s.Atoi();
+#endif
   } else
     fSegment = 0;
 
