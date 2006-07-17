@@ -1,78 +1,102 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html><head>
 <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-<title>Release Notes Hall A C++ Analyzer v1.3</title>
+<title>Release Notes Podd v1.4</title>
 </head>
 
 <body background="wallpaper.gif">
-<h2>Hall A C++ Analyzer version 1.3</h2>
+<h2>Podd version 1.4</h2>
 
-11 June 2004
+17 July 2006
 <p>
-The Hall A software team is pleased to present version 1.3 of the
-Hall A C++ Analyzer. The main improvement in this version is the
-addition of a beam data interface for the physics modules, which
-allows physics modules to apply corrections to those data or
-to re-compute them. Additionally,
-a first version of energy loss correction modules as well as
-other useful physics modules are included. 
+The Hall A software team is pleased to present version 1.4 of the
+C++ analysis software Podd.  This version is largely a maintenance release;
+it includes various corrections and smaller improvements that have
+accumulated since the release of version 1.3 in June 2004.
+<p>
+The main structural improvement is in the decoder. The decoder
+interface is now an abstract base class, and the actual implementation
+can be chosen by the user. In this version, a standard CODA file decoder
+is provided, and an alternative frontend interface to simulation data (VDCsim)
+is available in a <a href="http://hallaweb.jlab.org/root/vdcsim.html">separate
+package</a>.
+<p>
+The most current beam helicity code is available as a
+<a href="http://www.jlab.org/~rom/helicity_podd.html">separate plug-in</a>.
+The older THaHelicity class is still available as before, but expect
+its functionality to change in the next release.
 <hr>
 
 <h3>What's new</h3>
-Compared to Release 1.2, the following features have been added:
-<ul>
-  <li>Energy loss corrections (both for tracks and for the beam)
-      have been implemented. This is still somewhat preliminary.
-  <li>Physics modules can import and export beam information in a similar
-      way as track and vertex information.
-  <li>The electron kinematics module now optionally accepts beam
-      information (i.e. incident momentum vector) for improved resolution
-      with rastered beam.
-  <li>Events that belong to more than one event class (physics events
-      that are also scaler events, for example) can be properly analyzed.
-  <li>All output files are now explicitly closed when terminating the analyzer.
-      Previously, filtered files sometimes were not flushed completely.
-  <li>New module THaNormAna allows dead-time and charge analysis.
-      This is still somewhat preliminary.
-  <li>New module THaEpicsEbeam allows extraction of the beam energy from
-      an EPICS variable. This is an experimental feature.
-  <li>Many small bug fixes throughout the code.
-  <li>Support for ROOT version 4.
-</ul>
+Compared to Release 1.3, the following features have been added:
 
-<h3>Removed Limitations</h3>
-Known limitations are documented in
-the <a href="RELEASE_NOTES_v1.0.txt">Release
-Notes for version 1.0</a>.
-The following limitations have been removed in Release 1.3:
 <ul>
-  <li>Energy loss corrections are now possible. Handling complex
-      target geometries, however, is not well supported yet.
+  <li>Improved support for split CODA input files.
+  <li>Improved support for split ROOT output files.
+  <li>Support for writing arbitrary ROOT objects to the ROOT output file
+      (e.g. TLorentzVector).
+  <li>Support for writing the non-event data from analysis objects (detectors, apparatuses,
+      physics modules) to the ROOT output file, for example to document calibration and
+      geometry parameters used for the analysis.
+  <li>Support for "F1" and CAEN 767 TDCs.
+  <li>Support for G0 helicity scheme. Improved handling of helicity data.
+  <li>Improved scaler package with more functionality
+      (see the <a href="http://hallaweb.jlab.org/equipment/daq/THaScaler.html">online
+      scaler documentation</a>).
+  <li>BPM and raster calibration scripts are supplied.
+  <li>The Chi^2 of the cluster track fitting in the HRS VDCs is calculated.
+  <li>Track intercepts and pathlengths are calculated for all tracks at all detector
+      positions.
+  <li>More calculated kinematics variables available as global variables from
+      kinematics physics modules.
+  <li>Support for new prescale event type.
+  <li>Fix for incorrectly calculated HRS VDC plane spacings. This may require
+      re-optimization of matrix elements since it affects the calculated V-slopes.
+  <li>Support for gcc4 and 64-bit environments.
 </ul>
 
 <h3>Compatibility</h3>
-Version 1.3 is essentially source-compatible with version 1.2, but
-not binary-compatible. Modules developed for version 1.2
-should not require any source code changes, but must be recompiled.
+Version 1.4 is mostly source-compatible with version 1.3, but
+not binary-compatible. The one known source code incompatibility occurs
+in the THaDetector class hierarchy: The member variables fDetector and
+fApparatus have been changed from simple pointers to TRef objects.
+Classes that formerly accessed these pointers directly should now use calls
+to the GetDetector() and GetApparatus() member functions. For example,
+replace
+<pre>
+       TString name = fApparatus->GetName();
+</pre>
+with
+<pre>
+       TString name = GetApparatus()->GetName();
+</pre>
+Modules developed for version 1.3 must be modified like this, but will then still work
+with version 1.3 or earlier.  Of course, all modules need to be recompiled for use
+with version 1.4.
+<p>
+The only module that is known to have been affected by this change is the RICH library.
+The RICH code has been patched in CVS.
+<p>
+<b>NOTE:</b> ROOT 5.08/00 contains a bug in the TFormula code that causes Podd's test
+and output packages to crash "mysteriously" under certain circumstances. Please avoid
+using this version of ROOT and upgrade to ROOT 5.10/00 instead.
 
 <h3>System requirements</h3>
 <ul>
   <li>Linux with gcc/g++; or Solaris with the Sun Workshop compiler.
-  <li>ROOT 3.02 or higher
+  <li>ROOT 3.02 or higher. CAUTION: Do not use ROOT 5.08/00! (see above).
   <li>GNU make
-  <li>Decent hardware (at least 300MHz CPU, 128MB RAM).
+  <li>Decent hardware (at least 300MHz CPU, 256MB RAM). Compilation of the
+      dictionary takes forever unless your CPU speed is at least 1GHz.
 </ul>
 The following platforms have been explicitly tested:
 <ul>
   <li>RedHat Enterprise Linux 3WS with default compiler (gcc 3.2.3)
-      and ROOT 3.10/02 and ROOT 4.00/04.
-  <li>RedHat Linux 9 with default compiler (gcc 3.2.2) and ROOT 3.05/04
+      and ROOT 4.04/02 and ROOT 5.10/00.
+  <li>RedHat Linux 9 with default compiler (gcc 3.2.2) and ROOT 5.10/00.
 </ul>
 Most other recent Linux and Solaris installations should work as well.
 Other Unix platforms require (probably fairly simple) changes to the Makefiles.
-The analyzer has been reported to work on IRIX and Mac OS X; those
-ports will be included in a future release. We have no plans to
-support Windows.
 
 <h3>Building and installing the program</h3>
 Please see <a href="install.html">docs/install.html</a>
@@ -88,11 +112,16 @@ Example scripts can be found in the "examples" and "examples/BPM" subdirectories
 Further documentation is available in the "docs" subdirectory and
 at the <a href="http://hallaweb.jlab.org/root/">project home page</a>.
 
+<h3>Credits</h3>
+Special thanks to Rob Feuerbach, Robert Michaels, Bodo Reitz,
+Ken Rossato (summer student), and Amy Orsborn (summer student) who contributed
+significantly to this version.
+
 <p>
 <hr>
 <address><a href="mailto:ole@jlab.org">Ole Hansen &lt;ole@jlab.org&gt;</a></address>
 <!-- hhmts start -->
-Last modified: Sat Jun 12 12:20:14 EDT 2004
+Last modified: Mon Jul 17 14:20:11 EDT 2006
 <!-- hhmts end -->
 </body> 
 </html>
