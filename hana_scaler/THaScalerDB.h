@@ -182,7 +182,7 @@ public:
     for (std::vector<std::string>::iterator str = direct.begin(); str != direct.end(); str++) {
       std::string sdir = *str;
       if (ParseDir(sdir)) {
-         stemp.insert(make_pair(skey, sdata));
+         stemp.insert(make_pair(fSkey, fSdata));
         ok = true;
       }
     }
@@ -190,7 +190,7 @@ public:
       std::pair<Int_t, std::string> pkey = make_pair(crate, key);
       std::map<std::pair<Int_t, std::string>, std::map<std::string, std::string> >::iterator pm = directives.find(pkey);
       if (pm != directives.end()) {
-         (pm->second).insert(make_pair(skey, sdata));
+         (pm->second).insert(make_pair(fSkey, fSdata));
       } else {
          directives.insert(make_pair(make_pair(crate,key), stemp));
       }
@@ -212,17 +212,17 @@ private:
   SDB_directive& operator=(const SDB_directive &sd);
   std::map<std::pair<Int_t, std::string>, std::map<std::string, std::string> > directives;
   bool ParseDir(std::string sdir) {
-    skey = "";
-    sdata = "";
+    fSkey  = "";
+    fSdata = "";
     std::string::size_type pos1;
     pos1 = sdir.find(":");
     if (pos1 != std::string::npos) {
-      skey.assign(sdir.substr(0,pos1));
-      sdata.assign(sdir.substr(pos1+1,sdir.length()));
+      fSkey.assign(sdir.substr(0,pos1));
+      fSdata.assign(sdir.substr(pos1+1,sdir.length()));
     }
     return true;
   }
-  std::string skey, sdata;
+  std::string fSkey, fSdata;
 };
 
 
