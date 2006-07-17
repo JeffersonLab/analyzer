@@ -72,8 +72,8 @@ ifdef DEBUG
   CXXFLG      = -g -O0
   LDFLAGS     = -g -O0
 else
-  CXXFLG      = -g -O
-  LDFLAGS     = -g -O
+  CXXFLG      = -O
+  LDFLAGS     = -O
 endif
 DEFINES       = -DLINUXVERS
 CXXFLG       += -Wall -Woverloaded-virtual -fPIC
