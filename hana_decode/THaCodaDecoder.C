@@ -725,6 +725,7 @@ int THaCodaDecoder::vme_decode(int roc, THaCrateMap* map, const int* evbuffer,
 		    cout<< "[" << (loc-evbuffer) << "] data            0x"<<hex<<*loc<<dec<<endl;
 		  int chn = ((*loc)>>16) & 0x3f;  // internal channel number
 
+		  chan =0;
 		  if (model==6401) {        // normal resolution
 		    // do the reordering of the channels, for contiguous groups
 		    // odd numbered TDC channels from the board -> +16
