@@ -84,7 +84,11 @@ SONAME        = -Wl,-soname=
 
 GCC_MAJOR     := $(shell chmod +x ./gcc-version; ./gcc-version)
 GCC_MINOR     := $(shell ./gcc-version -m)
+
 ifeq ($(GCC_MAJOR),3)
+DEFINES       += -DHAS_SSTREAM
+endif
+ifeq ($(GCC_MAJOR),4)
 DEFINES       += -DHAS_SSTREAM
 endif
 
