@@ -145,7 +145,7 @@ Int_t THaScaler::Init(const char* thetime )
   return 0;
 };
 
-Int_t THaScaler::InitData(string bankgrp, const Bdate& date_want) {
+Int_t THaScaler::InitData(const string& bankgrp, const Bdate& date_want) {
 // Initialize data of the class for this bankgroup for the date wanted.
 // While in principle this should come from a "database", it basically
 // never changes.  However, to add a new scaler bank, imitate what is
@@ -320,7 +320,7 @@ void THaScaler::SetupNormMap() {
   clkchan = GetChan("clock");
   for (Int_t ichan = 0; ichan < SCAL_NUMCHAN; ichan++) {
     vector<string> chan_name = database->GetShortNames(crate, normslot[0], ichan);
-    for (int i = 0; i < chan_name.size(); i++) {
+    for (vector<string>::size_type i = 0; i < chan_name.size(); i++) {
       if (chan_name[i] != "none") {
         normmap.insert(multimap<string,int>::value_type(chan_name[i], ichan));
       }
@@ -931,7 +931,7 @@ Double_t THaScaler::GetTimeDiff(Int_t helicity) {
   }
 };
 
-UInt_t THaScaler::header_str_to_base16(string hdr) {
+UInt_t THaScaler::header_str_to_base16(const string& hdr) {
 // Utility to convert string header to base 16 integer
   static bool hs16_first = true;
   static map<char, int> strmap;
@@ -939,7 +939,7 @@ UInt_t THaScaler::header_str_to_base16(string hdr) {
   //  pair<char, int> pci;
   static char chex[]="0123456789abcdef";
   static vector<int> numarray; 
-  static int linesize = 12;
+  const vector<int>::size_type linesize = 12;
   if (hs16_first) {
     hs16_first = false;
     for (int i = 0; i < 16; i++) {
@@ -948,10 +948,10 @@ UInt_t THaScaler::header_str_to_base16(string hdr) {
     numarray.reserve(linesize);
   }
   numarray.clear();
-  for (string::iterator p = hdr.begin(); p != hdr.end(); p++) {
-    map<char, int>::iterator pm = strmap.find(*p);     
+  for (string::size_type i = 0; i < hdr.size(); i++) {
+    map<char, int>::iterator pm = strmap.find(hdr[i]);     
     if (pm != strmap.end()) numarray.push_back(pm->second);
-    if ((long)numarray.size() > linesize-1) break;
+    if (numarray.size()+1 > linesize) break;
   }
   UInt_t result = 0;  UInt_t power = 1;
   for (vector<int>::reverse_iterator p = numarray.rbegin(); 
