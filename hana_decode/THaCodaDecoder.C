@@ -1,14 +1,9 @@
 /////////////////////////////////////////////////////////////////////
 //
-//   Documentation may need revision due to class restructuring
-//   (THaEvData is now a base class inherited by THaCodaDecoder)
+//   THaCodaDecoder
+//   Hall A Event Data from one CODA "Event"
 //
-//   -Ken Rossato (rossato@jlab.org)
-//
-//   THaEvData
-//   Hall A Event Data from One CODA "Event"
-//
-//   THaEvData contains facilities to load an event buffer
+//   THaCodaDecoder contains facilities to load an event buffer
 //   from a CODA "event" and get information about the event, 
 //   such as event type, TDC hits, scalers, prescale factors,
 //   etc.  The idea of an "event" is not just a physics trigger,   
@@ -30,7 +25,6 @@
 /////////////////////////////////////////////////////////////////////
 
 #include "THaCodaDecoder.h"
-#include "THaHelicity.h"
 #include "THaFastBusWord.h"
 #include "THaCrateMap.h"
 #include "THaEpics.h"
@@ -51,7 +45,7 @@
 
 using namespace std;
 
-static const int VERBOSE = 1;
+static const int VERBOSE = 0;
 static const int DEBUG   = 0;
 static const int BENCH   = 0;
 
@@ -236,15 +230,6 @@ int THaCodaDecoder::physics_decode(const int* evbuffer, THaCrateMap* map) {
 	 status = camac_decode(iroc,map,evbuffer,ipt,iptmax);
 	 if(status == HED_ERR) return HED_ERR;
        }
-     }
-     if( HelicityEnabled()) {
-       if( !helicity ) {
-	 helicity = new THaHelicity;
-	 if( !helicity ) return HED_ERR;
-       }
-       if(helicity->Decode(*this) != 1) return HED_ERR;
-       dhel = (Double_t)helicity->GetHelicity();
-       dtimestamp = (Double_t)helicity->GetTime();
      }
      return HED_OK;
 }

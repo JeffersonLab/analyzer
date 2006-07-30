@@ -227,7 +227,6 @@ Int_t THaRun::ReadInitInfo()
     THaEvData* evdata = static_cast<THaEvData*>(gHaDecoder->New());
     // Disable advanced processing
     evdata->EnableScalers(kFALSE);
-    evdata->EnableHelicity(kFALSE);
     UInt_t nev = 0;
     Int_t status = S_SUCCESS;
     while( nev<fMaxScan && !HasInfo(wanted_info) && 

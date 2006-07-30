@@ -19,7 +19,6 @@ class THaBenchmark;
 class THaEpics;
 class THaCrateMap;
 class THaFastBusWord;
-class THaHelicity;
 
 class THaEvData : public TObject {
 
@@ -32,12 +31,10 @@ public:
      int GetRunNum()   const { return run_num; }
      // Run time/date. Time of prestart event (UNIX time).
      UInt_t GetRunTime() const { return run_time; }
-     // Event time from 100 kHz helicity clock.
      virtual Double_t GetEvTime() const;
      int GetRunType()  const { return run_type; }
      int GetRocLength(int crate) const;   // Get the ROC length
 
-     // KCR: in THaCodaDecoder
      virtual int GetPrescaleFactor(int trigger) const;  // Obtain prescale factor
      bool IsPhysicsTrigger() const;    // physics trigger (event types 1-14)
      bool IsScalerEvent() const;       // scalers from datastream
@@ -67,18 +64,13 @@ public:
 // spec = "evleft" or "evright" for L,R scalers injected into datastream.
      virtual int GetScaler(const TString& spec, int slot, int chan) const;   
      virtual int GetScaler(int roc, int slot, int chan) const;         
-     virtual int GetHelicity() const;         // Returns Beam Helicity (-1,0,+1)  '0' is 'unknown'
-     virtual int GetHelicity(const TString& spec) const;  // Beam Helicity for spec="left","right"
 
-     // THaEvData doesn't do Epics, go see THaCodaDetector
      virtual double GetEpicsData(const char* tag, int event=0) const;
      virtual double GetEpicsTime(const char* tag, int event=0) const;
      virtual std::string GetEpicsString(const char* tag, int event=0) const;
      virtual Bool_t IsLoadedEpics(const char* tag) const;
 
 // Loads CODA data evbuffer using THaCrateMap passed as 2nd arg
-// KCR: NOTE this is not implemented here.  All derived classes must
-//      define and implement their own version.
      virtual int LoadEvent(const int* evbuffer, THaCrateMap* usermap) = 0;    
 
 // Loads CODA data evbuffer using private crate map "cmap" (recommended)
@@ -86,8 +78,6 @@ public:
      virtual void PrintSlotData(int crate, int slot) const;
      virtual void PrintOut() const;
      virtual void SetRunTime( UInt_t tloc );
-     void EnableHelicity( Bool_t enable=kTRUE );
-     Bool_t HelicityEnabled() const;
      void EnableScalers( Bool_t enable=kTRUE );
      Bool_t ScalersEnabled() const;
      void SetOrigPS( Int_t event_type ); 
@@ -105,9 +95,7 @@ public:
 
 protected:
   // Control bits in TObject::fBits used by decoders
-     enum { kHelicityEnabled = BIT(14),
-	    kScalersEnabled  = BIT(15)
-     };
+     enum { kScalersEnabled  = BIT(15) };
 
      static const int MAXROC = 32;  
      static const int MAXSLOT = 27;  
@@ -133,9 +121,6 @@ protected:
      //     THaFastBusWord* fb;
      THaSlotData** crateslot;  
 
-     // KCR: helicity really doesnt belong here, I'm gonna think about it.
-     THaHelicity* helicity;
-
      bool first_load, first_decode;//first_scaler;
      //TString scalerdef[MAXROC];
      //     int numscaler_crate;
@@ -152,11 +137,8 @@ protected:
      Int_t event_type,event_length,event_num,run_num,evscaler;
      Int_t run_type;     // CODA run type from prestart event
      UInt_t run_time;    // CODA run time (Unix time) from prestart event
-     UInt_t evt_time;    // Event time (Unix time). Not supported by CODA.
-                         //  KCR: Actually, this isnt ever read from.
+     UInt_t evt_time;    // Event time (Unix time). Not directly supported by CODA.
      Int_t recent_event;//,synchflag,datascan;
-     Double_t dhel,dtimestamp;
-     //
 
      bool buffmode,synchmiss,synchextra;
      int idx(int crate, int slot) const;

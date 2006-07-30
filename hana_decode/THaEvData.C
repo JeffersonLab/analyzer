@@ -5,28 +5,22 @@
 //
 //   This is a pure virtual base class.  You should not
 //   instantiate this directly (and actually CAN not), but
-//   rather use THaCodaDecoder (the former THaEvData), or (more 
-//   unlikely) a sim class like THaVDCSimDecoder.
+//   rather use THaCodaDecoder or (less likely) a sim class like 
+//   THaVDCSimDecoder.
 //   
 //   This class is intended to provide a crate/slot structure
-//   for derived classes to use.  This class does NOT provide
-//   Epics, fastbus, or any fancy stuff that I don't understand
-//   (I'm just a lowly student).  Helicity is provided but defaults
-//   to NULL and zero results.  Derived classes should implement
-//   this if they can. Also, all derived class must define and 
+//   for derived classes to use.  All derived class must define and 
 //   implement LoadEvent(const int*, THaCrateMap*).  See the header.
 //
 //   
 //   original author  Robert Michaels (rom@jlab.org)
 //
 //   modified for abstraction by Ken Rossato (rossato@jlab.org)
-//   This blurb also by Ken Rossato, comments labeled KCR
 //
 //
 /////////////////////////////////////////////////////////////////////
 
 #include "THaEvData.h"
-#include "THaHelicity.h"
 #include "THaFastBusWord.h"
 #include "THaCrateMap.h"
 #include "THaUsrstrutils.h"
@@ -56,18 +50,15 @@ TBits THaEvData::fgInstances;
 //_____________________________________________________________________________
 
 THaEvData::THaEvData() :
-  helicity(0), first_load(true), first_decode(true), fgTrigSupPS(true),
-  buffer(0), run_num(0), run_type(0), run_time(0), 
-  recent_event(0),
-  dhel(0.0), dtimestamp(0.0), fNSlotUsed(0), fNSlotClear(0), fMap(0)
+  first_load(true), first_decode(true), fgTrigSupPS(true),
+  buffer(0), run_num(0), run_type(0), run_time(0), recent_event(0),
+  fNSlotUsed(0), fNSlotClear(0), fMap(0)
 {
   fInstance = fgInstances.FirstNullBit();
   fgInstances.SetBitNumber(fInstance);
   fInstance++;
-  //  epics = new THaEpics;
   crateslot = new THaSlotData*[MAXROC*MAXSLOT];
   cmap = new THaCrateMap;
-  //fb = new THaFastBusWord;
   fSlotUsed  = new UShort_t[MAXROC*MAXSLOT];
   fSlotClear = new UShort_t[MAXROC*MAXSLOT];
   //memset(psfact,0,MAX_PSFACT*sizeof(int));
@@ -83,8 +74,6 @@ THaEvData::THaEvData() :
       { "evnum",     "Event number",   kInt,    0, &event_num },
       { "evtyp",     "Event type",     kInt,    0, &event_type },
       { "evlen",     "Event Length",   kInt,    0, &event_length },
-      { "helicity",  "Beam helicity",  kDouble, 0, &dhel },
-      { "timestamp", "Timestamp",      kDouble, 0, &dtimestamp },
       { 0 }
     };
     TString prefix("g");
@@ -106,8 +95,6 @@ THaEvData::THaEvData() :
   } else
     fBench = NULL;
 
-  // Enable scalers by default
-  //EnableScalers();
 }
 
 
@@ -130,10 +117,7 @@ THaEvData::~THaEvData() {
   for( int i=0; i<MAXROC*MAXSLOT; i++ )
     delete crateslot[i];
   delete [] crateslot;  
-  //  delete epics;
-  delete helicity;
   delete cmap;
-  //delete fb;
   delete [] fSlotUsed;
   delete [] fSlotClear;
   fInstance--;
@@ -158,10 +142,8 @@ const char* THaEvData::DevType(int crate, int slot) const {
 }
 
 Double_t THaEvData::GetEvTime() const {
-  // I'm gonna let helicity related functions get away with it,
-  // because they properly check for NULL helicity -KCR
-
-  return helicity ? helicity->GetTime() : 0.0;
+  // Implement in derived class
+  return 0.0;
 }
 
 int THaEvData::GetScaler(const TString& spec, int slot, int chan) const {
@@ -176,14 +158,6 @@ int THaEvData::GetScaler(int roc, int slot, int chan) const {
     cout << "for non-Coda class" << endl;
   }
   return 0;
-}
-
-int THaEvData::GetHelicity() const {
-  return helicity ? (int)helicity->GetHelicity() : 0;
-}
-
-int THaEvData::GetHelicity(const TString& spec) const {
-  return helicity ? (int)helicity->GetHelicity(spec) : 0;
 }
 
 Bool_t THaEvData::IsLoadedEpics(const char* tag) const {
@@ -230,21 +204,6 @@ void THaEvData::SetRunTime( UInt_t tloc )
 
   init_cmap();
   // can't initialize what doesn't exist.  Go see THaCodaDecoder
-}
-
-void THaEvData::EnableHelicity( Bool_t enable ) 
-{
-  // Enable/disable helicity decoding
-  if( enable )
-    SetBit(kHelicityEnabled);
-  else
-    ResetBit(kHelicityEnabled);
-}
-
-Bool_t THaEvData::HelicityEnabled() const
-{
-  // Test if helicity decoding enabled
-  return TestBit(kHelicityEnabled);
 }
 
 void THaEvData::EnableScalers( Bool_t enable ) 

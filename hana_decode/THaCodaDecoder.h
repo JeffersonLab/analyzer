@@ -51,7 +51,6 @@ class THaCodaDecoder : public THaEvData {
 
   // Hall A Trigger Types
   Int_t synchflag,datascan;
-  //Double_t dhel,dtimestamp;
   bool buffmode,synchmiss,synchextra;
 
   void dump(const int* evbuffer) const;

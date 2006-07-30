@@ -37,7 +37,6 @@ public:
   virtual void   Print( Option_t* opt="" ) const;
 
   void           EnableBenchmarks( Bool_t b = kTRUE );
-  void           EnableHelicity( Bool_t b = kTRUE );
   void           EnableOtherEvents( Bool_t b = kTRUE );
   void           EnableOverwrite( Bool_t b = kTRUE );
   void           EnablePhysicsEvents( Bool_t b = kTRUE );
@@ -56,7 +55,6 @@ public:
   TList*         GetScalers()          const  { return fScalers; }
   TList*         GetPostProcess()      const  { return fPostProcess; }
   Bool_t         HasStarted()          const  { return fAnalysisStarted; }
-  Bool_t         HelicityEnabled()     const  { return fDoHelicity; }
   Bool_t         PhysicsEnabled()      const  { return fDoPhysics; }
   Bool_t         OtherEventsEnabled()  const  { return fDoOtherEvents; }
   Bool_t         ScalersEnabled()      const  { return fDoScalers; }
@@ -138,7 +136,6 @@ protected:
   Bool_t         fUpdateRun;       // Update run parameters during replay
   Bool_t         fOverwrite;       // Overwrite existing output files
   Bool_t         fDoBench;         // Collect detailed timing statistics
-  Bool_t         fDoHelicity;      // Enable helicity decoding
   Bool_t         fDoPhysics;       // Enable physics event processing
   Bool_t         fDoOtherEvents;   // Enable other event processing
   Bool_t         fDoScalers;       // Enable scaler processing
