@@ -10,7 +10,6 @@
 #pragma link C++ class THaEpics+;
 #pragma link C++ class THaEvData+;
 #pragma link C++ class THaFastBusWord+;
-#pragma link C++ class THaHelicity+;
 #pragma link C++ class THaSlotData+;
 #pragma link C++ class THaUsrstrutils+;
 #pragma link C++ class THaCodaDecoder+;

@@ -163,7 +163,7 @@ GLIBS        += $(ROOTGLIBS) $(SYSLIBS)
 # DECODE_OBJS is the package for CODA I/O and decoder written by R. Michaels.
 # This, together with libevio, is what other developers need.
 
-SRC = THaUsrstrutils.C THaCrateMap.C THaCodaData.C THaHelicity.C \
+SRC = THaUsrstrutils.C THaCrateMap.C THaCodaData.C \
       THaEpics.C THaFastBusWord.C THaCodaFile.C THaSlotData.C \
       THaEvData.C evio.C THaCodaDecoder.C
 
