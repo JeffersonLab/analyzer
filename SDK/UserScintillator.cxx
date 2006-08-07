@@ -125,8 +125,8 @@ Int_t UserScintillator::ReadDatabase( const TDatime& date )
   // class to work even with non-spectrometer apparatuses and incomplete
   // databases. Alternatively, one could return an init error to force the
   // user to do more sane stuff and/or fix the database.
-  bool have_spectro = fApparatus != NULL 
-    && fApparatus->IsA()->InheritsFrom("THaSpectrometer");
+  bool have_spectro = GetApparatus() != NULL 
+    && GetApparatus()->IsA()->InheritsFrom("THaSpectrometer");
   fGoodToGo = have_spectro && fSize[0]!=0.0 && fNelem>0;
 
   return kOK;
@@ -168,7 +168,7 @@ Int_t UserScintillator::FineProcess( TClonesArray& tracks )
 
   // Get the Golden Track 
   THaTrack* theTrack = 
-    static_cast<THaSpectrometer*>(fApparatus)->GetGoldenTrack();
+    static_cast<THaSpectrometer*>(GetApparatus())->GetGoldenTrack();
 
   // Determine the paddle number using the focal plane coordinates
   // x and y are the coordinates of the track in the scintillator plane
