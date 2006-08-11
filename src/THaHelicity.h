@@ -6,6 +6,14 @@
 // 
 // author: R. Michaels, Sept 2002
 // updated: Jan 2006 by V. Sulkosky
+// Changed into an implementation of THaHelicityDet, Aug 2006, Ole Hansen
+//
+// Debug levels for this detector: (set via SetDebug(n))
+// = 1 for messages about unusual helicity bit handling,
+//     e.g. handling missing quadruples
+// = 2 for messages relating to scalers
+// = 3 for verbose debugging output
+// = -1 to get fTdiff (calib time)
 //
 ////////////////////////////////////////////////////////////////////////
 
@@ -13,65 +21,52 @@
 #ifndef ROOT_THaHelicity
 #define ROOT_THaHelicity
 
+#include "THaHelicityDet.h"
+
 class THaEvData;
+class TString;
+class TH1F;
 
-#include <iostream>
-#include "TString.h"
-#include "TH1.h"
-
-//FIXME: Make this a helicity detector or die (*cringe*)
-//class THaHelicity : public THaHelicityDet {
-class  THaHelicity {
+class THaHelicity : public THaHelicityDet {
 
 public:
 
-  THaHelicity();
+  THaHelicity( const char* name, const char* description, 
+	       THaApparatus* a = NULL );
   virtual ~THaHelicity();
-  Int_t GetHelicity() const;   // To get the helicity flag (-1,0,+1)
-                               // -1 = minus, +1 = plus, 0 = unknown.
-  Int_t GetHelicity(const TString& spec) const;  // Get from spec "left" or "right"
-  Double_t GetTime()       const;   // Returns timestamp (~105 kHz)
 
-// Get methods for ROC 10/11 (R/L) helicity information for debugging
-  Int_t GetQrt( int spec=-1 ) const
-    {
-      if ((spec<0) || (spec>2)) return fQrt[fWhichSpec];
-      else return fQrt[spec];
-    }
-  Int_t GetQuad( int spec=-1 ) const
-    {
-      if ((spec<0) || (spec>2)) return fQuad[fWhichSpec];
-      else return fQuad[spec];
-    }
-  Double_t GetTdiff( int spec=-1 ) const
-    {
-      if ((spec<0) || (spec>2)) return fTdiff[fWhichSpec];
-      else return fTdiff[spec];
-    }
-  Int_t GetGate( int spec=-1 ) const 
-    { 
-      if ((spec<0) || (spec>2)) return fGate[fWhichSpec];
-      return fGate[spec]; 
-    }
-  Int_t GetReading( int spec=-1 ) const 
-    { 
-      if ((spec<0) || (spec>2)) return present_reading[fWhichSpec];
-      return present_reading[spec]; 
-    }
-  Int_t GetValidTime( int spec=-1 ) const 
-    { 
-      if ((spec<0) || (spec>2)) return validTime[fWhichSpec];
-      return validTime[spec]; 
-    }
-  Int_t GetValidHelicity( int spec=-1 ) const 
-    { 
-      if ((spec<0) || (spec>2)) return validHel[fWhichSpec];
-      return validHel[spec]; 
-    }
+  virtual Int_t  Begin( THaRunBase* r=0 );
+  virtual void   Clear( Option_t* opt = "" );
+  virtual Int_t  Decode( const THaEvData& evdata );
 
-  Int_t GetNumRead()      const { return fNumread; } // Lastest valid reading
-  Int_t GetBadRead()      const { return fBadread; } // Latest problematic reading
-// Get methods for Ring Buffer scalers
+  // Helicity sources: left or right spectrometer. Use as argument to
+  // GetHelicity() etc. 
+  // kDefault selects the spectrometer arm specified in the database 
+  // (or last call to SetState, resp.)
+  enum EArm { kDefault = -1, kLeft, kRight };
+
+  virtual Int_t  GetHelicity() const;
+          Int_t  GetHelicity( const char* spec ) const;
+          Int_t  GetHelicity( EArm spec ) const;
+  virtual Bool_t HelicityValid() const;
+          Bool_t HelicityValid( EArm spec ) const;
+
+  // Get helicity clock timestamp (~105 kHz)
+  virtual Double_t GetTime() const;
+
+  // 
+  // Get ROC 10/11 (R/L) helicity information (for debugging)
+  Int_t    GetQrt( EArm arm=kDefault ) const;
+  Int_t    GetQuad( EArm arm=kDefault ) const;
+  Double_t GetTdiff( EArm arm=kDefault ) const;
+  Int_t    GetGate( EArm arm=kDefault ) const; 
+  Int_t    GetReading( EArm arm=kDefault ) const;
+  Int_t    GetValidTime( EArm arm=kDefault ) const;
+  Int_t    GetValidHelicity( EArm arm=kDefault ) const;
+  Int_t    GetNumRead() const { return fNumread; } // Lastest valid reading
+  Int_t    GetBadRead() const { return fBadread; } // Latest problematic reading
+
+  // Get methods for Ring Buffer scalers
   Int_t GetRingClk()      const { return fRing_clock; }
   Int_t GetRingQrt()      const { return fRing_qrt; }
   Int_t GetRingHelicity() const { return fRing_helicity; }
@@ -80,22 +75,20 @@ public:
   Int_t GetRingl1a()      const { return fRing_l1a; }
   Int_t GetRingV2fh()     const { return fRing_v2fh; }
 
-  Int_t Decode( const THaEvData& evdata );
-  void ClearEvent();
-// The user may set the state of this class (see implementation)
-  void SetState(int mode, int delay, int sign, int spec, int redund);
-  void SetROC (int arm, int roc,
-	       int helheader, int helindex,
-	       int timeheader, int timeindex);
-  void SetRTimeROC (int arm, 
-		    int roct2, int t2header, int t2index, 
-		    int roct3, int t3header, int t3index);
+  // The user may set the state of this class (see implementation)
+  void SetState(Int_t mode, Int_t delay, Int_t sign, 
+		Int_t spec, Int_t redund);
+  void SetROC (Int_t arm, Int_t roc, Int_t helheader, Int_t helindex,
+	       Int_t timeheader, Int_t timeindex);
+  void SetRTimeROC (Int_t arm, 
+		    Int_t roct2, Int_t t2header, Int_t t2index, 
+		    Int_t roct3, Int_t t3header, Int_t t3index);
 
-private:
+  THaHelicity();  // For ROOT I/O only
 
-  THaHelicity( const THaHelicity& ) {}
-  THaHelicity& operator=( const THaHelicity& ) { return *this; }
-  void ReadData ( const THaEvData& evdata);
+protected:
+
+  virtual void ReadData ( const THaEvData& evdata );
   void TimingEvent(); // Check for and process timing events
   void QuadCalib();
   void LoadHelicity();
@@ -107,22 +100,19 @@ private:
 		  Int_t index) const;
 
 // These variables define the state of this object ---------
-// The fgG0mode flag turns G0 mode on (1) or off (0)
+// The fG0mode flag turns G0 mode on (1) or off (0)
 // G0 mode is the delayed helicity mode, else it is in-time.
-  Int_t fgG0mode;
-  Int_t fgG0delay;  // delay of helicity (# windows)
+  Bool_t fG0mode;
+  Int_t fG0delay;  // delay of helicity (# windows)
 // Overall sign (as determined by Moller)
   Int_t fSign;
 // Which spectrometer do we believe ?
   Int_t fWhichSpec;  // = fgLarm or fgRarm
 // Check redundancy ? (yes=1, no=0)
-  Int_t fCheckRedund;
+  Bool_t fCheckRedund;
 // ---- end of state variables -----------------
 
-  static const Int_t fgNbits = 24;   
-  static const Int_t fgLarm = 0;
-  static const Int_t fgRarm = 1;
-  static const Double_t fgTdiff_LeftHRS, fgTdiff_RightHRS;
+  enum { kNbits = 24 };
   Double_t *fTdavg, *fTdiff, *fT0, *fT9;
   Bool_t* fT0T9; // Was fT0 computed using fT9?
   Double_t *fTlastquad, *fTtol;
@@ -142,7 +132,7 @@ private:
   Int_t recovery_flag;
   int nb;
   UInt_t iseed, iseed_earlier, inquad;
-  Int_t fArm;  // Spectrometer = fgLarm or fgRarm
+  Int_t fArm;  // Spectrometer = kRight or kLeft
 
   Int_t fNumread, fBadread;
   // ring buffer scalers
@@ -154,7 +144,7 @@ private:
   Double_t  Radc_helicity, Radc_gate;
   Int_t  Ladc_hbit, Radc_hbit;
 
-  Int_t     Lhel,Rhel,Hel;
+  Int_t     Lhel,Rhel;
   Double_t  timestamp;                         
 
   // ROC information
@@ -193,18 +183,14 @@ private:
   static const Int_t Plus     =  1;    
   static const Int_t Minus    = -1;    
   static const Int_t Unknown  =  0;    
-  // HELDEBUG = 1 for messages about unusual helicity bit handling,
-  // e.g. handling missing quadruples
-  // = 2 for messages relating to scalers
-  // = 3 for verbose debugging output
-  // = -1 to get fTdiff (calib time)
-  static const Int_t HELDEBUG =   0;
-  static const Int_t HELVERBOSE = 0;
 
   void   InitG0();
   void   InitMemory();
 
-  ClassDef(THaHelicity,0)       // Beam helicity information.
+  virtual Int_t DefineVariables( EMode mode = kDefine );
+  virtual Int_t ReadDatabase( const TDatime& date );
+
+  ClassDef(THaHelicity,1)       // Beam helicity information.
 };
 
 #endif 
