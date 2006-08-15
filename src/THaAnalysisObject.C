@@ -420,7 +420,7 @@ THaAnalysisObject::EStatus THaAnalysisObject::Init( const TDatime& date )
 
  err:
   if( status == kFileError )
-    Error(Here("OpenFile"),"Cannot open database file db_%sdat",fnam);
+    Error(Here("Init"),"Cannot open database file db_%sdat",fnam);
  exit:
   return fStatus = (EStatus)status;
 }
