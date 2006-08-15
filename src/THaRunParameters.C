@@ -125,7 +125,7 @@ Int_t THaRunParameters::ReadDatabase( const TDatime& date )
 #define OPEN THaAnalysisObject::OpenFile
 #define READ THaAnalysisObject::LoadDBvalue
 
-  FILE* f = OPEN( "run", date, "THaRunParameters::ReadDatabase", "r", 0 );
+  FILE* f = OPEN( "run", date, "THaRunParameters::ReadDatabase", "r", 1 );
   if( !f ) 
     return -1;
 
