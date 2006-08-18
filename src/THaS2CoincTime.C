@@ -140,7 +140,7 @@ Int_t THaS2CoincTime::Process( const THaEvData& evdata )
     *(sp->Ntr) = sp->Sp->GetNTracks();
     if (*(sp->Ntr) <=0) continue;   // no tracks, skip
     
-    if (sp->Ntr > sp->Sz) {  // expand array if necessary
+    if ( *(sp->Ntr) > *(sp->Sz) ) {  // expand array if necessary
 #if CAN_RESIZE
       delete [] *(sp->Vxtime);
       *(sp->Sz) = *(sp->Ntr)+5;
