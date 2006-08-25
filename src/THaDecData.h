@@ -41,7 +41,7 @@ class BdataLoc {
    Int_t NumHits() { return ndata; }
    UInt_t Get(Int_t i=0) { 
      return (i >= 0 && ndata > i) ? rdata[i] : 0; }
-   Bool_t ThisIs(const char* aname) { return (strstr(name.c_str(),aname) != 0);}
+   Bool_t ThisIs(const char* aname) { return name==aname;}
    ~BdataLoc() {}
    
    Int_t  crate, slot, chan;   // where to look in crates
