@@ -21,6 +21,7 @@
 #include "THaString.h"
 #include "THaGlobals.h"
 #include "THaAnalyzer.h"
+#include "THaDBFile.h"
 #include "ha_compiledata.h"
 
 #include "TTree.h"
@@ -38,6 +39,7 @@ TList*      gHaScalers = NULL;  //List of scaler groups
 TList*      gHaPhysics = NULL;  //List of physics modules
 THaRunBase* gHaRun     = NULL;  //The currently active run
 TClass*     gHaDecoder = NULL;  //Class(!) of decoder to use
+THaDB*      gHaDB      = NULL;  //Database system to use
 
 THaInterface* THaInterface::fgAint = NULL;  //Pointer to this interface
 
@@ -67,6 +69,8 @@ THaInterface::THaInterface( const char* appClassName, int* argc, char** argv,
   gHaPhysics = new TList;
   // Use the standard CODA file decoder by default
   gHaDecoder = THaCodaDecoder::Class();
+  // File-based database by default
+  //  gHaDB      = new THaDBFile();
 
   // Set the maximum size for a file written by Podd contained by the TTree
   //  putting it to 1.5 GB, down from the default 1.9 GB since something odd
@@ -90,6 +94,7 @@ THaInterface::~THaInterface()
     // Clean up the analyzer object if defined
     delete THaAnalyzer::GetInstance();
     // Delete all global lists and objects contained in them
+    delete gHaDB;           gHaDB = 0;
     delete gHaPhysics;   gHaPhysics=0;
     delete gHaScalers;   gHaScalers=0;
     delete gHaApps;         gHaApps=0;

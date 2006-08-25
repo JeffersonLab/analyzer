@@ -1,30 +1,30 @@
+#include "THaDB.h"
+#include "THaDetMap.h"
+#include "TString.h"
+
 #include <fstream>
 #include <iostream>
 #include <iomanip>
 #include <string>
-#include "TString.h"
 
-#include "THaDB.h"
-#include "THaDetMap.h"
 
 using namespace std;
 
 
-
-THaDB* gHaDB = NULL;
 
 typedef string::size_type ssiz_t;
 
 //_____________________________________________________________________________
 
 THaDB::THaDB()
-{ if (!gHaDB) gHaDB=this; }
+{  
+
+}
 
 //_____________________________________________________________________________
-THaDB::~THaDB() {
-  if (gHaDB == this) {
-    gHaDB = NULL;
-  }
+THaDB::~THaDB() 
+{
+
 }
 
 //_____________________________________________________________________________
@@ -140,8 +140,10 @@ Int_t THaDB::GetDetMap( const char* sysname, THaDetMap& detmap, const TDatime& d
   for (CI i=fDetectorMap.begin(); i != fDetectorMap.end() ; i++) {
     const THaDetConfig& dc = *i;
     if ( dc.name == sysname ) {
-      if ( detmap.AddModule(dc.roc,dc.slot,dc.chan_lo,dc.chan_hi,dc.wir,atoi(dc.model.c_str())) < 0 ) {
-	Error("THaDB::Get_DetMap","Too many modules listed for %s. They will be dropped!",sysname);
+      if ( detmap.AddModule(dc.roc,dc.slot,dc.chan_lo,dc.chan_hi,dc.wir,
+			    atoi(dc.model.c_str())) < 0 ) {
+	Error("THaDB::Get_DetMap","Too many modules listed for %s. "
+	      "They will be dropped!", sysname);
 	return -1;
       }
       nfnd++;

@@ -12,28 +12,42 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "TObject.h"
-#include "TDatime.h"
 
 #include "VarDef.h"
 #include "VarType.h"
+#include "THaGlobals.h"
 
 #include<string>
 #include<vector>
 
 class THaDetMap;
-
-class THaDB;
-class THaDetConfig;
-
-extern THaDB* gHaDB;
+class TDatime;
 
 
+class THaDetConfig {
+  
+ public:
+  THaDetConfig(std::string line);
+  bool IsGood() const;
+  virtual ~THaDetConfig();
+  
+ private:
+  std::string name;
+  int wir, roc, crate, slot;
+  int chan_lo, chan_hi;
+  std::string model;
+  
+ public:
+  friend class THaDB;
+  friend std::ostream& operator<<(std::ostream&, const THaDetConfig& );
+
+  ClassDef(THaDetConfig,0)
+};
 
 class THaDB : public TObject {
 
  public:
   THaDB();
-  
   virtual ~THaDB();
 
   // For all 'Get' routines, the returned Int_t is the number of elements read
@@ -124,26 +138,6 @@ class THaDB : public TObject {
  public:
   
   ClassDef(THaDB,0) // ABC for a key- and date-based database
-};
-
-class THaDetConfig {
-  
- public:
-  THaDetConfig(std::string line);
-  bool IsGood() const;
-  virtual ~THaDetConfig();
-  
- private:
-  std::string name;
-  int wir, roc, crate, slot;
-  int chan_lo, chan_hi;
-  std::string model;
-  
- public:
-  friend class THaDB;
-  friend std::ostream& operator<<(std::ostream&, const THaDetConfig& );
-
-  ClassDef(THaDetConfig,0)
 };
 
 #endif  // HallA_THaDB
