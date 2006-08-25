@@ -1,14 +1,81 @@
+//*-- Author :    Robert Feuerbach   02-July-2003
+
+//////////////////////////////////////////////////////////////////////////
+//
+// THaDBFile
+//
+//  Interface to a database stored in key-value format textfile(s).
+//
+//  Date/time-based granularity is implemented, though clumsy in the
+//  file at the moment.
+//
+//  The data are organized by "system" (e.g. a detector or spectrometer) 
+//  and "attribute" (actual names of data fields).  Data can be 
+//  integers, doubles, strings, arrays of integers or doubles, or
+//  two-dimensional arrays (matrix) or integers or doubles.
+//
+//  Data for each system is expected to be stored in an individual file 
+//  with name "db_<system>.dat".  Inside this file,
+//  the data are simple key-value pairs.  The files are expected to be located
+//  in the "database directory".  This directory is either the one specified
+//  in a call to SetDBDir() or the value of the environment variable DB_DIR.  
+//  If neither is available, ./DB ./db and ./ (current directory) are tried.
+//  
+//  Time dependence of the data can be implemented in two ways: database files 
+//  can be stored in subdirectories of the database directory whose names
+//  represent a time stamp of the form YYYYMMDD.  This allows a granularity
+//  of one day. 
+//
+//  In addition or instead of the directory-based method, database files 
+//  may contain date tags of form
+//  -----[ YYYY-MM-DD HH:MM:SS ]-----
+//  Such tags must be ordered by ascending time. Everything following a 
+//  date tag is considered valid starting with the indicated time up until
+//  the date of the next tag. If there is no next tag, then the validity
+//  never expires.
+//
+//  A subdirectory named "DEFAULT" and/or the database directory itself
+//  can be used to store files that do not change as often as the
+//  time stamps of the subdirectories.  Of course, these files may
+//  contain date tags as described above.
+//
+//  For quick tests, dabatase files may be put in the current directory, which
+//  is always searched first before looking in the database directory and its
+//  subdirectories.
+//
+//  In addition to (or instead of) a single file per "system", there can be
+//  a "master database file". Entries not found in single files are
+//  searched for in the master file.  The database direcory, subdirectory,
+//  and date tag logic described above applies to the master file as well,
+//  so users may choose, for example, bewteen smaller master files distributed 
+//  over several subdirectories and a single file stored in the database 
+//  directory with no subdirectories at all.  Different experiments may
+//  choose different master files, e.g. $DB_DIR/e01001.db, $DB_DIR/e05012, etc.
+//  The default master file name "default.db", but can be overridden with a 
+//  call to SetMasterFileName().
+//
+//  Within the master file, the keys are of format "system.attribute"
+//  followed by the corresponding value(s).
+//
+//  The master file is an extension of the older "run database" concept.
+//  THaDB does not support a special run database; instead run-specific
+//  data should be stored like any other database entries.  For backwards
+//  compatibility, however, THaDBFile can be configured to search db_run.dat 
+//  files as well if entries are not found in either single files or the master
+//  file. To enable this mode, call EnableRunDBSearch().
+//
+//////////////////////////////////////////////////////////////////////////
+
 #include "THaDBFile.h"
-
+#include "TDatime.h"
 #include "TString.h"
-#include "TMath.h"
-#include "TSystem.h"
-
 #include <fstream>
 #include <iostream>
 #include <iomanip>
 #include <string>
-#include <cstring>
+//#include <cstring>
+
+using namespace std;
 
 // for compatibility since strstream is being depreciated,
 // but not all platforms have stringstreams yet
@@ -23,8 +90,6 @@
 #define OSSTREAM ostrstream
 #define ASSIGN_SSTREAM(a,b)  b<<'\0'; a=b.str()
 #endif
-
-using namespace std;
 
 // the old GNUC has a funny version of string::compare
 // egcs (GNUC old) has a non-standard compare method
@@ -195,7 +260,7 @@ Int_t THaDBFile::GetValue( const char* system, const char* attr,
 //_____________________________________________________________________________
 template<class T>
 Int_t THaDBFile::ReadValue( const char* systemC, const char* attrC,
-			    T& value, TDatime date)
+			    T& value, const TDatime& date)
 {
   // Read in a single value, using the istream >> operator.
   // Actually implements the reading functions.
@@ -208,7 +273,8 @@ Int_t THaDBFile::ReadValue( const char* systemC, const char* attrC,
   string system(systemC);
   string attr(attrC);
 
-  if ( from.good() && FindEntry(system,attr,from,date) ) {
+  TDatime dbdate(date);
+  if ( from.good() && FindEntry(system,attr,from,dbdate) ) {
     // found an entry
     
     from >> value;
@@ -240,7 +306,7 @@ Int_t THaDBFile::GetArray( const char* system, const char* attr,
 //_____________________________________________________________________________
 template<class T>
 Int_t THaDBFile::ReadArray( const char* systemC, const char* attrC,
-			    vector<T>& array, TDatime date)
+			    vector<T>& array, const TDatime& date)
 {
   // Read in a series of values, using the istream >> operator
   // They are returned in a vector, with the return value and the
@@ -254,27 +320,22 @@ Int_t THaDBFile::ReadArray( const char* systemC, const char* attrC,
   //  ifstream from(fInFileName.c_str());
   string system(systemC);
   string attr(attrC);
-
-
-  Int_t s=array.size();
-  //  vector<T>::size_type s=array.size();
   
+  T val;
+
   Int_t cnt=0;
   
-  if ( from.good() && FindEntry(system,attr,from,date) ) {
+  TDatime dbdate(date);
+  if ( from.good() && FindEntry(system,attr,from,dbdate) ) {
     while ( from.good() && find_constant(from) ) {
       
-      // We must have some constants!
-      if (cnt>=s) {
-	array.resize(cnt+10);
-	s=array.size();
-      }
-      from >> array[cnt];
+      from >> val;
+      array.push_back(val);
       cnt++;
     }
   }
   
-  array.resize(cnt); // only keep it as large as necessary
+  //  array.resize(cnt); // only keep it as large as necessary
   return cnt;
 }
 
@@ -300,7 +361,7 @@ Int_t THaDBFile::GetArray( const char* system, const char* attr,
 //_____________________________________________________________________________
 template<class T>
 Int_t THaDBFile::ReadArray( const char* systemC, const char* attrC,
-			   T* array, Int_t size, TDatime date )
+			    T* array, Int_t size, const TDatime& date )
 {
   // Read in a series of values, using the istream >> operator
   // They are returned in a C-style array, with the return value equal
@@ -315,9 +376,9 @@ Int_t THaDBFile::ReadArray( const char* systemC, const char* attrC,
 
   Int_t cnt=0;
 
-  if ( from.good() && FindEntry(system,attr,from,date) ) {
+  TDatime dbdate(date);
+  if ( from.good() && FindEntry(system,attr,from,dbdate) ) {
     while ( from.good() && find_constant(from) ) {
-      // We must have some constants!
 
       // If the array is full, do not read in any more
       if (cnt>=size) {
@@ -357,7 +418,7 @@ Int_t THaDBFile::GetMatrix( const char* system, const char* attr,
 //_____________________________________________________________________________
 template<class T>
 Int_t THaDBFile::ReadMatrix( const char* systemC, const char* attrC, 
-			     vector<vector<T> >& rows, TDatime date )
+			     vector<vector<T> >& rows, const TDatime& date )
 {
   // Reads in a matrix of values, broken by '\n'. Each line in the matrix
   // must begin with whitespace
@@ -379,7 +440,8 @@ Int_t THaDBFile::ReadMatrix( const char* systemC, const char* attrC,
   
   // this differs from a 'normal' vector in that here, each line
   // gets its own row in the matrix
-  if ( FindEntry(system,attr,from,date) ) {
+  TDatime dbdate(date);
+  if ( FindEntry(system,attr,from,dbdate) ) {
     // Start collecting a new row
     while ( from.good() && find_constant(from) ) {
       v.clear();
@@ -429,7 +491,7 @@ Int_t THaDBFile::PutValue( const char* system, const char* attr,
 //_____________________________________________________________________________
 template<class T>
 Int_t THaDBFile::WriteValue( const char* system, const char* attr,
-			     const T& value, TDatime date)
+			     const T& value, const TDatime& date)
 {
   // Write out a single value, using the ostream << operator
   // For now, each of these will copy from the old file, writing
@@ -509,7 +571,7 @@ Int_t THaDBFile::PutArray( const char* system, const char* attr,
 //_____________________________________________________________________________
 template<class T>
 Int_t THaDBFile::WriteArray( const char* system, const char* attr,
-			     const vector<T>& v, TDatime date)
+			     const vector<T>& v, const TDatime& date)
 {
   // Write out an array, using the ostream << operator
   // For now, each of these will copy from the old file, writing
@@ -601,8 +663,7 @@ Int_t THaDBFile::PutArray( const char* system, const char* attr,
 //_____________________________________________________________________________
 template<class T>
 Int_t THaDBFile::WriteArray( const char* system, const char* attr,
-			     const T* array, Int_t size, 
-			     TDatime date)
+			     const T* array, Int_t size, const TDatime& date)
 {
 
   // Write out the sequence of values to the database file. Can also
@@ -699,8 +760,7 @@ Int_t THaDBFile::PutMatrix( const char* system, const char* name,
 //_____________________________________________________________________________
 template <class T>
 Int_t THaDBFile::WriteMatrix( const char* system, const char* attr,
-			      const vector<vector<T> >& matrix,
-			      TDatime date )
+			      const vector<vector<T> >& matrix, const TDatime& date )
 {
   // Write out a matrix of arbitrary type, just needs the ostream<< operator
   // prepared. Each line corresponds to a row in the matrix

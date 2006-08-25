@@ -5,19 +5,17 @@
 //
 // THaDBFile
 //
-//  A simple class to read database from a key - value format txtfile
+//  Interface to a database stored in key-value format textfile(s).
 //
-//  Date/time-based granularity is implemented, though clumsy in the
-//  file at the moment.
-// 
 //////////////////////////////////////////////////////////////////////////
 
-#include "TDatime.h"
 #include "THaDB.h"
 
 #include<string>
 #include<vector>
 #include<iostream>
+
+class TDatime;
 
 class THaDBFile : public THaDB {
 
@@ -26,25 +24,26 @@ class THaDBFile : public THaDB {
   THaDBFile(const char* calib="default.db",
 	     const char* detcfg="det.config",
 	     std::vector<THaDetConfig>* detmap=0);
+  //  THaDBFile();
   
   virtual ~THaDBFile();
 
   Int_t GetValue( const char* system, const char* attr,
-		  Int_t& value, const TDatime &date );
+		  Int_t& value, const TDatime& date );
   Int_t GetValue( const char* system, const char* attr,
-		  Double_t& value, const TDatime &date );
+		  Double_t& value, const TDatime& date );
   Int_t GetValue( const char* system, const char* attr,
-		  std::string& value, const TDatime &date );
+		  std::string& value, const TDatime& date );
 
   Int_t GetArray( const char* system, const char* attr,
-		  std::vector<Int_t>& array, const TDatime &date );
+		  std::vector<Int_t>& array, const TDatime& date );
   Int_t GetArray( const char* system, const char* attr,
-		  std::vector<Double_t>& array, const TDatime &date );
+		  std::vector<Double_t>& array, const TDatime& date );
 
   Int_t GetArray( const char* system, const char* attr,
-		  Int_t* array, Int_t size, const TDatime &date );
+		  Int_t* array, Int_t size, const TDatime& date );
   Int_t GetArray( const char* system, const char* attr,
-		  Double_t* array, Int_t size, const TDatime &date );
+		  Double_t* array, Int_t size, const TDatime& date );
 
   Int_t LoadValues ( const char* system, const TagDef* list,
 		     const TDatime& date );
@@ -105,9 +104,9 @@ class THaDBFile : public THaDB {
 
   Int_t PutDetMap( const TDatime& date );
 
-  int LoadDB();       // force reloading of database from file, what is in memory
+  int LoadDB();   // force reloading of database from file, what is in memory
   
-  int FlushDB();      // Flush DB in memory to file
+  int FlushDB();  // Flush DB in memory to file
 
   friend std::ostream& operator<<(std::ostream&, THaDBFile&);
 
@@ -131,30 +130,30 @@ class THaDBFile : public THaDB {
   
   template<class T>
     Int_t ReadValue( const char* systemC, const char* attrC,
-		     T& value, TDatime date);
+		     T& value, const TDatime& date);
   template<class T>
     Int_t ReadArray( const char* systemC, const char* attrC,
-		     std::vector<T>& array, TDatime date);
+		     std::vector<T>& array, const TDatime& date);
   template<class T>
     Int_t ReadArray( const char* systemC, const char* attrC,
-		     T* array, Int_t size, TDatime date );
+		     T* array, Int_t size, const TDatime& date );
   template<class T>
     Int_t ReadMatrix( const char* systemC, const char* attrC, 
-		      std::vector<std::vector<T> >& rows, TDatime date );
+		      std::vector<std::vector<T> >& rows, const TDatime& date );
   template<class T>
     Int_t WriteValue( const char* systemC, const char* attrC,
-		      const T& value, TDatime date);
+		      const T& value, const TDatime& date);
   template<class T>
     Int_t WriteArray( const char* system, const char* attr,
-		      const std::vector<T>& v, TDatime date);
+		      const std::vector<T>& v, const TDatime& date);
   template<class T>
     Int_t WriteArray( const char* system, const char* attr,
 		      const T* array, Int_t size, 
-		      TDatime date);
+		      const TDatime& date);
   template <class T>
     Int_t WriteMatrix( const char* system, const char* attr,
 		       const std::vector<std::vector<T> >& matrix,
-		       TDatime date );
+		       const TDatime& date );
 
   std::string db_contents; // everything in this database -- buffer for reading/writing
   
@@ -163,7 +162,6 @@ class THaDBFile : public THaDB {
   bool NextLine( std::istream& from );
   bool CopyDB(std::istream& from, std::ostream& to, std::streampos pos=-1);
   
- public:
   ClassDef(THaDBFile,0) //  An ASCII file-based implementation of THaDB
 
 
