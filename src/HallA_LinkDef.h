@@ -108,8 +108,11 @@
 #pragma link C++ class THaBeamEloss+;
 #pragma link C++ class THaTriggerTime+;
 #pragma link C++ class THaTrackOut+;
-#pragma link C++ class THaHelicity+;
-#pragma link C++ class THaHelicityDet+;
+// #pragma link C++ class THaHelicityDet+;
+// #pragma link C++ class THaADCHelicity+;
+// #pragma link C++ class THaHelicity+;
+// #pragma link C++ class THaG0HelicityReader+;
+// #pragma link C++ class THaG0Helicity+;
 
 #ifdef ONLINE_ET
 #pragma link C++ class THaOnlRun+;

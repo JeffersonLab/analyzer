@@ -19,21 +19,27 @@ class THaHelicityDet :  public THaDetector {
   
 public:
 
+  enum EHelicity { kMinus = -1, kUnknown, kPlus };
+
   virtual ~THaHelicityDet();
 
-  virtual Int_t  GetHelicity()   const { return fHelicity; }
-  virtual Bool_t HelicityValid() const { return (fHelicity != 0); }
+  virtual void       Clear( Option_t* opt="" ) { fHelicity = kUnknown; }
+  virtual EHelicity  GetHelicity()   const { return fHelicity; }
+  virtual Bool_t     HelicityValid() const { return (fHelicity != kUnknown); }
 
   THaHelicityDet();  // For ROOT I/O only
 
 protected:
 
   //Only derived classes may construct me
+  THaHelicityDet( const char* name, const char* description,
+		  THaApparatus* a = NULL);
 
-  THaHelicityDet(const char* name, const char* description,
-		 THaApparatus* a = NULL);
+  EHelicity fHelicity;  // Beam helicity. fHelicity = fSign * decoded_helicity
+  Int_t     fSign;      // Overall sign of beam helicity. Default 1.
 
-  Int_t fHelicity;               // Beam helicity
+  virtual Int_t DefineVariables( EMode mode = kDefine );
+  virtual Int_t ReadDatabase( const TDatime& date );
 
   ClassDef(THaHelicityDet,1)     // ABC for a beam helicity detector
 };
