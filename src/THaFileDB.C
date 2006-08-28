@@ -2,7 +2,7 @@
 
 //////////////////////////////////////////////////////////////////////////
 //
-// THaDBFile
+// THaFileDB
 //
 //  Interface to a database stored in key-value format textfile(s).
 //
@@ -60,13 +60,13 @@
 //  The master file is an extension of the older "run database" concept.
 //  THaDB does not support a special run database; instead run-specific
 //  data should be stored like any other database entries.  For backwards
-//  compatibility, however, THaDBFile can be configured to search db_run.dat 
+//  compatibility, however, THaFileDB can be configured to search db_run.dat 
 //  files as well if entries are not found in either single files or the master
 //  file. To enable this mode, call EnableRunDBSearch().
 //
 //////////////////////////////////////////////////////////////////////////
 
-#include "THaDBFile.h"
+#include "THaFileDB.h"
 #include "TDatime.h"
 #include "TString.h"
 #include <fstream>
@@ -149,7 +149,7 @@ namespace {
 }
 
 //_____________________________________________________________________________
-THaDBFile::THaDBFile(const char* infile, const char* detcfg,
+THaFileDB::THaFileDB(const char* infile, const char* detcfg,
 		       vector<THaDetConfig>* detmap)
   : fInFileName(infile), fOutFileName("out.db"), fDetFile(detcfg)
 {
@@ -162,7 +162,7 @@ THaDBFile::THaDBFile(const char* infile, const char* detcfg,
 }
 
 //_____________________________________________________________________________
-THaDBFile::~THaDBFile()
+THaFileDB::~THaFileDB()
 {
   // the THaDB parent handles the assigning/freeing of the global
   // variable pointer
@@ -171,7 +171,7 @@ THaDBFile::~THaDBFile()
 }
 
 //_____________________________________________________________________________
-int THaDBFile::LoadDB()
+int THaFileDB::LoadDB()
 {
   // Read database from fInFileName, dropping all that is in memory
   db_contents.erase();
@@ -188,7 +188,7 @@ int THaDBFile::LoadDB()
 }
 
 //_____________________________________________________________________________
-int THaDBFile::FlushDB()
+int THaFileDB::FlushDB()
 {
   // Write contents of memory out to file
   ofstream to(fOutFileName.c_str());
@@ -201,20 +201,20 @@ int THaDBFile::FlushDB()
 }
 
 //_____________________________________________________________________________
-void THaDBFile::PrintDB()
+void THaFileDB::PrintDB()
 {
   // Print database contents
   cout << *this << endl;
 }
 
 //_____________________________________________________________________________
-void  THaDBFile::SetOutFile( const char* outfname )
+void  THaFileDB::SetOutFile( const char* outfname )
 {
   fOutFileName = outfname; 
 }
 
 //_____________________________________________________________________________
-bool THaDBFile::CopyDB(istream& in, ostream& out, streampos pos) {
+bool THaFileDB::CopyDB(istream& in, ostream& out, streampos pos) {
   // Copy, starting at the current position through position "pos"
   // from "in" to "out"
   int ch;
@@ -222,7 +222,7 @@ bool THaDBFile::CopyDB(istream& in, ostream& out, streampos pos) {
     out.put(ch);
   }
   if ( !in.good() && !in.eof() ) {
-    //    Warning("THaDBFile::Copy","Something weird happened while copying...");
+    //    Warning("THaFileDB::Copy","Something weird happened while copying...");
     return false;
   }
   return true;
@@ -230,7 +230,7 @@ bool THaDBFile::CopyDB(istream& in, ostream& out, streampos pos) {
 
 //  READING A SINGLE VALUE
 //_____________________________________________________________________________
-Int_t THaDBFile::GetValue( const char* system, const char* attr,
+Int_t THaFileDB::GetValue( const char* system, const char* attr,
 			   Int_t& value, const TDatime& date)
 {
   // Read an Int_t for system/attribute
@@ -238,7 +238,7 @@ Int_t THaDBFile::GetValue( const char* system, const char* attr,
 }
 
 //_____________________________________________________________________________
-Int_t THaDBFile::GetValue( const char* system, const char* attr,
+Int_t THaFileDB::GetValue( const char* system, const char* attr,
 			   Double_t& value, const TDatime& date)
 {
   // Read an Double_t for system/attribute
@@ -246,7 +246,7 @@ Int_t THaDBFile::GetValue( const char* system, const char* attr,
 }
 
 //_____________________________________________________________________________
-Int_t THaDBFile::GetValue( const char* system, const char* attr,
+Int_t THaFileDB::GetValue( const char* system, const char* attr,
 			   string& value, const TDatime& date)
 {
   // Read a string for system/attribute
@@ -259,7 +259,7 @@ Int_t THaDBFile::GetValue( const char* system, const char* attr,
 
 //_____________________________________________________________________________
 template<class T>
-Int_t THaDBFile::ReadValue( const char* systemC, const char* attrC,
+Int_t THaFileDB::ReadValue( const char* systemC, const char* attrC,
 			    T& value, const TDatime& date)
 {
   // Read in a single value, using the istream >> operator.
@@ -287,7 +287,7 @@ Int_t THaDBFile::ReadValue( const char* systemC, const char* attrC,
 
 //  READING AN ARRAY INTO A VECTOR
 //_____________________________________________________________________________
-Int_t THaDBFile::GetArray( const char* system, const char* attr,
+Int_t THaFileDB::GetArray( const char* system, const char* attr,
 			   vector<Int_t>& array, const TDatime& date)
 {
   // Read in a set of Int_t's in to a vector.
@@ -295,7 +295,7 @@ Int_t THaDBFile::GetArray( const char* system, const char* attr,
   return ReadArray(system,attr,array,date);
 }
 //_____________________________________________________________________________
-Int_t THaDBFile::GetArray( const char* system, const char* attr,
+Int_t THaFileDB::GetArray( const char* system, const char* attr,
 			   vector<Double_t>& array, const TDatime& date)
 {
   // Read in a set of Double_t's in to a vector.
@@ -305,7 +305,7 @@ Int_t THaDBFile::GetArray( const char* system, const char* attr,
 
 //_____________________________________________________________________________
 template<class T>
-Int_t THaDBFile::ReadArray( const char* systemC, const char* attrC,
+Int_t THaFileDB::ReadArray( const char* systemC, const char* attrC,
 			    vector<T>& array, const TDatime& date)
 {
   // Read in a series of values, using the istream >> operator
@@ -342,7 +342,7 @@ Int_t THaDBFile::ReadArray( const char* systemC, const char* attrC,
 
 //  READING AN ARRAY INTO A C-style ARRAY
 //_____________________________________________________________________________
-Int_t THaDBFile::GetArray( const char* system, const char* attr,
+Int_t THaFileDB::GetArray( const char* system, const char* attr,
 			   Int_t* array, Int_t size, const TDatime& date)
 {
   // Read in a set of Int_t's in to a C-style array.
@@ -350,7 +350,7 @@ Int_t THaDBFile::GetArray( const char* system, const char* attr,
   return ReadArray(system,attr,array,size,date);
 }
 //_____________________________________________________________________________
-Int_t THaDBFile::GetArray( const char* system, const char* attr,
+Int_t THaFileDB::GetArray( const char* system, const char* attr,
 			   Double_t* array, Int_t size, const TDatime& date)
 {
   // Read in a set of Double_t's in to a vector.
@@ -360,7 +360,7 @@ Int_t THaDBFile::GetArray( const char* system, const char* attr,
 
 //_____________________________________________________________________________
 template<class T>
-Int_t THaDBFile::ReadArray( const char* systemC, const char* attrC,
+Int_t THaFileDB::ReadArray( const char* systemC, const char* attrC,
 			    T* array, Int_t size, const TDatime& date )
 {
   // Read in a series of values, using the istream >> operator
@@ -396,7 +396,7 @@ Int_t THaDBFile::ReadArray( const char* systemC, const char* attrC,
 
 //  READING A MATRIX INTO A two-dimensional vector
 //_____________________________________________________________________________
-Int_t THaDBFile::GetMatrix( const char* system, const char* attr,
+Int_t THaFileDB::GetMatrix( const char* system, const char* attr,
 			    vector<vector<Int_t> >& matrix,
 			    const TDatime& date)
 {
@@ -405,7 +405,7 @@ Int_t THaDBFile::GetMatrix( const char* system, const char* attr,
   return ReadMatrix(system,attr,matrix,date);
 }
 //_____________________________________________________________________________
-Int_t THaDBFile::GetMatrix( const char* system, const char* attr,
+Int_t THaFileDB::GetMatrix( const char* system, const char* attr,
 			    vector<vector<Double_t> >& matrix,
 			    const TDatime& date)
 {
@@ -417,7 +417,7 @@ Int_t THaDBFile::GetMatrix( const char* system, const char* attr,
 
 //_____________________________________________________________________________
 template<class T>
-Int_t THaDBFile::ReadMatrix( const char* systemC, const char* attrC, 
+Int_t THaFileDB::ReadMatrix( const char* systemC, const char* attrC, 
 			     vector<vector<T> >& rows, const TDatime& date )
 {
   // Reads in a matrix of values, broken by '\n'. Each line in the matrix
@@ -464,21 +464,21 @@ Int_t THaDBFile::ReadMatrix( const char* systemC, const char* attrC,
 
 //    WRITING A SINGLE VALUE TO THE FILE
 //_____________________________________________________________________________
-Int_t THaDBFile::PutValue( const char* system, const char* attr,
+Int_t THaFileDB::PutValue( const char* system, const char* attr,
 			   const Int_t& value, const TDatime& date )
 {
   // Save the single Int_t value, corresponding to system/attribute
   return WriteValue(system,attr,value,date);
 }
 //_____________________________________________________________________________
-Int_t THaDBFile::PutValue( const char* system, const char* attr,
+Int_t THaFileDB::PutValue( const char* system, const char* attr,
 			   const Double_t& value, const TDatime& date )
 {
   // Save the single Double_t value, corresponding to system/attribute
   return WriteValue(system,attr,value,date);
 }
 //_____________________________________________________________________________
-Int_t THaDBFile::PutValue( const char* system, const char* attr,
+Int_t THaFileDB::PutValue( const char* system, const char* attr,
 			   const string& value, const TDatime& date )
 {
   // Save the single string value, corresponding to system/attribute
@@ -490,7 +490,7 @@ Int_t THaDBFile::PutValue( const char* system, const char* attr,
   
 //_____________________________________________________________________________
 template<class T>
-Int_t THaDBFile::WriteValue( const char* system, const char* attr,
+Int_t THaFileDB::WriteValue( const char* system, const char* attr,
 			     const T& value, const TDatime& date)
 {
   // Write out a single value, using the ostream << operator
@@ -554,14 +554,14 @@ Int_t THaDBFile::WriteValue( const char* system, const char* attr,
 
 //    WRITING A VECTOR TO THE FILE
 //_____________________________________________________________________________
-Int_t THaDBFile::PutArray( const char* system, const char* attr,
+Int_t THaFileDB::PutArray( const char* system, const char* attr,
 			   const vector<Int_t>& array, const TDatime& date )
 {
   // Save the vector of Int_t 's corresponding to system/attribute
   return WriteArray(system,attr,array,date);
 }
 //_____________________________________________________________________________
-Int_t THaDBFile::PutArray( const char* system, const char* attr,
+Int_t THaFileDB::PutArray( const char* system, const char* attr,
 			   const vector<Double_t>& array, const TDatime& date )
 {
   // Save the vector of Double_t 's, corresponding to system/attribute
@@ -570,7 +570,7 @@ Int_t THaDBFile::PutArray( const char* system, const char* attr,
 
 //_____________________________________________________________________________
 template<class T>
-Int_t THaDBFile::WriteArray( const char* system, const char* attr,
+Int_t THaFileDB::WriteArray( const char* system, const char* attr,
 			     const vector<T>& v, const TDatime& date)
 {
   // Write out an array, using the ostream << operator
@@ -644,7 +644,7 @@ Int_t THaDBFile::WriteArray( const char* system, const char* attr,
 
 //    WRITING A C-style array TO THE FILE
 //_____________________________________________________________________________
-Int_t THaDBFile::PutArray( const char* system, const char* attr,
+Int_t THaFileDB::PutArray( const char* system, const char* attr,
 			   const Int_t* array, Int_t size,
 			   const TDatime& date )
 {
@@ -652,7 +652,7 @@ Int_t THaDBFile::PutArray( const char* system, const char* attr,
   return WriteArray(system,attr,array,size,date);
 }
 //_____________________________________________________________________________
-Int_t THaDBFile::PutArray( const char* system, const char* attr,
+Int_t THaFileDB::PutArray( const char* system, const char* attr,
 			   const Double_t* array, Int_t size,
 			   const TDatime& date )
 {
@@ -662,7 +662,7 @@ Int_t THaDBFile::PutArray( const char* system, const char* attr,
 
 //_____________________________________________________________________________
 template<class T>
-Int_t THaDBFile::WriteArray( const char* system, const char* attr,
+Int_t THaFileDB::WriteArray( const char* system, const char* attr,
 			     const T* array, Int_t size, const TDatime& date)
 {
 
@@ -741,7 +741,7 @@ Int_t THaDBFile::WriteArray( const char* system, const char* attr,
 
 //    WRITE A MATRIX, BUILT OF VECTORS
 //_____________________________________________________________________________
-Int_t THaDBFile::PutMatrix( const char* system, const char* name,
+Int_t THaFileDB::PutMatrix( const char* system, const char* name,
 			    const vector<vector<Double_t> >& rows,
 			    const TDatime& date )
 {
@@ -749,7 +749,7 @@ Int_t THaDBFile::PutMatrix( const char* system, const char* name,
   return WriteMatrix(system,name,rows,date);
 }
 //_____________________________________________________________________________
-Int_t THaDBFile::PutMatrix( const char* system, const char* name,
+Int_t THaFileDB::PutMatrix( const char* system, const char* name,
 			    const vector<vector<Int_t> >& rows,
 			    const TDatime& date )
 {
@@ -759,7 +759,7 @@ Int_t THaDBFile::PutMatrix( const char* system, const char* name,
 
 //_____________________________________________________________________________
 template <class T>
-Int_t THaDBFile::WriteMatrix( const char* system, const char* attr,
+Int_t THaFileDB::WriteMatrix( const char* system, const char* attr,
 			      const vector<vector<T> >& matrix, const TDatime& date )
 {
   // Write out a matrix of arbitrary type, just needs the ostream<< operator
@@ -834,7 +834,7 @@ Int_t THaDBFile::WriteMatrix( const char* system, const char* attr,
 }
 
 //_____________________________________________________________________________
-bool THaDBFile::find_constant(istream& from, int linebreak) {
+bool THaFileDB::find_constant(istream& from, int linebreak) {
   // A Utility routine. Look through the stream 'from' 
   // for the next character that is permitted to be
   // part of the constant set
@@ -875,7 +875,7 @@ bool THaDBFile::find_constant(istream& from, int linebreak) {
 }
 
 //_____________________________________________________________________________
-bool THaDBFile::NextLine( istream& from ) {
+bool THaFileDB::NextLine( istream& from ) {
   // look at the beginning of a new line and determine if it is the beginning
   // of a record, or just blank space or comments
   int ci=from.peek();
@@ -889,7 +889,7 @@ bool THaDBFile::NextLine( istream& from ) {
 }
 
 //_____________________________________________________________________________
-void THaDBFile::WriteDate( ostream& to, const TDatime& date ) {
+void THaFileDB::WriteDate( ostream& to, const TDatime& date ) {
   // Write a line that states the date of the future entries
 
   to << '\n';
@@ -898,7 +898,7 @@ void THaDBFile::WriteDate( ostream& to, const TDatime& date ) {
 }
 
 //_____________________________________________________________________________
-bool THaDBFile::IsDate( istream& from, streampos& pos, TDatime& date ) {
+bool THaFileDB::IsDate( istream& from, streampos& pos, TDatime& date ) {
   // if the next line is a date entry, save that information
   // (position before the date and the date itself)
   int ci;
@@ -915,7 +915,7 @@ bool THaDBFile::IsDate( istream& from, streampos& pos, TDatime& date ) {
     Int_t yy, mm, dd, hh, mi, ss;
     if( sscanf( line.substr(lbrk+1,rbrk-lbrk-1).c_str(), "%d-%d-%d %d:%d:%d",
 		&yy, &mm, &dd, &hh, &mi, &ss) != 6) {
-      Warning("THaDBFile::IsDate", 
+      Warning("THaFileDB::IsDate", 
 	      "Invalid date tag %s", line.c_str());
     }
     date.Set(yy,mm,dd,hh,mi,ss);
@@ -926,7 +926,7 @@ bool THaDBFile::IsDate( istream& from, streampos& pos, TDatime& date ) {
 
 
 //_____________________________________________________________________________
-bool THaDBFile::FindEntry( string& system, string& attr, istream& from,
+bool THaFileDB::FindEntry( string& system, string& attr, istream& from,
 			   TDatime& date ) {
   // Find the line beginning with the desired key.
   // we are always beginning at the start of a line, never
@@ -1029,7 +1029,7 @@ bool THaDBFile::FindEntry( string& system, string& attr, istream& from,
 }
 
 //_____________________________________________________________________________
-Int_t THaDBFile::GetMatrix( const char* systemC, vector<string>& mtr_name, 
+Int_t THaFileDB::GetMatrix( const char* systemC, vector<string>& mtr_name, 
 			    vector<vector<Double_t> >& mtr_rows, const TDatime &date )
 {
   // Read in the transport matrix from the text-file database.
@@ -1082,7 +1082,7 @@ Int_t THaDBFile::GetMatrix( const char* systemC, vector<string>& mtr_name,
   
 
 //_____________________________________________________________________________
-Int_t THaDBFile::PutMatrix( const char* system, 
+Int_t THaFileDB::PutMatrix( const char* system, 
 			    const vector<string>& mtr_name, 
 			    const vector<vector<Double_t> >& mtr_rows,
 			    const TDatime& date )
@@ -1145,13 +1145,13 @@ Int_t THaDBFile::PutMatrix( const char* system,
 }
 
 //_____________________________________________________________________________
-std::ostream& operator<<(std::ostream& out, THaDBFile& db) {
+std::ostream& operator<<(std::ostream& out, THaFileDB& db) {
   out << db.db_contents << endl;
   return out;
 }
 
 //_____________________________________________________________________________
-Int_t THaDBFile::LoadDetMap(const TDatime& date) {
+Int_t THaFileDB::LoadDetMap(const TDatime& date) {
   // Load the complete detector map into memory, from the
   // text configuration file given by the DAQ/Espace
   
@@ -1179,7 +1179,7 @@ Int_t THaDBFile::LoadDetMap(const TDatime& date) {
 }
 
 //_____________________________________________________________________________
-void THaDBFile::LoadDetCfgFile( const char* detcfg ) {
+void THaFileDB::LoadDetCfgFile( const char* detcfg ) {
   // Load ( and append ) the detector configuration from given filename
   
   if (detcfg)   fDetFile = detcfg;
@@ -1188,14 +1188,14 @@ void THaDBFile::LoadDetCfgFile( const char* detcfg ) {
 }
 
 //_____________________________________________________________________________
-void THaDBFile::SetCalibFile( const char* calib ) {
+void THaFileDB::SetCalibFile( const char* calib ) {
   // Set the filename from which to read calibration information
   
   if (calib) fInFileName = calib;
 }
 
 //_____________________________________________________________________________
-Int_t THaDBFile::PutDetMap( const TDatime& date ) {
+Int_t THaFileDB::PutDetMap( const TDatime& date ) {
   // write the detectormap out to a default file
   ofstream out("out_detmap.config");
   unsigned int i;
@@ -1208,7 +1208,7 @@ Int_t THaDBFile::PutDetMap( const TDatime& date ) {
 
 
 //_____________________________________________________________________________
-Int_t THaDBFile::LoadValues ( const char* system, const TagDef* list,
+Int_t THaFileDB::LoadValues ( const char* system, const TagDef* list,
 			      const TDatime& date )
 {
   // Load a number of entries from the database.
@@ -1233,7 +1233,7 @@ Int_t THaDBFile::LoadValues ( const char* system, const TagDef* list,
 			    ti->expected,date);
 	break;
       default:
-	Error("THaDBFile","Invalid type to read %s %s",system,ti->name);
+	Error("THaFileDB","Invalid type to read %s %s",system,ti->name);
 	break;
       }
 
@@ -1246,14 +1246,14 @@ Int_t THaDBFile::LoadValues ( const char* system, const TagDef* list,
 	this_cnt = GetValue(system,ti->name,*static_cast<Int_t*>(ti->var),date);
 	break;
       default:
-	Error("THaDBFile","Invalid type to read %s %s",system,ti->name);
+	Error("THaFileDB","Invalid type to read %s %s",system,ti->name);
 	break;
       }
     }
     
     if (this_cnt<=0) {
       if ( ti->fatal ) {
-	Fatal("THaDBFile","Could not find %s %s in database",system,ti->name);
+	Fatal("THaFileDB","Could not find %s %s in database",system,ti->name);
       }
     }
 
@@ -1265,7 +1265,7 @@ Int_t THaDBFile::LoadValues ( const char* system, const TagDef* list,
 }
 
 //_____________________________________________________________________________
-Int_t  THaDBFile::StoreValues( const char* system, const TagDef* list,
+Int_t  THaFileDB::StoreValues( const char* system, const TagDef* list,
 		    const TDatime& date )
 {
   // Store the set of values into the database.
@@ -1287,7 +1287,7 @@ Int_t  THaDBFile::StoreValues( const char* system, const TagDef* list,
 			     ti->expected, date );
       break;
     default:
-      Error("THaDBFile","Invalid type to write %s %s",system,ti->name);
+      Error("THaFileDB","Invalid type to write %s %s",system,ti->name);
       break;
     }
     cnt += this_cnt;
@@ -1299,12 +1299,12 @@ Int_t  THaDBFile::StoreValues( const char* system, const TagDef* list,
 
   
 //_____________________________________________________________________________
-void  THaDBFile::SetDescription(const char* description)
+void  THaFileDB::SetDescription(const char* description)
 {
   // Set the description to be written out with the next Write
   fDescription = description;
 }
 
-ClassImp(THaDBFile)
+ClassImp(THaFileDB)
 
 ////////////////////////////////////////////////////////////////////////////////

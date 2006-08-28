@@ -1,9 +1,9 @@
-#ifndef HallA_THaDBFile
-#define HallA_THaDBFile
+#ifndef HallA_THaFileDB
+#define HallA_THaFileDB
 
 //////////////////////////////////////////////////////////////////////////
 //
-// THaDBFile
+// THaFileDB
 //
 //  Interface to a database stored in key-value format textfile(s).
 //
@@ -17,16 +17,16 @@
 
 class TDatime;
 
-class THaDBFile : public THaDB {
+class THaFileDB : public THaDB {
 
  public:
   // constructor to connect to specific datafiles
-  THaDBFile(const char* calib="default.db",
+  THaFileDB(const char* calib="default.db",
 	     const char* detcfg="det.config",
 	     std::vector<THaDetConfig>* detmap=0);
-  //  THaDBFile();
+  //  THaFileDB();
   
-  virtual ~THaDBFile();
+  virtual ~THaFileDB();
 
   Int_t GetValue( const char* system, const char* attr,
 		  Int_t& value, const TDatime& date );
@@ -108,7 +108,7 @@ class THaDBFile : public THaDB {
   
   int FlushDB();  // Flush DB in memory to file
 
-  friend std::ostream& operator<<(std::ostream&, THaDBFile&);
+  friend std::ostream& operator<<(std::ostream&, THaFileDB&);
 
   void PrintDB();
   
@@ -162,10 +162,10 @@ class THaDBFile : public THaDB {
   bool NextLine( std::istream& from );
   bool CopyDB(std::istream& from, std::ostream& to, std::streampos pos=-1);
   
-  ClassDef(THaDBFile,0) //  An ASCII file-based implementation of THaDB
+  ClassDef(THaFileDB,0) //  An ASCII file-based implementation of THaDB
 
 
 };
 
-#endif  // HallA_THaDBFile
+#endif  // HallA_THaFileDB
 

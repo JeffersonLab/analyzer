@@ -168,7 +168,7 @@ SRC           = src/THaFormula.C src/THaVform.C src/THaVhist.C \
 		src/THaExtTarCor.C src/THaDebugModule.C src/THaTrackInfo.C \
 		src/THaGoldenTrack.C \
 		src/THaPrimaryKine.C src/THaSecondaryKine.C \
-		src/THaDB.C src/THaDBFile.C \
+		src/THaDB.C src/THaFileDB.C \
 	        src/THaCoincTime.C src/THaS2CoincTime.C \
                 src/THaTrackProj.C \
 		src/THaPostProcess.C src/THaFilter.C \
