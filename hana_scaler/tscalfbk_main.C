@@ -2,7 +2,8 @@
 //  tscalfbk_main.C
 //
 //  Use scalers to apply feedback on the charge asymmetry
-//  R. Michaels   Nov 2004
+//  R. Michaels   
+//  Updated July 2006
 //--------------------------------------------------------
 
 #include <iostream>
@@ -18,6 +19,7 @@ THaScaler *scaler;
 void AsyAccum();
 int AsyAvg();
 void ApplyFeedBack();
+void ReLoadParam();
 void LogMessage(const char* message); 
 string GetTime();
 float myatof(const char *cinput);
@@ -28,7 +30,7 @@ FILE *fd;
 // which bcm to use for feedback
 static string whichbcm = "bcm_u3";
 // cut on beam current
-static int bcmcut = 2000;  // This is ~0.5 uA on bcm_bu3
+static int bcmcut = 7000;  // 7 kHz per uA for u3.
 // interval of time between scaler readings
 static int sleeptime = 10;   // typically 10
 // number of events to accumulate for feedback
@@ -37,11 +39,13 @@ static int nevt = 90;       // typically 90
 // to debug(>0) or not(0)
 static int debug = 0;
 // Feedback slope (must be calibrated, hopefully stable)
-static float fslope = 147;   // ppm/knob
+static float fslope = 1630;   // ppm/knob
 // Feedback script
 static string fbscript = "/adaqfs/home/adaq/qasy/feedback/apply_feedback";
 // Present value of feedback data
 static string fbdata = "/adaqfs/home/adaq/qasy/feedback/feedback.data";
+// Parameters (optional)
+static string fbparam = "/adaqfs/home/adaq/qasy/feedback/feedback.param";
 // Min and max IA feedback
 static double minia = 0;
 static double maxia = 10;
@@ -51,14 +55,18 @@ static int evcnt, goodevt;
 // asy data
 double *asy;
 double qasy_global = 0;
+double sigma_global = 0;
 double signif_global = 0;
 
 int main(int argc, char* argv[]) {
 
-   signal(31, signalhandler);
    fd = fopen("/adaqfs/home/adaq/qasy/feedback/qasyfdbk.log","a+");
 
-   asy = new double[nevt+10];
+   signal(31, signalhandler);
+
+   ReLoadParam();
+
+   asy = new double[nevt+50];
 
    scaler = new THaScaler("Left");
    if (scaler->Init() == -1) {
@@ -115,9 +123,12 @@ void ApplyFeedBack() {
   //     signif_toosmall = significance too small
 
   double qasy_toobig, qasy_toosmall, signif_toosmall;
+  double big_sigma, signif_big_sigma;
   qasy_toobig = 20000;  // 20,000 ppm = 2% is huge (something wrong !)
   qasy_toosmall = 50;   // 50 ppm is too small to apply feedback
   signif_toosmall = 2;  // if < 2 sigma, too small to apply feedback
+  big_sigma = 250;      // Be careful: if sigma bigger than this, require
+  signif_big_sigma = 4; // that significance > signif_big_sigma
 
   if (AsyAvg() == 1) {
     double absqasy = qasy_global;
@@ -134,6 +145,13 @@ void ApplyFeedBack() {
       LogMessage("No feedback applied; not significant.\n");
       goto out1;
     }
+    if (sigma_global > big_sigma) {
+      if (signif_global < signif_big_sigma) {
+        LogMessage("No feedback applied; big sigma, not signif. enough \n");
+        goto out1;
+      }
+    }
+
     char command[100];
     float acorr = 0;
     if (fslope != 0) acorr = qasy_global / fslope;
@@ -164,7 +182,7 @@ void ApplyFeedBack() {
     LogMessage("-->  FEEDBACK  APPLIED.   System call: \n");
     syscall += "\n";    
     LogMessage(syscall.c_str());
-    
+
   }
 
 out1:
@@ -178,7 +196,7 @@ out1:
 int AsyAvg() {
   // Average the asymmetries.
   if (goodevt < 2) return -1;
-  qasy_global = 0;  signif_global = 0;
+  qasy_global = 0;  sigma_global = 0;  signif_global = 0;
   double asysum, asysq, xcnt, asysig, asyavg, adiff, asize;
   asysum = 0;  asysq = 0;  xcnt = 0;
   for (int i = 0; i < goodevt; i++) {
@@ -194,7 +212,7 @@ int AsyAvg() {
   if (adiff <= 0) {
      LogMessage("Sigma < 0 \n");  return -1;
   }
-  asysig = sqrt(adiff);
+  asysig = sqrt(adiff)/sqrt(xcnt);
   if (debug >= 2) cout << "1st pass "<<xcnt<<"  "<<asyavg<<"  "<<asysig<<endl;
   // Average again, now only if within 4 sigma
   asysum = 0;  asysq = 0;  xcnt = 0;
@@ -221,6 +239,7 @@ int AsyAvg() {
   asize = asyavg / asysig;
   if (asize < 0) asize = -1*asize;
   qasy_global = asyavg;
+  sigma_global = asysig;
   signif_global = asize;
   char result[100];
   sprintf(result,
@@ -231,6 +250,42 @@ int AsyAvg() {
   LogMessage(message.c_str());
   return 1;
 }
+
+
+void ReLoadParam() {
+// Read parameter file (if it exists) and reload some parameters.
+    ifstream fbparamfile;
+    fbparamfile.open(fbparam.c_str());
+    if (!fbparamfile) {
+      cout << "No param file "<<endl;
+      return;
+    }
+    string sinput;
+    char cinput[100],cdum[100];
+    string message = "\n Loading parameters at ";
+    message = message + GetTime() + " \n";
+    LogMessage(message.c_str());
+    while (getline(fbparamfile,sinput)) {
+      strcpy(cinput,sinput.c_str());
+      if (strstr(cinput,"sleeptime") != NULL) {
+        sscanf(cinput,"%s %d",cdum,&sleeptime);
+        strcat(cinput,"\n");
+        LogMessage(cinput);
+      }
+      if (strstr(cinput,"fslope") != NULL) {
+        sscanf(cinput,"%s %f",cdum,&fslope);
+        strcat(cinput,"\n");
+        LogMessage(cinput);
+      }
+      if (strstr(cinput,"nevt") != NULL) {
+        sscanf(cinput,"%s %d",cdum,&nevt);
+        strcat(cinput,"\n");
+        if (nevt > 140) nevt = 140;   // nevt is actually limited (see asy[])
+        LogMessage(cinput);
+      }
+    }
+}
+
 
 string GetTime() {
   int min, hour, day, month, year;
@@ -243,9 +298,9 @@ string GetTime() {
   month = 1 + btm->tm_mon;  
   day = btm->tm_mday;
   if (btm->tm_hour >= 0 && btm->tm_hour < 5) {
-      hour = btm->tm_hour + 19;
+      hour = btm->tm_hour + 20;
   } else {
-      hour = btm->tm_hour - 5;
+      hour = btm->tm_hour - 4;
   }
   min = btm->tm_min;  
   char result[100];
