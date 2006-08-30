@@ -3,28 +3,62 @@
 //
 //  Test of scaler class, for reading scaler history (end-of-run)
 //  files and obtaining data.
+//  This version also fills an ntuple
 //  Hint: if you have two scaler history files (for L and R arm),
 //  try to concatenate them 'cat file1 file2 > file3' and analyze
 //  the resulting concatenated file3.
 // 
-//  R. Michaels, April 2001
+//  R. Michaels, updated Mar 2005
 //--------------------------------------------------------
 
 #include <iostream>
 #include <string>
 #include "THaScaler.h"
 
+#ifndef __CINT__
+#include "TROOT.h"
+#include "TFile.h"
+#include "TH1.h"
+#include "TH2.h"
+#include "TProfile.h"
+#include "TNtuple.h"
+#include "TRandom.h"
+#endif
+
 using namespace std;
 
 int main(int argc, char* argv[]) {
+
+   Int_t lprint = 2;  // choice of printout
 
    const Double_t calib_u3  = 4114;  // calibrations (an example)
    const Double_t calib_d10 = 12728;
    const Double_t off_u3    = 167.1;
    const Double_t off_d10   = 199.5;
+   Float_t clockrate;
+   Float_t totchg = 0;
 
-   cout << "Enter bank 'Right' or 'Left' (spectrometer) ->" << endl;
+// Initialize root and output
+   TROOT scalana("scalroot","Hall A scaler analysis");
+   TFile hfile("scalerhist.root","RECREATE","Scaler history in Hall A");
+
+// Define the ntuple here
+//                0   1    2    3   4   5   6   7   8   9  10    11   12   13   14   15
+   char cdata[]="run:time:u3:d10:ct1:ct2:ct3:ct4:ct5:ct6:ct7:ctacc:charge:clkp:clkm:clk";
+   int nlen = strlen(cdata);
+   char *string_ntup = new char[nlen+1];
+   strcpy(string_ntup,cdata);
+   TNtuple *ntup = new TNtuple("ascal","Scaler History Data",string_ntup);
+
+   Float_t farray_ntup[16];       // Note, dimension is same as size of string_ntup 
+
+   cout << "Enter bank 'gen' or 'Right','Left' (spectr) ->" << endl;
    string bank;  cin >> bank;
+   if (bank == "gen" || bank == "GEN" ) {
+     clockrate = 105000;
+   } else {
+     clockrate = 1024;
+   }
    cout << "enter [runlo, runhi] = interval of runs to summarize ->" << endl;
    int runlo; cout << "runlo: " << endl; cin >> runlo; 
    int runhi; cout << "runhi: " << endl; cin >> runhi;
@@ -33,26 +67,65 @@ int main(int argc, char* argv[]) {
    if (scaler.Init() == -1) {    // Init for default time ("now").
       cout << "Error initializing scaler "<<endl;  return 1;
    }
+   //   printf("\n Using clock rate %f Hz\n",clockrate);
 
    int status;
 
-   for (int run = runlo; run < runhi; run++) {
+   for (int run = runlo; run <= runhi; run++) {
 
      status = scaler.LoadDataHistoryFile(run);  // load data from default history file
      if ( status != 0 ) continue;
 
-     cout << "\nScalers for run = "<<run<<endl<<flush;
-     cout << "Time    ---  Beam Current (uA)  ----    |   --- Triggers ---  "<<endl;
-     cout << "(min)         u3           d10";
-     cout << "        T1(Right)      T3(Left)       Tot accepted"<<endl;
-     double time_sec = scaler.GetPulser("clock")/1024;
-     double chg_u3  = (scaler.GetBcm("bcm_u3")/time_sec - off_u3)/calib_u3;
-     double chg_d10 = (scaler.GetBcm("bcm_d10")/time_sec - off_d10)/calib_d10;
-     printf("%7.2f     %7.2f     %7.2f       %d       %d         %d\n",
-     time_sec/60, chg_u3, chg_d10, scaler.GetTrig(1), scaler.GetTrig(3),
-	    scaler.GetNormData(0,12));
+     for (int i = 0; i < 12; i++) farray_ntup[i] = 0;
+
+     double time_sec = scaler.GetPulser("clock")/clockrate;
+     double curr_u3  = (scaler.GetBcm("bcm_u3")/time_sec - off_u3)/calib_u3;
+     double curr_d10 = (scaler.GetBcm("bcm_d10")/time_sec - off_d10)/calib_d10;
+     farray_ntup[0] = run;
+     farray_ntup[1] = time_sec;
+     farray_ntup[2] = curr_u3;
+     farray_ntup[3] = curr_d10;
+     for (int itrig = 1; itrig <= 7; itrig++) farray_ntup[3+itrig]=scaler.GetTrig(itrig);
+     farray_ntup[11] = scaler.GetNormData(0,12);
+     Float_t charge = curr_d10*time_sec;
+     Float_t clkplus = scaler.GetPulser(1,"clock");
+     Float_t clkminus = scaler.GetPulser(-1,"clock");
+     Float_t clock = scaler.GetPulser("clock");
+     farray_ntup[12] = charge; 
+     totchg += charge;
+     farray_ntup[13] = clkplus;
+     farray_ntup[14] = clkminus;
+     farray_ntup[15] = clock;
+     ntup->Fill(farray_ntup);
+     Float_t clkdiff = (clock - 1.016*(clkplus+clkminus))/clockrate; // units: seconds
+
+     if (lprint == 1) {
+        cout << "\nScalers for run = "<<run<<endl<<flush;
+        cout << "Time    ---  Beam Current (uA)  ----    |   --- Triggers ---  "<<endl;
+        cout << "(min)         u3           d10";
+        cout << "        T1       T2          T3    Accepted "<<endl;
+        printf("%7.2f     %7.2f     %7.2f       %d       %d         %d     %d\n",
+	    time_sec/60, curr_u3, curr_d10, scaler.GetTrig(1), scaler.GetTrig(2),
+            scaler.GetTrig(3),scaler.GetNormData(0,12));
+     }
+     if (lprint == 2) {
+       if (run == runlo) printf("Run    Events    Time    Current   Charge(uC)   T1   T2   T3\n");
+       printf("%d    %d   %6.1f   %7.2f   %7.2f    %d   %d   %d\n",
+              run,scaler.GetNormData(0,12),time_sec/60,curr_d10,charge,
+              scaler.GetTrig(1), scaler.GetTrig(2),scaler.GetTrig(3));
+     }
+
+     //  printf("==== %d  %d \n",run,scaler.GetNormData(1,11));
+
 
    }
+
+   hfile.Write();
+   hfile.Close();
+
+   cout << "\n\nTotal charge from run "<<runlo<<"  to run "<<runhi<<"  = "<<1e-6*totchg<<"  Coul "<<endl;
+
+
    return 0;
 }
 
