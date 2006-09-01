@@ -10,6 +10,7 @@
 #pragma link C++ global gHaScalers;
 #pragma link C++ global gHaPhysics;
 #pragma link C++ global gHaRun;
+#pragma link C++ global gHaDB;
 
 #pragma link C++ class THaVar+;
 #pragma link C++ class THaVarList+;
