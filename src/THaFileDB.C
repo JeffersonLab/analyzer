@@ -51,8 +51,8 @@
 //  over several subdirectories and a single file stored in the database 
 //  directory with no subdirectories at all.  Different experiments may
 //  choose different master files, e.g. $DB_DIR/e01001.db, $DB_DIR/e05012, etc.
-//  The default master file name "default.db", but can be overridden with a 
-//  call to SetMasterFileName().
+//  The default master file name is "default.db", but can be overridden with a 
+//  call to SetInFile().
 //
 //  Within the master file, the keys are of format "system.attribute"
 //  followed by the corresponding value(s).
@@ -60,7 +60,7 @@
 //  The master file is an extension of the older "run database" concept.
 //  THaDB does not support a special run database; instead run-specific
 //  data should be stored like any other database entries.  For backwards
-//  compatibility, however, THaFileDB can be configured to search db_run.dat 
+//  compatibility, however, THaFileDB can be configured to search run.db
 //  files as well if entries are not found in either single files or the master
 //  file. To enable this mode, call EnableRunDBSearch().
 //
@@ -69,11 +69,13 @@
 #include "THaFileDB.h"
 #include "TDatime.h"
 #include "TString.h"
+#include "TError.h"
+#include "TSystem.h"
 #include <fstream>
-#include <iostream>
 #include <iomanip>
 #include <string>
-//#include <cstring>
+#include <algorithm>
+#include <iterator>
 
 using namespace std;
 
@@ -151,14 +153,17 @@ namespace {
 //_____________________________________________________________________________
 THaFileDB::THaFileDB(const char* infile, const char* detcfg,
 		       vector<THaDetConfig>* detmap)
-  : fInFileName(infile), fOutFileName("out.db"), fDetFile(detcfg)
+  : fOutFileName("out.db"), fDetFile(detcfg), fDebug(2), modified(0)
 {
   cerr << "Reading configuration information from : " << endl;
   cerr << "\t" << infile << " and " << detcfg << endl;
   
   if (detmap) fDetectorMap = *detmap;
   fDescription = "";
-  LoadDB();
+
+  SetInFile( infile );
+  db[0].good = db[2].good = false;
+  db[2].system_name = "run";
 }
 
 //_____________________________________________________________________________
@@ -171,29 +176,12 @@ THaFileDB::~THaFileDB()
 }
 
 //_____________________________________________________________________________
-int THaFileDB::LoadDB()
-{
-  // Read database from fInFileName, dropping all that is in memory
-  db_contents.erase();
-  ifstream from(fInFileName.c_str());
-  string line;
-  while ( from ) {
-    getline(from,line);
-    db_contents.append(line);
-    db_contents += '\n';
-  }
-  modified = 0;
-
-  return from.eof();
-}
-
-//_____________________________________________________________________________
 int THaFileDB::FlushDB()
 {
   // Write contents of memory out to file
   ofstream to(fOutFileName.c_str());
-  to << db_contents;
-  if (db_contents.length()>0 && db_contents[db_contents.length()-1] != '\n')
+  to << db[1].contents;
+  if (db[1].contents.length()>0 && db[1].contents[db[1].contents.length()-1] != '\n')
     to << endl;
   modified = 0;
   
@@ -201,20 +189,55 @@ int THaFileDB::FlushDB()
 }
 
 //_____________________________________________________________________________
-void THaFileDB::PrintDB()
+void THaFileDB::PrintDB() const
 {
   // Print database contents
   cout << *this << endl;
 }
 
 //_____________________________________________________________________________
-void  THaFileDB::SetOutFile( const char* outfname )
+Int_t  THaFileDB::SetDBDir( const char* name )
 {
-  fOutFileName = outfname; 
+  static const char* const here = "THaFileDB::SetDBDir";
+
+  if( !name || *name == 0 ) {
+    Error( here, "Invalid directory name" );
+    return -1;
+  }
+
+  // Check if this directory exists, if not then warn user.
+  void* dirp = gSystem->OpenDirectory( name );
+  if( !dirp ) {
+    Warning( here, "Requested database directory %s unavailable! "
+	     "Directory not changed.", name );
+    return -2;
+  }
+  gSystem->FreeDirectory( dirp );
+
+  fDBDir = name;
+  return 0;
 }
 
 //_____________________________________________________________________________
-bool THaFileDB::CopyDB(istream& in, ostream& out, streampos pos) {
+void  THaFileDB::SetOutFile( const char* name )
+{
+  if( name && *name )
+     fOutFileName = name; 
+}
+
+//_____________________________________________________________________________
+void  THaFileDB::SetInFile( const char* name )
+{
+  if( name && *name ) {
+    db[1].system_name = name;
+    db[1].contents.clear();
+    db[1].good = false;
+  }
+}
+
+//_____________________________________________________________________________
+bool THaFileDB::CopyDB(istream& in, ostream& out, streampos pos)
+{
   // Copy, starting at the current position through position "pos"
   // from "in" to "out"
   int ch;
@@ -268,19 +291,23 @@ Int_t THaFileDB::ReadValue( const char* systemC, const char* attrC,
   // look through the file, looking for the latest date stamp
   // that is still before 'date'
 
-  ISSTREAM from(db_contents.c_str());
-  //  ifstream from(fInFileName.c_str());
-  string system(systemC);
-  string attr(attrC);
+  if( !LoadDB(systemC, date) )
+    return 0;
 
-  TDatime dbdate(date);
-  if ( from.good() && FindEntry(system,attr,from,dbdate) ) {
-    // found an entry
-    
-    from >> value;
-    return 1;
+  for( int i=0; i<3; i++ ) {
+    ISSTREAM from(db[i].contents.c_str());
+    string system; 
+    if( i>0 ) 
+      system = systemC;
+    string attr(attrC);
+
+    TDatime dbdate(date);
+    if ( from.good() && FindEntry(system,attr,from,dbdate) ) {
+      // found an entry    
+      from >> value;
+      return 1;
+    }
   }
-
   return 0;
 }
 
@@ -316,27 +343,33 @@ Int_t THaFileDB::ReadArray( const char* systemC, const char* attrC,
   // Also, for efficiency .reserve'ing the appropriate space for the array
   // before the call is recommended.
 
-  ISSTREAM from(db_contents.c_str());
-  //  ifstream from(fInFileName.c_str());
-  string system(systemC);
-  string attr(attrC);
-  
-  T val;
+  if( !LoadDB(systemC, date) )
+    return 0;
 
-  Int_t cnt=0;
+  for( int i=0; i<3; i++ ) {
+    ISSTREAM from(db[i].contents.c_str());
+    string system;
+    if( i>0 )
+      system = systemC;
+    string attr(attrC);
   
-  TDatime dbdate(date);
-  if ( from.good() && FindEntry(system,attr,from,dbdate) ) {
-    while ( from.good() && find_constant(from) ) {
+    T val;
+
+    Int_t cnt=0;
+  
+    TDatime dbdate(date);
+    if ( from.good() && FindEntry(system,attr,from,dbdate) ) {
+      while ( from.good() && find_constant(from) ) {
       
-      from >> val;
-      array.push_back(val);
-      cnt++;
+	from >> val;
+	array.push_back(val);
+	cnt++;
+      }
+      //  array.resize(cnt); // only keep it as large as necessary
+      return cnt;
     }
   }
-  
-  //  array.resize(cnt); // only keep it as large as necessary
-  return cnt;
+  return 0;
 }
 
 
@@ -369,28 +402,35 @@ Int_t THaFileDB::ReadArray( const char* systemC, const char* attrC,
   //
   // No resizing is done, so only 'size' elements may be stored.
 
-  ISSTREAM from(db_contents.c_str());
-  //  ifstream from(fInFileName.c_str());
-  string system(systemC);
-  string attr(attrC);
+  if( !LoadDB(systemC, date) )
+    return 0;
 
-  Int_t cnt=0;
+  for( int i=0; i<3; i++ ) {
+    ISSTREAM from(db[i].contents.c_str());
+    string system;
+    if( i>0 )
+      system = systemC;
+    string attr(attrC);
 
-  TDatime dbdate(date);
-  if ( from.good() && FindEntry(system,attr,from,dbdate) ) {
-    while ( from.good() && find_constant(from) ) {
+    Int_t cnt=0;
 
-      // If the array is full, do not read in any more
-      if (cnt>=size) {
-	break;
-      }
+    TDatime dbdate(date);
+    if ( from.good() && FindEntry(system,attr,from,dbdate) ) {
+      while ( from.good() && find_constant(from) ) {
+
+	// If the array is full, do not read in any more
+	if (cnt>=size) {
+	  break;
+	}
       
-      from >> array[cnt];
-      cnt++;
+	from >> array[cnt];
+	cnt++;
+      }
+      return cnt;
     }
   }
 
-  return cnt;
+  return 0;
 }
 
 
@@ -422,42 +462,48 @@ Int_t THaFileDB::ReadMatrix( const char* systemC, const char* attrC,
 {
   // Reads in a matrix of values, broken by '\n'. Each line in the matrix
   // must begin with whitespace
-  ISSTREAM from(db_contents.c_str());
-  //  ifstream from(fInFileName.c_str());
-  string system(systemC);
-  string attr(attrC);
-  
-  vector<T> v;
-  T tmp;
-  
-  // Clear out the matrix vectors, first
-  typename vector<vector<T> >::size_type vi;
-  // Make certain we are starting with a fresh matrix
-  for (vi = 0; vi<rows.size(); vi++) {
-    rows[vi].clear();
-  }
-  rows.clear();
-  
-  // this differs from a 'normal' vector in that here, each line
-  // gets its own row in the matrix
-  TDatime dbdate(date);
-  if ( FindEntry(system,attr,from,dbdate) ) {
-    // Start collecting a new row
-    while ( from.good() && find_constant(from) ) {
-      v.clear();
 
-      // collect a row, breaking on a '\n'
-      while ( from.good() && find_constant(from,1) ) {
-	from >> tmp;
-	v.push_back(tmp);
-      }
-      
-      if (v.size()>0) {
-	rows.push_back(v);
+  if( !LoadDB(systemC, date) )
+    return 0;
+
+  for( int i=0; i<3; i++ ) {
+    ISSTREAM from(db[i].contents.c_str());
+    string system;
+    if( i>0 )
+      system = systemC;
+    string attr(attrC);
+  
+    vector<T> v;
+    T tmp;
+  
+    // Clear out the matrix vectors, first
+    typename vector<vector<T> >::size_type vi;
+    // Make certain we are starting with a fresh matrix
+    for (vi = 0; vi<rows.size(); vi++) {
+      rows[vi].clear();
+    }
+    rows.clear();
+  
+    // this differs from a 'normal' vector in that here, each line
+    // gets its own row in the matrix
+    TDatime dbdate(date);
+    if ( FindEntry(system,attr,from,dbdate) ) {
+      // Start collecting a new row
+      while ( from.good() && find_constant(from) ) {
+	v.clear();
+
+	// collect a row, breaking on a '\n'
+	while ( from.good() && find_constant(from,1) ) {
+	  from >> tmp;
+	  v.push_back(tmp);
+	}
+	if (v.size()>0)
+	  rows.push_back(v);
       }
     }
+    return rows.size();
   }
-  return rows.size();
+  return 0;
 }
 
 
@@ -499,7 +545,7 @@ Int_t THaFileDB::WriteValue( const char* system, const char* attr,
 
   TDatime fnd_date(date);
 
-  ISSTREAM from(db_contents.c_str());
+  ISSTREAM from(db[1].contents.c_str());
   OSSTREAM to;
 
   // Find the last location with a date earlier or equal to the current date
@@ -544,7 +590,7 @@ Int_t THaFileDB::WriteValue( const char* system, const char* attr,
   if ( pos == from.tellg() ) // were already at the end of the file
     to << endl;              // add a newline
 
-  ASSIGN_SSTREAM(db_contents,to);
+  ASSIGN_SSTREAM(db[1].contents,to);
 
   modified = 1;
   
@@ -579,7 +625,7 @@ Int_t THaFileDB::WriteArray( const char* system, const char* attr,
 
   TDatime fnd_date(date);
 
-  ISSTREAM from(db_contents.c_str());
+  ISSTREAM from(db[1].contents.c_str());
   OSSTREAM to;
   
   // Find the last location with a date (or equal to) the current date
@@ -634,7 +680,7 @@ Int_t THaFileDB::WriteArray( const char* system, const char* attr,
   if ( pos == from.tellg() ) // were already at the end of the file
     to << endl;              // add a newline
   
-  ASSIGN_SSTREAM(db_contents,to);
+  ASSIGN_SSTREAM(db[1].contents,to);
 
   modified = 1;
   
@@ -676,7 +722,7 @@ Int_t THaFileDB::WriteArray( const char* system, const char* attr,
 
   TDatime fnd_date(date);
 
-  ISSTREAM from(db_contents.c_str());
+  ISSTREAM from(db[1].contents.c_str());
   OSSTREAM to;
 
   // Find the last location with a date (or equal to) the current date
@@ -731,7 +777,7 @@ Int_t THaFileDB::WriteArray( const char* system, const char* attr,
   if ( pos == from.tellg() )
     to << endl;
   
-  ASSIGN_SSTREAM(db_contents,to);
+  ASSIGN_SSTREAM(db[1].contents,to);
 
   modified = 1;
 
@@ -769,7 +815,7 @@ Int_t THaFileDB::WriteMatrix( const char* system, const char* attr,
 
   TDatime fnd_date(date);
 
-  ISSTREAM from(db_contents.c_str());
+  ISSTREAM from(db[1].contents.c_str());
   OSSTREAM to;
 
   // Find the last location with a date (or equal to) the current date
@@ -826,7 +872,7 @@ Int_t THaFileDB::WriteMatrix( const char* system, const char* attr,
   if ( pos == from.tellg() )
     to << endl;
   
-  ASSIGN_SSTREAM(db_contents,to);
+  ASSIGN_SSTREAM(db[1].contents,to);
 
   modified = 1;
   
@@ -834,8 +880,9 @@ Int_t THaFileDB::WriteMatrix( const char* system, const char* attr,
 }
 
 //_____________________________________________________________________________
-bool THaFileDB::find_constant(istream& from, int linebreak) {
-  // A Utility routine. Look through the stream 'from' 
+bool THaFileDB::find_constant(istream& from, int linebreak)
+{
+  // A utility routine. Look through the stream 'from' 
   // for the next character that is permitted to be
   // part of the constant set
   
@@ -932,15 +979,20 @@ bool THaFileDB::FindEntry( string& system, string& attr, istream& from,
   // we are always beginning at the start of a line, never
   // in the middle of one
   
-  // system and attr are always set to what was actually found!
+  // attr and date are always set to what was actually found!
+  // attr may end with a wildcard "*"
   
-  string sys_in;
-  string att_in;
+  if( attr.empty() )
+    return false;
+
+  // If system given, search for the key "system.attr", 
+  // otherwise search for just attr.
   ssiz_t sys_len = system.length();
-  ssiz_t attr_len = attr.length();
-  
-  bool sys_match;
-  bool att_match;
+  bool do_system = ( sys_len > 0 );
+  string key(attr);
+  if( do_system )
+    key.insert(0,system + ".");
+  ssiz_t key_len = key.length();
 
   streampos data_pos=0;
   
@@ -957,9 +1009,9 @@ bool THaFileDB::FindEntry( string& system, string& attr, istream& from,
   // if a wild-card character '*' is the last part of the name, then match to only
   // the first part of the string
   
-  sys_len =  ( system[sys_len-1] == '*' ? sys_len-1  : 0 );
-  attr_len = (  attr[attr_len-1] == '*' ? attr_len-1 : 0 );
+  key_len =  ( key[key_len-1] == '*' ? key_len-1  : 0 );
 
+  string key_in;
   while ( from.good() && curdate<=date ) {
 
     // look for a line that does NOT begin with a space or '#'
@@ -973,30 +1025,27 @@ bool THaFileDB::FindEntry( string& system, string& attr, istream& from,
       continue;
     }
 
-    // We have a line that should be the beginning of a system/attribute.
+    // We have a line that should be the beginning of a key.
     // cannot grab the whole line because the wanted values could
     // be on the same line.
 
-    from >> sys_in;
-    from >> att_in;
+    from >> key_in;
 
     if ( !from.good() ) break;
     
     // check against part or the whole string, to find the system and attribute
-    sys_match = sys_in==system ||
-      ( sys_len && sys_in. STR_COMPARE(0,sys_len,system) ==0 );
-    
-    if ( sys_match ) {
-      att_match =  att_in==attr ||
-	( attr_len && att_in. STR_COMPARE(0,attr_len,attr)==0 );
-      if ( att_match ) {
-	attr = att_in;
-	system = sys_in;
+    bool match = (key_in==key) ||
+      ( key_len && key_in. STR_COMPARE(0,key_len,key) ==0 );
 
-	data_pos = from.tellg();
-	fnddate  = curdate;
-      }      
-    }
+    if ( match ) {
+      if( do_system )
+	attr = key_in.substr(sys_len+1);
+      else
+	attr = key_in;
+
+      data_pos = from.tellg();
+      fnddate  = curdate;
+    }      
 
     // We are in a set of constants. Discard the rest of the line
     // and let the top part of the routine concern itself with
@@ -1012,7 +1061,7 @@ bool THaFileDB::FindEntry( string& system, string& attr, istream& from,
     return true;
   }
 
-  // Only reach here if the key was NOT found in valid time frame
+  // Only get here if the key was NOT found in valid time frame
   
   // If end-of-file found, use last read in date and set pointer to the end
   // of the file
@@ -1040,7 +1089,7 @@ Int_t THaFileDB::GetMatrix( const char* systemC, vector<string>& mtr_name,
 
   TDatime orig_date(date);
 
-  ISSTREAM from(db_contents.c_str());
+  ISSTREAM from(db[1].contents.c_str());
 
 //    ifstream from(fInFileName.c_str());
 
@@ -1092,7 +1141,7 @@ Int_t THaFileDB::PutMatrix( const char* system,
 
   TDatime fnd_date(date);
 
-  ISSTREAM from(db_contents.c_str());
+  ISSTREAM from(db[1].contents.c_str());
   OSSTREAM to;
   
   // Find the last location with a date (or equal to) the current date
@@ -1137,7 +1186,7 @@ Int_t THaFileDB::PutMatrix( const char* system,
   if ( pos == from.tellg() )
     to << endl;
 
-  ASSIGN_SSTREAM(db_contents,to);
+  ASSIGN_SSTREAM(db[1].contents,to);
 
   modified = 1;
 
@@ -1145,8 +1194,9 @@ Int_t THaFileDB::PutMatrix( const char* system,
 }
 
 //_____________________________________________________________________________
-std::ostream& operator<<(std::ostream& out, THaFileDB& db) {
-  out << db.db_contents << endl;
+std::ostream& operator<<(std::ostream& out, const THaFileDB& db) {
+  for( int i=0; i<3; i++ )
+    out << db.db[i].contents << endl;
   return out;
 }
 
@@ -1185,13 +1235,6 @@ void THaFileDB::LoadDetCfgFile( const char* detcfg ) {
   if (detcfg)   fDetFile = detcfg;
   TDatime now;
   LoadDetMap(now);
-}
-
-//_____________________________________________________________________________
-void THaFileDB::SetCalibFile( const char* calib ) {
-  // Set the filename from which to read calibration information
-  
-  if (calib) fInFileName = calib;
 }
 
 //_____________________________________________________________________________
@@ -1253,7 +1296,7 @@ Int_t THaFileDB::LoadValues ( const char* system, const TagDef* list,
     
     if (this_cnt<=0) {
       if ( ti->fatal ) {
-	Fatal("THaFileDB","Could not find %s %s in database",system,ti->name);
+	Error("THaFileDB","Could not find %s %s in database",system,ti->name);
       }
     }
 
@@ -1305,6 +1348,193 @@ void  THaFileDB::SetDescription(const char* description)
   fDescription = description;
 }
 
-ClassImp(THaFileDB)
+
+
+//_____________________________________________________________________________
+int THaFileDB::LoadFile( const char* systemC, const TDatime& date,
+			 string& contents )
+{
+  // Find an individual db file for 'system' and for 'date', then copy it 
+  // into 'contents'.
+
+  const string defaultdir("DEFAULT");
+  string here("THaFileDB::\""); here += systemC; here += "\"";
+
+  // Build search list of directories
+  const char* tmp;
+  vector<string> dnames;
+
+  // If fDBDir is set, use it and look nowhere else
+  if( !fDBDir.empty() )
+    dnames.push_back( fDBDir );
+  // otherwise, if DB_DIR is set, use it and look nowhere else
+  else if( (tmp = gSystem->Getenv("DB_DIR")) )
+    dnames.push_back( tmp );
+  // otherwise try ./DB, ./db, and ./
+  else {
+    dnames.push_back( "DB" );
+    dnames.push_back( "db" );
+    dnames.push_back( "." );
+  }
+
+  // Try to open the database directories in the search list.
+  // The first directory that can be opened is taken to be the database
+  // directory. Subsequent directories are ignored.
+  
+  vector<string>::iterator it = dnames.begin();
+  void* dirp;
+  while( !(dirp = gSystem->OpenDirectory( (*it).c_str() )) && 
+	 (++it != dnames.end()) );
+
+  // None of the directories can be opened?
+  if( it == dnames.end() ) {
+    Error( here.c_str(), "Cannot open database directory. Tried" );
+    ostream_iterator<string> outp( cerr, " " );
+    copy( dnames.begin(), dnames.end(), outp ); cerr << endl;
+    return -1;
+  }
+
+  // Pointer to database directory string
+  vector<string>::iterator thedir = it;
+
+  // In the database directory, get the names of all subdirectories matching 
+  // a YYYYMMDD pattern.
+  vector<string> time_dirs;
+  string item;
+  bool have_defaultdir = false;
+  while( (tmp = gSystem->GetDirEntry(dirp)) ) {
+    item = tmp;
+    if( item.length() == 8 ) {
+      unsigned int pos;
+      for( pos=0; pos<8; ++pos )
+	if( !isdigit(item[pos])) break;
+      if( pos==8 )
+	time_dirs.push_back( item );
+    } else if ( item == defaultdir )
+      have_defaultdir = true;
+  }
+  gSystem->FreeDirectory(dirp);
+
+  // Search a date-coded subdirectory that corresponds to the requested date.
+  bool found = false;
+  if( time_dirs.size() > 0 ) {
+    sort( time_dirs.begin(), time_dirs.end() );
+    for( it = time_dirs.begin(); it != time_dirs.end(); it++ ) {
+      Int_t item_date = atoi((*it).c_str());
+      if( it == time_dirs.begin() && date.GetDate() < item_date )
+	break;
+      if( it != time_dirs.begin() && date.GetDate() < item_date ) {
+	it--;
+	found = true;
+	break;
+      }
+      // Assume that the last directory is valid until infinity.
+      if( it+1 == time_dirs.end() && date.GetDate() >= item_date ) {
+	found = true;
+	break;
+      }
+    }
+  }
+
+  // Construct the database file name. It is of the form <system>.db.
+  // NB: Usually, subdetectors use the same files as their parent detectors!
+  string filename(systemC);
+  filename += ".db";
+
+  // Build the searchlist of file names in the order:
+  //  ./filename 
+  //  <dbdir>/<date-dir>/filename
+  //  <dbdir>/DEFAULT/filename
+  //  <dbdir>/filename
+
+  vector<string> fnames;
+  fnames.push_back( filename );
+  if( found ) {
+    item = *thedir + "/" + *it + "/" + filename;
+    fnames.push_back( item );
+  }
+  if( have_defaultdir ) {
+    item = *thedir + "/" + defaultdir + "/" + filename;
+    fnames.push_back( item );
+  }
+  fnames.push_back( *thedir + "/" + filename );
+
+  // Try to open these files in turn and read the first one found.
+
+  ifstream infile;
+  it = fnames.begin();
+  do {
+    if( fDebug>1 )
+      cout << "<" << /* here << */ ">: Opening database file " << *it;
+    // Open the database file
+    infile.clear();
+    infile.open( (*it).c_str() );
+      
+    if( fDebug>1 ) {
+      if( !infile.good() ) 
+	cout << " ... failed" << endl;
+      else
+	cout << " ... ok" << endl;
+    } else if( fDebug>0 && infile.good() )
+      cout << "<" << /* here << */ ">: Opened database file " << *it << endl;
+    // continue until we succeed
+  } while ( !infile.good() && ++it != fnames.end() );
+
+  if( !infile.good() && fDebug>0 ) {
+    Error( here.c_str(), "Cannot open database file %s", filename.c_str() );
+    return -2;
+  }
+
+  // Now we have the file. Read its contents into the 'contents' string
+
+  infile.seekg( 0, ios::end );
+  streamsize len = infile.tellg();
+  infile.seekg( 0, ios::beg );
+  char* buf = new char[len+1];
+  infile.read( buf, len );
+  buf[len] = 0;
+  contents = buf;
+  delete [] buf;
+
+  infile.close();
+  return 0;
+}
+
+//_____________________________________________________________________________
+int THaFileDB::LoadFile( DBFile& db )
+{
+  int ret = LoadFile( db.system_name.c_str(), db.date, db.contents );
+  db.good = ( ret == 0 );
+  return ret;
+}
+
+
+//_____________________________________________________________________________
+bool THaFileDB::LoadDB( const char* systemC, const TDatime& date )
+{
+  // Read database file(s) for 'system' into memory, provided they have changed
+  // db[0]:  individual file for system
+  // db[1]:  master database file
+  // db[2]:  run database
+
+  if( db[0].system_name != systemC ) {
+    db[0].system_name = systemC;
+    db[0].good = false;
+  }
+
+  for( int i=0; i<3; i++ ) {
+    if( db[i].date != date ) {
+      db[i].date = date;
+      db[i].good = false;
+    }
+    if( !db[i].good )
+      LoadFile( db[i] );
+  }
+
+  // return true if at least one file is good
+  return ( db[0].good || db[1].good || db[2].good );
+}
 
 ////////////////////////////////////////////////////////////////////////////////
+
+ClassImp(THaFileDB)

@@ -10,12 +10,12 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaDB.h"
+#include "TDatime.h"
 
 #include<string>
 #include<vector>
 #include<iostream>
 
-class TDatime;
 
 class THaFileDB : public THaDB {
 
@@ -24,7 +24,6 @@ class THaFileDB : public THaDB {
   THaFileDB(const char* calib="default.db",
 	     const char* detcfg="det.config",
 	     std::vector<THaDetConfig>* detmap=0);
-  //  THaFileDB();
   
   virtual ~THaFileDB();
 
@@ -96,31 +95,24 @@ class THaFileDB : public THaDB {
 		   const TDatime& date );
   
   void  LoadDetCfgFile( const char* detcfg );
-  void  SetCalibFile( const char* calib );
 
   void  SetDescription( const char* comment);
 
-  void  SetOutFile( const char* outfname );
-
   Int_t PutDetMap( const TDatime& date );
 
-  int LoadDB();   // force reloading of database from file, what is in memory
-  
   int FlushDB();  // Flush DB in memory to file
 
-  friend std::ostream& operator<<(std::ostream&, THaFileDB&);
+  friend std::ostream& operator<<(std::ostream&, const THaFileDB&);
 
-  void PrintDB();
-  
+  void PrintDB() const;
+
+  virtual Int_t SetDBDir( const char* name );
+  virtual void  SetInFile( const char* name );
+  virtual void  SetOutFile( const char* outfname );
+
  protected:
   Int_t LoadDetMap(const TDatime& date);
   
-  std::string fInFileName;      // filename to read the calibration DB from
-  std::string fOutFileName;     // filename to write the DB to
-  std::string fDetFile;         // file to read the detector configuration from
-  std::string fDescription;     // tmp string to hold the description of current system
-
- private:
   bool find_constant(std::istream& from, int linebreak=0);
   bool FindEntry( std::string& system, std::string& attr, std::istream& from,
 		  TDatime& date);
@@ -129,43 +121,62 @@ class THaFileDB : public THaDB {
   bool IsDate(std::istream& from, std::streampos &pos, TDatime& date );
   
   template<class T>
-    Int_t ReadValue( const char* systemC, const char* attrC,
-		     T& value, const TDatime& date);
+  Int_t ReadValue( const char* systemC, const char* attrC,
+		   T& value, const TDatime& date);
   template<class T>
-    Int_t ReadArray( const char* systemC, const char* attrC,
-		     std::vector<T>& array, const TDatime& date);
+  Int_t ReadArray( const char* systemC, const char* attrC,
+		   std::vector<T>& array, const TDatime& date);
   template<class T>
-    Int_t ReadArray( const char* systemC, const char* attrC,
-		     T* array, Int_t size, const TDatime& date );
+  Int_t ReadArray( const char* systemC, const char* attrC,
+		   T* array, Int_t size, const TDatime& date );
   template<class T>
-    Int_t ReadMatrix( const char* systemC, const char* attrC, 
-		      std::vector<std::vector<T> >& rows, const TDatime& date );
+  Int_t ReadMatrix( const char* systemC, const char* attrC, 
+		    std::vector<std::vector<T> >& rows, const TDatime& date );
   template<class T>
-    Int_t WriteValue( const char* systemC, const char* attrC,
-		      const T& value, const TDatime& date);
+  Int_t WriteValue( const char* systemC, const char* attrC,
+		    const T& value, const TDatime& date);
   template<class T>
-    Int_t WriteArray( const char* system, const char* attr,
-		      const std::vector<T>& v, const TDatime& date);
+  Int_t WriteArray( const char* system, const char* attr,
+		    const std::vector<T>& v, const TDatime& date);
   template<class T>
-    Int_t WriteArray( const char* system, const char* attr,
-		      const T* array, Int_t size, 
-		      const TDatime& date);
+  Int_t WriteArray( const char* system, const char* attr,
+		    const T* array, Int_t size, 
+		    const TDatime& date);
   template <class T>
-    Int_t WriteMatrix( const char* system, const char* attr,
-		       const std::vector<std::vector<T> >& matrix,
-		       const TDatime& date );
+  Int_t WriteMatrix( const char* system, const char* attr,
+		     const std::vector<std::vector<T> >& matrix,
+		     const TDatime& date );
 
-  std::string db_contents; // everything in this database -- buffer for reading/writing
-  
+  struct DBFile {
+    std::string system_name;
+    TDatime     date;
+    std::string contents;
+    bool        good;
+  } db[3];
+
+  std::string fDBDir;         // Database directory root. If unset, use $DB_DIR.
+  std::string fOutFileName;   // filename to write the DB to
+  std::string fDetFile;       // file to read the detector configuration from
+  std::string fDescription;   // tmp string to hold the description of current system
+
+  Int_t fDebug;               // Verbosity level for diagnostic messages
+
 
   int modified;
   bool NextLine( std::istream& from );
   bool CopyDB(std::istream& from, std::ostream& to, std::streampos pos=-1);
   
+  int LoadFile( const char* systemC, const TDatime& date,
+		std::string& contents );
+  int LoadFile( DBFile& db );
+  bool LoadDB( const char* systemC, const TDatime& date );
+
+
   ClassDef(THaFileDB,0) //  An ASCII file-based implementation of THaDB
 
 
 };
 
 #endif  // HallA_THaFileDB
+
 
