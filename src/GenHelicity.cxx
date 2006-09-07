@@ -543,7 +543,7 @@ void GenHelicity::ReadData( const THaEvData& evdata ) {
 	   Double_t t2t1 = oldt1 + t2 - oldt2;
 	   Double_t t3t1 = oldt1 + t3 - oldt3;
 	   // We believe t1 unless it disagrees with t2 and t2 agrees with t3
-	   if (oldt1 >= 0 && abs (t1-t2t1) > 3 && abs (t2t1-t3t1) <= 3)
+	   if (oldt1 >= 0 && TMath::Abs (t1-t2t1) > 3 && TMath::Abs (t2t1-t3t1) <= 3)
 	     {
 	       if (HELDEBUG >= 1)
 		 cout << "WARNING GenHelicity: Clock 1 disagrees with 2, 3; using 2: " << t1 << " " << t2t1 << " " << t3t1 << endl;
@@ -692,7 +692,7 @@ void GenHelicity::TimingEvent()
 	  fTET9Index[fArm] = fTET9Index[fArm] % 4;
 	}
       if (fTEType9[fArm] &&
-	  fabs (tdiff - (nt9miss + 1) * 3508) > 3 * (nt9miss + 1))
+	  TMath::Abs (tdiff - (nt9miss + 1) * 3508) > 3 * (nt9miss + 1))
 	cout << "WARNING GenHelicity: Weird time difference between timing events: " << tdiff 
 	     << " at " << fTETime[fArm] << endl;
     }
