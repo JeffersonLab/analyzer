@@ -59,17 +59,13 @@ Int_t GenBPM::ReadDatabase( const TDatime& date )
   const int LEN=100;
   char buf[LEN];
   char *filestatus;
-  char keyword[LEN];
   int locdebug = 1; 
   
   FILE* fi = OpenFile( date );
   if( !fi) return kInitError;
 
   // Seek our database section
-  //sprintf(keyword,"[%s_detmap]",GetName());
-  //cout << "keyword = "<<keyword<<endl;
 
-  Int_t n=strlen(keyword);
   if (locdebug) {
      printf("Reading database: BPM %s   desc %s \n",GetName(),GetTitle());
   }
@@ -80,7 +76,7 @@ Int_t GenBPM::ReadDatabase( const TDatime& date )
   int status = 1;
 
   while (fgets( buf, LEN, fi) != NULL) {
-    
+    if (buf[0]=='#') continue; // skip lines beginning with '#'
     if (strstr(buf,"detmap") != NULL) {
       sscanf(buf,"%s %d %s %d ", cdummy, &fDaqCrate, chead, &fDaqOff);
       fDaqHead = header_str_to_base16(chead);
@@ -99,8 +95,11 @@ Int_t GenBPM::ReadDatabase( const TDatime& date )
       }
     }
     if (strstr(buf,"calibration") != NULL) {
-      sscanf(buf,"%s %f ", cdummy, &fCalibRot);
-      if (locdebug) printf("  Calibration const  %f \n",fCalibRot);
+      if (sscanf(buf,"%s %f ", cdummy, &fCalibRot)!=2) {
+	Error("GenBPM::ReadDatabase","Could not read CalibRot");
+      } else {
+	if (locdebug) printf("  Calibration const  %f \n",fCalibRot);
+      }
     }     
     if (strstr(buf,"pedestals") != NULL) {
       sscanf(buf,"%s %f %f %f %f \n", cdummy, &fd1, &fd2, &fd3, &fd4);

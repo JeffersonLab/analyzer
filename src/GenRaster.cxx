@@ -48,17 +48,13 @@ Int_t GenRaster::ReadDatabase( const TDatime& date )
   const int LEN=100;
   char buf[LEN];
   char *filestatus;
-  char keyword[LEN];
   int locdebug = 1; 
   
   FILE* fi = OpenFile( date );
   if( !fi ) return kFileError;
 
   // Seek our database section
-  //sprintf(keyword,"[%s_detmap]",GetName());
-  //cout << "keyword = " <<keyword<<endl;
 
-  Int_t n=strlen(keyword);
   if (locdebug) {
      printf("Reading database: %s   desc %s \n",GetName(),GetTitle());
   }

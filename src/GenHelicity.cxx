@@ -230,6 +230,16 @@ void GenHelicity::InitMemory() {
   fTEStartup          = new   Int_t[2];
   fTETime             = new   Double_t[2];
   fTEType9            = new   Bool_t[2];
+  for (int i=0; i<2; i++) {
+    validTime[i] = validHel[i] = fQrt[i] = fGate[i] = fFirstquad[i] = fEvtype[i] = fQuad[i] = 0;
+    fTimestamp[i] = fLastTimestamp[i] = fTimeLastQ1[i] = fTdavg[i] = fTdiff[i] = fTtol[i] = fT0[i] = fT9[i] = 0.;
+    fT0T9[i] = fTEType9[i] = false;
+    fTlastquad[i] = fTELastEvtTime[i] = fTELastTime[i] = fTETime[i] = 0.;
+    t9count[i] = fNqrt[i] = present_reading[i] = q1_reading[i] = predicted_reading[i] = present_helicity[i] = 0;
+    saved_helicity[i] = quad_calibrated[i] = q1_present_helicity[i] = fTET9Index[i] = fTELastEvtQrt[i] = 0;
+    fTEPresentReadingQ1[i] = fTEStartup[i] = 0;
+  }
+  for (int i=0; i<fgNbits; hbits[i++]=0);
 }
 
 //____________________________________________________________________
