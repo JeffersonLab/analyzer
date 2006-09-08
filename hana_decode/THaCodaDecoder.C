@@ -305,9 +305,9 @@ int THaCodaDecoder::prescale_decode(const int* evbuffer) {
 	if (trig < 4) psmax = 16777216;  // 2^24 for 1st 4 trigs
         if (trig > 7) ps = 1;  // cannot prescale trig 9-12
         ps = ps % psmax;
-	if (psfact[j] && ps != psfact[j]) {
+	if (psfact[trig] && ps != psfact[trig]) {
 	  Warning("prescale_decode","Mismatch in prescale factor: Trig %d  oldps %d   prescale.dat %d, Keeping old value",
-		  j+1,psfact[j],ps);
+		  trig+1,psfact[trig],ps);
 	}
 	// are they setup? less authoritative side
 	if (ps==0) ps=psmax;
