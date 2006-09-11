@@ -80,8 +80,8 @@ class THaDB : public TObject {
 			   std::vector<std::vector<Double_t> >& rows,
 			   const TDatime& date ) = 0;
   
-  // specialized for elements with named rows -- TRANSPORT MATRIX
-  virtual Int_t GetMatrix( const char* system,
+  // specialized for elements with named rows -- e.g. TRANSPORT matrix
+  virtual Int_t GetMatrix( const char* system, const char* name,
 			   std::vector<std::string>& row_name,
 			   std::vector<std::vector<Double_t> >& row_data,
 			   const TDatime& date ) = 0;
@@ -111,8 +111,8 @@ class THaDB : public TObject {
 			   const std::vector<std::vector<Int_t> >& rows,
 			   const TDatime& date ) = 0;
 
-  // specialized for elements with named rows, such as the TRANSPORT MATRIX
-  virtual Int_t PutMatrix( const char* system,
+  // specialized for elements with named rows, such as the TRANSPORT matrix
+  virtual Int_t PutMatrix( const char* system, const char* name,
 			   const std::vector<std::string>& row_name,
 			   const std::vector<std::vector<Double_t> >& row_data,
 			   const TDatime& date ) = 0;
@@ -134,8 +134,6 @@ class THaDB : public TObject {
 
 
   typedef TagDef DBTagDef; // Create a private version for related class to use.
-  
- public:
   
   ClassDef(THaDB,0) // ABC for a key- and date-based database
 };
