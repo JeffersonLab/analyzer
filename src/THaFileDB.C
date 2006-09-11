@@ -68,7 +68,6 @@
 
 #include "THaFileDB.h"
 #include "TDatime.h"
-#include "TString.h"
 #include "TError.h"
 #include "TSystem.h"
 #include <fstream>
@@ -76,6 +75,8 @@
 #include <string>
 #include <algorithm>
 #include <iterator>
+#include <cctype>
+#include <cstdio>   // For sscanf - FIXME: remove
 
 using namespace std;
 
@@ -115,7 +116,6 @@ namespace {
   std::ostream& operator<<(std::ostream& to, const DbString& str) {
     // for a string, break it into lines, writing each line out
     // with a single 'tab' character in front.
-    // 
     
     ssiz_t oldpos=0;
     ssiz_t pos=0;
@@ -136,14 +136,10 @@ namespace {
     // 'tab' character
     str.fString.erase();
     
-    int ci;
     std::string line;
-    int cnt=0;
     // strings must begin with a '\t'
-    while ( (ci=from.peek(),ci=='\t') && getline(from,line).good() ) {
-      if (cnt>0 && line[0]!='\t') 
-	break;
-      str.fString += line[0];
+    while( from.peek()=='\t' && getline(from,line).good() ) {
+      str.fString += line.substr(1);
     }
     return from;
   }
@@ -151,18 +147,13 @@ namespace {
 }
 
 //_____________________________________________________________________________
-THaFileDB::THaFileDB(const char* infile, const char* detcfg,
-		       vector<THaDetConfig>* detmap)
-  : fOutFileName("out.db"), fDetFile(detcfg), fDebug(2), modified(0)
+THaFileDB::THaFileDB( const char* infile )
+  : fOutFileName("out.db"), fDebug(2), modified(0)
 {
-  cerr << "Reading configuration information from : " << endl;
-  cerr << "\t" << infile << " and " << detcfg << endl;
-  
-  if (detmap) fDetectorMap = *detmap;
   fDescription = "";
 
   SetInFile( infile );
-  db[0].good = db[2].good = false;
+  db[0].good = db[0].tried = db[2].good = db[2].tried = false;
   db[2].system_name = "run";
 }
 
@@ -228,11 +219,13 @@ void  THaFileDB::SetOutFile( const char* name )
 //_____________________________________________________________________________
 void  THaFileDB::SetInFile( const char* name )
 {
-  if( name && *name ) {
+  if( name && *name )
     db[1].system_name = name;
-    db[1].contents.clear();
-    db[1].good = false;
-  }
+  else
+    db[1].system_name.clear();
+
+  db[1].contents.clear();
+  db[1].good = db[1].tried = false;
 }
 
 //_____________________________________________________________________________
@@ -295,6 +288,7 @@ Int_t THaFileDB::ReadValue( const char* systemC, const char* attrC,
     return 0;
 
   for( int i=0; i<3; i++ ) {
+    if( !db[i].good ) continue;
     ISSTREAM from(db[i].contents.c_str());
     string system; 
     if( i>0 ) 
@@ -347,6 +341,7 @@ Int_t THaFileDB::ReadArray( const char* systemC, const char* attrC,
     return 0;
 
   for( int i=0; i<3; i++ ) {
+    if( !db[i].good ) continue;
     ISSTREAM from(db[i].contents.c_str());
     string system;
     if( i>0 )
@@ -406,6 +401,7 @@ Int_t THaFileDB::ReadArray( const char* systemC, const char* attrC,
     return 0;
 
   for( int i=0; i<3; i++ ) {
+    if( !db[i].good ) continue;
     ISSTREAM from(db[i].contents.c_str());
     string system;
     if( i>0 )
@@ -467,6 +463,7 @@ Int_t THaFileDB::ReadMatrix( const char* systemC, const char* attrC,
     return 0;
 
   for( int i=0; i<3; i++ ) {
+    if( !db[i].good ) continue;
     ISSTREAM from(db[i].contents.c_str());
     string system;
     if( i>0 )
@@ -549,10 +546,9 @@ Int_t THaFileDB::WriteValue( const char* system, const char* attr,
   OSSTREAM to;
 
   // Find the last location with a date earlier or equal to the current date
-  string sysJNK("JUNK");
-  string attJNK("JUNK");
+  string dummy;
   
-  FindEntry(sysJNK,attJNK,from,fnd_date);
+  FindEntry(dummy,dummy,from,fnd_date);
 
   // Copy over the old contents
   Int_t pos = from.tellg();
@@ -629,10 +625,8 @@ Int_t THaFileDB::WriteArray( const char* system, const char* attr,
   OSSTREAM to;
   
   // Find the last location with a date (or equal to) the current date
-  string sysJNK("JUNK");
-  string attJNK("JUNK");
-  
-  FindEntry(sysJNK,attJNK,from,fnd_date);
+  string dummy;
+  FindEntry(dummy,dummy,from,fnd_date);
 
   // Copy over the old contents
   Int_t pos = from.tellg();
@@ -726,10 +720,9 @@ Int_t THaFileDB::WriteArray( const char* system, const char* attr,
   OSSTREAM to;
 
   // Find the last location with a date (or equal to) the current date
-  string sysJNK("JUNK");
-  string attJNK("JUNK");
+  string dummy;
   
-  FindEntry(sysJNK,attJNK,from,fnd_date);
+  FindEntry(dummy,dummy,from,fnd_date);
 
   // Copy over the old contents
   Int_t pos = from.tellg();
@@ -819,10 +812,8 @@ Int_t THaFileDB::WriteMatrix( const char* system, const char* attr,
   OSSTREAM to;
 
   // Find the last location with a date (or equal to) the current date
-  string sysJNK("JUNK");
-  string attJNK("JUNK");
-  
-  FindEntry(sysJNK,attJNK,from,fnd_date);
+  string dummy;
+    FindEntry(dummy,dummy,from,fnd_date);
 
   // Copy over the old contents
   Int_t pos = from.tellg();
@@ -922,7 +913,8 @@ bool THaFileDB::find_constant(istream& from, int linebreak)
 }
 
 //_____________________________________________________________________________
-bool THaFileDB::NextLine( istream& from ) {
+bool THaFileDB::NextLine( istream& from )
+{
   // look at the beginning of a new line and determine if it is the beginning
   // of a record, or just blank space or comments
   int ci=from.peek();
@@ -936,7 +928,8 @@ bool THaFileDB::NextLine( istream& from ) {
 }
 
 //_____________________________________________________________________________
-void THaFileDB::WriteDate( ostream& to, const TDatime& date ) {
+void THaFileDB::WriteDate( ostream& to, const TDatime& date ) 
+{
   // Write a line that states the date of the future entries
 
   to << '\n';
@@ -945,141 +938,131 @@ void THaFileDB::WriteDate( ostream& to, const TDatime& date ) {
 }
 
 //_____________________________________________________________________________
-bool THaFileDB::IsDate( istream& from, streampos& pos, TDatime& date ) {
-  // if the next line is a date entry, save that information
-  // (position before the date and the date itself)
-  int ci;
+bool THaFileDB::IsDate( const string& line, TDatime& date ) 
+{
+  // If 'line' is a date stamp, extract the date to date
+  // Date stamps must be in SQL format: [ yyyy-mm-dd hh:mi:ss ]
 
-  if ( (ci=from.peek()) =='-' ) {
-    pos = from.tellg()+(streampos)1;
-    // this should be a date
-    string line;
-    getline(from,line);
-    ssiz_t lbrk = line.find('[');
-    if( lbrk == string::npos || lbrk >= line.size()-12 ) return 0;
-    ssiz_t rbrk = line.find(']',lbrk);
-    if( rbrk == string::npos || rbrk <= lbrk+11 ) return 0;
-    Int_t yy, mm, dd, hh, mi, ss;
-    if( sscanf( line.substr(lbrk+1,rbrk-lbrk-1).c_str(), "%d-%d-%d %d:%d:%d",
-		&yy, &mm, &dd, &hh, &mi, &ss) != 6) {
-      Warning("THaFileDB::IsDate", 
-	      "Invalid date tag %s", line.c_str());
-    }
-    date.Set(yy,mm,dd,hh,mi,ss);
-    return true;
+  ssiz_t lbrk = line.find('[');
+  if( lbrk == string::npos || lbrk >= line.size()-12 )
+    return false;
+  ssiz_t rbrk = line.find(']',lbrk);
+  if( rbrk == string::npos || rbrk <= lbrk+11 )
+    return false;
+  Int_t yy, mm, dd, hh, mi, ss;
+  if( sscanf( line.substr(lbrk+1,rbrk-lbrk-1).c_str(), "%d-%d-%d %d:%d:%d",
+	      &yy, &mm, &dd, &hh, &mi, &ss) != 6) {
+    //    Warning("THaFileDB::IsDate", 
+    //	    "Invalid date tag %s", line.c_str());
+    return false;
   }
-  return false;
+  date.Set(yy,mm,dd,hh,mi,ss);
+  return true;
 }
 
 
 //_____________________________________________________________________________
-bool THaFileDB::FindEntry( string& system, string& attr, istream& from,
-			   TDatime& date ) {
+bool THaFileDB::IsKey( const string& line, const string& key, ssiz_t& offset )
+{
+  // Check if 'line' is of the form "key = value" and matches 'key'
+  // In keeping with Unix convention, keys ARE case sensitive.
+
+  // Check for a good '='
+  ssiz_t pos = line.find('=');
+  if( pos == string::npos || pos == 0 )
+    return false;
+  // Trim leading and trailing whitespace from the key
+  ssiz_t pos1 = line.substr(0,pos).find_first_not_of(" \t");
+  if( pos1 == string::npos )
+    return false;
+  ssiz_t pos2 = line.substr(0,pos).find_last_not_of(" \t");
+  if( pos2 == string::npos )
+    return false;
+  // Extract the key and compare
+  string this_key(line.substr(pos1,pos2-pos1+1));
+  if( this_key != key )
+    return false;
+
+  offset = pos+1;
+
+  return true;
+}
+
+//_____________________________________________________________________________
+bool THaFileDB::FindEntry( const string& system, const string& attr, 
+			   istream& from, TDatime& date )
+{
   // Find the line beginning with the desired key.
   // we are always beginning at the start of a line, never
   // in the middle of one
-  
-  // attr and date are always set to what was actually found!
-  // attr may end with a wildcard "*"
   
   if( attr.empty() )
     return false;
 
   // If system given, search for the key "system.attr", 
-  // otherwise search for just attr.
-  ssiz_t sys_len = system.length();
-  bool do_system = ( sys_len > 0 );
+  // otherwise search for "attr".
   string key(attr);
-  if( do_system )
+  if( system.length() > 0 )
     key.insert(0,system + ".");
-  ssiz_t key_len = key.length();
+  // And empty key indicates we are only interested in seeking a date
+  bool do_key = ( key.length() > 0 );
 
-  streampos data_pos=0;
-  
-  TDatime prevdate(950101,0);
+  // Rewind the stream
+  from.clear();
+  from.seekg(0,ios::beg);
 
-  TDatime curdate(950101,0);
-  TDatime datetmp(curdate);
-  TDatime fnddate;
-  
-  streampos curdate_pos=0;
+  TDatime curdate(950101,0), bestdate(curdate), founddate(curdate);
+  bool found = false, ignore = false;
+  string line;
+  streampos foundpos = 0, datepos = 0, lastpos = from.tellg();
+  while( getline(from,line) ) {
+    // Skip comments '#' and blank lines
+    if( line[0] != '#' && line.find_first_not_of(" \t") != string::npos ) {
+      ssiz_t offset;
+      if( do_key && !ignore && IsKey(line, key, offset) ) {
+	found = true;
+	foundpos = lastpos+(streampos)offset;
+	founddate = curdate;
+      } else if( IsDate(line, curdate) ) {
+	// Save the actual date in the file that is closest to the search date
+	if( curdate>bestdate && curdate<=date ) {
+	  datepos = lastpos;
+	  bestdate = curdate;
+	}
+	// Ignore further keys until a more recent but still valid date 
+	// appears in the stream
+	ignore = ( curdate>date || curdate<founddate );
+      }
+    }
+    lastpos = from.tellg();
+  }
+  if( !from.eof() && from.bad() ) {
+    ::Error( "THaFileDB::FindEntry", "Error reading file." );
+    return false;
+  }
 
   from.clear();
-  
-  // if a wild-card character '*' is the last part of the name, then match to only
-  // the first part of the string
-  
-  key_len =  ( key[key_len-1] == '*' ? key_len-1  : 0 );
+  if( found ) {
+    from.seekg( foundpos );
+    date = founddate;
+  } else { 
+    // If the key was NOT found in valid time frame, position file at the end of the
+    // section with the closest matching date and return that date
+    // This functionality is used for writing data.
+    if( datepos > 0 )
+      from.seekg( datepos );
+    else
+      from.seekg( 0, ios::end );
+    date = bestdate;
+  } 
 
-  string key_in;
-  while ( from.good() && curdate<=date ) {
-
-    // look for a line that does NOT begin with a space or '#'
-    if ( NextLine(from) ) continue;
-
-    // If we passed the target date, stop looping and use what we have
-    if ( IsDate(from,curdate_pos,datetmp) ) {
-      prevdate = curdate;
-      curdate  = datetmp;
-      
-      continue;
-    }
-
-    // We have a line that should be the beginning of a key.
-    // cannot grab the whole line because the wanted values could
-    // be on the same line.
-
-    from >> key_in;
-
-    if ( !from.good() ) break;
-    
-    // check against part or the whole string, to find the system and attribute
-    bool match = (key_in==key) ||
-      ( key_len && key_in. STR_COMPARE(0,key_len,key) ==0 );
-
-    if ( match ) {
-      if( do_system )
-	attr = key_in.substr(sys_len+1);
-      else
-	attr = key_in;
-
-      data_pos = from.tellg();
-      fnddate  = curdate;
-    }      
-
-    // We are in a set of constants. Discard the rest of the line
-    // and let the top part of the routine concern itself with
-    // finding the next Key.
-    NextLine(from);
-    
-  }
-
-  if ( data_pos ) { 
-    from.clear();
-    from.seekg(data_pos);
-    date = fnddate;
-    return true;
-  }
-
-  // Only get here if the key was NOT found in valid time frame
-  
-  // If end-of-file found, use last read in date and set pointer to the end
-  // of the file
-  if ( from.eof() ) {
-    date = curdate;
-    from.seekg(0,ios::end);
-  } else {
-    from.seekg(curdate_pos); // seek to just before 'too late'
-    date = prevdate;
-  }
-
-  
-  return false;
+  return found;
 }
 
 //_____________________________________________________________________________
-Int_t THaFileDB::GetMatrix( const char* systemC, vector<string>& mtr_name, 
-			    vector<vector<Double_t> >& mtr_rows, const TDatime &date )
+Int_t THaFileDB::GetMatrix( const char* systemC, const char* name,
+			    vector<string>& mtr_name, vector<vector<Double_t> >& mtr_rows, 
+			    const TDatime &date )
 {
   // Read in the transport matrix from the text-file database.
   // Return each entry as correlated vectors of string and floats
@@ -1131,7 +1114,7 @@ Int_t THaFileDB::GetMatrix( const char* systemC, vector<string>& mtr_name,
   
 
 //_____________________________________________________________________________
-Int_t THaFileDB::PutMatrix( const char* system, 
+Int_t THaFileDB::PutMatrix( const char* system, const char* name,
 			    const vector<string>& mtr_name, 
 			    const vector<vector<Double_t> >& mtr_rows,
 			    const TDatime& date )
@@ -1145,10 +1128,8 @@ Int_t THaFileDB::PutMatrix( const char* system,
   OSSTREAM to;
   
   // Find the last location with a date (or equal to) the current date
-  string sysJNK("JUNK");
-  string attJNK("JUNK");
-  
-  FindEntry(sysJNK,attJNK,from,fnd_date);
+  string dummy;
+  FindEntry(dummy,dummy,from,fnd_date);
 
   // Copy over the old contents
   Int_t pos = from.tellg();
@@ -1358,7 +1339,7 @@ int THaFileDB::LoadFile( const char* systemC, const TDatime& date,
   // into 'contents'.
 
   const string defaultdir("DEFAULT");
-  string here("THaFileDB::\""); here += systemC; here += "\"";
+  string here("\""); here += systemC; here += "\"";
 
   // Build search list of directories
   const char* tmp;
@@ -1519,16 +1500,18 @@ bool THaFileDB::LoadDB( const char* systemC, const TDatime& date )
 
   if( db[0].system_name != systemC ) {
     db[0].system_name = systemC;
-    db[0].good = false;
+    db[0].good = db[0].tried = false;
   }
 
   for( int i=0; i<3; i++ ) {
     if( db[i].date != date ) {
       db[i].date = date;
-      db[i].good = false;
+      db[i].tried = false;
     }
-    if( !db[i].good )
+    if( !db[i].tried ) {
       LoadFile( db[i] );
+      db[i].tried = true;
+    }
   }
 
   // return true if at least one file is good

@@ -21,9 +21,7 @@ class THaFileDB : public THaDB {
 
  public:
   // constructor to connect to specific datafiles
-  THaFileDB(const char* calib="default.db",
-	     const char* detcfg="det.config",
-	     std::vector<THaDetConfig>* detmap=0);
+  THaFileDB( const char* calib="default" );
   
   virtual ~THaFileDB();
 
@@ -44,8 +42,8 @@ class THaFileDB : public THaDB {
   Int_t GetArray( const char* system, const char* attr,
 		  Double_t* array, Int_t size, const TDatime& date );
 
-  Int_t LoadValues ( const char* system, const TagDef* list,
-		     const TDatime& date );
+  Int_t LoadValues( const char* system, const TagDef* list,
+		    const TDatime& date );
 
   Int_t GetMatrix( const char* system, const char* name,
 		   std::vector<std::vector<Int_t> >& rows,
@@ -53,9 +51,7 @@ class THaFileDB : public THaDB {
   Int_t GetMatrix( const char* system, const char* name,
 		   std::vector<std::vector<Double_t> >& rows,
 		   const TDatime& date );
-
-  // SPECIALIZED for the transport matrix with named rows
-  Int_t GetMatrix( const char* systemC,
+  Int_t GetMatrix( const char* systemC, const char* name,
 		   std::vector<std::string>& mtr_name,
 		   std::vector<std::vector<Double_t> >& mtr_rows,
 		   const TDatime& date );
@@ -88,8 +84,7 @@ class THaFileDB : public THaDB {
 		   const std::vector<std::vector<Int_t> >& rows,
 		   const TDatime& date );
   
-  // SPECIALIZED for the transport matrix with named rows
-  Int_t PutMatrix( const char* systemC,
+  Int_t PutMatrix( const char* systemC, const char* name,
 		   const std::vector<std::string>& mtr_name,
 		   const std::vector<std::vector<Double_t> >& mtr_rows,
 		   const TDatime& date );
@@ -114,12 +109,15 @@ class THaFileDB : public THaDB {
   Int_t LoadDetMap(const TDatime& date);
   
   bool find_constant(std::istream& from, int linebreak=0);
-  bool FindEntry( std::string& system, std::string& attr, std::istream& from,
-		  TDatime& date);
 
   void WriteDate(std::ostream& to, const TDatime& date);
-  bool IsDate(std::istream& from, std::streampos &pos, TDatime& date );
-  
+
+  static bool IsDate( const std::string& line, TDatime& date );
+  static bool IsKey( const std::string& line, const std::string& key, 
+	      std::string::size_type& offset ); 
+  static bool FindEntry( const std::string& system, const std::string& attr, 
+			 std::istream& from, TDatime& date );
+
   template<class T>
   Int_t ReadValue( const char* systemC, const char* attrC,
 		   T& value, const TDatime& date);
@@ -152,6 +150,7 @@ class THaFileDB : public THaDB {
     TDatime     date;
     std::string contents;
     bool        good;
+    bool        tried;
   } db[3];
 
   std::string fDBDir;         // Database directory root. If unset, use $DB_DIR.
