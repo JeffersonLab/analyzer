@@ -1012,7 +1012,8 @@ bool THaFileDB::FindEntry( const string& system, const string& attr,
   streampos foundpos = 0, datepos = 0, lastpos = from.tellg();
   while( getline(from,line) ) {
     // Skip comments '#' and blank lines
-    if( line[0] != '#' && line.find_first_not_of(" \t") != string::npos ) {
+    ssiz_t pos = line.find_first_not_of(" \t");
+    if( pos != string::npos && line[pos] != '#' ) {
       ssiz_t offset;
       if( do_key && !ignore && IsKey(line, key, offset) ) {
 	found = true;
