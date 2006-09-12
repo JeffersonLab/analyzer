@@ -108,9 +108,9 @@ class THaFileDB : public THaDB {
  protected:
   Int_t LoadDetMap(const TDatime& date);
   
-  bool find_constant(std::istream& from, int linebreak=0);
+  static void WriteDate(std::ostream& to, const TDatime& date);
 
-  void WriteDate(std::ostream& to, const TDatime& date);
+  static bool find_constant(std::istream& from, int linebreak=0);
 
   static bool IsDate( const std::string& line, TDatime& date );
   static bool IsKey( const std::string& line, const std::string& key, 
@@ -163,8 +163,8 @@ class THaFileDB : public THaDB {
 
 
   int modified;
-  bool NextLine( std::istream& from );
-  bool CopyDB(std::istream& from, std::ostream& to, std::streampos pos=-1);
+  static bool NextLine( std::istream& from );
+  static bool CopyDB(std::istream& from, std::ostream& to, std::streampos pos=-1);
   
   int LoadFile( const char* systemC, const TDatime& date,
 		std::string& contents );
