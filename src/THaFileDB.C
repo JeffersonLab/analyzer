@@ -546,9 +546,7 @@ Int_t THaFileDB::WriteValue( const char* system, const char* attr,
   OSSTREAM to;
 
   // Find the last location with a date earlier or equal to the current date
-  string dummy;
-  
-  FindEntry(dummy,dummy,from,fnd_date);
+  SeekDate(from,fnd_date);
 
   // Copy over the old contents
   Int_t pos = from.tellg();
@@ -625,8 +623,7 @@ Int_t THaFileDB::WriteArray( const char* system, const char* attr,
   OSSTREAM to;
   
   // Find the last location with a date (or equal to) the current date
-  string dummy;
-  FindEntry(dummy,dummy,from,fnd_date);
+  SeekDate(from,fnd_date);
 
   // Copy over the old contents
   Int_t pos = from.tellg();
@@ -720,9 +717,7 @@ Int_t THaFileDB::WriteArray( const char* system, const char* attr,
   OSSTREAM to;
 
   // Find the last location with a date (or equal to) the current date
-  string dummy;
-  
-  FindEntry(dummy,dummy,from,fnd_date);
+  SeekDate(from,fnd_date);
 
   // Copy over the old contents
   Int_t pos = from.tellg();
@@ -812,8 +807,7 @@ Int_t THaFileDB::WriteMatrix( const char* system, const char* attr,
   OSSTREAM to;
 
   // Find the last location with a date (or equal to) the current date
-  string dummy;
-    FindEntry(dummy,dummy,from,fnd_date);
+  SeekDate(from,fnd_date);
 
   // Copy over the old contents
   Int_t pos = from.tellg();
@@ -996,16 +990,17 @@ bool THaFileDB::FindEntry( const string& system, const string& attr,
   // we are always beginning at the start of a line, never
   // in the middle of one
   
-  if( attr.empty() )
+  // Can't have only 'system'.
+  if( !system.empty() && attr.empty() )
     return false;
 
   // If system given, search for the key "system.attr", 
   // otherwise search for "attr".
   string key(attr);
-  if( system.length() > 0 )
+  if( !system.empty() )
     key.insert(0,system + ".");
   // And empty key indicates we are only interested in seeking a date
-  bool do_key = ( key.length() > 0 );
+  bool do_key = !key.empty();
 
   // Rewind the stream
   from.clear();
@@ -1057,6 +1052,18 @@ bool THaFileDB::FindEntry( const string& system, const string& attr,
   } 
 
   return found;
+}
+
+//_____________________________________________________________________________
+bool THaFileDB::SeekDate( istream& from, TDatime& date )
+{
+  // Find position in the stream 'from' appropriate for writing data valid for 
+  // 'date'. Usually this is the position right before the time stamp later than
+  // 'date'. If 'date' is later than all time stamps in the stream, go to the 
+  // end of the stream.
+
+  string dummy;
+  return FindEntry( dummy, dummy, from, date );
 }
 
 //_____________________________________________________________________________
@@ -1128,8 +1135,7 @@ Int_t THaFileDB::PutMatrix( const char* system, const char* name,
   OSSTREAM to;
   
   // Find the last location with a date (or equal to) the current date
-  string dummy;
-  FindEntry(dummy,dummy,from,fnd_date);
+  SeekDate(from,fnd_date);
 
   // Copy over the old contents
   Int_t pos = from.tellg();

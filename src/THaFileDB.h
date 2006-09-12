@@ -117,6 +117,7 @@ class THaFileDB : public THaDB {
 	      std::string::size_type& offset ); 
   static bool FindEntry( const std::string& system, const std::string& attr, 
 			 std::istream& from, TDatime& date );
+  static bool SeekDate( std::istream& from, TDatime& date );
 
   template<class T>
   Int_t ReadValue( const char* systemC, const char* attrC,
