@@ -990,6 +990,8 @@ bool THaFileDB::FindEntry( const string& system, const string& attr,
   // we are always beginning at the start of a line, never
   // in the middle of one
   
+  static const char* const here = "THaFileDB::FindEntry";
+
   // Can't have only 'system'.
   if( !system.empty() && attr.empty() )
     return false;
@@ -1006,34 +1008,54 @@ bool THaFileDB::FindEntry( const string& system, const string& attr,
   from.clear();
   from.seekg(0,ios::beg);
 
-  TDatime curdate(950101,0), bestdate(curdate), founddate(curdate);
+  TDatime curdate(950101,0), bestdate(curdate), founddate(curdate),
+    prevdate(curdate);
   bool found = false, ignore = false;
   string line;
   streampos foundpos = 0, datepos = 0, lastpos = from.tellg();
   while( getline(from,line) ) {
-    // Skip comments '#' and blank lines
+    // Skip blank lines and comments starting with '#'.
     ssiz_t pos = line.find_first_not_of(" \t");
     if( pos != string::npos && line[pos] != '#' ) {
       ssiz_t offset;
       if( do_key && !ignore && IsKey(line, key, offset) ) {
 	found = true;
-	foundpos = lastpos+(streampos)offset;
+	foundpos = lastpos+static_cast<streampos>(offset);
 	founddate = curdate;
       } else if( IsDate(line, curdate) ) {
-	// Save the actual date in the file that is closest to the search date
-	if( curdate>bestdate && curdate<=date ) {
+	if( prevdate == bestdate )
 	  datepos = lastpos;
+	// Require time stamps to be ordered.  If they are not, warn user 
+	// but continue, returning correct results as much as possible.
+	if( curdate<prevdate ) {
+	  // Copy strings to get around ROOT's lovely "internal static buffer"
+	  string pd(prevdate.AsSQLString()), cd(curdate.AsSQLString());
+	  ::Warning( here, "Time stamps for key %s not ordered. "
+		     "%s followed by %s. ",
+		     key.c_str(), pd.c_str(), cd.c_str() );
+	} 
+	// Quit once we are past 'date'
+	else if( curdate>date )
+	  break;
+	else if( curdate>bestdate )
 	  bestdate = curdate;
-	}
-	// Ignore further keys until a more recent but still valid date 
-	// appears in the stream
-	ignore = ( curdate>date || curdate<founddate );
+        // Ignore further keys until a more recent but still valid date
+        // appears in the stream
+ 	ignore = ( curdate<founddate );
+	prevdate = curdate;
       }
     }
     lastpos = from.tellg();
   }
-  if( !from.eof() && from.bad() ) {
-    ::Error( "THaFileDB::FindEntry", "Error reading file." );
+
+  if( from.eof() ) {
+    // If we hit EOF, we never found a time stamp past 'date'.
+    if( prevdate == bestdate )
+      // Go to end of file unless there was some mis-ordering
+      datepos = 0;
+  } else if( from.bad() ) {
+    ::Error( here, "Error reading file for key %s. Key not found.", 
+	     key.c_str() );
     return false;
   }
 
@@ -1043,8 +1065,8 @@ bool THaFileDB::FindEntry( const string& system, const string& attr,
     date = founddate;
   } else { 
     // If the key was NOT found in valid time frame, position file at the end of the
-    // section with the closest matching date and return that date
-    // This functionality is used for writing data.
+    // section with the closest matching date and return that date.
+    // This functionality may be used for writing data.
     if( datepos > 0 )
       from.seekg( datepos );
     else
