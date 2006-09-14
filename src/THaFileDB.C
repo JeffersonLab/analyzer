@@ -76,7 +76,6 @@
 #include <algorithm>
 #include <iterator>
 #include <cctype>
-#include <cstdio>   // For sscanf - FIXME: remove
 
 using namespace std;
 
@@ -943,14 +942,24 @@ bool THaFileDB::IsDate( const string& line, TDatime& date )
   ssiz_t rbrk = line.find(']',lbrk);
   if( rbrk == string::npos || rbrk <= lbrk+11 )
     return false;
-  Int_t yy, mm, dd, hh, mi, ss;
-  if( sscanf( line.substr(lbrk+1,rbrk-lbrk-1).c_str(), "%d-%d-%d %d:%d:%d",
-	      &yy, &mm, &dd, &hh, &mi, &ss) != 6) {
-    //    Warning("THaFileDB::IsDate", 
-    //	    "Invalid date tag %s", line.c_str());
+  string dstr(line.substr(lbrk+1,rbrk-lbrk-1));
+  if( dstr.find_first_not_of("0123456789 -:") != string::npos )
     return false;
-  }
-  date.Set(yy,mm,dd,hh,mi,ss);
+  ISSTREAM inp(dstr);
+  int yy, mm, dd, hh, mi, ss = 0;
+  char ch;
+  if( !(inp >> yy) || !inp.get(ch) || ch != '-' ||
+      !(inp >> mm) || !inp.get(ch) || ch != '-' ||
+      !(inp >> dd) ||
+      !(inp >> hh) || !inp.get(ch) || ch != ':' ||
+      !(inp >> mi) || !inp.get(ch) || ch != ':' )
+    return false;
+  inp >> ss;
+  if( mm<0 || mm>12 || dd<0 || dd>31 || hh<0 || hh>23 || 
+      mi<0 || mi>59 || ss<0 || ss>59 )
+    return false;
+
+  date.Set(yy, mm, dd, hh, mi, ss);
   return true;
 }
 
