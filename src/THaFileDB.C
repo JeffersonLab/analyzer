@@ -948,19 +948,22 @@ bool THaFileDB::IsDate( const string& line, TDatime& date )
   ISSTREAM inp(dstr);
   int yy, mm, dd, hh, mi, ss = 0;
   char ch;
-  if( !(inp >> yy) || !inp.get(ch) || ch != '-' ||
-      !(inp >> mm) || !inp.get(ch) || ch != '-' ||
-      !(inp >> dd) ||
-      !(inp >> hh) || !inp.get(ch) || ch != ':' ||
-      !(inp >> mi) || !inp.get(ch) || ch != ':' )
-    return false;
-  inp >> ss;
-  if( mm<0 || mm>12 || dd<0 || dd>31 || hh<0 || hh>23 || 
-      mi<0 || mi>59 || ss<0 || ss>59 )
-    return false;
+  if( (inp >> yy) && inp.get(ch) && ch == '-' &&
+      (inp >> mm) && inp.get(ch) && ch == '-' &&
+      (inp >> dd) &&
+      (inp >> hh) && inp.get(ch) && ch == ':' &&
+      (inp >> mi) && inp.get(ch) && ch == ':' &&
+      ((inp >> ss) || inp.eof()) &&
+      !(mm<0 || mm>12 || dd<0 || dd>31 || hh<0 || hh>23 || 
+	mi<0 || mi>59 || ss<0 || ss>59) ) {
 
-  date.Set(yy, mm, dd, hh, mi, ss);
-  return true;
+    date.Set(yy, mm, dd, hh, mi, ss);
+    return true;
+  }
+
+  ::Warning( "THaFileDB:IsDate", "Ignoring invalid time stamp \"%s\"",
+	     line.c_str() );
+  return false;
 }
 
 
