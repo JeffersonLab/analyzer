@@ -25,75 +25,79 @@ class THaFileDB : public THaDB {
   
   virtual ~THaFileDB();
 
-  Int_t GetValue( const char* system, const char* attr,
-		  Int_t& value, const TDatime& date );
-  Int_t GetValue( const char* system, const char* attr,
-		  Double_t& value, const TDatime& date );
-  Int_t GetValue( const char* system, const char* attr,
-		  std::string& value, const TDatime& date );
+  virtual UInt_t GetValue( const char* system, const char* attr,
+			   Int_t& value, const TDatime& date );
+  virtual UInt_t GetValue( const char* system, const char* attr,
+			   Double_t& value, const TDatime& date );
+  virtual UInt_t GetValue( const char* system, const char* attr,
+			   std::string& value, const TDatime& date );
 
-  Int_t GetArray( const char* system, const char* attr,
-		  std::vector<Int_t>& array, const TDatime& date );
-  Int_t GetArray( const char* system, const char* attr,
-		  std::vector<Double_t>& array, const TDatime& date );
+  virtual UInt_t GetArray( const char* system, const char* attr,
+			   std::vector<Int_t>& array, const TDatime& date );
+  virtual UInt_t GetArray( const char* system, const char* attr,
+			   std::vector<Double_t>& array, const TDatime& date );
 
-  Int_t GetArray( const char* system, const char* attr,
-		  Int_t* array, Int_t size, const TDatime& date );
-  Int_t GetArray( const char* system, const char* attr,
-		  Double_t* array, Int_t size, const TDatime& date );
+  virtual UInt_t GetArray( const char* system, const char* attr,
+			   Int_t* array, UInt_t size, const TDatime& date );
+  virtual UInt_t GetArray( const char* system, const char* attr,
+			   Double_t* array, UInt_t size, const TDatime& date );
 
-  Int_t LoadValues( const char* system, const TagDef* list,
-		    const TDatime& date );
+  virtual UInt_t LoadValues( const char* system, const TagDef* list,
+			     const TDatime& date );
 
-  Int_t GetMatrix( const char* system, const char* name,
-		   std::vector<std::vector<Int_t> >& rows,
-		   const TDatime& date );
-  Int_t GetMatrix( const char* system, const char* name,
-		   std::vector<std::vector<Double_t> >& rows,
-		   const TDatime& date );
-  Int_t GetMatrix( const char* systemC, const char* name,
-		   std::vector<std::string>& mtr_name,
-		   std::vector<std::vector<Double_t> >& mtr_rows,
-		   const TDatime& date );
+  virtual UInt_t GetMatrix( const char* system, const char* name,
+			    std::vector<std::vector<Int_t> >& rows,
+			    const TDatime& date );
+  virtual UInt_t GetMatrix( const char* system, const char* name,
+			    std::vector<std::vector<Double_t> >& rows,
+			    const TDatime& date );
+  virtual UInt_t GetMatrix( const char* systemC, const char* name,
+			    std::vector<std::string>& row_names,
+			    std::vector<std::vector<Double_t> >& rows,
+			    const TDatime& date );
 
-  Int_t PutValue( const char* system, const char* attr,
-		  const Int_t& value, const TDatime& date );
-  Int_t PutValue( const char* system, const char* attr,
-		  const Double_t& value, const TDatime& date );
-  Int_t PutValue( const char* system, const char* attr,
-		  const std::string& value, const TDatime& date );
+  virtual UInt_t PutValue( const char* system, const char* attr,
+			   const Int_t& value, const TDatime& date );
+  virtual UInt_t PutValue( const char* system, const char* attr,
+			   const Double_t& value, const TDatime& date );
+  virtual UInt_t PutValue( const char* system, const char* attr,
+			   const std::string& value, const TDatime& date );
   
-  Int_t PutArray( const char* system, const char* attr,
-		  const std::vector<Int_t>& array, const TDatime& date );
-  Int_t PutArray( const char* system, const char* attr,
-		  const std::vector<Double_t>& array, const TDatime& date );
+  virtual UInt_t PutArray( const char* system, const char* attr,
+			   const std::vector<Int_t>& array, 
+			   const TDatime& date );
+  virtual UInt_t PutArray( const char* system, const char* attr,
+			   const std::vector<Double_t>& array, 
+			   const TDatime& date );
   
-  Int_t PutArray( const char* system, const char* attr,
-		  const Int_t* array, Int_t size, const TDatime& date );
-  Int_t PutArray( const char* system, const char* attr,
-		  const Double_t* array, Int_t size, const TDatime& date );
+  virtual UInt_t PutArray( const char* system, const char* attr,
+			   const Int_t* array, UInt_t size, 
+			   const TDatime& date );
+  virtual UInt_t PutArray( const char* system, const char* attr,
+			   const Double_t* array, UInt_t size,
+			   const TDatime& date );
   
-  Int_t StoreValues( const char* system, const TagDef* list,
-		     const TDatime& date );
+  virtual UInt_t StoreValues( const char* system, const TagDef* list,
+			      const TDatime& date );
   
-  Int_t PutMatrix( const char* system, const char* name,
-		   const std::vector<std::vector<Double_t> >& rows,
-		   const TDatime& date );
+  virtual UInt_t PutMatrix( const char* system, const char* name,
+			    const std::vector<std::vector<Double_t> >& rows,
+			    const TDatime& date );
   
-  Int_t PutMatrix( const char* system, const char* name,
-		   const std::vector<std::vector<Int_t> >& rows,
-		   const TDatime& date );
+  virtual UInt_t PutMatrix( const char* system, const char* name,
+			    const std::vector<std::vector<Int_t> >& rows,
+			    const TDatime& date );
   
-  Int_t PutMatrix( const char* systemC, const char* name,
-		   const std::vector<std::string>& mtr_name,
-		   const std::vector<std::vector<Double_t> >& mtr_rows,
-		   const TDatime& date );
+  virtual UInt_t PutMatrix( const char* systemC, const char* name,
+			    const std::vector<std::string>& row_names,
+			    const std::vector<std::vector<Double_t> >& rows,
+			    const TDatime& date );
   
   void  LoadDetCfgFile( const char* detcfg );
 
   void  SetDescription( const char* comment);
 
-  Int_t PutDetMap( const TDatime& date );
+  UInt_t PutDetMap( const TDatime& date );
 
   int FlushDB();  // Flush DB in memory to file
 
@@ -106,7 +110,7 @@ class THaFileDB : public THaDB {
   virtual void  SetOutFile( const char* outfname );
 
  protected:
-  Int_t LoadDetMap(const TDatime& date);
+  UInt_t LoadDetMap(const TDatime& date);
   
   static void WriteDate(std::ostream& to, const TDatime& date);
 
@@ -114,37 +118,32 @@ class THaFileDB : public THaDB {
 
   static bool IsDate( const std::string& line, TDatime& date );
   static bool IsKey( const std::string& line, const std::string& key, 
-	      std::string::size_type& offset ); 
+		     std::string::size_type& offset ); 
   static bool FindEntry( const std::string& system, const std::string& attr, 
 			 std::istream& from, TDatime& date );
   static bool SeekDate( std::istream& from, TDatime& date );
 
   template<class T>
-  Int_t ReadValue( const char* systemC, const char* attrC,
-		   T& value, const TDatime& date);
+  UInt_t ReadValue( const char* systemC, const char* attrC,
+		    T& value, const TDatime& date);
   template<class T>
-  Int_t ReadArray( const char* systemC, const char* attrC,
-		   std::vector<T>& array, const TDatime& date);
+  UInt_t ReadArray( const char* systemC, const char* attrC,
+		    std::vector<T>& array, const TDatime& date,
+		    UInt_t size = 0 );
   template<class T>
-  Int_t ReadArray( const char* systemC, const char* attrC,
-		   T* array, Int_t size, const TDatime& date );
-  template<class T>
-  Int_t ReadMatrix( const char* systemC, const char* attrC, 
-		    std::vector<std::vector<T> >& rows, const TDatime& date );
-  template<class T>
-  Int_t WriteValue( const char* systemC, const char* attrC,
-		    const T& value, const TDatime& date);
-  template<class T>
-  Int_t WriteArray( const char* system, const char* attr,
-		    const std::vector<T>& v, const TDatime& date);
-  template<class T>
-  Int_t WriteArray( const char* system, const char* attr,
-		    const T* array, Int_t size, 
-		    const TDatime& date);
-  template <class T>
-  Int_t WriteMatrix( const char* system, const char* attr,
-		     const std::vector<std::vector<T> >& matrix,
+  UInt_t ReadMatrix( const char* systemC, const char* attrC, 
+		     std::vector<std::vector<T> >& rows,
 		     const TDatime& date );
+  template<class T>
+  UInt_t WriteValue( const char* systemC, const char* attrC,
+		     const T& value, const TDatime& date);
+  template<class T>
+  UInt_t WriteArray( const char* system, const char* attr,
+		     const std::vector<T>& v, const TDatime& date );
+  template <class T>
+  UInt_t WriteMatrix( const char* system, const char* attr,
+		      const std::vector<std::vector<T> >& matrix,
+		      const TDatime& date );
 
   struct DBFile {
     std::string system_name;
@@ -163,7 +162,6 @@ class THaFileDB : public THaDB {
 
 
   int modified;
-  static bool NextLine( std::istream& from );
   static bool CopyDB(std::istream& from, std::ostream& to, std::streampos pos=-1);
   
   int LoadFile( const char* systemC, const TDatime& date,
