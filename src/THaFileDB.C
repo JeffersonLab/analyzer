@@ -318,10 +318,10 @@ UInt_t THaFileDB::ReadArray( const char* systemC, const char* attr,
 {
   // Read in a series of values, using the istream >> operator
   // They are returned in a vector, with the return value and the
-  // array.size() equal to the number of constants read in.
+  // array.size() equal to the number of values read in.
   //
   // Since "array" may be resized, anticipate the possiblity of it moving. 
-  // Also, for efficiency .reserve'ing the appropriate space for the array
+  // Also, for efficiency .reserving the appropriate space for the array
   // before the call is recommended.
 
   if( !LoadDB(systemC, date) )
@@ -338,6 +338,7 @@ UInt_t THaFileDB::ReadArray( const char* systemC, const char* attr,
     UInt_t cnt=0;
     ISSTREAM from(db[i].contents.c_str());
     if ( from.good() && FindEntry(system,attr,from,dbdate) ) {
+      array.clear();
       while ( from.good() && find_constant(from) ) {
 	if( cnt >= size ) {
 	  //FIXME: print key and db source
@@ -383,6 +384,7 @@ UInt_t THaFileDB::GetArray( const char* system, const char* attr,
   // Read in a set of Int_t's in to a C-style array.
   
   vector<Int_t> vect;
+  vect.reserve(size);
   UInt_t cnt = ReadArray(system,attr,vect,date,size);
   copy( vect.begin(), vect.begin()+cnt, array );
   return cnt;
@@ -395,6 +397,7 @@ UInt_t THaFileDB::GetArray( const char* system, const char* attr,
   // Read in a set of Double_t's in to a C-style array.
   
   vector<Double_t> vect;
+  vect.reserve(size);
   UInt_t cnt = ReadArray(system,attr,vect,date,size);
   copy( vect.begin(), vect.begin()+cnt, array );
   return cnt;
@@ -417,18 +420,11 @@ UInt_t THaFileDB::ReadMatrix( const char* systemC, const char* attr,
     ISSTREAM from(db[i].contents.c_str());
     const char* system = ( i>0 ) ? systemC : "";
   
-    // Clear out the matrix vectors, first
-    //    typename vector<vector<T> >::size_type vi;
-    // Make certain we are starting with a fresh matrix
-//     for (vi = 0; vi<rows.size(); vi++) {
-//       rows[vi].clear();
-//     }
-    rows.clear();
-  
     // this differs from a 'normal' vector in that here, each line
     // gets its own row in the matrix
     TDatime dbdate(date);
     if ( FindEntry(system,attr,from,dbdate) ) {
+      rows.clear();
       // Start collecting a new row
       while ( from.good() && find_constant(from) ) {
 	// collect a row, breaking on a '\n'
@@ -441,8 +437,8 @@ UInt_t THaFileDB::ReadMatrix( const char* systemC, const char* attr,
 	if (v.size()>0)
 	  rows.push_back(v);
       }
+      return rows.size();
     }
-    return rows.size();
   }
   return 0;
 }
