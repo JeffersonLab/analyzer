@@ -119,7 +119,7 @@ class THaFileDB : public THaDB {
   static bool IsDate( const std::string& line, TDatime& date );
   static bool IsKey( const std::string& line, const std::string& key, 
 		     std::string::size_type& offset ); 
-  static bool FindEntry( const std::string& system, const std::string& attr, 
+  static bool FindEntry( const char* systemC, const char* attrC, 
 			 std::istream& from, TDatime& date );
   static bool SeekDate( std::istream& from, TDatime& date );
 

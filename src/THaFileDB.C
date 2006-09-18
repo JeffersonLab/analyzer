@@ -1059,7 +1059,7 @@ bool THaFileDB::IsKey( const string& line, const string& key, ssiz_t& offset )
 }
 
 //_____________________________________________________________________________
-bool THaFileDB::FindEntry( const string& system, const string& attr, 
+bool THaFileDB::FindEntry( const char* system, const char* attr, 
 			   istream& from, TDatime& date )
 {
   // Find the line beginning with the desired key.
@@ -1068,15 +1068,20 @@ bool THaFileDB::FindEntry( const string& system, const string& attr,
   
   static const char* const here = "THaFileDB::FindEntry";
 
+  if( system == NULL ) system = "";
+  if( attr == NULL )   attr = "";
+
   // Can't have only 'system'.
-  if( !system.empty() && attr.empty() )
+  if( system[0] != 0 && attr[0] == 0 )
     return false;
 
   // If system given, search for the key "system.attr", 
   // otherwise search for "attr".
   string key(attr);
-  if( !system.empty() )
-    key.insert(0,system + ".");
+  if( system[0] != 0 ) {
+    key.insert(0,".");
+    key.insert(0,system);
+  }
   // And empty key indicates we are only interested in seeking a date
   bool do_key = !key.empty();
 
@@ -1161,7 +1166,7 @@ bool THaFileDB::SeekDate( istream& from, TDatime& date )
   // 'date'. If 'date' is later than all time stamps in the stream, go to the 
   // end of the stream.
 
-  string dummy;
+  const char* dummy = "";
   return FindEntry( dummy, dummy, from, date );
 }
 
@@ -1248,7 +1253,7 @@ UInt_t THaFileDB::LoadValues ( const char* system, const TagDef* list,
 			    ti->expected,date);
 	break;
       default:
-	Error("THaFileDB","Invalid type to read %s %s",system,ti->name);
+	Error("LoadValues","Invalid type to read %s %s",system,ti->name);
 	break;
       }
 
