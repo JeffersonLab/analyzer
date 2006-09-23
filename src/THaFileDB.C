@@ -264,13 +264,14 @@ UInt_t THaFileDB::ReadValue( const char* systemC, const char* attr,
   if( !LoadDB(systemC, date) )
     return 0;
 
+  TDatime reqdate;
   for( int i=0; i<3; i++ ) {
     if( !db[i].good ) continue;
     const char* system = ( i>0 ) ? systemC : "";
-    TDatime dbdate(date);
 
     ISSTREAM from(db[i].contents.c_str());
-    if ( from.good() && FindEntry(system,attr,from,dbdate) ) {
+    reqdate = date;
+    if ( from.good() && FindEntry(system,attr,from,reqdate) ) {
       // found an entry    
       from >> value;
       return 1;
@@ -330,23 +331,24 @@ UInt_t THaFileDB::ReadArray( const char* systemC, const char* attr,
   if( size == 0 )
     size = array.max_size();
 
+  TDatime reqdate;
   for( int i=0; i<3; i++ ) {
     if( !db[i].good ) continue;
     const char* system = ( i>0 ) ? systemC : "";
-    TDatime dbdate(date);
   
     UInt_t cnt=0;
     ISSTREAM from(db[i].contents.c_str());
-    if ( from.good() && FindEntry(system,attr,from,dbdate) ) {
+    reqdate = date;
+    if ( from.good() && FindEntry(system,attr,from,reqdate) ) {
       array.clear();
-      while ( from.good() && find_constant(from) ) {
+      T val;
+      while( find_constant(from) ) {
 	if( cnt >= size ) {
 	  //FIXME: print key and db source
 	  Warning("ReadArray", "Array truncated from %d to %d elements",
 		  size, cnt );
 	  break;
 	}
-	T val;
 	from >> val;
 	array.push_back(val);
 	cnt++;
@@ -415,29 +417,28 @@ UInt_t THaFileDB::ReadMatrix( const char* systemC, const char* attr,
   if( !LoadDB(systemC, date) )
     return 0;
 
+  TDatime reqdate;
   for( int i=0; i<3; i++ ) {
     if( !db[i].good ) continue;
     ISSTREAM from(db[i].contents.c_str());
     const char* system = ( i>0 ) ? systemC : "";
   
-    // this differs from a 'normal' vector in that here, each line
-    // gets its own row in the matrix
-    TDatime dbdate(date);
-    if ( FindEntry(system,attr,from,dbdate) ) {
+    reqdate = date;
+    if ( from.good() && FindEntry(system,attr,from,reqdate) ) {
       rows.clear();
-      // Start collecting a new row
-      while ( from.good() && find_constant(from) ) {
+      vector<T> v;
+      T tmp;
+      while( find_constant(from) ) {
 	// collect a row, breaking on a '\n'
-	vector<T> v;
-	while ( from.good() && find_constant(from,1) ) {
-	  T tmp;
+	v.clear();
+	while( find_constant(from,1) ) {
 	  from >> tmp;
 	  v.push_back(tmp);
 	}
-	if (v.size()>0)
+	if( !v.empty() )
 	  rows.push_back(v);
       }
-      return rows.size();
+      return static_cast<UInt_t>( rows.size() );
     }
   }
   return 0;
@@ -464,55 +465,48 @@ UInt_t THaFileDB::GetMatrix( const char* system, const char* attr,
 
 
 //_____________________________________________________________________________
-UInt_t THaFileDB::GetMatrix( const char* system, const char* name,
-			     vector<string>& mtr_name, 
-			     vector<vector<Double_t> >& mtr_rows,
+UInt_t THaFileDB::GetMatrix( const char* systemC, const char* attr,
+			     vector<string>& row_names, 
+			     vector<vector<Double_t> >& rows,
 			     const TDatime &date )
 {
   // Read in the transport matrix from the text-file database.
   // Return each entry as correlated vectors of string and floats
-  //  
-  // Read in the matrix as a group, all at once
-  // 
 
-  TDatime orig_date(date);
+  if( !LoadDB(systemC, date) )
+    return 0;
 
-  ISSTREAM from(db[1].contents.c_str());
-
-//    ifstream from(fInFileName.c_str());
-
+  TDatime reqdate;
+  for( int i=0; i<3; i++ ) {
+    if( !db[i].good ) continue;
+    ISSTREAM from(db[i].contents.c_str());
+    const char* system = ( i>0 ) ? systemC : "";
   
-  // Clear out the matrix vectors, first
-  mtr_name.clear();
-  
-  //  vector<vector<Double_t> >::size_type vi;
-
-  // Make certain we are starting with a fresh matrix
-//   for (vi = 0; vi<mtr_rows.size(); vi++) {
-//     mtr_rows[vi].clear();
-//   }
-  mtr_rows.clear();
-  
-  //FIXME:
-  const char*  attr = "matrix";
-  
-  while ( from.good() && FindEntry(system,attr,from,orig_date) ) {
-    vector<Double_t> v;
-    while ( from.good() && find_constant(from) ) {
+    reqdate = date;
+    if ( from.good() && FindEntry(system,attr,from,reqdate) ) {
+      string rname;
+      rows.clear();
+      row_names.clear();
+      vector<Double_t> v;
       Double_t tmp;
-      from >> tmp;
-      v.push_back(tmp);
-    }
-    
-    if (v.size()>0) {
-      mtr_name.push_back(attr);
-      mtr_rows.push_back(v);
+      while( find_constant(from) ) {
+	// collect a row, breaking on a '\n'
+	v.clear();
+	from >> rname;
+	while( find_constant(from,1) ) {
+	  from >> tmp;
+	  v.push_back(tmp);
+	}
+	if( !v.empty() ) {
+	  row_names.push_back(rname);
+	  rows.push_back(v);
+	}
+      }
+      return static_cast<UInt_t>( rows.size() );
     }
   }
-  return mtr_rows.size();
+  return 0;
 }
-  
-  
 
 //_____________________________________________________________________________
 void THaFileDB::WriteDate( ostream& to, const TDatime& date ) 
@@ -949,12 +943,16 @@ UInt_t THaFileDB::PutMatrix( const char* system, const char* name,
 }
 
 //_____________________________________________________________________________
-bool THaFileDB::find_constant(istream& from, int linebreak)
+bool THaFileDB::find_constant( istream& from, int linebreak )
 {
   // A utility routine. Look through the stream 'from' 
   // for the next character that is permitted to be
-  // part of the constant set
-  
+  // part of the constant set. A newline followed by a whitespace
+  // character is considered a continuation of an entry and will be skipped. 
+  // However, if 'linebreak' != 0, then stop at each newline, regardless of
+  // what follows. (This is needed for reading matrices where each line 
+  // represents a row.)
+
   int ci=0;  // next character to be read in
 
   while ( from.good() ) {
@@ -965,21 +963,21 @@ bool THaFileDB::find_constant(istream& from, int linebreak)
     // Eat space until the next non-space character or end-of-line
     while ( from.good() && (ci=from.peek())!='\n' && isspace(ci) )
       from.get();
-    
+
     // Check to see if a new line is coming:
-    if ( ci=='\n' ) {
-      if (linebreak) return true;
+    if ( ci=='\n' || ci==EOF ) {
+      if (linebreak) return false;
       from.get();
       // If it does not begin with a space-like character, the end
       // of the entry has been reached.
-      if ( !isspace(from.peek()) || !from.good() )
+      if ( !from.good() || !isspace(from.peek()) )
 	break;
       continue;
     }
     
     // Discard the rest of the line at a comment character
     if ( ci=='#' ) {
-      while( from.peek()!='\n' ) from.get();
+      while( from.good() && from.peek()!='\n' ) from.get();
       continue;
     }
 
@@ -1224,7 +1222,7 @@ UInt_t THaFileDB::PutDetMap( const TDatime& date ) {
 
 
 //_____________________________________________________________________________
-UInt_t THaFileDB::LoadValues ( const char* system, const TagDef* list,
+UInt_t THaFileDB::LoadValues ( const char* system, const DBRequest* list,
 			       const TDatime& date )
 {
   // Load a number of entries from the database.
@@ -1232,7 +1230,7 @@ UInt_t THaFileDB::LoadValues ( const char* system, const TagDef* list,
   // must be given, and the memory already allocated
   //
   
-  const TagDef *ti = list;
+  const DBRequest *ti = list;
   UInt_t cnt=0;
   UInt_t this_cnt=0;
 
@@ -1281,14 +1279,14 @@ UInt_t THaFileDB::LoadValues ( const char* system, const TagDef* list,
 }
 
 //_____________________________________________________________________________
-UInt_t  THaFileDB::StoreValues( const char* system, const TagDef* list,
+UInt_t  THaFileDB::StoreValues( const char* system, const DBRequest* list,
 				const TDatime& date )
 {
   // Store the set of values into the database.
   // For array entries, the number of elements to be written out
   // must be given
   
-  const TagDef *ti = list;
+  const DBRequest *ti = list;
   UInt_t cnt=0;
   UInt_t this_cnt=0;
 
