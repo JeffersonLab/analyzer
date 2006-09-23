@@ -21,7 +21,7 @@ class THaFileDB : public THaDB {
 
  public:
   // constructor to connect to specific datafiles
-  THaFileDB( const char* calib="default" );
+  THaFileDB( const char* infile = "default" );
   
   virtual ~THaFileDB();
 
@@ -42,7 +42,7 @@ class THaFileDB : public THaDB {
   virtual UInt_t GetArray( const char* system, const char* attr,
 			   Double_t* array, UInt_t size, const TDatime& date );
 
-  virtual UInt_t LoadValues( const char* system, const TagDef* list,
+  virtual UInt_t LoadValues( const char* system, const DBRequest* list,
 			     const TDatime& date );
 
   virtual UInt_t GetMatrix( const char* system, const char* name,
@@ -77,7 +77,7 @@ class THaFileDB : public THaDB {
 			   const Double_t* array, UInt_t size,
 			   const TDatime& date );
   
-  virtual UInt_t StoreValues( const char* system, const TagDef* list,
+  virtual UInt_t StoreValues( const char* system, const DBRequest* list,
 			      const TDatime& date );
   
   virtual UInt_t PutMatrix( const char* system, const char* name,

@@ -74,7 +74,7 @@ class THaDB : public TObject {
 			   Double_t* array, UInt_t size,
 			   const TDatime &date ) = 0;
   
-  virtual UInt_t LoadValues ( const char* system, const TagDef* list,
+  virtual UInt_t LoadValues ( const char* system, const DBRequest* list,
 			      const TDatime& date ) = 0;
 
   virtual UInt_t GetMatrix( const char* system, const char* name,
@@ -127,7 +127,7 @@ class THaDB : public TObject {
 			    const std::vector<std::vector<Double_t> >& row_data,
 			    const TDatime& date ) = 0;
 
-  virtual  UInt_t  StoreValues( const char* system, const TagDef* list,
+  virtual  UInt_t  StoreValues( const char* system, const DBRequest* list,
 				const TDatime& date ) = 0;
   
   // Set the comment associated with future DB writes
@@ -142,9 +142,6 @@ class THaDB : public TObject {
   virtual  UInt_t LoadDetMap(const TDatime& date) = 0;
   std::vector<THaDetConfig> fDetectorMap; // contains the detector configurations
 
-
-  typedef TagDef DBTagDef; // Create a private version for related class to use.
-  
   ClassDef(THaDB,0) // ABC for a key- and date-based database
 };
 
