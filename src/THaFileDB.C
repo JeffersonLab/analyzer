@@ -131,15 +131,18 @@ namespace {
   }
   
   std::istream& operator>>(std::istream& from, DbString& str) {
-    // for a string, read in each line belonging, and remove the initial
-    // 'tab' character
     str.fString.erase();
     
     std::string line;
     // strings must begin with a '\t'
-    while( from.peek()=='\t' && getline(from,line).good() ) {
+    while( from.peek()=='\t' && getline(from,line) ) {
       str.fString += line.substr(1);
     }
+    // Simulate a conversion error if no data read - e.g.if the string
+    // does not start with a tab
+    if( str.fString.empty() )
+      from.setstate( ios_base::failbit );
+
     return from;
   }
   
@@ -274,6 +277,12 @@ UInt_t THaFileDB::ReadValue( const char* systemC, const char* attr,
     if ( from.good() && FindEntry(system,attr,from,reqdate) ) {
       // found an entry    
       from >> value;
+      if( !from.good() ) {
+	if( fDebug>0 )
+	  Error( "GetValue", "Data format error reading key %s.%s",
+		 system, attr );
+	return 0;
+      }
       return 1;
     }
   }
@@ -302,10 +311,9 @@ UInt_t THaFileDB::GetValue( const char* system, const char* attr,
 {
   // Read a string for system/attribute
 
-  DbString dbstr;
+  DbString dbstr(value);
   Int_t ret = ReadValue(system,attr,dbstr,date);
-  if( ret )
-    value = dbstr.fString;
+  value = dbstr.fString;
   return ret;
 }
 
@@ -344,14 +352,20 @@ UInt_t THaFileDB::ReadArray( const char* systemC, const char* attr,
       T val;
       while( find_constant(from) ) {
 	if( cnt >= size ) {
-	  //FIXME: print key and db source
-	  Warning("ReadArray", "Array truncated from %d to %d elements",
-		  size, cnt );
-	  break;
+	  Error("ReadArray", "Array %s.%s truncated from %d to %d elements",
+		system, attr, size, cnt );
+	  return 0;
 	}
 	from >> val;
-	array.push_back(val);
-	cnt++;
+	if( from.good() ) {
+	  array.push_back(val);
+	  cnt++;
+	} else {
+	  if( fDebug>0 )
+	    Error("GetArray", "Data format error reading key %s.%s element %d",
+		  system, attr, cnt );
+	  return 0;
+	}
       }
       //  array.resize(cnt); // only keep it as large as necessary
       return cnt;
@@ -433,7 +447,14 @@ UInt_t THaFileDB::ReadMatrix( const char* systemC, const char* attr,
 	v.clear();
 	while( find_constant(from,1) ) {
 	  from >> tmp;
-	  v.push_back(tmp);
+	  if( from.good() ) {
+	    v.push_back(tmp);
+	  } else {
+	    if( fDebug>0 )
+	      Error("GetMatrix", "Data format error reading matrix %s.%s",
+		    system, attr );
+	    return 0;
+	  }
 	}
 	if( !v.empty() )
 	  rows.push_back(v);
@@ -493,8 +514,20 @@ UInt_t THaFileDB::GetMatrix( const char* systemC, const char* attr,
 	// collect a row, breaking on a '\n'
 	v.clear();
 	from >> rname;
+	if( !from.good() ) {
+	  if( fDebug>0 )
+	    Error("GetMatrix", "Data format error reading "
+		  "row name of matrix %s.%s", system, attr );
+	  return 0;
+	}
 	while( find_constant(from,1) ) {
 	  from >> tmp;
+	  if( !from.good() ) {
+	    if( fDebug>0 )
+	      Error("GetMatrix", "Data format error reading matrix %s.%s",
+		    system, attr );
+	    return 0;
+	  }
 	  v.push_back(tmp);
 	}
 	if( !v.empty() ) {
