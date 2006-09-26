@@ -9,17 +9,14 @@
 
 #include "TNamed.h"
 #include "THaGlobals.h"
-#include <TDatime.h>
+#include "TDatime.h"
+#include "VarDef.h"
 
 #include <vector>
-#include <string>
 #include <cstdio>
 
 class THaEvData; //needed by derived classes
 class TList;
-struct VarDef;
-struct RVarDef;
-struct TagDef;
 class TVector3;
 class THaRunBase;
 class THaOutput;

@@ -32,6 +32,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <cstdio>
+#include <string>
 
 using namespace std;
 typedef string::size_type ssiz_t;
