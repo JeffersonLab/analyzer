@@ -378,9 +378,10 @@ Int_t THaCoincTime::Process( const THaEvData& evdata )
 #else
 	Double_t c = 2.99792458e8;
 #endif
-	*(sp->Vxtime[i]) = tr->GetTime() - tr->GetPathLen()/(beta*c);
+	(*(sp->Vxtime))[i] = tr->GetTime() - tr->GetPathLen()/(beta*c);
       } else {
-	*(sp->Vxtime[i]) = (i+1)*kBig;  //FIXME: seriously i+1 times kBig??
+	// Using (i+1)*kBig here prevents differences from being zero
+	(*(sp->Vxtime))[i] = (i+1)*kBig;  
       }
     }
   }

@@ -174,7 +174,8 @@ Int_t THaS2CoincTime::Process( const THaEvData& evdata )
       if ( tr && (p=tr->GetP())>0. ) {
 	int pad = static_cast<int>(tr_pads->GetValue(i));
 	if (pad<0) {
-	  *(sp->Vxtime[i]) = (i+1)*kBig; //FIXME: huh?
+	  // Using (i+1)*kBig prevents differences of large numbers to be zero
+	  (*(sp->Vxtime))[i] = (i+1)*kBig;
 	  continue;
 	}
 	Double_t s2t = s2times->GetValue(pad);
@@ -185,10 +186,10 @@ Int_t THaS2CoincTime::Process( const THaEvData& evdata )
 #else
 	Double_t c = 2.99792458e8;
 #endif
-	*(sp->Vxtime[i]) = s2t - 
+	(*(sp->Vxtime))[i] = s2t - 
 	  (trpath->GetValue(i)+s2trpath->GetValue(i))/(beta*c);
       } else {
-	*(sp->Vxtime[i]) = (i+1)*kBig; //FIXME: arithmetic on kBig?!?
+	(*(sp->Vxtime))[i] = (i+1)*kBig;
       }
     }
   }
