@@ -399,28 +399,26 @@ Int_t THaAnalyzer::InitModules( const TList* module_list, TDatime& run_time,
 
   static const char* const here = "InitModules()";
 
-  if( !module_list )
+  if( !module_list || !baseclass || !*baseclass )
     return -3-erroff;
+
   TIter next( module_list );
-  bool fail = false;
   Int_t retval = 0;
   TObject* obj;
-  while( !fail && (obj = next())) {
-    if( baseclass && !obj->IsA()->InheritsFrom( baseclass )) {
-      Error( here, "Object %s (%s) is not a %s. Analyzer initialization "
-	     "failed.", obj->GetName(), obj->GetTitle(), baseclass );
-      retval = -2;
-      fail = true;
-    } else {
-      THaAnalysisObject* theModule = static_cast<THaAnalysisObject*>( obj );
-      theModule->Init( run_time );
-      if( !theModule->IsOK() ) {
+  while( retval == 0 && (obj = next()) != NULL ) {
+    if( obj->IsA()->InheritsFrom( baseclass )) {
+      THaAnalysisObject* theModule = dynamic_cast<THaAnalysisObject*>( obj );
+      if( !theModule ||
+	  ( theModule->Init( run_time ) && !theModule->IsOK())) {
 	Error( here, "Error initializing module %s (%s). "
 	       "Analyzer initialization failed.", 
 	       obj->GetName(), obj->GetTitle() );
 	retval = -1;
-	fail = true;
       }
+    } else {
+      Error( here, "Object %s (%s) is not a %s. Analyzer initialization "
+	     "failed.", obj->GetName(), obj->GetTitle(), baseclass );
+      retval = -2;
     }
   }
   return (retval == 0) ? 0 : retval - erroff;
