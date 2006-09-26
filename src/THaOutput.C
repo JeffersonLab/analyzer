@@ -484,11 +484,6 @@ void THaOutput::BuildList(vector<THaString > vdata)
 		    atoi(vdata[1].c_str()),atoi(vdata[2].c_str()));
 	 } else {
 // Default scalers = normalization scalers, like charge and triggers.
-	   if (vdata[0].CmpNoCase("default") == 0) {
-	     DefScaler();  return;
-	   } else if (vdata[0].CmpNoCase("default_helicity") == 0) {
-             DefScaler(1);  return;
-	   } else {
   	     fScalRC = kRate;
              if (vdata.size() >= 2) {
 	       if ((vdata[1].CmpNoCase("count") == 0) || 
@@ -496,6 +491,11 @@ void THaOutput::BuildList(vector<THaString > vdata)
 		 fScalRC = kCount;
 	       }
 	     }
+	   if (vdata[0].CmpNoCase("default") == 0) {
+	     DefScaler();  return;
+	   } else if (vdata[0].CmpNoCase("default_helicity") == 0) {
+             DefScaler(1);  return;
+	   } else {
      	     AddScaler(vdata[0],fScalBank);           
            }
 	 }
@@ -524,7 +524,7 @@ void THaOutput::DefScaler(Int_t hel) {
 			    "bcm_u1", "bcm_u3", "bcm_u10",
 			    "bcm_d1", "bcm_d3", "bcm_d10",
                             "clock", "TS-accept", "edtpulser",
-                            "strobe" };
+			     "strobe", "dclock" };
 
   Int_t nscal = 1;
   Int_t jhel = 0;
@@ -689,7 +689,13 @@ Int_t THaOutput::ProcScaler(THaScalerGroup *scagrp)
       }     
 
     } else {
-
+      if (fScalerKey[i]->GetChanName()=="dclock") {
+	fScalerKey[i]->Fill(
+	  scaler->GetNormData(fScalerKey[i]->GetHelicity(),
+			      "clock",0) -
+	  scaler->GetNormData(fScalerKey[i]->GetHelicity(),
+			      "clock",1) );
+      } else 
       if (fScalerKey[i]->IsRate()) {
          fScalerKey[i]->Fill(
                   scaler->GetNormRate(fScalerKey[i]->GetHelicity(), 
