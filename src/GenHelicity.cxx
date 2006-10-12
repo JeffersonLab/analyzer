@@ -693,8 +693,9 @@ void GenHelicity::TimingEvent()
   if (fTELastTime[fArm] > 0)
     {
       // Look for missed timing events
+      Double_t T9Diff = 3511;
       Double_t tdiff = fTETime[fArm] - fTELastTime[fArm];
-      Int_t nt9miss = (Int_t) (tdiff / 3508 - 0.5);
+      Int_t nt9miss = (Int_t) (tdiff / T9Diff - 0.5);
       fTET9Index[fArm] += nt9miss;
       if (fTET9Index[fArm] > 3)
 	{
@@ -702,7 +703,7 @@ void GenHelicity::TimingEvent()
 	  fTET9Index[fArm] = fTET9Index[fArm] % 4;
 	}
       if (fTEType9[fArm] &&
-	  TMath::Abs (tdiff - (nt9miss + 1) * 3508) > 3 * (nt9miss + 1))
+	  TMath::Abs (tdiff - (nt9miss + 1) * T9Diff) > 3 * (nt9miss + 1))
 	cout << "WARNING GenHelicity: Weird time difference between timing events: " << tdiff 
 	     << " at " << fTETime[fArm] << endl;
     }
