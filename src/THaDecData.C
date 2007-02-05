@@ -487,12 +487,15 @@ void THaDecData::VdcEff( )
   static Int_t cnt = 0;
   const Int_t nwire = 400;
   Int_t wire[nwire];
-  static Double_t xcnt[8*400],eff[8*400];
+  Int_t hitwire[nwire];   // lookup to avoid O(N^3) algorithm
+
+  static Double_t xcnt[8*nwire],eff[8*nwire];  // FIXME: use member variables
+  
   Double_t xeff;    
   static Bool_t first = kTRUE;
   if (first) {
-    memset(eff,0,nwire*sizeof(Double_t));
-    memset(xcnt,0,nwire*sizeof(Double_t));
+    memset(eff,0,8*nwire*sizeof(eff[0]));
+    memset(xcnt,0,8*nwire*sizeof(xcnt[0]));
     first = kFALSE;
   }
 
@@ -506,7 +509,8 @@ void THaDecData::VdcEff( )
      if (local_debug)
       cout << "plane "<<ipl<<"  "<<VdcVars[ipl]<<" $$$ "<<pvar<<endl;
      if (!pvar) continue;
-     memset(wire,0,nwire);
+     memset(wire,0,nwire*sizeof(wire[0]));
+     memset(hitwire,0,nwire*sizeof(hitwire[0]));
 
      n = pvar->GetLen();
      nhit = n;
@@ -518,40 +522,34 @@ void THaDecData::VdcEff( )
 
      for (i = 0; i < n; i++) {
        wire[i] = (Int_t) pvar->GetValue(i);
+       if (wire[i]>=0 && wire[i]<nwire)	 hitwire[wire[i]]=1;
        if (local_debug)
          cout << "wire "<<i<<"  "<<wire[i]<<endl;
      }
 
-// The following does not assume what wire[] is ordered.
-     for (i = 0; i < n-1; i++) {
-       for (j = i+1; j < n; j++) {
-         if (((wire[i]-wire[j])==2) ||
-             ((wire[j]-wire[i])==2)) {
-	   awire = (Int_t)(wire[i]+wire[j])/2;
-           if (local_debug) 
-	     cout << "wire eff "<<i<<"  "<<j<<"  "<<awire<<endl;
-           if (awire>0 && awire<nwire) {
-             xcnt[ipl*nwire+awire] = xcnt[ipl*nwire+awire] + 1;
-             found = 0;
-             for (k = 0; k < n; k++) {
-               if (k == i || k == j) continue;
-               if (wire[k] == awire) {
-		 found = 1; 
-                 break;
-	       }
-             }
-             if (found) {
-	       eff[ipl*nwire+awire] = eff[ipl*nwire+awire] + 1;
-             } else {
-               eff[ipl*nwire+awire] = eff[ipl*nwire+awire] + 0;
-	     }
+// The following does not assume that wire[] is ordered.
+     for (i = 0; i < n; i++) {
+       // look for neighboring hit at +2 wires
+       int ngh2=wire[i]+2;
+       if (wire[i]<0 || ngh2>=nwire) continue;
+       
+       if (hitwire[ngh2]) {
+	 awire = wire[i]+1;
+	 if (local_debug) 
+	   cout << "wire eff "<<i<<"  "<<j<<"  "<<awire<<endl;
+	 if (awire>=0 && awire<nwire) {
+	   xcnt[ipl*nwire+awire] = xcnt[ipl*nwire+awire] + 1;
+	   
+	   if ( hitwire[awire] ) {
+	     eff[ipl*nwire+awire] = eff[ipl*nwire+awire] + 1;
+	   } else {
+	     eff[ipl*nwire+awire] = eff[ipl*nwire+awire] + 0;
 	   }
-
 	 }
        }
      }
-
-     if ((cnt++%500) == 0) {
+     
+     if ((cnt%500) == 0) {
 
        hist[ipl+8]->Reset();
        for (i = 0; i < nwire; i++) {
@@ -567,8 +565,9 @@ void THaDecData::VdcEff( )
      }
 
   }
-  if ((cnt < 2000 && cnt++ % 100 == 0) ||
-      (cnt++ % 5000 == 0)) WriteHist();
+  cnt++;
+  if ((cnt < 2000 && cnt % 500 == 0) ||
+      (cnt % 5000 == 0)) WriteHist();
 
   //  if ((cnt%10)==0) Print();
 
