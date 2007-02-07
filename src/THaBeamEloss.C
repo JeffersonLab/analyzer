@@ -12,6 +12,7 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaBeamEloss.h"
+#include "THaBeam.h"
 #include "THaVertexModule.h"
 #include "TMath.h"
 #include "TVector3.h"
@@ -83,8 +84,9 @@ THaAnalysisObject::EStatus THaBeamEloss::Init( const TDatime& run_time )
 
   // Extract the beam particle parameters from the input
   THaBeamInfo* beamifo = fBeamModule->GetBeamInfo();
-  if( !beamifo->IsOK() )
-    return fStatus = kInitError;
+  THaBeam* beam = beamifo->GetBeam();
+  if( !beam || !beam->IsInit() )
+    return fStatus = kInitError;  
 
   // overrides anything set by SetMass()
   SetMass( beamifo->GetM() );
