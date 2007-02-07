@@ -478,7 +478,7 @@ void THaDecData::VdcEff( )
 { // Check the VDC efficiency
 
   Int_t local_debug = 0;
-  Int_t i,j,k,n,ipl,nhit,awire,found;
+  Int_t i,n,ipl,nhit,awire;
   THaVar *pvar;
   static string VdcVars[] = {"L.vdc.u1.wire", "L.vdc.v1.wire", 
            "L.vdc.u2.wire", "L.vdc.v2.wire", "R.vdc.u1.wire", 
@@ -536,7 +536,7 @@ void THaDecData::VdcEff( )
        if (hitwire[ngh2]) {
 	 awire = wire[i]+1;
 	 if (local_debug) 
-	   cout << "wire eff "<<i<<"  "<<j<<"  "<<awire<<endl;
+	   cout << "wire eff "<<i<<"  "<<awire<<endl;
 	 if (awire>=0 && awire<nwire) {
 	   xcnt[ipl*nwire+awire] = xcnt[ipl*nwire+awire] + 1;
 	   
