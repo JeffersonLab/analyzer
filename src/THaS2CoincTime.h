@@ -23,7 +23,7 @@ public:
 		  const char* spec1="L", const char* spec2="R",
 		  Double_t mass1 = .938272, Double_t mass2 = 0.000511,
 		  const char* ch_name1=0, const char* ch_name2=0,
-		  const char* detname="s2");
+		  const char* detname1="s2", const char* detname2="");
   
   virtual ~THaS2CoincTime();
   
@@ -43,7 +43,7 @@ protected:
   THaVar* fS2Times2;   //!
   THaVar* fTrPath2;    //!
 
-  TString fDetName;
+  TString fDetName1, fDetName2;
   
 public:  
 
