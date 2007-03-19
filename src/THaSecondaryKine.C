@@ -200,29 +200,27 @@ Int_t THaSecondaryKine::Process( const THaEvData& evdata )
   fPmiss_y = p_miss.Y();
   fPmiss_z = p_miss.Z();
 
-  // Invariant mass of the recoil system. Sometimes called "missing mass",
-  // see below. This invariant mass equals MB(ground state) + excitation energy
+  // Invariant mass of the recoil system, a.k.a. "missing mass".
+  // This invariant mass equals MB(ground state) plus any excitation energy.
   fMrecoil = fB.M();
 
   // Kinetic energies of X and B
   fTX = fX.E() - fMX;
   fTB = fB.E() - fMrecoil;
     
-  // Missing energy and mass
-  // Standard nuclear physics definition of missing energy: 
-  // binding energy of X in the target (= excitation energy of the 
-  // recoil system)
-  // Caution: because TB is defined in terms of Mrecoil and not 
-  // MB(ground state), this Emiss includes the excitation energy
-  // of the recoil nucleus. To exclude the excitation energy, compute:
-  //    Emiss' = omega - TX - Erecoil + MB(ground state)
-  // where MB(ground state) is an external parameter set by the user.
+  // Standard nuclear physics definition of "missing energy":
+  // binding energy of X in the target (= removal energy of X).
+  // NB: If X is knocked out of a lower shell, the recoil system carries
+  // a significant excitation energy. This excitation is included in Emiss
+  // here, as it should, since it results from the binding of X.
   fEmiss = omega - fTX - fTB;
 
   // In production reactions, the "missing energy" is defined 
-  // as the energy of the undetected recoil system:
+  // as the total energy of the undetected recoil system.
+  // This is the "missing mass", Mrecoil, plus any kinetic energy.
   fErecoil = fB.E();
 
+  // Lab components of the recoil momentum 3-vector
   fPrecoil_x = fB.X();
   fPrecoil_y = fB.Y();
   fPrecoil_z = fB.Z();
