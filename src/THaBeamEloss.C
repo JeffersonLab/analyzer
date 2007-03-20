@@ -88,6 +88,8 @@ THaAnalysisObject::EStatus THaBeamEloss::Init( const TDatime& run_time )
   if( !beam || !beam->IsInit() )
     return fStatus = kInitError;  
 
+  fBeamIfo.SetBeam(beam);
+
   // overrides anything set by SetMass()
   SetMass( beamifo->GetM() );
   fZ = TMath::Abs(beamifo->GetQ());
