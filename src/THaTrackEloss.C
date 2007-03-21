@@ -18,8 +18,6 @@
 #include "THaVertexModule.h"
 #include "TMath.h"
 #include "TVector3.h"
-#include "VarDef.h"
-#include <iostream>
 
 using namespace std;
 
@@ -84,12 +82,29 @@ THaAnalysisObject::EStatus THaTrackEloss::Init( const TDatime& run_time )
   // Locate the input tracking module named in fInputName and save
   // pointer to it.
 
-  // Standard initialization. Calls this object's DefineVariables().
-  if( THaElossCorrection::Init( run_time ) != kOK )
-    return fStatus;
+  static const char* const here = "Init()";
 
+  // Find the input tracking module
   fTrackModule = dynamic_cast<THaTrackingModule*>
     ( FindModule( fInputName.Data(), "THaTrackingModule"));
+  if( !fTrackModule )
+    return fStatus;
+
+  THaTrackInfo* trkifo = fTrackModule->GetTrackInfo();
+  THaSpectrometer* spectro = trkifo->GetSpectrometer();
+  if( !spectro ) {
+    Error( Here(here), "Input tracking module has no pointer to spectrometer?!?" );
+    return fStatus = kInitError;
+  }
+  if( !spectro->IsInit() ) {
+    Error( Here(here), "Parent spectrometer is not initialized?!?" );
+    return fStatus = kInitError;
+  }
+  fTrkIfo.SetSpectrometer( spectro );
+
+  // Standard initialization. Calls this object's DefineVariables() and
+  // reads meterial properties from the run database.
+  THaElossCorrection::Init( run_time );
 
   return fStatus;
 }
@@ -102,25 +117,7 @@ Int_t THaTrackEloss::DefineVariables( EMode mode )
   if( mode == kDefine && fIsSetup ) return kOK;
   THaElossCorrection::DefineVariables( mode );
 
-  const char* var_prefix = "fTrkIfo.";
-
-  // Corrected track parameters
-  const RVarDef var1[] = {
-    { "x",        "Target x coordinate",            "fX"},
-    { "y",        "Target y coordinate",            "fY"},
-    { "th",       "Tangent of target theta angle",  "fTheta"},
-    { "ph",       "Tangent of target phi angle",    "fPhi"},    
-    { "dp",       "Target delta",                   "fDp"},
-    { "p",        "Lab momentum (GeV)",             "fP"},
-    { "px",       "Lab momentum x (GeV)",           "GetPx()"},
-    { "py",       "Lab momentum y (GeV)",           "GetPy()"},
-    { "pz",       "Lab momentum z (GeV)",           "GetPz()"},
-    { "ok",       "Data valid status flag (1=ok)",  "fOK"},
-    { 0 }
-  };
-  DefineVarsFromList( var1, mode, var_prefix );
-
-  return 0;
+  return DefineVarsFromList( GetRVarDef(), mode );
 }
 
 //_____________________________________________________________________________
