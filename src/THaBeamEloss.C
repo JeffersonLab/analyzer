@@ -117,7 +117,7 @@ Int_t THaBeamEloss::DefineVariables( EMode mode )
   THaElossCorrection::DefineVariables( mode );
 
   // Define the variables for the beam info subobject
-  return DefineVarsFromList( GetRVarDef(), mode );
+  return DefineVarsFromList( THaBeamModule::GetRVarDef(), mode );
 }
 
 //_____________________________________________________________________________

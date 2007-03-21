@@ -117,7 +117,7 @@ Int_t THaTrackEloss::DefineVariables( EMode mode )
   if( mode == kDefine && fIsSetup ) return kOK;
   THaElossCorrection::DefineVariables( mode );
 
-  return DefineVarsFromList( GetRVarDef(), mode );
+  return DefineVarsFromList( THaTrackingModule::GetRVarDef(), mode );
 }
 
 //_____________________________________________________________________________
