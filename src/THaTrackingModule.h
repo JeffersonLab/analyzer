@@ -8,7 +8,9 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaTrackInfo.h"
+
 class THaTrack;
+struct RVarDef;
 
 class THaTrackingModule {
   
@@ -20,6 +22,7 @@ public:
   THaTrack*      GetTrack()     { return fTrk; }
 
   void TrkIfoClear();
+  static const RVarDef* GetRVarDef();
 
 protected:
 
