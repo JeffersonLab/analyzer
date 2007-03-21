@@ -11,6 +11,7 @@
 #include "TDatime.h"
 #include "TError.h"
 #include "TMath.h"
+#include "THaEvData.h"
 #include <iostream>
 
 using namespace std;
@@ -22,6 +23,9 @@ THaRunParameters::THaRunParameters() :
 {
   // Default constructor
 
+  fPrescale.Set(THaEvData::MAX_PSFACT);
+  for( int i=0; i<fPrescale.GetSize(); i++)
+    fPrescale[i] = -1;
 }
 
 //_____________________________________________________________________________

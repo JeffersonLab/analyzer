@@ -111,7 +111,6 @@ Int_t THaRunBase::Update( const THaEvData* evdata )
     }
     SetNumber( evdata->GetRunNum() );
     SetType( evdata->GetRunType() );
-    fDataSet  |= kRunNumber|kRunType;
     fDataRead |= kDate|kRunNumber|kRunType;
     ret = 1;
   } 
@@ -251,15 +250,8 @@ Int_t THaRunBase::Init()
   // allocate THaRunParameters automatically. If a derived class needs
   // a different structure, then its Init() method must allocate it
   // before calling this Init().
-  if( !fParam ) {
+  if( !fParam )
     fParam = new THaRunParameters;
-    // THaEvData uses a fixed number of prescale factors, so we can
-    // just set the size of the array here once and for all
-    fParam->Prescales().Set(THaEvData::MAX_PSFACT);
-    // Default all prescale factors to -1 (not set)
-    for(int i=0; i<fParam->GetPrescales().GetSize(); i++)
-      fParam->Prescales()[i] = -1;
-  }
 
   // Open the data source.
   Int_t retval = 0;
@@ -284,8 +276,24 @@ Int_t THaRunBase::Init()
     return retval;
 
   if( !HasInfo(fDataRequired) ) {
-    Error( here, "Not all required run parameters are set. "
-	   "Cannot initialize the run." );
+    const char* errmsg[] = { "run date", "run number", "run type", 
+			     "prescale factors", 0 };
+    TString errtxt("Missing run parameters: ");
+    UInt_t i = 0, n = 0;
+    const char** msg = errmsg;
+    while( *msg ) {
+      if( !HasInfo(BIT(i)&fDataRequired) ) {
+	if( n>0 )
+	  errtxt += ", ";
+	errtxt += *msg;
+	n++;
+      }
+      i++;
+      msg++;
+    }
+    errtxt += ". Run not initialized.";
+    Error( here, errtxt );
+
     return 255;
   }
 
