@@ -16,8 +16,6 @@
 #include "THaVertexModule.h"
 #include "TMath.h"
 #include "TVector3.h"
-#include "VarDef.h"
-#include <iostream>
 
 using namespace std;
 
@@ -78,16 +76,25 @@ THaAnalysisObject::EStatus THaBeamEloss::Init( const TDatime& run_time )
   // Locate the input beam module named in fInputName and save pointer to it. 
   // Extract mass and charge of the beam particles from the input.
 
+  static const char* const here = "Init()";
+
   // Find the input beam module
   fBeamModule = dynamic_cast<THaBeamModule*>
     ( FindModule( fInputName.Data(), "THaBeamModule"));
+  if( !fBeamModule )
+    return fStatus;
 
   // Extract the beam particle parameters from the input
   THaBeamInfo* beamifo = fBeamModule->GetBeamInfo();
   THaBeam* beam = beamifo->GetBeam();
-  if( !beam || !beam->IsInit() )
+  if( !beam ) {
+    Error( Here(here), "Input beam module has no pointer to beam apparatus?!?" );
     return fStatus = kInitError;  
-
+  }
+  if( !beam->IsInit() ) {
+    Error( Here(here), "Parent beam apparatus is not initialized?!?" );
+    return fStatus = kInitError;  
+  }
   fBeamIfo.SetBeam(beam);
 
   // overrides anything set by SetMass()
