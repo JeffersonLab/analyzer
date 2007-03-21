@@ -29,7 +29,7 @@ public:
 
   THaTrackInfo( const THaTrackInfo& t ) :
     fP(t.fP), fDp(t.fDp), fX(t.fX), fY(t.fY), fTheta(t.fTheta), 
-    fPhi(t.fPhi), fPvect(t.fPvect), fOK(t.fOK) {}
+    fPhi(t.fPhi), fPvect(t.fPvect), fOK(t.fOK), fSpectro(t.fSpectro) {}
   THaTrackInfo& operator=( const THaTrackInfo& );
   THaTrackInfo& operator=( const THaTrack& );
   virtual ~THaTrackInfo() {}
