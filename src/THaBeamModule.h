@@ -14,6 +14,7 @@ struct RVarDef;
 class THaBeamModule {
 
 public:
+  THaBeamModule();  // public for ROOT I/O
   virtual ~THaBeamModule();
   
   THaBeamInfo*  GetBeamInfo()  { return &fBeamIfo; }
@@ -25,9 +26,7 @@ protected:
 
   THaBeamInfo  fBeamIfo;      // Beam information
 
-  THaBeamModule();
-
-  ClassDef(THaBeamModule,0)   // ABC for a beam module
+  ClassDef(THaBeamModule,1)   // ABC for a beam module
 
 };
 
