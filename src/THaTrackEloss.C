@@ -90,16 +90,14 @@ THaAnalysisObject::EStatus THaTrackEloss::Init( const TDatime& run_time )
   if( !fTrackModule )
     return fStatus;
 
-  THaTrackInfo* trkifo = fTrackModule->GetTrackInfo();
-  THaSpectrometer* spectro = trkifo->GetSpectrometer();
+  // Get the parent spectrometer apparatus from the input module  
+  THaSpectrometer* spectro = fTrackModule->GetTrackInfo()->GetSpectrometer();
   if( !spectro ) {
-    Error( Here(here), "Input tracking module has no pointer to spectrometer?!?" );
+    Error( Here(here), "Oops. Input tracking module has no pointer "
+	   "to a spectrometer?!?" );
     return fStatus = kInitError;
   }
-  if( !spectro->IsInit() ) {
-    Error( Here(here), "Parent spectrometer is not initialized?!?" );
-    return fStatus = kInitError;
-  }
+  // Needed for initialization of dependent modules in a chain
   fTrkIfo.SetSpectrometer( spectro );
 
   // Standard initialization. Calls this object's DefineVariables() and

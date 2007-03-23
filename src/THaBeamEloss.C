@@ -84,20 +84,20 @@ THaAnalysisObject::EStatus THaBeamEloss::Init( const TDatime& run_time )
   if( !fBeamModule )
     return fStatus;
 
-  // Extract the beam particle parameters from the input
+  // Get the parent beam apparatus from the input module
+  // NB: FindModule() above already checked initialization
   THaBeamInfo* beamifo = fBeamModule->GetBeamInfo();
   THaBeam* beam = beamifo->GetBeam();
   if( !beam ) {
-    Error( Here(here), "Input beam module has no pointer to beam apparatus?!?" );
+    Error( Here(here), "Oops. Input beam module has no pointer to "
+	   "a beam apparatus?!?" );
     return fStatus = kInitError;  
   }
-  if( !beam->IsInit() ) {
-    Error( Here(here), "Parent beam apparatus is not initialized?!?" );
-    return fStatus = kInitError;  
-  }
+  // Needed for initialization of dependent modules in a chain
   fBeamIfo.SetBeam(beam);
 
-  // overrides anything set by SetMass()
+  // Get beam particle properties from the input module. 
+  // Overrides anything set by SetMass()
   SetMass( beamifo->GetM() );
   fZ = TMath::Abs(beamifo->GetQ());
 
