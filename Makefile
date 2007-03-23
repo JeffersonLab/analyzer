@@ -17,7 +17,7 @@ export WITH_DEBUG = 1
 # VERSION should be numerical only - it becomes the shared lib soversion
 # EXTVERS (optional) describes the build, e.g. "dbg", "et", "gcc33" etc.
 SOVERSION  = 1.4
-PATCH   = 2
+PATCH   = 3pre
 VERSION = $(SOVERSION).$(PATCH)
 EXTVERS =
 NAME    = analyzer-$(VERSION)
@@ -30,7 +30,6 @@ ARCH          = linuxegcs
 ROOTCFLAGS   := $(shell root-config --cflags)
 ROOTLIBS     := $(shell root-config --libs)
 ROOTGLIBS    := $(shell root-config --glibs)
-
 
 SUBDIRS       = $(DCDIR) $(SCALERDIR)
 
@@ -67,7 +66,6 @@ endif
 ifeq ($(ARCH),linuxegcs)
 # Linux with egcs (>= RedHat 5.2)
 CXX           = g++
-# Always have the debugging symbols written out, but permit full optimization
 ifdef DEBUG
   CXXFLG      = -g -O0
   LDFLAGS     = -g -O0
@@ -82,15 +80,8 @@ LDCONFIG      = /sbin/ldconfig -n $(LIBDIR)
 SOFLAGS       = -shared
 SONAME        = -Wl,-soname=
 
-GCC_MAJOR     := $(shell chmod +x ./gcc-version; ./gcc-version)
-GCC_MINOR     := $(shell ./gcc-version -m)
-
-ifeq ($(GCC_MAJOR),3)
+# requires gcc 3 or up - test in configure script
 DEFINES       += -DHAS_SSTREAM
-endif
-ifeq ($(GCC_MAJOR),4)
-DEFINES       += -DHAS_SSTREAM
-endif
 
 endif
 
@@ -176,6 +167,7 @@ SRC           = src/THaFormula.C src/THaVform.C src/THaVhist.C \
 		src/THaBeamModule.C src/THaBeamInfo.C src/THaEpicsEbeam.C \
 		src/THaBeamEloss.C \
 		src/THaTrackOut.C src/THaTriggerTime.C
+#		src/THaPhotoReaction.C
 
 ifdef ONLINE_ET
 SRC += src/THaOnlRun.C
