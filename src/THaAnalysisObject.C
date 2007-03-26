@@ -417,6 +417,8 @@ THaAnalysisObject::EStatus THaAnalysisObject::Init( const TDatime& date )
 
   // Define this object's variables.
   status = DefineVariables(kDefine);
+
+  Clear();
   goto exit;
 
  err:
