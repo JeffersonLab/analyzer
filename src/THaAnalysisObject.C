@@ -22,17 +22,17 @@
 #include "TMath.h"
 #include "TError.h"
 #include "TVector3.h"
+#include "TSystem.h"
 
 #include <cstring>
 #include <cctype>
-#include <dirent.h>
 #include <errno.h>
-#include <unistd.h>
 #include <algorithm>
 #include <iostream>
 #include <cmath>
 #include <cstdlib>
 #include <cstdio>
+#include <string>
 
 using namespace std;
 typedef string::size_type ssiz_t;
@@ -240,12 +240,9 @@ vector<string> THaAnalysisObject::GetDBFileList( const char* name,
   // Return the database file searchlist as a vector of strings.
   // The file names are relative to the current directory.
 
-  // FIXME: Try to write this in a system-independent way. Avoid direct Unix 
-  // system calls, call ROOT's OS interface instead.
-
-  char *dbdir = NULL;
-  struct dirent* result;
-  DIR* dir;
+  const char* dbdir = NULL;
+  const char* result;
+  void* dirp;
   size_t pos;
   vector<string> time_dirs, dnames, fnames;
   vector<string>::iterator it, thedir;
@@ -255,7 +252,7 @@ vector<string> THaAnalysisObject::GetDBFileList( const char* name,
   bool have_defaultdir = false, found = false;
 
   // Build search list of directories
-  if( (dbdir = getenv("DB_DIR")))
+  if( (dbdir = gSystem->Getenv("DB_DIR")))
     dnames.push_back( dbdir );
   dnames.push_back( "DB" );
   dnames.push_back( "db" );
@@ -266,19 +263,22 @@ vector<string> THaAnalysisObject::GetDBFileList( const char* name,
   // directory. Subsequent directories are ignored.
   
   it = dnames.begin();
-  while( !(dir = opendir( (*it).c_str() )) && (++it != dnames.end()) );
+  while( !(dirp = gSystem->OpenDirectory( (*it).c_str() )) && 
+	 (++it != dnames.end()) );
 
   // None of the directories can be opened?
-  if( it == dnames.end() ) goto error;
+  if( it == dnames.end() ) {
+    ::Error( here, "Cannot open any database directories. Check your disk!");
+    goto exit;
+  }
 
   // Pointer to database directory string
   thedir = it;
 
   // In the database directory, get the names of all subdirectories matching 
   // a YYYYMMDD pattern.
-  errno = 0;
-  while( (result = readdir(dir)) ) {
-    item = result->d_name;
+  while( (result = gSystem->GetDirEntry(dirp)) ) {
+    item = result;
     if( item.length() == 8 ) {
       for( pos=0; pos<8; ++pos )
 	if( !isdigit(item[pos])) break;
@@ -287,8 +287,7 @@ vector<string> THaAnalysisObject::GetDBFileList( const char* name,
     } else if ( item == defaultdir )
       have_defaultdir = true;
   }
-  if( errno )  goto error;
-  closedir(dir);
+  gSystem->FreeDirectory(dirp);
 
   // Search a date-coded subdirectory that corresponds to the requested date.
   if( time_dirs.size() > 0 ) {
@@ -332,10 +331,6 @@ vector<string> THaAnalysisObject::GetDBFileList( const char* name,
     fnames.push_back( item );
   }
   fnames.push_back( *thedir + "/" + filename );
-  goto exit;
-
- error:
-  perror(here);
 
  exit:
   return fnames;
@@ -426,7 +421,7 @@ THaAnalysisObject::EStatus THaAnalysisObject::Init( const TDatime& date )
 
  err:
   if( status == kFileError )
-    Error(Here("OpenFile"),"Cannot open database file db_%sdat",fnam);
+    Error(Here("Init"),"Cannot open database file db_%sdat",fnam);
  exit:
   return fStatus = (EStatus)status;
 }
