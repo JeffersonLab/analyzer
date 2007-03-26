@@ -4,7 +4,7 @@
 export WITH_DEBUG = 1
 
 # Compile debug version
-# export DEBUG = 1
+ export DEBUG = 1
 
 # Profiling with gprof
 # export PROFILE = 1
@@ -166,8 +166,8 @@ SRC           = src/THaFormula.C src/THaVform.C src/THaVhist.C \
 		src/THaElossCorrection.C src/THaTrackEloss.C \
 		src/THaBeamModule.C src/THaBeamInfo.C src/THaEpicsEbeam.C \
 		src/THaBeamEloss.C \
-		src/THaTrackOut.C src/THaTriggerTime.C
-#		src/THaPhotoReaction.C
+		src/THaTrackOut.C src/THaTriggerTime.C \
+		src/THaPhotoReaction.C src/THaSAProtonEP.C
 
 ifdef ONLINE_ET
 SRC += src/THaOnlRun.C
