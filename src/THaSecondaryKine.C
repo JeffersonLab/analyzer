@@ -94,9 +94,9 @@ Int_t THaSecondaryKine::DefineVariables( EMode mode )
                   "omega-Tx-Tb", "fEmiss" },
     { "Mrecoil",  "Invariant mass of recoil system (GeV)", "fMrecoil" },
     { "Erecoil",  "Total energy of recoil system (GeV)", "fErecoil" },
-    { "Prec_x",   "x-component of recoil system in lab (GeV/c)", "fPrecoil_x" },
-    { "Prec_y",   "y-component of recoil system in lab (GeV/c)", "fPrecoil_y" },
-    { "Prec_z",   "z-component of recoil system in lab (GeV/c)", "fPrecoil_z" },
+    { "Prec_x",   "x-component of recoil system in lab (GeV/c)", "fB.X()" },
+    { "Prec_y",   "y-component of recoil system in lab (GeV/c)", "fB.Y()" },
+    { "Prec_z",   "z-component of recoil system in lab (GeV/c)", "fB.Z()" },
     { "tx",       "Kinetic energy of detected particle (GeV)", "fTX" },
     { "tb",       "Kinetic energy of recoil system (GeV)", "fTB" },
     { "px_cm",    "Magnitude of X momentum in CM system (GeV)", "fPX_cm" },
@@ -191,6 +191,7 @@ Int_t THaSecondaryKine::Process( const THaEvData& evdata )
   TVector3 p_miss = -bq;
   fPmiss   = p_miss.Mag();  //=fB.P()
   //The missing momentum components in the q coordinate system.
+  //FIXME: just store p_miss in member variable
   fPmiss_x = p_miss.X();
   fPmiss_y = p_miss.Y();
   fPmiss_z = p_miss.Z();
@@ -215,10 +216,12 @@ Int_t THaSecondaryKine::Process( const THaEvData& evdata )
   // This is the "missing mass", Mrecoil, plus any kinetic energy.
   fErecoil = fB.E();
 
+  //FIXME: BCI - remove. Still calculated because of inline getters in header
   // Lab components of the recoil momentum 3-vector
   fPrecoil_x = fB.X();
   fPrecoil_y = fB.Y();
   fPrecoil_z = fB.Z();
+  // end BCI
 
   // Calculate some interesting quantities in the CM system of A'.
   // NB: If the target is initially at rest, the A'-vector (spatial part)
