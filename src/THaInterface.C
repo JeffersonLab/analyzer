@@ -13,6 +13,8 @@
 #include "TROOT.h"
 #include "TClass.h"
 #include "TError.h"
+#include "TSystem.h"
+#include "TString.h"
 #include "THaInterface.h"
 #include "TInterpreter.h"
 #include "THaVarList.h"
@@ -40,6 +42,8 @@ THaRunBase* gHaRun     = NULL;  //The currently active run
 TClass*     gHaDecoder = NULL;  //Class(!) of decoder to use
 
 THaInterface* THaInterface::fgAint = NULL;  //Pointer to this interface
+
+static TString fgTZ;
 
 //_____________________________________________________________________________
 THaInterface::THaInterface( const char* appClassName, int* argc, char** argv, 
@@ -78,6 +82,22 @@ THaInterface::THaInterface( const char* appClassName, int* argc, char** argv,
   for (vector<THaString>::size_type i=0; i<ipv.size(); i++)
     gInterpreter->AddIncludePath( ipv[i].c_str() );
   
+  // Because of lack of foresight, the analyzer uses TDatime objects,
+  // which are kept in localtime() and hence are not portable, and also
+  // uses localtime() directly in several places. As a result, database
+  // lookups depend on the timezone of the machine that the replay is done on! 
+  // If this timezone is different from the one in which the data were taken, 
+  // mismatches may occur. This is bad.
+  // FIXME: Use TTimeStamp to keep time in UTC internally. 
+  // To be done in version 1.5
+  //
+  // As a temporary workaround, we assume that all data were taken in
+  // US/Eastern time, and that the database has US/Eastern timestamps.
+  // This should be true for all JLab production data..
+  fgTZ = gSystem->Getenv("TZ");
+  gSystem->Setenv("TZ","US/Eastern");
+
+  
   fgAint = this;
 }
 
@@ -87,6 +107,8 @@ THaInterface::~THaInterface()
   // Destructor
 
   if( fgAint == this ) {
+    // Restore the user's original TZ
+    gSystem->Setenv("TZ",fgTZ.Data());
     // Clean up the analyzer object if defined
     delete THaAnalyzer::GetInstance();
     // Delete all global lists and objects contained in them
