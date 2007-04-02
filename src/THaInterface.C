@@ -15,12 +15,12 @@
 #include "TError.h"
 #include "TSystem.h"
 #include "TString.h"
+#include "TRegexp.h"
 #include "THaInterface.h"
 #include "TInterpreter.h"
 #include "THaVarList.h"
 #include "THaCutList.h"
 #include "THaCodaDecoder.h"
-#include "THaString.h"
 #include "THaGlobals.h"
 #include "THaAnalyzer.h"
 #include "ha_compiledata.h"
@@ -75,12 +75,40 @@ THaInterface::THaInterface( const char* appClassName, int* argc, char** argv,
   // Set the maximum size for a file written by Podd contained by the TTree
   //  putting it to 1.5 GB, down from the default 1.9 GB since something odd
   //  happens for larger files
+  //FIXME: investigate
   TTree::SetMaxTreeSize(1500000000);
 
-  THaString ipath( HA_INCLUDEPATH );
-  vector<THaString> ipv(ipath.Split());
-  for (vector<THaString>::size_type i=0; i<ipv.size(); i++)
-    gInterpreter->AddIncludePath( ipv[i].c_str() );
+  // Make the Podd header directory(s) available so scripts don't have to 
+  // specify an explicit path.
+  // If $ANALYZER defined, we take our includes from there, otherwise we fall 
+  // back to the compile-time directories (which may have moved!)
+  TString s = gSystem->Getenv("ANALYZER");
+  if( s.IsNull() ) {
+    s = HA_INCLUDEPATH;
+  } else {
+    // Give preference to $ANALYZER/include
+    TString p = s+"/include";
+    void* dp = gSystem->OpenDirectory(p);
+    if( dp ) {
+      gSystem->FreeDirectory(dp);
+      s = p;
+    } else 
+      s = s+"/src " + s+"/hana_decode " + s+"/hana_scaler";
+  }
+  // Directories names separated by blanks.
+  // FIXME: allow blanks
+  TRegexp re("[^ ]+");
+  TString ss = s(re);
+  while( !ss.IsNull() ) {
+    // Only add dirs that exist
+    void* dp = gSystem->OpenDirectory(ss);
+    if( dp ) {
+      gInterpreter->AddIncludePath(ss);
+      gSystem->FreeDirectory(dp);
+    }
+    s.Remove(0,s.Index(re)+ss.Length());
+    ss = s(re);
+  }
   
   // Because of lack of foresight, the analyzer uses TDatime objects,
   // which are kept in localtime() and hence are not portable, and also
