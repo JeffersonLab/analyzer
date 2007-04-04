@@ -635,8 +635,8 @@ void THaDecData::TrigBits(UInt_t ibit, BdataLoc *dataloc) {
   if( ibit >= kBitsPerByte*sizeof(UInt_t) ) return; //Limit of evtypebits
   bits.ResetBitNumber(ibit);
 
-  static const UInt_t cutlo = 400;
-  static const UInt_t cuthi = 1200;
+  static const UInt_t cutlo = 200;
+  static const UInt_t cuthi = 1500;
   
   for (int ihit = 0; ihit < dataloc->NumHits(); ihit++) {
     if (dataloc->Get(ihit) > cutlo && dataloc->Get(ihit) < cuthi) {
