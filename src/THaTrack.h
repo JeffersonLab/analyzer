@@ -29,22 +29,19 @@ public:
     kHasVertex     = BIT(4)   // Vertex reconstructed
   };
 
-  typedef THaTrackingDetector TD;
-
-  THaTrack() : 
-    fX(0.0), fY(0.0), fTheta(0.0), fPhi(0.0), fP(0.0), fNclusters(0),
-    fPIDinfo(NULL), fCreator(NULL), fVertexError(1.0,1.0,1.0),
-    fID(NULL), fFlag(0), fType(0), fChi2(kBig), fNDoF(0.0) {}
+  THaTrack() : fPIDinfo(NULL), fCreator(NULL), fID(NULL)
+  { Clear("F"); }
   THaTrack( Double_t x, Double_t y, Double_t theta, Double_t phi,
-	    TD* creator=NULL, THaTrackID* id=NULL, THaPIDinfo* pid=NULL ) :
-    fX(x), fY(y), fTheta(theta), fPhi(phi), fP(0.0), fNclusters(0),
-    fPIDinfo(pid), fCreator(creator), fVertexError(1.0,1.0,1.0),
-    fID(id), fFlag(0), fType(0), fChi2(kBig), fNDoF(0.0) { if(pid) pid->Clear(); }
+	    THaTrackingDetector* creator=NULL, THaTrackID* id=NULL,
+	    THaPIDinfo* pid=NULL )
+    : fX(x), fY(y), fTheta(theta), fPhi(phi), fPIDinfo(pid), 
+      fCreator(creator), fID(id)
+  { Clear("P"); }
   virtual ~THaTrack();
 
   Int_t             AddCluster( THaCluster* c );
   void              Clear( Option_t* opt="" );
-  TD*               GetCreator()       const { return fCreator; }
+  THaTrackingDetector* GetCreator()    const { return fCreator; }
   Int_t             GetNclusters()     const { return fNclusters; }
   THaCluster*       GetCluster( Int_t i )    { return fClusters[i]; }
   UInt_t            GetFlag()          const { return fFlag; }
@@ -116,16 +113,16 @@ public:
 			       Double_t theta, Double_t phi );
 
   void              SetPathLen( Double_t pathl ) { fPathl = pathl; /* meters */ }
-  void              SetTime( Double_t time ) { fTime = time; /* seconds */ } 
-  void              SetdTime( Double_t dt ) { fdTime = dt; /* seconds */ }
-  void              SetBeta( Double_t beta ) { fBeta = beta; }
-  void              SetdBeta( Double_t db ) { fdBeta = db; }
+  void              SetTime( Double_t time )     { fTime = time; /* seconds */ } 
+  void              SetdTime( Double_t dt )      { fdTime = dt; /* seconds */ }
+  void              SetBeta( Double_t beta )     { fBeta = beta; }
+  void              SetdBeta( Double_t db )      { fdBeta = db; }
 
-  void              SetChi2( Double_t chi2, Double_t ndof ) { fChi2=chi2; fNDoF=ndof; }
+  void              SetChi2( Double_t chi2, Int_t ndof ) { fChi2=chi2; fNDoF=ndof; }
 
-  void              SetCreator( TD* d )                { fCreator = d; }
-  void              SetPIDinfo( THaPIDinfo* pid )      { fPIDinfo = pid; }
-  void              SetPvect( const TVector3& pvect )  { fPvect   = pvect; }
+  void              SetCreator( THaTrackingDetector* d ) { fCreator = d; }
+  void              SetPIDinfo( THaPIDinfo* pid )        { fPIDinfo = pid; }
+  void              SetPvect( const TVector3& pvect )    { fPvect   = pvect; }
   void              SetVertex( const TVector3& vert )     
   { fVertex = vert; fType |= kHasVertex; }
   void              SetVertex( Double_t x, Double_t y, Double_t z )
@@ -149,7 +146,7 @@ protected:
   Int_t             fNclusters;      //! Number of clusters
   THaCluster*       fClusters[kMAXCL]; //! Clusters of this track
   THaPIDinfo*       fPIDinfo;        //! Particle ID information for this track
-  TD*               fCreator;        //! Detector creating this track
+  THaTrackingDetector* fCreator;     //! Detector creating this track
 
   // coordinates in the detector system
   Double_t fDX;     // x position in DCS
@@ -185,12 +182,12 @@ protected:
   UInt_t            fFlag;   // General status flag (for use by tracking det.)
   UInt_t            fType;   // Flag indicating which vectors reconstructed
 
-  Double_t          fChi2;   // good-ness of track
-  Double_t          fNDoF;   // number of hits on the track contributing to chi2
+  Double_t          fChi2;   // goodness of track fit
+  Int_t             fNDoF;   // number of hits on the track contributing to chi2
 
   static const Double_t kBig;
   
-  ClassDef(THaTrack,3)       // A generic particle track
+  ClassDef(THaTrack,4)       // A generic particle track
 };
 
 //__________________ inlines __________________________________________________

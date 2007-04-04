@@ -28,22 +28,29 @@ THaTrack::~THaTrack()
 //_____________________________________________________________________________
 void THaTrack::Clear( const Option_t* opt )
 {
-  // If *opt == 'F' then reset all track quantities, else just
+  // If *opt == 'F' ("Full") then reset all track quantities, else just
   // delete memory managed by this track.
-  // (We need this behavior so we can Clear("C") the track TClonesArray
+  // (We want this behavior so we can Clear("C") the track TClonesArray
   // without the overhead of clearing everything.)
+  // If *opt == 'P' ("Partial"), clear everything except the focal plane 
+  // coordinates (used by constructor).
 
-  if( opt && (*opt == 'F') ) {
-    fP = fDp = fTheta = fPhi = fX = fY = 0.0;
-    fRX = fRY = fRTheta = fRPhi = 0.0;
-    fTX = fTY = fTTheta = fTPhi = 0.0;
-    fDX = fDY = fDTheta = fDPhi = 0.0;
-    fNclusters = fFlag = fType = 0;
-    if( fPIDinfo ) fPIDinfo->Clear( opt );
-    fPvect.SetXYZ( 0.0, 0.0, 0.0 );
-    fVertex.SetXYZ( 0.0, 0.0, 0.0 );
-    fVertexError.SetXYZ( 1.0, 1.0, 1.0 );
-    fChi2 = kBig; fNDoF = 0.0;
+  if( opt ) {
+    if( *opt == 'F' ) {
+      fTheta = fPhi = fX = fY = kBig;
+    }
+    if( *opt == 'F' || *opt == 'P' ) {
+      fP = fDp = kBig;
+      fRX = fRY = fRTheta = fRPhi = kBig;
+      fTX = fTY = fTTheta = fTPhi = kBig;
+      fDX = fDY = fDTheta = fDPhi = kBig;
+      fNclusters = fFlag = fType = 0;
+      if( fPIDinfo ) fPIDinfo->Clear( opt );
+      fPvect.SetXYZ( kBig, kBig, kBig );
+      fVertex.SetXYZ( kBig, kBig, kBig );
+      fVertexError.SetXYZ( kBig, kBig, kBig );
+      fChi2 = kBig; fNDoF = 0;
+    }
   }
   delete fID; fID = NULL;
 }
@@ -69,8 +76,8 @@ void THaTrack::Print( Option_t* opt ) const
   cout << "Momentum = " << fP << " GeV/c\n";
   cout << "x_fp     = " << fX   << " m\n";
   cout << "y_fp     = " << fY   << " m\n";
-  cout << "Theta    = " << fTheta << " rad\n";
-  cout << "Phi      = " << fPhi << " rad\n";
+  cout << "theta_fp = " << fTheta << " rad\n";
+  cout << "phi_fp   = " << fPhi << " rad\n";
 
   for( int i=0; i<fNclusters; i++ )
     fClusters[i]->Print();
