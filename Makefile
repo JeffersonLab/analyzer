@@ -182,7 +182,20 @@ OBJS          = $(OBJ) haDict.o
 LIBHALLA      = $(LIBDIR)/libHallA.so
 LIBDC         = $(LIBDIR)/libdc.so
 LIBSCALER     = $(LIBDIR)/libscaler.so
-PROGRAMS      = analyzer
+
+#------ Extra libraries -------------------------
+LNA           = NormAna
+LIBNORMANA    = $(LIBDIR)/lib$(LNA).so
+LNA_DICT      = $(LNA)Dict
+LNA_SRC       = src/THa$(LNA).C
+LNA_OBJ       = $(LNA_SRC:.C=.o)
+LNA_HDR       = $(LNA_SRC:.C=.h)
+LNA_DEP       = $(LNA_SRC:.C=.d)
+LNA_OBJS      = $(LNA_OBJ) $(LNA_DICT).o
+LNA_LINKDEF   = src/$(LNA)_LinkDef.h
+#------------------------------------------------
+
+PROGRAMS      = analyzer $(LIBNORMANA)
 
 all:            subdirs
 		set -e; for i in $(PROGRAMS); do $(MAKE) $$i; done
@@ -194,6 +207,7 @@ src/ha_compiledata.h:	Makefile
 subdirs:
 		set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i; done
 
+#---------- Shared libraries ---------------------------------------
 $(LIBHALLA).$(VERSION):	$(HDR) $(OBJS)
 ifeq ($(strip $(SONAME)),)
 		$(LD) $(LDFLAGS) $(SOFLAGS) -o $@ $(OBJS)
@@ -238,9 +252,20 @@ $(LIBSCALER):	$(LIBSCALER).$(SOVERSION)
 		rm -f $@
 		ln -s $< $@
 
+$(LIBNORMANA):	$(LNA_HDR) $(LNA_OBJS)
+		$(LD) $(LDFLAGS) $(SOFLAGS) -o $@ $(LNA_OBJS)
+		@echo "$@ done"
+
+$(LNA_DICT).C:	$(LNA_HDR) $(LNA_LINKDEF)
+		@echo "Generating dictionary $(LNA_DICT)..."
+		$(ROOTSYS)/bin/rootcint -f $@ -c $(INCLUDES) $(DEFINES) $^
+
+#---------- Main program -------------------------------------------
 analyzer:	src/main.o $(LIBDC) $(LIBSCALER) $(LIBHALLA)
 		$(LD) $(LDFLAGS) $< $(HALLALIBS) $(GLIBS) -o $@
 
+
+#---------- Maintenance --------------------------------------------
 clean:
 		$(MAKE) -C $(DCDIR) clean
 		$(MAKE) -C $(SCALERDIR) clean

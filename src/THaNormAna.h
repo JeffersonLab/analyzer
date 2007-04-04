@@ -193,7 +193,7 @@ private:
 
    static const int fDEBUG = 0;
 
-   ClassDef(THaNormAna,0)  
+  ClassDef(THaNormAna,0)  // Normalization analysis utilities
 };
 
 #endif
