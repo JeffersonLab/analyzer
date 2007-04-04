@@ -162,13 +162,14 @@ private:
    UInt_t evtypebits;    // trigger bit pattern
    Int_t *tdcdata, *nhit;   // tdc for trigger bit
    Double_t alive,hpos_alive,hneg_alive; // scaler livetime
+   Double_t dlive;   // differential livetime (one helicity)
    Double_t bcmu3;       // a BCM (rate)
    Int_t *eventint;      // event intervals for BCM calib
    // scaler data from roc10 or 11 (counts)
-   Double_t roc11_bcmu3, roc11_bcmu10, roc11_bcmd10;
+   Double_t roc11_bcmu3, roc11_bcmu10;
    Double_t roc11_t1,roc11_t2,roc11_t3,roc11_t4,roc11_t5;
    Double_t roc11_clk1024, roc11_clk104k;
-   Double_t *norm_scaler;
+   Double_t *norm_scaler, *norm_plus, *norm_minus;
    // current calibration:
    Double_t off_u1, off_u3, off_u10;
    Double_t off_d1, off_d3, off_d10;
@@ -179,6 +180,7 @@ private:
    std::vector<TH1* > hist;
    void TrigBits( Int_t helicity );
    void LiveTime();
+   void CalcAsy();
    void GetRocScalers(const THaEvData& );
    Int_t SetupRawData( const TDatime* runTime = NULL, EMode mode = kDefine );
    void InitRocScalers();
