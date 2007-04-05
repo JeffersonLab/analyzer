@@ -262,9 +262,9 @@ realclean:  clean
 
 install:	all
 	mkdir -p $(ANALYZER)/src/hana_scaler
-	cp -puvf $(SRC) $(HEAD) haScal_LinkDef.h Makefile $(ANALYZER)/src/hana_scaler
-	cp -puvf $(HEAD) $(ANALYZER)/include
-	-cp -puvf libscaler.so $(ANALYZER)/$(PLATFORM)
+	cp -pu $(SRC) $(HEAD) haScal_LinkDef.h Makefile $(ANALYZER)/src/hana_scaler
+	cp -pu $(HEAD) $(ANALYZER)/include
+#	-cp -puvf libscaler.so $(ANALYZER)/$(PLATFORM)
 ###
 
 .SUFFIXES:

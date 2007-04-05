@@ -313,9 +313,9 @@ clean_evio:
 
 install:	all
 	mkdir -p $(ANALYZER)/src/hana_decode
-	cp -puvf $(SRC) $(HEAD) haDecode_LinkDef.h Makefile $(ANALYZER)/src/hana_decode
-	cp -puvf $(HEAD) $(ANALYZER)/include
-	-cp -puvf libdc.so $(ANALYZER)/$(PLATFORM)
+	cp -pu $(SRC) $(HEAD) haDecode_LinkDef.h Makefile $(ANALYZER)/src/hana_decode
+	cp -pu $(HEAD) $(ANALYZER)/include
+#	-cp -puvf libdc.so $(ANALYZER)/$(PLATFORM)
 ###
 
 .SUFFIXES:
