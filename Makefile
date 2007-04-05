@@ -199,12 +199,11 @@ LNA_LINKDEF   = src/$(LNA)_LinkDef.h
 #------------------------------------------------
 
 PROGRAMS      = analyzer $(LIBNORMANA)
-LINKDEFS      = $(HA_LINKDEF) $(LNA_LINKDEF)
 
 all:            subdirs
 		set -e; for i in $(PROGRAMS); do $(MAKE) $$i; done
 
-src/ha_compiledata.h:	#Makefile
+src/ha_compiledata.h:	Makefile
 		echo "#define HA_INCLUDEPATH \"$(INCDIRS)\"" > $@
 		echo "#define HA_VERSION \"$(VERSION)$(EXTVERS)\"" >> $@
 
@@ -309,10 +308,10 @@ ifndef ANALYZER
 		$(error $$ANALYZER environment variable not defined)
 endif
 		@echo "Installing in $(ANALYZER) ..."
-		@mkdir -p $(ANALYZER)/{$(PLATFORM),include,src,docs,DB,examples,SDK}
-		@mkdir -p $(ANALYZER)/src/src
-		cp -pu $(SRC) $(HDR) $(LINKDEFS) $(ANALYZER)/src/src
-		cp -pu $(HDR) $(ANALYZER)/include
+		@mkdir -p $(ANALYZER)/{$(PLATFORM),include,src/src,docs,DB,examples,SDK}
+		cp -pu $(SRC) $(HDR) $(HA_LINKDEF) $(ANALYZER)/src/src
+		cp -pu $(LNA_SRC) $(LNA_HDR) $(LNA_LINKDEF) $(ANALYZER)/src/src
+		cp -pu $(HDR) $(LNA_HDR) $(ANALYZER)/include
 		gtar cf - `find examples docs SDK -type f | grep -Ev '(CVS|*~)'` | gtar xf - -C $(ANALYZER)
 		cp -pu Makefile ChangeLog $(ANALYZER)/src
 		cp -pru DB $(ANALYZER)/
