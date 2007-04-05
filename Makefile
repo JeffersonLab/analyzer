@@ -4,7 +4,7 @@
 export WITH_DEBUG = 1
 
 # Compile debug version
- export DEBUG = 1
+# export DEBUG = 1
 
 # Profiling with gprof
 # export PROFILE = 1
@@ -14,10 +14,10 @@ export WITH_DEBUG = 1
 # export ONLINE_ET = 1
 #------------------------------------------------------------------------------
 
-# VERSION should be numerical only - it becomes the shared lib soversion
+# SOVERSION should be numerical only - it becomes the shared lib soversion
 # EXTVERS (optional) describes the build, e.g. "dbg", "et", "gcc33" etc.
 SOVERSION  = 1.4
-PATCH   = 3pre
+PATCH   = 3
 VERSION = $(SOVERSION).$(PATCH)
 EXTVERS =
 NAME    = analyzer-$(VERSION)
@@ -26,19 +26,21 @@ NAME    = analyzer-$(VERSION)
 
 ARCH          = linuxegcs
 #ARCH          = solarisCC5
+ifndef PLATFORM
+PLATFORM = bin
+endif
 
 ROOTCFLAGS   := $(shell root-config --cflags)
 ROOTLIBS     := $(shell root-config --libs)
 ROOTGLIBS    := $(shell root-config --glibs)
 
-SUBDIRS       = $(DCDIR) $(SCALERDIR)
-
 HA_DIR       := $(shell pwd)
-INCDIRS       = $(addprefix $(HA_DIR)/, src $(SUBDIRS))
 DCDIR         = hana_decode
 SCALERDIR     = hana_scaler
 LIBDIR        = $(shell pwd)
 HALLALIBS     = -L$(LIBDIR) -lHallA -ldc -lscaler
+SUBDIRS       = $(DCDIR) $(SCALERDIR)
+INCDIRS       = $(addprefix $(HA_DIR)/, src $(SUBDIRS))
 
 LIBS          = 
 GLIBS         = 
@@ -175,9 +177,10 @@ endif
 
 OBJ           = $(SRC:.C=.o)
 RCHDR         = $(SRC:.C=.h) src/THaGlobals.h
-HDR           = $(RCHDR) src/VarDef.h src/VarType.h src/ha_compiledata.h
+HDR           = $(RCHDR) src/VarDef.h src/VarType.h src/ha_compiledata.h src/Ext_TRotation.h
 DEP           = $(SRC:.C=.d) src/main.d
 OBJS          = $(OBJ) haDict.o
+HA_LINKDEF    = src/HallA_LinkDef.h
 
 LIBHALLA      = $(LIBDIR)/libHallA.so
 LIBDC         = $(LIBDIR)/libdc.so
@@ -196,18 +199,19 @@ LNA_LINKDEF   = src/$(LNA)_LinkDef.h
 #------------------------------------------------
 
 PROGRAMS      = analyzer $(LIBNORMANA)
+LINKDEFS      = $(HA_LINKDEF) $(LNA_LINKDEF)
 
 all:            subdirs
 		set -e; for i in $(PROGRAMS); do $(MAKE) $$i; done
 
-src/ha_compiledata.h:	Makefile
+src/ha_compiledata.h:	#Makefile
 		echo "#define HA_INCLUDEPATH \"$(INCDIRS)\"" > $@
 		echo "#define HA_VERSION \"$(VERSION)$(EXTVERS)\"" >> $@
 
 subdirs:
 		set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i; done
 
-#---------- Shared libraries ---------------------------------------
+#---------- Core libraries -----------------------------------------
 $(LIBHALLA).$(VERSION):	$(HDR) $(OBJS)
 ifeq ($(strip $(SONAME)),)
 		$(LD) $(LDFLAGS) $(SOFLAGS) -o $@ $(OBJS)
@@ -252,6 +256,13 @@ $(LIBSCALER):	$(LIBSCALER).$(SOVERSION)
 		rm -f $@
 		ln -s $< $@
 
+haDict.C: $(RCHDR) $(HA_LINKDEF)
+	@echo "Generating dictionary haDict..."
+	$(ROOTSYS)/bin/rootcint -f $@ -c $(INCLUDES) $(DEFINES) $^
+
+
+#---------- Extra libraries ----------------------------------------
+
 $(LIBNORMANA):	$(LNA_HDR) $(LNA_OBJS)
 		$(LD) $(LDFLAGS) $(SOFLAGS) -o $@ $(LNA_OBJS)
 		@echo "$@ done"
@@ -267,14 +278,12 @@ analyzer:	src/main.o $(LIBDC) $(LIBSCALER) $(LIBHALLA)
 
 #---------- Maintenance --------------------------------------------
 clean:
-		$(MAKE) -C $(DCDIR) clean
-		$(MAKE) -C $(SCALERDIR) clean
+		set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i clean; done
 		rm -f *.so *.a $(PROGRAMS) *.o *Dict.* *~ src/ha_compiledata.h
 		cd src; rm -f *.o *~
 
 realclean:	clean
-		$(MAKE) -C $(DCDIR) realclean
-		$(MAKE) -C $(SCALERDIR) realclean
+		set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i realclean; done
 		find . -name "*.d" -exec rm {} \;
 
 srcdist:
@@ -282,7 +291,7 @@ srcdist:
 		ln -s $(PWD) ../$(NAME)
 		gtar czv -C .. -f ../$(NAME).tar.gz -X .exclude \
 		 -V "JLab/Hall A C++ Analysis Software "$(VERSION)" `date -I`"\
-		 $(NAME)/.exclude $(NAME)/ChangeLog $(NAME)/gcc-version \
+		 $(NAME)/.exclude $(NAME)/ChangeLog \
 		 $(NAME)/src $(NAME)/examples \
 		 $(NAME)/DB $(NAME)/$(DCDIR) $(NAME)/$(SCALERDIR) \
 		 $(NAME)/Makefile $(NAME)/docs $(NAME)/Calib $(NAME)/contrib
@@ -295,9 +304,28 @@ cvsdist:	srcdist
 		 `find . -type f -name .cvsignore 2>/dev/null | sed "s%^\./%$(NAME)/%"`
 		gzip -f ../$(NAME)-cvs.tar
 
-haDict.C: $(RCHDR) src/HallA_LinkDef.h
-	@echo "Generating dictionary haDict..."
-	$(ROOTSYS)/bin/rootcint -f $@ -c $(INCLUDES) $(DEFINES) $^
+install:	all
+ifndef ANALYZER
+		$(error $$ANALYZER environment variable not defined)
+endif
+		@echo "Installing in $(ANALYZER) ..."
+		@mkdir -p $(ANALYZER)/{$(PLATFORM),include,src,docs,DB,examples,SDK}
+		@mkdir -p $(ANALYZER)/src/src
+		cp -pu $(SRC) $(HDR) $(LINKDEFS) $(ANALYZER)/src/src
+		cp -pu $(HDR) $(ANALYZER)/include
+		gtar cf - `find examples docs SDK -type f | grep -Ev '(CVS|*~)'` | gtar xf - -C $(ANALYZER)
+		cp -pu Makefile ChangeLog $(ANALYZER)/
+		cp -pru DB $(ANALYZER)/
+		@echo "Installing in $(ANALYZER)/$(PLATFORM) ..."
+		rm -f $(ANALYZER)/$(PLATFORM)/lib*.so.$(SOVERSION)
+		rm -f $(ANALYZER)/$(PLATFORM)/lib*.so.$(SOVERSION).*
+		rm -f $(ANALYZER)/$(PLATFORM)/analyzer
+		rm -f $(ANALYZER)/$(PLATFORM)/analyzer-$(SOVERSION).*
+		cp -af lib*.so.$(SOVERSION) lib*.so.$(VERSION) $(ANALYZER)/$(PLATFORM)
+		cp -pf $(PROGRAMS) $(ANALYZER)/$(PLATFORM)/
+		mv $(ANALYZER)/$(PLATFORM)/analyzer $(ANALYZER)/$(PLATFORM)/$(NAME)
+		ln -s $(NAME) $(ANALYZER)/$(PLATFORM)/analyzer
+		set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i install; done
 
 .PHONY: all clean realclean srcdist cvsdist subdirs
 
