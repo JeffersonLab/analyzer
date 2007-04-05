@@ -314,7 +314,7 @@ endif
 		cp -pu $(SRC) $(HDR) $(LINKDEFS) $(ANALYZER)/src/src
 		cp -pu $(HDR) $(ANALYZER)/include
 		gtar cf - `find examples docs SDK -type f | grep -Ev '(CVS|*~)'` | gtar xf - -C $(ANALYZER)
-		cp -pu Makefile ChangeLog $(ANALYZER)/
+		cp -pu Makefile ChangeLog $(ANALYZER)/src
 		cp -pru DB $(ANALYZER)/
 		@echo "Installing in $(ANALYZER)/$(PLATFORM) ..."
 		rm -f $(ANALYZER)/$(PLATFORM)/lib*.so.$(SOVERSION)
