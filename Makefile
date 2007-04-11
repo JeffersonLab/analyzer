@@ -17,7 +17,7 @@ export WITH_DEBUG = 1
 # SOVERSION should be numerical only - it becomes the shared lib soversion
 # EXTVERS (optional) describes the build, e.g. "dbg", "et", "gcc33" etc.
 SOVERSION  = 1.4
-PATCH   = 3
+PATCH   = 4
 VERSION = $(SOVERSION).$(PATCH)
 EXTVERS =
 NAME    = analyzer-$(VERSION)
@@ -72,6 +72,7 @@ ifdef DEBUG
   CXXFLG      = -g -O0
   LDFLAGS     = -g -O0
 else
+#  CXXFLG      = -O -march=pentium4
   CXXFLG      = -O
   LDFLAGS     = -O
 endif
