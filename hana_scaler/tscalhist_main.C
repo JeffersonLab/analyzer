@@ -52,7 +52,7 @@ int main(int argc, char* argv[]) {
 
    Float_t farray_ntup[16];       // Note, dimension is same as size of string_ntup 
 
-   cout << "Enter bank 'gen' or 'Right','Left' (spectr) ->" << endl;
+   cout << "Enter bank 'Right','Left' (spectr) ->" << endl;
    string bank;  cin >> bank;
    if (bank == "gen" || bank == "GEN" ) {
      clockrate = 105000;
@@ -62,6 +62,9 @@ int main(int argc, char* argv[]) {
    cout << "enter [runlo, runhi] = interval of runs to summarize ->" << endl;
    int runlo; cout << "runlo: " << endl; cin >> runlo; 
    int runhi; cout << "runhi: " << endl; cin >> runhi;
+   cout << "is data in hex(1) or decimal(0) format ? "<<endl;
+   int hdeci;
+   cin >> hdeci;
 
    THaScaler scaler(bank.c_str());
    if (scaler.Init() == -1) {    // Init for default time ("now").
@@ -73,7 +76,7 @@ int main(int argc, char* argv[]) {
 
    for (int run = runlo; run <= runhi; run++) {
 
-     status = scaler.LoadDataHistoryFile(run);  // load data from default history file
+     status = scaler.LoadDataHistoryFile(run, hdeci);  // load data from default history file
      if ( status != 0 ) continue;
 
      for (int i = 0; i < 12; i++) farray_ntup[i] = 0;
@@ -109,10 +112,10 @@ int main(int argc, char* argv[]) {
             scaler.GetTrig(3),scaler.GetNormData(0,12));
      }
      if (lprint == 2) {
-       if (run == runlo) printf("Run    Events    Time    Current   Charge(uC)   T1   T2   T3\n");
+       if (run == runlo) printf("Run    Events    Time    Current   Charge(uC)      T1      T3      T5\n");
        printf("%d    %d   %6.1f   %7.2f   %7.2f    %d   %d   %d\n",
               run,scaler.GetNormData(0,12),time_sec/60,curr_d10,charge,
-              scaler.GetTrig(1), scaler.GetTrig(2),scaler.GetTrig(3));
+              scaler.GetTrig(1), scaler.GetTrig(3),scaler.GetTrig(5));
      }
 
      //  printf("==== %d  %d \n",run,scaler.GetNormData(1,11));

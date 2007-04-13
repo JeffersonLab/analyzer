@@ -459,12 +459,12 @@ Int_t THaScaler::ExtractRaw(const Int_t* data, int dlen) {
   return 0;
 };  
 
-Int_t THaScaler::LoadDataHistoryFile(int run_num) {
+Int_t THaScaler::LoadDataHistoryFile(int run_num, int hdeci) {
 // Load data from scaler history file for run number
-  return LoadDataHistoryFile("scaler_history.dat", run_num);
+  return LoadDataHistoryFile("scaler_history.dat", run_num, hdeci);
 };
 
-Int_t THaScaler::LoadDataHistoryFile(const char* filename, int run_num) {
+Int_t THaScaler::LoadDataHistoryFile(const char* filename, int run_num, int hdeci) {
 // Load data from scaler history file 'filename' for run number run_num
   new_load = kFALSE;
   if (CheckInit() == SCAL_ERROR) return SCAL_ERROR;
@@ -495,7 +495,12 @@ Int_t THaScaler::LoadDataHistoryFile(const char* filename, int run_num) {
             getline(hfile, dat);
 	    int k = slot*SCAL_NUMCHAN + j;
             if (k >= 0 && k < SCAL_NUMBANK*SCAL_NUMCHAN) {
- 	      rawdata[k] = atoi(dat.c_str());
+/* this line depends on whether the data was stored as hex or decimal */    
+              if (hdeci == 0) {
+   	         rawdata[k] = atoi(dat.c_str());
+	      } else { /* hexidecimal */
+   	         rawdata[k] = header_str_to_base16(dat);
+	      }
 	    }
 	  }
 	}

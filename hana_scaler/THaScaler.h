@@ -61,8 +61,8 @@ public:
    Int_t LoadDataCodaFile(const char* filename);      
    Int_t LoadDataCodaFile(TString filename);      
 // Load data from scaler history file for run number
-   Int_t LoadDataHistoryFile(int run_num); // default file "scaler_history.dat"
-   Int_t LoadDataHistoryFile(const char* filename, int run_num);
+   Int_t LoadDataHistoryFile(int run_num, int hdeci=0); // default file "scaler_history.dat"
+   Int_t LoadDataHistoryFile(const char* filename, int run_num, int hdeci=0);
 // Online 'server' may be Name or IP of VME cpu, or
 // 'server' may also be a mnemonic like "Left", "Right", etc
    Int_t LoadDataOnline();    // server and port is known for 'Bankgroup'
