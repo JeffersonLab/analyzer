@@ -45,7 +45,7 @@ typedef vector<THaString>::iterator Iter_s_t;
 
 Int_t THaOutput::fgVerbose = 1;
 //FIXME: these should be member variables
-static Bool_t fgDoBench = kTRUE;
+static Bool_t fgDoBench = kFALSE;
 static THaBenchmark fgBench;
 
 //_____________________________________________________________________________
