@@ -56,10 +56,10 @@ public:
   Double_t GetData(Int_t index = 0) const;
 // This object is either a formula, a variable sized array, a cut, or
 // an "eye" ("[I]" variable)
-  Bool_t IsFormula() const;
-  Bool_t IsVarray() const;
-  Bool_t IsCut() const;
-  Bool_t IsEye() const;
+  Bool_t IsFormula() const { return (fType == kForm); }
+  Bool_t IsVarray() const  { return (fVarPtr != NULL && fType == kVarArray); }
+  Bool_t IsCut() const     { return (fType == kCut); }
+  Bool_t IsEye() const     { return (fType == kEye); }
 // Get the size (dimension) of this object 
   Int_t GetSize() const { return fObjSize; };
 // Get names of variable that are used by this formula.
@@ -103,26 +103,6 @@ private:
   ClassDef(THaVform,0)  // Vector of formulas or a var-sized array
 };
 
-
-inline
-Bool_t THaVform::IsEye() const {
-  return (fType == kEye);
-};
-
-inline
-Bool_t THaVform::IsCut() const {
-  return (fType == kCut);
-};
-
-inline
-Bool_t THaVform::IsFormula() const {
-  return (fType == kForm);
-};
-
-inline
-Bool_t THaVform::IsVarray() const {
-  return (fVarPtr != 0 && fType == kVarArray);
-};
 
 inline
 Double_t THaVform::GetData(Int_t index) const {
