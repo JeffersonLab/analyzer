@@ -16,13 +16,11 @@
 
 #include "THaOutput.h"
 #include "TROOT.h"
-#include "THaFormula.h"
 #include "THaVform.h"
 #include "THaVhist.h"
 #include "THaVarList.h"
 #include "THaVar.h"
 #include "THaGlobals.h"
-#include "THaCut.h"
 #include "TH1.h"
 #include "TH2.h"
 //#include "TTree.h"
@@ -301,6 +299,8 @@ Int_t THaOutput::Init( const char* filename )
   Int_t k = 0;
   for (Iter_s_t inam = fFormnames.begin(); inam != fFormnames.end(); inam++, k++) {
     tinfo = Form("f%d",k);
+    // FIXME: avoid duplicate formulas
+    // FIXME: create and Init() first, then add to array?
     fFormulas.push_back(new THaVform("formula",inam->c_str(),fFormdef[k].c_str()));
     THaVform* pform = fFormulas[k];
     status = pform->Init();
@@ -342,6 +342,8 @@ Int_t THaOutput::Init( const char* filename )
   }
   k = 0;
   for (Iter_s_t inam = fCutnames.begin(); inam != fCutnames.end(); inam++, k++ ) {
+    // FIXME: avoid duplicate cuts
+    // FIXME: create and Init() first, then add to array?
     fCuts.push_back(new THaVform("cut", inam->c_str(), fCutdef[k].c_str()));
     THaVform* pcut = fCuts[k];
     status = pcut->Init(); 
@@ -365,6 +367,7 @@ Int_t THaOutput::Init( const char* filename )
     sfvary = (*ihist)->GetVarY();
     for (Iter_f_t iform = fFormulas.begin(); iform != fFormulas.end(); iform++) {
       THaString stemp((*iform)->GetName());
+      //FIXME: SetX(), SetY() and SetCut() create copies! Really needed?
       if (sfvarx.CmpNoCase(stemp) == 0) { 
 	(*ihist)->SetX(*iform);
       }

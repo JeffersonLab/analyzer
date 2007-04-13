@@ -16,11 +16,9 @@
 #include <iostream>
 #include <string> 
 
-class THaFormula;
 class THaVar;
 class TH1F;
 class TH2F;
-class THaCut;
 class THaVform;
 class THaVhist;
 class THaScalerGroup;
