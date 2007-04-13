@@ -7,7 +7,6 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-#define THAOMAX 4096
 #include "TObject.h"
 #include "THaString.h"
 #include "TTree.h"
@@ -31,7 +30,7 @@ class THaOdata {
 // Utility class used by THaOutput to store arrays 
 // up to size 'nsize' for tree output.
 public:
-  THaOdata(int n=THAOMAX) : nsize(n) { data = new Double_t[n]; Clear(); }
+  THaOdata(int n=1) : ndata(0), nsize(n) { data = new Double_t[n]; }
   THaOdata(const THaOdata& other) : nsize(other.nsize) {
     data = new Double_t[nsize]; ndata = other.ndata;
     memcpy( data, other.data, nsize*sizeof(Double_t));
@@ -47,6 +46,7 @@ public:
   }
   virtual ~THaOdata() { delete [] data; };
   void AddBranches(TTree *T, std::string name) {
+     // FIXME: defined this way, ROOT always thinks we are variable-size
      std::string sname = "Ndata." + name;
      std::string leaf = sname;
      T->Branch(sname.c_str(),&ndata,(leaf+"/I").c_str());
@@ -54,27 +54,36 @@ public:
      T->Branch(name.c_str(),data,leaf.c_str());
   }
   void Clear( Option_t* opt="" ) {
-    ndata = 0; memset(data, 0, nsize*sizeof(Double_t)); 
+    ndata = 0; //memset(data, 0, nsize*sizeof(Double_t)); 
+  }
+  Bool_t Resize(Int_t i) {
+    static const Int_t MAX = 4096;
+    if( i > MAX ) return true;
+    Int_t newsize = nsize;
+    while ( i >= newsize ) { newsize *= 2; } 
+    Double_t* tmp = new Double_t[newsize];
+    memcpy( tmp, data, nsize*sizeof(Double_t) );
+    delete [] data; data = tmp; nsize = newsize;
+    return false;
   }
   Int_t Fill(Double_t dat) { return Fill(0, dat); };
   Int_t Fill(Int_t i, Double_t dat) {
-    if (i >= 0 && i < nsize-1) {
-      if (i >= ndata) ndata = i+1;
-      data[i] = dat;
-      return 1;
-    }
-    return 0;
+    if( i<0 || (i>=nsize && Resize(i)) ) return 0;
+    if( i>=ndata ) ndata = i+1;
+    data[i] = dat;
+    return 1;
   }
   Int_t Fill(Int_t n, const Double_t* array) {
-    if( n<0 || n>nsize ) return 0;
+    if( n<=0 || (n>nsize && Resize(n-1)) ) return 0;
     memcpy( data, array, n*sizeof(Double_t));
     ndata = n;
     return 1;
   }
   Double_t Get(Int_t index=0) {
-    if( index<0 || index>nsize ) return 0;
+    if( index<0 || index>=ndata ) return 0;
     return data[index];
   }
+    
   Int_t       ndata;   // Number of array elements
   Int_t       nsize;   // Maximum number of elements
   Double_t*   data;    // [ndata] Array data
