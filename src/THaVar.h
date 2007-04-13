@@ -234,6 +234,30 @@ protected:
 
 //_______________ Inlines _____________________________________________________
 inline
+Int_t THaVar::GetLen() const
+{ 
+  if( fCount )
+    return *fCount;
+  if( fOffset != -1 ) {
+    const Int_t* pi = GetObjArrayLenPtr();
+    return pi ? *pi : kInvalidInt;
+  }
+  return fArrayData.GetLen();
+}
+
+//_____________________________________________________________________________
+inline
+const Int_t* THaVar::GetDim() const
+{
+  if( fCount )
+    return fCount;
+  if( fOffset != - 1 )
+    return GetObjArrayLenPtr();
+  return fArrayData.GetDim();
+}
+
+//_____________________________________________________________________________
+inline
 Double_t THaVar::GetValueAsDouble( Int_t i ) const
 {
   //  if( ( fValueP == NULL ) || 
@@ -318,30 +342,6 @@ Double_t THaVar::GetValueAsDouble( Int_t i ) const
     ;
   }
   return kInvalid;
-}
-
-//_____________________________________________________________________________
-inline
-Int_t THaVar::GetLen() const
-{ 
-  if( fCount )
-    return *fCount;
-  if( fOffset != -1 ) {
-    const Int_t* pi = GetObjArrayLenPtr();
-    return pi ? *pi : kInvalidInt;
-  }
-  return fArrayData.GetLen();
-}
-
-//_____________________________________________________________________________
-inline
-const Int_t* THaVar::GetDim() const
-{
-  if( fCount )
-    return fCount;
-  if( fOffset != - 1 )
-    return GetObjArrayLenPtr();
-  return fArrayData.GetDim();
 }
 
 #endif
