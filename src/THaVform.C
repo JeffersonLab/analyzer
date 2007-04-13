@@ -67,6 +67,8 @@ THaVform::THaVform( const THaVform& rhs ) :
   for (vector<THaCut*>::const_iterator itc = rhs.fCut.begin();
        itc != rhs.fCut.end(); itc++) {
     if( *itc ) {
+      //FIXME: do we really need to make copies?
+      // The more formulas, the more stuff to evaluate...
 #if ROOT_VERSION_CODE >= ROOT_VERSION(3,10,0)
       fCut.push_back(new THaCut(**itc));
 #else
@@ -80,6 +82,7 @@ THaVform::THaVform( const THaVform& rhs ) :
   for (vector<THaFormula*>::const_iterator itf = rhs.fFormula.begin();
        itf != rhs.fFormula.end(); itf++) {
     if( *itf ) {
+      //FIXME: do we really need to make copies?
 #if ROOT_VERSION_CODE >= ROOT_VERSION(3,10,0)
       fFormula.push_back(new THaFormula(**itf));
 #else
@@ -130,6 +133,7 @@ void THaVform::Create(const THaVform &rhs)
   for (vector<THaCut*>::const_iterator itc = rhs.fCut.begin();
        itc != rhs.fCut.end(); itc++) {
     if( *itc ) {
+      //FIXME: do we really need to make copies?
 #if ROOT_VERSION_CODE >= ROOT_VERSION(3,10,0)
       fCut.push_back(new THaCut(**itc));
 #else
@@ -143,6 +147,7 @@ void THaVform::Create(const THaVform &rhs)
   for (vector<THaFormula*>::const_iterator itf = rhs.fFormula.begin();
        itf != rhs.fFormula.end(); itf++) {
     if( *itf ) {
+      //FIXME: do we really need to make copies?
 #if ROOT_VERSION_CODE >= ROOT_VERSION(3,10,0)
       fFormula.push_back(new THaFormula(**itf));
 #else
@@ -430,6 +435,7 @@ Int_t THaVform::MakeFormula(Int_t flo, Int_t fhi)
 
    for (Int_t i = flo; i < fhi; i++) { 
      string cname = Form("%s-%d",GetName(),i);
+     //FIXME: avoid duplicate cuts/formulas
      if (IsCut()) {
         fCut.push_back(new THaCut(cname.c_str(),fVectSform[i].c_str(),
 				  "thavcut"));
@@ -484,22 +490,24 @@ Int_t THaVform::MakeFormula(Int_t flo, Int_t fhi)
     string cname(GetName());
 
     if (IsCut()) {
-      if ((long)fCut.size() != 0) {  // drop what was there before
-         for (vector<THaCut* >::iterator itc = fCut.begin();
+      if( !fCut.empty() ) {  // drop what was there before
+	for (vector<THaCut* >::iterator itc = fCut.begin();
              itc != fCut.end(); itc++) delete *itc;
-         fCut.clear();
+	fCut.clear();
       }
       cname += "cut";
+      //FIXME: avoid duplicate cuts/formulas
       fCut.push_back(new THaCut(cname.c_str(),sform.c_str(), 
 				"thavsform"));
     } else if (IsFormula()) {
-      if ((long)fFormula.size() != 0) {  // drop what was there before
-         for (vector<THaFormula* >::iterator itf = 
-           fFormula.begin(); itf != fFormula.end(); itf++) 
-               delete *itf;
-         fFormula.clear();
+      if( !fFormula.empty() ) {  // drop what was there before
+	for (vector<THaFormula* >::iterator itf = fFormula.begin(); 
+	     itf != fFormula.end(); itf++) 
+	  delete *itf;
+	fFormula.clear();
       }
       cname += "form";
+      //FIXME: avoid duplicate cuts/formulas
       fFormula.push_back(new THaFormula(cname.c_str(),sform.c_str()));
     }
 
@@ -609,6 +617,7 @@ Int_t THaVform::Process()
     if (!fFormula.empty()) {
       THaFormula* theFormula = fFormula[0];
       if ( !theFormula->IsError() ) {
+	//FIXME: use cached result
         fData = theFormula->Eval();
       }
     }
@@ -617,6 +626,7 @@ Int_t THaVform::Process()
       while( i-- > 0 ) {
 	THaFormula* theFormula = fFormula[i];
 	if ( !theFormula->IsError()) {
+	  //FIXME: use cached result?
 	  fOdata->Fill(i,theFormula->Eval());
 	}
       }
@@ -668,7 +678,9 @@ Int_t THaVform::Process()
     if (!fCut.empty()) {
       THaCut* theCut = fCut[0];
       if (!theCut->IsError()) {
-        if (theCut->EvalCut()) fData = 1;
+	  //FIXME: use cached result?
+	//        if (theCut->Result()) fData = 1.0;
+        if (theCut->EvalCut()) fData = 1.0;
       }
     }
     if( fOdata != 0 ) {
@@ -676,6 +688,8 @@ Int_t THaVform::Process()
       while( i-- > 0 ) {
 	THaCut* theCut = fCut[i];
 	if ( !theCut->IsError() )
+	  //FIXME: use cached result?
+	  //	  fOdata->Fill( i, ((theCut->GetResult()) ? 1.0 : 0.0) );  // 1 = true
 	  fOdata->Fill( i, ((theCut->EvalCut()) ? 1.0 : 0.0) );  // 1 = true
       }
     }
