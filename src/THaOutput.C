@@ -23,7 +23,7 @@
 #include "THaGlobals.h"
 #include "TH1.h"
 #include "TH2.h"
-//#include "TTree.h"
+#include "TTree.h"
 #include "TFile.h"
 #include "TRegexp.h"
 #include "TError.h"
@@ -183,6 +183,55 @@ string THaScalerKey::DashToUbar(string& var)
     } else { break; }
   }
   return output;
+}
+
+//_____________________________________________________________________________
+THaOdata::THaOdata( const THaOdata& other )
+  : tree(other.tree), name(other.name), nsize(other.nsize) 
+{
+  data = new Double_t[nsize]; ndata = other.ndata;
+  memcpy( data, other.data, nsize*sizeof(Double_t));
+}
+
+//_____________________________________________________________________________
+THaOdata& THaOdata::operator=(const THaOdata& rhs )
+{ 
+  if( this != &rhs ) {
+    tree = rhs.tree; name = rhs.name;
+    if( nsize < rhs.nsize ) {
+      nsize = rhs.nsize; delete [] data; data = new Double_t[nsize];
+    }
+    ndata = rhs.ndata; memcpy( data, rhs.data, nsize*sizeof(Double_t));
+  }
+  return *this;   
+}
+
+//_____________________________________________________________________________
+void THaOdata::AddBranches( TTree* _tree, string _name )
+{
+  name = _name;
+  tree = _tree;
+  string sname = "Ndata." + name;
+  string leaf = sname;
+  tree->Branch(sname.c_str(),&ndata,(leaf+"/I").c_str());
+  // FIXME: defined this way, ROOT always thinks we are variable-size
+  leaf = "data["+leaf+"]/D";
+  tree->Branch(name.c_str(),data,leaf.c_str());
+}
+
+//_____________________________________________________________________________
+Bool_t THaOdata::Resize(Int_t i)
+{
+  static const Int_t MAX = 4096;
+  if( i > MAX ) return true;
+  Int_t newsize = nsize;
+  while ( i >= newsize ) { newsize *= 2; } 
+  Double_t* tmp = new Double_t[newsize];
+  memcpy( tmp, data, nsize*sizeof(Double_t) );
+  delete [] data; data = tmp; nsize = newsize;
+  if( tree )
+    tree->SetBranchAddress( name.c_str(), data );
+  return false;
 }
 
 //_____________________________________________________________________________
