@@ -11,8 +11,6 @@
 #include "THaString.h"
 #include <vector>
 #include <map>
-#include <iterator>
-#include <iostream>
 #include <string> 
 
 class THaVar;
@@ -97,8 +95,8 @@ protected:
   virtual THaString StripBracket(THaString& var) const; 
   std::vector<THaString> reQuote(std::vector<THaString> input) const;
   THaString CleanEpicsName(THaString var) const;
-  void BuildList(std::vector<THaString > vdata);
-  void AddScaler(THaString name, THaString bank, 
+  void BuildList(const std::vector<THaString>& vdata);
+  void AddScaler(const THaString& name, const THaString& bank, 
          Int_t helicity = 0, Int_t slot=-1, Int_t chan=-1); 
   void DefScaler(Int_t hel = 0);
   void Print() const;
