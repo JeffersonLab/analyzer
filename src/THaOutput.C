@@ -34,6 +34,7 @@
 #include <fstream>
 #include <cstring>
 #include <iostream>
+//#include <iterator>
 
 #include "THaBenchmark.h"
 
@@ -53,9 +54,9 @@ class THaEpicsKey {
 // Utility class used by THaOutput to store a list of
 // 'keys' to access EPICS data 'string=num' assignments
 public:
-  THaEpicsKey(std::string &nm) : fName(nm) 
+  THaEpicsKey(const std::string &nm) : fName(nm) 
      { fAssign.clear(); }
-  void AddAssign(std::string input) {
+  void AddAssign(const std::string& input) {
 // Add optional assignments.  The input must
 // be of the form "epicsvar=number" 
 // epicsvar can be a string with spaces if
@@ -81,7 +82,7 @@ public:
      }
    }
   };
-  string findQuotes(string input) {
+  string findQuotes(const string& input) {
     string result,temp1;
     string::size_type pos1,pos2;
     result = input;
@@ -97,9 +98,10 @@ public:
     return result;
   };
   Bool_t IsString() { return (fAssign.size()>0); };
-  Double_t Eval(string input) {
-    if (fAssign.size() == 0) return 0;
-    for (std::map<std::string,Double_t>::iterator pm = fAssign.begin(); pm != fAssign.end(); pm++) {
+  Double_t Eval(const string& input) {
+    if (fAssign.empty()) return 0;
+    for (std::map<std::string,Double_t>::iterator pm = fAssign.begin();
+	 pm != fAssign.end(); pm++) {
       if (input == pm->first) {
         return pm->second;
       }
@@ -117,13 +119,15 @@ class THaScalerKey {
 // Utility class used by THaOutput to store a list
 // of 'keys' to access scaler data for output.
 public:
-  THaScalerKey(string& nm, string& bk, Int_t rc,
+  THaScalerKey(const string& nm, const string& bk, Int_t rc,
 	       Int_t hel, Int_t sl, Int_t ch) : 
-    fName(nm), fBank(bk), fRC(rc), fHelicity(hel), fSlot(sl), fChan(ch) { }
-  THaScalerKey(string& nm, string& bk) : 
-    fName(nm), fBank(bk), fRC(0), fHelicity(0), fSlot(-1), fChan(-1) { }
-  virtual ~THaScalerKey() { }
-  void AddBranches(TTree *T, string spref="");
+    fData(0.0), fName(nm), fBank(bk), fRC(rc), fHelicity(hel),
+    fSlot(sl), fChan(ch) {}
+  THaScalerKey(const string& nm, const string& bk) : 
+    fData(0.0), fName(nm), fBank(bk), fRC(0), fHelicity(0),
+    fSlot(-1), fChan(-1) {}
+  virtual ~THaScalerKey() {}
+  void AddBranches(TTree *T, Bool_t addprefix = kTRUE);
   void Fill(Double_t dat) { fData = dat; };
   void Print() const;
   Double_t GetData() { return fData; };
@@ -148,10 +152,10 @@ private:
 };
 
 //_____________________________________________________________________________
-void THaScalerKey::AddBranches(TTree *T, string spref ) 
+void THaScalerKey::AddBranches(TTree *T, Bool_t addprefix ) 
 {
-  string name = "";
-  if (spref != "noprefix") name = fBank + "_";  
+  string name;
+  if (addprefix) name = fBank + "_";  
   if (GetHelicity() > 0) name += "P_"; 
   if (GetHelicity() < 0) name += "M_";
   name += fName;
@@ -367,14 +371,19 @@ Int_t THaOutput::Init( const char* filename )
 // Reason is that TTree::Draw() may otherwise fail with ERROR 26 
       vector<THaString> avar = pform->GetVars();
       for (Iter_s_t it = avar.begin(); it != avar.end(); it++) {
-        THaString svar = StripBracket(*inam);
+        THaString svar = StripBracket(*it);
         pvar = gHaVars->Find(svar.c_str());
         if (pvar) {
           if (pvar->IsArray()) {
-            fArrayNames.push_back(svar);
-            fOdata.push_back(new THaOdata());
+	    Iter_s_t it = find(fArrayNames.begin(),fArrayNames.end(),svar);
+	    if( it == fArrayNames.end() ) {
+	      fArrayNames.push_back(svar);
+	      fOdata.push_back(new THaOdata());
+	    }
           } else {
-   	    fVNames.push_back(svar);
+	    Iter_s_t it = find(fVNames.begin(),fVNames.end(),svar);
+	    if( it == fVNames.end() )
+	      fVNames.push_back(svar);
 	  }
 	}
       }
@@ -453,15 +462,17 @@ Int_t THaOutput::Init( const char* filename )
     fEpicsVar[siz] = -1e32;
     fEpicsTree->Branch("timestamp",&fEpicsVar[siz],"timestamp/D", kNbout);
   }
-  for (vector<THaScalerKey*>::size_type i = 0; i < fScalerKey.size(); i++) {
-    fScalerKey[i]->AddBranches(fTree);
+  for (vector<THaScalerKey*>::iterator it = fScalerKey.begin(); 
+       it != fScalerKey.end(); it++) {
+    THaScalerKey* pkey(*it);
+    pkey->AddBranches(fTree);
     for (map<string, TTree*>::iterator mt = fScalTree.begin();
 	 mt != fScalTree.end(); mt++) {
            THaString thisbank(mt->first);
            TTree *sctree = mt->second;
-           if ( thisbank.CmpNoCase(fScalerKey[i]->GetBank()) != 0) 
-                continue;
-           fScalerKey[i]->AddBranches(sctree,"noprefix");
+           if ( thisbank.CmpNoCase(pkey->GetBank()) != 0) 
+	     continue;
+           pkey->AddBranches(sctree,kFALSE);
     }
   }
 
@@ -486,12 +497,12 @@ Int_t THaOutput::Init( const char* filename )
   return 0;
 }
 
-void THaOutput::BuildList(vector<THaString > vdata) 
+void THaOutput::BuildList( const vector<THaString>& vdata) 
 {
   // Build list of EPICS variables and
   // SCALER variables to add to output.
 
-    if (vdata.size() == 0) return;
+    if (vdata.empty()) return;
     if (vdata[0].CmpNoCase("begin") == 0) {
       if (vdata.size() < 2) return;
       if (vdata[1].CmpNoCase("epics") == 0) fOpenEpics = kTRUE;
@@ -615,13 +626,13 @@ void THaOutput::DefScaler(Int_t hel) {
 
 
 //_____________________________________________________________________________
-void THaOutput::AddScaler(THaString name, 
-       THaString bank, Int_t helicity, Int_t slot, Int_t chan) 
+void THaOutput::AddScaler(const THaString& name, const THaString& bank,
+			  Int_t helicity, Int_t slot, Int_t chan) 
 {
   Int_t scal_rc = 0;  // default: data are rates.
   if (fScalRC == kCount) scal_rc = 1;  // data are counts.
   fScalerKey.push_back(new THaScalerKey(name, bank, scal_rc, 
-               helicity, slot, chan));
+					helicity, slot, chan));
 } 
 
 
@@ -705,8 +716,8 @@ Int_t THaOutput::ProcEpics(THaEvData *evdata)
   // This function is called by THaAnalyzer.
 
   if ( !evdata->IsEpicsEvent() 
-    || fEpicsKey.size()==0 
-    || !fEpicsTree ) return 0;
+       || fEpicsKey.empty() || !fEpicsTree ) return 0;
+  if( fgDoBench ) fgBench.Begin("EPICS");
   fEpicsVar[fEpicsKey.size()] = -1e32;
   for (UInt_t i = 0; i < fEpicsKey.size(); i++) {
     if (evdata->IsLoadedEpics(fEpicsKey[i]->GetName().c_str())) {
@@ -729,6 +740,7 @@ Int_t THaOutput::ProcEpics(THaEvData *evdata)
     }
   }
   if (fEpicsTree != 0) fEpicsTree->Fill();  
+  if( fgDoBench ) fgBench.Stop("EPICS");
   return 1;
 }
 
@@ -737,50 +749,48 @@ Int_t THaOutput::ProcScaler(THaScalerGroup *scagrp)
 {
   // Process the scaler data, this fills the trees.
   // This function is called by THaAnalyzer.
+  THaScaler *scaler = scagrp->GetScalerObj();
+  if (!scaler || !scaler->IsRenewed()) return 0;
+  if( fgDoBench ) fgBench.Begin("Scalers");
 
   Bool_t did_fill = kFALSE;
-  THaScaler *scaler = scagrp->GetScalerObj();
-  if ( !scaler->IsRenewed()) return 0;
   THaString thisbank(scaler->GetName());
 
-  for (UInt_t i = 0; i < fScalerKey.size(); i++) {
+  for (vector<THaScalerKey*>::iterator it = fScalerKey.begin(); 
+       it != fScalerKey.end(); it++) {
+    THaScalerKey* pkey(*it);
 
-    if ( thisbank.CmpNoCase(fScalerKey[i]->GetBank()) != 0) continue;
+    if ( thisbank.CmpNoCase(pkey->GetBank()) != 0) continue;
 
     did_fill = kTRUE;
 
-    if (fScalerKey[i]->SlotDefined()) {
+    if (pkey->SlotDefined()) {
 
-      if (fScalerKey[i]->IsRate()) {
-         fScalerKey[i]->Fill(scaler->GetScalerRate(
-               fScalerKey[i]->GetSlot(), fScalerKey[i]->GetChan()));
+      if (pkey->IsRate()) {
+	pkey->Fill(scaler->GetScalerRate(pkey->GetSlot(), pkey->GetChan()));
       } else {
-         fScalerKey[i]->Fill(scaler->GetScaler(
-               fScalerKey[i]->GetSlot(), fScalerKey[i]->GetChan()));
+	pkey->Fill(scaler->GetScaler(pkey->GetSlot(), pkey->GetChan()));
       }     
 
     } else {
-      if (fScalerKey[i]->GetChanName()=="dclock") {
-	fScalerKey[i]->Fill(
-	  scaler->GetNormData(fScalerKey[i]->GetHelicity(),
-			      "clock",0) -
-	  scaler->GetNormData(fScalerKey[i]->GetHelicity(),
-			      "clock",1) );
+      if (pkey->GetChanName()=="dclock") {
+	pkey->Fill(scaler->GetNormData(pkey->GetHelicity(),
+				       "clock",0) -
+		   scaler->GetNormData(pkey->GetHelicity(),
+				       "clock",1) );
       } else 
-      if (fScalerKey[i]->IsRate()) {
-         fScalerKey[i]->Fill(
-                  scaler->GetNormRate(fScalerKey[i]->GetHelicity(), 
-                        fScalerKey[i]->GetChanName().c_str()));
-      } else {
-         fScalerKey[i]->Fill(
-                  scaler->GetNormData(fScalerKey[i]->GetHelicity(), 
-                        fScalerKey[i]->GetChanName().c_str(), 0));
-      }
+	if (pkey->IsRate()) {
+	  pkey->Fill(scaler->GetNormRate(pkey->GetHelicity(), 
+					  pkey->GetChanName().c_str()));
+	} else {
+	  pkey->Fill(scaler->GetNormData(pkey->GetHelicity(), 
+					  pkey->GetChanName().c_str(), 0));
+	}
 
     }
 
 // DEBUG
-// fScalerKey[i]->Print();
+// pkey->Print();
 
   }
 			  
@@ -788,6 +798,7 @@ Int_t THaOutput::ProcScaler(THaScalerGroup *scagrp)
   TTree *sctree = fScalTree[thisbank.ToLower().c_str()];
   if (did_fill && sctree) sctree->Fill();
 
+  if( fgDoBench ) fgBench.Stop("Scalers");
   return 1;
 }
 
@@ -814,8 +825,9 @@ Int_t THaOutput::Process()
     if (pvar) fVar[ivar] = pvar->GetValue();
   }
   Int_t k = 0;
-  for (Iter_o_t iodat = fOdata.begin(); iodat != fOdata.end(); iodat++, k++) { 
-    (*iodat)->Clear();
+  for (Iter_o_t it = fOdata.begin(); it != fOdata.end(); it++, k++) { 
+    THaOdata* pdat(*it);
+    pdat->Clear();
     pvar = fArrays[k];
     if ( pvar == NULL ) continue;
     // Fill array in reverse order so that fOdata[k] gets resized just once
@@ -824,7 +836,7 @@ Int_t THaOutput::Process()
     while( i-- > 0 ) {
       // FIXME: for better efficiency, should use pointer to data and 
       // Fill(int n,double* data) method in case of a contiguous array
-      if ((*iodat)->Fill(i,pvar->GetValue(i)) != 1) {
+      if (pdat->Fill(i,pvar->GetValue(i)) != 1) {
 	if( fgVerbose>0 && first ) {
 	  cerr << "THaOutput::ERROR: storing too much variable sized data: " 
 	       << pvar->GetName() <<"  "<<pvar->GetLen()<<endl;
@@ -874,8 +886,9 @@ Int_t THaOutput::End()
     fgBench.Print("Cuts");
     fgBench.Print("Histos");
     fgBench.Print("TreeFill");
+    fgBench.Print("EPICS");
+    fgBench.Print("Scalers");
     fgBench.Print("End");
-    fgBench.Print("Total");
   }
   return 0;
 }
@@ -1030,9 +1043,9 @@ THaString THaOutput::StripBracket(THaString& var) const
 // it away.  In practice this should not be fatal 
 // because your variable will still show up in the tree.
   string::size_type pos1,pos2;
-  THaString open_brack = "[";
-  THaString close_brack = "]";
-  THaString result = "";
+  THaString open_brack("[");
+  THaString close_brack("]");
+  THaString result;
   pos1 = var.find(open_brack,0);
   pos2 = var.find(close_brack,0);
   if ((pos1 != string::npos) &&
@@ -1042,7 +1055,7 @@ THaString THaOutput::StripBracket(THaString& var) const
 //      cout << "THaOutput:WARNING:: Stripping away";
 //      cout << "unwanted brackets from "<<var<<endl;
   } else {
-      result = var;
+    result = var;
   }
   return result;
 }
