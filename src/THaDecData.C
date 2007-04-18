@@ -73,7 +73,7 @@ typedef vector<BdataLoc*>::iterator Iter_t;
 THaDecData::THaDecData( const char* name, const char* descript ) : 
   THaApparatus( name, descript )
 {
-  Clear();
+  Reset();
 }
 
 //_____________________________________________________________________________
@@ -83,13 +83,13 @@ THaDecData::~THaDecData()
   // Dtor. Remove global variables.
 
   SetupDecData( NULL, kDelete ); 
-  for( Iter_t p = fWordLoc.begin();  p != fWordLoc.end(); p++ )  delete *p;
-  for( Iter_t p = fCrateLoc.begin(); p != fCrateLoc.end(); p++ ) delete *p;
 }
 
 //_____________________________________________________________________________
 void THaDecData::Clear( Option_t* opt ) 
 {
+  // Clear the object (set event-by-event data to zero)
+
   evtypebits = 0;
   evtype     = 0;
   ctimel     = 0;
@@ -114,6 +114,16 @@ void THaDecData::Clear( Option_t* opt )
   lenroc16   = 0;
   for( Iter_t p = fWordLoc.begin();  p != fWordLoc.end(); p++)  (*p)->Clear();
   for( Iter_t p = fCrateLoc.begin(); p != fCrateLoc.end(); p++) (*p)->Clear();
+}
+
+//_____________________________________________________________________________
+void THaDecData::Reset( Option_t* opt ) 
+{
+  // Reset the object (zero all data, including histograms)
+
+  Clear();
+  for( vector<TH1F*>::iterator it = hist.begin(); it != hist.end(); it++ )
+    (*it)->Reset();
 }
 
 //_____________________________________________________________________________
@@ -149,115 +159,200 @@ Int_t THaDecData::SetupDecData( const TDatime* run_time, EMode mode )
     { "lenroc16",   "ROC16 event length",         "lenroc16" },   
     { 0 }
   };
-  Int_t nvar = sizeof(vars)/sizeof(RVarDef);
 
-  if( mode != kDefine || !fIsSetup )
+  Bool_t re_init = ((mode == kDefine) && fIsSetup);
+  if( !re_init )
     retval = DefineVarsFromList( vars, mode );
 
   fIsSetup = ( mode == kDefine );
 
-  if( mode != kDefine ) {   // cleanup the dynamically built list
-    for (unsigned int i=0; i<fCrateLoc.size(); i++)
-      DefineChannel(fCrateLoc[i],mode);
+  if( mode != kDefine ) {
+    // Undefine the dynamically-defined global variables
+     for( Iter_t p = fCrateLoc.begin(); p != fCrateLoc.end(); p++ ) {
+      DefineChannel(*p,mode);
+      if( mode == kDelete )
+	delete *p;
+    }
+    for( Iter_t p = fWordLoc.begin();  p != fWordLoc.end(); p++ ) {
+      DefineChannel(*p,mode);
+      if( mode == kDelete )
+	delete *p;
+    }
+    if( mode == kDelete ) {
+      for( vector<TH1F*>::iterator it = hist.begin(); it != hist.end(); it++ )
+	delete *it;
+      fCrateLoc.clear();   
+      fWordLoc.clear(); 
+      hist.clear();
+    }
 
-    for (unsigned int i=0; i<fWordLoc.size(); i++)
-      DefineChannel(fWordLoc[i],mode);
+  } else {
 
-    return retval;
-  }
-  
 // Set up the locations in raw data corresponding to variables of this class. 
 // Each element of a BdataLoc is one channel or word.  Since a channel 
 // may be a multihit device, the BdataLoc stores data in a vector.
 
-  fCrateLoc.clear();   
-  fWordLoc.clear();   
+    if( !re_init ) {
+      fCrateLoc.clear();   
+      fWordLoc.clear(); 
+      BookHist();
+    }  
 
-  ifstream decdatafile;
+    ifstream decdatafile;
 
-  const char* const here = "SetupDecData()";
-  const char* name = GetDBFileName();
+    const char* const here = "SetupDecData()";
+    const char* name = GetDBFileName();
 
-  TDatime date;
-  if( run_time ) date = *run_time;
-  vector<string> fnames = GetDBFileList( name, date, Here(here));
-  // always look for 'decdata.map' in the current directory first.
-  fnames.insert(fnames.begin(),string("decdata.map"));
-  if( !fnames.empty() ) {
-    vector<string>::iterator it = fnames.begin();
-    do {
-#ifdef WITH_DEBUG
-      if( fDebug>0 ) {
-	cout << "<" << Here(here) << ">: Opening database file " << *it;
-      }
-#endif
-      decdatafile.clear();  // Forget previous failures before attempt
-      decdatafile.open((*it).c_str());
+    TDatime date;
+    if( run_time ) date = *run_time;
+    vector<string> fnames = GetDBFileList( name, date, Here(here));
+    // always look for 'decdata.map' in the current directory first.
+    fnames.insert(fnames.begin(),string("decdata.map"));
+    if( !fnames.empty() ) {
+      vector<string>::iterator it = fnames.begin();
+      do {
+	if( fDebug>0 ) {
+	  cout << "<" << IsA()->GetName() << "::" << Here(here)
+	       << ">: Opening database file " << *it;
+	}
+	decdatafile.clear();  // Forget previous failures before attempt
+	decdatafile.open((*it).c_str());
 
-#ifdef WITH_DEBUG
-      if (decdatafile) {
-	cout << "Opening file "<<*it<<endl;
+	if( fDebug>0 ) 
+	  if( !decdatafile ) cout << " ... failed" << endl;
+	  else               cout << " ... ok" << endl;
+      } while ( !decdatafile && ++it != fnames.end() );
+    }
+    if( fnames.empty() || !decdatafile ) {
+      if( !re_init ) {
+	if( fDebug>0 )
+	  Warning( Here(here), "File db_%s.dat not found.\nAn example of this "
+		   "file should be in the examples directory.\nWill proceed "
+		   "with default mapping for THaDecData.", name );
+	return DefaultMap();
       } else {
-        cout << "cannot open file "<<*it<<endl;
+	if( fDebug>0 )
+	  Warning( Here(here), "File db_%s.dat not found for timestamp %s.\n"
+		   "Variable definitions unchanged from prior initialization.\n"
+		   "Update database to be sure you have valid data.",
+		   name, date.AsString() );
+	return retval;
       }
-      if( fDebug>0 ) 
-	if( !decdatafile ) cout << " ... failed" << endl;
-	else               cout << " ... ok" << endl;
-#endif
-    } while ( !decdatafile && ++it != fnames.end() );
-  }
-  if( fnames.empty() || !decdatafile )
-    if (THADEC_VERBOSE) {
-      cout << "WARNING:: THaDecData: File db_"<<name<<".dat not found."<<endl;
-      cout << "An example of this file should be in the examples directory."<<endl;
-      cout << "Will proceed with default mapping for THaDecData."<<endl;
-      return DefaultMap();
     }
 
-  string sinput;
-  const string comment = "#";
-  while (getline(decdatafile, sinput)) {
-#ifdef WITH_DEBUG
-    cout << "sinput "<<sinput<<endl;
-#endif
-    vector<string> strvect( vsplit(sinput) );
-    if (strvect.size() < 5 || strvect[0] == comment) continue;
-    Bool_t found = kFALSE;
-    for (int i = 0; i < nvar; i++) {
-      if (vars[i].name && strvect[0] == vars[i].name) found = kTRUE;
-    }
-// !found may be ok, but might be a typo error too, so I print to warn you.
-    if ( !found && THADEC_VERBOSE ) 
-      cout << "THaDecData: new variable "<<strvect[0]<<" will become global"<<endl;
-    Int_t crate = (Int_t)atoi(strvect[2].c_str());  // crate #
-    BdataLoc *b = 0;
-    if (strvect[1] == "crate") {  // Crate data ?
-      Int_t slot = (Int_t)atoi(strvect[3].c_str());
-      Int_t chan = (Int_t)atoi(strvect[4].c_str());
-      b = new BdataLoc(strvect[0].c_str(), crate, slot, chan); 
-      fCrateLoc.push_back(b);
-    } else {         // Data is relative to a header
-      UInt_t header = header_str_to_base16(strvect[3].c_str());
-      Int_t skip = (Int_t)atoi(strvect[4].c_str());
-      b = new BdataLoc(strvect[0].c_str(), crate, header, skip);
-      fWordLoc.push_back(b);
-    }
+    string sinput;
+    const string comment = "#";
+    while (getline(decdatafile, sinput)) {
+      if( fDebug>3 )
+	Info( Here(here), "sinput = %s", sinput.c_str() );
+      vector<string> strvect( vsplit(sinput) );
+      if (strvect.size() < 5 || strvect[0] == comment) continue;
+      bool found = false;
+      RVarDef* pdef = vars;
+      while( pdef->name && !found ) {
+	if( strvect[0] == pdef->name ) { 
+	  found = true; break;
+	}
+	pdef++;
+      }
+      Int_t slot(0), chan(0), skip(0);
+      UInt_t header(0);
+      Int_t crate = (Int_t)atoi(strvect[2].c_str());  // crate #
+      bool is_slot = (strvect[1] == "crate");
+      BdataLoc* b;
+      if( is_slot ) {  // Crate data ?
+	slot = (Int_t)atoi(strvect[3].c_str());
+	chan = (Int_t)atoi(strvect[4].c_str());
+	b = new BdataLoc(strvect[0].c_str(), crate, slot, chan);
+      } else {         // Data is relative to a header
+	header = header_str_to_base16(strvect[3].c_str());
+	skip = (Int_t)atoi(strvect[4].c_str());
+	b = new BdataLoc(strvect[0].c_str(), crate, header, skip);
+      }
 
-    if (!found) {
-      // a new variable to add to our dynamic list
-      DefineChannel(b,mode);
+      bool already_defined = false;
+      if( re_init ) {
+	// When reinitializing, use simple logic, assuming things didn't 
+	// change much:
+	// - if the name exists, update it with the chan/slot read from the 
+	//   database for the new time
+	// - if the name is new, add it - leave it up to the user to decide
+	//   whether this is sensible
+	// - if a name disappeared, we're confused. Just leave it as it is,
+	//   although something is probably wrong with the database
+	//
+	Iter_t p;
+	for( p = fWordLoc.begin();  p != fWordLoc.end(); p++ ) {
+	  if( b->name == (*p)->name ) {
+	    already_defined = true;
+	    break;
+	  }
+	}
+	if( !already_defined ) {
+	  for( p = fCrateLoc.begin(); p != fCrateLoc.end(); p++ ) {
+	    if( b->name == (*p)->name ) {
+	      already_defined = true;
+	      break;
+	    }
+	  }
+	}
+
+	if( already_defined ) {
+	  if ( **p != *b ) {
+	    if( fDebug>2 ) 
+	      Info( Here(here), 
+		    "Updating variable %s", (*p)->name.c_str() );
+	    if( is_slot )
+	      (*p)->SetSlot( crate, slot, chan );
+	    else
+	      (*p)->SetHeader( crate, header, skip );
+	  } else {
+	    if( fDebug>2 )
+	      Info( Here(here),
+		    "Variable %s already defined and not changed",
+		    (*p)->name.c_str() );
+	  }
+	}
+      }
+      
+      if( !already_defined ) {
+	if( found && fDebug>2 ) 
+	  Info( Here(here), "Defining standard variable %s", 
+		b->name.c_str());
+	else if( !found && fDebug>2 ) 
+	  // !found is ok, but might be a typo error too, so I print to warn you.
+	  Info( Here(here), 
+		"New variable %s will become global", b->name.c_str());
+
+	if( is_slot ) {
+	  fCrateLoc.push_back(b);
+	} else {
+	  fWordLoc.push_back(b);
+	}
+	
+	if (!found) {
+	  // if not one of the pre-defined global variables, make a new global
+	  // variable for this BdataLoc
+	  DefineChannel(b,mode);
+	}
+      }
     }
   }
+
   return retval;
 }
 
 //_____________________________________________________________________________
-BdataLoc* THaDecData::DefineChannel(BdataLoc *b, EMode mode, const char* desc) {
-  string nm(fPrefix + b->name);
-  if (mode==kDefine) {
-    if (gHaVars) gHaVars->Define(nm.c_str(),desc,b->rdata[0],&(b->ndata));
-  } else {
-    if (gHaVars) gHaVars->RemoveName(nm.c_str());
+BdataLoc* THaDecData::DefineChannel(BdataLoc *b, EMode mode, const char* desc)
+{
+  if( gHaVars ) {
+    string nm(fPrefix + b->name);
+    if (mode==kDefine)
+      gHaVars->Define(nm.c_str(),desc,b->rdata[0],&(b->ndata));
+    else if (mode==kDelete) {
+      gHaVars->RemoveName(nm.c_str());
+      b = NULL;
+    }
   }
   return b;
 }
@@ -270,10 +365,11 @@ Int_t THaDecData::End( THaRunBase* run )
 }
 
 //_____________________________________________________________________________
-  void THaDecData::WriteHist()
+void THaDecData::WriteHist()
 {
   //  cout << "Writing Bob Dec Data histos"<<endl<<flush;
-  for (UInt_t i = 0; i < hist.size(); i++) hist[i]->Write();
+  for (vector<TH1F*>::iterator it = hist.begin(); it != hist.end(); it++)
+    (*it)->Write();
 }
 
 //_____________________________________________________________________________
@@ -314,7 +410,6 @@ THaAnalysisObject::EStatus THaDecData::Init( const TDatime& run_time )
   fStatus = kNotinit;
   MakePrefix();
   cnt1 = 0;
-  BookHist();
   return fStatus = static_cast<EStatus>( SetupDecData( &run_time ) );
 }
 
@@ -409,6 +504,8 @@ Int_t THaDecData::Decode(const THaEvData& evdata)
 // for performance reasons; this loop could be slow !
 
   for (i = 0; i < evdata.GetEvLength(); i++) {
+    //FIXME: hash list lookup of header -> BdataLoc
+    //FIXME: skip to next header?
     for (Iter_t p = fWordLoc.begin(); p != fWordLoc.end(); p++) {
       BdataLoc *dataloc = *p;
       if ( dataloc->DidLoad() || dataloc->IsSlot() ) continue;
@@ -424,30 +521,40 @@ Int_t THaDecData::Decode(const THaEvData& evdata)
 
   for( Iter_t p = fCrateLoc.begin(); p != fCrateLoc.end(); p++) {
     BdataLoc *dataloc = *p;
+    bool found = false;
 
 // bit pattern of triggers
+
+  // FIXME: dozens of string comparisons for every event?!?
+  // should store pointer to member data with the corresponding BdataLoc object
+  // otherwise use a hash list
     for (UInt_t i = 0; i < bits.GetNbits(); i++) {
-      if ( dataloc->ThisIs(Form("bit%d",i+1)) ) TrigBits(i+1,dataloc);
+      if ( dataloc->ThisIs(Form("bit%d",i+1)) ) {
+	TrigBits(i+1,dataloc);
+	found = true;
+	break;
+      }
     }
+    if( found ) continue;
 
 // synch ADCs
     if ( dataloc->ThisIs("synchadc1") ) synchadc1  = dataloc->Get();
-    if ( dataloc->ThisIs("synchadc2") ) synchadc2  = dataloc->Get();
-    if ( dataloc->ThisIs("synchadc3") ) synchadc3  = dataloc->Get();
-    if ( dataloc->ThisIs("synchadc4") ) synchadc4  = dataloc->Get();
-    if ( dataloc->ThisIs("synchadc14")) synchadc14 = dataloc->Get();
+    else if ( dataloc->ThisIs("synchadc2") ) synchadc2  = dataloc->Get();
+    else if ( dataloc->ThisIs("synchadc3") ) synchadc3  = dataloc->Get();
+    else if ( dataloc->ThisIs("synchadc4") ) synchadc4  = dataloc->Get();
+    else if ( dataloc->ThisIs("synchadc14")) synchadc14 = dataloc->Get();
 
 // coincidence times
-    if ( dataloc->ThisIs("ctimel")) ctimel = dataloc->Get();
-    if ( dataloc->ThisIs("ctimer")) ctimer = dataloc->Get();
+    else if ( dataloc->ThisIs("ctimel")) ctimel = dataloc->Get();
+    else if ( dataloc->ThisIs("ctimer")) ctimer = dataloc->Get();
 
 // RF time
-    if ( dataloc->ThisIs("rftime1") ) rftime1  = dataloc->Get();
-    if ( dataloc->ThisIs("rftime2") ) rftime2  = dataloc->Get();
+    else if ( dataloc->ThisIs("rftime1") ) rftime1  = dataloc->Get();
+    else if ( dataloc->ThisIs("rftime2") ) rftime2  = dataloc->Get();
 
 // EDTM pulser
-    if ( dataloc->ThisIs("edtpl") ) edtpl  = dataloc->Get();
-    if ( dataloc->ThisIs("edtpr") ) edtpr  = dataloc->Get();
+    else if ( dataloc->ThisIs("edtpl") ) edtpl  = dataloc->Get();
+    else if ( dataloc->ThisIs("edtpr") ) edtpr  = dataloc->Get();
 
   }
 
@@ -456,11 +563,11 @@ Int_t THaDecData::Decode(const THaEvData& evdata)
 
 // time stamps
     if ( dataloc->ThisIs("timestamp")) timestamp = dataloc->Get();
-    if ( dataloc->ThisIs("timeroc1") ) timeroc1  = dataloc->Get();
-    if ( dataloc->ThisIs("timeroc2") ) timeroc2  = dataloc->Get();
-    if ( dataloc->ThisIs("timeroc3") ) timeroc3  = dataloc->Get();
-    if ( dataloc->ThisIs("timeroc4") ) timeroc4  = dataloc->Get();
-    if ( dataloc->ThisIs("timeroc14")) timeroc14 = dataloc->Get();
+    else if ( dataloc->ThisIs("timeroc1") ) timeroc1  = dataloc->Get();
+    else if ( dataloc->ThisIs("timeroc2") ) timeroc2  = dataloc->Get();
+    else if ( dataloc->ThisIs("timeroc3") ) timeroc3  = dataloc->Get();
+    else if ( dataloc->ThisIs("timeroc4") ) timeroc4  = dataloc->Get();
+    else if ( dataloc->ThisIs("timeroc14")) timeroc14 = dataloc->Get();
 
   }
 
@@ -475,68 +582,83 @@ Int_t THaDecData::Decode(const THaEvData& evdata)
 
 //_____________________________________________________________________________
 void THaDecData::VdcEff( )
-{ // Check the VDC efficiency
+{ 
+  // Update VDC efficiency histograms with current event data
 
-  Int_t local_debug = 0;
-  Int_t i,n,ipl,nhit,awire;
-  THaVar *pvar;
-  static string VdcVars[] = {"L.vdc.u1.wire", "L.vdc.v1.wire", 
-           "L.vdc.u2.wire", "L.vdc.v2.wire", "R.vdc.u1.wire", 
-	   "R.vdc.v1.wire", "R.vdc.u2.wire", "R.vdc.v2.wire"};
-
-  static Int_t cnt = 0;
+  static const string VdcVars[] = {"L.vdc.u1.wire", "L.vdc.v1.wire", 
+				   "L.vdc.u2.wire", "L.vdc.v2.wire", 
+				   "R.vdc.u1.wire", "R.vdc.v1.wire", 
+				   "R.vdc.u2.wire", "R.vdc.v2.wire"};
+  
   const Int_t nwire = 400;
   Int_t wire[nwire];
   Int_t hitwire[nwire];   // lookup to avoid O(N^3) algorithm
 
-  static Double_t xcnt[8*nwire],eff[8*nwire];  // FIXME: use member variables
   
-  Double_t xeff;    
+  //FIXME: these static variables prevent multiple instances of this object!
+  // use member variables
+  static Int_t cnt = 0;
   static Bool_t first = kTRUE;
+  static Double_t xcnt[8*nwire],eff[8*nwire];
+  static THaVar* varp[8];
   if (first) {
     memset(eff,0,8*nwire*sizeof(eff[0]));
     memset(xcnt,0,8*nwire*sizeof(xcnt[0]));
+    for( Int_t i = 0; i<8; i++ ) {
+      varp[i] = gHaVars->Find(VdcVars[i].c_str());
+    }
     first = kFALSE;
   }
 
-  if (local_debug) 
+#ifdef WITH_DEBUG
+  if (fDebug>4) 
     cout << "\n *************** \n Vdc Effic "<<endl;
+#endif
 
-  for (ipl = 0; ipl < 8; ipl++) {
+  for (Int_t ipl = 0; ipl < 8; ipl++) {
 
-     nhit = 0;
-     pvar = gHaVars->Find(VdcVars[ipl].c_str());
-     if (local_debug)
+    Int_t nhit = 0;
+    THaVar* pvar = varp[ipl];
+#ifdef WITH_DEBUG
+     if (fDebug>4)
       cout << "plane "<<ipl<<"  "<<VdcVars[ipl]<<" $$$ "<<pvar<<endl;
+#endif
      if (!pvar) continue;
      memset(wire,0,nwire*sizeof(wire[0]));
      memset(hitwire,0,nwire*sizeof(hitwire[0]));
 
-     n = pvar->GetLen();
+     Int_t n = pvar->GetLen();
      nhit = n;
      hist[ipl]->Fill(nhit);
      if (n < 0) n = 0;
      if (n > nwire) n = nwire;
-     if (local_debug)
+#ifdef WITH_DEBUG
+     if (fDebug>4)
        cout << "nwire "<<n<<"  "<<nwire<<"  "<<nhit<<endl;
+#endif
 
-     for (i = 0; i < n; i++) {
+     for (Int_t i = 0; i < n; i++) {
        wire[i] = (Int_t) pvar->GetValue(i);
-       if (wire[i]>=0 && wire[i]<nwire)	 hitwire[wire[i]]=1;
-       if (local_debug)
+       if (wire[i]>=0 && wire[i]<nwire)
+	 hitwire[wire[i]]=1;
+#ifdef WITH_DEBUG
+       if (fDebug>4)
          cout << "wire "<<i<<"  "<<wire[i]<<endl;
+#endif
      }
 
 // The following does not assume that wire[] is ordered.
-     for (i = 0; i < n; i++) {
+     for (Int_t i = 0; i < n; i++) {
        // look for neighboring hit at +2 wires
-       int ngh2=wire[i]+2;
+       Int_t ngh2=wire[i]+2;
        if (wire[i]<0 || ngh2>=nwire) continue;
        
        if (hitwire[ngh2]) {
-	 awire = wire[i]+1;
-	 if (local_debug) 
+	 Int_t awire = wire[i]+1;
+#ifdef WITH_DEBUG
+	 if (fDebug>4) 
 	   cout << "wire eff "<<i<<"  "<<awire<<endl;
+#endif
 	 if (awire>=0 && awire<nwire) {
 	   xcnt[ipl*nwire+awire] = xcnt[ipl*nwire+awire] + 1;
 	   
@@ -552,14 +674,16 @@ void THaDecData::VdcEff( )
      if ((cnt%500) == 0) {
 
        hist[ipl+8]->Reset();
-       for (i = 0; i < nwire; i++) {
+       for (Int_t i = 0; i < nwire; i++) {
 
-         xeff = -1;
+         Double_t xeff = -1;
          if (xcnt[ipl*nwire+i] != 0) {
 	   xeff = eff[ipl*nwire+i]/xcnt[ipl*nwire+i];
 	 }
-         if (local_debug) 
+#ifdef WITH_DEBUG
+         if (fDebug>4) 
 	   cout << "Efficiency "<<i<<"  "<<xcnt[ipl*nwire+i]<<"  "<<xeff<<endl;
+#endif
          if (xeff > 0) hist[ipl+8]->Fill(i,xeff);
        }
      }
@@ -589,6 +713,10 @@ void THaDecData::Print( Option_t* opt ) const {
   cout << timeroc3<<"  "<<timeroc4<<"  "<<timeroc14<<endl<<endl;
   cout << "RF timing "<<rftime1<<"  "<<rftime2<<endl;
   cout << "EDTM pulser "<<edtpl<<"  "<<edtpr<<endl;
+  cout << endl;
+  cout << "Crate-type variables: " << fCrateLoc.size() << endl;
+  cout << "Word-type variables: " << fWordLoc.size() << endl;
+  cout << "Histograms: " << hist.size() << endl;
 }
 
 
@@ -613,7 +741,7 @@ vector<string> THaDecData::vsplit(const string& s) {
 //_____________________________________________________________________________
 UInt_t THaDecData::header_str_to_base16(const char* hdr) {
 // Utility to convert string header to base 16 integer
-  static const char chex[] = "0123456789abcdef";
+  const char chex[] = "0123456789abcdef";
   if( !hdr ) return 0;
   const char* p = hdr+strlen(hdr);
   UInt_t result = 0;  UInt_t power = 1;
@@ -635,8 +763,8 @@ void THaDecData::TrigBits(UInt_t ibit, BdataLoc *dataloc) {
   if( ibit >= kBitsPerByte*sizeof(UInt_t) ) return; //Limit of evtypebits
   bits.ResetBitNumber(ibit);
 
-  static const UInt_t cutlo = 200;
-  static const UInt_t cuthi = 1500;
+  const UInt_t cutlo = 200;
+  const UInt_t cuthi = 1500;
   
   for (int ihit = 0; ihit < dataloc->NumHits(); ihit++) {
     if (dataloc->Get(ihit) > cutlo && dataloc->Get(ihit) < cuthi) {
