@@ -390,7 +390,7 @@ void THaAnalyzer::InitCuts()
 }
 
 //_____________________________________________________________________________
-Int_t THaAnalyzer::InitModules( const TList* module_list, TDatime& run_time, 
+Int_t THaAnalyzer::InitModules( TList* module_list, TDatime& run_time, 
 				Int_t erroff, const char* baseclass )
 {
   // Initialize a list of THaAnalysisObjects for time 'run_time'.
@@ -405,23 +405,37 @@ Int_t THaAnalyzer::InitModules( const TList* module_list, TDatime& run_time,
   TIter next( module_list );
   Int_t retval = 0;
   TObject* obj;
-  while( retval == 0 && (obj = next()) != NULL ) {
-    if( obj->IsA()->InheritsFrom( baseclass )) {
-      THaAnalysisObject* theModule = dynamic_cast<THaAnalysisObject*>( obj );
-      if( !theModule ||
-	  ( theModule->Init( run_time ) && !theModule->IsOK())) {
-	Error( here, "Error initializing module %s (%s). "
-	       "Analyzer initialization failed.", 
-	       obj->GetName(), obj->GetTitle() );
-	retval = -1;
-      }
-    } else {
+  while( (obj = next()) ) {
+    if( !obj->IsA()->InheritsFrom( baseclass )) {
       Error( here, "Object %s (%s) is not a %s. Analyzer initialization "
 	     "failed.", obj->GetName(), obj->GetTitle(), baseclass );
       retval = -2;
+      break;
+    }
+    THaAnalysisObject* theModule = dynamic_cast<THaAnalysisObject*>( obj );
+    if( !theModule ) {
+      Error( here, "Object %s (%s) is not a THaAnalysisObject. Analyzer "
+	     "initialization failed.", obj->GetName(), obj->GetTitle() );
+      retval = -2;
+      break;
+    } else if( theModule->IsZombie() ) {
+      Warning( here, "Removing zombie module %s (%s) from list of %s objects",
+	       obj->GetName(), obj->GetTitle(), baseclass );
+      module_list->Remove( theModule );
+      delete theModule;
+      continue;
+    }
+    retval = theModule->Init( run_time );
+    if( retval != kOK || !theModule->IsOK() ) {
+      Error( here, "Error %d initializing module %s (%s). Analyzer initial"
+	     "ization failed.", retval, obj->GetName(), obj->GetTitle() );
+      if( retval == kOK )
+	retval = -1;
+      break;
     }
   }
-  return (retval == 0) ? 0 : retval - erroff;
+  if( retval != 0 ) retval -= erroff;
+  return retval;
 }
 
 //_____________________________________________________________________________
