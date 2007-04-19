@@ -13,7 +13,6 @@
 //#include "TH2.h"
 #include <vector>
 #include <string>
-#include <cstring>
 
 class TH1F;
 
@@ -123,6 +122,9 @@ private:
    virtual void BookHist(); 
    void VdcEff();
    static UInt_t header_str_to_base16(const char* hdr);
+
+  static THaDecData* fgThis;   //Pointer to instance of this class
+  static Int_t fgVdcEffFirst; //If >0, initialize VdcEff() on next call
 
    ClassDef(THaDecData,0)  
 };

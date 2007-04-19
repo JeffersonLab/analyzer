@@ -64,16 +64,30 @@
 #include "VarDef.h"
 #include <fstream>
 #include <iostream>
+#include <cstring>
+#include <cctype>
 
 using namespace std;
 
 typedef vector<BdataLoc*>::iterator Iter_t;
 
+THaDecData* THaDecData::fgThis = NULL;  //Pointer to single instance of this class
+Int_t  THaDecData::fgVdcEffFirst = 2;
+
+
 //_____________________________________________________________________________
 THaDecData::THaDecData( const char* name, const char* descript ) : 
   THaApparatus( name, descript )
 {
+  if( fgThis ) {
+    Error("THaDecData", "Only one instance of THaDecData allowed. "
+	  "Object creation failed.");
+    MakeZombie();
+    return;
+  }
   Reset();
+
+  fgThis = this;
 }
 
 //_____________________________________________________________________________
@@ -82,7 +96,10 @@ THaDecData::~THaDecData()
 
   // Dtor. Remove global variables.
 
-  SetupDecData( NULL, kDelete ); 
+  if( fgThis == this ) {
+    SetupDecData( NULL, kDelete ); 
+    fgThis = NULL;
+  }
 }
 
 //_____________________________________________________________________________
@@ -124,6 +141,7 @@ void THaDecData::Reset( Option_t* opt )
   Clear();
   for( vector<TH1F*>::iterator it = hist.begin(); it != hist.end(); it++ )
     (*it)->Reset();
+  fgVdcEffFirst = 2;
 }
 
 //_____________________________________________________________________________
@@ -278,8 +296,8 @@ Int_t THaDecData::SetupDecData( const TDatime* run_time, EMode mode )
 	//   database for the new time
 	// - if the name is new, add it - leave it up to the user to decide
 	//   whether this is sensible
-	// - if a name disappeared, we're confused. Just leave it as it is,
-	//   although something is probably wrong with the database
+	// - if a name disappears, things are ambiguous. Just leave it as 
+	//   it is, although something is probably wrong with the database
 	//
 	Iter_t p;
 	for( p = fWordLoc.begin();  p != fWordLoc.end(); p++ ) {
@@ -408,8 +426,14 @@ THaAnalysisObject::EStatus THaDecData::Init( const TDatime& run_time )
   // skip the detector initialization.
 
   fStatus = kNotinit;
+  if( IsZombie() )
+    return fStatus;
+    
   MakePrefix();
   cnt1 = 0;
+  // Let VdcEff reassociate its global variable pointers upon re-init
+  if( fgVdcEffFirst == 0 )
+    fgVdcEffFirst = 1;
   return fStatus = static_cast<EStatus>( SetupDecData( &run_time ) );
 }
 
@@ -471,13 +495,12 @@ Int_t THaDecData::DefaultMap() {
 //_____________________________________________________________________________
 Int_t THaDecData::Decode(const THaEvData& evdata)
 {
-  Int_t i;
-  Clear();
+  // Extract the requested variables from the event data
 
-  static int jtst = 0;
-  jtst++;  
-  if (jtst > 400) jtst = 0;
-  //  float dd = 40*jtst + 100;
+  if( !IsOK() )
+    return -1;
+
+  Clear();
 
   lenroc12 = evdata.GetRocLength(12);
   lenroc16 = evdata.GetRocLength(16);
@@ -491,7 +514,7 @@ Int_t THaDecData::Decode(const THaEvData& evdata)
   for( Iter_t p = fCrateLoc.begin(); p != fCrateLoc.end(); p++) {
     BdataLoc *dataloc = *p;
     if ( dataloc->IsSlot() ) {  
-      for (i = 0; i < evdata.GetNumHits(dataloc->crate, 
+      for (Int_t i = 0; i < evdata.GetNumHits(dataloc->crate, 
 		         dataloc->slot, dataloc->chan); i++) {
 	dataloc->Load(evdata.GetData(dataloc->crate, dataloc->slot, 
 				     dataloc->chan, i));
@@ -503,7 +526,7 @@ Int_t THaDecData::Decode(const THaEvData& evdata)
 // as relative to a header.   fWordLoc are treated seperately from fCrateLoc
 // for performance reasons; this loop could be slow !
 
-  for (i = 0; i < evdata.GetEvLength(); i++) {
+  for (Int_t i = 0; i < evdata.GetEvLength(); i++) {
     //FIXME: hash list lookup of header -> BdataLoc
     //FIXME: skip to next header?
     for (Iter_t p = fWordLoc.begin(); p != fWordLoc.end(); p++) {
@@ -591,6 +614,7 @@ void THaDecData::VdcEff( )
 				   "R.vdc.u2.wire", "R.vdc.v2.wire"};
   
   const Int_t nwire = 400;
+  //FIXME: really push 3.2kB on the stack every event?
   Int_t wire[nwire];
   Int_t hitwire[nwire];   // lookup to avoid O(N^3) algorithm
 
@@ -598,16 +622,18 @@ void THaDecData::VdcEff( )
   //FIXME: these static variables prevent multiple instances of this object!
   // use member variables
   static Int_t cnt = 0;
-  static Bool_t first = kTRUE;
   static Double_t xcnt[8*nwire],eff[8*nwire];
   static THaVar* varp[8];
-  if (first) {
-    memset(eff,0,8*nwire*sizeof(eff[0]));
-    memset(xcnt,0,8*nwire*sizeof(xcnt[0]));
+  if (fgVdcEffFirst>0) {
+    if( fgVdcEffFirst>1) {
+      cnt = 0;
+      memset(eff,0,8*nwire*sizeof(eff[0]));
+      memset(xcnt,0,8*nwire*sizeof(xcnt[0]));
+    }
     for( Int_t i = 0; i<8; i++ ) {
       varp[i] = gHaVars->Find(VdcVars[i].c_str());
     }
-    first = kFALSE;
+    fgVdcEffFirst = 0;
   }
 
 #ifdef WITH_DEBUG
