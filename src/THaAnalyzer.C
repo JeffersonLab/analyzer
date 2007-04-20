@@ -390,7 +390,7 @@ void THaAnalyzer::InitCuts()
 }
 
 //_____________________________________________________________________________
-Int_t THaAnalyzer::InitModules( TList* module_list, TDatime& run_time, 
+Int_t THaAnalyzer::InitModules( const TList* module_list, TDatime& run_time, 
 				Int_t erroff, const char* baseclass )
 {
   // Initialize a list of THaAnalysisObjects for time 'run_time'.
@@ -421,7 +421,7 @@ Int_t THaAnalyzer::InitModules( TList* module_list, TDatime& run_time,
     } else if( theModule->IsZombie() ) {
       Warning( here, "Removing zombie module %s (%s) from list of %s objects",
 	       obj->GetName(), obj->GetTitle(), baseclass );
-      module_list->Remove( theModule );
+      const_cast<TList*>(module_list)->Remove( theModule );
       delete theModule;
       continue;
     }
