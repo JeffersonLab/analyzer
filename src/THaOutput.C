@@ -1255,7 +1255,7 @@ void THaOutput::Print() const
 	  cout << endl;
 	  UInt_t i = 0;
 	  for (Iterc_h_t ihist = fHistos.begin(); ihist != fHistos.end(); 
-	       i++, ihist) {
+	       i++, ihist++) {
 	    cout << "Histogram # "<<i<<endl;
 	    (*ihist)->Print();
 	  }
