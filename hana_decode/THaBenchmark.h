@@ -26,4 +26,14 @@ public:
 	Warning("Start","too many benches");
     }
   }
+
+  virtual void Print(Option_t *name="") const {
+    if (name && name[0]!='\0') TBenchmark::Print(name);
+    else {
+      for (int i=0; i<fNbench; i++) {
+	TBenchmark::Print( (fNames[i]).Data() );
+      }
+    }
+  }
+  
 };
