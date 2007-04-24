@@ -4,7 +4,7 @@
 
 # Dummy values for checkout runs
 ebeam      = 1.
-R.theta    = -16.
+R.theta    = -16. 22. 11. -99.
 R.pcentral = 0.8
 L.theta    = 16.
 L.pcentral = 0.8
@@ -51,11 +51,6 @@ L.pcentral = 0.975
 
 R.pcentral = 1.051
 L.pcentral = 1.051
-
---------[ 2003-01-09 09:00:00 ]
-
-R.pcentral = 0.675
-L.pcentral = 0.675
 
 --------[ 2003-01-09 09:00:00 ]
 

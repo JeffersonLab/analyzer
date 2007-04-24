@@ -10,6 +10,7 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaVertexModule.h"
+#include "VarDef.h"
 
 using namespace std;
 
@@ -38,6 +39,22 @@ void THaVertexModule::VertexClear()
   fVertexError.SetXYZ(1.0,1.0,1.0);
   fVertexOK = kFALSE;
 }
+
+//_____________________________________________________________________________
+const RVarDef* THaVertexModule::GetRVarDef()
+{
+  // Return definition block of global variables for this object
+
+  static const RVarDef vars[] = {
+    { "x",  "vertex x-position", "fVertex.fX" },
+    { "y",  "vertex y-position", "fVertex.fY" },
+    { "z",  "vertex z-position", "fVertex.fZ" },
+    { "ok", "Data valid (1=ok)", "fVertexOK" },
+    { 0 }
+  };
+  return vars;
+}
+
 
 //_____________________________________________________________________________
 ClassImp(THaVertexModule)

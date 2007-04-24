@@ -37,9 +37,9 @@ public:
   Double_t          GetEmiss()      const { return fEmiss; }
   Double_t          GetMrecoil()    const { return fMrecoil; }
   Double_t          GetErecoil()    const { return fErecoil; }
-  Double_t          GetPrecoil_x()  const { return fPrecoil_x; }
-  Double_t          GetPrecoil_y()  const { return fPrecoil_y; }
-  Double_t          GetPrecoil_z()  const { return fPrecoil_z; }
+  Double_t          GetPrecoil_x()  const { return fB.X(); }
+  Double_t          GetPrecoil_y()  const { return fB.Y(); }
+  Double_t          GetPrecoil_z()  const { return fB.Z(); }
   Double_t          GetTX()         const { return fTX; }
   Double_t          GetTB()         const { return fTB; }
   Double_t          GetPX_cm()      const { return fPX_cm; }
@@ -56,8 +56,8 @@ public:
 
   Double_t          GetMX()         const { return fMX; }
 
-  const FourVect*   GetPX()         const { return &fX; }
-  const FourVect*   GetPB()         const { return &fB; }
+  const TLorentzVector* GetPX()     const { return &fX; }
+  const TLorentzVector* GetPB()     const { return &fB; }
 
   virtual EStatus   Init( const TDatime& run_time );
   virtual Int_t     Process( const THaEvData& );
@@ -67,6 +67,7 @@ public:
 
 protected:
 
+  // Event data
   Double_t fTheta_xq;   // Polar angle of detected particle with q (rad)
   Double_t fPhi_xq;     // Azimuth of detected particle with scattering plane (rad)
   Double_t fTheta_bq;   // Polar angle of recoil system with q (rad)
@@ -79,9 +80,11 @@ protected:
   Double_t fEmiss;      // Missing energy (GeV), nuclear physics definition omega-Tx-Tb
   Double_t fMrecoil;    // Invariant mass of recoil system (GeV)
   Double_t fErecoil;    // Total energy of recoil system (GeV)
-  Double_t fPrecoil_x;  // x-component of recoil system mom in lab (GeV/c)
-  Double_t fPrecoil_y;  // y-component of recoil system mom in lab (GeV/c)
-  Double_t fPrecoil_z;  // z-component of recoil system mom in lab (GeV/c)
+  //BCI: redundant, remove
+  Double_t fPrecoil_x;  // unused
+  Double_t fPrecoil_y;  // unused
+  Double_t fPrecoil_z;  // unused
+  //end BCI
   Double_t fTX;         // Kinetic energy of detected particle (GeV)
   Double_t fTB;         // Kinetic energy of recoil system (GeV)
   Double_t fPX_cm;      // Magnitude of X momentum in CM system (GeV)
@@ -96,18 +99,19 @@ protected:
   Double_t fMandelT;    // Mandelstam t for secondary vertex (GeV^2)
   Double_t fMandelU;    // Mandelstam u for secondary vertex (GeV^2)
 
-  FourVect fX;          // Detected secondary particle 4-momentum
-  FourVect fB;          // Recoil system 4-momentum
+  TLorentzVector fX;    // Detected secondary particle 4-momentum (GeV)
+  TLorentzVector fB;    // Recoil system 4-momentum (GeV)
 
+  // Parameters
   Double_t fMX;         // Mass of secondary particle (GeV)
-
-  virtual Int_t DefineVariables( EMode mode = kDefine );
-  virtual Int_t ReadRunDatabase( const TDatime& date );
 
   TString            fSpectroName;  // Name of spectrometer for secondary particle
   THaTrackingModule* fSpectro;      // Pointer to spectrometer object
   TString            fPrimaryName;  // Name of module for primary interaction kinematics
   THaPrimaryKine*    fPrimary;      // Pointer to primary kinematics module
+
+  virtual Int_t DefineVariables( EMode mode = kDefine );
+  virtual Int_t ReadRunDatabase( const TDatime& date );
 
   ClassDef(THaSecondaryKine,0)   //Secondary particle kinematics module
 };

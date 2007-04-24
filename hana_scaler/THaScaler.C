@@ -145,7 +145,7 @@ Int_t THaScaler::Init(const char* thetime )
   return 0;
 };
 
-Int_t THaScaler::InitData(string bankgroup, const Bdate& date_want) {
+Int_t THaScaler::InitData(const string& bankgrp, const Bdate& date_want) {
 // Initialize data of the class for this bankgroup for the date wanted.
 // While in principle this should come from a "database", it basically
 // never changes.  However, to add a new scaler bank, imitate what is
@@ -194,30 +194,30 @@ Int_t THaScaler::InitData(string bankgroup, const Bdate& date_want) {
 
    string bank_to_find = "unknown";
    if (database) {
-     if ( database->FindNoCase(bankgroup,"Left") != string::npos  
-        || bankgroup == "L" ) {
+     if ( database->FindNoCase(bankgrp,"Left") != string::npos  
+        || bankgrp == "L" ) {
           bank_to_find = "Left"; 
      }
-     if ( database->FindNoCase(bankgroup,"Right") != string::npos  
-        || bankgroup == "R" ) {
+     if ( database->FindNoCase(bankgrp,"Right") != string::npos  
+        || bankgrp == "R" ) {
           bank_to_find = "Right"; 
      }
-     if ( database->FindNoCase(bankgroup,"dvcs") != string::npos) {
+     if ( database->FindNoCase(bankgrp,"dvcs") != string::npos) {
           bank_to_find = "dvcs"; 
      }
-     if ( database->FindNoCase(bankgroup,"gen") != string::npos) {
+     if ( database->FindNoCase(bankgrp,"gen") != string::npos) {
           bank_to_find = "gen"; 
      }
-     if ( database->FindNoCase(bankgroup,"evgen") != string::npos) {
+     if ( database->FindNoCase(bankgrp,"evgen") != string::npos) {
           bank_to_find = "evgen"; 
      }
-     if ( database->FindNoCase(bankgroup,"N20") != string::npos) {
+     if ( database->FindNoCase(bankgrp,"N20") != string::npos) {
           bank_to_find = "N20"; 
      }
-     if ( database->FindNoCase(bankgroup,"evleft") != string::npos) {
+     if ( database->FindNoCase(bankgrp,"evleft") != string::npos) {
           bank_to_find = "evleft"; 
      }
-     if ( database->FindNoCase(bankgroup,"evright") != string::npos) {
+     if ( database->FindNoCase(bankgrp,"evright") != string::npos) {
           bank_to_find = "evright"; 
      }
 
@@ -320,9 +320,9 @@ void THaScaler::SetupNormMap() {
   clkchan = GetChan("clock");
   for (Int_t ichan = 0; ichan < SCAL_NUMCHAN; ichan++) {
     vector<string> chan_name = database->GetShortNames(crate, normslot[0], ichan);
-    for (unsigned int i = 0; i < chan_name.size(); i++) {
+    for (vector<string>::size_type i = 0; i < chan_name.size(); i++) {
       if (chan_name[i] != "none") {
-        normmap.insert(make_pair(chan_name[i], ichan));
+        normmap.insert(multimap<string,int>::value_type(chan_name[i], ichan));
       }
     }
   }
@@ -812,20 +812,22 @@ Int_t THaScaler::GetChan(string detector, Int_t helicity, Int_t chan) {
 };
 
 Double_t THaScaler::GetScalerRate(Int_t slot, Int_t chan) {
-// Rates on scaler data, for slot #slot, channel #chan
-  Double_t rate,etime;
-  if (slot == normslot[1] || slot == normslot[2] ) {
-    if (slot == normslot[1]) etime = GetTimeDiff(-1);
-    if (slot == normslot[2]) etime = GetTimeDiff(1);
-  } else {
+// Return rates on scaler data, for slot #slot, channel #chan
+  Double_t etime;
+  if (slot == normslot[1])
+    etime = GetTimeDiff(-1);
+  else if (slot == normslot[2]) 
+    etime = GetTimeDiff(1);
+  else
     etime = GetTimeDiff(0);
-  }
-  if (etime > 0) { 
-      rate = ( GetScaler(slot, chan, 0) -
-               GetScaler(slot, chan, 1) ) / etime;
-      return rate;
-  }
-  return 0;
+
+  if (etime <= 0.0)
+    return 0.0;
+
+  Double_t rate = 
+    ( GetScaler(slot,chan,0)-GetScaler(slot,chan,1) ) / etime;
+
+  return rate;
 };
 
 Double_t THaScaler::GetScalerRate(const char* detector, Int_t chan) {
@@ -934,7 +936,7 @@ Double_t THaScaler::GetTimeDiff(Int_t helicity) {
   }
 };
 
-UInt_t THaScaler::header_str_to_base16(string hdr) {
+UInt_t THaScaler::header_str_to_base16(const string& hdr) {
 // Utility to convert string header to base 16 integer
   static bool hs16_first = true;
   static map<char, int> strmap;
@@ -942,7 +944,7 @@ UInt_t THaScaler::header_str_to_base16(string hdr) {
   //  pair<char, int> pci;
   static char chex[]="0123456789abcdef";
   static vector<int> numarray; 
-  static int linesize = 12;
+  const vector<int>::size_type linesize = 12;
   if (hs16_first) {
     hs16_first = false;
     for (int i = 0; i < 16; i++) {
@@ -951,10 +953,10 @@ UInt_t THaScaler::header_str_to_base16(string hdr) {
     numarray.reserve(linesize);
   }
   numarray.clear();
-  for (string::iterator p = hdr.begin(); p != hdr.end(); p++) {
-    map<char, int>::iterator pm = strmap.find(*p);     
+  for (string::size_type i = 0; i < hdr.size(); i++) {
+    map<char, int>::iterator pm = strmap.find(hdr[i]);     
     if (pm != strmap.end()) numarray.push_back(pm->second);
-    if ((long)numarray.size() > linesize-1) break;
+    if (numarray.size()+1 > linesize) break;
   }
   UInt_t result = 0;  UInt_t power = 1;
   for (vector<int>::reverse_iterator p = numarray.rbegin(); 

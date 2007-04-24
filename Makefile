@@ -14,7 +14,7 @@ export DEBUG = 1
 # export ONLINE_ET = 1
 #------------------------------------------------------------------------------
 
-# VERSION should be numerical only - it becomes the shared lib soversion
+# SOVERSION should be numerical only - it becomes the shared lib soversion
 # EXTVERS (optional) describes the build, e.g. "dbg", "et", "gcc33" etc.
 SOVERSION  = 1.5
 PATCH   = 0
@@ -26,20 +26,21 @@ NAME    = analyzer-$(VERSION)
 
 ARCH          = linuxegcs
 #ARCH          = solarisCC5
+ifndef PLATFORM
+PLATFORM = bin
+endif
 
 ROOTCFLAGS   := $(shell root-config --cflags)
 ROOTLIBS     := $(shell root-config --libs)
 ROOTGLIBS    := $(shell root-config --glibs)
 
-
-SUBDIRS       = $(DCDIR) $(SCALERDIR)
-
 HA_DIR       := $(shell pwd)
-INCDIRS       = $(addprefix $(HA_DIR)/, src $(SUBDIRS))
 DCDIR         = hana_decode
 SCALERDIR     = hana_scaler
 LIBDIR        = $(shell pwd)
 HALLALIBS     = -L$(LIBDIR) -lHallA -ldc -lscaler
+SUBDIRS       = $(DCDIR) $(SCALERDIR)
+INCDIRS       = $(addprefix $(HA_DIR)/, src $(SUBDIRS))
 
 LIBS          = 
 GLIBS         = 
@@ -67,13 +68,13 @@ endif
 ifeq ($(ARCH),linuxegcs)
 # Linux with egcs (>= RedHat 5.2)
 CXX           = g++
-# Always have the debugging symbols written out, but permit full optimization
 ifdef DEBUG
   CXXFLG      = -g -O0
   LDFLAGS     = -g -O0
 else
-  CXXFLG      = -g -O
-  LDFLAGS     = -g -O
+#  CXXFLG      = -O -march=pentium4
+  CXXFLG      = -O
+  LDFLAGS     = -O
 endif
 DEFINES       = -DLINUXVERS
 CXXFLG       += -Wall -Woverloaded-virtual -fPIC
@@ -81,18 +82,10 @@ LD            = g++
 LDCONFIG      = /sbin/ldconfig -n $(LIBDIR)
 SOFLAGS       = -shared
 SONAME        = -Wl,-soname=
+endif
 
-GCC_MAJOR     := $(shell chmod +x ./gcc-version; ./gcc-version)
-GCC_MINOR     := $(shell ./gcc-version -m)
-
-ifeq ($(GCC_MAJOR),3)
+# requires gcc 3 or up - test in configure script
 DEFINES       += -DHAS_SSTREAM
-endif
-ifeq ($(GCC_MAJOR),4)
-DEFINES       += -DHAS_SSTREAM
-endif
-
-endif
 
 ifeq ($(CXX),)
 $(error $(ARCH) invalid architecture)
@@ -175,9 +168,10 @@ SRC           = src/THaFormula.C src/THaVform.C src/THaVhist.C \
 		src/THaElossCorrection.C src/THaTrackEloss.C \
 		src/THaBeamModule.C src/THaBeamInfo.C src/THaEpicsEbeam.C \
 		src/THaBeamEloss.C \
-		src/THaTrackOut.C src/THaTriggerTime.C
-#		src/THaHelicityDet.C src/THaG0HelicityReader.C src/THaG0Helicity.C \
-#		src/THaADCHelicity.C src/THaHelicity.C
+		src/THaTrackOut.C src/THaTriggerTime.C \
+		src/THaHelicityDet.C src/THaG0HelicityReader.C src/THaG0Helicity.C \
+		src/THaADCHelicity.C \
+		src/THaPhotoReaction.C src/THaSAProtonEP.C
 
 ifdef ONLINE_ET
 SRC += src/THaOnlRun.C
@@ -188,11 +182,25 @@ RCHDR         = $(SRC:.C=.h) src/THaGlobals.h
 HDR           = $(RCHDR) src/VarDef.h src/VarType.h src/ha_compiledata.h
 DEP           = $(SRC:.C=.d) src/main.d
 OBJS          = $(OBJ) haDict.o
+HA_LINKDEF    = src/HallA_LinkDef.h
 
 LIBHALLA      = $(LIBDIR)/libHallA.so
 LIBDC         = $(LIBDIR)/libdc.so
 LIBSCALER     = $(LIBDIR)/libscaler.so
-PROGRAMS      = analyzer
+
+#------ Extra libraries -------------------------
+LNA           = NormAna
+LIBNORMANA    = $(LIBDIR)/lib$(LNA).so
+LNA_DICT      = $(LNA)Dict
+LNA_SRC       = src/THa$(LNA).C
+LNA_OBJ       = $(LNA_SRC:.C=.o)
+LNA_HDR       = $(LNA_SRC:.C=.h)
+LNA_DEP       = $(LNA_SRC:.C=.d)
+LNA_OBJS      = $(LNA_OBJ) $(LNA_DICT).o
+LNA_LINKDEF   = src/$(LNA)_LinkDef.h
+#------------------------------------------------
+
+PROGRAMS      = analyzer $(LIBNORMANA)
 
 all:            subdirs
 		set -e; for i in $(PROGRAMS); do $(MAKE) $$i; done
@@ -204,6 +212,7 @@ src/ha_compiledata.h:	Makefile
 subdirs:
 		set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i; done
 
+#---------- Core libraries -----------------------------------------
 $(LIBHALLA).$(VERSION):	$(HDR) $(OBJS)
 ifeq ($(strip $(SONAME)),)
 		$(LD) $(LDFLAGS) $(SOFLAGS) -o $@ $(OBJS)
@@ -248,18 +257,34 @@ $(LIBSCALER):	$(LIBSCALER).$(SOVERSION)
 		rm -f $@
 		ln -s $< $@
 
+haDict.C: $(RCHDR) $(HA_LINKDEF)
+	@echo "Generating dictionary haDict..."
+	$(ROOTSYS)/bin/rootcint -f $@ -c $(INCLUDES) $(DEFINES) $^
+
+
+#---------- Extra libraries ----------------------------------------
+
+$(LIBNORMANA):	$(LNA_HDR) $(LNA_OBJS)
+		$(LD) $(LDFLAGS) $(SOFLAGS) -o $@ $(LNA_OBJS)
+		@echo "$@ done"
+
+$(LNA_DICT).C:	$(LNA_HDR) $(LNA_LINKDEF)
+		@echo "Generating dictionary $(LNA_DICT)..."
+		$(ROOTSYS)/bin/rootcint -f $@ -c $(INCLUDES) $(DEFINES) $^
+
+#---------- Main program -------------------------------------------
 analyzer:	src/main.o $(LIBDC) $(LIBSCALER) $(LIBHALLA)
 		$(LD) $(LDFLAGS) $< $(HALLALIBS) $(GLIBS) -o $@
 
+
+#---------- Maintenance --------------------------------------------
 clean:
-		$(MAKE) -C $(DCDIR) clean
-		$(MAKE) -C $(SCALERDIR) clean
+		set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i clean; done
 		rm -f *.so *.a $(PROGRAMS) *.o *Dict.* *~ src/ha_compiledata.h
 		cd src; rm -f *.o *~
 
 realclean:	clean
-		$(MAKE) -C $(DCDIR) realclean
-		$(MAKE) -C $(SCALERDIR) realclean
+		set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i realclean; done
 		find . -name "*.d" -exec rm {} \;
 
 srcdist:
@@ -267,7 +292,7 @@ srcdist:
 		ln -s $(PWD) ../$(NAME)
 		gtar czv -C .. -f ../$(NAME).tar.gz -X .exclude \
 		 -V "JLab/Hall A C++ Analysis Software "$(VERSION)" `date -I`"\
-		 $(NAME)/.exclude $(NAME)/ChangeLog $(NAME)/gcc-version \
+		 $(NAME)/.exclude $(NAME)/ChangeLog \
 		 $(NAME)/src $(NAME)/examples \
 		 $(NAME)/DB $(NAME)/$(DCDIR) $(NAME)/$(SCALERDIR) \
 		 $(NAME)/Makefile $(NAME)/docs $(NAME)/Calib $(NAME)/contrib
@@ -280,9 +305,28 @@ cvsdist:	srcdist
 		 `find . -type f -name .cvsignore 2>/dev/null | sed "s%^\./%$(NAME)/%"`
 		gzip -f ../$(NAME)-cvs.tar
 
-haDict.C: $(RCHDR) src/HallA_LinkDef.h
-	@echo "Generating dictionary haDict..."
-	$(ROOTSYS)/bin/rootcint -f $@ -c $(INCLUDES) $(DEFINES) $^
+install:	all
+ifndef ANALYZER
+		$(error $$ANALYZER environment variable not defined)
+endif
+		@echo "Installing in $(ANALYZER) ..."
+		@mkdir -p $(ANALYZER)/{$(PLATFORM),include,src/src,docs,DB,examples,SDK}
+		cp -pu $(SRC) $(HDR) $(HA_LINKDEF) $(ANALYZER)/src/src
+		cp -pu $(LNA_SRC) $(LNA_HDR) $(LNA_LINKDEF) $(ANALYZER)/src/src
+		cp -pu $(HDR) $(LNA_HDR) $(ANALYZER)/include
+		gtar cf - `find examples docs SDK -type f | grep -Ev '(CVS|*~)'` | gtar xf - -C $(ANALYZER)
+		cp -pu Makefile ChangeLog $(ANALYZER)/src
+		cp -pru DB $(ANALYZER)/
+		@echo "Installing in $(ANALYZER)/$(PLATFORM) ..."
+		rm -f $(ANALYZER)/$(PLATFORM)/lib*.so.$(SOVERSION)
+		rm -f $(ANALYZER)/$(PLATFORM)/lib*.so.$(SOVERSION).*
+		rm -f $(ANALYZER)/$(PLATFORM)/analyzer
+		rm -f $(ANALYZER)/$(PLATFORM)/analyzer-$(SOVERSION).*
+		cp -af lib*.so.$(SOVERSION) lib*.so.$(VERSION) $(ANALYZER)/$(PLATFORM)
+		cp -pf $(PROGRAMS) $(ANALYZER)/$(PLATFORM)/
+		mv $(ANALYZER)/$(PLATFORM)/analyzer $(ANALYZER)/$(PLATFORM)/$(NAME)
+		ln -s $(NAME) $(ANALYZER)/$(PLATFORM)/analyzer
+		set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i install; done
 
 .PHONY: all clean realclean srcdist cvsdist subdirs
 

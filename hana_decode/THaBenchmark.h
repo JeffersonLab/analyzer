@@ -10,7 +10,7 @@
 //_____________________________________________________________________________
 class THaBenchmark : public TBenchmark {
 public:
-  THaBenchmark() {}
+  THaBenchmark() { fNmax = 50;  }
   virtual ~THaBenchmark() {}
 
   virtual void Begin(const char *name) {

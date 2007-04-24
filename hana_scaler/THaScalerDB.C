@@ -96,7 +96,7 @@ bool THaScalerDB::extract_db(const Bdate& bdate) {
   }
   string sinput;
   vector<string> strvect;
-  bool found_date = false;
+  found_date = false;
 
 // 1st pass: find the date, 2nd pass: load maps
   Bdate bd;  Bdate dfound(1,1,1990);   

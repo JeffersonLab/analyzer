@@ -153,7 +153,8 @@ int main(int argc, char* argv[]) {
      numread0 = evdata->GetRawData(MYROC,index++);
      numread1 = evdata->GetRawData(MYROC,index++);
      badread = evdata->GetRawData(MYROC,index++);
-     if (PRINTOUT) cout << "FIFO num of last good read " << dec << numread << endl;
+     if (PRINTOUT) cout << "FIFO num of last good read " << dec << numread0 
+			<< endl;
      if (badread != 0) {
        cout << "DISASTER: There are bad readings " << endl;
        cout << "FIFO num of last bad read " << badread << endl;

@@ -16,6 +16,8 @@ using namespace std;
 const Option_t* const THaFormula::kPRINTFULL  = "FULL";
 const Option_t* const THaFormula::kPRINTBRIEF = "BRIEF";
 
+static const Double_t kBig = 1e38; // Error value
+
 //_____________________________________________________________________________
 //
 //     A THaFormula defines cuts and histogram expressions
@@ -136,7 +138,7 @@ Double_t THaFormula::DefinedValue( Int_t i )
   
   FVarDef_t* def = fVarDef+i;
   const void* ptr = def->code;
-  if( !ptr ) return 0.0;
+  if( !ptr ) return kBig;
   switch( def->type ) {
   case kVariable:
     return reinterpret_cast<const THaVar*>(ptr)->GetValue( def->index );
@@ -145,9 +147,8 @@ Double_t THaFormula::DefinedValue( Int_t i )
     return reinterpret_cast<const THaCut*>(ptr)->GetResult();
     break;
   default:
-    return 0.0;
+    return kBig;
   }
-  return 0.0;
 }  
 
 //_____________________________________________________________________________
@@ -213,7 +214,7 @@ Int_t THaFormula::DefinedGlobalVariable( const TString& name )
 
   // No list of variables or too many variables in this formula?
   if( !fVarList || fNcodes >= kMAXCODES )
-    return -1;
+    return -2;
 
   // Parse name for array syntax
   THaArrayString var(name);
@@ -255,7 +256,7 @@ Double_t THaFormula::Eval( void )
 {
   // Evaluate this formula
 
-  if( fError )  return 0.0;
+  if( fError )  return kBig;
   if (fNoper == 1 && fNcodes == 1 )  return DefinedValue(0);
   
   return EvalPar( 0 );

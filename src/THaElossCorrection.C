@@ -130,9 +130,10 @@ Int_t THaElossCorrection::ReadRunDatabase( const TDatime& date )
 
   // Die if any required parameters still missing
   if( err ) {
-    const char* errmsg[] = { "particle mass", "particle Z", 
-			     "Z_medium", "A_medium", "medium density",
-			     "pathlength through medium" };
+    const char* errmsg[] = { "M (particle mass [GeV/c^2])", "Z (particle Z)", 
+			     "Z_med (Z of medium)", "A_med (A of medium)", 
+			     "density (of medium [g/cm^3])",
+			     "pathlength (through medium [m])" };
     const char* here = Here("ReadRunDatabase");
     if( err>0 && err<=6 )
       Error( here, "Required database entry \"%s\" missing "

@@ -92,7 +92,6 @@ THaNormAna::THaNormAna( const char* name, const char* descript ) :
   hneg_alive = 0;
   roc11_bcmu3 = 0;
   roc11_bcmu10 = 0;
-  roc11_bcmd10 = 0;
   roc11_t1 = 0;
   roc11_t2 = 0;
   roc11_t3 = 0;
@@ -103,7 +102,11 @@ THaNormAna::THaNormAna( const char* name, const char* descript ) :
   eventint = new Int_t[fgMaxEvInt];
   memset(eventint, 0, fgMaxEvInt*sizeof(Int_t));
   norm_scaler = new Double_t[fgNumRoc * fgNumChan];   
-  for (int i = 0; i < fgNumRoc*fgNumChan; i++) norm_scaler[i] = 0;
+  norm_plus = new Double_t[fgNumRoc * fgNumChan];   
+  norm_minus = new Double_t[fgNumRoc * fgNumChan];   
+  for (int i = 0; i < fgNumRoc*fgNumChan; i++) {
+      norm_scaler[i] = 0; norm_plus[i] = 0; norm_minus[i] = 0;
+  }
   InitRocScalers();
 }
 
@@ -115,6 +118,9 @@ THaNormAna::~THaNormAna()
   delete [] nhit;
   delete [] tdcdata;
   delete [] eventint;
+  delete [] norm_scaler;
+  delete [] norm_plus;
+  delete [] norm_minus;
   for (vector<BRocScaler*>::iterator ir = fRocScaler.begin();
        ir != fRocScaler.end(); ir++) delete *ir;
   SetupRawData( NULL, kDelete ); 
@@ -130,14 +136,14 @@ Int_t THaNormAna::SetupRawData( const TDatime* run_time, EMode mode )
     { "evtypebits", "event type bit pattern",      "evtypebits" },  
     // This first part is based on event type 140 and is "older" code.
     { "bcmu3",   "bcm upstream with x3 gain",      "bcmu3" },
-    { "alive",   "approx average livetime from scaler", "alive" },  
+    { "alive",   "approx average livetime from scaler", "alive" },
+    { "dlive",   "differential livetime from scaler ",  "dlive" },  
     { "hpos_alive", "helicity positive livetime", "hpos_alive" },  
     { "hneg_alive", "helicity negative livetime", "hneg_alive" },  
 
     // Now we add roc11 data, it is "newer" code.
-    { "roc11_bcmu3", "ROC11 BCM upstream, gain 3", "roc11_bcmu3" },  
-    { "roc11_bcmu10", "ROC11 BCM upstream, gain 10", "roc11_bcmu10" },  
-    { "roc11_bcmd10", "ROC11 BCM downstream, gain 10", "roc11_bcmd10" },  
+    { "roc11_bcmu3", "ROC11 BCM upsgream, gain 3", "roc11_bcmu3" },  
+    { "roc11_bcmu10", "ROC11 BCM upsgream, gain 10", "roc11_bcmu10" },  
     { "roc11_t1", "ROC11 trigger 1 counts", "roc11_t1" },  
     { "roc11_t2", "ROC11 trigger 2 counts", "roc11_t2" },  
     { "roc11_t3", "ROC11 trigger 3 counts", "roc11_t3" },  
@@ -168,8 +174,7 @@ void THaNormAna::InitRocScalers()
   fRocScaler.push_back(new BRocScaler(11,"trigger-5",0xabc30000, 0xabc50000, 4, &roc11_t5));
   fRocScaler.push_back(new BRocScaler(11,"clock1024",0xabc30000, 0xabc50000, 7, &roc11_clk1024));
   fRocScaler.push_back(new BRocScaler(11,"bcm_u3",0xabc30000, 0xabc50000, 6, &roc11_bcmu3));
-  fRocScaler.push_back(new BRocScaler(11,"bcm_u10",0xabc30000, 0xabc50000, 8, &roc11_bcmu10));
-  fRocScaler.push_back(new BRocScaler(11,"bcm_d10",0xabc30000, 0xabc50000, 11, &roc11_bcmd10));
+  fRocScaler.push_back(new BRocScaler(11,"bcm_u10",0xabc30000, 0xabc50000, 11, &roc11_bcmu10));
 }
 
 //_____________________________________________________________________________
@@ -195,7 +200,7 @@ Int_t THaNormAna::PrintSummary() const
   }
 
   cout << "Trigger      Prescale      Num evt     Num in      Livetime"<<endl;
-  cout << "             Factor        CODA file   Scalers"<<endl;
+  cout << "---           Factor        CODA file   Scalers"<<endl;
 
   Int_t nhel=1;
   if (fHelEnable) nhel=3; 
@@ -221,7 +226,7 @@ Int_t THaNormAna::PrintSummary() const
   }
 
 // This repeats what is in THaScaler::PrintSummary()
-  printf("\n ----------------   Scaler Summary   ---------------- \n");
+  printf("\n ------------ THaNormAna Scaler Summary   ---------------- \n");
   Double_t clockrate = 1024;
   Double_t time_sec = myscaler->GetPulser("clock")/clockrate;
   if (time_sec == 0) {
@@ -297,6 +302,8 @@ THaAnalysisObject::EStatus THaNormAna::Init( const TDatime& run_time )
   fStatus = kNotinit;
   MakePrefix();
 
+  cout << "THaNormAna:: Init !"<<endl<<flush;
+
   // Grab the scalers.
   // Of course these scalers are the event type 140 scaler data 
   THaAnalyzer* theAnalyzer = THaAnalyzer::GetInstance();
@@ -335,6 +342,13 @@ THaAnalysisObject::EStatus THaNormAna::Init( const TDatime& run_time )
   off_u1 = 92.07;   off_u3 = 167.06;  off_u10 = 102.62;  
   off_d1 = 72.19;   off_d3 = 81.08;   off_d10 = 199.51;
 
+// Calibration of BCMs.  run 1400 E04-018 dec 2006
+// right u10 odd values need to check scaler map so old constant here
+  calib_u1 = 2363.11;  calib_u3 = 7266.15;  calib_u10 = 12515; 
+  calib_d1 = 2392.87;  calib_d3 = 7403.55;  calib_d10 = 22430.2; 
+  off_u1 = 345.61;   off_u3 = 386.17;  off_u10 = 102.62;  
+  off_d1 = 179.57;   off_d3 = 214.80;   off_d10 = 3540.19;
+
 
   return fStatus = static_cast<EStatus>( SetupRawData( &run_time ) );
 
@@ -352,6 +366,8 @@ Int_t THaNormAna::Process(const THaEvData& evdata)
 
   Int_t i, j;
 
+  //  cout << "THaNormAna:  process the data ..."<<endl<<flush;
+
 // bcmu3 is an uncalibrated rate in Hz
   bcmu3 = -1;
   if (myscaler) bcmu3 = myscaler->GetBcmRate("bcm_u3");
@@ -361,20 +377,27 @@ Int_t THaNormAna::Process(const THaEvData& evdata)
 // helicity is -1,0,1.  here, 0 == irrespective of helicity.
 // But if helicity disabled its always 0.
 
-  fHelEnable = evdata.HelicityEnabled();
-  Int_t helicity = evdata.GetHelicity();
+//FIXME: temporary workaround for helicity work-in-progress
+//  fHelEnable = evdata.HelicityEnabled();
+//  Int_t helicity = evdata.GetHelicity();
+  fHelEnable = kFALSE;
+  Int_t helicity = 0;
 
   if (evdata.IsPhysicsTrigger()) normdata->EvCount(helicity);
 
 // If you have ~1000 events you probably have seen 
 // prescale event; ok, this might not work for filesplitting
 // if prescale event only goes into first file (sigh).
+  
   if (!fSetPrescale && evdata.GetEvNum() > 1000) {
     fSetPrescale = kTRUE;
 // CAREFUL, must GetPrescaleFactor(J) where J = 1,2,3 .. 
 // (index starts at 1).  normdata starts at 0.
-    for (i = 0; i < 8; i++) 
+//    cout << "Prescale factors.  Origin = "<<evdata.GetOrigPS()<<endl;
+    for (i = 0; i < 8; i++) {
+         cout << "  trig= "<<i+1<<"   ps= "<<evdata.GetPrescaleFactor(i+1)<<endl;
          normdata->SetPrescale(i,evdata.GetPrescaleFactor(i+1));
+    }
     for (i = 8; i < 12; i++) normdata->SetPrescale(i,1);
   }
 
@@ -391,16 +414,23 @@ Int_t THaNormAna::Process(const THaEvData& evdata)
 // TDC for trigger latch pattern.  The crate,slot,startchan 
 // might change with experiments (I hope not).
 
-  int crate = 3;
-  int slot = 5;
-  int startchan = 64;
+//  int crate = 3;
+//  int slot = 5;
+//  int startchan = 64;
+  int crate = 4;
+  int slot = 13;
+  int startchan = 0;
+
+  int ldebug = 0;
 
   for (i = 0; i < 12; i++) {
     for (j = 0; j < 6; j++) tdcdata[j*12+i] = 0;
     nhit[i] = evdata.GetNumHits(crate, slot, startchan+i);
+    if (ldebug) cout << "Latch for trig "<<i+1<<"   Nhit "<<nhit[i]<<endl;
     if (nhit[i] > 6) nhit[i] = 6;  
     for (j = 0; j < nhit[i]; j++) {
       Int_t tdat = evdata.GetData(crate,slot,startchan+i,j);
+      if (ldebug) cout << "Raw TDC "<<tdat<<endl;
       tdcdata[j*12+i] = tdat;
       hist[i]->Fill(tdat);
     }        
@@ -495,7 +525,11 @@ void THaNormAna::GetRocScalers(const THaEvData& evdata) {
   Int_t len, data, helicity, gate, qrt, timestamp;
   Int_t nscaler, header, found, index;
 
-  for (int i = 0; i < fgNumRoc*fgNumChan; i++) norm_scaler[i] = 0;
+  for (int i = 0; i < fgNumRoc*fgNumChan; i++) {
+     norm_scaler[i] = 0;
+     norm_plus[i] = 0;
+     norm_minus[i] = 0;
+  }
 
   for (Int_t iroc = 0; iroc < 2; iroc++) {
      len = evdata.GetRocLength(myroc[iroc]);
@@ -529,6 +563,7 @@ void THaNormAna::GetRocScalers(const THaEvData& evdata) {
 // 32 channels of scaler data for two helicities.
      Int_t roc_offset = iroc;
      if (roc_offset > fgNumRoc) roc_offset = fgNumRoc;
+   
      for (int ihel = 0; ihel < nscaler; ihel++) { 
        header = evdata.GetRawData(myroc[iroc],index++);
        if (ldebug) {
@@ -539,6 +574,8 @@ void THaNormAna::GetRocScalers(const THaEvData& evdata) {
        for (int ichan = 0; ichan < 32; ichan++) {
 	   data = evdata.GetRawData(myroc[iroc],index++);
            norm_scaler[roc_offset*fgNumChan + ichan] += data;
+           if (ihel == 0) norm_plus[roc_offset*fgNumChan + ichan] = data;
+           if (ihel == 1) norm_minus[roc_offset*fgNumChan + ichan] = data;
            if (ldebug) {       
               cout << "channel # " << dec << ichan+1;
               cout << "  (hex) data = " << hex << data;
@@ -566,6 +603,9 @@ void THaNormAna::GetRocScalers(const THaEvData& evdata) {
        }
      }
   }
+
+  CalcAsy();
+
   if (ldebug) {
     cout << "Check of Roc Scaler Data : "<<endl;
     cout << "roc11 trig "<<roc11_t1<<"  "<<roc11_t2<<"  "<<roc11_t3;
@@ -573,6 +613,12 @@ void THaNormAna::GetRocScalers(const THaEvData& evdata) {
     cout << "bcms "<< roc11_bcmu3<<"  "<<roc11_bcmu10<<endl;
     cout << "clocks "<<roc11_clk1024<<"  "<<roc11_clk104k<<endl;
   }
+
+}
+
+
+void THaNormAna::CalcAsy( ) {
+  // do something with norm_plus and norm_minus ...
 
 }
 
@@ -588,7 +634,7 @@ void THaNormAna::TrigBits( Int_t helicity ) {
 // They importantly define "simultaneous" triggers, and 
 // may therefore introduce a (small) systematic error
 
-  static const Int_t cutlo = 700;
+  static const Int_t cutlo = 100;
   static const Int_t cuthi = 1300;
 
   evtypebits = 0;
@@ -640,6 +686,8 @@ void THaNormAna::LiveTime() {
   Double_t t5corr, t7corr, tcorr;
   Double_t totaltrig, livetime, avglive;
   Double_t numtrig, tsaccept, corrfact;  
+  Double_t trate, ttrigrate;
+  Double_t t5rate_corr;
 
   ok1=0;
   nhel = 1;  
@@ -655,9 +703,13 @@ void THaNormAna::LiveTime() {
 // normdata indices all start at 0.
 
     t5corr = 0;
+    t5rate_corr = 0;
     if (normdata->GetPrescale(4) != 0) {
       t5corr = 
           (Double_t)myscaler->GetTrig(helicity,5)/
+                      normdata->GetPrescale(4);
+      t5rate_corr = 
+          (Double_t)myscaler->GetTrigRate(helicity,5)/
                       normdata->GetPrescale(4);
     }
     t7corr = 0;
@@ -670,11 +722,14 @@ void THaNormAna::LiveTime() {
     tsaccept = 0;
     totaltrig = 0;
     corrfact = 0;
+    ttrigrate = 0;
     ok1 = 0;
 
     for (itrig = 0; itrig < 12; itrig++) {
 
       numtrig = (Double_t)myscaler->GetTrig(helicity,itrig+1);
+      trate = myscaler->GetTrigRate(helicity,itrig+1);
+      //      cout << "trate "<<trate<<endl;
 
 // Livetime by trigger type and by helicity:
 // These are exact and physically meaningful, in
@@ -717,7 +772,25 @@ void THaNormAna::LiveTime() {
       if (totaltrig > 0) avglive = tsaccept/totaltrig;
       normdata->SetAvgLive(avglive,corrfact,helicity);
 
+// Differential DT for helicity==0.  Ignores the "corrfact"
+      if (helicity==0 && 
+        normdata->GetPrescale(itrig) > 0 && trate > 0) {
+        tcorr = 0; 
+        if (itrig == 0 || itrig == 2) tcorr = t5rate_corr;
+        ttrigrate = ttrigrate +
+ 	   (trate-tcorr)/normdata->GetPrescale(itrig);
+	//        cout << "ttrigrate "<<itrig<<"  "<<trate<<"  "<<tcorr<<"   "<<ttrigrate<<endl;
+      }
+
+
     }
+
+    if (helicity == 0) {   
+     dlive = -1;
+     if (ttrigrate > 0) dlive = myscaler->GetNormRate(0,"TS-accept")/ttrigrate;
+     //     cout << "TS-accept rate  "<<myscaler->GetNormRate(0,"TS-accept")<<"   dlive "<<dlive<<endl;
+    }
+
   }
 
   alive = normdata->GetAvgLive();

@@ -393,31 +393,43 @@ Int_t THaAnalyzer::InitModules( const TList* module_list, TDatime& run_time,
 
   static const char* const here = "InitModules()";
 
-  if( !module_list )
+  if( !module_list || !baseclass || !*baseclass )
     return -3-erroff;
+
   TIter next( module_list );
-  bool fail = false;
   Int_t retval = 0;
   TObject* obj;
-  while( !fail && (obj = next())) {
-    if( baseclass && !obj->IsA()->InheritsFrom( baseclass )) {
+  while( (obj = next()) ) {
+    if( !obj->IsA()->InheritsFrom( baseclass )) {
       Error( here, "Object %s (%s) is not a %s. Analyzer initialization "
 	     "failed.", obj->GetName(), obj->GetTitle(), baseclass );
       retval = -2;
-      fail = true;
-    } else {
-      THaAnalysisObject* theModule = static_cast<THaAnalysisObject*>( obj );
-      theModule->Init( run_time );
-      if( !theModule->IsOK() ) {
-	Error( here, "Error initializing module %s (%s). "
-	       "Analyzer initialization failed.", 
-	       obj->GetName(), obj->GetTitle() );
+      break;
+    }
+    THaAnalysisObject* theModule = dynamic_cast<THaAnalysisObject*>( obj );
+    if( !theModule ) {
+      Error( here, "Object %s (%s) is not a THaAnalysisObject. Analyzer "
+	     "initialization failed.", obj->GetName(), obj->GetTitle() );
+      retval = -2;
+      break;
+    } else if( theModule->IsZombie() ) {
+      Warning( here, "Removing zombie module %s (%s) from list of %s objects",
+	       obj->GetName(), obj->GetTitle(), baseclass );
+      const_cast<TList*>(module_list)->Remove( theModule );
+      delete theModule;
+      continue;
+    }
+    retval = theModule->Init( run_time );
+    if( retval != kOK || !theModule->IsOK() ) {
+      Error( here, "Error %d initializing module %s (%s). Analyzer initial"
+	     "ization failed.", retval, obj->GetName(), obj->GetTitle() );
+      if( retval == kOK )
 	retval = -1;
-	fail = true;
-      }
+      break;
     }
   }
-  return (retval == 0) ? 0 : retval - erroff;
+  if( retval != 0 ) retval -= erroff;
+  return retval;
 }
 
 //_____________________________________________________________________________

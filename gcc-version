@@ -1,6 +1,0 @@
-#!/bin/sh
-if [ "$1" = "-m" ]; then
-  g++ -v 2>&1 | tail -1 | awk '{print $3}' | awk -F. '{print $2}'
-else
-  g++ -v 2>&1 | tail -1 | awk '{print $3}' | awk -F. '{print $1}'
-fi

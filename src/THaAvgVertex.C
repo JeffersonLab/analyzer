@@ -59,13 +59,7 @@ Int_t THaAvgVertex::DefineVariables( EMode mode )
   if( mode == kDefine && fIsSetup ) return kOK;
   fIsSetup = ( mode == kDefine );
 
-  RVarDef vars[] = {
-    { "x",  "average vertex x-position", "fVertex.fX" },
-    { "y",  "average vertex y-position", "fVertex.fY" },
-    { "z",  "average vertex z-position", "fVertex.fZ" },
-    { 0 }
-  };
-  return DefineVarsFromList( vars, mode );
+  return DefineVarsFromList( THaVertexModule::GetRVarDef(), mode );
 }
 
 //_____________________________________________________________________________

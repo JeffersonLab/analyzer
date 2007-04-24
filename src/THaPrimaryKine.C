@@ -31,7 +31,7 @@ THaPrimaryKine::THaPrimaryKine( const char* name, const char* description,
   fMA(target_mass), fSpectroName(spectro), fSpectro(NULL), fBeam(NULL)
 {
   // Standard constructor. Must specify particle mass. Incident particles
-  // are assumed to be long z_lab.
+  // are assumed to be along z_lab.
 
 }
 
@@ -58,11 +58,17 @@ THaPrimaryKine::~THaPrimaryKine()
 //_____________________________________________________________________________
 void THaPrimaryKine::Clear( Option_t* opt )
 {
-  // Clear all internal variables.
+  // Clear event-by-event variables.
 
   THaPhysicsModule::Clear(opt);
   fQ2 = fOmega = fW2 = fXbj = fScatAngle = fEpsilon = fQ3mag
     = fThetaQ = fPhiQ = kBig;
+  // Clear the 4-vectors  
+  fP0.SetXYZT(kBig,kBig,kBig,kBig);
+  fP1 = fA = fA1 = fQ = fP0;
+
+  //BCI, remove
+  fQx = fQy = fQz = kBig;
 }
 
 //_____________________________________________________________________________
@@ -84,9 +90,9 @@ Int_t THaPrimaryKine::DefineVariables( EMode mode )
     { "th_q",    "Theta of 3-momentum vector (rad)",        "fThetaQ" },
     { "ph_q",    "Phi of 3-momentum vector (rad)",          "fPhiQ" },
     { "nu",      "Energy transfer (GeV)",                   "fOmega" },
-    { "q_x",     "x-cmp of Photon vector in the lab",       "fQx" },
-    { "q_y",     "y-cmp of Photon vector in the lab",       "fQy" },
-    { "q_z",     "z-cmp of Photon vector in the lab",       "fQz" },
+    { "q_x",     "x-cmp of Photon vector in the lab",       "fQ.X()" },
+    { "q_y",     "y-cmp of Photon vector in the lab",       "fQ.Y()" },
+    { "q_z",     "z-cmp of Photon vector in the lab",       "fQ.Z()" },
     { 0 }
   };
   return DefineVarsFromList( vars, mode );
@@ -166,8 +172,6 @@ Int_t THaPrimaryKine::Process( const THaEvData& evdata )
   fThetaQ    = fQ.Theta();
   fPhiQ      = fQ.Phi();
   fXbj       = fQ2/(2.0*Mp*fOmega);
-
-  fQx = fQ.X();   fQy = fQ.Y();   fQz = fQ.Z(); 
 
   fDataValid = true;
   return 0;

@@ -18,8 +18,6 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-#define CHECKOUT 1
-
 #include "THaVhist.h"
 #include "THaVform.h"
 #include "TObject.h"
@@ -243,11 +241,8 @@ Int_t THaVhist::FindVarSize()
  //     -3 = Cut size inconsistent with X.
  //     -4 = Cut size inconsistent with Y.
 
-  Int_t sizex,sizey,sizec;  
   if (!fFormX) return -2;  // Error, must have at least an X.
-  sizex = 0;
-  sizey = 0;
-  sizec = 0;
+  Int_t sizex = 0, sizey = 0, sizec = 0;
   if ( fFormX->IsEye() ) {
     fEye = 1;
   } else {
@@ -256,10 +251,10 @@ Int_t THaVhist::FindVarSize()
   if (fFormY) { 
     sizey = fFormY->GetSize();
     if ( fFormY->IsEye() ) {
-       fEye = 1;
-       sizey = sizex;
+      fEye = 1;
+      sizey = sizex;
     } else {
-       if (fFormX->IsEye()) sizex = sizey;
+      if (fFormX->IsEye()) sizex = sizey;
     }
   }
   if (fCut) sizec = fCut->GetSize();
@@ -355,8 +350,6 @@ Int_t THaVhist::Process()
   // Also, a vector of histograms can grow in size (up to a 
   // sensible limit) if the inputs grow in size.
 
-  Int_t i,oldsize,size,sizey;
-
   // Check validity just once for efficiency.  
   if (fFirst) {
     fFirst = kFALSE;  
@@ -369,19 +362,22 @@ Int_t THaVhist::Process()
   if (fCut) fCut->Process();
 
   if ( IsScaler() ) {  
-    sizey = 0;
-    if (fFormY) sizey = fFormY->GetSize();
-    if (sizey == 0) {  // Y is a scaler.  
-     for (i = 0; i < fFormX->GetSize(); i++) {
-        if ( CheckCut()==0 ) continue; 
-        if (fFormY) {
+    Int_t sizey = (fFormY) ? fFormY->GetSize() : 0;
+    if( sizey == 0 ) {   // Y is a scalar
+      Int_t sizex = fFormX->GetSize();
+      if( fFormY ) {
+	for (Int_t i = 0; i < sizex; i++) {
+	  if ( CheckCut()==0 ) continue; 
           fH1[0]->Fill(fFormX->GetData(i), fFormY->GetData());
-	} else {
+	} 
+      } else {
+	for (Int_t i = 0; i < sizex; i++) {
+	  if ( CheckCut()==0 ) continue; 
           fH1[0]->Fill(fFormX->GetData(i));
 	}
       }
     } else {   // Y is a vector 
-      for (i = 0; i < fFormY->GetSize(); i++) {
+      for (Int_t i = 0; i < sizey; i++) {
         if ( CheckCut()==0 ) continue; 
         fH1[0]->Fill(fFormX->GetData(), fFormY->GetData(i));
       }
@@ -390,41 +386,30 @@ Int_t THaVhist::Process()
   } else { // Vector histogram.  
 
 // Expand if the size has changed.
-    size = FindVarSize();
+    Int_t size = FindVarSize();
     if (size < 0) return -1;
     if (size > fSize) {
-      oldsize = fSize;
+      BookHisto(fSize, size);
       fSize = size;
-      BookHisto(oldsize, fSize);
     }    
 
-    for (Int_t i = 0; i < fSize; i++) {
-      if ( CheckCut(i)==0 ) continue; 
-      if (fFormY) {
-        if (fEye == 1) {
-          fH1[0]->Fill(fFormX->GetData(i), fFormY->GetData(i));
-	} else {
-          fH1[i]->Fill(fFormX->GetData(i), fFormY->GetData(i));
-	}
-      } else {
-        if (fEye == 1) {
-          fH1[0]->Fill(fFormX->GetData(i));
-	} else {
-          fH1[i]->Fill(fFormX->GetData(i));
-	}
+    // Slightly tricky coding here to avoid redundant testing inside the loop
+    Int_t zero = 0, i;
+    Int_t* idx = (fEye == 1) ? &zero : &i;
+    if( fFormY ) {
+      for (i = 0; i < fSize; i++) {
+	if ( CheckCut(i)==0 ) continue; 
+	fH1[*idx]->Fill(fFormX->GetData(i), fFormY->GetData(i));
+      }
+    } else {
+      for (i = 0; i < fSize; i++) {
+	if ( CheckCut(i)==0 ) continue; 
+	fH1[*idx]->Fill(fFormX->GetData(i));
       }
     }
   }
 
   return 0;
-}
-
-//_____________________________________________________________________________
-Int_t THaVhist::CheckCut(Int_t index) 
-{ 
- // Check the cut.  Returns 1 if cut condition passed.
-   if ( !fCut ) return 1;
-   return int(fCut->GetData(index));
 }
 
 //_____________________________________________________________________________

@@ -117,22 +117,7 @@ Int_t THaExtTarCor::DefineVariables( EMode mode )
   if( mode == kDefine && fIsSetup ) return kOK;
   fIsSetup = ( mode == kDefine );
 
-  const char* var_prefix = "fTrkIfo.";
-
-  const RVarDef var1[] = {
-    { "x",        "Target x coordinate",            "fX"},
-    { "y",        "Target y coordinate",            "fY"},
-    { "th",       "Tangent of target theta angle",  "fTheta"},
-    { "ph",       "Tangent of target phi angle",    "fPhi"},    
-    { "dp",       "Target delta",                   "fDp"},
-    { "p",        "Lab momentum (GeV)",             "fP"},
-    { "px",       "Lab momentum x (GeV)",           "GetPx()"},
-    { "py",       "Lab momentum y (GeV)",           "GetPy()"},
-    { "pz",       "Lab momentum z (GeV)",           "GetPz()"},
-    { "ok",       "Data valid status flag (1=ok)",  "fOK"},
-    { 0 }
-  };
-  DefineVarsFromList( var1, mode, var_prefix );
+  DefineVarsFromList( THaTrackingModule::GetRVarDef(), mode );
 
   const RVarDef var2[] = {
     { "delta_p",  "Size of momentum correction",    "fDeltaP" },

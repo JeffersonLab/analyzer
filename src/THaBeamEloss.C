@@ -12,11 +12,10 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaBeamEloss.h"
+#include "THaBeam.h"
 #include "THaVertexModule.h"
 #include "TMath.h"
 #include "TVector3.h"
-#include "VarDef.h"
-#include <iostream>
 
 using namespace std;
 
@@ -77,16 +76,28 @@ THaAnalysisObject::EStatus THaBeamEloss::Init( const TDatime& run_time )
   // Locate the input beam module named in fInputName and save pointer to it. 
   // Extract mass and charge of the beam particles from the input.
 
+  static const char* const here = "Init()";
+
   // Find the input beam module
   fBeamModule = dynamic_cast<THaBeamModule*>
     ( FindModule( fInputName.Data(), "THaBeamModule"));
+  if( !fBeamModule )
+    return fStatus;
 
-  // Extract the beam particle parameters from the input
+  // Get the parent beam apparatus from the input module
+  // NB: FindModule() above already checked initialization
   THaBeamInfo* beamifo = fBeamModule->GetBeamInfo();
-  if( !beamifo->IsOK() )
-    return fStatus = kInitError;
+  THaBeam* beam = beamifo->GetBeam();
+  if( !beam ) {
+    Error( Here(here), "Oops. Input beam module has no pointer to "
+	   "a beam apparatus?!?" );
+    return fStatus = kInitError;  
+  }
+  // Needed for initialization of dependent modules in a chain
+  fBeamIfo.SetBeam(beam);
 
-  // overrides anything set by SetMass()
+  // Get beam particle properties from the input module. 
+  // Overrides anything set by SetMass()
   SetMass( beamifo->GetM() );
   fZ = TMath::Abs(beamifo->GetQ());
 
@@ -106,7 +117,7 @@ Int_t THaBeamEloss::DefineVariables( EMode mode )
   THaElossCorrection::DefineVariables( mode );
 
   // Define the variables for the beam info subobject
-  return DefineVarsFromList( GetRVarDef(), mode );
+  return DefineVarsFromList( THaBeamModule::GetRVarDef(), mode );
 }
 
 //_____________________________________________________________________________

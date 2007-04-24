@@ -68,13 +68,7 @@ Int_t THaTwoarmVertex::DefineVariables( EMode mode )
   if( mode == kDefine && fIsSetup ) return kOK;
   fIsSetup = ( mode == kDefine );
 
-  RVarDef vars[] = {
-    { "x",  "two-arm vertex x-position", "fVertex.fX" },
-    { "y",  "two-arm vertex y-position", "fVertex.fY" },
-    { "z",  "two-arm vertex z-position", "fVertex.fZ" },
-    { 0 }
-  };
-  return DefineVarsFromList( vars, mode );
+  return DefineVarsFromList( THaVertexModule::GetRVarDef(), mode );
 }
 
 //_____________________________________________________________________________

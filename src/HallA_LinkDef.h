@@ -111,9 +111,11 @@
 #pragma link C++ class THaTrackOut+;
 #pragma link C++ class THaHelicityDet+;
 #pragma link C++ class THaADCHelicity+;
-#pragma link C++ class THaHelicity+;
+//#pragma link C++ class THaHelicity+;
 #pragma link C++ class THaG0HelicityReader+;
 #pragma link C++ class THaG0Helicity+;
+#pragma link C++ class THaPhotoReaction+;
+#pragma link C++ class THaSAProtonEP+;
 
 #ifdef ONLINE_ET
 #pragma link C++ class THaOnlRun+;

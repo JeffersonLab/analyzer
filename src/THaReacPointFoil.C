@@ -53,13 +53,7 @@ Int_t THaReacPointFoil::DefineVariables( EMode mode )
   if( mode == kDefine && fIsSetup ) return kOK;
   fIsSetup = ( mode == kDefine );
 
-  RVarDef vars[] = {
-    { "x",  "vertex x-position", "fVertex.fX" },
-    { "y",  "vertex y-position", "fVertex.fY" },
-    { "z",  "vertex z-position", "fVertex.fZ" },
-    { 0 }
-  };
-  return DefineVarsFromList( vars, mode );
+  return DefineVarsFromList( THaVertexModule::GetRVarDef(), mode );
 }
 
 //_____________________________________________________________________________

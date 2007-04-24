@@ -122,7 +122,7 @@ protected:
    THaCodaFile *fcodafile;
    std::vector<Int_t> onlmap;
    THaScalerDB *database; 
-   std::multimap<std::string, Int_t> normmap;
+   std::multimap<std::string, int> normmap;
    Int_t *rawdata;
    Bool_t coda_open;
    Int_t header, crate, evstr_type;
@@ -132,14 +132,14 @@ protected:
    Bool_t did_init, new_load, one_load, use_clock;
    Int_t *normslot;
    Double_t clockrate;
-   Int_t InitData(std::string bankgroup, const Bdate& bd);
+   Int_t InitData(const std::string& bankgroup, const Bdate& bd);
    Int_t CheckInit();
    void Clear(Option_t* opt="");
    void ClearAll();
    void LoadPrevious();
    Int_t ExtractRaw(const Int_t* data, int len=0);
    void DumpRaw(Int_t flag=0);
-   UInt_t header_str_to_base16(std::string header);
+   UInt_t header_str_to_base16(const std::string& header);
    Double_t calib_u1,calib_u3,calib_u10,calib_d1,calib_d3,calib_d10;
    Double_t off_u1,off_u3,off_u10,off_d1,off_d3,off_d10;
    Double_t GetTimeDiff(Int_t helicity);

@@ -35,8 +35,8 @@ public:
    THaString GetVarY() const { return fVarY; };
    THaString GetCutStr() const  { return fScut; };
    Int_t CheckCut(Int_t index=0);
-   Bool_t HasCut() const { return (fScut != ""); };
-   Bool_t IsValid() const { return (fProc == kTRUE); };
+   Bool_t HasCut() const { return !fScut.empty(); };
+   Bool_t IsValid() const { return fProc; };
 // Must Init() once at beginning after various Set()'s
    Int_t Init();
 // Must ReAttach() if pointers to global variables reset
@@ -128,9 +128,17 @@ void THaVhist::SetCut(THaString cut)
 inline 
 void THaVhist::SetCut(THaVform *cut)
 {
+  //FIXME: the following won't work with ROOT <3.10 because of buggy TFormula copy ctor
+  //  fCut = new THaVform(*cut);
   fCut = new THaVform("cut", cut->GetName(), cut->GetTitle());
   *fCut = *cut;
 };
+
+inline
+Int_t THaVhist::CheckCut(Int_t index) { 
+  // Check the cut.  Returns !=0 if cut condition passed.
+  return (fCut) ? Int_t(fCut->GetData(index)) : 1;
+}
 
 #endif
 

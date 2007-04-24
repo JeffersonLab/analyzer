@@ -7,74 +7,52 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-#define THAOMAX 4096
 #include "TObject.h"
 #include "THaString.h"
-#include "TTree.h"
 #include <vector>
 #include <map>
-#include <iterator>
-#include <iostream>
 #include <string> 
 
-class THaFormula;
 class THaVar;
 class TH1F;
 class TH2F;
-class THaCut;
 class THaVform;
 class THaVhist;
 class THaScalerGroup;
 class THaEvData;
+class TTree;
 
 class THaOdata {
 // Utility class used by THaOutput to store arrays 
 // up to size 'nsize' for tree output.
 public:
-  THaOdata(int n=THAOMAX) : nsize(n) { data = new Double_t[n]; Clear(); }
-  THaOdata(const THaOdata& other) : nsize(other.nsize) {
-    data = new Double_t[nsize]; ndata = other.ndata;
-    memcpy( data, other.data, nsize*sizeof(Double_t));
-  }
-  THaOdata& operator=(const THaOdata& rhs) { 
-    if( this != &rhs ) {
-      if( nsize < rhs.nsize ) {
-	nsize = rhs.nsize; delete [] data; data = new Double_t[nsize];
-      }
-      ndata = rhs.ndata; memcpy( data, rhs.data, nsize*sizeof(Double_t));
-    }
-    return *this;   
-  }
+  THaOdata(int n=1) : tree(NULL), ndata(0), nsize(n) { data = new Double_t[n]; }
+  THaOdata(const THaOdata& other);
+  THaOdata& operator=(const THaOdata& rhs);
   virtual ~THaOdata() { delete [] data; };
-  void AddBranches(TTree *T, std::string name) {
-     std::string sname = "Ndata." + name;
-     std::string leaf = sname;
-     T->Branch(sname.c_str(),&ndata,(leaf+"/I").c_str());
-     leaf = "data["+leaf+"]/D";
-     T->Branch(name.c_str(),data,leaf.c_str());
-  }
-  void Clear( Option_t* opt="" ) {
-    ndata = 0; memset(data, 0, nsize*sizeof(Double_t)); 
-  }
-  Int_t Fill(Double_t dat) { return Fill(0, dat); };
+  void AddBranches(TTree* T, std::string name);
+  void Clear( Option_t* opt="" ) { ndata = 0; }  
+  Bool_t Resize(Int_t i);
   Int_t Fill(Int_t i, Double_t dat) {
-    if (i >= 0 && i < nsize-1) {
-      if (i >= ndata) ndata = i+1;
-      data[i] = dat;
-      return 1;
-    }
-    return 0;
+    if( i<0 || (i>=nsize && Resize(i)) ) return 0;
+    if( i>=ndata ) ndata = i+1;
+    data[i] = dat;
+    return 1;
   }
   Int_t Fill(Int_t n, const Double_t* array) {
-    if( n<0 || n>nsize ) return 0;
+    if( n<=0 || (n>nsize && Resize(n-1)) ) return 0;
     memcpy( data, array, n*sizeof(Double_t));
     ndata = n;
     return 1;
   }
+  Int_t Fill(Double_t dat) { return Fill(0, dat); };
   Double_t Get(Int_t index=0) {
-    if( index<0 || index>nsize ) return 0;
+    if( index<0 || index>=ndata ) return 0;
     return data[index];
   }
+    
+  TTree*      tree;    // Tree that we belong to
+  std::string name;    // Name of the tree branch for the data
   Int_t       ndata;   // Number of array elements
   Int_t       nsize;   // Maximum number of elements
   Double_t*   data;    // [ndata] Array data
@@ -117,8 +95,8 @@ protected:
   virtual THaString StripBracket(THaString& var) const; 
   std::vector<THaString> reQuote(std::vector<THaString> input) const;
   THaString CleanEpicsName(THaString var) const;
-  void BuildList(std::vector<THaString > vdata);
-  void AddScaler(THaString name, THaString bank, 
+  void BuildList(const std::vector<THaString>& vdata);
+  void AddScaler(const THaString& name, const THaString& bank, 
          Int_t helicity = 0, Int_t slot=-1, Int_t chan=-1); 
   void DefScaler(Int_t hel = 0);
   void Print() const;

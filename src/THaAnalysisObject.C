@@ -381,6 +381,9 @@ THaAnalysisObject::EStatus THaAnalysisObject::Init( const TDatime& date )
   // 
   // This implementation will change once the real database is  available.
 
+  if( IsZombie() )
+    return fStatus = kNotinit;
+
   fInitDate = date;
   
   Int_t status = kOK;
@@ -417,6 +420,8 @@ THaAnalysisObject::EStatus THaAnalysisObject::Init( const TDatime& date )
 
   // Define this object's variables.
   status = DefineVariables(kDefine);
+
+  Clear();
   goto exit;
 
  err:

@@ -9,6 +9,8 @@
 
 #include "TVector3.h"
 
+struct RVarDef;
+
 class THaVertexModule {
   
 public:
@@ -18,6 +20,7 @@ public:
   virtual const TVector3&   GetVertexError() const { return fVertexError; }
   virtual       Bool_t      HasVertex()      const { return fVertexOK; }
   virtual       void        VertexClear();
+  static  const RVarDef*    GetRVarDef();
 
 protected:
 
