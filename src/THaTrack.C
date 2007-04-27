@@ -28,18 +28,22 @@ THaTrack::~THaTrack()
 //_____________________________________________________________________________
 void THaTrack::Clear( const Option_t* opt )
 {
-  // If *opt == 'F' ("Full") then reset all track quantities, else just
-  // delete memory managed by this track.
-  // (We want this behavior so we can Clear("C") the track TClonesArray
-  // without the overhead of clearing everything.)
   // If *opt == 'P' ("Partial"), clear everything except the focal plane 
   // coordinates (used by constructor).
+  // If *opt == 'F' ("Full") or empty then reset all track quantities.
+  // If *opt == 'C', do a Full clear and also deallocate any memory that
+  // is reallocated for every event
+  
+  //FIXME: too complicated. Do we really need to reallocate the trackID?
 
   if( opt ) {
-    if( *opt == 'F' ) {
+    switch( *opt ) {
+    case 'C':
+      delete fID; fID = NULL;
+    case 'F':
+    case '\0':
       fTheta = fPhi = fX = fY = kBig;
-    }
-    if( *opt == 'F' || *opt == 'P' ) {
+    case 'P':
       fP = fDp = kBig;
       fRX = fRY = fRTheta = fRPhi = kBig;
       fTX = fTY = fTTheta = fTPhi = kBig;
@@ -50,9 +54,11 @@ void THaTrack::Clear( const Option_t* opt )
       fVertex.SetXYZ( kBig, kBig, kBig );
       fVertexError.SetXYZ( kBig, kBig, kBig );
       fChi2 = kBig; fNDoF = 0;
+      break;
+    default:
+      break;
     }
   }
-  delete fID; fID = NULL;
 }
 
 //_____________________________________________________________________________
