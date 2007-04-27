@@ -93,12 +93,15 @@ void THaUsrstrutils::getflagpos_instring(const char *constr, const char *s,
   return;
 }
   
+void THaUsrstrutils::string_from_evbuffer(const int *evbuffer, int nlen )
+{
 // Routine string_from_evbuffer loads the configstr from the event buffer.
 // It has the same strengths and weaknesses as the DAQ code,
 // hence the interpretation should be the same.
+//
+// nlen is the length of the string data (from CODA) in longwords (4 bytes)
 
-void THaUsrstrutils::string_from_evbuffer(const int *evbuffer, int nlen )
-{
+//old code:
 //       union cidata {
 //          int ibuff[MAX];
 //          char cbuff[MAX];
@@ -114,13 +117,18 @@ void THaUsrstrutils::string_from_evbuffer(const int *evbuffer, int nlen )
 // If evbuffer always terminated (as implied above):
 //     string strbuff = (const char*)evbuffer;  
 // but since we can't be sure:
-     int  bufsize = TMath::Min(nlen,MAX);
-     char* ctemp = new char[bufsize+1];
-     memcpy(ctemp,evbuffer,bufsize);
-     ctemp[bufsize] = 0;  // terminate C-string for sure
-     TString strbuff = ctemp;
-     delete [] ctemp;
-     Ssiz_t pos1, ext;
+
+  size_t bufsize = sizeof(int)*nlen;
+  char* ctemp = new char[bufsize+1];
+  if( !ctemp ) {
+    configstr = "";
+    return;
+  }
+  strncpy( ctemp, reinterpret_cast<const char*>(evbuffer), bufsize );
+  ctemp[bufsize] = 0;  // terminate C-string for sure
+  TString strbuff = ctemp;
+  delete [] ctemp;
+  Ssiz_t pos1, ext;
      // Note: These expressions designed to provide backwards-compatibility.
      // They will skip lines that have text before the comment char ";".
      TRegexp re1("\n[^;]*\n[^;]*");
