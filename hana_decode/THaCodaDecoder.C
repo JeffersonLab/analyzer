@@ -251,19 +251,17 @@ int THaCodaDecoder::prescale_decode(const int* evbuffer) {
 // To cause THaEvData select one or the other,
 // use SetOrigPS() method.
 
-   const int MAX = 5000;
-   const int HEAD_OFF1 = 2;
-   const int HEAD_OFF2 = 4;
-   int j,trig,data[MAX];
-   int type = evbuffer[1]>>16;
-// TS registers -->
-   if (/* fgTrigSupPS && */ type == TS_PRESCALE_EVTYPE) {
-     // this is more authoritative
-     for (j = 0; j < 8; j++) {
-      int lenbuf = evbuffer[0]+1;
+  const int HEAD_OFF1 = 2;
+  const int HEAD_OFF2 = 4;
+  int type = evbuffer[1]>>16;
+  int len  = evbuffer[0]+1; // in longwords (4 bytes)
+  // TS registers -->
+  if (/* fgTrigSupPS && */ type == TS_PRESCALE_EVTYPE) {
+    // this is more authoritative
+    for (int j = 0; j < 8; j++) {
       int k = j + HEAD_OFF1;
       int ps = 0;
-      if (k < lenbuf) {
+      if (k < len) {
 	ps = evbuffer[k];
 	if (psfact[j]!=0 && ps != psfact[j]) {
 	  Warning("prescale_decode","Mismatch in prescale factor: Trig %d  oldps %d   TS_PRESCALE %d. Setting to TS_PRESCALE",
@@ -272,38 +270,34 @@ int THaCodaDecoder::prescale_decode(const int* evbuffer) {
       }
       psfact[j]=ps;
       if (DEBUG) cout << "%% TS psfact "<<dec<<j<<"  "<<psfact[j]<<endl;
-     }        
-   } 
-// "prescale.dat" -->
-   const char* pstr[] = { "ps1", "ps2", "ps3", "ps4",
-			"ps5", "ps6", "ps7", "ps8",
-		       "ps9", "ps10", "ps11", "ps12" };
-   if ( /* !fgTrigSupPS && */ type == PRESCALE_EVTYPE) {  
-     int len = sizeof(int)*(evbuffer[0]+1);  
-     int nlen = (len < MAX) ? len : MAX;   
-     for (j=HEAD_OFF2; j<nlen; j++) data[j-HEAD_OFF2] = evbuffer[j];  
-     THaUsrstrutils sut;
-     sut.string_from_evbuffer(data);
-     for(trig=0; trig<MAX_PSFACT; trig++) {
-        int ps =  sut.getint(pstr[trig]);
-        int psmax = 65536; // 2^16 for trig > 3
-	if (trig < 4) psmax = 16777216;  // 2^24 for 1st 4 trigs
-        if (trig > 7) ps = 1;  // cannot prescale trig 9-12
-        ps = ps % psmax;
-	if (psfact[trig] && ps != psfact[trig]) {
-	  Warning("prescale_decode","Mismatch in prescale factor: Trig %d  oldps %d   prescale.dat %d, Keeping old value",
-		  trig+1,psfact[trig],ps);
-	}
-	// are they setup? less authoritative side
-	if (ps==0) ps=psmax;
-	if (psfact[trig]==0) {
-	  psfact[trig] = ps;
-	}
-	if (DEBUG) cout << "** psfact[ "<<trig+1<< " ] = "<<psfact[trig]<<endl;
-     }
-   }
-// Ok in any case
-   return HED_OK;  
+    }        
+  } 
+  // "prescale.dat" -->
+  static const char* const pstr[] = { "ps1", "ps2", "ps3", "ps4",
+				      "ps5", "ps6", "ps7", "ps8",
+				      "ps9", "ps10", "ps11", "ps12" };
+  if ( /* !fgTrigSupPS && */ type == PRESCALE_EVTYPE) {  
+    if( len <= HEAD_OFF2 )
+      return HED_ERR;  //oops, event too short?
+    THaUsrstrutils sut;
+    sut.string_from_evbuffer(evbuffer+HEAD_OFF2, len-HEAD_OFF2);
+    for(int trig=0; trig<MAX_PSFACT; trig++) {
+      int ps =  sut.getint(pstr[trig]);
+      int psmax = 65536; // 2^16 for trig > 3
+      if (trig < 4) psmax = 16777216;  // 2^24 for 1st 4 trigs
+      if (trig > 7) ps = 1;  // cannot prescale trig 9-12
+      ps = ps % psmax;
+      if (psfact[trig]==0)
+	psfact[trig] = ps;
+      else if (ps != psfact[trig]) {
+	Warning("prescale_decode","Mismatch in prescale factor: Trig %d  oldps %d   prescale.dat %d, Keeping old value",
+		trig+1,psfact[trig],ps);
+      }
+      if (DEBUG) cout << "** psfact[ "<<trig+1<< " ] = "<<psfact[trig]<<endl;
+    }
+  }
+  // Ok in any case
+  return HED_OK;  
 }
 
 int THaCodaDecoder::scaler_event_decode(const int* evbuffer, THaCrateMap* map) 
