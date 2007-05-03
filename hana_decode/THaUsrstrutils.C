@@ -1,6 +1,7 @@
 /////////////////////////////////////////////////////////////////////
 //
 // R. Michaels, March 2000
+// Updated string_from_buffer, May 2007/
 // THaUsrstrutils = USeR STRing UTILitieS.
 // The code below is what is used by DAQ to interpret strings
 // like prescale factors 
@@ -10,10 +11,14 @@
 //
 /////////////////////////////////////////////////////////////////////
 
+#define COMMENT_CHAR ';'
+
 #include "THaUsrstrutils.h"
 #include "TMath.h"
 #include "TRegexp.h"
 #include <cctype>
+#include <string>
+#include <vector>
 
 using namespace std;
 
@@ -100,23 +105,9 @@ void THaUsrstrutils::string_from_evbuffer(const int *evbuffer, int nlen )
 // hence the interpretation should be the same.
 //
 // nlen is the length of the string data (from CODA) in longwords (4 bytes)
-
-//old code:
-//       union cidata {
-//          int ibuff[MAX];
-//          char cbuff[MAX];
-//       } evbuff; 
-//       int nmax;
-//       nmax = (max_size_string < MAX) ? max_size_string : MAX;
-//       for (int j=0; j < nmax; j++) evbuff.ibuff[j] = evbuffer[j];
-//       string strbuff;
-//       char *ctmp = new char[sizeof(evbuff.cbuff)+1];
-//       memcpy(ctmp, evbuff.cbuff, sizeof(evbuff.cbuff));
-//       strbuff = ctemp;
 //
-// If evbuffer always terminated (as implied above):
-//     string strbuff = (const char*)evbuffer;  
-// but since we can't be sure:
+// R. Michaels, updated to make the algorithm closely resemble the
+//              usrstrutils.c used by trigger supervisor.
 
   size_t bufsize = sizeof(int)*nlen;
   char* ctemp = new char[bufsize+1];
@@ -126,28 +117,70 @@ void THaUsrstrutils::string_from_evbuffer(const int *evbuffer, int nlen )
   }
   strncpy( ctemp, reinterpret_cast<const char*>(evbuffer), bufsize );
   ctemp[bufsize] = 0;  // terminate C-string for sure
-  TString strbuff = ctemp;
+  string strbuff = ctemp;
+  string strdynamic = strbuff;
   delete [] ctemp;
-  Ssiz_t pos1, ext;
-     // Note: These expressions designed to provide backwards-compatibility.
-     // They will skip lines that have text before the comment char ";".
-     TRegexp re1("\n[^;]*\n[^;]*");
-     TRegexp re2("^[^;]*\n[^;]*");
-     TRegexp re3("\n[^;]*$");
-     TRegexp re4("^[^;]*$");
-     if( (pos1 = re1.Index(strbuff,&ext)) != kNPOS ||
-	 (pos1 = re2.Index(strbuff,&ext)) != kNPOS || 
-	 (pos1 = re3.Index(strbuff,&ext)) != kNPOS ||
-	 (pos1 = re4.Index(strbuff,&ext)) != kNPOS ) {
-       strbuff = strbuff(pos1,ext); //note: may contain a leading \n, stripped below
-       const char* p = strbuff.Data();
-       while(isspace(*p)) p++;   //Removes leading \n's too
-       configstr = p;
-       if (DEBUG) cout << "configstr = \n"<<configstr<<endl;
-     } else {
-       configstr = "";
+  string::size_type pos,pos1,pos2;
+  vector<string> strlines;
+  string sline,stemp;
+  
+  if (DEBUG >= 1) {
+    cout << "Check THaUsrstrutils::string_from_buffer "<<endl;
+    cout << "strbuff length "<<strbuff.length()<<endl;
+    cout << "strbuff == \n"<<strbuff<<endl<<endl;
+  }
+
+// In order to make this as nearly identical to the online VME code,
+// we first unpack the buffer into lines seperated by '\n'.  
+// This is like the reading of the prescale.dat file done
+// by fgets(s,255,fd) in usrstrutils.c
+  pos=0;  pos1=0;  pos2=0;
+  while (pos < strbuff.length()) {
+     pos1 = strdynamic.find_first_of("\n",0);
+     if (pos1 != string::npos) {
+       pos2 = pos1;
+     } else {   // It may happen that the last line has no '\n'
+       pos2 = strdynamic.length(); 
+     } 
+     sline = strdynamic.substr(0,pos2);
+     strlines.push_back(sline);
+     pos += pos2 + 1;
+     if (DEBUG >= 2) {
+         cout << "pos = "<< pos << "   pos1 "<<pos1<<"  pos2 "<<pos2<<"  sline =  "<<sline<<"\n dynamic str  "<<strdynamic<<"  len "<<strdynamic.length()<<endl;
      }
-     return;
+     if (pos < strbuff.length()) {
+        stemp = strdynamic.substr(pos2+1,pos2+strdynamic.length());
+        strdynamic = stemp;
+     } 
+   }
+
+// Next we loop over the lines of the 'prescale.dat file' and 
+// use the exact same code as in usrstrutils.c
+   char s[256], *flag_line=0;
+   if (strlines.size() == 0) {
+      configstr="";
+      return;
+   }
+   for (int i=0; i<(Int_t)strlines.size(); i++) {
+     strcpy(s,strlines[i].c_str());
+     if (DEBUG >= 1) printf("prescale line[%d]  =  %s \n",i,s);
+     char *arg;
+     arg = strchr(s,COMMENT_CHAR);
+     if(arg) *arg = '\0';       /* Blow away comments */
+     arg = s;			/* Skip whitespace */
+     while(*arg && isspace(*arg)){
+	arg++;
+     }
+     if(*arg) {
+	flag_line = arg;
+	break;
+     }
+   }
+   if (DEBUG >= 1) printf("flag_line = %s \n",flag_line);
+
+   configstr = flag_line;
+
+   return;
 }
       
 // This routine reads a file to load file_configustr.
