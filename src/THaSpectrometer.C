@@ -22,6 +22,7 @@
 #include "THaPIDinfo.h"
 #include "THaTrack.h"
 #include "TClass.h"
+#include "TList.h"
 #include "TMath.h"
 #include "VarDef.h"
 #include <cmath>

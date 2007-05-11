@@ -11,6 +11,7 @@
 #include "THaVDCPlane.h"
 #include "THaVDCUVTrack.h"
 #include "THaTrack.h"
+#include "TMath.h"
 #include "TClass.h"
 
 #include <iostream>
@@ -423,8 +424,8 @@ void THaVDCCluster::FitSimpleTrackWgt()
     m  =   1/G;
     b  = - F/G;
 
-    sigmaM = m * m * sqrt( sigmaG2 );
-    sigmaB = sqrt( sigmaF2/(G*G) + F*F/(G*G*G*G)*sigmaG2 - 2*F/(G*G*G)*sigmaFG);
+    sigmaM = m * m * TMath::Sqrt( sigmaG2 );
+    sigmaB = TMath::Sqrt( sigmaF2/(G*G) + F*F/(G*G*G*G)*sigmaG2 - 2*F/(G*G*G)*sigmaFG);
     
     // calculate the best possible chi2 for the track given this slope and intercept
     Double_t chi2 = 0.;

@@ -13,6 +13,7 @@
 #include "THaEvData.h"
 #include "THaDB.h"
 #include "TH1F.h"
+#include "TMath.h"
 #include <iostream>
 
 using namespace std;

@@ -8,6 +8,7 @@
 
 #include "THaSpectrometerDetector.h"
 #include "THaTrack.h"
+#include "TMath.h"
 
 ClassImp(THaSpectrometerDetector)
 
