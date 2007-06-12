@@ -224,21 +224,21 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
   if( sdet )
     fOrigin += sdet->GetOrigin();
 
+  // finally, find the timing-offset to apply on an event-by-event basis
+  THaApparatus* app = GetApparatus();
+  if (!app) {
+    Error(Here(here),"Subdet->Det->App chain is incorrect!");
+    return kInitError;
+  }
+  const char* nm = "trg"; // inside an apparatus, the apparatus name is assumed
+  fglTrg = dynamic_cast<THaTriggerTime*>(app->GetDetector(nm));
+  if (!fglTrg)
+    Warning(Here(here),"Expected %s to be prepared before VDCs. "
+	    "Event-dependent time offsets NOT used!!",nm);
+  
   fIsInit = true;
   fclose(file);
 
-  // finally, find the timing-offset to apply on an event-by-event basis
-  // How do I find my way to the parent apparatus?
-  while ( sdet && dynamic_cast<THaSubDetector*>(sdet) ) 
-    sdet = static_cast<THaSubDetector*>(sdet)->GetDetector();
-  // so, sdet should be a 'THADetector' now, and we can find the apparatus
-  THaApparatus* app = (sdet ? static_cast<THaDetector*>(sdet)->GetApparatus() : 0);
-  if (!app) Error(Here(here),"Subdet->Det->App chain is incorrect!");
-
-  TString nm = "trg";  // inside an apparatus, the apparatus name is assumed
-  fglTrg = dynamic_cast<THaTriggerTime*>(app->GetDetector(nm.Data()));
-  if (!fglTrg) Warning(Here(here),"Expected %s to be prepared before VDCs. Event-dependent time offsets NOT used!!",nm.Data());
-  
   return kOK;
 }
 
