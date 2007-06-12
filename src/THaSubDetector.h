@@ -15,14 +15,17 @@
 #include "THaDetectorBase.h"
 #include <TRef.h>
 
+class THaApparatus;
+
 class THaSubDetector : public THaDetectorBase {
   
 public:
   virtual ~THaSubDetector();
   
-  THaDetectorBase*  GetDetector() const            {
+  THaDetectorBase*  GetDetector() const {
     return static_cast<THaDetectorBase*>(fDetector.GetObject());
   }
+  THaApparatus*    GetApparatus() const;
   
   virtual void      SetDetector( THaDetectorBase* );
 

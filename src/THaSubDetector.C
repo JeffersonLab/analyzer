@@ -7,6 +7,7 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaSubDetector.h"
+#include "THaDetector.h"
 #include "TString.h"
 //#include "TError.h"
 
@@ -79,4 +80,18 @@ void THaSubDetector::MakePrefix()
 	     "Fix your code!" );
 
   THaDetectorBase::MakePrefix( basename.Data() );
+}
+
+//_____________________________________________________________________________
+THaApparatus* THaSubDetector::GetApparatus() const
+{
+  // Return parent apparatus (parent of parent detector)
+
+  THaDetectorBase* parent = GetDetector();
+  while( parent && dynamic_cast<THaSubDetector*>(parent) )
+    parent = static_cast<THaSubDetector*>(parent)->GetDetector();
+  THaDetector* det = dynamic_cast<THaDetector*>(parent);
+  if( det == NULL )
+    return NULL;
+  return det->GetApparatus();
 }
