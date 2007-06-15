@@ -68,6 +68,8 @@ public:
   static  Int_t   LoadDBvalue( FILE* file, const TDatime& date, 
 			       const char* tag, Double_t& value );
   static  Int_t   LoadDBvalue( FILE* file, const TDatime& date, 
+			       const char* tag, Int_t& value );
+  static  Int_t   LoadDBvalue( FILE* file, const TDatime& date, 
 			       const char* tag, std::string& text );
   static  Int_t   LoadDBvalue( FILE* file, const TDatime& date, 
 			       const char* tag, TString& text );

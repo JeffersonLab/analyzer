@@ -786,7 +786,7 @@ static bool IsTag( const char* buf )
 Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 				 const TagDef* tags, const char* prefix )
 {
-  // Load a list of parameters from the run database according to 
+  // Load a list of parameters from the database file 'f' according to 
   // the contents of the 'tags' structure (see VarDef.h).
 
   if( !tags ) return -1;
@@ -799,11 +799,44 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
   while( item->name ) {
     if( item->var ) {
       tag[0] = 0; strncat(tag,prefix,LEN-1); strncat(tag,item->name,LEN-np-1);
-      Int_t ret=0;
-      switch ( item->type ) {
-      case kDouble:
-	ret = LoadDBvalue( f, date, tag, *((Double_t*)item->var)); break;
-      default:
+      Int_t ret;
+      if( item->type >= kDouble && item->type <= kFloat ) {
+	Double_t dval = 0.0;
+	ret = LoadDBvalue( f, date, tag, dval );
+	if( ret == 0 ) {
+	  if( item->type == kDouble ) 
+	    *((Double_t*)item->var) = dval;
+	  else
+	    *((Float_t*)item->var) = dval;
+	}
+      } else if( item->type >= kInt && item->type <= kByte ) {
+	Int_t ival;
+	ret = LoadDBvalue( f, date, tag, ival );
+	if( ret == 0 ) {
+	  switch( item->type ) {
+	  case kInt:
+	    *((Int_t*)item->var) = ival;
+	    break;
+	  case kUInt:
+	    *((UInt_t*)item->var) = ival;
+	    break;
+	  case kShort:
+	    *((Short_t*)item->var) = ival;
+	    break;
+	  case kUShort:
+	    *((UShort_t*)item->var) = ival;
+	    break;
+	  case kChar:
+	    *((Char_t*)item->var) = ival;
+	    break;
+	  case kByte:
+	    *((Byte_t*)item->var) = ival;
+	    break;
+	  }
+	}
+      } else if( item->type == kString ) {
+	ret = LoadDBvalue( f, date, tag, *((TString*)item->var) );
+      } else {
 	cerr << "THaAnalysisObject::LoadDB  "
 	     << "READING of VarType " << item->type << " for item " << tag
 	     << " (see VarType.h) not implemented at this point !!! \n"
@@ -876,6 +909,21 @@ Int_t THaAnalysisObject::LoadDBvalue( FILE* file, const TDatime& date,
   Int_t err = LoadDBvalue( file, date, tag, text );
   if( err == 0 )
     value = atof(text.c_str());
+  return err;
+}
+
+//_____________________________________________________________________________
+Int_t THaAnalysisObject::LoadDBvalue( FILE* file, const TDatime& date, 
+				      const char* tag, Int_t& value )
+{
+  // Locate tag in database, convert the text found to integer
+  // and return result in 'value'.
+  // This is a convenience function.
+
+  string text;
+  Int_t err = LoadDBvalue( file, date, tag, text );
+  if( err == 0 )
+    value = atoi(text.c_str());
   return err;
 }
 
