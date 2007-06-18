@@ -14,6 +14,7 @@
 #include "TMath.h"
 #include "TVector3.h"
 #include "VarDef.h"
+#include "VarType.h"
 #include <iostream>
 
 using namespace std;
@@ -102,10 +103,9 @@ Int_t THaElossCorrection::ReadRunDatabase( const TDatime& date )
   FILE* f = OpenRunDBFile( date );
   if( !f ) return kFileError;
 
-  Double_t z = double(fZ);
   TagDef tags[] = {
     { "M",           &fM, 1 },
-    { "Z",           &z },
+    { "Z",           &fZ, 0, 0, kInt },
     { "Z_med",       &fZmed, 3 },
     { "A_med",       &fAmed, 4 },
     { "density",     &fDensity, 5 },
@@ -142,8 +142,6 @@ Int_t THaElossCorrection::ReadRunDatabase( const TDatime& date )
       Error( here, "Error reading run database. Module not initialized" );
     return kInitError;
   }
-
-  fZ = TMath::Sign(int(TMath::Abs(z)+0.5),int(z));
 
   return kOK;
 }
