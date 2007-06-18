@@ -73,6 +73,10 @@ public:
 			       const char* tag, std::string& text );
   static  Int_t   LoadDBvalue( FILE* file, const TDatime& date, 
 			       const char* tag, TString& text );
+  static  Int_t   LoadDBarray( FILE* file, const TDatime& date, 
+			       const char* tag, std::vector<double>& values );
+  static  Int_t   LoadDBarray( FILE* file, const TDatime& date, 
+  			       const char* tag, std::vector<int>& values );
   static  Int_t   LoadDB( FILE* file, const TDatime& date, 
 			  const TagDef* tags, const char* prefix="" );
   static  Int_t   SeekDBdate( FILE* file, const TDatime& date,
@@ -153,12 +157,6 @@ protected:
   static TList* fgModules;    // List of all currently existing Analysis Modules
 
 private:
-  // Support functions for reading database files
-  static Int_t IsDBdate( const std::string& line, TDatime& date, 
-			 bool warn=true );
-  static Int_t IsDBtag ( const std::string& line, const char* tag, 
-			 std::string& text );
-
   // Prevent default construction, copying, assignment
   THaAnalysisObject( const THaAnalysisObject& );
   THaAnalysisObject& operator=( const THaAnalysisObject& );

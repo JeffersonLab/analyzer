@@ -15,7 +15,6 @@
 
 #include "THaAnalysisObject.h"
 #include "THaVarList.h"
-#include "THaString.h"
 #include "TClass.h"
 #include "TDatime.h"
 #include "TROOT.h"
@@ -33,6 +32,13 @@
 #include <cstdlib>
 #include <cstdio>
 #include <string>
+#ifdef HAS_SSTREAM
+ #include <sstream>
+ #define ISSTREAM istringstream
+#else
+ #include <strstream>
+ #define ISSTREAM istrstream
+#endif
 
 using namespace std;
 typedef string::size_type ssiz_t;
@@ -712,9 +718,10 @@ void THaAnalysisObject::SphToGeo( Double_t  th_sph, Double_t  ph_sph,
 }
 
 //---------- Database utility functions ---------------------------------------
+
+// Local helper functions (could be in an anonymous namespace)
 //_____________________________________________________________________________
-Int_t THaAnalysisObject::IsDBdate( const string& line, TDatime& date,
-				   bool warn )
+static Int_t IsDBdate( const string& line, TDatime& date, bool warn = true )
 {
   // Check if 'line' contains a valid database time stamp. If so, 
   // parse the line, set 'date' to the extracted time stamp, and return 1.
@@ -738,16 +745,41 @@ Int_t THaAnalysisObject::IsDBdate( const string& line, TDatime& date,
 }
 
 //_____________________________________________________________________________
-Int_t THaAnalysisObject::IsDBtag( const string& line, const char* tag,
-				  string& text )
+static Int_t TrimDBline( const string& line, string& value, 
+			 bool leading = false )
+{
+  // Trim trailing whitespace from 'line' and put result in 'value'
+  // If 'leading' is true, also trim leading whitespace
+  // If line does not end with '\', return 1.
+  // If line ends with '\', strip the '\' and return 2.
+
+  value.erase();
+  ssiz_t pos1 = (leading) ? line.find_first_not_of(" \t") : 0;
+  if( pos1 == string::npos ) return 1;
+  ssiz_t pos2 = line.find_last_not_of(" \t");
+  // pos2 >= pos1 guaranteed here
+  value = line.substr(pos1,pos2-pos1+1);
+  if( line[pos2] == '\\' ) {
+    value.erase(pos2-pos1);
+    return 2;
+  }
+  return 1;
+}
+
+//_____________________________________________________________________________
+static Int_t IsDBtag( const string& line, const char* tag, string& text )
 {
   // Check if 'line' is of the form "tag = value" and, if so, whether the tag 
-  // equals 'tag'. If there is no '=', then return zero;
-  // If there is a '=', but the left-hand side doesn't match 'tag',
-  // or if there is NO text after the '=' (obviously a bad database entry), 
-  // then return -1. 
-  // If tag found, parse the line, set 'text' to the text after the "=", 
-  // and return +1. Tags are NOT case sensitive.
+  // equals 'tag'. Tags are case sensitive.
+  // - If there is no '=', then return zero.
+  // - If there is a '=', but the left-hand side doesn't match 'tag',
+  //   then return -1. 
+  // - If there is NO text after the '=' (obviously a bad database entry), 
+  //   then return -2.
+  // - If tag found, parse the line, set 'text' to the text after the "=", 
+  //   and return +1.
+  // - If 'text' ends with a '\' (continuation mark), then strip the '\',
+  //   set 'text' to the remaining text after the '=', and return +2
   // 'text' is unchanged unless a valid tag is found.
 
   ssiz_t pos = line.find('=');
@@ -758,15 +790,12 @@ Int_t THaAnalysisObject::IsDBtag( const string& line, const char* tag,
   ssiz_t pos2 = line.substr(0,pos).find_last_not_of(" \t");
   if( pos2 == string::npos ) return -1;
   // Ignore case of the tag
-  THaString t1(line.substr(pos1,pos2-pos1+1));
-  if( t1.CmpNoCase(tag) != 0 ) return -1;
+  string t1(line.substr(pos1,pos2-pos1+1));
+  if( t1 != tag ) return -1;
   // Extract the text, discarding any whitespace at beginning and end
   string rhs = line.substr(pos+1);
-  pos1 = rhs.find_first_not_of(" \t");
-  if( pos1 == string::npos ) return -1;
-  pos2 = rhs.find_last_not_of(" \t");
-  text = rhs.substr(pos1,pos2-pos1+1);
-  return 1;
+  if( rhs.find_first_not_of(" \t") == string::npos ) return -2;
+  return TrimDBline( rhs, text, true );
 }
 
 //_____________________________________________________________________________
@@ -780,6 +809,153 @@ static bool IsTag( const char* buf )
   if( *p != '[' ) return false;
   while( *p && *p != ']' ) p++;
   return ( *p == ']' );
+}
+
+//_____________________________________________________________________________
+Int_t THaAnalysisObject::LoadDBvalue( FILE* file, const TDatime& date, 
+				      const char* tag, string& text )
+{
+  // Load a data value tagged with 'tag' from the database 'file'.
+  // Lines before the first valid time stamp or starting with "#" are ignored.
+  // If 'tag' is found, then the most recent value seen (based on time stamps
+  // and position within the file) is returned in 'text'.
+  // Values with time stamps later than 'date' are ignored.
+  // This allows incremental organization of the database where
+  // only changes are recorded with time stamps.
+  // Return 0 if success, >0 if tag not found, <0 if file error.
+
+  if( !file || !tag ) return 2;
+  const int LEN = 256;
+  char buf[LEN];
+  TDatime tagdate(950101,0), prevdate(950101,0);
+
+  errno = 0;
+  rewind(file);
+
+  bool found = false, ignore = false, multi_line = false, not_prev_cont = true;
+  while( fgets( buf, LEN, file) != NULL) {
+    size_t len = strlen(buf);
+    if( len < 2 || ( !multi_line && buf[0] == '#') ) {
+      not_prev_cont = true;
+      multi_line = false;
+      continue;
+    }
+    if( buf[len-1] == '\n') buf[len-1] = 0; //delete trailing newline
+    string line(buf), value;
+    Int_t status = TrimDBline( line, value ), cur_status = status;
+    if( !ignore && ( multi_line || ( not_prev_cont && 
+		 (status = IsDBtag( line, tag, value )) != 0 ) )) {
+      if( status > 0 ) {
+	if( multi_line ) {   // previous line was a match and was continued
+	  text.append(value);
+	} else {
+	  found = true;
+	  prevdate = tagdate;
+	  text = value;
+	}
+	multi_line = ( status == 2 );
+	// we do not set ignore to true here so that the _last_, not the first,
+	// of multiple identical tags is evaluated.
+      }
+    } else if( not_prev_cont && IsDBdate( line, tagdate ) != 0 ) 
+      ignore = ( tagdate>date || tagdate<prevdate );
+
+    not_prev_cont = ( cur_status != 2 );
+  }
+  if( errno ) {
+    perror( "THaAnalysisObject::LoadDBvalue()" );
+    return -1;
+  }
+  return found ? 0 : 1;
+}
+
+//_____________________________________________________________________________
+Int_t THaAnalysisObject::LoadDBvalue( FILE* file, const TDatime& date, 
+				      const char* tag, Double_t& value )
+{
+  // Locate tag in database, convert the text found to double-precision,
+  // and return result in 'value'.
+  // This is a convenience function.
+
+  string text;
+  Int_t err = LoadDBvalue( file, date, tag, text );
+  if( err == 0 )
+    value = atof(text.c_str());
+  return err;
+}
+
+//_____________________________________________________________________________
+Int_t THaAnalysisObject::LoadDBvalue( FILE* file, const TDatime& date, 
+				      const char* tag, Int_t& value )
+{
+  // Locate tag in database, convert the text found to integer
+  // and return result in 'value'.
+  // This is a convenience function.
+
+  string text;
+  Int_t err = LoadDBvalue( file, date, tag, text );
+  if( err == 0 )
+    value = atoi(text.c_str());
+  return err;
+}
+
+//_____________________________________________________________________________
+Int_t THaAnalysisObject::LoadDBvalue( FILE* file, const TDatime& date, 
+				      const char* tag, TString& text )
+{
+  // Locate tag in database, convert the text found to TString
+  // and return result in 'text'.
+  // This is a convenience function.
+
+  string _text;
+  Int_t err = LoadDBvalue( file, date, tag, _text );
+  if( err == 0 )
+    text = _text.c_str();
+  return err;
+}
+
+//_____________________________________________________________________________
+Int_t THaAnalysisObject::LoadDBarray( FILE* file, const TDatime& date, 
+				      const char* tag, vector<double>& values )
+{
+  string text;
+  Int_t err = LoadDBvalue( file, date, tag, text );
+  if( err )
+    return err;
+  values.clear();
+  text += " ";
+  istringstream inp(text);
+  double dval;
+  while( 1 ) {
+    inp >> dval;
+    if( inp.good() )
+      values.push_back(dval);
+    else
+      break;
+  }
+  return 0;
+}
+
+//_____________________________________________________________________________
+Int_t THaAnalysisObject::LoadDBarray( FILE* file, const TDatime& date, 
+				      const char* tag, vector<int>& values )
+{
+  string text;
+  Int_t err = LoadDBvalue( file, date, tag, text );
+  if( err )
+    return err;
+  values.clear();
+  text += " ";
+  istringstream inp(text);
+  int ival;
+  while( 1 ) {
+    inp >> ival;
+    if( inp.good() )
+      values.push_back(ival);
+    else
+      break;
+  }
+  return 0;
 }
 
 //_____________________________________________________________________________
@@ -850,96 +1026,6 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
     item++;
   }
   return 0;
-}
-
-//_____________________________________________________________________________
-Int_t THaAnalysisObject::LoadDBvalue( FILE* file, const TDatime& date, 
-				      const char* tag, string& text )
-{
-  // Load a data value tagged with 'tag' from the database 'file'.
-  // Lines before the first valid time stamp or starting with "#" are ignored.
-  // If 'tag' is found, then the most recent value seen (based on time stamps
-  // and position within the file) is returned in 'text'.
-  // Values with time stamps later than 'date' are ignored.
-  // This allows incremental organization of the database where
-  // only changes are recorded with time stamps.
-  // Return 0 if success, >0 if tag not found, <0 if file error.
-
-  if( !file || !tag ) return 2;
-  const int LEN = 256;
-  char buf[LEN];
-  TDatime tagdate(950101,0), prevdate(950101,0);
-
-  errno = 0;
-  rewind(file);
-
-  bool found = false, ignore = false;
-  while( fgets( buf, LEN, file) != NULL) {
-    size_t len = strlen(buf);
-    if( len<2 || buf[0] == '#' ) continue;
-    if( buf[len-1] == '\n') buf[len-1] = 0; //delete trailing newline
-    string line(buf);
-    Int_t status;
-    if( !ignore && (status = IsDBtag( line, tag, text )) != 0) {
-      if( status > 0 ) {
-	found = true;
-	prevdate = tagdate;
-	// ignore is not set to true here so that the _last_, not the first,
-	// of multiple identical tags is evaluated.
-      }
-    } else if( IsDBdate( line, tagdate ) != 0 )
-      ignore = ( tagdate>date || tagdate<prevdate );
-  }
-  if( errno ) {
-    perror( "THaAnalysisObject::LoadDBvalue()" );
-    return -1;
-  }
-  return found ? 0 : 1;
-}
-
-//_____________________________________________________________________________
-Int_t THaAnalysisObject::LoadDBvalue( FILE* file, const TDatime& date, 
-				      const char* tag, Double_t& value )
-{
-  // Locate tag in database, convert the text found to double-precision,
-  // and return result in 'value'.
-  // This is a convenience function.
-
-  string text;
-  Int_t err = LoadDBvalue( file, date, tag, text );
-  if( err == 0 )
-    value = atof(text.c_str());
-  return err;
-}
-
-//_____________________________________________________________________________
-Int_t THaAnalysisObject::LoadDBvalue( FILE* file, const TDatime& date, 
-				      const char* tag, Int_t& value )
-{
-  // Locate tag in database, convert the text found to integer
-  // and return result in 'value'.
-  // This is a convenience function.
-
-  string text;
-  Int_t err = LoadDBvalue( file, date, tag, text );
-  if( err == 0 )
-    value = atoi(text.c_str());
-  return err;
-}
-
-//_____________________________________________________________________________
-Int_t THaAnalysisObject::LoadDBvalue( FILE* file, const TDatime& date, 
-				      const char* tag, TString& text )
-{
-  // Locate tag in database, convert the text found to TString
-  // and return result in 'text'.
-  // This is a convenience function.
-
-  string _text;
-  Int_t err = LoadDBvalue( file, date, tag, _text );
-  if( err == 0 )
-    text = _text.c_str();
-  return err;
 }
 
 //_____________________________________________________________________________
