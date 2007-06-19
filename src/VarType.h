@@ -21,6 +21,9 @@ enum VarType { kDouble = 0, kFloat, kLong, kULong, kInt, kUInt,
 	       kObjectP,
 	       kDouble2P, kFloat2P, kLong2P, kULong2P, kInt2P, kUInt2P, 
 	       kShort2P, kUShort2P, kChar2P, kByte2P,
-	       kObject2P };
+	       kObject2P,
+	       kDoubleV, kIntV };
+
+extern const char* var_type_name[];
 
 #endif
