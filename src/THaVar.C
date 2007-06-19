@@ -62,6 +62,18 @@ using namespace std;
 const Int_t    THaVar::kInvalidInt = -1;
 const Double_t THaVar::kInvalid    = 1e38;
 
+const char* var_type_name[] = { 
+  "kDouble", "kFloat", "kLong", "kULong", "kInt", "kUInt",
+  "kShort", "kUShort", "kChar", "kByte", 
+  "kObject", "kString",
+  "kDoubleP", "kFloatP", "kLongP", "kULongP", "kIntP", "kUIntP", 
+  "kShortP", "kUShortP", "kCharP", "kByteP",
+  "kObjectP",
+  "kDouble2P", "kFloat2P", "kLong2P", "kULong2P", "kInt2P", "kUInt2P", 
+  "kShort2P", "kUShort2P", "kChar2P", "kByte2P",
+  "kObject2P",
+  "kDoubleV", "kIntV" };
+
 //_____________________________________________________________________________
 THaVar::THaVar( const THaVar& rhs ) :
   TNamed( rhs ), fArrayData(rhs.fArrayData), fValueD(rhs.fValueD),
