@@ -1026,9 +1026,14 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
       } else if( item->type == kIntV ) {
 	ret = LoadDBarray( f, date, tag, *((vector<int>*)item->var) );
       } else {
+	const char* type_name;
+	if( item->type >= 0 && item->type <= kIntV )
+	  type_name = var_type_name[item->type];
+	else
+	  type_name = Form("(#%d)", item->type );
 	::Error( ::Here("THaAnalysisObject::LoadDB"), 
 		 "Reading of data type \"%s\" for item \"%s\" currently "
-		 "not implemented", var_type_name[item->type], tag );
+		 "not implemented", type_name, tag );
 	ret = -1;
       }
 
