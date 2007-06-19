@@ -21,6 +21,8 @@ class TVector3;
 class THaRunBase;
 class THaOutput;
 
+const char* Here( const char* here, const char* prefix = NULL );
+
 class THaAnalysisObject : public TNamed {
   
 public:
