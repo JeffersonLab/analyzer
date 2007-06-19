@@ -349,22 +349,31 @@ const char* THaAnalysisObject::GetDBFileName() const
 }
 
 //_____________________________________________________________________________
+const char* Here( const char* here, const char* prefix )
+{
+  // Utility function for error messages
+
+  static char buf[256];
+  buf[0] = 0;
+  if(prefix != NULL) {
+    strcpy( buf, "\"" );
+    strcat( buf, prefix );
+    *(buf+strlen(buf)-1) = 0;   // Delete trailing dot of prefix
+    strcat( buf, "\"::" );
+  }
+  strcat( buf, here );
+  return buf;
+}
+
+//_____________________________________________________________________________
 const char* THaAnalysisObject::Here( const char* here ) const
 {
   // Return a string consisting of 'here' followed by fPrefix.
   // Used for generating diagnostic messages.
   // The return value points to an internal static buffer that
   // one should not try to delete ;)
-
-  static char buf[256];
-  strcpy( buf, "\"" );
-  if(fPrefix != NULL) {
-    strcat( buf, fPrefix );
-    *(buf+strlen(buf)-1) = 0;   // Delete trailing dot of prefix
-  }
-  strcat( buf, "\"::" );
-  strcat( buf, here );
-  return buf;
+  
+  return ::Here( here, fPrefix );
 }
 
 //_____________________________________________________________________________
@@ -1012,11 +1021,14 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 	}
       } else if( item->type == kString ) {
 	ret = LoadDBvalue( f, date, tag, *((TString*)item->var) );
+      } else if( item->type == kDoubleV ) {
+	ret = LoadDBarray( f, date, tag, *((vector<double>*)item->var) );
+      } else if( item->type == kIntV ) {
+	ret = LoadDBarray( f, date, tag, *((vector<int>*)item->var) );
       } else {
-	cerr << "THaAnalysisObject::LoadDB  "
-	     << "READING of VarType " << item->type << " for item " << tag
-	     << " (see VarType.h) not implemented at this point !!! \n"
-	     << endl;
+	::Error( ::Here("THaAnalysisObject::LoadDB"), 
+		 "Reading of data type \"%s\" for item \"%s\" currently "
+		 "not implemented", var_type_name[item->type], tag );
 	ret = -1;
       }
 
