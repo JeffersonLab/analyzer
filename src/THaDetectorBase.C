@@ -16,7 +16,7 @@
 #include "THaDetectorBase.h"
 #include "THaDetMap.h"
 
-ClassImp(THaDetectorBase)
+using std::vector;
 
 //_____________________________________________________________________________
 THaDetectorBase::THaDetectorBase( const char* name, 
@@ -38,7 +38,27 @@ THaDetectorBase::THaDetectorBase() : fDetMap(0) {
 THaDetectorBase::~THaDetectorBase()
 {
   // Destructor
-  if (fDetMap) delete fDetMap;
+  delete fDetMap;
+}
+
+//_____________________________________________________________________________
+Int_t THaDetectorBase::FillDetMap( const vector<int> values, UInt_t flags,
+				   const char* here )
+{
+  // Utility function to fill this detector's detector map. 
+  // See THaDetMap::Fill for documentation.
+
+  Int_t ret = fDetMap->Fill( values, flags );
+  if( ret == 0 ) {
+    Warning( Here(here), "No detector map entries found. Check database." );
+  } else if( ret == -1 ) {
+    Error( Here(here), "Too many detector map entries (maximum %d)",
+	   THaDetMap::kDetMapSize );
+  } else if( ret < -1 ) {
+    Error( Here(here), "Invalid detector map data format "
+	   "(wrong number of values). Check database." );
+  }
+  return ret;
 }
 
 //_____________________________________________________________________________
@@ -49,4 +69,5 @@ void THaDetectorBase::PrintDetMap( Option_t* opt ) const
   fDetMap->Print( opt );
 }
 
-
+//_____________________________________________________________________________
+ClassImp(THaDetectorBase)
