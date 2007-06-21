@@ -18,6 +18,7 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "Rtypes.h"
+#include <vector>
 
 class THaDetMap {
 
@@ -42,30 +43,46 @@ public:
 			       UShort_t chan_lo, UShort_t chan_hi,
 			       UInt_t first=0, UInt_t model=0,
 			       Int_t refindex=-1 );
-  virtual void      Clear() { fNmodules = 0; }
+          void      Clear()  { fNmodules = 0; }
+  virtual Int_t     Fill( const std::vector<int> values, UInt_t flags = 0 );
           Module*   GetModule( UShort_t i ) const { return (Module*)fMap+i; }
+          Int_t     GetNchan( UShort_t i ) const;
+          Int_t     GetTotNumChan() const;
           Int_t     GetSize() const { return static_cast<Int_t>(fNmodules); }
 
-  static  UInt_t    GetModel( Module *d );
-  static  Bool_t    IsADC(Module *d);
-  static  Bool_t    IsTDC(Module *d);
+          UInt_t    GetModel( UShort_t i ) const;
+          Bool_t    IsADC( UShort_t i ) const;
+          Bool_t    IsTDC( UShort_t i ) const;
+  static  UInt_t    GetModel( Module* d );
+  static  Bool_t    IsADC( Module* d );
+  static  Bool_t    IsTDC( Module* d );
 
   virtual void      Print( Option_t* opt="" ) const;
+  virtual void      Reset();
 
-  static const int kDetMapSize = 300;  //Maximum size of the map (sanity check)
+  static const int kDetMapSize = (1<<16)-1;  //Sanity limit on map size
+
+  // Flags for Fill()
+  enum EFillFlags {
+    kDoNotClear          = BIT(0),    // Don't clear the map first
+    kAutoCount           = BIT(1),    // Compute logical channels automatically
+    kFillLogicalChannel  = BIT(10),   // Parse the logical channel number
+    kFillModel           = BIT(11),   // Parse the model number
+    kFillRefIndex        = BIT(12)    // Parse the reference index
+  };
 
 protected:
-  UShort_t     fNmodules;    //Number of modules (=crate,slot) with data
-                             // from this detector
+  UShort_t     fNmodules;  // Number of modules (=crate,slot) in the map
 
-  Module*      fMap;         //Array of modules, each module is a 6-tuple
-                             // (create,slot,chan_lo,chan_hi,first_logical, model)
+  Module*      fMap;       // Array of modules, each module is a 7-tuple
+                           // (create,slot,chan_lo,chan_hi,first_logical,
+                           // model,refindex)
 
-  Int_t        fMaplength;   // current size of the fMap array
+  Int_t        fMaplength; // current size of the fMap array
   
-  static const UInt_t kADCBit = 0x1<<31;
-  static const UInt_t kTDCBit = 0x1<<30;
-  static const UInt_t kModelMask = 0xffff0000;
+  static const UInt_t kADCBit = BIT(31);
+  static const UInt_t kTDCBit = BIT(30);
+  static const UInt_t kModelMask = 0x0000ffff;
   
   ClassDef(THaDetMap,0)   //The standard detector map
 };
@@ -82,5 +99,21 @@ inline UInt_t THaDetMap::GetModel(Module* d) {
   return d->model & kModelMask;
 }
 
+inline Bool_t THaDetMap::IsADC( UShort_t i ) const {
+  return IsADC(GetModule(i));
+}
+
+inline Bool_t THaDetMap::IsTDC( UShort_t i ) const {
+  return IsTDC(GetModule(i));
+}
+
+inline UInt_t THaDetMap::GetModel( UShort_t i) const {
+  return GetModel(GetModule(i));
+}
+
+inline Int_t THaDetMap::GetNchan( UShort_t i ) const {
+  // Return the number of channels of the i-th module
+  return (fMap+i)->hi - (fMap+i)->lo + 1;
+}
 
 #endif
