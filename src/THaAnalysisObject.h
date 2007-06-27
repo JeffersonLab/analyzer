@@ -80,12 +80,14 @@ public:
   static  Int_t   LoadDBarray( FILE* file, const TDatime& date, 
   			       const char* tag, std::vector<int>& values );
   static  Int_t   LoadDB( FILE* file, const TDatime& date, 
+			  const DBRequest* request, const char* prefix="" );
+  static  Int_t   LoadDB( FILE* file, const TDatime& date, 
 			  const TagDef* tags, const char* prefix="" );
   static  Int_t   SeekDBdate( FILE* file, const TDatime& date,
-			      bool end_on_tag = false );
+			      Bool_t end_on_tag = false );
   static  Int_t   SeekDBconfig( FILE* file, const char* tag,
 				const char* label = "config",
-				bool end_on_tag = false );
+				Bool_t end_on_tag = false );
 
   // Geometry utility functions
   static  void    GeoToSph( Double_t  th_geo, Double_t  ph_geo,
@@ -116,8 +118,8 @@ protected:
   char*           fPrefix;    // Name prefix for global variables
   EStatus         fStatus;    // Initialization status flag
   Int_t           fDebug;     // Debug level
-  bool            fIsInit;    // Flag indicating that ReadDatabase called.
-  bool            fIsSetup;   // Flag indicating that Setup called.
+  Bool_t          fIsInit;    // Flag indicating that ReadDatabase called.
+  Bool_t          fIsSetup;   // Flag indicating that Setup called.
   TString         fConfig;    // Configuration to use from database
   UInt_t          fProperties;// Properties of this object (see EProperties)
   Bool_t          fOKOut;     // Flag indicating object-output prepared

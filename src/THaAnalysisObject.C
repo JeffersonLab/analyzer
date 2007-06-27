@@ -396,6 +396,8 @@ THaAnalysisObject::EStatus THaAnalysisObject::Init( const TDatime& date )
   // 
   // This implementation will change once the real database is  available.
 
+  static const char* const here = "Init";
+
   if( IsZombie() )
     return fStatus = kNotinit;
 
@@ -441,7 +443,9 @@ THaAnalysisObject::EStatus THaAnalysisObject::Init( const TDatime& date )
 
  err:
   if( status == kFileError )
-    Error(Here("Init"),"Cannot open database file db_%sdat",fnam);
+    Error(Here(here),"Cannot open database file db_%sdat",fnam);
+  else if( status == kInitError )
+    Error(Here(here),"Error when reading file db_%sdat",fnam);
  exit:
   return fStatus = (EStatus)status;
 }
@@ -576,15 +580,17 @@ Int_t THaAnalysisObject::ReadDatabase( const TDatime& date )
 Int_t THaAnalysisObject::ReadRunDatabase( const TDatime& date )
 {
   // Default run database reader. Reads one value, <prefix>.config, into 
-  // fConfig.
+  // fConfig. This value is optional; if not found, fConfig is empty.
 
   FILE* file = OpenRunDBFile( date );
   if( !file ) return kFileError;
 
   string name(fPrefix); name.append("config");
-  LoadDBvalue( file, date, name.c_str(), fConfig );
-
+  Int_t ret = LoadDBvalue( file, date, name.c_str(), fConfig );
   fclose(file);
+
+  if( ret == -1 ) return kFileError;
+  if( ret < 0 )   return kInitError;
   return kOK;
 }
 
@@ -728,6 +734,10 @@ void THaAnalysisObject::SphToGeo( Double_t  th_sph, Double_t  ph_sph,
 
 //---------- Database utility functions ---------------------------------------
 
+static size_t LEN = 256; // Initial size of line buffer
+static size_t MAX = 1UL<<14; // Max size of line buffer (16 kB)
+static string errtxt;
+
 // Local helper functions (could be in an anonymous namespace)
 //_____________________________________________________________________________
 static Int_t IsDBdate( const string& line, TDatime& date, bool warn = true )
@@ -754,16 +764,22 @@ static Int_t IsDBdate( const string& line, TDatime& date, bool warn = true )
 }
 
 //_____________________________________________________________________________
-static Int_t TrimDBline( const string& line, string& value, 
+static Int_t TrimDBline( const string& _line, string& value, 
 			 bool leading = false )
 {
-  // Trim trailing whitespace from 'line' and put result in 'value'
+  // Trim trailing whitespace and comments ("#") from 'line' and put
+  // the result into 'value'
   // If 'leading' is true, also trim leading whitespace
   // If line does not end with '\', return 1.
   // If line ends with '\', strip the '\' and return 2.
 
   value.erase();
-  ssiz_t pos1 = (leading) ? line.find_first_not_of(" \t") : 0;
+  string line(_line);
+  // Trim comment, if any
+  ssiz_t pos1 = line.find("#");
+  if( pos1 != string::npos )
+    line.erase(pos1);
+  pos1 = (leading) ? line.find_first_not_of(" \t") : 0;
   if( pos1 == string::npos ) return 1;
   ssiz_t pos2 = line.find_last_not_of(" \t");
   // pos2 >= pos1 guaranteed here
@@ -831,27 +847,47 @@ Int_t THaAnalysisObject::LoadDBvalue( FILE* file, const TDatime& date,
   // Values with time stamps later than 'date' are ignored.
   // This allows incremental organization of the database where
   // only changes are recorded with time stamps.
-  // Return 0 if success, >0 if tag not found, <0 if file error.
+  // Return 0 if success, 1 if tag not found, <0 if unexpected error.
 
-  if( !file || !tag ) return 2;
-  const int LEN = 256;
-  char buf[LEN];
+  if( !file || !tag ) return -255;
+  char* buf = new char[LEN];
+  if( !buf ) return -256;
   TDatime tagdate(950101,0), prevdate(950101,0);
 
   errno = 0;
+  errtxt.erase();
   rewind(file);
 
   bool found = false, ignore = false, multi_line = false, not_prev_cont = true;
+  long pos = ftell(file);
   while( fgets( buf, LEN, file) != NULL) {
     size_t len = strlen(buf);
-    if( len < 2 || ( !multi_line && buf[0] == '#') ) {
+    // Line too long? If so, grow buffer and try again.
+    if( len >= LEN-1 ) {
+      LEN *= 2;
+      if( LEN > MAX ) {
+	buf[72] = 0;
+	errtxt = buf;
+      }
+      delete [] buf;
+      if( LEN > MAX )
+	return -128;
+      buf = new char[LEN];
+      if( !buf ) return -256;
+      fseek( file, pos, SEEK_SET ); 
+      continue;
+    }
+    pos = ftell(file);
+    if( len == 0 ) continue; //oops
+    if( buf[len-1] == '\n') buf[len-1] = 0; //delete trailing newline
+    string line(buf), value;
+    // Determine status of the current line (continued or not)
+    Int_t status = TrimDBline( line, value ), cur_status = status;
+    if( len < 2 || ( !multi_line && status == 1 && value.empty() )) {
       not_prev_cont = true;
       multi_line = false;
       continue;
     }
-    if( buf[len-1] == '\n') buf[len-1] = 0; //delete trailing newline
-    string line(buf), value;
-    Int_t status = TrimDBline( line, value ), cur_status = status;
     if( !ignore && ( multi_line || ( not_prev_cont && 
 		 (status = IsDBtag( line, tag, value )) != 0 ) )) {
       if( status > 0 ) {
@@ -871,6 +907,7 @@ Int_t THaAnalysisObject::LoadDBvalue( FILE* file, const TDatime& date,
 
     not_prev_cont = ( cur_status != 2 );
   }
+  delete [] buf;
   if( errno ) {
     perror( "THaAnalysisObject::LoadDBvalue()" );
     return -1;
@@ -969,25 +1006,25 @@ Int_t THaAnalysisObject::LoadDBarray( FILE* file, const TDatime& date,
 
 //_____________________________________________________________________________
 Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
-				 const TagDef* tags, const char* prefix )
+				 const DBRequest* req, const char* prefix )
 {
   // Load a list of parameters from the database file 'f' according to 
-  // the contents of the 'tags' structure (see VarDef.h).
+  // the contents of the 'req' structure (see VarDef.h).
 
-  if( !tags ) return -1;
-  const Int_t LEN = 256;
-  Int_t np = strlen(prefix);
-  if( np > LEN-2 ) return -2;
-  char tag[LEN];
+  const char* const here = "THaAnalysisObject::LoadDB";
+  
+  if( !req ) return -255;
+  if( !prefix ) prefix = "";
+  Int_t ret = 0;
 
-  const TagDef* item = tags;
+  const DBRequest* item = req;
   while( item->name ) {
     if( item->var ) {
-      tag[0] = 0; strncat(tag,prefix,LEN-1); strncat(tag,item->name,LEN-np-1);
-      Int_t ret;
-      if( item->type >= kDouble && item->type <= kFloat ) {
+      string keystr(prefix); keystr.append(item->name);
+      const char* key = keystr.c_str();
+      if( item->type == kDouble || item->type == kFloat ) {
 	Double_t dval = 0.0;
-	ret = LoadDBvalue( f, date, tag, dval );
+	ret = LoadDBvalue( f, date, key, dval );
 	if( ret == 0 ) {
 	  if( item->type == kDouble ) 
 	    *((Double_t*)item->var) = dval;
@@ -995,8 +1032,9 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 	    *((Float_t*)item->var) = dval;
 	}
       } else if( item->type >= kInt && item->type <= kByte ) {
+	// Implies a certain order of definitions in VarType.h
 	Int_t ival;
-	ret = LoadDBvalue( f, date, tag, ival );
+	ret = LoadDBvalue( f, date, key, ival );
 	if( ret == 0 ) {
 	  switch( item->type ) {
 	  case kInt:
@@ -1017,38 +1055,102 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 	  case kByte:
 	    *((Byte_t*)item->var) = ival;
 	    break;
+	  default:
+	    goto badtype;
 	  }
 	}
       } else if( item->type == kString ) {
-	ret = LoadDBvalue( f, date, tag, *((TString*)item->var) );
+	ret = LoadDBvalue( f, date, key, *((TString*)item->var) );
       } else if( item->type == kDoubleV ) {
-	ret = LoadDBarray( f, date, tag, *((vector<double>*)item->var) );
+	ret = LoadDBarray( f, date, key, *((vector<double>*)item->var) );
       } else if( item->type == kIntV ) {
-	ret = LoadDBarray( f, date, tag, *((vector<int>*)item->var) );
+	ret = LoadDBarray( f, date, key, *((vector<int>*)item->var) );
       } else {
+      badtype:
 	const char* type_name;
-	if( item->type >= 0 && item->type <= kIntV )
+	if( item->type >= kDouble && item->type <= kObject2P )
 	  type_name = var_type_name[item->type];
 	else
 	  type_name = Form("(#%d)", item->type );
-	::Error( ::Here("THaAnalysisObject::LoadDB"), 
-		 "Reading of data type \"%s\" for item \"%s\" currently "
-		 "not implemented", type_name, tag );
-	ret = -1;
+	::Error( ::Here(here,prefix), "Key \"%s\": Reading of data type "
+		 "\"%s\" not implemented", type_name, key );
+	ret = -2;
+	break;
       }
 
-      if (ret && item->fatal )
-	return item->fatal;
+      if( ret > 0 ) {
+	if( item->optional ) 
+	  ret = 0;
+	else {
+	  if( item->descript ) {
+	    ::Error( ::Here(here,prefix), "Required key \"%s\" (%s) "
+		     "missing in the database.", key, item->descript );
+	  } else {
+	    ::Error( ::Here(here,prefix), "Required key \"%s\" "
+		     "missing in the database.", key );
+	  }
+	  // For missing keys, the return code is the index into the request 
+	  // array + 1. In this way the caller knows which key is missing.
+	  ret = 1+(item-req);
+	  break;
+	}
+      } else if( ret == -128 ) {
+	::Error( ::Here(here,prefix), "Text line too long. Fix the database!\n"
+		 "\"%s...\"", errtxt.c_str() );
+	break;
+      } else if( ret < 0 ) {
+	::Error( ::Here(here,prefix), "Program error when trying to "
+		 "read database key \"%s\". Call expert.", key );
+	break;
+      }
     }
     item++;
   }
-  return 0;
+  return ret;
+}
+
+//_____________________________________________________________________________
+Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
+				 const TagDef* tags, const char* prefix )
+{
+  // Compatibility function to read database with old 'TagDef' 
+  // request structure
+
+  if( !tags )
+    return -1;
+
+  const TagDef* item = tags;
+  Int_t nreq = 0;
+  while( (item++)->name )
+    nreq++;
+  if( nreq == 0 )
+    return 0;
+
+  DBRequest *req = new struct DBRequest[nreq+1], *theReq = req;
+  if( !tags )
+    return -3;
+  item = tags;
+  while( item->name ) {
+    theReq->name      = item->name;
+    theReq->var       = item->var;
+    theReq->type      = item->type;
+    theReq->nelem     = item->expected;
+    theReq->optional  = item->fatal ? kFALSE : kTRUE;
+    theReq->descript  = item->name;
+    item++; theReq++;
+  }
+  theReq->name = 0;
+
+  Int_t ret = LoadDB( f, date, req, prefix );
+
+  delete [] req;
+  return ret;
 }
 
 //_____________________________________________________________________________
 Int_t THaAnalysisObject::SeekDBconfig( FILE* file, const char* tag, 
 				       const char* label,
-				       bool end_on_tag )
+				       Bool_t end_on_tag )
 {
   // Starting from the current position in 'file', look for the
   // configuration 'tag'. Position the file on the
@@ -1110,7 +1212,7 @@ Int_t THaAnalysisObject::SeekDBconfig( FILE* file, const char* tag,
 
 //_____________________________________________________________________________
 Int_t THaAnalysisObject::SeekDBdate( FILE* file, const TDatime& date,
-				     bool end_on_tag )
+				     Bool_t end_on_tag )
 {
   // Starting from the current position in file 'f', look for a 
   // date tag matching time stamp 'date'. Position the file on the
