@@ -12,6 +12,8 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
+#include "VarType.h"
+
 struct VarDef {
   const char*      name;     // Variable name
   const char*      desc;     // Variable description
@@ -27,14 +29,21 @@ struct RVarDef {
   const char*      def;      // Definition of data (data member or method name)
 };
 
-struct DBRequest {
+struct TagDef {
   const char*      name;     // Key name
   void*            var;      // Destination of result (default to Double*)
   Int_t            fatal;    // optional: Error to return if tag not found (0=ignore)
   UInt_t           expected; // optional: number of elements to write/read (0/1 scaler)
-  Int_t            type;     // optional(default kDouble): data type (kInt, etc.)
+  VarType          type;     // optional(default kDouble): data type (kInt, etc.)
 };
 
-typedef DBRequest TagDef;
+struct DBRequest {
+  const char*      name;     // Key name
+  void*            var;      // Pointer to data (default to Double*)
+  VarType          type;     // (opt) data type (see VarType.h, default Double_t)
+  UInt_t           nelem;    // (opt) number of array elements (0/1 = 1 or auto)
+  Bool_t           optional; // (opt) If true, missing key is ok
+  const char*      descript; // (opt) Key description (if 0, same as name)
+};
 
 #endif

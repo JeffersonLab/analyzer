@@ -141,7 +141,7 @@ public:
   Bool_t          IsBasic() const
     { return ( fOffset == -1 && fMethod == NULL ); }
   Bool_t          IsPointerArray() const 
-    { return ( IsArray() && fType>=kDouble2P ); }
+    { return ( IsArray() && fType>=kDouble2P && fType <= kObject2P ); }
   virtual void    Print( Option_t* opt="FULL" ) const;
 
   // The following are necessary to initialize empty THaVars such as those in arrays, 
