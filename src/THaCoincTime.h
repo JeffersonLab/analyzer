@@ -70,7 +70,7 @@ public:
   virtual Int_t DefineVariables( EMode mode = kDefine );
 
   virtual Int_t ReadDatabase( const TDatime& date );
-  virtual Int_t ReadDB( const TDatime& date );
+  //  virtual Int_t ReadDB( const TDatime& date );
 
   THaDetMap *fDetMap;
 

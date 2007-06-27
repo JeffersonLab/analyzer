@@ -11,10 +11,11 @@
 
 #include "THaG0Helicity.h"
 #include "THaEvData.h"
-#include "THaDB.h"
+//#include "THaDB.h"
 #include "TH1F.h"
 #include "TMath.h"
 #include <iostream>
+#include <cstdio>
 
 using namespace std;
 
@@ -102,28 +103,29 @@ Int_t THaG0Helicity::ReadDatabase( const TDatime& date )
   if( st != kOK )
     return st;
 
+  FILE* file = OpenFile( date );
+  if( !file ) return kFileError;
+
   Int_t helroc[3], timeroc[3], time2roc[3], time3roc[3];
   time2roc[0] = 0; time3roc[0] = 0;
   Int_t delay = fG0delay;
   Double_t tdavg = fTdavg, ttol = fTtol;
 
-  TagDef tags[] = {
-    { "helroc",   helroc,   1, 3, kInt },
-    { "timeroc",  timeroc,  2, 3, kInt },
-    { "time2roc", time2roc, 0, 3, kInt },
-    { "time3roc", time3roc, 0, 3, kInt },
-    { "delay",    &delay,   0, 1, kInt },
+  DBRequest req[] = {
+    { "helroc",   helroc,   kInt, 3 },
+    { "timeroc",  timeroc,  kInt, 3 },
+    { "time2roc", time2roc, kInt, 3, 1 },
+    { "time3roc", time3roc, kInt, 3, 1 },
+    { "delay",    &delay,   kInt, 1, 1 },
     { "tdavg",    &tdavg },
     { "ttol",     &ttol },
     { 0 }
   };
-  Int_t err = gHaDB->LoadValues( GetPrefix(), tags, date );
-  if( err ) {
-    if( err>0 )
-      Error( Here(here), "Required tag %s%s missing in database.\n"
-	     "Detector initialization failed.", GetPrefix(),tags[err-1].name );
+  //  Int_t err = gHaDB->LoadValues( GetPrefix(), req, date );
+  st = LoadDB( file, date, req, GetPrefix() );
+  fclose(file);
+  if( st )
     return kInitError;
-  }
 
   //old:
 //   SetROC (kLeft, 11, 0, 3, 0, 4); // Left arm

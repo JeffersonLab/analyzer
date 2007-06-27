@@ -21,7 +21,7 @@
 #include "TMath.h"
 
 #include "THaTrackProj.h"
-#include "THaDB.h"
+//#include "THaDB.h"
 
 using namespace std;
 
@@ -196,27 +196,29 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   for (int i=0; i<fNelem; i++) fTrigOff[i]=0;
   
   
-  TagDef list[] = {
-    { "TDC_offsetsL", fLOff, 0, fNelem },
-    { "TDC_offsetsR", fROff, 0, fNelem },
-    { "ADC_pedsL", fLPed, 0, fNelem },
-    { "ADC_pedsR", fRPed, 0, fNelem },
-    { "ADC_coefL", fLGain, 0, fNelem },
-    { "ADC_coefR", fRGain, 0, fNelem },
-    { "TDC_res",   &fTdc2T, 0 },
-    { "TransSpd",  &fCn,  0 },
-    { "AdcMIP",    &fAdcMIP, 0},
-    { "NTWalk",    &fNTWalkPar, 0, 0, kInt },
-    { "Timewalk",  fTWalkPar, 0, 2*fNelem },
-    { "ReTimeOff", fTrigOff, 0, fNelem },
-    { "AvgRes",    &fResolution, 0 },
-    { "Atten",     &fAttenuation, 0 },
+  DBRequest list[] = {
+    { "TDC_offsetsL", fLOff, kDouble, fNelem },
+    { "TDC_offsetsR", fROff, kDouble, fNelem },
+    { "ADC_pedsL", fLPed, kDouble, fNelem },
+    { "ADC_pedsR", fRPed, kDouble, fNelem },
+    { "ADC_coefL", fLGain, kDouble, fNelem },
+    { "ADC_coefR", fRGain, kDouble, fNelem },
+    { "TDC_res",   &fTdc2T },
+    { "TransSpd",  &fCn },
+    { "AdcMIP",    &fAdcMIP },
+    { "NTWalk",    &fNTWalkPar, kInt },
+    { "Timewalk",  fTWalkPar, kDouble, 2*fNelem },
+    { "ReTimeOff", fTrigOff, kDouble, fNelem },
+    { "AvgRes",    &fResolution },
+    { "Atten",     &fAttenuation },
     { 0 }
   };
 
+#if 0
   if ( gHaDB && gHaDB->LoadValues(GetPrefix(),list,date) ) {
     goto exit;  // the new database existed -- we're finished
   }
+#endif
   
   // otherwise, gHaDB is unavailable, use the old file database
   
@@ -334,9 +336,9 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
 
   if ( fDebug > 1 ) {
     cout << '\n' << GetPrefix() << " calibration parameters: " << endl;;
-    for ( TagDef *li = list; li->name; li++ ) {
+    for ( DBRequest *li = list; li->name; li++ ) {
       cout << "  " << li->name;
-      int maxc = li->expected;
+      int maxc = li->nelem;
       if (maxc==0)maxc=1;
       for (int i=0; i<maxc; i++) {
 	if (li->type==kDouble) cout << "  " << ((Double_t*)li->var)[i];

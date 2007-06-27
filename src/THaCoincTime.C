@@ -250,6 +250,7 @@ Int_t THaCoincTime::ReadDatabase( const TDatime& date )
   return kOK;
 }
 
+#if 0
 //_____________________________________________________________________________
 Int_t THaCoincTime::ReadDB( const TDatime& date )
 {
@@ -280,7 +281,7 @@ Int_t THaCoincTime::ReadDB( const TDatime& date )
     }
 
     // read in calibration constants
-    TagDef list[] = {
+    DBRequest list[] = {
       { "TDC_res", &fTdcRes[i] },
       { "TDC_offset", &fTdcOff[i] },
       { 0 }
@@ -304,7 +305,7 @@ Int_t THaCoincTime::ReadDB( const TDatime& date )
     
   return kOK;
 }
-
+#endif
 
 //_____________________________________________________________________________
 Int_t THaCoincTime::Process( const THaEvData& evdata )
