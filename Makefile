@@ -161,7 +161,6 @@ SRC           = src/THaFormula.C src/THaVform.C src/THaVhist.C \
 		src/THaExtTarCor.C src/THaDebugModule.C src/THaTrackInfo.C \
 		src/THaGoldenTrack.C \
 		src/THaPrimaryKine.C src/THaSecondaryKine.C \
-		src/THaDB.C src/THaFileDB.C \
 	        src/THaCoincTime.C src/THaS2CoincTime.C \
                 src/THaTrackProj.C \
 		src/THaPostProcess.C src/THaFilter.C \
@@ -171,7 +170,9 @@ SRC           = src/THaFormula.C src/THaVform.C src/THaVhist.C \
 		src/THaTrackOut.C src/THaTriggerTime.C \
 		src/THaHelicityDet.C src/THaG0HelicityReader.C src/THaG0Helicity.C \
 		src/THaADCHelicity.C \
-		src/THaPhotoReaction.C src/THaSAProtonEP.C
+		src/THaPhotoReaction.C src/THaSAProtonEP.C \
+		src/THaDB.C # src/THaFileDB.C 
+
 
 ifdef ONLINE_ET
 SRC += src/THaOnlRun.C
