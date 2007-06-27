@@ -45,6 +45,9 @@ protected:
   TVector3    fOrigin;    // Center position of detector (m)
   Float_t     fSize[3];   // Detector size in x,y,z (m) - x,y are half-widths
   
+  virtual Int_t ReadGeometry( FILE* file, const TDatime& date,
+			      Bool_t required = kFALSE );
+
   THaDetectorBase( const char* name, const char* description );
 
   ClassDef(THaDetectorBase,1)   //ABC for a detector or subdetector
