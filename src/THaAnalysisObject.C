@@ -737,6 +737,8 @@ void THaAnalysisObject::SphToGeo( Double_t  th_sph, Double_t  ph_sph,
 static size_t LEN = 256; // Initial size of line buffer
 static size_t MAX = 1UL<<14; // Max size of line buffer (16 kB)
 static string errtxt;
+static int loaddb_depth = 0; // Recursion depth in LoadDB
+static string loaddb_prefix; // Actual prefix of object in LoadDB (for err msg)
 
 // Local helper functions (could be in an anonymous namespace)
 //_____________________________________________________________________________
@@ -834,6 +836,32 @@ static bool IsTag( const char* buf )
   if( *p != '[' ) return false;
   while( *p && *p != ']' ) p++;
   return ( *p == ']' );
+}
+
+//_____________________________________________________________________________
+static Int_t ChopPrefix( string& s )
+{
+  // Remove trailing level from prefix. Example "L.vdc." -> "L."
+  // Return remaining number of dots, or zero if empty/invalid prefix
+
+  ssiz_t len = s.size(), pos;
+  Int_t ndot = 0;
+  if( len<2 )
+    goto null;
+  pos = s.rfind('.',len-2);
+  if( pos == string::npos ) 
+    goto null;
+  s.erase(pos+1);
+  for( ssiz_t i = 0; i <= pos; i++ ) {
+    if( s[i] == '.' )
+      ndot++;
+  }
+  return ndot;
+
+ null:
+  s.clear();
+  return 0;
+
 }
 
 //_____________________________________________________________________________
@@ -1006,16 +1034,21 @@ Int_t THaAnalysisObject::LoadDBarray( FILE* file, const TDatime& date,
 
 //_____________________________________________________________________________
 Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
-				 const DBRequest* req, const char* prefix )
+				 const DBRequest* req, const char* prefix,
+				 Int_t search )
 {
   // Load a list of parameters from the database file 'f' according to 
   // the contents of the 'req' structure (see VarDef.h).
+
+  // FIXME: handle item->nelem to read arrays!
 
   const char* const here = "THaAnalysisObject::LoadDB";
   
   if( !req ) return -255;
   if( !prefix ) prefix = "";
   Int_t ret = 0;
+  if( loaddb_depth++ == 0 )
+    loaddb_prefix = prefix;
 
   const DBRequest* item = req;
   while( item->name ) {
@@ -1060,6 +1093,8 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 	  }
 	}
       } else if( item->type == kString ) {
+	ret = LoadDBvalue( f, date, key, *((string*)item->var) );
+      } else if( item->type == kTString ) {
 	ret = LoadDBvalue( f, date, key, *((TString*)item->var) );
       } else if( item->type == kDoubleV ) {
 	ret = LoadDBarray( f, date, key, *((vector<double>*)item->var) );
@@ -1072,46 +1107,94 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 	  type_name = var_type_name[item->type];
 	else
 	  type_name = Form("(#%d)", item->type );
-	::Error( ::Here(here,prefix), "Key \"%s\": Reading of data type "
-		 "\"%s\" not implemented", type_name, key );
+	::Error( ::Here(here,loaddb_prefix.c_str()),
+		 "Key \"%s\": Reading of data type \"%s\" not implemented",
+		 type_name, key );
 	ret = -2;
 	break;
       }
 
-      if( ret > 0 ) {
+      if( ret > 0 ) {  // Key not found
+	// If searching specified, either for this key or globally, retry
+	// finding the key at the next level up along the name tree. Name
+	// tree levels are defined by dots (".") in the prefix. The top
+	// level is 1 (where prefix = "").
+	// Example: key = "nw", prefix = "L.vdc.u1", search = 1, then
+	// search for:  "L.vdc.u1.nw" -> "L.vdc.nw" -> "L.nw" -> "nw"
+	//
+	// Negative values of 'search' mean search up relative to the
+	// current level by at most abs(search) steps, or up to top level.
+	// Example: key = "nw", prefix = "L.vdc.u1", search = -1, then
+	// search for:  "L.vdc.u1.nw" -> "L.vdc.nw"
+	//
+	if( (search != 0 || item->search != 0) && *prefix ) {
+	  DBRequest* newreq = new DBRequest[2];
+	  if( newreq ) {
+	    memcpy( newreq, item, sizeof(DBRequest) );
+	    memset( newreq+1, 0, sizeof(DBRequest) );
+	    newreq->search = 0;
+	    // per-item search level overrides global one
+	    Int_t newsearch = (item->search != 0) ? item->search : search;
+	    string newprefix(prefix);
+	    Int_t newlevel = ChopPrefix(newprefix);
+	    Int_t ret2 = 1;
+	    if( newsearch > 0 && newlevel >= newsearch )
+	      ret2 = LoadDB( f, date, newreq, newprefix.c_str(), newsearch );
+	    else if( newsearch < 0 )
+	      ret2 = LoadDB( f, date, newreq, newprefix.c_str(), newsearch+1 );
+	    delete [] newreq;
+	    ret = ret2;
+	    // If error, quit here. Error message printed at lowest level.
+	    if( ret != 0 )
+	      break;  
+	    goto nextitem;  // Key found and ok
+	  } else {
+	    ret = -5;
+	    goto unexpected_error;
+	  }
+	}
 	if( item->optional ) 
 	  ret = 0;
 	else {
 	  if( item->descript ) {
-	    ::Error( ::Here(here,prefix), "Required key \"%s\" (%s) "
-		     "missing in the database.", key, item->descript );
+	    ::Error( ::Here(here,loaddb_prefix.c_str()),
+		     "Required key \"%s\" (%s) missing in the database.",
+		     key, item->descript );
 	  } else {
-	    ::Error( ::Here(here,prefix), "Required key \"%s\" "
-		     "missing in the database.", key );
+	    ::Error( ::Here(here,loaddb_prefix.c_str()),
+		     "Required key \"%s\" missing in the database.", key );
 	  }
 	  // For missing keys, the return code is the index into the request 
 	  // array + 1. In this way the caller knows which key is missing.
 	  ret = 1+(item-req);
 	  break;
 	}
-      } else if( ret == -128 ) {
-	::Error( ::Here(here,prefix), "Text line too long. Fix the database!\n"
-		 "\"%s...\"", errtxt.c_str() );
+      } else if( ret == -128 ) {  // Line too long
+	::Error( ::Here(here,loaddb_prefix.c_str()),
+		 "Text line too long. Fix the database!\n\"%s...\"",
+		 errtxt.c_str() );
 	break;
-      } else if( ret < 0 ) {
-	::Error( ::Here(here,prefix), "Program error when trying to "
-		 "read database key \"%s\". Call expert.", key );
+      } else if( ret < 0 ) {  // Unexpected zero pointer etc.
+      unexpected_error:
+	::Error( ::Here(here,loaddb_prefix.c_str()), 
+		 "Program error when trying to read database key \"%s\". "
+		 "CALL EXPERT!", key );
 	break;
       }
     }
+  nextitem:
     item++;
   }
+  if( --loaddb_depth == 0 )
+    loaddb_prefix.erase();
+
   return ret;
 }
 
 //_____________________________________________________________________________
 Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
-				 const TagDef* tags, const char* prefix )
+				 const TagDef* tags, const char* prefix,
+				 Int_t search )
 {
   // Compatibility function to read database with old 'TagDef' 
   // request structure
@@ -1127,7 +1210,7 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
     return 0;
 
   DBRequest *req = new struct DBRequest[nreq+1], *theReq = req;
-  if( !tags )
+  if( !req )
     return -3;
   item = tags;
   while( item->name ) {
@@ -1136,12 +1219,13 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
     theReq->type      = item->type;
     theReq->nelem     = item->expected;
     theReq->optional  = item->fatal ? kFALSE : kTRUE;
+    theReq->search    = 0;
     theReq->descript  = item->name;
     item++; theReq++;
   }
   theReq->name = 0;
 
-  Int_t ret = LoadDB( f, date, req, prefix );
+  Int_t ret = LoadDB( f, date, req, prefix, search );
 
   delete [] req;
   return ret;
@@ -1260,6 +1344,26 @@ Int_t THaAnalysisObject::SeekDBdate( FILE* file, const TDatime& date,
   }
   fseek( file, (found ? foundpos: pos), SEEK_SET );
   return found;
+}
+
+//_____________________________________________________________________________
+vector<string> THaAnalysisObject::vsplit(const string& s)
+{
+  // Static utility function to split a string into
+  // whitespace-separated strings
+  vector<string> ret;
+  typedef string::size_type ssiz_t;
+  ssiz_t i = 0;
+  while ( i != s.size()) {
+    while (i != s.size() && isspace(s[i])) ++i;
+      ssiz_t j = i;
+      while (j != s.size() && !isspace(s[j])) ++j;
+      if (i != j) {
+         ret.push_back(s.substr(i, j-i));
+         i = j;
+      }
+  }
+  return ret;
 }
 
 //_____________________________________________________________________________

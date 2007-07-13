@@ -65,7 +65,7 @@ const Double_t THaVar::kInvalid    = 1e38;
 const char* var_type_name[] = { 
   "kDouble", "kFloat", "kLong", "kULong", "kInt", "kUInt",
   "kShort", "kUShort", "kChar", "kByte", 
-  "kObject", "kString", "kDoubleV", "kIntV",
+  "kObject", "kTString", "kString", "kDoubleV", "kIntV",
   "kDoubleP", "kFloatP", "kLongP", "kULongP", "kIntP", "kUIntP", 
   "kShortP", "kUShortP", "kCharP", "kByteP",
   "kObjectP",

@@ -13,6 +13,7 @@
 #include "VarDef.h"
 
 #include <vector>
+#include <string>
 #include <cstdio>
 
 class THaEvData; //needed by derived classes
@@ -80,14 +81,19 @@ public:
   static  Int_t   LoadDBarray( FILE* file, const TDatime& date, 
   			       const char* tag, std::vector<int>& values );
   static  Int_t   LoadDB( FILE* file, const TDatime& date, 
-			  const DBRequest* request, const char* prefix="" );
+			  const DBRequest* request, const char* prefix="",
+			  Int_t search = 0 );
   static  Int_t   LoadDB( FILE* file, const TDatime& date, 
-			  const TagDef* tags, const char* prefix="" );
+			  const TagDef* tags, const char* prefix="",
+			  Int_t search = 0 );
   static  Int_t   SeekDBdate( FILE* file, const TDatime& date,
 			      Bool_t end_on_tag = false );
   static  Int_t   SeekDBconfig( FILE* file, const char* tag,
 				const char* label = "config",
 				Bool_t end_on_tag = false );
+
+  // Generic utility functions
+  static std::vector<std::string> vsplit( const std::string& s );
 
   // Geometry utility functions
   static  void    GeoToSph( Double_t  th_geo, Double_t  ph_geo,

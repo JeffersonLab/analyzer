@@ -81,9 +81,9 @@ Int_t THaDetectorBase::ReadGeometry( FILE* file, const TDatime& date,
   Int_t err;
   if( required ) {
     DBRequest request[] = {
-      { "position", &position, kDoubleV, 0, 0, 
+      { "position", &position, kDoubleV, 0, 0, 0,
 	"\"position\" (detector position [m])" },
-      { "size", &size, kDoubleV, 0, 0, "\"size\" (detector size [m])"},
+      { "size", &size, kDoubleV, 0, 0, 0, "\"size\" (detector size [m])"},
       { 0 }
     };
     err = LoadDB( file, date, request, fPrefix );

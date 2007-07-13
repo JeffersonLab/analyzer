@@ -43,6 +43,7 @@ struct DBRequest {
   VarType          type;     // (opt) data type (see VarType.h, default Double_t)
   UInt_t           nelem;    // (opt) number of array elements (0/1 = 1 or auto)
   Bool_t           optional; // (opt) If true, missing key is ok
+  Int_t            search;   // (opt) Search for key along name tree
   const char*      descript; // (opt) Key description (if 0, same as name)
 };
 
