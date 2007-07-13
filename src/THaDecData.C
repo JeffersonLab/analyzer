@@ -62,19 +62,98 @@
 #include "TDatime.h"
 #include "TH1.h"
 #include "TClass.h"
+#include "TNamed.h"
 
 #include "VarDef.h"
 #include <fstream>
 #include <iostream>
 #include <cstring>
 #include <cctype>
+#include <vector>
+#include <string>
 
 using namespace std;
+
+class BdataLoc : public TNamed {
+// Utility class used by THaDecData.
+// Data location, either in (crates, slots, channel), or
+// relative to a unique header in a crate or in an event.
+   static const Int_t MxHits=16;
+ public:
+   // c'tor for (crate,slot,channel) selection
+   BdataLoc ( const char* nm, Int_t cra, Int_t slo, Int_t cha ) :
+     TNamed(nm,nm), crate(cra), slot(slo), chan(cha), header(0), ntoskip(0), 
+     search_choice(0) { Clear(); }
+   // c'tor for header search (note, the only diff to above is 3rd arg is UInt_t)
+  //FIXME: this kind of overloading (Int/UInt) is asking for trouble...
+   BdataLoc ( const char* nm, Int_t cra, UInt_t head, Int_t skip ) :
+     TNamed(nm,nm), crate(cra), slot(0), chan(0), header(head), ntoskip(skip),
+     search_choice(1) { Clear(); }
+   Bool_t IsSlot() { return (search_choice == 0); }
+   void Clear( const Option_t* opt="" ) { ndata=0;  loaded_once = kFALSE; }
+   void Load(UInt_t data) {
+     if (ndata<MxHits) rdata[ndata++]=data;
+     loaded_once = kTRUE;
+   }
+   Bool_t DidLoad() { return loaded_once; }
+   Int_t NumHits() { return ndata; }
+   UInt_t Get(Int_t i=0) { 
+     return (i >= 0 && ndata > i) ? rdata[i] : 0; }
+  //FIXME: this should be operator==( const char* )
+   Bool_t ThisIs(const char* aname) { return fName==aname;}
+  // operator== and != compare the hardware definitions of two BdataLoc's
+  Bool_t operator==( const BdataLoc& rhs ) const {
+    return ( search_choice == rhs.search_choice && crate == rhs.crate &&
+	     ( (search_choice == 0 && slot == rhs.slot && chan == rhs.chan) ||
+	       (search_choice == 1 && header == rhs.header && 
+		ntoskip == rhs.ntoskip)
+	       )  
+	     );
+  }
+  Bool_t operator!=( const BdataLoc& rhs ) const { return !(*this == rhs ); }
+  void SetSlot( Int_t cr, Int_t sl, Int_t ch ) {
+    crate = cr; slot = sl; chan = ch; header = ntoskip = search_choice = 0;
+  }
+  void SetHeader( Int_t cr, UInt_t hd, Int_t sk ) {
+    crate = cr; header = hd; ntoskip = sk; slot = chan = 0; search_choice = 1;
+  }
+   ~BdataLoc() {}
+   
+   Int_t  crate, slot, chan;   // where to look in crates
+   UInt_t header;              // header (unique either in data or in crate)
+   Int_t ntoskip;              // how far to skip beyond header
+   
+   UInt_t rdata[MxHits];       //[ndata] raw data (to accom. multihit chanl)
+   Int_t  ndata;               // number of relevant entries
+ private:
+   Int_t  search_choice;       // whether to search in crates or rel. to header
+   Bool_t loaded_once;
+   BdataLoc();
+   BdataLoc(const BdataLoc& dataloc);
+   BdataLoc& operator=(const BdataLoc& dataloc);
+};
 
 typedef vector<BdataLoc*>::iterator Iter_t;
 
 THaDecData* THaDecData::fgThis = NULL;  //Pointer to single instance of this class
 Int_t  THaDecData::fgVdcEffFirst = 2;
+
+//_____________________________________________________________________________
+static UInt_t header_str_to_base16(const char* hdr) {
+  // Utility to convert string header to base 16 integer
+  const char chex[] = "0123456789abcdef";
+  if( !hdr ) return 0;
+  const char* p = hdr+strlen(hdr);
+  UInt_t result = 0;  UInt_t power = 1;
+  while( p-- != hdr ) {
+    const char* q = strchr(chex,tolower(*p));
+    if( q ) {
+      result += (q-chex)*power; 
+      power *= 16;
+    }
+  }
+  return result;
+};
 
 
 //_____________________________________________________________________________
@@ -301,16 +380,17 @@ Int_t THaDecData::SetupDecData( const TDatime* run_time, EMode mode )
 	// - if a name disappears, things are ambiguous. Just leave it as 
 	//   it is, although something is probably wrong with the database
 	//
+	TString bname = b->GetName();
 	Iter_t p;
 	for( p = fWordLoc.begin();  p != fWordLoc.end(); p++ ) {
-	  if( b->name == (*p)->name ) {
+	  if( bname == (*p)->GetName() ) {
 	    already_defined = true;
 	    break;
 	  }
 	}
 	if( !already_defined ) {
 	  for( p = fCrateLoc.begin(); p != fCrateLoc.end(); p++ ) {
-	    if( b->name == (*p)->name ) {
+	    if( bname == (*p)->GetName() ) {
 	      already_defined = true;
 	      break;
 	    }
@@ -321,7 +401,9 @@ Int_t THaDecData::SetupDecData( const TDatime* run_time, EMode mode )
 	  if ( **p != *b ) {
 	    if( fDebug>2 ) 
 	      Info( Here(here), 
-		    "Updating variable %s", (*p)->name.c_str() );
+		    "Updating variable %s", (*p)->GetName() );
+	    //FIXME:  Ouch! If we change from slot to header or vice versa, we
+	    // must move the object from fCrateLoc to fWordLoc or vice versa...
 	    if( is_slot )
 	      (*p)->SetSlot( crate, slot, chan );
 	    else
@@ -330,7 +412,7 @@ Int_t THaDecData::SetupDecData( const TDatime* run_time, EMode mode )
 	    if( fDebug>2 )
 	      Info( Here(here),
 		    "Variable %s already defined and not changed",
-		    (*p)->name.c_str() );
+		    (*p)->GetName() );
 	  }
 	}
       }
@@ -338,11 +420,11 @@ Int_t THaDecData::SetupDecData( const TDatime* run_time, EMode mode )
       if( !already_defined ) {
 	if( found && fDebug>2 ) 
 	  Info( Here(here), "Defining standard variable %s", 
-		b->name.c_str());
+		b->GetName() );
 	else if( !found && fDebug>2 ) 
 	  // !found is ok, but might be a typo error too, so I print to warn you.
 	  Info( Here(here), 
-		"New variable %s will become global", b->name.c_str());
+		"New variable %s will become global", b->GetName() );
 
 	if( is_slot ) {
 	  fCrateLoc.push_back(b);
@@ -366,7 +448,7 @@ Int_t THaDecData::SetupDecData( const TDatime* run_time, EMode mode )
 BdataLoc* THaDecData::DefineChannel(BdataLoc *b, EMode mode, const char* desc)
 {
   if( gHaVars ) {
-    string nm(fPrefix + b->name);
+    string nm(fPrefix); nm += b->GetName();
     if (mode==kDefine)
       gHaVars->Define(nm.c_str(),desc,b->rdata[0],&(b->ndata));
     else if (mode==kDelete) {
@@ -528,17 +610,14 @@ Int_t THaDecData::Decode(const THaEvData& evdata)
 // as relative to a header.   fWordLoc are treated seperately from fCrateLoc
 // for performance reasons; this loop could be slow !
 
-  for (Int_t i = 0; i < evdata.GetEvLength(); i++) {
-    //FIXME: hash list lookup of header -> BdataLoc
-    //FIXME: skip to next header?
-    for (Iter_t p = fWordLoc.begin(); p != fWordLoc.end(); p++) {
-      BdataLoc *dataloc = *p;
-      if ( dataloc->DidLoad() || dataloc->IsSlot() ) continue;
-      if ( evdata.InCrate(dataloc->crate, i) ) {
-        if ((UInt_t)evdata.GetRawData(i) == dataloc->header) {
-            dataloc->Load(evdata.GetRawData(i + dataloc->ntoskip));
-        }
-      }
+  //FIXME: This can be made faster if each header is followed by the offset
+  // to the next header. Is it?
+  for (Iter_t p = fWordLoc.begin(); p != fWordLoc.end(); p++) {
+    BdataLoc *dataloc = *p;
+    for( Int_t i = 0; i < evdata.GetRocLength(dataloc->crate); i++ ) {
+      if( static_cast<UInt_t>( evdata.GetRawData(dataloc->crate,i) )
+	  == dataloc->header)
+	dataloc->Load(evdata.GetRawData(dataloc->crate, i + dataloc->ntoskip));
     }
   }
 
@@ -747,41 +826,6 @@ void THaDecData::Print( Option_t* opt ) const {
   cout << "Histograms: " << hist.size() << endl;
 }
 
-
-//_____________________________________________________________________________
-vector<string> THaDecData::vsplit(const string& s) {
-// split a string into whitespace-separated strings
-  vector<string> ret;
-  typedef string::size_type ssiz_t;
-  ssiz_t i = 0;
-  while ( i != s.size()) {
-    while (i != s.size() && isspace(s[i])) ++i;
-      ssiz_t j = i;
-      while (j != s.size() && !isspace(s[j])) ++j;
-      if (i != j) {
-         ret.push_back(s.substr(i, j-i));
-         i = j;
-      }
-  }
-  return ret;
-}
-
-//_____________________________________________________________________________
-UInt_t THaDecData::header_str_to_base16(const char* hdr) {
-// Utility to convert string header to base 16 integer
-  const char chex[] = "0123456789abcdef";
-  if( !hdr ) return 0;
-  const char* p = hdr+strlen(hdr);
-  UInt_t result = 0;  UInt_t power = 1;
-  while( p-- != hdr ) {
-    const char* q = strchr(chex,tolower(*p));
-    if( q ) {
-      result += (q-chex)*power; 
-      power *= 16;
-    }
-  }
-  return result;
-};
 
 //_____________________________________________________________________________
 void THaDecData::TrigBits(UInt_t ibit, BdataLoc *dataloc) {
