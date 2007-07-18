@@ -31,7 +31,7 @@
 
 #include "THaHelicity.h"
 #include "THaEvData.h"
-#include <string.h>
+#include "TMath.h"
 using namespace std;
 
 ClassImp(THaHelicity)
