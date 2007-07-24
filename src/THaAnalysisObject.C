@@ -741,10 +741,13 @@ Int_t THaAnalysisObject::IsDBdate( const string& line, TDatime& date,
 Int_t THaAnalysisObject::IsDBtag( const string& line, const char* tag,
 				  string& text )
 {
-  // Check if 'line' is a tag = value pair and whether the tag equals 'tag'. 
-  // If tag = text, but tag not found, return -1. If tag found, 
-  // parse the line, set 'text' to the text after the "=", and return +1.
-  // Tags are NOT case sensitive.
+  // Check if 'line' is of the form "tag = value" and, if so, whether the tag 
+  // equals 'tag'. If there is no '=', then return zero;
+  // If there is a '=', but the left-hand side doesn't match 'tag',
+  // or if there is NO text after the '=' (obviously a bad database entry), 
+  // then return -1. 
+  // If tag found, parse the line, set 'text' to the text after the "=", 
+  // and return +1. Tags are NOT case sensitive.
   // 'text' is unchanged unless a valid tag is found.
 
   ssiz_t pos = line.find('=');
@@ -760,6 +763,7 @@ Int_t THaAnalysisObject::IsDBtag( const string& line, const char* tag,
   // Extract the text, discarding any whitespace at beginning and end
   string rhs = line.substr(pos+1);
   pos1 = rhs.find_first_not_of(" \t");
+  if( pos1 == string::npos ) return -1;
   pos2 = rhs.find_last_not_of(" \t");
   text = rhs.substr(pos1,pos2-pos1+1);
   return 1;
