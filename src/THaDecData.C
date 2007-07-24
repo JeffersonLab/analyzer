@@ -61,6 +61,7 @@
 #include "THaDetMap.h"
 #include "TDatime.h"
 #include "TH1.h"
+#include "TClass.h"
 #include "VarDef.h"
 #include <fstream>
 #include <iostream>

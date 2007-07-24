@@ -23,6 +23,7 @@
 #include "THaTrack.h"
 #include "TClass.h"
 #include "TMath.h"
+#include "TList.h"
 #include "VarDef.h"
 #include <cmath>
 

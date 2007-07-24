@@ -11,6 +11,7 @@
 #include "THaBeamInfo.h"
 #include "THaBeam.h"
 #include "THaRunParameters.h"
+#include "TMath.h"
 
 using namespace std;
 

@@ -56,6 +56,7 @@
 #include "TClass.h"
 #include "TMethodCall.h"
 #include "TROOT.h"
+#include "TMath.h"
 
 #include <algorithm>
 #include <cstring>

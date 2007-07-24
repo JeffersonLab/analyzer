@@ -12,6 +12,7 @@
 #include "THaRaster.h"
 #include "TMath.h"
 #include "TDatime.h"
+#include "TList.h"
 #include "VarDef.h"
 
 

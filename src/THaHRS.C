@@ -51,6 +51,8 @@
 #include "THaVDC.h"
 #include "THaTrackProj.h"
 #include "THaTriggerTime.h"
+#include "TMath.h"
+#include "TList.h"
 
 #ifdef WITH_DEBUG
 #include <iostream>
