@@ -13,8 +13,6 @@
 //
 //   Crate, Slot, array of channels
 //
-// This is a very preliminary version.
-//
 //////////////////////////////////////////////////////////////////////////
 
 #include "Rtypes.h"
@@ -44,7 +42,7 @@ public:
 			       UInt_t first=0, UInt_t model=0,
 			       Int_t refindex=-1 );
           void      Clear()  { fNmodules = 0; }
-  virtual Int_t     Fill( const std::vector<int> values, UInt_t flags = 0 );
+  virtual Int_t     Fill( const std::vector<int>& values, UInt_t flags = 0 );
           Module*   GetModule( UShort_t i ) const { return (Module*)fMap+i; }
           Int_t     GetNchan( UShort_t i ) const;
           Int_t     GetTotNumChan() const;

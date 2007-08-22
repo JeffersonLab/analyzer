@@ -43,7 +43,7 @@ THaDetectorBase::~THaDetectorBase()
 }
 
 //_____________________________________________________________________________
-Int_t THaDetectorBase::FillDetMap( const vector<int> values, UInt_t flags,
+Int_t THaDetectorBase::FillDetMap( const vector<int>& values, UInt_t flags,
 				   const char* here )
 {
   // Utility function to fill this detector's detector map. 

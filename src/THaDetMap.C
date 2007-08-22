@@ -117,7 +117,7 @@ Int_t THaDetMap::AddModule( UShort_t crate, UShort_t slot,
 }
 
 //_____________________________________________________________________________
-Int_t THaDetMap::Fill( const vector<int> values, UInt_t flags )
+Int_t THaDetMap::Fill( const vector<int>& values, UInt_t flags )
 {
   // Fill the map with 'values'. Depending on 'flags', the values vector
   // is interpreted as a 4-, 5-, 6- or 7-tuple:
