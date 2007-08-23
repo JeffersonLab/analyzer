@@ -294,7 +294,6 @@ THaVDCPlane::~THaVDCPlane()
 }
 
 //_____________________________________________________________________________
-inline
 void THaVDCPlane::Clear( Option_t* opt )
 {    
   // Clears the contents of the and hits and clusters
@@ -311,8 +310,6 @@ Int_t THaVDCPlane::Decode( const THaEvData& evData)
   // TODO: Make sure the wires are numbered in order, even if the channels
   //       aren't
               
-  Clear();  //Clear the last event
-
   if (!evData.IsPhysicsTrigger()) return -1;
 
   // the event's T0-shift, due to the trigger-type

@@ -26,6 +26,7 @@ public:
 	       THaDetectorBase* parent = NULL );
   virtual ~THaVDCPlane();
 
+  virtual void    Clear( Option_t* opt="" );
   virtual Int_t   Decode( const THaEvData& ); // Raw data -> hits
   virtual Int_t   FindClusters();             // Hits -> clusters  
   virtual Int_t   FitTracks();                // Clusters -> tracks
@@ -99,8 +100,6 @@ protected:
   
   THaTriggerTime* fglTrg; //! time-offset global variable. Needed at the decode stage
   
-  virtual void  Clear( Option_t* opt="" );
-
   virtual void  MakePrefix();
   virtual Int_t ReadDatabase( const TDatime& date );
   virtual Int_t DefineVariables( EMode mode = kDefine );

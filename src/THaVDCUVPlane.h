@@ -24,9 +24,10 @@ public:
 		 THaDetectorBase* parent = NULL );
   virtual ~THaVDCUVPlane();
 
-  virtual Int_t   Decode( const THaEvData& );   // Process Raw Data
-  virtual Int_t   CoarseTrack(  );              // Find clusters & estimate track
-  virtual Int_t   FineTrack( );                 // More precisely calculate track
+  virtual void    Clear( Option_t* opt="" );    // Reset event-by-event data
+  virtual Int_t   Decode( const THaEvData& evData );
+  virtual Int_t   CoarseTrack();          // Find clusters & estimate track
+  virtual Int_t   FineTrack();            // More precisely calculate track
   virtual EStatus Init( const TDatime& date );
 
   // Get and Set Functions
@@ -58,8 +59,6 @@ protected:
   Double_t fCos_v;            // angle
   Double_t fSin_vu;           // Sine of the difference between the V wire
                               // angle and the U wire angle
-
-  void Clear( Option_t* opt="" )  { fUVTracks->Clear(); }
 
   // For CoarseTrack
   void FindClusters()        // Find clusters in U & V planes

@@ -196,16 +196,21 @@ Int_t THaVDCUVPlane::CalcUVTrackCoords()
 }
 
 //_____________________________________________________________________________
+void THaVDCUVPlane::Clear( Option_t* opt )
+{ 
+  // Clear event-by-event data
+  fU->Clear(opt);
+  fV->Clear(opt);
+  fUVTracks->Clear();
+}
+
+//_____________________________________________________________________________
 Int_t THaVDCUVPlane::Decode( const THaEvData& evData )
 {
   // Convert raw data into good stuff
 
-  Clear();
-
-  // Decode each plane
   fU->Decode(evData);
   fV->Decode(evData);  
-
   return 0;
 }
 

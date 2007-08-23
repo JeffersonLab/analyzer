@@ -23,6 +23,7 @@ public:
 
   virtual ~THaVDC();
 
+  virtual void  Clear( Option_t* opt="" );
   virtual Int_t Decode( const THaEvData& );
   virtual Int_t CoarseTrack( TClonesArray& tracks );
   virtual Int_t FineTrack( TClonesArray& tracks );
@@ -129,7 +130,7 @@ protected:
 			    const Double_t powers[][5]);
   Int_t ReadDatabase( const TDatime& date );
 
-  virtual Int_t ConstructTracks( TClonesArray * tracks = NULL, Int_t flag = 0 );
+  virtual Int_t ConstructTracks( TClonesArray* tracks = NULL, Int_t flag = 0 );
 
   void CorrectTimeOfFlight(TClonesArray& tracks);
   void FindBadTracks(TClonesArray &tracks);

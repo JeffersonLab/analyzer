@@ -609,11 +609,19 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 }
 
 //_____________________________________________________________________________
+void THaVDC::Clear( Option_t* opt )
+{ 
+  // Clear event-by-event data
+
+  fLower->Clear(opt);
+  fUpper->Clear(opt);
+}
+
+//_____________________________________________________________________________
 Int_t THaVDC::Decode( const THaEvData& evdata )
 {
   // Decode data from VDC planes
   
-  Clear();
   fLower->Decode(evdata); 
   fUpper->Decode(evdata);
 
