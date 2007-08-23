@@ -426,7 +426,7 @@ THaAnalysisObject::EStatus THaAnalysisObject::Init( const TDatime& date )
       != gROOT->GetClass("THaAnalysisObject")->GetMethodAllAny("ReadDatabase")){
 
     // Call this object's actual database reader
-    fnam = fPrefix;
+    fnam = GetDBFileName();
     if( (status = ReadDatabase(date)) )
       goto err;
   } 
