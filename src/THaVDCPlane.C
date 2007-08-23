@@ -48,9 +48,7 @@ THaVDCPlane::THaVDCPlane( const char* name, const char* description,
   fClusters = new TClonesArray("THaVDCCluster", 5 );
   fWires    = new TClonesArray("THaVDCWire", 368 );
 
-  THaDetectorBase *det = GetDetector();
-  if( det )
-    fVDC = static_cast<THaSubDetector*>(det)->GetDetector();
+  fVDC = GetDetector();
 }
 
 //_____________________________________________________________________________
@@ -441,7 +439,7 @@ Int_t THaVDCPlane::FindClusters()
     hard_cut = soft_cut = false;
   Double_t maxdist = 0.0;
   if( soft_cut ) {
-    maxdist = static_cast<THaVDCUVPlane*>(GetDetector())->GetSpacing() / 2.0;
+    maxdist = 0.5*static_cast<THaVDCUVPlane*>(GetParent())->GetSpacing();
     if( maxdist == 0.0 )
       soft_cut = false;
   }

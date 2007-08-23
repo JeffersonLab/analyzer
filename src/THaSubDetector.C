@@ -15,12 +15,12 @@ ClassImp(THaSubDetector)
 
 //_____________________________________________________________________________
 THaSubDetector::THaSubDetector( const char* name, const char* description,
-				THaDetectorBase* detector )
-  : THaDetectorBase(name,description), fDetector(detector)
+				THaDetectorBase* parent )
+  : THaDetectorBase(name,description), fParent(parent)
 {
   // Normal constructor with name and description
 
-  static const char* const here = "THaSubDetector()";
+  static const char* const here = "THaSubDetector";
 
   if( !name || !*name ) {
     Error( Here(here), "Must construct subdetector with valid name! "
@@ -57,7 +57,14 @@ void THaSubDetector::SetDetector( THaDetectorBase* detector )
     Warning( Here(here), "Cannot set detector to self. Detector not changed.");
     return;
   }    
-  fDetector = detector;
+  fParent = detector;
+}
+
+//_____________________________________________________________________________
+const char* THaSubDetector::GetDBFileName() const
+{
+  THaDetector* det = GetDetector();
+  return det ? det->GetDBFileName() : GetPrefix();
 }
 
 //_____________________________________________________________________________
@@ -80,16 +87,4 @@ void THaSubDetector::MakePrefix()
   THaDetectorBase::MakePrefix( basename.Data() );
 }
 
-//_____________________________________________________________________________
-THaApparatus* THaSubDetector::GetApparatus() const
-{
-  // Return parent apparatus (parent of parent detector)
-
-  THaDetectorBase* parent = GetDetector();
-  while( parent && dynamic_cast<THaSubDetector*>(parent) )
-    parent = static_cast<THaSubDetector*>(parent)->GetDetector();
-  THaDetector* det = dynamic_cast<THaDetector*>(parent);
-  if( det == NULL )
-    return NULL;
-  return det->GetApparatus();
-}
+///////////////////////////////////////////////////////////////////////////////

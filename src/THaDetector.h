@@ -28,15 +28,17 @@ public:
   virtual void   SetApparatus( THaApparatus* );
 
   THaDetector();  // for ROOT I/O only
+
 protected:
-  TRef  fApparatus;          // Apparatus containing this detector
 
-//Only derived classes may construct me
+  virtual void MakePrefix();
 
+  //Only derived classes may construct me
   THaDetector( const char* name, const char* description, 
 	       THaApparatus* apparatus = NULL );  
 
-  virtual void MakePrefix();
+private:
+  TRef  fApparatus;         // Apparatus containing this detector
 
   ClassDef(THaDetector,1)   //Abstract base class for a Hall A detector
 };
