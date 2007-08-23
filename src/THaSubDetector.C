@@ -72,9 +72,7 @@ void THaSubDetector::MakePrefix()
   THaDetectorBase *det = GetDetector();
   if( det ) {
     basename = det->GetPrefix();
-    Ssiz_t len = basename.Length();
-    if( len>0 )
-      basename.Replace(len-1,1,"");  // delete trailing dot
+    basename.Chop();
   } else
     Warning( Here("MakePrefix()"), "No detector defined for this subdetector! "
 	     "Fix your code!" );

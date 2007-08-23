@@ -100,8 +100,8 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
   
   // Build the search tag and find it in the file. Search tags
   // are of form [ <prefix> ], e.g. [ R.vdc.u1 ].
-  TString tag(fPrefix); tag.Prepend("["); tag.Append("]"); 
-  tag.Replace( tag.Length()-2, 1, "" );  // delete trailing dot of prefix
+  TString tag(fPrefix); tag.Chop(); // delete trailing dot of prefix
+  tag.Prepend("["); tag.Append("]"); 
   TString line, tag2(tag);
   tag.ToLower();
   bool found = false;
