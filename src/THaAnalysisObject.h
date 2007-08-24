@@ -76,10 +76,9 @@ public:
 			       const char* tag, std::string& text );
   static  Int_t   LoadDBvalue( FILE* file, const TDatime& date, 
 			       const char* tag, TString& text );
+  template <class T>
   static  Int_t   LoadDBarray( FILE* file, const TDatime& date, 
-			       const char* tag, std::vector<double>& values );
-  static  Int_t   LoadDBarray( FILE* file, const TDatime& date, 
-  			       const char* tag, std::vector<int>& values );
+ 			       const char* tag, std::vector<T>& values );
   static  Int_t   LoadDB( FILE* file, const TDatime& date, 
 			  const DBRequest* request, const char* prefix="",
 			  Int_t search = 0 );

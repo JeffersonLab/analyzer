@@ -15,7 +15,7 @@
 
 enum VarType { kDouble = 0, kFloat, kLong, kULong, kInt, kUInt, 
 	       kShort, kUShort, kChar, kByte, 
-	       kObject, kTString, kString, kDoubleV, kIntV,
+	       kObject, kTString, kString, kIntV, kFloatV, kDoubleV,
 	       kDoubleP, kFloatP, kLongP, kULongP, kIntP, kUIntP, 
 	       kShortP, kUShortP, kCharP, kByteP,
 	       kObjectP,

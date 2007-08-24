@@ -989,8 +989,9 @@ Int_t THaAnalysisObject::LoadDBvalue( FILE* file, const TDatime& date,
 }
 
 //_____________________________________________________________________________
+template <class T>
 Int_t THaAnalysisObject::LoadDBarray( FILE* file, const TDatime& date, 
-				      const char* tag, vector<double>& values )
+				      const char* tag, vector<T>& values )
 {
   string text;
   Int_t err = LoadDBvalue( file, date, tag, text );
@@ -999,33 +1000,11 @@ Int_t THaAnalysisObject::LoadDBarray( FILE* file, const TDatime& date,
   values.clear();
   text += " ";
   istringstream inp(text);
-  double dval;
+  T dval;
   while( 1 ) {
     inp >> dval;
     if( inp.good() )
       values.push_back(dval);
-    else
-      break;
-  }
-  return 0;
-}
-
-//_____________________________________________________________________________
-Int_t THaAnalysisObject::LoadDBarray( FILE* file, const TDatime& date, 
-				      const char* tag, vector<int>& values )
-{
-  string text;
-  Int_t err = LoadDBvalue( file, date, tag, text );
-  if( err )
-    return err;
-  values.clear();
-  text += " ";
-  istringstream inp(text);
-  int ival;
-  while( 1 ) {
-    inp >> ival;
-    if( inp.good() )
-      values.push_back(ival);
     else
       break;
   }
@@ -1096,6 +1075,8 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 	ret = LoadDBvalue( f, date, key, *((string*)item->var) );
       } else if( item->type == kTString ) {
 	ret = LoadDBvalue( f, date, key, *((TString*)item->var) );
+      } else if( item->type == kFloatV ) {
+	ret = LoadDBarray( f, date, key, *((vector<float>*)item->var) );
       } else if( item->type == kDoubleV ) {
 	ret = LoadDBarray( f, date, key, *((vector<double>*)item->var) );
       } else if( item->type == kIntV ) {
