@@ -16,13 +16,15 @@
 #include "TMath.h"
 #include <iostream>
 #include <cstdio>
+#include <cmath>
 
 using namespace std;
 
 // Default parameters
-static const Double_t kDefaultTdavg = 14000.;
-static const Double_t kDefaultTtol  = 200.;
+static const Double_t kDefaultTdavg = 14050.;
+static const Double_t kDefaultTtol  = 40.;
 static const Int_t    kDefaultDelay = 8;
+static const Int_t    kDefaultMissQ = 30;
 
 //_____________________________________________________________________________
 THaG0Helicity::THaG0Helicity( const char* name, const char* description,
@@ -35,7 +37,7 @@ THaG0Helicity::THaG0Helicity( const char* name, const char* description,
   fFirstquad(0), fLastTimestamp(0.0), fTimeLastQ1(0.0),
   fT9count(0), fPredicted_reading(0), fQ1_reading(0),
   fPresent_helicity(kUnknown), fSaved_helicity(kUnknown),
-  fQ1_present_helicity(kUnknown),
+  fQ1_present_helicity(kUnknown), fMaxMissed(kDefaultMissQ),
   fNqrt(0), fHisto(NULL), fNB(0), fIseed(0), fIseed_earlier(0),
   fInquad(0), fTET9Index(0), fTELastEvtQrt(-1), fTELastEvtTime(-1.),
   fTELastTime(-1.), fTEPresentReadingQ1(-1), fTEStartup(3), fTETime(-1.),
@@ -70,6 +72,7 @@ Int_t THaG0Helicity::DefineVariables( EMode mode )
 
   const RVarDef var[] = {
     { "qrt",       "qrt from ROC",                "fQrt" },
+    { "nqrt",      "number of qrts seen",         "fNqrt" },
     { "quad",      "quad (1, 2, or 4)",           "fQuad" },
     { "tdiff",     "time since quad start",       "fTdiff" },
     { "gate",      "Helicity Gate from ROC",      "fGate" },
@@ -110,6 +113,7 @@ Int_t THaG0Helicity::ReadDatabase( const TDatime& date )
   time2roc[0] = 0; time3roc[0] = 0;
   Int_t delay = fG0delay;
   Double_t tdavg = fTdavg, ttol = fTtol;
+  Int_t missqrt = fMaxMissed;
 
   DBRequest req[] = {
     { "helroc",   helroc,   kInt, 3 },
@@ -119,6 +123,7 @@ Int_t THaG0Helicity::ReadDatabase( const TDatime& date )
     { "delay",    &delay,   kInt, 1, 1 },
     { "tdavg",    &tdavg },
     { "ttol",     &ttol },
+    { "missqrt",  &missqrt },
     { 0 }
   };
   //  Int_t err = gHaDB->LoadValues( GetPrefix(), req, date );
@@ -147,6 +152,8 @@ Int_t THaG0Helicity::ReadDatabase( const TDatime& date )
     fTdavg = tdavg;
   if( !TESTBIT(fManuallySet,2) )
     fTtol = ttol;
+  if( !TESTBIT(fManuallySet,3) )
+    fMaxMissed = missqrt;
 
   return kOK;
 }
@@ -247,11 +254,24 @@ void THaG0Helicity::SetTdavg( Double_t value )
 //_____________________________________________________________________________
 void THaG0Helicity::SetTtol( Double_t value )
 {
-  // Set delay of helicity data (# windows).
+  // Set the tolerance in timing when looking for missing quads
+  // (# channels)
   // This value will override the value from the database.
 
   fTtol = value;
   fManuallySet |= BIT(2);
+}
+
+//_____________________________________________________________________________
+void THaG0Helicity::SetMaxMsQrt( Int_t value )
+{
+  // Set the maximum number of missing quads permitted before
+  // forcing the helicity calibration to be re-performed.
+  // (# quads)
+  // This value will override the value from the database.
+
+  fMaxMissed = value;
+  fManuallySet |= BIT(3);
 }
 
 //_____________________________________________________________________________
@@ -260,6 +280,10 @@ void THaG0Helicity::TimingEvent()
   // Check for and process timing events
   // A timing event is a T9, *or* if enough time elapses without a
   // T9, it's any event with QRT==1 following an event with QRT==0.
+  //
+  //  NOTE: This presently has NO EFFECT on the helicity processing,
+  //        just provides warning messages if something suspicious
+  //        happens.
 
   static const char* const here = "TimingEvent";
 
@@ -275,9 +299,14 @@ void THaG0Helicity::TimingEvent()
     // or just the timestamp of the QRT==1 event (if it is).
     // This is lousy accuracy but better than nothing.
     fTEType9 = kFALSE;
-    fTETime = 
-      (fTimestamp - fTELastEvtTime) < 0.5 * fTdavg ?
-      (fTimestamp + fTELastEvtTime) * 0.5 : fTimestamp;
+    if (fTELastEvtTime>0.
+	&& (fTimestamp - fTELastEvtTime) < 0.1 * fTdavg) {
+      fTETime = (fTimestamp + fTELastEvtTime) * 0.5;
+    } else {
+      // Either we have not seen a previous event or it was too far away,
+      // work with the present reading
+      fTETime = fTimestamp;
+    }
   }
   else {
     fTELastEvtQrt = fQrt;
@@ -290,15 +319,16 @@ void THaG0Helicity::TimingEvent()
   if (fTELastTime > 0)
     {
       // Look for missed timing events
+      Double_t t9diff = 0.25 * fTdavg;
       Double_t tdiff = fTETime - fTELastTime;
-      Int_t nt9miss = (Int_t) (tdiff / 3508 - 0.5);
+      Int_t nt9miss = (Int_t) (tdiff / t9diff - 0.5);
       fTET9Index += nt9miss;
       if (fTET9Index > 3) {
 	fTEPresentReadingQ1 = -1;
 	fTET9Index = fTET9Index % 4;
       }
       if (fTEType9 &&
-	  TMath::Abs(tdiff - (nt9miss+1) * 3510) > 10*(nt9miss + 1) )
+	  TMath::Abs(tdiff - (nt9miss+1) * t9diff) > 10*(nt9miss + 1) )
 	Warning( Here(here), "Weird time difference between timing events: "
 		 "%f at %f.", tdiff, fTETime);
     }
@@ -367,13 +397,8 @@ void THaG0Helicity::QuadCalib() {
     if (fDebug >= 1)
       Info( Here(here), "Recovering large DT, nqmiss = %d "
 	    "at timestamp %f, tdiff %f", nqmiss, fTimestamp, fTdiff );
-    if (nqmiss < 30) {
+    if (fQuad_calibrated && nqmiss < fMaxMissed) {
       for (Int_t i = 0; i < nqmiss; i++) {
-	fNqrt++;
-	QuadHelicity(1);
-
-	fQ1_reading = (fPredicted_reading == -1) ? 0 : 1;
-
 	if (fQrt == 1 && fT9 > 0 
 	    && fTimestamp - fT9 < 8*fTdavg) 
 	  {
@@ -385,6 +410,11 @@ void THaG0Helicity::QuadCalib() {
 	  fT0 += fTdavg;
 	  fT0T9 = kFALSE;
 	}
+	QuadHelicity(1);
+	fNqrt++;
+
+	fQ1_reading = (fPredicted_reading == -1) ? 0 : 1;
+
 	fQ1_present_helicity = fPresent_helicity;
 	if (fDebug>=1) {
 	  Info(Here(here)," %5d  M  M %1d %2d  %10.0f  %10.0f  %10.0f Missing",
@@ -393,7 +423,9 @@ void THaG0Helicity::QuadCalib() {
       }
       fTdiff = fTimestamp - fT0;
     } else { 
-      Warning( Here(here), "Skipped QRT.  Low rate ?" );
+      Warning( Here(here), "Cannot recover: Too many skipped QRT (Low rate ?) or uninitialized" );
+      fNqrt += nqmiss; // advance counter for later check
+      fT0 += nqmiss*fTdavg;
       fRecovery_flag = kTRUE;    // clear & recalibrate the predictor
       fQuad_calibrated = kFALSE;
       fFirstquad = 1;
@@ -409,9 +441,8 @@ void THaG0Helicity::QuadCalib() {
 
   if (fEvtype == 9 && fQrt == 1) {
     if (fTimeLastQ1 > 0) {
-      Double_t q1tdiff = fTimestamp - fTimeLastQ1;
-      if (q1tdiff < .9 * fTdavg ||
-	  (q1tdiff > 1.1 * fTdavg && q1tdiff < 1.9 * fTdavg))
+      Double_t q1tdiff = fmod(fTimestamp - fTimeLastQ1,fTdavg);
+      if (q1tdiff > .1*fTdavg)
 	Warning( Here(here), "QRT==1 timing error --  Last time = %f "
 	     "This time = %f\nHELICITY SIGNALS MAY BE CORRUPT", 
 		 fTimeLastQ1, fTimestamp );
@@ -427,16 +458,10 @@ void THaG0Helicity::QuadCalib() {
   // Do not worry about  evt9's for now, since that transition is redundant
   // when a new Qrt is found. And frequently the evt9 came immediately
   // BEFORE the Qrt.
+  // NOTE: missing QRT's are already handled by the 'nmissq' section above
   if ( ( fTdiff > 0.5*fTdavg ) && ( fQrt == 1 ) ) {
-    // ||
-    // On rare occassions QRT bit might be missing.  Then look for
-    // evtype 9 w/ gate = 0 within the first 0.5 msec after 4th window.
-    // However this doesn't work well because of time fluctuations,
-    // so I leave it out for now.  Missing QRT is hopefully rare.
-    //        (( fTdiff > 1.003*fTdavg )  &&
-    //     ( fEvtype == 9 && fGate == 0 && t9count > 3 )) ) {
     if (fDebug >= 3) 
-      cout << "found qrt "<<endl;
+      Info(Here(here),"found qrt ");
 
     // If we have T9 within recent time: Update fT0 to match the
     // nearest/closest last evt9 (extrapolated from the last
@@ -452,14 +477,14 @@ void THaG0Helicity::QuadCalib() {
     }
     else {
       fT0 = (fLastTimestamp == 0 
-	     || fTimestamp - fLastTimestamp > 0.5*fTdavg)
+	     || fTimestamp - fLastTimestamp > 0.1*fTdavg)
 	? fTimestamp : 0.5 * (fTimestamp + fLastTimestamp);
       fT0T9 = kFALSE;
     }
     fQ1_reading = fPresentReading;
     QuadHelicity();
-    fQ1_present_helicity = fPresent_helicity;
     fNqrt++;
+    fQ1_present_helicity = fPresent_helicity;
     if (fQuad_calibrated && fDebug >= 3) 
       cout << "------------  quad calibrated --------------------------"<<endl;
     if (fQuad_calibrated && !CompHel() ) {
@@ -577,10 +602,27 @@ void THaG0Helicity::LoadHelicity() {
 void THaG0Helicity::QuadHelicity(Int_t cond) {
 // Load the helicity from the present reading for the
 // start of a quad.
-
-  if (fRecovery_flag) 
+//  Requires:  cond!=0 in order to force the quad to advance
+//             fT0 to be updated and set for THIS quad
+  static const char* const here = "QuadHelicity";
+  
+  if (fRecovery_flag) {
     fNB = 0;
+    fSaved_helicity = kUnknown;
+  }
   fRecovery_flag = kFALSE;
+
+  fPresent_helicity = fSaved_helicity;
+  // Make certain a given qrt is used only once UNLESS
+  // a reset of the Quad calibration has happened
+  if (cond == 0 && fNB>0
+      && fTlastquad > 0
+      && fT0 - fTlastquad < 0.3 * fTdavg) {
+    if (fDebug >= 2) Warning(Here(here),"SKIP this quad, QRT's too close");
+    return;
+  }
+  fTlastquad = fT0;
+  
   if (fNB < kNbits) {
     fHbits[fNB] = fPresentReading;
     fNB++;
@@ -606,15 +648,9 @@ void THaG0Helicity::QuadHelicity(Int_t cond) {
     fNB++;
     fSaved_helicity = fPresent_helicity;
     fQuad_calibrated = kTRUE;
-  } else {      
-    fPresent_helicity = fSaved_helicity;
-    if (cond == 0) {
-      if (fTimestamp - fTlastquad < 
-	  0.3 * fTdavg) return;  // Don't calibrate twice same qrt.
-    }
+  } else {
     fPredicted_reading = RanBit(0);
     fSaved_helicity = fPresent_helicity = RanBit(1);
-    fTlastquad = fTimestamp;
     if (fDebug >= 3) {
       cout << "quad helicities  " << dec;
       cout << fPredicted_reading;           // -1, +1

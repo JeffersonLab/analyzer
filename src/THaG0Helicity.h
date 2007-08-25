@@ -36,6 +36,7 @@ public:
   void      SetG0Delay( Int_t delay );
   void      SetTdavg( Double_t tdavg );
   void      SetTtol( Double_t ttol );
+  void      SetMaxMsQrt( Int_t missq );
 
 protected:
 
@@ -64,6 +65,7 @@ protected:
   Int_t fT9count;
   Int_t fPredicted_reading, fQ1_reading;
   EHelicity fPresent_helicity, fSaved_helicity, fQ1_present_helicity;
+  Int_t fMaxMissed;   // maximum number of missed quads before resetting
   Int_t fHbits[kNbits];
   UInt_t fNqrt;
   TH1F *fHisto;  // Histogram of time diffs, filled in calibration mode
@@ -84,7 +86,7 @@ protected:
   virtual Int_t DefineVariables( EMode mode = kDefine );
   virtual Int_t ReadDatabase( const TDatime& date );
 
-  ClassDef(THaG0Helicity,1)   // Beam helicity from G0 electronics in delayed mode
+  ClassDef(THaG0Helicity,2)   // Beam helicity from G0 electronics in delayed mode
 
 };
 

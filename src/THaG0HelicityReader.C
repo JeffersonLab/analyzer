@@ -47,8 +47,8 @@ Int_t THaG0HelicityReader::SetROCinfo( Int_t which, Int_t roc,
     return -2;
 
   fROCinfo[which].roc    = roc;
-  fROCinfo[which].header = roc;
-  fROCinfo[which].index  = roc;
+  fROCinfo[which].header = header;
+  fROCinfo[which].index  = index;
 
   fHaveROCs = ( fROCinfo[kHel].roc > 0 && fROCinfo[kTime].roc > 0 );
     
