@@ -30,6 +30,20 @@ public:
     UInt_t   model;  // model number of module (for ADC/TDC identification).
                      // Upper two bytes of model -> ADC/TDC-ness of module
     Int_t   refindex;  // for pipeline TDCs: index to a reference channel
+    Double_t resolution; // Resolution (s/chan) for TDCs
+  };
+
+  // Flags for GetMinMaxChan()
+  enum ECountMode {
+    kLogicalChan         = 0,
+    kRefIndex            = 1
+  };
+  // Flags for Fill()
+  enum EFillFlags {
+    kDoNotClear          = BIT(0),    // Don't clear the map first
+    kFillLogicalChannel  = BIT(10),   // Parse the logical channel number
+    kFillModel           = BIT(11),   // Parse the model number
+    kFillRefIndex        = BIT(12)    // Parse the reference index
   };
 
   THaDetMap();
@@ -43,6 +57,8 @@ public:
 			       Int_t refindex=-1 );
           void      Clear()  { fNmodules = 0; }
   virtual Int_t     Fill( const std::vector<int>& values, UInt_t flags = 0 );
+          void      GetMinMaxChan( Int_t& min, Int_t& max,
+				   ECountMode mode = kLogicalChan ) const;
           Module*   GetModule( UShort_t i ) const { return (Module*)fMap+i; }
           Int_t     GetNchan( UShort_t i ) const;
           Int_t     GetTotNumChan() const;
@@ -59,15 +75,6 @@ public:
   virtual void      Reset();
 
   static const int kDetMapSize = (1<<16)-1;  //Sanity limit on map size
-
-  // Flags for Fill()
-  enum EFillFlags {
-    kDoNotClear          = BIT(0),    // Don't clear the map first
-    kAutoCount           = BIT(1),    // Compute logical channels automatically
-    kFillLogicalChannel  = BIT(10),   // Parse the logical channel number
-    kFillModel           = BIT(11),   // Parse the model number
-    kFillRefIndex        = BIT(12)    // Parse the reference index
-  };
 
 protected:
   UShort_t     fNmodules;  // Number of modules (=crate,slot) in the map

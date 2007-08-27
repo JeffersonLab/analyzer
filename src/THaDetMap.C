@@ -68,28 +68,31 @@ Int_t THaDetMap::AddModule( UShort_t crate, UShort_t slot,
 {
   // Add a module to the map.
 
+  // FIXME: put in database, maybe load into static member variable
   struct ModuleType {
-    UInt_t model;
-    int adc;
-    int tdc;
+    UInt_t  model;       // model identifier
+    Bool_t  adc;         // true if ADC
+    Bool_t  tdc;         // true if TDC
+    Double_t resolution; // Resolution in s/channel (for TDCs) (<0: not spec'd)
   };
 
   static const ModuleType module_list[] = {
-    { 1875, 0, 1 },
-    { 1877, 0, 1 },
-    { 1881, 1, 0 },
-    { 1872, 0, 1 },
-    { 3123, 1, 0 },
-    { 1182, 1, 0 },
-    {  792, 1, 0 },
-    {  775, 0, 1 },
-    {  767, 0, 1 },
-    { 3201, 0, 1 },
-    { 6401, 0, 1 },
+    { 1875, 0, 1, -1 },
+    { 1877, 0, 1, 5e-10 },
+    { 1881, 1, 0, -1 },
+    { 1872, 0, 1, -1 },
+    { 3123, 1, 0, -1 },
+    { 1182, 1, 0, -1 },
+    {  792, 1, 0, -1 },
+    {  775, 0, 1, -1 },
+    {  767, 0, 1, -1 },
+    { 3201, 0, 1, -1 },
+    { 6401, 0, 1, -1 },
     { 0 }
   };
 
   if( fNmodules >= kDetMapSize ) return -1;  //Map is full
+  if( chan_lo > chan_hi )        return -2;  //Invalid channel range
 
   if ( fNmodules >= fMaplength ) { // need to expand the Map
     Int_t oldlen = fMaplength;
@@ -112,7 +115,8 @@ Int_t THaDetMap::AddModule( UShort_t crate, UShort_t slot,
   const ModuleType* md = module_list;
   while ( md->model && model != md->model ) md++;
   m.model |= ( md->adc ? kADCBit : 0 ) | ( md->tdc ? kTDCBit : 0 );
-  
+  m.resolution = md->resolution;
+
   return ++fNmodules;
 }
 
@@ -138,9 +142,9 @@ Int_t THaDetMap::Fill( const vector<int>& values, UInt_t flags )
   //      the vector is interpreted as a series of 6-tuples in the order
   //      (crate,slot,start_chan,end_chan,model,refindex).
   //
-  // If kFillLogicalChannel is not set, but kAutoCount is, then the 
-  // first logical channel numbers are automatically calculated for each 
-  // module, assuming the numbers are sequential.
+  // If kFillLogicalChannel is not set then the first logical channel numbers
+  // are automatically calculated for each module, assuming the numbers are 
+  // sequential.
   // 
   // By default, an existing map is overwritten. If the flag kDoNotClear 
   // is present, then the data are appended.
@@ -173,14 +177,14 @@ Int_t THaDetMap::Fill( const vector<int>& values, UInt_t flags )
       break;
     // Now we require a full tuple
     if( i+tuple_size > values.size() ) {
-      ret = -2;
+      ret = -127;
       break;
     }
 
     vsiz_t k = 4;
     if( flags & kFillLogicalChannel )
       first = values[i+k++];
-    else if( flags & kAutoCount ) {
+    else {
       first = prev_first + prev_nchan;
     }
     if( flags & kFillModel )
@@ -214,6 +218,28 @@ Int_t THaDetMap::GetTotNumChan() const
 
 
 //_____________________________________________________________________________
+void THaDetMap::GetMinMaxChan( Int_t& min, Int_t& max, ECountMode mode ) const
+{
+  // Put the minimum and maximum logical or reference channel numbers 
+  // into min and max. If refidx is true, check refindex, else check logical
+  // channel numbers.
+
+  min = kMaxInt;
+  max = kMinInt;
+  bool do_ref = ( mode == kRefIndex );
+  for( UShort_t i = 0; i < fNmodules; i++ ) {
+    Module* m = GetModule(i);
+    Int_t m_min = do_ref ? m->refindex : m->first;
+    Int_t m_max = do_ref ? m->refindex : m->first + m->hi - m->lo;
+    if( m_min < min )
+      min = m_min;
+    if( m_max > max )
+      max = m_max;
+  }
+}
+
+
+//_____________________________________________________________________________
 void THaDetMap::Print( Option_t* opt ) const
 {
   // Print the contents of the map
@@ -227,9 +253,12 @@ void THaDetMap::Print( Option_t* opt ) const
 	 << setw(5) << m->lo 
 	 << setw(5) << m->hi 
 	 << setw(5) << m->first
-	 << setw(5) << GetModel(m)
-	 << setw(4) << ( IsADC(m) ? " ADC" : " " )
-	 << setw(4) << ( IsTDC(m) ? " TDC" : " " )
+	 << setw(5) << GetModel(m);
+    if( IsADC(m) )
+      cout << setw(4) << " ADC";
+    if( IsTDC(m) )
+      cout << setw(4) << " TDC";
+    cout << setw(8) << m->resolution
 	 << endl;
   }
 }
