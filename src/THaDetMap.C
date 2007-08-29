@@ -12,6 +12,7 @@
 #include <iostream>
 #include <iomanip>
 #include <cstring>
+#include <cstdlib>
 
 using namespace std;
 
@@ -121,7 +122,7 @@ Int_t THaDetMap::AddModule( UShort_t crate, UShort_t slot,
 }
 
 //_____________________________________________________________________________
-Int_t THaDetMap::Fill( const vector<int>& values, UInt_t flags )
+Int_t THaDetMap::Fill( const vector<Int_t>& values, UInt_t flags )
 {
   // Fill the map with 'values'. Depending on 'flags', the values vector
   // is interpreted as a 4-, 5-, 6- or 7-tuple:
@@ -152,7 +153,7 @@ Int_t THaDetMap::Fill( const vector<int>& values, UInt_t flags )
   // The return value is the number of modules successfully added,
   // or negative if an error occurred.
 
-  typedef vector<int>::size_type vsiz_t;
+  typedef vector<Int_t>::size_type vsiz_t;
 
   if( (flags & kDoNotClear) == 0 )
     Clear();
@@ -272,6 +273,32 @@ void THaDetMap::Reset()
   delete [] fMap;
   fMap = NULL;
   fMaplength = 0;
+}
+
+//_____________________________________________________________________________
+static int compare_modules( const void* p1, const void* p2 )
+{
+  // Helper function for sort
+
+  const THaDetMap::Module* lhs = static_cast<const THaDetMap::Module*>(p1);
+  const THaDetMap::Module* rhs = static_cast<const THaDetMap::Module*>(p2);
+  
+  if( lhs->crate < rhs->crate )  return -1;
+  if( lhs->crate > rhs->crate )  return  1;
+  if( lhs->slot < rhs->slot )    return -1;
+  if( lhs->slot > rhs->slot )    return  1;
+  if( lhs->lo < rhs->lo )        return -1;
+  if( lhs->lo > rhs->lo )        return  1;
+  return 0;
+}
+
+//_____________________________________________________________________________
+void THaDetMap::Sort()
+{
+  // Sort the map by crate/slot/low channel
+  
+  qsort( fMap, fNmodules, sizeof(Module), compare_modules );
+
 }
 
 //_____________________________________________________________________________
