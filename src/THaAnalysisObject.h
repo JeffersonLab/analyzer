@@ -79,6 +79,11 @@ public:
   template <class T>
   static  Int_t   LoadDBarray( FILE* file, const TDatime& date, 
  			       const char* tag, std::vector<T>& values );
+  template <class T>
+  static  Int_t   LoadDBmatrix( FILE* file, const TDatime& date, 
+				const char* tag, 
+				std::vector<std::vector<T> >& values,
+				UInt_t ncols );
   static  Int_t   LoadDB( FILE* file, const TDatime& date, 
 			  const DBRequest* request, const char* prefix="",
 			  Int_t search = 0 );

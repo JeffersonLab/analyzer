@@ -866,21 +866,21 @@ static Int_t ChopPrefix( string& s )
 
 //_____________________________________________________________________________
 Int_t THaAnalysisObject::LoadDBvalue( FILE* file, const TDatime& date, 
-				      const char* tag, string& text )
+				      const char* key, string& text )
 {
-  // Load a data value tagged with 'tag' from the database 'file'.
+  // Load a data value tagged with 'key' from the database 'file'.
   // Lines before the first valid time stamp or starting with "#" are ignored.
-  // If 'tag' is found, then the most recent value seen (based on time stamps
+  // If 'key' is found, then the most recent value seen (based on time stamps
   // and position within the file) is returned in 'text'.
   // Values with time stamps later than 'date' are ignored.
   // This allows incremental organization of the database where
   // only changes are recorded with time stamps.
-  // Return 0 if success, 1 if tag not found, <0 if unexpected error.
+  // Return 0 if success, 1 if key not found, <0 if unexpected error.
 
-  if( !file || !tag ) return -255;
+  if( !file || !key ) return -255;
   char* buf = new char[LEN];
   if( !buf ) return -256;
-  TDatime tagdate(950101,0), prevdate(950101,0);
+  TDatime keydate(950101,0), prevdate(950101,0);
 
   errno = 0;
   errtxt.erase();
@@ -917,21 +917,21 @@ Int_t THaAnalysisObject::LoadDBvalue( FILE* file, const TDatime& date,
       continue;
     }
     if( !ignore && ( multi_line || ( not_prev_cont && 
-		 (status = IsDBtag( line, tag, value )) != 0 ) )) {
+		 (status = IsDBtag( line, key, value )) != 0 ) )) {
       if( status > 0 ) {
 	if( multi_line ) {   // previous line was a match and was continued
 	  text.append(value);
 	} else {
 	  found = true;
-	  prevdate = tagdate;
+	  prevdate = keydate;
 	  text = value;
 	}
 	multi_line = ( status == 2 );
 	// we do not set ignore to true here so that the _last_, not the first,
-	// of multiple identical tags is evaluated.
+	// of multiple identical keys is evaluated.
       }
-    } else if( not_prev_cont && IsDBdate( line, tagdate ) != 0 ) 
-      ignore = ( tagdate>date || tagdate<prevdate );
+    } else if( not_prev_cont && IsDBdate( line, keydate ) != 0 ) 
+      ignore = ( keydate>date || keydate<prevdate );
 
     not_prev_cont = ( cur_status != 2 );
   }
@@ -945,14 +945,14 @@ Int_t THaAnalysisObject::LoadDBvalue( FILE* file, const TDatime& date,
 
 //_____________________________________________________________________________
 Int_t THaAnalysisObject::LoadDBvalue( FILE* file, const TDatime& date, 
-				      const char* tag, Double_t& value )
+				      const char* key, Double_t& value )
 {
-  // Locate tag in database, convert the text found to double-precision,
+  // Locate key in database, convert the text found to double-precision,
   // and return result in 'value'.
   // This is a convenience function.
 
   string text;
-  Int_t err = LoadDBvalue( file, date, tag, text );
+  Int_t err = LoadDBvalue( file, date, key, text );
   if( err == 0 )
     value = atof(text.c_str());
   return err;
@@ -960,14 +960,14 @@ Int_t THaAnalysisObject::LoadDBvalue( FILE* file, const TDatime& date,
 
 //_____________________________________________________________________________
 Int_t THaAnalysisObject::LoadDBvalue( FILE* file, const TDatime& date, 
-				      const char* tag, Int_t& value )
+				      const char* key, Int_t& value )
 {
-  // Locate tag in database, convert the text found to integer
+  // Locate key in database, convert the text found to integer
   // and return result in 'value'.
   // This is a convenience function.
 
   string text;
-  Int_t err = LoadDBvalue( file, date, tag, text );
+  Int_t err = LoadDBvalue( file, date, key, text );
   if( err == 0 )
     value = atoi(text.c_str());
   return err;
@@ -975,14 +975,14 @@ Int_t THaAnalysisObject::LoadDBvalue( FILE* file, const TDatime& date,
 
 //_____________________________________________________________________________
 Int_t THaAnalysisObject::LoadDBvalue( FILE* file, const TDatime& date, 
-				      const char* tag, TString& text )
+				      const char* key, TString& text )
 {
-  // Locate tag in database, convert the text found to TString
+  // Locate key in database, convert the text found to TString
   // and return result in 'text'.
   // This is a convenience function.
 
   string _text;
-  Int_t err = LoadDBvalue( file, date, tag, _text );
+  Int_t err = LoadDBvalue( file, date, key, _text );
   if( err == 0 )
     text = _text.c_str();
   return err;
@@ -991,15 +991,15 @@ Int_t THaAnalysisObject::LoadDBvalue( FILE* file, const TDatime& date,
 //_____________________________________________________________________________
 template <class T>
 Int_t THaAnalysisObject::LoadDBarray( FILE* file, const TDatime& date, 
-				      const char* tag, vector<T>& values )
+				      const char* key, vector<T>& values )
 {
   string text;
-  Int_t err = LoadDBvalue( file, date, tag, text );
+  Int_t err = LoadDBvalue( file, date, key, text );
   if( err )
     return err;
   values.clear();
   text += " ";
-  istringstream inp(text);
+  ISSTREAM inp(text);
   T dval;
   while( 1 ) {
     inp >> dval;
@@ -1008,6 +1008,42 @@ Int_t THaAnalysisObject::LoadDBarray( FILE* file, const TDatime& date,
     else
       break;
   }
+  return 0;
+}
+
+//_____________________________________________________________________________
+template <class T>
+Int_t THaAnalysisObject::LoadDBmatrix( FILE* file, const TDatime& date, 
+				       const char* key, 
+				       vector<vector<T> >& values,
+				       UInt_t ncols )
+{
+  // Read a matrix of values of type T into a vector of vectors.
+  // The matrix is square with ncols columns.
+
+  vector<T>* tmpval = new vector<T>;
+  if( !tmpval )
+    return -255;
+  Int_t err = LoadDBarray( file, date, key, *tmpval );
+  if( err ) {
+    delete tmpval;
+    return err;
+  }
+  if( (tmpval->size() % ncols) != 0 ) {
+    delete tmpval;
+    errtxt = "key = "; errtxt += key;
+    return -129;
+  }
+  values.clear();
+  typename vector<vector<T> >::size_type nrows = tmpval->size()/ncols, irow;
+  for( irow = 0; irow < nrows; ++irow ) {
+    vector<T> row;
+    for( typename vector<T>::size_type i=0; i<ncols; ++i ) {
+      row.push_back( tmpval->at(i+irow*ncols) );
+    }
+    values.push_back( row );
+  }
+  delete tmpval;
   return 0;
 }
 
@@ -1080,7 +1116,19 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
       } else if( item->type == kDoubleV ) {
 	ret = LoadDBarray( f, date, key, *((vector<double>*)item->var) );
       } else if( item->type == kIntV ) {
-	ret = LoadDBarray( f, date, key, *((vector<int>*)item->var) );
+	ret = LoadDBarray( f, date, key, *((vector<Int_t>*)item->var) );
+      } else if( item->type == kFloatM ) {
+	ret = LoadDBmatrix( f, date, key, 
+			    *((vector<vector<float> >*)item->var),
+			    item->nelem );
+      } else if( item->type == kDoubleM ) {
+	ret = LoadDBmatrix( f, date, key, 
+			    *((vector<vector<double> >*)item->var),
+			    item->nelem );
+      } else if( item->type == kIntM ) {
+	ret = LoadDBmatrix( f, date, key,
+			    *((vector<vector<Int_t> >*)item->var),
+			    item->nelem );
       } else {
       badtype:
 	const char* type_name;
@@ -1155,6 +1203,12 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 		 "Text line too long. Fix the database!\n\"%s...\"",
 		 errtxt.c_str() );
 	break;
+      } else if( ret == -129 ) {  // Matrix ncols mismatch
+	::Error( ::Here(here,loaddb_prefix.c_str()),
+		 "Number of matrix elements not evenly divisible by requested "
+		 "number of columns. Fix the database!\n\"%s...\"",
+		 errtxt.c_str() );
+	break;
       } else if( ret < 0 ) {  // Unexpected zero pointer etc.
       unexpected_error:
 	::Error( ::Here(here,loaddb_prefix.c_str()), 
@@ -1174,16 +1228,16 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 
 //_____________________________________________________________________________
 Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
-				 const TagDef* tags, const char* prefix,
+				 const TagDef* keys, const char* prefix,
 				 Int_t search )
 {
   // Compatibility function to read database with old 'TagDef' 
   // request structure
 
-  if( !tags )
+  if( !keys )
     return -1;
 
-  const TagDef* item = tags;
+  const TagDef* item = keys;
   Int_t nreq = 0;
   while( (item++)->name )
     nreq++;
@@ -1193,7 +1247,7 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
   DBRequest *req = new struct DBRequest[nreq+1], *theReq = req;
   if( !req )
     return -3;
-  item = tags;
+  item = keys;
   while( item->name ) {
     theReq->name      = item->name;
     theReq->var       = item->var;
