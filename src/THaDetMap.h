@@ -25,6 +25,11 @@
 
 class THaDetMap {
 
+protected:
+  static const UInt_t kADCBit = BIT(31);
+  static const UInt_t kTDCBit = BIT(30);
+  static const UInt_t kModelMask = 0x0000ffff;
+  
 public:
   struct Module {
     UShort_t crate;
@@ -37,10 +42,18 @@ public:
     Int_t    refindex;   // for pipeline TDCs: index to a reference channel
     Double_t resolution; // Resolution (s/chan) for TDCs
 
+    bool   operator==( const Module& rhs ) const
+    { return crate == rhs.crate && slot == rhs.slot; }
+    bool   operator!=( const Module& rhs ) const
+    { return !(*this==rhs); }
     Int_t  GetNchan() const { return hi-lo+1; }
     UInt_t GetModel() const { return model & kModelMask; }
     Bool_t IsTDC()    const { return model & kTDCBit; }
     Bool_t IsADC()    const { return model & kADCBit; }
+    void   SetModel( UInt_t model );
+    void   SetResolution( Double_t resolution );
+    void   MakeTDC()  { model |= kTDCBit; }
+    void   MakeADC()  { model |= kADCBit; }
   };
 
   // Flags for GetMinMaxChan()
@@ -95,10 +108,6 @@ protected:
                            // model,refindex)
 
   Int_t        fMaplength; // current size of the fMap array
-  
-  static const UInt_t kADCBit = BIT(31);
-  static const UInt_t kTDCBit = BIT(30);
-  static const UInt_t kModelMask = 0x0000ffff;
   
   ClassDef(THaDetMap,0)   //The standard detector map
 };

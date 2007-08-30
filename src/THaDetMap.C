@@ -18,6 +18,40 @@ using namespace std;
 
 const int THaDetMap::kDetMapSize;
 
+// FIXME: load from db_cratemap
+struct ModuleType {
+  UInt_t  model;       // model identifier
+  Bool_t  adc;         // true if ADC
+  Bool_t  tdc;         // true if TDC
+};
+
+static const ModuleType module_list[] = {
+  { 1875, 0, 1 },
+  { 1877, 0, 1 },
+  { 1881, 1, 0 },
+  { 1872, 0, 1 },
+  { 3123, 1, 0 },
+  { 1182, 1, 0 },
+  {  792, 1, 0 },
+  {  775, 0, 1 },
+  {  767, 0, 1 },
+  { 3201, 0, 1 },
+  { 6401, 0, 1 },
+  { 0 }
+};
+
+//_____________________________________________________________________________
+void THaDetMap::Module::SetModel( UInt_t m )
+{
+  model = m & kModelMask;
+}
+
+//_____________________________________________________________________________
+void THaDetMap::Module::SetResolution( Double_t res )
+{
+  resolution = res;
+}
+
 //_____________________________________________________________________________
 THaDetMap::THaDetMap() : fNmodules(0)
 {
@@ -57,7 +91,7 @@ THaDetMap& THaDetMap::operator=( const THaDetMap& rhs )
 //_____________________________________________________________________________
 THaDetMap::~THaDetMap()
 {
-  // Destructor. Free all memory used by the detector map.
+  // Destructor
 
   delete [] fMap;
 }
@@ -68,29 +102,6 @@ Int_t THaDetMap::AddModule( UShort_t crate, UShort_t slot,
 			    UInt_t first, UInt_t model, Int_t refindex )
 {
   // Add a module to the map.
-
-  // FIXME: put in database, maybe load into static member variable
-  struct ModuleType {
-    UInt_t  model;       // model identifier
-    Bool_t  adc;         // true if ADC
-    Bool_t  tdc;         // true if TDC
-    Double_t resolution; // Resolution in s/channel (for TDCs) (<0: not spec'd)
-  };
-
-  static const ModuleType module_list[] = {
-    { 1875, 0, 1, -1 },
-    { 1877, 0, 1, 5e-10 },
-    { 1881, 1, 0, -1 },
-    { 1872, 0, 1, -1 },
-    { 3123, 1, 0, -1 },
-    { 1182, 1, 0, -1 },
-    {  792, 1, 0, -1 },
-    {  775, 0, 1, -1 },
-    {  767, 0, 1, -1 },
-    { 3201, 0, 1, -1 },
-    { 6401, 0, 1, -1 },
-    { 0 }
-  };
 
   if( fNmodules >= kDetMapSize ) return -1;  //Map is full
   if( chan_lo > chan_hi )        return -2;  //Invalid channel range
@@ -115,8 +126,8 @@ Int_t THaDetMap::AddModule( UShort_t crate, UShort_t slot,
 
   const ModuleType* md = module_list;
   while ( md->model && model != md->model ) md++;
-  m.model |= ( md->adc ? kADCBit : 0 ) | ( md->tdc ? kTDCBit : 0 );
-  m.resolution = md->resolution;
+  if( md->adc ) m.MakeADC();
+  if( md->tdc ) m.MakeTDC();
 
   return ++fNmodules;
 }
