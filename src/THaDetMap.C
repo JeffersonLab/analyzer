@@ -99,7 +99,8 @@ THaDetMap::~THaDetMap()
 //_____________________________________________________________________________
 Int_t THaDetMap::AddModule( UShort_t crate, UShort_t slot, 
 			    UShort_t chan_lo, UShort_t chan_hi,
-			    UInt_t first, UInt_t model, Int_t refindex )
+			    UInt_t first, UInt_t model, Int_t refindex,
+			    Int_t refchan )
 {
   // Add a module to the map.
 
@@ -123,6 +124,8 @@ Int_t THaDetMap::AddModule( UShort_t crate, UShort_t slot,
   m.first = first;
   m.model = model;
   m.refindex = refindex;
+  m.refchan  = refchan;
+  m.resolution = 0.0;
 
   const ModuleType* md = module_list;
   while ( md->model && model != md->model ) md++;
@@ -130,6 +133,28 @@ Int_t THaDetMap::AddModule( UShort_t crate, UShort_t slot,
   if( md->tdc ) m.MakeTDC();
 
   return ++fNmodules;
+}
+
+//_____________________________________________________________________________
+THaDetMap::Module* THaDetMap::Find( UShort_t crate, UShort_t slot,
+				    UShort_t chan )
+{
+  // Return the module containing crate, slot, and channel chan.
+  // If several matching modules exist (which mean the map is misconfigured),
+  // only the first one is returned. If none match, return NULL.
+  // Since the map is usually small and not necessarily sorted, a simple
+  // linear search is done.
+
+  Module* found = NULL;
+  for( UShort_t i = 0; i < fNmodules; ++i ) {
+    Module* d = uGetModule(i);
+    if( d->crate == crate && d->slot == slot && 
+	d->lo <= chan && chan <= d->hi ) {
+      found = d;
+      break;
+    }
+  }
+  return found;
 }
 
 //_____________________________________________________________________________
@@ -144,15 +169,16 @@ Int_t THaDetMap::Fill( const vector<Int_t>& values, UInt_t flags )
   // 
   // kFillLogicalChannel - Logical channel number for 'start_chan'.
   // kFillModel          - The module's hardware model number (see AddModule())
-  // kFillRefIndex       - Reference channel (for pipeline TDCs etc.)
+  // kFillRefChan        - Reference channel (for pipeline TDCs etc.)
+  // kFillRefIndex       - Reference index (for pipeline TDCs etc.)
   //
   // If more than one flag is present, the numbers will be interpreted
   // in the order the flags are listed above. 
   // Example:
-  //      flags = kFillModel | kFillRefIndex
+  //      flags = kFillModel | kFillRefChan
   // ==>
   //      the vector is interpreted as a series of 6-tuples in the order
-  //      (crate,slot,start_chan,end_chan,model,refindex).
+  //      (crate,slot,start_chan,end_chan,model,refchan).
   //
   // If kFillLogicalChannel is not set then the first logical channel numbers
   // are automatically calculated for each module, assuming the numbers are 
@@ -174,13 +200,15 @@ Int_t THaDetMap::Fill( const vector<Int_t>& values, UInt_t flags )
     tuple_size++;
   if( flags & kFillModel )
     tuple_size++;
+  if( flags & kFillRefChan )
+    tuple_size++;
   if( flags & kFillRefIndex )
     tuple_size++;
 
   UInt_t prev_first = 0, prev_nchan = 0;
   // Defaults for optional values
   UInt_t first = 0, model = 0;
-  Int_t ref = -1;
+  Int_t rchan = -1, ref = -1;
 
   Int_t ret = 0;
   for( vsiz_t i = 0; i < values.size(); i += tuple_size ) {
@@ -201,11 +229,13 @@ Int_t THaDetMap::Fill( const vector<Int_t>& values, UInt_t flags )
     }
     if( flags & kFillModel )
       model = values[i+k++];
+    if( flags & kFillRefChan )
+      rchan = values[i+k++];
     if( flags & kFillRefIndex )
       ref   = values[i+k++];
 
     ret = AddModule( values[i], values[i+1], values[i+2], values[i+3],
-		     first, model, ref );
+		     first, model, ref, rchan );
     if( ret<=0 )
       break;
     prev_first = first;
@@ -270,7 +300,9 @@ void THaDetMap::Print( Option_t* opt ) const
       cout << setw(4) << " ADC";
     if( IsTDC(m) )
       cout << setw(4) << " TDC";
-    cout << setw(8) << m->resolution
+    cout << setw(5) << m->refchan
+	 << setw(5) << m->refindex
+	 << setw(8) << m->resolution
 	 << endl;
   }
 }
