@@ -22,12 +22,13 @@ public:
 
   virtual Int_t    Decode( const THaEvData& ) = 0;
 
-  Int_t            GetNelem()  const    { return fNelem; }
-  const TVector3&  GetOrigin() const    { return fOrigin; }
-  const Float_t*   GetSize()   const    { return fSize; }
-  Float_t          GetXSize()  const    { return 2.0*fSize[0]; }
-  Float_t          GetYSize()  const    { return 2.0*fSize[1]; }
-  Float_t          GetZSize()  const    { return fSize[2]; }
+  THaDetMap*       GetDetMap() const { return fDetMap; }
+  Int_t            GetNelem()  const { return fNelem; }
+  const TVector3&  GetOrigin() const { return fOrigin; }
+  const Float_t*   GetSize()   const { return fSize; }
+  Float_t          GetXSize()  const { return 2.0*fSize[0]; }
+  Float_t          GetYSize()  const { return 2.0*fSize[1]; }
+  Float_t          GetZSize()  const { return fSize[2]; }
 
   Int_t            FillDetMap( const std::vector<Int_t>& values, 
 			       UInt_t flags=0,
