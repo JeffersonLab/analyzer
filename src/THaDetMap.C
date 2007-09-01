@@ -44,6 +44,10 @@ static const ModuleType module_list[] = {
 void THaDetMap::Module::SetModel( UInt_t m )
 {
   model = m & kModelMask;
+  const ModuleType* md = module_list;
+  while ( md->model && model != md->model ) md++;
+  if( md->adc ) MakeADC();
+  if( md->tdc ) MakeTDC();
 }
 
 //_____________________________________________________________________________
@@ -122,15 +126,10 @@ Int_t THaDetMap::AddModule( UShort_t crate, UShort_t slot,
   m.lo    = chan_lo;
   m.hi    = chan_hi;
   m.first = first;
-  m.model = model;
+  m.SetModel( model );
   m.refindex = refindex;
   m.refchan  = refchan;
-  m.resolution = 0.0;
-
-  const ModuleType* md = module_list;
-  while ( md->model && model != md->model ) md++;
-  if( md->adc ) m.MakeADC();
-  if( md->tdc ) m.MakeTDC();
+  m.SetResolution( 0.0 );
 
   return ++fNmodules;
 }
