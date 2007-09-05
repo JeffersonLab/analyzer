@@ -15,6 +15,7 @@
 
 #include "THaAnalysisObject.h"
 #include "THaVarList.h"
+#include "THaString.h"
 #include "TClass.h"
 #include "TDatime.h"
 #include "TROOT.h"
@@ -817,8 +818,8 @@ static Int_t IsDBkey( const string& line, const char* key, string& text )
   ssiz_t pos2 = line.substr(0,pos).find_last_not_of(" \t");
   if( pos2 == string::npos ) return -1;
   // Ignore case of the key
-  string lhs(line.substr(pos1,pos2-pos1+1).c_str());
-  if( lhs != key ) return -1;
+  THaString lhs(line.substr(pos1,pos2-pos1+1).c_str());
+  if( lhs.CmpNoCase(key) != 0 ) return -1;
   // Extract the text, discarding any whitespace at beginning and end
   string rhs = line.substr(pos+1);
   if( rhs.find_first_not_of(" \t") == string::npos ) return -2;
