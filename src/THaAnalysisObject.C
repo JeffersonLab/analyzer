@@ -794,20 +794,20 @@ static Int_t TrimDBline( const string& _line, string& value,
 }
 
 //_____________________________________________________________________________
-static Int_t IsDBtag( const string& line, const char* tag, string& text )
+static Int_t IsDBkey( const string& line, const char* key, string& text )
 {
-  // Check if 'line' is of the form "tag = value" and, if so, whether the tag 
-  // equals 'tag'. Tags are case sensitive.
+  // Check if 'line' is of the form "key = value" and, if so, whether the key 
+  // equals 'key'. Keys are not case sensitive.
   // - If there is no '=', then return zero.
-  // - If there is a '=', but the left-hand side doesn't match 'tag',
+  // - If there is a '=', but the left-hand side doesn't match 'key',
   //   then return -1. 
   // - If there is NO text after the '=' (obviously a bad database entry), 
   //   then return -2.
-  // - If tag found, parse the line, set 'text' to the text after the "=", 
+  // - If key found, parse the line, set 'text' to the text after the "=", 
   //   and return +1.
   // - If 'text' ends with a '\' (continuation mark), then strip the '\',
   //   set 'text' to the remaining text after the '=', and return +2
-  // 'text' is unchanged unless a valid tag is found.
+  // 'text' is unchanged unless a valid key is found.
 
   ssiz_t pos = line.find('=');
   if( pos == string::npos ) return 0;
@@ -816,9 +816,9 @@ static Int_t IsDBtag( const string& line, const char* tag, string& text )
   if( pos1 == string::npos ) return -1;
   ssiz_t pos2 = line.substr(0,pos).find_last_not_of(" \t");
   if( pos2 == string::npos ) return -1;
-  // Ignore case of the tag
-  string t1(line.substr(pos1,pos2-pos1+1));
-  if( t1 != tag ) return -1;
+  // Ignore case of the key
+  string lhs(line.substr(pos1,pos2-pos1+1).c_str());
+  if( lhs != key ) return -1;
   // Extract the text, discarding any whitespace at beginning and end
   string rhs = line.substr(pos+1);
   if( rhs.find_first_not_of(" \t") == string::npos ) return -2;
@@ -917,7 +917,7 @@ Int_t THaAnalysisObject::LoadDBvalue( FILE* file, const TDatime& date,
       continue;
     }
     if( !ignore && ( multi_line || ( not_prev_cont && 
-		 (status = IsDBtag( line, key, value )) != 0 ) )) {
+		 (status = IsDBkey( line, key, value )) != 0 ) )) {
       if( status > 0 ) {
 	if( multi_line ) {   // previous line was a match and was continued
 	  text.append(value);
