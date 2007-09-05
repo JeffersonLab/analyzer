@@ -136,7 +136,7 @@ Int_t THaRunParameters::ReadDatabase( const TDatime& date )
   Int_t iq, st;
   Double_t E, M = 0.511e-3, Q = -1.0, dE = 0.0;
 
-  if( (st = READ( f, date, "Ebeam", E )) ) {
+  if( (st = READ( f, date, "ebeam", E )) ) {
     // Beam energy required
     Error( "ReadDatabase", "Beam energy missing in run database. "
 	   "Run parameter initialization failed." );
