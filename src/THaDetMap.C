@@ -109,7 +109,18 @@ Int_t THaDetMap::AddModule( UShort_t crate, UShort_t slot,
   // Add a module to the map.
 
   if( fNmodules >= kDetMapSize ) return -1;  //Map is full
-  if( chan_lo > chan_hi )        return -2;  //Invalid channel range
+  // Logical channels can run either "with" or "against" the physical channel
+  // numbers:
+  // lo<=hi :    lo -> first
+  //             hi -> first+hi-lo
+  // 
+  // lo>hi  :    hi -> first
+  //             lo -> first+lo-hi
+  // 
+  // To indicate the second case, The flag "reverse" is set to true in the 
+  // module. The fields lo and hi are reversed so that lo<=hi always.
+  // 
+  bool reverse = ( chan_lo > chan_hi );
 
   if ( fNmodules >= fMaplength ) { // need to expand the Map
     Int_t oldlen = fMaplength;
@@ -123,13 +134,19 @@ Int_t THaDetMap::AddModule( UShort_t crate, UShort_t slot,
   Module& m = fMap[fNmodules];
   m.crate = crate;
   m.slot  = slot;
-  m.lo    = chan_lo;
-  m.hi    = chan_hi;
+  if( reverse ) {
+    m.lo = chan_hi;
+    m.hi = chan_lo;
+  } else {
+    m.lo = chan_lo;
+    m.hi = chan_hi;
+  }
   m.first = first;
   m.SetModel( model );
   m.refindex = refindex;
   m.refchan  = refchan;
   m.SetResolution( 0.0 );
+  m.reverse = reverse;
 
   return ++fNmodules;
 }

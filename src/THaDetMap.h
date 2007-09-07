@@ -42,6 +42,7 @@ public:
     Int_t    refchan;    // for pipeline TDCs: reference channel number
     Int_t    refindex;   // for pipeline TDCs: index into reference channel map
     Double_t resolution; // Resolution (s/chan) for TDCs
+    Bool_t   reverse;    // Indicates that "first" corresponds to hi, not lo
 
     bool   operator==( const Module& rhs ) const
     { return crate == rhs.crate && slot == rhs.slot; }
