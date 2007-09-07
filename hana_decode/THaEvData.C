@@ -121,7 +121,7 @@ THaEvData::~THaEvData() {
   delete [] fSlotUsed;
   delete [] fSlotClear;
   fInstance--;
-  fgInstances.SetBitNumber(fInstance,kFALSE);
+  fgInstances.ResetBitNumber(fInstance);
 }
 
 int THaEvData::GetPrescaleFactor(int trigger_type) const {
@@ -209,15 +209,12 @@ void THaEvData::SetRunTime( UInt_t tloc )
 void THaEvData::EnableScalers( Bool_t enable ) 
 {
   // Enable/disable scaler decoding
-  if( enable )
-    SetBit(kScalersEnabled);
-  else
-    ResetBit(kScalersEnabled);
+  SetBit(kScalersEnabled, enable);
 }
 
 Bool_t THaEvData::ScalersEnabled() const
 {
-  // Test if scalar decoding enabled
+  // Test if scaler decoding enabled
   return TestBit(kScalersEnabled);
 }
 
@@ -339,4 +336,5 @@ int THaEvData::init_slotdata(const THaCrateMap* map)
 }
 
 ClassImp(THaEvData)
+ClassImp(THaBenchmark)
 

@@ -1,3 +1,6 @@
+#ifndef THaBenchmark_
+#define THaBenchmark_
+
 //_____________________________________________________________________________
 //
 // THaBenchmark utility class
@@ -35,5 +38,7 @@ public:
       }
     }
   }
-  
+  ClassDef(THaBenchmark,0)   // TBenchmark with true start/stop mode
 };
+
+#endif
