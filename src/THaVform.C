@@ -28,15 +28,18 @@ using namespace std;
 
 THaVform::THaVform( const char *type, const char* name, const char* formula,
 		    const THaVarList* vlst, const THaCutList* clst )
-  : THaFormula("[0]", "[0]", vlst, clst), fNvar(0), fObjSize(0),
-    fData(0.0), fType(kUnknown), fVarPtr(NULL), fOdata(NULL),
-    fPrefix(kNoPrefix)
+  : THaFormula(), fNvar(0), fObjSize(0), fData(0.0),
+    fType(kUnknown), fVarPtr(NULL), fOdata(NULL), fPrefix(kNoPrefix)
 {
-// The title "[0]" and expression "[0]" will be over-written
-// depending on the type of THaVform.
   SetName(name);
-  THaString stemp1 = StripPrefix(formula); 
+  SetList(vlst);
+  SetCutList(clst);
+  THaString stemp1 = StripPrefix(formula);
   SetTitle(stemp1.c_str());
+  // Never register these objects in ROOT's list of functions.
+  // We may have multiple copies of THaVforms with identical names, and if
+  // they were registered, ROOT would attempt to delete them multiple times.
+  fRegister = kFALSE;
 
   if( type && *type ) {
     size_t len = strlen(type); char* buf = new char[len+1];
@@ -51,6 +54,7 @@ THaVform::THaVform( const char *type, const char* name, const char* formula,
       fType = kVarArray;
   }
 	     
+  // Call THaFormula's Compile()
   Compile();  
 }
 
