@@ -17,7 +17,7 @@
 # SOVERSION should be numerical only - it becomes the shared lib soversion
 # EXTVERS (optional) describes the build, e.g. "dbg", "et", "gcc33" etc.
 SOVERSION  = 1.4
-PATCH   = 7
+PATCH   = 9
 VERSION = $(SOVERSION).$(PATCH)
 EXTVERS =
 NAME    = analyzer-$(VERSION)
@@ -72,8 +72,8 @@ ifdef DEBUG
   CXXFLG      = -g -O0
   LDFLAGS     = -g -O0
 else
-#  CXXFLG      = -O -march=pentium4
   CXXFLG      = -O
+#  CXXFLG      = -O -march=pentium4 #-msse2 -mfpmath=sse
   LDFLAGS     = -O
 endif
 DEFINES       = -DLINUXVERS
