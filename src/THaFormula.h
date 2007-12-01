@@ -29,6 +29,7 @@ public:
   THaFormula& operator=( const THaFormula& rhs );
   virtual             ~THaFormula();
   virtual Int_t       Compile( const char* expression="" );
+  virtual char*       DefinedString( Int_t i );
   virtual Double_t    DefinedValue( Int_t i );
 #if ROOT_VERSION_CODE >= 262144 // 4.00/00
   virtual Int_t       DefinedVariable( TString& variable, Int_t& action );
@@ -60,7 +61,7 @@ public:
 protected:
 
   enum { kMAXCODES = 100 };            //Max. number of global variables per formula
-  enum EVariableType { kUndefined, kVariable, kCut };
+  enum EVariableType { kUndefined, kVariable, kCut, kString };
 
   struct FVarDef_t;
   friend struct FVarDef_t;
@@ -75,6 +76,8 @@ protected:
   const THaCutList* fCutList;          //Pointer to list of cuts
   Bool_t            fError;            //Flag indicating error in expression
   Bool_t            fRegister;         //If true, register this formula in ROOT's global list
+
+  virtual Bool_t IsString( Int_t oper ) const;
 
   ClassDef(THaFormula,0)  //Formula defined on list of variables
 };

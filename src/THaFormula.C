@@ -130,6 +130,33 @@ THaFormula::~THaFormula()
 }
 
 //_____________________________________________________________________________
+char* THaFormula::DefinedString( Int_t i )
+{
+  // Get pointer to the i-th string variable
+
+  //TODO: This could be speeded up with a map from string# -> variable#
+  FVarDef_t* def = fVarDef;
+  Int_t j = fNcodes;
+  Int_t k = -1;
+  while( j-- > 0 ) {
+    if( def->type == kString && ++k == i ) {
+      const THaVar* pvar = reinterpret_cast<const THaVar*>( def->code );
+      char** ppc = (char**)pvar->GetValuePointer(); //truly gruesome cast
+      return *ppc;
+    }
+    def++;
+  }
+  return 0;
+}
+
+//_____________________________________________________________________________
+Bool_t THaFormula::IsString(Int_t oper) const
+{
+  Int_t action = GetAction(oper);
+  return ( action == kStringConst || action == kDefinedString );
+}
+
+//_____________________________________________________________________________
 Double_t THaFormula::DefinedValue( Int_t i )
 {
   // Get value of i-th variable in the formula
@@ -141,6 +168,7 @@ Double_t THaFormula::DefinedValue( Int_t i )
   if( !ptr ) return kBig;
   switch( def->type ) {
   case kVariable:
+  case kString:
     return reinterpret_cast<const THaVar*>(ptr)->GetValue( def->index );
     break;
   case kCut:
@@ -175,7 +203,18 @@ Int_t THaFormula::DefinedVariable(TString& name)
   action = kDefinedVariable;
 #endif
   Int_t k = DefinedGlobalVariable( name );
-  if( k>=0 ) return k;
+  if( k>=0 ) {
+    // Interpret Char_t* variables as strings
+    const THaVar* pvar = reinterpret_cast<const THaVar*>( fVarDef[k].code );
+    if( pvar->GetType() == kCharP ) {
+      action = kDefinedString;
+      // String definitions must be in the same array as variable definitions
+      // because TFormula may revert a kDefinedString to a kDefinedVariable.
+      fVarDef[k].type = kString;
+      // TFormula::Analyze will increment fNstring
+    }
+    return k;
+  }
   return DefinedCut( name );
 }
 
