@@ -6,6 +6,7 @@
 #include "THaCutList.h"
 #include "THaCut.h"
 #include "TROOT.h"
+#include "TError.h"
 
 #include <iostream>
 #include <cstring>
@@ -105,6 +106,11 @@ Int_t THaFormula::Compile( const char* expression )
 
   Int_t status = TFormula::Compile( expression );
 
+#ifdef WITH_DEBUG
+    R__ASSERT( fNval+fNstring == fNcodes );
+    R__ASSERT( fNstring >= 0 && fNval >= 0 );
+#endif
+
   //*-*- Store formula in linked list of formula in ROOT
 
   if( status ) {
@@ -117,6 +123,14 @@ Int_t THaFormula::Compile( const char* expression )
       if (old) gROOT->GetListOfFunctions()->Remove(old);
       gROOT->GetListOfFunctions()->Add(this);
     }
+    // If the formula is good, then fix the variable counters that TFormula
+    // may have messed with when reverting lone kDefinedString variables to
+    // kDefinedVariable. If there is a mix of strings and values, 
+    // we force the variable counters to the full number of defined variables,
+    // so that the loops in EvalPar calculate all the values. This inefficient,
+    // but the best we can do with the implementation of TFormula.
+    if( fNstring > 0 && fNval > 0 )
+      fNval = fNstring = fNcodes;
   }
   return status;
 }
@@ -132,21 +146,19 @@ THaFormula::~THaFormula()
 //_____________________________________________________________________________
 char* THaFormula::DefinedString( Int_t i )
 {
-  // Get pointer to the i-th string variable
+  // Get pointer to the i-th string variable. If the variable is not
+  // a string, return pointer to an empty string.
 
-  //TODO: This could be speeded up with a map from string# -> variable#
-  FVarDef_t* def = fVarDef;
-  Int_t j = fNcodes;
-  Int_t k = -1;
-  while( j-- > 0 ) {
-    if( def->type == kString && ++k == i ) {
-      const THaVar* pvar = reinterpret_cast<const THaVar*>( def->code );
-      char** ppc = (char**)pvar->GetValuePointer(); //truly gruesome cast
-      return *ppc;
-    }
-    def++;
+#ifdef WITH_DEBUG
+  R__ASSERT( i>=0 && i<fNcodes );
+#endif
+  FVarDef_t* def = fVarDef+i;
+  if( def->type == kString ) {
+    const THaVar* pvar = reinterpret_cast<const THaVar*>( def->code );
+    char** ppc = (char**)pvar->GetValuePointer(); //truly gruesome cast
+    return *ppc;
   }
-  return 0;
+  return "";
 }
 
 //_____________________________________________________________________________
@@ -162,7 +174,11 @@ Double_t THaFormula::DefinedValue( Int_t i )
   // Get value of i-th variable in the formula
   // If the i-th variable is a cut, return its last result
   // (calculated at the last evaluation).
+  // If the variable is a string, return value of its character value
   
+#ifdef WITH_DEBUG
+  R__ASSERT( i>=0 && i<fNcodes );
+#endif
   FVarDef_t* def = fVarDef+i;
   const void* ptr = def->code;
   if( !ptr ) return kBig;
@@ -204,14 +220,22 @@ Int_t THaFormula::DefinedVariable(TString& name)
 #endif
   Int_t k = DefinedGlobalVariable( name );
   if( k>=0 ) {
+    FVarDef_t* def = fVarDef+k;
     // Interpret Char_t* variables as strings
-    const THaVar* pvar = reinterpret_cast<const THaVar*>( fVarDef[k].code );
+    const THaVar* pvar = reinterpret_cast<const THaVar*>( def->code );
     if( pvar->GetType() == kCharP ) {
+#if ROOT_VERSION_CODE >= ROOT_VERSION(4,0,0)
       action = kDefinedString;
+#endif
       // String definitions must be in the same array as variable definitions
       // because TFormula may revert a kDefinedString to a kDefinedVariable.
-      fVarDef[k].type = kString;
-      // TFormula::Analyze will increment fNstring
+      def->type = kString;
+      // TFormula::Analyze will increment fNstring even if the string 
+      // was already found. Fix this here.
+      if( k < kMAXFOUND && !fAlreadyFound.TestBitNumber(k) )
+	fAlreadyFound.SetBitNumber(k);
+      else
+	--fNstring;
     }
     return k;
   }
