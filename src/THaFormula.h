@@ -60,7 +60,7 @@ public:
 
 protected:
 
-  enum { kMAXCODES = 100 };            //Max. number of global variables per formula
+  enum { kMAXCODES = kMAXFOUND }; //Max. number of global variables per formula
   enum EVariableType { kUndefined, kVariable, kCut, kString };
 
   struct FVarDef_t;
