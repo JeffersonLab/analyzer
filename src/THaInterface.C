@@ -150,7 +150,11 @@ THaInterface::~THaInterface()
 }
 
 //_____________________________________________________________________________
+#if ROOT_VERSION_CODE < ROOT_VERSION(5,18,0)
 void THaInterface::PrintLogo()
+#else
+void THaInterface::PrintLogo( Bool_t lite )
+#endif
 {
    // Print the Hall A analyzer logo on standard output.
 
@@ -174,19 +178,21 @@ void THaInterface::PrintLogo()
    const char* halla_version = HA_VERSION;
    //   const char* halla_date = Form("%d %s %4d",24,months[2-1],2003);
 
-   Printf("  ************************************************");
-   Printf("  *                                              *");
-   Printf("  *            W E L C O M E  to  the            *");
-   Printf("  *       H A L L A   C++  A N A L Y Z E R       *");
-   Printf("  *                                              *");
-   Printf("  *        Release %10s %18s *",halla_version,__DATE__);
-   Printf("  *  Based on ROOT %8s %20s *",root_version,root_date);
-   //   Printf("  *             Development version              *");
-   Printf("  *                                              *");
-   Printf("  *            For information visit             *");
-   Printf("  *        http://hallaweb.jlab.org/root/        *");
-   Printf("  *                                              *");
-   Printf("  ************************************************");
+   if( !lite ) {
+     Printf("  ************************************************");
+     Printf("  *                                              *");
+     Printf("  *            W E L C O M E  to  the            *");
+     Printf("  *       H A L L A   C++  A N A L Y Z E R       *");
+     Printf("  *                                              *");
+     Printf("  *        Release %10s %18s *",halla_version,__DATE__);
+     Printf("  *  Based on ROOT %8s %20s *",root_version,root_date);
+     //   Printf("  *             Development version              *");
+     Printf("  *                                              *");
+     Printf("  *            For information visit             *");
+     Printf("  *        http://hallaweb.jlab.org/root/        *");
+     Printf("  *                                              *");
+     Printf("  ************************************************");
+   }
 
 #ifdef R__UNIX
    //   if (!strcmp(gGXW->GetName(), "X11TTF"))
