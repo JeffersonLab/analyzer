@@ -38,7 +38,7 @@ public:
   virtual ~THaAnalysisObject();
   
   virtual Int_t        Begin( THaRunBase* r=0 );
-  virtual void         Clear( Option_t* opt="" ) {}
+  virtual void         Clear( Option_t* ) {}
   virtual Int_t        End( THaRunBase* r=0 );
   virtual const char*  GetDBFileName() const;
           const char*  GetConfig() const         { return fConfig.Data(); }
