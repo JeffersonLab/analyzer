@@ -57,7 +57,7 @@ protected:
   Double_t fCos_u;            // angle
   Double_t fSin_v;            // Trig functions for the V plane wire 
   Double_t fCos_v;            // angle
-  Double_t fSin_vu;           // Sine of the difference between the V wire
+  Double_t fInv_sin_vu;       // 1/Sine of the difference between the V wire
                               // angle and the U wire angle
 
   // For CoarseTrack

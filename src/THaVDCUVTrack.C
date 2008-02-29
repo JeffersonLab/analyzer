@@ -35,14 +35,14 @@ void THaVDCUVTrack::CalcDetCoords()
   Double_t v = v0 - mv * dz;
 
   // Now calculate track parameters in the detector cs
-  Double_t detX     = (u*fUVPlane->fSin_v - v*fUVPlane->fSin_u) / 
-    fUVPlane->fSin_vu;
-  Double_t detY     = (v*fUVPlane->fCos_u - u*fUVPlane->fCos_v) / 
-    fUVPlane->fSin_vu;
-  Double_t detTheta = (mu*fUVPlane->fSin_v - mv*fUVPlane->fSin_u) / 
-    fUVPlane->fSin_vu;
-  Double_t detPhi   = (mv*fUVPlane->fCos_u - mu*fUVPlane->fCos_v) / 
-    fUVPlane->fSin_vu;
+  Double_t detX     = (u*fUVPlane->fSin_v - v*fUVPlane->fSin_u) *
+    fUVPlane->fInv_sin_vu;
+  Double_t detY     = (v*fUVPlane->fCos_u - u*fUVPlane->fCos_v) *
+    fUVPlane->fInv_sin_vu;
+  Double_t detTheta = (mu*fUVPlane->fSin_v - mv*fUVPlane->fSin_u) *
+    fUVPlane->fInv_sin_vu; 
+  Double_t detPhi   = (mv*fUVPlane->fCos_u - mu*fUVPlane->fCos_v) *
+    fUVPlane->fInv_sin_vu;
 
   Set( detX, detY, detTheta, detPhi, fUVPlane->GetOrigin() );
 

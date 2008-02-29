@@ -81,7 +81,7 @@ THaDetectorBase::EStatus THaVDCUVPlane::Init( const TDatime& date )
   fCos_u   = TMath::Cos( uwAngle );
   fSin_v   = TMath::Sin( vwAngle );
   fCos_v   = TMath::Cos( vwAngle );
-  fSin_vu  = TMath::Sin( fVUWireAngle );
+  fInv_sin_vu = 1.0/TMath::Sin( fVUWireAngle );
 
   return fStatus = kOK;
 }
