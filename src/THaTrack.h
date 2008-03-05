@@ -10,6 +10,7 @@
 #include "TObject.h"
 #include "TVector3.h"
 #include "THaPIDinfo.h"
+#include <cstring>   // for memset
 
 class TClonesArray;
 class THaTrackingDetector;
@@ -29,14 +30,40 @@ public:
     kHasVertex     = BIT(4)   // Vertex reconstructed
   };
 
-  THaTrack() : fPIDinfo(NULL), fCreator(NULL), fID(NULL)
-  { Clear("F"); }
+  // Default constructor
+  THaTrack() 
+    : TObject(),
+      fX(kBig), fY(kBig), fTheta(kBig), fPhi(kBig), fP(kBig),
+      fNclusters(0), fPIDinfo(0), fCreator(0), 
+      fDX(kBig), fDY(kBig), fDTheta(kBig), fDPhi(kBig),
+      fRX(kBig), fRY(kBig), fRTheta(kBig), fRPhi(kBig),
+      fTX(kBig), fTY(kBig), fTTheta(kBig), fTPhi(kBig), fDp(kBig),
+      fPvect(kBig,kBig,kBig), fVertex(kBig,kBig,kBig),
+      fVertexError(kBig,kBig,kBig),
+      fPathl(kBig), fTime(kBig), fdTime(kBig), fBeta(kBig), fdBeta(kBig),
+      fID(0), fFlag(0), fType(0), fChi2(kBig), fNDoF(0)
+  { memset(fClusters,0,kMAXCL*sizeof(THaCluster*)); }
+
+  // Constructor with fp coordinates
+  // FIXME: this really should be setting detector coordinates
   THaTrack( Double_t x, Double_t y, Double_t theta, Double_t phi,
-	    THaTrackingDetector* creator=NULL, THaTrackID* id=NULL,
-	    THaPIDinfo* pid=NULL )
-    : fX(x), fY(y), fTheta(theta), fPhi(phi), fPIDinfo(pid), 
-      fCreator(creator), fID(id)
-  { Clear("P"); }
+	    THaTrackingDetector* creator=0, THaTrackID* id=0,
+	    THaPIDinfo* pid=0 )
+    : TObject(),
+      fX(x), fY(y), fTheta(theta), fPhi(phi), fP(kBig),
+      fNclusters(0), fPIDinfo(pid), fCreator(creator), 
+      fDX(kBig), fDY(kBig), fDTheta(kBig), fDPhi(kBig),
+      fRX(kBig), fRY(kBig), fRTheta(kBig), fRPhi(kBig),
+      fTX(kBig), fTY(kBig), fTTheta(kBig), fTPhi(kBig), fDp(kBig),
+      fPvect(kBig,kBig,kBig), fVertex(kBig,kBig,kBig),
+      fVertexError(kBig,kBig,kBig),
+      fPathl(kBig), fTime(kBig), fdTime(kBig), fBeta(kBig), fdBeta(kBig),
+      fID(id), fFlag(0), fType(kHasFP), fChi2(kBig), fNDoF(0)
+  { 
+    memset(fClusters,0,kMAXCL*sizeof(THaCluster*)); 
+    if(pid) pid->Clear(); 
+  }
+
   virtual ~THaTrack();
 
   Int_t             AddCluster( THaCluster* c );
@@ -57,7 +84,7 @@ public:
   Double_t          GetY( Double_t z ) const { return fY + z*fPhi; }
 
   Double_t          GetChi2()          const { return fChi2; }
-  Double_t          GetNDoF()          const { return fNDoF; }
+  Int_t             GetNDoF()          const { return fNDoF; }
   
   Double_t          GetDX()            const { return fDX; }
   Double_t          GetDY()            const { return fDY; }
