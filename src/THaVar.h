@@ -35,11 +35,11 @@ public:
 	  const Int_t* count = NULL ) :
     TNamed(name,descript), fArrayData(name), fValueF(&var), fType(kFloat),
     fCount(count), fOffset(-1), fMethod(NULL) {}
-  THaVar( const char* name, const char* descript, const Long_t& var,
+  THaVar( const char* name, const char* descript, const Long64_t& var,
 	  const Int_t* count = NULL ) :
     TNamed(name,descript), fArrayData(name), fValueL(&var), fType(kLong),
     fCount(count), fOffset(-1), fMethod(NULL) {}
-  THaVar( const char* name, const char* descript, const ULong_t& var,
+  THaVar( const char* name, const char* descript, const ULong64_t& var,
 	  const Int_t* count = NULL ) :
     TNamed(name,descript), fArrayData(name), fValueX(&var), fType(kULong),
     fCount(count), fOffset(-1), fMethod(NULL) {}
@@ -77,11 +77,11 @@ public:
 	  const Int_t* count = NULL ) :
     TNamed(name,descript), fArrayData(name), fValueFF(&var), fType(kFloatP),
     fCount(count), fOffset(-1), fMethod(NULL) {}
-  THaVar( const char* name, const char* descript, const Long_t*& var,
+  THaVar( const char* name, const char* descript, const Long64_t*& var,
 	  const Int_t* count = NULL ) :
     TNamed(name,descript), fArrayData(name), fValueLL(&var), fType(kLongP),
     fCount(count), fOffset(-1), fMethod(NULL) {}
-  THaVar( const char* name, const char* descript, const ULong_t*& var,
+  THaVar( const char* name, const char* descript, const ULong64_t*& var,
 	  const Int_t* count = NULL ) :
     TNamed(name,descript), fArrayData(name), fValueXX(&var), fType(kULongP),
     fCount(count), fOffset(-1), fMethod(NULL) {}
@@ -148,8 +148,8 @@ public:
   // where each element was constructed with the default constructor
   void SetVar( const Double_t& var ) { fValueD = &var; fType = kDouble; }
   void SetVar( const Float_t& var )  { fValueF = &var; fType = kFloat; }
-  void SetVar( const Long_t& var )   { fValueL = &var; fType = kLong; }
-  void SetVar( const ULong_t& var )  { fValueX = &var; fType = kULong; }
+  void SetVar( const Long64_t& var ) { fValueL = &var; fType = kLong; }
+  void SetVar( const ULong64_t& var ){ fValueX = &var; fType = kULong; }
   void SetVar( const Int_t& var )    { fValueI = &var; fType = kInt; }
   void SetVar( const UInt_t& var )   { fValueU = &var; fType = kUInt; }
   void SetVar( const Short_t& var )  { fValueS = &var; fType = kShort; }
@@ -159,8 +159,8 @@ public:
 
   void SetVar( const Double_t*& var ) { fValueDD = &var; fType = kDoubleP; }
   void SetVar( const Float_t*& var )  { fValueFF = &var; fType = kFloatP; }
-  void SetVar( const Long_t*& var )   { fValueLL = &var; fType = kLongP; }
-  void SetVar( const ULong_t*& var )  { fValueXX = &var; fType = kULongP; }
+  void SetVar( const Long64_t*& var ) { fValueLL = &var; fType = kLongP; }
+  void SetVar( const ULong64_t*& var ){ fValueXX = &var; fType = kULongP; }
   void SetVar( const Int_t*& var )    { fValueII = &var; fType = kIntP; }
   void SetVar( const UInt_t*& var )   { fValueUU = &var; fType = kUIntP; }
   void SetVar( const Short_t*& var )  { fValueSS = &var; fType = kShortP; }
@@ -170,8 +170,8 @@ public:
 
   void SetVar( const Double_t**& var ) { fValue3D = &var; fType = kDouble2P; }
   void SetVar( const Float_t**& var )  { fValue3F = &var; fType = kFloat2P; }
-  void SetVar( const Long_t**& var )   { fValue3L = &var; fType = kLong2P; }
-  void SetVar( const ULong_t**& var )  { fValue3X = &var; fType = kULong2P; }
+  void SetVar( const Long64_t**& var ) { fValue3L = &var; fType = kLong2P; }
+  void SetVar( const ULong64_t**& var ){ fValue3X = &var; fType = kULong2P; }
   void SetVar( const Int_t**& var )    { fValue3I = &var; fType = kInt2P; }
   void SetVar( const UInt_t**& var )   { fValue3U = &var; fType = kUInt2P; }
   void SetVar( const Short_t**& var )  { fValue3S = &var; fType = kShort2P; }
@@ -191,8 +191,8 @@ protected:
   union {
     const Double_t*   fValueD;  //Pointers to data (scalar or stack array)
     const Float_t*    fValueF;
-    const Long_t*     fValueL;
-    const ULong_t*    fValueX;
+    const Long64_t*   fValueL;
+    const ULong64_t*  fValueX;
     const Int_t*      fValueI;
     const UInt_t*     fValueU;
     const Short_t*    fValueS;
@@ -201,8 +201,8 @@ protected:
     const Byte_t*     fValueB;
     const Double_t**  fValueDD;  //Pointers to pointers to array of data
     const Float_t**   fValueFF;  //(fixed or variable heap arrays)
-    const Long_t**    fValueLL;
-    const ULong_t**   fValueXX;
+    const Long64_t**  fValueLL;
+    const ULong64_t** fValueXX;
     const Int_t**     fValueII;
     const UInt_t**    fValueUU;
     const Short_t**   fValueSS;
@@ -211,8 +211,8 @@ protected:
     const Byte_t**    fValueBB;
     const Double_t*** fValue3D;  //Pointers to pointers to array of pointers
     const Float_t***  fValue3F;  //to data (non-contiguous arrays)
-    const Long_t***   fValue3L;
-    const ULong_t***  fValue3X;
+    const Long64_t*** fValue3L;
+    const ULong64_t*** fValue3X;
     const Int_t***    fValue3I;
     const UInt_t***   fValue3U;
     const Short_t***  fValue3S;

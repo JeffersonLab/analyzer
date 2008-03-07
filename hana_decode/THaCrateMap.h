@@ -20,8 +20,7 @@
 
 #include "Rtypes.h"
 #include "TString.h"
-
-//#define CHECK_RANGE
+#include <cassert>
 
 class THaCrateMap
 {
@@ -59,10 +58,8 @@ class THaCrateMap
      void setSlotDone(int slot);                    // Used to speed up decoder
      void setSlotDone();                            // Used to speed up decoder
      int init(TString the_map);                     // Initialize from text-block
-     int init(UInt_t time);                         // Initialize by Unix time.
-     int init();                                    // Let me initialize everything 
-                                                    // (recommend to call this once)
-     int init_hc(UInt_t time);                      // Hard-coded crate-map
+     int init(ULong64_t time = 0);                  // Initialize by Unix time.
+     int init_hc(ULong64_t time);                   // Hard-coded crate-map
      void print() const;
 
      static const int CM_OK;
@@ -72,11 +69,14 @@ class THaCrateMap
 
      enum ECrateCode { kUnknown, kFastbus, kVME, kScaler, kCamac };
 
+  //FIXME: synchronize MAXROC/MAXSLOT with same parameters in THaEvData
      static const int MAXROC = 32;
      static const int MAXSLOT = 27;
+  //FIXME: replace parallel arrays with structure
      TString crate_type[MAXROC];
      ECrateCode crate_code[MAXROC];
      int nslot[MAXROC];               // Number of slots used
+  //TODO: also need maxslot[MAXROC];
      bool didslot[MAXSLOT];
      bool crate_used[MAXROC];
      bool slot_used[MAXROC][MAXSLOT];
@@ -97,178 +97,132 @@ class THaCrateMap
 
 //=============== inline functions ================================
 inline
-bool THaCrateMap::isFastBus(int crate) const {
-#ifdef CHECK_RANGE
-  if ( crate < 0 || crate >= MAXROC ) 
-    return false;
-#endif
+bool THaCrateMap::isFastBus(int crate) const
+{
+  assert( crate >= 0 && crate < MAXROC );
   return (crate_code[crate] == kFastbus);
 }
 
 inline
-bool THaCrateMap::isVme(int crate) const {
-#ifdef CHECK_RANGE
-  if ( crate < 0 || crate >= MAXROC ) 
-    return false;
-#endif
+bool THaCrateMap::isVme(int crate) const
+{
+  assert( crate >= 0 && crate < MAXROC );
   return  (crate_code[crate] == kVME ||
 	   crate_code[crate] == kScaler );
 }
 
 inline
-bool THaCrateMap::isCamac(int crate) const {
-#ifdef CHECK_RANGE
-  if ( crate < 0 || crate >= MAXROC ) 
-    return false;
-#endif
+bool THaCrateMap::isCamac(int crate) const
+{
+  assert( crate >= 0 && crate < MAXROC );
   return (crate_code[crate] == kCamac);
 }
 
 inline
-bool THaCrateMap::isScalerCrate(int crate) const {
-#ifdef CHECK_RANGE
-  if ( crate < 0 || crate >= MAXROC ) 
-    return false;
-#endif
+bool THaCrateMap::isScalerCrate(int crate) const
+{
+  assert( crate >= 0 && crate < MAXROC );
   return (crate_code[crate] == kScaler);
 }
 
 inline
-bool THaCrateMap::crateUsed(int crate) const {
-#ifdef CHECK_RANGE
-  if (crate < 0 || crate >= MAXROC) 
-    return false;
-#endif
+bool THaCrateMap::crateUsed(int crate) const
+{
+  assert( crate >= 0 && crate < MAXROC );
   return crate_used[crate];
 }
 
 inline
-bool THaCrateMap::slotUsed(int crate, int slot) const {
-#ifdef CHECK_RANGE
-  if (crate < 0 || crate >= MAXROC ||
-      slot < 0  || slot  >= MAXSLOT )
+bool THaCrateMap::slotUsed(int crate, int slot) const
+{
+  assert( crate >= 0 && crate < MAXROC && slot >= 0 && slot < MAXSLOT );
+  if( crate < 0 || crate >= MAXROC || slot < 0 || slot >= MAXSLOT )
     return false;
-#endif
   return slot_used[crate][slot];
 }
 
 inline
-bool THaCrateMap::slotClear(int crate, int slot) const {
-#ifdef CHECK_RANGE
-  if (crate < 0 || crate >= MAXROC ||
-      slot < 0  || slot  >= MAXSLOT )
-    return true;
-#endif
+bool THaCrateMap::slotClear(int crate, int slot) const
+{
+  assert( crate >= 0 && crate < MAXROC && slot >= 0 && slot < MAXSLOT );
   return slot_clear[crate][slot];
 }
 
 inline
-int THaCrateMap::getModel(int crate, int slot) const {
-#ifdef CHECK_RANGE
-  if (crate < 0 || crate >= MAXROC ||
-      slot < 0  || slot  >= MAXSLOT )
-    return CM_ERR;
-#endif
+int THaCrateMap::getModel(int crate, int slot) const
+{
+  assert( crate >= 0 && crate < MAXROC && slot >= 0 && slot < MAXSLOT );
   return model[crate][slot];
 }
 
 inline
-int THaCrateMap::getMask(int crate, int slot) const {
-#ifdef CHECK_RANGE
-  if (crate < 0 || crate >= MAXROC ||
-      slot < 0  || slot  >= MAXSLOT )
-    return CM_ERR;
-#endif
+int THaCrateMap::getMask(int crate, int slot) const
+{
+  assert( crate >= 0 && crate < MAXROC && slot >= 0 && slot < MAXSLOT );
   return headmask[crate][slot];
 }
 
 inline
-UShort_t THaCrateMap::getNchan(int crate, int slot) const {
-#ifdef CHECK_RANGE
-  if (crate < 0 || crate >= MAXROC ||
-      slot < 0  || slot  >= MAXSLOT )
-    return CM_ERR;
-#endif
+UShort_t THaCrateMap::getNchan(int crate, int slot) const
+{
+  assert( crate >= 0 && crate < MAXROC && slot >= 0 && slot < MAXSLOT );
   return nchan[crate][slot];
 }
 
 inline
-UShort_t THaCrateMap::getNdata(int crate, int slot) const {
-#ifdef CHECK_RANGE
-  if (crate < 0 || crate >= MAXROC ||
-      slot < 0  || slot  >= MAXSLOT )
-    return CM_ERR;
-#endif
+UShort_t THaCrateMap::getNdata(int crate, int slot) const
+{
+  assert( crate >= 0 && crate < MAXROC && slot >= 0 && slot < MAXSLOT );
   return ndata[crate][slot];
 }
 
 inline
-int THaCrateMap::getNslot(int crate) const {
-#ifdef CHECK_RANGE
-  if (crate < 0 || crate >= MAXROC ) 
-    return CM_ERR;
-#endif
+int THaCrateMap::getNslot(int crate) const
+{
+  assert( crate >= 0 && crate < MAXROC );
   return nslot[crate];
 }
 
 inline
-const char* THaCrateMap::getScalerLoc(int crate) const {
-#ifdef CHECK_RANGE
-  if ( crate < 0 || crate >= MAXROC ) 
-    return "unknown";
-#endif
+const char* THaCrateMap::getScalerLoc(int crate) const
+{
+  assert( crate >= 0 && crate < MAXROC );
   return scalerloc[crate].Data();
 }
 
 inline
-int THaCrateMap::getHeader(int crate, int slot) const {
-#ifdef CHECK_RANGE
-  if (crate < 0 || crate >= MAXROC ||
-      slot < 0  || slot  >= MAXSLOT )
-    return CM_ERR;
-#endif
+int THaCrateMap::getHeader(int crate, int slot) const
+{
+  assert( crate >= 0 && crate < MAXROC && slot >= 0 && slot < MAXSLOT );
   return header[crate][slot];
 }
 
 inline
-void THaCrateMap::setUsed(int crate, int slot) {
-#ifdef CHECK_RANGE
-  if (crate < 0 || crate >= MAXROC ) 
-    return;
-#endif
+void THaCrateMap::setUsed(int crate, int slot)
+{
+  assert( crate >= 0 && crate < MAXROC && slot >= 0 && slot < MAXSLOT );
   crate_used[crate] = true;
-#ifdef CHECK_RANGE
-  if (slot < 0 || slot >= MAXSLOT ) 
-    return;
-#endif
   slot_used[crate][slot] = true;
 }
 
 inline
-void THaCrateMap::setClear(int crate, int slot, bool clear) {
-#ifdef CHECK_RANGE
-  if (crate < 0 || crate >= MAXROC ||
-      slot < 0  || slot  >= MAXSLOT )
-    return;
-#endif
+void THaCrateMap::setClear(int crate, int slot, bool clear)
+{
+  assert( crate >= 0 && crate < MAXROC && slot >= 0 && slot < MAXSLOT );
   slot_clear[crate][slot] = clear;
 }
 
 inline
-bool THaCrateMap::slotDone(int slot) const {
-#ifdef CHECK_RANGE
-  if (slot < 0 || slot >= MAXSLOT ) 
-    return false;
-#endif
+bool THaCrateMap::slotDone(int slot) const
+{
+  assert( slot >= 0 && slot < MAXSLOT );
   return didslot[slot];
 }
 
 inline
-void THaCrateMap::setSlotDone(int slot) {
-#ifdef CHECK_RANGE
-  if (slot < 0 || slot >= MAXSLOT ) 
-    return;
-#endif
+void THaCrateMap::setSlotDone(int slot)
+{
+  assert( slot >= 0 && slot < MAXSLOT );
   didslot[slot] = true;
 }
 
@@ -276,11 +230,6 @@ inline
 void THaCrateMap::setSlotDone() {        // initialize
   for (int i=0; i<MAXSLOT; i++)
     didslot[i] = false;
-}
-
-inline
-int THaCrateMap::init() {
-  return init(0);
 }
 
 #endif

@@ -14,6 +14,7 @@
 #include "TBits.h"
 #include "evio.h"
 #include <string>
+#include <cassert>
 
 class THaBenchmark;
 class THaEpics;
@@ -23,297 +24,342 @@ class THaFastBusWord;
 class THaEvData : public TObject {
 
 public:
-     THaEvData();
-     virtual ~THaEvData();
-     int GetEvType()   const { return event_type; }
-     int GetEvLength() const { return event_length; }
-     int GetEvNum()    const { return event_num; }
-     int GetRunNum()   const { return run_num; }
-     // Run time/date. Time of prestart event (UNIX time).
-     UInt_t GetRunTime() const { return run_time; }
-     virtual Double_t GetEvTime() const;
-     int GetRunType()  const { return run_type; }
-     int GetRocLength(int crate) const;   // Get the ROC length
+  THaEvData();
+  virtual ~THaEvData();
 
-     virtual int GetPrescaleFactor(int trigger) const;  // Obtain prescale factor
-     bool IsPhysicsTrigger() const;    // physics trigger (event types 1-14)
-     bool IsScalerEvent() const;       // scalers from datastream
-     bool IsPrestartEvent() const;     // prestart event
-     bool IsEpicsEvent() const;        // epics data inserted in datastream
-     bool IsPrescaleEvent() const;     // prescale factors
-     bool IsSpecialEvent() const;      // e.g. detmap or trigger file insertion
-// number of raw words in crate, slot
-     int GetNumRaw(int crate, int slot) const;
-// raw words for hit 0,1,2.. on crate, slot
-     int GetRawData(int crate, int slot, int hit) const;            
-// To retrieve data by crate, slot, channel, and hit# (hit=0,1,2,..)
-     int GetRawData(int crate, int slot, int chan, int hit) const;
-// To get element #i of the raw evbuffer
-     int GetRawData(int i) const;
-     int GetRawData(int crate, int i) const;   // Get raw element i within crate
-     int GetNumHits(int crate, int slot, int chan) const;
-     int GetData(int crate, int slot, int chan, int hit) const;
-     Bool_t InCrate(int crate, int i) const;
-     int GetNumChan(int crate, int slot) const;    // Num unique channels hit
-     int GetNextChan(int crate, int slot, int index) const; // List unique chan
-     const char* DevType(int crate, int slot) const;
+  // Loads CODA data evbuffer using private crate map "cmap" (recommended)
+  Int_t LoadEvent(const Int_t* evbuffer);          
+  // Loads CODA data evbuffer using THaCrateMap passed as 2nd arg
+  // Derived classes MUST implement this
+  virtual Int_t LoadEvent(const Int_t* evbuffer, THaCrateMap* usermap) = 0;    
 
-     // KCR: Scaler stuff is in THaCodaDecoder
-// User can GetScaler, alternativly to GetSlotData for scalers
-// spec = "left", "right", "rcs" for event type 140 scaler "events"
-// spec = "evleft" or "evright" for L,R scalers injected into datastream.
-     virtual int GetScaler(const TString& spec, int slot, int chan) const;   
-     virtual int GetScaler(int roc, int slot, int chan) const;         
+  // Basic access to the decoded data
+  Int_t     GetEvType()   const { return event_type; }
+  Int_t     GetEvLength() const { return event_length; }
+  Int_t     GetEvNum()    const { return event_num; }
+  Int_t     GetRunNum()   const { return run_num; }
+  // Run time/date. Time of prestart event (UNIX time).
+  ULong64_t GetRunTime()  const { return fRunTime; }
+  Int_t     GetRunType()  const { return run_type; }
+  Int_t     GetRocLength(Int_t crate) const;   // Get the ROC length
 
-     virtual double GetEpicsData(const char* tag, int event=0) const;
-     virtual double GetEpicsTime(const char* tag, int event=0) const;
-     virtual std::string GetEpicsString(const char* tag, int event=0) const;
-     virtual Bool_t IsLoadedEpics(const char* tag) const;
+  Bool_t    IsPhysicsTrigger() const;  // physics trigger (event types 1-14)
+  Bool_t    IsScalerEvent() const;     // scalers from datastream
+  Bool_t    IsPrestartEvent() const;   // prestart event
+  Bool_t    IsEpicsEvent() const;      // epics data inserted in datastream
+  Bool_t    IsPrescaleEvent() const;   // prescale factors
+  Bool_t    IsSpecialEvent() const;    // e.g. detmap or trigger file insertion
+  // number of raw words in crate, slot
+  Int_t     GetNumRaw(Int_t crate, Int_t slot) const;
+  // raw words for hit 0,1,2.. on crate, slot
+  Int_t     GetRawData(Int_t crate, Int_t slot, Int_t hit) const;            
+  // To retrieve data by crate, slot, channel, and hit# (hit=0,1,2,..)
+  Int_t     GetRawData(Int_t crate, Int_t slot, Int_t chan, Int_t hit) const;
+  // To get element #i of the raw evbuffer
+  Int_t     GetRawData(Int_t i) const;
+  // Get raw element i within crate
+  Int_t     GetRawData(Int_t crate, Int_t i) const;
+  Int_t     GetNumHits(Int_t crate, Int_t slot, Int_t chan) const;
+  Int_t     GetData(Int_t crate, Int_t slot, Int_t chan, Int_t hit) const;
+  Bool_t    InCrate(Int_t crate, Int_t i) const;
+  // Num unique channels hit
+  Int_t     GetNumChan(Int_t crate, Int_t slot) const;
+  // List unique chan
+  Int_t     GetNextChan(Int_t crate, Int_t slot, Int_t index) const;
+  const char* DevType(Int_t crate, Int_t slot) const;
 
-// Loads CODA data evbuffer using THaCrateMap passed as 2nd arg
-     virtual int LoadEvent(const int* evbuffer, THaCrateMap* usermap) = 0;    
+  // Optional functionality that may be implemented by derived classes
+  virtual ULong64_t GetEvTime() const  
+  { assert(fgAllowUnimpl); return kMaxUInt; }
+   // Returns Beam Helicity (-1,0,+1)  '0' is 'unknown'
+  virtual Int_t GetHelicity() const
+  //  { assert(HelicityEnabled() && fgAllowUnimpl); return 0; }
+  { return 0; }
+  // Beam Helicity for spec="left","right"
+  virtual Int_t GetHelicity(const TString& /*spec*/) const
+  { return GetHelicity(); }
+  virtual Int_t GetPrescaleFactor(Int_t /*trigger*/ ) const 
+  { assert(fgAllowUnimpl); return -1; }
+  // User can GetScaler, alternativly to GetSlotData for scalers
+  // spec = "left", "right", "rcs" for event type 140 scaler "events"
+  // spec = "evleft" or "evright" for L,R scalers injected into datastream.
+  virtual Int_t GetScaler(Int_t /*roc*/, Int_t /*slot*/, Int_t /*chan*/) const
+  { assert(ScalersEnabled() && fgAllowUnimpl); return kMaxInt; };
+  virtual Int_t GetScaler(const TString& /*spec*/, 
+			  Int_t /*slot*/, Int_t /*chan*/) const
+  { return GetScaler(0,0,0); }
 
-// Loads CODA data evbuffer using private crate map "cmap" (recommended)
-     int LoadEvent(const int* evbuffer);          
-     virtual void PrintSlotData(int crate, int slot) const;
-     virtual void PrintOut() const;
-     virtual void SetRunTime( UInt_t tloc );
-     void EnableScalers( Bool_t enable=kTRUE );
-     Bool_t ScalersEnabled() const;
-     void SetOrigPS( Int_t event_type ); 
-     TString GetOrigPS() const;
+  // Access functions for EPICS (slow control) data
+  virtual double GetEpicsData(const char* tag, Int_t event=0) const;
+  virtual double GetEpicsTime(const char* tag, Int_t event=0) const;
+  virtual std::string GetEpicsString(const char* tag, Int_t event=0) const;
+  virtual Bool_t IsLoadedEpics(const char* /*tag*/ ) const
+  { return false; }
 
-     UInt_t GetInstance() const { return fInstance; }
-     static UInt_t GetInstances() { return fgInstances.CountBits(); }
+  virtual void PrintSlotData(Int_t crate, Int_t slot) const;
+  virtual void PrintOut() const;
+  virtual void SetRunTime( ULong64_t tloc );
 
-// Utility function for hexdumping any sort of data
-     static void hexdump(const char* cbuff, size_t len);
+  // Status control
+  void    EnableHelicity( Bool_t enable=true );
+  Bool_t  HelicityEnabled() const;
+  void    EnableScalers( Bool_t enable=true );
+  Bool_t  ScalersEnabled() const;
+  void    SetOrigPS( Int_t event_type ); 
+  TString GetOrigPS() const;
 
-     enum { HED_OK = 0, HED_ERR = -127};
-     enum { MAX_PSFACT = 12 };
+  UInt_t  GetInstance() const { return fInstance; }
+  static UInt_t GetInstances() { return fgInstances.CountBits(); }
+
+  // Utility function for hexdumping any sort of data
+  static void hexdump(const char* cbuff, size_t len);
+
+  enum { HED_OK = 0, HED_ERR = -127};
+  enum { MAX_PSFACT = 12 };
   
-
 protected:
   // Control bits in TObject::fBits used by decoders
-     enum { kScalersEnabled  = BIT(15) };
+  enum { kHelicityEnabled = BIT(14),
+	 kScalersEnabled  = BIT(15)
+  };
 
-     static const int MAXROC = 32;  
-     static const int MAXSLOT = 27;  
+  static const Int_t MAXROC = 32;  
+  static const Int_t MAXSLOT = 27;  
 
-     static const int MAX_PHYS_EVTYPE  = 14;  // Types up to this are physics
-     static const int SYNC_EVTYPE      = 16;
-     static const int PRESTART_EVTYPE  = 17;
-     static const int GO_EVTYPE        = 18;
-     static const int PAUSE_EVTYPE     = 19;
-     static const int END_EVTYPE       = 20;
-     static const int TS_PRESCALE_EVTYPE  = 120;
-     static const int EPICS_EVTYPE     = 131;
-     static const int PRESCALE_EVTYPE  = 133;
-     static const int DETMAP_FILE      = 135;
-     static const int TRIGGER_FILE     = 136;
-     static const int SCALER_EVTYPE    = 140;
+  static const Int_t MAX_PHYS_EVTYPE  = 14;  // Types up to this are physics
+  static const Int_t SYNC_EVTYPE      = 16;
+  static const Int_t PRESTART_EVTYPE  = 17;
+  static const Int_t GO_EVTYPE        = 18;
+  static const Int_t PAUSE_EVTYPE     = 19;
+  static const Int_t END_EVTYPE       = 20;
+  static const Int_t TS_PRESCALE_EVTYPE  = 120;
+  static const Int_t EPICS_EVTYPE     = 131;
+  static const Int_t PRESCALE_EVTYPE  = 133;
+  static const Int_t DETMAP_FILE      = 135;
+  static const Int_t TRIGGER_FILE     = 136;
+  static const Int_t SCALER_EVTYPE    = 140;
      
-     struct RocDat_t {           // ROC raw data descriptor
-       int pos;                  // position in evbuffer[]
-       int len;                  // length of data
-     } rocdat[MAXROC];
-     THaCrateMap* cmap;          // default crate map
-     //     THaFastBusWord* fb;
-     THaSlotData** crateslot;  
+  struct RocDat_t {           // ROC raw data descriptor
+    Int_t pos;                // position in evbuffer[]
+    Int_t len;                // length of data
+  } rocdat[MAXROC];
+  THaCrateMap* cmap;          // default crate map
+  THaSlotData** crateslot;  
 
-     bool first_load, first_decode;//first_scaler;
-     //TString scalerdef[MAXROC];
-     //     int numscaler_crate;
-     //     int scaler_crate[MAXROC];        // stored from cratemap for fast ref.
-     //int psfact[MAX_PSFACT];
+  Bool_t first_load, first_decode;
+  Bool_t fTrigSupPS;
 
-     bool fgTrigSupPS;
+  // Hall A Trigger Types
+  const Int_t *buffer;
 
-// Hall A Trigger Types
-     const Int_t *buffer;
+  Int_t  event_type,event_length,event_num,run_num,evscaler;
+  Int_t  run_type;    // CODA run type from prestart event
+  ULong64_t fRunTime; // CODA run time (Unix time) from prestart event
+  ULong64_t evt_time; // Event time. Not directly supported by CODA
+  Int_t  recent_event;
 
-     // KCR: evscaler is weird.  It doesn't really belong here, but theres
-     //      the one inline function that reads from it, so I'll leave it.
-     Int_t event_type,event_length,event_num,run_num,evscaler;
-     Int_t run_type;     // CODA run type from prestart event
-     UInt_t run_time;    // CODA run time (Unix time) from prestart event
-     UInt_t evt_time;    // Event time (Unix time). Not directly supported by CODA.
-     Int_t recent_event;//,synchflag,datascan;
+  Bool_t buffmode,synchmiss,synchextra;
+  Int_t  idx(Int_t crate, Int_t slot) const;
+  Int_t  idx(Int_t crate, Int_t slot);
+  Bool_t GoodIndex(Int_t crate, Int_t slot) const;
 
-     bool buffmode,synchmiss,synchextra;
-     int idx(int crate, int slot) const;
-     int idx(int crate, int slot);
-     bool GoodIndex(int crate, int slot) const;
+  Int_t init_cmap();
+  Int_t init_slotdata(const THaCrateMap* map);
+  void  makeidx(Int_t crate, Int_t slot);
 
-     int init_cmap();
-     int init_slotdata(const THaCrateMap* map);
-     void makeidx(int crate, int slot);
+  Int_t     fNSlotUsed;   // Number of elements of crateslot[] actually used
+  Int_t     fNSlotClear;  // Number of elements of crateslot[] to clear
+  UShort_t* fSlotUsed;    // [fNSlotUsed] Indices of crateslot[] used
+  UShort_t* fSlotClear;   // [fNSlotClear] Indices of crateslot[] to clear
 
-     int       fNSlotUsed;   // Number of elements of crateslot[] actually used
-     int       fNSlotClear;  // Number of elements of crateslot[] to clear
-     UShort_t* fSlotUsed;    // [fNSlotUsed] Indices of crateslot[] used
-     UShort_t* fSlotClear;   // [fNSlotClear] Indices of crateslot[] to clear
+  THaCrateMap* fMap;      // Pointer to active crate map
 
-     THaCrateMap* fMap;      // Pointer to active crate map
+  Bool_t fDoBench;
+  THaBenchmark *fBench;
 
-     bool fDoBench;
-     THaBenchmark *fBench;
+  UInt_t fInstance;            // My instance
+  static TBits fgInstances;    // Number of instances of this object
 
-     UInt_t fInstance;          //My instance
-     static TBits fgInstances;  //number of instances of this object
-     //
+  static const Double_t kBig;  // default value for invalid data
+  static Bool_t fgAllowUnimpl; // If true, allow unimplemented functions
 
-     ClassDef(THaEvData,0)  // Decoder for CODA event buffer
+  ClassDef(THaEvData,0)  // Decoder for CODA event buffer
 
 };
 
 //=============== inline functions ================================
 
-//A utility function to index into the crateslot array
-inline int THaEvData::idx( int crate, int slot) const {
+//Utility function to index into the crateslot array
+inline Int_t THaEvData::idx( Int_t crate, Int_t slot) const {
   return slot+MAXSLOT*crate;
 }
-//Another utility function, but it initializes empty slots
-inline int THaEvData::idx( int crate, int slot) {
-  int idx = slot+MAXSLOT*crate;
+//Like idx() const, but initializes empty slots
+inline Int_t THaEvData::idx( Int_t crate, Int_t slot) {
+  Int_t idx = slot+MAXSLOT*crate;
   if( !crateslot[idx] ) makeidx(crate,slot);
   return idx;
 }
 
-inline bool THaEvData::GoodIndex( int crate, int slot ) const {
+inline Bool_t THaEvData::GoodIndex( Int_t crate, Int_t slot ) const {
   return ( crate >= 0 && crate < MAXROC && 
 	   slot >= 0 && slot < MAXSLOT &&
 	   crateslot[idx(crate,slot)] != 0);
 }
 
-inline int THaEvData::GetRocLength(int crate) const {
-  if (crate >= 0 && crate < MAXROC) return rocdat[crate].len;
-  return 0;
+inline Int_t THaEvData::GetRocLength(Int_t crate) const {
+  assert(crate >= 0 && crate < MAXROC);
+  return rocdat[crate].len;
 }
 
-inline int THaEvData::GetNumHits(int crate, int slot, int chan) const {
-// Number hits in crate, slot, channel
-  if( GoodIndex(crate,slot))
-    return crateslot[idx(crate,slot)]->getNumHits(chan);
-  return 0;
+inline Int_t THaEvData::GetNumHits(Int_t crate, Int_t slot, Int_t chan) const {
+  // Number hits in crate, slot, channel
+  assert( GoodIndex(crate,slot) );
+  return crateslot[idx(crate,slot)]->getNumHits(chan);
 };
 
-inline int THaEvData::GetData(int crate, int slot, int chan, int hit) const {
-// Return the data in crate, slot, channel #chan and hit# hit
-  if( GoodIndex(crate,slot))
-    return crateslot[idx(crate,slot)]->getData(chan,hit);
-  return 0;
+inline Int_t THaEvData::GetData(Int_t crate, Int_t slot, Int_t chan,
+				Int_t hit) const {
+  // Return the data in crate, slot, channel #chan and hit# hit
+  assert( GoodIndex(crate,slot) );
+  return crateslot[idx(crate,slot)]->getData(chan,hit);
 };
 
-inline int THaEvData::GetNumRaw(int crate, int slot) const {
-// Number of raw words in crate, slot
-  if( GoodIndex(crate,slot))
-    return crateslot[idx(crate,slot)]->getNumRaw();
-  return 0;
+inline Int_t THaEvData::GetNumRaw(Int_t crate, Int_t slot) const {
+  // Number of raw words in crate, slot
+  assert( GoodIndex(crate,slot) );
+  return crateslot[idx(crate,slot)]->getNumRaw();
 };
 
-inline int THaEvData::GetRawData(int crate, int slot, int hit) const {
-// Raw words in crate, slot
-  if( GoodIndex(crate,slot))
-    return crateslot[idx(crate,slot)]->getRawData(hit);
-  return 0;
+inline Int_t THaEvData::GetRawData(Int_t crate, Int_t slot, Int_t hit) const {
+  // Raw words in crate, slot
+  assert( GoodIndex(crate,slot) );
+  return crateslot[idx(crate,slot)]->getRawData(hit);
 };
 
-inline int THaEvData::GetRawData(int crate, int slot, int chan, int hit) const {
-// Return the Rawdata in crate, slot, channel #chan and hit# hit
-  if( GoodIndex(crate,slot))
-    return crateslot[idx(crate,slot)]->getRawData(chan,hit);
-  return 0;
+inline Int_t THaEvData::GetRawData(Int_t crate, Int_t slot, Int_t chan,
+				   Int_t hit) const {
+  // Return the Rawdata in crate, slot, channel #chan and hit# hit
+  assert( GoodIndex(crate,slot) );
+  return crateslot[idx(crate,slot)]->getRawData(chan,hit);
 };
 
-inline int THaEvData::GetRawData(int i) const {
-// Raw words in evbuffer at location #i.
-  if ( !buffer ) return 0;   // oops, you didn't LoadEvent
-  if (i >= 0 && i < GetEvLength()) return buffer[i];
-  return 0;
+inline Int_t THaEvData::GetRawData(Int_t i) const {
+  // Raw words in evbuffer at location #i.
+  assert( buffer && i >= 0 && i < GetEvLength() );
+  return buffer[i];
 };
 
-// KCR: WOAH.  No lo puedo hacer.  
-//      Something has to be done about buffer, fast.
-inline int THaEvData::GetRawData(int crate, int i) const {
-// Raw words in evbuffer within crate #crate.
-  if (crate < 0 || crate > MAXROC) return 0;
-  int index = rocdat[crate].pos + i;
-  if (index >= 0 && index < GetEvLength()) return buffer[index];
-  return 0;
+inline Int_t THaEvData::GetRawData(Int_t crate, Int_t i) const {
+  // Raw words in evbuffer within crate #crate.
+  assert( crate >= 0 && crate < MAXROC );
+  Int_t index = rocdat[crate].pos + i;
+  return GetRawData(index);
 };
 
-inline Bool_t THaEvData::InCrate(int crate, int i) const {
-// To tell if the index "i" points to a word inside crate #crate.
-  if (crate == 0) return kTRUE;     // Used for crawling through whole event.
-  if (crate < 0 || crate > MAXROC) return kFALSE;
-  if (rocdat[crate].pos == 0 || rocdat[crate].len == 0) return kFALSE;
-  return (i >= rocdat[crate].pos && i <= rocdat[crate].pos+rocdat[crate].len);
+inline Bool_t THaEvData::InCrate(Int_t crate, Int_t i) const {
+  // To tell if the index "i" poInt_ts to a word inside crate #crate.
+  assert( crate >= 0 && crate < MAXROC );
+  // Used for crawling through whole event
+  if (crate == 0) return (i >= 0 && i < GetEvLength());
+  if (rocdat[crate].pos == 0 || rocdat[crate].len == 0) return false;
+  return (i >= rocdat[crate].pos && 
+	  i <= rocdat[crate].pos+rocdat[crate].len);
 };
 
-inline int THaEvData::GetNumChan(int crate, int slot) const {
-// Get number of unique channels hit
-  if( GoodIndex(crate,slot))
-    return crateslot[idx(crate,slot)]->getNumChan();
-  return 0;
+inline Int_t THaEvData::GetNumChan(Int_t crate, Int_t slot) const {
+  // Get number of unique channels hit
+  assert( GoodIndex(crate,slot) );
+  return crateslot[idx(crate,slot)]->getNumChan();
 };
 
-inline int THaEvData::GetNextChan(int crate, int slot, int index) const {
-// Get list of unique channels hit (indexed by index=0,getNumChan())
-  if( GoodIndex(crate,slot))
-    return crateslot[idx(crate,slot)]->getNextChan(index);
-  return 0;
+inline Int_t THaEvData::GetNextChan(Int_t crate, Int_t slot,
+				    Int_t index) const {
+  // Get list of unique channels hit (indexed by index=0,getNumChan()-1)
+  assert( GoodIndex(crate,slot) );
+  return crateslot[idx(crate,slot)]->getNextChan(index);
 };
 
 inline
-bool THaEvData::IsPhysicsTrigger() const {
+Bool_t THaEvData::IsPhysicsTrigger() const {
   return ((event_type > 0) && (event_type <= MAX_PHYS_EVTYPE));
 };
 
 inline
-bool THaEvData::IsScalerEvent() const {
-// Either 'event type 140' or events with the synchronous readout of scalers (roc11, etc)
-// A scaler event can also be a physics event.
+Bool_t THaEvData::IsScalerEvent() const {
+  // Either 'event type 140' or events with the synchronous readout
+  // of scalers (roc11, etc).
+  // Important: A scaler event can also be a physics event.
   return (event_type == SCALER_EVTYPE || evscaler == 1);
 };
 
 inline
-bool THaEvData::IsPrestartEvent() const {
+Bool_t THaEvData::IsPrestartEvent() const {
   return (event_type == PRESTART_EVTYPE);
 };
 
 inline
-bool THaEvData::IsEpicsEvent() const {
+Bool_t THaEvData::IsEpicsEvent() const {
   return (event_type == EPICS_EVTYPE);
 };
 
 inline
-bool THaEvData::IsPrescaleEvent() const {
+Bool_t THaEvData::IsPrescaleEvent() const {
   return (event_type == TS_PRESCALE_EVTYPE ||
 	  event_type == PRESCALE_EVTYPE);
-#if 0
-  if (fgTrigSupPS) {
-    return (event_type == TS_PRESCALE_EVTYPE);
-  } else {
-    return (event_type == PRESCALE_EVTYPE);
-  }
-#endif
 };
 
 inline
-bool THaEvData::IsSpecialEvent() const {
+Bool_t THaEvData::IsSpecialEvent() const {
   return ( (event_type == DETMAP_FILE) ||
 	   (event_type == TRIGGER_FILE) );
 };
 
 inline
-int THaEvData::LoadEvent(const int* evbuffer) {
-// This version of LoadEvent() uses private THaCrateMap cmap (recommended)
+Int_t THaEvData::LoadEvent(const Int_t* evbuffer) {
+  // This version of LoadEvent() uses private THaCrateMap cmap (recommended)
   if (first_load) {
-      first_load = false;
-      if (init_cmap() == HED_ERR) return HED_ERR;
+    first_load = false;
+    if (init_cmap() == HED_ERR) return HED_ERR;
   }
   return LoadEvent(evbuffer, cmap);
 };
+
+inline
+Bool_t THaEvData::HelicityEnabled() const
+{
+  // Test if helicity decoding enabled
+  return TestBit(kHelicityEnabled);
+}
+
+inline
+Bool_t THaEvData::ScalersEnabled() const
+{
+  // Test if scaler decoding enabled
+  return TestBit(kScalersEnabled);
+}
+
+// Dummy versions of EPICS data access functions. These will always fail 
+// in debug mode unless IsLoadedEpics is changed. This is by design - 
+// clients should never try to retrieve data that are not loaded.
+inline
+double THaEvData::GetEpicsData(const char* tag, Int_t /*event*/ ) const
+{ 
+  assert(IsLoadedEpics(tag) && fgAllowUnimpl);
+  return kBig;
+}
+
+inline
+double THaEvData::GetEpicsTime(const char* tag, Int_t /*event*/ ) const
+{
+  assert(IsLoadedEpics(tag) && fgAllowUnimpl);
+  return kBig;
+}
+
+inline
+std::string THaEvData::GetEpicsString(const char* tag, Int_t /*event*/ ) const
+{
+  assert(IsLoadedEpics(tag) && fgAllowUnimpl);
+  return std::string("");
+}
 
 #endif 

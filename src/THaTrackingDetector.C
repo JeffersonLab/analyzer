@@ -75,7 +75,7 @@ THaTrack* THaTrackingDetector::AddTrack( TClonesArray& tracks,
     if( i > c.GetLast() || !c.At(i) )  new( c[i] ) THaPIDinfo( ndet, npart );
     pid = static_cast<THaPIDinfo*>( c.At(i) );
   
-  } else {
+  } else if( fDebug>0 ) {
     ::Warning("THaTrackingDetector::AddTrack", "No spectrometer defined for "
 	      "detector %s. Track has no PID and vertex info.", GetName());
   }

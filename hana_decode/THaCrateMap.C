@@ -65,8 +65,7 @@ int THaCrateMap::getScalerCrate(int data) const {
 }
 
 int THaCrateMap::setCrateType(int crate, const char* ctype) {
-  if ( crate < 0 || crate >= MAXROC ) 
-    return CM_ERR;
+  assert( crate >= 0 && crate < MAXROC );
   TString type(ctype);
   crate_used[crate] = true;
   crate_type[crate] = type;
@@ -89,11 +88,7 @@ int THaCrateMap::setCrateType(int crate, const char* ctype) {
 
 int THaCrateMap::setModel(int crate, int slot, UShort_t mod,
 			  UShort_t nc, UShort_t nd ) {
-  if ( crate < 0 || crate >= MAXROC ) 
-    return CM_ERR;
-  incrNslot(crate);
-  if ( slot < 0 || slot >= MAXSLOT ) 
-    return CM_ERR;
+  assert( crate >= 0 && crate < MAXROC && slot >= 0 && slot < MAXSLOT );
   setUsed(crate,slot);
   model[crate][slot] = mod;
   if( !SetModelSize( crate, slot, mod )) {
@@ -106,6 +101,7 @@ int THaCrateMap::setModel(int crate, int slot, UShort_t mod,
 int THaCrateMap::SetModelSize( int crate, int slot, UShort_t imodel ) 
 {
   // Set the max number of channels and data words for some known modules
+  assert( crate >= 0 && crate < MAXROC && slot >= 0 && slot < MAXSLOT );
   struct ModelPar_t { UShort_t model, nchan, ndata; };
   static const ModelPar_t modelpar[] = {
     { 1875, 64, 512 },  // Detector TDC
@@ -138,30 +134,23 @@ int THaCrateMap::SetModelSize( int crate, int slot, UShort_t imodel )
 }
 
 int THaCrateMap::setHeader(int crate, int slot, int head) {
-  if ( crate < 0 || crate >= MAXROC ) 
-    return CM_ERR;
+  assert( crate >= 0 && crate < MAXROC && slot >= 0 && slot < MAXSLOT );
   incrNslot(crate);
-  if ( slot < 0 || slot >= MAXSLOT ) 
-    return CM_ERR;
   setUsed(crate,slot);
   header[crate][slot] = head;
   return CM_OK;
 }
 
 int THaCrateMap::setMask(int crate, int slot, int mask) {
-  if ( crate < 0 || crate >= MAXROC ) 
-    return CM_ERR;
+  assert( crate >= 0 && crate < MAXROC && slot >= 0 && slot < MAXSLOT );
   incrNslot(crate);
-  if ( slot < 0 || slot >= MAXSLOT ) 
-    return CM_ERR;
   setUsed(crate,slot);
   headmask[crate][slot] = mask;
   return CM_OK;
 }
 
 int THaCrateMap::setScalerLoc(int crate, const char* loc) {
-  if ( crate < 0 || crate >= MAXROC ) 
-    return CM_ERR;
+  assert( crate >= 0 && crate < MAXROC );
   incrNslot(crate); 
   setCrateType(crate,"scaler");
   scalerloc[crate] = loc;
@@ -169,6 +158,8 @@ int THaCrateMap::setScalerLoc(int crate, const char* loc) {
 }
 
 void THaCrateMap::incrNslot(int crate) {
+  assert( crate >= 0 && crate < MAXROC );
+  //FIXME: urgh, really count every time?
   nslot[crate] = 0;
   for (int slot=0; slot<MAXSLOT; slot++) {
     if (model[crate][slot] != 0)
@@ -176,7 +167,7 @@ void THaCrateMap::incrNslot(int crate) {
   }
 }
 
-int THaCrateMap::init(UInt_t tloc) {
+int THaCrateMap::init(ULong64_t tloc) {
   // Modify the interface to be able to use a database file.
   // The real work is done by the init(TString&) method
 
@@ -184,7 +175,8 @@ int THaCrateMap::init(UInt_t tloc) {
   static bool first = true;
   static const char* const here = "THaCrateMap::init";
 
-  TDatime date(tloc);
+  //FIXME: replace with TTimeStamp
+  TDatime date((UInt_t)tloc);
   
   TString db;
 
@@ -220,7 +212,7 @@ int THaCrateMap::init(UInt_t tloc) {
 // time_period determined from the Unix time passed as argument.
 // The Unix time is obtained from Prestart event by the user class.
 
-int THaCrateMap::init_hc(UInt_t tloc) {
+int THaCrateMap::init_hc(ULong64_t tloc) {
   int crate, slot, month=0, year=0;
 // Default state: most recent.
   int prior_oct_2000 = 0;
@@ -232,7 +224,8 @@ int THaCrateMap::init_hc(UInt_t tloc) {
   if (tloc == 0) {
 //       cout << "Initializing crate map for the time='now'."<<endl;
   } else {
-    time_t t = tloc;
+    //FIXME: replace with something 64-bit proof
+    time_t t = (UInt_t)tloc;
     struct tm* tp = localtime(&t);
     year = 1900 + tp->tm_year;
     month = tp->tm_mon+1;

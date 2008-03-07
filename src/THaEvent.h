@@ -8,7 +8,6 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "TObject.h"
-#include "Htypes.h"
 
 class THaVar;
 
@@ -16,31 +15,45 @@ class THaEventHeader {
 
 public:
   THaEventHeader() : 
-    fEvtNum(0), fEvtType(0), fEvtLen(0), fEvtTime(0.0), fRun(0) {}
+    fEvtTime(0), fEvtNum(0), fEvtType(0), fEvtLen(0), fHelicity(0),
+    fTargetPol(0), fRun(0) {}
   virtual ~THaEventHeader() {}
 
-  void   Set( UInt_t num, Int_t type, Int_t len, Double_t time, Int_t run ) {
-    fEvtNum   = num; 
-    fEvtType  = type;
-    fEvtLen   = len;
-    fEvtTime  = time;
-    fRun      = run; 
+  void Set( UInt_t num, Int_t type, Int_t len, ULong64_t time,
+	    Int_t hel, Int_t pol, Int_t run ) { 
+    fEvtNum    = num; 
+    fEvtType   = type;
+    fEvtLen    = len;
+    fEvtTime   = time;
+    fHelicity  = hel;
+    fTargetPol = pol;
+    fRun       = run;
   }
-  UInt_t   GetEvtNum()   const  { return fEvtNum; }
-  Int_t    GetEvtType()  const  { return fEvtType; }
-  Int_t    GetEvtLen()   const  { return fEvtLen; }
-  Double_t GetEvtTime()  const  { return fEvtTime; }
-  Int_t    GetRun()      const  { return fRun; }
+  // Old Set() for backwards compatibility
+  void Set( UInt_t num, Int_t type, Int_t len, Double_t time,
+	    Int_t hel, Int_t run ) { 
+    Set( num, type, len, static_cast<ULong64_t>( 1e6*time ),
+	 hel, 0, run );
+  }
+  UInt_t    GetEvtNum()    const  { return fEvtNum; }
+  Int_t     GetEvtType()   const  { return fEvtType; }
+  Int_t     GetEvtLen()    const  { return fEvtLen; }
+  ULong64_t GetEvtTime()   const  { return fEvtTime; }
+  Int_t     GetHelicity()  const  { return fHelicity; }
+  Int_t     GetTargetPol() const  { return fTargetPol; }
+  Int_t     GetRun()       const  { return fRun; }
 
 private:
-  UInt_t   fEvtNum;           // Event number
-  Int_t    fEvtType;          // Event type
-  Int_t    fEvtLen;           // Event length
-  Double_t fEvtTime;          // Event time stamp
-  Int_t    fRun;              // Run number
+  // The units of these data are entirely up to the experiment
+  ULong64_t fEvtTime;         // Event time stamp
+  UInt_t    fEvtNum;          // Event number
+  Int_t     fEvtType;         // Event type
+  Int_t     fEvtLen;          // Event length
+  Int_t     fHelicity;        // Beam helicity
+  Int_t     fTargetPol;       // Target polarization
+  Int_t     fRun;             // Run number
 
- public:
-  ClassDef(THaEventHeader,4)  //THaEvent Header
+  ClassDef(THaEventHeader,5)  // Header for analyzed event data in ROOT file
 };
 
 
@@ -72,9 +85,7 @@ protected:
   };
   DataMap*       fDataMap;       //! Map of global variables to copy
 
- public:
-
-  ClassDef(THaEvent,4)  //Base class for event structure definition
+  ClassDef(THaEvent,3)  //Base class for event structure definition
 };
 
 

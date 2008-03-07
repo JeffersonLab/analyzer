@@ -156,10 +156,10 @@ Int_t THaEvent::Fill()
 	      *(((UShort_t*)datamap->dest)+j) = static_cast<UShort_t>(val);
 	      break;
 	    case kLong:   case kLongP:
-	      *(((Long_t*)datamap->dest)+j)   = static_cast<Long_t>(val);
+	      *(((Long64_t*)datamap->dest)+j) = static_cast<Long64_t>(val);
 	      break;
 	    case kULong:  case kULongP:
-	      *(((ULong_t*)datamap->dest)+j)  = static_cast<ULong_t>(val);
+	      *(((ULong64_t*)datamap->dest)+j)= static_cast<ULong64_t>(val);
 	      break;
 	    case kChar:   case kCharP:
 	      *(((Char_t*)datamap->dest)+j)   = static_cast<Char_t>(val);

@@ -73,7 +73,7 @@ THaAnalyzer::THaAnalyzer() :
   fPostProcess(NULL),
   fIsInit(kFALSE), fAnalysisStarted(kFALSE), fLocalEvent(kFALSE), 
   fUpdateRun(kTRUE), fOverwrite(kTRUE), fDoBench(kFALSE), 
-  fDoPhysics(kTRUE), fDoOtherEvents(kTRUE),
+  fDoHelicity(kFALSE), fDoPhysics(kTRUE), fDoOtherEvents(kTRUE),
   fDoScalers(kTRUE), fDoSlowControl(kTRUE)
 {
   // Default constructor.
@@ -236,6 +236,12 @@ THaAnalyzer::Counter_t* THaAnalyzer::DefineCounter( const Counter_t* item )
 void THaAnalyzer::EnableBenchmarks( Bool_t b )
 {
   fDoBench = b;
+}
+
+//_____________________________________________________________________________
+void THaAnalyzer::EnableHelicity( Bool_t b )
+{
+  fDoHelicity = b;
 }
 
 //_____________________________________________________________________________
@@ -1041,6 +1047,7 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
 			      fEvData->GetEvType(),
 			      fEvData->GetEvLength(),
 			      fEvData->GetEvTime(),
+			      fEvData->GetHelicity(),
 			      fRun->GetNumber()
 			      );
     fEvent->Fill();
@@ -1229,11 +1236,16 @@ Int_t THaAnalyzer::Process( THaRunBase* run )
   // needed by some modules
   gHaRun = fRun;
 
+  // Enable/disable helicity decoding as requested
+  fEvData->EnableHelicity( HelicityEnabled() );
   // Decode scalers only if requested and fScalers is not empty
   fEvData->EnableScalers( ScalersEnabled() && (fScalers->GetSize()>0) );
 
   // Informational messages
   if( fVerbose>1 ) {
+    cout << "Decoder: helicity " 
+	 << (fEvData->HelicityEnabled() ? "enabled" : "disabled")
+	 << endl;
     cout << "Decoder: scalers " 
 	 << (fEvData->ScalersEnabled() ? "enabled" : "disabled")
 	 << endl;

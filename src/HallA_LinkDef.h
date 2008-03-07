@@ -79,8 +79,6 @@
 #pragma link C++ class THaVDCTrackID+;
 #pragma link C++ class THaVDCTrackPair+;
 #pragma link C++ class THaRTTI+;
-#pragma link C++ class THaRawEvent+;
-#pragma link C++ class THaVDCEvent+;
 #pragma link C++ class THaScalerGroup+;
 #pragma link C++ class THaElectronKine+;
 #pragma link C++ class THaReactionPoint+;

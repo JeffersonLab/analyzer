@@ -19,55 +19,53 @@ class THaCodaDecoder : public THaEvData {
  public:
   THaCodaDecoder();
   ~THaCodaDecoder();
-// Loads CODA data evbuffer using THaCrateMap passed as 2nd arg
-  virtual int LoadEvent(const int* evbuffer, THaCrateMap* usermap);    
+  // Loads CODA data evbuffer using THaCrateMap passed as 2nd arg
+  virtual Int_t LoadEvent(const Int_t* evbuffer, THaCrateMap* usermap);    
 
-  void PrintOut() const { dump(buffer); }
+  virtual Int_t GetPrescaleFactor(Int_t trigger) const;
+  virtual Int_t GetScaler(const TString& spec, Int_t slot, Int_t chan) const;
+  virtual Int_t GetScaler(Int_t roc, Int_t slot, Int_t chan) const;
+  
+  virtual Bool_t IsLoadedEpics(const char* tag) const;
+  virtual Double_t GetEpicsData(const char* tag, Int_t event=0) const;
+  virtual Double_t GetEpicsTime(const char* tag, Int_t event=0) const;
+  virtual std::string GetEpicsString(const char* tag, Int_t event=0) const;
 
-  int GetPrescaleFactor(int trigger) const; //Obtain prescale factor
-
-  int GetScaler(const TString& spec, int slot, int chan) const;
-  int GetScaler(int roc, int slot, int chan) const;
-
-  Bool_t IsLoadedEpics(const char* tag) const;
-// EPICS data which is nearest CODA event# 'event'.  Tag is EPICS variable, e.g. 'IPM1H04B.XPOS'
-  double GetEpicsData(const char* tag, int event=0) const;
-  double GetEpicsTime(const char* tag, int event=0) const;
-  std::string GetEpicsString(const char* tag, int event=0) const;
-
-  virtual void SetRunTime(UInt_t tloc);
+  virtual void PrintOut() const { dump(buffer); }
+  virtual void SetRunTime(ULong64_t tloc);
 
  protected:
   THaFastBusWord* fb;
 
-  THaEpics* epics; // KCR: Yes, epics is done by us, not THaEvData.
+  THaEpics* epics; // EPICS is done by us, not THaEvData.
 
-  bool first_scaler;
+  Bool_t  first_scaler;
   TString scalerdef[MAXROC];
-  int numscaler_crate;
-  int scaler_crate[MAXROC];        // stored from cratemap for fast ref.
+  Int_t   numscaler_crate;
+  Int_t   scaler_crate[MAXROC];    // stored from cratemap for fast ref.
 
-  int psfact[MAX_PSFACT];
+  Int_t   psfact[MAX_PSFACT];
 
   // Hall A Trigger Types
-  Int_t synchflag,datascan;
-  bool buffmode,synchmiss,synchextra;
+  Int_t   synchflag,datascan;
+  Bool_t  buffmode,synchmiss,synchextra;
 
-  void dump(const int* evbuffer) const;
-  int gendecode(const int* evbuffer, THaCrateMap* map);
+  static void dump(const Int_t* evbuffer);
 
-  int loadFlag(const int* evbuffer);
+  Int_t   gendecode(const Int_t* evbuffer, THaCrateMap* map);
 
-  int epics_decode(const int* evbuffer);
-  int prescale_decode(const int* evbuffer);
-  int physics_decode(const int* evbuffer, THaCrateMap* map);
-  int fastbus_decode(int roc, THaCrateMap* map, const int* evbuffer, 
-		     int p1, int p2);
-  int vme_decode(int roc, THaCrateMap* map, const int* evbuffer, 
-		 int p1, int p2);
-  int camac_decode(int roc, THaCrateMap* map, const int* evbuffer, 
-		   int p1, int p2);
-  int scaler_event_decode(const int* evbuffer, THaCrateMap* map);
+  Int_t   loadFlag(const Int_t* evbuffer);
+
+  Int_t   epics_decode(const Int_t* evbuffer);
+  Int_t   prescale_decode(const Int_t* evbuffer);
+  Int_t   physics_decode(const Int_t* evbuffer, THaCrateMap* map);
+  Int_t   fastbus_decode(Int_t roc, THaCrateMap* map, const Int_t* evbuffer, 
+			 Int_t p1, Int_t p2);
+  Int_t   vme_decode(Int_t roc, THaCrateMap* map, const Int_t* evbuffer, 
+		     Int_t p1, Int_t p2);
+  Int_t   camac_decode(Int_t roc, THaCrateMap* map, const Int_t* evbuffer, 
+		       Int_t p1, Int_t p2);
+  Int_t   scaler_event_decode(const Int_t* evbuffer, THaCrateMap* map);
 
   ClassDef(THaCodaDecoder,0) // Decoder for CODA event buffer
 };
