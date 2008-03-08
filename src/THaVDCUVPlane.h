@@ -9,6 +9,7 @@
 #include "THaVDCPlane.h"
 
 #include "TClonesArray.h"
+#include <cassert>
 
 class THaVDCUVTrack;
 class THaVDC;
@@ -38,8 +39,8 @@ public:
   THaVDC*        GetVDC()         const { return (THaVDC*)GetDetector(); }
   Double_t       GetSpacing()     const { return fSpacing;}
   THaVDCUVTrack* GetUVTrack( Int_t i ) const 
-    { return (THaVDCUVTrack*)fUVTracks->At(i); }
-  Double_t       GetVUWireAngle() const { return fVUWireAngle; }
+    { assert( i>=0 && i<GetNUVTracks() );
+      return (THaVDCUVTrack*)fUVTracks->UncheckedAt(i); }
 
 protected:
 
@@ -50,15 +51,12 @@ protected:
   
   //UV Plane Geometry
   Double_t fSpacing;          // Space between U & V planes (m)
-  Double_t fVUWireAngle;      // Angle between V plane wire angle and U plane 
-                              // wire angle (rad)
-  // For efficiency
-  Double_t fSin_u;            // Trig functions for the U plane wire
-  Double_t fCos_u;            // angle
-  Double_t fSin_v;            // Trig functions for the V plane wire 
-  Double_t fCos_v;            // angle
-  Double_t fInv_sin_vu;       // 1/Sine of the difference between the V wire
-                              // angle and the U wire angle
+  Double_t fSin_u;            // Trig functions for the U plane axis angle
+  Double_t fCos_u;            // 
+  Double_t fSin_v;            // Trig functions for the V plane axis angle
+  Double_t fCos_v;            // 
+  Double_t fInv_sin_vu;       // 1/Sine of the difference between the
+                              // V axis angle and the U axis angle
 
   // For CoarseTrack
   void FindClusters()        // Find clusters in U & V planes

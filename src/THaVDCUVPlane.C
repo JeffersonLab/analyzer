@@ -72,14 +72,13 @@ THaDetectorBase::EStatus THaVDCUVPlane::Init( const TDatime& date )
 
   Double_t uwAngle  = fU->GetWAngle();      // Get U plane Wire angle
   Double_t vwAngle  = fV->GetWAngle();      // Get V plane Wire angle
-  fVUWireAngle = vwAngle - uwAngle;    // Difference between vwAngle and
-                                       // uwAngle
+
   // Precompute and store values for efficiency
   fSin_u   = TMath::Sin( uwAngle );
   fCos_u   = TMath::Cos( uwAngle );
   fSin_v   = TMath::Sin( vwAngle );
   fCos_v   = TMath::Cos( vwAngle );
-  fInv_sin_vu = 1.0/TMath::Sin( fVUWireAngle );
+  fInv_sin_vu = 1.0/TMath::Sin( vwAngle-uwAngle );
 
   return fStatus = kOK;
 }
