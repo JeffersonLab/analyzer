@@ -48,7 +48,7 @@ THaVDCPlane::THaVDCPlane( const char* name, const char* description,
   fClusters = new TClonesArray("THaVDCCluster", 5 );
   fWires    = new TClonesArray("THaVDCWire", 368 );
 
-  fVDC = GetDetector();
+  fVDC = GetMainDetector();
 }
 
 //_____________________________________________________________________________
@@ -58,21 +58,17 @@ void THaVDCPlane::MakePrefix()
   // names such as "R.vdc.uv1.u.x", but rather "R.vdc.u1.x".
 
   TString basename;
-  THaDetectorBase
-    *parent = NULL,
-    *det = GetDetector();
+  THaDetectorBase* uv_plane = GetParent();
 
-  if( det && det->IsA()->InheritsFrom("THaSubDetector") )
-    parent = static_cast<THaSubDetector*>(det)->GetDetector();
-  if( parent )
-    basename = parent->GetPrefix();
+  if( fVDC )
+    basename = fVDC->GetPrefix();
   if( fName.Contains("u") )
     basename.Append("u");
   else if ( fName.Contains("v") )
     basename.Append("v");
-  if( det && strstr( det->GetName(), "uv1" ))
+  if( uv_plane && strstr( uv_plane->GetName(), "uv1" ))
     basename.Append("1.");
-  else if( det && strstr( det->GetName(), "uv2" ))
+  else if( uv_plane && strstr( uv_plane->GetName(), "uv2" ))
     basename.Append("2.");
   if( basename.Length() == 0 )
     basename = fName + ".";
@@ -218,7 +214,7 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
 
   fOrigin.SetXYZ( 0.0, 0.0, fZ );
 
-  THaDetectorBase *sdet = GetDetector();
+  THaDetectorBase *sdet = GetParent();
   if( sdet )
     fOrigin += sdet->GetOrigin();
 
@@ -428,15 +424,11 @@ Int_t THaVDCPlane::FindClusters()
   // correspond to decreasing physical position.
   // Ignores possibility of overlapping clusters
 
-  //FIXME: Requires ROOT 3.02. Below is a non-equivalent workaround.
-  //  bool hard_cut = fVDC->TestBits(THaVDC::kTDCbits) == kHardTDCcut;
-  //  bool soft_cut = fVDC->TestBits(kTDCbits) == kSoftTDCcut;
-  bool hard_cut, soft_cut;
+  bool hard_cut = false, soft_cut = false;
   if( fVDC ) {
     hard_cut = fVDC->TestBit(THaVDC::kHardTDCcut);
     soft_cut = fVDC->TestBit(THaVDC::kSoftTDCcut);
-  } else
-    hard_cut = soft_cut = false;
+  }
   Double_t maxdist = 0.0;
   if( soft_cut ) {
     maxdist = 0.5*static_cast<THaVDCUVPlane*>(GetParent())->GetSpacing();

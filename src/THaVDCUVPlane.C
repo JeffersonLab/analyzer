@@ -28,7 +28,6 @@ THaVDCUVPlane::THaVDCUVPlane( const char* name, const char* description,
   // Constructor
 
   // Create the U and V planes
-  // FIXME: 'this' pointer is stored twice in the planes
   fU = new THaVDCPlane( "u", "U plane", this );
   fV = new THaVDCPlane( "v", "V plane", this );
 
@@ -57,8 +56,8 @@ THaDetectorBase::EStatus THaVDCUVPlane::Init( const TDatime& date )
   if( IsZombie() || !fV || !fU )
     return fStatus = kInitError;
 
-  if( GetDetector() )
-    fOrigin = GetDetector()->GetOrigin();
+  if( GetParent() )
+    fOrigin = GetParent()->GetOrigin();
 
   EStatus status;
   if( (status = THaSubDetector::Init( date )) ||
@@ -71,7 +70,6 @@ THaDetectorBase::EStatus THaVDCUVPlane::Init( const TDatime& date )
   TVector3 z( 0.0, 0.0, fU->GetZ() );
   fOrigin += z; 
 
-  //Double_t vdcAngle = fVDC->GetVDCAngle();  // Get angle of the VDC
   Double_t uwAngle  = fU->GetWAngle();      // Get U plane Wire angle
   Double_t vwAngle  = fV->GetWAngle();      // Get V plane Wire angle
   fVUWireAngle = vwAngle - uwAngle;    // Difference between vwAngle and

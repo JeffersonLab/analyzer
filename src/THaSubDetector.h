@@ -22,14 +22,18 @@ class THaSubDetector : public THaDetectorBase {
 public:
   virtual ~THaSubDetector();
   
-  // Get parent (sub)detector
+  // Get parent (sub)detector (one level up)
   THaDetectorBase* GetParent() const {
     return static_cast<THaDetectorBase*>(fParent.GetObject());
   }
-  THaDetector*     GetDetector() const;
+  // For backward compatibility
+  THaDetectorBase* GetDetector() const { return GetParent(); }
+  // Search for parent THaDetector (not subdetector)
+  THaDetector*     GetMainDetector() const;
   THaApparatus*    GetApparatus() const;
   
-  virtual void     SetDetector( THaDetectorBase* );
+  virtual void     SetParent( THaDetectorBase* );
+  void             SetDetector( THaDetectorBase* det ) { SetParent(det); }
 
 protected:
 
@@ -47,27 +51,4 @@ protected:
   ClassDef(THaSubDetector,1)   //ABC for a subdetector
 };
 
-//_____________________________________________________________________________
-inline
-THaDetector* THaSubDetector::GetDetector() const
-{
-  // Return parent detector (not subdetector)
-
-  THaDetectorBase* parent = GetParent();
-  while( parent && dynamic_cast<THaSubDetector*>(parent) )
-    parent = static_cast<THaSubDetector*>(parent)->GetParent();
-  return dynamic_cast<THaDetector*>(parent);
-}
-
-//_____________________________________________________________________________
-inline
-THaApparatus* THaSubDetector::GetApparatus() const
-{
-  // Return parent apparatus (parent of parent detector)
-
-  THaDetector* det = GetDetector();
-  return det ? det->GetApparatus() : NULL;
-}
-
-///////////////////////////////////////////////////////////////////////////////
 #endif

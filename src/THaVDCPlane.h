@@ -96,7 +96,7 @@ protected:
 
   THaVDCTimeToDistConv* fTTDConv;  // Time-to-distance converter for this plane's wires
 
-  THaDetectorBase* fVDC;  // VDC detector to which this plane belongs
+  THaDetector* fVDC;      // VDC detector to which this plane belongs
   
   THaTriggerTime* fglTrg; //! time-offset global variable. Needed at the decode stage
   

@@ -9,7 +9,7 @@
 #include "THaSubDetector.h"
 #include "THaDetector.h"
 #include "TString.h"
-//#include "TError.h"
+#include "TError.h"
 
 ClassImp(THaSubDetector)
 
@@ -38,33 +38,35 @@ THaSubDetector::~THaSubDetector()
 }
 
 //_____________________________________________________________________________
-void THaSubDetector::SetDetector( THaDetectorBase* detector )
+THaApparatus* THaSubDetector::GetApparatus() const
 {
-  // Associate this subdetector with the given detector or subdetector.
-  // Only possible before initialization.
+  // Return parent apparatus (parent of parent detector)
 
-  static const char* const here = "SetDetector()";
-
-  if( IsInit() ) {
-    Warning( Here(here), "Cannot set detector. Object already initialized.");
-    return;
-  }
-  if( !detector ) {
-    Warning( Here(here), "Cannot set detector to NULL. Detector not changed.");
-    return;
-  }    
-  if( detector == this ) {
-    Warning( Here(here), "Cannot set detector to self. Detector not changed.");
-    return;
-  }    
-  fParent = detector;
+  THaDetector* det = GetMainDetector();
+  return det ? det->GetApparatus() : 0;
 }
 
 //_____________________________________________________________________________
 const char* THaSubDetector::GetDBFileName() const
 {
-  THaDetector* det = GetDetector();
+  // Get database file name root. By default, subdetectors use the same 
+  // database file as their parent (sub)detector.
+
+  THaDetectorBase* det = GetParent();
   return det ? det->GetDBFileName() : GetPrefix();
+}
+
+//_____________________________________________________________________________
+THaDetector* THaSubDetector::GetMainDetector() const
+{
+  // Search up the chain of parent detectors until a THaDetector 
+  // (not a THaSubDetector) is found. This is the "main detector"
+  // containing this subdetector
+
+  THaDetectorBase* parent = GetParent();
+  while( parent && dynamic_cast<THaSubDetector*>(parent) )
+    parent = static_cast<THaSubDetector*>(parent)->GetParent();
+  return dynamic_cast<THaDetector*>(parent);
 }
 
 //_____________________________________________________________________________
@@ -72,11 +74,13 @@ void THaSubDetector::MakePrefix()
 {
   // Set up name prefix for global variables. 
   // Internal function called by constructors of derived classes.
-  // Subdetector prefixes are of form "<detector_prefix><subdetector_name>.",
-  // e.g. R.vdc.u1.
+  // Subdetector prefixes are of form "<parent_prefix><subdetector_name>.",
+  // where <parent_prefix> is the prefix of the immediate parent, which may
+  // be another subdetector. If a different behavior is needed, subdetectors
+  // need to override MakePrefix().
 
   TString basename;
-  THaDetectorBase *det = GetDetector();
+  THaDetectorBase *det = GetParent();
   if( det ) {
     basename = det->GetPrefix();
     basename.Chop();
@@ -85,6 +89,29 @@ void THaSubDetector::MakePrefix()
 	     "Fix your code!" );
 
   THaDetectorBase::MakePrefix( basename.Data() );
+}
+
+//_____________________________________________________________________________
+void THaSubDetector::SetParent( THaDetectorBase* detector )
+{
+  // Associate this subdetector with the given detector or subdetector.
+  // Only possible before initialization.
+
+  static const char* const here = "SetParent()";
+
+  if( IsInit() ) {
+    Error( Here(here), "Cannot set detector. Object already initialized.");
+    return;
+  }
+  if( !detector ) {
+    Error( Here(here), "Cannot set detector to NULL. Detector not changed.");
+    return;
+  }    
+  if( detector == this ) {
+    Error( Here(here), "Cannot set detector to self. Detector not changed.");
+    return;
+  }    
+  fParent = detector;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
