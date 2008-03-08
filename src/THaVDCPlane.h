@@ -9,6 +9,7 @@
 
 #include "THaSubDetector.h"
 #include "TClonesArray.h"
+#include <cassert>
 
 class THaEvData;
 class THaVDCWire;
@@ -35,17 +36,20 @@ public:
   Int_t          GetNClusters() const { return fClusters->GetLast()+1; }
   TClonesArray*  GetClusters()  const { return fClusters; }
   THaVDCCluster* GetCluster(Int_t i) const
-  { return (THaVDCCluster*)fClusters->At(i); } 
+  { assert( i>=0 && i<GetNClusters() );
+    return (THaVDCCluster*)fClusters->UncheckedAt(i); } 
 
   Int_t          GetNWires()    const { return fWires->GetLast()+1; }
   TClonesArray*  GetWires()     const { return fWires; }
   THaVDCWire*    GetWire(Int_t i) const
-  { return (THaVDCWire*)fWires->At(i);}
+  { assert( i>=0 && i<GetNWires() );
+    return (THaVDCWire*)fWires->UncheckedAt(i);}
 
   Int_t          GetNHits()     const { return fHits->GetLast()+1; }
   TClonesArray*  GetHits()      const { return fHits; }
   THaVDCHit*     GetHit(Int_t i) const
-  { return (THaVDCHit*)fHits->At(i); }
+  { assert( i>=0 && i<GetNHits() );
+    return (THaVDCHit*)fHits->UncheckedAt(i); }
 
   Int_t    GetNWiresHit() const  { return fNWiresHit; } 
 
@@ -56,15 +60,9 @@ public:
   Double_t GetTDCRes()   const   { return fTDCRes; }
   Double_t GetDriftVel() const   { return fDriftVel; }
 
-  Double_t GetT0() const { return fT0; }
-  Int_t GetNumBins() const { return fNumBins; }
-  Float_t *GetTable() const { return fTable; }
-
-/*    void SetZ(Double_t z)          {fZ     = z;    } */
-/*    void SetWBeg(Double_t wbeg)    {fWBeg  = wbeg; } */
-/*    void SetWSpac(Double_t wspac)  {fWSpac = wspac;} */
-/*    void SetWAngle(Double_t wangle){fWAngle = wangle;} */
-  //  void SetUVPlane(THaVDCUVPlane * plane) {fUVPlane = plane;}
+//   Double_t GetT0() const { return fT0; }
+//   Int_t GetNumBins() const { return fNumBins; }
+//   Float_t *GetTable() const { return fTable; }
 
 protected:
 
@@ -84,15 +82,15 @@ protected:
   Double_t fZ;            // Z coordinate of planes in U1 coord sys (m)
   Double_t fWBeg;         // Position of 1-st wire in E-arm coord sys (m)
   Double_t fWSpac;        // Wires spacing and direction (m)
-  Double_t fWAngle;       // Angle between dispersive direction and direction of 
-                          // decreasing wire number (rad)
+  Double_t fWAngle;       // Angle (rad) between dispersive direction (x) and 
+                          // normal to wires in dir of increasing wire position
   Double_t fTDCRes;       // TDC Resolution ( s / channel)
   Double_t fDriftVel;     // Drift velocity in the wire plane (m/s)
 
   // Lookup table parameters
-  Double_t fT0;     // calculated zero time 
-  Int_t fNumBins;   // size of lookup table
-  Float_t *fTable;  // time-to-distance lookup table
+//   Double_t fT0;     // calculated zero time 
+//   Int_t fNumBins;   // size of lookup table
+//   Float_t *fTable;  // time-to-distance lookup table
 
   THaVDCTimeToDistConv* fTTDConv;  // Time-to-distance converter for this plane's wires
 

@@ -38,7 +38,7 @@ using namespace std;
 //_____________________________________________________________________________
 THaVDCPlane::THaVDCPlane( const char* name, const char* description,
 			  THaDetectorBase* parent )
-  : THaSubDetector(name,description,parent), fTable(NULL), fTTDConv(NULL),
+  : THaSubDetector(name,description,parent), /*fTable(NULL),*/ fTTDConv(NULL),
     fVDC(NULL), fglTrg(NULL)
 {
   // Constructor
@@ -170,28 +170,28 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
 
   // now read in the time-to-drift-distance lookup table
   // data (if it exists)
-  fgets(buff, LEN, file); // read to the end of line
-  fgets(buff, LEN, file);
-  if(strncmp(buff, "TTD Lookup Table", 16) == 0) {
-    // if it exists, read the data in
-    fscanf(file, "%le", &fT0);
-    fscanf(file, "%d", &fNumBins);
+//   fgets(buff, LEN, file); // read to the end of line
+//   fgets(buff, LEN, file);
+//   if(strncmp(buff, "TTD Lookup Table", 16) == 0) {
+//     // if it exists, read the data in
+//     fscanf(file, "%le", &fT0);
+//     fscanf(file, "%d", &fNumBins);
     
-    // this object is responsible for the memory management 
-    // of the lookup table
-    delete [] fTable;
-    fTable = new Float_t[fNumBins];
-    for(int i=0; i<fNumBins; i++) {
-      fscanf(file, "%e", &(fTable[i]));
-    }
-  } else {
-    // if not, set some reasonable defaults and rewind the file
-    fT0 = 0.0;
-    fNumBins = 0;
-    fTable = NULL;
-    cout<<"Could not find lookup table header: "<<buff<<endl;
-    fseek(file, -strlen(buff), SEEK_CUR);
-  }
+//     // this object is responsible for the memory management 
+//     // of the lookup table
+//     delete [] fTable;
+//     fTable = new Float_t[fNumBins];
+//     for(int i=0; i<fNumBins; i++) {
+//       fscanf(file, "%e", &(fTable[i]));
+//     }
+//   } else {
+//     // if not, set some reasonable defaults and rewind the file
+//     fT0 = 0.0;
+//     fNumBins = 0;
+//     fTable = NULL;
+//     cout<<"Could not find lookup table header: "<<buff<<endl;
+//     fseek(file, -strlen(buff), SEEK_CUR);
+//   }
 
   // Define time-to-drift-distance converter
   // Currently, we use the analytic converter. 
@@ -284,7 +284,7 @@ THaVDCPlane::~THaVDCPlane()
   delete fHits;
   delete fClusters;
   delete fTTDConv;
-  delete [] fTable;
+//   delete [] fTable;
 }
 
 //_____________________________________________________________________________
@@ -400,7 +400,7 @@ Int_t THaVDCPlane::Decode( const THaEvData& evData)
       for (int c=0; c<ncol; c++) {
 	int ind = c*nextHit/ncol+i;
 	if (ind < nextHit) {
-	  THaVDCHit* hit = static_cast<THaVDCHit*>((*fHits)[ind]);
+	  THaVDCHit* hit = static_cast<THaVDCHit*>(fHits->At(ind));
 	  printf("     %3d    %5d ",hit->GetWireNum(),hit->GetRawTime());
 	} else {
 	  //	  printf("\n");
@@ -478,8 +478,10 @@ Int_t THaVDCPlane::FindClusters()
     ndif = wireNum - pwireNum;
     if (ndif < 0) {
       // Scream Bloody Murder
-      printf("THaVDCPlane::FindCluster()-Wire Ordering Error\n");
-      return 0;
+      Error(Here("FindCluster"),"Wire ordering error at wire numbers %d %d. "
+	    "Call expert.", pwireNum, wireNum );
+      fClusters->Remove(clust);
+      return GetNClusters();
     }
 
     pwireNum = wireNum;
