@@ -34,10 +34,7 @@ public:
   THaTrackInfo& operator=( const THaTrack& );
   virtual ~THaTrackInfo() {}
 
-  void      Clear( Option_t* opt="" ) { 
-    fPhi = fTheta = fY = fX = fDp = fP = kBig; fPvect.SetXYZ(kBig,kBig,kBig); 
-    fOK = 0; 
-  }
+  void      Clear( Option_t* opt="" );
 
   Bool_t    IsOK()  const { return fOK; }
   Double_t  GetPx() const { return fPvect.X(); }
@@ -86,6 +83,14 @@ private:
 
   ClassDef(THaTrackInfo,1)  // Track information
 };
+
+//_____________________________________________________________________________
+inline
+void THaTrackInfo::Clear( Option_t* )
+{ 
+  fPhi = fTheta = fY = fX = fDp = fP = kBig; fPvect.SetXYZ(kBig,kBig,kBig); 
+  fOK = 0; 
+}
 
 //_____________________________________________________________________________
 inline
