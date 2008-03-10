@@ -128,8 +128,8 @@ protected:
   char*           fPrefix;    // Name prefix for global variables
   EStatus         fStatus;    // Initialization status flag
   Int_t           fDebug;     // Debug level
-  Bool_t          fIsInit;    // Flag indicating that ReadDatabase called.
-  Bool_t          fIsSetup;   // Flag indicating that Setup called.
+  Bool_t          fIsInit;    // Flag indicating that ReadDatabase done
+  Bool_t          fIsSetup;   // Flag indicating that DefineVariables done.
   TString         fConfig;    // Configuration to use from database
   UInt_t          fProperties;// Properties of this object (see EProperties)
   Bool_t          fOKOut;     // Flag indicating object-output prepared
