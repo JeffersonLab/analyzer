@@ -20,7 +20,8 @@ public:
   
   virtual Int_t    CoarseTrack( TClonesArray& tracks ) = 0;
   virtual Int_t    FineTrack( TClonesArray& tracks )  = 0;
-  virtual Int_t    FindVertices( TClonesArray& tracks ) = 0;
+  // For backward-compatibility
+  virtual Int_t    FindVertices( TClonesArray& /* tracks */ ) { return 0; }
           Bool_t   IsTracking() { return kTRUE; }
           Bool_t   IsPid()      { return kFALSE; }
 
@@ -37,7 +38,7 @@ protected:
   THaTrackingDetector( const char* name, const char* description,
 		       THaApparatus* a = NULL );
 
-  ClassDef(THaTrackingDetector,1)   //ABC for a Hall A tracking detector
+  ClassDef(THaTrackingDetector,1)   //ABC for a generic tracking detector
 };
 
 #endif
