@@ -304,9 +304,9 @@ srcdist:
 		gtar czv -C .. -f ../$(NAME).tar.gz -X .exclude \
 		 -V "JLab/Hall A C++ Analysis Software "$(VERSION)" `date -I`"\
 		 $(NAME)/.exclude $(NAME)/ChangeLog \
-		 $(NAME)/src $(NAME)/DB $(NAME)/$(DCDIR) $(NAME)/$(SCALERDIR) \
+		 $(NAME)/src $(NAME)/$(DCDIR) $(NAME)/$(SCALERDIR) \
 		 $(NAME)/Makefile 
-                 # $(NAME)/examples \# $(NAME)/docs $(NAME)/Calib $(NAME)/contrib
+                 # $(NAME)/DB $(NAME)/examples \# $(NAME)/docs $(NAME)/Calib $(NAME)/contrib
 
 cvsdist:	srcdist
 		cp ../$(NAME).tar.gz ../$(NAME)-cvs.tar.gz
