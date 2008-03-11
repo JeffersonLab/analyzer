@@ -60,8 +60,8 @@ Bool_t THaEvData::fgAllowUnimpl = true;
 
 THaEvData::THaEvData() :
   first_load(true), first_decode(true), fTrigSupPS(true),
-  buffer(0), run_num(0), run_type(0), fRunTime(0), recent_event(0),
-  fNSlotUsed(0), fNSlotClear(0), fMap(0)
+  buffer(0), run_num(0), run_type(0), fRunTime(0), evt_time(0),
+  recent_event(0), fNSlotUsed(0), fNSlotClear(0), fMap(0)
 {
   fInstance = fgInstances.FirstNullBit();
   fgInstances.SetBitNumber(fInstance);
@@ -83,6 +83,7 @@ THaEvData::THaEvData() :
       { "evnum",     "Event number",   kInt,    0, &event_num },
       { "evtyp",     "Event type",     kInt,    0, &event_type },
       { "evlen",     "Event Length",   kInt,    0, &event_length },
+      { "evtime",    "Event time",     kULong,  0, &evt_time },
       { 0 }
     };
     TString prefix("g");

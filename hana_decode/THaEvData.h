@@ -69,12 +69,9 @@ public:
   const char* DevType(Int_t crate, Int_t slot) const;
 
   // Optional functionality that may be implemented by derived classes
-  virtual ULong64_t GetEvTime() const  
-  { assert(fgAllowUnimpl); return kMaxUInt; }
+  virtual ULong64_t GetEvTime() const { return evt_time; }
    // Returns Beam Helicity (-1,0,+1)  '0' is 'unknown'
-  virtual Int_t GetHelicity() const
-  //  { assert(HelicityEnabled() && fgAllowUnimpl); return 0; }
-  { return 0; }
+  virtual Int_t GetHelicity() const   { return 0; }
   // Beam Helicity for spec="left","right"
   virtual Int_t GetHelicity(const TString& /*spec*/) const
   { return GetHelicity(); }
