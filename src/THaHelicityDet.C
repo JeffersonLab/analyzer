@@ -10,7 +10,7 @@
 
 
 #include "THaHelicityDet.h"
-#include "THaDB.h"
+//#include "THaDB.h"
 
 using namespace std;
 
@@ -54,12 +54,12 @@ Int_t THaHelicityDet::ReadDatabase( const TDatime& date )
 {
   // Read fSign
 
-  if( !gHaDB )
-    return kInitError;
+//   if( !gHaDB )
+  return kInitError;
 
-  gHaDB->GetValue( GetPrefix(), "helicity_sign", fSign, date );
+//   gHaDB->GetValue( GetPrefix(), "helicity_sign", fSign, date );
 
-  return kOK;
+//   return kOK;
 }
 
 ClassImp(THaHelicityDet)

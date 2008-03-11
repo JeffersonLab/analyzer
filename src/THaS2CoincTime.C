@@ -36,7 +36,7 @@
 #include "THaGlobals.h"
 #include "VarDef.h"
 #include "THaString.h"
-#include "THaDB.h"
+//#include "THaDB.h"
 
 using namespace std;
 
