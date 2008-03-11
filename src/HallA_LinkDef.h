@@ -91,9 +91,6 @@
 #pragma link C++ class THaGoldenTrack+;
 #pragma link C++ class THaPrimaryKine+;
 #pragma link C++ class THaSecondaryKine+;
-#pragma link C++ class THaDB+;
-#pragma link C++ class THaDetConfig+;
-//#pragma link C++ class THaFileDB+;
 #pragma link C++ class THaCoincTime+;
 #pragma link C++ class THaS2CoincTime+;
 #pragma link C++ class THaTrackProj+;

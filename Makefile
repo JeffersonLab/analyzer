@@ -174,8 +174,7 @@ SRC          := src/THaFormula.C src/THaVform.C src/THaVhist.C \
 		src/THaTrackOut.C src/THaTriggerTime.C \
 		src/THaHelicityDet.C src/THaG0HelicityReader.C \
 		src/THaG0Helicity.C src/THaADCHelicity.C \
-		src/THaPhotoReaction.C src/THaSAProtonEP.C \
-		src/THaDB.C # src/THaFileDB.C 
+		src/THaPhotoReaction.C src/THaSAProtonEP.C
 
 
 ifdef ONLINE_ET
@@ -305,9 +304,9 @@ srcdist:
 		gtar czv -C .. -f ../$(NAME).tar.gz -X .exclude \
 		 -V "JLab/Hall A C++ Analysis Software "$(VERSION)" `date -I`"\
 		 $(NAME)/.exclude $(NAME)/ChangeLog \
-		 $(NAME)/src $(NAME)/examples \
-		 $(NAME)/DB $(NAME)/$(DCDIR) $(NAME)/$(SCALERDIR) \
-		 $(NAME)/Makefile $(NAME)/docs $(NAME)/Calib $(NAME)/contrib
+		 $(NAME)/src $(NAME)/DB $(NAME)/$(DCDIR) $(NAME)/$(SCALERDIR) \
+		 $(NAME)/Makefile 
+                 # $(NAME)/examples \# $(NAME)/docs $(NAME)/Calib $(NAME)/contrib
 
 cvsdist:	srcdist
 		cp ../$(NAME).tar.gz ../$(NAME)-cvs.tar.gz
