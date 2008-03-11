@@ -20,6 +20,7 @@
 /////////////////////////////////////////////////////////////////////
 
 #include "TString.h"
+#include <cassert>
 
 const int SD_ERR = -1; 
 const int SD_OK = 1;
@@ -83,6 +84,7 @@ private:
 //______________ inline functions _____________________________________________
 inline int THaSlotData::getRawData(int hit) const {  
   // Returns the raw data (all bits)
+  assert( hit >= 0 && hit < numraw );
   if (hit >= 0 && hit < numraw) return rawData[hit];
   return 0;
 };
@@ -91,9 +93,11 @@ inline int THaSlotData::getRawData(int hit) const {
 // Data (words on 1 chan)
 inline 
 int THaSlotData::getRawData(int chan, int hit) const {  
+  assert( chan >= 0 && chan < maxc && hit >= 0 &&  hit < numHits[chan] );
   if (chan < 0 || chan >= maxc || numHits[chan]<=hit || hit<0 )
     return 0;
   int index = dataindex[idxlist[chan]+hit];
+  assert(index >= 0 && index < numraw);
   if (index >= 0 && index < numraw) return rawData[index];
   return 0; 
 };
@@ -102,8 +106,8 @@ int THaSlotData::getRawData(int chan, int hit) const {
 inline 
 int THaSlotData::getNumHits(int chan) const {    
   // Num hits on a channel
-  return (chan >= 0 && chan < maxc ) ?
-    numHits[chan] : 0;
+  assert( chan >= 0 && chan < maxc );
+  return (chan >= 0 && chan < maxc) ? numHits[chan] : 0;
 };
 
 //_____________________________________________________________________________
@@ -117,7 +121,9 @@ int THaSlotData::getNumChan() const {
 inline 
 int THaSlotData::getNextChan(int index) const {    
   // List of unique channels hit
-  if (index >= 0 && index < numchanhit) return chanlist[index];
+  assert(index >= 0 && index < numchanhit);
+  if (index >= 0 && index < numchanhit)
+    return chanlist[index];
   return 0;
 };
 
@@ -125,9 +131,11 @@ int THaSlotData::getNextChan(int index) const {
 // Data (words on 1 chan)
 inline 
 int THaSlotData::getData(int chan, int hit) const {  
+  assert( chan >= 0 && chan < maxc && hit >= 0 &&  hit < numHits[chan] );
   if (chan < 0 || chan >= maxc || numHits[chan]<=hit || hit<0 )
     return 0;
   int index = dataindex[idxlist[chan]+hit];
+  assert(index >= 0 && index < numraw);
   if (index >= 0 && index < numraw) return data[index];
   return 0; 
 };
