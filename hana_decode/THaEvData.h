@@ -161,6 +161,7 @@ protected:
   Bool_t buffmode,synchmiss,synchextra;
   Int_t  idx(Int_t crate, Int_t slot) const;
   Int_t  idx(Int_t crate, Int_t slot);
+  Bool_t GoodCrateSlot(Int_t crate, Int_t slot) const;
   Bool_t GoodIndex(Int_t crate, Int_t slot) const;
 
   Int_t init_cmap();
@@ -200,10 +201,13 @@ inline Int_t THaEvData::idx( Int_t crate, Int_t slot) {
   return idx;
 }
 
-inline Bool_t THaEvData::GoodIndex( Int_t crate, Int_t slot ) const {
+inline Bool_t THaEvData::GoodCrateSlot( Int_t crate, Int_t slot ) const {
   return ( crate >= 0 && crate < MAXROC && 
-	   slot >= 0 && slot < MAXSLOT &&
-	   crateslot[idx(crate,slot)] != 0);
+	   slot >= 0 && slot < MAXSLOT );
+}
+
+inline Bool_t THaEvData::GoodIndex( Int_t crate, Int_t slot ) const {
+  return ( GoodCrateSlot(crate,slot) && crateslot[idx(crate,slot)] != 0);
 }
 
 inline Int_t THaEvData::GetRocLength(Int_t crate) const {
@@ -213,8 +217,10 @@ inline Int_t THaEvData::GetRocLength(Int_t crate) const {
 
 inline Int_t THaEvData::GetNumHits(Int_t crate, Int_t slot, Int_t chan) const {
   // Number hits in crate, slot, channel
-  assert( GoodIndex(crate,slot) );
-  return crateslot[idx(crate,slot)]->getNumHits(chan);
+  assert( GoodCrateSlot(crate,slot) );
+  if( crateslot[idx(crate,slot)] != 0 )
+    return crateslot[idx(crate,slot)]->getNumHits(chan);
+  return 0;
 };
 
 inline Int_t THaEvData::GetData(Int_t crate, Int_t slot, Int_t chan,
@@ -226,8 +232,10 @@ inline Int_t THaEvData::GetData(Int_t crate, Int_t slot, Int_t chan,
 
 inline Int_t THaEvData::GetNumRaw(Int_t crate, Int_t slot) const {
   // Number of raw words in crate, slot
-  assert( GoodIndex(crate,slot) );
-  return crateslot[idx(crate,slot)]->getNumRaw();
+  assert( GoodCrateSlot(crate,slot) );
+  if( crateslot[idx(crate,slot)] != 0 )
+    return crateslot[idx(crate,slot)]->getNumRaw();
+  return 0;
 };
 
 inline Int_t THaEvData::GetRawData(Int_t crate, Int_t slot, Int_t hit) const {
@@ -268,14 +276,17 @@ inline Bool_t THaEvData::InCrate(Int_t crate, Int_t i) const {
 
 inline Int_t THaEvData::GetNumChan(Int_t crate, Int_t slot) const {
   // Get number of unique channels hit
-  assert( GoodIndex(crate,slot) );
-  return crateslot[idx(crate,slot)]->getNumChan();
+  assert( GoodCrateSlot(crate,slot) );
+  if( crateslot[idx(crate,slot)] != 0 )
+    return crateslot[idx(crate,slot)]->getNumChan();
+  return 0;
 };
 
 inline Int_t THaEvData::GetNextChan(Int_t crate, Int_t slot,
 				    Int_t index) const {
   // Get list of unique channels hit (indexed by index=0,getNumChan()-1)
   assert( GoodIndex(crate,slot) );
+  assert( index >= 0 && index < GetNumChan(crate,slot) );
   return crateslot[idx(crate,slot)]->getNextChan(index);
 };
 
