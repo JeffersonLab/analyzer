@@ -19,8 +19,11 @@ public:
 		Bool_t noLogo = kFALSE );
   virtual ~THaInterface();
 
+#if ROOT_VERSION_CODE < 332288  // 5.18/00
   virtual void PrintLogo();
-
+#else
+  virtual void PrintLogo(Bool_t lite = kFALSE);
+#endif
   static TClass* GetDecoder();
   static TClass* SetDecoder( TClass* c );
 
