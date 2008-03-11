@@ -77,6 +77,7 @@ else
      else
         CXXFLG      = -O -KPIC
         LDFLAGS     = -O
+        DEFINES    += -DNDEBUG
      endif
   endif
 
@@ -92,6 +93,7 @@ else
      else
         CXXFLG      = -O2 -Wall -Woverloaded-virtual -fPIC
         LDFLAGS     = -O2
+        DEFINES    += -DNDEBUG
      endif
   endif
   ifdef WITH_DEBUG
