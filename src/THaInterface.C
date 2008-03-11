@@ -23,7 +23,7 @@
 #include "THaCodaDecoder.h"
 #include "THaGlobals.h"
 #include "THaAnalyzer.h"
-#include "THaFileDB.h"
+//#include "THaFileDB.h"
 #include "ha_compiledata.h"
 
 #include "TTree.h"
@@ -144,7 +144,7 @@ THaInterface::~THaInterface()
     // Clean up the analyzer object if defined
     delete THaAnalyzer::GetInstance();
     // Delete all global lists and objects contained in them
-    delete gHaDB;           gHaDB = 0;
+    //    delete gHaDB;           gHaDB = 0;
     delete gHaPhysics;   gHaPhysics=0;
     delete gHaScalers;   gHaScalers=0;
     delete gHaApps;         gHaApps=0;
@@ -183,7 +183,9 @@ void THaInterface::PrintLogo( Bool_t lite )
    const char* halla_version = HA_VERSION;
    //   const char* halla_date = Form("%d %s %4d",24,months[2-1],2003);
 
+#if ROOT_VERSION_CODE >= ROOT_VERSION(5,18,0)
    if( !lite ) {
+#endif
      Printf("  ************************************************");
      Printf("  *                                              *");
      Printf("  *            W E L C O M E  to  the            *");
@@ -197,7 +199,9 @@ void THaInterface::PrintLogo( Bool_t lite )
      Printf("  *        http://hallaweb.jlab.org/root/        *");
      Printf("  *                                              *");
      Printf("  ************************************************");
+#if ROOT_VERSION_CODE >= ROOT_VERSION(5,18,0)
    }
+#endif
 
 #ifdef R__UNIX
    //   if (!strcmp(gGXW->GetName(), "X11TTF"))
