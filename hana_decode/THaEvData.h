@@ -350,23 +350,24 @@ Bool_t THaEvData::ScalersEnabled() const
 // in debug mode unless IsLoadedEpics is changed. This is by design - 
 // clients should never try to retrieve data that are not loaded.
 inline
-double THaEvData::GetEpicsData(const char* tag, Int_t /*event*/ ) const
+double THaEvData::GetEpicsData(const char* /*tag*/, Int_t /*event*/ ) const
 { 
-  assert(IsLoadedEpics(tag) && fgAllowUnimpl);
+  assert(IsLoadedEpics("") && fgAllowUnimpl);
   return kBig;
 }
 
 inline
-double THaEvData::GetEpicsTime(const char* tag, Int_t /*event*/ ) const
+double THaEvData::GetEpicsTime(const char* /*tag*/, Int_t /*event*/ ) const
 {
-  assert(IsLoadedEpics(tag) && fgAllowUnimpl);
+  assert(IsLoadedEpics("") && fgAllowUnimpl);
   return kBig;
 }
 
 inline
-std::string THaEvData::GetEpicsString(const char* tag, Int_t /*event*/ ) const
+std::string THaEvData::GetEpicsString(const char* /*tag*/,
+				      Int_t /*event*/ ) const
 {
-  assert(IsLoadedEpics(tag) && fgAllowUnimpl);
+  assert(IsLoadedEpics("") && fgAllowUnimpl);
   return std::string("");
 }
 
