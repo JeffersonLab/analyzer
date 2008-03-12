@@ -973,7 +973,8 @@ Int_t THaOutput::LoadFile( const char* filename )
           if (iscut != fgNocut) fHistos[idx]->SetCut(scut);
           break;
       case kBlock:
-	  BuildBlock(sname);
+	// Do not strip brackets for block regexps
+	  BuildBlock(strvect[1]);
 	  break;
       case kBegin:
       case kEnd:
