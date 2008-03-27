@@ -54,9 +54,9 @@ THaVhist::THaVhist( const THaString& type, const THaString& name,
 //_____________________________________________________________________________
 THaVhist::~THaVhist() 
 {
-  if (fFormX && fMyFormX) delete fFormX;
-  if (fFormY && fMyFormY) delete fFormY;
-  if (fCut && fMyCut) delete fCut;
+  if (fMyFormX) delete fFormX;
+  if (fMyFormY) delete fFormY;
+  if (fMyCut) delete fCut;
   if( TROOT::Initialized() ) {
     for (std::vector<TH1*>::iterator ith = fH1.begin();
 	 ith != fH1.end(); ith++) delete *ith;
@@ -120,12 +120,13 @@ Int_t THaVhist::Init( )
        fFormX = new THaVform("formula",sname.c_str(),fVarX.c_str());
      }
      fMyFormX = kTRUE;
-  }
-  status = fFormX->Init();
-  if (status != 0) {
-     fFormX->ErrPrint(status);
-     fInitStat = kIllFox;
-     return fInitStat;
+
+     status = fFormX->Init();
+     if (status != 0) {
+       fFormX->ErrPrint(status);
+       fInitStat = kIllFox;
+       return fInitStat;
+     }
   }
   if (fNbinY != 0 && fFormY == 0) {
      if (fVarY == "") {
@@ -138,8 +139,7 @@ Int_t THaVhist::Init( )
        fFormY = new THaVform("formula",sname.c_str(),fVarY.c_str());
      }
      fMyFormY = kTRUE;
-  }
-  if (fFormY) {
+
      status = fFormY->Init();
      if (status != 0) {
        fFormY->ErrPrint(status);
@@ -151,8 +151,7 @@ Int_t THaVhist::Init( )
      sname = fName+"Cut";
      fCut = new THaVform("cut",sname.c_str(),fScut.c_str());
      fMyCut = kTRUE;
-  }
-  if (fCut) {
+
      status = fCut->Init();
      if (status != 0) {
        fCut->ErrPrint(status);
@@ -195,9 +194,9 @@ Int_t THaVhist::Init( )
 //_____________________________________________________________________________
 void THaVhist::ReAttach( ) 
 {
-  if (fFormX) fFormX->ReAttach();
-  if (fFormY) fFormY->ReAttach();
-  if (fCut) fCut->ReAttach();
+  if (fFormX && fMyFormX) fFormX->ReAttach();
+  if (fFormY && fMyFormY) fFormY->ReAttach();
+  if (fCut && fMyCut) fCut->ReAttach();
   return;
 }
 
@@ -357,9 +356,9 @@ Int_t THaVhist::Process()
   }
   if ( !IsValid() ) return -1;
 
-  fFormX->Process();
-  if (fFormY) fFormY->Process();
-  if (fCut) fCut->Process();
+  if (fMyFormX) fFormX->Process();
+  if (fFormY && fMyFormY) fFormY->Process();
+  if (fCut && fMyCut) fCut->Process();
 
   if ( IsScaler() ) {  
     Int_t sizey = (fFormY) ? fFormY->GetSize() : 0;

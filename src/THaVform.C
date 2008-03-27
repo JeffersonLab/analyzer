@@ -26,16 +26,16 @@
 
 using namespace std;
 
+//_____________________________________________________________________________
 THaVform::THaVform( const char *type, const char* name, const char* formula,
 		    const THaVarList* vlst, const THaCutList* clst )
-  : THaFormula("[0]", "[0]", vlst, clst), fNvar(0), fObjSize(0),
-    fData(0.0), fType(kUnknown), fVarPtr(NULL), fOdata(NULL),
-    fPrefix(kNoPrefix)
+  : THaFormula(), fNvar(0), fObjSize(0), fData(0.0),
+    fType(kUnknown), fVarPtr(NULL), fOdata(NULL), fPrefix(kNoPrefix)
 {
-// The title "[0]" and expression "[0]" will be over-written
-// depending on the type of THaVform.
   SetName(name);
-  THaString stemp1 = StripPrefix(formula); 
+  SetList(vlst);
+  SetCutList(clst);
+  THaString stemp1 = StripPrefix(formula);
   SetTitle(stemp1.c_str());
 
   if( type && *type ) {
@@ -51,6 +51,7 @@ THaVform::THaVform( const char *type, const char* name, const char* formula,
       fType = kVarArray;
   }
 	     
+  // Call THaFormula's Compile()
   Compile();  
 }
 
