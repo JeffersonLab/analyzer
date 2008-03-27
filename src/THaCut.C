@@ -105,7 +105,11 @@ Int_t THaCut::DefinedVariable(TString& name)
 #endif
   Int_t k = DefinedCut( name );
   if( k>=0 ) return k;
-  return DefinedGlobalVariable( name );
+#if ROOT_VERSION_CODE >= ROOT_VERSION(4,0,0)
+  return THaFormula::DefinedVariable( name, action );
+#else
+  return THaFormula::DefinedVariable( name );
+#endif
 }
 
 //_____________________________________________________________________________
