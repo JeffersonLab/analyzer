@@ -65,6 +65,8 @@ public:
           void      SetPrimary( const char* name );
           void      SetMX( Double_t m );
 
+  THaPrimaryKine*   GetPrimary() const { return fPrimary; }
+
 protected:
 
   // Event data

@@ -289,9 +289,9 @@ void THaVDCCluster::FitSimpleTrack()
       sumDY2 += (y - Y) * (y - Y);
     } 
     
-    sigmaY = sqrt (sumDY2 / (N - 2));
-    sigmaM = sigmaY * sqrt ( N / ( N * sumXX - sumX * sumX) );
-    sigmaB = sigmaY * sqrt (sumXX / ( N * sumXX - sumX * sumX) );
+    sigmaY = TMath::Sqrt (sumDY2 / (N - 2));
+    sigmaM = sigmaY * TMath::Sqrt ( N / ( N * sumXX - sumX * sumX) );
+    sigmaB = sigmaY * TMath::Sqrt (sumXX / ( N * sumXX - sumX * sumX) );
     
     // Pick the best value
     if (i == 0 || sigmaY < bestFit) {
