@@ -43,6 +43,7 @@ protected:
   //Only derived classes may construct me
   THaSubDetector( const char* name, const char* description,
 		  THaDetectorBase* parent );  
+  THaSubDetector() {} // For ROOT RTTI
 
  private:
   TRef fParent;        // (Sub)detector containing this subdetector
