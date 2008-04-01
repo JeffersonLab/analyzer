@@ -1,3 +1,6 @@
+#ifndef ROOT_THaHelicityDet
+#define ROOT_THaHelicityDet
+
 ////////////////////////////////////////////////////////////////////////
 //
 // THaHelicityDet
@@ -5,13 +8,10 @@
 // Abstract base class for a beam helicity "detector".
 // Typically, this type of detector will be part of a beam apparatus.
 // 
-// author: V. Sulkosky and R. Feuerbach, Jan 2006
+// authors: V. Sulkosky and R. Feuerbach, Jan 2006
 // Changed to an abstract base class. Ole Hansen, Aug 2006.
 //
 ////////////////////////////////////////////////////////////////////////
-
-#ifndef ROOT_THaHelicityDet
-#define ROOT_THaHelicityDet
 
 #include "THaDetector.h"
 
@@ -27,7 +27,10 @@ public:
   virtual EHelicity  GetHelicity()   const { return fHelicity; }
   virtual Bool_t     HelicityValid() const { return (fHelicity != kUnknown); }
 
-  THaHelicityDet();  // For ROOT I/O only
+  virtual const char* GetDBFileName() const;
+  virtual void        MakePrefix();
+
+  THaHelicityDet() {}  // For ROOT I/O only
 
 protected:
 

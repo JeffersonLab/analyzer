@@ -1,0 +1,8 @@
+# -*- mode: Text -*-
+#-----------------------------------------------------------
+#  Database for Hall A helicity decoders
+#-----------------------------------------------------------
+
+R.adchel.detmap = 1 25 14 15
+L.adchel.detmap = 3 25 14 15
+L.adchel.ignore_gate = 1

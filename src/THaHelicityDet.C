@@ -10,15 +10,8 @@
 
 
 #include "THaHelicityDet.h"
-//#include "THaDB.h"
 
 using namespace std;
-
-//_____________________________________________________________________________
-THaHelicityDet::THaHelicityDet() : fHelicity(kUnknown), fSign(1)
-{
-  // Constructor
-}
 
 //_____________________________________________________________________________
 THaHelicityDet::THaHelicityDet( const char* name, const char* description ,
@@ -43,10 +36,30 @@ Int_t THaHelicityDet::DefineVariables( EMode mode )
   fIsSetup = ( mode == kDefine );
 
   const RVarDef var[] = {
-    { "helicity", "Beam helicity",               "fHelicity" },
+    { "helicity", "Beam helicity",  "fHelicity" },
     { 0 }
   };
   return DefineVarsFromList( var, mode );
+}
+
+//_____________________________________________________________________________
+const char* THaHelicityDet::GetDBFileName() const
+{
+  // All helicity detectors read from db_hel.dat by default. Database
+  // keys should (but do not have to) be prefixed by each detector's prefix,
+  // e.g. L.adchel.detmap
+
+  return "hel.";
+}
+
+//_____________________________________________________________________________
+void THaHelicityDet::MakePrefix()
+{
+  // All helicity detectors use only their name, not apparatus.name, as
+  // prefix.
+
+  THaDetectorBase::MakePrefix( 0 );
+
 }
 
 //_____________________________________________________________________________
@@ -54,12 +67,20 @@ Int_t THaHelicityDet::ReadDatabase( const TDatime& date )
 {
   // Read fSign
 
-//   if( !gHaDB )
-  return kInitError;
+  FILE* file = OpenFile( date );
+  if( !file ) return kFileError;
 
-//   gHaDB->GetValue( GetPrefix(), "helicity_sign", fSign, date );
+  fSign = 1;  // Default sign is +1
+  const  DBRequest request[] = {
+    { "helicity_sign", &fSign, kInt, 0, 1, -2 },
+    { 0 }
+  };
+  Int_t err = LoadDB( file, date, request, fPrefix );
+  fclose(file);
+  if( err )
+    return kInitError;
 
-//   return kOK;
+  return kOK;
 }
 
 ClassImp(THaHelicityDet)
