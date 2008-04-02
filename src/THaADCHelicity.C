@@ -73,7 +73,7 @@ Int_t THaADCHelicity::ReadDatabase( const TDatime& date )
   fThreshold  = kDefaultThreshold;
   fIgnoreGate = kFALSE;
   const  DBRequest request[] = {
-    { "detmap",       &detmap,       kIntV,   0, 1, -2 },
+    { "detmap",       &detmap,       kIntV,   0, 0, -2 },
     { "threshold",    &fThreshold,   kDouble, 0, 1, -2 },
     { "ignore_gate",  &fIgnoreGate,  kInt,    0, 1, -2 },
     { 0 }
