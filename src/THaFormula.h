@@ -54,6 +54,13 @@ public:
   { return Eval(); }
 #endif
           Bool_t      IsError() const { return fError; }
+#if ROOT_VERSION_CODE >= 197895 // 3.05/07
+#if ROOT_VERSION_CODE >= 331776 // 5.16/00
+  virtual TString     GetExpFormula( Option_t* opt="" ) const;
+#else
+  virtual TString     GetExpFormula() const;
+#endif
+#endif
   virtual void        Print( Option_t* option="" ) const; // *MENU*
           void        SetList( const THaVarList* lst )    { fVarList = lst; }
           void        SetCutList( const THaCutList* lst ) { fCutList = lst; }

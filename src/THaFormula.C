@@ -326,6 +326,21 @@ Double_t THaFormula::Eval( void )
 }
   
 //_____________________________________________________________________________
+#if ROOT_VERSION_CODE >= ROOT_VERSION(3,5,7)
+#if ROOT_VERSION_CODE >= ROOT_VERSION(5,16,0)
+TString THaFormula::GetExpFormula( Option_t* ) const
+#else
+TString THaFormula::GetExpFormula() const
+#endif
+{
+  // Override ROOT's TFormula::GetExpFormula because it does not handle
+  // kDefinedVariable and kDefinedString opcodes.
+  // For our purposes, the un-expanded expression is good enough
+
+  return fTitle;
+}
+#endif
+//_____________________________________________________________________________
 void THaFormula::Print( Option_t* option ) const
 {
   // Print this formula to stdout
