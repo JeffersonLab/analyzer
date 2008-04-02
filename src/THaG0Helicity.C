@@ -124,9 +124,9 @@ Int_t THaG0Helicity::ReadDatabase( const TDatime& date )
     { "time2roc", &rocaddr[2], kIntV,   0, 1, -2 },
     { "time3roc", &rocaddr[3], kIntV,   0, 1, -2 },
     { "delay",    &delay,      kInt,    0, 1, -2 },
-    { "tdavg",    &tdavg,      kDouble, 0, 0, -2 },
-    { "ttol",     &ttol,       kDouble, 0, 0, -2 },
-    { "missqrt",  &missqrt,    kInt,    0, 0, -2 },
+    { "tdavg",    &tdavg,      kDouble, 0, 1, -2 },
+    { "ttol",     &ttol,       kDouble, 0, 1, -2 },
+    { "missqrt",  &missqrt,    kInt,    0, 1, -2 },
     { 0 }
   };
   st = LoadDB( file, date, req, GetPrefix() );
