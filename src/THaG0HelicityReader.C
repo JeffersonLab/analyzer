@@ -19,10 +19,6 @@ THaG0HelicityReader::THaG0HelicityReader() :
   fPresentReading(0), fQrt(0), fGate(0), fTimestamp(0),
   fOldT1(-1.0), fOldT2(-1.0), fOldT3(-1.0), fValidTime(kFALSE),
   fHaveROCs(kFALSE), fG0Debug(0)
-#ifdef G0RINGBUFF
-  , fNumread(0), fBadread(0), fRing_clock(0), fRing_qrt(0), fRing_helicity(0),
-  fRing_trig(0), fRing_bcm(0), fRing_l1a(0), fRing_v2fh(0)
-#endif
 {
   // Default constructor
 
@@ -67,11 +63,6 @@ void THaG0HelicityReader::ClearG0()
   fPresentReading = fQrt = fGate = 0;
   fTimestamp = 0.0;
   fValidTime = kFALSE;
-#ifdef G0RINGBUFF
-  size_t nbytes = (char*)&fRing_v2fh - (char*)&fNumread
-    + sizeof(fRing_v2fh);
-  memset( &fNumread, 0, nbytes );
-#endif
 }
 
 //____________________________________________________________________
@@ -168,102 +159,8 @@ Int_t THaG0HelicityReader::ReadData( const THaEvData& evdata )
 	 << endl;
   }
 
-#ifdef G0RINGBUFF
-  ReadRingScalers( evdata, hroc, 5 );
-#endif
-
   return 0;
 }
 
 //____________________________________________________________________
-#ifdef G0RINGBUFF
-Int_t THaG0HelicityReader::ReadRingScalers( const THaEvData& evdata, 
-					    Int_t hroc, Int_t index ) 
-{
-  // Read ring buffer scalers
-
-  static const char* here = "THaG0HelicityReader::ReadRingScalers";
-
-  Int_t len = evdata.GetRocLength(hroc);
-  if( len <= index ) 
-    return -1;
-
-  Int_t data = 0, nscaler = 0;
-  bool found = false;
-  while( !found ) {
-    data = evdata.GetRawData(hroc,index++);
-    if ( (data & 0xffff0000) == 0xfb0b0000) found = true;
-    if (index >= len) break;
-  }
-  if (!found && fG0Debug >= 2)
-    ::Warning( here, "Cannot find scalers" );
-
-  nscaler = data & 0x7;
-
-   if (nscaler <= 0) return -1;
-   if (nscaler > 2) {
-     if (fG0Debug >= 2)
-       ::Warning( here, "Too many scalers, should be 2, found %d", nscaler );
-     nscaler = 2;  // shouldn't be necessary
-   }
-   // 32 channels of scaler data for two helicities.
-   if (fG0Debug >= 2) cout << "Synch event ----> " << endl;
-   for (Int_t ihel = 0; ihel < nscaler; ihel++) { 
-     Int_t header = evdata.GetRawData(hroc,index++);
-     if (fG0Debug >= 2) {
-       cout << "Scaler for helicity = " << dec << ihel;
-       cout << "  unique header = " << hex << header << endl;
-     }
-     for (int ichan = 0; ichan < 32; ichan++) {
-       data = evdata.GetRawData(hroc,index++);
-       if (fG0Debug >= 2) {
-	 cout << "channel # " << dec << ichan+1;
-	 cout << "  (hex) data = " << hex << data << endl;
-       }
-     }
-   }
-   fNumread = evdata.GetRawData(hroc,index++);
-   fBadread = evdata.GetRawData(hroc,index++);
-   if (fG0Debug >= 2) 
-     cout << "FIFO num of last good read " << dec << fNumread << endl;
-// We hope fBadread=0 forever.  If not, two possibilities :
-//   a) Skip that run, or
-//   b) Cut out bad events and use ring buffer to recover.
-// See R. Michaels if these messages ever appear !!
-   if (fBadread != 0) {
-     cout << "NOTE: There are bad scaler readings !! " << endl;
-     cout << "FIFO num of last bad read " << endl;
-     cout << fBadread << endl;
-   }
-   // Subset of scaler channels stored in a 30 Hz ring buffer.
-   Int_t nring = 0;
-   while (index < len && nring == 0) {
-     Int_t header = evdata.GetRawData(hroc,index++);
-     if ((header & 0xffff0000) == 0xfb1b0000) {
-       nring = header & 0x3ff;
-     }
-   }
-   if (fG0Debug >= 2) 
-     cout << "Num in ring buffer = " << dec << nring << endl;
-   for (Int_t iring = 0; iring < nring; iring++) {
-     fRing_clock = evdata.GetRawData(hroc,index++);
-     data = evdata.GetRawData(hroc,index++);
-     fRing_qrt  = (data & 0x10) >> 4;
-     fRing_helicity = (data & 0x1);
-     fRing_trig = evdata.GetRawData(hroc,index++);
-     fRing_bcm  = evdata.GetRawData(hroc,index++);
-     fRing_l1a  = evdata.GetRawData(hroc,index++);
-     fRing_v2fh = evdata.GetRawData(hroc,index++);
-     if (fG0Debug >= 2) {
-       cout << "buff [" << dec << iring << "] ";
-       cout << "  clck " << fRing_clock << "  qrt " << fRing_qrt;
-       cout << "  hel " << fRing_helicity;
-       cout << "  trig " << fRing_trig << "  bcm " << fRing_bcm;
-       cout << "  L1a "<<fRing_l1a<<"  v2fh "<<fRing_v2fh<<endl;
-     }
-   }
-   return 0;
-}
-#endif
-
 ClassImp(THaG0HelicityReader)

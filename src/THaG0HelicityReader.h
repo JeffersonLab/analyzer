@@ -11,9 +11,6 @@
 
 #include "Rtypes.h"
 
-// If defined, compile with support for ring buffer scalers
-//#define G0RINGBUFF
-
 class THaEvData;
 
 class THaG0HelicityReader {
@@ -28,19 +25,6 @@ public:
   Int_t  GetQrt()      const { return fQrt; }
   Int_t  GetGate()     const { return fGate; }
   Int_t  GetReading()  const { return fPresentReading; }
-
-#ifdef G0RINGBUFF
-  // Get methods for Ring Buffer scalers
-  Int_t  GetNumRead() const { return fNumread; } // Latest valid reading
-  Int_t  GetBadRead() const { return fBadread; } // Latest problematic reading
-  Int_t  GetRingClk()      const { return fRing_clock; }
-  Int_t  GetRingQrt()      const { return fRing_qrt; }
-  Int_t  GetRingHelicity() const { return fRing_helicity; }
-  Int_t  GetRingTrig()     const { return fRing_trig; }
-  Int_t  GetRingBCM()      const { return fRing_bcm; }
-  Int_t  GetRingl1a()      const { return fRing_l1a; }
-  Int_t  GetRingV2fh()     const { return fRing_v2fh; }
-#endif
 
 protected:
 
@@ -72,20 +56,6 @@ protected:
 
   Bool_t fHaveROCs;       // Required ROCs are defined
   Int_t  fG0Debug;        // Debug level
-
-#ifdef G0RINGBUFF
-  Int_t ReadRingScalers( const THaEvData& evdata, Int_t hroc, Int_t index );
-  // ring buffer scaler data
-  Int_t fNumread;         //!
-  Int_t fBadread;         //!
-  Int_t fRing_clock;      //!
-  Int_t fRing_qrt;        //!
-  Int_t fRing_helicity;   //!
-  Int_t fRing_trig;       //!
-  Int_t fRing_bcm;        //!
-  Int_t fRing_l1a;        //!
-  Int_t fRing_v2fh;       //!
-#endif
 
 private:
 

@@ -80,17 +80,6 @@ Int_t THaG0Helicity::DefineVariables( EMode mode )
     { "timestamp", "Timestamp from ROC",           "fTimestamp" },
     { "validtime", "validtime flag",               "fValidTime" },
     { "validHel",  "validHel flag",                "fValidHel" },
-#ifdef G0RINGBUFF
-    { "numread",   "Latest valid reading",         "fNumread" },
-    { "badread",   "Latest problematic reading",   "fBadread" },
-    { "ringclk",   "Ring buffer clock (1024 Hz)",  "fRing_clock" },
-    { "ringqrt",   "Ring buffer qrt",              "fRing_qrt" },
-    { "ringhel",   "Ring buffer helicity",         "fRing_helicity" },
-    { "ringtrig",  "Ring buffer trigger",          "fRing_trig" },
-    { "ringbcm",   "Ring buffer BCM",              "fRing_bcm" },
-    { "ringl1a",   "Ring buffer accepted trigger", "fRing_11a" },
-    { "ringv2fh",  "Ring buffer Helicity V-to-F",  "fRing_v2fh" },
-#endif
     { 0 }
   };
   return DefineVarsFromList( var, mode );
