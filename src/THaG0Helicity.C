@@ -11,12 +11,12 @@
 
 #include "THaG0Helicity.h"
 #include "THaEvData.h"
-//#include "THaDB.h"
 #include "TH1F.h"
 #include "TMath.h"
 #include <iostream>
 #include <cstdio>
 #include <cmath>
+#include <vector>
 
 using namespace std;
 
@@ -71,24 +71,26 @@ Int_t THaG0Helicity::DefineVariables( EMode mode )
   THaHelicityDet::DefineVariables( mode );
 
   const RVarDef var[] = {
-    { "qrt",       "qrt from ROC",                "fQrt" },
-    { "nqrt",      "number of qrts seen",         "fNqrt" },
-    { "quad",      "quad (1, 2, or 4)",           "fQuad" },
-    { "tdiff",     "time since quad start",       "fTdiff" },
-    { "gate",      "Helicity Gate from ROC",      "fGate" },
-    { "pread",     "Present helicity reading",    "fPresentReading" },
-    { "timestamp", "Timestamp from ROC",          "fTimestamp" },
-    { "validtime", "validtime flag",              "fValidTime" },
-    { "validHel",  "validHel flag",               "fValidHel" },
-//     { "numread", "Latest valid reading",        "GetNumRead()" },
-//     { "badread", "Latest problematic reading",  "GetBadRead()" },
-//     { "ringclk", "Ring buffer clock (1024 Hz)", "GetRingClk()" },
-//     { "ringqrt", "Ring buffer qrt",             "GetRingQrt()" },
-//     { "ringhel", "Ring buffer helicity",        "GetRingHelicity()" },
-//     { "ringtrig","Ring buffer trigger",         "GetRingTrig()" },
-//     { "ringbcm", "Ring buffer BCM",             "GetRingBCM()" },
-//     { "ringl1a","Ring buffer accepted trigger", "GetRingl1a()" },
-//     { "ringv2fh","Ring buffer Helicity V-to-F", "GetRingV2fh()" },
+    { "qrt",       "qrt from ROC",                 "fQrt" },
+    { "nqrt",      "number of qrts seen",          "fNqrt" },
+    { "quad",      "quad (1, 2, or 4)",            "fQuad" },
+    { "tdiff",     "time since quad start",        "fTdiff" },
+    { "gate",      "Helicity Gate from ROC",       "fGate" },
+    { "pread",     "Present helicity reading",     "fPresentReading" },
+    { "timestamp", "Timestamp from ROC",           "fTimestamp" },
+    { "validtime", "validtime flag",               "fValidTime" },
+    { "validHel",  "validHel flag",                "fValidHel" },
+#ifdef G0RINGBUFF
+    { "numread",   "Latest valid reading",         "fNumread" },
+    { "badread",   "Latest problematic reading",   "fBadread" },
+    { "ringclk",   "Ring buffer clock (1024 Hz)",  "fRing_clock" },
+    { "ringqrt",   "Ring buffer qrt",              "fRing_qrt" },
+    { "ringhel",   "Ring buffer helicity",         "fRing_helicity" },
+    { "ringtrig",  "Ring buffer trigger",          "fRing_trig" },
+    { "ringbcm",   "Ring buffer BCM",              "fRing_bcm" },
+    { "ringl1a",   "Ring buffer accepted trigger", "fRing_11a" },
+    { "ringv2fh",  "Ring buffer Helicity V-to-F",  "fRing_v2fh" },
+#endif
     { 0 }
   };
   return DefineVarsFromList( var, mode );
@@ -109,43 +111,43 @@ Int_t THaG0Helicity::ReadDatabase( const TDatime& date )
   FILE* file = OpenFile( date );
   if( !file ) return kFileError;
 
-  Int_t helroc[3], timeroc[3], time2roc[3], time3roc[3];
-  time2roc[0] = 0; time3roc[0] = 0;
-  Int_t delay = fG0delay;
-  Double_t tdavg = fTdavg, ttol = fTtol;
-  Int_t missqrt = fMaxMissed;
+  EROC rocname[4] = { kHel, kTime, kROC2, kROC3 };
+  vector< vector<Int_t> > rocaddr(4); // helroc, timeroc, time2roc, time3roc
+  Int_t    delay   = kDefaultDelay;
+  Double_t tdavg   = kDefaultTdavg;
+  Double_t ttol    = kDefaultTtol;
+  Int_t    missqrt = kDefaultMissQ;
 
   DBRequest req[] = {
-    { "helroc",   helroc,   kInt, 3 },
-    { "timeroc",  timeroc,  kInt, 3 },
-    { "time2roc", time2roc, kInt, 3, 1 },
-    { "time3roc", time3roc, kInt, 3, 1 },
-    { "delay",    &delay,   kInt, 1, 1 },
-    { "tdavg",    &tdavg },
-    { "ttol",     &ttol },
-    { "missqrt",  &missqrt },
+    { "helroc",   &rocaddr[0], kIntV,   0, 0, -2 },
+    { "timeroc",  &rocaddr[1], kIntV,   0, 0, -2 },
+    { "time2roc", &rocaddr[2], kIntV,   0, 1, -2 },
+    { "time3roc", &rocaddr[3], kIntV,   0, 1, -2 },
+    { "delay",    &delay,      kInt,    0, 1, -2 },
+    { "tdavg",    &tdavg,      kDouble, 0, 0, -2 },
+    { "ttol",     &ttol,       kDouble, 0, 0, -2 },
+    { "missqrt",  &missqrt,    kInt,    0, 0, -2 },
     { 0 }
   };
-  //  Int_t err = gHaDB->LoadValues( GetPrefix(), req, date );
   st = LoadDB( file, date, req, GetPrefix() );
   fclose(file);
   if( st )
     return kInitError;
 
-  //old:
-//   SetROC (kLeft, 11, 0, 3, 0, 4); // Left arm
-//   SetState (1, 8, -1, kLeft, 0);  // G0 mode; 8 window delay; sign -1;
-                                  // left arm; no redund
-  SetROCinfo( kHel,  helroc[0],   helroc[1],   helroc[2]  );
-  SetROCinfo( kTime, timeroc[0],  timeroc[1],  timeroc[2] );
-  SetROCinfo( kROC2, time2roc[0], time2roc[1], time2roc[2] );
-  SetROCinfo( kROC3, time3roc[0], time3roc[1], time3roc[2] );
-
+  // TODO: implement reading into C-style arrays in LoadDB,
+  // then read fROCinfo directly
+  for( vector<Int_t>::size_type i = 0; i < rocaddr.size(); ++i ) {
+    vector<Int_t>& r = rocaddr[i];
+    if( r.size() >= 3 )
+      SetROCinfo( rocname[i], r[0], r[1], r[2] );
+  }
   if( !fHaveROCs ) {
-    Error( Here(here), "Invalid ROC data. Detector initialization failed." );
+    Error( Here(here), "Invalid ROC data. Fix database." );
     return kInitError;
   }
 
+  // Manually set parameters take precedence over the database values.
+  // This is meant for quick-and-dirty debugging.
   if( !TESTBIT(fManuallySet,0) )
     fG0delay = delay;
   if( !TESTBIT(fManuallySet,1) )
@@ -165,6 +167,9 @@ Int_t THaG0Helicity::Begin( THaRunBase* run )
   if (fDebug == -1) {
     if( !fHisto )
       fHisto = new TH1F("hahel1","Time diff for QRT",1000,11000,22000);
+    else
+      //TODO: only clear if run number changes?
+      fHisto->Clear();
   }
   return 0;
 }
@@ -219,6 +224,17 @@ Int_t THaG0Helicity::Decode( const THaEvData& evdata )
     cout << "G0 helicity "<< GetName() << " =  " << fHelicity <<endl;
 
   return HelicityValid() ? 1 : 0;
+}
+
+//_____________________________________________________________________________
+Int_t THaG0Helicity::End( THaRunBase* run )
+{
+  // End of run processing. Write histograms.
+
+  if( fHisto )
+    fHisto->Write();
+
+  return 0;
 }
 
 //_____________________________________________________________________________
@@ -362,7 +378,8 @@ void THaG0Helicity::TimingEvent()
 }
 
 //_____________________________________________________________________________
-void THaG0Helicity::QuadCalib() {
+void THaG0Helicity::QuadCalib()
+{
   // Calibrate the helicity predictor shift register.
 
   static const char* const here = "QuadCalib";
@@ -509,7 +526,6 @@ void THaG0Helicity::QuadCalib() {
       cout << fTdiff<<endl;
       if (fHisto) {
 	fHisto->Fill(fTdiff);
-	fHisto->Write(); //FIXME: really write here?
       }
     }
   }
@@ -519,9 +535,10 @@ void THaG0Helicity::QuadCalib() {
 
 
 //_____________________________________________________________________________
-void THaG0Helicity::LoadHelicity() {
-// Load the helicity in G0 mode.  
-// If fGate == 0, helicity remains 'Unknown'.
+void THaG0Helicity::LoadHelicity()
+{
+  // Load the helicity in G0 mode.  
+  // If fGate == 0, helicity remains 'Unknown'.
 
   static const char* const here = "LoadHelicity";
 
@@ -599,11 +616,12 @@ void THaG0Helicity::LoadHelicity() {
 }
 
 //_____________________________________________________________________________
-void THaG0Helicity::QuadHelicity(Int_t cond) {
-// Load the helicity from the present reading for the
-// start of a quad.
-//  Requires:  cond!=0 in order to force the quad to advance
-//             fT0 to be updated and set for THIS quad
+void THaG0Helicity::QuadHelicity( Int_t cond )
+{
+  // Load the helicity from the present reading for the
+  // start of a quad.
+  //  Requires:  cond!=0 in order to force the quad to advance
+  //             fT0 to be updated and set for THIS quad
   static const char* const here = "QuadHelicity";
   
   if (fRecovery_flag) {
@@ -668,7 +686,8 @@ void THaG0Helicity::QuadHelicity(Int_t cond) {
 }
 
 //_____________________________________________________________________________
-THaHelicityDet::EHelicity THaG0Helicity::RanBit(int which) {
+THaHelicityDet::EHelicity THaG0Helicity::RanBit( int which )
+{
   // This is the random bit generator according to the G0
   // algorithm described in "G0 Helicity Digital Controls" by 
   // E. Stangland, R. Flood, H. Dong, July 2002.
@@ -702,7 +721,8 @@ THaHelicityDet::EHelicity THaG0Helicity::RanBit(int which) {
 
 
 //_____________________________________________________________________________
-UInt_t THaG0Helicity::GetSeed() {
+UInt_t THaG0Helicity::GetSeed()
+{
   int seedbits[kNbits];
   UInt_t ranseed = 0;
   for (int i = 0; i < 20; i++)
@@ -718,7 +738,8 @@ UInt_t THaG0Helicity::GetSeed() {
 }
 
 //_____________________________________________________________________________
-Bool_t THaG0Helicity::CompHel() {
+Bool_t THaG0Helicity::CompHel()
+{
   // Compare the present reading to the predicted reading.
   // The raw data are 0's and 1's which compare to predictions of
   // -1 and +1.  A prediction of 0 occurs when there is no gate.

@@ -1,3 +1,6 @@
+#ifndef ROOT_THaG0Helicity
+#define ROOT_THaG0Helicity
+
 ////////////////////////////////////////////////////////////////////////
 //
 // THaG0Helicity
@@ -5,10 +8,6 @@
 // Helicity of the beam - from G0 electronics in delayed mode
 // 
 ////////////////////////////////////////////////////////////////////////
-
-
-#ifndef ROOT_THaG0Helicity
-#define ROOT_THaG0Helicity
 
 #include "THaHelicityDet.h"
 #include "THaG0HelicityReader.h"
@@ -27,6 +26,7 @@ public:
   virtual Int_t  Begin( THaRunBase* r=0 );
   virtual void   Clear( Option_t* opt = "" );
   virtual Int_t  Decode( const THaEvData& evdata );
+  virtual Int_t  End( THaRunBase* r=0 );
   virtual void   SetDebug( Int_t level );
   virtual Bool_t HelicityValid() const { return fValidHel; }
 

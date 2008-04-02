@@ -1,8 +1,45 @@
 # -*- mode: Text -*-
 #-----------------------------------------------------------
-#  Database for Hall A helicity decoders
+#  Example database for Hall A helicity decoders
+#
+#  Note that you can set validity time periods in the
+#  usual way by starting sections with time stamps like
+#  [ 2005-06-20 14:30:35 ]
 #-----------------------------------------------------------
 
-R.adchel.detmap = 1 25 14 15
-L.adchel.detmap = 3 25 14 15
-L.adchel.ignore_gate = 1
+#---- Overall helicity sign (from Moller)
+
+helicity_sign = 1
+
+#---- Helicity ADCs
+
+adchel.R.detmap = 1 25 14 15
+adchel.L.detmap = 3 25 14 15
+# adchel.L.ignore_gate = 1
+
+#---- G0 helicity
+#
+# The "roc"s used to be set with:
+#
+#    SetROC( arm, roc1, hel_header, hel_index, time_header, time_index )
+#    SetRTimeROC( arm, roc2, t2header, t2index, roc3, t3header, t3index )
+#
+# "arm" is now implied in the name of the G0 helicity module
+# Note that it is now possible to read helicity and time from different rocs.
+#
+# These parameters apply to all "g0hel" detectors unless a more specialized
+# key such as "g0hel.R.delay" exists
+
+g0hel.L.helroc   = 11 0 3   # roc1, hel_header, hel_index
+g0hel.L.timeroc  = 11 0 4   # roc1, time_header, time_index
+g0hel.R.helroc   = 10 0 3   # roc1, hel_header, hel_index
+g0hel.R.timeroc  = 10 0 4   # roc1, time_header, time_index
+# g0hel.time2roc = ? ? ?        # redundant time t2
+# g0hel.time3roc = ? ? ?        # redundant time t3
+
+g0hel.delay = 8
+g0hel.tdavg = 14050
+g0hel.ttol  = 40
+g0hel.missqrt = 30
+
+
