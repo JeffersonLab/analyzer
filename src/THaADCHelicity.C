@@ -92,11 +92,17 @@ Int_t THaADCHelicity::ReadDatabase( const TDatime& date )
 
   Int_t nchan = fDetMap->GetTotNumChan();
   if( nchan < 2 ) {
-    Error( Here(here), "Need exactly 2 detector map channels, found %d. "
-	   "Fix database.", nchan );
-    return kInitError;
+    if( !fIgnoreGate ) {
+      Error( Here(here), "Need excatly 2 detector map channels, found %d. "
+	     "Fix database.", nchan );
+      return kInitError;
+    } else if( nchan == 0 ) {
+      Error( Here(here), "Need either 1 or 2 detector map channels if "
+	     "ignoring gate, found %d. Fix database.", nchan );
+      return kInitError;
+    }
   } else if ( nchan > 2 ) {
-    Warning( Here(here), "Extra channels in detector map. Should be exactly "
+    Warning( Here(here), "Extra channels in detector map. Should be at most "
 	     "2, found %d. Check database.", nchan );
   }
 
@@ -131,26 +137,35 @@ Int_t THaADCHelicity::Decode( const THaEvData& evdata )
   if( !fIsInit )
     return -1;
 
-  // Collect the input channel addresses
+  // Collect the addresses of the two input channels (helicity bit, gate).
+  // This is a bit tedious because the channels could be specified either
+  // as adjacent channels in a single module or as two separate modules.
   struct ChanDef_t { UShort_t roc, slot, chan; } addr[2];
   THaDetMap::Module* d = fDetMap->GetModule(0);
-  if( !d )
-    return -1;
-  memcpy( addr, d, 3*sizeof(UShort_t) );
-  if( d->GetNchan() > 1 ) {
-    memcpy( addr+1, d, 3*sizeof(UShort_t) );
-    ++addr[1].chan;
-  } else {
-    d = fDetMap->GetModule(1);
-    if( !d )
+  Int_t k = 0;
+  // If ignoring gate and only one channel given, decode only one
+  Int_t imax = ( fIgnoreGate && fDetMap->GetTotNumChan() == 1 ) ? 1 : 2;
+  for( Int_t i = 0; i < imax; i++, k++ ) {
+    if( !d || d->GetNchan() == 0 )
       return -1;
-    memcpy( addr+1, d, 3*sizeof(UShort_t) );
+    addr[i].roc  = d->crate;
+    addr[i].slot = d->slot;
+    if( d->reverse )
+      addr[i].chan = d->hi-k;
+    else
+      addr[i].chan = d->lo+k;
+    // If the first module contains only one channel, get the second
+    // channel from the next module
+    if( d->GetNchan() == 1 && (i+1 < imax) ) {
+      d = fDetMap->GetModule(i+1);
+      k = -1;
+    }
   }
 
   Int_t ret = 0;
   bool gate_high = false;
 
-  for( Int_t i = 0; i < 2; ++i ) {
+  for( Int_t i = 0; i < imax; ++i ) {
     Int_t roc = addr[i].roc, slot = addr[i].slot, chan = addr[i].chan;
     if ( !evdata.GetNumHits( roc, slot, chan ))
       continue;
@@ -167,16 +182,14 @@ Int_t THaADCHelicity::Decode( const THaEvData& evdata )
     }
 
     // Assign gate and helicity bit data. The first data channel is
-    // the gate, the second, the helicity bit.
-    // NB: As of 9/04, there is no gate on L-arm, only helicity bit.
-    // For this arm, set fIgnoreGate true.
+    // the helicity bit, the second, the gate.
     switch(i) {
     case 0:
-      fADC_Gate = data;
-      gate_high = ( data > fThreshold );
+      fADC_hdata = data; 
       break;
     case 1:
-      fADC_hdata = data; 
+      fADC_Gate = data;
+      gate_high = ( data > fThreshold );
       break;
     }
 
