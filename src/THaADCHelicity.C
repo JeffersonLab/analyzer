@@ -108,7 +108,7 @@ Int_t THaADCHelicity::ReadDatabase( const TDatime& date )
     return kInitError;
   }
 
-  fIgnoreGate = (ignore_gate != 0);
+  fIgnoreGate = (ignore_gate > 0);
   // If ignoring gate and no gate channel given, decode only one
   fNchan = (fIgnoreGate && gatedef.empty()) ? 1 : 2;
 
@@ -177,24 +177,24 @@ Int_t THaADCHelicity::Decode( const THaEvData& evdata )
       gate_high = ( data > fThreshold );
       break;
     }
-
-    // Logic: if gate==0 helicity remains unknown. If gate==1 
-    // (or we are ingoring the gate) then helicity is determined by 
-    // the helicity bit.
-    if( gate_high || fIgnoreGate ) {
-      fADC_Hel = ( fADC_hdata > fThreshold ) ? kPlus : kMinus;
-      if( fSign<0 )
-	fADC_Hel = ( fADC_Hel == kPlus ) ? kMinus : kPlus;
-      ret = 1;
-    }
-
-    if (fDebug >= 3) {
-      cout << "ADC helicity info "<<endl;
-      cout << "Gate "<<fADC_Gate<<"  helic. bit "<<fADC_hdata;
-      cout << "    resulting helicity "<<fADC_Hel<<endl;
-    }
-
   }
+
+  // Logic: if gate==0 helicity remains unknown. If gate==1 
+  // (or we are ingoring the gate) then helicity is determined by 
+  // the helicity bit.
+  if( gate_high || fIgnoreGate ) {
+    fADC_Hel = ( fADC_hdata > fThreshold ) ? kPlus : kMinus;
+    if( fSign<0 )
+      fADC_Hel = ( fADC_Hel == kPlus ) ? kMinus : kPlus;
+    ret = 1;
+  }
+
+  if (fDebug >= 3) {
+    cout << "ADC helicity info "<<endl;
+    cout << "Gate "<<fADC_Gate<<"  helic. bit "<<fADC_hdata;
+    cout << "    resulting helicity "<<fADC_Hel<<endl;
+  }
+
   // fHelicity may be reassigned by derived classes, so we must keep the ADC
   // result separately. But within this class, the two are the same.
   fHelicity = fADC_Hel;
