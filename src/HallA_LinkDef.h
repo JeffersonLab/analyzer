@@ -106,6 +106,7 @@
 #pragma link C++ class THaTrackOut+;
 #pragma link C++ class THaHelicityDet+;
 #pragma link C++ class THaADCHelicity+;
+#pragma link C++ class THaADCHelicity::ChanDef_t+;
 //#pragma link C++ class THaHelicity+;
 #pragma link C++ class THaG0HelicityReader+;
 #pragma link C++ class THaG0HelicityReader::ROCinfo+;

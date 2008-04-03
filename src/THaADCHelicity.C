@@ -27,7 +27,7 @@ THaADCHelicity::THaADCHelicity( const char* name, const char* description,
 				THaApparatus* app ) : 
   THaHelicityDet( name, description, app ),
   fADC_hdata(kBig), fADC_Gate(kBig), fADC_Hel(kUnknown), 
-  fThreshold(kDefaultThreshold), fIgnoreGate(kFALSE)
+  fThreshold(kDefaultThreshold), fIgnoreGate(kFALSE), fNchan(0)
 {
   // Constructor
 }
@@ -69,13 +69,14 @@ Int_t THaADCHelicity::ReadDatabase( const TDatime& date )
   FILE* file = OpenFile( date );
   if( !file ) return kFileError;
 
-  vector<Int_t> detmap;
+  vector<Int_t> heldef, gatedef;
   fThreshold  = kDefaultThreshold;
-  fIgnoreGate = kFALSE;
+  Int_t ignore_gate = -1;
   const  DBRequest request[] = {
-    { "detmap",       &detmap,       kIntV,   0, 0, -2 },
+    { "helchan",      &heldef,       kIntV,   0, 0, -2 },
+    { "gatechan",     &gatedef,      kIntV,   0, 1, -2 },
     { "threshold",    &fThreshold,   kDouble, 0, 1, -2 },
-    { "ignore_gate",  &fIgnoreGate,  kInt,    0, 1, -2 },
+    { "ignore_gate",  &ignore_gate,  kInt,    0, 1, -2 },
     { 0 }
   };
   // Database keys are prefixed with this detector's name, not apparatus.name
@@ -84,28 +85,37 @@ Int_t THaADCHelicity::ReadDatabase( const TDatime& date )
   if( err )
     return kInitError;
 
-  // Parse detector map. Warn/err if something looks suspect
-  err = FillDetMap( detmap, 0, here );
-  if( err <= 0 )
-    //Error already printed
+  if( heldef.size() != 3 ) {
+    Error( Here(here), "Incorrect defintion of helicity data channel. Must be "
+	   "exactly 3 numbers (roc,slot,chan), found %d. Fix database.", 
+	   heldef.size() );
     return kInitError;
-
-  Int_t nchan = fDetMap->GetTotNumChan();
-  if( nchan < 2 ) {
-    if( !fIgnoreGate ) {
-      Error( Here(here), "Need excatly 2 detector map channels, found %d. "
-	     "Fix database.", nchan );
-      return kInitError;
-    } else if( nchan == 0 ) {
-      Error( Here(here), "Need either 1 or 2 detector map channels if "
-	     "ignoring gate, found %d. Fix database.", nchan );
+  }
+  // Missing gate channel implies ignoring gate unless explicitly set
+  if( gatedef.empty() ) {
+    if( ignore_gate < 0 )
+      fIgnoreGate = kTRUE;
+    else {
+      Error( Here(here), "Missing gate data channel definition gatechan. "
+	     "Fix database." );
       return kInitError;
     }
-  } else if ( nchan > 2 ) {
-    Warning( Here(here), "Extra channels in detector map. Should be at most "
-	     "2, found %d. Check database.", nchan );
+  }
+  if( !gatedef.empty() && gatedef.size() != 3 ) {
+    Error( Here(here), "Incorrect defintion of gate data channel. Must be "
+	   "exactly 3 numbers (roc,slot,chan), found %d. Fix database.", 
+	   gatedef.size() );
+    return kInitError;
   }
 
+  fIgnoreGate = (ignore_gate != 0);
+  // If ignoring gate and no gate channel given, decode only one
+  fNchan = (fIgnoreGate && gatedef.empty()) ? 1 : 2;
+
+  memcpy( fAddr, &heldef[0], 3*sizeof(Int_t) );
+  if( !gatedef.empty() )
+    memcpy( fAddr+1, &gatedef[0], 3*sizeof(Int_t) );
+    
   fIsInit = true;
   return kOK;
 }
@@ -137,36 +147,11 @@ Int_t THaADCHelicity::Decode( const THaEvData& evdata )
   if( !fIsInit )
     return -1;
 
-  // Collect the addresses of the two input channels (helicity bit, gate).
-  // This is a bit tedious because the channels could be specified either
-  // as adjacent channels in a single module or as two separate modules.
-  struct ChanDef_t { UShort_t roc, slot, chan; } addr[2];
-  THaDetMap::Module* d = fDetMap->GetModule(0);
-  Int_t k = 0;
-  // If ignoring gate and only one channel given, decode only one
-  Int_t imax = ( fIgnoreGate && fDetMap->GetTotNumChan() == 1 ) ? 1 : 2;
-  for( Int_t i = 0; i < imax; i++, k++ ) {
-    if( !d || d->GetNchan() == 0 )
-      return -1;
-    addr[i].roc  = d->crate;
-    addr[i].slot = d->slot;
-    if( d->reverse )
-      addr[i].chan = d->hi-k;
-    else
-      addr[i].chan = d->lo+k;
-    // If the first module contains only one channel, get the second
-    // channel from the next module
-    if( d->GetNchan() == 1 && (i+1 < imax) ) {
-      d = fDetMap->GetModule(i+1);
-      k = -1;
-    }
-  }
-
   Int_t ret = 0;
   bool gate_high = false;
 
-  for( Int_t i = 0; i < imax; ++i ) {
-    Int_t roc = addr[i].roc, slot = addr[i].slot, chan = addr[i].chan;
+  for( Int_t i = 0; i < fNchan; ++i ) {
+    Int_t roc = fAddr[i].roc, slot = fAddr[i].slot, chan = fAddr[i].chan;
     if ( !evdata.GetNumHits( roc, slot, chan ))
       continue;
 

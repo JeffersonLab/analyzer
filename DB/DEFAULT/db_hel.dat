@@ -13,9 +13,10 @@ helicity_sign = 1
 
 #---- Helicity ADCs
 
-adchel.R.detmap = 1 25 14 15
-adchel.L.detmap = 3 25 14 15
-# adchel.L.ignore_gate = 1
+adchel.R.helchan  = 1 25 14
+adchel.R.gatechan = 1 25 15
+adchel.L.helchan  = 3 23 49
+adchel.L.gatechan = 3 23 50
 
 #---- G0 helicity
 #
