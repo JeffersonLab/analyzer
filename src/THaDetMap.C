@@ -57,34 +57,35 @@ void THaDetMap::Module::SetResolution( Double_t res )
 }
 
 //_____________________________________________________________________________
-THaDetMap::THaDetMap() : fNmodules(0)
+THaDetMap::THaDetMap() : fNmodules(0), fMap(0), fMaplength(0)
 {
-  // Default constructor. Create an empty detector map.
-  fMaplength = 10; // default number of modules/size of the array
-  fMap = new Module[fMaplength];
+  // Default constructor. Creates an empty detector map.
 }
 
 //_____________________________________________________________________________
 THaDetMap::THaDetMap( const THaDetMap& rhs )
 {
-  // Copy constructor. Initialize one detector map with another.
+  // Copy constructor
 
   fMaplength = rhs.fMaplength;
   fNmodules  = rhs.fNmodules;
-  fMap       = new Module[fMaplength];
-  memcpy(fMap,rhs.fMap,fNmodules*sizeof(Module));
+  if( fMaplength > 0 ) {
+    fMap = new Module[fMaplength];
+    memcpy(fMap,rhs.fMap,fNmodules*sizeof(Module));
+  }
 }
 
 //_____________________________________________________________________________
 THaDetMap& THaDetMap::operator=( const THaDetMap& rhs )
 {
-  // THaDetMap assignment operator. Assign one map to another.
+  // THaDetMap assignment operator
 
   if ( this != &rhs ) {
     if ( fMaplength != rhs.fMaplength ) {
       delete [] fMap;
       fMaplength = rhs.fMaplength;
-      fMap = new Module[fMaplength];
+      if( fMaplength > 0 )
+	fMap = new Module[fMaplength];
     }
     fNmodules = rhs.fNmodules;
     memcpy(fMap,rhs.fMap,fNmodules*sizeof(Module));
@@ -126,8 +127,10 @@ Int_t THaDetMap::AddModule( UShort_t crate, UShort_t slot,
     Int_t oldlen = fMaplength;
     fMaplength += 10;
     Module* tmpmap = new Module[fMaplength];   // expand in groups of 10
-    memcpy(tmpmap,fMap,oldlen*sizeof(Module));
-    delete [] fMap;
+    if( oldlen > 0 ) {
+      memcpy(tmpmap,fMap,oldlen*sizeof(Module));
+      delete [] fMap;
+    }
     fMap = tmpmap;
   }
 
@@ -356,7 +359,8 @@ void THaDetMap::Sort()
 {
   // Sort the map by crate/slot/low channel
   
-  qsort( fMap, fNmodules, sizeof(Module), compare_modules );
+  if( fMap && fNmodules )
+    qsort( fMap, fNmodules, sizeof(Module), compare_modules );
 
 }
 
