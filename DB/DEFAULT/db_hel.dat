@@ -15,8 +15,13 @@ helicity_sign = 1
 
 adchel.R.helchan  = 1 25 14
 adchel.R.gatechan = 1 25 15
+hel.R.helchan     = 1 25 14
+hel.R.gatechan    = 1 25 15
+
 adchel.L.helchan  = 3 23 49
 adchel.L.gatechan = 3 23 50
+hel.L.helchan     = 3 23 49
+hel.L.gatechan    = 3 23 50
 
 #---- G0 helicity
 #
@@ -26,21 +31,26 @@ adchel.L.gatechan = 3 23 50
 #    SetRTimeROC( arm, roc2, t2header, t2index, roc3, t3header, t3index )
 #
 # "arm" is now implied in the name of the G0 helicity module
-# Note that it is now possible to read helicity and time from different rocs.
+# Note that it is now possible to read helicity and time from different ROCs.
 #
-# These parameters apply to all "g0hel" detectors unless a more specialized
+# These parameters apply to all G0 detectors unless a more specialized
 # key such as "g0hel.R.delay" exists
 
 g0hel.L.helroc   = 11 0 3   # roc1, hel_header, hel_index
 g0hel.L.timeroc  = 11 0 4   # roc1, time_header, time_index
+hel.L.helroc     = 11 0 3   # roc1, hel_header, hel_index
+hel.L.timeroc    = 11 0 4   # roc1, time_header, time_index
+
 g0hel.R.helroc   = 10 0 3   # roc1, hel_header, hel_index
 g0hel.R.timeroc  = 10 0 4   # roc1, time_header, time_index
 # g0hel.time2roc = ? ? ?        # redundant time t2
 # g0hel.time3roc = ? ? ?        # redundant time t3
 
-g0hel.delay = 8
-g0hel.tdavg = 14050
-g0hel.ttol  = 40
-g0hel.missqrt = 30
+delay = 8
+tdavg = 14050
+ttol  = 40
+missqrt = 30
 
+#---- THaHelicity (combined ADC and in-time G0) detectors
 
+hel.verbose = 1          # print errors if ADC and G0 helicities differ
