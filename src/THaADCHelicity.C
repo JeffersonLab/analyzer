@@ -20,7 +20,7 @@
 
 using namespace std;
 
-static const Double_t kDefaultThreshold = 5000.0;
+static const Double_t kDefaultThreshold = 4000.0;
 
 //____________________________________________________________________
 THaADCHelicity::THaADCHelicity( const char* name, const char* description,
@@ -137,8 +137,6 @@ Int_t THaADCHelicity::Decode( const THaEvData& evdata )
   // Decode Helicity data.
   // Return 1 if helicity was assigned, 0 if not, -1 if error.
   
-  Clear();  
-
   // Only the first two channels defined in the detector map are used
   // here, regardless of how they are defined (consecutive channels
   // in same module or otherwise). ReadDatabase guarantees that two channels
@@ -184,20 +182,22 @@ Int_t THaADCHelicity::Decode( const THaEvData& evdata )
   // the helicity bit.
   if( gate_high || fIgnoreGate ) {
     fADC_Hel = ( fADC_hdata > fThreshold ) ? kPlus : kMinus;
-    if( fSign<0 )
-      fADC_Hel = ( fADC_Hel == kPlus ) ? kMinus : kPlus;
     ret = 1;
-  }
-
-  if (fDebug >= 3) {
-    cout << "ADC helicity info "<<endl;
-    cout << "Gate "<<fADC_Gate<<"  helic. bit "<<fADC_hdata;
-    cout << "    resulting helicity "<<fADC_Hel<<endl;
   }
 
   // fHelicity may be reassigned by derived classes, so we must keep the ADC
   // result separately. But within this class, the two are the same.
-  fHelicity = fADC_Hel;
+  if( fSign >= 0 )
+    fHelicity = fADC_Hel;
+  else
+    fHelicity = ( fADC_Hel == kPlus ) ? kMinus : kPlus;
+
+  if (fDebug >= 3) {
+    cout << "ADC helicity info "<<endl
+	 << "Gate "<<fADC_Gate<<"  helic. bit "<<fADC_hdata
+	 << "    ADC helicity "<<fADC_Hel
+	 << "    resulting helicity"<<fHelicity<<endl;
+  }
 
   return ret;
 }
