@@ -42,6 +42,7 @@
 #pragma link C++ class THaNonTrackingDetector+;
 #pragma link C++ class THaPidDetector+;
 #pragma link C++ class THaDetMap+;
+#pragma link C++ class THaDetMap::Module+;
 #pragma link C++ class THaScintillator+;
 #pragma link C++ class THaScintillator::DataDest+;
 #pragma link C++ class THaEvent+;
@@ -108,7 +109,7 @@
 #pragma link C++ class THaHelicityDet+;
 #pragma link C++ class THaADCHelicity+;
 #pragma link C++ class THaADCHelicity::ChanDef_t+;
-//#pragma link C++ class THaHelicity+;
+#pragma link C++ class THaHelicity+;
 #pragma link C++ class THaG0HelicityReader+;
 #pragma link C++ class THaG0HelicityReader::ROCinfo+;
 #pragma link C++ class THaG0Helicity+;
