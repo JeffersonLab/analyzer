@@ -12,6 +12,7 @@
 #include "Rtypes.h"
 
 class THaEvData;
+class TDatime;
 
 class THaG0HelicityReader {
   
@@ -32,30 +33,34 @@ protected:
   enum EROC { kHel = 0, kTime, kROC2, kROC3 };
   Int_t SetROCinfo( EROC which, Int_t roc, Int_t header, Int_t index );
 
-  void  ClearG0();
-
+  virtual void  Clear( Option_t* opt="" );
   virtual Int_t ReadData( const THaEvData& evdata );
+  Int_t         ReadDatabase( const char* dbfilename, const char* prefix,
+			      const TDatime& date, int debug_flag = 0 );
 
-  Int_t fPresentReading;       // Current helicity reading
-  Int_t fQrt, fGate;           // Current QRT and Gate
+  Int_t    fPresentReading;   // Current helicity reading
+  Int_t    fQrt;              // Current QRT
+  Int_t    fGate;             // Current gate
 
-  Double_t fTimestamp;         // Event time from 105 kHz clock
-  Double_t fOldT1, fOldT2, fOldT3;  // Last event's timestamps
-  Bool_t   fValidTime;         // fTimestamp valid
+  Double_t fTimestamp;        // Event time from 105 kHz clock
+  Double_t fOldT1;            // Last event's timestamps
+  Double_t fOldT2;
+  Double_t fOldT3;
+  Bool_t   fValidTime;        // fTimestamp valid
 
   // ROC information
   // If a header is zero the index is taken to be from the start of
   // the ROC (0 = first word of ROC), otherwise it's from the header
   // (0 = first word after header).
   struct ROCinfo {
-    Int_t roc;            // ROC to read out
-    Int_t header;         // Headers to search for (0 = ignore)
-    Int_t index;          // Index into buffer
+    Int_t  roc;               // ROC to read out
+    Int_t  header;            // Headers to search for (0 = ignore)
+    Int_t  index;             // Index into buffer
   };
-  ROCinfo fROCinfo[kROC3+1]; // Primary readouts and two redundant clocks
+  ROCinfo  fROCinfo[kROC3+1]; // Primary readouts and two redundant clocks
 
-  Bool_t fHaveROCs;       // Required ROCs are defined
-  Int_t  fG0Debug;        // Debug level
+  Bool_t   fHaveROCs;         // Required ROCs are defined
+  Int_t    fG0Debug;          // Debug level
 
 private:
 

@@ -6,6 +6,8 @@
 //
 // Helicity of the beam from G0 electronics in delayed mode
 //    +1 = plus,  -1 = minus,  0 = unknown
+//
+// Also supports in-time mode with delay = 0
 // 
 ////////////////////////////////////////////////////////////////////////
 
@@ -14,9 +16,6 @@
 #include "TH1F.h"
 #include "TMath.h"
 #include <iostream>
-#include <cstdio>
-#include <cmath>
-#include <vector>
 
 using namespace std;
 
@@ -89,29 +88,29 @@ Int_t THaG0Helicity::DefineVariables( EMode mode )
 //_____________________________________________________________________________
 Int_t THaG0Helicity::ReadDatabase( const TDatime& date )
 {
-  // Read parameters from database:  ROC info (detector map), G0 delay value
+  // Read parameters from database:  ROC info (detector map), G0 delay, etc.
 
-  static const char* const here = "ReadDatabase";
-
+  // Read general HelicityDet database values (e.g. fSign)
   Int_t st = THaHelicityDet::ReadDatabase( date );
   if( st != kOK )
     return st;
 
+  // Read G0 readout parameters (ROC addresses etc.)
+  st = THaG0HelicityReader::ReadDatabase( GetDBFileName(), GetPrefix(),
+					  date, fG0Debug );
+  if( st != kOK )
+    return st;
+
+  // Read parameters for the delayed-mode algorithm
   FILE* file = OpenFile( date );
   if( !file ) return kFileError;
 
-  EROC rocname[4] = { kHel, kTime, kROC2, kROC3 };
-  vector< vector<Int_t> > rocaddr(4); // helroc, timeroc, time2roc, time3roc
   Int_t    delay   = kDefaultDelay;
   Double_t tdavg   = kDefaultTdavg;
   Double_t ttol    = kDefaultTtol;
   Int_t    missqrt = kDefaultMissQ;
 
   DBRequest req[] = {
-    { "helroc",   &rocaddr[0], kIntV,   0, 0, -2 },
-    { "timeroc",  &rocaddr[1], kIntV,   0, 0, -2 },
-    { "time2roc", &rocaddr[2], kIntV,   0, 1, -2 },
-    { "time3roc", &rocaddr[3], kIntV,   0, 1, -2 },
     { "delay",    &delay,      kInt,    0, 1, -2 },
     { "tdavg",    &tdavg,      kDouble, 0, 1, -2 },
     { "ttol",     &ttol,       kDouble, 0, 1, -2 },
@@ -122,18 +121,6 @@ Int_t THaG0Helicity::ReadDatabase( const TDatime& date )
   fclose(file);
   if( st )
     return kInitError;
-
-  // TODO: implement reading into C-style arrays in LoadDB,
-  // then read fROCinfo directly
-  for( vector<Int_t>::size_type i = 0; i < rocaddr.size(); ++i ) {
-    vector<Int_t>& r = rocaddr[i];
-    if( r.size() >= 3 )
-      SetROCinfo( rocname[i], r[0], r[1], r[2] );
-  }
-  if( !fHaveROCs ) {
-    Error( Here(here), "Invalid ROC data. Fix database." );
-    return kInitError;
-  }
 
   // Manually set parameters take precedence over the database values.
   // This is meant for quick-and-dirty debugging.
@@ -170,7 +157,7 @@ void THaG0Helicity::Clear( Option_t* opt )
 
   THaHelicityDet::Clear(opt);
   fLastTimestamp = fTimestamp;
-  ClearG0();
+  THaG0HelicityReader::Clear(opt);
   fEvtype = fQuad = 0;
   fValidHel = kFALSE;
   fPresent_helicity = kUnknown;
@@ -181,8 +168,6 @@ Int_t THaG0Helicity::Decode( const THaEvData& evdata )
 {
   // Decode Helicity data.
   // Return 1 if helicity was assigned, 0 if not, <0 if error.
-
-  Clear();
 
   Int_t err = ReadData( evdata );
   if( err ) {
@@ -200,11 +185,16 @@ Int_t THaG0Helicity::Decode( const THaEvData& evdata )
     cout << "   time stamp " << fTimestamp << endl;
   }
 
-  TimingEvent();
-  QuadCalib();      
-  LoadHelicity();
+  if( fG0delay > 0 ) {
+    TimingEvent();
+    QuadCalib();      
+    LoadHelicity();
+  } 
+  else if( fGate != 0 ) {
+    fPresent_helicity = ( fPresentReading ) ? kPlus : kMinus;
+  }
 
-  if( fSign>=0 )
+  if( fSign >= 0 )
     fHelicity = fPresent_helicity;
   else
     fHelicity = ( fPresent_helicity == kPlus ) ? kMinus : kPlus;
