@@ -115,11 +115,11 @@ Int_t THaHelicity::Decode( const THaEvData& evdata )
   if( st < 0 )
     return st;
 
+  // Read G0 data
   st = ReadData( evdata );
   if( st < 0 )
     return st;
-
-  if( fGate != 0 )
+  if( fGate )
     fG0_Hel = ( fPresentReading ) ? kPlus : kMinus;
 
   // Test helicities for agreement
@@ -128,7 +128,7 @@ Int_t THaHelicity::Decode( const THaEvData& evdata )
 	       (fADC_Hel == kUnknown && fG0_Hel  != kUnknown) ||
 	       (fG0_Hel  == kUnknown && fADC_Hel != kUnknown) );
 
-  if( !fGoodHel && fDebug >= 1 ) {
+  if( (!fGoodHel && fDebug >= 2) || (!fGoodHel2 && fDebug >= 1) ) {
     Warning( Here("Decode"), "ADC and G0 helicities disagree: %d %d at "
 	     "evno = %d", fADC_Hel, fG0_Hel, evdata.GetEvNum() );
   }
