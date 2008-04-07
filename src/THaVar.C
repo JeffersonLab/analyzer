@@ -225,7 +225,7 @@ Double_t THaVar::GetValueFromObject( Int_t i ) const
     if( !fMethod ) {
       // No method ... get the data directly.
       // Compute location using the offset.
-      ULong64_t loc = (ULong64_t)obj + fOffset;
+      ULong_t loc = (ULong_t)obj + fOffset;
       if( !loc || (fType >= kDoubleP && (*(void**)loc == NULL )) )
 	return kInvalid;
       switch( fType ) {
