@@ -19,7 +19,7 @@ export DEBUG = 1
 SOVERSION  := 1.5
 PATCH   := 0
 VERSION := $(SOVERSION).$(PATCH)
-EXTVERS := -beta2
+EXTVERS := -beta3
 NAME    := analyzer-$(VERSION)
 VERCODE := $(shell echo $(subst ., ,$(SOVERSION)) $(PATCH) | awk '{ print $$1*65536 + $$2*256 + $$3 }')
 
