@@ -38,9 +38,9 @@ protected:
   Int_t         ReadDatabase( const char* dbfilename, const char* prefix,
 			      const TDatime& date, int debug_flag = 0 );
 
-  Int_t    fPresentReading;   // Current helicity reading
-  Int_t    fQrt;              // Current QRT
-  Int_t    fGate;             // Current gate
+  Bool_t   fPresentReading;   // Current helicity reading
+  Bool_t   fQrt;              // Current QRT
+  Bool_t   fGate;             // Current gate
 
   Double_t fTimestamp;        // Event time from 105 kHz clock
   Double_t fOldT1;            // Last event's timestamps
@@ -59,14 +59,15 @@ protected:
   };
   ROCinfo  fROCinfo[kROC3+1]; // Primary readouts and two redundant clocks
 
-  Bool_t   fHaveROCs;         // Required ROCs are defined
   Int_t    fG0Debug;          // Debug level
+  Bool_t   fHaveROCs;         // Required ROCs are defined
+  Bool_t   fNegGate;          // Invert polarity of gate, so that 0=active
 
 private:
 
   static Int_t FindWord( const THaEvData& evdata, const ROCinfo& info );
 
-  ClassDef(THaG0HelicityReader,1) // Helper class for reading G0 helicity data
+  ClassDef(THaG0HelicityReader,2) // Helper class for reading G0 helicity data
 
 };
 

@@ -20,8 +20,8 @@ using namespace std;
 //____________________________________________________________________
 THaG0HelicityReader::THaG0HelicityReader() :
   fPresentReading(0), fQrt(0), fGate(0), fTimestamp(0),
-  fOldT1(-1.0), fOldT2(-1.0), fOldT3(-1.0), fValidTime(kFALSE),
-  fHaveROCs(kFALSE), fG0Debug(0)
+  fOldT1(-1.0), fOldT2(-1.0), fOldT3(-1.0), fValidTime(false),
+  fG0Debug(0), fHaveROCs(false), fNegGate(false)
 {
   // Default constructor
 
@@ -39,7 +39,7 @@ void THaG0HelicityReader::Clear( Option_t* )
 {
   fPresentReading = fQrt = fGate = 0;
   fTimestamp = 0.0;
-  fValidTime = kFALSE;
+  fValidTime = false;
 }
 
 //____________________________________________________________________
@@ -76,12 +76,13 @@ Int_t THaG0HelicityReader::ReadDatabase( const char* dbfilename,
 
   EROC rocname[4] = { kHel, kTime, kROC2, kROC3 };
   vector< vector<Int_t> > rocaddr(4); // helroc, timeroc, time2roc, time3roc
-
+  Int_t invert_gate = 0;
   DBRequest req[] = {
-    { "helroc",   &rocaddr[0], kIntV,   0, 0, -2 },
-    { "timeroc",  &rocaddr[1], kIntV,   0, 0, -2 },
-    { "time2roc", &rocaddr[2], kIntV,   0, 1, -2 },
-    { "time3roc", &rocaddr[3], kIntV,   0, 1, -2 },
+    { "helroc",      &rocaddr[0],  kIntV,   0, 0, -2 },
+    { "timeroc",     &rocaddr[1],  kIntV,   0, 0, -2 },
+    { "time2roc",    &rocaddr[2],  kIntV,   0, 1, -2 },
+    { "time3roc",    &rocaddr[3],  kIntV,   0, 1, -2 },
+    { "invert_gate", &invert_gate, kInt,    0, 1, -2 },
     { 0 }
   };
   Int_t st = THaAnalysisObject::LoadDB( file, date, req, prefix );
@@ -101,6 +102,9 @@ Int_t THaG0HelicityReader::ReadDatabase( const char* dbfilename,
     ::Error( here, "Invalid ROC data. Fix database." );
     return THaAnalysisObject::kInitError;
   }
+
+  fNegGate = (invert_gate != 0);
+
   return THaAnalysisObject::kOK;
 }
 
@@ -133,10 +137,14 @@ Int_t THaG0HelicityReader::ReadData( const THaEvData& evdata )
   }
 
   Int_t data = evdata.GetRawData( hroc, ihel );   
-  fPresentReading = (data & 0x10) >> 4;
-  fQrt            = (data & 0x20) >> 5;
-  fGate           = (data & 0x40) >> 6;
+  fPresentReading = ((data & 0x10) != 0);
+  fQrt            = ((data & 0x20) != 0);
+  fGate           = ((data & 0x40) != 0);
   fTimestamp = static_cast<Double_t>( evdata.GetRawData( hroc, itime) );
+
+  // Invert the gate polarity if requested
+  if( fNegGate )
+    fGate = !fGate;
 
   // Look for redundant clock info and patch up time if it appears wrong
 
@@ -169,16 +177,7 @@ Int_t THaG0HelicityReader::ReadData( const THaEvData& evdata )
     }
   }
        
-  fValidTime = kTRUE;
-
-  if (fG0Debug >= 3) {
-    cout << dec << "-->  evtype " << evdata.GetEvType()
-	 << "  helicity " << fPresentReading
-	 << "  qrt " << fQrt
-	 << " gate " << fGate
-	 << "   time stamp " << fTimestamp 
-	 << endl;
-  }
+  fValidTime = true;
 
   return 0;
 }

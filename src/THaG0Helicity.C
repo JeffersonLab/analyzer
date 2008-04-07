@@ -190,7 +190,7 @@ Int_t THaG0Helicity::Decode( const THaEvData& evdata )
     QuadCalib();      
     LoadHelicity();
   } 
-  else if( fGate != 0 ) {
+  else if( fGate ) {
     fPresent_helicity = ( fPresentReading ) ? kPlus : kMinus;
   }
 
@@ -328,7 +328,7 @@ void THaG0Helicity::TimingEvent()
 		 "%f at %f.", tdiff, fTETime);
     }
   ++fTET9Index;
-  if (fQrt == 1) {
+  if (fQrt) {
     if (fTET9Index != 4 && !fTEStartup)
       Warning("THaG0Helicity", "QRT wrong spacing: %d at %f.", 
 	      fTET9Index, fTETime);
@@ -346,7 +346,7 @@ void THaG0Helicity::TimingEvent()
 	      fTET9Index == 3))
 	Warning( Here(here), "Wrong helicity pattern: "
 		 "%d in window 1, %d in window %d at timestamp %f.",
-		 fTEPresentReadingQ1, fPresentReading, (fTET9Index+1), fTETime);
+	 fTEPresentReadingQ1, fPresentReading, (fTET9Index+1), fTETime);
   }
   // Now push back information
   fTELastTime = fTETime;
@@ -376,7 +376,7 @@ void THaG0Helicity::QuadCalib()
     }
   }
    
-  if (fEvtype != 9 && fGate == 0) return;
+  if (fEvtype != 9 && !fGate) return;
 
   fTdiff = fTimestamp - fT0;
   if (fDebug >= 3) {
@@ -395,12 +395,10 @@ void THaG0Helicity::QuadCalib()
 	    "at timestamp %f, tdiff %f", nqmiss, fTimestamp, fTdiff );
     if (fQuad_calibrated && nqmiss < fMaxMissed) {
       for (Int_t i = 0; i < nqmiss; i++) {
-	if (fQrt == 1 && fT9 > 0 
-	    && fTimestamp - fT9 < 8*fTdavg) 
-	  {
-	    fT0 = TMath::Floor((fTimestamp-fT9)/(.25*fTdavg))
-	      *(.25*fTdavg) + fT9;
-	    fT0T9 = kTRUE;
+	if (fQrt && fT9 > 0 && fTimestamp - fT9 < 8*fTdavg) {
+	  fT0 = TMath::Floor((fTimestamp-fT9)/(.25*fTdavg))
+	    *(.25*fTdavg) + fT9;
+	  fT0T9 = kTRUE;
 	  }
 	else {
 	  fT0 += fTdavg;
@@ -419,7 +417,8 @@ void THaG0Helicity::QuadCalib()
       }
       fTdiff = fTimestamp - fT0;
     } else { 
-      Warning( Here(here), "Cannot recover: Too many skipped QRT (Low rate ?) or uninitialized" );
+      Warning( Here(here), "Cannot recover: Too many skipped QRT (Low rate ?) "
+	       "or uninitialized" );
       fNqrt += nqmiss; // advance counter for later check
       fT0 += nqmiss*fTdavg;
       fRecovery_flag = kTRUE;    // clear & recalibrate the predictor
@@ -427,7 +426,7 @@ void THaG0Helicity::QuadCalib()
       fFirstquad = 1;
     }
   }
-  if (fQrt == 1  && fFirstquad == 1) {
+  if (fQrt && fFirstquad == 1) {
     fT0 = fTimestamp;
     fT0T9 = kFALSE;
     fFirstquad = 0;
@@ -435,7 +434,7 @@ void THaG0Helicity::QuadCalib()
 
   // Check for QRT at anomalous separations
 
-  if (fEvtype == 9 && fQrt == 1) {
+  if (fEvtype == 9 && fQrt) {
     if (fTimeLastQ1 > 0) {
       Double_t q1tdiff = fmod(fTimestamp - fTimeLastQ1,fTdavg);
       if (q1tdiff > .1*fTdavg)
@@ -446,7 +445,7 @@ void THaG0Helicity::QuadCalib()
     fTimeLastQ1 = fTimestamp;
   }
 
-  if (fQrt == 1) 
+  if (fQrt) 
     fT9count = 0;
 
   // The most solid predictor of a new helicity window:
@@ -455,7 +454,7 @@ void THaG0Helicity::QuadCalib()
   // when a new Qrt is found. And frequently the evt9 came immediately
   // BEFORE the Qrt.
   // NOTE: missing QRT's are already handled by the 'nmissq' section above
-  if ( ( fTdiff > 0.5*fTdavg ) && ( fQrt == 1 ) ) {
+  if ( ( fTdiff > 0.5*fTdavg ) && fQrt ) {
     if (fDebug >= 3) 
       Info(Here(here),"found qrt ");
 
@@ -499,7 +498,7 @@ void THaG0Helicity::QuadCalib()
     }
     if (fDebug>=3) {
       Info(Here(here), "%5d  %1d  %1d %1d %2d  %10.0f  %10.0f  %10.0f",fNqrt,
-	   fEvtype,fQrt,fQ1_reading,fQ1_present_helicity,fTimestamp,fT0,fTdiff);
+	 fEvtype,fQrt,fQ1_reading,fQ1_present_helicity,fTimestamp,fT0,fTdiff);
     }
     if (fDebug==-1) { // Only used during an initial calibration.
       cout << fTdiff<<endl;
@@ -523,7 +522,7 @@ void THaG0Helicity::LoadHelicity()
 
   if ( fQuad_calibrated ) 
     fValidHel = kTRUE;
-  if ( !fQuad_calibrated  || fGate == 0 ) {
+  if ( !fQuad_calibrated  || !fGate ) {
     fPresent_helicity = kUnknown;
     return;
   }
@@ -532,7 +531,7 @@ void THaG0Helicity::LoadHelicity()
   // Look for pattern (+ - - +)  or (- + + -) to decide where in quad
   // Ignore timing for assignment, but later we'll check it.
   fInquad = 0;
-  if (fQrt == 1) {
+  if (fQrt) {
     fInquad = 1;  
     if (fPresentReading != fQ1_reading) {
       Warning( Here(here), "Invalid bit pattern !! "
@@ -540,12 +539,10 @@ void THaG0Helicity::LoadHelicity()
 	       "%f.\nHELICITY ASSIGNMENT MAY BE INCORRECT", fTimestamp);
     }
   }
-  if (fQrt == 0 &&
-      fPresentReading != fQ1_reading) {
+  if (!fQrt && fPresentReading != fQ1_reading) {
     fInquad = 2;  // same is inquad = 3
   }
-  if (fQrt == 0 &&
-      fPresentReading == fQ1_reading) {
+  if (!fQrt && fPresentReading == fQ1_reading) {
     fInquad = 4;  
   }
   if (fInquad == 0) {

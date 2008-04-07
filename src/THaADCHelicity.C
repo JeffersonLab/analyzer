@@ -71,12 +71,13 @@ Int_t THaADCHelicity::ReadDatabase( const TDatime& date )
 
   vector<Int_t> heldef, gatedef;
   fThreshold  = kDefaultThreshold;
-  Int_t ignore_gate = -1;
+  Int_t ignore_gate = -1, invert_gate = 0;
   const  DBRequest request[] = {
     { "helchan",      &heldef,       kIntV,   0, 0, -2 },
     { "gatechan",     &gatedef,      kIntV,   0, 1, -2 },
     { "threshold",    &fThreshold,   kDouble, 0, 1, -2 },
     { "ignore_gate",  &ignore_gate,  kInt,    0, 1, -2 },
+    { "invert_gate",  &invert_gate,  kInt,    0, 1, -2 },
     { 0 }
   };
   // Database keys are prefixed with this detector's name, not apparatus.name
@@ -116,6 +117,8 @@ Int_t THaADCHelicity::ReadDatabase( const TDatime& date )
   if( !gatedef.empty() )
     memcpy( fAddr+1, &gatedef[0], 3*sizeof(Int_t) );
     
+  fInvertGate = (invert_gate != 0);
+
   fIsInit = true;
   return kOK;
 }
@@ -172,7 +175,7 @@ Int_t THaADCHelicity::Decode( const THaEvData& evdata )
       break;
     case 1:
       fADC_Gate = data;
-      gate_high = ( data > fThreshold );
+      gate_high = fInvertGate ? (data < fThreshold) : (data >= fThreshold);
       break;
     }
   }
@@ -181,7 +184,7 @@ Int_t THaADCHelicity::Decode( const THaEvData& evdata )
   // (or we are ingoring the gate) then helicity is determined by 
   // the helicity bit.
   if( gate_high || fIgnoreGate ) {
-    fADC_Hel = ( fADC_hdata > fThreshold ) ? kPlus : kMinus;
+    fADC_Hel = ( fADC_hdata >= fThreshold ) ? kPlus : kMinus;
     ret = 1;
   }
 

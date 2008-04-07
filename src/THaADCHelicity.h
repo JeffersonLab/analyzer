@@ -33,6 +33,7 @@ protected:
 
   Double_t   fThreshold;  // Min ADC amplitude required for Hel = Plus
   Bool_t     fIgnoreGate; // Ignore the gate info and always assign helicity
+  Bool_t     fInvertGate; // Invert polarity of gate signal, so that 0=active
 
   // Simplified detector map for the two data channels
   struct ChanDef_t {
