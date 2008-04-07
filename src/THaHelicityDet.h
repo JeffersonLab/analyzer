@@ -23,7 +23,8 @@ public:
 
   virtual ~THaHelicityDet();
 
-  virtual void       Clear( Option_t* opt="" ) { fHelicity = kUnknown; }
+  virtual void       Clear( Option_t* opt="" ) 
+  { THaDetector::Clear(opt); fHelicity = kUnknown; }
   virtual EHelicity  GetHelicity()   const { return fHelicity; }
   virtual Bool_t     HelicityValid() const { return (fHelicity != kUnknown); }
 

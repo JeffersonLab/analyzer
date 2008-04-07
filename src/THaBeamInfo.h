@@ -14,11 +14,13 @@ class THaBeamInfo {
 public:
   THaBeamInfo() : fPosition(kBig,kBig,kBig), fPvect(kBig,kBig,kBig), fPol(0.0),
 		  fOK(0), fBeam(0) {}
-  THaBeamInfo( const TVector3& pvect, const TVector3& position, Double_t pol = 0.0 ) 
+  THaBeamInfo( const TVector3& pvect, const TVector3& position, 
+	       Double_t pol = 0.0 ) 
     : fPosition(position), fPvect(pvect), fPol(pol), fOK(1), fBeam(0) {}
   THaBeamInfo( Double_t p, const TVector3& vect, const TVector3& position, 
 	       Double_t pol = 0.0 ) 
-    : fPosition(position), fPvect(vect), fPol(pol), fOK(1), fBeam(0) { SetP(p); }
+    : fPosition(position), fPvect(vect), fPol(pol), fOK(1), fBeam(0)
+  { SetP(p); }
 
   THaBeamInfo( const THaBeamInfo& t ) :
     fPosition(t.fPosition), fPvect(t.fPvect), fPol(t.fPol), fOK(t.fOK),
@@ -35,11 +37,7 @@ public:
   }
   virtual ~THaBeamInfo() {}
 
-  void      Clear( Option_t* opt="" ) { 
-    fPvect.SetXYZ(kBig,kBig,kBig); fPosition.SetXYZ(kBig,kBig,kBig);
-    fPol = 0.0; fOK = 0; 
-  }
-
+  void      Clear( Option_t* opt="" );
   Bool_t    IsOK()     const { return fOK; }
   Double_t  GetPx()    const { return fPvect.X(); }
   Double_t  GetPy()    const { return fPvect.Y(); }
@@ -86,6 +84,15 @@ private:
   ClassDef(THaBeamInfo,1)  // Beam information for physics modules
 };
 
+//_____________________________________________________________________________
+inline
+void THaBeamInfo::Clear( Option_t* )
+{
+  fPvect.SetXYZ(kBig,kBig,kBig);
+  fPosition.SetXYZ(kBig,kBig,kBig);
+  fPol = 0.0;
+  fOK = 0; 
+}
 
 #endif
 
