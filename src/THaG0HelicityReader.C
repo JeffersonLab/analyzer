@@ -82,7 +82,7 @@ Int_t THaG0HelicityReader::ReadDatabase( const char* dbfilename,
     { "timeroc",     &rocaddr[1],  kIntV,   0, 0, -2 },
     { "time2roc",    &rocaddr[2],  kIntV,   0, 1, -2 },
     { "time3roc",    &rocaddr[3],  kIntV,   0, 1, -2 },
-    { "invert_gate", &invert_gate, kInt,    0, 1, -2 },
+    { "neg_g0_gate", &invert_gate, kInt,    0, 1, -2 },
     { 0 }
   };
   Int_t st = THaAnalysisObject::LoadDB( file, date, req, prefix );
