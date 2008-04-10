@@ -72,13 +72,10 @@ THaAnalysisObject::~THaAnalysisObject()
 
   if (fgModules) {
     fgModules->Remove( this );
-    if( fgModules->GetSize() == 0 ) {
+    if( fgModules->GetSize() == 0 )
       delete fgModules; fgModules = 0;
-    }
   }
-  if (fPrefix) {
-    delete [] fPrefix; fPrefix = 0;
-  }
+  delete [] fPrefix; fPrefix = 0;
 }
 
 //_____________________________________________________________________________
@@ -146,9 +143,8 @@ Int_t THaAnalysisObject::DefineVarsFromList( const void* list,
     if( mode == kDefine )
       action = "defined";
     else if( mode == kDelete )
-      action = "deleted (this is safe when exitting)";
-    ::Warning( "DefineVariables", 
-	     "No global variable list found. No variables %s.", 
+      action = "deleted (this is safe when exiting)";
+    ::Warning( here, "No global variable list found. No variables %s.", 
 	     action.Data() );
     return (mode==kDefine ? kInitError : kOK);
   }
@@ -320,7 +316,7 @@ vector<string> THaAnalysisObject::GetDBFileList( const char* name,
   filename = "db_";
   filename += name;
   // Make sure that "name" ends with a dot. If not, add one.
-  if( filename[ filename.length()-1 ] != '.' )
+  if( *filename.rbegin() != '.' )
     filename += '.';
   filename += "dat";
 
@@ -381,8 +377,7 @@ THaAnalysisObject::EStatus THaAnalysisObject::Init()
 {
   // Initialize this object for current time. See Init(date) below.
 
-  TDatime now;
-  return Init(now);
+  return Init( TDatime() );
 }
 
 //_____________________________________________________________________________
@@ -483,13 +478,12 @@ void THaAnalysisObject::MakePrefix( const char* basename )
     fPrefix = new char[ strlen(basename) + strlen(GetName()) + 3 ];
     strcpy( fPrefix, basename );
     strcat( fPrefix, "." );
-    strcat( fPrefix, GetName() );
-    strcat( fPrefix, "." );
   } else {
     fPrefix = new char[ strlen(GetName()) + 2 ];
-    strcpy( fPrefix, GetName() );
-    strcat( fPrefix, "." );
+    *fPrefix = 0;
   }
+  strcat( fPrefix, GetName() );
+  strcat( fPrefix, "." );
 }
 
 //_____________________________________________________________________________
@@ -582,11 +576,13 @@ Int_t THaAnalysisObject::ReadRunDatabase( const TDatime& date )
   // Default run database reader. Reads one value, <prefix>.config, into 
   // fConfig. This value is optional; if not found, fConfig is empty.
 
+  if( !fPrefix ) return kInitError;
+
   FILE* file = OpenRunDBFile( date );
   if( !file ) return kFileError;
 
-  string name(fPrefix); name.append("config");
-  Int_t ret = LoadDBvalue( file, date, name.c_str(), fConfig );
+  TString name(fPrefix); name.Append("config");
+  Int_t ret = LoadDBvalue( file, date, name, fConfig );
   fclose(file);
 
   if( ret == -1 ) return kFileError;
@@ -894,7 +890,7 @@ Int_t THaAnalysisObject::LoadDBvalue( FILE* file, const TDatime& date,
     if( len >= LEN-1 ) {
       LEN *= 2;
       if( LEN > MAX ) {
-	buf[72] = 0;
+	buf[72] = 0;  // Only show first 72 chars of line in error message
 	errtxt = buf;
       }
       delete [] buf;
@@ -911,11 +907,17 @@ Int_t THaAnalysisObject::LoadDBvalue( FILE* file, const TDatime& date,
     string line(buf), value;
     // Determine status of the current line (continued or not)
     Int_t status = TrimDBline( line, value ), cur_status = status;
+    // Blank lines end continuation, unless continuation in progress in which
+    // case the empty line finishes the string
     if( len < 2 || ( !multi_line && status == 1 && value.empty() )) {
       not_prev_cont = true;
       multi_line = false;
       continue;
     }
+    // Pure comment lines in the middle of a continuation do nothing at all
+    if(  multi_line && status == 1 && value.empty() &&
+	 line.find('#') != string::npos )
+      continue;
     if( !ignore && ( multi_line || ( not_prev_cont && 
 		 (status = IsDBkey( line, key, value )) != 0 ) )) {
       if( status > 0 ) {
@@ -937,7 +939,7 @@ Int_t THaAnalysisObject::LoadDBvalue( FILE* file, const TDatime& date,
   }
   delete [] buf;
   if( errno ) {
-    perror( "THaAnalysisObject::LoadDBvalue()" );
+    perror( "THaAnalysisObject::LoadDBvalue" );
     return -1;
   }
   return found ? 0 : 1;
