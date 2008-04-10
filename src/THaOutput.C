@@ -425,7 +425,6 @@ Int_t THaOutput::Init( const char* filename )
     sfvary = (*ihist)->GetVarY();
     for (Iter_f_t iform = fFormulas.begin(); iform != fFormulas.end(); iform++) {
       THaString stemp((*iform)->GetName());
-      //FIXME: SetX(), SetY() and SetCut() create copies! Really needed?
       if (sfvarx.CmpNoCase(stemp) == 0) { 
 	(*ihist)->SetX(*iform);
       }
@@ -898,7 +897,6 @@ Int_t THaOutput::LoadFile( const char* filename )
 {
   // Process the file that defines the output
   
-  Int_t idx;
   if( !filename || !*filename || strspn(filename," ") == strlen(filename) ) {
     ::Error( "THaOutput::LoadFile", "invalid file name, "
 	     "no output definition loaded" );
@@ -963,18 +961,21 @@ Int_t THaOutput::LoadFile( const char* filename )
 	  }
           fHistos.push_back(
 	     new THaVhist(strvect[0],sname,stitle));
-          idx = (long)fHistos.size()-1;
 // Tentatively assign variables and cuts as strings. 
 // Later will check if they are actually THaVform's.
-          fHistos[idx]->SetX(nx, xlo, xhi, sfvarx);
+          fHistos.back()->SetX(nx, xlo, xhi, sfvarx);
           if (ikey == kH2f || ikey == kH2d) {
-            fHistos[idx]->SetY(ny, ylo, yhi, sfvary);
+            fHistos.back()->SetY(ny, ylo, yhi, sfvary);
 	  }
-          if (iscut != fgNocut) fHistos[idx]->SetCut(scut);
+          if (iscut != fgNocut) fHistos.back()->SetCut(scut);
           break;
       case kBlock:
-	// Do not strip brackets for block regexps
-	  BuildBlock(strvect[1]);
+	  // Do not strip brackets for block regexps: use strvect[1] not sname
+	  if( BuildBlock(strvect[1]) == 0 ) {
+	    cout << "\nTHaOutput::Init: WARNING: Block ";
+	    cout << strvect[1] << " does not match any variables. " << endl;
+	    cout << "There is probably a typo error... "<<endl;
+	  }
 	  break;
       case kBegin:
       case kEnd:
