@@ -147,7 +147,8 @@ protected:
 					   EType type, EMode mode,
 					   const char* var_prefix="" ) const;
 
-  THaAnalysisObject* FindModule( const char* name, const char* classname );
+  THaAnalysisObject* FindModule( const char* name, const char* classname,
+				 bool do_error = true );
 
   virtual const char*  Here( const char* ) const;
           void         MakePrefix( const char* basename );
@@ -168,12 +169,12 @@ protected:
   // Only derived classes may construct
   THaAnalysisObject( const char* name, const char* description );
 
-  static TList* fgModules;    // List of all currently existing Analysis Modules
-
 private:
   // Prevent default construction, copying, assignment
   THaAnalysisObject( const THaAnalysisObject& );
   THaAnalysisObject& operator=( const THaAnalysisObject& );
+
+  static TList* fgModules;  // List of all currently existing Analysis Modules
 
   ClassDef(THaAnalysisObject,1)   //ABC for a data analysis object
 };

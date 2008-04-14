@@ -192,43 +192,54 @@ Int_t THaAnalysisObject::End( THaRunBase* run )
 
 //_____________________________________________________________________________
 THaAnalysisObject* THaAnalysisObject::FindModule( const char* name,
-						  const char* classname )
+						  const char* classname,
+						  bool do_error )
 {
   // Locate the object 'name' in the global list of Analysis Modules 
   // and check if it inherits from 'classname' (if given), and whether 
   // it is properly initialized.
-  // Return pointer to valid object, else return NULL and set fStatus.
+  // Return pointer to valid object, else return NULL.
+  // If do_error == true (default), also print error message and set fStatus
+  // to kInitError.
+  // If do_error == false, do not test if object is initialized.
 
   static const char* const here = "FindModule()";
   static const char* const anaobj = "THaAnalysisObject";
 
   EStatus save_status = fStatus;
-  fStatus = kInitError;
+  if( do_error )
+    fStatus = kInitError;
   if( !name || !*name ) {
-    Error( Here(here), "No module name given." );
+    if( do_error )
+      Error( Here(here), "No module name given." );
     return NULL;
   }
   TObject* obj = fgModules->FindObject( name );
   if( !obj ) {
-    Error( Here(here), "Module %s does not exist.", name );
+    if( do_error )
+      Error( Here(here), "Module %s does not exist.", name );
     return NULL;
   }
   if( !obj->IsA()->InheritsFrom( anaobj )) {
-    Error( Here(here), "Module %s (%s) is not a %s.",
-	   obj->GetName(), obj->GetTitle(), anaobj );
+    if( do_error )
+      Error( Here(here), "Module %s (%s) is not a %s.",
+	     obj->GetName(), obj->GetTitle(), anaobj );
     return NULL;
   }
   if( classname && *classname && strcmp(classname,anaobj) &&
       !obj->IsA()->InheritsFrom( classname )) {
-    Error( Here(here), "Module %s (%s) is not a %s.",
-	   obj->GetName(), obj->GetTitle(), classname );
+    if( do_error )
+      Error( Here(here), "Module %s (%s) is not a %s.",
+	     obj->GetName(), obj->GetTitle(), classname );
     return NULL;
   }
   THaAnalysisObject* aobj = static_cast<THaAnalysisObject*>( obj );
-  if( !aobj->IsOK() ) {
-    Error( Here(here), "Module %s (%s) not initialized.",
-	   obj->GetName(), obj->GetTitle() );
-    return NULL;
+  if( do_error ) {
+    if( !aobj->IsOK() ) {
+      Error( Here(here), "Module %s (%s) not initialized.",
+	     obj->GetName(), obj->GetTitle() );
+      return NULL;
+    }
   }
   fStatus = save_status;
   return aobj;
