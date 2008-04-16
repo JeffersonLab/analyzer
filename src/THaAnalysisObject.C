@@ -72,8 +72,10 @@ THaAnalysisObject::~THaAnalysisObject()
 
   if (fgModules) {
     fgModules->Remove( this );
-    if( fgModules->GetSize() == 0 )
-      delete fgModules; fgModules = 0;
+    if( fgModules->GetSize() == 0 ) {
+      delete fgModules;
+      fgModules = 0;
+    }
   }
   delete [] fPrefix; fPrefix = 0;
 }
