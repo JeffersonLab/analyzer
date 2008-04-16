@@ -14,8 +14,15 @@
 using namespace std;
 
 //_____________________________________________________________________________
-THaCodaRun::THaCodaRun( const char* description ) : 
-  THaRunBase(description), fCodaData(NULL)
+THaCodaRun::THaCodaRun( const char* description )
+  : THaRunBase(description), fCodaData(NULL)
+{
+  // Normal & default constructor
+}
+
+//_____________________________________________________________________________
+THaCodaRun::THaCodaRun( const THaCodaRun& rhs )
+  : THaRunBase(rhs), fCodaData(NULL)
 {
   // Normal & default constructor
 }
