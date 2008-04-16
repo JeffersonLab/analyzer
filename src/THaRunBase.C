@@ -13,7 +13,6 @@
 #include "THaEvData.h"
 #include "TClass.h"
 #include <iostream>
-#include <climits>
 #if ROOT_VERSION_CODE < ROOT_VERSION(3,1,6)
 #include <ctime>
 #endif
@@ -164,27 +163,30 @@ bool THaRunBase::operator>=( const THaRunBase& rhs ) const
 //_____________________________________________________________________________
 void THaRunBase::Clear( const Option_t* opt )
 {
-  // Reset the run object.
+  // Reset the run object as if freshly constructed.
+  // However, when opt=="INIT", keep an explicitly set event range and run date
 
   TString sopt(opt);
   bool doing_init = (sopt == "INIT");
 
+  Close();
+  fName = NOTINIT;
   fNumber = -1;
   fType = 0;
   fNumAnalyzed = 0;
   fDBRead = fIsInit = fOpened = kFALSE;
   fDataSet = fDataRead = 0;
   fParam->Clear(opt);
-  if ( fAssumeDate )
+
+  // If initializing and the date was explicitly set, keep the date
+  if( doing_init && fAssumeDate )
     SetDate(fDate);
-  
-  if( doing_init ) {
-    if( !fAssumeDate )
-      ClearDate();
-  } else {
-    fName = NOTINIT;
+  else
+    ClearDate();
+
+  // Likewise, if initializing, keep any explicitly set event range
+  if( !doing_init ) {
     ClearEventRange();
-    Close();
   }
 }
 
@@ -204,7 +206,7 @@ void THaRunBase::ClearEventRange()
   // Reset the range of events to analyze
 
   fEvtRange[0] = 1;
-  fEvtRange[1] = UINT_MAX;
+  fEvtRange[1] = kMaxUInt;
 }
 
 //_____________________________________________________________________________
@@ -253,6 +255,9 @@ Int_t THaRunBase::Init()
   if( !fParam )
     fParam = new THaRunParameters;
 
+  // Clear selected parameters (matters for re-init)
+  Clear("INIT");
+
   // Open the data source.
   Int_t retval = 0;
   if( !IsOpen() ) {
@@ -260,9 +265,6 @@ Int_t THaRunBase::Init()
     if( retval )
       return retval;
   }
-
-  // Clear selected parameters (matters for re-init)
-  Clear("INIT");
 
   // Get initial information - e.g., prescan the data source for
   // the required run date

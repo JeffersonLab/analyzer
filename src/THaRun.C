@@ -14,7 +14,11 @@
 #include "THaGlobals.h"
 #include "TClass.h"
 #include "TError.h"
+#include "TSystem.h"
+#include "TRegexp.h"
 #include <iostream>
+#include <cstdlib>
+#include <cassert>
 
 using namespace std;
 
@@ -51,7 +55,7 @@ THaRun& THaRun::operator=(const THaRunBase& rhs)
 
   if (this != &rhs) {
      THaCodaRun::operator=(rhs);
-     //     delete fCodaData; //already done in THaRunBase
+     //     delete fCodaData; //already done in THaCodaRun
      fCodaData   = new THaCodaFile;
      if( rhs.InheritsFrom(fgThisClass) ) {
        fFilename   = static_cast<const THaRun&>(rhs).fFilename;
@@ -63,77 +67,6 @@ THaRun& THaRun::operator=(const THaRunBase& rhs)
      }
   }
   return *this;
-}
-
-//_____________________________________________________________________________
-bool THaRun::operator==( const THaRunBase& rhs ) const
-{
-  if( THaCodaRun::operator!=(rhs) )
-    return false;
-
-  if(rhs.InheritsFrom(fgThisClass) &&
-     fSegment != static_cast<const THaRun&>(rhs).fSegment )
-    return false;
-
-  return true;
-}
-
-//_____________________________________________________________________________
-bool THaRun::operator!=( const THaRunBase& rhs ) const
-{
-  return ! (*this==(rhs));
-}
-
-//_____________________________________________________________________________
-bool THaRun::operator<( const THaRunBase& rhs ) const
-{
-  if( THaCodaRun::operator<(rhs) )
-    return true;
-
-  if( THaCodaRun::operator==(rhs) && rhs.InheritsFrom(fgThisClass) &&
-      fSegment < static_cast<const THaRun&>(rhs).fSegment )
-    return true;
-
-  return false;
-}
-
-//_____________________________________________________________________________
-bool THaRun::operator>( const THaRunBase& rhs ) const
-{
-  if( THaCodaRun::operator>(rhs) )
-    return true;
-
-  if( THaCodaRun::operator==(rhs) && rhs.InheritsFrom(fgThisClass) &&
-      fSegment > static_cast<const THaRun&>(rhs).fSegment )
-    return true;
-
-  return false;
-}
-
-//_____________________________________________________________________________
-bool THaRun::operator<=( const THaRunBase& rhs ) const
-{
-  if( THaCodaRun::operator<(rhs) )
-    return true;
-
-  if( THaCodaRun::operator==(rhs) && rhs.InheritsFrom(fgThisClass) &&
-      fSegment <= static_cast<const THaRun&>(rhs).fSegment )
-    return true;
-
-  return false;
-}
-
-//_____________________________________________________________________________
-bool THaRun::operator>=( const THaRunBase& rhs ) const
-{
-  if( THaCodaRun::operator>(rhs) )
-    return true;
-
-  if( THaCodaRun::operator==(rhs) && rhs.InheritsFrom(fgThisClass) &&
-      fSegment >= static_cast<const THaRun&>(rhs).fSegment )
-    return true;
-
-  return false;
 }
 
 //_____________________________________________________________________________
@@ -151,23 +84,11 @@ void THaRun::Clear( const Option_t* opt )
   TString sopt(opt);
   bool doing_init = (sopt == "INIT");
 
-  // Reset the entire run object EXCEPT when initializing a continuation
-  // segment of a run. 
-  // NB: Segment files in Hall A do not have header info, and so it would be 
-  // difficult to initialize them on their own. Continuation segment run objects
-  // should be created as copies of the initialized first segment, followed by
-  // setting the file name.
+  THaCodaRun::Clear(opt);
 
-  if( !doing_init || fSegment==0 )
-    THaCodaRun::Clear(opt);
-
+  // If initializing, keep explicitly set fMaxScan
   if( !doing_init )
     fMaxScan = fgMaxScan;
-
-  // Disable scanning for continuation segments - Hall A continuation runs
-  // have no headers.
-  if( fSegment>0 )
-    fMaxScan = 0;
 }
 
 //_____________________________________________________________________________
@@ -181,7 +102,11 @@ Int_t THaRun::Compare( const TObject* obj ) const
   const THaRunBase* rhs = dynamic_cast<const THaRunBase*>(obj);
   if( !rhs ) return -1;
   if( *this < *rhs )       return -1;
-  else if( *this > *rhs )  return  1;
+  else if( *rhs < *this )  return  1;
+  const THaRun* rhsr = dynamic_cast<const THaRun*>(rhs);
+  if( !rhsr ) return 0;
+  if( fSegment < rhsr->fSegment ) return -1;
+  else if( rhsr->fSegment < fSegment ) return 1;
   return 0;
 }
 
@@ -222,42 +147,88 @@ Int_t THaRun::ReadInitInfo()
 
   // If pre-scanning of the data file requested, read up to fMaxScan events
   // and extract run parameters from the data.
+  Int_t status = S_SUCCESS;
   if( fMaxScan > 0 ) {
-    UInt_t wanted_info = kDate|kRunNumber|kRunType|kPrescales;
-    THaEvData* evdata = static_cast<THaEvData*>(gHaDecoder->New());
-    // Disable advanced processing
-    evdata->EnableScalers(kFALSE);
-    UInt_t nev = 0;
-    Int_t status = S_SUCCESS;
-    while( nev<fMaxScan && !HasInfo(wanted_info) && 
-	   (status = ReadEvent()) == S_SUCCESS ) {
+    if( fSegment == 0 ) {
+      UInt_t wanted_info = kDate|kRunNumber|kRunType|kPrescales;
+      THaEvData* evdata = static_cast<THaEvData*>(gHaDecoder->New());
+      // Disable advanced processing
+      evdata->EnableScalers(kFALSE);
+      evdata->EnableHelicity(kFALSE);
+      UInt_t nev = 0;
+      while( nev<fMaxScan && !HasInfo(wanted_info) && 
+	     (status = ReadEvent()) == S_SUCCESS ) {
 
-      // Decode events. Skip bad events.
-      nev++;
-      if( evdata->LoadEvent( GetEvBuffer()) != THaEvData::HED_OK ) {
-	Warning( here, "Error decoding event buffer at event %u", nev );
-	continue;
+	// Decode events. Skip bad events.
+	nev++;
+	if( evdata->LoadEvent( GetEvBuffer()) != THaEvData::HED_OK ) {
+	  Warning( here, "Error decoding event buffer at event %u", nev );
+	  continue;
+	}
+
+	// Inspect event and extract run parameters if appropriate
+	Int_t st = Update( evdata );
+	//FIXME: debug
+	if( st == 1 )
+	  cout << "Prestart at " << nev << endl;
+	else if( st == 2 )
+	  cout << "Prescales at " << nev << endl;
+
+      }//end while
+      delete evdata;
+
+      if( status != S_SUCCESS && status != EOF ) {
+	Error( here, "Error %d reading CODA file %s. Check file permissions.",
+	       status, GetFilename());
+	return status;
       }
-
-      // Inspect event and extract run parameters if appropriate
-      Int_t st = Update( evdata );
-      //FIXME: debug
-      if( st == 1 )
-	cout << "Prestart at " << nev << endl;
-      else if( st == 2 )
-	cout << "Prescales at " << nev << endl;
-
-    }//end while
-    delete evdata;
-
-    if( status != S_SUCCESS && status != EOF ) {
-      Error( here, "Error %d reading CODA file %s. Check file permissions.",
-	     status, GetFilename());
-      return status;
-    }
+    
+    } else {
+      // If this is a continuation segment, try finding segment 0
+      // Since this class is Hall A-specific, look in typical directories.
+      // First look in the same directory as the continuation segment. 
+      // If the filename's dirname contains dataN, with N=1...9, also look in 
+      // all other dataN's.
+      Ssiz_t dot = fFilename.Last('.');
+      assert( dot != kNPOS );  // if fSegment>0, there must be a dot
+      TString s = fFilename(0,dot);
+      s.Append(".0");
+      vector<TString> fnames;
+      fnames.push_back(s);
+      TString dirn = gSystem->DirName(s);
+      Ssiz_t pos = dirn.Index( TRegexp("data[1-9]") );
+      if( pos != kNPOS ) {
+	fnames.reserve(10);
+	TString sN = dirn(pos+4,1);
+	Int_t curN = atoi(sN.Data());
+	TString base = gSystem->BaseName(s);
+	for( Int_t i = 1; i <= 9; i++ ) {
+	  if( i == curN )
+	    continue;
+	  dirn.Replace( pos, 5, Form("data%d",i) );
+	  s = dirn + "/" + base;
+	  fnames.push_back(s);
+	}
+      }
+      for( vector<TString>::size_type i = 0; i < fnames.size(); ++i ) {
+	s = fnames[i];
+	if( !gSystem->AccessPathName(s, kReadPermission) ) {
+	  THaCodaData* save_coda = fCodaData;
+	  Int_t        save_seg  = fSegment;
+	  fCodaData = new THaCodaFile;
+	  fSegment  = 0;
+	  if( fCodaData->codaOpen(s) == 0 )
+	    status = ReadInitInfo();
+	  delete fCodaData;
+	  fSegment  = save_seg;
+	  fCodaData = save_coda;
+	  break;
+	}
+      }
+    } //end if(fSegment==0)else
   } //end if(fMaxScan>0)
 
-  return 0;
+  return status;
 }
 
 //_____________________________________________________________________________
@@ -296,10 +267,6 @@ void THaRun::SetNscan( UInt_t n )
   fMaxScan = n;
 }
 
-#if ROOT_VERSION_CODE < ROOT_VERSION(5,8,0)
-#include <cstdlib>
-#endif
-
 //_____________________________________________________________________________
 Int_t THaRun::FindSegmentNumber()
 {
@@ -310,12 +277,7 @@ Int_t THaRun::FindSegmentNumber()
   Ssiz_t dot = fFilename.Last('.');
   if( dot != kNPOS ) {
     TString s = fFilename(dot+1,fFilename.Length()-dot-1);
-#if ROOT_VERSION_CODE < ROOT_VERSION(5,8,0)
     fSegment = atoi(s.Data());
-#else
-    // NB: This ignores whitespace. Shouldn't matter though.
-    fSegment = s.Atoi();
-#endif
   } else
     fSegment = 0;
 

@@ -17,13 +17,6 @@ public:
   virtual THaRun& operator=( const THaRunBase& rhs );
   virtual ~THaRun();
   
-  virtual bool operator==( const THaRunBase& ) const;
-  virtual bool operator!=( const THaRunBase& ) const;
-  virtual bool operator< ( const THaRunBase& ) const;
-  virtual bool operator> ( const THaRunBase& ) const;
-  virtual bool operator<=( const THaRunBase& ) const;
-  virtual bool operator>=( const THaRunBase& ) const;
-
   virtual void         Clear( Option_t* opt="" );
   virtual Int_t        Compare( const TObject* obj ) const;
           const char*  GetFilename() const { return fFilename.Data(); }
