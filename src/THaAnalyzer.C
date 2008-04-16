@@ -608,7 +608,8 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
 
   // Make sure we save a copy of the run in fRun.
   // Note that the run may be derived from THaRunBase, so this is a bit tricky.
-  if( new_run ) {
+  // Check if run changed using Compare to be sure we note change of split runs
+  if( new_run || fRun->Compare(run) ) {
     delete fRun;
     fRun = static_cast<THaRunBase*>(run->IsA()->New());
     if( !fRun )
