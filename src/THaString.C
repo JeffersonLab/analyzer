@@ -2,17 +2,6 @@
 //
 //       THaString.C  (implementation)
 //
-// Authors:  R. Holmes, A. Vacheret, R. Michaels
-//
-// Derives from STL string; provides additional methods.  No
-// additional storage is defined, so strings and THaStrings can be
-// converted back and forth as needed; e.g. to convert a string to
-// lowercase you can do something like
-//
-//      string mixedstring ("MixedCaseString");
-//      THaString temp = mixedstring;
-//      string lowerstring = temp.ToLower();
-//
 ////////////////////////////////////////////////////////////////////////
 
 #include "THaString.h"
@@ -27,36 +16,38 @@
 
 using namespace std;
 
+namespace THaString {
+
 //_____________________________________________________________________________
-int THaString::CmpNoCase (const THaString& s) const
+int CmpNoCase( const string& r, const string& s )
 {
   // Case insensitive compare.  Returns -1 if "less", 0 if equal, 1 if
   // "greater".
 
-  string::const_iterator p =  begin();
+  string::const_iterator p =  r.begin();
   string::const_iterator p2 = s.begin();
 
-  while (p != end() && p2 != s.end()) {
+  while (p != r.end() && p2 != s.end()) {
     if (toupper(*p) != toupper(*p2))
       return (toupper(*p) < toupper(*p2)) ? -1 : 1;
     ++p;
     ++p2;
   }
 
-  return (s.size() == size()) ? 0 : (size() < s.size()) ? -1 : 1;
+  return (r.size() == s.size()) ? 0 : (r.size() < s.size()) ? -1 : 1;
 }
 
 //_____________________________________________________________________________
-vector<THaString> THaString::Split() const
+vector<string> Split( const string& s )
 {
   // Split on whitespace.
 #ifdef HAS_SSTREAM
-  istringstream ist(c_str());
+  istringstream ist(s.c_str());
 #else
-  istrstream ist(c_str());
+  istrstream ist(s.c_str());
 #endif
   string w;
-  vector<THaString> v;
+  vector<string> v;
 
   while (ist >> w)
     v.push_back(w);
@@ -64,55 +55,56 @@ vector<THaString> THaString::Split() const
 }
 
 //_____________________________________________________________________________
-UInt_t THaString::Hex() const
+unsigned int Hex( const string& s )
 {
   // Conversion to unsigned interpreting as hex.
 #ifdef HAS_SSTREAM
-  istringstream ist(c_str());
+  istringstream ist(s.c_str());
 #else
-  istrstream ist(c_str());
+  istrstream ist(s.c_str());
 #endif
-  UInt_t in;
+  unsigned int in;
   ist >> hex >> in;
   return in;
 }
 
 //_____________________________________________________________________________
-THaString THaString::ToLower() const
+string ToLower( const string& s )
 {
   // Return copy of this string converted to lower case.
 
-  THaString result(*this);
+  string result(s);
   // The bizarre cast here is needed for newer gccs
-  transform( begin(), end(), result.begin(), (int(*)(int))tolower );
+  transform( s.begin(), s.end(), result.begin(), (int(*)(int))tolower );
   return result;
 }
 
 //_____________________________________________________________________________
-THaString THaString::ToUpper() const
+string ToUpper( const string& s )
 {
   // Return copy of this string converted to upper case.
-  THaString result(*this);
-  transform( begin(), end(), result.begin(), (int(*)(int))toupper );
+  string result(s);
+  transform( s.begin(), s.end(), result.begin(), (int(*)(int))toupper );
   return result;
 }
 
 //_____________________________________________________________________________
-void THaString::Lower()
+void Lower( string& s )
 {
   // Convert this string to lower case
 
-  transform( begin(), end(), begin(), (int(*)(int))tolower );
+  transform( s.begin(), s.end(), s.begin(), (int(*)(int))tolower );
   return;
 }
 
 //_____________________________________________________________________________
-void THaString::Upper()
+void Upper( string& s )
 {
   // Convert this string to upper case
-  transform( begin(), end(), begin(), (int(*)(int))toupper );
+  transform( s.begin(), s.end(), s.begin(), (int(*)(int))toupper );
   return;
 }
 
 //_____________________________________________________________________________
-ClassImp(THaString)
+
+}

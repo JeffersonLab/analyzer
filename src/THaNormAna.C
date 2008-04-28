@@ -311,8 +311,8 @@ THaAnalysisObject::EStatus THaNormAna::Init( const TDatime& run_time )
   TIter next(scalerList);
   while( THaScalerGroup* tscalgrp = static_cast<THaScalerGroup*>( next() )) {
     THaScaler *scaler = tscalgrp->GetScalerObj();
-    THaString mybank("Left");
-    if (mybank.CmpNoCase(scaler->GetName()) == 0) {
+    string mybank("Left");
+    if (CmpNoCase(mybank,scaler->GetName()) == 0) {
          myscaler = scaler;   // event type 140 data
          break;
     }

@@ -20,6 +20,7 @@
 
 #include "THaVhist.h"
 #include "THaVform.h"
+#include "THaString.h"
 #include "TObject.h"
 #include "THaFormula.h"
 #include "THaVarList.h"
@@ -39,12 +40,13 @@
 #include <iostream>
 
 using namespace std;
+using THaString::CmpNoCase;
 
 //_____________________________________________________________________________
-THaVhist::THaVhist( const THaString& type, const THaString& name, 
-		    const THaString& title ) :
+THaVhist::THaVhist( const string& type, const string& name, 
+		    const string& title ) :
   fType(type), fName(name), fTitle(title), fNbinX(0), fNbinY(0), fSize(0),
-  fInitStat(0), fScaler(0), fEye(0), fXlo(0.0), fXhi(0.0), fYlo(0.0), fYhi(0.0),
+  fInitStat(0), fScaler(0), fEye(0), fXlo(0.), fXhi(0.), fYlo(0.), fYhi(0.),
   fFirst(kTRUE), fProc(kTRUE), fFormX(NULL), fFormY(NULL), fCut(NULL),
   fMyFormX(kFALSE), fMyFormY(kFALSE), fMyCut(kFALSE)
 { 
@@ -202,13 +204,13 @@ void THaVhist::ReAttach( )
 
 
 //_____________________________________________________________________________
-Bool_t THaVhist::FindEye(THaString& var) {
+Bool_t THaVhist::FindEye(const string& var) {
 // If the variable is "[I]" it is an "Eye" variable.
 // This means we will simply use I = 0,1,2, to fill that axis.
   string::size_type pos, pos1,pos2;
-  THaString eye = "[I]";
-  pos1 = var.find(eye.ToUpper(),0);
-  pos2 = var.find(eye.ToLower(),0);
+  string eye  = "[I]";
+  pos1 = var.find(ToUpper(eye),0);
+  pos2 = var.find(ToLower(eye),0);
   pos = string::npos;
   if (pos1 != string::npos) pos = pos1;
   if (pos2 != string::npos) pos = pos2;
@@ -306,15 +308,15 @@ Int_t THaVhist::BookHisto(Int_t hfirst, Int_t hlast)
        stitle = fTitle + Form(" %d",i);
     }
     if (fEye == 1 && i > hfirst) continue;
-    if (fType.CmpNoCase("th1f") == 0) {
+    if (CmpNoCase(fType,"th1f") == 0) {
        fH1.push_back(new TH1F(sname.c_str(), 
 	     stitle.c_str(), fNbinX, fXlo, fXhi));
     }
-    if (fType.CmpNoCase("th1d") == 0) {
+    if (CmpNoCase(fType,"th1d") == 0) {
        fH1.push_back(new TH1D(sname.c_str(), 
 	     stitle.c_str(), fNbinX, fXlo, fXhi));
     }
-    if (fType.CmpNoCase("th2f") == 0) { 
+    if (CmpNoCase(fType,"th2f") == 0) { 
       fH1.push_back(new TH2F(sname.c_str(), stitle.c_str(), 
        	  fNbinX, fXlo, fXhi, fNbinY, fYlo, fYhi));
       if (fNbinY == 0) {
@@ -323,7 +325,7 @@ Int_t THaVhist::BookHisto(Int_t hfirst, Int_t hlast)
        cerr << "2D histo with fNbiny = 0 ?"<<endl;
       }
     }
-    if (fType.CmpNoCase("th2d") == 0) {
+    if (CmpNoCase(fType,"th2d") == 0) {
       fH1.push_back(new TH2D(sname.c_str(), stitle.c_str(), 
 	  fNbinX, fXlo, fXhi, fNbinY, fYlo, fYhi));
       if (fNbinY == 0) {

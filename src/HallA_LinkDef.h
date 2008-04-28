@@ -50,7 +50,6 @@
 #pragma link C++ class THaOutput+;
 //#pragma link C++ class THaOdata+;
 //#pragma link C++ class THaScalerKey+;
-#pragma link C++ class THaString+;
 #pragma link C++ class THaAnalyzer+;
 #pragma link C++ class THaPrintOption+;
 #pragma link C++ class THaBeam+;

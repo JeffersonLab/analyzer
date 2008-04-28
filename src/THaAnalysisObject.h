@@ -147,8 +147,8 @@ protected:
 					   EType type, EMode mode,
 					   const char* var_prefix="" ) const;
 
-  THaAnalysisObject* FindModule( const char* name, const char* classname,
-				 bool do_error = true );
+  THaAnalysisObject*   FindModule( const char* name, const char* classname,
+				   bool do_error = true );
 
   virtual const char*  Here( const char* ) const;
           void         MakePrefix( const char* basename );

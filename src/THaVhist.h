@@ -7,33 +7,35 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-#include "THaString.h"
 #include "THaVform.h"
 #include "TTree.h"
 #include <vector>
+#include <string>
 
 class THaVar;
 class TH1F;
 class TH2F;
 class THaCut;
 
+using std::string;
+
 class THaVhist {
   
 public:
 
-   THaVhist(const THaString& type, const THaString& name, const THaString& title);
+   THaVhist(const string& type, const string& name, const string& title);
    virtual ~THaVhist(); 
 
 // Set up the axis and cuts, as applicable.
-   void  SetX(Int_t nbinx, Double_t xlo, Double_t xhi, THaString varx);
+   void  SetX(Int_t nbinx, Double_t xlo, Double_t xhi, const string& varx);
    void  SetX(THaVform *varx);
-   void  SetY(Int_t nbiny, Double_t ylo, Double_t yhi, THaString vary);
+   void  SetY(Int_t nbiny, Double_t ylo, Double_t yhi, const string& vary);
    void  SetY(THaVform *vary);
-   void  SetCut(THaString cut);
+   void  SetCut(const string& cut);
    void  SetCut(THaVform *cut);
-   THaString GetVarX() const { return fVarX; };
-   THaString GetVarY() const { return fVarY; };
-   THaString GetCutStr() const  { return fScut; };
+   const string& GetVarX() const { return fVarX; };
+   const string& GetVarY() const { return fVarY; };
+   const string& GetCutStr() const  { return fScut; };
    Int_t CheckCut(Int_t index=0);
    Bool_t HasCut() const { return !fScut.empty(); };
    Bool_t IsValid() const { return fProc; };
@@ -60,7 +62,7 @@ protected:
    Int_t ParseVar();
    Int_t BookHisto(Int_t hfirst, Int_t hlast);
    Int_t FindVarSize();
-   Bool_t FindEye(THaString& var);
+   Bool_t FindEye(const string& var);
    Int_t GetCut(Int_t index=0); 
 
    enum FEr { kOK = 0, kNoBinX, kIllFox, kIllFoy, kIllCut,
@@ -70,7 +72,7 @@ protected:
    static const int fgVERBOSE = 1;
    static const int fgVHIST_HUGE = 10000;
 
-   THaString fType, fName, fTitle, fVarX, fVarY, fScut;
+   string fType, fName, fTitle, fVarX, fVarY, fScut;
    Int_t fNbinX, fNbinY, fSize, fInitStat, fScaler, fEye;
    Double_t fXlo, fXhi, fYlo, fYhi;
    Bool_t fFirst, fProc;
@@ -89,7 +91,8 @@ private:
 };
 
 inline 
-void THaVhist::SetX(Int_t nbinx, Double_t xlo, Double_t xhi, THaString varx)
+void THaVhist::SetX(Int_t nbinx, Double_t xlo, Double_t xhi,
+		    const string& varx)
 {
   fNbinX = nbinx;  fXlo = xlo;  fXhi = xhi;  fVarX = varx;
 };
@@ -105,7 +108,8 @@ void THaVhist::SetX(THaVform *varx)
 
 
 inline 
-void THaVhist::SetY(Int_t nbiny, Double_t ylo, Double_t yhi, THaString vary)
+void THaVhist::SetY(Int_t nbiny, Double_t ylo, Double_t yhi,
+		    const string& vary)
 {
   fNbinY = nbiny;  fYlo = ylo;  fYhi = yhi;  fVarY = vary;
 };
@@ -121,7 +125,7 @@ void THaVhist::SetY(THaVform *vary)
 
 
 inline 
-void THaVhist::SetCut(THaString cut)
+void THaVhist::SetCut(const string& cut)
 {
   fScut = cut;
 };

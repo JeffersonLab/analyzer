@@ -10,7 +10,7 @@
 #include "THaFormula.h"
 #include "THaOutput.h"
 #include "TTree.h"
-#include "THaString.h"
+#include <string>
 #include <vector>
 #include <iostream>
 
@@ -63,7 +63,7 @@ public:
 // Get the size (dimension) of this object 
   Int_t GetSize() const { return fObjSize; };
 // Get names of variable that are used by this formula.
-  std::vector<THaString> GetVars() const; 
+  std::vector<string> GetVars() const; 
   
 protected:
 
@@ -78,22 +78,22 @@ protected:
 
   static const Int_t fgDebug  = 0;
   static const Int_t fgVFORM_HUGE = 10000;
-  THaString fgAndStr, fgOrStr, fgSumStr;
+  string fgAndStr, fgOrStr, fgSumStr;
 
   Int_t MakeFormula(Int_t flo, Int_t fhi);
-  THaString StripPrefix(const char* formula);
-  THaString StripBracket(THaString& var) const; 
+  string StripPrefix(const char* formula);
+  string StripBracket(const string& var) const; 
   void  GetForm(Int_t size);
   void  Create(const THaVform& vf); 
   void  Uncreate();
 
-  std::vector<THaString> fVarName;
+  std::vector<string> fVarName;
   std::vector<Int_t> fVarStat;
   std::vector<THaFormula*> fFormula;
   std::vector<THaCut*> fCut;
-  std::vector<THaString> fSarray;
-  std::vector<THaString> fVectSform;
-  THaString fStitle;
+  std::vector<string> fSarray;
+  std::vector<string> fVectSform;
+  string   fStitle;
   THaVar   *fVarPtr;
   THaOdata *fOdata;
   Int_t fPrefix;

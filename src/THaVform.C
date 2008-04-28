@@ -35,7 +35,7 @@ THaVform::THaVform( const char *type, const char* name, const char* formula,
   SetName(name);
   SetList(vlst);
   SetCutList(clst);
-  THaString stemp1 = StripPrefix(formula);
+  string stemp1 = StripPrefix(formula);
   SetTitle(stemp1.c_str());
 
   if( type && *type ) {
@@ -279,10 +279,10 @@ void THaVform::ErrPrint(Int_t err) const
 
 
 //_____________________________________________________________________________
-vector<THaString> THaVform::GetVars() const
+vector<string> THaVform::GetVars() const
 {
 // Get names of variable that are used by this formula.
-  vector<THaString> result;
+  vector<string> result;
   result.clear();
   for (Int_t i = 0; i < fNvar; i++) {
     result.push_back(fVarName[i]);
@@ -518,11 +518,11 @@ Int_t THaVform::MakeFormula(Int_t flo, Int_t fhi)
 }
 
 //_____________________________________________________________________________
-THaString THaVform::StripPrefix(const char* expr)
+string THaVform::StripPrefix(const char* expr)
 {
   string::size_type pos,pos1,pos2;
-  THaString result,stitle;
-  vector<THaString> sprefix;
+  string result,stitle;
+  vector<string> sprefix;
   vector<Int_t> ipflg;
   fgAndStr = "AND:";
   fgOrStr  = "OR:";
@@ -532,13 +532,13 @@ THaString THaVform::StripPrefix(const char* expr)
   sprefix.push_back(fgSumStr);  ipflg.push_back(kSum);
 // If we ever invent new prefixes, add them here...
 
-  stitle = THaString(expr);
+  stitle = string(expr);
 
   fPrefix = kNoPrefix;
   result = stitle;
   for (int i = 0; i < (long)sprefix.size(); i++) {
-     pos1 = stitle.find(sprefix[i].ToUpper(),0);
-     pos2 = stitle.find(sprefix[i].ToLower(),0);
+     pos1 = stitle.find(ToUpper(sprefix[i]),0);
+     pos2 = stitle.find(ToLower(sprefix[i]),0);
      pos  = string::npos;
      if (pos1 != string::npos) pos = pos1;
      if (pos2 != string::npos) pos = pos2;
@@ -554,10 +554,10 @@ THaString THaVform::StripPrefix(const char* expr)
 
 // If the variable is like "L.s1.lt[I]" strip the [I]
 // from the end since it is implicit
-  THaString eye = "[I]";
-  THaString stemp = result;
-  pos1 = result.find(eye.ToUpper(),0);
-  pos2 = result.find(eye.ToLower(),0);
+  string eye = "[I]";
+  string stemp = result;
+  pos1 = result.find(ToUpper(eye),0);
+  pos2 = result.find(ToLower(eye),0);
   pos = string::npos;
   if (pos1 != string::npos) pos = pos1;
   if (pos2 != string::npos) pos = pos2;
@@ -566,14 +566,14 @@ THaString THaVform::StripPrefix(const char* expr)
 }
 
 //_____________________________________________________________________________
-THaString THaVform::StripBracket(THaString& var) const
+string THaVform::StripBracket(const string& var) const
 {
 // If the string contains "[anything]", we strip
 // it away.
   string::size_type pos1,pos2;
-  THaString open_brack = "[";
-  THaString close_brack = "]";
-  THaString result = "";
+  string open_brack = "[";
+  string close_brack = "]";
+  string result = "";
   pos1 = var.find(open_brack,0);
   pos2 = var.find(close_brack,0);
   if ((pos1 != string::npos) &&
@@ -593,9 +593,9 @@ Int_t THaVform::SetOutput(TTree *tree)
   string mydata = string(GetName());
   if (fOdata) fOdata->AddBranches(tree, mydata);
   if (!IsVarray() && fObjSize <= 1) {
-    THaString tinfo;
+    string tinfo;
     tinfo = mydata + "/D";
-    THaString tmp = mydata;
+    string tmp = mydata;
     tree->Branch(tmp.c_str(), &fData, tinfo.c_str(), 4000);
   }
   return 0;
@@ -760,20 +760,20 @@ Int_t THaVform::DefinedGlobalVariable( const TString& name )
 void THaVform::GetForm(Int_t size)
 {
 
-  THaString open_brack="[";
-  THaString close_brack="]";
+  string open_brack="[";
+  string close_brack="]";
   string::size_type pos,pos1,pos2;
   vector<Int_t> ipos;
 
   char num[10]; 
-  THaString aline,acopy;
+  string aline,acopy;
   for (int idx = 0; idx < size; idx++) {
     acopy = fStitle;
     aline = acopy;
     sprintf(num,"%d",idx);
-    for (vector<THaString>::iterator is = fSarray.begin();
+    for (vector<string>::iterator is = fSarray.begin();
         is != fSarray.end(); is++) {
-      THaString sb = *is;
+      string sb = *is;
       aline = "";
       ipos.clear();
       pos1 = 0;

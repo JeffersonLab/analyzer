@@ -15,9 +15,7 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-#include <iostream>
 #include <cstring>
-#include <string>
 
 #include "TLorentzVector.h"
 #include "TVector3.h"
@@ -35,8 +33,6 @@
 #include "THaVarList.h"
 #include "THaGlobals.h"
 #include "VarDef.h"
-#include "THaString.h"
-//#include "THaDB.h"
 
 using namespace std;
 
@@ -103,25 +99,31 @@ THaAnalysisObject::EStatus THaS2CoincTime::Init( const TDatime& run_time )
   if (stat != kOK) return stat;
 
   if (!fSpect1 || !fSpect2) return kInitError;
-  string detn1(fDetName1,fDetName1.Length());
-  string detn2(fDetName2,fDetName2.Length());
   
-  fTrPads1   = gHaVars->Find(Form("%s.%s.trpad",fSpect1->GetName(),detn1.c_str()));
-  fS2TrPath1 = gHaVars->Find(Form("%s.%s.trpath",fSpect1->GetName(),detn1.c_str()));
-  fS2Times1  = gHaVars->Find(Form("%s.%s.time",fSpect1->GetName(),detn1.c_str()));
-  fTrPath1   = gHaVars->Find(Form("%s.tr.pathl",fSpect1->GetName()));
+  fTrPads1  = gHaVars->Find(Form("%s.%s.trpad",fSpect1->GetName(),
+				 fDetName1.Data()));
+  fS2TrPath1= gHaVars->Find(Form("%s.%s.trpath",fSpect1->GetName(),
+				 fDetName1.Data()));
+  fS2Times1 = gHaVars->Find(Form("%s.%s.time",fSpect1->GetName(),
+				 fDetName1.Data()));
+  fTrPath1  = gHaVars->Find(Form("%s.tr.pathl",fSpect1->GetName()));
   if (!fTrPads1 || !fS2TrPath1 || !fS2Times1 || !fTrPath1) {
-    Error(Here("Init"),"Cannot get variables for spectrometer %s detector %s", fSpect1->GetName(),detn1.c_str());
+    Error(Here("Init"),"Cannot get variables for spectrometer %s detector %s",
+	  fSpect1->GetName(),fDetName1.Data());
     return kInitError;
   }
 
-  fTrPads2   = gHaVars->Find(Form("%s.%s.trpad",fSpect2->GetName(),detn2.c_str()));
-  fS2TrPath2 = gHaVars->Find(Form("%s.%s.trpath",fSpect2->GetName(),detn2.c_str()));
-  fS2Times2  = gHaVars->Find(Form("%s.%s.time",fSpect2->GetName(),detn2.c_str()));
-  fTrPath2   = gHaVars->Find(Form("%s.tr.pathl",fSpect2->GetName()));
+  fTrPads2  = gHaVars->Find(Form("%s.%s.trpad",fSpect2->GetName(),
+				 fDetName2.Data()));
+  fS2TrPath2= gHaVars->Find(Form("%s.%s.trpath",fSpect2->GetName(),
+				 fDetName2.Data()));
+  fS2Times2 = gHaVars->Find(Form("%s.%s.time",fSpect2->GetName(),
+				 fDetName2.Data()));
+  fTrPath2  = gHaVars->Find(Form("%s.tr.pathl",fSpect2->GetName()));
   
   if (!fTrPads2 || !fS2TrPath2 || !fS2Times2 || !fTrPath2) {
-    Error(Here("Init"),"Cannot get variables for spectrometer %s detector %s", fSpect2->GetName(),detn2.c_str());
+    Error(Here("Init"),"Cannot get variables for spectrometer %s detector %s",
+	  fSpect2->GetName(),fDetName2.Data());
     return kInitError;
   }
 

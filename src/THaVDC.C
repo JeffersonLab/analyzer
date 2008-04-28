@@ -39,6 +39,7 @@
 #endif
 
 using namespace std;
+using THaString::Split;
 
 //_____________________________________________________________________________
 THaVDC::THaVDC( const char* name, const char* description,
@@ -162,7 +163,7 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   fFPMatrixElems.clear();
   fFPMatrixElems.resize(3);
 
-  typedef vector<THaString>::size_type vsiz_t;
+  typedef vector<string>::size_type vsiz_t;
   map<string,vsiz_t> power;
   power["t"] = 3;  // transport to focal-plane tensors
   power["y"] = 3;
@@ -200,14 +201,14 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   // Read in line-by-line, so as to be able to handle tensors of
   // different orders.
   while( fgets(buff, LEN, file) ) {
-    THaString line(buff);
+    string line(buff);
     // Erase trailing newline
     if( line.size() > 0 && line[line.size()-1] == '\n' ) {
       buff[line.size()-1] = 0;
       line.erase(line.size()-1,1);
     }
     // Split the line into whitespace-separated fields    
-    vector<THaString> line_spl = line.Split();
+    vector<string> line_spl = Split(line);
 
     // Stop if the line does not start with a string referring to
     // a known type of matrix element. In particular, this will
