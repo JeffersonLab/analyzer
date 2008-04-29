@@ -72,7 +72,7 @@
 #include <iostream>
 
 using namespace std;
-
+using THaString::CmpNoCase;
 
 //_____________________________________________________________________________
 THaNormAna::THaNormAna( const char* name, const char* descript ) :
