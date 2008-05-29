@@ -4,10 +4,10 @@
 export WITH_DEBUG = 1
 
 # Compile debug version
-export DEBUG = 1
+# export DEBUG = 1
 
 # Profiling with gprof
-# export PROFILE = 1
+#export PROFILE = 1
 
 # Include libraries for reading from the ET ring
 #  (only for adaq? machines with the Coda libraries )
@@ -17,9 +17,9 @@ export DEBUG = 1
 # SOVERSION should be numerical only - it becomes the shared lib soversion
 # EXTVERS (optional) describes the build, e.g. "dbg", "et", "gcc33" etc.
 SOVERSION  := 1.5
-PATCH   := 0
+PATCH   := 1
 VERSION := $(SOVERSION).$(PATCH)
-EXTVERS := -beta3
+EXTVERS := 
 NAME    := analyzer-$(VERSION)
 VERCODE := $(shell echo $(subst ., ,$(SOVERSION)) $(PATCH) | awk '{ print $$1*65536 + $$2*256 + $$3 }')
 
@@ -119,8 +119,8 @@ DEFINES      += -DWITH_DEBUG
 endif
 
 ifdef PROFILE
-CXXFLG       += -pg
-LDFLAGS      += -pg
+CXXFLG       += -g -pg
+LDFLAGS      += -g -pg
 endif
 
 CXXFLAGS     += $(CXXFLG) $(INCLUDES) $(DEFINES)
@@ -283,10 +283,18 @@ $(LNA_DICT).C:	$(LNA_HDR) $(LNA_LINKDEF)
 		@echo "Generating dictionary $(LNA_DICT)..."
 		$(ROOTSYS)/bin/rootcint -f $@ -c $(INCLUDES) $(DEFINES) $^
 
+libPodd.a:	$(OBJS) $(LNA_OBJS) subdirs
+		echo "Making libPodd.a..."
+		ar rcs $@ $(OBJS) $(LNA_OBJS) $(DCDIR)/*.o $(SCALERDIR)/*.o
+
 #---------- Main program -------------------------------------------
 analyzer:	src/main.o $(LIBDC) $(LIBSCALER) $(LIBHALLA)
 		$(LD) $(LDFLAGS) $< $(HALLALIBS) $(GLIBS) -o $@
 
+podda:		src/main.o libPodd.a
+		$(LD) $^ $(ROOTSYS)/lib/libRoot.a $(ROOTSYS)/lib/libpcre.a $(ROOTSYS)/lib/libfreetype.a -lz $(shell root-config --auxlibs) -o $@
+
+static:		podda
 
 #---------- Maintenance --------------------------------------------
 clean:
@@ -339,7 +347,7 @@ endif
 		ln -s $(NAME) $(ANALYZER)/$(PLATFORM)/analyzer
 		set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i install; done
 
-.PHONY: all clean realclean srcdist cvsdist subdirs
+.PHONY: all clean realclean srcdist cvsdist subdirs static
 
 
 ###--- DO NOT CHANGE ANYTHING BELOW THIS LINE UNLESS YOU KNOW WHAT 
