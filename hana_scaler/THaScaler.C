@@ -27,6 +27,7 @@
 //
 //   Modifications
 //   Jan 2, 2005    RWM      Added GeN scalers 
+//   Mar 12, 2008   RWM     Added Bigbite scalers 
 //
 /////////////////////////////////////////////////////////////////////
 
@@ -66,6 +67,7 @@ THaScaler::THaScaler( const char* bankgr ) {
   vme_server = "";
   vme_port = 0;
   normslot = new Int_t[3];
+  icurslot=-1;  icurchan=-1;
   memset(normslot, -1, 3*sizeof(Int_t));
   clkslot = -1;
   clkchan = -1;
@@ -73,6 +75,7 @@ THaScaler::THaScaler( const char* bankgr ) {
   rawdata = new Int_t[2*SCAL_NUMBANK*SCAL_NUMCHAN];
   memset(rawdata,0,2*SCAL_NUMBANK*SCAL_NUMCHAN*sizeof(Int_t));
   clockrate = 1024;  // a default 
+
 };
 
 THaScaler::~THaScaler() {
@@ -145,7 +148,7 @@ Int_t THaScaler::Init(const char* thetime )
   return 0;
 };
 
-Int_t THaScaler::InitData(const string& bankgrp, const Bdate& date_want) {
+Int_t THaScaler::InitData(const string& bankgroup, const Bdate& date_want) {
 // Initialize data of the class for this bankgroup for the date wanted.
 // While in principle this should come from a "database", it basically
 // never changes.  However, to add a new scaler bank, imitate what is
@@ -171,53 +174,62 @@ Int_t THaScaler::InitData(const string& bankgrp, const Bdate& date_want) {
   static const DataMap datamap[] = {
     // Event type 140's
     { "Left",  0xabc00000, 8, 140, 4, 1024, "129.57.192.30",  5022, 
-      { 0,1,2,3,4,5,6,7,8,9,10,11 } },
+             {0,1,2,3,4,5,6,7,8,9,10,11} },
     { "Right", 0xceb00000, 7, 140, 8, 1024, "129.57.192.28",  5021, 
-      { 0,7,8,9,1,2,3,4,5,6,10,11 } },
+             {0,7,8,9,1,2,3,4,5,6,10,11} },
     { "dvcs",  0xd0c00000, 9, 140, 0, 105000, "129.57.192.51",  5064, 
-      { 0,1,2,3,4,5,6,7,8,9,10,11 } },
-    // normslot is defined here (5th arg) in addition to scaler.map (sorry)
+             {0,1,2,3,4,5,6,7,8,9,10,11} },
+    // default normslot is defined here (5th arg) in addition to scaler.map 
+    // but you can fix it in scaler.map as TS-accept.  Also don't forget
+    // to define "clock" in scaler.map
+    { "bbite",  0xbbe00000, 9, 140, 3, 1024, "129.57.192.8",  5037, 
+             {0,1,2,3,4,5,6,7,8,9,10,11} },
     { "gen",  0xb0d00000, 9, 140, 2, 105000, "129.57.192.5",  5022, 
-      { 0,1,2,3,4,5,6,7,8,9,10,11 } },
+             {0,1,2,3,4,5,6,7,8,9,10,11} },
+    { "evgen",  0xb0d00000, 23, 1, 2, 105000, "none",  0, 
+             {0,1,2,3,4,5,6,7,8,9,10,11} },
     // N20: header 0xbba...,  crate=6 (our choice), 
     { "N20",  0xbba00000, 6, 140, 1, 2048, "129.57.192.51",  5064, 
-      { 0,1,2,3,4,5,6,7,8,9,10,11 } },
+             {0,1,2,3,4,5,6,7,8,9,10,11} },
     // Data that are part of the event stream
     { "evgen",  0xb0d00000, 23, 1, 2, 105000, "none",  0, 
              {0,1,2,3,4,5,6,7,8,9,10,11} },
-    { "evleft",  0xabc00000, 11, 1, 4, 1024, "none",  0, { 0,0,0,0,0,0,0,0,0,0,0,0} },
-    { "evright", 0xceb00000, 10, 1, 8, 1024, "none",  0, { 0,0,0,0,0,0,0,0,0,0,0,0} },
+    { "evleft",  0xabc00000, 11, 1, 4, 1024, "none",  0, {0,0,0,0,0,0,0,0,0,0,0,0}},
+    { "evright", 0xceb00000, 10, 1, 8, 1024, "none",  0, {0,0,0,0,0,0,0,0,0,0,0,0}},
    // Add new scaler bank here...
-    { 0, 0, 0, 0, 0, 0, "none",  0, { 0,0,0,0,0,0,0,0,0,0,0,0} }
+    { 0, 0, 0, 0, 0, 0, "none",  0,  {0,0,0,0,0,0,0,0,0,0,0,0} }
   };
 
 
    string bank_to_find = "unknown";
    if (database) {
-     if ( database->FindNoCase(bankgrp,"Left") != string::npos  
-        || bankgrp == "L" ) {
+     if ( database->FindNoCase(bankgroup,"Left") != string::npos  
+        || bankgroup == "L" ) {
           bank_to_find = "Left"; 
      }
-     if ( database->FindNoCase(bankgrp,"Right") != string::npos  
-        || bankgrp == "R" ) {
+     if ( database->FindNoCase(bankgroup,"Right") != string::npos  
+        || bankgroup == "R" ) {
           bank_to_find = "Right"; 
      }
-     if ( database->FindNoCase(bankgrp,"dvcs") != string::npos) {
+     if ( database->FindNoCase(bankgroup,"dvcs") != string::npos) {
           bank_to_find = "dvcs"; 
      }
-     if ( database->FindNoCase(bankgrp,"gen") != string::npos) {
+     if ( database->FindNoCase(bankgroup,"bbite") != string::npos) {
+          bank_to_find = "bbite"; 
+     }
+     if ( database->FindNoCase(bankgroup,"gen") != string::npos) {
           bank_to_find = "gen"; 
      }
-     if ( database->FindNoCase(bankgrp,"evgen") != string::npos) {
+     if ( database->FindNoCase(bankgroup,"evgen") != string::npos) {
           bank_to_find = "evgen"; 
      }
-     if ( database->FindNoCase(bankgrp,"N20") != string::npos) {
+     if ( database->FindNoCase(bankgroup,"N20") != string::npos) {
           bank_to_find = "N20"; 
      }
-     if ( database->FindNoCase(bankgrp,"evleft") != string::npos) {
+     if ( database->FindNoCase(bankgroup,"evleft") != string::npos) {
           bank_to_find = "evleft"; 
      }
-     if ( database->FindNoCase(bankgrp,"evright") != string::npos) {
+     if ( database->FindNoCase(bankgroup,"evright") != string::npos) {
           bank_to_find = "evright"; 
      }
 
@@ -308,16 +320,37 @@ void THaScaler::SetClockLoc(Int_t slot, Int_t chan)
   clkchan = chan;
 }
 
+
+void THaScaler::SetIChan(Int_t slot, Int_t chan) {
+  icurslot = slot;
+  icurchan = chan;
+}
+
 void THaScaler::SetupNormMap() {
   if (!database) return;
 // Retrieve info about the normalization scaler, which
 // is the one that contains TS-accept.  This makes
 // subsequent code much faster.
+ 
+  Int_t savenslot[3];
+  for (int i=0; i<3; i++) savenslot[i]=normslot[i];
+
   normslot[0] = GetSlot("TS-accept");
   normslot[1] = GetSlot("TS-accept", -1);
   normslot[2] = GetSlot("TS-accept",  1);
   clkslot = GetSlot("clock");
   clkchan = GetChan("clock");
+
+  if (normslot[0]==-1 && savenslot[0]!=-1) {
+    cout << "TS-accept not defined in scaler.map."<<endl;
+    cout << "So we will use default normslot."<<endl;
+    for (int i=0; i<3; i++) normslot[i]=savenslot[i];
+  }
+
+  if (fDebug) {
+    cout << "NormMap info "<<normslot[0]<<"  "<<normslot[1]<<"  "<<normslot[2]<<endl;
+    cout << "clock "<<clkslot << " " << clkchan<<endl;
+  }
   for (Int_t ichan = 0; ichan < SCAL_NUMCHAN; ichan++) {
     vector<string> chan_name = database->GetShortNames(crate, normslot[0], ichan);
     for (vector<string>::size_type i = 0; i < chan_name.size(); i++) {
@@ -683,7 +716,10 @@ void THaScaler::PrintSummary() {
   }
   printf("\n -------------   Scaler Summary   ---------------- \n");
   cout << "Scaler bank  " << bankgroup << endl;
-  Double_t time_sec = GetPulser("clock")/clockrate;
+  //  Double_t time_sec = GetPulser("clock")/clockrate;
+  Double_t time_sec = GetScaler(clkslot,clkchan)/clockrate;
+  cout << "clock location "<<clkslot<<"  "<<clkchan<<endl; 
+  cout << "clock counts "<< GetScaler(clkslot,clkchan)<<"   clock rate "<<clockrate<<endl;
   if (time_sec == 0) {
     cout << "THaScaler: WARNING:  Time of run = ZERO (\?\?)\n"<<endl;
     return;
@@ -899,6 +935,7 @@ Double_t THaScaler::GetPulserRate(Int_t helicity, const char* which) {
 Double_t THaScaler::GetNormRate(Int_t helicity, const char* which) {
   Double_t rate,etime;
   etime = GetTimeDiff(helicity);
+
   if (etime > 0) { 
       rate = ( GetNormData(helicity, which, 0) -
                GetNormData(helicity, which, 1) ) / etime;
@@ -918,6 +955,14 @@ Double_t THaScaler::GetNormRate(Int_t helicity, Int_t chan) {
   return 0;
 };
 
+Double_t THaScaler::GetIRate(Int_t slot, Int_t chan) {
+  Double_t rate;
+  if (icurslot == -1 || icurchan == -1) return 0;
+  rate = GetScalerRate(icurslot,icurchan);
+  if (rate == 0) return 0;
+  return GetScalerRate(slot,chan)/rate;
+}
+
 Double_t THaScaler::GetTimeDiff(Int_t helicity) {
 // Get the time difference in seconds.  Must normalize to a clock.
 // If we have "SetClockLoc" then we use the location it defined.
@@ -934,6 +979,7 @@ Double_t THaScaler::GetTimeDiff(Int_t helicity) {
              GetScaler(clkslot, clkchan, 1)) /
   	          clockrate);
   } else {
+  
     return ((GetNormData(helicity,"clock",0) -
 	     GetNormData(helicity,"clock",1)) /
             	  clockrate) ;

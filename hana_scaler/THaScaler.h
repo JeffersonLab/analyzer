@@ -106,12 +106,15 @@ public:
    Double_t GetPulserRate(Int_t helicity, const char* which);   
    Double_t GetNormRate(Int_t helicity, const char* which);
    Double_t GetNormRate(Int_t helicity, Int_t chan);
+   Double_t GetClockRate() const { return clockrate; }
+   Double_t GetIRate(Int_t slot, Int_t chan);
    Bool_t IsRenewed() const { return new_load; }  // kTRUE if obj has new data
    void SetIpAddress(std::string ipaddress);  // set IP for online data
    void SetPort(Int_t port);                    // set PORT# for online data
    void SetClockLoc(Int_t slot, Int_t chan);  // set clock location
    void SetClockRate(Double_t clkrate);       // set clock rate
    void SetTimeInterval(Double_t time);    // set avg time interval between events. (if no clk)
+   void SetIChan(Int_t slot, Int_t chan);  // Set channel to norm. by (for GetIRate)
    Int_t GetSlot(std::string which, Int_t helicity=0);
    Int_t GetChan(std::string which, Int_t helicity=0, Int_t chan=0);
    THaScalerDB* GetDataBase() { return database; };
@@ -122,12 +125,13 @@ protected:
    THaCodaFile *fcodafile;
    std::vector<Int_t> onlmap;
    THaScalerDB *database; 
-   std::multimap<std::string, int> normmap;
+   std::multimap<std::string, Int_t> normmap;
    Int_t *rawdata;
    Bool_t coda_open;
    Int_t header, crate, evstr_type;
    std::string vme_server;
    int vme_port, clkslot, clkchan;
+   int icurslot, icurchan;
    Bool_t found_crate,first_loop;
    Bool_t did_init, new_load, one_load, use_clock;
    Int_t *normslot;
