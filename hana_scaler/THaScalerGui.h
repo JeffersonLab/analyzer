@@ -55,7 +55,7 @@ private:
    std::map<Int_t, TNtuple*> fDataHistory;
    std::map<Int_t, Int_t> slotmap;
    TTimer *timer;
-   TGCheckButton *fRateSelect, *fCountSelect;
+   TGCheckButton *fRateSelect, *fCountSelect, *fNormISelect;
    TRootHelpDialog *fHelpDialog;
    Int_t InitFromDB();
    Bool_t ProcessMessage(Long_t , Long_t , Long_t);

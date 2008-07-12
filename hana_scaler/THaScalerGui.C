@@ -17,12 +17,14 @@
 // Constants for the logic
 #define SHOWRATE       1
 #define SHOWCOUNT      2
+#define SHOWNORMI      3     
 #define OFFSET_START   1
 #define OFFSET_QUIT    2
 #define OFFSET_HELP    3
 #define OFFSET_RATE    4
 #define OFFSET_COUNT   5
-#define OFFSET_HIST    6
+#define OFFSET_NORMI   6
+#define OFFSET_HIST    7
 // Show the last TIME_CUT entries into ntuple
 #define TIME_CUT      50
 // Update time (msec) of TTImer
@@ -67,7 +69,7 @@ Int_t THaScalerGui::InitFromDB() {
 // Otherwise the parameters are defaults which are probably ok.
   if (!scaler) return -1;
   if ( !scaler->GetDataBase()) return -1;
-  std::string server,port,clkchan,clkslot,clkrate;
+  std::string server,port,clkchan,clkslot,clkrate,curslot,curchan;
   server = scaler->GetDataBase()->GetStringDirectives(crate, "xscaler-server", "IP"); 
   if (server != "none") {
     scaler->SetIpAddress(server);
@@ -95,6 +97,12 @@ Int_t THaScalerGui::InitFromDB() {
       cout << "Setting clock rate "<<clkrate<<endl;
       scaler->SetClockRate((Double_t)atoi(clkrate.c_str()));
   }
+  curslot = scaler->GetDataBase()->GetStringDirectives(crate, "xscaler-currentnorm", "slot"); 
+  curchan = scaler->GetDataBase()->GetStringDirectives(crate, "xscaler-currentnorm", "chan"); 
+  cout << "Slot to normalize by current: "<<curslot <<"     chan: "<<curchan<<endl;
+  if (curslot != "none" && curchan != "none") {
+    scaler->SetIChan((Int_t)atoi(curslot.c_str()),(Int_t)atoi(curchan.c_str()));
+  }
   return 0;
 }
 
@@ -104,6 +112,7 @@ Int_t THaScalerGui::InitPlots() {
     cout << "THaScalerGui::ERROR: no scaler defined... cannot init."<<endl;
     return -1;
   }
+ 
   InitPages();
   yboxsize = new Int_t[SCAL_NUMBANK];
   occupied = new Int_t[SCAL_NUMBANK];
@@ -111,7 +120,7 @@ Int_t THaScalerGui::InitPlots() {
   fDataBuff  = new TGTextBuffer[SCAL_NUMBANK*SCAL_NUMCHAN];
   pair<Int_t, TGTextEntry *> txtpair;
   pair<Int_t, TNtuple *> ntupair;
-  char string_ntup[]="UpdateNum:Count:Rate";
+  char string_ntup[]="UpdateNum:Count:Rate:RateI";
   iloop = 0;  lastsize = YBOXSMALL;
   showselect = SHOWRATE;
   TGTab *fTab = new TGTab(this, 600, 800);
@@ -193,9 +202,10 @@ Int_t THaScalerGui::InitPlots() {
        tgcf->AddFrame(fr,fLayout);
      }       
   }
+
   AddFrame(fTab,new TGLayoutHints(kLHintsExpandX | kLHintsExpandY,0,0,0,0));
   TGGroupFrame *fGb = 
-     new TGGroupFrame(this, new TGString("Click channel button for history plot.  Click ``Show Rates'' or ``Show Counts''"));
+     new TGGroupFrame(this, new TGString("Click channel button for history plot.  Click ``Show Rates'' or ``Show Counts, etc''"));
   TGCompositeFrame *fGCb = new TGCompositeFrame(fGb, 10, 0, kHorizontalFrame);
   TGHorizontalLayout *fLhorzb =  new TGHorizontalLayout(fGCb);
   fGCb->SetLayoutManager(fLhorzb);
@@ -207,7 +217,7 @@ Int_t THaScalerGui::InitPlots() {
   TGTextButton *fQuit = new TGTextButton(fGCb,fLabel,SCAL_NUMBANK*SCAL_NUMCHAN+OFFSET_QUIT);
   fGCb->AddFrame(fQuit, fLayout2);
   fQuit->Associate(this);
-  TGLabel *fGlabel2 = new TGLabel(fGCb, new TGString("                              "));
+  TGLabel *fGlabel2 = new TGLabel(fGCb, new TGString("                                                    "));
   fGCb->AddFrame(fGlabel2, fLayout);
   TGHotString *fHString1 = new TGHotString("Show Rates"); 
   fRateSelect = new TGCheckButton(fGCb,fHString1,SCAL_NUMBANK*SCAL_NUMCHAN+OFFSET_RATE);
@@ -219,6 +229,11 @@ Int_t THaScalerGui::InitPlots() {
   fGCb->AddFrame(fCountSelect, fLayout);
   fCountSelect->Associate(this);
   fCountSelect->SetState(kButtonUp);
+  TGHotString *fHString3 = new TGHotString("Norm-by-Current"); 
+  fNormISelect = new TGCheckButton(fGCb,fHString3,SCAL_NUMBANK*SCAL_NUMCHAN+OFFSET_NORMI);
+  fGCb->AddFrame(fNormISelect, fLayout);
+  fNormISelect->Associate(this);
+  fNormISelect->SetState(kButtonUp);
   fGb->AddFrame(fGCb,fLayout2);
   TGLayoutHints *fL1 = new TGLayoutHints(kLHintsNormal | kLHintsExpandX , 10, 10, 10, 10);
   AddFrame(fGb, fL1);
@@ -280,9 +295,16 @@ Bool_t THaScalerGui::ProcessMessage(Long_t msg, Long_t parm1, Long_t) {
       case SCAL_NUMBANK*SCAL_NUMCHAN+OFFSET_RATE:
         showselect = SHOWRATE;
         fCountSelect->SetState(kButtonUp);
+        fNormISelect->SetState(kButtonUp);
         break;
       case SCAL_NUMBANK*SCAL_NUMCHAN+OFFSET_COUNT:
         showselect = SHOWCOUNT;
+        fRateSelect->SetState(kButtonUp);
+        fNormISelect->SetState(kButtonUp);
+        break;
+      case SCAL_NUMBANK*SCAL_NUMCHAN+OFFSET_NORMI:
+        showselect = SHOWNORMI;
+        fCountSelect->SetState(kButtonUp);
         fRateSelect->SetState(kButtonUp);
         break;
       default:
@@ -294,7 +316,7 @@ Bool_t THaScalerGui::ProcessMessage(Long_t msg, Long_t parm1, Long_t) {
 
 void THaScalerGui::Help() {
   fHelpDialog = new TRootHelpDialog(this,"BRIEF  HELP  INSTRUCTIONS",350,250);
-  fHelpDialog->SetText("xscaler++ treats the data from one bank\nof scalers (e.g. L-arm, R-arm, etc).\nUsage:\nxscaler [bankgroup]\nTo view a recent history of updates, press on\nthe button corresponding to the channel and\na canvas will pop up.\nClick ``Show Rates'' or ``Show Counts'' to switch\nbetween rate display and accumulated counts.\n\nSupport: Robert Michaels, JLab Hall A\nDocumentation:\nhallaweb.jlab.org/equipment/daq/THaScaler.html");
+  fHelpDialog->SetText("xscaler++ treats the data from one bank\nof scalers (e.g. bigbite, L-arm, R-arm, etc).\nUsage:\nxscaler [bankgroup]\nTo view a recent history of updates, press on\nthe button corresponding to the channel and\na canvas will pop up.\nClick ``Show Rates'' or ``Show Counts'' to switch\nbetween rate display and accumulated counts.\n\nSupport: Robert Michaels, JLab Hall A\nDocumentation:\nhallaweb.jlab.org/equipment/daq/THaScaler.html");
   fHelpDialog->Popup();
 };
 
@@ -311,8 +333,8 @@ Bool_t THaScalerGui::HandleTimer(TTimer *t) {
 void THaScalerGui::updateValues() {
   static int ipage,slot,chan,index;
   static char value[50];
-  static Float_t farray_ntup[3];
-  static float rate,count;
+  static Float_t farray_ntup[4];
+  static float rate,count,ratenormi;
   static map< Int_t, TGTextEntry* >::iterator txt;
   static map< Int_t, TNtuple* >::iterator ntu;
 #ifndef TESTONLY
@@ -331,6 +353,7 @@ void THaScalerGui::updateValues() {
 #else
        count = (float)scaler->GetScaler(slot, chan);
        rate  = (float)scaler->GetScalerRate(slot, chan);
+       ratenormi = (float)scaler->GetIRate(slot, chan);
 #endif
        switch (showselect) {
            case SHOWRATE:
@@ -338,6 +361,9 @@ void THaScalerGui::updateValues() {
                break;
            case SHOWCOUNT:
                sprintf(value,"%-6.4e",count);
+               break;
+           case SHOWNORMI:
+               sprintf(value,"%-6.4e",ratenormi);
                break;
            default:
    	       cout << "WARNING: Not updating rates or counts "<<endl;
@@ -354,6 +380,7 @@ void THaScalerGui::updateValues() {
 	   farray_ntup[0] = (float) iloop;
            farray_ntup[1] = count;
            farray_ntup[2] = rate;                      
+           farray_ntup[3] = ratenormi;                      
 	   if (iloop > 1) fDataHistory[index]->Fill(farray_ntup);
 	}
     }
@@ -375,7 +402,15 @@ void THaScalerGui::popPlot(int index) {
           fDataHistory[index]->SetMarkerColor(4);
           fDataHistory[index]->SetMarkerStyle(21);
           fDataHistory[index]->Draw("Rate:UpdateNum",tc);
-      } else {
+      }
+      if (showselect == SHOWNORMI) {
+  	  sprintf(ctit,"RECENT HIS of NormRATE updated each %3.0f sec",upd);
+	  TCanvas *c1 = new TCanvas("Rate",ctit,500,400);
+          fDataHistory[index]->SetMarkerColor(4);
+          fDataHistory[index]->SetMarkerStyle(21);
+          fDataHistory[index]->Draw("RateI:UpdateNum",tc);
+      }
+      if (showselect == SHOWCOUNT) {
   	  sprintf(ctit,"RECENT HISTORY of COUNTS updated each %3.0f sec",upd);
 	  TCanvas *c1 = new TCanvas("Rate",ctit,500,400);
           fDataHistory[index]->SetMarkerColor(2);
