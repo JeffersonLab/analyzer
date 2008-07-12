@@ -31,14 +31,14 @@ int main(int argc, char **argv) {
 
    if (argc > 1) {
      bank = argv[1];
-     if (bank != "Left" && bank != "LEFT" && bank != "Right" && bank != "RIGHT" && bank != "DVCS_CALO" ) {
+     if (bank != "Left" && bank != "LEFT" && bank != "Right" && bank != "RIGHT" && bank != "bbite" ) {
          usage();
          return 1;
      }
    } else {
      bank = "Left";       // Left is default
      cout << "Since you provided no argument, we assume you"<<endl;
-     cout << "want to use the "<<bank<<" spectrometer."<<endl;
+     cout << "want to use the "<<bank<<" scalers"<<endl;
      cout << "And for your reference, here are usage instructions: "<<endl;
      usage();
    }
@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
 
 void usage() {
   cout << endl << "Usage:  ./xscaler [bank]"<<endl;
-  cout << "where bank = `Left' or `Right' or 'DVCS_CALO'"<<endl;
+  cout << "where bank = `Left' or `Right' or `bbite'"<<endl;
   cout << "(without the quotes)"<<endl;
   cout << "and default bank is `Left' (i.e. if no arg)"<<endl;
 }
