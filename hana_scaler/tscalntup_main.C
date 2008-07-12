@@ -7,9 +7,9 @@
 //  R. Michaels, May 2001 
 //--------------------------------------------------------
 
-#define BCM_CUT1  1000   // cut on BCM (x1 gain) to require beam on.
-#define BCM_CUT3  3000   // cut on BCM (x3 gain) to require beam on.
-#define BCM_CUT10 7000   // cut on BCM (x10 gain) to require beam on.
+#define BCM_CUT1  2400   // cut on BCM (x1 gain) to require beam on.
+#define BCM_CUT3  7000   // cut on BCM (x3 gain) to require beam on.
+#define BCM_CUT10 21000  // cut on BCM (x10 gain) to require beam on.
 #define NBCM 6         // number of BCM signals 
 #define PRINTSUM 1
 #define OUTFILENAME "asytst.dat"
@@ -34,21 +34,22 @@ using namespace std;
 int main(int argc, char* argv[]) {
 
    int printout = 0;   // To printout lots of stuff (1) or not (0)
+   Float_t clockrate = 1024;
    int trig;
    Float_t sum,asy;
 
    if (argc < 3) {
      cout << "Usage:  " << argv[0]<<" file  bank" << endl;
      cout << "where file = CODA file to analyze " << endl;
-     cout << "and bank = 'Right', 'Left'  (spectrometer)" << endl;
+     cout << "and bank = 'gen', 'Right', 'Left'  (spectr)" << endl;
      return 1;
    }
    TString filename = argv[1];
    string bank = argv[2];   
-   if (bank != "Left" && bank != "Right") {
-       cout << "2nd argument should be Left or Right but was "<<argv[2]<<endl;
-       cout << "I will assume Left"<<endl;
-       bank = "Left";
+   if (bank != "gen" && bank != "Right" && bank != "Left") {
+       cout << "2nd argument should be gen,left, or right but was "<<argv[2]<<endl;
+       cout << "I will assume gen"<<endl;
+       bank = "gen";
     }
     cout << "Bank = "<<bank<<endl;
 
@@ -56,7 +57,7 @@ int main(int argc, char* argv[]) {
    scaler = new THaScaler(bank.c_str());
 
 // Init must be done once.  If you leave out the date, it assumes "now".
-   if (scaler->Init("1-10-2004") == -1) {  
+   if (scaler->Init("1-3-2008") == -1) {  // March 1, 2008 for e04007
       cout << "Error initializing scaler " << endl;
       return 1;
    }
@@ -66,17 +67,20 @@ int main(int argc, char* argv[]) {
    TFile hfile("scaler.root","RECREATE","Scaler data in Hall A");
 
 // Define the ntuple here
-//                   0   1  2  3   4   5  6  7   8  9 10 11 12  13   14   15  16  17  18  19  20  21  22  23  24  25 
-   char rawrates[]="time:u1:u3:u10:d1:d3:d10:t1:t2:t3:t4:t5:clk:tacc:s11:s12:s13:s14:s15:s16:s21:s22:s23:s24:s25:s26:";
-//                      26  27  28  29  30  31   32  33  34  35  36  37 
-   char asymmetries[]="au1:au3:au10:ad1:ad3:ad10:at1:at2:at3:at4:at5:aclk";
-   int nlen = strlen(rawrates) + strlen(asymmetries);
+//                   0   1  2  3   4   5  6  7   8  9 10 11 12 13 14  15   16   17  18  19  20  21  22  23  24  25 26 27 28
+   char rawrates[]="time:u1:u3:u10:d1:d3:d10:t1:t2:t3:t4:t5:t6:t7:t8:clk:tacc:s11:s12:s13:s14:s15:s16:s21:s22:s23:s24:s25:s26:";
+//                     29  30  31   32  33  34   35  36  37  38  39  40  41  42
+   char asymmetries[]="au1:au3:au10:ad1:ad3:ad10:at1:at2:at3:at4:at5:at6:at7:aclk:";
+//                 43  44  45  46  47  48  49  50  51  52   53  54  55
+   char counts[]="ct1:ct2:ct3:ct4:ct5:ct6:ct7:cu1:cu3:cu10:cd1:cd3:cd10";
+   int nlen = strlen(rawrates) + strlen(asymmetries) + strlen(counts);
    char *string_ntup = new char[nlen+1];
    strcpy(string_ntup,rawrates);
    strcat(string_ntup,asymmetries);
+   strcat(string_ntup,counts);
    TNtuple *ntup = new TNtuple("ascal","Scaler Rates",string_ntup);
 
-   Float_t farray_ntup[39];       // Note, dimension is same as size of string_ntup (i.e. nlen+1)
+   Float_t farray_ntup[56];       // Note, dimension is same as size of string_ntup (i.e. nlen+1)
 
 // Statistics kept on x1,3,10 upstream and downstream BCMs
    Double_t bcmsum[NBCM],bcmsq[NBCM],xcnt[NBCM];
@@ -92,7 +96,7 @@ int main(int argc, char* argv[]) {
    Float_t bcmped[NBCM];
 
    int i;
-   if (bank == "Left") {
+   if (bank == "Left" || bank == "gen") {
      cout << "Using Left Arm BCM pedestals"<<endl;
      for (i = 0; i < NBCM; i++) {
        bcmped[i] = bcmpedL[i];
@@ -110,7 +114,7 @@ int main(int argc, char* argv[]) {
    while (status) {
      status = scaler->LoadDataCodaFile(filename);   // load data for 'filename'
      if (!status) goto quit;
-     Double_t time = scaler->GetPulser("clock")/1024;
+     Double_t time = scaler->GetPulser("clock")/clockrate;
      if ( iev > 0 && (iev < 10 || ((iev % 10) == 0)) ) cout << "iev = " << iev << endl;
 
 // Optional printout
@@ -150,14 +154,16 @@ int main(int argc, char* argv[]) {
        farray_ntup[4] = scaler->GetBcmRate("bcm_d1");
        farray_ntup[5] = scaler->GetBcmRate("bcm_d3");
        farray_ntup[6] = scaler->GetBcmRate("bcm_d10");
-       for (trig = 1; trig <= 5; trig++) farray_ntup[6+trig] = scaler->GetTrigRate(trig);
-       farray_ntup[12] = scaler->GetPulserRate("clock");
-       farray_ntup[13] = scaler->GetNormRate(0,"TS-accept");
+       for (trig = 1; trig <= 8; trig++) {
+          farray_ntup[6+trig] = scaler->GetTrigRate(trig);
+       } 
+      farray_ntup[15] = scaler->GetPulserRate("clock");
+       farray_ntup[16] = scaler->GetNormRate(0,"TS-accept");
        for (int pad = 0; pad < 6; pad++) {
-	 farray_ntup[14+pad] = scaler->GetScalerRate("s1",pad);
+	 farray_ntup[17+pad] = scaler->GetScalerRate("s1L",pad);
        }
        for (int pad = 0; pad < 6; pad++) {
-	 farray_ntup[20+pad] = scaler->GetScalerRate("s2",pad);
+	 farray_ntup[23+pad] = scaler->GetScalerRate("s2",pad);
        }
        string bcms[] = {"bcm_u1", "bcm_u3", "bcm_u10", "bcm_d1", "bcm_d3", "bcm_d10"};
        for (int ibcm = 0; ibcm < 6; ibcm++ ) {
@@ -167,7 +173,7 @@ int main(int argc, char* argv[]) {
          if (sum != 0) {
 	   asy = (scaler->GetBcmRate(1,bcms[ibcm].c_str()) - scaler->GetBcmRate(-1,bcms[ibcm].c_str())) / sum;
          } 
-         farray_ntup[26+ibcm] = asy;
+         farray_ntup[29+ibcm] = asy;
          Float_t bcm_cut = 0;
          if (ibcm == 0 || ibcm == 3) bcm_cut = BCM_CUT1;
          if (ibcm == 1 || ibcm == 4) bcm_cut = BCM_CUT3;
@@ -179,7 +185,7 @@ int main(int argc, char* argv[]) {
                  xcnt[ibcm] = xcnt[ibcm] + 1.;
 	 }
        }
-       for (trig = 1; trig <= 5; trig++) {
+       for (trig = 1; trig <= 7; trig++) {
          asy = -999;
          if (scaler->GetBcmRate(1,"bcm_u3") > BCM_CUT3 && scaler->GetBcmRate(-1,"bcm_u3") > BCM_CUT3) {    
            sum = scaler->GetTrigRate(1,trig)/scaler->GetBcmRate(1,"bcm_u3") 
@@ -189,15 +195,17 @@ int main(int argc, char* argv[]) {
                  -  scaler->GetTrigRate(-1,trig)/scaler->GetBcmRate(-1,"bcm_u3")) / sum;
 	   }
 	 }
-         farray_ntup[31+trig] = asy;
+         farray_ntup[34+trig] = asy;
        }
        sum = scaler->GetPulser(1,"clock") + scaler->GetPulser(-1,"clock");
        asy = -999;
        if (sum != 0) {
 	 asy = (scaler->GetPulser(1,"clock") - scaler->GetPulser(-1,"clock")) / sum;
        }
-       farray_ntup[37] = asy;
-
+       farray_ntup[42] = asy;
+       for (trig = 1; trig <= 7; trig++) farray_ntup[42+trig] = scaler->GetTrig(trig);
+       for (int ibcm = 0; ibcm < 6; ibcm++) farray_ntup[50+ibcm] = scaler->GetBcm(bcms[ibcm].c_str());
+ 
        ntup->Fill(farray_ntup);
 
 

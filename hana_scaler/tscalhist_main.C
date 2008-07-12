@@ -29,12 +29,16 @@ using namespace std;
 
 int main(int argc, char* argv[]) {
 
-   Int_t lprint = 2;  // choice of printout
+   Int_t lprint = 3;  // choice of printout
 
-   const Double_t calib_u3  = 4114;  // calibrations (an example)
-   const Double_t calib_d10 = 12728;
-   const Double_t off_u3    = 167.1;
-   const Double_t off_d10   = 199.5;
+   const Double_t calib_u3  = 7180;  // calibrations (an example)
+   const Double_t calib_d3  = 7508; 
+   const Double_t calib_u10 = 21897;
+   const Double_t calib_d10 = 23633;
+   const Double_t off_u3    = 369;
+   const Double_t off_d3    = 110.0;
+   const Double_t off_u10   = 477;
+   const Double_t off_d10   = 253;
    Float_t clockrate;
    Float_t totchg = 0;
 
@@ -44,13 +48,13 @@ int main(int argc, char* argv[]) {
 
 // Define the ntuple here
 //                0   1    2    3   4   5   6   7   8   9  10    11   12   13   14   15
-   char cdata[]="run:time:u3:d10:ct1:ct2:ct3:ct4:ct5:ct6:ct7:ctacc:charge:clkp:clkm:clk";
+   char cdata[]="run:time:u3:d10:ct1:ct2:ct3:ct4:ct5:ct6:ct7:ctacc:charge:clkp:clkm:clk:d3:u10";
    int nlen = strlen(cdata);
    char *string_ntup = new char[nlen+1];
    strcpy(string_ntup,cdata);
    TNtuple *ntup = new TNtuple("ascal","Scaler History Data",string_ntup);
 
-   Float_t farray_ntup[16];       // Note, dimension is same as size of string_ntup 
+   Float_t farray_ntup[18];       // Note, dimension is same as size of string_ntup 
 
    cout << "Enter bank 'Right','Left' (spectr) ->" << endl;
    string bank;  cin >> bank;
@@ -79,10 +83,12 @@ int main(int argc, char* argv[]) {
      status = scaler.LoadDataHistoryFile(run, hdeci);  // load data from default history file
      if ( status != 0 ) continue;
 
-     for (int i = 0; i < 12; i++) farray_ntup[i] = 0;
+     for (int i = 0; i < 18; i++) farray_ntup[i] = 0;
 
      double time_sec = scaler.GetPulser("clock")/clockrate;
      double curr_u3  = (scaler.GetBcm("bcm_u3")/time_sec - off_u3)/calib_u3;
+     double curr_d3  = (scaler.GetBcm("bcm_d3")/time_sec - off_d3)/calib_d3;
+     double curr_u10 = (scaler.GetBcm("bcm_u10")/time_sec - off_u10)/calib_u10;
      double curr_d10 = (scaler.GetBcm("bcm_d10")/time_sec - off_d10)/calib_d10;
      farray_ntup[0] = run;
      farray_ntup[1] = time_sec;
@@ -90,7 +96,11 @@ int main(int argc, char* argv[]) {
      farray_ntup[3] = curr_d10;
      for (int itrig = 1; itrig <= 7; itrig++) farray_ntup[3+itrig]=scaler.GetTrig(itrig);
      farray_ntup[11] = scaler.GetNormData(0,12);
-     Float_t charge = curr_d10*time_sec;
+     Float_t charge = curr_u3*time_sec;
+     Float_t chgu3 = curr_u3*time_sec;
+     Float_t chgd3 = curr_d3*time_sec;
+     Float_t chgu10 = curr_u10*time_sec;
+     Float_t chgd10 = curr_d10*time_sec;
      Float_t clkplus = scaler.GetPulser(1,"clock");
      Float_t clkminus = scaler.GetPulser(-1,"clock");
      Float_t clock = scaler.GetPulser("clock");
@@ -99,6 +109,8 @@ int main(int argc, char* argv[]) {
      farray_ntup[13] = clkplus;
      farray_ntup[14] = clkminus;
      farray_ntup[15] = clock;
+     farray_ntup[16] = curr_d3;
+     farray_ntup[17] = curr_u10;
      ntup->Fill(farray_ntup);
      Float_t clkdiff = (clock - 1.016*(clkplus+clkminus))/clockrate; // units: seconds
 
@@ -112,10 +124,16 @@ int main(int argc, char* argv[]) {
             scaler.GetTrig(3),scaler.GetNormData(0,12));
      }
      if (lprint == 2) {
-       if (run == runlo) printf("Run    Events    Time    Current   Charge(uC)      T1      T3      T5\n");
-       printf("%d    %d   %6.1f   %7.2f   %7.2f    %d   %d   %d\n",
-              run,scaler.GetNormData(0,12),time_sec/60,curr_d10,charge,
-              scaler.GetTrig(1), scaler.GetTrig(3),scaler.GetTrig(5));
+       if (run == runlo) printf("Run    Events    Time    Current   Charge(uC)      T1      T3      T5    T6\n");
+       printf("%d    %d   %6.1f   %7.2f   %7.2f    %d   %d   %d   %d\n",
+              run,scaler.GetNormData(0,12),time_sec/60,curr_u3,charge,
+              scaler.GetTrig(1), scaler.GetTrig(3),scaler.GetTrig(5),scaler.GetTrig(6));
+     }
+     if (lprint == 3) {
+       if (run == runlo) printf("Run    Events    Time    Current (u3, d3, u10, d10)  Charge (u3, d3, u10, d10)\n");
+       printf("%d    %d   %6.1f   %7.2f  %7.2f  %7.2f  %7.2f    %7.2f  %7.2f  %7.2f  %7.2f \n",      
+              run,scaler.GetNormData(0,12),time_sec/60,curr_u3,curr_d3,curr_u10,curr_d10,
+              chgu3,chgd3,chgu10,chgd10);
      }
 
      //  printf("==== %d  %d \n",run,scaler.GetNormData(1,11));
