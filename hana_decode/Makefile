@@ -209,6 +209,8 @@ ifndef STANDALONE
 	cp -p $@ $(LIBDIR)
 endif
 
+static:	libdc.a
+
 libdc.so: $(DECODE_OBJS)
 	rm -f $@
 ifeq ($(strip $(SONAME)),)

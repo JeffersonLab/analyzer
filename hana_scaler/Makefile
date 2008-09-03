@@ -176,6 +176,8 @@ ifndef STANDALONE
 	cp -p $@ $(LIBDIR)
 endif
 
+static:	libscaler.a
+
 libscaler.so:	$(SCALER_OBJS) 
 	rm -f $@
 ifeq ($(strip $(SONAME)),)
