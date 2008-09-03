@@ -106,18 +106,16 @@ Int_t THaFormula::Compile( const char* expression )
 
   Int_t status = TFormula::Compile( expression );
 
+  //*-*- Store formula in linked list of formula in ROOT
+
+  fError = (status != 0);
+  if( fError ) {
+    if( fRegister) gROOT->GetListOfFunctions()->Remove(this);
+  } else {
 #ifdef WITH_DEBUG
     R__ASSERT( fNval+fNstring == fNcodes );
     R__ASSERT( fNstring >= 0 && fNval >= 0 );
 #endif
-
-  //*-*- Store formula in linked list of formula in ROOT
-
-  if( status ) {
-    fError = kTRUE;
-    if( fRegister) gROOT->GetListOfFunctions()->Remove(this);
-  } else {
-    fError = kFALSE;
     if( fRegister ) {
       TObject* old = gROOT->GetListOfFunctions()->FindObject(GetName());
       if (old) gROOT->GetListOfFunctions()->Remove(old);
