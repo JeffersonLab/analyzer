@@ -106,18 +106,16 @@ Int_t THaFormula::Compile( const char* expression )
 
   Int_t status = TFormula::Compile( expression );
 
+  //*-*- Store formula in linked list of formula in ROOT
+
+  fError = (status != 0);
+  if( fError ) {
+    if( fRegister) gROOT->GetListOfFunctions()->Remove(this);
+  } else {
 #ifdef WITH_DEBUG
     R__ASSERT( fNval+fNstring == fNcodes );
     R__ASSERT( fNstring >= 0 && fNval >= 0 );
 #endif
-
-  //*-*- Store formula in linked list of formula in ROOT
-
-  if( status ) {
-    fError = kTRUE;
-    if( fRegister) gROOT->GetListOfFunctions()->Remove(this);
-  } else {
-    fError = kFALSE;
     if( fRegister ) {
       TObject* old = gROOT->GetListOfFunctions()->FindObject(GetName());
       if (old) gROOT->GetListOfFunctions()->Remove(old);
@@ -325,6 +323,21 @@ Double_t THaFormula::Eval( void )
   return EvalPar( 0 );
 }
   
+//_____________________________________________________________________________
+#if ROOT_VERSION_CODE >= ROOT_VERSION(3,5,7)
+#if ROOT_VERSION_CODE >= ROOT_VERSION(5,16,0)
+TString THaFormula::GetExpFormula( Option_t* ) const
+#else
+TString THaFormula::GetExpFormula() const
+#endif
+{
+  // Override ROOT's TFormula::GetExpFormula because it does not handle
+  // kDefinedVariable and kDefinedString opcodes.
+  // For our purposes, the un-expanded expression is good enough
+
+  return fTitle;
+}
+#endif
 //_____________________________________________________________________________
 void THaFormula::Print( Option_t* option ) const
 {
