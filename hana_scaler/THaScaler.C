@@ -356,6 +356,7 @@ Int_t THaScaler::LoadData(const THaEvData& evdata) {
   if (evstr_type == 1) {  // data in the event stream (physics triggers)
     if (!evdata.IsPhysicsTrigger()) return 0;  
     nlen = evdata.GetRocLength(crate); 
+    if (nlen == 0) return 0;
   } else {  // traditional scaler event type 140
     if (evdata.GetEvType() != 140) return 0;   
     nlen = evdata.GetEvLength();
@@ -423,6 +424,9 @@ Int_t THaScaler::ExtractRaw(const Int_t* data, int dlen) {
   Int_t lfirst = 1;
   len = dlen;
   if (!data) return 0;
+// (9-Jul-08 RM): Following line is ok for evtype 140, but not for "ev" data
+// because there you want to crawl through a crate only (dlen is then
+// the length of the crate).  I'll leave this alone and fix LoadData.
   if (dlen == 0) len  = data[0] + 1;
   max = fcodafile->getBuffSize();
   ndat = len < max ? len : max;

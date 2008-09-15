@@ -319,12 +319,13 @@ load1:
 }
 
 vector<string> THaScalerDB::GetShortNames(Int_t crate, Int_t slot, Int_t chan) {
-  Int_t slot0 = GetSlot(crate, "TS-accept", 0);
-  Int_t slotm = GetSlot(crate, "TS-accept", -1);
-  Int_t slotp = GetSlot(crate, "TS-accept", 1);
-  if ( slot == slotm && IsHelicityTied(crate, -1) ) slot = slot0;
-  if ( slot == slotp && IsHelicityTied(crate,  1) ) slot = slot0;
-  pair<pair<Int_t, Int_t>, Int_t> cs = make_pair(make_pair(crate, slot), chan);
+  Int_t lcrate = TiedCrate(crate,0);
+  Int_t slot0 = GetSlot(lcrate, "TS-accept", 0);
+  Int_t slotm = GetSlot(lcrate, "TS-accept", -1);
+  Int_t slotp = GetSlot(lcrate, "TS-accept", 1);
+  if ( slot == slotm && IsHelicityTied(lcrate, -1) ) slot = slot0;
+  if ( slot == slotp && IsHelicityTied(lcrate,  1) ) slot = slot0;
+  pair<pair<Int_t, Int_t>, Int_t> cs = make_pair(make_pair(lcrate, slot), chan);
   if (channame.find(cs) == channame.end()) {
     vector<string> null_result;
     null_result.push_back("none");
