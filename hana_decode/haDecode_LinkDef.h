@@ -14,7 +14,6 @@
 #pragma link C++ class THaSlotData+;
 #pragma link C++ class THaUsrstrutils+;
 #pragma link C++ class THaCodaDecoder+;
-#pragma link C++ class THaBenchmark+;
 #pragma link C++ class THaEvData::RocDat_t+;
 
 #ifdef ONLINE_ET
