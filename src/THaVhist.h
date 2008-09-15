@@ -98,8 +98,9 @@ void THaVhist::SetX(Int_t nbinx, Double_t xlo, Double_t xhi, THaString varx)
 inline 
 void THaVhist::SetX(THaVform *varx)
 {
-  fFormX = new THaVform("formula", varx->GetName(), varx->GetTitle());
-  *fFormX = *varx;
+  if(fMyFormX) delete fFormX;
+  fFormX = varx;
+  fMyFormX = false;
 };
 
 
@@ -113,8 +114,9 @@ void THaVhist::SetY(Int_t nbiny, Double_t ylo, Double_t yhi, THaString vary)
 inline 
 void THaVhist::SetY(THaVform *vary)
 {
-  fFormY = new THaVform("formula", vary->GetName(), vary->GetTitle());
-  *fFormY = *vary;
+  if(fMyFormY) delete fFormY;
+  fFormY = vary;
+  fMyFormY = false;
 };
 
 
@@ -128,10 +130,9 @@ void THaVhist::SetCut(THaString cut)
 inline 
 void THaVhist::SetCut(THaVform *cut)
 {
-  //FIXME: the following won't work with ROOT <3.10 because of buggy TFormula copy ctor
-  //  fCut = new THaVform(*cut);
-  fCut = new THaVform("cut", cut->GetName(), cut->GetTitle());
-  *fCut = *cut;
+  if(fMyCut) delete fCut;
+  fCut = cut;
+  fMyCut = false;
 };
 
 inline
