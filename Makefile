@@ -1,7 +1,7 @@
 #------------------------------------------------------------------------------
 
 # Compile extra debugging code (slight performance impact)
-#export WITH_DEBUG = 1
+export WITH_DEBUG = 1
 
 # Compile debug version
 #export DEBUG = 1
@@ -17,7 +17,7 @@
 # SOVERSION should be numerical only - it becomes the shared lib soversion
 # EXTVERS (optional) describes the build, e.g. "dbg", "et", "gcc33" etc.
 SOVERSION  = 1.4
-PATCH   = 9
+PATCH   = 11
 VERSION = $(SOVERSION).$(PATCH)
 EXTVERS =
 NAME    = analyzer-$(VERSION)
