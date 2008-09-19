@@ -87,17 +87,19 @@ else
      LD            = g++
      SOFLAGS       = -shared
      ifdef DEBUG
-        CXXFLG      = -g -O0 -Wall -Woverloaded-virtual -fPIC
+        CXXFLG      = -g -O0
         LDFLAGS     = -g -O0
      else
-        CXXFLG      = -O2 -Wall -Woverloaded-virtual -fPIC
+        CXXFLG      = -O2
         LDFLAGS     = -O2
      endif
+     CXXFLG        += -Wall -fPIC
+     CXXEXTFLG      = -Woverloaded-virtual
   endif
   ifdef WITH_DEBUG
      DEFINES     += -DWITH_DEBUG
   endif
-  CXXFLG       += $(INCLUDES) $(DEFINES)
+#  CXXFLG       += $(INCLUDES) $(DEFINES)
 endif
 
 ifeq ($(CXX),)
@@ -155,7 +157,8 @@ ifdef ONLINE_ET
 endif
 
 DEFINES      += $(DC_DEFINES)
-CXXFLAGS     += $(CXXFLG) $(INCLUDES) $(DEFINES)
+CFLAGS        = $(CXXFLG) $(INCLUDES) $(DEFINES)
+CXXFLAGS      = $(CXXFLG) $(CXXEXTFLG) $(INCLUDES) $(DEFINES)
 LIBS         += $(ROOTLIBS) $(SYSLIBS)
 GLIBS        += $(ROOTGLIBS) $(SYSLIBS)
 
@@ -278,7 +281,7 @@ libevio_linux.a:  evio.o swap_util.o swapped_intcpy.o
 # 	$(CXX) -c  $<
 
 swapped_intcpy.o: swapped_intcpy.c
-	$(CC) $(CXXFLAGS) -c  $<
+	$(CC) $(CFLAGS) -c  $<
 
 # Dictionary
 
