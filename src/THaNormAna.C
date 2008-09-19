@@ -167,14 +167,14 @@ Int_t THaNormAna::SetupRawData( const TDatime* run_time, EMode mode )
 void THaNormAna::InitRocScalers()
 { // setup the ROC scalers we want to decode.
 
-  fRocScaler.push_back(new BRocScaler(11,"trigger-1",0xabc30000, 0xabc50000, 0, &roc11_t1));
-  fRocScaler.push_back(new BRocScaler(11,"trigger-2",0xabc30000, 0xabc50000, 1, &roc11_t2));
-  fRocScaler.push_back(new BRocScaler(11,"trigger-3",0xabc30000, 0xabc50000, 2, &roc11_t3));
-  fRocScaler.push_back(new BRocScaler(11,"trigger-4",0xabc30000, 0xabc50000, 3, &roc11_t4));
-  fRocScaler.push_back(new BRocScaler(11,"trigger-5",0xabc30000, 0xabc50000, 4, &roc11_t5));
-  fRocScaler.push_back(new BRocScaler(11,"clock1024",0xabc30000, 0xabc50000, 7, &roc11_clk1024));
-  fRocScaler.push_back(new BRocScaler(11,"bcm_u3",0xabc30000, 0xabc50000, 6, &roc11_bcmu3));
-  fRocScaler.push_back(new BRocScaler(11,"bcm_u10",0xabc30000, 0xabc50000, 11, &roc11_bcmu10));
+  fRocScaler.push_back(new BRocScaler(11,(char*)"trigger-1",0xabc30000, 0xabc50000, 0, &roc11_t1));
+  fRocScaler.push_back(new BRocScaler(11,(char*)"trigger-2",0xabc30000, 0xabc50000, 1, &roc11_t2));
+  fRocScaler.push_back(new BRocScaler(11,(char*)"trigger-3",0xabc30000, 0xabc50000, 2, &roc11_t3));
+  fRocScaler.push_back(new BRocScaler(11,(char*)"trigger-4",0xabc30000, 0xabc50000, 3, &roc11_t4));
+  fRocScaler.push_back(new BRocScaler(11,(char*)"trigger-5",0xabc30000, 0xabc50000, 4, &roc11_t5));
+  fRocScaler.push_back(new BRocScaler(11,(char*)"clock1024",0xabc30000, 0xabc50000, 7, &roc11_clk1024));
+  fRocScaler.push_back(new BRocScaler(11,(char*)"bcm_u3",0xabc30000, 0xabc50000, 6, &roc11_bcmu3));
+  fRocScaler.push_back(new BRocScaler(11,(char*)"bcm_u10",0xabc30000, 0xabc50000, 11, &roc11_bcmu10));
 }
 
 //_____________________________________________________________________________

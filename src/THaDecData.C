@@ -237,9 +237,10 @@ Int_t THaDecData::SetupDecData( const TDatime* run_time, EMode mode )
 	decdatafile.clear();  // Forget previous failures before attempt
 	decdatafile.open((*it).c_str());
 
-	if( fDebug>0 ) 
+	if( fDebug>0 ) {
 	  if( !decdatafile ) cout << " ... failed" << endl;
 	  else               cout << " ... ok" << endl;
+	}
       } while ( !decdatafile && ++it != fnames.end() );
     }
     if( fnames.empty() || !decdatafile ) {
