@@ -2,6 +2,7 @@
 #include <iostream>
 #include <iomanip>
 #include <string>
+#include <cstdlib>
 #include "TString.h"
 
 #include "THaDB.h"
