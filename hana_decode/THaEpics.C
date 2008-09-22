@@ -24,6 +24,7 @@
 #include "THaEpics.h"
 #include "TMath.h"
 #include <iostream>
+#include <cstring>
 
 using namespace std;
 

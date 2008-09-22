@@ -11,6 +11,7 @@
 #include <vector>
 #include <map>
 #include <string> 
+#include <cstring>
 
 class THaVar;
 class TH1F;

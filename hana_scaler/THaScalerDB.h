@@ -17,6 +17,7 @@
 #include <map>
 #include <iterator>
 #include <iostream>
+#include <cstdlib>
 #define ADB_DEBUG 0
 
 class Bdate {
