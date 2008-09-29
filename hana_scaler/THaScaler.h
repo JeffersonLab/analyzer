@@ -92,7 +92,9 @@ public:
    Int_t GetTrig(Int_t helicity, Int_t trigger, Int_t histor=0);   
    Int_t GetBcm(Int_t helicity, const char* which, Int_t histor=0);   
    Int_t GetPulser(Int_t helicity, const char* which, Int_t histor=0);  
+   Int_t GetNormData(Int_t tgtstate, Int_t helicity, const char* which, Int_t histor=0);  
    Int_t GetNormData(Int_t helicity, const char* which, Int_t histor=0);  
+   Int_t GetNormData(Int_t tgtstate, Int_t helicity, Int_t chan, Int_t histor);
    Int_t GetNormData(Int_t helicity, Int_t chan, Int_t histor=0);
 // RATES (Hz) since last update, similar usage to above.
    Double_t GetScalerRate(Int_t slot, Int_t chan);
@@ -104,8 +106,10 @@ public:
    Double_t GetBcmRate(Int_t helicity, const char* which);      
    Double_t GetPulserRate(const char* which);   
    Double_t GetPulserRate(Int_t helicity, const char* which);   
+   Double_t GetNormRate(Int_t tgtstate, Int_t helicity, const char* which);
    Double_t GetNormRate(Int_t helicity, const char* which);
    Double_t GetNormRate(Int_t helicity, Int_t chan);
+   Double_t GetNormRate(Int_t tgtstate, Int_t helicity, Int_t chan);
    Double_t GetClockRate() const { return clockrate; }
    Double_t GetIRate(Int_t slot, Int_t chan);
    Bool_t IsRenewed() const { return new_load; }  // kTRUE if obj has new data
@@ -116,6 +120,7 @@ public:
    void SetTimeInterval(Double_t time);    // set avg time interval between events. (if no clk)
    void SetIChan(Int_t slot, Int_t chan);  // Set channel to norm. by (for GetIRate)
    Int_t GetSlot(std::string which, Int_t helicity=0);
+   Int_t GetSlot(Int_t tgtstate, Int_t helicity);
    Int_t GetChan(std::string which, Int_t helicity=0, Int_t chan=0);
    THaScalerDB* GetDataBase() { return database; };
    
@@ -146,6 +151,7 @@ protected:
    UInt_t header_str_to_base16(const std::string& header);
    Double_t calib_u1,calib_u3,calib_u10,calib_d1,calib_d3,calib_d10;
    Double_t off_u1,off_u3,off_u10,off_d1,off_d3,off_d10;
+   Double_t GetTimeDiff(Int_t tgtstate, Int_t helicity);
    Double_t GetTimeDiff(Int_t helicity);
    void SetupNormMap();
    static const Int_t fDebug = 0;

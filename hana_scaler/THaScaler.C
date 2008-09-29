@@ -66,9 +66,9 @@ THaScaler::THaScaler( const char* bankgr ) {
   use_clock = kTRUE;
   vme_server = "";
   vme_port = 0;
-  normslot = new Int_t[3];
+  normslot = new Int_t[5];
   icurslot=-1;  icurchan=-1;
-  memset(normslot, -1, 3*sizeof(Int_t));
+  memset(normslot, -1, 5*sizeof(Int_t));
   clkslot = -1;
   clkchan = -1;
   fcodafile = new THaCodaFile;
@@ -268,8 +268,6 @@ Int_t THaScaler::InitData(const string& bankgroup, const Bdate& date_want) {
       it++;
     }
   }
-  normslot[1] = normslot[0]-1;
-  normslot[2] = normslot[0]+1;
 
   if (fDebug) {
     cout << "Set up bank "<<bank_to_find<<endl;
@@ -332,8 +330,14 @@ void THaScaler::SetupNormMap() {
 // is the one that contains TS-accept.  This makes
 // subsequent code much faster.
  
-  Int_t savenslot[3];
-  for (int i=0; i<3; i++) savenslot[i]=normslot[i];
+// Initial defaults
+  normslot[1] = normslot[0]-1;
+  normslot[2] = normslot[0]+1;
+  normslot[3] = 0;
+  normslot[4] = 0;
+
+  Int_t savenslot[5];
+  for (int i=0; i<5; i++) savenslot[i]=normslot[i];
 
   normslot[0] = GetSlot("TS-accept");
   normslot[1] = GetSlot("TS-accept", -1);
@@ -341,15 +345,28 @@ void THaScaler::SetupNormMap() {
   clkslot = GetSlot("clock");
   clkchan = GetChan("clock");
 
+  if (database) {
+// possible over-ride if target state defined 
+    if (database->UsesTargetState(crate)) {
+      if (fDebug) cout << "Using target state info "<<endl;
+      normslot[0] = database->GetSlot(crate,0,0);
+      normslot[1] = database->GetSlot(crate,1,1);
+      normslot[2] = database->GetSlot(crate,1,-1);
+      normslot[3] = database->GetSlot(crate,-1,1);
+      normslot[4] = database->GetSlot(crate,-1,-1);
+    }
+  }
+
   if (normslot[0]==-1 && savenslot[0]!=-1) {
     cout << "TS-accept not defined in scaler.map."<<endl;
     cout << "So we will use default normslot."<<endl;
-    for (int i=0; i<3; i++) normslot[i]=savenslot[i];
+    for (int i=0; i<5; i++) normslot[i]=savenslot[i];
   }
 
   if (fDebug) {
-    cout << "NormMap info "<<normslot[0]<<"  "<<normslot[1]<<"  "<<normslot[2]<<endl;
-    cout << "clock "<<clkslot << " " << clkchan<<endl;
+    cout << "NormMap info ";
+    for (Int_t i=0; i<5; i++) cout << "  "<<normslot[i];
+    cout << "\nclock "<<clkslot << " " << clkchan<<endl;
   }
   for (Int_t ichan = 0; ichan < SCAL_NUMCHAN; ichan++) {
     vector<string> chan_name = database->GetShortNames(crate, normslot[0], ichan);
@@ -814,6 +831,23 @@ Int_t THaScaler::GetPulser(Int_t helicity, const char* which, Int_t histor) {
   return GetNormData(helicity, which, histor);
 };   
 
+Int_t THaScaler::GetNormData(Int_t tgtstate, Int_t helicity, const char* which, Int_t histor) {
+// Get Normalization Data for channel 'which'
+// by target and helcity states 0, 1, -1  where 0 is neither
+// histor = 0 = this event.  1 = previous event.
+  if ( !did_init | !one_load ) return 0;
+  Int_t index = 0;
+  if (tgtstate == 0  && helicity == 0)  index=0;
+  if (tgtstate == 1  && helicity == 1)  index=1;
+  if (tgtstate == 1  && helicity == -1) index=2;
+  if (tgtstate == -1 && helicity == 1)  index=3;
+  if (tgtstate == -1 && helicity == -1) index=4;
+  if (normslot[index] < 0) return 0;
+  multimap<string, Int_t>::iterator pm = normmap.find(which);
+  if (pm == normmap.end()) return 0;
+  return GetScaler(normslot[index],pm->second,histor);
+};
+
 Int_t THaScaler::GetNormData(Int_t helicity, const char* which, Int_t histor) {
 // Get Normalization Data for channel 'which'
 // by helcity state (-1, 0, +1)  where 0 is non-helicity gated
@@ -826,6 +860,22 @@ Int_t THaScaler::GetNormData(Int_t helicity, const char* which, Int_t histor) {
   multimap<string, Int_t>::iterator pm = normmap.find(which);
   if (pm == normmap.end()) return 0;
   return GetScaler(normslot[index],pm->second,histor);
+};
+
+Int_t THaScaler::GetNormData(Int_t tgtstate, Int_t helicity, Int_t chan, Int_t histor) {
+// Get Normalization Data for channel #chan = 0,1,2,...
+// by target and helcity state (-1, 0, +1)  where 0 is neither
+// histor = 0 = this event.  1 = previous event.
+// Assumption: a slot with "TS-accept" is a normalization scaler.
+  if ( !did_init | !one_load ) return 0;
+  Int_t index = 0;
+  if (tgtstate == 0  && helicity == 0)  index=0;
+  if (tgtstate == 1  && helicity == 1)  index=1;
+  if (tgtstate == 1  && helicity == -1) index=2;
+  if (tgtstate == -1 && helicity == 1)  index=3;
+  if (tgtstate == -1 && helicity == -1) index=4;
+  if (normslot[index] == -1) return 0;
+  return GetScaler(normslot[index],chan,histor);  
 };
 
 Int_t THaScaler::GetNormData(Int_t helicity, Int_t chan, Int_t histor) {
@@ -846,7 +896,14 @@ Int_t THaScaler::GetSlot(string detector, Int_t helicity) {
   return database->GetSlot(crate, detector, helicity);
 };
 
+Int_t THaScaler::GetSlot(Int_t tgtstate, Int_t helicity) {
+  if (!database) return -1;
+  return database->GetSlot(crate, tgtstate, helicity);
+};
+
 Int_t THaScaler::GetChan(string detector, Int_t helicity, Int_t chan) {
+// No distinction by target state because it's assumed that diff tgt states 
+// share the same channel map since that's how we fan out the signals.
   if (!database) return 0;
   return database->GetChan(crate, detector, helicity, chan);
 };
@@ -932,6 +989,18 @@ Double_t THaScaler::GetPulserRate(Int_t helicity, const char* which) {
   return 0;
 };
 
+Double_t THaScaler::GetNormRate(Int_t tgtstate, Int_t helicity, const char* which) {
+  Double_t rate,etime;
+  etime = GetTimeDiff(helicity);
+
+  if (etime > 0) { 
+      rate = ( GetNormData(helicity, which, 0) -
+               GetNormData(helicity, which, 1) ) / etime;
+      return rate;
+  }
+  return 0;
+};
+
 Double_t THaScaler::GetNormRate(Int_t helicity, const char* which) {
   Double_t rate,etime;
   etime = GetTimeDiff(helicity);
@@ -950,6 +1019,17 @@ Double_t THaScaler::GetNormRate(Int_t helicity, Int_t chan) {
   if (etime > 0) { 
       rate = ( GetNormData(helicity, chan, 0) -
                GetNormData(helicity, chan, 1) ) / etime;
+      return rate;
+  }
+  return 0;
+};
+
+Double_t THaScaler::GetNormRate(Int_t tgtstate, Int_t helicity, Int_t chan) {
+  Double_t rate,etime;
+  etime = GetTimeDiff(tgtstate, helicity);
+  if (etime > 0) { 
+      rate = ( GetNormData(tgtstate, helicity, chan, 0) -
+               GetNormData(tgtstate, helicity, chan, 1) ) / etime;
       return rate;
   }
   return 0;
@@ -975,8 +1055,8 @@ Double_t THaScaler::GetTimeDiff(Int_t helicity) {
   }
   if (clockrate == 0) return 0;
   if (helicity==0 && clkslot != -1 && clkchan != -1) {
-    return ((GetScaler(clkslot, clkchan, 0) -
-             GetScaler(clkslot, clkchan, 1)) /
+    return ((GetNormData(clkslot, clkchan, 0) -
+             GetNormData(clkslot, clkchan, 1)) /
   	          clockrate);
   } else {
   
@@ -985,6 +1065,21 @@ Double_t THaScaler::GetTimeDiff(Int_t helicity) {
             	  clockrate) ;
   }
 };
+
+Double_t THaScaler::GetTimeDiff(Int_t tgtstate, Int_t helicity) {
+// Get time diff for target state 'tgtstate' and helicity.
+// See overloaded implementation for comments.
+  if (tgtstate == 0) return GetTimeDiff(helicity);
+  if ( !use_clock ) {
+    Double_t etime = 0;
+    if (clockrate != 0) etime = 1/clockrate;
+    return etime;
+  }
+  if (clockrate == 0) return 0;
+  return ((GetNormData(tgtstate, helicity,"clock",0) -
+	   GetNormData(tgtstate, helicity,"clock",1)) /
+            	  clockrate) ;
+}
 
 UInt_t THaScaler::header_str_to_base16(const string& hdr) {
 // Utility to convert string header to base 16 integer

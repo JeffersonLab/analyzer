@@ -17,7 +17,6 @@
 #include <map>
 #include <iterator>
 #include <iostream>
-#include <cstdlib>
 #define ADB_DEBUG 0
 
 class Bdate {
@@ -238,6 +237,7 @@ public:
    std::string::size_type FindNoCase(const std::string s1, 
 				     const std::string s2);
    Int_t GetSlot(Int_t crate, std::string desc, Int_t helicity=0);
+   Int_t GetSlot(Int_t crate, Int_t tgtstate, Int_t helicity);
    Int_t GetChan(Int_t crate, std::string desc, Int_t helicity=0, Int_t chan=0);
    std::vector<std::string> GetShortNames(Int_t crate, Int_t slot, Int_t chan);
    Int_t GetNumDirectives(Int_t craet, std::string directive);
@@ -245,6 +245,7 @@ public:
    std::string GetStringDirectives(Int_t crate, std::string directive, 
 				   std::string key);
    void LoadCrateToInt(const char *bank, Int_t cr);
+   Bool_t UsesTargetState(Int_t crate);
    Int_t CrateToInt(const std::string& scrate);
    void PrintChanMap();
    void PrintDirectives();

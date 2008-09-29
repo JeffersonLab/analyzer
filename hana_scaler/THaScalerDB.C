@@ -47,6 +47,7 @@ void THaScalerDB::Init() {
     directnames.push_back("helicity");
     directnames.push_back("crate");
     directnames.push_back("slot");
+    directnames.push_back("target");
 }
 
 bool THaScalerDB::extract_db(const Bdate& bdate) {
@@ -199,10 +200,12 @@ string THaScalerDB::GetLineType(string sline) {
 }
 
 SDB_chanDesc THaScalerDB::GetChanDesc(Int_t crate, string desc, Int_t helicity) {  
-// If crate is tied to the map of another crate.
+// No distinction by target state (they share channel mapping)
+// First check if crate is tied to the map of another crate.
   Int_t lcrate = TiedCrate(crate, helicity);
   Int_t lhelicity = helicity;
 // If this helicity is tied to helicity=0 map, we use helicity=0.
+  if ( IsHelicityTied(crate, helicity) ) lhelicity = 0;
   if ( IsHelicityTied(crate, helicity) ) lhelicity = 0;
   SDB_chanKey sk(lcrate, lhelicity, desc);
   SDB_chanDesc cdesc(-1,"empty");  // empty so far
@@ -223,6 +226,19 @@ Int_t THaScalerDB::GetSlot(Int_t crate, string desc, Int_t helicity) {
 // channel in the detector described by "desc".
    SDB_chanDesc cdesc = GetChanDesc(crate, desc, helicity);
    return cdesc.GetSlot() + GetSlotOffset(crate, helicity);
+}
+ 
+
+Int_t THaScalerDB::GetSlot(Int_t crate, Int_t tgtstate, Int_t helicity) {  
+// Returns the slot in a scaler corresp. to the
+// combination of target state and beam helicity.
+  string subdir = "";
+  if (tgtstate == 0 && helicity == 0) subdir="00";
+  if (tgtstate == 1 && helicity == 1) subdir="pp";
+  if (tgtstate == 1 && helicity ==-1) subdir="pm";
+  if (tgtstate ==-1 && helicity == 1) subdir="mp";
+  if (tgtstate ==-1 && helicity ==-1) subdir="mm";
+  return GetIntDirectives(crate, "target-beam", subdir);
 }
 
 Int_t THaScalerDB::GetChan(Int_t crate, string desc, Int_t helicity, Int_t chan) {  
@@ -375,6 +391,15 @@ Int_t THaScalerDB::CrateToInt(const string& scr) {
   if (si != crate_strtoi.end()) return crate_strtoi[scrate];
   return 0;
 } 
+
+Bool_t THaScalerDB::UsesTargetState(Int_t crate) {
+// Does this crate have target state info ?
+  if (!direct) return kFALSE;
+  if (direct->GetDirective(crate, "target-beam", "pp") == "none") 
+      return kFALSE;
+  return kTRUE;
+}
+
 
 // The following 3 routines involve tying one combination of
 // (crate, helicity) to another crate's helicity=0 data with a
