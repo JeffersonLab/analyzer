@@ -17,7 +17,7 @@ export WITH_DEBUG = 1
 # SOVERSION should be numerical only - it becomes the shared lib soversion
 # EXTVERS (optional) describes the build, e.g. "dbg", "et", "gcc33" etc.
 SOVERSION  := 1.5
-PATCH   := 1
+PATCH   := 3
 VERSION := $(SOVERSION).$(PATCH)
 EXTVERS := 
 NAME    := analyzer-$(VERSION)
