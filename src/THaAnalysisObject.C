@@ -764,7 +764,9 @@ static Int_t IsDBdate( const string& line, TDatime& date, bool warn = true )
   if( rbrk == string::npos || rbrk <= lbrk+11 ) return 0;
   Int_t yy, mm, dd, hh, mi, ss;
   if( sscanf( line.substr(lbrk+1,rbrk-lbrk-1).c_str(), "%d-%d-%d %d:%d:%d",
-	      &yy, &mm, &dd, &hh, &mi, &ss) != 6) {
+	      &yy, &mm, &dd, &hh, &mi, &ss) != 6
+      || yy < 1995 || mm < 1 || mm > 12 || dd < 1 || dd > 31
+      || hh < 0 || hh > 23 || mi < 0 || mi > 59 || ss < 0 || ss > 59 ) {
     if( warn )
       ::Warning("THaAnalysisObject::IsDBdate()", 
 		"Invalid date tag %s", line.c_str());
