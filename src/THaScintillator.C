@@ -7,10 +7,6 @@
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include <cstring>
-#include <cstdio>
-#include <iostream>
-
 #include "THaScintillator.h"
 #include "THaEvData.h"
 #include "THaDetMap.h"
@@ -21,7 +17,11 @@
 #include "TMath.h"
 
 #include "THaTrackProj.h"
-#include <cstdlib>    // for printf in debug section
+
+#include <cstring>
+#include <cstdio>
+#include <cstdlib>
+#include <iostream>
 
 using namespace std;
 
