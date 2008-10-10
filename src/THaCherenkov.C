@@ -18,6 +18,7 @@
 #include "TMath.h"
 
 #include <cstring>
+#include <cstdlib>  // for printf in debug section
 
 ClassImp(THaCherenkov)
 

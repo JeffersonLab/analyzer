@@ -21,7 +21,7 @@
 #include "TMath.h"
 
 #include "THaTrackProj.h"
-//#include "THaDB.h"
+#include <cstdlib>    // for printf in debug section
 
 using namespace std;
 
