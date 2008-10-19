@@ -27,6 +27,7 @@
 #include "TProfile.h"
 #include "TNtuple.h"
 #include "TRandom.h"
+#include "TMath.h"
 #endif
 
 using namespace std;
@@ -239,7 +240,7 @@ quit:
      avg = bcmsum[1]/xcnt[1];
      diff = bcmsq[1]/xcnt[1] - avg*avg;
      if (diff < 0) diff = -1*diff;
-     asyerr = sqrt(diff)/sqrt(xcnt[1]);
+     asyerr = TMath::Sqrt(diff)/sqrt(xcnt[1]);
    }
    if (xtot > 0 && asyerr < 1000 && xsum > 200) {
      ofstream outfile(OUTFILENAME);

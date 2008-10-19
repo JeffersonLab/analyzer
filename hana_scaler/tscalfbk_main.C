@@ -12,6 +12,7 @@
 #include <time.h>
 #include <signal.h>
 #include "THaScaler.h"
+#include "TMath.h"
 
 using namespace std;
 
@@ -212,7 +213,7 @@ int AsyAvg() {
   if (adiff <= 0) {
      LogMessage("Sigma < 0 \n");  return -1;
   }
-  asysig = sqrt(adiff)/sqrt(xcnt);
+  asysig = TMath::Sqrt(adiff)/TMath::Sqrt(xcnt);
   if (debug >= 2) cout << "1st pass "<<xcnt<<"  "<<asyavg<<"  "<<asysig<<endl;
   // Average again, now only if within 4 sigma
   asysum = 0;  asysq = 0;  xcnt = 0;
@@ -231,7 +232,7 @@ int AsyAvg() {
   if (adiff <= 0) {
      LogMessage("2nd pass sigma < 0 \n"); return -1;
   }
-  asysig = sqrt(adiff)/sqrt(xcnt);  // asy in average
+  asysig = TMath::Sqrt(adiff)/TMath::Sqrt(xcnt);  // asy in average
   if (debug >= 2) cout << "2nd pass "<<xcnt<<"  "<<asyavg<<"  "<<asysig<<endl;
   if (asysig == 0) {
     LogMessage("Sigma = 0 \n");  return -1;  

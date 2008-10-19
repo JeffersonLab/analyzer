@@ -8,6 +8,7 @@
 #include <iostream>
 #include <string>
 #include "THaScaler.h"
+#include "TMath.h"
 
 using namespace std;
 
@@ -59,11 +60,11 @@ int main(int argc, char* argv[]) {
      au3 = au3sum / xcnt;
      Double_t xx = au3sq/xcnt - au3*au3;
      Double_t au3sig = 0;
-     if (xx > 0) au3sig = sqrt(xx);
+     if (xx > 0) au3sig = TMath::Sqrt(xx);
      ad10 = ad10sum / xcnt;
      xx = ad10sq/xcnt - ad10*ad10;
      Double_t ad10sig = 0;
-     if (xx > 0) ad10sig = sqrt(xx);
+     if (xx > 0) ad10sig = TMath::Sqrt(xx);
      cout << "Upstream x3  Asymmetry    = "<<au3<<" +/- "<<au3sig<<endl;
      cout << "Downstream x10  Asymmetry = "<<ad10<<" +/- "<<ad10sig<<endl;
    } else {
