@@ -194,8 +194,9 @@ Int_t THaScaler::InitData(const string& bankgroup, const Bdate& date_want) {
     // Data that are part of the event stream
     { "evgen",  0xb0d00000, 23, 1, 2, 105000, "none",  0, 
              {0,1,2,3,4,5,6,7,8,9,10,11} },
-    { "evleft",  0xabc00000, 11, 1, 4, 1024, "none",  0, {0,0,0,0,0,0,0,0,0,0,0,0}},
+    { "evleft",  0xabc00000, 11, 1, 1, 1024, "none",  0, {0,0,0,0,0,0,0,0,0,0,0,0}},
     { "evright", 0xceb00000, 10, 1, 8, 1024, "none",  0, {0,0,0,0,0,0,0,0,0,0,0,0}},
+    { "evbbite", 0xbbe00000, 12, 1, 1, 1024, "none",  0, {0,0,0,0,0,0,0,0,0,0,0,0}},
    // Add new scaler bank here...
     { 0, 0, 0, 0, 0, 0, "none",  0,  {0,0,0,0,0,0,0,0,0,0,0,0} }
   };
@@ -752,8 +753,20 @@ void THaScaler::PrintSummary() {
   printf("Triggers:     1 = %d    2 = %d    3 = %d   4 = %d    5 = %d\n",
          GetTrig(1),GetTrig(2),GetTrig(3),GetTrig(4),GetTrig(5));
   printf("Accepted triggers:   %d \n",GetNormData(0,"TS-accept"));
-  printf("Accepted triggers by helicity:    (-) = %d    (+) = %d\n",
-         GetNormData(-1,"TS-accept"),GetNormData(1,"TS-accept"));
+  printf("Accepted triggers by target and helicity state: \n");
+  printf("  (++) = %d    (+-) = %d   (-+) = %d    (--) = %d \n",
+       GetNormData(1,1,"TS-accept"),GetNormData(1,-1,"TS-accept"),
+       GetNormData(-1,1,"TS-accept"),GetNormData(-1,-1,"TS-accept"));
+// Can also GetNormData(tgt, hel, chan, 0)  for channel# chan = 0,1,2...
+// As for that last 0 it's needed because of the function overloading thing.
+// Just put 0 and don't worry.
+  printf("Trigger 1,2,3,4,5,6,7,8 by target and helicity state :\n");
+  cout << "  (++)       (+-)      (-+)      (--)  "<<endl;
+  for (Int_t ichan=0; ichan<=7; ichan++) {
+    cout << "trig "<<ichan<<"   "<<GetNormData(1,1,ichan,0)<<"   ";
+    cout << GetNormData(1,-1,ichan,0)<<"   "<<GetNormData(-1,1,ichan,0);
+    cout << "   "<<GetNormData(-1,-1,ichan,0)<<endl;
+  }
   printf("Charge Monitors  (Micro Coulombs)\n");
   printf("Upstream BCM   gain x1 %8.2f     x3 %8.2f     x10 %8.2f\n",
      curr_u1*time_sec,curr_u3*time_sec,curr_u10*time_sec);
