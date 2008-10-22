@@ -182,7 +182,7 @@ Int_t THaScaler::InitData(const string& bankgroup, const Bdate& date_want) {
     // default normslot is defined here (5th arg) in addition to scaler.map 
     // but you can fix it in scaler.map as TS-accept.  Also don't forget
     // to define "clock" in scaler.map
-    { "bbite",  0xbbe00000, 9, 140, 3, 1024, "129.57.192.8",  5037, 
+    { "bbite",  0xbbe00000, 9, 140, 4, 1024, "129.57.192.8",  5037, 
              {0,1,2,3,4,5,6,7,8,9,10,11} },
     { "gen",  0xb0d00000, 9, 140, 2, 105000, "129.57.192.5",  5022, 
              {0,1,2,3,4,5,6,7,8,9,10,11} },
@@ -196,7 +196,7 @@ Int_t THaScaler::InitData(const string& bankgroup, const Bdate& date_want) {
              {0,1,2,3,4,5,6,7,8,9,10,11} },
     { "evleft",  0xabc00000, 11, 1, 1, 1024, "none",  0, {0,0,0,0,0,0,0,0,0,0,0,0}},
     { "evright", 0xceb00000, 10, 1, 8, 1024, "none",  0, {0,0,0,0,0,0,0,0,0,0,0,0}},
-    { "evbbite", 0xbbe00000, 12, 1, 1, 1024, "none",  0, {0,0,0,0,0,0,0,0,0,0,0,0}},
+    { "evbbite", 0xabc00000, 12, 1, 1, 1024, "none",  0, {0,0,0,0,0,0,0,0,0,0,0,0}},
    // Add new scaler bank here...
     { 0, 0, 0, 0, 0, 0, "none",  0,  {0,0,0,0,0,0,0,0,0,0,0,0} }
   };
@@ -232,6 +232,9 @@ Int_t THaScaler::InitData(const string& bankgroup, const Bdate& date_want) {
      }
      if ( database->FindNoCase(bankgroup,"evright") != string::npos) {
           bank_to_find = "evright"; 
+     }
+     if ( database->FindNoCase(bankgroup,"evbbite") != string::npos) {
+          bank_to_find = "evbbite"; 
      }
 
    }
@@ -449,6 +452,11 @@ Int_t THaScaler::LoadDataCodaFile(THaCodaFile *codafile) {
 // Load data from a CODA file, assumed to be already opened. 
 // Return of 0 means end of data, return of 1 means there is more data.
   new_load = kFALSE;
+// Turn the following 2 on to see if the code works. 
+  Int_t dodump=0;
+  Int_t ldebug=0;
+  Int_t MAXLEN=5000;
+  Int_t databuff[MAXLEN];
   if (CheckInit() == SCAL_ERROR) return SCAL_ERROR;
   int codastat, extstat;
   found_crate = kFALSE;
@@ -457,10 +465,64 @@ Int_t THaScaler::LoadDataCodaFile(THaCodaFile *codafile) {
     codastat = codafile->codaRead();  
     if (codastat < 0) return 0;
     const Int_t *data = codafile->getEvBuffer();
+    int evlen = data[0]+1;
     int evtype = data[1]>>16;
-    if (evtype == SCAL_EVTYPE) {
-      extstat = ExtractRaw(data);
-      if (extstat) return 1;
+    int evnum = data[4];
+    if (ldebug) 
+      cout << "LoadCoda check "<<evlen<<"  "<<evtype<<"  "<<evnum<<endl;
+// optional dump of data to check
+    if (dodump) { 
+      cout << "\n\n Event number " << dec << evnum;
+      cout << " length " << evlen << " type " << evtype << endl;
+      int ipt = 0;
+      for (int j = 0; j < (evlen/5); j++) {
+        cout << dec << "\n evbuffer[" << ipt << "] = ";
+        for (int k=j; k<j+5; k++) {
+          cout << hex << data[ipt++] << " ";
+        }
+        cout << endl;
+      }
+      if (ipt < evlen) {
+        cout << dec << "\n evbuffer[" << ipt << "] = ";
+        for (int k=ipt; k<evlen; k++) {
+          cout << hex << data[ipt++] << " ";
+	}
+        cout << endl;
+      }
+    }
+// ------ end of dump
+    if (evstr_type == 1) {  // data in the event stream (physics triggers)
+      if (evtype > 14) return 1;
+      if (ldebug) cout << "Loading for crate # "<<crate<<endl; 
+      for (int j=0; j<MAXLEN; j++) databuff[j]=0; // clear !
+      int pos = data[2]+3;
+         while (pos+1 < evlen) {
+	   int len = data[pos];
+           int iroc = (data[pos+1]&0xff0000)>>16;
+           if (ldebug) 
+              cout << "crate len "<<len<<" crate num "<<iroc<<endl;
+           if (iroc == crate) {
+	     for (int j=pos; j<pos+len; j++) {
+               int idx = j-pos;
+       	       if (idx<MAXLEN) {
+		 databuff[idx] = data[j];
+                 if (ldebug) cout << "data["<<dec<<idx<<"] = 0x "<<hex<<databuff[idx]<<endl;
+	       }
+	     }
+             break;  // Got my crate
+	   }
+           pos += len+1;
+	 }
+         extstat = ExtractRaw(databuff);
+         if (ldebug) Print();
+         return 1;
+    } else {
+      if (evtype == SCAL_EVTYPE) {
+        if (ldebug) cout << "Event type 140 data"<<endl;
+        extstat = ExtractRaw(data);
+        if (ldebug) Print();
+        if (extstat) return 1;
+      }
     }
   }
   return 0;
@@ -763,7 +825,7 @@ void THaScaler::PrintSummary() {
   printf("Trigger 1,2,3,4,5,6,7,8 by target and helicity state :\n");
   cout << "  (++)       (+-)      (-+)      (--)  "<<endl;
   for (Int_t ichan=0; ichan<=7; ichan++) {
-    cout << "trig "<<ichan<<"   "<<GetNormData(1,1,ichan,0)<<"   ";
+    cout << "trig "<<ichan+1<<"   "<<GetNormData(1,1,ichan,0)<<"   ";
     cout << GetNormData(1,-1,ichan,0)<<"   "<<GetNormData(-1,1,ichan,0);
     cout << "   "<<GetNormData(-1,-1,ichan,0)<<endl;
   }
@@ -817,7 +879,8 @@ Int_t THaScaler::GetTrig(Int_t helicity, Int_t trig, Int_t histor) {
 // by helcity state (-1, 0, +1)  where 0 is non-helicity gated
 // histor = 0 = this event.  1 = previous event.
   char ctrig[50];
-  sprintf(ctrig,"trigger-%d",trig);
+  sprintf(ctrig,"trigger-%d",trig); // default
+  if (crate == 9) sprintf(ctrig,"T%d",trig); // for bbite
   return GetNormData(helicity, ctrig, histor);
 };
 
