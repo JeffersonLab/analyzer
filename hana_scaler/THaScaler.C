@@ -70,7 +70,7 @@ THaScaler::THaScaler( const char* bankgr ) {
   icurslot=-1;  icurchan=-1;
   memset(normslot, -1, 5*sizeof(Int_t));
   clkslot = -1;
-  clkchan = -1;
+  clkchan = 7;  // historical default
   fcodafile = new THaCodaFile;
   rawdata = new Int_t[2*SCAL_NUMBANK*SCAL_NUMCHAN];
   memset(rawdata,0,2*SCAL_NUMBANK*SCAL_NUMCHAN*sizeof(Int_t));
@@ -196,7 +196,7 @@ Int_t THaScaler::InitData(const string& bankgroup, const Bdate& date_want) {
              {0,1,2,3,4,5,6,7,8,9,10,11} },
     { "evleft",  0xabc00000, 11, 1, 1, 1024, "none",  0, {0,0,0,0,0,0,0,0,0,0,0,0}},
     { "evright", 0xceb00000, 10, 1, 8, 1024, "none",  0, {0,0,0,0,0,0,0,0,0,0,0,0}},
-    { "evbbite", 0xabc00000, 12, 1, 1, 1024, "none",  0, {0,0,0,0,0,0,0,0,0,0,0,0}},
+    { "evbbite", 0xbbe00000, 12, 1, 4, 1024, "none",  0, {0,0,0,0,0,0,0,0,0,0,0,0}},
    // Add new scaler bank here...
     { 0, 0, 0, 0, 0, 0, "none",  0,  {0,0,0,0,0,0,0,0,0,0,0,0} }
   };
@@ -880,7 +880,7 @@ Int_t THaScaler::GetTrig(Int_t helicity, Int_t trig, Int_t histor) {
 // histor = 0 = this event.  1 = previous event.
   char ctrig[50];
   sprintf(ctrig,"trigger-%d",trig); // default
-  if (crate == 9) sprintf(ctrig,"T%d",trig); // for bbite
+  if (crate == 9 || crate==12) sprintf(ctrig,"T%d",trig); // for bbite
   return GetNormData(helicity, ctrig, histor);
 };
 
@@ -986,13 +986,17 @@ Int_t THaScaler::GetChan(string detector, Int_t helicity, Int_t chan) {
 
 Double_t THaScaler::GetScalerRate(Int_t slot, Int_t chan) {
 // Return rates on scaler data, for slot #slot, channel #chan
-  Double_t etime;
-  if (slot == normslot[1])
-    etime = GetTimeDiff(-1);
-  else if (slot == normslot[2]) 
-    etime = GetTimeDiff(1);
-  else
+  Double_t etime=0;
+  Int_t found=0;
+  for (Int_t i=0; i<5; i++) {
+    if (slot == normslot[i]) {
+      found=1;
+      etime = GetTimeDiffSlot(slot, clkchan);
+    }
+  }
+  if (!found) {
     etime = GetTimeDiff(0);
+  }
 
   if (etime <= 0.0)
     return 0.0;
@@ -1067,11 +1071,11 @@ Double_t THaScaler::GetPulserRate(Int_t helicity, const char* which) {
 
 Double_t THaScaler::GetNormRate(Int_t tgtstate, Int_t helicity, const char* which) {
   Double_t rate,etime;
-  etime = GetTimeDiff(helicity);
+  etime = GetTimeDiff(tgtstate,helicity);
 
   if (etime > 0) { 
-      rate = ( GetNormData(helicity, which, 0) -
-               GetNormData(helicity, which, 1) ) / etime;
+    rate = ( GetNormData(tgtstate, helicity, which, 0) -
+	     GetNormData(tgtstate,helicity, which, 1) ) / etime;
       return rate;
   }
   return 0;
@@ -1118,6 +1122,21 @@ Double_t THaScaler::GetIRate(Int_t slot, Int_t chan) {
   if (rate == 0) return 0;
   return GetScalerRate(slot,chan)/rate;
 }
+
+Double_t THaScaler::GetTimeDiffSlot(Int_t slot, Int_t chan) {
+// Get the time difference in seconds based on a clock
+// in (slot, chan).  Normally chan=7.
+// See also comments in GetTimeDiff
+  if ( !use_clock ) {
+    Double_t etime = 0;
+    if (clockrate != 0) etime = 1/clockrate;
+    return etime;
+  }
+  if (clockrate == 0) return 0;
+  return (GetScaler(slot, chan, 0) - 
+          GetScaler(slot, chan, 1))/clockrate;
+};
+
 
 Double_t THaScaler::GetTimeDiff(Int_t helicity) {
 // Get the time difference in seconds.  Must normalize to a clock.

@@ -153,6 +153,7 @@ protected:
    Double_t off_u1,off_u3,off_u10,off_d1,off_d3,off_d10;
    Double_t GetTimeDiff(Int_t tgtstate, Int_t helicity);
    Double_t GetTimeDiff(Int_t helicity);
+   Double_t GetTimeDiffSlot(Int_t slot, Int_t chan=7);
    void SetupNormMap();
    static const Int_t fDebug = 0;
 
