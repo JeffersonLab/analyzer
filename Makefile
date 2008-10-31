@@ -1,31 +1,31 @@
 #------------------------------------------------------------------------------
 
 # Compile extra debugging code (slight performance impact)
-export WITH_DEBUG = 1
+#export WITH_DEBUG = 1
 
 # Compile debug version
-# export DEBUG = 1
+#export DEBUG = 1
 
 # Profiling with gprof
 #export PROFILE = 1
 
 # Include libraries for reading from the ET ring
 #  (only for adaq? machines with the Coda libraries )
-# export ONLINE_ET = 1
+export ONLINE_ET = 1
 #------------------------------------------------------------------------------
 
 # SOVERSION should be numerical only - it becomes the shared lib soversion
 # EXTVERS (optional) describes the build, e.g. "dbg", "et", "gcc33" etc.
 SOVERSION  := 1.5
-PATCH   := 4
+PATCH   := 5
 VERSION := $(SOVERSION).$(PATCH)
-EXTVERS := 
+EXTVERS := -et
 NAME    := analyzer-$(VERSION)
 VERCODE := $(shell echo $(subst ., ,$(SOVERSION)) $(PATCH) | awk '{ print $$1*65536 + $$2*256 + $$3 }')
 
 #------------------------------------------------------------------------------
 
-ARCH          := linuxegcs
+ARCH          := linux
 #ARCH          := solarisCC5
 ifndef PLATFORM
 PLATFORM = bin
@@ -42,6 +42,7 @@ LIBDIR       := $(shell pwd)
 HALLALIBS    := -L$(LIBDIR) -lHallA -ldc -lscaler
 SUBDIRS      := $(DCDIR) $(SCALERDIR)
 INCDIRS      := $(addprefix $(HA_DIR)/, src $(SUBDIRS))
+HA_DICT      := haDict
 
 LIBS         := 
 GLIBS        := 
@@ -66,9 +67,10 @@ LDCONFIG     :=
 SOFLAGS      := -G
 SONAME       := -h
 DEFINES      += -DSUNVERS
+DICTCXXFLG   :=
 endif
 
-ifeq ($(ARCH),linuxegcs)
+ifeq ($(ARCH),linux)
 # Linux with egcs (>= RedHat 5.2)
 CXX          := g++
 ifdef DEBUG
@@ -76,8 +78,8 @@ ifdef DEBUG
   LDFLAGS    := -g -O0
   DEFINES    :=
 else
-#  CXXFLG     := -O -march=pentium4
-  CXXFLG     := -O
+  CXXFLG     := -O2 -march=pentium4
+#  CXXFLG     := -O
   LDFLAGS    := -O
   DEFINES    := -DNDEBUG
 endif
@@ -87,6 +89,12 @@ LD           := g++
 LDCONFIG     := /sbin/ldconfig -n $(LIBDIR)
 SOFLAGS      := -shared
 SONAME       := -Wl,-soname=
+#FIXME: should be configure'd:
+CXXVER       := $(shell g++ --version | head -1 | sed 's/.* \([0-9]\)\..*/\1/')
+ifeq ($(CXXVER),4)
+CXXFLAGS     += -Wextra -Wno-missing-field-initializers
+DICTCXXFLG   := -Wno-strict-aliasing 
+endif
 endif
 
 # requires gcc 3 or up - test in configure script
@@ -185,7 +193,7 @@ OBJ          := $(SRC:.C=.o)
 RCHDR        := $(SRC:.C=.h) src/THaGlobals.h
 HDR          := $(RCHDR) src/VarDef.h src/VarType.h src/ha_compiledata.h
 DEP          := $(SRC:.C=.d) src/main.d
-OBJS         := $(OBJ) haDict.o
+OBJS         := $(OBJ) $(HA_DICT).o
 HA_LINKDEF   := src/HallA_LinkDef.h
 
 LIBHALLA     := $(LIBDIR)/libHallA.so
@@ -268,8 +276,13 @@ $(LIBSCALER):	$(LIBSCALER).$(SOVERSION)
 		rm -f $@
 		ln -s $< $@
 
-haDict.C: $(RCHDR) $(HA_LINKDEF)
-	@echo "Generating dictionary haDict..."
+ifeq ($(ARCH),linux)
+$(HA_DICT).o:  $(HA_DICT).C
+	$(CXX) $(CXXFLAGS) $(DICTCXXFLG) -o $@ -c $^
+endif
+
+$(HA_DICT).C: $(RCHDR) $(HA_LINKDEF)
+	@echo "Generating dictionary $(HA_DICT)..."
 	$(ROOTSYS)/bin/rootcint -f $@ -c $(INCLUDES) $(DEFINES) $^
 
 
@@ -299,7 +312,8 @@ static:		podda
 #---------- Maintenance --------------------------------------------
 clean:
 		set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i clean; done
-		rm -f *.so *.a $(PROGRAMS) *.o *Dict.* *~ src/ha_compiledata.h
+		rm -f *.so *.a $(PROGRAMS) *.o $(HA_DICT).* $(LNA_DICT).* *~ 
+		rm -f src/ha_compiledata.h
 		cd src; rm -f *.o *~
 
 realclean:	clean
