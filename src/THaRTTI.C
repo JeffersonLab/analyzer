@@ -201,7 +201,7 @@ Bool_t THaRTTI::IsPointer() const
 }
 
 //_____________________________________________________________________________
-void THaRTTI::Print( Option_t* opt ) const
+void THaRTTI::Print( Option_t* ) const
 {
   // Print RTTI information
 

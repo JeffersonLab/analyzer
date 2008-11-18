@@ -253,7 +253,7 @@ Int_t THaArrayString::Parse( const char* string )
 }
 
 //_____________________________________________________________________________
-void THaArrayString::Print( Option_t *option )
+void THaArrayString::Print( Option_t* )
 {
   cout << fName ;
   if( fNdim > 0 ) {

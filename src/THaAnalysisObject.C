@@ -81,7 +81,7 @@ THaAnalysisObject::~THaAnalysisObject()
 }
 
 //_____________________________________________________________________________
-Int_t THaAnalysisObject::Begin( THaRunBase* run )
+Int_t THaAnalysisObject::Begin( THaRunBase* /* run */ )
 {
   // Method usually called right before the start of the event loop
   // for 'run'. Begin() is similar to Init(), but since there is a default
@@ -95,7 +95,7 @@ Int_t THaAnalysisObject::Begin( THaRunBase* run )
 }
 
 //_____________________________________________________________________________
-Int_t THaAnalysisObject::DefineVariables( EMode mode )
+Int_t THaAnalysisObject::DefineVariables( EMode /* mode */ )
 { 
   // Default method for defining global variables. Currently does nothing.
 
@@ -182,7 +182,7 @@ Int_t THaAnalysisObject::DefineVarsFromList( const void* list,
 }
 
 //_____________________________________________________________________________
-Int_t THaAnalysisObject::End( THaRunBase* run )
+Int_t THaAnalysisObject::End( THaRunBase* /* run */ )
 {
   // Method usually called right after the end of the event loop for 'run'.
   // May be used by modules to clean up, compute averages, write summaries, etc.
@@ -279,7 +279,7 @@ vector<string> THaAnalysisObject::GetDBFileList( const char* name,
   
   it = dnames.begin();
   while( !(dirp = gSystem->OpenDirectory( (*it).c_str() )) && 
-	 (++it != dnames.end()) );
+	 (++it != dnames.end()) ) {}
 
   // None of the directories can be opened?
   if( it == dnames.end() ) {
@@ -459,7 +459,7 @@ THaAnalysisObject::EStatus THaAnalysisObject::Init( const TDatime& date )
 }
 
 //_____________________________________________________________________________
-Int_t THaAnalysisObject::InitOutput( THaOutput *output )
+Int_t THaAnalysisObject::InitOutput( THaOutput* /* output */ )
 {
   // This method is called from THaAnalyzer::DoInit,
   // after THaOutput is initialized.
@@ -576,7 +576,7 @@ char* THaAnalysisObject::ReadComment( FILE* fp, char *buf, const int len )
 }
 
 //_____________________________________________________________________________
-Int_t THaAnalysisObject::ReadDatabase( const TDatime& date )
+Int_t THaAnalysisObject::ReadDatabase( const TDatime& /* date */ )
 {
   // Default database reader. Currently does nothing.
 

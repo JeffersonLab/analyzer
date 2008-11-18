@@ -130,7 +130,7 @@ Int_t THaExtTarCor::DefineVariables( EMode mode )
 }
 
 //_____________________________________________________________________________
-Int_t THaExtTarCor::Process( const THaEvData& evdata )
+Int_t THaExtTarCor::Process( const THaEvData& )
 {
   // Calculate corrections and adjust the track parameters.
 

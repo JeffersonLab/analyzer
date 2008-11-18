@@ -64,7 +64,7 @@
 ClassImp(THaVarList)
 
 //_____________________________________________________________________________
-void THaVarList::Clear( Option_t* opt )
+void THaVarList::Clear( Option_t* )
 {
    // Remove all variables from the list.
 

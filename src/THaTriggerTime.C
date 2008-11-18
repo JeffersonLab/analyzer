@@ -53,7 +53,7 @@ Int_t THaTriggerTime::ReadDatabase( const TDatime& date )
   // however, this is not unexpected since most of the time it is un-necessary
   if( !fi ) return kOK;
   
-  while ( ReadComment( fi, buf, LEN ) );
+  while ( ReadComment( fi, buf, LEN ) ) {}
   
   // Read in the time offsets, in the format below, to be subtracted from
   // the times measured in other detectors.
@@ -108,7 +108,7 @@ Int_t THaTriggerTime::ReadDatabase( const TDatime& date )
 }
 
 //____________________________________________________________________________
-void THaTriggerTime::Clear(Option_t* opt)
+void THaTriggerTime::Clear(Option_t* )
 {
   // Reset all variables to their default/unknown state
   fEvtType = -1;

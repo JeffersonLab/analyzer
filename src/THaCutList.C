@@ -74,7 +74,7 @@ THaCutList::~THaCutList()
 }
 
 //______________________________________________________________________________
-void THaCutList::Clear( Option_t* option )
+void THaCutList::Clear( Option_t* )
 {
   // Remove all cuts and all blocks
 
@@ -83,7 +83,7 @@ void THaCutList::Clear( Option_t* option )
 }
 
 //______________________________________________________________________________
-void THaCutList::ClearAll( Option_t* opt )
+void THaCutList::ClearAll( Option_t* )
 {
   // Clear the results of all defined cuts
 
@@ -93,7 +93,7 @@ void THaCutList::ClearAll( Option_t* opt )
 }
 
 //______________________________________________________________________________
-void THaCutList::ClearBlock( const char* block, Option_t* opt )
+void THaCutList::ClearBlock( const char* block, Option_t* )
 {
   // Clear the results of the defined cuts in the named block
 

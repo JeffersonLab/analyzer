@@ -22,6 +22,7 @@ const Double_t THaVDCCluster::kBig = 1e38;  // Arbitrary large value
 
 //_____________________________________________________________________________
 THaVDCCluster::THaVDCCluster( const THaVDCCluster& rhs ) :
+  TObject(rhs),
   fSize(rhs.fSize), fPlane(rhs.fPlane), fSlope(rhs.fSlope), 
   fSigmaSlope(rhs.fSigmaSlope), fInt(rhs.fInt), fSigmaInt(rhs.fSigmaInt), 
   fT0(rhs.fT0), fSigmaT0(rhs.fSigmaT0), fPivot(rhs.fPivot), 
@@ -81,7 +82,7 @@ void THaVDCCluster::AddHit(THaVDCHit * hit)
 }
 
 //_____________________________________________________________________________
-void THaVDCCluster::Clear( const Option_t* opt )
+void THaVDCCluster::Clear( const Option_t* )
 {
   // Clear the contents of the cluster
 
@@ -201,7 +202,7 @@ void THaVDCCluster::CalcDist()
 }
   
 //_____________________________________________________________________________
-void THaVDCCluster::FitTrack( EMode mode )
+void THaVDCCluster::FitTrack( EMode /* mode */ )
 {
   // Fit track to drift distances. Supports three modes:
   // 
@@ -510,7 +511,7 @@ void THaVDCCluster::CalcChisquare(Double_t& chi2, Int_t& nhits ) const
 
 
 //_____________________________________________________________________________
-void THaVDCCluster::Print( Option_t* opt ) const
+void THaVDCCluster::Print( Option_t* ) const
 {
   // Print contents of cluster
 

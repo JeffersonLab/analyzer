@@ -59,7 +59,7 @@ THaPIDinfo::~THaPIDinfo()
 }
 
 //_____________________________________________________________________________
-void THaPIDinfo::Clear( Option_t* opt )
+void THaPIDinfo::Clear( Option_t* )
 {
   // Zero contents of the arrays
 
@@ -82,7 +82,7 @@ void THaPIDinfo::CombinePID()
 }
     
 //_____________________________________________________________________________
-void THaPIDinfo::Print( Option_t* opt ) const
+void THaPIDinfo::Print( Option_t* ) const
 {
   // Display contents of arrays
 

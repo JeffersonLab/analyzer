@@ -32,7 +32,7 @@ public:
   THaOdata& operator=(const THaOdata& rhs);
   virtual ~THaOdata() { delete [] data; };
   void AddBranches(TTree* T, std::string name);
-  void Clear( Option_t* opt="" ) { ndata = 0; }  
+  void Clear( Option_t* ="" ) { ndata = 0; }  
   Bool_t Resize(Int_t i);
   Int_t Fill(Int_t i, Double_t dat) {
     if( i<0 || (i>=nsize && Resize(i)) ) return 0;
@@ -127,8 +127,8 @@ protected:
 
 private:
 
-  THaOutput(const THaOutput& output) {}
-  THaOutput& operator=(const THaOutput& output) { return *this; }
+  THaOutput(const THaOutput&); /* {} */
+  THaOutput& operator=(const THaOutput& ); /* { return *this; } */
 
   std::string stitle, sfvarx, sfvary, scut, fScalBank;
 

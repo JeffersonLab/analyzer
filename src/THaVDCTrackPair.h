@@ -19,7 +19,7 @@ public:
     fLowerTrack(NULL), fUpperTrack(NULL), fError(1e307) {}
   THaVDCTrackPair( pUV lt, pUV ut ) :
     fLowerTrack(lt), fUpperTrack(ut), fError(1e307), fStatus(0) {}
-  THaVDCTrackPair( const THaVDCTrackPair& rhs ) :
+  THaVDCTrackPair( const THaVDCTrackPair& rhs ) : TObject(rhs),
     fLowerTrack(rhs.fLowerTrack), fUpperTrack(rhs.fUpperTrack),
     fError(rhs.fError), fStatus(rhs.fStatus) {}
   THaVDCTrackPair& operator=( const THaVDCTrackPair& );

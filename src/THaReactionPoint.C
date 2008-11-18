@@ -91,7 +91,7 @@ THaAnalysisObject::EStatus THaReactionPoint::Init( const TDatime& run_time )
 }
 
 //_____________________________________________________________________________
-Int_t THaReactionPoint::Process( const THaEvData& evdata )
+Int_t THaReactionPoint::Process( const THaEvData& )
 {
   // Calculate the vertex coordinates.
 

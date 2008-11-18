@@ -66,9 +66,10 @@ protected:
   Double_t fTheta; // Angle between z-axis and projection of track into xz plane
   Double_t fPhi;   // Angle between z-axis and projection of track into yz plane
   
+private:
   // Hide copy ctor and op=
-  THaVDCUVTrack( const THaVDCUVTrack& ) {}
-  THaVDCUVTrack& operator=( const THaVDCUVTrack& ) { return *this; }
+  THaVDCUVTrack( const THaVDCUVTrack& );
+  THaVDCUVTrack& operator=( const THaVDCUVTrack& );
 
   ClassDef(THaVDCUVTrack,0)             // VDCUVTrack class
 };

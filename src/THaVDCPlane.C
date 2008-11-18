@@ -288,7 +288,7 @@ THaVDCPlane::~THaVDCPlane()
 }
 
 //_____________________________________________________________________________
-void THaVDCPlane::Clear( Option_t* opt )
+void THaVDCPlane::Clear( Option_t* )
 {    
   // Clears the contents of the and hits and clusters
   fNWiresHit = 0;

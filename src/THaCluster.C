@@ -24,7 +24,7 @@ THaCluster& THaCluster::operator=( const THaCluster& rhs )
 }
 
 //_____________________________________________________________________________
-void THaCluster::Clear( const Option_t* opt )
+void THaCluster::Clear( const Option_t* )
 {
   // Clear the contents of the cluster
 
@@ -32,7 +32,7 @@ void THaCluster::Clear( const Option_t* opt )
 }
 
 //_____________________________________________________________________________
-void THaCluster::Print( Option_t* opt ) const
+void THaCluster::Print( Option_t* ) const
 {
   // Print contents of cluster
 

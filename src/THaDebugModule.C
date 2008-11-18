@@ -187,8 +187,9 @@ Int_t THaDebugModule::Process( const THaEvData& evdata )
     cout << "RETURN: continue, H: run 100 events, R: run to end, F: finish quietly, Q: quit\n";
     char c;
     cin.clear();
-    while( !cin.eof() && cin.get(c) && !strchr("\nqQhHrRfF",c));
-    if( c != '\n' ) while( !cin.eof() && cin.get() != '\n');
+    while( !cin.eof() && cin.get(c) && !strchr("\nqQhHrRfF",c)) {}
+    if( c != '\n' )
+      while( !cin.eof() && cin.get() != '\n') {}
     if( tolower(c) == 'q' )
       return kTerminate;
     else if( tolower(c) == 'h' ) {

@@ -91,7 +91,7 @@ class BdataLoc : public TNamed {
      TNamed(nm,nm), crate(cra), slot(0), chan(0), header(head), ntoskip(skip),
      search_choice(1) { Clear(); }
    Bool_t IsSlot() { return (search_choice == 0); }
-   void Clear( const Option_t* opt="" ) { ndata=0;  loaded_once = kFALSE; }
+   void Clear( const Option_t* ="" ) { ndata=0;  loaded_once = kFALSE; }
    void Load(UInt_t data) {
      if (ndata<MxHits) rdata[ndata++]=data;
      loaded_once = kTRUE;
@@ -185,7 +185,7 @@ THaDecData::~THaDecData()
 }
 
 //_____________________________________________________________________________
-void THaDecData::Clear( Option_t* opt ) 
+void THaDecData::Clear( Option_t* )
 {
   // Clear the object (set event-by-event data to zero)
 
@@ -216,7 +216,7 @@ void THaDecData::Clear( Option_t* opt )
 }
 
 //_____________________________________________________________________________
-void THaDecData::Reset( Option_t* opt ) 
+void THaDecData::Reset( Option_t* ) 
 {
   // Reset the object (zero all data, including histograms)
 
@@ -318,9 +318,10 @@ Int_t THaDecData::SetupDecData( const TDatime* run_time, EMode mode )
 	decdatafile.clear();  // Forget previous failures before attempt
 	decdatafile.open((*it).c_str());
 
-	if( fDebug>0 ) 
+	if( fDebug>0 ) {
 	  if( !decdatafile ) cout << " ... failed" << endl;
 	  else               cout << " ... ok" << endl;
+	}
       } while ( !decdatafile && ++it != fnames.end() );
     }
     if( fnames.empty() || !decdatafile ) {
@@ -461,7 +462,7 @@ BdataLoc* THaDecData::DefineChannel(BdataLoc *b, EMode mode, const char* desc)
 }
   
 //_____________________________________________________________________________
-Int_t THaDecData::End( THaRunBase* run ) 
+Int_t THaDecData::End( THaRunBase* )
 {
   WriteHist();
   return 0;
@@ -807,7 +808,7 @@ void THaDecData::VdcEff( )
 
 
 //_____________________________________________________________________________
-void THaDecData::Print( Option_t* opt ) const {
+void THaDecData::Print( Option_t* ) const {
 // Dump the data for purpose of debugging.
   cout << "Dump of THaDecData "<<endl;
   cout << "event pattern bits : ";

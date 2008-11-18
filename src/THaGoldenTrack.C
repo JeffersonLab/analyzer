@@ -86,7 +86,7 @@ Int_t THaGoldenTrack::DefineVariables( EMode mode )
 }
 
 //_____________________________________________________________________________
-Int_t THaGoldenTrack::Process( const THaEvData& evdata )
+Int_t THaGoldenTrack::Process( const THaEvData& )
 {
   // Calculate corrections and adjust the track parameters.
 

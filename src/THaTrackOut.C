@@ -26,7 +26,7 @@ THaTrackOut::~THaTrackOut()
 }
 
 //_____________________________________________________________________________
-void THaTrackOut::Clear( Option_t* opt )
+void THaTrackOut::Clear( Option_t* )
 {  
   // Set vector to default (junk) values
   fP4->SetXYZT(kBig,kBig,kBig,0); // also gives a large - Mag2()
@@ -95,7 +95,7 @@ Int_t THaTrackOut::InitOutput( THaOutput* output )
 }
 
 //_____________________________________________________________________________
-Int_t THaTrackOut::Process( const THaEvData& evdata )
+Int_t THaTrackOut::Process( const THaEvData& )
 {
   // Calculate the 4-vector for the golden track from fSrc
   

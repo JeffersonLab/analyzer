@@ -51,7 +51,7 @@ THaSAProtonEP::~THaSAProtonEP()
 }
 
 //_____________________________________________________________________________
-Int_t THaSAProtonEP::Process( const THaEvData& evdata )
+Int_t THaSAProtonEP::Process( const THaEvData& )
 {
   // Calculate the electron kinematics for elastic eX -> eX using the 
   // 4-vector from the outgoing X.

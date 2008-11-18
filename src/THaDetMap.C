@@ -301,7 +301,7 @@ void THaDetMap::GetMinMaxChan( Int_t& min, Int_t& max, ECountMode mode ) const
 
 
 //_____________________________________________________________________________
-void THaDetMap::Print( Option_t* opt ) const
+void THaDetMap::Print( Option_t* ) const
 {
   // Print the contents of the map
 

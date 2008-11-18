@@ -44,7 +44,7 @@ Int_t THaFilter::Close()
 }
 
 //_____________________________________________________________________________
-Int_t THaFilter::Init(const TDatime& date)
+Int_t THaFilter::Init(const TDatime& )
 {
   // Init the filter
 
@@ -76,8 +76,8 @@ Int_t THaFilter::Init(const TDatime& date)
 }
 
 //_____________________________________________________________________________
-Int_t THaFilter::Process( const THaEvData* evdata, const THaRunBase* run,
-			  Int_t code ) 
+Int_t THaFilter::Process( const THaEvData* /* evdata */, const THaRunBase* run,
+			  Int_t /* code */ ) 
 {
   // Process event. Write the event to output CODA file if and only if
   // the event passes the filter cut.

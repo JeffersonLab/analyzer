@@ -72,7 +72,7 @@ public:
    virtual void PrintSummary();  // Print out a summary of important scalers.
 
    const char* GetName() const { return bankgroup.c_str(); };
-   const Int_t GetCrate() const { return crate; };
+   Int_t GetCrate() const { return crate; };
 
 // Get scaler data from slot #slot and channel #chan (slot >= 0, chan >= 0)
 // Get counts by history, histor = 1 = previous event, 0 = present.

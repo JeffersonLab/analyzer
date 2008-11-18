@@ -121,7 +121,7 @@ Int_t THaBeamEloss::DefineVariables( EMode mode )
 }
 
 //_____________________________________________________________________________
-Int_t THaBeamEloss::Process( const THaEvData& evdata )
+Int_t THaBeamEloss::Process( const THaEvData& )
 {
   // Calculate corrections and adjust the track parameters.
 

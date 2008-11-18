@@ -79,7 +79,7 @@ THaAnalysisObject::EStatus THaReacPointFoil::Init( const TDatime& run_time )
 }
 
 //_____________________________________________________________________________
-Int_t THaReacPointFoil::Process( const THaEvData& evdata )
+Int_t THaReacPointFoil::Process( const THaEvData& )
 {
   // Calculate the vertex coordinates.
 

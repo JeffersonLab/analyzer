@@ -29,10 +29,6 @@ public:
 
 protected:
 
-  THaVDCAnalyticTTDConv( const THaVDCAnalyticTTDConv& ) {}
-  THaVDCAnalyticTTDConv& operator=( const THaVDCAnalyticTTDConv& ) 
-  { return *this; }
-  
   Double_t fDriftVel;   // Drift velocity (m / s)
 
   // Coefficients for a polynomial yielding correction parameters

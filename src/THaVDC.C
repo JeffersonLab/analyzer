@@ -148,7 +148,7 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   // t 0 0 0  ... etc.
   //
   if( SeekDBdate( file, date ) == 0 && fConfig.Length() > 0 && 
-      SeekDBconfig( file, fConfig.Data() ));
+      SeekDBconfig( file, fConfig.Data() )) {}
 
   fgets(buff, LEN, file); // Skip comment line
 
@@ -269,7 +269,7 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
 	// but ensure that they are defined only once!
 	bool match = false;
 	for( vector<THaMatrixElement>::iterator it = mat->begin();
-	     it != mat->end() && !(match = it->match(ME)); it++ );
+	     it != mat->end() && !(match = it->match(ME)); it++ ) {}
 	if( match ) {
 	  Warning(Here(here), "Duplicate definition of "
 		  "matrix element: %s. Using first definition.", buff);

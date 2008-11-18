@@ -101,7 +101,7 @@ THaAnalysisObject::EStatus THaPhotoReaction::Init( const TDatime& run_time )
 }
 
 //_____________________________________________________________________________
-Int_t THaPhotoReaction::Process( const THaEvData& evdata )
+Int_t THaPhotoReaction::Process( const THaEvData& )
 {
   const Double_t Mn = 0.939565;
   const Double_t Mp = 0.938272;

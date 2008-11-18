@@ -55,7 +55,7 @@ THaEvent::~THaEvent()
 }
 
 //_____________________________________________________________________________
-void THaEvent::Clear( Option_t* opt )
+void THaEvent::Clear( Option_t* )
 {
   // Reset
 }
@@ -208,7 +208,7 @@ Int_t THaEvent::Init()
 }
 
 //_____________________________________________________________________________
-void THaEvent::Reset( Option_t* opt )
+void THaEvent::Reset( Option_t* )
 {
   // Reset pointers to global variables. Forces Init() to be executed
   // at next Fill(), which re-associates global variables with the

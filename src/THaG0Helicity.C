@@ -137,7 +137,7 @@ Int_t THaG0Helicity::ReadDatabase( const TDatime& date )
 }
 
 //_____________________________________________________________________________
-Int_t THaG0Helicity::Begin( THaRunBase* run )
+Int_t THaG0Helicity::Begin( THaRunBase* )
 {
   // Book a histogram, if requested
   if (fDebug == -1) {
@@ -206,7 +206,7 @@ Int_t THaG0Helicity::Decode( const THaEvData& evdata )
 }
 
 //_____________________________________________________________________________
-Int_t THaG0Helicity::End( THaRunBase* run )
+Int_t THaG0Helicity::End( THaRunBase* )
 {
   // End of run processing. Write histograms.
 

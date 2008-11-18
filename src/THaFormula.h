@@ -41,15 +41,17 @@ public:
   virtual Double_t    Eval();
 #if ROOT_VERSION_CODE > 262660 // 4.02/04  Dumb rootcint chokes on ROOT_VERSION macro
   // The ROOT team strikes again - this one is really BAD
-  virtual Double_t    Eval( Double_t x, Double_t y=0.0, 
-			    Double_t z=0.0, Double_t t=0.0 ) const
+  virtual Double_t    Eval( Double_t /*x*/, Double_t /*y*/=0.0, 
+			    Double_t /*z*/=0.0, Double_t /*t*/=0.0 ) const
     // hack this-pointer to be non-const - courtesy of ROOT team
   { return const_cast<THaFormula*>(this)->Eval(); }
 #else
 #if ROOT_VERSION_CODE >= 197632 // 3.04/00
-  virtual Double_t    Eval( Double_t x, Double_t y=0.0, Double_t z=0.0, Double_t t=0.0 ) 
+  virtual Double_t    Eval( Double_t /*x*/, Double_t /*y*/=0.0,
+			    Double_t /*z*/=0.0, Double_t /*t*/=0.0 ) 
 #else
-  virtual Double_t    Eval( Double_t x, Double_t y=0.0, Double_t z=0.0 )
+    virtual Double_t    Eval( Double_t /*x*/, Double_t /*y*/=0.0,
+			      Double_t /*z*/=0.0 )
 #endif
   { return Eval(); }
 #endif

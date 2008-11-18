@@ -156,7 +156,7 @@ char* THaFormula::DefinedString( Int_t i )
     char** ppc = (char**)pvar->GetValuePointer(); //truly gruesome cast
     return *ppc;
   }
-  return "";
+  return (char*)"";
 }
 
 //_____________________________________________________________________________

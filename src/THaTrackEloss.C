@@ -119,7 +119,7 @@ Int_t THaTrackEloss::DefineVariables( EMode mode )
 }
 
 //_____________________________________________________________________________
-Int_t THaTrackEloss::Process( const THaEvData& evdata )
+Int_t THaTrackEloss::Process( const THaEvData& )
 {
   // Calculate corrections and adjust the track parameters.
 

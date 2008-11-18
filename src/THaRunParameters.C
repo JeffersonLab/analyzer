@@ -30,6 +30,7 @@ THaRunParameters::THaRunParameters() :
 
 //_____________________________________________________________________________
 THaRunParameters::THaRunParameters( const THaRunParameters& rhs ) :
+  TObject(rhs),
   fBeamName(rhs.fBeamName), fBeamE(rhs.fBeamE), fBeamP(rhs.fBeamP),
   fBeamM(rhs.fBeamM), fBeamQ(rhs.fBeamQ), fBeamdE(rhs.fBeamdE), 
   fBeamPol(rhs.fBeamPol),
@@ -72,7 +73,7 @@ THaRunParameters::~THaRunParameters()
 }
 
 //_____________________________________________________________________________
-void THaRunParameters::Clear( Option_t* opt )
+void THaRunParameters::Clear( Option_t* )
 {
   // Clear run parameters
   fBeamName = fTgtName = fRunName = "";
@@ -83,7 +84,7 @@ void THaRunParameters::Clear( Option_t* opt )
 }
 
 //_____________________________________________________________________________
-void THaRunParameters::Print( Option_t* opt ) const
+void THaRunParameters::Print( Option_t* ) const
 {
   // Print run parameters
 

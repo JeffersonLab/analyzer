@@ -19,11 +19,10 @@ public:
 
   virtual Double_t ConvertTimeToDist(Double_t time, Double_t tanTheta,
 				     Double_t *ddist=0) = 0;
+private:
 
-protected:
-
-  THaVDCTimeToDistConv( const THaVDCTimeToDistConv& ) {}
-  THaVDCTimeToDistConv& operator=( const THaVDCTimeToDistConv& ) { return *this; }
+  THaVDCTimeToDistConv( const THaVDCTimeToDistConv& );
+  THaVDCTimeToDistConv& operator=( const THaVDCTimeToDistConv& );
 
   ClassDef(THaVDCTimeToDistConv,0)             // VDCTimeToDistConv class
 };

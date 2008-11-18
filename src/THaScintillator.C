@@ -84,7 +84,7 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   FILE* fi = OpenFile( date );
   if( !fi ) return kFileError;
 
-  while ( ReadComment( fi, buf, LEN ) );
+  while ( ReadComment( fi, buf, LEN ) ) {}
   fscanf ( fi, "%d", &nelem );                        // Number of  paddles
   fgets ( buf, LEN, fi );
 
@@ -100,7 +100,7 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   // Read detector map. Unless a model-number is given
   // for the detector type, this assumes that the first half of the entries 
   // are for ADCs and the second half, for TDCs.
-  while ( ReadComment( fi, buf, LEN ) );
+  while ( ReadComment( fi, buf, LEN ) ) {}
   int i = 0;
   fDetMap->Clear();
   while (1) {
@@ -119,17 +119,17 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
       return kInitError;
     }
   }
-  while ( ReadComment( fi, buf, LEN ) );
+  while ( ReadComment( fi, buf, LEN ) ) {}
 
   Float_t x,y,z;
   fscanf ( fi, "%f%f%f", &x, &y, &z );             // Detector's X,Y,Z coord
   fgets ( buf, LEN, fi );
   fOrigin.SetXYZ( x, y, z );
   fgets ( buf, LEN, fi );
-  while ( ReadComment( fi, buf, LEN ) );
+  while ( ReadComment( fi, buf, LEN ) ) {}
   fscanf ( fi, "%f%f%f", fSize, fSize+1, fSize+2 ); // Sizes of det on X,Y,Z
   fgets ( buf, LEN, fi );
-  while ( ReadComment( fi, buf, LEN ) );
+  while ( ReadComment( fi, buf, LEN ) ) {}
 
   Float_t angle;
   fscanf ( fi, "%f", &angle );                     // Rotation angle of detector
@@ -251,36 +251,36 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   // ...etc.
   //
   if( SeekDBdate( fi, date ) == 0 && fConfig.Length() > 0 && 
-      SeekDBconfig( fi, fConfig.Data() ));
+      SeekDBconfig( fi, fConfig.Data() )) {}
 
-  while ( ReadComment( fi, buf, LEN ) );
+  while ( ReadComment( fi, buf, LEN ) ) {}
   // Read calibration data
   for (i=0;i<fNelem;i++) 
     fscanf(fi,"%lf",fLOff+i);                    // Left Pads TDC offsets
   fgets ( buf, LEN, fi );   // finish line
-  while ( ReadComment( fi, buf, LEN ) );
+  while ( ReadComment( fi, buf, LEN ) ) {}
   for (i=0;i<fNelem;i++) 
     fscanf(fi,"%lf",fROff+i);                    // Right Pads TDC offsets
   fgets ( buf, LEN, fi );   // finish line
-  while ( ReadComment( fi, buf, LEN ) );
+  while ( ReadComment( fi, buf, LEN ) ) {}
   for (i=0;i<fNelem;i++) 
     fscanf(fi,"%lf",fLPed+i);                    // Left Pads ADC Pedest-s
   fgets ( buf, LEN, fi );   // finish line, etc.
-  while ( ReadComment( fi, buf, LEN ) );
+  while ( ReadComment( fi, buf, LEN ) ) {}
   for (i=0;i<fNelem;i++) 
     fscanf(fi,"%lf",fRPed+i);                    // Right Pads ADC Pedes-s
   fgets ( buf, LEN, fi );
-  while ( ReadComment( fi, buf, LEN ) );
+  while ( ReadComment( fi, buf, LEN ) ) {}
   for (i=0;i<fNelem;i++) 
     fscanf (fi,"%lf",fLGain+i);                  // Left Pads ADC Coeff-s
   fgets ( buf, LEN, fi );
-  while ( ReadComment( fi, buf, LEN ) );
+  while ( ReadComment( fi, buf, LEN ) ) {}
   for (i=0;i<fNelem;i++) 
     fscanf (fi,"%lf",fRGain+i);                  // Right Pads ADC Coeff-s
   fgets ( buf, LEN, fi ); 
 
 
-  while ( ReadComment( fi, buf, LEN ) );
+  while ( ReadComment( fi, buf, LEN ) ) {}
   // Here on down, look ahead line-by-line
   // stop reading if a '[' is found on a line (corresponding to the next date-tag)
   // read in TDC resolution (s/channel)
@@ -288,22 +288,22 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   sscanf(buf,"%lf",&fTdc2T);
   fResolution = 3.*fTdc2T;      // guess at timing resolution
 
-  while ( ReadComment( fi, buf, LEN ) );
+  while ( ReadComment( fi, buf, LEN ) ) {}
   // Speed of light in the scintillator material
   if ( !fgets(buf, LEN, fi) ||  strchr(buf,'[') ) goto exit;
   sscanf(buf,"%lf",&fCn);
   
   // Attenuation length (inverse meters)
-  while ( ReadComment( fi, buf, LEN ) );
+  while ( ReadComment( fi, buf, LEN ) ) {}
   if ( !fgets ( buf, LEN, fi ) ||  strchr(buf,'[') ) goto exit;
   sscanf(buf,"%lf",&fAttenuation);
   
-  while ( ReadComment( fi, buf, LEN ) );
+  while ( ReadComment( fi, buf, LEN ) ) {}
   // Time-walk correction parameters
   if ( !fgets(buf, LEN, fi) ||  strchr(buf,'[') ) goto exit;
   sscanf(buf,"%lf",&fAdcMIP);
   
-  while ( ReadComment( fi, buf, LEN ) );
+  while ( ReadComment( fi, buf, LEN ) ) {}
   // timewalk parameters
   {
     int cnt=0;
@@ -317,7 +317,7 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
     }
   }
 
-  while ( ReadComment( fi, buf, LEN ) );
+  while ( ReadComment( fi, buf, LEN ) ) {}
   // trigger timing offsets
   {
     int cnt=0;
@@ -611,7 +611,7 @@ Double_t THaScintillator::TimeWalkCorrection(const Int_t& paddle,
 }
 
 //_____________________________________________________________________________
-Int_t THaScintillator::CoarseProcess( TClonesArray& tracks )
+Int_t THaScintillator::CoarseProcess( TClonesArray& /* tracks */ )
 {
   // Calculation of coordinates of particle track cross point with scint
   // plane in the detector coordinate system. For this, parameters of track 

@@ -331,7 +331,7 @@ void THaAnalyzer::InitStages()
     { -1 }
   };
   const Stage_t* idef = stagedef;
-  while( DefineStage(idef++) );
+  while( DefineStage(idef++) ) {}
 }
 
 //_____________________________________________________________________________
@@ -363,7 +363,7 @@ void THaAnalyzer::InitCounters()
     { -1 }
   };
   const Counter_t* jdef = counterdef;
-  while( DefineCounter(jdef++) );
+  while( DefineCounter(jdef++) ) {}
 }
 
 //_____________________________________________________________________________
@@ -811,7 +811,7 @@ Int_t THaAnalyzer::SetCountMode( Int_t mode )
 }
 
 //_____________________________________________________________________________
-void THaAnalyzer::Print( Option_t* opt ) const
+void THaAnalyzer::Print( Option_t* ) const
 {
   // Report status of the analyzer.
 

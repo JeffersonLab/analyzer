@@ -48,8 +48,9 @@ protected:
   Double_t    fdDist;    // uncertainty in fDist (for chi2 calc)
   Double_t    ftrDist;   // (Perpendicular) distance from the track
   
-  THaVDCHit( const THaVDCHit& ) {}
-  THaVDCHit& operator=( const THaVDCHit& ) { return *this; }
+ private:
+  THaVDCHit( const THaVDCHit& );
+  THaVDCHit& operator=( const THaVDCHit& );
   
   ClassDef(THaVDCHit,2)             // VDCHit class
 };

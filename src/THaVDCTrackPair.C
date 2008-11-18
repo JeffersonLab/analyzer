@@ -90,7 +90,7 @@ Int_t THaVDCTrackPair::Compare( const TObject* obj ) const
 }
 
 //_____________________________________________________________________________
-void THaVDCTrackPair::Print( Option_t* opt ) const
+void THaVDCTrackPair::Print( Option_t* ) const
 {
   // Print this object
 

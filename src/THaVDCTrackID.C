@@ -65,7 +65,7 @@ THaVDCTrackID& THaVDCTrackID::operator=( const THaVDCTrackID& rhs )
 }
 
 //_____________________________________________________________________________
-void THaVDCTrackID::Print( Option_t* opt ) const
+void THaVDCTrackID::Print( Option_t* ) const
 {
   // Print ID description
 

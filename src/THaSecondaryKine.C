@@ -137,7 +137,7 @@ THaAnalysisObject::EStatus THaSecondaryKine::Init( const TDatime& run_time )
 }
 
 //_____________________________________________________________________________
-Int_t THaSecondaryKine::Process( const THaEvData& evdata )
+Int_t THaSecondaryKine::Process( const THaEvData& )
 {
   // Calculate the kinematics.
 

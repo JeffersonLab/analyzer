@@ -54,7 +54,8 @@ Int_t THaG0HelicityReader::FindWord( const THaEvData& evdata,
   if( info.header == 0 )
     i = info.index;
   else {
-    for( i=0; i<len && evdata.GetRawData(info.roc, i) != info.header; ++i);
+    for( i=0; i<len && evdata.GetRawData(info.roc, i) != info.header; 
+	 ++i) {}
     i += info.index;
   }
   return (i < len) ? i : -1;

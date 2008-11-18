@@ -191,7 +191,7 @@ Int_t THaCoincTime::ReadDatabase( const TDatime& date )
     
     Int_t crate, slot, first, last;
 
-    while ( ReadComment( fi, buf, LEN ) );
+    while ( ReadComment( fi, buf, LEN ) ) {}
 
     fgets ( buf, LEN, fi );
     

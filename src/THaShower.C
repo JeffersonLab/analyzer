@@ -202,7 +202,7 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
   // the best matching tag if any are found. If none found, but we have a configuration
   // string, search for it.
   if( SeekDBdate( fi, date ) == 0 && fConfig.Length() > 0 && 
-      SeekDBconfig( fi, fConfig.Data() ));
+      SeekDBconfig( fi, fConfig.Data() )) {}
 
   fgets ( buf, LEN, fi );  
   // Crude protection against a missed date/config tag
@@ -481,7 +481,7 @@ Int_t THaShower::CoarseProcess( TClonesArray& tracks )
   return 0;
 }
 //_____________________________________________________________________________
-Int_t THaShower::FineProcess( TClonesArray& tracks )
+Int_t THaShower::FineProcess( TClonesArray& /* tracks */ )
 {
   // Fine Shower processing.
   // Not implemented. Does nothing, returns 0.
