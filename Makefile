@@ -11,7 +11,7 @@
 
 # Include libraries for reading from the ET ring
 #  (only for adaq? machines with the Coda libraries )
-export ONLINE_ET = 1
+#export ONLINE_ET = 1
 #------------------------------------------------------------------------------
 
 # SOVERSION should be numerical only - it becomes the shared lib soversion
