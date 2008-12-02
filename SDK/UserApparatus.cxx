@@ -39,6 +39,7 @@
 #include "THaScintillator.h"
 #include "UserDetector.h"
 #include "VarDef.h"
+#include "TList.h"
 
 using namespace std;
 
