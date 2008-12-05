@@ -499,8 +499,10 @@ Int_t THaScaler::LoadDataCodaFile(THaCodaFile *codafile) {
          while (pos+1 < evlen) {
 	   int len = data[pos];
            int iroc = (data[pos+1]&0xff0000)>>16;
-           if (ldebug) 
+           if (ldebug) {
               cout << "crate len "<<len<<" crate num "<<iroc<<endl;
+              if (iroc==crate && len>25) cout << "Long read "<<endl;
+	   }
            if (iroc == crate) {
 	     for (int j=pos; j<pos+len; j++) {
                int idx = j-pos;
@@ -1150,8 +1152,8 @@ Double_t THaScaler::GetTimeDiff(Int_t helicity) {
   }
   if (clockrate == 0) return 0;
   if (helicity==0 && clkslot != -1 && clkchan != -1) {
-    return ((GetNormData(clkslot, clkchan, 0) -
-             GetNormData(clkslot, clkchan, 1)) /
+    return ((GetNormData(helicity, clkchan, 0) -
+             GetNormData(helicity, clkchan, 1)) /
   	          clockrate);
   } else {
   
