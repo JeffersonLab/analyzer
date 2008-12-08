@@ -27,10 +27,7 @@ public:
 protected:
 
   virtual Int_t  DefineVariables( EMode mode = kDefine );
-  void   Update() { 
-    fBeamIfo.Set( fRunParam->GetBeamP(), fDirection, fPosition,
-		  fRunParam->GetBeamPol() );
-  }
+          void   Update();
 
   TVector3  fPosition;   // Beam position at the target (usually z=0) (meters)
   TVector3  fDirection;  // Beam direction vector (arbitrary units)

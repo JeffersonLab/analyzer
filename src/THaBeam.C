@@ -85,6 +85,19 @@ Int_t THaBeam::DefineVariables( EMode mode )
 }
 
 //_____________________________________________________________________________
+void THaBeam::Update()
+{
+  // Update the fBeamIfo data with the info from the current event
+
+  THaRunParameters* rp = gHaRun->GetParameters();
+  if( rp )
+    fBeamIfo.Set( rp->GetBeamP(), fDirection, fPosition,
+		  rp->GetBeamPol() );
+  else
+    fBeamIfo.Set( kBig, fDirection, fPosition, kBig );
+}
+
+//_____________________________________________________________________________
 ClassImp(THaBeam)
 
 
