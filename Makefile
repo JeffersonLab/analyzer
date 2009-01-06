@@ -84,7 +84,8 @@ else
   DEFINES    := -DNDEBUG
 endif
 DEFINES      += -DLINUXVERS
-CXXFLG       += -Wall -Woverloaded-virtual -fPIC
+CXXFLG       += -Wall -fPIC
+CXXEXTFLG     = -Woverloaded-virtual
 LD           := g++
 LDCONFIG     := /sbin/ldconfig -n $(LIBDIR)
 SOFLAGS      := -shared
@@ -97,7 +98,7 @@ DICTCXXFLG   := -Wno-strict-aliasing
 endif
 endif
 
-# requires gcc 3 or up - test in configure script
+#FIXME: requires gcc 3 or up - test in configure script
 DEFINES       += -DHAS_SSTREAM
 
 ifeq ($(CXX),)
@@ -131,11 +132,12 @@ CXXFLG       += -g -pg
 LDFLAGS      += -g -pg
 endif
 
-CXXFLAGS     += $(CXXFLG) $(INCLUDES) $(DEFINES)
+CXXFLAGS      = $(CXXFLG) $(CXXEXTFLG) $(INCLUDES) $(DEFINES)
+CFLAGS        = $(CXXFLG) $(INCLUDES) $(DEFINES)
 LIBS         += $(ROOTLIBS) $(SYSLIBS)
 GLIBS        += $(ROOTGLIBS) $(SYSLIBS)
 
-export ARCH LIBDIR CXX LD SOFLAGS SONAME CXXFLG LDFLAGS DEFINES VERSION SOVERSION VERCODE
+export ARCH LIBDIR CXX LD SOFLAGS SONAME CXXFLG LDFLAGS DEFINES VERSION SOVERSION VERCODE CXXEXTFLG
 
 #------------------------------------------------------------------------------
 

@@ -86,7 +86,8 @@ ARCH          = linuxegcs
       CXXFLG      = -O
       LDFLAGS     = -O
     endif
-    CXXFLG       += -Wall -Woverloaded-virtual -fPIC
+    CXXFLG       += -Wall -fPIC
+    CXXEXTFLG     = -Woverloaded-virtual
     LD            = g++
     SOFLAGS       = -shared
   endif
@@ -131,7 +132,7 @@ ifeq ($(OSNAME),Linux)
 endif
 
 DEFINES      += $(SC_DEFINES)
-CXXFLAGS     += $(CXXFLG) $(INCLUDES) $(DEFINES)
+CXXFLAGS      = $(CXXFLG) $(CXXEXTFLG) $(INCLUDES) $(DEFINES)
 LIBS         += $(ROOTLIBS) $(SYSLIBS)
 GLIBS        += $(ROOTGLIBS) $(SYSLIBS)
 
