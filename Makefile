@@ -17,9 +17,9 @@
 # SOVERSION should be numerical only - it becomes the shared lib soversion
 # EXTVERS (optional) describes the build, e.g. "dbg", "et", "gcc33" etc.
 SOVERSION  := 1.5
-PATCH   := 5
+PATCH   := 6
 VERSION := $(SOVERSION).$(PATCH)
-EXTVERS := -et
+EXTVERS :=
 NAME    := analyzer-$(VERSION)
 VERCODE := $(shell echo $(subst ., ,$(SOVERSION)) $(PATCH) | awk '{ print $$1*65536 + $$2*256 + $$3 }')
 
