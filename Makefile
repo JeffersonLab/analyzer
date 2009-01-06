@@ -17,7 +17,7 @@
 # SOVERSION should be numerical only - it becomes the shared lib soversion
 # EXTVERS (optional) describes the build, e.g. "dbg", "et", "gcc33" etc.
 SOVERSION  := 1.5
-PATCH   := 6
+PATCH   := 7
 VERSION := $(SOVERSION).$(PATCH)
 EXTVERS :=
 NAME    := analyzer-$(VERSION)
@@ -78,8 +78,8 @@ ifdef DEBUG
   LDFLAGS    := -g -O0
   DEFINES    :=
 else
-  CXXFLG     := -O2 -march=pentium4
-#  CXXFLG     := -O
+#  CXXFLG     := -O2 -march=pentium4
+  CXXFLG     := -O
   LDFLAGS    := -O
   DEFINES    := -DNDEBUG
 endif
@@ -92,6 +92,7 @@ SOFLAGS      := -shared
 SONAME       := -Wl,-soname=
 #FIXME: should be configure'd:
 CXXVER       := $(shell g++ --version | head -1 | sed 's/.* \([0-9]\)\..*/\1/')
+DEFINES      += $(shell getconf LFS_CFLAGS)
 ifeq ($(CXXVER),4)
 CXXFLAGS     += -Wextra -Wno-missing-field-initializers
 DICTCXXFLG   := -Wno-strict-aliasing 

@@ -24,7 +24,7 @@ LINKDEF = $(PACKAGE)_LinkDef.h
 #export DEBUG = 1
 
 # Architecture to compile for
-ARCH          = linuxegcs
+ARCH          = linux
 #ARCH          = solarisCC5
 
 #------------------------------------------------------------------------------
@@ -75,7 +75,7 @@ LD            = CC
 SOFLAGS       = -G
 endif
 
-ifeq ($(ARCH),linuxegcs)
+ifeq ($(ARCH),linux)
 # Linux with egcs (>= RedHat 5.2)
 CXX           = g++
 ifdef DEBUG
@@ -88,13 +88,14 @@ endif
 CXXFLAGS     += -Wall -Woverloaded-virtual -fPIC
 LD            = g++
 SOFLAGS       = -shared
+DEFINES      += $(shell getconf LFS_CFLAGS)
 endif
 
 ifeq ($(CXX),)
 $(error $(ARCH) invalid architecture)
 endif
 
-CXXFLAGS     += $(INCLUDES)
+CXXFLAGS     += $(INCLUDES) $(DEFINES)
 LIBS         += $(ROOTLIBS) $(SYSLIBS)
 GLIBS        += $(ROOTGLIBS) $(SYSLIBS)
 

@@ -898,7 +898,7 @@ Int_t THaAnalysisObject::LoadDBvalue( FILE* file, const TDatime& date,
   rewind(file);
 
   bool found = false, ignore = false, multi_line = false, not_prev_cont = true;
-  long pos = ftell(file);
+  off_t pos = ftello(file);
   while( fgets( buf, LEN, file) != NULL) {
     size_t len = strlen(buf);
     // Line too long? If so, grow buffer and try again.
@@ -913,10 +913,10 @@ Int_t THaAnalysisObject::LoadDBvalue( FILE* file, const TDatime& date,
 	return -128;
       buf = new char[LEN];
       if( !buf ) return -256;
-      fseek( file, pos, SEEK_SET ); 
+      fseeko( file, pos, SEEK_SET ); 
       continue;
     }
-    pos = ftell(file);
+    pos = ftello(file);
     if( len == 0 ) continue; //oops
     if( buf[len-1] == '\n') buf[len-1] = 0; //delete trailing newline
     string line(buf), value;
@@ -1317,7 +1317,7 @@ Int_t THaAnalysisObject::SeekDBconfig( FILE* file, const char* tag,
   char buf[LEN];
 
   errno = 0;
-  long pos = ftell(file);
+  off_t pos = ftello(file);
   if( pos != -1 ) {
     while( !errno && !found && !quit && fgets( buf, LEN, file)) {
       size_t len = strlen(buf);
@@ -1342,7 +1342,7 @@ Int_t THaAnalysisObject::SeekDBconfig( FILE* file, const char* tag,
     found = false;
   }
   if( !found && pos >= 0 )
-    fseek( file, pos, SEEK_SET ); 
+    fseeko( file, pos, SEEK_SET ); 
   return found;
 }
 
@@ -1369,13 +1369,13 @@ Int_t THaAnalysisObject::SeekDBdate( FILE* file, const TDatime& date,
   const bool kNoWarn = false;
 
   errno = 0;
-  long pos = ftell(file);
+  off_t pos = ftello(file);
   if( pos == -1 ) {
     if( errno ) 
       perror(here);
     return 0;
   }
-  long foundpos = -1;
+  off_t foundpos = -1;
   bool found = false, quit = false;
   while( !errno && !quit && fgets( buf, LEN, file)) {
     size_t len = strlen(buf);
@@ -1385,7 +1385,7 @@ Int_t THaAnalysisObject::SeekDBdate( FILE* file, const TDatime& date,
     if( IsDBdate( line, tagdate, kNoWarn )
 	&& tagdate<=date && tagdate>=prevdate ) {
       prevdate = tagdate;
-      foundpos = ftell(file);
+      foundpos = ftello(file);
       found = true;
     } else if( end_on_tag && IsTag(buf))
       quit = true;
@@ -1394,7 +1394,7 @@ Int_t THaAnalysisObject::SeekDBdate( FILE* file, const TDatime& date,
     perror(here);
     found = false;
   }
-  fseek( file, (found ? foundpos: pos), SEEK_SET );
+  fseeko( file, (found ? foundpos: pos), SEEK_SET );
   return found;
 }
 

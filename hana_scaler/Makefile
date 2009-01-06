@@ -52,7 +52,7 @@ ROOTGLIBS    := $(shell root-config --glibs)
 INCLUDES     = $(ROOTCFLAGS) -I$(DCDIR)
 
 ifdef STANDALONE
-ARCH          = linuxegcs
+ARCH          = linux
 #ARCH          = solarisCC5
 
 # Only define compiler options for STANDALONE, otherwise inherit them from
@@ -75,7 +75,7 @@ ARCH          = linuxegcs
     SOFLAGS       = -G
     endif
 
-    ifeq ($(ARCH),linuxegcs)
+    ifeq ($(ARCH),linux)
     DEFINES   += -DLINUXVERS 
     # Linux with egcs (>= RedHat 5.2)
     CXX           = g++
@@ -95,6 +95,7 @@ ARCH          = linuxegcs
   ifdef WITH_DEBUG
     DEFINES      += -DWITH_DEBUG
   endif
+  DEFINES        += $(shell getconf LFS_CFLAGS)
 endif
 
 ifeq ($(CXX),)
