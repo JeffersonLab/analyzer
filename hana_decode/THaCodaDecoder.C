@@ -716,20 +716,6 @@ int THaCodaDecoder::vme_decode(int roc, THaCrateMap* map, const int* evbuffer,
 	    // look at all the data
 	    loc = p;
 	    while ((loc <= pevlen) && ((*loc)&0xf8000000)==(head&0xf8000000)) {
-	      if ( ((*loc) & DATA_CHK) != F1_RES_LOCK ) {
-		cout << "Warning: F1 TDC " << hex << (*loc) << dec;
-		if ( (*loc) & F1_HIT_OFLW ) {
-		  cout << " Hit-FIFO overflow";
-		}
-		if ( (*loc) & F1_OUT_OFLW ) {
-		  cout << " Output FIFO overflow";
-		}
-		if ( ! ((*loc) & F1_RES_LOCK ) ) {
-		  cout << " Resolution lock failure!";
-		}
-		cout << endl;
-	      }
-		
 	      if ( !( (*loc) & DATA_MARKER ) ) {
 		// header/trailer word, to be ignored
 		if(DEBUG)
@@ -750,6 +736,23 @@ int THaCodaDecoder::vme_decode(int roc, THaCrateMap* map, const int* evbuffer,
 		  // drop last bit for channel renumbering
 		  chan=(chn >> 1);
 		}
+		int f1slot = ((*loc)&0xf8000000)>>27;
+		if ( ((*loc) & DATA_CHK) != F1_RES_LOCK ) {
+		  cout << event_num << ":";
+		  cout << "\tWarning: F1 TDC " << hex << (*loc) << dec;
+		  cout << "\tSlot (Ch) = " << f1slot << "(" << chan << ")";
+		  if ( (*loc) & F1_HIT_OFLW ) {
+		    cout << "\tHit-FIFO overflow";
+		  }
+		  if ( (*loc) & F1_OUT_OFLW ) {
+		    cout << "\tOutput FIFO overflow";
+		  }
+		  if ( ! ((*loc) & F1_RES_LOCK ) ) {
+		    cout << "\tResolution lock failure!";
+		  }
+		  cout << endl;
+		}
+		
 		raw= (*loc) & 0xffff;
 		if(DEBUG) {
 		  cout<<" int_chn chan data "<<dec<<chn<<"  "<<chan
