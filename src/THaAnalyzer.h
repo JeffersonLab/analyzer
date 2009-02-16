@@ -51,6 +51,7 @@ public:
   TFile*         GetOutFile()          const  { return fFile; }
   Int_t          GetCompressionLevel() const  { return fCompress; }
   THaEvent*      GetEvent()            const  { return fEvent; }
+  THaEvData*     GetDecoder()          const  { return fEvData; }
   TList*         GetApps()             const  { return fApps; }
   TList*         GetPhysics()          const  { return fPhysics; }
   TList*         GetScalers()          const  { return fScalers; }

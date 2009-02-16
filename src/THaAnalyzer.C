@@ -1241,6 +1241,9 @@ Int_t THaAnalyzer::Process( THaRunBase* run )
   fEvData->EnableHelicity( HelicityEnabled() );
   // Decode scalers only if requested and fScalers is not empty
   fEvData->EnableScalers( ScalersEnabled() && (fScalers->GetSize()>0) );
+  // Set decoder reporting level. FIXME: update when THaEvData is updated
+  fEvData->SetVerbose( (fVerbose>2) );
+  fEvData->SetDebug( (fVerbose>3) );
 
   // Informational messages
   if( fVerbose>1 ) {
