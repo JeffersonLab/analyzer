@@ -45,10 +45,6 @@
 
 using namespace std;
 
-static const int VERBOSE = 0;
-static const int DEBUG   = 0;
-static const int BENCH   = 0;
-
 THaCodaDecoder::THaCodaDecoder() :
   first_scaler(true),
   numscaler_crate(0)
@@ -72,7 +68,7 @@ Int_t THaCodaDecoder::GetPrescaleFactor(Int_t trigger_type) const {
   if ( (trigger_type > 0) && (trigger_type <= MAX_PSFACT)) {
     return psfact[trigger_type - 1];
   }
-  if (VERBOSE) {
+  if (TestBit(kVerbose)) {
     cout << "Warning:  Requested prescale factor for ";
     cout << "un-prescalable trigger "<<dec<<trigger_type<<endl;
   }
@@ -96,7 +92,7 @@ Int_t THaCodaDecoder::gendecode(const Int_t* evbuffer, THaCrateMap* map)
   Int_t ret = HED_OK;
   fMap = map;
   buffer = evbuffer;
-  if(DEBUG) dump(evbuffer);    
+  if(TestBit(kDebug)) dump(evbuffer);    
   if (first_decode) {
     for (int crate=0; crate<MAXROC; crate++)
       scalerdef[crate] = "nothing";
@@ -206,7 +202,7 @@ int THaCodaDecoder::physics_decode(const int* evbuffer, THaCrateMap* map)
     int len  = evbuffer[pos];
     int iroc = (evbuffer[pos+1]&0xff0000)>>16;
     if(iroc>=MAXROC) {
-      if(VERBOSE) { 
+      if(TestBit(kVerbose)) { 
 	cout << "ERROR in THaCodaDecoder::physics_decode:";
 	cout << "  illegal ROC number " <<dec<<iroc<<endl;
       }
@@ -283,7 +279,8 @@ int THaCodaDecoder::prescale_decode(const int* evbuffer)
 	}
       }
       psfact[j]=ps;
-      if (DEBUG) cout << "%% TS psfact "<<dec<<j<<"  "<<psfact[j]<<endl;
+      if (TestBit(kDebug)) 
+	cout << "%% TS psfact "<<dec<<j<<"  "<<psfact[j]<<endl;
     }        
   }
   // "prescale.dat" -->
@@ -305,7 +302,8 @@ int THaCodaDecoder::prescale_decode(const int* evbuffer)
 		"Trig %d  oldps %d   prescale.dat %d, Keeping old value",
 		trig+1,psfact[trig],ps);
       }
-      if (DEBUG) cout << "** psfact[ "<<trig+1<< " ] = "<<psfact[trig]<<endl;
+      if (TestBit(kDebug))
+	cout << "** psfact[ "<<trig+1<< " ] = "<<psfact[trig]<<endl;
     }
   }
   // Ok in any case
@@ -320,7 +318,7 @@ int THaCodaDecoder::scaler_event_decode(const int* evbuffer, THaCrateMap* map)
   assert( ScalersEnabled() );
   assert( event_type == SCALER_EVTYPE );
   if( fDoBench ) fBench->Begin("scaler_event_decode");
-  if (DEBUG) cout << "Scaler decoding"<<endl;
+  if (TestBit(kDebug)) cout << "Scaler decoding"<<endl;
   if (first_scaler) {
     first_scaler = kFALSE;
     numscaler_crate = 0;
@@ -337,7 +335,7 @@ int THaCodaDecoder::scaler_event_decode(const int* evbuffer, THaCrateMap* map)
   while (++ipt < event_length) {
     UInt_t headerword = evbuffer[ipt];
     int roc = map->getScalerCrate(headerword);
-    if (DEBUG) {
+    if (TestBit(kDebug)) {
       cout << "ipt "<<ipt<<" evbuffer "<<hex<<headerword<<dec;
       cout <<" evlen "<<event_length<<" roc "<<roc<<endl;
     }
@@ -353,14 +351,14 @@ int THaCodaDecoder::scaler_event_decode(const int* evbuffer, THaCrateMap* map)
     // needed if you know the roc#, you can call getScaler(roc,...)
     int slot = (headerword&0xf0000)>>16; // 0<=slot<=15
     int numchan = headerword&0xff;
-    if (DEBUG) cout<<"slot "<<slot<<" numchan "<<numchan<<endl;
+    if (TestBit(kDebug)) cout<<"slot "<<slot<<" numchan "<<numchan<<endl;
     int ics = idx(roc,slot);
     crateslot[ics]->clearEvent();
     for (int chan=0; chan<numchan; chan++) {
       ipt++; 
       rocdat[roc].len++;
       int data = evbuffer[ipt];
-      if (DEBUG) cout<<"scaler chan "<<chan<<" data "<<data<<endl;
+      if (TestBit(kDebug)) cout<<"scaler chan "<<chan<<" data "<<data<<endl;
       if (crateslot[ics]->loadData(location,chan,data,data)
 	  == SD_ERR) {
 	cerr << "THaEvData::scaler_event_decode(): ERROR:";
@@ -442,10 +440,10 @@ int THaCodaDecoder::fastbus_decode(int roc, THaCrateMap* map,
   buffmode = false;
   int xctr = 0;
   int nspflag = 0;
-  if (DEBUG) cout << "Fastbus roc  "<<roc<<endl;
+  if (TestBit(kDebug)) cout << "Fastbus roc  "<<roc<<endl;
   while ( p++ < pstop ) {  
     xctr++;
-    if(DEBUG) {
+    if(TestBit(kDebug)) {
       cout << "evbuffer  " <<(p-evbuffer)<<"   ";
       cout << hex << *p << dec << endl;
     }
@@ -462,13 +460,13 @@ int THaCodaDecoder::fastbus_decode(int roc, THaCrateMap* map,
     int model = map->getModel(roc,slot);
     if (model == THaCrateMap::CM_ERR) continue;
     if (!model) {
-      if (VERBOSE) {
+      if (TestBit(kVerbose)) {
 	cout << "Warning: Undefined module in data" << endl;
 	cout << "roc " << roc << "   slot " << slot << endl;
       }
       continue;
     }
-    if (DEBUG) {
+    if (TestBit(kDebug)) {
       cout<<"slot slotold model "<<slot;
       cout<<"  "<<slotold<<"  "<<model<<endl;
     }
@@ -480,14 +478,14 @@ int THaCodaDecoder::fastbus_decode(int roc, THaCrateMap* map,
 	  if( fDoBench ) fBench->Stop("fastbus_decode");
 	  return HED_ERR;
 	}
-	if (DEBUG) cout << "header, wdcnt = "<<n<<endl;
+	if (TestBit(kDebug)) cout << "header, wdcnt = "<<n<<endl;
 	if (n <= 1) continue;
 	p++;
       }
     }
     int chan = fb->Chan(model,*p);
     int data = fb->Data(model,*p);
-    if (DEBUG) {
+    if (TestBit(kDebug)) {
       printf("roc %2d  slot %3d  chan %3d  data %5d  ipt %3d"
 	     "  raw %8x  device %s\n",
 	     roc, slot, chan, data, static_cast<int>(p-evbuffer), 
@@ -516,15 +514,15 @@ int THaCodaDecoder::vme_decode(int roc, THaCrateMap* map, const int* evbuffer,
   const int* p      = evbuffer+ipt;
   const int* pstop  = evbuffer+istop;
   const int* pevlen = evbuffer+event_length;
-  const int* loc;
+  const int* loc    = 0;
 
-  if (DEBUG) cout << "VME roc "<<dec<<roc<<" nslot "<<Nslot<<endl;
+  if (TestBit(kDebug)) cout << "VME roc "<<dec<<roc<<" nslot "<<Nslot<<endl;
   if (Nslot <= 0) goto err;
   scalerdef[roc] = map->getScalerLoc(roc);
   map->setSlotDone();
   if (map->isScalerCrate(roc) && GetRocLength(roc) >= 16) evscaler = 1;
   while ( p++ < pstop ) {
-    if(DEBUG) cout << "evbuff "<<(p-evbuffer)<<"  "<<hex<<*p<<dec<<endl;
+    if(TestBit(kDebug)) cout << "evbuff "<<(p-evbuffer)<<"  "<<hex<<*p<<dec<<endl;
     // look through all slots, since Nslot only gives number of occupied slots,
     // not the highest-numbered occupied slot.
     for (slot=0; slot<MAXSLOT; slot++) {
@@ -532,7 +530,7 @@ int THaCodaDecoder::vme_decode(int roc, THaCrateMap* map, const int* evbuffer,
       if (map->slotDone(slot)) continue;
       head = map->getHeader(roc,slot);
       mask = map->getMask(roc,slot);
-      if(DEBUG) {
+      if(TestBit(kDebug)) {
 	cout<<"slot head mask "<<slot<<"  ";
 	cout<<hex<<head<<"  "<<mask<<dec<<endl;
       }
@@ -540,12 +538,12 @@ int THaCodaDecoder::vme_decode(int roc, THaCrateMap* map, const int* evbuffer,
 	map->setSlotDone(slot);
 
 	int model = map->getModel(roc,slot);
-	if (DEBUG) cout<<"model " << model << flush;
+	if (TestBit(kDebug)) cout<<"model " << model << flush;
 	switch(model) {
 	case 1182:    // LeCroy 1182 ADC
 	  for (chan=0; chan<8; chan++) {
 	    if( ++p >= pevlen ) goto SlotDone;  
-	    if(DEBUG) {
+	    if(TestBit(kDebug)) {
 	      cout<<"1182 chan data "<<chan<<" 0x"<<hex<<*p<<dec<<endl;
 	    }
 	    if( crateslot[idx(roc,slot)]->loadData("adc",chan,*p,*p)
@@ -554,11 +552,11 @@ int THaCodaDecoder::vme_decode(int roc, THaCrateMap* map, const int* evbuffer,
 	  break;
 	case 7510:    // Struck 7510 ADC
 	  nhit = ((*p)&0xfff)/8;
-	  if (DEBUG) cout << "nhit 7510 " << nhit << endl;
+	  if (TestBit(kDebug)) cout << "nhit 7510 " << nhit << endl;
 	  for (chan=0; chan<8; chan++) {
 	    for (int j=0; j<nhit/2; j++) {  // nhit must be even
 	      if( ++p >= pevlen ) goto SlotDone;
-	      if(DEBUG)  cout<<"7510 raw  0x"<<hex<<*p<<dec<<endl;
+	      if(TestBit(kDebug))  cout<<"7510 raw  0x"<<hex<<*p<<dec<<endl;
 	      if( crateslot[idx(roc,slot)]
 		  ->loadData("adc",chan,((*p)&0x0fff0000)>>16,*p)
 		  ==  SD_ERR) goto err;
@@ -571,7 +569,7 @@ int THaCodaDecoder::vme_decode(int roc, THaCrateMap* map, const int* evbuffer,
 	case 3123:    // VMIC 3123 ADC
 	  for (chan=0; chan<16; chan++) {
 	    if( ++p >= pevlen ) goto SlotDone;
-	    if(DEBUG) {
+	    if(TestBit(kDebug)) {
 	      cout<<"3123 chan data "<<chan<<"  0x"<<hex<<*p<<dec<<endl;
 	    }
 	    if( crateslot[idx(roc,slot)]->loadData("adc",chan,*p,*p) 
@@ -583,7 +581,7 @@ int THaCodaDecoder::vme_decode(int roc, THaCrateMap* map, const int* evbuffer,
 	case 1151:    // LeCroy 1151 scaler
 	  for (chan=0; chan<16; chan++) {
 	    if( ++p >= pevlen ) goto SlotDone;
-	    if(DEBUG) {
+	    if(TestBit(kDebug)) {
 	      cout<<"1151 chan data "<<chan<<"  0x"<<hex<<*p<<dec<<endl;
 	    }
 	    if( crateslot[idx(roc,slot)]
@@ -596,7 +594,7 @@ int THaCodaDecoder::vme_decode(int roc, THaCrateMap* map, const int* evbuffer,
 	  loc = p;
 	  for (chan=0; chan<16; chan++) {  
 	    if( ++loc >= pevlen ) goto SlotDone; 
-	    if(DEBUG) {
+	    if(TestBit(kDebug)) {
 	      cout<<"560 chan data "<<chan<<"  0x"<<hex<<*loc<<dec<<endl;
 	    }
 	    if( crateslot[idx(roc,slot)]
@@ -606,7 +604,7 @@ int THaCodaDecoder::vme_decode(int roc, THaCrateMap* map, const int* evbuffer,
 	case 3801:    // Struck 3801 scaler
 	  for (chan=0; chan<32; chan++) {
 	    if( ++p >= pevlen) goto SlotDone;
-	    if(DEBUG) {
+	    if(TestBit(kDebug)) {
 	      cout<<"3801 chan data "<<chan<<"  0x"<<hex<<*p<<dec<<endl;
 	    }
 	    if( crateslot[idx(roc,slot)]->loadData("scaler",chan,*p,*p)
@@ -616,7 +614,7 @@ int THaCodaDecoder::vme_decode(int roc, THaCrateMap* map, const int* evbuffer,
 	case 7353:    // BRs hack for the trigger module
 	  chan=0;
 	  raw = (*p)&0xfff;
-	  if(DEBUG) {
+	  if(TestBit(kDebug)) {
 	    cout<<"7353 chan data "<<chan<<"  0x"<<hex<<raw<<dec<<endl;
 	  }
 	  if( crateslot[idx(roc,slot)]->loadData("register",chan,raw,raw)
@@ -625,11 +623,11 @@ int THaCodaDecoder::vme_decode(int roc, THaCrateMap* map, const int* evbuffer,
 	case 550:     // CAEN 550 for RICH 
 	  // ('slot' was called 'chan' in Fortran)
 	  slotprime = 1+(((*p)&0xff0000)>>16);  
-	  if (DEBUG) cout << "Rich slot "<<slot<<" "
+	  if (TestBit(kDebug)) cout << "Rich slot "<<slot<<" "
 			  <<slotprime<<" "<<loc<<" "<<hex<<*p<<dec<<endl; 
 	  if (slot == slotprime) {    // They should agree, else problem.
 	    ndat = (*p)&0xfff;
-	    if (DEBUG) cout << "Rich ndat = "<<ndat<<endl;
+	    if (TestBit(kDebug)) cout << "Rich ndat = "<<ndat<<endl;
 	    if (p+ndat>pstop) {
 	      p=pstop;
 	      // FIXME : in this case a warning should apear
@@ -642,7 +640,7 @@ int THaCodaDecoder::vme_decode(int roc, THaCrateMap* map, const int* evbuffer,
 		// channel number (was called 'wire' in Fortran)
 		raw  = (*loc)&0xffffffff;
 		data = (*loc)&0x0fff;           
-		if (DEBUG) cout << "channel "<<chan<<"  raw data "<<raw<<endl;
+		if (TestBit(kDebug)) cout << "channel "<<chan<<"  raw data "<<raw<<endl;
 		if( crateslot[idx(roc,slot)]->loadData("adc",chan,data,raw) 
 		    == SD_ERR) goto err;
 	      }
@@ -718,11 +716,11 @@ int THaCodaDecoder::vme_decode(int roc, THaCrateMap* map, const int* evbuffer,
 	    while ((loc <= pevlen) && ((*loc)&0xf8000000)==(head&0xf8000000)) {
 	      if ( !( (*loc) & DATA_MARKER ) ) {
 		// header/trailer word, to be ignored
-		if(DEBUG)
+		if(TestBit(kDebug))
 		  cout<< "[" << (loc-evbuffer) << "] header/trailer  0x"
 		      <<hex<<*loc<<dec<<endl;
 	      } else {
-		if (DEBUG)
+		if (TestBit(kDebug))
 		  cout<< "[" << (loc-evbuffer) << "] data            0x"
 		      <<hex<<*loc<<dec<<endl;
 		int chn = ((*loc)>>16) & 0x3f;  // internal channel number
@@ -754,13 +752,13 @@ int THaCodaDecoder::vme_decode(int roc, THaCrateMap* map, const int* evbuffer,
 		}
 		
 		raw= (*loc) & 0xffff;
-		if(DEBUG) {
+		if(TestBit(kDebug)) {
 		  cout<<" int_chn chan data "<<dec<<chn<<"  "<<chan
 		      <<"  0x"<<hex<<raw<<dec<<endl;
 		}
 		if (crateslot[idx(roc,slot)]->loadData("tdc",chan,raw,raw)
 		    == SD_ERR) {
-		  if (DEBUG) {
+		  if (TestBit(kDebug)) {
 		    cout<<"Error found loadData tdc roc/slot/chan data"
 			<<dec<< roc << "  " << slot << "  " << chan 
 			<<"  0x"<<hex<<raw<<endl;
@@ -771,7 +769,7 @@ int THaCodaDecoder::vme_decode(int roc, THaCrateMap* map, const int* evbuffer,
 	      loc++;
 	    }
 	    p=loc-1;  // point to the previous position, so loop goes to current loc
-	    if (DEBUG) {
+	    if (TestBit(kDebug)) {
 	      cout << "Exiting at [" <<dec<<(loc-evbuffer) <<"]  0x"
 		   <<hex<<*loc<<dec<<endl;
 	    }
@@ -794,7 +792,7 @@ int THaCodaDecoder::vme_decode(int roc, THaCrateMap* map, const int* evbuffer,
 	      return HED_ERR;
 	    } else {
 	      if (((*loc)&0xffff)!=nword) {
-		if (DEBUG) cout<<"WC mismatch "<<nword<<" "<<hex<<(*p)<<endl;
+		if (TestBit(kDebug)) cout<<"WC mismatch "<<nword<<" "<<hex<<(*p)<<endl;
 		return HED_ERR;
 		//    Replace the above line with this to 
 		//    disable tossing out the event
@@ -815,7 +813,7 @@ int THaCodaDecoder::vme_decode(int roc, THaCrateMap* map, const int* evbuffer,
     } //end for(slot)
 
   SlotDone:
-    if (DEBUG) cout<<"slot done, or skip word"<<endl;
+    if (TestBit(kDebug)) cout<<"slot done, or skip word"<<endl;
   } //end while(p++<pstop)
   goto exit;
 
@@ -831,7 +829,7 @@ int THaCodaDecoder::camac_decode(int roc, THaCrateMap* map,
 				 int ipt, int istop)
 {
   assert( evbuffer && map );
-  if (VERBOSE) {
+  if (TestBit(kVerbose)) {
     cout << "Sorry, no CAMAC decoding yet !!" << endl;
   }
   return HED_ERR;
@@ -845,7 +843,7 @@ int THaCodaDecoder::loadFlag(const int* evbuffer)
   assert( evbuffer );
   UInt_t word   = *evbuffer;
   UInt_t upword = word & 0xffff0000;
-  if (DEBUG) {
+  if (TestBit(kDebug)) {
     cout << "Flag data "<<hex<<word<<dec<<endl;
   }
   if( word == 0xdc0000ff) synchmiss = true;
@@ -853,14 +851,14 @@ int THaCodaDecoder::loadFlag(const int* evbuffer)
     synchextra = true;
     int slot = (word&0xf800)>>11;
     int nhit = (word&0x7ff);
-    if(VERBOSE) {
+    if(TestBit(kVerbose)) {
       cout << "THaEvData: WARNING: Fastbus slot ";
       cout << slot << "  has extra hits "<<nhit<<endl;
     }
   }
   if( upword == 0xfabc0000) {
     datascan = *(evbuffer+3);
-    if(VERBOSE && (synchmiss || synchextra)) {
+    if(TestBit(kVerbose) && (synchmiss || synchextra)) {
       cout << "THaEvData: WARNING: Synch problems !"<<endl;
       cout << "Data scan word 0x"<<hex<<datascan<<dec<<endl;
     }

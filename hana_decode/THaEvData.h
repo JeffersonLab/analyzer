@@ -98,6 +98,7 @@ public:
   virtual void SetRunTime( ULong64_t tloc );
 
   // Status control
+  void    EnableBenchmarks( Bool_t enable=true );
   void    EnableHelicity( Bool_t enable=true );
   Bool_t  HelicityEnabled() const;
   void    EnableScalers( Bool_t enable=true );
@@ -108,6 +109,10 @@ public:
   UInt_t  GetInstance() const { return fInstance; }
   static UInt_t GetInstances() { return fgInstances.CountBits(); }
 
+  // Reporting level
+  void SetVerbose( UInt_t level );
+  void SetDebug( UInt_t level );
+
   // Utility function for hexdumping any sort of data
   static void hexdump(const char* cbuff, size_t len);
 
@@ -116,8 +121,12 @@ public:
   
 protected:
   // Control bits in TObject::fBits used by decoders
-  enum { kHelicityEnabled = BIT(14),
-	 kScalersEnabled  = BIT(15)
+  enum { 
+    kHelicityEnabled = BIT(14),
+    kScalersEnabled  = BIT(15),
+  // FIXME: this is a kludge for binary compatibility. Add fDebug/fVerbose
+    kVerbose         = BIT(16),
+    kDebug           = BIT(17)
   };
 
   static const Int_t MAXROC = 32;  

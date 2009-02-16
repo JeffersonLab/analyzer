@@ -40,10 +40,6 @@
 
 using namespace std;
 
-static const int VERBOSE = 1;
-static const int DEBUG   = 1;
-static const int BENCH   = 0;
-
 // Instances of this object
 TBits THaEvData::fgInstances;
 
@@ -61,7 +57,8 @@ Bool_t THaEvData::fgAllowUnimpl = true;
 THaEvData::THaEvData() :
   first_load(true), first_decode(true), fTrigSupPS(true),
   buffer(0), run_num(0), run_type(0), fRunTime(0), evt_time(0),
-  recent_event(0), fNSlotUsed(0), fNSlotClear(0), fMap(0)
+  recent_event(0), fNSlotUsed(0), fNSlotClear(0), fMap(0),
+  fDoBench(kFALSE), fBench(0)
 {
   fInstance = fgInstances.FirstNullBit();
   fgInstances.SetBitNumber(fInstance);
@@ -91,20 +88,15 @@ THaEvData::THaEvData() :
     if( fInstance > 1 )
       prefix.Append(Form("%d",fInstance));
     prefix.Append(".");
-#ifndef STANDALONE
     gHaVars->DefineVariables( vars, prefix, "THaEvData::THaEvData" );
-#endif
   } else
     Warning("THaEvData::THaEvData","No global variable list found. "
 	    "Variables not registered.");
-
 #endif
-  fDoBench = BENCH;
-  if( fDoBench ) {
-    fBench = new THaBenchmark;
-  } else
-    fBench = NULL;
 
+  // Ensure reporting level bits are cleared
+  ResetBit(kVerbose);
+  ResetBit(kDebug);
 }
 
 
@@ -152,6 +144,19 @@ void THaEvData::SetRunTime( ULong64_t tloc )
   // can't initialize what doesn't exist.  Go see THaCodaDecoder
 }
 
+void THaEvData::EnableBenchmarks( Bool_t enable )
+{
+  // Enable/disable run time reporting
+  fDoBench = enable;
+  if( fDoBench ) {
+    if( !fBench )
+      fBench = new THaBenchmark;
+  } else {
+    delete fBench;
+    fBench = 0;
+  }
+}
+
 void THaEvData::EnableHelicity( Bool_t enable ) 
 {
   // Enable/disable helicity decoding
@@ -162,6 +167,18 @@ void THaEvData::EnableScalers( Bool_t enable )
 {
   // Enable/disable scaler decoding
   SetBit(kScalersEnabled, enable);
+}
+
+void THaEvData::SetVerbose( UInt_t level )
+{ 
+  // Set verbosity level
+  SetBit(kVerbose,(level!=0));
+}
+
+void THaEvData::SetDebug( UInt_t level )
+{
+  // Set debug level
+  SetBit(kDebug,(level!=0));
 }
 
 void THaEvData::SetOrigPS(Int_t evtyp)
@@ -191,7 +208,6 @@ TString THaEvData::GetOrigPS() const
   return answer;
 }
 
-// KCR: wow this function looks cool.  I want one =P
 void THaEvData::hexdump(const char* cbuff, size_t nlen)
 {
   // Hexdump buffer 'cbuff' of length 'nlen'
@@ -213,7 +229,7 @@ void THaEvData::hexdump(const char* cbuff, size_t nlen)
 
 // To initialize the crate map member if it is to be used.
 int THaEvData::init_cmap()  {
-  if (DEBUG) cout << "Init crate map " << endl;
+  if (TestBit(kDebug)) cout << "Init crate map " << endl;
   if( cmap->init(GetRunTime()) == THaCrateMap::CM_ERR )
     return HED_ERR;
   return HED_OK;
