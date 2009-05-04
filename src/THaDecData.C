@@ -691,10 +691,10 @@ void THaDecData::VdcEff( )
 { 
   // Update VDC efficiency histograms with current event data
 
-  static const string VdcVars[] = {"L.vdc.u1.wire", "L.vdc.v1.wire", 
-				   "L.vdc.u2.wire", "L.vdc.v2.wire", 
-				   "R.vdc.u1.wire", "R.vdc.v1.wire", 
-				   "R.vdc.u2.wire", "R.vdc.v2.wire"};
+  static const string VdcVars[] = {"L.vdc.u1.wire", "L.vdc.u2.wire", 
+				   "L.vdc.v1.wire", "L.vdc.v2.wire", 
+				   "R.vdc.u1.wire", "R.vdc.u2.wire", 
+				   "R.vdc.v1.wire", "R.vdc.v2.wire"};
   
   const Int_t nwire = 400;
   //FIXME: really push 3.2kB on the stack every event?
