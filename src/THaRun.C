@@ -161,8 +161,15 @@ Int_t THaRun::ReadInitInfo()
 
 	// Decode events. Skip bad events.
 	nev++;
-	if( evdata->LoadEvent( GetEvBuffer()) != THaEvData::HED_OK ) {
-	  Warning( here, "Error decoding event buffer at event %u", nev );
+	status = evdata->LoadEvent( GetEvBuffer());
+	if( status != THaEvData::HED_OK ) {
+	  if( status == THaEvData::HED_ERR ||
+	      status == THaEvData::HED_FATAL ) {
+	    Error( here, "Error decoding event %u", nev );
+	    return S_FAILURE;
+	  }
+	  Warning( here, "Skipping event %u due to warnings", nev );
+	  status = S_SUCCESS;
 	  continue;
 	}
 

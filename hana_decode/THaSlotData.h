@@ -22,6 +22,7 @@
 #include "TString.h"
 #include <cassert>
 
+const int SD_WARN = -2;
 const int SD_ERR = -1; 
 const int SD_OK = 1;
 

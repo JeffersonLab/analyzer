@@ -58,14 +58,11 @@ class THaCodaDecoder : public THaEvData {
 
   Int_t   epics_decode(const Int_t* evbuffer);
   Int_t   prescale_decode(const Int_t* evbuffer);
-  Int_t   physics_decode(const Int_t* evbuffer, THaCrateMap* map);
-  Int_t   fastbus_decode(Int_t roc, THaCrateMap* map, const Int_t* evbuffer, 
-			 Int_t p1, Int_t p2);
-  Int_t   vme_decode(Int_t roc, THaCrateMap* map, const Int_t* evbuffer, 
-		     Int_t p1, Int_t p2);
-  Int_t   camac_decode(Int_t roc, THaCrateMap* map, const Int_t* evbuffer, 
-		       Int_t p1, Int_t p2);
-  Int_t   scaler_event_decode(const Int_t* evbuffer, THaCrateMap* map);
+  Int_t   physics_decode(const Int_t* evbuffer);
+  Int_t   fastbus_decode(Int_t roc, const Int_t* evbuffer, Int_t p1, Int_t p2);
+  Int_t   vme_decode(Int_t roc, const Int_t* evbuffer, Int_t p1, Int_t p2);
+  Int_t   camac_decode(Int_t roc, const Int_t* evbuffer, Int_t p1, Int_t p2);
+  Int_t   scaler_event_decode(const Int_t* evbuffer );
 
   ClassDef(THaCodaDecoder,0) // Decoder for CODA event buffer
 };

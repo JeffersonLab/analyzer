@@ -30,7 +30,7 @@ class THaCrateMap
      static const UShort_t MAXCHAN;
      static const UShort_t MAXDATA;
 
-     THaCrateMap() {}                               // Construct, but not initialized
+     THaCrateMap( const char* db = "cratemap" );    // Construct uninitialized
      virtual ~THaCrateMap() {}
      bool isFastBus(int crate) const;               // True if fastbus crate;
      bool isVme(int crate) const;                   // True if VME crate;
@@ -65,10 +65,13 @@ class THaCrateMap
      static const int CM_OK;
      static const int CM_ERR;
 
+     const char* GetName() const { return fDBfileName.Data(); }
+
  private:
 
      enum ECrateCode { kUnknown, kFastbus, kVME, kScaler, kCamac };
 
+     TString fDBfileName;             // Database file name
   //FIXME: synchronize MAXROC/MAXSLOT with same parameters in THaEvData
      static const int MAXROC = 32;
      static const int MAXSLOT = 27;

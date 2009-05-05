@@ -44,10 +44,12 @@
 #include "TROOT.h"
 #include "TMath.h"
 #include "TDirectory.h"
+#include "THaCrateMap.h"
 
 #include <fstream>
 #include <algorithm>
 #include <iomanip>
+#include <cstring>
 
 using namespace std;
 
@@ -58,7 +60,7 @@ const int MAXSTAGE = 100;   // Sanity limit on number of stages
 const int MAXCOUNTER = 200; // Sanity limit on number of counters
 
 // Pointer to single instance of this object
-THaAnalyzer* THaAnalyzer::fgAnalyzer = NULL;
+THaAnalyzer* THaAnalyzer::fgAnalyzer = 0;
 
 //FIXME: 
 // do we need to "close" scalers/EPICS analysis if we reach the event limit?
@@ -768,6 +770,8 @@ Int_t THaAnalyzer::ReadOneEvent()
     // Decode the event
     // FIXME: return code mixup with above
     status = fEvData->LoadEvent( fRun->GetEvBuffer() );
+    if( status == THaEvData::HED_OK )
+      status = S_SUCCESS;
     Incr(kNevRead);
     break;
 
@@ -808,6 +812,33 @@ Int_t THaAnalyzer::SetCountMode( Int_t mode )
 
   fCountMode = mode;
   return mode;
+}
+
+//_____________________________________________________________________________
+void THaAnalyzer::SetCrateMapFileName( const char* name )
+{
+  // Set name of file from which to read the crate map. Unless already
+  // specified, the name will be automatically prefixed with "db_" and
+  // terminated with ".dat", so SetCrateMapFileName("mymap") will get
+  // the crate map from db_mymap.dat
+
+  if( !name || !*name || !strcmp( name, "cratemap" ) 
+      || !strcmp( name, "db_cratemap.dat" ) ) {
+    // Use default map
+    THaEvData::SetCrateMapName("");
+    return;
+  }
+
+  TString fname(name);
+  // Remove prefix/extension, if given. These will be added by THaCrateMap
+  // automatically
+  if( fname.BeginsWith("db_") )
+    fname.Remove(0,3);
+  if( fname.EndsWith(".dat") )
+    fname.Remove( TMath::Max(fname.Length()-4, 0) );
+
+  THaEvData::SetCrateMapName( fname );
+  return;
 }
 
 //_____________________________________________________________________________
@@ -1272,9 +1303,12 @@ Int_t THaAnalyzer::Process( THaRunBase* run )
   while ( !terminate && (status = ReadOneEvent()) != EOF && 
 	  fNev < nlast ) {
 
-    //--- Skip events.with errors
-    if( status )
+    //--- Skip events.with errors, unless fatal
+    if( status ) {
+      if( status == THaEvData::HED_FATAL )
+	break;
       continue;
+    }
 
     UInt_t evnum = fEvData->GetEvNum();
 

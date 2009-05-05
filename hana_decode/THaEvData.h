@@ -29,8 +29,9 @@ public:
 
   // Loads CODA data evbuffer using private crate map "cmap" (recommended)
   Int_t LoadEvent(const Int_t* evbuffer);          
-  // Loads CODA data evbuffer using THaCrateMap passed as 2nd arg
-  // Derived classes MUST implement this
+  // Loads CODA data evbuffer using THaCrateMap passed as 2nd arg.
+  // This is the one function that derived classes MUST implement.
+  //FIXME: the crate map should become part of the database
   virtual Int_t LoadEvent(const Int_t* evbuffer, THaCrateMap* usermap) = 0;    
 
   // Basic access to the decoded data
@@ -116,9 +117,11 @@ public:
   // Utility function for hexdumping any sort of data
   static void hexdump(const char* cbuff, size_t len);
 
-  enum { HED_OK = 0, HED_ERR = -127};
+  enum { HED_OK = 0, HED_WARN = -63, HED_ERR = -127, HED_FATAL = -255 };
   enum { MAX_PSFACT = 12 };
   
+  static void SetCrateMapName( const char* name );
+
 protected:
   // Control bits in TObject::fBits used by decoders
   enum { 
@@ -149,6 +152,7 @@ protected:
     Int_t pos;                // position in evbuffer[]
     Int_t len;                // length of data
   } rocdat[MAXROC];
+  // FIXME: cmap is not needed -> fMap below
   THaCrateMap* cmap;          // default crate map
   THaSlotData** crateslot;  
 
@@ -189,6 +193,10 @@ protected:
 
   static const Double_t kBig;  // default value for invalid data
   static Bool_t fgAllowUnimpl; // If true, allow unimplemented functions
+
+  static const TString fgDefaultCrateMapName; // Default crate map name
+  static TString fgCrateMapName; // Crate map database file name to use
+  static Bool_t fgNeedInit;  // Crate map needs to be (re-)initialized
 
   ClassDef(THaEvData,0)  // Decoder for CODA event buffer
 
@@ -334,10 +342,8 @@ Bool_t THaEvData::IsSpecialEvent() const {
 inline
 Int_t THaEvData::LoadEvent(const Int_t* evbuffer) {
   // This version of LoadEvent() uses private THaCrateMap cmap (recommended)
-  if (first_load) {
-    first_load = false;
-    if (init_cmap() == HED_ERR) return HED_ERR;
-  }
+  assert(cmap);
+  first_load = false;
   return LoadEvent(evbuffer, cmap);
 };
 

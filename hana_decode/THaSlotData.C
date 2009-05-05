@@ -104,7 +104,7 @@ int THaSlotData::loadData(const char* type, int chan, int dat, int raw) {
       cout <<chan<<" out of bounds, ignored,"
 	   << " on crate " << crate << " slot "<< slot << endl;
     }
-    return SD_ERR;
+    return SD_WARN;
   }
   if( numraw >= maxd || numchanhit > maxc) {
     if (VERBOSE) {
@@ -115,7 +115,7 @@ int THaSlotData::loadData(const char* type, int chan, int dat, int raw) {
       cout << ": " << (numraw>=maxd ? numraw : numchanhit) << " seen." 
 	   << endl;
     }
-    return SD_ERR;
+    return SD_WARN;
   }
   if( device.IsNull() ) device = type;
 
@@ -169,7 +169,7 @@ int THaSlotData::loadData(const char* type, int chan, int dat, int raw) {
 	   << "for module " << device << " in crate/slot = " 
 	   << dec << crate << " " << slot 
 	   << " chan = " << chan << endl;
-    return SD_ERR;
+    return SD_WARN;
   }
   numHits[chan]++;
   return SD_OK;

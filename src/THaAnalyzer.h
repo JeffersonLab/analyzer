@@ -21,6 +21,7 @@ class THaCut;
 class THaBenchmark;
 class THaEvData;
 class THaPostProcess;
+class THaCrateMap;
 
 class THaAnalyzer : public TObject {
 
@@ -63,6 +64,7 @@ public:
   Bool_t         ScalersEnabled()      const  { return fDoScalers; }
   Bool_t         SlowControlEnabled()  const  { return fDoSlowControl; }
   virtual Int_t  SetCountMode( Int_t mode );
+  void           SetCrateMapFileName( const char* name );
   void           SetEvent( THaEvent* event )     { fEvent = event; }
   void           SetOutFile( const char* name )  { fOutFileName = name; }
   void           SetCutFile( const char* name )  { fCutFileName = name; }
@@ -185,7 +187,7 @@ protected:
   static const char* const kMasterCutName;
   static const char* const kDefaultOdefFile;
 
-  private:
+private:
   THaAnalyzer( const THaAnalyzer& );
   THaAnalyzer& operator=( const THaAnalyzer& );
   
@@ -206,9 +208,3 @@ inline UInt_t THaAnalyzer::Incr( Int_t i )
 }
 
 #endif
-
-
-
-
-
-

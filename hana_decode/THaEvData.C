@@ -52,10 +52,14 @@ Bool_t THaEvData::fgAllowUnimpl = false;
 Bool_t THaEvData::fgAllowUnimpl = true;
 #endif
 
+const TString THaEvData::fgDefaultCrateMapName = "cratemap";
+TString THaEvData::fgCrateMapName;
+Bool_t  THaEvData::fgNeedInit = true;
+
 //_____________________________________________________________________________
 
 THaEvData::THaEvData() :
-  first_load(true), first_decode(true), fTrigSupPS(true),
+  cmap(0), first_load(true), first_decode(true), fTrigSupPS(true),
   buffer(0), run_num(0), run_type(0), fRunTime(0), evt_time(0),
   recent_event(0), fNSlotUsed(0), fNSlotClear(0), fMap(0),
   fDoBench(kFALSE), fBench(0)
@@ -63,8 +67,8 @@ THaEvData::THaEvData() :
   fInstance = fgInstances.FirstNullBit();
   fgInstances.SetBitNumber(fInstance);
   fInstance++;
+  // FIXME: dynamic allocation
   crateslot = new THaSlotData*[MAXROC*MAXSLOT];
-  cmap = new THaCrateMap;
   fSlotUsed  = new UShort_t[MAXROC*MAXSLOT];
   fSlotClear = new UShort_t[MAXROC*MAXSLOT];
   //memset(psfact,0,MAX_PSFACT*sizeof(int));
@@ -141,7 +145,6 @@ void THaEvData::SetRunTime( ULong64_t tloc )
   fRunTime = tloc;
 
   init_cmap();
-  // can't initialize what doesn't exist.  Go see THaCodaDecoder
 }
 
 void THaEvData::EnableBenchmarks( Bool_t enable )
@@ -227,11 +230,31 @@ void THaEvData::hexdump(const char* cbuff, size_t nlen)
   }
 }
 
-// To initialize the crate map member if it is to be used.
+// Static function to set fgCrateMapName
+void THaEvData::SetCrateMapName( const char* name ) {
+  if( name && *name ) {
+    if( fgCrateMapName != name ) {
+      fgCrateMapName = name;
+      fgNeedInit = true;
+    }
+  } else if( fgCrateMapName != fgDefaultCrateMapName ) {
+    fgCrateMapName = fgDefaultCrateMapName;
+    fgNeedInit = true;
+  }
+}
+
+// Set up and initialize the crate map
 int THaEvData::init_cmap()  {
+  if( fgCrateMapName.IsNull() )
+    fgCrateMapName = fgDefaultCrateMapName;
+  if( !fMap || fgNeedInit || fgCrateMapName != fMap->GetName() ) {
+    delete fMap;
+    fMap = new THaCrateMap( fgCrateMapName );
+  }
   if (TestBit(kDebug)) cout << "Init crate map " << endl;
-  if( cmap->init(GetRunTime()) == THaCrateMap::CM_ERR )
-    return HED_ERR;
+  if( fMap->init(GetRunTime()) == THaCrateMap::CM_ERR )
+    return HED_FATAL; // Can't continue w/o cratemap
+  fgNeedInit = false;
   return HED_OK;
 }
 

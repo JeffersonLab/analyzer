@@ -51,6 +51,20 @@ const UShort_t THaCrateMap::MAXDATA = 1024;
 const int THaCrateMap::CM_OK = 1;
 const int THaCrateMap::CM_ERR = -1;
 
+THaCrateMap::THaCrateMap( const char* db_filename )
+{
+  // Construct uninitialized crate map. The argument is the name of
+  // the database file to use for initialization
+
+  if( !db_filename || !*db_filename ) {
+    ::Warning( "THaCrateMap", "Undefined database file name, "
+	       "using default \"db_cratemap.dat\"" );
+    db_filename = "cratemap";
+  }
+  fDBfileName = db_filename;
+
+}
+
 int THaCrateMap::getScalerCrate(int data) const {
   for (int crate=0; crate<MAXROC; crate++) {
     if (!crate_used[crate]) continue;
@@ -172,7 +186,7 @@ int THaCrateMap::init(ULong64_t tloc) {
   // The real work is done by the init(TString&) method
 
   // Only print warning/error messages exactly once
-  static bool first = true;
+  //  static bool first = true;
   static const char* const here = "THaCrateMap::init";
 
   //FIXME: replace with TTimeStamp
@@ -181,9 +195,10 @@ int THaCrateMap::init(ULong64_t tloc) {
   TString db;
 
 #ifndef STANDALONE
-  FILE* fi = THaAnalysisObject::OpenFile("cratemap",date,here,"r",0);
+  FILE* fi = THaAnalysisObject::OpenFile(fDBfileName,date,here,"r",0);
 #else
-  FILE* fi = fopen("db_cratemap.dat","r");
+  TString fname = "db_"; fname.Append(fDBfileName); fname.Append(".dat");
+  FILE* fi = fopen(fname,"r");
 #endif
   if ( fi ) {
     // just build the string to parse later
@@ -195,12 +210,16 @@ int THaCrateMap::init(ULong64_t tloc) {
   }
 
   if ( db.Length() <= 0 ) {
-    if( first )
-      ::Warning( here, "Using hard-coded time-dependent crate-map" );
-    first = false;
-    return init_hc(tloc);
+    // Die if we can't open the crate map file
+    ::Error( here, "Error reading crate map database file db_%s.dat",
+	    fDBfileName.Data() );
+    return CM_ERR;
+//     if( first )
+//       ::Warning( here, "Using hard-coded time-dependent crate-map" );
+//     first = false;
+//     return init_hc(tloc);
   }
-  first = false;
+  //  first = false;
   return init(db);
 }
 
