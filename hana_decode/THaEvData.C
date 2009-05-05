@@ -59,7 +59,7 @@ Bool_t  THaEvData::fgNeedInit = true;
 //_____________________________________________________________________________
 
 THaEvData::THaEvData() :
-  cmap(0), first_load(true), first_decode(true), fTrigSupPS(true),
+  first_load(true), first_decode(true), fTrigSupPS(true),
   buffer(0), run_num(0), run_type(0), fRunTime(0), evt_time(0),
   recent_event(0), fNSlotUsed(0), fNSlotClear(0), fMap(0),
   fDoBench(kFALSE), fBench(0)
@@ -67,6 +67,8 @@ THaEvData::THaEvData() :
   fInstance = fgInstances.FirstNullBit();
   fgInstances.SetBitNumber(fInstance);
   fInstance++;
+  // FIXME: not needed - here for compatibility
+  cmap = new THaCrateMap( fgDefaultCrateMapName );
   // FIXME: dynamic allocation
   crateslot = new THaSlotData*[MAXROC*MAXSLOT];
   fSlotUsed  = new UShort_t[MAXROC*MAXSLOT];
