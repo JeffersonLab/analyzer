@@ -1,7 +1,7 @@
 # Makefile for "hana" (C++ Hall A Analyzer) Event Decoder.
 # R. Michaels, rom@jlab.org, Mar 2001
 #
-# Test Executibles:
+# Test Executables:
 # tstcoda  --  test of abstract interface to THaCodaFile and THaEtClient.
 # tstio    --  simple tests of CODA I/O from a file.
 # tdecpr   --  test of decoder with self-explanatory printouts.
@@ -12,7 +12,7 @@
 # 
 # To understand how to use decoding classes, look at the 'main'
 # routines tstcoda_main.C, tstio_main.C, tdecpr_main.C, tdecex_main.C etc
-# corresponding to the above executibles.  Also see haGenDetTest.C
+# corresponding to the above executables.  Also see haGenDetTest.C
 # which shows proposed usage in a 'generic' detector class.
 
 # Note regarding software from DAQ group
@@ -29,7 +29,7 @@ VERS = hana_decode_1.6
 # export STANDALONE = 1
 
 # MAINDIR is the source of headers for main code.
-# Also need objects from MAINDIR for standalone test executibles,
+# Also need objects from MAINDIR for standalone test executables,
 # but NOT for making library.
 export MAINDIR = ../src
 
