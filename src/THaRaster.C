@@ -228,6 +228,8 @@ Int_t THaRaster::Decode( const THaEvData& evdata )
 
   ClearEvent();
 
+  UInt_t chancnt = 0;
+
   for (Int_t i = 0; i < fDetMap->GetSize(); i++ ){
     THaDetMap::Module* d = fDetMap->GetModule( i );
 
@@ -235,7 +237,7 @@ Int_t THaRaster::Decode( const THaEvData& evdata )
       Int_t chan = evdata.GetNextChan( d->crate, d->slot, j);
       if ((chan>=d->lo)&&(chan<=d->hi)) {
 	Int_t data = evdata.GetData( d->crate, d->slot, chan, 0 );
-	Int_t k = d->first + chan - d->lo -1;
+       Int_t k = chancnt+d->first + chan - d->lo -1;
 	if (k<2) {
 	  fRawPos(k)= data;
 	  fNfired++;
@@ -248,7 +250,11 @@ Int_t THaRaster::Decode( const THaEvData& evdata )
 	  Warning( Here("Decode()"), "Illegal detector channel: %d", k );
 	}
       }
+
+
     }
+
+    chancnt+=d->hi-d->lo+1;
   }
 
   if (fNfired!=4) {
