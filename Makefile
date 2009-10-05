@@ -17,7 +17,7 @@
 # SOVERSION should be numerical only - it becomes the shared lib soversion
 # EXTVERS (optional) describes the build, e.g. "dbg", "et", "gcc33" etc.
 SOVERSION  := 1.5
-PATCH   := 11
+PATCH   := 12
 VERSION := $(SOVERSION).$(PATCH)
 EXTVERS :=
 NAME    := analyzer-$(VERSION)
