@@ -82,6 +82,32 @@ void THaTrack::Print( Option_t* opt ) const
 }
 
 //_____________________________________________________________________________
+static Double_t SafeNDoF( Int_t dof )
+{
+  if( dof <= 0 )
+    return 1e-10;
+  return static_cast<Double_t>(dof);
+}
+
+//_____________________________________________________________________________
+Int_t THaTrack::Compare(const TObject * obj) const
+{
+  // compare two tracks by chi2/ndof
+  // for track array sorting
+
+  const THaTrack* tr = dynamic_cast<const THaTrack*>(obj);
+  if (!tr) return 0;
+
+  Double_t v1 = GetChi2() / SafeNDoF( GetNDoF() );
+  Double_t v2 = tr->GetChi2()/ SafeNDoF( tr->GetNDoF() );
+
+  if( v1<v2 ) return -1;
+  else if( v1==v2 ) return 0;
+  else return 1;
+}
+
+
+//_____________________________________________________________________________
 
 ClassImp(THaTrack)
 
