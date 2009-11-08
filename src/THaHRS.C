@@ -96,7 +96,6 @@ Bool_t THaHRS::SetTrSorting( Bool_t set )
 }
 
 //_____________________________________________________________________________
-inline
 Bool_t THaHRS::GetTrSorting() const
 {
   return ((fProperties & kSortTracks) != 0);
