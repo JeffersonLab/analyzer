@@ -5,100 +5,86 @@
 </head>
 
 <body background="wallpaper.gif">
-<h2>Podd version 1.4</h2>
+<h2>Podd version 1.5</h2>
 
-17 July 2006
+28 April 2008
 <p>
-The Hall A software team is pleased to present version 1.4 of the
-C++ analysis software Podd.  This version is largely a maintenance release;
-it includes various corrections and smaller improvements that have
-accumulated since the release of version 1.3 in June 2004.
+The Hall A software team is pleased to present version 1.5 of the
+C++ analysis software Podd.  This version contains many significant
+improvements that were driven by the experience with analyzing
+recent experiments in Hall A as well as the requirements
+of the complex BigBite spectrometer tracking code. 
+
 <p>
-The main structural improvement is in the decoder. The decoder
-interface is now an abstract base class, and the actual implementation
-can be chosen by the user. In this version, a standard CODA file decoder
-is provided, and an alternative frontend interface to simulation data (VDCsim)
-is available in a <a href="http://hallaweb.jlab.org/root/vdcsim.html">separate
-package</a>.
+Several parts of the programming interface in this release have changed noticeably
+compared to Podd version 1.4. As a result, plug-ins for version 1.4 will have
+to be recompiled at the minimum. In many cases, code changes will be necessary.
+However, most of the bug fixes as well as some of the additional functionality of
+this release have been (or will shortly be) backported to version 1.4. We plan to
+support version 1.4 for several years into the future because many earlier
+Hall A experiments have spent considerable effort on developing complex libraries.
+They should not be forced to upgrade. For new development, however, version 1.5
+should be used.
+
 <p>
-The most current beam helicity code is available as a
-<a href="http://www.jlab.org/~rom/helicity_podd.html">separate plug-in</a>.
-The older THaHelicity class is still available as before, but expect
-its functionality to change in the next release.
+The main improvements in this release are the database system, which now
+supports a much more user-friendly free file format and additional data
+types, and the helicity classes, which have been restructured and integrated
+into Podd. The old <tt>THaHelicty</tt> class has been replaced with
+a new version which performs a reasonable default action for standard
+polarization experiments.
+
 <hr>
 
 <h3>What's new</h3>
-Compared to Release 1.3, the following features have been added:
+Compared to Release 1.4, the following features have been added:
 
 <ul>
-  <li>Improved support for split CODA input files.
-  <li>Improved support for split ROOT output files.
-  <li>Support for writing arbitrary ROOT objects to the ROOT output file
-      (e.g. TLorentzVector).
-  <li>Support for writing the non-event data from analysis objects (detectors, apparatuses,
-      physics modules) to the ROOT output file, for example to document calibration and
-      geometry parameters used for the analysis.
-  <li>Support for "F1" and CAEN 767 TDCs.
-  <li>Support for G0 helicity scheme. Improved handling of helicity data.
-  <li>Improved scaler package with more functionality
-      (see the <a href="http://hallaweb.jlab.org/equipment/daq/THaScaler.html">online
-      scaler documentation</a>).
-  <li>BPM and raster calibration scripts are supplied.
-  <li>The Chi^2 of the cluster track fitting in the HRS VDCs is calculated.
-  <li>Track intercepts and pathlengths are calculated for all tracks at all detector
-      positions.
-  <li>More calculated kinematics variables available as global variables from
-      kinematics physics modules.
-  <li>Support for new prescale event type.
-  <li>Fix for incorrectly calculated HRS VDC plane spacings. This may require
-      re-optimization of matrix elements since it affects the calculated V-slopes.
-  <li>Support for gcc4 and 64-bit environments.
+  <li>Expanded database capabilities (arrays, strings, free format files). Database
+      reader functions no longer need to be written by hand using cumbersome raw I/O
+      calls, but can be reduced to the definition of a database request
+      (<tt>DBRequest</tt> structure) followed by a call to <tt>THaAnalysisObject::LoadDB</tt>.
+  <li>Support for "reference channels" in detector maps.
+  <li>Restructured and fully-integrated helicity classes (user classes <tt>THaHelicity</tt>,
+      <tt>THaADCHelicity</tt>, and <tt>THaG0Helicity</tt>).
+  <li>Intelligent handling of split CODA raw data files (continuation segments).
+  <li>Improved scaler code (helicity sorting).
+  <li>Speed improvements in writing the output ROOT file.
+  <li>Ability to sort multiple HRS tracks (rare) by Chi2/ndof of the track fit
+      (<tt>THaHRS::SetTrSorting()</tt>). This redefines the meaning of the "golden track" in the HRS,
+      probably for the better.
+  <li>Ability to use arbitrary crate map database files (<tt>THaAnalyzer::SetCrateMapFileName()</tt>)
+  <li>Run-time configurable verbosity of decoder messages.
+  <li>Preliminary support for JLab 250 MHz Flash ADC (non-pipelined "window raw data" mode).
+  <li>Support for large CODA input files (&gt; 2GB).
+  <li>Support for current versions of ROOT and gcc/g++.
+  <li>Miscellaneous minor bug fixes.
 </ul>
 
 <h3>Compatibility</h3>
-Version 1.4 is mostly source-compatible with version 1.3, but
-not binary-compatible. The one known source code incompatibility occurs
-in the THaDetector class hierarchy: The member variables fDetector and
-fApparatus have been changed from simple pointers to TRef objects.
-Classes that formerly accessed these pointers directly should now use calls
-to the GetDetector() and GetApparatus() member functions. For example,
-replace
-<pre>
-       TString name = fApparatus->GetName();
-</pre>
-with
-<pre>
-       TString name = GetApparatus()->GetName();
-</pre>
-Modules developed for version 1.3 must be modified like this, but will then still work
-with version 1.3 or earlier.  Of course, all modules need to be recompiled for use
-with version 1.4.
-<p>
-The only module that is known to have been affected by this change is the RICH library.
-The RICH code has been patched in CVS.
-<p>
-<b>NOTE:</b> ROOT 5.08/00 contains a bug in the TFormula code that causes Podd's test
-and output packages to crash "mysteriously" under certain circumstances. Please avoid
-using this version of ROOT and upgrade to ROOT 5.10/00 instead.
+Version 1.5 is neither source-compatible nor binary-compatible with version 1.4 and
+prior releases. Plug-ins and user libraries will need to be recompiled and possibly
+changed. Please contact the developers if you need to do this and run into problems.
 
 <h3>System requirements</h3>
 <ul>
-  <li>Linux with gcc/g++; or Solaris with the Sun Workshop compiler.
-  <li>ROOT 3.02 or higher. CAUTION: Do not use ROOT 5.08/00! (see above).
+  <li>Linux with gcc/g++ 3.2 or higher; or Solaris with the Sun Workshop 5 compiler.
+  <li>ROOT 5.10 or higher. 5.18 or higher recommended.
   <li>GNU make
-  <li>Decent hardware (at least 300MHz CPU, 256MB RAM). Compilation of the
-      dictionary takes forever unless your CPU speed is at least 1GHz.
+  <li>Reasonably powerful hardware (2GHz CPU, 1GB RAM). Less will work, but it won't be fun.
 </ul>
 The following platforms have been explicitly tested:
 <ul>
-  <li>RedHat Enterprise Linux 3WS with default compiler (gcc 3.2.3)
-      and ROOT 4.04/02 and ROOT 5.10/00.
-  <li>RedHat Linux 9 with default compiler (gcc 3.2.2) and ROOT 5.10/00.
+  <li>RedHat Enterprise Linux 3 and 5 with default compilers (gcc/g++ 3.2.3 and 4.1.2)
+      and ROOT 5.10 through 5.24.
+  <li>Fedora 6, 9, and 11 with default compilers (gcc/g++ 4.1.2 through 4.4.1)
+      and ROOT 5.16 through 5.24.
 </ul>
 Most other recent Linux and Solaris installations should work as well.
 Other Unix platforms require (probably fairly simple) changes to the Makefiles.
+An unofficial port to Mac OS X exists. Please contact the developers for details.
 
-<h3>Building and installing the program</h3>
+<h3>Building and installing the software</h3>
 Please see <a href="install.html">docs/install.html</a>
 
 <h3>Running the program / How to analyze data</h3>
@@ -113,15 +99,15 @@ Further documentation is available in the "docs" subdirectory and
 at the <a href="http://hallaweb.jlab.org/root/">project home page</a>.
 
 <h3>Credits</h3>
-Special thanks to Rob Feuerbach, Robert Michaels, Bodo Reitz,
-Ken Rossato (summer student), and Amy Orsborn (summer student) who contributed
-significantly to this version.
+Special thanks to Robert Michaels and Jin Huang, who made valuable contributions
+to this version.
 
 <p>
 <hr>
-<address><a href="mailto:ole@jlab.org">Ole Hansen &lt;ole@jlab.org&gt;</a></address>
+Contact: <address><a href="mailto:ole@jlab.org">Ole Hansen &lt;ole@jlab.org&gt;</a>
+</address>
 <!-- hhmts start -->
-Last modified: Mon Jul 17 14:20:11 EDT 2006
+Last modified: Thu Dec 10 14:53:09 EST 2009
 <!-- hhmts end -->
 </body> 
 </html>
