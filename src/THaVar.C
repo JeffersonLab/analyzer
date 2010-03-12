@@ -56,6 +56,7 @@
 #include "TMethodCall.h"
 #include "TObjArray.h"
 #include "TClass.h"
+#include <cassert>
 
 using namespace std;
 
@@ -65,7 +66,8 @@ const Double_t THaVar::kInvalid    = 1e38;
 const char* var_type_name[] = { 
   "kDouble", "kFloat", "kLong", "kULong", "kInt", "kUInt",
   "kShort", "kUShort", "kChar", "kByte", 
-  "kObject", "kTString", "kString", "kDoubleV", "kIntV",
+  "kObject", "kTString", "kString",
+  "kIntV", "kFloatV", "kDoubleV", "kIntM", "kFloatM", "kDoubleM",
   "kDoubleP", "kFloatP", "kLongP", "kULongP", "kIntP", "kUIntP", 
   "kShortP", "kUShortP", "kCharP", "kByteP",
   "kObjectP",
@@ -150,13 +152,18 @@ const char* THaVar::GetTypeName( VarType itype )
 {
   static const char* const type[] = { 
     "Double_t", "Float_t", "Long64_t", "ULong64_t", "Int_t", "UInt_t",
-    "Short_t",  "UShort_t", "Char_t", "Byte_t", "TObject",
+    "Short_t",  "UShort_t", "Char_t", "Byte_t",
+    "TObject", "TString", "string",
+    "vector<int>", "vector<float>", "vector<double>", "vector< vector<int> >",
+    "vector< vector<float> >", "vector< vector<double> >",
     "Double_t*", "Float_t*", "Long64_t*", "ULong64_t*", "Int_t*", "UInt_t*", 
-    "Short_t*", "UShort_t*", "Char_t*", "Byte_t*", "TObject*",
+    "Short_t*", "UShort_t*", "Char_t*", "Byte_t*",
+    "TObject*",
     "Double_t**", "Float_t**", "Long_t64**", "ULong_t64**", "Int_t**",
     "UInt_t**",  "Short_t**", "UShort_t**", "Char_t**", "Byte_t**",
     "TObject**" };
 
+  assert( itype >= 0 && (size_t)itype < sizeof(type)/sizeof(char*) );
   return type[itype];
 }
 
