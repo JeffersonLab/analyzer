@@ -149,6 +149,7 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   //
   if( SeekDBdate( file, date ) == 0 && fConfig.Length() > 0 && 
       SeekDBconfig( file, fConfig.Data() )) {}
+  //FIXME: print warning if a requested (non-empty) config not found
 
   fgets(buff, LEN, file); // Skip comment line
 
@@ -300,7 +301,9 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
 
   // since we take the VDC to be the origin of the coordinate
   // space, this is actually pretty simple
-  const THaDetector* s1 = GetApparatus()->GetDetector("s1");
+  const THaDetector* s1 = 0;
+  if( GetApparatus() )
+    s1 = GetApparatus()->GetDetector("s1");
   if(s1 == NULL)
     fCentralDist = 0;
   else

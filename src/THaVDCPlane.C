@@ -219,17 +219,16 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
     fOrigin += sdet->GetOrigin();
 
   // finally, find the timing-offset to apply on an event-by-event basis
+  //FIXME: time offset handling should go into the enclosing apparatus -
+  //since not doing so leads to exactly this kind of mess:
   THaApparatus* app = GetApparatus();
-  if (!app) {
-    Error(Here(here),"Subdet->Det->App chain is incorrect!");
-    return kInitError;
-  }
   const char* nm = "trg"; // inside an apparatus, the apparatus name is assumed
-  fglTrg = dynamic_cast<THaTriggerTime*>(app->GetDetector(nm));
-  if (!fglTrg)
-    Warning(Here(here),"Expected %s to be prepared before VDCs. "
-	    "Event-dependent time offsets NOT used!!",nm);
-  
+  if( !app || 
+      !(fglTrg = dynamic_cast<THaTriggerTime*>(app->GetDetector(nm))) ) {
+    Warning(Here(here),"Trigger-time detector \"%s\" not found. "
+	    "Event-by-event time offsets will NOT be used!!",nm);
+  }
+
   fIsInit = true;
   fclose(file);
 
