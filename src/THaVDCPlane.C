@@ -96,20 +96,18 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
   // are of form [ <prefix> ], e.g. [ R.vdc.u1 ].
   TString tag(fPrefix); tag.Chop(); // delete trailing dot of prefix
   tag.Prepend("["); tag.Append("]"); 
-  TString line, tag2(tag);
-  tag.ToLower();
+  TString line;
   bool found = false;
   while (!found && fgets (buff, LEN, file) != NULL) {
     char* buf = ::Compress(buff);  //strip blanks
     line = buf;
     delete [] buf;
     if( line.EndsWith("\n") ) line.Chop();  //delete trailing newline
-    line.ToLower();
     if ( tag == line ) 
       found = true;
   }
   if( !found ) {
-    Error(Here(here), "Database entry \"%s\" not found!", tag2.Data() );
+    Error(Here(here), "Database entry \"%s\" not found!", tag.Data() );
     fclose(file);
     return kInitError;
   }
