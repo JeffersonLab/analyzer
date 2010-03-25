@@ -123,7 +123,7 @@ public:
 
 protected:
 
-  enum EProperties { kNeedsRunDB = BIT(0) };
+  enum EProperties { kNeedsRunDB = BIT(0), kConfigOverride = BIT(1) };
 
   // General status variables
   char*           fPrefix;    // Name prefix for global variables

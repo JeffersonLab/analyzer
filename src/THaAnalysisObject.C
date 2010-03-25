@@ -587,15 +587,20 @@ Int_t THaAnalysisObject::ReadDatabase( const TDatime& /* date */ )
 Int_t THaAnalysisObject::ReadRunDatabase( const TDatime& date )
 {
   // Default run database reader. Reads one key, <prefix>.config, into 
-  // fConfig. If not found, fConfig is empty.
+  // fConfig. If not found, fConfig is empty. If fConfig was explicitly
+  // set with SetConfig(), the run database is not parsed and fConfig is
+  // not touched.
 
   if( !fPrefix ) return kInitError;
 
   FILE* file = OpenRunDBFile( date );
   if( !file ) return kFileError;
 
-  TString name(fPrefix); name.Append("config");
-  Int_t ret = LoadDBvalue( file, date, name, fConfig );
+  Int_t ret = 0;
+  if( (fProperties & kConfigOverride) == 0) {
+    TString name(fPrefix); name.Append("config");
+    ret = LoadDBvalue( file, date, name, fConfig );
+  }
   fclose(file);
 
   if( ret == -1 ) return kFileError;
@@ -643,6 +648,10 @@ void THaAnalysisObject::SetConfig( const char* label )
   // seek to a section header [ config=label ] if the module supports it.
 
   fConfig = label;
+  if( fConfig.IsNull() )
+    fProperties &= ~kConfigOverride;
+  else
+    fProperties |= kConfigOverride;
 }
 
 //_____________________________________________________________________________
