@@ -106,21 +106,19 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
     tag.Append(".");
   tag.Prepend("[");
   tag.Append("global]"); 
-  TString line, tag2(tag);
-  tag.ToLower();
 
+  TString line;
   bool found = false;
   while (!found && fgets (buff, LEN, file) != NULL) {
     char* buf = ::Compress(buff);  //strip blanks
     line = buf;
     delete [] buf;
     if( line.EndsWith("\n") ) line.Chop();
-    line.ToLower();
-     if ( tag == line ) 
+    if ( tag == line ) 
       found = true;
   }
   if( !found ) {
-    Error(Here(here), "Database entry %s not found!", tag2.Data() );
+    Error(Here(here), "Database section %s not found!", tag.Data() );
     fclose(file);
     return kInitError;
   }
@@ -129,7 +127,8 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
 
   // read in some basic constants first
   //  fscanf(file, "%lf", &fSpacing);
-  // fSpacing is calculated from the actual z-positions in Init()
+  // fSpacing is now calculated from the actual z-positions in Init(),
+  // so skip the first line after [ global ] completely:
   fgets(buff, LEN, file); // Skip rest of line
  
   // Read in the focal plane transfer elements
@@ -147,11 +146,21 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   // comment line
   // t 0 0 0  ... etc.
   //
-  if( SeekDBdate( file, date ) == 0 && fConfig.Length() > 0 && 
-      SeekDBconfig( file, fConfig.Data() )) {}
-  //FIXME: print warning if a requested (non-empty) config not found
+  if( (found = SeekDBdate( file, date )) == 0 && !fConfig.IsNull() && 
+      (found = SeekDBconfig( file, fConfig.Data() )) == 0 ) {
+    // Print warning if a requested (non-empty) config not found
+    Warning( Here(here), "Requested configuration section \"%s\" not "
+	     "found in database. Using default (first) section.", 
+	     fConfig.Data() );
+  }
 
-  fgets(buff, LEN, file); // Skip comment line
+  // Second line after [ global ] or first line after a found tag.
+  // After a found tag, it must be the comment line. If not found, then it 
+  // can be either the comment or a non-found tag before the comment...
+  fgets(buff, LEN, file);  // Skip line
+  if( !found && IsTag(buff) )
+    // Skip one more line if this one was a non-found tag
+    fgets(buff, LEN, file);
 
   fTMatrixElems.clear();
   fDMatrixElems.clear();
