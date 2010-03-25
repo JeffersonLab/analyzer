@@ -95,6 +95,7 @@ public:
   static  Int_t   SeekDBconfig( FILE* file, const char* tag,
 				const char* label = "config",
 				Bool_t end_on_tag = false );
+  static  bool    IsTag( const char* buf );
 
   // Generic utility functions
   static std::vector<std::string> vsplit( const std::string& s );

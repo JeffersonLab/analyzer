@@ -835,19 +835,6 @@ static Int_t IsDBkey( const string& line, const char* key, string& text )
 }
 
 //_____________________________________________________________________________
-static bool IsTag( const char* buf )
-{
-  // Return true if the string in 'buf' matches regexp "[ \t]*\[.*\].*",
-  // i.e. it is a tag. Internal function.
-
-  register const char* p = buf;
-  while( isspace(*p)) p++;
-  if( *p != '[' ) return false;
-  while( *p && *p != ']' ) p++;
-  return ( *p == ']' );
-}
-
-//_____________________________________________________________________________
 static Int_t ChopPrefix( string& s )
 {
   // Remove trailing level from prefix. Example "L.vdc." -> "L."
@@ -871,6 +858,23 @@ static Int_t ChopPrefix( string& s )
   s.clear();
   return 0;
 
+}
+
+//_____________________________________________________________________________
+inline
+bool THaAnalysisObject::IsTag( const char* buf )
+{
+  // Return true if the string in 'buf' matches regexp ".*\[.+\].*",
+  // i.e. it is a tag. Static utility function.
+
+  register const char* p = buf;
+  while( *p && *p != '[' ) p++;
+  if( !*p ) return false;
+  p++;
+  if( !*p || *p == ']' ) return false;
+  p++;
+  while( *p && *p != ']' ) p++;
+  return ( *p == ']' );
 }
 
 //_____________________________________________________________________________
@@ -1324,7 +1328,7 @@ Int_t THaAnalysisObject::SeekDBconfig( FILE* file, const char* tag,
       char* cbuf = ::Compress(buf);
       string line(cbuf); delete [] cbuf;
       ssiz_t lbrk = line.find(_label);
-      if( lbrk != string::npos && lbrk < line.size()-llen ) {
+      if( lbrk != string::npos && lbrk+llen < line.size() ) {
 	ssiz_t rbrk = line.find(']',lbrk+llen);
 	if( rbrk == string::npos ) continue;
 	if( line.substr(lbrk+llen,rbrk-lbrk-llen) == tag ) {
