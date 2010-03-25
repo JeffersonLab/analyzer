@@ -586,8 +586,8 @@ Int_t THaAnalysisObject::ReadDatabase( const TDatime& /* date */ )
 //_____________________________________________________________________________
 Int_t THaAnalysisObject::ReadRunDatabase( const TDatime& date )
 {
-  // Default run database reader. Reads one value, <prefix>.config, into 
-  // fConfig. This value is optional; if not found, fConfig is empty.
+  // Default run database reader. Reads one key, <prefix>.config, into 
+  // fConfig. If not found, fConfig is empty.
 
   if( !fPrefix ) return kInitError;
 
@@ -600,6 +600,7 @@ Int_t THaAnalysisObject::ReadRunDatabase( const TDatime& date )
 
   if( ret == -1 ) return kFileError;
   if( ret < 0 )   return kInitError;
+  if( ret == 1 )  fConfig = "";
   return kOK;
 }
 
@@ -809,30 +810,27 @@ static Int_t IsDBkey( const string& line, const char* key, string& text )
 {
   // Check if 'line' is of the form "key = value" and, if so, whether the key 
   // equals 'key'. Keys are not case sensitive.
-  // - If there is no '=', then return zero.
+  // - If there is no '=', then return 0.
   // - If there is a '=', but the left-hand side doesn't match 'key',
   //   then return -1. 
-  // - If there is NO text after the '=' (obviously a bad database entry), 
-  //   then return -2.
   // - If key found, parse the line, set 'text' to the text after the "=", 
   //   and return +1.
   // - If 'text' ends with a '\' (continuation mark), then strip the '\',
   //   set 'text' to the remaining text after the '=', and return +2
-  // 'text' is unchanged unless a valid key is found.
+  // 'text' is not changed unless a valid key is found.
 
   ssiz_t pos = line.find('=');
   if( pos == string::npos ) return 0;
-  if( pos == 0 || pos == line.size()-1 ) return -1;
+  if( pos == 0 ) return -1;
   ssiz_t pos1 = line.substr(0,pos).find_first_not_of(" \t");
   if( pos1 == string::npos ) return -1;
   ssiz_t pos2 = line.substr(0,pos).find_last_not_of(" \t");
   if( pos2 == string::npos ) return -1;
-  // Ignore case of the key
+  // Found a LHS, compare it to the requested key
   string lhs(line.substr(pos1,pos2-pos1+1).c_str());
   if( lhs != key ) return -1;
-  // Extract the text, discarding any whitespace at beginning and end
+  // Extract the RHS text, discarding any whitespace at beginning and end
   string rhs = line.substr(pos+1);
-  if( rhs.find_first_not_of(" \t") == string::npos ) return -2;
   return TrimDBline( rhs, text, true );
 }
 
