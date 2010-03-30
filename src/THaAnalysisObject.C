@@ -870,7 +870,6 @@ static Int_t ChopPrefix( string& s )
 }
 
 //_____________________________________________________________________________
-inline
 bool THaAnalysisObject::IsTag( const char* buf )
 {
   // Return true if the string in 'buf' matches regexp ".*\[.+\].*",
