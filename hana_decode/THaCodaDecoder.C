@@ -98,7 +98,7 @@ Int_t THaCodaDecoder::gendecode(const Int_t* evbuffer, THaCrateMap* )
   assert( fMap || fgNeedInit );
   Int_t ret = HED_OK;
   buffer = evbuffer;
-  if(TestBit(kDebug)) dump(evbuffer);    
+  if(TestBit(kDebug)) dump(evbuffer);
   if (first_decode || fgNeedInit) {
     ret = init_cmap();
     if( ret != HED_OK ) return ret;
@@ -792,33 +792,36 @@ Int_t THaCodaDecoder::vme_decode( Int_t roc, const Int_t* evbuffer,
 	  break;
 
 	case 550:     // CAEN 550 for RICH 
-	  // ('slot' was called 'chan' in Fortran)
 	  slotprime = 1+(((*p)&0xff0000)>>16);  
-	  if (TestBit(kDebug)) cout << "Rich slot "<<slot<<" "
-			  <<slotprime<<" "<<loc<<" "<<hex<<*p<<dec<<endl; 
+	  if (TestBit(kDebug))
+	    cout << "CAEN 550 slot header_slot data = "
+		 <<slot<<" "<<slotprime<<" "<<loc<<" "<<hex<<*p<<dec<<endl; 
 	  if (slot == slotprime) {    // They should agree, else problem.
 	    ndat = (*p)&0xfff;
-	    if (TestBit(kDebug)) cout << "Rich ndat = "<<ndat<<endl;
+	    if (TestBit(kDebug)) cout << "CAEN 550 ndat = "<<ndat<<endl;
 	    if (p+ndat>pstop) {
 	      p=pstop;
-	      // FIXME : in this case a warning should apear
-	      //          the buffer/data must be corrupted
-	    }
-	    else {
+	      if( TestBit(kVerbose) )
+		cout << "Error: CAEN 550 data overflow roc/slot/ndat = "
+		     << roc << "/" << slot << "/" << ndat << endl;
+	    } else {
 	      loc = p;
 	      while( ++loc <= p+ndat ) {
 		chan = ((*loc)&0x7ff000)>>12;    
-		// channel number (was called 'wire' in Fortran)
+		// channel number
 		raw  = (*loc)&0xffffffff;
 		data = (*loc)&0x0fff;           
-		if (TestBit(kDebug)) 
-		  cout << "channel "<<chan<<"  raw data "<<raw<<endl;
+		if (TestBit(kDebug)) cout << "CAEN 550 channel "<<chan
+					  <<"  data "<<hex<<data<<dec<<endl;
 		status = crateslot[idx(roc,slot)]
 		  ->loadData("adc",chan,data,raw);
 		if( status != SD_OK ) goto err;
 	      }
 	      p += ndat;
 	    }
+	  } else if( TestBit(kVerbose) ) {
+	    cout << "Warning: slot != header_slot for CAEN 550 roc/slot = "
+		 << roc << "/" << slot << endl;
 	  }
 	  break;
 
@@ -995,6 +998,8 @@ Int_t THaCodaDecoder::vme_decode( Int_t roc, const Int_t* evbuffer,
 	  break;
 
 	default:
+	  if (TestBit(kVerbose)) 
+	    cout << "Warning: unknown VME model " << model << endl;
 	  break;
 	} //end switch(model)
 
