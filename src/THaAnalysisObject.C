@@ -39,6 +39,7 @@
  #include <strstream>
  #define ISSTREAM istrstream
 #endif
+#include <stdexcept>
 
 using namespace std;
 typedef string::size_type ssiz_t;
@@ -430,17 +431,29 @@ THaAnalysisObject::EStatus THaAnalysisObject::Init( const TDatime& date )
   // Don't bother if this object has not implemented its own database reader.
 
   // Note: requires ROOT >= 3.01 because of TClass::GetMethodAllAny()
-  if( IsA()->GetMethodAllAny("ReadDatabase")
-      != gROOT->GetClass("THaAnalysisObject")->GetMethodAllAny("ReadDatabase")){
+  if( IsA()->GetMethodAllAny("ReadDatabase") != 
+      gROOT->GetClass("THaAnalysisObject")->GetMethodAllAny("ReadDatabase") ) {
 
     // Call this object's actual database reader
     fnam = GetDBFileName();
-    if( (status = ReadDatabase(date)) )
+    try {
+      status = ReadDatabase(date);
+    }
+    catch( std::bad_alloc ) {
+      Error( Here(here), "Out of memory in ReadDatabase. Machine too busy? "
+	     "Call expert." );
+      status = kInitError;
+    }
+    catch( ... ) {
+      Error( Here(here), "Exception caught in ReadDatabase. Not initialized. "
+	     "Call expert." );
+      status = kInitError;
+    }
+    if( status )
       goto err;
   } 
   else if ( fDebug>0 ) {
-    cout << "Info: Skipping database call for object " << GetName() 
-	 << " since no ReadDatabase function defined.\n";
+    Info( Here(here), "No ReadDatabase function defined. Database not read." );
   }
 
   // Define this object's variables.
@@ -451,9 +464,9 @@ THaAnalysisObject::EStatus THaAnalysisObject::Init( const TDatime& date )
 
  err:
   if( status == kFileError )
-    Error(Here(here),"Cannot open database file db_%sdat",fnam);
+    Error( Here(here), "Cannot open database file db_%sdat", fnam );
   else if( status == kInitError )
-    Error(Here(here),"Error when reading file db_%sdat",fnam);
+    Error( Here(here), "Error when reading file db_%sdat", fnam);
  exit:
   return fStatus = (EStatus)status;
 }
