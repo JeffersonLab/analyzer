@@ -44,7 +44,7 @@ using THaString::Split;
 //_____________________________________________________________________________
 THaVDC::THaVDC( const char* name, const char* description,
 		THaApparatus* apparatus ) :
-  THaTrackingDetector(name,description,apparatus), fNtracks(0)
+  THaTrackingDetector(name,description,apparatus), fNtracks(0), fEvNum(0)
 {
   // Constructor
 
@@ -635,6 +635,11 @@ Int_t THaVDC::Decode( const THaEvData& evdata )
 {
   // Decode data from VDC planes
   
+#ifdef WITH_DEBUG
+  // Save current event number for diagnostics
+  fEvNum = evdata.GetEvNum();
+#endif
+
   fLower->Decode(evdata); 
   fUpper->Decode(evdata);
 
@@ -646,11 +651,9 @@ Int_t THaVDC::CoarseTrack( TClonesArray& tracks )
 {
  
 #ifdef WITH_DEBUG
-  static int nev = 0;
   if( fDebug>1 ) {
-    nev++;
     cout << "=========================================\n";
-    cout << "Event: " << nev << endl;
+    cout << "Event: " << fEvNum << endl;
   }
 #endif
 

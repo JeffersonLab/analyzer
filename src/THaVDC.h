@@ -83,6 +83,8 @@ protected:
                             // the origin of the transport coordinates to 
                             // the s1 plane
 
+  UInt_t   fEvNum;          // Event number from decoder (for diagnostics)
+
   // declarations for target vertex reconstruction
   enum ECoordTypes { kTransport, kRotatingTransport };
   enum EFPMatrixElemTags { T000 = 0, Y000, P000 };
