@@ -14,7 +14,7 @@
 class THaVDCHit : public TObject {
 
 public:
-  THaVDCHit( THaVDCWire* wire=0, Int_t rawtime=0, Double_t time=kBig )
+  THaVDCHit( THaVDCWire* wire=0, Int_t rawtime=0, Double_t time=0.0 )
     : fWire(wire), fRawTime(rawtime), fTime(time), fDist(kBig), fdDist(1.0),
       ftrDist(kBig) {}
   virtual ~THaVDCHit() {}
