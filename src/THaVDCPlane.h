@@ -33,32 +33,34 @@ public:
   virtual Int_t   FitTracks();                // Clusters -> tracks
 
   //Get and Set functions
-  Int_t          GetNClusters() const { return fClusters->GetLast()+1; }
-  TClonesArray*  GetClusters()  const { return fClusters; }
+  Int_t          GetNClusters()      const { return fClusters->GetLast()+1; }
+  TClonesArray*  GetClusters()       const { return fClusters; }
   THaVDCCluster* GetCluster(Int_t i) const
   { assert( i>=0 && i<GetNClusters() );
     return (THaVDCCluster*)fClusters->UncheckedAt(i); } 
 
-  Int_t          GetNWires()    const { return fWires->GetLast()+1; }
-  TClonesArray*  GetWires()     const { return fWires; }
-  THaVDCWire*    GetWire(Int_t i) const
+  Int_t          GetNWires()         const { return fWires->GetLast()+1; }
+  TClonesArray*  GetWires()          const { return fWires; }
+  THaVDCWire*    GetWire(Int_t i)    const
   { assert( i>=0 && i<GetNWires() );
     return (THaVDCWire*)fWires->UncheckedAt(i);}
 
-  Int_t          GetNHits()     const { return fHits->GetLast()+1; }
-  TClonesArray*  GetHits()      const { return fHits; }
-  THaVDCHit*     GetHit(Int_t i) const
+  Int_t          GetNHits()          const { return fHits->GetLast()+1; }
+  TClonesArray*  GetHits()           const { return fHits; }
+  THaVDCHit*     GetHit(Int_t i)     const
   { assert( i>=0 && i<GetNHits() );
     return (THaVDCHit*)fHits->UncheckedAt(i); }
 
-  Int_t    GetNWiresHit() const  { return fNWiresHit; } 
+  Int_t          GetNWiresHit()      const { return fNWiresHit; } 
 
-  Double_t GetZ()        const   { return fZ; }
-  Double_t GetWBeg()     const   { return fWBeg; }
-  Double_t GetWSpac()    const   { return fWSpac; }
-  Double_t GetWAngle()   const   { return fWAngle; }
-  Double_t GetTDCRes()   const   { return fTDCRes; }
-  Double_t GetDriftVel() const   { return fDriftVel; }
+  Double_t       GetZ()              const { return fZ; }
+  Double_t       GetWBeg()           const { return fWBeg; }
+  Double_t       GetWSpac()          const { return fWSpac; }
+  Double_t       GetWAngle()         const { return fWAngle; }
+  Double_t       GetTDCRes()         const { return fTDCRes; }
+  Double_t       GetDriftVel()       const { return fDriftVel; }
+
+  Double_t       GetT0Resolution()   const { return fT0Resolution; }
 
 //   Double_t GetT0() const { return fT0; }
 //   Int_t GetNumBins() const { return fNumBins; }
@@ -87,6 +89,8 @@ protected:
   Double_t fTDCRes;       // TDC Resolution ( s / channel)
   Double_t fDriftVel;     // Drift velocity in the wire plane (m/s)
 
+  Double_t fT0Resolution; // (Average) resolution of cluster time offset fit
+
   // Lookup table parameters
 //   Double_t fT0;     // calculated zero time 
 //   Int_t fNumBins;   // size of lookup table
@@ -105,6 +109,6 @@ protected:
   ClassDef(THaVDCPlane,0)             // VDCPlane class
 };
 
-///////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 
 #endif

@@ -38,8 +38,8 @@ using namespace std;
 //_____________________________________________________________________________
 THaVDCPlane::THaVDCPlane( const char* name, const char* description,
 			  THaDetectorBase* parent )
-  : THaSubDetector(name,description,parent), /*fTable(NULL),*/ fTTDConv(NULL),
-    fVDC(NULL), fglTrg(NULL)
+  : THaSubDetector(name,description,parent), /*fTable(0),*/ fTTDConv(0),
+    fVDC(0), fglTrg(0)
 {
   // Constructor
 
@@ -140,6 +140,7 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
   fWAngle *= TMath::Pi()/180.0; // Convert to radians
   // FIXME: Read from file
   fTDCRes = 5.0e-10;  // 0.5 ns/chan = 5e-10 s /chan
+  fT0Resolution = 2e-8; // 20 ns --- crude guess
 
   // Load drift velocity (will be used to initialize Crude Time to Distance
   // converter)
