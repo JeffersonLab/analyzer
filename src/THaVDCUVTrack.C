@@ -12,6 +12,8 @@
 
 ClassImp(THaVDCUVTrack)
 
+const Double_t THaVDCUVTrack::kBig = 1e38;  // Arbitrary large value
+
 //_____________________________________________________________________________
 void THaVDCUVTrack::CalcDetCoords()
 {

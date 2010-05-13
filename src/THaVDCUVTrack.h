@@ -9,6 +9,7 @@
 
 #include "THaCluster.h"
 #include "TVector3.h"
+#include <cassert>
 
 class THaVDCCluster;
 class THaVDCUVPlane;
@@ -17,9 +18,11 @@ class THaTrack;
 class THaVDCUVTrack : public THaCluster {
 
 public:
-  THaVDCUVTrack() :
-    fUClust(NULL), fVClust(NULL), fUVPlane(NULL), fTrack(NULL), fPartner(NULL),
-    fX(0.0), fY(0.0), fTheta(0.0), fPhi(0.0) {}
+  THaVDCUVTrack( THaVDCCluster* u_cl, THaVDCCluster* v_cl,
+		 THaVDCUVPlane* plane ) :
+    fUClust(u_cl), fVClust(v_cl), fUVPlane(0), fTrack(0), fPartner(0),
+    fX(kBig), fY(kBig), fTheta(kBig), fPhi(kBig)
+  { assert( fUClust && fVClust && fUVPlane ); }
 
   virtual ~THaVDCUVTrack() {}
 
@@ -54,6 +57,8 @@ public:
 
 
 protected:
+  static const Double_t kBig;
+
   THaVDCCluster* fUClust;       // Cluster in the U plane
   THaVDCCluster* fVClust;       // Cluster in the V plane
   THaVDCUVPlane* fUVPlane;      // UV plane that own's this track
@@ -74,7 +79,7 @@ private:
   ClassDef(THaVDCUVTrack,0)             // VDCUVTrack class
 };
 
-//-------------------- inlines -------------------------------------------------
+//-------------------- inlines ------------------------------------------------
 inline
 void THaVDCUVTrack::Set( Double_t x, Double_t y, Double_t theta, Double_t phi,
 			 const TVector3& offset )
@@ -86,6 +91,6 @@ void THaVDCUVTrack::Set( Double_t x, Double_t y, Double_t theta, Double_t phi,
   fCenter += offset;
 }
 
-////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 #endif
