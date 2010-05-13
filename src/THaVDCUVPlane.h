@@ -6,11 +6,11 @@
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 #include "THaSubDetector.h"
-#include "THaVDCPlane.h"
 
 #include "TClonesArray.h"
 #include <cassert>
 
+class THaVDCPlane;
 class THaVDCUVTrack;
 class THaVDC;
 class THaEvData;
@@ -32,15 +32,19 @@ public:
   virtual EStatus Init( const TDatime& date );
 
   // Get and Set Functions
-  THaVDCPlane*   GetUPlane()      const { return fU; }
-  THaVDCPlane*   GetVPlane()      const { return fV; } 
-  Int_t          GetNUVTracks()   const { return fUVTracks->GetLast()+1; }
-  TClonesArray*  GetUVTracks()    const { return fUVTracks; }
-  THaVDC*        GetVDC()         const { return (THaVDC*)GetDetector(); }
-  Double_t       GetSpacing()     const { return fSpacing;}
-  THaVDCUVTrack* GetUVTrack( Int_t i ) const 
+  THaVDCPlane*    GetUPlane()      const { return fU; }
+  THaVDCPlane*    GetVPlane()      const { return fV; } 
+  Int_t           GetNUVTracks()   const { return fUVTracks->GetLast()+1; }
+  TClonesArray*   GetUVTracks()    const { return fUVTracks; }
+  THaVDC*         GetVDC()         const { return (THaVDC*)GetDetector(); }
+  Double_t        GetSpacing()     const { return fSpacing;}
+  THaVDCUVTrack*  GetUVTrack( Int_t i ) const 
     { assert( i>=0 && i<GetNUVTracks() );
       return (THaVDCUVTrack*)fUVTracks->UncheckedAt(i); }
+
+  void            UnmarkBad();    // Clear "ambiguous cluster match" flag
+  void            MarkBad();      // Set "ambiguous cluster match" flag
+  Bool_t          IsBad() const;  // True if cluster match ambiguity found
 
 protected:
 
@@ -57,22 +61,37 @@ protected:
   Double_t fCos_v;            // 
   Double_t fInv_sin_vu;       // 1/Sine of the difference between the
                               // V axis angle and the U axis angle
+  UInt_t   fUVStatus;         // Analysis status flags
 
-  // For CoarseTrack
-  void FindClusters()        // Find clusters in U & V planes
-    { fU->FindClusters(); fV->FindClusters(); }
-  Int_t MatchUVClusters();   // Match U plane clusters 
-                             //  with V plane clusters
-  // For FineTrack
-  void FitTracks()      // Fit data to recalculate cluster position
-    { fU->FitTracks(); fV->FitTracks(); }
+  enum EUVStatus { kAmbiguous = 0 };
 
-  // For Both
-  Int_t CalcUVTrackCoords(); // Compute UV track coords in detector cs
+  void  FindClusters();       // Find clusters in U and V planes
+  void  FitTracks();          // Fit local tracks for each cluster
+  Int_t MatchUVClusters();    // Match clusters in U with clusters in V
+  Int_t CalcUVTrackCoords();
   
   ClassDef(THaVDCUVPlane,0)             // VDCUVPlane class
 };
 
-////////////////////////////////////////////////////////////////////////////////
+//-------------------- inlines ------------------------------------------------
+inline
+void THaVDCUVPlane::MarkBad()
+{
+  fUVStatus |= (1 << kAmbiguous);
+}
+
+inline
+void THaVDCUVPlane::UnmarkBad()
+{
+  fUVStatus &= ~(1 << kAmbiguous);
+}
+
+inline
+Bool_t THaVDCUVPlane::IsBad() const
+{
+  return (fUVStatus != 0);
+}
+
+///////////////////////////////////////////////////////////////////////////////
 
 #endif

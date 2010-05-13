@@ -92,84 +92,43 @@ Int_t THaVDCUVPlane::MatchUVClusters()
   Int_t nu = fU->GetNClusters();
   Int_t nv = fV->GetNClusters();
 
-  // Need at least one cluster per plane in order to match
-  if ( nu < 1 || nv < 1) {
-    return 0;
-  }
-  
-  THaVDCUVTrack* uvTrack = NULL;
-  
-  // There are two cases:
-  // 1) One cluster per plane
-  // 2) Multiple clusters per plane
+  // Quick-and-dirty algorithm pushed by Bogdan Wojtsekhowski.
+  // Probably not the way to go for the real thing, but it will give 
+  // relatively clean (if inefficient) results:
+  //
+  // Match best in-time clusters (t_0 close to zero).
+  // Discard any out-of-time clusters (|t_0| > N sigma, N = 3, configurable).
+  // Bail if any ambiguity, marking the event as not analyzable
 
-  // One cluster per plane case
-  if ( nu == 1 && nv == 1) {
-    uvTrack = new ( (*fUVTracks)[0] ) THaVDCUVTrack();
-    uvTrack->SetUVPlane(this);
+  Double_t max_u_t0 = fU->GetT0Resolution();
+  Double_t max_v_t0 = fV->GetT0Resolution();
+  THaVDCUVTrack* uvTrack = 0;
 
-    // Set the U & V clusters
-    uvTrack->SetUCluster( fU->GetCluster(0) );
-    uvTrack->SetVCluster( fV->GetCluster(0) );
+  for( Int_t iu = 0; iu < nu; ++iu ) {
+    THaVDCCluster* uClust = fU->GetCluster(iu);
+    if( uClust->GetT0() > max_u_t0 )
+      continue;
 
-  } else { 
-    // At least one plane has multiple clusters
-    // FIXME: This is a crucial part of the algorithm. Really the right approach?
-    // Cope with different numbers of clusters per plane by ensuring that
-    // p1 has more clusters than p2
-    THaVDCPlane *p1, *p2; // Plane 1 and plane 2
-    if ( nu > nv ) { 
-      // More U clusters than V clusters
-      p1 = fU;
-      p2 = fV;
-    } else {  
-      p1 = fV;
-      p2 = fU;
-    }       
-    // Match clusters by time
-    THaVDCCluster *p1Clust, *p2Clust; //Cluster from p1, p2 respectively
-    THaVDCCluster *minClust;     //Cluster in p2 with time closest to p1Clust
-    THaVDCHit     *p1Pivot, *p2Pivot;
-    Double_t minTimeDif;      // Time difference between p1Clust and minClust
-    for (int i = 0; i < p1->GetNClusters(); i++) {
-      
-      p1Clust = p1->GetCluster(i);
-      p1Pivot = p1Clust->GetPivot();
-      if( !p1Pivot ) {
-	Warning( "THaVDCUVPlane", "Cluster without pivot in p1, %d!", i );
+    for( Int_t iv = 0; iv < nv; ++iv ) {
+      THaVDCCluster* vClust = fV->GetCluster(iv);
+      if( vClust->GetT0() > max_v_t0 )
 	continue;
-      }
-      minClust = NULL;
-      minTimeDif = 1e307;  //Arbitrary large value
-      for (int j = 0; j < p2->GetNClusters(); j++) {
-	p2Clust = p2->GetCluster(j);
-	p2Pivot = p2Clust->GetPivot();
-	if( !p2Pivot ) {
-	  Warning( "THaVDCUVPlane", 
-		   "Cluster without pivot in p2, %d, %d!", i, j );
-	  continue;
-	}
-	Double_t timeDif = TMath::Abs(p1Pivot->GetTime() - p2Pivot->GetTime());
-	
-	if (timeDif < minTimeDif) {
-	  minTimeDif = timeDif;
-	  minClust = p2Clust;
-	}
-	  
-      }
-      uvTrack = new ( (*fUVTracks)[i] ) THaVDCUVTrack();
-      uvTrack->SetUVPlane(this);
 
-      // Set the UV tracks U & V clusters
-      if (p1 == fU) { // If p1 is the U plane	
-	uvTrack->SetUCluster( p1Clust );
-	uvTrack->SetVCluster( minClust );
-      } else {  // p2 is the U plane
-	uvTrack->SetUCluster( minClust );
-	uvTrack->SetVCluster( p1Clust );
+      if( uvTrack == 0 ) {
+	// Found two clusters with "small" t0s, and none were found before.
+	// So we pair them and hope for the best.
+	uvTrack = new ( (*fUVTracks)[0] )
+	  THaVDCUVTrack( fU->GetCluster(0), fV->GetCluster(0), this );
+	uvTrack->CalcDetCoords();
+      } else {
+	// Too bad, another combination with small t0s found. 
+	// This situation is ambiguous (within the limits of this algorithm),
+	// and so we mark the event as not analyzable.
+	MarkBad();
       }
-    }   
+    }
   }
+
   // return the number of UV tracks found
   return GetNUVTracks();
 }
@@ -199,6 +158,7 @@ void THaVDCUVPlane::Clear( Option_t* opt )
   fU->Clear(opt);
   fV->Clear(opt);
   fUVTracks->Clear();
+  UnmarkBad();
 }
 
 //_____________________________________________________________________________
@@ -212,37 +172,62 @@ Int_t THaVDCUVPlane::Decode( const THaEvData& evData )
 }
 
 //_____________________________________________________________________________
-Int_t THaVDCUVPlane::CoarseTrack( )
+void THaVDCUVPlane::FindClusters()
+{
+  // Find clusters in U & V planes
+
+  fU->FindClusters();
+  fV->FindClusters();
+}
+
+//_____________________________________________________________________________
+void THaVDCUVPlane::FitTracks()
+{
+  // Fit data to recalculate cluster position
+
+  fU->FitTracks();
+  fV->FitTracks();
+}
+
+//_____________________________________________________________________________
+Int_t THaVDCUVPlane::CoarseTrack()
 {
   // Coarse computation of tracks
   
   // Find clusters and estimate their positions
   FindClusters();
 
-  // Pair U and V clusters
-  MatchUVClusters();
-
-  // Construct UV tracks
-  CalcUVTrackCoords();
-
-  return 0;
-}
-
-//_____________________________________________________________________________
-Int_t THaVDCUVPlane::FineTrack( )
-{
-  // High precision computation of tracks
-  
-  // Refine cluster position
+  // Fit tracks through the hit coordinates of each cluster
   FitTracks();
-
+  
   // FIXME: The fit may fail, so we might want to call a function here
   // that deletes UV tracks whose clusters have bad fits, or with
   // clusters that are too small (e.g. 1 hit), etc. 
   // Right now, we keep them, preferring efficiency over precision.
 
-  // Reconstruct the UV tracks, based on the refined cluster positions
-  CalcUVTrackCoords();
+  // Pair U and V clusters
+#ifndef NDEBUG
+  UInt_t n_pairs =
+#endif
+    MatchUVClusters();
+
+  // The current logic in MatchUVClusters should always produces at most
+  // one cluster pair or mark the event as ambiguous
+  assert( n_pairs <= 1 || IsBad() );
+
+  return 0;
+}
+
+//_____________________________________________________________________________
+Int_t THaVDCUVPlane::FineTrack()
+{
+  // High precision computation of tracks
+
+  //TODO:
+  //- Redo time-to-distance conversion based on "global" track slope
+  //- Refit cluster of the track (if any), using new drift distances
+  //- Recalculate cluster UV coordinates, so new "gobal" slopes can be
+  //  computed
 
   return 0;
 }
