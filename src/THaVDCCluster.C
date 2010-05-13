@@ -212,9 +212,10 @@ void THaVDCCluster::FitTrack( EMode /* mode */ )
   // 
   // FIXME: kT0 and kFull are not yet implemented. Identical to kSimple.
 
-  FitSimpleTrack();
+  //  FitSimpleTrack();
   //  FitSimpleTrackWgt();
-  CalcDist();
+  LinearClusterFitWithT0();
+  //  CalcDist();
 }
 
 //_____________________________________________________________________________
@@ -465,12 +466,245 @@ void THaVDCCluster::FitSimpleTrackWgt()
 }
 
 //_____________________________________________________________________________
+Int_t THaVDCCluster::LinearClusterFitWithT0()
+{
+  // Perform linear fit on drift times. Calculates slope, intercept, time
+  // offset t0, and errors.
+  // Accounts for different uncertainties of each drift distance.
+  //
+  // Fits the parameters m, b, and d0 in
+  //
+  // s_i ( d_i + d0 ) = m x_i + b
+  //
+  // where
+  //  s_i   = sign of ith drift distance (+/- 1)
+  //  d_i   = ith measured drift distance
+  //  x_i   = ith wire position
+  //
+  // The sign vector, s_i, is automatically optimized to yield the smallest
+  // chi^2. Normally, s_i = -1 for i < i_pivot, and s_i = 1 for i >= i_pivot,
+  // but this may occasionally not be the best choice in the presence of 
+  // a significant negative offset d0.
+  //
+  // The results, m, b, and d0, are converted to the "slope" and "intercept"
+  // of the cluster geometery, where slope = 1/m and intercept = -b/m.
+  // d0 is simply converted to time units to give t0, using the asymptotic
+  // drift velocity.
+
+
+  fFitOK = false;
+  if( fSize < 3 ) {
+    fChi2 = kBig;
+    fNDoF = fSize;
+    return -1;  // Too few hits to get meaningful results
+                // Do keep current values of slope and intercept
+  }
+  
+  Double_t m, sigmaM;   // Slope, St. Dev. in slope
+  Double_t b, sigmaB;   // Intercept, St. Dev in Intercept
+  Double_t d0, sigmaD0;
+
+  sigmaM = sigmaB = sigmaD0 = 0;
+
+  Double_t* xArr = new Double_t[fSize];
+  Double_t* dArr = new Double_t[fSize];
+  Double_t* wArr = new Double_t[fSize];
+  Int_t*    sArr = new Int_t[fSize];
+
+  //--- Copy hit data into local arrays
+  Int_t ihit, incr, ilast = fSize-1;
+  // Ensure that the first element of the local arrays always corresponds 
+  // to the wire with the smallest x position
+  if( fPlane->GetWSpac() < 0 ) {
+    ihit = ilast;
+    incr = -1;
+  } else {
+    ihit = 0;
+    incr = 1;
+  }
+  for( Int_t i = 0; i < fSize; ihit += incr, ++i ) {
+    assert( ihit >= 0 && ihit < fSize );
+    xArr[i] = fHits[ihit]->GetPos();
+    dArr[i] = fHits[ihit]->GetDist() + fTimeCorrection;
+    
+    Double_t wt = fHits[ihit]->GetdDist();
+    if( wt>0 )   // the hit will be ignored if the uncertainty is <= 0
+      wArr[i] = 1./(wt*wt);
+
+    assert( i == 0 || xArr[i-1] < xArr[i] );
+  }
+
+  Double_t bestFit = 0.0;
+
+  //--- Perform 3-parameter for different sign coefficients
+  //
+  // We make some simplifying assumptions:
+  // - The first wire of the cluster always has negative drift distance.
+  // - The last wire always has positive drift.
+  // - The sign flips exactly once from - to + somewhere in between
+  sArr[0] = -1;
+  for( Int_t i = 1; i < fSize; ++i )
+    sArr[i] = 1;
+
+  for( Int_t ipivot = 0; ipivot < ilast; ++ipivot ) {
+    if( ipivot != 0 )
+      sArr[ipivot] = -sArr[ipivot];;
+
+    // 3-parameter fit 
+//     Double_t F, sigmaF2;  // intermediate slope and St. Dev.**2
+//     Double_t G, sigmaG2;  // intermediate intercept and St. Dev.**2
+//     Double_t sigmaFG;     // correlated uncertainty
+    
+    Double_t sumX   = 0.0;   //Positions
+    Double_t sumXX  = 0.0;
+    Double_t sumD   = 0.0;   //Drift distances
+    Double_t sumXD  = 0.0;
+    Double_t sumS   = 0.0;   //sign vector
+    Double_t sumSX  = 0.0;
+    Double_t sumSD  = 0.0;
+    Double_t sumSDX = 0.0;
+
+//     Double_t sumXW = 0.0;
+//     Double_t sumXXW= 0.0;
+    
+    Double_t sumW  = 0.0;
+//     Double_t sumWW = 0.0;
+//     Double_t sumDD = 0.0;
+    
+
+    for (int j = 0; j < fSize; j++) {
+      Double_t x = xArr[j];   // Position of wire
+      Double_t d = dArr[j];   // Distance to wire
+      Double_t w = wArr[j];   // Weight/error of distance measurement
+      Int_t    s = sArr[j];   // Sign of distance
+
+      if (w <= 0) continue;
+
+      d = TMath::Abs(d);
+
+      sumX   += x * w;
+      sumXX  += x * x * w;
+      sumD   += d * w;
+      sumXD  += x * d * w;
+      sumS   += s * w;
+      sumSX  += s * x * w;
+      sumSD  += s * d * w;
+      sumSDX += s * d * x * w;
+      sumW   += w;
+//       sumWW  += w*w;
+//       sumXW  += x * w * w;
+//       sumXXW += x * x * w * w;
+//       sumDD  += d * d * w;
+    }
+
+    // Standard formulae for linear regression (see Bevington)
+    Double_t Delta = 
+      sumXX   * ( sumW  * sumW - sumW * sumS  ) -
+      sumX    * ( sumX  * sumW - sumX * sumS  );
+
+    m = 
+      sumSDX  * ( sumW  * sumW - sumW * sumS  ) -
+      sumSD   * ( sumX  * sumW - sumW * sumSX ) +
+      sumD    * ( sumX  * sumS - sumW * sumSX );
+
+    b =
+      -sumSDX * ( sumX  * sumW - sumX * sumS  ) +
+      sumSD   * ( sumXX * sumW - sumX * sumSX ) -
+      sumD    * ( sumXX * sumS - sumX - sumSX );
+
+    d0 = ( sumD - sumSD ) * ( sumXX * sumW - sumX * sumX );
+
+    m  /= Delta;
+    b  /= Delta;
+    d0 /= Delta;
+
+
+//     F  = (sumXX * sumD - sumX * sumXD) / Delta;
+//     G  = (sumW * sumXD - sumX * sumD) / Delta;
+//     sigmaF2 = ( sumXX / Delta );
+//     sigmaG2 = ( sumW / Delta );
+//     sigmaFG = ( sumXW * sumW * sumXX - sumXXW * sumW * sumX
+// 		- sumWW * sumX * sumXX + sumXW * sumX * sumX ) / (Delta*Delta);
+
+//     m  =   1/G;
+//     b  = - F/G;
+
+//     sigmaM = m * m * TMath::Sqrt( sigmaG2 );
+//     sigmaB = TMath::Sqrt( sigmaF2/(G*G) + F*F/(G*G*G*G)*sigmaG2 - 2*F/(G*G*G)*sigmaFG);
+    
+    // calculate the best possible chi2 for the track given this slope, 
+    // intercept, and distance offset
+    
+    chi2_t chi2 = CalcChisquare( xArr, dArr, sArr, wArr, m, b, d0, fSize );
+    
+    // scale the uncertainty of the fit parameters based upon the
+    // quality of the fit. This really should not be necessary if
+    // we believe the drift-distance uncertainties
+//     sigmaM *= chi2/(nhits - 2);
+//     sigmaB *= chi2/(nhits - 2);
+    
+    // Pick the best value
+    if( ipivot == 0 || chi2.first < bestFit ) {
+      bestFit     = fChi2 = chi2.first;
+      fNDoF       = chi2.second-3;
+      fSlope      = m;
+      fInt        = b;
+      fT0         = d0;
+      fSigmaSlope = sigmaM;
+      fSigmaInt   = sigmaB;
+      fSigmaT0    = sigmaD0;
+    }
+  }
+
+  // Rotate the coordinate system to match the VDC definition of "slope"
+  fSlope = 1.0/fSlope;       // 1/m
+  fInt   = -fInt * fSlope;   // -b/m
+  if( fPlane )
+    fT0  *= fPlane->GetDriftVel();
+  
+  fLocalSlope = fSlope;
+  fFitOK = true;
+
+  delete[] wArr;
+  delete[] sArr;
+  delete[] dArr;
+  delete[] xArr;
+
+  return 0;
+}
+
+//_____________________________________________________________________________
 Int_t THaVDCCluster::GetPivotWireNum() const
 {
   // Get wire number of cluster pivot (hit with smallest drift distance)
 
   return fPivot ? fPivot->GetWireNum() : -1;
 }
+
+
+//_____________________________________________________________________________
+chi2_t THaVDCCluster::CalcChisquare( const Double_t* xArr, 
+				     const Double_t* dArr,
+				     const Int_t* sArr,
+				     const Double_t* wArr,
+				     Double_t slope, Double_t icpt,
+				     Double_t d0, Int_t size )
+{
+  Int_t npt = 0;
+  Double_t chi2 = 0;
+  for( int j = 0; j < size; ++j ) {
+    Double_t x  = xArr[j];
+    Double_t y  = sArr[j] * dArr[j];
+    Double_t w  = wArr[j];
+    Double_t yp = x*slope + icpt + d0*sArr[j];
+    if( w <= 0 ) continue;
+    Double_t d  = (y-yp)/w;
+    chi2       += d*d;
+    ++npt;
+  }
+  return make_pair( chi2, npt );
+}
+
 
 //_____________________________________________________________________________
 void THaVDCCluster::CalcChisquare(Double_t& chi2, Int_t& nhits ) const
