@@ -15,6 +15,7 @@
 #include "THaEvData.h"
 #include "THaDetMap.h"
 #include "THaTrack.h"
+#include "THaVDCPlane.h"
 #include "THaVDCUVPlane.h"
 #include "THaVDCUVTrack.h"
 #include "THaVDCCluster.h"
@@ -690,15 +691,6 @@ Int_t THaVDC::FineTrack( TClonesArray& tracks )
   }
 
   fNtracks = ConstructTracks( &tracks, 2 );
-
-#ifdef WITH_DEBUG
-  // Wait for user to hit Return
-  static char c;
-  if( fDebug>1 ) {
-    cin.clear();
-    while( !cin.eof() && cin.get(c) && c != '\n');
-  }
-#endif
 
   return 0;
 }
