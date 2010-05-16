@@ -23,7 +23,7 @@ public:
   THaVDCCluster( THaVDCPlane* owner = 0 ) :
     fSize(0), fPlane(owner), fTrack(0),
     fSlope(kBig), fSigmaSlope(kBig), fInt(kBig), fSigmaInt(kBig),
-    fT0(0.0), fSigmaT0(kBig), fPivot(0), fTimeCorrection(0.0),
+    fT0(kBig), fSigmaT0(kBig), fPivot(0), fTimeCorrection(0.0),
     fFitOK(false), fLocalSlope(kBig), fChi2(kBig), fNDoF(0.0)  {}
   THaVDCCluster( const THaVDCCluster& );
   THaVDCCluster& operator=( const THaVDCCluster& );
@@ -90,6 +90,7 @@ protected:
   Double_t       fInt, fSigmaInt;    // Intercept and error
   Double_t       fT0, fSigmaT0;      // Fitted common timing offset and error
   THaVDCHit*     fPivot;             // Pivot - hit with smallest drift time
+  Int_t          fIPivot;            // Drift sign flips at this hit index
   Double_t       fTimeCorrection;    // correction to be applied when fitting
                                      // drift times
   bool           fFitOK;             // Flag indicating that fit results valid
@@ -103,8 +104,10 @@ protected:
 
   chi2_t CalcChisquare( const Double_t* x, const Double_t* y, 
 			const Int_t* s, const Double_t* w,
-			Double_t slope, Double_t icpt, Double_t d0,
-			Int_t size );
+			Double_t slope, Double_t icpt, Double_t d0 ) const;
+  void Linear3DFit( const Double_t* x, const Double_t* y, 
+		    const Int_t* s, const Double_t* w,
+		    Double_t& slope, Double_t& icpt, Double_t& d0 ) const;
   Int_t LinearClusterFitWithT0();
 
   ClassDef(THaVDCCluster,0)          // A group of VDC hits

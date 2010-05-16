@@ -26,6 +26,7 @@ THaVDCCluster::THaVDCCluster( const THaVDCCluster& rhs ) :
   fSize(rhs.fSize), fPlane(rhs.fPlane), fSlope(rhs.fSlope), 
   fSigmaSlope(rhs.fSigmaSlope), fInt(rhs.fInt), fSigmaInt(rhs.fSigmaInt), 
   fT0(rhs.fT0), fSigmaT0(rhs.fSigmaT0), fPivot(rhs.fPivot), 
+  fIPivot(-1),
   fTimeCorrection(rhs.fTimeCorrection), fFitOK(rhs.fFitOK),
   fLocalSlope(rhs.fLocalSlope), fChi2(rhs.fChi2), fNDoF(rhs.fNDoF)
 {
@@ -45,6 +46,7 @@ THaVDCCluster& THaVDCCluster::operator=( const THaVDCCluster& rhs )
   if( this != &rhs ) {
     fSize       = rhs.fSize;
     fPlane      = rhs.fPlane;
+    fTrack      = rhs.fTrack;
     fSlope      = rhs.fSlope;
     fSigmaSlope = rhs.fSigmaSlope;
     fInt        = rhs.fInt;
@@ -52,6 +54,7 @@ THaVDCCluster& THaVDCCluster::operator=( const THaVDCCluster& rhs )
     fT0         = rhs.fT0;
     fSigmaT0    = rhs.fSigmaT0;
     fPivot      = rhs.fPivot;
+    fIPivot     = rhs.fIPivot;
     fTimeCorrection = rhs.fTimeCorrection;
     fFitOK      = rhs.fFitOK;
     fLocalSlope = rhs.fLocalSlope;
@@ -87,11 +90,11 @@ void THaVDCCluster::Clear( const Option_t* )
   // Clear the contents of the cluster
 
   ClearFit();
-  fSize  = 0;
-  fPivot = NULL;
-  fPlane = NULL;
+  fSize   = 0;
+  fPivot  = 0;
+  fPlane  = 0;
 //    fUVTrack = NULL;
-//    fTrack = NULL;
+  fTrack = 0;
 
 }
 
@@ -106,6 +109,7 @@ void THaVDCCluster::ClearFit()
   fSigmaInt   = kBig;
   fT0         = 0.0;
   fSigmaT0    = kBig;
+  fIPivot     = -1;
   fFitOK      = false;
   fLocalSlope = kBig;
   fChi2       = kBig;
@@ -335,8 +339,6 @@ void THaVDCCluster::FitSimpleTrackWgt()
 
   fFitOK = false;
   if( fSize < 3 ) {
-    fChi2 = kBig;
-    fNDoF = fSize;
     return;  // Too few hits to get meaningful results
              // Do keep current values of slope and intercept
   }
@@ -433,11 +435,7 @@ void THaVDCCluster::FitSimpleTrackWgt()
     Double_t chi2 = 0.;
     Int_t nhits = 0;
     
-    Double_t oldslope = fSlope;
-    Double_t oldint   = fInt;
     CalcChisquare(chi2,nhits);
-    fSlope = oldslope;
-    fInt   = oldint;
     
     // scale the uncertainty of the fit parameters based upon the
     // quality of the fit. This really should not be necessary if
@@ -493,9 +491,7 @@ Int_t THaVDCCluster::LinearClusterFitWithT0()
 
 
   fFitOK = false;
-  if( fSize < 3 ) {
-    fChi2 = kBig;
-    fNDoF = fSize;
+  if( fSize < 4 ) {
     return -1;  // Too few hits to get meaningful results
                 // Do keep current values of slope and intercept
   }
@@ -515,7 +511,8 @@ Int_t THaVDCCluster::LinearClusterFitWithT0()
   Int_t ihit, incr, ilast = fSize-1;
   // Ensure that the first element of the local arrays always corresponds 
   // to the wire with the smallest x position
-  if( fPlane->GetWSpac() < 0 ) {
+  bool reversed = ( fPlane->GetWSpac() < 0 );
+  if( reversed ) {
     ihit = ilast;
     incr = -1;
   } else {
@@ -530,6 +527,8 @@ Int_t THaVDCCluster::LinearClusterFitWithT0()
     Double_t wt = fHits[ihit]->GetdDist();
     if( wt>0 )   // the hit will be ignored if the uncertainty is <= 0
       wArr[i] = 1./(wt*wt);
+    else
+      wArr[i] = -1.;
 
     assert( i == 0 || xArr[i-1] < xArr[i] );
   }
@@ -550,92 +549,12 @@ Int_t THaVDCCluster::LinearClusterFitWithT0()
     if( ipivot != 0 )
       sArr[ipivot] = -sArr[ipivot];;
 
-    // 3-parameter fit 
-//     Double_t F, sigmaF2;  // intermediate slope and St. Dev.**2
-//     Double_t G, sigmaG2;  // intermediate intercept and St. Dev.**2
-//     Double_t sigmaFG;     // correlated uncertainty
-    
-    Double_t sumX   = 0.0;   //Positions
-    Double_t sumXX  = 0.0;
-    Double_t sumD   = 0.0;   //Drift distances
-    Double_t sumXD  = 0.0;
-    Double_t sumS   = 0.0;   //sign vector
-    Double_t sumSX  = 0.0;
-    Double_t sumSD  = 0.0;
-    Double_t sumSDX = 0.0;
+    // Do the fit
+    Linear3DFit( xArr, dArr, sArr, wArr, m, b, d0 );
 
-//     Double_t sumXW = 0.0;
-//     Double_t sumXXW= 0.0;
-    
-    Double_t sumW  = 0.0;
-//     Double_t sumWW = 0.0;
-//     Double_t sumDD = 0.0;
-    
-
-    for (int j = 0; j < fSize; j++) {
-      Double_t x = xArr[j];   // Position of wire
-      Double_t d = dArr[j];   // Distance to wire
-      Double_t w = wArr[j];   // Weight/error of distance measurement
-      Int_t    s = sArr[j];   // Sign of distance
-
-      if (w <= 0) continue;
-
-      d = TMath::Abs(d);
-
-      sumX   += x * w;
-      sumXX  += x * x * w;
-      sumD   += d * w;
-      sumXD  += x * d * w;
-      sumS   += s * w;
-      sumSX  += s * x * w;
-      sumSD  += s * d * w;
-      sumSDX += s * d * x * w;
-      sumW   += w;
-//       sumWW  += w*w;
-//       sumXW  += x * w * w;
-//       sumXXW += x * x * w * w;
-//       sumDD  += d * d * w;
-    }
-
-    // Standard formulae for linear regression (see Bevington)
-    Double_t Delta = 
-      sumXX   * ( sumW  * sumW - sumW * sumS  ) -
-      sumX    * ( sumX  * sumW - sumX * sumS  );
-
-    m = 
-      sumSDX  * ( sumW  * sumW - sumW * sumS  ) -
-      sumSD   * ( sumX  * sumW - sumW * sumSX ) +
-      sumD    * ( sumX  * sumS - sumW * sumSX );
-
-    b =
-      -sumSDX * ( sumX  * sumW - sumX * sumS  ) +
-      sumSD   * ( sumXX * sumW - sumX * sumSX ) -
-      sumD    * ( sumXX * sumS - sumX - sumSX );
-
-    d0 = ( sumD - sumSD ) * ( sumXX * sumW - sumX * sumX );
-
-    m  /= Delta;
-    b  /= Delta;
-    d0 /= Delta;
-
-
-//     F  = (sumXX * sumD - sumX * sumXD) / Delta;
-//     G  = (sumW * sumXD - sumX * sumD) / Delta;
-//     sigmaF2 = ( sumXX / Delta );
-//     sigmaG2 = ( sumW / Delta );
-//     sigmaFG = ( sumXW * sumW * sumXX - sumXXW * sumW * sumX
-// 		- sumWW * sumX * sumXX + sumXW * sumX * sumX ) / (Delta*Delta);
-
-//     m  =   1/G;
-//     b  = - F/G;
-
-//     sigmaM = m * m * TMath::Sqrt( sigmaG2 );
-//     sigmaB = TMath::Sqrt( sigmaF2/(G*G) + F*F/(G*G*G*G)*sigmaG2 - 2*F/(G*G*G)*sigmaFG);
-    
     // calculate the best possible chi2 for the track given this slope, 
     // intercept, and distance offset
-    
-    chi2_t chi2 = CalcChisquare( xArr, dArr, sArr, wArr, m, b, d0, fSize );
+    chi2_t chi2 = CalcChisquare( xArr, dArr, sArr, wArr, m, b, d0 );
     
     // scale the uncertainty of the fit parameters based upon the
     // quality of the fit. This really should not be necessary if
@@ -646,13 +565,14 @@ Int_t THaVDCCluster::LinearClusterFitWithT0()
     // Pick the best value
     if( ipivot == 0 || chi2.first < bestFit ) {
       bestFit     = fChi2 = chi2.first;
-      fNDoF       = chi2.second-3;
+      fNDoF       = chi2.second - 3;
       fSlope      = m;
       fInt        = b;
       fT0         = d0;
       fSigmaSlope = sigmaM;
       fSigmaInt   = sigmaB;
       fSigmaT0    = sigmaD0;
+      fIPivot     = (reversed) ? ilast - ipivot : ipivot + 1;
     }
   }
 
@@ -660,7 +580,7 @@ Int_t THaVDCCluster::LinearClusterFitWithT0()
   fSlope = 1.0/fSlope;       // 1/m
   fInt   = -fInt * fSlope;   // -b/m
   if( fPlane )
-    fT0  *= fPlane->GetDriftVel();
+    fT0  /= fPlane->GetDriftVel();
   
   fLocalSlope = fSlope;
   fFitOK = true;
@@ -671,6 +591,93 @@ Int_t THaVDCCluster::LinearClusterFitWithT0()
   delete[] xArr;
 
   return 0;
+}
+
+//_____________________________________________________________________________
+void THaVDCCluster::Linear3DFit( const Double_t* xArr, const Double_t* dArr,
+				 const Int_t* sArr, const Double_t* wArr,
+				 Double_t& m, Double_t& b, Double_t& d0 ) const
+{
+  // 3-parameter fit 
+//     Double_t F, sigmaF2;  // intermediate slope and St. Dev.**2
+//     Double_t G, sigmaG2;  // intermediate intercept and St. Dev.**2
+//     Double_t sigmaFG;     // correlated uncertainty
+    
+  Double_t sumX   = 0.0;   //Positions
+  Double_t sumXX  = 0.0;
+  Double_t sumD   = 0.0;   //Drift distances
+  Double_t sumXD  = 0.0;
+  Double_t sumS   = 0.0;   //sign vector
+  Double_t sumSX  = 0.0;
+  Double_t sumSD  = 0.0;
+  Double_t sumSDX = 0.0;
+
+  //     Double_t sumXW = 0.0;
+  //     Double_t sumXXW= 0.0;
+    
+  Double_t sumW  = 0.0;
+  //     Double_t sumWW = 0.0;
+  //     Double_t sumDD = 0.0;
+    
+
+  for (int j = 0; j < fSize; j++) {
+    Double_t x = xArr[j];   // Position of wire
+    Double_t d = dArr[j];   // Distance to wire
+    Double_t w = wArr[j];   // Weight/error of distance measurement
+    Int_t    s = sArr[j];   // Sign of distance
+
+    if (w <= 0) continue;
+
+    sumX   += x * w;
+    sumXX  += x * x * w;
+    sumD   += d * w;
+    sumXD  += x * d * w;
+    sumS   += s * w;
+    sumSX  += s * x * w;
+    sumSD  += s * d * w;
+    sumSDX += s * d * x * w;
+    sumW   += w;
+    //       sumWW  += w*w;
+    //       sumXW  += x * w * w;
+    //       sumXXW += x * x * w * w;
+    //       sumDD  += d * d * w;
+  }
+
+  // Standard formulae for linear regression (see Bevington)
+  Double_t Delta = 
+    sumXX   * ( sumW  * sumW - sumW * sumS  ) -
+    sumX    * ( sumX  * sumW - sumX * sumS  );
+
+  m = 
+    sumSDX  * ( sumW  * sumW - sumW * sumS  ) -
+    sumSD   * ( sumX  * sumW - sumW * sumSX ) +
+    sumD    * ( sumX  * sumS - sumW * sumSX );
+
+  b =
+    -sumSDX * ( sumX  * sumW - sumX * sumS  ) +
+    sumSD   * ( sumXX * sumW - sumX * sumSX ) -
+    sumD    * ( sumXX * sumS - sumX - sumSX );
+
+  d0 = ( sumD - sumSD ) * ( sumXX * sumW - sumX * sumX );
+
+  m  /= Delta;
+  b  /= Delta;
+  d0 /= Delta;
+
+
+  //     F  = (sumXX * sumD - sumX * sumXD) / Delta;
+  //     G  = (sumW * sumXD - sumX * sumD) / Delta;
+  //     sigmaF2 = ( sumXX / Delta );
+  //     sigmaG2 = ( sumW / Delta );
+  //     sigmaFG = ( sumXW * sumW * sumXX - sumXXW * sumW * sumX
+  // 		- sumWW * sumX * sumXX + sumXW * sumX * sumX ) / (Delta*Delta);
+
+  //     m  =   1/G;
+  //     b  = - F/G;
+
+  //     sigmaM = m * m * TMath::Sqrt( sigmaG2 );
+  //     sigmaB = TMath::Sqrt( sigmaF2/(G*G) + F*F/(G*G*G*G)*sigmaG2 - 2*F/(G*G*G)*sigmaFG);
+
 }
 
 //_____________________________________________________________________________
@@ -688,18 +695,18 @@ chi2_t THaVDCCluster::CalcChisquare( const Double_t* xArr,
 				     const Int_t* sArr,
 				     const Double_t* wArr,
 				     Double_t slope, Double_t icpt,
-				     Double_t d0, Int_t size )
+				     Double_t d0 ) const
 {
   Int_t npt = 0;
   Double_t chi2 = 0;
-  for( int j = 0; j < size; ++j ) {
+  for( int j = 0; j < fSize; ++j ) {
     Double_t x  = xArr[j];
     Double_t y  = sArr[j] * dArr[j];
     Double_t w  = wArr[j];
     Double_t yp = x*slope + icpt + d0*sArr[j];
-    if( w <= 0 ) continue;
-    Double_t d  = (y-yp)/w;
-    chi2       += d*d;
+    if( w < 0 ) continue;
+    Double_t d  = y-yp;
+    chi2       += d*d*w;
     ++npt;
   }
   return make_pair( chi2, npt );
