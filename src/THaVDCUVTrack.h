@@ -20,7 +20,7 @@ class THaVDCUVTrack : public THaCluster {
 public:
   THaVDCUVTrack( THaVDCCluster* u_cl, THaVDCCluster* v_cl,
 		 THaVDCUVPlane* plane ) :
-    fUClust(u_cl), fVClust(v_cl), fUVPlane(0), fTrack(0), fPartner(0),
+    fUClust(u_cl), fVClust(v_cl), fUVPlane(plane), fTrack(0), fPartner(0),
     fX(kBig), fY(kBig), fTheta(kBig), fPhi(kBig)
   { assert( fUClust && fVClust && fUVPlane ); }
 
