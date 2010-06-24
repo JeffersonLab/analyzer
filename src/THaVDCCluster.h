@@ -21,10 +21,10 @@ class THaVDCCluster : public TObject {
 
 public:
   THaVDCCluster( THaVDCPlane* owner = 0 ) :
-    fSize(0), fPlane(owner), fTrack(0),
-    fSlope(kBig), fSigmaSlope(kBig), fInt(kBig), fSigmaInt(kBig),
+    fSize(0), fPlane(owner), fTrack(0), fTrkNum(0), fSlope(kBig),
+    fLocalSlope(kBig), fSigmaSlope(kBig), fInt(kBig), fSigmaInt(kBig),
     fT0(kBig), fSigmaT0(kBig), fPivot(0), fTimeCorrection(0.0),
-    fFitOK(false), fLocalSlope(kBig), fChi2(kBig), fNDoF(0.0)  {}
+    fFitOK(false), fChi2(kBig), fNDoF(0.0)  {}
   THaVDCCluster( const THaVDCCluster& );
   THaVDCCluster& operator=( const THaVDCCluster& );
   virtual ~THaVDCCluster();
@@ -37,7 +37,7 @@ public:
   virtual void   FitTrack( EMode mode = kSimple );
   virtual void   ClearFit();
   virtual void   CalcChisquare(Double_t& chi2, Int_t& nhits) const;
-
+  chi2_t         CalcDist();    // calculate global track to wire distances
 
   // TObject functions redefined
   virtual void   Clear( Option_t* opt="" );
@@ -60,6 +60,7 @@ public:
   Double_t       GetTimeCorrection() const { return fTimeCorrection; }
   Double_t       GetT0()             const { return fT0; }
   THaTrack*      GetTrack()          const { return fTrack; }
+  Int_t          GetTrkNum()         const { return fTrkNum; }
   Double_t       GetSigmaT0()        const { return fSigmaT0; }
   Double_t       GetChi2()           const { return fChi2; }
   Double_t       GetNDoF()           const { return fNDoF; }
@@ -71,7 +72,7 @@ public:
   void           SetSlope( Double_t slope)          { fSlope = slope;}
   void           SetPivot( THaVDCHit* piv)          { fPivot = piv; }
   void           SetTimeCorrection( Double_t dt )   { fTimeCorrection = dt; }
-  void           SetTrack( THaTrack* track )        { fTrack = track; }
+  void           SetTrack( THaTrack* track );
 
   //    void SetUVTrack(THaVDCUVTrack * uvtrack) {fUVTrack = uvtrack;} 
 
@@ -84,23 +85,28 @@ protected:
   THaVDCPlane*   fPlane;             // Plane the cluster belongs to
   //  THaVDCUVTrack * fUVTrack;      // UV Track the cluster belongs to
   THaTrack*      fTrack;             // Track the cluster belongs to
+  Int_t          fTrkNum;            // Number of the track using this cluster
 
   //Track Parameters 
-  Double_t       fSlope, fSigmaSlope;// Slope and error in slope
-  Double_t       fInt, fSigmaInt;    // Intercept and error
+  Double_t       fSlope;             // Current best estimate of actual slope
+  Double_t       fLocalSlope;        // Fitted slope, from FitTrack()
+  Double_t       fSigmaSlope;        // Error estimate of fLocalSlope from fit
+  Double_t       fInt, fSigmaInt;    // Intercept and error estimate
   Double_t       fT0, fSigmaT0;      // Fitted common timing offset and error
   THaVDCHit*     fPivot;             // Pivot - hit with smallest drift time
   Int_t          fIPivot;            // Drift sign flips at this hit index
+  //FIXME: in the code, this is used as a distance correction!!
   Double_t       fTimeCorrection;    // correction to be applied when fitting
                                      // drift times
   bool           fFitOK;             // Flag indicating that fit results valid
-  Double_t       fLocalSlope;        // Local slope, from FitTrack()
-  Double_t       fChi2;              // chi2 for the cluster
+  Double_t       fChi2;              // chi2 for the cluster (using fSlope)
   Double_t       fNDoF;              // NDoF in local chi2 calculation
 
-  virtual void   CalcDist();         // calculate the track to wire distances
-  virtual void   FitSimpleTrack();
-  virtual void   FitSimpleTrackWgt(); // present for testing
+  void   CalcLocalDist();     // calculate the local track to wire distances
+
+  void   FitSimpleTrack();
+  void   FitSimpleTrackWgt(); // present for testing
+  void   FitNLTrack();        // Non-linear 3-parameter fit
 
   chi2_t CalcChisquare( const Double_t* x, const Double_t* y, 
 			const Int_t* s, const Double_t* w,
