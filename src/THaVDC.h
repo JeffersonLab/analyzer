@@ -31,13 +31,15 @@ public:
   virtual EStatus Init( const TDatime& date );
 
   // Get and Set Functions
-  virtual THaVDCUVPlane* GetUpper() { return fUpper; }
-  virtual THaVDCUVPlane* GetLower() { return fLower; }
+  THaVDCUVPlane* GetUpper() const { return fUpper; }
+  THaVDCUVPlane* GetLower() const { return fLower; }
 
-  virtual Double_t GetVDCAngle() { return fVDCAngle; }
-  virtual Double_t GetSpacing()  { return fUSpacing;  }
+  Double_t GetVDCAngle() const { return fVDCAngle; }
+  Double_t GetSpacing()  const { return fUSpacing;  }
+  Double_t GetUSpacing() const { return fUSpacing;  }
+  Double_t GetVSpacing() const { return fVSpacing;  }
 
-  virtual void Print(const Option_t* opt) const;
+  void Print(const Option_t* opt) const;
 
   // Bits & and bit masks for THaTrack
   enum {
