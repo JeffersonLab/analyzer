@@ -34,13 +34,13 @@ public:
   THaTrack() 
     : TObject(),
       fX(kBig), fY(kBig), fTheta(kBig), fPhi(kBig), fP(kBig),
-      fNclusters(0), fPIDinfo(0), fCreator(0), 
       fDX(kBig), fDY(kBig), fDTheta(kBig), fDPhi(kBig),
       fRX(kBig), fRY(kBig), fRTheta(kBig), fRPhi(kBig),
       fTX(kBig), fTY(kBig), fTTheta(kBig), fTPhi(kBig), fDp(kBig),
       fPvect(kBig,kBig,kBig), fVertex(kBig,kBig,kBig),
       fVertexError(kBig,kBig,kBig),
       fPathl(kBig), fTime(kBig), fdTime(kBig), fBeta(kBig), fdBeta(kBig),
+      fNclusters(0), fPIDinfo(0), fCreator(0), fTrkNum(0),
       fID(0), fFlag(0), fType(0), fChi2(kBig), fNDoF(0)
   { memset(fClusters,0,kMAXCL*sizeof(THaCluster*)); }
 
@@ -51,13 +51,13 @@ public:
 	    THaPIDinfo* pid=0 )
     : TObject(),
       fX(x), fY(y), fTheta(theta), fPhi(phi), fP(kBig),
-      fNclusters(0), fPIDinfo(pid), fCreator(creator), 
       fDX(kBig), fDY(kBig), fDTheta(kBig), fDPhi(kBig),
       fRX(kBig), fRY(kBig), fRTheta(kBig), fRPhi(kBig),
       fTX(kBig), fTY(kBig), fTTheta(kBig), fTPhi(kBig), fDp(kBig),
       fPvect(kBig,kBig,kBig), fVertex(kBig,kBig,kBig),
       fVertexError(kBig,kBig,kBig),
       fPathl(kBig), fTime(kBig), fdTime(kBig), fBeta(kBig), fdBeta(kBig),
+      fNclusters(0), fPIDinfo(pid), fCreator(creator), fTrkNum(0),
       fID(id), fFlag(0), fType(kHasFP), fChi2(kBig), fNDoF(0)
   { 
     memset(fClusters,0,kMAXCL*sizeof(THaCluster*)); 
@@ -74,6 +74,8 @@ public:
   UInt_t            GetFlag()          const { return fFlag; }
   UInt_t            GetType()          const { return fType; }
   THaTrackID*       GetID()            const { return fID; }
+  Int_t             GetTrkNum()        const { return fTrkNum; }
+
   Double_t          GetP()             const { return fP; }
   Double_t          GetPhi()           const { return fPhi; }
   THaPIDinfo*       GetPIDinfo()       const { return fPIDinfo; }
@@ -124,12 +126,6 @@ public:
 
   void              Print( Option_t* opt="" ) const;
 
-  void              SetID( THaTrackID* id )   { fID   = id; }
-  void              SetFlag( UInt_t flag )    { fFlag = flag; }
-  void              SetType( UInt_t flag )    { fType = flag; }
-  void              SetMomentum( Double_t p ) { fP    = p; }
-  void              SetDp( Double_t dp )      { fDp   = dp; }
-
   void              Set( Double_t x, Double_t y, Double_t theta, Double_t phi )
   { fX = x; fY = y; fTheta = theta; fPhi = phi; fType |= kHasFP; }
   void              SetR( Double_t x, Double_t y,
@@ -147,6 +143,12 @@ public:
 
   void              SetChi2( Double_t chi2, Int_t ndof ) { fChi2=chi2; fNDoF=ndof; }
 
+  void              SetID( THaTrackID* id )   { fID   = id; }
+  void              SetFlag( UInt_t flag )    { fFlag = flag; }
+  void              SetType( UInt_t flag )    { fType = flag; }
+  void              SetMomentum( Double_t p ) { fP    = p; }
+  void              SetDp( Double_t dp )      { fDp   = dp; }
+  void              SetTrkNum( Int_t n )      { fTrkNum = n; }
   void              SetCreator( THaTrackingDetector* d ) { fCreator = d; }
   void              SetPIDinfo( THaPIDinfo* pid )        { fPIDinfo = pid; }
   void              SetPvect( const TVector3& pvect )    { fPvect   = pvect; }
@@ -172,11 +174,6 @@ protected:
   Double_t          fTheta;          // Tangent of TRANSPORT Theta (x')
   Double_t          fPhi;            // Tangent of TRANSPORT Phi (y')
   Double_t          fP;              // Track momentum (GeV)
-
-  Int_t             fNclusters;      //! Number of clusters
-  THaCluster*       fClusters[kMAXCL]; //! Clusters of this track
-  THaPIDinfo*       fPIDinfo;        //! Particle ID information for this track
-  THaTrackingDetector* fCreator;     //! Detector creating this track
 
   // coordinates in the detector system
   Double_t fDX;     // x position in DCS
@@ -208,6 +205,13 @@ protected:
   Double_t          fBeta;   // beta of track
   Double_t          fdBeta;  // uncertainty in fBeta
   
+  // Bookkeeping paramet
+  Int_t             fNclusters;      //! Number of clusters
+  THaCluster*       fClusters[kMAXCL]; //! Clusters of this track
+  THaPIDinfo*       fPIDinfo;        //! Particle ID information for this track
+  THaTrackingDetector* fCreator;     //! Detector creating this track
+  Int_t             fTrkNum;         // Track number (0 = unassigned)
+
   THaTrackID*       fID;     //! Track identifier
   UInt_t            fFlag;   // General status flag (for use by tracking det.)
   UInt_t            fType;   // Flag indicating which vectors reconstructed
