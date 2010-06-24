@@ -18,6 +18,7 @@ class THaVDCCluster;
 class THaVDCHit;
 class THaVDCTimeToDistConv;
 class THaTriggerTime;
+class THaVDC;
 
 class THaVDCPlane : public THaSubDetector {
 
@@ -57,9 +58,12 @@ public:
   Double_t       GetWBeg()           const { return fWBeg; }
   Double_t       GetWSpac()          const { return fWSpac; }
   Double_t       GetWAngle()         const { return fWAngle; }
+  Double_t       GetCosAngle()       const { return fCosAngle; }
+  Double_t       GetSinAngle()       const { return fSinAngle; }
   Double_t       GetTDCRes()         const { return fTDCRes; }
   Double_t       GetDriftVel()       const { return fDriftVel; }
-
+  Double_t       GetMinTime()        const { return fMinTime; }
+  Double_t       GetMaxTime()        const { return fMaxTime; }
   Double_t       GetT0Resolution()   const { return fT0Resolution; }
 
 //   Double_t GetT0() const { return fT0; }
@@ -73,19 +77,23 @@ protected:
   TClonesArray*  fHits;      // Fired wires 
   TClonesArray*  fClusters;  // Clusters
   
-  Int_t fNWiresHit;  // Number of wires that were hit
+  Int_t fNHits;      // Total number of hits (including multihits)
+  Int_t fNWiresHit;  // Number of wires with one or more hits
 
-  // The following parameters are read from database.
- 
-  Int_t fNMaxGap;            // Max gap in a cluster
+  // Parameters, read from database
+  Int_t fMinClustSize;       // Minimum number of wires needed for a cluster
+  Int_t fMaxClustSpan;       // Maximum size of cluster in wire spacings
+  Int_t fNMaxGap;            // Max gap in wire numbers in a cluster
   Int_t fMinTime, fMaxTime;  // Min and Max limits of TDC times for clusters
   Int_t fFlags;              // Analysis control flags
 
-  Double_t fZ;            // Z coordinate of planes in U1 coord sys (m)
+  Double_t fZ;            // Z coordinate of plane in U1 coord sys (m)
   Double_t fWBeg;         // Position of 1-st wire in E-arm coord sys (m)
-  Double_t fWSpac;        // Wires spacing and direction (m)
+  Double_t fWSpac;        // Wire spacing and direction (m)
   Double_t fWAngle;       // Angle (rad) between dispersive direction (x) and 
                           // normal to wires in dir of increasing wire position
+  Double_t fSinAngle;     // sine of fWAngle, for efficiency
+  Double_t fCosAngle;     // cosine of fWAngle, for efficiency
   Double_t fTDCRes;       // TDC Resolution ( s / channel)
   Double_t fDriftVel;     // Drift velocity in the wire plane (m/s)
 
@@ -98,7 +106,7 @@ protected:
 
   THaVDCTimeToDistConv* fTTDConv;  // Time-to-distance converter for this plane's wires
 
-  THaDetector* fVDC;      // VDC detector to which this plane belongs
+  THaVDC* fVDC;           // VDC detector to which this plane belongs
   
   THaTriggerTime* fglTrg; //! time-offset global variable. Needed at the decode stage
   
