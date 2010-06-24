@@ -7,5 +7,6 @@
 #pragma link C++ class THaVDCSimWireHit+;
 #pragma link C++ class THaVDCSimEvent+;
 #pragma link C++ class THaVDCSimConditions+;
+#pragma link C++ class THaVDCSimTrack+;
 
 #endif
