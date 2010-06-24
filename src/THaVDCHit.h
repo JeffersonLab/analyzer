@@ -16,7 +16,7 @@ class THaVDCHit : public TObject {
 public:
   THaVDCHit( THaVDCWire* wire=0, Int_t rawtime=0, Double_t time=0.0 )
     : fWire(wire), fRawTime(rawtime), fTime(time), fDist(kBig), fdDist(1.0),
-      ftrDist(kBig) {}
+      ftrDist(kBig), fTrkNum(0) {}
   virtual ~THaVDCHit() {}
 
   virtual Double_t ConvertTimeToDist(Double_t slope);
@@ -31,6 +31,7 @@ public:
   Double_t GetDist()    const { return fDist; }
   Double_t GetPos()     const { return fWire->GetPos(); } //Position of hit wire
   Double_t GetdDist()   const { return fdDist; }
+  Int_t    GetTrkNum()  const { return fTrkNum; }
 
   void     SetWire(THaVDCWire * wire) { fWire = wire; }
   void     SetRawTime(Int_t time)     { fRawTime = time; }
@@ -38,17 +39,21 @@ public:
   void     SetDist(Double_t dist)     { fDist = dist; }
   void     SetdDist(Double_t ddist)   { fdDist = ddist; }
   void     SetFitDist(Double_t dist)  { ftrDist = dist; }
-  
+  void     SetLocalFitDist(Double_t dist)  { fltrDist = dist; }
+  void     SetTrkNum(Int_t num)       { fTrkNum = num; }
+
 protected:
-  static const Double_t kBig;  //!
+  static const Double_t kBig;  //! Arbitrary lrg number indicating invalid data
   
   THaVDCWire* fWire;     // Wire on which the hit occurred
   Int_t       fRawTime;  // TDC value (channels)
   Double_t    fTime;     // Raw drift time, corrected for trigger time (s)
   Double_t    fDist;     // (Perpendicular) Drift Distance
   Double_t    fdDist;    // uncertainty in fDist (for chi2 calc)
-  Double_t    ftrDist;   // (Perpendicular) distance from the track
-  
+  Double_t    ftrDist;   // (Perpendicular) distance from the global track (m)
+  Double_t    fltrDist;  // (Perpendicular) distance from the local track (m)
+  Int_t       fTrkNum;   // Number of the track using this hit (0 = unused)
+
  private:
   THaVDCHit( const THaVDCHit& );
   THaVDCHit& operator=( const THaVDCHit& );
