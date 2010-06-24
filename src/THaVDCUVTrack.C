@@ -28,8 +28,8 @@ void THaVDCUVTrack::CalcDetCoords()
   // this track belongs to. fUVPlane must be set!
 
   Double_t dz = fUVPlane->GetSpacing();  // Space between U and V planes
-  Double_t u  = fUClust->GetIntercept(); // Intercept for U plane
-  Double_t v0 = fVClust->GetIntercept(); // Intercept for V plane
+  Double_t u  = GetU();                  // Intercept for U plane
+  Double_t v0 = GetV();                  // Intercept for V plane
   Double_t mu = fUClust->GetSlope();     // Slope of U cluster
   Double_t mv = fVClust->GetSlope();     // Slope of V cluster
     
@@ -48,6 +48,33 @@ void THaVDCUVTrack::CalcDetCoords()
 
   Set( detX, detY, detTheta, detPhi, fUVPlane->GetOrigin() );
 
+}
+
+//_____________________________________________________________________________
+Double_t THaVDCUVTrack::GetZU() const
+{
+  // Return z-position of u cluster
+
+  return fUVPlane->GetZ();
+}
+
+//_____________________________________________________________________________
+Double_t THaVDCUVTrack::GetZV() const
+{
+  // Return intercept of u cluster
+
+  return fUVPlane->GetZ() + fUVPlane->GetSpacing();
+}
+
+//_____________________________________________________________________________
+void THaVDCUVTrack::SetSlopes( Double_t mu, Double_t mv )
+{
+  // Set global slopes of U and V clusters to mu, mv
+  // Recalculate detector coordinates (v projection may have changed slightly)
+
+  fUClust->SetSlope( mu );
+  fVClust->SetSlope( mv );
+  CalcDetCoords();
 }
 
 //_____________________________________________________________________________
