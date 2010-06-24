@@ -8,6 +8,7 @@
 #include "THaSubDetector.h"
 
 #include "TClonesArray.h"
+#include "THaVDCPlane.h"
 #include <cassert>
 
 class THaVDCPlane;
@@ -41,6 +42,7 @@ public:
   THaVDCUVTrack*  GetUVTrack( Int_t i ) const 
     { assert( i>=0 && i<GetNUVTracks() );
       return (THaVDCUVTrack*)fUVTracks->UncheckedAt(i); }
+  Double_t        GetZ()           const { return fU->GetZ(); }
 
   void            UnmarkBad();    // Clear "ambiguous cluster match" flag
   void            MarkBad();      // Set "ambiguous cluster match" flag
@@ -63,6 +65,8 @@ protected:
                               // V axis angle and the U axis angle
   UInt_t   fUVStatus;         // Analysis status flags
 
+  THaVDC*  fVDC;              // VDC detector to which this plane belongs
+  
   enum EUVStatus { kAmbiguous = 0 };
 
   void  FindClusters();       // Find clusters in U and V planes

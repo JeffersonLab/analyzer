@@ -33,6 +33,8 @@ THaVDCUVPlane::THaVDCUVPlane( const char* name, const char* description,
 
   // Create the UV tracks array
   fUVTracks = new TClonesArray("THaVDCUVTrack", 10); // 10 is arbitrary
+
+  fVDC = dynamic_cast<THaVDC*>( GetMainDetector() );
 }
 
 
@@ -70,15 +72,12 @@ THaDetectorBase::EStatus THaVDCUVPlane::Init( const TDatime& date )
   TVector3 z( 0.0, 0.0, fU->GetZ() );
   fOrigin += z; 
 
-  Double_t uwAngle  = fU->GetWAngle();      // Get U plane Wire angle
-  Double_t vwAngle  = fV->GetWAngle();      // Get V plane Wire angle
-
   // Precompute and store values for efficiency
-  fSin_u   = TMath::Sin( uwAngle );
-  fCos_u   = TMath::Cos( uwAngle );
-  fSin_v   = TMath::Sin( vwAngle );
-  fCos_v   = TMath::Cos( vwAngle );
-  fInv_sin_vu = 1.0/TMath::Sin( vwAngle-uwAngle );
+  fSin_u   = fU->GetSinAngle();
+  fCos_u   = fU->GetCosAngle();
+  fSin_v   = fV->GetSinAngle();
+  fCos_v   = fV->GetCosAngle();
+  fInv_sin_vu = 1.0/TMath::Sin( fV->GetWAngle() - fU->GetWAngle() );
 
   return fStatus = kOK;
 }
@@ -106,12 +105,12 @@ Int_t THaVDCUVPlane::MatchUVClusters()
 
   for( Int_t iu = 0; iu < nu; ++iu ) {
     THaVDCCluster* uClust = fU->GetCluster(iu);
-    if( uClust->GetT0() > max_u_t0 )
+    if( TMath::Abs(uClust->GetT0()) > max_u_t0 )
       continue;
 
     for( Int_t iv = 0; iv < nv; ++iv ) {
       THaVDCCluster* vClust = fV->GetCluster(iv);
-      if( vClust->GetT0() > max_v_t0 )
+      if( TMath::Abs(vClust->GetT0()) > max_v_t0 )
 	continue;
 
       if( uvTrack == 0 ) {
@@ -194,10 +193,10 @@ Int_t THaVDCUVPlane::CoarseTrack()
 {
   // Coarse computation of tracks
   
-  // Find clusters and estimate their positions
+  // Find clusters and estimate their position/slope
   FindClusters();
 
-  // Fit tracks through the hit coordinates of each cluster
+  // Fit "local" tracks through the hit coordinates of each cluster
   FitTracks();
   
   // FIXME: The fit may fail, so we might want to call a function here
@@ -225,7 +224,7 @@ Int_t THaVDCUVPlane::FineTrack()
 
   //TODO:
   //- Redo time-to-distance conversion based on "global" track slope
-  //- Refit cluster of the track (if any), using new drift distances
+  //- Refit clusters of the track (if any), using new drift distances
   //- Recalculate cluster UV coordinates, so new "gobal" slopes can be
   //  computed
 
