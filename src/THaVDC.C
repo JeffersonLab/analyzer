@@ -632,6 +632,10 @@ Int_t THaVDC::Decode( const THaEvData& evdata )
 #ifdef WITH_DEBUG
   // Save current event number for diagnostics
   fEvNum = evdata.GetEvNum();
+  if( fDebug>1 ) {
+    cout << "=========================================\n";
+    cout << "Event: " << fEvNum << endl;
+  }
 #endif
 
   fLower->Decode(evdata); 
@@ -643,15 +647,11 @@ Int_t THaVDC::Decode( const THaEvData& evdata )
 //_____________________________________________________________________________
 Int_t THaVDC::CoarseTrack( TClonesArray& tracks )
 {
- 
-#ifdef WITH_DEBUG
-  if( fDebug>1 ) {
-    cout << "=========================================\n";
-    cout << "Event: " << fEvNum << endl;
-  }
-#endif
+  // Coarse Tracking
 
-  // Quickly calculate tracks in upper and lower UV planes
+  if( TestBit(kDecodeOnly) )
+    return 0;
+
   fLower->CoarseTrack();
   fUpper->CoarseTrack();
 
@@ -667,7 +667,7 @@ Int_t THaVDC::FineTrack( TClonesArray& tracks )
   // Calculate exact track position and angle using drift time information.
   // Assumes that CoarseTrack has been called (ie - clusters are matched)
   
-  if( TestBit(kCoarseOnly) )
+  if( TestBit(kDecodeOnly) || TestBit(kCoarseOnly) )
     return 0;
 
   fLower->FineTrack();
