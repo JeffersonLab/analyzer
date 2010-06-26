@@ -60,7 +60,8 @@ public:
     kSoftTDCcut     = BIT(16), // Use soft TDC cut (reasonable estimated drifts)
     kIgnoreNegDrift = BIT(17), // Completely ignore negative drift times
 
-    kCoarseOnly     = BIT(23) // Do only coarse tracking
+    kDecodeOnly     = BIT(22), // Only decode data, disable tracking
+    kCoarseOnly     = BIT(23)  // Do only coarse tracking
   };
 
 protected:
