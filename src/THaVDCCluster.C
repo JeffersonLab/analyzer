@@ -895,16 +895,27 @@ void THaVDCCluster::FitNLTrack()
 	  it = 0;
 	} else if(it > itMax){	 
 	  err_smallest = kBig;
+	  bool found = false;
 	  for(Int_t jj =1; jj < it; jj++){
 	    if(err_it[jj] < err_smallest){
 	      it_smallest = jj;
+	      found = true;
 	    }
 	  }
 
-	  err_tot[i] = err_it[it_smallest];
-	  m_tot[i] = m_it[it_smallest];
-	  b_tot[i] = b_it[it_smallest];
-	  t0_tot[i] = t0_it[it_smallest];
+	  if( found ) {
+	    err_tot[i] = err_it[it_smallest];
+	    m_tot[i] = m_it[it_smallest];
+	    b_tot[i] = b_it[it_smallest];
+	    t0_tot[i] = t0_it[it_smallest];
+	  } else {
+	    // happens if all err_it are nan or inf
+	    err_tot[i] = kBig;
+	    m_tot[i] = kBig;
+	    b_tot[i] = kBig;
+	    t0_tot[i] = kBig;
+	    // probably should set fFitOK = false and bail
+	  }
 
 	  iter = 0;
 	  it = 0;
