@@ -549,8 +549,8 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 	//	theTrack->SetCreator( this );
 	theTrack->AddCluster( track );
 	theTrack->AddCluster( partner );
-	assert( tracks->IndexOf(track) >= 0 );
-	theTrack->SetTrkNum( tracks->IndexOf(track)+1 );
+	assert( tracks->IndexOf(theTrack) >= 0 );
+	theTrack->SetTrkNum( tracks->IndexOf(theTrack)+1 );
 	thePair->Associate( theTrack );
 	if( theStage == kFine ) 
 	  flag |= kReassigned;
