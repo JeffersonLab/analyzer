@@ -334,6 +334,18 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
     fNMaxGap = 0;
     fMinTime = 800;
     fMaxTime = 2200;
+
+    if( THaVDCAnalyticTTDConv* analytic_conv = 
+	dynamic_cast<THaVDCAnalyticTTDConv*>(fTTDConv) ) {
+      Double_t A1[4], A2[4], dtime = 4e-9;
+      A1[0] = 2.12e-3;
+      A1[1] = A1[2] = A1[3] = 0.0;
+      A2[0] = -4.2e-4;
+      A2[1] = 1.3e-3;
+      A2[2] = 1.06e-4;
+      A2[3] = 0.0;
+      analytic_conv->SetParameters( A1, A2, dtime );
+    }
   }
 
   THaDetectorBase *sdet = GetParent();
