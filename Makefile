@@ -1,10 +1,10 @@
 #------------------------------------------------------------------------------
 
 # Compile extra debugging code (slight performance impact)
-#export WITH_DEBUG = 1
+export WITH_DEBUG = 1
 
 # Compile debug version
-#export DEBUG = 1
+export DEBUG = 1
 
 # Profiling with gprof
 #export PROFILE = 1
@@ -17,9 +17,9 @@
 # SOVERSION should be numerical only - it becomes the shared lib soversion
 # EXTVERS (optional) describes the build, e.g. "dbg", "et", "gcc33" etc.
 SOVERSION  := 1.5
-PATCH   := 13
+PATCH   := 14
 VERSION := $(SOVERSION).$(PATCH)
-EXTVERS :=
+EXTVERS := apex-beta1
 NAME    := analyzer-$(VERSION)
 VERCODE := $(shell echo $(subst ., ,$(SOVERSION)) $(PATCH) | awk '{ print $$1*65536 + $$2*256 + $$3 }')
 
