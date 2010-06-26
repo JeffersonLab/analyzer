@@ -80,8 +80,8 @@ chi2_t THaVDCTrackPair::CalcChi2() const
     { fLowerTrack->GetUCluster(), fLowerTrack->GetVCluster(),
       fUpperTrack->GetUCluster(), fUpperTrack->GetVCluster() };
 
-  chi2_t res;
-  for( int i=0; i<2; i++ ) {
+  chi2_t res(0,0);
+  for( int i=0; i<4; i++ ) {
     chi2_t r = clust[i]->CalcDist();
     res.first  += r.first;
     res.second += r.second;
