@@ -185,8 +185,8 @@ SRC          := src/THaFormula.C src/THaVform.C src/THaVhist.C \
 		src/THaTrackOut.C src/THaTriggerTime.C \
 		src/THaHelicityDet.C src/THaG0HelicityReader.C \
 		src/THaG0Helicity.C src/THaADCHelicity.C src/THaHelicity.C \
-		src/THaPhotoReaction.C src/THaSAProtonEP.C
-
+		src/THaPhotoReaction.C src/THaSAProtonEP.C \
+		src/THaTextvars.C
 
 ifdef ONLINE_ET
 SRC += src/THaOnlRun.C
