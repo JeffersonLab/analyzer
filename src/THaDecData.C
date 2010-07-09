@@ -63,6 +63,7 @@
 #include "TH1.h"
 #include "TClass.h"
 #include "TNamed.h"
+#include "TDirectory.h"
 
 #include "VarDef.h"
 #include <fstream>
@@ -72,9 +73,50 @@
 #include <vector>
 #include <string>
 #include <cstdlib>
+#include <cassert>
 
 using namespace std;
 
+//FIXME: temporary, for histogram definitions in BookHist
+struct HistDef {
+  const char* name;
+  const char* title;
+  Int_t       nbins;
+  Double_t    xmin;
+  Double_t    xmax;
+};
+
+static const HistDef histdefs[] = {
+  //FIXME: put the nhit spectra into the THaOutput Odef file
+  // they are simply histos of ${arm}.vdc.${plane}.nhit
+  { "Lu1nhit",  "Num Hits Left U1", 50, -1, 49 },
+  { "Lu2nhit",  "Num Hits Left U2", 50, -1, 49 },
+  { "Lv1nhit",  "Num Hits Left V1", 50, -1, 49 },
+  { "Lv2nhit",  "Num Hits Left V2", 50, -1, 49 },
+  { "Ru1nhit",  "Num Hits Right U1", 50, -1, 49 },
+  { "Ru2nhit",  "Num Hits Right U2", 50, -1, 49 },
+  { "Rv1nhit",  "Num Hits Right V1", 50, -1, 49 },
+  { "Rv2nhit",  "Num Hits Right V2", 50, -1, 49 },
+  // These are probably best left here
+  //FIXME: adjust nbins, xmax based on actual VDC configuration
+  { "Lu1eff",   "Left arm U1 efficiency", 400, 0,400 },
+  { "Lu2eff",   "Left arm U2 efficiency", 400, 0,400 },
+  { "Lv1eff",   "Left arm V1 efficiency", 400, 0,400 },
+  { "Lv2eff",   "Left arm V2 efficiency", 400, 0,400 },
+  { "Ru1eff",   "Right arm U1 efficiency", 400, 0,400 },
+  { "Ru2eff",   "Right arm U2 efficiency", 400, 0,400 },
+  { "Rv1eff",   "Right arm V1 efficiency", 400, 0,400 },
+  { "Rv2eff",   "Right arm V2 efficiency", 400, 0,400 },
+  //FIXME: why not put into THaOutput Odef file?
+  { "Lenroc12", "Event length in ROC12", 500, 0,5000 },
+  { "Lenroc16", "Event length in ROC16", 500, 0,5000 },
+  { 0 }
+};
+
+//FIXME: make this a nice OO hierarchy for different derived classes for
+// the different data type (crate, header, etc.)
+//FIXME: let this class handle its associated global analyzer variable
+//FIXME: add "roclen" data type
 class BdataLoc : public TNamed {
 // Utility class used by THaDecData.
 // Data location, either in (crates, slots, channel), or
@@ -98,6 +140,7 @@ class BdataLoc : public TNamed {
    }
    Bool_t DidLoad() { return loaded_once; }
    Int_t NumHits() { return ndata; }
+  //FIXME: not really needed if the global analyzer variable is right in here
    UInt_t Get(Int_t i=0) { 
      return (i >= 0 && ndata > i) ? rdata[i] : 0; }
   //FIXME: this should be operator==( const char* )
@@ -112,6 +155,7 @@ class BdataLoc : public TNamed {
 	     );
   }
   Bool_t operator!=( const BdataLoc& rhs ) const { return !(*this == rhs ); }
+  //FIXME: Set functions not needed if we put the database line parser in here
   void SetSlot( Int_t cr, Int_t sl, Int_t ch ) {
     crate = cr; slot = sl; chan = ch; header = ntoskip = search_choice = 0;
   }
@@ -124,6 +168,7 @@ class BdataLoc : public TNamed {
    UInt_t header;              // header (unique either in data or in crate)
    Int_t ntoskip;              // how far to skip beyond header
    
+  //FIXME: this can be a vector if we carefully keep track of the data's address
    UInt_t rdata[MxHits];       //[ndata] raw data (to accom. multihit chanl)
    Int_t  ndata;               // number of relevant entries
  private:
@@ -141,7 +186,7 @@ Int_t  THaDecData::fgVdcEffFirst = 2;
 
 //_____________________________________________________________________________
 static UInt_t header_str_to_base16(const char* hdr) {
-  // Utility to convert string header to base 16 integer
+  // Utility to convert string header to base 16 (FIXME: base 16??) integer
   const char chex[] = "0123456789abcdef";
   if( !hdr ) return 0;
   const char* p = hdr+strlen(hdr);
@@ -234,6 +279,7 @@ Int_t THaDecData::SetupDecData( const TDatime* run_time, EMode mode )
 
   Int_t retval = 0;
 
+  // FIXME: make this completely dynamic
   RVarDef vars[] = {
     { "evtypebits", "event type bit pattern",      "evtypebits" },  
     { "evtype",     "event type from bit pattern", "evtype" },  
@@ -279,8 +325,18 @@ Int_t THaDecData::SetupDecData( const TDatime* run_time, EMode mode )
 	delete *p;
     }
     if( mode == kDelete ) {
-      for( vector<TH1F*>::iterator it = hist.begin(); it != hist.end(); it++ )
-	delete *it;
+      const HistDef* h = histdefs;
+      for( vector<TH1F*>::iterator it = hist.begin(); it != hist.end(); it++ ) {
+	// Verify that each histogram is still in memory. It usually isn't because
+	// ROOT deletes it when the output file is closed.
+	assert( h && h->name );
+	TObject* obj = gDirectory->FindObject(h->name);
+	if( obj && obj->IsA() && obj->IsA()->InheritsFrom("TH1F") ) {
+	  assert( !strcmp(h->name,obj->GetName()) );
+	  delete *it;
+	}
+	++h;
+      }
       fCrateLoc.clear();   
       fWordLoc.clear(); 
       hist.clear();
@@ -360,7 +416,11 @@ Int_t THaDecData::SetupDecData( const TDatime* run_time, EMode mode )
       UInt_t header(0);
       Int_t crate = (Int_t)atoi(strvect[2].c_str());  // crate #
       bool is_slot = (strvect[1] == "crate");
+      //FIXME: instantiate based on keyword -> class mapping
+      // If BdataLoc is a ROOT class hierarchy, we can even dynamically
+      // extend the list of supported data types with plugins
       BdataLoc* b;
+      //FIXME: analyze strvect inside BdataLoc
       if( is_slot ) {  // Crate data ?
 	slot = (Int_t)atoi(strvect[3].c_str());
 	chan = (Int_t)atoi(strvect[4].c_str());
@@ -447,6 +507,7 @@ Int_t THaDecData::SetupDecData( const TDatime* run_time, EMode mode )
 }
 
 //_____________________________________________________________________________
+//FIXME: put into BdataLoc
 BdataLoc* THaDecData::DefineChannel(BdataLoc *b, EMode mode, const char* desc)
 {
   if( gHaVars ) {
@@ -481,27 +542,11 @@ void THaDecData::WriteHist()
 {
   // VDC efficiencies
 
-  hist.push_back(new TH1F("Lu1nhit","Num Hits Left U1",50,-1,49));
-  hist.push_back(new TH1F("Lu2nhit","Num Hits Left U2",50,-1,49));
-  hist.push_back(new TH1F("Lv1nhit","Num Hits Left V1",50,-1,49));
-  hist.push_back(new TH1F("Lv2nhit","Num Hits Left V2",50,-1,49));
-  hist.push_back(new TH1F("Ru1nhit","Num Hits Right U1",50,-1,49));
-  hist.push_back(new TH1F("Ru2nhit","Num Hits Right U2",50,-1,49));
-  hist.push_back(new TH1F("Rv1nhit","Num Hits Right V1",50,-1,49));
-  hist.push_back(new TH1F("Rv2nhit","Num Hits Right V2",50,-1,49));
-
-  hist.push_back(new TH1F("Lu1eff","Left arm U1 efficiency",400,0,400));
-  hist.push_back(new TH1F("Lu2eff","Left arm U2 efficiency",400,0,400));
-  hist.push_back(new TH1F("Lv1eff","Left arm V1 efficiency",400,0,400));
-  hist.push_back(new TH1F("Lv2eff","Left arm V2 efficiency",400,0,400));
-  hist.push_back(new TH1F("Ru1eff","Right arm U1 efficiency",400,0,400));
-  hist.push_back(new TH1F("Ru2eff","Right arm U2 efficiency",400,0,400));
-  hist.push_back(new TH1F("Rv1eff","Right arm V1 efficiency",400,0,400));
-  hist.push_back(new TH1F("Rv2eff","Right arm V2 efficiency",400,0,400));
-
-  hist.push_back(new TH1F("Lenroc12","Event length in ROC12",500,0,5000));
-  hist.push_back(new TH1F("Lenroc16","Event length in ROC16",500,0,5000));
-
+  const HistDef* h = histdefs;
+  while( h->name ) {
+    hist.push_back( new TH1F(h->name, h->title, h->nbins, h->xmin, h->xmax) );
+    ++h;
+  }
 }
 
 
@@ -524,7 +569,7 @@ THaAnalysisObject::EStatus THaDecData::Init( const TDatime& run_time )
 }
 
 //_____________________________________________________________________________
-
+//FIXME: junk this
 
 Int_t THaDecData::DefaultMap() {
 // Default setup of mapping of data in this class to locations in the raw data.
@@ -533,6 +578,7 @@ Int_t THaDecData::DefaultMap() {
 // example of decdata.map
 
 // ADCs that show data synch.
+//FIXME: note the beauty of the constructor overloading
    Int_t crate = 1, slot = 25, chan = 16;   
    fCrateLoc.push_back(new BdataLoc("synchadc1", crate, slot, chan));
    fCrateLoc.push_back(new BdataLoc("synchadc2", 2, (Int_t) 24, 48));
@@ -588,6 +634,8 @@ Int_t THaDecData::Decode(const THaEvData& evdata)
 
   Clear();
 
+  // FIXME: the pain, THE PAIN
+  // fix this by introducing another configration type "roclen"
   lenroc12 = evdata.GetRocLength(12);
   lenroc16 = evdata.GetRocLength(16);
 
@@ -616,7 +664,8 @@ Int_t THaDecData::Decode(const THaEvData& evdata)
   // to the next header. Is it?
   for (Iter_t p = fWordLoc.begin(); p != fWordLoc.end(); p++) {
     BdataLoc *dataloc = *p;
-    for( Int_t i = 0; i < evdata.GetRocLength(dataloc->crate); i++ ) {
+    for( Int_t i = 0; 
+	 i+dataloc->ntoskip <= evdata.GetRocLength(dataloc->crate); i++ ) {
       if( static_cast<UInt_t>( evdata.GetRawData(dataloc->crate,i) )
 	  == dataloc->header)
 	dataloc->Load(evdata.GetRawData(dataloc->crate, i + dataloc->ntoskip));
@@ -680,6 +729,8 @@ Int_t THaDecData::Decode(const THaEvData& evdata)
 // debug 
 //    Print();
 
+  // FIXME: so what guarantees that the VDC wire variables are filled here?
+  // The order in which the apparatuses are added to gHaApps, right? THE PAIN
   VdcEff();
 
   return 0;
@@ -687,10 +738,12 @@ Int_t THaDecData::Decode(const THaEvData& evdata)
 
 
 //_____________________________________________________________________________
+// FIXME: make VdcEff separate module, and make it a physics module
 void THaDecData::VdcEff( )
 { 
   // Update VDC efficiency histograms with current event data
 
+  //FIXME: make configurable
   static const string VdcVars[] = {"L.vdc.u1.wire", "L.vdc.u2.wire", 
 				   "L.vdc.v1.wire", "L.vdc.v2.wire", 
 				   "R.vdc.u1.wire", "R.vdc.u2.wire", 
@@ -699,7 +752,7 @@ void THaDecData::VdcEff( )
   const Int_t nwire = 400;
   //FIXME: really push 3.2kB on the stack every event?
   Int_t wire[nwire];
-  Int_t hitwire[nwire];   // lookup to avoid O(N^3) algorithm
+  Int_t hitwire[nwire];   // lookup to avoid O(N^3) algorithm // really??
 
   
   //FIXME: these static variables prevent multiple instances of this object!
@@ -757,6 +810,7 @@ void THaDecData::VdcEff( )
      }
 
 // The following does not assume that wire[] is ordered.
+//FIXME: but we can order it
      for (Int_t i = 0; i < n; i++) {
        // look for neighboring hit at +2 wires
        Int_t ngh2=wire[i]+2;
@@ -768,12 +822,13 @@ void THaDecData::VdcEff( )
 	 if (fDebug>4) 
 	   cout << "wire eff "<<i<<"  "<<awire<<endl;
 #endif
-	 if (awire>=0 && awire<nwire) {
+	 if (awire>=0 && awire<nwire) { //FIXME:  always true
 	   xcnt[ipl*nwire+awire] = xcnt[ipl*nwire+awire] + 1;
 	   
 	   if ( hitwire[awire] ) {
 	     eff[ipl*nwire+awire] = eff[ipl*nwire+awire] + 1;
 	   } else {
+	     //FIXME: is this a joke?
 	     eff[ipl*nwire+awire] = eff[ipl*nwire+awire] + 0;
 	   }
 	 }
@@ -782,6 +837,7 @@ void THaDecData::VdcEff( )
      
      if ((cnt%500) == 0) {
 
+       // FIXME: why reset?
        hist[ipl+8]->Reset();
        for (Int_t i = 0; i < nwire; i++) {
 
@@ -799,13 +855,14 @@ void THaDecData::VdcEff( )
 
   }
   cnt++;
+  // FIXME: repeated WriteHist seems to cause problems with splits files
+  // (multiple cycles left in output)
   if ((cnt < 2000 && cnt % 500 == 0) ||
       (cnt % 5000 == 0)) WriteHist();
 
   //  if ((cnt%10)==0) Print();
 
 }
-
 
 //_____________________________________________________________________________
 void THaDecData::Print( Option_t* ) const {
