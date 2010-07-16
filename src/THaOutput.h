@@ -67,7 +67,6 @@ private:
 class THaEpicsKey;
 class THaScalerKey;
 
-
 class THaOutput {
   
 public:
@@ -101,9 +100,7 @@ protected:
          Int_t helicity = 0, Int_t slot=-1, Int_t chan=-1); 
   void DefScaler(Int_t hel = 0);
   void Print() const;
-
-// Variables, Formulas, Cuts, Histograms
-
+  // Variables, Formulas, Cuts, Histograms
   Int_t fNvar;
   Double_t *fVar, *fEpicsVar;
   std::vector<std::string> fVarnames, 
@@ -119,16 +116,18 @@ protected:
   TTree *fTree, *fEpicsTree; 
   std::map<std::string, TTree*> fScalTree;
   bool fInit;
-
+  
   enum EId {kVar = 1, kForm, kCut, kH1f, kH1d, kH2f, kH2d, kBlock,
             kBegin, kEnd, kRate, kCount };
   static const Int_t kNbout = 4000;
   static const Int_t fgNocut = -1;
 
+  static Int_t fgVerbose;
+
 private:
 
-  THaOutput(const THaOutput&); /* {} */
-  THaOutput& operator=(const THaOutput& ); /* { return *this; } */
+  THaOutput(const THaOutput&);
+  THaOutput& operator=(const THaOutput& );
 
   std::string stitle, sfvarx, sfvary, scut, fScalBank;
 
@@ -136,17 +135,7 @@ private:
   Float_t xlo,xhi,ylo,yhi;
   Bool_t fOpenEpics,fOpenScal,fFirstEpics,fFirstScal;
 
-  static Int_t fgVerbose;
-
   ClassDef(THaOutput,0)  
 };
 
 #endif
-
-
-
-
-
-
-
-

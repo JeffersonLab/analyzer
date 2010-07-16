@@ -20,6 +20,7 @@
 #include "THaVhist.h"
 #include "THaVarList.h"
 #include "THaVar.h"
+#include "THaTextvars.h"
 #include "THaGlobals.h"
 #include "TH1.h"
 #include "TH2.h"
@@ -911,8 +912,8 @@ Int_t THaOutput::LoadFile( const char* filename )
     return -1;
   }
   string loadfile(filename);
-  ifstream* odef = new ifstream(loadfile.c_str());
-  if ( ! (*odef) ) {
+  ifstream odef(loadfile.c_str());
+  if ( !odef ) {
     ErrFile(-1, loadfile);
     return -1;
   }
@@ -921,7 +922,7 @@ Int_t THaOutput::LoadFile( const char* filename )
   string::size_type pos;
   vector<string> strvect;
   string sline;
-  while (getline(*odef,sline)) {
+  while (getline(odef,sline)) {
     // Blank line or comment line?
     if( sline.empty()
 	|| (pos = sline.find_first_not_of( whitespace )) == string::npos
@@ -930,70 +931,79 @@ Int_t THaOutput::LoadFile( const char* filename )
     // Get rid of trailing comments
     if( (pos = sline.find_first_of( comment )) != string::npos )
       sline.erase(pos);
-    // Split the line into tokens separated by whitespace
-    strvect = Split(sline);
-    BuildList(strvect);
-    if (strvect.size() < 2) {
-      ErrFile(0, sline);
+    // Substitute text variables
+    vector<string> lines( 1, sline );
+    if( gHaTextvars->Substitute(lines) )
       continue;
-    }
-    Int_t ikey = FindKey(strvect[0]);
-    string sname = StripBracket(strvect[1]);
-    switch (ikey) {
+    for( Iter_s_t it = lines.begin(); it != lines.end(); ++it ) {
+      // Split the line into tokens separated by whitespace
+      const string& str = *it;
+      strvect = Split(str);
+      bool special_before = (fOpenEpics || fOpenScal);
+      BuildList(strvect);
+      bool special_now = (fOpenEpics || fOpenScal);
+      if( special_before || special_now )
+	continue; // strvect already processed
+      if (strvect.size() < 2) {
+	ErrFile(0, str);
+	continue;
+      }
+      Int_t ikey = FindKey(strvect[0]);
+      string sname = StripBracket(strvect[1]);
+      switch (ikey) {
       case kVar:
-  	  fVarnames.push_back(sname);
-          break;
+	fVarnames.push_back(sname);
+	break;
       case kForm:
-          if (strvect.size() < 3) {
-	    ErrFile(ikey, sline);
-            continue;
-	  }
-          fFormnames.push_back(sname);
-          fFormdef.push_back(strvect[2]);
-          break;
+	if (strvect.size() < 3) {
+	  ErrFile(ikey, str);
+	  continue;
+	}
+	fFormnames.push_back(sname);
+	fFormdef.push_back(strvect[2]);
+	break;
       case kCut:
-          if (strvect.size() < 3) {
-	    ErrFile(ikey, sline);
-            continue;
-	  }
-          fCutnames.push_back(sname);
-          fCutdef.push_back(strvect[2]);
-          break;
+	if (strvect.size() < 3) {
+	  ErrFile(ikey, str);
+	  continue;
+	}
+	fCutnames.push_back(sname);
+	fCutdef.push_back(strvect[2]);
+	break;
       case kH1f:
       case kH1d:
       case kH2f:
       case kH2d:
-          if( ChkHistTitle(ikey, sline) != 1) {
-	    ErrFile(ikey, sline);
-            continue;
-	  }
-          fHistos.push_back(
-	     new THaVhist(strvect[0],sname,stitle));
-// Tentatively assign variables and cuts as strings. 
-// Later will check if they are actually THaVform's.
-          fHistos.back()->SetX(nx, xlo, xhi, sfvarx);
-          if (ikey == kH2f || ikey == kH2d) {
-            fHistos.back()->SetY(ny, ylo, yhi, sfvary);
-	  }
-          if (iscut != fgNocut) fHistos.back()->SetCut(scut);
-          break;
+	if( ChkHistTitle(ikey, str) != 1) {
+	  ErrFile(ikey, str);
+	  continue;
+	}
+	fHistos.push_back(
+			  new THaVhist(strvect[0],sname,stitle));
+	// Tentatively assign variables and cuts as strings. 
+	// Later will check if they are actually THaVform's.
+	fHistos.back()->SetX(nx, xlo, xhi, sfvarx);
+	if (ikey == kH2f || ikey == kH2d) {
+	  fHistos.back()->SetY(ny, ylo, yhi, sfvary);
+	}
+	if (iscut != fgNocut) fHistos.back()->SetCut(scut);
+	break;
       case kBlock:
-	  // Do not strip brackets for block regexps: use strvect[1] not sname
-	  if( BuildBlock(strvect[1]) == 0 ) {
-	    cout << "\nTHaOutput::Init: WARNING: Block ";
-	    cout << strvect[1] << " does not match any variables. " << endl;
-	    cout << "There is probably a typo error... "<<endl;
-	  }
-	  break;
+	// Do not strip brackets for block regexps: use strvect[1] not sname
+	if( BuildBlock(strvect[1]) == 0 ) {
+	  cout << "\nTHaOutput::Init: WARNING: Block ";
+	  cout << strvect[1] << " does not match any variables. " << endl;
+	  cout << "There is probably a typo error... "<<endl;
+	}
+	break;
       case kBegin:
       case kEnd:
-          break;
+	break;
       default:
-        if (!fOpenEpics && !fOpenScal)
-          cout << "Warning: keyword "<<strvect[0]<<" undefined "<<endl;
+	cout << "Warning: keyword "<<strvect[0]<<" undefined "<<endl;
+      }
     }
   }
-  delete odef;
 
   // sort thru fVarnames, removing identical entries
   if( fVarnames.size() > 1 ) {
@@ -1197,6 +1207,7 @@ void THaOutput::ErrFile(Int_t iden, const string& sline) const
        cerr << "optionally can impose THaCut expression 'cut-expr'"<<endl;
        break;
      default:
+       cerr << "Illegal line: " << sline << endl;
        cerr << "See the documentation or ask Bob Michaels"<<endl;
        break;
   }
