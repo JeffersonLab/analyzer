@@ -130,6 +130,8 @@ THaEvData::~THaEvData() {
   delete [] fSlotClear;
   fInstance--;
   fgInstances.ResetBitNumber(fInstance);
+  // FIXME: this should be per instance; or better, why is this static??
+  fgNeedInit = true;
 }
 
 const char* THaEvData::DevType(int crate, int slot) const {
