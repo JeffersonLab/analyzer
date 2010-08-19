@@ -1,10 +1,10 @@
 #------------------------------------------------------------------------------
 
 # Compile extra debugging code (slight performance impact)
-#export WITH_DEBUG = 1
+export WITH_DEBUG = 1
 
 # Compile debug version
-#export DEBUG = 1
+export DEBUG = 1
 
 # Profiling with gprof
 #export PROFILE = 1
@@ -34,6 +34,7 @@ endif
 ROOTCFLAGS   := $(shell root-config --cflags)
 ROOTLIBS     := $(shell root-config --libs)
 ROOTGLIBS    := $(shell root-config --glibs)
+ROOTBIN      := $(shell root-config --bindir)
 
 HA_DIR       := $(shell pwd)
 DCDIR        := hana_decode
@@ -286,7 +287,7 @@ endif
 
 $(HA_DICT).C: $(RCHDR) $(HA_LINKDEF)
 	@echo "Generating dictionary $(HA_DICT)..."
-	$(ROOTSYS)/bin/rootcint -f $@ -c $(INCLUDES) $(DEFINES) $^
+	$(ROOTBIN)/rootcint -f $@ -c $(INCLUDES) $(DEFINES) $^
 
 
 #---------- Extra libraries ----------------------------------------
@@ -297,7 +298,7 @@ $(LIBNORMANA):	$(LNA_HDR) $(LNA_OBJS)
 
 $(LNA_DICT).C:	$(LNA_HDR) $(LNA_LINKDEF)
 		@echo "Generating dictionary $(LNA_DICT)..."
-		$(ROOTSYS)/bin/rootcint -f $@ -c $(INCLUDES) $(DEFINES) $^
+		rootcint -f $@ -c $(INCLUDES) $(DEFINES) $^
 
 libPodd.a:	$(OBJS) $(LNA_OBJS) subdirs
 		echo "Making libPodd.a..."
@@ -306,11 +307,6 @@ libPodd.a:	$(OBJS) $(LNA_OBJS) subdirs
 #---------- Main program -------------------------------------------
 analyzer:	src/main.o $(LIBDC) $(LIBSCALER) $(LIBHALLA)
 		$(LD) $(LDFLAGS) $< $(HALLALIBS) $(GLIBS) -o $@
-
-podda:		src/main.o libPodd.a
-		$(LD) $^ $(ROOTSYS)/lib/libRoot.a $(ROOTSYS)/lib/libpcre.a $(ROOTSYS)/lib/libfreetype.a -lz $(shell root-config --auxlibs) -o $@
-
-static:		podda
 
 #---------- Maintenance --------------------------------------------
 clean:

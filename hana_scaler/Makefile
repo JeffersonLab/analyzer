@@ -48,6 +48,7 @@ LIBDC=libdc_local.a
 ROOTCFLAGS   := $(shell root-config --cflags)
 ROOTLIBS     := $(shell root-config --libs)
 ROOTGLIBS    := $(shell root-config --glibs)
+ROOTBIN      := $(shell root-config --bindir)
 
 INCLUDES     = $(ROOTCFLAGS) -I$(DCDIR)
 
@@ -258,7 +259,7 @@ tscalring23: tscalring23_main.o $(SCALER_OBJS) $(SRC) $(HEAD) $(LIBDC)
 # Dictionary
 THaScalDict.C: $(HEAD) haScal_LinkDef.h
 	@echo "Generating Scaler Package Dictionary..."
-	$(ROOTSYS)/bin/rootcint -f THaScalDict.C -c $(INCLUDES) $^
+	$(ROOTBIN)/rootcint -f THaScalDict.C -c $(INCLUDES) $^
 
 tarfile: clean version
 	tar cvf $(VERS).tar ./hana_scaler

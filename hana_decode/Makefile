@@ -52,6 +52,7 @@ export MAINDIR = ../src
 ROOTCFLAGS   := $(shell root-config --cflags)
 ROOTLIBS     := $(shell root-config --libs)
 ROOTGLIBS    := $(shell root-config --glibs)
+ROOTBIN      := $(shell root-config --bindir)
 
 INCLUDES      = $(ROOTCFLAGS) 
 
@@ -292,7 +293,7 @@ swapped_intcpy.o: swapped_intcpy.c
 
 THaDecDict.C: $(RCHEAD) haDecode_LinkDef.h
 	@echo "Generating Decoder Dictionary..."
-	$(ROOTSYS)/bin/rootcint -f THaDecDict.C -c $(CXXFLAGS) $^
+	$(ROOTBIN)/rootcint -f THaDecDict.C -c $(CXXFLAGS) $^
 
 # create a tar file of ./$(VERS)/* (all code)
 
