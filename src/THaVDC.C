@@ -41,6 +41,7 @@
 #include <iostream>
 #endif
 
+
 using namespace std;
 using THaString::Split;
 
@@ -62,7 +63,8 @@ THaVDC::THaVDC( const char* name, const char* description,
   fUVpairs = new TClonesArray( "THaVDCTrackPair", 20 );
 
   // Default behavior for now
-  SetBit( kOnlyFastest | kHardTDCcut );
+//  SetBit( kOnlyFastest | kHardTDCcut );
+  SetBit( kHardTDCcut );
 
 }
 
@@ -366,6 +368,12 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
   UInt_t theStage = ( mode == 1 ) ? kCoarse : kFine;
 
   fUVpairs->Clear();
+  
+  // Bail out if either plane has ambiguous
+  // cluster association
+  Bool_t lowerBad = fLower->IsBad();
+  Bool_t upperBad = fUpper->IsBad();
+  if( lowerBad || upperBad ){ return 0;}
 
   Int_t nUpperTracks = fUpper->GetNUVTracks();
   Int_t nLowerTracks = fLower->GetNUVTracks();

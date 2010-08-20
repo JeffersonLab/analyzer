@@ -617,8 +617,15 @@ Int_t THaVDCPlane::FindClusters()
   Int_t nextClust = 0;            // Current cluster number
   assert( GetNClusters() == 0 );
 
+  vector <THaVDCHit *> clushits;
+  Double_t deltat;
+  Bool_t falling;
+
   //Loop through all TDC hits
   for( Int_t i = 0; i < nHits; ) {
+    
+    clushits.clear();
+    falling = kTRUE;
 
     THaVDCHit* hit = GetHit(i);
     assert(hit);      
@@ -628,36 +635,66 @@ Int_t THaVDCPlane::FindClusters()
     }
     // Consider this hit the beginning of a potential new cluster.
     // Find the end of the cluster.
-    Int_t j = i, span = 0, nwires = 1;
+    Int_t span = 0, nwires = 1;
+    UInt_t j;
     while( ++i < nHits ) {
       THaVDCHit* nextHit = GetHit(i);
       assert( nextHit );    // should never happen, else bug in Decode
       if( !timecut(nextHit) )
 	continue;
       Int_t ndif = nextHit->GetWireNum() - hit->GetWireNum();
+      // Do not consider adding hits from a wire that was already
+      // added
+      if( ndif == 0 ) { continue; }
       assert( ndif >= 0 );
       // The cluster ends when we encounter a gap in wire numbers.
       // TODO: cluster should also end if 
       //  DONE (a) it is too big
-      //  (b) drift times decrease again after initial fall/rise (V-shape)
+      //  DONE (b) drift times decrease again after initial fall/rise (V-shape)
+      //  (c) Enforce reasonable changes in wire-to-wire V-shape
+
+      // Times are sorted by earliest first when on same wire
+      deltat = nextHit->GetTime() - hit->GetTime();
+
       span += ndif;
       if( ndif > fNMaxGap+1 || span > fMaxClustSpan )
 	break;
-      nwires += (ndif != 0);
+
+      // Make sure the time structure is sensible
+      // If this cluster is rising, wire with falling time
+      // should not be associated in the cluster
+      if( !falling && deltat < 0.0 ){ continue; }
+      
+      // If we are falling and it starts to rise, make
+      // sure we're not on the same wire and continue
+      if( falling && deltat > 0.0 ){
+	      falling = kFALSE;
+      }
+      
+      // If all time sorting is done properly then we 
+      // should be on a new wire at this point
+      assert( ndif != 0 );
+      
+      nwires++;
+      if( clushits.size() == 0 ){
+	      clushits.push_back(hit);
+      }
+      clushits.push_back(nextHit);
       hit = nextHit;
     }
     assert( i <= nHits );
     // Make a new cluster if it is big enough
     // If not, the hits of this i-iteration are ignored
-    if( nwires >= fMinClustSize ) {
+    // Also, make sure that we did indeed see the time
+    // spectrum turn around at some point
+    if( nwires >= fMinClustSize && !falling ) {
       THaVDCCluster* clust =
 	new ( (*fClusters)[nextClust++] ) THaVDCCluster(this);
-      while( j < i ) {
-	hit = GetHit(j++);
-	if( !timecut(hit) )
-	  continue;
-	clust->AddHit( hit );
+
+      for( j = 0; j < clushits.size(); j++ ){
+	      clust->AddHit( clushits[j] );
       }
+
       assert( clust->GetSize() > 0 && clust->GetSize() >= nwires );
       // This is a good cluster candidate. Estimate its position/slope
       clust->EstTrackParameters();

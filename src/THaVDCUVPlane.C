@@ -117,7 +117,7 @@ Int_t THaVDCUVPlane::MatchUVClusters()
 	// Found two clusters with "small" t0s, and none were found before.
 	// So we pair them and hope for the best.
 	uvTrack = new ( (*fUVTracks)[0] )
-	  THaVDCUVTrack( fU->GetCluster(0), fV->GetCluster(0), this );
+	  THaVDCUVTrack( uClust, vClust, this );
 	uvTrack->CalcDetCoords();
       } else {
 	// Too bad, another combination with small t0s found. 
