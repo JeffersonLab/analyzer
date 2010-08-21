@@ -15,6 +15,8 @@
 
 #include "THaAnalysisObject.h"
 #include "THaVarList.h"
+#include "THaTextvars.h"
+#include "THaGlobals.h"
 #include "TClass.h"
 #include "TDatime.h"
 #include "TROOT.h"
@@ -40,6 +42,7 @@
  #define ISSTREAM istrstream
 #endif
 #include <stdexcept>
+#include <cassert>
 
 using namespace std;
 typedef string::size_type ssiz_t;
@@ -573,10 +576,10 @@ FILE* THaAnalysisObject::OpenRunDBFile( const TDatime& date )
 //_____________________________________________________________________________
 char* THaAnalysisObject::ReadComment( FILE* fp, char *buf, const int len )
 {
-  // Read blank and comment lines ( those starting non-starting with a
-  //  space (' '), returning the comment.
-  // If the line is data, then nothing is done and NULL is returned
-  // (so one can search for the next data line with:
+  // Read database comment lines (those not starting with a space (' ')),
+  // returning the comment.
+  // If the line is data, then nothing is done and NULL is returned,
+  // so one can search for the next data line with:
   //   while ( ReadComment(fp, buf, len) );
   int ch = fgetc(fp);  // peak ahead one character
   ungetc(ch,fp);
@@ -766,8 +769,6 @@ void THaAnalysisObject::SphToGeo( Double_t  th_sph, Double_t  ph_sph,
 
 //---------- Database utility functions ---------------------------------------
 
-static size_t LEN = 256; // Initial size of line buffer
-static size_t MAX = 1UL<<14; // Max size of line buffer (16 kB)
 static string errtxt;
 static int loaddb_depth = 0; // Recursion depth in LoadDB
 static string loaddb_prefix; // Actual prefix of object in LoadDB (for err msg)
@@ -809,19 +810,22 @@ static Int_t TrimDBline( const string& _line, string& value,
   // If line does not end with '\', return 1.
   // If line ends with '\', strip the '\' and return 2.
 
-  value.erase();
   string line(_line);
   // Trim comment, if any
   ssiz_t pos1 = line.find("#");
   if( pos1 != string::npos )
     line.erase(pos1);
   pos1 = (leading) ? line.find_first_not_of(" \t") : 0;
-  if( pos1 == string::npos ) return 1;
   ssiz_t pos2 = line.find_last_not_of(" \t");
+  if( pos1 == string::npos || pos2 == string::npos ) {
+    value.erase();
+    return 1;
+  }
   // pos2 >= pos1 guaranteed here
   value = line.substr(pos1,pos2-pos1+1);
-  if( line[pos2] == '\\' ) {
-    value.erase(pos2-pos1);
+  pos1 = value.find('\\');
+  if( pos1 != string::npos ) {
+    value.erase(pos1);
     return 2;
   }
   return 1;
@@ -886,7 +890,7 @@ static Int_t ChopPrefix( string& s )
 bool THaAnalysisObject::IsTag( const char* buf )
 {
   // Return true if the string in 'buf' matches regexp ".*\[.+\].*",
-  // i.e. it is a tag. Static utility function.
+  // i.e. it is a database tag.  Generic utility function.
 
   register const char* p = buf;
   while( *p && *p != '[' ) p++;
@@ -896,6 +900,74 @@ bool THaAnalysisObject::IsTag( const char* buf )
   p++;
   while( *p && *p != ']' ) p++;
   return ( *p == ']' );
+}
+
+//_____________________________________________________________________________
+static Int_t ReadDBline( FILE* file, string& line, size_t MAX = 1UL<<14 )
+{
+  // Get a text line from the database file 'file'. Strip all comments
+  // (anything after a #). Trim trailing whitespacel; thus, pure comment lines
+  // (starting with #) result in an empty string. 
+  // Concatenate continuation lines (ending with \).
+  // Maximum size to read is MAX (default 16kB).
+
+  line.erase();
+
+  bool continued = false, prev_continued = false, allblank = true;
+  int c;
+  size_t nc = 0;
+  while( (c = fgetc(file)) != EOF ) {
+    assert( c >= 0 && c < kMaxUChar );
+    // Note continuation mark
+    if( c == '\\' ) {
+      continued = true;
+    }
+    // Ignore all until end of line from comment or continuation mark
+    if( c == '#' || continued ) {
+      while( c != '\n' && c != EOF ) {
+	c = fgetc(file);
+      }
+      // At end of line, we are done, unless continued and not EOF or
+      // this is a pure comment line in the middle of a continuation
+      if( c == EOF || !(continued || (prev_continued && allblank)) ) {
+	break;
+      }
+      prev_continued = continued;
+      continued = false;
+      allblank = true;
+    } else if( isblank(c) || !iscntrl(c) ) {
+      // Append regular/blank characters to line
+      if( ++nc > MAX ) {
+	// Line too long
+	errtxt.swap(line);
+	// Only show first 72 chars of line in error message
+	if( nc > 72 ) errtxt.erase(72);
+	//FIXME: throw exception
+	return EOF;  
+      }
+      // Convert tabs to spaces
+      if( c == '\t' ) c = ' ';
+      if( c != ' ' ) allblank = false;
+      line += static_cast<unsigned char>( c );
+    } else if( c == '\n' ) {
+      // End-of-line after regular, non-continued text => line done
+      break;
+    }
+  } //end while(c)
+
+  // Trim trailing whitespace
+  if( !line.empty() ) {
+    ssiz_t pos = line.find_last_not_of(" \t");
+    if( pos == string::npos )
+      line.erase();
+    else
+      line = line.substr(0,pos+1);
+  }
+  // Don't report EOF yet if the last line wasn't empty
+  if( c == EOF && !line.empty() )
+    c = '\n';
+
+  return c;  // EOF or \n
 }
 
 //_____________________________________________________________________________
@@ -912,70 +984,31 @@ Int_t THaAnalysisObject::LoadDBvalue( FILE* file, const TDatime& date,
   // Return 0 if success, 1 if key not found, <0 if unexpected error.
 
   if( !file || !key ) return -255;
-  char* buf = new char[LEN];
-  if( !buf ) return -256;
   TDatime keydate(950101,0), prevdate(950101,0);
 
   errno = 0;
   errtxt.erase();
   rewind(file);
 
-  bool found = false, ignore = false, multi_line = false, not_prev_cont = true;
-  off_t pos = ftello(file);
-  while( fgets( buf, LEN, file) != NULL) {
-    size_t len = strlen(buf);
-    // Line too long? If so, grow buffer and try again.
-    if( len >= LEN-1 ) {
-      LEN *= 2;
-      if( LEN > MAX ) {
-	buf[72] = 0;  // Only show first 72 chars of line in error message
-	errtxt = buf;
-      }
-      delete [] buf;
-      if( LEN > MAX )
-	return -128;
-      buf = new char[LEN];
-      if( !buf ) return -256;
-      fseeko( file, pos, SEEK_SET ); 
-      continue;
-    }
-    pos = ftello(file);
-    if( len == 0 ) continue; //oops
-    if( buf[len-1] == '\n') buf[len-1] = 0; //delete trailing newline
-    string line(buf), value;
-    // Determine status of the current line (continued or not)
-    Int_t status = TrimDBline( line, value ), cur_status = status;
-    // Blank lines end continuation, unless continuation in progress in which
-    // case the empty line finishes the string
-    if( len < 2 || ( !multi_line && status == 1 && value.empty() )) {
-      not_prev_cont = true;
-      multi_line = false;
-      continue;
-    }
-    // Pure comment lines in the middle of a continuation do nothing at all
-    if(  multi_line && status == 1 && value.empty() &&
-	 line.find('#') != string::npos )
-      continue;
-    if( !ignore && ( multi_line || ( not_prev_cont && 
-		 (status = IsDBkey( line, key, value )) != 0 ) )) {
+  bool found = false, ignore = false;
+  string line;
+  while( ReadDBline(file, line) != EOF ) {
+    if( line.empty() ) continue;
+    // Replace text variables in this database line, if any. Multi-valued
+    // variables are not supported here; they are not useful in this context.
+    gHaTextvars->Substitute( line );
+    Int_t status;
+    if( !ignore && (status = IsDBkey( line, key, text )) != 0 ) {
       if( status > 0 ) {
-	if( multi_line ) {   // previous line was a match and was continued
-	  text.append(value);
-	} else {
-	  found = true;
-	  prevdate = keydate;
-	  text = value;
-	}
-	multi_line = ( status == 2 );
+	// Found a matching key for a newer date than before
+	found = true;
+	prevdate = keydate;
 	// we do not set ignore to true here so that the _last_, not the first,
 	// of multiple identical keys is evaluated.
       }
-    } else if( not_prev_cont && IsDBdate( line, keydate ) != 0 ) 
+    } else if( IsDBdate( line, keydate ) != 0 ) 
       ignore = ( keydate>date || keydate<prevdate );
-
-    not_prev_cont = ( cur_status != 2 );
   }
-  delete [] buf;
   if( errno ) {
     perror( "THaAnalysisObject::LoadDBvalue" );
     return -1;

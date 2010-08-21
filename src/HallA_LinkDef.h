@@ -11,6 +11,7 @@
 #pragma link C++ global gHaPhysics;
 #pragma link C++ global gHaRun;
 #pragma link C++ global gHaDB;
+#pragma link C++ global gHaTextvars;
 
 #pragma link C++ class THaVar+;
 #pragma link C++ class THaVarList+;
@@ -114,6 +115,7 @@
 #pragma link C++ class THaG0Helicity+;
 #pragma link C++ class THaPhotoReaction+;
 #pragma link C++ class THaSAProtonEP+;
+#pragma link C++ class THaTextvars+;
 
 #ifdef ONLINE_ET
 #pragma link C++ class THaOnlRun+;

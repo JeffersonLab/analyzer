@@ -13,6 +13,8 @@
 #include "THaNamedList.h"
 #include "THaCutList.h"
 #include "THaPrintOption.h"
+#include "THaTextvars.h"
+#include "THaGlobals.h"
 #include "TError.h"
 #include "TList.h"
 #include "TString.h"
@@ -22,8 +24,9 @@
 #include <iomanip>
 #include <algorithm>
 #include <cstring>
-#include <cstdio>
-#include <cctype>
+#include <string>
+#include <vector>
+#include <cassert>
 
 using namespace std;
 
@@ -259,12 +262,10 @@ Int_t THaCutList::EvalBlock( const char* block )
 }
 
 //______________________________________________________________________________
-static inline bool IsEnd( const char* s )
+inline static bool IsComment( const string& s, string::size_type pos )
 {
-  // True if s points to a comment ("#" or "//") or zero.
-  // Utility function used by Load().
-
-  return ( !*s || *s == '#' || (*s == '/' && *(s+1) == '/' ));
+  return ( pos != string::npos && pos < s.length() &&
+	   (s[pos] == '#' || s.substr(pos,2) == "//") );
 }
 
 //______________________________________________________________________________
@@ -317,85 +318,73 @@ Int_t THaCutList::Load( const char* filename )
   }
 
   // Read the file line by line
-
-  const unsigned LEN = 256;
-  unsigned line_size = LEN;
-  char* line  = new char[ line_size ];
-  char block[ LEN ];
-  strcpy( block, kDefaultBlockName );
+  string line;
+  string block = kDefaultBlockName;
   Int_t nlines_read = 0, nlines_ok = 0;
 
-  while( !ifile.eof() ) {
-    streampos pos = ifile.tellg();
-    ifile.getline( line, line_size );
-
-    // Buffer too small?
-
-    if( (unsigned)ifile.gcount() == line_size-1 ) {
-      ifile.clear();
-      ifile.seekg( pos );
-      delete [] line;
-      line_size += LEN;
-      line = new char[ line_size ];
-      continue;
-    }
+  while( getline(ifile,line) ) {
 
     // Blank line or comment?
+    string::size_type start, pos = 0;
+    if( line.empty()
+	|| (start = line.find_first_not_of( whtspc )) == string::npos
+	|| IsComment(line, start) )
+      continue;
 
-    size_t i = strspn( line, whtspc );
-    if( IsEnd(line+i) ) continue;
+    // Get rid of trailing comments and whitespace
+    while( (pos = line.find_first_of("#/", pos+1)) != string::npos ) {
+      if( IsComment(line, pos) ) {
+	line.erase(pos);
+	break;
+      }
+    }
+    pos = line.find_last_not_of( whtspc );
+    assert( pos != string::npos );
+    if( pos != string::npos && ++pos < line.length() )
+      line.erase(pos);
 
     // Valid line ... start processing
 
-    nlines_read++;
+    // Substitute text variables
+    vector<string> lines( 1, line );
+    if( gHaTextvars->Substitute(lines) )
+      continue;
 
-    // Extract first argument (cut name or "Block:")
-    const char* arg1 = line+i, *arg2 = 0;
-    while( line[i] && !isspace(line[i]) ) i++;
-    if( line[i] == '\0' ) goto noexpr;
-    line[i++] = '\0';
+    for( vector<string>::iterator it = lines.begin(); 
+	 it != lines.end(); ++it ) {
+      nlines_read++;
+      const string& str = *it;
+      string arg1, arg2;
 
-    // Extract second argument (expression or block name)
-    while( isspace(line[i])) i++;
-    if( IsEnd(line+i) ) goto noexpr;
-    arg2 = line+i;
-
-    i++;
-    while( !IsEnd(line+i) ) i++;
-    while( isspace(line[i-1]) ) i--;
-    line[i] = '\0';
-
-    // Set block name
-
-    if( !strcmp( arg1, "Block:" ) ) {
-      if( strlen(arg2) >= LEN ) {
-	Error( here, "block name too long, aborting: %s", arg2 );
-	return -3;
+      // Extract first argument (cut name or "Block:")
+      pos = str.find_first_of( whtspc, start );
+      if( pos == string::npos ) {
+	Warning( here, "ignoring label without expression, line = \"%s\"",
+		 str.c_str() );
+	continue;
       }
-      strcpy( block, arg2 );
-      nlines_ok++;
-      continue;
+      arg1 = str.substr( start, pos-start );
+
+      // Extract second argument (expression or block name)
+      pos = str.find_first_not_of( whtspc, pos );
+      assert( pos != string::npos );
+      if( pos == string::npos ) continue;
+      arg2 = str.substr( pos );
+
+      // Set block name
+      if( arg1 == "Block:" ) {
+	block = arg2;
+	nlines_ok++;
+	continue;
+      }
+
+      // Define the cut. Errors are reported by Define()
+      if( !Define( arg1.c_str(), arg2.c_str(), block.c_str() ) ) nlines_ok++;
+
     }
-
-    // Define the cut. Errors are reported by Define()
-
-    if( strlen(arg1) >= LEN ) {
-      Error( here, "cut name too long, cut not loaded: %s %s", 
-	     arg1, arg2 );
-      continue;
-    }
-
-    if( !Define( arg1, arg2, block ) ) nlines_ok++;
-    continue;
-
-  noexpr:    
-    Warning( here, "ignoring label without expression, %s", arg1 );
-    continue;
-
   }
 
   ifile.close();
-  delete [] line;
   Int_t nbad = nlines_read-nlines_ok;
   if( nbad>0 ) Warning( here, "%d cut(s) could not be defined, check input "
 			"file %s", nbad, filename );
