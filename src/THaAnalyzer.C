@@ -817,27 +817,15 @@ Int_t THaAnalyzer::SetCountMode( Int_t mode )
 //_____________________________________________________________________________
 void THaAnalyzer::SetCrateMapFileName( const char* name )
 {
-  // Set name of file from which to read the crate map. Unless already
-  // specified, the name will be automatically prefixed with "db_" and
-  // terminated with ".dat", so SetCrateMapFileName("mymap") will get
-  // the crate map from db_mymap.dat
+  // Set name of file from which to read the crate map. 
+  // For simplicity, a simple string like "mymap" is automatically
+  // converted to "db_mymap.dat". See THaAnalysisObject::GetDBFileList
 
-  if( !name || !*name || !strcmp( name, "cratemap" ) 
-      || !strcmp( name, "db_cratemap.dat" ) ) {
+  if( !name || !*name )
     // Use default map
-    THaEvData::SetCrateMapName("");
-    return;
-  }
+    name = "";
 
-  TString fname(name);
-  // Remove prefix/extension, if given. These will be added by THaCrateMap
-  // automatically
-  if( fname.BeginsWith("db_") )
-    fname.Remove(0,3);
-  if( fname.EndsWith(".dat") )
-    fname.Remove( TMath::Max(fname.Length()-4, 0) );
-
-  THaEvData::SetCrateMapName( fname );
+  THaEvData::SetCrateMapName(name);
   return;
 }
 
@@ -1297,6 +1285,7 @@ Int_t THaAnalyzer::Process( THaRunBase* run )
   fAnalysisStarted = kTRUE;
   BeginAnalysis();
   if( fFile ) {
+    fFile->cd();
     fRun->Write("Run_Data");  // Save run data to first ROOT file
   }
 
