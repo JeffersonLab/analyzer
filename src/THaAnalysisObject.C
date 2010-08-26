@@ -259,16 +259,32 @@ vector<string> THaAnalysisObject::GetDBFileList( const char* name,
   // Return the database file searchlist as a vector of strings.
   // The file names are relative to the current directory.
 
+  static const string defaultdir = "DEFAULT";
+#ifdef WIN32
+  static const string dirsep = "\\", allsep = "/\\";
+#else
+  static const string dirsep = "/", allsep = "/";
+#endif
+
   const char* dbdir = NULL;
   const char* result;
   void* dirp;
   size_t pos;
   vector<string> time_dirs, dnames, fnames;
-  vector<string>::iterator it, thedir;
-  string item, filename;
+  vector<string>::iterator it;
+  string item, filename, thedir;
   Int_t item_date;
-  const string defaultdir("DEFAULT");
   bool have_defaultdir = false, found = false;
+
+  if( !name || !*name )
+    goto exit;
+
+  // If name contains a directory separator, we take the name verbatim
+  filename = name;
+  if( filename.find_first_of(allsep) != string::npos ) {
+    fnames.push_back( filename );
+    goto exit;
+  }
 
   // Build search list of directories
   if( (dbdir = gSystem->Getenv("DB_DIR")))
@@ -278,9 +294,8 @@ vector<string> THaAnalysisObject::GetDBFileList( const char* name,
   dnames.push_back( "." );
 
   // Try to open the database directories in the search list.
-  // The first directory that can be opened is taken to be the database
+  // The first directory that can be opened is taken as the database
   // directory. Subsequent directories are ignored.
-  
   it = dnames.begin();
   while( !(dirp = gSystem->OpenDirectory( (*it).c_str() )) && 
 	 (++it != dnames.end()) ) {}
@@ -292,7 +307,7 @@ vector<string> THaAnalysisObject::GetDBFileList( const char* name,
   }
 
   // Pointer to database directory string
-  thedir = it;
+  thedir = *it;
 
   // In the database directory, get the names of all subdirectories matching 
   // a YYYYMMDD pattern.
@@ -330,26 +345,35 @@ vector<string> THaAnalysisObject::GetDBFileList( const char* name,
 
   // Construct the database file name. It is of the form db_<prefix>.dat.
   // Subdetectors use the same files as their parent detectors!
-  filename = "db_";
-  filename += name;
-  // Make sure that "name" ends with a dot. If not, add one.
-  if( *filename.rbegin() != '.' )
-    filename += '.';
-  filename += "dat";
+  // If filename does not start with "db_", make it so
+  if( filename.substr(0,3) != "db_" )
+    filename.insert(0,"db_");
+  // If filename does not end with ".dat", make it so
+#ifndef NDEBUG
+  // should never happen
+  assert( filename.length() >= 4 );
+#else
+  if( filename.length() < 4 ) { fnames.clear(); goto exit; }
+#endif
+  if( *filename.rbegin() == '.' ) {
+    filename += "dat";
+  } else if( filename.substr(filename.length()-4) != ".dat" ) {
+    filename += ".dat";
+  }
 
   // Build the searchlist of file names in the order:
-  // ./filename <dbdir/<date-dir>/filename <dbdir>/DEFAULT/filename <dbdir>/filename
-
+  // ./filename <dbdir>/<date-dir>/filename 
+  //    <dbdir>/DEFAULT/filename <dbdir>/filename
   fnames.push_back( filename );
   if( found ) {
-    item = *thedir + "/" + *it + "/" + filename;
+    item = thedir + dirsep + *it + dirsep + filename;
     fnames.push_back( item );
   }
   if( have_defaultdir ) {
-    item = *thedir + "/" + defaultdir + "/" + filename;
+    item = thedir + dirsep + defaultdir + dirsep + filename;
     fnames.push_back( item );
   }
-  fnames.push_back( *thedir + "/" + filename );
+  fnames.push_back( thedir + dirsep + filename );
 
  exit:
   return fnames;
