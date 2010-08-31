@@ -55,6 +55,9 @@ THaVDCPlane::THaVDCPlane( const char* name, const char* description,
   fClusters = new TClonesArray("THaVDCCluster", 5 );
   fWires    = new TClonesArray("THaVDCWire", 368 );
 
+  fNpass = 0;
+  fMinTdiff = fMaxTdiff = 0.0;
+
   fVDC = dynamic_cast<THaVDC*>( GetMainDetector() );
 }
 
@@ -262,8 +265,8 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
       return kInitError;
     }
     fgets(buff, LEN, file); // Read to end of line
-    if( fscanf( file, "%d %d %d %d %d", &fMinClustSize, &fMaxClustSpan, 
-		&fNMaxGap, &fMinTime, &fMaxTime ) != 5 ) {
+    if( fscanf( file, "%d %d %d %d %d %lf %lf", &fMinClustSize, &fMaxClustSpan, 
+		&fNMaxGap, &fMinTime, &fMaxTime, &fMinTdiff, &fMaxTdiff ) != 7 ) {
       Error( Here(here), "Error reading min_clust_size, max_clust_span, "
 	     "max_gap, min_time or max_time.\nLine = %s\nFix database.",
 	     buff );
@@ -292,6 +295,22 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
 //     else if( (... *conv = dynamic_cast<...*>(fTTDConv)) ) {
 //       // handle parameters of other TTD converters here
 //     }
+
+    fgets(buff, LEN, file); // Read to end of line
+
+    Double_t h, w;
+
+    if( fscanf(file, "%lf %lf", &h, &w) != 2) {
+	Error( Here(here), "Error reading height/width parameters\n"
+	       "Line = %s\nExpect 2 floating point numbers. Fix database.",
+	       buff );
+	fclose(file);
+	return kInitError;
+      } else {
+	   fSize[0] = h/2.0;
+	   fSize[1] = w/2.0;
+      }
+
     fgets(buff, LEN, file); // Read to end of line
     // Sanity checks
     if( fMinClustSize < 1 || fMinClustSize > 6 ) {
@@ -389,6 +408,7 @@ Int_t THaVDCPlane::DefineVariables( EMode mode )
     { "trdist", "Dist. from track",           "fHits.THaVDCHit.ftrDist" },
     { "ltrdist","Dist. from local track",     "fHits.THaVDCHit.fltrDist" },
     { "trknum", "Track number (0=unused)",    "fHits.THaVDCHit.fTrkNum" },
+    { "clsnum", "Cluster number (-1=unused)",    "fHits.THaVDCHit.fClsNum" },
     { "nclust", "Number of clusters",         "GetNClusters()" },
     { "clsiz",  "Cluster sizes",              "fClusters.THaVDCCluster.fSize" },
     { "clpivot","Cluster pivot wire num",     "fClusters.THaVDCCluster.GetPivotWireNum()" },
@@ -403,6 +423,9 @@ Int_t THaVDCPlane::DefineVariables( EMode mode )
     { "clndof", "Cluster NDoF",               "fClusters.THaVDCCluster.fNDoF" },
     { "cltcor", "Cluster Time correction",    "fClusters.THaVDCCluster.fTimeCorrection" },
     { "cltrknum", "Cluster track number (0=unused)", "fClusters.THaVDCCluster.fTrkNum" },
+    { "clstr", "Cluster start wire", "fClusters.THaVDCCluster.fClsStr" },
+    { "clend", "Cluster end wire", "fClusters.THaVDCCluster.fClsEnd" },
+    { "npass", "Number of hit passes for cluster", "GetNpass()" },
     { 0 }
   };
   return DefineVarsFromList( vars, mode );
@@ -614,6 +637,8 @@ Int_t THaVDCPlane::FindClusters()
 // #endif
 
   Int_t nHits     = GetNHits();   // Number of hits in the plane
+  Int_t nUsed = 0;                // Number of wires used in clustering
+  Int_t nLastUsed = -1;            
   Int_t nextClust = 0;            // Current cluster number
   assert( GetNClusters() == 0 );
 
@@ -621,86 +646,119 @@ Int_t THaVDCPlane::FindClusters()
   Double_t deltat;
   Bool_t falling;
 
-  //Loop through all TDC hits
-  for( Int_t i = 0; i < nHits; ) {
-    
-    clushits.clear();
-    falling = kTRUE;
+  fNpass = 0;
 
-    THaVDCHit* hit = GetHit(i);
-    assert(hit);      
-    if( !timecut(hit) ) {
-      ++i;
-      continue;
-    }
-    // Consider this hit the beginning of a potential new cluster.
-    // Find the end of the cluster.
-    Int_t span = 0, nwires = 1;
-    UInt_t j;
-    while( ++i < nHits ) {
-      THaVDCHit* nextHit = GetHit(i);
-      assert( nextHit );    // should never happen, else bug in Decode
-      if( !timecut(nextHit) )
-	continue;
-      Int_t ndif = nextHit->GetWireNum() - hit->GetWireNum();
-      // Do not consider adding hits from a wire that was already
-      // added
-      if( ndif == 0 ) { continue; }
-      assert( ndif >= 0 );
-      // The cluster ends when we encounter a gap in wire numbers.
-      // TODO: cluster should also end if 
-      //  DONE (a) it is too big
-      //  DONE (b) drift times decrease again after initial fall/rise (V-shape)
-      //  (c) Enforce reasonable changes in wire-to-wire V-shape
+  //  Loop while we're making new clusters
+  while( nLastUsed != nUsed ){
+     fNpass++;
+     nLastUsed = nUsed;
+     //Loop through all TDC hits
+     for( Int_t i = 0; i < nHits; ) {
+       clushits.clear();
+       falling = kTRUE;
 
-      // Times are sorted by earliest first when on same wire
-      deltat = nextHit->GetTime() - hit->GetTime();
+       THaVDCHit* hit = GetHit(i);
+       assert(hit);      
 
-      span += ndif;
-      if( ndif > fNMaxGap+1 || span > fMaxClustSpan )
-	break;
+       if( !timecut(hit) ) {
+	       ++i;
+	       continue;
+       }
+       if( hit->GetClsNum() != -1 )
+       	  { ++i; continue; }
+       // Ensures we don't use this to try and start a new
+       // cluster
+       hit->SetClsNum(-3);
 
-      // Make sure the time structure is sensible
-      // If this cluster is rising, wire with falling time
-      // should not be associated in the cluster
-      if( !falling && deltat < 0.0 ){ continue; }
-      
-      // If we are falling and it starts to rise, make
-      // sure we're not on the same wire and continue
-      if( falling && deltat > 0.0 ){
-	      falling = kFALSE;
-      }
-      
-      // If all time sorting is done properly then we 
-      // should be on a new wire at this point
-      assert( ndif != 0 );
-      
-      nwires++;
-      if( clushits.size() == 0 ){
-	      clushits.push_back(hit);
-      }
-      clushits.push_back(nextHit);
-      hit = nextHit;
-    }
-    assert( i <= nHits );
-    // Make a new cluster if it is big enough
-    // If not, the hits of this i-iteration are ignored
-    // Also, make sure that we did indeed see the time
-    // spectrum turn around at some point
-    if( nwires >= fMinClustSize && !falling ) {
-      THaVDCCluster* clust =
-	new ( (*fClusters)[nextClust++] ) THaVDCCluster(this);
+       // Consider this hit the beginning of a potential new cluster.
+       // Find the end of the cluster.
+       Int_t span = 0, nwires = 1;
+       UInt_t j;
+       while( ++i < nHits ) {
+	  THaVDCHit* nextHit = GetHit(i);
+	  assert( nextHit );    // should never happen, else bug in Decode
+	  if( !timecut(nextHit) )
+		  continue;
+	  if(    nextHit->GetClsNum() != -1   // -1 is virgin
+	      && nextHit->GetClsNum() != -3 ) // -3 was considered to start
+		  			      //a clus but is not in cluster
+		  continue;
+	  Int_t ndif = nextHit->GetWireNum() - hit->GetWireNum();
+	  // Do not consider adding hits from a wire that was already
+	  // added
+	  if( ndif == 0 ) { continue; }
+	  assert( ndif >= 0 );
+	  // The cluster ends when we encounter a gap in wire numbers.
+	  // TODO: cluster should also end if 
+	  //  DONE (a) it is too big
+	  //  DONE (b) drift times decrease again after initial fall/rise (V-shape)
+	  //  DONE (c) Enforce reasonable changes in wire-to-wire V-shape
 
-      for( j = 0; j < clushits.size(); j++ ){
-	      clust->AddHit( clushits[j] );
-      }
+	  // Times are sorted by earliest first when on same wire
+	  deltat = nextHit->GetTime() - hit->GetTime();
 
-      assert( clust->GetSize() > 0 && clust->GetSize() >= nwires );
-      // This is a good cluster candidate. Estimate its position/slope
-      clust->EstTrackParameters();
-    } //end new cluster
+	  span += ndif;
+	  if( ndif > fNMaxGap+1 || span > fMaxClustSpan ){
+		  break;
+	  }
 
-  } //end loop over hits
+	  // Make sure the time structure is sensible
+	  // If this cluster is rising, wire with falling time
+	  // should not be associated in the cluster
+	  if( !falling ){
+		  if( deltat < fMinTdiff*ndif ||
+		      deltat > fMaxTdiff*ndif )
+		  { continue; }
+	  }
+
+	  if( falling ){
+		  // Step is too big, can't be associated
+		  if( deltat < -fMaxTdiff*ndif ){ continue; }
+		  if( deltat > 0.0 ){ 
+			  // if rise is reasonable and we don't
+			  // have a monotonically increasing cluster
+			  if( deltat < fMaxTdiff*ndif && span > 1 ){
+				  // now we're rising
+				  falling = kFALSE;
+			  } else {
+				  continue;
+			  }
+		  }
+	  }
+
+	  nwires++;
+	  if( clushits.size() == 0 ){ 
+		  clushits.push_back(hit); 
+		  hit->SetClsNum(-2);
+		  nUsed++;
+	  }
+	  clushits.push_back(nextHit);
+	  nextHit->SetClsNum(-2);
+	  nUsed++;
+	  hit = nextHit;
+       }
+       assert( i <= nHits );
+       // Make a new cluster if it is big enough
+       // If not, the hits of this i-iteration are ignored
+       // Also, make sure that we did indeed see the time
+       // spectrum turn around at some point
+       if( nwires >= fMinClustSize && !falling ) {
+	  THaVDCCluster* clust =
+	     new ( (*fClusters)[nextClust++] ) THaVDCCluster(this);
+
+	  for( j = 0; j < clushits.size(); j++ ){
+	     clushits[j]->SetClsNum(nextClust-1);
+	     clust->AddHit( clushits[j] );
+	  }
+
+	  assert( clust->GetSize() > 0 && clust->GetSize() >= nwires );
+	  // This is a good cluster candidate. Estimate its position/slope
+	  clust->EstTrackParameters();
+       } //end new cluster 
+
+     } //end loop over hits
+     
+  } // end passes over hits
 
   assert( GetNClusters() == nextClust );
 

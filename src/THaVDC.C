@@ -373,7 +373,13 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
   // cluster association
   Bool_t lowerBad = fLower->IsBad();
   Bool_t upperBad = fUpper->IsBad();
-  if( lowerBad || upperBad ){ return 0;}
+  if( lowerBad || upperBad ){
+    if( fDebug>1 ){
+	    cout << "lower bad: " << lowerBad << "  upper bad: "
+		   << upperBad << endl;
+    }
+    return 0; 
+  }
 
   Int_t nUpperTracks = fUpper->GetNUVTracks();
   Int_t nLowerTracks = fLower->GetNUVTracks();
@@ -469,7 +475,7 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
     // Stop if track matching error too big
     if( thePair->GetError() > fErrorCutoff )
       break;
-
+    
     // Get the tracks of the pair
     track   = thePair->GetLower();
     partner = thePair->GetUpper();

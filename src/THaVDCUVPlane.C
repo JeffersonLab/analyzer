@@ -102,6 +102,9 @@ Int_t THaVDCUVPlane::MatchUVClusters()
   Double_t max_u_t0 = fU->GetT0Resolution();
   Double_t max_v_t0 = fV->GetT0Resolution();
   THaVDCUVTrack* uvTrack = 0;
+  THaVDCUVTrack* testTrack = 0;
+
+  Int_t ntrk = 0;
 
   for( Int_t iu = 0; iu < nu; ++iu ) {
     THaVDCCluster* uClust = fU->GetCluster(iu);
@@ -113,18 +116,39 @@ Int_t THaVDCUVPlane::MatchUVClusters()
       if( TMath::Abs(vClust->GetT0()) > max_v_t0 )
 	continue;
 
-      if( uvTrack == 0 ) {
-	// Found two clusters with "small" t0s, and none were found before.
-	// So we pair them and hope for the best.
-	uvTrack = new ( (*fUVTracks)[0] )
-	  THaVDCUVTrack( uClust, vClust, this );
-	uvTrack->CalcDetCoords();
-      } else {
-	// Too bad, another combination with small t0s found. 
-	// This situation is ambiguous (within the limits of this algorithm),
-	// and so we mark the event as not analyzable.
-	MarkBad();
+      testTrack = new THaVDCUVTrack( uClust, vClust, this );
+      testTrack->CalcDetCoords();
+      Double_t xcoord = testTrack->GetX();
+      Double_t ycoord = testTrack->GetY();
+      delete testTrack;  testTrack = NULL;
+
+      // Test position to be within drift chambers
+      if( TMath::Abs(ycoord) > fU->GetYSize() ||
+	  TMath::Abs(xcoord) > fU->GetXSize()){
+	      continue;
       }
+
+      delete testTrack; testTrack = NULL;
+
+      // FIXME:  We should just mark this one "region" bad. 
+      // Pairs that are sufficiently far away from this should
+      // still be OK to use (if they're not ambiguious themselves)
+      if( uClust->IsPaired() || vClust->IsPaired() ){
+	      // Found a pair that was already some good match
+	      // We say there is an ambiguity and we stop
+	      MarkBad();
+	      continue;
+      }
+
+      uClust->SetPaired(kTRUE);
+      vClust->SetPaired(kTRUE);
+
+	// Found two clusters with "small" t0s
+	// So we pair them and hope for the best.
+	
+	uvTrack = new ( (*fUVTracks)[ntrk++] ) 
+		THaVDCUVTrack( uClust, vClust, this );
+	uvTrack->CalcDetCoords();
     }
   }
 
@@ -212,7 +236,6 @@ Int_t THaVDCUVPlane::CoarseTrack()
 
   // The current logic in MatchUVClusters should always produces at most
   // one cluster pair or mark the event as ambiguous
-  assert( n_pairs <= 1 || IsBad() );
 
   return 0;
 }

@@ -53,6 +53,7 @@ public:
     return (THaVDCHit*)fHits->UncheckedAt(i); }
 
   Int_t          GetNWiresHit()      const { return fNWiresHit; } 
+  Int_t          GetNpass()      const { return fNpass; } 
 
   Double_t       GetZ()              const { return fZ; }
   Double_t       GetWBeg()           const { return fWBeg; }
@@ -64,6 +65,7 @@ public:
   Double_t       GetDriftVel()       const { return fDriftVel; }
   Double_t       GetMinTime()        const { return fMinTime; }
   Double_t       GetMaxTime()        const { return fMaxTime; }
+  Double_t       GetMaxTdiff()        const { return fMaxTdiff; }
   Double_t       GetT0Resolution()   const { return fT0Resolution; }
 
 //   Double_t GetT0() const { return fT0; }
@@ -86,6 +88,9 @@ protected:
   Int_t fNMaxGap;            // Max gap in wire numbers in a cluster
   Int_t fMinTime, fMaxTime;  // Min and Max limits of TDC times for clusters
   Int_t fFlags;              // Analysis control flags
+  Int_t fNpass;              // Number of hit passes
+
+  Double_t fMinTdiff, fMaxTdiff;  // Min and Max limits of times between wires in cluster
 
   Double_t fZ;            // Z coordinate of plane in U1 coord sys (m)
   Double_t fWBeg;         // Position of 1-st wire in E-arm coord sys (m)

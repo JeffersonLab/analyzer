@@ -37,7 +37,8 @@ THaVDCCluster::THaVDCCluster( const THaVDCCluster& rhs ) :
   fT0(rhs.fT0), fSigmaT0(rhs.fSigmaT0), fPivot(rhs.fPivot), 
   fIPivot(-1),
   fTimeCorrection(rhs.fTimeCorrection), fFitOK(rhs.fFitOK),
-  fChi2(rhs.fChi2), fNDoF(rhs.fNDoF)
+  fChi2(rhs.fChi2), fNDoF(rhs.fNDoF),
+  fClsStr(-1), fClsEnd(-1), fIsPaired(rhs.fIsPaired)
 {
   // Copy constructor
 
@@ -88,6 +89,18 @@ void THaVDCCluster::AddHit(THaVDCHit * hit)
 
   if (fSize < MAX_SIZE) {
     fHits[fSize++] = hit;
+    if( fSize == 1 ){
+	    fClsStr = hit->GetWireNum();
+	    fClsEnd = hit->GetWireNum();
+    } else {
+	    if( fClsEnd < hit->GetWireNum() ){
+		    fClsEnd = hit->GetWireNum();
+	    }
+	    if( fClsStr > hit->GetWireNum() ){
+		    fClsStr = hit->GetWireNum();
+	    }
+    }
+    
   } else if( fPlane && fPlane->GetDebug()>0 ) {
     Warning( "AddHit()", "Max cluster size reached.");
   }

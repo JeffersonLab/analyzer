@@ -16,7 +16,7 @@ class THaVDCHit : public TObject {
 public:
   THaVDCHit( THaVDCWire* wire=0, Int_t rawtime=0, Double_t time=0.0 )
     : fWire(wire), fRawTime(rawtime), fTime(time), fDist(kBig), fdDist(1.0),
-      ftrDist(kBig), fTrkNum(0) {}
+      ftrDist(kBig), fTrkNum(0), fClsNum(-1) {}
   virtual ~THaVDCHit() {}
 
   virtual Double_t ConvertTimeToDist(Double_t slope);
@@ -32,6 +32,7 @@ public:
   Double_t GetPos()     const { return fWire->GetPos(); } //Position of hit wire
   Double_t GetdDist()   const { return fdDist; }
   Int_t    GetTrkNum()  const { return fTrkNum; }
+  Int_t    GetClsNum()  const { return fClsNum; }
 
   void     SetWire(THaVDCWire * wire) { fWire = wire; }
   void     SetRawTime(Int_t time)     { fRawTime = time; }
@@ -41,6 +42,7 @@ public:
   void     SetFitDist(Double_t dist)  { ftrDist = dist; }
   void     SetLocalFitDist(Double_t dist)  { fltrDist = dist; }
   void     SetTrkNum(Int_t num)       { fTrkNum = num; }
+  void     SetClsNum(Int_t num)       { fClsNum = num; }
 
 protected:
   static const Double_t kBig;  //! Arbitrary lrg number indicating invalid data
@@ -53,6 +55,7 @@ protected:
   Double_t    ftrDist;   // (Perpendicular) distance from the global track (m)
   Double_t    fltrDist;  // (Perpendicular) distance from the local track (m)
   Int_t       fTrkNum;   // Number of the track using this hit (0 = unused)
+  Int_t       fClsNum;   // Number of the cluster using this hit (-1 = unused)
 
  private:
   THaVDCHit( const THaVDCHit& );
