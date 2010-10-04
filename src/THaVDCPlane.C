@@ -117,10 +117,13 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
   Int_t prev_first = 0, prev_nwires = 0;
   // Set up the detector map
   fDetMap->Clear();
-  for(int i=0; i<4; i++) {
-    Int_t crate, slot, lo, hi;
-    // Get crate, slot, low channel and high channel from file
+  do {
     fgets( buff, LEN, file );
+    // bad kludge to allow a variable number of detector map lines
+    if( strchr(buff, '.') ) // any floating point number indicates end of map
+      break;
+    // Get crate, slot, low channel and high channel from file
+    Int_t crate, slot, lo, hi;
     if( sscanf( buff, "%d%d%d%d", &crate, &slot, &lo, &hi ) != 4 ) {
       if( *buff ) buff[strlen(buff)-1] = 0; //delete trailing newline
       Error( Here(here), "Error reading detector map line: %s", buff );
@@ -133,10 +136,9 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
     prev_first = first;
     prev_nwires = (hi - lo + 1);
     nWires += prev_nwires;
-  }
+  } while( *buff );  // sanity escape
   // Load z, wire beginning postion, wire spacing, and wire angle
-  fscanf (file, "%lf%lf%lf%lf", &fZ, &fWBeg, &fWSpac, &fWAngle);
-  fgets(buff, LEN, file); // Read to end of line
+  sscanf( buff, "%lf%lf%lf%lf", &fZ, &fWBeg, &fWSpac, &fWAngle );
   fWAngle *= TMath::Pi()/180.0; // Convert to radians
   // FIXME: Read from file
   fTDCRes = 5.0e-10;  // 0.5 ns/chan = 5e-10 s /chan
