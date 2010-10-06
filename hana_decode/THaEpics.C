@@ -26,6 +26,7 @@
 #include <iostream>
 #include <cstring>
 
+
 using namespace std;
 
 void THaEpics::Print() {
@@ -36,11 +37,16 @@ void THaEpics::Print() {
 	 epicsData.begin(); pm != epicsData.end(); pm++) {
     vector<EpicsChan> vepics = pm->second;
     string tag = pm->first;
+    j++;
     cout << "\n\nEpics Var #" << j++;
     cout << "   Var Name =  '"<<tag<<"'"<<endl;
     cout << "Size of epics vector "<<vepics.size();
     for (UInt_t k=0; k<vepics.size(); k++) {
       cout << "\n Tag = "<<vepics[k].GetTag();
+      //      if (strstr(vepics[k].GetTag().c_str(),"VMI3128")!=NULL) {
+      //	cout << "\n GOT ONE "<<k<<endl;
+      //        exit(0);
+      //      }
       cout << "   Evnum = "<<vepics[k].GetEvNum();
       cout << "   Date = "<<vepics[k].GetDate();
       cout << "   Timestamp = "<<vepics[k].GetTimeStamp();
@@ -119,7 +125,7 @@ Int_t THaEpics::FindEvent(const vector<EpicsChan> ep, int event) const
 int THaEpics::LoadData(const int* evbuffer, int evnum)
 { // load data from the event buffer 'evbuffer' 
   // for event nearest 'evnum'.
-     static const size_t DEBUGL = 0, MAX  = 5000, MAXEPV = 100;
+     static const size_t DEBUGL = 0, MAX  = 1000000, MAXEPV = 100;
      char *line, *date;
      const char* cbuff = (const char*)evbuffer;
      char wtag[MAXEPV+1],wval[MAXEPV+1],sunit[MAXEPV+1];
@@ -132,6 +138,12 @@ int THaEpics::LoadData(const int* evbuffer, int evnum)
      }
      size_t len = sizeof(int)*(evbuffer[0]+1);  
      size_t nlen = TMath::Min(len,MAX);
+     if (DEBUGL) cout << "Enter loadData, len = "<<len<<" nlen "<<nlen<<endl;
+     if (len > nlen) {
+       cout << "THaEpics: ERROR: len to big !"<<endl;
+       cout << "Need to recompile with a bigger param. MAX "<<endl;
+       exit(0);
+     }
      // Nothing to do?
      if( nlen<16 ) return 0;
      // Set up buffer for parsing
