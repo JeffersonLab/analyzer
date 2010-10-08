@@ -133,7 +133,8 @@ protected:
    std::multimap<std::string, Int_t> normmap;
    Int_t *rawdata;
    Bool_t coda_open;
-   Int_t header, crate, evstr_type;
+   UInt_t header;
+   Int_t crate, evstr_type;
    std::string vme_server;
    int vme_port, clkslot, clkchan;
    int icurslot, icurchan;

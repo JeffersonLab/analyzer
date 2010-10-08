@@ -553,7 +553,7 @@ Int_t THaScaler::ExtractRaw(const Int_t* data, int dlen) {
      return 0;
   }
   for (i = 0; i < ndat; i++) {
-    if (((data[i]&0xfff00000) == (unsigned long)header) &&
+    if (((data[i]&0xfff00000) == header) &&
     ((data[i]&0x0000ff00) == 0) ) { // found this crate's data
       if (lfirst) {
         lfirst = 0;
@@ -607,7 +607,7 @@ Int_t THaScaler::LoadDataHistoryFile(const char* filename, int run_num, int hdec
         int nextrun = dat.find(runstr,0);
         if (nextrun >= 0) goto decoder;
 	UInt_t htst = header_str_to_base16(dat);
-        if ((htst&0xfff00000) == (unsigned long)header) {
+        if ((htst&0xfff00000) == header) {
           int slot = (htst&0xf0000)>>16;
 	  int numchan = (htst&0xff);
           for (int j = 0; j < numchan; j++) {
@@ -651,7 +651,7 @@ Int_t THaScaler::LoadDataOnline(const char* server, int port) {
 #define MSGSIZE  50
 struct request { 
    int reply;
-   long ibuf[16*MAXBLK]; 
+   int ibuf[16*MAXBLK]; 
    char message[MSGSIZE];
    int clearflag; int checkend;
 };
