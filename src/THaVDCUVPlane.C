@@ -123,8 +123,7 @@ Int_t THaVDCUVPlane::MatchUVClusters()
       delete testTrack;  testTrack = NULL;
 
       // Test position to be within drift chambers
-      if( TMath::Abs(ycoord) > fU->GetYSize() ||
-	  TMath::Abs(xcoord) > fU->GetXSize()){
+      if( TMath::Abs(ycoord) > fU->GetYSize() ){
 	      continue;
       }
 
@@ -136,12 +135,21 @@ Int_t THaVDCUVPlane::MatchUVClusters()
       if( uClust->IsPaired() || vClust->IsPaired() ){
 	      // Found a pair that was already some good match
 	      // We say there is an ambiguity and we stop
+	      uClust->SetAmbiguous(kTRUE);
+	      vClust->SetAmbiguous(kTRUE);
+
+	      if( uClust->GetPaired() ){
+		uClust->GetPaired()->SetAmbiguous(kTRUE);
+	      }
+	      if( vClust->GetPaired() ){
+		vClust->GetPaired()->SetAmbiguous(kTRUE);
+	      }
 	      MarkBad();
 	      continue;
       }
 
-      uClust->SetPaired(kTRUE);
-      vClust->SetPaired(kTRUE);
+      uClust->SetPaired(vClust);
+      vClust->SetPaired(uClust);
 
 	// Found two clusters with "small" t0s
 	// So we pair them and hope for the best.

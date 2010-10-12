@@ -38,7 +38,7 @@ THaVDCCluster::THaVDCCluster( const THaVDCCluster& rhs ) :
   fIPivot(-1),
   fTimeCorrection(rhs.fTimeCorrection), fFitOK(rhs.fFitOK),
   fChi2(rhs.fChi2), fNDoF(rhs.fNDoF),
-  fClsStr(-1), fClsEnd(-1), fIsPaired(rhs.fIsPaired)
+  fClsStr(-1), fClsEnd(-1), fPaired(rhs.fPaired), fAmbig(rhs.fAmbig)
 {
   // Copy constructor
 
@@ -70,6 +70,8 @@ THaVDCCluster& THaVDCCluster::operator=( const THaVDCCluster& rhs )
     fLocalSlope = rhs.fLocalSlope;
     fChi2       = rhs.fChi2;
     fNDoF       = rhs.fNDoF;
+    fPaired     = rhs.fPaired;
+    fAmbig      = rhs.fAmbig;
     for( int i = 0; i < fSize; i++ )
       fHits[i] = rhs.fHits[i];
   }
@@ -136,6 +138,8 @@ void THaVDCCluster::ClearFit()
   fLocalSlope = kBig;
   fChi2       = kBig;
   fNDoF       = 0.0;
+  fPaired     = 0;
+  fAmbig      = kFALSE;
 }
 
 //_____________________________________________________________________________
@@ -267,9 +271,9 @@ void THaVDCCluster::FitTrack( EMode /* mode */ )
   // 
   // FIXME: kT0 and kFull are not yet implemented. Identical to kSimple.
 
-  //  FitSimpleTrack();
+//   FitSimpleTrack();
   //  FitSimpleTrackWgt();
-  // LinearClusterFitWithT0();
+  //LinearClusterFitWithT0();
   FitNLTrack();
   CalcLocalDist();
 }
@@ -794,6 +798,8 @@ void THaVDCCluster::FitNLTrack()
     yArr[i] = fHits[i]->GetPos();
   }
 
+  Double_t pvttime = fHits[pivotNum]->GetTime();
+
   Double_t mi;   //   
   Double_t bi;   //   Initial guesses for m,b and t0.
   Double_t t0i;  //
@@ -812,7 +818,6 @@ void THaVDCCluster::FitNLTrack()
   Double_t b_tot[4];
   Double_t t0_tot[4];
   Double_t err_it[itMax+1], m_it[itMax+1], b_it[itMax+1], t0_it[itMax+1];
-
 
   const Int_t nSignCombos = 4; //Number of different sign combinations
   for (int i = 0; i < nSignCombos; i++) {
@@ -957,10 +962,18 @@ void THaVDCCluster::FitNLTrack()
 	
 
       }
-      if(err_tot[i] < bestFit || i ==0){
-	fLocalSlope = m_tot[i];
-	fInt = b_tot[i];
-	fT0 = t0_tot[i];
+      if( err_tot[i] < bestFit || i ==0  ){
+	  fLocalSlope = m_tot[i];
+	  fInt = b_tot[i];
+	
+	// 9/15 SPR - This is a dirty hack which
+	// is better than misfitting
+	if( t0_tot[i] < pvttime ){
+	  fT0 = t0_tot[i];
+	} else {
+	  fT0 = pvttime;
+	}
+
 	bestFit = err_tot[i];
       }
   }

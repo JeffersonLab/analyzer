@@ -425,6 +425,7 @@ Int_t THaVDCPlane::DefineVariables( EMode mode )
     { "cltrknum", "Cluster track number (0=unused)", "fClusters.THaVDCCluster.fTrkNum" },
     { "clstr", "Cluster start wire", "fClusters.THaVDCCluster.fClsStr" },
     { "clend", "Cluster end wire", "fClusters.THaVDCCluster.fClsEnd" },
+    { "ambig", "UV Association ambiguous", "fClusters.THaVDCCluster.fAmbig" },
     { "npass", "Number of hit passes for cluster", "GetNpass()" },
     { 0 }
   };
@@ -648,6 +649,9 @@ Int_t THaVDCPlane::FindClusters()
 
   fNpass = 0;
 
+  Int_t nwires, span;
+  UInt_t j;
+
   //  Loop while we're making new clusters
   while( nLastUsed != nUsed ){
      fNpass++;
@@ -672,8 +676,8 @@ Int_t THaVDCPlane::FindClusters()
 
        // Consider this hit the beginning of a potential new cluster.
        // Find the end of the cluster.
-       Int_t span = 0, nwires = 1;
-       UInt_t j;
+       span = 0; 
+       nwires = 1;
        while( ++i < nHits ) {
 	  THaVDCHit* nextHit = GetHit(i);
 	  assert( nextHit );    // should never happen, else bug in Decode

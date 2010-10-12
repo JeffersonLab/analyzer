@@ -24,7 +24,7 @@ public:
     fSize(0), fPlane(owner), fTrack(0), fTrkNum(0), fSlope(kBig),
     fLocalSlope(kBig), fSigmaSlope(kBig), fInt(kBig), fSigmaInt(kBig),
     fT0(kBig), fSigmaT0(kBig), fPivot(0), fTimeCorrection(0.0),
-    fFitOK(false), fChi2(kBig), fNDoF(0.0), fIsPaired(kFALSE)  {}
+    fFitOK(false), fChi2(kBig), fNDoF(0.0), fPaired(0), fAmbig(kFALSE)  {}
   THaVDCCluster( const THaVDCCluster& );
   THaVDCCluster& operator=( const THaVDCCluster& );
   virtual ~THaVDCCluster();
@@ -66,7 +66,10 @@ public:
   Double_t       GetNDoF()           const { return fNDoF; }
   Bool_t         IsFitOK()           const { return fFitOK; }
   Bool_t         IsUsed()            const { return (fTrack != 0); }
-  Bool_t         IsPaired()          const { return fIsPaired; }
+  Bool_t         IsPaired()          const { if(fPaired){return kTRUE;} else {return kFALSE;} }
+  THaVDCCluster*  GetPaired()        const { return fPaired; }
+
+  void           SetAmbiguous( Bool_t a ) { fAmbig  = a;}
   
   void           SetPlane( THaVDCPlane* plane )     { fPlane = plane; }
   void           SetIntercept( Double_t intercept ) { fInt = intercept; }
@@ -74,7 +77,7 @@ public:
   void           SetPivot( THaVDCHit* piv)          { fPivot = piv; }
   void           SetTimeCorrection( Double_t dt )   { fTimeCorrection = dt; }
   void           SetTrack( THaTrack* track );
-  void           SetPaired( Bool_t b ){ fIsPaired = b; }
+  void           SetPaired( THaVDCCluster *p ){ fPaired = p; }
 
   //    void SetUVTrack(THaVDCUVTrack * uvtrack) {fUVTrack = uvtrack;} 
 
@@ -107,7 +110,9 @@ protected:
   Int_t          fClsStr; 	     // Starting wire number
   Int_t          fClsEnd;            // Ending wire number
 
-  Bool_t	 fIsPaired;
+  Bool_t         fAmbig;
+
+  THaVDCCluster* fPaired;
 
   void   CalcLocalDist();     // calculate the local track to wire distances
 
