@@ -6,9 +6,6 @@ export WITH_DEBUG = 1
 # Compile debug version
 #export DEBUG = 1
 
-# Profiling with gprof
-#export PROFILE = 1
-
 # Include libraries for reading from the ET ring
 #  (only for adaq? machines with the Coda libraries )
 #export ONLINE_ET = 1
@@ -17,7 +14,7 @@ export WITH_DEBUG = 1
 # SOVERSION should be numerical only - it becomes the shared lib soversion
 # EXTVERS (optional) describes the build, e.g. "dbg", "et", "gcc33" etc.
 SOVERSION  := 1.5
-PATCH   := 15
+PATCH   := 16
 VERSION := $(SOVERSION).$(PATCH)
 EXTVERS :=
 #EXTVERS := -et
@@ -128,11 +125,6 @@ MAKEDEPEND   := gcc
 
 ifdef WITH_DEBUG
 DEFINES      += -DWITH_DEBUG
-endif
-
-ifdef PROFILE
-CXXFLG       += -g -pg
-LDFLAGS      += -g -pg
 endif
 
 CXXFLAGS      = $(CXXFLG) $(CXXEXTFLG) $(INCLUDES) $(DEFINES)
