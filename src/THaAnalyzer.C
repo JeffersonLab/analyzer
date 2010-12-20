@@ -1289,8 +1289,7 @@ Int_t THaAnalyzer::Process( THaRunBase* run )
     fRun->Write("Run_Data");  // Save run data to first ROOT file
   }
 
-  while ( !terminate && (status = ReadOneEvent()) != EOF && 
-	  fNev < nlast ) {
+  while ( !terminate && fNev < nlast && (status = ReadOneEvent()) != EOF ) {
 
     //--- Skip events.with errors, unless fatal
     if( status ) {
