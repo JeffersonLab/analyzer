@@ -133,6 +133,7 @@ int THaCrateMap::SetModelSize( int crate, int slot, UShort_t imodel )
     { 6401, 64, 1024 },  // JLab F1 TDC normal resolution
     { 3201, 32, 512 },  // JLab F1 TDC high resolution
     { 792, 32, 32 },  // CAEN V792 QDC
+    { 1190, 128, 1024 }, //CAEN 1190A
     { 0 }
   };
   const ModelPar_t* item = modelpar;

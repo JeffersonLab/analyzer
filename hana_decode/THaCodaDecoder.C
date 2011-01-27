@@ -985,6 +985,62 @@ Int_t THaCodaDecoder::vme_decode( Int_t roc, const Int_t* evbuffer,
 	    p = loc-1; // so p++ will point to the first word that didn't match
 	  }
 	  break;
+	case 1190:	// CAEN 1190A MultiHit TDC
+		{
+			loc = p;
+			loc++;  //skip dummy word
+			loc++;	//skip the Global header.  
+			Int_t nword=2;	//Number of words
+			Int_t nwordchip=0;  //Number of data words per chip (indcluding header and footer)
+			/*For each chip (4) there is a TDC header and TDC trailer.  These contain pieces of information that are either 
+			redundant or numbers that are assigned by other modules.  As such we skip the TDC header.  We use the TDC trailer 
+			to check the number of words for each chip.  Then the global trailer to check the number of words for the module.*/
+			while((loc <= pevlen)&&(((*loc)&0xc0000000)==0x00000000)){
+				//Skipping Header
+				if(((*loc)&0xf8000000)==0x08000000){
+					loc++;
+					nwordchip++;
+					nword++; 
+				}
+				//Reading Data Words
+				if(((*loc)&0xf8000000)==0x00000000){
+					chan=((*loc)&0x03f80000)>>19;	
+					raw=((*loc)&0x0007ffff);
+					status = crateslot[idx(roc,slot)]->loadData("tdc",chan,raw,raw);
+					//cout<<"tdc   "<<chan<<"   "<<raw<<"   "<<raw<<endl;		
+					if(status != SD_OK) goto err;
+					//Nword and pointer arithmatic 
+					loc++;
+					nword++;
+					nwordchip++;
+				}
+				//Reading Trailer
+				if(((*loc)&0xf8000000)==0x18000000){
+					nwordchip++;
+					nword++; 
+					if(((*loc)&0x000007ff)!=nwordchip){
+						cout<<event_num<<" TDC trailer nword mismatch "<<nwordchip<<" "<<hex<<((*loc)&0x000007ff)<<dec<<endl;
+						return HED_ERR;
+					} else{
+						nwordchip=0;
+					}
+					loc++;
+				}
+			}
+			//Once data has been decoded error check with global trailer
+			if(((*loc)&0xf8000000)!=0x80000000){
+				nword++;
+				//cout<<event_num<<" This global trailer was not written to the data stream "<<hex<<(*loc)<<" was written instead"<<dec<<endl;
+				//return HED_ERR;
+			} else{
+				if ((((*loc)&0x001fffe0)>>5)!=nword) {
+				cout<<"Global Word Count mismatch "<<nword<<" "<<hex<<(*p)<<endl;
+				cout<<(((*loc)&0x001fffe0)>>5)<<" and "<<nword<<" are obviously not the same"<<endl;
+				//return HED_ERR;
+				}
+			}			
+		}
+		break;
 
 	case 250:   // JLab 250MHz FADC
 	  {
