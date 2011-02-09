@@ -390,6 +390,7 @@ const char* Here( const char* here, const char* prefix )
 {
   // Utility function for error messages
 
+  // FIXME: STATIC BUFFER NOT THREAD SAFE!!!
   static char buf[256];
   buf[0] = 0;
   if(prefix != NULL) {
@@ -927,13 +928,13 @@ bool THaAnalysisObject::IsTag( const char* buf )
 }
 
 //_____________________________________________________________________________
-static Int_t ReadDBline( FILE* file, string& line, size_t MAX = 1UL<<14 )
+static Int_t ReadDBline( FILE* file, string& line, size_t MAX = 1048576 )
 {
   // Get a text line from the database file 'file'. Strip all comments
   // (anything after a #). Trim trailing whitespacel; thus, pure comment lines
   // (starting with #) result in an empty string. 
   // Concatenate continuation lines (ending with \).
-  // Maximum size to read is MAX (default 16kB).
+  // Maximum size to read is MAX (default 1MiB).
 
   line.erase();
 
