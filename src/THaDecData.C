@@ -143,8 +143,7 @@ class BdataLoc : public TNamed {
   //FIXME: not really needed if the global analyzer variable is right in here
    UInt_t Get(Int_t i=0) { 
      return (i >= 0 && ndata > i) ? rdata[i] : 0; }
-  //FIXME: this should be operator==( const char* )
-   Bool_t ThisIs(const char* aname) { return fName==aname;}
+  Bool_t operator==( const char* aname ) { return fName==aname; }
   // operator== and != compare the hardware definitions of two BdataLoc's
   Bool_t operator==( const BdataLoc& rhs ) const {
     return ( search_choice == rhs.search_choice && crate == rhs.crate &&
@@ -168,7 +167,9 @@ class BdataLoc : public TNamed {
    UInt_t header;              // header (unique either in data or in crate)
    Int_t ntoskip;              // how far to skip beyond header
    
-  //FIXME: this can be a vector if we carefully keep track of the data's address
+  //FIXME: each subclass of BdataLoc should support its own data type here.
+  // Not all hardware is/needs multihit capability. Should support single-value
+  // data as well.
    UInt_t rdata[MxHits];       //[ndata] raw data (to accom. multihit chanl)
    Int_t  ndata;               // number of relevant entries
  private:
@@ -256,8 +257,8 @@ void THaDecData::Clear( Option_t* )
   edtpr      = 0;
   lenroc12   = 0;
   lenroc16   = 0;
-  for( Iter_t p = fWordLoc.begin();  p != fWordLoc.end(); p++)  (*p)->Clear();
-  for( Iter_t p = fCrateLoc.begin(); p != fCrateLoc.end(); p++) (*p)->Clear();
+  for( Iter_t p = fWordLoc.begin();  p != fWordLoc.end(); ++p)  (*p)->Clear();
+  for( Iter_t p = fCrateLoc.begin(); p != fCrateLoc.end(); ++p) (*p)->Clear();
 }
 
 //_____________________________________________________________________________
@@ -266,7 +267,7 @@ void THaDecData::Reset( Option_t* )
   // Reset the object (zero all data, including histograms)
 
   Clear();
-  for( vector<TH1F*>::iterator it = hist.begin(); it != hist.end(); it++ )
+  for( vector<TH1F*>::iterator it = hist.begin(); it != hist.end(); ++it )
     (*it)->Reset();
   fgVdcEffFirst = 2;
 }
@@ -314,19 +315,19 @@ Int_t THaDecData::SetupDecData( const TDatime* run_time, EMode mode )
 
   if( mode != kDefine ) {
     // Undefine the dynamically-defined global variables
-     for( Iter_t p = fCrateLoc.begin(); p != fCrateLoc.end(); p++ ) {
+     for( Iter_t p = fCrateLoc.begin(); p != fCrateLoc.end(); ++p ) {
       DefineChannel(*p,mode);
       if( mode == kDelete )
 	delete *p;
     }
-    for( Iter_t p = fWordLoc.begin();  p != fWordLoc.end(); p++ ) {
+    for( Iter_t p = fWordLoc.begin();  p != fWordLoc.end(); ++p ) {
       DefineChannel(*p,mode);
       if( mode == kDelete )
 	delete *p;
     }
     if( mode == kDelete ) {
       const HistDef* h = histdefs;
-      for( vector<TH1F*>::iterator it = hist.begin(); it != hist.end(); it++ ) {
+      for( vector<TH1F*>::iterator it = hist.begin(); it != hist.end(); ++it ) {
 	// Verify that each histogram is still in memory. It usually isn't because
 	// ROOT deletes it when the output file is closed.
 	assert( h && h->name );
@@ -364,7 +365,7 @@ Int_t THaDecData::SetupDecData( const TDatime* run_time, EMode mode )
     vector<string> fnames = GetDBFileList( name, date, Here(here));
     // always look for 'decdata.map' in the current directory first.
     fnames.insert(fnames.begin(),string("decdata.map"));
-    if( !fnames.empty() ) {
+    if( !fnames.empty() ) { //keep this test so we may comment out prev line
       vector<string>::iterator it = fnames.begin();
       do {
 	if( fDebug>0 ) {
@@ -410,7 +411,7 @@ Int_t THaDecData::SetupDecData( const TDatime* run_time, EMode mode )
 	if( strvect[0] == pdef->name ) { 
 	  found = true; break;
 	}
-	pdef++;
+	++pdef;
       }
       Int_t slot(0), chan(0), skip(0);
       UInt_t header(0);
@@ -444,14 +445,14 @@ Int_t THaDecData::SetupDecData( const TDatime* run_time, EMode mode )
 	//
 	TString bname = b->GetName();
 	Iter_t p;
-	for( p = fWordLoc.begin();  p != fWordLoc.end(); p++ ) {
+	for( p = fWordLoc.begin();  p != fWordLoc.end(); ++p ) {
 	  if( bname == (*p)->GetName() ) {
 	    already_defined = true;
 	    break;
 	  }
 	}
 	if( !already_defined ) {
-	  for( p = fCrateLoc.begin(); p != fCrateLoc.end(); p++ ) {
+	  for( p = fCrateLoc.begin(); p != fCrateLoc.end(); ++p ) {
 	    if( bname == (*p)->GetName() ) {
 	      already_defined = true;
 	      break;
@@ -513,6 +514,11 @@ BdataLoc* THaDecData::DefineChannel(BdataLoc *b, EMode mode, const char* desc)
   if( gHaVars ) {
     string nm(fPrefix); nm += b->GetName();
     if (mode==kDefine)
+      //FIXME: one should be able to define scalar-type global variables
+      // using a fixed-size variable-number-of-entry array (rdata) is a 
+      // terrible kludge to squeeze in support for multihit modules.
+      // This problem will go away automatically if BdataLoc turns into 
+      // a class hierachy and this function is part of each subclass
       gHaVars->Define(nm.c_str(),desc,b->rdata[0],&(b->ndata));
     else if (mode==kDelete) {
       gHaVars->RemoveName(nm.c_str());
@@ -533,7 +539,7 @@ Int_t THaDecData::End( THaRunBase* )
 void THaDecData::WriteHist()
 {
   //  cout << "Writing Bob Dec Data histos"<<endl<<flush;
-  for (vector<TH1F*>::iterator it = hist.begin(); it != hist.end(); it++)
+  for (vector<TH1F*>::iterator it = hist.begin(); it != hist.end(); ++it)
     (*it)->Write();
 }
 
@@ -614,7 +620,7 @@ Int_t THaDecData::DefaultMap() {
 
 // Bit pattern for trigger definition
 
-   for (UInt_t i = 0; i < bits.GetNbits(); i++) {
+   for (UInt_t i = 0; i < bits.GetNbits(); ++i) {
      fCrateLoc.push_back(new BdataLoc(Form("bit%d",i+1), 3, (Int_t) 5, 64+i));
    }
 
@@ -645,11 +651,11 @@ Int_t THaDecData::Decode(const THaEvData& evdata)
 // For each raw data registerd in fCrateLoc, get the data if it belongs to a 
 // combination (crate, slot, chan).
 
-  for( Iter_t p = fCrateLoc.begin(); p != fCrateLoc.end(); p++) {
+  for( Iter_t p = fCrateLoc.begin(); p != fCrateLoc.end(); ++p) {
     BdataLoc *dataloc = *p;
     if ( dataloc->IsSlot() ) {  
       for (Int_t i = 0; i < evdata.GetNumHits(dataloc->crate, 
-		         dataloc->slot, dataloc->chan); i++) {
+		         dataloc->slot, dataloc->chan); ++i) {
 	dataloc->Load(evdata.GetData(dataloc->crate, dataloc->slot, 
 				     dataloc->chan, i));
       }
@@ -662,10 +668,10 @@ Int_t THaDecData::Decode(const THaEvData& evdata)
 
   //FIXME: This can be made faster if each header is followed by the offset
   // to the next header. Is it?
-  for (Iter_t p = fWordLoc.begin(); p != fWordLoc.end(); p++) {
+  for (Iter_t p = fWordLoc.begin(); p != fWordLoc.end(); ++p) {
     BdataLoc *dataloc = *p;
     for( Int_t i = 0; 
-	 i+dataloc->ntoskip <= evdata.GetRocLength(dataloc->crate); i++ ) {
+	 i+dataloc->ntoskip <= evdata.GetRocLength(dataloc->crate); ++i ) {
       if( static_cast<UInt_t>( evdata.GetRawData(dataloc->crate,i) )
 	  == dataloc->header)
 	dataloc->Load(evdata.GetRawData(dataloc->crate, i + dataloc->ntoskip));
@@ -674,8 +680,8 @@ Int_t THaDecData::Decode(const THaEvData& evdata)
 
   evtype = evdata.GetEvType();   // CODA event type 
 
-  for( Iter_t p = fCrateLoc.begin(); p != fCrateLoc.end(); p++) {
-    BdataLoc *dataloc = *p;
+  for( Iter_t p = fCrateLoc.begin(); p != fCrateLoc.end(); ++p) {
+    BdataLoc& dataloc = **p;
     bool found = false;
 
 // bit pattern of triggers
@@ -683,9 +689,9 @@ Int_t THaDecData::Decode(const THaEvData& evdata)
   // FIXME: dozens of string comparisons for every event?!?
   // should store pointer to member data with the corresponding BdataLoc object
   // otherwise use a hash list
-    for (UInt_t i = 0; i < bits.GetNbits(); i++) {
-      if ( dataloc->ThisIs(Form("bit%d",i+1)) ) {
-	TrigBits(i+1,dataloc);
+    for (UInt_t i = 1; i <= bits.GetNbits(); ++i) {
+      if ( dataloc == Form("bit%d",i) ) {
+	TrigBits(i,&dataloc);
 	found = true;
 	break;
       }
@@ -693,36 +699,36 @@ Int_t THaDecData::Decode(const THaEvData& evdata)
     if( found ) continue;
 
 // synch ADCs
-    if ( dataloc->ThisIs("synchadc1") ) synchadc1  = dataloc->Get();
-    else if ( dataloc->ThisIs("synchadc2") ) synchadc2  = dataloc->Get();
-    else if ( dataloc->ThisIs("synchadc3") ) synchadc3  = dataloc->Get();
-    else if ( dataloc->ThisIs("synchadc4") ) synchadc4  = dataloc->Get();
-    else if ( dataloc->ThisIs("synchadc14")) synchadc14 = dataloc->Get();
+    if ( dataloc == "synchadc1" ) synchadc1  = dataloc.Get();
+    else if ( dataloc == "synchadc2" ) synchadc2  = dataloc.Get();
+    else if ( dataloc == "synchadc3" ) synchadc3  = dataloc.Get();
+    else if ( dataloc == "synchadc4" ) synchadc4  = dataloc.Get();
+    else if ( dataloc == "synchadc14" ) synchadc14 = dataloc.Get();
 
 // coincidence times
-    else if ( dataloc->ThisIs("ctimel")) ctimel = dataloc->Get();
-    else if ( dataloc->ThisIs("ctimer")) ctimer = dataloc->Get();
+    else if ( dataloc == "ctimel" ) ctimel = dataloc.Get();
+    else if ( dataloc == "ctimer" ) ctimer = dataloc.Get();
 
 // RF time
-    else if ( dataloc->ThisIs("rftime1") ) rftime1  = dataloc->Get();
-    else if ( dataloc->ThisIs("rftime2") ) rftime2  = dataloc->Get();
+    else if ( dataloc == "rftime1" ) rftime1  = dataloc.Get();
+    else if ( dataloc == "rftime2" ) rftime2  = dataloc.Get();
 
 // EDTM pulser
-    else if ( dataloc->ThisIs("edtpl") ) edtpl  = dataloc->Get();
-    else if ( dataloc->ThisIs("edtpr") ) edtpr  = dataloc->Get();
+    else if ( dataloc == "edtpl" ) edtpl  = dataloc.Get();
+    else if ( dataloc == "edtpr" ) edtpr  = dataloc.Get();
 
   }
 
-  for (Iter_t p = fWordLoc.begin(); p != fWordLoc.end(); p++) {
-    BdataLoc *dataloc = *p;
+  for (Iter_t p = fWordLoc.begin(); p != fWordLoc.end(); ++p) {
+    BdataLoc& dataloc = **p;
 
 // time stamps
-    if ( dataloc->ThisIs("timestamp")) timestamp = dataloc->Get();
-    else if ( dataloc->ThisIs("timeroc1") ) timeroc1  = dataloc->Get();
-    else if ( dataloc->ThisIs("timeroc2") ) timeroc2  = dataloc->Get();
-    else if ( dataloc->ThisIs("timeroc3") ) timeroc3  = dataloc->Get();
-    else if ( dataloc->ThisIs("timeroc4") ) timeroc4  = dataloc->Get();
-    else if ( dataloc->ThisIs("timeroc14")) timeroc14 = dataloc->Get();
+    if ( dataloc == "timestamp" ) timestamp = dataloc.Get();
+    else if ( dataloc == "timeroc1" ) timeroc1  = dataloc.Get();
+    else if ( dataloc == "timeroc2" ) timeroc2  = dataloc.Get();
+    else if ( dataloc == "timeroc3" ) timeroc3  = dataloc.Get();
+    else if ( dataloc == "timeroc4" ) timeroc4  = dataloc.Get();
+    else if ( dataloc == "timeroc14" ) timeroc14 = dataloc.Get();
 
   }
 
@@ -766,7 +772,7 @@ void THaDecData::VdcEff( )
       memset(eff,0,8*nwire*sizeof(eff[0]));
       memset(xcnt,0,8*nwire*sizeof(xcnt[0]));
     }
-    for( Int_t i = 0; i<8; i++ ) {
+    for( Int_t i = 0; i<8; ++i ) {
       varp[i] = gHaVars->Find(VdcVars[i].c_str());
     }
     fgVdcEffFirst = 0;
@@ -777,7 +783,7 @@ void THaDecData::VdcEff( )
     cout << "\n *************** \n Vdc Effic "<<endl;
 #endif
 
-  for (Int_t ipl = 0; ipl < 8; ipl++) {
+  for (Int_t ipl = 0; ipl < 8; ++ipl) {
 
     Int_t nhit = 0;
     THaVar* pvar = varp[ipl];
@@ -799,7 +805,7 @@ void THaDecData::VdcEff( )
        cout << "nwire "<<n<<"  "<<nwire<<"  "<<nhit<<endl;
 #endif
 
-     for (Int_t i = 0; i < n; i++) {
+     for (Int_t i = 0; i < n; ++i) {
        wire[i] = (Int_t) pvar->GetValue(i);
        if (wire[i]>=0 && wire[i]<nwire)
 	 hitwire[wire[i]]=1;
@@ -811,7 +817,7 @@ void THaDecData::VdcEff( )
 
 // The following does not assume that wire[] is ordered.
 //FIXME: but we can order it
-     for (Int_t i = 0; i < n; i++) {
+     for (Int_t i = 0; i < n; ++i) {
        // look for neighboring hit at +2 wires
        Int_t ngh2=wire[i]+2;
        if (wire[i]<0 || ngh2>=nwire) continue;
@@ -839,7 +845,7 @@ void THaDecData::VdcEff( )
 
        // FIXME: why reset?
        hist[ipl+8]->Reset();
-       for (Int_t i = 0; i < nwire; i++) {
+       for (Int_t i = 0; i < nwire; ++i) {
 
          Double_t xeff = -1;
          if (xcnt[ipl*nwire+i] != 0) {
@@ -854,7 +860,7 @@ void THaDecData::VdcEff( )
      }
 
   }
-  cnt++;
+  ++cnt;
   // FIXME: repeated WriteHist seems to cause problems with splits files
   // (multiple cycles left in output)
   if ((cnt < 2000 && cnt % 500 == 0) ||
@@ -869,7 +875,7 @@ void THaDecData::Print( Option_t* ) const {
 // Dump the data for purpose of debugging.
   cout << "Dump of THaDecData "<<endl;
   cout << "event pattern bits : ";
-  for (UInt_t i = 0; i < bits.GetNbits(); i++) 
+  for (UInt_t i = 0; i < bits.GetNbits(); ++i) 
     cout << " "<<i<<" = "<< bits.TestBitNumber(i)<<"  | ";
   cout << endl;
   cout << "event types,  CODA = "<<evtype<<"   bit pattern = "<<evtypebits<<endl;
@@ -894,10 +900,11 @@ void THaDecData::TrigBits(UInt_t ibit, BdataLoc *dataloc) {
   if( ibit >= kBitsPerByte*sizeof(UInt_t) ) return; //Limit of evtypebits
   bits.ResetBitNumber(ibit);
 
+  //FIXME: MAKE THIS CUT CONFIGURABLE - SEPARATELY FOR EACH BIT!
   const UInt_t cutlo = 200;
   const UInt_t cuthi = 1500;
   
-  for (int ihit = 0; ihit < dataloc->NumHits(); ihit++) {
+  for (int ihit = 0; ihit < dataloc->NumHits(); ++ihit) {
     if (dataloc->Get(ihit) > cutlo && dataloc->Get(ihit) < cuthi) {
       bits.SetBitNumber(ibit);
       evtypebits |= BIT(ibit);
