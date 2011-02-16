@@ -14,7 +14,7 @@ export WITH_DEBUG = 1
 # SOVERSION should be numerical only - it becomes the shared lib soversion
 # EXTVERS (optional) describes the build, e.g. "dbg", "et", "gcc33" etc.
 SOVERSION  := 1.5
-PATCH   := 20
+PATCH   := 21
 VERSION := $(SOVERSION).$(PATCH)
 EXTVERS :=
 #EXTVERS := -et
@@ -180,7 +180,8 @@ SRC          := src/THaFormula.C src/THaVform.C src/THaVhist.C \
 		src/THaHelicityDet.C src/THaG0HelicityReader.C \
 		src/THaG0Helicity.C src/THaADCHelicity.C src/THaHelicity.C \
 		src/THaPhotoReaction.C src/THaSAProtonEP.C \
-		src/THaTextvars.C
+		src/THaTextvars.C src/THaQWEAKHelicity.C \
+		src/THaQWEAKHelicityReader.C
 
 ifdef ONLINE_ET
 SRC += src/THaOnlRun.C
