@@ -901,7 +901,7 @@ void THaDecData::TrigBits(UInt_t ibit, BdataLoc *dataloc) {
   bits.ResetBitNumber(ibit);
 
   //FIXME: MAKE THIS CUT CONFIGURABLE - SEPARATELY FOR EACH BIT!
-  const UInt_t cutlo = 200;
+  const UInt_t cutlo = 0;
   const UInt_t cuthi = 1500;
   
   for (int ihit = 0; ihit < dataloc->NumHits(); ++ihit) {
