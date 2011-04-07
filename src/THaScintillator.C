@@ -500,6 +500,12 @@ Int_t THaScintillator::Decode( const THaEvData& evdata )
       Int_t chan = evdata.GetNextChan( d->crate, d->slot, j );
       if( chan < d->lo || chan > d->hi ) continue;     // Not one of my channels
 
+#ifdef WITH_DEBUG      
+      Int_t nhit = evdata.GetNumHits(d->crate, d->slot, chan);
+      if( nhit > 1 )
+	Warning( Here("Decode"), "%d hits on %s channel %d/%d/%d",
+		 nhit, adc ? "ADC" : "TDC", d->crate, d->slot, chan );
+#endif
       // Get the data. Scintillators are assumed to have only single hit (hit=0)
       Int_t data = evdata.GetData( d->crate, d->slot, chan, 0 );
 
