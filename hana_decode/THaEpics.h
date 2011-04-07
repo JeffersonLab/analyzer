@@ -19,11 +19,14 @@ class EpicsChan {
 public:
   EpicsChan()  : tag(""), dtime(""), evnum(0), 
           svalue(""), units(""), dvalue(0) {}
+  EpicsChan( const std::string& _tg, const std::string& _dt, Int_t _ev,
+	     const std::string& _sv, const std::string& _un, Double_t _dv ) :
+    tag(_tg), dtime(_dt), evnum(_ev), svalue(_sv), units(_un), dvalue(_dv)
+  { MakeTime(); }
   virtual ~EpicsChan() {}
   void Load(char *tg, char *dt, Int_t ev, 
             char *sv, char *un, Double_t dv) {
-    tag = tg; dtime = dt;  evnum = ev;  
-    svalue = sv; units = un;  dvalue = dv;
+    tag = tg; dtime = dt; evnum = ev; svalue = sv; units = un; dvalue = dv;
     MakeTime();
   };
   Double_t GetData() const { return dvalue; };

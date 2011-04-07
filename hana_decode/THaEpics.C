@@ -24,8 +24,8 @@
 #include "THaEpics.h"
 #include "TMath.h"
 #include <iostream>
-#include <cstring>
-
+#include <string>
+#include <sstream>
 
 using namespace std;
 
@@ -34,12 +34,12 @@ void THaEpics::Print() {
   cout << "Print of Epics Data : "<<endl;
   Int_t j = 0;
   for (map<string, vector<EpicsChan> >::iterator pm =
-	 epicsData.begin(); pm != epicsData.end(); pm++) {
-    vector<EpicsChan> vepics = pm->second;
-    string tag = pm->first;
+	 epicsData.begin(); pm != epicsData.end(); ++pm) {
+    const vector<EpicsChan>& vepics = pm->second;
+    const string& tag = pm->first;
     j++;
-    cout << "\n\nEpics Var #" << j++;
-    cout << "   Var Name =  '"<<tag<<"'"<<endl;
+    cout << "\n\nEpics Var #" << j;
+    cout << "   Var Name =  \""<<tag<<"\""<<endl;
     cout << "Size of epics vector "<<vepics.size();
     for (UInt_t k=0; k<vepics.size(); k++) {
       cout << "\n Tag = "<<vepics[k].GetTag();
@@ -123,86 +123,60 @@ Int_t THaEpics::FindEvent(const vector<EpicsChan> ep, int event) const
         
 
 int THaEpics::LoadData(const int* evbuffer, int evnum)
-{ // load data from the event buffer 'evbuffer' 
+{ 
+  // load data from the event buffer 'evbuffer' 
   // for event nearest 'evnum'.
-     static const size_t DEBUGL = 0, MAX  = 1000000, MAXEPV = 100;
-     char *line, *date;
-     const char* cbuff = (const char*)evbuffer;
-     char wtag[MAXEPV+1],wval[MAXEPV+1],sunit[MAXEPV+1];
-     float dval;
-     static char fmt[16];
-     static bool first = true;
-     if( first ) { 
-       sprintf(fmt,"%%%us %%n",static_cast<unsigned int>(MAXEPV)); 
-       first = false; 
-     }
-     size_t len = sizeof(int)*(evbuffer[0]+1);  
-     size_t nlen = TMath::Min(len,MAX);
-     if (DEBUGL) cout << "Enter loadData, len = "<<len<<" nlen "<<nlen<<endl;
-     if (len > nlen) {
-       cout << "THaEpics: ERROR: len to big !"<<endl;
-       cout << "Need to recompile with a bigger param. MAX "<<endl;
-       exit(0);
-     }
-     // Nothing to do?
-     if( nlen<16 ) return 0;
-     // Set up buffer for parsing
-     size_t dlen = nlen-16;
-     char* buf = new char[ dlen+1 ];
-     strncpy( buf, cbuff+16, dlen );
-     buf[dlen] = 0;
-     
-     // Extract date time stamp
-     date = strtok(buf,"\n");
-     if(DEBUGL) cout << "Timestamp: " << date <<endl;
-     // Extract EPICS tags, values, and units.
-     while( (line = strtok(0,"\n")) ) {
-       // Here we parse the line
-       if(DEBUGL) cout << "epics line : "<<line<<endl;
-       wtag[0] = 0; wval[0] = 0;
-       int n;
-       size_t m, slen = strlen(line);
-       if( sscanf(line,fmt,wtag,&n) < 1 ) continue;
-       // Get the value string _including_ spaces and 
-       // excluding the trailing newline
-       m = slen-n;
-       if( m > 0 ) { 
-	 m = TMath::Min(m,MAXEPV); 
-	 strncpy(wval,line+n,m); wval[m] = 0; 
-       }
-       if (DEBUGL) cout << "wtag "<<wtag<<"   wval "<<wval<<endl;
-       m = slen-n;
-       if( m>0 ) { 
-	 m = TMath::Min(m,MAXEPV); 
-	 strncpy(wval,line+n,m); wval[m] = 0; 
-       }
-       // If value is of the form (int num, char* units) parse it.
-       dval = 0;  sunit[0] = 0;  
-       sscanf(wval,"%f  %s",&dval,sunit);
-       if (DEBUGL) cout << "dval "<<dval<<"   sunit "<<sunit<<endl;
-       // Add tag/value/units to the EPICS data.
-       vector<EpicsChan> vepics;
-       vepics.clear();
-       map<string, vector<EpicsChan> >::iterator pm =
-  	   epicsData.find(string(wtag));
-       Bool_t isnew = kTRUE;
-       if (pm != epicsData.end()) {
-	 vepics = pm->second;
-         isnew = kFALSE;
-       } 
-       EpicsChan ec;
-       ec.Load(wtag, date, evnum, wval, sunit, dval);
-       vepics.push_back(ec);
-       if (isnew == kTRUE) {
-         epicsData.insert(epVal(string(wtag), vepics));
-       } else {  
-         epicsData[string(wtag)] = vepics;
-       }
-     }
-     if( DEBUGL==3 ) Print();
-     delete [] buf;
-     return 1;
-}
 
+  const unsigned int DEBUGL = 0;
+
+  const char* cbuff = (const char*)evbuffer;
+  size_t len = sizeof(int)*(evbuffer[0]+1);  
+  if (DEBUGL>1) cout << "Enter loadData, len = "<<len<<endl;
+  if( len<16 ) return 0;
+  // The first 16 bytes of the buffer are the event header
+  len -= 16;
+  cbuff += 16;
+  
+  // Copy data to internal string buffer
+  string buf( cbuff, len );
+
+  // The first line is the time stamp
+  string date;
+  istringstream ib(buf);
+  if( !getline(ib,date) || date.size() < 16 ) {
+    cerr << "Invalid time stamp for EPICS event at evnum = " << evnum << endl;
+    return 0;
+  }
+  if(DEBUGL>1) cout << "Timestamp: " << date <<endl;
+
+  string line;
+  while( getline(ib,line) ) {
+    // Here we parse each line
+    if(DEBUGL>2) cout << "epics line : "<<line<<endl;
+    istringstream il(line);
+    string wtag, wval, sunit;
+    il >> wtag;
+    if( wtag.empty() || wtag[0] == 0 ) continue;
+    istringstream::pos_type spos = il.tellg();
+    il >> wval >> sunit; // Assumes that sunit contains no whitespace
+    Double_t dval;
+    istringstream iv(wval);
+    if( !(iv >> dval) ) {
+      // Mimic the old behavior: if the string doesn't convert to a number,
+      // then wval = rest of string after tag, dval = 0, sunit = empty
+      string::size_type lpos = line.find_first_not_of(" \t",spos);
+      wval = ( lpos != string::npos ) ? line.substr(lpos) : "";
+      dval = 0;
+      sunit.clear();
+    }
+    if(DEBUGL>2) cout << "wtag = "<<wtag<<"   wval = "<<wval
+		      << "   dval = "<<dval<<"   sunit = "<<sunit<<endl;
+
+    // Add tag/value/units to the EPICS data.    
+    epicsData[wtag].push_back( EpicsChan(wtag,date,evnum,wval,sunit,dval) );
+  }
+  if(DEBUGL) Print();
+  return 1;
+}
 
 ClassImp(THaEpics)
