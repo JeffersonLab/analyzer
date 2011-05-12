@@ -51,6 +51,7 @@ endif
 ROOTCFLAGS   := $(shell root-config --cflags)
 ROOTLIBS     := $(shell root-config --libs)
 ROOTGLIBS    := $(shell root-config --glibs)
+ROOTBIN      := $(shell root-config --bindir)
 
 INCLUDES      = $(ROOTCFLAGS) $(addprefix -I, $(INCDIRS) ) -I$(shell pwd)
 
@@ -132,7 +133,7 @@ $(USERLIB):	$(HDR) $(OBJS)
 
 $(USERDICT).cxx: $(HDR) $(LINKDEF)
 	@echo "Generating dictionary $(USERDICT)..."
-	$(ROOTSYS)/bin/rootcint -f $@ -c $(INCLUDES) $^
+	$(ROOTBIN)/rootcint -f $@ -c $(INCLUDES) $^
 
 install:	all
 		$(error Please define install yourself)
