@@ -18,6 +18,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <cstring>
+#include <cerrno>
 #include "evio.h"
 
 using namespace std;
@@ -231,7 +232,6 @@ Finish:
         maxflist = maxflist + 100;
         evlist.Set(maxflist);
         for (i=0; i<=temp[0]; i++) evlist[i]=temp[i];
-        temp.~TArrayI();
      }
      evlist[0] = evlist[0] + 1;  // 0th element = num elements in list
      int n = evlist[0];
@@ -254,41 +254,39 @@ void THaCodaFile::staterr(const char* tried_to, int status) {
 // Note: severe errors can cause job to exit(0)
 // and the user has to pay attention to why.
     if (status == S_SUCCESS) return;  // everything is fine.
-    if (tried_to && !strcmp(tried_to,"open")) {
-       cout << "THaCodaFile: ERROR opening file = " << filename << endl;
-       cout << "Most likely errors are: " << endl;
-       cout << "   1.  You mistyped the name of file ?" << endl;
-       cout << "   2.  The file has length zero ? " << endl;
+    if (status == EOF) {
+      if(CODA_VERBOSE) {
+	cout << "Normal end of file " << filename << " encountered" << endl;
+      }
+      return;
     }
+    cerr << Form("THaCodaFile: ERROR while trying to %s %s: ",
+		 tried_to, filename.Data());
     switch (status) {
       case S_EVFILE_TRUNC :
-	 cout << "THaCodaFile ERROR:  Truncated event on file read" << endl;
-         cout << "Evbuffer size is too small. " << endl;
+	cerr << "Truncated event on file read. Evbuffer size is too small. "
+	     << endl;
       case S_EVFILE_BADBLOCK : 
-        cout << "Bad block number encountered " << endl;
+        cerr << "Bad block number encountered " << endl;
         break;
       case S_EVFILE_BADHANDLE :
-        cout << "Bad handle (file/stream not open) " << endl;
+        cerr << "Bad handle (file/stream not open) " << endl;
         break;
       case S_EVFILE_ALLOCFAIL : 
-        cout << "Failed to allocate event I/O" << endl;
+        cerr << "Failed to allocate event I/O" << endl;
         break;
       case S_EVFILE_BADFILE :
-        cout << "File format error" << endl;
+        cerr << "File format error" << endl;
         break;
       case S_EVFILE_UNKOPTION :
-        cout << "Unknown option specified" << endl;
+        cerr << "Unknown file open option specified" << endl;
         break;
       case S_EVFILE_UNXPTDEOF :
-        cout << "Unexpected end of file while reading event" << endl;
-        break;
-      case EOF: 
-        if(CODA_VERBOSE) {
-          cout << "Normal end of file " << filename << " encountered" << endl;
-	}
+        cerr << "Unexpected end of file while reading event" << endl;
         break;
       default:
-        cout << "Error status  0x" << hex << status << dec << endl;
+	errno = status;
+	perror(0);
       }
   };
 
