@@ -16,6 +16,11 @@
  *
  * Revision History:
  *   $Log$
+ *   Revision 1.10  2011/05/25 20:58:58  ole
+ *   Bugfixes to evOpen:
+ *   - Fix incorrect free() if leading whitespace was trimmed from file name.
+ *   - Correctly handle file names with embedded whitespace
+ *
  *   Revision 1.9  2009/01/06 20:12:19  ole
  *   Add support for large input files (>2GB).
  *
@@ -208,20 +213,26 @@ int evopen_(const char *filename,const char *flags,void** handle,int fnlen,int f
 
 int evOpen(const char *filename,const char *flags,void* *handle)
 {
+  // Open CODA file and check magic header bytes. When reading, determine if
+  // the file is byte-swapped. "flags" must be "", "r" or "R" for reading,
+  // or "w" or "W" for writing.
   EVFILE* a = evGetStructure(); /* allocate control structure or quit */
   if (!a) return(S_EVFILE_ALLOCFAIL);
   int header[EV_HDSIZ];
   int temp, blk_size = 0;
-  char* fn = (char*)malloc(strlen(filename)+1);
+  char *fn = (char*)malloc(strlen(filename)+1), *fp = fn;
   strcpy(fn,filename);
   /* remove leading whitespace */
-  while(isspace(*fn)) fn++; 
-  /* remove trailing whitespace */
-  for(char* cp=fn; *cp!='\0'; cp++)
-    if(isspace(*cp)||!isprint(*cp)) *cp='\0';
+  while(isspace(*fp)) ++fp; 
+  if (*fp!='\0') {
+    /* remove trailing whitespace */
+    char *cp = fp+strlen(fp)-1;
+    while(isspace(*cp)) --cp;
+    *(cp+1) = '\0';
+  }
   switch (*flags)
   case '\0': case 'r': case 'R': {
-    a->file = fopen(fn,"r"); free(fn);
+    a->file = fopen(fp,"r"); free(fn);
     a->rw = EV_READ;
     if (a->file) {
       fread(header,sizeof(header),1,a->file); /* update: check nbytes return */
@@ -264,7 +275,8 @@ int evOpen(const char *filename,const char *flags,void* *handle)
     }
     break;
   case 'w': case 'W':
-    a->file = fopen(fn,"w"); free(fn);
+    // FIXME: byte order?
+    a->file = fopen(fp,"w"); free(fn);
     a->rw = EV_WRITE;
     if (a->file) {
       a->buf = (int *) malloc(EVBLOCKSIZE*4);
@@ -298,11 +310,11 @@ int evOpen(const char *filename,const char *flags,void* *handle)
     return(S_SUCCESS);
   } else {
     free(a);
-#ifdef DEBUG
+    /*
     fprintf(stderr,"evOpen: Error opening file %s, flag %s\n",
 	    filename,flags);
     perror(NULL);
-#endif
+    */
     *handle = 0;
     return(errno);
   }
