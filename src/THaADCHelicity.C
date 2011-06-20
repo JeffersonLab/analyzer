@@ -88,8 +88,8 @@ Int_t THaADCHelicity::ReadDatabase( const TDatime& date )
 
   if( heldef.size() != 3 ) {
     Error( Here(here), "Incorrect defintion of helicity data channel. Must be "
-	   "exactly 3 numbers (roc,slot,chan), found %d. Fix database.", 
-	   heldef.size() );
+	   "exactly 3 numbers (roc,slot,chan), found %u. Fix database.", 
+	   static_cast<unsigned int>(heldef.size()) );
     return kInitError;
   }
   // Missing gate channel implies ignoring gate unless explicitly set
@@ -104,8 +104,8 @@ Int_t THaADCHelicity::ReadDatabase( const TDatime& date )
   }
   if( !gatedef.empty() && gatedef.size() != 3 ) {
     Error( Here(here), "Incorrect defintion of gate data channel. Must be "
-	   "exactly 3 numbers (roc,slot,chan), found %d. Fix database.", 
-	   gatedef.size() );
+	   "exactly 3 numbers (roc,slot,chan), found %u. Fix database.", 
+	   static_cast<unsigned int>(gatedef.size()) );
     return kInitError;
   }
 
