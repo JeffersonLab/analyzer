@@ -294,7 +294,7 @@ Int_t THaRunBase::Init()
       msg++;
     }
     errtxt += ". Run not initialized.";
-    Error( here, errtxt );
+    Error( here, "%s", errtxt.Data() );
 
     return 255;
   }
