@@ -1,2 +1,14 @@
 haDict.C
 haDict.h
+lib*.so*
+db*.dat
+*.png
+ChangeLog
+FADC
+GEM_EVENT_DISPLAY_1.0
+Multitrack-Patch
+*.patch
+*.root
+*.odef
+*.cdef
+
