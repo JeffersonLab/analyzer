@@ -447,8 +447,8 @@ void THaRunBase::SetDataRequired( UInt_t mask )
   
   UInt_t all_info = kDate | kRunNumber | kRunType | kPrescales;
   if( (mask & all_info) != mask ) {
-    Warning( "THaRunBase::SetDataRequired", "Illegal bit(s) is mask argument ignored. "
-	     "See EInfoType." );
+    Warning( "THaRunBase::SetDataRequired", "Illegal bit(s) 0x%x in bitmask "
+	     "argument ignored. See EInfoType.", (mask & ~all_info) );
   }
   fDataRequired = (mask & all_info);
 }
