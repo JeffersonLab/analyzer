@@ -6,7 +6,6 @@ analyzer
 # Generated files
 *Dict.[Ch]
 ha_compiledata.h
-/DB/scaler.map
 ChangeLog
 
 # Editor lint
@@ -15,6 +14,9 @@ ChangeLog
 
 # Helpers
 /fix-filedates.sh
+
+# Standalone distribution support files
+/hana_scaler/scaler.map
 
 # Work directory clutter, test files, replay output etc.
 /db*.dat

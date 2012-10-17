@@ -191,7 +191,6 @@ endif
 
 ifndef STANDALONE
 $(LIBDIR)/libscaler.so.$(VERSION): libscaler.so
-	-cp -f scaler.map ../DB
 	rm -f $@ $(LIBDIR)/libscaler.so.$(SOVERSION)
 	cp -p $< $@
 endif
