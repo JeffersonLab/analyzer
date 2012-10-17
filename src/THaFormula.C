@@ -84,7 +84,7 @@ THaFormula& THaFormula::operator=( const THaFormula& rhs )
     fCutList = rhs.fCutList;
     fError = rhs.fError;
     fRegister = rhs.fRegister;
-    delete fVarDef;
+    delete [] fVarDef;
     fVarDef = new FVarDef_t[ kMAXCODES ];
     memcpy( fVarDef, rhs.fVarDef, kMAXCODES*sizeof(FVarDef_t));
   }
