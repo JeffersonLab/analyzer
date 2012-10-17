@@ -33,6 +33,9 @@ THaRun::THaRun( const char* fname, const char* description ) :
 
   fCodaData = new THaCodaFile;  //Specifying the file name would open the file
   FindSegmentNumber();
+
+  // Hall A runs normally contain all these items
+  fDataRequired = kDate|kRunNumber|kRunType|kPrescales;
 }
 
 //_____________________________________________________________________________
@@ -150,13 +153,12 @@ Int_t THaRun::ReadInitInfo()
   Int_t status = S_SUCCESS;
   if( fMaxScan > 0 ) {
     if( fSegment == 0 ) {
-      UInt_t wanted_info = kDate|kRunNumber|kRunType|kPrescales;
       THaEvData* evdata = static_cast<THaEvData*>(gHaDecoder->New());
       // Disable advanced processing
       evdata->EnableScalers(kFALSE);
       evdata->EnableHelicity(kFALSE);
       UInt_t nev = 0;
-      while( nev<fMaxScan && !HasInfo(wanted_info) && 
+      while( nev<fMaxScan && !HasInfo(fDataRequired) && 
 	     (status = ReadEvent()) == S_SUCCESS ) {
 
 	// Decode events. Skip bad events.
