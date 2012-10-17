@@ -43,6 +43,7 @@ public:
           Bool_t       DBRead()         const { return fDBRead; }
           void         IncrNumAnalyzed( Int_t n=1 ) { fNumAnalyzed += n; }
   const TDatime&       GetDate()        const { return fDate; }
+          UInt_t       GetDataRequired() const { return fDataRequired; }
           UInt_t       GetNumAnalyzed() const { return fNumAnalyzed; }
           Int_t        GetNumber()      const { return fNumber; }
           Int_t        GetType()        const { return fType; }
@@ -56,6 +57,7 @@ public:
   virtual void         Print( Option_t* opt="" ) const;
   virtual void         SetDate( const TDatime& date );
           void         SetDate( UInt_t tloc );
+	  void         SetDataRequired( UInt_t mask ); // mask is OR of EInfoType
           void         SetFirstEvent( UInt_t n );
           void         SetLastEvent(  UInt_t n );
           void         SetEventRange( UInt_t first, UInt_t last );
@@ -78,7 +80,7 @@ protected:
   Bool_t        fIsInit;       //  True if run successfully initialized
   Bool_t        fOpened;       //  True if opened successfully
   Bool_t        fAssumeDate;   //  True if run date explicitly set
-  UInt_t        fDataSet;      //  Flags for info that is valid (see EInfotype)
+  UInt_t        fDataSet;      //  Flags for info that is valid (see EInfoType)
   UInt_t        fDataRead;     //  Flags for info found in data (see EInfoType)
   UInt_t        fDataRequired; //  Info required for Init() to succeed
   THaRunParameters* fParam;    //  Run parameters

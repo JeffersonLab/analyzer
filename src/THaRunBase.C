@@ -274,7 +274,7 @@ Int_t THaRunBase::Init()
   // again later.
   Close();
 
-  if( retval )
+  if( retval != S_SUCCESS && retval != EOF )
     return retval;
 
   if( !HasInfo(fDataRequired) ) {
@@ -426,6 +426,31 @@ void THaRunBase::SetDate( UInt_t tloc )
 	    tp->tm_hour, tp->tm_min, tp->tm_sec );
 #endif
   SetDate( date );
+}
+
+//_____________________________________________________________________________
+void THaRunBase::SetDataRequired( UInt_t mask )
+{
+  // Set bitmask of information items that must be extracted from the run
+  // for Init() to succeed. Can be used to override the default value set by
+  // the class for special cases. Use with caution! The default values are
+  // usually sensible, and further analysis will usually fail if certain
+  // info is not present.
+  //
+  // The 'mask' argument should contain only the bits defined in EInfoType.
+  // Additional bits are ignored with a warning.
+  //
+  // Example: Only require the run date:
+  //
+  // run->SetDataRequired( THaRunBase::kDate );
+  //
+  
+  UInt_t all_info = kDate | kRunNumber | kRunType | kPrescales;
+  if( (mask & all_info) != mask ) {
+    Warning( "THaRunBase::SetDataRequired", "Illegal bit(s) is mask argument ignored. "
+	     "See EInfoType." );
+  }
+  fDataRequired = (mask & all_info);
 }
 
 //_____________________________________________________________________________
