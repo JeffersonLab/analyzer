@@ -1,0 +1,25 @@
+# Compiled stuff
+*.[od]
+lib*.so*
+analyzer
+
+# Generated files
+*Dict.[Ch]
+ha_compiledata.h
+/DB/scaler.map
+ChangeLog
+
+# Editor lint
+.#*
+*~
+
+# Helpers
+/fix-filedates.sh
+
+# Work directory clutter, test files, replay output etc.
+/db*.dat
+*.root
+*.odef
+*.cdef
+*.png
+*.patch
