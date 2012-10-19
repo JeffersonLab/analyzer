@@ -243,19 +243,20 @@ ifneq ($(strip $(LDCONFIG)),)
 		$(LDCONFIG)
 else
 		rm -f $@
-		ln -s $< $@
+		ln -s $(notdir $<) $@
 endif
 
 $(LIBHALLA):	$(LIBHALLA).$(SOVERSION)
+		cd $(LIBDIR)
 		rm -f $@
-		ln -s $< $@
+		ln -s $(notdir $<) $@
 
 $(LIBDC).$(SOVERSION):	$(LIBDC).$(VERSION)
 ifneq ($(strip $(LDCONFIG)),)
 		$(LDCONFIG)
 else
 		rm -f $@
-		ln -s $< $@
+		ln -s $(notdir $<) $@
 endif
 
 $(LIBSCALER).$(SOVERSION):	$(LIBSCALER).$(VERSION)
@@ -263,16 +264,16 @@ ifneq ($(strip $(LDCONFIG)),)
 		$(LDCONFIG)
 else
 		rm -f $@
-		ln -s $< $@
+		ln -s $(notdir $<) $@
 endif
 
 $(LIBDC):	$(LIBDC).$(SOVERSION)
 		rm -f $@
-		ln -s $< $@
+		ln -s $(notdir $<) $@
 
 $(LIBSCALER):	$(LIBSCALER).$(SOVERSION)
 		rm -f $@
-		ln -s $< $@
+		ln -s $(notdir $<) $@
 
 ifeq ($(ARCH),linux)
 $(HA_DICT).o:  $(HA_DICT).C
