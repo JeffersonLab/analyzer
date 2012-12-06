@@ -54,6 +54,7 @@ INCLUDES     = $(ROOTCFLAGS) -I$(DCDIR)
 
 ifdef STANDALONE
 ARCH          = linux
+#ARCH          = macosx
 #ARCH          = solarisCC5
 
 # Only define compiler options for STANDALONE, otherwise inherit them from
@@ -91,6 +92,24 @@ ARCH          = linux
     CXXEXTFLG     = -Woverloaded-virtual
     LD            = g++
     SOFLAGS       = -shared
+  endif
+
+  ifeq ($(ARCH),macosx)
+    # EXPERIMENTAL: Mac OS X with Xcode 3.x/gcc 4.x
+    DEFINES   += -DMACVERS 
+    CXX           = g++
+    ifdef DEBUG
+      CXXFLG      = -g -O0
+      LDFLAGS     = -g -O0
+    else
+      CXXFLG      = -O
+      LDFLAGS     = -O
+    endif
+    CXXFLG       += -Wall -fPIC
+    CXXEXTFLG     = -Woverloaded-virtual
+    LD            = g++
+    SOFLAGS       = -shared -Wl,-undefined,dynamic_lookup
+    SONAME        = -Wl,-install_name,@rpath/
   endif
 
   ifdef WITH_DEBUG
