@@ -60,6 +60,7 @@ ifndef STANDALONE
    INCLUDES += -I$(MAINDIR)
 else
    ARCH          = linux
+  # ARCH           = macosx
   # ARCH          = solarisCC5
 
 # Only define compiler options for STANDALONE, otherwise inherit them from
@@ -99,6 +100,26 @@ else
      CXXFLG        += -Wall -fPIC
      CXXEXTFLG      = -Woverloaded-virtual
   endif
+
+  ifeq ($(ARCH),macosx)
+     # EXPERIMENTAL: Mac OS X with Xcode 3.x/gcc 4.x
+     DEFINES      += -DMACVERS
+     CXX           = g++
+     LD            = g++
+     SOFLAGS       = -shared -Wl,-undefined,dynamic_lookup
+     SONAME        = -Wl,-install_name,@rpath/
+     ifdef DEBUG
+        CXXFLG      = -g -O0
+        LDFLAGS     = -g -O0
+     else
+        CXXFLG      = -O2
+        LDFLAGS     = -O2
+        DEFINES    += -DNDEBUG
+     endif
+     CXXFLG        += -Wall -fPIC
+     CXXEXTFLG      = -Woverloaded-virtual
+  endif
+
   ifdef WITH_DEBUG
      DEFINES     += -DWITH_DEBUG
   endif
@@ -152,6 +173,10 @@ ifeq ($(OSNAME),Linux)
       CXXFLG   += -pg
    endif
 
+endif
+
+ifeq ($(OSNAME),Darwin)
+  ALL_LIBS = $(ROOTLIBS) $(ROOTGLIBS)
 endif
 
 # ... finished, what ET needs.

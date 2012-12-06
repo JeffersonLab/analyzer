@@ -19,11 +19,13 @@ VERSION := $(SOVERSION).$(PATCH)
 EXTVERS :=
 #EXTVERS := -et
 NAME    := analyzer-$(VERSION)
-VERCODE := $(shell echo $(subst ., ,$(SOVERSION)) $(PATCH) | awk '{ print $$1*65536 + $$2*256 + $$3 }')
+VERCODE := $(shell echo $(subst ., ,$(SOVERSION)) $(PATCH) | \
+   awk '{ print $$1*65536 + $$2*256 + $$3 }')
 
 #------------------------------------------------------------------------------
 
 ARCH          := linux
+#ARCH          := macosx
 #ARCH          := solarisCC5
 ifndef PLATFORM
 PLATFORM = bin
@@ -92,6 +94,33 @@ SONAME       := -Wl,-soname=
 #FIXME: should be configure'd:
 CXXVER       := $(shell g++ --version | head -1 | sed 's/.* \([0-9]\)\..*/\1/')
 DEFINES      += $(shell getconf LFS_CFLAGS)
+ifeq ($(CXXVER),4)
+CXXFLAGS     += -Wextra -Wno-missing-field-initializers
+DICTCXXFLG   := -Wno-strict-aliasing 
+endif
+endif
+
+ifeq ($(ARCH),macosx)
+# EXPERIMENTAL: Mac OS X with Xcode/gcc 3.x
+CXX          := g++
+ifdef DEBUG
+  CXXFLG     := -g -O0
+  LDFLAGS    := -g -O0
+  DEFINES    :=
+else
+  CXXFLG     := -O
+  LDFLAGS    := -O
+  DEFINES    := -DNDEBUG
+endif
+DEFINES      += -DMACVERS
+CXXFLG       += -Wall -fPIC
+CXXEXTFLG     = -Woverloaded-virtual
+LD           := g++
+LDCONFIG     :=
+SOFLAGS      := -shared -Wl,-undefined,dynamic_lookup
+SONAME       := -Wl,-install_name,@rpath/
+#FIXME: should be configure'd:
+CXXVER       := $(shell g++ --version | head -1 | sed 's/.* \([0-9]\)\..*/\1/')
 ifeq ($(CXXVER),4)
 CXXFLAGS     += -Wextra -Wno-missing-field-initializers
 DICTCXXFLG   := -Wno-strict-aliasing 
