@@ -212,12 +212,14 @@ void swapped_memcpy(char *buffer,char *source,int size)
   evStack  *head, *p;
   LK_AHEAD lk;
   int      int_len, short_len, long_len;
-  int      i, j, depth, current_type = 0;
+  int      i, j, current_type = 0;
   int      header1, header2;
   int      ev_size, ev_tag, ev_num, ev_type;
   int      bk_size, bk_tag, bk_num, bk_type;
   int      sg_size, sg_tag, sg_type;
-  short    pk_size, pk_tag, pack;
+  // int      depth;
+  short    pk_size, pack;
+  // short    pk_tag;
   char     temp[4],temp2[2];
 
   int_len = sizeof(int);
@@ -274,7 +276,7 @@ void swapped_memcpy(char *buffer,char *source,int size)
 	bk_tag = (header2 >> 16) & (0x0000ffff);
 	bk_type = (header2 >> 8) & (0x000000ff);
 	bk_num = (header2) & (0x000000ff);
-	depth = head->length;  /* tree depth */
+	// depth = head->length;  /* tree depth */
 	if (bk_type >= 0x10){  /* contains children */
 	  evStack_pushon((bk_size+1)*2,i-2,bk_type,bk_tag,bk_num,head);
 	  lk.head_pos = i + 2;
@@ -316,7 +318,7 @@ void swapped_memcpy(char *buffer,char *source,int size)
 	  i++;
 	}
 	else{
-	  pk_tag = (pack >> 8) & (0x00ff);
+	  // pk_tag = (pack >> 8) & (0x00ff);
 	  pk_size = (pack) & (0x00ff);
 	  current_type = lk.type;
 	  lk.head_pos = i + pk_size + 1;

@@ -691,14 +691,13 @@ void THaNormAna::LiveTime() {
 
    if (myscaler == 0) return;
 
-  Int_t itrig, ihel, nhel, ok1;
+  Int_t itrig, ihel, nhel;
   Double_t t5corr, t7corr, tcorr;
   Double_t totaltrig, livetime, avglive;
   Double_t numtrig, tsaccept, corrfact;  
   Double_t trate, ttrigrate;
   Double_t t5rate_corr;
 
-  ok1=0;
   nhel = 1;  
   if (fHelEnable) nhel = 3;
 
@@ -732,7 +731,6 @@ void THaNormAna::LiveTime() {
     totaltrig = 0;
     corrfact = 0;
     ttrigrate = 0;
-    ok1 = 0;
 
     for (itrig = 0; itrig < 12; itrig++) {
 
@@ -757,7 +755,6 @@ void THaNormAna::LiveTime() {
         if (tsaccept > 0) corrfact = 
    	   normdata->GetEvCount(helicity)/tsaccept;
         if (corrfact > 0.5 && corrfact < 2.0) {
-          ok1=1;
           livetime = livetime/corrfact;
         } else {
           livetime = -1;  // failure

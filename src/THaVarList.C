@@ -122,11 +122,12 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
   }
 
   // Find up to two dots in the definition and extract the strings between them
-  Ssiz_t dot[2], pos = 0, ppos = 0;
+  Ssiz_t pos = 0, ppos = 0;
+  // Ssiz_t dot[2];
   Int_t ndot = 0;
   TString s[3];
   while( (pos = def.Index( ".", pos )) != kNPOS && ndot<2 ) {
-    dot[ndot] = pos;
+    // dot[ndot] = pos;
     Int_t len = pos - ppos;
     if( len >= 0 )
       s[ndot] = def(ppos, len);

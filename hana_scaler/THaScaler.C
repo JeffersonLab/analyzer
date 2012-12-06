@@ -160,7 +160,7 @@ Int_t THaScaler::InitData(const string& bankgroup, const Bdate& date_want) {
 
   struct DataMap {
     const char *bank_name;      // name of bank ("Left", "Right", "dvcs", etc)
-    Int_t bank_header;          // header to find data
+    UInt_t bank_header;         // header to find data
     Int_t bank_cratenum;        // crate number
     Int_t evstr_type;           // part of event stream (1) or evtype 140
     Int_t normslot;             // slot of normalization data (database can
