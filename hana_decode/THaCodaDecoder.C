@@ -535,9 +535,9 @@ static UInt_t FADCWindowRawDecode( const Int_t* p, const Int_t* pstop,
 
   Int_t type, type_last = 15, time_last = 0, status = 0;
   Bool_t go = true, new_type = true, valid_1, valid_2;
-  Int_t slot_id_hd, slot_id_tr, n_evts, blk_num, n_words, evt_num_1, 
-    evt_num_2, time_now = 0, time_1, time_2, time_3, time_4, chan = 0,
-    n_samples, adc_1, adc_2;
+  //  Int_t slot_id_hd, slot_id_tr, n_evts, blk_num, n_words, evt_num_1, 
+  // evt_num_2, time_1, time_2, time_3, time_4, n_samples
+  Int_t chan = 0, time_now = 0, adc_1, adc_2;
   UInt_t nwords = 0;
 
   while( p<=pstop && go ) {
@@ -560,38 +560,38 @@ static UInt_t FADCWindowRawDecode( const Int_t* p, const Int_t* pstop,
       //TODO: ensure nothing gets processed without a block header first
 
     case 0:		// BLOCK HEADER
-      slot_id_hd = (data & 0x7C00000) >> 22;
-      n_evts = (data & 0x3FF800) >> 11;
-      blk_num = (data & 0x7FF);
+      // slot_id_hd = (data & 0x7C00000) >> 22;
+      // n_evts = (data & 0x3FF800) >> 11;
+      // blk_num = (data & 0x7FF);
       // TODO: check slot
       // TODO: use n_evts, blk_num
       break;
     case 1:		// BLOCK TRAILER
-      slot_id_tr = (data & 0x7C00000) >> 22;
-      n_words = (data & 0x3FFFFF);
+      // slot_id_tr = (data & 0x7C00000) >> 22;
+      // n_words = (data & 0x3FFFFF);
       // End of block, quit while loop
       //TODO: check slot, n_words
       go = false;
       break;
     case 2:		// EVENT HEADER
-      if( new_type )
-	evt_num_1 = (data & 0x7FFFFFF);
-      else
-	evt_num_2 = (data & 0x7FFFFFF);
+      // if( new_type )
+      // 	evt_num_1 = (data & 0x7FFFFFF);
+      // else
+      // 	evt_num_2 = (data & 0x7FFFFFF);
       break;
     case 3:		// TRIGGER TIME
       if( new_type ) {
-	time_1 = (data & 0xFFFFFF);
+	// time_1 = (data & 0xFFFFFF);
 	time_now = 1;
 	time_last = 1;
       } else if( time_last == 1 ) {
-	time_2 = (data & 0xFFFFFF);
+	// time_2 = (data & 0xFFFFFF);
 	time_now = 2;
       } else if( time_last == 2 ) {
-	time_3 = (data & 0xFFFFFF);
+	// time_3 = (data & 0xFFFFFF);
 	time_now = 3;
       } else if( time_last == 3 ) {
-	time_4 = (data & 0xFFFFFF);
+	// time_4 = (data & 0xFFFFFF);
 	time_now = 4;
       }    
       //else
@@ -601,7 +601,7 @@ static UInt_t FADCWindowRawDecode( const Int_t* p, const Int_t* pstop,
     case 4:		// WINDOW RAW DATA
       if( new_type ) {
 	chan = (data & 0x7800000) >> 23;
-	n_samples = (data & 0xFFF);
+	// n_samples = (data & 0xFFF);
 	//TODO: ensure n_samples really follow
       } else {
 	//TODO: ensure this is preceded by the channel/nsamples header

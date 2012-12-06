@@ -741,11 +741,10 @@ static int evSearchWithinBlock(EVFILE *a, EVBSEARCH *b, int *bknum,
 {
   int temp, ev_size;
   int status;
-  int found = 0, t_evn, block_num;
+  int found = 0, t_evn;
   int ev_type;
 
   evFindEventBlockNum(a, b, bknum);
-  block_num = *bknum;
 
   /* check first event, if its event number is greater than
    * requested event number, return -1 

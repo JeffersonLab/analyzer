@@ -196,19 +196,20 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   for (int i=0; i<fNelem; i++) fTrigOff[i]=0;
   
   
+  //FIXME (BCI): The static_cast is a kludge, THaDetectorBase::fNelem should be UInt_t
   DBRequest list[] = {
-    { "TDC_offsetsL", fLOff, kDouble, fNelem },
-    { "TDC_offsetsR", fROff, kDouble, fNelem },
-    { "ADC_pedsL", fLPed, kDouble, fNelem },
-    { "ADC_pedsR", fRPed, kDouble, fNelem },
-    { "ADC_coefL", fLGain, kDouble, fNelem },
-    { "ADC_coefR", fRGain, kDouble, fNelem },
+    { "TDC_offsetsL", fLOff, kDouble, static_cast<UInt_t>(fNelem) },
+    { "TDC_offsetsR", fROff, kDouble, static_cast<UInt_t>(fNelem) },
+    { "ADC_pedsL", fLPed, kDouble, static_cast<UInt_t>(fNelem) },
+    { "ADC_pedsR", fRPed, kDouble, static_cast<UInt_t>(fNelem) },
+    { "ADC_coefL", fLGain, kDouble, static_cast<UInt_t>(fNelem) },
+    { "ADC_coefR", fRGain, kDouble, static_cast<UInt_t>(fNelem) },
     { "TDC_res",   &fTdc2T },
     { "TransSpd",  &fCn },
     { "AdcMIP",    &fAdcMIP },
     { "NTWalk",    &fNTWalkPar, kInt },
-    { "Timewalk",  fTWalkPar, kDouble, 2*fNelem },
-    { "ReTimeOff", fTrigOff, kDouble, fNelem },
+    { "Timewalk",  fTWalkPar, kDouble, 2*static_cast<UInt_t>(fNelem) },
+    { "ReTimeOff", fTrigOff, kDouble, static_cast<UInt_t>(fNelem) },
     { "AvgRes",    &fResolution },
     { "Atten",     &fAttenuation },
     { 0 }
@@ -338,9 +339,9 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
     cout << '\n' << GetPrefix() << " calibration parameters: " << endl;;
     for ( DBRequest *li = list; li->name; li++ ) {
       cout << "  " << li->name;
-      int maxc = li->nelem;
+      UInt_t maxc = li->nelem;
       if (maxc==0)maxc=1;
-      for (int i=0; i<maxc; i++) {
+      for (UInt_t i=0; i<maxc; i++) {
 	if (li->type==kDouble) cout << "  " << ((Double_t*)li->var)[i];
 	if (li->type==kInt) cout << "  " << ((Int_t*)li->var)[i];
       }
