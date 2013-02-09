@@ -116,7 +116,9 @@ Int_t THaTextvars::Add( const string& name, const string& value )
   if( it != fVars.end() ) {  // already exists?
     (*it).second.swap(tokens);
   } else {                   // if not, add a new one
-    // pair<Textvars_t::iterator,bool> ret =
+#ifndef NDEBUG
+    pair<Textvars_t::iterator,bool> ret =
+#endif
       fVars.insert( make_pair(name,tokens) );
     assert( ret.second );
   }
@@ -139,7 +141,9 @@ Int_t THaTextvars::AddVerbatim( const string& name, const string& value )
   if( it != fVars.end() ) {  // already exists?
     (*it).second.swap(values);
   } else {                   // if not, add a new one
-    // pair<Textvars_t::iterator,bool> ret =
+#ifndef NDEBUG
+    pair<Textvars_t::iterator,bool> ret =
+#endif
       fVars.insert( make_pair(name,values) );
     assert( ret.second );
   }
