@@ -78,23 +78,15 @@ Int_t THaDetectorBase::ReadGeometry( FILE* file, const TDatime& date,
   // Derived classes may override to read more advanced data.
 
   vector<double> position, size;
-  Int_t err;
-  if( required ) {
-    DBRequest request[] = {
-      { "position", &position, kDoubleV, 0, 0, 0,
-	"\"position\" (detector position [m])" },
-      { "size", &size, kDoubleV, 0, 0, 0, "\"size\" (detector size [m])"},
-      { 0 }
-    };
-    err = LoadDB( file, date, request, fPrefix );
-  } else {
-    DBRequest request[] = {
-      { "position", &position, kDoubleV, 0, 1 },
-      { "size", &size, kDoubleV, 0, 1 },
-      { 0 }
-    };
-    err = LoadDB( file, date, request, fPrefix );
-  }
+  Bool_t optional = !required;
+  DBRequest request[] = {
+    { "position", &position, kDoubleV, 0, optional, 0,
+      "\"position\" (detector position [m])" },
+    { "size",     &size,     kDoubleV, 0, optional, 0,
+      "\"size\" (detector size [m])"},
+    { 0 }
+  };
+  Int_t err = LoadDB( file, date, request, fPrefix );
   if( err )
     return err;
 
