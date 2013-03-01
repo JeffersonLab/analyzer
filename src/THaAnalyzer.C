@@ -50,6 +50,8 @@
 #include <algorithm>
 #include <iomanip>
 #include <cstring>
+#include <exception>
+#include <stdexcept>
 
 using namespace std;
 
@@ -427,7 +429,16 @@ Int_t THaAnalyzer::InitModules( const TList* module_list, TDatime& run_time,
       delete theModule;
       continue;
     }
-    retval = theModule->Init( run_time );
+    try {
+      retval = theModule->Init( run_time );
+    }
+    catch( exception& e ) {
+      Error( here, "Exception %s caught during initialization of module "
+	     "%s (%s). Analyzer initialization failed.",
+	     e.what(), obj->GetName(), obj->GetTitle() );
+      retval = -1;
+      goto errexit;
+    }
     if( retval != kOK || !theModule->IsOK() ) {
       Error( here, "Error %d initializing module %s (%s). Analyzer initial"
 	     "ization failed.", retval, obj->GetName(), obj->GetTitle() );
@@ -436,6 +447,7 @@ Int_t THaAnalyzer::InitModules( const TList* module_list, TDatime& run_time,
       break;
     }
   }
+ errexit:
   if( retval != 0 ) retval -= erroff;
   return retval;
 }
@@ -955,6 +967,8 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
 {
   // Analysis of physics events
 
+  static const char* const here = "PhysicsAnalysis";
+
   // Don't analyze events that did not pass RawDecode cuts
   if( code != kOK )
     return code;
@@ -976,107 +990,137 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
   //--- Process all apparatuses that are defined in fApps
   //    First Decode(), then Reconstruct()
 
-  if( fDoBench ) fBench->Begin("Decode");
+  TObject* obj = 0;
+  TString stage = "Decode";
+  if( fDoBench ) fBench->Begin(stage);
   TIter next(fApps);
-  while( THaApparatus* theApparatus = static_cast<THaApparatus*>( next() )) {
-    theApparatus->Clear();
-    theApparatus->Decode( *fEvData );
-  }
-  if( fDoBench ) fBench->Stop("Decode");
-  if( !EvalStage(kDecode) )  return kSkip;
-
-  //--- Main physics analysis. Calls the following for each defined apparatus
-  //    THaSpectrometer::CoarseTrack  (only for spectrometers)
-  //    THaApparatus::CoarseReconstruct
-  //    THaSpectrometer::Track        (only for spectrometers)
-  //    THaApparatus::Reconstruct
-  //
-  // Test blocks are evaulated after each of these stages
-
-  //-- Coarse processing
-
-  if( fDoBench ) fBench->Begin("CoarseTracking");
-  next.Reset();
-  while( TObject* obj = next() ) {
-    THaSpectrometer* theSpectro = dynamic_cast<THaSpectrometer*>(obj);
-    if( theSpectro )
-      theSpectro->CoarseTrack();
-  }
-  if( fDoBench ) fBench->Stop("CoarseTracking");
-  if( !EvalStage(kCoarseTrack) )  return kSkip;
-  
-
-  if( fDoBench ) fBench->Begin("CoarseReconstruct");
-  next.Reset();
-  while( THaApparatus* theApparatus =
-	 static_cast<THaApparatus*>( next() )) {
-    theApparatus->CoarseReconstruct();
-  }
-  if( fDoBench ) fBench->Stop("CoarseReconstruct");
-  if( !EvalStage(kCoarseRecon) )  return kSkip;
-
-  //-- Fine (Full) Reconstruct().
-
-  if( fDoBench ) fBench->Begin("Tracking");
-  next.Reset();
-  while( TObject* obj = next() ) {
-    THaSpectrometer* theSpectro = dynamic_cast<THaSpectrometer*>(obj);
-    if( theSpectro )
-      theSpectro->Track();
-  }
-  if( fDoBench ) fBench->Stop("Tracking");
-  if( !EvalStage(kTracking) )  return kSkip;
-  
-
-  if( fDoBench ) fBench->Begin("Reconstruct");
-  next.Reset();
-  while( THaApparatus* theApparatus = static_cast<THaApparatus*>( next() )) {
-    theApparatus->Reconstruct();
-  }
-  if( fDoBench ) fBench->Stop("Reconstruct");
-  if( !EvalStage(kReconstruct) )  return kSkip;
-
-  //--- Process the list of physics modules
-
-  if( fDoBench ) fBench->Begin("Physics");
-  TIter next_physics(fPhysics);
-  while( THaPhysicsModule* theModule =
-	 static_cast<THaPhysicsModule*>( next_physics() )) {
-    theModule->Clear();
-    Int_t err = theModule->Process( *fEvData );
-    if( err == THaPhysicsModule::kTerminate )
-      code = kTerminate;
-    else if( err == THaPhysicsModule::kFatal ) {
-      code = kFatal;
-      break;
+  try {
+    while( (obj = next()) ) {
+      THaApparatus* theApparatus = static_cast<THaApparatus*>(obj);
+      theApparatus->Clear();
+      theApparatus->Decode( *fEvData );
     }
-  }
-  if( fDoBench ) fBench->Stop("Physics");
-  if( code == kFatal ) return kFatal;
+    if( fDoBench ) fBench->Stop(stage);
+    if( !EvalStage(kDecode) )  return kSkip;
 
-  //--- Evaluate "Physics" test block
+    //--- Main physics analysis. Calls the following for each defined apparatus
+    //    THaSpectrometer::CoarseTrack  (only for spectrometers)
+    //    THaApparatus::CoarseReconstruct
+    //    THaSpectrometer::Track        (only for spectrometers)
+    //    THaApparatus::Reconstruct
+    //
+    // Test blocks are evaulated after each of these stages
 
-  if( !EvalStage(kPhysics) )
-    // any status code form the physics analysis overrides skip code
-    return (code == kOK) ? kSkip : code;
+    //-- Coarse processing
 
-  //--- If Event defined, fill it.
-  if( fDoBench ) fBench->Begin("Output");
-  if( fEvent ) {
-    fEvent->GetHeader()->Set( static_cast<UInt_t>(fEvData->GetEvNum()),
-			      fEvData->GetEvType(),
-			      fEvData->GetEvLength(),
-			      fEvData->GetEvTime(),
-			      fEvData->GetHelicity(),
-			      fRun->GetNumber()
-			      );
-    fEvent->Fill();
+    stage = "CoarseTracking";
+    if( fDoBench ) fBench->Begin(stage);
+    next.Reset();
+    while( (obj = next()) ) {
+      THaSpectrometer* theSpectro = dynamic_cast<THaSpectrometer*>(obj);
+      if( theSpectro )
+	theSpectro->CoarseTrack();
+    }
+    if( fDoBench ) fBench->Stop(stage);
+    if( !EvalStage(kCoarseTrack) )  return kSkip;
+  
+
+    stage = "CoarseReconstruct";
+    if( fDoBench ) fBench->Begin(stage);
+    next.Reset();
+    while( (obj = next()) ) {
+      THaApparatus* theApparatus = static_cast<THaApparatus*>(obj);
+      theApparatus->CoarseReconstruct();
+    }
+    if( fDoBench ) fBench->Stop(stage);
+    if( !EvalStage(kCoarseRecon) )  return kSkip;
+
+    //-- Fine (Full) Reconstruct().
+
+    stage = "Tracking";
+    if( fDoBench ) fBench->Begin(stage);
+    next.Reset();
+    while( (obj = next()) ) {
+      THaSpectrometer* theSpectro = dynamic_cast<THaSpectrometer*>(obj);
+      if( theSpectro )
+	theSpectro->Track();
+    }
+    if( fDoBench ) fBench->Stop(stage);
+    if( !EvalStage(kTracking) )  return kSkip;
+  
+
+    stage = "Reconstruct";
+    if( fDoBench ) fBench->Begin(stage);
+    next.Reset();
+    while( (obj = next()) ) {
+      THaApparatus* theApparatus = static_cast<THaApparatus*>(obj); 
+      theApparatus->Reconstruct();
+    }
+    if( fDoBench ) fBench->Stop(stage);
+    if( !EvalStage(kReconstruct) )  return kSkip;
+
+    //--- Process the list of physics modules
+
+    stage = "Physics";
+    if( fDoBench ) fBench->Begin(stage);
+    TIter next_physics(fPhysics);
+    while( (obj = next_physics()) ) {
+      THaPhysicsModule* theModule = static_cast<THaPhysicsModule*>(obj);
+      theModule->Clear();
+      Int_t err = theModule->Process( *fEvData );
+      if( err == THaPhysicsModule::kTerminate )
+	code = kTerminate;
+      else if( err == THaPhysicsModule::kFatal ) {
+	code = kFatal;
+	break;
+      }
+    }
+    if( fDoBench ) fBench->Stop(stage);
+    if( code == kFatal ) return kFatal;
+
+    //--- Evaluate "Physics" test block
+
+    if( !EvalStage(kPhysics) )
+      // any status code form the physics analysis overrides skip code
+      return (code == kOK) ? kSkip : code;
+
+  } // end try
+  catch( exception& e ) {
+    TString module_name = (obj != 0) ? obj->GetName() : "unknown";
+    TString module_desc = (obj != 0) ? obj->GetTitle() : "unknown";
+    Error( here, "Caught exception %s in module %s (%s) during %s analysis "
+	   "stage. Terminating analysis.", e.what(), module_name.Data(),
+	   module_desc.Data(), stage.Data() );
+    if( fDoBench ) fBench->Stop(stage);
+    code = kFatal;
+    goto errexit;
   }
 
   //---  Process output
-  if( fOutput ) fOutput->Process();
+  if( fDoBench ) fBench->Begin("Output");
+  try {
+    //--- If Event defined, fill it.
+    if( fEvent ) {
+      fEvent->GetHeader()->Set( static_cast<UInt_t>(fEvData->GetEvNum()),
+				fEvData->GetEvType(),
+				fEvData->GetEvLength(),
+				fEvData->GetEvTime(),
+				fEvData->GetHelicity(),
+				fRun->GetNumber()
+				);
+      fEvent->Fill();
+    }
+    // Write to output file
+    if( fOutput ) fOutput->Process();
+  }
+  catch( exception& e ) {
+    Error( here, "Caught exception %s during output of event %u. "
+	   "Terminating analysis.", e.what(), fNev );
+    code = kFatal;
+  }
   if( fDoBench ) fBench->Stop("Output");
 
+ errexit:
   return code;
 }
 
