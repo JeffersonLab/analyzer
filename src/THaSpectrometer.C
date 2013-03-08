@@ -82,8 +82,11 @@ Int_t THaSpectrometer::AddDetector( THaDetector* pdet )
   // Add a detector to the internal lists of spectrometer detectors.
   // This method is useful for quick testing of a new detector class that 
   // one doesn't want to include permanently in an Apparatus yet.
-  // The detector object must be allocated and deleted by the caller.
   // Duplicate detector names are not allowed.
+  //
+  // NOTE: The detector object must be allocated by the caller, but will be
+  // deleted by the spectrometer. Do not delete detectors you've added
+  // to an apparatus/spectrometer. Recommended: AddDetector( new MyDetector )
 
   if( !pdet || !pdet->IsA()->InheritsFrom("THaSpectrometerDetector")) {
     Error("AddDetector", "Detector is not a THaSpectrometerDetector. "
