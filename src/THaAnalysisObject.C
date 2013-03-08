@@ -1240,7 +1240,9 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 	break;
       }
 
-      if( ret > 0 ) {  // Key not found
+      if( ret == 0 ) {  // Key found -> next item
+	goto nextitem;
+      } else if( ret > 0 ) {  // Key not found
 	// If searching specified, either for this key or globally, retry
 	// finding the key at the next level up along the name tree. Name
 	// tree levels are defined by dots (".") in the prefix. The top
@@ -1252,31 +1254,24 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 	// current level by at most abs(search) steps, or up to top level.
 	// Example: key = "nw", prefix = "L.vdc.u1", search = -1, then
 	// search for:  "L.vdc.u1.nw" -> "L.vdc.nw"
-	//
-	if( (search != 0 || item->search != 0) && *prefix ) {
-	  DBRequest* newreq = new DBRequest[2];
-	  if( newreq ) {
-	    memcpy( newreq, item, sizeof(DBRequest) );
+
+	// per-item search level overrides global one
+	Int_t newsearch = (item->search != 0) ? item->search : search;
+	if( newsearch != 0 && *prefix ) {
+	  string newprefix(prefix);
+	  Int_t newlevel = ChopPrefix(newprefix) + 1;
+	  if( newsearch < 0 || newlevel >= newsearch ) {
+	    DBRequest newreq[2];
+	    newreq[0] = *item;
 	    memset( newreq+1, 0, sizeof(DBRequest) );
 	    newreq->search = 0;
-	    // per-item search level overrides global one
-	    Int_t newsearch = (item->search != 0) ? item->search : search;
-	    string newprefix(prefix);
-	    Int_t newlevel = ChopPrefix(newprefix);
-	    Int_t ret2 = 1;
-	    if( newsearch > 0 && newlevel >= newsearch )
-	      ret2 = LoadDB( f, date, newreq, newprefix.c_str(), newsearch );
-	    else if( newsearch < 0 )
-	      ret2 = LoadDB( f, date, newreq, newprefix.c_str(), newsearch+1 );
-	    delete [] newreq;
-	    ret = ret2;
+	    if( newsearch < 0 )
+	      newsearch++;
+	    ret = LoadDB( f, date, newreq, newprefix.c_str(), newsearch );
 	    // If error, quit here. Error message printed at lowest level.
 	    if( ret != 0 )
-	      break;  
+	      break;
 	    goto nextitem;  // Key found and ok
-	  } else {
-	    ret = -5;
-	    goto unexpected_error;
 	  }
 	}
 	if( item->optional ) 
@@ -1306,8 +1301,7 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 		 "number of columns. Fix the database!\n\"%s...\"",
 		 errtxt.c_str() );
 	break;
-      } else if( ret < 0 ) {  // Unexpected zero pointer etc.
-      unexpected_error:
+      } else {  // other ret < 0: unexpected zero pointer etc.
 	::Error( ::Here(here,loaddb_prefix.c_str()), 
 		 "Program error when trying to read database key \"%s\". "
 		 "CALL EXPERT!", key );
