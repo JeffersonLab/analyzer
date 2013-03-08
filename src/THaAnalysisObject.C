@@ -634,19 +634,18 @@ Int_t THaAnalysisObject::ReadRunDatabase( const TDatime& date )
 
   if( !fPrefix ) return kInitError;
 
-  FILE* file = OpenRunDBFile( date );
-  if( !file ) return kFileError;
-
-  Int_t ret = 0;
   if( (fProperties & kConfigOverride) == 0) {
-    TString name(fPrefix); name.Append("config");
-    ret = LoadDBvalue( file, date, name, fConfig );
-  }
-  fclose(file);
+    FILE* file = OpenRunDBFile( date );
+    if( !file ) return kFileError;
 
-  if( ret == -1 ) return kFileError;
-  if( ret < 0 )   return kInitError;
-  if( ret == 1 )  fConfig = "";
+    TString name(fPrefix); name.Append("config");
+    Int_t ret = LoadDBvalue( file, date, name, fConfig );
+    fclose(file);
+
+    if( ret == -1 ) return kFileError;
+    if( ret < 0 )   return kInitError;
+    if( ret == 1 )  fConfig = "";
+  }
   return kOK;
 }
 
