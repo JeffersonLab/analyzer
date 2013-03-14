@@ -1,5 +1,5 @@
-#ifndef EVIO_H
-#define EVIO_H
+#ifndef __EVIO_h__
+#define __EVIO_h__
 
 #include <stdio.h>
 #include <iostream>
