@@ -46,6 +46,7 @@
 
 using namespace std;
 typedef string::size_type ssiz_t;
+typedef vector<string>::iterator vsiter_t;
 
 TList* THaAnalysisObject::fgModules = NULL;
 
@@ -271,7 +272,7 @@ vector<string> THaAnalysisObject::GetDBFileList( const char* name,
   void* dirp;
   size_t pos;
   vector<string> time_dirs, dnames, fnames;
-  vector<string>::iterator it;
+  vsiter_t it;
   string item, filename, thedir;
   Int_t item_date;
   bool have_defaultdir = false, found = false;
@@ -559,7 +560,7 @@ FILE* THaAnalysisObject::OpenFile( const char *name, const TDatime& date,
   FILE* fi = NULL;
   vector<string> fnames( GetDBFileList(name, date, here) );
   if( !fnames.empty() ) {
-    vector<string>::iterator it = fnames.begin();
+    vsiter_t it = fnames.begin();
     do {
       if( debug_flag>1 )
       	cout << "<" << here << ">: Opening database file " << *it;
@@ -1015,23 +1016,27 @@ Int_t THaAnalysisObject::LoadDBvalue( FILE* file, const TDatime& date,
   rewind(file);
 
   bool found = false, ignore = false;
-  string line;
-  while( ReadDBline(file, line) != EOF ) {
-    if( line.empty() ) continue;
+  string fline;
+  while( ReadDBline(file, fline) != EOF ) {
+    if( fline.empty() ) continue;
     // Replace text variables in this database line, if any. Multi-valued
-    // variables are not supported here; they are not useful in this context.
-    gHaTextvars->Substitute( line );
-    Int_t status;
-    if( !ignore && (status = IsDBkey( line, key, text )) != 0 ) {
-      if( status > 0 ) {
-	// Found a matching key for a newer date than before
-	found = true;
-	prevdate = keydate;
-	// we do not set ignore to true here so that the _last_, not the first,
-	// of multiple identical keys is evaluated.
-      }
-    } else if( IsDBdate( line, keydate ) != 0 ) 
-      ignore = ( keydate>date || keydate<prevdate );
+    // variables are supported here, although they are only sensible on the LHS
+    vector<string> lines( 1, fline );
+    gHaTextvars->Substitute( lines );
+    for( vsiter_t it = lines.begin(); it != lines.end(); ++it ) {
+      string& line = *it;
+      Int_t status;
+      if( !ignore && (status = IsDBkey( line, key, text )) != 0 ) {
+	if( status > 0 ) {
+	  // Found a matching key for a newer date than before
+	  found = true;
+	  prevdate = keydate;
+	  // we do not set ignore to true here so that the _last_, not the first,
+	  // of multiple identical keys is evaluated.
+	}
+      } else if( IsDBdate( line, keydate ) != 0 ) 
+	ignore = ( keydate>date || keydate<prevdate );
+    }
   }
   if( errno ) {
     perror( "THaAnalysisObject::LoadDBvalue" );
