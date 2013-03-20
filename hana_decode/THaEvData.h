@@ -210,9 +210,9 @@ inline Int_t THaEvData::idx( Int_t crate, Int_t slot) const {
 }
 //Like idx() const, but initializes empty slots
 inline Int_t THaEvData::idx( Int_t crate, Int_t slot) {
-  Int_t idx = slot+MAXSLOT*crate;
-  if( !crateslot[idx] ) makeidx(crate,slot);
-  return idx;
+  Int_t ix = slot+MAXSLOT*crate;
+  if( !crateslot[ix] ) makeidx(crate,slot);
+  return ix;
 }
 
 inline Bool_t THaEvData::GoodCrateSlot( Int_t crate, Int_t slot ) const {
