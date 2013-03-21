@@ -460,9 +460,15 @@ Int_t THaAnalyzer::Init( THaRunBase* run )
   // This is a wrapper so we can conveniently control the benchmark counter
   if( !run ) return -1;
 
+  if( !fIsInit ) fBench->Reset();
+  fBench->Begin("Total");
+
   if( fDoBench ) fBench->Begin("Init");
   Int_t retval = DoInit( run );
   if( fDoBench ) fBench->Stop("Init");
+
+  // Stop "Total" counter since Init() may be called separately from Process()
+  fBench->Stop("Total");
   return retval;
 }
   
@@ -1277,16 +1283,16 @@ Int_t THaAnalyzer::Process( THaRunBase* run )
     else
       return -1;
   }
-  if( !fAnalysisStarted ) fBench->Reset();
-  fBench->Begin("Total");
 
   //--- Initialization. Creates fFile, fOutput, and fEvent if necessary.
   //    Also copies run to fRun if run is different from fRun
   Int_t status = Init( run );
   if( status != 0 ) {
-    fBench->Stop("Total");
     return status;
   }
+
+  // Restart "Total" since it is stopped in Init()
+  fBench->Begin("Total");
   
   //--- Re-open the data source. Should succeed since this was tested in Init().
   if( (status = fRun->Open()) ) {
