@@ -826,37 +826,6 @@ static Int_t IsDBdate( const string& line, TDatime& date, bool warn = true )
 }
 
 //_____________________________________________________________________________
-static Int_t TrimDBline( const string& _line, string& value, 
-			 bool leading = false )
-{
-  // Trim trailing whitespace and comments ("#") from 'line' and put
-  // the result into 'value'
-  // If 'leading' is true, also trim leading whitespace
-  // If line does not end with '\', return 1.
-  // If line ends with '\', strip the '\' and return 2.
-
-  string line(_line);
-  // Trim comment, if any
-  ssiz_t pos1 = line.find("#");
-  if( pos1 != string::npos )
-    line.erase(pos1);
-  pos1 = (leading) ? line.find_first_not_of(" \t") : 0;
-  ssiz_t pos2 = line.find_last_not_of(" \t");
-  if( pos1 == string::npos || pos2 == string::npos ) {
-    value.erase();
-    return 1;
-  }
-  // pos2 >= pos1 guaranteed here
-  value = line.substr(pos1,pos2-pos1+1);
-  pos1 = value.find('\\');
-  if( pos1 != string::npos ) {
-    value.erase(pos1);
-    return 2;
-  }
-  return 1;
-}
-
-//_____________________________________________________________________________
 static Int_t IsDBkey( const string& line, const char* key, string& text )
 {
   // Check if 'line' is of the form "key = value" and, if so, whether the key 
@@ -864,25 +833,34 @@ static Int_t IsDBkey( const string& line, const char* key, string& text )
   // - If there is no '=', then return 0.
   // - If there is a '=', but the left-hand side doesn't match 'key',
   //   then return -1. 
-  // - If key found, parse the line, set 'text' to the text after the "=", 
-  //   and return +1.
-  // - If 'text' ends with a '\' (continuation mark), then strip the '\',
-  //   set 'text' to the remaining text after the '=', and return +2
+  // - If key found, parse the line, set 'text' to the whitespace-trimmed
+  //   text after the "=" and return +1.
   // 'text' is not changed unless a valid key is found.
+  //
+  // Note: By construction in ReadDBline, 'line' is not empty, any comments
+  // starting with '#' have been removed, and trailing whitespace has been
+  // trimmed. Also, all tabs have been converted to spaces.
 
-  ssiz_t pos = line.find('=');
-  if( pos == string::npos ) return 0;
-  if( pos == 0 ) return -1;
-  ssiz_t pos1 = line.substr(0,pos).find_first_not_of(" \t");
-  if( pos1 == string::npos ) return -1;
-  ssiz_t pos2 = line.substr(0,pos).find_last_not_of(" \t");
-  if( pos2 == string::npos ) return -1;
-  // Found a LHS, compare it to the requested key
-  string lhs(line.substr(pos1,pos2-pos1+1).c_str());
-  if( lhs != key ) return -1;
-  // Extract the RHS text, discarding any whitespace at beginning and end
-  string rhs = line.substr(pos+1);
-  return TrimDBline( rhs, text, true );
+  // Search for "="
+  register const char* ln = line.c_str();
+  const char* eq = strchr(ln, '=');
+  if( !eq ) return 0;
+  // Extract the key
+  if( *ln == ' ' )  // strspn is an expensive way to find out there are no leading blanks
+    ln += strspn(ln, " ");
+  assert( ln <= eq );
+  if( ln == eq ) return -1;
+  register const char* p = eq-1;
+  assert( p >= ln );
+  while( *p == ' ' ) --p; // find_last_not_of(" ")
+  if( strncmp(ln, key, p-ln+1) ) return -1;
+  // Key matches. Now extract the value, trimming leading whitespace.
+  ln = eq+1;
+  assert( !*ln || *(ln+strlen(ln)-1) != ' ' ); // Trailing space already trimmed
+  ln += strspn(ln, " ");
+  text = ln;
+
+  return 1;
 }
 
 //_____________________________________________________________________________
@@ -928,71 +906,79 @@ bool THaAnalysisObject::IsTag( const char* buf )
 }
 
 //_____________________________________________________________________________
-static Int_t ReadDBline( FILE* file, string& line, size_t MAX = 1048576 )
+static Int_t ReadDBline( FILE* file, char* buf, size_t bufsiz, string& line )
 {
-  // Get a text line from the database file 'file'. Strip all comments
-  // (anything after a #). Trim trailing whitespacel; thus, pure comment lines
-  // (starting with #) result in an empty string. 
-  // Concatenate continuation lines (ending with \).
-  // Maximum size to read is MAX (default 1MiB).
+  // Get a text line from the database file 'file'. Ignore all comments
+  // (anything after a #). Trim trailing whitespace. Concatenate continuation
+  // lines (ending with \).
+  // Only returns if a non-empty line was found, or on EOF.
 
-  line.erase();
+  line.clear();
 
-  bool continued = false, prev_continued = false, allblank = true;
-  int c;
-  size_t nc = 0;
-  while( (c = fgetc(file)) != EOF ) {
-    assert( c >= 0 && c < kMaxUChar );
-    // Note continuation mark
-    if( c == '\\' ) {
-      continued = true;
-    }
-    // Ignore all until end of line from comment or continuation mark
-    if( c == '#' || continued ) {
-      while( c != '\n' && c != EOF ) {
-	c = fgetc(file);
-      }
-      // At end of line, we are done, unless continued and not EOF or
-      // this is a pure comment line in the middle of a continuation
-      if( c == EOF || !(continued || (prev_continued && allblank)) ) {
-	break;
-      }
-      prev_continued = continued;
-      continued = false;
-      allblank = true;
-    } else if( isblank(c) || !iscntrl(c) ) {
-      // Append regular/blank characters to line
-      if( ++nc > MAX ) {
-	// Line too long
-	errtxt.swap(line);
-	// Only show first 72 chars of line in error message
-	if( nc > 72 ) errtxt.erase(72);
-	//FIXME: throw exception
-	return EOF;  
-      }
+  char *r = buf;
+  while( line.empty() && r ) {
+    bool continued = false, unfinished = true, do_trim = false;
+    // Must use C-style I/O because of the legacy FILE*
+    while( unfinished && (r = fgets(buf, bufsiz, file)) ) {
+      // Search for an end-of-data character
+      char *c = strpbrk(buf, "\n#\\");
+      if( !c ) c = buf+strlen(buf);
+      int t = *c;
+      *c = 0;
       // Convert tabs to spaces
-      if( c == '\t' ) c = ' ';
-      if( c != ' ' ) allblank = false;
-      line += static_cast<unsigned char>( c );
-    } else if( c == '\n' ) {
-      // End-of-line after regular, non-continued text => line done
-      break;
-    }
-  } //end while(c)
+      register char *p = buf;
+      while( (p = strchr(p,'\t')) ) *(p++) = ' ';
+      // Locate last non-blank character of the data
+      char* lastc = 0;
+      if( *buf ) {
+	p = c;
+	while( --p != buf && *p == ' ' );
+	if( *p != ' ' ) lastc = p;
+      }
+      // Ensure that the whole line was read after comments and continuations
+      bool read_more = ( t != '\n' && t != 0 && strchr(c+1,'\n') == 0 );
 
-  // Trim trailing whitespace
-  if( !line.empty() ) {
-    ssiz_t pos = line.find_last_not_of(" \t");
-    if( pos == string::npos )
-      line.erase();
-    else
-      line = line.substr(0,pos+1);
+      // Continue reading if there is a continuation, the line wasn't fully
+      // read yet, or the previous read was continued and now we have a pure 
+      // comment line in the middle of a continuation
+      bool only_comment = (t == '#' && !lastc);
+      continued = ( t == '\\' || (only_comment && continued) );
+      unfinished = (continued || !t );
+
+      // Append current line's data to the output string
+      if( !only_comment && (unfinished || lastc) ) {
+	size_t len;
+	if( unfinished ) {
+	  do_trim = true;  // May have trailing blanks
+	  len = c-buf;
+	} else {
+	  assert( lastc < c );
+	  *(++lastc) = 0;
+	  len = lastc-buf;
+	}
+	line.append(buf,len);
+      }
+      if( read_more ) do {
+	  r = fgets(buf, bufsiz, file);
+	} while( r && *r && buf[strlen(buf)-1] != '\n' );
+    }
+    if( line.empty() )
+      continue;
+
+    // Trim trailing whitespace
+    if( do_trim ) {
+      ssiz_t pos = line.find_last_not_of(" ");
+      if( pos == string::npos )
+	line.clear();
+      else if( pos+1 != line.length() )
+	line.erase(pos+1);
+    }
   }
   // Don't report EOF yet if the last line wasn't empty
-  if( c == EOF && !line.empty() )
-    c = '\n';
+  if( r == 0 && !line.empty() )
+    r = buf; // this is ok, the actual value of r will not be used
 
-  return c;  // EOF or \n
+  return (r == 0) ? EOF : '\n';
 }
 
 //_____________________________________________________________________________
@@ -1012,16 +998,20 @@ Int_t THaAnalysisObject::LoadDBvalue( FILE* file, const TDatime& date,
   TDatime keydate(950101,0), prevdate(950101,0);
 
   errno = 0;
-  errtxt.erase();
+  errtxt.clear();
   rewind(file);
 
+  static const size_t bufsiz = 256;
+  char* buf = new char[bufsiz];
+
   bool found = false, ignore = false;
-  string fline;
-  while( ReadDBline(file, fline) != EOF ) {
-    if( fline.empty() ) continue;
+  string dbline;
+  vector<string> lines;
+  while( ReadDBline(file, buf, bufsiz, dbline) != EOF ) {
+    if( dbline.empty() ) continue;
     // Replace text variables in this database line, if any. Multi-valued
     // variables are supported here, although they are only sensible on the LHS
-    vector<string> lines( 1, fline );
+    lines.assign( 1, dbline );
     gHaTextvars->Substitute( lines );
     for( vsiter_t it = lines.begin(); it != lines.end(); ++it ) {
       string& line = *it;
@@ -1038,6 +1028,8 @@ Int_t THaAnalysisObject::LoadDBvalue( FILE* file, const TDatime& date,
 	ignore = ( keydate>date || keydate<prevdate );
     }
   }
+  delete [] buf;
+
   if( errno ) {
     perror( "THaAnalysisObject::LoadDBvalue" );
     return -1;
@@ -1139,6 +1131,7 @@ Int_t THaAnalysisObject::LoadDBmatrix( FILE* file, const TDatime& date,
   values.clear();
   typename vector<vector<T> >::size_type nrows = tmpval->size()/ncols, irow;
   for( irow = 0; irow < nrows; ++irow ) {
+
     vector<T> row;
     for( typename vector<T>::size_type i=0; i<ncols; ++i ) {
       row.push_back( tmpval->at(i+irow*ncols) );
@@ -1317,7 +1310,7 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
     item++;
   }
   if( --loaddb_depth == 0 )
-    loaddb_prefix.erase();
+    loaddb_prefix.clear();
 
   return ret;
 }

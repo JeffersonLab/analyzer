@@ -24,15 +24,13 @@
 #include <cassert>
 #include <iostream>
 #include <iomanip>
-#include <list>
-#include <algorithm>
+#include <cstring>
 
 using namespace std;
 
 typedef string::size_type ssiz_t;
 typedef vector<string>::size_type vssiz_t;
-
-#define ALL(c) (c).begin(), (c).end()
+typedef vector<string>::iterator  vsiter_t;
 
 //_____________________________________________________________________________
 static void Tokenize( const string& s, const string& delim,
@@ -78,23 +76,25 @@ static ssiz_t Index( const string& s, ssiz_t& ext, ssiz_t start )
   // of the pattern. Search starts at 'start'.
   // This is equivalent to searching for regexp "\$\{[^\{\}]*\}"
 
-  static const string pat = "${";
-
-  if( s.empty() || start == string::npos || start > s.length() )
+  if( s.empty() || start == string::npos || start+2 >= s.length() )
     return string::npos;
 
-  ssiz_t beg = s.find(pat, start), beg2, end;
-  if( beg == string::npos ) return string::npos;
-  do {
-    end = s.find('}', beg);
-    if( end == string::npos) return string::npos;
-    beg2 = s.find(pat, beg+1);
-  }
-  while( beg2 != string::npos && beg2 < end && (beg = beg2) );
+  register const char* c = s.c_str() + start, *end;
+  if( (c = strchr(c,'$')) && *(++c) == '{' ) {
+    if( !(end = strchr(++c,'}')) ) return string::npos;
+    register const char *c2;
+    do {
+      // Find innermost bracket, allowing nesting
+      if( (c2 = strchr(c,'$')) && *(++c2) != '{' ) c2 = 0;
+    }
+    while( c2 && ++c2 < end && (c = c2) );
+  } else
+    return string::npos;
 
-  assert( end>beg );
-  ext = end-beg+1;
-  return beg;
+  c -= 2;   // Point to beginning of pattern: ${
+  assert( end>c );
+  ext = end-c+1;
+  return (c - s.c_str());
 }
 
 //_____________________________________________________________________________
@@ -175,14 +175,22 @@ vector<string>& THaTextvars::GetArray( const string& name )
   // If name is not found, a zero-size dummy array is returned, which 
   // one should not use.
 
+  // BCI: Returning a reference from this function is a bad idea.
+  // It allows write access to the internal data.
+  // We should bite the bullet and return by value or, perhaps better, fill
+  // a user-supplied vector<string>.
   static vector<string> dummy;
 
-  if( name.empty() )
+  if( name.empty() ) {
+    dummy.clear();
     return dummy;
+  }
 
   Textvars_t::iterator it = fVars.find(name);
-  if( it == fVars.end() )
+  if( it == fVars.end() ) {
+    dummy.clear();
     return dummy;
+  }
 
   return (*it).second;
 }
@@ -251,54 +259,51 @@ Int_t THaTextvars::Substitute( vector<string>& lines, bool do_multi ) const
 
   bool good = true;
 
-  list<string> newlines( ALL(lines) );
-  for( list<string>::iterator li = newlines.begin(); li != newlines.end()
-	 && good; ++li ) {
-    ssiz_t pos = 0, ext = 0;
-    while( (pos = Index((*li), ext, pos+ext)) != string::npos ) {
+  vector<string> newlines;
+  for( vsiter_t li = lines.begin(); li != lines.end() && good; ++li ) {
+    string& line = *li;
+    ssiz_t ext = 0, pos = Index( line, ext, 0 );
+    if( pos != string::npos ) {
       assert( ext >= 3 );
       Textvars_t::const_iterator it;
       if( ext > 3 && 
-	  (it = fVars.find((*li).substr(pos+2,ext-3))) != fVars.end() ) {
+	  (it = fVars.find(line.substr(pos+2,ext-3))) != fVars.end() ) {
 	const vector<string>& repl = (*it).second;
 	assert( !repl.empty() );
 	if( !do_multi && repl.size() > 1 ) {
 	  ::Error( here, "multivalue variable %s = %s not supported in this "
-		   "context", (*li).substr(pos,ext).c_str(),
-		   ValStr(repl).c_str());
+		   "context: \"%s\"", line.substr(pos,ext).c_str(),
+		   ValStr(repl).c_str(), line.c_str());
 	  good = false;
 	}
-	if( good ) { // don't replace and rescan if error already occurred
-	  string s = *li;  // save copy of unmodified line
-	  list<string>::iterator lp = li;
-	  assert( lp != newlines.end() );
-	  ++lp; // new elements will be inserted before here
+	if( good ) { // stop replacing once an error has been detected
+	  // Found a valid replacement, so we actually need to do something
+	  if( newlines.empty() ) {
+	    // Guess that every line gets replaced similarly
+	    newlines.reserve( lines.size()*repl.size() );
+	    newlines.assign( lines.begin(), li );
+	  }
 	  for( vector<string>::const_iterator jt = repl.begin();
 	       jt != repl.end(); ++jt ) {
-	    if( jt == repl.begin() ) {
-	      // Replace first instance in place
-	      (*li).replace( pos, ext, *jt );
-	    } else {
-	      // Any additional instances are appended to the results array
-	      // and scanned further in subsequent iterations
-	      list<string>::iterator np = newlines.insert( lp, s );
-	      (*np).replace( pos, ext, *jt );
-	    }
+	    newlines.push_back(line);
+	    newlines.back().replace( pos, ext, *jt );
 	  }
-	  pos = ext = 0;  // Rescan current line *li
 	}
       } else {
 	::Error( here, "unknown text variable %s",
-		 (*li).substr(pos,ext).c_str() );
+		 line.substr(pos,ext).c_str() );
 	good = false;
       }
     }
   }
-  if( good ) {
-    // Change input array only if there were no errors
-    lines.clear();
-    copy( ALL(newlines), back_inserter(lines) );
+
+  if( !newlines.empty() && good ) {
+    // Rescan for multiple and/or nested replacements
+    good = ( Substitute( newlines, do_multi ) == 0 );
+    if( good ) 
+      lines.swap( newlines );
   }
+
   return (good ? 0 : 1);
 }
 
