@@ -123,7 +123,6 @@ else
   ifdef WITH_DEBUG
      DEFINES     += -DWITH_DEBUG
   endif
-  CXXFLG       += $(INCLUDES) $(DEFINES)
   DEFINES      += $(shell getconf LFS_CFLAGS)
 endif
 
