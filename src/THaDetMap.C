@@ -106,7 +106,7 @@ THaDetMap::~THaDetMap()
 Int_t THaDetMap::AddModule( UShort_t crate, UShort_t slot, 
 			    UShort_t chan_lo, UShort_t chan_hi,
 			    UInt_t first, UInt_t model, Int_t refindex,
-			    Int_t refchan )
+			    Int_t refchan, UInt_t plane, UInt_t signal )
 {
   // Add a module to the map.
 
@@ -149,6 +149,8 @@ Int_t THaDetMap::AddModule( UShort_t crate, UShort_t slot,
   m.SetModel( model );
   m.refindex = refindex;
   m.refchan  = refchan;
+  m.plane = plane;
+  m.signal = signal;
   m.SetResolution( 0.0 );
   m.reverse = reverse;
 
@@ -191,6 +193,8 @@ Int_t THaDetMap::Fill( const vector<Int_t>& values, UInt_t flags )
   // kFillModel          - The module's hardware model number (see AddModule())
   // kFillRefChan        - Reference channel (for pipeline TDCs etc.)
   // kFillRefIndex       - Reference index (for pipeline TDCs etc.)
+  // kFillPlane          - Which plane in detector (for Hall C)
+  // kFillSignal         - Which signal type (for Hall C)
   //
   // If more than one flag is present, the numbers will be interpreted
   // in the order the flags are listed above. 
@@ -224,11 +228,16 @@ Int_t THaDetMap::Fill( const vector<Int_t>& values, UInt_t flags )
     tuple_size++;
   if( flags & kFillRefIndex )
     tuple_size++;
+  if( flags & kFillPlane )
+    tuple_size++;
+  if( flags & kFillSignal )
+    tuple_size++;
 
   UInt_t prev_first = 0, prev_nchan = 0;
   // Defaults for optional values
   UInt_t first = 0, model = 0;
   Int_t rchan = -1, ref = -1;
+  UInt_t plane=0, signal=0;
 
   Int_t ret = 0;
   for( vsiz_t i = 0; i < values.size(); i += tuple_size ) {
@@ -253,9 +262,13 @@ Int_t THaDetMap::Fill( const vector<Int_t>& values, UInt_t flags )
       rchan = values[i+k++];
     if( flags & kFillRefIndex )
       ref   = values[i+k++];
+    if( flags & kFillPlane )
+      plane   = values[i+k++];
+    if( flags & kFillSignal )
+      signal  = values[i+k++];
 
     ret = AddModule( values[i], values[i+1], values[i+2], values[i+3],
-		     first, model, ref, rchan );
+		     first, model, ref, rchan, plane, signal );
     if( ret<=0 )
       break;
     prev_first = first;
