@@ -29,7 +29,7 @@ The main package for the SCons software construction utility.
 
 __revision__ = "src/engine/SCons/__init__.py  2013/03/03 09:48:35 garyo"
 
-__version__ = "2.3.0"
+__version__ = "4.9.9"
 
 __build__ = ""
 
