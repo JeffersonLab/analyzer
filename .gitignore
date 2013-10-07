@@ -1,10 +1,12 @@
 # Compiled stuff
 *.[od]
+*.os
 lib*.so*
 analyzer
 
 # Generated files
 *Dict.[Ch]
+*Dict.so
 ha_compiledata.h
 ChangeLog
 
@@ -25,3 +27,9 @@ ChangeLog
 *.cdef
 *.png
 *.patch
+
+#scons stuff
+config.log
+*.pyc
+.sconsign.dblite
+.sconf_temp/
