@@ -30,7 +30,9 @@ baseenv = Environment(ENV = os.environ)
 #	print "Construction variable = '%s', value = '%s'" % (key, dict[key])
 
 ####### Check SCons version ##################
-EnsureSConsVersion(2,3,0)
+print('!!! You should be using the local version of SCons, invoked with:')
+print('!!! ./scons/scons.py')
+EnsureSConsVersion(4,9,9)
 
 ####### Hall A Build Environment #############
 #
