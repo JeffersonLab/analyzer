@@ -74,8 +74,15 @@ try:
         baseenv.ParseConfig('$ROOTCONFIG --libs')
         baseenv.MergeFlags('-fPIC')
 except OSError:
-       	print "Cannot find ROOT.  Check if root-config is in your PATH."
-       	exit(1)
+	try:
+		baseenv.Replace(ROOTCONFIG = baseenv['ENV']['ROOTSYS'] + '/bin/root-config')
+		baseenv.Replace(ROOTCINT = baseenv['ENV']['ROOTSYS'] + '/bin/rootcint')
+        	baseenv.ParseConfig('$ROOTCONFIG --cflags')
+        	baseenv.ParseConfig('$ROOTCONFIG --libs')
+		baseenv.MergeFlags('-fPIC')
+	except KeyError:
+       		print "Cannot find ROOT.  Check if root-config is in your PATH."
+       		exit(1)
 
 bld = Builder(action=rootcint)
 baseenv.Append(BUILDERS = {'RootCint': bld})
