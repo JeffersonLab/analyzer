@@ -5,6 +5,7 @@ import os
 import sys
 import platform
 import commands
+import SCons
 
 def rootcint(target,source,env):
 	"""Executes the ROOT dictionary generator over a list of headers."""
@@ -27,6 +28,9 @@ baseenv = Environment(ENV = os.environ)
 #keys.sort()
 #for key in keys:
 #	print "Construction variable = '%s', value = '%s'" % (key, dict[key])
+
+####### Check SCons version ##################
+EnsureSConsVersion(2,3,0)
 
 ####### Hall A Build Environment #############
 #
