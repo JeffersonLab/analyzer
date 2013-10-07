@@ -66,8 +66,6 @@ if not conf.CheckFunc('printf'):
 baseenv = conf.Finish()
 
 ####### ROOT Definitions ####################
-rootsys = baseenv['ENV']['ROOTSYS']
-# Try a "bare" root-config/rootcint first, for installations where ROOTSYS is not defined.
 baseenv.Append(ROOTCONFIG = 'root-config')
 baseenv.Append(ROOTCINT = 'rootcint')
 
@@ -76,16 +74,8 @@ try:
         baseenv.ParseConfig('$ROOTCONFIG --libs')
         baseenv.MergeFlags('-fPIC')
 except OSError:
-	# Now, try with ROOTSYS to see if that helps.
-	baseenv.Replace(ROOTCONFIG = rootsys+'/bin/root-config')
-	baseenv.Replace(ROOTCINT = rootsys + '/bin/rootcint')
-	try:
-        	baseenv.ParseConfig('$ROOTCONFIG --cflags')
-        	baseenv.ParseConfig('$ROOTCONFIG --libs')
-        	baseenv.MergeFlags('-fPIC')
-	except OSError:
-        	print "Cannot find ROOT.  Check if root-config is in your PATH."
-        	exit(1)
+       	print "Cannot find ROOT.  Check if root-config is in your PATH."
+       	exit(1)
 
 bld = Builder(action=rootcint)
 baseenv.Append(BUILDERS = {'RootCint': bld})
