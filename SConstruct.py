@@ -60,7 +60,7 @@ if not conf.CheckCXX():
 	Exit(0)
 
 if not conf.CheckFunc('printf'):
-       	print('!! Your compiler and/or environment is not correctly configured.')
+       	print('!!! Your compiler and/or environment is not correctly configured.')
        	Exit(0)
 
 baseenv = conf.Finish()
@@ -81,8 +81,8 @@ except OSError:
         	baseenv.ParseConfig('$ROOTCONFIG --libs')
 		baseenv.MergeFlags('-fPIC')
 	except KeyError:
-       		print "Cannot find ROOT.  Check if root-config is in your PATH."
-       		exit(1)
+       		print('!!! Cannot find ROOT.  Check if root-config is in your PATH.')
+		Exit(1)
 
 bld = Builder(action=rootcint)
 baseenv.Append(BUILDERS = {'RootCint': bld})
