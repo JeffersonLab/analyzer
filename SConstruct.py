@@ -30,10 +30,6 @@ baseenv = Environment(ENV = os.environ)
 
 ####### Hall A Build Environment #############
 #
-# Edit for the location of your root installation here ...
-#
-#baseenv.Append(ROOTSYS = '/usr/local/root')
-#
 baseenv.Append(MAIN_DIR = Dir('.').abspath)
 baseenv.Append(HA_DIR = baseenv.subst('$MAIN_DIR'))
 baseenv.Append(HA_SRC = baseenv.subst('$HA_DIR')+'/src ') 
@@ -70,18 +66,26 @@ if not conf.CheckFunc('printf'):
 baseenv = conf.Finish()
 
 ####### ROOT Definitions ####################
-
 rootsys = baseenv['ENV']['ROOTSYS']
-baseenv.Append(ROOTCONFIG = rootsys+'/bin/root-config')
-baseenv.Append(ROOTCINT = rootsys+'/bin/rootcint')
+# Try a "bare" root-config/rootcint first, for installations where ROOTSYS is not defined.
+baseenv.Append(ROOTCONFIG = 'root-config')
+baseenv.Append(ROOTCINT = 'rootcint')
 
 try:
         baseenv.ParseConfig('$ROOTCONFIG --cflags')
         baseenv.ParseConfig('$ROOTCONFIG --libs')
         baseenv.MergeFlags('-fPIC')
 except OSError:
-        print "ROOT not found!!"
-        exit(1)
+	# Now, try with ROOTSYS to see if that helps.
+	baseenv.Replace(ROOTCONFIG = rootsys+'/bin/root-config')
+	baseenv.Replace(ROOTCINT = rootsys + '/bin/rootcint')
+	try:
+        	baseenv.ParseConfig('$ROOTCONFIG --cflags')
+        	baseenv.ParseConfig('$ROOTCONFIG --libs')
+        	baseenv.MergeFlags('-fPIC')
+	except OSError:
+        	print "Cannot find ROOT.  Check if root-config is in your PATH."
+        	exit(1)
 
 bld = Builder(action=rootcint)
 baseenv.Append(BUILDERS = {'RootCint': bld})
