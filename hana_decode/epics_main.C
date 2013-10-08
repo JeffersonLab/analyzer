@@ -3,6 +3,7 @@
 //                   do something with them.
 // 
 #include <iostream>
+#include <cstdlib>
 #include "THaCodaFile.h"
 #include "THaCodaDecoder.h"
 #include "TString.h"

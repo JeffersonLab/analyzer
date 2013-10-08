@@ -19,6 +19,7 @@
 #define MAXRING 20
 
 #include <iostream>
+#include <cstdlib>
 #include "THaCodaFile.h"
 #include "THaEvData.h"
 #include "THaCodaDecoder.h"

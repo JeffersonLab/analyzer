@@ -3,6 +3,7 @@
 //            in CODA file, then exit.
 // 
 #include <iostream>
+#include <cstdlib>
 #include "THaCodaFile.h"
 #include "THaCodaDecoder.h"
 #include "TString.h"
