@@ -7,6 +7,7 @@
 // R. Michaels,  rom@jlab.org,  Mar, 2000
 
 #include <iostream>
+#include <cstdlib>
 #include "THaCodaFile.h"
 #include "THaCodaDecoder.h"
 #include "THaSlotData.h"
