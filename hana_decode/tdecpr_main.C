@@ -5,6 +5,7 @@
 // R. Michaels,  Feb, 2000
 
 #include <iostream>
+#include <cstdlib>
 #include "THaCodaFile.h"
 #include "THaCodaDecoder.h"
 #include "TString.h"

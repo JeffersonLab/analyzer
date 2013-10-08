@@ -2,6 +2,7 @@
 // R. Michaels, Jan 2000
 
 #include <iostream>
+#include <cstdlib>
 #include "THaCodaFile.h"
 #include "THaCodaDecoder.h"
 #include "THaEvData.h"
@@ -28,6 +29,7 @@ int main(int argc, char* argv[])
   if ( Choice == 1 ) {
 
    // CODA file "snippet.dat" is a disk file of CODA data.  
+   //TString filename("snippet.dat");
    TString filename("snippet.dat");
 
    // Two types of constructor
