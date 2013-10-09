@@ -562,7 +562,7 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
 
   //--- Create our decoder from the TClass specified by the user.
   bool new_decoder = false;
-  cout << "Here I am!!! Point 1.5 ... " << fEvData << endl;
+  cout << "Here I am!!! Point 1.8 ... " << gHaDecoder << endl;
   if( !fEvData || fEvData->IsA() != gHaDecoder ) {
     delete fEvData; fEvData = NULL;
     cout << "Here I am!!! Point 2.5 ... " << gHaDecoder << endl;
