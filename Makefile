@@ -336,9 +336,9 @@ analyzer:	src/main.o $(LIBDC) $(LIBSCALER) $(LIBHALLA)
 #---------- Maintenance --------------------------------------------
 clean:
 		set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i clean; done
-		rm -f *.so *.a $(PROGRAMS) *.o $(HA_DICT).* $(LNA_DICT).* *~ 
-		rm -f src/ha_compiledata.h
-		cd src; rm -f *.o *~
+		rm -f *.{so,a,o,os} *.so.*
+		rm -f $(PROGRAMS) $(HA_DICT).* $(LNA_DICT).* *~
+		cd src; rm -f ha_compiledata.h *.{o,os} *~
 
 realclean:	clean
 		set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i realclean; done
