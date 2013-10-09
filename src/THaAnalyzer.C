@@ -565,9 +565,9 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
   cout << "Here I am!!! Point 1.5 ... " << fEvData << endl;
   if( !fEvData || fEvData->IsA() != gHaDecoder ) {
     delete fEvData; fEvData = NULL;
-    cout << "Here I am!!! Point 2 ... " << gHaDecoder << endl;
+    cout << "Here I am!!! Point 2.5 ... " << gHaDecoder << endl;
     if( gHaDecoder ) { 
-      cout << "Here I am!!! Point 3 ... " << endl;
+      cout << "Here I am!!! Point 3.5 ... " << endl;
       fEvData = static_cast<THaEvData*>(gHaDecoder->New());
     }
     if( !fEvData ) {
