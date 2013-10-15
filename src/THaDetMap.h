@@ -1,4 +1,3 @@
-
 #ifndef ROOT_THaDetMap
 #define ROOT_THaDetMap
 
@@ -40,10 +39,8 @@ public:
     UInt_t   first;  // logical number of first channel
     UInt_t   model;  // model number of module (for ADC/TDC identification).
     //FIXME: Clean this up in next major release
-#ifdef HALLC_MODS
     UInt_t   plane;  // Detector plane
     UInt_t   signal; // (eg. PosADC, NegADC, PosTDC, NegTDC)
-#endif
     Int_t    refchan;    // for pipeline TDCs: reference channel number
     Int_t    refindex;   // for pipeline TDCs: index into reference channel map
     Double_t resolution; // Resolution (s/chan) for TDCs
@@ -87,10 +84,8 @@ public:
   virtual Int_t     AddModule( UShort_t crate, UShort_t slot, 
 			       UShort_t chan_lo, UShort_t chan_hi,
 			       UInt_t first=0, UInt_t model=0,
-			       Int_t refindex=-1, Int_t refchan = -1
-#ifdef HALLC_MODS
-			       , UInt_t plane=0, UInt_t signal=0
-#endif
+			       Int_t refindex=-1, Int_t refchan = -1, 
+			       UInt_t plane=0, UInt_t signal=0
 			       );
           void      Clear()  { fNmodules = 0; }
   virtual Module*   Find( UShort_t crate, UShort_t slot, UShort_t chan );
