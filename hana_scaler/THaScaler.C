@@ -520,9 +520,11 @@ Int_t THaScaler::LoadDataCodaFile(THaCodaFile *codafile) {
          return 1;
     } else {
       if (evtype == SCAL_EVTYPE) {
-        if (ldebug) cout << "Event type 140 data"<<endl;
+        //if (ldebug) cout << "Event type 0 data"<<endl;
+        cout << "Event type 0 data"<<endl;
         extstat = ExtractRaw(data);
-        if (ldebug) Print();
+        //if (ldebug) Print();
+        Print();
         if (extstat) return 1;
       }
     }
