@@ -53,9 +53,6 @@ public:
 			    const char* block=kDefaultBlockName );
   virtual Int_t     Eval();
   virtual Int_t     EvalBlock( const char* block=kDefaultBlockName );
-  //BCI: change to static in next version
-  //  static  Int_t     EvalBlock( const TList* plist );
-  virtual Int_t     EvalBlock( const TList* plist );
   THaCut*           FindCut( const char* name ) const
     { return reinterpret_cast<THaCut*>(fCuts->FindObject( name )); }
   THaNamedList*     FindBlock( const char* block ) const
@@ -74,6 +71,8 @@ public:
   virtual Int_t     Remove( const char* cutname );
   virtual Int_t     RemoveBlock( const char* block=kDefaultBlockName );
   virtual void      SetList( THaVarList* lst );
+
+  static  Int_t     EvalBlock( const TList* plist );
 
 protected:
   THaHashList*      fCuts;    //Hash list holding all cuts
