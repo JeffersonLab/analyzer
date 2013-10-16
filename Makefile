@@ -156,6 +156,10 @@ ifdef WITH_DEBUG
 DEFINES      += -DWITH_DEBUG
 endif
 
+# External EVIO support
+INCLUDES     += -I$(EVIO_INCDIR)
+SYSLIBS      += -L$(EVIO_LIBDIR) -levio
+
 CXXFLAGS      = $(CXXFLG) $(CXXEXTFLG) $(INCLUDES) $(DEFINES)
 CFLAGS        = $(CXXFLG) $(INCLUDES) $(DEFINES)
 LIBS         += $(ROOTLIBS) $(SYSLIBS)
@@ -325,10 +329,6 @@ $(LNA_DICT).C:	$(LNA_HDR) $(LNA_LINKDEF)
 		@echo "Generating dictionary $(LNA_DICT)..."
 		rootcint -f $@ -c $(INCLUDES) $(DEFINES) $^
 
-libPodd.a:	$(OBJS) $(LNA_OBJS) subdirs
-		echo "Making libPodd.a..."
-		ar rcs $@ $(OBJS) $(LNA_OBJS) $(DCDIR)/*.o $(SCALERDIR)/*.o
-
 #---------- Main program -------------------------------------------
 analyzer:	src/main.o $(LIBDC) $(LIBSCALER) $(LIBHALLA)
 		$(LD) $(LDFLAGS) $< $(HALLALIBS) $(GLIBS) -o $@
@@ -392,7 +392,7 @@ endif
 ###    YOU ARE DOING
 
 .SUFFIXES:
-.SUFFIXES: .c .cc .cpp .C .o .d
+.SUFFIXES: .c .cc .cpp .C .o .os .d
 
 %.o:	%.C
 	$(CXX) $(CXXFLAGS) -o $@ -c $<

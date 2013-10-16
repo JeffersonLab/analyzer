@@ -5,10 +5,8 @@
 //
 //  CODA data file, and facilities to open, close, read,
 //  write, filter CODA data to disk files, etc.
-//  A lot of this relies on the "evio.cpp" code from
-//  DAQ group which is a C++ rendition of evio.c that
-//  we have used for years, but here are some useful
-//  added features.
+//
+//  This is largely a wrapper around the JLAB EVIO library.
 //
 //  author  Robert Michaels (rom@jlab.org)
 //
@@ -43,14 +41,20 @@ using namespace std;
 
   int THaCodaFile::codaOpen(const char* fname, int mode) {  
        init(fname);
-       int status = evOpen(fname,"r",&handle);
+       // evOpen really wants char*, so we need to do this safely. (The string
+       // _might_ be modified internally ...) Silly, really.
+       char *d_fname = strdup(fname), *d_flags = strdup("r");
+       int status = evOpen(d_fname,d_flags,&handle);
+       free(d_fname); free(d_flags);
        staterr("open",status);
        return status;
   };
 
   int THaCodaFile::codaOpen(const char* fname, const char* readwrite, int mode) {  
       init(fname);
-      int status = evOpen(fname,readwrite,&handle);
+      char *d_fname = strdup(fname), *d_flags = strdup(readwrite);
+      int status = evOpen(d_fname,d_flags,&handle);
+      free(d_fname); free(d_flags);
       staterr("open",status);
       return status;
   };
@@ -72,7 +76,7 @@ using namespace std;
 // Must be called once per event.
     int status;
     if ( handle ) {
-       status = evRead(handle, evbuffer, MAXEVLEN);
+       status = evRead(handle, (uint32_t *)evbuffer, MAXEVLEN);
        staterr("read",status);
        if (status != S_SUCCESS) {
 	 //           status = CODA_ERROR; //don't clobber the return code!
@@ -94,7 +98,7 @@ using namespace std;
 // codaWrite: Writes data from 'evbuf' to file
      int status;
      if ( handle ) {
-       status = evWrite(handle, evbuf);
+       status = evWrite(handle, (uint32_t *)evbuf);
        staterr("write",status);
      } else {
        cout << "codaWrite ERROR: tried to access file with handle = 0" << endl;

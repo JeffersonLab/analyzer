@@ -12,7 +12,6 @@
 #include "TString.h"
 #include "THaSlotData.h"
 #include "TBits.h"
-#include "evio.h"
 #include "THaEvData.h"
 
 class THaCodaDecoder : public THaEvData {

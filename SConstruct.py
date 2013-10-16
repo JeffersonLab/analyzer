@@ -50,6 +50,17 @@ print "Main Directory = %s" % baseenv.subst('$HA_DIR')
 print "Software Version = %s" % baseenv.subst('$VERSION')
 ivercode = 65536*int(float(baseenv.subst('$SOVERSION')))+ 256*int(10*(float(baseenv.subst('$SOVERSION'))-int(float(baseenv.subst('$SOVERSION')))))+ int(float(baseenv.subst('$PATCH')))
 baseenv.Append(VERCODE = ivercode)
+#
+# evio environment #
+uname = os.uname();
+platform = uname[0]
+machine  = uname[4]
+osname   = platform + '-' +  machine
+baseenv.Append(EVIO_LIB = os.getenv('EVIO_LIBDIR'))
+baseenv.Append(EVIO_INC = os.getenv('EVIO_INCDIR'))
+print "EVIO lib Directory = %s" % baseenv.subst('$EVIO_LIB')
+print "EVIO include Directory = %s" % baseenv.subst('$EVIO_INC')
+baseenv.Append(CPPPATH = ['$EVIO_INC'])
 baseenv.Append(CPPPATH = ['$HA_SRC','$HA_DC','$HA_SCALER'])
 
 ######## Configure Section #######
@@ -98,10 +109,10 @@ baseenv.Append(BUILDERS = {'RootCint': bld})
 hallalib = 'HallA'
 dclib = 'dc'
 scalerlib = 'scaler'
+eviolib = 'evio'
 
-baseenv.Append(LIBPATH=['$HA_DIR','$HA_SRC','$HA_DC','$HA_SCALER'])
-#baseenv.Append(LIBPATH=['$HA_LIB'])
-baseenv.Append(LIBS=[hallalib,dclib,scalerlib])
+baseenv.Append(LIBPATH=['$HA_DIR','$EVIO_LIB','$HA_SRC','$HA_DC','$HA_SCALER'])
+baseenv.Append(LIBS=[eviolib,hallalib,dclib,scalerlib])
 baseenv.Replace(SHLIBSUFFIX = '.so')
 
 SConscript(dirs = ['./','src/','hana_decode/','hana_scaler'],name='SConscript.py',exports='baseenv')

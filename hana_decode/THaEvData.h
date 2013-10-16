@@ -12,6 +12,9 @@
 #include "TString.h"
 #include "THaSlotData.h"
 #include "TBits.h"
+// FIXME: we need to include evio.h here only so that clients of
+// THaEvData can understand CODA error return codes.
+// Define API-specific return values here instead.
 #include "evio.h"
 #include <string>
 #include <cassert>
