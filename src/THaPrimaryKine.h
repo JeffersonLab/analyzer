@@ -71,11 +71,6 @@ protected:
   FourVect          fA;            // Target 4-momentum
   FourVect          fA1;           // Recoil system 4-momentum
   FourVect          fQ;            // Momentum transfer 4-vector
-  // BCI: remove - redundant
-  Double_t          fQx;           // unused
-  Double_t          fQy;           // unused
-  Double_t          fQz;           // unused
-  // end BCI
   
   Double_t          fM;            // Mass of incident particle (GeV/c^2)
   Double_t          fMA;           // Target mass (GeV/c^2)

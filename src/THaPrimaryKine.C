@@ -67,8 +67,6 @@ void THaPrimaryKine::Clear( Option_t* opt )
   fP0.SetXYZT(kBig,kBig,kBig,kBig);
   fP1 = fA = fA1 = fQ = fP0;
 
-  //BCI, remove
-  fQx = fQy = fQz = kBig;
 }
 
 //_____________________________________________________________________________

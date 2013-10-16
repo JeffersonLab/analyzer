@@ -169,30 +169,35 @@ const char* THaTextvars::Get( const string& name, Int_t idx ) const
 }
 
 //_____________________________________________________________________________
-vector<string>& THaTextvars::GetArray( const string& name )
+UInt_t THaTextvars::GetArray( const string& name, vector<string>& array )
 {
-  // Get the values array for the text variable with the given name.
-  // If name is not found, a zero-size dummy array is returned, which 
-  // one should not use.
+  // Get the array of values for the text variable with the given name.
+  // Returns number of values found (size of array), or zero if not found.
 
-  // BCI: Returning a reference from this function is a bad idea.
-  // It allows write access to the internal data.
-  // We should bite the bullet and return by value or, perhaps better, fill
-  // a user-supplied vector<string>.
-  static vector<string> dummy;
-
-  if( name.empty() ) {
-    dummy.clear();
-    return dummy;
-  }
+  array.clear();
+  if( name.empty() )
+    return 0;
 
   Textvars_t::iterator it = fVars.find(name);
-  if( it == fVars.end() ) {
-    dummy.clear();
-    return dummy;
-  }
+  if( it == fVars.end() )
+    return 0;
 
-  return (*it).second;
+  array.swap( (*it).second );
+  return array.size();
+}
+
+//_____________________________________________________________________________
+vector<string> THaTextvars::GetArray( const string& name )
+{
+  // Get the values array for the text variable with the given name.
+  // If name is not found, the returned array has size zero.
+  // This function is inefficient and provided only for backward
+  // compatibility. Use GetArray( const string&, vector<string>& )
+  // instead.
+
+  vector<string> the_array;
+  GetArray( name, the_array );
+  return the_array;
 }
 
 //_____________________________________________________________________________

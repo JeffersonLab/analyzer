@@ -26,7 +26,9 @@ public:
   UInt_t   Size() const { return fVars.size(); }
 
   const char*               Get( const std::string& name, Int_t idx=0 ) const;
-  std::vector<std::string>& GetArray( const std::string& name );
+  std::vector<std::string>  GetArray( const std::string& name );
+  UInt_t                    GetArray( const std::string& name,
+				      std::vector<std::string>& array );
   UInt_t                    GetNvalues( const std::string& name ) const;
 
   Int_t    Set( const std::string& name, const std::string& value ) {

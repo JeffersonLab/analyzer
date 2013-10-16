@@ -82,11 +82,6 @@ protected:
   Double_t fEmiss;      // Missing energy (GeV), nuclear physics definition omega-Tx-Tb
   Double_t fMrecoil;    // Invariant mass of recoil system (GeV)
   Double_t fErecoil;    // Total energy of recoil system (GeV)
-  //BCI: redundant, remove
-  Double_t fPrecoil_x;  // unused
-  Double_t fPrecoil_y;  // unused
-  Double_t fPrecoil_z;  // unused
-  //end BCI
   Double_t fTX;         // Kinetic energy of detected particle (GeV)
   Double_t fTB;         // Kinetic energy of recoil system (GeV)
   Double_t fPX_cm;      // Magnitude of X momentum in CM system (GeV)

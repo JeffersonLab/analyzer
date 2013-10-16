@@ -13,12 +13,10 @@
 #include "TBits.h"
 #include <vector>
 #include <string>
-#include <cstring>
+#include <cstring> // for memset etc.
 #include <iostream>
 
 #define NTRIG 12
-
-using namespace std;
 
 class TH1;
 class THaScaler;
@@ -28,11 +26,11 @@ class BRocScaler {
 // Container class of ROC scaler data in THaNormAna.  All data public, so
 // it is like a "struct".
  public:
-  //BCI: second arg should be const char*
-  BRocScaler(Int_t ir, char *nm, Int_t headp, Int_t headn, Int_t ch, Double_t *d) : roc(ir), chan_name(nm), header_P(headp), header_N(headn), chan(ch) { data = d; }
+  BRocScaler(Int_t ir, const char *nm, Int_t headp, Int_t headn, Int_t ch, 
+	     Double_t *d) 
+  : roc(ir), chan_name(nm), header_P(headp), header_N(headn), chan(ch) { data = d; }
   Int_t roc;                 // roc num you want
-  //BCI should be const char* or, better yet, string
-  char *chan_name;           // name of channel
+  std::string chan_name;     // name of channel
   Int_t header_P, header_N;  // headers of + & - helicity data
   Int_t chan;                // channel in scaler
   Double_t *data;            // pointer to data
@@ -64,6 +62,7 @@ public:
     delete [] psfact;
   }
   void Print(Int_t ihel=0) {
+    using std::cout; using std::endl;
     cout << "Print of normdata";
     cout << " for helicity "<<ihel<<endl; 
     cout << "EvCount "<<GetEvCount(ihel)<<endl;
