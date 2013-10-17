@@ -24,6 +24,7 @@
 #include "TError.h"
 #include "TVector3.h"
 #include "TSystem.h"
+#include "TObjArray.h"
 
 #include <cstring>
 #include <cctype>
@@ -906,7 +907,8 @@ bool THaAnalysisObject::IsTag( const char* buf )
 }
 
 //_____________________________________________________________________________
-static Int_t ReadDBline( FILE* file, char* buf, size_t bufsiz, string& line )
+Int_t THaAnalysisObject::ReadDBline( FILE* file, char* buf, size_t bufsiz,
+				     string& line )
 {
   // Get a text line from the database file 'file'. Ignore all comments
   // (anything after a #). Trim trailing whitespace. Concatenate continuation
@@ -1488,6 +1490,14 @@ vector<string> THaAnalysisObject::vsplit(const string& s)
       }
   }
   return ret;
+}
+
+//_____________________________________________________________________________
+TString& THaAnalysisObject::GetObjArrayString( const TObjArray* array, Int_t i )
+{
+  // Get the string at index i in the given TObjArray
+
+  return (static_cast<TObjString*>(array->At(i)))->String();
 }
 
 //_____________________________________________________________________________

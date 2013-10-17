@@ -39,6 +39,7 @@ public:
        virtual ~THaSlotData();
        const char* devType() const;             // "adc", "tdc", "scaler"
        int getNumRaw() const { return numraw; };  // Amount of raw CODA data
+       int* getRawDataBuffer() const;             // Raw data buffer, for fast searches
        int getRawData(int ihit) const;            // Returns raw data words
        int getRawData(int chan, int hit) const;
        int getNumHits(int chan) const;      // Num hits on a channel
@@ -88,6 +89,12 @@ inline int THaSlotData::getRawData(int hit) const {
   assert( hit >= 0 && hit < numraw );
   if (hit >= 0 && hit < numraw) return rawData[hit];
   return 0;
+};
+
+//_____________________________________________________________________________
+inline int* THaSlotData::getRawDataBuffer() const {  
+  // Returns pointer to the raw data array (with numraw valid entries)
+  return rawData;
 };
 
 //_____________________________________________________________________________

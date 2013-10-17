@@ -15,7 +15,7 @@ THaAnalyzer.C             THaCutList.C              THaGoldenTrack.C
 THaPidDetector.C          THaSAProtonEP.C           THaTrackOut.C             THaVDCUVPlane.C
 THaApparatus.C            THaDebugModule.C          THaHRS.C                  
 THaPostProcess.C          THaScalerGroup.C          THaTrackProj.C            THaVDCUVTrack.C
-THaArrayString.C          THaDecData.C              THaHelicity.C             
+THaArrayString.C          THaDecData.C              BdataLoc.C                THaHelicity.C             
 THaPrimaryKine.C          THaScintillator.C         THaTrackingDetector.C     THaVDCWire.C
 THaAvgVertex.C            THaDetMap.C               THaHelicityDet.C          
 THaPrintOption.C          THaSecondaryKine.C        THaTrackingModule.C       THaVar.C

@@ -42,7 +42,7 @@ src/THaFormula.h src/THaVform.h src/THaVhist.h src/THaVar.h src/THaVarList.h
 src/THaCut.h src/THaNamedList.h src/THaCutList.h src/THaInterface.h src/THaRunBase.h 
 src/THaCodaRun.h src/THaRun.h src/THaRunParameters.h src/THaDetMap.h src/THaApparatus.h 
 src/THaDetector.h src/THaSpectrometer.h src/THaSpectrometerDetector.h src/THaHRS.h 
-src/THaDecData.h src/THaOutput.h src/THaString.h src/THaTrackingDetector.h 
+src/THaDecData.h src/BdataLoc.h src/THaOutput.h src/THaString.h src/THaTrackingDetector.h 
 src/THaNonTrackingDetector.h src/THaPidDetector.h src/THaSubDetector.h 
 src/THaAnalysisObject.h src/THaDetectorBase.h src/THaRTTI.h src/THaPhysicsModule.h 
 src/THaVertexModule.h src/THaTrackingModule.h src/THaAnalyzer.h src/THaPrintOption.h 
