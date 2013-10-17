@@ -4,7 +4,7 @@
 export WITH_DEBUG = 1
 
 # Compile debug version
-#export DEBUG = 1
+export DEBUG = 1
 
 # Include libraries for reading from the ET ring
 #  (only for adaq? machines with the Coda libraries )
