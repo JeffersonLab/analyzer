@@ -48,11 +48,28 @@ normanatarget = 'NormAna'
 
 srclib = baseenv.SharedLibrary(target = sotarget, source = list+['haDict.so'],SHLIBVERSION=['$VERSION'],SHLIBPREFIX='../lib',LIBS=[''])
 print ('Source shared library = %s\n' % srclib)
+#
+if baseenv['PLATFORM'] == 'darwin':
+	cleantarget = '../'+baseenv.subst('$SHLIBPREFIX')+sotarget+'.'+baseenv.subst('$VERSION')+baseenv.subst('$SHLIBSUFFIX')
+else:
+	cleantarget = '../'+baseenv.subst('$SHLIBPREFIX')+sotarget+baseenv.subst('$SHLIBSUFFIX')+'.'+baseenv.subst('$VERSION')
+Clean(srclib,cleantarget)
+shortcleantarget = '../'+baseenv.subst('$SHLIBPREFIX')+sotarget+baseenv.subst('$SHLIBSUFFIX')+'.'+baseenv.subst('$SOVERSION')
+Clean(srclib,shortcleantarget)
+#
 #baseenv.Install('../lib',srclib)
 #baseenv.Alias('install',['../lib'])
 
 normanalib = baseenv.SharedLibrary(target = normanatarget,source = normanalist+['NormAnaDict.so'],SHLIBVERSION=['$VERSION'],SHLIBPREFIX='../lib',LIBS=[''])
 print ('NormAna shared library = %s\n' % normanalib)
+#
+if baseenv['PLATFORM'] == 'darwin':
+	normanacleantarget = '../'+baseenv.subst('$SHLIBPREFIX')+normanatarget+'.'+baseenv.subst('$VERSION')+baseenv.subst('$SHLIBSUFFIX')
+else:
+	normanacleantarget = '../'+baseenv.subst('$SHLIBPREFIX')+normanatarget+baseenv.subst('$SHLIBSUFFIX')+'.'+baseenv.subst('$VERSION')
+Clean(srclib,normanacleantarget)
+shortnormanacleantarget = '../'+baseenv.subst('$SHLIBPREFIX')+normanatarget+baseenv.subst('$SHLIBSUFFIX')+'.'+baseenv.subst('$SOVERSION')
+Clean(srclib,shortnormanacleantarget)
 #baseenv.Install('../lib',normanalib)
 #baseenv.Alias('install',['../lib'])
 
