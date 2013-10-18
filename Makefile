@@ -13,10 +13,15 @@ export WITH_DEBUG = 1
 
 # SOVERSION should be numerical only - it becomes the shared lib soversion
 # EXTVERS (optional) describes the build, e.g. "dbg", "et", "gcc33" etc.
+<<<<<<< HEAD
 SOVERSION  := 1.5
 PATCH   := 25
+=======
+SOVERSION  := 1.6
+PATCH   := 0
+>>>>>>> upstream2/master
 VERSION := $(SOVERSION).$(PATCH)
-EXTVERS :=
+EXTVERS := -devel
 #EXTVERS := -et
 NAME    := analyzer-$(VERSION)
 VERCODE := $(shell echo $(subst ., ,$(SOVERSION)) $(PATCH) | \
@@ -155,6 +160,10 @@ MAKEDEPEND   := gcc
 ifdef WITH_DEBUG
 DEFINES      += -DWITH_DEBUG
 endif
+
+# External EVIO support
+INCLUDES     += -I$(EVIO_INCDIR)
+SYSLIBS      += -L$(EVIO_LIBDIR) -levio
 
 CXXFLAGS      = $(CXXFLG) $(CXXEXTFLG) $(INCLUDES) $(DEFINES)
 CFLAGS        = $(CXXFLG) $(INCLUDES) $(DEFINES)
@@ -325,10 +334,6 @@ $(LNA_DICT).C:	$(LNA_HDR) $(LNA_LINKDEF)
 		@echo "Generating dictionary $(LNA_DICT)..."
 		rootcint -f $@ -c $(INCLUDES) $(DEFINES) $^
 
-libPodd.a:	$(OBJS) $(LNA_OBJS) subdirs
-		echo "Making libPodd.a..."
-		ar rcs $@ $(OBJS) $(LNA_OBJS) $(DCDIR)/*.o $(SCALERDIR)/*.o
-
 #---------- Main program -------------------------------------------
 analyzer:	src/main.o $(LIBDC) $(LIBSCALER) $(LIBHALLA)
 		$(LD) $(LDFLAGS) $< $(HALLALIBS) $(GLIBS) -o $@
@@ -392,7 +397,7 @@ endif
 ###    YOU ARE DOING
 
 .SUFFIXES:
-.SUFFIXES: .c .cc .cpp .C .o .d
+.SUFFIXES: .c .cc .cpp .C .o .os .d
 
 %.o:	%.C
 	$(CXX) $(CXXFLAGS) -o $@ -c $<

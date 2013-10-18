@@ -62,7 +62,7 @@ void THaSecondaryKine::Clear( Option_t* opt )
     = fPmiss_x = fPmiss_y = fPmiss_z = fEmiss = fMrecoil = fErecoil
     = fTX = fTB = fPX_cm = fTheta_x_cm = fPhi_x_cm = fTheta_b_cm
     = fPhi_b_cm = fTX_cm = fTB_cm = fTtot_cm = fMandelS = fMandelT
-    = fMandelU = fPrecoil_x = fPrecoil_y = fPrecoil_z = kBig;
+    = fMandelU = kBig;
   fX.SetXYZT(kBig,kBig,kBig,kBig); 
   fB.SetXYZT(kBig,kBig,kBig,kBig);
 }
@@ -215,13 +215,6 @@ Int_t THaSecondaryKine::Process( const THaEvData& )
   // as the total energy of the undetected recoil system.
   // This is the "missing mass", Mrecoil, plus any kinetic energy.
   fErecoil = fB.E();
-
-  //FIXME: BCI - remove. Still calculated because of inline getters in header
-  // Lab components of the recoil momentum 3-vector
-  fPrecoil_x = fB.X();
-  fPrecoil_y = fB.Y();
-  fPrecoil_z = fB.Z();
-  // end BCI
 
   // Calculate some interesting quantities in the CM system of A'.
   // NB: If the target is initially at rest, the A'-vector (spatial part)

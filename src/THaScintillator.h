@@ -95,7 +95,7 @@ protected:
   // Useful derived quantities
   double tan_angle, sin_angle, cos_angle;
   
-  static const char NDEST = 2;
+  static const Int_t NDEST = 2;
   struct DataDest {
     Int_t*    nthit;
     Int_t*    nahit;

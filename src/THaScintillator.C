@@ -196,7 +196,6 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   for (int i=0; i<fNelem; i++) fTrigOff[i]=0;
   
   
-  //FIXME (BCI): The static_cast is a kludge, THaDetectorBase::fNelem should be UInt_t
   DBRequest list[] = {
     { "TDC_offsetsL", fLOff, kDouble, static_cast<UInt_t>(fNelem) },
     { "TDC_offsetsR", fROff, kDouble, static_cast<UInt_t>(fNelem) },

@@ -50,7 +50,8 @@ ROOTLIBS     := $(shell root-config --libs)
 ROOTGLIBS    := $(shell root-config --glibs)
 ROOTBIN      := $(shell root-config --bindir)
 
-INCLUDES     = $(ROOTCFLAGS) -I$(DCDIR)
+INCLUDES     = $(ROOTCFLAGS) -I$(DCDIR) -I$(EVIO_INCDIR)
+
 
 ifdef STANDALONE
 ARCH          = linux
@@ -293,7 +294,7 @@ version:
 	tar cvf $(VERS).tar ./$(VERS)
 
 clean:
-	rm -f *.o core *~ THaScalDict* *.out *.tar $(PROGS)
+	rm -f *.{a,o,os,out} core *~ THaScalDict* $(VERS).tar $(PROGS)
 
 realclean:  clean
 	rm -f *.d
@@ -306,7 +307,7 @@ install:	all
 ###
 
 .SUFFIXES:
-.SUFFIXES: .c .cc .cpp .C .o .d
+.SUFFIXES: .c .cc .cpp .C .o .os .d
 
 %.o:	%.C
 	$(CXX) $(CXXFLAGS) -c $<

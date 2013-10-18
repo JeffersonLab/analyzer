@@ -18,6 +18,7 @@
 #include "TError.h"
 #include "TList.h"
 #include "TString.h"
+#include "TClass.h"
 
 #include <iostream>
 #include <fstream>
@@ -37,7 +38,7 @@ const char* const THaCutList::kDefaultCutFile   = "default.cuts";
 void THaHashList::PrintOpt( Option_t* opt ) const
 {
   // Print all objects in the list. Pass option 'opt' through to each object
-  // being printed. (This is the old ROOT 2,x behavior).
+  // being printed. (This is the old ROOT 2.x behavior).
 
   TIter next(this);
   TObject* object;
@@ -46,7 +47,7 @@ void THaHashList::PrintOpt( Option_t* opt ) const
 }
 
 //______________________________________________________________________________
-THaCutList::THaCutList() : fVarList(NULL)
+THaCutList::THaCutList() : fVarList(0)
 {
   // Default constructor. No variable list is defined. Either define it
   // later with SetList() or pass the list as an argument to Define().
@@ -112,7 +113,7 @@ void THaCutList::Compile()
   // Since cuts are compiled when we Define() them, this routine typically only 
   // needs to be called when global variable pointers need to be updated.
 
-  TList* bad_cuts = NULL;
+  TList* bad_cuts = 0;
   bool have_bad = false;
 
   TIter next( fCuts );
@@ -241,12 +242,21 @@ Int_t THaCutList::Eval()
 Int_t THaCutList::EvalBlock( const TList* plist )
 {
   // Evaluate all cuts in the given list in the order in which they were defined.
+  // This is a static member function that can be called externally.
+  // Only TObject* in the given list that inherit from THaCut* are evaluated.
 
   if( !plist ) return -1;
   Int_t i = 0;
   TIter next( plist );
-  while( THaCut* pcut = static_cast<THaCut*>( next() )) {
-    pcut->EvalCut();
+  while( TObject* pobj = next() ) {
+    if( !pobj->InheritsFrom(THaCut::Class()) ) {
+#ifdef WITH_DEBUG
+      ::Warning("THaCutList::EvalBlock()", "List contains a non-THaCut:" );
+      pobj->Print();
+#endif
+      continue;
+    }
+    static_cast<THaCut*>(pobj)->EvalCut();
     i++;
   }
   return i;

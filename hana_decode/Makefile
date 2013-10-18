@@ -15,11 +15,9 @@
 # corresponding to the above executables.  Also see haGenDetTest.C
 # which shows proposed usage in a 'generic' detector class.
 
-# Note regarding software from DAQ group
-# evio.h, evio.C, swap_util.C, et.h are taken from DAQ group intact
-# (only a few tiny mod's by me).  For this reason I did not rename 
-# those modules with prefix "THa".  Next, swapped_intcpy.c is a version
-# extracted from swap_util and modified by Ole for higher speed.
+# Note regarding software from DAQ group:
+# EVIO headers and libraries must be installed in $EVIO_INCDIR and
+# $EVIO_LIBDIR, respectively.
 
 # name and version of this release
 VERS = hana_decode_1.6
@@ -54,7 +52,7 @@ ROOTLIBS     := $(shell root-config --libs)
 ROOTGLIBS    := $(shell root-config --glibs)
 ROOTBIN      := $(shell root-config --bindir)
 
-INCLUDES      = $(ROOTCFLAGS) 
+INCLUDES      = $(ROOTCFLAGS)
 
 ifndef STANDALONE
    INCLUDES += -I$(MAINDIR)
@@ -134,9 +132,10 @@ MAKEDEPEND    = g++
 
 export OSNAME := $(shell uname)
 
+EVIO_LIB      = -L$(EVIO_LIBDIR) -levio
+
 ifeq ($(OSNAME),SunOS)
 
-   EVIO_LIB=libevio_sun.a
    GLIB =  -lm -lc -lgen -lw -lnsl -ldl
    SLIB = -L/opt/SUNWspro/SC4.2/lib -lF77 -lM77 -lsunmath
 # all this needed for ET...  up to comment below
@@ -156,7 +155,6 @@ ifeq ($(OSNAME),Linux)
 
    LIBS          =
    GLIBS         = -L/usr/X11R6/lib -lXpm -lX11
-   EVIO_LIB      = libevio_linux.a
    ALL_LIBS      = $(EVIO_LIB) $(GLIBS) $(ROOTLIBS) $(ROOTGLIBS)
 
 # ONLIBS is needed for ET
@@ -184,6 +182,9 @@ ifdef ONLINE_ET
   ALL_LIBS   += $(ONLIBS)
 endif
 
+# External EVIO support
+INCLUDES     += -I$(EVIO_INCDIR)
+
 DEFINES      += $(DC_DEFINES)
 CFLAGS        = $(CXXFLG) $(INCLUDES) $(DEFINES)
 CXXFLAGS      = $(CXXFLG) $(CXXEXTFLG) $(INCLUDES) $(DEFINES)
@@ -196,7 +197,7 @@ GLIBS        += $(ROOTGLIBS) $(SYSLIBS)
 
 SRC = THaUsrstrutils.C THaCrateMap.C THaCodaData.C \
       THaEpics.C THaFastBusWord.C THaCodaFile.C THaSlotData.C \
-      THaEvData.C evio.C THaCodaDecoder.C
+      THaEvData.C THaCodaDecoder.C
 
 PROGS = tstio tdecpr tdecex prfact epicsd 
 # If you want to use the ET system at Jlab.
@@ -211,8 +212,6 @@ HEAD = $(RCHEAD)
 ifdef ONLINE_ET
   HEAD += et.h
 endif
-# sources without headers:
-SRC += swap_util.C swapped_intcpy.c
 DEPS = $(patsubst %.c,%.d,$(SRC:.C=.d))
 DECODE_OBJS = $(patsubst %.c,%.o,$(SRC:%.C=%.o)) THaDecDict.o
 
@@ -289,30 +288,6 @@ tstcoda: tstcoda_main.o THaCodaFile.o THaEtClient.o THaCodaData.o THaCodaFile.h 
 	$(CXX) $(CXXFLAGS) -o $@ tstcoda_main.o $(DECODE_OBJS) $(ALL_LIBS) $(MAINOBJS)
 
 
-# Below is the evio library, which comes rather directly 
-# from CODA group with minor tweaking by R. Michaels & O. Hansen.
-
-libevio_sun.a:  evio.o swap_util.o swapped_intcpy.o
-	rm -f $@
-	ar cr $@ evio.o swap_util.o swapped_intcpy.o
-
-libevio_linux.a:  evio.o swap_util.o swapped_intcpy.o
-	rm -f $@
-	ar cr $@ evio.o swap_util.o swapped_intcpy.o
-
-#libevio_hpux.a:  evio.o swap_util.o swapped_intcpy.o
-#	rm -f $@
-#	ar cr $@ evio.o swap_util.o swapped_intcpy.o
-
-#evio.o: evio.C
-#	$(CXX) -c  $<
-
-# swap_util.o: swap_util.C
-# 	$(CXX) -c  $<
-
-swapped_intcpy.o: swapped_intcpy.c
-	$(CC) $(CFLAGS) -c  $<
-
 # Dictionary
 
 THaDecDict.C: $(RCHEAD) haDecode_LinkDef.h
@@ -335,24 +310,19 @@ version:
 	cp ChangeLog ./$(VERS)
 	tar cvf $(VERS).tar ./$(VERS)
 
-clean:  clean_evio
-	rm -f *.o *.a core *~ THaDecDict* *.out *.tar $(PROGS)
+clean:
+	rm -f *.{a,out,o,os} *.so.* core *~ THaDecDict* $(VERS).tar $(PROGS)
 
 realclean:  clean
 	rm -f *.d
-
-clean_evio:
-	rm -f evio.o swap_util.o swapped_intcpy.o
 
 install:	all
 	mkdir -p $(ANALYZER)/src/hana_decode
 	cp -pu $(SRC) $(HEAD) haDecode_LinkDef.h Makefile $(ANALYZER)/src/hana_decode
 	cp -pu $(HEAD) $(ANALYZER)/include
-#	-cp -puvf libdc.so $(ANALYZER)/$(PLATFORM)
-###
 
 .SUFFIXES:
-.SUFFIXES: .c .cc .cpp .C .o .d
+.SUFFIXES: .c .cc .cpp .C .o .os .d
 
 %.o:	%.C
 	$(CXX) $(CXXFLAGS) -c $<

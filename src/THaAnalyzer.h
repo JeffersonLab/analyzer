@@ -172,8 +172,7 @@ protected:
   virtual void   InitCounters();
   virtual void   InitCuts();
   virtual void   InitStages();
-  //FIXME: BCI: make module_list non-const
-  virtual Int_t  InitModules( const TList* module_list, TDatime& time, 
+  virtual Int_t  InitModules( TList* module_list, TDatime& time, 
 			      Int_t erroff, const char* baseclass = NULL );
   virtual Int_t  InitOutput( const TList* module_list, Int_t erroff,
 			     const char* baseclass = NULL );

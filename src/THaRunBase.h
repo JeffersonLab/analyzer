@@ -31,6 +31,11 @@ public:
   // Main functions
   virtual const Int_t* GetEvBuffer() const = 0;
   virtual Int_t        Init();
+  // FIXME: these currently may return implementation-dependent
+  // error codes (e.g. from evio.h). We should define all possible
+  // return values for this API here. Implemetations
+  // then have to translate codes they get from the underlying
+  // library (e.g. EVIO) to this API's return values.
   virtual Int_t        Open() = 0;
   virtual Int_t        ReadEvent() = 0;
   virtual Int_t        Close() = 0;
