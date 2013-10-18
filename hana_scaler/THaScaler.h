@@ -15,7 +15,7 @@
 
 #define SCAL_NUMCHAN     32
 #define SCAL_NUMBANK     12
-#define SCAL_EVTYPE     140  
+#define SCAL_EVTYPE     140
 #define SCAL_ERROR       -1
 #define SCAL_VERBOSE      1  // verbose warnings (0 = silent, recommend = 1)
 
