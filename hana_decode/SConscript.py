@@ -47,5 +47,13 @@ sotarget = 'dc'
 
 dclib = baseenv.SharedLibrary(target=sotarget, source = list+['THaDecDict.so'],SHLIBPREFIX='../lib',SHLIBVERSION=['$VERSION'],LIBS=[''])
 print ('Decoder shared library = %s\n' % dclib)
+#
+if baseenv['PLATFORM'] == 'darwin':
+	cleantarget = '../'+baseenv.subst('$SHLIBPREFIX')+sotarget+'.'+baseenv.subst('$VERSION')+baseenv.subst('$SHLIBSUFFIX')
+else:
+        cleantarget = '../'+baseenv.subst('$SHLIBPREFIX')+sotarget+baseenv.subst('$SHLIBSUFFIX')+'.'+baseenv.subst('$VERSION')
+Clean(dclib,cleantarget)
+shortcleantarget = '../'+baseenv.subst('$SHLIBPREFIX')+sotarget+baseenv.subst('$SHLIBSUFFIX')+'.'+baseenv.subst('$SOVERSION')
+Clean(dclib,shortcleantarget)
 #baseenv.Install('../lib',dclib)
 #baseenv.Alias('install',['../lib'])

@@ -37,5 +37,13 @@ sotarget = 'scaler'
 
 scalerlib = baseenv.SharedLibrary(target=sotarget, source = list+['THaScalDict.so'],SHLIBPREFIX='../lib',SHLIBVERSION=['$VERSION'],LIBS=[''])
 print ('Scaler shared library = %s\n' % scalerlib)
+#
+if baseenv['PLATFORM'] == 'darwin':
+	cleantarget = '../'+baseenv.subst('$SHLIBPREFIX')+sotarget+'.'+baseenv.subst('$VERSION')+baseenv.subst('$SHLIBSUFFIX')
+else:
+	cleantarget = '../'+baseenv.subst('$SHLIBPREFIX')+sotarget+baseenv.subst('$SHLIBSUFFIX')+'.'+baseenv.subst('$VERSION')
+Clean(scalerlib,cleantarget)
+shortcleantarget = '../'+baseenv.subst('$SHLIBPREFIX')+sotarget+baseenv.subst('$SHLIBSUFFIX')+'.'+baseenv.subst('$SOVERSION')
+Clean(scalerlib,shortcleantarget)
 #baseenv.Install('../lib',scalerlib)
 #baseenv.Alias('install',['../lib'])
