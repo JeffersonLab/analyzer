@@ -46,30 +46,61 @@ baseenv.Object('main.C')
 sotarget = 'HallA'
 normanatarget = 'NormAna'
 
-srclib = baseenv.SharedLibrary(target = sotarget, source = list+['haDict.so'],SHLIBVERSION=['$VERSION'],SHLIBPREFIX='../lib',LIBS=[''])
+baseenv.Append(SHLIBSUFFIX = '.'+baseenv.subst('$VERSION'))
+
+#srclib = baseenv.SharedLibrary(target = sotarget, source = list+['haDict.so'],SHLIBVERSION=['$VERSION'],SHLIBPREFIX='../lib',LIBS=[''])
+srclib = baseenv.SharedLibrary(target = sotarget, source = list+['haDict.so'],SHLIBPREFIX='../lib',LIBS=[''])
 print ('Source shared library = %s\n' % srclib)
-#
-if baseenv['PLATFORM'] == 'darwin':
-	cleantarget = '../'+baseenv.subst('$SHLIBPREFIX')+sotarget+'.'+baseenv.subst('$VERSION')+baseenv.subst('$SHLIBSUFFIX')
-else:
-	cleantarget = '../'+baseenv.subst('$SHLIBPREFIX')+sotarget+baseenv.subst('$SHLIBSUFFIX')+'.'+baseenv.subst('$VERSION')
+
+linkbase = baseenv.subst('$SHLIBPREFIX')+sotarget
+
+cleantarget = linkbase+'.so.'+baseenv.subst('$VERSION')
+majorcleantarget = linkbase+'.so'
+localmajorcleantarget = '../'+linkbase+'.so'
+shortcleantarget = linkbase+'.so.'+baseenv.subst('$SOVERSION')
+localshortcleantarget = '../'+linkbase+'.so.'+baseenv.subst('$SOVERSION')
+
+print ('cleantarget = %s\n' % cleantarget)
+print ('majorcleantarget = %s\n' % majorcleantarget)
+print ('shortcleantarget = %s\n' % shortcleantarget)
+try:
+	os.symlink(cleantarget,localshortcleantarget)
+	os.symlink(shortcleantarget,localmajorcleantarget)
+except:	
+	print " Continuing ... "
+
 Clean(srclib,cleantarget)
-shortcleantarget = '../'+baseenv.subst('$SHLIBPREFIX')+sotarget+baseenv.subst('$SHLIBSUFFIX')+'.'+baseenv.subst('$SOVERSION')
-Clean(srclib,shortcleantarget)
-#
+Clean(srclib,localmajorcleantarget)
+Clean(srclib,localshortcleantarget)
+
 #baseenv.Install('../lib',srclib)
 #baseenv.Alias('install',['../lib'])
 
-normanalib = baseenv.SharedLibrary(target = normanatarget,source = normanalist+['NormAnaDict.so'],SHLIBVERSION=['$VERSION'],SHLIBPREFIX='../lib',LIBS=[''])
+#normanalib = baseenv.SharedLibrary(target = normanatarget,source = normanalist+['NormAnaDict.so'],SHLIBVERSION=['$VERSION'],SHLIBPREFIX='../lib',LIBS=[''])
+normanalib = baseenv.SharedLibrary(target = normanatarget,source = normanalist+['NormAnaDict.so'],SHLIBPREFIX='../lib',LIBS=[''])
 print ('NormAna shared library = %s\n' % normanalib)
-#
-if baseenv['PLATFORM'] == 'darwin':
-	normanacleantarget = '../'+baseenv.subst('$SHLIBPREFIX')+normanatarget+'.'+baseenv.subst('$VERSION')+baseenv.subst('$SHLIBSUFFIX')
-else:
-	normanacleantarget = '../'+baseenv.subst('$SHLIBPREFIX')+normanatarget+baseenv.subst('$SHLIBSUFFIX')+'.'+baseenv.subst('$VERSION')
-Clean(srclib,normanacleantarget)
-shortnormanacleantarget = '../'+baseenv.subst('$SHLIBPREFIX')+normanatarget+baseenv.subst('$SHLIBSUFFIX')+'.'+baseenv.subst('$SOVERSION')
-Clean(srclib,shortnormanacleantarget)
+
+nlinkbase = baseenv.subst('$SHLIBPREFIX')+normanatarget
+
+ncleantarget = nlinkbase+'.so.'+baseenv.subst('$VERSION')
+nmajorcleantarget = nlinkbase+'.so'
+nlocalmajorcleantarget = '../'+nlinkbase+'.so'
+nshortcleantarget = nlinkbase+'.so.'+baseenv.subst('$SOVERSION')
+nlocalshortcleantarget = '../'+nlinkbase+'.so.'+baseenv.subst('$SOVERSION')
+
+print ('ncleantarget = %s\n' % ncleantarget)
+print ('nmajorcleantarget = %s\n' % nmajorcleantarget)
+print ('nshortcleantarget = %s\n' % nshortcleantarget)
+try:
+	os.symlink(ncleantarget,nlocalshortcleantarget)
+	os.symlink(nshortcleantarget,nlocalmajorcleantarget)
+except:	
+	print " Continuing ... "
+
+Clean(normanalib,ncleantarget)
+Clean(normanalib,nlocalmajorcleantarget)
+Clean(normanalib,nlocalshortcleantarget)
+
 #baseenv.Install('../lib',normanalib)
 #baseenv.Alias('install',['../lib'])
 
