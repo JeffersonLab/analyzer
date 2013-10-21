@@ -55,7 +55,8 @@ print ('Source shared library = %s\n' % srclib)
 linkbase = baseenv.subst('$SHLIBPREFIX')+sotarget
 
 cleantarget = linkbase+'.so.'+baseenv.subst('$VERSION')
-majorcleantarget = '../'+linkbase+'.so'
+majorcleantarget = linkbase+'.so'
+localmajorcleantarget = '../'+linkbase+'.so'
 shortcleantarget = linkbase+'.so.'+baseenv.subst('$SOVERSION')
 localshortcleantarget = '../'+linkbase+'.so.'+baseenv.subst('$SOVERSION')
 
@@ -64,13 +65,13 @@ print ('majorcleantarget = %s\n' % majorcleantarget)
 print ('shortcleantarget = %s\n' % shortcleantarget)
 try:
 	os.symlink(cleantarget,localshortcleantarget)
-	os.symlink(shortcleantarget,majorcleantarget)
+	os.symlink(shortcleantarget,localmajorcleantarget)
 except:	
 	print "some error ... "
 
 Clean(srclib,cleantarget)
-Clean(srclib,majorcleantarget)
-Clean(srclib,shortcleantarget)
+Clean(srclib,localmajorcleantarget)
+Clean(srclib,localshortcleantarget)
 
 #baseenv.Install('../lib',srclib)
 #baseenv.Alias('install',['../lib'])
@@ -82,22 +83,23 @@ print ('NormAna shared library = %s\n' % normanalib)
 nlinkbase = baseenv.subst('$SHLIBPREFIX')+normanatarget
 
 ncleantarget = nlinkbase+'.so.'+baseenv.subst('$VERSION')
-nmajorcleantarget = '../'+nlinkbase+'.so'
+nmajorcleantarget = nlinkbase+'.so'
+nlocalmajorcleantarget = '../'+nlinkbase+'.so'
 nshortcleantarget = nlinkbase+'.so.'+baseenv.subst('$SOVERSION')
-nlocalshortcleantarget = '..'+nlinkbase+'.so.'+baseenv.subst('$SOVERSION')
+nlocalshortcleantarget = '../'+nlinkbase+'.so.'+baseenv.subst('$SOVERSION')
 
 print ('ncleantarget = %s\n' % ncleantarget)
 print ('nmajorcleantarget = %s\n' % nmajorcleantarget)
 print ('nshortcleantarget = %s\n' % nshortcleantarget)
 try:
 	os.symlink(ncleantarget,nlocalshortcleantarget)
-	os.symlink(nshortcleantarget,nmajorcleantarget)
+	os.symlink(nshortcleantarget,nlocalmajorcleantarget)
 except:	
 	print "some error ... "
 
 Clean(normanalib,ncleantarget)
-Clean(normanalib,nmajorcleantarget)
-Clean(normanalib,nshortcleantarget)
+Clean(normanalib,nlocalmajorcleantarget)
+Clean(normanalib,nlocalshortcleantarget)
 
 #baseenv.Install('../lib',normanalib)
 #baseenv.Alias('install',['../lib'])

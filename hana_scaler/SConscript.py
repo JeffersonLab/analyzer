@@ -42,7 +42,8 @@ print ('Scaler shared library = %s\n' % scalerlib)
 linkbase = baseenv.subst('$SHLIBPREFIX')+sotarget
 
 cleantarget = linkbase+'.so.'+baseenv.subst('$VERSION')
-majorcleantarget = '../'+linkbase+'.so'
+majorcleantarget = linkbase+'.so'
+localmajorcleantarget = '../'+linkbase+'.so'
 shortcleantarget = linkbase+'.so.'+baseenv.subst('$SOVERSION')
 localshortcleantarget = '../'+linkbase+'.so.'+baseenv.subst('$SOVERSION')
 
@@ -51,13 +52,13 @@ print ('majorcleantarget = %s\n' % majorcleantarget)
 print ('shortcleantarget = %s\n' % shortcleantarget)
 try:
 	os.symlink(cleantarget,localshortcleantarget)
-	os.symlink(shortcleantarget,majorcleantarget)
+	os.symlink(shortcleantarget,localmajorcleantarget)
 except:	
 	print "some error ... "
 
 Clean(scalerlib,cleantarget)
-Clean(scalerlib,majorcleantarget)
-Clean(scalerlib,shortcleantarget)
+Clean(scalerlib,localmajorcleantarget)
+Clean(scalerlib,localshortcleantarget)
 
 #baseenv.Install('../lib',scalerlib)
 #baseenv.Alias('install',['../lib'])

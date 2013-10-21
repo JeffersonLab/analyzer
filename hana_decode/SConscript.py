@@ -52,7 +52,8 @@ print ('Decoder shared library = %s\n' % dclib)
 linkbase = baseenv.subst('$SHLIBPREFIX')+sotarget
 
 cleantarget = linkbase+'.so.'+baseenv.subst('$VERSION')
-majorcleantarget = '../'+linkbase+'.so'
+majorcleantarget = linkbase+'.so'
+localmajorcleantarget = '../'+linkbase+'.so'
 shortcleantarget = linkbase+'.so.'+baseenv.subst('$SOVERSION')
 localshortcleantarget = '../'+linkbase+'.so.'+baseenv.subst('$SOVERSION')
 
@@ -61,13 +62,13 @@ print ('majorcleantarget = %s\n' % majorcleantarget)
 print ('shortcleantarget = %s\n' % shortcleantarget)
 try:
 	os.symlink(cleantarget,localshortcleantarget)
-	os.symlink(shortcleantarget,majorcleantarget)
+	os.symlink(shortcleantarget,localmajorcleantarget)
 except:	
 	print "some error ... "
 
 Clean(dclib,cleantarget)
-Clean(dclib,majorcleantarget)
-Clean(dclib,shortcleantarget)
+Clean(dclib,localmajorcleantarget)
+Clean(dclib,localshortcleantarget)
 
 #baseenv.Install('../lib',dclib)
 #baseenv.Alias('install',['../lib'])
