@@ -64,7 +64,7 @@ try:
 	os.symlink(cleantarget,localshortcleantarget)
 	os.symlink(shortcleantarget,localmajorcleantarget)
 except:	
-	print "some error ... "
+	print " Continuing ... "
 
 Clean(dclib,cleantarget)
 Clean(dclib,localmajorcleantarget)

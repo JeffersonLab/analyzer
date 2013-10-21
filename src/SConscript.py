@@ -67,7 +67,7 @@ try:
 	os.symlink(cleantarget,localshortcleantarget)
 	os.symlink(shortcleantarget,localmajorcleantarget)
 except:	
-	print "some error ... "
+	print " Continuing ... "
 
 Clean(srclib,cleantarget)
 Clean(srclib,localmajorcleantarget)
@@ -95,7 +95,7 @@ try:
 	os.symlink(ncleantarget,nlocalshortcleantarget)
 	os.symlink(nshortcleantarget,nlocalmajorcleantarget)
 except:	
-	print "some error ... "
+	print " Continuing ... "
 
 Clean(normanalib,ncleantarget)
 Clean(normanalib,nlocalmajorcleantarget)
