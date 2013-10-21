@@ -54,6 +54,8 @@ if baseenv['PLATFORM'] == 'darwin':
 else:
 	cleantarget = '../'+baseenv.subst('$SHLIBPREFIX')+sotarget+baseenv.subst('$SHLIBSUFFIX')+'.'+baseenv.subst('$VERSION')
 Clean(srclib,cleantarget)
+majorcleantarget = '../'+baseenv.subst('$SHLIBPREFIX')+sotarget+baseenv.subst('$SHLIBSUFFIX')+'.'+baseenv.subst('$MAJORVERSION')
+Clean(srclib,majorcleantarget)
 shortcleantarget = '../'+baseenv.subst('$SHLIBPREFIX')+sotarget+baseenv.subst('$SHLIBSUFFIX')+'.'+baseenv.subst('$SOVERSION')
 Clean(srclib,shortcleantarget)
 #
@@ -68,6 +70,8 @@ if baseenv['PLATFORM'] == 'darwin':
 else:
 	normanacleantarget = '../'+baseenv.subst('$SHLIBPREFIX')+normanatarget+baseenv.subst('$SHLIBSUFFIX')+'.'+baseenv.subst('$VERSION')
 Clean(srclib,normanacleantarget)
+majornormanacleantarget = '../'+baseenv.subst('$SHLIBPREFIX')+normanatarget+baseenv.subst('$SHLIBSUFFIX')+'.'+baseenv.subst('$MAJORVERSION')
+Clean(srclib,majornormanacleantarget)
 shortnormanacleantarget = '../'+baseenv.subst('$SHLIBPREFIX')+normanatarget+baseenv.subst('$SHLIBSUFFIX')+'.'+baseenv.subst('$SOVERSION')
 Clean(srclib,shortnormanacleantarget)
 #baseenv.Install('../lib',normanalib)

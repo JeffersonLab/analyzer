@@ -32,7 +32,7 @@ baseenv = Environment(ENV = os.environ)
 ####### Check SCons version ##################
 print('!!! You should be using the local version of SCons, invoked with:')
 print('!!! ./scons/scons.py')
-EnsureSConsVersion(4,9,9)
+EnsureSConsVersion(2,3,0)
 
 ####### Hall A Build Environment #############
 #
@@ -41,8 +41,10 @@ baseenv.Append(HA_DIR = baseenv.subst('$MAIN_DIR'))
 baseenv.Append(HA_SRC = baseenv.subst('$HA_DIR')+'/src ') 
 baseenv.Append(HA_DC = baseenv.subst('$HA_DIR')+'/hana_decode ') 
 baseenv.Append(HA_SCALER = baseenv.subst('$HA_DIR')+'/hana_scaler ') 
-baseenv.Append(SOVERSION = '1.6')
+baseenv.Append(MAJORVERSION = '1')
+baseenv.Append(MINORVERSION = '6')
 baseenv.Append(PATCH = '0')
+baseenv.Append(SOVERSION = baseenv.subst('$MAJORVERSION')+'.'+baseenv.subst('$MINORVERSION'))
 baseenv.Append(VERSION = baseenv.subst('$SOVERSION')+'.'+baseenv.subst('$PATCH'))
 baseenv.Append(EXTVERS = '-devel')
 baseenv.Append(HA_VERSION = baseenv.subst('$VERSION')+baseenv.subst('$EXTVERS'))

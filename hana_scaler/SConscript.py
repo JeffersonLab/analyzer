@@ -43,6 +43,8 @@ if baseenv['PLATFORM'] == 'darwin':
 else:
 	cleantarget = '../'+baseenv.subst('$SHLIBPREFIX')+sotarget+baseenv.subst('$SHLIBSUFFIX')+'.'+baseenv.subst('$VERSION')
 Clean(scalerlib,cleantarget)
+majorcleantarget = '../'+baseenv.subst('$SHLIBPREFIX')+sotarget+baseenv.subst('$SHLIBSUFFIX')+'.'+baseenv.subst('$MAJORVERSION')
+Clean(scalerlib,majorcleantarget)
 shortcleantarget = '../'+baseenv.subst('$SHLIBPREFIX')+sotarget+baseenv.subst('$SHLIBSUFFIX')+'.'+baseenv.subst('$SOVERSION')
 Clean(scalerlib,shortcleantarget)
 #baseenv.Install('../lib',scalerlib)
