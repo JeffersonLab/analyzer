@@ -45,17 +45,29 @@ if baseenv.subst('$STANDALONE')==proceed:
 
 sotarget = 'dc'
 
-dclib = baseenv.SharedLibrary(target=sotarget, source = list+['THaDecDict.so'],SHLIBPREFIX='../lib',SHLIBVERSION=['$VERSION'],LIBS=[''])
+#dclib = baseenv.SharedLibrary(target=sotarget, source = list+['THaDecDict.so'],SHLIBPREFIX='../lib',SHLIBVERSION=['$VERSION'],LIBS=[''])
+dclib = baseenv.SharedLibrary(target=sotarget, source = list+['THaDecDict.so'],SHLIBPREFIX='../lib',LIBS=[''])
 print ('Decoder shared library = %s\n' % dclib)
-#
-if baseenv['PLATFORM'] == 'darwin':
-	cleantarget = '../'+baseenv.subst('$SHLIBPREFIX')+sotarget+'.'+baseenv.subst('$VERSION')+baseenv.subst('$SHLIBSUFFIX')
-else:
-        cleantarget = '../'+baseenv.subst('$SHLIBPREFIX')+sotarget+baseenv.subst('$SHLIBSUFFIX')+'.'+baseenv.subst('$VERSION')
+
+linkbase = baseenv.subst('$SHLIBPREFIX')+sotarget
+
+cleantarget = linkbase+'.so.'+baseenv.subst('$VERSION')
+majorcleantarget = '../'+linkbase+'.so'
+shortcleantarget = linkbase+'.so.'+baseenv.subst('$SOVERSION')
+localshortcleantarget = '../'+linkbase+'.so.'+baseenv.subst('$SOVERSION')
+
+print ('cleantarget = %s\n' % cleantarget)
+print ('majorcleantarget = %s\n' % majorcleantarget)
+print ('shortcleantarget = %s\n' % shortcleantarget)
+try:
+	os.symlink(cleantarget,localshortcleantarget)
+	os.symlink(shortcleantarget,majorcleantarget)
+except:	
+	print "some error ... "
+
 Clean(dclib,cleantarget)
-majorcleantarget = '../'+baseenv.subst('$SHLIBPREFIX')+sotarget+baseenv.subst('$SHLIBSUFFIX')+'.'+baseenv.subst('$MAJORVERSION')
 Clean(dclib,majorcleantarget)
-shortcleantarget = '../'+baseenv.subst('$SHLIBPREFIX')+sotarget+baseenv.subst('$SHLIBSUFFIX')+'.'+baseenv.subst('$SOVERSION')
 Clean(dclib,shortcleantarget)
+
 #baseenv.Install('../lib',dclib)
 #baseenv.Alias('install',['../lib'])

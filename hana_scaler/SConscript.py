@@ -35,17 +35,29 @@ if baseenv.subst('$STANDALONE')==proceed:
 
 sotarget = 'scaler'
 
-scalerlib = baseenv.SharedLibrary(target=sotarget, source = list+['THaScalDict.so'],SHLIBPREFIX='../lib',SHLIBVERSION=['$VERSION'],LIBS=[''])
+#scalerlib = baseenv.SharedLibrary(target=sotarget, source = list+['THaScalDict.so'],SHLIBPREFIX='../lib',SHLIBVERSION=['$VERSION'],LIBS=[''])
+scalerlib = baseenv.SharedLibrary(target=sotarget, source = list+['THaScalDict.so'],SHLIBPREFIX='../lib',LIBS=[''])
 print ('Scaler shared library = %s\n' % scalerlib)
-#
-if baseenv['PLATFORM'] == 'darwin':
-	cleantarget = '../'+baseenv.subst('$SHLIBPREFIX')+sotarget+'.'+baseenv.subst('$VERSION')+baseenv.subst('$SHLIBSUFFIX')
-else:
-	cleantarget = '../'+baseenv.subst('$SHLIBPREFIX')+sotarget+baseenv.subst('$SHLIBSUFFIX')+'.'+baseenv.subst('$VERSION')
+
+linkbase = baseenv.subst('$SHLIBPREFIX')+sotarget
+
+cleantarget = linkbase+'.so.'+baseenv.subst('$VERSION')
+majorcleantarget = '../'+linkbase+'.so'
+shortcleantarget = linkbase+'.so.'+baseenv.subst('$SOVERSION')
+localshortcleantarget = '../'+linkbase+'.so.'+baseenv.subst('$SOVERSION')
+
+print ('cleantarget = %s\n' % cleantarget)
+print ('majorcleantarget = %s\n' % majorcleantarget)
+print ('shortcleantarget = %s\n' % shortcleantarget)
+try:
+	os.symlink(cleantarget,localshortcleantarget)
+	os.symlink(shortcleantarget,majorcleantarget)
+except:	
+	print "some error ... "
+
 Clean(scalerlib,cleantarget)
-majorcleantarget = '../'+baseenv.subst('$SHLIBPREFIX')+sotarget+baseenv.subst('$SHLIBSUFFIX')+'.'+baseenv.subst('$MAJORVERSION')
 Clean(scalerlib,majorcleantarget)
-shortcleantarget = '../'+baseenv.subst('$SHLIBPREFIX')+sotarget+baseenv.subst('$SHLIBSUFFIX')+'.'+baseenv.subst('$SOVERSION')
 Clean(scalerlib,shortcleantarget)
+
 #baseenv.Install('../lib',scalerlib)
 #baseenv.Alias('install',['../lib'])

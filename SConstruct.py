@@ -32,7 +32,7 @@ baseenv = Environment(ENV = os.environ)
 ####### Check SCons version ##################
 print('!!! You should be using the local version of SCons, invoked with:')
 print('!!! ./scons/scons.py')
-EnsureSConsVersion(2,3,0)
+EnsureSConsVersion(2,1,0)
 
 ####### Hall A Build Environment #############
 #
