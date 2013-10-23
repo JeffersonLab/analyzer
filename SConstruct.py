@@ -107,6 +107,7 @@ baseenv.Append(LIBPATH=['$HA_DIR','$HA_SRC','$HA_DC','$HA_SCALER'])
 #baseenv.Append(LIBPATH=['$HA_LIB'])
 baseenv.Append(LIBS=[hallalib,dclib,scalerlib])
 baseenv.Replace(SHLIBSUFFIX = '.so')
+baseenv.Append(SHLIBSUFFIX = '.'+baseenv.subst('$VERSION'))
 
 SConscript(dirs = ['./','src/','hana_decode/','hana_scaler'],name='SConscript.py',exports='baseenv')
 

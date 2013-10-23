@@ -46,8 +46,6 @@ baseenv.Object('main.C')
 sotarget = 'HallA'
 normanatarget = 'NormAna'
 
-baseenv.Append(SHLIBSUFFIX = '.'+baseenv.subst('$VERSION'))
-
 #srclib = baseenv.SharedLibrary(target = sotarget, source = list+['haDict.so'],SHLIBVERSION=['$VERSION'],SHLIBPREFIX='../lib',LIBS=[''])
 srclib = baseenv.SharedLibrary(target = sotarget, source = list+['haDict.so'],SHLIBPREFIX='../lib',LIBS=[''])
 print ('Source shared library = %s\n' % srclib)
