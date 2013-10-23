@@ -118,6 +118,7 @@ eviolib = 'evio'
 baseenv.Append(LIBPATH=['$HA_DIR','$EVIO_LIB','$HA_SRC','$HA_DC','$HA_SCALER'])
 baseenv.Append(LIBS=[eviolib,hallalib,dclib,scalerlib])
 baseenv.Replace(SHLIBSUFFIX = '.so')
+baseenv.Append(SHLIBSUFFIX = '.'+baseenv.subst('$VERSION'))
 
 SConscript(dirs = ['./','src/','hana_decode/','hana_scaler'],name='SConscript.py',exports='baseenv')
 
