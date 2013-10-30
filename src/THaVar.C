@@ -63,17 +63,56 @@ using namespace std;
 const Int_t    THaVar::kInvalidInt = -1;
 const Double_t THaVar::kInvalid    = 1e38;
 
-const char* var_type_name[] = { 
-  "kDouble", "kFloat", "kLong", "kULong", "kInt", "kUInt",
-  "kShort", "kUShort", "kChar", "kByte", 
-  "kObject", "kTString", "kString",
-  "kIntV", "kFloatV", "kDoubleV", "kIntM", "kFloatM", "kDoubleM",
-  "kDoubleP", "kFloatP", "kLongP", "kULongP", "kIntP", "kUIntP", 
-  "kShortP", "kUShortP", "kCharP", "kByteP",
-  "kObjectP",
-  "kDouble2P", "kFloat2P", "kLong2P", "kULong2P", "kInt2P", "kUInt2P", 
-  "kShort2P", "kUShort2P", "kChar2P", "kByte2P",
-  "kObject2P" };
+// NB: Must match definition order in VarDef.h
+static struct VarTypeInfo_t {
+  VarType      type;
+  const char*  enum_name;
+  const char*  cpp_name;
+  size_t       size;
+}
+  var_type_info[] = {
+    { kDouble,   "kDouble",   "Double_t",    sizeof(Double_t)  },
+    { kFloat,    "kFloat",    "Float_t",     sizeof(Float_t)   },
+    { kLong,     "kLong",     "Long64_t",    sizeof(Long64_t)  },
+    { kULong,    "kULong",    "ULong64_t",   sizeof(ULong64_t) },
+    { kInt,      "kInt",      "Int_t",       sizeof(Int_t)     },
+    { kUInt,     "kUInt",     "UInt_t",      sizeof(UInt_t)    },
+    { kShort,    "kShort",    "Short_t",     sizeof(Short_t)   },
+    { kUShort,   "kUShort",   "UShort_t",    sizeof(UShort_t)  },
+    { kChar,     "kChar",     "Char_t",      sizeof(Char_t)    },
+    { kByte,     "kByte",     "Byte_t",      sizeof(Byte_t)    },
+    { kObject,   "kObject",   "TObject",     0                 },
+    { kTString,  "kTString",  "TString",     sizeof(char)      },
+    { kString,   "kString",   "string",      sizeof(char)      },
+    { kIntV,     "kIntV",     "vector<int>",              sizeof(int)    },
+    { kFloatV,   "kFloatV",   "vector<float>",            sizeof(float)  },
+    { kDoubleV,  "kDoubleV",  "vector<double>",           sizeof(double) },
+    { kIntM,     "kIntM",     "vector< vector<int> >",    sizeof(int)    },
+    { kFloatM,   "kFloatM",   "vector< vector<float> >",  sizeof(float)  },
+    { kDoubleM,  "kDoubleM",  "vector< vector<double> >", sizeof(double) },
+    { kDoubleP,  "kDoubleP",  "Double_t*",   sizeof(Double_t)  },
+    { kFloatP,   "kFloatP",   "Float_t*",    sizeof(Float_t)   },
+    { kLongP,    "kLongP",    "Long64_t*",   sizeof(Long64_t)  },
+    { kULongP,   "kULongP",   "ULong64_t*",  sizeof(ULong64_t) },
+    { kIntP,     "kIntP",     "Int_t*",      sizeof(Int_t)     },
+    { kUIntP,    "kUIntP",    "UInt_t*",     sizeof(UInt_t)    },
+    { kShortP,   "kShortP",   "Short_t*",    sizeof(Short_t)   },
+    { kUShortP,  "kUShortP",  "UShort_t*",   sizeof(UShort_t)  },
+    { kCharP,    "kCharP",    "Char_t*",     sizeof(Char_t)    },
+    { kByteP,    "kByteP",    "Byte_t*",     sizeof(Byte_t)    },
+    { kObjectP,  "kObjectP",  "TObject*",    0                 },
+    { kDouble2P, "kDouble2P", "Double_t**",  sizeof(Double_t)  },
+    { kFloat2P,  "kFloat2P",  "Float_t**",   sizeof(Float_t)   },
+    { kLong2P,   "kLong2P",   "Long64_t**",  sizeof(Long64_t)  },
+    { kULong2P,  "kULong2P",  "ULong64_t**", sizeof(ULong64_t) },
+    { kInt2P,    "kInt2P",    "Int_t**",     sizeof(Int_t)     },
+    { kUInt2P,   "kUInt2P",   "UInt_t**",    sizeof(UInt_t)    },
+    { kShort2P,  "kShort2P",  "Short_t**",   sizeof(Short_t)   },
+    { kUShort2P, "kUShort2P", "UShort_t**",  sizeof(UShort_t)  },
+    { kChar2P,   "kChar2P",   "Char_t**",    sizeof(Char_t)    },
+    { kByte2P,   "kByte2P",   "Byte_t**",    sizeof(Byte_t)    },
+    { kObject2P, "kObject2P", "TObject**",   0                 }
+  };
 
 //_____________________________________________________________________________
 THaVar::THaVar( const THaVar& rhs ) :
@@ -148,40 +187,31 @@ Bool_t THaVar::HasSameSize( const THaVar* rhs ) const
 }
 
 //_____________________________________________________________________________
+const char* THaVar::GetEnumName( VarType itype )
+{
+  // Return C++ name of the given VarType
+
+  assert( (size_t)itype < sizeof(var_type_info)/sizeof(VarTypeInfo_t) );
+  return var_type_info[itype].enum_name;
+}
+
+//_____________________________________________________________________________
 const char* THaVar::GetTypeName( VarType itype )
 {
-  static const char* const type[] = { 
-    "Double_t", "Float_t", "Long64_t", "ULong64_t", "Int_t", "UInt_t",
-    "Short_t",  "UShort_t", "Char_t", "Byte_t",
-    "TObject", "TString", "string",
-    "vector<int>", "vector<float>", "vector<double>", "vector< vector<int> >",
-    "vector< vector<float> >", "vector< vector<double> >",
-    "Double_t*", "Float_t*", "Long64_t*", "ULong64_t*", "Int_t*", "UInt_t*", 
-    "Short_t*", "UShort_t*", "Char_t*", "Byte_t*",
-    "TObject*",
-    "Double_t**", "Float_t**", "Long_t64**", "ULong_t64**", "Int_t**",
-    "UInt_t**",  "Short_t**", "UShort_t**", "Char_t**", "Byte_t**",
-    "TObject**" };
+  // Return C++ name of the given VarType
 
-  assert( itype >= 0 && (size_t)itype < sizeof(type)/sizeof(char*) );
-  return type[itype];
+  assert( (size_t)itype < sizeof(var_type_info)/sizeof(VarTypeInfo_t) );
+  return var_type_info[itype].cpp_name;
 }
 
 //_____________________________________________________________________________
 size_t THaVar::GetTypeSize( VarType itype )
 {
-  static const size_t size[] = { 
-    sizeof(Double_t), sizeof(Float_t), sizeof(Long64_t), sizeof(ULong64_t), 
-    sizeof(Int_t), sizeof(UInt_t), sizeof(Short_t), sizeof(UShort_t), 
-    sizeof(Char_t), sizeof(Byte_t), 0, 
-    sizeof(Double_t), sizeof(Float_t), sizeof(Long64_t), sizeof(ULong64_t), 
-    sizeof(Int_t), sizeof(UInt_t), sizeof(Short_t), sizeof(UShort_t), 
-    sizeof(Char_t), sizeof(Byte_t), 0,
-    sizeof(Double_t), sizeof(Float_t), sizeof(Long64_t), sizeof(ULong64_t),
-    sizeof(Int_t), sizeof(UInt_t), sizeof(Short_t), sizeof(UShort_t), 
-    sizeof(Char_t), sizeof(Byte_t), 0  };
+  // Return size of the underlying (innermost) basic data type of each VarType.
+  // Returns 0 for object types.
 
-  return size[itype];
+  assert( (size_t)itype < sizeof(var_type_info)/sizeof(VarTypeInfo_t) );
+  return var_type_info[itype].size;
 }
 
 //_____________________________________________________________________________

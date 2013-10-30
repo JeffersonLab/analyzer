@@ -1228,7 +1228,7 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
       badtype:
 	const char* type_name;
 	if( item->type >= kDouble && item->type <= kObject2P )
-	  type_name = var_type_name[item->type];
+	  type_name = THaVar::GetEnumName(item->type);
 	else
 	  type_name = Form("(#%d)", item->type );
 	::Error( ::Here(here,loaddb_prefix.c_str()),

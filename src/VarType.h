@@ -13,7 +13,9 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-enum VarType { kDouble = 0, kFloat, kLong, kULong, kInt, kUInt, 
+// NB: When updating this list, must also update var_type_info[] in THaVar.C
+enum VarType { kVarTypeBegin = 0, kDouble = kVarTypeBegin,
+	       kFloat, kLong, kULong, kInt, kUInt, 
 	       kShort, kUShort, kChar, kByte, 
 	       kObject, kTString, kString,
 	       kIntV, kFloatV, kDoubleV, kIntM, kFloatM, kDoubleM,
@@ -22,8 +24,7 @@ enum VarType { kDouble = 0, kFloat, kLong, kULong, kInt, kUInt,
 	       kObjectP,
 	       kDouble2P, kFloat2P, kLong2P, kULong2P, kInt2P, kUInt2P, 
 	       kShort2P, kUShort2P, kChar2P, kByte2P,
-	       kObject2P };
-
-extern const char* var_type_name[];
+	       kObject2P,
+	       kVarTypeEnd };
 
 #endif
