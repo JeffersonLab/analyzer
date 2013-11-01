@@ -26,8 +26,8 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include <iostream>
-#include <string.h>
-#include <stdlib.h>
+#include <cstring>
+#include <cstdlib>
 #include "THaArrayString.h"
 #include "TMath.h"
 
@@ -253,20 +253,33 @@ Int_t THaArrayString::Parse( const char* string )
 }
 
 //_____________________________________________________________________________
-void THaArrayString::Print( Option_t* )
+static void WriteDims( Int_t ndim, Int_t* dims )
 {
-  cout << fName ;
-  if( fNdim > 0 ) {
-    cout << "[";
-    for( Int_t i = 0; i<fNdim; i++ ) {
-      cout << fDim[i];
-      if( i+1<fNdim )
-	cout << ",";
-      else
-	cout << "]";
-    }
+  for( Int_t i = 0; i<ndim; i++ ) {
+    cout << dims[i];
+    if( i+1<ndim )
+      cout << ",";
   }
-  cout << endl;
+}
+      
+//_____________________________________________________________________________
+void THaArrayString::Print( Option_t* option ) const
+{
+  // Print the name and array dimension(s), if any.
+  // If option == "dimonly", only print the dimensions, without square brackets.
+
+  TString opt(option);
+  if( !opt.Contains("dimonly") ) {
+    cout << fName ;
+    if( fNdim > 0 ) {
+      cout << "[";
+      WriteDims(fNdim,fDim);
+      cout << "]";
+    }
+    cout << endl;
+  }
+  else 
+    WriteDims(fNdim,fDim);
 }
 //_____________________________________________________________________________
 ClassImp(THaArrayString);

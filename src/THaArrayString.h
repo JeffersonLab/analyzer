@@ -34,7 +34,7 @@ public:
   Bool_t          IsArray() const { return (fNdim > 0); }
   Bool_t          IsError() const { return (fStatus != kOK); }
   virtual Int_t   Parse( const char* string="" );
-  virtual void    Print( Option_t* opt="" );
+  virtual void    Print( Option_t* opt="" ) const;
   EStatus         Status()  const { return fStatus; }
 
 protected:

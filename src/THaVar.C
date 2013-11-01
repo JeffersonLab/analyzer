@@ -618,12 +618,27 @@ void THaVar::Print(Option_t* option) const
 
   if( strcmp( option, "FULL" )) return;
 
-  cout << "(" << GetTypeName() << ")[";
-  if( fCount ) cout << "*";
-  cout << GetLen() << "]";
-  for( int i=0; i<GetLen(); i++ ) {
-    cout << "  " << GetValue(i);
-  }
+  cout << "(" << GetTypeName() << ")";
+  if( IsArray() ) {
+    Bool_t is_fixed = (IsBasic() && !IsVector() && fCount == 0);
+    if( is_fixed )
+      cout << "=";
+    cout << "[";
+    if( is_fixed ) {
+      if( !fParsedName.IsArray() )
+	Warning( "THaVar::Print", "Parsed name of fixed-size array is not "
+		 "an array? Should never happen. Call expert." );
+      fParsedName.Print("dimonly");
+    }
+    else
+      cout << GetLen();
+    cout << "]";
+    for( int i=0; i<GetLen(); i++ ) {
+      cout << "  " << GetValue(i);
+    }
+  } else
+    cout << "  " << GetValue();
+
   cout << endl;
 }
 
