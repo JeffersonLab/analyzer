@@ -8,16 +8,16 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-#include "TList.h"
+#include "THashList.h"
 #include "THaVar.h"
 #include "VarDef.h"
 #include <vector>
 
-class THaVarList : public TList {
+class THaVarList : public THashList {
   
 public:
-  THaVarList() : TList() {}
-  virtual ~THaVarList() { Clear(); }
+  THaVarList();
+  virtual ~THaVarList();
 
   // Define() with reference to variable
   THaVar*  Define( const char* name, const char* descript, 
@@ -168,7 +168,6 @@ public:
 		   const Int_t* count=0 )
     { return Define( name, name, var, count ); }
 
-  virtual void     Clear( Option_t* opt="" );
   virtual THaVar*  DefineByType( const char* name, const char* desc,
 				 const void* loc, VarType type, 
 				 const Int_t* count );

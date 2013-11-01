@@ -4,7 +4,7 @@
 //
 //  THaVarList
 //
-//  A specialized TList containing global variables of the
+//  A specialized THashList containing global variables of the
 //  Hall A analyzer.
 //
 //  Variables can be added to the list as follows: 
@@ -58,22 +58,28 @@
 #include "TROOT.h"
 #include "TMath.h"
 
-#include <algorithm>
 #include <cstring>
 
 ClassImp(THaVarList)
 
+static const Int_t kInitVarListCapacity = 100;
+static const Int_t kVarListRehashLevel  = 3;
 //_____________________________________________________________________________
-void THaVarList::Clear( Option_t* )
+THaVarList::THaVarList() : THashList(kInitVarListCapacity, kVarListRehashLevel)
 {
-   // Remove all variables from the list.
+  // Default constructor
 
-  while( fFirst ) {
-    THaVar* obj = (THaVar*)TList::Remove( fFirst );
-    delete obj;
-  }
+  // THaVarList "owns" the variables put into it, i.e. if the list is deleted
+  // so are the global variables in it.
+  SetOwner(kTRUE);
 }
 
+//_____________________________________________________________________________
+THaVarList::~THaVarList()
+{
+  // Destructor
+}
+  
 //_____________________________________________________________________________
 THaVar* THaVarList::DefineByType( const char* name, const char* descript, 
 				  const void* var, VarType type, 
@@ -519,19 +525,19 @@ THaVar* THaVarList::Find( const char* name ) const
   // Find a variable in the list.  If 'name' has array syntax ("var[3]"),
   // the search is performed for the array basename ("var").
 
-  THaVar* ptr;
+  TObject* ptr;
   const char* p = strchr( name, '[' );
   if( !p ) 
-    return static_cast<THaVar*>(FindObject( name ));
+    ptr = FindObject( name );
   else {
     size_t n = p-name;
     char* basename = new char[ n+1 ];
     strncpy( basename, name, n );
     basename[n] = '\0';
-    ptr = static_cast<THaVar*>(FindObject( basename ));
+    ptr = FindObject( basename );
     delete [] basename;
   }
-  return ptr;
+  return static_cast<THaVar*>(ptr);
 }
 
 //_____________________________________________________________________________
@@ -545,36 +551,38 @@ void THaVarList::PrintFull( Option_t* option ) const
   if( !option )  option = "";
   TRegexp re(option,kTRUE);
   TIter next(this);
-  TObject* object;
 
-  while ((object = next())) {
-    TString s = object->GetName();
-    if (*option && strcmp(option,object->GetName()) && s.Index(re) == kNPOS) 
-      continue;
-    object->Print("FULL");
+  while( TObject* obj = next() ) {
+    if( *option ) {
+      TString s = obj->GetName();
+      if( s.Index(re) == kNPOS )
+	continue;
+    }
+    obj->Print("FULL");
   }
 }
 
 //_____________________________________________________________________________
 Int_t THaVarList::RemoveName( const char* name )
 {
-  // Remove a variable from the list
-  // Since each name is unique, we only have to find it once
-  // Returns 1 if variable was deleted, 0 is it wasn't in the list
+  // Delete the variable with the given name from the list.
+  // Returns 1 if variable was deleted, 0 is it wasn't in the list.
+  //
+  // Note: This differs from TList::Remove(), which doesn't delete the
+  // element itself.
 
-  THaVar* ptr = Find( name );
-  if( ptr ) {
-    THaVar* p = static_cast< THaVar* >(TList::Remove( ptr ));
-    delete p;
-    return 1;
-  } else
+  TObject* ptr = Find( name );
+  if( !ptr )
     return 0;
+  ptr = Remove( ptr );
+  delete ptr;
+  return 1;
 }
 
 //_____________________________________________________________________________
 Int_t THaVarList::RemoveRegexp( const char* expr, Bool_t wildcard )
 {
-  // Remove all variables matching regular expression 'expr'. If 'wildcard'
+  // Delete all variables matching regular expression 'expr'. If 'wildcard'
   // is true, the more user-friendly wildcard format is used (see TRegexp).
   // Returns number of variables removed, or <0 if error.
 
@@ -582,13 +590,12 @@ Int_t THaVarList::RemoveRegexp( const char* expr, Bool_t wildcard )
   if( re.Status() ) return -1;
 
   Int_t ndel = 0;
-  TString name;
   TIter next( this );
-  while( THaVar* ptr = static_cast< THaVar* >( next() )) {
-    name = ptr->GetName();
+  while( TObject* ptr = next() ) {
+    TString name = ptr->GetName();
     if( name.Index( re ) != kNPOS ) {
-      THaVar* p = static_cast< THaVar* >(TList::Remove( ptr ));
-      delete p;
+      ptr = Remove( ptr );
+      delete ptr;
       ndel++;
     } 
   }
