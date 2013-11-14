@@ -21,8 +21,10 @@
 
 #include "VDCeff.h"
 #include "VarDef.h"
+#include "THaVar.h"
 #include "TObjArray.h"
 #include "TH1F.h"
+#include "TMath.h"
 
 #include <stdexcept>
 #include <memory>
@@ -67,6 +69,16 @@ Int_t VDCeff::Begin( THaRunBase* )
   // Start of analysis
 
   //  BookHist();
+
+  for( vector<VDCvar_t>::iterator it = fVDCvar.begin();
+       it != fVDCvar.end(); ++it ) {
+    VDCvar_t& thePlane = *it;
+    thePlane.ncnt.assign( thePlane.nwire, 0 );
+    thePlane.nhit.assign( thePlane.nwire, 0 );
+  }
+
+  fNevt = 0;
+
   return 0;
 }
 
@@ -174,10 +186,66 @@ Int_t VDCeff::Process( const THaEvData& evdata )
   // 				   "R.vdc.u1.wire", "R.vdc.u2.wire", 
   // 				   "R.vdc.v1.wire", "R.vdc.v2.wire"};
   
+  typedef vector<Short_t>::iterator Vsiter_t;
+
+  const char* const here = __FUNCTION__;
+
   if( !IsOK() ) return -1;
 
-  
+  ++fNevt;
+  bool cycle_event = ( (fNevt%fCycle) == 0 );
 
+  for( vector<VDCvar_t>::iterator it = fVDCvar.begin();
+       it != fVDCvar.end(); ++it ) {
+    VDCvar_t& thePlane = *it;
+
+    if( !thePlane.pvar ) continue;  // Oops, no global variable?
+
+    Int_t nwire = thePlane.nwire;
+    fWire.clear();
+    fHitWire.assign( nwire, false );
+
+    Int_t nhit = thePlane.pvar->GetLen();
+    thePlane.hist_nhit->Fill(nhit);
+    if( nhit < 0 ) {
+      Warning( Here(here), "nhit = %d < 0?", nhit );
+      nhit = 0;
+    } else if( nhit > nwire ) {
+      Warning( Here(here), "nhit = %d > nwire = %d?", nhit, nwire );
+      nhit = nwire;
+    }
+
+    for( Int_t i = 0; i < nhit; ++i ) {
+      Int_t wire = TMath::Nint( thePlane.pvar->GetValue(i) );
+      if( wire >= 0 && wire < nwire ) {
+	fWire.push_back(wire);
+	fHitWire[wire] = true;
+      }
+    }
+
+    for( Vsiter_t iw = fWire.begin(); iw != fWire.end(); ++iw ) {
+      Int_t wire = *iw;
+      Int_t ngh2 = wire+2;
+      if( ngh2 >= nwire ) continue;
+
+      if( fHitWire[ngh2] ) {
+	Int_t awire = wire+1;
+	thePlane.ncnt[awire]++;
+	if( fHitWire[awire] )
+	  thePlane.nhit[awire]++;
+      }
+    }
+
+    if( cycle_event ) {
+      for( Int_t i = 0; i < nwire; ++i ) {
+	if( thePlane.ncnt[i] != 0 ) {
+	  Double_t xeff = static_cast<Double_t>(thePlane.nhit[i]) /
+	    static_cast<Double_t>(thePlane.ncnt[i]);
+	  thePlane.hist_eff->Fill(i,xeff);
+	}
+      }
+    }
+  }
 
 #if 0
   const Int_t nwire = 400;
@@ -358,6 +426,7 @@ Int_t VDCeff::ReadDatabase( const TDatime& date )
   }
   fVDCvar.clear();
   const TObjArray* params = vdcvars.get();
+  Int_t max_nwire = 0;
   for( Int_t ip = 0; ip < nparams; ip += NPAR ) {
     const TString& name     = GetObjArrayString(params,ip);
     const TString& histname = GetObjArrayString(params,ip+1);
@@ -367,13 +436,18 @@ Int_t VDCeff::ReadDatabase( const TDatime& date )
 	     "Fix database.", nwire, name.Data() ); 
       return kInitError;
     }
-    fVDCvar.push_back( VDCvar_t(name, histname, nwire) );
-    VDCvar_t& it = fVDCvar.back();
-    it.ncnt.reserve( it.nwire );
-    it.nhit.reserve( it.nwire );
     if( fDebug>2 )
       Info( Here(here), "Defining VDC variable %s", name.Data() );
+
+    fVDCvar.push_back( VDCvar_t(name, histname, nwire) );
+    VDCvar_t& thePlane = fVDCvar.back();
+    thePlane.ncnt.reserve( thePlane.nwire );
+    thePlane.nhit.reserve( thePlane.nwire );
+    max_nwire = TMath::Max(max_nwire,thePlane.nwire);
   }
+
+  fWire.reserve( max_nwire*fMaxOcc );
+  fHitWire.assign( max_nwire, 0 );
 
   return kOK;
 }

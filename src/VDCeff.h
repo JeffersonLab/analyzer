@@ -32,14 +32,14 @@ protected:
   struct VDCvar_t {
     TString  name;
     TString  histname;
-    CVar_t*  var;
+    CVar_t*  pvar;
     Int_t    nwire;
     Vcnt_t   ncnt;
     Vcnt_t   nhit;
     TH1F*    hist_nhit;
     TH1F*    hist_eff;
     VDCvar_t( const char* nm, const char* hn, Int_t nw )
-      : name(nm), histname(hn), var(0), nwire(nw), hist_nhit(0), hist_eff(0) {}
+      : name(nm), histname(hn), pvar(0), nwire(nw), hist_nhit(0), hist_eff(0) {}
     ~VDCvar_t();
   };
 
