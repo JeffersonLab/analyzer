@@ -62,6 +62,24 @@ void VDCeff::Clear( Option_t* opt )
 }
 
 //_____________________________________________________________________________
+Int_t VDCeff::Begin( THaRunBase* )
+{
+  // Start of analysis
+
+  //  BookHist();
+  return 0;
+}
+
+//_____________________________________________________________________________
+Int_t VDCeff::End( THaRunBase* )
+{
+  // End of analysis
+
+  //  WriteHist();
+  return 0;
+}
+
+//_____________________________________________________________________________
 Int_t VDCeff::DefineVariables( EMode mode )
 {
   // Define/delete global variables.
@@ -157,6 +175,9 @@ Int_t VDCeff::Process( const THaEvData& evdata )
   // 				   "R.vdc.v1.wire", "R.vdc.v2.wire"};
   
   if( !IsOK() ) return -1;
+
+  
+
 
 #if 0
   const Int_t nwire = 400;
@@ -363,13 +384,6 @@ ClassImp(VDCeff)
 
 
 // Int_t  THaDecData::fgVdcEffFirst = 2;
-
-//_____________________________________________________________________________
-// Int_t THaDecData::End( THaRunBase* )
-// {
-//   WriteHist();
-//   return 0;
-// }
 
 // //_____________________________________________________________________________
 // void THaDecData::WriteHist()

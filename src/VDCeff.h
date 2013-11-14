@@ -18,7 +18,9 @@ public:
   VDCeff( const char* name, const char* description );
   virtual ~VDCeff();
   
+  virtual Int_t   Begin( THaRunBase* r=0 );
   virtual void    Clear( Option_t* opt="" );
+  virtual Int_t   End( THaRunBase* r=0 );
   virtual EStatus Init( const TDatime& run_time );
   virtual Int_t   Process( const THaEvData& );
 
