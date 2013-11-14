@@ -52,7 +52,7 @@ src/THaParticleInfo.h src/THaCluster.h src/THaArrayString.h src/THaScintillator.
 src/THaShower.h src/THaTotalShower.h src/THaCherenkov.h src/THaEvent.h 
 src/THaTrackID.h src/THaVDC.h src/THaVDCPlane.h src/THaVDCUVPlane.h src/THaVDCUVTrack.h 
 src/THaVDCWire.h src/THaVDCHit.h src/THaVDCCluster.h src/THaVDCTimeToDistConv.h 
-src/THaVDCTrackID.h src/THaVDCAnalyticTTDConv.h src/THaVDCTrackPair.h 
+src/THaVDCTrackID.h src/THaVDCAnalyticTTDConv.h src/THaVDCTrackPair.h src/VDCeff.h
 src/THaScalerGroup.h src/THaElectronKine.h src/THaReactionPoint.h 
 src/THaReacPointFoil.h src/THaTwoarmVertex.h src/THaAvgVertex.h src/THaExtTarCor.h 
 src/THaDebugModule.h src/THaTrackInfo.h src/THaGoldenTrack.h src/THaPrimaryKine.h 
