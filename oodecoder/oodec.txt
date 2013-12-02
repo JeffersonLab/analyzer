@@ -1,0 +1,253 @@
+From ole@jlab.org Thu Oct  3 17:35:22 2013
+Date: Thu, 03 Oct 2013 17:35:21 -0400
+From: Ole Hansen <ole@jlab.org>
+To: Robert Michaels <rom@jlab.org>
+Subject: Re: proposed OO decoder modification for Podd
+
+Hi Bob,
+
+see comments below.
+
+Ole
+
+On 10/01/2013 10:24 AM, Robert Michaels wrote:
+> I think I can have a working version in <= 5 months
+> after we agree on a design.
+>
+> IDEAS FOR AN OO DECODER   Bob Michaels  Oct 1, 2013
+> ====================================================
+>
+> IMPORTANT:  THaEvData is the public interface, and this
+> should not be changed, though possibly augmented.  This
+> will ensure that user classes like detectors still work.
+>
+>
+
+Agreed. But you'll most likely have to add functions and new protected
+member variables.
+
+> GOALS OF THE UPGRADE
+>
+> 1) to make it easier to add new kinds of modules, crates,
+> and event types
+> 2) to define rules that can be easily translated from the
+> authors of the DAQ readout (see "Decoder Rules" below)
+> 3) a more consistent use of THaCrateMap
+> 4) to greatly simplify scalers.
+> 5) don't break existing code
+>
+>
+> MAPS to REPLACE CASE STATEMENTS
+>
+> In the following, I'll refer to STL maps, but these could
+> also be a ROOT container class.  I'd need to think about
+> which ROOT class, but I know how to do it with STL.
+>
+> Case statements should be replaced by loops over an STL
+> map between an index and an object that is of a type belonging
+> to that index.  An example would be an index = EPICS_EVTYPE
+> and the object is the EPICS data decoder.  This is fast
+> because, at least for STL, integer maps are fast.
+> All maps would be set up at initialization time.
+
+As long as event types are small integers (which I they are now), that
+"map" could be an array, e.g.
+
+vector<THaEvTypeHandler*>
+
+Nowadays, a few kB of memory are nothing, and the lookup speed is instant.
+
+>
+> There are 3 areas where this needs to be done:
+>
+> 1. In THaCodaDecoder:gendecode for the loop over event_type.
+> Event types are unique integers defined in CODA.  Here we
+> use a map between these integers and an abstract class
+> "THaGeneralDecode" (maybe need a better name ?). Inheriting
+> from this class would be concrete classes THaPhysicsDecode,
+> THaScalerEvDecode (scaler events), THaEpicsDecode, etc.
+>
+
+Yes, that's how I would do this too.
+
+In fact, I already wrote some code for generalizing event type handlers,
+but never finished it. I can try to find it and send it to you.
+
+> 2. In THaPhysicsDecode, the "if" statements for types of
+> crates, such as "if (fMap->isFastbus(iroc))",  would
+> be replaced as follows.  The THaCrateMap (which reads a
+> setup file like before, see section below) defines the
+> layout of the DAQ: what crates exist, what types they are,
+> and the slots and channels and their device type.  This would
+> be done like before.  At initialization time, an STL map
+> is setup between the crate indices and an abstract class
+> THaCrateDecoder.  Concrete classes like THaFastbusDecoder,
+> THaVmeDecoder, THaCamacDecoder, etc, derive from THaCrateDecoder,
+> and are instantiated when the map is defined.  Each
+> crate knows from THaCrateMap what modules are inside.
+>
+
+Agreed. Again, since crate numbers seem to be small (even smaller than
+event type numbers), I'd probably use an array instead of a map for
+performance reasons.
+
+
+> 2. The method "THaCodaDecoder::vme_decode" would become the
+> Decode method of a THaVmeDecoder.  It would use the crate map
+> to define an STL map (called a slot map) between the slot number
+> and an abstract THaDeviceDecoder.  Fastbus could also use this
+> kind of slot map, though with Fastbus the slots are discoverable.
+> Inheriting from THaDeviceDecoder would be concrete classes
+> corresponding to the module types, i.e. Struck 3801 scalers,
+> LeCroy 1181M ADC, CAEN 550 TDCs, JLab FADCs, etc.  The slot
+> maps are known from the THaCrateMap.
+>
+>
+
+Sounds good, too. Since slot numbers are small and crates usually full,
+my suggestion to use arrays applies even more here.
+
+You'll need to make sure that VME device decoders cannot be inserted
+into Fastbus crate slot maps. DeviceDecoder should have abstract
+subclasses like VMEModule, FastbusModule etc.
+
+> CRATE MAPPING
+>
+> Historically, there was a THaCrateMap.  However, the
+> module type was defined redundantly in THaDetMap, so
+> there could be an inconsistency.  In the future,
+> THaDetMap would not need to know the module types,
+> it would only need to know the crates, slots, and
+> channels that belong to that detector.  For backward
+> compatibility, if an old detmap was read in, it's module
+> types will be checked for consistency with the
+> THaCrateMap, and clear error messages issued when they
+> are inconsistent.  For detectors, the structure of
+> the data (e.g. what type of data and how many hits
+> on a channel) are then discoverable from the data, because
+> THaCrateMap guides the decoder.  Let me emphasize here
+> that the public interface to the decoder and the existing
+> code in detector classes will not change.  But new,
+> useful public methods will be made available.
+>
+>
+
+Yes, the detmaps shouldn't have duplicate information.
+
+> DECODER RULES
+>
+> A new feature of THaCrateMap would be "Decoder Rules".
+> This defines how the data are arranged in VME or Fastbus.
+> To an extent, this was already built into the decoder,
+> but some of it was hard-coded.  Now it will be in
+> the THaCrateMap only.  Fastbus data structure is, to
+> a degree, self-discoverable, and so are some VME modules
+> like the FADCs.  However, many kinds of VME modules
+> need to be flagged by a unique header, to show where
+> that slot begins, and I think those flags help with
+> any device, though with Fastbus they can be absent
+> because the slot number is encoded in the data word.
+> We use headers like this now in the DAQ.  Optionally,
+> the header could also be a pair of successive 32-bit
+> words, to ensure uniqueness.  There can also be
+> "special words" in the data, which need to be uniquely
+> flagged so the decoder can find them.  An example of a
+> special word would be a synchronization timestamp.
+> There could be other types of rules needed; I need to
+> think a little more about this.  I've done this for the
+> Parity DAQ and Analyzer, and it worked pretty well.
+>
+>
+
+To the extent that header words can change, they should always be read
+from the database.
+
+> SIMPLIFICATION OF SCALERS
+>
+> The present THaScaler would be tossed out of Podd, though
+> still available as a separate online software package
+> (xscaler, quick diagnostics, etc).  THaScaler was too heavy.
+> We'll replace it by a lightweight THaScaler.  BTW, this
+> affects THaOutput, THaNormAna, and THaScalerGroup, so
+> I'll make sure those don't break.
+>
+> Another problem: the scaler decoding in THaEvData had become
+> obsolete.  This will be revived and simplified.
+>
+> Scalers should be simple.  The data are successive readings.
+> From this, you get counts and a rate between readings,
+> per channel.  To get a rate, you need to know where the
+> clock is plugged in, and what its frequency is, to
+> calibrate the time.  A classic problem with THaScaler was
+> that when the clock cable was relocated, users couldn't
+> figure out how to move it in software to the right channel
+> because the software was too complicated.  They usually
+> had to ask me to fix the scaler.map file.   For Podd,
+> scaler.map only provided the clock location and frequency.
+> But scaler.map was used a lot by the online codes like
+> xscaler.  I plan to toss scaler.map out of Podd, and let
+> the clock location and frequency be defined in THaCrateMap.
+>
+> Some scalers come in the "scaler events" (decoded by
+> THaScalerEvDecode). Some other scalers come in the
+> "physics events" (decoded as any other VME module).
+> The underlying device in both would be the new THaScaler.
+> On any given event, the user should be able to "Get"
+> the counts or the rate pertaining to the last readings.
+>
+> Although THaScaler and scaler.map would be removed,
+> users would still be able to get scalers in the output ROOT
+> tree as before.  This was very popular, and the public
+> interface will not change.  As before, users will be able
+> to put scalers to the output ROOT file with a mnemonic name,
+> e.g. "t1c" for "trigger 1 counts" or "t3r" for "trigger 3
+> rate".   They can get "physics event" scalers from any crate
+> that has a scaler module, and they can also get the
+> "scaler event type" scalers, which have been integrated
+> and inserted every few seconds.
+>
+
+I have actually never use the scaler decoding, so I can't really
+comment, except that the scaler code has been a source of various issues
+in the past (bugs, 64-bit problems, incorrect output (maybe user error),
+etc.), so I am glad to hear it is going to be redesigned.
+
+> TESTING
+>
+> To test the new code, the usual printout/debug is done,
+> in comparison with the old code.  As a final check, several
+> kinds of data, include HRS, FADC, RICH, etc, can be analyzed
+> by Podd producing a ROOT file.  The old code can be compared
+> to the new code by reading in the ROOT files and comparing,
+> bin by bin, each histogram.
+>
+
+Right - we need some kind of "make test" procedure to make sure new code
+produces identical results. This is going to be time-consuming .....
+
+Two more things:
+- THaDecData should probably be rewritten at some point, too.
+- Whatever the new decoder looks like, it would be great if it became
+thread safe so that multiple threads can decode events simultaneously.
+If this is too hard, we can perhaps do without, but parallelization is
+going to be bread and butter in the future.
+
+Just these quick comments for now. I'll send you what I wrote for event
+types later today.
+
+Ole
+
+-- 
+Jens-Ole Hansen <ole@jlab.org> +1-757-269-7627
+Staff Physicist
+Jefferson Lab, Suite 4, Room 12/A106
+12000 Jefferson Avenue, Newport News, VA 23606, USA
+
+PGP: 7F74 730E 86F0 FA76 2588 F901 3A4D 3771 F121 ECCA
+
+
+
+    [ Part 2, "OpenPGP digital signature"  Application/PGP-SIGNATURE ]
+    [ 237bytes. ]
+    [ Unable to print this part. ]
+

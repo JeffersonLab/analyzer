@@ -1,0 +1,48 @@
+
+ Proposal about SCALERs.  Bob Michaels.  Oct 18, 2013
+
+Here is a proposal about how to handle scalers in Podd.
+In the following, a class will be noted by all-capital 
+letters like SCALER and I'll drop the prefix "THa".
+(But I'll stick to standard naming when I write the code.)
+
+A SCALER is a VMEMODULE.  Similarly, there are other VMEMODULEs
+like ADC1182, CAEN550, FADC250, etc.  VMEMODULEs and FASTBUSMODULEs
+are FRONTENDMODULEs, whose location (roc, slot) in the event 
+buffer is known by using the CRATEMAP.  This suggests a class
+hierarchy with FRONTENDMODULEs at the top.  There are also 
+types of SCALER, but I'm a little leary about having too
+many classes (e.g. SCALER3801, SCALER1151, etc.); we can
+think about it later.
+
+Users can EVDATA->GetScaler(roc, slot, chan), as before.
+(Actually, it's a little embarassing that this method
+does nothing at the moment ! but it will work in the future).
+Data may be added to the root output using OUTPUT.  The
+DECDATA	and NORMANA classes will also be written to show
+examples of how to get SCALER data.  (Note, DECDATA is an 
+existing general-purpose class to get data not belonging 
+to a specific detector, and NORMANA is an existing class 
+used to normalize data to get absolute cross sections.
+And yes, I know they need to be rewritten.)
+
+A Hall-A specific type is the SCALEREVENTBANK, which are banks
+of scalers that are injected using the ET system (so-called
+event type 140.)  Hall C doesn't do this, I think, but maybe 
+they have something similar ?  In Podd, this is what is 
+meant by EVDATA->IsScalerEvent().  In Podd, these data are 
+put into a wrapper class SCALERGROUP which are ANALYSISOBJECTs 
+and are (optionally) added to the root OUTPUT.  I think we 
+can leave it this way, except maybe remove the wrapper
+layer and let SCALEREVENTBANK be an ANALYSISOBJECT.
+
+Summary:  The old THaScaler will become SCALEREVENTBANK and 
+be greatly simplified with many things removed like support
+for the xscaler GUI.  A new lightweight SCALER class will 
+be used in the decoder and will be on the same footing as 
+other VMEMODULEs.  A SCALEREVENTBANK will contain SCALERs.
+EVDATA (event data) will be able to get SCALER data pertaining
+to the event trigger.  Data can be added to the OUTPUT or 
+obtained by EVDATA; clear examples of the latter will be 
+written for NORMANA and DECDATA.
+
