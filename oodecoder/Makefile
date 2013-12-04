@@ -2,6 +2,7 @@
 # R. Michaels, rom@jlab.org, Mar 2001
 #
 # Test Executables:
+# tstoy    --  tests of toy decoder
 # tstcoda  --  test of abstract interface to THaCodaFile and THaEtClient.
 # tstio    --  simple tests of CODA I/O from a file.
 # tdecpr   --  test of decoder with self-explanatory printouts.
@@ -202,7 +203,7 @@ SRC = THaUsrstrutils.C THaCrateMap.C THaCodaData.C \
       ToyPhysicsEvtHandler.C ToyScalerEvtHandler.C \
       ToyModule.C ToyModuleX.C ToyFastbusModule.C
 
-PROGS = tstio tdecpr tdecex prfact epicsd 
+PROGS = tstoy tstio tdecpr tdecex prfact epicsd 
 # If you want to use the ET system at Jlab.
 ifdef ONLINE_ET
   SRC += THaEtClient.C
@@ -265,6 +266,10 @@ ifdef STANDALONE
 else
    MAINOBJS = $(MAINDIR)/libHallA.so
 endif
+
+tstoy: tstoy_main.o $(DECODE_OBJS) $(SRC) $(EVIO_LIB) $(MAINOBJS)
+	rm -f $@
+	$(CXX) $(CXXFLAGS) -o $@ tstoy_main.o $(DECODE_OBJS) $(ALL_LIBS) $(MAINOBJS)
 
 tstio: tstio_main.o $(DECODE_OBJS) $(SRC) $(EVIO_LIB) $(MAINOBJS)
 	rm -f $@
