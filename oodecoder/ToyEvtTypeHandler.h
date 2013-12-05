@@ -3,7 +3,7 @@
 
 /////////////////////////////////////////////////////////////////////
 //
-//   NEW STUFF (the entire class)
+//   NEW STUFF (= the entire class)
 //   ToyEvtTypeHandler
 //   Abstract class to handle different types of events.
 //   author  Robert Michaels (rom@jlab.org)
