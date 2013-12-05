@@ -1,9 +1,10 @@
 /////////////////////////////////////////////////////////////////////
 //
 //   ToyCodaDecoder
-//   Hall A Event Data from one CODA "Event"
 //
-//   A toy model of an improved THaCodaDecoder
+//   A toy model of an improved THaCodaDecoder.  
+//   Work in progress towards OO decoder upgrade.
+//   Dec 2013.  Bob Michaels
 //
 /////////////////////////////////////////////////////////////////////
 
@@ -16,6 +17,7 @@
 #include "THaEpics.h"
 #include "THaUsrstrutils.h"
 #include "THaBenchmark.h"
+#include "ToyModule.h"
 #include "TError.h"
 #include <cstring>
 #include <cstdio>
@@ -59,7 +61,7 @@ Int_t ToyCodaDecoder::GetPrescaleFactor(Int_t trigger_type) const
 }
 
 //_____________________________________________________________________________
-Int_t ToyCodaDecoder::LoadEvent(const Int_t* evbuffer)
+Int_t ToyCodaDecoder::LoadEvent(const Int_t* evbuffer, THaCrateMap* map)
 {//PUBLIC
   // Main engine for decoding, called by public LoadEvent() methods
   // The crate map argument is ignored. Use SetCrateMapName instead
@@ -76,6 +78,7 @@ Int_t ToyCodaDecoder::LoadEvent(const Int_t* evbuffer)
     // NEW STUFF
     if(first_decode) {
       InitHandlers();
+      first_decode=false;
     }
   }
   if( fDoBench ) fBench->Begin("clearEvent");
@@ -86,7 +89,8 @@ Int_t ToyCodaDecoder::LoadEvent(const Int_t* evbuffer)
   event_type = evbuffer[1]>>16;
   if(event_type <= 0) return HED_ERR;
 // NEW STUFF
-  if (evidx[event_type] > 0) {
+  cout << "Here AAAAA event_type = "<<event_type<<"  "<<evidx[event_type]<<endl;
+  if (evidx[event_type] >= 0) {
       event_handler[evidx[event_type]]->Decode(this);
   }
   return ret;
@@ -219,13 +223,22 @@ void ToyCodaDecoder::InitHandlers()
   event_handler.push_back(new ToyPrescaleEvtHandler());
 #endif
 
+  cout << "ToyCodaDecoder:  event_handler size "<<dec<<event_handler.size()<<endl;
+
+
   for (UInt_t i=0; i<event_handler.size(); i++) {
     event_handler[i]->Init(fMap);
   }
   
 }
 
-
+//_____________________________________________________________________________
+ToyModule* ToyCodaDecoder::GetModule(Int_t crate, Int_t slot) 
+{ 
+  // NEW STUFF
+  // Get pointer to module
+  return crateslot[idx(crate,slot)]->GetModule();
+}
 
 //_____________________________________________________________________________
 ClassImp(ToyCodaDecoder)

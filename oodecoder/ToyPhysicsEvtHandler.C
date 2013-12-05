@@ -24,12 +24,10 @@ ToyPhysicsEvtHandler::~ToyPhysicsEvtHandler() {
 
 Int_t ToyPhysicsEvtHandler::Decode(THaEvData *evdata) {
 
-  // Break evdata's evbuffer into rocs
-  // Find all the slots.
-
+  // Break evdata's evbuffer into rocs.  Find all the slots.
   // Pass the buffer for that slot to the module belonging to it.
 
-  // Toy code.
+  // Wildly inefficient TOY code -- just in time for Christmas.
 
    Int_t nroc=4;  
    Int_t irn[4], istart[4], iend[4];
@@ -41,20 +39,23 @@ Int_t ToyPhysicsEvtHandler::Decode(THaEvData *evdata) {
    n_slots_checked = 0;
 
    for (iroc = 0; iroc < nroc; iroc++) {
-       
+
      Int_t roc = irn[iroc];
 
      for (slot=first_slot_used; n_slots_checked<Nslot-n_slots_done; slot++) {
 
        n_slots_done++;
 
-       for (Int_t index = istart[iroc]; index < iend[iroc]; index++) {
+       for (Int_t jj = istart[iroc]; jj < iend[iroc]; jj++) {
+         
+         ToyModule *module = evdata->GetModule(roc,slot);
 
-	 Int_t idx = roc*100 + slot;  // need to fix this
-         if (evdata->GetSlot(idx)->GetModule()->Found(evdata->GetRawData(index))) {
-	   evdata->GetSlot(idx)->GetModule()->Decode(evdata, index);
-               // module::Decode starts at "index" and increments "index".
-               // and does  "evdata->crateslot->loadData()"
+         if (module) {
+	   if (module->IsSlot(evdata->GetRawData(jj))) {
+   	       module->Decode(evdata, jj);
+                 // module::Decode starts at "jj" and increments "jj".
+                 // and loads data into evdata: "evdata->LoadData()"
+	   }
 	 }
        }
      }

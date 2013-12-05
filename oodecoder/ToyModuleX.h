@@ -19,11 +19,12 @@ class ToyModuleX : public ToyModule {
 public:
 
    ToyModuleX();  
+   ToyModuleX(Int_t crate, Int_t slot);  
    virtual ~ToyModuleX();  
 
    Int_t Decode(THaEvData *evdata, Int_t start);
 
-   Bool_t IsSlot(Int_t slot, Int_t rdata);
+   Bool_t IsSlot(Int_t rdata);
 
 
 private:

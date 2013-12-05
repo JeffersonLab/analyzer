@@ -21,23 +21,21 @@ class ToyModule  {
 public:
 
    ToyModule();  
+   ToyModule(Int_t crate, Int_t slot);  
    virtual ~ToyModule();  
 
-   Bool_t Found(Int_t i) { return kTRUE; };
-
-   Bool_t IsSlot(Int_t slot, Int_t rdata);
-   Int_t Decode(THaEvData *evdata, Int_t start);
-   ToyModule(const ToyModule& rhs); 
-   ToyModule& operator=(const ToyModule &rhs);
+   virtual Bool_t IsSlot(Int_t rdata)=0;
+   virtual Int_t Decode(THaEvData *evdata, Int_t start)=0;
 
 protected:
 
-   void Create(const ToyModule&);
-   void Uncreate();
+   Int_t fCrate, fSlot;
 
 private:
 
-   Int_t slotmask, chanmask, datamask;
+   ToyModule(const ToyModule& rhs); 
+   ToyModule& operator=(const ToyModule &rhs);
+
    ClassDef(ToyModule,0)  // Module type "X"
 
 };

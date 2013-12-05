@@ -1,6 +1,7 @@
 ////////////////////////////////////////////////////////////////////
 //
 //   ToyModuleX
+//   This toy doesn't do anything; look at ToyFastbusModule instead
 //
 /////////////////////////////////////////////////////////////////////
 
@@ -16,6 +17,11 @@ using namespace std;
 ToyModuleX::ToyModuleX() { 
 }
 
+ToyModuleX::ToyModuleX(Int_t crate, Int_t slot) { 
+  fCrate = crate;
+  fSlot = slot;
+}
+
 ToyModuleX::~ToyModuleX() { 
 }
 
@@ -25,8 +31,8 @@ Int_t ToyModuleX::Decode(THaEvData *evdata, Int_t jstart) {
   return 0;
 }
 
-Bool_t ToyModuleX::IsSlot(Int_t slot, Int_t rdata) {
-  return kTRUE;
+Bool_t ToyModuleX::IsSlot(Int_t rdata) {
+  return kFALSE;
 }
 
 ClassImp(ToyModuleX)

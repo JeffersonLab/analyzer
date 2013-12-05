@@ -21,6 +21,7 @@
 
 class ToyEvtTypeHandler;
 class ToyCrateDecoder;
+class ToyModule;
 
 class ToyCodaDecoder : public THaEvData {
   // public interface is SAME as before
@@ -28,7 +29,7 @@ class ToyCodaDecoder : public THaEvData {
   ToyCodaDecoder();
   ~ToyCodaDecoder();
  
-  virtual Int_t LoadEvent(const Int_t* evbuffer);    
+  virtual Int_t LoadEvent(const Int_t* evbuffer, THaCrateMap* usermap);    
 
   virtual Int_t GetPrescaleFactor(Int_t trigger) const;
   virtual Int_t GetScaler(const TString& spec, Int_t slot, Int_t chan) const;
@@ -39,6 +40,8 @@ class ToyCodaDecoder : public THaEvData {
   virtual Double_t GetEpicsData(const char* tag, Int_t event=0) const;
   virtual Double_t GetEpicsTime(const char* tag, Int_t event=0) const;
   virtual std::string GetEpicsString(const char* tag, Int_t event=0) const;
+
+  ToyModule* GetModule(Int_t crate, Int_t slot);  
 
   virtual void PrintOut() const { dump(buffer); }
   virtual void SetRunTime(ULong64_t tloc);
