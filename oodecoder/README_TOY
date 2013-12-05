@@ -4,15 +4,26 @@
 
 Author:  Robert Michaels
 
-date:  Dec 5, 2013 
+Updated :  Dec 5, 2013 
 
-purpose:  A light-weight test of the design concept for the OO decoder.
+Purpose:  A light-weight test of the design concept for the OO decoder.
 
 Details of the OO decoder:
     http://userweb.jlab.org/~rom/oodecoder_nov13.pdf
     to be updated before the Dec Hall A Software Mtg
 
-Content
+How to run the test code "tstoy"
+
+  1. You have a raw data file somewhere: make a link to "snippet.dat"
+     ln -s /home/rom/scratch/happexsp/happexsp_6742.dat.0 snippet.dat
+
+  2. Compile
+     make
+
+  3. Run
+     ./tstoy
+
+Contents :
 
   main:   tstoy_main.C
 
