@@ -16,9 +16,6 @@
 
 
 #include "THaCrateMap.h"
-#include "ToyModule.h"
-#include "ToyModuleX.h"
-#include "ToyFastbusModule.h"
 #include <iostream>
 #include <ctime>
 
@@ -524,19 +521,6 @@ int THaCrateMap::init(TString the_map)
   int slot;
   
   typedef string::size_type ssiz_t;
-
-// We would actually build this list from CrateMap database.
-// This is TEST CODE
-  fModules = new ToyModule*[MAXROC*MAXSLOT];
-  for(crate=0; crate<MAXROC; crate++) {
-    for (slot=0; slot<MAXSLOT; slot++) {
-      if (crate%2==0) {
-           fModules[crate*MAXSLOT + slot] = new ToyModuleX();  
-      } else {
-           fModules[crate*MAXSLOT + slot] = new ToyFastbusModule();  
-      }
-    }
-  }
 
   for(crate=0; crate<MAXROC; crate++) {
     nslot[crate] = 0;

@@ -39,12 +39,9 @@ class THaCrateMap
      bool isCamac(int crate) const;                 // True if CAMAC crate;
      bool isScalerCrate(int crate) const;           // True if a Scaler crate;
 
-     ToyModule *GetModule(Int_t crate, Int_t slot) const { ;  // Get pointer to module
-       return fModules[crate*MAXSLOT + slot];  // don't forget : need to check index
-     }
 
- // The methods below will become obsolete since
- // since fModule knows it's model#, header, etc
+ // The methods below will become obsolete since a crateslot will have modules
+ // This class must inform the crateslot where the modules are.
 
      int getModel(int crate, int slot) const;       // Return module type
      int getHeader(int crate, int slot) const;      // Return header
@@ -95,11 +92,6 @@ class THaCrateMap
      bool slot_used[MAXROC][MAXSLOT];
      bool slot_clear[MAXROC][MAXSLOT];
  
-     ToyModule **fModules;  // array of pointers to Modules
-   
- // The data below will get replaced by the fModule
- // since fModule knows it's model#, header, etc
-
      UShort_t model[MAXROC][MAXSLOT]; // Model number
      int header[MAXROC][MAXSLOT];     // Header signature
      int headmask[MAXROC][MAXSLOT];   // Mask for header signature bits
