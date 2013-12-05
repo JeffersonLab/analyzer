@@ -5,7 +5,7 @@
 //    1. Event handlers corresponding to each event type.
 //    2. Modules take care of decoding.
 //
-// R. Michaels, Dec 2013
+// R. Michaels, Dec 5, 2013
 
 #include <iostream>
 #include <cstdlib>
