@@ -1,5 +1,10 @@
-// Test of Toy decoder model for the OO decoder upgrade
-// Humble beginnigns
+// Test of a TOY decoder model for the OO decoder upgrade
+// Purpose: express the design changes with a simple code
+//
+// Main changes :
+//    1. Event handlers corresponding to each event type.
+//    2. Modules take care of decoding.
+//
 // R. Michaels, Dec 2013
 
 #include <iostream>
