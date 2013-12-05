@@ -88,7 +88,9 @@ void THaSlotData::define(int cra, int slo, UShort_t nchan, UShort_t ndata, UShor
 }
 
 int THaSlotData::loadModule(ToyModule *mod) {
-   *fModule = *mod;  // get private copy, using copy c'tor
+// For this toy version, I copy pointers.  Yes, I know it's bad.
+// I should make copy constructors for the ToyModules.
+   fModule = mod;  
 }
 
 int THaSlotData::loadData(const char* type, int chan, int dat, int raw) {

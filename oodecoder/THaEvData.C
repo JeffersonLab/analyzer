@@ -25,6 +25,9 @@
 #include "THaCrateMap.h"
 #include "THaUsrstrutils.h"
 #include "THaBenchmark.h"
+#include "ToyModule.h"
+#include "ToyModuleX.h"
+#include "ToyFastbusModule.h"
 #include "TError.h"
 #include <cstring>
 #include <cstdio>
@@ -304,8 +307,8 @@ int THaEvData::init_slotdata(const THaCrateMap* map)
     THaSlotData* crslot = crateslot[fSlotUsed[i]];
     int crate = crslot->getCrate();
     int slot  = crslot->getSlot();
-    // New line
-    crslot->loadModule(map->GetModule(crate,slot));
+// New line, to be something like this (doesn't work now)
+//    crslot->loadModule(map->GetModuleInfo(crate,slot));
     if( !map->crateUsed(crate) || !map->slotUsed(crate,slot) ||
 	!map->slotClear(crate,slot)) {
       for( int k=0; k<fNSlotClear; k++ ) {
@@ -323,7 +326,25 @@ int THaEvData::init_slotdata(const THaCrateMap* map)
       fNSlotUsed--;
     }
   }
+// Toy code to test modules.  The definition of modules will
+//      ultimately come from THaCrateMap.  And no, I won't copy pointers.
+  Int_t crate = 1;  Int_t slot = 9;
+  Int_t ics = idx(crate, slot);
+  ToyFastbusModule *module = new ToyFastbusModule(crate, slot);
+  crateslot[ics]->loadModule(module);  
+// End, toy code
+
   return HED_OK;
+}
+
+// NEW (Dec 2013) in test phase
+Int_t  THaEvData::LoadData(Int_t crate, Int_t slot, Int_t chan, Int_t data) 
+{
+    Int_t ics = idx(crate,slot);  // need to protect against array over-run.
+    if (crateslot[ics]->loadData("",chan,data,data) == SD_ERR) {
+      //	cerr << "THaEvData::LoadData: ERROR:  you blew it !";
+    }
+    return 1;
 }
 
 ClassImp(THaEvData)
