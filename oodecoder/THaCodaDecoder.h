@@ -13,6 +13,7 @@
 #include "TBits.h"
 #include "evio.h"
 #include "THaEvData.h"
+#include "ToyModule.h"
 
 class THaCodaDecoder : public THaEvData {
  public:
@@ -32,6 +33,8 @@ class THaCodaDecoder : public THaEvData {
 
   virtual void PrintOut() const { dump(buffer); }
   virtual void SetRunTime(ULong64_t tloc);
+
+  ToyModule* GetModule(Int_t crate, Int_t slot) { return 0;} // don't worry 
 
  protected:
   THaFastBusWord* fb;

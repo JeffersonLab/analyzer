@@ -20,6 +20,7 @@ class THaBenchmark;
 class THaEpics;
 class THaCrateMap;
 class THaFastBusWord;
+class ToyModule;
 
 class THaEvData : public TObject {
 
@@ -68,6 +69,10 @@ public:
   // List unique chan
   Int_t     GetNextChan(Int_t crate, Int_t slot, Int_t index) const;
   const char* DevType(Int_t crate, Int_t slot) const;
+
+  // NEW (Dec 2013)
+  Int_t     LoadData(Int_t crate, Int_t slot, Int_t chan, Int_t rdat);
+  virtual ToyModule* GetModule(Int_t crate, Int_t slot)=0;
 
   // Optional functionality that may be implemented by derived classes
   virtual ULong64_t GetEvTime() const { return evt_time; }
