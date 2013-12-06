@@ -71,6 +71,9 @@ public:
           Double_t         GetPcentral() const { return fPcentral; }
           Double_t         GetCollDist() const { return fCollDist; }
 
+          void             SetCentralAngles( Double_t th, Double_t ph,
+					     Bool_t bend_down );
+
   virtual void             TrackToLab( THaTrack& track, TVector3& pvect ) const;
   virtual void             TransportToLab( Double_t p, Double_t th, 
 					   Double_t ph, TVector3& pvect ) const;
