@@ -8,6 +8,7 @@ analyzer
 *Dict.[Ch]
 *Dict.so
 ha_compiledata.h
+cppcheck_report.txt
 ChangeLog
 
 # Editor lint
@@ -31,5 +32,6 @@ ChangeLog
 #scons stuff
 config.log
 *.pyc
+*Dict.C
 .sconsign.dblite
 .sconf_temp/
