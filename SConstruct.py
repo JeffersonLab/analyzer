@@ -67,6 +67,7 @@ print "EVIO include Directory = %s" % baseenv.subst('$EVIO_INC')
 baseenv.Append(CPPPATH = ['$EVIO_INC'])
 baseenv.Append(CPPPATH = ['$HA_SRC','$HA_DC','$HA_SCALER'])
 
+proceed = "1" or "y" or "yes" or "Yes" or "Y"
 ######## Configure Section #######
 
 import configure
@@ -83,6 +84,14 @@ if not conf.CheckCXX():
 if not conf.CheckFunc('printf'):
        	print('!!! Your compiler and/or environment is not correctly configured.')
        	Exit(0)
+
+if baseenv.subst('$CHECKHEADERS')==proceed:
+	system_header_list = ['arpa/inet.h','errno.h','assert.h','netdb.h','netinet/in.h','pthread.h','signal.h','stddef.h','stdio.h','stdlib.h','string.h','strings.h','sys/ioctl.h','sys/socket.h','sys/time.h','sys/types.h','time.h','unistd.h','memory.h','math.h','limits.h']
+	
+	for header_file in system_header_list:
+		if not conf.CheckHeader(header_file):
+			print('!! Header file %s not found.' % header_file)
+			Exit(0)
 
 baseenv = conf.Finish()
 
@@ -127,7 +136,6 @@ def which(program):
                                 return exe_file
         return None
 
-proceed = "1" or "y" or "yes" or "Yes" or "Y"
 if baseenv.subst('$CPPCHECK')==proceed:
         is_cppcheck = which('cppcheck')
         print "Path to cppcheck is %s\n" % is_cppcheck
