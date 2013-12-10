@@ -32,5 +32,6 @@ ChangeLog
 #scons stuff
 config.log
 *.pyc
+*Dict.C
 .sconsign.dblite
 .sconf_temp/
