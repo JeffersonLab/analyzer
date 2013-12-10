@@ -159,7 +159,7 @@ const char* THaVar::GetTypeName( VarType itype )
     "Double_t*", "Float_t*", "Long64_t*", "ULong64_t*", "Int_t*", "UInt_t*", 
     "Short_t*", "UShort_t*", "Char_t*", "Byte_t*",
     "TObject*",
-    "Double_t**", "Float_t**", "Long_t64**", "ULong_t64**", "Int_t**",
+    "Double_t**", "Float_t**", "Long64_t**", "ULong64_t**", "Int_t**",
     "UInt_t**",  "Short_t**", "UShort_t**", "Char_t**", "Byte_t**",
     "TObject**" };
 
@@ -173,7 +173,8 @@ size_t THaVar::GetTypeSize( VarType itype )
   static const size_t size[] = { 
     sizeof(Double_t), sizeof(Float_t), sizeof(Long64_t), sizeof(ULong64_t), 
     sizeof(Int_t), sizeof(UInt_t), sizeof(Short_t), sizeof(UShort_t), 
-    sizeof(Char_t), sizeof(Byte_t), 0, 
+    sizeof(Char_t), sizeof(Byte_t), 0, sizeof(char), sizeof(char),
+    sizeof(int), sizeof(float), sizeof(double), sizeof(int), sizeof(float), sizeof(double),
     sizeof(Double_t), sizeof(Float_t), sizeof(Long64_t), sizeof(ULong64_t), 
     sizeof(Int_t), sizeof(UInt_t), sizeof(Short_t), sizeof(UShort_t), 
     sizeof(Char_t), sizeof(Byte_t), 0,
@@ -181,6 +182,7 @@ size_t THaVar::GetTypeSize( VarType itype )
     sizeof(Int_t), sizeof(UInt_t), sizeof(Short_t), sizeof(UShort_t), 
     sizeof(Char_t), sizeof(Byte_t), 0  };
 
+  assert( itype >= 0 && (size_t)itype < sizeof(size)/sizeof(size_t) );
   return size[itype];
 }
 

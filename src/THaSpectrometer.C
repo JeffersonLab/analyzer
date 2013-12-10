@@ -487,6 +487,43 @@ void THaSpectrometer::LabToTransport( const TVector3& vertex,
 }
 
 //_____________________________________________________________________________
+void THaSpectrometer::SetCentralAngles( Double_t th, Double_t ph,
+					Bool_t bend_down )
+{
+  // Given geographical angles theta and phi (in degrees), compute the
+  // spectrometer's central angles in spherical coordinates and save trig.
+  // values of angles for later use.
+  // Note: negative theta corresponds to beam RIGHT.
+  // phi should be close to zero unless this is a true out-of-plane spectrometer.
+  // If 'bend_down' is true, the spectrometer bends downwards.
+
+  fThetaGeo = TMath::DegToRad()*th; fPhiGeo = TMath::DegToRad()*ph;
+  GeoToSph( fThetaGeo, fPhiGeo, fThetaSph, fPhiSph );
+  fSinThGeo = TMath::Sin( fThetaGeo ); fCosThGeo = TMath::Cos( fThetaGeo );
+  fSinPhGeo = TMath::Sin( fPhiGeo );   fCosPhGeo = TMath::Cos( fPhiGeo );
+  Double_t st, ct, sp, cp;
+  st = fSinThSph = TMath::Sin( fThetaSph ); ct = fCosThSph = TMath::Cos( fThetaSph );
+  sp = fSinPhSph = TMath::Sin( fPhiSph );   cp = fCosPhSph = TMath::Cos( fPhiSph );
+
+  // Compute the rotation from TRANSPORT to lab and vice versa.
+  Double_t norm = TMath::Sqrt(ct*ct + st*st*cp*cp);
+  TVector3 nx( st*st*sp*cp/norm, -norm, st*ct*sp/norm );
+  TVector3 ny( ct/norm,          0.0,   -st*cp/norm   );
+  TVector3 nz( st*cp,            st*sp, ct            );
+  if( bend_down ) { nx *= -1.0; ny *= -1.0; }
+#if ROOT_VERSION_CODE >= ROOT_VERSION(3,5,4)
+  fToLabRot.SetToIdentity().RotateAxes( nx, ny, nz );
+#else
+  if( !fToLabRot.IsIdentity()) {
+    TRotation tmp; //Identity
+    fToLabRot = tmp;
+  }
+  fToLabRot.RotateAxes( nx, ny, nz );
+#endif
+  fToTraRot = fToLabRot.Inverse();
+}
+
+//_____________________________________________________________________________
 Int_t THaSpectrometer::ReadRunDatabase( const TDatime& date )
 {
   // Query the run database for parameters specific to this spectrometer
@@ -498,7 +535,6 @@ Int_t THaSpectrometer::ReadRunDatabase( const TDatime& date )
   FILE* file = OpenRunDBFile( date );
   if( !file ) return kFileError;
 
-  static const Double_t degrad = TMath::Pi()/180.0;
   Double_t th = 0.0, ph = 0.0;
   Double_t off_x = 0.0, off_y = 0.0, off_z = 0.0;
 
@@ -522,36 +558,8 @@ Int_t THaSpectrometer::ReadRunDatabase( const TDatime& date )
     return kInitError;
   }
 
-  // Compute central angles in spherical coordinates and save trig. values
-  // of angles for later use.
-  // Note: negative theta corresponds to beam RIGHT.
-  // phi should be close to zero unless this is a true out-of-plane spectrometer.
-  fThetaGeo = degrad*th; fPhiGeo = degrad*ph;
-  GeoToSph( fThetaGeo, fPhiGeo, fThetaSph, fPhiSph );
-  fSinThGeo = sin( fThetaGeo ); fCosThGeo = cos( fThetaGeo );
-  fSinPhGeo = sin( fPhiGeo );   fCosPhGeo = cos( fPhiGeo );
-  Double_t st, ct, sp, cp;
-  st = fSinThSph = sin( fThetaSph ); ct = fCosThSph = cos( fThetaSph );
-  sp = fSinPhSph = sin( fPhiSph );   cp = fCosPhSph = cos( fPhiSph );
+  SetCentralAngles( th, ph, false );
 
-  // Compute the rotation from TRANSPORT to lab and vice versa.
-  // If 'bend_down' is true, the spectrometer bends downwards.
-  bool bend_down = false;
-  Double_t norm = sqrt(ct*ct + st*st*cp*cp);
-  TVector3 nx( st*st*sp*cp/norm, -norm, st*ct*sp/norm );
-  TVector3 ny( ct/norm,          0.0,   -st*cp/norm   );
-  TVector3 nz( st*cp,            st*sp, ct            );
-  if( bend_down ) { nx *= -1.0; ny *= -1.0; }
-#if ROOT_VERSION_CODE >= ROOT_VERSION(3,5,4)
-  fToLabRot.SetToIdentity().RotateAxes( nx, ny, nz );
-#else
-  if( !fToLabRot.IsIdentity()) {
-    TRotation tmp; //Identity
-    fToLabRot = tmp;
-  }
-  fToLabRot.RotateAxes( nx, ny, nz );
-#endif
-  fToTraRot = fToLabRot.Inverse();
   fPointingOffset.SetXYZ( off_x, off_y, off_z );
 
   fclose(file);

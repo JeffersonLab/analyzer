@@ -30,9 +30,11 @@ baseenv = Environment(ENV = os.environ)
 #	print "Construction variable = '%s', value = '%s'" % (key, dict[key])
 
 ####### Check SCons version ##################
-print('!!! You should be using the local version of SCons, invoked with:')
-print('!!! ./scons/scons.py')
-EnsureSConsVersion(2,3,0)
+#print('!!! You should be using the local version of SCons, invoked with:')
+#print('!!! ./scons/scons.py')
+print('!!! Building the Hall A analyzer and libraries with SCons requires')
+print('!!! SCons version 2.1.0 or newer.')
+EnsureSConsVersion(2,1,0)
 
 ####### Hall A Build Environment #############
 #
@@ -42,8 +44,8 @@ baseenv.Append(HA_SRC = baseenv.subst('$HA_DIR')+'/src ')
 baseenv.Append(HA_DC = baseenv.subst('$HA_DIR')+'/hana_decode ') 
 baseenv.Append(HA_SCALER = baseenv.subst('$HA_DIR')+'/hana_scaler ') 
 baseenv.Append(MAJORVERSION = '1')
-baseenv.Append(MINORVERSION = '6')
-baseenv.Append(PATCH = '0')
+baseenv.Append(MINORVERSION = '5')
+baseenv.Append(PATCH = '25')
 baseenv.Append(SOVERSION = baseenv.subst('$MAJORVERSION')+'.'+baseenv.subst('$MINORVERSION'))
 baseenv.Append(VERSION = baseenv.subst('$SOVERSION')+'.'+baseenv.subst('$PATCH'))
 baseenv.Append(EXTVERS = '-devel')
@@ -116,6 +118,7 @@ eviolib = 'evio'
 baseenv.Append(LIBPATH=['$HA_DIR','$EVIO_LIB','$HA_SRC','$HA_DC','$HA_SCALER'])
 baseenv.Append(LIBS=[eviolib,hallalib,dclib,scalerlib])
 baseenv.Replace(SHLIBSUFFIX = '.so')
+baseenv.Append(SHLIBSUFFIX = '.'+baseenv.subst('$VERSION'))
 
 SConscript(dirs = ['./','src/','hana_decode/','hana_scaler'],name='SConscript.py',exports='baseenv')
 
