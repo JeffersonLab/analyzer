@@ -6,6 +6,7 @@ import sys
 import platform
 import commands
 import SCons
+import time
 
 def rootcint(target,source,env):
 	"""Executes the ROOT dictionary generator over a list of headers."""
@@ -22,7 +23,7 @@ def rootcint(target,source,env):
 	ok = os.system(command)
 	return ok
 
-baseenv = Environment(ENV = os.environ)
+baseenv = Environment(ENV = os.environ,tools=["default","disttar"],toolpath='.')
 #dict = baseenv.Dictionary()
 #keys = dict.keys()
 #keys.sort()
@@ -48,6 +49,7 @@ baseenv.Append(MINORVERSION = '6')
 baseenv.Append(PATCH = '0')
 baseenv.Append(SOVERSION = baseenv.subst('$MAJORVERSION')+'.'+baseenv.subst('$MINORVERSION'))
 baseenv.Append(VERSION = baseenv.subst('$SOVERSION')+'.'+baseenv.subst('$PATCH'))
+baseenv.Append(NAME = 'analyzer-'+baseenv.subst('$VERSION'))
 baseenv.Append(EXTVERS = '-devel')
 baseenv.Append(HA_VERSION = baseenv.subst('$VERSION')+baseenv.subst('$EXTVERS'))
 print "Main Directory = %s" % baseenv.subst('$HA_DIR')
@@ -145,7 +147,29 @@ if baseenv.subst('$CPPCHECK')==proceed:
                 Exit(1)
         else:
                 cppcheck_command = baseenv.Command('cppcheck_report.txt',[],"cppcheck --quiet --enable=all src/ 2> $TARGET")
+		print "cppcheck_command = %s" % cppcheck_command
                 baseenv.AlwaysBuild(cppcheck_command)
+
+####### build source distribution tarball #############
+
+if baseenv.subst('$SRCDIST')==proceed:
+#	srcdist_link_target = baseenv.subst('$HA_DIR')+'/../'+baseenv.subst('$NAME')
+#	srcdist_link_source = baseenv.subst('$HA_DIR')
+#	try:
+#		os.symlink(srcdist_link_source,srcdist_link_target)
+#	except:
+#		print "Continuing ... " 
+
+	baseenv['DISTTAR_FORMAT']='gz'
+	baseenv.Append(
+		    DISTTAR_EXCLUDEEXTS=['.o','.os','.so','.a','.dll','.cache','.pyc','.cvsignore','.dblite','.log', '.gz', '.bz2', '.zip']
+		    , DISTTAR_EXCLUDEDIRS=['.git','Calib','docs', 'SDK','contrib','VDCsim','bin','examples','scripts','DB','.sconf_temp']
+		    , DISTTAR_EXCLUDERES=[r'Dict\.C$', r'Dict\.h$',r'analyzer',r'\~$',r'\.so\.']
+	)
+	tar = baseenv.DistTar("dist/analyzer-"+baseenv.subst('$VERSION'),[baseenv.Dir('#')])
+	print "tarball target = %s" % tar
+
+###	tar_command = 'tar cvz -C .. -f ../' + baseenv.subst('$NAME') + '.tar.gz -X .exclude -V "JLab/Hall A C++ Analysis Software '+baseenv.subst('$VERSION') + ' `date -I`" ' + '../' + baseenv.subst('$NAME') + '/.exclude ' + '../' + baseenv.subst('$NAME') + '/Changelog ' + '../' + baseenv.subst('$NAME') + '/src ' + '../' + baseenv.subst('$NAME') + '/hana_decode ' + '../' + baseenv.subst('$NAME') + '/hana_scaler ' + '../' + baseenv.subst('$NAME') + '/Makefile ' + '../' + baseenv.subst('$NAME') + '/*.py' + '../' + baseenv.subst('$NAME') + '/SConstruct'
 
 ####### Start of main SConstruct ############
 
