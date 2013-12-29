@@ -145,22 +145,21 @@ if baseenv.subst('$CPPCHECK')==proceed:
 ####### build source distribution tarball #############
 
 if baseenv.subst('$SRCDIST')==proceed:
-	srcdist_link_target = baseenv.subst('$HA_DIR')+'/../'+baseenv.subst('$NAME')
-	srcdist_link_source = baseenv.subst('$HA_DIR')
-	try:
-		os.symlink(srcdist_link_source,srcdist_link_target)
-	except:
-		print "Continuing ... " 
+#	srcdist_link_target = baseenv.subst('$HA_DIR')+'/../'+baseenv.subst('$NAME')
+#	srcdist_link_source = baseenv.subst('$HA_DIR')
+#	try:
+#		os.symlink(srcdist_link_source,srcdist_link_target)
+#	except:
+#		print "Continuing ... " 
 
 	baseenv['DISTTAR_FORMAT']='gz'
 	baseenv.Append(
 		    DISTTAR_EXCLUDEEXTS=['.o','.os','.so','.a','.dll','.cache','.pyc','.cvsignore','.dblite','.log', '.gz', '.bz2', '.zip']
 		    , DISTTAR_EXCLUDEDIRS=['.git','Calib','docs', 'SDK','contrib','VDCsim','bin','examples','scripts','DB','.sconf_temp']
-		    , DISTTAR_EXCLUDERES=[r'_wrap\.c$', r'python/swigwrapper\.py$']
+		    , DISTTAR_EXCLUDERES=[r'Dict\.C$', r'Dict\.h$',r'analyzer',r'\~$',r'\.so\.']
 	)
-	tar = baseenv.DistTar("../analyzer-"+baseenv.subst('$VERSION'),srcdist_link_target+'/Makefile')
+	tar = baseenv.DistTar("dist/analyzer-"+baseenv.subst('$VERSION'),[baseenv.Dir('#')])
 	print "tarball target = %s" % tar
-	baseenv.AlwaysBuild(tar)
 
 ###	tar_command = 'tar cvz -C .. -f ../' + baseenv.subst('$NAME') + '.tar.gz -X .exclude -V "JLab/Hall A C++ Analysis Software '+baseenv.subst('$VERSION') + ' `date -I`" ' + '../' + baseenv.subst('$NAME') + '/.exclude ' + '../' + baseenv.subst('$NAME') + '/Changelog ' + '../' + baseenv.subst('$NAME') + '/src ' + '../' + baseenv.subst('$NAME') + '/hana_decode ' + '../' + baseenv.subst('$NAME') + '/hana_scaler ' + '../' + baseenv.subst('$NAME') + '/Makefile ' + '../' + baseenv.subst('$NAME') + '/*.py' + '../' + baseenv.subst('$NAME') + '/SConstruct'
 

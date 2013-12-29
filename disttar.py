@@ -31,6 +31,7 @@ def disttar_emitter(target,source,env):
 
         # assume the sources are directories... need to check that
         for item in origsource:
+		#print "item = %s" % item
                 for root, dirs, files in os.walk(str(item)):
 
                         # don't make directory dependences as that triggers full build
