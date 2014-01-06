@@ -43,6 +43,7 @@ baseenv.Append(MAIN_DIR = Dir('.').abspath)
 baseenv.Append(HA_DIR = baseenv.subst('$MAIN_DIR'))
 baseenv.Append(HA_SRC = baseenv.subst('$HA_DIR')+'/src ') 
 baseenv.Append(HA_DC = baseenv.subst('$HA_DIR')+'/hana_decode ') 
+baseenv.Append(HA_OODC = baseenv.subst('$HA_DIR')+'/oodecoder ') 
 baseenv.Append(HA_SCALER = baseenv.subst('$HA_DIR')+'/hana_scaler ') 
 baseenv.Append(MAJORVERSION = '1')
 baseenv.Append(MINORVERSION = '6')
@@ -175,6 +176,6 @@ baseenv.Append(LIBS=[eviolib,hallalib,dclib,scalerlib])
 baseenv.Replace(SHLIBSUFFIX = '.so')
 baseenv.Append(SHLIBSUFFIX = '.'+baseenv.subst('$VERSION'))
 
-SConscript(dirs = ['./','src/','hana_decode/','hana_scaler'],name='SConscript.py',exports='baseenv')
+SConscript(dirs = ['./','src/','hana_decode/','hana_scaler/','oodecoder/'],name='SConscript.py',exports='baseenv')
 
 #######  End of SConstruct #########

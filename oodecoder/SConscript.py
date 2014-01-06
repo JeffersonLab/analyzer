@@ -7,10 +7,10 @@ import SCons.Util
 Import('baseenv')
 
 standalone = baseenv.subst('$STANDALONE')
-print ('Compiling decoder executables:  STANDALONE = %s\n' % standalone)
+print ('Compiling object-oriented decoder executables:  STANDALONE = %s\n' % standalone)
 
 standalonelist = Split("""
-tstoy tstio tdecpr prfact epicsd tdecex 
+tstoy
 """)
 # Still to come, perhaps, are (etclient, tstcoda) which should be compiled
 # if the ONLINE_ET variable is set.  
@@ -33,24 +33,24 @@ if baseenv.subst('$STANDALONE')==proceed:
         for scalex in standalonelist:
                 pname = scalex
 
-		if scalex=='epicsd':
-			main = 'epics_main.C'
+		if scalex=='tstoy':
+			main = scalex+'_main.C'
 		else:
-                	main = scalex+'_main.C'
+			main = scalex+'_main.C'
 
-                if scalex=='tdecex':
-			pname = baseenv.Program(target = pname, source = list+[main,'THaGenDetTest.C','THaDecDict.so'])
+                if scalex=='tstoy':
+			pname = baseenv.Program(target = pname, source = list+[main,'THaOODecDict.so'])
 		else:	
-			pname = baseenv.Program(target = pname, source = list+[main,'THaDecDict.so'])
+			pname = baseenv.Program(target = pname, source = list+[main,'THaOODecDict.so'])
 			
                 baseenv.Install('../bin',pname)
                 baseenv.Alias('install',['../bin'])
 
-sotarget = 'dc'
+sotarget = 'oodc'
 
 #dclib = baseenv.SharedLibrary(target=sotarget, source = list+['THaDecDict.so'],SHLIBPREFIX='../lib',SHLIBVERSION=['$VERSION'],LIBS=[''])
-dclib = baseenv.SharedLibrary(target=sotarget, source = list+['THaDecDict.so'],SHLIBPREFIX='../lib',LIBS=[''])
-print ('Decoder shared library = %s\n' % dclib)
+oodclib = baseenv.SharedLibrary(target=sotarget, source = list+['THaOODecDict.so'],SHLIBPREFIX='../lib',LIBS=[''])
+print ('Decoder shared library = %s\n' % oodclib)
 
 linkbase = baseenv.subst('$SHLIBPREFIX')+sotarget
 
@@ -69,9 +69,9 @@ try:
 except:	
 	print " Continuing ... "
 
-Clean(dclib,cleantarget)
-Clean(dclib,localmajorcleantarget)
-Clean(dclib,localshortcleantarget)
+Clean(oodclib,cleantarget)
+Clean(oodclib,localmajorcleantarget)
+Clean(oodclib,localshortcleantarget)
 
 #baseenv.Install('../lib',dclib)
 #baseenv.Alias('install',['../lib'])
