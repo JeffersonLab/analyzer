@@ -21,6 +21,7 @@ class TList;
 class TVector3;
 class THaRunBase;
 class THaOutput;
+class TObjArray;
 
 const char* Here( const char* here, const char* prefix = NULL );
 
@@ -60,12 +61,14 @@ public:
   virtual Int_t        InitOutput( THaOutput * );
           Bool_t       IsOKOut()                 { return fOKOut; }
 
-  // Static function to provide easy access to database files
+  // Static functions to provide easy access to database files
   // from CINT scripts etc.
   static  FILE*   OpenFile( const char* name, const TDatime& date,
 			    const char* here = "OpenFile()",
 			    const char* filemode = "r", 
 			    const int debug_flag = 1);
+  static Int_t    ReadDBline( FILE* fp, char* buf, size_t bufsiz,
+			      std::string& line );
 
   // Access functions for reading tag/value pairs from database files
   static  Int_t   LoadDBvalue( FILE* file, const TDatime& date, 
@@ -99,6 +102,7 @@ public:
 
   // Generic utility functions
   static std::vector<std::string> vsplit( const std::string& s );
+  static TString& GetObjArrayString( const TObjArray* params, Int_t pos );
 
   // Geometry utility functions
   static  void    GeoToSph( Double_t  th_geo, Double_t  ph_geo,

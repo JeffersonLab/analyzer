@@ -29,18 +29,18 @@ public:
   const Int_t*    GetDim()  const { return fDim; }
   Int_t           GetLen()  const { return fLen; }
   const char*     GetName() const { return fName.Data(); }
-  Byte_t          GetNdim() const { return fNdim; }
+  Int_t           GetNdim() const { return fNdim; }
   ULong_t         Hash()    const { return fName.Hash(); }
   Bool_t          IsArray() const { return (fNdim > 0); }
   Bool_t          IsError() const { return (fStatus != kOK); }
   virtual Int_t   Parse( const char* string="" );
-  virtual void    Print( Option_t* opt="" );
+  virtual void    Print( Option_t* opt="" ) const;
   EStatus         Status()  const { return fStatus; }
 
 protected:
 
   TString  fName;            //Variable name
-  Byte_t   fNdim;            //Number of array dimensions (0=scalar)
+  Int_t    fNdim;            //Number of array dimensions (0=scalar)
   Int_t*   fDim;             //Dimensions, if any (NULL for scalar)
   Int_t    fLen;             //Length of array (product of all dimensions)
   EStatus  fStatus;          //Status of Parse()

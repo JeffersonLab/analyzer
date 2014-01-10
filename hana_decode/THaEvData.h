@@ -63,6 +63,8 @@ public:
   Int_t     GetRawData(Int_t i) const;
   // Get raw element i within crate
   Int_t     GetRawData(Int_t crate, Int_t i) const;
+  // Get raw data buffer for crate
+  const Int_t* GetRawDataBuffer(Int_t crate) const;
   Int_t     GetNumHits(Int_t crate, Int_t slot, Int_t chan) const;
   Int_t     GetData(Int_t crate, Int_t slot, Int_t chan, Int_t hit) const;
   Bool_t    InCrate(Int_t crate, Int_t i) const;
@@ -138,6 +140,7 @@ protected:
   static const Int_t MAXROC = 32;  
   static const Int_t MAXSLOT = 27;  
 
+  // Hall A Trigger Types
   static const Int_t MAX_PHYS_EVTYPE  = 14;  // Types up to this are physics
   static const Int_t SYNC_EVTYPE      = 16;
   static const Int_t PRESTART_EVTYPE  = 17;
@@ -162,7 +165,6 @@ protected:
   Bool_t first_load, first_decode;
   Bool_t fTrigSupPS;
 
-  // Hall A Trigger Types
   const Int_t *buffer;
 
   Int_t  event_type,event_length,event_num,run_num,evscaler;
@@ -279,6 +281,14 @@ inline Int_t THaEvData::GetRawData(Int_t crate, Int_t i) const {
   assert( crate >= 0 && crate < MAXROC );
   Int_t index = rocdat[crate].pos + i;
   return GetRawData(index);
+};
+
+inline const Int_t* THaEvData::GetRawDataBuffer(Int_t crate) const {
+  // Direct access to the event buffer for the given crate,
+  // e.g. for fast header word searches
+  assert( crate >= 0 && crate < MAXROC );
+  Int_t index = rocdat[crate].pos;
+  return buffer+index;
 };
 
 inline Bool_t THaEvData::InCrate(Int_t crate, Int_t i) const {

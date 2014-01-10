@@ -26,8 +26,8 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include <iostream>
-#include <string.h>
-#include <stdlib.h>
+#include <cstring>
+#include <cstdlib>
 #include "THaArrayString.h"
 #include "TMath.h"
 
@@ -42,7 +42,7 @@ THaArrayString::THaArrayString( const THaArrayString& rhs )
 
   if( fNdim > 0 ) {
     fDim = new Int_t[fNdim];
-    for( Byte_t i = 0; i<fNdim; i++ )
+    for( Int_t i = 0; i<fNdim; i++ )
       fDim[i] = rhs.fDim[i];
   } 
 }
@@ -60,7 +60,7 @@ THaArrayString& THaArrayString::operator=( const THaArrayString& rhs )
     delete [] fDim;
     if( fNdim > 0 ) {
       fDim = new Int_t[fNdim];
-      for( Byte_t i = 0; i<fNdim; i++ )
+      for( Int_t i = 0; i<fNdim; i++ )
 	fDim[i] = rhs.fDim[i];
     } else
       fDim = NULL;
@@ -96,7 +96,7 @@ Int_t THaArrayString::Parse( const char* string )
   char *str = 0, *s, *t;
   const char *cs;
   size_t len;
-  Byte_t ncomma = 0, nl = 0, nr = 0;
+  Int_t ncomma = 0, nl = 0, nr = 0;
   Int_t j;
   Double_t lsum = 0.0;
 
@@ -253,20 +253,33 @@ Int_t THaArrayString::Parse( const char* string )
 }
 
 //_____________________________________________________________________________
-void THaArrayString::Print( Option_t* )
+static void WriteDims( Int_t ndim, Int_t* dims )
 {
-  cout << fName ;
-  if( fNdim > 0 ) {
-    cout << "[";
-    for( Byte_t i = 0; i<fNdim; i++ ) {
-      cout << fDim[i];
-      if( i+1<fNdim )
-	cout << ",";
-      else
-	cout << "]";
-    }
+  for( Int_t i = 0; i<ndim; i++ ) {
+    cout << dims[i];
+    if( i+1<ndim )
+      cout << ",";
   }
-  cout << endl;
+}
+      
+//_____________________________________________________________________________
+void THaArrayString::Print( Option_t* option ) const
+{
+  // Print the name and array dimension(s), if any.
+  // If option == "dimonly", only print the dimensions, without square brackets.
+
+  TString opt(option);
+  if( !opt.Contains("dimonly") ) {
+    cout << fName ;
+    if( fNdim > 0 ) {
+      cout << "[";
+      WriteDims(fNdim,fDim);
+      cout << "]";
+    }
+    cout << endl;
+  }
+  else 
+    WriteDims(fNdim,fDim);
 }
 //_____________________________________________________________________________
 ClassImp(THaArrayString);

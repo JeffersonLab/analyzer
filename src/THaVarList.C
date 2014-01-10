@@ -4,7 +4,7 @@
 //
 //  THaVarList
 //
-//  A specialized TList containing global variables of the
+//  A specialized THashList containing global variables of the
 //  Hall A analyzer.
 //
 //  Variables can be added to the list as follows: 
@@ -58,29 +58,35 @@
 #include "TROOT.h"
 #include "TMath.h"
 
-#include <algorithm>
 #include <cstring>
 
 ClassImp(THaVarList)
 
+static const Int_t kInitVarListCapacity = 100;
+static const Int_t kVarListRehashLevel  = 3;
 //_____________________________________________________________________________
-void THaVarList::Clear( Option_t* )
+THaVarList::THaVarList() : THashList(kInitVarListCapacity, kVarListRehashLevel)
 {
-   // Remove all variables from the list.
+  // Default constructor
 
-  while( fFirst ) {
-    THaVar* obj = (THaVar*)TList::Remove( fFirst );
-    delete obj;
-  }
+  // THaVarList "owns" the variables put into it, i.e. if the list is deleted
+  // so are the global variables in it.
+  SetOwner(kTRUE);
 }
 
+//_____________________________________________________________________________
+THaVarList::~THaVarList()
+{
+  // Destructor
+}
+  
 //_____________________________________________________________________________
 THaVar* THaVarList::DefineByType( const char* name, const char* descript, 
 				  const void* var, VarType type, 
 				  const Int_t* count )
 {
   // Define a global variable with given type.
-  // Duplicate names are not allowed; if a name already exists, return NULL
+  // Duplicate names are not allowed; if a name already exists, return 0
 
   static const char* const here = "DefineByType()";
 
@@ -88,10 +94,10 @@ THaVar* THaVarList::DefineByType( const char* name, const char* descript,
   if( ptr ) {
     Warning( here, "Variable %s already exists. Not redefined.", 
 	     ptr->GetName() );
-    return NULL;
+    return 0;
   }
 
-  ptr = new THaVar( name, descript, var, type, -1, NULL, count );
+  ptr = new THaVar( name, descript, var, type, -1, 0, count );
   if( ptr ) 
     AddLast( ptr );
   else
@@ -111,14 +117,14 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
   if( !obj || !cl ) {
     Warning( errloc, "Invalid class or object. Variable %s not defined.",
 	     name.Data() );
-    return NULL;
+    return 0;
   }
 
   THaVar* var = Find( name );
   if( var ) {
     Warning( errloc, "Variable %s already exists. Not redefined.", 
 	     var->GetName() );
-    return NULL;
+    return 0;
   }
 
   // Find up to two dots in the definition and extract the strings between them
@@ -140,17 +146,17 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
   if( pos != kNPOS ) {
     Warning( errloc, "Too many dots in definition of variable %s (%s). "
 	     "Variable not defined.", name.Data(), desc.Data() );
-    return NULL;
+    return 0;
   }
   // Any zero-length strings?
   Int_t i = 0;
   while( i <= ndot )
     if( s[i++].Length() == 0 )
-      return NULL;
+      return 0;
 
   Bool_t        function   =  s[ndot].EndsWith("()");
-  TMethodCall*  theMethod  =  NULL;
-  TClass*       theClass   =  NULL;
+  TMethodCall*  theMethod  =  0;
+  TClass*       theClass   =  0;
   ULong_t       loc        =  (ULong_t)obj;
   void**        ploc;
 
@@ -169,9 +175,9 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
       // Member variable contained in a member object, or pointer to it
       objrtti.Find( cl, s[0], obj );
       if( !objrtti.IsValid() || !objrtti.IsObject() ) 
-	return NULL;
+	return 0;
       theClass = objrtti.GetClass();
-      if( !theClass ) return NULL;
+      if( !theClass ) return 0;
       loc += objrtti.GetOffset();
       if( objrtti.IsPointer() ) {
 	ploc = (void**)loc;
@@ -183,14 +189,14 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
       // TSeqCollection member object, or pointer to it
       objrtti.Find( cl, s[0], obj );
       if( !objrtti.IsValid() || !objrtti.IsObject() ) 
-	return NULL;
+	return 0;
       theClass = objrtti.GetClass();
-      if( !theClass ) return NULL;
+      if( !theClass ) return 0;
       if( !theClass->InheritsFrom( "TSeqCollection" )) {
 	Warning( errloc, "Data member %s is not a TSeqCollection. "
 		 "Variable %s (%s) not defined.", 
 		 s[0].Data(), name.Data(), desc.Data() );
-	return NULL;
+	return 0;
       }
       loc += objrtti.GetOffset();
       if( objrtti.IsPointer() ) {
@@ -203,7 +209,7 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
 	Warning( errloc, "Cannot determine class of container "
 		 "member object %s. Variable %s (%s) not defined.",
 		 s[1].Data(), name.Data(), desc.Data() );
-	return NULL;
+	return 0;
       }
       rtti.Find( theClass, s[2] );
       break;
@@ -213,18 +219,18 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
     if( !rtti.IsValid() ) {
       Warning( errloc, "No RTTI information for variable %s. "
 	       "Not defined.", name.Data() );
-      return NULL;
+      return 0;
     }
     if( rtti.IsObject() ) {
       Warning( errloc, "Variable %s is an object. Must be a basic type. "
 	       "Not defined.", name.Data() );
-      return NULL;
+      return 0;
     }
 
     if( ndot < 2 ) {
       loc += rtti.GetOffset();
       TString theName(name);
-      Int_t* count_loc = NULL;
+      Int_t* count_loc = 0;
       switch( rtti.GetArrayType() ) {
       case THaRTTI::kFixed:
 	theName.Append( rtti.GetSubscript() );
@@ -244,7 +250,7 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
       else {
 	Error( errloc, "Error allocating new variable %s. No variable defined.",
 	       name.Data() );
-	return NULL;
+	return 0;
       }
     }
 
@@ -255,7 +261,7 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
     TString funcName(s[ndot]);
     Ssiz_t i = funcName.Index( '(' );
     if( i == kNPOS )
-      return NULL; // Oops
+      return 0; // Oops
     funcName = funcName(0,i);
 
     switch( ndot ) {
@@ -265,9 +271,9 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
     case 1:
       objrtti.Find( cl, s[0], obj );
       if( !objrtti.IsValid() || !objrtti.IsObject() ) 
-	return NULL;
+	return 0;
       theClass = objrtti.GetClass();
-      if( !theClass ) return NULL;
+      if( !theClass ) return 0;
       loc += objrtti.GetOffset();
       if( objrtti.IsPointer() ) {
 	ploc = (void**)loc;
@@ -278,14 +284,14 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
     case 2:
       objrtti.Find( cl, s[0], obj );
       if( !objrtti.IsValid() || !objrtti.IsObject() ) 
-	return NULL;
+	return 0;
       theClass = objrtti.GetClass();
-      if( !theClass ) return NULL;
+      if( !theClass ) return 0;
       if( !theClass->InheritsFrom( "TSeqCollection" )) {
 	Warning( errloc, "Data member %s is not a TSeqCollection. "
 		 "Variable %s (%s) not defined.", 
 		 s[0].Data(), name.Data(), desc.Data() );
-	return NULL;
+	return 0;
       }
       loc += objrtti.GetOffset();
       if( objrtti.IsPointer() ) {
@@ -298,7 +304,7 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
 	Warning( errloc, "Cannot determine class of container "
 		 "member object %s. Variable %s (%s) not defined.",
 		 s[1].Data(), name.Data(), desc.Data() );
-	return NULL;
+	return 0;
       }
       theMethod = new TMethodCall( theClass, funcName, "" );
       break;
@@ -309,13 +315,13 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
     if( !theMethod ) {
       Warning( errloc, "Error getting function information for variable %s. "
 	       "Not defined.", name.Data() );
-      return NULL;
+      return 0;
     }
     if( !theMethod->GetMethod() ) {
       Warning( errloc, "Function %s does not exist. "
 	       "Variable %s not defined.", s[ndot].Data(), name.Data() );
       delete theMethod;
-      return NULL;
+      return 0;
     }
 
     VarType type;
@@ -329,7 +335,7 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
     default:
       Warning( errloc, "Undefined return type for function %s. "
 	       "Variable %s not defined.", s[ndot].Data(), name.Data() );
-      return NULL;
+      return 0;
       delete theMethod;
       break;
     }
@@ -342,7 +348,7 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
       Error( errloc, "Error allocating new variable %s. No variable defined.",
 	     name.Data() );
       delete theMethod;
-      return NULL;
+      return 0;
     }
 
   }
@@ -519,19 +525,19 @@ THaVar* THaVarList::Find( const char* name ) const
   // Find a variable in the list.  If 'name' has array syntax ("var[3]"),
   // the search is performed for the array basename ("var").
 
-  THaVar* ptr;
+  TObject* ptr;
   const char* p = strchr( name, '[' );
   if( !p ) 
-    return static_cast<THaVar*>(FindObject( name ));
+    ptr = FindObject( name );
   else {
     size_t n = p-name;
     char* basename = new char[ n+1 ];
     strncpy( basename, name, n );
     basename[n] = '\0';
-    ptr = static_cast<THaVar*>(FindObject( basename ));
+    ptr = FindObject( basename );
     delete [] basename;
   }
-  return ptr;
+  return static_cast<THaVar*>(ptr);
 }
 
 //_____________________________________________________________________________
@@ -545,36 +551,38 @@ void THaVarList::PrintFull( Option_t* option ) const
   if( !option )  option = "";
   TRegexp re(option,kTRUE);
   TIter next(this);
-  TObject* object;
 
-  while ((object = next())) {
-    TString s = object->GetName();
-    if (*option && strcmp(option,object->GetName()) && s.Index(re) == kNPOS) 
-      continue;
-    object->Print("FULL");
+  while( TObject* obj = next() ) {
+    if( *option ) {
+      TString s = obj->GetName();
+      if( s.Index(re) == kNPOS )
+	continue;
+    }
+    obj->Print("FULL");
   }
 }
 
 //_____________________________________________________________________________
 Int_t THaVarList::RemoveName( const char* name )
 {
-  // Remove a variable from the list
-  // Since each name is unique, we only have to find it once
-  // Returns 1 if variable was deleted, 0 is it wasn't in the list
+  // Delete the variable with the given name from the list.
+  // Returns 1 if variable was deleted, 0 is it wasn't in the list.
+  //
+  // Note: This differs from TList::Remove(), which doesn't delete the
+  // element itself.
 
-  THaVar* ptr = Find( name );
-  if( ptr ) {
-    THaVar* p = static_cast< THaVar* >(TList::Remove( ptr ));
-    delete p;
-    return 1;
-  } else
+  TObject* ptr = Find( name );
+  if( !ptr )
     return 0;
+  ptr = Remove( ptr );
+  delete ptr;
+  return 1;
 }
 
 //_____________________________________________________________________________
 Int_t THaVarList::RemoveRegexp( const char* expr, Bool_t wildcard )
 {
-  // Remove all variables matching regular expression 'expr'. If 'wildcard'
+  // Delete all variables matching regular expression 'expr'. If 'wildcard'
   // is true, the more user-friendly wildcard format is used (see TRegexp).
   // Returns number of variables removed, or <0 if error.
 
@@ -582,13 +590,12 @@ Int_t THaVarList::RemoveRegexp( const char* expr, Bool_t wildcard )
   if( re.Status() ) return -1;
 
   Int_t ndel = 0;
-  TString name;
   TIter next( this );
-  while( THaVar* ptr = static_cast< THaVar* >( next() )) {
-    name = ptr->GetName();
+  while( TObject* ptr = next() ) {
+    TString name = ptr->GetName();
     if( name.Index( re ) != kNPOS ) {
-      THaVar* p = static_cast< THaVar* >(TList::Remove( ptr ));
-      delete p;
+      ptr = Remove( ptr );
+      delete ptr;
       ndel++;
     } 
   }
