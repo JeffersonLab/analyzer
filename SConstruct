@@ -179,3 +179,7 @@ baseenv.Append(SHLIBSUFFIX = '.'+baseenv.subst('$VERSION'))
 SConscript(dirs = ['./','src/','hana_decode/','hana_scaler/','oodecoder/'],name='SConscript.py',exports='baseenv')
 
 #######  End of SConstruct #########
+
+# Local Variables:
+# mode: python
+# End:
