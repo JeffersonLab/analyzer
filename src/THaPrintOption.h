@@ -9,8 +9,6 @@
 
 #include "Rtypes.h"
 
-class TString;
-
 Option_t* const kPRINTLINE  = "LINE";
 Option_t* const kPRINTSTATS = "STATS";
 
@@ -22,7 +20,6 @@ public:
   THaPrintOption( const THaPrintOption& opt );
   THaPrintOption& operator=( const THaPrintOption& rhs );
   THaPrintOption& operator=( const char* rhs );
-  THaPrintOption& operator=( const TString& rhs );
   virtual ~THaPrintOption();
 
   Int_t        GetNOptions()            const { return fNTokens; }
