@@ -6,6 +6,7 @@ def config(env,args):
 	debug = args.get('debug',0)
 	standalone = args.get('standalone',0)
 	cppcheck = args.get('cppcheck',0)
+	checkheaders = args.get('checkheaders',0)
 	srcdist = args.get('srcdist',0)
 	
 	if int(debug):
@@ -20,6 +21,9 @@ def config(env,args):
 	if int(cppcheck):
 		env.Append(CPPCHECK= '1')
 	
+	if int(checkheaders):
+		env.Append(CHECKHEADERS= '1')
+
 	if int(srcdist):
 		env.Append(SRCDIST= '1')
 	
