@@ -24,17 +24,17 @@ ships with Centos6.4/RHEL (The rpms may have been installed depending on what ch
 during the system installation process).  If 'which eclipse' tells you that it has been installed,
 then uninstall the older version with the following series of commands:
 
-$ yum erase eclipse
-$ yum erase eclipse-cdt
-$ yum erase eclipse-rcp
-$ yum erase eclipse-swt
-$ yum erase jetty-eclipse
-$ yum erase icu4j-eclipse
+	$ yum erase eclipse
+	$ yum erase eclipse-cdt
+	$ yum erase eclipse-rcp
+	$ yum erase eclipse-swt
+	$ yum erase jetty-eclipse
+	$ yum erase icu4j-eclipse
 
 This worked for me.  You can check to see if all eclipse-related rpms have been uninstalled
 with 
 
-$ rpm -qa | grep -i eclipse
+	$ rpm -qa | grep -i eclipse
 
 If there are other rpms reported, you can uninstall them with commands similar to those above.
 
@@ -42,21 +42,21 @@ We are going to install eclipse under /opt (of course, you can install it anywhe
 you like - modify the commands below as necessary).  The procedure below will 
 require superuser privileges.
 
-$ cd
-$ sudo tar -xvzf ~/Downloads/eclipse-cpp-kepler-SR1-linux-gtk-x86_64.tar.gz -C /opt
-$ chmod -R +r /opt/eclipse
+	$ cd
+	$ sudo tar -xvzf ~/Downloads/eclipse-cpp-kepler-SR1-linux-gtk-x86_64.tar.gz -C /opt
+	$ chmod -R +r /opt/eclipse
 
 Now, we want to add a script to /usr/bin to launch eclipse.
 
-$ sudo touch /usr/bin/eclipse
-$ sudo chmod 755 /usr/bin/eclipse
+	$ sudo touch /usr/bin/eclipse
+	$ sudo chmod 755 /usr/bin/eclipse
 
 With your favorite editor, create the /usr/bin/eclipse file with the following content:
 
-#!/bin/sh
-export ECLIPSE_HOME="/opt/eclipse"
+	#!/bin/sh
+	export ECLIPSE_HOME="/opt/eclipse"
  
-$ECLIPSE_HOME/eclipse $*
+	$ECLIPSE_HOME/eclipse $*
 
 You may also want to create the Gnome desktop launcher for eclipse.  Create the file
 
@@ -64,20 +64,20 @@ You may also want to create the Gnome desktop launcher for eclipse.  Create the 
 
 with the following content:
 
-[Desktop Entry]
-Encoding=UTF-8
-Name=Eclipse
-Comment=Eclipse SDK 4.3.1
-Exec=eclipse
-Icon=/opt/eclipse/icon.xpm
-Terminal=false
-Type=Application
-Categories=GNOME;Application;Development;
-StartupNotify=true
+	[Desktop Entry]
+	Encoding=UTF-8
+	Name=Eclipse
+	Comment=Eclipse SDK 4.3.1
+	Exec=eclipse
+	Icon=/opt/eclipse/icon.xpm
+	Terminal=false
+	Type=Application
+	Categories=GNOME;Application;Development;
+	StartupNotify=true
 
 Start up Eclipse from the command line with:
 
-$ eclipse
+	$ eclipse
 
 When you start up Eclipse, you will get a window asking you to choose a workspace.  The
 default is usually /Users/****/Documents/workspace.  This is fine, but you might want to
