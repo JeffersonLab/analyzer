@@ -46,6 +46,7 @@ In order for Eclipse to work with SCons, one has to install a plugin
 called SConsolidator.  To do this, do the following:
 
 a) Go to Help->Install New Software
+
 b) In the Install window that comes up, in the "Work with" field, enter:
 
 http://www.sconsolidator.com/update
@@ -53,8 +54,10 @@ http://www.sconsolidator.com/update
 and click on "Add..."
 
 c) Specify the name as "SConsolidator"
+
 d) Check the Eclipse Plug-In for SCons radio button, then hit Next>
 and follow the installation through.
+
 e) After the installation, Eclipse will need to be restarted, which it
 should do automatically.
 
