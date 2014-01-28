@@ -1,4 +1,4 @@
-#!/usr/bin/env
+#!/usr/bin/env python
 ###### Hall A Software Main SConstruct Build File #####
 ###### Author:	Edward Brash (brash@jlab.org) June 2013
 

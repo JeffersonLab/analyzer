@@ -29,11 +29,27 @@ rootdecobj = baseenv.subst('$HA_DC')+'/THaDecDict.so'
 decheaders = Split("""
 hana_decode/THaUsrstrutils.h hana_decode/THaCrateMap.h hana_decode/THaCodaData.h hana_decode/THaEpics.h
 hana_decode/THaFastBusWord.h hana_decode/THaCodaFile.h hana_decode/THaSlotData.h hana_decode/THaEvData.h
-hana_decode/THaCodaDecoder.h hana_decode/THaBenchmark.h hana_decode/haDecode_LinkDef.h
+hana_decode/THaCodaDecoder.h
+hana_decode/THaBenchmark.h hana_decode/haDecode_LinkDef.h
 """)
 #hana_decode/evio.h
 baseenv.RootCint(rootdecdict,decheaders)
 baseenv.SharedObject(target = rootdecobj, source = rootdecdict)
+
+rootoodecdict = baseenv.subst('$MAIN_DIR')+'/THaOODecDict.C'
+rootoodecobj = baseenv.subst('$HA_OODC')+'/THaOODecDict.so'
+oodecheaders = Split("""
+oodecoder/THaUsrstrutils.h oodecoder/THaCrateMap.h oodecoder/THaCodaData.h oodecoder/THaEpics.h
+oodecoder/THaFastBusWord.h oodecoder/THaCodaFile.h oodecoder/THaSlotData.h oodecoder/THaEvData.h
+oodecoder/THaCodaDecoder.h
+oodecoder/ToyCodaDecoder.h oodecoder/ToyEvtTypeHandler.h oodecoder/ToyFastbusModule.h 
+oodecoder/ToyModule.h oodecoder/ToyModuleX.h 
+oodecoder/ToyPhysicsEvtHandler.h oodecoder/ToyScalerEvtHandler.h
+oodecoder/THaBenchmark.h oodecoder/haDecode_LinkDef.h
+""")
+#hana_decode/evio.h
+baseenv.RootCint(rootoodecdict,oodecheaders)
+baseenv.SharedObject(target = rootoodecobj, source = rootoodecdict)
 
 roothadict = baseenv.subst('$MAIN_DIR')+'/haDict.C'
 roothaobj = baseenv.subst('$HA_SRC')+'/haDict.so'
