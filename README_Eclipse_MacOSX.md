@@ -18,12 +18,12 @@ Unpack this somewhere in your own user space.  I chose to install it
 directly underneath my home directory, but of course you can install
 it where you like.
 
-$ cd
-$ sudo tar -xvzf ~/Downloads/eclipse-cpp-kepler-SR1-macosx-cocoa-x86_64.tar.gz
+	$ cd
+	$ sudo tar -xvzf ~/Downloads/eclipse-cpp-kepler-SR1-macosx-cocoa-x86_64.tar.gz
 
 Start up Eclipse from the command line with:
 
-$ ~/eclipse/eclipse
+	$ ~/eclipse/eclipse
 
 You might also find it useful to add the Eclipse app to your dock,
 permanently, to make it easier to start up in the future.
