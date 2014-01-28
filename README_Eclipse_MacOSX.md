@@ -1,7 +1,5 @@
-Installation of Eclipse (Kepler) on MacOSX, with plugins for SCons,
-===================================================================
-Git, GitHub, and Python
-=======================
+Installation of Eclipse (Kepler) on MacOSX, with plugins for SCons, Git, GitHub, and Python
+===========================================================================================
 
 Install Eclipse
 ---------------
