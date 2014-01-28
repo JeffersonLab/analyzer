@@ -86,19 +86,26 @@ PyDev-3.X, and so we will install PyDev-2.X instead.  The reason may
 be related to issues with Java 1.6 vs. 1.7, in fact.
 
 a) Go to Help->Install New Software
+
 b) In the Install window that comes up, in the "Work with" field, enter:
 
 http://pydev.org/updates
 
 and click on "Add..."
+
 c) Specify the name as "PyDev" and hit return
+
 d) IMPORTANT: Uncheck the radio button to show versions other than the
 latest version in the bottom portion of this window.
+
 e) Look for the PyDev for Eclipse Version 2.8.2, and check this radio button.
+
 d) Proceed with the installation.
+
 e) IMPORTANT: At some point it may ask you to allow a certain security
 certificate - you actually have to check the radio button in the top
 part of the window and THEN accept the certificate.
+
 f) After the installation, Eclipse will need to be restarted, which it
 should do automatically.
 
@@ -145,10 +152,13 @@ Opening PODD as a New Project from Exisiting Source within Eclipse
 This section assumes that you have already cloned PODD (from the command line) somewhere on your system.
 
 a) Choose File->New->Other
+
 b) In the pop-up window, choose 'New SCons project from existing source', and click 'Next'
+
 c) Choose a project name (analyzer or analyzer-1.6 are good choices), specify the existing code location, and
 then add any SCons Options (for example, debug=1 standalone=1 will compile the code in debug
 mode, and compile the standalone codes as well.
+
 d) Click 'Finish'
 
 You should now see the project within the Project Explorer window on the RHS of the Eclipse window.
@@ -177,35 +187,48 @@ This section details how to clone your forked copy of PODD directly from within 
 having done so at the command line already).
 
 a) Select File → Import → Git → Project from Git.
+
 b) Select Clone URI in the next dialog.
+
 c) Enter the URI of your repository on github, for example:
 
 git@github.com:brash99/analyzer.git
 
 d) Click on ‘Next’ to get the Branch Selection dialog
+
 e) The default is to clone all branches.  You may want to select only certain ones.  Do so, 
 if you please, and click on ‘Next’
+
 f) Choose the local destination for your cloned repository.  Note that Eclipse will
 warn you if there is already an existing repository clone there (which can happen as the 
 default is to choose your top-level directory plus the first part of the repository name, 
 i.e. analyzer, and so this may already be used).
+
 g) Choose the initial branch that you want to work with.
+
 h) IMPORTANT!!!!  Click the radio button to Clone Submodules!!!!
+
 i) Click on ‘Next’ to get the Projects dialog.
+
 j) Click the ‘Use New Project wizard’ radio button, and then click on ‘Finish’
+
 k)  The final dialog will allow you to choose ‘New SCons project from existing source’, at 
 which point you can then continue from step b) in Section 5 above!! 
 
 l) The final step is to add the appropriate Jefferson Lab reposistory as an upstream remote.
 
 (i) Open the Git Repositories view (Select Window → Show View → Other... → Git → Git Repositories)
+
 (ii) From the Git Repositories tab in the Console area, expand the repository that you are trying
 to set up (analyzer in this case), and then expand Remotes.  You should see that origin is present.
+
 (iii) Right-click on Remotes, and choose 'Create Remote'.  Specify the Remote Name as 'upstream'. Select
 'Configure Push', and Click OK.
+
 (iv) Click on "Change" next to the field where one specifies the URI ... in the new dialog, specify
 the remote URI as git@github.com:JeffersonLab/analyzer.git.  Click on 'Save'.  You should now see that the
 remote called upstream has been added.
+
 (v)  The final step is to configure the upstream fetch so that it pulls from the develop branch.  Expand
 the upstream directory under Remotes.  You will see a fetch and a push specification for the upstream
 repository.  The fetch specification is indicated by a left green arrow.  Right-click on this, and 
