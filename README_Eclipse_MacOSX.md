@@ -1,15 +1,15 @@
 Installation of Eclipse (Kepler) on MacOSX, with plugins for SCons,
 Git, GitHub, and Python
+============================================
 
-=========================
-
-1.  Install Eclipse
+Install Eclipse
+---------------
 
 There exists an Eclipse plugin for SCons, called SConsolidator.  As of
 January, 2014, this plugin works only with the Kepler version of
 Eclipse.  To download and install this version of Eclipse, go to:
 
-http://www.eclipse.org/downloads/packages/eclipse-ide-cc-developers/keplersr1
+[Eclipse Kepler SR1 Downloads](http://www.eclipse.org/downloads/packages/eclipse-ide-cc-developers/keplersr1)
 
 and download the MacOSX (Cocoa 64) version.  The file should be called:
 
@@ -32,17 +32,16 @@ permanently, to make it easier to start up in the future.
 When you start up Eclipse, you will get a window asking you to choose
 a workspace.  The default is usually /Users/****/Documents/workspace.
 This is fine, but you might want to choose someplace else.  Make sure
-to click the "Use this as the default ..." radio button so that you
-won't get asked this every time.
+to click the 'Use this as the default ...' radio button so that you
+will not get asked this every time.
 
 When Eclipse finally starts up, you can click on the "X" on the
 welcome page, and it should take you to the Project Explorer page.
 This is the main view that you will probably end up using most of the
 time.
 
-=========================
-
-2.  Install the SConsolidator Plugin
+Install the SConsolidator Plugin
+--------------------------------
 
 In order for Eclipse to work with SCons, one has to install a plugin
 called SConsolidator.  To do this, do the following:
@@ -72,7 +71,8 @@ for Build Settings, Performance vs. Accuracy, and Warnings.  In
 particular, if you want to build the standalone executables, you can
 add 'standalone=1' to the SCons Options in Build Settings.
 
-3. Install PyDev for Python Support
+Install PyDev for Python Support
+--------------------------------
 
 PyDev includes a nice Python editor with appropriate syntax
 highlighting, as well as providing the "mouse-over" documentation
@@ -104,11 +104,10 @@ Restart Eclipse; you should now have access to PyDev. You should see
 it by going to Eclipse->About Eclipse->Installation Details->Installed
 Software
 
-=========================
+Setting up Git within Eclipse
+-----------------------------
 
-4. Setting up Git within Eclipse
-
-Much of this comes from http://www.vogella.com/tutorials/EclipseGit/article.html
+Much of this comes from [this article](http://www.vogella.com/tutorials/EclipseGit/article.html).
 
 a)  Basic Configuration
 
@@ -137,10 +136,9 @@ c) Activate the Git Toolbar
 Select Window → Customize perspective... and check the command groups Git and Git Navigation Actions
 in the Command Groups Availability tab.  You should now see "Git" as one of the main pulldown menus
 of the Eclipse toolbar.
-
-=========================
  
-5. Opening PODD as a New Project from Exisiting Source within Eclipse
+Opening PODD as a New Project from Exisiting Source within Eclipse
+------------------------------------------------------------------
 
 This section assumes that you have already cloned PODD (from the command line) somewhere on your system.
 
@@ -170,9 +168,8 @@ Also, you can commit and push from the Git Staging window!!!  And, you show the 
 by right-clicking on the top level analyzer folder, and choosing Team -> Show in History
 You should see now a tab in the Console area called History, with a table of commits for the repository.
 
-=========================
-
-6.  Cloning PODD from within Eclipse
+Cloning PODD from within Eclipse
+--------------------------------
 
 This section details how to clone your forked copy of PODD directly from within Eclipse (without
 having done so at the command line already).
@@ -212,11 +209,3 @@ the upstream directory under Remotes.  You will see a fetch and a push specifica
 repository.  The fetch specification is indicated by a left green arrow.  Right-click on this, and 
 choose Configure Fetch.  From the next dialog, choose Add.  In the next dialog, for the Source, specify
 the develop branch, then click Save and Finish.
-
-
-
-
-
-
-
-
