@@ -35,3 +35,9 @@ config.log
 *Dict.C
 .sconsign.dblite
 .sconf_temp/
+
+#eclipse stuff
+.project
+.cproject
+.pydevproject
+.settings/
