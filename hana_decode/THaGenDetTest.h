@@ -17,6 +17,7 @@
 //
 /////////////////////////////////////////////////////////////////////
 
+#include <iostream>
 #include "Rtypes.h"
 #include "THaEvData.h"
 #include "THaSlotData.h"
