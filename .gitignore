@@ -35,6 +35,7 @@ config.log
 *Dict.C
 .sconsign.dblite
 .sconf_temp/
+dist/
 
 #eclipse stuff
 .project
