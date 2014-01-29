@@ -27,6 +27,9 @@ def config(env,args):
 	if int(srcdist):
 		env.Append(SRCDIST= '1')
 
+	if int(srcdist):
+		env.Append(SRCDIST= '1')
+
 	env.Append(CXXFLAGS = '-m32 -Wall -Woverloaded-virtual')
 	env.Append(CPPDEFINES = '-DLINUXVERS')
 
