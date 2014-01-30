@@ -7,12 +7,11 @@
 ///////////////////////////////////////////////////////////////////////////////
 #include "THaSubDetector.h"
 #include "THaVDCPlane.h"
-
+#include "THaVDCUVTrack.h"
+#include "THaVDC.h"
 #include "TClonesArray.h"
 #include <cassert>
 
-class THaVDCUVTrack;
-class THaVDC;
 class THaEvData;
 
 class THaVDCUVPlane : public THaSubDetector {
@@ -36,11 +35,12 @@ public:
   THaVDCPlane*   GetVPlane()      const { return fV; } 
   Int_t          GetNUVTracks()   const { return fUVTracks->GetLast()+1; }
   TClonesArray*  GetUVTracks()    const { return fUVTracks; }
-  THaVDC*        GetVDC()         const { return (THaVDC*)GetDetector(); }
+  THaVDC*        GetVDC()         const
+  { return static_cast<THaVDC*>(GetDetector()); }
   Double_t       GetSpacing()     const { return fSpacing;}
   THaVDCUVTrack* GetUVTrack( Int_t i ) const 
     { assert( i>=0 && i<GetNUVTracks() );
-      return (THaVDCUVTrack*)fUVTracks->UncheckedAt(i); }
+      return static_cast<THaVDCUVTrack*>( fUVTracks->UncheckedAt(i) ); }
 
 protected:
 

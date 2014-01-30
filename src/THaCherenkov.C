@@ -52,7 +52,7 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
   Int_t nelem;
 
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  fscanf ( fi, "%d", &nelem );                      // Number of mirrors
+  fscanf ( fi, "%5d", &nelem );                      // Number of mirrors
 
   // Reinitialization only possible for same basic configuration 
   if( fIsInit && nelem != fNelem ) {
@@ -72,7 +72,8 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
     Int_t crate, slot, first, last, first_chan,model;
     int pos;
     fgets ( buf, LEN, fi );
-    sscanf( buf, "%d%d%d%d%d%n", &crate, &slot, &first, &last, &first_chan, &pos );
+    sscanf( buf, "%6d %6d %6d %6d %6d %n",
+	    &crate, &slot, &first, &last, &first_chan, &pos );
     model=atoi(buf+pos); // if there is no model number given, set to zero
 
     if( crate < 0 ) break;
@@ -88,14 +89,14 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
   // Read geometry
 
   Float_t x,y,z;
-  fscanf ( fi, "%f%f%f", &x, &y, &z );             // Detector's X,Y,Z coord
+  fscanf ( fi, "%15f %15f %15f", &x, &y, &z );        // Detector's X,Y,Z coord
   fOrigin.SetXYZ( x, y, z );
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  fscanf ( fi, "%f%f%f", fSize, fSize+1, fSize+2 );   // Sizes of det on X,Y,Z
+  fscanf ( fi, "%15f %15f %15f", fSize, fSize+1, fSize+2 );   // Sizes of det on X,Y,Z
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
 
   Float_t angle;
-  fscanf ( fi, "%f", &angle );                     // Rotation angle of det
+  fscanf ( fi, "%15f", &angle );                       // Rotation angle of det
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
   const Double_t degrad = TMath::Pi()/180.0;
   tan_angle = TMath::Tan(angle*degrad);
@@ -123,13 +124,13 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
 
   // Read calibrations
   for (i=0;i<fNelem;i++) 
-    fscanf( fi, "%f", fOff+i );                   // TDC offsets
+    fscanf( fi, "%15f", fOff+i );                   // TDC offsets
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
   for (i=0;i<fNelem;i++) 
-    fscanf( fi, "%f", fPed+i );                   // ADC pedestals
+    fscanf( fi, "%15f", fPed+i );                   // ADC pedestals
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
   for (i=0;i<fNelem;i++) 
-    fscanf( fi, "%f", fGain+i);                   // ADC gains
+    fscanf( fi, "%15f", fGain+i);                   // ADC gains
   fgets ( buf, LEN, fi );
 
   fclose(fi);

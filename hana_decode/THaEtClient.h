@@ -78,6 +78,12 @@ private:
     void initflags();
     int init(const char* computer="hana_sta");
 
+// rate calculation  
+    int firstRateCalc;
+    int evsum, xcnt;
+    time_t daqt1;
+    double ratesum;
+
     ClassDef(THaEtClient,0)   // ET client connection for online data
 
 };

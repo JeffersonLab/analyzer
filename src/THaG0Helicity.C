@@ -362,11 +362,11 @@ void THaG0Helicity::QuadCalib()
 {
   // Calibrate the helicity predictor shift register.
 
-  static const char* const here = "QuadCalib";
+  const char* const here = "QuadCalib";
 
   // Is the Qrt signal delayed such that the evt9 at the beginning of
   // a Qrt does NOT contain the qrt flag?
-  int delayed_qrt = 1; 
+  const int delayed_qrt = 1; 
 
   if (fEvtype == 9) {
     fT9count += 1;

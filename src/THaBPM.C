@@ -72,7 +72,8 @@ Int_t THaBPM::ReadDatabase( const TDatime& date )
   int first_chan, crate, dummy, slot, first, last, modulid;
   do {
     fgets( buf, LEN, fi);
-    sscanf(buf,"%d %d %d %d %d %d %d",&first_chan, &crate, &dummy, &slot, &first, &last, &modulid);
+    sscanf(buf,"%6d %6d %6d %6d %6d %6d %6d",
+	   &first_chan, &crate, &dummy, &slot, &first, &last, &modulid);
     if (first_chan>=0) {
       if ( fDetMap->AddModule (crate, slot, first, last, first_chan )<0) {
 	Error( Here(here), "Couldnt add BPM to DetMap. Good bye, blue sky, good bye!");
@@ -96,7 +97,7 @@ Int_t THaBPM::ReadDatabase( const TDatime& date )
 
   double dummy1,dummy2,dummy3,dummy4,dummy5,dummy6;
   fgets( buf, LEN, fi);
-  sscanf(buf,"%lf%lf%lf%lf",&dummy1,&dummy2,&dummy3,&dummy4);
+  sscanf(buf,"%15lf %15lf %15lf %15lf",&dummy1,&dummy2,&dummy3,&dummy4);
 
   fOffset(2)=dummy1;  // z position of the bpm
   fCalibRot=dummy2;   // calibration constant, historical,
@@ -106,7 +107,7 @@ Int_t THaBPM::ReadDatabase( const TDatime& date )
                       // apparatus, but might be useful for the struck
 
   fgets( buf, LEN, fi);
-  sscanf(buf,"%lf%lf%lf%lf",&dummy1,&dummy2,&dummy3,&dummy4);
+  sscanf(buf,"%15lf %15lf %15lf %15lf",&dummy1,&dummy2,&dummy3,&dummy4);
 
   fPedestals(0)=dummy1;
   fPedestals(1)=dummy2;
@@ -114,7 +115,8 @@ Int_t THaBPM::ReadDatabase( const TDatime& date )
   fPedestals(3)=dummy4;
 
   fgets( buf, LEN, fi);
-  sscanf(buf,"%lf%lf%lf%lf%lf%lf",&dummy1,&dummy2,&dummy3,&dummy4,&dummy5,&dummy6);
+  sscanf(buf,"%15lf %15lf %15lf %15lf %15lf %15lf",
+	 &dummy1,&dummy2,&dummy3,&dummy4,&dummy5,&dummy6);
 
   fRot2HCSPos(0,0)=dummy1;
   fRot2HCSPos(0,1)=dummy2;

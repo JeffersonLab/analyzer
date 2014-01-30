@@ -23,11 +23,12 @@ using namespace std;
 
 //Constructors 
 
-  THaCodaFile::THaCodaFile() : ffirst(0), handle(0) {       
+  THaCodaFile::THaCodaFile()
+    : ffirst(0), max_to_filt(0), handle(0), maxflist(0), maxftype(0) {
     // Default constructor. Do nothing (must open file separately).
   }
-  THaCodaFile::THaCodaFile(const char* fname, const char* readwrite) :
-    ffirst(0), handle(0) {
+  THaCodaFile::THaCodaFile(const char* fname, const char* readwrite)
+    : ffirst(0), max_to_filt(0), handle(0), maxflist(0), maxftype(0) {
     // Standard constructor
     int status = codaOpen(fname,readwrite);  // pass read or write flag
     staterr("open",status);
@@ -210,13 +211,12 @@ Finish:
   void THaCodaFile::addEvTypeFilt(int evtype_to_filt)
 // Function to set up filtering by event type
   {
-     int i;
      initFilter();
      if (evtypes[0] >= maxftype-1) {
         TArrayI temp = evtypes;
         maxftype = maxftype + 100;
         evtypes.Set(maxftype);
-        for (i=0; i<=temp[0]; i++) evtypes[i]=temp[i];
+        for (int i=0; i<=temp[0]; i++) evtypes[i]=temp[i];
         temp.~TArrayI();
      }
      evtypes[0] = evtypes[0] + 1;  // 0th element = num elements in list
@@ -229,13 +229,12 @@ Finish:
   void THaCodaFile::addEvListFilt(int event_num_to_filt)
 // Function to set up filtering by list of event numbers
   {
-     int i;
      initFilter();
      if (evlist[0] >= maxflist-1) {
         TArrayI temp = evlist;
         maxflist = maxflist + 100;
         evlist.Set(maxflist);
-        for (i=0; i<=temp[0]; i++) evlist[i]=temp[i];
+        for (int i=0; i<=temp[0]; i++) evlist[i]=temp[i];
      }
      evlist[0] = evlist[0] + 1;  // 0th element = num elements in list
      int n = evlist[0];

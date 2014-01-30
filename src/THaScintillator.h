@@ -38,7 +38,7 @@ public:
   
   friend class THaScCalib;
 
-  THaScintillator();  // for ROOT I/O
+  //  THaScintillator();  // for ROOT I/O
 protected:
 
   // Calibration

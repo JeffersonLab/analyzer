@@ -27,8 +27,8 @@ using namespace std;
 
 //_____________________________________________________________________________
 THaScintillator::THaScintillator( const char* name, const char* description,
-				  THaApparatus* apparatus ) :
-  THaNonTrackingDetector(name,description,apparatus)
+				  THaApparatus* apparatus )
+  : THaNonTrackingDetector(name,description,apparatus)
 {
   // Constructor
   fTWalkPar = 0;
@@ -37,18 +37,16 @@ THaScintillator::THaScintillator( const char* name, const char* description,
 }
 
 //_____________________________________________________________________________
-THaScintillator::THaScintillator( ) :
-  THaNonTrackingDetector()
-{
-  // Constructor
-  fTWalkPar = NULL;
-  fTrackProj = NULL;
-  fRA_c = fRA_p = fRA = fLA_c = fLA_p = fLA = NULL;
-  fRT_c = fRT = fLT_c = fLT = NULL;
-  fRGain = fLGain = fRPed = fLPed = fROff = fLOff = NULL;
-  fTrigOff = fTime = fdTime = fYt = fYa = NULL;
-  fHitPad = NULL;
-}
+// THaScintillator::THaScintillator()
+//   : THaNonTrackingDetector(), fLOff(0), fROff(0), fLPed(0), fRPed(0),
+//     fLGain(0), fRGain(0), fTWalkPar(0), fAdcMIP(0), fTrigOff(0),
+//     fLT(0), fLT_c(0), fRT(0), fRT_c(0), fLA(0), fLA_p(0), fLA_c(0),
+//     fRA(0), fRA_p(0), fRA_c(0), fHitPad(0), fTime(0), fdTime(0), fAmpl(0),
+//     fYt(0), fYa(0), fTrackProj(0), tan_angle(0), sin_angle(0), cos_angle(0)
+// {
+//   // Default constructor (for ROOT I/O)
+
+// }
 
 //_____________________________________________________________________________
 THaAnalysisObject::EStatus THaScintillator::Init( const TDatime& date )
@@ -85,7 +83,7 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   if( !fi ) return kFileError;
 
   while ( ReadComment( fi, buf, LEN ) ) {}
-  fscanf ( fi, "%d", &nelem );                        // Number of  paddles
+  fscanf ( fi, "%5d", &nelem );                        // Number of  paddles
   fgets ( buf, LEN, fi );
 
   // Reinitialization only possible for same basic configuration 
@@ -108,7 +106,8 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
     Int_t first_chan, model;
     Int_t crate, slot, first, last;
     fgets ( buf, LEN, fi );
-    sscanf( buf, "%d%d%d%d%d%n", &crate, &slot, &first, &last, &first_chan, &pos );
+    sscanf( buf, "%6d %6d %6d %6d %6d %n", 
+	    &crate, &slot, &first, &last, &first_chan, &pos );
     if( crate < 0 ) break;
     model=atoi(buf+pos); // if there is no model number given, set to zero
     
@@ -122,17 +121,17 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   while ( ReadComment( fi, buf, LEN ) ) {}
 
   Float_t x,y,z;
-  fscanf ( fi, "%f%f%f", &x, &y, &z );             // Detector's X,Y,Z coord
+  fscanf ( fi, "%15f %15f %15f", &x, &y, &z );       // Detector's X,Y,Z coord
   fgets ( buf, LEN, fi );
   fOrigin.SetXYZ( x, y, z );
   fgets ( buf, LEN, fi );
   while ( ReadComment( fi, buf, LEN ) ) {}
-  fscanf ( fi, "%f%f%f", fSize, fSize+1, fSize+2 ); // Sizes of det on X,Y,Z
+  fscanf ( fi, "%15f %15f %15f", fSize, fSize+1, fSize+2 ); // Sizes of det on X,Y,Z
   fgets ( buf, LEN, fi );
   while ( ReadComment( fi, buf, LEN ) ) {}
 
   Float_t angle;
-  fscanf ( fi, "%f", &angle );                     // Rotation angle of detector
+  fscanf ( fi, "%15f", &angle );                   // Rotation angle of detector
   fgets ( buf, LEN, fi );
   const Float_t degrad = TMath::Pi()/180.0;
   tan_angle = TMath::Tan(angle*degrad);
@@ -256,27 +255,27 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   while ( ReadComment( fi, buf, LEN ) ) {}
   // Read calibration data
   for (i=0;i<fNelem;i++) 
-    fscanf(fi,"%lf",fLOff+i);                    // Left Pads TDC offsets
+    fscanf(fi,"%15lf",fLOff+i);                    // Left Pads TDC offsets
   fgets ( buf, LEN, fi );   // finish line
   while ( ReadComment( fi, buf, LEN ) ) {}
   for (i=0;i<fNelem;i++) 
-    fscanf(fi,"%lf",fROff+i);                    // Right Pads TDC offsets
+    fscanf(fi,"%15lf",fROff+i);                    // Right Pads TDC offsets
   fgets ( buf, LEN, fi );   // finish line
   while ( ReadComment( fi, buf, LEN ) ) {}
   for (i=0;i<fNelem;i++) 
-    fscanf(fi,"%lf",fLPed+i);                    // Left Pads ADC Pedest-s
+    fscanf(fi,"%15lf",fLPed+i);                    // Left Pads ADC Pedest-s
   fgets ( buf, LEN, fi );   // finish line, etc.
   while ( ReadComment( fi, buf, LEN ) ) {}
   for (i=0;i<fNelem;i++) 
-    fscanf(fi,"%lf",fRPed+i);                    // Right Pads ADC Pedes-s
+    fscanf(fi,"%15lf",fRPed+i);                    // Right Pads ADC Pedes-s
   fgets ( buf, LEN, fi );
   while ( ReadComment( fi, buf, LEN ) ) {}
   for (i=0;i<fNelem;i++) 
-    fscanf (fi,"%lf",fLGain+i);                  // Left Pads ADC Coeff-s
+    fscanf (fi,"%15lf",fLGain+i);                  // Left Pads ADC Coeff-s
   fgets ( buf, LEN, fi );
   while ( ReadComment( fi, buf, LEN ) ) {}
   for (i=0;i<fNelem;i++) 
-    fscanf (fi,"%lf",fRGain+i);                  // Right Pads ADC Coeff-s
+    fscanf (fi,"%15lf",fRGain+i);                  // Right Pads ADC Coeff-s
   fgets ( buf, LEN, fi ); 
 
 
@@ -285,23 +284,23 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   // stop reading if a '[' is found on a line (corresponding to the next date-tag)
   // read in TDC resolution (s/channel)
   if ( ! fgets(buf, LEN, fi) || strchr(buf,'[') ) goto exit;
-  sscanf(buf,"%lf",&fTdc2T);
+  sscanf(buf,"%15lf",&fTdc2T);
   fResolution = 3.*fTdc2T;      // guess at timing resolution
 
   while ( ReadComment( fi, buf, LEN ) ) {}
   // Speed of light in the scintillator material
   if ( !fgets(buf, LEN, fi) ||  strchr(buf,'[') ) goto exit;
-  sscanf(buf,"%lf",&fCn);
+  sscanf(buf,"%15lf",&fCn);
   
   // Attenuation length (inverse meters)
   while ( ReadComment( fi, buf, LEN ) ) {}
   if ( !fgets ( buf, LEN, fi ) ||  strchr(buf,'[') ) goto exit;
-  sscanf(buf,"%lf",&fAttenuation);
+  sscanf(buf,"%15lf",&fAttenuation);
   
   while ( ReadComment( fi, buf, LEN ) ) {}
   // Time-walk correction parameters
   if ( !fgets(buf, LEN, fi) ||  strchr(buf,'[') ) goto exit;
-  sscanf(buf,"%lf",&fAdcMIP);
+  sscanf(buf,"%15lf",&fAdcMIP);
   
   while ( ReadComment( fi, buf, LEN ) ) {}
   // timewalk parameters
@@ -310,7 +309,7 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
     while ( cnt<fNTWalkPar && fgets( buf, LEN, fi ) && ! strchr(buf,'[') ) {
       char *ptr = buf;
       int pos=0;
-      while ( cnt < fNTWalkPar && sscanf(ptr,"%lf%n",&fTWalkPar[cnt],&pos)>0 ) {
+      while ( cnt < fNTWalkPar && sscanf(ptr,"%15lf%n",&fTWalkPar[cnt],&pos)>0 ) {
 	ptr += pos;
 	cnt++;
       }
@@ -324,7 +323,7 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
     while ( cnt<fNelem && fgets( buf, LEN, fi ) && ! strchr(buf,'[') ) {
       char *ptr = buf;
       int pos=0;
-      while ( cnt < fNelem && sscanf(ptr,"%lf%n",&fTrigOff[cnt],&pos)>0 ) {
+      while ( cnt < fNelem && sscanf(ptr,"%15lf%n",&fTrigOff[cnt],&pos)>0 ) {
 	ptr += pos;
 	cnt++;
       }

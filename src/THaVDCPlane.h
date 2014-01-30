@@ -8,14 +8,14 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "THaSubDetector.h"
+#include "THaVDCWire.h"
+#include "THaVDCCluster.h"
 #include "TClonesArray.h"
+#include "THaVDCHit.h"
 #include <cassert>
 
 class THaEvData;
-class THaVDCWire;
 class THaVDCUVPlane;
-class THaVDCCluster;
-class THaVDCHit;
 class THaVDCTimeToDistConv;
 class THaTriggerTime;
 
@@ -37,19 +37,19 @@ public:
   TClonesArray*  GetClusters()  const { return fClusters; }
   THaVDCCluster* GetCluster(Int_t i) const
   { assert( i>=0 && i<GetNClusters() );
-    return (THaVDCCluster*)fClusters->UncheckedAt(i); } 
+    return static_cast<THaVDCCluster*>( fClusters->UncheckedAt(i) ); } 
 
   Int_t          GetNWires()    const { return fWires->GetLast()+1; }
   TClonesArray*  GetWires()     const { return fWires; }
   THaVDCWire*    GetWire(Int_t i) const
   { assert( i>=0 && i<GetNWires() );
-    return (THaVDCWire*)fWires->UncheckedAt(i);}
+    return static_cast<THaVDCWire*>( fWires->UncheckedAt(i) ); }
 
   Int_t          GetNHits()     const { return fHits->GetLast()+1; }
   TClonesArray*  GetHits()      const { return fHits; }
   THaVDCHit*     GetHit(Int_t i) const
   { assert( i>=0 && i<GetNHits() );
-    return (THaVDCHit*)fHits->UncheckedAt(i); }
+    return static_cast<THaVDCHit*>( fHits->UncheckedAt(i) ); }
 
   Int_t    GetNWiresHit() const  { return fNWiresHit; } 
 

@@ -38,6 +38,7 @@ THaScalerDB::~THaScalerDB() {
 
 void THaScalerDB::Init() {
     direct = new SDB_directive();
+    found_date = false;
     fgnfar=10;
     sdate="DATE";
     scomment="#";
@@ -74,7 +75,7 @@ bool THaScalerDB::extract_db(const Bdate& bdate) {
   fname[i++] = "DB/" + scalmap;
   fname[i++] = "db/DEFAULT/" + scalmap;
   fname[i++] = "db/" + scalmap;
-  fname[i++] = "DEFAULT/" + scalmap;
+  fname[i] = "DEFAULT/" + scalmap;
   i = 0;
   ifstream mapfile;
   do {
@@ -152,7 +153,7 @@ void THaScalerDB::PrintChanMap() {
   Int_t i = 0;
   cout << "Print of Channel Map.  Size = "<<chanmap.size()<<endl;
   for (map< SDB_chanKey, SDB_chanDesc>::iterator pm = chanmap.begin();
-      pm != chanmap.end(); pm++) {
+      pm != chanmap.end(); ++pm) {
       i++;
       SDB_chanKey ck = pm->first;
       SDB_chanDesc cd = pm->second;
@@ -169,7 +170,7 @@ void THaScalerDB::PrintDirectives() {
 };
 
 
-string THaScalerDB::GetLineType(string sline) {
+string THaScalerDB::GetLineType(const string& sline) {
 // Decide if the line is a date, comment, directive, or a map field.
    if ((Int_t)sline.length() == 0) return "COMMENT";
    if ((Int_t)sline.length() == AmtSpace(sline)) return "COMMENT";
@@ -199,7 +200,7 @@ string THaScalerDB::GetLineType(string sline) {
    return "MAP";
 }
 
-SDB_chanDesc THaScalerDB::GetChanDesc(Int_t crate, string desc, Int_t helicity) {  
+SDB_chanDesc THaScalerDB::GetChanDesc(Int_t crate, const string& desc, Int_t helicity) {  
 // No distinction by target state (they share channel mapping)
 // First check if crate is tied to the map of another crate.
   Int_t lcrate = TiedCrate(crate, helicity);
@@ -214,14 +215,14 @@ SDB_chanDesc THaScalerDB::GetChanDesc(Int_t crate, string desc, Int_t helicity) 
   return cdesc;
 }
 
-string THaScalerDB::GetLongDesc(Int_t crate, string desc, Int_t helicity) {  
+string THaScalerDB::GetLongDesc(Int_t crate, const string& desc, Int_t helicity) {  
 // Returns the slot in a scaler corresp. to the
 // channel in the detector described by "desc".
    SDB_chanDesc cdesc = GetChanDesc(crate, desc, helicity);
    return cdesc.GetDesc();
 }
 
-Int_t THaScalerDB::GetSlot(Int_t crate, string desc, Int_t helicity) {  
+Int_t THaScalerDB::GetSlot(Int_t crate, const string& desc, Int_t helicity) {  
 // Returns the slot in a scaler corresp. to the
 // channel in the detector described by "desc".
    SDB_chanDesc cdesc = GetChanDesc(crate, desc, helicity);
@@ -241,14 +242,14 @@ Int_t THaScalerDB::GetSlot(Int_t crate, Int_t tgtstate, Int_t helicity) {
   return GetIntDirectives(crate, "target-beam", subdir);
 }
 
-Int_t THaScalerDB::GetChan(Int_t crate, string desc, Int_t helicity, Int_t chan) {  
+Int_t THaScalerDB::GetChan(Int_t crate, const string& desc, Int_t helicity, Int_t chan) {  
 // Returns the channel in a scaler corresp. to the
 // channel in the detector described by "desc".
    SDB_chanDesc cdesc = GetChanDesc(crate, desc, helicity);
    return cdesc.GetChan(chan);
 }
 
-bool THaScalerDB::LoadMap(string sinput) 
+bool THaScalerDB::LoadMap(const string& sinput) 
 {  
   typedef map<SDB_chanKey, SDB_chanDesc>::value_type valType;
   pair<map<SDB_chanKey, SDB_chanDesc>::iterator, bool> pin;
@@ -292,7 +293,7 @@ bool THaScalerDB::LoadMap(string sinput)
   return true;
 }
 
-bool THaScalerDB::LoadDirective(string sinput) 
+bool THaScalerDB::LoadDirective(const string& sinput) 
 {
   if (!direct) return false;
   vector<string> vstring = vsplit(sinput);
@@ -350,19 +351,21 @@ vector<string> THaScalerDB::GetShortNames(Int_t crate, Int_t slot, Int_t chan) {
   return channame[cs];
 }
 
-string THaScalerDB::GetStringDirectives(Int_t crate, string directive, string key) 
+string THaScalerDB::GetStringDirectives(Int_t crate, const string& directive,
+					const string& key) 
 {
   if (!direct) return "";
   return direct->GetDirective(crate, directive, key);
 }
 
-Int_t THaScalerDB::GetNumDirectives(Int_t crate, string directive)
+Int_t THaScalerDB::GetNumDirectives(Int_t crate, const string& directive)
 {
   if (!direct) return 0;
   return direct->GetDirectiveSize(crate, directive);
 }
 
-Int_t THaScalerDB::GetIntDirectives(Int_t crate, string directive, string key)
+Int_t THaScalerDB::GetIntDirectives(Int_t crate, const string& directive,
+				    const string& key)
 {
   if (!direct) return 0;
   string sdir = direct->GetDirective(crate, directive, key);
@@ -374,7 +377,7 @@ void THaScalerDB::LoadCrateToInt(const char *bank, Int_t icr) {
     string scr(bank);
     string scrate = "";
     for (string::const_iterator p = 
-       scr.begin(); p != scr.end(); p++) {
+       scr.begin(); p != scr.end(); ++p) {
           scrate += tolower(*p);
     } 
     crate_strtoi.insert(make_pair(scrate, icr));
@@ -384,7 +387,7 @@ Int_t THaScalerDB::CrateToInt(const string& scr) {
 // Find integer representation of crate "scrate".  
   string scrate = "";
   for (string::const_iterator p = 
-     scr.begin(); p != scr.end(); p++) {
+     scr.begin(); p != scr.end(); ++p) {
         scrate += tolower(*p);   
   } 
   map<string, Int_t>::iterator si = crate_strtoi.find(scrate);
@@ -433,18 +436,18 @@ Int_t THaScalerDB::GetSlotOffset(Int_t crate, Int_t helicity) {
   return atoi(sdir.c_str());
 }
 
-string::size_type THaScalerDB::FindNoCase(const string sdata, 
-					  const string skey) 
+string::size_type THaScalerDB::FindNoCase(const string& sdata, 
+					  const string& skey) 
 {
 // Find iterator of word "sdata" where "skey" starts.  Case insensitive.
   string sdatalc, skeylc;
   sdatalc = "";  skeylc = "";
   for (string::const_iterator p = 
-   sdata.begin(); p != sdata.end(); p++) {
+   sdata.begin(); p != sdata.end(); ++p) {
       sdatalc += tolower(*p);
   } 
   for (string::const_iterator p = 
-   skey.begin(); p != skey.end(); p++) {
+   skey.begin(); p != skey.end(); ++p) {
       skeylc += tolower(*p);
   } 
   return sdatalc.find(skeylc,0);

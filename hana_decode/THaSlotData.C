@@ -89,7 +89,7 @@ void THaSlotData::define(int cra, int slo, UShort_t nchan, UShort_t ndata, UShor
 int THaSlotData::loadData(const char* type, int chan, int dat, int raw) {
 // loadData loads the data into storage arrays.
 
-  static int very_verb=1;
+  const int very_verb=1;
 
   if( !didini ) {
     if (very_verb) {  // this might be your problem.

@@ -72,6 +72,10 @@ void THaEtClient::initflags()
   nread = 0;
   nused = 0;
   timeout = BIG_TIMEOUT;
+  firstRateCalc = 1;
+  evsum = 0;
+  xcnt = 0;
+  ratesum = 0;
 };
 
 int THaEtClient::init(const char* mystation) 
@@ -155,23 +159,16 @@ int THaEtClient::codaRead() {
 //  To try to use network efficiently, it actually gets
 //  the events in chunks, and passes them to the user.
 
-  static et_event *evs[ET_CHUNK_SIZE];
+  et_event *evs[ET_CHUNK_SIZE];
   struct timespec twait;
-  int *data, *pdata;
-  int i, j, err, status;
-  int lencpy, nbytes, bpi, event_size;
+  int *data;
+  int err;
+  int lencpy, nbytes, bpi;
   int swapflg;
   
-// rate calculation  
-  static int firstRateCalc = 1;
-  static int evsum = 0, xcnt = 0;
-  static time_t daqt1, daqt2, *tapt;
-  static double ratesum = 0;
-  double tdiff, daqrate, avgrate;
-
   if (firstread) {
     firstread = 0;
-    status = init();
+    int status = init();
     if (status == CODA_ERROR) {
       cout << "THaEtClient: ERROR: codaRead, cannot connect to CODA"<<endl;
       return CODA_ERROR;
@@ -202,15 +199,15 @@ int THaEtClient::codaRead() {
 // reset 
     nused = 0;
     
-    for (j=0; j < nread; j++) {
+    for (int j=0; j < nread; j++) {
 	
       et_event_getdata(evs[j], (void **) &data);
       et_event_needtoswap(evs[j], &swapflg);
       if (swapflg == ET_SWAP) {            
 	et_event_CODAswap(evs[j]);
       }
-      pdata = data;
-      event_size = *pdata + 1; 
+      int* pdata = data;
+      int event_size = *pdata + 1; 
       if ( event_size > MAXEVLEN ) {
          printf("\nET:codaRead:ERROR:  Event from ET truncated\n");
          printf("-> Need a larger value than MAXEVLEN = %d \n",MAXEVLEN);
@@ -219,7 +216,7 @@ int THaEtClient::codaRead() {
       if (CODA_DEBUG) {
   	 cout<<"\n\n===== Event "<<j<<"  length "<<event_size<<endl;
 	 pdata = data;
-         for (i=0; i < event_size; i++, pdata++) {
+         for (int i=0; i < event_size; i++, pdata++) {
            cout<<"evbuff["<<dec<<i<<"] = "<<*pdata<<" = 0x"<<hex<<*pdata<<endl;
 	 }
       }
@@ -227,17 +224,17 @@ int THaEtClient::codaRead() {
 
     if (firstRateCalc) {
       firstRateCalc = 0;
-      daqt1 = time(tapt);
+      daqt1 = time(0);
     }
     else {
-      daqt2 = time(tapt);
-      tdiff = difftime(daqt2, daqt1);
+      time_t daqt2 = time(0);
+      double tdiff = difftime(daqt2, daqt1);
       evsum += nread;
       if ((tdiff > 4) && (evsum > 30)) {
-         daqrate  = (float)evsum/tdiff;
+	 double daqrate  = static_cast<double>(evsum)/tdiff;
          evsum    = 0;
          ratesum += daqrate;
-         avgrate  = ratesum/++xcnt;
+         double avgrate  = ratesum/++xcnt;
 
          if (CODA_VERBOSE) 
            printf("ET rate %4.1f Hz in %2.0f sec, avg %4.1f Hz\n",
@@ -245,7 +242,7 @@ int THaEtClient::codaRead() {
          if (waitflag != 0) {
            timeout = (avgrate > FAST) ? SMALL_TIMEOUT : BIG_TIMEOUT;
          }
-         daqt1 = time(tapt);
+         daqt1 = time(0);
       }
     }
   }

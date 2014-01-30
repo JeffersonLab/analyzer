@@ -62,11 +62,10 @@ int main(int argc, char* argv[])
 
 // Loop over events
   int NUMEVT=20000;
-  int status;
 
   for (int iev = 0; iev < NUMEVT; iev++) {
 
-      status = coda->codaRead();  
+      int status = coda->codaRead();  
 
       if (status != 0) {
         if ( status == -1) {

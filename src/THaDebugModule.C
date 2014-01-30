@@ -125,7 +125,7 @@ void THaDebugModule::Print( Option_t* opt ) const
     }
     cout << "Number of variables: " << fVars.size() << endl;
     VIter_t it = fVars.begin();
-    for( ; it != fVars.end(); it++ )
+    for( ; it != fVars.end(); ++it )
       cout << (*it)->GetName() << "  ";
     cout << endl;
   } else {
@@ -168,7 +168,7 @@ Int_t THaDebugModule::Process( const THaEvData& evdata )
   if( good && (fFlags & kQuiet) == 0) {
     PrintEvNum( evdata );
     VIter_t it = fVars.begin();
-    for( ; it != fVars.end(); it++ ) {
+    for( ; it != fVars.end(); ++it ) {
       const char* opt = "";
       if( (*it)->IsA()->InheritsFrom("THaVar") ) 
 	opt = "FULL";

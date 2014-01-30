@@ -212,7 +212,8 @@ THaAnalyzer::Stage_t* THaAnalyzer::DefineStage( const Stage_t* item )
     fStages = tmp;
     fNStages = newmax;
   }
-  return (Stage_t*)memcpy(fStages+item->key,item,sizeof(Stage_t));
+  return static_cast<Stage_t*>
+    ( memcpy(fStages+item->key,item,sizeof(Stage_t)) );
 }
 
 //_____________________________________________________________________________
@@ -233,7 +234,8 @@ THaAnalyzer::Counter_t* THaAnalyzer::DefineCounter( const Counter_t* item )
     fCounters = tmp;
     fNCounters = newmax;
   }
-  return (Counter_t*)memcpy(fCounters+item->key,item,sizeof(Counter_t));
+  return static_cast<Counter_t*>
+    ( memcpy(fCounters+item->key,item,sizeof(Counter_t)) );
 }
 
 //_____________________________________________________________________________

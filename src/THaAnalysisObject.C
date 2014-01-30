@@ -67,7 +67,10 @@ THaAnalysisObject::THaAnalysisObject( const char* name,
 }
 
 //_____________________________________________________________________________
-THaAnalysisObject::THaAnalysisObject( ) : fPrefix(NULL), fIsSetup(false) {
+THaAnalysisObject::THaAnalysisObject( )
+  : fPrefix(NULL), fStatus(kNotinit), fDebug(0), fIsInit(false),
+    fIsSetup(false), fProperties(), fOKOut(false)
+{
   // only for ROOT I/O
 }
 
@@ -159,15 +162,16 @@ Int_t THaAnalysisObject::DefineVarsFromList( const void* list,
 
   if( mode == kDefine ) {
     if( type == kVarDef )
-      gHaVars->DefineVariables( (const VarDef*)list, prefix, here );
+      gHaVars->DefineVariables( static_cast<const VarDef*>(list),
+				prefix, here );
     else if( type == kRVarDef )
-      gHaVars->DefineVariables( (const RVarDef*)list, obj,
+      gHaVars->DefineVariables( static_cast<const RVarDef*>(list), obj,
 				prefix, here, var_prefix );
   }
   else if( mode == kDelete ) {
     if( type == kVarDef ) {
       const VarDef* item;
-      const VarDef* theList = (const VarDef*)list;
+      const VarDef* theList = static_cast<const VarDef*>(list);
       while( (item = theList++) && item->name ) {
 	TString name(prefix);
 	name.Append( item->name );
@@ -175,7 +179,7 @@ Int_t THaAnalysisObject::DefineVarsFromList( const void* list,
       }
     } else if( type == kRVarDef ) {
       const RVarDef* item;
-      const RVarDef* theList = (const RVarDef*)list;
+      const RVarDef* theList = static_cast<const RVarDef*>(list);
       while( (item = theList++) && item->name ) {
 	TString name(prefix);
 	name.Append( item->name );
@@ -328,12 +332,12 @@ vector<string> THaAnalysisObject::GetDBFileList( const char* name,
   // Search a date-coded subdirectory that corresponds to the requested date.
   if( time_dirs.size() > 0 ) {
     sort( time_dirs.begin(), time_dirs.end() );
-    for( it = time_dirs.begin(); it != time_dirs.end(); it++ ) {
+    for( it = time_dirs.begin(); it != time_dirs.end(); ++it ) {
       item_date = atoi((*it).c_str());
       if( it == time_dirs.begin() && date.GetDate() < item_date )
 	break;
       if( it != time_dirs.begin() && date.GetDate() < item_date ) {
-	it--;
+	--it;
 	found = true;
 	break;
       }
@@ -442,7 +446,6 @@ THaAnalysisObject::EStatus THaAnalysisObject::Init( const TDatime& date )
 
   fInitDate = date;
   
-  Int_t status = kOK;
   const char* fnam = "run.";
 
   // Generate the name prefix for global variables. Do this here, not in
@@ -453,7 +456,7 @@ THaAnalysisObject::EStatus THaAnalysisObject::Init( const TDatime& date )
   // Open the run database and call the reader. If database cannot be opened,
   // fail only if this object needs the run database
   // Call this object's actual database reader
-  status = ReadRunDatabase(date);
+  Int_t status = ReadRunDatabase(date);
   if( status && (status != kFileError || (fProperties & kNeedsRunDB) != 0))
     goto err;
 
@@ -813,7 +816,7 @@ static Int_t IsDBdate( const string& line, TDatime& date, bool warn = true )
   ssiz_t rbrk = line.find(']',lbrk);
   if( rbrk == string::npos || rbrk <= lbrk+11 ) return 0;
   Int_t yy, mm, dd, hh, mi, ss;
-  if( sscanf( line.substr(lbrk+1,rbrk-lbrk-1).c_str(), "%d-%d-%d %d:%d:%d",
+  if( sscanf( line.substr(lbrk+1,rbrk-lbrk-1).c_str(), "%4d-%2d-%2d %2d:%2d:%2d",
 	      &yy, &mm, &dd, &hh, &mi, &ss) != 6
       || yy < 1995 || mm < 1 || mm > 12 || dd < 1 || dd > 31
       || hh < 0 || hh > 23 || mi < 0 || mi > 59 || ss < 0 || ss > 59 ) {
@@ -1386,13 +1389,14 @@ Int_t THaAnalysisObject::SeekDBconfig( FILE* file, const char* tag,
   }
   ssiz_t llen = _label.size();
 
-  bool found = false, quit = false;;
-  const int LEN = 256;
-  char buf[LEN];
+  bool found = false;
 
   errno = 0;
   off_t pos = ftello(file);
   if( pos != -1 ) {
+    bool quit = false;
+    const int LEN = 256;
+    char buf[LEN];
     while( !errno && !found && !quit && fgets( buf, LEN, file)) {
       size_t len = strlen(buf);
       if( len<2 || buf[0] == '#' ) continue;      //skip comments

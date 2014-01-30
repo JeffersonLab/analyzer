@@ -31,7 +31,7 @@ using namespace std;
 //_____________________________________________________________________________
 THaShower::THaShower( const char* name, const char* description,
 		      THaApparatus* apparatus ) :
-  THaPidDetector(name,description,apparatus), fNChan(NULL), fChanMap(NULL)
+  THaPidDetector(name,description,apparatus), fNChan(0), fChanMap(0)
 {
   // Constructor.
 
@@ -57,7 +57,7 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
 
   // Blocks, rows, max blocks per cluster
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );          
-  fscanf ( fi, "%d%d", &ncols, &nrows );  
+  fscanf ( fi, "%5d %5d", &ncols, &nrows );  
 
   nelem = ncols * nrows;
   nclbl = TMath::Min( 3, nrows ) * TMath::Min( 3, ncols );
@@ -94,7 +94,7 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
   while (1) {
     Int_t crate, slot, first, last;
-    fscanf ( fi,"%d%d%d%d", &crate, &slot, &first, &last );
+    fscanf ( fi,"%6d %6d %6d %6d", &crate, &slot, &first, &last );
     fgets ( buf, LEN, fi );
     if( crate < 0 ) break;
     if( fDetMap->AddModule( crate, slot, first, last ) < 0 ) {
@@ -122,10 +122,10 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
       fChanMap[i] = new UShort_t[ fNChan[i] ];
     else {
       Error( Here(here), "No channels defined for module %d.", i);
-      delete [] fNChan; fNChan = NULL;
+      delete [] fNChan; fNChan = 0;
       for( UShort_t j=0; j<i; j++ )
 	delete [] fChanMap[j];
-      delete [] fChanMap; fChanMap = NULL;
+      delete [] fChanMap; fChanMap = 0;
       fclose(fi);
       return kInitError;
     }
@@ -148,7 +148,7 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
 	ptr = buf;
 	nchar=0;
       }
-      sscanf (ptr, "%hu%n", *(fChanMap+i)+j, &nchar );
+      sscanf (ptr, "%6hu %n", *(fChanMap+i)+j, &nchar );
       ptr += nchar;
     }
   }
@@ -156,14 +156,14 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
   fgets ( buf, LEN, fi );
 
   Float_t x,y,z;
-  fscanf ( fi, "%f%f%f", &x, &y, &z );               // Detector's X,Y,Z coord
+  fscanf ( fi, "%15f %15f %15f", &x, &y, &z );               // Detector's X,Y,Z coord
   fOrigin.SetXYZ( x, y, z );
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  fscanf ( fi, "%f%f%f", fSize, fSize+1, fSize+2 );  // Sizes of det in X,Y,Z
+  fscanf ( fi, "%15f %15f %15f", fSize, fSize+1, fSize+2 );  // Sizes of det in X,Y,Z
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
 
   Float_t angle;
-  fscanf ( fi, "%f", &angle );                       // Rotation angle of det
+  fscanf ( fi, "%15f", &angle );                       // Rotation angle of det
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
   const Double_t degrad = TMath::Pi()/180.0;
   tan_angle = TMath::Tan(angle*degrad);
@@ -189,12 +189,12 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
     fIsInit = true;
   }
 
-  fscanf ( fi, "%f%f", &x, &y );                     // Block 1 center position
+  fscanf ( fi, "%15f %15f", &x, &y );                  // Block 1 center position
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
   Float_t dx, dy;
-  fscanf ( fi, "%f%f", &dx, &dy );                   // Block spacings in x and y
+  fscanf ( fi, "%15f %15f", &dx, &dy );                // Block spacings in x and y
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  fscanf ( fi, "%f", &fEmin );                       // Emin thresh for center
+  fscanf ( fi, "%15f", &fEmin );                       // Emin thresh for center
   fgets ( buf, LEN, fi );
 
   // Read calibrations.
@@ -210,10 +210,10 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
 
   // Read ADC pedestals and gains (in order of logical channel number)
   for (int j=0; j<fNelem; j++)
-    fscanf (fi,"%f",fPed+j);
+    fscanf (fi,"%15f",fPed+j);
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
   for (int j=0; j<fNelem; j++) 
-    fscanf (fi, "%f",fGain+j);
+    fscanf (fi, "%15f",fGain+j);
 
 
   // Compute block positions
@@ -415,7 +415,6 @@ Int_t THaShower::CoarseProcess( TClonesArray& tracks )
   // coordinates.
 
   fNclust = 0;
-  short mult = 0, nr, nc, ir, ic, dr, dc;
   int nmax = -1;
   double  emax = fEmin;                     // Min threshold of energy in center
   for ( int  i = 0; i < fNelem; i++) {      // Find the block with max energy:
@@ -426,6 +425,7 @@ Int_t THaShower::CoarseProcess( TClonesArray& tracks )
     }
   }
   if ( nmax >= 0 ) {
+    short mult = 0, nr, nc, ir, ic, dr, dc;
     double  sxe = 0, sye = 0;               // Sums of xi*ei and yi*ei
     nc = nmax/fNrows;                       // Column of the block with max engy
     nr = nmax%fNrows;                       // Row of the block with max energy

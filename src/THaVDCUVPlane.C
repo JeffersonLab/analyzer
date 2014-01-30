@@ -127,23 +127,22 @@ Int_t THaVDCUVPlane::MatchUVClusters()
       p2 = fU;
     }       
     // Match clusters by time
-    THaVDCCluster *p1Clust, *p2Clust; //Cluster from p1, p2 respectively
-    THaVDCCluster *minClust;     //Cluster in p2 with time closest to p1Clust
-    THaVDCHit     *p1Pivot, *p2Pivot;
-    Double_t minTimeDif;      // Time difference between p1Clust and minClust
+    // FIXME: THIS ALGORITHM IS JUNK
     for (int i = 0; i < p1->GetNClusters(); i++) {
+      THaVDCCluster *minClust;  // Cluster in p2 with time closest to p1Clust
+      Double_t minTimeDif;      // Time difference between p1Clust and minClust
       
-      p1Clust = p1->GetCluster(i);
-      p1Pivot = p1Clust->GetPivot();
+      THaVDCCluster* p1Clust = p1->GetCluster(i);
+      THaVDCHit* p1Pivot = p1Clust->GetPivot();
       if( !p1Pivot ) {
 	Warning( "THaVDCUVPlane", "Cluster without pivot in p1, %d!", i );
 	continue;
       }
-      minClust = NULL;
+      minClust = 0;
       minTimeDif = 1e307;  //Arbitrary large value
       for (int j = 0; j < p2->GetNClusters(); j++) {
-	p2Clust = p2->GetCluster(j);
-	p2Pivot = p2Clust->GetPivot();
+	THaVDCCluster* p2Clust = p2->GetCluster(j);
+	THaVDCHit* p2Pivot = p2Clust->GetPivot();
 	if( !p2Pivot ) {
 	  Warning( "THaVDCUVPlane", 
 		   "Cluster without pivot in p2, %d, %d!", i, j );
@@ -168,7 +167,7 @@ Int_t THaVDCUVPlane::MatchUVClusters()
 	uvTrack->SetUCluster( minClust );
 	uvTrack->SetVCluster( p1Clust );
       }
-    }   
+    }
   }
   // return the number of UV tracks found
   return GetNUVTracks();

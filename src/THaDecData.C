@@ -276,8 +276,10 @@ static Int_t CheckDBVersion( FILE* file )
   char* buf = new char[bufsiz];
   rewind(file);
   const char* s = fgets(buf,bufsiz,file);
-  if( !s ) // No first line? Not our problem...
+  if( !s ) { // No first line? Not our problem...
+    delete [] buf;
     return 1;
+  }
   TString line(buf);
   delete [] buf;
   Ssiz_t pos = line.Index(identifier,0,TString::kIgnoreCase);

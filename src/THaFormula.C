@@ -152,7 +152,7 @@ char* THaFormula::DefinedString( Int_t i )
 #endif
   FVarDef_t* def = fVarDef+i;
   if( def->type == kString ) {
-    const THaVar* pvar = reinterpret_cast<const THaVar*>( def->code );
+    const THaVar* pvar = static_cast<const THaVar*>( def->code );
     char** ppc = (char**)pvar->GetValuePointer(); //truly gruesome cast
     return *ppc;
   }
@@ -183,10 +183,10 @@ Double_t THaFormula::DefinedValue( Int_t i )
   switch( def->type ) {
   case kVariable:
   case kString:
-    return reinterpret_cast<const THaVar*>(ptr)->GetValue( def->index );
+    return static_cast<const THaVar*>(ptr)->GetValue( def->index );
     break;
   case kCut:
-    return reinterpret_cast<const THaCut*>(ptr)->GetResult();
+    return static_cast<const THaCut*>(ptr)->GetResult();
     break;
   default:
     return kBig;
@@ -220,7 +220,7 @@ Int_t THaFormula::DefinedVariable(TString& name)
   if( k>=0 ) {
     FVarDef_t* def = fVarDef+k;
     // Interpret Char_t* variables as strings
-    const THaVar* pvar = reinterpret_cast<const THaVar*>( def->code );
+    const THaVar* pvar = static_cast<const THaVar*>( def->code );
     if( pvar->GetType() == kCharP ) {
 #if ROOT_VERSION_CODE >= ROOT_VERSION(4,0,0)
       action = kDefinedString;

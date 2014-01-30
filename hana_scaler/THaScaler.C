@@ -45,6 +45,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <string>
+#include <errno.h>
 
 #include <iostream>
 
@@ -666,7 +667,7 @@ struct request {
 
   int   sFd;      //  socket file descriptor 
   int i, k, slot, nchan, ntot, sca;
-  unsigned long nRead, nRead1;
+  ssize_t nRead, nRead1;
   struct request myRequest;           //  request to send to server 
   struct request vmeReply;            //  reply from server
   struct sockaddr_in serverSockAddr;  //  socket addr of server
@@ -706,7 +707,7 @@ struct request {
        printf("ERROR: THaScaler: reading from scaler server\n");
        exit(0);
     }
-    while (nRead < sizeof(vmeReply)) {
+    while (nRead < static_cast<ssize_t>(sizeof(vmeReply))) {
        nRead1 = read (sFd, ((char *) &vmeReply)+nRead,
                     sizeof(vmeReply)-nRead);
        if(nRead1 < 0) {
@@ -862,7 +863,7 @@ Int_t THaScaler::GetScaler(const char* det, const char* pm, Int_t chan,
 // "leadgl", "edtm".   PMT = "left" or "right" or "LR"    
   string detector = det;
   string PMT = pm;
-  if ( !did_init | !one_load ) return 0;
+  if ( !(did_init && one_load) ) return 0;
   if ( !database ) return 0;
   if ( database->FindNoCase(PMT,"Left") != string::npos ) detector += "L";
   if ( database->FindNoCase(PMT,"Right") != string::npos ) detector += "R";
@@ -913,7 +914,7 @@ Int_t THaScaler::GetNormData(Int_t tgtstate, Int_t helicity, const char* which, 
 // Get Normalization Data for channel 'which'
 // by target and helcity states 0, 1, -1  where 0 is neither
 // histor = 0 = this event.  1 = previous event.
-  if ( !did_init | !one_load ) return 0;
+  if ( !(did_init && one_load) ) return 0;
   Int_t index = 0;
   if (tgtstate == 0  && helicity == 0)  index=0;
   if (tgtstate == 1  && helicity == 1)  index=1;
@@ -930,7 +931,7 @@ Int_t THaScaler::GetNormData(Int_t helicity, const char* which, Int_t histor) {
 // Get Normalization Data for channel 'which'
 // by helcity state (-1, 0, +1)  where 0 is non-helicity gated
 // histor = 0 = this event.  1 = previous event.
-  if ( !did_init | !one_load ) return 0;
+  if ( !(did_init && one_load) ) return 0;
   Int_t index = 0;
   if (helicity == -1) index = 1;
   if (helicity ==  1) index = 2;
@@ -945,7 +946,7 @@ Int_t THaScaler::GetNormData(Int_t tgtstate, Int_t helicity, Int_t chan, Int_t h
 // by target and helcity state (-1, 0, +1)  where 0 is neither
 // histor = 0 = this event.  1 = previous event.
 // Assumption: a slot with "TS-accept" is a normalization scaler.
-  if ( !did_init | !one_load ) return 0;
+  if ( !(did_init && one_load) ) return 0;
   Int_t index = 0;
   if (tgtstate == 0  && helicity == 0)  index=0;
   if (tgtstate == 1  && helicity == 1)  index=1;
@@ -961,7 +962,7 @@ Int_t THaScaler::GetNormData(Int_t helicity, Int_t chan, Int_t histor) {
 // by helcity state (-1, 0, +1)  where 0 is non-helicity gated
 // histor = 0 = this event.  1 = previous event.
 // Assumption: a slot with "TS-accept" is a normalization scaler.
-  if ( !did_init | !one_load ) return 0;
+  if ( !(did_init && one_load) ) return 0;
   Int_t index = 0;
   if (helicity == -1) index = 1;
   if (helicity ==  1) index = 2;
@@ -1180,33 +1181,12 @@ Double_t THaScaler::GetTimeDiff(Int_t tgtstate, Int_t helicity) {
 
 UInt_t THaScaler::header_str_to_base16(const string& hdr) {
 // Utility to convert string header to base 16 integer
-  static bool hs16_first = true;
-  static map<char, int> strmap;
-  typedef map<char,int>::value_type valType;
-  //  pair<char, int> pci;
-  static char chex[]="0123456789abcdef";
-  static vector<int> numarray; 
-  const vector<int>::size_type linesize = 12;
-  if (hs16_first) {
-    hs16_first = false;
-    for (int i = 0; i < 16; i++) {
-      strmap.insert(valType(chex[i],i));
-    }
-    numarray.reserve(linesize);
-  }
-  numarray.clear();
-  for (string::size_type i = 0; i < hdr.size(); i++) {
-    map<char, int>::iterator pm = strmap.find(hdr[i]);     
-    if (pm != strmap.end()) numarray.push_back(pm->second);
-    if (numarray.size()+1 > linesize) break;
-  }
-  UInt_t result = 0;  UInt_t power = 1;
-  for (vector<int>::reverse_iterator p = numarray.rbegin(); 
-      p != numarray.rend(); p++) {
-      result += (*p) * power;  power *= 16;
-  }
-  return result;
-};
+  char* p = 0;
+  unsigned long li = strtoul( hdr.c_str(), &p, 16 );
+  if( errno || *p )   return 0;
+  if( li > kMaxUInt ) return 0;
+  return static_cast<UInt_t>(li);
+}
 
 void THaScaler::DumpRaw(Int_t flag)
 {

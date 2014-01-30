@@ -157,7 +157,8 @@ Int_t THaHRS::TrackCalc()
 }
 
 //_____________________________________________________________________________
-Int_t THaHRS::TrackTimes( TClonesArray* Tracks ) {
+Int_t THaHRS::TrackTimes( TClonesArray* Tracks )
+{
   // Do the actual track-timing (beta) calculation.
   // Use multiple scintillators to average together and get "best" time at S1.
   //
@@ -166,7 +167,6 @@ Int_t THaHRS::TrackTimes( TClonesArray* Tracks ) {
   
   if ( !Tracks ) return -1;
   
-  THaTrack *track=0;
   Int_t ntrack = GetNTracks();
 
   // linear regression to:  t = t0 + pathl/(beta*c)
@@ -174,7 +174,7 @@ Int_t THaHRS::TrackTimes( TClonesArray* Tracks ) {
   //   t0 and beta are solved for.
   //
   for ( Int_t i=0; i < ntrack; i++ ) {
-    track = static_cast<THaTrack*>(Tracks->At(i));
+    THaTrack* track = static_cast<THaTrack*>(Tracks->At(i));
     THaTrackProj* tr_ref = static_cast<THaTrackProj*>
       (sc_ref->GetTrackHits()->At(i));
     
