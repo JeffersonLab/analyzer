@@ -170,13 +170,13 @@ void THaScalerDB::PrintDirectives() {
 
 
 string THaScalerDB::GetLineType(string sline) {
-// Decide if the line is a date, comment, directive, or a map field.
-   if ((Int_t)sline.length() == 0) return "COMMENT";
-   if ((Int_t)sline.length() == AmtSpace(sline)) return "COMMENT";
-   string::size_type pos1 = FindNoCase(sline,sdate);
-   string::size_type pos2 = FindNoCase(sline,scomment);
-   if (pos1 != string::npos) { // date was found
-     if (pos2 != string::npos) {  // comment found
+   if (sline.length() == 0) return "COMMENT";
+   if (sline.length() == AmtSpace(sline)) return "COMMENT";
+   size_t minus1 = -1;
+   size_t pos1 = FindNoCase(sline,sdate);
+   size_t pos2 = FindNoCase(sline,scomment);
+   if (pos1 != minus1 ) { // date was found
+     if (pos2 != minus1) {  // comment found
        if (pos2 < pos1) return "COMMENT";
      }
      return "DATE";
@@ -184,17 +184,17 @@ string THaScalerDB::GetLineType(string sline) {
 // Directives line, even if after a comment (#)
 // as long as not too far after (fgnfar)
    string result;
-   if (pos2 == string::npos || pos2 < fgnfar) {
+   if (pos2 == minus1 || pos2 < fgnfar) {
     for (UInt_t i=0; i<directnames.size(); i++) {
      pos1 = FindNoCase(sline, directnames[i]);
-     if (pos1 != string::npos) {
+     if (pos1 != minus1) {
       result.assign(sline.substr(pos1,sline.length()));;
       return result;
      }
     }
    }
 // Not a directive but has a comment near start.
-   if (pos2 != string::npos && pos2 < fgnfar) return "COMMENT";
+   if (pos2 != minus1 && pos2 < fgnfar) return "COMMENT";
 // otherwise its a map line
    return "MAP";
 }
@@ -433,8 +433,7 @@ Int_t THaScalerDB::GetSlotOffset(Int_t crate, Int_t helicity) {
   return atoi(sdir.c_str());
 }
 
-string::size_type THaScalerDB::FindNoCase(const string sdata, 
-					  const string skey) 
+size_t THaScalerDB::FindNoCase(const string sdata, const string skey) 
 {
 // Find iterator of word "sdata" where "skey" starts.  Case insensitive.
   string sdatalc, skeylc;
@@ -447,12 +446,14 @@ string::size_type THaScalerDB::FindNoCase(const string sdata,
    skey.begin(); p != skey.end(); p++) {
       skeylc += tolower(*p);
   } 
+  if (sdatalc.find(skeylc,0) == string::npos) return -1;
   return sdatalc.find(skeylc,0);
 }
 
-Int_t THaScalerDB::AmtSpace(const string& s) {
+
+UInt_t THaScalerDB::AmtSpace(const string& s) {
   typedef string::size_type string_size;
-  Int_t nsp = 0;  string_size i = 0;
+  UInt_t nsp = 0;  string_size i = 0;
   while (i++ != s.size()) if(isspace(s[i])) nsp++;
   return nsp;
 }
