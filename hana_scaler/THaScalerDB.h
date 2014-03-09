@@ -235,8 +235,7 @@ public:
    virtual ~THaScalerDB();
    bool extract_db(const Bdate& bdate);
    std::string GetLongDesc(Int_t crate, std::string desc, Int_t helicity=0);
-   std::string::size_type FindNoCase(const std::string s1, 
-				     const std::string s2);
+   size_t FindNoCase(const std::string s1, const std::string s2);
    Int_t GetSlot(Int_t crate, std::string desc, Int_t helicity=0);
    Int_t GetSlot(Int_t crate, Int_t tgtstate, Int_t helicity);
    Int_t GetChan(Int_t crate, std::string desc, Int_t helicity=0, Int_t chan=0);
@@ -256,7 +255,7 @@ private:
    THaScalerDB(const THaScalerDB &bk);
    THaScalerDB& operator=(const THaScalerDB &bk);
    bool found_date;
-   UInt_t fgnfar;
+   size_t fgnfar;
    std::string scomment, sdate;
    std::vector<std::string> directnames;
    std::map< SDB_chanKey, SDB_chanDesc > chanmap;
@@ -271,7 +270,7 @@ private:
    Bool_t IsHelicityTied(Int_t crate, Int_t helicity);
    Int_t TiedCrate(Int_t crate, Int_t helicity);
    Int_t GetSlotOffset(Int_t crate, Int_t helicity);
-   Int_t AmtSpace(const std::string& s);
+   UInt_t AmtSpace(const std::string& s);
    std::vector<std::string> vsplit(const std::string& s);
 
 ClassDef(THaScalerDB,0)  // Text-based time-dependent database for scaler map and directives
