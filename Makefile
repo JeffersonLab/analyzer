@@ -245,6 +245,7 @@ LNA_LINKDEF  := src/$(LNA)_LinkDef.h
 #------------------------------------------------
 
 PROGRAMS     := analyzer $(LIBNORMANA)
+PODDLIBS     := $(LIBHALLA) $(LIBDC) $(LIBSCALER)
 
 all:            subdirs
 		set -e; for i in $(PROGRAMS); do $(MAKE) $$i; done
@@ -370,14 +371,22 @@ endif
 		cp -pu Makefile ChangeLog $(ANALYZER)/src
 		cp -pru DB $(ANALYZER)/
 		@echo "Installing in $(ANALYZER)/$(PLATFORM) ..."
-		rm -f $(ANALYZER)/$(PLATFORM)/lib*.so.$(SOVERSION)
-		rm -f $(ANALYZER)/$(PLATFORM)/lib*.so.$(SOVERSION).*
-		rm -f $(ANALYZER)/$(PLATFORM)/analyzer
-		rm -f $(ANALYZER)/$(PLATFORM)/analyzer-$(SOVERSION).*
-		cp -af lib*.so.$(SOVERSION) lib*.so.$(VERSION) $(ANALYZER)/$(PLATFORM)
+		for lib in $(PODDLIBS); do \
+			rm -f  $(ANALYZER)/$(PLATFORM)/$(notdir $$lib); \
+			rm -f  $(ANALYZER)/$(PLATFORM)/$(notdir $$lib).$(SOVERSION); \
+			rm -f  $(ANALYZER)/$(PLATFORM)/$(notdir $$lib).$(VERSION); \
+			cp -af $$lib $$lib.$(SOVERSION) $$lib.$(VERSION) $(ANALYZER)/$(PLATFORM); \
+		done
+		rm -f $(ANALYZER)/$(PLATFORM)/analyzer $(ANALYZER)/$(PLATFORM)/$(NAME)
 		cp -pf $(PROGRAMS) $(ANALYZER)/$(PLATFORM)/
+ifneq ($(PLATFORM),bin)
+		rm -f $(ANALYZER)/bin
+		ln -s $(ANALYZER)/$(PLATFORM) $(ANALYZER)/bin
+endif
+ifneq ($(NAME),analyzer)
 		mv $(ANALYZER)/$(PLATFORM)/analyzer $(ANALYZER)/$(PLATFORM)/$(NAME)
 		ln -s $(NAME) $(ANALYZER)/$(PLATFORM)/analyzer
+endif
 		set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i install; done
 
 .PHONY: all clean realclean srcdist subdirs
