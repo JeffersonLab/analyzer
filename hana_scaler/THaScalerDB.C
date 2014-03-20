@@ -169,10 +169,16 @@ void THaScalerDB::PrintDirectives() {
 };
 
 
+static string::size_type AmtSpace(const string& s) {
+  string::size_type nsp = 0, i = 0;
+  while (i++ != s.size()) if(isspace(s[i])) nsp++;
+  return nsp;
+}
+
 string THaScalerDB::GetLineType(string sline) {
 // Decide if the line is a date, comment, directive, or a map field.
-   if ((Int_t)sline.length() == 0) return "COMMENT";
-   if ((Int_t)sline.length() == AmtSpace(sline)) return "COMMENT";
+   if (sline.length() == 0) return "COMMENT";
+   if (sline.length() == AmtSpace(sline)) return "COMMENT";
    string::size_type pos1 = FindNoCase(sline,sdate);
    string::size_type pos2 = FindNoCase(sline,scomment);
    if (pos1 != string::npos) { // date was found
@@ -433,7 +439,7 @@ Int_t THaScalerDB::GetSlotOffset(Int_t crate, Int_t helicity) {
   return atoi(sdir.c_str());
 }
 
-string::size_type THaScalerDB::FindNoCase(const string sdata, 
+string::size_type THaScalerDB::FindNoCase(const string sdata,
 					  const string skey) 
 {
 // Find iterator of word "sdata" where "skey" starts.  Case insensitive.
@@ -450,12 +456,6 @@ string::size_type THaScalerDB::FindNoCase(const string sdata,
   return sdatalc.find(skeylc,0);
 }
 
-Int_t THaScalerDB::AmtSpace(const string& s) {
-  typedef string::size_type string_size;
-  Int_t nsp = 0;  string_size i = 0;
-  while (i++ != s.size()) if(isspace(s[i])) nsp++;
-  return nsp;
-}
 
 vector<string> THaScalerDB::vsplit(const string& s) {
 // split a string into whitespace-separated strings

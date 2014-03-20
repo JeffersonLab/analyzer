@@ -271,7 +271,6 @@ private:
    Bool_t IsHelicityTied(Int_t crate, Int_t helicity);
    Int_t TiedCrate(Int_t crate, Int_t helicity);
    Int_t GetSlotOffset(Int_t crate, Int_t helicity);
-   Int_t AmtSpace(const std::string& s);
    std::vector<std::string> vsplit(const std::string& s);
 
 ClassDef(THaScalerDB,0)  // Text-based time-dependent database for scaler map and directives

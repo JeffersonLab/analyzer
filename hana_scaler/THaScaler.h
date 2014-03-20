@@ -158,6 +158,8 @@ protected:
    void SetupNormMap();
    static const Int_t fDebug = 0;
 
+   enum EScalerFlags { kIsClockReset = BIT(14) };
+
 private:
 
    THaScaler();
