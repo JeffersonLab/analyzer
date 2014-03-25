@@ -18,7 +18,6 @@
 #include <iterator>
 #include <iostream>
 #include <cstdlib>
-#define ADB_DEBUG 0
 
 class Bdate {
   // Utility class of date information.
@@ -250,6 +249,7 @@ public:
   Int_t CrateToInt(const std::string& scrate) const;
   void PrintChanMap() const;
   void PrintDirectives() const;
+  Int_t SetDebug( Int_t level );
 
 private:
 
@@ -270,12 +270,12 @@ private:
 
   Bool_t found_date;
   std::string::size_type fgnfar;
-  std::string scomment, sdate;
   std::vector<std::string> directnames;
   std::map< SDB_chanKey, SDB_chanDesc > chanmap;
   std::map< std::string, Int_t > crate_strtoi;
   std::map< Namekey_t, std::vector< std::string> > channame;
   SDB_directive *direct;
+  Int_t fDebug;
 
   ClassDef(THaScalerDB,0)  // Text-based time-dependent database for scaler map and directives
 

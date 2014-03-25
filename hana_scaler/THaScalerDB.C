@@ -32,6 +32,9 @@
 
 using namespace std;
 
+const std::string scomment = "#";
+const std::string sdate = "DATE";
+
 THaScalerDB::THaScalerDB() { Init(); }
 THaScalerDB::~THaScalerDB() {
     if (direct) delete direct;
@@ -41,8 +44,6 @@ void THaScalerDB::Init() {
     direct = new SDB_directive();
     found_date = false;
     fgnfar=10;
-    sdate="DATE";
-    scomment="#";
     crate_strtoi.clear();
     directnames.clear();
     directnames.push_back("xscaler");
@@ -50,14 +51,16 @@ void THaScalerDB::Init() {
     directnames.push_back("crate");
     directnames.push_back("slot");
     directnames.push_back("target");
+    fDebug = 0;
 }
 
-bool THaScalerDB::extract_db(const Bdate& bdate) {
-// Load the database.
-// Input: Bdate = time (day,month,year) when database wanted
-// Return : true if successful, else false.
-// Search order for scaler.map:
-//   $DB_DIR/DEFAULT $DB_DIR ./DB/DEFAULT ./DB ./db/DEFAULT ./db DEFAULT .
+bool THaScalerDB::extract_db(const Bdate& bdate)
+{
+  // Load the database.
+  // Input: Bdate = time (day,month,year) when database wanted
+  // Return : true if successful, else false.
+  // Search order for scaler.map:
+  //   $DB_DIR/DEFAULT $DB_DIR ./DB/DEFAULT ./DB ./db/DEFAULT ./db DEFAULT .
   const string scalmap("scaler.map");
   char* dbdir=getenv("DB_DIR");
   Int_t ndir = 6;
@@ -85,28 +88,28 @@ bool THaScalerDB::extract_db(const Bdate& bdate) {
     mapfile.open(filename.c_str());
   } while( (!mapfile) && (++i)<ndir );
   if ( !mapfile ) {
-// Bad but not fatal. Without a scaler.map one can
-// still "GetScaler" by crate, slot, chan.
-     cerr << "WARNING: THaScalerDB: scaler.map file does not exist !!"<<endl;
-     cerr << "You should have scaler.map in present working directory,"<<endl;
-     cerr << "or in $DB_DIR directory." << endl;
-     cerr << "Download  http://hallaweb.jlab.org/adaq/scaler.map"<<endl;
-     return false;
+    // Bad but not fatal. Without a scaler.map one can
+    // still "GetScaler" by crate, slot, chan.
+    cerr << "WARNING: THaScalerDB: scaler.map file does not exist !!"<<endl;
+    cerr << "You should have scaler.map in present working directory,"<<endl;
+    cerr << "or in $DB_DIR directory." << endl;
+    cerr << "Download  http://hallaweb.jlab.org/adaq/scaler.map"<<endl;
+    return false;
   } else {
-    cout << "Opened scaler map file " << fname[i] << endl;
+    ::Info("THaScalerDB", "Opened scaler map file %s", fname[i].c_str() );
   }
   string sinput;
   vector<string> strvect;
   found_date = false;
 
-// 1st pass: find the date, 2nd pass: load maps
+  // 1st pass: find the date, 2nd pass: load maps
   Bdate bd;  Bdate dfound(1,1,1990);
   while ( getline(mapfile,sinput) ) {
     if (GetLineType(sinput) == "DATE") {
-     bd.load(vsplit(sinput));
-     if (dfound <= bd && bd <= bdate) {
-       found_date = true;  dfound = bd;
-     }
+      bd.load(vsplit(sinput));
+      if (dfound <= bd && bd <= bdate) {
+	found_date = true;  dfound = bd;
+      }
     }
   }
 
@@ -114,35 +117,41 @@ bool THaScalerDB::extract_db(const Bdate& bdate) {
     dfound.Print();
     mapfile.close(); mapfile.clear();
     mapfile.open(filename.c_str());
-    if (ADB_DEBUG) dfound.Print();
+#ifdef WITH_DEBUG
+    if (fDebug) dfound.Print();
+#endif
     while ( getline(mapfile,sinput) ) {
-     if (GetLineType(sinput) == "DATE") {
-       bd.load(vsplit(sinput));
-       if (ADB_DEBUG) bd.Print();
-       if (bd == dfound) {
-	while ( getline(mapfile,sinput) ) { // load until next DATE
-          string linetype = GetLineType(sinput);
-          if ( linetype == "DATE" ) goto finish1;
-          if ( linetype == "COMMENT") continue;
-          if (linetype == "MAP") {
+      if (GetLineType(sinput) == "DATE") {
+	bd.load(vsplit(sinput));
+#ifdef WITH_DEBUG
+	if (fDebug) bd.Print();
+#endif
+	if (bd == dfound) {
+	  while ( getline(mapfile,sinput) ) { // load until next DATE
+	    string linetype = GetLineType(sinput);
+	    if ( linetype == "DATE" ) goto finish1;
+	    if ( linetype == "COMMENT") continue;
+	    if (linetype == "MAP") {
               LoadMap(sinput);  continue;
+	    }
+	    LoadDirective(linetype); // otherwise its a "directive"
 	  }
-	  LoadDirective(linetype); // otherwise its a "directive"
 	}
-       }
-     }
+      }
     }
-   } else {
-      cout << "Warning: THaScalerDB: Did not find data in database"<<endl;
-      return false;
-   }
-
-finish1:
-
-  if (ADB_DEBUG) {
-      PrintChanMap();
-      PrintDirectives();
+  } else {
+    ::Warning("THaScalerDB", "Did not find data in database" );
+    return false;
   }
+
+ finish1:
+
+#ifdef WITH_DEBUG
+  if (fDebug) {
+    PrintChanMap();
+    PrintDirectives();
+  }
+#endif
   return true;
 
 };
@@ -169,9 +178,16 @@ void THaScalerDB::PrintDirectives() const {
 };
 
 
-static string::size_type AmtSpace( const string& s ) {
-  typedef string::size_type string_size;
-  string_size i = 0, nsp = 0;
+Int_t THaScalerDB::SetDebug( Int_t level )
+{
+  Int_t prev_level = fDebug;
+  fDebug = level;
+  return prev_level;
+}
+
+static string::size_type AmtSpace( const string& s )
+{
+  string::size_type i = 0, nsp = 0;
   while (i++ != s.size()) if(isspace(s[i])) nsp++;
   return nsp;
 }

@@ -77,7 +77,7 @@ THaScaler::THaScaler( const char* bankgr ) {
   memset(rawdata,0,2*SCAL_NUMBANK*SCAL_NUMCHAN*sizeof(Int_t));
   clockrate = 1024;  // a default 
   isclockreset = false;
-
+  fDebug = 0;
 };
 
 THaScaler::~THaScaler() {
@@ -132,6 +132,7 @@ Int_t THaScaler::Init(const char* thetime )
   Bdate date_want(day,month,year);    // date when we want data.
 
   database = new THaScalerDB();
+  if( database ) database->SetDebug(fDebug);
   int status = InitData(bankgroup, date_want);
   if (status == SCAL_ERROR) return SCAL_ERROR;
 
@@ -266,15 +267,18 @@ Int_t THaScaler::InitData(const string& bankgroup, const Bdate& date_want) {
       }
       if (database) {
           database->LoadCrateToInt(it->bank_name, it->bank_cratenum);
+#ifdef WITH_DEBUG
           if (fDebug) {
             cout << "crate corresp. "<<it->bank_name;
             cout << " = "<<database->CrateToInt(string(it->bank_name))<<endl;
 	  }
+#endif
       }
       it++;
     }
   }
 
+#ifdef WITH_DEBUG
   if (fDebug) {
     cout << "Set up bank "<<bank_to_find<<endl;
     cout << "crate "<<crate<<"   header 0x"<<hex<<header<<dec<<endl;
@@ -285,6 +289,7 @@ Int_t THaScaler::InitData(const string& bankgroup, const Bdate& date_want) {
     for (int i = 0; i < SCAL_NUMBANK; i++) cout << " "<<onlmap[i];
     cout << endl;
    }
+#endif
 
 // Calibration of BCMs
   calib_u1 = 1345;  calib_u3 = 4114;  calib_u10 = 12515; 
@@ -330,6 +335,15 @@ void THaScaler::SetIChan(Int_t slot, Int_t chan) {
   icurchan = chan;
 }
 
+Int_t THaScaler::SetDebug( Int_t level )
+{
+  Int_t prev_level = fDebug;
+  fDebug = level;
+  if( database )
+    database->SetDebug(level);
+  return prev_level;
+}
+
 void THaScaler::SetupNormMap() {
   if (!database) return;
 // Retrieve info about the normalization scaler, which
@@ -354,7 +368,9 @@ void THaScaler::SetupNormMap() {
   if (database) {
 // possible over-ride if target state defined 
     if (database->UsesTargetState(crate)) {
+#ifdef WITH_DEBUG
       if (fDebug) cout << "Using target state info "<<endl;
+#endif
       normslot[0] = database->GetSlot(crate,0,0);
       normslot[1] = database->GetSlot(crate,1,1);
       normslot[2] = database->GetSlot(crate,1,-1);
@@ -369,11 +385,13 @@ void THaScaler::SetupNormMap() {
     for (int i=0; i<5; i++) normslot[i]=savenslot[i];
   }
 
+#ifdef WITH_DEBUG
   if (fDebug) {
     cout << "NormMap info ";
     for (Int_t i=0; i<5; i++) cout << "  "<<normslot[i];
     cout << "\nclock "<<clkslot << " " << clkchan<<endl;
   }
+#endif
   for (Int_t ichan = 0; ichan < SCAL_NUMCHAN; ichan++) {
     vector<string> chan_name = database->GetShortNames(crate, normslot[0], ichan);
     for (vector<string>::size_type i = 0; i < chan_name.size(); i++) {
