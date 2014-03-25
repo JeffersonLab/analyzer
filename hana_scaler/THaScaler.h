@@ -139,7 +139,7 @@ protected:
    int vme_port, clkslot, clkchan;
    int icurslot, icurchan;
    Bool_t found_crate,first_loop;
-   Bool_t did_init, new_load, one_load, use_clock;
+   Bool_t did_init, new_load, one_load, use_clock, isclockreset;
    Int_t *normslot;
    Double_t clockrate;
    Int_t InitData(const std::string& bankgroup, const Bdate& bd);

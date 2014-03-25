@@ -76,6 +76,7 @@ THaScaler::THaScaler( const char* bankgr ) {
   rawdata = new Int_t[2*SCAL_NUMBANK*SCAL_NUMCHAN];
   memset(rawdata,0,2*SCAL_NUMBANK*SCAL_NUMCHAN*sizeof(Int_t));
   clockrate = 1024;  // a default 
+  isclockreset = false;
 
 };
 
@@ -258,7 +259,7 @@ Int_t THaScaler::InitData(const string& bankgroup, const Bdate& date_want) {
         crate = it->bank_cratenum;
         evstr_type = it->evstr_type;
         normslot[0] = it->normslot;
-        if (use_clock) clockrate = it->bank_clockrate;
+        if (use_clock && !isclockreset) clockrate = it->bank_clockrate;
         vme_server = it->bank_IP;
         vme_port = it->bank_port;
         for (int i = 0; i < SCAL_NUMBANK; i++) onlmap.push_back(it->bank_onlmap[i]);
@@ -386,6 +387,7 @@ void THaScaler::SetupNormMap() {
 void THaScaler::SetClockRate(Double_t rate)
 { 
   clockrate = rate;
+  isclockreset = true;
 }
 
 void THaScaler::SetTimeInterval(Double_t time)
@@ -674,6 +676,7 @@ struct request {
   static int lprint   = 0;
   myRequest.clearflag = 0;
   myRequest.checkend  = 0;
+  UInt_t timeoutcnt=0;
 
 // create socket 
   if ((sFd = socket (PF_INET, SOCK_STREAM, 0)) == -1 ) {
@@ -710,6 +713,7 @@ struct request {
     while (nRead < static_cast<ssize_t>(sizeof(vmeReply))) {
        nRead1 = read (sFd, ((char *) &vmeReply)+nRead,
                     sizeof(vmeReply)-nRead);
+       if (timeoutcnt++ > 50) break;
        if(nRead1 < 0) {
 	 cout << "Error from reading from scaler server\n"<<endl;
          return SCAL_ERROR;
@@ -800,6 +804,7 @@ void THaScaler::PrintSummary() {
   printf("\n -------------   Scaler Summary   ---------------- \n");
   cout << "Scaler bank  " << bankgroup << endl;
   //  Double_t time_sec = GetPulser("clock")/clockrate;
+  cout << "Clock rate "<<clockrate<<endl;
   Double_t time_sec = GetScaler(clkslot,clkchan)/clockrate;
   cout << "clock location "<<clkslot<<"  "<<clkchan<<endl; 
   cout << "clock counts "<< GetScaler(clkslot,clkchan)<<"   clock rate "<<clockrate<<endl;
