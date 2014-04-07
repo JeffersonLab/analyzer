@@ -52,7 +52,7 @@ Int_t ToyScalerEvtHandler::Decode(THaEvData *evdata) {
   return 1;
 }
 
-void ToyScalerEvtHandler::Init(THaCrateMap *map) {
+Int_t ToyScalerEvtHandler::Init(THaCrateMap *map) {
 
 }
 

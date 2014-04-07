@@ -5,7 +5,7 @@
 //
 //   NEW STUFF (= the entire class)
 //   ToyEvtTypeHandler
-//   Abstract class to handle different types of events.
+//   Base class to handle different types of events.
 //   author  Robert Michaels (rom@jlab.org)
 //
 /////////////////////////////////////////////////////////////////////
@@ -14,6 +14,7 @@
 #include <map>
 #include <vector>
 #include "Rtypes.h"
+#include "DecoderGlobals.h"
 
 class THaCrateMap;
 class THaEvData;
@@ -25,12 +26,18 @@ public:
    ToyEvtTypeHandler();
    virtual ~ToyEvtTypeHandler();  
 
-   virtual Int_t Decode(THaEvData *evdata)=0; // abstract
-   virtual void Init(THaCrateMap *map)=0;
+   virtual Int_t Decode(THaEvData *evdata); 
+   virtual Int_t Init(THaCrateMap *map);
 
 protected:
 
-   
+   THaCrateMap *fMap;
+   Int_t FindRocs(const Int_t *evbuffer);
+   Int_t irn[MAXROC];
+   struct RocDat_t {           // ROC raw data descriptor
+        Int_t pos;                // position in evbuffer[]
+        Int_t len;                // length of data
+    } rocdat[MAXROC];
 
 private:
 

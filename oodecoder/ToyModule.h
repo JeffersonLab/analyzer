@@ -25,7 +25,8 @@ public:
    virtual ~ToyModule();  
 
    virtual Bool_t IsSlot(Int_t rdata)=0;
-   virtual Int_t Decode(THaEvData *evdata, Int_t start)=0;
+   virtual Int_t Decode(THaEvData *evdata, Int_t start=0)=0;
+   Int_t GetSlot() { return fSlot; );
 
 protected:
 

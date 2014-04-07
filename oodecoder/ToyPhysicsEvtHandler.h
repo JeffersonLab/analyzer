@@ -26,7 +26,7 @@ public:
    virtual ~ToyPhysicsEvtHandler();  
 
    Int_t Decode(THaEvData *evdata);
-   void Init(THaCrateMap *map);
+   Int_t Init(THaCrateMap *map);
   
 
 private:

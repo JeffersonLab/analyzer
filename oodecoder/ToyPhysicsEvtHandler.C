@@ -64,7 +64,7 @@ Int_t ToyPhysicsEvtHandler::Decode(THaEvData *evdata) {
   return 0;
 }
 
-void ToyPhysicsEvtHandler::Init(THaCrateMap *map) {
+Int_t ToyPhysicsEvtHandler::Init(THaCrateMap *map) {
 
 }
 
