@@ -25,24 +25,41 @@
 #include "TObjArray.h"
 #include "TH1F.h"
 #include "TMath.h"
+#include "TDirectory.h"
+#include "TClass.h"
 
 #include <stdexcept>
 #include <memory>
+#include <cassert>
 
 using namespace std;
+
+typedef vector<Short_t>::iterator Vsiter_t;
+typedef vector<VDCeff::VDCvar_t>::iterator variter_t;
 
 //_____________________________________________________________________________
 VDCeff::VDCvar_t::~VDCvar_t()
 {
+  // VDCvar_t destructor. Delete histograms, if defined.
+
+  // Verify that each histogram is still in memory. It usually isn't because
+  // ROOT deletes it when the output file is closed.
+
+  //FIXME:
+  TObject* obj = gDirectory->FindObject(histname);
+  if( obj && obj->IsA() && obj->IsA()->InheritsFrom(TH1::Class()) ) {
+    assert( histname == obj->GetName() );
+    delete hist_eff;
+  }
+
   delete hist_nhit;
-  delete hist_eff;
 }
 
 //_____________________________________________________________________________
 VDCeff::VDCeff( const char* name, const char* description )
   : THaPhysicsModule(name,description)
 {
-  // Normal constructor. 
+  // Normal constructor.
 
 }
 
@@ -68,13 +85,24 @@ Int_t VDCeff::Begin( THaRunBase* )
 {
   // Start of analysis
 
-  //  BookHist();
-
-  for( vector<VDCvar_t>::iterator it = fVDCvar.begin();
-       it != fVDCvar.end(); ++it ) {
+  for( variter_t it = fVDCvar.begin(); it != fVDCvar.end(); ++it ) {
     VDCvar_t& thePlane = *it;
     thePlane.ncnt.assign( thePlane.nwire, 0 );
     thePlane.nhit.assign( thePlane.nwire, 0 );
+    // Book histograms here, not in Init. The output file must be open for the
+    // histogram to be saved. This is the case here, but not when Init runs.
+    TString title;
+    if( !thePlane.hist_nhit ) {
+      TString name(thePlane.name); //FIXME
+      title = "Num hits " + thePlane.name;
+      Int_t nmax = TMath::Nint( thePlane.nwire * fMaxOcc );
+      thePlane.hist_nhit = new TH1F( name, title, nmax, -1, nmax-1 );
+    }
+    if( !thePlane.hist_eff ) {
+      title = thePlane.name + " efficiency";
+      thePlane.hist_nhit = new TH1F( thePlane.histname, title,
+				     thePlane.nwire, 0, thePlane.nwire );
+    }
   }
 
   fNevt = 0;
@@ -87,7 +115,7 @@ Int_t VDCeff::End( THaRunBase* )
 {
   // End of analysis
 
-  //  WriteHist();
+  WriteHist();
   return 0;
 }
 
@@ -181,12 +209,10 @@ Int_t VDCeff::Process( const THaEvData& evdata )
 {
   // Update VDC efficiency histograms with current event data
 
-  // static const string VdcVars[] = {"L.vdc.u1.wire", "L.vdc.u2.wire", 
-  // 				   "L.vdc.v1.wire", "L.vdc.v2.wire", 
-  // 				   "R.vdc.u1.wire", "R.vdc.u2.wire", 
+  // static const string VdcVars[] = {"L.vdc.u1.wire", "L.vdc.u2.wire",
+  // 				   "L.vdc.v1.wire", "L.vdc.v2.wire",
+  // 				   "R.vdc.u1.wire", "R.vdc.u2.wire",
   // 				   "R.vdc.v1.wire", "R.vdc.v2.wire"};
-  
-  typedef vector<Short_t>::iterator Vsiter_t;
 
   const char* const here = __FUNCTION__;
 
@@ -195,8 +221,7 @@ Int_t VDCeff::Process( const THaEvData& evdata )
   ++fNevt;
   bool cycle_event = ( (fNevt%fCycle) == 0 );
 
-  for( vector<VDCvar_t>::iterator it = fVDCvar.begin();
-       it != fVDCvar.end(); ++it ) {
+  for( variter_t it = fVDCvar.begin(); it != fVDCvar.end(); ++it ) {
     VDCvar_t& thePlane = *it;
 
     if( !thePlane.pvar ) continue;  // Oops, no global variable?
@@ -237,6 +262,7 @@ Int_t VDCeff::Process( const THaEvData& evdata )
     }
 
     if( cycle_event ) {
+      thePlane.hist_eff->Reset();
       for( Int_t i = 0; i < nwire; ++i ) {
 	if( thePlane.ncnt[i] != 0 ) {
 	  Double_t xeff = static_cast<Double_t>(thePlane.nhit[i]) /
@@ -247,13 +273,29 @@ Int_t VDCeff::Process( const THaEvData& evdata )
     }
   }
 
-#if 0
+  // FIXME: repeated WriteHist seems to cause problems with splits files
+  // (multiple cycles left in output)
+  if( (cycle_event && fNevt < 4*fCycle) ||
+      (fNevt % (10*fCycle) == 0) )
+    WriteHist();
+
+#ifdef WITH_DEBUG
+  if( fDebug>1 && (fNevt%10) == 0 )
+    Print();
+#endif
+
+  fDataValid = true;
+  return 0;
+}
+
+
+/*
   const Int_t nwire = 400;
   //FIXME: really push 3.2kB on the stack every event?
   Int_t wire[nwire];
   Int_t hitwire[nwire];   // lookup to avoid O(N^3) algorithm // really??
 
-  
+
   //FIXME: these static variables prevent multiple instances of this object!
   // use member variables
   static Int_t cnt = 0;  // Event counter
@@ -272,7 +314,7 @@ Int_t VDCeff::Process( const THaEvData& evdata )
   }
 
 #ifdef WITH_DEBUG
-  if (fDebug>4) 
+  if (fDebug>4)
     cout << "\n *************** \n Vdc Effic "<<endl;
 #endif
 
@@ -314,16 +356,16 @@ Int_t VDCeff::Process( const THaEvData& evdata )
        // look for neighboring hit at +2 wires
        Int_t ngh2=wire[i]+2;
        if (wire[i]<0 || ngh2>=nwire) continue;
-       
+
        if (hitwire[ngh2]) {
 	 Int_t awire = wire[i]+1;
 #ifdef WITH_DEBUG
-	 if (fDebug>4) 
+	 if (fDebug>4)
 	   cout << "wire eff "<<i<<"  "<<awire<<endl;
 #endif
 	 if (awire>=0 && awire<nwire) { //FIXME:  always true
 	   xcnt[ipl*nwire+awire] = xcnt[ipl*nwire+awire] + 1;
-	   
+
 	   if ( hitwire[awire] ) {
 	     eff[ipl*nwire+awire] = eff[ipl*nwire+awire] + 1;
 	   } else {
@@ -333,7 +375,7 @@ Int_t VDCeff::Process( const THaEvData& evdata )
 	 }
        }
      }
-     
+
      if ((cnt%500) == 0) {
 
        // FIXME: why reset?
@@ -345,30 +387,14 @@ Int_t VDCeff::Process( const THaEvData& evdata )
 	   xeff = eff[ipl*nwire+i]/xcnt[ipl*nwire+i];
 	 }
 #ifdef WITH_DEBUG
-         if (fDebug>4) 
+         if (fDebug>4)
 	   cout << "Efficiency "<<i<<"  "<<xcnt[ipl*nwire+i]<<"  "<<xeff<<endl;
 #endif
          if (xeff > 0) hist[ipl+8]->Fill(i,xeff);
        }
      }
 
-  }
-//   }
-//   ++cnt;
-//   // FIXME: repeated WriteHist seems to cause problems with splits files
-//   // (multiple cycles left in output)
-//   if ((cnt < 2000 && cnt % 500 == 0) ||
-//       (cnt % 5000 == 0)) WriteHist();
-
-//   //  if ((cnt%10)==0) Print();
-
-// }
-
-#endif
-
-  fDataValid = true;
-  return 0;
-}
+*/
 
 //_____________________________________________________________________________
 Int_t VDCeff::ReadDatabase( const TDatime& date )
@@ -384,7 +410,6 @@ Int_t VDCeff::ReadDatabase( const TDatime& date )
 
   TString configstr;
   fCycle = 500;
-  fMaxNwire = 400;
   fMaxOcc = 0.25;
 
   Int_t status = kOK;
@@ -433,7 +458,7 @@ Int_t VDCeff::ReadDatabase( const TDatime& date )
     Int_t nwire             = GetObjArrayString(params,ip+2).Atoi();
     if( nwire <= 0 || nwire > kMaxShort ) {
       Error( Here(here), "Illegal number of wires = %d for VDC variable %s. "
-	     "Fix database.", nwire, name.Data() ); 
+	     "Fix database.", nwire, name.Data() );
       return kInitError;
     }
     if( fDebug>2 )
@@ -451,19 +476,20 @@ Int_t VDCeff::ReadDatabase( const TDatime& date )
 
   return kOK;
 }
-  
+
+//_____________________________________________________________________________
+void VDCeff::WriteHist()
+{
+  // Write all defined histograms
+
+  for( variter_t it = fVDCvar.begin(); it != fVDCvar.end(); ++it ) {
+    VDCvar_t& thePlane = *it;
+    if( thePlane.hist_nhit )
+      thePlane.hist_nhit->Write();
+    if( thePlane.hist_eff )
+      thePlane.hist_eff->Write();
+  }
+}
+
 //_____________________________________________________________________________
 ClassImp(VDCeff)
-
-
-
-// Int_t  THaDecData::fgVdcEffFirst = 2;
-
-// //_____________________________________________________________________________
-// void THaDecData::WriteHist()
-// {
-//   //  cout << "Writing Bob Dec Data histos"<<endl<<flush;
-//   for (vector<TH1F*>::iterator it = hist.begin(); it != hist.end(); ++it)
-//     (*it)->Write();
-// }
-
