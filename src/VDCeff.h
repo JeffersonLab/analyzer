@@ -19,16 +19,18 @@ public:
   virtual ~VDCeff();
 
   virtual Int_t   Begin( THaRunBase* r=0 );
-  virtual void    Clear( Option_t* opt="" );
   virtual Int_t   End( THaRunBase* r=0 );
   virtual EStatus Init( const TDatime& run_time );
   virtual Int_t   Process( const THaEvData& );
+
+  void            Reset( Option_t* opt="" );
 
 protected:
 
   typedef std::vector<Long64_t> Vcnt_t;
   typedef const THaVar CVar_t;
 
+  // Data needed for efficiency calculation for one VDC plane/wire spectrum
   struct VDCvar_t {
     TString  name;
     TString  histname;
@@ -41,17 +43,20 @@ protected:
     VDCvar_t( const char* nm, const char* hn, Int_t nw )
       : name(nm), histname(hn), pvar(0), nwire(nw), hist_nhit(0), hist_eff(0) {}
     ~VDCvar_t();
+    void     Reset( Option_t* opt ="" );
   };
 
+  // Internal working storage
   std::vector<VDCvar_t>  fVDCvar;
   std::vector<Short_t>   fWire;
   std::vector<bool>      fHitWire;
 
-  Int_t     fCycle;
-  Double_t  fMaxOcc;
   Long64_t  fNevt;
 
-  virtual Int_t DefineVariables( EMode mode = kDefine );
+  // Configuration parameters
+  Int_t     fCycle;
+  Double_t  fMaxOcc;
+
   virtual Int_t ReadDatabase( const TDatime& date );
 
   void WriteHist();

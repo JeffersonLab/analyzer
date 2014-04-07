@@ -64,10 +64,23 @@ VDCeff::VDCvar_t::~VDCvar_t()
 }
 
 //_____________________________________________________________________________
-VDCeff::VDCeff( const char* name, const char* description )
-  : THaPhysicsModule(name,description)
+void VDCeff::VDCvar_t::Reset( Option_t* )
 {
-  // Normal constructor.
+  // Reset histograms and counters of this VDCvar
+
+  if( nwire > 0 ) {
+    ncnt.assign( nwire, 0 );
+    nhit.assign( nwire, 0 );
+  }
+  if( hist_nhit ) hist_nhit->Reset();
+  if( hist_eff  ) hist_eff->Reset();
+}
+
+//_____________________________________________________________________________
+VDCeff::VDCeff( const char* name, const char* description )
+  : THaPhysicsModule(name,description), fNevt(0)
+{
+  // VDCeff module constructor
 
 }
 
@@ -80,18 +93,22 @@ VDCeff::~VDCeff()
 }
 
 //_____________________________________________________________________________
-void VDCeff::Clear( Option_t* opt )
+void VDCeff::Reset( Option_t* opt )
 {
   // Clear event-by-event data
 
-  THaPhysicsModule::Clear(opt);
-
+  Clear(opt);
+  for( variter_t it = fVDCvar.begin(); it != fVDCvar.end(); ++it ) {
+    it->Reset(opt);
+  }
 }
 
 //_____________________________________________________________________________
 Int_t VDCeff::Begin( THaRunBase* )
 {
   // Start of analysis
+
+  if( !IsOK() ) return -1;
 
   for( variter_t it = fVDCvar.begin(); it != fVDCvar.end(); ++it ) {
     VDCvar_t& thePlane = *it;
@@ -125,23 +142,6 @@ Int_t VDCeff::End( THaRunBase* )
 
   WriteHist();
   return 0;
-}
-
-//_____________________________________________________________________________
-Int_t VDCeff::DefineVariables( EMode mode )
-{
-  // Define/delete global variables.
-
-  if( mode == kDefine && fIsSetup ) return kOK;
-  fIsSetup = ( mode == kDefine );
-
-  // RVarDef vars[] = {
-  //   { "A",  "Result A", "fResultA" },
-  //   { "B",  "Result B", "fResultB" },
-  //   { 0 }
-  // };
-  // return DefineVarsFromList( vars, mode );
-  return kOK;
 }
 
 //_____________________________________________________________________________
@@ -290,7 +290,7 @@ Int_t VDCeff::ReadDatabase( const TDatime& date )
     Error( Here(here), "No VDC variables defined. Fix database." );
     return kInitError;
   };
-  // Parse variables at set up definition structure for each
+  // Parse the vdcvars string and set up definition structure for each item
   auto_ptr<TObjArray> vdcvars( configstr.Tokenize(separators) );
   Int_t nparams = vdcvars->GetLast()+1;
   if( nparams == 0 ) {
