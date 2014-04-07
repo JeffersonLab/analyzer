@@ -37,22 +37,30 @@ using namespace std;
 typedef vector<Short_t>::iterator Vsiter_t;
 typedef vector<VDCeff::VDCvar_t>::iterator variter_t;
 
+const TString nhit_suffix( "nhit" );
+const TString eff_suffix(  "eff" );
+
+//_____________________________________________________________________________
+static void SafeDeleteHist( const TString& name, TH1F*& the_hist )
+{
+  // Verify that each histogram is still in memory. It usually isn't because
+  // ROOT deletes it when the output file is closed.
+  if( !the_hist ) return;
+  TObject* obj = gDirectory->FindObject(name);
+  if( obj && obj->IsA() && obj->IsA()->InheritsFrom(TH1::Class()) ) {
+    assert( name == obj->GetName() );
+    delete the_hist;
+  }
+  the_hist = 0; // Zero out now-invalid pointer, regardless of who deleted it
+}
+
 //_____________________________________________________________________________
 VDCeff::VDCvar_t::~VDCvar_t()
 {
   // VDCvar_t destructor. Delete histograms, if defined.
 
-  // Verify that each histogram is still in memory. It usually isn't because
-  // ROOT deletes it when the output file is closed.
-
-  //FIXME:
-  TObject* obj = gDirectory->FindObject(histname);
-  if( obj && obj->IsA() && obj->IsA()->InheritsFrom(TH1::Class()) ) {
-    assert( histname == obj->GetName() );
-    delete hist_eff;
-  }
-
-  delete hist_nhit;
+  SafeDeleteHist( histname + nhit_suffix, hist_eff );
+  SafeDeleteHist( histname + eff_suffix,  hist_nhit );
 }
 
 //_____________________________________________________________________________
@@ -87,20 +95,21 @@ Int_t VDCeff::Begin( THaRunBase* )
 
   for( variter_t it = fVDCvar.begin(); it != fVDCvar.end(); ++it ) {
     VDCvar_t& thePlane = *it;
+    assert( thePlane.nwire > 0 );
     thePlane.ncnt.assign( thePlane.nwire, 0 );
     thePlane.nhit.assign( thePlane.nwire, 0 );
     // Book histograms here, not in Init. The output file must be open for the
     // histogram to be saved. This is the case here, but not when Init runs.
-    TString title;
     if( !thePlane.hist_nhit ) {
-      TString name(thePlane.name); //FIXME
-      title = "Num hits " + thePlane.name;
+      TString name = thePlane.histname + nhit_suffix;
+      TString title = "Num hits " + thePlane.histname;
       Int_t nmax = TMath::Nint( thePlane.nwire * fMaxOcc );
       thePlane.hist_nhit = new TH1F( name, title, nmax, -1, nmax-1 );
     }
     if( !thePlane.hist_eff ) {
-      title = thePlane.name + " efficiency";
-      thePlane.hist_nhit = new TH1F( thePlane.histname, title,
+      TString name = thePlane.histname + eff_suffix;
+      TString title = thePlane.histname + " efficiency";
+      thePlane.hist_nhit = new TH1F( name, title,
 				     thePlane.nwire, 0, thePlane.nwire );
     }
   }
