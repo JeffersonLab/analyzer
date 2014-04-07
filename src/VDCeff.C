@@ -20,8 +20,8 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "VDCeff.h"
-#include "VarDef.h"
-#include "THaVar.h"
+#include "THaVarList.h"
+#include "THaGlobals.h"
 #include "TObjArray.h"
 #include "TH1F.h"
 #include "TMath.h"
@@ -139,12 +139,26 @@ Int_t VDCeff::DefineVariables( EMode mode )
 //_____________________________________________________________________________
 THaAnalysisObject::EStatus VDCeff::Init( const TDatime& run_time )
 {
+  // Initialize VDCeff physics module
 
-  // Standard initialization. Calls this object's ReadDatabase(),
-  // ReadRunDatabase(), and DefineVariables()
-  // (see THaAnalysisObject::Init)
+  const char* const here = __FUNCTION__;
+
+  // Standard initialization. Calls ReadDatabase(), ReadRunDatabase(),
+  // and DefineVariables() (see THaAnalysisObject::Init)
   if( THaPhysicsModule::Init( run_time ) != kOK )
     return fStatus;
+
+  // Associate global variable pointers. This can and should be done
+  // at every reinitialization (pointers in VDC class may have changed)
+  for( variter_t it = fVDCvar.begin(); it != fVDCvar.end(); ++it ) {
+    VDCvar_t& thePlane = *it;
+    if( thePlane.name.IsNull() ) continue;  // no global variable name
+    thePlane.pvar = gHaVars->Find( thePlane.name );
+    if( !thePlane.pvar ) {
+      Warning( Here(here), "Cannot find global VDC variable %s. Ignoring.",
+	       thePlane.name.Data() );
+    }
+  }
 
 //======= VDCEff stuff ==================
 
@@ -224,7 +238,7 @@ Int_t VDCeff::Process( const THaEvData& evdata )
   for( variter_t it = fVDCvar.begin(); it != fVDCvar.end(); ++it ) {
     VDCvar_t& thePlane = *it;
 
-    if( !thePlane.pvar ) continue;  // Oops, no global variable?
+    if( !thePlane.pvar ) continue;  // global variable wasn't found
 
     Int_t nwire = thePlane.nwire;
     fWire.clear();
