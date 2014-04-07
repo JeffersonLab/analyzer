@@ -109,11 +109,10 @@ Int_t VDCeff::Begin( THaRunBase* )
     if( !thePlane.hist_eff ) {
       TString name = thePlane.histname + eff_suffix;
       TString title = thePlane.histname + " efficiency";
-      thePlane.hist_nhit = new TH1F( name, title,
-				     thePlane.nwire, 0, thePlane.nwire );
+      thePlane.hist_eff = new TH1F( name, title,
+				    thePlane.nwire, 0, thePlane.nwire );
     }
   }
-
   fNevt = 0;
 
   return 0;
