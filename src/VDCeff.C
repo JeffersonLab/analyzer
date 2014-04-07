@@ -326,6 +326,20 @@ Int_t VDCeff::ReadDatabase( const TDatime& date )
 	     "Fix database.", nwire, name.Data() );
       return kInitError;
     }
+    // Check for duplicate name or histname
+    for( variter_t it = fVDCvar.begin(); it != fVDCvar.end(); ++it ) {
+      VDCvar_t& thePlane = *it;
+      if( thePlane.name == name ) {
+	Error( Here(here), "Duplicate global variable name %s. "
+	       "Fix database.", name.Data() );
+	return kInitError;
+      }
+      if( thePlane.histname == histname ) {
+	Error( Here(here), "Duplicate histogram name %s. "
+	       "Fix database.", histname.Data() );
+	return kInitError;
+      }
+    }
     if( fDebug>2 )
       Info( Here(here), "Defining VDC variable %s", name.Data() );
 
