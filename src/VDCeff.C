@@ -160,7 +160,7 @@ THaAnalysisObject::EStatus VDCeff::Init( const TDatime& run_time )
   // at every reinitialization (pointers in VDC class may have changed)
   for( variter_t it = fVDCvar.begin(); it != fVDCvar.end(); ++it ) {
     VDCvar_t& thePlane = *it;
-    if( thePlane.name.IsNull() ) continue;  // no global variable name
+    assert( !thePlane.name.IsNull() );
     thePlane.pvar = gHaVars->Find( thePlane.name );
     if( !thePlane.pvar ) {
       Warning( Here(here), "Cannot find global VDC variable %s. Ignoring.",
@@ -263,6 +263,7 @@ Int_t VDCeff::ReadDatabase( const TDatime& date )
   if( !f ) return kFileError;
 
   TString configstr;
+  // Default values
   fCycle = 500;
   fMaxOcc = 0.25;
 
@@ -310,6 +311,16 @@ Int_t VDCeff::ReadDatabase( const TDatime& date )
     const TString& name     = GetObjArrayString(params,ip);
     const TString& histname = GetObjArrayString(params,ip+1);
     Int_t nwire             = GetObjArrayString(params,ip+2).Atoi();
+    if( name.IsNull() ) {
+      Error( Here(here), "Missing global variable name at vdcvars[%d]. "
+	     "Fix database.", ip );
+      return kInitError;
+    }
+    if( histname.IsNull() ) {
+      Error( Here(here), "Missing histogram name at vdcvars[%d]. "
+	     "Fix database.", ip );
+      return kInitError;
+    }
     if( nwire <= 0 || nwire > kMaxShort ) {
       Error( Here(here), "Illegal number of wires = %d for VDC variable %s. "
 	     "Fix database.", nwire, name.Data() );
