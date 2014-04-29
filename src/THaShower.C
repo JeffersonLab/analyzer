@@ -14,6 +14,7 @@
 #include "THaGlobals.h"
 #include "THaEvData.h"
 #include "THaDetMap.h"
+#include "THaTrackProj.h"
 #include "VarDef.h"
 #include "VarType.h"
 #include "THaTrack.h"
@@ -24,8 +25,6 @@
 #include <cstring>
 #include <iostream>
 
-ClassImp(THaShower)
-
 using namespace std;
 
 //_____________________________________________________________________________
@@ -35,6 +34,7 @@ THaShower::THaShower( const char* name, const char* description,
 {
   // Constructor.
 
+  fTrackProj = new TClonesArray( "THaTrackProj", 5 );
 }
 
 //_____________________________________________________________________________
@@ -56,12 +56,12 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
   if( !fi ) return kFileError;
 
   // Blocks, rows, max blocks per cluster
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );          
-  fscanf ( fi, "%5d %5d", &ncols, &nrows );  
+  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
+  fscanf ( fi, "%5d %5d", &ncols, &nrows );
 
   nelem = ncols * nrows;
   nclbl = TMath::Min( 3, nrows ) * TMath::Min( 3, ncols );
-  // Reinitialization only possible for same basic configuration 
+  // Reinitialization only possible for same basic configuration
   if( fIsInit && (nelem != fNelem || nclbl != fNclublk) ) {
     Error( Here(here), "Cannot re-initalize with different number of blocks or "
 	   "blocks per cluster. Detector not re-initialized." );
@@ -98,7 +98,7 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
     fgets ( buf, LEN, fi );
     if( crate < 0 ) break;
     if( fDetMap->AddModule( crate, slot, first, last ) < 0 ) {
-      Error( Here(here), "Too many DetMap modules (maximum allowed - %d).", 
+      Error( Here(here), "Too many DetMap modules (maximum allowed - %d).",
 	    THaDetMap::kDetMapSize);
       fclose(fi);
       return kInitError;
@@ -152,7 +152,7 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
       ptr += nchar;
     }
   }
-  
+
   fgets ( buf, LEN, fi );
 
   Float_t x,y,z;
@@ -201,10 +201,10 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
   // Before doing this, search for any date tags that follow, and start reading from
   // the best matching tag if any are found. If none found, but we have a configuration
   // string, search for it.
-  if( SeekDBdate( fi, date ) == 0 && fConfig.Length() > 0 && 
+  if( SeekDBdate( fi, date ) == 0 && fConfig.Length() > 0 &&
       SeekDBconfig( fi, fConfig.Data() )) {}
 
-  fgets ( buf, LEN, fi );  
+  fgets ( buf, LEN, fi );
   // Crude protection against a missed date/config tag
   if( buf[0] == '[' ) fgets ( buf, LEN, fi );
 
@@ -212,7 +212,7 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
   for (int j=0; j<fNelem; j++)
     fscanf (fi,"%15f",fPed+j);
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  for (int j=0; j<fNelem; j++) 
+  for (int j=0; j<fNelem; j++)
     fscanf (fi, "%15f",fGain+j);
 
 
@@ -252,8 +252,9 @@ Int_t THaShower::DefineVariables( EMode mode )
     { "mult",   "Multiplicity of largest cluster",    "fMult" },
     { "nblk",   "Numbers of blocks in main cluster",  "fNblk" },
     { "eblk",   "Energies of blocks in main cluster", "fEblk" },
-    { "trx",    "track x-position in det plane",      "fTRX" },
-    { "try",    "track y-position in det plane",      "fTRY" },
+    { "trx",    "x-position of track in det plane",   "fTrackProj.THaTrackProj.fX" },
+    { "try",    "y-position of track in det plane",   "fTrackProj.THaTrackProj.fY" },
+    { "trpath", "TRCS pathlen of track to det plane", "fTrackProj.THaTrackProj.fPathl" },
     { 0 }
   };
   return DefineVarsFromList( vars, mode );
@@ -268,6 +269,10 @@ THaShower::~THaShower()
     RemoveVariables();
   if( fIsInit )
     DeleteArrays();
+  if (fTrackProj) {
+    fTrackProj->Clear();
+    delete fTrackProj; fTrackProj = 0;
+  }
 }
 
 //_____________________________________________________________________________
@@ -316,8 +321,8 @@ void THaShower::ClearEvent()
   fMult = 0;
   memset( fNblk, 0, lsi );
   memset( fEblk, 0, lsc );
-  fTRX = 0.0;
-  fTRY = 0.0;
+
+  fTrackProj->Clear();
 }
 
 //_____________________________________________________________________________
@@ -351,7 +356,7 @@ Int_t THaShower::Decode( const THaEvData& evdata )
       // Copy the data to the local variables.
       Int_t k = *(*(fChanMap+i)+(chan-d->lo)) - 1;
 #ifdef WITH_DEBUG
-      if( k<0 || k>=fNelem ) 
+      if( k<0 || k>=fNelem )
 	Warning( Here("Decode()"), "Bad array index: %d. Your channel map is "
 		 "invalid. Data skipped.", k );
       else
@@ -376,7 +381,7 @@ Int_t THaShower::Decode( const THaEvData& evdata )
       printf("  Block  ADC  ADC_p  ");
     }
     printf("\n");
-    
+
     for (int i=0; i<(fNelem+ncol-1)/ncol; i++ ) {
       for (int c=0; c<ncol; c++) {
 	int ind = c*fNelem/ncol+i;
@@ -397,7 +402,7 @@ Int_t THaShower::Decode( const THaEvData& evdata )
 //_____________________________________________________________________________
 Int_t THaShower::CoarseProcess( TClonesArray& tracks )
 {
-  // Reconstruct Clusters in shower detector and copy the data 
+  // Reconstruct Clusters in shower detector and copy the data
   // into the following local data structure:
   //
   // fNclust        -  Number of clusters in shower;
@@ -407,11 +412,9 @@ Int_t THaShower::CoarseProcess( TClonesArray& tracks )
   // fMult          -  Number of blocks in the cluster;
   // fNblk[0]...[5] -  Numbers of blocks composing the cluster;
   // fEblk[0]...[5] -  Energies in blocks composing the cluster;
-  // fTRX;          -  X-coordinate of track cross point with shower plane
-  // fTRY;          -  Y-coordinate of track cross point with shower plane
   //
-  // Only one ("main") cluster, i.e. the cluster with the largest energy 
-  // deposition is considered. Units are MeV for energies and cm for 
+  // Only one ("main") cluster, i.e. the cluster with the largest energy
+  // deposition is considered. Units are MeV for energies and cm for
   // coordinates.
 
   fNclust = 0;
@@ -420,7 +423,7 @@ Int_t THaShower::CoarseProcess( TClonesArray& tracks )
   for ( int  i = 0; i < fNelem; i++) {      // Find the block with max energy:
     double  ei = fA_c[i];                   // Energy in next block
     if ( ei > emax) {
-      nmax = i;                             // Number of block with max energy 
+      nmax = i;                             // Number of block with max energy
       emax = ei;                            // Max energy per a blocks
     }
   }
@@ -458,36 +461,54 @@ Int_t THaShower::CoarseProcess( TClonesArray& tracks )
     fMult   = mult;                         // Number of blocks in "main" clust.
   }
 
-
-
-  // Calculation of coordinates of the track cross point with 
+  // Calculation of coordinates of the track cross point with
   // shower plane in the detector coordinate system. For this, parameters
   // of track reconstructed in THaVDC::CoarseTrack() are used.
 
-  int ne_track = tracks.GetLast()+1;   // Number of reconstructed in Earm tracks
+  int n_track = tracks.GetLast()+1;   // Number of reconstructed tracks
 
-  if ( ne_track >= 1 && tracks.At(0) != 0 ) {
-    THaTrack* theTrack = static_cast<THaTrack*>( tracks[0] );
-    double fpe_x       = theTrack->GetX();
-    double fpe_y       = theTrack->GetY();
-    double fpe_th      = theTrack->GetTheta();
-    double fpe_ph      = theTrack->GetPhi();
+  for ( int i=0; i<n_track; i++ ) {
+    THaTrack* theTrack = static_cast<THaTrack*>( tracks[i] );
+    Double_t pathl=kBig, xc=kBig, yc=kBig;
+    Double_t dx=0.; // unused
+    Int_t pad=-1;   // unused
 
-    fTRX = ( fpe_x + fpe_th * fOrigin.Z() ) / 
-      ( cos_angle * (1.0 + fpe_th * tan_angle) );
-    fTRY = fpe_y + fpe_ph * fOrigin.Z() - fpe_ph * sin_angle * fTRX;
-   }
+    CalcTrackIntercept(theTrack, pathl, xc, yc);
+    // if it hit or not, store the information (defaults if no hit)
+    new ( (*fTrackProj)[i] ) THaTrackProj(xc,yc,pathl,dx,pad,this);
+  }
 
   return 0;
 }
 //_____________________________________________________________________________
-Int_t THaShower::FineProcess( TClonesArray& /* tracks */ )
+Int_t THaShower::FineProcess( TClonesArray& tracks )
 {
   // Fine Shower processing.
-  // Not implemented. Does nothing, returns 0.
+
+  // Redo the track-matching, since tracks might have been thrown out
+  // during the FineTracking stage.
+  fTrackProj->Clear();
+  int n_track = tracks.GetLast()+1;   // Number of reconstructed tracks
+
+  for ( int i=0; i<n_track; i++ ) {
+    THaTrack* theTrack = static_cast<THaTrack*>( tracks[i] );
+    Double_t pathl=kBig, xc=kBig, yc=kBig;
+    Double_t dx=0.; // unused
+    Int_t pad=-1;   // unused
+
+    CalcTrackIntercept(theTrack, pathl, xc, yc);
+    // if it hit or not, store the information (defaults if no hit)
+    new ( (*fTrackProj)[i] ) THaTrackProj(xc,yc,pathl,dx,pad,this);
+  }
 
   return 0;
 }
 
-///////////////////////////////////////////////////////////////////////////////
+//_____________________________________________________________________________
+Int_t THaShower::GetNTracks() const
+{
+  return fTrackProj->GetLast()+1;
+}
 
+//_____________________________________________________________________________
+ClassImp(THaShower)

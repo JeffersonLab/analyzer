@@ -9,6 +9,8 @@
 
 #include "THaPidDetector.h"
 
+class TClonesArray;
+
 class THaShower : public THaPidDetector {
 
 public:
@@ -24,6 +26,9 @@ public:
           Float_t    GetE() const      { return fE; }
           Float_t    GetX() const      { return fX; }
           Float_t    GetY() const      { return fY; }
+
+  Int_t GetNTracks() const;  // Number of tracks crossing this detector
+  const TClonesArray* GetTrackHits() const { return fTrackProj; }
 
 protected:
 
@@ -60,18 +65,18 @@ protected:
   Int_t      fMult;      // Number of blocks in main cluster
   Int_t*     fNblk;      // [fNclublk] Numbers of blocks composing main cluster
   Float_t*   fEblk;      // [fNclublk] Energies of blocks composing main cluster
-  Float_t    fTRX;       // x position of track cross point
-  Float_t    fTRY;       // y position of track cross point
 
   // Useful derived quantities for internal usage.
 
   Double_t tan_angle, sin_angle, cos_angle;
 
+  TClonesArray*  fTrackProj;  // projection of track onto shower plane
+
   void           ClearEvent();
   void           DeleteArrays();
   virtual Int_t  ReadDatabase( const TDatime& date );
   virtual Int_t  DefineVariables( EMode mode = kDefine );
-  
+
   ClassDef(THaShower,0)     //Generic shower detector class
 };
 
