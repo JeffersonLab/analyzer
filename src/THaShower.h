@@ -66,10 +66,6 @@ protected:
   Int_t*     fNblk;      // [fNclublk] Numbers of blocks composing main cluster
   Float_t*   fEblk;      // [fNclublk] Energies of blocks composing main cluster
 
-  // Useful derived quantities for internal usage.
-
-  Double_t tan_angle, sin_angle, cos_angle;
-
   TClonesArray*  fTrackProj;  // projection of track onto shower plane
 
   void           ClearEvent();

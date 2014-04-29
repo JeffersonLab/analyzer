@@ -166,9 +166,6 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
   fscanf ( fi, "%15f", &angle );                       // Rotation angle of det
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
   const Double_t degrad = TMath::Pi()/180.0;
-  tan_angle = TMath::Tan(angle*degrad);
-  sin_angle = TMath::Sin(angle*degrad);
-  cos_angle = TMath::Cos(angle*degrad);
 
   DefineAxes(angle*degrad);
 

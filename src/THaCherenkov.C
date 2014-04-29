@@ -21,8 +21,6 @@
 #include <cstdlib>
 #include <cstdio>
 
-ClassImp(THaCherenkov)
-
 //_____________________________________________________________________________
 THaCherenkov::THaCherenkov( const char* name, const char* description,
 			    THaApparatus* apparatus )
@@ -54,7 +52,7 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
   fscanf ( fi, "%5d", &nelem );                      // Number of mirrors
 
-  // Reinitialization only possible for same basic configuration 
+  // Reinitialization only possible for same basic configuration
   if( fIsInit && nelem != fNelem ) {
     Error( Here(here), "Cannot re-initalize with different number of mirrors. "
 	   "(was: %d, now: %d). Detector not re-initialized.", fNelem, nelem );
@@ -63,7 +61,7 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
   }
   fNelem = nelem;
 
-  // Read detector map.  Assumes that the first half of the entries 
+  // Read detector map.  Assumes that the first half of the entries
   // is for ADCs, and the second half, for TDCs
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
   int i = 0;
@@ -78,14 +76,14 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
 
     if( crate < 0 ) break;
     if( fDetMap->AddModule( crate, slot, first, last, first_chan, model ) < 0 ) {
-      Error( Here(here), "Too many DetMap modules (maximum allowed - %d).", 
+      Error( Here(here), "Too many DetMap modules (maximum allowed - %d).",
 	     THaDetMap::kDetMapSize);
       fclose(fi);
       return kInitError;
     }
   }
   fgets ( buf, LEN, fi );
-  
+
   // Read geometry
 
   Float_t x,y,z;
@@ -99,9 +97,6 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
   fscanf ( fi, "%15f", &angle );                       // Rotation angle of det
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
   const Double_t degrad = TMath::Pi()/180.0;
-  tan_angle = TMath::Tan(angle*degrad);
-  sin_angle = TMath::Sin(angle*degrad);
-  cos_angle = TMath::Cos(angle*degrad);
 
   DefineAxes(angle*degrad);
 
@@ -123,13 +118,13 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
   }
 
   // Read calibrations
-  for (i=0;i<fNelem;i++) 
+  for (i=0;i<fNelem;i++)
     fscanf( fi, "%15f", fOff+i );                   // TDC offsets
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  for (i=0;i<fNelem;i++) 
+  for (i=0;i<fNelem;i++)
     fscanf( fi, "%15f", fPed+i );                   // ADC pedestals
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  for (i=0;i<fNelem;i++) 
+  for (i=0;i<fNelem;i++)
     fscanf( fi, "%15f", fGain+i);                   // ADC gains
   fgets ( buf, LEN, fi );
 
@@ -191,7 +186,7 @@ void THaCherenkov::DeleteArrays()
 }
 
 //_____________________________________________________________________________
-inline 
+inline
 void THaCherenkov::ClearEvent()
 {
   // Reset all local data to prepare for next event.
@@ -214,7 +209,7 @@ Int_t THaCherenkov::Decode( const THaEvData& evdata )
 {
   // Decode Cherenkov data, correct TDC times and ADC amplitudes, and copy
   // the data into the local data members.
-  // This implementation assumes that the first half of the detector map 
+  // This implementation assumes that the first half of the detector map
   // entries corresponds to ADCs, and the second half, to TDCs.
 
   ClearEvent();
@@ -223,7 +218,7 @@ Int_t THaCherenkov::Decode( const THaEvData& evdata )
   for( Int_t i = 0; i < fDetMap->GetSize(); i++ ) {
     THaDetMap::Module* d = fDetMap->GetModule( i );
     bool adc = (d->model ? fDetMap->IsADC(d) : i < fDetMap->GetSize()/2 );
-    
+
     // Loop over all channels that have a hit.
     for( Int_t j = 0; j < evdata.GetNumChan( d->crate, d->slot ); j++) {
 
@@ -269,7 +264,7 @@ Int_t THaCherenkov::Decode( const THaEvData& evdata )
       printf("  Mirror TDC   ADC  ADC_p  ");
     }
     printf("\n");
-    
+
     for (int i=0; i<(fNelem+ncol-1)/ncol; i++ ) {
       for (int c=0; c<ncol; c++) {
 	int ind = c*fNelem/ncol+i;
@@ -283,7 +278,7 @@ Int_t THaCherenkov::Decode( const THaEvData& evdata )
       printf("\n");
     }
   }
-  
+
   return fNThit;
 }
 
@@ -292,9 +287,9 @@ Int_t THaCherenkov::CoarseProcess( TClonesArray& tracks )
 {
   // Reconstruct coordinates of where a particle track crosses
   // the Cherenkov plane, and copy the point into the fTrackProj array.
-  //
+
   // Calculation of coordinates of particle track cross point with Cherenkov
-  // plane in the detector coordinate system. For this, parameters of track 
+  // plane in the detector coordinate system. For this, parameters of track
   // reconstructed in THaVDC::CrudeTrack() are used.
 
   int n_track = tracks.GetLast()+1;   // Number of reconstructed tracks
@@ -304,7 +299,7 @@ Int_t THaCherenkov::CoarseProcess( TClonesArray& tracks )
     Double_t pathl=kBig, xc=kBig, yc=kBig;
     Double_t dx=0.; // unused
     Int_t pad=-1;   // unused
-    
+
     CalcTrackIntercept(theTrack, pathl, xc, yc);
     // if it hit or not, store the information (defaults if no hit)
     new ( (*fTrackProj)[i] ) THaTrackProj(xc,yc,pathl,dx,pad,this);
@@ -317,6 +312,7 @@ Int_t THaCherenkov::CoarseProcess( TClonesArray& tracks )
 Int_t THaCherenkov::FineProcess( TClonesArray& tracks )
 {
   // Fine Cherenkov processing.
+
   // Redo the track-matching, since tracks might have been thrown out
   // during the FineTracking stage.
   fTrackProj->Clear();
@@ -327,7 +323,7 @@ Int_t THaCherenkov::FineProcess( TClonesArray& tracks )
     Double_t pathl=kBig, xc=kBig, yc=kBig;
     Double_t dx=0.; // unused
     Int_t pad=-1;   // unused
-    
+
     CalcTrackIntercept(theTrack, pathl, xc, yc);
     // if it hit or not, store the information (defaults if no hit)
     new ( (*fTrackProj)[i] ) THaTrackProj(xc,yc,pathl,dx,pad,this);
@@ -341,4 +337,6 @@ Int_t THaCherenkov::GetNTracks() const
 {
   return fTrackProj->GetLast()+1;
 }
-///////////////////////////////////////////////////////////////////////////////
+
+//_____________________________________________________________________________
+ClassImp(THaCherenkov)

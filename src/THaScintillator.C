@@ -10,13 +10,12 @@
 #include "THaScintillator.h"
 #include "THaEvData.h"
 #include "THaDetMap.h"
+#include "THaTrackProj.h"
 #include "VarDef.h"
 #include "VarType.h"
 #include "THaTrack.h"
 #include "TClonesArray.h"
 #include "TMath.h"
-
-#include "THaTrackProj.h"
 
 #include <cstring>
 #include <cstdio>
@@ -42,7 +41,7 @@ THaScintillator::THaScintillator( const char* name, const char* description,
 //     fLGain(0), fRGain(0), fTWalkPar(0), fAdcMIP(0), fTrigOff(0),
 //     fLT(0), fLT_c(0), fRT(0), fRT_c(0), fLA(0), fLA_p(0), fLA_c(0),
 //     fRA(0), fRA_p(0), fRA_c(0), fHitPad(0), fTime(0), fdTime(0), fAmpl(0),
-//     fYt(0), fYa(0), fTrackProj(0), tan_angle(0), sin_angle(0), cos_angle(0)
+//     fYt(0), fYa(0), fTrackProj(0)
 // {
 //   // Default constructor (for ROOT I/O)
 
@@ -78,7 +77,7 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   char buf[LEN];
   Int_t nelem;
 
-  // Read data from database 
+  // Read data from database
   FILE* fi = OpenFile( date );
   if( !fi ) return kFileError;
 
@@ -86,7 +85,7 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   fscanf ( fi, "%5d", &nelem );                        // Number of  paddles
   fgets ( buf, LEN, fi );
 
-  // Reinitialization only possible for same basic configuration 
+  // Reinitialization only possible for same basic configuration
   if( fIsInit && nelem != fNelem ) {
     Error( Here(here), "Cannot re-initalize with different number of paddles. "
 	   "(was: %d, now: %d). Detector not re-initialized.", fNelem, nelem );
@@ -96,7 +95,7 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   fNelem = nelem;
 
   // Read detector map. Unless a model-number is given
-  // for the detector type, this assumes that the first half of the entries 
+  // for the detector type, this assumes that the first half of the entries
   // are for ADCs and the second half, for TDCs.
   while ( ReadComment( fi, buf, LEN ) ) {}
   int i = 0;
@@ -106,13 +105,13 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
     Int_t first_chan, model;
     Int_t crate, slot, first, last;
     fgets ( buf, LEN, fi );
-    sscanf( buf, "%6d %6d %6d %6d %6d %n", 
+    sscanf( buf, "%6d %6d %6d %6d %6d %n",
 	    &crate, &slot, &first, &last, &first_chan, &pos );
     if( crate < 0 ) break;
     model=atoi(buf+pos); // if there is no model number given, set to zero
-    
+
     if( fDetMap->AddModule( crate, slot, first, last, first_chan, model ) < 0 ) {
-      Error( Here(here), "Too many DetMap modules (maximum allowed - %d).", 
+      Error( Here(here), "Too many DetMap modules (maximum allowed - %d).",
 	     THaDetMap::kDetMapSize);
       fclose(fi);
       return kInitError;
@@ -134,9 +133,6 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   fscanf ( fi, "%15f", &angle );                   // Rotation angle of detector
   fgets ( buf, LEN, fi );
   const Float_t degrad = TMath::Pi()/180.0;
-  tan_angle = TMath::Tan(angle*degrad);
-  sin_angle = TMath::Sin(angle*degrad);
-  cos_angle = TMath::Cos(angle*degrad);
 
   DefineAxes(angle*degrad);
 
@@ -167,14 +163,14 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
     fNTWalkPar = 2*fNelem; // 1 paramter per paddle
     fTWalkPar = new Double_t[ fNTWalkPar ];
 
-    fHitPad = new Int_t[ fNelem ];   
+    fHitPad = new Int_t[ fNelem ];
     fTime   = new Double_t[ fNelem ]; // analysis indexed by paddle (yes, inefficient)
     fdTime  = new Double_t[ fNelem ];
     fAmpl   = new Double_t[ fNelem ];
-    
+
     fYt     = new Double_t[ fNelem ];
     fYa     = new Double_t[ fNelem ];
-    
+
     fIsInit = true;
   }
   memset(fTrigOff,0,fNelem*sizeof(fTrigOff[0]));
@@ -182,7 +178,7 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   // Set DEFAULT values here
   // TDC resolution (s/channel)
   fTdc2T = 0.1e-9;      // seconds/channel
-  fResolution = fTdc2T; // actual timing resolution 
+  fResolution = fTdc2T; // actual timing resolution
   // Speed of light in the scintillator material
   fCn = 1.7e+8;    // meters/second
   // Attenuation length
@@ -193,8 +189,8 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   for (int i=0; i<fNTWalkPar; i++) fTWalkPar[i]=0;
   // trigger-timing offsets (s)
   for (int i=0; i<fNelem; i++) fTrigOff[i]=0;
-  
-  
+
+
   DBRequest list[] = {
     { "TDC_offsetsL", fLOff, kDouble, static_cast<UInt_t>(fNelem) },
     { "TDC_offsetsR", fROff, kDouble, static_cast<UInt_t>(fNelem) },
@@ -218,13 +214,13 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
     goto exit;  // the new database existed -- we're finished
   }
 #endif
-  
+
   // otherwise, gHaDB is unavailable, use the old file database
-  
+
   // Read in the timing/adc calibration constants
   // For fine-tuning of these data, we seek to a matching time stamp, or
   // if no time stamp found, to a "configuration" section. Examples:
-  // 
+  //
   // [ 2002-10-10 15:30:00 ]
   // #comment line goes here
   // <left TDC offsets>
@@ -244,39 +240,39 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   //
   //
   // or
-  // 
+  //
   // [ config=highmom ]
   // comment line
   // ...etc.
   //
-  if( SeekDBdate( fi, date ) == 0 && fConfig.Length() > 0 && 
+  if( SeekDBdate( fi, date ) == 0 && fConfig.Length() > 0 &&
       SeekDBconfig( fi, fConfig.Data() )) {}
 
   while ( ReadComment( fi, buf, LEN ) ) {}
   // Read calibration data
-  for (i=0;i<fNelem;i++) 
+  for (i=0;i<fNelem;i++)
     fscanf(fi,"%15lf",fLOff+i);                    // Left Pads TDC offsets
   fgets ( buf, LEN, fi );   // finish line
   while ( ReadComment( fi, buf, LEN ) ) {}
-  for (i=0;i<fNelem;i++) 
+  for (i=0;i<fNelem;i++)
     fscanf(fi,"%15lf",fROff+i);                    // Right Pads TDC offsets
   fgets ( buf, LEN, fi );   // finish line
   while ( ReadComment( fi, buf, LEN ) ) {}
-  for (i=0;i<fNelem;i++) 
+  for (i=0;i<fNelem;i++)
     fscanf(fi,"%15lf",fLPed+i);                    // Left Pads ADC Pedest-s
   fgets ( buf, LEN, fi );   // finish line, etc.
   while ( ReadComment( fi, buf, LEN ) ) {}
-  for (i=0;i<fNelem;i++) 
+  for (i=0;i<fNelem;i++)
     fscanf(fi,"%15lf",fRPed+i);                    // Right Pads ADC Pedes-s
   fgets ( buf, LEN, fi );
   while ( ReadComment( fi, buf, LEN ) ) {}
-  for (i=0;i<fNelem;i++) 
+  for (i=0;i<fNelem;i++)
     fscanf (fi,"%15lf",fLGain+i);                  // Left Pads ADC Coeff-s
   fgets ( buf, LEN, fi );
   while ( ReadComment( fi, buf, LEN ) ) {}
-  for (i=0;i<fNelem;i++) 
+  for (i=0;i<fNelem;i++)
     fscanf (fi,"%15lf",fRGain+i);                  // Right Pads ADC Coeff-s
-  fgets ( buf, LEN, fi ); 
+  fgets ( buf, LEN, fi );
 
 
   while ( ReadComment( fi, buf, LEN ) ) {}
@@ -291,17 +287,17 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   // Speed of light in the scintillator material
   if ( !fgets(buf, LEN, fi) ||  strchr(buf,'[') ) goto exit;
   sscanf(buf,"%15lf",&fCn);
-  
+
   // Attenuation length (inverse meters)
   while ( ReadComment( fi, buf, LEN ) ) {}
   if ( !fgets ( buf, LEN, fi ) ||  strchr(buf,'[') ) goto exit;
   sscanf(buf,"%15lf",&fAttenuation);
-  
+
   while ( ReadComment( fi, buf, LEN ) ) {}
   // Time-walk correction parameters
   if ( !fgets(buf, LEN, fi) ||  strchr(buf,'[') ) goto exit;
   sscanf(buf,"%15lf",&fAdcMIP);
-  
+
   while ( ReadComment( fi, buf, LEN ) ) {}
   // timewalk parameters
   {
@@ -329,7 +325,7 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
       }
     }
   }
-  
+
  exit:
   fclose(fi);
 
@@ -346,7 +342,7 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
       cout << endl;
     }
   }
-  
+
   return kOK;
 }
 
@@ -424,7 +420,7 @@ void THaScintillator::DeleteArrays()
   delete [] fRT;      fRT      = NULL;
   delete [] fLT_c;    fLT_c    = NULL;
   delete [] fLT;      fLT      = NULL;
-  
+
   delete [] fRGain;   fRGain   = NULL;
   delete [] fLGain;   fLGain   = NULL;
   delete [] fRPed;    fRPed    = NULL;
@@ -442,7 +438,7 @@ void THaScintillator::DeleteArrays()
 }
 
 //_____________________________________________________________________________
-inline 
+inline
 void THaScintillator::ClearEvent()
 {
   // Reset per-event data.
@@ -462,14 +458,14 @@ void THaScintillator::ClearEvent()
   memset( fRA, 0, lf );                   // Right paddles ADCs
   memset( fRA_p, 0, lf );                 // Right paddles ADC minus pedestal
   memset( fRA_c, 0, lf );                 // Right paddles corrected ADCs
-  
+
   fNhit = 0;
   memset( fHitPad, 0, fNelem*sizeof(fHitPad[0]) );
   memset( fTime, 0, lf );
   memset( fdTime, 0, lf );
   memset( fYt, 0, lf );
   memset( fYa, 0, lf );
-  
+
   fTrackProj->Clear();
 }
 
@@ -479,7 +475,7 @@ Int_t THaScintillator::Decode( const THaEvData& evdata )
   // Decode scintillator data, correct TDC times and ADC amplitudes, and copy
   // the data to the local data members.
   // This implementation makes the following assumptions about the detector map:
-  // - The first half of the map entries corresponds to ADCs, 
+  // - The first half of the map entries corresponds to ADCs,
   //   the second half, to TDCs.
   // - The first fNelem detector channels correspond to the PMTs on the
   //   right hand side, the next fNelem channels, to the left hand side.
@@ -499,7 +495,7 @@ Int_t THaScintillator::Decode( const THaEvData& evdata )
       Int_t chan = evdata.GetNextChan( d->crate, d->slot, j );
       if( chan < d->lo || chan > d->hi ) continue;     // Not one of my channels
 
-#ifdef WITH_DEBUG      
+#ifdef WITH_DEBUG
       Int_t nhit = evdata.GetNumHits(d->crate, d->slot, chan);
       if( nhit > 1 )
 	Warning( Here("Decode"), "%d hits on %s channel %d/%d/%d",
@@ -509,9 +505,9 @@ Int_t THaScintillator::Decode( const THaEvData& evdata )
       Int_t data = evdata.GetData( d->crate, d->slot, chan, 0 );
 
       // Get the detector channel number, starting at 0
-      Int_t k = d->first + chan - d->lo - 1;   
+      Int_t k = d->first + chan - d->lo - 1;
 
-#ifdef WITH_DEBUG      
+#ifdef WITH_DEBUG
       if( k<0 || k>NDEST*fNelem ) {
 	// Indicates bad database
 	Warning( Here("Decode()"), "Illegal detector channel: %d", k );
@@ -543,14 +539,14 @@ Int_t THaScintillator::Decode( const THaEvData& evdata )
 	     i+1,fLT[i],fLA[i],fLA_p[i],fRT[i],fRA[i],fRA_p[i]);
     }
   }
-  
+
   return fLTNhit+fRTNhit;
 }
 
 //_____________________________________________________________________________
 Int_t THaScintillator::ApplyCorrections( void )
 {
-  // Apply the ADC/TDC corrections to get the 'REAL' relevant 
+  // Apply the ADC/TDC corrections to get the 'REAL' relevant
   // TDC and ADC values. No tracking needs to have been done yet.
   //
   // Permits the dividing up of the decoding step (events could come from
@@ -599,14 +595,14 @@ Double_t THaScintillator::TimeWalkCorrection(const Int_t& paddle,
 
   // get the ADC value above the pedestal
   if ( adc <=0. ) return 0.;
-  
+
   // we have an arbitrary timing offset, and will declare here that
   // for a MIP ( peak ~2000 ADC channels ) the timewalk correction is 0
-  
+
   Double_t ref = fAdcMIP;
   Double_t tw(0), tw_ref(0.);
   int npar = fNTWalkPar/(2*fNelem);
-  
+
   Double_t *par = &(fTWalkPar[npar*(side*fNelem+paddle)]);
 
   tw = par[0]*pow(adc,-.5);
@@ -619,13 +615,13 @@ Double_t THaScintillator::TimeWalkCorrection(const Int_t& paddle,
 Int_t THaScintillator::CoarseProcess( TClonesArray& /* tracks */ )
 {
   // Calculation of coordinates of particle track cross point with scint
-  // plane in the detector coordinate system. For this, parameters of track 
+  // plane in the detector coordinate system. For this, parameters of track
   // reconstructed in THaVDC::CoarseTrack() are used.
   //
   // Apply corrections and reconstruct the complete hits.
   //
   static const Double_t sqrt2 = TMath::Sqrt(2.);
-  
+
   ApplyCorrections();
 
   // count the number of paddles with complete TDC hits
@@ -647,7 +643,7 @@ Int_t THaScintillator::CoarseProcess( TClonesArray& /* tracks */ )
 	/ fSize[2];
     }
   }
-  
+
   return 0;
 }
 
@@ -660,27 +656,27 @@ Int_t THaScintillator::FineProcess( TClonesArray& tracks )
   // Units of measurements are meters.
 
   // Calculation of coordinates of particle track cross point with scint
-  // plane in the detector coordinate system. For this, parameters of track 
+  // plane in the detector coordinate system. For this, parameters of track
   // reconstructed in THaVDC::FineTrack() are used.
 
   int n_track = tracks.GetLast()+1;   // Number of reconstructed tracks
-  
+
   Double_t dpadx = (2.*fSize[0])/(fNelem); // width of a paddle
   // center of paddle '0'
   Double_t padx0 = -dpadx*(fNelem-1)*.5;
-  
+
   for ( int i=0; i<n_track; i++ ) {
     THaTrack* theTrack = static_cast<THaTrack*>( tracks[i] );
 
     Double_t pathl=kBig, xc=kBig, yc=kBig, dx=kBig;
     Int_t pad=-1;
-    
+
     if ( ! CalcTrackIntercept(theTrack, pathl, xc, yc) ) { // failed to hit
       new ( (*fTrackProj)[i] )
 	THaTrackProj(xc,yc,pathl,dx,pad,this);
       continue;
     }
-    
+
     // xc, yc are the positions of the track intercept
     //  _RELATIVE TO THE DETECTOR PLANE's_ origin.
     //
@@ -700,9 +696,15 @@ Int_t THaScintillator::FineProcess( TClonesArray& tracks )
     new ( (*fTrackProj)[i] )
       THaTrackProj(xc,yc,pathl,dx,pad,this);
   }
-  
+
   return 0;
 }
 
+//_____________________________________________________________________________
+Int_t THaScintillator::GetNTracks() const
+{
+  return fTrackProj->GetLast()+1;
+}
+
+//_____________________________________________________________________________
 ClassImp(THaScintillator)
-////////////////////////////////////////////////////////////////////////////////
