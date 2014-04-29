@@ -11,16 +11,16 @@
 
 class THaVDCHit;
 class THaVDCPlane;
-//class THaVDCUVTrack;
-//class THaTrack;
+class THaVDCUVTrack;
+class THaTrack;
 
 class THaVDCCluster : public TObject {
 
 public:
-  THaVDCCluster( THaVDCPlane* owner = NULL ) :
-    fSize(0), fPlane(owner), fSlope(kBig), fSigmaSlope(kBig), fInt(kBig),
-    fSigmaInt(kBig), fT0(0.0), fSigmaT0(kBig), fPivot(NULL),
-    fTimeCorrection(0.0),
+  THaVDCCluster( THaVDCPlane* owner = 0 ) :
+    fSize(0), fPlane(owner), fUVTrack(0), fTrack(0),
+    fSlope(kBig), fSigmaSlope(kBig), fInt(kBig), fSigmaInt(kBig),
+    fT0(0.0), fSigmaT0(kBig), fPivot(0), fTimeCorrection(0.0),
     fFitOK(false), fLocalSlope(kBig), fChi2(kBig), fNDoF(0.0)  {}
   THaVDCCluster( const THaVDCCluster& );
   THaVDCCluster& operator=( const THaVDCCluster& );
@@ -34,7 +34,6 @@ public:
   virtual void   FitTrack( EMode mode = kSimple );
   virtual void   ClearFit();
   virtual void   CalcChisquare(Double_t& chi2, Int_t& nhits) const;
-
 
   // TObject functions redefined
   virtual void   Clear( Option_t* opt="" );
@@ -55,16 +54,19 @@ public:
   THaVDCHit*     GetPivot()          const { return fPivot; }
   Int_t          GetPivotWireNum()   const;
   Double_t       GetTimeCorrection() const { return fTimeCorrection; }
-  
+  THaVDCUVTrack* GetUVTrack()        const { return fUVTrack; }
+  THaTrack*      GetTrack()          const { return fTrack; }
+  Int_t          GetTrackIndex()     const;
+
   bool           IsFitOK()           const { return fFitOK; }
 
   void           SetPlane( THaVDCPlane* plane )     { fPlane = plane; }
   void           SetIntercept( Double_t intercept ) { fInt = intercept; }
-  void           SetSlope( Double_t slope)          { fSlope = slope;}
-  void           SetPivot( THaVDCHit* piv)          { fPivot = piv; }
-  void           SetTimeCorrection(Double_t deltat) { fTimeCorrection = deltat; }
-  //    void SetUVTrack(THaVDCUVTrack * uvtrack) {fUVTrack = uvtrack;} 
-  //    void SetTrack(THaTrack * track) {fTrack = track;} 
+  void           SetSlope( Double_t slope )         { fSlope = slope;}
+  void           SetPivot( THaVDCHit* piv )         { fPivot = piv; }
+  void           SetTimeCorrection( Double_t tc )   { fTimeCorrection = tc; }
+  void           SetUVTrack( THaVDCUVTrack* uvtrk ) { fUVTrack = uvtrk; }
+  void           SetTrack( THaTrack* track )        { fTrack = track; }
 
 protected:
   static const Int_t MAX_SIZE = 16;  // Assume no more than 16 hits per cluster
@@ -73,8 +75,8 @@ protected:
   Int_t          fSize;              // Size of cluster (no. of hits)
   THaVDCHit*     fHits[MAX_SIZE];    // [fSize] Hits associated w/this cluster
   THaVDCPlane*   fPlane;             // Plane the cluster belongs to
-  //  THaVDCUVTrack * fUVTrack;      // UV Track the cluster belongs to
-  //  THaTrack * fTrack;             // Track the cluster belongs to
+  THaVDCUVTrack* fUVTrack;           // UV Track the cluster belongs to
+  THaTrack*      fTrack;             // Track the cluster belongs to
 
   //Track Parameters 
   Double_t       fSlope, fSigmaSlope;// Slope and error in slope

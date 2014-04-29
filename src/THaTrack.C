@@ -41,6 +41,7 @@ void THaTrack::Clear( const Option_t* opt )
     fTX = fTY = fTTheta = fTPhi = kBig;
     fDX = fDY = fDTheta = fDPhi = kBig;
     fNclusters = fFlag = fType = 0;
+    fIndex = -1;
     if( fPIDinfo ) fPIDinfo->Clear( opt );
     fPvect.SetXYZ( kBig, kBig, kBig );
     fVertex.SetXYZ( kBig, kBig, kBig );
@@ -110,4 +111,3 @@ Int_t THaTrack::Compare(const TObject * obj) const
 //_____________________________________________________________________________
 
 ClassImp(THaTrack)
-

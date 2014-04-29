@@ -18,7 +18,7 @@ class THaVDCUVTrack : public THaCluster {
 
 public:
   THaVDCUVTrack() :
-    fUClust(NULL), fVClust(NULL), fUVPlane(NULL), fTrack(NULL), fPartner(NULL),
+    fUClust(0), fVClust(0), fUVPlane(0), fTrack(0), fPartner(0),
     fX(0.0), fY(0.0), fTheta(0.0), fPhi(0.0) {}
 
   virtual ~THaVDCUVTrack() {}
@@ -34,13 +34,14 @@ public:
   Double_t       GetY()        const { return fY; }
   Double_t       GetTheta()    const { return fTheta; }
   Double_t       GetPhi()      const { return fPhi; } 
+  Int_t          GetTrackIndex() const;
 
   void CalcChisquare(Double_t &chi2, Int_t &nhits) const;
 
   void SetUCluster( THaVDCCluster* clust)  { fUClust = clust;}
   void SetVCluster( THaVDCCluster* clust)  { fVClust = clust;}
   void SetUVPlane( THaVDCUVPlane* plane)   { fUVPlane = plane;}
-  void SetTrack( THaTrack* track)          { fTrack = track; }
+  void SetTrack( THaTrack* track);
   void SetPartner( THaVDCUVTrack* partner) { fPartner = partner;}
 
   void SetX( Double_t x )                  { fX = x;}
@@ -51,7 +52,6 @@ public:
   { fX = x; fY = y; fTheta = theta; fPhi = phi; }
   void Set( Double_t x, Double_t y, Double_t theta, Double_t phi,
 	    const TVector3& offset );
-
 
 protected:
   THaVDCCluster* fUClust;       // Cluster in the U plane

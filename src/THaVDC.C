@@ -567,7 +567,9 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 	//	theTrack->SetCreator( this );
 	theTrack->AddCluster( track );
 	theTrack->AddCluster( partner );
-	if( theStage == kFine ) 
+	track->SetTrack( theTrack );
+	partner->SetTrack( theTrack );
+	if( theStage == kFine )
 	  flag |= kReassigned;
       }
       
@@ -616,6 +618,13 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
     // FIXME: Is this really what we want?
     if( modified )
       tracks->Compress();
+  }
+
+  // Assign index to each track (0 = first/"best", 1 = second, etc.)
+  for( int i = 0; i < tracks->GetLast()+1; i++ ) {
+    THaTrack* theTrack = static_cast<THaTrack*>( tracks->At(i) );
+    assert( theTrack );
+    theTrack->SetIndex(i);
   }
 
   return nTracks;

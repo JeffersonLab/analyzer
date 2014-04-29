@@ -266,6 +266,7 @@ Int_t THaVDCPlane::DefineVariables( EMode mode )
     { "clchi2", "Cluster chi2",               "fClusters.THaVDCCluster.fChi2" },
     { "clndof", "Cluster NDoF",               "fClusters.THaVDCCluster.fNDoF" },
     { "cltcor", "Cluster Time correction",    "fClusters.THaVDCCluster.fTimeCorrection" },
+    { "cltrnum","No of track assoc w/cluster", "fClusters.THaVDCCluster.GetTrackIndex()" },
     { 0 }
   };
   return DefineVarsFromList( vars, mode );

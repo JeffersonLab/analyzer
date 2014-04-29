@@ -9,8 +9,7 @@
 #include "THaVDCUVTrack.h"
 #include "THaVDCUVPlane.h"
 #include "THaVDCCluster.h"
-
-ClassImp(THaVDCUVTrack)
+#include "THaTrack.h"
 
 //_____________________________________________________________________________
 void THaVDCUVTrack::CalcDetCoords()
@@ -62,4 +61,25 @@ void THaVDCUVTrack::CalcChisquare(Double_t& chi2, Int_t& nhits) const
   fVClust->CalcChisquare(chi2,nhits);
 }
   
-////////////////////////////////////////////////////////////////////////////////
+//_____________________________________________________________________________
+void THaVDCUVTrack::SetTrack( THaTrack* track )
+{
+  // Associate this cluster as well as the underlying U and V clusters
+  // with a reconstructed track
+
+  fTrack = track;
+  if( fUClust ) fUClust->SetTrack(track);
+  if( fVClust ) fVClust->SetTrack(track);
+}
+
+//_____________________________________________________________________________
+Int_t THaVDCUVTrack::GetTrackIndex() const
+{
+  // Return index of assigned track (-1 = none, 0 = first/best, etc.)
+
+  if( !fTrack ) return -1;
+  return fTrack->GetIndex();
+}
+
+//_____________________________________________________________________________
+ClassImp(THaVDCUVTrack)

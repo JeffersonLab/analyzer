@@ -23,8 +23,9 @@ const Double_t THaVDCCluster::kBig = 1e38;  // Arbitrary large value
 //_____________________________________________________________________________
 THaVDCCluster::THaVDCCluster( const THaVDCCluster& rhs ) :
   TObject(rhs),
-  fSize(rhs.fSize), fPlane(rhs.fPlane), fSlope(rhs.fSlope), 
-  fSigmaSlope(rhs.fSigmaSlope), fInt(rhs.fInt), fSigmaInt(rhs.fSigmaInt), 
+  fSize(rhs.fSize), fPlane(rhs.fPlane), fUVTrack(0), fTrack(0),
+  fSlope(rhs.fSlope), fSigmaSlope(rhs.fSigmaSlope),
+  fInt(rhs.fInt), fSigmaInt(rhs.fSigmaInt),
   fT0(rhs.fT0), fSigmaT0(rhs.fSigmaT0), fPivot(rhs.fPivot), 
   fTimeCorrection(rhs.fTimeCorrection), fFitOK(rhs.fFitOK),
   fLocalSlope(rhs.fLocalSlope), fChi2(rhs.fChi2), fNDoF(rhs.fNDoF)
@@ -45,6 +46,8 @@ THaVDCCluster& THaVDCCluster::operator=( const THaVDCCluster& rhs )
   if( this != &rhs ) {
     fSize       = rhs.fSize;
     fPlane      = rhs.fPlane;
+    fUVTrack    = rhs.fUVTrack;
+    fTrack      = rhs.fTrack;
     fSlope      = rhs.fSlope;
     fSigmaSlope = rhs.fSigmaSlope;
     fInt        = rhs.fInt;
@@ -88,11 +91,10 @@ void THaVDCCluster::Clear( const Option_t* )
 
   ClearFit();
   fSize  = 0;
-  fPivot = NULL;
-  fPlane = NULL;
-//    fUVTrack = NULL;
-//    fTrack = NULL;
-
+  fPivot = 0;
+  fPlane = 0;
+  fUVTrack = 0;
+  fTrack = 0;
 }
 
 //_____________________________________________________________________________
@@ -201,6 +203,15 @@ void THaVDCCluster::CalcDist()
   }
 }
   
+//_____________________________________________________________________________
+Int_t THaVDCCluster::GetTrackIndex() const
+{
+  // Return index of assigned track (-1 = none, 0 = first/best, etc.)
+
+  if( !fTrack ) return -1;
+  return fTrack->GetIndex();
+}
+
 //_____________________________________________________________________________
 void THaVDCCluster::FitTrack( EMode /* mode */ )
 {

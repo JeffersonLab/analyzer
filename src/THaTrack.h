@@ -34,7 +34,7 @@ public:
   THaTrack() 
     : TObject(),
       fX(kBig), fY(kBig), fTheta(kBig), fPhi(kBig), fP(kBig),
-      fNclusters(0), fPIDinfo(0), fCreator(0), 
+      fNclusters(0), fPIDinfo(0), fCreator(0),  fIndex(-1),
       fDX(kBig), fDY(kBig), fDTheta(kBig), fDPhi(kBig),
       fRX(kBig), fRY(kBig), fRTheta(kBig), fRPhi(kBig),
       fTX(kBig), fTY(kBig), fTTheta(kBig), fTPhi(kBig), fDp(kBig),
@@ -51,7 +51,7 @@ public:
 	    THaPIDinfo* pid=0 )
     : TObject(),
       fX(x), fY(y), fTheta(theta), fPhi(phi), fP(kBig),
-      fNclusters(0), fPIDinfo(pid), fCreator(creator), 
+      fNclusters(0), fPIDinfo(pid), fCreator(creator),  fIndex(-1),
       fDX(kBig), fDY(kBig), fDTheta(kBig), fDPhi(kBig),
       fRX(kBig), fRY(kBig), fRTheta(kBig), fRPhi(kBig),
       fTX(kBig), fTY(kBig), fTTheta(kBig), fTPhi(kBig), fDp(kBig),
@@ -70,6 +70,7 @@ public:
   void              Clear( Option_t* opt="" );
   THaTrackingDetector* GetCreator()    const { return fCreator; }
   Int_t             GetNclusters()     const { return fNclusters; }
+  Int_t             GetIndex()         const { return fIndex; }
   THaCluster*       GetCluster( Int_t i )    { return fClusters[i]; }
   UInt_t            GetFlag()          const { return fFlag; }
   UInt_t            GetType()          const { return fType; }
@@ -148,6 +149,7 @@ public:
   void              SetChi2( Double_t chi2, Int_t ndof ) { fChi2=chi2; fNDoF=ndof; }
 
   void              SetCreator( THaTrackingDetector* d ) { fCreator = d; }
+  void              SetIndex( Int_t idx )                { fIndex   = idx; }
   void              SetPIDinfo( THaPIDinfo* pid )        { fPIDinfo = pid; }
   void              SetPvect( const TVector3& pvect )    { fPvect   = pvect; }
   void              SetVertex( const TVector3& vert )     
@@ -177,6 +179,7 @@ protected:
   THaCluster*       fClusters[kMAXCL]; //! Clusters of this track
   THaPIDinfo*       fPIDinfo;        //! Particle ID information for this track
   THaTrackingDetector* fCreator;     //! Detector creating this track
+  Int_t             fIndex;          // Track index (-1 = none, 0 = first, etc.)
 
   // coordinates in the detector system
   Double_t fDX;     // x position in DCS
@@ -217,7 +220,7 @@ protected:
 
   static const Double_t kBig;
   
-  ClassDef(THaTrack,4)       // A generic particle track
+  ClassDef(THaTrack,5)       // A generic particle track
 };
 
 //__________________ inlines __________________________________________________
