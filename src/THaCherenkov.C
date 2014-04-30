@@ -12,7 +12,6 @@
 #include "VarDef.h"
 #include "VarType.h"
 #include "THaTrack.h"
-#include "THaTrackProj.h"
 #include "TClonesArray.h"
 #include "TDatime.h"
 #include "TMath.h"
@@ -27,7 +26,6 @@ THaCherenkov::THaCherenkov( const char* name, const char* description,
   : THaPidDetector(name,description,apparatus)
 {
   // Constructor
-  fTrackProj = new TClonesArray( "THaTrackProj", 5 );
 }
 
 //_____________________________________________________________________________
@@ -201,7 +199,6 @@ void THaCherenkov::ClearEvent()
   memset( fA_c, 0, lf );                  // Corrected ADC amplitudes of chans
   fASUM_p = 0.0;                          // Sum of ADC minus pedestal values
   fASUM_c = 0.0;                          // Sum of corrected ADC amplitudes
-  fTrackProj->Clear();
 }
 
 //_____________________________________________________________________________
@@ -288,22 +285,7 @@ Int_t THaCherenkov::CoarseProcess( TClonesArray& tracks )
   // Reconstruct coordinates of where a particle track crosses
   // the Cherenkov plane, and copy the point into the fTrackProj array.
 
-  // Calculation of coordinates of particle track cross point with Cherenkov
-  // plane in the detector coordinate system. For this, parameters of track
-  // reconstructed in THaVDC::CrudeTrack() are used.
-
-  int n_track = tracks.GetLast()+1;   // Number of reconstructed tracks
-
-  for ( int i=0; i<n_track; i++ ) {
-    THaTrack* theTrack = static_cast<THaTrack*>( tracks[i] );
-    Double_t pathl=kBig, xc=kBig, yc=kBig;
-    Double_t dx=0.; // unused
-    Int_t pad=-1;   // unused
-
-    CalcTrackIntercept(theTrack, pathl, xc, yc);
-    // if it hit or not, store the information (defaults if no hit)
-    new ( (*fTrackProj)[i] ) THaTrackProj(xc,yc,pathl,dx,pad,this);
-  }
+  CalcTrackProj( tracks );
 
   return 0;
 }
@@ -311,31 +293,14 @@ Int_t THaCherenkov::CoarseProcess( TClonesArray& tracks )
 //_____________________________________________________________________________
 Int_t THaCherenkov::FineProcess( TClonesArray& tracks )
 {
-  // Fine Cherenkov processing.
+  // Fine Cherenkov processing
 
-  // Redo the track-matching, since tracks might have been thrown out
+  // Redo the track matching since tracks might have been thrown out
   // during the FineTracking stage.
-  fTrackProj->Clear();
-  int n_track = tracks.GetLast()+1;   // Number of reconstructed tracks
 
-  for ( int i=0; i<n_track; i++ ) {
-    THaTrack* theTrack = static_cast<THaTrack*>( tracks[i] );
-    Double_t pathl=kBig, xc=kBig, yc=kBig;
-    Double_t dx=0.; // unused
-    Int_t pad=-1;   // unused
-
-    CalcTrackIntercept(theTrack, pathl, xc, yc);
-    // if it hit or not, store the information (defaults if no hit)
-    new ( (*fTrackProj)[i] ) THaTrackProj(xc,yc,pathl,dx,pad,this);
-  }
+  CalcTrackProj( tracks );
 
   return 0;
-}
-
-//_____________________________________________________________________________
-Int_t THaCherenkov::GetNTracks() const
-{
-  return fTrackProj->GetLast()+1;
 }
 
 //_____________________________________________________________________________

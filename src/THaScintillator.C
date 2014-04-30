@@ -21,6 +21,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
+#include <cassert>
 
 using namespace std;
 
@@ -31,8 +32,6 @@ THaScintillator::THaScintillator( const char* name, const char* description,
 {
   // Constructor
   fTWalkPar = 0;
-
-  fTrackProj = new TClonesArray( "THaTrackProj", 5 );
 }
 
 //_____________________________________________________________________________
@@ -41,7 +40,7 @@ THaScintillator::THaScintillator( const char* name, const char* description,
 //     fLGain(0), fRGain(0), fTWalkPar(0), fAdcMIP(0), fTrigOff(0),
 //     fLT(0), fLT_c(0), fRT(0), fRT_c(0), fLA(0), fLA_p(0), fLA_c(0),
 //     fRA(0), fRA_p(0), fRA_c(0), fHitPad(0), fTime(0), fdTime(0), fAmpl(0),
-//     fYt(0), fYa(0), fTrackProj(0)
+//     fYt(0), fYa(0)
 // {
 //   // Default constructor (for ROOT I/O)
 
@@ -399,10 +398,6 @@ THaScintillator::~THaScintillator()
     RemoveVariables();
   if( fIsInit )
     DeleteArrays();
-  if (fTrackProj) {
-    fTrackProj->Clear();
-    delete fTrackProj; fTrackProj = 0;
-  }
 }
 
 //_____________________________________________________________________________
@@ -465,8 +460,6 @@ void THaScintillator::ClearEvent()
   memset( fdTime, 0, lf );
   memset( fYt, 0, lf );
   memset( fYa, 0, lf );
-
-  fTrackProj->Clear();
 }
 
 //_____________________________________________________________________________
@@ -544,7 +537,7 @@ Int_t THaScintillator::Decode( const THaEvData& evdata )
 }
 
 //_____________________________________________________________________________
-Int_t THaScintillator::ApplyCorrections( void )
+Int_t THaScintillator::ApplyCorrections()
 {
   // Apply the ADC/TDC corrections to get the 'REAL' relevant
   // TDC and ADC values. No tracking needs to have been done yet.
@@ -579,8 +572,8 @@ Int_t THaScintillator::ApplyCorrections( void )
 }
 
 //_____________________________________________________________________________
-Double_t THaScintillator::TimeWalkCorrection(const Int_t& paddle,
-					     const ESide side)
+Double_t THaScintillator::TimeWalkCorrection( const Int_t& paddle,
+					      const ESide side )
 {
   // Calculate the time-walk correction. The timewalk might be
   // dependent upon the specific PMT, so information about exactly
@@ -612,14 +605,15 @@ Double_t THaScintillator::TimeWalkCorrection(const Int_t& paddle,
 }
 
 //_____________________________________________________________________________
-Int_t THaScintillator::CoarseProcess( TClonesArray& /* tracks */ )
+Int_t THaScintillator::CoarseProcess( TClonesArray& tracks )
 {
-  // Calculation of coordinates of particle track cross point with scint
-  // plane in the detector coordinate system. For this, parameters of track
-  // reconstructed in THaVDC::CoarseTrack() are used.
+  // Scintillator coarse processing:
   //
-  // Apply corrections and reconstruct the complete hits.
-  //
+  // - Apply timewalk corrections
+  // - Calculate rough transverse (y) position and energy deposition for hits
+  //   for which PMTs on both ends of the paddle fired
+  // - Calculate rough track crossing points
+
   static const Double_t sqrt2 = TMath::Sqrt(2.);
 
   ApplyCorrections();
@@ -644,66 +638,58 @@ Int_t THaScintillator::CoarseProcess( TClonesArray& /* tracks */ )
     }
   }
 
+  // Project tracks onto scintillator plane
+  CalcTrackProj( tracks );
+
   return 0;
 }
 
 //_____________________________________________________________________________
 Int_t THaScintillator::FineProcess( TClonesArray& tracks )
 {
-  // Reconstruct coordinates of particle track cross point with scintillator
-  // plane, and copy the data into the following local data structure:
+  // Scintillator fine processing:
   //
-  // Units of measurements are meters.
+  // - Reconstruct coordinates of track cross point with scintillator plane
+  // - For each crossing track, determine position residual and paddle number
+  //
+  // The position residuals are calculated along the x-coordinate (dispersive
+  // direction) only. They are useful to determine whether a track has a
+  // matching hit ( if abs(dx) <= 0.5*paddle x-width ) and, if so, how close
+  // to the edge of the paddle the track crossed. This assumes scintillator
+  // paddles oriented along the transverse (non-dispersive, y) direction.
 
-  // Calculation of coordinates of particle track cross point with scint
-  // plane in the detector coordinate system. For this, parameters of track
-  // reconstructed in THaVDC::FineTrack() are used.
+  // Redo projection of tracks since FineTrack may have changed tracks
+  Int_t n_cross = CalcTrackProj( tracks );
 
-  int n_track = tracks.GetLast()+1;   // Number of reconstructed tracks
-
-  Double_t dpadx = (2.*fSize[0])/(fNelem); // width of a paddle
-  // center of paddle '0'
-  Double_t padx0 = -dpadx*(fNelem-1)*.5;
-
-  for ( int i=0; i<n_track; i++ ) {
-    THaTrack* theTrack = static_cast<THaTrack*>( tracks[i] );
-
-    Double_t pathl=kBig, xc=kBig, yc=kBig, dx=kBig;
-    Int_t pad=-1;
-
-    if ( ! CalcTrackIntercept(theTrack, pathl, xc, yc) ) { // failed to hit
-      new ( (*fTrackProj)[i] )
-	THaTrackProj(xc,yc,pathl,dx,pad,this);
-      continue;
-    }
-
-    // xc, yc are the positions of the track intercept
-    //  _RELATIVE TO THE DETECTOR PLANE's_ origin.
-    //
-    // look through set of complete hits for closest match
-    // loop through due to possible poor matches
-    dx = kBig;
-    for ( Int_t j=0; j<fNhit; j++ ) {
-      Double_t dx2 = ( padx0 + fHitPad[j]*dpadx) - xc;
-      if (TMath::Abs(dx2) < TMath::Abs(dx) ) {
-	pad = fHitPad[j];
-	dx = dx2;
+  // Find the closest hits to the track crossing points
+  if( n_cross > 0 ) {
+    Double_t dpadx = fSize[0]/fNelem;      // 1/2 width of a paddle
+    Double_t padx0 = -dpadx*(fNelem-1);    // center of paddle '0'
+    dpadx *= 2.0;                          // now full width of a paddle
+    for( Int_t i=0; i<fTrackProj->GetLast()+1; i++ ) {
+      THaTrackProj* proj = static_cast<THaTrackProj*>( fTrackProj->At(i) );
+      assert( proj );
+      if( !proj->IsOK() )
+	continue;
+      Int_t pad = -1;                      // paddle number of closest hit
+      Double_t xc = proj->GetX();          // track intercept x-coordinate
+      Double_t dx = kBig;                  // distance paddle center - xc
+      for( Int_t j = 0; j < fNhit; j++ ) {
+	Double_t dx2 = padx0 + fHitPad[j]*dpadx - xc;
+	if (TMath::Abs(dx2) < TMath::Abs(dx) ) {
+	  pad = fHitPad[j];
+	  dx = dx2;
+	}
       }
-      else if (pad>=0) break; // stop after finding closest in X
+      assert( pad >= 0 || fNhit == 0 ); // Must find a pad unless no hits
+      if( pad >= 0 ) {
+	proj->SetdX(dx);
+	proj->SetChannel(pad);
+      }
     }
-
-    // record information, found or not
-    new ( (*fTrackProj)[i] )
-      THaTrackProj(xc,yc,pathl,dx,pad,this);
   }
 
   return 0;
-}
-
-//_____________________________________________________________________________
-Int_t THaScintillator::GetNTracks() const
-{
-  return fTrackProj->GetLast()+1;
 }
 
 //_____________________________________________________________________________

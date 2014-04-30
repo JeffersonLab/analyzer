@@ -27,9 +27,6 @@ public:
           Float_t    GetX() const      { return fX; }
           Float_t    GetY() const      { return fY; }
 
-  Int_t GetNTracks() const;  // Number of tracks crossing this detector
-  const TClonesArray* GetTrackHits() const { return fTrackProj; }
-
 protected:
 
   // Mapping (see also fDetMap)
@@ -65,8 +62,6 @@ protected:
   Int_t      fMult;      // Number of blocks in main cluster
   Int_t*     fNblk;      // [fNclublk] Numbers of blocks composing main cluster
   Float_t*   fEblk;      // [fNclublk] Energies of blocks composing main cluster
-
-  TClonesArray*  fTrackProj;  // projection of track onto shower plane
 
   void           ClearEvent();
   void           DeleteArrays();

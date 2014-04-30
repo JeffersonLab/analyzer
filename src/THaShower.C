@@ -14,7 +14,6 @@
 #include "THaGlobals.h"
 #include "THaEvData.h"
 #include "THaDetMap.h"
-#include "THaTrackProj.h"
 #include "VarDef.h"
 #include "VarType.h"
 #include "THaTrack.h"
@@ -32,9 +31,7 @@ THaShower::THaShower( const char* name, const char* description,
 		      THaApparatus* apparatus ) :
   THaPidDetector(name,description,apparatus), fNChan(0), fChanMap(0)
 {
-  // Constructor.
-
-  fTrackProj = new TClonesArray( "THaTrackProj", 5 );
+  // Constructor
 }
 
 //_____________________________________________________________________________
@@ -266,10 +263,6 @@ THaShower::~THaShower()
     RemoveVariables();
   if( fIsInit )
     DeleteArrays();
-  if (fTrackProj) {
-    fTrackProj->Clear();
-    delete fTrackProj; fTrackProj = 0;
-  }
 }
 
 //_____________________________________________________________________________
@@ -318,8 +311,6 @@ void THaShower::ClearEvent()
   fMult = 0;
   memset( fNblk, 0, lsi );
   memset( fEblk, 0, lsc );
-
-  fTrackProj->Clear();
 }
 
 //_____________________________________________________________________________
@@ -458,25 +449,13 @@ Int_t THaShower::CoarseProcess( TClonesArray& tracks )
     fMult   = mult;                         // Number of blocks in "main" clust.
   }
 
-  // Calculation of coordinates of the track cross point with
-  // shower plane in the detector coordinate system. For this, parameters
-  // of track reconstructed in THaVDC::CoarseTrack() are used.
+  // Calculate track projections onto shower plane
 
-  int n_track = tracks.GetLast()+1;   // Number of reconstructed tracks
-
-  for ( int i=0; i<n_track; i++ ) {
-    THaTrack* theTrack = static_cast<THaTrack*>( tracks[i] );
-    Double_t pathl=kBig, xc=kBig, yc=kBig;
-    Double_t dx=0.; // unused
-    Int_t pad=-1;   // unused
-
-    CalcTrackIntercept(theTrack, pathl, xc, yc);
-    // if it hit or not, store the information (defaults if no hit)
-    new ( (*fTrackProj)[i] ) THaTrackProj(xc,yc,pathl,dx,pad,this);
-  }
+  CalcTrackProj( tracks );
 
   return 0;
 }
+
 //_____________________________________________________________________________
 Int_t THaShower::FineProcess( TClonesArray& tracks )
 {
@@ -484,27 +463,10 @@ Int_t THaShower::FineProcess( TClonesArray& tracks )
 
   // Redo the track-matching, since tracks might have been thrown out
   // during the FineTracking stage.
-  fTrackProj->Clear();
-  int n_track = tracks.GetLast()+1;   // Number of reconstructed tracks
 
-  for ( int i=0; i<n_track; i++ ) {
-    THaTrack* theTrack = static_cast<THaTrack*>( tracks[i] );
-    Double_t pathl=kBig, xc=kBig, yc=kBig;
-    Double_t dx=0.; // unused
-    Int_t pad=-1;   // unused
-
-    CalcTrackIntercept(theTrack, pathl, xc, yc);
-    // if it hit or not, store the information (defaults if no hit)
-    new ( (*fTrackProj)[i] ) THaTrackProj(xc,yc,pathl,dx,pad,this);
-  }
+  CalcTrackProj( tracks );
 
   return 0;
-}
-
-//_____________________________________________________________________________
-Int_t THaShower::GetNTracks() const
-{
-  return fTrackProj->GetLast()+1;
 }
 
 //_____________________________________________________________________________

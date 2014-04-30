@@ -7,7 +7,6 @@
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "TClonesArray.h"
 #include "THaNonTrackingDetector.h"
 
 class THaScCalib;
@@ -33,9 +32,6 @@ public:
   const Double_t* GetAmplitudes() const { return fAmpl; }
   const Double_t* GetYtime() const { return fYt; }
   const Double_t* GetYampl() const { return fYa; }
-
-  Int_t GetNTracks() const;  // Number of tracks crossing this detector
-  const TClonesArray* GetTrackHits() const { return fTrackProj; }
 
   friend class THaScCalib;
 
@@ -91,8 +87,6 @@ protected:
   Double_t*   fYt;         // [fNelem] y-position of hit in paddle from TDC (m)
   Double_t*   fYa;         // [fNelem] y-position of hit in paddle from ADC (m)
 
-  TClonesArray*  fTrackProj;  // projection of track onto scintillator plane
-                              // and estimated match to TOF paddle
   static const Int_t NDEST = 2;
   struct DataDest {
     Int_t*    nthit;
