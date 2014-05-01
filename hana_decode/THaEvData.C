@@ -10,8 +10,7 @@
 //   
 //   This class is intended to provide a crate/slot structure
 //   for derived classes to use.  All derived class must define and 
-//   implement LoadEvent(const int*, THaCrateMap*).  See the header.
-//
+//   implement LoadEvent(const int*).  See the header.
 //   
 //   original author  Robert Michaels (rom@jlab.org)
 //
@@ -57,7 +56,7 @@ TString THaEvData::fgDefaultCrateMapName = "cratemap";
 //_____________________________________________________________________________
 
 THaEvData::THaEvData() :
-  first_load(true), first_decode(true), fTrigSupPS(true),
+  first_decode(true), fTrigSupPS(true),
   buffer(0), run_num(0), run_type(0), fRunTime(0), evt_time(0),
   recent_event(0), fNSlotUsed(0), fNSlotClear(0), fMap(0),
   fDoBench(kFALSE), fBench(0), fNeedInit(true)
@@ -65,8 +64,6 @@ THaEvData::THaEvData() :
   fInstance = fgInstances.FirstNullBit();
   fgInstances.SetBitNumber(fInstance);
   fInstance++;
-  // FIXME: not needed - here for compatibility
-  cmap = new THaCrateMap( fgDefaultCrateMapName );
   // FIXME: dynamic allocation
   crateslot = new THaSlotData*[MAXROC*MAXSLOT];
   fSlotUsed  = new UShort_t[MAXROC*MAXSLOT];
@@ -123,7 +120,6 @@ THaEvData::~THaEvData() {
   for( int i=0; i<MAXROC*MAXSLOT; i++ )
     delete crateslot[i];
   delete [] crateslot;  
-  delete cmap;
   delete [] fSlotUsed;
   delete [] fSlotClear;
   fInstance--;

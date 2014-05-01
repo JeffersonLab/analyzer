@@ -10,7 +10,6 @@
 
 #include "THaVDCSimDecoder.h"
 #include "THaVDCSim.h"
-#include "THaCrateMap.h"
 #include "THaBenchmark.h"
 #include "VarDef.h"
 
@@ -91,12 +90,11 @@ Int_t THaVDCSimDecoder::GetNTracks() const
 }
 
 //-----------------------------------------------------------------------------
-int THaVDCSimDecoder::LoadEvent(const int*evbuffer, THaCrateMap* map) {
-  //  int status = HED_OK;
+int THaVDCSimDecoder::LoadEvent(const int* evbuffer )
+{
+  // Decode event data in evbuffer
 
   Clear();
-
-  fMap = map;
 
   // Local copy of evbuffer pointer - any good use for it?
   buffer = evbuffer;

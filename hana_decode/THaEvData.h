@@ -30,12 +30,8 @@ public:
   THaEvData();
   virtual ~THaEvData();
 
-  // Loads CODA data evbuffer using private crate map "cmap" (recommended)
-  Int_t LoadEvent(const Int_t* evbuffer);          
-  // Loads CODA data evbuffer using THaCrateMap passed as 2nd arg.
-  // This is the one function that derived classes MUST implement.
-  //FIXME: the crate map should become part of the database
-  virtual Int_t LoadEvent(const Int_t* evbuffer, THaCrateMap* usermap) = 0;    
+  // Load CODA data evbuffer. Derived classes MUST implement this function.
+  virtual Int_t LoadEvent(const Int_t* evbuffer) = 0;
 
   // Basic access to the decoded data
   Int_t     GetEvType()   const { return event_type; }
@@ -159,11 +155,9 @@ protected:
     Int_t pos;                // position in evbuffer[]
     Int_t len;                // length of data
   } rocdat[MAXROC];
-  // FIXME: cmap is not needed -> fMap below
-  THaCrateMap* cmap;          // default crate map
   THaSlotData** crateslot;  
 
-  Bool_t first_load, first_decode;
+  Bool_t first_decode;
   Bool_t fTrigSupPS;
 
   const Int_t *buffer;
@@ -351,14 +345,6 @@ inline
 Bool_t THaEvData::IsSpecialEvent() const {
   return ( (event_type == DETMAP_FILE) ||
 	   (event_type == TRIGGER_FILE) );
-};
-
-inline
-Int_t THaEvData::LoadEvent(const Int_t* evbuffer) {
-  // This version of LoadEvent() uses private THaCrateMap cmap (recommended)
-  assert(cmap);
-  first_load = false;
-  return LoadEvent(evbuffer, cmap);
 };
 
 inline

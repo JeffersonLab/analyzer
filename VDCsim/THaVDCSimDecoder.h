@@ -19,7 +19,7 @@ class THaVDCSimDecoder : public THaEvData {
   THaVDCSimDecoder();
   virtual ~THaVDCSimDecoder();
 
-  Int_t  LoadEvent( const int*evbuffer, THaCrateMap* usermap );
+  virtual Int_t  LoadEvent( const int* evbuffer);
 
   void   Clear( Option_t* opt="" );
   Int_t  GetNTracks() const;

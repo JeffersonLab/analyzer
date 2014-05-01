@@ -80,20 +80,18 @@ Int_t THaCodaDecoder::GetPrescaleFactor(Int_t trigger_type) const
 }
 
 //_____________________________________________________________________________
-Int_t THaCodaDecoder::LoadEvent(const Int_t* evbuffer, THaCrateMap* cratemap)
+Int_t THaCodaDecoder::LoadEvent(const Int_t* evbuffer )
 {
   // Public interface to decode the event.  Note, LoadEvent()
   // MUST be called once per event BEFORE you can extract 
   // information about the event.
-  // This version of LoadEvent() uses externally provided THaCrateMap
-  return gendecode(evbuffer, cratemap);
+  return gendecode(evbuffer);
 }
 
 //_____________________________________________________________________________
-Int_t THaCodaDecoder::gendecode(const Int_t* evbuffer, THaCrateMap* )
+Int_t THaCodaDecoder::gendecode(const Int_t* evbuffer )
 {
   // Main engine for decoding, called by public LoadEvent() methods
-  // The crate map argument is ignored. Use SetCrateMapName instead
   assert( evbuffer );
   assert( fMap || fNeedInit );
   Int_t ret = HED_OK;
