@@ -840,13 +840,9 @@ void THaAnalyzer::SetCrateMapFileName( const char* name )
   // Set name of file from which to read the crate map. 
   // For simplicity, a simple string like "mymap" is automatically
   // converted to "db_mymap.dat". See THaAnalysisObject::GetDBFileList
+  // Must be called before initialization.
 
-  if( !name || !*name )
-    // Use default map
-    name = "";
-
-  THaEvData::SetCrateMapName(name);
-  return;
+  THaEvData::SetDefaultCrateMapName( name );
 }
 
 //_____________________________________________________________________________

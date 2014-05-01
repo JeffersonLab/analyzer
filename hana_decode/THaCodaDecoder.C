@@ -95,11 +95,11 @@ Int_t THaCodaDecoder::gendecode(const Int_t* evbuffer, THaCrateMap* )
   // Main engine for decoding, called by public LoadEvent() methods
   // The crate map argument is ignored. Use SetCrateMapName instead
   assert( evbuffer );
-  assert( fMap || fgNeedInit );
+  assert( fMap || fNeedInit );
   Int_t ret = HED_OK;
   buffer = evbuffer;
   if(TestBit(kDebug)) dump(evbuffer);
-  if (first_decode || fgNeedInit) {
+  if (first_decode || fNeedInit) {
     ret = init_cmap();
     if( ret != HED_OK ) return ret;
     ret = init_slotdata(fMap);
@@ -1141,9 +1141,7 @@ void THaCodaDecoder::SetRunTime( ULong64_t tloc )
   if( fRunTime == tloc ) 
     return;
   fRunTime = tloc;
-  //  init_cmap();     
-  //  init_slotdata(fMap);
-  fgNeedInit = true;  // force re-init
+  fNeedInit = true;  // force re-init
 }
 
 //_____________________________________________________________________________

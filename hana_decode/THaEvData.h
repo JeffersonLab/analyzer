@@ -125,7 +125,8 @@ public:
   enum { HED_OK = 0, HED_WARN = -63, HED_ERR = -127, HED_FATAL = -255 };
   enum { MAX_PSFACT = 12 };
   
-  static void SetCrateMapName( const char* name );
+  void SetCrateMapName( const char* name );
+  static void SetDefaultCrateMapName( const char* name );
 
 protected:
   // Control bits in TObject::fBits used by decoders
@@ -199,9 +200,9 @@ protected:
   static const Double_t kBig;  // default value for invalid data
   static Bool_t fgAllowUnimpl; // If true, allow unimplemented functions
 
-  static const TString fgDefaultCrateMapName; // Default crate map name
-  static TString fgCrateMapName; // Crate map database file name to use
-  static Bool_t fgNeedInit;  // Crate map needs to be (re-)initialized
+  static TString fgDefaultCrateMapName; // Default crate map name
+  TString fCrateMapName; // Crate map database file name to use
+  Bool_t fNeedInit;  // Crate map needs to be (re-)initialized
 
   ClassDef(THaEvData,0)  // Decoder for CODA event buffer
 
