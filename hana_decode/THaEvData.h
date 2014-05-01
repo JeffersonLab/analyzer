@@ -129,9 +129,6 @@ protected:
   enum { 
     kHelicityEnabled = BIT(14),
     kScalersEnabled  = BIT(15),
-  // FIXME: this is a kludge for binary compatibility. Add fDebug/fVerbose
-    kVerbose         = BIT(16),
-    kDebug           = BIT(17)
   };
 
   static const Int_t MAXROC = 32;  
@@ -197,6 +194,8 @@ protected:
   static TString fgDefaultCrateMapName; // Default crate map name
   TString fCrateMapName; // Crate map database file name to use
   Bool_t fNeedInit;  // Crate map needs to be (re-)initialized
+
+  Int_t  fDebug;     // Debug/verbosity level
 
   ClassDef(THaEvData,0)  // Decoder for CODA event buffer
 

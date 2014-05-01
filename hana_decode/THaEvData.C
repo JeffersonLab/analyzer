@@ -59,7 +59,7 @@ THaEvData::THaEvData() :
   first_decode(true), fTrigSupPS(true),
   buffer(0), run_num(0), run_type(0), fRunTime(0), evt_time(0),
   recent_event(0), fNSlotUsed(0), fNSlotClear(0), fMap(0),
-  fDoBench(kFALSE), fBench(0), fNeedInit(true)
+  fDoBench(kFALSE), fBench(0), fNeedInit(true), fDebug(0)
 {
   fInstance = fgInstances.FirstNullBit();
   fgInstances.SetBitNumber(fInstance);
@@ -94,10 +94,6 @@ THaEvData::THaEvData() :
     Warning("THaEvData::THaEvData","No global variable list found. "
 	    "Variables not registered.");
 #endif
-
-  // Ensure reporting level bits are cleared
-  ResetBit(kVerbose);
-  ResetBit(kDebug);
 }
 
 
@@ -170,14 +166,16 @@ void THaEvData::EnableScalers( Bool_t enable )
 
 void THaEvData::SetVerbose( UInt_t level )
 { 
-  // Set verbosity level
-  SetBit(kVerbose,(level!=0));
+  // Set verbosity level. Identical to SetDebug(). Kept for compatibility.
+
+  SetDebug(level);
 }
 
 void THaEvData::SetDebug( UInt_t level )
 {
   // Set debug level
-  SetBit(kDebug,(level!=0));
+
+  fDebug = level;
 }
 
 void THaEvData::SetOrigPS(Int_t evtyp)
@@ -264,7 +262,7 @@ int THaEvData::init_cmap()  {
     delete fMap;
     fMap = new THaCrateMap( fCrateMapName );
   }
-  if (TestBit(kDebug)) cout << "Init crate map " << endl;
+  if( fDebug>0 ) cout << "Init crate map " << endl;
   if( fMap->init(GetRunTime()) == THaCrateMap::CM_ERR )
     return HED_FATAL; // Can't continue w/o cratemap
   fNeedInit = false;
