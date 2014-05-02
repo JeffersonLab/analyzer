@@ -20,6 +20,10 @@ public:
   THaVDCUVTrack() :
     fUClust(0), fVClust(0), fUVPlane(0), fTrack(0), fPartner(0),
     fX(0.0), fY(0.0), fTheta(0.0), fPhi(0.0) {}
+  THaVDCUVTrack( THaVDCCluster* ucl, THaVDCCluster* vcl,
+		 THaVDCUVPlane* uvp ) :
+    fUClust(ucl), fVClust(vcl), fUVPlane(uvp), fTrack(0), fPartner(0),
+    fX(0.0), fY(0.0), fTheta(0.0), fPhi(0.0) {}
 
   virtual ~THaVDCUVTrack() {}
 
