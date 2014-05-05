@@ -31,9 +31,12 @@ public:
    Int_t Decode(THaEvData *evdata, Int_t start);
 
 
-private:
+protected:
 
    Int_t fChanMask, fDataMask, fWdcntMask, fChanShift;
+
+private:
+
 
    ToyFastbusModule(const ToyFastbusModule &fh);
    ToyFastbusModule& operator=(const ToyFastbusModule &fh);
