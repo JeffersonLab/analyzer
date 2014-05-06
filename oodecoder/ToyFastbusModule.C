@@ -13,10 +13,15 @@
 #include <sstream>
 using namespace std;
 
-// crate, etc (here, toy data) would ultimately come from crate map
-ToyFastbusModule::ToyFastbusModule(Int_t crate, Int_t slot) : fChanMask(0xfe0000), fDataMask(0xffff), fWdcntMask(0x7ff), fChanShift(17) {  
-  fCrate = crate;
-  fSlot = slot;
+ToyFastbusModule::ToyFastbusModule(Int_t crate, Int_t slot) fCrate(crate), fSlot(slot) {
+  if (fCrate < 0 || fCrate > MAXROC) {
+       cerr << "ERROR: crate out of bounds"<<endl;
+       fCrate = 0;
+  }
+  if (fSlot < 0 || fSlot > 26) {
+       cerr << "ERROR: slot out of bounds"<<endl;
+       fSlot = 0;
+  }
 }
 
 ToyFastbusModule::ToyFastbusModule() : fChanMask(0xfe0000), fDataMask(0xffff), fWdcntMask(0x7ff), fChanShift(17) {  
@@ -24,28 +29,27 @@ ToyFastbusModule::ToyFastbusModule() : fChanMask(0xfe0000), fDataMask(0xffff), f
   fSlot = 0;
 }
 
-Int_t ToyFastbusModule::Decode(THaEvData *evdata, Int_t jstart) {
+
+
+Int_t ToyFastbusModule::Clear() {
+  ndata = 0;
+}
+
+Int_t ToyFastbusModule::Decode(Int_t rdata) {
   
-  cout<<"ToyFastbusModule decode from "<<dec<<jstart<<endl;
+  cout<<"ToyFastbusModule decode  "<<endl;
   cout << "Crate "<<fCrate<<"   slot "<<fSlot<<endl;
-// Yes, I know this is inefficient ... it's a TOY code.
-  Int_t index=jstart;
-  while (index++ < evdata->GetEvLength()) {
-    Int_t data = evdata->GetRawData(index);
-    if ( IsSlot(data) ) {
-      Int_t chan = (data & fChanMask) >> fChanShift;
-      Int_t wdcnt = (data & fWdcntMask);
-      if (wdcnt > 10) wdcnt=10;  // hummm... TOY decoding is wrong; fix later
-      Int_t rdata = (data & fDataMask);
-      cout << "slot "<<fSlot<<" found.  chan = "<<chan<<"    wdcnt "<<wdcnt<<endl;
-      for (Int_t i = 0; i<wdcnt; i++) {
-	 evdata->LoadData(fCrate, fSlot, chan, rdata);
-         index++;
-      }
+  if (IsSlot(rdata) {
+     Int_t chan = (rdata & fChanMask) >> fChanShift;
+     Int_t dat  = (rdata & fDataMask) >> fDataShift;
+     if (chan < 0 || chan > MAXCHAN) {
+	// error
+     }
+     // increment hits
+     // print stuff to debug
+
     }
-
-  }
-
+    
   return 0;
 }
 
@@ -53,7 +57,7 @@ ToyFastbusModule::~ToyFastbusModule() {
 }
 
 Bool_t ToyFastbusModule::IsSlot(Int_t rdata) {
-  return (fSlot == ((rdata>>27)&0xf));  // TOY, but sorta works
+  return (fSlot == ((rdata&fSlotMask)>>fSlotShift));  
 }
 
 
