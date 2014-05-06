@@ -26,18 +26,18 @@ public:
   Double_t GetDriftVel() { return fDriftVel; }
 
   void SetDriftVel(Double_t v) {fDriftVel = v; }
+  void SetParameters( const Double_t* A1, const Double_t* A2, Double_t dtime );
 
 protected:
 
-  Double_t fDriftVel;   // Drift velocity (m / s)
+  Double_t fDriftVel;   // Drift velocity (m/s)
 
   // Coefficients for a polynomial yielding correction parameters
-  // For now, hard code these values from db_eh845
-  // Eventually, this need to be read directly from the database
   Double_t fA1tdcCor[4];
   Double_t fA2tdcCor[4];
 
   Double_t fdtime;      // uncertainty in the measured time
+  Bool_t   fIsSet;      // Flag to indicate that parameters are set
 
   ClassDef(THaVDCAnalyticTTDConv,0)             // VDC Analytic TTD Conv class
 };

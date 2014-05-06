@@ -31,6 +31,8 @@ THaVDCUVPlane::THaVDCUVPlane( const char* name, const char* description,
 
   // Create the UV tracks array
   fUVTracks = new TClonesArray("THaVDCUVTrack", 10); // 10 is arbitrary
+
+  fVDC = dynamic_cast<THaVDC*>( GetMainDetector() );
 }
 
 
@@ -68,15 +70,12 @@ THaDetectorBase::EStatus THaVDCUVPlane::Init( const TDatime& date )
   TVector3 z( 0.0, 0.0, fU->GetZ() );
   fOrigin += z;
 
-  Double_t uwAngle  = fU->GetWAngle();      // Get U plane Wire angle
-  Double_t vwAngle  = fV->GetWAngle();      // Get V plane Wire angle
-
   // Precompute and store values for efficiency
-  fSin_u   = TMath::Sin( uwAngle );
-  fCos_u   = TMath::Cos( uwAngle );
-  fSin_v   = TMath::Sin( vwAngle );
-  fCos_v   = TMath::Cos( vwAngle );
-  fInv_sin_vu = 1.0/TMath::Sin( vwAngle-uwAngle );
+  fSin_u   = fU->GetSinAngle();
+  fCos_u   = fU->GetCosAngle();
+  fSin_v   = fV->GetSinAngle();
+  fCos_v   = fV->GetCosAngle();
+  fInv_sin_vu = 1.0/TMath::Sin( fV->GetWAngle() - fU->GetWAngle() );
 
   return fStatus = kOK;
 }
@@ -89,19 +88,79 @@ Int_t THaVDCUVPlane::MatchUVClusters()
 
   Int_t nu = fU->GetNClusters();
   Int_t nv = fV->GetNClusters();
-  Int_t nuv = 0;
 
-  for( Int_t i = 0; i < nu; i++ ) {
-    THaVDCCluster* uClust = fU->GetCluster(i);
-    for( Int_t j = 0; j < nv; j++ ) {
-      THaVDCCluster* vClust = fV->GetCluster(j);
+  // Quick-and-dirty algorithm pushed by Bogdan Wojtsekhowski.
+  // Probably not the way to go for the real thing, but it will give 
+  // relatively clean (if inefficient) results:
+  //
+  // Match best in-time clusters (t_0 close to zero).
+  // Discard any out-of-time clusters (|t_0| > N sigma, N = 3, configurable).
+  // Bail if any ambiguity, marking the event as not analyzable
 
-      THaVDCUVTrack* uvTrack =
-	new((*fUVTracks)[nuv++]) THaVDCUVTrack(uClust, vClust, this);
+  Double_t max_u_t0 = fU->GetT0Resolution();
+  Double_t max_v_t0 = fV->GetT0Resolution();
+  THaVDCUVTrack* uvTrack = 0;
+  THaVDCUVTrack* testTrack = 0;
+
+  Int_t ntrk = 0;
+
+  for( Int_t iu = 0; iu < nu; ++iu ) {
+    THaVDCCluster* uClust = fU->GetCluster(iu);
+    if( TMath::Abs(uClust->GetT0()) > max_u_t0 )
+      continue;
+
+    for( Int_t iv = 0; iv < nv; ++iv ) {
+      THaVDCCluster* vClust = fV->GetCluster(iv);
+      if( TMath::Abs(vClust->GetT0()) > max_v_t0 )
+	continue;
+
+      testTrack = new THaVDCUVTrack( uClust, vClust, this );
+      testTrack->CalcDetCoords();
+      //      Double_t xcoord = testTrack->GetX();
+      Double_t ycoord = testTrack->GetY();
+      delete testTrack;  testTrack = NULL;
+
+      // Test position to be within drift chambers
+      if( TMath::Abs(ycoord) > fU->GetYSize() ){
+	      continue;
+      }
+      // FIXME: also test xcoord!
+
+      delete testTrack; testTrack = NULL;
+
+      // FIXME:  We should just mark this one "region" bad. 
+      // Pairs that are sufficiently far away from this should
+      // still be OK to use (if they're not ambiguious themselves)
+      if( uClust->IsPaired() || vClust->IsPaired() ){
+	      // Found a pair that was already some good match
+	      // We say there is an ambiguity and we stop
+	      uClust->SetAmbiguous(kTRUE);
+	      vClust->SetAmbiguous(kTRUE);
+
+	      if( uClust->GetPaired() ){
+		uClust->GetPaired()->SetAmbiguous(kTRUE);
+	      }
+	      if( vClust->GetPaired() ){
+		vClust->GetPaired()->SetAmbiguous(kTRUE);
+	      }
+	      MarkBad();
+	      continue;
+      }
+
+      uClust->SetPaired(vClust);
+      vClust->SetPaired(uClust);
+
+	// Found two clusters with "small" t0s
+	// So we pair them and hope for the best.
+	
+	uvTrack = new ( (*fUVTracks)[ntrk++] ) 
+		THaVDCUVTrack( uClust, vClust, this );
+	uvTrack->CalcDetCoords();
     }
   }
-  assert( GetNUVTracks() == nuv );
-  return nuv;
+
+  // return the number of UV tracks found
+  return GetNUVTracks();
 }
 
 //_____________________________________________________________________________
@@ -129,6 +188,7 @@ void THaVDCUVPlane::Clear( Option_t* opt )
   fU->Clear(opt);
   fV->Clear(opt);
   fUVTracks->Clear();
+  UnmarkBad();
 }
 
 //_____________________________________________________________________________
@@ -142,37 +202,55 @@ Int_t THaVDCUVPlane::Decode( const THaEvData& evData )
 }
 
 //_____________________________________________________________________________
-Int_t THaVDCUVPlane::CoarseTrack( )
+void THaVDCUVPlane::FindClusters()
 {
-  // Coarse computation of tracks
+  // Find clusters in U & V planes
 
-  // Find clusters and estimate their positions
-  FindClusters();
-
-  // Pair U and V clusters
-  MatchUVClusters();
-
-  // Construct UV tracks
-  CalcUVTrackCoords();
-
-  return 0;
+  fU->FindClusters();
+  fV->FindClusters();
 }
 
 //_____________________________________________________________________________
-Int_t THaVDCUVPlane::FineTrack( )
+void THaVDCUVPlane::FitTracks()
 {
-  // High precision computation of tracks
+  // Fit data to recalculate cluster position
 
-  // Refine cluster position
+  fU->FitTracks();
+  fV->FitTracks();
+}
+
+//_____________________________________________________________________________
+Int_t THaVDCUVPlane::CoarseTrack()
+{
+  // Coarse computation of tracks
+  
+  // Find clusters and estimate their position/slope
+  FindClusters();
+
+  // Fit "local" tracks through the hit coordinates of each cluster
   FitTracks();
-
+  
   // FIXME: The fit may fail, so we might want to call a function here
   // that deletes UV tracks whose clusters have bad fits, or with
   // clusters that are too small (e.g. 1 hit), etc.
   // Right now, we keep them, preferring efficiency over precision.
 
-  // Reconstruct the UV tracks, based on the refined cluster positions
-  CalcUVTrackCoords();
+  // Pair U and V clusters
+  MatchUVClusters();
+
+  return 0;
+}
+
+//_____________________________________________________________________________
+Int_t THaVDCUVPlane::FineTrack()
+{
+  // High precision computation of tracks
+
+  //TODO:
+  //- Redo time-to-distance conversion based on "global" track slope
+  //- Refit clusters of the track (if any), using new drift distances
+  //- Recalculate cluster UV coordinates, so new "gobal" slopes can be
+  //  computed
 
   return 0;
 }

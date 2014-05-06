@@ -574,6 +574,10 @@ TTD Lookup Table
 1.51e+01 1.51e+01 1.51e+01 1.51e+01 1.51e+01 1.51e+01 1.51e+01 1.51e+01 1.51e+01 1.51e+01
 1.51e+01 1.51e+01 1.51e+01 1.51e+01 1.51e+01 1.51e+01 1.51e+01 1.51e+01 1.51e+01 1.51e+01
 1.51e+01 1.51e+01 1.51e+01 1.51e+01 1.51e+01 1.51e+01 1.51e+01 1.51e+01 7.99e-44
+[ R.extra_param ]
+5.0e-10   6.0e-8              TDC scale (ns/chan), t0 resolution (ns)
+4  7  0  800  2200            min_clust_size, max_clust_span, max_gap, min_time, max_time
+2.12e-3 0.0 0.0 0.0 -4.2e-4 1.3e-3 1.06e-4 0.0 4e-9    AnalyticTTD parameters
 [ R.global ]
 0.3348 1                     Plane Spacing, TTD Converter
 matrix elements

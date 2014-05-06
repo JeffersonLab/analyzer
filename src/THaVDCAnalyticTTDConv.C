@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //
-// THaVDCAnalyticTTDConv                                                      //
+// THaVDCAnalyticTTDConv                                                     //
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -9,41 +9,29 @@
 ClassImp(THaVDCAnalyticTTDConv)
 
 
-//______________________________________________________________________________
-THaVDCAnalyticTTDConv::THaVDCAnalyticTTDConv()
+//_____________________________________________________________________________
+THaVDCAnalyticTTDConv::THaVDCAnalyticTTDConv() : fIsSet(false)
 {
   //Normal constructor
 }
 
-//______________________________________________________________________________
-THaVDCAnalyticTTDConv::THaVDCAnalyticTTDConv( Double_t vel) 
+//_____________________________________________________________________________
+THaVDCAnalyticTTDConv::THaVDCAnalyticTTDConv( Double_t vel ) :
+  fDriftVel(vel), fIsSet(false)
 {
   // Normal constructor 
-  fDriftVel = vel;
-
-  // TODO: This should be read from database!!
-  fA1tdcCor[0] = 2.12e-3;
-  fA1tdcCor[1] = 0.0;
-  fA1tdcCor[2] = 0.0;
-  fA1tdcCor[3] = 0.0;
-  fA2tdcCor[0] = -4.20e-4;
-  fA2tdcCor[1] =  1.3e-3;
-  fA2tdcCor[2] = 1.06e-4;
-  fA2tdcCor[3] = 0.0;
-  
-  fdtime    = 4.e-9; // 4ns -> 200 microns
 }
 
 
 
-//______________________________________________________________________________
+//_____________________________________________________________________________
 THaVDCAnalyticTTDConv::~THaVDCAnalyticTTDConv()
 {
   // Destructor. Remove variables from global list.
 
 }
 
-//______________________________________________________________________________
+//_____________________________________________________________________________
 Double_t THaVDCAnalyticTTDConv::ConvertTimeToDist(Double_t time,
 						  Double_t tanTheta,
 						  Double_t *ddist)
@@ -52,6 +40,12 @@ Double_t THaVDCAnalyticTTDConv::ConvertTimeToDist(Double_t time,
   // time in s
   // Return m 
   
+  if( !fIsSet ) {
+    Error( "THaVDCAnalyticTTDConv::ConvertTimeToDist", "Parameters not set. "
+	   "Fix database." );
+    return 1e38;
+  }
+
 //    printf("Converting Drift Time to Drift Distance!\n");
 
   Double_t a1 = 0.0, a2 = 0.0;
@@ -93,5 +87,37 @@ Double_t THaVDCAnalyticTTDConv::ConvertTimeToDist(Double_t time,
   
 }
 
+//_____________________________________________________________________________
+void THaVDCAnalyticTTDConv::SetParameters( const Double_t* A1,
+					   const Double_t* A2, Double_t dtime )
+{
+  // Set coefficients of a1 and a2 4-th order polynomial and uncertainty
+  // of drift time measurement
 
-////////////////////////////////////////////////////////////////////////////////
+  for( int i=0; i<4; ++i ) {
+    fA1tdcCor[i] = A1[i];
+    fA2tdcCor[i] = A2[i];
+  }  
+  fdtime = dtime;
+  fIsSet = true;
+}
+
+//_____________________________________________________________________________
+// void THaVDCAnalyticTTDConv::SetDefaultParam()
+// {
+//   // Set some reasonable defaults for the polynomial coefficients and 
+//   // drift time uncertainty. Applicable to Hall A VDCs.
+
+//   fA1tdcCor[0] = 2.12e-3;
+//   fA1tdcCor[1] = 0.0;
+//   fA1tdcCor[2] = 0.0;
+//   fA1tdcCor[3] = 0.0;
+//   fA2tdcCor[0] = -4.20e-4;
+//   fA2tdcCor[1] =  1.3e-3;
+//   fA2tdcCor[2] = 1.06e-4;
+//   fA2tdcCor[3] = 0.0;
+  
+//   fdtime    = 4.e-9; // 4ns -> 200 microns
+// }
+
+///////////////////////////////////////////////////////////////////////////////

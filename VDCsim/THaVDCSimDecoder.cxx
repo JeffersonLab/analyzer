@@ -144,7 +144,19 @@ int THaVDCSimDecoder::LoadEvent(const int*evbuffer, THaCrateMap* map) {
       Int_t chan = hit->wirenum % 96;
       Int_t raw = static_cast<Int_t>(hit->time);
       Int_t roc = 3;
-      Int_t slot = hit->wirenum / 96 + 6 + i*4;
+      //  Int_t slot = hit->wirenum / 96 + 6 + i*4;
+
+      Int_t inislot = hit->wirenum / 96 + 3 + i*4;
+      Int_t slot;
+
+      if(inislot <= 11){
+	slot = inislot;
+      }else{
+	slot = inislot + 4;
+      }
+      // cout << inislot << " > " << slot << endl;
+
+      //   cout << slot << endl;
 
       if (crateslot[idx(roc,slot)]->loadData("tdc",chan,raw,raw)
 	  == SD_ERR) return HED_ERR;

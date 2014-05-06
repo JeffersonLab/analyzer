@@ -8,16 +8,15 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "TObject.h"
+#include "THaVDCCluster.h"   // for chi2_t
 
 class THaVDCUVTrack;
-typedef THaVDCUVTrack* pUV;
+class THaTrack;
 
 class THaVDCTrackPair : public TObject {
 
 public:
-  THaVDCTrackPair() : 
-    fLowerTrack(NULL), fUpperTrack(NULL), fError(1e307) {}
-  THaVDCTrackPair( pUV lt, pUV ut ) :
+  THaVDCTrackPair( THaVDCUVTrack* lt, THaVDCUVTrack* ut ) :
     fLowerTrack(lt), fUpperTrack(ut), fError(1e307), fStatus(0) {}
   THaVDCTrackPair( const THaVDCTrackPair& rhs ) : TObject(rhs),
     fLowerTrack(rhs.fLowerTrack), fUpperTrack(rhs.fUpperTrack),
@@ -27,26 +26,35 @@ public:
   virtual ~THaVDCTrackPair() {}
 
   void            Analyze( Double_t spacing );
+  void            Associate( THaTrack* track );
+  chi2_t          CalcChi2() const;
   virtual Int_t   Compare( const TObject* ) const;
   Double_t        GetError()   const { return fError; }
-  pUV             GetLower()   const { return fLowerTrack; }
-  pUV             GetUpper()   const { return fUpperTrack; }
+  THaVDCUVTrack*  GetLower()   const { return fLowerTrack; }
+  THaVDCUVTrack*  GetUpper()   const { return fUpperTrack; }
   Int_t           GetStatus()  const { return fStatus; }
+  THaTrack*       GetTrack()   const;
   virtual Bool_t  IsSortable() const { return kTRUE; }
-  void            SetStatus( Int_t i ) { fStatus = i; }
   virtual void    Print( Option_t* opt="" ) const;
+  void            Release();
+  void            SetStatus( Int_t i ) { fStatus = i; }
+  void            Use();
 
-  Double_t        GetProjectedDistance( pUV here, pUV there, Double_t spacing );
+  Double_t        GetProjectedDistance( THaVDCUVTrack* here, 
+					THaVDCUVTrack* there,
+					Double_t spacing );
 
 protected:
 
-  pUV             fLowerTrack;     // Lower UV track
-  pUV             fUpperTrack;     // Upper UV track
-  Double_t        fError;          // Measure of goodness of match of the tracks
-  Int_t           fStatus;         // Status flag
+  THaVDCUVTrack*  fLowerTrack;    // Lower UV track
+  THaVDCUVTrack*  fUpperTrack;    // Upper UV track
+  Double_t        fError;         // Measure of goodness of match of the tracks
+  Int_t           fStatus;        // Status flag
 
+private:
+  THaVDCTrackPair();
 
-  ClassDef(THaVDCTrackPair,0)      // A pair of VDC UV tracks
+  ClassDef(THaVDCTrackPair,0)     // A pair of VDC UV tracks
 };
 
 //////////////////////////////////////////////////////////////////////////////

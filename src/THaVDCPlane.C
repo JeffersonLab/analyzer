@@ -12,6 +12,8 @@
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 
+//#define CLUST_RAWDATA_HACK
+
 #include "THaVDC.h"
 #include "THaVDCPlane.h"
 #include "THaVDCWire.h"
@@ -31,6 +33,11 @@
 #include <cstring>
 #include <vector>
 #include <iostream>
+#include <cassert>
+
+#ifdef CLUST_RAWDATA_HACK
+#include <fstream>
+#endif
 
 using namespace std;
 
@@ -38,8 +45,8 @@ using namespace std;
 //_____________________________________________________________________________
 THaVDCPlane::THaVDCPlane( const char* name, const char* description,
 			  THaDetectorBase* parent )
-  : THaSubDetector(name,description,parent), /*fTable(NULL),*/ fTTDConv(NULL),
-    fVDC(NULL), fglTrg(NULL)
+  : THaSubDetector(name,description,parent), /*fTable(0),*/ fTTDConv(0),
+    fVDC(0), fglTrg(0)
 {
   // Constructor
 
@@ -48,7 +55,10 @@ THaVDCPlane::THaVDCPlane( const char* name, const char* description,
   fClusters = new TClonesArray("THaVDCCluster", 5 );
   fWires    = new TClonesArray("THaVDCWire", 368 );
 
-  fVDC = GetMainDetector();
+  fNpass = 0;
+  fMinTdiff = fMaxTdiff = 0.0;
+
+  fVDC = dynamic_cast<THaVDC*>( GetMainDetector() );
 }
 
 //_____________________________________________________________________________
@@ -107,7 +117,8 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
       found = true;
   }
   if( !found ) {
-    Error(Here(here), "Database entry \"%s\" not found!", tag.Data() );
+    Error(Here(here), "Database section \"%s\" not found! "
+	  "Initialization failed", tag.Data() );
     fclose(file);
     return kInitError;
   }
@@ -140,21 +151,14 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
   // Load z, wire beginning postion, wire spacing, and wire angle
   sscanf( buff, "%15lf %15lf %15lf %15lf", &fZ, &fWBeg, &fWSpac, &fWAngle );
   fWAngle *= TMath::Pi()/180.0; // Convert to radians
-  // FIXME: Read from file
-  fTDCRes = 5.0e-10;  // 0.5 ns/chan = 5e-10 s /chan
+  fSinAngle = TMath::Sin( fWAngle );
+  fCosAngle = TMath::Cos( fWAngle );
 
-  // Load drift velocity (will be used to initialize Crude Time to Distance
+  // Load drift velocity (will be used to initialize crude Time to Distance
   // converter)
   fscanf(file, "%15lf", &fDriftVel);
   fgets(buff, LEN, file); // Read to end of line
   fgets(buff, LEN, file); // Skip line
-
-  fNWiresHit = 0;
-  
-  // Values are the same for each plane
-  fNMaxGap = 1;
-  fMinTime = 800;
-  fMaxTime = 2200;
 
   // first read in the time offsets for the wires
   float* wire_offsets = new float[nWires];
@@ -167,6 +171,7 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
     wire_nums[i] = wnum-1; // Wire numbers in file start at 1
     wire_offsets[i] = offset;
   }
+
 
   // now read in the time-to-drift-distance lookup table
   // data (if it exists)
@@ -212,7 +217,156 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
   delete [] wire_offsets;
   delete [] wire_nums;
 
+  // Set location of chamber center (in detector coordinates)
   fOrigin.SetXYZ( 0.0, 0.0, fZ );
+
+  // Read additional parameters (not in original database)
+  // For backward compatibility with database version 1, these parameters 
+  // are in an optional section, labelled [ <prefix>.extra_param ]
+  // (e.g. [ R.vdc.u1.extra_param ]) or [ R.extra_param ].  If this tag is
+  // not found, a warning is printed and defaults are used.
+
+  tag = "["; tag.Append(fPrefix); tag.Append("extra_param]");
+  TString tag2(tag);
+  found = false;
+  rewind(file);
+  while (!found && fgets(buff, LEN, file) != NULL) {
+    char* buf = ::Compress(buff);  //strip blanks
+    line = buf;
+    delete [] buf;
+    if( line.EndsWith("\n") ) line.Chop();  //delete trailing newline
+    if ( tag == line ) 
+      found = true;
+  }
+  if( !found ) {
+    // Poor man's default key search
+    rewind(file);
+    tag2 = fPrefix;
+    Ssiz_t pos = tag2.Index("."); 
+    if( pos != kNPOS )
+      tag2 = tag2(0,pos+1);
+    else
+      tag2.Append(".");
+    tag2.Prepend("[");
+    tag2.Append("extra_param]");
+    while (!found && fgets(buff, LEN, file) != NULL) {
+      char* buf = ::Compress(buff);  //strip blanks
+      line = buf;
+      delete [] buf;
+      if( line.EndsWith("\n") ) line.Chop();  //delete trailing newline
+      if ( tag2 == line ) 
+	found = true;
+    }
+  }
+  if( found ) {
+    if( fscanf(file, "%lf %lf", &fTDCRes, &fT0Resolution) != 2) {
+      Error( Here(here), "Error reading TDC scale and T0 resolution\n"
+	     "Line = %s\nFix database.", buff );
+      fclose(file);
+      return kInitError;
+    }
+    fgets(buff, LEN, file); // Read to end of line
+    if( fscanf( file, "%d %d %d %d %d %lf %lf", &fMinClustSize, &fMaxClustSpan, 
+		&fNMaxGap, &fMinTime, &fMaxTime, &fMinTdiff, &fMaxTdiff ) != 7 ) {
+      Error( Here(here), "Error reading min_clust_size, max_clust_span, "
+	     "max_gap, min_time or max_time.\nLine = %s\nFix database.",
+	     buff );
+      fclose(file);
+      return kInitError;
+    }
+    fgets(buff, LEN, file); // Read to end of line
+    // Time-to-distance converter parameters
+    if( THaVDCAnalyticTTDConv* analytic_conv = 
+	dynamic_cast<THaVDCAnalyticTTDConv*>(fTTDConv) ) {
+      // THaVDCAnalyticTTDConv
+      // Format: 4*A1 4*A2 dtime(s)  (9 floats)
+      Double_t A1[4], A2[4], dtime;
+      if( fscanf(file, "%lf %lf %lf %lf %lf %lf %lf %lf %lf", 
+		 &A1[0], &A1[1], &A1[2], &A1[3],
+		 &A2[0], &A2[1], &A2[2], &A2[3], &dtime ) != 9) {
+	Error( Here(here), "Error reading THaVDCAnalyticTTDConv parameters\n"
+	       "Line = %s\nExpect 9 floating point numbers. Fix database.",
+	       buff );
+	fclose(file);
+	return kInitError;
+      } else {
+	analytic_conv->SetParameters( A1, A2, dtime );
+      }
+    }
+//     else if( (... *conv = dynamic_cast<...*>(fTTDConv)) ) {
+//       // handle parameters of other TTD converters here
+//     }
+
+    fgets(buff, LEN, file); // Read to end of line
+
+    Double_t h, w;
+
+    if( fscanf(file, "%lf %lf", &h, &w) != 2) {
+	Error( Here(here), "Error reading height/width parameters\n"
+	       "Line = %s\nExpect 2 floating point numbers. Fix database.",
+	       buff );
+	fclose(file);
+	return kInitError;
+      } else {
+	   fSize[0] = h/2.0;
+	   fSize[1] = w/2.0;
+      }
+
+    fgets(buff, LEN, file); // Read to end of line
+    // Sanity checks
+    if( fMinClustSize < 1 || fMinClustSize > 6 ) {
+      Error( Here(here), "Invalid min_clust_size = %d, must be betwwen 1 and "
+	     "6. Fix database.", fMinClustSize );
+      fclose(file);
+      return kInitError;
+    }
+    if( fMaxClustSpan < 2 || fMaxClustSpan > 12 ) {
+      Error( Here(here), "Invalid max_clust_span = %d, must be betwwen 1 and "
+	     "12. Fix database.", fMaxClustSpan );
+      fclose(file);
+      return kInitError;
+    }
+    if( fNMaxGap < 0 || fNMaxGap > 2 ) {
+      Error( Here(here), "Invalid max_gap = %d, must be betwwen 0 and 2. "
+	     "Fix database.", fNMaxGap );
+      fclose(file);
+      return kInitError;
+    }
+    if( fMinTime < 0 || fMinTime > 4095 ) {
+      Error( Here(here), "Invalid min_time = %d, must be betwwen 0 and 4095. "
+	     "Fix database.", fMinTime );
+      fclose(file);
+      return kInitError;
+    }
+    if( fMaxTime < 1 || fMaxTime > 4096 || fMinTime >= fMaxTime ) {
+      Error( Here(here), "Invalid max_time = %d. Must be between 1 and 4096 "
+	     "and >= min_time = %d. Fix database.", fMaxTime, fMinTime );
+      fclose(file);
+      return kInitError;
+    }
+  } else {
+    Warning( Here(here), "No database section \"%s\" or \"%s\" found. "
+	     "Using defaults.", tag.Data(), tag2.Data() );
+    fTDCRes = 5.0e-10;  // 0.5 ns/chan = 5e-10 s /chan
+    fT0Resolution = 6e-8; // 60 ns --- crude guess
+    fMinClustSize = 4;
+    fMaxClustSpan = 7;
+    fNMaxGap = 0;
+    fMinTime = 800;
+    fMaxTime = 2200;
+
+    if( THaVDCAnalyticTTDConv* analytic_conv = 
+	dynamic_cast<THaVDCAnalyticTTDConv*>(fTTDConv) ) {
+      Double_t A1[4], A2[4], dtime = 4e-9;
+      A1[0] = 2.12e-3;
+      A1[1] = A1[2] = A1[3] = 0.0;
+      A2[0] = -4.2e-4;
+      A2[1] = 1.3e-3;
+      A2[2] = 1.06e-4;
+      A2[3] = 0.0;
+      analytic_conv->SetParameters( A1, A2, dtime );
+    }
+  }
 
   THaDetectorBase *sdet = GetParent();
   if( sdet )
@@ -253,6 +407,9 @@ Int_t THaVDCPlane::DefineVariables( EMode mode )
     { "dist",   "Drift distances",            "fHits.THaVDCHit.fDist" },
     { "ddist",  "Drft dist uncertainty",      "fHits.THaVDCHit.fdDist" },
     { "trdist", "Dist. from track",           "fHits.THaVDCHit.ftrDist" },
+    { "ltrdist","Dist. from local track",     "fHits.THaVDCHit.fltrDist" },
+    { "trknum", "Track number (0=unused)",    "fHits.THaVDCHit.fTrkNum" },
+    { "clsnum", "Cluster number (-1=unused)",    "fHits.THaVDCHit.fClsNum" },
     { "nclust", "Number of clusters",         "GetNClusters()" },
     { "clsiz",  "Cluster sizes",              "fClusters.THaVDCCluster.fSize" },
     { "clpivot","Cluster pivot wire num",     "fClusters.THaVDCCluster.GetPivotWireNum()" },
@@ -266,7 +423,12 @@ Int_t THaVDCPlane::DefineVariables( EMode mode )
     { "clchi2", "Cluster chi2",               "fClusters.THaVDCCluster.fChi2" },
     { "clndof", "Cluster NDoF",               "fClusters.THaVDCCluster.fNDoF" },
     { "cltcor", "Cluster Time correction",    "fClusters.THaVDCCluster.fTimeCorrection" },
-    { "cltrnum","No of track assoc w/cluster", "fClusters.THaVDCCluster.GetTrackIndex()" },
+    { "cltridx","Idx of track assoc w/cluster", "fClusters.THaVDCCluster.GetTrackIndex()" },
+    { "cltrknum", "Cluster track number (0=unused)", "fClusters.THaVDCCluster.fTrkNum" },
+    { "clstr", "Cluster start wire", "fClusters.THaVDCCluster.fClsStr" },
+    { "clend", "Cluster end wire", "fClusters.THaVDCCluster.fClsEnd" },
+    { "ambig", "UV Association ambiguous", "fClusters.THaVDCCluster.fAmbig" },
+    { "npass", "Number of hit passes for cluster", "GetNpass()" },
     { 0 }
   };
   return DefineVarsFromList( vars, mode );
@@ -291,18 +453,19 @@ THaVDCPlane::~THaVDCPlane()
 void THaVDCPlane::Clear( Option_t* )
 {    
   // Clears the contents of the and hits and clusters
-  fNWiresHit = 0;
+  fNHits = fNWiresHit = 0;
   fHits->Clear();
   fClusters->Clear();
 }
 
 //_____________________________________________________________________________
-Int_t THaVDCPlane::Decode( const THaEvData& evData)
+Int_t THaVDCPlane::Decode( const THaEvData& evData )
 {    
   // Converts the raw data into hit information
-  // Assumes channels & wires  are numbered in order
-  // TODO: Make sure the wires are numbered in order, even if the channels
-  //       aren't
+  // Logical wire numbers a defined by the detector map. Wire number 0
+  // corresponds to the first defined channel, etc.
+
+  // TODO: Support "reversed" detector map modules a la MWDC
               
   if (!evData.IsPhysicsTrigger()) return -1;
 
@@ -310,17 +473,16 @@ Int_t THaVDCPlane::Decode( const THaEvData& evData)
   // only an issue when adding in un-retimed trigger types
   Double_t evtT0=0;
   if ( fglTrg && fglTrg->Decode(evData)==kOK ) evtT0 = fglTrg->TimeOffset();
-  
+
   Int_t nextHit = 0;
 
-  bool only_fastest_hit, no_negative;
+  bool only_fastest_hit = false, no_negative = false;
   if( fVDC ) {
     // If true, add only the first (earliest) hit for each wire
     only_fastest_hit = fVDC->TestBit(THaVDC::kOnlyFastest);
-    // If true, ignore negativ drift times completely
+    // If true, ignore negative drift times completely
     no_negative      = fVDC->TestBit(THaVDC::kIgnoreNegDrift);
-  } else
-    only_fastest_hit = no_negative = false;
+  }
 
   // Loop over all detector modules for this wire plane
   for (Int_t i = 0; i < fDetMap->GetSize(); i++) {
@@ -371,6 +533,9 @@ Int_t THaVDCPlane::Decode( const THaEvData& evData)
 	    new( (*fHits)[nextHit++] )  THaVDCHit( wire, data, time );
 	}
 	  
+    // Count all hits and wires with hits
+    //    fNWiresHit++;
+
       } // End hit loop
 
       // If we are only interested in the hit with the largest TDC value 
@@ -417,6 +582,47 @@ Int_t THaVDCPlane::Decode( const THaEvData& evData)
 
 
 //_____________________________________________________________________________
+class TimeCut {
+public:
+  TimeCut( THaVDC* vdc, THaVDCPlane* _plane ) 
+    : hard_cut(false), soft_cut(false), maxdist(0.0), plane(_plane)
+  {
+    assert(vdc);
+    assert(plane);
+    if( vdc ) {
+      hard_cut = vdc->TestBit(THaVDC::kHardTDCcut);
+      soft_cut = vdc->TestBit(THaVDC::kSoftTDCcut);
+    }
+    if( soft_cut ) {
+      maxdist = 
+	0.5*static_cast<THaVDCUVPlane*>(plane->GetParent())->GetSpacing();
+      if( maxdist == 0.0 )
+	soft_cut = false;
+    }
+  }
+  bool operator() ( const THaVDCHit* hit )
+  {
+    // Only keep hits whose drift times are within sanity cuts
+    if( hard_cut ) {
+      Double_t rawtime = hit->GetRawTime();
+      if( rawtime < plane->GetMinTime() || rawtime > plane->GetMaxTime()) 
+	return false;
+    }
+    if( soft_cut ) {
+      Double_t ratio = hit->GetTime() * plane->GetDriftVel() / maxdist;
+      if( ratio < -0.5 || ratio > 1.5 )
+	return false;
+    }
+    return true;
+  }
+private:
+  bool          hard_cut;
+  bool          soft_cut;
+  double        maxdist;
+  THaVDCPlane*  plane;
+};
+
+//_____________________________________________________________________________
 Int_t THaVDCPlane::FindClusters()
 {
   // Reconstruct clusters in a VDC plane
@@ -424,87 +630,145 @@ Int_t THaVDCPlane::FindClusters()
   // correspond to decreasing physical position.
   // Ignores possibility of overlapping clusters
 
-  bool hard_cut = false, soft_cut = false;
-  if( fVDC ) {
-    hard_cut = fVDC->TestBit(THaVDC::kHardTDCcut);
-    soft_cut = fVDC->TestBit(THaVDC::kSoftTDCcut);
-  }
-  Double_t maxdist = 0.0;
-  if( soft_cut ) {
-    maxdist = 0.5*static_cast<THaVDCUVPlane*>(GetParent())->GetSpacing();
-    if( maxdist == 0.0 )
-      soft_cut = false;
-  }
+  TimeCut timecut(fVDC,this);
 
-  Int_t pwireNum = -10;         // Previous wire number
-  Int_t wireNum  =   0;         // Current wire number
-  Int_t ndif     =   0;         // Difference between wire numbers
-  Int_t nHits    = GetNHits();  // Number of hits in the plane
-  THaVDCCluster* clust = NULL;  // Current cluster
-  THaVDCHit* hit;               // current hit
+// #ifndef NDEBUG
+//   // bugcheck
+//   bool only_fastest_hit = false;
+//   if( fVDC )
+//     only_fastest_hit = fVDC->TestBit(THaVDC::kOnlyFastest);
+// #endif
 
-//    Int_t minTime = 0;        // Smallest TDC time for a given cluster
-//    THaVDCHit * minHit = NULL; // Hit with the smallest TDC time for 
-                             // a given cluster
-  //  const Double_t sqrt2 = 0.707106781186547462;
+  Int_t nHits     = GetNHits();   // Number of hits in the plane
+  Int_t nUsed = 0;                // Number of wires used in clustering
+  Int_t nLastUsed = -1;            
+  Int_t nextClust = 0;            // Current cluster number
+  assert( GetNClusters() == 0 );
 
-  Int_t nextClust = GetNClusters();  // Should be zero
+  vector <THaVDCHit *> clushits;
+  Double_t deltat;
+  Bool_t falling;
 
-  for ( int i = 0; i < nHits; i++ ) {
-    //Loop through all TDC  hits
-    if( !(hit = GetHit(i)))
-      continue;
+  fNpass = 0;
 
-    // Time within sanity cuts?
-    if( hard_cut ) {
-      Double_t rawtime = hit->GetRawTime();
-      if( rawtime < fMinTime || rawtime > fMaxTime) 
-	continue;
-    }
-    if( soft_cut ) {
-      Double_t ratio = hit->GetTime() * fDriftVel / maxdist;
-      if( ratio < -0.5 || ratio > 1.5 )
-	continue;
-    }
+  Int_t nwires, span;
+  UInt_t j;
 
-    wireNum = hit->GetWire()->GetNum();  
+  //  Loop while we're making new clusters
+  while( nLastUsed != nUsed ){
+     fNpass++;
+     nLastUsed = nUsed;
+     //Loop through all TDC hits
+     for( Int_t i = 0; i < nHits; ) {
+       clushits.clear();
+       falling = kTRUE;
 
-    // Ignore multiple hits per wire
-    if ( wireNum == pwireNum )
-      continue;
+       THaVDCHit* hit = GetHit(i);
+       assert(hit);      
 
-    // Keep track of how many wire were hit
-    fNWiresHit++;
-    ndif = wireNum - pwireNum;
-    if (ndif < 0) {
-      // Scream Bloody Murder
-      Error(Here("FindCluster"),"Wire ordering error at wire numbers %d %d. "
-	    "Call expert.", pwireNum, wireNum );
-      fClusters->Remove(clust);
-      return GetNClusters();
-    }
+       if( !timecut(hit) ) {
+	       ++i;
+	       continue;
+       }
+       if( hit->GetClsNum() != -1 )
+       	  { ++i; continue; }
+       // Ensures we don't use this to try and start a new
+       // cluster
+       hit->SetClsNum(-3);
 
-    pwireNum = wireNum;
-    if ( ndif > fNMaxGap+1 ) {
-      // Found a new cluster
-      if (clust) 
-	// Estimate the track parameters for this cluster
-	// (Pivot, intercept, and slope)
-	clust->EstTrackParameters();
+       // Consider this hit the beginning of a potential new cluster.
+       // Find the end of the cluster.
+       span = 0; 
+       nwires = 1;
+       while( ++i < nHits ) {
+	  THaVDCHit* nextHit = GetHit(i);
+	  assert( nextHit );    // should never happen, else bug in Decode
+	  if( !timecut(nextHit) )
+		  continue;
+	  if(    nextHit->GetClsNum() != -1   // -1 is virgin
+	      && nextHit->GetClsNum() != -3 ) // -3 was considered to start
+		  			      //a clus but is not in cluster
+		  continue;
+	  Int_t ndif = nextHit->GetWireNum() - hit->GetWireNum();
+	  // Do not consider adding hits from a wire that was already
+	  // added
+	  if( ndif == 0 ) { continue; }
+	  assert( ndif >= 0 );
+	  // The cluster ends when we encounter a gap in wire numbers.
+	  // TODO: cluster should also end if 
+	  //  DONE (a) it is too big
+	  //  DONE (b) drift times decrease again after initial fall/rise (V-shape)
+	  //  DONE (c) Enforce reasonable changes in wire-to-wire V-shape
 
-      // Make a new THaVDCCluster (using space from fCluster array)  
-      clust = new ( (*fClusters)[nextClust++] ) THaVDCCluster(this);
-    } 
-    //Add hit to the cluster
-    clust->AddHit(hit);
+	  // Times are sorted by earliest first when on same wire
+	  deltat = nextHit->GetTime() - hit->GetTime();
 
-  } // End looping through hits
+	  span += ndif;
+	  if( ndif > fNMaxGap+1 || span > fMaxClustSpan ){
+		  break;
+	  }
 
-  // Estimate track parameters for the last cluster found
-  if (clust)
-    clust->EstTrackParameters(); 
+	  // Make sure the time structure is sensible
+	  // If this cluster is rising, wire with falling time
+	  // should not be associated in the cluster
+	  if( !falling ){
+		  if( deltat < fMinTdiff*ndif ||
+		      deltat > fMaxTdiff*ndif )
+		  { continue; }
+	  }
 
-  return GetNClusters();  // return the number of clusters found
+	  if( falling ){
+		  // Step is too big, can't be associated
+		  if( deltat < -fMaxTdiff*ndif ){ continue; }
+		  if( deltat > 0.0 ){ 
+			  // if rise is reasonable and we don't
+			  // have a monotonically increasing cluster
+			  if( deltat < fMaxTdiff*ndif && span > 1 ){
+				  // now we're rising
+				  falling = kFALSE;
+			  } else {
+				  continue;
+			  }
+		  }
+	  }
+
+	  nwires++;
+	  if( clushits.size() == 0 ){ 
+		  clushits.push_back(hit); 
+		  hit->SetClsNum(-2);
+		  nUsed++;
+	  }
+	  clushits.push_back(nextHit);
+	  nextHit->SetClsNum(-2);
+	  nUsed++;
+	  hit = nextHit;
+       }
+       assert( i <= nHits );
+       // Make a new cluster if it is big enough
+       // If not, the hits of this i-iteration are ignored
+       // Also, make sure that we did indeed see the time
+       // spectrum turn around at some point
+       if( nwires >= fMinClustSize && !falling ) {
+	  THaVDCCluster* clust =
+	     new ( (*fClusters)[nextClust++] ) THaVDCCluster(this);
+
+	  for( j = 0; j < clushits.size(); j++ ){
+	     clushits[j]->SetClsNum(nextClust-1);
+	     clust->AddHit( clushits[j] );
+	  }
+
+	  assert( clust->GetSize() > 0 && clust->GetSize() >= nwires );
+	  // This is a good cluster candidate. Estimate its position/slope
+	  clust->EstTrackParameters();
+       } //end new cluster 
+
+     } //end loop over hits
+     
+  } // end passes over hits
+
+  assert( GetNClusters() == nextClust );
+
+  return nextClust;  // return the number of clusters found
 }
 
 //_____________________________________________________________________________
@@ -520,13 +784,36 @@ Int_t THaVDCPlane::FitTracks()
     // Convert drift times to distances. 
     // The conversion algorithm is determined at wire initialization time,
     // i.e. currently in the ReadDatabase() function of this class.
-    // Current best estimates of the track parameters will be passed to
-    // the converter.
+    // The conversion is done with the current value of fSlope in the
+    // clusters, i.e. either the rough guess from 
+    // THaVDCCluster::EstTrackParameters or the global slope from 
+    // THaVDC::ConstructTracks
     clust->ConvertTimeToDist();
 
     // Fit drift distances to get intercept, slope.
     clust->FitTrack();
+
+#ifdef CLUST_RAWDATA_HACK
+    // HACK: write out cluster info for small-t0 clusters in u1
+    if( fName == "u" && !strcmp(GetParent()->GetName(),"uv1") &&
+	TMath::Abs(clust->GetT0()) < fT0Resolution/3. &&
+	clust->GetSize() <= 6 ) {
+      ofstream outp;
+      outp.open("u1_cluster_data.out",ios_base::app);
+      outp << clust->GetSize() << endl;
+      for( int i=clust->GetSize()-1; i>=0; i-- ) {
+	outp << clust->GetHit(i)->GetPos() << " "
+	     << clust->GetHit(i)->GetDist() 
+	     << endl;
+      }
+      outp << 1./clust->GetSlope() << " "
+	   << clust->GetIntercept()
+	   << endl;
+      outp.close();
+    }
+#endif
   }
+
   return 0;
 }
 

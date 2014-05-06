@@ -31,13 +31,15 @@ public:
   virtual EStatus Init( const TDatime& date );
 
   // Get and Set Functions
-  virtual THaVDCUVPlane* GetUpper() { return fUpper; }
-  virtual THaVDCUVPlane* GetLower() { return fLower; }
+  THaVDCUVPlane* GetUpper() const { return fUpper; }
+  THaVDCUVPlane* GetLower() const { return fLower; }
 
-  virtual Double_t GetVDCAngle() { return fVDCAngle; }
-  virtual Double_t GetSpacing()  { return fUSpacing;  }
+  Double_t GetVDCAngle() const { return fVDCAngle; }
+  Double_t GetSpacing()  const { return fUSpacing;  }
+  Double_t GetUSpacing() const { return fUSpacing;  }
+  Double_t GetVSpacing() const { return fVSpacing;  }
 
-  virtual void Print(const Option_t* opt) const;
+  void Print(const Option_t* opt) const;
 
   // Bits & and bit masks for THaTrack
   enum {
@@ -58,7 +60,8 @@ public:
     kSoftTDCcut     = BIT(16), // Use soft TDC cut (reasonable estimated drifts)
     kIgnoreNegDrift = BIT(17), // Completely ignore negative drift times
 
-    kCoarseOnly     = BIT(23) // Do only coarse tracking
+    kDecodeOnly     = BIT(22), // Only decode data, disable tracking
+    kCoarseOnly     = BIT(23)  // Do only coarse tracking
   };
 
 protected:
@@ -82,6 +85,8 @@ protected:
   Double_t fCentralDist;    // the path length of the central ray from
                             // the origin of the transport coordinates to 
                             // the s1 plane
+
+  UInt_t   fEvNum;          // Event number from decoder (for diagnostics)
 
   // declarations for target vertex reconstruction
   enum ECoordTypes { kTransport, kRotatingTransport };

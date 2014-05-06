@@ -8,20 +8,23 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "TObject.h"
+#include <utility>
 
 class THaVDCHit;
 class THaVDCPlane;
 class THaVDCUVTrack;
 class THaTrack;
 
+typedef std::pair<Double_t,Int_t>  chi2_t;
+
 class THaVDCCluster : public TObject {
 
 public:
   THaVDCCluster( THaVDCPlane* owner = 0 ) :
-    fSize(0), fPlane(owner), fUVTrack(0), fTrack(0),
-    fSlope(kBig), fSigmaSlope(kBig), fInt(kBig), fSigmaInt(kBig),
-    fT0(0.0), fSigmaT0(kBig), fPivot(0), fTimeCorrection(0.0),
-    fFitOK(false), fLocalSlope(kBig), fChi2(kBig), fNDoF(0.0)  {}
+    fSize(0), fPlane(owner), fUVTrack(0), fTrack(0), fTrkNum(0), fSlope(kBig),
+    fLocalSlope(kBig), fSigmaSlope(kBig), fInt(kBig), fSigmaInt(kBig),
+    fT0(kBig), fSigmaT0(kBig), fPivot(0), fTimeCorrection(0.0),
+    fFitOK(false), fChi2(kBig), fNDoF(0.0), fAmbig(kFALSE), fPaired(0)  {}
   THaVDCCluster( const THaVDCCluster& );
   THaVDCCluster& operator=( const THaVDCCluster& );
   virtual ~THaVDCCluster();
@@ -34,6 +37,7 @@ public:
   virtual void   FitTrack( EMode mode = kSimple );
   virtual void   ClearFit();
   virtual void   CalcChisquare(Double_t& chi2, Int_t& nhits) const;
+  chi2_t         CalcDist();    // calculate global track to wire distances
 
   // TObject functions redefined
   virtual void   Clear( Option_t* opt="" );
@@ -54,19 +58,28 @@ public:
   THaVDCHit*     GetPivot()          const { return fPivot; }
   Int_t          GetPivotWireNum()   const;
   Double_t       GetTimeCorrection() const { return fTimeCorrection; }
+  Double_t       GetT0()             const { return fT0; }
   THaVDCUVTrack* GetUVTrack()        const { return fUVTrack; }
   THaTrack*      GetTrack()          const { return fTrack; }
   Int_t          GetTrackIndex()     const;
+  Int_t          GetTrkNum()         const { return fTrkNum; }
+  Double_t       GetSigmaT0()        const { return fSigmaT0; }
+  Double_t       GetChi2()           const { return fChi2; }
+  Double_t       GetNDoF()           const { return fNDoF; }
+  Bool_t         IsFitOK()           const { return fFitOK; }
+  Bool_t         IsUsed()            const { return (fTrack != 0); }
+  Bool_t         IsPaired()          const { return (fPaired !=0); }
+  THaVDCCluster* GetPaired()         const { return fPaired; }
 
-  bool           IsFitOK()           const { return fFitOK; }
-
+  void           SetAmbiguous( Bool_t a )           { fAmbig  = a;}
   void           SetPlane( THaVDCPlane* plane )     { fPlane = plane; }
   void           SetIntercept( Double_t intercept ) { fInt = intercept; }
-  void           SetSlope( Double_t slope )         { fSlope = slope;}
-  void           SetPivot( THaVDCHit* piv )         { fPivot = piv; }
-  void           SetTimeCorrection( Double_t tc )   { fTimeCorrection = tc; }
+  void           SetSlope( Double_t slope)          { fSlope = slope;}
+  void           SetPivot( THaVDCHit* piv)          { fPivot = piv; }
+  void           SetTimeCorrection( Double_t dt )   { fTimeCorrection = dt; }
   void           SetUVTrack( THaVDCUVTrack* uvtrk ) { fUVTrack = uvtrk; }
-  void           SetTrack( THaTrack* track )        { fTrack = track; }
+  void           SetTrack( THaTrack* track );
+  void           SetPaired( THaVDCCluster *p )      { fPaired = p; }
 
 protected:
   static const Int_t MAX_SIZE = 16;  // Assume no more than 16 hits per cluster
@@ -77,22 +90,41 @@ protected:
   THaVDCPlane*   fPlane;             // Plane the cluster belongs to
   THaVDCUVTrack* fUVTrack;           // UV Track the cluster belongs to
   THaTrack*      fTrack;             // Track the cluster belongs to
+  Int_t          fTrkNum;            // Number of the track using this cluster
 
   //Track Parameters 
-  Double_t       fSlope, fSigmaSlope;// Slope and error in slope
-  Double_t       fInt, fSigmaInt;    // Intercept and error
+  Double_t       fSlope;             // Current best estimate of actual slope
+  Double_t       fLocalSlope;        // Fitted slope, from FitTrack()
+  Double_t       fSigmaSlope;        // Error estimate of fLocalSlope from fit
+  Double_t       fInt, fSigmaInt;    // Intercept and error estimate
   Double_t       fT0, fSigmaT0;      // Fitted common timing offset and error
   THaVDCHit*     fPivot;             // Pivot - hit with smallest drift time
+  Int_t          fIPivot;            // Drift sign flips at this hit index
+  //FIXME: in the code, this is used as a distance correction!!
   Double_t       fTimeCorrection;    // correction to be applied when fitting
                                      // drift times
-  bool           fFitOK;             // Flag indicating that fit results valid
-  Double_t       fLocalSlope;        // Local slope, from FitTrack()
-  Double_t       fChi2;              // chi2 for the cluster
+  Bool_t         fFitOK;             // Flag indicating that fit results valid
+  Double_t       fChi2;              // chi2 for the cluster (using fSlope)
   Double_t       fNDoF;              // NDoF in local chi2 calculation
+  Int_t          fClsStr; 	     // Starting wire number
+  Int_t          fClsEnd;            // Ending wire number
+  Bool_t         fAmbig;
 
-  virtual void   CalcDist();         // calculate the track to wire distances
-  virtual void   FitSimpleTrack();
-  virtual void   FitSimpleTrackWgt(); // present for testing
+  THaVDCCluster* fPaired;
+
+  void   CalcLocalDist();     // calculate the local track to wire distances
+
+  void   FitSimpleTrack();
+  void   FitSimpleTrackWgt(); // present for testing
+  void   FitNLTrack();        // Non-linear 3-parameter fit
+
+  chi2_t CalcChisquare( const Double_t* x, const Double_t* y, 
+			const Int_t* s, const Double_t* w,
+			Double_t slope, Double_t icpt, Double_t d0 ) const;
+  void   Linear3DFit( const Double_t* x, const Double_t* y, 
+		      const Int_t* s, const Double_t* w,
+		      Double_t& slope, Double_t& icpt, Double_t& d0 ) const;
+  Int_t  LinearClusterFitWithT0();
 
   ClassDef(THaVDCCluster,0)          // A group of VDC hits
 };
