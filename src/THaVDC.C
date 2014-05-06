@@ -101,16 +101,16 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   static const char* const here = "ReadDatabase";
   const int LEN = 200;
   char buff[LEN];
-  
+
   // Look for the section [<prefix>.global] in the file, e.g. [ R.global ]
   TString tag(fPrefix);
-  Ssiz_t pos = tag.Index("."); 
+  Ssiz_t pos = tag.Index(".");
   if( pos != kNPOS )
     tag = tag(0,pos+1);
   else
     tag.Append(".");
   tag.Prepend("[");
-  tag.Append("global]"); 
+  tag.Append("global]");
 
   TString line;
   bool found = false;
@@ -119,7 +119,7 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
     line = buf;
     delete [] buf;
     if( line.EndsWith("\n") ) line.Chop();
-    if ( tag == line ) 
+    if ( tag == line )
       found = true;
   }
   if( !found ) {
@@ -135,32 +135,32 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   // fSpacing is now calculated from the actual z-positions in Init(),
   // so skip the first line after [ global ] completely:
   fgets(buff, LEN, file); // Skip rest of line
- 
+
   // Read in the focal plane transfer elements
   // For fine-tuning of these data, we seek to a matching time stamp, or
   // if no time stamp found, to a "configuration" section. Examples:
-  // 
+  //
   // [ 2002-10-10 15:30:00 ]
   // comment line goes here
   // t 0 0 0  ...
   // y 0 0 0  ... etc.
   //
   // or
-  // 
+  //
   // [ config=highmom ]
   // comment line
   // t 0 0 0  ... etc.
   //
-  if( (found = SeekDBdate( file, date )) == 0 && !fConfig.IsNull() && 
+  if( (found = SeekDBdate( file, date )) == 0 && !fConfig.IsNull() &&
       (found = SeekDBconfig( file, fConfig.Data() )) == 0 ) {
     // Print warning if a requested (non-empty) config not found
     Warning( Here(here), "Requested configuration section \"%s\" not "
-	     "found in database. Using default (first) section.", 
+	     "found in database. Using default (first) section.",
 	     fConfig.Data() );
   }
 
   // Second line after [ global ] or first line after a found tag.
-  // After a found tag, it must be the comment line. If not found, then it 
+  // After a found tag, it must be the comment line. If not found, then it
   // can be either the comment or a non-found tag before the comment...
   fgets(buff, LEN, file);  // Skip line
   if( !found && IsTag(buff) )
@@ -174,7 +174,7 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   fYMatrixElems.clear();
   fYTAMatrixElems.clear();
   fLMatrixElems.clear();
-  
+
   fFPMatrixElems.clear();
   fFPMatrixElems.resize(3);
 
@@ -194,7 +194,7 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   power["TF"] = 5;
   power["PF"] = 5;
   power["YF"] = 5;
-  
+
   map<string,vector<THaMatrixElement>*> matrix_map;
   matrix_map["t"] = &fFPMatrixElems;
   matrix_map["y"] = &fFPMatrixElems;
@@ -222,7 +222,7 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
       buff[line.size()-1] = 0;
       line.erase(line.size()-1,1);
     }
-    // Split the line into whitespace-separated fields    
+    // Split the line into whitespace-separated fields
     vector<string> line_spl = Split(line);
 
     // Stop if the line does not start with a string referring to
@@ -232,7 +232,7 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
       continue; //ignore empty lines
     const char* w = line_spl[0].c_str();
     vsiz_t npow = power[w];
-    if( npow == 0 ) 
+    if( npow == 0 )
       break;
 
     // Looks like a good line, go parse it.
@@ -262,7 +262,7 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
     // Don't bother with all-zero matrix elements
     if( ME.iszero )
       continue;
-    
+
     // Add this matrix element to the appropriate array
     vector<THaMatrixElement> *mat = matrix_map[w];
     if (mat) {
@@ -278,7 +278,7 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
 	} else
 	  Warning(Here(here), "Bad coefficients of focal plane matrix "
 		  "element %s", buff);
-      } 
+      }
       else {
 	// All other matrix elements are just appended to the respective array
 	// but ensure that they are defined only once!
@@ -294,7 +294,7 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
     }
     else if ( fDebug > 0 )
       Warning(Here(here), "Not storing matrix for: %s !", w);
-    
+
   } //while(fgets)
 
   // Compute derived quantities and set some hardcoded parameters
@@ -324,7 +324,7 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
     fCentralDist = s1->GetOrigin().Z();
 
   CalcMatrix(1.,fLMatrixElems); // tensor without explicit polynomial in x_fp
-  
+
   // FIXME: Set geometry data (fOrigin). Currently fOrigin = (0,0,0).
 
   fIsInit = true;
@@ -345,10 +345,10 @@ THaVDC::~THaVDC()
 //_____________________________________________________________________________
 Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 {
-  // Construct tracks from pairs of upper and lower UV tracks and add 
+  // Construct tracks from pairs of upper and lower UV tracks and add
   // them to 'tracks'
 
-  // TODO:  
+  // TODO:
   //   Only make combos whose projections are close
   //   do a real 3D fit, not just compute 3D chi2?
 
@@ -368,7 +368,7 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
   UInt_t theStage = ( mode == 1 ) ? kCoarse : kFine;
 
   fUVpairs->Clear();
-  
+
   // Bail out if either plane has ambiguous
   // cluster association
   Bool_t lowerBad = fLower->IsBad();
@@ -378,7 +378,7 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 	    cout << "lower bad: " << lowerBad << "  upper bad: "
 		   << upperBad << endl;
     }
-    return 0; 
+    return 0;
   }
 
   Int_t nUpperTracks = fUpper->GetNUVTracks();
@@ -401,15 +401,15 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
   Int_t nTracks = 0;  // Number of valid particle tracks through the detector
   Int_t nPairs  = 0;  // Number of UV track pairs to consider
 
-  // One plane has no tracks, the other does 
+  // One plane has no tracks, the other does
   // -> maybe recoverable with loss of precision
   // FIXME: Only do this if missing cluster recovery flag set
   if( nUpperTracks == 0 || nLowerTracks == 0 ) {
     //FIXME: Put missing cluster recovery code here
     //For now, do nothing
 #ifdef WITH_DEBUG
-    if( fDebug>1 ) 
-      cout << "missing cluster " << nLowerTracks << " " 
+    if( fDebug>1 )
+      cout << "missing cluster " << nLowerTracks << " "
 	   << nUpperTracks << endl;
 #endif
     return 0;
@@ -420,12 +420,12 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 
   for( int i = 0; i < nLowerTracks; i++ ) {
     track = fLower->GetUVTrack(i);
-    if( !track ) 
+    if( !track )
       continue;
 
     for( int j = 0; j < nUpperTracks; j++ ) {
       partner = fUpper->GetUVTrack(j);
-      if( !partner ) 
+      if( !partner )
 	continue;
 
       // Create new UV track pair.
@@ -439,7 +439,7 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
       thePair->Analyze( fUSpacing );
     }
   }
-      
+
 #ifdef WITH_DEBUG
   if( fDebug>1 )
     cout << nPairs << " pairs.\n";
@@ -464,7 +464,7 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 
 #ifdef WITH_DEBUG
     if( fDebug>1 ) {
-      cout << "Pair " << i << ":  " 
+      cout << "Pair " << i << ":  "
 	   << thePair->GetUpper()->GetUCluster()->GetPivotWireNum() << " "
 	   << thePair->GetUpper()->GetVCluster()->GetPivotWireNum() << " "
 	   << thePair->GetLower()->GetUCluster()->GetPivotWireNum() << " "
@@ -475,17 +475,17 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
     // Stop if track matching error too big
     if( thePair->GetError() > fErrorCutoff )
       break;
-    
+
     // Get the tracks of the pair
     track   = thePair->GetLower();
     partner = thePair->GetUpper();
-    if( !track || !partner ) 
+    if( !track || !partner )
       continue;
 
     //FIXME: debug
 #ifdef WITH_DEBUG
     if( fDebug>1 ) {
-      cout << "dUpper/dLower = " 
+      cout << "dUpper/dLower = "
 	   << thePair->GetProjectedDistance( track,partner,fUSpacing) << "  "
 	   << thePair->GetProjectedDistance( partner,track,-fUSpacing);
     }
@@ -503,7 +503,7 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
     if( fDebug>1 )
       cout << " ... good.\n";
 #endif
- 
+
     // Use the pair. This partners the UVtracks and calculates global slopes
     thePair->Use();
     nTracks++;
@@ -512,18 +512,18 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
     if( fDebug>2 ) {
       Double_t mu = track->GetUCluster()->GetSlope();
       Double_t mv = track->GetVCluster()->GetSlope();
-      cout << "Global track parameters: " 
-	   << mu << " " << mv << " " 
+      cout << "Global track parameters: "
+	   << mu << " " << mv << " "
 	   << track->GetTheta() << " " << track->GetPhi()
 	   << endl;
     }
 #endif
 
-    // If the 'tracks' array was given, add THaTracks to it 
+    // If the 'tracks' array was given, add THaTracks to it
     // (or modify existing ones).
     if (tracks) {
 
-      // Decide whether this is a new track or an old track 
+      // Decide whether this is a new track or an old track
       // that is being updated
       THaVDCTrackID* thisID = new THaVDCTrackID(track,partner);
       THaTrack* theTrack = NULL;
@@ -566,14 +566,14 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 	assert( tracks->IndexOf(theTrack) >= 0 );
 	theTrack->SetTrkNum( tracks->IndexOf(theTrack)+1 );
 	thePair->Associate( theTrack );
-	if( theStage == kFine ) 
+	if( theStage == kFine )
 	  flag |= kReassigned;
       }
-      
-      theTrack->SetD(track->GetX(), track->GetY(), track->GetTheta(), 
+
+      theTrack->SetD(track->GetX(), track->GetY(), track->GetTheta(),
 		     track->GetPhi());
       theTrack->SetFlag( flag );
-      
+
       // Calculate the TRANSPORT coordinates
       CalcFocalPlaneCoords(theTrack, kRotatingTransport);
 
@@ -638,7 +638,7 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 
 //_____________________________________________________________________________
 void THaVDC::Clear( Option_t* opt )
-{ 
+{
   // Clear event-by-event data
 
   fLower->Clear(opt);
@@ -649,7 +649,7 @@ void THaVDC::Clear( Option_t* opt )
 Int_t THaVDC::Decode( const THaEvData& evdata )
 {
   // Decode data from VDC planes
-  
+
 #ifdef WITH_DEBUG
   // Save current event number for diagnostics
   fEvNum = evdata.GetEvNum();
@@ -659,7 +659,7 @@ Int_t THaVDC::Decode( const THaEvData& evdata )
   }
 #endif
 
-  fLower->Decode(evdata); 
+  fLower->Decode(evdata);
   fUpper->Decode(evdata);
 
   return 0;
@@ -687,7 +687,7 @@ Int_t THaVDC::FineTrack( TClonesArray& tracks )
 {
   // Calculate exact track position and angle using drift time information.
   // Assumes that CoarseTrack has been called (ie - clusters are matched)
-  
+
   if( TestBit(kDecodeOnly) || TestBit(kCoarseOnly) )
     return 0;
 
@@ -733,8 +733,8 @@ void THaVDC::CalcFocalPlaneCoords( THaTrack* track, const ECoordTypes mode )
   Double_t x, y, theta, phi;
   // Rotating TRANSPORT coordinates
   Double_t r_x, r_y, r_theta, r_phi;
-  
-  // tan rho (for the central ray) is stored as a matrix element 
+
+  // tan rho (for the central ray) is stored as a matrix element
   tan_rho = fFPMatrixElems[T000].poly[0];
   cos_rho = 1.0/sqrt(1.0+tan_rho*tan_rho);
 
@@ -744,7 +744,7 @@ void THaVDC::CalcFocalPlaneCoords( THaTrack* track, const ECoordTypes mode )
   x = track->GetDX() * cos_rho * (1.0 + theta * tan_rho);
   phi = track->GetDPhi() / (1.0-track->GetDTheta()*tan_rho) / cos_rho;
   y = track->GetDY() + tan_rho*phi*track->GetDX()*cos_rho;
-  
+
   // then calculate the rotating transport frame coordinates
   r_x = x;
 
@@ -759,8 +759,8 @@ void THaVDC::CalcFocalPlaneCoords( THaTrack* track, const ECoordTypes mode )
   // Calculate now the tan(rho) and cos(rho) of the local rotation angle.
   tan_rho_loc = fFPMatrixElems[T000].v;   // T000
   cos_rho_loc = 1.0/sqrt(1.0+tan_rho_loc*tan_rho_loc);
-  
-  r_phi = (track->GetDPhi() - fFPMatrixElems[P000].v /* P000 */ ) / 
+
+  r_phi = (track->GetDPhi() - fFPMatrixElems[P000].v /* P000 */ ) /
     (1.0-track->GetDTheta()*tan_rho_loc) / cos_rho_loc;
   r_theta = (track->GetDTheta()+tan_rho_loc) /
     (1.0-track->GetDTheta()*tan_rho_loc);
@@ -792,7 +792,7 @@ void THaVDC::CalcTargetCoords(THaTrack *track, const ECoordTypes mode)
     x_fp = track->GetRX();
     y_fp = track->GetRY();
     th_fp = track->GetRTheta();
-    ph_fp = track->GetRPhi();  
+    ph_fp = track->GetRPhi();
   }
 
   // calculate the powers we need
@@ -833,7 +833,7 @@ void THaVDC::CalcTargetCoords(THaTrack *track, const ECoordTypes mode)
   track->SetDp(dp);
   track->SetMomentum(p);
   track->SetPathLen(pathl);
-  
+
   app->TransportToLab( p, theta, phi, track->GetPvect() );
 
 }
@@ -843,7 +843,7 @@ void THaVDC::CalcTargetCoords(THaTrack *track, const ECoordTypes mode)
 void THaVDC::CalcMatrix( const Double_t x, vector<THaMatrixElement>& matrix )
 {
   // calculates the values of the matrix elements for a given location
-  // by evaluating a polynomial in x of order it->order with 
+  // by evaluating a polynomial in x of order it->order with
   // coefficients given by it->poly
 
   for( vector<THaMatrixElement>::iterator it=matrix.begin();
@@ -874,7 +874,7 @@ Double_t THaVDC::CalcTargetVar(const vector<THaMatrixElement>& matrix,
       for (unsigned int i=0; i<np; ++i)
 	v *= powers[it->pw[i]][i+1];
       retval += v;
-  //      retval += it->v * powers[it->pw[0]][1] 
+  //      retval += it->v * powers[it->pw[0]][1]
   //	              * powers[it->pw[1]][2]
   //	              * powers[it->pw[2]][3];
     }
@@ -924,7 +924,7 @@ void THaVDC::CorrectTimeOfFlight(TClonesArray& tracks)
   //cerr<<"num tracks: "<<n_exist<<endl;
   for( Int_t t = 0; t < n_exist; t++ ) {
     THaTrack* track = static_cast<THaTrack*>( tracks.At(t) );
-    
+
     // calculate the correction, since it's on a per track basis
     Double_t s1_dist, vdc_dist, dist, tdelta;
     if(!s1->CalcPathLen(track, s1_dist))
@@ -939,18 +939,18 @@ void THaVDC::CorrectTimeOfFlight(TClonesArray& tracks)
       dist = s1_dist + vdc_dist;
     else
       dist = s1_dist - vdc_dist;
-    
+
     tdelta = ( fCentralDist - dist) / v;
     //cout<<"time correction: "<<tdelta<<endl;
 
     // apply the correction
     Int_t n_clust = track->GetNclusters();
     for( Int_t i = 0; i < n_clust; i++ ) {
-      THaVDCUVTrack* the_uvtrack = 
+      THaVDCUVTrack* the_uvtrack =
 	static_cast<THaVDCUVTrack*>( track->GetCluster(i) );
       if( !the_uvtrack )
 	continue;
-      
+
       the_uvtrack->GetUCluster()->SetTimeCorrection(tdelta);
       the_uvtrack->GetVCluster()->SetTimeCorrection(tdelta);
     }
@@ -979,7 +979,7 @@ void THaVDC::FindBadTracks(TClonesArray& tracks)
     if(!s2->CalcInterceptCoords(track, x2, y2)) {
       x2 = 0.0;
       y2 = 0.0;
-    } 
+    }
 
     // if the tracks go out of the bounds of the s2 plane,
     // toss the track out
@@ -992,7 +992,7 @@ void THaVDC::FindBadTracks(TClonesArray& tracks)
       //tracks.RemoveAt(t);
 #ifdef WITH_DEBUG
       //cout << "Track " << t << " deleted.\n";
-#endif  
+#endif
     }
   }
 

@@ -17,12 +17,12 @@ const Double_t THaVDCUVTrack::kBig = 1e38;  // Arbitrary large value
 void THaVDCUVTrack::CalcDetCoords()
 {
   // Convert U,V coordinates of our two clusters to the detector coordinate
-  // system. 
+  // system.
   //
   // Note that the slopes of our clusters may have been replaced
-  // with global angles computed in a higher-level class. 
+  // with global angles computed in a higher-level class.
   // See, for example, THaVDC::ConstructTracks()
-  // 
+  //
   // This routine requires several parameters from the THaVDCUVPlane that
   // this track belongs to. fUVPlane must be set!
 
@@ -31,7 +31,7 @@ void THaVDCUVTrack::CalcDetCoords()
   Double_t v0 = GetV();                  // Intercept for V plane
   Double_t mu = fUClust->GetSlope();     // Slope of U cluster
   Double_t mv = fVClust->GetSlope();     // Slope of V cluster
-    
+
   // Project v0 into the u plane
   Double_t v = v0 - mv * dz;
 
@@ -41,7 +41,7 @@ void THaVDCUVTrack::CalcDetCoords()
   Double_t detY     = (v*fUVPlane->fCos_u - u*fUVPlane->fCos_v) *
     fUVPlane->fInv_sin_vu;
   Double_t detTheta = (mu*fUVPlane->fSin_v - mv*fUVPlane->fSin_u) *
-    fUVPlane->fInv_sin_vu; 
+    fUVPlane->fInv_sin_vu;
   Double_t detPhi   = (mv*fUVPlane->fCos_u - mu*fUVPlane->fCos_v) *
     fUVPlane->fInv_sin_vu;
 
@@ -89,7 +89,7 @@ void THaVDCUVTrack::CalcChisquare(Double_t& chi2, Int_t& nhits) const
   fUClust->CalcChisquare(chi2,nhits);
   fVClust->CalcChisquare(chi2,nhits);
 }
-  
+
 //_____________________________________________________________________________
 void THaVDCUVTrack::SetTrack( THaTrack* track )
 {

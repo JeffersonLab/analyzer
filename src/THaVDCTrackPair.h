@@ -22,7 +22,7 @@ public:
     fLowerTrack(rhs.fLowerTrack), fUpperTrack(rhs.fUpperTrack),
     fError(rhs.fError), fStatus(rhs.fStatus) {}
   THaVDCTrackPair& operator=( const THaVDCTrackPair& );
-  
+
   virtual ~THaVDCTrackPair() {}
 
   void            Analyze( Double_t spacing );
@@ -40,7 +40,7 @@ public:
   void            SetStatus( Int_t i ) { fStatus = i; }
   void            Use();
 
-  Double_t        GetProjectedDistance( THaVDCUVTrack* here, 
+  Double_t        GetProjectedDistance( THaVDCUVTrack* here,
 					THaVDCUVTrack* there,
 					Double_t spacing );
 

@@ -83,7 +83,7 @@ protected:
   Double_t fErrorCutoff;    // Cut on track matching error
 
   Double_t fCentralDist;    // the path length of the central ray from
-                            // the origin of the transport coordinates to 
+                            // the origin of the transport coordinates to
                             // the s1 plane
 
   UInt_t   fEvNum;          // Event number from decoder (for diagnostics)
@@ -126,10 +126,10 @@ protected:
   void CalcTargetCoords(THaTrack *the_track, const ECoordTypes mode);
   void CalcMatrix(const double x, std::vector<THaMatrixElement> &matrix);
   Double_t DoPoly(const int n, const std::vector<double> &a, const double x);
-  Double_t PolyInv(const double x1, const double x2, const double xacc, 
-		 const double y, const int norder, 
+  Double_t PolyInv(const double x1, const double x2, const double xacc,
+		 const double y, const int norder,
 		 const std::vector<double> &a);
-  Double_t CalcTargetVar(const std::vector<THaMatrixElement> &matrix, 
+  Double_t CalcTargetVar(const std::vector<THaMatrixElement> &matrix,
 			 const double powers[][5]);
   Double_t CalcTarget2FPLen(const std::vector<THaMatrixElement>& matrix,
 			    const Double_t powers[][5]);
@@ -141,7 +141,7 @@ protected:
   void FindBadTracks(TClonesArray &tracks);
 
   ClassDef(THaVDC,0)             // VDC class
-}; 
+};
 
 ////////////////////////////////////////////////////////////////////////////////
 

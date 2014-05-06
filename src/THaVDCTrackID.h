@@ -21,7 +21,7 @@ public:
   THaVDCTrackID( const THaVDCUVTrack* lower, const THaVDCUVTrack* upper );
   THaVDCTrackID( const THaVDCTrackID& );
   THaVDCTrackID& operator=( const THaVDCTrackID& );
-  
+
   virtual ~THaVDCTrackID() {}
 
   virtual Bool_t  operator==( const THaTrackID& );

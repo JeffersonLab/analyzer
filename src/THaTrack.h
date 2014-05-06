@@ -24,14 +24,14 @@ public:
   // Bits for fType
   enum {
     kHasDet        = BIT(0),  // Detector coordinates set
-    kHasFP         = BIT(1),  // Focal plane coordinates set 
+    kHasFP         = BIT(1),  // Focal plane coordinates set
     kHasRot        = BIT(2),  // Rotating TRANSPORT coordinates set
     kHasTarget     = BIT(3),  // Target coordinates reconstructed
     kHasVertex     = BIT(4)   // Vertex reconstructed
   };
 
   // Default constructor
-  THaTrack() 
+  THaTrack()
     : TObject(),
       fX(kBig), fY(kBig), fTheta(kBig), fPhi(kBig), fP(kBig),
       fDX(kBig), fDY(kBig), fDTheta(kBig), fDPhi(kBig),
@@ -59,9 +59,9 @@ public:
       fPathl(kBig), fTime(kBig), fdTime(kBig), fBeta(kBig), fdBeta(kBig),
       fNclusters(0), fPIDinfo(pid), fCreator(creator), fIndex(-1), fTrkNum(0),
       fID(id), fFlag(0), fType(kHasFP), fChi2(kBig), fNDoF(0)
-  { 
-    memset(fClusters,0,kMAXCL*sizeof(THaCluster*)); 
-    if(pid) pid->Clear(); 
+  {
+    memset(fClusters,0,kMAXCL*sizeof(THaCluster*));
+    if(pid) pid->Clear();
   }
 
   virtual ~THaTrack();
@@ -88,15 +88,15 @@ public:
 
   Double_t          GetChi2()          const { return fChi2; }
   Int_t             GetNDoF()          const { return fNDoF; }
-  
+
   Double_t          GetDX()            const { return fDX; }
   Double_t          GetDY()            const { return fDY; }
   Double_t          GetDTheta()        const { return fDTheta; }
-  Double_t          GetDPhi()          const { return fDPhi; } 
+  Double_t          GetDPhi()          const { return fDPhi; }
   Double_t          GetRX()            const { return fRX; }
   Double_t          GetRY()            const { return fRY; }
   Double_t          GetRTheta()        const { return fRTheta; }
-  Double_t          GetRPhi()          const { return fRPhi; } 
+  Double_t          GetRPhi()          const { return fRPhi; }
   Double_t          GetTX()            const { return fTX; }
   Double_t          GetTY()            const { return fTY; }
   Double_t          GetTTheta()        const { return fTTheta; }
@@ -109,7 +109,7 @@ public:
   Double_t          GetVertexY()       const { return fVertex.Y(); }
   Double_t          GetVertexZ()       const { return fVertex.Z(); }
   Double_t          GetPathLen()       const { return fPathl; }
-  
+
   TVector3&         GetPvect()               { return fPvect; }
   TVector3&         GetVertex()              { return fVertex; }
   TVector3&         GetVertexError()         { return fVertexError; }
@@ -118,7 +118,7 @@ public:
   Double_t          GetdTime()         const { return fdTime; } // (s)
   Double_t          GetBeta()          const { return fBeta; } // from scint.
   Double_t          GetdBeta()         const { return fdBeta; }
-  
+
   bool              HasDet()           const { return (fType&kHasDet); }
   bool              HasFP()            const { return (fType&kHasFP); }
   bool              HasRot()           const { return (fType&kHasRot); }
@@ -137,7 +137,7 @@ public:
 			       Double_t theta, Double_t phi );
 
   void              SetPathLen( Double_t pathl ) { fPathl = pathl; /* meters */ }
-  void              SetTime( Double_t time )     { fTime = time; /* seconds */ } 
+  void              SetTime( Double_t time )     { fTime = time; /* seconds */ }
   void              SetdTime( Double_t dt )      { fdTime = dt; /* seconds */ }
   void              SetBeta( Double_t beta )     { fBeta = beta; }
   void              SetdBeta( Double_t db )      { fdBeta = db; }
@@ -154,11 +154,11 @@ public:
   void              SetIndex( Int_t idx )                { fIndex   = idx; }
   void              SetPIDinfo( THaPIDinfo* pid )        { fPIDinfo = pid; }
   void              SetPvect( const TVector3& pvect )    { fPvect   = pvect; }
-  void              SetVertex( const TVector3& vert )     
+  void              SetVertex( const TVector3& vert )
   { fVertex = vert; fType |= kHasVertex; }
   void              SetVertex( Double_t x, Double_t y, Double_t z )
   { fVertex.SetXYZ( x, y, z ); fType |= kHasVertex; }
-  void              SetVertexError( const TVector3& err ) 
+  void              SetVertexError( const TVector3& err )
   { fVertexError = err; }
   void              SetVertexError( Double_t x, Double_t y, Double_t z )
   { fVertexError.SetXYZ( x, y, z ); }
@@ -180,8 +180,8 @@ protected:
   // coordinates in the detector system
   Double_t fDX;     // x position in DCS
   Double_t fDY;     // y position in DCS
-  Double_t fDTheta; // Tangent of DCS Theta 
-  Double_t fDPhi;   // Tangent of DCS Phi 
+  Double_t fDTheta; // Tangent of DCS Theta
+  Double_t fDPhi;   // Tangent of DCS Phi
 
   // coordinates in the rotated TRANSPORT system
   Double_t fRX;     // x position in focal plane (m)
@@ -206,7 +206,7 @@ protected:
   Double_t          fdTime;  // uncertainty in fTime
   Double_t          fBeta;   // beta of track
   Double_t          fdBeta;  // uncertainty in fBeta
-  
+
   // Status variables and objects related to this track
   Int_t             fNclusters;      //! Number of clusters
   THaCluster*       fClusters[kMAXCL]; //! Clusters of this track
@@ -223,7 +223,7 @@ protected:
   Int_t             fNDoF;   // number of hits on the track contributing to chi2
 
   static const Double_t kBig;
-  
+
   ClassDef(THaTrack,5)       // A generic particle track
 };
 

@@ -90,7 +90,7 @@ Int_t THaVDCUVPlane::MatchUVClusters()
   Int_t nv = fV->GetNClusters();
 
   // Quick-and-dirty algorithm pushed by Bogdan Wojtsekhowski.
-  // Probably not the way to go for the real thing, but it will give 
+  // Probably not the way to go for the real thing, but it will give
   // relatively clean (if inefficient) results:
   //
   // Match best in-time clusters (t_0 close to zero).
@@ -128,7 +128,7 @@ Int_t THaVDCUVPlane::MatchUVClusters()
 
       delete testTrack; testTrack = NULL;
 
-      // FIXME:  We should just mark this one "region" bad. 
+      // FIXME:  We should just mark this one "region" bad.
       // Pairs that are sufficiently far away from this should
       // still be OK to use (if they're not ambiguious themselves)
       if( uClust->IsPaired() || vClust->IsPaired() ){
@@ -152,8 +152,8 @@ Int_t THaVDCUVPlane::MatchUVClusters()
 
 	// Found two clusters with "small" t0s
 	// So we pair them and hope for the best.
-	
-	uvTrack = new ( (*fUVTracks)[ntrk++] ) 
+
+	uvTrack = new ( (*fUVTracks)[ntrk++] )
 		THaVDCUVTrack( uClust, vClust, this );
 	uvTrack->CalcDetCoords();
     }
@@ -223,13 +223,13 @@ void THaVDCUVPlane::FitTracks()
 Int_t THaVDCUVPlane::CoarseTrack()
 {
   // Coarse computation of tracks
-  
+
   // Find clusters and estimate their position/slope
   FindClusters();
 
   // Fit "local" tracks through the hit coordinates of each cluster
   FitTracks();
-  
+
   // FIXME: The fit may fail, so we might want to call a function here
   // that deletes UV tracks whose clusters have bad fits, or with
   // clusters that are too small (e.g. 1 hit), etc.

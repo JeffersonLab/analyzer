@@ -69,7 +69,7 @@ void THaVDCTrackID::Print( Option_t* ) const
 {
   // Print ID description
 
-  cout << " " 
+  cout << " "
        << setw(5) << fLowerU
        << setw(5) << fLowerV
        << setw(5) << fUpperU

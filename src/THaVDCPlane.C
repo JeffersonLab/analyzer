@@ -97,15 +97,15 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
   if( !file ) return kFileError;
 
   // Use default values until ready to read from database
-  
+
   static const char* const here = "ReadDatabase";
   const int LEN = 100;
   char buff[LEN];
-  
+
   // Build the search tag and find it in the file. Search tags
   // are of form [ <prefix> ], e.g. [ R.vdc.u1 ].
   TString tag(fPrefix); tag.Chop(); // delete trailing dot of prefix
-  tag.Prepend("["); tag.Append("]"); 
+  tag.Prepend("["); tag.Append("]");
   TString line;
   bool found = false;
   while (!found && fgets (buff, LEN, file) != NULL) {
@@ -113,7 +113,7 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
     line = buf;
     delete [] buf;
     if( line.EndsWith("\n") ) line.Chop();  //delete trailing newline
-    if ( tag == line ) 
+    if ( tag == line )
       found = true;
   }
   if( !found ) {
@@ -122,7 +122,7 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
     fclose(file);
     return kInitError;
   }
-  
+
   //Found the entry for this plane, so read data
   Int_t nWires = 0;    // Number of wires to create
   Int_t prev_first = 0, prev_nwires = 0;
@@ -181,8 +181,8 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
 //     // if it exists, read the data in
 //     fscanf(file, "%le", &fT0);
 //     fscanf(file, "%d", &fNumBins);
-    
-//     // this object is responsible for the memory management 
+
+//     // this object is responsible for the memory management
 //     // of the lookup table
 //     delete [] fTable;
 //     fTable = new Float_t[fNumBins];
@@ -199,7 +199,7 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
 //   }
 
   // Define time-to-drift-distance converter
-  // Currently, we use the analytic converter. 
+  // Currently, we use the analytic converter.
   // FIXME: Let user choose this via a parameter
   delete fTTDConv;
   fTTDConv = new THaVDCAnalyticTTDConv(fDriftVel);
@@ -209,7 +209,7 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
   // Now initialize wires (those wires... too lazy to initialize themselves!)
   // Caution: This may not correspond at all to actual wire channels!
   for (int i = 0; i < nWires; i++) {
-    THaVDCWire* wire = new((*fWires)[i]) 
+    THaVDCWire* wire = new((*fWires)[i])
       THaVDCWire( i, fWBeg+i*fWSpac, wire_offsets[i], fTTDConv );
     if( wire_nums[i] < 0 )
       wire->SetFlag(1);
@@ -221,7 +221,7 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
   fOrigin.SetXYZ( 0.0, 0.0, fZ );
 
   // Read additional parameters (not in original database)
-  // For backward compatibility with database version 1, these parameters 
+  // For backward compatibility with database version 1, these parameters
   // are in an optional section, labelled [ <prefix>.extra_param ]
   // (e.g. [ R.vdc.u1.extra_param ]) or [ R.extra_param ].  If this tag is
   // not found, a warning is printed and defaults are used.
@@ -235,14 +235,14 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
     line = buf;
     delete [] buf;
     if( line.EndsWith("\n") ) line.Chop();  //delete trailing newline
-    if ( tag == line ) 
+    if ( tag == line )
       found = true;
   }
   if( !found ) {
     // Poor man's default key search
     rewind(file);
     tag2 = fPrefix;
-    Ssiz_t pos = tag2.Index("."); 
+    Ssiz_t pos = tag2.Index(".");
     if( pos != kNPOS )
       tag2 = tag2(0,pos+1);
     else
@@ -254,7 +254,7 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
       line = buf;
       delete [] buf;
       if( line.EndsWith("\n") ) line.Chop();  //delete trailing newline
-      if ( tag2 == line ) 
+      if ( tag2 == line )
 	found = true;
     }
   }
@@ -266,7 +266,7 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
       return kInitError;
     }
     fgets(buff, LEN, file); // Read to end of line
-    if( fscanf( file, "%d %d %d %d %d %lf %lf", &fMinClustSize, &fMaxClustSpan, 
+    if( fscanf( file, "%d %d %d %d %d %lf %lf", &fMinClustSize, &fMaxClustSpan,
 		&fNMaxGap, &fMinTime, &fMaxTime, &fMinTdiff, &fMaxTdiff ) != 7 ) {
       Error( Here(here), "Error reading min_clust_size, max_clust_span, "
 	     "max_gap, min_time or max_time.\nLine = %s\nFix database.",
@@ -276,12 +276,12 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
     }
     fgets(buff, LEN, file); // Read to end of line
     // Time-to-distance converter parameters
-    if( THaVDCAnalyticTTDConv* analytic_conv = 
+    if( THaVDCAnalyticTTDConv* analytic_conv =
 	dynamic_cast<THaVDCAnalyticTTDConv*>(fTTDConv) ) {
       // THaVDCAnalyticTTDConv
       // Format: 4*A1 4*A2 dtime(s)  (9 floats)
       Double_t A1[4], A2[4], dtime;
-      if( fscanf(file, "%lf %lf %lf %lf %lf %lf %lf %lf %lf", 
+      if( fscanf(file, "%lf %lf %lf %lf %lf %lf %lf %lf %lf",
 		 &A1[0], &A1[1], &A1[2], &A1[3],
 		 &A2[0], &A2[1], &A2[2], &A2[3], &dtime ) != 9) {
 	Error( Here(here), "Error reading THaVDCAnalyticTTDConv parameters\n"
@@ -355,7 +355,7 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
     fMinTime = 800;
     fMaxTime = 2200;
 
-    if( THaVDCAnalyticTTDConv* analytic_conv = 
+    if( THaVDCAnalyticTTDConv* analytic_conv =
 	dynamic_cast<THaVDCAnalyticTTDConv*>(fTTDConv) ) {
       Double_t A1[4], A2[4], dtime = 4e-9;
       A1[0] = 2.12e-3;
@@ -377,7 +377,7 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
   //since not doing so leads to exactly this kind of mess:
   THaApparatus* app = GetApparatus();
   const char* nm = "trg"; // inside an apparatus, the apparatus name is assumed
-  if( !app || 
+  if( !app ||
       !(fglTrg = dynamic_cast<THaTriggerTime*>(app->GetDetector(nm))) ) {
     Warning(Here(here),"Trigger-time detector \"%s\" not found. "
 	    "Event-by-event time offsets will NOT be used!!",nm);
@@ -451,7 +451,7 @@ THaVDCPlane::~THaVDCPlane()
 
 //_____________________________________________________________________________
 void THaVDCPlane::Clear( Option_t* )
-{    
+{
   // Clears the contents of the and hits and clusters
   fNHits = fNWiresHit = 0;
   fHits->Clear();
@@ -460,13 +460,13 @@ void THaVDCPlane::Clear( Option_t* )
 
 //_____________________________________________________________________________
 Int_t THaVDCPlane::Decode( const THaEvData& evData )
-{    
+{
   // Converts the raw data into hit information
   // Logical wire numbers a defined by the detector map. Wire number 0
   // corresponds to the first defined channel, etc.
 
   // TODO: Support "reversed" detector map modules a la MWDC
-              
+
   if (!evData.IsPhysicsTrigger()) return -1;
 
   // the event's T0-shift, due to the trigger-type
@@ -487,58 +487,58 @@ Int_t THaVDCPlane::Decode( const THaEvData& evData )
   // Loop over all detector modules for this wire plane
   for (Int_t i = 0; i < fDetMap->GetSize(); i++) {
     THaDetMap::Module * d = fDetMap->GetModule(i);
-    
+
     // Get number of channels with hits
     Int_t nChan = evData.GetNumChan(d->crate, d->slot);
     for (Int_t chNdx = 0; chNdx < nChan; chNdx++) {
       // Use channel index to loop through channels that have hits
 
       Int_t chan = evData.GetNextChan(d->crate, d->slot, chNdx);
-      if (chan < d->lo || chan > d->hi) 
+      if (chan < d->lo || chan > d->hi)
 	continue; //Not part of this detector
 
-      // Wire numbers and channels go in the same order ... 
+      // Wire numbers and channels go in the same order ...
       Int_t wireNum  = d->first + chan - d->lo;
       THaVDCWire* wire = GetWire(wireNum);
       if( !wire || wire->GetFlag() != 0 ) continue;
 
       // Get number of hits for this channel and loop through hits
       Int_t nHits = evData.GetNumHits(d->crate, d->slot, chan);
-   
+
       Int_t max_data = -1;
       Double_t toff = wire->GetTOffset();
 
       for (Int_t hit = 0; hit < nHits; hit++) {
-	
+
 	// Now get the TDC data for this hit
 	Int_t data = evData.GetData(d->crate, d->slot, chan, hit);
 
 	// Convert the TDC value to the drift time.
-	// Being perfectionist, we apply a 1/2 channel correction to the raw 
+	// Being perfectionist, we apply a 1/2 channel correction to the raw
 	// TDC data to compensate for the fact that the TDC truncates, not
 	// rounds, the data.
 	Double_t xdata = static_cast<Double_t>(data) + 0.5;
 	Double_t time = fTDCRes * (toff - xdata) - evtT0;
 
-	// If requested, ignore hits with negative drift times 
+	// If requested, ignore hits with negative drift times
 	// (due to noise or miscalibration). Use with care.
 	// If only fastest hit requested, find maximum TDC value and record the
-	// hit after the hit loop is done (see below). 
+	// hit after the hit loop is done (see below).
 	// Otherwise just record all hits.
-	if( !no_negative || time > 0.0 ) {	  
+	if( !no_negative || time > 0.0 ) {
 	  if( only_fastest_hit ) {
 	    if( data > max_data )
 	      max_data = data;
 	  } else
 	    new( (*fHits)[nextHit++] )  THaVDCHit( wire, data, time );
 	}
-	  
+
     // Count all hits and wires with hits
     //    fNWiresHit++;
 
       } // End hit loop
 
-      // If we are only interested in the hit with the largest TDC value 
+      // If we are only interested in the hit with the largest TDC value
       // (shortest drift time), it is recorded here.
       if( only_fastest_hit && max_data>0 ) {
 	Double_t xdata = static_cast<Double_t>(max_data) + 0.5;
@@ -560,7 +560,7 @@ Int_t THaVDCPlane::Decode( const THaEvData& evData )
       printf("     Wire    TDC  ");
     }
     printf("\n");
-    
+
     for (int i=0; i<(nextHit+ncol-1)/ncol; i++ ) {
       for (int c=0; c<ncol; c++) {
 	int ind = c*nextHit/ncol+i;
@@ -584,7 +584,7 @@ Int_t THaVDCPlane::Decode( const THaEvData& evData )
 //_____________________________________________________________________________
 class TimeCut {
 public:
-  TimeCut( THaVDC* vdc, THaVDCPlane* _plane ) 
+  TimeCut( THaVDC* vdc, THaVDCPlane* _plane )
     : hard_cut(false), soft_cut(false), maxdist(0.0), plane(_plane)
   {
     assert(vdc);
@@ -594,7 +594,7 @@ public:
       soft_cut = vdc->TestBit(THaVDC::kSoftTDCcut);
     }
     if( soft_cut ) {
-      maxdist = 
+      maxdist =
 	0.5*static_cast<THaVDCUVPlane*>(plane->GetParent())->GetSpacing();
       if( maxdist == 0.0 )
 	soft_cut = false;
@@ -605,7 +605,7 @@ public:
     // Only keep hits whose drift times are within sanity cuts
     if( hard_cut ) {
       Double_t rawtime = hit->GetRawTime();
-      if( rawtime < plane->GetMinTime() || rawtime > plane->GetMaxTime()) 
+      if( rawtime < plane->GetMinTime() || rawtime > plane->GetMaxTime())
 	return false;
     }
     if( soft_cut ) {
@@ -641,7 +641,7 @@ Int_t THaVDCPlane::FindClusters()
 
   Int_t nHits     = GetNHits();   // Number of hits in the plane
   Int_t nUsed = 0;                // Number of wires used in clustering
-  Int_t nLastUsed = -1;            
+  Int_t nLastUsed = -1;
   Int_t nextClust = 0;            // Current cluster number
   assert( GetNClusters() == 0 );
 
@@ -664,7 +664,7 @@ Int_t THaVDCPlane::FindClusters()
        falling = kTRUE;
 
        THaVDCHit* hit = GetHit(i);
-       assert(hit);      
+       assert(hit);
 
        if( !timecut(hit) ) {
 	       ++i;
@@ -678,7 +678,7 @@ Int_t THaVDCPlane::FindClusters()
 
        // Consider this hit the beginning of a potential new cluster.
        // Find the end of the cluster.
-       span = 0; 
+       span = 0;
        nwires = 1;
        while( ++i < nHits ) {
 	  THaVDCHit* nextHit = GetHit(i);
@@ -695,7 +695,7 @@ Int_t THaVDCPlane::FindClusters()
 	  if( ndif == 0 ) { continue; }
 	  assert( ndif >= 0 );
 	  // The cluster ends when we encounter a gap in wire numbers.
-	  // TODO: cluster should also end if 
+	  // TODO: cluster should also end if
 	  //  DONE (a) it is too big
 	  //  DONE (b) drift times decrease again after initial fall/rise (V-shape)
 	  //  DONE (c) Enforce reasonable changes in wire-to-wire V-shape
@@ -720,7 +720,7 @@ Int_t THaVDCPlane::FindClusters()
 	  if( falling ){
 		  // Step is too big, can't be associated
 		  if( deltat < -fMaxTdiff*ndif ){ continue; }
-		  if( deltat > 0.0 ){ 
+		  if( deltat > 0.0 ){
 			  // if rise is reasonable and we don't
 			  // have a monotonically increasing cluster
 			  if( deltat < fMaxTdiff*ndif && span > 1 ){
@@ -733,8 +733,8 @@ Int_t THaVDCPlane::FindClusters()
 	  }
 
 	  nwires++;
-	  if( clushits.size() == 0 ){ 
-		  clushits.push_back(hit); 
+	  if( clushits.size() == 0 ){
+		  clushits.push_back(hit);
 		  hit->SetClsNum(-2);
 		  nUsed++;
 	  }
@@ -760,10 +760,10 @@ Int_t THaVDCPlane::FindClusters()
 	  assert( clust->GetSize() > 0 && clust->GetSize() >= nwires );
 	  // This is a good cluster candidate. Estimate its position/slope
 	  clust->EstTrackParameters();
-       } //end new cluster 
+       } //end new cluster
 
      } //end loop over hits
-     
+
   } // end passes over hits
 
   assert( GetNClusters() == nextClust );
@@ -773,20 +773,20 @@ Int_t THaVDCPlane::FindClusters()
 
 //_____________________________________________________________________________
 Int_t THaVDCPlane::FitTracks()
-{    
+{
   // Fit tracks to cluster positions and drift distances.
-  
+
   Int_t nClust = GetNClusters();
   for (int i = 0; i < nClust; i++) {
     THaVDCCluster* clust = static_cast<THaVDCCluster*>( (*fClusters)[i] );
     if( !clust ) continue;
 
-    // Convert drift times to distances. 
+    // Convert drift times to distances.
     // The conversion algorithm is determined at wire initialization time,
     // i.e. currently in the ReadDatabase() function of this class.
     // The conversion is done with the current value of fSlope in the
-    // clusters, i.e. either the rough guess from 
-    // THaVDCCluster::EstTrackParameters or the global slope from 
+    // clusters, i.e. either the rough guess from
+    // THaVDCCluster::EstTrackParameters or the global slope from
     // THaVDC::ConstructTracks
     clust->ConvertTimeToDist();
 
@@ -803,7 +803,7 @@ Int_t THaVDCPlane::FitTracks()
       outp << clust->GetSize() << endl;
       for( int i=clust->GetSize()-1; i>=0; i-- ) {
 	outp << clust->GetHit(i)->GetPos() << " "
-	     << clust->GetHit(i)->GetDist() 
+	     << clust->GetHit(i)->GetDist()
 	     << endl;
       }
       outp << 1./clust->GetSlope() << " "

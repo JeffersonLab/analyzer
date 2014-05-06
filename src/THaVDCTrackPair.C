@@ -38,7 +38,7 @@ void THaVDCTrackPair::Analyze( Double_t spacing )
 {
   // Compute goodness of match paremeter for the two UV tracks.
   // Essentially, this is a measure of how closely the two tracks
-  // point at each other. 'spacing' is the separation of the 
+  // point at each other. 'spacing' is the separation of the
   // upper and lower UV planes (in m).
   //
   // This method is critical for the quality of the VDC multi-track
@@ -58,7 +58,7 @@ void THaVDCTrackPair::Analyze( Double_t spacing )
 //_____________________________________________________________________________
 void THaVDCTrackPair::Associate( THaTrack* track )
 {
-  // Mark upper and lower UV tracks as well as their clusters 
+  // Mark upper and lower UV tracks as well as their clusters
   // as belonging to this track
 
   THaVDCUVTrack* uvtrk[2] = { fLowerTrack, fUpperTrack };
@@ -76,7 +76,7 @@ chi2_t THaVDCTrackPair::CalcChi2() const
   // Calculate chi2 and number of data points for the associated track
   // and clusters
 
-  THaVDCCluster* clust[4] = 
+  THaVDCCluster* clust[4] =
     { fLowerTrack->GetUCluster(), fLowerTrack->GetVCluster(),
       fUpperTrack->GetUCluster(), fUpperTrack->GetVCluster() };
 
@@ -118,7 +118,7 @@ Double_t THaVDCTrackPair::GetProjectedDistance( THaVDCUVTrack* here,
 
   Double_t px = here->GetX() + spacing * here->GetTheta();  // Projected x
   Double_t py = here->GetY() + spacing * here->GetPhi();    // Projected y
-  
+
   Double_t x = there->GetX();
   Double_t y = there->GetY();
 

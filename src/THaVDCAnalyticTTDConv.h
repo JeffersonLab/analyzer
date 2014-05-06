@@ -22,7 +22,7 @@ public:
 				     Double_t *ddist=0);
 
 
-  // Get and Set Functions 
+  // Get and Set Functions
   Double_t GetDriftVel() { return fDriftVel; }
 
   void SetDriftVel(Double_t v) {fDriftVel = v; }

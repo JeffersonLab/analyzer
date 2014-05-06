@@ -30,7 +30,7 @@ public:
 
   virtual void    Clear( Option_t* opt="" );
   virtual Int_t   Decode( const THaEvData& ); // Raw data -> hits
-  virtual Int_t   FindClusters();             // Hits -> clusters  
+  virtual Int_t   FindClusters();             // Hits -> clusters
   virtual Int_t   FitTracks();                // Clusters -> tracks
 
   //Get and Set functions
@@ -38,7 +38,7 @@ public:
   TClonesArray*  GetClusters()       const { return fClusters; }
   THaVDCCluster* GetCluster(Int_t i) const
   { assert( i>=0 && i<GetNClusters() );
-    return static_cast<THaVDCCluster*>( fClusters->UncheckedAt(i) ); } 
+    return static_cast<THaVDCCluster*>( fClusters->UncheckedAt(i) ); }
 
   Int_t          GetNWires()         const { return fWires->GetLast()+1; }
   TClonesArray*  GetWires()          const { return fWires; }
@@ -52,8 +52,8 @@ public:
   { assert( i>=0 && i<GetNHits() );
     return static_cast<THaVDCHit*>( fHits->UncheckedAt(i) ); }
 
-  Int_t          GetNWiresHit()      const { return fNWiresHit; } 
-  Int_t          GetNpass()      const { return fNpass; } 
+  Int_t          GetNWiresHit()      const { return fNWiresHit; }
+  Int_t          GetNpass()      const { return fNpass; }
 
   Double_t       GetZ()              const { return fZ; }
   Double_t       GetWBeg()           const { return fWBeg; }
@@ -74,11 +74,11 @@ public:
 
 protected:
 
-  //Use TClonesArray::GetLast()+1 to get the number of wires, hits, & clusters 
+  //Use TClonesArray::GetLast()+1 to get the number of wires, hits, & clusters
   TClonesArray*  fWires;     // Wires
-  TClonesArray*  fHits;      // Fired wires 
+  TClonesArray*  fHits;      // Fired wires
   TClonesArray*  fClusters;  // Clusters
-  
+
   Int_t fNHits;      // Total number of hits (including multihits)
   Int_t fNWiresHit;  // Number of wires with one or more hits
 
@@ -95,7 +95,7 @@ protected:
   Double_t fZ;            // Z coordinate of plane in U1 coord sys (m)
   Double_t fWBeg;         // Position of 1-st wire in E-arm coord sys (m)
   Double_t fWSpac;        // Wire spacing and direction (m)
-  Double_t fWAngle;       // Angle (rad) between dispersive direction (x) and 
+  Double_t fWAngle;       // Angle (rad) between dispersive direction (x) and
                           // normal to wires in dir of increasing wire position
   Double_t fSinAngle;     // sine of fWAngle, for efficiency
   Double_t fCosAngle;     // cosine of fWAngle, for efficiency
@@ -105,16 +105,16 @@ protected:
   Double_t fT0Resolution; // (Average) resolution of cluster time offset fit
 
   // Lookup table parameters
-//   Double_t fT0;     // calculated zero time 
+//   Double_t fT0;     // calculated zero time
 //   Int_t fNumBins;   // size of lookup table
 //   Float_t *fTable;  // time-to-distance lookup table
 
   THaVDCTimeToDistConv* fTTDConv;  // Time-to-distance converter for this plane's wires
 
   THaVDC* fVDC;           // VDC detector to which this plane belongs
-  
+
   THaTriggerTime* fglTrg; //! time-offset global variable. Needed at the decode stage
-  
+
   virtual void  MakePrefix();
   virtual Int_t ReadDatabase( const TDatime& date );
   virtual Int_t DefineVariables( EMode mode = kDefine );

@@ -22,7 +22,7 @@ public:
   virtual Double_t ConvertTimeToDist(Double_t slope);
   Int_t  Compare ( const TObject* obj ) const;
   Bool_t IsSortable () const { return kTRUE; }
-  
+
   // Get and Set Functions
   THaVDCWire* GetWire() const { return fWire; }
   Int_t    GetWireNum() const { return fWire->GetNum(); }
@@ -46,7 +46,7 @@ public:
 
 protected:
   static const Double_t kBig;  //! Arbitrary lrg number indicating invalid data
-  
+
   THaVDCWire* fWire;     // Wire on which the hit occurred
   Int_t       fRawTime;  // TDC value (channels)
   Double_t    fTime;     // Raw drift time, corrected for trigger time (s)
@@ -60,7 +60,7 @@ protected:
  private:
   THaVDCHit( const THaVDCHit& );
   THaVDCHit& operator=( const THaVDCHit& );
-  
+
   ClassDef(THaVDCHit,2)             // VDCHit class
 };
 

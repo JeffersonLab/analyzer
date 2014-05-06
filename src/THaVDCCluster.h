@@ -92,7 +92,7 @@ protected:
   THaTrack*      fTrack;             // Track the cluster belongs to
   Int_t          fTrkNum;            // Number of the track using this cluster
 
-  //Track Parameters 
+  //Track Parameters
   Double_t       fSlope;             // Current best estimate of actual slope
   Double_t       fLocalSlope;        // Fitted slope, from FitTrack()
   Double_t       fSigmaSlope;        // Error estimate of fLocalSlope from fit
@@ -118,10 +118,10 @@ protected:
   void   FitSimpleTrackWgt(); // present for testing
   void   FitNLTrack();        // Non-linear 3-parameter fit
 
-  chi2_t CalcChisquare( const Double_t* x, const Double_t* y, 
+  chi2_t CalcChisquare( const Double_t* x, const Double_t* y,
 			const Int_t* s, const Double_t* w,
 			Double_t slope, Double_t icpt, Double_t d0 ) const;
-  void   Linear3DFit( const Double_t* x, const Double_t* y, 
+  void   Linear3DFit( const Double_t* x, const Double_t* y,
 		      const Int_t* s, const Double_t* w,
 		      Double_t& slope, Double_t& icpt, Double_t& d0 ) const;
   Int_t  LinearClusterFitWithT0();

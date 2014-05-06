@@ -33,7 +33,7 @@ public:
 
   void CalcDetCoords();
 
-  // Get and Set Functions  
+  // Get and Set Functions
   THaVDCCluster* GetUCluster() const { return fUClust; }
   THaVDCCluster* GetVCluster() const { return fVClust; }
   THaVDCUVPlane* GetUVPlane()  const { return fUVPlane; }
@@ -44,7 +44,7 @@ public:
   Double_t       GetX()        const { return fX; }
   Double_t       GetY()        const { return fY; }
   Double_t       GetTheta()    const { return fTheta; }
-  Double_t       GetPhi()      const { return fPhi; } 
+  Double_t       GetPhi()      const { return fPhi; }
   Int_t          GetTrackIndex() const;
   Double_t       GetZU()       const;
   Double_t       GetZV()       const;
@@ -64,12 +64,12 @@ protected:
   THaVDCCluster* fVClust;       // Cluster in the V plane
   THaVDCUVPlane* fUVPlane;      // UV plane that owns this track
   THaTrack*      fTrack;        // Track this UV Track is associated with
-  THaVDCUVTrack* fPartner;      // UV track associated with this one in 
+  THaVDCUVTrack* fPartner;      // UV track associated with this one in
                                 //  the other UV plane
   // Detector coordinates derived from the cluster coordinates
   // at the U plane (z = GetZ()).  X,Y in m; theta, phi in tan(angle)
-  Double_t fX;     // X position of track in U wire-plane 
-  Double_t fY;     // Y position of track in U wire-plane 
+  Double_t fX;     // X position of track in U wire-plane
+  Double_t fY;     // Y position of track in U wire-plane
   Double_t fTheta; // Angle between z-axis and projection of track into xz plane
   Double_t fPhi;   // Angle between z-axis and projection of track into yz plane
 

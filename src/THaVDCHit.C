@@ -18,23 +18,23 @@ Double_t THaVDCHit::ConvertTimeToDist(Double_t slope)
 {
   // Converts TDC time to drift distance
   // Takes the (estimated) slope of the track as an argument
-  
+
   THaVDCTimeToDistConv* ttdConv = (fWire) ? fWire->GetTTDConv() : NULL;
-  
+
   if (ttdConv) {
-    // If a time to distance algorithm exists, use it to convert the TDC time 
+    // If a time to distance algorithm exists, use it to convert the TDC time
     // to the drift distance
     fDist = ttdConv->ConvertTimeToDist(fTime, slope, &fdDist);
     return fDist;
   }
-  
+
   Error("ConvertTimeToDist()", "No Time to dist algorithm available");
   return 0.0;
 
 }
 
 //_____________________________________________________________________________
-Int_t THaVDCHit::Compare( const TObject* obj ) const 
+Int_t THaVDCHit::Compare( const TObject* obj ) const
 {
   // Used to sort hits
   // A hit is "less than" another hit if it occurred on a lower wire number.
@@ -48,7 +48,7 @@ Int_t THaVDCHit::Compare( const TObject* obj ) const
     return -1;
 
   const THaVDCHit* hit = static_cast<const THaVDCHit*>( obj );
- 
+
   Int_t myWireNum = fWire->GetNum();
   Int_t hitWireNum = hit->GetWire()->GetNum();
   // Compare wire numbers
