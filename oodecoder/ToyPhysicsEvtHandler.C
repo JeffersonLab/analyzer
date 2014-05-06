@@ -24,49 +24,64 @@ ToyPhysicsEvtHandler::~ToyPhysicsEvtHandler() {
 
 Int_t ToyPhysicsEvtHandler::Decode(THaEvData *evdata) {
 
-  // Break evdata's evbuffer into rocs.  Find all the slots.
-  // Pass the buffer for that slot to the module belonging to it.
+  assert( evbuffer && fMap );
+#ifdef FIXME
+  if( fDoBench ) fBench->Begin("physics_decode");
+#endif
+  Int_t status = HED_OK;
 
-  // Wildly inefficient TOY code -- just in time for Christmas.
+  if( (evdata->GetRawData(1)&0xffff) != 0x10cc ) std::cout<<"Warning, header error"<<std::endl;
+  if( (evdata->GetRawData(1)>>16) > MAX_PHYS_EVTYPE ) std::cout<<"Warning, Event type makes no sense"<<std::endl;
+  memset(rocdat,0,MAXROC*sizeof(RocDat_t));
+  // Set pos to start of first ROC data bank
+  Int_t pos = evdata->GetRawData(2)+3;  // should be 7
+  Int_t nroc = 0;
+  Int_t irn[MAXROC];   // Lookup table i-th ROC found -> ROC number
+  while( pos+1 < evdata->GetRawData(0]+1 && nroc < MAXROC ) {
+    Int_t len  = evdata->GetRawData(pos);
+    Int_t iroc = (evdata->GetRawData(pos+1)&0xff0000)>>16;
+    if( iroc>=MAXROC ) {
+#ifdef FIXME
+      if(TestBit(kVerbose)) { 
+	cout << "ERROR in EvtTypeHandler::FindRocs "<<endl;
+	cout << "  illegal ROC number " <<dec<<iroc<<endl;
+      }
+      if( fDoBench ) fBench->Stop("physics_decode");
+#endif
+      return HED_ERR;
+    }
+    // Save position and length of each found ROC data block
+    rocdat[iroc].pos  = pos;
+    rocdat[iroc].len  = len;
+    irn[nroc++] = iroc;
+    pos += len+1;
+  }
 
-   Int_t nroc=4;  
-   Int_t irn[4], istart[4], iend[4];
-   irn[0] = 1; irn[1] = 2; irn[2] = 5; irn[3] = 8; // list of rocs found
-   for (Int_t i = 0; i < 4; i++) { istart[i]=0; iend[i]=10; }
-   Int_t first_slot_used = 0, n_slots_done = 0;
-   Int_t Nslot = 20;  // will depend on cratemap info
-   Int_t iroc, slot, n_slots_checked;
-   n_slots_checked = 0;
+  // Decode each ROC
+  // This is not part of the loop above because it may exit prematurely due 
+  // to errors, which would leave the rocdat[] array incomplete.
+  for( Int_t i=0; i<nroc; i++ ) {
+    Int_t iroc = irn[i];
+    const RocDat_t* proc = rocdat+iroc;
+    Int_t ipt = proc->pos + 1;
+    Int_t iptmax = proc->pos + proc->len;
+    while (ipt++ < iptmax) {
+      slot = GetSlot(evdata->GetRawData[ipt]);
+      evdata|>GetCrateSlot(roc,slot)|>Fill(evdata->GetRawData(loc]);
+    }
+  }
 
-   for (iroc = 0; iroc < nroc; iroc++) {
+  return 1;
 
-     Int_t roc = irn[iroc];
-
-     for (slot=first_slot_used; n_slots_checked<Nslot-n_slots_done; slot++) {
-
-       n_slots_done++;
-
-       for (Int_t jj = istart[iroc]; jj < iend[iroc]; jj++) {
-         
-         ToyModule *module = evdata->GetModule(roc,slot);
-
-         if (module) {
-	   if (module->IsSlot(evdata->GetRawData(jj))) {
-   	       module->Decode(evdata, jj);
-                 // module::Decode starts at "jj" and increments "jj".
-                 // and loads data into evdata: "evdata->LoadData()"
-	   }
-	 }
-       }
-     }
-   }
-
-  return 0;
 }
 
 Int_t ToyPhysicsEvtHandler::Init(THaCrateMap *map) {
-
+  fMap = map;
+  SetDecoderRules();
 }
 
+Int_t ToyPhysicsEvtHandler::SetDecoderRules() {
+  // using the map, define how to find slots or other info.
+}
 
 ClassImp(ToyPhysicsEvtHandler)

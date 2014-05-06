@@ -33,10 +33,12 @@ public:
 
 protected:
 
-   Int_t fChanMask, fDataMask, fWdcntMask, fChanShift;
+   Int_t fSlot,  fSlotMask, fSlotShift;
+   Int_t fChan,  fChanMask, fChanShift;
+   Int_t *fData, fDatamask,  fWdcnt, fWdcntMask;
+   Int_t fNumChan;
 
 private:
-
 
    ToyFastbusModule(const ToyFastbusModule &fh);
    ToyFastbusModule& operator=(const ToyFastbusModule &fh);
