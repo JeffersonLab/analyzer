@@ -29,58 +29,6 @@ using namespace std;
 const Double_t THaVDCCluster::kBig = 1e38;  // Arbitrary large value
 
 //_____________________________________________________________________________
-THaVDCCluster::THaVDCCluster( const THaVDCCluster& rhs ) :
-  TObject(rhs),
-  fSize(rhs.fSize), fPlane(rhs.fPlane), fUVTrack(0), fTrack(0), fTrkNum(0),
-  fSlope(rhs.fSlope), fLocalSlope(rhs.fLocalSlope),
-  fSigmaSlope(rhs.fSigmaSlope), fInt(rhs.fInt), fSigmaInt(rhs.fSigmaInt),
-  fT0(rhs.fT0), fSigmaT0(rhs.fSigmaT0), fPivot(rhs.fPivot),
-  fIPivot(-1),
-  fTimeCorrection(rhs.fTimeCorrection), fFitOK(rhs.fFitOK),
-  fChi2(rhs.fChi2), fNDoF(rhs.fNDoF),
-  fClsStr(-1), fClsEnd(-1), fAmbig(rhs.fAmbig), fPaired(rhs.fPaired)
-{
-  // Copy constructor
-
-  for( int i = 0; i < fSize; i++ ) {
-    fHits[i] = rhs.fHits[i];
-  }
-}
-
-//_____________________________________________________________________________
-THaVDCCluster& THaVDCCluster::operator=( const THaVDCCluster& rhs )
-{
-  // Assignment operator
-
-  TObject::operator=( rhs );
-  if( this != &rhs ) {
-    fSize       = rhs.fSize;
-    fPlane      = rhs.fPlane;
-    fUVTrack    = rhs.fUVTrack;
-    fTrack      = rhs.fTrack;
-    fTrkNum     = rhs.fTrkNum;
-    fSlope      = rhs.fSlope;
-    fLocalSlope = rhs.fLocalSlope;
-    fSigmaSlope = rhs.fSigmaSlope;
-    fInt        = rhs.fInt;
-    fSigmaInt   = rhs.fSigmaInt;
-    fT0         = rhs.fT0;
-    fSigmaT0    = rhs.fSigmaT0;
-    fPivot      = rhs.fPivot;
-    fIPivot     = rhs.fIPivot;
-    fTimeCorrection = rhs.fTimeCorrection;
-    fFitOK      = rhs.fFitOK;
-    fChi2       = rhs.fChi2;
-    fNDoF       = rhs.fNDoF;
-    fPaired     = rhs.fPaired;
-    fAmbig      = rhs.fAmbig;
-    for( int i = 0; i < fSize; i++ )
-      fHits[i] = rhs.fHits[i];
-  }
-  return *this;
-}
-
-//_____________________________________________________________________________
 THaVDCCluster::~THaVDCCluster()
 {
   // Destructor

@@ -25,8 +25,6 @@ public:
     fLocalSlope(kBig), fSigmaSlope(kBig), fInt(kBig), fSigmaInt(kBig),
     fT0(kBig), fSigmaT0(kBig), fPivot(0), fTimeCorrection(0.0),
     fFitOK(false), fChi2(kBig), fNDoF(0.0), fAmbig(kFALSE), fPaired(0)  {}
-  THaVDCCluster( const THaVDCCluster& );
-  THaVDCCluster& operator=( const THaVDCCluster& );
   virtual ~THaVDCCluster();
 
   enum EMode { kSimple, kT0, kFull };
