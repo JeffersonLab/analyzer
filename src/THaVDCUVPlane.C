@@ -139,10 +139,9 @@ Int_t THaVDCUVPlane::MatchUVClusters()
       const UVPlaneCoords_t c = CalcDetCoords(uClust,vClust);
 
       // Test position to be within drift chambers
-      if( TMath::Abs(c.y) > fU->GetYSize() ){
-	      continue;
+      if( !fU->IsInActiveArea( c.x, c.y ) ) {
+	continue;
       }
-      // FIXME: also test xcoord!
 
       // FIXME:  We should just mark this one "region" bad.
       // Pairs that are sufficiently far away from this should
