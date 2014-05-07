@@ -11,7 +11,7 @@
 
 #include "THaVDCTrackID.h"
 #include "THaVDCCluster.h"
-#include "THaVDCUVTrack.h"
+#include "THaVDCPoint.h"
 #include <iostream>
 #include <iomanip>
 #include <cstring>
@@ -19,12 +19,12 @@
 using namespace std;
 
 //_____________________________________________________________________________
-THaVDCTrackID::THaVDCTrackID( const THaVDCUVTrack* lower,
-			      const THaVDCUVTrack* upper) :
+THaVDCTrackID::THaVDCTrackID( const THaVDCPoint* lower,
+			      const THaVDCPoint* upper) :
   THaTrackID()
 {
   // Constructor that automatically determines pivot numbers
-  // from the given THaVDCUVTracks.
+  // from the given THaVDCPoints.
 
   THaVDCCluster* cluster;
   if( lower ) {

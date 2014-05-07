@@ -1,13 +1,11 @@
-#ifndef ROOT_THaVDCUVTrack
-#define ROOT_THaVDCUVTrack
+#ifndef ROOT_THaVDCPoint
+#define ROOT_THaVDCPoint
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //
-// THaVDCUVTrack                                                             //
+// THaVDCPoint                                                               //
 //                                                                           //
-// NB: this is not really a "track", but rather a "cluster pair". However,   //
-// a cluster pair alone already fully defines a track, albeit with low       //
-// angular resolution.                                                       //
+// A pair of one U and one V VDC cluster in a given VDC chamber              //
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -19,12 +17,12 @@
 class THaVDCUVPlane;
 class THaTrack;
 
-class THaVDCUVTrack : public THaCluster {
+class THaVDCPoint : public THaCluster {
 
 public:
-  THaVDCUVTrack( THaVDCCluster* u_cl, THaVDCCluster* v_cl,
+  THaVDCPoint( THaVDCCluster* u_cl, THaVDCCluster* v_cl,
 		 THaVDCUVPlane* plane );
-  virtual ~THaVDCUVTrack() {}
+  virtual ~THaVDCPoint() {}
 
   void CalcDetCoords();
 
@@ -32,7 +30,7 @@ public:
   THaVDCCluster* GetUCluster() const { return fUClust; }
   THaVDCCluster* GetVCluster() const { return fVClust; }
   THaVDCUVPlane* GetUVPlane()  const { return fUVPlane; }
-  THaVDCUVTrack* GetPartner()  const { return fPartner; }
+  THaVDCPoint*   GetPartner()  const { return fPartner; }
   THaTrack*      GetTrack()    const { return fTrack; }
   Double_t       GetU()        const;
   Double_t       GetV()        const;
@@ -48,7 +46,7 @@ public:
   void CalcChisquare(Double_t &chi2, Int_t &nhits) const;
 
   void SetTrack( THaTrack* track);
-  void SetPartner( THaVDCUVTrack* partner) { fPartner = partner;}
+  void SetPartner( THaVDCPoint* partner) { fPartner = partner;}
 
   void SetSlopes( Double_t mu, Double_t mv );
 
@@ -57,14 +55,14 @@ protected:
 
   THaVDCCluster* fUClust;       // Cluster in the U plane
   THaVDCCluster* fVClust;       // Cluster in the V plane
-  THaVDCUVPlane* fUVPlane;      // UV plane that owns this track
-  THaTrack*      fTrack;        // Track this UV Track is associated with
-  THaVDCUVTrack* fPartner;      // UV track associated with this one in
+  THaVDCUVPlane* fUVPlane;      // Chamber of this cluster pair
+  THaTrack*      fTrack;        // Track that this point is associated with
+  THaVDCPoint*   fPartner;      // Point associated with this one in
                                 //  the other UV plane
   // Detector coordinates derived from the cluster coordinates
   // at the U plane (z = GetZ()).  X,Y in m; theta, phi in tan(angle)
-  Double_t fX;     // X position of track in U wire-plane
-  Double_t fY;     // Y position of track in U wire-plane
+  Double_t fX;     // X position of point in U wire-plane
+  Double_t fY;     // Y position of point in U wire-plane
   Double_t fTheta; // Angle between z-axis and projection of track into xz plane
   Double_t fPhi;   // Angle between z-axis and projection of track into yz plane
 
@@ -75,18 +73,18 @@ protected:
 
 private:
   // Hide copy ctor and op=
-  THaVDCUVTrack( const THaVDCUVTrack& );
-  THaVDCUVTrack& operator=( const THaVDCUVTrack& );
+  THaVDCPoint( const THaVDCPoint& );
+  THaVDCPoint& operator=( const THaVDCPoint& );
 
-  ClassDef(THaVDCUVTrack,0)             // VDCUVTrack class
+  ClassDef(THaVDCPoint,0)    // Pair of one U and one V cluster in a VDC chamber
 };
 
 //-------------------- inlines ------------------------------------------------
 inline
-void THaVDCUVTrack::Set( Double_t x, Double_t y, Double_t theta, Double_t phi,
+void THaVDCPoint::Set( Double_t x, Double_t y, Double_t theta, Double_t phi,
 			 const TVector3& offset )
 {
-  // Set coordinates for this track. Also set absolute position vector.
+  // Set coordinates of this point. Also set absolute position vector.
 
   Set( x, y, theta, phi );
   fCenter.SetXYZ( x, y, 0.0 );
@@ -95,7 +93,7 @@ void THaVDCUVTrack::Set( Double_t x, Double_t y, Double_t theta, Double_t phi,
 
 //_____________________________________________________________________________
 inline
-Double_t THaVDCUVTrack::GetU() const
+Double_t THaVDCPoint::GetU() const
 {
   // Return intercept of u cluster
 
@@ -104,7 +102,7 @@ Double_t THaVDCUVTrack::GetU() const
 
 //_____________________________________________________________________________
 inline
-Double_t THaVDCUVTrack::GetV() const
+Double_t THaVDCPoint::GetV() const
 {
   // Return intercept of v cluster
 

@@ -13,7 +13,7 @@
 class THaVDCUVPlane;
 class THaTrack;
 class TClonesArray;
-class THaVDCUVTrack;
+class THaVDCPoint;
 
 class THaVDC : public THaTrackingDetector {
 
@@ -69,7 +69,7 @@ protected:
   THaVDCUVPlane* fLower;    // Lower UV plane
   THaVDCUVPlane* fUpper;    // Upper UV plane
 
-  TClonesArray*  fUVpairs;  // Pairs of matched UV tracks (THaVDCTrackPair obj)
+  TClonesArray*  fLUpairs;  // Candidate pairs of lower/upper points
 
   Double_t fVDCAngle;       // Angle from the VDC cs to TRANSPORT cs (rad)
   Double_t fSin_vdc;        // Sine of VDC angle

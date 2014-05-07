@@ -10,7 +10,6 @@
 #include "THaVDCCluster.h"
 #include "THaVDCHit.h"
 #include "THaVDCPlane.h"
-#include "THaVDCUVTrack.h"
 #include "THaTrack.h"
 #include "TMath.h"
 #include "TClass.h"

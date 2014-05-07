@@ -1,37 +1,37 @@
-#ifndef ROOT_THaVDCTrackPair
-#define ROOT_THaVDCTrackPair
+#ifndef ROOT_THaVDCPointPair
+#define ROOT_THaVDCPointPair
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //
-// THaVDCTrackPair                                                           //
+// THaVDCPointPair                                                           //
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "TObject.h"
 #include "THaVDCCluster.h"   // for chi2_t
 
-class THaVDCUVTrack;
+class THaVDCPoint;
 class THaTrack;
 
-class THaVDCTrackPair : public TObject {
+class THaVDCPointPair : public TObject {
 
 public:
-  THaVDCTrackPair( THaVDCUVTrack* lt, THaVDCUVTrack* ut ) :
-    fLowerTrack(lt), fUpperTrack(ut), fError(1e307), fStatus(0) {}
-  THaVDCTrackPair( const THaVDCTrackPair& rhs ) : TObject(rhs),
-    fLowerTrack(rhs.fLowerTrack), fUpperTrack(rhs.fUpperTrack),
+  THaVDCPointPair( THaVDCPoint* lt, THaVDCPoint* ut ) :
+    fLowerPoint(lt), fUpperPoint(ut), fError(1e307), fStatus(0) {}
+  THaVDCPointPair( const THaVDCPointPair& rhs ) : TObject(rhs),
+    fLowerPoint(rhs.fLowerPoint), fUpperPoint(rhs.fUpperPoint),
     fError(rhs.fError), fStatus(rhs.fStatus) {}
-  THaVDCTrackPair& operator=( const THaVDCTrackPair& );
+  THaVDCPointPair& operator=( const THaVDCPointPair& );
 
-  virtual ~THaVDCTrackPair() {}
+  virtual ~THaVDCPointPair() {}
 
   void            Analyze( Double_t spacing );
   void            Associate( THaTrack* track );
   chi2_t          CalcChi2() const;
   virtual Int_t   Compare( const TObject* ) const;
   Double_t        GetError()   const { return fError; }
-  THaVDCUVTrack*  GetLower()   const { return fLowerTrack; }
-  THaVDCUVTrack*  GetUpper()   const { return fUpperTrack; }
+  THaVDCPoint*    GetLower()   const { return fLowerPoint; }
+  THaVDCPoint*    GetUpper()   const { return fUpperPoint; }
   Int_t           GetStatus()  const { return fStatus; }
   THaTrack*       GetTrack()   const;
   virtual Bool_t  IsSortable() const { return kTRUE; }
@@ -40,21 +40,21 @@ public:
   void            SetStatus( Int_t i ) { fStatus = i; }
   void            Use();
 
-  Double_t        GetProjectedDistance( THaVDCUVTrack* here,
-					THaVDCUVTrack* there,
+  Double_t        GetProjectedDistance( THaVDCPoint* here,
+					THaVDCPoint* there,
 					Double_t spacing );
 
 protected:
 
-  THaVDCUVTrack*  fLowerTrack;    // Lower UV track
-  THaVDCUVTrack*  fUpperTrack;    // Upper UV track
-  Double_t        fError;         // Measure of goodness of match of the tracks
-  Int_t           fStatus;        // Status flag
+  THaVDCPoint*    fLowerPoint;  // Lower UV point
+  THaVDCPoint*    fUpperPoint;  // Upper UV point
+  Double_t        fError;       // Goodness of match between the points
+  Int_t           fStatus;      // Status flag
 
 private:
-  THaVDCTrackPair();
+  THaVDCPointPair();
 
-  ClassDef(THaVDCTrackPair,0)     // A pair of VDC UV tracks
+  ClassDef(THaVDCPointPair,0)     // Pair of lower/upper VDC points
 };
 
 //////////////////////////////////////////////////////////////////////////////

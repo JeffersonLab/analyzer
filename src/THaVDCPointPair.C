@@ -2,15 +2,14 @@
 
 //////////////////////////////////////////////////////////////////////////
 //
-// THaVDCTrackPair
+// THaVDCPointPair
 //
-// This is a utility class for the VDC tracking classes.
-// It allows unique identification of tracks.
+// A pair of THaVDCPoints, candidate for a reconstructed track.
 //
 //////////////////////////////////////////////////////////////////////////
 
-#include "THaVDCTrackPair.h"
-#include "THaVDCUVTrack.h"
+#include "THaVDCPointPair.h"
+#include "THaVDCPoint.h"
 #include "TClass.h"
 
 #include <iostream>
@@ -19,14 +18,14 @@
 using namespace std;
 
 //_____________________________________________________________________________
-THaVDCTrackPair& THaVDCTrackPair::operator=( const THaVDCTrackPair& rhs )
+THaVDCPointPair& THaVDCPointPair::operator=( const THaVDCPointPair& rhs )
 {
   // Assignment operator.
 
   TObject::operator=(rhs);
   if ( this != &rhs ) {
-    fLowerTrack = rhs.fLowerTrack;
-    fUpperTrack = rhs.fUpperTrack;
+    fLowerPoint = rhs.fLowerPoint;
+    fUpperPoint = rhs.fUpperPoint;
     fError      = rhs.fError;
     fStatus     = rhs.fStatus;
   }
@@ -34,51 +33,51 @@ THaVDCTrackPair& THaVDCTrackPair::operator=( const THaVDCTrackPair& rhs )
 }
 
 //_____________________________________________________________________________
-void THaVDCTrackPair::Analyze( Double_t spacing )
+void THaVDCPointPair::Analyze( Double_t spacing )
 {
-  // Compute goodness of match paremeter for the two UV tracks.
-  // Essentially, this is a measure of how closely the two tracks
+  // Compute goodness of match parameter between upper and lower point.
+  // Essentially, this is a measure of how closely the two UV tracks
   // point at each other. 'spacing' is the separation of the
   // upper and lower UV planes (in m).
   //
   // This method is critical for the quality of the VDC multi-track
   // reconstruction.
 
-  // For now, a simple approach: Calculate projected positions of tracks in
-  // opposite planes, measure how far they differ from partner track
+  // For now, a simple approach: Calculate projected positions of UV tracks in
+  // opposite planes, measure how far they differ from partner UV track
   // intercept, and store the sum of the distances
 
   // Project the lower track into the upper plane
-  fError  = GetProjectedDistance( fLowerTrack, fUpperTrack, spacing );
-  fError += GetProjectedDistance( fUpperTrack, fLowerTrack, -spacing );
+  fError  = GetProjectedDistance( fLowerPoint, fUpperPoint, spacing );
+  fError += GetProjectedDistance( fUpperPoint, fLowerPoint, -spacing );
 
   return;
 }
 
 //_____________________________________________________________________________
-void THaVDCTrackPair::Associate( THaTrack* track )
+void THaVDCPointPair::Associate( THaTrack* track )
 {
-  // Mark upper and lower UV tracks as well as their clusters
-  // as belonging to this track
+  // Mark upper and lower points as well as their clusters
+  // as belonging to the given track
 
-  THaVDCUVTrack* uvtrk[2] = { fLowerTrack, fUpperTrack };
+  THaVDCPoint* point[2] = { fLowerPoint, fUpperPoint };
 
   for( int i=0; i<2; i++ ) {
-    uvtrk[i]->SetTrack( track );
-    uvtrk[i]->GetUCluster()->SetTrack( track );
-    uvtrk[i]->GetVCluster()->SetTrack( track );
+    point[i]->SetTrack( track );
+    point[i]->GetUCluster()->SetTrack( track );
+    point[i]->GetVCluster()->SetTrack( track );
   }
 }
 
 //_____________________________________________________________________________
-chi2_t THaVDCTrackPair::CalcChi2() const
+chi2_t THaVDCPointPair::CalcChi2() const
 {
   // Calculate chi2 and number of data points for the associated track
   // and clusters
 
   THaVDCCluster* clust[4] =
-    { fLowerTrack->GetUCluster(), fLowerTrack->GetVCluster(),
-      fUpperTrack->GetUCluster(), fUpperTrack->GetVCluster() };
+    { fLowerPoint->GetUCluster(), fLowerPoint->GetVCluster(),
+      fUpperPoint->GetUCluster(), fUpperPoint->GetVCluster() };
 
   chi2_t res(0,0);
   for( int i=0; i<4; i++ ) {
@@ -90,15 +89,15 @@ chi2_t THaVDCTrackPair::CalcChi2() const
 }
 
 //_____________________________________________________________________________
-Int_t THaVDCTrackPair::Compare( const TObject* obj ) const
+Int_t THaVDCPointPair::Compare( const TObject* obj ) const
 {
-  // Compare this object to another THaVDCTrackPair.
+  // Compare this object to another THaVDCPointPair.
   // Used for sorting tracks.
 
   if( !obj || IsA() != obj->IsA() )
     return -1;
 
-  const THaVDCTrackPair* rhs = static_cast<const THaVDCTrackPair*>( obj );
+  const THaVDCPointPair* rhs = static_cast<const THaVDCPointPair*>( obj );
 
   if( fError < rhs->fError )
     return -1;
@@ -109,8 +108,8 @@ Int_t THaVDCTrackPair::Compare( const TObject* obj ) const
 }
 
 //_____________________________________________________________________________
-Double_t THaVDCTrackPair::GetProjectedDistance( THaVDCUVTrack* here,
-						THaVDCUVTrack* there,
+Double_t THaVDCPointPair::GetProjectedDistance( THaVDCPoint* here,
+						THaVDCPoint* there,
 						Double_t spacing )
 {
   // Project 'here' to plane of 'there' and return square of distance between
@@ -126,16 +125,16 @@ Double_t THaVDCTrackPair::GetProjectedDistance( THaVDCUVTrack* here,
 }
 
 //_____________________________________________________________________________
-THaTrack* THaVDCTrackPair::GetTrack() const
+THaTrack* THaVDCPointPair::GetTrack() const
 {
   // Return track associated with this pair
 
-  assert( fLowerTrack->GetTrack() == fUpperTrack->GetTrack() );
-  return fLowerTrack->GetTrack();
+  assert( fLowerPoint->GetTrack() == fUpperPoint->GetTrack() );
+  return fLowerPoint->GetTrack();
 }
 
 //_____________________________________________________________________________
-void THaVDCTrackPair::Print( Option_t* ) const
+void THaVDCPointPair::Print( Option_t* ) const
 {
   // Print this object
 
@@ -143,42 +142,42 @@ void THaVDCTrackPair::Print( Option_t* ) const
 }
 
 //_____________________________________________________________________________
-void THaVDCTrackPair::Use()
+void THaVDCPointPair::Use()
 {
-  // Mark this track pair as used (i.e. associated with a track)
+  // Mark this coordinate pair as used (i.e. associated with a track)
   // This does the following:
   //
-  // (a) upper and lower tracks are marked as each other's partners
-  // (b) the global slope resulting from the track pair is calculated
-  //     and stored in the clusters associated with the UVtracks
+  // (a) upper and lower points are marked as each other's partners
+  // (b) the global slope resulting from the coordinate pair is calculated
+  //     and stored in the clusters associated with the points
   // (c) This pair is marked as used
 
-  // Make the tracks of this pair each other's partners. This prevents
+  // Make the points of this pair each other's partners. This prevents
   // tracks from being associated with more than one valid pair.
-  fLowerTrack->SetPartner( fUpperTrack );
-  fUpperTrack->SetPartner( fLowerTrack );
+  fLowerPoint->SetPartner( fUpperPoint );
+  fUpperPoint->SetPartner( fLowerPoint );
 
   // Compute global track values and get TRANSPORT coordinates for tracks. Re-
   // place local cluster slopes with global ones, which have higher precision.
   Double_t mu =
-    (fUpperTrack->GetU() - fLowerTrack->GetU()) /
-    (fUpperTrack->GetZU() - fLowerTrack->GetZU());
+    (fUpperPoint->GetU() - fLowerPoint->GetU()) /
+    (fUpperPoint->GetZU() - fLowerPoint->GetZU());
   Double_t mv =
-    (fUpperTrack->GetV() - fLowerTrack->GetV()) /
-    (fUpperTrack->GetZV() - fLowerTrack->GetZV());
+    (fUpperPoint->GetV() - fLowerPoint->GetV()) /
+    (fUpperPoint->GetZV() - fLowerPoint->GetZV());
 
-  fLowerTrack->SetSlopes( mu, mv );
-  fUpperTrack->SetSlopes( mu, mv );
+  fLowerPoint->SetSlopes( mu, mv );
+  fUpperPoint->SetSlopes( mu, mv );
 
   SetStatus(1);
 }
 
 //_____________________________________________________________________________
-void THaVDCTrackPair::Release()
+void THaVDCPointPair::Release()
 {
   // Mark this track pair as unused
 
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-ClassImp(THaVDCTrackPair)
+ClassImp(THaVDCPointPair)

@@ -8,15 +8,15 @@
 #include "THaSubDetector.h"
 #include "TClonesArray.h"
 #include "THaVDCPlane.h"
-#include "THaVDCUVTrack.h"
+#include "THaVDCPoint.h"
 #include "THaVDC.h"
 #include <cassert>
 
 class THaVDCPlane;
 class THaEvData;
 
-// Coordinates of a hit in this VDC UV plane
-struct UVPlaneCoords_t {
+// Coordinates of a point in this VDC UV plane
+struct PointCoords_t {
   Double_t x;
   Double_t y;
   Double_t theta;  // TRANSPORT x' = dx/dz
@@ -37,20 +37,20 @@ public:
   virtual Int_t   FineTrack();            // More precisely calculate track
   virtual EStatus Init( const TDatime& date );
 
-  UVPlaneCoords_t CalcDetCoords( const THaVDCCluster* u,
+  PointCoords_t   CalcDetCoords( const THaVDCCluster* u,
 				 const THaVDCCluster* v ) const;
 
   // Get and Set Functions
   THaVDCPlane*    GetUPlane()      const { return fU; }
   THaVDCPlane*    GetVPlane()      const { return fV; }
-  Int_t           GetNUVTracks()   const { return fUVTracks->GetLast()+1; }
-  TClonesArray*   GetUVTracks()    const { return fUVTracks; }
+  Int_t           GetNPoints()     const { return fPoints->GetLast()+1; }
+  TClonesArray*   GetPoints()      const { return fPoints; }
   THaVDC*         GetVDC()         const
   { return static_cast<THaVDC*>(GetDetector()); }
   Double_t        GetSpacing()     const { return fSpacing;}
-  THaVDCUVTrack*  GetUVTrack( Int_t i ) const
-    { assert( i>=0 && i<GetNUVTracks() );
-      return static_cast<THaVDCUVTrack*>( fUVTracks->UncheckedAt(i) ); }
+  THaVDCPoint*    GetPoint( Int_t i ) const
+    { assert( i>=0 && i<GetNPoints() );
+      return static_cast<THaVDCPoint*>( fPoints->UncheckedAt(i) ); }
   Double_t        GetZ()           const { return fU->GetZ(); }
 
 protected:
@@ -58,7 +58,7 @@ protected:
   THaVDCPlane*  fU;           // The U plane
   THaVDCPlane*  fV;           // The V plane
 
-  TClonesArray* fUVTracks;    // UV tracks
+  TClonesArray* fPoints;      // Pairs of possibly matching U and V clusters
 
   //UV Plane Geometry
   Double_t fSpacing;          // Space between U & V planes (m)
@@ -73,7 +73,7 @@ protected:
   void  FindClusters();       // Find clusters in U and V planes
   void  FitTracks();          // Fit local tracks for each cluster
   Int_t MatchUVClusters();    // Match clusters in U with clusters in V
-  Int_t CalcUVTrackCoords();
+  Int_t CalcPointCoords();
 
   ClassDef(THaVDCUVPlane,0)             // VDCUVPlane class
 };

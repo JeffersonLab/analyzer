@@ -8,7 +8,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 #include "THaTrackID.h"
 
-class THaVDCUVTrack;
+class THaVDCPoint;
 
 class THaVDCTrackID : public THaTrackID {
 
@@ -18,7 +18,7 @@ public:
   THaVDCTrackID( Int_t lowerU, Int_t lowerV,
 		 Int_t upperU, Int_t upperV ) : THaTrackID(),
     fLowerU(lowerU), fLowerV(lowerV), fUpperU(upperU), fUpperV(upperV) {}
-  THaVDCTrackID( const THaVDCUVTrack* lower, const THaVDCUVTrack* upper );
+  THaVDCTrackID( const THaVDCPoint* lower, const THaVDCPoint* upper );
   THaVDCTrackID( const THaVDCTrackID& );
   THaVDCTrackID& operator=( const THaVDCTrackID& );
 

@@ -17,10 +17,10 @@
 #include "THaTrack.h"
 #include "THaVDCPlane.h"
 #include "THaVDCUVPlane.h"
-#include "THaVDCUVTrack.h"
+#include "THaVDCPoint.h"
 #include "THaVDCCluster.h"
 #include "THaVDCTrackID.h"
-#include "THaVDCTrackPair.h"
+#include "THaVDCPointPair.h"
 #include "THaVDCHit.h"
 #include "THaScintillator.h"
 #include "THaSpectrometer.h"
@@ -60,7 +60,7 @@ THaVDC::THaVDC( const char* name, const char* description,
     MakeZombie();
   }
 
-  fUVpairs = new TClonesArray( "THaVDCTrackPair", 20 );
+  fLUpairs = new TClonesArray( "THaVDCPointPair", 20 );
 
   // Default behavior for now
 //  SetBit( kOnlyFastest | kHardTDCcut );
@@ -114,7 +114,7 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
 
   TString line;
   bool found = false;
-  while (!found && fgets (buff, LEN, file) != NULL) {
+  while (!found && fgets (buff, LEN, file) != 0) {
     char* buf = ::Compress(buff);  //strip blanks
     line = buf;
     delete [] buf;
@@ -318,7 +318,7 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   const THaDetector* s1 = 0;
   if( GetApparatus() )
     s1 = GetApparatus()->GetDetector("s1");
-  if(s1 == NULL)
+  if(s1 == 0)
     fCentralDist = 0;
   else
     fCentralDist = s1->GetOrigin().Z();
@@ -339,13 +339,13 @@ THaVDC::~THaVDC()
 
   delete fLower;
   delete fUpper;
-  delete fUVpairs;
+  delete fLUpairs;
 }
 
 //_____________________________________________________________________________
 Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 {
-  // Construct tracks from pairs of upper and lower UV tracks and add
+  // Construct tracks from pairs of upper and lower points and add
   // them to 'tracks'
 
   // TODO:
@@ -367,61 +367,47 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 #endif
   UInt_t theStage = ( mode == 1 ) ? kCoarse : kFine;
 
-  fUVpairs->Clear();
+  fLUpairs->Clear();
 
-  Int_t nUpperTracks = fUpper->GetNUVTracks();
-  Int_t nLowerTracks = fLower->GetNUVTracks();
+  Int_t nUpper = fUpper->GetNPoints();
+  Int_t nLower = fLower->GetNPoints();
 
 #ifdef WITH_DEBUG
   if( fDebug>1 )
-    cout << "nUpper/nLower = " << nUpperTracks << "  " << nLowerTracks << endl;
+    cout << "nUpper/nLower = " << nUpper << "  " << nLower << endl;
 #endif
-
-  // No tracks at all -> can't have any tracks
-  if( nUpperTracks == 0 && nLowerTracks == 0 ) {
-#ifdef WITH_DEBUG
-    if( fDebug>1 )
-      cout << "No tracks.\n";
-#endif
-    return 0;
-  }
-
-  Int_t nTracks = 0;  // Number of valid particle tracks through the detector
-  Int_t nPairs  = 0;  // Number of UV track pairs to consider
 
   // One plane has no tracks, the other does
   // -> maybe recoverable with loss of precision
   // FIXME: Only do this if missing cluster recovery flag set
-  if( nUpperTracks == 0 || nLowerTracks == 0 ) {
+  if( (nUpper == 0) xor (nLower == 0) ) {
     //FIXME: Put missing cluster recovery code here
     //For now, do nothing
 #ifdef WITH_DEBUG
     if( fDebug>1 )
-      cout << "missing cluster " << nLowerTracks << " "
-	   << nUpperTracks << endl;
+      cout << "missing cluster " << nLower << " "
+	   << nUpper << endl;
 #endif
-    return 0;
   }
 
-  THaVDCUVTrack *track, *partner;
-  THaVDCTrackPair *thePair;
+  Int_t nTracks = 0;  // Number of reconstructed tracks
+  Int_t nPairs  = 0;  // Number of point pairs to consider
 
-  for( int i = 0; i < nLowerTracks; i++ ) {
-    track = fLower->GetUVTrack(i);
-    if( !track )
-      continue;
+  for( int i = 0; i < nLower; i++ ) {
+    THaVDCPoint* lowerPoint = fLower->GetPoint(i);
+    assert(lowerPoint);
 
-    for( int j = 0; j < nUpperTracks; j++ ) {
-      partner = fUpper->GetUVTrack(j);
-      if( !partner )
-	continue;
+    for( int j = 0; j < nUpper; j++ ) {
+      THaVDCPoint* upperPoint = fUpper->GetPoint(j);
+      assert(upperPoint);
 
-      // Create new UV track pair.
-      thePair = new( (*fUVpairs)[nPairs++] ) THaVDCTrackPair( track, partner );
+      // Create new point pair.
+      THaVDCPointPair* thePair = new( (*fLUpairs)[nPairs++] )
+	THaVDCPointPair( lowerPoint, upperPoint );
 
-      // Explicitly mark these UV tracks as unpartnered
-      track->SetPartner( NULL );
-      partner->SetPartner( NULL );
+      // Explicitly mark these points as unpartnered
+      lowerPoint->SetPartner( 0 );
+      upperPoint->SetPartner( 0 );
 
       // Compute goodness of match parameter
       thePair->Analyze( fUSpacing );
@@ -433,7 +419,7 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
     cout << nPairs << " pairs.\n";
 #endif
 
-  // Initialize some counters
+  // Initialize counters
   int n_exist = 0, n_mod = 0;
   int n_oops = 0;
   // How many tracks already exist in the global track array?
@@ -442,13 +428,13 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 
   // Sort pairs in order of ascending goodness of match
   if( nPairs > 1 )
-    fUVpairs->Sort();
+    fLUpairs->Sort();
 
   // Mark pairs as partners, starting with the best matches,
   // until all tracks are marked.
   for( int i = 0; i < nPairs; i++ ) {
-    if( !(thePair = static_cast<THaVDCTrackPair*>( fUVpairs->At(i) )) )
-      continue;
+    THaVDCPointPair* thePair = static_cast<THaVDCPointPair*>( fLUpairs->At(i) );
+    assert(thePair);
 
 #ifdef WITH_DEBUG
     if( fDebug>1 ) {
@@ -464,23 +450,23 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
     if( thePair->GetError() > fErrorCutoff )
       break;
 
-    // Get the tracks of the pair
-    track   = thePair->GetLower();
-    partner = thePair->GetUpper();
-    if( !track || !partner )
-      continue;
+    // Get the points of the pair
+    THaVDCPoint* lowerPoint = thePair->GetLower();
+    THaVDCPoint* upperPoint = thePair->GetUpper();
+    assert( lowerPoint != 0 && upperPoint != 0 );
 
     //FIXME: debug
 #ifdef WITH_DEBUG
     if( fDebug>1 ) {
       cout << "dUpper/dLower = "
-	   << thePair->GetProjectedDistance( track,partner,fUSpacing) << "  "
-	   << thePair->GetProjectedDistance( partner,track,-fUSpacing);
+	   << thePair->GetProjectedDistance( lowerPoint,upperPoint,fUSpacing )
+	   << "  "
+	   << thePair->GetProjectedDistance( upperPoint,lowerPoint,-fUSpacing );
     }
 #endif
 
-    // Skip pairs where any of the tracks already has a partner
-    if( track->GetPartner() || partner->GetPartner() ) {
+    // Skip pairs where any of the points already has a partner
+    if( lowerPoint->GetPartner() || upperPoint->GetPartner() ) {
 #ifdef WITH_DEBUG
       if( fDebug>1 )
 	cout << " ... skipped.\n";
@@ -492,17 +478,17 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
       cout << " ... good.\n";
 #endif
 
-    // Use the pair. This partners the UVtracks and calculates global slopes
+    // Use the pair. This partners the points and calculates global slopes
     thePair->Use();
     nTracks++;
 
 #ifdef WITH_DEBUG
     if( fDebug>2 ) {
-      Double_t mu = track->GetUCluster()->GetSlope();
-      Double_t mv = track->GetVCluster()->GetSlope();
+      Double_t mu = lowerPoint->GetUCluster()->GetSlope();
+      Double_t mv = lowerPoint->GetVCluster()->GetSlope();
       cout << "Global track parameters: "
 	   << mu << " " << mv << " "
-	   << track->GetTheta() << " " << track->GetPhi()
+	   << lowerPoint->GetTheta() << " " << lowerPoint->GetPhi()
 	   << endl;
     }
 #endif
@@ -513,14 +499,14 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 
       // Decide whether this is a new track or an old track
       // that is being updated
-      THaVDCTrackID* thisID = new THaVDCTrackID(track,partner);
-      THaTrack* theTrack = NULL;
+      THaVDCTrackID* thisID = new THaVDCTrackID(lowerPoint,upperPoint);
+      THaTrack* theTrack = 0;
       bool found = false;
       int t;
       for( t = 0; t < n_exist; t++ ) {
 	theTrack = static_cast<THaTrack*>( tracks->At(t) );
 	// This test is true if an existing track has exactly the same clusters
-	// as the current one (defined by track/partner)
+	// as the current one (defined by lowerPoint/upperPoint)
 	if( theTrack && theTrack->GetCreator() == this &&
 	    *thisID == *theTrack->GetID() ) {
 	  found = true;
@@ -549,8 +535,8 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 	theTrack = AddTrack(*tracks, 0.0, 0.0, 0.0, 0.0, thisID );
 	//	theTrack->SetID( thisID );
 	//	theTrack->SetCreator( this );
-	theTrack->AddCluster( track );
-	theTrack->AddCluster( partner );
+	theTrack->AddCluster( lowerPoint );
+	theTrack->AddCluster( upperPoint );
 	assert( tracks->IndexOf(theTrack) >= 0 );
 	theTrack->SetTrkNum( tracks->IndexOf(theTrack)+1 );
 	thePair->Associate( theTrack );
@@ -558,8 +544,8 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 	  flag |= kReassigned;
       }
 
-      theTrack->SetD(track->GetX(), track->GetY(), track->GetTheta(),
-		     track->GetPhi());
+      theTrack->SetD(lowerPoint->GetX(), lowerPoint->GetY(), lowerPoint->GetTheta(),
+		     lowerPoint->GetPhi());
       theTrack->SetFlag( flag );
 
       // Calculate the TRANSPORT coordinates
@@ -587,8 +573,9 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 	  ((theTrack->GetFlag() & kStageMask) != theStage ) ) {
 	// First, release clusters pointing to this track
 	for( int j = 0; j < nPairs; j++ ) {
-	  if( !(thePair = static_cast<THaVDCTrackPair*>( fUVpairs->At(j) )) )
-	    continue;
+	  THaVDCPointPair* thePair
+	    = static_cast<THaVDCPointPair*>( fLUpairs->At(i) );
+	  assert(thePair);
 	  if( thePair->GetTrack() == theTrack ) {
 	    thePair->Associate(0);
 	    break;
@@ -900,7 +887,7 @@ void THaVDC::CorrectTimeOfFlight(TClonesArray& tracks)
   THaScintillator* s2 = static_cast<THaScintillator*>
     ( GetApparatus()->GetDetector("s2") );
 
-  if( (s1 == NULL) || (s2 == NULL) )
+  if( (s1 == 0) || (s2 == 0) )
     return;
 
   // adjusts caluculated times so that the time of flight to S1
@@ -934,13 +921,13 @@ void THaVDC::CorrectTimeOfFlight(TClonesArray& tracks)
     // apply the correction
     Int_t n_clust = track->GetNclusters();
     for( Int_t i = 0; i < n_clust; i++ ) {
-      THaVDCUVTrack* the_uvtrack =
-	static_cast<THaVDCUVTrack*>( track->GetCluster(i) );
-      if( !the_uvtrack )
+      THaVDCPoint* the_point =
+	static_cast<THaVDCPoint*>( track->GetCluster(i) );
+      if( !the_point )
 	continue;
 
-      the_uvtrack->GetUCluster()->SetTimeCorrection(tdelta);
-      the_uvtrack->GetVCluster()->SetTimeCorrection(tdelta);
+      the_point->GetUCluster()->SetTimeCorrection(tdelta);
+      the_point->GetVCluster()->SetTimeCorrection(tdelta);
     }
   }
 }
@@ -953,7 +940,7 @@ void THaVDC::FindBadTracks(TClonesArray& tracks)
   THaScintillator* s2 = static_cast<THaScintillator*>
     ( GetApparatus()->GetDetector("s2") );
 
-  if(s2 == NULL) {
+  if(s2 == 0) {
     //cerr<<"Could not find s2 plane!!"<<endl;
     return;
   }

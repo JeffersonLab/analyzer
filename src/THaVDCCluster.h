@@ -12,7 +12,6 @@
 
 class THaVDCHit;
 class THaVDCPlane;
-class THaVDCUVTrack;
 class THaTrack;
 
 typedef std::pair<Double_t,Int_t>  chi2_t;

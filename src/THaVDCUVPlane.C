@@ -9,7 +9,7 @@
 #include "THaVDC.h"
 #include "THaVDCUVPlane.h"
 #include "THaVDCPlane.h"
-#include "THaVDCUVTrack.h"
+#include "THaVDCPoint.h"
 #include "THaVDCCluster.h"
 #include "THaVDCHit.h"
 #include "TMath.h"
@@ -30,7 +30,7 @@ THaVDCUVPlane::THaVDCUVPlane( const char* name, const char* description,
   fV = new THaVDCPlane( "v", "V plane", this );
 
   // Create the UV tracks array
-  fUVTracks = new TClonesArray("THaVDCUVTrack", 10); // 10 is arbitrary
+  fPoints = new TClonesArray("THaVDCPoint", 10); // 10 is arbitrary
 
   fVDC = dynamic_cast<THaVDC*>( GetMainDetector() );
 }
@@ -43,7 +43,7 @@ THaVDCUVPlane::~THaVDCUVPlane()
 
   delete fU;
   delete fV;
-  delete fUVTracks;
+  delete fPoints;
 }
 
 //_____________________________________________________________________________
@@ -81,7 +81,7 @@ THaDetectorBase::EStatus THaVDCUVPlane::Init( const TDatime& date )
 }
 
 //_____________________________________________________________________________
-UVPlaneCoords_t THaVDCUVPlane::CalcDetCoords( const THaVDCCluster* ucl,
+PointCoords_t THaVDCUVPlane::CalcDetCoords( const THaVDCCluster* ucl,
 					      const THaVDCCluster* vcl ) const
 {
   // Convert U,V coordinates of the given uv cluster pair to the detector
@@ -95,7 +95,7 @@ UVPlaneCoords_t THaVDCUVPlane::CalcDetCoords( const THaVDCCluster* ucl,
   // Project v0 into the u plane
   Double_t v = v0 - mv * GetSpacing();
 
-  UVPlaneCoords_t c;
+  PointCoords_t c;
   c.x     = (u*fSin_v - v*fSin_u) * fInv_sin_vu;
   c.y     = (v*fCos_u - u*fCos_v) * fInv_sin_vu;
   c.theta = (mu*fSin_v - mv*fSin_u) * fInv_sin_vu;
@@ -108,7 +108,7 @@ UVPlaneCoords_t THaVDCUVPlane::CalcDetCoords( const THaVDCCluster* ucl,
 Int_t THaVDCUVPlane::MatchUVClusters()
 {
   // Match clusters in the U plane with cluster in the V plane by t0 and
-  // geometry. Fills fUVTracks with good pairs.
+  // geometry. Fills fPoints with good pairs.
 
   Int_t nu = fU->GetNClusters();
   Int_t nv = fV->GetNClusters();
@@ -133,14 +133,14 @@ Int_t THaVDCUVPlane::MatchUVClusters()
 	continue;
 
       // Test position to be within drift chambers
-      const UVPlaneCoords_t c = CalcDetCoords(uClust,vClust);
+      const PointCoords_t c = CalcDetCoords(uClust,vClust);
       if( !fU->IsInActiveArea( c.x, c.y ) ) {
 	continue;
       }
 
       // This cluster pair passes preliminary tests, so we save it, regardless
       // of possible ambiguities, which will be sorted out later
-      new( (*fUVTracks)[nuv++] ) THaVDCUVTrack( uClust, vClust, this );
+      new( (*fPoints)[nuv++] ) THaVDCPoint( uClust, vClust, this );
     }
   }
 
@@ -149,7 +149,7 @@ Int_t THaVDCUVPlane::MatchUVClusters()
 }
 
 //_____________________________________________________________________________
-Int_t THaVDCUVPlane::CalcUVTrackCoords()
+Int_t THaVDCUVPlane::CalcPointCoords()
 {
   // Compute track info (x, y, theta, phi) for the tracks based on
   // information contained in the clusters of the tracks and on
@@ -157,13 +157,13 @@ Int_t THaVDCUVPlane::CalcUVTrackCoords()
   //
   // Uses TRANSPORT coordinates.
 
-  Int_t nUVTracks = GetNUVTracks();
-  for (int i = 0; i < nUVTracks; i++) {
-    THaVDCUVTrack* track  = GetUVTrack(i);
+  Int_t nPoints = GetNPoints();
+  for (int i = 0; i < nPoints; i++) {
+    THaVDCPoint* track = GetPoint(i);
     if( track )
       track->CalcDetCoords();
   }
-  return nUVTracks;
+  return nPoints;
 }
 
 //_____________________________________________________________________________
@@ -172,7 +172,7 @@ void THaVDCUVPlane::Clear( Option_t* opt )
   // Clear event-by-event data
   fU->Clear(opt);
   fV->Clear(opt);
-  fUVTracks->Clear();
+  fPoints->Clear();
 }
 
 //_____________________________________________________________________________

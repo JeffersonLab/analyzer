@@ -1,20 +1,20 @@
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //
-// THaVDCUVTrack                                                             //
+// THaVDCPoint                                                               //
 //                                                                           //
 // Class for UV Tracks                                                       //
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "THaVDCUVTrack.h"
+#include "THaVDCPoint.h"
 #include "THaVDCUVPlane.h"
 #include "THaTrack.h"
 
-const Double_t THaVDCUVTrack::kBig = 1e38;  // Arbitrary large value
+const Double_t THaVDCPoint::kBig = 1e38;  // Arbitrary large value
 
 //_____________________________________________________________________________
-THaVDCUVTrack::THaVDCUVTrack( THaVDCCluster* u_cl, THaVDCCluster* v_cl,
-			      THaVDCUVPlane* plane )
+THaVDCPoint::THaVDCPoint( THaVDCCluster* u_cl, THaVDCCluster* v_cl,
+			  THaVDCUVPlane* plane )
   : fUClust(u_cl), fVClust(v_cl), fUVPlane(plane), fTrack(0), fPartner(0)
 {
   // Constructor
@@ -25,17 +25,17 @@ THaVDCUVTrack::THaVDCUVTrack( THaVDCCluster* u_cl, THaVDCCluster* v_cl,
 }
 
 //_____________________________________________________________________________
-void THaVDCUVTrack::CalcDetCoords()
+void THaVDCPoint::CalcDetCoords()
 {
   // Convert U,V coordinates of our two clusters to the detector
   // coordinate system.
 
-  const UVPlaneCoords_t c = fUVPlane->CalcDetCoords(fUClust,fVClust);
+  const PointCoords_t c = fUVPlane->CalcDetCoords(fUClust,fVClust);
   Set( c.x, c.y, c.theta, c.phi, fUVPlane->GetOrigin() );
 }
 
 //_____________________________________________________________________________
-Double_t THaVDCUVTrack::GetZU() const
+Double_t THaVDCPoint::GetZU() const
 {
   // Return z-position of u cluster
 
@@ -43,7 +43,7 @@ Double_t THaVDCUVTrack::GetZU() const
 }
 
 //_____________________________________________________________________________
-Double_t THaVDCUVTrack::GetZV() const
+Double_t THaVDCPoint::GetZV() const
 {
   // Return intercept of u cluster
 
@@ -51,7 +51,7 @@ Double_t THaVDCUVTrack::GetZV() const
 }
 
 //_____________________________________________________________________________
-void THaVDCUVTrack::SetSlopes( Double_t mu, Double_t mv )
+void THaVDCPoint::SetSlopes( Double_t mu, Double_t mv )
 {
   // Set global slopes of U and V clusters to mu, mv and recalculate
   // detector coordinates
@@ -62,9 +62,9 @@ void THaVDCUVTrack::SetSlopes( Double_t mu, Double_t mv )
 }
 
 //_____________________________________________________________________________
-void THaVDCUVTrack::CalcChisquare(Double_t& chi2, Int_t& nhits) const
+void THaVDCPoint::CalcChisquare(Double_t& chi2, Int_t& nhits) const
 {
-  // Accumulate the chi2 from the clusters making up this track,
+  // Accumulate the chi2 from the clusters making up this pair,
   // adding their terms to the chi2 and nhits.
   //
   //  The global slope and intercept, derived from the entire track,
@@ -76,9 +76,9 @@ void THaVDCUVTrack::CalcChisquare(Double_t& chi2, Int_t& nhits) const
 }
 
 //_____________________________________________________________________________
-void THaVDCUVTrack::SetTrack( THaTrack* track )
+void THaVDCPoint::SetTrack( THaTrack* track )
 {
-  // Associate this cluster as well as the underlying U and V clusters
+  // Associate this cluster pair as well as the underlying U and V clusters
   // with a reconstructed track
 
   fTrack = track;
@@ -87,7 +87,7 @@ void THaVDCUVTrack::SetTrack( THaTrack* track )
 }
 
 //_____________________________________________________________________________
-Int_t THaVDCUVTrack::GetTrackIndex() const
+Int_t THaVDCPoint::GetTrackIndex() const
 {
   // Return index of assigned track (-1 = none, 0 = first/best, etc.)
 
@@ -96,4 +96,4 @@ Int_t THaVDCUVTrack::GetTrackIndex() const
 }
 
 //_____________________________________________________________________________
-ClassImp(THaVDCUVTrack)
+ClassImp(THaVDCPoint)
