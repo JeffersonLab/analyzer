@@ -24,7 +24,8 @@ public:
     fSize(0), fPlane(owner), fUVTrack(0), fTrack(0), fTrkNum(0), fSlope(kBig),
     fLocalSlope(kBig), fSigmaSlope(kBig), fInt(kBig), fSigmaInt(kBig),
     fT0(kBig), fSigmaT0(kBig), fPivot(0), fTimeCorrection(0.0),
-    fFitOK(false), fChi2(kBig), fNDoF(0.0), fAmbig(kFALSE), fPaired(0)  {}
+    fFitOK(false), fChi2(kBig), fNDoF(0.0), fClsBeg(-1), fClsEnd(-1),
+    fAmbig(kFALSE), fPaired(0)  {}
   virtual ~THaVDCCluster();
 
   enum EMode { kSimple, kT0, kFull };
@@ -104,7 +105,7 @@ protected:
   Bool_t         fFitOK;             // Flag indicating that fit results valid
   Double_t       fChi2;              // chi2 for the cluster (using fSlope)
   Double_t       fNDoF;              // NDoF in local chi2 calculation
-  Int_t          fClsStr; 	     // Starting wire number
+  Int_t          fClsBeg; 	     // Starting wire number
   Int_t          fClsEnd;            // Ending wire number
   Bool_t         fAmbig;
 

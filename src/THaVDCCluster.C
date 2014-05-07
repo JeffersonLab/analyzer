@@ -42,14 +42,14 @@ void THaVDCCluster::AddHit(THaVDCHit * hit)
   if (fSize < MAX_SIZE) {
     fHits[fSize++] = hit;
     if( fSize == 1 ){
-	    fClsStr = hit->GetWireNum();
+	    fClsBeg = hit->GetWireNum();
 	    fClsEnd = hit->GetWireNum();
     } else {
 	    if( fClsEnd < hit->GetWireNum() ){
 		    fClsEnd = hit->GetWireNum();
 	    }
-	    if( fClsStr > hit->GetWireNum() ){
-		    fClsStr = hit->GetWireNum();
+	    if( fClsBeg > hit->GetWireNum() ){
+		    fClsBeg = hit->GetWireNum();
 	    }
     }
 
@@ -61,15 +61,19 @@ void THaVDCCluster::AddHit(THaVDCHit * hit)
 //_____________________________________________________________________________
 void THaVDCCluster::Clear( const Option_t* )
 {
-  // Clear the contents of the cluster
+  // Clear the contents of the cluster and reset status
 
   ClearFit();
-  fSize  = 0;
-  fPivot = 0;
-  fPlane = 0;
+  fSize    = 0;
+  fPivot   = 0;
+  fPlane   = 0;
   fUVTrack = 0;
-  fTrack = 0;
-  fTrkNum = 0;
+  fTrack   = 0;
+  fTrkNum  = 0;
+  fClsBeg  = -1;
+  fClsEnd  = -1;
+  fAmbig   = kFALSE;
+  fPaired  = 0;
 }
 
 //_____________________________________________________________________________
@@ -89,8 +93,6 @@ void THaVDCCluster::ClearFit()
   fLocalSlope = kBig;
   fChi2       = kBig;
   fNDoF       = 0.0;
-  fPaired     = 0;
-  fAmbig      = kFALSE;
 }
 
 //_____________________________________________________________________________

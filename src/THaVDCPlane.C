@@ -425,9 +425,9 @@ Int_t THaVDCPlane::DefineVariables( EMode mode )
     { "cltcor", "Cluster Time correction",    "fClusters.THaVDCCluster.fTimeCorrection" },
     { "cltridx","Idx of track assoc w/cluster", "fClusters.THaVDCCluster.GetTrackIndex()" },
     { "cltrknum", "Cluster track number (0=unused)", "fClusters.THaVDCCluster.fTrkNum" },
-    { "clstr", "Cluster start wire", "fClusters.THaVDCCluster.fClsStr" },
-    { "clend", "Cluster end wire", "fClusters.THaVDCCluster.fClsEnd" },
-    { "ambig", "UV Association ambiguous", "fClusters.THaVDCCluster.fAmbig" },
+    { "clbeg", "Cluster start wire",          "fClusters.THaVDCCluster.fClsBeg" },
+    { "clend", "Cluster end wire",            "fClusters.THaVDCCluster.fClsEnd" },
+    { "ambig", "UV Association ambiguous",    "fClusters.THaVDCCluster.fAmbig" },
     { "npass", "Number of hit passes for cluster", "GetNpass()" },
     { 0 }
   };
