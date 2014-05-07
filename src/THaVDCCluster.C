@@ -67,13 +67,10 @@ void THaVDCCluster::Clear( const Option_t* )
   fSize    = 0;
   fPivot   = 0;
   fPlane   = 0;
-  fUVTrack = 0;
   fTrack   = 0;
   fTrkNum  = 0;
   fClsBeg  = -1;
   fClsEnd  = -1;
-  fAmbig   = kFALSE;
-  fPaired  = 0;
 }
 
 //_____________________________________________________________________________

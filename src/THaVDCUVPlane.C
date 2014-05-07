@@ -107,25 +107,21 @@ UVPlaneCoords_t THaVDCUVPlane::CalcDetCoords( const THaVDCCluster* ucl,
 //_____________________________________________________________________________
 Int_t THaVDCUVPlane::MatchUVClusters()
 {
-  // Match clusters in the U plane with cluster in the V plane
-  // Creates THaVDCUVTrack object for each pair
+  // Match clusters in the U plane with cluster in the V plane by t0 and
+  // geometry. Fills fUVTracks with good pairs.
 
   Int_t nu = fU->GetNClusters();
   Int_t nv = fV->GetNClusters();
 
-  // Quick-and-dirty algorithm pushed by Bogdan Wojtsekhowski.
-  // Probably not the way to go for the real thing, but it will give
-  // relatively clean (if inefficient) results:
-  //
   // Match best in-time clusters (t_0 close to zero).
   // Discard any out-of-time clusters (|t_0| > N sigma, N = 3, configurable).
-  // Bail if any ambiguity, marking the event as not analyzable
 
   Double_t max_u_t0 = fU->GetT0Resolution();
   Double_t max_v_t0 = fV->GetT0Resolution();
 
-  Int_t ntrk = 0;
+  Int_t nuv = 0;
 
+  // Consider all possible uv cluster combinations
   for( Int_t iu = 0; iu < nu; ++iu ) {
     THaVDCCluster* uClust = fU->GetCluster(iu);
     if( TMath::Abs(uClust->GetT0()) > max_u_t0 )
@@ -136,43 +132,20 @@ Int_t THaVDCUVPlane::MatchUVClusters()
       if( TMath::Abs(vClust->GetT0()) > max_v_t0 )
 	continue;
 
-      const UVPlaneCoords_t c = CalcDetCoords(uClust,vClust);
-
       // Test position to be within drift chambers
+      const UVPlaneCoords_t c = CalcDetCoords(uClust,vClust);
       if( !fU->IsInActiveArea( c.x, c.y ) ) {
 	continue;
       }
 
-      // FIXME:  We should just mark this one "region" bad.
-      // Pairs that are sufficiently far away from this should
-      // still be OK to use (if they're not ambiguious themselves)
-      if( uClust->IsPaired() || vClust->IsPaired() ){
-	      // Found a pair that was already some good match
-	      // We say there is an ambiguity and we stop
-	      uClust->SetAmbiguous(kTRUE);
-	      vClust->SetAmbiguous(kTRUE);
-
-	      if( uClust->GetPaired() ){
-		uClust->GetPaired()->SetAmbiguous(kTRUE);
-	      }
-	      if( vClust->GetPaired() ){
-		vClust->GetPaired()->SetAmbiguous(kTRUE);
-	      }
-	      MarkBad();
-	      continue;
-      }
-
-      uClust->SetPaired(vClust);
-      vClust->SetPaired(uClust);
-
-	// Found two clusters with "small" t0s
-	// So we pair them and hope for the best.
-      new( (*fUVTracks)[ntrk++] ) THaVDCUVTrack( uClust, vClust, this );
+      // This cluster pair passes preliminary tests, so we save it, regardless
+      // of possible ambiguities, which will be sorted out later
+      new( (*fUVTracks)[nuv++] ) THaVDCUVTrack( uClust, vClust, this );
     }
   }
 
-  // return the number of UV tracks found
-  return GetNUVTracks();
+  // return the number of UV pairs found
+  return nuv;
 }
 
 //_____________________________________________________________________________
@@ -200,7 +173,6 @@ void THaVDCUVPlane::Clear( Option_t* opt )
   fU->Clear(opt);
   fV->Clear(opt);
   fUVTracks->Clear();
-  UnmarkBad();
 }
 
 //_____________________________________________________________________________

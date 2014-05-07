@@ -53,10 +53,6 @@ public:
       return static_cast<THaVDCUVTrack*>( fUVTracks->UncheckedAt(i) ); }
   Double_t        GetZ()           const { return fU->GetZ(); }
 
-  void            UnmarkBad();    // Clear "ambiguous cluster match" flag
-  void            MarkBad();      // Set "ambiguous cluster match" flag
-  Bool_t          IsBad() const;  // True if cluster match ambiguity found
-
 protected:
 
   THaVDCPlane*  fU;           // The U plane
@@ -72,11 +68,7 @@ protected:
   Double_t fCos_v;            //
   Double_t fInv_sin_vu;       // 1/Sine of the difference between the
                               // V axis angle and the U axis angle
-  UInt_t   fUVStatus;         // Analysis status flags
-
   THaVDC*  fVDC;              // VDC detector to which this plane belongs
-
-  enum EUVStatus { kAmbiguous = 0 };
 
   void  FindClusters();       // Find clusters in U and V planes
   void  FitTracks();          // Fit local tracks for each cluster
@@ -85,25 +77,6 @@ protected:
 
   ClassDef(THaVDCUVPlane,0)             // VDCUVPlane class
 };
-
-//-------------------- inlines ------------------------------------------------
-inline
-void THaVDCUVPlane::MarkBad()
-{
-  fUVStatus |= (1 << kAmbiguous);
-}
-
-inline
-void THaVDCUVPlane::UnmarkBad()
-{
-  fUVStatus &= ~(1 << kAmbiguous);
-}
-
-inline
-Bool_t THaVDCUVPlane::IsBad() const
-{
-  return (fUVStatus != 0);
-}
 
 ///////////////////////////////////////////////////////////////////////////////
 

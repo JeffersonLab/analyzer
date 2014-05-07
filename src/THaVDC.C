@@ -369,18 +369,6 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 
   fUVpairs->Clear();
 
-  // Bail out if either plane has ambiguous
-  // cluster association
-  Bool_t lowerBad = fLower->IsBad();
-  Bool_t upperBad = fUpper->IsBad();
-  if( lowerBad || upperBad ){
-    if( fDebug>1 ){
-	    cout << "lower bad: " << lowerBad << "  upper bad: "
-		   << upperBad << endl;
-    }
-    return 0;
-  }
-
   Int_t nUpperTracks = fUpper->GetNUVTracks();
   Int_t nLowerTracks = fLower->GetNUVTracks();
 
