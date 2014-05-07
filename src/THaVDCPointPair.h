@@ -18,10 +18,6 @@ class THaVDCPointPair : public TObject {
 public:
   THaVDCPointPair( THaVDCPoint* lt, THaVDCPoint* ut ) :
     fLowerPoint(lt), fUpperPoint(ut), fError(1e307), fStatus(0) {}
-  THaVDCPointPair( const THaVDCPointPair& rhs ) : TObject(rhs),
-    fLowerPoint(rhs.fLowerPoint), fUpperPoint(rhs.fUpperPoint),
-    fError(rhs.fError), fStatus(rhs.fStatus) {}
-  THaVDCPointPair& operator=( const THaVDCPointPair& );
 
   virtual ~THaVDCPointPair() {}
 

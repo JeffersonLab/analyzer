@@ -18,34 +18,16 @@
 using namespace std;
 
 //_____________________________________________________________________________
-THaVDCPointPair& THaVDCPointPair::operator=( const THaVDCPointPair& rhs )
-{
-  // Assignment operator.
-
-  TObject::operator=(rhs);
-  if ( this != &rhs ) {
-    fLowerPoint = rhs.fLowerPoint;
-    fUpperPoint = rhs.fUpperPoint;
-    fError      = rhs.fError;
-    fStatus     = rhs.fStatus;
-  }
-  return *this;
-}
-
-//_____________________________________________________________________________
 void THaVDCPointPair::Analyze( Double_t spacing )
 {
   // Compute goodness of match parameter between upper and lower point.
-  // Essentially, this is a measure of how closely the two UV tracks
+  // Essentially, this is a measure of how closely the two local tracks
   // point at each other. 'spacing' is the separation of the
   // upper and lower UV planes (in m).
   //
-  // This method is critical for the quality of the VDC multi-track
-  // reconstruction.
-
-  // For now, a simple approach: Calculate projected positions of UV tracks in
-  // opposite planes, measure how far they differ from partner UV track
-  // intercept, and store the sum of the distances
+  // Calculate projected positions of UV tracks in opposite planes, measure
+  // how far they differ from partner UV track intercept, and store the sum
+  // of the squares of the distances
 
   // Project the lower track into the upper plane
   fError  = GetProjectedDistance( fLowerPoint, fUpperPoint, spacing );
