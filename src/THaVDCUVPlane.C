@@ -123,8 +123,6 @@ Int_t THaVDCUVPlane::MatchUVClusters()
 
   Double_t max_u_t0 = fU->GetT0Resolution();
   Double_t max_v_t0 = fV->GetT0Resolution();
-  THaVDCUVTrack* uvTrack = 0;
-  THaVDCUVTrack* testTrack = 0;
 
   Int_t ntrk = 0;
 
@@ -138,19 +136,13 @@ Int_t THaVDCUVPlane::MatchUVClusters()
       if( TMath::Abs(vClust->GetT0()) > max_v_t0 )
 	continue;
 
-      testTrack = new THaVDCUVTrack( uClust, vClust, this );
-      testTrack->CalcDetCoords();
-      //      Double_t xcoord = testTrack->GetX();
-      Double_t ycoord = testTrack->GetY();
-      delete testTrack;  testTrack = NULL;
+      const UVPlaneCoords_t c = CalcDetCoords(uClust,vClust);
 
       // Test position to be within drift chambers
-      if( TMath::Abs(ycoord) > fU->GetYSize() ){
+      if( TMath::Abs(c.y) > fU->GetYSize() ){
 	      continue;
       }
       // FIXME: also test xcoord!
-
-      delete testTrack; testTrack = NULL;
 
       // FIXME:  We should just mark this one "region" bad.
       // Pairs that are sufficiently far away from this should
@@ -176,10 +168,7 @@ Int_t THaVDCUVPlane::MatchUVClusters()
 
 	// Found two clusters with "small" t0s
 	// So we pair them and hope for the best.
-
-	uvTrack = new ( (*fUVTracks)[ntrk++] )
-		THaVDCUVTrack( uClust, vClust, this );
-	uvTrack->CalcDetCoords();
+      new( (*fUVTracks)[ntrk++] ) THaVDCUVTrack( uClust, vClust, this );
     }
   }
 
