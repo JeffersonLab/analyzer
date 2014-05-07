@@ -16,7 +16,6 @@
 #include "TVector3.h"
 #include <cassert>
 
-class THaVDCCluster;
 class THaVDCUVPlane;
 class THaTrack;
 
@@ -24,11 +23,7 @@ class THaVDCUVTrack : public THaCluster {
 
 public:
   THaVDCUVTrack( THaVDCCluster* u_cl, THaVDCCluster* v_cl,
-		 THaVDCUVPlane* plane ) :
-    fUClust(u_cl), fVClust(v_cl), fUVPlane(plane), fTrack(0), fPartner(0),
-    fX(kBig), fY(kBig), fTheta(kBig), fPhi(kBig)
-  { assert( fUClust && fVClust && fUVPlane ); }
-
+		 THaVDCUVPlane* plane );
   virtual ~THaVDCUVTrack() {}
 
   void CalcDetCoords();
@@ -97,6 +92,7 @@ void THaVDCUVTrack::Set( Double_t x, Double_t y, Double_t theta, Double_t phi,
   fCenter.SetXYZ( x, y, 0.0 );
   fCenter += offset;
 }
+
 //_____________________________________________________________________________
 inline
 Double_t THaVDCUVTrack::GetU() const

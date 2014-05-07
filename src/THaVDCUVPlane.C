@@ -81,6 +81,30 @@ THaDetectorBase::EStatus THaVDCUVPlane::Init( const TDatime& date )
 }
 
 //_____________________________________________________________________________
+UVPlaneCoords_t THaVDCUVPlane::CalcDetCoords( const THaVDCCluster* ucl,
+					      const THaVDCCluster* vcl ) const
+{
+  // Convert U,V coordinates of the given uv cluster pair to the detector
+  // coordinate system of this plane. Assumes that u is the reference plane.
+
+  Double_t u  = ucl->GetIntercept();  // Intercept for U plane
+  Double_t v0 = vcl->GetIntercept();  // Intercept for V plane
+  Double_t mu = ucl->GetSlope();      // Slope of U cluster
+  Double_t mv = vcl->GetSlope();      // Slope of V cluster
+
+  // Project v0 into the u plane
+  Double_t v = v0 - mv * GetSpacing();
+
+  UVPlaneCoords_t c;
+  c.x     = (u*fSin_v - v*fSin_u) * fInv_sin_vu;
+  c.y     = (v*fCos_u - u*fCos_v) * fInv_sin_vu;
+  c.theta = (mu*fSin_v - mv*fSin_u) * fInv_sin_vu;
+  c.phi   = (mv*fCos_u - mu*fCos_v) * fInv_sin_vu;
+
+  return c;
+}
+
+//_____________________________________________________________________________
 Int_t THaVDCUVPlane::MatchUVClusters()
 {
   // Match clusters in the U plane with cluster in the V plane

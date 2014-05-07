@@ -15,9 +15,15 @@
 class THaVDCPlane;
 class THaEvData;
 
-class THaVDCUVPlane : public THaSubDetector {
+// Coordinates of a hit in this VDC UV plane
+struct UVPlaneCoords_t {
+  Double_t x;
+  Double_t y;
+  Double_t theta;  // TRANSPORT x' = dx/dz
+  Double_t phi;    // TRANSPORT y' = dy/dz
+};
 
-  friend class THaVDCUVTrack;
+class THaVDCUVPlane : public THaSubDetector {
 
 public:
 
@@ -30,6 +36,9 @@ public:
   virtual Int_t   CoarseTrack();          // Find clusters & estimate track
   virtual Int_t   FineTrack();            // More precisely calculate track
   virtual EStatus Init( const TDatime& date );
+
+  UVPlaneCoords_t CalcDetCoords( const THaVDCCluster* u,
+				 const THaVDCCluster* v ) const;
 
   // Get and Set Functions
   THaVDCPlane*    GetUPlane()      const { return fU; }

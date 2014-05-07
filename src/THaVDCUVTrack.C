@@ -8,45 +8,30 @@
 
 #include "THaVDCUVTrack.h"
 #include "THaVDCUVPlane.h"
-#include "THaVDCCluster.h"
 #include "THaTrack.h"
 
 const Double_t THaVDCUVTrack::kBig = 1e38;  // Arbitrary large value
 
 //_____________________________________________________________________________
+THaVDCUVTrack::THaVDCUVTrack( THaVDCCluster* u_cl, THaVDCCluster* v_cl,
+			      THaVDCUVPlane* plane )
+  : fUClust(u_cl), fVClust(v_cl), fUVPlane(plane), fTrack(0), fPartner(0)
+{
+  // Constructor
+
+  assert( fUClust && fVClust && fUVPlane );
+
+  CalcDetCoords();
+}
+
+//_____________________________________________________________________________
 void THaVDCUVTrack::CalcDetCoords()
 {
-  // Convert U,V coordinates of our two clusters to the detector coordinate
-  // system.
-  //
-  // Note that the slopes of our clusters may have been replaced
-  // with global angles computed in a higher-level class.
-  // See, for example, THaVDC::ConstructTracks()
-  //
-  // This routine requires several parameters from the THaVDCUVPlane that
-  // this track belongs to. fUVPlane must be set!
+  // Convert U,V coordinates of our two clusters to the detector
+  // coordinate system.
 
-  Double_t dz = fUVPlane->GetSpacing();  // Space between U and V planes
-  Double_t u  = GetU();                  // Intercept for U plane
-  Double_t v0 = GetV();                  // Intercept for V plane
-  Double_t mu = fUClust->GetSlope();     // Slope of U cluster
-  Double_t mv = fVClust->GetSlope();     // Slope of V cluster
-
-  // Project v0 into the u plane
-  Double_t v = v0 - mv * dz;
-
-  // Now calculate track parameters in the detector cs
-  Double_t detX     = (u*fUVPlane->fSin_v - v*fUVPlane->fSin_u) *
-    fUVPlane->fInv_sin_vu;
-  Double_t detY     = (v*fUVPlane->fCos_u - u*fUVPlane->fCos_v) *
-    fUVPlane->fInv_sin_vu;
-  Double_t detTheta = (mu*fUVPlane->fSin_v - mv*fUVPlane->fSin_u) *
-    fUVPlane->fInv_sin_vu;
-  Double_t detPhi   = (mv*fUVPlane->fCos_u - mu*fUVPlane->fCos_v) *
-    fUVPlane->fInv_sin_vu;
-
-  Set( detX, detY, detTheta, detPhi, fUVPlane->GetOrigin() );
-
+  const UVPlaneCoords_t c = fUVPlane->CalcDetCoords(fUClust,fVClust);
+  Set( c.x, c.y, c.theta, c.phi, fUVPlane->GetOrigin() );
 }
 
 //_____________________________________________________________________________
@@ -68,8 +53,8 @@ Double_t THaVDCUVTrack::GetZV() const
 //_____________________________________________________________________________
 void THaVDCUVTrack::SetSlopes( Double_t mu, Double_t mv )
 {
-  // Set global slopes of U and V clusters to mu, mv
-  // Recalculate detector coordinates (v projection may have changed slightly)
+  // Set global slopes of U and V clusters to mu, mv and recalculate
+  // detector coordinates
 
   fUClust->SetSlope( mu );
   fVClust->SetSlope( mv );
