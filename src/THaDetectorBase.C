@@ -27,7 +27,7 @@ THaDetectorBase::THaDetectorBase( const char* name,
 {
   // Normal constructor. Creates an empty detector map.
 
-  fSize[0] = fSize[1] = fSize[2] = 0.0;
+  fSize[0] = fSize[1] = fSize[2] = kBig;
   fDetMap = new THaDetMap;
 }
 
