@@ -24,16 +24,9 @@ void THaVDCPointPair::Analyze( Double_t spacing )
   // Essentially, this is a measure of how closely the two local tracks
   // point at each other. 'spacing' is the separation of the
   // upper and lower UV planes (in m).
-  //
-  // Calculate projected positions of UV tracks in opposite planes, measure
-  // how far they differ from partner UV track intercept, and store the sum
-  // of the squares of the distances
 
-  // Project the lower track into the upper plane
-  fError  = GetProjectedDistance( fLowerPoint, fUpperPoint, spacing );
-  fError += GetProjectedDistance( fUpperPoint, fLowerPoint, -spacing );
-
-  return;
+  //FIXME: preliminary, just the old functionality
+  fError = CalcError( fLowerPoint, fUpperPoint, spacing );
 }
 
 //_____________________________________________________________________________
@@ -85,6 +78,23 @@ Int_t THaVDCPointPair::Compare( const TObject* obj ) const
     return 1;
 
   return 0;
+}
+
+//_____________________________________________________________________________
+Double_t THaVDCPointPair::CalcError( THaVDCPoint* here,
+				     THaVDCPoint* there,
+				     Double_t spacing )
+{
+  // Calculate projected positions of points in opposite planes, measure
+  // how far they differ from partner point intercept, and return the sum
+  // of the squares of the distances
+
+  Double_t error =
+    GetProjectedDistance( here, there, spacing );
+  error +=
+    GetProjectedDistance( there, here, -spacing );
+
+  return error;
 }
 
 //_____________________________________________________________________________

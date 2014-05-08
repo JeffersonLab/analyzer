@@ -390,7 +390,6 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 #endif
   }
 
-  Int_t nTracks = 0;  // Number of reconstructed tracks
   Int_t nPairs  = 0;  // Number of point pairs to consider
 
   for( int i = 0; i < nLower; i++ ) {
@@ -401,7 +400,16 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
       THaVDCPoint* upperPoint = fUpper->GetPoint(j);
       assert(upperPoint);
 
-      // Create new point pair.
+      // Compute projection error of the selected pair of points
+      // i.e., how well the two points point at each other.
+      // Don't bother with pairs that are obviously mismatched
+      Double_t error =
+	THaVDCPointPair::CalcError( lowerPoint, upperPoint, fUSpacing );
+
+      if( error >= fErrorCutoff )
+	continue;
+
+      // Create new point pair
       THaVDCPointPair* thePair = new( (*fLUpairs)[nPairs++] )
 	THaVDCPointPair( lowerPoint, upperPoint );
 
@@ -409,7 +417,14 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
       lowerPoint->SetPartner( 0 );
       upperPoint->SetPartner( 0 );
 
-      // Compute goodness of match parameter
+      // Further analyze this pair
+      //TODO: Several things come to mind, to be tested:
+      // - calculate global slope
+      // - recompute drift distances using global slope
+      // - refit cluster using new distances
+      // - calculate global chi2
+      // - sort pairs by this global chi2 later?
+      // - could do all of this before deciding to keep this pair
       thePair->Analyze( fUSpacing );
     }
   }
@@ -430,11 +445,14 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
   if( nPairs > 1 )
     fLUpairs->Sort();
 
+  Int_t nTracks = 0;  // Number of reconstructed tracks
+
   // Mark pairs as partners, starting with the best matches,
   // until all tracks are marked.
   for( int i = 0; i < nPairs; i++ ) {
     THaVDCPointPair* thePair = static_cast<THaVDCPointPair*>( fLUpairs->At(i) );
-    assert(thePair);
+    assert( thePair );
+    assert( thePair->GetError() < fErrorCutoff );
 
 #ifdef WITH_DEBUG
     if( fDebug>1 ) {
@@ -446,9 +464,6 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 	   << thePair->GetError() << endl;
     }
 #endif
-    // Stop if track matching error too big
-    if( thePair->GetError() > fErrorCutoff )
-      break;
 
     // Get the points of the pair
     THaVDCPoint* lowerPoint = thePair->GetLower();

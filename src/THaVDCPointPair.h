@@ -36,7 +36,11 @@ public:
   void            SetStatus( Int_t i ) { fStatus = i; }
   void            Use();
 
-  Double_t        GetProjectedDistance( THaVDCPoint* here,
+  static Double_t CalcError( THaVDCPoint* lowerPoint,
+			     THaVDCPoint* upperPoint,
+			     Double_t spacing );
+
+  static Double_t GetProjectedDistance( THaVDCPoint* here,
 					THaVDCPoint* there,
 					Double_t spacing );
 
