@@ -15,6 +15,11 @@ class THaVDCPlane;
 class THaTrack;
 
 typedef std::pair<Double_t,Int_t>  chi2_t;
+inline chi2_t operator+( chi2_t a, const chi2_t& b ) {
+  a.first  += b.first;
+  a.second += b.second;
+  return a;
+};
 
 class THaVDCCluster : public TObject {
 

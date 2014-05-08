@@ -63,9 +63,7 @@ chi2_t THaVDCPointPair::CalcChi2() const
 
   chi2_t res(0,0);
   for( int i=0; i<4; i++ ) {
-    chi2_t r = clust[i]->CalcDist();
-    res.first  += r.first;
-    res.second += r.second;
+    res = res + clust[i]->CalcDist();
   }
   return res;
 }
