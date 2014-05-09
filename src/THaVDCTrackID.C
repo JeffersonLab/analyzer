@@ -42,29 +42,6 @@ THaVDCTrackID::THaVDCTrackID( const THaVDCPoint* lower,
 }
 
 //_____________________________________________________________________________
-THaVDCTrackID::THaVDCTrackID( const THaVDCTrackID& rhs ) : THaTrackID(rhs),
-  fLowerU(rhs.fLowerU), fLowerV(rhs.fLowerV),
-  fUpperU(rhs.fUpperU), fUpperV(rhs.fUpperV)
-{
-  // Copy constructor.
-}
-
-//_____________________________________________________________________________
-THaVDCTrackID& THaVDCTrackID::operator=( const THaVDCTrackID& rhs )
-{
-  // Assignment operator.
-
-  THaTrackID::operator=(rhs);
-  if ( this != &rhs ) {
-    fLowerU = rhs.fLowerU;
-    fLowerV = rhs.fLowerV;
-    fUpperU = rhs.fUpperU;
-    fUpperV = rhs.fUpperV;
-  }
-  return *this;
-}
-
-//_____________________________________________________________________________
 void THaVDCTrackID::Print( Option_t* ) const
 {
   // Print ID description
