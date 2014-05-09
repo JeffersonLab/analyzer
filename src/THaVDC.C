@@ -82,9 +82,8 @@ THaAnalysisObject::EStatus THaVDC::Init( const TDatime& date )
       (status = fUpper->Init( date )) )
     return fStatus = status;
 
-  // Get the spacing between the VDC planes from the planes' geometry
-  fUSpacing = fUpper->GetUPlane()->GetZ() - fLower->GetUPlane()->GetZ();
-  fVSpacing = fUpper->GetVPlane()->GetZ() - fLower->GetVPlane()->GetZ();
+  // Get the spacing between the VDC planes
+  fSpacing = fUpper->GetUPlane()->GetZ() - fLower->GetUPlane()->GetZ();
 
   return fStatus = kOK;
 }
@@ -404,14 +403,14 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
       // i.e., how well the two points point at each other.
       // Don't bother with pairs that are obviously mismatched
       Double_t error =
-	THaVDCPointPair::CalcError( lowerPoint, upperPoint, fUSpacing );
+	THaVDCPointPair::CalcError( lowerPoint, upperPoint, fSpacing );
 
       if( error >= fErrorCutoff )
 	continue;
 
       // Create new point pair
       THaVDCPointPair* thePair = new( (*fLUpairs)[nPairs++] )
-	THaVDCPointPair( lowerPoint, upperPoint );
+	THaVDCPointPair( lowerPoint, upperPoint, GetSpacing() );
 
       // Explicitly mark these points as unpartnered
       lowerPoint->SetPartner( 0 );
@@ -425,7 +424,7 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
       // - calculate global chi2
       // - sort pairs by this global chi2 later?
       // - could do all of this before deciding to keep this pair
-      thePair->Analyze( fUSpacing );
+      thePair->Analyze();
     }
   }
 
@@ -456,27 +455,8 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 
 #ifdef WITH_DEBUG
     if( fDebug>1 ) {
-      cout << "Pair " << i << ":  "
-	   << thePair->GetUpper()->GetUCluster()->GetPivotWireNum() << " "
-	   << thePair->GetUpper()->GetVCluster()->GetPivotWireNum() << " "
-	   << thePair->GetLower()->GetUCluster()->GetPivotWireNum() << " "
-	   << thePair->GetLower()->GetVCluster()->GetPivotWireNum() << " "
-	   << thePair->GetError() << endl;
-    }
-#endif
-
-    // Get the points of the pair
-    THaVDCPoint* lowerPoint = thePair->GetLower();
-    THaVDCPoint* upperPoint = thePair->GetUpper();
-    assert( lowerPoint != 0 && upperPoint != 0 );
-
-    //FIXME: debug
-#ifdef WITH_DEBUG
-    if( fDebug>1 ) {
-      cout << "dUpper/dLower = "
-	   << thePair->GetProjectedDistance( lowerPoint,upperPoint,fUSpacing )
-	   << "  "
-	   << thePair->GetProjectedDistance( upperPoint,lowerPoint,-fUSpacing );
+      cout << "Pair " << i << ":  ";
+      thePair->Print("NOHEAD");
     }
 #endif
 
@@ -493,9 +473,14 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
       cout << " ... good.\n";
 #endif
 
+    // Get the points of the pair
+    THaVDCPoint* lowerPoint = thePair->GetLower();
+    THaVDCPoint* upperPoint = thePair->GetUpper();
+    assert( lowerPoint && upperPoint );
+
     // All partnered pairs must have a used cluster and hence never get here,
     // else there is a bug in the underlying logic
-    assert( lowerPoint->GetPartner() == 0 && upperPoint->GetPartner() );
+    assert( lowerPoint->GetPartner() == 0 && upperPoint->GetPartner() == 0 );
 
     // Use the pair. This partners the points, marks its clusters as used
     // and calculates global slopes
@@ -504,12 +489,7 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 
 #ifdef WITH_DEBUG
     if( fDebug>2 ) {
-      Double_t mu = lowerPoint->GetUCluster()->GetSlope();
-      Double_t mv = lowerPoint->GetVCluster()->GetSlope();
-      cout << "Global track parameters: "
-	   << mu << " " << mv << " "
-	   << lowerPoint->GetTheta() << " " << lowerPoint->GetPhi()
-	   << endl;
+      thePair->Print("TRACKP");
     }
 #endif
 

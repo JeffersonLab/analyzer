@@ -16,18 +16,19 @@ class THaTrack;
 class THaVDCPointPair : public TObject {
 
 public:
-  THaVDCPointPair( THaVDCPoint* lt, THaVDCPoint* ut ) :
-    fLowerPoint(lt), fUpperPoint(ut), fError(1e307), fStatus(0) {}
-
+  THaVDCPointPair( THaVDCPoint* lp, THaVDCPoint* up, Double_t spacing )
+    : fLowerPoint(lp), fUpperPoint(up), fSpacing(spacing), fError(1e38),
+      fStatus(0) {}
   virtual ~THaVDCPointPair() {}
 
-  void            Analyze( Double_t spacing );
+  void            Analyze();
   void            Associate( THaTrack* track );
   chi2_t          CalcChi2() const;
   virtual Int_t   Compare( const TObject* ) const;
   Double_t        GetError()   const { return fError; }
   THaVDCPoint*    GetLower()   const { return fLowerPoint; }
   THaVDCPoint*    GetUpper()   const { return fUpperPoint; }
+  Double_t        GetSpacing() const { return fSpacing; }
   Int_t           GetStatus()  const { return fStatus; }
   THaTrack*       GetTrack()   const;
   Bool_t          HasUsedCluster() const;
@@ -49,6 +50,7 @@ protected:
 
   THaVDCPoint*    fLowerPoint;  // Lower UV point
   THaVDCPoint*    fUpperPoint;  // Upper UV point
+  Double_t        fSpacing;     // Spacing between lower and upper chambers [m]
   Double_t        fError;       // Goodness of match between the points
   Int_t           fStatus;      // Status flag
 

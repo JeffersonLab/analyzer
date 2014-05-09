@@ -35,9 +35,7 @@ public:
   THaVDCChamber* GetLower() const { return fLower; }
 
   Double_t GetVDCAngle() const { return fVDCAngle; }
-  Double_t GetSpacing()  const { return fUSpacing;  }
-  Double_t GetUSpacing() const { return fUSpacing;  }
-  Double_t GetVSpacing() const { return fVSpacing;  }
+  Double_t GetSpacing()  const { return fSpacing;  }
 
   void Print(const Option_t* opt) const;
 
@@ -75,8 +73,7 @@ protected:
   Double_t fSin_vdc;        // Sine of VDC angle
   Double_t fCos_vdc;        // Cosine of VDC angle
   Double_t fTan_vdc;        // Tangent of VDC angle
-  Double_t fUSpacing;       // Spacing between U1 and U2 (m)
-  Double_t fVSpacing;       // Spacing between V1 and V2 (m)
+  Double_t fSpacing;        // Spacing between lower and upper chambers (m)
   Int_t    fNtracks;        // Number of tracks found in ConstructTracks
 
   Int_t    fNumIter;        // Number of iterations for FineTrack()

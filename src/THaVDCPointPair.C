@@ -9,8 +9,9 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaVDCPointPair.h"
-#include "THaVDCPoint.h"
-#include "TClass.h"
+#include "THaVDCChamber.h"
+#include "TClass.h"       // for IsA()
+#include "TString.h"
 
 #include <iostream>
 #include <cassert>
@@ -18,15 +19,14 @@
 using namespace std;
 
 //_____________________________________________________________________________
-void THaVDCPointPair::Analyze( Double_t spacing )
+void THaVDCPointPair::Analyze()
 {
   // Compute goodness of match parameter between upper and lower point.
   // Essentially, this is a measure of how closely the two local tracks
-  // point at each other. 'spacing' is the separation of the
-  // upper and lower chamber (in m).
+  // point at each other.
 
   //FIXME: preliminary, just the old functionality
-  fError = CalcError( fLowerPoint, fUpperPoint, spacing );
+  fError = CalcError( fLowerPoint, fUpperPoint, fSpacing );
 }
 
 //_____________________________________________________________________________
@@ -142,11 +142,36 @@ Bool_t THaVDCPointPair::HasUsedCluster() const
 }
 
 //_____________________________________________________________________________
-void THaVDCPointPair::Print( Option_t* ) const
+void THaVDCPointPair::Print( Option_t* opt ) const
 {
-  // Print this object
+  // Print details about this point pair (for debugging)
 
-  cout << fError << endl;
+  TString sopt(opt);
+  if( sopt.Contains("TRACKP") ) {
+    cout << "Global track parameters: mu/mv/th/ph = "
+	 << GetLower()->GetUCluster()->GetSlope() << " "
+	 << GetLower()->GetVCluster()->GetSlope() << " "
+	 << GetLower()->GetTheta() << " "
+	 << GetLower()->GetPhi()
+	 << endl;
+    return;
+  }
+
+  if( !sopt.Contains("NOHEAD") ) {
+    cout << "Pair: ";
+  }
+  cout << "pivots = "
+       << GetLower()->GetUCluster()->GetPivotWireNum() << " "
+       << GetLower()->GetVCluster()->GetPivotWireNum() << " "
+       << GetUpper()->GetUCluster()->GetPivotWireNum() << " "
+       << GetUpper()->GetVCluster()->GetPivotWireNum()
+       << ", dUpper/dLower = "
+       << GetProjectedDistance( GetLower(), GetUpper(), fSpacing )
+       << "  "
+       << GetProjectedDistance( GetUpper(), GetLower(),-fSpacing )
+       << ", error = "
+       << GetError()
+       << endl;
 }
 
 //_____________________________________________________________________________
