@@ -26,6 +26,7 @@
 using namespace std;
 
 const Double_t VDC::kBig = 1e38;  // Arbitrary large value
+static const Int_t kDefaultNHit = 16;
 
 //_____________________________________________________________________________
 THaVDCCluster::THaVDCCluster( THaVDCPlane* owner )
@@ -37,7 +38,8 @@ THaVDCCluster::THaVDCCluster( THaVDCPlane* owner )
 {
   // Constructor
 
-  fHits.reserve(16);
+  fHits.reserve(kDefaultNHit);
+  fCoord.reserve(kDefaultNHit);
 }
 
 //_____________________________________________________________________________
@@ -216,126 +218,31 @@ Int_t THaVDCCluster::GetTrackIndex() const
 }
 
 //_____________________________________________________________________________
-void THaVDCCluster::FitTrack( EMode /* mode */ )
+void THaVDCCluster::FitTrack( EMode mode )
 {
   // Fit track to drift distances. Supports three modes:
   //
-  // kSimple:  Linear fit, ignore t0 and multihits
-  // kT0:      Fit t0, but ignore mulithits
-  // kFull:    Analyze multihits and fit t0
-  //
-  // FIXME: kT0 and kFull are not yet implemented. Identical to kSimple.
+  // kSimple:    Linear fit, ignore t0 and multihits
+  // kWeighted:  Linear fit with weights, ignore t0
+  // kT0:        Fit t0, but ignore mulithits
 
-//   FitSimpleTrack();
-  //  FitSimpleTrackWgt();
-  //LinearClusterFitWithT0();
-  FitNLTrack();
+  switch( mode ) {
+  case kSimple:
+    FitSimpleTrack(false);
+    break;
+  case kWeighted:
+    FitSimpleTrack(true);
+    break;
+  case kT0:
+    //LinearClusterFitWithT0();
+    FitNLTrack();
+    break;
+  }
   CalcLocalDist();
 }
 
 //_____________________________________________________________________________
-void THaVDCCluster::FitSimpleTrack()
-{
-  // Perform linear fit on drift times. Calculates slope, intercept, and
-  // errors. Assume t0 = 0.
-
-  // For this function,
-  //   X = Drift Distance
-  //   Y = Position of Wires
-
-  fFitOK = false;
-  if( GetSize() < 3 )
-    return;  // Too few hits to get meaningful results
-             // Do keep current values of slope and intercept
-
-  Double_t N = GetSize();  //Ensure that floating point calculations are used
-  Double_t m, sigmaM;  // Slope, St. Dev. in slope
-  Double_t b, sigmaB;  // Intercept, St. Dev in Intercept
-  Double_t sigmaY;     // St Dev in delta Y values
-
-  Double_t* xArr = new Double_t[GetSize()];
-  Double_t* yArr = new Double_t[GetSize()];
-
-  Double_t bestFit = 0.0;
-
-  // Find the index of the pivot wire and copy distances into local arrays
-  // Note that as the index of the hits is increasing, the position of the
-  // wires is decreasing
-
-  Int_t pivotNum = 0;
-  for (int i = 0; i < GetSize(); i++) {
-    if (fHits[i] == fPivot) {
-      pivotNum = i;
-    }
-    xArr[i] = fHits[i]->GetDist() + fTimeCorrection;
-    yArr[i] = fHits[i]->GetPos();
-  }
-
-  const Int_t nSignCombos = 2; //Number of different sign combinations
-  for (int i = 0; i < nSignCombos; i++) {
-
-    Double_t sumX  = 0.0;   //Drift distances
-    Double_t sumXX = 0.0;
-    Double_t sumY  = 0.0;   //Position of wires
-    Double_t sumXY = 0.0;
-    Double_t sumDY2 = 0.0;  // Sum of squares of delta Y values
-
-    if (i == 0)
-      for (int j = pivotNum+1; j < GetSize(); j++)
-	xArr[j] = -xArr[j];
-    else if (i == 1)
-      xArr[pivotNum] = -xArr[pivotNum];
-
-    for (int j = 0; j < GetSize(); j++) {
-      Double_t x = xArr[j];  // Distance to wire
-      Double_t y = yArr[j];   // Position of wire
-      sumX  += x;
-      sumXX += x * x;
-      sumY  += y;
-      sumXY += x * y;
-    }
-
-    // Standard formulae
-    m  = (N * sumXY - sumX * sumY) / (N * sumXX - sumX * sumX);
-    b  = (sumXX * sumY - sumX * sumXY) / (N * sumXX - sumX * sumX);
-
-    // Calculate sum of delta y values
-    for (int j = 0; j < GetSize(); j++) {
-      Double_t y = yArr[j];
-      Double_t Y = m * xArr[j] + b;
-      sumDY2 += (y - Y) * (y - Y);
-    }
-
-    sigmaY = TMath::Sqrt (sumDY2 / (N - 2));
-    sigmaM = sigmaY * TMath::Sqrt ( N / ( N * sumXX - sumX * sumX) );
-    sigmaB = sigmaY * TMath::Sqrt (sumXX / ( N * sumXX - sumX * sumX) );
-
-    // Pick the best value
-    if (i == 0 || sigmaY < bestFit) {
-      bestFit = sigmaY;
-      fLocalSlope = m;
-      fSigmaSlope = sigmaM;
-      fInt = b;
-      fSigmaInt = sigmaB;
-    }
-  }
-
-  // calculate the best possible chi2 for the track given this slope and intercept
-  Double_t chi2 = 0.;
-  Int_t nhits = 0;
-
-  CalcChisquare(chi2,nhits);
-  fChi2 = chi2;
-  fNDoF = nhits-2;
-
-  fFitOK = true;
-
-  delete[] xArr;
-  delete[] yArr;
-}
-
-//_____________________________________________________________________________
-void THaVDCCluster::FitSimpleTrackWgt()
+void THaVDCCluster::FitSimpleTrack( Bool_t weighted )
 {
   // Perform linear fit on drift times. Calculates slope, intercept, and errors.
   // Does not assume the uncertainty is the same for all hits.
@@ -346,7 +253,6 @@ void THaVDCCluster::FitSimpleTrackWgt()
   //   X = Drift Distance
   //   Y = Position of Wires
 
-
   fFitOK = false;
   if( GetSize() < 3 ) {
     return;  // Too few hits to get meaningful results
@@ -356,9 +262,7 @@ void THaVDCCluster::FitSimpleTrackWgt()
   Double_t m, sigmaM;  // Slope, St. Dev. in slope
   Double_t b, sigmaB;  // Intercept, St. Dev in Intercept
 
-  Double_t* xArr = new Double_t[GetSize()];
-  Double_t* yArr = new Double_t[GetSize()];
-  Double_t* wtArr= new Double_t[GetSize()];
+  fCoord.clear();
 
   Double_t bestFit = 0.0;
 
@@ -377,12 +281,20 @@ void THaVDCCluster::FitSimpleTrackWgt()
       pivotNum = i;
     }
 
-    xArr[i] = fHits[i]->GetPos();
-    yArr[i] = fHits[i]->GetDist() + fTimeCorrection;
-    wtArr[i]= fHits[i]->GetdDist();
-
-    // the hit will be ignored if the uncertainty is < 0
-    if (wtArr[i]>0) wtArr[i] = 1./(wtArr[i]*wtArr[i]); // sigma^-2 is the weight
+    Double_t x = fHits[i]->GetPos();
+    Double_t y = fHits[i]->GetDist() + fTimeCorrection;
+    Double_t w;
+    if( weighted ) {
+      w = fHits[i]->GetdDist();
+      // the hit will be ignored if the uncertainty is < 0
+      if (w>0)
+	w = 1./(w*w); // sigma^-2 is the weight
+      else
+	w = -1.;
+    } else {
+      w = 1.0;
+    }
+    fCoord.push_back( FitCoord_t(x,y,w) );
   }
 
   const Int_t nSignCombos = 2; //Number of different sign combinations
@@ -404,14 +316,14 @@ void THaVDCCluster::FitSimpleTrackWgt()
 
     if (i == 0)
       for (int j = pivotNum+1; j < GetSize(); j++)
-	yArr[j] *= -1;
+	fCoord[j].y *= -1;
     else if (i == 1)
-      yArr[pivotNum] *= -1;
+      fCoord[pivotNum].y *= -1;
 
     for (int j = 0; j < GetSize(); j++) {
-      Double_t x = xArr[j];   // Position of wire
-      Double_t y = yArr[j];   // Distance to wire
-      Double_t w =wtArr[j];
+      Double_t x = fCoord[j].x;   // Position of wire
+      Double_t y = fCoord[j].y;   // Distance to wire
+      Double_t w = fCoord[j].w;
 
       if (w <= 0) continue;
       W     += w;
@@ -441,7 +353,7 @@ void THaVDCCluster::FitSimpleTrackWgt()
     sigmaM = m * m * TMath::Sqrt( sigmaG2 );
     sigmaB = TMath::Sqrt( sigmaF2/(G*G) + F*F/(G*G*G*G)*sigmaG2 - 2*F/(G*G*G)*sigmaFG);
 
-    // calculate the best possible chi2 for the track given this slope and intercept
+    // calculate chi2 for the track given this slope and intercept
     Double_t chi2 = 0.;
     Int_t nhits = 0;
 
@@ -450,8 +362,8 @@ void THaVDCCluster::FitSimpleTrackWgt()
     // scale the uncertainty of the fit parameters based upon the
     // quality of the fit. This really should not be necessary if
     // we believe the drift-distance uncertainties
-    sigmaM *= chi2/(nhits - 2);
-    sigmaB *= chi2/(nhits - 2);
+    // sigmaM *= chi2/(nhits - 2);
+    // sigmaB *= chi2/(nhits - 2);
 
     // Pick the best value
     if (i == 0 || chi2 < bestFit) {
@@ -466,10 +378,6 @@ void THaVDCCluster::FitSimpleTrackWgt()
   }
 
   fFitOK = true;
-
-  delete[] xArr;
-  delete[] yArr;
-  delete[] wtArr;
 }
 
 //_____________________________________________________________________________
@@ -511,10 +419,7 @@ Int_t THaVDCCluster::LinearClusterFitWithT0()
 
   sigmaM = sigmaB = sigmaD0 = 0;
 
-  Double_t* xArr = new Double_t[GetSize()];
-  Double_t* dArr = new Double_t[GetSize()];
-  Double_t* wArr = new Double_t[GetSize()];
-  Int_t*    sArr = new Int_t[GetSize()];
+  fCoord.clear();
 
   //--- Copy hit data into local arrays
   Int_t ihit, incr, ilast = GetSize()-1;
@@ -530,16 +435,18 @@ Int_t THaVDCCluster::LinearClusterFitWithT0()
   }
   for( Int_t i = 0; i < GetSize(); ihit += incr, ++i ) {
     assert( ihit >= 0 && ihit < GetSize() );
-    xArr[i] = fHits[ihit]->GetPos();
-    dArr[i] = fHits[ihit]->GetDist() + fTimeCorrection;
+    Double_t x = fHits[ihit]->GetPos();
+    Double_t y = fHits[ihit]->GetDist() + fTimeCorrection;
 
     Double_t wt = fHits[ihit]->GetdDist();
     if( wt>0 )   // the hit will be ignored if the uncertainty is <= 0
-      wArr[i] = 1./(wt*wt);
+      wt = 1./(wt*wt);
     else
-      wArr[i] = -1.;
+      wt = -1.;
 
-    assert( i == 0 || xArr[i-1] < xArr[i] );
+    fCoord.push_back( FitCoord_t(x,y,wt) );
+
+    assert( i == 0 || fCoord[i-1].x < fCoord[i].x );
   }
 
   Double_t bestFit = 0.0;
@@ -550,20 +457,20 @@ Int_t THaVDCCluster::LinearClusterFitWithT0()
   // - The first wire of the cluster always has negative drift distance.
   // - The last wire always has positive drift.
   // - The sign flips exactly once from - to + somewhere in between
-  sArr[0] = -1;
+  fCoord[0].s = -1;
   for( Int_t i = 1; i < GetSize(); ++i )
-    sArr[i] = 1;
+    fCoord[i].s = 1;
 
   for( Int_t ipivot = 0; ipivot < ilast; ++ipivot ) {
     if( ipivot != 0 )
-      sArr[ipivot] = -sArr[ipivot];;
+      fCoord[ipivot].s *= -1;
 
     // Do the fit
-    Linear3DFit( xArr, dArr, sArr, wArr, m, b, d0 );
+    Linear3DFit( m, b, d0 );
 
-    // calculate the best possible chi2 for the track given this slope,
+    // calculate chi2 for the track given this slope,
     // intercept, and distance offset
-    chi2_t chi2 = CalcChisquare( xArr, dArr, sArr, wArr, m, b, d0 );
+    chi2_t chi2 = CalcChisquare( m, b, d0 );
 
     // scale the uncertainty of the fit parameters based upon the
     // quality of the fit. This really should not be necessary if
@@ -592,18 +499,11 @@ Int_t THaVDCCluster::LinearClusterFitWithT0()
 
   fFitOK = true;
 
-  delete[] wArr;
-  delete[] sArr;
-  delete[] dArr;
-  delete[] xArr;
-
   return 0;
 }
 
 //_____________________________________________________________________________
-void THaVDCCluster::Linear3DFit( const Double_t* xArr, const Double_t* dArr,
-				 const Int_t* sArr, const Double_t* wArr,
-				 Double_t& m, Double_t& b, Double_t& d0 ) const
+void THaVDCCluster::Linear3DFit( Double_t& m, Double_t& b, Double_t& d0 ) const
 {
   // 3-parameter fit
 //     Double_t F, sigmaF2;  // intermediate slope and St. Dev.**2
@@ -628,10 +528,10 @@ void THaVDCCluster::Linear3DFit( const Double_t* xArr, const Double_t* dArr,
 
 
   for (int j = 0; j < GetSize(); j++) {
-    Double_t x = xArr[j];   // Position of wire
-    Double_t d = dArr[j];   // Distance to wire
-    Double_t w = wArr[j];   // Weight/error of distance measurement
-    Int_t    s = sArr[j];   // Sign of distance
+    Double_t x = fCoord[j].x;   // Position of wire
+    Double_t d = fCoord[j].y;   // Distance to wire
+    Double_t w = fCoord[j].w;   // Weight/error of distance measurement
+    Int_t    s = fCoord[j].s;   // Sign of distance
 
     if (w <= 0) continue;
 
@@ -702,9 +602,10 @@ void THaVDCCluster::FitNLTrack()
 
   //  cout << "beginning Fit" << endl;
 
+  const Int_t itMax = 10;  //total number of iterations
+  const Int_t nSignCombos = 4; //Number of different sign combinations
 
   fFitOK = false;
-  const Int_t itMax = 10;  //total number of iterations
   if( GetSize() < 3 )
     return;  // Too few hits to get meaningful results
              // Do keep current values of slope and intercept
@@ -723,14 +624,14 @@ void THaVDCCluster::FitNLTrack()
   Bool_t iter;  //Continue iteration?
   Int_t it; //Iteration counter
 
-  Double_t* xArr = new Double_t[GetSize()];
-  Double_t* xDist = new Double_t[GetSize()];
-  Double_t* xDistTDCcor = new Double_t[GetSize()];
-  Double_t* yArr = new Double_t[GetSize()];
-  Double_t* polArr = new Double_t[GetSize()];
-  Double_t* dydm = new Double_t[GetSize()];
-  Double_t* dydb = new Double_t[GetSize()];
-  Double_t* dydt0 = new Double_t[GetSize()];
+  //  Double_t* xArr = new Double_t[GetSize()];
+  // Double_t* xDist = new Double_t[GetSize()];
+  // Double_t* xDistTDCcor = new Double_t[GetSize()];
+  //  Double_t* yArr = new Double_t[GetSize()];
+  //  Double_t* polArr = new Double_t[GetSize()];
+  // Double_t* dydm = new Double_t[GetSize()];
+  // Double_t* dydb = new Double_t[GetSize()];
+  // Double_t* dydt0 = new Double_t[GetSize()];
 
 
   Double_t bestFit = kBig;
@@ -744,13 +645,13 @@ void THaVDCCluster::FitNLTrack()
   Double_t slope_guess = fSlope;
 
   drftVel = fPlane->GetDriftVel();
-  for (int i = 0; i < GetSize(); i++) {
-    if (fHits[i] == fPivot) {
-      pivotNum = i;
-    }
-    xArr[i] = fHits[i]->GetTime();
-    yArr[i] = fHits[i]->GetPos();
-  }
+  // for (int i = 0; i < GetSize(); i++) {
+  //   if (fHits[i] == fPivot) {
+  //     pivotNum = i;
+  //   }
+  //   xArr[i] = fHits[i]->GetTime();
+  //   yArr[i] = fHits[i]->GetPos();
+  // }
 
   Double_t pvttime = fHits[pivotNum]->GetTime();
 
@@ -767,13 +668,12 @@ void THaVDCCluster::FitNLTrack()
   TVectorD JTr(3); // Transpose(J)*r
 
   Double_t err,err_old;
-  Double_t err_tot[4];
-  Double_t m_tot[4];
-  Double_t b_tot[4];
-  Double_t t0_tot[4];
+  Double_t err_tot[nSignCombos];
+  Double_t m_tot[nSignCombos];
+  Double_t b_tot[nSignCombos];
+  Double_t t0_tot[nSignCombos];
   Double_t err_it[itMax+1], m_it[itMax+1], b_it[itMax+1], t0_it[itMax+1];
 
-  const Int_t nSignCombos = 4; //Number of different sign combinations
   for (int i = 0; i < nSignCombos; i++) {
       iter = 1;
 
@@ -822,20 +722,26 @@ void THaVDCCluster::FitNLTrack()
 	  // Fit using the predefined time to distance conversion
 
 
-	  xArr[j] = PosNeg*(fHits[j]->GetDist() + fTimeCorrection - t0*drftVel);
+	  //	  xArr[j] = PosNeg*(fHits[j]->GetDist() + fTimeCorrection - t0*drftVel);
+	  Double_t x = PosNeg*(fHits[j]->GetDist() + fTimeCorrection - t0*drftVel);
+	  Double_t y = fHits[i]->GetPos();
 
-	  polArr[j] = m*(xArr[j]) +b;
-	  dydm[j] = xArr[j];
-	  dydb[j] = 1;
-	  dydt0[j] = -m*drftVel*PosNeg;
+	  //polArr[j] = m*(xArr[j]) +b;
+	  //	  dydm[j] = xArr[j];
+	  // dydm[j] = x;
+	  // dydb[j] = 1;
+	  // dydt0[j] = -m*drftVel*PosNeg;
 
+	  //	  r(j) = yArr[j] - polArr[j];
+	  // J(j,0) = dydm[j];
+	  // J(j,1) = dydb[j];
+	  // J(j,2) = dydt0[j];
 
-
-	  r(j) = yArr[j] - polArr[j];
-
-	  J(j,0) = dydm[j];
-	  J(j,1) = dydb[j];
-	  J(j,2) = dydt0[j];
+	  Double_t yfit = m*x +b;
+	  r(j) = y - yfit;
+	  J(j,0) = x;
+	  J(j,1) = 1;
+	  J(j,2) = -m*drftVel*PosNeg;
 
 	}
 
@@ -934,7 +840,7 @@ void THaVDCCluster::FitNLTrack()
 
     // Pick the best value
 
-  // calculate the best possible chi2 for the track given this slope and intercept
+  // calculate chi2 for the track given this slope and intercept
   Double_t chi2 = bestFit;
   Int_t nhits = GetSize();
 
@@ -944,14 +850,14 @@ void THaVDCCluster::FitNLTrack()
 
   fFitOK = true;
 
-  delete[] xArr;
-  delete[] yArr;
-  delete[] xDist;
-  delete[] xDistTDCcor;
-  delete[] polArr;
-  delete[] dydm;
-  delete[] dydb;
-  delete[] dydt0;
+  // delete[] xArr;
+  // delete[] yArr;
+  // delete[] xDist;
+  // delete[] xDistTDCcor;
+  // delete[] polArr;
+  // delete[] dydm;
+  // delete[] dydb;
+  // delete[] dydt0;
 }
 
 //_____________________________________________________________________________
@@ -985,20 +891,16 @@ void THaVDCCluster::SetTrack( THaTrack* track )
 }
 
 //_____________________________________________________________________________
-chi2_t THaVDCCluster::CalcChisquare( const Double_t* xArr,
-				     const Double_t* dArr,
-				     const Int_t* sArr,
-				     const Double_t* wArr,
-				     Double_t slope, Double_t icpt,
+chi2_t THaVDCCluster::CalcChisquare( Double_t slope, Double_t icpt,
 				     Double_t d0 ) const
 {
   Int_t npt = 0;
   Double_t chi2 = 0;
   for( int j = 0; j < GetSize(); ++j ) {
-    Double_t x  = xArr[j];
-    Double_t y  = sArr[j] * dArr[j];
-    Double_t w  = wArr[j];
-    Double_t yp = x*slope + icpt + d0*sArr[j];
+    Double_t x  = fCoord[j].x;
+    Double_t y  = fCoord[j].s * fCoord[j].y;
+    Double_t w  = fCoord[j].w;
+    Double_t yp = x*slope + icpt + d0*fCoord[j].s;
     if( w < 0 ) continue;
     Double_t d  = y-yp;
     chi2       += d*d*w;

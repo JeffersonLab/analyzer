@@ -17,15 +17,24 @@ class THaVDCPointPair;
 class THaTrack;
 
 namespace VDC {
+  struct FitCoord_t {
+    FitCoord_t( Double_t _x, Double_t _y, Double_t _w = 1.0, Int_t _s = 1 )
+      : x(_x), y(_y), w(_w), s(_s) {}
+    Double_t x, y, w;
+    Int_t s;
+  };
   typedef std::pair<Double_t,Int_t>  chi2_t;
+  typedef THaVDCPointPair VDCpp_t;
+  typedef std::vector<THaVDCHit*> Vhit_t;
+  typedef std::vector<FitCoord_t> Vcoord_t;
+
+  extern const Double_t kBig;
+
   inline chi2_t operator+( chi2_t a, const chi2_t& b ) {
     a.first  += b.first;
     a.second += b.second;
     return a;
   };
-  typedef THaVDCPointPair VDCpp_t;
-  typedef std::vector<THaVDCHit*> Vhit_t;
-  extern const Double_t kBig;
 }
 using namespace VDC;
 
@@ -36,12 +45,12 @@ public:
   THaVDCCluster( THaVDCPlane* owner = 0 );
   virtual ~THaVDCCluster() {}
 
-  enum EMode { kSimple, kT0, kFull };
+  enum EMode { kSimple, kWeighted, kT0 };
 
-  virtual void   AddHit(THaVDCHit * hit);
+  virtual void   AddHit( THaVDCHit* hit );
   virtual void   EstTrackParameters();
   virtual void   ConvertTimeToDist();
-  virtual void   FitTrack( EMode mode = kSimple );
+  virtual void   FitTrack( EMode mode = kT0 );
   virtual void   ClearFit();
   virtual void   CalcChisquare(Double_t& chi2, Int_t& nhits) const;
   chi2_t         CalcDist();    // calculate global track to wire distances
@@ -106,18 +115,16 @@ protected:
   Int_t          fClsBeg; 	     // Starting wire number
   Int_t          fClsEnd;            // Ending wire number
 
+  // Workspace for fitting routines
+  Vcoord_t       fCoord;             // coordinates to be fit
+
   void   CalcLocalDist();     // calculate the local track to wire distances
 
-  void   FitSimpleTrack();
-  void   FitSimpleTrackWgt(); // present for testing
+  void   FitSimpleTrack( Bool_t weighted = false );
   void   FitNLTrack();        // Non-linear 3-parameter fit
 
-  chi2_t CalcChisquare( const Double_t* x, const Double_t* y,
-			const Int_t* s, const Double_t* w,
-			Double_t slope, Double_t icpt, Double_t d0 ) const;
-  void   Linear3DFit( const Double_t* x, const Double_t* y,
-		      const Int_t* s, const Double_t* w,
-		      Double_t& slope, Double_t& icpt, Double_t& d0 ) const;
+  chi2_t CalcChisquare( Double_t slope, Double_t icpt, Double_t d0 ) const;
+  void   Linear3DFit( Double_t& slope, Double_t& icpt, Double_t& d0 ) const;
   Int_t  LinearClusterFitWithT0();
 
   ClassDef(THaVDCCluster,0)          // A group of VDC hits
