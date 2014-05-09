@@ -10,8 +10,6 @@
 #include "THaVDCChamber.h"
 #include "THaTrack.h"
 
-const Double_t THaVDCPoint::kBig = 1e38;  // Arbitrary large value
-
 //_____________________________________________________________________________
 THaVDCPoint::THaVDCPoint( THaVDCCluster* u_cl, THaVDCCluster* v_cl,
 			  THaVDCChamber* chamber )

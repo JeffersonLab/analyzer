@@ -24,6 +24,11 @@ inline chi2_t operator+( chi2_t a, const chi2_t& b ) {
 
 typedef THaVDCPointPair VDCpp_t;
 
+namespace VDC {
+  extern const Double_t kBig;
+}
+using namespace VDC;
+
 class THaVDCCluster : public TObject {
 
 public:
@@ -86,7 +91,6 @@ public:
 
 protected:
   static const Int_t MAX_SIZE = 16;  // Assume no more than 16 hits per cluster
-  static const Double_t kBig;
 
   Int_t          fSize;              // Size of cluster (no. of hits)
   THaVDCHit*     fHits[MAX_SIZE];    // [fSize] Hits associated w/this cluster

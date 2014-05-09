@@ -51,8 +51,6 @@ public:
   void SetSlopes( Double_t mu, Double_t mv );
 
 protected:
-  static const Double_t kBig;
-
   THaVDCCluster* fUClust;       // Cluster in the U plane
   THaVDCCluster* fVClust;       // Cluster in the V plane
   THaVDCChamber* fChamber;      // Chamber of this cluster pair

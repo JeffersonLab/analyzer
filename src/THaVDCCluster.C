@@ -25,7 +25,7 @@
 
 using namespace std;
 
-const Double_t THaVDCCluster::kBig = 1e38;  // Arbitrary large value
+const Double_t VDC::kBig = 1e38;  // Arbitrary large value
 
 //_____________________________________________________________________________
 void THaVDCCluster::AddHit(THaVDCHit * hit)
