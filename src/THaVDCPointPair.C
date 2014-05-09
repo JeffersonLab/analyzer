@@ -124,6 +124,24 @@ THaTrack* THaVDCPointPair::GetTrack() const
 }
 
 //_____________________________________________________________________________
+Bool_t THaVDCPointPair::HasUsedCluster() const
+{
+  // Return true if any cluster underlying this point pair is also part of
+  // another point pair that has already been chosen for making a track.
+  // This ensures each cluster is only ever used in at most one final track.
+
+  const THaVDCCluster* clust[4] =
+    { fLowerPoint->GetUCluster(), fLowerPoint->GetVCluster(),
+      fUpperPoint->GetUCluster(), fUpperPoint->GetVCluster() };
+
+  for( int i=0; i<4; i++ ) {
+    if( clust[i]->GetPointPair() != 0 )
+      return kTRUE;
+  }
+  return kFALSE;
+}
+
+//_____________________________________________________________________________
 void THaVDCPointPair::Print( Option_t* ) const
 {
   // Print this object
@@ -134,18 +152,14 @@ void THaVDCPointPair::Print( Option_t* ) const
 //_____________________________________________________________________________
 void THaVDCPointPair::Use()
 {
-  // Mark this coordinate pair as used (i.e. associated with a track)
+  // Mark this point pair as used (i.e. chosen for making a track)
   // This does the following:
   //
   // (a) upper and lower points are marked as each other's partners
-  // (b) the global slope resulting from the coordinate pair is calculated
+  // (b) the underlying four clusters are marked as associated with this pair
+  // (c) the global slope resulting from the coordinate pair is calculated
   //     and stored in the clusters associated with the points
-  // (c) This pair is marked as used
-
-  // Make the points of this pair each other's partners. This prevents
-  // tracks from being associated with more than one valid pair.
-  fLowerPoint->SetPartner( fUpperPoint );
-  fUpperPoint->SetPartner( fLowerPoint );
+  // (d) This pair is marked as used
 
   // Compute global track values and get TRANSPORT coordinates for tracks. Re-
   // place local cluster slopes with global ones, which have higher precision.
@@ -156,8 +170,14 @@ void THaVDCPointPair::Use()
     (fUpperPoint->GetV() - fLowerPoint->GetV()) /
     (fUpperPoint->GetZV() - fLowerPoint->GetZV());
 
-  fLowerPoint->SetSlopes( mu, mv );
-  fUpperPoint->SetSlopes( mu, mv );
+  // Set point an cluster data
+  THaVDCPoint* point[2] = { fLowerPoint, fUpperPoint };
+  for( int i = 0; i<2; ++i ) {
+    point[i]->SetPartner( point[!i] );
+    point[i]->SetSlopes( mu, mv );
+    point[i]->GetUCluster()->SetPointPair( this );
+    point[i]->GetVCluster()->SetPointPair( this );
+  }
 
   SetStatus(1);
 }

@@ -441,7 +441,7 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
   if( tracks )
     n_exist = tracks->GetLast()+1;
 
-  // Sort pairs in order of ascending goodness of match
+  // Sort pairs in order of ascending matching error
   if( nPairs > 1 )
     fLUpairs->Sort();
 
@@ -480,8 +480,8 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
     }
 #endif
 
-    // Skip pairs where any of the points already has a partner
-    if( lowerPoint->GetPartner() || upperPoint->GetPartner() ) {
+    // Skip pairs where any of the points already has at least one used cluster
+    if( thePair->HasUsedCluster() ) {
 #ifdef WITH_DEBUG
       if( fDebug>1 )
 	cout << " ... skipped.\n";
@@ -493,7 +493,12 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
       cout << " ... good.\n";
 #endif
 
-    // Use the pair. This partners the points and calculates global slopes
+    // All partnered pairs must have a used cluster and hence never get here,
+    // else there is a bug in the underlying logic
+    assert( lowerPoint->GetPartner() == 0 && upperPoint->GetPartner() );
+
+    // Use the pair. This partners the points, marks its clusters as used
+    // and calculates global slopes
     thePair->Use();
     nTracks++;
 

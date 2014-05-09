@@ -28,12 +28,6 @@ using namespace std;
 const Double_t THaVDCCluster::kBig = 1e38;  // Arbitrary large value
 
 //_____________________________________________________________________________
-THaVDCCluster::~THaVDCCluster()
-{
-  // Destructor
-}
-
-//_____________________________________________________________________________
 void THaVDCCluster::AddHit(THaVDCHit * hit)
 {
   //Add a hit to the cluster
@@ -66,6 +60,7 @@ void THaVDCCluster::Clear( const Option_t* )
   fSize    = 0;
   fPivot   = 0;
   fPlane   = 0;
+  fPointPair = 0;
   fTrack   = 0;
   fTrkNum  = 0;
   fClsBeg  = -1;

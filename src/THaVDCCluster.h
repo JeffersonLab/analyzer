@@ -12,6 +12,7 @@
 
 class THaVDCHit;
 class THaVDCPlane;
+class THaVDCPointPair;
 class THaTrack;
 
 typedef std::pair<Double_t,Int_t>  chi2_t;
@@ -21,16 +22,19 @@ inline chi2_t operator+( chi2_t a, const chi2_t& b ) {
   return a;
 };
 
+typedef THaVDCPointPair VDCpp_t;
+
 class THaVDCCluster : public TObject {
 
 public:
   THaVDCCluster( THaVDCPlane* owner = 0 ) :
-    fSize(0), fPlane(owner), fTrack(0), fTrkNum(0), fSlope(kBig),
-    fLocalSlope(kBig), fSigmaSlope(kBig), fInt(kBig), fSigmaInt(kBig),
-    fT0(kBig), fSigmaT0(kBig), fPivot(0), fTimeCorrection(0.0),
+    fSize(0), fPlane(owner), fPointPair(0), fTrack(0), fTrkNum(0),
+    fSlope(kBig), fLocalSlope(kBig), fSigmaSlope(kBig),
+    fInt(kBig), fSigmaInt(kBig), fT0(kBig), fSigmaT0(kBig),
+    fPivot(0), fIPivot(-1), fTimeCorrection(0),
     fFitOK(false), fChi2(kBig), fNDoF(0.0), fClsBeg(-1), fClsEnd(-1)
     {}
-  virtual ~THaVDCCluster();
+  virtual ~THaVDCCluster() {}
 
   enum EMode { kSimple, kT0, kFull };
 
@@ -62,6 +66,7 @@ public:
   Int_t          GetPivotWireNum()   const;
   Double_t       GetTimeCorrection() const { return fTimeCorrection; }
   Double_t       GetT0()             const { return fT0; }
+  VDCpp_t*       GetPointPair()      const { return fPointPair; }
   THaTrack*      GetTrack()          const { return fTrack; }
   Int_t          GetTrackIndex()     const;
   Int_t          GetTrkNum()         const { return fTrkNum; }
@@ -76,6 +81,7 @@ public:
   void           SetSlope( Double_t slope)          { fSlope = slope;}
   void           SetPivot( THaVDCHit* piv)          { fPivot = piv; }
   void           SetTimeCorrection( Double_t dt )   { fTimeCorrection = dt; }
+  void           SetPointPair( VDCpp_t* pp )        { fPointPair = pp; }
   void           SetTrack( THaTrack* track );
 
 protected:
@@ -85,6 +91,7 @@ protected:
   Int_t          fSize;              // Size of cluster (no. of hits)
   THaVDCHit*     fHits[MAX_SIZE];    // [fSize] Hits associated w/this cluster
   THaVDCPlane*   fPlane;             // Plane the cluster belongs to
+  VDCpp_t*       fPointPair;         // Lower/upper combo we're assigned to
   THaTrack*      fTrack;             // Track the cluster belongs to
   Int_t          fTrkNum;            // Number of the track using this cluster
 

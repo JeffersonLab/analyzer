@@ -30,6 +30,7 @@ public:
   THaVDCPoint*    GetUpper()   const { return fUpperPoint; }
   Int_t           GetStatus()  const { return fStatus; }
   THaTrack*       GetTrack()   const;
+  Bool_t          HasUsedCluster() const;
   virtual Bool_t  IsSortable() const { return kTRUE; }
   virtual void    Print( Option_t* opt="" ) const;
   void            Release();
