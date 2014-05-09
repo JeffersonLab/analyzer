@@ -14,14 +14,14 @@
 #include "TVector3.h"
 #include <cassert>
 
-class THaVDCUVPlane;
+class THaVDCChamber;
 class THaTrack;
 
 class THaVDCPoint : public THaCluster {
 
 public:
   THaVDCPoint( THaVDCCluster* u_cl, THaVDCCluster* v_cl,
-		 THaVDCUVPlane* plane );
+	       THaVDCChamber* chamber );
   virtual ~THaVDCPoint() {}
 
   void CalcDetCoords();
@@ -29,7 +29,7 @@ public:
   // Get and Set Functions
   THaVDCCluster* GetUCluster() const { return fUClust; }
   THaVDCCluster* GetVCluster() const { return fVClust; }
-  THaVDCUVPlane* GetUVPlane()  const { return fUVPlane; }
+  THaVDCChamber* GetChamber()  const { return fChamber; }
   THaVDCPoint*   GetPartner()  const { return fPartner; }
   THaTrack*      GetTrack()    const { return fTrack; }
   Double_t       GetU()        const;
@@ -55,10 +55,10 @@ protected:
 
   THaVDCCluster* fUClust;       // Cluster in the U plane
   THaVDCCluster* fVClust;       // Cluster in the V plane
-  THaVDCUVPlane* fUVPlane;      // Chamber of this cluster pair
+  THaVDCChamber* fChamber;      // Chamber of this cluster pair
   THaTrack*      fTrack;        // Track that this point is associated with
   THaVDCPoint*   fPartner;      // Point associated with this one in
-                                //  the other UV plane
+                                //  the other chamber
   // Detector coordinates derived from the cluster coordinates
   // at the U plane (z = GetZ()).  X,Y in m; theta, phi in tan(angle)
   Double_t fX;     // X position of point in U wire-plane

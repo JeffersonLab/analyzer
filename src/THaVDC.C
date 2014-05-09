@@ -16,7 +16,7 @@
 #include "THaDetMap.h"
 #include "THaTrack.h"
 #include "THaVDCPlane.h"
-#include "THaVDCUVPlane.h"
+#include "THaVDCChamber.h"
 #include "THaVDCPoint.h"
 #include "THaVDCCluster.h"
 #include "THaVDCTrackID.h"
@@ -52,9 +52,9 @@ THaVDC::THaVDC( const char* name, const char* description,
 {
   // Constructor
 
-  // Create Upper and Lower UV planes
-  fLower   = new THaVDCUVPlane( "uv1", "Lower UV Plane", this );
-  fUpper   = new THaVDCUVPlane( "uv2", "Upper UV Plane", this );
+  // Create objects for the upper and lower chamber
+  fLower = new THaVDCChamber( "uv1", "Lower VDC chamber", this );
+  fUpper = new THaVDCChamber( "uv2", "Upper VDC chamber", this );
   if( !fLower || !fUpper || fLower->IsZombie() || fUpper->IsZombie() ) {
     Error( Here("THaVDC()"), "Failed to create subdetectors." );
     MakeZombie();

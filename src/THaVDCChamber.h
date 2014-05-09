@@ -1,10 +1,12 @@
-#ifndef ROOT_THaVDCUVPlane
-#define ROOT_THaVDCUVPlane
+#ifndef ROOT_THaVDCChamber
+#define ROOT_THaVDCChamber
+
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //
-// THaVDCUVPlane                                                             //
+// THaVDCChamber                                                             //
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
+
 #include "THaSubDetector.h"
 #include "TClonesArray.h"
 #include "THaVDCPlane.h"
@@ -15,7 +17,7 @@
 class THaVDCPlane;
 class THaEvData;
 
-// Coordinates of a point in this VDC UV plane
+// Coordinates of a point in this chamber
 struct PointCoords_t {
   Double_t x;
   Double_t y;
@@ -23,13 +25,13 @@ struct PointCoords_t {
   Double_t phi;    // TRANSPORT y' = dy/dz
 };
 
-class THaVDCUVPlane : public THaSubDetector {
+class THaVDCChamber : public THaSubDetector {
 
 public:
 
-  THaVDCUVPlane( const char* name="", const char* description="",
+  THaVDCChamber( const char* name="", const char* description="",
 		 THaDetectorBase* parent = NULL );
-  virtual ~THaVDCUVPlane();
+  virtual ~THaVDCChamber();
 
   virtual void    Clear( Option_t* opt="" );    // Reset event-by-event data
   virtual Int_t   Decode( const THaEvData& evData );
@@ -60,7 +62,7 @@ protected:
 
   TClonesArray* fPoints;      // Pairs of possibly matching U and V clusters
 
-  //UV Plane Geometry
+  // Geometry
   Double_t fSpacing;          // Space between U & V planes (m)
   Double_t fSin_u;            // Trig functions for the U plane axis angle
   Double_t fCos_u;            //
@@ -68,14 +70,14 @@ protected:
   Double_t fCos_v;            //
   Double_t fInv_sin_vu;       // 1/Sine of the difference between the
                               // V axis angle and the U axis angle
-  THaVDC*  fVDC;              // VDC detector to which this plane belongs
+  THaVDC*  fVDC;              // Parent VDC detector of this chamber
 
   void  FindClusters();       // Find clusters in U and V planes
   void  FitTracks();          // Fit local tracks for each cluster
   Int_t MatchUVClusters();    // Match clusters in U with clusters in V
   Int_t CalcPointCoords();
 
-  ClassDef(THaVDCUVPlane,0)             // VDCUVPlane class
+  ClassDef(THaVDCChamber,0)   // VDC chamber (pair of a U and a V plane)
 };
 
 ///////////////////////////////////////////////////////////////////////////////

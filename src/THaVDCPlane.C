@@ -17,7 +17,7 @@
 #include "THaVDC.h"
 #include "THaVDCPlane.h"
 #include "THaVDCWire.h"
-#include "THaVDCUVPlane.h"
+#include "THaVDCChamber.h"
 #include "THaVDCCluster.h"
 #include "THaVDCHit.h"
 #include "THaDetMap.h"
@@ -595,7 +595,7 @@ public:
     }
     if( soft_cut ) {
       maxdist =
-	0.5*static_cast<THaVDCUVPlane*>(plane->GetParent())->GetSpacing();
+	0.5*static_cast<THaVDCChamber*>(plane->GetParent())->GetSpacing();
       if( maxdist == 0.0 )
 	soft_cut = false;
     }

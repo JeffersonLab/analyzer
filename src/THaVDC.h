@@ -10,7 +10,7 @@
 #include "THaTrackingDetector.h"
 #include <vector>
 
-class THaVDCUVPlane;
+class THaVDCChamber;
 class THaTrack;
 class TClonesArray;
 class THaVDCPoint;
@@ -31,8 +31,8 @@ public:
   virtual EStatus Init( const TDatime& date );
 
   // Get and Set Functions
-  THaVDCUVPlane* GetUpper() const { return fUpper; }
-  THaVDCUVPlane* GetLower() const { return fLower; }
+  THaVDCChamber* GetUpper() const { return fUpper; }
+  THaVDCChamber* GetLower() const { return fLower; }
 
   Double_t GetVDCAngle() const { return fVDCAngle; }
   Double_t GetSpacing()  const { return fUSpacing;  }
@@ -66,8 +66,8 @@ public:
 
 protected:
 
-  THaVDCUVPlane* fLower;    // Lower UV plane
-  THaVDCUVPlane* fUpper;    // Upper UV plane
+  THaVDCChamber* fLower;    // Lower chamber
+  THaVDCChamber* fUpper;    // Upper chamber
 
   TClonesArray*  fLUpairs;  // Candidate pairs of lower/upper points
 

@@ -15,7 +15,6 @@
 #include <cassert>
 
 class THaEvData;
-class THaVDCUVPlane;
 class THaVDCTimeToDistConv;
 class THaTriggerTime;
 class THaVDC;

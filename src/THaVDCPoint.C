@@ -7,19 +7,19 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "THaVDCPoint.h"
-#include "THaVDCUVPlane.h"
+#include "THaVDCChamber.h"
 #include "THaTrack.h"
 
 const Double_t THaVDCPoint::kBig = 1e38;  // Arbitrary large value
 
 //_____________________________________________________________________________
 THaVDCPoint::THaVDCPoint( THaVDCCluster* u_cl, THaVDCCluster* v_cl,
-			  THaVDCUVPlane* plane )
-  : fUClust(u_cl), fVClust(v_cl), fUVPlane(plane), fTrack(0), fPartner(0)
+			  THaVDCChamber* chamber )
+  : fUClust(u_cl), fVClust(v_cl), fChamber(chamber), fTrack(0), fPartner(0)
 {
   // Constructor
 
-  assert( fUClust && fVClust && fUVPlane );
+  assert( fUClust && fVClust && fChamber );
 
   CalcDetCoords();
 }
@@ -30,8 +30,8 @@ void THaVDCPoint::CalcDetCoords()
   // Convert U,V coordinates of our two clusters to the detector
   // coordinate system.
 
-  const PointCoords_t c = fUVPlane->CalcDetCoords(fUClust,fVClust);
-  Set( c.x, c.y, c.theta, c.phi, fUVPlane->GetOrigin() );
+  const PointCoords_t c = fChamber->CalcDetCoords(fUClust,fVClust);
+  Set( c.x, c.y, c.theta, c.phi, fChamber->GetOrigin() );
 }
 
 //_____________________________________________________________________________
@@ -39,7 +39,7 @@ Double_t THaVDCPoint::GetZU() const
 {
   // Return z-position of u cluster
 
-  return fUVPlane->GetZ();
+  return fChamber->GetZ();
 }
 
 //_____________________________________________________________________________
@@ -47,7 +47,7 @@ Double_t THaVDCPoint::GetZV() const
 {
   // Return intercept of u cluster
 
-  return fUVPlane->GetZ() + fUVPlane->GetSpacing();
+  return fChamber->GetZ() + fChamber->GetSpacing();
 }
 
 //_____________________________________________________________________________

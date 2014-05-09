@@ -76,7 +76,7 @@
 #pragma link C++ class THaCherenkov+;
 #pragma link C++ class THaTotalShower+;
 #pragma link C++ class THaVDC+;
-#pragma link C++ class THaVDCUVPlane+;
+#pragma link C++ class THaVDCChamber+;
 #pragma link C++ class THaVDCPlane+;
 #pragma link C++ class THaVDCCluster+;
 #pragma link C++ class THaVDCHit+;

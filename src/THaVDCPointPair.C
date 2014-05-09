@@ -23,7 +23,7 @@ void THaVDCPointPair::Analyze( Double_t spacing )
   // Compute goodness of match parameter between upper and lower point.
   // Essentially, this is a measure of how closely the two local tracks
   // point at each other. 'spacing' is the separation of the
-  // upper and lower UV planes (in m).
+  // upper and lower chamber (in m).
 
   //FIXME: preliminary, just the old functionality
   fError = CalcError( fLowerPoint, fUpperPoint, spacing );

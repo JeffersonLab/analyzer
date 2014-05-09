@@ -1,13 +1,22 @@
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //
-// THaVDCUVPlane                                                             //
+// THaVDCChamber                                                             //
 //                                                                           //
-// Class for a UV-Plane in the VDC.  Each UV-Plane consists of two planes    //
+// Representation of a VDC chamber, consisting of one U plane and one        //
+// V plane in close proximity. With the Hall A VDCs, the two planes of a     //
+// chamber share the same mechanical frame and gas system.                   //
+//                                                                           //
+// This particular implementation takes the U plane as the reference for     //
+// specifying coordinates. It was also written assuming that the U plane is  //
+// below the V plane (smaller z). It should work the other way around as     //
+// well but that configuration has not been tested. If in doubt, one can     //
+// always swap the meaning of "U" and "V" such that "U" always means the     //
+// first (bottom) plane.                                                     //
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "THaVDC.h"
-#include "THaVDCUVPlane.h"
+#include "THaVDCChamber.h"
 #include "THaVDCPlane.h"
 #include "THaVDCPoint.h"
 #include "THaVDCCluster.h"
@@ -19,7 +28,7 @@
 #include <cassert>
 
 //_____________________________________________________________________________
-THaVDCUVPlane::THaVDCUVPlane( const char* name, const char* description,
+THaVDCChamber::THaVDCChamber( const char* name, const char* description,
 			      THaDetectorBase* parent )
   : THaSubDetector(name,description,parent)
 {
@@ -29,7 +38,7 @@ THaVDCUVPlane::THaVDCUVPlane( const char* name, const char* description,
   fU = new THaVDCPlane( "u", "U plane", this );
   fV = new THaVDCPlane( "v", "V plane", this );
 
-  // Create the UV tracks array
+  // Create array for cluster pairs (points) representing hits
   fPoints = new TClonesArray("THaVDCPoint", 10); // 10 is arbitrary
 
   fVDC = dynamic_cast<THaVDC*>( GetMainDetector() );
@@ -37,9 +46,9 @@ THaVDCUVPlane::THaVDCUVPlane( const char* name, const char* description,
 
 
 //_____________________________________________________________________________
-THaVDCUVPlane::~THaVDCUVPlane()
+THaVDCChamber::~THaVDCChamber()
 {
-  // Destructor. Delete planes and track array.
+  // Destructor. Delete plane objects and point array.
 
   delete fU;
   delete fV;
@@ -47,11 +56,10 @@ THaVDCUVPlane::~THaVDCUVPlane()
 }
 
 //_____________________________________________________________________________
-THaDetectorBase::EStatus THaVDCUVPlane::Init( const TDatime& date )
+THaDetectorBase::EStatus THaVDCChamber::Init( const TDatime& date )
 {
-  // Initialize the UV plane object.
-  // Calls its own Init(), then initializes subdetectors, then calculates
-  // some local geometry data.
+  // Initialize the chamber class. Calls its own Init(), then initializes
+  // subdetectors, then calculates local geometry data.
 
   if( IsZombie() || !fV || !fU )
     return fStatus = kInitError;
@@ -81,14 +89,14 @@ THaDetectorBase::EStatus THaVDCUVPlane::Init( const TDatime& date )
 }
 
 //_____________________________________________________________________________
-PointCoords_t THaVDCUVPlane::CalcDetCoords( const THaVDCCluster* ucl,
+PointCoords_t THaVDCChamber::CalcDetCoords( const THaVDCCluster* ucl,
 					      const THaVDCCluster* vcl ) const
 {
   // Convert U,V coordinates of the given uv cluster pair to the detector
-  // coordinate system of this plane. Assumes that u is the reference plane.
+  // coordinate system of this chamber. Takes u as the reference plane.
 
-  Double_t u  = ucl->GetIntercept();  // Intercept for U plane
-  Double_t v0 = vcl->GetIntercept();  // Intercept for V plane
+  Double_t u  = ucl->GetIntercept();  // Intercept in U plane
+  Double_t v0 = vcl->GetIntercept();  // Intercept in V plane
   Double_t mu = ucl->GetSlope();      // Slope of U cluster
   Double_t mv = vcl->GetSlope();      // Slope of V cluster
 
@@ -105,7 +113,7 @@ PointCoords_t THaVDCUVPlane::CalcDetCoords( const THaVDCCluster* ucl,
 }
 
 //_____________________________________________________________________________
-Int_t THaVDCUVPlane::MatchUVClusters()
+Int_t THaVDCChamber::MatchUVClusters()
 {
   // Match clusters in the U plane with cluster in the V plane by t0 and
   // geometry. Fills fPoints with good pairs.
@@ -149,25 +157,22 @@ Int_t THaVDCUVPlane::MatchUVClusters()
 }
 
 //_____________________________________________________________________________
-Int_t THaVDCUVPlane::CalcPointCoords()
+Int_t THaVDCChamber::CalcPointCoords()
 {
-  // Compute track info (x, y, theta, phi) for the tracks based on
-  // information contained in the clusters of the tracks and on
-  // geometry information from this UV plane.
-  //
+  // Compute track info (x, y, theta, phi) for the all matched points.
   // Uses TRANSPORT coordinates.
 
   Int_t nPoints = GetNPoints();
   for (int i = 0; i < nPoints; i++) {
-    THaVDCPoint* track = GetPoint(i);
-    if( track )
-      track->CalcDetCoords();
+    THaVDCPoint* point = GetPoint(i);
+    if( point )
+      point->CalcDetCoords();
   }
   return nPoints;
 }
 
 //_____________________________________________________________________________
-void THaVDCUVPlane::Clear( Option_t* opt )
+void THaVDCChamber::Clear( Option_t* opt )
 {
   // Clear event-by-event data
   fU->Clear(opt);
@@ -176,7 +181,7 @@ void THaVDCUVPlane::Clear( Option_t* opt )
 }
 
 //_____________________________________________________________________________
-Int_t THaVDCUVPlane::Decode( const THaEvData& evData )
+Int_t THaVDCChamber::Decode( const THaEvData& evData )
 {
   // Decode both wire planes
 
@@ -186,7 +191,7 @@ Int_t THaVDCUVPlane::Decode( const THaEvData& evData )
 }
 
 //_____________________________________________________________________________
-void THaVDCUVPlane::FindClusters()
+void THaVDCChamber::FindClusters()
 {
   // Find clusters in U & V planes
 
@@ -195,7 +200,7 @@ void THaVDCUVPlane::FindClusters()
 }
 
 //_____________________________________________________________________________
-void THaVDCUVPlane::FitTracks()
+void THaVDCChamber::FitTracks()
 {
   // Fit data to recalculate cluster position
 
@@ -204,7 +209,7 @@ void THaVDCUVPlane::FitTracks()
 }
 
 //_____________________________________________________________________________
-Int_t THaVDCUVPlane::CoarseTrack()
+Int_t THaVDCChamber::CoarseTrack()
 {
   // Coarse computation of tracks
 
@@ -215,8 +220,8 @@ Int_t THaVDCUVPlane::CoarseTrack()
   FitTracks();
 
   // FIXME: The fit may fail, so we might want to call a function here
-  // that deletes UV tracks whose clusters have bad fits, or with
-  // clusters that are too small (e.g. 1 hit), etc.
+  // that deletes points whose clusters have bad fits or are too small
+  // (e.g. 1 hit), etc.
   // Right now, we keep them, preferring efficiency over precision.
 
   // Pair U and V clusters
@@ -226,7 +231,7 @@ Int_t THaVDCUVPlane::CoarseTrack()
 }
 
 //_____________________________________________________________________________
-Int_t THaVDCUVPlane::FineTrack()
+Int_t THaVDCChamber::FineTrack()
 {
   // High precision computation of tracks
 
@@ -240,4 +245,4 @@ Int_t THaVDCUVPlane::FineTrack()
 }
 
 //_____________________________________________________________________________
-ClassImp(THaVDCUVPlane)
+ClassImp(THaVDCChamber)
