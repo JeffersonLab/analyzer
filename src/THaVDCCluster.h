@@ -9,6 +9,7 @@
 
 #include "TObject.h"
 #include <utility>
+#include <vector>
 
 class THaVDCHit;
 class THaVDCPlane;
@@ -23,6 +24,7 @@ namespace VDC {
     return a;
   };
   typedef THaVDCPointPair VDCpp_t;
+  typedef std::vector<THaVDCHit*> Vhit_t;
   extern const Double_t kBig;
 }
 using namespace VDC;
@@ -30,13 +32,8 @@ using namespace VDC;
 class THaVDCCluster : public TObject {
 
 public:
-  THaVDCCluster( THaVDCPlane* owner = 0 ) :
-    fSize(0), fPlane(owner), fPointPair(0), fTrack(0), fTrkNum(0),
-    fSlope(kBig), fLocalSlope(kBig), fSigmaSlope(kBig),
-    fInt(kBig), fSigmaInt(kBig), fT0(kBig), fSigmaT0(kBig),
-    fPivot(0), fIPivot(-1), fTimeCorrection(0),
-    fFitOK(false), fChi2(kBig), fNDoF(0.0), fClsBeg(-1), fClsEnd(-1)
-    {}
+
+  THaVDCCluster( THaVDCPlane* owner = 0 );
   virtual ~THaVDCCluster() {}
 
   enum EMode { kSimple, kT0, kFull };
@@ -56,10 +53,9 @@ public:
   virtual void   Print( Option_t* opt="" ) const;
 
   //Get and Set Functions
-  THaVDCHit**    GetHits()                 { return fHits; } // Get array of pointers
-  THaVDCHit *    GetHit(Int_t i)     const { return fHits[i]; }
+  THaVDCHit*     GetHit(Int_t i)     const { return fHits[i]; }
   THaVDCPlane*   GetPlane()          const { return fPlane; }
-  Int_t          GetSize ()          const { return fSize; }
+  Int_t          GetSize ()          const { return fHits.size(); }
   Double_t       GetSlope()          const { return fSlope; }
   Double_t       GetLocalSlope()     const { return fLocalSlope; }
   Double_t       GetSigmaSlope()     const { return fSigmaSlope; }
@@ -88,10 +84,7 @@ public:
   void           SetTrack( THaTrack* track );
 
 protected:
-  static const Int_t MAX_SIZE = 16;  // Assume no more than 16 hits per cluster
-
-  Int_t          fSize;              // Size of cluster (no. of hits)
-  THaVDCHit*     fHits[MAX_SIZE];    // [fSize] Hits associated w/this cluster
+  Vhit_t         fHits;              // Hits associated w/this cluster
   THaVDCPlane*   fPlane;             // Plane the cluster belongs to
   VDCpp_t*       fPointPair;         // Lower/upper combo we're assigned to
   THaTrack*      fTrack;             // Track the cluster belongs to
@@ -104,7 +97,6 @@ protected:
   Double_t       fInt, fSigmaInt;    // Intercept and error estimate
   Double_t       fT0, fSigmaT0;      // Fitted common timing offset and error
   THaVDCHit*     fPivot;             // Pivot - hit with smallest drift time
-  Int_t          fIPivot;            // Drift sign flips at this hit index
   //FIXME: in the code, this is used as a distance correction!!
   Double_t       fTimeCorrection;    // correction to be applied when fitting
                                      // drift times
