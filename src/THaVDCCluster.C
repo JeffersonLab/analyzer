@@ -354,10 +354,7 @@ void THaVDCCluster::FitSimpleTrack( Bool_t weighted )
     sigmaB = TMath::Sqrt( sigmaF2/(G*G) + F*F/(G*G*G*G)*sigmaG2 - 2*F/(G*G*G)*sigmaFG);
 
     // calculate chi2 for the track given this slope and intercept
-    Double_t chi2 = 0.;
-    Int_t nhits = 0;
-
-    CalcChisquare(chi2,nhits);
+    chi2_t chi2 = CalcChisquare( m, b, 0 );
 
     // scale the uncertainty of the fit parameters based upon the
     // quality of the fit. This really should not be necessary if
@@ -366,14 +363,13 @@ void THaVDCCluster::FitSimpleTrack( Bool_t weighted )
     // sigmaB *= chi2/(nhits - 2);
 
     // Pick the best value
-    if (i == 0 || chi2 < bestFit) {
-      bestFit = chi2;
-      fChi2 = chi2;
-      fNDoF = nhits-2;
+    if (i == 0 || chi2.first < bestFit) {
+      bestFit     = fChi2 = chi2.first;
+      fNDoF       = chi2.second - 2;
       fLocalSlope = m;
+      fInt        = b;
       fSigmaSlope = sigmaM;
-      fInt = b;
-      fSigmaInt = sigmaB;
+      fSigmaInt   = sigmaB;
     }
   }
 
@@ -494,8 +490,10 @@ Int_t THaVDCCluster::LinearClusterFitWithT0()
   // Rotate the coordinate system to match the VDC definition of "slope"
   fLocalSlope = 1.0/fLocalSlope;  // 1/m
   fInt   = -fInt * fLocalSlope;   // -b/m
-  if( fPlane )
-    fT0  /= fPlane->GetDriftVel();
+  if( fPlane ) {
+    fT0      /= fPlane->GetDriftVel();
+    fSigmaT0 /= fPlane->GetDriftVel();
+  }
 
   fFitOK = true;
 
