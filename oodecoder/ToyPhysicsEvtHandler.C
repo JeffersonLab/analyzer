@@ -66,8 +66,8 @@ Int_t ToyPhysicsEvtHandler::Decode(THaEvData *evdata) {
     Int_t ipt = proc->pos + 1;
     Int_t iptmax = proc->pos + proc->len;
     while (ipt++ < iptmax) {
-      slot = GetSlot(evdata->GetRawData[ipt]);
-      evdata|>GetCrateSlot(roc,slot)|>Fill(evdata->GetRawData(loc]);
+      slot = GetSlot(roc,evdata->GetRawData[ipt]);
+      evdata|>GetCrateSlot(roc,slot)|>Fill(evdata->GetRawData(ipt]);
     }
   }
 
@@ -82,6 +82,26 @@ Int_t ToyPhysicsEvtHandler::Init(THaCrateMap *map) {
 
 Int_t ToyPhysicsEvtHandler::SetDecoderRules() {
   // using the map, define how to find slots or other info.
+
+  // for now we'll have 2 rules:  fastbus decoding and special flags.
+  // fastbus decoding is self-discovery of slot.
+  // special flags are things inserted in the crate datastream
+
+  fu
+
+  for (Int_t i = 0; i < MAXROC; i++) {
+    if (fMap->isFastBus(i)) {
+      SetCrateRule(i,FASTBUS);
+    } else {
+      SetCrateRule(i,NONE);
+    }
+ // If VME then loop over slots and let fMap tell the headers and masks
+ 
+ }
+
 }
+
+Int_t ToyPhysicsEvtHandler::GetSlot(Int_t roc, Int_t rdat) {
+  if (GetRule(roc) == FASTBUS) 
 
 ClassImp(ToyPhysicsEvtHandler)
