@@ -38,8 +38,8 @@ public:
        THaSlotData(int crate, int slot);
        virtual ~THaSlotData();
        const char* devType() const;             // "adc", "tdc", "scaler"
-       int loadModule(ToyModule *mod);          // Load module 
-       ToyModule *GetModule() { return fModule; };
+       //      int loadModule(ToyModule *mod);          // Load module 
+       //       ToyModule *GetModule() { return fModule; };
        int getNumRaw() const { return numraw; };  // Amount of raw CODA data
        int getRawData(int ihit) const;            // Returns raw data words
        int getRawData(int chan, int hit) const;
@@ -49,7 +49,7 @@ public:
        int getData(int chan, int hit) const;  // Data (adc,tdc,scaler) on 1 chan
        int getCrate() const { return crate; }
        int getSlot()  const { return slot; }
-       Bool_t IsSlot(Int_t rdat) const { return fModule->IsSlot(rdat); };
+       Bool_t IsSlot(Int_t rdat) const { kTRUE; }// return fModule->IsSlot(rdat); };
        void clearEvent();                   // clear event counters
        int loadData(const char* type, int chan, int dat, int raw);
        void define(int crate, int slot, UShort_t nchan=DEFNCHAN, 
@@ -63,7 +63,7 @@ private:
        int crate;
        int slot;
        TString device;
-       ToyModule *fModule;
+       //       ToyModule *fModule;
        UShort_t numhitperchan; // expected number of hits per channel
        UShort_t numraw;      // Hit counters (numraw, numHits, numchanhit)
        UShort_t numchanhit;  // can be zero'd by clearEvent each event.

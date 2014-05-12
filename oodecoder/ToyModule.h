@@ -12,7 +12,6 @@
 #include <map>
 #include <vector>
 #include "Rtypes.h"
-#include "ToyModule.h"
 
 class THaEvData;
 
@@ -25,19 +24,22 @@ public:
    virtual ~ToyModule();  
 
    virtual Bool_t IsSlot(Int_t rdata)=0;
+   virtual Int_t GetNumWords() { return fNumWords; };
    virtual Int_t Decode(THaEvData *evdata, Int_t start=0)=0;
-   Int_t GetSlot() { return fSlot; );
+   Int_t GetCrate() { return fCrate; };
+   Int_t GetSlot() { return fSlot; };
+   ToyModule& operator=(const ToyModule &rhs);
 
 protected:
 
-   Int_t fCrate, fSlot;
+  Int_t fCrate, fSlot;
+  Int_t fNumWord;
+  ToyModule(const ToyModule& rhs); 
+  void Create(const ToyModule& rhs);
 
 private:
 
-   ToyModule(const ToyModule& rhs); 
-   ToyModule& operator=(const ToyModule &rhs);
-
-   ClassDef(ToyModule,0)  // Module type "X"
+   ClassDef(ToyModule,0)  // A module in a crate and slot
 
 };
 
