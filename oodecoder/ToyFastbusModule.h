@@ -9,6 +9,8 @@
 //
 /////////////////////////////////////////////////////////////////////
 
+#define MAXSLOTS_FASTBUS 26
+
 #include <string>
 #include <map>
 #include <vector>
@@ -27,16 +29,21 @@ public:
    ToyFastbusModule(Int_t crate, Int_t slot);
    virtual ~ToyFastbusModule(); 
 
-   Bool_t IsSlot(Int_t rdata);
-   Int_t Decode(THaEvData *evdata, Int_t start);
-
+   Int_t Slot(Int_t rdata) { return (rdata&fSlotMask)>>fSlotShift; };
+   Int_t Chan(Int_t rdata) { return (rdata&fChanMask)>>fChanShift; };
+   Int_t WndCnt(Int_t rdata) { 
+          if (fNoWdCnt) return -1; 
+          return (rdata&fWdcntMask)>>fWdcntShift; 
+   };
+   Int_t Data(Int_t rdata);
 
 protected:
 
-   Int_t fSlot,  fSlotMask, fSlotShift;
-   Int_t fChan,  fChanMask, fChanShift;
-   Int_t *fData, fDatamask,  fWdcnt, fWdcntMask;
-   Int_t fNumChan;
+   Int_t fSlotMask, fSlotShift;
+   Int_t fChanMask, fChanShift;
+   Int_t fDatamask,  fDataShift;
+   Int_t fWdcnt, fWdcntMask;
+   Int_t fNoWdCnt;
 
 private:
 
