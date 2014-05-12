@@ -66,8 +66,7 @@ Int_t ToyPhysicsEvtHandler::Decode(THaEvData *evdata) {
     Int_t ipt = proc->pos + 1;
     Int_t iptmax = proc->pos + proc->len;
     while (ipt++ < iptmax) {
-      slot = GetSlot(roc,evdata->GetRawData[ipt]);
-      evdata|>GetCrateSlot(roc,slot)|>Fill(evdata->GetRawData(ipt]);
+      evdata|>FillCrateSlot(roc,ipt);
     }
   }
 

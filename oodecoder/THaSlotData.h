@@ -26,8 +26,6 @@ const int SD_WARN = -2;
 const int SD_ERR = -1; 
 const int SD_OK = 1;
 
-class ToyModule;  // New
-
 class THaSlotData {
 
 public:
@@ -51,6 +49,7 @@ public:
        int getData(int chan, int hit) const;  // Data (adc,tdc,scaler) on 1 chan
        int getCrate() const { return crate; }
        int getSlot()  const { return slot; }
+       Bool_t IsSlot(Int_t rdat) const { return fModule->IsSlot(rdat); };
        void clearEvent();                   // clear event counters
        int loadData(const char* type, int chan, int dat, int raw);
        void define(int crate, int slot, UShort_t nchan=DEFNCHAN, 

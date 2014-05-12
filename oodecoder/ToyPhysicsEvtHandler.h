@@ -21,48 +21,39 @@ class THaEvData;
 
 using THaString::CmpNoCase;
 
-class DecoderRules {
-  // Utility class used by PhysicsHandler to store decoder rules
+class FlagData : public TNamed {
+
  public:
- DecoderRules(string ctype) : {
-    isFastbus=0;
-    isVme=0;
-    isFlag=1;
-    if (CmpNoCase("ctype","fastbus")==0) isFastbus=1; 
-    if (CmpNoCase("ctype","vme")==0) isVme=1;
-    if (CmpNoCase("ctype","flag")==0) isFlag=1;
+ FlagData(const char *cname, Int_t hdr, Int_t msk, Int_t offs, Int_t siz) : fName(cname),  header(hdr), offset(offs), size(siz) {
+    isLoaded = kFALSE;
+    if (size <= 0) size=1;
+    fData = new Float_t[size];
   }
-  Int_t GetHeader(Int_t index) {
-    if (index >= 0 && index < headers.size()) return headers[index];
-    return -1;
+  ~FlagData() { 
+    if (size>0) delete []fData;
   }
-  Int_t GetMask(Int_t index) {
-    if (index >= 0 && index < masks.size()) return masks[index];
-    return -1;
-  }
-  Int_t GetOffset(Int_t index) {
-    if (index >= 0 && index < offsets.size()) return offsets[index];
-    return -1;
-  }
-  Int_t GetSlot(Int_t rdat) {
-    if (isFastbus) return (rdat>>fbslotshift);
-    for (Int_t i = 0 ; i < headers.size(); i++) {
-      if ((rdat & masks[i])==headers[i]) return slots[i];
+  void LoadFlag(Int_t *rdat, Int_t ptr) {
+    if ((rdat[ptr]&mask)==header) {
+      for (Int_t i=0; i<size; i++) {
+	fData[i]=rdat[offset+ptr++];
+      }
     }
-    return -1;
+    isLoaded=kTRUE;
   }
-  Int_t LoadSlotInfo(Int_t header, Int_t mask, Int_t off=0,  Int_t slot=-1) {
-     headers.push_back(header);
-     masks.push_back(mask);
-     slots.push_back(slot);
-     offsets.push_back(slot);
+  Bool_t isLoaded() { return isLoaded; };
+  void Clear() { isLoaded=kFALSE; }    
+  // I think there is a GetName for TNamed -- check
+  Float_t GetData(Int_t i=0) { 
+    if (i >= 0 &&  i < size) return fData[i];
     return 0;
   }
-private:
-  Int_t slot, isFasbus, isVme, isFlag;
-  static const Int_t fbslotshift=27;
-  vector <Int_t> headers, masks, offsets, slots;
+ private:
+  Int_t header, mask, offset, size;
+  Bool_t toOutput;
+  Float_t *fData;
+
 }
+
 
 class ToyPhysicsEvtHandler : public ToyEvtTypeHandler {
 
@@ -73,7 +64,6 @@ public:
 
    Int_t Decode(THaEvData *evdata);
    Int_t Init(THaCrateMap *map);
-   Int_t SetCrateRule(Int_t i);
 
 private:
 
@@ -88,7 +78,7 @@ private:
    } rocdat[MAXROC];
 
    Int_t *idxdr;
-   vector <DecoderRules *> drules;
+   vector <FlagData *> flagdata;
    Int_t ProcFlags(THaEvData*, Int_t loc1);
 
 
