@@ -323,7 +323,8 @@ static Int_t ReadOldFormatDB( FILE* file, map<TString,TString>& configstr_map )
     if( dbline.empty() ) continue;
     // Tokenize each line read
     TString line( dbline.c_str() );
-    TObjArray* params = line.Tokenize(" \t");
+    auto_ptr<TObjArray> tokens( line.Tokenize(" \t") );
+    TObjArray* params = tokens.get();
     if( params->IsEmpty() || params->GetLast() < 4 ) continue;
     // Determine data type
     bool is_slot = ( GetString(params,1) == "crate" );
