@@ -9,8 +9,6 @@
 #include "THaVDCHit.h"
 #include "THaVDCTimeToDistConv.h"
 
-ClassImp(THaVDCHit)
-
 const Double_t THaVDCHit::kBig = 1.e38; // Arbitrary large value
 
 //_____________________________________________________________________________
@@ -44,23 +42,25 @@ Int_t THaVDCHit::Compare( const TObject* obj ) const
   // wire number and, for each wire, will be in the order in which they hit
   // the wire
 
-  if( !obj || IsA() != obj->IsA() || !fWire )
+  assert( obj && IsA() == obj->IsA() );
+
+  if( obj == this )
+    return 0;
+
+#ifndef NDEBUG
+  const THaVDCHit* other = dynamic_cast<const THaVDCHit*>( obj );
+  assert( other );
+#else
+  const THaVDCHit* other = static_cast<const THaVDCHit*>( obj );
+#endif
+
+  ByWireThenTime isless;
+  if( isless( this, other ) )
     return -1;
-
-  const THaVDCHit* hit = static_cast<const THaVDCHit*>( obj );
-
-  Int_t myWireNum = fWire->GetNum();
-  Int_t hitWireNum = hit->GetWire()->GetNum();
-  // Compare wire numbers
-  if (myWireNum < hitWireNum) return -1;
-  if (myWireNum > hitWireNum) return  1;
-  if (myWireNum == hitWireNum) {
-    // If wire numbers are the same, compare times
-    Double_t hitTime = hit->GetTime();
-    if (fTime < hitTime) return -1;
-    if (fTime > hitTime) return  1;
-  }
+  if( isless( other, this ) )
+    return 1;
   return 0;
 }
 
-////////////////////////////////////////////////////////////////////////////////
+//_____________________________________________________________________________
+ClassImp(THaVDCHit)

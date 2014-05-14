@@ -10,6 +10,8 @@
 #include "TObject.h"
 #include "THaVDCWire.h"
 #include <cstdio>
+#include <cassert>
+#include <functional>
 
 class THaVDCHit : public TObject {
 
@@ -43,6 +45,19 @@ public:
   void     SetLocalFitDist(Double_t dist)  { fltrDist = dist; }
   void     SetTrkNum(Int_t num)       { fTrkNum = num; }
   void     SetClsNum(Int_t num)       { fClsNum = num; }
+
+  // Functor for ordering hits
+  struct ByWireThenTime :
+    public std::binary_function< THaVDCHit*, THaVDCHit*, bool >
+  {
+    bool operator() ( const THaVDCHit* a, const THaVDCHit* b ) const
+    {
+      assert( a && b );
+      if( a->GetWireNum() != b->GetWireNum() )
+	return ( a->GetWireNum() < b->GetWireNum() );
+      return ( a->GetTime() < b->GetTime() );
+    }
+  };
 
 protected:
   static const Double_t kBig;  //! Arbitrary lrg number indicating invalid data
