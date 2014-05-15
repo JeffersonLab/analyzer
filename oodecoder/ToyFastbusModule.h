@@ -41,14 +41,15 @@ protected:
 
    Int_t fSlotMask, fSlotShift;
    Int_t fChanMask, fChanShift;
-   Int_t fDatamask,  fDataShift;
-   Int_t fWdcnt, fWdcntMask;
+   Int_t fDataMask,  fDataShift;
+   Int_t fWdcnt, fWdcntMask, fWdcntShift;
    Int_t fNoWdCnt;
 
 private:
 
    ToyFastbusModule(const ToyFastbusModule &fh);
    ToyFastbusModule& operator=(const ToyFastbusModule &fh);
+   void Create(const ToyFastbusModule& rhs);
 
    ClassDef(ToyFastbusModule,0)  // Fastbus module
 

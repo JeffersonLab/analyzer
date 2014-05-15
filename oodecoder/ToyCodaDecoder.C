@@ -232,13 +232,6 @@ void ToyCodaDecoder::InitHandlers()
   
 }
 
-//_____________________________________________________________________________
-ToyModule* ToyCodaDecoder::GetModule(Int_t crate, Int_t slot) 
-{ 
-  // NEW STUFF
-  // Get pointer to module
-  return crateslot[idx(crate,slot)]->GetModule();
-}
 
 //_____________________________________________________________________________
 ClassImp(ToyCodaDecoder)

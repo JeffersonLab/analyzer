@@ -16,7 +16,7 @@
 //
 /////////////////////////////////////////////////////////////////////
 
-//#include "ToyModule.h"
+#include "ToyModule.h"
 #include "THaSlotData.h"
 #include "TMath.h"
 #include <iostream>
@@ -87,11 +87,10 @@ void THaSlotData::define(int cra, int slo, UShort_t nchan, UShort_t ndata, UShor
   memset(numHits,0,maxc*sizeof(UChar_t));
 }
 
-//int THaSlotData::loadModule(ToyModule *mod) {
-// For this toy version, I copy pointers.  Yes, I know it's bad.
-// I should make copy constructors for the ToyModules.
-//   fModule = mod;  
-//}
+int THaSlotData::loadModule(THaCrateMap *map) {
+  // do something
+}  
+
 
 int THaSlotData::loadData(const char* type, int chan, int dat, int raw) {
 // loadData loads the data into storage arrays.
@@ -218,6 +217,6 @@ void THaSlotData::print() const {
     }
   }
   return;
-};
+}
 
 ClassImp(THaSlotData)

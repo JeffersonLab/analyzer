@@ -28,6 +28,7 @@
 #include "ToyModule.h"
 #include "ToyModuleX.h"
 #include "ToyFastbusModule.h"
+#include "Lecroy1877Module.h"
 #include "TError.h"
 #include <cstring>
 #include <cstdio>
@@ -307,8 +308,8 @@ int THaEvData::init_slotdata(const THaCrateMap* map)
     THaSlotData* crslot = crateslot[fSlotUsed[i]];
     int crate = crslot->getCrate();
     int slot  = crslot->getSlot();
-// New line, to be something like this (doesn't work now)
-//    crslot->loadModule(map->GetModuleInfo(crate,slot));
+// New(5/2014) line to define the module information
+// TBD    crslot->loadModule(map->GetModuleInfo(crate,slot));
     if( !map->crateUsed(crate) || !map->slotUsed(crate,slot) ||
 	!map->slotClear(crate,slot)) {
       for( int k=0; k<fNSlotClear; k++ ) {
@@ -330,8 +331,8 @@ int THaEvData::init_slotdata(const THaCrateMap* map)
 //      ultimately come from THaCrateMap.  And no, I won't copy pointers.
   Int_t crate = 1;  Int_t slot = 9;
   Int_t ics = idx(crate, slot);
-  ToyFastbusModule *module = new ToyFastbusModule(crate, slot);
-  crateslot[ics]->loadModule(module);  
+  Lecroy1877Module *module = new Lecroy1877Module(crate, slot);
+//  crateslot[ics]->loadModule(module);  
 // End, toy code
 
   return HED_OK;

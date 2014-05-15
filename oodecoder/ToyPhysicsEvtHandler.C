@@ -37,7 +37,7 @@ Int_t ToyPhysicsEvtHandler::Decode(THaEvData *evdata) {
   Int_t pos = evdata->GetRawData(2)+3;  // should be 7
   Int_t nroc = 0;
   Int_t irn[MAXROC];   // Lookup table i-th ROC found -> ROC number
-  while( pos+1 < evdata->GetRawData(0]+1 && nroc < MAXROC ) {
+  while( pos+1 < evdata->GetRawData(0)+1 && nroc < MAXROC ) {
     Int_t len  = evdata->GetRawData(pos);
     Int_t iroc = (evdata->GetRawData(pos+1)&0xff0000)>>16;
     if( iroc>=MAXROC ) {
@@ -66,7 +66,7 @@ Int_t ToyPhysicsEvtHandler::Decode(THaEvData *evdata) {
     Int_t ipt = proc->pos + 1;
     Int_t iptmax = proc->pos + proc->len;
     while (ipt++ < iptmax) {
-      evdata|>FillCrateSlot(roc,ipt);
+      //      evdata|>FillCrateSlot(iroc,ipt);
     }
   }
 
@@ -74,33 +74,50 @@ Int_t ToyPhysicsEvtHandler::Decode(THaEvData *evdata) {
 
 }
 
+Int_t ToyPhysicsEvtHandler::FindRocs(const Int_t *evbuffer) {
+  
+  assert( evbuffer && fMap );
+#ifdef FIXME
+  if( fDoBench ) fBench->Begin("physics_decode");
+#endif
+  Int_t status = HED_OK;
+
+  if( (evbuffer[1]&0xffff) != 0x10cc ) std::cout<<"Warning, header error"<<std::endl;
+  if( (evbuffer[1]>>16) > MAX_PHYS_EVTYPE ) std::cout<<"Warning, Event type makes no sense"<<std::endl;
+  memset(rocdat,0,MAXROC*sizeof(RocDat_t));
+  // Set pos to start of first ROC data bank
+  Int_t pos = evbuffer[2]+3;  // should be 7
+  Int_t nroc = 0;
+  Int_t irn[MAXROC];   // Lookup table i-th ROC found -> ROC number
+  while( pos+1 < evbuffer[0]+1 && nroc < MAXROC ) {
+    Int_t len  = evbuffer[pos];
+    Int_t iroc = (evbuffer[pos+1]&0xff0000)>>16;
+    if( iroc>=MAXROC ) {
+#ifdef FIXME
+      if(TestBit(kVerbose)) { 
+	cout << "ERROR in EvtTypeHandler::FindRocs "<<endl;
+	cout << "  illegal ROC number " <<dec<<iroc<<endl;
+      }
+      if( fDoBench ) fBench->Stop("physics_decode");
+#endif
+      return HED_ERR;
+    }
+    // Save position and length of each found ROC data block
+    rocdat[iroc].pos  = pos;
+    rocdat[iroc].len  = len;
+    irn[nroc++] = iroc;
+    pos += len+1;
+  }
+
+  return 1;
+
+}
+
+
 Int_t ToyPhysicsEvtHandler::Init(THaCrateMap *map) {
   fMap = map;
-  SetDecoderRules();
+  return 1;  
 }
 
-Int_t ToyPhysicsEvtHandler::SetDecoderRules() {
-  // using the map, define how to find slots or other info.
-
-  // for now we'll have 2 rules:  fastbus decoding and special flags.
-  // fastbus decoding is self-discovery of slot.
-  // special flags are things inserted in the crate datastream
-
-  fu
-
-  for (Int_t i = 0; i < MAXROC; i++) {
-    if (fMap->isFastBus(i)) {
-      SetCrateRule(i,FASTBUS);
-    } else {
-      SetCrateRule(i,NONE);
-    }
- // If VME then loop over slots and let fMap tell the headers and masks
- 
- }
-
-}
-
-Int_t ToyPhysicsEvtHandler::GetSlot(Int_t roc, Int_t rdat) {
-  if (GetRule(roc) == FASTBUS) 
 
 ClassImp(ToyPhysicsEvtHandler)

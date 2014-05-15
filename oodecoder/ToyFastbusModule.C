@@ -4,16 +4,18 @@
 //
 /////////////////////////////////////////////////////////////////////
 
+#include "DecoderGlobals.h"
 #include "ToyFastbusModule.h"
 #include "ToyModule.h"
 #include "THaEvData.h"
 #include "TMath.h"
+#include "Rtypes.h"
 #include <iostream>
 #include <string>
 #include <sstream>
 using namespace std;
 
-ToyFastbusModule::ToyFastbusModule(Int_t crate, Int_t slot) fCrate(crate), fSlot(slot) {
+ToyFastbusModule::ToyFastbusModule(Int_t crate, Int_t slot) : ToyModule(crate, slot) {
   fNoWdCnt=1;
   if (fCrate < 0 || fCrate > MAXROC) {
        cerr << "ERROR: crate out of bounds"<<endl;
@@ -30,7 +32,7 @@ ToyFastbusModule::ToyFastbusModule(const ToyFastbusModule& rhs) {
 }
 
 
-ToyFastbusModule::ToyFastbusModule::operator=(const ToyFastbusModule& rhs) {
+ToyFastbusModule &ToyFastbusModule::operator=(const ToyFastbusModule& rhs) {
   if ( &rhs != this) {
     //    Uncreate();  // need a destructor method if we allocate memory 
     //                 (so far that's not the design)
@@ -39,7 +41,7 @@ ToyFastbusModule::ToyFastbusModule::operator=(const ToyFastbusModule& rhs) {
   return *this;
 } 
 
-void Create(const ToyFastbusModule& rhs) {
+void ToyFastbusModule::Create(const ToyFastbusModule& rhs) {
   ToyModule::Create(rhs);
   fSlotMask = rhs.fSlotMask;
   fSlotShift = rhs.fSlotShift;

@@ -15,6 +15,7 @@
 #include <vector>
 #include "Rtypes.h"
 #include "THaString.h"
+#include "TNamed.h"
 
 class ToyEvtTypeHandler;
 class THaEvData;
@@ -23,8 +24,7 @@ using THaString::CmpNoCase;
 
 class FlagData : public TNamed {
 
- public:
- FlagData(const char *cname, Int_t hdr, Int_t msk, Int_t offs, Int_t siz) : fName(cname),  header(hdr), offset(offs), size(siz) {
+ public: FlagData(const char *name, const char *descr, Int_t hdr, Int_t msk, Int_t offs, Int_t siz) : TNamed(name,descr),  header(hdr), offset(offs), size(siz) {
     isLoaded = kFALSE;
     if (size <= 0) size=1;
     fData = new Float_t[size];
@@ -40,7 +40,7 @@ class FlagData : public TNamed {
     }
     isLoaded=kTRUE;
   }
-  Bool_t isLoaded() { return isLoaded; };
+  Bool_t IsLoaded() { return isLoaded; };
   void Clear() { isLoaded=kFALSE; }    
   // I think there is a GetName for TNamed -- check
   Float_t GetData(Int_t i=0) { 
@@ -49,10 +49,10 @@ class FlagData : public TNamed {
   }
  private:
   Int_t header, mask, offset, size;
-  Bool_t toOutput;
+  Bool_t toOutput, isLoaded;
   Float_t *fData;
 
-}
+};
 
 
 class ToyPhysicsEvtHandler : public ToyEvtTypeHandler {
