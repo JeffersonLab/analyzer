@@ -33,7 +33,7 @@ public:
 protected:
 
   Int_t fCrate, fSlot;
-  Int_t fNumWord;
+  Int_t fNumWords;
   ToyModule(const ToyModule& rhs); 
   void Create(const ToyModule& rhs);
 
