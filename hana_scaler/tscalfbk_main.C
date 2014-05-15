@@ -269,17 +269,17 @@ void ReLoadParam() {
     while (getline(fbparamfile,sinput)) {
       strcpy(cinput,sinput.c_str());
       if (strstr(cinput,"sleeptime") != NULL) {
-        sscanf(cinput,"%s %d",cdum,&sleeptime);
+        sscanf(cinput,"%99s %15d",cdum,&sleeptime);
         strcat(cinput,"\n");
         LogMessage(cinput);
       }
       if (strstr(cinput,"fslope") != NULL) {
-        sscanf(cinput,"%s %f",cdum,&fslope);
+        sscanf(cinput,"%99s %15f",cdum,&fslope);
         strcat(cinput,"\n");
         LogMessage(cinput);
       }
       if (strstr(cinput,"nevt") != NULL) {
-        sscanf(cinput,"%s %d",cdum,&nevt);
+        sscanf(cinput,"%99s %15d",cdum,&nevt);
         strcat(cinput,"\n");
         if (nevt > 140) nevt = 140;   // nevt is actually limited (see asy[])
         LogMessage(cinput);

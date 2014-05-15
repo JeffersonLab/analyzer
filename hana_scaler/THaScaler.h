@@ -117,8 +117,9 @@ public:
    void SetPort(Int_t port);                    // set PORT# for online data
    void SetClockLoc(Int_t slot, Int_t chan);  // set clock location
    void SetClockRate(Double_t clkrate);       // set clock rate
-   void SetTimeInterval(Double_t time);    // set avg time interval between events. (if no clk)
+   void SetTimeInterval(Double_t time); // set avg time interval between events. (if no clk)
    void SetIChan(Int_t slot, Int_t chan);  // Set channel to norm. by (for GetIRate)
+   Int_t SetDebug( Int_t level );          // Set debug level
    Int_t GetSlot(std::string which, Int_t helicity=0);
    Int_t GetSlot(Int_t tgtstate, Int_t helicity);
    Int_t GetChan(std::string which, Int_t helicity=0, Int_t chan=0);
@@ -139,9 +140,11 @@ protected:
    int vme_port, clkslot, clkchan;
    int icurslot, icurchan;
    Bool_t found_crate,first_loop;
-   Bool_t did_init, new_load, one_load, use_clock;
+   Bool_t did_init, new_load, one_load, use_clock, isclockreset;
    Int_t *normslot;
    Double_t clockrate;
+   Int_t fDebug;
+
    Int_t InitData(const std::string& bankgroup, const Bdate& bd);
    Int_t CheckInit();
    void Clear(Option_t* opt="");
@@ -156,7 +159,6 @@ protected:
    Double_t GetTimeDiff(Int_t helicity);
    Double_t GetTimeDiffSlot(Int_t slot, Int_t chan=7);
    void SetupNormMap();
-   static const Int_t fDebug = 0;
 
 private:
 

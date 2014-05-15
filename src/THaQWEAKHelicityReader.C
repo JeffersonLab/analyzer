@@ -14,6 +14,7 @@
 #include "THaAnalysisObject.h"   // For LoadDB
 #include <iostream>
 #include <vector>
+#include "TH1F.h"
 
 using namespace std;
 
@@ -25,12 +26,16 @@ THaQWEAKHelicityReader::THaQWEAKHelicityReader()
   fHaveROCs=kFALSE;         // Required ROCs are defined
   fNegGate=kFALSE;          // Invert polarity of gate, so that 0=active
   
-  memset( fROCinfo, 0, sizeof(fROCinfo) );
+  memset( fROCinfo, 0, 3*sizeof(ROCinfo) );
+  for( Int_t i = 0; i < NHISTR; ++i )
+    fHistoR[i] = 0;
 }
 //____________________________________________________________________
 THaQWEAKHelicityReader::~THaQWEAKHelicityReader() 
 {
-
+  // for( Int_t i = 0; i < NHISTR; ++i ) {
+  //   delete fHistoR[i];
+  // }
 }
 //____________________________________________________________________
 void THaQWEAKHelicityReader::Print() 
@@ -138,20 +143,20 @@ void THaQWEAKHelicityReader::Begin()
   // static const char* const here = "THaQWEAKHelicityReader::Begin";
   // cout<<here<<endl;
 
-  fHisto[0]=new TH1F("hel.Pattern.TIR","hel.Pattern.TIR",5,-0.75, 1.75);
-  fHisto[1]=new TH1F("hel.TSettle.TIR","hel.TSettle.TIR",5,-0.75, 1.75);
-  fHisto[2]=new TH1F("hel.Reported.Helicity.TIR","hel.Reported.Helicity.TIR"
+  fHistoR[0]=new TH1F("hel.Pattern.TIR","hel.Pattern.TIR",5,-0.75, 1.75);
+  fHistoR[1]=new TH1F("hel.TSettle.TIR","hel.TSettle.TIR",5,-0.75, 1.75);
+  fHistoR[2]=new TH1F("hel.Reported.Helicity.TIR","hel.Reported.Helicity.TIR"
 		     ,5,-0.75, 1.75);
-  fHisto[3]=new TH1F("hel.dTimestamp.TIR","hel.dTimestamp.TIR",1000,-50,49950);  
-  fHisto[4]=new TH1F("hel.Pattern.Ring","hel.Pattern.Ring",5,-0.75, 1.75);
-  fHisto[5]=new TH1F("hel.Reported.Helicity.Ring","hel.Reported.Helicity.Ring"
+  fHistoR[3]=new TH1F("hel.dTimestamp.TIR","hel.dTimestamp.TIR",1000,-50,49950);  
+  fHistoR[4]=new TH1F("hel.Pattern.Ring","hel.Pattern.Ring",5,-0.75, 1.75);
+  fHistoR[5]=new TH1F("hel.Reported.Helicity.Ring","hel.Reported.Helicity.Ring"
 		     ,5,-0.75, 1.75);
-  fHisto[6]=new TH1F("hel.Timestamp.Ring","hel.Timestamp.Ring",100,-10,490);
-  fHisto[7]=new TH1F("hel.T3.Ring","hel.T3.Ring",53,-1.5, 50.5);
-  fHisto[8]=new TH1F("hel.U3.Ring","hel.U3.Ring",100,-0.5, 99.5);
-  fHisto[9]=new TH1F("hel.T5.Ring","hel.T5.Ring",53,-1.5, 50.5);
-  fHisto[10]=new TH1F("hel.T10.Ring","hel.T10.Ring",53,-1.5, 50.5);
-  fHisto[11]=new TH1F("hel.NRing","hel.NRing",503,-1.5, 501.5);
+  fHistoR[6]=new TH1F("hel.Timestamp.Ring","hel.Timestamp.Ring",100,-10,490);
+  fHistoR[7]=new TH1F("hel.T3.Ring","hel.T3.Ring",53,-1.5, 50.5);
+  fHistoR[8]=new TH1F("hel.U3.Ring","hel.U3.Ring",100,-0.5, 99.5);
+  fHistoR[9]=new TH1F("hel.T5.Ring","hel.T5.Ring",53,-1.5, 50.5);
+  fHistoR[10]=new TH1F("hel.T10.Ring","hel.T10.Ring",53,-1.5, 50.5);
+  fHistoR[11]=new TH1F("hel.NRing","hel.NRing",503,-1.5, 501.5);
 
   return;
 }
@@ -161,8 +166,8 @@ void THaQWEAKHelicityReader::End()
   // static const char* const here = "THaQWEAKHelicityReader::End";
   // cout<<here<<endl;
 
-  for(int i=0;i<12;i++)
-    fHisto[i]->Write();
+  for(int i=0;i<NHISTR;i++)
+    fHistoR[i]->Write();
 
   return;
 }
@@ -273,22 +278,22 @@ void THaQWEAKHelicityReader::FillHisto()
   // static const char* here = "THaQWEAKHelicityReader::FillHisto";
   // cout<<here<<endl;
 
-  fHisto[0]->Fill(fPatternTir);
-  fHisto[1]->Fill(fTSettleTir);
-  fHisto[2]->Fill(fHelicityTir);
-  fHisto[3]->Fill(fTimeStampTir-fOldTimeStampTir);
+  fHistoR[0]->Fill(fPatternTir);
+  fHistoR[1]->Fill(fTSettleTir);
+  fHistoR[2]->Fill(fHelicityTir);
+  fHistoR[3]->Fill(fTimeStampTir-fOldTimeStampTir);
   fOldTimeStampTir=fTimeStampTir;
   for(int i=0;i<fIRing;i++)
     {
-      fHisto[4]->Fill(fPatternRing[i]);
-      fHisto[5]->Fill(fHelicityRing[i]);
-      fHisto[6]->Fill(fTimeStampRing[i]);
-      fHisto[7]->Fill(fT3Ring[i]);
-      fHisto[8]->Fill(fU3Ring[i]);
-      fHisto[9]->Fill(fT5Ring[i]);
-      fHisto[10]->Fill(fT10Ring[i]);
+      fHistoR[4]->Fill(fPatternRing[i]);
+      fHistoR[5]->Fill(fHelicityRing[i]);
+      fHistoR[6]->Fill(fTimeStampRing[i]);
+      fHistoR[7]->Fill(fT3Ring[i]);
+      fHistoR[8]->Fill(fU3Ring[i]);
+      fHistoR[9]->Fill(fT5Ring[i]);
+      fHistoR[10]->Fill(fT10Ring[i]);
     }
-  fHisto[11]->Fill(fIRing);
+  fHistoR[11]->Fill(fIRing);
 
   return;
 }

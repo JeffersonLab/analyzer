@@ -10,7 +10,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "THaPidDetector.h"
-#include <TClonesArray.h>
+
+class TClonesArray;
 
 class THaCherenkov : public THaPidDetector {
 
@@ -23,9 +24,6 @@ public:
   virtual Int_t      CoarseProcess( TClonesArray& tracks );
   virtual Int_t      FineProcess( TClonesArray& tracks );
           Float_t    GetAsum() const { return fASUM_c; }
-
-          Int_t      GetNTracks() const;
-  const TClonesArray* GetTrackHits() const { return fTrackProj; }
 
 protected:
 
@@ -44,13 +42,6 @@ protected:
   Float_t*   fA_c;        // [fNelem] Array of corrected ADC amplitudes of chans
   Float_t    fASUM_p;     // Sum of ADC minus pedestal values of channels
   Float_t    fASUM_c;     // Sum of corrected ADC amplitudes of channels
-  Float_t    fTRX;        // Xcoord(cm) of track cross point with Aero pl
-  Float_t    fTRY;        // Ycoord(cm) of track cross point with Aero pl
-
-  // Useful derived quantities
-  double tan_angle, sin_angle, cos_angle; // Rotation angle of the detector plane
-
-  TClonesArray*  fTrackProj;  // projection of track onto cerenkov plane
 
           void   ClearEvent();
   virtual Int_t  DefineVariables( EMode mode = kDefine );

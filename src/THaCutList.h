@@ -8,12 +8,12 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THashList.h"
+#include "THaCut.h"
+#include "THaNamedList.h"
 
 class TList;
 class THaVarList;
 class THaPrintOption;
-class THaNamedList;
-class THaCut;
 
 // Utility class that provides the PrintOpt method
 class THaHashList : public THashList {
@@ -38,6 +38,7 @@ public:
   enum EWarnMode { kWarn, kNoWarn };
 
   THaCutList();
+  THaCutList( const THaCutList& clst );
   THaCutList( const THaVarList* lst );
   virtual    ~THaCutList();
 
@@ -54,9 +55,9 @@ public:
   virtual Int_t     Eval();
   virtual Int_t     EvalBlock( const char* block=kDefaultBlockName );
   THaCut*           FindCut( const char* name ) const
-    { return reinterpret_cast<THaCut*>(fCuts->FindObject( name )); }
+    { return static_cast<THaCut*>(fCuts->FindObject( name )); }
   THaNamedList*     FindBlock( const char* block ) const
-    { return reinterpret_cast<THaNamedList*>(fBlocks->FindObject( block )); }
+    { return static_cast<THaNamedList*>(fBlocks->FindObject( block )); }
   const THashList*  GetCutList()   const { return fCuts; }   //These might disappear
   const THashList*  GetBlockList() const { return fBlocks; } //in future versions
           Int_t     GetNblocks()   const { return fBlocks->GetSize(); }

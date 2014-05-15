@@ -10,8 +10,7 @@
 //   
 //   This class is intended to provide a crate/slot structure
 //   for derived classes to use.  All derived class must define and 
-//   implement LoadEvent(const int*, THaCrateMap*).  See the header.
-//
+//   implement LoadEvent(const int*).  See the header.
 //   
 //   original author  Robert Michaels (rom@jlab.org)
 //
@@ -52,23 +51,19 @@ Bool_t THaEvData::fgAllowUnimpl = false;
 Bool_t THaEvData::fgAllowUnimpl = true;
 #endif
 
-const TString THaEvData::fgDefaultCrateMapName = "cratemap";
-TString THaEvData::fgCrateMapName;
-Bool_t  THaEvData::fgNeedInit = true;
+TString THaEvData::fgDefaultCrateMapName = "cratemap";
 
 //_____________________________________________________________________________
 
 THaEvData::THaEvData() :
-  first_load(true), first_decode(true), fTrigSupPS(true),
+  first_decode(true), fTrigSupPS(true),
   buffer(0), run_num(0), run_type(0), fRunTime(0), evt_time(0),
   recent_event(0), fNSlotUsed(0), fNSlotClear(0), fMap(0),
-  fDoBench(kFALSE), fBench(0)
+  fDoBench(kFALSE), fBench(0), fNeedInit(true), fDebug(0)
 {
   fInstance = fgInstances.FirstNullBit();
   fgInstances.SetBitNumber(fInstance);
   fInstance++;
-  // FIXME: not needed - here for compatibility
-  cmap = new THaCrateMap( fgDefaultCrateMapName );
   // FIXME: dynamic allocation
   crateslot = new THaSlotData*[MAXROC*MAXSLOT];
   fSlotUsed  = new UShort_t[MAXROC*MAXSLOT];
@@ -99,10 +94,6 @@ THaEvData::THaEvData() :
     Warning("THaEvData::THaEvData","No global variable list found. "
 	    "Variables not registered.");
 #endif
-
-  // Ensure reporting level bits are cleared
-  ResetBit(kVerbose);
-  ResetBit(kDebug);
 }
 
 
@@ -125,13 +116,10 @@ THaEvData::~THaEvData() {
   for( int i=0; i<MAXROC*MAXSLOT; i++ )
     delete crateslot[i];
   delete [] crateslot;  
-  delete cmap;
   delete [] fSlotUsed;
   delete [] fSlotClear;
   fInstance--;
   fgInstances.ResetBitNumber(fInstance);
-  // FIXME: this should be per instance; or better, why is this static??
-  fgNeedInit = true;
 }
 
 const char* THaEvData::DevType(int crate, int slot) const {
@@ -178,14 +166,16 @@ void THaEvData::EnableScalers( Bool_t enable )
 
 void THaEvData::SetVerbose( UInt_t level )
 { 
-  // Set verbosity level
-  SetBit(kVerbose,(level!=0));
+  // Set verbosity level. Identical to SetDebug(). Kept for compatibility.
+
+  SetDebug(level);
 }
 
 void THaEvData::SetDebug( UInt_t level )
 {
   // Set debug level
-  SetBit(kDebug,(level!=0));
+
+  fDebug = level;
 }
 
 void THaEvData::SetOrigPS(Int_t evtyp)
@@ -234,31 +224,48 @@ void THaEvData::hexdump(const char* cbuff, size_t nlen)
   }
 }
 
-// Static function to set fgCrateMapName
-void THaEvData::SetCrateMapName( const char* name ) {
+void THaEvData::SetDefaultCrateMapName( const char* name )
+{
+  // Static function to set fgDefaultCrateMapName. Call this function to set a
+  // global default name for all decoder instances before initialization. This
+  // is usually what you want to do for a given replay.
+
   if( name && *name ) {
-    if( fgCrateMapName != name ) {
-      fgCrateMapName = name;
-      fgNeedInit = true;
+    fgDefaultCrateMapName = name;
+  }
+  else {
+    ::Error( "THaEvData::SetDefaultCrateMapName", "Default crate map name "
+	     "must not be empty" );
+  }
+}
+
+void THaEvData::SetCrateMapName( const char* name )
+{
+  // Set fCrateMapName for this decoder instance only
+
+  if( name && *name ) {
+    if( fCrateMapName != name ) {
+      fCrateMapName = name;
+      fNeedInit = true;
     }
-  } else if( fgCrateMapName != fgDefaultCrateMapName ) {
-    fgCrateMapName = fgDefaultCrateMapName;
-    fgNeedInit = true;
+  } else if( fCrateMapName != fgDefaultCrateMapName ) {
+    fCrateMapName = fgDefaultCrateMapName;
+    fNeedInit = true;
   }
 }
 
 // Set up and initialize the crate map
 int THaEvData::init_cmap()  {
-  if( fgCrateMapName.IsNull() )
-    fgCrateMapName = fgDefaultCrateMapName;
-  if( !fMap || fgNeedInit || fgCrateMapName != fMap->GetName() ) {
+  if( fCrateMapName.IsNull() )
+    fCrateMapName = fgDefaultCrateMapName;
+  if( !fMap || fNeedInit || fCrateMapName != fMap->GetName() ) {
     delete fMap;
-    fMap = new THaCrateMap( fgCrateMapName );
+    fMap = new THaCrateMap( fCrateMapName );
   }
-  if (TestBit(kDebug)) cout << "Init crate map " << endl;
+  if( fDebug>0 ) cout << "Init crate map " << endl;
   if( fMap->init(GetRunTime()) == THaCrateMap::CM_ERR )
     return HED_FATAL; // Can't continue w/o cratemap
-  fgNeedInit = false;
+  fNeedInit = false;
   return HED_OK;
 }
 

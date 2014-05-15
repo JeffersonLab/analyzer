@@ -56,7 +56,7 @@ protected:
   Double_t  fTdavg, fTdiff, fT0, fT9;
   Bool_t    fT0T9; // Was fT0 computed using fT9?
   Bool_t    fQuad_calibrated;
-  Bool_t    fValidTime, fValidHel;
+  Bool_t    fValidHel;
   Bool_t    fRecovery_flag;
   Double_t  fTlastquad, fTtol;
   Int_t     fQuad, fFirstquad;

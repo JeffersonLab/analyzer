@@ -279,7 +279,7 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
 	// but ensure that they are defined only once!
 	bool match = false;
 	for( vector<THaMatrixElement>::iterator it = mat->begin();
-	     it != mat->end() && !(match = it->match(ME)); it++ ) {}
+	     it != mat->end() && !(match = it->match(ME)); ++it ) {}
 	if( match ) {
 	  Warning(Here(here), "Duplicate definition of "
 		  "matrix element: %s. Using first definition.", buff);
@@ -646,8 +646,9 @@ Int_t THaVDC::CoarseTrack( TClonesArray& tracks )
 {
  
 #ifdef WITH_DEBUG
-  static int nev = 0;
   if( fDebug>1 ) {
+    // FIXME: urgh
+    static int nev = 0;
     nev++;
     cout << "=========================================\n";
     cout << "Event: " << nev << endl;
@@ -690,8 +691,8 @@ Int_t THaVDC::FineTrack( TClonesArray& tracks )
 
 #ifdef WITH_DEBUG
   // Wait for user to hit Return
-  static char c;
   if( fDebug>1 ) {
+    char c;
     cin.clear();
     while( !cin.eof() && cin.get(c) && c != '\n');
   }
@@ -839,11 +840,11 @@ void THaVDC::CalcMatrix( const Double_t x, vector<THaMatrixElement>& matrix )
   // coefficients given by it->poly
 
   for( vector<THaMatrixElement>::iterator it=matrix.begin();
-       it!=matrix.end(); it++ ) {
+       it!=matrix.end(); ++it ) {
     it->v = 0.0;
 
     if(it->order > 0) {
-      for(int i=it->order-1; i>=1; i--)
+      for(int i=it->order-1; i>=1; --i)
 	it->v = x * (it->v + it->poly[i]);
       it->v += it->poly[0];
     }
@@ -859,11 +860,11 @@ Double_t THaVDC::CalcTargetVar(const vector<THaMatrixElement>& matrix,
   Double_t retval=0.0;
   Double_t v=0;
   for( vector<THaMatrixElement>::const_iterator it=matrix.begin();
-       it!=matrix.end(); it++ ) 
+       it!=matrix.end(); ++it )
     if(it->v != 0.0) {
       v = it->v;
       unsigned int np = it->pw.size(); // generalize for extra matrix elems.
-      for (unsigned int i=0; i<np; i++)
+      for (unsigned int i=0; i<np; ++i)
 	v *= powers[it->pw[i]][i+1];
       retval += v;
   //      retval += it->v * powers[it->pw[0]][1] 
@@ -883,7 +884,7 @@ Double_t THaVDC::CalcTarget2FPLen(const vector<THaMatrixElement>& matrix,
 
   Double_t retval=0.0;
   for( vector<THaMatrixElement>::const_iterator it=matrix.begin();
-       it!=matrix.end(); it++ ) 
+       it!=matrix.end(); ++it )
     if(it->v != 0.0)
       retval += it->v * powers[it->pw[0]][0]
 	              * powers[it->pw[1]][1]

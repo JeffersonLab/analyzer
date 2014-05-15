@@ -30,12 +30,8 @@ public:
   THaEvData();
   virtual ~THaEvData();
 
-  // Loads CODA data evbuffer using private crate map "cmap" (recommended)
-  Int_t LoadEvent(const Int_t* evbuffer);          
-  // Loads CODA data evbuffer using THaCrateMap passed as 2nd arg.
-  // This is the one function that derived classes MUST implement.
-  //FIXME: the crate map should become part of the database
-  virtual Int_t LoadEvent(const Int_t* evbuffer, THaCrateMap* usermap) = 0;    
+  // Load CODA data evbuffer. Derived classes MUST implement this function.
+  virtual Int_t LoadEvent(const Int_t* evbuffer) = 0;
 
   // Basic access to the decoded data
   Int_t     GetEvType()   const { return event_type; }
@@ -125,16 +121,14 @@ public:
   enum { HED_OK = 0, HED_WARN = -63, HED_ERR = -127, HED_FATAL = -255 };
   enum { MAX_PSFACT = 12 };
   
-  static void SetCrateMapName( const char* name );
+  void SetCrateMapName( const char* name );
+  static void SetDefaultCrateMapName( const char* name );
 
 protected:
   // Control bits in TObject::fBits used by decoders
   enum { 
     kHelicityEnabled = BIT(14),
     kScalersEnabled  = BIT(15),
-  // FIXME: this is a kludge for binary compatibility. Add fDebug/fVerbose
-    kVerbose         = BIT(16),
-    kDebug           = BIT(17)
   };
 
   static const Int_t MAXROC = 32;  
@@ -158,11 +152,9 @@ protected:
     Int_t pos;                // position in evbuffer[]
     Int_t len;                // length of data
   } rocdat[MAXROC];
-  // FIXME: cmap is not needed -> fMap below
-  THaCrateMap* cmap;          // default crate map
   THaSlotData** crateslot;  
 
-  Bool_t first_load, first_decode;
+  Bool_t first_decode;
   Bool_t fTrigSupPS;
 
   const Int_t *buffer;
@@ -199,9 +191,11 @@ protected:
   static const Double_t kBig;  // default value for invalid data
   static Bool_t fgAllowUnimpl; // If true, allow unimplemented functions
 
-  static const TString fgDefaultCrateMapName; // Default crate map name
-  static TString fgCrateMapName; // Crate map database file name to use
-  static Bool_t fgNeedInit;  // Crate map needs to be (re-)initialized
+  static TString fgDefaultCrateMapName; // Default crate map name
+  TString fCrateMapName; // Crate map database file name to use
+  Bool_t fNeedInit;  // Crate map needs to be (re-)initialized
+
+  Int_t  fDebug;     // Debug/verbosity level
 
   ClassDef(THaEvData,0)  // Decoder for CODA event buffer
 
@@ -350,14 +344,6 @@ inline
 Bool_t THaEvData::IsSpecialEvent() const {
   return ( (event_type == DETMAP_FILE) ||
 	   (event_type == TRIGGER_FILE) );
-};
-
-inline
-Int_t THaEvData::LoadEvent(const Int_t* evbuffer) {
-  // This version of LoadEvent() uses private THaCrateMap cmap (recommended)
-  assert(cmap);
-  first_load = false;
-  return LoadEvent(evbuffer, cmap);
 };
 
 inline

@@ -50,7 +50,7 @@ int main(int argc, char* argv[]) {
    strcpy(string_ntup,cdata);
    TNtuple *ntup = new TNtuple("ascal","Scaler History Data",string_ntup);
 
-   Float_t farray_ntup[12];       // Note, dimension is same as size of string_ntup 
+   //   Float_t farray_ntup[12];       // Note, dimension is same as size of string_ntup 
 
    cout << "Enter bank 'gen' or 'Right','Left' (spectr) ->" << endl;
    string bank;  cin >> bank;
@@ -69,11 +69,9 @@ int main(int argc, char* argv[]) {
    }
    if (printout) printf("\n Using clock rate %f Hz\n",clockrate);
 
-   int status;
-
    for (int run = runlo; run < runhi; run++) {
 
-     status = scaler.LoadDataHistoryFile(run);  // load data from default history file
+     int status = scaler.LoadDataHistoryFile(run);  // load data from default history file
      if ( status != 0 ) continue;
 
      //     for (int i = 0; i < 12; i++) farray_ntup[i] = 0;

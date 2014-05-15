@@ -7,10 +7,10 @@
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "TClonesArray.h"
 #include "THaNonTrackingDetector.h"
 
 class THaScCalib;
+class TClonesArray;
 
 class THaScintillator : public THaNonTrackingDetector {
 
@@ -23,7 +23,7 @@ public:
   virtual EStatus    Init( const TDatime& run_time );
   virtual Int_t      CoarseProcess( TClonesArray& tracks );
   virtual Int_t      FineProcess( TClonesArray& tracks );
-  
+
   virtual Int_t      ApplyCorrections( void );
 
   Int_t GetNHits() const { return fNhit; }
@@ -32,13 +32,10 @@ public:
   const Double_t* GetAmplitudes() const { return fAmpl; }
   const Double_t* GetYtime() const { return fYt; }
   const Double_t* GetYampl() const { return fYa; }
-  
-        Int_t GetNTracks() const { return fTrackProj->GetLast()+1; }
-  const TClonesArray* GetTrackHits() const { return fTrackProj; }
-  
+
   friend class THaScCalib;
 
-  THaScintillator();  // for ROOT I/O
+  //  THaScintillator();  // for ROOT I/O
 protected:
 
   // Calibration
@@ -79,7 +76,7 @@ protected:
   Double_t*   fRA_p;       // [fNelem] Array of Right paddles ADC minus ped values
   Double_t*   fRA_c;       // [fNelem] Array of Right paddles corrected ADC ampl-s
 
-  
+
   Int_t      fNhit;       // Number of paddles with complete TDC hits (l&r)
   Int_t*     fHitPad;     // [fNhit] list of paddles with complete TDC hits
 
@@ -89,12 +86,7 @@ protected:
   Double_t*   fAmpl;       // [fNelem] overall amplitude for the paddle
   Double_t*   fYt;         // [fNelem] y-position of hit in paddle from TDC (m)
   Double_t*   fYa;         // [fNelem] y-position of hit in paddle from ADC (m)
-  
-  TClonesArray*  fTrackProj;  // projection of track onto scintillator plane
-                              // and estimated match to TOF paddle
-  // Useful derived quantities
-  double tan_angle, sin_angle, cos_angle;
-  
+
   static const Int_t NDEST = 2;
   struct DataDest {
     Int_t*    nthit;
@@ -115,7 +107,7 @@ protected:
   virtual Int_t  DefineVariables( EMode mode = kDefine );
 
   enum ESide { kLeft = 0, kRight = 1 };
-  
+
   virtual  Double_t TimeWalkCorrection(const Int_t& paddle,
 					   const ESide side);
 

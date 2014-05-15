@@ -100,8 +100,8 @@ int main(int argc, char* argv[]) {
      }
      Double_t tsacc;
 // Since the Norm scaler for helicity=0 is in slot 8 and 'ts-accept' in chan 12...
-     tsacc = scaler->GetScalerRate(8,12);  // equivalent to next line (slot 8, chan 12)
-     tsacc = scaler->GetNormRate(0,12);  // equivalent to next line (helicity 0, chan 12)
+//     tsacc = scaler->GetScalerRate(8,12);  // equivalent to next line (slot 8, chan 12)
+//     tsacc = scaler->GetNormRate(0,12);  // equivalent to next line (helicity 0, chan 12)
      tsacc = scaler->GetNormRate(0,"TS-accept");  // for helicity 0
      ltime = -1;
      if(tsum != 0) ltime = tsacc / tsum;

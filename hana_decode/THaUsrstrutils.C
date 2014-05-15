@@ -65,7 +65,7 @@ unsigned int THaUsrstrutils::getint(const char *s) const
   if(!sval) return(0);		/* Just return zero if no value string */
   unsigned int retval = strtol(sval,0,0);
   if(retval == LONGMAX && (sval[1]=='x' || sval[1]=='X')) {/* Probably hex */
-     sscanf(sval,"%x",&retval);
+     sscanf(sval,"%12x",&retval);
    }
   delete [] sval;
   return(retval);

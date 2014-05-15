@@ -130,16 +130,18 @@ Int_t THaElossCorrection::ReadRunDatabase( const TDatime& date )
 
   // Die if any required parameters still missing
   if( err ) {
-    const char* errmsg[] = { "M (particle mass [GeV/c^2])", "Z (particle Z)", 
-			     "Z_med (Z of medium)", "A_med (A of medium)", 
-			     "density (of medium [g/cm^3])",
-			     "pathlength (through medium [m])" };
     const char* here = Here("ReadRunDatabase");
-    if( err>0 && err<=6 )
+    if( err>0 && err<=6 ) {
+      const char* errmsg[6] = {
+	"M (particle mass [GeV/c^2])", "Z (particle Z)",
+	"Z_med (Z of medium)", "A_med (A of medium)",
+	"density (of medium [g/cm^3])",
+	"pathlength (through medium [m])" };
       Error( here, "Required database entry \"%s\" missing "
 	     "in the run database. Module not initialized", errmsg[err-1] );
-    else
-      Error( here, "Error reading run database. Module not initialized" );
+    } else
+      Error( here, "Error %d reading run database. "
+	     "Module not initialized", err );
     return kInitError;
   }
 
@@ -474,8 +476,8 @@ Double_t THaElossCorrection::ExEnerg( Double_t z_med, Double_t d_med )
     if(d_med<0.01)
       EXEN = 19.2;
     //-    Liquid Hydrogen
-    else if(d_med<0.1)
-      EXEN = 21.8;
+    //    else if(d_med<0.1)
+    //      EXEN = 21.8;
     //---- Liquid Deuterium
     else
       EXEN = 21.8;

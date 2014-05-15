@@ -105,7 +105,6 @@ public:
 
 protected:
 
-  int max_size_string;
   TString configstr;
   void getflagpos(const char *s, const char **pos_ret, 
 		  const char **val_ret) const;

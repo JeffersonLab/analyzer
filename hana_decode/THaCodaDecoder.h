@@ -18,8 +18,8 @@ class THaCodaDecoder : public THaEvData {
  public:
   THaCodaDecoder();
   ~THaCodaDecoder();
-  // Loads CODA data evbuffer using THaCrateMap passed as 2nd arg
-  virtual Int_t LoadEvent(const Int_t* evbuffer, THaCrateMap* usermap);    
+  // Loads CODA data evbuffer
+  virtual Int_t LoadEvent(const Int_t* evbuffer );
 
   virtual Int_t GetPrescaleFactor(Int_t trigger) const;
   virtual Int_t GetScaler(const TString& spec, Int_t slot, Int_t chan) const;
@@ -47,11 +47,10 @@ class THaCodaDecoder : public THaEvData {
 
   // Hall A Trigger Types
   Int_t   synchflag,datascan;
-  Bool_t  buffmode,synchmiss,synchextra;
 
   static void dump(const Int_t* evbuffer);
 
-  Int_t   gendecode(const Int_t* evbuffer, THaCrateMap* map);
+  Int_t   gendecode(const Int_t* evbuffer );
 
   Int_t   loadFlag(const Int_t* evbuffer);
 

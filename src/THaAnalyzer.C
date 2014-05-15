@@ -212,7 +212,8 @@ THaAnalyzer::Stage_t* THaAnalyzer::DefineStage( const Stage_t* item )
     fStages = tmp;
     fNStages = newmax;
   }
-  return (Stage_t*)memcpy(fStages+item->key,item,sizeof(Stage_t));
+  return static_cast<Stage_t*>
+    ( memcpy(fStages+item->key,item,sizeof(Stage_t)) );
 }
 
 //_____________________________________________________________________________
@@ -233,7 +234,8 @@ THaAnalyzer::Counter_t* THaAnalyzer::DefineCounter( const Counter_t* item )
     fCounters = tmp;
     fNCounters = newmax;
   }
-  return (Counter_t*)memcpy(fCounters+item->key,item,sizeof(Counter_t));
+  return static_cast<Counter_t*>
+    ( memcpy(fCounters+item->key,item,sizeof(Counter_t)) );
 }
 
 //_____________________________________________________________________________
@@ -838,13 +840,9 @@ void THaAnalyzer::SetCrateMapFileName( const char* name )
   // Set name of file from which to read the crate map. 
   // For simplicity, a simple string like "mymap" is automatically
   // converted to "db_mymap.dat". See THaAnalysisObject::GetDBFileList
+  // Must be called before initialization.
 
-  if( !name || !*name )
-    // Use default map
-    name = "";
-
-  THaEvData::SetCrateMapName(name);
-  return;
+  THaEvData::SetDefaultCrateMapName( name );
 }
 
 //_____________________________________________________________________________

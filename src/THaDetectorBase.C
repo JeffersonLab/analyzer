@@ -15,18 +15,19 @@
 
 #include "THaDetectorBase.h"
 #include "THaDetMap.h"
+#include "TMath.h"
 #include "VarType.h"
 
 using std::vector;
 
 //_____________________________________________________________________________
-THaDetectorBase::THaDetectorBase( const char* name, 
+THaDetectorBase::THaDetectorBase( const char* name,
 				  const char* description ) :
   THaAnalysisObject(name,description), fNelem(0)
 {
   // Normal constructor. Creates an empty detector map.
 
-  fSize[0] = fSize[1] = fSize[2] = 0.0;
+  fSize[0] = fSize[1] = fSize[2] = kBig;
   fDetMap = new THaDetMap;
 }
 
@@ -60,6 +61,18 @@ Int_t THaDetectorBase::FillDetMap( const vector<Int_t>& values, UInt_t flags,
 	   "(wrong number of values). Check database." );
   }
   return ret;
+}
+
+//_____________________________________________________________________________
+Bool_t THaDetectorBase::IsInActiveArea( Double_t x, Double_t y ) const
+{
+  // Check if given (x,y) coordinates are inside this detector's active area
+  // (defined by fOrigin/fSize)
+
+  return ( x >= fOrigin.X()-fSize[0] &&
+	   x <= fOrigin.X()+fSize[0] &&
+	   y >= fOrigin.Y()-fSize[1] &&
+	   y <= fOrigin.Y()+fSize[1] );
 }
 
 //_____________________________________________________________________________

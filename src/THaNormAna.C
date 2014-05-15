@@ -122,7 +122,7 @@ THaNormAna::~THaNormAna()
   delete [] norm_plus;
   delete [] norm_minus;
   for (vector<BRocScaler*>::iterator ir = fRocScaler.begin();
-       ir != fRocScaler.end(); ir++) delete *ir;
+       ir != fRocScaler.end(); ++ir) delete *ir;
   SetupRawData( NULL, kDelete ); 
 
 }

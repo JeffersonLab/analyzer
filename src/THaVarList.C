@@ -155,7 +155,6 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
       return 0;
 
   Bool_t        function   =  s[ndot].EndsWith("()");
-  TMethodCall*  theMethod  =  0;
   TClass*       theClass   =  0;
   ULong_t       loc        =  (ULong_t)obj;
   void**        ploc;
@@ -255,8 +254,8 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
     }
 
   } else {
-
     // Process member functions
+    TMethodCall* theMethod = 0;
 
     TString funcName(s[ndot]);
     Ssiz_t i = funcName.Index( '(' );
@@ -335,8 +334,8 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
     default:
       Warning( errloc, "Undefined return type for function %s. "
 	       "Variable %s not defined.", s[ndot].Data(), name.Data() );
-      return 0;
       delete theMethod;
+      return 0;
       break;
     }
     var = new THaVar( name, desc, (void*)loc, type, ((ndot==2) ? 0 : -1),

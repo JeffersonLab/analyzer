@@ -276,8 +276,10 @@ static Int_t CheckDBVersion( FILE* file )
   char* buf = new char[bufsiz];
   rewind(file);
   const char* s = fgets(buf,bufsiz,file);
-  if( !s ) // No first line? Not our problem...
+  if( !s ) { // No first line? Not our problem...
+    delete [] buf;
     return 1;
+  }
   TString line(buf);
   delete [] buf;
   Ssiz_t pos = line.Index(identifier,0,TString::kIgnoreCase);
@@ -321,7 +323,8 @@ static Int_t ReadOldFormatDB( FILE* file, map<TString,TString>& configstr_map )
     if( dbline.empty() ) continue;
     // Tokenize each line read
     TString line( dbline.c_str() );
-    TObjArray* params = line.Tokenize(" \t");
+    auto_ptr<TObjArray> tokens( line.Tokenize(" \t") );
+    TObjArray* params = tokens.get();
     if( params->IsEmpty() || params->GetLast() < 4 ) continue;
     // Determine data type
     bool is_slot = ( GetString(params,1) == "crate" );

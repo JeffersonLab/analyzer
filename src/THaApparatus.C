@@ -146,7 +146,7 @@ THaDetector* THaApparatus::GetDetector( const char* name )
   // Find the named detector and return a pointer to it. 
   // This is useful for specialized processing.
 
-  return reinterpret_cast<THaDetector*>( fDetectors->FindObject( name ));
+  return static_cast<THaDetector*>( fDetectors->FindObject( name ));
 }
 
 //_____________________________________________________________________________
