@@ -17,9 +17,15 @@
 using namespace std;
 
 ToyPhysicsEvtHandler::ToyPhysicsEvtHandler() { 
+  rocnum = new Int_t[MAXROC];
+  rocpos = new Int_t[MAXROC];
+  roclen = new Int_t[MAXROC];
 }
 
 ToyPhysicsEvtHandler::~ToyPhysicsEvtHandler() { 
+  delete [] rocnum;
+  delete [] rocpos;
+  delete [] roclen;
 }
 
 Int_t ToyPhysicsEvtHandler::Decode(THaEvData *evdata) {
@@ -36,7 +42,6 @@ Int_t ToyPhysicsEvtHandler::Decode(THaEvData *evdata) {
   // Set pos to start of first ROC data bank
   Int_t pos = evdata->GetRawData(2)+3;  // should be 7
   Int_t nroc = 0;
-  Int_t irn[MAXROC];   // Lookup table i-th ROC found -> ROC number
   while( pos+1 < evdata->GetRawData(0)+1 && nroc < MAXROC ) {
     Int_t len  = evdata->GetRawData(pos);
     Int_t iroc = (evdata->GetRawData(pos+1)&0xff0000)>>16;
@@ -51,9 +56,9 @@ Int_t ToyPhysicsEvtHandler::Decode(THaEvData *evdata) {
       return HED_ERR;
     }
     // Save position and length of each found ROC data block
-    rocdat[iroc].pos  = pos;
-    rocdat[iroc].len  = len;
-    irn[nroc++] = iroc;
+    rocpos[iroc]  = pos;
+    roclen[iroc]  = len;
+    rocnum[nroc++] = iroc;
     pos += len+1;
   }
 
@@ -61,7 +66,7 @@ Int_t ToyPhysicsEvtHandler::Decode(THaEvData *evdata) {
   // This is not part of the loop above because it may exit prematurely due 
   // to errors, which would leave the rocdat[] array incomplete.
   for( Int_t i=0; i<nroc; i++ ) {
-    Int_t iroc = irn[i];
+    Int_t iroc = rocnum[i];
     const RocDat_t* proc = rocdat+iroc;
     Int_t ipt = proc->pos + 1;
     Int_t iptmax = proc->pos + proc->len;
@@ -88,7 +93,6 @@ Int_t ToyPhysicsEvtHandler::FindRocs(const Int_t *evbuffer) {
   // Set pos to start of first ROC data bank
   Int_t pos = evbuffer[2]+3;  // should be 7
   Int_t nroc = 0;
-  Int_t irn[MAXROC];   // Lookup table i-th ROC found -> ROC number
   while( pos+1 < evbuffer[0]+1 && nroc < MAXROC ) {
     Int_t len  = evbuffer[pos];
     Int_t iroc = (evbuffer[pos+1]&0xff0000)>>16;
@@ -103,9 +107,9 @@ Int_t ToyPhysicsEvtHandler::FindRocs(const Int_t *evbuffer) {
       return HED_ERR;
     }
     // Save position and length of each found ROC data block
-    rocdat[iroc].pos  = pos;
-    rocdat[iroc].len  = len;
-    irn[nroc++] = iroc;
+    rocpos[iroc]  = pos;
+    roclen[iroc]  = len;
+    rocnum[nroc++] = iroc;
     pos += len+1;
   }
 

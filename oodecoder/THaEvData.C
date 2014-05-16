@@ -25,10 +25,10 @@
 #include "THaCrateMap.h"
 #include "THaUsrstrutils.h"
 #include "THaBenchmark.h"
-#include "ToyModule.h"
-#include "ToyModuleX.h"
-#include "ToyFastbusModule.h"
-#include "Lecroy1877Module.h"
+//#include "ToyModule.h"
+//#include "ToyModuleX.h"
+//#include "ToyFastbusModule.h"
+//#include "Lecroy1877Module.h"
 #include "TError.h"
 #include <cstring>
 #include <cstdio>
@@ -329,9 +329,9 @@ int THaEvData::init_slotdata(const THaCrateMap* map)
   }
 // Toy code to test modules.  The definition of modules will
 //      ultimately come from THaCrateMap.  And no, I won't copy pointers.
-  Int_t crate = 1;  Int_t slot = 9;
-  Int_t ics = idx(crate, slot);
-  Lecroy1877Module *module = new Lecroy1877Module(crate, slot);
+//  Int_t crate = 1;  Int_t slot = 9;
+//  Int_t ics = idx(crate, slot);
+//  Lecroy1877Module *module = new Lecroy1877Module(crate, slot);
 //  crateslot[ics]->loadModule(module);  
 // End, toy code
 

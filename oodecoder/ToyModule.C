@@ -9,6 +9,8 @@
 /////////////////////////////////////////////////////////////////////
 
 #include "ToyModule.h"
+#include "Lecroy1877Module.h"
+#include "ToyModuleX.h"
 #include "THaEvData.h"
 #include "TMath.h"
 #include <iostream>
@@ -17,9 +19,11 @@
 
 using namespace std;
 
+typedef ToyModule::TypeSet_t  TypeSet_t;
+typedef ToyModule::TypeIter_t TypeIter_t;
 
-ToyModule::ToyModule() { 
-}
+TypeIter_t Lecroy1877Module::fgThisType = DoRegister( ToyModuleType( "Lecroy1877Module" ));
+TypeIter_t ToyModuleX::fgThisType = DoRegister( ToyModuleType( "ModuleX" ));
 
 ToyModule::ToyModule(Int_t crate, Int_t slot) : fCrate(crate), fSlot(slot), fNumWords(0) { 
 }
@@ -47,6 +51,40 @@ void ToyModule::Create(const ToyModule& rhs) {
   fSlot = rhs.fSlot;
   fNumWords = rhs.fNumWords;
 
+}
+
+//_____________________________________________________________________________
+TypeSet_t& ToyModule::fgToyModuleTypes()
+{
+  // Local storage for all defined Module types. Initialize here on first use
+  // (cf. http://www.parashift.com/c++-faq/static-init-order-on-first-use-members.html)
+
+  static TypeSet_t* fgToyModuleTypes = new TypeSet_t;
+
+  return *fgToyModuleTypes;
+}
+
+//_____________________________________________________________________________
+TypeIter_t ToyModule::DoRegister( const ToyModuleType& info )
+{
+  // Add given info in fgBdataLocTypes
+
+  if( !info.fClassName ||!*info.fClassName ) {
+    ::Error( "ToyModule::DoRegister", "Attempt to register empty class name. "
+	     "Coding error. Call expert." );
+    return fgToyModuleTypes().end();
+  }
+
+  pair< TypeIter_t, bool > ins = fgToyModuleTypes().insert(info);
+
+  if( !ins.second ) {
+    ::Error( "ToyModule::DoRegister", "Attempt to register duplicate database "
+	     "class \"%s\". Coding error. Call expert.", info.fClassName );
+    return fgToyModuleTypes().end();
+  }
+  // NB: std::set guarantees that iterators remain valid on further insertions,
+  // so this return value will remain good, unlike, e.g., std::vector iterators.
+  return ins.first;
 }
 
 

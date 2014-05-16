@@ -7,7 +7,7 @@
 #include "DecoderGlobals.h"
 #include "ToyFastbusModule.h"
 #include "ToyModule.h"
-#include "THaEvData.h"
+//#include "THaEvData.h"
 #include "TMath.h"
 #include "Rtypes.h"
 #include <iostream>
@@ -19,11 +19,11 @@ ToyFastbusModule::ToyFastbusModule(Int_t crate, Int_t slot) : ToyModule(crate, s
   fNoWdCnt=1;
   if (fCrate < 0 || fCrate > MAXROC) {
        cerr << "ERROR: crate out of bounds"<<endl;
-       fCrate = -1;
+       fCrate = 0;
   }
   if (fSlot < 0 || fSlot > MAXSLOTS_FASTBUS) {
        cerr << "ERROR: slot out of bounds"<<endl;
-       fSlot = -1;
+       fSlot = 0;
   }
 }
 

@@ -13,6 +13,7 @@
 #include "ToyModuleX.h"
 #include "THaEvData.h"
 #include "TMath.h"
+#include "TClass.h"
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -28,15 +29,53 @@ ToyModuleCollect::~ToyModuleCollect() {
 Int_t ToyModuleCollect::Init() {
   // Create a list of the (finite number of) possible modules
   // If a new module comes into existance it must be added here.
-  
-  fModuleList->insert(make_pair("1877",new LeCroy1877Module()));
-  fModuleList->insert(make_pair("ModuleX",new ToyModuleX()));
 
-  ProcessCrateMap();  
+   Int_t err=0;  
+
+   for( ToyModule::TypeIter_t it = ToyModule::fgToyModuleTypes().begin();
+       !err && it != ToyModule::fgToyModuleTypes().end(); ++it ) {
+    const ToyModule::ToyModuleType& loctype = *it;
+
+    // Get the ROOT class for this type
+    cout << "loctype.fClassName  "<< loctype.fClassName<<endl;
+
+    //    assert( loctype.fClassName && *loctype.fClassName );
+    if( !loctype.fTClass ) {
+      loctype.fTClass = TClass::GetClass( loctype.fClassName );
+
+      cout << "loctype.fTClass "<<loctype.fTClass<<endl;
+#ifdef THING
+      if( !loctype.fTClass ) {
+	// Probably typo in the call to ToyModule::DoRegister
+        
+	Error( Here(here), "No class defined for data type \"%s\". Programming "
+	       "error. Call expert.", loctype.fClassName );
+	err = -1;
+	break;
+      }
+#endif
+    }
+
+    if( !loctype.fTClass->InheritsFrom( ToyModule::Class() )) {
+      cout << "does not inherit from class"<<endl;
+
+#ifdef THING
+      Error( Here(here), "Class %s is not a ToyModule. Programming error. "
+	     "Call expert.", loctype.fTClass->GetName() );
+      err = -1;
+      break;
+#endif
+
+    } else {
+      cout << "DOES inherit from class"<<endl;
+    }
+   }    
+
+  return ProcessCrateMap();  
 
 }
 
-Int_t ToyModuleCollect::ProcessCrateMap() {
+Int_t ToyModuleCollect::ProcessCrateMap(void) {
 
   // Pretend we're reading in a cratemap and encounter these modules
 
@@ -48,20 +87,15 @@ Int_t ToyModuleCollect::ProcessCrateMap() {
   strmodule[3] = "ModuleX";
   strmodule[4] = "1877";
 
-  const ToyModule& modtype;
+  const ToyModule *modtype;
 
   for (Int_t islot=0; islot < 5; islot++) {
 
-    map< string, ToyModule *module >::const_iterator it =
-           fModuleList.find(strmodule[islot]);
-  
-    if (it != fModuleList.end()) modtype = it->second;
-
-    cout << "modtype.fClassName "<<modtype.fClassName<<endl;
-    cout << "modtype.fName "<<modtype.fName<<endl;
-    cout << "modtype.fTClass "<<modtype.fTClass<<endl;
+    // do something ...
 
   }
+
+  return 1;
     
 
 }
