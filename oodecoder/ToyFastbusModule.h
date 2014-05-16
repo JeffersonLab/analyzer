@@ -25,7 +25,7 @@ class ToyFastbusModule : public ToyModule {
 
 public:
 
-   ToyFastbusModule();
+   ToyFastbusModule() {};
    ToyFastbusModule(Int_t crate, Int_t slot);
    virtual ~ToyFastbusModule(); 
 
@@ -36,13 +36,14 @@ public:
           return (rdata&fWdcntMask)>>fWdcntShift; 
    };
    Int_t Data(Int_t rdata);
+         
 
 protected:
 
    Int_t fSlotMask, fSlotShift;
    Int_t fChanMask, fChanShift;
    Int_t fDataMask,  fDataShift;
-   Int_t fWdcnt, fWdcntMask, fWdcntShift;
+   Int_t fWdcntMask, fWdcntShift;
    Int_t fNoWdCnt;
 
 private:

@@ -29,6 +29,7 @@ public:
 
 private:
 
+   static TypeIter_t fgThisType;
    Int_t slotmask, chanmask, datamask;
    ClassDef(ToyModuleX,0)  // Module type "X"
 

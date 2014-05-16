@@ -32,6 +32,8 @@ public:
 
 private:
 
+   static TypeIter_t fgThisType;
+
    Lecroy1877Module(const Lecroy1877Module &fh);
    Lecroy1877Module& operator=(const Lecroy1877Module &fh);
 

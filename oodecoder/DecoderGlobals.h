@@ -1,5 +1,9 @@
+#ifndef DecoderGlobals_
+#define DecoderGlobals_
 
-  static const Int_t MAXROC = 32;  
+#include "Rtypes.h"
+
+#define MAXROC  32;  
   static const Int_t MAXSLOT = 27;  
 
   static const Int_t MAX_PHYS_EVTYPE  = 14;  // Types up to this are physics
@@ -18,3 +22,5 @@
 
   enum { HED_OK = 0, HED_WARN = -63, HED_ERR = -127, HED_FATAL = -255 };
   enum { MAX_PSFACT = 12 };
+
+#endif

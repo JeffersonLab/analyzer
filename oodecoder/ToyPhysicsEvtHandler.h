@@ -5,7 +5,7 @@
 //
 //   NEW STUFF (the entire class)
 //   ToyPhysicsEvtHandler
-//   Abstract class to handle different types of events.
+//   Class to handle physics triggers, which contain ROCs
 //   author  Robert Michaels (rom@jlab.org)
 //
 /////////////////////////////////////////////////////////////////////
@@ -14,6 +14,7 @@
 #include <map>
 #include <vector>
 #include "Rtypes.h"
+#include "DecoderGlobals.h"
 #include "THaString.h"
 #include "TNamed.h"
 
@@ -41,7 +42,7 @@ class FlagData : public TNamed {
     isLoaded=kTRUE;
   }
   Bool_t IsLoaded() { return isLoaded; };
-  void Clear() { isLoaded=kFALSE; }    
+  void ClearLoad() { isLoaded=kFALSE; }    
   // I think there is a GetName for TNamed -- check
   Float_t GetData(Int_t i=0) { 
     if (i >= 0 &&  i < size) return fData[i];
@@ -71,16 +72,9 @@ private:
    ToyPhysicsEvtHandler& operator=(const ToyPhysicsEvtHandler &fh);
 
    Int_t FindRocs(const Int_t *evbuffer);
-   Int_t irn[MAXROC];
-   struct RocDat_t {           // ROC raw data descriptor
-        Int_t pos;             // position in evbuffer[]
-        Int_t len;             // length of data
-   } rocdat[MAXROC];
-
-   Int_t *idxdr;
+   Int_t *rocnum, *rocpos, *roclen;
    vector <FlagData *> flagdata;
    Int_t ProcFlags(THaEvData*, Int_t loc1);
-
 
    ClassDef(ToyPhysicsEvtHandler,0)  // Physics Event handler
 

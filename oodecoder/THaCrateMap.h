@@ -20,6 +20,7 @@
 
 #include "Rtypes.h"
 #include "TString.h"
+#include "DecoderGlobals.h"
 #include <cassert>
 
 class ToyModule;
@@ -79,9 +80,6 @@ class THaCrateMap
      enum ECrateCode { kUnknown, kFastbus, kVME, kScaler, kCamac };
 
      TString fDBfileName;             // Database file name
-  //FIXME: synchronize MAXROC/MAXSLOT with same parameters in THaEvData
-     static const int MAXROC = 32;
-     static const int MAXSLOT = 27;
   //FIXME: replace parallel arrays with structure
      TString crate_type[MAXROC];
      ECrateCode crate_code[MAXROC];
