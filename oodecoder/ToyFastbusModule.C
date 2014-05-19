@@ -21,7 +21,7 @@ ToyFastbusModule::ToyFastbusModule(Int_t crate, Int_t slot) : ToyModule(crate, s
        cerr << "ERROR: crate out of bounds"<<endl;
        fCrate = 0;
   }
-  if (fSlot < 0 || fSlot > MAXSLOTS_FASTBUS) {
+  if (fSlot < 0 || fSlot > MAXSLOT_FB) {
        cerr << "ERROR: slot out of bounds"<<endl;
        fSlot = 0;
   }
@@ -30,6 +30,9 @@ ToyFastbusModule::ToyFastbusModule(Int_t crate, Int_t slot) : ToyModule(crate, s
 ToyFastbusModule::ToyFastbusModule(const ToyFastbusModule& rhs) {
    Create(rhs);
 }
+
+ToyFastbusModule::~ToyFastbusModule() {
+};
 
 
 ToyFastbusModule &ToyFastbusModule::operator=(const ToyFastbusModule& rhs) {

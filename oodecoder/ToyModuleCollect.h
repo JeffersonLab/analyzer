@@ -18,7 +18,6 @@
 
 using namespace std;
 
-class ToyModule;
 
 class ToyModuleCollect  {
 

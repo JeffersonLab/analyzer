@@ -23,7 +23,7 @@ typedef ToyModule::TypeSet_t  TypeSet_t;
 typedef ToyModule::TypeIter_t TypeIter_t;
 
 TypeIter_t Lecroy1877Module::fgThisType = DoRegister( ToyModuleType( "Lecroy1877Module" ));
-TypeIter_t ToyModuleX::fgThisType = DoRegister( ToyModuleType( "ModuleX" ));
+TypeIter_t ToyModuleX::fgThisType = DoRegister( ToyModuleType( "ToyModuleX" ));
 
 ToyModule::ToyModule(Int_t crate, Int_t slot) : fCrate(crate), fSlot(slot), fNumWords(0) { 
 }

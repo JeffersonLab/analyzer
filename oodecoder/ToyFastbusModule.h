@@ -9,8 +9,6 @@
 //
 /////////////////////////////////////////////////////////////////////
 
-#define MAXSLOTS_FASTBUS 26
-
 #include <string>
 #include <map>
 #include <vector>
@@ -18,8 +16,6 @@
 #include "TNamed.h"
 #include "ToyModule.h"
 
-class THaCrateMap;
-class THaEvData;
 
 class ToyFastbusModule : public ToyModule {
 
@@ -35,15 +31,15 @@ public:
           if (fNoWdCnt) return -1; 
           return (rdata&fWdcntMask)>>fWdcntShift; 
    };
-   Int_t Data(Int_t rdata);
+   Int_t Data(Int_t rdata) { return (rdata&fDataMask)>>fDataShift; };
          
 
 protected:
 
+   Int_t fWdcntMask, fWdcntShift;
    Int_t fSlotMask, fSlotShift;
    Int_t fChanMask, fChanShift;
    Int_t fDataMask,  fDataShift;
-   Int_t fWdcntMask, fWdcntShift;
    Int_t fNoWdCnt;
 
 private:

@@ -28,7 +28,6 @@ public:
      bool operator<( const ToyModuleType& rhs ) const { return fClassName < rhs.fClassName; }
      const char*      fClassName;
      mutable TClass*  fTClass;
-
   };
 
   ToyModule(Int_t crate, Int_t slot);
@@ -38,7 +37,7 @@ public:
   static TypeSet_t& fgToyModuleTypes();
   
   ToyModule() {};  // for ROOT TClass & I/O
-  //  ToyModule(Int_t crate, Int_t slot);  
+
   virtual ~ToyModule();  
 
   virtual void Init(Int_t crate, Int_t slot) { fCrate=crate; fSlot=slot; };

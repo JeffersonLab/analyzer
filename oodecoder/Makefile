@@ -2,8 +2,8 @@
 # R. Michaels, rom@jlab.org, Mar 2001
 #
 # Test Executables:
-# tcrmap   --  test of crate map
 # tmodco   --  test of module scheme
+# tcrmap   --  test of crate map
 # tstoy    --  tests of toy decoder
 # tstcoda  --  test of abstract interface to THaCodaFile and THaEtClient.
 # tstio    --  simple tests of CODA I/O from a file.
@@ -203,10 +203,8 @@ SRC = THaUsrstrutils.C THaCrateMap.C THaCodaData.C \
       THaEvData.C evio.C THaCodaDecoder.C \
       ToyCodaDecoder.C ToyEvtTypeHandler.C \
       ToyPhysicsEvtHandler.C ToyScalerEvtHandler.C \
-      ToyModule.C ToyModuleX.C ToyFastbusModule.C ToyModuleCollect.C 
-
-MODSRC = ToyModule.C Lecroy1877Module.C ToyModuleX.C \
-      ToyFastbusModule.C ToyModuleCollect.C 
+      ToyModule.C ToyModuleX.C ToyFastbusModule.C ToyModuleCollect.C \
+      Lecroy1877Module.C ToyModuleCollect.C
 
 PROGS = tcrmap tmodco tstoy tstio tdecpr tdecex prfact epicsd 
 # If you want to use the ET system at Jlab.
@@ -225,7 +223,6 @@ endif
 SRC += swap_util.C swapped_intcpy.c
 DEPS = $(patsubst %.c,%.d,$(SRC:.C=.d))
 DECODE_OBJS = $(patsubst %.c,%.o,$(SRC:%.C=%.o)) THaDecDict.o
-MOD_OBJS = $(patsubst %.c,%.o,$(MODSRC:%.C=%.o)) THaDecDict.o
 
 ifndef STANDALONE
   all:  $(LIBDIR)/libdc.so.$(VERSION)
@@ -279,7 +276,7 @@ tmodco: tmodco_main.o $(MODOBJS) $(SRC) $(EVIO_LIB) $(MAINOBJS)
 
 tcrmap: tcrmap_main.o THaCrateMap.o $(SRC) $(EVIO_LIB) $(MAINOBJS)
 	rm -f $@
-	$(CXX) $(CXXFLAGS) -o $@ tcrmap_main.o THaCrateMap.o $(ALL_LIBS) $(MAINOBJS)
+	$(CXX) $(CXXFLAGS) -o $@ tcrmap_main.o $(DECODE_OBJS) $(ALL_LIBS) $(MAINOBJS)
 
 tstoy: tstoy_main.o $(DECODE_OBJS) $(SRC) $(EVIO_LIB) $(MAINOBJS)
 	rm -f $@

@@ -4,7 +4,7 @@
 //
 /////////////////////////////////////////////////////////////////////
 
-#include "LeCroy1877Module.h"
+#include "Lecroy1877Module.h"
 #include "ToyModule.h"
 #include "THaEvData.h"
 #include "TMath.h"
@@ -14,7 +14,7 @@
 using namespace std;
 
 // crate, etc (here, toy data) would ultimately come from crate map
-LeCroy1877Module::LeCroy1877Module(Int_t crate, Int_t slot) : ToyFastBusModule(crate, slot) {
+Lecroy1877Module::Lecroy1877Module(Int_t crate, Int_t slot) : ToyFastbusModule(crate, slot) {
   fChanMask = 0xfe0000;
   fDataMask = 0xffff;
   fWdcntMask = 0x7ff;
@@ -22,8 +22,8 @@ LeCroy1877Module::LeCroy1877Module(Int_t crate, Int_t slot) : ToyFastBusModule(c
   fNoWdCnt = 0;
 }
 
-LeCroy1877Module::~LeCroy1877Module() { 
+Lecroy1877Module::~Lecroy1877Module() { 
 }
 
 
-ClassImp(LeCroy1877Module)
+ClassImp(Lecroy1877Module)

@@ -30,20 +30,32 @@ Int_t ToyModuleCollect::Init() {
   // Create a list of the (finite number of) possible modules
   // If a new module comes into existance it must be added here.
 
+  cout << "aaaa "<<endl;
+
    Int_t err=0;  
+
+  cout << "bbbb "<<endl;
 
    for( ToyModule::TypeIter_t it = ToyModule::fgToyModuleTypes().begin();
        !err && it != ToyModule::fgToyModuleTypes().end(); ++it ) {
     const ToyModule::ToyModuleType& loctype = *it;
+
+  cout << "cccc "<<endl;
 
     // Get the ROOT class for this type
     cout << "loctype.fClassName  "<< loctype.fClassName<<endl;
 
     //    assert( loctype.fClassName && *loctype.fClassName );
     if( !loctype.fTClass ) {
+
+  cout << "dddd "<<endl;
+
       loctype.fTClass = TClass::GetClass( loctype.fClassName );
 
+      cout << "Stuff "<<loctype.fClassName<<"    "<< TClass::GetClass( loctype.fClassName )<<endl;
+
       cout << "loctype.fTClass "<<loctype.fTClass<<endl;
+   
 #ifdef THING
       if( !loctype.fTClass ) {
 	// Probably typo in the call to ToyModule::DoRegister
@@ -55,6 +67,11 @@ Int_t ToyModuleCollect::Init() {
       }
 #endif
     }
+
+
+    cout << "eeee "<<ToyModule::Class()<<endl;
+
+    if (loctype.fTClass) {
 
     if( !loctype.fTClass->InheritsFrom( ToyModule::Class() )) {
       cout << "does not inherit from class"<<endl;
@@ -69,7 +86,12 @@ Int_t ToyModuleCollect::Init() {
     } else {
       cout << "DOES inherit from class"<<endl;
     }
+    }
    }    
+
+
+   
+  cout << "ffff "<<endl;
 
   return ProcessCrateMap();  
 

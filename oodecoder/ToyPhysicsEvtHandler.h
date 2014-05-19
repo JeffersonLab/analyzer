@@ -75,7 +75,11 @@ private:
    Int_t *rocnum, *rocpos, *roclen;
    vector <FlagData *> flagdata;
    Int_t ProcFlags(THaEvData*, Int_t loc1);
-
+   struct RocDat_t {           // ROC raw data descriptor
+     Int_t pos;                // position in evbuffer[]
+     Int_t len;                // length of data
+   } rocdat[32];
+ 
    ClassDef(ToyPhysicsEvtHandler,0)  // Physics Event handler
 
 };
