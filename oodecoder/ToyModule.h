@@ -40,13 +40,14 @@ public:
 
   virtual ~ToyModule();  
 
-  virtual void Init(Int_t crate, Int_t slot) { fCrate=crate; fSlot=slot; };
+  virtual void Init(TString name, Int_t crate, Int_t slot) { fName = name; fCrate=crate; fSlot=slot; };
   virtual Bool_t IsSlot(Int_t rdata)=0;
   virtual Int_t GetNumWords() { return fNumWords; };
   virtual Int_t Decode(THaEvData *evdata, Int_t start=0)=0;
   Int_t GetCrate() { return fCrate; };
   Int_t GetSlot() { return fSlot; };
   ToyModule& operator=(const ToyModule &rhs);
+  virtual void DoPrint();
 
 protected:
 

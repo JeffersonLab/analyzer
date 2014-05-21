@@ -27,32 +27,10 @@ ToyFastbusModule::ToyFastbusModule(Int_t crate, Int_t slot) : ToyModule(crate, s
   }
 }
 
-ToyFastbusModule::ToyFastbusModule(const ToyFastbusModule& rhs) {
-   Create(rhs);
-}
-
 ToyFastbusModule::~ToyFastbusModule() {
 };
 
 
-ToyFastbusModule &ToyFastbusModule::operator=(const ToyFastbusModule& rhs) {
-  if ( &rhs != this) {
-    //    Uncreate();  // need a destructor method if we allocate memory 
-    //                 (so far that's not the design)
-    Create(rhs);
-  }
-  return *this;
-} 
-
-void ToyFastbusModule::Create(const ToyFastbusModule& rhs) {
-  ToyModule::Create(rhs);
-  fSlotMask = rhs.fSlotMask;
-  fSlotShift = rhs.fSlotShift;
-  fChanMask = rhs.fChanMask;
-  fChanShift = rhs.fChanShift;
-  fDataMask = rhs.fDataMask;
-  fDataShift = rhs.fDataShift;
-}
 
 
 ClassImp(ToyFastbusModule)

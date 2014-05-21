@@ -23,6 +23,7 @@ typedef ToyModule::TypeSet_t  TypeSet_t;
 typedef ToyModule::TypeIter_t TypeIter_t;
 
 TypeIter_t Lecroy1877Module::fgThisType = DoRegister( ToyModuleType( "Lecroy1877Module" ));
+TypeIter_t ToyFastbusModule::fgThisType = DoRegister( ToyModuleType( "ToyFastbusModule" ));
 TypeIter_t ToyModuleX::fgThisType = DoRegister( ToyModuleType( "ToyModuleX" ));
 
 ToyModule::ToyModule(Int_t crate, Int_t slot) : fCrate(crate), fSlot(slot), fNumWords(0) { 
@@ -52,6 +53,14 @@ void ToyModule::Create(const ToyModule& rhs) {
   fNumWords = rhs.fNumWords;
 
 }
+
+void ToyModule::DoPrint() {
+
+  cout << "Module   name = "<<fName<<endl;
+  cout << "Crate  "<<fCrate<<"     slot "<<fSlot<<endl;
+
+}
+
 
 //_____________________________________________________________________________
 TypeSet_t& ToyModule::fgToyModuleTypes()

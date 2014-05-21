@@ -14,8 +14,6 @@
 
 using namespace std;
 
-ToyModuleX::ToyModuleX() { 
-}
 
 ToyModuleX::ToyModuleX(Int_t crate, Int_t slot) { 
   fCrate = crate;

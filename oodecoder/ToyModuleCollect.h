@@ -18,26 +18,22 @@
 
 using namespace std;
 
-
 class ToyModuleCollect  {
 
 public:
 
-   ToyModuleCollect();  
-   virtual ~ToyModuleCollect();  
+  ToyModuleCollect() {};  
+  virtual ~ToyModuleCollect() {};  
 
    THashList fModuleList;
 
    Int_t Init();
-
 
 private:
 
    Int_t ProcessCrateMap(void);
 
    ClassDef(ToyModuleCollect,0)  // A set of modules
-
-
 
 };
 

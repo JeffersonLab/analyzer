@@ -20,35 +20,22 @@
 
 using namespace std;
 
-ToyModuleCollect::ToyModuleCollect() { 
-}
-
-ToyModuleCollect::~ToyModuleCollect() {
-}
-
-Int_t ToyModuleCollect::Init() {
+Int_t ToyModuleCollect::Init(void) {
   // Create a list of the (finite number of) possible modules
   // If a new module comes into existance it must be added here.
 
-  cout << "aaaa "<<endl;
+    Int_t err=0;  
 
-   Int_t err=0;  
 
-  cout << "bbbb "<<endl;
-
-   for( ToyModule::TypeIter_t it = ToyModule::fgToyModuleTypes().begin();
+    for( ToyModule::TypeIter_t it = ToyModule::fgToyModuleTypes().begin();
        !err && it != ToyModule::fgToyModuleTypes().end(); ++it ) {
     const ToyModule::ToyModuleType& loctype = *it;
-
-  cout << "cccc "<<endl;
 
     // Get the ROOT class for this type
     cout << "loctype.fClassName  "<< loctype.fClassName<<endl;
 
     //    assert( loctype.fClassName && *loctype.fClassName );
     if( !loctype.fTClass ) {
-
-  cout << "dddd "<<endl;
 
       loctype.fTClass = TClass::GetClass( loctype.fClassName );
 
@@ -87,39 +74,72 @@ Int_t ToyModuleCollect::Init() {
       cout << "DOES inherit from class"<<endl;
     }
     }
-   }    
+    }
 
-
-   
-  cout << "ffff "<<endl;
-
-  return ProcessCrateMap();  
+    return ProcessCrateMap();  
 
 }
+
 
 Int_t ToyModuleCollect::ProcessCrateMap(void) {
 
   // Pretend we're reading in a cratemap and encounter these modules
 
-  string strmodule[5];
+  TString strmodule[5], modname[5];
 
-  strmodule[0] = "1877";
-  strmodule[1] = "1877";
-  strmodule[2] = "ModuleX";
-  strmodule[3] = "ModuleX";
-  strmodule[4] = "1877";
+  strmodule[0] = "Lecroy1877Module";        modname[0] = "fred";
+  strmodule[1] = "ToyFastbusModule";        modname[1] = "bob";
+  strmodule[2] = "ToyModuleX";              modname[2] = "hip";
+  strmodule[3] = "ToyModuleX";              modname[3] = "norf";
+  strmodule[4] = "Lecroy1877Module";        modname[4] = "abddef";
 
-  const ToyModule *modtype;
+  ToyModule *locmodule;
+
+    Int_t err=0;  
+
+    cout << "ProcessCrateMap ++++++++++++++++++++++++++++ "<<endl;
 
   for (Int_t islot=0; islot < 5; islot++) {
 
-    // do something ...
+    for( ToyModule::TypeIter_t it = ToyModule::fgToyModuleTypes().begin();
+       !err && it != ToyModule::fgToyModuleTypes().end(); ++it ) {
+    const ToyModule::ToyModuleType& loctype = *it;
 
+    // Get the ROOT class for this type
+    cout << "loctype.fClassName  "<< loctype.fClassName<<endl;
+
+    if (strmodule[islot] == loctype.fClassName) {
+
+      cout << "Found Module !!!! "<<modname[islot]<<endl;
+      cout << "fTClass ptr =  "<<loctype.fTClass<<endl;
+
+      locmodule = static_cast<ToyModule*>( loctype.fTClass->New() );
+
+#ifdef THING1
+      if (strmodule[islot]=="Lecroy1877Module") locmodule = new Lecroy1877Module();
+      if (strmodule[islot]=="ToyFastbusModule") locmodule = new ToyFastbusModule();
+      if (strmodule[islot]=="ToyModuleX") locmodule = new ToyModuleX();
+#endif
+
+      cout << "Class name "<<loctype.fTClass->GetName()<<endl;
+
+      cout << "=====================   module pointer "<<locmodule<<"     slot "<<islot<<endl;
+
+      fModuleList.Add(locmodule);
+
+    }
+    
+
+
+    }
   }
+
+  cout << "\n\n Size of fModuleList "<<fModuleList.GetSize()<<endl;
 
   return 1;
     
 
 }
+
 
 ClassImp(ToyModuleCollect)

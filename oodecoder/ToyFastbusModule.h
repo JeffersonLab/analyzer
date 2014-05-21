@@ -33,6 +33,9 @@ public:
    };
    Int_t Data(Int_t rdata) { return (rdata&fDataMask)>>fDataShift; };
          
+   Int_t Decode(THaEvData *evdata, Int_t start) {return 0;};
+
+   Bool_t IsSlot(Int_t rdata) { return (rdata !=0); };
 
 protected:
 
@@ -44,6 +47,7 @@ protected:
 
 private:
 
+   static TypeIter_t fgThisType;
    ToyFastbusModule(const ToyFastbusModule &fh);
    ToyFastbusModule& operator=(const ToyFastbusModule &fh);
    void Create(const ToyFastbusModule& rhs);

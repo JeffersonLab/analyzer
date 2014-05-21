@@ -18,7 +18,7 @@ class ToyModuleX : public ToyModule {
 
 public:
 
-   ToyModuleX();  
+  ToyModuleX() {};  
    ToyModuleX(Int_t crate, Int_t slot);  
    virtual ~ToyModuleX();  
 
