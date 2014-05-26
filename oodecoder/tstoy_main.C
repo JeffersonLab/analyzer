@@ -44,7 +44,7 @@ int main(int argc, char* argv[])
 	 } else {
 
             int *data = datafile.getEvBuffer();
-  	    dump(data);
+	    //  	    dump(data);
 
             evdata->LoadEvent( data );   
 
