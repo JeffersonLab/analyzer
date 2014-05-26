@@ -41,7 +41,7 @@ public:
        THaSlotData(int crate, int slot);
        virtual ~THaSlotData();
        const char* devType() const;             // "adc", "tdc", "scaler"
-       int loadModule(THaCrateMap *map);
+       int loadModule(const THaCrateMap *map);
        int getNumRaw() const { return numraw; };  // Amount of raw CODA data
        int getRawData(int ihit) const;            // Returns raw data words
        int getRawData(int chan, int hit) const;
@@ -52,7 +52,10 @@ public:
        int getCrate() const { return crate; }
        int getSlot()  const { return slot; }
        void clearEvent();                   // clear event counters
+// this version of loadData will be deprecated since the "type" is known by the fModule
        int loadData(const char* type, int chan, int dat, int raw);
+// new version
+       int loadData(int chan, int dat, int raw);
        void define(int crate, int slot, UShort_t nchan=DEFNCHAN, 
 		   UShort_t ndata=DEFNDATA, UShort_t nhitperchan=DEFNHITCHAN );// Define crate, slot
        void print() const;

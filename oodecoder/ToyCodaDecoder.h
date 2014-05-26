@@ -13,7 +13,7 @@
 
 #include "TObject.h"
 #include "TString.h"
-#include "THaSlotData.h"
+#include "THaSlotData.h"1
 #include "TBits.h"
 #include "evio.h"
 #include "THaEvData.h"
@@ -31,6 +31,9 @@ class ToyCodaDecoder : public THaEvData {
  
   virtual Int_t LoadEvent(const Int_t* evbuffer, THaCrateMap* usermap);    
 
+  virtual Int_t GetNslots() { return fNSlotUsed; };
+  virtual Int_t FillCrateSlot(Int_t crate, Int_t ipt);
+
   virtual Int_t GetPrescaleFactor(Int_t trigger) const;
   virtual Int_t GetScaler(const TString& spec, Int_t slot, Int_t chan) const;
   virtual Int_t GetScaler(Int_t roc, Int_t slot, Int_t chan) const;
@@ -47,6 +50,9 @@ class ToyCodaDecoder : public THaEvData {
  protected:
 
   // NEW STUFF
+
+  int init_slotdata(const THaCrateMap *map);
+
   void InitHandlers();
 
   std::vector<ToyEvtTypeHandler *> event_handler;

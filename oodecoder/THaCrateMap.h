@@ -65,7 +65,6 @@ class THaCrateMap
      void setSlotDone();                            // Used to speed up decoder
      int init(TString the_map);                     // Initialize from text-block
      int init(ULong64_t time = 0);                  // Initialize by Unix time.
-     int init_hc(ULong64_t time);                   // Hard-coded crate-map
      void print() const;
 
      static const int CM_OK;
