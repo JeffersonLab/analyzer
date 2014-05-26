@@ -7,12 +7,14 @@
 
 #pragma link C++ class ToyCodaDecoder+;
 #pragma link C++ class ToyEvtTypeHandler+;
-#pragma link C++ class ToyFastbusModule+;  
-#pragma link C++ class ToyModuleCollect+;
 #pragma link C++ class ToyModule+;  
+#pragma link C++ class ToyModuleCollect+;
+#pragma link C++ class ToyFastbusModule+;  
+#pragma link C++ class Lecroy1877Module+;  
 #pragma link C++ class ToyModuleX+;  
 #pragma link C++ class ToyPhysicsEvtHandler+;  
 #pragma link C++ class ToyScalerEvtHandler+;
+
 
 #pragma link C++ class THaCodaData+;
 #pragma link C++ class THaCodaFile+;
