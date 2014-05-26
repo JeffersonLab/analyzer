@@ -36,6 +36,8 @@ Int_t ToyPhysicsEvtHandler::Decode(THaEvData *evdata) {
 #endif
   Int_t status = HED_OK;
 
+  std::cout<<"Into ToyPhysicsEvtHandler::Decode "<<std::endl;
+
   if( (evdata->GetRawData(1)&0xffff) != 0x10cc ) std::cout<<"Warning, header error"<<std::endl;
   if( (evdata->GetRawData(1)>>16) > MAX_PHYS_EVTYPE ) std::cout<<"Warning, Event type makes no sense"<<std::endl;
   memset(rocdat,0,MAXROC*sizeof(RocDat_t));
@@ -62,6 +64,9 @@ Int_t ToyPhysicsEvtHandler::Decode(THaEvData *evdata) {
     pos += len+1;
   }
 
+  std::cout<<"Rocs found "<<std::endl;
+
+
   // Decode each ROC
   // This is not part of the loop above because it may exit prematurely due 
   // to errors, which would leave the rocdat[] array incomplete.
@@ -70,8 +75,9 @@ Int_t ToyPhysicsEvtHandler::Decode(THaEvData *evdata) {
     const RocDat_t* proc = rocdat+iroc;
     Int_t ipt = proc->pos + 1;
     Int_t iptmax = proc->pos + proc->len;
+    std::cout<<"roc  "<<i<<"   ipt "<<ipt<<"   iptmax "<<iptmax<<std::endl;
     while (ipt++ < iptmax) {
-      //      evdata|>FillCrateSlot(iroc,ipt);
+      evdata|>FillCrateSlot(iroc, ipt);
     }
   }
 

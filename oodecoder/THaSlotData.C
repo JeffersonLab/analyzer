@@ -17,7 +17,12 @@
 /////////////////////////////////////////////////////////////////////
 
 #include "ToyModule.h"
+#include "ToyFastbusModule.h"
+#include "Lecroy1877Module.h"
+#include "ToyModuleX.h"
 #include "THaSlotData.h"
+#include "THaCrateMap.h"
+#include "TClass.h"
 #include "TMath.h"
 #include <iostream>
 #include <cstring>
@@ -87,12 +92,63 @@ void THaSlotData::define(int cra, int slo, UShort_t nchan, UShort_t ndata, UShor
   memset(numHits,0,maxc*sizeof(UChar_t));
 }
 
-int THaSlotData::loadModule(THaCrateMap *map) {
-  // do something
-}  
+int THaSlotData::loadModule(const THaCrateMap *map) {
+
+  int modelnum = map->getModel(crate, slot);
+  TString mymodule;
+
+  cout << "mymodule in THaSlotData::loadModule =  "<< map->getModel(crate,slot) << endl;
+
+  // test
+  mymodule = "ToyModuleX";
+  if (modelnum==1877) {
+    mymodule = "Lecroy1877Module";
+  } 
+  if (modelnum==1881) {
+    mymodule = "ToyFastbusModule";
+  } 
+  
+  cout << "mymodule (string)  = "<<mymodule<<endl;
+
+  Int_t err=0;
+
+   for( ToyModule::TypeIter_t it = ToyModule::fgToyModuleTypes().begin();
+       !err && it != ToyModule::fgToyModuleTypes().end(); ++it ) {
+    const ToyModule::ToyModuleType& loctype = *it;
+
+    // Get the ROOT class for this type
+    
+    cout << "loctype.fClassName  "<< loctype.fClassName<<endl;
+    cout << "fTClass ptr =  "<<loctype.fTClass<<endl;
+
+    if( !loctype.fTClass ) {
+
+      loctype.fTClass = TClass::GetClass( loctype.fClassName );
+
+    }
+
+    if (mymodule == loctype.fClassName) {
+
+      cout << "Found Module !!!! "<<mymodule<<endl;
+
+      if (loctype.fTClass) {
+	cout << "Creating fModule"<<endl;
+         fModule= static_cast<ToyModule*>( loctype.fTClass->New() );
+      } else {
+	cout << "SERIOUS problem :  fTClass still zero "<<endl;
+      }
+ 
+      cout << "fModule pointer   "<<fModule <<endl;
+
+
+    }
+
+   }
+}
 
 
 int THaSlotData::loadData(const char* type, int chan, int dat, int raw) {
+  // OLD, DEPRECATED, WILL DISAPPEAR
 // loadData loads the data into storage arrays.
 
   static int very_verb=1;
@@ -124,6 +180,95 @@ int THaSlotData::loadData(const char* type, int chan, int dat, int raw) {
     return SD_WARN;
   }
   if( device.IsNull() ) device = type;
+
+  if (( numchanhit == 0 )||(numHits[chan]==0)) {
+    compressdataindex(numhitperchan);
+    dataindex[firstfreedataidx]=numraw;
+    idxlist[chan]=firstfreedataidx;
+    numMaxHits[chan]=numhitperchan;
+    firstfreedataidx=firstfreedataidx+numhitperchan;
+    chanindex[chan]=numchanhit;
+    chanlist[numchanhit++]=chan;
+  } else {
+    if (numHits[chan]<numMaxHits[chan]) {
+      dataindex[idxlist[chan]+numHits[chan]]=numraw;
+    } else {
+      if (idxlist[chan]+numMaxHits[chan]==firstfreedataidx) {
+	compressdataindex(numhitperchan);
+	dataindex[idxlist[chan]+numHits[chan]]=numraw;
+	numMaxHits[chan]=numMaxHits[chan]+numhitperchan;
+	firstfreedataidx=firstfreedataidx+numhitperchan;
+      } else {
+	compressdataindex(numMaxHits[chan]+numhitperchan);
+	numholesdataidx=numholesdataidx+numMaxHits[chan];
+	for (Int_t i=0; i<numHits[chan]; i++  ) {
+	  dataindex[firstfreedataidx+i]=dataindex[idxlist[chan]+i];
+	}
+	dataindex[firstfreedataidx+numHits[chan]]=numraw;
+	idxlist[chan]=firstfreedataidx;
+	numMaxHits[chan]=numMaxHits[chan]+numhitperchan;
+	firstfreedataidx=firstfreedataidx+numMaxHits[chan];
+      }
+    }
+  }
+
+  // Grow data arrays if really necessary (rare)
+  if( numraw >= allocd ) {
+    UShort_t old_allocd = allocd;
+    allocd *= 2; if( allocd > maxd ) allocd = maxd;
+    int* tmp = new int[allocd];
+    memcpy(tmp,data,old_allocd*sizeof(int));
+    delete [] data; data = tmp;
+    tmp = new int[allocd];
+    memcpy(tmp,rawData,old_allocd*sizeof(int));
+    delete [] rawData; rawData = tmp;
+  }
+  rawData[numraw] = raw;
+  data[numraw++]  = dat;
+  if( numHits[chan] == (UChar_t)~0 ) {
+    if( VERBOSE ) 
+      cout << "THaSlotData: Warning in loadData: too many hits " 
+	   << "for module " << device << " in crate/slot = " 
+	   << dec << crate << " " << slot 
+	   << " chan = " << chan << endl;
+    return SD_WARN;
+  }
+  numHits[chan]++;
+  return SD_OK;
+}
+
+int THaSlotData::loadData(int chan, int dat, int raw) {
+  // NEW, BETTER VERSION
+// loadData loads the data into storage arrays.
+
+  static int very_verb=1;
+
+  if( !didini ) {
+    if (very_verb) {  // this might be your problem.
+      cout << "THaSlotData: ERROR: Did not init slot."<<endl;
+      cout << "  Fix your cratemap."<<endl;
+    }
+    return SD_ERR;
+  }
+  if (chan < 0 || chan >= maxc) {
+    if (VERBOSE) {
+      cout << "THaSlotData: Warning in loadData: channel ";
+      cout <<chan<<" out of bounds, ignored,"
+	   << " on crate " << crate << " slot "<< slot << endl;
+    }
+    return SD_WARN;
+  }
+  if( numraw >= maxd || numchanhit > maxc) {
+    if (VERBOSE) {
+      cout << "THaSlotData: Warning in loadData: too many "
+	   << ((numraw >= maxd ) ? "data words" : "channels")
+	   << " for crate/slot = " 
+	   << crate << " " << slot;
+      cout << ": " << (numraw>=maxd ? numraw : numchanhit) << " seen." 
+	   << endl;
+    }
+    return SD_WARN;
+  }
 
   if (( numchanhit == 0 )||(numHits[chan]==0)) {
     compressdataindex(numhitperchan);

@@ -69,7 +69,7 @@ Int_t ToyCodaDecoder::LoadEvent(const Int_t* evbuffer, THaCrateMap* map)
   assert( fMap || fgNeedInit );
   Int_t ret = HED_OK;
   buffer = evbuffer;
-  if(TestBit(kDebug)) dump(evbuffer);
+  //  if(TestBit(kDebug)) dump(evbuffer);
   if (first_decode || fgNeedInit) {
     ret = init_cmap();
     if( ret != HED_OK ) return ret;
@@ -78,7 +78,7 @@ Int_t ToyCodaDecoder::LoadEvent(const Int_t* evbuffer, THaCrateMap* map)
     // NEW STUFF
     if(first_decode) {
       InitHandlers();
-      first_decode=false;
+      first_decode=kFALSE;
     }
   }
   if( fDoBench ) fBench->Begin("clearEvent");
@@ -89,12 +89,70 @@ Int_t ToyCodaDecoder::LoadEvent(const Int_t* evbuffer, THaCrateMap* map)
   event_type = evbuffer[1]>>16;
   if(event_type <= 0) return HED_ERR;
 // NEW STUFF
-  cout << "Here AAAAA event_type = "<<event_type<<"  "<<evidx[event_type]<<endl;
+  cout << "Here AAAAA event_type = "<<dec<<event_type<<"  "<<evidx[event_type]<<endl;
   if (evidx[event_type] >= 0) {
       event_handler[evidx[event_type]]->Decode(this);
   }
+
+  cout << "num slots ? "<<GetNslots()<<endl;
+
   return ret;
 }
+
+
+// To initialize the THaSlotData member on first call to decoder
+int ToyCodaDecoder::init_slotdata(const THaCrateMap* map)
+{
+  // Update lists of used/clearable slots in case crate map changed
+  cout << "into TOY DECODER init slotdata "<<map<<"   "<<fNSlotUsed<<endl;
+  if(!map) return HED_ERR;
+
+  for (Int_t iroc = 0; iroc<MAXROC; iroc++) {
+    if (  !map->crateUsed(iroc)  ) continue;
+
+    for (Int_t islot=0; islot < MAXSLOT; islot++) {
+
+      if ( !map->slotUsed(iroc,islot) ) continue;
+
+        makeidx(iroc,islot);
+        cout << "Num slots defined "<<GetNslots()<<endl;
+
+    }
+  }
+
+  for( int i=0; i<fNSlotUsed; i++ ) {
+    THaSlotData* crslot = crateslot[fSlotUsed[i]];
+    int crate = crslot->getCrate();
+    int slot  = crslot->getSlot();
+    cout << "print of crate slot ---   crate "<<crate<<"   slot "<<slot<<endl;
+    crslot->print();
+    crslot->loadModule(map);
+    cout << "Dev type xxx  = "<<crslot->devType()<<endl;
+// New(5/2014) line to define the module information
+// TBD    crslot->loadModule(map->GetModuleInfo(crate,slot));
+    if( !map->crateUsed(crate) || !map->slotUsed(crate,slot) ||
+	!map->slotClear(crate,slot)) {
+      for( int k=0; k<fNSlotClear; k++ ) {
+	if( crslot == crateslot[fSlotClear[k]] ) {
+	  for( int j=k+1; j<fNSlotClear; j++ )
+	    fSlotClear[j-1] = fSlotClear[j];
+	  fNSlotClear--;
+	  break;
+	}
+      }
+    }
+    if( !map->crateUsed(crate) || !map->slotUsed(crate,slot)) {
+      for( int j=i+1; j<fNSlotUsed; j++ )
+	fSlotUsed[j-1] = fSlotUsed[j];
+      fNSlotUsed--;
+    }
+  }
+
+
+  return HED_OK;
+
+}
+
 
 //_____________________________________________________________________________
 void ToyCodaDecoder::dump(const Int_t* evbuffer)
@@ -216,13 +274,12 @@ void ToyCodaDecoder::InitHandlers()
   event_handler.push_back(new ToyPhysicsEvtHandler());
   evidx[SCALER_EVTYPE] = event_handler.size();  
   event_handler.push_back(new ToyScalerEvtHandler());
-#ifdef LATER_ON
+#ifdef THING1
   evidx[EPICS_EVTYPE] = event_handler.size();   
   event_handler.push_back(new ToyEpicsEvtHandler());
   evidx[PRESCALE_EVTYPE] = event_handler.size();  
   event_handler.push_back(new ToyPrescaleEvtHandler());
 #endif
-
   cout << "ToyCodaDecoder:  event_handler size "<<dec<<event_handler.size()<<endl;
 
 
