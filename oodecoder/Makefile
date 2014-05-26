@@ -204,7 +204,7 @@ SRC = THaUsrstrutils.C THaCrateMap.C THaCodaData.C \
       ToyCodaDecoder.C ToyEvtTypeHandler.C \
       ToyPhysicsEvtHandler.C ToyScalerEvtHandler.C \
       ToyModule.C ToyModuleX.C ToyFastbusModule.C ToyModuleCollect.C \
-      Lecroy1877Module.C ToyModuleCollect.C
+      Lecroy1877Module.C
 
 PROGS = tcrmap tmodco tstoy tstio tdecpr tdecex prfact epicsd 
 # If you want to use the ET system at Jlab.
