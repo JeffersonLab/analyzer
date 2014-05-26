@@ -271,6 +271,7 @@ void THaEvData::makeidx(int crate, int slot)
   // Activate crate/slot
   int idx = slot+MAXSLOT*crate;
   delete crateslot[idx];  // just in case
+  cout << "Making a new crateslot at   "<<crate<<"  "<<slot<<"   "<<idx<<endl;
   crateslot[idx] = new THaSlotData(crate,slot);
   if( !fMap ) return;
   if( fMap->crateUsed(crate) && fMap->slotUsed(crate,slot)) {
@@ -308,6 +309,7 @@ int THaEvData::init_slotdata(const THaCrateMap* map)
     THaSlotData* crslot = crateslot[fSlotUsed[i]];
     int crate = crslot->getCrate();
     int slot  = crslot->getSlot();
+    crslot->print();
 // New(5/2014) line to define the module information
 // TBD    crslot->loadModule(map->GetModuleInfo(crate,slot));
     if( !map->crateUsed(crate) || !map->slotUsed(crate,slot) ||
@@ -327,6 +329,9 @@ int THaEvData::init_slotdata(const THaCrateMap* map)
       fNSlotUsed--;
     }
   }
+
+  
+
 // Toy code to test modules.  The definition of modules will
 //      ultimately come from THaCrateMap.  And no, I won't copy pointers.
 //  Int_t crate = 1;  Int_t slot = 9;
