@@ -46,6 +46,10 @@
 #include "TDirectory.h"
 #include "THaCrateMap.h"
 
+#include "ToyEvtTypeHandler.h"
+#include "ToyPhysicsEvtHandler.h"
+#include "ToyScalerEvtHandler.h"
+
 #include <fstream>
 #include <algorithm>
 #include <iomanip>
@@ -74,7 +78,7 @@ THaAnalyzer::THaAnalyzer() :
   fStages(NULL), fCounters(NULL), fNev(0), fMarkInterval(1000), fCompress(1), 
   fVerbose(2), fCountMode(kCountRaw), fBench(NULL), fPrevEvent(NULL), 
   fRun(NULL), fEvData(NULL), fApps(NULL), fPhysics(NULL), fScalers(NULL), 
-  fPostProcess(NULL),
+  fPostProcess(NULL), fEvtHandlers(NULL), 
   fIsInit(kFALSE), fAnalysisStarted(kFALSE), fLocalEvent(kFALSE), 
   fUpdateRun(kTRUE), fOverwrite(kTRUE), fDoBench(kFALSE), 
   fDoHelicity(kFALSE), fDoPhysics(kTRUE), fDoOtherEvents(kTRUE),
@@ -94,6 +98,21 @@ THaAnalyzer::THaAnalyzer() :
   fApps    = gHaApps;
   fScalers = gHaScalers;
   fPhysics = gHaPhysics;
+
+   ToyPhysicsEvtHandler *h1 = new ToyPhysicsEvtHandler("physics","Test by Bob");
+   TDatime td;
+   h1->Init(td);
+   h1->Print();
+
+   ToyScalerEvtHandler *h2 = new ToyScalerEvtHandler("scaler","Event type 140");
+   h2->Init(td);
+   h2->Print();
+  
+   fEvtHandlers = new TList();
+
+   fEvtHandlers->Add(h1);
+   fEvtHandlers->Add(h2);
+
 
   // Timers
   fBench = new THaBenchmark;
@@ -1225,6 +1244,14 @@ Int_t THaAnalyzer::MainAnalysis()
   if( !EvalStage(kRawDecode) ) {
     retval = kSkip;
     rawfail = true;
+  }
+
+  cout << "---- into Main Analysis for Evt Type Handlers "<<endl;
+  cout << "Event type = "<<fEvData->GetEvType()<<endl;
+  TIter nextp(fEvtHandlers);
+  while( ToyEvtTypeHandler* obj = static_cast<ToyEvtTypeHandler*>(nextp()) ) {
+    obj->Print(  );
+    if (obj->IsMyEvent(fEvData->GetEvType())) cout << "Is my type of event !"<<endl;
   }
 
   bool evdone = false;

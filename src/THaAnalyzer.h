@@ -133,6 +133,7 @@ protected:
   TList*         fPhysics;         //List of physics modules
   TList*         fScalers;         //List of scaler groups
   TList*         fPostProcess;     //List of post-processing modules
+  TList*         fEvtHandlers;     //List of Event Type Handlers
 
   // Status and control flags
   Bool_t         fIsInit;          // Init() called successfully
