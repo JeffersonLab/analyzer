@@ -96,5 +96,16 @@ TypeIter_t ToyModule::DoRegister( const ToyModuleType& info )
   return ins.first;
 }
 
+Int_t ToyModule::LoadWords(int* p, THaSlotData *sldat) {
+// this increments p
+
+  while (IsSlot( *p )) {
+    Decode(*p);
+    sldat->loadData(GetType(), GetChan(), GetData(), GetRaw());
+    p++;
+    // Need to prevent runaway
+  }
+  return 1;
+}
 
 ClassImp(ToyModule)

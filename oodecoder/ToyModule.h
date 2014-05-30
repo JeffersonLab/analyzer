@@ -48,6 +48,7 @@ public:
   Int_t GetSlot() { return fSlot; };
   ToyModule& operator=(const ToyModule &rhs);
   virtual void DoPrint();
+  Int_t LoadWords(int* evbuffer, int* p, THaSlotData *sldat); // this increments p
 
 protected:
 

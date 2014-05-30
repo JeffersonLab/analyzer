@@ -146,10 +146,27 @@ int THaSlotData::loadModule(const THaCrateMap *map) {
    }
 }
 
+Bool_t THaSlotData::LoadIfSlot(int* p) {
+  // this increments p
+  if ( !fModule ) {
+     cout << "Serious problem !"<<endl;
+     return kFALSE;
+  }
+  if ( !fModule->IsSlot( *p ) ) {
+     return kFALSE;
+  }
+  Int_t ichan, done, stat;
+  done=0;
+  while ( !done ) {
+    done = fModule->LoadWords(p, this);  // increments p
+  }
+
+  return kTRUE;
+
+}
+
 
 int THaSlotData::loadData(const char* type, int chan, int dat, int raw) {
-  // OLD, DEPRECATED, WILL DISAPPEAR
-// loadData loads the data into storage arrays.
 
   static int very_verb=1;
 
