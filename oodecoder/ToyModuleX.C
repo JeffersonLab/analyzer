@@ -23,14 +23,5 @@ ToyModuleX::ToyModuleX(Int_t crate, Int_t slot) {
 ToyModuleX::~ToyModuleX() { 
 }
 
-Int_t ToyModuleX::Decode(THaEvData *evdata, Int_t jstart) {
-  std::cout<<"ToyModuleX decode from "<<jstart<<std::endl;
-  
-  return 0;
-}
-
-Bool_t ToyModuleX::IsSlot(Int_t rdata) {
-  return kFALSE;
-}
 
 ClassImp(ToyModuleX)

@@ -12,6 +12,7 @@
 #include "Lecroy1877Module.h"
 #include "ToyModuleX.h"
 #include "THaEvData.h"
+#include "THaSlotData.h"
 #include "TMath.h"
 #include <iostream>
 #include <string>
@@ -22,11 +23,15 @@ using namespace std;
 typedef ToyModule::TypeSet_t  TypeSet_t;
 typedef ToyModule::TypeIter_t TypeIter_t;
 
-TypeIter_t Lecroy1877Module::fgThisType = DoRegister( ToyModuleType( "Lecroy1877Module" ));
-TypeIter_t ToyFastbusModule::fgThisType = DoRegister( ToyModuleType( "ToyFastbusModule" ));
-TypeIter_t ToyModuleX::fgThisType = DoRegister( ToyModuleType( "ToyModuleX" ));
+TypeIter_t Lecroy1877Module::fgThisType = DoRegister( ToyModuleType( "Lecroy1877Module" , "1877"));
+TypeIter_t LeCroy1881Module::fgThisType = DoRegister( ToyModuleType( "Lecroy1881Module" , "1881"));
+TypeIter_t LeCroy1875Module::fgThisType = DoRegister( ToyModuleType( "Lecroy1875Module" , "1875"));
+TypeIter_t ToyModuleX::fgThisType = DoRegister( ToyModuleType( "ToyModuleX" , "4417" ));
+// Add your module here.  
 
 ToyModule::ToyModule(Int_t crate, Int_t slot) : fCrate(crate), fSlot(slot), fNumWords(0) { 
+  fHeader=-1;
+  fHeaderMask=-1;
 }
 
 ToyModule::~ToyModule() { 
@@ -96,12 +101,26 @@ TypeIter_t ToyModule::DoRegister( const ToyModuleType& info )
   return ins.first;
 }
 
-Int_t ToyModule::LoadWords(int* p, THaSlotData *sldat) {
-// this increments p
+Bool_t ToyModule::IsSlot(Int_t rdata) {
+  // may want to have "rules" like possibly 2 headers and 
+  // a different rule for where to get fWordsExpected.
+  // rules can be defined in the cratemap.
+  if ((rdata & fHeaderMask)==fHeader) {
+    fWordsExpected = (rata & fWdcntMask)>>fWdcntShift;
+    return kTRUE;
+  }
+  if (fWordsSeen < fWordsExpected) return kTRUE;
+  return kFALSE;
+}
 
+
+Int_t ToyModule::LoadSlot(THaSlotData *sldat, int* evbuffer) {
+// this increments p
+  if (fHeader<0) cout << "error, not init"<<endl;
   while (IsSlot( *p )) {
     Decode(*p);
-    sldat->loadData(GetType(), GetChan(), GetData(), GetRaw());
+    sldat->loadData(fDevType, fChan, fData, fRawData);
+    fWordsSeen++;
     p++;
     // Need to prevent runaway
   }

@@ -28,7 +28,22 @@ ToyFastbusModule::ToyFastbusModule(Int_t crate, Int_t slot) : ToyModule(crate, s
 }
 
 ToyFastbusModule::~ToyFastbusModule() {
-};
+}
+
+
+ToyFastbusModule::Decode(int *evbuffer) {
+  fChan = Chan(*evbuffer);
+  fData = Data(*evbuffer);
+  fRawData = fData;
+}
+
+
+Bool_t ToyFastbusModule::IsSlot(Int_t rdata)  { 
+   
+return (Slot(rdata)==fSlot); 
+
+}
+
 
 
 

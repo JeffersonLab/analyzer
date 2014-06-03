@@ -9,6 +9,7 @@
 /////////////////////////////////////////////////////////////////////
 
 #include "ToyCodaDecoder.h"
+#include "THaEvData.h"
 #include "ToyEvtTypeHandler.h"
 #include "ToyPhysicsEvtHandler.h"
 #include "ToyScalerEvtHandler.h"
@@ -49,7 +50,7 @@ Int_t ToyCodaDecoder::GetPrescaleFactor(Int_t trigger_type) const
 
   // To get the prescale factors for trigger number "trigger_type"
   // (valid types are 1,2,3...)
-  if (fgPsFact) return fgPsFact->GetPrescaleFactor(trigger_type);
+  //  if (fgPsFact) return fgPsFact->GetPrescaleFactor(trigger_type);
   return 0;
 }
 
@@ -214,7 +215,7 @@ Int_t THaCodaDecoder::vme_decode( Int_t roc, const Int_t* evbuffer,
 
   if (TestBit(kDebug)) cout << "VME roc "<<dec<<roc<<" nslot "<<Nslot<<endl;
   if (Nslot <= 0) goto err;
-  scalerdef[roc] = fMap->getScalerLoc(roc);
+  //  scalerdef[roc] = fMap->getScalerLoc(roc);
   fMap->setSlotDone();
   if (fMap->isScalerCrate(roc) && GetRocLength(roc) >= 16) evscaler = 1;
   while ( p++ < pstop && n_slots_done < Nslot ) {
@@ -309,7 +310,7 @@ Int_t THaCodaDecoder::roc_decode( Int_t roc, const Int_t* evbuffer,
   fMap->setSlotDone();
   while ( p++ < pstop && n_slots_done < Nslot ) {
     if(TestBit(kDebug)) cout << "evbuff "<<(p-evbuffer)<<"  "<<hex<<*p<<dec<<endl;
-    LoadIfFlagData(evbuffer, p); // this can increment p
+    LoadIfFlagData(p); // this can increment p
 
     // look through all slots, since Nslot only gives number of occupied slots,
     // not the highest-numbered occupied slot.
@@ -327,7 +328,7 @@ Int_t THaCodaDecoder::roc_decode( Int_t roc, const Int_t* evbuffer,
       }
       ++n_slots_checked;
 
-      status = crateslot[idx(roc,slot)]->LoadIfSlot(evbuffer, p);
+      status = crateslot[idx(roc,slot)]->LoadIfSlot(p);
       if (status = kTRUE) fMap->setSlotDone(slot);
 
       if (p >= pevlen) goto SlotDone;
@@ -354,13 +355,15 @@ Int_t THaCodaDecoder::roc_decode( Int_t roc, const Int_t* evbuffer,
 
 
 //_____________________________________________________________________________
-Int_t THaCodaDecoder::loadFlag(const Int_t* evbuffer)
+Int_t THaCodaDecoder::loadIfFlagData(const Int_t* p)
 {
+  // Need to generalize this ...  too Hall A specific
+  //
   // Looks for buffer mode and synch problems.  The latter are recoverable
   // but extremely rare, so I haven't bothered to write recovery a code yet, 
   // but at least this warns you. 
-  assert( evbuffer );
-  UInt_t word   = *evbuffer;
+  assert( p );
+  UInt_t word   = *p;
   UInt_t upword = word & 0xffff0000;
   if (TestBit(kDebug)) {
     cout << "Flag data "<<hex<<word<<dec<<endl;
@@ -376,7 +379,7 @@ Int_t THaCodaDecoder::loadFlag(const Int_t* evbuffer)
     }
   }
   if( upword == 0xfabc0000) {
-    datascan = *(evbuffer+3);
+    datascan = *(p+3);
     if(TestBit(kVerbose) && (synchmiss || synchextra)) {
       cout << "THaEvData: WARNING: Synch problems !"<<endl;
       cout << "Data scan word 0x"<<hex<<datascan<<dec<<endl;
@@ -430,12 +433,6 @@ Int_t ToyCodaDecoder::FindRocs(const Int_t *evbuffer) {
 
 }
 
-Int_t ToyCodaDecoder::roc_decode(const Int_t *evbuffer) {
-
-  return HED_OK;
-
-}
-
 
 // To initialize the THaSlotData member on first call to decoder
 int ToyCodaDecoder::init_slotdata(const THaCrateMap* map)
@@ -465,8 +462,6 @@ int ToyCodaDecoder::init_slotdata(const THaCrateMap* map)
     crslot->print();
     crslot->loadModule(map);
     cout << "Dev type xxx  = "<<crslot->devType()<<endl;
-// New(5/2014) line to define the module information
-// TBD    crslot->loadModule(map->GetModuleInfo(crate,slot));
     if( !map->crateUsed(crate) || !map->slotUsed(crate,slot) ||
 	!map->slotClear(crate,slot)) {
       for( int k=0; k<fNSlotClear; k++ ) {
@@ -519,13 +514,15 @@ void ToyCodaDecoder::dump(const Int_t* evbuffer)
 }
 
 
+// We probably want to throw out these, to use the Event Type Handlers instead
 //_____________________________________________________________________________
 Int_t ToyCodaDecoder::GetScaler( const TString& spec, Int_t slot,
 				 Int_t chan ) const
 {// PUBLIC -- get a scaler from a spectromter.  This is per event
+  // FIXME !
 
-  Int_t roc;
-  roc = scalerdef[spec];
+  Int_t roc=0;
+  //  roc = scalerdef[spec];
   if (roc >= 0) return GetScaler(roc, slot, chan);
   return 0;
 
@@ -539,7 +536,7 @@ Int_t ToyCodaDecoder::GetScaler(Int_t roc, Int_t slot, Int_t chan) const
   assert( ScalersEnabled() );  // Should never request data when not enabled
   assert( GoodIndex(roc,slot) );
 
-  if (fgScalEvt) return fgScalEvt->GetScaler(roc, slot, chan);
+  //  if (fgScalEvt) return fgScalEvt->GetScaler(roc, slot, chan);
   return crateslot[idx(roc,slot)]->getData(chan,0);
 
 }
@@ -550,7 +547,7 @@ Bool_t ToyCodaDecoder::IsLoadedEpics(const char* tag) const
 {// PUBLIC
   // Test if the given EPICS variable name has been loaded
   assert( tag );
-  if (fgEpicsEvt) return fgEpicsEvt->IsLoaded(tag);
+  //  if (fgEpicsEvt) return fgEpicsEvt->IsLoaded(tag);
   return kFALSE;
 }
 
@@ -562,7 +559,7 @@ double ToyCodaDecoder::GetEpicsData(const char* tag, Int_t event) const
   // Tag is EPICS variable, e.g. 'IPM1H04B.XPOS'
 
   assert( IsLoadedEpics(tag) ); // Should never ask for non-existent data
-  if (fgEpicsEvt) return fgEpics->GetData(tag, event);
+  //  if (fgEpicsEvt) return fgEpics->GetData(tag, event);
   return 0;
 }
 
@@ -573,14 +570,14 @@ string ToyCodaDecoder::GetEpicsString(const char* tag, Int_t event) const
   // event == 0 --> get latest data
 
   assert( IsLoadedEpics(tag) ); // Should never ask for non-existent data
-  if (fgEpicsEvt) return fgEpicsEvt->GetString(tag, event);
+  //  if (fgEpicsEvt) return fgEpicsEvt->GetString(tag, event);
   return "";
 }
 
 //_____________________________________________________________________________
 double ToyCodaDecoder::GetEpicsTime(const char* tag, Int_t event) const
 {//PUBLIC
-  if (fgEpicsEvt) return fgEpicsEvt->GetTimeStamp(tag, event);
+  //  if (fgEpicsEvt) return fgEpicsEvt->GetTimeStamp(tag, event);
   return 0; 
 }
 

@@ -39,6 +39,7 @@ class ToyCodaDecoder : public THaEvData {
   virtual Int_t GetScaler(Int_t roc, Int_t slot, Int_t chan) const;
   //  virtual Int_t GetScaler(Int_t evtype, Int_t roc, Int_t slot, Int_t chan) const;
   
+  virtual Int_t LoadIfFlagData(Int_t *p);
   virtual Bool_t IsLoadedEpics(const char* tag) const;
   virtual Double_t GetEpicsData(const char* tag, Int_t event=0) const;
   virtual Double_t GetEpicsTime(const char* tag, Int_t event=0) const;
@@ -46,6 +47,9 @@ class ToyCodaDecoder : public THaEvData {
 
   virtual void PrintOut() const { dump(buffer); }
   virtual void SetRunTime(ULong64_t tloc);
+
+  Int_t FindRocs(const Int_t *evbuffer);
+  Int_t roc_decode( Int_t roc, const Int_t* evbuffer, Int_t ipt, Int_t istop );
 
  protected:
 

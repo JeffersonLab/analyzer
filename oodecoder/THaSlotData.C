@@ -95,20 +95,8 @@ void THaSlotData::define(int cra, int slo, UShort_t nchan, UShort_t ndata, UShor
 int THaSlotData::loadModule(const THaCrateMap *map) {
 
   int modelnum = map->getModel(crate, slot);
-  TString mymodule;
 
-  cout << "mymodule in THaSlotData::loadModule =  "<< map->getModel(crate,slot) << endl;
-
-  // test
-  mymodule = "ToyModuleX";
-  if (modelnum==1877) {
-    mymodule = "Lecroy1877Module";
-  } 
-  if (modelnum==1881) {
-    mymodule = "ToyFastbusModule";
-  } 
-  
-  cout << "mymodule (string)  = "<<mymodule<<endl;
+  cout << "modelnum in THaSlotData::loadModule =  "<< map->getModel(crate,slot) << endl;
 
   Int_t err=0;
 
@@ -119,6 +107,7 @@ int THaSlotData::loadModule(const THaCrateMap *map) {
     // Get the ROOT class for this type
     
     cout << "loctype.fClassName  "<< loctype.fClassName<<endl;
+    cout << "loctype.fMapNum  "<< loctype.fMapNum<<endl;
     cout << "fTClass ptr =  "<<loctype.fTClass<<endl;
 
     if( !loctype.fTClass ) {
@@ -127,13 +116,15 @@ int THaSlotData::loadModule(const THaCrateMap *map) {
 
     }
 
-    if (mymodule == loctype.fClassName) {
+    if (modelnum == loctype.fMapNum) {
 
-      cout << "Found Module !!!! "<<mymodule<<endl;
+      cout << "Found Module !!!! "<<modelnum<<endl;
 
       if (loctype.fTClass) {
-	cout << "Creating fModule"<<endl;
-         fModule= static_cast<ToyModule*>( loctype.fTClass->New() );
+  	 cout << "Creating fModule"<<endl;
+         fModule= static_cast<ToyModule*>( loctype.fTClass->New() ); 
+// Init, or get decoder rules.
+        fModule->Init( crate, slot, map->getHeader(crate, slot), map->getMask(crate, slot));  
       } else {
 	cout << "SERIOUS problem :  fTClass still zero "<<endl;
       }
@@ -144,21 +135,25 @@ int THaSlotData::loadModule(const THaCrateMap *map) {
     }
 
    }
+
+   return 1;
+
 }
 
 Bool_t THaSlotData::LoadIfSlot(int* p) {
   // this increments p
-  if ( !fModule ) {
+  if ( !fModule ) {  // should be an "assert"
      cout << "Serious problem !"<<endl;
      return kFALSE;
   }
   if ( !fModule->IsSlot( *p ) ) {
      return kFALSE;
   }
-  Int_t ichan, done, stat;
-  done=0;
+  fModule->Clear("");
+  Int_t done = 0;
   while ( !done ) {
-    done = fModule->LoadWords(p, this);  // increments p
+    done = fModule->LoadSlot(this, p);  // increments p
+    // risk of runaway here, need to mitigate
   }
 
   return kTRUE;
@@ -255,7 +250,7 @@ int THaSlotData::loadData(const char* type, int chan, int dat, int raw) {
 }
 
 int THaSlotData::loadData(int chan, int dat, int raw) {
-  // NEW, BETTER VERSION
+  // NEW (6/2014) BETTER VERSION
 // loadData loads the data into storage arrays.
 
   static int very_verb=1;

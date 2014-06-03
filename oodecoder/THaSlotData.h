@@ -52,11 +52,11 @@ public:
        int getCrate() const { return crate; }
        int getSlot()  const { return slot; }
        void clearEvent();                   // clear event counters
-// this version of loadData will be deprecated since the "type" 
-// is known by the fModule
        int loadData(const char* type, int chan, int dat, int raw);
-// new version
-       Bool_t LoadIfSlot(int* evbuffer, int* p);
+       int loadData(int chan, int dat, int raw);
+
+       // new
+       Bool_t LoadIfSlot(int* evbuffer);
 
        void define(int crate, int slot, UShort_t nchan=DEFNCHAN, 
 		   UShort_t ndata=DEFNDATA, UShort_t nhitperchan=DEFNHITCHAN );// Define crate, slot

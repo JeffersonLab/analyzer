@@ -15,7 +15,7 @@
 #include "Rtypes.h"
 #include "TNamed.h"
 
-class THaEvData;
+class THaSlotData;
 
 class ToyModule : public TNamed  {
 
@@ -23,10 +23,10 @@ public:
 
   struct ToyModuleType {
    public:
-     ToyModuleType ( const char *c1 ) : fClassName(c1), fTClass(0) {}
-    // The class names have to be unique, so use them for sorting
-     bool operator<( const ToyModuleType& rhs ) const { return fClassName < rhs.fClassName; }
+     ToyModuleType ( const char *c1, Int_t i1 ) : fClassName(c1), fMapNum(i1), fTClass(0) {}
+     bool operator<( const ToyModuleType& rhs ) const { return fMapNum < rhs.fMapNum; }
      const char*      fClassName;
+     Int_t  fMapNum;
      mutable TClass*  fTClass;
   };
 
@@ -40,22 +40,32 @@ public:
 
   virtual ~ToyModule();  
 
-  virtual void Init(TString name, Int_t crate, Int_t slot) { fName = name; fCrate=crate; fSlot=slot; };
-  virtual Bool_t IsSlot(Int_t rdata)=0;
-  virtual Int_t GetNumWords() { return fNumWords; };
-  virtual Int_t Decode(THaEvData *evdata, Int_t start=0)=0;
+  virtual void Init(Int_t crate, Int_t slot, Int_t header, Int_t mask) 
+    { fCrate=crate; fSlot=slot; fHeader=header; fMask=mask; };
+
+  virtual void Clear(const Option_t *opt) { fWordsSeen = 0; };
+
+  virtual Bool_t IsSlot(Int_t rdata);
+
+  virtual Int_t Decode(Int_t *p)=0;  // --> abstract
+
   Int_t GetCrate() { return fCrate; };
   Int_t GetSlot() { return fSlot; };
+
   ToyModule& operator=(const ToyModule &rhs);
+
   virtual void DoPrint();
-  Int_t LoadWords(int* evbuffer, int* p, THaSlotData *sldat); // this increments p
+
+// Loads sldat and increments ptr to evbuffer
+  Int_t LoadSlot(THaSlotData *sldat,  int* evbuffer );  
 
 protected:
 
   static TypeIter_t DoRegister( const ToyModuleType& registration_info );
 
-  Int_t fCrate, fSlot;
-  Int_t fNumWords;
+  Int_t fCrate, fSlot, fHeader, fMask;
+  Int_t fChan, fData, fRawData;   // transient data
+  Int_t fWordsExpect, fWordsSeen;
   ToyModule(const ToyModule& rhs); 
   void Create(const ToyModule& rhs);
 

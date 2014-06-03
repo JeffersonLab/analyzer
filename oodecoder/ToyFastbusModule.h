@@ -33,12 +33,14 @@ public:
    };
    Int_t Data(Int_t rdata) { return (rdata&fDataMask)>>fDataShift; };
          
-   Int_t Decode(THaEvData *evdata, Int_t start) {return 0;};
+   Int_t Decode(Int_t *evbuffer);
 
-   Bool_t IsSlot(Int_t rdata) { return (rdata !=0); };
+   Bool_t IsSlot(Int_t rdata) { return (Slot(rdata)==fSlot); };
 
 protected:
 
+   Bool_t fHasHeader;
+   Int_t fHeader;
    Int_t fWdcntMask, fWdcntShift;
    Int_t fSlotMask, fSlotShift;
    Int_t fChanMask, fChanShift;

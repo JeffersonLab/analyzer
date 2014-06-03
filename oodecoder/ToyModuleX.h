@@ -22,8 +22,6 @@ public:
    ToyModuleX(Int_t crate, Int_t slot);  
    virtual ~ToyModuleX();  
 
-   Int_t Decode(THaEvData *evdata, Int_t start);
-
    Bool_t IsSlot(Int_t rdata);
 
 
