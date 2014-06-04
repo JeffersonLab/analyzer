@@ -41,13 +41,13 @@ public:
   virtual ~ToyModule();  
 
   virtual void Init(Int_t crate, Int_t slot, Int_t header, Int_t mask) 
-    { fCrate=crate; fSlot=slot; fHeader=header; fMask=mask; };
+    { fCrate=crate; fSlot=slot; fHeader=header; fHeaderMask=mask; };
 
   virtual void Clear(const Option_t *opt) { fWordsSeen = 0; };
 
   virtual Bool_t IsSlot(Int_t rdata);
 
-  virtual Int_t Decode(Int_t *p)=0;  // --> abstract
+  virtual Int_t Decode(const Int_t *p)=0;  // --> abstract
 
   Int_t GetCrate() { return fCrate; };
   Int_t GetSlot() { return fSlot; };
@@ -57,15 +57,16 @@ public:
   virtual void DoPrint();
 
 // Loads sldat and increments ptr to evbuffer
-  Int_t LoadSlot(THaSlotData *sldat,  int* evbuffer );  
+  Int_t LoadSlot(THaSlotData *sldat,  const Int_t* evbuffer );  
 
 protected:
 
   static TypeIter_t DoRegister( const ToyModuleType& registration_info );
 
-  Int_t fCrate, fSlot, fHeader, fMask;
+  Int_t fCrate, fSlot, fHeader, fHeaderMask;
   Int_t fChan, fData, fRawData;   // transient data
   Int_t fWordsExpect, fWordsSeen;
+  Int_t fWdcntMask, fWdcntShift;
   ToyModule(const ToyModule& rhs); 
   void Create(const ToyModule& rhs);
 

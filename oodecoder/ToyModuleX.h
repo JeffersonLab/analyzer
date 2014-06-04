@@ -23,6 +23,10 @@ public:
    virtual ~ToyModuleX();  
 
    Bool_t IsSlot(Int_t rdata);
+   Int_t Decode(const Int_t *evbuffer);
+   Int_t Slot(Int_t rdata) { return fSlot; };
+   Int_t Data(Int_t rdata) { return rdata; };
+         
 
 
 private:

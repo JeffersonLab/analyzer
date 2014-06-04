@@ -16,7 +16,6 @@
 using namespace std;
 
 ToyFastbusModule::ToyFastbusModule(Int_t crate, Int_t slot) : ToyModule(crate, slot) {
-  fNoWdCnt=1;
   if (fCrate < 0 || fCrate > MAXROC) {
        cerr << "ERROR: crate out of bounds"<<endl;
        fCrate = 0;
@@ -31,19 +30,11 @@ ToyFastbusModule::~ToyFastbusModule() {
 }
 
 
-ToyFastbusModule::Decode(int *evbuffer) {
+Int_t ToyFastbusModule::Decode(const Int_t *evbuffer) {
   fChan = Chan(*evbuffer);
   fData = Data(*evbuffer);
   fRawData = fData;
 }
-
-
-Bool_t ToyFastbusModule::IsSlot(Int_t rdata)  { 
-   
-return (Slot(rdata)==fSlot); 
-
-}
-
 
 
 

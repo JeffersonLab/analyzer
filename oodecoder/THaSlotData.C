@@ -140,7 +140,7 @@ int THaSlotData::loadModule(const THaCrateMap *map) {
 
 }
 
-Bool_t THaSlotData::LoadIfSlot(int* p) {
+Bool_t THaSlotData::LoadIfSlot(const Int_t* p) {
   // this increments p
   if ( !fModule ) {  // should be an "assert"
      cout << "Serious problem !"<<endl;

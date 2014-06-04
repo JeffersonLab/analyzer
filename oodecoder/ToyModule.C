@@ -10,6 +10,8 @@
 
 #include "ToyModule.h"
 #include "Lecroy1877Module.h"
+#include "Lecroy1881Module.h"
+#include "Lecroy1875Module.h"
 #include "ToyModuleX.h"
 #include "THaEvData.h"
 #include "THaSlotData.h"
@@ -23,15 +25,17 @@ using namespace std;
 typedef ToyModule::TypeSet_t  TypeSet_t;
 typedef ToyModule::TypeIter_t TypeIter_t;
 
-TypeIter_t Lecroy1877Module::fgThisType = DoRegister( ToyModuleType( "Lecroy1877Module" , "1877"));
-TypeIter_t LeCroy1881Module::fgThisType = DoRegister( ToyModuleType( "Lecroy1881Module" , "1881"));
-TypeIter_t LeCroy1875Module::fgThisType = DoRegister( ToyModuleType( "Lecroy1875Module" , "1875"));
-TypeIter_t ToyModuleX::fgThisType = DoRegister( ToyModuleType( "ToyModuleX" , "4417" ));
+TypeIter_t Lecroy1877Module::fgThisType = DoRegister( ToyModuleType( "Lecroy1877Module" , 1877));
+TypeIter_t Lecroy1881Module::fgThisType = DoRegister( ToyModuleType( "Lecroy1881Module" , 1881));
+TypeIter_t Lecroy1875Module::fgThisType = DoRegister( ToyModuleType( "Lecroy1875Module" , 1875));
+TypeIter_t ToyModuleX::fgThisType = DoRegister( ToyModuleType( "ToyModuleX" , 4417 ));
 // Add your module here.  
 
-ToyModule::ToyModule(Int_t crate, Int_t slot) : fCrate(crate), fSlot(slot), fNumWords(0) { 
+ToyModule::ToyModule(Int_t crate, Int_t slot) : fCrate(crate), fSlot(slot), fWordsExpect(0) { 
   fHeader=-1;
   fHeaderMask=-1;
+  fWdcntMask=0;
+  fWdcntShift=0;
 }
 
 ToyModule::~ToyModule() { 
@@ -55,7 +59,7 @@ ToyModule &ToyModule::operator=(const ToyModule& rhs) {
 void ToyModule::Create(const ToyModule& rhs) {
   fCrate = rhs.fCrate;
   fSlot = rhs.fSlot;
-  fNumWords = rhs.fNumWords;
+  fWordsExpect = rhs.fWordsExpect;
 
 }
 
@@ -103,25 +107,26 @@ TypeIter_t ToyModule::DoRegister( const ToyModuleType& info )
 
 Bool_t ToyModule::IsSlot(Int_t rdata) {
   // may want to have "rules" like possibly 2 headers and 
-  // a different rule for where to get fWordsExpected.
+  // a different rule for where to get fWordsExpect.
   // rules can be defined in the cratemap.
+  // For some modules, fWordsExpect may be a property of the module.
   if ((rdata & fHeaderMask)==fHeader) {
-    fWordsExpected = (rata & fWdcntMask)>>fWdcntShift;
+    fWordsExpect = (rdata & fWdcntMask)>>fWdcntShift;
     return kTRUE;
   }
-  if (fWordsSeen < fWordsExpected) return kTRUE;
+  if (fWordsSeen < fWordsExpect) return kTRUE;
   return kFALSE;
 }
 
 
-Int_t ToyModule::LoadSlot(THaSlotData *sldat, int* evbuffer) {
-// this increments p
+Int_t ToyModule::LoadSlot(THaSlotData *sldat, const Int_t* evbuffer) {
+// this increments evbuffer
   if (fHeader<0) cout << "error, not init"<<endl;
-  while (IsSlot( *p )) {
-    Decode(*p);
-    sldat->loadData(fDevType, fChan, fData, fRawData);
+  while (IsSlot( *evbuffer )) {
+    Decode(evbuffer);
+    sldat->loadData(fChan, fData, fRawData);
     fWordsSeen++;
-    p++;
+    evbuffer++;
     // Need to prevent runaway
   }
   return 1;

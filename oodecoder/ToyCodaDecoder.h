@@ -19,7 +19,6 @@
 #include "THaEvData.h"
 #include <vector>
 
-class ToyEvtTypeHandler;
 class ToyCrateDecoder;
 class ToyModule;
 
@@ -39,7 +38,7 @@ class ToyCodaDecoder : public THaEvData {
   virtual Int_t GetScaler(Int_t roc, Int_t slot, Int_t chan) const;
   //  virtual Int_t GetScaler(Int_t evtype, Int_t roc, Int_t slot, Int_t chan) const;
   
-  virtual Int_t LoadIfFlagData(Int_t *p);
+  virtual Int_t LoadIfFlagData(const Int_t *p);
   virtual Bool_t IsLoadedEpics(const char* tag) const;
   virtual Double_t GetEpicsData(const char* tag, Int_t event=0) const;
   virtual Double_t GetEpicsTime(const char* tag, Int_t event=0) const;
@@ -50,8 +49,13 @@ class ToyCodaDecoder : public THaEvData {
 
   Int_t FindRocs(const Int_t *evbuffer);
   Int_t roc_decode( Int_t roc, const Int_t* evbuffer, Int_t ipt, Int_t istop );
+  Int_t nroc;
+  Int_t *irn;
 
  protected:
+
+  Int_t   synchflag,datascan;
+  Bool_t  buffmode,synchmiss,synchextra;
 
    int init_slotdata(const THaCrateMap *map);
 

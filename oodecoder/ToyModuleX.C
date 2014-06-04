@@ -23,5 +23,15 @@ ToyModuleX::ToyModuleX(Int_t crate, Int_t slot) {
 ToyModuleX::~ToyModuleX() { 
 }
 
+Int_t ToyModuleX::Decode(const Int_t *evbuffer) {
+  fChan = 0;
+  fData = Data(*evbuffer);
+  fRawData = fData;
+}
+
+Bool_t ToyModuleX::IsSlot(Int_t rdata) {
+  return ((rdata & fHeaderMask)==fHeader);
+}
+
 
 ClassImp(ToyModuleX)

@@ -56,7 +56,7 @@ public:
        int loadData(int chan, int dat, int raw);
 
        // new
-       Bool_t LoadIfSlot(int* evbuffer);
+       Bool_t LoadIfSlot(const Int_t* evbuffer);
 
        void define(int crate, int slot, UShort_t nchan=DEFNCHAN, 
 		   UShort_t ndata=DEFNDATA, UShort_t nhitperchan=DEFNHITCHAN );// Define crate, slot

@@ -27,13 +27,9 @@ public:
 
    Int_t Slot(Int_t rdata) { return (rdata&fSlotMask)>>fSlotShift; };
    Int_t Chan(Int_t rdata) { return (rdata&fChanMask)>>fChanShift; };
-   Int_t WndCnt(Int_t rdata) { 
-          if (fNoWdCnt) return -1; 
-          return (rdata&fWdcntMask)>>fWdcntShift; 
-   };
    Int_t Data(Int_t rdata) { return (rdata&fDataMask)>>fDataShift; };
          
-   Int_t Decode(Int_t *evbuffer);
+   Int_t Decode(const Int_t *evbuffer);
 
    Bool_t IsSlot(Int_t rdata) { return (Slot(rdata)==fSlot); };
 
@@ -45,7 +41,7 @@ protected:
    Int_t fSlotMask, fSlotShift;
    Int_t fChanMask, fChanShift;
    Int_t fDataMask,  fDataShift;
-   Int_t fNoWdCnt;
+   Int_t fOptMask, fOptShift;
 
 private:
 

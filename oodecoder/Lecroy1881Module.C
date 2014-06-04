@@ -1,10 +1,10 @@
 ////////////////////////////////////////////////////////////////////
 //
-//   Lecroy1877Module
+//   Lecroy1881Module
 //
 /////////////////////////////////////////////////////////////////////
 
-#include "Lecroy1877Module.h"
+#include "Lecroy1881Module.h"
 #include "ToyModule.h"
 #include "THaEvData.h"
 #include "TMath.h"
@@ -14,19 +14,19 @@
 using namespace std;
 
 // crate, etc (here, toy data) would ultimately come from crate map
-Lecroy1877Module::Lecroy1877Module(Int_t crate, Int_t slot) : ToyFastbusModule(crate, slot) {
-  fChanMask = 0xfe0000;
-  fDataMask = 0xffff;
-  fWdcntMask = 0x7ff;
-  fOptMask = 0x10000;
+Lecroy1881Module::Lecroy1881Module(Int_t crate, Int_t slot) : ToyFastbusModule(crate, slot) {
+  fChanMask = 0x7e0000;
+  fDataMask = 0x3fff;
+  fWdcntMask = 0x7f;
+  fOptMask = 0x3000000;
   fChanShift = 17;
-  fOptShift = 16;
+  fOptShift = 24;
   fHasHeader = kTRUE;
   fHeader = 0;
 }
 
-Lecroy1877Module::~Lecroy1877Module() { 
+Lecroy1881Module::~Lecroy1881Module() { 
 }
 
 
-ClassImp(Lecroy1877Module)
+ClassImp(Lecroy1881Module)
