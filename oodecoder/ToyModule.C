@@ -121,12 +121,14 @@ Bool_t ToyModule::IsSlot(Int_t rdata) {
 
 Int_t ToyModule::LoadSlot(THaSlotData *sldat, const Int_t* evbuffer) {
 // this increments evbuffer
+  cout << "ToyModule:: loadslot "<<endl; 
   if (fHeader<0) cout << "error, not init"<<endl;
   while (IsSlot( *evbuffer )) {
     Decode(evbuffer);
     sldat->loadData(fChan, fData, fRawData);
     fWordsSeen++;
     evbuffer++;
+    cout << "hi "<<endl;
     // Need to prevent runaway
   }
   return 1;

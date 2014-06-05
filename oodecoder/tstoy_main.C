@@ -29,6 +29,7 @@ int main(int argc, char* argv[])
 
    THaCodaFile datafile(filename);
    THaEvData *evdata = new ToyCodaDecoder();
+   evdata->SetDebug(1);
 
     // Loop over events
       int NUMEVT=100;
@@ -44,9 +45,11 @@ int main(int argc, char* argv[])
 	 } else {
 
             int *data = datafile.getEvBuffer();
-	    //  	    dump(data);
+	    //	    dump(data);
 
+            cout << "Hi, about to Load Event "<<endl;
             evdata->LoadEvent( data );   
+            cout << "Hi, Finished with Load Event "<<endl;
 
             process (evdata);
 
@@ -92,7 +95,6 @@ void process (THaEvData *evdata) {
      if (evdata->IsPhysicsTrigger() ) { // triggers 1-14
         cout << "Physics trigger " << endl;
      }
-     if(evdata->IsScalerEvent()) cout << "Scaler `event' " << endl;
 
 // Now we want data from a particular crate and slot.
 // E.g. crates are 1,2,3,13,14,15 (roc numbers), Slots are 1,2,3... 
@@ -104,13 +106,15 @@ void process (THaEvData *evdata) {
 //  Here are raw 32-bit CODA words for this crate and slot
       cout << "Raw Data Dump for crate "<<dec<<crate<<" slot "<<slot<<endl; 
       int hit;
+      cout << "Num raw "<<evdata->GetNumRaw(crate,slot)<<endl;
       for(hit=0; hit<evdata->GetNumRaw(crate,slot); hit++) {
         cout<<dec<<"raw["<<hit<<"] =   ";
         cout<<hex<<evdata->GetRawData(crate,slot,hit)<<endl;  
       }
 // You can alternatively let evdata print out the contents of a crate and slot:
+      cout << "To print slotdata "<<crate<<"  "<<slot<<endl;
       evdata->PrintSlotData(crate,slot);
-
+      cout << "finished with print slot data"<<endl;
 }
 
 

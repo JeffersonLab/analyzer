@@ -124,7 +124,8 @@ int THaSlotData::loadModule(const THaCrateMap *map) {
   	 cout << "Creating fModule"<<endl;
          fModule= static_cast<ToyModule*>( loctype.fTClass->New() ); 
 // Init, or get decoder rules.
-        fModule->Init( crate, slot, map->getHeader(crate, slot), map->getMask(crate, slot));  
+         cout << "about to init  module   "<<crate<<"  "<<slot<<endl;
+         fModule->Init( crate, slot, map->getHeader(crate, slot), map->getMask(crate, slot));  
       } else {
 	cout << "SERIOUS problem :  fTClass still zero "<<endl;
       }
@@ -140,23 +141,26 @@ int THaSlotData::loadModule(const THaCrateMap *map) {
 
 }
 
-Bool_t THaSlotData::LoadIfSlot(const Int_t* p) {
+Int_t THaSlotData::LoadIfSlot(const Int_t* p) {
   // this increments p
   if ( !fModule ) {  // should be an "assert"
      cout << "Serious problem !"<<endl;
-     return kFALSE;
+     return SD_ERR;
   }
   if ( !fModule->IsSlot( *p ) ) {
-     return kFALSE;
+    cout << "not slot "<<endl;
+    return SD_ERR;
   }
   fModule->Clear("");
   Int_t done = 0;
+  cout << "is slot "<<done<<endl;
   while ( !done ) {
+    cout << "loading slot ..."<<endl;
     done = fModule->LoadSlot(this, p);  // increments p
     // risk of runaway here, need to mitigate
   }
-
-  return kTRUE;
+  cout << "done at end "<<done<<endl;
+  return SD_OK;
 
 }
 
@@ -181,8 +185,10 @@ int THaSlotData::loadData(const char* type, int chan, int dat, int raw) {
     return SD_WARN;
   }
   if( numraw >= maxd || numchanhit > maxc) {
+    cout << "maxd, etc "<<maxd<< "  "<<numchanhit<<"  "<<numraw<<endl;
+    cout << "numraw again "<<getNumRaw()<<endl;
     if (VERBOSE) {
-      cout << "THaSlotData: Warning in loadData: too many "
+      cout << "(1) THaSlotData: Warning in loadData: too many "
 	   << ((numraw >= maxd ) ? "data words" : "channels")
 	   << " for crate/slot = " 
 	   << crate << " " << slot;
@@ -238,6 +244,7 @@ int THaSlotData::loadData(const char* type, int chan, int dat, int raw) {
   rawData[numraw] = raw;
   data[numraw++]  = dat;
   if( numHits[chan] == (UChar_t)~0 ) {
+    cout << "(2)  maxd, etc "<<maxd<< "  "<<numchanhit<<"  "<<numraw<<endl;
     if( VERBOSE ) 
       cout << "THaSlotData: Warning in loadData: too many hits " 
 	   << "for module " << device << " in crate/slot = " 
@@ -250,93 +257,11 @@ int THaSlotData::loadData(const char* type, int chan, int dat, int raw) {
 }
 
 int THaSlotData::loadData(int chan, int dat, int raw) {
-  // NEW (6/2014) BETTER VERSION
-// loadData loads the data into storage arrays.
+  // NEW (6/2014).  
 
-  static int very_verb=1;
-
-  if( !didini ) {
-    if (very_verb) {  // this might be your problem.
-      cout << "THaSlotData: ERROR: Did not init slot."<<endl;
-      cout << "  Fix your cratemap."<<endl;
-    }
-    return SD_ERR;
-  }
-  if (chan < 0 || chan >= maxc) {
-    if (VERBOSE) {
-      cout << "THaSlotData: Warning in loadData: channel ";
-      cout <<chan<<" out of bounds, ignored,"
-	   << " on crate " << crate << " slot "<< slot << endl;
-    }
-    return SD_WARN;
-  }
-  if( numraw >= maxd || numchanhit > maxc) {
-    if (VERBOSE) {
-      cout << "THaSlotData: Warning in loadData: too many "
-	   << ((numraw >= maxd ) ? "data words" : "channels")
-	   << " for crate/slot = " 
-	   << crate << " " << slot;
-      cout << ": " << (numraw>=maxd ? numraw : numchanhit) << " seen." 
-	   << endl;
-    }
-    return SD_WARN;
-  }
-
-  if (( numchanhit == 0 )||(numHits[chan]==0)) {
-    compressdataindex(numhitperchan);
-    dataindex[firstfreedataidx]=numraw;
-    idxlist[chan]=firstfreedataidx;
-    numMaxHits[chan]=numhitperchan;
-    firstfreedataidx=firstfreedataidx+numhitperchan;
-    chanindex[chan]=numchanhit;
-    chanlist[numchanhit++]=chan;
-  } else {
-    if (numHits[chan]<numMaxHits[chan]) {
-      dataindex[idxlist[chan]+numHits[chan]]=numraw;
-    } else {
-      if (idxlist[chan]+numMaxHits[chan]==firstfreedataidx) {
-	compressdataindex(numhitperchan);
-	dataindex[idxlist[chan]+numHits[chan]]=numraw;
-	numMaxHits[chan]=numMaxHits[chan]+numhitperchan;
-	firstfreedataidx=firstfreedataidx+numhitperchan;
-      } else {
-	compressdataindex(numMaxHits[chan]+numhitperchan);
-	numholesdataidx=numholesdataidx+numMaxHits[chan];
-	for (Int_t i=0; i<numHits[chan]; i++  ) {
-	  dataindex[firstfreedataidx+i]=dataindex[idxlist[chan]+i];
-	}
-	dataindex[firstfreedataidx+numHits[chan]]=numraw;
-	idxlist[chan]=firstfreedataidx;
-	numMaxHits[chan]=numMaxHits[chan]+numhitperchan;
-	firstfreedataidx=firstfreedataidx+numMaxHits[chan];
-      }
-    }
-  }
-
-  // Grow data arrays if really necessary (rare)
-  if( numraw >= allocd ) {
-    UShort_t old_allocd = allocd;
-    allocd *= 2; if( allocd > maxd ) allocd = maxd;
-    int* tmp = new int[allocd];
-    memcpy(tmp,data,old_allocd*sizeof(int));
-    delete [] data; data = tmp;
-    tmp = new int[allocd];
-    memcpy(tmp,rawData,old_allocd*sizeof(int));
-    delete [] rawData; rawData = tmp;
-  }
-  rawData[numraw] = raw;
-  data[numraw++]  = dat;
-  if( numHits[chan] == (UChar_t)~0 ) {
-    if( VERBOSE ) 
-      cout << "THaSlotData: Warning in loadData: too many hits " 
-	   << "for module " << device << " in crate/slot = " 
-	   << dec << crate << " " << slot 
-	   << " chan = " << chan << endl;
-    return SD_WARN;
-  }
-  numHits[chan]++;
-  return SD_OK;
+  return loadData(NULL, chan, dat, raw);
 }
+
 
 void THaSlotData::print() const {
   cout << "\n THaSlotData contents : " << endl;

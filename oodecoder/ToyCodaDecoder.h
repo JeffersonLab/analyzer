@@ -28,7 +28,13 @@ class ToyCodaDecoder : public THaEvData {
   ToyCodaDecoder();
   ~ToyCodaDecoder();
  
-  virtual Int_t LoadEvent(const Int_t* evbuffer, THaCrateMap* usermap);    
+  virtual Int_t LoadEvent(const Int_t* evbuffer);    
+
+  virtual Int_t LoadEvent(const Int_t* evbuffer, THaCrateMap* usermap) {
+    std::cout << "ToyCodaDecoder :: LoadEvent: ERROR: "<<std::endl;
+    std::cout << "Version with cratemap arg not supported"<<std::endl;
+    return -1;
+  }
 
   virtual Int_t GetNslots() { return fNSlotUsed; };
   //  virtual Int_t FillCrateSlot(Int_t crate, Int_t ipt);

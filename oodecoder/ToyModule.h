@@ -40,7 +40,7 @@ public:
 
   virtual ~ToyModule();  
 
-  virtual void Init(Int_t crate, Int_t slot, Int_t header, Int_t mask) 
+  virtual void Init(Int_t crate, Int_t slot, Int_t header=0, Int_t mask=0) 
     { fCrate=crate; fSlot=slot; fHeader=header; fHeaderMask=mask; };
 
   virtual void Clear(const Option_t *opt) { fWordsSeen = 0; };

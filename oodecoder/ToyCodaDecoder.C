@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////
 //
 //   ToyCodaDecoder
 //
@@ -53,15 +53,16 @@ Int_t ToyCodaDecoder::GetPrescaleFactor(Int_t trigger_type) const
 }
 
 //_____________________________________________________________________________
-Int_t ToyCodaDecoder::LoadEvent(const Int_t* evbuffer, THaCrateMap* map)
+Int_t ToyCodaDecoder::LoadEvent(const Int_t* evbuffer)
 {//PUBLIC
   // Main engine for decoding, called by public LoadEvent() methods
   // The crate map argument is ignored. Use SetCrateMapName instead
+  cout << "HERE 1234"<<endl;
   assert( evbuffer );
-   assert( fMap || fgNeedInit );
+  assert( fMap || fgNeedInit );
   Int_t ret = HED_OK;
   buffer = evbuffer;
-  //  if(TestBit(kDebug)) dump(evbuffer);
+  if(TestBit(kDebug)) dump(evbuffer);
   if (first_decode || fgNeedInit) {
     ret = init_cmap();
     if( ret != HED_OK ) return ret;
@@ -72,36 +73,35 @@ Int_t ToyCodaDecoder::LoadEvent(const Int_t* evbuffer, THaCrateMap* map)
     }
   }
   if( fDoBench ) fBench->Begin("clearEvent");
-  for( Int_t i=0; i<fNSlotClear; i++ )
-    crateslot[fSlotClear[i]]->clearEvent();
+  for( Int_t i=0; i<fNSlotClear; i++ ) crateslot[fSlotClear[i]]->clearEvent();
   if( fDoBench ) fBench->Stop("clearEvent");
   event_length = evbuffer[0]+1;  // in longwords (4 bytes)
   event_type = evbuffer[1]>>16;
   if(event_type <= 0) return HED_ERR;
  
- if (event_type <= MAX_PHYS_EVTYPE) {
-    event_num = evbuffer[4];
-    recent_event = event_num;
-    FindRocs(evbuffer);
-  }
+  if (event_type <= MAX_PHYS_EVTYPE) {
+     event_num = evbuffer[4];
+     recent_event = event_num;
+     FindRocs(evbuffer);
 
-  // Decode each ROC
-  // This is not part of the loop above because it may exit prematurely due 
-  // to errors, which would leave the rocdat[] array incomplete.
+   // Decode each ROC
+   // This is not part of the loop above because it may exit prematurely due 
+   // to errors, which would leave the rocdat[] array incomplete.
 
-  for( Int_t i=0; i<nroc; i++ ) {
+    for( Int_t i=0; i<nroc; i++ ) {
  
-    Int_t iroc = irn[i];
-    const RocDat_t* proc = rocdat+iroc;
-    Int_t ipt = proc->pos + 1;
-    Int_t iptmax = proc->pos + proc->len;
-    Int_t status = roc_decode(iroc,evbuffer, ipt, iptmax);
+      Int_t iroc = irn[i];
+      const RocDat_t* proc = rocdat+iroc;
+      Int_t ipt = proc->pos + 1;
+      Int_t iptmax = proc->pos + proc->len;
+      cout << "Calling roc_decode "<<i<<"   "<<iroc<<"  "<<ipt<<"  "<<iptmax<<endl;
+      Int_t status = roc_decode(iroc,evbuffer, ipt, iptmax);
 
-    // do something with status
-    if (status == -1) break;
+      // do something with status
+      if (status == -1) break;
 
+    }
   }
-
 
   return ret;
 }
@@ -125,6 +125,7 @@ Int_t ToyCodaDecoder::roc_decode( Int_t roc, const Int_t* evbuffer,
   Int_t status = SD_ERR;
 
   if (TestBit(kDebug)) cout << "Decode roc#  "<<dec<<roc<<" nslot "<<Nslot<<endl;
+
   if (Nslot <= 0) goto err;
   fMap->setSlotDone();
   while ( p++ < pstop && n_slots_done < Nslot ) {
@@ -147,7 +148,10 @@ Int_t ToyCodaDecoder::roc_decode( Int_t roc, const Int_t* evbuffer,
       }
       ++n_slots_checked;
 
-      status = crateslot[idx(roc,slot)]->LoadIfSlot(p);
+      cout << "Calling load if slot "<<roc<<"   "<<slot<<endl;
+      cout << "numraw here 111 "<<   crateslot[idx(roc,slot)]->getNumRaw()<<endl;
+      status = crateslot[idx(roc,slot)]->LoadIfSlot(p); 
+      cout << "numraw here 222 "<<   crateslot[idx(roc,slot)]->getNumRaw()<<endl;
       if (status == kTRUE) fMap->setSlotDone(slot);
 
       if (p >= pevlen) goto SlotDone;
@@ -168,7 +172,7 @@ Int_t ToyCodaDecoder::roc_decode( Int_t roc, const Int_t* evbuffer,
  err:
   retval = (status == SD_ERR) ? HED_ERR : HED_WARN;
  exit:
-  if( fDoBench ) fBench->Stop("vme_decode");
+  if( fDoBench ) fBench->Stop("roc_decode");
   return retval;
 }
 
@@ -185,7 +189,7 @@ Int_t ToyCodaDecoder::LoadIfFlagData(const Int_t* evbuffer)
   UInt_t word   = *evbuffer;
   UInt_t upword = word & 0xffff0000;
   if (TestBit(kDebug)) {
-    cout << "Flag data "<<hex<<word<<dec<<endl;
+    cout << "TestBit on :  Flag data "<<hex<<word<<dec<<endl;
   }
   if( word == 0xdc0000ff) synchmiss = true;
   if( upword == 0xdcfe0000) {
@@ -216,6 +220,7 @@ Int_t ToyCodaDecoder::LoadIfFlagData(const Int_t* evbuffer)
 
 Int_t ToyCodaDecoder::FindRocs(const Int_t *evbuffer) {
   
+  Int_t ldebug=1;
   assert( evbuffer && fMap );
 #ifdef FIXME
   if( fDoBench ) fBench->Begin("physics_decode");
@@ -249,6 +254,14 @@ Int_t ToyCodaDecoder::FindRocs(const Int_t *evbuffer) {
     pos += len+1;
   }
 
+  if (ldebug) {
+    cout << "num rocs "<<nroc<<endl;
+    for (Int_t i=0; i < nroc; i++) {
+      Int_t iroc=irn[i];
+      cout << "   roc  num "<<iroc<<"   pos "<<rocdat[iroc].pos<<"     len "<<rocdat[iroc].len<<endl;
+    }
+  }
+
   return status;
 
 }
@@ -273,6 +286,8 @@ int ToyCodaDecoder::init_slotdata(const THaCrateMap* map)
 
     }
   }
+
+  cout << "fNSlotUsed "<<fNSlotUsed<<endl;
 
   for( int i=0; i<fNSlotUsed; i++ ) {
     THaSlotData* crslot = crateslot[fSlotUsed[i]];

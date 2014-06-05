@@ -10,12 +10,17 @@
 /////////////////////////////////////////////////////////////////////
 
 #include <string>
+#include <cstdio>
 #include <map>
 #include <vector>
 #include "Rtypes.h"
 #include "TNamed.h"
 #include "ToyModule.h"
 
+
+#include "THaEvData.h"
+
+using namespace std;
 
 class ToyFastbusModule : public ToyModule {
 
@@ -25,13 +30,15 @@ public:
    ToyFastbusModule(Int_t crate, Int_t slot);
    virtual ~ToyFastbusModule(); 
 
-   Int_t Slot(Int_t rdata) { return (rdata&fSlotMask)>>fSlotShift; };
-   Int_t Chan(Int_t rdata) { return (rdata&fChanMask)>>fChanShift; };
-   Int_t Data(Int_t rdata) { return (rdata&fDataMask)>>fDataShift; };
+   Int_t Slot(UInt_t rdata) { return (rdata>>fSlotShift); };
+   Int_t Chan(UInt_t rdata) { return (rdata&fChanMask)>>fChanShift; };
+   Int_t Data(UInt_t rdata) { return (rdata&fDataMask)>>fDataShift; };
          
    Int_t Decode(const Int_t *evbuffer);
+   void Init(Int_t crate, Int_t slot, Int_t, Int_t);
 
    Bool_t IsSlot(Int_t rdata) { return (Slot(rdata)==fSlot); };
+   Int_t LoadSlot(THaSlotData *sldat, const Int_t* evbuffer);
 
 protected:
 
