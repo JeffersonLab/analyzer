@@ -98,6 +98,7 @@ THaAnalyzer::THaAnalyzer() :
   fApps    = gHaApps;
   fScalers = gHaScalers;
   fPhysics = gHaPhysics;
+  fDebug = 0;
 
    ToyPhysicsEvtHandler *h1 = new ToyPhysicsEvtHandler("physics","Test by Bob");
    TDatime td;
@@ -1246,12 +1247,18 @@ Int_t THaAnalyzer::MainAnalysis()
     rawfail = true;
   }
 
-  cout << "---- into Main Analysis for Evt Type Handlers "<<endl;
-  cout << "Event type = "<<fEvData->GetEvType()<<endl;
+  //  cout << "---- into Main Analysis for Evt Type Handlers "<<endl;
+  //  cout << "Event type = "<<fEvData->GetEvType()<<endl;
+
+
   TIter nextp(fEvtHandlers);
   while( ToyEvtTypeHandler* obj = static_cast<ToyEvtTypeHandler*>(nextp()) ) {
-    obj->Print(  );
-    if (obj->IsMyEvent(fEvData->GetEvType())) cout << "Is my type of event !"<<endl;
+    if (fDebug) {
+          obj->Print(  );
+          if (obj->IsMyEvent(fEvData->GetEvType())) 
+               cout << "Is my type of event !"<<endl;
+    }
+    obj->Analyze(fEvData);
   }
 
   bool evdone = false;
