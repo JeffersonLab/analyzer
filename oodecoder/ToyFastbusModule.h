@@ -39,7 +39,8 @@ public:
 
    Bool_t IsSlot(Int_t rdata) { return (Slot(rdata)==fSlot); };
    Int_t LoadSlot(THaSlotData *sldat, const Int_t* evbuffer);
-
+   void DoPrint();
+  
 protected:
 
    Bool_t fHasHeader;

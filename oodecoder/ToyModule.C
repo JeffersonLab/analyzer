@@ -65,7 +65,7 @@ void ToyModule::Create(const ToyModule& rhs) {
 
 void ToyModule::DoPrint() {
 
-  cout << "Module   name = "<<fName<<endl;
+  cout << "ToyModule   name = "<<fName<<endl;
   cout << "Crate  "<<fCrate<<"     slot "<<fSlot<<endl;
 
 }
@@ -121,7 +121,7 @@ Bool_t ToyModule::IsSlot(Int_t rdata) {
 
 Int_t ToyModule::LoadSlot(THaSlotData *sldat, const Int_t* evbuffer) {
 // this increments evbuffer
-  cout << "ToyModule:: loadslot "<<endl; 
+  cout << "x ToyModule:: loadslot "<<endl; 
   if (fHeader<0) cout << "error, not init"<<endl;
   while (IsSlot( *evbuffer )) {
     Decode(evbuffer);

@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////
 //
 //   ToyFastbusModule
 //
@@ -48,17 +48,28 @@ Int_t ToyFastbusModule::Decode(const Int_t *evbuffer) {
 Int_t ToyFastbusModule::LoadSlot(THaSlotData *sldat, const Int_t* evbuffer) {
 // this increments evbuffer
   cout << "ToyFastbusModule:: loadslot "<<endl; 
+  fWordsSeen = 0;
   while (IsSlot( *evbuffer )) {
-    Decode(evbuffer);
-    sldat->loadData(fChan, fData, fRawData);
-    fWordsSeen++;
-    evbuffer++;
-    cout << "hi, evbuff "<<evbuffer<<"   "<<hex<<*evbuffer<<dec<<endl;
-    // Need to prevent runaway
+    if (fHasHeader && fWordsSeen==0) {
+      fWordsSeen++;
+    } else {
+      Decode(evbuffer);
+      sldat->loadData(fChan, fData, fRawData);
+      fWordsSeen++;
+      evbuffer++;
+      cout << "hi, evbuff "<<evbuffer<<"   "<<hex<<*evbuffer<<dec<<endl;
+      // Need to prevent runaway
+    }
   }
   return 1;
 }
 
+void ToyFastbusModule::DoPrint() {
+
+  cout << "ToyFastbusModule   name = "<<fName<<endl;
+  cout << "Crate  "<<fCrate<<"     slot "<<fSlot<<endl;
+
+}
 
 
 ClassImp(ToyFastbusModule)

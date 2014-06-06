@@ -26,7 +26,7 @@ public:
      ToyModuleType ( const char *c1, Int_t i1 ) : fClassName(c1), fMapNum(i1), fTClass(0) {}
      bool operator<( const ToyModuleType& rhs ) const { return fMapNum < rhs.fMapNum; }
      const char*      fClassName;
-     Int_t  fMapNum;
+     Int_t            fMapNum;
      mutable TClass*  fTClass;
   };
 
@@ -49,15 +49,15 @@ public:
 
   virtual Int_t Decode(const Int_t *p)=0;  // --> abstract
 
-  Int_t GetCrate() { return fCrate; };
-  Int_t GetSlot() { return fSlot; };
+  virtual Int_t GetCrate() { return fCrate; };
+  virtual Int_t GetSlot() { return fSlot; };
 
   ToyModule& operator=(const ToyModule &rhs);
 
   virtual void DoPrint();
 
 // Loads sldat and increments ptr to evbuffer
-  Int_t LoadSlot(THaSlotData *sldat,  const Int_t* evbuffer );  
+  virtual Int_t LoadSlot(THaSlotData *sldat,  const Int_t* evbuffer );  
 
 protected:
 

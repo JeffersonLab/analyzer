@@ -101,7 +101,7 @@ void process (THaEvData *evdata) {
 // This is like what one might do in a detector decode() routine.
 
       int crate = 1;    // for example
-      int slot = 24;
+      int slot = 25;
 
 //  Here are raw 32-bit CODA words for this crate and slot
       cout << "Raw Data Dump for crate "<<dec<<crate<<" slot "<<slot<<endl; 

@@ -151,6 +151,7 @@ Int_t THaSlotData::LoadIfSlot(const Int_t* p) {
     cout << "not slot "<<endl;
     return SD_ERR;
   }
+  fModule->DoPrint();
   fModule->Clear("");
   Int_t done = 0;
   cout << "is slot "<<done<<endl;
