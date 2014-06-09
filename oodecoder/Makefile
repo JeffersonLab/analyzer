@@ -63,6 +63,7 @@ ifndef STANDALONE
    INCLUDES += -I$(MAINDIR)
    CXXFLAGS += -DSTANDALONE
 else
+   INCLUDES += -I$(MAINDIR)
    ARCH          = linux
   # ARCH           = macosx
   # ARCH          = solarisCC5
@@ -201,10 +202,10 @@ GLIBS        += $(ROOTGLIBS) $(SYSLIBS)
 SRC = THaUsrstrutils.C THaCrateMap.C THaCodaData.C \
       THaEpics.C THaFastBusWord.C THaCodaFile.C THaSlotData.C \
       THaEvData.C evio.C THaCodaDecoder.C \
-      ToyCodaDecoder.C ToyEvtTypeHandler.C \
-      ToyPhysicsEvtHandler.C ToyScalerEvtHandler.C \
+      ToyCodaDecoder.C \
       ToyModule.C ToyModuleX.C ToyFastbusModule.C ToyModuleCollect.C \
-      Lecroy1877Module.C
+      Lecroy1877Module.C Lecroy1875Module.C Lecroy1881Module.C \
+      THaGenScaler.C 
 
 PROGS = tcrmap tmodco tstoy tstio tdecpr tdecex prfact epicsd 
 # If you want to use the ET system at Jlab.
