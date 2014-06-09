@@ -384,8 +384,7 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
     //For now, do nothing
 #ifdef WITH_DEBUG
     if( fDebug>1 )
-      cout << "missing cluster " << nLower << " "
-	   << nUpper << endl;
+      cout << "missing cluster " << nLower << " " << nUpper << endl;
 #endif
   }
 
@@ -512,8 +511,10 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 	  found = true;
 	  break;
 	}
+#ifdef WITH_DEBUG
 	// FIXME: for debugging
 	n_oops++;
+#endif
       }
 
       UInt_t flag = theStage;
@@ -544,8 +545,8 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 	  flag |= kReassigned;
       }
 
-      theTrack->SetD(lowerPoint->GetX(), lowerPoint->GetY(), lowerPoint->GetTheta(),
-		     lowerPoint->GetPhi());
+      theTrack->SetD(lowerPoint->GetX(), lowerPoint->GetY(),
+		     lowerPoint->GetTheta(), lowerPoint->GetPhi());
       theTrack->SetFlag( flag );
 
       // Calculate the TRANSPORT coordinates
