@@ -12,6 +12,10 @@
 #pragma link C++ class Lecroy1877Module+;  
 #pragma link C++ class Lecroy1881Module+;  
 #pragma link C++ class Lecroy1875Module+;  
+#pragma link C++ class Scaler1151+;  
+#pragma link C++ class Scaler3800+;  
+#pragma link C++ class Scaler3801+;  
+#pragma link C++ class Scaler560+;  
 #pragma link C++ class THaGenScaler+;  
 #pragma link C++ class ToyModuleX+;  
 
