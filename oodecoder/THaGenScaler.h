@@ -34,6 +34,7 @@ public:
    void Clear(const Option_t *opt) { fIsDecoded=kFALSE; };
    Bool_t IsDecoded() { return fIsDecoded; };
    void LoadNormScaler(THaGenScaler *scal);
+   void DoPrint();
 
 protected:
 

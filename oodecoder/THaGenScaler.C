@@ -21,6 +21,7 @@ THaGenScaler::THaGenScaler(Int_t crate, Int_t slot, Int_t numchan) : ToyModule(c
   fClockChan = -1;
   fClockRate = 0;
   fNormScaler = 0;  
+  fNumChanMask = 0xf0;
   fDeltaT = DEFAULT_DELTAT;  // a default time interval between readings
   fWordsExpect = numchan;  
   fDataArray = new Int_t[fWordsExpect];
@@ -92,9 +93,11 @@ Int_t THaGenScaler::Decode(const Int_t *evbuffer) {
   // Return arg:
   //     0 = did not decode this module since slot not found yet.
   //     1 = slot found, decode finished.
-  Int_t result=0;
+  Int_t ldebug=1;
   Int_t doload=0;
-  if (IsDecoded()) return result;
+  Int_t nfound=1;
+  if (IsDecoded()) return nfound;
+  if (ldebug) cout << "x decoding in slot "<<fSlot<<endl;
   if (fFirstTime) {
     fFirstTime = kFALSE;
   } else {
@@ -102,14 +105,17 @@ Int_t THaGenScaler::Decode(const Int_t *evbuffer) {
     memcpy(fPrevData, fDataArray, fWordsExpect*sizeof(Int_t));
   }
   if (IsSlot(*evbuffer)) {
-    result=1;
+    if (ldebug) cout << "is slot 0x"<<hex<<*evbuffer<<dec<<endl;
     fIsDecoded = kTRUE;
+    evbuffer++;
     for (Int_t i=0; i<fWordsExpect; i++) {
-      fDataArray[i] = *(evbuffer+i+1);
+      fDataArray[i] = *(evbuffer++);
+      nfound++;
+      if (ldebug) cout << "   data["<<i<<"] = 0x"<<hex<<fDataArray[i]<<dec<<endl;
     }
   }
   if (doload) LoadRates();
-  return result;
+  return nfound;
 }
 
 Double_t THaGenScaler::GetTimeSincePrev() {
@@ -129,8 +135,10 @@ Double_t THaGenScaler::GetTimeSincePrev() {
 }
 
 void THaGenScaler::LoadRates() {
+  cout << "LoadRates "<<endl;
   if (IsDecoded()) {
     Double_t dtime = GetTimeSincePrev();
+    cout << "dtime = "<<dtime<<endl;
     if (dtime==0) {
        memset(fRate, 0, fWordsExpect*sizeof(Double_t));
        return;
@@ -155,6 +163,12 @@ Double_t THaGenScaler::GetRate(Int_t chan) {
   } else {
     return 0;
   }
+}
+
+void THaGenScaler::DoPrint() {
+  cout << "THaGenScaler::   crate "<<fCrate<<"   slot "<<fSlot<<endl;
+  cout << "THaGenScaler::   Header 0x"<<hex<<fHeader<<"    Mask  0x"<<fHeaderMask<<dec<<endl;
+
 }
 
 Bool_t THaGenScaler::IsSlot(Int_t rdata) {
