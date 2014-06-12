@@ -105,9 +105,13 @@ THaAnalyzer::THaAnalyzer() :
    h1->Init(td);
    h1->Print();
 
-   ToyScalerEvtHandler *h2 = new ToyScalerEvtHandler("scaler","Event type 140");
+   ToyScalerEvtHandler *h2 = new ToyScalerEvtHandler("Left","Event type 140");
    h2->Init(td);
    h2->Print();
+
+   ToyScalerEvtHandler *h3 = new ToyScalerEvtHandler("Right","Event type 140");
+   h3->Init(td);
+   h3->Print();
   
    fEvtHandlers = new TList();
 
@@ -595,8 +599,11 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
 
   //--- Create our decoder from the TClass specified by the user.
   bool new_decoder = false;
+  cout << "fEvData ?  "<<fEvData<<endl;
+  //cout << "fEvData IsA ?  "<<fEvData->IsA()<<endl;
   if( !fEvData || fEvData->IsA() != gHaDecoder ) {
     delete fEvData; fEvData = NULL;
+    cout << "gHaDecoder "<<gHaDecoder<<endl;
     if( gHaDecoder ) 
       fEvData = static_cast<THaEvData*>(gHaDecoder->New());
     if( !fEvData ) {

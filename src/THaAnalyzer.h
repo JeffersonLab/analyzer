@@ -186,6 +186,7 @@ protected:
   // In-class constants
   static const char* const kMasterCutName;
   static const char* const kDefaultOdefFile;
+  Int_t fDebug;
 
 private:
   THaAnalyzer( const THaAnalyzer& );

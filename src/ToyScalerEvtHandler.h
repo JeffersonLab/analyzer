@@ -14,6 +14,8 @@
 #include <vector>
 #include "Rtypes.h"
 
+class THaGenScaler;
+
 class ToyScalerEvtHandler : public ToyEvtTypeHandler {
 
 public:
@@ -26,6 +28,9 @@ public:
 
 
 private:
+
+   vector<THaGenScaler *> scalers;
+   Int_t *rdata;
 
    ToyScalerEvtHandler(const ToyScalerEvtHandler &fh);
    ToyScalerEvtHandler& operator=(const ToyScalerEvtHandler &fh);
