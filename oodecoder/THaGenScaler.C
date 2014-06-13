@@ -40,7 +40,7 @@ THaGenScaler::~THaGenScaler() {
 }
 
 Int_t THaGenScaler::SetClock(Double_t deltaT, Int_t clockchan, Double_t clockrate) {
-  // Sets teh clock for the time base
+  // Sets the clock for the time base
   // retcode:
   //     0   nothing wrong, but has no deltaT nor clock data. (a bit odd)
   //    -1   something wrong, see error print
@@ -97,14 +97,13 @@ Int_t THaGenScaler::Decode(const Int_t *evbuffer) {
   Int_t doload=0;
   Int_t nfound=1;
   if (IsDecoded()) return nfound;
-  if (ldebug) cout << "x decoding in slot "<<fSlot<<endl;
-  if (fFirstTime) {
-    fFirstTime = kFALSE;
-  } else {
-    doload=1;
-    memcpy(fPrevData, fDataArray, fWordsExpect*sizeof(Int_t));
-  }
   if (IsSlot(*evbuffer)) {
+    if (fFirstTime) {
+      fFirstTime = kFALSE;
+    } else {
+      doload=1;
+      memcpy(fPrevData, fDataArray, fWordsExpect*sizeof(Int_t));
+    }
     if (ldebug) cout << "is slot 0x"<<hex<<*evbuffer<<dec<<endl;
     fIsDecoded = kTRUE;
     evbuffer++;
@@ -123,11 +122,18 @@ Double_t THaGenScaler::GetTimeSincePrev() {
 // If a normalization scaler was defined, use its time base.
 // Otherwise, if this scaler has a clock, use it to get the time precisely.
 // Finally, if there is no clock, use fDeltaT as an approximate time.
-  
+
+  Int_t ldebug=0;  
   if (fNormScaler) return fNormScaler->GetTimeSincePrev();
   Double_t dtime = 0;
+  if (ldebug) {
+     cout << "Into GetTimeSincePrev "<<endl;
+     if (IsDecoded()) cout << "Is Decoded "<<endl;
+     if (fHasClock) cout << "has Clock "<<endl;
+  }
   if (IsDecoded() && fHasClock && fClockRate>0 && checkchan(fClockChan)) {
     dtime = (fDataArray[fClockChan]-fPrevData[fClockChan])/fClockRate;
+    if (ldebug) cout << "GetTimeSincePrev  "<<fClockRate<<"   "<<fClockChan<<"   "<<dtime<<endl;
   } else {
     if (fDeltaT > 0) dtime = fDeltaT;   // default
   }
@@ -168,7 +174,19 @@ Double_t THaGenScaler::GetRate(Int_t chan) {
 void THaGenScaler::DoPrint() {
   cout << "THaGenScaler::   crate "<<fCrate<<"   slot "<<fSlot<<endl;
   cout << "THaGenScaler::   Header 0x"<<hex<<fHeader<<"    Mask  0x"<<fHeaderMask<<dec<<endl;
+  cout << "num words expected  "<<fWordsExpect<<endl;
+  if (fHasClock) cout << "Has a clock"<<endl;
+  if (fNormScaler) cout << "Using norm scaler with ptr = "<<fNormScaler << endl;
+  cout << "Clock channel "<<fClockChan<<"   clock rate "<<fClockRate<<endl;
+}
 
+void THaGenScaler::DebugPrint(ofstream *file) {
+  if (!file) return;
+  *file<<"----  Data ---- "<<fWordsExpect<<endl;
+  *file<<"Data now   //   previous    //   rate  "<<endl;
+  for (Int_t i=0; i<fWordsExpect; i++) {
+     *file << "  0x"<<hex<<fDataArray[i]<<"   0x"<<fPrevData[i]<<dec<<"   "<<fRate[i]<<endl;
+  }
 }
 
 Bool_t THaGenScaler::IsSlot(Int_t rdata) {
