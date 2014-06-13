@@ -11,10 +11,14 @@
 
 #include <string>
 #include <map>
+#include <iostream>
+#include <fstream>
 #include <vector>
 #include "Rtypes.h"
+#include "TTree.h"
 
 class THaGenScaler;
+class THaRunBase;
 
 class ToyScalerEvtHandler : public ToyEvtTypeHandler {
 
@@ -24,13 +28,18 @@ public:
    virtual ~ToyScalerEvtHandler();  
 
    Int_t Analyze(THaEvData *evdata);
-   virtual EStatus Init( const TDatime& run_time );
+   virtual EStatus Init( const TDatime& run_time, Int_t idebug=0 );
+   Int_t End( THaRunBase* r=0 );
 
 
 private:
 
    vector<THaGenScaler *> scalers;
    Int_t *rdata;
+   ofstream *fDebugFile;
+   TTree *fScalerTree;
+
+   Double_t TSbcmu1, TSbcmu1r, TSbcmu3, TSbcmu3r;
 
    ToyScalerEvtHandler(const ToyScalerEvtHandler &fh);
    ToyScalerEvtHandler& operator=(const ToyScalerEvtHandler &fh);
