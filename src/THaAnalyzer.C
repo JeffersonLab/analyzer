@@ -106,11 +106,11 @@ THaAnalyzer::THaAnalyzer() :
    h1->Print();
 
    ToyScalerEvtHandler *h2 = new ToyScalerEvtHandler("Left","Event type 140");
-   h2->Init(td);
+   h2->Init(td, 1);
    h2->Print();
 
    ToyScalerEvtHandler *h3 = new ToyScalerEvtHandler("Right","Event type 140");
-   h3->Init(td);
+   h3->Init(td, 1);
    h3->Print();
   
    fEvtHandlers = new TList();
@@ -991,7 +991,10 @@ Int_t THaAnalyzer::EndAnalysis()
   while( THaAnalysisObject* obj = static_cast<THaAnalysisObject*>(nextp()) ) {
     obj->End( fRun );
   }
-
+  TIter nexte(fEvtHandlers);
+  while( ToyEvtTypeHandler* obj = static_cast<ToyEvtTypeHandler*>(nexte()) ) {
+    obj->End( fRun );
+  }
   return 0;
 }
 
