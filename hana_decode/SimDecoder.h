@@ -5,7 +5,7 @@
 
 /////////////////////////////////////////////////////////////////////
 //
-//   SimDecoder
+//   Podd::SimDecoder
 //
 //   Generic simulation decoder interface
 //
@@ -14,6 +14,8 @@
 #include "THaEvData.h"
 #include "THaAnalysisObject.h"
 #include "TClonesArray.h"
+
+namespace Podd {
 
 // MC truth information for detector hits
 class MCHitInfo {
@@ -68,5 +70,8 @@ protected:
   ClassDef(SimDecoder,0) // Generic decoder for simulation data
 };
 
+///////////////////////////////////////////////////////////////////////////////
+
+} // end namespace Podd
 
 #endif

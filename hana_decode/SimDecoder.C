@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////
 //
-//   SimDecoder
+//   Podd::SimDecoder
 //
 //   Generic simulation decoder interface
 //
@@ -9,6 +9,11 @@
 #include "SimDecoder.h"
 
 using namespace std;
+
+ClassImp(Podd::SimDecoder)
+ClassImp(Podd::MCHitInfo)
+
+namespace Podd {
 
 // Prefix of our own global variables (MC truth data)
 const char* const MC_PREFIX = "MC.";
@@ -95,5 +100,6 @@ void MCHitInfo::MCPrint() const
        << endl;
 }
 
-//_____________________________________________________________________________
-ClassImp(SimDecoder)
+///////////////////////////////////////////////////////////////////////////////
+
+} // end namespace Podd
