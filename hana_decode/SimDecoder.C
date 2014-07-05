@@ -19,7 +19,7 @@ namespace Podd {
 const char* const MC_PREFIX = "MC.";
 
 //_____________________________________________________________________________
-SimDecoder::SimDecoder() : fMCHits(0), fMCTracks(0)
+SimDecoder::SimDecoder() : fMCHits(0), fMCTracks(0), fIsSetup(false)
 {
   // Constructor. Derived classes must allocate the TClonesArrays using
   // their respective hit and track classes
@@ -68,7 +68,7 @@ Int_t SimDecoder::DefineVariables( THaAnalysisObject::EMode mode )
   // Define generic global variables. Derived classes may override or extend
   // this function. It is not automatically called.
 
-  const char* const here = __FUNCTION__;
+  const char* const here = "SimDecoder::DefineVariables";
 
   if( mode == THaAnalysisObject::kDefine && fIsSetup )
     return THaAnalysisObject::kOK;
