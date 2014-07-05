@@ -22,7 +22,7 @@ class MCHitInfo {
 public:
   MCHitInfo() : fMCTrack(0), fContam(0), fMCPos(0), fMCTime(0) {}
   MCHitInfo( Int_t mctrk, Double_t mcpos, Double_t time, Int_t contam = 0 )
-    : fMCTrack(mctrk), fContam(contam), fMCPos(mcpos), fMCTime(0) {}
+    : fMCTrack(mctrk), fContam(contam), fMCPos(mcpos), fMCTime(time) {}
   virtual ~MCHitInfo() {}
 
   void MCPrint() const;
