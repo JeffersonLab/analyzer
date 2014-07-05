@@ -197,7 +197,7 @@ GLIBS        += $(ROOTGLIBS) $(SYSLIBS)
 
 SRC = THaUsrstrutils.C THaCrateMap.C THaCodaData.C \
       THaEpics.C THaFastBusWord.C THaCodaFile.C THaSlotData.C \
-      THaEvData.C THaCodaDecoder.C
+      THaEvData.C THaCodaDecoder.C SimDecoder.C
 
 PROGS = tstio tdecpr tdecex prfact epicsd 
 # If you want to use the ET system at Jlab.
