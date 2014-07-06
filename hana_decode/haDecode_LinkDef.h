@@ -16,6 +16,7 @@
 #pragma link C++ class THaBenchmark+;
 #pragma link C++ class THaEvData::RocDat_t+;
 #pragma link C++ class Podd::MCHitInfo+;
+#pragma link C++ class Podd::MCTrackPoint+;
 #pragma link C++ class Podd::SimDecoder+;
 
 #ifdef ONLINE_ET
@@ -23,10 +24,3 @@
 #endif
 
 #endif
-
-
-
-
-
-
-

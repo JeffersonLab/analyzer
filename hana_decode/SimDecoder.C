@@ -21,9 +21,10 @@ const char* const MC_PREFIX = "MC.";
 //_____________________________________________________________________________
 SimDecoder::SimDecoder() : fMCHits(0), fMCTracks(0), fIsSetup(false)
 {
-  // Constructor. Derived classes must allocate the TClonesArrays using
-  // their respective hit and track classes
+  // Constructor. Derived classes must allocate the track and hit
+  // TClonesArrays using their respective hit and track classes
 
+  fMCPoints = new TClonesArray( "Podd::MCTrackPoint", 50 );
 }
 
 //_____________________________________________________________________________
@@ -33,6 +34,7 @@ SimDecoder::~SimDecoder()
   // delete them and set the pointers to zero (using SafeDelete, for example),
   // else we may double-delete.
 
+  SafeDelete(fMCPoints);
   SafeDelete(fMCTracks);
   SafeDelete(fMCHits);
 }
@@ -50,6 +52,7 @@ void SimDecoder::Clear( Option_t* opt )
     fMCHits->Clear();
   if( fMCTracks )
     fMCTracks->Clear();
+  fMCPoints->Clear();
 }
 
 //_____________________________________________________________________________
@@ -93,11 +96,21 @@ void MCHitInfo::MCPrint() const
 {
   // Print MC hit info
 
-  cout << " MCtrack =" << fMCTrack
-       << ", MCpos =" << fMCPos
-       << ", MCtime =" << fMCTime
-       << ", num_bg =" << fContam
+  cout << " MCtrack = " << fMCTrack
+       << ", MCpos = " << fMCPos
+       << ", MCtime = " << fMCTime
+       << ", num_bg = " << fContam
        << endl;
+}
+
+//_____________________________________________________________________________
+void MCTrackPoint::Print( Option_t* ) const
+{
+  // Print MC hit info
+
+  cout << " MCtrack = " << fMCTrack
+       << ", plane = "  << fPlane
+       << ", coord = "; fMCPoint.Print();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
