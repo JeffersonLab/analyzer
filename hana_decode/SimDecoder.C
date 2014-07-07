@@ -49,9 +49,9 @@ void SimDecoder::Clear( Option_t* opt )
   THaEvData::Clear();
 
   if( fMCHits )
-    fMCHits->Clear();
+    fMCHits->Clear(opt);
   if( fMCTracks )
-    fMCTracks->Clear();
+    fMCTracks->Clear(opt);
   fMCPoints->Clear();
 }
 
@@ -81,8 +81,50 @@ Int_t SimDecoder::DefineVariables( THaAnalysisObject::EMode mode )
     // Generated hit and track info. Just report the sizes of the arrays.
     // Anything beyond this requires the type of the actual hit and
     // track classes.
-    { "hit.n",     "Number of MC hits",   "GetNMCHits()" },
     { "tr.n",      "Number of MC tracks", "GetNMCTracks()" },
+    { "hit.n",     "Number of MC hits",   "GetNMCHits()" },
+    // MCTrackPoints
+    { "pt.n",      "Number of MC track points",
+                                                        "GetNMCPoints()" },
+    { "pt.plane",  "Plane number",
+                                   "fMCPoints.Podd::MCTrackPoint.fPlane" },
+    { "pt.type",   "Plane type",
+                                    "fMCPoints.Podd::MCTrackPoint.fType" },
+    { "pt.status", "Reconstruction status",
+                                  "fMCPoints.Podd::MCTrackPoint.fStatus" },
+    { "pt.time",   "Track arrival time [s]",
+                                  "fMCPoints.Podd::MCTrackPoint.fMCTime" },
+    { "pt.p",      "Track momentum [GeV]",
+                                      "fMCPoints.Podd::MCTrackPoint.P() "},
+    // MC point positions in Cartesian/TRANSPORT coordinates
+    { "pt.x",      "Track pos lab x [m]",
+                                      "fMCPoints.Podd::MCTrackPoint.X()" },
+    { "pt.y",      "Track pos lab y [m]",
+                                      "fMCPoints.Podd::MCTrackPoint.Y()" },
+    { "pt.th",     "Track dir tan(theta)",
+                                 "fMCPoints.Podd::MCTrackPoint.ThetaT()" },
+    { "pt.ph",     "Track dir tan(phi)",
+                                   "fMCPoints.Podd::MCTrackPoint.PhiT()" },
+    // MC point positions and directions in cylindrical/spherical coordinates
+    { "pt.r",      "Track pos lab r_trans [m]",
+                                      "fMCPoints.Podd::MCTrackPoint.R()" },
+    { "pt.theta",  "Track pos lab theta [rad]",
+                                  "fMCPoints.Podd::MCTrackPoint.Theta()" },
+    { "pt.phi",    "Track pos lab phi [rad]",
+                                    "fMCPoints.Podd::MCTrackPoint.Phi()" },
+    { "pt.thdir",  "Track dir theta [rad]",
+                               "fMCPoints.Podd::MCTrackPoint.ThetaDir()" },
+    { "pt.phdir",  "Track dir phi [rad]",
+                                 "fMCPoints.Podd::MCTrackPoint.PhiDir()" },
+    // MC point analysis results
+    { "pt.deltaE", "Eloss wrt prev plane (GeV)",
+                                  "fMCPoints.Podd::MCTrackPoint.fDeltaE" },
+    { "pt.deflect","Deflection wrt prev plane (rad)",
+                                 "fMCPoints.Podd::MCTrackPoint.fDeflect" },
+    { "pt.hitres", "Hit residual (mm)",
+                                "fMCPoints.Podd::MCTrackPoint.fHitResid" },
+    { "pt.trkres", "Track residual (mm)",
+                              "fMCPoints.Podd::MCTrackPoint.fTrackResid" },
     { 0 }
   };
 
@@ -94,7 +136,7 @@ Int_t SimDecoder::DefineVariables( THaAnalysisObject::EMode mode )
 //_____________________________________________________________________________
 void MCHitInfo::MCPrint() const
 {
-  // Print MC hit info
+  // Print MC digitized hit info
 
   cout << " MCtrack = " << fMCTrack
        << ", MCpos = " << fMCPos
@@ -106,11 +148,20 @@ void MCHitInfo::MCPrint() const
 //_____________________________________________________________________________
 void MCTrackPoint::Print( Option_t* ) const
 {
-  // Print MC hit info
+  // Print MC track point info
 
-  cout << " MCtrack = " << fMCTrack
-       << ", plane = "  << fPlane
-       << ", coord = "; fMCPoint.Print();
+  cout << " MCtrack = "     << fMCTrack
+       << ", plane = "      << fPlane
+       << ", plane_type = " << fType
+       << ", status = "     << fStatus << endl
+       << " coord = ";  fMCPoint.Print();
+  cout << " P = ";      fMCP.Print();
+  cout << " time = "        << fMCTime << " s"
+       << ", deltaE = "     << fDeltaE << " GeV"
+       << ", deflect = "    << 1e3*fDeflect << " mrad"
+       << ", hit_resid = "  << 1e3*fHitResid << " mm"
+       << ", trk_resid = "  << 1e3*fTrackResid << " mm"
+       << endl;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -16,6 +16,10 @@
 #include "TClonesArray.h"
 #include "TVector3.h"
 
+#ifndef KBIG
+#define KBIG THaAnalysisObject::kBig
+#endif
+
 namespace Podd {
 
 // Recommended prefix of MC global variables (MC truth data)
@@ -52,16 +56,41 @@ public:
 // A MC physics track's interaction point at a tracker plane in the lab system.
 class MCTrackPoint : public TObject {
 public:
-  MCTrackPoint() : fMCTrack(0) {}
-  MCTrackPoint( Int_t mctrk, Int_t plane, const TVector3& point )
-    : fMCTrack(mctrk), fPlane(plane), fMCPoint(point) {}
+  MCTrackPoint() : fMCTrack(0), fPlane(-1), fType(-1), fStatus(-1),
+		   fMCPoint(KBIG,KBIG,KBIG), fMCP(KBIG,KBIG,KBIG),
+		   fMCTime(KBIG), fDeltaE(KBIG), fDeflect(KBIG),
+		   fHitResid(KBIG), fTrackResid(KBIG)  {}
+  MCTrackPoint( Int_t mctrk, Int_t plane, Int_t type, const TVector3& point,
+		const TVector3& pvect )
+    : fMCTrack(mctrk), fPlane(plane), fType(type), fStatus(-1), fMCPoint(point),
+      fMCP(pvect), fMCTime(KBIG), fDeltaE(KBIG), fDeflect(KBIG),
+      fHitResid(KBIG), fTrackResid(KBIG)  {}
   virtual ~MCTrackPoint() {}
 
   virtual void Print( Option_t* opt ) const;
 
+  Double_t X()         const { return fMCPoint.X(); }
+  Double_t Y()         const { return fMCPoint.Y(); }
+  Double_t P()         const { return fMCP.Mag(); }
+  Double_t ThetaT()    const { return fMCP.Px()/fMCP.Pz(); }
+  Double_t PhiT()      const { return fMCP.Py()/fMCP.Pz(); }
+  Double_t R()         const { return fMCPoint.Perp(); }
+  Double_t Theta()     const { return fMCPoint.Theta(); }
+  Double_t Phi()       const { return fMCPoint.Phi(); }
+  Double_t ThetaDir()  const { return fMCP.Theta(); }
+  Double_t PhiDir()    const { return fMCP.Phi(); }
+
   Int_t    fMCTrack;  // MC track number generating this point
   Int_t    fPlane;    // Tracker plane/layer number
-  TVector3 fMCPoint;  // Truth position of a MC physics track in a tracker plane
+  Int_t    fType;     // Plane type (u,v,x etc.)
+  Int_t    fStatus;   // Reconstruction status (typ != 0 -> failed to find)
+  TVector3 fMCPoint;  // Truth position of a MC physics track in a tracker plane (m)
+  TVector3 fMCP;      // True momentum vector at this position (GeV)
+  Double_t fMCTime;   // Arrival time wrt trigger (s)
+  Double_t fDeltaE;   // Energy loss wrt prior plane, kBig if unknown (GeV)
+  Double_t fDeflect;  // Deflection angle wrt prior plane (rad)
+  Double_t fHitResid; // True residual reconstructed hit pos - MC track pos (m)
+  Double_t fTrackResid; // True residual reconstructed track - MC track (m)
 
   ClassDef(MCTrackPoint,1)  // Monte Carlo track interaction coordinates
 };
@@ -101,7 +130,7 @@ protected:
 
   TClonesArray*  fMCHits;     //-> MC hits
   TClonesArray*  fMCTracks;   //-> MC physics tracks
-  TClonesArray*  fMCPoints;   //-> Points of the MC physics tracks
+  TClonesArray*  fMCPoints;   //-> MC physics track points
   Bool_t         fIsSetup;    // DefineVariables has run
 
   ClassDef(SimDecoder,0) // Generic decoder for simulation data
