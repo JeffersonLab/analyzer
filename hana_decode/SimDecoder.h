@@ -67,7 +67,9 @@ public:
       fHitResid(KBIG), fTrackResid(KBIG)  {}
   virtual ~MCTrackPoint() {}
 
-  virtual void Print( Option_t* opt ) const;
+  virtual Int_t  Compare( const TObject* obj ) const;
+  virtual Bool_t IsSortable() const { return kTRUE; }
+  virtual void   Print( Option_t* opt ) const;
 
   Double_t X()         const { return fMCPoint.X(); }
   Double_t Y()         const { return fMCPoint.Y(); }
@@ -89,8 +91,12 @@ public:
   Double_t fMCTime;   // Arrival time wrt trigger (s)
   Double_t fDeltaE;   // Energy loss wrt prior plane, kBig if unknown (GeV)
   Double_t fDeflect;  // Deflection angle wrt prior plane (rad)
-  Double_t fHitResid; // True residual reconstructed hit pos - MC track pos (m)
-  Double_t fTrackResid; // True residual reconstructed track - MC track (m)
+  Double_t fHitResid; // True residual reconstructed hit pos - MC hit pos (m)
+  Double_t fTrackResid; // True residual reconstructed track - MC hit pos (m)
+  //TODO:
+  // tof (deltaTime)
+  // fMCHitRes  // distance to reconstructed hit containing true MC signal
+  // enum of status bits for fStatus
 
   ClassDef(MCTrackPoint,1)  // Monte Carlo track interaction coordinates
 };

@@ -10,9 +10,6 @@
 
 using namespace std;
 
-ClassImp(Podd::SimDecoder)
-ClassImp(Podd::MCHitInfo)
-
 namespace Podd {
 
 // Prefix of our own global variables (MC truth data)
@@ -143,6 +140,22 @@ void MCHitInfo::MCPrint() const
        << ", MCtime = " << fMCTime
        << ", num_bg = " << fContam
        << endl;
+};
+
+//_____________________________________________________________________________
+Int_t MCTrackPoint::Compare( const TObject* obj ) const
+{
+  // Sorting function for MCTrackPoints. Orders by fType, then fPlane.
+  // Returns -1 if this is smaller than rhs, 0 if equal, +1 if greater.
+
+  assert( dynamic_cast<const MCTrackPoint*>(obj) );
+  const MCTrackPoint* rhs = static_cast<const MCTrackPoint*>(obj);
+
+  if( fType  < rhs->fType  ) return -1;
+  if( fType  > rhs->fType  ) return  1;
+  if( fPlane < rhs->fPlane ) return -1;
+  if( fPlane > rhs->fPlane ) return  1;
+  return 0;
 }
 
 //_____________________________________________________________________________
@@ -167,3 +180,6 @@ void MCTrackPoint::Print( Option_t* ) const
 ///////////////////////////////////////////////////////////////////////////////
 
 } // end namespace Podd
+
+ClassImp(Podd::SimDecoder)
+ClassImp(Podd::MCHitInfo)
