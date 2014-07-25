@@ -46,6 +46,9 @@ void THaTrack::Clear( const Option_t* opt )
     fVertex.SetXYZ( kBig, kBig, kBig );
     fVertexError.SetXYZ( kBig, kBig, kBig );
     fPathl = fTime = fdTime = fBeta = fdBeta = kBig;
+#ifdef HALLC_MODS
+    fDedx = fEnergy = kBig;
+#endif
     fChi2 = kBig; fNDoF = 0;
     memset( fClusters, 0, kMAXCL*sizeof(THaCluster*) );
   }
