@@ -35,7 +35,7 @@ extern const char* const MC_PREFIX;
 // background) and which generated on demand for certain hardware channels,
 // typically to compare measured to true hit data
 
-// MC truth information for digitized etector hits
+// MC truth information for digitized detector hits
 class MCHitInfo {
 public:
   MCHitInfo() : fMCTrack(0), fContam(0), fMCPos(0), fMCTime(0) {}
@@ -44,13 +44,14 @@ public:
   virtual ~MCHitInfo() {}
 
   void MCPrint() const;
+  void MCClear() { fMCTrack = fContam = 0; fMCPos = fMCTime = 0; }
 
   Int_t    fMCTrack;     // MC signal track number generating this hit
   Int_t    fContam;      // Indicator for contributions other than signal
   Double_t fMCPos;       // True MC track crossing position (m)
   Double_t fMCTime;      // Hit time (s)
 
-  ClassDef(MCHitInfo,0)  // Generic Monte Carlo hit info
+  ClassDef(MCHitInfo,1)  // Generic Monte Carlo hit info
 };
 
 // A MC physics track's interaction point at a tracker plane in the lab system.
