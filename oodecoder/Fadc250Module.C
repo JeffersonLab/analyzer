@@ -1,0 +1,439 @@
+////////////////////////////////////////////////////////////////////
+//
+//   Fadc250Module
+//   JLab FADC 250 Module
+//
+/////////////////////////////////////////////////////////////////////
+
+#include "Fadc250Module.h"
+#include "THaEvData.h"
+#include "TMath.h"
+#include <iostream>
+#include <string>
+#include <sstream>
+
+using namespace std;
+
+
+Fadc250Module::Fadc250Module(Int_t crate, Int_t slot) : ToyModuleX(crate, slot) {
+  fNumAInt = new Int_t[NADCCHAN];
+  fNumTInt = new Int_t[NADCCHAN];
+  fNumSample = new Int_t[NADCCHAN];
+  fAdcData = new Int_t[MAXEVT*MAXRAW];
+  fTdcData = new Int_t[MAXEVT*MAXRAW];
+  f250_setmode=-1;
+  f250_foundmode=-1;
+  Clear();
+}
+
+Fadc250Module::~Fadc250Module() { 
+  if (fNumAInt) delete [] fNumAInt;
+  if (fNumTInt) delete [] fNumTInt;
+  if (fNumSample) delete [] fNumSample;
+  if (fAdcData) delete [] fAdcData;
+  if (fTdcData) delete [] fTdcData;
+}
+
+
+Bool_t Fadc250Module::IsSlot(Int_t rdata) {
+  return ((rdata != 0xffffffff) & ((rdata & fHeaderMask)==fHeader))
+}
+
+void Fadc250Module::CheckSetMode() {
+  if (f250_setmode != F250_SAMPLE && f250_setmode != F250_INTEG) {
+    cout << "Check the F250 mode.  It is = "<<f250_mode<<endl;
+    cout << "And should be set to either "<<F250_SAMPLE<<"   or "<<F250_INTEG<<endl;
+  }
+}
+
+void Fadc250Module::CheckFoundMode() {
+  if (f250_setmode != f250_foundmode) {
+    cout << "Fadc250Module:: ERROR: The set mode "<<f250_setmode;
+    cout << "   is not consistent with the found mode "<<f250_foundmode<<endl;
+  }
+}
+
+Int_t Fadc250Module::GetAdcData(Int_t chan, Int_t isample, Int_t ievent) {
+  Int_t index;
+  if (chan < 0 || chan > NADCCHAN) {
+    cout << "ERROR:: Fadc250Module:: GetAdcData:: invalid channel "<<chan<<endl;
+    return -1;
+  }
+  if (f250_foundmode == F250_INTEG) {
+     if (ievent < 0 || ievent > fNumAInt[chan]) {
+        cout << "ERROR:: Fadc250Module:: GetAdcData:: invalid event num "<<ievent<<endl;
+        return -1;
+      }
+      index = NADCCHAN*chan + ievent;
+      if (index < 0 || index > NADCCHAN*MAXDAT) {
+        cout << "ERROR:: Fadc250Module:: GetAdcData:: invalid index "<<index<<endl;
+        return -1;
+      }
+      return fAdcData[index];
+  }
+  if (f250_foundmode == F250_SAMPLE) {
+     if (isample < 0 || isample > fNumSample[chan]) {
+        cout << "ERROR:: Fadc250Module:: GetAdcData:: invalid sample num "<<isample<<endl;
+        return -1;
+      }
+      index = NADCCHAN*chan + isample;
+      if (index < 0 || index > NADCCHAN*MAXDAT) {
+        cout << "ERROR:: Fadc250Module:: GetAdcData:: invalid index "<<index<<endl;
+        return -1;
+      }
+      return fAdcData[index];
+  }
+  return -1;
+}
+
+Int_t Fadc250Module::GetTdcData(Int_t chan, Int_t event, Int_t isample) {
+
+}
+
+Int_t Fadc250Module::GetAdcData(Int_t chan, Int_t isample=0) {
+
+}
+
+Int_t Fadc250Module::GetTdcData(Int_t chan, Int_t isample=0) {
+
+} 
+
+void Fadc250Module::Clear() { 
+  f250_foundmode=-1;  
+  fNumEvents = 0;
+  fNumTrig = 0;
+  memset(fNumAInt, 0, NADCCHAN*sizeof(Int_t));
+  memset(fNumTInt, 0, NADCCHAN*sizeof(Int_t));
+  memset(fNumSample, 0, NADCCHAN*sizeof(Int_t));
+}
+
+Int_t Fadc250Module::LoadSlot(THaSlotData *sldat, const Int_t* evbuffer, Int_t pstop) {
+// this increments evbuffer
+  cout << "Fadc250Module:: loadslot "<<endl; 
+  fWordsSeen = 0;
+  Int_t numwords = 0;
+  if (IsSlot(*evbuffer)) {
+    numwords = *(evbuffer+2);
+  }
+  // Fill data structures of this class
+  Clear();
+  while ( evbuffer < pstop && fWordsSeen < numwords ) {
+      fWordsSeen++;
+      done = Decode(evbuffer);
+  }
+  CheckFoundMode();
+  // Now load the THaSlotData
+
+  
+  return 1;
+}
+
+void FAdc250Module::Decode(Int_t data)
+{ // Routine from B. Moffit, adapted by R. Michaels for this class.
+  // Note, there are several modes, but for now we only use two.
+
+  int i_print = 0;
+  static unsigned int type_last = 15;	/* initialize to type FILLER WORD */
+  static unsigned int time_last = 0;
+  static unsigned int iword=0;
+
+  Int_t seepulse=0;
+
+// Note,  fadc_data_struct fadc_data is global, see top of code
+
+  if (i_print) printf("%3d: ",iword++);
+
+  if( data & 0x80000000 )		/* data type defining word */
+    {
+      fadc_data.new_type = 1;
+      fadc_data.type = (data & 0x78000000) >> 27;
+    }
+  else
+    {
+      fadc_data.new_type = 0;
+      fadc_data.type = type_last;
+    }
+     
+  switch( fadc_data.type )
+    {
+    case 0:		/* BLOCK HEADER */
+      fadc_data.slot_id_hd = ((data) & 0x7C00000) >> 22;
+      fadc_data.n_evts = (data & 0x3FF800) >> 11;
+      fadc_data.blk_num = (data & 0x7FF);
+      if( i_print ) 
+	printf("%8X - BLOCK HEADER - slot = %d   n_evts = %d   n_blk = %d\n",
+	       data, fadc_data.slot_id_hd, fadc_data.n_evts, fadc_data.blk_num);
+      break;
+    case 1:		/* BLOCK TRAILER */
+      fadc_data.slot_id_tr = (data & 0x7C00000) >> 22;
+      fadc_data.n_words = (data & 0x3FFFFF);
+      if( i_print ) 
+	printf("%8X - BLOCK TRAILER - slot = %d   n_words = %d\n",
+	       data, fadc_data.slot_id_tr, fadc_data.n_words);
+      break;
+    case 2:		/* EVENT HEADER */
+      if( fadc_data.new_type )
+	{
+	  fadc_data.evt_num_1 = (data & 0x7FFFFFF);
+          fNumEvents++;
+	  fNumTrig = fadc_data.evt_num_1;
+	  if( i_print ) 
+	    printf("%8X - EVENT HEADER 1 - evt_num = %d\n", data, fadc_data.evt_num_1);
+	}    
+      else
+	{
+	  fadc_data.evt_num_2 = (data & 0x7FFFFFF);
+	  if( i_print ) 
+	    printf("%8X - EVENT HEADER 2 - evt_num = %d\n", data, fadc_data.evt_num_2);
+	}
+      break;
+    case 3:		/* TRIGGER TIME */
+      if( fadc_data.new_type )
+	{
+	  fadc_data.time_1 = (data & 0xFFFFFF);
+	  if( i_print ) 
+	    printf("%8X - TRIGGER TIME 1 - time = %08x\n", data, fadc_data.time_1);
+	  fadc_data.time_now = 1;
+	  time_last = 1;
+	}    
+      else
+	{
+	  if( time_last == 1 )
+	    {
+	      fadc_data.time_2 = (data & 0xFFFFFF);
+	      if( i_print ) 
+		printf("%8X - TRIGGER TIME 2 - time = %08x\n", data, fadc_data.time_2);
+	      fadc_data.time_now = 2;
+	    }    
+	  else if( time_last == 2 )
+	    {
+	      fadc_data.time_3 = (data & 0xFFFFFF);
+	      if( i_print ) 
+		printf("%8X - TRIGGER TIME 3 - time = %08x\n", data, fadc_data.time_3);
+	      fadc_data.time_now = 3;
+	    }    
+	  else if( time_last == 3 )
+	    {
+	      fadc_data.time_4 = (data & 0xFFFFFF);
+	      if( i_print ) 
+		printf("%8X - TRIGGER TIME 4 - time = %08x\n", data, fadc_data.time_4);
+	      fadc_data.time_now = 4;
+	    }    
+	  else
+	    if( i_print ) 
+	      printf("%8X - TRIGGER TIME - (ERROR)\n", data);
+	                
+	  time_last = fadc_data.time_now;
+	}    
+      break;
+    case 4:		/* WINDOW RAW DATA */
+      
+      if( fadc_data.new_type )
+	{
+	  fadc_data.chan = (data & 0x7800000) >> 23;
+	  fadc_data.width = (data & 0xFFF);
+          nsamples = fadc_data.width;
+	  if( i_print ) 
+	    printf("%8X - WINDOW RAW DATA - chan = %d   nsamples = %d\n", 
+		   data, fadc_data.chan, fadc_data.width);
+	}    
+      else
+	{
+	  fadc_data.valid_1 = 1;
+	  fadc_data.valid_2 = 1;
+	  fadc_data.adc_1 = (data & 0x1FFF0000) >> 16;
+	  if( data & 0x20000000 )
+	    fadc_data.valid_1 = 0;
+	  fadc_data.adc_2 = (data & 0x1FFF);
+	  if( data & 0x2000 )
+	    fadc_data.valid_2 = 0;
+	  if( i_print ) 
+	    printf("%8X - RAW SAMPLES - valid = %d  adc = %4d   valid = %d  adc = %4d\n", 
+		   data, fadc_data.valid_1, fadc_data.adc_1, 
+		   fadc_data.valid_2, fadc_data.adc_2);
+          f250_foundmode = F250_SAMPLE;
+          Int_t chan=0;
+          if (fadc_data.chan >= 0 && adc_data.chan < NADCCHAN) {
+   	       chan = adc_data.chan;
+          } else {
+               cout << "ERROR:: Fadc250Module:: ADC channel makes no sense !"<<endl;
+          }
+          for (Int_t ii=0; ii<2; ii++) {
+            Int_t index = NADCCHAN*fadc_data.chan + fNumSample[chan];
+            fNumSample[chan]++;
+            if (index >= 0 && index < NADCCHAN*MAXDAT) {
+	      if (ii==0) {
+                 fAdcData[index] = fadc_data.adc_1;
+	      } else {
+                 fAdcData[index] = fadc_data.adc_2;
+	      }
+	    } else {
+              cout << "Fadc250Module:: too many raw data words ? "<<endl;
+	    }
+	  }
+	}
+      break;
+    case 5:		/* WINDOW SUM */
+      fadc_data.over = 0; 
+      fadc_data.chan = (data & 0x7800000) >> 23;
+      fadc_data.adc_sum = (data & 0x3FFFFF);
+      if( data & 0x400000 )
+	fadc_data.over = 1;
+      if( i_print ) 
+	printf("%8X - WINDOW SUM - chan = %d   over = %d   adc_sum = %08x\n",
+	       data, fadc_data.chan, fadc_data.over, fadc_data.adc_sum);
+      break;
+    case 6:		/* PULSE RAW DATA */
+      if( fadc_data.new_type )
+	{
+	  fadc_data.chan = (data & 0x7800000) >> 23;
+	  fadc_data.pulse_num = (data & 0x600000) >> 21;
+	  fadc_data.thres_bin = (data & 0x3FF);
+	  if( i_print ) 
+	    printf("%8X - PULSE RAW DATA - chan = %d   pulse # = %d   threshold bin = %d\n", 
+		   data, fadc_data.chan, fadc_data.pulse_num, fadc_data.thres_bin);
+	}    
+      else
+	{
+	  fadc_data.valid_1 = 1;
+	  fadc_data.valid_2 = 1;
+	  fadc_data.adc_1 = (data & 0x1FFF0000) >> 16;
+	  if( data & 0x20000000 )
+	    fadc_data.valid_1 = 0;
+	  fadc_data.adc_2 = (data & 0x1FFF);
+	  if( data & 0x2000 )
+	    fadc_data.valid_2 = 0;
+	  if( i_print ) 
+	    printf("%8X - PULSE RAW SAMPLES - valid = %d  adc = %d   valid = %d  adc = %d\n", 
+		   data, fadc_data.valid_1, fadc_data.adc_1, 
+		   fadc_data.valid_2, fadc_data.adc_2);
+ 	}    
+      break;
+    case 7:		/* PULSE INTEGRAL */
+      f250_foundmode = F250_INTEG;
+      fadc_data.chan = (data & 0x7800000) >> 23;
+      fadc_data.pulse_num = (data & 0x600000) >> 21;
+      fadc_data.quality = (data & 0x180000) >> 19;
+      fadc_data.integral = (data & 0x7FFFF);
+      Int_t chan=0;
+      if (fadc_data.chan >= 0 && adc_data.chan < NADCCHAN) {
+	chan = adc_data.chan;
+      } else {
+        cout << "ERROR:: Fadc250Module:: ADC channel makes no sense !"<<endl;
+      }
+      Int_t index = NADCCHAN*chan + fNumAInt[chan];
+      fNumAInt[chan]++;
+      if (index >= 0 && index < NADCCHAN*MAXDAT) {
+   	  fAdcData[index] = fadc_data.integral;
+      } else {
+          cout << "Fadc250Module:: too many raw data words ? "<<endl;
+      }
+      if( i_print ) 
+	printf("%8X - PULSE INTEGRAL - chan = %d   pulse # = %d   quality = %d   integral = %d\n", 
+	       data, fadc_data.chan, fadc_data.pulse_num, 
+	       fadc_data.quality, fadc_data.integral);
+      break;
+    case 8:		/* PULSE TIME */
+      fadc_data.chan = (data & 0x7800000) >> 23;
+      fadc_data.pulse_num = (data & 0x600000) >> 21;
+      fadc_data.quality = (data & 0x180000) >> 19;
+      fadc_data.time = (data & 0xFFFF);
+      Int_t index = NADCCHAN*chan + fNumTInt[chan];
+      fNumTInt[chan]++;
+      if (index >= 0 && index < NADCCHAN*MAXDAT) {
+   	  fTdcData[index] = fadc_data.time;
+      } else {
+          cout << "Fadc250Module:: too many raw data words ? "<<endl;
+      }
+      if( i_print ) 
+	printf("%8X - PULSE TIME - chan = %d   pulse # = %d   quality = %d   time = %d\n", 
+	       data, fadc_data.chan, fadc_data.pulse_num, 
+	       fadc_data.quality, fadc_data.time);
+      break;
+    case 9:		/* STREAMING RAW DATA */
+      if( fadc_data.new_type )
+	{
+	  fadc_data.chan_a = (data & 0x3C00000) >> 22;
+	  fadc_data.source_a = (data & 0x4000000) >> 26;
+	  fadc_data.chan_b = (data & 0x1E0000) >> 17;
+	  fadc_data.source_b = (data & 0x200000) >> 21;
+	  if( i_print ) 
+	    printf("%8X - STREAMING RAW DATA - ena A = %d  chan A = %d   ena B = %d  chan B = %d\n", 
+		   data, fadc_data.source_a, fadc_data.chan_a, 
+		   fadc_data.source_b, fadc_data.chan_b);
+	}    
+      else
+	{
+	  fadc_data.valid_1 = 1;
+	  fadc_data.valid_2 = 1;
+	  fadc_data.adc_1 = (data & 0x1FFF0000) >> 16;
+	  if( data & 0x20000000 )
+	    fadc_data.valid_1 = 0;
+	  fadc_data.adc_2 = (data & 0x1FFF);
+	  if( data & 0x2000 )
+	    fadc_data.valid_2 = 0;
+	  fadc_data.group = (data & 0x40000000) >> 30;
+	  if( fadc_data.group )
+	    {
+	      if( i_print ) 
+		printf("%8X - RAW SAMPLES B - valid = %d  adc = %d   valid = %d  adc = %d\n", 
+		       data, fadc_data.valid_1, fadc_data.adc_1, 
+		       fadc_data.valid_2, fadc_data.adc_2);
+	    }		 
+	  else
+	    if( i_print ) 
+	      printf("%8X - RAW SAMPLES A - valid = %d  adc = %d   valid = %d  adc = %d\n", 
+		     data, fadc_data.valid_1, fadc_data.adc_1, 
+		     fadc_data.valid_2, fadc_data.adc_2);	            
+	}    
+      break;
+    case 10:		/* PULSE AMPLITUDE DATA */
+      fadc_data.chan = (data & 0x7800000) >> 23;
+      fadc_data.pulse_num = (data & 0x600000) >> 21;
+      fadc_data.vmin = (data & 0x1FF000) >> 12;
+      fadc_data.vpeak = (data & 0xFFF);
+      if( i_print ) 
+	printf("%8X - PULSE V - chan = %d   pulse # = %d   vmin = %d   vpeak = %d\n", 
+	       data, fadc_data.chan, fadc_data.pulse_num, 
+	       fadc_data.vmin, fadc_data.vpeak);
+      break;
+
+    case 11:		/* INTERNAL TRIGGER WORD */
+      fadc_data.trig_type_int = data & 0x7;
+      fadc_data.trig_state_int = (data & 0x8) >> 3;
+      fadc_data.evt_num_int = (data & 0xFFF0) >> 4;
+      fadc_data.err_status_int = (data & 0x10000) >> 16;
+      if( i_print ) 
+	printf("%8X - INTERNAL TRIGGER - type = %d   state = %d   num = %d   error = %d\n",
+	       data, fadc_data.trig_type_int, fadc_data.trig_state_int, fadc_data.evt_num_int,
+	       fadc_data.err_status_int);
+    case 12:		/* UNDEFINED TYPE */
+      if( i_print ) 
+	printf("%8X - UNDEFINED TYPE = %d\n", data, fadc_data.type);
+      break;
+    case 13:		/* END OF EVENT */
+      if( i_print ) 
+	printf("%8X - END OF EVENT = %d\n", data, fadc_data.type);
+      break;
+    case 14:		/* DATA NOT VALID (no data available) */
+      if( i_print ) 
+	printf("%8X - DATA NOT VALID = %d\n", data, fadc_data.type);
+      break;
+    case 15:		/* FILLER WORD */
+      if( i_print ) 
+	printf("%8X - FILLER WORD = %d\n", data, fadc_data.type);
+      break;
+    }
+	
+  type_last = fadc_data.type;	/* save type of current data word */
+
+		   
+}
+
+
+
+
+
+
+
+ClassImp(Fadc250Module)
