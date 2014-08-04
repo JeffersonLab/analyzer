@@ -18,6 +18,7 @@
 #pragma link C++ class Scaler560+;  
 #pragma link C++ class THaGenScaler+;  
 #pragma link C++ class ToyModuleX+;  
+#pragma link C++ class Fadc250Module+;  
 
 #pragma link C++ class THaCodaData+;
 #pragma link C++ class THaCodaFile+;
