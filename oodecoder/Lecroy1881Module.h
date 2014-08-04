@@ -34,7 +34,7 @@ private:
    Lecroy1881Module(const Lecroy1881Module &fh);
    Lecroy1881Module& operator=(const Lecroy1881Module &fh);
 
-   ClassDef(Lecroy1881Module,0)  // Lecroy 1881 TDC module
+   ClassDef(Lecroy1881Module,0)  // Lecroy 1881 ADC module
 
 };
 

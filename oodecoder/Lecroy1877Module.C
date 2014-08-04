@@ -13,7 +13,6 @@
 #include <sstream>
 using namespace std;
 
-// crate, etc (here, toy data) would ultimately come from crate map
 Lecroy1877Module::Lecroy1877Module(Int_t crate, Int_t slot) : ToyFastbusModule(crate, slot) {
   fChanMask = 0xfe0000;
   fDataMask = 0xffff;

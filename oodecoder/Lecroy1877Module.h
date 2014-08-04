@@ -16,9 +16,6 @@
 #include "TNamed.h"
 #include "ToyFastbusModule.h"
 
-class THaCrateMap;
-class THaEvData;
-
 class Lecroy1877Module : public ToyFastbusModule {
 
 public:
