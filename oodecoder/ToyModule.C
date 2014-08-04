@@ -66,7 +66,7 @@ void ToyModule::Create(const ToyModule& rhs) {
 void ToyModule::DoPrint() {
 
   cout << "ToyModule   name = "<<fName<<endl;
-  cout << "Crate  "<<fCrate<<"     slot "<<fSlot<<endl;
+  cout << "ToyModule::    Crate  "<<fCrate<<"     slot "<<fSlot<<endl;
 
 }
 
@@ -105,7 +105,7 @@ TypeIter_t ToyModule::DoRegister( const ToyModuleType& info )
   return ins.first;
 }
 
-Bool_t ToyModule::IsSlot(Int_t rdata) {
+Bool_t ToyModule::IsSlot(UInt_t rdata) {
   // may want to have "rules" like possibly 2 headers and 
   // a different rule for where to get fWordsExpect.
   // rules can be defined in the cratemap.
@@ -119,17 +119,16 @@ Bool_t ToyModule::IsSlot(Int_t rdata) {
 }
 
 
-Int_t ToyModule::LoadSlot(THaSlotData *sldat, const Int_t* evbuffer) {
+Int_t ToyModule::LoadSlot(THaSlotData *sldat, const Int_t* evbuffer, const Int_t *pstop) {
 // this increments evbuffer
   cout << "x ToyModule:: loadslot "<<endl; 
   if (fHeader<0) cout << "error, not init"<<endl;
   while (IsSlot( *evbuffer )) {
+    if (evbuffer >= pstop) break;
     Decode(evbuffer);
     sldat->loadData(fChan, fData, fRawData);
     fWordsSeen++;
     evbuffer++;
-    cout << "hi "<<endl;
-    // Need to prevent runaway
   }
   return 1;
 }

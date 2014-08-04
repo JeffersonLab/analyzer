@@ -110,14 +110,14 @@ Int_t ToyCodaDecoder::LoadEvent(const Int_t* evbuffer)
 Int_t ToyCodaDecoder::roc_decode( Int_t roc, const Int_t* evbuffer,
 				  Int_t ipt, Int_t istop )
 {
-  // Decode VME
+  // Decode a Readout controller
   assert( evbuffer && fMap );
-  if( fDoBench ) fBench->Begin("vme_decode");
+  if( fDoBench ) fBench->Begin("roc_decode");
   Int_t slot;
   Int_t Nslot = fMap->getNslot(roc); //FIXME: use this for crude cross-check
   Int_t retval = HED_OK;
   const Int_t* p      = evbuffer+ipt;    // Points to ROC ID word (1 before data)
-  const Int_t* pstop  = evbuffer+istop;  // Points to last word of data
+  const Int_t* pstop  =evbuffer+istop;  // Points to last word of data
   //FIXME: should never check against event_length since data cannot overrun pstop!
   const Int_t* pevlen = evbuffer+event_length;
   Int_t first_slot_used = 0, n_slots_done = 0;
@@ -128,15 +128,17 @@ Int_t ToyCodaDecoder::roc_decode( Int_t roc, const Int_t* evbuffer,
 
   if (Nslot <= 0) goto err;
   fMap->setSlotDone();
+
   while ( p++ < pstop && n_slots_done < Nslot ) {
+
     if(TestBit(kDebug)) cout << "evbuff "<<(p-evbuffer)<<"  "<<hex<<*p<<dec<<endl;
     LoadIfFlagData(p); // this can increment p
 
     // look through all slots, since Nslot only gives number of occupied slots,
     // not the highest-numbered occupied slot.
     // Note- the way the DAQ is set up, each module's VME header word contains 
-    // the slot number, so we can find the right module unambiguously with the
-    // ((data&mask)==head) test below
+    // the slot number, so we can find the right module unambiguously 
+
     Int_t n_slots_checked = 0;
     for (slot=first_slot_used; n_slots_checked<Nslot-n_slots_done 
 	   && slot<MAXSLOT; slot++) {
@@ -148,13 +150,10 @@ Int_t ToyCodaDecoder::roc_decode( Int_t roc, const Int_t* evbuffer,
       }
       ++n_slots_checked;
 
-      cout << "Calling load if slot "<<roc<<"   "<<slot<<endl;
-      cout << "numraw here 111 "<<   crateslot[idx(roc,slot)]->getNumRaw()<<endl;
-      status = crateslot[idx(roc,slot)]->LoadIfSlot(p); 
-      cout << "numraw here 222 "<<   crateslot[idx(roc,slot)]->getNumRaw()<<endl;
+      status = crateslot[idx(roc,slot)]->LoadIfSlot(p, pstop); 
       if (status == kTRUE) fMap->setSlotDone(slot);
 
-      if (p >= pevlen) goto SlotDone;
+      if (p >= pstop || p >= pevlen) goto SlotDone;
 
     }
 

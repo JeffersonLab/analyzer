@@ -21,6 +21,7 @@
 
 #include "TString.h"
 #include <cassert>
+#include <iostream>
 
 const int SD_WARN = -2;
 const int SD_ERR = -1; 
@@ -28,6 +29,8 @@ const int SD_OK = 1;
 
 class THaCrateMap;
 class ToyModule;
+
+using namespace std;
 
 class THaSlotData {
 
@@ -56,7 +59,7 @@ public:
        int loadData(int chan, int dat, int raw);
 
        // new
-       Int_t LoadIfSlot(const Int_t* evbuffer);
+       Int_t LoadIfSlot(const Int_t* evbuffer, const Int_t *pstop);
 
        void define(int crate, int slot, UShort_t nchan=DEFNCHAN, 
 		   UShort_t ndata=DEFNDATA, UShort_t nhitperchan=DEFNHITCHAN );// Define crate, slot

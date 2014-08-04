@@ -15,9 +15,7 @@
 using namespace std;
 
 
-ToyModuleX::ToyModuleX(Int_t crate, Int_t slot) { 
-  fCrate = crate;
-  fSlot = slot;
+ToyModuleX::ToyModuleX(Int_t crate, Int_t slot) : ToyModule(crate,slot) { 
 }
 
 ToyModuleX::~ToyModuleX() { 
@@ -29,7 +27,7 @@ Int_t ToyModuleX::Decode(const Int_t *evbuffer) {
   fRawData = fData;
 }
 
-Bool_t ToyModuleX::IsSlot(Int_t rdata) {
+Bool_t ToyModuleX::IsSlot(UInt_t rdata) {
   return ((rdata & fHeaderMask)==fHeader);
 }
 

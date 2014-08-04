@@ -19,11 +19,11 @@ Fadc250Module::Fadc250Module(Int_t crate, Int_t slot) : ToyModuleX(crate, slot) 
   fNumAInt = new Int_t[NADCCHAN];
   fNumTInt = new Int_t[NADCCHAN];
   fNumSample = new Int_t[NADCCHAN];
-  fAdcData = new Int_t[MAXEVT*MAXRAW];
-  fTdcData = new Int_t[MAXEVT*MAXRAW];
+  fAdcData = new Int_t[NADCCHAN*MAXDAT];
+  fTdcData = new Int_t[NADCCHAN*MAXDAT];
   f250_setmode=-1;
   f250_foundmode=-1;
-  Clear();
+  Clear("");
 }
 
 Fadc250Module::~Fadc250Module() { 
@@ -35,13 +35,13 @@ Fadc250Module::~Fadc250Module() {
 }
 
 
-Bool_t Fadc250Module::IsSlot(Int_t rdata) {
-  return ((rdata != 0xffffffff) & ((rdata & fHeaderMask)==fHeader))
+Bool_t Fadc250Module::IsSlot(UInt_t rdata) {
+  return ((rdata != 0xffffffff) & ((rdata & fHeaderMask)==fHeader));
 }
 
 void Fadc250Module::CheckSetMode() {
   if (f250_setmode != F250_SAMPLE && f250_setmode != F250_INTEG) {
-    cout << "Check the F250 mode.  It is = "<<f250_mode<<endl;
+    cout << "Check the F250 setmode.  It is = "<<f250_setmode<<endl;
     cout << "And should be set to either "<<F250_SAMPLE<<"   or "<<F250_INTEG<<endl;
   }
 }
@@ -53,52 +53,69 @@ void Fadc250Module::CheckFoundMode() {
   }
 }
 
-Int_t Fadc250Module::GetAdcData(Int_t chan, Int_t isample, Int_t ievent) {
-  Int_t index;
+Int_t Fadc250Module::GetAdcData(Int_t chan, Int_t ievent) {
+  Int_t result = GetData(chan, ievent, GET_ADC);
+  if (result < 0) cout << "Fadc250Module:: WARNING:  Strange ADC data "<<endl;
+  return result;
+}
+
+Int_t Fadc250Module::GetTdcData(Int_t chan, Int_t ievent) {
+  Int_t result = GetData(chan, ievent, GET_TDC);
+  if (result < 0) cout << "Fadc250Module:: WARNING:  Strange TDC data "<<endl;
+  return result;
+}
+
+
+Int_t Fadc250Module::GetData(Int_t chan, Int_t ievent, Int_t which) {
+
+  int index;
+  int nevent;
+
   if (chan < 0 || chan > NADCCHAN) {
     cout << "ERROR:: Fadc250Module:: GetAdcData:: invalid channel "<<chan<<endl;
     return -1;
   }
+
+  nevent = 0;
+
   if (f250_foundmode == F250_INTEG) {
-     if (ievent < 0 || ievent > fNumAInt[chan]) {
-        cout << "ERROR:: Fadc250Module:: GetAdcData:: invalid event num "<<ievent<<endl;
-        return -1;
-      }
-      index = NADCCHAN*chan + ievent;
-      if (index < 0 || index > NADCCHAN*MAXDAT) {
-        cout << "ERROR:: Fadc250Module:: GetAdcData:: invalid index "<<index<<endl;
-        return -1;
-      }
-      return fAdcData[index];
+    if (which == GET_ADC) {
+      nevent = fNumAInt[chan];
+    } 
+    if (which == GET_TDC) {
+      nevent = fNumAInt[chan];
+    } 
+  } else {
+    nevent = fNumSample[chan];
   }
-  if (f250_foundmode == F250_SAMPLE) {
-     if (isample < 0 || isample > fNumSample[chan]) {
-        cout << "ERROR:: Fadc250Module:: GetAdcData:: invalid sample num "<<isample<<endl;
-        return -1;
-      }
-      index = NADCCHAN*chan + isample;
-      if (index < 0 || index > NADCCHAN*MAXDAT) {
-        cout << "ERROR:: Fadc250Module:: GetAdcData:: invalid index "<<index<<endl;
-        return -1;
-      }
-      return fAdcData[index];
+
+  if (ievent < 0 || ievent > nevent) {
+      cout << "ERROR:: Fadc250Module:: GetData:: invalid event "<<ievent<<endl;
+      return -1;
   }
+
+  index = NADCCHAN*chan + ievent;
+  if (index < 0 || index > NADCCHAN*MAXDAT) {
+      cout << "ERROR:: Fadc250Module:: GetData:: invalid index "<<index<<endl;
+      return -1;
+  }
+  
+  if (f250_foundmode == F250_INTEG) {
+    if (which == GET_ADC) {
+      return fAdcData[index];
+    } 
+    if (which == GET_TDC) {
+      return fTdcData[index];
+    } 
+  } else {
+    return fAdcData[index];
+  }
+
   return -1;
+  
 }
 
-Int_t Fadc250Module::GetTdcData(Int_t chan, Int_t event, Int_t isample) {
-
-}
-
-Int_t Fadc250Module::GetAdcData(Int_t chan, Int_t isample=0) {
-
-}
-
-Int_t Fadc250Module::GetTdcData(Int_t chan, Int_t isample=0) {
-
-} 
-
-void Fadc250Module::Clear() { 
+void Fadc250Module::Clear(const Option_t *opt) { 
   f250_foundmode=-1;  
   fNumEvents = 0;
   fNumTrig = 0;
@@ -107,7 +124,7 @@ void Fadc250Module::Clear() {
   memset(fNumSample, 0, NADCCHAN*sizeof(Int_t));
 }
 
-Int_t Fadc250Module::LoadSlot(THaSlotData *sldat, const Int_t* evbuffer, Int_t pstop) {
+Int_t Fadc250Module::LoadSlot(THaSlotData *sldat, const Int_t *evbuffer, const Int_t *pstop) {
 // this increments evbuffer
   cout << "Fadc250Module:: loadslot "<<endl; 
   fWordsSeen = 0;
@@ -116,19 +133,33 @@ Int_t Fadc250Module::LoadSlot(THaSlotData *sldat, const Int_t* evbuffer, Int_t p
     numwords = *(evbuffer+2);
   }
   // Fill data structures of this class
-  Clear();
+  Clear("");
   while ( evbuffer < pstop && fWordsSeen < numwords ) {
+      Decode(evbuffer);
       fWordsSeen++;
-      done = Decode(evbuffer);
+      evbuffer++;
   }
   CheckFoundMode();
   // Now load the THaSlotData
-
+  for (Int_t chan=0; chan<NADCCHAN; chan++) {
+    for (Int_t i=0; i<fNumAInt[chan]; i++) {
+      Int_t index = NADCCHAN*chan + i;
+      sldat->loadData("adc", chan, fAdcData[index], fAdcData[index]);
+    }
+    for (Int_t i=0; i<fNumTInt[chan]; i++) {
+      Int_t index = NADCCHAN*chan + i;
+      sldat->loadData("tdc", chan, fTdcData[index], fTdcData[index]);
+    }
+    for (Int_t i=0; i<fNumSample[chan]; i++) {
+      Int_t index = NADCCHAN*chan + i;
+      sldat->loadData("adc", chan, fAdcData[index], fAdcData[index]);
+    }
+  }
   
   return 1;
 }
 
-void FAdc250Module::Decode(Int_t data)
+Int_t Fadc250Module::Decode(const Int_t *pdat)
 { // Routine from B. Moffit, adapted by R. Michaels for this class.
   // Note, there are several modes, but for now we only use two.
 
@@ -137,7 +168,8 @@ void FAdc250Module::Decode(Int_t data)
   static unsigned int time_last = 0;
   static unsigned int iword=0;
 
-  Int_t seepulse=0;
+  Int_t data = *pdat;
+  Int_t nsamples, index, chan;
 
 // Note,  fadc_data_struct fadc_data is global, see top of code
 
@@ -252,14 +284,14 @@ void FAdc250Module::Decode(Int_t data)
 		   data, fadc_data.valid_1, fadc_data.adc_1, 
 		   fadc_data.valid_2, fadc_data.adc_2);
           f250_foundmode = F250_SAMPLE;
-          Int_t chan=0;
-          if (fadc_data.chan >= 0 && adc_data.chan < NADCCHAN) {
-   	       chan = adc_data.chan;
+          chan=0;
+          if (fadc_data.chan >= 0 && fadc_data.chan < NADCCHAN) {
+   	       chan = fadc_data.chan;
           } else {
                cout << "ERROR:: Fadc250Module:: ADC channel makes no sense !"<<endl;
           }
           for (Int_t ii=0; ii<2; ii++) {
-            Int_t index = NADCCHAN*fadc_data.chan + fNumSample[chan];
+            index = NADCCHAN*fadc_data.chan + fNumSample[chan];
             fNumSample[chan]++;
             if (index >= 0 && index < NADCCHAN*MAXDAT) {
 	      if (ii==0) {
@@ -315,13 +347,13 @@ void FAdc250Module::Decode(Int_t data)
       fadc_data.pulse_num = (data & 0x600000) >> 21;
       fadc_data.quality = (data & 0x180000) >> 19;
       fadc_data.integral = (data & 0x7FFFF);
-      Int_t chan=0;
-      if (fadc_data.chan >= 0 && adc_data.chan < NADCCHAN) {
-	chan = adc_data.chan;
+      chan=0;
+      if (fadc_data.chan >= 0 && fadc_data.chan < NADCCHAN) {
+	chan = fadc_data.chan;
       } else {
         cout << "ERROR:: Fadc250Module:: ADC channel makes no sense !"<<endl;
       }
-      Int_t index = NADCCHAN*chan + fNumAInt[chan];
+      index = NADCCHAN*chan + fNumAInt[chan];
       fNumAInt[chan]++;
       if (index >= 0 && index < NADCCHAN*MAXDAT) {
    	  fAdcData[index] = fadc_data.integral;
@@ -338,7 +370,13 @@ void FAdc250Module::Decode(Int_t data)
       fadc_data.pulse_num = (data & 0x600000) >> 21;
       fadc_data.quality = (data & 0x180000) >> 19;
       fadc_data.time = (data & 0xFFFF);
-      Int_t index = NADCCHAN*chan + fNumTInt[chan];
+      chan=0;
+      if (fadc_data.chan >= 0 && fadc_data.chan < NADCCHAN) {
+	chan = fadc_data.chan;
+      } else {
+        cout << "ERROR:: Fadc250Module:: ADC channel makes no sense !"<<endl;
+      }
+      index = NADCCHAN*chan + fNumTInt[chan];
       fNumTInt[chan]++;
       if (index >= 0 && index < NADCCHAN*MAXDAT) {
    	  fTdcData[index] = fadc_data.time;
@@ -425,8 +463,9 @@ void FAdc250Module::Decode(Int_t data)
       break;
     }
 	
-  type_last = fadc_data.type;	/* save type of current data word */
-
+   type_last = fadc_data.type;	/* save type of current data word */
+   
+   return 1;
 		   
 }
 

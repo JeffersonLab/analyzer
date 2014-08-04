@@ -45,25 +45,31 @@ public:
 
   virtual void Clear(const Option_t *opt) { fWordsSeen = 0; };
 
-  virtual Bool_t IsSlot(Int_t rdata);
+  virtual Bool_t IsSlot(UInt_t rdata);
 
   virtual Int_t Decode(const Int_t *p)=0;  // --> abstract
 
   virtual Int_t GetCrate() { return fCrate; };
   virtual Int_t GetSlot() { return fSlot; };
 
+  virtual void SetHeader(UInt_t header, UInt_t mask) {
+    fHeader = header;
+    fHeaderMask = mask;
+  }
+
   ToyModule& operator=(const ToyModule &rhs);
 
   virtual void DoPrint();
 
 // Loads sldat and increments ptr to evbuffer
-  virtual Int_t LoadSlot(THaSlotData *sldat,  const Int_t* evbuffer );  
+  virtual Int_t LoadSlot(THaSlotData *sldat,  const Int_t *evbuffer, const Int_t *pstop );  
 
 protected:
 
   static TypeIter_t DoRegister( const ToyModuleType& registration_info );
 
-  Int_t fCrate, fSlot, fHeader, fHeaderMask;
+  Int_t fCrate, fSlot;
+  UInt_t fHeader, fHeaderMask;
   Int_t fChan, fData, fRawData;   // transient data
   Int_t fWordsExpect, fWordsSeen;
   Int_t fWdcntMask, fWdcntShift;

@@ -25,26 +25,25 @@ public:
    Fadc250Module(Int_t crate, Int_t slot);  
    virtual ~Fadc250Module();  
 
-   Bool_t IsSlot(Int_t rdata);
+   Bool_t IsSlot(UInt_t rdata);
    Int_t Decode(const Int_t *evbuffer);
 
-   Int_t GetNumEvents() { return fNumEvent; };
+   Int_t GetNumEvents() { return fNumEvents; };
 
-   Int_t GetAdcData(Int_t chan, Int_t isample, Int_t ievent=0); 
-   Int_t GetTdcData(Int_t chan, Int_t isample, Int_t ievent=0);  
+   Int_t GetAdcData(Int_t chan, Int_t ievent); 
+   Int_t GetTdcData(Int_t chan, Int_t ievent);  
 
    void SetMode(Int_t mode) { 
      f250_setmode = mode;
      CheckSetMode();
    }
 
-// Loads sldat and increments ptr to evbuffer
-   Int_t LoadSlot(THaSlotData *sldat,  const Int_t* evbuffer, Int_t pstop );  
 
 private:
  
-   enum { F250_SAMPLE = 0, F250_INTEG = 1 };
+   enum { F250_SAMPLE = 1, F250_INTEG = 2 };  // supported modes
    Int_t f250_setmode, f250_foundmode;
+   enum { GET_ADC = 1, GET_TDC = 2 };  
 
    struct fadc_data_struct {
       unsigned int new_type;	
@@ -91,10 +90,14 @@ private:
   
    fadc_data_struct fadc_data;
 
-   Int_t fTrigNum,  *fNumEvent,  *fNumSample;
-   Float_t *fAdcData;  // Raw data (either samples or pulse integrals)
-   Float_t *fTdcData; 
-   void Clear(); 
+   Int_t GetData(Int_t chan, Int_t event, Int_t which=0);
+// Loads sldat and increments ptr to evbuffer
+   Int_t LoadSlot(THaSlotData *sldat,  const Int_t* evbuffer, const Int_t *pstop );  
+
+   Int_t fNumTrig, fNumEvents, *fNumAInt, *fNumTInt,  *fNumSample;
+   Int_t *fAdcData;  // Raw data (either samples or pulse integrals)
+   Int_t *fTdcData;   
+   void Clear(const Option_t *opt);
    void CheckSetMode();
    void CheckFoundMode();
    static TypeIter_t fgThisType;

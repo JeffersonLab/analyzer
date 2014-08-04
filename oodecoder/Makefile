@@ -203,7 +203,8 @@ SRC = THaUsrstrutils.C THaCrateMap.C THaCodaData.C \
       THaEpics.C THaFastBusWord.C THaCodaFile.C THaSlotData.C \
       THaEvData.C evio.C THaCodaDecoder.C \
       ToyCodaDecoder.C \
-      ToyModule.C ToyModuleX.C ToyFastbusModule.C ToyModuleCollect.C \
+      ToyModule.C ToyModuleX.C Fadc250Module.C \
+      ToyFastbusModule.C ToyModuleCollect.C \
       Lecroy1877Module.C Lecroy1875Module.C Lecroy1881Module.C \
       THaGenScaler.C Scaler1151.C Scaler560.C Scaler3800.C Scaler3801.C
 

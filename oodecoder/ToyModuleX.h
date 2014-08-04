@@ -22,7 +22,7 @@ public:
    ToyModuleX(Int_t crate, Int_t slot);  
    virtual ~ToyModuleX();  
 
-   Bool_t IsSlot(Int_t rdata);
+   virtual Bool_t IsSlot(UInt_t rdata);
    Int_t Decode(const Int_t *evbuffer);
    Int_t Slot(Int_t rdata) { return fSlot; };
    Int_t Data(Int_t rdata) { return rdata; };

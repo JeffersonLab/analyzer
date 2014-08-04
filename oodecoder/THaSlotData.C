@@ -141,26 +141,22 @@ int THaSlotData::loadModule(const THaCrateMap *map) {
 
 }
 
-Int_t THaSlotData::LoadIfSlot(const Int_t* p) {
+Int_t THaSlotData::LoadIfSlot(const Int_t* p, const Int_t *pstop) {
   // this increments p
   if ( !fModule ) {  // should be an "assert"
      cout << "Serious problem !"<<endl;
      return SD_ERR;
   }
   if ( !fModule->IsSlot( *p ) ) {
-    cout << "not slot "<<endl;
     return SD_ERR;
   }
   fModule->DoPrint();
   fModule->Clear("");
   Int_t done = 0;
-  cout << "is slot "<<done<<endl;
   while ( !done ) {
-    cout << "loading slot ..."<<endl;
-    done = fModule->LoadSlot(this, p);  // increments p
-    // risk of runaway here, need to mitigate
+    done = fModule->LoadSlot(this, p, pstop);  // increments p
+    if (p >= pstop) done = 1;
   }
-  cout << "done at end "<<done<<endl;
   return SD_OK;
 
 }
