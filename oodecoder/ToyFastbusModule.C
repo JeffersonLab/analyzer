@@ -45,11 +45,12 @@ Int_t ToyFastbusModule::Decode(const Int_t *evbuffer) {
   fRawData = fData;
 }
 
-Int_t ToyFastbusModule::LoadSlot(THaSlotData *sldat, const Int_t* evbuffer) {
+Int_t ToyFastbusModule::LoadSlot(THaSlotData *sldat, const Int_t* evbuffer, const Int_t *pstop) {
 // this increments evbuffer
   cout << "ToyFastbusModule:: loadslot "<<endl; 
   fWordsSeen = 0;
   while (IsSlot( *evbuffer )) {
+    if (evbuffer >= pstop) break;
     if (fHasHeader && fWordsSeen==0) {
       fWordsSeen++;
     } else {
@@ -57,8 +58,7 @@ Int_t ToyFastbusModule::LoadSlot(THaSlotData *sldat, const Int_t* evbuffer) {
       sldat->loadData(fChan, fData, fRawData);
       fWordsSeen++;
       evbuffer++;
-      cout << "hi, evbuff "<<evbuffer<<"   "<<hex<<*evbuffer<<dec<<endl;
-      // Need to prevent runaway
+      
     }
   }
   return 1;
