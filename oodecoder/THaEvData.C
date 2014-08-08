@@ -25,10 +25,6 @@
 #include "THaCrateMap.h"
 #include "THaUsrstrutils.h"
 #include "THaBenchmark.h"
-//#include "ToyModule.h"
-//#include "ToyModuleX.h"
-//#include "ToyFastbusModule.h"
-//#include "Lecroy1877Module.h"
 #include "TError.h"
 #include <cstring>
 #include <cstdio>
@@ -66,13 +62,11 @@ THaEvData::THaEvData() :
   first_load(true), first_decode(true), fTrigSupPS(true),
   buffer(0), run_num(0), run_type(0), fRunTime(0), evt_time(0),
   recent_event(0), fNSlotUsed(0), fNSlotClear(0), fMap(0),
-  fDoBench(kFALSE), fBench(0)
+  fDoBench(kFALSE), fDebugFile(0), fBench(0)
 {
   fInstance = fgInstances.FirstNullBit();
   fgInstances.SetBitNumber(fInstance);
   fInstance++;
-  // FIXME: not needed - here for compatibility
-  cmap = new THaCrateMap( fgDefaultCrateMapName );
   // FIXME: dynamic allocation
   crateslot = new THaSlotData*[MAXROC*MAXSLOT];
   fSlotUsed  = new UShort_t[MAXROC*MAXSLOT];
@@ -129,7 +123,6 @@ THaEvData::~THaEvData() {
   for( int i=0; i<MAXROC*MAXSLOT; i++ )
     delete crateslot[i];
   delete [] crateslot;  
-  delete cmap;
   delete [] fSlotUsed;
   delete [] fSlotClear;
   fInstance--;
@@ -260,8 +253,9 @@ int THaEvData::init_cmap()  {
     fMap = new THaCrateMap( fgCrateMapName );
   }
   if (TestBit(kDebug)) cout << "Init crate map " << endl;
-  if( fMap->init(GetRunTime()) == THaCrateMap::CM_ERR )
+  if( fMap->init(GetRunTime()) == THaCrateMap::CM_ERR ) {
     return HED_FATAL; // Can't continue w/o cratemap
+  }
   fgNeedInit = false;
   return HED_OK;
 }
@@ -271,8 +265,8 @@ void THaEvData::makeidx(int crate, int slot)
   // Activate crate/slot
   int idx = slot+MAXSLOT*crate;
   delete crateslot[idx];  // just in case
-  cout << "Making a new crateslot at   "<<crate<<"  "<<slot<<"   "<<idx<<endl;
   crateslot[idx] = new THaSlotData(crate,slot);
+  if (fDebugFile) crateslot[idx]->SetDebugFile(fDebugFile);
   if( !fMap ) return;
   if( fMap->crateUsed(crate) && fMap->slotUsed(crate,slot)) {
     crateslot[idx]
@@ -306,16 +300,13 @@ int THaEvData::init_slotdata(const THaCrateMap* map)
   // Update lists of used/clearable slots in case crate map changed
   if(!map) return HED_ERR;
   for( int i=0; i<fNSlotUsed; i++ ) {
-    THaSlotData* crslot = crateslot[fSlotUsed[i]];
-    int crate = crslot->getCrate();
-    int slot  = crslot->getSlot();
-    crslot->print();
-// New(5/2014) line to define the module information
-// TBD    crslot->loadModule(map->GetModuleInfo(crate,slot));
+    THaSlotData* module = crateslot[fSlotUsed[i]];
+    int crate = module->getCrate();
+    int slot  = module->getSlot();
     if( !map->crateUsed(crate) || !map->slotUsed(crate,slot) ||
 	!map->slotClear(crate,slot)) {
       for( int k=0; k<fNSlotClear; k++ ) {
-	if( crslot == crateslot[fSlotClear[k]] ) {
+	if( module == crateslot[fSlotClear[k]] ) {
 	  for( int j=k+1; j<fNSlotClear; j++ )
 	    fSlotClear[j-1] = fSlotClear[j];
 	  fNSlotClear--;
@@ -329,28 +320,7 @@ int THaEvData::init_slotdata(const THaCrateMap* map)
       fNSlotUsed--;
     }
   }
-
-  
-
-// Toy code to test modules.  The definition of modules will
-//      ultimately come from THaCrateMap.  And no, I won't copy pointers.
-//  Int_t crate = 1;  Int_t slot = 9;
-//  Int_t ics = idx(crate, slot);
-//  Lecroy1877Module *module = new Lecroy1877Module(crate, slot);
-//  crateslot[ics]->loadModule(module);  
-// End, toy code
-
   return HED_OK;
-}
-
-// NEW (Dec 2013) in test phase
-Int_t  THaEvData::LoadData(Int_t crate, Int_t slot, Int_t chan, Int_t data) 
-{
-    Int_t ics = idx(crate,slot);  // need to protect against array over-run.
-    if (crateslot[ics]->loadData("",chan,data,data) == SD_ERR) {
-      //	cerr << "THaEvData::LoadData: ERROR:  you blew it !";
-    }
-    return 1;
 }
 
 ClassImp(THaEvData)

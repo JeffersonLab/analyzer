@@ -37,7 +37,7 @@ public:
    Int_t Decode(const Int_t *evbuffer);
    void Init(Int_t crate, Int_t slot, Int_t, Int_t);
 
-   Bool_t IsSlot(UInt_t rdata) { return (Slot(rdata)==fSlot); };
+   Bool_t IsSlot(UInt_t rdata) { *fDebugFile<<"fb isslot"<<endl; *fDebugFile << dec<<fSlot << hex<< "  "<<rdata<<"  "<<dec<<Slot(rdata)<<endl;  return (Slot(rdata)==fSlot); };
    virtual Int_t LoadSlot(THaSlotData *sldat, const Int_t* evbuffer, const Int_t *pstop);
    void DoPrint();
   
@@ -50,6 +50,8 @@ protected:
    Int_t fChanMask, fChanShift;
    Int_t fDataMask,  fDataShift;
    Int_t fOptMask, fOptShift;
+
+   virtual void Init()=0;  
 
 private:
 

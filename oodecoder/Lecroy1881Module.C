@@ -14,6 +14,10 @@
 using namespace std;
 
 Lecroy1881Module::Lecroy1881Module(Int_t crate, Int_t slot) : ToyFastbusModule(crate, slot) {
+  Init();
+}
+
+void Lecroy1881Module::Init() {
   fChanMask = 0x7e0000;
   fDataMask = 0x3fff;
   fWdcntMask = 0x7f;
@@ -22,6 +26,7 @@ Lecroy1881Module::Lecroy1881Module(Int_t crate, Int_t slot) : ToyFastbusModule(c
   fOptShift = 24;
   fHasHeader = kTRUE;
   fHeader = 0;
+  fModelNum = 1881;
 }
 
 Lecroy1881Module::~Lecroy1881Module() { 

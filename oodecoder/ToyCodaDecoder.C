@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////
 //
-//   ToyCodaDecoder
+//   TOYCODADECODER
 //
 //   A toy model of an improved THaCodaDecoder.  
 //   Work in progress towards OO decoder upgrade.
@@ -69,6 +69,8 @@ Int_t ToyCodaDecoder::LoadEvent(const Int_t* evbuffer)
   Int_t ret = HED_OK;
   buffer = evbuffer;
   //  if(TestBit(kDebug)) dump(evbuffer);
+  if (first_decode) cout << "first decode "<<endl;
+  if (fgNeedInit) cout << "fgNeedInit "<<endl;
   if (first_decode || fgNeedInit) {
     ret = init_cmap();
     if (fDebugFile) {
@@ -110,7 +112,7 @@ Int_t ToyCodaDecoder::LoadEvent(const Int_t* evbuffer)
       const RocDat_t* proc = rocdat+iroc;
       Int_t ipt = proc->pos + 1;
       Int_t iptmax = proc->pos + proc->len;
-      if (fDebugFile) *fDebugFile << "\nCalling roc_decode "<<i<<"   "<<iroc<<"  "<<ipt<<"  "<<iptmax<<endl;
+
       if (fMap->isFastBus(iroc)) {  // checking that slots found = expected
           if (GetEvNum() > 200 && chkfbstat < 3) chkfbstat=2;
           if (chkfbstat == 1) ChkFbSlot(iroc, evbuffer, ipt, iptmax);
@@ -119,6 +121,8 @@ Int_t ToyCodaDecoder::LoadEvent(const Int_t* evbuffer)
               chkfbstat = 3;
           }
       }
+
+      if (fDebugFile) *fDebugFile << "\nCalling roc_decode "<<i<<"   "<<iroc<<"  "<<ipt<<"  "<<iptmax<<endl;
 
       Int_t status = roc_decode(iroc,evbuffer, ipt, iptmax);
 
@@ -141,6 +145,7 @@ Int_t ToyCodaDecoder::roc_decode( Int_t roc, const Int_t* evbuffer,
   Int_t slot;
   Int_t Nslot = fMap->getNslot(roc); //FIXME: use this for crude cross-check
   Int_t retval = HED_OK;
+  Int_t nwords;
   const Int_t* p      = evbuffer+ipt;    // Points to ROC ID word (1 before data)
   const Int_t* pstop  =evbuffer+istop;  // Points to last word of data
   //FIXME: should never check against event_length since data cannot overrun pstop!
@@ -183,11 +188,12 @@ Int_t ToyCodaDecoder::roc_decode( Int_t roc, const Int_t* evbuffer,
         *fDebugFile<< "slot logic "<<first_slot_used << "  "<<n_slots_checked <<  "   "<<slot<<endl;
       }
 
-      status = crateslot[idx(roc,slot)]->LoadIfSlot(p, pstop); 
+      nwords = crateslot[idx(roc,slot)]->LoadIfSlot(p, pstop); 
+      p += nwords;
       if (status == kTRUE) fMap->setSlotDone(slot);
 
       if (fDebugFile) {
-        *fDebugFile<< "after LoadIfSlot "<<p << "  "<<pstop<<endl;
+        *fDebugFile<< "after LoadIfSlot "<<p << "  "<<pstop<<"  "<<nwords<<endl;
       }
 
       if (p >= pstop || p >= pevlen) goto SlotDone;
@@ -452,12 +458,14 @@ void ToyCodaDecoder::ChkFbSlots()
     }
   }
   for (Int_t iroc=0; iroc<MAXROC; iroc++) {
+    if ( !fMap->isFastBus(iroc) ) continue;
     for (Int_t islot=0; islot<MAXSLOT; islot++) {
       Int_t index = MAXSLOT*iroc + islot;
       if (slotstat[index]==2) cout << "Decoder:: WARNING:  Fastbus module in (roc,slot) = ("<<iroc<<","<<islot<<")  found in cratemap but NOT in data !"<<endl;
     }
   }
   for (Int_t iroc=0; iroc<MAXROC; iroc++) {
+    if ( !fMap->isFastBus(iroc) ) continue;
     for (Int_t islot=0; islot<MAXSLOT; islot++) {
       Int_t index = MAXSLOT*iroc + islot;
       if (slotstat[index]==3) cout << "Decoder:: WARNING:  Fastbus module in (roc,slot) = ("<<iroc<<","<<islot<<")  found in data but NOT in cratemap !"<<endl;

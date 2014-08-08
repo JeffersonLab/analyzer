@@ -53,6 +53,7 @@ const int THaCrateMap::CM_ERR = -1;
 
 THaCrateMap::THaCrateMap( const char* db_filename )
 {
+
   // Construct uninitialized crate map. The argument is the name of
   // the database file to use for initialization
 
@@ -217,6 +218,30 @@ int THaCrateMap::init(ULong64_t tloc) {
     return CM_ERR;
   }
   return init(db);
+}
+
+void THaCrateMap::print(ofstream *file) const {
+{
+  for( int roc=0; roc<MAXROC; roc++ ) {
+    if( !crdat[roc].crate_used || crdat[roc].nslot ==0 ) continue;
+    *file << "==== Crate " << roc << " type " << crdat[roc].crate_type;
+    if( !crdat[roc].scalerloc.IsNull() )  *file << " \"" << crdat[roc].scalerloc << "\"";
+    *file << endl;
+    *file << "#slot\tmodel\tclear\t  header\t  mask  \tnchan\tndata\n";
+    for( int slot=0; slot<MAXSLOT; slot++ ) {
+      if( !slotUsed(roc,slot) ) continue;
+      *file << "  " << slot << "\t" << crdat[roc].model[slot] 
+	   << "\t" << crdat[roc].slot_clear[slot];
+      *file << "   \t0x" << hex << crdat[roc].header[slot]
+	   << "    \t0x" << hex  << crdat[roc].headmask[slot]
+	   << dec << "   " 
+	   << "  \t" << crdat[roc].nchan[slot]
+	   << "  \t" << crdat[roc].ndata[slot]
+	   << endl;
+    }
+  }
+}
+
 }
 
   

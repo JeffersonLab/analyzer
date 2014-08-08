@@ -12,15 +12,19 @@
 #include "TString.h"
 #include "THaSlotData.h"
 #include "TBits.h"
+// FIXME: we need to include evio.h here only so that clients of
+// THaEvData can understand CODA error return codes.
+// Define API-specific return values here instead.
 #include "evio.h"
 #include <string>
 #include <cassert>
+#include <iostream>
+#include <fstream>
 
 class THaBenchmark;
 class THaEpics;
 class THaCrateMap;
 class THaFastBusWord;
-class ToyModule;
 
 class THaEvData : public TObject {
 
@@ -28,12 +32,7 @@ public:
   THaEvData();
   virtual ~THaEvData();
 
-  // Loads CODA data evbuffer using private crate map "cmap" (recommended)
-  Int_t LoadEvent(const Int_t* evbuffer);          
-  // Loads CODA data evbuffer using THaCrateMap passed as 2nd arg.
-  // This is the one function that derived classes MUST implement.
-  //FIXME: the crate map should become part of the database
-  virtual Int_t LoadEvent(const Int_t* evbuffer, THaCrateMap* usermap) = 0;    
+  virtual Int_t LoadEvent(const Int_t* evbuffer)=0;          
 
   // Basic access to the decoded data
   Int_t     GetEvType()   const { return event_type; }
@@ -61,6 +60,8 @@ public:
   Int_t     GetRawData(Int_t i) const;
   // Get raw element i within crate
   Int_t     GetRawData(Int_t crate, Int_t i) const;
+  // Get raw data buffer for crate
+  const Int_t* GetRawDataBuffer(Int_t crate) const;
   Int_t     GetNumHits(Int_t crate, Int_t slot, Int_t chan) const;
   Int_t     GetData(Int_t crate, Int_t slot, Int_t chan, Int_t hit) const;
   Bool_t    InCrate(Int_t crate, Int_t i) const;
@@ -69,9 +70,6 @@ public:
   // List unique chan
   Int_t     GetNextChan(Int_t crate, Int_t slot, Int_t index) const;
   const char* DevType(Int_t crate, Int_t slot) const;
-
-  // NEW (Dec 2013)
-  Int_t     LoadData(Int_t crate, Int_t slot, Int_t chan, Int_t rdat);
 
   // Optional functionality that may be implemented by derived classes
   virtual ULong64_t GetEvTime() const { return evt_time; }
@@ -101,7 +99,8 @@ public:
   virtual void PrintSlotData(Int_t crate, Int_t slot) const;
   virtual void PrintOut() const;
   virtual void SetRunTime( ULong64_t tloc );
-  THaSlotData *GetSlot(Int_t i) { return crateslot[i]; };
+
+  virtual void SetDebugFile( ofstream *file ) { fDebugFile = file; };
 
   // Status control
   void    EnableBenchmarks( Bool_t enable=true );
@@ -140,6 +139,7 @@ protected:
   static const Int_t MAXROC = 32;  
   static const Int_t MAXSLOT = 27;  
 
+  // Hall A Trigger Types
   static const Int_t MAX_PHYS_EVTYPE  = 14;  // Types up to this are physics
   static const Int_t SYNC_EVTYPE      = 16;
   static const Int_t PRESTART_EVTYPE  = 17;
@@ -147,7 +147,6 @@ protected:
   static const Int_t PAUSE_EVTYPE     = 19;
   static const Int_t END_EVTYPE       = 20;
   static const Int_t TS_PRESCALE_EVTYPE  = 120;
-  // should be able to load special event types from crate map
   static const Int_t EPICS_EVTYPE     = 131;
   static const Int_t PRESCALE_EVTYPE  = 133;
   static const Int_t DETMAP_FILE      = 135;
@@ -158,15 +157,15 @@ protected:
     Int_t pos;                // position in evbuffer[]
     Int_t len;                // length of data
   } rocdat[MAXROC];
-  // FIXME: cmap is not needed -> fMap below
-  THaCrateMap* cmap;          // default crate map
+
   THaSlotData** crateslot;  
 
   Bool_t first_load, first_decode;
   Bool_t fTrigSupPS;
 
-  // Hall A Trigger Types
   const Int_t *buffer;
+
+  ofstream *fDebugFile;
 
   Int_t  event_type,event_length,event_num,run_num,evscaler;
   Int_t  run_type;    // CODA run type from prestart event
@@ -284,6 +283,14 @@ inline Int_t THaEvData::GetRawData(Int_t crate, Int_t i) const {
   return GetRawData(index);
 };
 
+inline const Int_t* THaEvData::GetRawDataBuffer(Int_t crate) const {
+  // Direct access to the event buffer for the given crate,
+  // e.g. for fast header word searches
+  assert( crate >= 0 && crate < MAXROC );
+  Int_t index = rocdat[crate].pos;
+  return buffer+index;
+};
+
 inline Bool_t THaEvData::InCrate(Int_t crate, Int_t i) const {
   // To tell if the index "i" poInt_ts to a word inside crate #crate.
   assert( crate >= 0 && crate < MAXROC );
@@ -343,14 +350,6 @@ inline
 Bool_t THaEvData::IsSpecialEvent() const {
   return ( (event_type == DETMAP_FILE) ||
 	   (event_type == TRIGGER_FILE) );
-};
-
-inline
-Int_t THaEvData::LoadEvent(const Int_t* evbuffer) {
-  // This version of LoadEvent() uses private THaCrateMap cmap (recommended)
-  assert(cmap);
-  first_load = false;
-  return LoadEvent(evbuffer, cmap);
 };
 
 inline

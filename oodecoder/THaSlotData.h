@@ -22,6 +22,7 @@
 #include "TString.h"
 #include <cassert>
 #include <iostream>
+#include <fstream>
 
 const int SD_WARN = -2;
 const int SD_ERR = -1; 
@@ -60,10 +61,12 @@ public:
 
        // new
        Int_t LoadIfSlot(const Int_t* evbuffer, const Int_t *pstop);
+       void SetDebugFile(ofstream *file) { fDebugFile = file; };
 
        void define(int crate, int slot, UShort_t nchan=DEFNCHAN, 
 		   UShort_t ndata=DEFNDATA, UShort_t nhitperchan=DEFNHITCHAN );// Define crate, slot
        void print() const;
+       void print_to_file() const;
        int compressdataindex(int numidx); 
 
 private:
@@ -73,7 +76,7 @@ private:
        int slot;
        TString device;
        ToyModule *fModule;
-       UShort_t numhitperchan; // expected number of hits per channel
+        UShort_t numhitperchan; // expected number of hits per channel
        UShort_t numraw;      // Hit counters (numraw, numHits, numchanhit)
        UShort_t numchanhit;  // can be zero'd by clearEvent each event.
        UShort_t firstfreedataidx;     // pointer to first free space in dataindex array 
@@ -86,6 +89,7 @@ private:
        UChar_t* numMaxHits;  // [channel] current maximum number of hits
        int* rawData;         // rawData[hit] (all bits)
        int* data;            // data[hit] (only data bits)
+       ofstream *fDebugFile; // debug output to this file, if nonzero
        bool didini;          // true if object initialized via define()
        UShort_t maxc;        // Number of channels for this device
        UShort_t maxd;        // Max number of data words per event

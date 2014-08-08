@@ -12,7 +12,9 @@
 #include "Lecroy1877Module.h"
 #include "Lecroy1881Module.h"
 #include "Lecroy1875Module.h"
-#include "ToyModuleX.h"
+#include "Scaler3800.h"
+#include "Scaler3801.h"
+#include "Fadc250Module.h"
 #include "THaEvData.h"
 #include "THaSlotData.h"
 #include "TMath.h"
@@ -28,7 +30,9 @@ typedef ToyModule::TypeIter_t TypeIter_t;
 TypeIter_t Lecroy1877Module::fgThisType = DoRegister( ToyModuleType( "Lecroy1877Module" , 1877));
 TypeIter_t Lecroy1881Module::fgThisType = DoRegister( ToyModuleType( "Lecroy1881Module" , 1881));
 TypeIter_t Lecroy1875Module::fgThisType = DoRegister( ToyModuleType( "Lecroy1875Module" , 1875));
-TypeIter_t ToyModuleX::fgThisType = DoRegister( ToyModuleType( "ToyModuleX" , 4417 ));
+TypeIter_t Scaler3800::fgThisType = DoRegister( ToyModuleType( "Scaler3800" , 3800 ));
+TypeIter_t Scaler3801::fgThisType = DoRegister( ToyModuleType( "Scaler3801" , 3801 ));
+TypeIter_t Fadc250Module::fgThisType = DoRegister( ToyModuleType( "Fadc250Module" , 250 ));
 // Add your module here.  
 
 ToyModule::ToyModule(Int_t crate, Int_t slot) : fCrate(crate), fSlot(slot), fWordsExpect(0) { 
@@ -36,6 +40,8 @@ ToyModule::ToyModule(Int_t crate, Int_t slot) : fCrate(crate), fSlot(slot), fWor
   fHeaderMask=-1;
   fWdcntMask=0;
   fWdcntShift=0;
+  fDebugFile=0;
+  fModelNum = 4444;
 }
 
 ToyModule::~ToyModule() { 
@@ -64,10 +70,10 @@ void ToyModule::Create(const ToyModule& rhs) {
 }
 
 void ToyModule::DoPrint() {
-
-  cout << "ToyModule   name = "<<fName<<endl;
-  cout << "ToyModule::    Crate  "<<fCrate<<"     slot "<<fSlot<<endl;
-
+  if (fDebugFile) {
+    *fDebugFile << "ToyModule   name = "<<fName<<endl;
+    *fDebugFile << "ToyModule::    Crate  "<<fCrate<<"     slot "<<fSlot<<endl;
+  }
 }
 
 
@@ -110,6 +116,7 @@ Bool_t ToyModule::IsSlot(UInt_t rdata) {
   // a different rule for where to get fWordsExpect.
   // rules can be defined in the cratemap.
   // For some modules, fWordsExpect may be a property of the module.
+  *fDebugFile << "generic isslot "<<endl;
   if ((rdata & fHeaderMask)==fHeader) {
     fWordsExpect = (rdata & fWdcntMask)>>fWdcntShift;
     return kTRUE;
@@ -121,8 +128,8 @@ Bool_t ToyModule::IsSlot(UInt_t rdata) {
 
 Int_t ToyModule::LoadSlot(THaSlotData *sldat, const Int_t* evbuffer, const Int_t *pstop) {
 // this increments evbuffer
-  cout << "x ToyModule:: loadslot "<<endl; 
-  if (fHeader<0) cout << "error, not init"<<endl;
+  if (fDebugFile) *fDebugFile << "ToyModule:: loadslot "<<endl; 
+  //  if (fHeader<0) cout << "error, not initialized -- no header ?"<<endl;
   while (IsSlot( *evbuffer )) {
     if (evbuffer >= pstop) break;
     Decode(evbuffer);

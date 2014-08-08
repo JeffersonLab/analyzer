@@ -22,6 +22,8 @@
 #include "TString.h"
 #include "DecoderGlobals.h"
 #include <cassert>
+#include <iostream>
+#include <fstream>
 
 class THaCrateMap
 {
@@ -38,8 +40,6 @@ class THaCrateMap
      bool isCamac(int crate) const;                 // True if CAMAC crate;
      bool isScalerCrate(int crate) const;           // True if a Scaler crate;
 
-
- // The methods below will become obsolete since a crateslot will have modules
  // This class must inform the crateslot where the modules are.
 
      int getModel(int crate, int slot) const;       // Return module type
@@ -66,6 +66,7 @@ class THaCrateMap
      int init(TString the_map);                     // Initialize from text-block
      int init(ULong64_t time = 0);                  // Initialize by Unix time.
      void print() const;
+     void print(ofstream *file) const;
 
      static const int CM_OK;
      static const int CM_ERR;
@@ -230,8 +231,10 @@ void THaCrateMap::setSlotDone(int slot)
 
 inline
 void THaCrateMap::setSlotDone() {        // initialize
-  for (int i=0; i<MAXSLOT; i++)
+  for (int i=0; i<MAXSLOT; i++) {
     didslot[i] = false;
+  }
 }
+
 
 #endif

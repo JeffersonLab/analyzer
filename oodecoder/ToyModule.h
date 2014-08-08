@@ -12,6 +12,8 @@
 #include <map>
 #include <vector>
 #include <set>
+#include <iostream>
+#include <fstream>
 #include "Rtypes.h"
 #include "TNamed.h"
 
@@ -36,12 +38,14 @@ public:
   typedef TypeSet_t::iterator TypeIter_t;
   static TypeSet_t& fgToyModuleTypes();
   
-  ToyModule() {};  // for ROOT TClass & I/O
+  ToyModule() { };  // for ROOT TClass & I/O
 
   virtual ~ToyModule();  
 
   virtual void Init(Int_t crate, Int_t slot, Int_t header=0, Int_t mask=0) 
-    { fCrate=crate; fSlot=slot; fHeader=header; fHeaderMask=mask; };
+  { fCrate=crate; fSlot=slot; fHeader=header; fHeaderMask=mask; };
+
+  virtual void Init() { fModelNum=-1; };
 
   virtual void Clear(const Option_t *opt) { fWordsSeen = 0; };
 
@@ -51,6 +55,8 @@ public:
 
   virtual Int_t GetCrate() { return fCrate; };
   virtual Int_t GetSlot() { return fSlot; };
+
+  virtual void SetDebugFile(ofstream *file) { fDebugFile = file; };
 
   virtual void SetHeader(UInt_t header, UInt_t mask) {
     fHeader = header;
@@ -73,8 +79,13 @@ protected:
   Int_t fChan, fData, fRawData;   // transient data
   Int_t fWordsExpect, fWordsSeen;
   Int_t fWdcntMask, fWdcntShift;
+  Int_t fModelNum;
+ 
+  ofstream *fDebugFile;
+
   ToyModule(const ToyModule& rhs); 
   void Create(const ToyModule& rhs);
+  
 
 private:
 

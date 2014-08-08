@@ -17,9 +17,6 @@
 /////////////////////////////////////////////////////////////////////
 
 #include "ToyModule.h"
-#include "ToyFastbusModule.h"
-#include "Lecroy1877Module.h"
-#include "ToyModuleX.h"
 #include "THaSlotData.h"
 #include "THaCrateMap.h"
 #include "TClass.h"
@@ -37,13 +34,13 @@ const int THaSlotData::DEFNHITCHAN = 1; // Default number of hits per channel
 THaSlotData::THaSlotData() : 
   crate(-1), slot(-1), fModule(0), numhitperchan(0), numraw(0), numchanhit(0), firstfreedataidx(0), 
   numholesdataidx(0), numHits(0), chanlist(0), idxlist (0), chanindex(0), dataindex(0), 
-  numMaxHits(0), rawData(0), data(0), didini(false),
+  numMaxHits(0), rawData(0), data(0), fDebugFile(0), didini(false),
   maxc(0), maxd(0), allocd(0), alloci(0) {}
 
 THaSlotData::THaSlotData(int cra, int slo) :
   crate(cra), slot(slo), fModule(0), numhitperchan(0), numraw(0), numchanhit(0), firstfreedataidx(0), 
   numholesdataidx(0), numHits(0), chanlist(0), idxlist (0), chanindex(0), dataindex(0), 
-  numMaxHits(0), rawData(0), data(0), didini(false),
+  numMaxHits(0), rawData(0), data(0), fDebugFile(0), didini(false),
   maxc(0), maxd(0), allocd(0), alloci(0) {}
 
 
@@ -106,9 +103,11 @@ int THaSlotData::loadModule(const THaCrateMap *map) {
 
     // Get the ROOT class for this type
     
-    cout << "loctype.fClassName  "<< loctype.fClassName<<endl;
-    cout << "loctype.fMapNum  "<< loctype.fMapNum<<endl;
-    cout << "fTClass ptr =  "<<loctype.fTClass<<endl;
+    if (fDebugFile) {
+      *fDebugFile << "loctype.fClassName  "<< loctype.fClassName<<endl;
+      *fDebugFile << "loctype.fMapNum  "<< loctype.fMapNum<<endl;
+      *fDebugFile << "fTClass ptr =  "<<loctype.fTClass<<endl;
+    }
 
     if( !loctype.fTClass ) {
 
@@ -118,19 +117,24 @@ int THaSlotData::loadModule(const THaCrateMap *map) {
 
     if (modelnum == loctype.fMapNum) {
 
-      cout << "Found Module !!!! "<<modelnum<<endl;
+      if (fDebugFile) *fDebugFile << "Found Module !!!! "<<modelnum<<endl;
 
       if (loctype.fTClass) {
-  	 cout << "Creating fModule"<<endl;
+  	 if (fDebugFile) *fDebugFile << "Creating fModule"<<endl;
          fModule= static_cast<ToyModule*>( loctype.fTClass->New() ); 
 // Init, or get decoder rules.
-         cout << "about to init  module   "<<crate<<"  "<<slot<<endl;
+         if (fDebugFile) *fDebugFile << "about to init  module   "<<crate<<"  "<<slot<<endl;
          fModule->Init( crate, slot, map->getHeader(crate, slot), map->getMask(crate, slot));  
+         fModule->Init(); 
+         if (fDebugFile) { 
+            fModule->SetDebugFile(fDebugFile);
+   	    fModule->DoPrint();
+         }
       } else {
-	cout << "SERIOUS problem :  fTClass still zero "<<endl;
+	if (fDebugFile) *fDebugFile << "SERIOUS problem :  fTClass still zero "<<endl;
       }
  
-      cout << "fModule pointer   "<<fModule <<endl;
+      if (fDebugFile) *fDebugFile << "fModule pointer   "<<fModule <<endl;
 
 
     }
@@ -142,23 +146,23 @@ int THaSlotData::loadModule(const THaCrateMap *map) {
 }
 
 Int_t THaSlotData::LoadIfSlot(const Int_t* p, const Int_t *pstop) {
-  // this increments p
-  if ( !fModule ) {  // should be an "assert"
-     cout << "Serious problem !"<<endl;
-     return SD_ERR;
+  // returns how many words seen.
+  Int_t wordseen = 0;
+  if ( !fModule ) {  
+    //    cout << "THaSlotData::ERROR:   No module defined for slot. "<<crate<<"  "<<slot<<endl; // ok for now, but should be fatal.
+    return 0;
   }
+  if (fDebugFile) *fDebugFile << "LoadIfSlot:  " << dec<<crate<<"  "<<slot<<"   p "<<hex<<p<<"  "<<*p<<"  "<<dec<<(*p>>27)<<hex<<"  "<<pstop<<"  "<<fModule<<dec<<endl;
   if ( !fModule->IsSlot( *p ) ) {
-    return SD_ERR;
+    *fDebugFile << "Not slot ... return ... "<<endl;
+    return 0;
   }
-  fModule->DoPrint();
+  if (fDebugFile) fModule->DoPrint();
   fModule->Clear("");
-  Int_t done = 0;
-  while ( !done ) {
-    done = fModule->LoadSlot(this, p, pstop);  // increments p
-    if (p >= pstop) done = 1;
-  }
-  return SD_OK;
-
+  *fDebugFile << "p before load "<<p<<"  "<<pstop<<endl;
+  wordseen = fModule->LoadSlot(this, p, pstop);  // increments p
+  if (fDebugFile) *fDebugFile << "loop, LoadIfSlot:  p "<<p<<"  "<<pstop<<"  "<<wordseen<<endl;
+  return wordseen;
 }
 
 
@@ -255,12 +259,15 @@ int THaSlotData::loadData(const char* type, int chan, int dat, int raw) {
 
 int THaSlotData::loadData(int chan, int dat, int raw) {
   // NEW (6/2014).  
-
   return loadData(NULL, chan, dat, raw);
 }
 
 
 void THaSlotData::print() const {
+  if (fDebugFile) {
+    print_to_file();
+    return;
+  }  
   cout << "\n THaSlotData contents : " << endl;
   cout << "This is crate "<<dec<<crate<<" and slot "<<slot<<endl;
   cout << "Total Amount of Data : " << dec << getNumRaw() << endl;
@@ -292,6 +299,46 @@ void THaSlotData::print() const {
 	if(getData(chan,hit) == SD_ERR) cout<<"ERROR: getData"<<endl;
 	cout << "  Data  = (hex) "<<hex<<getData(chan,hit);
 	cout << "   or (decimal) = "<<dec<<getData(chan,hit)<<endl;
+      }
+    }
+  }
+  return;
+}
+
+void THaSlotData::print_to_file() const {
+  if (!fDebugFile) return;
+  *fDebugFile << "\n THaSlotData contents : " << endl;
+  *fDebugFile << "This is crate "<<dec<<crate<<" and slot "<<slot<<endl;
+  *fDebugFile << "Total Amount of Data : " << dec << getNumRaw() << endl;
+  if (getNumRaw() > 0) {
+    *fDebugFile << "Raw Data Dump: " << hex << endl;
+  } else {
+    if(getNumRaw() == SD_ERR) *fDebugFile << "getNumRaw ERROR"<<endl;
+    return;
+  }
+  int i,j,k,chan,hit;
+
+  bool first;
+  k = 0;
+  for (i=0; i<getNumRaw()/5; i++) {
+    for(j=0; j<5; j++) *fDebugFile << getRawData(k++) << "  ";
+    *fDebugFile << endl;
+  }
+  for (i=k; i<getNumRaw(); i++) *fDebugFile << getRawData(i) << "  ";
+  first = true;
+  for (chan=0; chan<maxc; chan++) {
+    if (getNumHits(chan) > 0) { 
+      if (first) {
+	*fDebugFile << "\nThis is "<<devType()<<" Data : "<<endl;
+	first = false;
+      }
+      *fDebugFile << dec << "Channel " << chan << "  ";
+      *fDebugFile << "numHits : " << getNumHits(chan) << endl;
+      for (hit=0; hit<getNumHits(chan); hit++) {
+	*fDebugFile << "Hit # "<<dec<<hit;
+	if(getData(chan,hit) == SD_ERR) *fDebugFile<<"ERROR: getData"<<endl;
+	*fDebugFile << "  Data  = (hex) "<<hex<<getData(chan,hit);
+	*fDebugFile << "   or (decimal) = "<<dec<<getData(chan,hit)<<endl;
       }
     }
   }
