@@ -8,6 +8,7 @@
 // R. Michaels, Dec 5, 2013
 
 #include <iostream>
+#include <fstream>
 #include <cstdlib>
 #include <cstdio>
 #include "THaCodaFile.h"
@@ -19,40 +20,44 @@
 
 using namespace std;
 
-void dump(int *buffer);
-void process(THaEvData *evdata);
+void dump(int *buffer, ofstream *file);
+void process(THaEvData *evdata, ofstream *file);
 
 int main(int argc, char* argv[])
 {
 
    TString filename("snippet.dat");
 
+   ofstream *debugfile = new ofstream;;
+   debugfile->open ("oodecoder.txt");
+   *debugfile << "Debug of OO decoder\n\n";
+
    THaCodaFile datafile(filename);
    THaEvData *evdata = new ToyCodaDecoder();
    evdata->SetDebug(1);
+   evdata->SetDebugFile(debugfile);
 
     // Loop over events
-      int NUMEVT=100;
+      int NUMEVT=250;
       for (int iev=0; iev<NUMEVT; iev++) {
    	 int status = datafile.codaRead();  
          if (status != S_SUCCESS) {
 	   if ( status == EOF) {
-             cout << "Normal end of file.  Bye bye." << endl;
+             *debugfile << "Normal end of file.  Bye bye." << endl;
 	   } else {
-  	     cout << hex << "ERROR: codaRread status = " << status << endl;
+  	     *debugfile << hex << "ERROR: codaRread status = " << status << endl;
  	   }
            exit(1);
 	 } else {
 
             int *data = datafile.getEvBuffer();
-	    //	    dump(data);
+	    dump(data, debugfile);
 
-            cout << "Hi, about to Load Event "<<endl;
+            *debugfile << "\nAbout to Load Event "<<endl;
             evdata->LoadEvent( data );   
-            cout << "Hi, Finished with Load Event "<<endl;
+            *debugfile << "\nFinished with Load Event "<<endl;
 
-            process (evdata);
-
+            process (evdata, debugfile);
 
 	 }
       }
@@ -61,39 +66,39 @@ int main(int argc, char* argv[])
 }
      
 
-void dump( int* data) {
+void dump( int* data, ofstream *debugfile) {
     // Crude event dump
             int evnum = data[4];
             int len = data[0] + 1;
             int evtype = data[1]>>16;
-            cout << "\n\n Event number " << dec << evnum << endl;
-            cout << " length " << len << " type " << evtype << endl;
+            *debugfile << "\n\n Event number " << dec << evnum << endl;
+            *debugfile << " length " << len << " type " << evtype << endl;
             int ipt = 0;
 	    for (int j=0; j<(len/5); j++) {
-	      cout << dec << "\n evbuffer[" << ipt << "] = ";
+	      *debugfile << dec << "\n evbuffer[" << ipt << "] = ";
               for (int k=j; k<j+5; k++) {
-		cout << hex << data[ipt++] << " ";
+		*debugfile << hex << data[ipt++] << " ";
 	      }
-              cout << endl;
+              *debugfile << endl;
 	    }
             if (ipt < len) {
-	      cout << dec << "\n evbuffer[" << ipt << "] = ";
+	      *debugfile << dec << "\n evbuffer[" << ipt << "] = ";
               for (int k=ipt; k<len; k++) {
-		cout << hex << data[ipt++] << " ";
+		*debugfile << hex << data[ipt++] << " ";
               }
-              cout << endl;
+              *debugfile << endl;
             }
 }
 
-void process (THaEvData *evdata) {
+void process (THaEvData *evdata, ofstream *debugfile) {
 
-     cout << "\n\nHello.  Now we process evdata : "<<endl;
+     *debugfile << "\n\nHello.  Now we process evdata : "<<endl;
 
-     cout << "\nEvent type   " << dec << evdata->GetEvType() << endl;
-     cout << "Event number " << evdata->GetEvNum()  << endl;
-     cout << "Event length " << evdata->GetEvLength() << endl;
+     *debugfile << "\nEvent type   " << dec << evdata->GetEvType() << endl;
+     *debugfile << "Event number " << evdata->GetEvNum()  << endl;
+     *debugfile << "Event length " << evdata->GetEvLength() << endl;
      if (evdata->IsPhysicsTrigger() ) { // triggers 1-14
-        cout << "Physics trigger " << endl;
+        *debugfile << "Physics trigger " << endl;
      }
 
 // Now we want data from a particular crate and slot.
@@ -104,17 +109,17 @@ void process (THaEvData *evdata) {
       int slot = 25;
 
 //  Here are raw 32-bit CODA words for this crate and slot
-      cout << "Raw Data Dump for crate "<<dec<<crate<<" slot "<<slot<<endl; 
+      *debugfile << "Raw Data Dump for crate "<<dec<<crate<<" slot "<<slot<<endl; 
       int hit;
-      cout << "Num raw "<<evdata->GetNumRaw(crate,slot)<<endl;
+      *debugfile << "Num raw "<<evdata->GetNumRaw(crate,slot)<<endl;
       for(hit=0; hit<evdata->GetNumRaw(crate,slot); hit++) {
-        cout<<dec<<"raw["<<hit<<"] =   ";
-        cout<<hex<<evdata->GetRawData(crate,slot,hit)<<endl;  
+        *debugfile<<dec<<"raw["<<hit<<"] =   ";
+        *debugfile<<hex<<evdata->GetRawData(crate,slot,hit)<<endl;  
       }
 // You can alternatively let evdata print out the contents of a crate and slot:
-      cout << "To print slotdata "<<crate<<"  "<<slot<<endl;
-      evdata->PrintSlotData(crate,slot);
-      cout << "finished with print slot data"<<endl;
+      *debugfile << "To print slotdata "<<crate<<"  "<<slot<<endl;
+      //      evdata->PrintSlotData(crate,slot);
+      *debugfile << "finished with print slot data"<<endl;
 }
 
 

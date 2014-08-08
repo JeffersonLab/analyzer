@@ -1,4 +1,4 @@
-///////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
 //
 //   ToyCodaDecoder
 //
@@ -34,12 +34,16 @@ using namespace std;
 ToyCodaDecoder::ToyCodaDecoder() 
 {
   irn = new Int_t[MAXROC];  
+  fbfound = new Int_t[MAXROC*MAXSLOT];
+  memset(irn, 0, MAXROC*sizeof(Int_t));
+  memset(fbfound, 0, MAXROC*MAXSLOT*sizeof(Int_t));
 }
 
 //_____________________________________________________________________________
 ToyCodaDecoder::~ToyCodaDecoder()
 {
   delete [] irn;
+  delete [] fbfound;
 }
 
 //_____________________________________________________________________________
@@ -57,14 +61,22 @@ Int_t ToyCodaDecoder::LoadEvent(const Int_t* evbuffer)
 {//PUBLIC
   // Main engine for decoding, called by public LoadEvent() methods
   // The crate map argument is ignored. Use SetCrateMapName instead
-  cout << "HERE 1234"<<endl;
+ static Int_t fdfirst=1; 
+ static Int_t chkfbstat=1;
+ if (fDebugFile) *fDebugFile << "Loading event in ToyCodaDecoder ... "<<endl;
   assert( evbuffer );
   assert( fMap || fgNeedInit );
   Int_t ret = HED_OK;
   buffer = evbuffer;
-  if(TestBit(kDebug)) dump(evbuffer);
+  //  if(TestBit(kDebug)) dump(evbuffer);
   if (first_decode || fgNeedInit) {
     ret = init_cmap();
+    if (fDebugFile) {
+         *fDebugFile << "Print of Crate Map"<<endl;
+         fMap->print(fDebugFile);
+    } else {
+      fMap->print();
+    }
     if( ret != HED_OK ) return ret;
     ret = init_slotdata(fMap);
     if( ret != HED_OK ) return ret;
@@ -83,6 +95,10 @@ Int_t ToyCodaDecoder::LoadEvent(const Int_t* evbuffer)
      event_num = evbuffer[4];
      recent_event = event_num;
      FindRocs(evbuffer);
+     if ((fdfirst==1) & (fDebugFile>0)) {
+       fdfirst=0;
+       CompareRocs();
+     }
 
    // Decode each ROC
    // This is not part of the loop above because it may exit prematurely due 
@@ -94,7 +110,16 @@ Int_t ToyCodaDecoder::LoadEvent(const Int_t* evbuffer)
       const RocDat_t* proc = rocdat+iroc;
       Int_t ipt = proc->pos + 1;
       Int_t iptmax = proc->pos + proc->len;
-      cout << "Calling roc_decode "<<i<<"   "<<iroc<<"  "<<ipt<<"  "<<iptmax<<endl;
+      if (fDebugFile) *fDebugFile << "\nCalling roc_decode "<<i<<"   "<<iroc<<"  "<<ipt<<"  "<<iptmax<<endl;
+      if (fMap->isFastBus(iroc)) {  // checking that slots found = expected
+          if (GetEvNum() > 200 && chkfbstat < 3) chkfbstat=2;
+          if (chkfbstat == 1) ChkFbSlot(iroc, evbuffer, ipt, iptmax);
+          if (chkfbstat == 2) {
+              ChkFbSlots();
+              chkfbstat = 3;
+          }
+      }
+
       Int_t status = roc_decode(iroc,evbuffer, ipt, iptmax);
 
       // do something with status
@@ -124,15 +149,19 @@ Int_t ToyCodaDecoder::roc_decode( Int_t roc, const Int_t* evbuffer,
   Bool_t find_first_used = true;
   Int_t status = SD_ERR;
 
-  if (TestBit(kDebug)) cout << "Decode roc#  "<<dec<<roc<<" nslot "<<Nslot<<endl;
+  if (TestBit(kDebug)) {
+    if (fDebugFile) *fDebugFile << "Decode roc#  "<<dec<<roc<<" nslot "<<Nslot<<endl;
+  }
 
   if (Nslot <= 0) goto err;
   fMap->setSlotDone();
 
   while ( p++ < pstop && n_slots_done < Nslot ) {
 
-    if(TestBit(kDebug)) cout << "evbuff "<<(p-evbuffer)<<"  "<<hex<<*p<<dec<<endl;
-    LoadIfFlagData(p); // this can increment p
+    if(TestBit(kDebug)) {
+      if (fDebugFile) *fDebugFile << "evbuff "<<(p-evbuffer)<<"  "<<hex<<*p<<dec<<endl;
+    }
+    LoadIfFlagData(p); 
 
     // look through all slots, since Nslot only gives number of occupied slots,
     // not the highest-numbered occupied slot.
@@ -150,8 +179,16 @@ Int_t ToyCodaDecoder::roc_decode( Int_t roc, const Int_t* evbuffer,
       }
       ++n_slots_checked;
 
+      if (fDebugFile) {
+        *fDebugFile<< "slot logic "<<first_slot_used << "  "<<n_slots_checked <<  "   "<<slot<<endl;
+      }
+
       status = crateslot[idx(roc,slot)]->LoadIfSlot(p, pstop); 
       if (status == kTRUE) fMap->setSlotDone(slot);
+
+      if (fDebugFile) {
+        *fDebugFile<< "after LoadIfSlot "<<p << "  "<<pstop<<endl;
+      }
 
       if (p >= pstop || p >= pevlen) goto SlotDone;
 
@@ -159,7 +196,9 @@ Int_t ToyCodaDecoder::roc_decode( Int_t roc, const Int_t* evbuffer,
 
     
   SlotDone:
-    if (TestBit(kDebug)) cout<<"slot done"<<endl;
+    if (TestBit(kDebug)) {
+        if (fDebugFile) *fDebugFile <<"slot done"<<endl;
+    }
     if( slot == first_slot_used ) {
       ++first_slot_used;
       find_first_used = true;
@@ -188,7 +227,7 @@ Int_t ToyCodaDecoder::LoadIfFlagData(const Int_t* evbuffer)
   UInt_t word   = *evbuffer;
   UInt_t upword = word & 0xffff0000;
   if (TestBit(kDebug)) {
-    cout << "TestBit on :  Flag data "<<hex<<word<<dec<<endl;
+    if (fDebugFile) *fDebugFile << "TestBit on :  Flag data ? "<<hex<<word<<dec<<endl;
   }
   if( word == 0xdc0000ff) synchmiss = true;
   if( upword == 0xdcfe0000) {
@@ -219,7 +258,6 @@ Int_t ToyCodaDecoder::LoadIfFlagData(const Int_t* evbuffer)
 
 Int_t ToyCodaDecoder::FindRocs(const Int_t *evbuffer) {
   
-  Int_t ldebug=1;
   assert( evbuffer && fMap );
 #ifdef FIXME
   if( fDoBench ) fBench->Begin("physics_decode");
@@ -253,11 +291,11 @@ Int_t ToyCodaDecoder::FindRocs(const Int_t *evbuffer) {
     pos += len+1;
   }
 
-  if (ldebug) {
-    cout << "num rocs "<<nroc<<endl;
+  if (fDebugFile) {
+    *fDebugFile << "num rocs "<<dec<<nroc<<endl;
     for (Int_t i=0; i < nroc; i++) {
       Int_t iroc=irn[i];
-      cout << "   roc  num "<<iroc<<"   pos "<<rocdat[iroc].pos<<"     len "<<rocdat[iroc].len<<endl;
+      *fDebugFile << "   roc  num "<<iroc<<"   pos "<<rocdat[iroc].pos<<"     len "<<rocdat[iroc].len<<endl;
     }
   }
 
@@ -270,7 +308,9 @@ Int_t ToyCodaDecoder::FindRocs(const Int_t *evbuffer) {
 int ToyCodaDecoder::init_slotdata(const THaCrateMap* map)
 {
   // Update lists of used/clearable slots in case crate map changed
-  cout << "into TOY DECODER init slotdata "<<map<<"   "<<fNSlotUsed<<endl;
+  if (fDebugFile) {
+    *fDebugFile << "into TOY DECODER init slotdata "<<map<<"   "<<fNSlotUsed<<endl;
+  }
   if(!map) return HED_ERR;
 
   for (Int_t iroc = 0; iroc<MAXROC; iroc++) {
@@ -281,21 +321,21 @@ int ToyCodaDecoder::init_slotdata(const THaCrateMap* map)
       if ( !map->slotUsed(iroc,islot) ) continue;
 
         makeidx(iroc,islot);
-        cout << "Num slots defined "<<GetNslots()<<endl;
-
+        if (fDebugFile) {
+           *fDebugFile << "Num slots defined "<<GetNslots()<<endl;
+	}
     }
   }
 
-  cout << "fNSlotUsed "<<fNSlotUsed<<endl;
+  if (fDebugFile) *fDebugFile << "fNSlotUsed "<<fNSlotUsed<<endl;
 
   for( int i=0; i<fNSlotUsed; i++ ) {
     THaSlotData* crslot = crateslot[fSlotUsed[i]];
     int crate = crslot->getCrate();
     int slot  = crslot->getSlot();
-    cout << "print of crate slot ---   crate "<<crate<<"   slot "<<slot<<endl;
-    crslot->print();
+    if (fDebugFile) crslot->print();
     crslot->loadModule(map);
-    cout << "Dev type xxx  = "<<crslot->devType()<<endl;
+    if (fDebugFile) *fDebugFile << "Dev type  = "<<crslot->devType()<<endl;
     if( !map->crateUsed(crate) || !map->slotUsed(crate,slot) ||
 	!map->slotClear(crate,slot)) {
       for( int k=0; k<fNSlotClear; k++ ) {
@@ -347,6 +387,83 @@ void ToyCodaDecoder::dump(const Int_t* evbuffer)
   cout<<dec<<endl;
 }
 
+//_____________________________________________________________________________
+void ToyCodaDecoder::CompareRocs(  )
+{
+  if (!fMap || !fDebugFile) return;
+  *fDebugFile<< "Comparing cratemap rocs with found rocs"<<endl;
+  for (Int_t i=0; i<nroc; i++) {
+    Int_t iroc = irn[i];
+    if (!fMap->crateUsed(iroc)) {
+          *fDebugFile << "ERROR  CompareRocs:: roc "<<iroc<<"  in data but not in map"<<endl;
+    }
+  }
+  for (Int_t iroc1 = 0; iroc1<MAXROC; iroc1++) {
+    if (  !fMap->crateUsed(iroc1)  ) continue;
+    Int_t ifound=0;
+    for( Int_t i=0; i<nroc; i++ ) {
+      Int_t iroc2 = irn[i];
+      if (iroc1 == iroc2) {
+	ifound=1;
+        break;
+      }
+    }
+    if (!ifound) *fDebugFile << "ERROR: CompareRocs:  roc "<<iroc1<<" in cratemap but not found data"<<endl;
+  }
+}
+  
+//_____________________________________________________________________________
+void ToyCodaDecoder::ChkFbSlot( Int_t roc, const Int_t* evbuffer,
+				  Int_t ipt, Int_t istop )
+{
+  const Int_t* p      = evbuffer+ipt;    // Points to ROC ID word (1 before data)
+  const Int_t* pstop  =evbuffer+istop;   // Points to last word of data in roc
+  while (p++ < pstop) {
+    Int_t slot = (*p)>>27;  // A "self-reported" slot.
+    Int_t index = MAXSLOT*roc + slot;
+    if ((slot > 0) && (index >=0 && index < MAXROC*MAXSLOT)) fbfound[index]=1;
+  }
+}
+ 
+//_____________________________________________________________________________
+void ToyCodaDecoder::ChkFbSlots()
+{
+  // This checks the fastbus slots to see if slots are appearing in both the
+  // data and the cratemap.  If they appear in one but not the other, an warning
+  // is issued, which usually means the cratemap is wrong.
+  Int_t slotstat[MAXROC*MAXSLOT];
+  for (Int_t iroc=0; iroc<MAXROC; iroc++) {
+    if ( !fMap->isFastBus(iroc) ) continue;
+    for (Int_t islot=0; islot<MAXSLOT; islot++) {
+      Int_t index = MAXSLOT*iroc + islot;
+      slotstat[index]=0;
+      if (fbfound[index] && fMap->slotUsed(iroc, islot)) {	
+	  if (fDebugFile) *fDebugFile << "FB slot in cratemap and in data.  (good!).  roc = "<<iroc<<"   slot = "<<islot<<endl;
+          slotstat[index]=1;
+      }
+      if ( !fbfound[index] && fMap->slotUsed(iroc, islot)) {
+	if (fDebugFile) *fDebugFile << "FB slot NOT in data, but in cratemap  (bad!).  roc = "<<iroc<<"   slot = "<<islot<<endl;
+ 	  slotstat[index]=2;
+      }
+      if ( fbfound[index] && !fMap->slotUsed(iroc, islot)) {
+	if (fDebugFile) *fDebugFile << "FB slot in data, but NOT in cratemap  (bad!).  roc = "<<iroc<<"   slot = "<<islot<<endl;
+ 	 slotstat[index]=3;
+      }
+    }
+  }
+  for (Int_t iroc=0; iroc<MAXROC; iroc++) {
+    for (Int_t islot=0; islot<MAXSLOT; islot++) {
+      Int_t index = MAXSLOT*iroc + islot;
+      if (slotstat[index]==2) cout << "Decoder:: WARNING:  Fastbus module in (roc,slot) = ("<<iroc<<","<<islot<<")  found in cratemap but NOT in data !"<<endl;
+    }
+  }
+  for (Int_t iroc=0; iroc<MAXROC; iroc++) {
+    for (Int_t islot=0; islot<MAXSLOT; islot++) {
+      Int_t index = MAXSLOT*iroc + islot;
+      if (slotstat[index]==3) cout << "Decoder:: WARNING:  Fastbus module in (roc,slot) = ("<<iroc<<","<<islot<<")  found in data but NOT in cratemap !"<<endl;
+    }
+  }
+}
 
 
 //_____________________________________________________________________________
@@ -360,6 +477,7 @@ void ToyCodaDecoder::SetRunTime( ULong64_t tloc )
   fRunTime = tloc;
   fgNeedInit = true;  // force re-init
 }
+
 
 
 
