@@ -52,7 +52,7 @@ Int_t THaGenScaler::SetClock(Double_t deltaT, Int_t clockchan, Double_t clockrat
     if (clockrate > 0) {
        if (fNormScaler) { 
           cout << "THaGenScaler:: WARNING:  Declaring this object to have"<<endl;
-          cout << "   a clock even though his also has a normalization scaler ?"<<endl;
+          cout << "   a clock even though this also has a normalization scaler ?"<<endl;
           cout << "  This makes no sense. "<<endl;
           retcode = -1;
        }
