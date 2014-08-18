@@ -14,7 +14,7 @@ export WITH_DEBUG = 1
 # SOVERSION should be numerical only - it becomes the shared lib soversion
 # EXTVERS (optional) describes the build, e.g. "dbg", "et", "gcc33" etc.
 SOVERSION  := 1.5
-PATCH   := 26
+PATCH   := 27
 VERSION := $(SOVERSION).$(PATCH)
 EXTVERS :=
 #EXTVERS := -et
@@ -45,8 +45,8 @@ SUBDIRS      := $(DCDIR) $(SCALERDIR)
 INCDIRS      := $(addprefix $(HA_DIR)/, src $(SUBDIRS))
 HA_DICT      := haDict
 
-LIBS         := 
-GLIBS        := 
+LIBS         :=
+GLIBS        :=
 
 INCLUDES     := $(ROOTCFLAGS) $(addprefix -I, $(INCDIRS) )
 
@@ -96,7 +96,7 @@ CXXVER       := $(shell g++ --version | head -1 | sed 's/.* \([0-9]\)\..*/\1/')
 DEFINES      += $(shell getconf LFS_CFLAGS)
 ifeq ($(CXXVER),4)
 CXXFLAGS     += -Wextra -Wno-missing-field-initializers
-DICTCXXFLG   := -Wno-strict-aliasing 
+DICTCXXFLG   := -Wno-strict-aliasing
 endif
 endif
 
@@ -123,7 +123,7 @@ SONAME       := -Wl,-install_name,@rpath/
 CXXVER       := $(shell g++ --version | head -1 | sed 's/.* \([0-9]\)\..*/\1/')
 ifeq ($(CXXVER),4)
 CXXFLAGS     += -Wextra -Wno-missing-field-initializers
-DICTCXXFLG   := -Wno-strict-aliasing 
+DICTCXXFLG   := -Wno-strict-aliasing
 endif
 endif
 
@@ -352,7 +352,7 @@ srcdist:
 		 -V "JLab/Hall A C++ Analysis Software "$(VERSION)" `date -I`"\
 		 $(NAME)/.exclude $(NAME)/ChangeLog \
 		 $(NAME)/src $(NAME)/$(DCDIR) $(NAME)/$(SCALERDIR) \
-		 $(NAME)/Makefile 
+		 $(NAME)/Makefile
                  # $(NAME)/DB $(NAME)/examples \# $(NAME)/docs $(NAME)/Calib $(NAME)/contrib
 
 cvsdist:	srcdist
@@ -397,7 +397,7 @@ endif
 .PHONY: all clean realclean srcdist cvsdist subdirs static
 
 
-###--- DO NOT CHANGE ANYTHING BELOW THIS LINE UNLESS YOU KNOW WHAT 
+###--- DO NOT CHANGE ANYTHING BELOW THIS LINE UNLESS YOU KNOW WHAT
 ###    YOU ARE DOING
 
 .SUFFIXES:
