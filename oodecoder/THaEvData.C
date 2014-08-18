@@ -254,6 +254,7 @@ int THaEvData::init_cmap()  {
   }
   if (TestBit(kDebug)) cout << "Init crate map " << endl;
   if( fMap->init(GetRunTime()) == THaCrateMap::CM_ERR ) {
+    cout << "THaEvData:: failure to init cmap !!    "<<GetRunTime()<<endl;
     return HED_FATAL; // Can't continue w/o cratemap
   }
   fgNeedInit = false;

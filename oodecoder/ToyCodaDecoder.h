@@ -37,7 +37,6 @@ class ToyCodaDecoder : public THaEvData {
   
   virtual Int_t LoadIfFlagData(const Int_t *p);
 
-  virtual void PrintOut() const { dump(buffer); }
   virtual void SetRunTime(ULong64_t tloc);
 
   Int_t FindRocs(const Int_t *evbuffer);
@@ -57,7 +56,7 @@ class ToyCodaDecoder : public THaEvData {
   void ChkFbSlots();
 
   int init_slotdata(const THaCrateMap *map);
-  static void dump(const Int_t* evbuffer);
+  void dump(const Int_t* evbuffer);
 
   ClassDef(ToyCodaDecoder,0) // Decoder for CODA event buffer
 };
