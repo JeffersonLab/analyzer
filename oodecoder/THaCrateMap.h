@@ -38,7 +38,10 @@ class THaCrateMap
      bool isFastBus(int crate) const;               // True if fastbus crate;
      bool isVme(int crate) const;                   // True if VME crate;
      bool isCamac(int crate) const;                 // True if CAMAC crate;
-     bool isScalerCrate(int crate) const;           // True if a Scaler crate;
+     bool isScalerCrate(int crate) const;           // True if a Scaler crate
+     int getNslot(int crate) const;                 // Returns num occupied slots
+     int getMinSlot(int crate) const;               // Returns min slot number
+     int getMaxSlot(int crate) const;               // Returns max slot number
 
  // This class must inform the crateslot where the modules are.
 
@@ -54,7 +57,6 @@ class THaCrateMap
      int setHeader(int crate, int slot, int head);  // set the header
      int setMask(int crate, int slot, int mask);    // set the header mask
      int setScalerLoc(int crate, const char* location); // Sets the scaler location
-     int getNslot(int crate) const;                 // Returns num occupied slots
      UShort_t getNchan(int crate, int slot) const;  // Max number of channels
      UShort_t getNdata(int crate, int slot) const;  // Max number of data words
      bool slotDone(int slot) const;                       // Used to speed up decoder
@@ -81,7 +83,7 @@ class THaCrateMap
      struct CrateInfo_t {           // Crate Information data descriptor
        TString crate_type;
        ECrateCode crate_code;
-       Int_t nslot, maxslot;
+       Int_t nslot, minslot, maxslot;
        bool crate_used;
        bool slot_used[MAXSLOT], slot_clear[MAXSLOT];
        UShort_t model[MAXSLOT];       
@@ -191,6 +193,20 @@ const char* THaCrateMap::getScalerLoc(int crate) const
 {
   assert( crate >= 0 && crate < MAXROC );
   return crdat[crate].scalerloc.Data();
+}
+
+inline
+int THaCrateMap::getMinSlot(int crate) const
+{
+  assert( crate >= 0 && crate < MAXROC );
+  return crdat[crate].minslot;
+}
+
+inline
+int THaCrateMap::getMaxSlot(int crate) const
+{
+  assert( crate >= 0 && crate < MAXROC );
+  return crdat[crate].maxslot;
 }
 
 inline

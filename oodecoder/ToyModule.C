@@ -116,7 +116,6 @@ Bool_t ToyModule::IsSlot(UInt_t rdata) {
   // a different rule for where to get fWordsExpect.
   // rules can be defined in the cratemap.
   // For some modules, fWordsExpect may be a property of the module.
-  *fDebugFile << "generic isslot "<<endl;
   if ((rdata & fHeaderMask)==fHeader) {
     fWordsExpect = (rdata & fWdcntMask)>>fWdcntShift;
     return kTRUE;
@@ -125,19 +124,21 @@ Bool_t ToyModule::IsSlot(UInt_t rdata) {
   return kFALSE;
 }
 
-
 Int_t ToyModule::LoadSlot(THaSlotData *sldat, const Int_t* evbuffer, const Int_t *pstop) {
-// this increments evbuffer
+  const Int_t *p = evbuffer;
   if (fDebugFile) *fDebugFile << "ToyModule:: loadslot "<<endl; 
-  //  if (fHeader<0) cout << "error, not initialized -- no header ?"<<endl;
-  while (IsSlot( *evbuffer )) {
-    if (evbuffer >= pstop) break;
-    Decode(evbuffer);
+  if (!fHeader) cerr << "ToyModule::LoadSlot::ERROR : no header ?"<<endl;
+  while (IsSlot( *p )) {
+    if (p >= pstop) break;
+    Decode(p);
+    if (fDebugFile) *fDebugFile << "ToyModule:: loadData  "<<fChan<<"  "<<fData<<endl; 
     sldat->loadData(fChan, fData, fRawData);
     fWordsSeen++;
-    evbuffer++;
+    p++;
   }
-  return 1;
+  return fWordsSeen;
 }
+
+
 
 ClassImp(ToyModule)

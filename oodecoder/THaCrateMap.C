@@ -79,6 +79,7 @@ int THaCrateMap::getScalerCrate(int data) const {
   return 0;
 }
 
+
 int THaCrateMap::setCrateType(int crate, const char* ctype) {
   assert( crate >= 0 && crate < MAXROC );
   TString type(ctype);
@@ -290,6 +291,8 @@ int THaCrateMap::init(TString the_map)
     crdat[crate].nslot = 0;
     crdat[crate].crate_used = false;
     setCrateType(crate,"unknown"); //   crate_type[crate] = "unknown";
+    crdat[crate].minslot=MAXSLOT;
+    crdat[crate].maxslot=0;
     for(slot=0; slot<MAXSLOT; slot++) {
       crdat[crate].slot_used[slot] = false;
       crdat[crate].model[slot] = 0;
@@ -313,12 +316,14 @@ int THaCrateMap::init(TString the_map)
     
     // set the next CRATE number and type
     if ( sscanf(line.c_str(),"==== Crate %d type %20s",&crate,ctype) == 2 ) {
-      if ( setCrateType(crate,ctype) != CM_OK ) 
+      if ( setCrateType(crate,ctype) != CM_OK )  {
+        cout << "THaCrateMap:: fatal ERROR 2  setCrateType "<<endl;
 	return CM_ERR;
-
+      }
       // for a scaler crate, get the 'name' or location as well
       if ( crdat[crate].crate_code == kScaler ) {
 	if (sscanf(line.c_str(),"==== Crate %*d type %*s %20s",ctype) != 1) {
+          cout << "THaCrateMap:: fatal ERROR 3   "<<endl;
 	  return CM_ERR;
 	}
 	TString scaler_name(ctype);
@@ -357,8 +362,23 @@ int THaCrateMap::init(TString the_map)
     }
     
     // unexpected input
+    cout << "THaCrateMap:: fatal ERROR 4   "<<endl<<"Bad line "<<endl<<line<<endl;
     return CM_ERR;
   }
+
+  for(crate=0; crate<MAXROC; crate++) {
+    Int_t imin=MAXSLOT;
+    Int_t imax=0;
+    for(slot=0; slot<MAXSLOT; slot++) {
+      if (crdat[crate].slot_used[slot]) {
+	if (slot < imin) imin=slot;
+        if (slot > imax) imax=slot;
+      }
+    }
+    crdat[crate].minslot=imin;
+    crdat[crate].maxslot=imax;
+  }
+
   return CM_OK;
 }
 

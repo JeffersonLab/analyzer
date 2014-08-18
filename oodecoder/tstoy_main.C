@@ -29,13 +29,13 @@ int main(int argc, char* argv[])
    TString filename("snippet.dat");
 
    ofstream *debugfile = new ofstream;;
-   debugfile->open ("oodecoder.txt");
+   debugfile->open ("oodecoder1.txt");
    *debugfile << "Debug of OO decoder\n\n";
 
    THaCodaFile datafile(filename);
    THaEvData *evdata = new ToyCodaDecoder();
-   evdata->SetDebug(1);
-   evdata->SetDebugFile(debugfile);
+   //   evdata->SetDebug(1);
+   //   evdata->SetDebugFile(debugfile);
 
     // Loop over events
       int NUMEVT=250;

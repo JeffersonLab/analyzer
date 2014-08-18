@@ -93,8 +93,6 @@ int THaSlotData::loadModule(const THaCrateMap *map) {
 
   int modelnum = map->getModel(crate, slot);
 
-  cout << "modelnum in THaSlotData::loadModule =  "<< map->getModel(crate,slot) << endl;
-
   Int_t err=0;
 
    for( ToyModule::TypeIter_t it = ToyModule::fgToyModuleTypes().begin();
@@ -104,9 +102,9 @@ int THaSlotData::loadModule(const THaCrateMap *map) {
     // Get the ROOT class for this type
     
     if (fDebugFile) {
-      *fDebugFile << "loctype.fClassName  "<< loctype.fClassName<<endl;
-      *fDebugFile << "loctype.fMapNum  "<< loctype.fMapNum<<endl;
-      *fDebugFile << "fTClass ptr =  "<<loctype.fTClass<<endl;
+      *fDebugFile << "THaSlotData:: loctype.fClassName  "<< loctype.fClassName<<endl;
+      *fDebugFile << "THaSlotData:: loctype.fMapNum  "<< loctype.fMapNum<<endl;
+      *fDebugFile << "THaSlotData:: fTClass ptr =  "<<loctype.fTClass<<endl;
     }
 
     if( !loctype.fTClass ) {
@@ -117,13 +115,13 @@ int THaSlotData::loadModule(const THaCrateMap *map) {
 
     if (modelnum == loctype.fMapNum) {
 
-      if (fDebugFile) *fDebugFile << "Found Module !!!! "<<modelnum<<endl;
+      if (fDebugFile) *fDebugFile << "THaSlotData::  Found Module !!!! "<<modelnum<<endl;
 
       if (loctype.fTClass) {
-  	 if (fDebugFile) *fDebugFile << "Creating fModule"<<endl;
+  	 if (fDebugFile) *fDebugFile << "THaSlotData:: Creating fModule"<<endl;
          fModule= static_cast<ToyModule*>( loctype.fTClass->New() ); 
 // Init, or get decoder rules.
-         if (fDebugFile) *fDebugFile << "about to init  module   "<<crate<<"  "<<slot<<endl;
+         if (fDebugFile) *fDebugFile << "THaSlotData:: about to init  module   "<<crate<<"  "<<slot<<endl;
          fModule->Init( crate, slot, map->getHeader(crate, slot), map->getMask(crate, slot));  
          fModule->Init(); 
          if (fDebugFile) { 
@@ -131,10 +129,10 @@ int THaSlotData::loadModule(const THaCrateMap *map) {
    	    fModule->DoPrint();
          }
       } else {
-	if (fDebugFile) *fDebugFile << "SERIOUS problem :  fTClass still zero "<<endl;
+	if (fDebugFile) *fDebugFile << "THaSlotData:: SERIOUS problem :  fTClass still zero "<<endl;
       }
  
-      if (fDebugFile) *fDebugFile << "fModule pointer   "<<fModule <<endl;
+      if (fDebugFile) *fDebugFile << "THaSlotData:: fModule pointer   "<<fModule <<endl;
 
 
     }
@@ -152,16 +150,15 @@ Int_t THaSlotData::LoadIfSlot(const Int_t* p, const Int_t *pstop) {
     //    cout << "THaSlotData::ERROR:   No module defined for slot. "<<crate<<"  "<<slot<<endl; // ok for now, but should be fatal.
     return 0;
   }
-  if (fDebugFile) *fDebugFile << "LoadIfSlot:  " << dec<<crate<<"  "<<slot<<"   p "<<hex<<p<<"  "<<*p<<"  "<<dec<<(*p>>27)<<hex<<"  "<<pstop<<"  "<<fModule<<dec<<endl;
+  if (fDebugFile) *fDebugFile << "THaSlotData::LoadIfSlot:  " << dec<<crate<<"  "<<slot<<"   p "<<hex<<p<<"  "<<*p<<"  "<<dec<<((UInt_t(*p))>>27)<<hex<<"  "<<pstop<<"  "<<fModule<<dec<<endl;
   if ( !fModule->IsSlot( *p ) ) {
-    *fDebugFile << "Not slot ... return ... "<<endl;
+    if(fDebugFile) *fDebugFile << "THaSlotData:: Not slot ... return ... "<<endl;
     return 0;
   }
   if (fDebugFile) fModule->DoPrint();
   fModule->Clear("");
-  *fDebugFile << "p before load "<<p<<"  "<<pstop<<endl;
   wordseen = fModule->LoadSlot(this, p, pstop);  // increments p
-  if (fDebugFile) *fDebugFile << "loop, LoadIfSlot:  p "<<p<<"  "<<pstop<<"  "<<wordseen<<endl;
+  if (fDebugFile) *fDebugFile << "THaSlotData:: after LoadIfSlot:  wordseen =  "<<dec<<"  "<<wordseen<<endl;
   return wordseen;
 }
 
