@@ -902,7 +902,7 @@ void THaDecData::TrigBits(UInt_t ibit, BdataLoc *dataloc) {
 
   //FIXME: MAKE THIS CUT CONFIGURABLE - SEPARATELY FOR EACH BIT!
   const UInt_t cutlo = 0;
-  const UInt_t cuthi = 1500;
+  const UInt_t cuthi = 2000;
   
   for (int ihit = 0; ihit < dataloc->NumHits(); ++ihit) {
     if (dataloc->Get(ihit) > cutlo && dataloc->Get(ihit) < cuthi) {
