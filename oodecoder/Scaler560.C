@@ -15,11 +15,17 @@
 using namespace std;
 
 
-Scaler560::Scaler560(Int_t crate, Int_t slot) : THaGenScaler(crate, slot, 16) { 
+Scaler560::Scaler560(Int_t crate, Int_t slot) : THaGenScaler(crate, slot) { 
+  Init();
 }
 
 Scaler560::~Scaler560() { 
 }
 
+void Scaler560::Init() {
+  fNumChan = 16;
+  fWordsExpect = 16;
+  THaGenScaler::GenInit();
+}
 
 ClassImp(Scaler560)

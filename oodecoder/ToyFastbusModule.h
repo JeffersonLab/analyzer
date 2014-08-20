@@ -35,7 +35,7 @@ public:
    Int_t Data(UInt_t rdata) { return (rdata&fDataMask); };
          
    Int_t Decode(const Int_t *evbuffer);
-   void Init(Int_t crate, Int_t slot, Int_t, Int_t);
+   void Init(Int_t crate, Int_t slot, Int_t i1=0, Int_t i2=0);
 
    Bool_t IsSlot(UInt_t rdata) { return (Slot(rdata)==fSlot); };
    virtual Int_t LoadSlot(THaSlotData *sldat, const Int_t* evbuffer, const Int_t *pstop);

@@ -15,10 +15,17 @@
 using namespace std;
 
 
-Scaler1151::Scaler1151(Int_t crate, Int_t slot) : THaGenScaler(crate, slot, 16) { 
+Scaler1151::Scaler1151(Int_t crate, Int_t slot) : THaGenScaler(crate, slot) { 
+  Init();
 }
 
 Scaler1151::~Scaler1151() { 
+}
+
+void Scaler1151::Init() {
+  fNumChan = 16;
+  fWordsExpect = 16;
+  THaGenScaler::GenInit();
 }
 
 

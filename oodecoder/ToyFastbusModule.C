@@ -16,24 +16,21 @@
 using namespace std;
 
 ToyFastbusModule::ToyFastbusModule(Int_t crate, Int_t slot) : ToyModule(crate, slot) {
-  fSlotMask=0xf8000000;
-  fSlotShift=27;
-  fDebugFile=0;
-  if (fCrate < 0 || fCrate > MAXROC) {
-       cerr << "ERROR: crate out of bounds"<<endl;
-       fCrate = 0;
-  }
-  if (fSlot < 0 || fSlot > MAXSLOT_FB) {
-       cerr << "ERROR: slot out of bounds"<<endl;
-       fSlot = 0;
-  }
+  Init(crate, slot);
 }
 
 ToyFastbusModule::~ToyFastbusModule() {
 }
 
 void ToyFastbusModule::Init(Int_t crate, Int_t slot, Int_t i1, Int_t i2) {
-  //  if (fDebugFile) *fDebugFile << "ToyFBMod:: Init module in crate "<<crate<<"     slot "<<slot<<endl;
+  if (fCrate < 0 || fCrate > MAXROC) {
+       cerr << "FastBusModule::ERROR: crate out of bounds"<<endl;
+       fCrate = 0;
+  }
+  if (fSlot < 0 || fSlot > MAXSLOT_FB) {
+       cerr << "FastBusModule::ERROR: slot out of bounds"<<endl;
+       fSlot = 0;
+  }
   fCrate = crate;
   fSlot = slot;
   fSlotMask = 0xf8000000;

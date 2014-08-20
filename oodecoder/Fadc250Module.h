@@ -12,12 +12,12 @@
 #include <map>
 #include <vector>
 #include "Rtypes.h"
-#include "ToyModuleX.h"
+#include "VmeModule.h"
 
 #define NADCCHAN   16
 #define MAXDAT     50000
 
-class Fadc250Module : public ToyModuleX {
+class Fadc250Module : public VmeModule {
 
 public:
 
@@ -25,6 +25,7 @@ public:
    Fadc250Module(Int_t crate, Int_t slot);  
    virtual ~Fadc250Module();  
 
+   void Init();
    Bool_t IsSlot(UInt_t rdata);
    Int_t Decode(const Int_t *evbuffer);
 
@@ -35,6 +36,7 @@ public:
 
    void SetMode(Int_t mode) { 
      f250_setmode = mode;
+     IsInit = kTRUE;
      CheckSetMode();
    }
 
@@ -96,7 +98,8 @@ private:
 
    Int_t fNumTrig, fNumEvents, *fNumAInt, *fNumTInt,  *fNumSample;
    Int_t *fAdcData;  // Raw data (either samples or pulse integrals)
-   Int_t *fTdcData;   
+   Int_t *fTdcData;  
+   Bool_t IsInit; 
    void Clear(const Option_t *opt);
    void CheckSetMode();
    void CheckFoundMode();

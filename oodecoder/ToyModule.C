@@ -12,6 +12,8 @@
 #include "Lecroy1877Module.h"
 #include "Lecroy1881Module.h"
 #include "Lecroy1875Module.h"
+#include "Scaler560.h"
+#include "Scaler1151.h"
 #include "Scaler3800.h"
 #include "Scaler3801.h"
 #include "Fadc250Module.h"
@@ -30,10 +32,15 @@ typedef ToyModule::TypeIter_t TypeIter_t;
 TypeIter_t Lecroy1877Module::fgThisType = DoRegister( ToyModuleType( "Lecroy1877Module" , 1877));
 TypeIter_t Lecroy1881Module::fgThisType = DoRegister( ToyModuleType( "Lecroy1881Module" , 1881));
 TypeIter_t Lecroy1875Module::fgThisType = DoRegister( ToyModuleType( "Lecroy1875Module" , 1875));
+TypeIter_t Scaler560::fgThisType = DoRegister( ToyModuleType( "Scaler560" , 560 ));
+TypeIter_t Scaler1151::fgThisType = DoRegister( ToyModuleType( "Scaler1151" , 1151 ));
 TypeIter_t Scaler3800::fgThisType = DoRegister( ToyModuleType( "Scaler3800" , 3800 ));
 TypeIter_t Scaler3801::fgThisType = DoRegister( ToyModuleType( "Scaler3801" , 3801 ));
 TypeIter_t Fadc250Module::fgThisType = DoRegister( ToyModuleType( "Fadc250Module" , 250 ));
+
 // Add your module here.  
+
+
 
 ToyModule::ToyModule(Int_t crate, Int_t slot) : fCrate(crate), fSlot(slot), fWordsExpect(0) { 
   fHeader=-1;
@@ -41,7 +48,7 @@ ToyModule::ToyModule(Int_t crate, Int_t slot) : fCrate(crate), fSlot(slot), fWor
   fWdcntMask=0;
   fWdcntShift=0;
   fDebugFile=0;
-  fModelNum = 4444;
+  fModelNum = -1;
 }
 
 ToyModule::~ToyModule() { 

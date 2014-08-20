@@ -22,6 +22,7 @@ public:
    Scaler3801(Int_t crate, Int_t slot);  
    virtual ~Scaler3801();  
 
+   void Init();
 
 private:
 

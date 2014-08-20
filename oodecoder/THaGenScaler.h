@@ -4,55 +4,56 @@
 /////////////////////////////////////////////////////////////////////
 //
 //   THaGenScaler
-//   Generic scaler
+//   Generic scaler.  This is an abstract class.
 //
 /////////////////////////////////////////////////////////////////////
 
 #include <string>
 #include <map>
 #include <vector>
+#include <iostream>
+#include <fstream>
 #include "Rtypes.h"
-#include "ToyModule.h"
+#include "VmeModule.h"
 
 const int DEFAULT_DELTAT = 4;
 
-class THaGenScaler : public ToyModule {
+class THaGenScaler : public VmeModule {
 
 public:
 
    THaGenScaler() {};  
-   THaGenScaler(Int_t crate, Int_t slot, Int_t numchan);  
+   THaGenScaler(Int_t crate, Int_t slot);  
    virtual ~THaGenScaler();  
 
+   virtual void Init()=0;  
+   void GenInit();
    Int_t SetClock(Double_t deltaT, Int_t clockchan=0, Double_t clockrate=0);
-
-   Bool_t IsSlot(Int_t rdata);
+   virtual Bool_t IsSlot(Int_t rdata);
    Int_t Decode(const Int_t *evbuffer);
-   Int_t GetData(Int_t chan);
-   Double_t GetRate(Int_t chan);
+   Int_t GetData(Int_t chan);   // Raw scaler counts
+   Double_t GetRate(Int_t chan);  // Scaler rate
    Double_t GetTimeSincePrev();  // returns deltaT since last reading
    void Clear(const Option_t *opt) { fIsDecoded=kFALSE; };
    Bool_t IsDecoded() { return fIsDecoded; };
-   void LoadNormScaler(THaGenScaler *scal);
+   void LoadNormScaler(THaGenScaler *scal);  // loads pointer to norm. scaler
    void DoPrint();
+   void DebugPrint(ofstream *file=0);
 
 protected:
 
    void LoadRates();
-
    Bool_t checkchan(Int_t chan) { return (chan >=0 && chan < fWordsExpect); }
    static TypeIter_t fgThisType;
    Bool_t fIsDecoded, fFirstTime, fDeltaT;
    Int_t *fDataArray, *fPrevData;
    Double_t *fRate;
-   Int_t fClockChan;
+   Int_t fNumChan, fClockChan, fNumChanMask;
    Bool_t fHasClock;
    Double_t fClockRate;
    THaGenScaler *fNormScaler;
-
-   Int_t fNumChanMask;
-   Int_t slotmask, chanmask, datamask;
-   ClassDef(THaGenScaler,0)  //   A generic scaler
+ 
+   ClassDef(THaGenScaler,0)  //   A generic scaler.  Abstract class.
 
 };
 

@@ -15,7 +15,12 @@
 using namespace std;
 
 
-THaGenScaler::THaGenScaler(Int_t crate, Int_t slot, Int_t numchan) : ToyModule(crate, slot) { 
+THaGenScaler::THaGenScaler(Int_t crate, Int_t slot) : VmeModule(crate, slot) { 
+  fNumChan = 32;
+  fWordsExpect = 32;
+}
+
+void THaGenScaler::GenInit() {
   fHasClock = kFALSE;
   fFirstTime = kTRUE;
   fClockChan = -1;
@@ -23,15 +28,14 @@ THaGenScaler::THaGenScaler(Int_t crate, Int_t slot, Int_t numchan) : ToyModule(c
   fNormScaler = 0;  
   fNumChanMask = 0xf0;
   fDeltaT = DEFAULT_DELTAT;  // a default time interval between readings
-  fWordsExpect = numchan;  
   fDataArray = new Int_t[fWordsExpect];
   fPrevData = new Int_t[fWordsExpect];
   fRate = new Double_t[fWordsExpect];
   memset(fDataArray, 0, fWordsExpect*sizeof(Int_t));
   memset(fPrevData, 0, fWordsExpect*sizeof(Int_t));
   memset(fRate, 0, fWordsExpect*sizeof(Double_t));
-}
 
+}
 
 THaGenScaler::~THaGenScaler() { 
   delete [] fDataArray;

@@ -6,6 +6,7 @@
 /////////////////////////////////////////////////////////////////////
 
 #include "Fadc250Module.h"
+#include "VmeModule.h"
 #include "THaEvData.h"
 #include "TMath.h"
 #include <iostream>
@@ -15,15 +16,8 @@
 using namespace std;
 
 
-Fadc250Module::Fadc250Module(Int_t crate, Int_t slot) : ToyModuleX(crate, slot) {
-  fNumAInt = new Int_t[NADCCHAN];
-  fNumTInt = new Int_t[NADCCHAN];
-  fNumSample = new Int_t[NADCCHAN];
-  fAdcData = new Int_t[NADCCHAN*MAXDAT];
-  fTdcData = new Int_t[NADCCHAN*MAXDAT];
-  f250_setmode=-1;
-  f250_foundmode=-1;
-  Clear("");
+Fadc250Module::Fadc250Module(Int_t crate, Int_t slot) : VmeModule(crate, slot) {
+  Init();
 }
 
 Fadc250Module::~Fadc250Module() { 
@@ -32,6 +26,18 @@ Fadc250Module::~Fadc250Module() {
   if (fNumSample) delete [] fNumSample;
   if (fAdcData) delete [] fAdcData;
   if (fTdcData) delete [] fTdcData;
+}
+
+void Fadc250Module::Init() {
+  fNumAInt = new Int_t[NADCCHAN];
+  fNumTInt = new Int_t[NADCCHAN];
+  fNumSample = new Int_t[NADCCHAN];
+  fAdcData = new Int_t[NADCCHAN*MAXDAT];
+  fTdcData = new Int_t[NADCCHAN*MAXDAT];
+  f250_setmode=-1;
+  f250_foundmode=-1;
+  Clear("");
+  IsInit = kTRUE;
 }
 
 
@@ -70,6 +76,11 @@ Int_t Fadc250Module::GetData(Int_t chan, Int_t ievent, Int_t which) {
 
   int index;
   int nevent;
+
+  if ( !IsInit ) {
+    cout << "ERROR:: Fadc250Module:: Not initialized "<<endl;
+    cout << "Need to execute SetMode "<<endl;
+  }
 
   if (chan < 0 || chan > NADCCHAN) {
     cout << "ERROR:: Fadc250Module:: GetAdcData:: invalid channel "<<chan<<endl;
@@ -161,7 +172,7 @@ Int_t Fadc250Module::LoadSlot(THaSlotData *sldat, const Int_t *evbuffer, const I
 
 Int_t Fadc250Module::Decode(const Int_t *pdat)
 { // Routine from B. Moffit, adapted by R. Michaels for this class.
-  // Note, there are several modes, but for now we only use two.
+  // Note, there are several modes, but for now (Aug 2014) we only use two.
 
   int i_print = 0;
   static unsigned int type_last = 15;	/* initialize to type FILLER WORD */
