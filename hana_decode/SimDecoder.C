@@ -119,6 +119,8 @@ Int_t SimDecoder::DefineVariables( THaAnalysisObject::EMode mode )
                                   "fMCPoints.Podd::MCTrackPoint.fDeltaE" },
     { "pt.deflect","Deflection wrt prev plane (rad)",
                                  "fMCPoints.Podd::MCTrackPoint.fDeflect" },
+    { "pt.tof",    "Time-of-flight from prev plane (s)",
+                                     "fMCPoints.Podd::MCTrackPoint.fToF" },
     { "pt.hitres", "Hit residual (mm)",
                                 "fMCPoints.Podd::MCTrackPoint.fHitResid" },
     { "pt.trkres", "Track residual (mm)",
@@ -173,6 +175,7 @@ void MCTrackPoint::Print( Option_t* ) const
   cout << " time = "        << fMCTime << " s"
        << ", deltaE = "     << fDeltaE << " GeV"
        << ", deflect = "    << 1e3*fDeflect << " mrad"
+       << ", tof = "        << 1e9*fToF << " ns"
        << ", hit_resid = "  << 1e3*fHitResid << " mm"
        << ", trk_resid = "  << 1e3*fTrackResid << " mm"
        << endl;
