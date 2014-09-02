@@ -42,6 +42,11 @@ public:
 
   virtual ~ToyModule();  
 
+  // problems here ... if =0 (abstract) some module types don't get created.
+  // better way ?
+  virtual Int_t GetNumEvents() { return 0; };  
+  virtual Int_t GetData(Int_t, Int_t, Int_t) { return 0; };
+
   virtual void Init(Int_t crate, Int_t slot, Int_t header=0, Int_t mask=0) 
   { fCrate=crate; fSlot=slot; fHeader=header; fHeaderMask=mask; };
 

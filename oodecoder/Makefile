@@ -5,6 +5,7 @@
 # tmodco   --  test of module scheme
 # tcrmap   --  test of crate map
 # tstoy    --  tests of toy decoder
+# tstfadc  --  tests of FADC 250 class
 # tstcoda  --  test of abstract interface to THaCodaFile and THaEtClient.
 # tstio    --  simple tests of CODA I/O from a file.
 # tdecpr   --  test of decoder with self-explanatory printouts.
@@ -203,12 +204,12 @@ SRC = THaUsrstrutils.C THaCrateMap.C THaCodaData.C \
       THaEpics.C THaFastBusWord.C THaCodaFile.C THaSlotData.C \
       THaEvData.C evio.C THaCodaDecoder.C \
       ToyCodaDecoder.C \
-      ToyModule.C ToyModuleX.C Fadc250Module.C \
+      ToyModule.C VmeModule.C Fadc250Module.C \
       ToyFastbusModule.C ToyModuleCollect.C \
       Lecroy1877Module.C Lecroy1875Module.C Lecroy1881Module.C \
       THaGenScaler.C Scaler1151.C Scaler560.C Scaler3800.C Scaler3801.C
 
-PROGS = tcrmap tmodco tstoy tstio tdecpr tdecex prfact epicsd 
+PROGS = tcrmap tmodco tstoy tstfadc tstio tdecpr tdecex prfact epicsd 
 # If you want to use the ET system at Jlab.
 ifdef ONLINE_ET
   SRC += THaEtClient.C
@@ -283,6 +284,10 @@ tcrmap: tcrmap_main.o THaCrateMap.o $(SRC) $(EVIO_LIB) $(MAINOBJS)
 tstoy: tstoy_main.o $(DECODE_OBJS) $(SRC) $(EVIO_LIB) $(MAINOBJS)
 	rm -f $@
 	$(CXX) $(CXXFLAGS) -o $@ tstoy_main.o $(DECODE_OBJS) $(ALL_LIBS) $(MAINOBJS)
+
+tstfadc: tstfadc_main.o $(DECODE_OBJS) $(SRC) $(EVIO_LIB) $(MAINOBJS)
+	rm -f $@
+	$(CXX) $(CXXFLAGS) -o $@ tstfadc_main.o $(DECODE_OBJS) $(ALL_LIBS) $(MAINOBJS)
 
 tstio: tstio_main.o $(DECODE_OBJS) $(SRC) $(EVIO_LIB) $(MAINOBJS)
 	rm -f $@

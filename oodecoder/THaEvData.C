@@ -324,6 +324,16 @@ int THaEvData::init_slotdata(const THaCrateMap* map)
   return HED_OK;
 }
 
+//_____________________________________________________________________________
+ToyModule* THaEvData::GetModule(Int_t roc, Int_t slot)
+{
+  THaSlotData *sldat = crateslot[idx(roc,slot)];
+  if (sldat) return sldat->GetModule();
+  return NULL;
+}
+
+
+
 ClassImp(THaEvData)
 ClassImp(THaBenchmark)
 

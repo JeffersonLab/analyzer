@@ -33,13 +33,13 @@ const int THaSlotData::DEFNHITCHAN = 1; // Default number of hits per channel
 
 THaSlotData::THaSlotData() : 
   crate(-1), slot(-1), fModule(0), numhitperchan(0), numraw(0), numchanhit(0), firstfreedataidx(0), 
-  numholesdataidx(0), numHits(0), chanlist(0), idxlist (0), chanindex(0), dataindex(0), 
+  numholesdataidx(0), numHits(0), xnumHits(0), chanlist(0), idxlist (0), chanindex(0), dataindex(0), 
   numMaxHits(0), rawData(0), data(0), fDebugFile(0), didini(false),
   maxc(0), maxd(0), allocd(0), alloci(0) {}
 
 THaSlotData::THaSlotData(int cra, int slo) :
   crate(cra), slot(slo), fModule(0), numhitperchan(0), numraw(0), numchanhit(0), firstfreedataidx(0), 
-  numholesdataidx(0), numHits(0), chanlist(0), idxlist (0), chanindex(0), dataindex(0), 
+  numholesdataidx(0), numHits(0), xnumHits(0), chanlist(0), idxlist (0), chanindex(0), dataindex(0), 
   numMaxHits(0), rawData(0), data(0), fDebugFile(0), didini(false),
   maxc(0), maxd(0), allocd(0), alloci(0) {}
 
@@ -47,6 +47,7 @@ THaSlotData::THaSlotData(int cra, int slo) :
 THaSlotData::~THaSlotData() {
   if( !didini ) return;
   delete [] numHits;
+  delete [] xnumHits;
   delete [] chanlist;
   delete [] idxlist;
   delete [] chanindex;
@@ -70,6 +71,7 @@ void THaSlotData::define(int cra, int slo, UShort_t nchan, UShort_t ndata, UShor
   alloci = nchan;
   // Delete arrays if defined so we can call define() more than once!
   delete [] numHits;
+  delete [] xnumHits;
   delete [] chanlist;
   delete [] idxlist;
   delete [] chanindex;
@@ -77,16 +79,18 @@ void THaSlotData::define(int cra, int slo, UShort_t nchan, UShort_t ndata, UShor
   delete [] numMaxHits;
   delete [] rawData;
   delete [] data;
-  numHits   = new UChar_t[maxc];
+  numHits   = new UShort_t[maxc];
+  xnumHits   = new Int_t[maxc];
   chanlist  = new UShort_t[maxc];
   idxlist  = new UShort_t[maxc];
   chanindex = new UShort_t[maxc];
   rawData   = new int[allocd];
   data      = new int[allocd];
   dataindex = new UShort_t[alloci];
-  numMaxHits = new UChar_t[maxc];
+  numMaxHits = new UShort_t[maxc];
   numchanhit = numraw = firstfreedataidx = numholesdataidx= 0;
-  memset(numHits,0,maxc*sizeof(UChar_t));
+  memset(numHits,0,maxc*sizeof(UShort_t));
+  memset(xnumHits,0,maxc*sizeof(Int_t));
 }
 
 int THaSlotData::loadModule(const THaCrateMap *map) {
@@ -120,8 +124,13 @@ int THaSlotData::loadModule(const THaCrateMap *map) {
       if (loctype.fTClass) {
   	 if (fDebugFile) *fDebugFile << "THaSlotData:: Creating fModule"<<endl;
          fModule= static_cast<ToyModule*>( loctype.fTClass->New() ); 
+         
+         if (!fModule) {
+	   if (fDebugFile) *fDebugFile << "failure to make module on crate "<<crate<<"  slot "<<slot<<endl;
+           return -1;
+	 }
 // Init, or get decoder rules.
-         if (fDebugFile) *fDebugFile << "THaSlotData:: about to init  module   "<<crate<<"  "<<slot<<endl;
+         if (fDebugFile) *fDebugFile << "THaSlotData:: about to init  module   "<<crate<<"  "<<slot<<" mod ptr "<<fModule<<endl;
          fModule->Init( crate, slot, map->getHeader(crate, slot), map->getMask(crate, slot));  
          fModule->Init(); 
          if (fDebugFile) { 
@@ -183,14 +192,12 @@ int THaSlotData::loadData(const char* type, int chan, int dat, int raw) {
     return SD_WARN;
   }
   if( numraw >= maxd || numchanhit > maxc) {
-    cout << "maxd, etc "<<maxd<< "  "<<numchanhit<<"  "<<numraw<<endl;
-    cout << "numraw again "<<getNumRaw()<<endl;
     if (VERBOSE) {
       cout << "(1) THaSlotData: Warning in loadData: too many "
-	   << ((numraw >= maxd ) ? "data words" : "channels")
+	   << ((numraw >= maxd ) ? "data words" : "(x) channels")
 	   << " for crate/slot = " 
 	   << crate << " " << slot;
-      cout << ": " << (numraw>=maxd ? numraw : numchanhit) << " seen." 
+           cout << ": " << (numraw>=maxd ? numraw : numchanhit) << " seen." 
 	   << endl;
     }
     return SD_WARN;
@@ -241,16 +248,17 @@ int THaSlotData::loadData(const char* type, int chan, int dat, int raw) {
   }
   rawData[numraw] = raw;
   data[numraw++]  = dat;
-  if( numHits[chan] == (UChar_t)~0 ) {
+  if( numHits[chan] == kMaxUShort ) {
     cout << "(2)  maxd, etc "<<maxd<< "  "<<numchanhit<<"  "<<numraw<<endl;
     if( VERBOSE ) 
-      cout << "THaSlotData: Warning in loadData: too many hits " 
+      cout << "(2) THaSlotData: Warning in loadData: too many hits " 
 	   << "for module " << device << " in crate/slot = " 
 	   << dec << crate << " " << slot 
 	   << " chan = " << chan << endl;
     return SD_WARN;
   }
   numHits[chan]++;
+  xnumHits[chan]++;
   return SD_OK;
 }
 

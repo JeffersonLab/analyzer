@@ -49,6 +49,7 @@ ToyModule::ToyModule(Int_t crate, Int_t slot) : fCrate(crate), fSlot(slot), fWor
   fWdcntShift=0;
   fDebugFile=0;
   fModelNum = -1;
+  fName = "";
 }
 
 ToyModule::~ToyModule() { 

@@ -62,6 +62,7 @@ public:
        // new
        Int_t LoadIfSlot(const Int_t* evbuffer, const Int_t *pstop);
        void SetDebugFile(ofstream *file) { fDebugFile = file; };
+       ToyModule* GetModule() { return fModule; };
 
        void define(int crate, int slot, UShort_t nchan=DEFNCHAN, 
 		   UShort_t ndata=DEFNDATA, UShort_t nhitperchan=DEFNHITCHAN );// Define crate, slot
@@ -81,12 +82,13 @@ private:
        UShort_t numchanhit;  // can be zero'd by clearEvent each event.
        UShort_t firstfreedataidx;     // pointer to first free space in dataindex array 
        UShort_t numholesdataidx;
-       UChar_t* numHits;     // numHits[channel]
+       UShort_t* numHits;     // numHits[channel]
+       Int_t *xnumHits;       // same as numHits
        UShort_t* chanlist;   // chanlist[hitindex]
        UShort_t* idxlist;    // [channel] pointer to 1st entry in dataindex
        UShort_t* chanindex;  // [channel] gives hitindex
        UShort_t* dataindex;  // [idxlist] pointer to rawdata and  data
-       UChar_t* numMaxHits;  // [channel] current maximum number of hits
+       UShort_t* numMaxHits;  // [channel] current maximum number of hits
        int* rawData;         // rawData[hit] (all bits)
        int* data;            // data[hit] (only data bits)
        ofstream *fDebugFile; // debug output to this file, if nonzero

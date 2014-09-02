@@ -1,4 +1,4 @@
-//////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
 //
 //   TOYCODADECODER
 //
@@ -93,7 +93,8 @@ Int_t ToyCodaDecoder::LoadEvent(const Int_t* evbuffer)
   if( fDoBench ) fBench->Stop("clearEvent");
   event_length = evbuffer[0]+1;  // in longwords (4 bytes)
   event_type = evbuffer[1]>>16;
-  if(event_type <= 0) return HED_ERR;
+  //  cout << "event type HERE  "<<event_length<<"  "<<event_type<<endl;
+  if(event_type < 0) return HED_ERR;
  
   if (event_type <= MAX_PHYS_EVTYPE) {
      event_num = evbuffer[4];
@@ -506,7 +507,6 @@ void ToyCodaDecoder::SetRunTime( ULong64_t tloc )
   fRunTime = tloc;
   fgNeedInit = true;  // force re-init
 }
-
 
 
 

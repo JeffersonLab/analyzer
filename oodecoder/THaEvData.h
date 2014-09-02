@@ -89,6 +89,9 @@ public:
 			  Int_t /*slot*/, Int_t /*chan*/) const
   { return GetScaler(0,0,0); }
 
+  // new
+  virtual ToyModule* GetModule(Int_t roc, Int_t slot);
+
   // Access functions for EPICS (slow control) data
   virtual double GetEpicsData(const char* tag, Int_t event=0) const;
   virtual double GetEpicsTime(const char* tag, Int_t event=0) const;
