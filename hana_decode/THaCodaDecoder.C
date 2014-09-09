@@ -983,62 +983,113 @@ Int_t THaCodaDecoder::vme_decode( Int_t roc, const Int_t* evbuffer,
 	    p = loc-1; // so p++ will point to the first word that didn't match
 	  }
 	  break;
-	case 1190:	// CAEN 1190A MultiHit TDC
-		{
-			loc = p;
-			loc++;  //skip dummy word
-			loc++;	//skip the Global header.  
-			Int_t nword=2;	//Number of words
-			Int_t nwordchip=0;  //Number of data words per chip (indcluding header and footer)
-			/*For each chip (4) there is a TDC header and TDC trailer.  These contain pieces of information that are either 
-			redundant or numbers that are assigned by other modules.  As such we skip the TDC header.  We use the TDC trailer 
-			to check the number of words for each chip.  Then the global trailer to check the number of words for the module.*/
-			while((loc <= pevlen)&&(((*loc)&0xc0000000)==0x00000000)){
-				//Skipping Header
-				if(((*loc)&0xf8000000)==0x08000000){
-					loc++;
-					nwordchip++;
-					nword++; 
-				}
-				//Reading Data Words
-				if(((*loc)&0xf8000000)==0x00000000){
-					chan=((*loc)&0x03f80000)>>19;	
-					raw=((*loc)&0x0007ffff);
-					status = crateslot[idx(roc,slot)]->loadData("tdc",chan,raw,raw);
-					//cout<<"tdc   "<<chan<<"   "<<raw<<"   "<<raw<<endl;		
-					if(status != SD_OK) goto err;
-					//Nword and pointer arithmatic 
-					loc++;
-					nword++;
-					nwordchip++;
-				}
-				//Reading Trailer
-				if(((*loc)&0xf8000000)==0x18000000){
-					nwordchip++;
-					nword++; 
-					if(((*loc)&0x000007ff)!=nwordchip){
-						cout<<event_num<<" TDC trailer nword mismatch "<<nwordchip<<" "<<hex<<((*loc)&0x000007ff)<<dec<<endl;
-						return HED_ERR;
-					} else{
-						nwordchip=0;
-					}
-					loc++;
-				}
-			}
-			//Once data has been decoded error check with global trailer
-			if(((*loc)&0xf8000000)!=0x80000000){
-				nword++;
-				//cout<<event_num<<" This global trailer was not written to the data stream "<<hex<<(*loc)<<" was written instead"<<dec<<endl;
-				//return HED_ERR;
-			} else{
-				if ((((*loc)&0x001fffe0)>>5)!=nword) {
-				cout<<"Global Word Count mismatch "<<nword<<" "<<hex<<(*p)<<endl;
-				cout<<(((*loc)&0x001fffe0)>>5)<<" and "<<nword<<" are obviously not the same"<<endl;
-				//return HED_ERR;
-				}
-			}			
-		}
-		break;
+        case 1190:  // CAEN 1190A MultiHit TDC in trigger matching mode·
+              //  (written by Simona M.; modified by Brad S.)
+          {
+            loc = p;
+            Int_t nword = 0;      // Num of words in the event including filler words but excluding dummies
+            Int_t nword_mod = 0;  // Num of module words from global trailer (includes header & trailer)
+            Int_t chip_nr_words    = 0;
+            Int_t module_nr_words  = 0;
+            Int_t ev_from_gl_hd    = -1;
+            Int_t slot_from_gl_hd  = -1;
+            Int_t slot_from_gl_tr  = -1;
+            Int_t chip_nr_hd       = -1;
+            Int_t chip_nr_tr       = -1;
+            Int_t bunch_id         = -1;
+            Int_t status_err       = -1;
+
+            Bool_t done = false;
+            while( loc <= pevlen && !done) {
+              switch( (*loc)&0xf8000000 ) {
+
+                case 0xc0000000 :  // buffer-alignment filler word from the 1190; skip it
+                  break;
+
+                case 0x40000000 :  // global header; contains: event nr. and slot nr.
+                  ev_from_gl_hd = ((*loc)&0x07ffffe0) >> 5; // bits 26-5
+                  slot_from_gl_hd = ((*loc)&0x0000001f); // bits 4-0
+                  slot = slot_from_gl_hd;
+                  /*
+                   * cerr << "1190 GL HD: ev_glhd, slot_glhd " << " "
+                   *      << ev_from_gl_hd << " " << slot_from_gl_hd << endl;
+                   */
+                  nword_mod++;  // nr of module words: includes global headers/trailers + what's in between;
+                                // will be cross checked against what's stored in the global trailer, bits 20-5
+                  break;
+
+                case 0x08000000 :  // chip header; contains: chip nr., ev. nr, bunch ID
+                  chip_nr_hd = ((*loc)&0x03000000) >> 24; // bits 25-24
+                  bunch_id = ((*loc)&0x00000fff); // bits 11-0
+                  nword_mod++;
+                  break;
+
+                case 0x00000000 : // measurement data
+                  chan=((*loc)&0x03f80000)>>19; // bits 25-19
+                  raw=((*loc)&0x0007ffff); // bits 18-0
+                  status = crateslot[idx(roc,slot)]->loadData("tdc",chan,raw,raw);
+                  if(status != SD_OK) goto err;
+                  //cerr << "(evt: " << event_num << ", slot: "<< slot_from_gl_hd << ") ";
+                  //cerr << "chan: " << chan << ",  data: " << raw << endl;
+                  nword_mod++;
+                  break;
+
+                case 0x18000000 : // chip trailer:  contains chip nr. & ev nr & word count
+                  chip_nr_tr = ((*loc)&0x03000000) >> 24; // bits 25-24
+                  /* If there is a chip trailer we assume there is a header too so we
+                   * cross check if chip nr stored in header matches chip nr. stored in
+                   * trailer.
+                   */
+                  if (chip_nr_tr != chip_nr_hd) {
+                    cerr  << "mismatch in chip nr between chip header and trailer"
+                          << " " << "header says: " << " " << chip_nr_hd
+                          << " " << "trailer says: " << " " << chip_nr_tr << endl;
+                  };
+                  chip_nr_words = ((*loc)&0x00000fff); // bits 11-0
+                  nword_mod++;
+                  break;
+
+                case 0x80000000 :  // global trailer: contains error status & word count per module & slot nr.
+                  status_err = ((*loc)&0x07000000) >> 24; // bits 26-24
+                  if(status_err != 0) {
+                    cerr << "(evt: " << event_num << ", slot: "<< slot_from_gl_hd << ") ";
+                    cerr << "Error in 1190 status word: " << hex << status_err << dec << endl;
+                  }
+                  module_nr_words = ((*loc)&0x001fffe0) >> 5; // bits 20-5
+                  slot_from_gl_tr = ((*loc)&0x0000001f); // bits 4-0
+                  if (slot_from_gl_tr != slot_from_gl_hd) {
+                    cerr << "(evt: " << event_num << ", slot: "<< slot_from_gl_hd << ") ";
+                    cerr  << "mismatch in slot between global header and trailer"
+                          << " " << "header says: " << " " << slot_from_gl_hd
+                          << " " << "trailer says: " << " " << slot_from_gl_tr << endl;
+                  };
+                  nword_mod++;
+                  done = true;
+                  break;
+
+
+                default : // Unknown word
+                  cerr << "unknown word for TDC1190:  0x" << hex << (*loc) << dec << endl;
+                  cerr << "according to global header ev. nr. is: " << " " << ev_from_gl_hd << endl;
+                  nword_mod++;
+                  break;
+
+              }
+              loc++;
+              nword++;
+            } // end of loop over 1190 data blob from one module
+
+            if (nword_mod != module_nr_words) {
+              cerr << "(evt: " << event_num << ", slot: "<< slot_from_gl_hd << ") ";
+              cerr << " 1190: mismatch between module word count in decoder"
+                  << "(" << nword_mod << ")"
+                  << " and the global trailer "
+                  << "(" << module_nr_words << ")" << endl;
+            }
+
+            p = loc-1;
+          }
+          break;
 
 	case 250:   // JLab 250MHz FADC
 	  {
