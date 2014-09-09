@@ -15,7 +15,9 @@
 // FIXME: we need to include evio.h here only so that clients of
 // THaEvData can understand CODA error return codes.
 // Define API-specific return values here instead.
+#if !defined(__CINT__)
 #include "evio.h"
+#endif
 #include <string>
 #include <cassert>
 
