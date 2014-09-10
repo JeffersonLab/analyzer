@@ -9,6 +9,7 @@
 
 #include "TNamed.h"
 #include "TDatime.h"
+#include <cstdio>        // for EOF
 
 class THaRunParameters;
 class THaEvData;
@@ -28,14 +29,12 @@ public:
   virtual bool operator<=( const THaRunBase& ) const;
   virtual bool operator>=( const THaRunBase& ) const;
 
+  // Return codes for Init/Open/ReadEvent/Close
+  enum { READ_OK = 0, READ_EOF = EOF, READ_ERROR = 32, READ_FATAL = 64 };
+
   // Main functions
-  virtual const Int_t* GetEvBuffer() const = 0;
+  virtual const UInt_t* GetEvBuffer() const = 0;
   virtual Int_t        Init();
-  // FIXME: these currently may return implementation-dependent
-  // error codes (e.g. from evio.h). We should define all possible
-  // return values for this API here. Implemetations
-  // then have to translate codes they get from the underlying
-  // library (e.g. EVIO) to this API's return values.
   virtual Int_t        Open() = 0;
   virtual Int_t        ReadEvent() = 0;
   virtual Int_t        Close() = 0;
@@ -47,7 +46,7 @@ public:
   virtual Int_t        Compare( const TObject* obj ) const;
           Bool_t       DBRead()         const { return fDBRead; }
           void         IncrNumAnalyzed( Int_t n=1 ) { fNumAnalyzed += n; }
-  const TDatime&       GetDate()        const { return fDate; }
+  const   TDatime&     GetDate()        const { return fDate; }
           UInt_t       GetDataRequired() const { return fDataRequired; }
           UInt_t       GetNumAnalyzed() const { return fNumAnalyzed; }
           Int_t        GetNumber()      const { return fNumber; }

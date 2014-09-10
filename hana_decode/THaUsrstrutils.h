@@ -100,7 +100,7 @@ public:
   int getflag(const char *s) const;
   char *getstr(const char *s) const;
   unsigned int getint(const char *s) const;
-  void string_from_evbuffer(const int *evbuffer, int nlen=MAX);
+  void string_from_evbuffer(const UInt_t* evbuffer, int nlen=MAX);
   void string_from_file(const char *ffile_name);
 
 protected:

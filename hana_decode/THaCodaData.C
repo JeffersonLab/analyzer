@@ -17,16 +17,9 @@
 ClassImp(THaCodaData)
 
 THaCodaData::THaCodaData() {
-   evbuffer = new int[MAXEVLEN];         // Raw data     
+   evbuffer = new UInt_t[MAXEVLEN];         // Raw data
 };
 
-THaCodaData::~THaCodaData() { 
+THaCodaData::~THaCodaData() {
    delete [] evbuffer;
 };
-
-
-
-
-
-
-

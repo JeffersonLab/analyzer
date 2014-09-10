@@ -150,7 +150,7 @@ protected:
    void Clear(Option_t* opt="");
    void ClearAll();
    void LoadPrevious();
-   Int_t ExtractRaw(const Int_t* data, int len=0);
+   Int_t ExtractRaw(const UInt_t* data, int len=0);
    void DumpRaw(Int_t flag=0);
    UInt_t header_str_to_base16(const std::string& header);
    Double_t calib_u1,calib_u3,calib_u10,calib_d1,calib_d3,calib_d10;

@@ -80,7 +80,7 @@ Int_t THaCodaDecoder::GetPrescaleFactor(Int_t trigger_type) const
 }
 
 //_____________________________________________________________________________
-Int_t THaCodaDecoder::LoadEvent(const Int_t* evbuffer )
+Int_t THaCodaDecoder::LoadEvent(const UInt_t* evbuffer )
 {
   // Public interface to decode the event.  Note, LoadEvent()
   // MUST be called once per event BEFORE you can extract 
@@ -89,7 +89,7 @@ Int_t THaCodaDecoder::LoadEvent(const Int_t* evbuffer )
 }
 
 //_____________________________________________________________________________
-Int_t THaCodaDecoder::gendecode(const Int_t* evbuffer )
+Int_t THaCodaDecoder::gendecode(const UInt_t* evbuffer )
 {
   // Main engine for decoding, called by public LoadEvent() methods
   assert( evbuffer );
@@ -168,7 +168,7 @@ Int_t THaCodaDecoder::gendecode(const Int_t* evbuffer )
 }
 
 //_____________________________________________________________________________
-void THaCodaDecoder::dump(const Int_t* evbuffer)
+void THaCodaDecoder::dump(const UInt_t* evbuffer)
 {
   if( !evbuffer ) return;
   Int_t len = evbuffer[0]+1;  
@@ -195,7 +195,7 @@ void THaCodaDecoder::dump(const Int_t* evbuffer)
 }
 
 //_____________________________________________________________________________
-Int_t THaCodaDecoder::physics_decode(const Int_t* evbuffer )
+Int_t THaCodaDecoder::physics_decode(const UInt_t* evbuffer )
 {
   assert( evbuffer && fMap );
   if( fDoBench ) fBench->Begin("physics_decode");
@@ -249,7 +249,7 @@ Int_t THaCodaDecoder::physics_decode(const Int_t* evbuffer )
   return HED_OK;
 }
 
-Int_t THaCodaDecoder::epics_decode(const Int_t* evbuffer)
+Int_t THaCodaDecoder::epics_decode(const UInt_t* evbuffer)
 {
   assert( evbuffer );
   if( fDoBench ) fBench->Begin("epics_decode");
@@ -259,7 +259,7 @@ Int_t THaCodaDecoder::epics_decode(const Int_t* evbuffer)
 };
 
 //_____________________________________________________________________________
-Int_t THaCodaDecoder::prescale_decode(const Int_t* evbuffer)
+Int_t THaCodaDecoder::prescale_decode(const UInt_t* evbuffer)
 {
   // Decodes prescale factors from either
   // TS_PRESCALE_EVTYPE(default) = PS factors 
@@ -323,7 +323,7 @@ Int_t THaCodaDecoder::prescale_decode(const Int_t* evbuffer)
 }
 
 //_____________________________________________________________________________
-Int_t THaCodaDecoder::scaler_event_decode( const Int_t* evbuffer )
+Int_t THaCodaDecoder::scaler_event_decode( const UInt_t* evbuffer )
 {
   // Decode scalers
 
@@ -370,7 +370,7 @@ Int_t THaCodaDecoder::scaler_event_decode( const Int_t* evbuffer )
     for (Int_t chan=0; chan<numchan; chan++) {
       ipt++; 
       rocdat[roc].len++;
-      Int_t data = evbuffer[ipt];
+      UInt_t data = evbuffer[ipt];
       if (fDebug > 1) cout<<"scaler chan "<<chan<<" data "<<data<<endl;
       if (crateslot[ics]->loadData(location,chan,data,data)
 	  == SD_ERR) {
@@ -448,14 +448,14 @@ double THaCodaDecoder::GetEpicsTime(const char* tag, Int_t event) const
 }
 
 //_____________________________________________________________________________
-Int_t THaCodaDecoder::fastbus_decode( Int_t roc, const Int_t* evbuffer,
+Int_t THaCodaDecoder::fastbus_decode( Int_t roc, const UInt_t* evbuffer,
 				      Int_t istart, Int_t istop)
 {
   assert( evbuffer && fMap );
   if( fDoBench ) fBench->Begin("fastbus_decode");
   Int_t slotold = -1;
-  const Int_t* p     = evbuffer+istart;
-  const Int_t* pstop = evbuffer+istop;
+  const UInt_t* p     = evbuffer+istart;
+  const UInt_t* pstop = evbuffer+istop;
   synchmiss = false;
   synchextra = false;
   buffmode = false;
@@ -526,7 +526,7 @@ Int_t THaCodaDecoder::fastbus_decode( Int_t roc, const Int_t* evbuffer,
 }
 
 //_____________________________________________________________________________
-static UInt_t FADCWindowRawDecode( const Int_t* p, const Int_t* pstop,
+static UInt_t FADCWindowRawDecode( const UInt_t* p, const UInt_t* pstop,
 				   Int_t slot, THaSlotData* crateslot )
 {
   // Decode "Window Raw Data" fields in event data from JLab 250 MHz Flash ADC
@@ -539,7 +539,7 @@ static UInt_t FADCWindowRawDecode( const Int_t* p, const Int_t* pstop,
   UInt_t nwords = 0;
 
   while( p<=pstop && go ) {
-    UInt_t data = static_cast<UInt_t>( *p );
+    UInt_t data = *p;
     ++nwords;
     ++p;
 
@@ -645,7 +645,7 @@ static UInt_t FADCWindowRawDecode( const Int_t* p, const Int_t* pstop,
 }
 			   
 //_____________________________________________________________________________
-Int_t THaCodaDecoder::vme_decode( Int_t roc, const Int_t* evbuffer,
+Int_t THaCodaDecoder::vme_decode( Int_t roc, const UInt_t* evbuffer,
 				  Int_t ipt, Int_t istop )
 {
   // Decode VME
@@ -654,11 +654,11 @@ Int_t THaCodaDecoder::vme_decode( Int_t roc, const Int_t* evbuffer,
   Int_t slot,chan,raw,data,slotprime,ndat,head,mask,nhit;
   Int_t Nslot = fMap->getNslot(roc); //FIXME: use this for crude cross-check
   Int_t retval = HED_OK;
-  const Int_t* p      = evbuffer+ipt;    // Points to ROC ID word (1 before data)
-  const Int_t* pstop  = evbuffer+istop;  // Points to last word of data
+  const UInt_t* p      = evbuffer+ipt;    // Points to ROC ID word (1 before data)
+  const UInt_t* pstop  = evbuffer+istop;  // Points to last word of data
   //FIXME: should never check against event_length since data cannot overrun pstop!
-  const Int_t* pevlen = evbuffer+event_length;
-  const Int_t* loc    = 0;
+  const UInt_t* pevlen = evbuffer+event_length;
+  const UInt_t* loc    = 0;
   Int_t first_slot_used = 0, n_slots_done = 0;
   Bool_t find_first_used = true;
   Int_t status = SD_ERR;
@@ -959,7 +959,7 @@ Int_t THaCodaDecoder::vme_decode( Int_t roc, const Int_t* evbuffer,
 	  {
 	    loc = p;
 	    loc++;  // skip first word (header)
-	    Int_t nword=0;
+	    UInt_t nword=0;
 	    while ( (loc <= pevlen)&& ((*loc)&0x00600000)==0) {
 	      chan=((*loc)&0x7f000000)>>24;
 	      raw=((*loc)&0x000fffff);	      
@@ -1134,7 +1134,7 @@ Int_t THaCodaDecoder::vme_decode( Int_t roc, const Int_t* evbuffer,
 }
 
 //_____________________________________________________________________________
-Int_t THaCodaDecoder::camac_decode(Int_t roc, const Int_t* evbuffer, 
+Int_t THaCodaDecoder::camac_decode(Int_t roc, const UInt_t* evbuffer,
 				   Int_t ipt, Int_t istop)
 {
   assert( evbuffer && fMap );
@@ -1145,7 +1145,7 @@ Int_t THaCodaDecoder::camac_decode(Int_t roc, const Int_t* evbuffer,
 }
 
 //_____________________________________________________________________________
-Int_t THaCodaDecoder::loadFlag(const Int_t* evbuffer)
+Int_t THaCodaDecoder::loadFlag(const UInt_t* evbuffer)
 {
   // Looks for buffer mode and synch problems.  The latter are recoverable
   // but extremely rare, so I haven't bothered to write recovery a code yet, 

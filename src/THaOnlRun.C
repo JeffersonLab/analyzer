@@ -91,7 +91,8 @@ Int_t THaOnlRun::Open()
   } 
 
   Int_t st = fCodaData->codaOpen(fComputer, fSession, fMode);
-  if( st == 0 )
+  st = ReturnCode(st);
+  if( st == READ_OK )
     fOpened = kTRUE;
   return st;
 }
@@ -106,7 +107,7 @@ Int_t THaOnlRun::OpenConnection( const char* computer, const char* session,
   fComputer = computer;
   fSession = session;
   fMode = mode;
-  return Open();
+  return ReturnCode( Open() );
 }
 
 //______________________________________________________________________________
