@@ -651,7 +651,8 @@ Int_t THaCodaDecoder::vme_decode( Int_t roc, const UInt_t* evbuffer,
   // Decode VME
   assert( evbuffer && fMap );
   if( fDoBench ) fBench->Begin("vme_decode");
-  Int_t slot,chan,raw,data,slotprime,ndat,head,mask,nhit;
+  Int_t slot,chan,raw,data,slotprime,ndat,nhit;
+  UInt_t head, mask;
   Int_t Nslot = fMap->getNslot(roc); //FIXME: use this for crude cross-check
   Int_t retval = HED_OK;
   const UInt_t* p      = evbuffer+ipt;    // Points to ROC ID word (1 before data)
@@ -882,11 +883,11 @@ Int_t THaCodaDecoder::vme_decode( Int_t roc, const UInt_t* evbuffer,
 	    // this might not be the case anymore - but this will be interesting anyhow
 	    // triggertime and eventnumber are not yet read out, they will again
 	    // be useful when multiblock mode (buffered mode) is used
-	    const Int_t F1_HIT_OFLW = 1<<24; // bad
-	    const Int_t F1_OUT_OFLW = 1<<25; // bad
-	    const Int_t F1_RES_LOCK = 1<<26; // good
-	    const Int_t DATA_CHK = F1_HIT_OFLW | F1_OUT_OFLW | F1_RES_LOCK;
-	    const Int_t DATA_MARKER = 1<<23;
+	    const UInt_t F1_HIT_OFLW = 1<<24; // bad
+	    const UInt_t F1_OUT_OFLW = 1<<25; // bad
+	    const UInt_t F1_RES_LOCK = 1<<26; // good
+	    const UInt_t DATA_CHK = F1_HIT_OFLW | F1_OUT_OFLW | F1_RES_LOCK;
+	    const UInt_t DATA_MARKER = 1<<23;
 
 	    // look at all the data
 	    loc = p;
