@@ -989,14 +989,14 @@ Int_t THaCodaDecoder::vme_decode( Int_t roc, const Int_t* evbuffer,
             loc = p;
             Int_t nword = 0;      // Num of words in the event including filler words but excluding dummies
             Int_t nword_mod = 0;  // Num of module words from global trailer (includes header & trailer)
-            Int_t chip_nr_words    = 0;
+	    //	    Int_t chip_nr_words    = 0;
             Int_t module_nr_words  = 0;
             Int_t ev_from_gl_hd    = -1;
             Int_t slot_from_gl_hd  = -1;
             Int_t slot_from_gl_tr  = -1;
             Int_t chip_nr_hd       = -1;
             Int_t chip_nr_tr       = -1;
-            Int_t bunch_id         = -1;
+	    //	    Int_t bunch_id         = -1;
             Int_t status_err       = -1;
 
             Bool_t done = false;
@@ -1020,7 +1020,7 @@ Int_t THaCodaDecoder::vme_decode( Int_t roc, const Int_t* evbuffer,
 
                 case 0x08000000 :  // chip header; contains: chip nr., ev. nr, bunch ID
                   chip_nr_hd = ((*loc)&0x03000000) >> 24; // bits 25-24
-                  bunch_id = ((*loc)&0x00000fff); // bits 11-0
+		  //                  bunch_id = ((*loc)&0x00000fff); // bits 11-0
                   nword_mod++;
                   break;
 
@@ -1045,7 +1045,7 @@ Int_t THaCodaDecoder::vme_decode( Int_t roc, const Int_t* evbuffer,
                           << " " << "header says: " << " " << chip_nr_hd
                           << " " << "trailer says: " << " " << chip_nr_tr << endl;
                   };
-                  chip_nr_words = ((*loc)&0x00000fff); // bits 11-0
+		  //                  chip_nr_words = ((*loc)&0x00000fff); // bits 11-0
                   nword_mod++;
                   break;
 
