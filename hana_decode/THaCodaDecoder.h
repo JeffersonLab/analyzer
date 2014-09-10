@@ -28,7 +28,7 @@ class THaCodaDecoder : public THaEvData {
   virtual Bool_t IsLoadedEpics(const char* tag) const;
   virtual Double_t GetEpicsData(const char* tag, Int_t event=0) const;
   virtual Double_t GetEpicsTime(const char* tag, Int_t event=0) const;
-  virtual std::string GetEpicsString(const char* tag, Int_t event=0) const;
+  virtual TString GetEpicsString(const char* tag, Int_t event=0) const;
 
   virtual void PrintOut() const { dump(buffer); }
   virtual void SetRunTime(ULong64_t tloc);

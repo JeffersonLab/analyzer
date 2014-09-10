@@ -93,7 +93,7 @@ public:
   // Access functions for EPICS (slow control) data
   virtual double GetEpicsData(const char* tag, Int_t event=0) const;
   virtual double GetEpicsTime(const char* tag, Int_t event=0) const;
-  virtual std::string GetEpicsString(const char* tag, Int_t event=0) const;
+  virtual TString GetEpicsString(const char* tag, Int_t event=0) const;
   virtual Bool_t IsLoadedEpics(const char* /*tag*/ ) const
   { return false; }
 
@@ -380,11 +380,11 @@ double THaEvData::GetEpicsTime(const char* /*tag*/, Int_t /*event*/ ) const
 }
 
 inline
-std::string THaEvData::GetEpicsString(const char* /*tag*/,
-				      Int_t /*event*/ ) const
+TString THaEvData::GetEpicsString(const char* /*tag*/,
+				  Int_t /*event*/ ) const
 {
   assert(IsLoadedEpics("") && fgAllowUnimpl);
-  return std::string("");
+  return TString("");
 }
 
-#endif 
+#endif

@@ -430,13 +430,13 @@ double THaCodaDecoder::GetEpicsData(const char* tag, Int_t event) const
 }
 
 //_____________________________________________________________________________
-string THaCodaDecoder::GetEpicsString(const char* tag, Int_t event) const
+TString THaCodaDecoder::GetEpicsString(const char* tag, Int_t event) const
 {
   // EPICS string data which is nearest CODA event# 'event'
   // event == 0 --> get latest data
 
   assert( IsLoadedEpics(tag) ); // Should never ask for non-existent data
-  return epics->GetString(tag, event);
+  return TString(epics->GetString(tag, event).c_str());
 }
 
 //_____________________________________________________________________________
