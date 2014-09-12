@@ -1,39 +1,22 @@
-// Test of FADC decoding
+// Test of a OO decoder
 //
-// R. Michaels, Aug 2014
-
-
-#define MYTYPE 0
+// R. Michaels, Sept 2014
 
 #include <iostream>
 #include <fstream>
 #include <cstdlib>
 #include <cstdio>
-#include "Decoder.h"
 #include "THaCodaFile.h"
 #include "CodaDecoder.h"
 #include "THaEvData.h"
-#include "Module.h"
-#include "Fadc250Module.h"
 #include "evio.h"
 #include "THaSlotData.h"
 #include "TString.h"
-#include "TROOT.h"
-#include "TFile.h"
-#include "TH1.h"
-#include "TH2.h"
-#include "TProfile.h"
-#include "TNtuple.h"
-#include "DecoderGlobals.h"
 
 using namespace std;
-using namespace Decoder;
-
-TH1F *h1,*h2,*h3,*h4,*h5;
-TH1F *hinteg;
 
 void dump(int *buffer, ofstream *file);
-void process(Int_t i, THaEvData *evdata, ofstream *file);
+void process(THaEvData *evdata, ofstream *file);
 
 int main(int argc, char* argv[])
 {
@@ -46,24 +29,11 @@ int main(int argc, char* argv[])
 
    THaCodaFile datafile(filename);
    THaEvData *evdata = new CodaDecoder();
-
    evdata->SetDebug(1);
    evdata->SetDebugFile(debugfile);
 
-// Initialize root and output
-  TROOT fadcana("fadcroot","Hall A FADC analysis, 1st version");
-  TFile hfile("fadc.root","RECREATE","FADC data");
-
-  h1 = new TH1F("h1","snapshot 1",1020,-5,505);
-  h2 = new TH1F("h2","snapshot 2",1020,-5,505);
-  h3 = new TH1F("h3","snapshot 3",1020,-5,505);
-  h4 = new TH1F("h4","snapshot 4",1020,-5,505);
-  h5 = new TH1F("h5","snapshot 5",1020,-5,505);
-  hinteg = new TH1F("hinteg","Integral of ADC",1000,50000,120000);
-
     // Loop over events
-      int NUMEVT=22;
-      Int_t jnum=1;
+      int NUMEVT=10;
       for (int iev=0; iev<NUMEVT; iev++) {
    	 int status = datafile.codaRead();  
          if (status != S_SUCCESS) {
@@ -81,19 +51,13 @@ int main(int argc, char* argv[])
             *debugfile << "\nAbout to Load Event "<<endl;
             evdata->LoadEvent( data );   
             *debugfile << "\nFinished with Load Event "<<endl;
-            
-            if (evdata->GetEvType() == MYTYPE) {
-                process (jnum, evdata, debugfile);
-                jnum++;
-	    }
+
+            process (evdata, debugfile);
 
 	 }
-      }  
+      }
 
-  hfile.Write();
-  hfile.Close();
-
-
+ 
 }
      
 
@@ -121,39 +85,15 @@ void dump( int* data, ofstream *debugfile) {
             }
 }
 
-void process (Int_t iev, THaEvData *evdata, ofstream *debugfile) {
+void process (THaEvData *evdata, ofstream *debugfile) {
 
      *debugfile << "\n\nHello.  Now we process evdata : "<<endl;
 
      *debugfile << "\nEvent type   " << dec << evdata->GetEvType() << endl;
      *debugfile << "Event number " << evdata->GetEvNum()  << endl;
      *debugfile << "Event length " << evdata->GetEvLength() << endl;
-     if (evdata->GetEvType() != MYTYPE) return;
      if (evdata->IsPhysicsTrigger() ) { // triggers 1-14
         *debugfile << "Physics trigger " << endl;
-     }
-
-     Module *fadc;
-
-     fadc = evdata->GetModule(9,5);
-     *debugfile << "main:  fadc ptr = "<<fadc<<endl;
-            
-     if (fadc) {
-	   *debugfile << "main: num events "<<fadc->GetNumEvents()<<endl;
-	   *debugfile << "main: fadc mode "<<fadc->GetMode()<<endl;
-	   for (Int_t i=0; i < 500; i++) {
-	     *debugfile << "main:  fadc data on ch. 11   "<<dec<<i<<"  "<<fadc->GetData(1, 11,i)<<endl;
-             if (fadc->GetMode()==1) {
-               if (iev==5) h1->Fill(i,fadc->GetData(1,11,i));
-               if (iev==6) h2->Fill(i,fadc->GetData(1,11,i));
-               if (iev==7) h3->Fill(i,fadc->GetData(1,11,i));
-               if (iev==8) h4->Fill(i,fadc->GetData(1,11,i));
-               if (iev==9) h5->Fill(i,fadc->GetData(1,11,i));
-	     }
-             if (fadc->GetMode()==2) {
-               hinteg->Fill(fadc->GetData(1,11,i),1.);
-	     }
-	   }
      }
 
 // Now we want data from a particular crate and slot.
