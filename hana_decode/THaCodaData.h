@@ -18,9 +18,14 @@
 
 #include "Rtypes.h"
 #include "TString.h"
+#include <cstdio>
 
-#define CODA_ERROR -128   // Generic error return code
-#define CODA_OK  0        // Means return is ok.
+// Return cods from codaNNN routines
+#define CODA_OK     0      // OK
+#define CODA_EOF    EOF    // End of file
+#define CODA_ERROR  -128   // Generic error return code
+#define CODA_FATAL  -255   // Fatal error
+
 #define MAXEVLEN 100005   // Maximum size of events
 #define CODA_VERBOSE 1    // Errors explained verbosely (recommended)
 #define CODA_DEBUG  0     // Lots of printout (recommend to set = 0)
@@ -38,6 +43,9 @@ public:
    virtual UInt_t* getEvBuffer() { return evbuffer; }
    virtual Int_t getBuffSize() const { return MAXEVLEN; }
    virtual Bool_t isOpen() const = 0;
+
+protected:
+   static Int_t ReturnCode( Int_t evio_retcode );
 
 private:
 

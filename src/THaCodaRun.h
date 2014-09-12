@@ -25,7 +25,7 @@ public:
   virtual Int_t        ReadEvent();
 
 protected:
-  static Int_t ReturnCode( Int_t evio_retcode);
+  static Int_t ReturnCode( Int_t coda_retcode);
 
   THaCodaData*  fCodaData;  //! CODA data associated with this run
 

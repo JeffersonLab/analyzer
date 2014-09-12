@@ -10,8 +10,6 @@
 
 #include "THaCodaRun.h"
 #include "THaCodaData.h"
-#include <cassert>
-#include "evio.h"
 
 using namespace std;
 
@@ -51,34 +49,21 @@ THaCodaRun& THaCodaRun::operator=(const THaRunBase& rhs)
 }
 
 //_____________________________________________________________________________
-Int_t THaCodaRun::ReturnCode( Int_t evio_retcode )
+Int_t THaCodaRun::ReturnCode( Int_t coda_retcode )
 {
-  // Convert EVIO return codes to THaRunBase codes
+  // Convert THaCodaData return codes to THaRunBase codes
 
-  switch( evio_retcode ) {
-
-  case S_SUCCESS:
+  switch( coda_retcode ) {
+  case CODA_OK:
     return READ_OK;
 
-  case EOF:
-  case S_EVFILE_UNXPTDEOF:
+  case CODA_EOF:
     return READ_EOF;
 
-  case S_EVFILE_TRUNC:
+  case CODA_ERROR:
     return READ_ERROR;
 
-  case S_EVFILE_BADBLOCK:
-  case S_EVFILE_BADHANDLE:
-  case S_EVFILE_ALLOCFAIL:
-  case S_EVFILE_BADFILE:
-  case S_EVFILE_BADSIZEREQ:
-    return READ_FATAL;
-
-    // The following indicate a programming error and so should be trapped
-  case S_EVFILE_UNKOPTION:
-  case S_EVFILE_BADARG:
-  case S_EVFILE_BADMODE:
-    assert( false );
+  case CODA_FATAL:
     return READ_FATAL;
 
   default:

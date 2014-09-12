@@ -48,7 +48,7 @@ using namespace std;
        Int_t status = evOpen(d_fname,d_flags,&handle);
        free(d_fname); free(d_flags);
        staterr("open",status);
-       return status;
+       return ReturnCode(status);
   };
 
   Int_t THaCodaFile::codaOpen(const char* fname, const char* readwrite, Int_t mode) {
@@ -57,7 +57,7 @@ using namespace std;
       Int_t status = evOpen(d_fname,d_flags,&handle);
       free(d_fname); free(d_flags);
       staterr("open",status);
-      return status;
+      return ReturnCode(status);
   };
 
 
@@ -66,7 +66,7 @@ using namespace std;
     if( handle ) {
       Int_t status = evClose(handle);
       handle = 0;
-      return status;
+      return ReturnCode(status);
     }
     return S_SUCCESS;
   }
@@ -87,7 +87,7 @@ using namespace std;
       }
       status = S_EVFILE_BADHANDLE;
     }
-    return status;
+    return ReturnCode(status);
   };
 
 
@@ -101,7 +101,7 @@ using namespace std;
        cout << "codaWrite ERROR: tried to access file with handle = 0" << endl;
        status = S_EVFILE_BADHANDLE;
      }
-     return status;
+     return ReturnCode(status);
    };
 
 

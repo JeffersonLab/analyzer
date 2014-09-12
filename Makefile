@@ -156,10 +156,6 @@ ifdef WITH_DEBUG
 DEFINES      += -DWITH_DEBUG
 endif
 
-# External EVIO support
-INCLUDES     += -I$(EVIO_INCDIR)
-SYSLIBS      += -L$(EVIO_LIBDIR) -levio
-
 CXXFLAGS      = $(CXXFLG) $(CXXEXTFLG) $(INCLUDES) $(DEFINES)
 CFLAGS        = $(CXXFLG) $(INCLUDES) $(DEFINES)
 LIBS         += $(ROOTLIBS) $(SYSLIBS)
