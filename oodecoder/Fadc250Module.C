@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////
 //
 //   Fadc250Module
 //   JLab FADC 250 Module
@@ -14,7 +14,7 @@
 #include <sstream>
 
 using namespace std;
-
+using namespace Decoder;
 
 Fadc250Module::Fadc250Module(Int_t crate, Int_t slot) : VmeModule(crate, slot) {
   Init();
@@ -34,13 +34,16 @@ void Fadc250Module::Init() {
   fNumSample = new Int_t[NADCCHAN];
   fAdcData = new Int_t[NADCCHAN*MAXDAT];
   fTdcData = new Int_t[NADCCHAN*MAXDAT];
+  memset(fNumAInt, 0, NADCCHAN*sizeof(Int_t));
+  memset(fNumTInt, 0, NADCCHAN*sizeof(Int_t));
+  memset(fNumSample, 0, NADCCHAN*sizeof(Int_t));
   f250_setmode=-1;
   f250_foundmode=-2;
   Clear("");
   IsInit = kTRUE;
   fName = "FADC 250";
   SetMode(F250_SAMPLE);  // needs to be driven by cratemap ... later
-  if (fDebugFile) *fDebugFile << "Fadc250  init ;  f250_foundmode = "<<f250_foundmode<<endl;
+  if (fDebugFile) *fDebugFile << "Fadc250  init ;  f250_setmode "<<f250_setmode<<"    f250_foundmode = "<<f250_foundmode<<endl;
 }
 
 
@@ -54,6 +57,12 @@ void Fadc250Module::CheckSetMode() {
     cout << "Check the F250 setmode.  It is = "<<f250_setmode<<endl;
     cout << "And should be set to either "<<F250_SAMPLE<<"   or "<<F250_INTEG<<endl;
   }
+}
+
+Int_t Fadc250Module::GetMode() {
+  if (fDebugFile) *fDebugFile << "GetMode ... "<<f250_setmode<< "   "<<f250_foundmode<<endl;
+  if (f250_setmode == f250_foundmode) return f250_setmode;
+  return -1;
 }
 
 void Fadc250Module::CheckFoundMode() {
@@ -140,8 +149,8 @@ void Fadc250Module::Clear(const Option_t *opt) {
   fNumEvents = 0;
   fNumTrig = 0;
   if (IsIntegMode()) {
-    memset(fNumAInt, 0, NADCCHAN*sizeof(Int_t));
-    memset(fNumTInt, 0, NADCCHAN*sizeof(Int_t));
+     memset(fNumAInt, 0, NADCCHAN*sizeof(Int_t));
+     memset(fNumTInt, 0, NADCCHAN*sizeof(Int_t));
   } 
   if (IsSampleMode()) memset(fNumSample, 0, NADCCHAN*sizeof(Int_t));
 }
@@ -163,27 +172,39 @@ Int_t Fadc250Module::LoadSlot(THaSlotData *sldat, const Int_t *evbuffer, const I
       fWordsSeen++;
       evbuffer++;
   }
+  if (fDebugFile) *fDebugFile << "Fadc250Module:: mode info "<<dec<<f250_setmode<<"   "<<f250_foundmode<<endl;
   CheckFoundMode();
 
   // Now load the THaSlotData
 
   for (Int_t chan=0; chan<NADCCHAN; chan++) {
-    if (fDebugFile) *fDebugFile << "Fadc250:: Chan  "<<chan<<"  num sample "<<fNumSample[chan]<<endl;
+    if (fDebugFile) *fDebugFile << "Fadc250:: Chan  "<<chan<<"  num sample "<<fNumSample[chan]<<"  MAXDAT "<<MAXDAT<<endl;
     for (Int_t i=0; i<fNumAInt[chan]; i++) {
-      Int_t index = MAXDAT*chan + i;
-      if (index < 0 || index > NADCCHAN*MAXDAT) cerr << "Fadc250:: WARN: index out of range "<<dec<<index<<endl;
-      sldat->loadData("adc", chan, fAdcData[index], fAdcData[index]);
+      Int_t index = MAXDAT*chan + i; 
+      if (fDebugFile) *fDebugFile << "Fadc250:: indexing  "<<index<<"  "<<NADCCHAN*MAXDAT<<endl;
+      if (index < 0 || index > NADCCHAN*MAXDAT) {
+ 	 if (fDebugFile) *fDebugFile << "Fadc250:: INDEX problem !  "<<index<<endl;
+         cerr << "Fadc250:: WARN: index out of range "<<dec<<index<<endl;
+      } else {
+         sldat->loadData("adc", chan, fAdcData[index], fAdcData[index]);
+      }
     }
     for (Int_t i=0; i<fNumTInt[chan]; i++) {
       Int_t index = MAXDAT*chan + i;
-      if (index < 0 || index > NADCCHAN*MAXDAT) cerr << "Fadc250:: WARN: index out of range "<<dec<<index<<endl;
-      sldat->loadData("tdc", chan, fTdcData[index], fTdcData[index]);
+      if (index < 0 || index > NADCCHAN*MAXDAT) {
+          cerr << "Fadc250:: WARN: index out of range "<<dec<<index<<endl;
+      } else {
+          sldat->loadData("tdc", chan, fTdcData[index], fTdcData[index]);
+      }
     }
     for (Int_t i=0; i<fNumSample[chan]; i++) {
       Int_t index = MAXDAT*chan + i;
-      if (index < 0 || index > NADCCHAN*MAXDAT) cerr << "Fadc250:: WARN: index out of range "<<dec<<index<<endl;
       if (fDebugFile) *fDebugFile << "channel "<<dec<<chan<<"  "<<i<<"  "<<index<<"   data "<<fAdcData[index]<<endl;
-       sldat->loadData("adc", chan, fAdcData[index], fAdcData[index]);
+      if (index < 0 || index > NADCCHAN*MAXDAT) {
+          cerr << "Fadc250:: WARN: index out of range "<<dec<<index<<endl;
+       } else {
+          sldat->loadData("adc", chan, fAdcData[index], fAdcData[index]);
+      }
     }
   }
   
@@ -202,7 +223,7 @@ Int_t Fadc250Module::Decode(const Int_t *pdat)
   Int_t data = *pdat;
   Int_t nsamples, index, chan;
 
-  if ((i_print==1) && (fDebugFile > 0)) *fDebugFile << "%3d: "<< iword<<endl;
+  if ((i_print==1) && (fDebugFile > 0)) *fDebugFile << "Fadc250::Decode   "<< data<<"   "<<iword<<endl;
   iword++;
 
   if( data & 0x80000000 )		/* data type defining word */
@@ -486,4 +507,4 @@ Int_t Fadc250Module::Decode(const Int_t *pdat)
 
 
 
-ClassImp(Fadc250Module)
+ClassImp(Decoder::Fadc250Module)

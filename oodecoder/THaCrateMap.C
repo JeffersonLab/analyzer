@@ -15,6 +15,7 @@
 /////////////////////////////////////////////////////////////////////
 
 
+#include "Decoder.h"
 #include "THaCrateMap.h"
 #include <iostream>
 #include <ctime>
@@ -45,6 +46,7 @@
 #endif
 
 using namespace std;
+using namespace Decoder;
 
 const UShort_t THaCrateMap::MAXCHAN = 100;
 const UShort_t THaCrateMap::MAXDATA = 1024;
@@ -382,4 +384,4 @@ int THaCrateMap::init(TString the_map)
   return CM_OK;
 }
 
-ClassImp(THaCrateMap)
+ClassImp(Decoder::THaCrateMap)

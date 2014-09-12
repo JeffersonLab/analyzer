@@ -12,12 +12,13 @@
 #include <map>
 #include <vector>
 #include "Rtypes.h"
+#include "Decoder.h"
 #include "VmeModule.h"
 
 #define NADCCHAN   16
-#define MAXDAT     50000
+#define MAXDAT     1000
 
-class Fadc250Module : public VmeModule {
+class Decoder::Fadc250Module : public VmeModule {
 
 public:
 
@@ -31,6 +32,7 @@ public:
 
    Int_t GetNumEvents() { return fNumEvents; };
 
+   Int_t GetData(Int_t chan, Int_t event, Int_t which=0);
    Int_t GetAdcData(Int_t chan, Int_t ievent); 
    Int_t GetTdcData(Int_t chan, Int_t ievent);  
 
@@ -40,6 +42,9 @@ public:
      CheckSetMode();
    }
 
+   Bool_t IsSampleMode() { return (f250_setmode == F250_SAMPLE); };
+   Bool_t IsIntegMode() { return (f250_setmode == F250_INTEG); };
+   Int_t GetMode();
 
 private:
  
@@ -92,7 +97,6 @@ private:
   
    fadc_data_struct fadc_data;
 
-   Int_t GetData(Int_t chan, Int_t event, Int_t which=0);
 // Loads sldat and increments ptr to evbuffer
    Int_t LoadSlot(THaSlotData *sldat,  const Int_t* evbuffer, const Int_t *pstop );  
 

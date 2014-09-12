@@ -6,6 +6,7 @@
 /////////////////////////////////////////////////////////////////////
 
 #include "Scaler560.h"
+#include "Decoder.h"
 #include "THaEvData.h"
 #include "TMath.h"
 #include <iostream>
@@ -13,9 +14,10 @@
 #include <sstream>
 
 using namespace std;
+using namespace Decoder;
 
 
-Scaler560::Scaler560(Int_t crate, Int_t slot) : THaGenScaler(crate, slot) { 
+Scaler560::Scaler560(Int_t crate, Int_t slot) : GenScaler(crate, slot) { 
   Init();
 }
 
@@ -25,7 +27,7 @@ Scaler560::~Scaler560() {
 void Scaler560::Init() {
   fNumChan = 16;
   fWordsExpect = 16;
-  THaGenScaler::GenInit();
+  GenScaler::GenInit();
 }
 
-ClassImp(Scaler560)
+ClassImp(Decoder::Scaler560)

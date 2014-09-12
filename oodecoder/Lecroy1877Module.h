@@ -4,7 +4,7 @@
 /////////////////////////////////////////////////////////////////////
 //
 //   Lecroy1877Module
-//   1877 Lecroy Fastbus module.  Toy Class.  
+//   1877 Lecroy Fastbus module. 
 //   author  Robert Michaels (rom@jlab.org)
 //
 /////////////////////////////////////////////////////////////////////
@@ -14,9 +14,10 @@
 #include <vector>
 #include "Rtypes.h"
 #include "TNamed.h"
-#include "ToyFastbusModule.h"
+#include "Decoder.h"
+#include "FastbusModule.h"
 
-class Lecroy1877Module : public ToyFastbusModule {
+class Decoder::Lecroy1877Module : public FastbusModule {
 
 public:
 

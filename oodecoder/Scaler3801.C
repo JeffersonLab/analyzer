@@ -16,7 +16,7 @@
 using namespace std;
 
 
-Scaler3801::Scaler3801(Int_t crate, Int_t slot) : THaGenScaler(crate, slot) { 
+Scaler3801::Scaler3801(Int_t crate, Int_t slot) : GenScaler(crate, slot) { 
   Init();
 }
 
@@ -26,8 +26,8 @@ Scaler3801::~Scaler3801() {
 void Scaler3801::Init() {
   fNumChan = 32;
   fWordsExpect = 32;
-  THaGenScaler::GenInit();
+  GenScaler::GenInit();
 }
 
 
-ClassImp(Scaler3801)
+ClassImp(Decoder::Scaler3801)

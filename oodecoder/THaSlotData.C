@@ -16,7 +16,8 @@
 //
 /////////////////////////////////////////////////////////////////////
 
-#include "ToyModule.h"
+#include "Decoder.h"
+#include "Module.h"
 #include "THaSlotData.h"
 #include "THaCrateMap.h"
 #include "TClass.h"
@@ -25,6 +26,7 @@
 #include <cstring>
 
 using namespace std;
+using namespace Decoder;
 
 static const bool VERBOSE = true;
 const int THaSlotData::DEFNCHAN = 128;  // Default number of channels
@@ -99,9 +101,9 @@ int THaSlotData::loadModule(const THaCrateMap *map) {
 
   Int_t err=0;
 
-   for( ToyModule::TypeIter_t it = ToyModule::fgToyModuleTypes().begin();
-       !err && it != ToyModule::fgToyModuleTypes().end(); ++it ) {
-    const ToyModule::ToyModuleType& loctype = *it;
+   for( Module::TypeIter_t it = Module::fgModuleTypes().begin();
+       !err && it != Module::fgModuleTypes().end(); ++it ) {
+    const Module::ModuleType& loctype = *it;
 
     // Get the ROOT class for this type
     
@@ -123,7 +125,7 @@ int THaSlotData::loadModule(const THaCrateMap *map) {
 
       if (loctype.fTClass) {
   	 if (fDebugFile) *fDebugFile << "THaSlotData:: Creating fModule"<<endl;
-         fModule= static_cast<ToyModule*>( loctype.fTClass->New() ); 
+         fModule= static_cast<Module*>( loctype.fTClass->New() ); 
          
          if (!fModule) {
 	   if (fDebugFile) *fDebugFile << "failure to make module on crate "<<crate<<"  slot "<<slot<<endl;
@@ -131,7 +133,7 @@ int THaSlotData::loadModule(const THaCrateMap *map) {
 	 }
 // Init, or get decoder rules.
          if (fDebugFile) *fDebugFile << "THaSlotData:: about to init  module   "<<crate<<"  "<<slot<<" mod ptr "<<fModule<<endl;
-         fModule->Init( crate, slot, map->getHeader(crate, slot), map->getMask(crate, slot));  
+         fModule->SetSlot( crate, slot, map->getHeader(crate, slot), map->getMask(crate, slot));  
          fModule->Init(); 
          if (fDebugFile) { 
             fModule->SetDebugFile(fDebugFile);
@@ -350,4 +352,4 @@ void THaSlotData::print_to_file() const {
   return;
 }
 
-ClassImp(THaSlotData)
+ClassImp(Decoder::THaSlotData)

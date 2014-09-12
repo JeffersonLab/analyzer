@@ -8,6 +8,7 @@
 /////////////////////////////////////////////////////////////////////
 
 
+#include "Decoder.h"
 #include "TObject.h"
 #include "TString.h"
 #include "THaSlotData.h"
@@ -23,10 +24,11 @@
 
 class THaBenchmark;
 class THaEpics;
-class THaCrateMap;
 class THaFastBusWord;
 
-class THaEvData : public TObject {
+using namespace Decoder;
+
+class Decoder::THaEvData : public TObject {
 
 public:
   THaEvData();
@@ -90,7 +92,7 @@ public:
   { return GetScaler(0,0,0); }
 
   // new
-  virtual ToyModule* GetModule(Int_t roc, Int_t slot);
+  virtual Module* GetModule(Int_t roc, Int_t slot);
 
   // Access functions for EPICS (slow control) data
   virtual double GetEpicsData(const char* tag, Int_t event=0) const;

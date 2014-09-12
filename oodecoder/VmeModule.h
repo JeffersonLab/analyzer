@@ -11,10 +11,11 @@
 #include <string>
 #include <map>
 #include <vector>
+#include "Decoder.h"
 #include "Rtypes.h"
-#include "ToyModule.h"
+#include "Module.h"
 
-class VmeModule : public ToyModule {
+class Decoder::VmeModule : public Module {
 
 public:
 
@@ -33,7 +34,7 @@ private:
 
    static TypeIter_t fgThisType;
    Int_t slotmask, chanmask, datamask;
-   ClassDef(VmeModule,0)  // A VME module (abstract)
+   ClassDef(Decoder::VmeModule,0)  // A VME module (abstract)
 
 };
 

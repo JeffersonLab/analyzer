@@ -12,9 +12,10 @@
 #include <map>
 #include <vector>
 #include "Rtypes.h"
-#include "THaGenScaler.h"
+#include "Decoder.h"
+#include "GenScaler.h"
 
-class Scaler3800 : public THaGenScaler {
+class Decoder::Scaler3800 : public GenScaler {
 
 public:
 

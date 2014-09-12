@@ -5,15 +5,18 @@
 /////////////////////////////////////////////////////////////////////
 
 #include "Lecroy1881Module.h"
-#include "ToyModule.h"
+#include "Module.h"
 #include "THaEvData.h"
+#include "Decoder.h"
 #include "TMath.h"
 #include <iostream>
 #include <string>
 #include <sstream>
-using namespace std;
 
-Lecroy1881Module::Lecroy1881Module(Int_t crate, Int_t slot) : ToyFastbusModule(crate, slot) {
+using namespace std;
+using namespace Decoder;
+
+Lecroy1881Module::Lecroy1881Module(Int_t crate, Int_t slot) : FastbusModule(crate, slot) {
   Init();
 }
 
@@ -27,10 +30,11 @@ void Lecroy1881Module::Init() {
   fHasHeader = kTRUE;
   fHeader = 0;
   fModelNum = 1881;
+  FastbusModule::Init();
 }
 
 Lecroy1881Module::~Lecroy1881Module() { 
 }
 
 
-ClassImp(Lecroy1881Module)
+ClassImp(Decoder::Lecroy1881Module)

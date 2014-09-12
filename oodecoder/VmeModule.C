@@ -5,6 +5,7 @@
 //
 /////////////////////////////////////////////////////////////////////
 
+#include "Decoder.h"
 #include "VmeModule.h"
 #include "THaEvData.h"
 #include "TMath.h"
@@ -13,9 +14,10 @@
 #include <sstream>
 
 using namespace std;
+using namespace Decoder;
 
 
-VmeModule::VmeModule(Int_t crate, Int_t slot) : ToyModule(crate,slot) { 
+VmeModule::VmeModule(Int_t crate, Int_t slot) : Module(crate,slot) { 
 }
 
 VmeModule::~VmeModule() { 
@@ -26,4 +28,4 @@ Bool_t VmeModule::IsSlot(UInt_t rdata) {
 }
 
 
-ClassImp(VmeModule)
+ClassImp(Decoder::VmeModule)

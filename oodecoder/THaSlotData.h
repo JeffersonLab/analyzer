@@ -20,6 +20,7 @@
 /////////////////////////////////////////////////////////////////////
 
 #include "TString.h"
+#include "Decoder.h"
 #include <cassert>
 #include <iostream>
 #include <fstream>
@@ -28,12 +29,10 @@ const int SD_WARN = -2;
 const int SD_ERR = -1; 
 const int SD_OK = 1;
 
-class THaCrateMap;
-class ToyModule;
-
 using namespace std;
+using namespace Decoder;
 
-class THaSlotData {
+class Decoder::THaSlotData {
 
 public:
 
@@ -62,7 +61,7 @@ public:
        // new
        Int_t LoadIfSlot(const Int_t* evbuffer, const Int_t *pstop);
        void SetDebugFile(ofstream *file) { fDebugFile = file; };
-       ToyModule* GetModule() { return fModule; };
+       Module* GetModule() { return fModule; };
 
        void define(int crate, int slot, UShort_t nchan=DEFNCHAN, 
 		   UShort_t ndata=DEFNDATA, UShort_t nhitperchan=DEFNHITCHAN );// Define crate, slot
@@ -76,8 +75,8 @@ private:
        int crate;
        int slot;
        TString device;
-       ToyModule *fModule;
-        UShort_t numhitperchan; // expected number of hits per channel
+       Module *fModule;
+       UShort_t numhitperchan; // expected number of hits per channel
        UShort_t numraw;      // Hit counters (numraw, numHits, numchanhit)
        UShort_t numchanhit;  // can be zero'd by clearEvent each event.
        UShort_t firstfreedataidx;     // pointer to first free space in dataindex array 
@@ -98,7 +97,7 @@ private:
        UShort_t allocd;      // Allocated size of data arrays
        UShort_t alloci;      // Allocated size of dataindex array
 
-       ClassDef(THaSlotData,0)   //  Data in one slot of fastbus, vme, camac
+       ClassDef(Decoder::THaSlotData,0)   //  Data in one slot of fastbus, vme, camac
 };
 
 //______________ inline functions _____________________________________________

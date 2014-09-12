@@ -20,12 +20,15 @@
 
 #include "Rtypes.h"
 #include "TString.h"
+#include "Decoder.h"
 #include "DecoderGlobals.h"
 #include <cassert>
 #include <iostream>
 #include <fstream>
 
-class THaCrateMap
+using namespace Decoder;
+
+class Decoder::THaCrateMap
 {
 
 
@@ -97,7 +100,7 @@ class THaCrateMap
      void setClear(int crate,int slot,bool clear);
      int  SetModelSize(int crate, int slot, UShort_t model );
 
-     ClassDef(THaCrateMap,0) // Map of modules in DAQ crates
+     ClassDef(Decoder::THaCrateMap,0) // Map of modules in DAQ crates
 };     
 
 //=============== inline functions ================================
