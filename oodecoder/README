@@ -1,10 +1,11 @@
 
- Dec 2013    Bob Michaels
+ Sept 10, 2014    Bob Michaels
 
- Toy OO Decoder for tests.
+ Object Oriented Decoder 
 
  Eventually to replace the hana_decode directory.
-
+ I'm still working on it ... as of Sept 12, 2014
+ Release date is probably early December
 
 
         Hall A C++ Event Decoder
