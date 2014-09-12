@@ -13,13 +13,16 @@
 //
 /////////////////////////////////////////////////////////////////////
 
+#include "Decoder.h"
 #include "TString.h"
 #include <iostream>
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
 
-class THaUsrstrutils
+using namespace Decoder;
+
+class Decoder::THaUsrstrutils
 {
 
 /* usrstrutils

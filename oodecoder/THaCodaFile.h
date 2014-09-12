@@ -18,10 +18,11 @@
 /////////////////////////////////////////////////////////////////////
 
 #include "Rtypes.h"
+#include "Decoder.h"
 #include "THaCodaData.h"
 #include "TArrayI.h"
 
-class THaCodaFile : public THaCodaData {
+class Decoder::THaCodaFile : public THaCodaData {
 
 public:
 

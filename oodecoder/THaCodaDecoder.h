@@ -7,20 +7,22 @@
 //
 /////////////////////////////////////////////////////////////////////
 
+
+#include "Decoder.h"
 #include "TObject.h"
 #include "TString.h"
 #include "THaSlotData.h"
 #include "TBits.h"
-#include "evio.h"
 #include "THaEvData.h"
-#include "ToyModule.h"
 
-class THaCodaDecoder : public THaEvData {
+using namespace Decoder;
+
+class Decoder::THaCodaDecoder : public THaEvData {
  public:
   THaCodaDecoder();
   ~THaCodaDecoder();
-  // Loads CODA data evbuffer using THaCrateMap passed as 2nd arg
-  virtual Int_t LoadEvent(const Int_t* evbuffer, THaCrateMap* usermap);    
+
+  virtual Int_t LoadEvent(const Int_t* evbuffer);
 
   virtual Int_t GetPrescaleFactor(Int_t trigger) const;
   virtual Int_t GetScaler(const TString& spec, Int_t slot, Int_t chan) const;
@@ -33,8 +35,6 @@ class THaCodaDecoder : public THaEvData {
 
   virtual void PrintOut() const { dump(buffer); }
   virtual void SetRunTime(ULong64_t tloc);
-
-  ToyModule* GetModule(Int_t crate, Int_t slot) { return 0;} // don't worry 
 
  protected:
   THaFastBusWord* fb;
@@ -54,8 +54,6 @@ class THaCodaDecoder : public THaEvData {
 
   static void dump(const Int_t* evbuffer);
 
-  Int_t   gendecode(const Int_t* evbuffer, THaCrateMap* map);
-
   Int_t   loadFlag(const Int_t* evbuffer);
 
   Int_t   epics_decode(const Int_t* evbuffer);
@@ -66,7 +64,7 @@ class THaCodaDecoder : public THaEvData {
   Int_t   camac_decode(Int_t roc, const Int_t* evbuffer, Int_t p1, Int_t p2);
   Int_t   scaler_event_decode(const Int_t* evbuffer );
 
-  ClassDef(THaCodaDecoder,0) // Decoder for CODA event buffer
+  ClassDef(Decoder::THaCodaDecoder,0) // Decoder for CODA event buffer
 };
 
 #endif

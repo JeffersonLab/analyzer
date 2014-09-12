@@ -38,7 +38,7 @@ class TString;
 #define ADAQS3 "129.57.164.45"
 
 
-class THaEtClient : public THaCodaData 
+class Decoder::THaEtClient : public THaCodaData 
 {
 
 public:

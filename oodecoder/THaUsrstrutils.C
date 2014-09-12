@@ -13,6 +13,7 @@
 
 #define COMMENT_CHAR ';'
 
+#include "Decoder.h"
 #include "THaUsrstrutils.h"
 #include "TMath.h"
 #include "TRegexp.h"
@@ -21,6 +22,7 @@
 #include <vector>
 
 using namespace std;
+using namespace Decoder;
 
 const int           THaUsrstrutils::MAX     = 5000;
 const unsigned long THaUsrstrutils::LONGMAX = 0x7FFFFFFF;
@@ -221,5 +223,5 @@ void THaUsrstrutils::string_from_file(const char *ffile_name)
 }
 
 
-ClassImp(THaUsrstrutils)
+ClassImp(Decoder::THaUsrstrutils)
 

@@ -12,9 +12,12 @@
 //
 /////////////////////////////////////////////////////////////////////
 
+#include "Decoder.h"
 #include "THaCodaData.h"
 
-ClassImp(THaCodaData)
+using namespace Decoder;
+
+ClassImp(Decoder::THaCodaData)
 
 THaCodaData::THaCodaData() {
    evbuffer = new int[MAXEVLEN];         // Raw data     

@@ -15,7 +15,7 @@
 //
 /////////////////////////////////////////////////////////////////////
 
-
+#include "Decoder.h"
 #include "Rtypes.h"
 #include "TString.h"
 #define CODA_ERROR -128   // Generic error return code
@@ -24,7 +24,7 @@
 #define CODA_VERBOSE 1    // Errors explained verbosely (recommended)
 #define CODA_DEBUG  0     // Lots of printout (recommend to set = 0)
 
-class THaCodaData {
+class Decoder::THaCodaData {
 
 public:
 
