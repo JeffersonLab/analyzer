@@ -2,9 +2,8 @@
 # R. Michaels, rom@jlab.org, Mar 2001
 #
 # Test Executables:
-# tmodco   --  test of module scheme
 # tcrmap   --  test of crate map
-# tstoy    --  tests of toy decoder
+# tstoo    --  tests of OO decoder
 # tstfadc  --  tests of FADC 250 class
 # tstcoda  --  test of abstract interface to THaCodaFile and THaEtClient.
 # tstio    --  simple tests of CODA I/O from a file.
@@ -203,13 +202,12 @@ GLIBS        += $(ROOTGLIBS) $(SYSLIBS)
 SRC = THaUsrstrutils.C THaCrateMap.C THaCodaData.C \
       THaEpics.C THaFastBusWord.C THaCodaFile.C THaSlotData.C \
       THaEvData.C evio.C THaCodaDecoder.C \
-      ToyCodaDecoder.C \
-      ToyModule.C VmeModule.C Fadc250Module.C \
-      ToyFastbusModule.C ToyModuleCollect.C \
+      CodaDecoder.C \
+      Module.C VmeModule.C Fadc250Module.C FastbusModule.C \
       Lecroy1877Module.C Lecroy1875Module.C Lecroy1881Module.C \
-      THaGenScaler.C Scaler1151.C Scaler560.C Scaler3800.C Scaler3801.C
+      GenScaler.C Scaler1151.C Scaler560.C Scaler3800.C Scaler3801.C
 
-PROGS = tcrmap tmodco tstoy tstfadc tstio tdecpr tdecex prfact epicsd 
+PROGS = tcrmap tstoo tstfadc tstio tdecpr tdecex prfact epicsd 
 # If you want to use the ET system at Jlab.
 ifdef ONLINE_ET
   SRC += THaEtClient.C
@@ -273,17 +271,13 @@ else
    MAINOBJS = $(MAINDIR)/libHallA.so
 endif
 
-tmodco: tmodco_main.o $(MODOBJS) $(SRC) $(EVIO_LIB) $(MAINOBJS)
-	rm -f $@
-	$(CXX) $(CXXFLAGS) -o $@ tmodco_main.o $(DECODE_OBJS) $(ALL_LIBS) $(MAINOBJS)
-
 tcrmap: tcrmap_main.o THaCrateMap.o $(SRC) $(EVIO_LIB) $(MAINOBJS)
 	rm -f $@
 	$(CXX) $(CXXFLAGS) -o $@ tcrmap_main.o $(DECODE_OBJS) $(ALL_LIBS) $(MAINOBJS)
 
-tstoy: tstoy_main.o $(DECODE_OBJS) $(SRC) $(EVIO_LIB) $(MAINOBJS)
+tstoo: tstoo_main.o $(DECODE_OBJS) $(SRC) $(EVIO_LIB) $(MAINOBJS)
 	rm -f $@
-	$(CXX) $(CXXFLAGS) -o $@ tstoy_main.o $(DECODE_OBJS) $(ALL_LIBS) $(MAINOBJS)
+	$(CXX) $(CXXFLAGS) -o $@ tstoo_main.o $(DECODE_OBJS) $(ALL_LIBS) $(MAINOBJS)
 
 tstfadc: tstfadc_main.o $(DECODE_OBJS) $(SRC) $(EVIO_LIB) $(MAINOBJS)
 	rm -f $@
