@@ -1245,14 +1245,14 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 			    item->nelem );
       } else {
       badtype:
-	const char* type_name;
 	if( item->type >= kDouble && item->type <= kObject2P )
-	  type_name = THaVar::GetEnumName(item->type);
+	  ::Error( ::Here(here,loaddb_prefix.c_str()),
+		   "Key \"%s\": Reading of data type \"%s\" not implemented",
+		   key, THaVar::GetEnumName(item->type) );
 	else
-	  type_name = Form("(#%d)", item->type );
-	::Error( ::Here(here,loaddb_prefix.c_str()),
-		 "Key \"%s\": Reading of data type \"%s\" not implemented",
-		 type_name, key );
+	  ::Error( ::Here(here,loaddb_prefix.c_str()),
+		   "Key \"%s\": Reading of data type \"(#%d)\" not implemented",
+		   key, item->type );
 	ret = -2;
 	break;
       }
