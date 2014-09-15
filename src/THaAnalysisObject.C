@@ -25,6 +25,8 @@
 #include "TVector3.h"
 #include "TSystem.h"
 #include "TObjArray.h"
+#include "TVirtualMutex.h"
+#include "TThread.h"
 
 #include <cstring>
 #include <cctype>
@@ -44,6 +46,7 @@
 #endif
 #include <stdexcept>
 #include <cassert>
+#include <map>
 
 using namespace std;
 typedef string::size_type ssiz_t;
@@ -52,6 +55,9 @@ typedef vector<string>::iterator vsiter_t;
 TList* THaAnalysisObject::fgModules = NULL;
 
 const Double_t THaAnalysisObject::kBig = 1.e38;
+
+// Mutex for concurrent access to global Here function
+static TVirtualMutex* gHereMutex = 0;
 
 //_____________________________________________________________________________
 THaAnalysisObject::THaAnalysisObject( const char* name, 
@@ -396,17 +402,25 @@ const char* Here( const char* here, const char* prefix )
 {
   // Utility function for error messages
 
-  // FIXME: STATIC BUFFER NOT THREAD SAFE!!!
-  static char buf[256];
-  buf[0] = 0;
-  if(prefix != NULL) {
-    strcpy( buf, "\"" );
-    strcat( buf, prefix );
-    *(buf+strlen(buf)-1) = 0;   // Delete trailing dot of prefix
-    strcat( buf, "\"::" );
+  // One static string buffer per thread ID.
+  static map<Long_t,string> buffers;
+
+  string txt;
+  if( prefix ) {
+    txt = "\"";
+    txt.append(prefix);
+    if( txt.length() > 1 )
+      txt.erase(txt.length()-1);   // Delete trailing dot of prefix
+    txt.append("\"::");
   }
-  strcat( buf, here );
-  return buf;
+  if( here )
+    txt += here;
+
+  R__LOCKGUARD2(gHereMutex);
+
+  string& ret = (buffers[ TThread::SelfId() ] = txt);
+
+  return ret.c_str(); // pointer to the C-string of a std::string in static map
 }
 
 //_____________________________________________________________________________
