@@ -6,7 +6,8 @@
 #include <cstdlib>
 #include <cstdio>
 #include "THaCrateMap.h"
-#include "ToyCodaDecoder.h"
+
+#include "CodaDecoder.h"
 #include "THaEvData.h"
 #include "THaCodaFile.h"
 #include "TDatime.h"
@@ -34,12 +35,12 @@ int main(int argc, char* argv[])
 
   map->print();
 
-  ToyCodaDecoder *deco = new ToyCodaDecoder();
+  CodaDecoder *deco = new CodaDecoder();
 
   TString filename("snippet.dat");
 
   THaCodaFile datafile(filename);
-  THaEvData *evdata = new ToyCodaDecoder();
+  THaEvData *evdata = new CodaDecoder();
 
   // Loop over events
   int NUMEVT=20;

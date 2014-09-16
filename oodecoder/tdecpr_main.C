@@ -8,7 +8,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include "THaCodaFile.h"
-#include "ToyCodaDecoder.h"
+#include "CodaDecoder.h"
 #include "TString.h"
 #include "evio.h"
 
@@ -32,7 +32,7 @@ int main(int argc, char* argv[])
         exit(0);
    }
       
-   THaEvData *evdata = new ToyCodaDecoder();
+   THaEvData *evdata = new CodaDecoder();
 
 // Loop over events
  
