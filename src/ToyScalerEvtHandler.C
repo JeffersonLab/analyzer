@@ -6,7 +6,7 @@
 
 #include "ToyEvtTypeHandler.h"
 #include "ToyScalerEvtHandler.h"
-#include "THaGenScaler.h"
+#include "GenScaler.h"
 #include "Scaler3800.h"
 #include "Scaler3801.h"
 #include "Scaler1151.h"
@@ -25,6 +25,7 @@ ToyScalerEvtHandler::ToyScalerEvtHandler(const char *name, const char* descripti
   rdata = new Int_t[MAXEVLEN];
   fDebugFile = 0;
   fScalerTree = 0;
+  evnum = 0;
 }
 
 ToyScalerEvtHandler::~ToyScalerEvtHandler() { 
@@ -63,6 +64,9 @@ Int_t ToyScalerEvtHandler::Analyze(THaEvData *evdata) {
 
     string name, tinfo;
 
+    name = "evnum";
+    tinfo = name + "/D";
+    fScalerTree->Branch(name.c_str(), &evnum, tinfo.c_str(), 4000);
     name = "bcmu1";
     tinfo = name + "/D";
     fScalerTree->Branch(name.c_str(), &TSbcmu1, tinfo.c_str(), 4000);
@@ -111,6 +115,8 @@ Int_t ToyScalerEvtHandler::Analyze(THaEvData *evdata) {
   TSbcmu1r = scalers[1]->GetRate(4);
   TSbcmu3  = scalers[1]->GetData(5);
   TSbcmu3r = scalers[1]->GetRate(5);
+  evnum = evnum + 1.0;
+
 
   if (fDebugFile) *fDebugFile << "my data "<<TSbcmu1<<"  "<<TSbcmu1r<<"  "<<TSbcmu3<<"  "<<TSbcmu3r<<endl;
   
@@ -141,7 +147,7 @@ THaAnalysisObject::EStatus ToyScalerEvtHandler::Init(const TDatime& dt, Int_t id
   RVarDef vars[] = {
     { "TSbcmu1",    "BCM x1 counts",     "TSbcmu1"   },  
     { "TSbcmu1r",   "BCM x1 rate",       "TSbcmu1r"  },  
-    { "TSbcmu3",    "BCM u3 counts",     "TSbmcu3"   },  
+    { "TSbcmu3",    "BCM u3 counts",     "TSbcmu3"   },  
     { "TSbcmu3r",   "BCM u3 rate",       "TSbcmu3r"  },  
     { 0 }
   };

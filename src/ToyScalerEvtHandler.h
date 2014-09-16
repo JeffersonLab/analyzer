@@ -16,8 +16,12 @@
 #include <vector>
 #include "Rtypes.h"
 #include "TTree.h"
+#include "Decoder.h"
+#include "THaEvData.h"
+#include "GenScaler.h"
 
-class THaGenScaler;
+using namespace Decoder;
+
 class THaRunBase;
 
 class ToyScalerEvtHandler : public ToyEvtTypeHandler {
@@ -34,7 +38,8 @@ public:
 
 private:
 
-   vector<THaGenScaler *> scalers;
+   vector<GenScaler *> scalers;
+   Double_t evnum;
    Int_t *rdata;
    ofstream *fDebugFile;
    TTree *fScalerTree;
