@@ -99,9 +99,9 @@ Int_t THaDetectorBase::ReadGeometry( FILE* file, const TDatime& date,
       "\"size\" (detector size [m])"},
     { 0 }
   };
-  Int_t err = LoadDB( file, date, request, fPrefix );
+  Int_t err = LoadDB( file, date, request );
   if( err )
-    return err;
+    return kInitError;
 
   if( !position.empty() ) {
     if( position.size() != 3 ) {

@@ -275,7 +275,7 @@ Int_t VDCeff::ReadDatabase( const TDatime& date )
       { "maxocc",     &fMaxOcc,     kDouble,  0, 1 },
       { 0 }
     };
-    status = LoadDB( f, date, request, fPrefix );
+    status = LoadDB( f, date, request );
   }
   catch(...) {
     fclose(f);

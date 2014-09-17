@@ -93,9 +93,6 @@ public:
 			  const DBRequest* request, const char* prefix,
 			  Int_t search = 0,
 			  const char* here = "THaAnalysisObject::LoadDB" );
-  static  Int_t   LoadDB( FILE* file, const TDatime& date, 
-			  const TagDef* tags, const char* prefix,
-			  Int_t search = 0 );
   static  Int_t   SeekDBdate( FILE* file, const TDatime& date,
 			      Bool_t end_on_tag = false );
   static  Int_t   SeekDBconfig( FILE* file, const char* tag,

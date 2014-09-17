@@ -1481,46 +1481,6 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 }
 
 //_____________________________________________________________________________
-Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
-				 const TagDef* keys, const char* prefix,
-				 Int_t search )
-{
-  // Compatibility function to read database with old 'TagDef' 
-  // request structure
-
-  if( !keys )
-    return -1;
-
-  const TagDef* item = keys;
-  Int_t nreq = 0;
-  while( (item++)->name )
-    nreq++;
-  if( nreq == 0 )
-    return 0;
-
-  DBRequest *req = new struct DBRequest[nreq+1], *theReq = req;
-  if( !req )
-    return -3;
-  item = keys;
-  while( item->name ) {
-    theReq->name      = item->name;
-    theReq->var       = item->var;
-    theReq->type      = item->type;
-    theReq->nelem     = item->expected;
-    theReq->optional  = item->fatal ? kFALSE : kTRUE;
-    theReq->search    = 0;
-    theReq->descript  = item->name;
-    item++; theReq++;
-  }
-  theReq->name = 0;
-
-  Int_t ret = LoadDB( f, date, req, prefix, search );
-
-  delete [] req;
-  return ret;
-}
-
-//_____________________________________________________________________________
 Int_t THaAnalysisObject::SeekDBconfig( FILE* file, const char* tag, 
 				       const char* label,
 				       Bool_t end_on_tag )

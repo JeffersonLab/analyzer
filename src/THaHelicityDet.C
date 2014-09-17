@@ -75,7 +75,7 @@ Int_t THaHelicityDet::ReadDatabase( const TDatime& date )
     { "helicity_sign", &fSign, kInt, 0, 1, -2 },
     { 0 }
   };
-  Int_t err = LoadDB( file, date, request, fPrefix );
+  Int_t err = LoadDB( file, date, request );
   fclose(file);
   if( err )
     return kInitError;

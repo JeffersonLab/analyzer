@@ -118,7 +118,7 @@ Int_t THaG0Helicity::ReadDatabase( const TDatime& date )
     { "missqrt",  &missqrt,    kInt,    0, 1, -2 },
     { 0 }
   };
-  st = LoadDB( file, date, req, GetPrefix() );
+  st = LoadDB( file, date, req );
   fclose(file);
   if( st )
     return kInitError;
