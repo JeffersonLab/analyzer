@@ -5,16 +5,16 @@
 # Definitions of wire spectra to analyze
 # Format:  global_variable_name  histogram_name_prefix  max_number_wires
 
-vdceff.vdcvars = \
+vdceff.vdcvars =
 # Left arm wire planes
-  L.u1.wire   Lu1   400  \
-  L.u2.wire   Lu2   400  \
-  L.v1.wire   Lv1   400  \
-  L.v2.wire   Lv2   400  \
+  L.u1.wire   Lu1   400
+  L.u2.wire   Lu2   400
+  L.v1.wire   Lv1   400
+  L.v2.wire   Lv2   400
 # Right arm wire planes
-  R.u1.wire   Ru1   400  \
-  R.u2.wire   Ru2   400  \
-  R.v1.wire   Rv1   400  \
+  R.u1.wire   Ru1   400
+  R.u2.wire   Ru2   400
+  R.v1.wire   Rv1   400
   R.v2.wire   Rv2   400
 
 vdceff.cycle  = 500    # Number of events between recalculations

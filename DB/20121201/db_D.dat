@@ -2,51 +2,48 @@
 # Example decoder data definition file
 # Taken from December 2012 online replay database
 # See THaDecData.C for documentation.
-# Please pay attention to the "\" continuation characters. Continuations
-# may be freely interspersed with comments, but not completely blank lines.
 
-D.word =  \
+D.word =
 # syncclock
-          syncroc1   1    fabc0006   6 \
-          syncroc2   2    fabc0006   6 \
-          syncroc3   3    fabc0008   8 \
-          syncroc4   4    fabc0008   8 \
-\
+          syncroc1   1    fabc0006   6
+          syncroc2   2    fabc0006   6
+          syncroc3   3    fabc0008   8
+          syncroc4   4    fabc0008   8
 # Deadtime Calculations
-          R1start	1	0xdeaddead	1 \
-          R1stop	1	0xdeaddead	2 \
-          R2start	2	0xdeaddead	1 \
-          R2stop	2	0xdeaddead	2 \
-	  R3start	3	0xdeaddead	1 \
-	  R3stop	3	0xdeaddead	2 \
-	  R4start	4	0xdeaddead	1 \
-	  R4stop	4	0xdeaddead	2 \
-	  BBTSstart	29	0xdeaddead	1 \
-	  BBTSstop	29	0xdeaddead	2 \
-	  R10start	10	0xdeaddead	1 \
-	  R10stop	10	0xdeaddead	2 \
-	  5time2	5	0xfaaa0001	-1 \
+          R1start	1	0xdeaddead	1
+          R1stop	1	0xdeaddead	2
+          R2start	2	0xdeaddead	1
+          R2stop	2	0xdeaddead	2
+	  R3start	3	0xdeaddead	1
+	  R3stop	3	0xdeaddead	2
+	  R4start	4	0xdeaddead	1
+	  R4stop	4	0xdeaddead	2
+	  BBTSstart	29	0xdeaddead	1
+	  BBTSstop	29	0xdeaddead	2
+	  R10start	10	0xdeaddead	1
+	  R10stop	10	0xdeaddead	2
+	  5time2	5	0xfaaa0001	-1
 	  10time2	10	0xfaaa0001	-1
 
-D.multi = \
+D.multi =
 # L-HRS, R-HRS, BB & HAND trigger inputs (1877) left arm copy
-  	 lt1	     	 4	23	64 \
-	 lt2		 4	23	65 \
-	 lt3		 4	23	66 \
-	 lt4		 4	23	67 \
-	 lt5		 4	23	68 \
-	 lt6		 4	23	69 \
-	 lt7		 4	23	70 \
-	 lt8		 4	23	71 \
-	 lfastclk	 4	23	73 \
-	 adcgate	 4	23	75 \
-	 l1a_L		 4	23	76 \
-	 strobe		 4	23	77 \
-	 s1or		 4	23	78 \
-	 s2or		 4	23	79 \
+	 lt1	     	 4	23	64
+	 lt2		 4	23	65
+	 lt3		 4	23	66
+	 lt4		 4	23	67
+	 lt5		 4	23	68
+	 lt6		 4	23	69
+	 lt7		 4	23	70
+	 lt8		 4	23	71
+	 lfastclk	 4	23	73
+	 adcgate	 4	23	75
+	 l1a_L		 4	23	76
+	 strobe		 4	23	77
+	 s1or		 4	23	78
+	 s2or		 4	23	79
 # Electronic deadtime
-	 edtpl		 4	23	74 \
-	 edtpr   	 2	11	58 \
+	 edtpl		 4	23	74
+	 edtpr   	 2	11	58
 # Coincidence time
-  	 ctimel  	 4	23	72 \
+	 ctimel  	 4	23	72
 	 ctimer  	 2	11	56
