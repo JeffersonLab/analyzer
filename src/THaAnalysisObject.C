@@ -27,6 +27,7 @@
 #include "TObjArray.h"
 #include "TVirtualMutex.h"
 #include "TThread.h"
+#include "Varargs.h"
 
 #include <cstring>
 #include <cctype>
@@ -140,8 +141,10 @@ Int_t THaAnalysisObject::DefineVarsFromList( const void* list,
   // variables, using prefix of the current apparatus.
   // Internal function that can be called during initialization.
 
+  TString here(GetClassName());
+  here.Append("::DefineVarsFromList");
   return DefineVarsFromList( list, type, mode, var_prefix, this, 
-			     fPrefix, Here(ClassName()) );
+			     fPrefix, here.Data() );
 }
 
 //_____________________________________________________________________________
@@ -161,18 +164,18 @@ Int_t THaAnalysisObject::DefineVarsFromList( const void* list,
       action = "defined";
     else if( mode == kDelete )
       action = "deleted (this is safe when exiting)";
-    ::Warning( here, "No global variable list found. No variables %s.", 
-	     action.Data() );
+    ::Warning( ::Here(here,prefix), "No global variable list found. "
+	       "No variables %s.",  action.Data() );
     return (mode==kDefine ? kInitError : kOK);
   }
 
   if( mode == kDefine ) {
     if( type == kVarDef )
       gHaVars->DefineVariables( static_cast<const VarDef*>(list),
-				prefix, here );
+				prefix, ::Here(here,prefix) );
     else if( type == kRVarDef )
       gHaVars->DefineVariables( static_cast<const RVarDef*>(list), obj,
-				prefix, here, var_prefix );
+				prefix, ::Here(here,prefix), var_prefix );
   }
   else if( mode == kDelete ) {
     if( type == kVarDef ) {
@@ -398,40 +401,93 @@ const char* THaAnalysisObject::GetDBFileName() const
 }
 
 //_____________________________________________________________________________
-const char* Here( const char* here, const char* prefix )
+const char* THaAnalysisObject::GetClassName() const
 {
-  // Utility function for error messages
+  const char* classname = "UnknownClass";
+  if( TROOT::Initialized() )
+    classname = ClassName();
+  return classname;
+}
 
-  // One static string buffer per thread ID.
-  static map<Long_t,string> buffers;
+//_____________________________________________________________________________
+void THaAnalysisObject::DoError( int level, const char* here,
+				 const char* fmt, va_list va) const
+{
+  // Interface to ErrorHandler. Inserts this object's name after the class name.
+  // If 'here' = ("prefix")::method -> print <Class("prefix")::method>
+  // If 'here' = method             -> print <Class::method>
 
-  string txt;
-  if( prefix ) {
-    txt = "\"";
-    txt.append(prefix);
-    if( txt.length() > 1 )
-      txt.erase(txt.length()-1);   // Delete trailing dot of prefix
-    txt.append("\"::");
+  TString location(here);
+  if( !location.BeginsWith("(\"") )
+    location.Prepend("::");
+
+  location.Prepend(GetClassName());
+
+  ::ErrorHandler(level, location.Data(), fmt, va);
+}
+
+//_____________________________________________________________________________
+const char* Here( const char* method, const char* prefix )
+{
+  // Utility function for error messages. The return value points to a static
+  // string buffer that is unique to the current thread.
+  // There are two usage cases:
+  // ::Here("method","prefix")        -> returns ("prefix")::method
+  // ::Here("Class::method","prefix") -> returns Class("prefix")::method
+
+  // One static string buffer per thread ID
+  static map<Long_t,TString> buffers;
+
+  TString txt;
+  if( prefix && *prefix ) {
+    TString full_prefix(prefix);
+    // delete trailing dot of prefix, if any
+    if( full_prefix.EndsWith(".") )
+      full_prefix.Chop();
+    full_prefix.Prepend("(\""); full_prefix.Append("\")");
+    const char* scope;
+    if( method && *method && (scope = strstr(method, "::")) ) {
+      Ssiz_t pos = scope - method;
+      txt = method;
+      assert(pos >= 0 && pos < txt.Length());
+      txt.Insert(pos, full_prefix);
+      method = 0;
+    } else {
+      txt = full_prefix + "::";
+    }
   }
-  if( here )
-    txt += here;
+  if( method )
+    txt.Append(method);
 
   R__LOCKGUARD2(gHereMutex);
 
-  string& ret = (buffers[ TThread::SelfId() ] = txt);
+  TString& ret = (buffers[ TThread::SelfId() ] = txt);
 
-  return ret.c_str(); // pointer to the C-string of a std::string in static map
+  return ret.Data(); // pointer to the C-string of a std::string in static map
 }
 
 //_____________________________________________________________________________
 const char* THaAnalysisObject::Here( const char* here ) const
 {
-  // Return a string consisting of 'here' followed by fPrefix.
+  // Return a string consisting of ("fPrefix")::here
   // Used for generating diagnostic messages.
   // The return value points to an internal static buffer that
   // one should not try to delete ;)
   
   return ::Here( here, fPrefix );
+}
+
+//_____________________________________________________________________________
+const char* THaAnalysisObject::ClassNameHere( const char* here ) const
+{
+  // Return a string consisting of Class("fPrefix")::here
+
+  TString method(here);
+  if( method.Index("::") == kNPOS ) {
+    method.Prepend("::");
+    method.Prepend(GetClassName());
+  }
+  return ::Here( method.Data(), fPrefix );
 }
 
 //_____________________________________________________________________________
@@ -581,7 +637,7 @@ FILE* THaAnalysisObject::OpenFile( const char *name, const TDatime& date,
     vsiter_t it = fnames.begin();
     do {
       if( debug_flag>1 )
-      	cout << "<" << here << ">: Opening database file " << *it;
+	cout << "Info in <" << here << ">: Opening database file " << *it;
       // Open the database file
       fi = fopen( (*it).c_str(), filemode);
       
@@ -606,7 +662,7 @@ FILE* THaAnalysisObject::OpenFile( const TDatime& date )
 { 
   // Default method for opening database file
 
-  return OpenFile(GetDBFileName(), date, Here("OpenFile()"), "r", fDebug);
+  return OpenFile(GetDBFileName(), date, ClassNameHere("OpenFile()"), "r", fDebug);
 }
 
 //_____________________________________________________________________________
@@ -614,7 +670,7 @@ FILE* THaAnalysisObject::OpenRunDBFile( const TDatime& date )
 { 
   // Default method for opening run database file
 
-  return OpenFile("run", date, Here("OpenFile()"), "r", fDebug);
+  return OpenFile("run", date, ClassNameHere("OpenFile()"), "r", fDebug);
 }
 
 //_____________________________________________________________________________
@@ -1244,16 +1300,25 @@ Int_t THaAnalysisObject::LoadDBmatrix( FILE* file, const TDatime& date,
 
 //_____________________________________________________________________________
 Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
+				 const DBRequest* req, Int_t search )
+{
+  // Member function version of LoadDB, uses current object's fPrefix and
+  // class name
+
+  TString here(GetClassName());
+  here.Append("::LoadDB");
+  return LoadDB( f, date, req, GetPrefix(), search, here.Data() );
+}
+//_____________________________________________________________________________
+Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 				 const DBRequest* req, const char* prefix,
-				 Int_t search )
+				 Int_t search, const char* here )
 {
   // Load a list of parameters from the database file 'f' according to 
   // the contents of the 'req' structure (see VarDef.h).
 
   // FIXME: handle item->nelem to read arrays!
 
-  const char* const here = "THaAnalysisObject::LoadDB";
-  
   if( !req ) return -255;
   if( !prefix ) prefix = "";
   Int_t ret = 0;
@@ -1365,7 +1430,7 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 	    newreq->search = 0;
 	    if( newsearch < 0 )
 	      newsearch++;
-	    ret = LoadDB( f, date, newreq, newprefix.c_str(), newsearch );
+	    ret = LoadDB( f, date, newreq, newprefix.c_str(), newsearch, here );
 	    // If error, quit here. Error message printed at lowest level.
 	    if( ret != 0 )
 	      break;

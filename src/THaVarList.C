@@ -83,16 +83,14 @@ THaVarList::~THaVarList()
 //_____________________________________________________________________________
 THaVar* THaVarList::DefineByType( const char* name, const char* descript, 
 				  const void* var, VarType type, 
-				  const Int_t* count )
+				  const Int_t* count, const char* errloc )
 {
   // Define a global variable with given type.
   // Duplicate names are not allowed; if a name already exists, return 0
 
-  static const char* const here = "DefineByType()";
-
   THaVar* ptr = Find( name );
   if( ptr ) {
-    Warning( here, "Variable %s already exists. Not redefined.", 
+    Warning( errloc, "Variable %s already exists. Not redefined.", 
 	     ptr->GetName() );
     return 0;
   }
@@ -101,7 +99,7 @@ THaVar* THaVarList::DefineByType( const char* name, const char* descript,
   if( ptr ) 
     AddLast( ptr );
   else
-    Error( here, "Error allocating new variable %s. No variable defined.",
+    Error( errloc, "Error allocating new variable %s. No variable defined.",
 	   name );
 
   return ptr;
@@ -240,7 +238,8 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
       default:
 	break;
       }
-      var = DefineByType( theName, desc, (void*)loc, rtti.GetType(), count_loc );
+      var = DefineByType( theName, desc, (void*)loc, rtti.GetType(), count_loc,
+			  errloc );
     } else {
       var = new THaVar( name, desc, (void*)loc, rtti.GetType(),
 			rtti.GetOffset() );
@@ -378,11 +377,12 @@ Int_t THaVarList::DefineVariables( const VarDef* list, const char* prefix,
   // Output a warning if a name already exists.  Return values >0 indicate the
   // number of variables defined, <0 indicate errors (no variables defined).
   
-  TString errloc("DefineVariables()");
-  if( caller) {
-    errloc.Append(" ");
-    errloc.Append(caller);
+  TString errloc("DefineVariables [called from ");
+  if( !caller || !*caller ) {
+    caller = "(global scope)";
   }
+  errloc.Append(caller);
+  errloc.Append("]");
 
   if( !list ) {
     Warning(errloc, "Empty input list. No variables registered.");
@@ -427,7 +427,7 @@ Int_t THaVarList::DefineVariables( const VarDef* list, const char* prefix,
 
     THaVar* var = DefineByType( name, description, item->loc, 
 				static_cast<VarType>( item->type ), 
-				item->count );
+				item->count, errloc );
     if( var )
       ndef++;
     item++;
@@ -460,11 +460,12 @@ Int_t THaVarList::DefineVariables( const RVarDef* list, const TObject* obj,
   // Output a warning if a name already exists.  Return values >0 indicate the
   // number of variables defined, <0 indicate errors (no variables defined).
 
-  TString errloc("DefineVariables()");
-  if( caller) {
-    errloc.Append(" ");
-    errloc.Append(caller);
+  TString errloc("DefineVariables [called from ");
+  if( !caller || !*caller) {
+    caller = "(global scope)";
   }
+  errloc.Append(caller);
+  errloc.Append("]");
 
   if( !list ) {
     Warning(errloc, "No input list. No variables registered.");

@@ -15,6 +15,7 @@
 #include <vector>
 #include <string>
 #include <cstdio>
+#include <stdarg.h>
 
 class THaEvData; //needed by derived classes
 class TList;
@@ -42,6 +43,7 @@ public:
   virtual void         Clear( Option_t* ="" ) {} // override TNamed::Clear()
   virtual Int_t        End( THaRunBase* r=0 );
   virtual const char*  GetDBFileName() const;
+          const char*  GetClassName() const;
           const char*  GetConfig() const         { return fConfig.Data(); }
           Int_t        GetDebug() const          { return fDebug; }
           const char*  GetPrefix() const         { return fPrefix; }
@@ -88,10 +90,11 @@ public:
 				std::vector<std::vector<T> >& values,
 				UInt_t ncols );
   static  Int_t   LoadDB( FILE* file, const TDatime& date, 
-			  const DBRequest* request, const char* prefix="",
-			  Int_t search = 0 );
+			  const DBRequest* request, const char* prefix,
+			  Int_t search = 0,
+			  const char* here = "THaAnalysisObject::LoadDB" );
   static  Int_t   LoadDB( FILE* file, const TDatime& date, 
-			  const TagDef* tags, const char* prefix="",
+			  const TagDef* tags, const char* prefix,
 			  Int_t search = 0 );
   static  Int_t   SeekDBdate( FILE* file, const TDatime& date,
 			      Bool_t end_on_tag = false );
@@ -152,10 +155,16 @@ protected:
 					   EType type, EMode mode,
 					   const char* var_prefix="" ) const;
 
+  virtual void         DoError( int level, const char* location,
+				const char* fmt, va_list va) const;
+
   THaAnalysisObject*   FindModule( const char* name, const char* classname,
 				   bool do_error = true );
 
   virtual const char*  Here( const char* ) const;
+  virtual const char*  ClassNameHere( const char* ) const;
+          Int_t        LoadDB( FILE* f, const TDatime& date,
+			       const DBRequest* req, Int_t search = 0 );
           void         MakePrefix( const char* basename );
   virtual void         MakePrefix() = 0;
   virtual FILE*        OpenFile( const TDatime& date );
