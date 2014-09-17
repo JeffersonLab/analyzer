@@ -149,7 +149,7 @@ THaAnalysisObject::EStatus VDCeff::Init( const TDatime& run_time )
 {
   // Initialize VDCeff physics module
 
-  const char* const here = __FUNCTION__;
+  const char* const here = "Init";
 
   // Standard initialization. Calls ReadDatabase(), ReadRunDatabase(),
   // and DefineVariables() (see THaAnalysisObject::Init)
@@ -176,7 +176,7 @@ Int_t VDCeff::Process( const THaEvData& evdata )
 {
   // Update VDC efficiency histograms with current event data
 
-  const char* const here = __FUNCTION__;
+  const char* const here = "Process";
 
   if( !IsOK() ) return -1;
 
@@ -255,7 +255,7 @@ Int_t VDCeff::ReadDatabase( const TDatime& date )
 {
   // Read database. Gets the VDC variables containing wire spectra.
 
-  const char* const here = __FUNCTION__;
+  const char* const here = "ReadDatabase";
   const char* const separators = ", \t";
   const Int_t NPAR = 3;
 
