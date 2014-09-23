@@ -18,6 +18,9 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
+#include <iostream>
+#include <fstream>
+#include "Decoder.h"
 #include "THaAnalyzer.h"
 #include "THaRunBase.h"
 #include "THaEvent.h"
@@ -46,9 +49,9 @@
 #include "TDirectory.h"
 #include "THaCrateMap.h"
 
-#include "ToyEvtTypeHandler.h"
+#include "THaEvtTypeHandler.h"
 #include "ToyPhysicsEvtHandler.h"
-#include "ToyScalerEvtHandler.h"
+#include "THaScalerEvtHandler.h"
 
 #include <fstream>
 #include <algorithm>
@@ -58,6 +61,7 @@
 #include <stdexcept>
 
 using namespace std;
+using namespace Decoder;
 
 const char* const THaAnalyzer::kMasterCutName = "master";
 const char* const THaAnalyzer::kDefaultOdefFile = "output.def";
@@ -105,11 +109,11 @@ THaAnalyzer::THaAnalyzer() :
    h1->Init(td);
    h1->Print();
 
-   ToyScalerEvtHandler *h2 = new ToyScalerEvtHandler("Left","Event type 140");
+   THaScalerEvtHandler *h2 = new THaScalerEvtHandler("Left","Event type 140");
    h2->Init(td, 1);
    h2->Print();
 
-   ToyScalerEvtHandler *h3 = new ToyScalerEvtHandler("Right","Event type 140");
+   THaScalerEvtHandler *h3 = new THaScalerEvtHandler("Right","Event type 140");
    h3->Init(td, 1);
    h3->Print();
   
@@ -117,6 +121,7 @@ THaAnalyzer::THaAnalyzer() :
 
    fEvtHandlers->Add(h1);
    fEvtHandlers->Add(h2);
+   fEvtHandlers->Add(h3);
 
 
   // Timers
@@ -611,6 +616,10 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
 	     "Something is very wrong..." );
       return 241;
     }
+    ofstream *debugfile = new ofstream;
+    //    debugfile->open("bobdecode1.txt");
+    // fEvData->SetDebug(1);
+    //fEvData->SetDebugFile(debugfile);
     new_decoder = true;
   }
 
@@ -992,7 +1001,7 @@ Int_t THaAnalyzer::EndAnalysis()
     obj->End( fRun );
   }
   TIter nexte(fEvtHandlers);
-  while( ToyEvtTypeHandler* obj = static_cast<ToyEvtTypeHandler*>(nexte()) ) {
+  while( THaEvtTypeHandler* obj = static_cast<THaEvtTypeHandler*>(nexte()) ) {
     obj->End( fRun );
   }
   return 0;
@@ -1262,7 +1271,7 @@ Int_t THaAnalyzer::MainAnalysis()
 
 
   TIter nextp(fEvtHandlers);
-  while( ToyEvtTypeHandler* obj = static_cast<ToyEvtTypeHandler*>(nextp()) ) {
+  while( THaEvtTypeHandler* obj = static_cast<THaEvtTypeHandler*>(nextp()) ) {
     if (fDebug) {
           obj->Print(  );
           if (obj->IsMyEvent(fEvData->GetEvType())) 
