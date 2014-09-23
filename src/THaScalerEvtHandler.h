@@ -13,6 +13,7 @@
 #define IRATE   2
 #define MAXCHAN  32
 #define MAXTEVT 5000
+#define defaultDT 4
 
 #include <string>
 #include <map>
@@ -56,6 +57,9 @@ private:
 
    void AddVars(TString name, TString desc, Int_t iscal, Int_t ichan, Int_t ikind);
    void DefVars();
+   vector<string> vsplit(const string& s);
+   size_t FindNoCase(const string sdata, const string skey);
+
    vector<GenScaler *> scalers;
    vector<ScalerLoc *> scalerloc;
    Double_t evcount;
