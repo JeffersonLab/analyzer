@@ -1,4 +1,4 @@
- #ifndef THaScalerEvtHandler_
+#ifndef THaScalerEvtHandler_
 #define THaScalerEvtHandler_
 
 /////////////////////////////////////////////////////////////////////
@@ -8,6 +8,11 @@
 //   author  Robert Michaels (rom@jlab.org)
 //
 /////////////////////////////////////////////////////////////////////
+
+#define ICOUNT  1
+#define IRATE   2
+#define MAXCHAN  32
+#define MAXTEVT 5000
 
 #include <string>
 #include <map>
@@ -26,6 +31,15 @@ using namespace Decoder;
 
 class THaRunBase;
 
+class ScalerLoc { // Utility class used by THaScalerEvtHandler
+ public:
+ ScalerLoc(TString nm, TString desc, Int_t isc, Int_t ich, Int_t iki) : 
+   name(nm), description(desc), iscaler(isc), ichan(ich), ikind(iki) { };
+  ~ScalerLoc();
+  TString name, description;
+  Int_t iscaler, ichan, ivar, ikind;
+};
+
 class THaScalerEvtHandler : public THaEvtTypeHandler {
 
 public:
@@ -40,20 +54,17 @@ public:
 
 private:
 
-   void AddVars(char *name, char *desc);
+   void AddVars(TString name, TString desc, Int_t iscal, Int_t ichan, Int_t ikind);
    void DefVars();
    vector<GenScaler *> scalers;
+   vector<ScalerLoc *> scalerloc;
    Double_t evcount;
    Int_t *rdata;
    vector<Int_t> index;
-   vector<RVarDef> rvars;
-   Int_t Nvars;
+   Int_t Nvars, ifound;
    Double_t *dvars;
-   ofstream *fDebugFile;
    TTree *fScalerTree;
    Double_t xdum1, xdum2, xdum3, xdum4;
-
-   //   Double_t TSbcmu1, TSbcmu1r, TSbcmu3, TSbcmu3r;
 
    THaScalerEvtHandler(const THaScalerEvtHandler &fh);
    THaScalerEvtHandler& operator=(const THaScalerEvtHandler &fh);

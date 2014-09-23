@@ -10,7 +10,9 @@
 //      decode the scalers and put some variables into global variables.
 //      The global variables can then appear in the Podd output tree T.
 //      In addition, a tree "TS" is created by this class; it contains 
-//      just the scaler data by itself.  
+//      just the scaler data by itself.  Note, the "fName" is concatenated
+//      with "TS" to ensure the tree is unqiue; further, "fName" is
+//      concatenated with the name of the global variables, for uniqueness. 
 //      The list of global variables and how they are tied to the 
 //      scaler module and channels is defined here; eventually this
 //      will be modified to use a scaler.map file
@@ -28,17 +30,18 @@
 #include "THaEvData.h"
 #include "TNamed.h"
 #include "TMath.h"
+#include "TString.h"
 #include <iostream>
-#include <string>
 #include <sstream>
 
 using namespace std;
 
 THaScalerEvtHandler::THaScalerEvtHandler(const char *name, const char* description) : THaEvtTypeHandler(name,description) {
-  rdata = new Int_t[MAXEVLEN];
+  rdata = new Int_t[MAXTEVT];
   fDebugFile = 0;
   fScalerTree = 0;
   evcount = 0;
+  ifound = 0;
 }
 
 THaScalerEvtHandler::~THaScalerEvtHandler() { 
@@ -63,69 +66,111 @@ Int_t THaScalerEvtHandler::Analyze(THaEvData *evdata) {
 
   if ( !IsMyEvent(evdata->GetEvType()) ) return -1;
 
+  if (fDebugFile) {
+     *fDebugFile << endl << "---------------------------------- "<<endl<<endl;
+     *fDebugFile << "\nEnter THaScalerEvtHandler  for fName = "<<fName<<endl;
+     Dump(evdata);
+  }
+
   if (lfirst && !fScalerTree) {
 
     lfirst = 0; // Can't do this in Init for some reason
 
-    fScalerTree = new TTree("TS","THa Scaler Data");
+    cout << "THaScalerEvtHandler   name = "<<fName<<endl;
+
+    TString sname1 = "TS";
+    TString sname2 = sname1 + fName;
+    TString sname3 = fName + "  Scaler Data  =================================";
+
+    if (fDebugFile) {
+        *fDebugFile << "\nAnalyze 1st time for fName = "<<fName<<endl;
+        *fDebugFile << sname2 << "      " <<sname3<<endl;
+    }
+
+    fScalerTree = new TTree(sname2.Data(),sname3.Data());
     fScalerTree->SetAutoSave(200000000);
 
-    string name, tinfo;
+    TString name, tinfo;
 
     name = "evcount";
     tinfo = name + "/D";
-    fScalerTree->Branch(name.c_str(), &evcount, tinfo.c_str(), 4000);
+    fScalerTree->Branch(name.Data(), &evcount, tinfo.Data(), 4000);
 
-    // yeah, this following should be a loop, once we have the loop for AddVars
-    name = "bcmu1";
-    tinfo = name + "/D";
-    fScalerTree->Branch(name.c_str(), &dvars[0], tinfo.c_str(), 4000);
-    name = "bcmu1r";
-    tinfo = name + "/D";
-    fScalerTree->Branch(name.c_str(), &dvars[1], tinfo.c_str(), 4000);
-    name = "bcmu3";
-    tinfo = name + "/D";
-    fScalerTree->Branch(name.c_str(), &dvars[2], tinfo.c_str(), 4000);
-    name = "bcmu3r";
-    tinfo = name + "/D";
-    fScalerTree->Branch(name.c_str(), &dvars[3], tinfo.c_str(), 4000);
+    for (Int_t i = 0; i < scalerloc.size(); i++) {
+      name = scalerloc[i]->name;
+      tinfo = name + "/D";
+      fScalerTree->Branch(name.Data(), &dvars[i], tinfo.Data(), 4000);
+    }
 
-  }
+  }  // if (lfirst && !fScalerTree)
 
 
 // Parse the data, load local data arrays.
 
   Int_t ndata = evdata->GetEvLength();
-  if (ndata >= MAXEVLEN) {
+  if (ndata >= MAXTEVT) {
     cout << "THaScalerEvtHandler:: ERROR: Event length crazy "<<endl;
-    ndata = MAXEVLEN;
+    ndata = MAXTEVT-1;
   }
 
-  if (fDebugFile) *fDebugFile<<"\n\nTHaScalerEvtHandler :: Debugging event type "<<evdata->GetEvType()<<endl;
+  if (fDebugFile) *fDebugFile<<"\n\nTHaScalerEvtHandler :: Debugging event type "<<dec<<evdata->GetEvType()<<endl<<endl;
 
   // local copy of data
+
   for (Int_t i=0; i<ndata; i++) rdata[i] = evdata->GetRawData(i);
 
-  Int_t nskip;
+  Int_t nskip=0;
   Int_t *p = rdata;
   Int_t *pstop = rdata+ndata;
+  int j=0;
+  
+  ifound = 0;
 
-  while (p < pstop) {
-    if (fDebugFile) *fDebugFile << "p  and  pstop  "<<p<<"   "<<pstop<<"   "<<hex<<*p<<"   "<<dec<<endl;   nskip = 1;
+  while (p < pstop && j < ndata) {
+    if (fDebugFile) *fDebugFile << "p  and  pstop  "<<j++<<"   "<<p<<"   "<<pstop<<"   "<<hex<<*p<<"   "<<dec<<endl;   
+    nskip = 1;
     for (Int_t j=0; j<scalers.size(); j++) {
        nskip = scalers[j]->Decode(p);
-       if (nskip > 1) break;
-       if (fDebugFile) scalers[j]->DebugPrint(fDebugFile);
+       if (fDebugFile && nskip > 1) {
+	 *fDebugFile << "\n===== Scaler # "<<j<<"     fName = "<<fName<<"   nskip = "<<nskip<<endl;
+          scalers[j]->DebugPrint(fDebugFile);
+       }
+       if (nskip > 1) {
+	 ifound = 1;
+         break;
+       }
     }
     p = p + nskip;
   }
 
+  if (*fDebugFile) {
+    *fDebugFile << "Finished with decoding.  "<<endl;
+    *fDebugFile << "   Found flag   =  "<<ifound<<endl;
+  }
+
+// L-HRS has headers which are different from R-HRS, but both are
+// event type 140 and come here.  If you found no headers, it was
+// the other arms event type.  (The arm is fName).
+
+  if (!ifound) return 0;   
+
   // The correspondance between dvars and the scaler and the channel
   // will be driven by a scaler.map file  -- later
-  dvars[0] = scalers[1]->GetData(4);
-  dvars[1] = scalers[1]->GetRate(4);
-  dvars[2] = scalers[1]->GetData(5);
-  dvars[3] = scalers[1]->GetRate(5);
+
+  for (Int_t i = 0; i < scalerloc.size(); i++) {
+    Int_t ivar = scalerloc[i]->ivar;
+    Int_t isca = scalerloc[i]->iscaler;
+    Int_t ichan = scalerloc[i]->ichan;
+    if (fDebugFile) *fDebugFile << "Debug dvars "<<i<<"   "<<ivar<<"  "<<isca<<"  "<<ichan<<endl;    if ((ivar >= 0 && ivar < scalerloc.size()) &&
+        (isca >= 0 && isca < scalers.size()) &&
+        (ichan >= 0 && ichan < MAXCHAN)) {
+          if (scalerloc[ivar]->ikind == ICOUNT) dvars[ivar] = scalers[isca]->GetData(ichan);
+          if (scalerloc[ivar]->ikind == IRATE)  dvars[ivar] = scalers[isca]->GetRate(ichan);
+          if (fDebugFile) *fDebugFile << "   dvars  "<<scalerloc[ivar]->ikind<<"  "<<dvars[ivar]<<endl;
+    } else {
+      cout << "THaScalerEvtHandler:: ERROR:: incorrect index "<<ivar<<"  "<<isca<<"  "<<ichan<<endl;
+    }
+  }
 
   evcount = evcount + 1.0;
 
@@ -142,16 +187,28 @@ THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& dt, Int_t id
 
   eventtypes.push_back(140);  // what events to look for
 
+  TString dfile;
+  dfile = fName + "scaler.txt";
+
   if (idebug) {
     fDebugFile = new ofstream();
-    fDebugFile->open("scaler.txt");
+    fDebugFile->open(dfile.Data());
   }
 
+  cout << "We are initializing THaScalerEvtHandler !!   name =   "<<fName<<endl;
+
   // This will be driven by a scaler.map and will be a kind of loop.
-  AddVars("TSbcmu1", "BCM x1 counts");
-  AddVars("TSbcmu1r","BCM x1 rate");
-  AddVars("TSbcmu3", "BCM u3 counts");
-  AddVars("TSbcmu3r", "BCM u3 rate");
+  if (fName == "Left") {
+      AddVars("TSbcmu1", "BCM x1 counts", 1, 4, ICOUNT);
+      AddVars("TSbcmu1r","BCM x1 rate",  1, 4, IRATE);
+      AddVars("TSbcmu3", "BCM u3 counts", 1, 5, ICOUNT);
+      AddVars("TSbcmu3r", "BCM u3 rate",  1, 5, IRATE);
+  } else {
+      AddVars("TSbcmu1", "BCM x1 counts", 0, 4, ICOUNT);
+      AddVars("TSbcmu1r","BCM x1 rate",  0, 4, IRATE);
+      AddVars("TSbcmu3", "BCM u3 counts", 0, 5, ICOUNT);
+      AddVars("TSbcmu3r", "BCM u3 rate",  0, 5, IRATE);
+  }
 
   DefVars();
 
@@ -186,35 +243,39 @@ THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& dt, Int_t id
   }
   if(fDebugFile) *fDebugFile << "THaScalerEvtHandler:: Name of scaler bank "<<fName<<endl;
   for (Int_t i=0; i<scalers.size(); i++) {
-    if(fDebugFile) *fDebugFile << "Scaler  #  "<<i<<endl;
-    //    scalers[i]->DoPrint();
+    if(fDebugFile) {
+         *fDebugFile << "Scaler  #  "<<i<<endl;
+         scalers[i]->DebugPrint(fDebugFile);
+    }
   }
   return kOK;
 }
 
-void THaScalerEvtHandler::AddVars(char *name, char *desc) {
-  RVarDef newvar;
-  newvar.name = name;
-  newvar.desc = desc;
-  if (fDebugFile) *fDebugFile << "THaScalerEvtHandler:: adding a new variable "<<name<<"   "<<desc<<endl;
-  rvars.push_back(newvar);
+void THaScalerEvtHandler::AddVars(TString name, TString desc, Int_t iscal, Int_t ichan, Int_t ikind) {
+// need to add fName here to make it a unique variable.  (Left vs Right HRS, for example)
+  TString name1 = fName + name;
+  TString desc1 = fName + desc;
+  ScalerLoc *loc = new ScalerLoc(name1, desc1, iscal, ichan, ikind);
+  loc->ivar = scalerloc.size();  // ivar will be the pointer to the dvars array.
+  scalerloc.push_back(loc);
 }
 
 void THaScalerEvtHandler::DefVars() {
-  // called after AddVars called several times
-  if (rvars.size() == 0) return;
-  Nvars = rvars.size();
-  dvars = new Double_t[Nvars];  // dvars is a class member
+// called after AddVars has finished being called.
+  Nvars = scalerloc.size();
+  if (Nvars == 0) return;
+  dvars = new Double_t[Nvars];  // dvars is a member of this class 
   if (gHaVars) { 
     if(fDebugFile) *fDebugFile << "THaScalerEVtHandler:: Have gHaVars "<<gHaVars<<endl;
   } else {
     cout << "No gHaVars ?!  Well, that's a problem !!"<<endl;
     return;
   }
-  if(fDebugFile) *fDebugFile << "THaScalerEvtHandler:: rvars size "<<rvars.size()<<endl;
+  if(fDebugFile) *fDebugFile << "THaScalerEvtHandler:: scalerloc size "<<scalerloc.size()<<endl;
   const Int_t* count = 0;
-  for (UInt_t i = 0; i < rvars.size(); i++) {
-     gHaVars->DefineByType(rvars[i].name, rvars[i].desc,  &dvars[i], kDouble, count);    
+  for (UInt_t i = 0; i < scalerloc.size(); i++) {
+    gHaVars->DefineByType(scalerloc[i]->name.Data(), scalerloc[i]->description.Data(),  
+                  &dvars[i], kDouble, count);    
   }
 }
 
