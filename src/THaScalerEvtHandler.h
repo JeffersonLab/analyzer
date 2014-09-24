@@ -65,10 +65,9 @@ private:
    Double_t evcount;
    Int_t *rdata;
    vector<Int_t> index;
-   Int_t Nvars, ifound;
+   Int_t Nvars, ifound, fNormIdx;
    Double_t *dvars;
    TTree *fScalerTree;
-   Double_t xdum1, xdum2, xdum3, xdum4;
 
    THaScalerEvtHandler(const THaScalerEvtHandler &fh);
    THaScalerEvtHandler& operator=(const THaScalerEvtHandler &fh);
