@@ -4,7 +4,7 @@
 VERS=hana_scaler_4.0
 #
 # Goes with this version of decoder 
-DCDIR=../hana_decode
+DCDIR=../oodecoder
 #
 # Test Executibles (compiled if STANDALONE=1)
 # tscalfile -- Read a CODA file and print various scaler data.
