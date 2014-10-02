@@ -12,6 +12,10 @@
 
 #include "THaPhysicsModule.h"
 #include "TString.h"
+#include "Decoder.h"
+#include "THaEvData.h"
+
+using namespace Decoder;
 
 class THaSpectrometer;
 class THaScintillator;

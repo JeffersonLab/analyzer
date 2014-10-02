@@ -10,6 +10,10 @@
 #include "THaPhysicsModule.h"
 #include "THaTrackInfo.h"
 #include "TString.h"
+#include "Decoder.h"
+#include "THaEvData.h"
+
+using namespace Decoder;
 
 class THaSpectrometer;
 class THaTrack;

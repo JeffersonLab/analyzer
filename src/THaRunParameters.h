@@ -10,6 +10,10 @@
 #include "TObject.h"
 #include "TString.h"
 #include "TArrayI.h"
+#include "Decoder.h"
+#include "THaEvData.h"
+
+using namespace Decoder;
 
 class TDatime;
 

@@ -57,8 +57,12 @@
 #include "TMethodCall.h"
 #include "TROOT.h"
 #include "TMath.h"
+#include <iostream>
+#include <stdio.h>
 
 #include <cstring>
+
+using namespace std;
 
 ClassImp(THaVarList)
 
@@ -527,8 +531,9 @@ THaVar* THaVarList::Find( const char* name ) const
 
   TObject* ptr;
   const char* p = strchr( name, '[' );
-  if( !p ) 
+  if( !p ) {
     ptr = FindObject( name );
+  }
   else {
     size_t n = p-name;
     char* basename = new char[ n+1 ];

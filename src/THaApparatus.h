@@ -8,10 +8,13 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaAnalysisObject.h"
+#include "Decoder.h"
+#include "THaEvData.h"
 
 class THaDetector;
-class THaEvData;
 class TList;
+
+using namespace Decoder;
 
 class THaApparatus : public THaAnalysisObject {
   

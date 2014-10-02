@@ -2,9 +2,12 @@
 #define HALLA_THaPostProcess
 
 #include "TObject.h"
+#include "Decoder.h"
+#include "THaEvData.h"
+
+using namespace Decoder;
 
 class THaRunBase;
-class THaEvData;
 class TDatime;
 class TList;
 

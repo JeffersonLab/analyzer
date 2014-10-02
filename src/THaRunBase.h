@@ -9,9 +9,12 @@
 
 #include "TNamed.h"
 #include "TDatime.h"
+#include "Decoder.h"
+#include "THaEvData.h"
+
+using namespace Decoder;
 
 class THaRunParameters;
-class THaEvData;
 
 class THaRunBase : public TNamed {
   

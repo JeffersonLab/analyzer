@@ -10,6 +10,10 @@
 #include "THaAnalysisObject.h"
 #include "TVector3.h"
 #include <vector>
+#include "Decoder.h"
+#include "THaEvData.h"
+
+using namespace Decoder;
 
 class THaDetMap;
 

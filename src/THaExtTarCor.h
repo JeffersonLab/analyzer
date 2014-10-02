@@ -10,6 +10,10 @@
 #include "THaPhysicsModule.h"
 #include "THaTrackingModule.h"
 #include "TString.h"
+#include "Decoder.h"
+#include "THaEvData.h"
+
+using namespace Decoder;
 
 class THaVertexModule;
 

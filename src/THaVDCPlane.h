@@ -10,8 +10,11 @@
 #include "THaSubDetector.h"
 #include "TClonesArray.h"
 #include <cassert>
+#include "Decoder.h"
+#include "THaEvData.h"
 
-class THaEvData;
+using namespace Decoder;
+
 class THaVDCWire;
 class THaVDCUVPlane;
 class THaVDCCluster;

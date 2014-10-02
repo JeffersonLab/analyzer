@@ -15,6 +15,10 @@
 #include <string>
 #include <cstring> // for memset etc.
 #include <iostream>
+#include "Decoder.h"
+#include "THaEvData.h"
+
+using namespace Decoder;
 
 #define NTRIG 12
 

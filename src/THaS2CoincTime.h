@@ -15,6 +15,10 @@
 #include "TString.h"
 #include "THaCoincTime.h"
 #include "THaVar.h"
+#include "Decoder.h"
+#include "THaEvData.h"
+
+using namespace Decoder;
 
 class THaS2CoincTime : public THaCoincTime {
   

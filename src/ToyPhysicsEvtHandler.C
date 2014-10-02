@@ -4,7 +4,7 @@
 //
 /////////////////////////////////////////////////////////////////////
 
-#include "ToyEvtTypeHandler.h"
+#include "THaEvtTypeHandler.h"
 #include "ToyPhysicsEvtHandler.h"
 #include "THaEvData.h"
 #include "THaCrateMap.h"
@@ -16,7 +16,7 @@
 
 using namespace std;
 
-ToyPhysicsEvtHandler::ToyPhysicsEvtHandler(const char *name, const char* description) : ToyEvtTypeHandler(name,description) {
+ToyPhysicsEvtHandler::ToyPhysicsEvtHandler(const char *name, const char* description) : THaEvtTypeHandler(name,description) {
 				      
   rocnum = new Int_t[MAXROC];
   rocpos = new Int_t[MAXROC];

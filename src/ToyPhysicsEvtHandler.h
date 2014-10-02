@@ -17,9 +17,12 @@
 #include "DecoderGlobals.h"
 #include "THaString.h"
 #include "TNamed.h"
+#include "Decoder.h"
+#include "THaEvData.h"
 
-class ToyEvtTypeHandler;
-class THaEvData;
+using namespace Decoder;
+
+class THaEvtTypeHandler;
 
 using THaString::CmpNoCase;
 
@@ -56,7 +59,7 @@ class FlagData : public TNamed {
 };
 
 
-class ToyPhysicsEvtHandler : public ToyEvtTypeHandler {
+class ToyPhysicsEvtHandler : public THaEvtTypeHandler {
 
 public:
 

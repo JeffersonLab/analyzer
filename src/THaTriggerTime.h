@@ -15,6 +15,10 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "THaNonTrackingDetector.h"
+#include "Decoder.h"
+#include "THaEvData.h"
+
+using namespace Decoder;
 
 class THaTriggerTime : public THaNonTrackingDetector {
  public:

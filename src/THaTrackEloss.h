@@ -9,6 +9,10 @@
 
 #include "THaElossCorrection.h"
 #include "THaTrackingModule.h"
+#include "Decoder.h"
+#include "THaEvData.h"
+
+using namespace Decoder;
 
 class THaTrackEloss : public THaElossCorrection, public THaTrackingModule {
   

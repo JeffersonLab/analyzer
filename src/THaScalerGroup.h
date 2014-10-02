@@ -11,6 +11,10 @@
 
 #include "THaAnalysisObject.h"
 #include "THaScaler.h"
+#include "Decoder.h"
+#include "THaEvData.h"
+
+using namespace Decoder;
 
 class THaScalerGroup : public THaAnalysisObject {
 

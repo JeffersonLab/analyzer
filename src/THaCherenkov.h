@@ -11,6 +11,10 @@
 
 #include "THaPidDetector.h"
 #include <TClonesArray.h>
+#include "Decoder.h"
+#include "THaEvData.h"
+
+using namespace Decoder;
 
 class THaCherenkov : public THaPidDetector {
 

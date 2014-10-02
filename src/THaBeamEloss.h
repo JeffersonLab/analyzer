@@ -9,6 +9,10 @@
 
 #include "THaElossCorrection.h"
 #include "THaBeamModule.h"
+#include "Decoder.h"
+#include "THaEvData.h"
+
+using namespace Decoder;
 
 class THaBeamEloss : public THaElossCorrection, public THaBeamModule {
   

@@ -11,8 +11,11 @@
 
 #include "Rtypes.h"
 #include "TH1F.h"
+#include "Decoder.h"
+#include "THaEvData.h"
 
-class THaEvData;
+using namespace Decoder;
+
 class TDatime;
 
 class THaQWEAKHelicityReader {

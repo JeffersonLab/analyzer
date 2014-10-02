@@ -14,6 +14,10 @@
 
 #include "THaADCHelicity.h"
 #include "THaG0HelicityReader.h"
+#include "Decoder.h"
+#include "THaEvData.h"
+
+using namespace Decoder;
 
 class THaHelicity : public THaADCHelicity, public THaG0HelicityReader {
   

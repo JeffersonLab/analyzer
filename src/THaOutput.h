@@ -12,6 +12,10 @@
 #include <map>
 #include <string> 
 #include <cstring>
+#include "Decoder.h"
+#include "THaEvData.h"
+
+using namespace Decoder;
 
 class THaVar;
 class TH1F;
@@ -19,7 +23,6 @@ class TH2F;
 class THaVform;
 class THaVhist;
 class THaScalerGroup;
-class THaEvData;
 class TTree;
 
 class THaOdata {

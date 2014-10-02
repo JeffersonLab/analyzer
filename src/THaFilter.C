@@ -11,7 +11,11 @@
 #include "THaCutList.h"
 #include "THaCut.h"
 #include "THaRunBase.h"
+#include "Decoder.h"
+#include "THaEvData.h"
+#include "THaCodaFile.h"
 
+using namespace Decoder;
 using namespace std;
 
 //_____________________________________________________________________________

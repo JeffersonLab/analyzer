@@ -44,7 +44,6 @@ protected:
 
 private:
 
-
    THaEvtTypeHandler(const THaEvtTypeHandler &fh);
    THaEvtTypeHandler& operator=(const THaEvtTypeHandler &fh);
 
