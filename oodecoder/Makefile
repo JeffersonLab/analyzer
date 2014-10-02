@@ -8,13 +8,12 @@
 # tstcoda  --  test of abstract interface to THaCodaFile and THaEtClient.
 # tstio    --  simple tests of CODA I/O from a file.
 # tdecpr   --  test of decoder with self-explanatory printouts.
-# tdecex   --  test of decoder, example for a use by a detector class.
 # etclient --  test of ET connection for online data.
 # prfact   --  standalone code to print the prescale factors and exit.  
 # epicsd   --  test of EPICS data
 # 
 # To understand how to use decoding classes, look at the 'main'
-# routines tstcoda_main.C, tstio_main.C, tdecpr_main.C, tdecex_main.C etc
+# routines tstcoda_main.C, tstio_main.C, tdecpr_main.C,  etc
 # corresponding to the above executables.  Also see haGenDetTest.C
 # which shows proposed usage in a 'generic' detector class.
 
@@ -29,7 +28,7 @@ VERS = hana_decode_1.6
 
 # If one defines STANDALONE, the library and test execs are compiled 
 # independently of the rest of the analyzer.  Normally this is commented out.
-export STANDALONE = 1
+# export STANDALONE = 1
 
 # MAINDIR is the source of headers for main code.
 # Also need objects from MAINDIR for standalone test executables,
@@ -60,10 +59,10 @@ ROOTBIN      := $(shell root-config --bindir)
 INCLUDES      = $(ROOTCFLAGS) 
 
 ifndef STANDALONE
-   INCLUDES += -I$(MAINDIR)
+   INCLUDES += -I$(MAINDIR) -I../oodecoder
    CXXFLAGS += -DSTANDALONE
 else
-   INCLUDES += -I$(MAINDIR)
+   INCLUDES += -I$(MAINDIR) 
    ARCH          = linux
   # ARCH           = macosx
   # ARCH          = solarisCC5
@@ -207,7 +206,7 @@ SRC = THaUsrstrutils.C THaCrateMap.C THaCodaData.C \
       Lecroy1877Module.C Lecroy1875Module.C Lecroy1881Module.C \
       GenScaler.C Scaler1151.C Scaler560.C Scaler3800.C Scaler3801.C
 
-PROGS = tcrmap tstoo tstfadc tstio tdecpr tdecex prfact epicsd 
+PROGS = tcrmap tstoo tstfadc tstio tdecpr prfact epicsd 
 # If you want to use the ET system at Jlab.
 ifdef ONLINE_ET
   SRC += THaEtClient.C
@@ -290,10 +289,6 @@ tstio: tstio_main.o $(DECODE_OBJS) $(SRC) $(EVIO_LIB) $(MAINOBJS)
 tdecpr: $(DECODE_OBJS) $(SRC) tdecpr_main.o $(HEAD) $(SRC) $(EVIO_LIB) $(MAINOBJS)
 	rm -f $@
 	$(CXX) $(CXXFLAGS) -o $@ tdecpr_main.o $(DECODE_OBJS) $(ALL_LIBS) $(MAINOBJS)
-
-tdecex: $(DECODE_OBJS) $(SRC) tdecex_main.o THaGenDetTest.o $(HEAD) THaGenDetTest.h $(SRC) $(DECODE_OBJS) $(EVIO_LIBS) $(MAINOBJS)  
-	rm -f $@
-	$(CXX) $(CXXFLAGS) -o $@ tdecex_main.o THaGenDetTest.o $(DECODE_OBJS) $(ALL_LIBS) $(MAINOBJS)
 
 etclient: etclient_main.o $(DECODE_OBJS) $(MAINOBJS)
 	$(CXX) $(CXXFLAGS) -o $@ etclient_main.o $(DECODE_OBJS) $(ALL_LIBS) $(MAINOBJS)
