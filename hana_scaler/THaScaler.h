@@ -19,6 +19,8 @@
 #define SCAL_ERROR       -1
 #define SCAL_VERBOSE      1  // verbose warnings (0 = silent, recommend = 1)
 
+#include "Decoder.h"
+#include "THaEvData.h"
 #include "TObject.h"
 #include "TString.h"
 #include <cstdlib>
@@ -31,8 +33,6 @@
 
 class Bdate;
 class THaScalerDB;
-class THaCodaFile;
-class THaEvData;
 class TDatime;
 
 class THaScaler : public TObject {
