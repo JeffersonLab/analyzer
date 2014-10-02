@@ -186,8 +186,14 @@ void GenScaler::DoPrint() {
 }
 
 void GenScaler::DebugPrint(ofstream *file) {
-  if (!file) return;
-  *file<<"----  Data ---- "<<fWordsExpect<<endl;
+  if (!file) return; 
+  *file << "GenScaler::   crate "<<fCrate<<"   slot "<<fSlot<<endl;
+  *file << "GenScaler::   Header 0x"<<hex<<fHeader<<"    Mask  0x"<<fHeaderMask<<dec<<endl;
+  *file << "num words expected  "<<fWordsExpect<<endl;
+  if (fHasClock) *file << "Has a clock"<<endl;
+  if (fNormScaler) *file << "Using norm scaler with ptr = "<<fNormScaler << endl;
+  *file << "Clock channel "<<fClockChan<<"   clock rate "<<fClockRate<<endl;
+  *file<<"  ----   Data  ---- "<<fWordsExpect<<endl;
   *file<<"Data now   //   previous    //   rate  "<<endl;
   for (Int_t i=0; i<fWordsExpect; i++) {
      *file << "  0x"<<hex<<fDataArray[i]<<"   0x"<<fPrevData[i]<<dec<<"   "<<fRate[i]<<endl;
