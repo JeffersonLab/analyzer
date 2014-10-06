@@ -30,7 +30,6 @@
 #include "THaCut.h"
 #include "THaScalerGroup.h"
 #include "THaPhysicsModule.h"
-#include "THaCodaData.h"
 #include "THaPostProcess.h"
 #include "THaBenchmark.h"
 #include "TList.h"
@@ -357,7 +356,7 @@ void THaAnalyzer::InitCounters()
     { kNevPostProcess,     "events post-processed" },
     { kNevAnalyzed,        "physics events analyzed" },
     { kNevAccepted,        "events accepted" },
-    { kEvFileTrunc,        "event file truncated" },
+    { kDecodeErr,          "decoding error" },
     { kCodaErr,            "CODA errors" },
     { kRawDecodeTest,      "skipped after raw decoding" },
     { kDecodeTest,         "skipped after Decode" },
@@ -786,26 +785,31 @@ Int_t THaAnalyzer::ReadOneEvent()
   // Find next event buffer in CODA file. Quit if error.
   Int_t status = fRun->ReadEvent();
   switch( status ) {
-  case S_SUCCESS:
+  case THaRunBase::READ_OK:
     // Decode the event
-    // FIXME: return code mixup with above
     status = fEvData->LoadEvent( fRun->GetEvBuffer() );
-    if( status == THaEvData::HED_OK )
-      status = S_SUCCESS;
-    Incr(kNevRead);
+    switch( status ) {
+    case THaEvData::HED_OK:     // fall through
+    case THaEvData::HED_WARN:
+      status = THaRunBase::READ_OK;
+      Incr(kNevRead);
+      break;
+    case THaEvData::HED_ERR:
+      // Decoding error
+      status = THaRunBase::READ_ERROR;
+      Incr(kDecodeErr);
+      break;
+    case THaEvData::HED_FATAL:
+      status = THaRunBase::READ_FATAL;
+      break;
+    }
     break;
 
-  case EOF:
+  case THaRunBase::READ_EOF:    // fall through
+  case THaRunBase::READ_FATAL:
     // Just exit on EOF - don't count it
     break;
-  case S_EVFILE_TRUNC:
-    Incr(kEvFileTrunc);
-    break;
-  case CODA_ERROR:
-    Incr(kCodaErr);
-    break;
   default:
-    // FIXME: handle unknown errors
     Incr(kCodaErr);
     break;
   }
@@ -1293,7 +1297,7 @@ Int_t THaAnalyzer::Process( THaRunBase* run )
   fBench->Begin("Total");
   
   //--- Re-open the data source. Should succeed since this was tested in Init().
-  if( (status = fRun->Open()) ) {
+  if( (status = fRun->Open()) != THaRunBase::READ_OK ) {
     Error( here, "Failed to re-open the input file. "
 	   "Make sure the file still exists.");
     fBench->Stop("Total");
@@ -1337,14 +1341,14 @@ Int_t THaAnalyzer::Process( THaRunBase* run )
     fRun->Write("Run_Data");  // Save run data to first ROOT file
   }
 
-  while ( !terminate && fNev < nlast && (status = ReadOneEvent()) != EOF ) {
+  while ( !terminate && fNev < nlast &&
+	  (status = ReadOneEvent()) != THaRunBase::READ_EOF ) {
 
-    //--- Skip events.with errors, unless fatal
-    if( status ) {
-      if( status == THaEvData::HED_FATAL )
-	break;
+    //--- Skip events with errors, unless fatal
+    if( status == THaRunBase::READ_FATAL )
+      break;
+    if( status != THaRunBase::READ_OK )
       continue;
-    }
 
     UInt_t evnum = fEvData->GetEvNum();
 
@@ -1435,7 +1439,7 @@ Int_t THaAnalyzer::Process( THaRunBase* run )
   //--- Report statistics
   if( fVerbose>0 ) {
     cout << dec;
-    if( status == EOF )
+    if( status == THaRunBase::READ_EOF )
       cout << "End of file";
     else if ( fNev == nlast )
       cout << "Event limit reached.";

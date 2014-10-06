@@ -1,5 +1,5 @@
-#ifndef ROOT_VarDef
-#define ROOT_VarDef
+#ifndef Podd_VarDef
+#define Podd_VarDef
 
 //////////////////////////////////////////////////////////////////////////
 //
@@ -7,7 +7,7 @@
 //
 // Structures for calls to THaVarList::DefineVariables() and derived
 // functions.
-// 
+//
 // Also defines structure for THaAnalysisModule::LoadDB().
 //
 //////////////////////////////////////////////////////////////////////////
@@ -27,14 +27,6 @@ struct RVarDef {
   const char*      name;     // Variable name
   const char*      desc;     // Variable description
   const char*      def;      // Definition of data (data member or method name)
-};
-
-struct TagDef {
-  const char*      name;     // Key name
-  void*            var;      // Destination of result (default to Double*)
-  Int_t            fatal;    // optional: Error to return if tag not found (0=ignore)
-  UInt_t           expected; // optional: number of elements to write/read (0/1 scaler)
-  VarType          type;     // optional(default kDouble): data type (kInt, etc.)
 };
 
 struct DBRequest {

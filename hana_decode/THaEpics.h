@@ -66,7 +66,7 @@ public:
 // Get tagged string value nearest 'event'
    std::string GetString (const char* tag, int event=0) const;
    Double_t GetTimeStamp(const char* tag, int event=0) const;
-   int LoadData (const int* evbuffer, int event=0);  // load the data
+   int LoadData (const UInt_t* evbuffer, int event=0);  // load the data
    Bool_t IsLoaded(const char* tag) const;
    void Print();
 

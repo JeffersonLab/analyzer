@@ -112,6 +112,9 @@ public:
     }
     return 0;  
   };
+  Double_t Eval(const TString& input) {
+    return Eval(string(input.Data()));
+  }
   const string& GetName() { return fName; };
 private:
   string fName;

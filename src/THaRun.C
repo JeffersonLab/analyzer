@@ -122,13 +122,13 @@ Int_t THaRun::Open()
 
   if( fFilename.IsNull() ) {
     Error( here, "CODA file name not set. Cannot open the run." );
-    return -2;  // filename not set
+    return READ_FATAL;  // filename not set
   }
   
   Int_t st = fCodaData->codaOpen( fFilename );
   if( st == 0 )
     fOpened = kTRUE;
-  return st;
+  return ReturnCode( st );
 }
 
 //_____________________________________________________________________________
@@ -150,7 +150,7 @@ Int_t THaRun::ReadInitInfo()
 
   // If pre-scanning of the data file requested, read up to fMaxScan events
   // and extract run parameters from the data.
-  Int_t status = S_SUCCESS;
+  Int_t status = READ_OK;
   if( fMaxScan > 0 ) {
     if( fSegment == 0 ) {
       THaEvData* evdata = static_cast<THaEvData*>(gHaDecoder->New());
@@ -159,7 +159,7 @@ Int_t THaRun::ReadInitInfo()
       evdata->EnableHelicity(kFALSE);
       UInt_t nev = 0;
       while( nev<fMaxScan && !HasInfo(fDataRequired) && 
-	     (status = ReadEvent()) == S_SUCCESS ) {
+	     (status = ReadEvent()) == READ_OK ) {
 
 	// Decode events. Skip bad events.
 	nev++;
@@ -168,10 +168,10 @@ Int_t THaRun::ReadInitInfo()
 	  if( status == THaEvData::HED_ERR ||
 	      status == THaEvData::HED_FATAL ) {
 	    Error( here, "Error decoding event %u", nev );
-	    return S_FAILURE;
+	    return READ_ERROR;
 	  }
 	  Warning( here, "Skipping event %u due to warnings", nev );
-	  status = S_SUCCESS;
+	  status = READ_OK;
 	  continue;
 	}
 
@@ -186,7 +186,7 @@ Int_t THaRun::ReadInitInfo()
       }//end while
       delete evdata;
 
-      if( status != S_SUCCESS && status != EOF ) {
+      if( status != READ_OK && status != READ_EOF ) {
 	Error( here, "Error %d reading CODA file %s. Check file permissions.",
 	       status, GetFilename());
 	return status;

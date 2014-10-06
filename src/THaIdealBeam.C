@@ -62,14 +62,16 @@ Int_t THaIdealBeam::ReadRunDatabase( const TDatime& date )
 
   Double_t x = 0.0, y = 0.0, th = 0.0, ph = 0.0;
 
-  const TagDef tags[] = {
-    { "x",     &x },
-    { "y",     &y },
-    { "theta", &th },
-    { "phi",   &ph },
+  const DBRequest req[] = {
+    { "x",     &x,  kDouble, 0, 1 },
+    { "y",     &y,  kDouble, 0, 1 },
+    { "theta", &th, kDouble, 0, 1 },
+    { "phi",   &ph, kDouble, 0, 1 },
     { 0 }
   };
-  LoadDB( file, date, tags, fPrefix );
+  err = LoadDB( file, date, req );
+  if( err )
+    return kInitError;
 
   fPosition.SetXYZ( x, y, 0.0 );
 

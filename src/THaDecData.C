@@ -162,7 +162,7 @@ Int_t THaDecData::DefineLocType( const BdataLoc::BdataLocType& loctype,
 {
   // Define variables for given loctype using parameters in configstr
 
-  const char* const here = __FUNCTION__;
+  const char* const here = "DefineLocType";
 
   Int_t err = 0;
 

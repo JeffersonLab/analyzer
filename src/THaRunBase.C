@@ -274,7 +274,7 @@ Int_t THaRunBase::Init()
   // again later.
   Close();
 
-  if( retval != S_SUCCESS && retval != EOF )
+  if( retval != READ_OK && retval != READ_EOF )
     return retval;
 
   if( !HasInfo(fDataRequired) ) {
@@ -296,7 +296,7 @@ Int_t THaRunBase::Init()
     errtxt += ". Run not initialized.";
     Error( here, "%s", errtxt.Data() );
 
-    return 255;
+    return READ_FATAL;
   }
 
   // Read the database to obtain additional parameters that are not set
@@ -306,7 +306,7 @@ Int_t THaRunBase::Init()
     return retval;
 
   fIsInit = kTRUE;
-  return 0;
+  return READ_OK;
 }
 
 //_____________________________________________________________________________
@@ -365,12 +365,12 @@ Int_t THaRunBase::ReadDatabase()
   if( !fParam ) {
     Error( here, "No run parameter object defined!?! "
 	   "Something is very wrong." );
-    return -255;
+    return READ_FATAL;
   }
   TDatime undef(UNDEFDATE,0);
   if( fDate == undef ) {
     Error( here, "Run date undefined. Cannot read database without a date." );
-    return -254;
+    return READ_FATAL;
   }
 
   Int_t st = fParam->ReadDatabase(fDate);
@@ -378,7 +378,7 @@ Int_t THaRunBase::ReadDatabase()
     return st;
 
   fDBRead = true;
-  return 0;
+  return READ_OK;
 }
   
 //_____________________________________________________________________________
@@ -394,7 +394,7 @@ Int_t THaRunBase::ReadInitInfo()
   if( !fAssumeDate )
     Error( "ReadInitInfo", "Run date not set." );
 
-  return 0;
+  return READ_OK;
 }
 
 //_____________________________________________________________________________

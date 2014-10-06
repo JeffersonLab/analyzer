@@ -169,11 +169,13 @@ public:
     { return Define( name, name, var, count ); }
 
   virtual THaVar*  DefineByType( const char* name, const char* desc,
-				 const void* loc, VarType type, 
-				 const Int_t* count );
+				 const void* loc, VarType type,
+				 const Int_t* count,
+				 const char* errloc = "DefineByType" );
   virtual THaVar*  DefineByRTTI( const TString& name, const TString& desc,
 				 const TString& def, const void* const obj,
-				 TClass* const cl, const char* errloc="" );
+				 TClass* const cl,
+				 const char* errloc = "DefineByRTTI" );
   virtual Int_t    DefineVariables( const VarDef* list, 
 				    const char* prefix="",
 				    const char* caller="" );

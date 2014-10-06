@@ -98,7 +98,7 @@ void THaUsrstrutils::getflagpos_instring(const char *constr, const char *s,
   return;
 }
   
-void THaUsrstrutils::string_from_evbuffer(const int *evbuffer, int nlen )
+void THaUsrstrutils::string_from_evbuffer(const UInt_t* evbuffer, int nlen )
 {
 // Routine string_from_evbuffer loads the configstr from the event buffer.
 // It has the same strengths and weaknesses as the DAQ code,

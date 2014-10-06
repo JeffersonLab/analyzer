@@ -122,7 +122,7 @@ Int_t THaEpics::FindEvent(const vector<EpicsChan>& ep, int event) const
 }
         
 
-int THaEpics::LoadData(const int* evbuffer, int evnum)
+int THaEpics::LoadData(const UInt_t* evbuffer, int evnum)
 { 
   // load data from the event buffer 'evbuffer' 
   // for event nearest 'evnum'.

@@ -38,6 +38,12 @@ THaDetector::~THaDetector()
 }
 
 //_____________________________________________________________________________
+THaApparatus* THaDetector::GetApparatus() const
+{
+  return static_cast<THaApparatus*>(fApparatus.GetObject());
+}
+
+//_____________________________________________________________________________
 void THaDetector::SetApparatus( THaApparatus* apparatus )
 {
   // Associate this detector with the given apparatus.
@@ -54,14 +60,12 @@ void THaDetector::SetApparatus( THaApparatus* apparatus )
 //_____________________________________________________________________________
 void THaDetector::MakePrefix()
 {
-  // Set up name prefix for global variables. Internal function called 
+  // Set up name prefix for global variables. Internal function called
   // during initialization.
 
-  const char* basename = NULL;
   THaApparatus *app = GetApparatus();
-  if( app )
-    basename = app->GetName();
+  const char* basename = (app != 0) ? app->GetName() : 0;
   THaDetectorBase::MakePrefix( basename );
 
 }
-  
+

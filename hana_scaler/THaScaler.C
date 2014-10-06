@@ -425,7 +425,7 @@ Int_t THaScaler::LoadData(const THaEvData& evdata) {
 // Load data from THaEvData object.  Return of 0 is ok.
 // Note: GetEvBuffer is no faster than evdata.Get...
   static int ldebug = 0;
-  static Int_t data[2*SCAL_NUMBANK*SCAL_NUMCHAN+100];
+  static UInt_t data[2*SCAL_NUMBANK*SCAL_NUMCHAN+100];
   new_load = kFALSE;
   Int_t nlen = 0;
   if (evstr_type == 1) {  // data in the event stream (physics triggers)
@@ -477,15 +477,15 @@ Int_t THaScaler::LoadDataCodaFile(THaCodaFile *codafile) {
   Int_t dodump=0;
   Int_t ldebug=0;
   Int_t MAXLEN=5000;
-  Int_t databuff[MAXLEN];
+  UInt_t databuff[MAXLEN];
   if (CheckInit() == SCAL_ERROR) return SCAL_ERROR;
   int codastat, extstat;
   found_crate = kFALSE;
-  codastat = 0;
-  while (codastat == 0) {
+  codastat = CODA_OK;
+  while (codastat == CODA_OK) {
     codastat = codafile->codaRead();  
-    if (codastat < 0) return 0;
-    const Int_t *data = codafile->getEvBuffer();
+    if (codastat != CODA_OK ) return 0;
+    const UInt_t* data = codafile->getEvBuffer();
     int evlen = data[0]+1;
     int evtype = data[1]>>16;
     int evnum = data[4];
@@ -551,7 +551,7 @@ Int_t THaScaler::LoadDataCodaFile(THaCodaFile *codafile) {
   return 0;
 };
 
-Int_t THaScaler::ExtractRaw(const Int_t* data, int dlen) {
+Int_t THaScaler::ExtractRaw(const UInt_t* data, int dlen) {
 // Extract rawdata from data if this event belongs to this scaler crate.
 // This works for CODA event data or VME data format but not 
 // for scaler history file (strings).
