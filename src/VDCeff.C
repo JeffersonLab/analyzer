@@ -34,9 +34,6 @@
 
 using namespace std;
 
-typedef vector<Short_t>::iterator Vsiter_t;
-typedef vector<VDCeff::VDCvar_t>::iterator variter_t;
-
 const TString nhit_suffix( "nhit" );
 const TString eff_suffix(  "eff" );
 
