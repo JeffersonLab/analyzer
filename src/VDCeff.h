@@ -46,6 +46,9 @@ protected:
     void     Reset( Option_t* opt ="" );
   };
 
+  typedef std::vector<Short_t>::iterator Vsiter_t;
+  typedef std::vector<VDCvar_t>::iterator variter_t;
+
   // Internal working storage
   std::vector<VDCvar_t>  fVDCvar;
   std::vector<Short_t>   fWire;
