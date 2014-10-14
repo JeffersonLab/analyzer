@@ -63,7 +63,7 @@ MCHitInfo SimDecoder::GetMCHitInfo( Int_t crate, Int_t slot, Int_t chan ) const
   return MCHitInfo();
 }
 
-//-----------------------------------------------------------------------------
+//_____________________________________________________________________________
 Int_t SimDecoder::DefineVariables( THaAnalysisObject::EMode mode )
 {
   // Define generic global variables. Derived classes may override or extend
@@ -134,6 +134,40 @@ Int_t SimDecoder::DefineVariables( THaAnalysisObject::EMode mode )
 }
 
 //_____________________________________________________________________________
+MCTrack::MCTrack( Int_t number, Int_t pid, Double_t weight,
+		  const TVector3& vertex, const TVector3& momentum )
+  : fNumber(number), fPID(pid), fWeight(weight), fOrigin(vertex),
+    fMomentum(momentum), fNHits(0), fNHitsFound(0),
+    fReconFlags(0), fContamFlags(0), fMatchval(KBIG), fFitRank(-1),
+    fTrackRank(-1)
+{
+  memset( fMCFitPar, 0, NFP*sizeof(fMCFitPar[0]) );
+  memset( fRcFitPar, 0, NFP*sizeof(fRcFitPar[0]) );
+}
+
+//_____________________________________________________________________________
+MCTrack::MCTrack()
+  : fNumber(0), fPID(0), fWeight(1.0), fNHits(0), fNHitsFound(0),
+    fReconFlags(0), fContamFlags(0), fMatchval(KBIG), fFitRank(-1),
+    fTrackRank(-1)
+{
+  memset( fMCFitPar, 0, NFP*sizeof(fMCFitPar[0]) );
+  memset( fRcFitPar, 0, NFP*sizeof(fRcFitPar[0]) );
+}
+
+//_____________________________________________________________________________
+void MCTrack::Print( const Option_t* /*opt*/ ) const
+{
+  // Print MCTrack info
+
+  cout << "track: num = " << fNumber
+       << ", PID = " << fPID
+       << endl;
+  cout << "  Origin    = ";  fOrigin.Print();
+  cout << "  Momentum  = ";  fMomentum.Print();
+}
+
+//_____________________________________________________________________________
 void MCHitInfo::MCPrint() const
 {
   // Print MC digitized hit info
@@ -185,5 +219,7 @@ void MCTrackPoint::Print( Option_t* ) const
 
 } // end namespace Podd
 
-ClassImp(Podd::SimDecoder)
 ClassImp(Podd::MCHitInfo)
+ClassImp(Podd::MCTrack)
+ClassImp(Podd::MCTrackPoint)
+ClassImp(Podd::SimDecoder)

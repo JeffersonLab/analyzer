@@ -28,6 +28,51 @@ extern const char* const MC_PREFIX;
 // Support classes for SimDecoder. These need to be ROOT classes so that
 // CINT doesn't choke on the return values of the respective Get functions
 
+//_____________________________________________________________________________
+// A generic Monte Carlo physics track. fMCTracks must contain either objects
+// of this class or objects that inherit from it
+class MCTrack : public TObject {
+public:
+  MCTrack( Int_t number, Int_t pid, Double_t weight,
+	   const TVector3& vertex, const TVector3& momentum );
+  MCTrack();
+
+  Double_t VX()     { return fOrigin.X(); }
+  Double_t VY()     { return fOrigin.Y(); }
+  Double_t VZ()     { return fOrigin.Z(); }
+  Double_t P()      { return fMomentum.Mag(); }
+  Double_t PTheta() { return fMomentum.Theta(); }
+  Double_t PPhi()   { return fMomentum.Phi(); }
+
+  virtual void Print( const Option_t* opt="" ) const;
+
+  // Physics truth data
+  Int_t    fNumber;        // Track counter
+  Int_t    fPID;           // Track particle ID (PDG)
+  Double_t fWeight;        // Weight factor
+  TVector3 fOrigin;        // Vertex position (m)
+  TVector3 fMomentum;      // Momentum (GeV)
+
+  // Interaction with detector
+  Int_t    fNHits;         // Number of hits (typ.: in tracker planes)
+
+  // Reconstruction status (implementation-dependent)
+  Int_t    fNHitsFound;    // Number of reconstructed hits
+  Int_t    fReconFlags;    // Reconstruction status flags
+  Int_t    fContamFlags;   // Flags indicating contaminated fits
+  Double_t fMatchval;      // Projection matchvalue, if applicable
+  Int_t    fFitRank;       // Rank of final track fit (0=best)
+  Int_t    fTrackRank;     // Rank of final track after pruning (0=best)
+
+  // Reconstruction fit quality checks (implementation-dependent)
+  static const Int_t NFP = 16;
+  Double_t fMCFitPar[NFP]; // Results of fit(s) to MC hits
+  Double_t fRcFitPar[NFP]; // Results of fit(s) to reconstructed hits
+
+  ClassDef(MCTrack,1)  // A MC physics track
+};
+
+//_____________________________________________________________________________
 // Track points typically are hits of the physics tracks (recorded in fMCTracks)
 // recorded in tracker planes. They are stored for every track and can be
 // exported as global variables. This is opposed to MCHitInfo, which is the
@@ -54,6 +99,7 @@ public:
   ClassDef(MCHitInfo,1)  // Generic Monte Carlo hit info
 };
 
+//_____________________________________________________________________________
 // A MC physics track's interaction point at a tracker plane in the lab system.
 class MCTrackPoint : public TObject {
 public:
@@ -99,6 +145,7 @@ public:
   ClassDef(MCTrackPoint,1)  // Monte Carlo track interaction coordinates
 };
 
+//_____________________________________________________________________________
 // Simulation decoder class
 class SimDecoder : public THaEvData {
  public:
