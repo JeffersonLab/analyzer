@@ -16,6 +16,9 @@ namespace Podd {
 // Prefix of our own global variables (MC truth data)
 const char* const MC_PREFIX = "MC.";
 
+// Default half-size of search window for reconstructed hits (m)
+Double_t MCTrackPoint::fgWindowSize = 1e-2;
+
 //_____________________________________________________________________________
 SimDecoder::SimDecoder() : fMCHits(0), fMCTracks(0), fIsSetup(false)
 {
@@ -137,7 +140,7 @@ Int_t SimDecoder::DefineVariables( THaAnalysisObject::EMode mode )
 MCTrack::MCTrack( Int_t number, Int_t pid, Double_t weight,
 		  const TVector3& vertex, const TVector3& momentum )
   : fNumber(number), fPID(pid), fWeight(weight), fOrigin(vertex),
-    fMomentum(momentum), fNHits(0), fNHitsFound(0),
+    fMomentum(momentum), fNHits(0), fHitBits(0), fNHitsFound(0), fFoundBits(0),
     fReconFlags(0), fContamFlags(0), fMatchval(KBIG), fFitRank(-1),
     fTrackRank(-1)
 {
@@ -147,9 +150,9 @@ MCTrack::MCTrack( Int_t number, Int_t pid, Double_t weight,
 
 //_____________________________________________________________________________
 MCTrack::MCTrack()
-  : fNumber(0), fPID(0), fWeight(1.0), fNHits(0), fNHitsFound(0),
-    fReconFlags(0), fContamFlags(0), fMatchval(KBIG), fFitRank(-1),
-    fTrackRank(-1)
+  : fNumber(0), fPID(0), fWeight(1.0), fNHits(0), fHitBits(0), fNHitsFound(0),
+    fFoundBits(0), fReconFlags(0), fContamFlags(0), fMatchval(KBIG),
+    fFitRank(-1), fTrackRank(-1)
 {
   memset( fMCFitPar, 0, NFP*sizeof(fMCFitPar[0]) );
   memset( fRcFitPar, 0, NFP*sizeof(fRcFitPar[0]) );
@@ -173,7 +176,7 @@ void MCHitInfo::MCPrint() const
   // Print MC digitized hit info
 
   cout << " MCtrack = " << fMCTrack
-       << ", MCpos = " << fMCPos
+       << ", MCpos = "  << fMCPos
        << ", MCtime = " << fMCTime
        << ", num_bg = " << fContam
        << endl;
