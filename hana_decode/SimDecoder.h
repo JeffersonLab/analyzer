@@ -135,12 +135,12 @@ public:
   enum { kDigitized      = 0,  // Digitized (signal in electronics)
 	 kFound          = 1,  // Hit found in search window
 	 kCorrectFound   = 2,  // Found hit from the correct MC track
-	                           // (not necessarily closest or in window)
+	                       // (not necessarily closest or in window)
 	 kCorrectClosest = 3,  // Correct hit is also the closest and in window
-	 kCorrectFarAway = 4,  // Correct hit lies outside of search window!
-	 kContaminated   = 5,  // Correct hit contains background
-	 kWrongTrack     = 6,  // Closest hit is from wrong MC track
-	 kUsedInTrack    = 7   // Correct hit used in a final track
+	 kContaminated   = 4,  // Correct hit contains background
+	 kUsedInTrack    = 5,  // Correct hit used in a final track
+	 kCorrectFarAway = 6,  // Correct hit lies outside of search window!
+	 kWrongTrack     = 7   // Closest hit is from wrong MC track
   };
 
   Int_t    fMCTrack;  // MC track number generating this point

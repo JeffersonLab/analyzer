@@ -17,7 +17,7 @@ namespace Podd {
 const char* const MC_PREFIX = "MC.";
 
 // Default half-size of search window for reconstructed hits (m)
-Double_t MCTrackPoint::fgWindowSize = 1e-2;
+Double_t MCTrackPoint::fgWindowSize = 1e-3;
 
 //_____________________________________________________________________________
 SimDecoder::SimDecoder() : fMCHits(0), fMCTracks(0), fIsSetup(false)
