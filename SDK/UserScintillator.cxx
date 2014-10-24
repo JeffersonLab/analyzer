@@ -83,7 +83,9 @@ Int_t UserScintillator::ReadDatabase( const TDatime& date )
 {
   // Read this detector's parameters from the database.
   // We use the same database file as the base class and
-  // search for our own tagged entries, presumably appended at the end.
+  // search for our own keys
+
+  const char* const here = "ReadDatabase";
 
   // Now read the database file
   // First read base class parameters
@@ -92,41 +94,46 @@ Int_t UserScintillator::ReadDatabase( const TDatime& date )
     return ret;
 
   // Read our parameters. For detailed comments, see UserDetector.cxx.
-  FILE* fi = OpenFile( date );
-  if( !fi ) return kFileError;
-  
+  FILE* file = OpenFile( date );
+  if( !file ) return kFileError;
+
   // Storage and default values for data from database
-  // Note: At present, these must be Double_t
   fC = fTDCscale = 0.0;
-  Double_t stop = 0.0;
+  Int_t stop = 0;
 
-  // Set up table of tags to read and locations to store values.
-  const TagDef tags[] = { 
-    { "c",        &fC, 1 },        // Speed of light in medium
-    { "tdcscale", &fTDCscale, 2 }, // TDC scale (ns/chan)
-    { "stop",     &stop, 3 },      // Common stop mode (1=yes)
-    { 0 }                          // Last element must be NULL
-  };
-  // Read the tags.
-  Int_t err = LoadDB( fi, date, tags );
+  // Read the database. This may throw exceptions, so we put it in a try block.
+  Int_t err = 0;
+  try {
+    // Set up an array of database requests. See VarDef.h for details.
+    const DBRequest request[] = {
+      { "c",        &fC },           // Speed of light in medium
+      { "tdcscale", &fTDCscale },    // TDC scale (ns/chan)
+      { "stop",     &stop, kInt },   // Common stop mode (1=yes)
+      { 0 }                          // Last element must be NULL
+    };
 
-  // Complain and quit if any required values missing.
-  if( err ) {    
-    if( err>0 )
-      Error( Here("ReadDatabase"), "Required tag %s missing in the "
-	     "database.\nDetector initialization failed.",
-	     tags[err-1].name );
-    fclose(fi);
-    return kInitError;
+    // Read the requested values
+    err = LoadDB( file, date, request );
   }
-  // Convert non-Double_t data types
-  fCommonStop = (stop != 0.0);
+  // Catch exceptions here so that we can close the file and clean up
+  catch(...) {
+    fclose(file);
+    throw;
+  }
+
+  // Normal end of reading the database
+  fclose(file);
+  if( err != kOK )
+    return err;
+
+  // Convert data types
+  fCommonStop = (stop != 0);
 
   // Check if all paramaters ok. This is just an example that allows this
   // class to work even with non-spectrometer apparatuses and incomplete
   // databases. Alternatively, one could return an init error to force the
   // user to do more sane stuff and/or fix the database.
-  bool have_spectro = GetApparatus() != NULL 
+  bool have_spectro = GetApparatus() != 0
     && GetApparatus()->IsA()->InheritsFrom("THaSpectrometer");
   fGoodToGo = have_spectro && fSize[0]!=0.0 && fNelem>0;
 
@@ -134,19 +141,24 @@ Int_t UserScintillator::ReadDatabase( const TDatime& date )
 }
 
 //_____________________________________________________________________________
-Int_t UserScintillator::Decode( const THaEvData& evdata )
+void UserScintillator::Clear( Option_t* )
 {
-  // Decode the UserScintillator. The decoding is actually done in
-  // the base class THaScintillator. Here we implement just one extension,
-  // clearing of our own member variables (since ClearEvent() is not virtual).
-  // Any additional processing needed at the Decode() stage should be done
-  // here as well.
+  // Reset per-event data
 
   fPaddle = -255;
   fYtdc = fYtrk = kBig;
-
-  return THaScintillator::Decode(evdata);
 }
+
+//_____________________________________________________________________________
+// Int_t UserScintillator::Decode( const THaEvData& evdata )
+// {
+  // Decode the UserScintillator. For our purposes, the basic decoding done
+  // in the base class THaScintillator is sufficient.
+  //
+  // Add any additional processing needed at the Decode() stage here.
+
+//   return THaScintillator::Decode(evdata);
+// }
 
 //_____________________________________________________________________________
 Int_t UserScintillator::FineProcess( TClonesArray& tracks )
@@ -158,6 +170,8 @@ Int_t UserScintillator::FineProcess( TClonesArray& tracks )
 
   // Call the base class method to do the standard work first:
   Int_t ret = THaScintillator::FineProcess(tracks);
+  if( ret )
+    return ret;
 
   // Now here go the extensions ...
 
@@ -165,10 +179,12 @@ Int_t UserScintillator::FineProcess( TClonesArray& tracks )
   Int_t n_track = tracks.GetLast()+1;
   // No tracks, bad init or bad parameters? If so, can't do anything here
   if( !(n_track > 0 && IsOK() && fGoodToGo))
-    return ret;
+    // Return codes are currently ignored, but for consistency use 0 if OK
+    // and non-zero for errors
+    return 1;
 
-  // Get the Golden Track 
-  THaTrack* theTrack = 
+  // Get the Golden Track
+  THaTrack* theTrack =
     static_cast<THaSpectrometer*>(GetApparatus())->GetGoldenTrack();
 
   // Determine the paddle number using the focal plane coordinates
@@ -178,25 +194,26 @@ Int_t UserScintillator::FineProcess( TClonesArray& tracks )
   double fpe_th = theTrack->GetTheta();
   double fpe_y  = theTrack->GetY();
   double fpe_ph = theTrack->GetPhi();
-  double x = ( fpe_x + fpe_th * fOrigin.Z() ) / 
-    ( cos_angle * (1.0 + fpe_th * tan_angle ) );
+  double cos_angle = fXax.X(), sin_angle = fXax.Z();
+  double x = ( fpe_x + fpe_th * fOrigin.Z() ) /
+    ( cos_angle + fpe_th * sin_angle );
   // transverse position from track data
   fYtrk = fpe_y + fpe_ph * fOrigin.Z() - fpe_ph * sin_angle * x;
 
   fPaddle = (Int_t) TMath::Floor((x+fSize[0])/fSize[0]/2*fNelem);
   // Mark garbage as invalid
-  if(fPaddle <0 || fPaddle >= fNelem) 
+  if(fPaddle <0 || fPaddle >= fNelem)
     fPaddle = -255;
 
   // Compute y-position from TDC data if possible
   else {
     if( fCommonStop )
-      fYtdc = (fC*.30*fTDCscale*(fRT_c[fPaddle]-fLT_c[fPaddle])+2*fSize[1])/2; 
+      fYtdc = (fC*.30*fTDCscale*(fRT_c[fPaddle]-fLT_c[fPaddle])+2*fSize[1])/2;
     else
       fYtdc = (fC*.30*fTDCscale*(fLT_c[fPaddle]-fRT_c[fPaddle])+2*fSize[1])/2;
   }
 
-  return ret;
+  return 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
