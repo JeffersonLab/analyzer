@@ -14,32 +14,27 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "UserDetector.h"
+#include "VarDef.h"
 #include "THaEvData.h"
 #include "THaDetMap.h"
-#include "VarDef.h"
-#include "VarType.h"
+#include "TMath.h"
+// Needed in CoarseProcess/FineProcess if implemented
 #include "THaTrack.h"
 #include "TClonesArray.h"
-#include "TMath.h"
-#include "TString.h"
 
-// stringstreams are a bit messy due to varying standards compliance 
-// of compilers. The following is needed only for ReadDatabase.
-#if defined(HAS_SSTREAM) || (defined(__GNUC__)&&(__GNUC__ >= 3))
-#include <sstream>
-#define ISTR istringstream
-#else
-#include <strstream>
-#define ISTR istrstream
-#endif
-// end of mess
+#include <cassert>
+#include <iostream>
 
 using namespace std;
 
+// Constructors should initialize all basic-type member variables to safe
+// default values. In particular, all pointers should be either zeroed or
+// assigned valid data.
 //_____________________________________________________________________________
 UserDetector::UserDetector( const char* name, const char* description,
-				  THaApparatus* apparatus ) :
-  THaNonTrackingDetector(name,description,apparatus)
+				  THaApparatus* apparatus )
+  : THaNonTrackingDetector(name,description,apparatus),
+    fNhit(0), fRawADC(0), fCorADC(0)
 {
   // Constructor
 }
@@ -50,8 +45,8 @@ UserDetector::~UserDetector()
   // Destructor. Remove variables from global list.
 
   RemoveVariables();
-  if( fIsInit )
-    DeleteArrays();
+  delete [] fRawADC;
+  delete [] fCorADC;
 }
 
 //_____________________________________________________________________________
@@ -66,153 +61,152 @@ Int_t UserDetector::ReadDatabase( const TDatime& date )
   // author of the detector class. Here, we use tag/value pairs to allow
   // for a free file format.
 
-  static const char* const here = "ReadDatabase";
+  const char* const here = "ReadDatabase";
 
   // Open the database file
   // NB: OpenFile() is in THaAnalysisObject. It will try to open a database
   // file named db_<fPrefix><fName>.dat (fPrefix is in THaAnalysisObject
   // and is typically the name of the apparatus containing this detector;
   // fName is the name of this object in TNamed).
-  FILE* fi = OpenFile( date );
-  if( !fi ) return kFileError;
+  FILE* file = OpenFile( date );
+  if( !file ) return kFileError;
 
-  // Storage and default values for data from database
-  // Note: These must be Double_t
-  Double_t nelem = 0.0, angle = 0.0;
+  // Storage and default values for data from database. To prevent memory
+  // leaks when re-initializing, all dynamically allocated memory should
+  // be deleted here, and the corresponding variables should be zeroed.
+  // All vectors should be cleared unless they are required database
+  // parameters. (If an optional parameter is not found in the database,
+  // its value remains unchanged.)
+  Int_t nelem = 0;
+  Double_t angle = 0.0;
+  fPed.clear();
+  fGain.clear();
 
-  // Set up a table of tags to read and locations to store values.
-  // If the optional third element of a line is non-zero, the item is required.
-  // This method works for scalar numerical values only. 
-  // See below for how to read arrays and strings.
-  const TagDef tags[] = { 
-    { "nelem", &nelem, 1 },       // Number of elements (e.g. PMTs)
-    { "angle", &angle },          // Rotation angle about y (degrees)
-    { 0 }                         // Last element must be NULL
-  };
+  // The detector map.
+  // This is a matrix of numerical values. Multiple lines are allowed.
+  // The format is:
+  //  detmap  <crate1> <slot1> <first channel1> <last channel1> <first logical ch1>
+  //          <crate2> <slot2> <first channel2> <last channel2> <first logical ch2>
+  //  etc.
+  // The "first logical channel" is the one assigned to the first hardware channel.
+  vector<Int_t> detmap;
 
-  // Read all the tag/value pairs. 
-  // NB: LoadDB() is in THaAnalysisObject
-  Int_t err = LoadDB( fi, date, tags );
+  // Read the database. This may throw exceptions, so we put it in a try block.
+  Int_t err = 0;
+  try {
+    // Set up an array of database requests. See VarDef.h for details.
+    const DBRequest request[] = {
+      // Required items
+      { "detmap",    &detmap, kIntV },         // Detector map
+      { "nelem",     &nelem,  kInt },          // Number of elements (e.g. PMTs)
+      // Optional items
+      { "angle",     &angle,  kDouble, 0, 1 }, // Rotation angle about y (deg)
+      { "pedestals", &fPed,   kFloatV, 0, 1 }, // Pedestals
+      { "gains",     &fGain,  kFloatV, 0, 1 }, // Gains
+      { 0 }                                    // Last element must be NULL
+    };
 
-  // Complain and quit if any required values missing.
-  if( err ) {    
-    if( err>0 )
-      Error( Here(here), "Required tag %s%s missing in the "
-	     "database.\nDetector initialization failed.",
-	     fPrefix, tags[err-1].name );
-    fclose(fi);
-    return kInitError;
+    // Read the requested values
+    err = LoadDB( file, date, request );
+
+    // If no error, parse the detector map. See THaDetMap::Fill for details.
+    if( err == kOK ) {
+      if( FillDetMap( detmap, THaDetMap::kFillLogicalChannel, here ) == 0 ) {
+	err = kInitError;
+      }
+    }
   }
-  
-  // Check nelem for sanity
-  if( nelem <= 0.0 ) {
+  // Catch exceptions here so that we can close the file and clean up
+  catch(...) {
+    fclose(file);
+    throw;
+  }
+
+  // Normal end of reading the database
+  fclose(file);
+  if( err != kOK )
+    return err;
+
+  // Check all configuration values for sanity. This is the more tedious, but
+  // nevertheless very important part of reading the database. In addition to
+  // simple checking, this part may also include computation of derived
+  // configuration parameters, for instance an allowed hitpattern or
+  // geometry limits. See the call to DefineAxes below as an example.
+  if( nelem <= 0 ) {
     Error( Here(here), "Cannot have zero or negative number of elements. "
-	   "Detector initialization failed." );
-    fclose(fi);
+	   "Fix database." );
     return kInitError;
   }
+  if( nelem > 100 ) {
+    Error( Here(here), "Illegal number of elements = %d. Must be <= 100. "
+	   "Fix database.", nelem );
+    return kInitError;
+  }
+
   // If the detector is already initialized, the number of elements must not
   // change. This prevents problems with global variables that
   // point to memory that is dynamically allocated.
   // Resizing a detector is hardly ever necessary for a given analysis,
   // so this catches database errors and simplifies the design of this class.
   if( fIsInit && nelem != fNelem ) {
-    Error( Here(here), "Cannot re-initalize with different number of paddles. "
+    Error( Here(here), "Cannot re-initalize with different number of elements. "
 	   "(was: %d, now: %d). Detector not re-initialized.", fNelem, nelem );
-    fclose(fi);
     return kInitError;
   }
 
   // All ok - store nelem
-  fNelem = int(nelem);
-  
-  // Use the rotation angle to set the axes vectors 
+  fNelem = nelem;
+
+  // Check detector map size. We assume that each detector element (e.g. paddle)
+  // has exactly one hardware channel. This could be different, e.g. if each PMT
+  // is read by an ADC and a TDC, etc. Modify as appropriate.
+  Int_t nchan = fDetMap->GetTotNumChan();
+  if( nchan != nelem ) {
+    Error( Here(here), "Incorrect number of detector map channels = %d. Must "
+	   "equal nelem = %d. Fix database.", nchan, nelem );
+    return kInitError;
+  }
+
+  // Check if the sizes of the arrays we read make sense.
+  // NB: If we have an empty vector here, there was no database entry for it.
+  if( !fPed.empty() && fPed.size() != static_cast<Vflt_t::size_type>(nelem)) {
+    Error( Here(here), "Incorrect number of pedestal values = %d. Must match "
+	   "nelem = %d. Fix database.",
+	   static_cast<Int_t>(fPed.size()), nelem );
+    return kInitError;
+  }
+  if( !fGain.empty() && fGain.size() != static_cast<Vflt_t::size_type>(nelem)) {
+    Error( Here(here), "Incorrect number of gain values = %d. Must match "
+	   "nelem = %d. Fix database.",
+	   static_cast<Int_t>(fGain.size()), nelem );
+    return kInitError;
+  }
+
+  // If any of the arrays were not given in the database, set them to defaults:
+  // Pedestals default to zero, gains to 1.0.
+  if( fPed.empty() )
+    fPed.assign( nelem, 0.0 );
+  if( fGain.empty() )
+    fGain.assign( nelem, 1.0 );
+
+  // Use the rotation angle to set the axes vectors
   // (required for display functions, for instance)
-  // NB: DefineAxes is in THaSpectrometerDetector
+  // See THaSpectrometerDetector::DefineAxes for details.
   const Float_t degrad = TMath::Pi()/180.0;
   DefineAxes(angle*degrad);
 
-  // Read arrays (e.g. calibration data). 
-  // First, allocate memory (if not already done)
+  // With analyzer 1.5 and earlier, arrays that are to be exported as global
+  // variables (i.e. event-by-event analysis results) must still be C-style
+  // arrays, not vectors. Set them up here if not already done.
   if( !fIsInit ) {
-    // Calibrations
-    fPed   = new Double_t[ fNelem ];
-    fGain  = new Double_t[ fNelem ];
-
-    // Per-event data
-    fRawADC = new Double_t[ fNelem ];
-    fCorADC = new Double_t[ fNelem ];
+    // Use assertions to check for program logic errors ("should never happen")
+    assert( fRawADC == 0 && fCorADC == 0 );
+    fRawADC = new Float_t[ fNelem ];
+    fCorADC = new Float_t[ fNelem ];
 
     fIsInit = true;
   }
-
-  // To read arrays, we need to read the data as text, then scan the text.
-  // This is kludgy; in the future, there will be full support for arrays.
-  TString line, tag;
-  Int_t retval = kOK;
-  int n;
-
-  // Now read the array data.
-  // We define a structure with the list of the arrays we want to read.
-  // This looks complicated, but allows for easy expansion.
-  struct ArrayInputDef_t {
-    const char* tag;
-    Double_t*   dest;
-    Int_t       nval;
-  };
-  const ArrayInputDef_t adef[] = {
-    { "pedestals", fPed,  fNelem },
-    { "gains"    , fGain, fNelem },
-    { 0 }
-  };
-  const ArrayInputDef_t* item = adef;
-  while( item->tag ) {
-    tag = item->tag;
-    // NB: LoadDBvalue is in THaAnalysisObject
-    if( LoadDBvalue( fi, date, tag, line ) != 0 ) 
-      goto bad_data;
-    ISTR inp(line.Data());
-    for(int i=0; i<item->nval; i++) {
-      inp >> item->dest[i];
-      if( !inp ) 
-	goto bad_data;
-    }
-    item++;
-  }
-
-  // Read detector map
-  // Multiple lines are allowed. The format is:
-  //  detmap_1  <crate> <slot> <first channel> <last channel> <first logical ch>
-  //  detmap_2   dto.
-  //  etc.
-  // The "first logical channel" is the one assigned to the 
-  // first hardware channel, as usual.
-  fDetMap->Clear();
-  n = 1;
-  while(1) {
-    Int_t crate, slot, lo, hi, first;
-    tag = Form("detmap_%d", n);
-    if( LoadDBvalue( fi, date, tag, line ) != 0 )
-      break;
-    ISTR inp(line.Data());
-    inp >> crate >> slot >> lo >> hi >> first;
-    if( !inp )
-      goto bad_data;
-    if( fDetMap->AddModule( crate, slot, lo, hi, first ) < 0 )
-      goto bad_data;
-    n++;
-  }
-  if(n>1)
-    goto done;
-
- bad_data:    
-  Error( Here(here), "Problem reading database entry \"%s\". "
-	 "Detector initialization failed.", tag.Data() );
-  retval = kInitError;
-
- done:
-  fclose(fi);
-  return retval;
+  return kOK;
 }
 
 //_____________________________________________________________________________
@@ -233,25 +227,18 @@ Int_t UserDetector::DefineVariables( EMode mode )
 }
 
 //_____________________________________________________________________________
-void UserDetector::DeleteArrays()
-{
-  // Delete dynamically allocated arrays. Used by destructor.
-
-  delete [] fRawADC; fRawADC = NULL;
-  delete [] fCorADC; fCorADC = NULL;
-}
-
-//_____________________________________________________________________________
 void UserDetector::Clear( Option_t* opt )
 {
   // Reset per-event data.
 
   THaNonTrackingDetector::Clear(opt);
 
-  const int asiz = fNelem*sizeof(Double_t);
   fNhit = 0;
-  memset( fRawADC, 0, asiz );
-  memset( fCorADC, 0, asiz );
+  if( fIsInit ) {
+    assert( fRawADC != 0 && fCorADC != 0 );
+    memset( fRawADC, 0, fNelem*sizeof(Float_t) );
+    memset( fCorADC, 0, fNelem*sizeof(Float_t) );
+  }
 }
 
 //_____________________________________________________________________________
@@ -267,7 +254,7 @@ Int_t UserDetector::Decode( const THaEvData& evdata )
   // Clear event-by-event data
   Clear();
 
-  // Loop over all modules defined in the detector map 
+  // Loop over all modules defined in the detector map
 
   for( Int_t i = 0; i < fDetMap->GetSize(); i++ ) {
     THaDetMap::Module* d = fDetMap->GetModule( i );
@@ -284,14 +271,15 @@ Int_t UserDetector::Decode( const THaEvData& evdata )
       // Get the detector channel number, starting at 0
       Int_t k = chan - d->lo + d->first;
 
-#ifdef WITH_DEBUG      
+      // Always ensure that index values are sane
       if( k<0 || k>=fNelem ) {
+#ifdef WITH_DEBUG
 	// Indicates bad database
 	Warning( Here("Decode()"), "Illegal detector channel: %d", k );
+#endif
 	continue;
       }
-#endif
-      fRawADC[k] = static_cast<Double_t>( data );
+      fRawADC[k] = static_cast<Float_t>( data );
       fCorADC[k] = (fRawADC[k] - fPed[k]) * fGain[k];
       fNhit++;
     }
@@ -315,6 +303,38 @@ Int_t UserDetector::FineProcess( TClonesArray& tracks )
   return 0;
 }
 
+//_____________________________________________________________________________
+static void PrintArray( const Float_t* arr, Int_t size )
+{
+  // Helper function for Print()
+
+  if( size <= 0 ) {
+    cout << "(empty)";
+  } else {
+    for( Int_t i = 0; i < size; ++i ) {
+      cout << arr[i];
+      if( i+1 != size )  cout << ", ";
+    }
+  }
+  cout << endl;
+}
+
+//_____________________________________________________________________________
+void UserDetector::Print( Option_t* opt ) const
+{
+  // Print current configuration
+
+  // It is always a good idea to have a Print method, if only for debugging
+
+  THaDetector::Print(opt);
+  cout << "detmap = "; fDetMap->Print();
+  cout << "nelem = " << fNelem << endl;
+  cout << "pedestals = "; PrintArray( &fPed[0],  fNelem );
+  cout << "gains = ";     PrintArray( &fGain[0], fNelem );
+  cout << "nhits = " << fNhit << endl;
+  cout << "rawadc = ";    PrintArray( fRawADC,   fNelem );
+  cout << "coradc = ";    PrintArray( fCorADC,   fNelem );
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
