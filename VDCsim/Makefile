@@ -50,8 +50,12 @@ endif
 ROOTCFLAGS   := $(shell root-config --cflags)
 ROOTLIBS     := $(shell root-config --libs)
 ROOTGLIBS    := $(shell root-config --glibs)
+ROOTBIN      := $(shell root-config --bindir)
+ROOTINC      := -I$(shell root-config --incdir)
+CXX          := $(shell root-config --cxx)
+CC           := $(shell root-config --cc)
 
-INCLUDES      = $(ROOTCFLAGS) $(addprefix -I, $(INCDIRS) ) -I$(shell pwd)
+INCLUDES      = $(addprefix -I, $(INCDIRS) ) -I$(shell pwd)
 
 USERLIB       = lib$(PACKAGE).so
 USERDICT      = $(PACKAGE)Dict
@@ -59,9 +63,9 @@ USERDICT      = $(PACKAGE)Dict
 LIBS          = 
 GLIBS         = 
 
+
 ifeq ($(ARCH),solarisCC5)
 # Solaris CC 5.0
-CXX           = CC
 ifdef DEBUG
   CXXFLAGS    = -g
   LDFLAGS     = -g
@@ -76,7 +80,6 @@ endif
 
 ifeq ($(ARCH),linuxegcs)
 # Linux with egcs (>= RedHat 5.2)
-CXX           = g++
 ifdef DEBUG
   CXXFLAGS    = -g -O0
   LDFLAGS     = -g -O0
@@ -89,11 +92,7 @@ LD            = g++
 SOFLAGS       = -shared
 endif
 
-ifeq ($(CXX),)
-$(error $(ARCH) invalid architecture)
-endif
-
-CXXFLAGS     += $(INCLUDES)
+CXXFLAGS     += $(ROOTCFLAGS) $(INCLUDES)
 LIBS         += $(ROOTLIBS) $(SYSLIBS)
 GLIBS        += $(ROOTGLIBS) $(SYSLIBS)
 
@@ -131,7 +130,7 @@ vdcsimgenDict.o: vdcsimgenDict.cxx
 	$(CXX) $(CXXFLAGS) -o $@ -c $^
 
 vdcsimgenDict.cxx: THaVDCSim.h vdcsimgen_LinkDef.h
-	$(ROOTSYS)/bin/rootcint -f $@ -c $^
+	$(ROOTBIN)/rootcint -f $@ -c $^
 
 vdcsimgen.o: vdcsimgen.cxx THaVDCSim.h
 	$(CXX) $(CXXFLAGS) -o $@ -c vdcsimgen.cxx
@@ -142,7 +141,7 @@ $(USERLIB):	$(HDR) $(OBJS)
 
 $(USERDICT).cxx: $(HDR) $(LINKDEF)
 	@echo "Generating dictionary $(USERDICT)..."
-	$(ROOTSYS)/bin/rootcint -f $@ -c $(INCLUDES) $^
+	$(ROOTSYS)/bin/rootcint -f $@ -c $(ROOTINC) $(INCLUDES) $(DEFINES) $^
 
 install:	all
 		$(error Please define install yourself)
@@ -175,7 +174,7 @@ srcdist:
 # FIXME: this only works with gcc
 %.d:	%.cxx
 	@echo Creating dependencies for $<
-	@$(SHELL) -ec '$(MAKEDEPEND) -MM $(INCLUDES) -c $< \
+	@$(SHELL) -ec '$(MAKEDEPEND) -MM $(ROOTINC) $(INCLUDES) -c $< \
 		| sed '\''s%^.*\.o%$*\.o%g'\'' \
 		| sed '\''s%\($*\)\.o[ :]*%\1.o $@ : %g'\'' > $@; \
 		[ -s $@ ] || rm -f $@'
