@@ -53,8 +53,11 @@ ROOTCFLAGS   := $(shell root-config --cflags)
 ROOTLIBS     := $(shell root-config --libs)
 ROOTGLIBS    := $(shell root-config --glibs)
 ROOTBIN      := $(shell root-config --bindir)
+ROOTINC      := -I$(shell root-config --incdir)
+CXX          := $(shell root-config --cxx)
+CC           := $(shell root-config --cc)
 
-INCLUDES      = $(ROOTCFLAGS) 
+INCLUDES =
 
 ifndef STANDALONE
    INCLUDES += -I$(MAINDIR)
@@ -126,10 +129,6 @@ else
   DEFINES      += $(shell getconf LFS_CFLAGS)
 endif
 
-ifeq ($(CXX),)
-   $(error $(ARCH) invalid architecture)
-endif
-
 MAKEDEPEND    = g++
 
 export OSNAME := $(shell uname)
@@ -185,8 +184,8 @@ ifdef ONLINE_ET
 endif
 
 DEFINES      += $(DC_DEFINES)
-CFLAGS        = $(CXXFLG) $(INCLUDES) $(DEFINES)
-CXXFLAGS      = $(CXXFLG) $(CXXEXTFLG) $(INCLUDES) $(DEFINES)
+CFLAGS        = $(CXXFLG) $(ROOTCLAGS) $(INCLUDES) $(DEFINES)
+CXXFLAGS      = $(CXXFLG) $(CXXEXTFLG) $(ROOTCFLAGS) $(INCLUDES) $(DEFINES)
 LIBS         += $(ROOTLIBS) $(SYSLIBS)
 GLIBS        += $(ROOTGLIBS) $(SYSLIBS)
 
@@ -317,7 +316,7 @@ swapped_intcpy.o: swapped_intcpy.c
 
 THaDecDict.C: $(RCHEAD) haDecode_LinkDef.h
 	@echo "Generating Decoder Dictionary..."
-	$(ROOTBIN)/rootcint -f THaDecDict.C -c $(CXXFLAGS) $^
+	$(ROOTBIN)/rootcint -f THaDecDict.C -c $(ROOTINC) $(INCLUDES) $(DEFINES) $^
 
 # create a tar file of ./$(VERS)/* (all code)
 
@@ -362,7 +361,7 @@ install:	all
 #	@$(SHELL) -ec '$(CXX) -MM $(CXXFLAGS) -c $< \
 #		| sed '\''s/\($*\)\.o[ :]*/\1.o $@ : /g'\'' > $@; \
 #		[ -s $@ ] || rm -f $@'
-	@$(SHELL) -ec '$(MAKEDEPEND) -MM $(INCLUDES) $(DEFINES) -c $< \
+	@$(SHELL) -ec '$(MAKEDEPEND) -MM $(ROOTINC) $(INCLUDES) $(DEFINES) -c $< \
 		| sed '\''s/\($*\)\.o[ :]*/\1.o $@ : /g'\'' > $@; \
 		[ -s $@ ] || rm -f $@'
 
