@@ -6,6 +6,7 @@ analyzer
 
 # Generated files
 *Dict.[Ch]
+*Dict.cxx
 *Dict.so
 ha_compiledata.h
 cppcheck_report.txt
