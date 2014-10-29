@@ -111,7 +111,7 @@ Int_t UserDetector::ReadDatabase( const TDatime& date )
 
     // If no error, parse the detector map. See THaDetMap::Fill for details.
     if( err == kOK ) {
-      if( FillDetMap( detmap, THaDetMap::kFillLogicalChannel, here ) == 0 ) {
+      if( FillDetMap( detmap, THaDetMap::kFillLogicalChannel, here ) <= 0 ) {
 	err = kInitError;
       }
     }
