@@ -52,7 +52,7 @@ Int_t THaDetectorBase::FillDetMap( const vector<Int_t>& values, UInt_t flags,
 
   Int_t ret = fDetMap->Fill( values, flags );
   if( ret == 0 ) {
-    Warning( Here(here), "No detector map entries found. Check database." );
+    Error( Here(here), "No detector map entries found. Check database." );
   } else if( ret == -1 ) {
     Error( Here(here), "Too many detector map entries (maximum %d)",
 	   THaDetMap::kDetMapSize );
