@@ -67,10 +67,13 @@ Int_t THaHelicityDet::ReadDatabase( const TDatime& date )
 {
   // Read fSign
 
-  FILE* file = OpenFile( date );
-  if( !file ) return kFileError;
-
   fSign = 1;  // Default sign is +1
+
+  FILE* file = OpenFile( date );
+  if( !file )
+    // No database file is fine since we only read an optional parameter here
+    return kOK;
+
   const  DBRequest request[] = {
     { "helicity_sign", &fSign, kInt, 0, 1, -2 },
     { 0 }
