@@ -106,13 +106,13 @@ public:
 class MCTrackPoint : public TObject {
 public:
   MCTrackPoint() : fMCTrack(0), fPlane(-1), fType(-1), fStatus(0), fNFound(0),
-		   fMCPoint(KBIG,KBIG,KBIG), fMCP(KBIG,KBIG,KBIG),
+		   fClustSize(0), fMCPoint(KBIG,KBIG,KBIG), fMCP(KBIG,KBIG,KBIG),
 		   fMCTime(KBIG), fDeltaE(KBIG), fDeflect(KBIG), fToF(KBIG),
 		   fHitResid(KBIG), fTrackResid(KBIG)  {}
   MCTrackPoint( Int_t mctrk, Int_t plane, Int_t type, const TVector3& point,
 		const TVector3& pvect )
     : fMCTrack(mctrk), fPlane(plane), fType(type), fStatus(0), fNFound(0),
-      fMCPoint(point), fMCP(pvect), fMCTime(KBIG), fDeltaE(KBIG),
+      fClustSize(0), fMCPoint(point), fMCP(pvect), fMCTime(KBIG), fDeltaE(KBIG),
       fDeflect(KBIG), fHitResid(KBIG), fTrackResid(KBIG)  {}
   virtual ~MCTrackPoint() {}
 
@@ -147,7 +147,8 @@ public:
   Int_t    fPlane;    // Tracker plane/layer number
   Int_t    fType;     // Plane type (u,v,x etc.)
   Int_t    fStatus;   // Reconstruction status bits
-  Int_t    fNFound;   // Number of reconstructed hits found in search window
+  Int_t    fNFound;   // Number of reconstructed hits found near this one
+  Int_t    fClustSize;// Size of reconstructed hit/cluster
   TVector3 fMCPoint;  // Truth position of MC physics track in tracker plane (m)
   TVector3 fMCP;      // True momentum vector at this position (GeV)
   Double_t fMCTime;   // Arrival time wrt trigger (s)
@@ -159,7 +160,7 @@ public:
 
   static Double_t fgWindowSize; // Half-size of search window (m)
 
-  ClassDef(MCTrackPoint,2)  // Monte Carlo track interaction coordinates
+  ClassDef(MCTrackPoint,3)  // Monte Carlo track interaction coordinates
 };
 
 //_____________________________________________________________________________

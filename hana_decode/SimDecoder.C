@@ -95,6 +95,8 @@ Int_t SimDecoder::DefineVariables( THaAnalysisObject::EMode mode )
                                   "fMCPoints.Podd::MCTrackPoint.fStatus" },
     { "pt.nfound", "# reconstructed hits found near this point",
                                   "fMCPoints.Podd::MCTrackPoint.fNFound" },
+    { "pt.clustsz",  "Size of closest reconstructed cluster",
+                               "fMCPoints.Podd::MCTrackPoint.fClustSize" },
     { "pt.time",   "Track arrival time [s]",
                                   "fMCPoints.Podd::MCTrackPoint.fMCTime" },
     { "pt.p",      "Track momentum [GeV]",
