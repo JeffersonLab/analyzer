@@ -151,8 +151,10 @@ MCTrack::MCTrack( Int_t number, Int_t pid,
     fReconFlags(0), fContamFlags(0), fMatchval(KBIG), fFitRank(-1),
     fTrackRank(-1)
 {
-  memset( fMCFitPar, 0, NFP*sizeof(fMCFitPar[0]) );
-  memset( fRcFitPar, 0, NFP*sizeof(fRcFitPar[0]) );
+  for( Int_t i = 0; i < NFP; ++i ) {
+    fMCFitPar[i] = KBIG;
+    fRcFitPar[i] = KBIG;
+  }
 }
 
 //_____________________________________________________________________________
@@ -161,8 +163,10 @@ MCTrack::MCTrack()
     fFoundBits(0), fReconFlags(0), fContamFlags(0), fMatchval(KBIG),
     fFitRank(-1), fTrackRank(-1)
 {
-  memset( fMCFitPar, 0, NFP*sizeof(fMCFitPar[0]) );
-  memset( fRcFitPar, 0, NFP*sizeof(fRcFitPar[0]) );
+  for( Int_t i = 0; i < NFP; ++i ) {
+    fMCFitPar[i] = KBIG;
+    fRcFitPar[i] = KBIG;
+  }
 }
 
 //_____________________________________________________________________________
