@@ -14,8 +14,8 @@
 #include "TROOT.h"
 #include "TClass.h"
 #include "TDataMember.h"
+#include "TDataType.h"
 #include "TRealData.h"
-#include "TDataMember.h"
 #include <iostream>
 
 using namespace std;
@@ -43,6 +43,25 @@ Int_t THaRTTI::Find( TClass* cl, TString& var,
     cl->BuildRealData( const_cast<void*>(prototype) );
     lrd = cl->GetListOfRealData();
     if( !lrd )
+      return -1;
+  }
+
+  // Looking for a specific array element? Currently only supports 1-d arrays
+  Int_t element_requested = -1;
+  Ssiz_t i = var.Index( '[' );
+  if( i != kNPOS ) {
+    if( var.Index( '[', i+i ) != kNPOS || var.Index( ',', i+1 ) != kNPOS )
+      return -1;
+    Ssiz_t j = var.Index( ']' );
+    if( j != kNPOS ) {
+      if( j<=i+1 )
+	return -1;
+      TString index = var(i+1,j-i-1);
+      element_requested = index.Atoi();
+      if( element_requested < 0 )
+	return -1;
+      var = var(0,i);
+    } else
       return -1;
   }
 
@@ -108,17 +127,27 @@ Int_t THaRTTI::Find( TClass* cl, TString& var,
   TString subscript( rd->GetName() );
   EArrayType atype = kScalar;
 
+  // Can only request an element of an explicitly-dimensioned 1-d array
+  if( element_requested >= 0 && array_dim != 1 )
+    return -1;
+
   // If variable is explicitly dimensioned, ignore any "array index"
   // in the comment.
   if( array_dim > 0 ) {
     // Explicitly dimensioned arrays must not be pointers
     if( m->IsaPointer() )
       return -1;
-    Ssiz_t i = subscript.Index( '[' );
-    if( i == kNPOS )
-      return -1;
-    subscript = subscript(i,subscript.Length()-i);
-    atype = kFixed;
+    // If a specific element was requested, treat the variable as a scalar
+    if( element_requested >= 0 ) {
+      if( element_requested >= m->GetMaxIndex(0) ) // Out of range
+	return -1;
+    } else {
+      Ssiz_t i = subscript.Index( '[' );
+      if( i == kNPOS )
+	return -1;
+      subscript = subscript(i,subscript.Length()-i);
+      atype = kFixed;
+    }
 
   } else if( array_index && *array_index && m->IsaPointer() ) {
     // If no explicit dimensions given, but the variable is a pointer
@@ -147,13 +176,15 @@ Int_t THaRTTI::Find( TClass* cl, TString& var,
   fRealData   = rd;
 
   switch( atype ) {
+  case kScalar:
+    if( element_requested >= 0 )
+      fOffset += element_requested * m->GetDataType()->Size();
+    break;
   case kFixed:
     fSubscript = subscript;
     break;
   case kVariable:
     fCountOffset = count_offset;
-    break;
-  default:
     break;
   }
 
@@ -173,7 +204,7 @@ TObject* THaRTTI::FindRealDataVar( TList* lrd, TString& var )
     TObject* obj = lnk->GetObject();
     TString name( obj->GetName() );
     name = name.Strip( TString::kLeading, '*' );
-    Ssiz_t i = name.Index( '[' );
+    Ssiz_t i = name.Index( "[" );
     if( i != kNPOS )
       name = name(0,i);
     if( name == var )
