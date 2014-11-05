@@ -20,7 +20,8 @@ const char* const MC_PREFIX = "MC.";
 Double_t MCTrackPoint::fgWindowSize = 1e-3;
 
 //_____________________________________________________________________________
-SimDecoder::SimDecoder() : fMCHits(0), fMCTracks(0), fIsSetup(false)
+SimDecoder::SimDecoder()
+  : fWeight(1.0), fMCHits(0), fMCTracks(0), fIsSetup(false)
 {
   // Constructor. Derived classes must allocate the track and hit
   // TClonesArrays using their respective hit and track classes
@@ -79,6 +80,8 @@ Int_t SimDecoder::DefineVariables( THaAnalysisObject::EMode mode )
   fIsSetup = ( mode == THaAnalysisObject::kDefine );
 
   RVarDef vars[] = {
+    // Event info
+    { "weight",    "Event weight",        "fWeight" },
     // Generated hit and track info. Just report the sizes of the arrays.
     // Anything beyond this requires the type of the actual hit and
     // track classes.
@@ -141,9 +144,9 @@ Int_t SimDecoder::DefineVariables( THaAnalysisObject::EMode mode )
 }
 
 //_____________________________________________________________________________
-MCTrack::MCTrack( Int_t number, Int_t pid, Double_t weight,
+MCTrack::MCTrack( Int_t number, Int_t pid,
 		  const TVector3& vertex, const TVector3& momentum )
-  : fNumber(number), fPID(pid), fWeight(weight), fOrigin(vertex),
+  : fNumber(number), fPID(pid), fOrigin(vertex),
     fMomentum(momentum), fNHits(0), fHitBits(0), fNHitsFound(0), fFoundBits(0),
     fReconFlags(0), fContamFlags(0), fMatchval(KBIG), fFitRank(-1),
     fTrackRank(-1)
@@ -154,7 +157,7 @@ MCTrack::MCTrack( Int_t number, Int_t pid, Double_t weight,
 
 //_____________________________________________________________________________
 MCTrack::MCTrack()
-  : fNumber(0), fPID(0), fWeight(1.0), fNHits(0), fHitBits(0), fNHitsFound(0),
+  : fNumber(0), fPID(0), fNHits(0), fHitBits(0), fNHitsFound(0),
     fFoundBits(0), fReconFlags(0), fContamFlags(0), fMatchval(KBIG),
     fFitRank(-1), fTrackRank(-1)
 {

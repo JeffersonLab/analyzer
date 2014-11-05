@@ -33,7 +33,7 @@ extern const char* const MC_PREFIX;
 // of this class or objects that inherit from it
 class MCTrack : public TObject {
 public:
-  MCTrack( Int_t number, Int_t pid, Double_t weight,
+  MCTrack( Int_t number, Int_t pid,
 	   const TVector3& vertex, const TVector3& momentum );
   MCTrack();
 
@@ -49,7 +49,6 @@ public:
   // Physics truth data
   Int_t    fNumber;        // Track counter
   Int_t    fPID;           // Track particle ID (PDG)
-  Double_t fWeight;        // Weight factor
   TVector3 fOrigin;        // Vertex position (m)
   TVector3 fMomentum;      // Momentum (GeV)
 
@@ -71,7 +70,7 @@ public:
   Double_t fMCFitPar[NFP]; // Results of fit(s) to MC hits
   Double_t fRcFitPar[NFP]; // Results of fit(s) to reconstructed hits
 
-  ClassDef(MCTrack,1)  // An MC physics track
+  ClassDef(MCTrack,2)  // An MC physics track
 };
 
 //_____________________________________________________________________________
@@ -175,6 +174,8 @@ class SimDecoder : public THaEvData {
   virtual Int_t      DefineVariables( THaAnalysisObject::EMode mode =
 				      THaAnalysisObject::kDefine );
 
+  Double_t GetWeight() const { return fWeight; }
+
   TObject* GetMCHit( Int_t i )   const {
     return (fMCHits) ? fMCHits->UncheckedAt(i) : 0;
   }
@@ -196,6 +197,8 @@ class SimDecoder : public THaEvData {
   }
 
 protected:
+
+  Double_t       fWeight;     // Event weight
 
   TClonesArray*  fMCHits;     //-> MC hits
   TClonesArray*  fMCTracks;   //-> MC physics tracks
