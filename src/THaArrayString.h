@@ -8,6 +8,7 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "TString.h"
+#include <cassert>
 
 class THaArrayString {
   
@@ -25,6 +26,9 @@ public:
   virtual ~THaArrayString()           { delete [] fDim; }
 
   operator const char*() const { return fName.Data(); }
+  operator const TString&() const { return fName; }
+  Int_t operator[](Int_t i) const;
+  bool  operator!()         const { return IsError(); }
 
   const Int_t*    GetDim()  const { return fDim; }
   Int_t           GetLen()  const { return fLen; }
@@ -47,6 +51,16 @@ protected:
 
   ClassDef(THaArrayString,0) //Parser for variable names with support for arrays
 };
+
+//__________________ inlines __________________________________________________
+inline
+Int_t THaArrayString::operator[](Int_t i) const
+{
+  // Return i-th array dimension
+  assert( fDim );
+  assert( i >= 0 && i < fNdim );
+  return fDim[i];
+}
 
 #endif
 

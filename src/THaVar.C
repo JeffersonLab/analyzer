@@ -562,19 +562,19 @@ Int_t THaVar::Index( const THaArrayString& elem ) const
 
   if( fCount ) {
     if( elem.GetNdim() != 1 ) return -2;
-    return *elem.GetDim();
+    return elem[0];
   }
 
   Int_t ndim = GetNdim();
   if( ndim != elem.GetNdim() ) return -2;
 
-  const Int_t *subs = elem.GetDim(), *adim = GetDim();
+  const Int_t *adim = GetDim();
 
-  Int_t index = subs[0];
+  Int_t index = elem[0];
   for( Int_t i = 0; i<ndim; i++ ) {
-    if( subs[i]+1 > adim[i] ) return -1;
+    if( elem[i] >= adim[i] ) return -1;
     if( i>0 )
-      index = index*adim[i] + subs[i];
+      index = index*adim[i] + elem[i];
   }
   if( index >= GetLen() || index > kMaxInt ) return -1;
   return index;
