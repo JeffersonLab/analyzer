@@ -13,6 +13,7 @@
 #include "THaVar.h"
 #include "TROOT.h"
 #include "TClass.h"
+#include "TClassEdit.h"
 #include "TDataMember.h"
 #include "TDataType.h"
 #include "TRealData.h"
@@ -53,7 +54,7 @@ Int_t THaRTTI::Find( TClass* cl, const TString& var,
   THaArrayString avar(var);
   if( avar.IsError() )
     return -1;
-  Int_t element_requested = 0;
+  Int_t element_requested = -1;
 
   // Variable names in TRealData are stored along with pointer prefixes (*)
   // and array subscripts, so we have to use a customized search function:
@@ -105,6 +106,28 @@ Int_t THaRTTI::Find( TClass* cl, const TString& var,
       // Simple, but depends on the definition order in VarType.h
       type = (VarType)(type + kDoubleP);
 
+  } else if( m->IsSTLContainer() ) {
+    // STL containers: only std::vector supported
+    if( m->IsSTLContainer() != TClassEdit::kVector )
+      return -1;
+    // Get the vector element type name
+    TString typnam( m->GetTypeName() );
+    Ssiz_t lbrk = typnam.Index( "<" );
+    Ssiz_t rbrk = typnam.Index( ">" );
+    if( lbrk == kNPOS || rbrk == kNPOS || lbrk+1 >= rbrk )
+      return -1;
+    typnam = typnam(lbrk+1,rbrk-lbrk-1);
+    if( typnam == "Int_t" || typnam == "int" )
+      type = kIntV;
+    else if( typnam == "UInt_t" || typnam == "unsigned int" )
+      type = kUIntV;
+    else if( typnam == "Float_t" || typnam == "float" || typnam == "Real_t" )
+      type = kFloatV;
+    else if( typnam == "Double_t" || typnam == "double" )
+      type = kDoubleV;
+    else
+      return -1;
+
   } else {
     type = (m->IsaPointer()) ? kObjectP : kObject;
   }
@@ -127,19 +150,24 @@ Int_t THaRTTI::Find( TClass* cl, const TString& var,
     // Explicitly dimensioned arrays must not be pointers
     if( m->IsaPointer() )
       return -1;
+    // Must be an array of a basic type
+    if( !m->GetDataType() )
+      return -1;
     if( avar.IsArray() ) {
       // If a specific element was requested, treat the variable as a scalar.
       // Calculate the linear index of the requested element.
+      element_requested = avar[0];
       for( Int_t idim = 0; idim < array_dim; ++idim ) {
 	if( avar[idim] >= m->GetMaxIndex(idim) ) // Out of bounds
 	  return -1;
-	if( idim > 0 )
+	if( idim > 0 ) {
 	  element_requested *= m->GetMaxIndex(idim);
-	element_requested += avar[idim];
+	  element_requested += avar[idim];
+	}
       }
     } else {
       // Otherwise it's a fixed-size array
-      Ssiz_t i = subscript.Index( '[' );
+      Ssiz_t i = subscript.Index( "[" );
       if( i == kNPOS )
 	return -1;
       subscript = subscript(i,subscript.Length()-i);
@@ -153,6 +181,10 @@ Int_t THaRTTI::Find( TClass* cl, const TString& var,
     // comment MUST be an Int_t. I guess that is a standard ROOT
     // convention anyway.
 
+    // Must be an array of a basic type
+    if( !m->GetDataType() )
+      return -1;
+
     // See if the subscript variable exists and is an Int_t
     TString index(array_index);
     THaRTTI rtti;
@@ -162,6 +194,10 @@ Int_t THaRTTI::Find( TClass* cl, const TString& var,
       count_offset = rtti.GetOffset();
     }
     atype = kVariable;
+
+  } else if( m->IsSTLContainer() ) {
+    assert( m->IsSTLContainer() == TClassEdit::kVector );
+    atype = kVector;
   }
 
   // Build the RTTI object
@@ -183,6 +219,8 @@ Int_t THaRTTI::Find( TClass* cl, const TString& var,
   case kVariable:
     fCountOffset = count_offset;
     break;
+  case kVector:
+    break;
   }
 
   return 0;
@@ -202,7 +240,7 @@ TObject* FindRealDataVar( TList* lrd, const TString& var )
     TObject* obj = lnk->GetObject();
     TString name( obj->GetName() );
     name = name.Strip( TString::kLeading, '*' );
-    Ssiz_t i = name.Index( '[' );
+    Ssiz_t i = name.Index( "[" );
     if( i != kNPOS )
       name = name(0,i);
     if( name == var )
