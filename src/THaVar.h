@@ -230,7 +230,7 @@ protected:
 
   Int_t               fOffset;   //Offset of data w.r.t. object pointer
   TMethodCall*        fMethod;   //Member function to access data in object
-  Int_t*              fDim;      //Storage for current size of object array
+  mutable Int_t       fDim;      //Current size of object array
 
   ClassDef(THaVar,0)   //Global symbolic variable
 };

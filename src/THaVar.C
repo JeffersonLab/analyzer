@@ -180,11 +180,6 @@ THaVar::THaVar( const char* name, const char* desc, const void* obj,
       delete fMethod; fMethod = 0;
     }
   }
-  if( fOffset != -1 || IsVector() )
-    // Storage for the current collection/vector size, for compatibility with
-    // the way THaArrayString works. This is a pointer so we can modify the
-    // contents in a const function ... :-/ oi
-    fDim = new Int_t;
 }
 
 //_____________________________________________________________________________
@@ -197,7 +192,6 @@ THaVar::THaVar( const THaVar& rhs ) :
 
   // Make local copies of pointers
   if( fMethod ) fMethod = new TMethodCall( *rhs.fMethod );
-  if( fDim )    fDim    = new Int_t( *rhs.fDim );
 }
 
 //_____________________________________________________________________________
@@ -214,11 +208,8 @@ THaVar& THaVar::operator=( const THaVar& rhs )
     fOffset     = rhs.fOffset;
     // Make local copies of pointers
     delete fMethod;
-    delete fDim;
     fMethod     = rhs.fMethod;
-    fDim        = rhs.fDim;
     if( fMethod ) fMethod  = new TMethodCall( *rhs.fMethod );
-    if( fDim )    fDim     = new Int_t( *rhs.fDim );
   }
   return *this;
 }
@@ -229,7 +220,6 @@ THaVar::~THaVar()
   // Destructor
 
   delete fMethod;
-  delete fDim;
 }
 
 //_____________________________________________________________________________
@@ -435,8 +425,8 @@ const Int_t* THaVar::GetDim() const
   if( fCount )
     return fCount;
   if( fOffset != -1 || IsVector() ) {
-    *fDim = GetLen();
-    return fDim;
+    fDim = GetLen();
+    return &fDim;
   }
   return fParsedName.GetDim();
 }
