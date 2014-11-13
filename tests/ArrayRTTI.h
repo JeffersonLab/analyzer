@@ -8,6 +8,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "THaAnalysisObject.h"
+#include <vector>
 
 class ArrayRTTI : public THaAnalysisObject {
 
@@ -20,16 +21,19 @@ public:
 
 protected:
 
-  static const Int_t fgD1  = 5;
+  // Array sizes
+  static const Int_t fgD1  = 8;
   static const Int_t fgD21 = 5;
   static const Int_t fgD22 = 7;
   static const Int_t fgDV  = 15;
+  static const Int_t fgDVE = 13;
 
   // Test data
   Float_t    fArray[fgD1];      // One-dimensional fixed
   Float_t    f2D[fgD21][fgD22]; // Two-dimensional fixed
   Int_t      fN;                // Number of elements in fVarArr
   Float_t*   fVarArr;           // [fN] variable-size
+  std::vector<Float_t> fVectorF;// std::vector array (1d, var size)
 
   virtual Int_t  DefineVariables( EMode mode );
   virtual Int_t  ReadDatabase( const TDatime& date );

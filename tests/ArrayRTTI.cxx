@@ -23,6 +23,7 @@ static RVarDef vars[] = {
   { "elem02", "f2D[0][2]", "f2D[0][2]" },
   { "elem30", "f2D[3][0]", "f2D[3][0]" },
   { "vararr", "Var size",  "fVarArr" },
+  { "vecarr", "std::vector", "fVectorF" },
   { 0 }
 };
 
@@ -78,11 +79,16 @@ Int_t ArrayRTTI::ReadDatabase( const TDatime& date )
     }
   }
 
+  // Variable-sized arrays
   delete [] fVarArr;
   fN = fgDV;
   fVarArr = new Float_t[fN];
   for( Int_t i = 0; i < fN; ++i )
     fVarArr[i] = 0.75 + Float_t(i);
+
+  fVectorF.clear();
+  for( Int_t i = 0; i < fgDVE; ++i )
+    fVectorF.push_back( -11.652 + Float_t(2*i) );
 
   fIsInit = true;
   return kOK;
@@ -132,7 +138,8 @@ Int_t ArrayRTTI::Test() const
       var->Print("FULL");
 
     // Group & individual tests
-    if( (name == "oned" || name == "twod" || name == "vararr") ) {
+    if( (name == "oned" || name == "twod" || name == "vararr" ||
+	 name == "vecarr") ) {
       if( !var->IsArray() ) {
 	Error( Here(here), "Variable %s is not an array",
 	       varname.Data() );
@@ -211,7 +218,7 @@ Int_t ArrayRTTI::Test() const
 	}
       } // end "twod"
 
-      else {
+      else if( name == "vararr" ) {
 	if( var->GetNdim() != 1 ) {
 	  Error( Here(here), "Variable %s is not a 1-d array",
 		 varname.Data() );
@@ -238,6 +245,39 @@ Int_t ArrayRTTI::Test() const
 	  }
 	}
       } // end "vararr"
+
+      else if( name == "vecarr" ) {
+	if( var->GetNdim() != 1 ) {
+	  Error( Here(here), "Variable %s is not a 1-d array",
+		 varname.Data() );
+	  return 30;
+	}
+	if( !var->IsVector() ) {
+	  Error( Here(here), "Variable %s does not report being a std::vector",
+		 varname.Data() );
+	  return 31;
+	}
+	if( var->GetType() != kFloatV ) {
+	  Error( Here(here), "Variable %s is not a kFloatV",
+		 varname.Data() );
+	  return 32;
+	}
+	if( dim[0] != fgDVE || var->GetLen() != fgDVE ) {
+	  Error( Here(here), "Variable %s has wrong size/len = %d/%d, "
+		 "expected %d",
+		 varname.Data(), dim[0], var->GetLen(), fgDVE );
+	  return 33;
+	}
+	for( Int_t i = 0; i < var->GetLen(); ++i ) {
+	  Float_t expect = -11.652 + Float_t(2*i);
+	  Float_t val = var->GetValue(i);
+	  if( Round(val-expect,NDIG) != 0 ) {
+	    Error( Here(here), "Element %s[%d] has wrong value = %f, "
+		   "expected %f", varname.Data(), i, val, expect );
+	    return 34;
+	  }
+	}
+      } // end "vecarr"
 
     } // end testing arrays
 
