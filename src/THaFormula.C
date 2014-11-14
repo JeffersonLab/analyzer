@@ -32,16 +32,16 @@ static const Double_t kBig = 1e38; // Error value
 
 
 //_____________________________________________________________________________
-THaFormula::THaFormula( const char* name, const char* expression, 
+THaFormula::THaFormula( const char* name, const char* expression,
 			const THaVarList* vlst, const THaCutList* clst )
   : TFormula(), fVarDef(NULL), fVarList(vlst), fCutList(clst),
     fError(kFALSE), fRegister(kTRUE)
 {
-  // Create a formula 'expression' with name 'name' and symbolic variables 
+  // Create a formula 'expression' with name 'name' and symbolic variables
   // from the list 'lst'.
-  
+
   // We have to duplicate the TFormula constructor code here because of
-  // the call to Compile(). Compile() only works if fVarList is set. 
+  // the call to Compile(). Compile() only works if fVarList is set.
 
   SetName(name);
 
@@ -123,7 +123,7 @@ Int_t THaFormula::Compile( const char* expression )
     }
     // If the formula is good, then fix the variable counters that TFormula
     // may have messed with when reverting lone kDefinedString variables to
-    // kDefinedVariable. If there is a mix of strings and values, 
+    // kDefinedVariable. If there is a mix of strings and values,
     // we force the variable counters to the full number of defined variables,
     // so that the loops in EvalPar calculate all the values. This inefficient,
     // but the best we can do with the implementation of TFormula.
@@ -173,7 +173,7 @@ Double_t THaFormula::DefinedValue( Int_t i )
   // If the i-th variable is a cut, return its last result
   // (calculated at the last evaluation).
   // If the variable is a string, return value of its character value
-  
+
 #ifdef WITH_DEBUG
   R__ASSERT( i>=0 && i<fNcodes );
 #endif
@@ -183,7 +183,12 @@ Double_t THaFormula::DefinedValue( Int_t i )
   switch( def->type ) {
   case kVariable:
   case kString:
-    return static_cast<const THaVar*>(ptr)->GetValue( def->index );
+    {
+      const THaVar* var = static_cast<const THaVar*>(ptr);
+      if( def->index >= var->GetLen() )
+	return kBig;
+      return var->GetValue( def->index );
+    }
     break;
   case kCut:
     return static_cast<const THaCut*>(ptr)->GetResult();
@@ -191,7 +196,7 @@ Double_t THaFormula::DefinedValue( Int_t i )
   default:
     return kBig;
   }
-}  
+}
 
 //_____________________________________________________________________________
 #if ROOT_VERSION_CODE >= ROOT_VERSION(4,0,0)
@@ -205,7 +210,7 @@ Int_t THaFormula::DefinedVariable(TString& name)
   //  This member function redefines the function in TFormula.
   //  A THaFormula may contain more than one variable.
   //  For each variable referenced, a pointer to the corresponding
-  //  global object is stored 
+  //  global object is stored
   //
   //  Return codes:
   //  >=0  serial number of variable or cut found
@@ -228,7 +233,7 @@ Int_t THaFormula::DefinedVariable(TString& name)
       // String definitions must be in the same array as variable definitions
       // because TFormula may revert a kDefinedString to a kDefinedVariable.
       def->type = kString;
-      // TFormula::Analyze will increment fNstring even if the string 
+      // TFormula::Analyze will increment fNstring even if the string
       // was already found. Fix this here.
       if( k < kMAXFOUND && !fAlreadyFound.TestBitNumber(k) )
 	fAlreadyFound.SetBitNumber(k);
@@ -243,7 +248,7 @@ Int_t THaFormula::DefinedVariable(TString& name)
 //_____________________________________________________________________________
 Int_t THaFormula::DefinedCut( const TString& name )
 {
-  // Check if 'name' is a known cut. If so, enter it in the local list of 
+  // Check if 'name' is a known cut. If so, enter it in the local list of
   // variables used in this formula.
 
   // Cut names are obviously only valid if there is a list of existing cuts
@@ -278,32 +283,49 @@ Int_t THaFormula::DefinedGlobalVariable( const TString& name )
     return -2;
 
   // Parse name for array syntax
-  THaArrayString var(name);
-  if( var.IsError() ) return -1;
+  THaArrayString parsed_name(name);
+  if( parsed_name.IsError() ) return -1;
 
   // Find the variable with this name
-  const THaVar* obj = fVarList->Find( var.GetName() );
-  if( !obj ) 
+  const THaVar* var = fVarList->Find( parsed_name.GetName() );
+  if( !var )
     return -1;
 
-  // Error if array requested but the corresponding variable is not an array
-  if( var.IsArray() && !obj->IsArray() )
-    return -2;
-
-  // Subscript(s) within bounds?
   Int_t index = 0;
-  if( var.IsArray() 
-      && (index = obj->Index( var )) <0 ) return -2;
-		    
+  if( parsed_name.IsArray() ) {
+    // Error if array requested but the corresponding variable is not an array
+    if( !var->IsArray() )
+      return -2;
+    if( !var->IsVarArray() ) {
+      // Fixed-size arrays: check if subscript(s) within bounds?
+      index = var->Index( parsed_name );
+      if( index < 0 )
+	return -2;
+    }
+    else {
+      // Variable-size arrays are always 1-d
+      assert( var->GetNdim() == 1 );
+      if( parsed_name.GetNdim() != 1 )
+	return -1;
+      // For variable-size arrays, we allow requests for any element and
+      // check at evaluation time whether the element actually exists
+      index = parsed_name[0];
+    }
+  } else if( var->IsArray() ) {
+    // Asking for an entire array -> multi-valued formula
+    // TODO: support multi-valued formulas
+    // For the moment, this is equivalent to asking for element [0]
+  }
+
   // Check if this variable already used in this formula
   FVarDef_t* def = fVarDef;
   for( Int_t i=0; i<fNcodes; i++, def++ ) {
-    if( obj == def->code && index == def->index )
+    if( var == def->code && index == def->index )
       return i;
   }
   // If this is a new variable, add it to the list
   def->type = kVariable;
-  def->code = obj;
+  def->code = var;
   def->index = index;
 
   // No parameters ever for a THaFormula
@@ -319,10 +341,10 @@ Double_t THaFormula::Eval( void )
 
   if( fError )  return kBig;
   if (fNoper == 1 && fNcodes == 1 )  return DefinedValue(0);
-  
+
   return EvalPar( 0 );
 }
-  
+
 //_____________________________________________________________________________
 #if ROOT_VERSION_CODE >= ROOT_VERSION(3,5,7)
 #if ROOT_VERSION_CODE >= ROOT_VERSION(5,16,0)
@@ -342,7 +364,7 @@ TString THaFormula::GetExpFormula() const
 void THaFormula::Print( Option_t* option ) const
 {
   // Print this formula to stdout
-  // Options:  
+  // Options:
   //   "BRIEF" -- short, one line
   //   "FULL"  -- full, multiple lines
 
