@@ -29,9 +29,12 @@ static RVarDef vars[] = {
 
 #define NDIG 5
 
+namespace Podd {
+namespace Tests {
+
 //_____________________________________________________________________________
 ArrayRTTI::ArrayRTTI( const char* name, const char* description ) :
-  THaAnalysisObject(name,description), fN(0), fVarArr(0)
+  UnitTest(name,description), fN(0), fVarArr(0)
 {
   // Constructor. Initialize fixed variables with with kBig
 
@@ -95,20 +98,7 @@ Int_t ArrayRTTI::ReadDatabase( const TDatime& date )
 }
 
 //_____________________________________________________________________________
-static Float_t Round( Double_t val, Int_t n )
-{
-  // Round to n+1 digits
-  if( val == 0 )
-    return 0;
-  if( n < 0 )
-    n = 0;
-  Float_t sign = ((val < 0) ? -1 : 1);
-  Double_t norm = TMath::Power(10,n-TMath::FloorNint(TMath::Log10(val)));
-  return sign * Int_t(TMath::Abs(val)*norm+0.5)/norm;
-}
-
-//_____________________________________________________________________________
-Int_t ArrayRTTI::Test() const
+Int_t ArrayRTTI::Test()
 {
   // Test for expected behavior at run time
 
@@ -322,6 +312,9 @@ Int_t ArrayRTTI::Test() const
 
 }
 
+} // namespace Tests
+} // namespace Podd
+
 ////////////////////////////////////////////////////////////////////////////////
 
-ClassImp(ArrayRTTI)
+ClassImp(Podd::Tests::ArrayRTTI)

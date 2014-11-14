@@ -1,5 +1,5 @@
-#ifndef Podd_ArrayRTTI
-#define Podd_ArrayRTTI
+#ifndef Podd_Tests_ArrayRTTI
+#define Podd_Tests_ArrayRTTI
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //
@@ -7,17 +7,20 @@
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "THaAnalysisObject.h"
+#include "UnitTest.h"
 #include <vector>
 
-class ArrayRTTI : public THaAnalysisObject {
+namespace Podd {
+namespace Tests {
+
+class ArrayRTTI : public UnitTest {
 
 public:
   ArrayRTTI( const char* name = "array_rtti",
 	     const char* description = "Array RTTI unit test" );
   virtual ~ArrayRTTI();
 
-  Int_t     Test() const;
+  virtual Int_t Test();
 
 protected:
 
@@ -37,10 +40,12 @@ protected:
 
   virtual Int_t  DefineVariables( EMode mode );
   virtual Int_t  ReadDatabase( const TDatime& date );
-  virtual void   MakePrefix() { THaAnalysisObject::MakePrefix(0); }
 
   ClassDef(ArrayRTTI,0)   // Example detector
 };
+
+} // namespace Tests
+} // namespace Podd
 
 ////////////////////////////////////////////////////////////////////////////////
 

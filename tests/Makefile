@@ -1,5 +1,5 @@
 #------------------------------------------------------------------------------
-SRC  = ArrayRTTI.cxx
+SRC  = UnitTest.cxx ArrayRTTI.cxx
 PACKAGE = Tests
 LINKDEF = $(PACKAGE)_LinkDef.h
 
