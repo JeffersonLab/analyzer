@@ -163,7 +163,7 @@ protected:
           Int_t        LoadDB( FILE* f, const TDatime& date,
 			       const DBRequest* req, Int_t search = 0 );
           void         MakePrefix( const char* basename );
-  virtual void         MakePrefix() = 0;
+  virtual void         MakePrefix();
   virtual FILE*        OpenFile( const TDatime& date );
   virtual FILE*        OpenRunDBFile( const TDatime& date );
   virtual Int_t        ReadDatabase( const TDatime& date );

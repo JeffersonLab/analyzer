@@ -41,12 +41,6 @@ THaPhysicsModule::~THaPhysicsModule()
 }
 
 //_____________________________________________________________________________
-void THaPhysicsModule::MakePrefix() 
-{ 
-  THaAnalysisObject::MakePrefix( NULL ); 
-}
-
-//_____________________________________________________________________________
 void THaPhysicsModule::PrintInitError( const char* here )
 {
   Error( Here(here), "Cannot set. Module already initialized." );

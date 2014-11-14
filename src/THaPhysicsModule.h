@@ -31,7 +31,6 @@ public:
 protected:
 
   THaPhysicsModule( const char* name, const char* description );
-  virtual void MakePrefix();
 
   void PrintInitError( const char* here );
 
