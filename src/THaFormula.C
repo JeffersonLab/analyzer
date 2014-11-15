@@ -178,6 +178,10 @@ Double_t THaFormula::DefinedValue( Int_t i )
   // If the variable is a string, return value of its character value
 
   assert( i>=0 && i<(Int_t)fVarDef.size() );
+
+  if( IsInvalid() )
+    return 1.0;
+
   FVarDef_t& def = fVarDef[i];
   switch( def.type ) {
   case kVariable:
