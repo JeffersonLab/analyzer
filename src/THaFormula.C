@@ -1,5 +1,18 @@
 //*-- Author :    Ole Hansen    20/04/2000
 
+//////////////////////////////////////////////////////////////////////////
+//
+// THaFormula
+//
+// A formula that is aware of the analyzer's global variables, similar
+// to TFormula;s parameters. Unlike TFormula, an arbitrary number of
+// global variables may be referenced in a THaFormula.
+//
+// THaFormulas containing arrays are arrays themselves. Each element
+// (instance) of such an array formula may be evaluated separately.
+//
+//////////////////////////////////////////////////////////////////////////
+
 #include "THaFormula.h"
 #include "THaArrayString.h"
 #include "THaVarList.h"
@@ -11,6 +24,7 @@
 #include <iostream>
 #include <cstring>
 #include <cstdlib>
+#include <cassert>
 
 using namespace std;
 
@@ -20,30 +34,35 @@ const Option_t* const THaFormula::kPRINTBRIEF = "BRIEF";
 static const Double_t kBig = 1e38; // Error value
 
 //_____________________________________________________________________________
-//
-//     A THaFormula defines cuts and histogram expressions
-//     for the Hall A analyzer
-//
-//  A THaFormula can contain any arithmetic expression including
-//  standard operators and mathematical functions separated by operators.
-//  Examples of valid expression:
-//          "x<y && sqrt(z)>3.2"
-//
+THaFormula::THaFormula() : TFormula(), fVarList(0), fCutList(0)
+{
+  // Default constructor
 
+  ResetBit(kNotGlobal);
+  ResetBit(kError);
+  ResetBit(kInvalid);
+  ResetBit(kArrayFormula);
+}
 
 //_____________________________________________________________________________
 THaFormula::THaFormula( const char* name, const char* expression,
 			const THaVarList* vlst, const THaCutList* clst )
-  : TFormula(), fVarDef(NULL), fVarList(vlst), fCutList(clst),
-    fError(kFALSE), fRegister(kTRUE)
+  : TFormula(), fVarList(vlst), fCutList(clst)
 {
   // Create a formula 'expression' with name 'name' and symbolic variables
   // from the list 'lst'.
 
   // We have to duplicate the TFormula constructor code here because of
-  // the call to Compile(). Compile() only works if fVarList is set.
+  // the call to Compile(). Not only do we have our own Compile(), but
+  // also out own DefinedVariable() etc. virtual functions. A disturbing
+  // design error of the ROOT base class indeed.
 
   SetName(name);
+
+  ResetBit(kNotGlobal);
+  ResetBit(kError);
+  ResetBit(kInvalid);
+  ResetBit(kArrayFormula);
 
   //eliminate blanks in expression
   Int_t nch = strlen(expression);
@@ -66,12 +85,9 @@ THaFormula::THaFormula( const char* name, const char* expression,
 
 //_____________________________________________________________________________
 THaFormula::THaFormula( const THaFormula& rhs ) :
-  TFormula(rhs), fNcodes(rhs.fNcodes), fVarList(rhs.fVarList),
-  fCutList(rhs.fCutList), fError(rhs.fError), fRegister(rhs.fRegister)
+  TFormula(rhs), fVarList(rhs.fVarList), fCutList(rhs.fCutList)
 {
   // Copy ctor
-  fVarDef = new FVarDef_t[ kMAXCODES ];
-  memcpy( fVarDef, rhs.fVarDef, kMAXCODES*sizeof(FVarDef_t));
 }
 
 //_____________________________________________________________________________
@@ -79,14 +95,8 @@ THaFormula& THaFormula::operator=( const THaFormula& rhs )
 {
   if( this != &rhs ) {
     TFormula::operator=(rhs);
-    fNcodes = rhs.fNcodes;
     fVarList = rhs.fVarList;
     fCutList = rhs.fCutList;
-    fError = rhs.fError;
-    fRegister = rhs.fRegister;
-    delete [] fVarDef;
-    fVarDef = new FVarDef_t[ kMAXCODES ];
-    memcpy( fVarDef, rhs.fVarDef, kMAXCODES*sizeof(FVarDef_t));
   }
   return *this;
 }
@@ -97,26 +107,22 @@ Int_t THaFormula::Compile( const char* expression )
   // Parse the given expression, or, if empty, parse the title.
   // Return 0 on success, 1 if error in expression.
 
-  fNcodes = 0;
-  fNval   = 0;
-  fAlreadyFound.ResetAllBits();
-  delete [] fVarDef;
-  fVarDef = new FVarDef_t[ kMAXCODES ];
-  memset( fVarDef, 0, kMAXCODES*sizeof(FVarDef_t));
+  fNval = 0;
+  fAlreadyFound.ResetAllBits(); // Seems to be missing in ROOT
+  fVarDef.clear();
+  ResetBit(kArrayFormula);
 
   Int_t status = TFormula::Compile( expression );
 
   //*-*- Store formula in linked list of formula in ROOT
 
-  fError = (status != 0);
-  if( fError ) {
-    if( fRegister) gROOT->GetListOfFunctions()->Remove(this);
+  SetBit( kError, (status != 0));
+  if( status != 0 ) {
+    if( !TestBit(kNotGlobal) ) gROOT->GetListOfFunctions()->Remove(this);
   } else {
-#ifdef WITH_DEBUG
-    R__ASSERT( fNval+fNstring == fNcodes );
-    R__ASSERT( fNstring >= 0 && fNval >= 0 );
-#endif
-    if( fRegister ) {
+    assert( fNval+fNstring == (Int_t)fVarDef.size() );
+    assert( fNstring >= 0 && fNval >= 0 );
+    if( !TestBit(kNotGlobal) ) {
       TObject* old = gROOT->GetListOfFunctions()->FindObject(GetName());
       if (old) gROOT->GetListOfFunctions()->Remove(old);
       gROOT->GetListOfFunctions()->Add(this);
@@ -128,7 +134,7 @@ Int_t THaFormula::Compile( const char* expression )
     // so that the loops in EvalPar calculate all the values. This inefficient,
     // but the best we can do with the implementation of TFormula.
     if( fNstring > 0 && fNval > 0 )
-      fNval = fNstring = fNcodes;
+      fNval = fNstring = fVarDef.size();
   }
   return status;
 }
@@ -138,7 +144,6 @@ THaFormula::~THaFormula()
 {
   // Destructor
 
-  delete [] fVarDef; fVarDef = 0;
 }
 
 //_____________________________________________________________________________
@@ -147,12 +152,10 @@ char* THaFormula::DefinedString( Int_t i )
   // Get pointer to the i-th string variable. If the variable is not
   // a string, return pointer to an empty string.
 
-#ifdef WITH_DEBUG
-  R__ASSERT( i>=0 && i<fNcodes );
-#endif
-  FVarDef_t* def = fVarDef+i;
-  if( def->type == kString ) {
-    const THaVar* pvar = static_cast<const THaVar*>( def->code );
+  assert( i>=0 && i<(Int_t)fVarDef.size() );
+  FVarDef_t& def = fVarDef[i];
+  if( def.type == kString ) {
+    const THaVar* pvar = static_cast<const THaVar*>( def.code );
     char** ppc = (char**)pvar->GetValuePointer(); //truly gruesome cast
     return *ppc;
   }
@@ -174,28 +177,31 @@ Double_t THaFormula::DefinedValue( Int_t i )
   // (calculated at the last evaluation).
   // If the variable is a string, return value of its character value
 
-#ifdef WITH_DEBUG
-  R__ASSERT( i>=0 && i<fNcodes );
-#endif
-  FVarDef_t* def = fVarDef+i;
-  const void* ptr = def->code;
-  if( !ptr ) return kBig;
-  switch( def->type ) {
+  assert( i>=0 && i<(Int_t)fVarDef.size() );
+  FVarDef_t& def = fVarDef[i];
+  switch( def.type ) {
   case kVariable:
   case kString:
     {
-      const THaVar* var = static_cast<const THaVar*>(ptr);
-      if( def->index >= var->GetLen() )
-	return kBig;
-      return var->GetValue( def->index );
+      const THaVar* var = static_cast<const THaVar*>(def.code);
+      assert(var);
+      if( def.index >= var->GetLen() ) {
+	SetBit(kInvalid);
+	return 1.0; // safer than kBig to prevent overflow
+      }
+      return var->GetValue( def.index );
     }
     break;
   case kCut:
-    return static_cast<const THaCut*>(ptr)->GetResult();
-    break;
-  default:
-    return kBig;
+    {
+      const THaCut* cut = static_cast<const THaCut*>(def.code);
+      assert(cut);
+      return cut->GetResult();
+      break;
+    }
   }
+  assert(false); // not reached
+  return kBig;
 }
 
 //_____________________________________________________________________________
@@ -223,16 +229,17 @@ Int_t THaFormula::DefinedVariable(TString& name)
 #endif
   Int_t k = DefinedGlobalVariable( name );
   if( k>=0 ) {
-    FVarDef_t* def = fVarDef+k;
+    FVarDef_t& def = fVarDef[k];
     // Interpret Char_t* variables as strings
-    const THaVar* pvar = static_cast<const THaVar*>( def->code );
+    const THaVar* pvar = static_cast<const THaVar*>( def.code );
+    assert(pvar);
     if( pvar->GetType() == kCharP ) {
 #if ROOT_VERSION_CODE >= ROOT_VERSION(4,0,0)
       action = kDefinedString;
 #endif
       // String definitions must be in the same array as variable definitions
       // because TFormula may revert a kDefinedString to a kDefinedVariable.
-      def->type = kString;
+      def.type = kString;
       // TFormula::Analyze will increment fNstring even if the string
       // was already found. Fix this here.
       if( k < kMAXFOUND && !fAlreadyFound.TestBitNumber(k) )
@@ -255,18 +262,15 @@ Int_t THaFormula::DefinedCut( const TString& name )
   if( fCutList ) {
     const THaCut* pcut = fCutList->FindCut( name );
     if( pcut ) {
-      if( fNcodes >= kMAXCODES ) return -1;
       // See if this cut already used earlier in this new cut
-      FVarDef_t* def = fVarDef;
-      for( Int_t i=0; i<fNcodes; i++, def++ ) {
-	if( def->type == kCut && pcut == def->code )
+      for( vector<FVarDef_t>::size_type i=0; i<fVarDef.size(); ++i ) {
+	FVarDef_t& def = fVarDef[i];
+	if( def.type == kCut && pcut == def.code )
 	  return i;
       }
-      def->type = kCut;
-      def->code  = pcut;
-      def->index = 0;
+      fVarDef.push_back( FVarDef_t(kCut,pcut,0) );
       fNpar = 0;
-      return fNcodes++;
+      return fVarDef.size()-1;
     }
   }
   return -1;
@@ -279,7 +283,7 @@ Int_t THaFormula::DefinedGlobalVariable( const TString& name )
   // local list of variables used in this formula.
 
   // No list of variables or too many variables in this formula?
-  if( !fVarList || fNcodes >= kMAXCODES )
+  if( !fVarList )
     return -2;
 
   // Parse name for array syntax
@@ -312,26 +316,24 @@ Int_t THaFormula::DefinedGlobalVariable( const TString& name )
       index = parsed_name[0];
     }
   } else if( var->IsArray() ) {
-    // Asking for an entire array -> multi-valued formula
-    // TODO: support multi-valued formulas
-    // For the moment, this is equivalent to asking for element [0]
+    // Asking for an entire array -> array formula
+    SetBit(kArrayFormula);
+    // TODO: support instances
   }
 
   // Check if this variable already used in this formula
-  FVarDef_t* def = fVarDef;
-  for( Int_t i=0; i<fNcodes; i++, def++ ) {
-    if( var == def->code && index == def->index )
+  for( vector<FVarDef_t>::size_type i=0; i<fVarDef.size(); ++i ) {
+    FVarDef_t& def = fVarDef[i];
+    if( var == def.code && index == def.index )
       return i;
   }
   // If this is a new variable, add it to the list
-  def->type = kVariable;
-  def->code = var;
-  def->index = index;
+  fVarDef.push_back( FVarDef_t(kVariable,var,index) );
 
   // No parameters ever for a THaFormula
   fNpar = 0;
 
-  return fNcodes++;
+  return fVarDef.size()-1;
 }
 
 //_____________________________________________________________________________
@@ -339,10 +341,19 @@ Double_t THaFormula::Eval( void )
 {
   // Evaluate this formula
 
-  if( fError )  return kBig;
-  if (fNoper == 1 && fNcodes == 1 )  return DefinedValue(0);
+  ResetBit(kInvalid);
+  Double_t y;
 
-  return EvalPar( 0 );
+  if( IsError() )  return kBig;
+  if (fNoper == 1 && fVarDef.size() == 1 )
+    y = DefinedValue(0);
+  else
+    y = EvalPar(0);
+
+  if( IsInvalid() )
+    return kBig;
+
+  return y;
 }
 
 //_____________________________________________________________________________

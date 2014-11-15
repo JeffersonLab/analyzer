@@ -9,12 +9,13 @@
 
 #include "THaFormula.h"
 #include "TString.h"
+#include "TMath.h"
 
 class THaCut : public THaFormula {
 
 public:
   THaCut() : THaFormula(), fLastResult(kFALSE), fNCalled(0), fNPassed(0) {}
-  THaCut( const char* name, const char* expression, const char* block, 
+  THaCut( const char* name, const char* expression, const char* block,
 	  const THaVarList* vlst = gHaVars, const THaCutList* clst = gHaCuts );
   THaCut( const THaCut& rhs );
   THaCut& operator=( const THaCut& rhs );
@@ -52,16 +53,25 @@ Bool_t THaCut::EvalCut()
 {
   // Evaluate the cut and increment counters
 
+  ResetBit(kInvalid);
   fNCalled++;
-  fLastResult = ( Eval() > 0.5 );
-  if( fLastResult ) fNPassed++;
+  if( TestBit(kError) )
+    fLastResult = false;
+  else {
+    fLastResult = (TMath::Nint( Eval() ) != 0);
+    if( TestBit(kInvalid) ) {
+      fLastResult = false;
+    } else if( fLastResult ) {
+      fNPassed++;
+    }
+  }
   return fLastResult;
 }
 
 //_____________________________________________________________________________
 inline
 void THaCut::Reset()
-{ 
+{
   // Reset cut result and statistics counters
 
   ClearResult();

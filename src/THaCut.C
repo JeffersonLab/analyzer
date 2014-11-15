@@ -3,8 +3,10 @@
 
 //////////////////////////////////////////////////////////////////////////
 //
-// THaCut -- Hall A analyzer cut (a.k.a. test)
-// This is a slightly expanded version of a THaFormula
+// THaCut -- Class for a cut (a.k.a. test)
+//
+// This is a slightly expanded version of a THaFormula that supports
+// statistics counters and caches the result of the last evaluation.
 //
 //////////////////////////////////////////////////////////////////////////
 
@@ -20,27 +22,26 @@
 using namespace std;
 
 //_____________________________________________________________________________
-THaCut::THaCut( const char* name, const char* expression, const char* block, 
+THaCut::THaCut( const char* name, const char* expression, const char* block,
 		const THaVarList* vlst, const THaCutList* clst ) :
   THaFormula(), fLastResult(kFALSE), fBlockname(block), fNCalled(0), fNPassed(0)
 {
-  // Create a cut 'name' according to 'expression'. 
+  // Create a cut 'name' according to 'expression'.
   // The cut may use global variables from the list 'vlst' and other,
   // previously defined cuts from 'clst'.
-  //  
-  // Unlike the behavior of THaFormula, THaCuts do NOT store themselves in 
-  // ROOT's list of formulas. Otherwise existing cuts used in new cut expressions 
-  // will get reparsed instead of queried. As a result, existing cuts can only
-  // be used by other cuts, not by formulas.
+  //
+  // Unlike the behavior of THaFormula, THaCuts do NOT store themselves in
+  // ROOT's list of formulas. Otherwise existing cuts used in new cut expressions
+  // would get reparsed instead of queried.
 
   // Sadly, we have to duplicate the TFormula constructor code here because of
-  // the call to Compile(), which in turn calls our virtual function 
+  // the call to Compile(), which in turn calls our virtual function
   // DefinedVariable().
 
   SetName(name);
   SetList(vlst);
   SetCutList(clst);
-  fRegister = kFALSE;
+  SetBit(kNotGlobal);  // Do not register cuts in ROOT's formula list
 
   //eliminate blanks in expression
   Int_t nch = strlen(expression);
@@ -89,7 +90,7 @@ Int_t THaCut::DefinedVariable(TString& name, Int_t& action)
 Int_t THaCut::DefinedVariable(TString& name)
 #endif
 {
-  // Check if 'name' is in the list of existing cuts. 
+  // Check if 'name' is in the list of existing cuts.
   // If so, store pointer to the cut for use by DefinedValue().
   // Otherwise, assume 'name' is a global variable and pass it on
   // to THaFormula::DefinedVariable().
@@ -127,13 +128,13 @@ void THaCut::Print( Option_t* option ) const
   Int_t nt = max( s.GetValue(2), (Int_t)strlen(GetTitle()) );
   Int_t nb = max( s.GetValue(3), fBlockname.Length() );
   Int_t np = max( s.GetValue(4), (Int_t)strlen(s.GetOption(4)) );
-    
+
   // Print data according to the requested format
 
   if ( s.IsLine() ) {
 
     cout.flags( ios::left );
-    cout << setw(nn) << GetName() << "  " 
+    cout << setw(nn) << GetName() << "  "
 	 << setw(nt) << GetTitle() << "  ";
     if( !strcmp( s.GetOption(), kPRINTLINE )) {
       cout << setw(1)  << (bool)fLastResult << "  "
@@ -170,7 +171,7 @@ void THaCut::Print( Option_t* option ) const
 void THaCut::SetBlockname( const Text_t* name )
 {
   // Set name of block (=group of cuts) for this cut.
-  // The block name is used only for informational purposes within the 
+  // The block name is used only for informational purposes within the
   // THaCut class.
 
   fBlockname = name;
@@ -184,7 +185,7 @@ void THaCut::SetName( const Text_t* name )
   // so that the name can only be set if it is empty.
   // This avoids problems with hash values since THaCuts are
   // elements of a THashList.
-  // Alternatively, we could rehash the associated table(s), but that 
+  // Alternatively, we could rehash the associated table(s), but that
   // would be much more involved.
 
   if( fName.Length() == 0 )
