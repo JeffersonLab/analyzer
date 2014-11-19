@@ -264,11 +264,7 @@ Double_t THaFormula::DefinedValue( Int_t i )
 }
 
 //_____________________________________________________________________________
-#if ROOT_VERSION_CODE >= ROOT_VERSION(4,0,0)
 Int_t THaFormula::DefinedVariable(TString& name, Int_t& action)
-#else
-Int_t THaFormula::DefinedVariable(TString& name)
-#endif
 {
   // Check if name is in the list of global objects
 
@@ -283,9 +279,7 @@ Int_t THaFormula::DefinedVariable(TString& name)
   //   -2  error parsing variable name
   //   -3  error parsing variable name, error already printed
 
-#if ROOT_VERSION_CODE >= ROOT_VERSION(4,0,0)
   action = kDefinedVariable;
-#endif
   Int_t k = DefinedGlobalVariable( name );
   if( k>=0 ) {
     FVarDef_t& def = fVarDef[k];
@@ -293,9 +287,7 @@ Int_t THaFormula::DefinedVariable(TString& name)
     assert(pvar);
     // Interpret Char_t* variables as strings
     if( pvar->GetType() == kCharP ) {
-#if ROOT_VERSION_CODE >= ROOT_VERSION(4,0,0)
       action = kDefinedString;
-#endif
       // String definitions must be in the same array as variable definitions
       // because TFormula may revert a kDefinedString to a kDefinedVariable.
       def.type = kString;

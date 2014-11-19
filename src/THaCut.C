@@ -84,11 +84,13 @@ THaCut& THaCut::operator=( const THaCut& rhs )
 }
 
 //_____________________________________________________________________________
-#if ROOT_VERSION_CODE >= ROOT_VERSION(4,0,0)
+THaCut::~THaCut()
+{
+  // Destructor
+}
+
+//_____________________________________________________________________________
 Int_t THaCut::DefinedVariable(TString& name, Int_t& action)
-#else
-Int_t THaCut::DefinedVariable(TString& name)
-#endif
 {
   // Check if 'name' is in the list of existing cuts.
   // If so, store pointer to the cut for use by DefinedValue().
@@ -101,16 +103,10 @@ Int_t THaCut::DefinedVariable(TString& name)
   //   -2  error parsing variable name
   //   -3  error parsing variable name, error already printed
 
-#if ROOT_VERSION_CODE >= ROOT_VERSION(4,0,0)
   action = kDefinedVariable;
-#endif
   Int_t k = DefinedCut( name );
   if( k>=0 ) return k;
-#if ROOT_VERSION_CODE >= ROOT_VERSION(4,0,0)
   return THaFormula::DefinedVariable( name, action );
-#else
-  return THaFormula::DefinedVariable( name );
-#endif
 }
 
 //_____________________________________________________________________________

@@ -19,14 +19,11 @@ public:
 	  const THaVarList* vlst = gHaVars, const THaCutList* clst = gHaCuts );
   THaCut( const THaCut& rhs );
   THaCut& operator=( const THaCut& rhs );
-  virtual ~THaCut() {}
+  virtual ~THaCut();
 
           void         ClearResult()        { fLastResult = kFALSE; }
-#if ROOT_VERSION_CODE >= 262144 // 4.00/00
+  // Requires ROOT >= 4.00/00
   virtual Int_t        DefinedVariable( TString& variable, Int_t& action );
-#else
-  virtual Int_t        DefinedVariable( TString& variable );
-#endif
   virtual Bool_t       EvalCut();
           Bool_t       GetResult()    const { return fLastResult; }
           const char*  GetBlockname() const { return fBlockname.Data(); }

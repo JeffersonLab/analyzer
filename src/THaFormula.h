@@ -27,34 +27,21 @@ public:
 	      const THaVarList* vlst=gHaVars, const THaCutList* clst=gHaCuts );
   THaFormula( const THaFormula& rhs );
   THaFormula& operator=( const THaFormula& rhs );
-  virtual             ~THaFormula();
+  virtual ~THaFormula();
+
   virtual Int_t       Compile( const char* expression="" );
   virtual char*       DefinedString( Int_t i );
   virtual Double_t    DefinedValue( Int_t i );
-#if ROOT_VERSION_CODE >= 262144 // 4.00/00
+  // Requires ROOT >= 4.00/00
   virtual Int_t       DefinedVariable( TString& variable, Int_t& action );
-#else
-  virtual Int_t       DefinedVariable( TString& variable );
-#endif
   virtual Int_t       DefinedCut( const TString& variable );
   virtual Int_t       DefinedGlobalVariable( const TString& variable );
   virtual Double_t    Eval();
-#if ROOT_VERSION_CODE > 262660 // 4.02/04  Dumb rootcint chokes on ROOT_VERSION macro
-  // The ROOT team strikes again - this one is really BAD
+  // Requires ROOT >= 4.02/04
   virtual Double_t    Eval( Double_t /*x*/, Double_t /*y*/=0.0,
 			    Double_t /*z*/=0.0, Double_t /*t*/=0.0 ) const
-    // hack this-pointer to be non-const - courtesy of ROOT team
+  // need to hack this-pointer to be non-const - courtesy of ROOT team
   { return const_cast<THaFormula*>(this)->Eval(); }
-#else
-#if ROOT_VERSION_CODE >= 197632 // 3.04/00
-  virtual Double_t    Eval( Double_t /*x*/, Double_t /*y*/=0.0,
-			    Double_t /*z*/=0.0, Double_t /*t*/=0.0 )
-#else
-  virtual Double_t    Eval( Double_t /*x*/, Double_t /*y*/=0.0,
-			    Double_t /*z*/=0.0 )
-#endif
-  { return Eval(); }
-#endif
   virtual Double_t    EvalInstance( Int_t instance );
   virtual Int_t       GetNdata();
           Bool_t      IsArray()   const { return TestBit(kArrayFormula); }
