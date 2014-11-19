@@ -45,7 +45,8 @@ THaCut::THaCut( const char* name, const char* expression, const char* block,
   SetCutList(clst);
 
   // Call common THaFormula::Init
-  Init( name, expression );
+  if( Init( name, expression ) != 0 )
+    return;
 
   // Do not register cuts in ROOT's list of functions
   SetBit(kNotGlobal);

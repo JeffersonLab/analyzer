@@ -55,13 +55,14 @@ THaFormula::THaFormula( const char* name, const char* expression,
   // also out own DefinedVariable() etc. virtual functions. A disturbing
   // design error of the ROOT base class indeed.
 
-  Init( name, expression );
+  if( Init( name, expression ) != 0 )
+    return;
 
   Compile();   // This calls our own Compile()
 }
 
 //_____________________________________________________________________________
-void THaFormula::Init( const char* name, const char* expression )
+Int_t THaFormula::Init( const char* name, const char* expression )
 {
   // Common initialization called from the constructors
 
@@ -73,11 +74,12 @@ void THaFormula::Init( const char* name, const char* expression )
   ResetBit(kArrayFormula);
 
   if( !name )
-    return;
+    return -1;
   SetName(name);
 
   if( fName.IsWhitespace() ) {
     Error(here, "name may not be empty");
+    SetBit(kError);
   }
 
   // Eliminate blanks in expression and convert "**" to "^"
@@ -86,7 +88,7 @@ void THaFormula::Init( const char* name, const char* expression )
   if( chaine.Length() == 0 ) {
     Error(here, "expression may not be empty");
     SetBit(kError);
-    return;
+    return -1;
   }
   chaine.ReplaceAll("**","^");
 
@@ -112,6 +114,8 @@ void THaFormula::Init( const char* name, const char* expression )
 
   if( gausNorm || landauNorm )
     SetBit(kNormalized);
+
+  return 0;
 }
 
 //_____________________________________________________________________________

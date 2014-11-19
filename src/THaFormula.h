@@ -73,7 +73,7 @@ protected:
   const THaCutList* fCutList;          //Pointer to list of cuts
   Int_t             fInstance;         //Current instance to evaluate
 
-          void   Init( const char* name, const char* expression );
+          Int_t  Init( const char* name, const char* expression );
   virtual Bool_t IsString( Int_t oper ) const;
 
   ClassDef(THaFormula,0)  //Formula defined on list of variables
