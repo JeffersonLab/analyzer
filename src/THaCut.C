@@ -22,44 +22,37 @@
 using namespace std;
 
 //_____________________________________________________________________________
+THaCut::THaCut() : THaFormula(), fLastResult(kFALSE), fNCalled(0), fNPassed(0)
+{
+  // Default constructor
+}
+
+//_____________________________________________________________________________
 THaCut::THaCut( const char* name, const char* expression, const char* block,
-		const THaVarList* vlst, const THaCutList* clst ) :
-  THaFormula(), fLastResult(kFALSE), fBlockname(block), fNCalled(0), fNPassed(0)
+		const THaVarList* vlst, const THaCutList* clst )
+  : THaFormula(), fLastResult(kFALSE), fBlockname(block),
+    fNCalled(0), fNPassed(0)
 {
   // Create a cut 'name' according to 'expression'.
   // The cut may use global variables from the list 'vlst' and other,
   // previously defined cuts from 'clst'.
   //
   // Unlike the behavior of THaFormula, THaCuts do NOT store themselves in
-  // ROOT's list of formulas. Otherwise existing cuts used in new cut expressions
+  // ROOT's list of functions. Otherwise existing cuts used in new cut expressions
   // would get reparsed instead of queried.
 
-  // Sadly, we have to duplicate the TFormula constructor code here because of
-  // the call to Compile(), which in turn calls our virtual function
-  // DefinedVariable().
-
-  SetName(name);
   SetList(vlst);
   SetCutList(clst);
-  SetBit(kNotGlobal);  // Do not register cuts in ROOT's formula list
 
-  //eliminate blanks in expression
-  Int_t nch = strlen(expression);
-  char *expr = new char[nch+1];
-  Int_t j = 0;
-  for (Int_t i=0;i<nch;i++) {
-     if (expression[i] == ' ') continue;
-     if (i > 0 && (expression[i] == '*') && (expression[i-1] == '*')) {
-        expr[j-1] = '^';
-        continue;
-     }
-     expr[j] = expression[i]; j++;
-   }
-  expr[j] = 0;
-  if (j) SetTitle(expr);
-  delete [] expr;
+  // Call common THaFormula::Init
+  Init( name, expression );
 
-  Compile();   // This calls our own Compile()
+  // Do not register cuts in ROOT's list of functions
+  SetBit(kNotGlobal);
+
+  // This calls THaFormula::Compile(), which calls TFormula::Analyze(),
+  // which then calls our own DefinedVariable()
+  Compile();
 }
 
 //_____________________________________________________________________________

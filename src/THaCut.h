@@ -14,7 +14,7 @@
 class THaCut : public THaFormula {
 
 public:
-  THaCut() : THaFormula(), fLastResult(kFALSE), fNCalled(0), fNPassed(0) {}
+  THaCut();
   THaCut( const char* name, const char* expression, const char* block,
 	  const THaVarList* vlst = gHaVars, const THaCutList* clst = gHaCuts );
   THaCut( const THaCut& rhs );
