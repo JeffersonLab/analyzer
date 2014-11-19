@@ -65,6 +65,8 @@ void THaFormula::Init( const char* name, const char* expression )
 {
   // Common initialization called from the constructors
 
+  const char* const here = "THaFormula";
+
   ResetBit(kNotGlobal);
   ResetBit(kError);
   ResetBit(kInvalid);
@@ -74,46 +76,36 @@ void THaFormula::Init( const char* name, const char* expression )
     return;
   SetName(name);
 
-  if( !expression || !*expression ) {
-    Error("THaFormula", "expression may not be 0 or have zero length");
-    SetBit(kError);
-    return;
+  if( fName.IsWhitespace() ) {
+    Error(here, "name may not be empty");
   }
 
   // Eliminate blanks in expression and convert "**" to "^"
-  Int_t nch = strlen(expression);
-  char *expr = new char[nch+1];
-  Int_t j = 0;
-  for (Int_t i=0;i<nch;i++) {
-     if (expression[i] == ' ') continue;
-     if (i > 0 && (expression[i] == '*') && (expression[i-1] == '*')) {
-        expr[j-1] = '^';
-        continue;
-     }
-     expr[j] = expression[i]; j++;
-   }
-  expr[j] = 0;
+  TString chaine(expression);
+  chaine.ReplaceAll(" ","");
+  if( chaine.Length() == 0 ) {
+    Error(here, "expression may not be empty");
+    SetBit(kError);
+    return;
+  }
+  chaine.ReplaceAll("**","^");
 
   Bool_t gausNorm = kFALSE, landauNorm = kFALSE, linear = kFALSE;
 
-  if (j) {
-    TString chaine(expr);
-    //special case for functions for linear fitting
-    if (chaine.Contains("++"))
-      linear = kTRUE;
-    // special case for normalized gaus
-    if (chaine.Contains("gausn")) {
-      gausNorm = kTRUE;
-      chaine.ReplaceAll("gausn","gaus");
-    }
-    // special case for normalized landau
-    if (chaine.Contains("landaun")) {
-      landauNorm = kTRUE;
-      chaine.ReplaceAll("landaun","landau");
-    }
-    SetTitle(chaine.Data());
+  //special case for functions for linear fitting
+  if (chaine.Contains("++"))
+    linear = kTRUE;
+  // special case for normalized gaus
+  if (chaine.Contains("gausn")) {
+    gausNorm = kTRUE;
+    chaine.ReplaceAll("gausn","gaus");
   }
-  delete [] expr;
+  // special case for normalized landau
+  if (chaine.Contains("landaun")) {
+    landauNorm = kTRUE;
+    chaine.ReplaceAll("landaun","landau");
+  }
+  SetTitle(chaine.Data());
 
   if( linear )
     SetBit(kLinear);
