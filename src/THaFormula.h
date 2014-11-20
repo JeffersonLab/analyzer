@@ -43,7 +43,7 @@ public:
   // need to hack this-pointer to be non-const - courtesy of ROOT team
   { return const_cast<THaFormula*>(this)->Eval(); }
   virtual Double_t    EvalInstance( Int_t instance );
-  virtual Int_t       GetNdata();
+  virtual Int_t       GetNdata()   const;
   virtual Bool_t      IsArray()    const { return TestBit(kArrayFormula); }
   virtual Bool_t      IsVarArray() const { return TestBit(kVarArray); }
           Bool_t      IsError()    const { return TestBit(kError); }
@@ -75,11 +75,24 @@ protected:
   const THaCutList* fCutList;          //Pointer to list of cuts
   Int_t             fInstance;         //Current instance to evaluate
 
-          Int_t  Init( const char* name, const char* expression );
-  virtual Bool_t IsString( Int_t oper ) const;
-  virtual void   RegisterFormula( Bool_t add = kTRUE );
+          Double_t  EvalInstanceUnchecked( Int_t instance );
+          Int_t     GetNdataUnchecked() const;
+          Int_t     Init( const char* name, const char* expression );
+  virtual Bool_t    IsString( Int_t oper ) const;
+  virtual void      RegisterFormula( Bool_t add = kTRUE );
 
   ClassDef(THaFormula,0)  //Formula defined on list of variables
 };
+
+//__________________inlines____________________________________________________
+inline
+Double_t THaFormula::EvalInstanceUnchecked( Int_t instance )
+{
+  fInstance = instance;
+  if( fNoper == 1 && fVarDef.size() == 1 )
+    return DefinedValue(0);
+  else
+    return EvalPar(0);
+}
 
 #endif

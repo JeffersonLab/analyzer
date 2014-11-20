@@ -393,12 +393,7 @@ Double_t THaFormula::EvalInstance( Int_t instance )
   }
 
   ResetBit(kInvalid);
-  fInstance = instance;
-  Double_t y;
-  if( fNoper == 1 && fVarDef.size() == 1 )
-    y = DefinedValue(0);
-  else
-    y = EvalPar(0);
+  Double_t y = EvalInstanceUnchecked( instance );
 
   if( IsInvalid() )
     return kBig;
@@ -407,17 +402,14 @@ Double_t THaFormula::EvalInstance( Int_t instance )
 }
 
 //_____________________________________________________________________________
-Int_t THaFormula::GetNdata()
+Int_t THaFormula::GetNdataUnchecked() const
 {
-  // Get number of available instances of this formula
-
-  if( !IsArray() )
-    return 1;
+  // Return minimum of sizes of all referenced arrays
 
   Int_t ndata = kMaxInt;
   for( vector<FVarDef_t>::size_type i = 0;
        ndata > 0 && i < fVarDef.size(); ++i ) {
-    FVarDef_t& def = fVarDef[i];
+    const FVarDef_t& def = fVarDef[i];
     if( def.type == kArray ) {
       const THaVar* pvar = static_cast<const THaVar*>(def.code);
       assert( pvar );
@@ -427,6 +419,17 @@ Int_t THaFormula::GetNdata()
     }
   }
   return ndata;
+}
+
+//_____________________________________________________________________________
+Int_t THaFormula::GetNdata() const
+{
+  // Get number of available instances of this formula
+
+  if( !IsArray() )
+    return 1;
+
+  return GetNdataUnchecked();
 }
 
 //_____________________________________________________________________________

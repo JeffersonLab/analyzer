@@ -1,6 +1,5 @@
 //*-- Author :    Ole Hansen   03-May-2000
 
-
 //////////////////////////////////////////////////////////////////////////
 //
 // THaCut -- Class for a cut (a.k.a. test)
@@ -12,17 +11,18 @@
 
 #include "THaCut.h"
 #include "THaPrintOption.h"
+#include "TMath.h"
 
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
 #include <cstring>
 
-
 using namespace std;
 
 //_____________________________________________________________________________
-THaCut::THaCut() : THaFormula(), fLastResult(kFALSE), fNCalled(0), fNPassed(0)
+THaCut::THaCut()
+  : THaFormula(), fLastResult(kFALSE), fNCalled(0), fNPassed(0), fMode(kAND)
 {
   // Default constructor
 }
@@ -30,23 +30,26 @@ THaCut::THaCut() : THaFormula(), fLastResult(kFALSE), fNCalled(0), fNPassed(0)
 //_____________________________________________________________________________
 THaCut::THaCut( const char* name, const char* expression, const char* block,
 		const THaVarList* vlst, const THaCutList* clst )
-  : THaFormula(), fLastResult(kFALSE), fBlockname(block),
-    fNCalled(0), fNPassed(0)
+  : THaFormula(), fLastResult(kFALSE), fBlockname(block), fNCalled(0),
+    fNPassed(0), fMode(kAND)
 {
   // Create a cut 'name' according to 'expression'.
   // The cut may use global variables from the list 'vlst' and other,
   // previously defined cuts from 'clst'.
   //
   // Unlike the behavior of THaFormula, THaCuts do NOT store themselves in
-  // ROOT's list of functions. Otherwise existing cuts used in new cut expressions
-  // would get reparsed instead of queried.
+  // ROOT's list of functions. Otherwise existing cuts used in new cut
+  // expressions would get reparsed instead of queried. This wouldn't
+  // work properly with a non-default array evaluation mode (OR/XOR).
 
   SetList(vlst);
   SetCutList(clst);
 
   // Call common THaFormula::Init
-  if( Init( name, expression ) != 0 )
+  if( Init(name, expression) != 0 ||
+      (fMode = ParsePrefix(fTitle)) == kModeErr ) {
     return;
+  }
 
   // Do not register cuts in ROOT's list of functions
   SetBit(kNotGlobal);
@@ -59,7 +62,7 @@ THaCut::THaCut( const char* name, const char* expression, const char* block,
 //_____________________________________________________________________________
 THaCut::THaCut( const THaCut& rhs ) :
   THaFormula(rhs), fLastResult(rhs.fLastResult), fBlockname(rhs.fBlockname),
-  fNCalled(rhs.fNCalled), fNPassed(rhs.fNPassed)
+  fNCalled(rhs.fNCalled), fNPassed(rhs.fNPassed), fMode(rhs.fMode)
 {
   // Copy ctor
 }
@@ -73,6 +76,7 @@ THaCut& THaCut::operator=( const THaCut& rhs )
     fBlockname  = rhs.fBlockname;
     fNCalled    = rhs.fNCalled;
     fNPassed    = rhs.fNPassed;
+    fMode       = rhs.fMode;
   }
   return *this;
 }
@@ -101,6 +105,117 @@ Int_t THaCut::DefinedVariable(TString& name, Int_t& action)
   Int_t k = DefinedCut( name );
   if( k>=0 ) return k;
   return THaFormula::DefinedVariable( name, action );
+}
+
+//_____________________________________________________________________________
+Bool_t THaCut::EvalElement( Int_t instance )
+{
+  return (TMath::Nint( THaFormula::EvalInstanceUnchecked(instance) ) != 0);
+}
+
+//_____________________________________________________________________________
+Double_t THaCut::Eval()
+{
+  // Evaluate the cut and increment counters. The Double_t return value
+  // is awkward, but results are usually retrieved via GetResult anyway.
+  // Problems like this will go away if Eval() is templatized.
+
+  ResetBit(kInvalid);
+  fNCalled++;
+  if( IsError() ) {
+    fLastResult = false;
+  }
+  else {
+    fLastResult = EvalElement(0);
+    if( TestBit(kArrayFormula) && !IsInvalid() ) {
+      Int_t ndata = GetNdataUnchecked();
+      if( ndata > 1 ) {
+	switch( fMode ) {
+	case kAND:
+	  // All elements satisfy the test (==N)
+	  for( Int_t i=1; fLastResult && i<ndata; ++i )
+	    fLastResult = EvalElement(i);
+	  break;
+	case kOR:
+	  // At least one element satisfies the test (>=1)
+	  for( Int_t i=1; !fLastResult && i<ndata; ++i )
+	    fLastResult = EvalElement(i);
+	  break;
+	case kXOR:
+	  {
+	    // Exactly one element satisfies the test (==1)
+	    Int_t ntrue = fLastResult ? 1 : 0;
+	    for( Int_t i=1; ntrue < 2 && i<ndata; ++i ) {
+	      if( EvalElement(i) )
+		++ntrue;
+	    }
+	    fLastResult = (ntrue == 1);
+	  }
+	  break;
+	default:
+	  fLastResult = false;
+	  break;
+	}
+      }
+    }
+    if( IsInvalid() ) {
+      fLastResult = false;
+    }
+    else if( fLastResult ) {
+      fNPassed++;
+    }
+  }
+  return fLastResult;
+}
+
+//_____________________________________________________________________________
+THaCut::EvalMode THaCut::ParsePrefix( TString& expr )
+{
+  // Parse the given expression for a mode prefix (e.g. "OR:")
+  // and return its value. If the expression does not have a mode prefix,
+  // return the default kAND (=0).
+  // The expression is expected to have all whitespace removed.
+  // If the prefix was found, it is stripped from the expression.
+  // If a mode prefix seems to be present, but is not found in
+  // the defined modes, return kModeErr.
+
+  const EvalMode kDefaultMode = kAND;
+  const char* const here = "THaCut";
+
+  struct ModeDef_t {
+    const char* prefix;
+    EvalMode    mode;
+  };
+  const ModeDef_t mode_defs[] = {
+    { "AND", kAND }, { "ALL", kAND }, { "OR", kOR }, { "ANY", kOR },
+    { "XOR", kXOR }, { "ONE", kXOR }, { "ONEOF", kXOR }, { 0, kModeErr }
+  };
+
+  Ssiz_t colon = expr.Index(":");
+  if( colon == kNPOS )
+    return kDefaultMode;
+
+  const ModeDef_t* def = mode_defs;
+  while( def->prefix ) {
+    if( expr.BeginsWith(def->prefix) &&
+	static_cast<Ssiz_t>(strlen(def->prefix)) == colon ) {
+      expr.Remove(0,colon+1);
+      break;
+    }
+    ++def;
+  }
+  EvalMode mode = def->mode;
+
+  if( mode == kModeErr ) {
+    TString prefix = expr(0,colon);
+    Error(here, "Unknown prefix %s", prefix.Data() );
+  } else if( expr.Length() == 0 ) {
+    Error(here, "expression may not be empty");
+    mode = kModeErr;
+  }
+  if( mode == kModeErr )
+    SetBit(kError);
+  return mode;
 }
 
 //_____________________________________________________________________________
@@ -192,5 +307,13 @@ void THaCut::SetNameTitle( const Text_t* name, const Text_t* formula )
 }
 
 //_____________________________________________________________________________
-ClassImp(THaCut)
+void THaCut::Reset()
+{
+  // Reset cut result and statistics counters
 
+  ClearResult();
+  fNCalled = fNPassed = 0;
+}
+
+//_____________________________________________________________________________
+ClassImp(THaCut)
