@@ -55,10 +55,14 @@ THaFormula::THaFormula( const char* name, const char* expression,
   // also out own DefinedVariable() etc. virtual functions. A disturbing
   // design error of the ROOT base class indeed.
 
-  if( Init( name, expression ) != 0 )
+  if( Init( name, expression ) != 0 ) {
+    RegisterFormula(false);
     return;
+  }
 
   Compile();   // This calls our own Compile()
+
+  RegisterFormula();
 }
 
 //_____________________________________________________________________________
@@ -157,31 +161,11 @@ Int_t THaFormula::Compile( const char* expression )
 
   Int_t status = TFormula::Compile( expression );
 
-  // Store formula in ROOT's list of functions
 
   SetBit(kError, (status != 0));
-
-  R__LOCKGUARD2(gROOTMutex);
-  if( IsError() ) {
-    if( !TestBit(kNotGlobal) )
-      gROOT->GetListOfFunctions()->Remove(this);
-  } else {
+  if( !IsError() ) {
     assert( fNval+fNstring == (Int_t)fVarDef.size() );
     assert( fNstring >= 0 && fNval >= 0 );
-    if( !TestBit(kNotGlobal) ) {
-      const char* name = GetName();
-      if( !strcmp(name,"x") || !strcmp(name,"y") ||
-	  !strcmp(name,"z") || !strcmp(name,"t") ) {
-	Error( "THaFormula", "The name \"%s\" is reserved as a TFormula "
-	       "variable name.\n\t This function will not be registered "
-	       "in the list of fuctions", name );
-      } else {
-	TObject* old = gROOT->GetListOfFunctions()->FindObject(GetName());
-	if (old)
-	  gROOT->GetListOfFunctions()->Remove(old);
-	gROOT->GetListOfFunctions()->Add(this);
-      }
-    }
     // If the formula is good, then fix the variable counters that TFormula
     // may have messed with when reverting lone kDefinedString variables to
     // kDefinedVariable. If there is a mix of strings and values, we force
@@ -459,6 +443,28 @@ void THaFormula::Print( Option_t* option ) const
 }
 
 //_____________________________________________________________________________
+void THaFormula::RegisterFormula( Bool_t add )
+{
+  // Store/remove this formula in/from ROOT's list of functions
+
+  if( gROOT ) {
+    R__LOCKGUARD2(gROOTMutex);
+    const char* name = GetName();
+    TCollection* flist = gROOT->GetListOfFunctions();
+    TObject* old = flist->FindObject(name);
+    if( !add || IsError() ) {
+      if( old == this )
+	flist->Remove(old);
+    } else {
+      if( old )
+	flist->Remove(old);
+      if( !TestBit(kNotGlobal) ) {
+	flist->Add(this);
+      }
+    }
+  }
+}
+
+//_____________________________________________________________________________
 
 ClassImp(THaFormula)
-

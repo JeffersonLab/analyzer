@@ -75,10 +75,9 @@ protected:
 
           Int_t  Init( const char* name, const char* expression );
   virtual Bool_t IsString( Int_t oper ) const;
+  virtual void   RegisterFormula( Bool_t add = kTRUE );
 
   ClassDef(THaFormula,0)  //Formula defined on list of variables
 };
 
 #endif
-
-
