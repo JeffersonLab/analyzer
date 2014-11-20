@@ -24,7 +24,6 @@
 
 #include <iostream>
 #include <cstring>
-#include <cstdlib>
 #include <cassert>
 
 using namespace std;
@@ -75,6 +74,7 @@ Int_t THaFormula::Init( const char* name, const char* expression )
   ResetBit(kNotGlobal);
   ResetBit(kError);
   ResetBit(kInvalid);
+  ResetBit(kVarArray);
   ResetBit(kArrayFormula);
 
   if( !name )
@@ -133,7 +133,6 @@ THaFormula::THaFormula( const THaFormula& rhs ) :
 THaFormula::~THaFormula()
 {
   // Destructor
-
 }
 
 //_____________________________________________________________________________
@@ -352,6 +351,8 @@ Int_t THaFormula::DefinedGlobalVariable( const TString& name )
     // Asking for an entire array
     type = kArray;
     SetBit(kArrayFormula);
+    if( var->IsVarArray() )
+      SetBit(kVarArray);
   }
 
   // Check if this variable already used in this formula

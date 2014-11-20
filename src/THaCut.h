@@ -29,6 +29,8 @@ public:
           const char*  GetBlockname() const { return fBlockname.Data(); }
           UInt_t       GetNCalled()   const { return fNCalled; }
           UInt_t       GetNPassed()   const { return fNPassed; }
+  virtual Bool_t       IsArray()      const { return kFALSE; }
+  virtual Bool_t       IsVarArray()   const { return kFALSE; }
   virtual void         Print( Option_t *opt="" ) const;
   virtual void         Reset();
   virtual void         SetBlockname( const Text_t* name );

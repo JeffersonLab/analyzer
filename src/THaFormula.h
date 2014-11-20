@@ -44,9 +44,10 @@ public:
   { return const_cast<THaFormula*>(this)->Eval(); }
   virtual Double_t    EvalInstance( Int_t instance );
   virtual Int_t       GetNdata();
-          Bool_t      IsArray()   const { return TestBit(kArrayFormula); }
-          Bool_t      IsError()   const { return TestBit(kError); }
-          Bool_t      IsInvalid() const { return TestBit(kInvalid); }
+  virtual Bool_t      IsArray()    const { return TestBit(kArrayFormula); }
+  virtual Bool_t      IsVarArray() const { return TestBit(kVarArray); }
+          Bool_t      IsError()    const { return TestBit(kError); }
+          Bool_t      IsInvalid()  const { return TestBit(kInvalid); }
   virtual void        Print( Option_t* option="" ) const;
           void        SetList( const THaVarList* lst )    { fVarList = lst; }
           void        SetCutList( const THaCutList* lst ) { fCutList = lst; }
@@ -54,9 +55,10 @@ public:
 protected:
 
   enum {
-    kError        = BIT(21),   // Compile() failed
-    kInvalid      = BIT(22),   // DefinedValue() encountered invalid data
-    kArrayFormula = BIT(23)    // Formula has multiple instances
+    kError        = BIT(0),   // Compile() failed
+    kInvalid      = BIT(1),   // DefinedValue() encountered invalid data
+    kVarArray     = BIT(2),   // Formula contains a variable-size array
+    kArrayFormula = BIT(3)    // Formula has multiple instances
   };
 
   enum EVariableType {  kVariable, kCut, kString, kArray };
