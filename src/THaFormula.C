@@ -279,7 +279,9 @@ Int_t THaFormula::DefinedVariable(TString& name, Int_t& action)
     }
     return k;
   }
-  return DefinedCut( name );
+  if( k == -1 )
+    k = DefinedCut( name );
+  return k;
 }
 
 //_____________________________________________________________________________
@@ -312,9 +314,9 @@ Int_t THaFormula::DefinedGlobalVariable( const TString& name )
   // Check if 'name' is a known global variable. If so, enter it in the
   // local list of variables used in this formula.
 
-  // No list of variables or too many variables in this formula?
+  // No global variable list?
   if( !fVarList )
-    return -2;
+    return -1;
 
   // Parse name for array syntax
   THaArrayString parsed_name(name);
@@ -336,7 +338,7 @@ Int_t THaFormula::DefinedGlobalVariable( const TString& name )
       // Variable-size arrays are always 1-d
       assert( var->GetNdim() == 1 );
       if( parsed_name.GetNdim() != 1 )
-	return -1;
+	return -2;
       // For variable-size arrays, we allow requests for any element and
       // check at evaluation time whether the element actually exists
       index = parsed_name[0];
