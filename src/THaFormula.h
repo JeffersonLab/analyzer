@@ -52,6 +52,11 @@ public:
           void        SetList( const THaVarList* lst )    { fVarList = lst; }
           void        SetCutList( const THaCutList* lst ) { fCutList = lst; }
 
+#if ROOT_VERSION_CODE >= 331529 && ROOT_VERSION_CODE < 334336// 5.15/09-5.26/00
+  // Workaround for buggy TFormula
+  virtual TString     GetExpFormula( Option_t* opt="" ) const;
+#endif
+
 protected:
 
   enum {
