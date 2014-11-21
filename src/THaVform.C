@@ -721,7 +721,7 @@ Int_t THaVform::DefinedGlobalVariable( const TString& name )
 
   // Retrieve some of the results of the THaFormula parser
   FVarDef_t& def = fVarDef[ret];
-  const THaVar* gvar = static_cast<const THaVar*>( def.code );
+  const THaVar* gvar = static_cast<const THaVar*>( def.obj );
   // This makes a certain assumption about the array syntax defined by ROOT 
   // and THaArrayString, but in the interest of performance  we don't create
   // a full THaArrayString here just to find out if it is an array element

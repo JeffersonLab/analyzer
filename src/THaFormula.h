@@ -70,10 +70,10 @@ protected:
 
   struct FVarDef_t {
     EVariableType type;                //Type of variable in the formula
-    const void*   code;                //Pointer to the variable
+    const void*   obj;                 //Pointer to the respective object
     Int_t         index;               //Linear index into array, if fixed-size
-    FVarDef_t( EVariableType t, const void* c, Int_t i )
-      : type(t), code(c), index(i) {}
+    FVarDef_t( EVariableType t, const void* p, Int_t i )
+      : type(t), obj(p), index(i) {}
   };
   std::vector<FVarDef_t> fVarDef;      //Global variables referenced in formula
   const THaVarList* fVarList;          //Pointer to list of variables

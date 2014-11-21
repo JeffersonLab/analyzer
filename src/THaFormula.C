@@ -186,7 +186,7 @@ char* THaFormula::DefinedString( Int_t i )
   assert( i>=0 && i<(Int_t)fVarDef.size() );
   FVarDef_t& def = fVarDef[i];
   if( def.type == kString ) {
-    const THaVar* pvar = static_cast<const THaVar*>( def.code );
+    const THaVar* pvar = static_cast<const THaVar*>( def.obj );
     char** ppc = (char**)pvar->GetValuePointer(); //truly gruesome cast
     return *ppc;
   }
@@ -219,7 +219,7 @@ Double_t THaFormula::DefinedValue( Int_t i )
   case kString:
   case kArray:
     {
-      const THaVar* var = static_cast<const THaVar*>(def.code);
+      const THaVar* var = static_cast<const THaVar*>(def.obj);
       assert(var);
       Int_t index = (def.type == kArray) ? fInstance : def.index;
       assert(index >= 0);
@@ -232,7 +232,7 @@ Double_t THaFormula::DefinedValue( Int_t i )
     break;
   case kCut:
     {
-      const THaCut* cut = static_cast<const THaCut*>(def.code);
+      const THaCut* cut = static_cast<const THaCut*>(def.obj);
       assert(cut);
       return cut->GetResult();
     }
@@ -262,7 +262,7 @@ Int_t THaFormula::DefinedVariable(TString& name, Int_t& action)
   Int_t k = DefinedGlobalVariable( name );
   if( k>=0 ) {
     FVarDef_t& def = fVarDef[k];
-    const THaVar* pvar = static_cast<const THaVar*>( def.code );
+    const THaVar* pvar = static_cast<const THaVar*>( def.obj );
     assert(pvar);
     // Interpret Char_t* variables as strings
     if( pvar->GetType() == kCharP ) {
@@ -297,7 +297,7 @@ Int_t THaFormula::DefinedCut( const TString& name )
       // See if this cut already used earlier in the expression
       for( vector<FVarDef_t>::size_type i=0; i<fVarDef.size(); ++i ) {
 	FVarDef_t& def = fVarDef[i];
-	if( def.type == kCut && pcut == def.code )
+	if( def.type == kCut && pcut == def.obj )
 	  return i;
       }
       fVarDef.push_back( FVarDef_t(kCut,pcut,0) );
@@ -360,7 +360,7 @@ Int_t THaFormula::DefinedGlobalVariable( const TString& name )
   // Check if this variable already used in this formula
   for( vector<FVarDef_t>::size_type i=0; i<fVarDef.size(); ++i ) {
     FVarDef_t& def = fVarDef[i];
-    if( var == def.code && index == def.index ) {
+    if( var == def.obj && index == def.index ) {
       assert( type == def.type );
       return i;
     }
@@ -433,7 +433,7 @@ Int_t THaFormula::GetNdataUnchecked() const
        ndata > 0 && i < fVarDef.size(); ++i ) {
     const FVarDef_t& def = fVarDef[i];
     if( def.type == kArray ) {
-      const THaVar* pvar = static_cast<const THaVar*>(def.code);
+      const THaVar* pvar = static_cast<const THaVar*>(def.obj);
       assert( pvar );
       assert( pvar->IsArray() );
       assert( pvar->GetNdim() > 0 );
