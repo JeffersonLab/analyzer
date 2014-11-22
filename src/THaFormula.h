@@ -61,10 +61,11 @@ public:
 protected:
 
   enum {
-    kError        = BIT(0),   // Compile() failed
-    kInvalid      = BIT(1),   // DefinedValue() encountered invalid data
-    kVarArray     = BIT(2),   // Formula contains a variable-size array
-    kArrayFormula = BIT(3)    // Formula has multiple instances
+    kError          = BIT(0),  // Compile() failed
+    kInvalid        = BIT(1),  // DefinedValue() encountered invalid data
+    kVarArray       = BIT(2),  // Formula contains a variable-size array
+    kArrayFormula   = BIT(3),  // Formula has multiple instances
+    kFuncOfVarArray = BIT(4)   // Formula contains function of var-size array
   };
 
   enum EVariableType {  kVariable, kCut, kString, kArray,

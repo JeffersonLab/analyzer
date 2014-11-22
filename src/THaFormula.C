@@ -109,6 +109,7 @@ Int_t THaFormula::Init( const char* name, const char* expression )
   ResetBit(kInvalid);
   ResetBit(kVarArray);
   ResetBit(kArrayFormula);
+  ResetBit(kFuncOfVarArray);
 
   if( !name )
     return -1;
@@ -528,6 +529,7 @@ Int_t THaFormula::DefinedSpecialFunction( TString& name )
   const FuncDef_t* def = func_defs;
   while( def->func ) {
     if( def->form && name.BeginsWith(def->func) && name.EndsWith(")") ) {
+      // Make a subformula for the argument, but don't register it with ROOT
       TString subform = name( strlen(def->func), name.Length() );
       subform.Chop();
       THaFormula* func = new THaFormula( def->form, subform, false,
@@ -535,6 +537,16 @@ Int_t THaFormula::DefinedSpecialFunction( TString& name )
       if( func->IsError() ) {
 	delete func;
 	return -3;
+      }
+      if( func->IsArray() ) {
+	if( func->IsVarArray() ) {
+	  // Make a note that the argument may be empty at evaluation time,
+	  // even if the formula is not an array per se
+	  SetBit( kFuncOfVarArray );
+	} else if( func->GetNdata() == 0 ) {
+	  // Empty fixed-size array is an invalid argument
+	  return -2;
+	}
       }
       fVarDef.push_back( FVarDef_t(def->type, func, def->code) );
       // Expand the function argument in case it is a recursive definition
@@ -612,7 +624,7 @@ Int_t THaFormula::GetNdataUnchecked() const
 {
   // Return minimum of sizes of all referenced arrays
 
-  Int_t ndata = kMaxInt;
+  Int_t ndata = TestBit(kArrayFormula) ? kMaxInt : 1; // 1 = kFuncOfVarArray
   for( vector<FVarDef_t>::size_type i = 0; ndata > 0 && i < fVarDef.size();
        ++i ) {
     const FVarDef_t& def = fVarDef[i];
@@ -650,7 +662,7 @@ Int_t THaFormula::GetNdata() const
 {
   // Get number of available instances of this formula
 
-  if( !IsArray() )
+  if( !IsArray() && !TestBit(kFuncOfVarArray) )
     return 1;
 
   return GetNdataUnchecked();
