@@ -707,7 +707,7 @@ Int_t THaVform::Process()
 
 
 //_____________________________________________________________________________
-Int_t THaVform::DefinedGlobalVariable( const TString& name )
+Int_t THaVform::DefinedGlobalVariable( TString& name )
 {
   // We use the parsing functionality of THaFormula to 
   // tell if the variables are global variables and, if so,
