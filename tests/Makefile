@@ -1,43 +1,20 @@
 #------------------------------------------------------------------------------
-# Names of source files and target libraries
-# You do want to modify this section
-
-# List all your source files here. They will be put into a shared library
-# that can be loaded from a script.
-# List only the implementation files (*.cxx). For every implementation file
-# there must be a corresponding header file (*.h).
-
-SRC  = UserDetector.cxx UserModule.cxx UserApparatus.cxx UserScintillator.cxx
-
-# Name of your package. 
-# The shared library that will be built will get the name lib$(PACKAGE).so
-PACKAGE = User
-
-# Name of the LinkDef file
+SRC  = UnitTest.cxx ArrayRTTI.cxx
+PACKAGE = Tests
 LINKDEF = $(PACKAGE)_LinkDef.h
 
 #------------------------------------------------------------------------------
-# This part defines overall options and directory locations.
-# Change as necessary,
-
 # Compile with diagnostic code
 export WITH_DEBUG = 1
 
 # Compile debug version
-#export DEBUG = 1
+export DEBUG = 1
 
 # Architecture to compile for
 ARCH          = linux
 #ARCH          = solarisCC5
 
 #------------------------------------------------------------------------------
-# Directory locations. All we need to know is INCDIRS.
-# INCDIRS lists the location(s) of the C++ Analyzer header (.h) files
-
-# The following should work with both local installations and the
-# Hall A counting house installation. For local installations, verify
-# the setting of ANALYZER, or specify INCDIRS explicitly.
-
 ifndef ANALYZER
   $(error $$ANALYZER environment variable not defined)
 endif
@@ -64,8 +41,8 @@ INCLUDES      = $(addprefix -I, $(INCDIRS) ) -I$(shell pwd)
 USERLIB       = lib$(PACKAGE).so
 USERDICT      = $(PACKAGE)Dict
 
-LIBS          = 
-GLIBS         = 
+LIBS          =
+GLIBS         =
 
 ifeq ($(ARCH),linux)
 # Linux with egcs (>= RedHat 5.2)

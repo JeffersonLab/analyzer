@@ -35,6 +35,9 @@ ROOTCFLAGS   := $(shell root-config --cflags)
 ROOTLIBS     := $(shell root-config --libs)
 ROOTGLIBS    := $(shell root-config --glibs)
 ROOTBIN      := $(shell root-config --bindir)
+ROOTINC      := -I$(shell root-config --incdir)
+CXX          := $(shell root-config --cxx)
+CC           := $(shell root-config --cc)
 
 HA_DIR       := $(shell pwd)
 DCDIR        := hana_decode
@@ -48,11 +51,10 @@ HA_DICT      := haDict
 LIBS         := 
 GLIBS        := 
 
-INCLUDES     := $(ROOTCFLAGS) $(addprefix -I, $(INCDIRS) )
+INCLUDES     := $(addprefix -I, $(INCDIRS) )
 
 ifeq ($(ARCH),solarisCC5)
 # Solaris CC 5.0
-CXX          := CC
 ifdef DEBUG
   CXXFLG     := -g
   LDFLAGS    := -g
@@ -73,7 +75,6 @@ endif
 
 ifeq ($(ARCH),linux)
 # Linux with egcs (>= RedHat 5.2)
-CXX          := g++
 ifdef DEBUG
   CXXFLG     := -g -O0
   LDFLAGS    := -g -O0
@@ -102,7 +103,6 @@ endif
 
 ifeq ($(ARCH),macosx)
 # EXPERIMENTAL: Mac OS X with Xcode/gcc 3.x
-CXX          := g++
 ifdef DEBUG
   CXXFLG     := -g -O0
   LDFLAGS    := -g -O0
@@ -130,10 +130,6 @@ endif
 #FIXME: requires gcc 3 or up - test in configure script
 DEFINES       += -DHAS_SSTREAM
 
-ifeq ($(CXX),)
-$(error $(ARCH) invalid architecture)
-endif
-
 ifdef ONLINE_ET
 
 # ONLIBS is needed for ET
@@ -156,8 +152,8 @@ ifdef WITH_DEBUG
 DEFINES      += -DWITH_DEBUG
 endif
 
-CXXFLAGS      = $(CXXFLG) $(CXXEXTFLG) $(INCLUDES) $(DEFINES)
-CFLAGS        = $(CXXFLG) $(INCLUDES) $(DEFINES)
+CXXFLAGS      = $(CXXFLG) $(CXXEXTFLG) $(ROOTCFLAGS) $(INCLUDES) $(DEFINES)
+CFLAGS        = $(CXXFLG) $(ROOTCFLAGS) $(INCLUDES) $(DEFINES)
 LIBS         += $(ROOTLIBS) $(SYSLIBS)
 GLIBS        += $(ROOTGLIBS) $(SYSLIBS)
 DEFINES      += $(PODD_EXTRA_DEFINES)
@@ -313,7 +309,7 @@ endif
 
 $(HA_DICT).C: $(RCHDR) $(HA_LINKDEF)
 	@echo "Generating dictionary $(HA_DICT)..."
-	$(ROOTBIN)/rootcint -f $@ -c $(INCLUDES) $(DEFINES) $^
+	$(ROOTBIN)/rootcint -f $@ -c $(ROOTINC) $(INCLUDES) $(DEFINES) $^
 
 
 #---------- Extra libraries ----------------------------------------
@@ -324,7 +320,7 @@ $(LIBNORMANA):	$(LNA_HDR) $(LNA_OBJS)
 
 $(LNA_DICT).C:	$(LNA_HDR) $(LNA_LINKDEF)
 		@echo "Generating dictionary $(LNA_DICT)..."
-		rootcint -f $@ -c $(INCLUDES) $(DEFINES) $^
+		rootcint -f $@ -c $(ROOTINC) $(INCLUDES) $(DEFINES) $^
 
 #---------- Main program -------------------------------------------
 analyzer:	src/main.o $(LIBDC) $(LIBSCALER) $(LIBHALLA)
@@ -402,7 +398,7 @@ endif
 #	@$(SHELL) -ec '$(CXX) -MM $(CXXFLAGS) -c $< \
 #		| sed '\''s%\($*\)\.o[ :]*%\1.o $@ : %g'\'' > $@; \
 #		[ -s $@ ] || rm -f $@'
-	@$(SHELL) -ec '$(MAKEDEPEND) -MM $(INCLUDES) $(DEFINES) -c $< \
+	@$(SHELL) -ec '$(MAKEDEPEND) -MM $(ROOTINC) $(INCLUDES) $(DEFINES) -c $< \
 		| sed '\''s%^.*\.o%$*\.o%g'\'' \
 		| sed '\''s%\($*\)\.o[ :]*%\1.o $@ : %g'\'' > $@; \
 		[ -s $@ ] || rm -f $@'

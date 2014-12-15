@@ -73,7 +73,7 @@ THaDetector* THaSubDetector::GetMainDetector() const
 void THaSubDetector::MakePrefix()
 {
   // Set up name prefix for global variables. 
-  // Internal function called by constructors of derived classes.
+  //
   // Subdetector prefixes are of form "<parent_prefix><subdetector_name>.",
   // where <parent_prefix> is the prefix of the immediate parent, which may
   // be another subdetector. If a different behavior is needed, subdetectors

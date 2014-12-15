@@ -33,7 +33,7 @@ extern const char* const MC_PREFIX;
 // of this class or objects that inherit from it
 class MCTrack : public TObject {
 public:
-  MCTrack( Int_t number, Int_t pid, Double_t weight,
+  MCTrack( Int_t number, Int_t pid,
 	   const TVector3& vertex, const TVector3& momentum );
   MCTrack();
 
@@ -49,15 +49,16 @@ public:
   // Physics truth data
   Int_t    fNumber;        // Track counter
   Int_t    fPID;           // Track particle ID (PDG)
-  Double_t fWeight;        // Weight factor
   TVector3 fOrigin;        // Vertex position (m)
   TVector3 fMomentum;      // Momentum (GeV)
 
   // Interaction with detector
   Int_t    fNHits;         // Number of hits (typ.: in tracker planes)
+  Int_t    fHitBits;       // Bitpattern of plane nums hit by this track
 
   // Reconstruction status (implementation-dependent)
   Int_t    fNHitsFound;    // Number of reconstructed hits
+  Int_t    fFoundBits;     // Bitpattern of plane numbers with found hits
   Int_t    fReconFlags;    // Reconstruction status flags
   Int_t    fContamFlags;   // Flags indicating contaminated fits
   Double_t fMatchval;      // Projection matchvalue, if applicable
@@ -69,7 +70,7 @@ public:
   Double_t fMCFitPar[NFP]; // Results of fit(s) to MC hits
   Double_t fRcFitPar[NFP]; // Results of fit(s) to reconstructed hits
 
-  ClassDef(MCTrack,1)  // A MC physics track
+  ClassDef(MCTrack,2)  // An MC physics track
 };
 
 //_____________________________________________________________________________
@@ -103,15 +104,15 @@ public:
 // A MC physics track's interaction point at a tracker plane in the lab system.
 class MCTrackPoint : public TObject {
 public:
-  MCTrackPoint() : fMCTrack(0), fPlane(-1), fType(-1), fStatus(-1),
-		   fMCPoint(KBIG,KBIG,KBIG), fMCP(KBIG,KBIG,KBIG),
+  MCTrackPoint() : fMCTrack(0), fPlane(-1), fType(-1), fStatus(0), fNFound(0),
+		   fClustSize(0), fMCPoint(KBIG,KBIG,KBIG), fMCP(KBIG,KBIG,KBIG),
 		   fMCTime(KBIG), fDeltaE(KBIG), fDeflect(KBIG), fToF(KBIG),
 		   fHitResid(KBIG), fTrackResid(KBIG)  {}
   MCTrackPoint( Int_t mctrk, Int_t plane, Int_t type, const TVector3& point,
 		const TVector3& pvect )
-    : fMCTrack(mctrk), fPlane(plane), fType(type), fStatus(-1), fMCPoint(point),
-      fMCP(pvect), fMCTime(KBIG), fDeltaE(KBIG), fDeflect(KBIG),
-      fHitResid(KBIG), fTrackResid(KBIG)  {}
+    : fMCTrack(mctrk), fPlane(plane), fType(type), fStatus(0), fNFound(0),
+      fClustSize(0), fMCPoint(point), fMCP(pvect), fMCTime(KBIG), fDeltaE(KBIG),
+      fDeflect(KBIG), fHitResid(KBIG), fTrackResid(KBIG)  {}
   virtual ~MCTrackPoint() {}
 
   virtual Int_t  Compare( const TObject* obj ) const;
@@ -129,10 +130,24 @@ public:
   Double_t ThetaDir()  const { return fMCP.Theta(); }
   Double_t PhiDir()    const { return fMCP.Phi(); }
 
+  // Bits for fStatus. "Found" refers to reconstructed hits
+  enum { kDigitized      = 0,  // Digitized (signal in electronics)
+	 kFound          = 1,  // Hit found in search window
+	 kCorrectFound   = 2,  // Found hit from the correct MC track
+	                       // (not necessarily closest or in window)
+	 kCorrectClosest = 3,  // Correct hit is also the closest and in window
+	 kContaminated   = 4,  // Correct hit contains background
+	 kUsedInTrack    = 5,  // Correct hit used in a final track
+	 kCorrectFarAway = 6,  // Correct hit lies outside of search window!
+	 kWrongTrack     = 7   // Closest hit is from wrong MC track
+  };
+
   Int_t    fMCTrack;  // MC track number generating this point
   Int_t    fPlane;    // Tracker plane/layer number
   Int_t    fType;     // Plane type (u,v,x etc.)
-  Int_t    fStatus;   // Reconstruction status (typ != 0 -> failed to find)
+  Int_t    fStatus;   // Reconstruction status bits
+  Int_t    fNFound;   // Number of reconstructed hits found near this one
+  Int_t    fClustSize;// Size of reconstructed hit/cluster
   TVector3 fMCPoint;  // Truth position of MC physics track in tracker plane (m)
   TVector3 fMCP;      // True momentum vector at this position (GeV)
   Double_t fMCTime;   // Arrival time wrt trigger (s)
@@ -142,7 +157,9 @@ public:
   Double_t fHitResid; // True residual nearest reconstr. hit pos - MC hit pos (m)
   Double_t fTrackResid; // True residual reconstructed track - MC hit pos (m)
 
-  ClassDef(MCTrackPoint,1)  // Monte Carlo track interaction coordinates
+  static Double_t fgWindowSize; // Half-size of search window (m)
+
+  ClassDef(MCTrackPoint,3)  // Monte Carlo track interaction coordinates
 };
 
 //_____________________________________________________________________________
@@ -156,6 +173,8 @@ class SimDecoder : public THaEvData {
   virtual MCHitInfo  GetMCHitInfo( Int_t crate, Int_t slot, Int_t chan ) const;
   virtual Int_t      DefineVariables( THaAnalysisObject::EMode mode =
 				      THaAnalysisObject::kDefine );
+
+  Double_t GetWeight() const { return fWeight; }
 
   TObject* GetMCHit( Int_t i )   const {
     return (fMCHits) ? fMCHits->UncheckedAt(i) : 0;
@@ -178,6 +197,8 @@ class SimDecoder : public THaEvData {
   }
 
 protected:
+
+  Double_t       fWeight;     // Event weight
 
   TClonesArray*  fMCHits;     //-> MC hits
   TClonesArray*  fMCTracks;   //-> MC physics tracks

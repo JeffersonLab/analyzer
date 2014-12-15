@@ -208,12 +208,6 @@ THaAnalysisObject::EStatus THaApparatus::Init( const TDatime& run_time )
 }
 
 //_____________________________________________________________________________
-void THaApparatus::MakePrefix()
-{
-  THaAnalysisObject::MakePrefix( NULL );
-}
-
-//_____________________________________________________________________________
 void THaApparatus::Print( Option_t* opt ) const
 { 
   // Print info about the apparatus and all its detectors

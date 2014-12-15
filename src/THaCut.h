@@ -8,65 +8,51 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaFormula.h"
-#include "TString.h"
 
 class THaCut : public THaFormula {
 
 public:
-  THaCut() : THaFormula(), fLastResult(kFALSE), fNCalled(0), fNPassed(0) {}
-  THaCut( const char* name, const char* expression, const char* block, 
+  THaCut();
+  THaCut( const char* name, const char* expression, const char* block,
 	  const THaVarList* vlst = gHaVars, const THaCutList* clst = gHaCuts );
   THaCut( const THaCut& rhs );
   THaCut& operator=( const THaCut& rhs );
-  virtual ~THaCut() {}
+  virtual ~THaCut();
+
+  using THaFormula::Eval;
+
+  enum EvalMode { kModeErr = -1, kAND, kOR, kXOR };
 
           void         ClearResult()        { fLastResult = kFALSE; }
-#if ROOT_VERSION_CODE >= 262144 // 4.00/00
+  // Requires ROOT >= 4.00/00
   virtual Int_t        DefinedVariable( TString& variable, Int_t& action );
-#else
-  virtual Int_t        DefinedVariable( TString& variable );
-#endif
-  virtual Bool_t       EvalCut();
-          Bool_t       GetResult()    const { return fLastResult; }
+  virtual Double_t     Eval();
+  // For backward compatibility
+          Bool_t       EvalCut()            { Eval(); return fLastResult; }
           const char*  GetBlockname() const { return fBlockname.Data(); }
+          EvalMode     GetMode()      const { return fMode; }
           UInt_t       GetNCalled()   const { return fNCalled; }
           UInt_t       GetNPassed()   const { return fNPassed; }
+          Bool_t       GetResult()    const { return fLastResult; }
+  virtual Bool_t       IsArray()      const { return kFALSE; }
+  virtual Bool_t       IsVarArray()   const { return kFALSE; }
   virtual void         Print( Option_t *opt="" ) const;
   virtual void         Reset();
   virtual void         SetBlockname( const Text_t* name );
   virtual void         SetName( const Text_t* name );
-  virtual void         SetNameTitle( const Text_t *name, const Text_t *title );
+  virtual void         SetNameTitle( const Text_t* name, const Text_t* title );
 
 protected:
-  Bool_t      fLastResult;   //Result of last evaluation of this formula
-  TString     fBlockname;    //Name of block this cut belongs to
-  UInt_t      fNCalled;      //Number of times this cut has been evaluated
-  UInt_t      fNPassed;      //Number of times this cut was true when evaluated
+  Bool_t      fLastResult;  // Result of last evaluation of this formula
+  TString     fBlockname;   // Name of block this cut belongs to
+  UInt_t      fNCalled;     // Number of times this cut has been evaluated
+  UInt_t      fNPassed;     // Number of times this cut was true when evaluated
+  EvalMode    fMode;        // Evaluation mode of array expressions (AND/OR etc)
 
-  ClassDef(THaCut,0)   //A logical cut (a.k.a. test)
+  Bool_t      EvalElement( Int_t instance );
+  EvalMode    ParsePrefix( TString& expr );
+
+  ClassDef(THaCut,0)   // A logical cut (a.k.a. test)
 };
 
-//________________ inlines ____________________________________________________
-inline
-Bool_t THaCut::EvalCut()
-{
-  // Evaluate the cut and increment counters
-
-  fNCalled++;
-  fLastResult = ( Eval() > 0.5 );
-  if( fLastResult ) fNPassed++;
-  return fLastResult;
-}
-
-//_____________________________________________________________________________
-inline
-void THaCut::Reset()
-{ 
-  // Reset cut result and statistics counters
-
-  ClearResult();
-  fNCalled = fNPassed = 0;
-}
-
 #endif
-

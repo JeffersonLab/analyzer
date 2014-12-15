@@ -720,33 +720,36 @@ Int_t THaVform::DefinedGlobalVariable( const TString& name )
     return ret;
 
   // Retrieve some of the results of the THaFormula parser
-  FVarDef_t* def = fVarDef+ret;
-  const THaVar* obj = static_cast<const THaVar*>( def->code );
+  FVarDef_t& def = fVarDef[ret];
+  const THaVar* gvar = static_cast<const THaVar*>( def.code );
   // This makes a certain assumption about the array syntax defined by ROOT 
   // and THaArrayString, but in the interest of performance  we don't create
   // a full THaArrayString here just to find out if it is an array element
   Bool_t var_is_array = name.Contains("[");
 
   fVarName.push_back(name.Data());
-  fVarStat.push_back(kScaler);
-  if (obj->IsArray()) {
-    if (var_is_array) {
-      fVarStat[fNvar] = kAElem;
+  FAr stat;
+  if( gvar->IsArray() ) {
+    if( var_is_array ) {
+      stat = kAElem;
+    } else if( gvar->IsVarArray() ) {
+      stat = kVAType;
     } else {
-      fVarStat[fNvar] = kFAType;
+      stat = kFAType;
     }
-    if (obj->GetLen() == 0)
-      fVarStat[fNvar] = kVAType;
+  } else {
+    stat = kScaler;
   }
+  fVarStat.push_back(stat);
 
   if (fgDebug) {
-    if (obj->IsArray()) cout << "obj is array"<<endl;
-    if (obj->IsBasic()) cout << "obj is basic"<<endl;
-    if (obj->IsPointerArray()) cout << "obj is pointer array"<<endl;
-    cout << "Here is obj print "<<endl;
-    obj->Print();
-    cout << "end of obj print "<<endl<<endl;
-    cout << "length of var  "<< obj->GetLen()<<endl;
+    if (gvar->IsArray()) cout << "gvar is array"<<endl;
+    if (gvar->IsBasic()) cout << "gvar is basic"<<endl;
+    if (gvar->IsPointerArray()) cout << "gvar is pointer array"<<endl;
+    cout << "Here is gvar print "<<endl;
+    gvar->Print();
+    cout << "end of gvar print "<<endl<<endl;
+    cout << "length of var  "<< gvar->GetLen()<<endl;
     cout << "fVarStat "<<fVarStat[fNvar]<<endl;
   }
 

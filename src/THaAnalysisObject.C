@@ -616,6 +616,14 @@ void THaAnalysisObject::MakePrefix( const char* basename )
 }
 
 //_____________________________________________________________________________
+void THaAnalysisObject::MakePrefix()
+{
+  // Make default prefix: GetName() + "."
+
+  MakePrefix(0);
+}
+
+//_____________________________________________________________________________
 FILE* THaAnalysisObject::OpenFile( const char *name, const TDatime& date,
 				   const char *here, const char *filemode, 
 				   const int debug_flag )
