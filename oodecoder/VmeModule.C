@@ -7,7 +7,6 @@
 
 #include "Decoder.h"
 #include "VmeModule.h"
-#include "THaEvData.h"
 #include "TMath.h"
 #include <iostream>
 #include <string>

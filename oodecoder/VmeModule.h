@@ -15,6 +15,7 @@
 #include "Rtypes.h"
 #include "Module.h"
 
+
 class Decoder::VmeModule : public Module {
 
 public:
@@ -27,13 +28,12 @@ public:
    virtual Int_t Decode(const Int_t *evbuffer)=0;  // abstract
    virtual Int_t Slot(Int_t rdata) { return fSlot; };
    virtual Int_t Data(Int_t rdata) { return rdata; };
-         
-
-
+ 
 private:
 
    static TypeIter_t fgThisType;
-   Int_t slotmask, chanmask, datamask;
+   VmeModule(const VmeModule &fh);
+   VmeModule& operator=(const VmeModule &fh);
    ClassDef(Decoder::VmeModule,0)  // A VME module (abstract)
 
 };
