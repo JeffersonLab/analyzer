@@ -344,20 +344,13 @@ realclean:	clean
 srcdist:
 		rm -f ../$(NAME)
 		ln -s $(PWD) ../$(NAME)
-		gtar czv -C .. -f ../$(NAME).tar.gz -X .exclude \
+		tar czv -C .. -f ../$(NAME).tar.gz -X .exclude \
 		 -V "JLab/Hall A C++ Analysis Software "$(VERSION)" `date -I`"\
 		 $(NAME)/.exclude $(NAME)/ChangeLog \
 		 $(NAME)/src $(NAME)/$(DCDIR) $(NAME)/$(SCALERDIR) \
-		 $(NAME)/Makefile
-                 # $(NAME)/DB $(NAME)/examples \# $(NAME)/docs $(NAME)/Calib $(NAME)/contrib
-
-cvsdist:	srcdist
-		cp ../$(NAME).tar.gz ../$(NAME)-cvs.tar.gz
-		gunzip -f ../$(NAME)-cvs.tar.gz
-		gtar rv -C .. -f ../$(NAME)-cvs.tar \
-		 `find . -type d -name CVS 2>/dev/null | sed "s%^\.%$(NAME)%"`\
-		 `find . -type f -name .cvsignore 2>/dev/null | sed "s%^\./%$(NAME)/%"`
-		gzip -f ../$(NAME)-cvs.tar
+		 $(NAME)/Makefile \
+		 $(NAME)/DB $(NAME)/examples $(NAME)/SDK \
+		 $(NAME)/docs $(NAME)/Calib $(NAME)/contrib
 
 install:	all
 ifndef ANALYZER
@@ -368,7 +361,7 @@ endif
 		cp -pu $(SRC) $(HDR) $(HA_LINKDEF) $(ANALYZER)/src/src
 		cp -pu $(LNA_SRC) $(LNA_HDR) $(LNA_LINKDEF) $(ANALYZER)/src/src
 		cp -pu $(HDR) $(LNA_HDR) $(ANALYZER)/include
-		gtar cf - `find examples docs SDK -type f | grep -Ev '(CVS|*~)'` | gtar xf - -C $(ANALYZER)
+		tar cf - `find examples docs SDK -type f | grep -Ev '(CVS|*~)'` | tar xf - -C $(ANALYZER)
 		cp -pu Makefile ChangeLog $(ANALYZER)/src
 		cp -pru DB $(ANALYZER)/
 		@echo "Installing in $(ANALYZER)/$(PLATFORM) ..."
