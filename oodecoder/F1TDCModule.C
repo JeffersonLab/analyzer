@@ -41,7 +41,7 @@ Bool_t F1TDCModule::IsSlot(UInt_t rdata) {
 
 Int_t F1TDCModule::GetData(Int_t chan, Int_t hit) {
   Int_t idx = chan*MAXHIT + hit;
-  if (idx < 0 || idx > MAXHIT*NTDCCHAN) return 0;
+  if (idx < 0 || idx >= MAXHIT*NTDCCHAN) return 0;
   return fTdcData[idx];
 }
 
