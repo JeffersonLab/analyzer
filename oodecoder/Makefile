@@ -6,6 +6,7 @@
 # tstoo    --  tests of OO decoder
 # tstfadc  --  tests of FADC 250 class
 # tstf1tdc --  tests of F1 TDC class
+# tstskel  --  tests of Skeleton module class
 # tstcoda  --  test of abstract interface to THaCodaFile and THaEtClient.
 # tstio    --  simple tests of CODA I/O from a file.
 # tdecpr   --  test of decoder with self-explanatory printouts.
@@ -203,11 +204,12 @@ SRC = THaUsrstrutils.C THaCrateMap.C THaCodaData.C \
       THaEpics.C THaFastBusWord.C THaCodaFile.C THaSlotData.C \
       THaEvData.C evio.C THaCodaDecoder.C \
       CodaDecoder.C \
-      Module.C VmeModule.C Fadc250Module.C F1TDCModule.C FastbusModule.C \
+      Module.C VmeModule.C Fadc250Module.C F1TDCModule.C \
+      SkeletonModule.C FastbusModule.C \
       Lecroy1877Module.C Lecroy1875Module.C Lecroy1881Module.C \
       GenScaler.C Scaler1151.C Scaler560.C Scaler3800.C Scaler3801.C
 
-PROGS = tcrmap tstoo tstfadc tstf1tdc tstio tdecpr prfact epicsd 
+PROGS = tcrmap tstoo tstfadc tstf1tdc tstskel tstio tdecpr prfact epicsd 
 # If you want to use the ET system at Jlab.
 ifdef ONLINE_ET
   SRC += THaEtClient.C
@@ -286,6 +288,10 @@ tstfadc: tstfadc_main.o $(DECODE_OBJS) $(SRC) $(EVIO_LIB) $(MAINOBJS)
 tstf1tdc: tstf1tdc_main.o $(DECODE_OBJS) $(SRC) $(EVIO_LIB) $(MAINOBJS)
 	rm -f $@
 	$(CXX) $(CXXFLAGS) -o $@ tstf1tdc_main.o $(DECODE_OBJS) $(ALL_LIBS) $(MAINOBJS)
+
+tstskel: tstskel_main.o $(DECODE_OBJS) $(SRC) $(EVIO_LIB) $(MAINOBJS)
+	rm -f $@
+	$(CXX) $(CXXFLAGS) -o $@ tstskel_main.o $(DECODE_OBJS) $(ALL_LIBS) $(MAINOBJS)
 
 tstio: tstio_main.o $(DECODE_OBJS) $(SRC) $(EVIO_LIB) $(MAINOBJS)
 	rm -f $@
