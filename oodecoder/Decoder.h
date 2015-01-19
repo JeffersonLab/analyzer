@@ -27,6 +27,7 @@ namespace Decoder {
   class Scaler3801;
   class Fadc250Module;
   class F1TDCModule;
+  class SkeletonModule;       // example of a module
 }
 
 #endif
