@@ -17,6 +17,7 @@ using namespace std;
 using namespace Decoder;
 
 Fadc250Module::Fadc250Module(Int_t crate, Int_t slot) : VmeModule(crate, slot) {
+  fDebugFile=0;
   Init();
 }
 
@@ -37,13 +38,13 @@ void Fadc250Module::Init() {
   memset(fNumAInt, 0, NADCCHAN*sizeof(Int_t));
   memset(fNumTInt, 0, NADCCHAN*sizeof(Int_t));
   memset(fNumSample, 0, NADCCHAN*sizeof(Int_t));
+  fDebugFile=0;
   f250_setmode=-1;
   f250_foundmode=-2;
   Clear("");
   IsInit = kTRUE;
   fName = "FADC 250";
   SetMode(F250_SAMPLE);  // needs to be driven by cratemap ... later
-  if (fDebugFile) *fDebugFile << "Fadc250  init ;  f250_setmode "<<f250_setmode<<"    f250_foundmode = "<<f250_foundmode<<endl;
 }
 
 
