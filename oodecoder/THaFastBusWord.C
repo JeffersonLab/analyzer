@@ -15,6 +15,7 @@
 #include <iostream>
 
 using namespace std;
+using namespace Decoder;
 
 const UShort_t THaFastBusWord::FB_ERR = ~(UShort_t)0;
 
@@ -76,4 +77,4 @@ void THaFastBusWord::init() {
     }
 }
 
-ClassImp(THaFastBusWord)
+ClassImp(Decoder::THaFastBusWord)
