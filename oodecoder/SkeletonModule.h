@@ -10,6 +10,7 @@
 //
 //   other steps
 //   1. Register in Module.C (add "DoRegister" call and include the header)
+//    note: the number (4444) that is registered must appear in db_cratemap.dat
 //   2. Add to namespace Decoder.h
 //   3. Add to Makefile
 //   4. Add to haDecode_LinkDef.h
