@@ -5,6 +5,7 @@
 # tcrmap   --  test of crate map
 # tstoo    --  tests of OO decoder
 # tstfadc  --  tests of FADC 250 class
+# tstf1tdc --  tests of F1 TDC class
 # tstcoda  --  test of abstract interface to THaCodaFile and THaEtClient.
 # tstio    --  simple tests of CODA I/O from a file.
 # tdecpr   --  test of decoder with self-explanatory printouts.
@@ -28,7 +29,7 @@ VERS = hana_decode_1.6
 
 # If one defines STANDALONE, the library and test execs are compiled 
 # independently of the rest of the analyzer.  Normally this is commented out.
-# export STANDALONE = 1
+export STANDALONE = 1
 
 # MAINDIR is the source of headers for main code.
 # Also need objects from MAINDIR for standalone test executables,
@@ -202,11 +203,11 @@ SRC = THaUsrstrutils.C THaCrateMap.C THaCodaData.C \
       THaEpics.C THaFastBusWord.C THaCodaFile.C THaSlotData.C \
       THaEvData.C evio.C THaCodaDecoder.C \
       CodaDecoder.C \
-      Module.C VmeModule.C Fadc250Module.C FastbusModule.C \
+      Module.C VmeModule.C Fadc250Module.C F1TDCModule.C FastbusModule.C \
       Lecroy1877Module.C Lecroy1875Module.C Lecroy1881Module.C \
       GenScaler.C Scaler1151.C Scaler560.C Scaler3800.C Scaler3801.C
 
-PROGS = tcrmap tstoo tstfadc tstio tdecpr prfact epicsd 
+PROGS = tcrmap tstoo tstfadc tstf1tdc tstio tdecpr prfact epicsd 
 # If you want to use the ET system at Jlab.
 ifdef ONLINE_ET
   SRC += THaEtClient.C
@@ -281,6 +282,10 @@ tstoo: tstoo_main.o $(DECODE_OBJS) $(SRC) $(EVIO_LIB) $(MAINOBJS)
 tstfadc: tstfadc_main.o $(DECODE_OBJS) $(SRC) $(EVIO_LIB) $(MAINOBJS)
 	rm -f $@
 	$(CXX) $(CXXFLAGS) -o $@ tstfadc_main.o $(DECODE_OBJS) $(ALL_LIBS) $(MAINOBJS)
+
+tstf1tdc: tstf1tdc_main.o $(DECODE_OBJS) $(SRC) $(EVIO_LIB) $(MAINOBJS)
+	rm -f $@
+	$(CXX) $(CXXFLAGS) -o $@ tstf1tdc_main.o $(DECODE_OBJS) $(ALL_LIBS) $(MAINOBJS)
 
 tstio: tstio_main.o $(DECODE_OBJS) $(SRC) $(EVIO_LIB) $(MAINOBJS)
 	rm -f $@
