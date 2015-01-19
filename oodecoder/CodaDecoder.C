@@ -95,7 +95,17 @@ Int_t CodaDecoder::LoadEvent(const Int_t* evbuffer)
   event_type = evbuffer[1]>>16;
   //  cout << "event type HERE  "<<event_length<<"  "<<event_type<<endl;
   if(event_type < 0) return HED_ERR;
- 
+  event_num = 0;
+  if (event_type == PRESTART_EVTYPE) {
+     // Usually prestart is the first 'event'.  Call SetRunTime() to 
+     // re-initialize the crate map since we now know the run time.  
+     // This won't happen for split files (no prestart). For such files, 
+     // the user should call SetRunTime() explicitly.
+     SetRunTime(static_cast<ULong64_t>(evbuffer[2]));
+     run_num  = evbuffer[3];
+     run_type = evbuffer[4];
+     evt_time = fRunTime;
+  }
   if (event_type <= MAX_PHYS_EVTYPE) {
      event_num = evbuffer[4];
      recent_event = event_num;
