@@ -19,6 +19,7 @@
 #include "Scaler3801.h"
 #include "Fadc250Module.h"
 #include "F1TDCModule.h"
+#include "SkeletonModule.h"
 #include "THaEvData.h"
 #include "THaSlotData.h"
 #include "TMath.h"
@@ -40,7 +41,8 @@ TypeIter_t Scaler1151::fgThisType = DoRegister( ModuleType( "Decoder::Scaler1151
 TypeIter_t Scaler3800::fgThisType = DoRegister( ModuleType( "Decoder::Scaler3800" , 3800 ));
 TypeIter_t Scaler3801::fgThisType = DoRegister( ModuleType( "Decoder::Scaler3801" , 3801 ));
 TypeIter_t Fadc250Module::fgThisType = DoRegister( ModuleType( "Decoder::Fadc250Module" , 250 ));
-TypeIter_t F1TDCModule::fgThisType = DoRegister( ModuleType( "Decoder::F1TDCModule" , 1001 ));
+TypeIter_t F1TDCModule::fgThisType = DoRegister( ModuleType( "Decoder::F1TDCModule" , 3201 ));
+TypeIter_t SkeletonModule::fgThisType = DoRegister( ModuleType( "Decoder::SkeletonModule" , 4444 ));
 
 // Add your module here.  
 
