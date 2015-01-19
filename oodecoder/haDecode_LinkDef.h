@@ -19,17 +19,17 @@
 #pragma link C++ class Decoder::Scaler3801+;  
 #pragma link C++ class Decoder::Scaler560+;  
 #pragma link C++ class Decoder::Fadc250Module+;  
+#pragma link C++ class Decoder::F1TDCModule+;  
 #pragma link C++ class Decoder::THaCodaData+;
 #pragma link C++ class Decoder::THaCodaFile+;
 #pragma link C++ class Decoder::THaCrateMap+;
+#pragma link C++ class Decoder::THaEpics+;
 #pragma link C++ class Decoder::THaEvData+;
+#pragma link C++ class Decoder::THaFastBusWord+;
 #pragma link C++ class Decoder::THaSlotData+;
 #pragma link C++ class Decoder::THaUsrstrutils+;
 #pragma link C++ class Decoder::THaCodaDecoder+;
 #pragma link C++ class Decoder::THaEvData::RocDat_t+;
-
-#pragma link C++ class THaEpics+;
-#pragma link C++ class THaFastBusWord+;
 #pragma link C++ class THaBenchmark+;
 
 #ifdef ONLINE_ET
