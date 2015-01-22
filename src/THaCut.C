@@ -126,10 +126,14 @@ Double_t THaCut::Eval()
     fLastResult = false;
   }
   else {
-    fLastResult = EvalElement(0);
-    if( TestBit(kArrayFormula) && !IsInvalid() ) {
-      Int_t ndata = GetNdataUnchecked();
-      if( ndata > 1 ) {
+    Int_t ndata = 1;
+    if( TestBit(kArrayFormula) || TestBit(kFuncOfVarArray) )
+      ndata = GetNdataUnchecked();
+    if( ndata == 0 )
+      SetBit(kInvalid);
+    else {
+      fLastResult = EvalElement(0);
+      if( TestBit(kArrayFormula) && !IsInvalid() && ndata > 1 ) {
 	switch( fMode ) {
 	case kAND:
 	  // All elements satisfy the test (==N)
@@ -145,7 +149,7 @@ Double_t THaCut::Eval()
 	  {
 	    // Exactly one element satisfies the test (==1)
 	    Int_t ntrue = fLastResult ? 1 : 0;
-	    for( Int_t i=1; ntrue < 2 && i<ndata; ++i ) {
+	    for( Int_t i=1; ntrue != 2 && i<ndata; ++i ) {
 	      if( EvalElement(i) )
 		++ntrue;
 	    }

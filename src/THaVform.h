@@ -34,7 +34,7 @@ public:
   THaVform& operator=(const THaVform& vform);
 
 // Over-rides base class DefinedGlobalVariables
-  Int_t DefinedGlobalVariable( const TString& variable );
+  Int_t DefinedGlobalVariable( TString& variable );
 // Self-explanatory printouts
   void  ShortPrint() const;
   void  LongPrint() const;

@@ -23,7 +23,7 @@ public:
   static const Option_t* const kPRINTBRIEF;
 
   THaFormula();
-  THaFormula( const char* name, const char* formula,
+  THaFormula( const char* name, const char* formula, Bool_t do_register=kTRUE,
 	      const THaVarList* vlst=gHaVars, const THaCutList* clst=gHaCuts );
   THaFormula( const THaFormula& rhs );
   THaFormula& operator=( const THaFormula& rhs );
@@ -34,8 +34,9 @@ public:
   virtual Double_t    DefinedValue( Int_t i );
   // Requires ROOT >= 4.00/00
   virtual Int_t       DefinedVariable( TString& variable, Int_t& action );
-  virtual Int_t       DefinedCut( const TString& variable );
-  virtual Int_t       DefinedGlobalVariable( const TString& variable );
+  virtual Int_t       DefinedCut( TString& variable );
+  virtual Int_t       DefinedGlobalVariable( TString& variable );
+  virtual Int_t       DefinedSpecialFunction( TString& name );
   virtual Double_t    Eval();
   // Requires ROOT >= 4.02/04
   virtual Double_t    Eval( Double_t /*x*/, Double_t /*y*/=0.0,
@@ -60,20 +61,22 @@ public:
 protected:
 
   enum {
-    kError        = BIT(0),   // Compile() failed
-    kInvalid      = BIT(1),   // DefinedValue() encountered invalid data
-    kVarArray     = BIT(2),   // Formula contains a variable-size array
-    kArrayFormula = BIT(3)    // Formula has multiple instances
+    kError          = BIT(0),  // Compile() failed
+    kInvalid        = BIT(1),  // DefinedValue() encountered invalid data
+    kVarArray       = BIT(2),  // Formula contains a variable-size array
+    kArrayFormula   = BIT(3),  // Formula has multiple instances
+    kFuncOfVarArray = BIT(4)   // Formula contains function of var-size array
   };
 
-  enum EVariableType {  kVariable, kCut, kString, kArray };
+  enum EVariableType {  kVariable, kCut, kString, kArray,
+			kFunction, kFormula, kVarFormula };
 
   struct FVarDef_t {
     EVariableType type;                //Type of variable in the formula
-    const void*   code;                //Pointer to the variable
+    void*         obj;                 //Pointer to the respective object
     Int_t         index;               //Linear index into array, if fixed-size
-    FVarDef_t( EVariableType t, const void* c, Int_t i )
-      : type(t), code(c), index(i) {}
+    FVarDef_t( EVariableType t, void* p, Int_t i )
+      : type(t), obj(p), index(i) {}
   };
   std::vector<FVarDef_t> fVarDef;      //Global variables referenced in formula
   const THaVarList* fVarList;          //Pointer to list of variables
