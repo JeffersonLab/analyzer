@@ -78,13 +78,8 @@ THaScaler::THaScaler( const char* bankgr ) {
   rawdata = new Int_t[2*SCAL_NUMBANK*SCAL_NUMCHAN];
   memset(rawdata,0,2*SCAL_NUMBANK*SCAL_NUMCHAN*sizeof(Int_t));
   clockrate = 1024;  // a default 
-<<<<<<< HEAD
-  isclockreset = 0;
-
-=======
   isclockreset = false;
   fDebug = 0;
->>>>>>> upstream/master
 };
 
 THaScaler::~THaScaler() {
@@ -412,11 +407,7 @@ void THaScaler::SetupNormMap() {
 void THaScaler::SetClockRate(Double_t rate)
 { 
   clockrate = rate;
-<<<<<<< HEAD
-  isclockreset = 1;
-=======
   isclockreset = true;
->>>>>>> upstream/master
 }
 
 void THaScaler::SetTimeInterval(Double_t time)
@@ -705,11 +696,7 @@ struct request {
   static int lprint   = 0;
   myRequest.clearflag = 0;
   myRequest.checkend  = 0;
-<<<<<<< HEAD
-  int timeoutcnt=0;
-=======
   UInt_t timeoutcnt=0;
->>>>>>> upstream/master
 
 // create socket 
   if ((sFd = socket (PF_INET, SOCK_STREAM, 0)) == -1 ) {
