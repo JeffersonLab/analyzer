@@ -233,7 +233,7 @@ int THaCrateMap::init(ULong64_t tloc) {
 // The Unix time is obtained from Prestart event by the user class.
 
 int THaCrateMap::init_hc(ULong64_t tloc) {
-  int crate, slot, month=0, year=0;
+  int crate, slot;
 // Default state: most recent.
   int prior_oct_2000 = 0;
   int prior_jan_2001 = 0;
@@ -247,8 +247,8 @@ int THaCrateMap::init_hc(ULong64_t tloc) {
     //FIXME: replace with something 64-bit proof
     time_t t = (UInt_t)tloc;
     struct tm* tp = localtime(&t);
-    year = 1900 + tp->tm_year;
-    month = tp->tm_mon+1;
+    int year = 1900 + tp->tm_year;
+    int month = tp->tm_mon+1;
     if (year < 2000 || (year < 2001 && month < 10)) 
       prior_oct_2000 = 1; 
     if (year < 2001) prior_jan_2001 = 1;  
@@ -548,7 +548,7 @@ int THaCrateMap::init(TString the_map)
     char ctype[21];
     
     // set the next CRATE number and type
-    if ( sscanf(line.c_str(),"==== Crate %d type %20s",&crate,ctype) == 2 ) {
+    if ( sscanf(line.c_str(),"==== Crate %6d type %20s",&crate,ctype) == 2 ) {
       if ( setCrateType(crate,ctype) != CM_OK ) 
 	return CM_ERR;
 
@@ -576,7 +576,7 @@ int THaCrateMap::init(TString the_map)
     // must read at least the slot and model numbers
     if ( crate>=0 &&
 	 (nread=
-	  sscanf(line.c_str(),"%d %d %d %x %x %d %d",
+	  sscanf(line.c_str(),"%6d %8d %6d %10x %10x %6u %8u",
 		 &slot,&imodel,&clear,&iheader,&mask,&ichan,&idata)) >=2 ) {
       if (nread>=6)
 	setModel(crate,slot,imodel,ichan,idata);

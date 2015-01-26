@@ -59,7 +59,7 @@ protected:
 
   //  THaRaster() {}
   //  THaRaster( const THaRaster& ) {}
-  THaRaster& operator=( const THaRaster& ) { return *this; }
+  //  THaRaster& operator=( const THaRaster& ) { return *this; }
 
 
   TVector  fRawPos;        // current in Raster ADCs for position

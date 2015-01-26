@@ -51,8 +51,11 @@ ROOTCFLAGS   := $(shell root-config --cflags)
 ROOTLIBS     := $(shell root-config --libs)
 ROOTGLIBS    := $(shell root-config --glibs)
 ROOTBIN      := $(shell root-config --bindir)
+ROOTINC      := -I$(shell root-config --incdir)
+CXX          := $(shell root-config --cxx)
+CC           := $(shell root-config --cc)
 
-INCLUDES      = $(ROOTCFLAGS)
+INCLUDES =
 
 ifndef STANDALONE
    INCLUDES += -I$(MAINDIR)
@@ -124,10 +127,6 @@ else
   DEFINES      += $(shell getconf LFS_CFLAGS)
 endif
 
-ifeq ($(CXX),)
-   $(error $(ARCH) invalid architecture)
-endif
-
 MAKEDEPEND    = g++
 
 export OSNAME := $(shell uname)
@@ -146,7 +145,7 @@ ifeq ($(OSNAME),SunOS)
 #   CODA = /data7/user/coda/2.2    (on haplix cluster)
    LIBET = $(CODA)/SunOS/lib/libet.so
    ONLIBS = $(LIBET) -lposix4 -lnsl -lsocket -lresolv
-   LIBS = $(EVIO_LIB) $(GLIB)
+   LIBS = $(GLIB)
    ALL_LIBS = $(LIBS) 
 
 endif
@@ -155,7 +154,7 @@ ifeq ($(OSNAME),Linux)
 
    LIBS          =
    GLIBS         = -L/usr/X11R6/lib -lXpm -lX11
-   ALL_LIBS      = $(EVIO_LIB) $(GLIBS) $(ROOTLIBS) $(ROOTGLIBS)
+   ALL_LIBS      = $(GLIBS) $(ROOTLIBS) $(ROOTGLIBS)
 
 # ONLIBS is needed for ET
    ET_AC_FLAGS = -D_REENTRANT -D_POSIX_PTHREAD_SEMANTICS
@@ -186,8 +185,8 @@ endif
 INCLUDES     += -I$(EVIO_INCDIR)
 
 DEFINES      += $(DC_DEFINES)
-CFLAGS        = $(CXXFLG) $(INCLUDES) $(DEFINES)
-CXXFLAGS      = $(CXXFLG) $(CXXEXTFLG) $(INCLUDES) $(DEFINES)
+CFLAGS        = $(CXXFLG) $(ROOTCLAGS) $(INCLUDES) $(DEFINES)
+CXXFLAGS      = $(CXXFLG) $(CXXEXTFLG) $(ROOTCFLAGS) $(INCLUDES) $(DEFINES)
 LIBS         += $(ROOTLIBS) $(SYSLIBS)
 GLIBS        += $(ROOTGLIBS) $(SYSLIBS)
 
@@ -197,7 +196,7 @@ GLIBS        += $(ROOTGLIBS) $(SYSLIBS)
 
 SRC = THaUsrstrutils.C THaCrateMap.C THaCodaData.C \
       THaEpics.C THaFastBusWord.C THaCodaFile.C THaSlotData.C \
-      THaEvData.C THaCodaDecoder.C
+      THaEvData.C THaCodaDecoder.C SimDecoder.C
 
 PROGS = tstio tdecpr tdecex prfact epicsd 
 # If you want to use the ET system at Jlab.
@@ -242,9 +241,9 @@ static:	libdc.a
 libdc.so: $(DECODE_OBJS)
 	rm -f $@
 ifeq ($(strip $(SONAME)),)
-	$(LD) $(LDFLAGS) $(SOFLAGS) -o $@ $^
+	$(LD) $(LDFLAGS) $(SOFLAGS) -o $@ $^ $(EVIO_LIB)
 else
-	$(LD) $(LDFLAGS) $(SOFLAGS) $(SONAME)libdc.so.$(SOVERSION) -o $@ $^
+	$(LD) $(LDFLAGS) $(SOFLAGS) $(SONAME)libdc.so.$(SOVERSION) -o $@ $^ $(EVIO_LIB)
 endif
 
 ifndef STANDALONE
@@ -261,26 +260,26 @@ else
    MAINOBJS = $(MAINDIR)/libHallA.so
 endif
 
-tstio: tstio_main.o $(DECODE_OBJS) $(SRC) $(EVIO_LIB) $(MAINOBJS)
+tstio: tstio_main.o $(DECODE_OBJS) $(SRC) $(MAINOBJS)
 	rm -f $@
 	$(CXX) $(CXXFLAGS) -o $@ tstio_main.o $(DECODE_OBJS) $(ALL_LIBS) $(MAINOBJS)
 
-tdecpr: $(DECODE_OBJS) $(SRC) tdecpr_main.o $(HEAD) $(SRC) $(EVIO_LIB) $(MAINOBJS)
+tdecpr: $(DECODE_OBJS) $(SRC) tdecpr_main.o $(HEAD) $(SRC) $(MAINOBJS)
 	rm -f $@
 	$(CXX) $(CXXFLAGS) -o $@ tdecpr_main.o $(DECODE_OBJS) $(ALL_LIBS) $(MAINOBJS)
 
-tdecex: $(DECODE_OBJS) $(SRC) tdecex_main.o THaGenDetTest.o $(HEAD) THaGenDetTest.h $(SRC) $(DECODE_OBJS) $(EVIO_LIBS) $(MAINOBJS)  
+tdecex: $(DECODE_OBJS) $(SRC) tdecex_main.o THaGenDetTest.o $(HEAD) THaGenDetTest.h $(SRC) $(DECODE_OBJS) $(MAINOBJS)  
 	rm -f $@
 	$(CXX) $(CXXFLAGS) -o $@ tdecex_main.o THaGenDetTest.o $(DECODE_OBJS) $(ALL_LIBS) $(MAINOBJS)
 
 etclient: etclient_main.o $(DECODE_OBJS) $(MAINOBJS)
 	$(CXX) $(CXXFLAGS) -o $@ etclient_main.o $(DECODE_OBJS) $(ALL_LIBS) $(MAINOBJS)
 
-prfact: $(DECODE_OBJS) $(SRC) prfact_main.o $(HEAD) $(EVIO_LIB) $(MAINOBJS)
+prfact: $(DECODE_OBJS) $(SRC) prfact_main.o $(HEAD) $(MAINOBJS)
 	rm -f $@
-	$(CXX) $(CXXFLAGS) -o $@ prfact_main.o $(DECODE_OBJS) $(ALL_LIBS) $(MAINOBJS)
+	$(CXX) $(CXXFLAGS) -o $@ prfact_main.o $(DECODE_OBJS) $(MAINOBJS)
 
-epicsd: $(DECODE_OBJS) $(SRC) epics_main.o $(HEAD) $(EVIO_LIB) $(MAINOBJS)
+epicsd: $(DECODE_OBJS) $(SRC) epics_main.o $(HEAD) $(MAINOBJS)
 	rm -f $@
 	$(CXX) $(CXXFLAGS) -o $@ epics_main.o $(DECODE_OBJS) $(ALL_LIBS) $(MAINOBJS)
 
@@ -292,7 +291,7 @@ tstcoda: tstcoda_main.o THaCodaFile.o THaEtClient.o THaCodaData.o THaCodaFile.h 
 
 THaDecDict.C: $(RCHEAD) haDecode_LinkDef.h
 	@echo "Generating Decoder Dictionary..."
-	$(ROOTBIN)/rootcint -f THaDecDict.C -c $(CXXFLAGS) $^
+	$(ROOTBIN)/rootcint -f THaDecDict.C -c $(ROOTINC) $(INCLUDES) $(DEFINES) $^
 
 # create a tar file of ./$(VERS)/* (all code)
 
@@ -332,7 +331,7 @@ install:	all
 #	@$(SHELL) -ec '$(CXX) -MM $(CXXFLAGS) -c $< \
 #		| sed '\''s/\($*\)\.o[ :]*/\1.o $@ : /g'\'' > $@; \
 #		[ -s $@ ] || rm -f $@'
-	@$(SHELL) -ec '$(MAKEDEPEND) -MM $(INCLUDES) $(DEFINES) -c $< \
+	@$(SHELL) -ec '$(MAKEDEPEND) -MM $(ROOTINC) $(INCLUDES) $(DEFINES) -c $< \
 		| sed '\''s/\($*\)\.o[ :]*/\1.o $@ : /g'\'' > $@; \
 		[ -s $@ ] || rm -f $@'
 

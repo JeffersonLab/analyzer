@@ -76,11 +76,9 @@ int main(int argc, char* argv[]) {
    }
    //   printf("\n Using clock rate %f Hz\n",clockrate);
 
-   int status;
-
    for (int run = runlo; run <= runhi; run++) {
 
-     status = scaler.LoadDataHistoryFile(run, hdeci);  // load data from default history file
+     int status = scaler.LoadDataHistoryFile(run, hdeci);  // load data from default history file
      if ( status != 0 ) continue;
 
      for (int i = 0; i < 18; i++) farray_ntup[i] = 0;
@@ -112,7 +110,7 @@ int main(int argc, char* argv[]) {
      farray_ntup[16] = curr_d3;
      farray_ntup[17] = curr_u10;
      ntup->Fill(farray_ntup);
-     Float_t clkdiff = (clock - 1.016*(clkplus+clkminus))/clockrate; // units: seconds
+     //     Float_t clkdiff = (clock - 1.016*(clkplus+clkminus))/clockrate; // units: seconds
 
      if (lprint == 1) {
         cout << "\nScalers for run = "<<run<<endl<<flush;

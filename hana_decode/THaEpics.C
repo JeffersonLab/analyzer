@@ -102,7 +102,7 @@ vector<EpicsChan> THaEpics::GetChan(const char *tag) const
 }
 
 
-Int_t THaEpics::FindEvent(const vector<EpicsChan> ep, int event) const
+Int_t THaEpics::FindEvent(const vector<EpicsChan>& ep, int event) const
 {
   // Return the index in the vector of Epics data 
   // nearest in event number to event 'event'.
@@ -122,7 +122,7 @@ Int_t THaEpics::FindEvent(const vector<EpicsChan> ep, int event) const
 }
         
 
-int THaEpics::LoadData(const int* evbuffer, int evnum)
+int THaEpics::LoadData(const UInt_t* evbuffer, int evnum)
 { 
   // load data from the event buffer 'evbuffer' 
   // for event nearest 'evnum'.

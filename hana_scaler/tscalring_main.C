@@ -480,7 +480,6 @@ finish:
 // *************************************************************
 
 int loadHelicity() {
-  int i;
   static int nb;
   if (recovery_flag) nb = 0;
   recovery_flag = 0;
@@ -490,10 +489,10 @@ int loadHelicity() {
       return 0;
   } else if (nb == NBIT) {   // Have finished loading
       iseed_earlier = getSeed();
-      for (i = 0; i < NBIT+1; i++) 
+      for (int i = 0; i < NBIT+1; i++) 
           predicted_reading = ranBit(iseed_earlier);
       iseed = iseed_earlier;
-      for (i = 0; i < NDELAY; i++)
+      for (int i = 0; i < NDELAY; i++)
           present_helicity = ranBit(iseed);
       nb++;
       return 1;
@@ -523,11 +522,11 @@ int loadHelicity() {
 
 int ranBit(unsigned int& ranseed) {
 
-  static int IB1 = 1;           // Bit 1
-  static int IB3 = 4;           // Bit 3
-  static int IB4 = 8;           // Bit 4
-  static int IB24 = 8388608;    // Bit 24 
-  static int MASK = IB1+IB3+IB4+IB24;
+  const int IB1 = 1;           // Bit 1
+  const int IB3 = 4;           // Bit 3
+  const int IB4 = 8;           // Bit 4
+  const int IB24 = 8388608;    // Bit 24 
+  const int MASK = IB1+IB3+IB4+IB24;
 
   if(ranseed & IB24) {    
       ranseed = ((ranseed^MASK)<<1) | IB1;

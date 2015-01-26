@@ -13,9 +13,9 @@
 #include "TClonesArray.h"
 #include "TVector3.h"
 #include "TRotation.h"
+#include "THaParticleInfo.h"
+#include "THaPidDetector.h"
 
-class THaParticleInfo;
-class THaPidDetector;
 class THaTrack;
 class TList;
 class THaCut;
@@ -147,13 +147,13 @@ inline Int_t THaSpectrometer::GetNpidDetectors() const
 inline const THaParticleInfo* THaSpectrometer::GetPidParticleInfo( Int_t i ) 
   const
 {
-  return (const THaParticleInfo*) fPidParticles->At(i);
+  return static_cast<const THaParticleInfo*>( fPidParticles->At(i) );
 }
 
 //_____________________________________________________________________________
 inline const THaPidDetector* THaSpectrometer::GetPidDetector( Int_t i ) const
 {
-  return (const THaPidDetector*) fPidDetectors->At(i);
+  return static_cast<const THaPidDetector*>( fPidDetectors->At(i) );
 }
 
 //_____________________________________________________________________________

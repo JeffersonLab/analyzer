@@ -29,7 +29,8 @@ rootdecobj = baseenv.subst('$HA_DC')+'/THaDecDict.so'
 decheaders = Split("""
 hana_decode/THaUsrstrutils.h hana_decode/THaCrateMap.h hana_decode/THaCodaData.h hana_decode/THaEpics.h
 hana_decode/THaFastBusWord.h hana_decode/THaCodaFile.h hana_decode/THaSlotData.h hana_decode/THaEvData.h
-hana_decode/THaCodaDecoder.h hana_decode/THaBenchmark.h hana_decode/haDecode_LinkDef.h
+hana_decode/THaCodaDecoder.h hana_decode/SimDecoder.h
+hana_decode/THaBenchmark.h hana_decode/haDecode_LinkDef.h
 """)
 #hana_decode/evio.h
 baseenv.RootCint(rootdecdict,decheaders)
@@ -52,7 +53,7 @@ src/THaParticleInfo.h src/THaCluster.h src/THaArrayString.h src/THaScintillator.
 src/THaShower.h src/THaTotalShower.h src/THaCherenkov.h src/THaEvent.h 
 src/THaTrackID.h src/THaVDC.h src/THaVDCPlane.h src/THaVDCUVPlane.h src/THaVDCUVTrack.h 
 src/THaVDCWire.h src/THaVDCHit.h src/THaVDCCluster.h src/THaVDCTimeToDistConv.h 
-src/THaVDCTrackID.h src/THaVDCAnalyticTTDConv.h src/THaVDCTrackPair.h 
+src/THaVDCTrackID.h src/THaVDCAnalyticTTDConv.h src/THaVDCTrackPair.h src/VDCeff.h
 src/THaScalerGroup.h src/THaElectronKine.h src/THaReactionPoint.h 
 src/THaReacPointFoil.h src/THaTwoarmVertex.h src/THaAvgVertex.h src/THaExtTarCor.h 
 src/THaDebugModule.h src/THaTrackInfo.h src/THaGoldenTrack.h src/THaPrimaryKine.h 

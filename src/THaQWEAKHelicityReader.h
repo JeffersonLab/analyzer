@@ -10,13 +10,17 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "Rtypes.h"
+<<<<<<< HEAD
 #include "TH1F.h"
 #include "Decoder.h"
 #include "THaEvData.h"
 
 using namespace Decoder;
+=======
+>>>>>>> upstream/master
 
 class TDatime;
+class TH1F;
 
 class THaQWEAKHelicityReader {
   
@@ -85,7 +89,8 @@ protected:
   Int_t    fQWEAKDebug;          // Debug level
   Bool_t   fHaveROCs;         // Required ROCs are defined
   Bool_t   fNegGate;          // Invert polarity of gate, TO DO implement this functionality
-  TH1F *    fHisto[12];  // Histograms
+  static const Int_t NHISTR = 12;
+  TH1F*    fHistoR[12];  // Histograms
 
 private:
 

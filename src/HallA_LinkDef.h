@@ -86,6 +86,7 @@
 #pragma link C++ class THaVDCAnalyticTTDConv+;
 #pragma link C++ class THaVDCTrackID+;
 #pragma link C++ class THaVDCTrackPair+;
+#pragma link C++ class VDCeff+;
 #pragma link C++ class THaRTTI+;
 #pragma link C++ class THaScalerGroup+;
 #pragma link C++ class THaElectronKine+;

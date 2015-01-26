@@ -65,7 +65,7 @@ unsigned int THaUsrstrutils::getint(const char *s) const
   if(!sval) return(0);		/* Just return zero if no value string */
   unsigned int retval = strtol(sval,0,0);
   if(retval == LONGMAX && (sval[1]=='x' || sval[1]=='X')) {/* Probably hex */
-     sscanf(sval,"%x",&retval);
+     sscanf(sval,"%12x",&retval);
    }
   delete [] sval;
   return(retval);
@@ -98,7 +98,7 @@ void THaUsrstrutils::getflagpos_instring(const char *constr, const char *s,
   return;
 }
   
-void THaUsrstrutils::string_from_evbuffer(const int *evbuffer, int nlen )
+void THaUsrstrutils::string_from_evbuffer(const UInt_t* evbuffer, int nlen )
 {
 // Routine string_from_evbuffer loads the configstr from the event buffer.
 // It has the same strengths and weaknesses as the DAQ code,

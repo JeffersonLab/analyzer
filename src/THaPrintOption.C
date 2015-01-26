@@ -11,7 +11,6 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-#include "TString.h"
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
@@ -70,12 +69,7 @@ THaPrintOption& THaPrintOption::operator=(const THaPrintOption& rhs)
   // Assignment operator
 
   if (this != &rhs) {
-    delete [] fString; fString = 0;
-    if( rhs.fString ) {
-      fString = new char[ strlen(rhs.fString)+1 ];
-      strcpy( fString, rhs.fString );
-    }
-    Parse();
+    *this = rhs.fString;
   }
   return *this;
 }
@@ -86,23 +80,10 @@ THaPrintOption& THaPrintOption::operator=(const char* rhs)
   // Initialize object with a string
 
   delete [] fString; fString = 0;
+  *fEmpty = 0;
   if( rhs ) {
     fString = new char[ strlen(rhs)+1 ];
     strcpy( fString, rhs );
-  }
-  Parse();
-  return *this;
-}
-
-//_____________________________________________________________________________
-THaPrintOption& THaPrintOption::operator=( const TString& rhs)
-{
-  // Initialize object with a string
-
-  delete [] fString; fString = 0;
-  if( rhs.Length() ) {
-    fString = new char[ rhs.Length()+1 ];
-    strcpy( fString, rhs.Data() );
   }
   Parse();
   return *this;
@@ -127,13 +108,13 @@ void THaPrintOption::Parse()
   // This function should never generate an error since the input
   // cannot be invalid.
 
-  static const char* const delim = ", ";       // token delimiters
+  const char* const delim = ", ";       // token delimiters
 
-  if( !fString || !*fString ) return;
   delete [] fTokenStr; fTokenStr = 0;
   delete [] fTokens; fTokens = 0;
   delete [] fParam; fParam = 0;
   fNTokens = 0;
+  if( !fString || !*fString ) return;
 
   fTokenStr = new char[ strlen(fString)+1 ];
   strcpy( fTokenStr, fString );

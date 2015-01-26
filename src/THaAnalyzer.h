@@ -102,8 +102,8 @@ protected:
   enum { 
     kNevRead = 0, kNevGood, kNevPhysics, kNevScaler, kNevEpics, kNevOther,
     kNevPostProcess, kNevAnalyzed, kNevAccepted,
-    kEvFileTrunc, kCodaErr, kRawDecodeTest, kDecodeTest, kCoarseTrackTest, 
-    kCoarseReconTest, kTrackTest, kReconstructTest, kPhysicsTest 
+    kDecodeErr, kCodaErr, kRawDecodeTest, kDecodeTest, kCoarseTrackTest,
+    kCoarseReconTest, kTrackTest, kReconstructTest, kPhysicsTest
   };
   struct Counter_t {
     Int_t       key;

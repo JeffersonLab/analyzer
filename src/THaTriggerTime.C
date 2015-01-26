@@ -71,20 +71,21 @@ Int_t THaTriggerTime::ReadDatabase( const TDatime& date )
   int trg;
   float toff;
   float ch2t=-0.5e-9;
-  int fnd=0;
   int crate,slot,chan;
   fTrgTypes.clear();
   fToffsets.clear();
   fTDCRes = -0.5e-9; // assume 1872 TDC's.
   
   while ( fgets(buf,LEN,fi) ) {
-    if ( (fnd=sscanf(buf,"%d %f %f",&trg,&toff,&ch2t)) < 2) continue;
-    if (trg==0) {
-      fGlOffset=toff;
-      fTDCRes=ch2t;
+    int fnd = sscanf( buf,"%8d %16f %16f",&trg,&toff,&ch2t);
+    if( fnd < 2 ) continue;
+    if( trg == 0 ) {
+      fGlOffset = toff;
+      fTDCRes = ch2t;
     }
     else {
-      if ( (fnd=sscanf(buf,"%d %f %d %d %d",&trg,&toff,&crate,&slot,&chan)!=5) ) {
+      fnd = sscanf( buf,"%8d %16f %8d %8d %8d",&trg,&toff,&crate,&slot,&chan);
+      if( fnd != 5 ) {
 	cerr << "Cannot parse line: " << buf << endl;
 	continue;
       }

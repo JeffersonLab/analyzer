@@ -37,22 +37,28 @@ THaQWEAKHelicity::THaQWEAKHelicity( const char* name, const char* description,
   fRingPhase_reported(0),fRing_reported_polarity(0),
   fRing_actual_polarity(0)
 {
+  for( Int_t i = 0; i < NHIST; ++i )
+    fHisto[i] = 0;
   //  memset(fHbits, 0, sizeof(fHbits));
 }
 
 //_____________________________________________________________________________
-THaQWEAKHelicity::THaQWEAKHelicity() 
+THaQWEAKHelicity::THaQWEAKHelicity()
 {
   // Default constructor for ROOT I/O
+
+  for( Int_t i = 0; i < NHIST; ++i )
+    fHisto[i] = 0;
 }
 
 //_____________________________________________________________________________
 THaQWEAKHelicity::~THaQWEAKHelicity() 
 {
-//   DefineVariables( kDelete );
+  DefineVariables( kDelete );
 
-//   delete fHisto[1];
-//   delete fHisto[0];
+  // for( Int_t i = 0; i < NHIST; ++i ) {
+  //   delete fHisto[i];
+  // }
 }
 
 //_____________________________________________________________________________
@@ -308,8 +314,8 @@ Int_t THaQWEAKHelicity::End( THaRunBase* )
   // End of run processing. Write histograms.
   THaQWEAKHelicityReader::End();
 
-  fHisto[0]->Write();
-  fHisto[1]->Write();
+  for( Int_t i = 0; i < NHIST; ++i )
+    fHisto[i]->Write();
 
   return 0;
 }

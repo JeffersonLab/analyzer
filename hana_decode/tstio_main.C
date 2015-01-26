@@ -101,14 +101,14 @@ int main(int argc, char* argv[])
       file1.setMaxEvFilt(20);  
 
       // Now filter
-      char* output_file = "filter_output.dat";
+      const char* output_file = "filter_output.dat";
       int ret = file1.filterToFile(output_file);
       cout << "\n Return status from filtering " << dec << ret << endl;
       exit(1);
 
   } else {    // Rapidly read file and count event types
   
-      char* filename = "snippet.dat";
+      const char* filename = "snippet.dat";
       THaCodaFile datafile(filename);
       static const int MAXEVTYPE = 200;
       int evtype_sum[MAXEVTYPE];

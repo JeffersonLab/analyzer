@@ -86,7 +86,7 @@ Int_t THaHelicity::ReadDatabase( const TDatime& date )
     { "verbose",       &fDebug,      kInt, 0, 1, -2 },
     { 0 }
   };
-  st = LoadDB( file, date, req, GetPrefix() );
+  st = LoadDB( file, date, req );
   fclose(file);
   if( st )
     return kInitError;

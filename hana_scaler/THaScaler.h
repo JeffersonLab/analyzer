@@ -117,8 +117,9 @@ public:
    void SetPort(Int_t port);                    // set PORT# for online data
    void SetClockLoc(Int_t slot, Int_t chan);  // set clock location
    void SetClockRate(Double_t clkrate);       // set clock rate
-   void SetTimeInterval(Double_t time);    // set avg time interval between events. (if no clk)
+   void SetTimeInterval(Double_t time); // set avg time interval between events. (if no clk)
    void SetIChan(Int_t slot, Int_t chan);  // Set channel to norm. by (for GetIRate)
+   Int_t SetDebug( Int_t level );          // Set debug level
    Int_t GetSlot(std::string which, Int_t helicity=0);
    Int_t GetSlot(Int_t tgtstate, Int_t helicity);
    Int_t GetChan(std::string which, Int_t helicity=0, Int_t chan=0);
@@ -139,16 +140,21 @@ protected:
    int vme_port, clkslot, clkchan;
    int icurslot, icurchan;
    Bool_t found_crate,first_loop;
-   Bool_t did_init, new_load, one_load, use_clock;
+   Bool_t did_init, new_load, one_load, use_clock, isclockreset;
    Int_t *normslot;
    Double_t clockrate;
+<<<<<<< HEAD
    Int_t isclockreset;
+=======
+   Int_t fDebug;
+
+>>>>>>> upstream/master
    Int_t InitData(const std::string& bankgroup, const Bdate& bd);
    Int_t CheckInit();
    void Clear(Option_t* opt="");
    void ClearAll();
    void LoadPrevious();
-   Int_t ExtractRaw(const Int_t* data, int len=0);
+   Int_t ExtractRaw(const UInt_t* data, int len=0);
    void DumpRaw(Int_t flag=0);
    UInt_t header_str_to_base16(const std::string& header);
    Double_t calib_u1,calib_u3,calib_u10,calib_d1,calib_d3,calib_d10;
@@ -157,7 +163,6 @@ protected:
    Double_t GetTimeDiff(Int_t helicity);
    Double_t GetTimeDiffSlot(Int_t slot, Int_t chan=7);
    void SetupNormMap();
-   static const Int_t fDebug = 0;
 
 private:
 

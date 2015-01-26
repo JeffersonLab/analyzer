@@ -49,9 +49,11 @@ ROOTCFLAGS   := $(shell root-config --cflags)
 ROOTLIBS     := $(shell root-config --libs)
 ROOTGLIBS    := $(shell root-config --glibs)
 ROOTBIN      := $(shell root-config --bindir)
+ROOTINC      := -I$(shell root-config --incdir)
+CXX          := $(shell root-config --cxx)
+CC           := $(shell root-config --cc)
 
-INCLUDES     = $(ROOTCFLAGS) -I$(DCDIR) -I$(EVIO_INCDIR)
-
+INCLUDES     = -I$(DCDIR) -I$(EVIO_INCDIR)
 
 ifdef STANDALONE
 ARCH          = linux
@@ -65,7 +67,6 @@ ARCH          = linux
   ifeq ($(ARCH),solarisCC5)
     DEFINES   += -DSUNVERS 
   # Solaris CC 5.0
-    CXX           = CC
     ifdef DEBUG
       CXXFLG      = -g
       LDFLAGS     = -g
@@ -81,7 +82,6 @@ ARCH          = linux
     ifeq ($(ARCH),linux)
     DEFINES   += -DLINUXVERS 
     # Linux with egcs (>= RedHat 5.2)
-    CXX           = g++
     ifdef DEBUG
       CXXFLG      = -g -O0
       LDFLAGS     = -g -O0
@@ -98,7 +98,6 @@ ARCH          = linux
   ifeq ($(ARCH),macosx)
     # EXPERIMENTAL: Mac OS X with Xcode 3.x/gcc 4.x
     DEFINES   += -DMACVERS 
-    CXX           = g++
     ifdef DEBUG
       CXXFLG      = -g -O0
       LDFLAGS     = -g -O0
@@ -117,10 +116,6 @@ ARCH          = linux
     DEFINES      += -DWITH_DEBUG
   endif
   DEFINES        += $(shell getconf LFS_CFLAGS)
-endif
-
-ifeq ($(CXX),)
-$(error $(ARCH) invalid architecture)
 endif
 
 MAKEDEPEND    = g++
@@ -154,7 +149,7 @@ ifeq ($(OSNAME),Linux)
 endif
 
 DEFINES      += $(SC_DEFINES)
-CXXFLAGS      = $(CXXFLG) $(CXXEXTFLG) $(INCLUDES) $(DEFINES)
+CXXFLAGS      = $(CXXFLG) $(CXXEXTFLG) $(ROOTCFLAGS) $(INCLUDES) $(DEFINES)
 LIBS         += $(ROOTLIBS) $(SYSLIBS)
 GLIBS        += $(ROOTGLIBS) $(SYSLIBS)
 
@@ -278,7 +273,7 @@ tscalring23: tscalring23_main.o $(SCALER_OBJS) $(SRC) $(HEAD) $(LIBDC)
 # Dictionary
 THaScalDict.C: $(HEAD) haScal_LinkDef.h
 	@echo "Generating Scaler Package Dictionary..."
-	$(ROOTBIN)/rootcint -f THaScalDict.C -c $(INCLUDES) $^
+	$(ROOTBIN)/rootcint -f THaScalDict.C -c $(ROOTINC) $(INCLUDES) $(DEFINES) $^
 
 tarfile: clean version
 	tar cvf $(VERS).tar ./hana_scaler
@@ -317,7 +312,7 @@ install:	all
 #	@$(SHELL) -ec '$(CXX) -MM $(CXXFLAGS) -c $< \
 #		| sed '\''s/\($*\)\.o[ :]*/\1.o $@ : /g'\'' > $@; \
 #		[ -s $@ ] || rm -f $@'
-	@$(SHELL) -ec '$(MAKEDEPEND) -MM $(INCLUDES) $(DEFINES) -c $< \
+	@$(SHELL) -ec '$(MAKEDEPEND) -MM $(ROOTINC) $(INCLUDES) $(DEFINES) -c $< \
 		| sed '\''s/\($*\)\.o[ :]*/\1.o $@ : /g'\'' > $@; \
 		[ -s $@ ] || rm -f $@'
 

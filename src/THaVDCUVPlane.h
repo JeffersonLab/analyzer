@@ -7,6 +7,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 #include "THaSubDetector.h"
 #include "THaVDCPlane.h"
+<<<<<<< HEAD
 #include "Decoder.h"
 #include "THaEvData.h"
 
@@ -18,6 +19,14 @@ using namespace Decoder;
 
 class THaVDCUVTrack;
 class THaVDC;
+=======
+#include "THaVDCUVTrack.h"
+#include "THaVDC.h"
+#include "TClonesArray.h"
+#include <cassert>
+
+class THaEvData;
+>>>>>>> upstream/master
 
 class THaVDCUVPlane : public THaSubDetector {
 
@@ -40,11 +49,12 @@ public:
   THaVDCPlane*   GetVPlane()      const { return fV; } 
   Int_t          GetNUVTracks()   const { return fUVTracks->GetLast()+1; }
   TClonesArray*  GetUVTracks()    const { return fUVTracks; }
-  THaVDC*        GetVDC()         const { return (THaVDC*)GetDetector(); }
+  THaVDC*        GetVDC()         const
+  { return static_cast<THaVDC*>(GetDetector()); }
   Double_t       GetSpacing()     const { return fSpacing;}
   THaVDCUVTrack* GetUVTrack( Int_t i ) const 
     { assert( i>=0 && i<GetNUVTracks() );
-      return (THaVDCUVTrack*)fUVTracks->UncheckedAt(i); }
+      return static_cast<THaVDCUVTrack*>( fUVTracks->UncheckedAt(i) ); }
 
 protected:
 

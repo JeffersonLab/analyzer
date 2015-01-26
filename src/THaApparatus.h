@@ -42,8 +42,6 @@ protected:
   THaApparatus( const char* name, const char* description );
   THaApparatus( );
 
-  virtual void MakePrefix();
-
   ClassDef(THaApparatus,1)   //A generic apparatus (collection of detectors)
 };
 

@@ -28,7 +28,7 @@ THaRTTI.C                 THaSpectrometerDetector.C THaUnRasteredBeam.C       TH
 THaBeamEloss.C            THaElossCorrection.C      THaNonTrackingDetector.C  
 THaRaster.C               THaString.C               THaVDC.C                  THaVhist.C
 THaBeamInfo.C             THaEpicsEbeam.C              
-THaRasteredBeam.C         THaSubDetector.C          THaVDCAnalyticTTDConv.C
+THaRasteredBeam.C         THaSubDetector.C          THaVDCAnalyticTTDConv.C   VDCeff.C
 THaBeamModule.C           THaEvent.C               
 THaReacPointFoil.C        THaTextvars.C             THaVDCCluster.C
 THaCherenkov.C            THaExtTarCor.C            THaOutput.C               

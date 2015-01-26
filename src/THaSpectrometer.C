@@ -502,25 +502,20 @@ Int_t THaSpectrometer::ReadRunDatabase( const TDatime& date )
   Double_t th = 0.0, ph = 0.0;
   Double_t off_x = 0.0, off_y = 0.0, off_z = 0.0;
 
-  const TagDef tags[] = { 
-    { "theta",    &th, 1 }, 
-    { "phi",      &ph },
-    { "pcentral", &fPcentral, 3 },
-    { "colldist", &fCollDist },
-    { "off_x",    &off_x },
-    { "off_y",    &off_y },
-    { "off_z",    &off_z },
+  const DBRequest req[] = {
+    { "theta",    &th                       },
+    { "phi",      &ph,        kDouble, 0, 1 },
+    { "pcentral", &fPcentral                },
+    { "colldist", &fCollDist, kDouble, 0, 1 },
+    { "off_x",    &off_x,     kDouble, 0, 1 },
+    { "off_y",    &off_y,     kDouble, 0, 1 },
+    { "off_z",    &off_z,     kDouble, 0, 1 },
     { 0 }
   };
-  err = LoadDB( file, date, tags, fPrefix );
-  if( err ) {    
-    if( err>0 )
-      Error( Here("ReadRunDatabase()"), "Required key %s%s missing in the "
-	     "run database.\nSpectrometer initialization failed.",
-	     fPrefix, tags[err-1].name );
-    fclose(file);
+  err = LoadDB( file, date, req );
+  fclose(file);
+  if( err )
     return kInitError;
-  }
 
   // Compute central angles in spherical coordinates and save trig. values
   // of angles for later use.
@@ -554,7 +549,6 @@ Int_t THaSpectrometer::ReadRunDatabase( const TDatime& date )
   fToTraRot = fToLabRot.Inverse();
   fPointingOffset.SetXYZ( off_x, off_y, off_z );
 
-  fclose(file);
   return kOK;
 }
 

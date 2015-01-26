@@ -180,11 +180,6 @@ THaVar::THaVar( const char* name, const char* desc, const void* obj,
       delete fMethod; fMethod = 0;
     }
   }
-  if( fOffset != -1 || IsVector() )
-    // Storage for the current collection/vector size, for compatibility with
-    // the way THaArrayString works. This is a pointer so we can modify the
-    // contents in a const function ... :-/ oi
-    fDim = new Int_t;
 }
 
 //_____________________________________________________________________________
@@ -197,7 +192,6 @@ THaVar::THaVar( const THaVar& rhs ) :
 
   // Make local copies of pointers
   if( fMethod ) fMethod = new TMethodCall( *rhs.fMethod );
-  if( fDim )    fDim    = new Int_t( *rhs.fDim );
 }
 
 //_____________________________________________________________________________
@@ -214,11 +208,8 @@ THaVar& THaVar::operator=( const THaVar& rhs )
     fOffset     = rhs.fOffset;
     // Make local copies of pointers
     delete fMethod;
-    delete fDim;
     fMethod     = rhs.fMethod;
-    fDim        = rhs.fDim;
     if( fMethod ) fMethod  = new TMethodCall( *rhs.fMethod );
-    if( fDim )    fDim     = new Int_t( *rhs.fDim );
   }
   return *this;
 }
@@ -229,7 +220,6 @@ THaVar::~THaVar()
   // Destructor
 
   delete fMethod;
-  delete fDim;
 }
 
 //_____________________________________________________________________________
@@ -435,8 +425,8 @@ const Int_t* THaVar::GetDim() const
   if( fCount )
     return fCount;
   if( fOffset != -1 || IsVector() ) {
-    *fDim = GetLen();
-    return fDim;
+    fDim = GetLen();
+    return &fDim;
   }
   return fParsedName.GetDim();
 }
@@ -562,19 +552,19 @@ Int_t THaVar::Index( const THaArrayString& elem ) const
 
   if( fCount ) {
     if( elem.GetNdim() != 1 ) return -2;
-    return *elem.GetDim();
+    return elem[0];
   }
 
   Int_t ndim = GetNdim();
   if( ndim != elem.GetNdim() ) return -2;
 
-  const Int_t *subs = elem.GetDim(), *adim = GetDim();
+  const Int_t *adim = GetDim();
 
-  Int_t index = subs[0];
+  Int_t index = elem[0];
   for( Int_t i = 0; i<ndim; i++ ) {
-    if( subs[i]+1 > adim[i] ) return -1;
+    if( elem[i] >= adim[i] ) return -1;
     if( i>0 )
-      index = index*adim[i] + subs[i];
+      index = index*adim[i] + elem[i];
   }
   if( index >= GetLen() || index > kMaxInt ) return -1;
   return index;

@@ -26,7 +26,7 @@ class THaVform : public THaFormula {
 
 public:
 
-  THaVform() : THaFormula() {}
+  THaVform() : THaFormula(), fType(kUnknown), fVarPtr(0), fOdata(0) {}
   THaVform( const char *type, const char* name, const char* formula,
       const THaVarList* vlst=gHaVars, const THaCutList* clst=gHaCuts );
   virtual  ~THaVform();
@@ -34,7 +34,7 @@ public:
   THaVform& operator=(const THaVform& vform);
 
 // Over-rides base class DefinedGlobalVariables
-  Int_t DefinedGlobalVariable( const TString& variable );
+  Int_t DefinedGlobalVariable( TString& variable );
 // Self-explanatory printouts
   void  ShortPrint() const;
   void  LongPrint() const;

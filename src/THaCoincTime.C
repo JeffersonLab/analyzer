@@ -195,8 +195,8 @@ Int_t THaCoincTime::ReadDatabase( const TDatime& date )
 
     fgets ( buf, LEN, fi );
     
-    int nread = sscanf( buf, "%d %d %d %d %f %20s %f", &crate, &slot, &first,
-		        &model, &tres, label, &toff );
+    int nread = sscanf( buf, "%6d %6d %6d %6d %15f %20s %15f",
+			&crate, &slot, &first, &model, &tres, label, &toff );
     if ( crate < 0 ) break;
     if ( nread < 6 ) {
       Error( Here(here), "Invalid detector map! Need at least 6 columns." );

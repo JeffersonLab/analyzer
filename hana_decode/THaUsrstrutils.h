@@ -100,12 +100,11 @@ public:
   int getflag(const char *s) const;
   char *getstr(const char *s) const;
   unsigned int getint(const char *s) const;
-  void string_from_evbuffer(const int *evbuffer, int nlen=MAX);
+  void string_from_evbuffer(const UInt_t* evbuffer, int nlen=MAX);
   void string_from_file(const char *ffile_name);
 
 protected:
 
-  int max_size_string;
   TString configstr;
   void getflagpos(const char *s, const char **pos_ret, 
 		  const char **val_ret) const;

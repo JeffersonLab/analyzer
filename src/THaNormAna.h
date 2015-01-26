@@ -15,12 +15,16 @@
 #include <string>
 #include <cstring> // for memset etc.
 #include <iostream>
+<<<<<<< HEAD
 #include "Decoder.h"
 #include "THaEvData.h"
 
 using namespace Decoder;
 
 #define NTRIG 12
+=======
+#include <cassert>
+>>>>>>> upstream/master
 
 class TH1;
 class THaScaler;
@@ -44,27 +48,10 @@ class BNormData {
 // Container class used by THaNormAna
 public:
   BNormData() {
-    evcnt = new Int_t[3];
-    avglive = new Double_t[3];
-    corrfact = new Double_t[3];
-    trigcnt = new Int_t[3*NTRIG];
-    live = new Double_t[3*NTRIG];
-    psfact = new Int_t[NTRIG];
-    memset(evcnt,0,3*sizeof(Int_t));
-    memset(avglive,0,3*sizeof(Double_t));
-    memset(corrfact,0,3*sizeof(Double_t));
-    memset(trigcnt,0,3*NTRIG*sizeof(Int_t));
-    memset(live,0,3*NTRIG*sizeof(Double_t));
+    memset(fData,0,NHEL*sizeof(BNorm_t));
     memset(psfact,0,NTRIG*sizeof(Int_t));
   }
-  virtual ~BNormData() {
-    delete [] evcnt;
-    delete [] avglive;
-    delete [] corrfact;
-    delete [] trigcnt;
-    delete [] live;
-    delete [] psfact;
-  }
+  virtual ~BNormData() {}
   void Print(Int_t ihel=0) {
     using std::cout; using std::endl;
     cout << "Print of normdata";
@@ -72,7 +59,7 @@ public:
     cout << "EvCount "<<GetEvCount(ihel)<<endl;
     cout << "Avg Live "<<GetAvgLive(ihel)<<endl;
     cout << "Correction "<<GetCorrfact(ihel)<<endl;
-    for (int itrig = 0; itrig < 12; itrig++) {
+    for (int itrig = 0; itrig < NTRIG; itrig++) {
       cout << "Trig "<<itrig+1;
       cout << "  PS "<<GetPrescale(itrig);
       cout << "  Latch "<< GetTrigCount(itrig,ihel);
@@ -88,50 +75,58 @@ public:
   }
   void EvCount(int hel=0) { 
   // By my def, hel=0 is irrespective of helicity
-    evcnt[0]++;
-    if (hel!=0) evcnt[Hel(hel)]++; 
+    fData[Hel(0)].evcnt++;
+    if (hel!=0) fData[Hel(hel)].evcnt++; 
   }
   void TrigCount(int trig, int hel=0) {
   // By my def, hel=0 is irrespective of helicity
-    trigcnt[Trig(trig)]++;
-    if (hel!=0) trigcnt[NTRIG*Hel(hel)+Trig(trig)]++;
+    fData[Hel(0)].trigcnt[Trig(trig)]++;
+    if (hel!=0) fData[Hel(hel)].trigcnt[Trig(trig)]++;
   }
   void SetLive(Int_t trig, Double_t ldat, Int_t hel=0) {
-     live[NTRIG*Hel(hel)+Trig(trig)] = ldat;
+    fData[Hel(hel)].live[Trig(trig)] = ldat;
   }
   void SetPrescale(Int_t trig, Int_t ps) {
      psfact[Trig(trig)] = ps;
   }
   void SetAvgLive(Double_t alive, Double_t corr, 
              Int_t hel=0) {
-     avglive[Hel(hel)] = alive;
-     corrfact[Hel(hel)] = corr;
+    fData[Hel(hel)].avglive  = alive;
+    fData[Hel(hel)].corrfact = corr;
   }
   Double_t GetAvgLive(Int_t hel=0) {
-     return avglive[Hel(hel)];
+     return fData[Hel(hel)].avglive;
   }
   Double_t GetCorrfact(Int_t hel=0) {
-     return corrfact[Hel(hel)];
+    return fData[Hel(hel)].corrfact;
   }
   Double_t GetLive(Int_t trig, Int_t hel=0) {
-     return live[NTRIG*Hel(hel)+Trig(trig)];
+    return fData[Hel(hel)].live[Trig(trig)];
   }
   Double_t GetPrescale(Int_t trig) {
-      return (Double_t)psfact[Trig(trig)];
+    return psfact[Trig(trig)];
   }
   Double_t GetEvCount(Int_t hel=0) {
-    return (Double_t)evcnt[Hel(hel)];
+    return fData[Hel(hel)].evcnt;
   }
   Double_t GetTrigCount(Int_t trig, Int_t hel=0) {
-    return (Double_t)trigcnt[NTRIG*Hel(hel)+Trig(trig)];
+    return fData[Hel(hel)].trigcnt[Trig(trig)];
   }
 private:
-  Int_t *evcnt, *trigcnt, *psfact;
-  Double_t *avglive, *corrfact, *live;
+  static const Int_t NHEL = 3, NTRIG = 12;
+  struct BNorm_t {
+    Int_t evcnt;
+    Int_t trigcnt[NTRIG];
+    Double_t avglive;
+    Double_t corrfact;
+    Double_t live[NTRIG];
+  };
+  BNorm_t fData[NHEL];
+  Int_t psfact[NTRIG];
   Int_t Trig(Int_t idx) {
 // Trigger indices are 0,1,2... for T1,T2,..
-    if (idx >= 0 && idx < NTRIG) return idx;
-    return 0;
+    assert(idx >= 0 && idx < NTRIG);
+    return idx;
   }
   Int_t Hel(Int_t hel) {
 // hel = -1, 0, +1  maps to (1,0,2)  

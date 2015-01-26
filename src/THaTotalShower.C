@@ -119,7 +119,7 @@ void THaTotalShower::Setup( const char* name,
   strcpy( desc+dlen, " preshower subdetector" );
 
   fPreShower = new THaShower( sname, desc, apparatus );
-  if( !fPreShower && fPreShower->IsZombie() ) {
+  if( !fPreShower || fPreShower->IsZombie() ) {
     MakeZombie();
     goto exit;
   }
@@ -176,7 +176,7 @@ Int_t THaTotalShower::ReadDatabase( const TDatime& date )
   if( !fi ) return kFileError;
 
   fgets ( line, LEN, fi ); fgets ( line, LEN, fi );          
-  fscanf ( fi, "%f%f", &fMaxDx, &fMaxDy );  // Max diff of shower centers
+  fscanf ( fi, "%15f %15f", &fMaxDx, &fMaxDy );  // Max diff of shower centers
 
   fIsInit = true;
   fclose(fi);

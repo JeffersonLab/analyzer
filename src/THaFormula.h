@@ -10,6 +10,7 @@
 #include "TFormula.h"
 #include "THaGlobals.h"
 #include "RVersion.h"
+#include <vector>
 
 class THaVarList;
 class THaCutList;
@@ -21,76 +22,85 @@ public:
   static const Option_t* const kPRINTFULL;
   static const Option_t* const kPRINTBRIEF;
 
-  THaFormula() : TFormula(), fNcodes(0), fVarDef(NULL), fVarList(NULL), 
-    fCutList(NULL), fError(kFALSE), fRegister(kTRUE) {}
-  THaFormula( const char* name, const char* formula, 
+  THaFormula();
+  THaFormula( const char* name, const char* formula, Bool_t do_register=kTRUE,
 	      const THaVarList* vlst=gHaVars, const THaCutList* clst=gHaCuts );
   THaFormula( const THaFormula& rhs );
   THaFormula& operator=( const THaFormula& rhs );
-  virtual             ~THaFormula();
+  virtual ~THaFormula();
+
   virtual Int_t       Compile( const char* expression="" );
   virtual char*       DefinedString( Int_t i );
   virtual Double_t    DefinedValue( Int_t i );
-#if ROOT_VERSION_CODE >= 262144 // 4.00/00
+  // Requires ROOT >= 4.00/00
   virtual Int_t       DefinedVariable( TString& variable, Int_t& action );
-#else
-  virtual Int_t       DefinedVariable( TString& variable );
-#endif
-  virtual Int_t       DefinedCut( const TString& variable );
-  virtual Int_t       DefinedGlobalVariable( const TString& variable );
+  virtual Int_t       DefinedCut( TString& variable );
+  virtual Int_t       DefinedGlobalVariable( TString& variable );
+  virtual Int_t       DefinedSpecialFunction( TString& name );
   virtual Double_t    Eval();
-#if ROOT_VERSION_CODE > 262660 // 4.02/04  Dumb rootcint chokes on ROOT_VERSION macro
-  // The ROOT team strikes again - this one is really BAD
-  virtual Double_t    Eval( Double_t /*x*/, Double_t /*y*/=0.0, 
-			    Double_t /*z*/=0.0, Double_t /*t*/=0.0 ) const
-    // hack this-pointer to be non-const - courtesy of ROOT team
-  { return const_cast<THaFormula*>(this)->Eval(); }
-#else
-#if ROOT_VERSION_CODE >= 197632 // 3.04/00
+  // Requires ROOT >= 4.02/04
   virtual Double_t    Eval( Double_t /*x*/, Double_t /*y*/=0.0,
-			    Double_t /*z*/=0.0, Double_t /*t*/=0.0 ) 
-#else
-    virtual Double_t    Eval( Double_t /*x*/, Double_t /*y*/=0.0,
-			      Double_t /*z*/=0.0 )
-#endif
-  { return Eval(); }
-#endif
-          Bool_t      IsError() const { return fError; }
-#if ROOT_VERSION_CODE >= 197895 // 3.05/07
-#if ROOT_VERSION_CODE >= 331776 // 5.16/00
-  virtual TString     GetExpFormula( Option_t* opt="" ) const;
-#else
-  virtual TString     GetExpFormula() const;
-#endif
-#endif
-  virtual void        Print( Option_t* option="" ) const; // *MENU*
+			    Double_t /*z*/=0.0, Double_t /*t*/=0.0 ) const
+  // need to hack this-pointer to be non-const - courtesy of ROOT team
+  { return const_cast<THaFormula*>(this)->Eval(); }
+  virtual Double_t    EvalInstance( Int_t instance );
+  virtual Int_t       GetNdata()   const;
+  virtual Bool_t      IsArray()    const { return TestBit(kArrayFormula); }
+  virtual Bool_t      IsVarArray() const { return TestBit(kVarArray); }
+          Bool_t      IsError()    const { return TestBit(kError); }
+          Bool_t      IsInvalid()  const { return TestBit(kInvalid); }
+  virtual void        Print( Option_t* option="" ) const;
           void        SetList( const THaVarList* lst )    { fVarList = lst; }
           void        SetCutList( const THaCutList* lst ) { fCutList = lst; }
 
+#if ROOT_VERSION_CODE >= 331529 && ROOT_VERSION_CODE < 334336// 5.15/09-5.26/00
+  // Workaround for buggy TFormula
+  virtual TString     GetExpFormula( Option_t* opt="" ) const;
+#endif
+
 protected:
 
-  enum { kMAXCODES = kMAXFOUND }; //Max. number of global variables per formula
-  enum EVariableType { kUndefined, kVariable, kCut, kString };
+  enum {
+    kError          = BIT(0),  // Compile() failed
+    kInvalid        = BIT(1),  // DefinedValue() encountered invalid data
+    kVarArray       = BIT(2),  // Formula contains a variable-size array
+    kArrayFormula   = BIT(3),  // Formula has multiple instances
+    kFuncOfVarArray = BIT(4)   // Formula contains function of var-size array
+  };
 
-  struct FVarDef_t;
-  friend struct FVarDef_t;
+  enum EVariableType {  kVariable, kCut, kString, kArray,
+			kFunction, kFormula, kVarFormula };
+
   struct FVarDef_t {
     EVariableType type;                //Type of variable in the formula
-    const void*   code;                //Pointer to the variable
-    Int_t         index;               //Linear index into array variable (0=scalar)
-  };  
-  Int_t             fNcodes;           //Number of global variables referenced in formula
-  FVarDef_t*        fVarDef;           //Array of variable definitions
+    void*         obj;                 //Pointer to the respective object
+    Int_t         index;               //Linear index into array, if fixed-size
+    FVarDef_t( EVariableType t, void* p, Int_t i )
+      : type(t), obj(p), index(i) {}
+  };
+  std::vector<FVarDef_t> fVarDef;      //Global variables referenced in formula
   const THaVarList* fVarList;          //Pointer to list of variables
   const THaCutList* fCutList;          //Pointer to list of cuts
-  Bool_t            fError;            //Flag indicating error in expression
-  Bool_t            fRegister;         //If true, register this formula in ROOT's global list
+  Int_t             fInstance;         //Current instance to evaluate
 
-  virtual Bool_t IsString( Int_t oper ) const;
+          Double_t  EvalInstanceUnchecked( Int_t instance );
+          Int_t     GetNdataUnchecked() const;
+          Int_t     Init( const char* name, const char* expression );
+  virtual Bool_t    IsString( Int_t oper ) const;
+  virtual void      RegisterFormula( Bool_t add = kTRUE );
 
   ClassDef(THaFormula,0)  //Formula defined on list of variables
 };
 
+//__________________inlines____________________________________________________
+inline
+Double_t THaFormula::EvalInstanceUnchecked( Int_t instance )
+{
+  fInstance = instance;
+  if( fNoper == 1 && fVarDef.size() == 1 )
+    return DefinedValue(0);
+  else
+    return EvalPar(0);
+}
+
 #endif
-
-

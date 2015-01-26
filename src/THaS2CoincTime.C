@@ -28,7 +28,6 @@
 #include "THaDetMap.h"
 #include "THaSpectrometer.h"
 #include "THaEvData.h"
-#include "THaTrackProj.h"
 
 #include "THaVarList.h"
 #include "THaGlobals.h"

@@ -20,6 +20,9 @@ LINKDEF = $(PACKAGE)_LinkDef.h
 # This part defines overall options and directory locations.
 # Change as necessary,
 
+# Compile with diagnostic code
+export WITH_DEBUG = 1
+
 # Compile debug version
 #export DEBUG = 1
 
@@ -52,8 +55,11 @@ ROOTCFLAGS   := $(shell root-config --cflags)
 ROOTLIBS     := $(shell root-config --libs)
 ROOTGLIBS    := $(shell root-config --glibs)
 ROOTBIN      := $(shell root-config --bindir)
+ROOTINC      := -I$(shell root-config --incdir)
+CXX          := $(shell root-config --cxx)
+CC           := $(shell root-config --cc)
 
-INCLUDES      = $(ROOTCFLAGS) $(addprefix -I, $(INCDIRS) ) -I$(shell pwd)
+INCLUDES      = $(addprefix -I, $(INCDIRS) ) -I$(shell pwd)
 
 USERLIB       = lib$(PACKAGE).so
 USERDICT      = $(PACKAGE)Dict
@@ -61,30 +67,15 @@ USERDICT      = $(PACKAGE)Dict
 LIBS          = 
 GLIBS         = 
 
-ifeq ($(ARCH),solarisCC5)
-# Solaris CC 5.0
-CXX           = CC
-ifdef DEBUG
-  CXXFLAGS    = -g
-  LDFLAGS     = -g
-else
-  CXXFLAGS    = -O
-  LDFLAGS     = -O
-endif
-CXXFLAGS     += -KPIC
-LD            = CC
-SOFLAGS       = -G
-endif
-
 ifeq ($(ARCH),linux)
 # Linux with egcs (>= RedHat 5.2)
-CXX           = g++
 ifdef DEBUG
   CXXFLAGS    = -g -O0
   LDFLAGS     = -g -O0
 else
-  CXXFLAGS    = -O
-  LDFLAGS     = -O
+  CXXFLAGS    = -g -O
+  LDFLAGS     = -g -O
+  DEFINES     = -DNDEBUG
 endif
 CXXFLAGS     += -Wall -Woverloaded-virtual -fPIC
 LD            = g++
@@ -92,23 +83,29 @@ SOFLAGS       = -shared
 DEFINES      += $(shell getconf LFS_CFLAGS)
 endif
 
-ifeq ($(CXX),)
-$(error $(ARCH) invalid architecture)
+ifeq ($(ARCH),solarisCC5)
+# Solaris CC 5.0
+ifdef DEBUG
+  CXXFLAGS    = -g
+  LDFLAGS     = -g
+else
+  CXXFLAGS    = -g -O
+  LDFLAGS     = -g -O
+  DEFINES     = -DNDEBUG
+endif
+CXXFLAGS     += -KPIC
+LD            = CC
+SOFLAGS       = -G
 endif
 
-CXXFLAGS     += $(INCLUDES) $(DEFINES)
+CXXFLAGS     += $(ROOTCFLAGS) $(INCLUDES) $(DEFINES)
 LIBS         += $(ROOTLIBS) $(SYSLIBS)
 GLIBS        += $(ROOTGLIBS) $(SYSLIBS)
 
 MAKEDEPEND    = gcc
 
 ifdef WITH_DEBUG
-CXXFLAGS     += -DWITH_DEBUG
-endif
-
-ifdef PROFILE
-CXXFLAGS     += -pg
-LDFLAGS      += -pg
+DEFINES     += -DWITH_DEBUG
 endif
 
 ifndef PKG
@@ -133,7 +130,7 @@ $(USERLIB):	$(HDR) $(OBJS)
 
 $(USERDICT).cxx: $(HDR) $(LINKDEF)
 	@echo "Generating dictionary $(USERDICT)..."
-	$(ROOTBIN)/rootcint -f $@ -c $(INCLUDES) $^
+	$(ROOTBIN)/rootcint -f $@ -c $(ROOTINC) $(INCLUDES) $(DEFINES) $^
 
 install:	all
 		$(error Please define install yourself)
@@ -166,7 +163,7 @@ srcdist:
 # FIXME: this only works with gcc
 %.d:	%.cxx
 	@echo Creating dependencies for $<
-	@$(SHELL) -ec '$(MAKEDEPEND) -MM $(INCLUDES) -c $< \
+	@$(SHELL) -ec '$(MAKEDEPEND) -MM $(ROOTINC) $(INCLUDES) -c $< \
 		| sed '\''s%^.*\.o%$*\.o%g'\'' \
 		| sed '\''s%\($*\)\.o[ :]*%\1.o $@ : %g'\'' > $@; \
 		[ -s $@ ] || rm -f $@'

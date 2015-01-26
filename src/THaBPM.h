@@ -44,7 +44,7 @@ protected:
 
   //  THaBPM() {}
   //  THaBPM( const THaBPM& ) {}
-  THaBPM& operator=( const THaBPM& ) { return *this; }
+  //  THaBPM& operator=( const THaBPM& ) { return *this; }
 
 
   TVector  fRawSignal;     // induced signal of the antennas
