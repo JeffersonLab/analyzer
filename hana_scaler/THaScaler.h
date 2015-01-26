@@ -143,12 +143,7 @@ protected:
    Bool_t did_init, new_load, one_load, use_clock, isclockreset;
    Int_t *normslot;
    Double_t clockrate;
-<<<<<<< HEAD
-   Int_t isclockreset;
-=======
    Int_t fDebug;
-
->>>>>>> upstream/master
    Int_t InitData(const std::string& bankgroup, const Bdate& bd);
    Int_t CheckInit();
    void Clear(Option_t* opt="");
