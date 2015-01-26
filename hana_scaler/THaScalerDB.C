@@ -177,37 +177,6 @@ void THaScalerDB::PrintDirectives() const {
   if (direct) direct->Print();
 };
 
-
-<<<<<<< HEAD
-string THaScalerDB::GetLineType(string sline) {
-   if (sline.length() == 0) return "COMMENT";
-   if (sline.length() == AmtSpace(sline)) return "COMMENT";
-   size_t minus1 = -1;
-   size_t pos1 = FindNoCase(sline,sdate);
-   size_t pos2 = FindNoCase(sline,scomment);
-   if (pos1 != minus1 ) { // date was found
-     if (pos2 != minus1) {  // comment found
-       if (pos2 < pos1) return "COMMENT";
-     }
-     return "DATE";
-   }
-// Directives line, even if after a comment (#)
-// as long as not too far after (fgnfar)
-   string result;
-   if (pos2 == minus1 || pos2 < fgnfar) {
-    for (UInt_t i=0; i<directnames.size(); i++) {
-     pos1 = FindNoCase(sline, directnames[i]);
-     if (pos1 != minus1) {
-      result.assign(sline.substr(pos1,sline.length()));;
-      return result;
-     }
-    }
-   }
-// Not a directive but has a comment near start.
-   if (pos2 != minus1 && pos2 < fgnfar) return "COMMENT";
-// otherwise its a map line
-   return "MAP";
-=======
 Int_t THaScalerDB::SetDebug( Int_t level )
 {
   Int_t prev_level = fDebug;
@@ -251,7 +220,6 @@ string THaScalerDB::GetLineType(const string& sline) const
   if( pos2 != string::npos && pos2 < fgnfar ) return "COMMENT";
   // otherwise its a map line
   return "MAP";
->>>>>>> upstream/master
 }
 
 SDB_chanDesc THaScalerDB::GetChanDesc(Int_t crate, const string& desc, Int_t helicity) const
@@ -497,40 +465,12 @@ Int_t THaScalerDB::GetSlotOffset(Int_t crate, Int_t helicity) const {
   return atoi(sdir.c_str());
 }
 
-<<<<<<< HEAD
-size_t THaScalerDB::FindNoCase(const string sdata, const string skey) 
-=======
 string::size_type THaScalerDB::FindNoCase( const string& sdata,
 					   const string& skey ) const
->>>>>>> upstream/master
 {
   // Find iterator of word "sdata" where "skey" starts.  Case insensitive.
   string sdatalc, skeylc;
   sdatalc = "";  skeylc = "";
-<<<<<<< HEAD
-  for (string::const_iterator p = 
-   sdata.begin(); p != sdata.end(); p++) {
-      sdatalc += tolower(*p);
-  } 
-  for (string::const_iterator p = 
-   skey.begin(); p != skey.end(); p++) {
-      skeylc += tolower(*p);
-  } 
-  if (sdatalc.find(skeylc,0) == string::npos) return -1;
-  return sdatalc.find(skeylc,0);
-}
-
-
-UInt_t THaScalerDB::AmtSpace(const string& s) {
-  typedef string::size_type string_size;
-  UInt_t nsp = 0;  string_size i = 0;
-  while (i++ != s.size()) if(isspace(s[i])) nsp++;
-  return nsp;
-}
-
-vector<string> THaScalerDB::vsplit(const string& s) {
-// split a string into whitespace-separated strings
-=======
   for (string::const_iterator p = sdata.begin(); p != sdata.end(); ++p) {
     sdatalc += tolower(*p);
   }
@@ -543,7 +483,6 @@ vector<string> THaScalerDB::vsplit(const string& s) {
 vector<string> THaScalerDB::vsplit(const string& s) const
 {
   // split a string into whitespace-separated strings
->>>>>>> upstream/master
   vector<string> ret;
   typedef string::size_type string_size;
   string_size i = 0;

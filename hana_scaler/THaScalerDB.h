@@ -229,49 +229,6 @@ private:
 class THaScalerDB  {
 public:
 
-<<<<<<< HEAD
-   THaScalerDB();
-   virtual ~THaScalerDB();
-   bool extract_db(const Bdate& bdate);
-   std::string GetLongDesc(Int_t crate, std::string desc, Int_t helicity=0);
-   size_t FindNoCase(const std::string s1, const std::string s2);
-   Int_t GetSlot(Int_t crate, std::string desc, Int_t helicity=0);
-   Int_t GetSlot(Int_t crate, Int_t tgtstate, Int_t helicity);
-   Int_t GetChan(Int_t crate, std::string desc, Int_t helicity=0, Int_t chan=0);
-   std::vector<std::string> GetShortNames(Int_t crate, Int_t slot, Int_t chan);
-   Int_t GetNumDirectives(Int_t craet, std::string directive);
-   Int_t GetIntDirectives(Int_t crate, std::string directive, std::string key);
-   std::string GetStringDirectives(Int_t crate, std::string directive, 
-				   std::string key);
-   void LoadCrateToInt(const char *bank, Int_t cr);
-   Bool_t UsesTargetState(Int_t crate);
-   Int_t CrateToInt(const std::string& scrate);
-   void PrintChanMap();
-   void PrintDirectives();
-
-private:
-
-   THaScalerDB(const THaScalerDB &bk);
-   THaScalerDB& operator=(const THaScalerDB &bk);
-   bool found_date;
-   size_t fgnfar;
-   std::string scomment, sdate;
-   std::vector<std::string> directnames;
-   std::map< SDB_chanKey, SDB_chanDesc > chanmap;
-   std::map< std::string, Int_t > crate_strtoi;
-   std::map< std::pair<std::pair<Int_t, Int_t>, Int_t>, std::vector< std::string> > channame;
-   SDB_directive *direct;
-   bool LoadMap(std::string sinput);
-   bool LoadDirective(std::string sinput);
-   std::string GetLineType(const std::string sline);
-   void Init();
-   SDB_chanDesc GetChanDesc(Int_t crate, std::string desc, Int_t helicity=0);
-   Bool_t IsHelicityTied(Int_t crate, Int_t helicity);
-   Int_t TiedCrate(Int_t crate, Int_t helicity);
-   Int_t GetSlotOffset(Int_t crate, Int_t helicity);
-   UInt_t AmtSpace(const std::string& s);
-   std::vector<std::string> vsplit(const std::string& s);
-=======
   THaScalerDB();
   virtual ~THaScalerDB();
   bool extract_db(const Bdate& bdate);
@@ -319,7 +276,6 @@ private:
   std::map< Namekey_t, std::vector< std::string> > channame;
   SDB_directive *direct;
   Int_t fDebug;
->>>>>>> upstream/master
 
   ClassDef(THaScalerDB,0)  // Text-based time-dependent database for scaler map and directives
 
