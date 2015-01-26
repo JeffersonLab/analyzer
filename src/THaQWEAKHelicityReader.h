@@ -10,14 +10,9 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "Rtypes.h"
-<<<<<<< HEAD
 #include "TH1F.h"
 #include "Decoder.h"
 #include "THaEvData.h"
-
-using namespace Decoder;
-=======
->>>>>>> upstream/master
 
 class TDatime;
 class TH1F;

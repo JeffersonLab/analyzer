@@ -10,16 +10,12 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "THaPidDetector.h"
-<<<<<<< HEAD
-#include <TClonesArray.h>
 #include "Decoder.h"
 #include "THaEvData.h"
 
 using namespace Decoder;
-=======
 
 class TClonesArray;
->>>>>>> upstream/master
 
 class THaCherenkov : public THaPidDetector {
 

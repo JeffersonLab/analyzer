@@ -16,13 +16,8 @@
 #include "Decoder.h"
 #include "THaEvData.h"
 
-using namespace Decoder;
-
-<<<<<<< HEAD
 class THaVDCWire;
-=======
 class THaEvData;
->>>>>>> upstream/master
 class THaVDCUVPlane;
 class THaVDCTimeToDistConv;
 class THaTriggerTime;

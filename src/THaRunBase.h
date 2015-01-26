@@ -9,14 +9,9 @@
 
 #include "TNamed.h"
 #include "TDatime.h"
-<<<<<<< HEAD
 #include "Decoder.h"
 #include "THaEvData.h"
-
-using namespace Decoder;
-=======
 #include <cstdio>        // for EOF
->>>>>>> upstream/master
 
 class THaRunParameters;
 
