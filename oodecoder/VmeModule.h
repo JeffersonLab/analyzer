@@ -4,7 +4,7 @@
 /////////////////////////////////////////////////////////////////////
 //
 //   VmeModule
-//   A VME module.  This is an abstract class.
+//   A VME module.  
 //
 /////////////////////////////////////////////////////////////////////
 
@@ -25,7 +25,8 @@ public:
    virtual ~VmeModule();  
 
    virtual Bool_t IsSlot(UInt_t rdata);
-   virtual Int_t Decode(const Int_t *evbuffer)=0;  // abstract
+   // I wanted to make this abstract but it causes problems with Dictionary
+   virtual Int_t Decode(const Int_t *evbuffer) { return 0;};  
    virtual Int_t Slot(Int_t rdata) { return fSlot; };
    virtual Int_t Data(Int_t rdata) { return rdata; };
  

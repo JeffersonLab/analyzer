@@ -42,8 +42,6 @@ public:
 
   virtual ~Module();  
 
-  // problems here ... if =0 (abstract) some module types don't get created.
-  // better way ?
   virtual Int_t GetNumEvents() { return 0; };  
   virtual Int_t GetMode() { return 0; };
 
@@ -61,7 +59,8 @@ public:
   virtual Int_t GetData(Int_t, Int_t) { return 0; };
   virtual Int_t GetData(Int_t, Int_t, Int_t) { return 0; };
 
-  virtual Int_t Decode(const Int_t *p)=0;  // --> abstract
+  // I wanted to make this abstract but it causes problems with Dictionary
+  virtual Int_t Decode(const Int_t *p) { return 0;};  
 
   virtual Int_t GetCrate() { return fCrate; };
   virtual Int_t GetSlot() { return fSlot; };
