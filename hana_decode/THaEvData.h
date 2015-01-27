@@ -13,6 +13,7 @@
 #include "THaSlotData.h"
 #include "TBits.h"
 #include <cassert>
+#include <iostream>
 
 class THaBenchmark;
 class THaEpics;
@@ -85,6 +86,8 @@ public:
   virtual Int_t GetScaler(const TString& /*spec*/,
 			  Int_t /*slot*/, Int_t /*chan*/) const
   { return GetScaler(0,0,0); }
+  virtual void SetDebugFile( ofstream *file ) { fDebugFile = file; };
+  virtual Module* GetModule(Int_t roc, Int_t slot);
 
   // Access functions for EPICS (slow control) data
   virtual double GetEpicsData(const char* tag, Int_t event=0) const;
@@ -155,6 +158,8 @@ protected:
   Bool_t fTrigSupPS;
 
   const UInt_t *buffer;
+
+  ofstream *fDebugFile;  // debug output 
 
   Int_t  event_type,event_length,event_num,run_num,evscaler;
   Int_t  run_type;    // CODA run type from prestart event

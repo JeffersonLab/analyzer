@@ -59,7 +59,7 @@ THaEvData::THaEvData() :
   first_decode(true), fTrigSupPS(true),
   buffer(0), run_num(0), run_type(0), fRunTime(0), evt_time(0),
   recent_event(0), fNSlotUsed(0), fNSlotClear(0), fMap(0),
-  fDoBench(kFALSE), fBench(0), fNeedInit(true), fDebug(0)
+  fDoBench(kFALSE), fBench(0), fNeedInit(true), fDebugFile(0), fDebug(0)
 {
   fInstance = fgInstances.FirstNullBit();
   fgInstances.SetBitNumber(fInstance);
@@ -275,6 +275,7 @@ void THaEvData::makeidx(int crate, int slot)
   int idx = slot+MAXSLOT*crate;
   delete crateslot[idx];  // just in case
   crateslot[idx] = new THaSlotData(crate,slot);
+  if (fDebugFile) crateslot[idx]->SetDebugFile(fDebugFile);
   if( !fMap ) return;
   if( fMap->crateUsed(crate) && fMap->slotUsed(crate,slot)) {
     crateslot[idx]
@@ -330,6 +331,14 @@ int THaEvData::init_slotdata(const THaCrateMap* map)
   }
   return HED_OK;
 }
+//_____________________________________________________________________________
+Module* THaEvData::GetModule(Int_t roc, Int_t slot)
+{
+  THaSlotData *sldat = crateslot[idx(roc,slot)];
+  if (sldat) return sldat->GetModule();
+  return NULL;
+}
+
 
 ClassImp(THaEvData)
 ClassImp(THaBenchmark)
