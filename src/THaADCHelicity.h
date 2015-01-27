@@ -9,11 +9,8 @@
 // 
 ////////////////////////////////////////////////////////////////////////
 
-#include "Decoder.h"
-#include "THaEvData.h"
-#include "THaHelicityDet.h"
 
-using namespace Decoder;
+#include "THaHelicityDet.h"
 
 class THaADCHelicity : public THaHelicityDet {
 

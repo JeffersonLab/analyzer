@@ -10,10 +10,6 @@
 #include "THaPhysicsModule.h"
 #include "THaPrintOption.h"
 #include <vector>
-#include "Decoder.h"
-#include "THaEvData.h"
-
-using namespace Decoder;
 
 class THaCut;
 

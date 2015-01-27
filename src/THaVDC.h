@@ -9,11 +9,6 @@
 
 #include "THaTrackingDetector.h"
 #include <vector>
-#include "Decoder.h"
-#include "THaEvData.h"
-
-using namespace Decoder;
-
 
 class THaVDCUVPlane;
 class THaTrack;

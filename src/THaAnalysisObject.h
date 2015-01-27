@@ -7,8 +7,6 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-#include "Decoder.h"
-#include "THaEvData.h"
 #include "TNamed.h"
 #include "THaGlobals.h"
 #include "TDatime.h"
@@ -19,7 +17,7 @@
 #include <cstdio>
 #include <stdarg.h>
 
-using namespace Decoder;
+class THaEvData; //needed by derived classes
 class TList;
 class TVector3;
 class THaRunBase;

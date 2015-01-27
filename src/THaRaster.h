@@ -9,10 +9,6 @@
 
 #include "THaBeamDet.h"
 #include "TVector.h"
-#include "Decoder.h"
-#include "THaEvData.h"
-
-using namespace Decoder;
 
 class THaRaster : public THaBeamDet {
 

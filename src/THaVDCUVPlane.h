@@ -7,21 +7,12 @@
 ///////////////////////////////////////////////////////////////////////////////
 #include "THaSubDetector.h"
 #include "THaVDCPlane.h"
-#include "Decoder.h"
-#include "THaEvData.h"
-#include "TClonesArray.h"
-#include <cassert>
-
-class THaVDCUVTrack;
-class THaVDC;
-
 #include "THaVDCUVTrack.h"
 #include "THaVDC.h"
 #include "TClonesArray.h"
 #include <cassert>
 
 class THaEvData;
->>>>>>> upstream/master
 
 class THaVDCUVPlane : public THaSubDetector {
 

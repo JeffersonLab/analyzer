@@ -11,10 +11,6 @@
 
 #include "THaHelicityDet.h"
 #include "THaQWEAKHelicityReader.h"
-#include "Decoder.h"
-#include "THaEvData.h"
-
-using namespace Decoder;
 
 class TH1F;
 

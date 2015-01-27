@@ -78,7 +78,6 @@
 #include "TObjArray.h"
 #include "TObjString.h"
 #include "BdataLoc.h"
-#include "Decoder.h"
 #include "THaEvData.h"
 
 #include <iostream>
@@ -91,7 +90,6 @@
 #define DECDATA_LEGACY_DB
 
 using namespace std;
-using namespace Decoder;
 
 static Int_t kInitHashCapacity = 100;
 static Int_t kRehashLevel = 3;

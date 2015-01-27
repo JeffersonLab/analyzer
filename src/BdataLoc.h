@@ -7,17 +7,14 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-#include "Decoder.h"
-#include "THaEvData.h"
 #include "THaAnalysisObject.h"
 #include "TString.h"
 #include <vector>
 #include <cassert>
 #include <set>
 
+class THaEvData;
 class TObjArray;
-
-using namespace Decoder;
 
 //___________________________________________________________________________
 class BdataLoc : public TNamed {

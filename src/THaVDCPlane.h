@@ -13,10 +13,7 @@
 #include "TClonesArray.h"
 #include "THaVDCHit.h"
 #include <cassert>
-#include "Decoder.h"
-#include "THaEvData.h"
 
-class THaVDCWire;
 class THaEvData;
 class THaVDCUVPlane;
 class THaVDCTimeToDistConv;

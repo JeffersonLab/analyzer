@@ -8,10 +8,6 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaAnalysisObject.h"
-#include "Decoder.h"
-#include "THaEvData.h"
-
-using namespace Decoder;
 
 class THaPhysicsModule : public THaAnalysisObject {
   

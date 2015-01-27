@@ -11,12 +11,10 @@
 #include "TDatime.h"
 #include "TError.h"
 #include "TMath.h"
-#include "Decoder.h"
 #include "THaEvData.h"
 #include <iostream>
 
 using namespace std;
-using namespace Decoder;
 
 //_____________________________________________________________________________
 THaRunParameters::THaRunParameters() :
@@ -25,7 +23,7 @@ THaRunParameters::THaRunParameters() :
 {
   // Default constructor
 
-  fPrescale.Set(Decoder::THaEvData::MAX_PSFACT);
+  fPrescale.Set(THaEvData::MAX_PSFACT);
   for( int i=0; i<fPrescale.GetSize(); i++)
     fPrescale[i] = -1;
 }

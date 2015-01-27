@@ -3,16 +3,12 @@
 
 #include "THaPostProcess.h"
 #include "TString.h"
-#include "Decoder.h"
-#include "THaEvData.h"
-#include "THaCodaFile.h"
 
+class THaCodaFile;
 class THaCut;
 class TString;
 class TDatime;
 class THaRunBase;
-
-using namespace Decoder;
 
 class THaFilter : public THaPostProcess {
  public:

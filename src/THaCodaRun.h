@@ -8,10 +8,8 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaRunBase.h"
-#include "Decoder.h"
-#include "THaCodaData.h"
 
-using namespace Decoder;
+class THaCodaData;
 
 class THaCodaRun : public THaRunBase {
   

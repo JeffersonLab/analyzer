@@ -13,11 +13,8 @@
 #include "VarDef.h"
 #include "TMath.h"
 #include <cstring>
-#include "Decoder.h"
-#include "THaEvData.h"
 
-using namespace Decoder;
-
+class THaEvData;
 class TClonesArray;
 class TDatime;
 

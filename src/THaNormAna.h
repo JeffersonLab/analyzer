@@ -9,15 +9,12 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-#define NTRIG 12
 #include "THaPhysicsModule.h"
 #include "TBits.h"
 #include <vector>
 #include <string>
 #include <cstring> // for memset etc.
 #include <iostream>
-#include "Decoder.h"
-#include "THaEvData.h"
 #include <cassert>
 
 class TH1;

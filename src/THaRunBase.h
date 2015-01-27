@@ -9,11 +9,10 @@
 
 #include "TNamed.h"
 #include "TDatime.h"
-#include "Decoder.h"
-#include "THaEvData.h"
 #include <cstdio>        // for EOF
 
 class THaRunParameters;
+class THaEvData;
 
 class THaRunBase : public TNamed {
   

@@ -10,10 +10,8 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "Rtypes.h"
-#include "TH1F.h"
-#include "Decoder.h"
-#include "THaEvData.h"
 
+class THaEvData;
 class TDatime;
 class TH1F;
 
