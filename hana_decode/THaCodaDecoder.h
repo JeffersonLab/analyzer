@@ -13,8 +13,9 @@
 #include "THaSlotData.h"
 #include "TBits.h"
 #include "THaEvData.h"
+#include "Decoder.h"
 
-class THaCodaDecoder : public THaEvData {
+class Decoder::THaCodaDecoder : public THaEvData {
  public:
   THaCodaDecoder();
   ~THaCodaDecoder();

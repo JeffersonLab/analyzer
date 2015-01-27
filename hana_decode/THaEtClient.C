@@ -27,6 +27,8 @@
 #include <netdb.h>
 
 using namespace std;
+using namespace Decoder;
+
 
 THaEtClient::THaEtClient(Int_t smode)
 {

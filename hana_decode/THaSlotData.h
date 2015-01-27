@@ -20,13 +20,18 @@
 /////////////////////////////////////////////////////////////////////
 
 #include "TString.h"
+#include "Decoder.h"
 #include <cassert>
+#include <iostream>
+#include <fstream>
 
 const int SD_WARN = -2;
 const int SD_ERR = -1; 
 const int SD_OK = 1;
 
-class THaSlotData {
+using namespace std;
+
+class Decoder::THaSlotData {
 
 public:
 
@@ -38,8 +43,8 @@ public:
        THaSlotData(int crate, int slot);
        virtual ~THaSlotData();
        const char* devType() const;             // "adc", "tdc", "scaler"
+       int loadModule(const THaCrateMap *map);
        int getNumRaw() const { return numraw; };  // Amount of raw CODA data
-       int* getRawDataBuffer() const;             // Raw data buffer, for fast searches
        int getRawData(int ihit) const;            // Returns raw data words
        int getRawData(int chan, int hit) const;
        int getNumHits(int chan) const;      // Num hits on a channel
@@ -50,9 +55,17 @@ public:
        int getSlot()  const { return slot; }
        void clearEvent();                   // clear event counters
        int loadData(const char* type, int chan, int dat, int raw);
+       int loadData(int chan, int dat, int raw);
+
+       // new
+       Int_t LoadIfSlot(const UInt_t* evbuffer, const UInt_t *pstop);
+       void SetDebugFile(ofstream *file) { fDebugFile = file; };
+       Module* GetModule() { return fModule; };
+
        void define(int crate, int slot, UShort_t nchan=DEFNCHAN, 
 		   UShort_t ndata=DEFNDATA, UShort_t nhitperchan=DEFNHITCHAN );// Define crate, slot
        void print() const;
+       void print_to_file() const;
        int compressdataindex(int numidx); 
 
 private:
@@ -61,30 +74,33 @@ private:
        int crate;
        int slot;
        TString device;
+       Module *fModule;
        UShort_t numhitperchan; // expected number of hits per channel
        UShort_t numraw;      // Hit counters (numraw, numHits, numchanhit)
        UShort_t numchanhit;  // can be zero'd by clearEvent each event.
        UShort_t firstfreedataidx;     // pointer to first free space in dataindex array 
        UShort_t numholesdataidx;
-       UChar_t* numHits;     // numHits[channel]
+       UShort_t* numHits;     // numHits[channel]
+       Int_t *xnumHits;       // same as numHits
        UShort_t* chanlist;   // chanlist[hitindex]
        UShort_t* idxlist;    // [channel] pointer to 1st entry in dataindex
        UShort_t* chanindex;  // [channel] gives hitindex
        UShort_t* dataindex;  // [idxlist] pointer to rawdata and  data
-       UChar_t* numMaxHits;  // [channel] current maximum number of hits
+       UShort_t* numMaxHits;  // [channel] current maximum number of hits
        int* rawData;         // rawData[hit] (all bits)
        int* data;            // data[hit] (only data bits)
+       ofstream *fDebugFile; // debug output to this file, if nonzero
        bool didini;          // true if object initialized via define()
        UShort_t maxc;        // Number of channels for this device
        UShort_t maxd;        // Max number of data words per event
        UShort_t allocd;      // Allocated size of data arrays
        UShort_t alloci;      // Allocated size of dataindex array
 
-       ClassDef(THaSlotData,0)   //  Data in one slot of fastbus, vme, camac
+       ClassDef(Decoder::THaSlotData,0)   //  Data in one slot of fastbus, vme, camac
 };
 
 //______________ inline functions _____________________________________________
-inline int THaSlotData::getRawData(int hit) const {  
+inline int Decoder::THaSlotData::getRawData(int hit) const {  
   // Returns the raw data (all bits)
   assert( hit >= 0 && hit < numraw );
   if (hit >= 0 && hit < numraw) return rawData[hit];
@@ -92,15 +108,9 @@ inline int THaSlotData::getRawData(int hit) const {
 };
 
 //_____________________________________________________________________________
-inline int* THaSlotData::getRawDataBuffer() const {  
-  // Returns pointer to the raw data array (with numraw valid entries)
-  return rawData;
-};
-
-//_____________________________________________________________________________
 // Data (words on 1 chan)
 inline 
-int THaSlotData::getRawData(int chan, int hit) const {  
+int Decoder::THaSlotData::getRawData(int chan, int hit) const {  
   assert( chan >= 0 && chan < maxc && hit >= 0 &&  hit < numHits[chan] );
   if (chan < 0 || chan >= maxc || numHits[chan]<=hit || hit<0 )
     return 0;
@@ -112,7 +122,7 @@ int THaSlotData::getRawData(int chan, int hit) const {
 
 //_____________________________________________________________________________
 inline 
-int THaSlotData::getNumHits(int chan) const {    
+int Decoder::THaSlotData::getNumHits(int chan) const {    
   // Num hits on a channel
   assert( chan >= 0 && chan < maxc );
   return (chan >= 0 && chan < maxc) ? numHits[chan] : 0;
@@ -120,14 +130,14 @@ int THaSlotData::getNumHits(int chan) const {
 
 //_____________________________________________________________________________
 inline 
-int THaSlotData::getNumChan() const {    
+int Decoder::THaSlotData::getNumChan() const {    
   // Num unique channels # hit
   return numchanhit;
 };
 
 //_____________________________________________________________________________
 inline 
-int THaSlotData::getNextChan(int index) const {    
+int Decoder::THaSlotData::getNextChan(int index) const {    
   // List of unique channels hit
   assert(index >= 0 && index < numchanhit);
   if (index >= 0 && index < numchanhit)
@@ -138,7 +148,7 @@ int THaSlotData::getNextChan(int index) const {
 //_____________________________________________________________________________
 // Data (words on 1 chan)
 inline 
-int THaSlotData::getData(int chan, int hit) const {  
+int Decoder::THaSlotData::getData(int chan, int hit) const {  
   assert( chan >= 0 && chan < maxc && hit >= 0 &&  hit < numHits[chan] );
   if (chan < 0 || chan >= maxc || numHits[chan]<=hit || hit<0 )
     return 0;
@@ -151,13 +161,13 @@ int THaSlotData::getData(int chan, int hit) const {
 //_____________________________________________________________________________
 // Device type (adc, tdc, scaler)
 inline
-const char* THaSlotData::devType() const {  
+const char* Decoder::THaSlotData::devType() const {  
   return device.Data();
 };
 
 //_____________________________________________________________________________
 inline
-void THaSlotData::clearEvent() {
+void Decoder::THaSlotData::clearEvent() {
   // Only the minimum is cleared; e.g. data array is not cleared.
   // CAUTION: this code is critical for performance
   numraw = 0;
@@ -168,7 +178,7 @@ void THaSlotData::clearEvent() {
 
 //_____________________________________________________________________________
 inline  
-int THaSlotData::compressdataindex(int numidx) {
+int Decoder::THaSlotData::compressdataindex(int numidx) {
 
   // first check if it is more favourable to expand it, or to reshuffle
   if (firstfreedataidx+numidx>=alloci){

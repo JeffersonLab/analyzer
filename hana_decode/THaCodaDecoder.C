@@ -44,6 +44,8 @@
 #endif
 
 using namespace std;
+using namespace Decoder;
+
 
 //_____________________________________________________________________________
 THaCodaDecoder::THaCodaDecoder() :
@@ -1195,4 +1197,4 @@ void THaCodaDecoder::SetRunTime( ULong64_t tloc )
 }
 
 //_____________________________________________________________________________
-ClassImp(THaCodaDecoder)
+ClassImp(Decoder::THaCodaDecoder)

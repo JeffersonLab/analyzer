@@ -21,6 +21,7 @@
 #include <vector>
 
 using namespace std;
+using namespace Decoder;
 
 const int           THaUsrstrutils::MAX     = 5000;
 const unsigned long THaUsrstrutils::LONGMAX = 0x7FFFFFFF;

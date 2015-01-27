@@ -16,7 +16,9 @@
 #include "evio.h"
 #include <cassert>
 
-ClassImp(THaCodaData)
+using namespace Decoder;
+
+ClassImp(Decoder::THaCodaData)
 
 //_____________________________________________________________________________
 THaCodaData::THaCodaData() {

@@ -14,12 +14,14 @@
 /////////////////////////////////////////////////////////////////////
 
 #include "TString.h"
+#include "Decoder.h"
 #include <iostream>
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
 
-class THaUsrstrutils
+
+class Decoder::THaUsrstrutils
 {
 
 /* usrstrutils
@@ -118,7 +120,7 @@ protected:
 //=============== inline functions ================================
 
 inline
-void THaUsrstrutils::getflagpos(const char *s, const char **pos_ret,
+void Decoder::THaUsrstrutils::getflagpos(const char *s, const char **pos_ret,
 				const char **val_ret) const
 {
   getflagpos_instring(configstr,s,pos_ret,val_ret);

@@ -20,6 +20,7 @@
 #include "evio.h"
 
 using namespace std;
+using namespace Decoder;
 
 //Constructors
 
@@ -304,4 +305,4 @@ void THaCodaFile::staterr(const char* tried_to, Int_t status) {
   };
 
 
-ClassImp(THaCodaFile)
+ClassImp(Decoder::THaCodaFile)

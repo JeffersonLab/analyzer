@@ -18,6 +18,7 @@
 
 #include "Rtypes.h"
 #include "TString.h"
+#include "Decoder.h"
 #include <cstdio>
 
 // Return cods from codaNNN routines
@@ -30,7 +31,7 @@
 #define CODA_VERBOSE 1    // Errors explained verbosely (recommended)
 #define CODA_DEBUG  0     // Lots of printout (recommend to set = 0)
 
-class THaCodaData {
+class Decoder::THaCodaData {
 
 public:
 

@@ -18,9 +18,10 @@
 /////////////////////////////////////////////////////////////////////
 
 #include "THaCodaData.h"
+#include "Decoder.h"
 #include "TArrayI.h"
 
-class THaCodaFile : public THaCodaData {
+class Decoder::THaCodaFile : public THaCodaData {
 
 public:
 
