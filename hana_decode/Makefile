@@ -2,6 +2,8 @@
 # R. Michaels, rom@jlab.org, Mar 2001
 #
 # Test Executables:
+# tstoo    --  tests of OO decoder
+# tstfadc  --  tests of FADC 250 class
 # tstcoda  --  test of abstract interface to THaCodaFile and THaEtClient.
 # tstio    --  simple tests of CODA I/O from a file.
 # tdecpr   --  test of decoder with self-explanatory printouts.
@@ -196,9 +198,14 @@ GLIBS        += $(ROOTGLIBS) $(SYSLIBS)
 
 SRC = THaUsrstrutils.C THaCrateMap.C THaCodaData.C \
       THaEpics.C THaFastBusWord.C THaCodaFile.C THaSlotData.C \
-      THaEvData.C THaCodaDecoder.C SimDecoder.C
+      THaEvData.C THaCodaDecoder.C \
+      CodaDecoder.C Module.C VmeModule.C FastbusModule.C  \
+      Lecroy1877Module.C Lecroy1881Module.C Lecroy1875Module.C \
+      Fadc250Module.C GenScaler.C Scaler560.C Scaler1151.C \
+      Scaler3800.C Scaler3801.C
+# SimDecoder.C \
 
-PROGS = tstio tdecpr tdecex prfact epicsd 
+PROGS = tstoo tstfadc tstio tdecpr tdecex prfact epicsd 
 # If you want to use the ET system at Jlab.
 ifdef ONLINE_ET
   SRC += THaEtClient.C
@@ -255,36 +262,44 @@ endif
 # Test programs for standalone tests of decoder.
 # Need a few objects from MAINDIR because of some links to those classes.
 ifdef STANDALONE
-   MAINOBJS = 
+   MAINOBJS =  
 else
-   MAINOBJS = $(MAINDIR)/libHallA.so
+   MAINOBJS = ../libHallA.so ../libscaler.so
 endif
+
+tstoo: tstoo_main.o $(DECODE_OBJS) $(SRC) 
+	rm -f $@
+	$(CXX) $(CXXFLAGS) -o $@ tstoo_main.o $(DECODE_OBJS) $(ALL_LIBS) $(EVIO_LIB) $(MAINOBJS)
+
+tstfadc: tstfadc_main.o $(DECODE_OBJS) $(SRC) $(MAINOBJS)
+	rm -f $@
+	$(CXX) $(CXXFLAGS) -o $@ tstfadc_main.o $(DECODE_OBJS) $(ALL_LIBS) $(EVIO_LIB) $(MAINOBJS)
 
 tstio: tstio_main.o $(DECODE_OBJS) $(SRC) $(MAINOBJS)
 	rm -f $@
-	$(CXX) $(CXXFLAGS) -o $@ tstio_main.o $(DECODE_OBJS) $(ALL_LIBS) $(MAINOBJS)
+	$(CXX) $(CXXFLAGS) -o $@ tstio_main.o $(DECODE_OBJS) $(ALL_LIBS) $(EVIO_LIB) $(MAINOBJS)
 
 tdecpr: $(DECODE_OBJS) $(SRC) tdecpr_main.o $(HEAD) $(SRC) $(MAINOBJS)
 	rm -f $@
-	$(CXX) $(CXXFLAGS) -o $@ tdecpr_main.o $(DECODE_OBJS) $(ALL_LIBS) $(MAINOBJS)
+	$(CXX) $(CXXFLAGS) -o $@ tdecpr_main.o $(DECODE_OBJS) $(ALL_LIBS) $(EVIO_LIB) $(MAINOBJS)
 
 tdecex: $(DECODE_OBJS) $(SRC) tdecex_main.o THaGenDetTest.o $(HEAD) THaGenDetTest.h $(SRC) $(DECODE_OBJS) $(MAINOBJS)  
 	rm -f $@
-	$(CXX) $(CXXFLAGS) -o $@ tdecex_main.o THaGenDetTest.o $(DECODE_OBJS) $(ALL_LIBS) $(MAINOBJS)
+	$(CXX) $(CXXFLAGS) -o $@ tdecex_main.o THaGenDetTest.o $(DECODE_OBJS) $(ALL_LIBS) $(EVIO_LIB) $(MAINOBJS)
 
 etclient: etclient_main.o $(DECODE_OBJS) $(MAINOBJS)
-	$(CXX) $(CXXFLAGS) -o $@ etclient_main.o $(DECODE_OBJS) $(ALL_LIBS) $(MAINOBJS)
+	$(CXX) $(CXXFLAGS) -o $@ etclient_main.o $(DECODE_OBJS) $(ALL_LIBS) $(EVIO_LIB) $(MAINOBJS)
 
 prfact: $(DECODE_OBJS) $(SRC) prfact_main.o $(HEAD) $(MAINOBJS)
 	rm -f $@
-	$(CXX) $(CXXFLAGS) -o $@ prfact_main.o $(DECODE_OBJS) $(MAINOBJS)
+	$(CXX) $(CXXFLAGS) -o $@ prfact_main.o $(DECODE_OBJS) $(EVIO_LIB) $(MAINOBJS)
 
 epicsd: $(DECODE_OBJS) $(SRC) epics_main.o $(HEAD) $(MAINOBJS)
 	rm -f $@
-	$(CXX) $(CXXFLAGS) -o $@ epics_main.o $(DECODE_OBJS) $(ALL_LIBS) $(MAINOBJS)
+	$(CXX) $(CXXFLAGS) -o $@ epics_main.o $(DECODE_OBJS) $(ALL_LIBS) $(EVIO_LIB) $(MAINOBJS)
 
 tstcoda: tstcoda_main.o THaCodaFile.o THaEtClient.o THaCodaData.o THaCodaFile.h THaEtClient.h THaCodaData.h $(DECODE_OBJS) $(MAINOBJS)
-	$(CXX) $(CXXFLAGS) -o $@ tstcoda_main.o $(DECODE_OBJS) $(ALL_LIBS) $(MAINOBJS)
+	$(CXX) $(CXXFLAGS) -o $@ tstcoda_main.o $(DECODE_OBJS) $(ALL_LIBS) $(EVIO_LIB) $(MAINOBJS)
 
 
 # Dictionary
