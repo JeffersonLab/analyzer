@@ -20,7 +20,6 @@
 
 #include <iostream>
 #include <fstream>
-#include "Decoder.h"
 #include "THaAnalyzer.h"
 #include "THaRunBase.h"
 #include "THaEvent.h"
@@ -49,7 +48,6 @@
 #include "THaCrateMap.h"
 
 #include "THaEvtTypeHandler.h"
-#include "ToyPhysicsEvtHandler.h"
 #include "THaScalerEvtHandler.h"
 
 #include <fstream>
@@ -103,24 +101,18 @@ THaAnalyzer::THaAnalyzer() :
   fPhysics = gHaPhysics;
   fDebug = 0;
 
-   ToyPhysicsEvtHandler *h1 = new ToyPhysicsEvtHandler("physics","Test by Bob");
-   TDatime td;
-   h1->Init(td);
+   THaScalerEvtHandler *h1 = new THaScalerEvtHandler("Left","Event type 140");
+   h1->Init(td, 1);
    h1->Print();
 
-   THaScalerEvtHandler *h2 = new THaScalerEvtHandler("Left","Event type 140");
+   THaScalerEvtHandler *h2 = new THaScalerEvtHandler("Right","Event type 140");
    h2->Init(td, 1);
    h2->Print();
-
-   THaScalerEvtHandler *h3 = new THaScalerEvtHandler("Right","Event type 140");
-   h3->Init(td, 1);
-   h3->Print();
   
    fEvtHandlers = new TList();
 
    fEvtHandlers->Add(h1);
    fEvtHandlers->Add(h2);
-   fEvtHandlers->Add(h3);
 
 
   // Timers
@@ -605,8 +597,6 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
 
   //--- Create our decoder from the TClass specified by the user.
   bool new_decoder = false;
-  cout << "fEvData ?  "<<fEvData<<endl;
-  //cout << "fEvData IsA ?  "<<fEvData->IsA()<<endl;
   if( !fEvData || fEvData->IsA() != gHaDecoder ) {
     delete fEvData; fEvData = NULL;
     cout << "gHaDecoder "<<gHaDecoder<<endl;

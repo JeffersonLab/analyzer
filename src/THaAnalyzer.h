@@ -7,9 +7,6 @@
 // 
 //////////////////////////////////////////////////////////////////////////
 
-#include "Decoder.h"
-#include "THaEvData.h"
-#include "THaCrateMap.h"
 #include "TObject.h"
 #include "TString.h"
 
@@ -22,11 +19,9 @@ class TFile;
 class TDatime;
 class THaCut;
 class THaBenchmark;
-//class THaEvData;
+class THaEvData;
 class THaPostProcess;
 class THaCrateMap;
-
-using namespace Decoder;
 
 class THaAnalyzer : public TObject {
 
