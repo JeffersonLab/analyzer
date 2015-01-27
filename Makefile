@@ -40,10 +40,10 @@ CXX          := $(shell root-config --cxx)
 CC           := $(shell root-config --cc)
 
 HA_DIR       := $(shell pwd)
-DCDIR        := oodecoder
+DCDIR        := hana_decode
 SCALERDIR    := hana_scaler
 LIBDIR       := $(shell pwd)
-HALLALIBS    := -L$(LIBDIR) -lHallA ./$(DCDIR)/libdc.so -lscaler
+HALLALIBS    := -L$(LIBDIR) -lHallA -ldc -lscaler
 SUBDIRS      := $(DCDIR) $(SCALERDIR)
 INCDIRS      := $(addprefix $(HA_DIR)/, src $(SUBDIRS))
 HA_DICT      := haDict
@@ -51,12 +51,7 @@ HA_DICT      := haDict
 LIBS         := 
 GLIBS        := 
 
-<<<<<<< HEAD
-INCLUDES     := $(ROOTCFLAGS) $(addprefix -I, $(INCDIRS) )
-INCLUDES     += -I./oodecoder
-=======
 INCLUDES     := $(addprefix -I, $(INCDIRS) )
->>>>>>> upstream/master
 
 ifeq ($(ARCH),solarisCC5)
 # Solaris CC 5.0
@@ -157,20 +152,9 @@ ifdef WITH_DEBUG
 DEFINES      += -DWITH_DEBUG
 endif
 
-<<<<<<< HEAD
-# External EVIO support
-INCLUDES     += -I$(EVIO_INCDIR) 
-SYSLIBS      += -L$(EVIO_LIBDIR) -levio
-
-CXXFLAGS      = $(CXXFLG) $(CXXEXTFLG) $(INCLUDES) $(DEFINES)
-CFLAGS        = $(CXXFLG) $(INCLUDES) $(DEFINES)
-LIBEVIO      = $(DCDIR)/libevio_linux.a
-LIBS         += $(ROOTLIBS) $(SYSLIBS) $(LIBEVIO)
-=======
 CXXFLAGS      = $(CXXFLG) $(CXXEXTFLG) $(ROOTCFLAGS) $(INCLUDES) $(DEFINES)
 CFLAGS        = $(CXXFLG) $(ROOTCFLAGS) $(INCLUDES) $(DEFINES)
 LIBS         += $(ROOTLIBS) $(SYSLIBS)
->>>>>>> upstream/master
 GLIBS        += $(ROOTGLIBS) $(SYSLIBS)
 DEFINES      += $(PODD_EXTRA_DEFINES)
 
@@ -223,9 +207,7 @@ SRC          := src/THaFormula.C src/THaVform.C src/THaVhist.C \
 		src/THaG0Helicity.C src/THaADCHelicity.C src/THaHelicity.C \
 		src/THaPhotoReaction.C src/THaSAProtonEP.C \
 		src/THaTextvars.C src/THaQWEAKHelicity.C \
-		src/THaQWEAKHelicityReader.C \
-		src/THaEvtTypeHandler.C src/ToyPhysicsEvtHandler.C \
-		src/THaScalerEvtHandler.C 
+		src/THaQWEAKHelicityReader.C
 
 ifdef ONLINE_ET
 SRC += src/THaOnlRun.C
@@ -296,13 +278,13 @@ $(LIBHALLA):	$(LIBHALLA).$(SOVERSION)
 		rm -f $@
 		ln -s $(notdir $<) $@
 
-#$(LIBDC).$(SOVERSION):	$(LIBDC).$(VERSION)
-#ifneq ($(strip $(LDCONFIG)),)
-#		$(LDCONFIG)
-#else
-#		rm -f $@
-#		ln -s $(notdir $<) $@
-#endif
+$(LIBDC).$(SOVERSION):	$(LIBDC).$(VERSION)
+ifneq ($(strip $(LDCONFIG)),)
+		$(LDCONFIG)
+else
+		rm -f $@
+		ln -s $(notdir $<) $@
+endif
 
 $(LIBSCALER).$(SOVERSION):	$(LIBSCALER).$(VERSION)
 ifneq ($(strip $(LDCONFIG)),)
@@ -312,9 +294,9 @@ else
 		ln -s $(notdir $<) $@
 endif
 
-#$(LIBDC):	$(LIBDC).$(SOVERSION)
-#		rm -f @
-#		ln -s $(notdir $<) $@
+$(LIBDC):	$(LIBDC).$(SOVERSION)
+		rm -f $@
+		ln -s $(notdir $<) $@
 
 $(LIBSCALER):	$(LIBSCALER).$(SOVERSION)
 		rm -f $@
@@ -341,14 +323,13 @@ $(LNA_DICT).C:	$(LNA_HDR) $(LNA_LINKDEF)
 		rootcint -f $@ -c $(ROOTINC) $(INCLUDES) $(DEFINES) $^
 
 #---------- Main program -------------------------------------------
-analyzer:	src/main.o $(LIBSCALER) $(LIBHALLA) $(LIBEVIO)
-		$(LD) $(LDFLAGS) $< $(HALLALIBS) $(LIBEVIO) $(GLIBS) -o $@
+analyzer:	src/main.o $(LIBDC) $(LIBSCALER) $(LIBHALLA)
+		$(LD) $(LDFLAGS) $< $(HALLALIBS) $(GLIBS) -o $@
 
 #---------- Maintenance --------------------------------------------
 clean:
 		set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i clean; done
-		rm -f *.{so,a,o,os} *.so.* ; rm ./oodecoder/*.so ; 
-		rm -f ./oodecoder/*.d ;
+		rm -f *.{so,a,o,os} *.so.*
 		rm -f $(PROGRAMS) $(HA_DICT).* $(LNA_DICT).* *~
 		cd src; rm -f ha_compiledata.h *.{o,os} *~
 
