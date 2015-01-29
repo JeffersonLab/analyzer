@@ -2,7 +2,6 @@
 #define Decoder_
 
 namespace Decoder {
-  class THaEvData;            // abstract decoder
   class Module;               // abstract module  
   class VmeModule;            // abstract VME module  
   class FastbusModule;        // abstract Fastbus module  
