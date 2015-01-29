@@ -21,7 +21,7 @@
 #pragma link C++ class Decoder::THaCodaFile+;
 #pragma link C++ class Decoder::THaCrateMap+;
 #pragma link C++ class Decoder::THaEpics+;
-#pragma link C++ class Decoder::THaEvData+;
+#pragma link C++ class THaEvData+;
 #pragma link C++ class Decoder::THaFastBusWord+;
 #pragma link C++ class Decoder::THaSlotData+;
 #pragma link C++ class Decoder::THaUsrstrutils+;
@@ -29,11 +29,13 @@
 
 #pragma link C++ class THaBenchmark+;
 
-#pragma link C++ class Podd::THaEvData::RocDat_t+;
+#pragma link C++ class THaEvData::RocDat_t+;
+#ifdef IF_IT_WOULD_WORK
 #pragma link C++ class Podd::MCHitInfo+;
 #pragma link C++ class Podd::MCTrack+;
 #pragma link C++ class Podd::MCTrackPoint+;
 #pragma link C++ class Podd::SimDecoder+;
+#endif
 
 #ifdef ONLINE_ET
 #pragma link C++ class THaEtClient+;
