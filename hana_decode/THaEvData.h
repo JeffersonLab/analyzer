@@ -8,6 +8,7 @@
 /////////////////////////////////////////////////////////////////////
 
 
+#include "Decoder.h"
 #include "TObject.h"
 #include "TString.h"
 #include "THaSlotData.h"
@@ -16,9 +17,6 @@
 #include <iostream>
 
 class THaBenchmark;
-class THaEpics;
-class THaCrateMap;
-class THaFastBusWord;
 
 class THaEvData : public TObject {
 
@@ -87,7 +85,7 @@ public:
 			  Int_t /*slot*/, Int_t /*chan*/) const
   { return GetScaler(0,0,0); }
   virtual void SetDebugFile( ofstream *file ) { fDebugFile = file; };
-  virtual Module* GetModule(Int_t roc, Int_t slot);
+  virtual Decoder::Module* GetModule(Int_t roc, Int_t slot);
 
   // Access functions for EPICS (slow control) data
   virtual double GetEpicsData(const char* tag, Int_t event=0) const;
@@ -152,7 +150,7 @@ protected:
     Int_t pos;                // position in evbuffer[]
     Int_t len;                // length of data
   } rocdat[MAXROC];
-  THaSlotData** crateslot;
+  Decoder::THaSlotData** crateslot;
 
   Bool_t first_decode;
   Bool_t fTrigSupPS;
@@ -174,7 +172,7 @@ protected:
   Bool_t GoodIndex(Int_t crate, Int_t slot) const;
 
   Int_t init_cmap();
-  Int_t init_slotdata(const THaCrateMap* map);
+  Int_t init_slotdata(const Decoder::THaCrateMap* map);
   void  makeidx(Int_t crate, Int_t slot);
 
   Int_t     fNSlotUsed;   // Number of elements of crateslot[] actually used
@@ -182,7 +180,7 @@ protected:
   UShort_t* fSlotUsed;    // [fNSlotUsed] Indices of crateslot[] used
   UShort_t* fSlotClear;   // [fNSlotClear] Indices of crateslot[] to clear
 
-  THaCrateMap* fMap;      // Pointer to active crate map
+  Decoder::THaCrateMap* fMap;      // Pointer to active crate map
 
   Bool_t fDoBench;
   THaBenchmark *fBench;

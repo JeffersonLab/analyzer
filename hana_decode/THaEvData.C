@@ -20,6 +20,8 @@
 /////////////////////////////////////////////////////////////////////
 
 #include "THaEvData.h"
+#include "Module.h"
+#include "THaSlotData.h"
 #include "THaFastBusWord.h"
 #include "THaCrateMap.h"
 #include "THaUsrstrutils.h"
@@ -38,6 +40,7 @@
 #endif
 
 using namespace std;
+using namespace Decoder;
 
 // Instances of this object
 TBits THaEvData::fgInstances;
@@ -331,6 +334,8 @@ int THaEvData::init_slotdata(const THaCrateMap* map)
   }
   return HED_OK;
 }
+
+#ifdef what
 //_____________________________________________________________________________
 Module* THaEvData::GetModule(Int_t roc, Int_t slot)
 {
@@ -338,7 +343,7 @@ Module* THaEvData::GetModule(Int_t roc, Int_t slot)
   if (sldat) return sldat->GetModule();
   return NULL;
 }
-
+#endif
 
 ClassImp(THaEvData)
 ClassImp(THaBenchmark)
