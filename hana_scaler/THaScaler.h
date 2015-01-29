@@ -21,6 +21,7 @@
 
 #include "TObject.h"
 #include "TString.h"
+#include "Decoder.h"
 #include <cstdlib>
 #include <iostream>
 #include <string>
@@ -31,7 +32,7 @@
 
 class Bdate;
 class THaScalerDB;
-class THaCodaFile;
+class Decoder::THaCodaFile;
 class THaEvData;
 class TDatime;
 
@@ -56,7 +57,7 @@ public:
 // 'event' of data.  Any CODA files are opened once, read sequentially
    Int_t LoadData(const THaEvData& evdata); // load from THaEvData (return if non-scaler evt)
 // from CODA file (assumed opened already)
-   Int_t LoadDataCodaFile(THaCodaFile *codafile);  
+   Int_t LoadDataCodaFile(Decoder::THaCodaFile *codafile);  
 // from CODA file 'filename' (we'll open it for you)
    Int_t LoadDataCodaFile(const char* filename);      
    Int_t LoadDataCodaFile(TString filename);      
@@ -128,7 +129,7 @@ public:
 protected:
 
    std::string bankgroup;
-   THaCodaFile *fcodafile;
+   Decoder::THaCodaFile *fcodafile;
    std::vector<Int_t> onlmap;
    THaScalerDB *database; 
    std::multimap<std::string, Int_t> normmap;

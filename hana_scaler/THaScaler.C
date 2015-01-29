@@ -50,6 +50,7 @@
 #include <iostream>
 
 using namespace std;
+using namespace Decoder;
 
 THaScaler::THaScaler( const char* bankgr ) {
 // Set up the scaler banks.  Each bank is a group of related scalers.
