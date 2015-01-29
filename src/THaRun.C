@@ -21,6 +21,7 @@
 #include <cassert>
 
 using namespace std;
+using namespace Decoder;
 
 static const int   fgMaxScan   = 5000;
 static const char* fgThisClass = "THaRun";
