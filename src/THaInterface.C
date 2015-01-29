@@ -34,6 +34,7 @@
 //#include "TVirtualX.h"
 
 using namespace std;
+using namespace Decoder;
 
 THaVarList*  gHaVars     = NULL;  // List of symbolic analyzer variables
 THaCutList*  gHaCuts     = NULL;  // List of global analyzer cuts/tests
