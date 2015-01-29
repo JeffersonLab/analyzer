@@ -19,8 +19,6 @@
 #define SCAL_ERROR       -1
 #define SCAL_VERBOSE      1  // verbose warnings (0 = silent, recommend = 1)
 
-#include "Decoder.h"
-#include "THaEvData.h"
 #include "TObject.h"
 #include "TString.h"
 #include <cstdlib>
@@ -33,6 +31,8 @@
 
 class Bdate;
 class THaScalerDB;
+class THaCodaFile;
+class THaEvData;
 class TDatime;
 
 class THaScaler : public TObject {
@@ -144,6 +144,7 @@ protected:
    Int_t *normslot;
    Double_t clockrate;
    Int_t fDebug;
+
    Int_t InitData(const std::string& bankgroup, const Bdate& bd);
    Int_t CheckInit();
    void Clear(Option_t* opt="");

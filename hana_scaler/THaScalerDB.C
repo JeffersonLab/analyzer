@@ -177,6 +177,7 @@ void THaScalerDB::PrintDirectives() const {
   if (direct) direct->Print();
 };
 
+
 Int_t THaScalerDB::SetDebug( Int_t level )
 {
   Int_t prev_level = fDebug;
