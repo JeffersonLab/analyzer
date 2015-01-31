@@ -6,8 +6,8 @@
 //
 // Abstract base class for a detector or subdetector.
 //
-// Derived classes must define all internal variables, a constructor 
-// that registers any internal variables of interest in the global 
+// Derived classes must define all internal variables, a constructor
+// that registers any internal variables of interest in the global
 // physics variable list, and a Decode() method that fills the variables
 // based on the information in the THaEvData structure.
 //
@@ -23,7 +23,8 @@ using std::vector;
 //_____________________________________________________________________________
 THaDetectorBase::THaDetectorBase( const char* name,
 				  const char* description ) :
-  THaAnalysisObject(name,description), fNelem(0)
+  THaAnalysisObject(name,description), fNelem(0),
+  fXax(1.0,0.0,0.0), fYax(0.0,1.0,0.0), fZax(0.0,0.0,1.0)
 {
   // Normal constructor. Creates an empty detector map.
 
@@ -44,10 +45,22 @@ THaDetectorBase::~THaDetectorBase()
 }
 
 //_____________________________________________________________________________
+void THaDetectorBase::DefineAxes( Double_t rotation_angle )
+{
+  // Define detector orientation, assuming a tilt by rotation_angle around
+  // the y-axis
+
+  fXax.SetXYZ( TMath::Cos(rotation_angle), 0.0, TMath::Sin(rotation_angle) );
+  fYax.SetXYZ( 0.0, 1.0, 0.0 );
+  fZax = fXax.Cross(fYax);
+
+}
+
+//_____________________________________________________________________________
 Int_t THaDetectorBase::FillDetMap( const vector<Int_t>& values, UInt_t flags,
 				   const char* here )
 {
-  // Utility function to fill this detector's detector map. 
+  // Utility function to fill this detector's detector map.
   // See THaDetMap::Fill for documentation.
 
   Int_t ret = fDetMap->Fill( values, flags );
@@ -85,9 +98,9 @@ void THaDetectorBase::PrintDetMap( Option_t* opt ) const
 
 //_____________________________________________________________________________
 Int_t THaDetectorBase::ReadGeometry( FILE* file, const TDatime& date,
-				     Bool_t required ) 
+				     Bool_t required )
 {
-  // Read this detector's basic geometry information from the database. 
+  // Read this detector's basic geometry information from the database.
   // Derived classes may override to read more advanced data.
 
   vector<double> position, size;
