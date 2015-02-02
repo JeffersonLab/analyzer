@@ -32,7 +32,6 @@
 
 class Bdate;
 class THaScalerDB;
-class Decoder::THaCodaFile;
 class THaEvData;
 class TDatime;
 
