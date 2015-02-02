@@ -101,20 +101,6 @@ THaAnalyzer::THaAnalyzer() :
   fPhysics = gHaPhysics;
   fDebug = 0;
 
-   THaScalerEvtHandler *h1 = new THaScalerEvtHandler("Left","Event type 140");
-   h1->Init(td, 1);
-   h1->Print();
-
-   THaScalerEvtHandler *h2 = new THaScalerEvtHandler("Right","Event type 140");
-   h2->Init(td, 1);
-   h2->Print();
-  
-   fEvtHandlers = new TList();
-
-   fEvtHandlers->Add(h1);
-   fEvtHandlers->Add(h2);
-
-
   // Timers
   fBench = new THaBenchmark;
 }
@@ -607,10 +593,14 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
 	     "Something is very wrong..." );
       return 241;
     }
+
+#ifdef DODEBUG
     ofstream *debugfile = new ofstream;
-    //    debugfile->open("bobdecode1.txt");
-    // fEvData->SetDebug(1);
-    //fEvData->SetDebugFile(debugfile);
+    debugfile->open("bobdecode1.txt");
+    /fEvData->SetDebug(1);
+    fEvData->SetDebugFile(debugfile);
+#endif
+
     new_decoder = true;
   }
 
@@ -684,6 +674,21 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
   // Obtain time of the run, the one parameter we really need 
   // for initializing the modules
   TDatime run_time = fRun->GetDate();
+
+  // Event type handlers -- these probably should be plug-ins (Bob)
+
+  THaScalerEvtHandler *h1 = new THaScalerEvtHandler("Left","Event type 140");
+  h1->Init(run_time);
+  h1->Print();
+
+  THaScalerEvtHandler *h2 = new THaScalerEvtHandler("Right","Event type 140");
+  h2->Init(run_time);
+  h2->Print();
+  
+  fEvtHandlers = new TList();
+
+  fEvtHandlers->Add(h1);
+  fEvtHandlers->Add(h2);
 
   // Tell the decoder the run time. This will trigger decoder
   // initialization (reading of crate map data etc.)

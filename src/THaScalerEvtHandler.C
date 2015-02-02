@@ -58,11 +58,11 @@ THaScalerEvtHandler::~THaScalerEvtHandler() {
 
 Int_t THaScalerEvtHandler::End( THaRunBase* r) {
   if (fScalerTree) fScalerTree->Write();   
+  return 0;
 }
 
 Int_t THaScalerEvtHandler::Analyze(THaEvData *evdata) {
 
-  Int_t ldebug=1;
   Int_t lfirst=1;
 
   if ( !IsMyEvent(evdata->GetEvType()) ) return -1;
@@ -70,7 +70,7 @@ Int_t THaScalerEvtHandler::Analyze(THaEvData *evdata) {
   if (fDebugFile) {
      *fDebugFile << endl << "---------------------------------- "<<endl<<endl;
      *fDebugFile << "\nEnter THaScalerEvtHandler  for fName = "<<fName<<endl;
-     Dump(evdata);
+     EvDump(evdata);
   }
 
   if (lfirst && !fScalerTree) {
@@ -97,7 +97,7 @@ Int_t THaScalerEvtHandler::Analyze(THaEvData *evdata) {
     tinfo = name + "/D";
     fScalerTree->Branch(name.Data(), &evcount, tinfo.Data(), 4000);
 
-    for (Int_t i = 0; i < scalerloc.size(); i++) {
+    for (UInt_t i = 0; i < scalerloc.size(); i++) {
       name = scalerloc[i]->name;
       tinfo = name + "/D";
       fScalerTree->Branch(name.Data(), &dvars[i], tinfo.Data(), 4000);
@@ -130,7 +130,7 @@ Int_t THaScalerEvtHandler::Analyze(THaEvData *evdata) {
   while (p < pstop && j < ndata) {
     if (fDebugFile) *fDebugFile << "p  and  pstop  "<<j++<<"   "<<p<<"   "<<pstop<<"   "<<hex<<*p<<"   "<<dec<<endl;   
     nskip = 1;
-    for (Int_t j=0; j<scalers.size(); j++) {
+    for (UInt_t j=0; j<scalers.size(); j++) {
        nskip = scalers[j]->Decode(p);
        if (fDebugFile && nskip > 1) {
 	 *fDebugFile << "\n===== Scaler # "<<j<<"     fName = "<<fName<<"   nskip = "<<nskip<<endl;
@@ -158,11 +158,12 @@ Int_t THaScalerEvtHandler::Analyze(THaEvData *evdata) {
   // The correspondance between dvars and the scaler and the channel
   // will be driven by a scaler.map file  -- later
 
-  for (Int_t i = 0; i < scalerloc.size(); i++) {
-    Int_t ivar = scalerloc[i]->ivar;
-    Int_t isca = scalerloc[i]->iscaler;
-    Int_t ichan = scalerloc[i]->ichan;
-    if (fDebugFile) *fDebugFile << "Debug dvars "<<i<<"   "<<ivar<<"  "<<isca<<"  "<<ichan<<endl;    if ((ivar >= 0 && ivar < scalerloc.size()) &&
+  for (UInt_t i = 0; i < scalerloc.size(); i++) {
+    UInt_t ivar = scalerloc[i]->ivar;
+    UInt_t isca = scalerloc[i]->iscaler;
+    UInt_t ichan = scalerloc[i]->ichan;
+    if (fDebugFile) *fDebugFile << "Debug dvars "<<i<<"   "<<ivar<<"  "<<isca<<"  "<<ichan<<endl;    
+    if ((ivar >= 0 && ivar < scalerloc.size()) &&
         (isca >= 0 && isca < scalers.size()) &&
         (ichan >= 0 && ichan < MAXCHAN)) {
           if (scalerloc[ivar]->ikind == ICOUNT) dvars[ivar] = scalers[isca]->GetData(ichan);
@@ -175,7 +176,7 @@ Int_t THaScalerEvtHandler::Analyze(THaEvData *evdata) {
 
   evcount = evcount + 1.0;
 
-  for (Int_t j=0; j<scalers.size(); j++) scalers[j]->Clear("");
+  for (UInt_t j=0; j<scalers.size(); j++) scalers[j]->Clear("");
 
   if (fDebugFile) *fDebugFile << "scaler tree ptr  "<<fScalerTree<<endl;
 
@@ -184,7 +185,9 @@ Int_t THaScalerEvtHandler::Analyze(THaEvData *evdata) {
   return 1;
 }
 
-THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& dt, Int_t idebug) {
+THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& dt) {
+
+  Int_t idebug=0;
 
   cout << "Howdy !  We are initializing THaScalerEvtHandler !!   name =   "<<fName<<endl;
 
@@ -237,11 +240,12 @@ THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& dt, Int_t id
       pos1 = FindNoCase(dbline[0],smap);
       if (fDebugFile) *fDebugFile << "map ? "<<dbline[0]<<"  "<<smap<<"   "<<pos1<<"   "<<dbline.size()<<endl; 
       if (pos1 != minus1 && dbline.size()>6) {
-         Int_t imodel, icrate, islot, inorm;
+	 Int_t imodel, icrate, islot;
+         UInt_t inorm;
          UInt_t header, mask;
          char cdum[20];
          sscanf(sinput.c_str(),"%s %d %d %d %x %x %d \n",cdum,&imodel,&icrate,&islot, &header, &mask, &inorm);
-         if ((fNormIdx > -1) && (fNormIdx != inorm)) cout << "THaScalerEvtHandler::WARN:  contradictory norm index"<<endl;
+         if ((fNormIdx >= 0) && (fNormIdx != inorm)) cout << "THaScalerEvtHandler::WARN:  contradictory norm index"<<endl;
          Int_t clkchan = -1;
          Double_t clkfreq = 1;
          if (dbline.size()>8) {
@@ -276,7 +280,7 @@ THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& dt, Int_t id
   }
 
 // need to do LoadNormScaler after scalers created and if fNormIdx found.
-  if ((fNormIdx != -1) && fNormIdx < scalers.size()) {
+  if ((fNormIdx >= 0) && fNormIdx < scalers.size()) {
     for (UInt_t i = 0; i < scalers.size(); i++) {
       if (i==fNormIdx) continue;
       scalers[i]->LoadNormScaler(scalers[fNormIdx]);
@@ -333,7 +337,7 @@ THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& dt, Int_t id
 #endif
 
   if(fDebugFile) *fDebugFile << "THaScalerEvtHandler:: Name of scaler bank "<<fName<<endl;
-  for (Int_t i=0; i<scalers.size(); i++) {
+  for (UInt_t i=0; i<scalers.size(); i++) {
     if(fDebugFile) {
          *fDebugFile << "Scaler  #  "<<i<<endl;
          scalers[i]->DebugPrint(fDebugFile);

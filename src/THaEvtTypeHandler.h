@@ -32,9 +32,9 @@ public:
 
    virtual Int_t Analyze(THaEvData *evdata); 
    virtual EStatus Init( const TDatime& run_time );
-   virtual void Print();
+   virtual void EvPrint();
    virtual Bool_t IsMyEvent(Int_t evnum); 
-   virtual void Dump(THaEvData *evdata);
+   virtual void EvDump(THaEvData *evdata);
 
 protected:
  

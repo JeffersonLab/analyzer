@@ -38,7 +38,7 @@ class ScalerLoc { // Utility class used by THaScalerEvtHandler
    name(nm), description(desc), iscaler(isc), ichan(ich), ikind(iki) { };
   ~ScalerLoc();
   TString name, description;
-  Int_t iscaler, ichan, ivar, ikind;
+  UInt_t iscaler, ichan, ivar, ikind;
 };
 
 class THaScalerEvtHandler : public THaEvtTypeHandler {
@@ -49,7 +49,8 @@ public:
    virtual ~THaScalerEvtHandler();  
 
    Int_t Analyze(THaEvData *evdata);
-   virtual EStatus Init( const TDatime& run_time, Int_t idebug=0 );
+   using THaEvtTypeHandler::Init;
+   virtual EStatus Init( const TDatime& run_time);
    Int_t End( THaRunBase* r=0 );
 
 
@@ -65,7 +66,7 @@ private:
    Double_t evcount;
    Int_t *rdata;
    vector<Int_t> index;
-   Int_t Nvars, ifound, fNormIdx;
+   UInt_t Nvars, ifound, fNormIdx;
    Double_t *dvars;
    TTree *fScalerTree;
 

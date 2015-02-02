@@ -27,7 +27,7 @@ Int_t THaEvtTypeHandler::Analyze(THaEvData *evdata) {
 
 }
 
-void THaEvtTypeHandler::Print() {
+void THaEvtTypeHandler::EvPrint() {
   cout << "Hello !  THaEvtTypeHandler name =  "<<GetName()<<endl;
   cout << "    description "<<GetTitle()<<endl;
   cout << "    event types handled are "<<endl;
@@ -37,7 +37,7 @@ void THaEvtTypeHandler::Print() {
   cout << "----------------- good bye ----------------- "<<endl;
 }
 
-void THaEvtTypeHandler::Dump(THaEvData *evdata) {
+void THaEvtTypeHandler::EvDump(THaEvData *evdata) {
   // Dumps data to file, if fDebugFile was set.
   if (!fDebugFile) return;
   if (!evdata) return;  // get what you deserve
