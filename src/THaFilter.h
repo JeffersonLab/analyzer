@@ -3,8 +3,8 @@
 
 #include "THaPostProcess.h"
 #include "TString.h"
+#include "Decoder.h"
 
-class THaCodaFile;
 class THaCut;
 class TString;
 class TDatime;
@@ -24,7 +24,7 @@ class THaFilter : public THaPostProcess {
  protected:
   TString   fCutExpr;    // Definition of cut to use for filtering events
   TString   fFileName;   // Name of CODA output file
-  THaCodaFile* fCodaOut; // The CODA output file
+  Decoder::THaCodaFile* fCodaOut; // The CODA output file
   THaCut*   fCut;        // Pointer to cut used for filtering
   
  public:

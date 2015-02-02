@@ -13,6 +13,7 @@
 #include "THaRunBase.h"
 
 using namespace std;
+using namespace Decoder;
 
 //_____________________________________________________________________________
 THaFilter::THaFilter( const char *cutexpr, const char* filename ) :
