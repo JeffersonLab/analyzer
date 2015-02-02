@@ -335,7 +335,6 @@ int THaEvData::init_slotdata(const THaCrateMap* map)
   return HED_OK;
 }
 
-#ifdef what
 //_____________________________________________________________________________
 Module* THaEvData::GetModule(Int_t roc, Int_t slot)
 {
@@ -343,7 +342,6 @@ Module* THaEvData::GetModule(Int_t roc, Int_t slot)
   if (sldat) return sldat->GetModule();
   return NULL;
 }
-#endif
 
 ClassImp(THaEvData)
 ClassImp(THaBenchmark)

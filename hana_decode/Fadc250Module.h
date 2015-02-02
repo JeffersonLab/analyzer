@@ -32,7 +32,8 @@ public:
 
    Int_t GetNumEvents() { return fNumEvents; };
 
-   Int_t GetData(Int_t chan, Int_t event, Int_t which=0);
+   using Module::GetData;
+   Int_t GetData(Int_t chan, Int_t event, Int_t which);
    Int_t GetAdcData(Int_t chan, Int_t ievent); 
    Int_t GetTdcData(Int_t chan, Int_t ievent);  
 

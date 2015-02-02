@@ -25,11 +25,9 @@ public:
    virtual ~VmeModule();  
 
    virtual Bool_t IsSlot(UInt_t rdata);
-   // Making this class Abstract does not work (problem with Dictionary)
-   virtual Int_t Decode(const Int_t *evbuffer) { return 0;};  // implement in derived class
    virtual Int_t Slot(Int_t rdata) { return fSlot; };
    virtual Int_t Data(Int_t rdata) { return rdata; };
- 
+
 private:
 
    static TypeIter_t fgThisType;

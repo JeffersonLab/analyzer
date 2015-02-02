@@ -30,12 +30,15 @@ public:
    virtual void Init() { return; };  // derived classes should implement
    void GenInit();
    Int_t SetClock(Double_t deltaT, Int_t clockchan=0, Double_t clockrate=0);
+   using Module::Decode;
    Int_t Decode(const Int_t *evbuffer);
+   using Module::GetData;
    Int_t GetData(Int_t chan);   // Raw scaler counts
    Double_t GetRate(Int_t chan);  // Scaler rate
    Double_t GetTimeSincePrev();  // returns deltaT since last reading
    void Clear(const Option_t *opt) { fIsDecoded=kFALSE; };
    Bool_t IsDecoded() { return fIsDecoded; };
+   using VmeModule::IsSlot;
    Bool_t IsSlot(Int_t rdata);
    void LoadNormScaler(GenScaler *scal);  // loads pointer to norm. scaler
    void DoPrint();

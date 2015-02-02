@@ -42,6 +42,14 @@ public:
 
   virtual ~Module();  
 
+  // inheriting classes need to implement one or more of these
+  virtual Int_t GetData(Int_t) { return 0; };
+  virtual Int_t GetData(Int_t, Int_t) { return 0; };
+  virtual Int_t GetData(Int_t, Int_t, Int_t) { return 0; };
+
+   // Making this class Abstract does not work (problem with Dictionary)
+  virtual Int_t Decode(const UInt_t *p) {return 0;}; // implement in derived class
+
   virtual Int_t GetNumEvents() { return 0; };  
   virtual Int_t GetMode() { return 0; };
 
@@ -53,14 +61,6 @@ public:
   virtual void Clear(const Option_t *opt) { fWordsSeen = 0; };
 
   virtual Bool_t IsSlot(UInt_t rdata);
-
-  // inheriting classes need to implement one or more of these
-  virtual Int_t GetData(Int_t) { return 0; };
-  virtual Int_t GetData(Int_t, Int_t) { return 0; };
-  virtual Int_t GetData(Int_t, Int_t, Int_t) { return 0; };
-
-   // Making this class Abstract does not work (problem with Dictionary)
-  virtual Int_t Decode(const UInt_t *p) {return 0;}; // implement in derived class
 
   virtual Int_t GetCrate() { return fCrate; };
   virtual Int_t GetSlot() { return fSlot; };

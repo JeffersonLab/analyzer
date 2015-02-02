@@ -150,5 +150,4 @@ Int_t Module::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const UInt_t 
 }
 
 
-
 ClassImp(Decoder::Module)
