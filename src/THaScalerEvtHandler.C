@@ -144,7 +144,7 @@ Int_t THaScalerEvtHandler::Analyze(THaEvData *evdata) {
     p = p + nskip;
   }
 
-  if (*fDebugFile) {
+  if (fDebugFile) {
     *fDebugFile << "Finished with decoding.  "<<endl;
     *fDebugFile << "   Found flag   =  "<<ifound<<endl;
   }
