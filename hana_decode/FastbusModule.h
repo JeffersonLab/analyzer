@@ -27,7 +27,7 @@ class Decoder::FastbusModule : public Module {
 
 public:
 
-   FastbusModule() {};
+   FastbusModule() { fDebugFile=0; };
    FastbusModule(Int_t crate, Int_t slot);
    virtual ~FastbusModule(); 
 
@@ -49,6 +49,7 @@ protected:
    Int_t fChanMask, fChanShift;
    Int_t fDataMask;
    Int_t fOptMask, fOptShift;
+   Int_t fChan, fData, fRawData;
    virtual void Init();  
 
 
