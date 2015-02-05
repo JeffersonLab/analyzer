@@ -18,6 +18,8 @@
 #include "Scaler3800.h"
 #include "Scaler3801.h"
 #include "Fadc250Module.h"
+#include "F1TDCModule.h"
+#include "SkeletonModule.h"
 #include "THaEvData.h"
 #include "THaSlotData.h"
 #include "TMath.h"
@@ -39,27 +41,21 @@ TypeIter_t Scaler1151::fgThisType = DoRegister( ModuleType( "Decoder::Scaler1151
 TypeIter_t Scaler3800::fgThisType = DoRegister( ModuleType( "Decoder::Scaler3800" , 3800 ));
 TypeIter_t Scaler3801::fgThisType = DoRegister( ModuleType( "Decoder::Scaler3801" , 3801 ));
 TypeIter_t Fadc250Module::fgThisType = DoRegister( ModuleType( "Decoder::Fadc250Module" , 250 ));
-TypeIter_t F1TDCModule::fgThisType = DoRegister( ModuleType( "Decoder::F1TDCModu
-le" , 3201 ));
-TypeIter_t SkeletonModule::fgThisType = DoRegister( ModuleType( "Decoder::Skelet
-onModule" , 4444 ));
-
+TypeIter_t F1TDCModule::fgThisType = DoRegister( ModuleType( "Decoder::F1TDCModule" , 3201 ));
+TypeIter_t SkeletonModule::fgThisType = DoRegister( ModuleType( "Decoder::SkeletonModule" , 4444 ));
 
 // Add your module here.  
-
 
 
 Module::Module(Int_t crate, Int_t slot) : fCrate(crate), fSlot(slot), fWordsExpect(0) { 
   fHeader=-1;
   fHeaderMask=-1;
+  fWordsSeen = 0;
   fWdcntMask=0;
   fWdcntShift=0;
   fDebugFile=0;
-  fChan=-1;
   fModelNum = -1;
   fName = "";
-  cout << "Module:: fChan here (1) "<<fChan<<endl;
-
 }
 
 Module::~Module() { 
@@ -130,11 +126,10 @@ TypeIter_t Module::DoRegister( const ModuleType& info )
 }
 
 Bool_t Module::IsSlot(UInt_t rdata) {
-  // may want to have "rules" like possibly 2 headers and 
-  // a different rule for where to get fWordsExpect.
-  // rules can be defined in the cratemap.
-  // For some modules, fWordsExpect may be a property of the module.
-  cout << "Module:: fChan here (2) "<<fChan<<endl;
+  // Simplest version of IsSlot relies on a unique header.
+  // For some modules you may want to have "rules" like possibly 
+  // 2 headers and a different rule for where to get fWordsExpect, etc.
+
   if ((rdata & fHeaderMask)==fHeader) {
     fWordsExpect = (rdata & fWdcntMask)>>fWdcntShift;
     return kTRUE;
@@ -144,17 +139,24 @@ Bool_t Module::IsSlot(UInt_t rdata) {
 }
 
 Int_t Module::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const UInt_t *pstop) {
+// This is a simple, default method for loading a slot
   const UInt_t *p = evbuffer;
-  cout << "Module:: fChan here (3) "<<fChan<<endl;
-  if (fDebugFile) *fDebugFile << "Module:: loadslot "<<endl; 
+  cout << "Module::LoadSlot "<<endl;
+  if (fDebugFile) *fDebugFile << "Module:: Loadslot "<<endl; 
   if (!fHeader) cerr << "Module::LoadSlot::ERROR : no header ?"<<endl;
+  Int_t nchan,mdata,rdata;
   while (IsSlot( *p )) {
     if (p >= pstop) break;
     Decode(p);
-    if (fDebugFile) *fDebugFile << "Module:: loadData  "<<fChan<<"  "<<fData<<endl; 
-    sldat->loadData(fChan, fData, fRawData);
-    fWordsSeen++;
-    p++;
+    nchan = GetNumChan();
+    for (Int_t ichan = 0; ichan < nchan; ichan++) {
+      fWordsSeen++;
+      p++;
+      if (p >= pstop) break;
+      rdata = GetData(ichan);
+      mdata = rdata;
+      sldat->loadData(ichan, mdata, rdata);
+    }
   }
   return fWordsSeen;
 }
