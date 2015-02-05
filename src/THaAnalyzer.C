@@ -596,8 +596,8 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
 
 #ifdef DODEBUG
     ofstream *debugfile = new ofstream;
-    debugfile->open("bobdecode1.txt");
-    /fEvData->SetDebug(1);
+    debugfile->open("bobdecode.txt");
+    fEvData->SetDebug(1);
     fEvData->SetDebugFile(debugfile);
 #endif
 
