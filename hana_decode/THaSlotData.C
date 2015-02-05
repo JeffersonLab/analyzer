@@ -147,9 +147,6 @@ int THaSlotData::loadModule(const THaCrateMap *map) {
 	if (fDebugFile) *fDebugFile << "THaSlotData:: SERIOUS problem :  fTClass still zero "<<endl;
       }
  
-      if (fDebugFile) *fDebugFile << "THaSlotData:: fModule pointer   "<<fModule <<endl;
-
-
     }
 
    }
