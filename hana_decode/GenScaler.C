@@ -17,7 +17,7 @@ using namespace Decoder;
 
 
 GenScaler::GenScaler(Int_t crate, Int_t slot) : VmeModule(crate, slot) { 
-  fNumChan = 32;
+  fNumChan = 0;
   fWordsExpect = 32;
 }
 
@@ -28,6 +28,7 @@ void GenScaler::GenInit() {
   fClockRate = 0;
   fNormScaler = 0;  
   fNumChanMask = 0xf0;
+  fDebugFile = 0;
   fDeltaT = DEFAULT_DELTAT;  // a default time interval between readings
   fDataArray = new Int_t[fWordsExpect];
   fPrevData = new Int_t[fWordsExpect];
@@ -35,7 +36,6 @@ void GenScaler::GenInit() {
   memset(fDataArray, 0, fWordsExpect*sizeof(Int_t));
   memset(fPrevData, 0, fWordsExpect*sizeof(Int_t));
   memset(fRate, 0, fWordsExpect*sizeof(Double_t));
-
 }
 
 GenScaler::~GenScaler() { 
@@ -101,6 +101,7 @@ Int_t GenScaler::Decode(const Int_t *evbuffer) {
   Int_t ldebug=1;
   Int_t doload=0;
   Int_t nfound=1;
+  cout << "GenScaler Decode "<<endl;
   if (IsDecoded()) return nfound;
   if (IsSlot(*evbuffer)) {
     if (fFirstTime) {
@@ -146,10 +147,8 @@ Double_t GenScaler::GetTimeSincePrev() {
 }
 
 void GenScaler::LoadRates() {
-  cout << "LoadRates "<<endl;
   if (IsDecoded()) {
     Double_t dtime = GetTimeSincePrev();
-    cout << "dtime = "<<dtime<<endl;
     if (dtime==0) {
        memset(fRate, 0, fWordsExpect*sizeof(Double_t));
        return;
@@ -202,15 +201,39 @@ void GenScaler::DebugPrint(ofstream *file) {
 
 Bool_t GenScaler::IsSlot(Int_t rdata) {
   Bool_t result;
-  Int_t numchan;
   result = ((rdata & fHeaderMask)==fHeader);
+  cout << "Isslot ?  "<<hex<<rdata<<"   "<<fHeaderMask<<"  "<<fHeader<<dec<<endl;
   if (result) {
-    numchan = rdata&fNumChanMask;
-    if (numchan != fWordsExpect) 
+    fNumChan = rdata&fNumChanMask;
+    cout << "==================== YES, is slot "<<fNumChan<<endl;
+    if (fNumChan != fWordsExpect) {
          cout << "GenScaler:: ERROR:  Inconsistent number of chan"<<endl;
+        if (fNumChan > fWordsExpect) fNumChan = fWordsExpect;
+    }
   }
   return result;
 }
+
+Int_t GenScaler::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const UInt_t *pstop) {
+// This is a simple, default method for loading a slot
+  const UInt_t *p = evbuffer;
+  while ( p < pstop ) {
+    if (IsSlot( *p )) {
+      cout << "GenScaler::LoadSlot "<<endl;
+      if (fDebugFile) *fDebugFile << "GenScaler:: Loadslot "<<endl; 
+      if (!fHeader) cerr << "GenScaler::LoadSlot::ERROR : no header ?"<<endl;
+      Decode(p);
+      for (Int_t ichan = 0; ichan < fNumChan; ichan++) {
+        sldat->loadData(ichan, fDataArray[ichan], fDataArray[ichan]);
+      }
+      fWordsSeen = fNumChan;
+      return fWordsSeen;
+    }
+  p++;
+  }
+  return 0;
+}
+
 
 
 ClassImp(Decoder::GenScaler)

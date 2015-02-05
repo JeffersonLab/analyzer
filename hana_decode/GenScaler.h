@@ -44,6 +44,9 @@ public:
    void DoPrint();
    void DebugPrint(ofstream *file=0);
 
+// Loads sldat 
+  virtual Int_t LoadSlot(THaSlotData *sldat,  const UInt_t *evbuffer, const UInt_t *pstop );  
+
 protected:
 
    void LoadRates();
