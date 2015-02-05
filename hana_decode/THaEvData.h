@@ -110,6 +110,8 @@ public:
   UInt_t  GetInstance() const { return fInstance; }
   static UInt_t GetInstances() { return fgInstances.CountBits(); }
 
+  Decoder::THaCrateMap* fMap;      // Pointer to active crate map
+
   // Reporting level
   void SetVerbose( UInt_t level );
   void SetDebug( UInt_t level );
@@ -179,8 +181,6 @@ protected:
   Int_t     fNSlotClear;  // Number of elements of crateslot[] to clear
   UShort_t* fSlotUsed;    // [fNSlotUsed] Indices of crateslot[] used
   UShort_t* fSlotClear;   // [fNSlotClear] Indices of crateslot[] to clear
-
-  Decoder::THaCrateMap* fMap;      // Pointer to active crate map
 
   Bool_t fDoBench;
   THaBenchmark *fBench;
