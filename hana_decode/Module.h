@@ -42,13 +42,17 @@ public:
 
   virtual ~Module();  
 
-  // inheriting classes need to implement one or more of these
+// inheriting classes need to implement one or more of these
   virtual Int_t GetData(Int_t) { return 0; };
   virtual Int_t GetData(Int_t, Int_t) { return 0; };
   virtual Int_t GetData(Int_t, Int_t, Int_t) { return 0; };
 
-   // Making this class Abstract does not work (problem with Dictionary)
+// Making this class Abstract does not work (problem with Dictionary)
   virtual Int_t Decode(const UInt_t *p) {return 0;}; // implement in derived class
+// Loads slot data
+  virtual Int_t LoadSlot(THaSlotData *sldat,  const UInt_t *evbuffer, const UInt_t *pstop );  
+
+  virtual Int_t GetNumChan() { return 0; };
 
   virtual Int_t GetNumEvents() { return 0; };  
   virtual Int_t GetMode() { return 0; };
@@ -76,16 +80,12 @@ public:
 
   virtual void DoPrint();
 
-// Loads sldat and increments ptr to evbuffer
-  virtual Int_t LoadSlot(THaSlotData *sldat,  const UInt_t *evbuffer, const UInt_t *pstop );  
-
 protected:
 
   static TypeIter_t DoRegister( const ModuleType& registration_info );
 
   Int_t fCrate, fSlot;
   UInt_t fHeader, fHeaderMask;
-  Int_t fChan, fData, fRawData;   // transient data
   Int_t fWordsExpect, fWordsSeen;
   Int_t fWdcntMask, fWdcntShift;
   Int_t fModelNum;
