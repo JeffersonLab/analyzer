@@ -278,7 +278,6 @@ void THaEvData::makeidx(int crate, int slot)
   int idx = slot+MAXSLOT*crate;
   delete crateslot[idx];  // just in case
   crateslot[idx] = new THaSlotData(crate,slot);
-  cout << "fDebugFile in THaEvData   "<<fDebugFile<<endl<<flush;
   if (fDebugFile) crateslot[idx]->SetDebugFile(fDebugFile);
   if( !fMap ) return;
   if( fMap->crateUsed(crate) && fMap->slotUsed(crate,slot)) {
