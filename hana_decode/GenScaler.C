@@ -95,13 +95,10 @@ void GenScaler::LoadNormScaler(GenScaler *scal) {
 }
 
 Int_t GenScaler::Decode(const Int_t *evbuffer) {
-  // Return arg:
-  //     0 = did not decode this module since slot not found yet.
-  //     1 = slot found, decode finished.
   Int_t ldebug=1;
   Int_t doload=0;
   Int_t nfound=1;
-  cout << "GenScaler Decode "<<endl;
+  if (ldebug) cout << "GenScaler Decode "<<endl;
   if (IsDecoded()) return nfound;
   if (IsSlot(*evbuffer)) {
     if (fFirstTime) {
@@ -219,7 +216,6 @@ Int_t GenScaler::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const UInt
   const UInt_t *p = evbuffer;
   while ( p < pstop ) {
     if (IsSlot( *p )) {
-      cout << "GenScaler::LoadSlot "<<endl;
       if (fDebugFile) *fDebugFile << "GenScaler:: Loadslot "<<endl; 
       if (!fHeader) cerr << "GenScaler::LoadSlot::ERROR : no header ?"<<endl;
       Decode(p);
