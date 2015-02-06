@@ -594,6 +594,7 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
       return 241;
     }
 
+// Bob's private debug stuff
 #ifdef DODEBUG
     ofstream *debugfile = new ofstream;
     debugfile->open("bobdecode.txt");
