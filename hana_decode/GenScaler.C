@@ -19,16 +19,18 @@ using namespace Decoder;
 GenScaler::GenScaler(Int_t crate, Int_t slot) : VmeModule(crate, slot) { 
   fNumChan = 0;
   fWordsExpect = 32;
+  fDebugFile = 0;
+  fIsDecoded = kFALSE;
 }
 
 void GenScaler::GenInit() {
   fHasClock = kFALSE;
   fFirstTime = kTRUE;
+  fIsDecoded = kFALSE;
   fClockChan = -1;
   fClockRate = 0;
   fNormScaler = 0;  
   fNumChanMask = 0xf0;
-  fDebugFile = 0;
   fDeltaT = DEFAULT_DELTAT;  // a default time interval between readings
   fDataArray = new Int_t[fWordsExpect];
   fPrevData = new Int_t[fWordsExpect];
@@ -95,10 +97,8 @@ void GenScaler::LoadNormScaler(GenScaler *scal) {
 }
 
 Int_t GenScaler::Decode(const Int_t *evbuffer) {
-  Int_t ldebug=1;
   Int_t doload=0;
   Int_t nfound=1;
-  if (ldebug) cout << "GenScaler Decode "<<endl;
   if (IsDecoded()) return nfound;
   if (IsSlot(*evbuffer)) {
     if (fFirstTime) {
@@ -107,13 +107,13 @@ Int_t GenScaler::Decode(const Int_t *evbuffer) {
       doload=1;
       memcpy(fPrevData, fDataArray, fWordsExpect*sizeof(Int_t));
     }
-    if (ldebug) cout << "is slot 0x"<<hex<<*evbuffer<<dec<<endl;
+    if (fDebugFile) *fDebugFile << "is slot 0x"<<hex<<*evbuffer<<dec<<endl;
     fIsDecoded = kTRUE;
     evbuffer++;
     for (Int_t i=0; i<fWordsExpect; i++) {
       fDataArray[i] = *(evbuffer++);
       nfound++;
-      if (ldebug) cout << "   data["<<i<<"] = 0x"<<hex<<fDataArray[i]<<dec<<endl;
+      if (fDebugFile) *fDebugFile << "   data["<<i<<"] = 0x"<<hex<<fDataArray[i]<<dec<<endl;
     }
   }
   if (doload) LoadRates();
@@ -126,17 +126,16 @@ Double_t GenScaler::GetTimeSincePrev() {
 // Otherwise, if this scaler has a clock, use it to get the time precisely.
 // Finally, if there is no clock, use fDeltaT as an approximate time.
 
-  Int_t ldebug=0;  
   if (fNormScaler) return fNormScaler->GetTimeSincePrev();
   Double_t dtime = 0;
-  if (ldebug) {
-     cout << "Into GetTimeSincePrev "<<endl;
-     if (IsDecoded()) cout << "Is Decoded "<<endl;
-     if (fHasClock) cout << "has Clock "<<endl;
+  if (fDebugFile) {
+     *fDebugFile << "Into GetTimeSincePrev "<<endl;
+     if (IsDecoded()) *fDebugFile << "Is Decoded "<<endl;
+     if (fHasClock) *fDebugFile << "has Clock "<<endl;
   }
   if (IsDecoded() && fHasClock && fClockRate>0 && checkchan(fClockChan)) {
     dtime = (fDataArray[fClockChan]-fPrevData[fClockChan])/fClockRate;
-    if (ldebug) cout << "GetTimeSincePrev  "<<fClockRate<<"   "<<fClockChan<<"   "<<dtime<<endl;
+    if (fDebugFile) *fDebugFile << "GetTimeSincePrev  "<<fClockRate<<"   "<<fClockChan<<"   "<<dtime<<endl;
   } else {
     if (fDeltaT > 0) dtime = fDeltaT;   // default
   }
@@ -199,12 +198,10 @@ void GenScaler::DebugPrint(ofstream *file) {
 Bool_t GenScaler::IsSlot(Int_t rdata) {
   Bool_t result;
   result = ((rdata & fHeaderMask)==fHeader);
-  cout << "Isslot ?  "<<hex<<rdata<<"   "<<fHeaderMask<<"  "<<fHeader<<dec<<endl;
   if (result) {
     fNumChan = rdata&fNumChanMask;
-    cout << "==================== YES, is slot "<<fNumChan<<endl;
     if (fNumChan != fWordsExpect) {
-         cout << "GenScaler:: ERROR:  Inconsistent number of chan"<<endl;
+        cout << "GenScaler:: ERROR:  Inconsistent number of chan"<<endl;
         if (fNumChan > fWordsExpect) fNumChan = fWordsExpect;
     }
   }
