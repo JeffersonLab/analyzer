@@ -35,6 +35,7 @@ public:
    virtual void EvPrint();
    virtual Bool_t IsMyEvent(Int_t evnum); 
    virtual void EvDump(THaEvData *evdata);
+   virtual void SetDebugFile(ofstream *file) { if (file>0) fDebugFile=file; };
 
 protected:
  
