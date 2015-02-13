@@ -309,12 +309,12 @@ Int_t CodaDecoder::FindRocs(const UInt_t *evbuffer) {
   Int_t status = HED_OK;
 
   if( (evbuffer[1]&0xffff) != 0x10cc ) std::cout<<"Warning, header error"<<std::endl;
-  if( (evbuffer[1]>>16) > MAX_PHYS_EVTYPE ) std::cout<<"Warning, Event type makes no sense"<<std::endl;
+  if( event_type > MAX_PHYS_EVTYPE ) std::cout<<"Warning, Event type makes no sense"<<std::endl;
   memset(rocdat,0,MAXROC*sizeof(RocDat_t));
   // Set pos to start of first ROC data bank
   Int_t pos = evbuffer[2]+3;  // should be 7
   nroc = 0;
-  while( pos+1 < evbuffer[0]+1 && nroc < MAXROC ) {
+  while( pos+1 < event_length && nroc < MAXROC ) {
     Int_t len  = evbuffer[pos];
     Int_t iroc = (evbuffer[pos+1]&0xff0000)>>16;
     if( iroc>=MAXROC ) {

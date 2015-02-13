@@ -41,6 +41,9 @@ public:
 
    Int_t GetNumHits() { return fNumHits; };
    
+   using Module::GetData;
+   using Module::LoadSlot;
+
    Int_t GetData(Int_t chan, Int_t hit);
 
 private:

@@ -59,10 +59,10 @@ TString THaEvData::fgDefaultCrateMapName = "cratemap";
 //_____________________________________________________________________________
 
 THaEvData::THaEvData() :
-  first_decode(true), fTrigSupPS(true),
-  buffer(0), run_num(0), run_type(0), fRunTime(0), evt_time(0),
-  recent_event(0), fNSlotUsed(0), fNSlotClear(0), fMap(0),
-  fDoBench(kFALSE), fBench(0), fNeedInit(true), fDebugFile(0), fDebug(0)
+  fMap(0), first_decode(true), fTrigSupPS(true),
+  buffer(0), fDebugFile(0), run_num(0), run_type(0), fRunTime(0), 
+  evt_time(0), recent_event(0), fNSlotUsed(0), fNSlotClear(0), 
+  fDoBench(kFALSE), fBench(0), fNeedInit(true), fDebug(0)
 {
   fInstance = fgInstances.FirstNullBit();
   fgInstances.SetBitNumber(fInstance);
