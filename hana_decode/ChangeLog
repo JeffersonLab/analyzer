@@ -2,6 +2,21 @@
   ChangeLog for Bob Michaels' Hall A C++ Decoder
   ==============================================	
 
+ ** Mods Feb 2015
+
+     The new decoder is called CodaDecoder.  It should replace 
+     THaCodaDecoder which might eventually be deleted.  Switching
+     between decoders is accomplished in /src/THaInterface.
+
+     The new decoder has a more Object-Oriented feel to it.
+     Modules are used (base class Modules) and there is a class
+     hierarchy of VmeModules and FastbusModules.  To add a new
+     module look at SkeletonModule and imitate this (for more
+     complete instructions, ask Bob).  Some modules like F1TDC
+     are still a work in progress, but the Fastbus and Scalers
+     are working well.
+
+	
  **  Mods Jan 2003
 
      Fix some index bugs in THaEvData.
