@@ -681,10 +681,22 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
   THaScalerEvtHandler *h1 = new THaScalerEvtHandler("Left","Event type 140");
   h1->Init(run_time);
   h1->Print();
+// Bob's private debug stuff
+#ifdef DODEBUG
+    ofstream *debugfile1 = new ofstream;
+    debugfile1->open("leftscaler.txt");
+    h1->SetDebugFile(debugfile1);
+#endif
 
   THaScalerEvtHandler *h2 = new THaScalerEvtHandler("Right","Event type 140");
   h2->Init(run_time);
   h2->Print();
+// Bob's private debug stuff
+#ifdef DODEBUG
+    ofstream *debugfile2 = new ofstream;
+    debugfile2->open("rightscaler.txt");
+    h2->SetDebugFile(debugfile2);
+#endif
   
   fEvtHandlers = new TList();
 
