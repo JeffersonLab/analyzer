@@ -52,6 +52,7 @@ public:
    using THaEvtTypeHandler::Init;
    virtual EStatus Init( const TDatime& run_time);
    Int_t End( THaRunBase* r=0 );
+   virtual void SetDebugFile(ofstream *file);
 
 
 private:
@@ -66,7 +67,7 @@ private:
    Double_t evcount;
    Int_t *rdata;
    vector<Int_t> index;
-   UInt_t Nvars, ifound, fNormIdx;
+   Int_t Nvars, ifound, fNormIdx, nscalers;
    Double_t *dvars;
    TTree *fScalerTree;
 

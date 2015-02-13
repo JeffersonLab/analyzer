@@ -2,11 +2,11 @@
 //
 //   THaScalerEvtHandler
 //
-//   Prototype event handler for scalers.
+//   Event handler for Hall A scalers.
 //   R. Michaels,  Sept, 2014
 //
 //   This class does the following
-//      For a particular set of event types (here, just 140)
+//      For a particular set of event types (here, event type 140)
 //      decode the scalers and put some variables into global variables.
 //      The global variables can then appear in the Podd output tree T.
 //      In addition, a tree "TS" is created by this class; it contains 
@@ -16,6 +16,8 @@
 //      The list of global variables and how they are tied to the 
 //      scaler module and channels is defined here; eventually this
 //      will be modified to use a scaler.map file
+//      NOTE: if you don't have the scaler map file (e.g. Leftscalevt.map)
+//      there will be no variable output to the Trees.
 //
 /////////////////////////////////////////////////////////////////////
 
@@ -128,14 +130,16 @@ Int_t THaScalerEvtHandler::Analyze(THaEvData *evdata) {
   ifound = 0;
 
   while (p < pstop && j < ndata) {
-    if (fDebugFile) *fDebugFile << "p  and  pstop  "<<j++<<"   "<<p<<"   "<<pstop<<"   "<<hex<<*p<<"   "<<dec<<endl;   
+    if (fDebugFile) {
+         *fDebugFile << "p  and  pstop  "<<j++<<"   "<<p<<"   "<<pstop<<"   "<<hex<<*p<<"   "<<dec<<endl;   
+    }
     nskip = 1;
     for (UInt_t j=0; j<scalers.size(); j++) {
        nskip = scalers[j]->Decode(p);
        if (fDebugFile && nskip > 1) {
 	 *fDebugFile << "\n===== Scaler # "<<j<<"     fName = "<<fName<<"   nskip = "<<nskip<<endl;
           scalers[j]->DebugPrint(fDebugFile);
-       }
+      }
        if (nskip > 1) {
 	 ifound = 1;
          break;
@@ -212,6 +216,7 @@ THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& dt) {
      return kInitError;
   }
   fNormIdx = -1;
+  cout << "fNormIdx here "<<fNormIdx<<endl;
   string sinput;
   size_t minus1 = -1;
   size_t pos1;
@@ -240,12 +245,11 @@ THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& dt) {
       pos1 = FindNoCase(dbline[0],smap);
       if (fDebugFile) *fDebugFile << "map ? "<<dbline[0]<<"  "<<smap<<"   "<<pos1<<"   "<<dbline.size()<<endl; 
       if (pos1 != minus1 && dbline.size()>6) {
-	 Int_t imodel, icrate, islot;
-         UInt_t inorm;
+	Int_t imodel, icrate, islot, inorm;
          UInt_t header, mask;
          char cdum[20];
          sscanf(sinput.c_str(),"%s %d %d %d %x %x %d \n",cdum,&imodel,&icrate,&islot, &header, &mask, &inorm);
-         if ((fNormIdx >= 0) && (fNormIdx != inorm)) cout << "THaScalerEvtHandler::WARN:  contradictory norm index"<<endl;
+         if ((fNormIdx >= 0) && (fNormIdx != inorm)) cout << "THaScalerEvtHandler::WARN:  contradictory norm index  "<<fNormIdx<<"   "<<inorm<<endl;
          Int_t clkchan = -1;
          Double_t clkfreq = 1;
          if (dbline.size()>8) {
@@ -278,14 +282,16 @@ THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& dt) {
       }
     }
   }
-
+// can't compare UInt_t to Int_t (compiler warning), so do this
+  nscalers=0;
+  for (UInt_t i=0; i<scalers.size(); i++) nscalers++;
 // need to do LoadNormScaler after scalers created and if fNormIdx found.
-  if ((fNormIdx >= 0) && fNormIdx < scalers.size()) {
-    for (UInt_t i = 0; i < scalers.size(); i++) {
+  if ((fNormIdx >= 0) && fNormIdx < nscalers) {
+    for (Int_t i = 0; i < nscalers; i++) {
       if (i==fNormIdx) continue;
       scalers[i]->LoadNormScaler(scalers[fNormIdx]);
     }
-  }     
+  }
 
 #ifdef HARDCODED
 // This code is superceded by the parsing of a map file above.  It's another way ...
@@ -344,6 +350,14 @@ THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& dt) {
     }
   }
   return kOK;
+}
+
+void THaScalerEvtHandler::SetDebugFile(ofstream *file) {
+  if (file <= 0) return;
+  fDebugFile = file;
+  for (UInt_t i = 0; i < scalers.size(); i++) {
+      scalers[i]->SetDebugFile(fDebugFile);
+  }
 }
 
 void THaScalerEvtHandler::AddVars(TString name, TString desc, Int_t iscal, Int_t ichan, Int_t ikind) {
