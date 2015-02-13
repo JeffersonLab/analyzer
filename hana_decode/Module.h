@@ -69,7 +69,7 @@ public:
   virtual Int_t GetCrate() { return fCrate; };
   virtual Int_t GetSlot() { return fSlot; };
 
-  virtual void SetDebugFile(ofstream *file) { fDebugFile = file; };
+  virtual void SetDebugFile(ofstream *file) { if (file>0) fDebugFile = file; };
 
   virtual void SetHeader(UInt_t header, UInt_t mask) {
     fHeader = header;
