@@ -731,7 +731,7 @@ Int_t THaVform::DefinedGlobalVariable( TString& name )
   FAr stat;
   if( gvar->IsArray() ) {
 
-    if (var_is_array) {
+    if( var_is_array ) {
       stat = kAElem;
     } else {
       stat = kFAType;
