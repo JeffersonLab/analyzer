@@ -77,7 +77,8 @@ Int_t FastbusModule::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const 
     if (fDebugFile) *fDebugFile << "FastbusModule:: words expected  "<<dec<<fWordsExpect<<endl;
     if (fWordsExpect != fWordsSeen) {
       if (fDebugFile) *fDebugFile << "ERROR:  FastbusModule:  crate "<<fCrate<<"   slot "<<fSlot<<" number of words expected "<<fWordsExpect<<"  not equal num words seen "<<fWordsSeen<<endl;
-      //      cerr << "ERROR:  FastbusModule:   number of words expected "<<fWordsExpect<<"  not equal num words seen "<<fWordsSeen<<endl;
+// This happens a lot for some modules, and appears to be harmless, so I suppress it. 
+//      cerr << "ERROR:  FastbusModule:   number of words expected "<<fWordsExpect<<"  not equal num words seen "<<fWordsSeen<<endl;
     }
   }
   return fWordsSeen;
