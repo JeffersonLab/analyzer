@@ -730,13 +730,16 @@ Int_t THaVform::DefinedGlobalVariable( TString& name )
   fVarName.push_back(name.Data());
   FAr stat;
   if( gvar->IsArray() ) {
-    if( var_is_array ) {
+
+    if (var_is_array) {
       stat = kAElem;
-    } else if( gvar->IsVarArray() ) {
-      stat = kVAType;
     } else {
       stat = kFAType;
     }
+    if (gvar->GetLen() == 0) {
+      stat = kVAType;
+    }
+
   } else {
     stat = kScaler;
   }
