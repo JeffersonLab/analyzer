@@ -315,16 +315,25 @@ int THaCrateMap::init(TString the_map)
     if ( line.find_first_not_of(" \t") == string::npos ) continue; // nothing useful
    
     char ctype[21];
-    
-    // set the next CRATE number and type
-    if ( sscanf(line.c_str(),"==== Crate %d type %20s",&crate,ctype) == 2 ) {
+
+// Make the line "==== Crate" not care about how many "=" chars or other
+// chars before "Crate", but lines beginning in # are still a comment
+    ssiz_t st = line.find("Crate", 0, 5);
+    if (st != string::npos) {    
+      string lcopy = line;
+      line.replace(0, lcopy.length(), lcopy, st, st+lcopy.length());
+    }
+
+// set the next CRATE number and type 
+
+    if ( sscanf(line.c_str(),"Crate %d type %20s",&crate,ctype) == 2 ) {
       if ( setCrateType(crate,ctype) != CM_OK )  {
         cout << "THaCrateMap:: fatal ERROR 2  setCrateType "<<endl;
 	return CM_ERR;
       }
       // for a scaler crate, get the 'name' or location as well
       if ( crdat[crate].crate_code == kScaler ) {
-	if (sscanf(line.c_str(),"==== Crate %*d type %*s %20s",ctype) != 1) {
+	if (sscanf(line.c_str(),"Crate %*d type %*s %20s",ctype) != 1) {
           cout << "THaCrateMap:: fatal ERROR 3   "<<endl;
 	  return CM_ERR;
 	}
@@ -365,6 +374,8 @@ int THaCrateMap::init(TString the_map)
     
     // unexpected input
     cout << "THaCrateMap:: fatal ERROR 4   "<<endl<<"Bad line "<<endl<<line<<endl;
+    cout << "    Warning: a bad line could cause wrong decoding !"<<endl;
+
     return CM_ERR;
   }
 
