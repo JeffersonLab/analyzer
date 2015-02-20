@@ -141,7 +141,7 @@ Bool_t Module::IsSlot(UInt_t rdata) {
 Int_t Module::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const UInt_t *pstop) {
 // This is a simple, default method for loading a slot
   const UInt_t *p = evbuffer;
-  cout << "Module::LoadSlot "<<endl;
+//  cout << "Module::LoadSlot "<<endl;
   if (fDebugFile) *fDebugFile << "Module:: Loadslot "<<endl; 
   if (!fHeader) cerr << "Module::LoadSlot::ERROR : no header ?"<<endl;
   Int_t nchan,mdata,rdata;
