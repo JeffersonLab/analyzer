@@ -38,7 +38,7 @@ CodaDecoder::CodaDecoder()
   memset(irn, 0, MAXROC*sizeof(Int_t));
   memset(fbfound, 0, MAXROC*MAXSLOT*sizeof(Int_t));
   fDebugFile = 0;
-  fDebug=1;
+  fDebug=0;
 }
 
 //_____________________________________________________________________________
@@ -372,7 +372,6 @@ int CodaDecoder::init_slotdata(const THaCrateMap* map)
     THaSlotData* crslot = crateslot[fSlotUsed[i]];
     int crate = crslot->getCrate();
     int slot  = crslot->getSlot();
-    //    if (fDebugFile) crslot->print();
     crslot->loadModule(map);
     if (fDebugFile) *fDebugFile << "CodaDecode::  crate, slot "<<crate<<"  "<<slot<<"   Dev type  = "<<crslot->devType()<<endl;
     if( !map->crateUsed(crate) || !map->slotUsed(crate,slot) ||
@@ -459,7 +458,7 @@ void CodaDecoder::ChkFbSlot( Int_t roc, const UInt_t* evbuffer,
   const UInt_t* p      = evbuffer+ipt;    // Points to ROC ID word (1 before data)
   const UInt_t* pstop  =evbuffer+istop;   // Points to last word of data in roc
   while (p++ < pstop) {
-    Int_t slot = (UInt_t(*p))>>27;  // A "self-reported" slot.  64-bit timebomb ???
+    Int_t slot = (UInt_t(*p))>>27;  // A "self-reported" slot.  
     Int_t index = MAXSLOT*roc + slot;
     if ((slot > 0) && (index >=0 && index < MAXROC*MAXSLOT)) fbfound[index]=1;
   }
