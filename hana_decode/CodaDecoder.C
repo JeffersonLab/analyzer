@@ -187,10 +187,10 @@ Int_t CodaDecoder::roc_decode( Int_t roc, const UInt_t* evbuffer,
       firstslot=minslot;
       incrslot = 1;
   }
-
-  if (fDebug) {
-    if (fDebugFile) *fDebugFile << "CodaDecode:: roc_decode:: roc#  "<<dec<<roc<<" nslot "<<Nslot<<endl;
-    if (fDebugFile) *fDebugFile << "CodaDecode:: roc_decode:: firstslot "<<dec<<firstslot<<"  incrslot "<<incrslot<<endl;
+  
+  if (fDebugFile) {
+    *fDebugFile << "CodaDecode:: roc_decode:: roc#  "<<dec<<roc<<" nslot "<<Nslot<<endl;
+    *fDebugFile << "CodaDecode:: roc_decode:: firstslot "<<dec<<firstslot<<"  incrslot "<<incrslot<<endl;
   }
 
   if (Nslot <= 0) goto err;
@@ -198,11 +198,9 @@ Int_t CodaDecoder::roc_decode( Int_t roc, const UInt_t* evbuffer,
 
   while ( p++ < pstop && n_slots_done < Nslot ) {
 
-    if(fDebug) {
-      if (fDebugFile) {
+    if (fDebugFile) {
          *fDebugFile << "CodaDecode::roc_decode:: evbuff "<<(p-evbuffer)<<"  "<<hex<<*p<<dec<<endl;
          *fDebugFile << "CodaDecode::roc_decode:: n_slots_done "<<n_slots_done<<"  "<<firstslot<<endl;
-      }
     }
     LoadIfFlagData(p); 
 
@@ -224,10 +222,8 @@ Int_t CodaDecoder::roc_decode( Int_t roc, const UInt_t* evbuffer,
       }
       ++n_slots_checked;
 
-     if(fDebug) {
-        if (fDebugFile) {
+     if (fDebugFile) {
           *fDebugFile<< "roc_decode:: slot logic "<<slot<<"  "<<firstslot<<"  "<<n_slots_checked<<"  "<<Nslot-n_slots_done<<endl;
-	}
      }
 
       nwords = crateslot[idx(roc,slot)]->LoadIfSlot(p, pstop); 
@@ -240,10 +236,8 @@ Int_t CodaDecoder::roc_decode( Int_t roc, const UInt_t* evbuffer,
            slotdone = kTRUE;
       }
 
-      if(fDebug) {
-        if (fDebugFile) {
+      if (fDebugFile) {
           *fDebugFile<< "CodaDecode:: roc_decode:: after LoadIfSlot "<<p << "  "<<pstop<<"  "<<"  "<<hex<<*p<<"  "<<dec<<nwords<<endl;
-	}
       }
 
     }
@@ -270,9 +264,7 @@ Int_t CodaDecoder::LoadIfFlagData(const UInt_t* evbuffer)
   assert( evbuffer );
   UInt_t word   = *evbuffer;
   UInt_t upword = word & 0xffff0000;
-  if (fDebug) {
-    if (fDebugFile) *fDebugFile << "CodaDecode:: TestBit on :  Flag data ? "<<hex<<word<<dec<<endl;
-  }
+  if (fDebugFile) *fDebugFile << "CodaDecode:: TestBit on :  Flag data ? "<<hex<<word<<dec<<endl;
   if( word == 0xdc0000ff) synchmiss = true;
   if( upword == 0xdcfe0000) {
     synchextra = true;
