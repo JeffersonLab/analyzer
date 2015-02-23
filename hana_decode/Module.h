@@ -57,8 +57,8 @@ public:
   virtual Int_t GetNumEvents() { return 0; };  
   virtual Int_t GetMode() { return 0; };
 
-  virtual void SetSlot(Int_t crate, Int_t slot, Int_t header=0, Int_t mask=0) 
-  { fCrate=crate; fSlot=slot; fHeader=header; fHeaderMask=mask; };
+  virtual void SetSlot(Int_t crate, Int_t slot, Int_t header=0, Int_t mask=0, Int_t modelnum=0) 
+  { fCrate=crate; fSlot=slot; fHeader=header; fHeaderMask=mask; fModelNum=modelnum;};
 
   virtual void Init() { fModelNum=-1; };
 
