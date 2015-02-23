@@ -159,7 +159,7 @@ Int_t THaSlotData::LoadIfSlot(const UInt_t* p, const UInt_t *pstop) {
   // returns how many words seen.
   Int_t wordseen = 0;
   if ( !fModule ) {  
-    cout << "THaSlotData::ERROR:   No module defined for slot. "<<crate<<"  "<<slot<<endl;  // this is fatal
+    cout << "THaSlotData::ERROR:   No module defined for slot. "<<crate<<"  "<<slot<<endl;  // this is bad and should not happen
     return 0;
   }
   if (fDebugFile) *fDebugFile << "THaSlotData::LoadIfSlot:  " << dec<<crate<<"  "<<slot<<"   p "<<hex<<p<<"  "<<*p<<"  "<<dec<<((UInt_t(*p))>>27)<<hex<<"  "<<pstop<<"  "<<fModule<<dec<<endl;
