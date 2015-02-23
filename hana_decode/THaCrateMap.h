@@ -96,6 +96,7 @@ class Decoder::THaCrateMap
      bool didslot[MAXSLOT];
      void incrNslot(int crate);
      void setUsed(int crate,int slot);
+     void setUnused(int crate,int slot);
      void setClear(int crate,int slot,bool clear);
      int  SetModelSize(int crate, int slot, UShort_t model );
 
@@ -224,6 +225,13 @@ void Decoder::THaCrateMap::setUsed(int crate, int slot)
   assert( crate >= 0 && crate < MAXROC && slot >= 0 && slot < MAXSLOT );
   crdat[crate].crate_used = true;
   crdat[crate].slot_used[slot] = true;
+}
+
+inline
+void Decoder::THaCrateMap::setUnused(int crate, int slot)
+{
+  assert( crate >= 0 && crate < MAXROC && slot >= 0 && slot < MAXSLOT );
+  crdat[crate].slot_used[slot] = false;
 }
 
 inline
