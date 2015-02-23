@@ -31,11 +31,13 @@ void F1TDCModule::Init() {
   Clear("");
   IsInit = kTRUE;
   fName = "F1 TDC 3201";
+  SetResolution(1);
+  if (fModelNum == 6401) SetResolution(0);
 }
 
 
 Bool_t F1TDCModule::IsSlot(UInt_t rdata) {
-  if (fDebugFile) *fDebugFile << "is slot ? "<<hex<<fHeader<<"  "<<fHeaderMask<<"  "<<rdata<<dec<<endl;
+  if (fDebugFile) *fDebugFile << "is F1TDC slot ? "<<hex<<fHeader<<"  "<<fHeaderMask<<"  "<<rdata<<dec<<endl;
   return ((rdata != 0xffffffff) & ((rdata & fHeaderMask)==fHeader));
 }
 
@@ -50,7 +52,7 @@ void F1TDCModule::Clear(const Option_t *opt) {
   memset(fTdcData, 0, NTDCCHAN*MAXHIT*sizeof(Int_t));
 }
 
-Int_t F1TDCModule::LoadSlot(THaSlotData *sldat, const Int_t *evbuffer, const Int_t *pstop) {
+Int_t F1TDCModule::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, const UInt_t *pstop) {
 // this increments evbuffer
   if (fDebugFile) *fDebugFile << "F1TDCModule:: loadslot "<<endl; 
   fWordsSeen = 0;
@@ -93,20 +95,20 @@ Int_t F1TDCModule::LoadSlot(THaSlotData *sldat, const Int_t *evbuffer, const Int
    const UInt_t DATA_CHK = F1_HIT_OFLW | F1_OUT_OFLW | F1_RES_LOCK;
    const UInt_t DATA_MARKER = 1<<23;
    // look at all the data
-   Int_t pevlen;
-   const Int_t *loc;
+   const UInt_t *loc;
    loc = evbuffer;
    Int_t chan, ihit;
-   Int_t fDebug=1;
-   while ((loc <= pstop) && ((*loc)&0xf8000000)==(fHeader&0xf8000000)) {
+   Int_t fDebug=0;
+   if(fDebug > 1 && fDebugFile!=0) *fDebugFile<< "Debug of F1TDC data, fResol =  "<<fResol<<"  model num  "<<fModelNum<<endl;
+   while ( loc <= pstop && IsSlot(*loc) ) {
       if ( !( (*loc) & DATA_MARKER ) ) {
 	// header/trailer word, to be ignored
-	 if(fDebug > 1)
-	    cout<< "[" << (loc-evbuffer) << "] header/trailer  0x"
+	 if(fDebug > 1 && fDebugFile!=0)
+	    *fDebugFile<< "[" << (loc-evbuffer) << "] header/trailer  0x"
       	      <<hex<<*loc<<dec<<endl;
         } else {
-	    if (fDebug > 1)
-	       cout<< "[" << (loc-evbuffer) << "] data            0x"
+	    if (fDebug > 1 && fDebugFile!=0)
+	       *fDebugFile<< "[" << (loc-evbuffer) << "] data            0x"
       	      <<hex<<*loc<<dec<<endl;
 	    Int_t chn = ((*loc)>>16) & 0x3f;  // internal channel number
 
@@ -137,8 +139,8 @@ Int_t F1TDCModule::LoadSlot(THaSlotData *sldat, const Int_t *evbuffer, const Int
 	     }
 		
 	      Int_t raw= (*loc) & 0xffff;
-	      if(fDebug > 1) {
-		cout<<" int_chn chan data "<<dec<<chn<<"  "<<chan
+	      if(fDebug > 1 && fDebugFile!=0) {
+		*fDebugFile<<" int_chn chan data "<<dec<<chn<<"  "<<chan
 	            <<"  0x"<<hex<<raw<<dec<<endl;
 	      }
               Int_t status;
@@ -147,8 +149,8 @@ Int_t F1TDCModule::LoadSlot(THaSlotData *sldat, const Int_t *evbuffer, const Int
               if (idx >= 0 && idx < MAXHIT*NTDCCHAN) fTdcData[idx] = raw;
               fWordsSeen++;
           }
-          loc++;
-        }
+       loc++;
+   }
   
   return fWordsSeen;
 }

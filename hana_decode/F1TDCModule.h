@@ -49,7 +49,7 @@ public:
 private:
  
 // Loads sldat and increments ptr to evbuffer
-   Int_t LoadSlot(THaSlotData *sldat,  const Int_t* evbuffer, const Int_t *pstop );  
+   Int_t LoadSlot(THaSlotData *sldat,  const UInt_t* evbuffer, const UInt_t *pstop );  
 
    Int_t fNumHits;
    Int_t fResol;
