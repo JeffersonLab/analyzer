@@ -31,7 +31,7 @@ public:
    void Init();
    Bool_t IsSlot(UInt_t rdata);
 
-   void SetResolution(Int_t which) {
+   void SetResolution(Int_t which=0) {
      fResol = IHI;
      if (which==0) fResol=ILO;
      return;
