@@ -30,7 +30,6 @@ class Decoder::CodaDecoder : public THaEvData {
   virtual Int_t LoadEvent(const UInt_t* evbuffer);    
 
   virtual Int_t GetNslots() { return fNSlotUsed; };
-  //  virtual Int_t FillCrateSlot(Int_t crate, Int_t ipt);
 
   virtual Int_t GetPrescaleFactor(Int_t trigger) const;
   
@@ -53,6 +52,7 @@ class Decoder::CodaDecoder : public THaEvData {
   void CompareRocs();
   void ChkFbSlot( Int_t roc, const UInt_t* evbuffer, Int_t ipt, Int_t istop );
   void ChkFbSlots();
+  void FindUsedSlots();  
 
   int init_slotdata(const THaCrateMap *map);
   void dump(const UInt_t* evbuffer);

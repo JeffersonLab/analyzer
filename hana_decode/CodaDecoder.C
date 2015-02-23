@@ -87,6 +87,7 @@ Int_t CodaDecoder::LoadEvent(const UInt_t* evbuffer)
     if( ret != HED_OK ) return ret;
     ret = init_slotdata(fMap);
     if( ret != HED_OK ) return ret;
+    FindUsedSlots();  
     if(first_decode) {
       first_decode=kFALSE;
     }
@@ -215,7 +216,7 @@ Int_t CodaDecoder::roc_decode( Int_t roc, const UInt_t* evbuffer,
 
       slot = slot + incrslot;
       if (!fMap->slotUsed(roc,slot)) {
-         continue;   // should not happen
+         continue;   
       }
       if (fMap->slotDone(slot)) {
          continue;
@@ -227,9 +228,8 @@ Int_t CodaDecoder::roc_decode( Int_t roc, const UInt_t* evbuffer,
      }
 
       nwords = crateslot[idx(roc,slot)]->LoadIfSlot(p, pstop); 
-      if (nwords > 0) p = p + nwords - 1;
-
       if (nwords > 0) {
+           p = p + nwords - 1;
            fMap->setSlotDone(slot);
            n_slots_done++;
            if(fDebugFile) *fDebugFile << "CodaDecode::  slot "<<slot<<"  is DONE    "<<nwords<<endl;
@@ -443,6 +443,20 @@ void CodaDecoder::CompareRocs(  )
   }
 }
   
+//_____________________________________________________________________________
+void CodaDecoder::FindUsedSlots() {
+  for (Int_t roc=0; roc<MAXROC; roc++) {
+    for (Int_t slot=0; slot<MAXSLOT; slot++) {
+      if ( !fMap->slotUsed(roc,slot) ) continue;
+      if ( !crateslot[idx(roc,slot)]->GetModule() ) {
+	cout << "Warning:  No module defined for crate "<<roc<<"   slot "<<slot<<endl;
+        fMap->setUnused(roc,slot);
+      }
+    }
+  }
+}
+
+
 //_____________________________________________________________________________
 void CodaDecoder::ChkFbSlot( Int_t roc, const UInt_t* evbuffer,
 				  Int_t ipt, Int_t istop )
