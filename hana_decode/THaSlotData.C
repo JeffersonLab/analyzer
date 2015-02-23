@@ -136,8 +136,8 @@ int THaSlotData::loadModule(const THaCrateMap *map) {
            return -1;
 	 }
 // Init, or get decoder rules.
-         if (fDebugFile) *fDebugFile << "THaSlotData:: about to init  module   "<<crate<<"  "<<slot<<" mod ptr "<<fModule<<endl;
-         fModule->SetSlot( crate, slot, map->getHeader(crate, slot), map->getMask(crate, slot));  
+         if (fDebugFile) *fDebugFile << "THaSlotData:: about to init  module   "<<crate<<"  "<<slot<<" mod ptr "<<fModule<<"  model num "<<map->getModel(crate,slot)<<endl;
+         fModule->SetSlot( crate, slot, map->getHeader(crate, slot), map->getMask(crate, slot), map->getModel(crate,slot));  
          fModule->Init(); 
          if (fDebugFile) { 
             fModule->SetDebugFile(fDebugFile);
@@ -159,7 +159,7 @@ Int_t THaSlotData::LoadIfSlot(const UInt_t* p, const UInt_t *pstop) {
   // returns how many words seen.
   Int_t wordseen = 0;
   if ( !fModule ) {  
-    //    cout << "THaSlotData::ERROR:   No module defined for slot. "<<crate<<"  "<<slot<<endl; // ok for now, but should be fatal.
+    cout << "THaSlotData::ERROR:   No module defined for slot. "<<crate<<"  "<<slot<<endl;  // this is fatal
     return 0;
   }
   if (fDebugFile) *fDebugFile << "THaSlotData::LoadIfSlot:  " << dec<<crate<<"  "<<slot<<"   p "<<hex<<p<<"  "<<*p<<"  "<<dec<<((UInt_t(*p))>>27)<<hex<<"  "<<pstop<<"  "<<fModule<<dec<<endl;
