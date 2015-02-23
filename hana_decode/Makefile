@@ -202,7 +202,7 @@ SRC = THaUsrstrutils.C THaCrateMap.C THaCodaData.C \
       CodaDecoder.C Module.C VmeModule.C FastbusModule.C  \
       Lecroy1877Module.C Lecroy1881Module.C Lecroy1875Module.C \
       Fadc250Module.C GenScaler.C Scaler560.C Scaler1151.C \
-      Scaler3800.C Scaler3801.C
+      Scaler3800.C Scaler3801.C F1TDCModule.C SkeletonModule.C
 # SimDecoder.C \
 
 PROGS = tstoo tstfadc tstio tdecpr tdecex prfact epicsd 

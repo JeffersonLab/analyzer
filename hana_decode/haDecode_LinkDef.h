@@ -17,6 +17,8 @@
 #pragma link C++ class Decoder::Scaler3801+;  
 #pragma link C++ class Decoder::Scaler560+;  
 #pragma link C++ class Decoder::Fadc250Module+;  
+#pragma link C++ class Decoder::F1TDCModule+;
+#pragma link C++ class Decoder::SkeletonModule+;
 #pragma link C++ class Decoder::THaCodaData+;
 #pragma link C++ class Decoder::THaCodaFile+;
 #pragma link C++ class Decoder::THaCrateMap+;
