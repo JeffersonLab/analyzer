@@ -148,7 +148,8 @@ Int_t Module::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const UInt_t 
   while (IsSlot( *p )) {
     if (p >= pstop) break;
     Decode(p);
-    nchan = GetNumChan();
+    nchan = GetNumChan(); 
+    p++;
     for (Int_t ichan = 0; ichan < nchan; ichan++) {
       fWordsSeen++;
       p++;
