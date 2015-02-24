@@ -23,8 +23,12 @@ VmeModule::~VmeModule() {
 }
 
 Bool_t VmeModule::IsSlot(UInt_t rdata) {
-  return ((rdata & fHeaderMask)==fHeader);
+  // Simplest version of IsSlot relies on a unique header.
+  if ((rdata & fHeaderMask)==fHeader) {
+    fWordsExpect = (rdata & fWdcntMask)>>fWdcntShift;
+    return kTRUE;
+  }
+  return kFALSE;
 }
-
 
 ClassImp(Decoder::VmeModule)
