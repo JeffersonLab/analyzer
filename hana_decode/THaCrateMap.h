@@ -67,6 +67,7 @@ class Decoder::THaCrateMap
      bool slotClear(int crate, int slot) const;     // Decide if not clear ea event
      void setSlotDone(int slot);                    // Used to speed up decoder
      void setSlotDone();                            // Used to speed up decoder
+     void setUnused(int crate,int slot);            // Disables this crate,slot
      int init(TString the_map);                     // Initialize from text-block
      int init(ULong64_t time = 0);                  // Initialize by Unix time.
      void print() const;
@@ -96,7 +97,6 @@ class Decoder::THaCrateMap
      bool didslot[MAXSLOT];
      void incrNslot(int crate);
      void setUsed(int crate,int slot);
-     void setUnused(int crate,int slot);
      void setClear(int crate,int slot,bool clear);
      int  SetModelSize(int crate, int slot, UShort_t model );
 
