@@ -4,6 +4,7 @@
 # Test Executables:
 # tstoo    --  tests of OO decoder
 # tstfadc  --  tests of FADC 250 class
+# tstskel  --  test of SkeltonModule
 # tstcoda  --  test of abstract interface to THaCodaFile and THaEtClient.
 # tstio    --  simple tests of CODA I/O from a file.
 # tdecpr   --  test of decoder with self-explanatory printouts.
@@ -205,7 +206,7 @@ SRC = THaUsrstrutils.C THaCrateMap.C THaCodaData.C \
       Scaler3800.C Scaler3801.C F1TDCModule.C SkeletonModule.C
 # SimDecoder.C \
 
-PROGS = tstoo tstfadc tstio tdecpr tdecex prfact epicsd 
+PROGS = tstoo tstfadc tstskel tstio tdecpr tdecex prfact epicsd 
 # If you want to use the ET system at Jlab.
 ifdef ONLINE_ET
   SRC += THaEtClient.C
@@ -274,6 +275,10 @@ tstoo: tstoo_main.o $(DECODE_OBJS) $(SRC)
 tstfadc: tstfadc_main.o $(DECODE_OBJS) $(SRC) $(MAINOBJS)
 	rm -f $@
 	$(CXX) $(CXXFLAGS) -o $@ tstfadc_main.o $(DECODE_OBJS) $(ALL_LIBS) $(EVIO_LIB) $(MAINOBJS)
+
+tstskel: tstskel_main.o $(DECODE_OBJS) $(SRC) $(MAINOBJS)
+	rm -f $@
+	$(CXX) $(CXXFLAGS) -o $@ tstskel_main.o $(DECODE_OBJS) $(ALL_LIBS) $(EVIO_LIB) $(MAINOBJS)
 
 tstio: tstio_main.o $(DECODE_OBJS) $(SRC) $(MAINOBJS)
 	rm -f $@
