@@ -39,6 +39,7 @@ CodaDecoder::CodaDecoder()
   memset(fbfound, 0, MAXROC*MAXSLOT*sizeof(Int_t));
   fDebugFile = 0;
   fDebug=0;
+  fNeedInit=true;
 }
 
 //_____________________________________________________________________________
@@ -74,7 +75,7 @@ Int_t CodaDecoder::LoadEvent(const UInt_t* evbuffer)
     *fDebugFile << "CodaDecode:: dumping "<<endl;
     dump(evbuffer);
   }
-  if (first_decode || fNeedInit) {
+  if (first_decode || fNeedInit) { 
     ret = init_cmap();
     if (fDebugFile) {
          *fDebugFile << "\n CodaDecode:: Print of Crate Map"<<endl;
@@ -86,9 +87,7 @@ Int_t CodaDecoder::LoadEvent(const UInt_t* evbuffer)
     ret = init_slotdata(fMap);
     if( ret != HED_OK ) return ret;
     FindUsedSlots();  
-    if(first_decode) {
-      first_decode=kFALSE;
-    }
+    if(first_decode) first_decode=kFALSE;
   }
   if( fDoBench ) fBench->Begin("clearEvent");
   for( Int_t i=0; i<fNSlotClear; i++ ) crateslot[fSlotClear[i]]->clearEvent();
@@ -189,7 +188,7 @@ Int_t CodaDecoder::roc_decode( Int_t roc, const UInt_t* evbuffer,
       firstslot=minslot;
       incrslot = 1;
   }
-  
+
   if (fDebugFile) {
     *fDebugFile << "CodaDecode:: roc_decode:: roc#  "<<dec<<roc<<" nslot "<<Nslot<<endl;
     *fDebugFile << "CodaDecode:: roc_decode:: firstslot "<<dec<<firstslot<<"  incrslot "<<incrslot<<endl;
@@ -223,7 +222,7 @@ Int_t CodaDecoder::roc_decode( Int_t roc, const UInt_t* evbuffer,
       ++n_slots_checked;
 
      if (fDebugFile) {
-          *fDebugFile<< "roc_decode:: slot logic "<<slot<<"  "<<firstslot<<"  "<<n_slots_checked<<"  "<<Nslot-n_slots_done<<endl;
+       *fDebugFile<< "roc_decode:: slot logic "<<roc<<"  "<<slot<<"  "<<firstslot<<"  "<<n_slots_checked<<"  "<<Nslot-n_slots_done<<endl;
      }
 
       nwords = crateslot[idx(roc,slot)]->LoadIfSlot(p, pstop); 
