@@ -37,27 +37,21 @@ public:
    SkeletonModule(Int_t crate, Int_t slot);  
    virtual ~SkeletonModule();  
 
-   void Init();
-   Bool_t IsSlot(UInt_t rdata);
-
-   Int_t GetNumHits() { return fNumHits; };
-
+   using VmeModule::IsSlot;
+   using Module::GetNumChan;
+   using Module::Init;
    using Module::GetData;
    using Module::LoadSlot;
    
-   Int_t GetData(Int_t chan, Int_t hit);
+   Int_t GetData(Int_t chan);
+   void Init();
+   void Clear(const Option_t *opt);
 
 private:
- 
-// Loads sldat and increments ptr to evbuffer
-   Int_t LoadSlot(THaSlotData *sldat,  const Int_t* evbuffer, const Int_t *pstop );  
 
    Int_t fNumHits;
-   Int_t *fTdcData;  // Raw data (either samples or pulse integrals)
-   Bool_t IsInit; 
-   void Clear(const Option_t *opt);
+
    static TypeIter_t fgThisType;
-   Int_t slotmask, chanmask, datamask;
    ClassDef(SkeletonModule,0)  //  Skeleton of a module; make your replacements
 
 };
