@@ -52,7 +52,7 @@ public:
 // Loads slot data
   virtual Int_t LoadSlot(THaSlotData *sldat,  const UInt_t *evbuffer, const UInt_t *pstop );  
 
-  virtual Int_t GetNumChan() { return 0; };
+  virtual Int_t GetNumChan() { return fNumChan; };
 
   virtual Int_t GetNumEvents() { return 0; };  
   virtual Int_t GetMode() { return 0; };
@@ -60,7 +60,7 @@ public:
   virtual void SetSlot(Int_t crate, Int_t slot, Int_t header=0, Int_t mask=0, Int_t modelnum=0) 
   { fCrate=crate; fSlot=slot; fHeader=header; fHeaderMask=mask; fModelNum=modelnum;};
 
-  virtual void Init() { fModelNum=-1; };
+  virtual void Init();
 
   virtual void Clear(const Option_t *opt) { fWordsSeen = 0; };
 
@@ -85,11 +85,15 @@ protected:
   static TypeIter_t DoRegister( const ModuleType& registration_info );
 
   Int_t fCrate, fSlot;
+  std::vector<Int_t> fData;  // Raw data
   UInt_t fHeader, fHeaderMask;
   Int_t fWordsExpect, fWordsSeen;
   Int_t fWdcntMask, fWdcntShift;
-  Int_t fModelNum;
- 
+  Int_t fModelNum, fNumChan;
+  Bool_t IsInit; 
+
+  static TypeIter_t fgThisType;
+
   ofstream *fDebugFile;
 
   Module(const Module& rhs); 
@@ -97,8 +101,6 @@ protected:
   
 
 private:
-
-  static TypeIter_t fgThisType;
 
   ClassDef(Decoder::Module,0)  // A module in a crate and slot
 

@@ -48,14 +48,16 @@ TypeIter_t SkeletonModule::fgThisType = DoRegister( ModuleType( "Decoder::Skelet
 
 
 Module::Module(Int_t crate, Int_t slot) : fCrate(crate), fSlot(slot), fWordsExpect(0) { 
-  fHeader=-1;
-  fHeaderMask=-1;
+  // Warning: see comments at Init()
+  fHeader=0;
+  fHeaderMask=0xffffffff;
   fWordsSeen = 0;
   fWdcntMask=0;
   fWdcntShift=0;
   fDebugFile=0;
   fModelNum = -1;
   fName = "";
+  fNumChan = 0;
 }
 
 Module::~Module() { 
@@ -65,7 +67,6 @@ Module::~Module() {
 Module::Module(const Module& rhs) {
    Create(rhs);
 }
-
 
 Module &Module::operator=(const Module& rhs) {
   if ( &rhs != this) {
@@ -83,10 +84,41 @@ void Module::Create(const Module& rhs) {
 
 }
 
+void Module::Init() {
+// Suggestion: call this Init() before calling the inherting class's Init.
+// Otherwise some variables may be undefined.  The "factory" method
+// using TClass::New does NOT call the c'tor of this base class !!
+// Make sure all your variables are defined.
+  fHeader=0;
+  fHeaderMask=0xffffffff;
+  fWordsSeen = 0;
+  fWordsExpect = 0;
+  fWdcntMask=0;
+  fWdcntShift=0;
+  fDebugFile=0;
+  fModelNum = -1;
+  fName = "";
+  fNumChan = 0;
+}
+
+
+Bool_t Module::IsSlot(UInt_t rdata) {
+// Simplest version of IsSlot relies on a unique header.
+ if ((rdata & fHeaderMask)==fHeader) {
+    fWordsExpect = (rdata & fWdcntMask)>>fWdcntShift;
+    return kTRUE;
+  }
+  return kFALSE;
+}
+
 void Module::DoPrint() {
   if (fDebugFile) {
     *fDebugFile << "Module   name = "<<fName<<endl;
     *fDebugFile << "Module::    Crate  "<<fCrate<<"     slot "<<fSlot<<endl;
+    *fDebugFile << "Module::    fWdcntMask "<<hex<<fWdcntMask<<dec<<endl;
+    *fDebugFile << "Module::    fHeader "<<hex<<fHeader<<endl;
+    *fDebugFile << "Module::    fHeaderMask "<<hex<<fHeaderMask<<dec<<endl;
+    *fDebugFile << "Module::    num chan "<<fNumChan<<endl;
   }
 }
 
@@ -125,38 +157,31 @@ TypeIter_t Module::DoRegister( const ModuleType& info )
   return ins.first;
 }
 
-Bool_t Module::IsSlot(UInt_t rdata) {
-  // Simplest version of IsSlot relies on a unique header.
-  // For some modules you may want to have "rules" like possibly 
-  // 2 headers and a different rule for where to get fWordsExpect, etc.
-
-  if ((rdata & fHeaderMask)==fHeader) {
-    fWordsExpect = (rdata & fWdcntMask)>>fWdcntShift;
-    return kTRUE;
-  }
-  if (fWordsSeen < fWordsExpect) return kTRUE;
-  return kFALSE;
-}
-
 Int_t Module::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const UInt_t *pstop) {
 // This is a simple, default method for loading a slot
   const UInt_t *p = evbuffer;
-//  cout << "Module::LoadSlot "<<endl;
-  if (fDebugFile) *fDebugFile << "Module:: Loadslot "<<endl; 
+  if (fDebugFile) {
+       *fDebugFile << "Module:: Loadslot "<<endl; 
+       *fDebugFile << "header  0x"<<hex<<fHeader<<dec<<endl; 
+       *fDebugFile << "masks  "<<hex<<fHeaderMask<<endl;
+  }
   if (!fHeader) cerr << "Module::LoadSlot::ERROR : no header ?"<<endl;
   Int_t nchan,mdata,rdata;
+  fWordsSeen=0;
   while (IsSlot( *p )) {
     if (p >= pstop) break;
+    if (fDebugFile) *fDebugFile << "IsSlot ... data = "<<*p<<endl;
+    p++;
     Decode(p);
     nchan = GetNumChan(); 
-    p++;
     for (Int_t ichan = 0; ichan < nchan; ichan++) {
       fWordsSeen++;
       p++;
       if (p >= pstop) break;
-      rdata = GetData(ichan);
+      rdata = *p;
       mdata = rdata;
       sldat->loadData(ichan, mdata, rdata);
+      if (ichan < fData.size()) fData[ichan]=rdata;
     }
   }
   return fWordsSeen;
