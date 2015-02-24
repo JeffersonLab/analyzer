@@ -31,6 +31,8 @@ void F1TDCModule::Init() {
   Clear("");
   IsInit = kTRUE;
   fName = "F1 TDC 3201";
+  fNumChan = 32;
+  fWdcntMask=0;
   SetResolution(1);
   if (fModelNum == 6401) SetResolution(0);
 }
