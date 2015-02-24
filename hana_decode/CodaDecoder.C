@@ -162,6 +162,9 @@ Int_t CodaDecoder::roc_decode( Int_t roc, const UInt_t* evbuffer,
   Int_t maxslot = fMap->getMaxSlot(roc);
   Int_t retval = HED_OK;
   Int_t nwords;
+  synchmiss = false;
+  synchextra = false;
+  buffmode = false;
   const UInt_t* p      = evbuffer+ipt;    // Points to ROC ID word (1 before data)
   const UInt_t* pstop  =evbuffer+istop;   // Points to last word of data
 
