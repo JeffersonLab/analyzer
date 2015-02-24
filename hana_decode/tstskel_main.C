@@ -1,10 +1,10 @@
 // Test of Skeleton Module class
 // which is a test class for modules.
 //
-// R. Michaels, Jan 2015
+// R. Michaels, Feb, 2015
 
 
-#define MYTYPE 0
+#define MYTYPE 5
 
 #include <iostream>
 #include <fstream>
@@ -30,10 +30,9 @@
 using namespace std;
 using namespace Decoder;
 
-TH1F *h1,*h2,*h3,*h4,*h5;
-TH1F *hinteg;
+TH1F *h1;
 
-void dump(int *buffer, ofstream *file);
+void dump(UInt_t *buffer, ofstream *file);
 void process(Int_t i, THaEvData *evdata, ofstream *file);
 
 int main(int argc, char* argv[])
@@ -48,19 +47,14 @@ int main(int argc, char* argv[])
    THaCodaFile datafile(filename);
    THaEvData *evdata = new CodaDecoder();
 
-   evdata->SetDebug(1);
-   evdata->SetDebugFile(debugfile);
+   //   evdata->SetDebug(1);
+   //   evdata->SetDebugFile(debugfile);
 
 // Initialize root and output
-  TROOT fadcana("fadcroot","Hall A FADC analysis, 1st version");
-  TFile hfile("fadc.root","RECREATE","FADC data");
+  TROOT fadcana("tskelroot","Hall A test analysis");
+  TFile hfile("tskel.root","RECREATE","skeleton module data");
 
-  h1 = new TH1F("h1","snapshot 1",1020,-5,505);
-  h2 = new TH1F("h2","snapshot 2",1020,-5,505);
-  h3 = new TH1F("h3","snapshot 3",1020,-5,505);
-  h4 = new TH1F("h4","snapshot 4",1020,-5,505);
-  h5 = new TH1F("h5","snapshot 5",1020,-5,505);
-  hinteg = new TH1F("hinteg","Integral of ADC",1000,50000,120000);
+  h1 = new TH1F("h1","raw data",201,-1,200.);
 
     // Loop over events
       int NUMEVT=22;
@@ -76,11 +70,11 @@ int main(int argc, char* argv[])
            exit(1);
 	 } else {
 
-            int *data = datafile.getEvBuffer();
+            UInt_t *data = datafile.getEvBuffer();
 	    dump(data, debugfile);
 
             *debugfile << "\nAbout to Load Event "<<endl;
-            evdata->LoadEvent( data );   
+	    evdata->LoadEvent( data );   
             *debugfile << "\nFinished with Load Event "<<endl;
             
             if (evdata->GetEvType() == MYTYPE) {
@@ -98,11 +92,11 @@ int main(int argc, char* argv[])
 }
      
 
-void dump( int* data, ofstream *debugfile) {
+void dump( UInt_t* data, ofstream *debugfile) {
     // Crude event dump
-            int evnum = data[4];
-            int len = data[0] + 1;
-            int evtype = data[1]>>16;
+            UInt_t evnum = data[4];
+            UInt_t len = data[0] + 1;
+            UInt_t evtype = data[1]>>16;
             *debugfile << "\n\n Event number " << dec << evnum << endl;
             *debugfile << " length " << len << " type " << evtype << endl;
             int ipt = 0;
@@ -134,48 +128,20 @@ void process (Int_t iev, THaEvData *evdata, ofstream *debugfile) {
         *debugfile << "Physics trigger " << endl;
      }
 
-     Module *fadc;
+     Module *fskel;
 
-     fadc = evdata->GetModule(9,5);
-     *debugfile << "main:  fadc ptr = "<<fadc<<endl;
+     fskel = evdata->GetModule(5,16);
+     *debugfile << "main:  fskel ptr = "<<fskel<<endl;
             
-     if (fadc) {
-	   *debugfile << "main: num events "<<fadc->GetNumEvents()<<endl;
-	   *debugfile << "main: fadc mode "<<fadc->GetMode()<<endl;
-	   for (Int_t i=0; i < 500; i++) {
-	     *debugfile << "main:  fadc data on ch. 11   "<<dec<<i<<"  "<<fadc->GetData(1, 11,i)<<endl;
-             if (fadc->GetMode()==1) {
-               if (iev==5) h1->Fill(i,fadc->GetData(1,11,i));
-               if (iev==6) h2->Fill(i,fadc->GetData(1,11,i));
-               if (iev==7) h3->Fill(i,fadc->GetData(1,11,i));
-               if (iev==8) h4->Fill(i,fadc->GetData(1,11,i));
-               if (iev==9) h5->Fill(i,fadc->GetData(1,11,i));
-	     }
-             if (fadc->GetMode()==2) {
-               hinteg->Fill(fadc->GetData(1,11,i),1.);
-	     }
+     if (fskel) {
+	   *debugfile << "fskel: num events "<<fskel->GetNumChan()<<endl;
+	   for (Int_t i=0; i < fskel->GetNumChan(); i++) {
+	     *debugfile << "main:  fskel data on ch.   "<<dec<<i<<"   "<<fskel->GetData(i)<<"   what "<< -1.0e-6*fskel->GetData(i) << endl;
+             h1->Fill(-1.0e-6*fskel->GetData(i));
 	   }
      }
 
-// Now we want data from a particular crate and slot.
-// E.g. crates are 1,2,3,13,14,15 (roc numbers), Slots are 1,2,3... 
-// This is like what one might do in a detector decode() routine.
 
-      int crate = 1;    // for example
-      int slot = 25;
-
-//  Here are raw 32-bit CODA words for this crate and slot
-      *debugfile << "Raw Data Dump for crate "<<dec<<crate<<" slot "<<slot<<endl; 
-      int hit;
-      *debugfile << "Num raw "<<evdata->GetNumRaw(crate,slot)<<endl;
-      for(hit=0; hit<evdata->GetNumRaw(crate,slot); hit++) {
-        *debugfile<<dec<<"raw["<<hit<<"] =   ";
-        *debugfile<<hex<<evdata->GetRawData(crate,slot,hit)<<endl;  
-      }
-// You can alternatively let evdata print out the contents of a crate and slot:
-      *debugfile << "To print slotdata "<<crate<<"  "<<slot<<endl;
-      //      evdata->PrintSlotData(crate,slot);
-      *debugfile << "finished with print slot data"<<endl;
 }
 
 
