@@ -48,6 +48,7 @@ THaSlotData::THaSlotData(int cra, int slo) :
 
 THaSlotData::~THaSlotData() {
   if( !didini ) return;
+  if(fModule) delete fModule;
   delete [] numHits;
   delete [] xnumHits;
   delete [] chanlist;
@@ -99,7 +100,7 @@ int THaSlotData::loadModule(const THaCrateMap *map) {
 
   int modelnum = map->getModel(crate, slot);
 
-  Int_t err=0;
+   Int_t err=0;
 
    for( Module::TypeIter_t it = Module::fgModuleTypes().begin();
        !err && it != Module::fgModuleTypes().end(); ++it ) {
@@ -135,10 +136,10 @@ int THaSlotData::loadModule(const THaCrateMap *map) {
 	   if (fDebugFile) *fDebugFile << "failure to make module on crate "<<dec<<crate<<"  slot "<<slot<<endl;
            return -1;
 	 }
-// Init, or get decoder rules.
-         if (fDebugFile) *fDebugFile << "THaSlotData:: about to init  module   "<<crate<<"  "<<slot<<" mod ptr "<<fModule<<"  model num "<<map->getModel(crate,slot)<<endl;
-         fModule->SetSlot( crate, slot, map->getHeader(crate, slot), map->getMask(crate, slot), map->getModel(crate,slot));  
+// Init first, then SetSlot
          fModule->Init(); 
+         fModule->SetSlot( crate, slot, map->getHeader(crate, slot), map->getMask(crate, slot), map->getModel(crate,slot));  
+         if (fDebugFile) *fDebugFile << "THaSlotData:: about to init  module   "<<crate<<"  "<<slot<<" mod ptr "<<fModule<<"  header "<<hex<<map->getHeader(crate,slot)<<"  model num "<<dec<<map->getModel(crate,slot)<<endl;
          if (fDebugFile) { 
             fModule->SetDebugFile(fDebugFile);
    	    fModule->DoPrint();
@@ -165,6 +166,7 @@ Int_t THaSlotData::LoadIfSlot(const UInt_t* p, const UInt_t *pstop) {
     return 0;
   }
   if (fDebugFile) *fDebugFile << "THaSlotData::LoadIfSlot:  " << dec<<crate<<"  "<<slot<<"   p "<<hex<<p<<"  "<<*p<<"  "<<dec<<((UInt_t(*p))>>27)<<hex<<"  "<<pstop<<"  "<<fModule<<dec<<endl;
+  fModule->DoPrint();
   if ( !fModule->IsSlot( *p ) ) {
     if(fDebugFile) *fDebugFile << "THaSlotData:: Not slot ... return ... "<<endl;
     return 0;
