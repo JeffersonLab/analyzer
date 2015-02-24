@@ -1,4 +1,4 @@
-/////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
 //
 //   CodaDecoder
 //
@@ -50,8 +50,7 @@ CodaDecoder::~CodaDecoder()
 
 //_____________________________________________________________________________
 Int_t CodaDecoder::GetPrescaleFactor(Int_t trigger_type) const
-{// PUBLIC
-
+{
   // To get the prescale factors for trigger number "trigger_type"
   // (valid types are 1,2,3...)
   //  if (fgPsFact) return fgPsFact->GetPrescaleFactor(trigger_type);
@@ -60,7 +59,7 @@ Int_t CodaDecoder::GetPrescaleFactor(Int_t trigger_type) const
 
 //_____________________________________________________________________________
 Int_t CodaDecoder::LoadEvent(const UInt_t* evbuffer)
-{//PUBLIC
+{
   // Main engine for decoding, called by public LoadEvent() methods
   // The crate map argument is ignored. Use SetCrateMapName instead
  static Int_t fdfirst=1; 
@@ -79,7 +78,6 @@ Int_t CodaDecoder::LoadEvent(const UInt_t* evbuffer)
     ret = init_cmap();
     if (fDebugFile) {
          *fDebugFile << "\n CodaDecode:: Print of Crate Map"<<endl;
-  if (fDebugFile) *fDebugFile << "\n here 0000 "<<endl;
          fMap->print(fDebugFile);
     } else {
       fMap->print();
@@ -203,13 +201,11 @@ Int_t CodaDecoder::roc_decode( Int_t roc, const UInt_t* evbuffer,
          *fDebugFile << "CodaDecode::roc_decode:: evbuff "<<(p-evbuffer)<<"  "<<hex<<*p<<dec<<endl;
          *fDebugFile << "CodaDecode::roc_decode:: n_slots_done "<<n_slots_done<<"  "<<firstslot<<endl;
     }
+    
     LoadIfFlagData(p); 
 
     n_slots_checked = 0;
     slot = firstslot - incrslot;
-
-    if(fDebugFile) *fDebugFile << "CodaDecode:: slot logic "<<n_slots_checked<<" "<<Nslot<<"  "<<n_slots_done<<endl;
-
     slotdone = kFALSE;
 
     while(!slotdone && n_slots_checked < Nslot-n_slots_done && slot >= 0 && slot < MAXSLOT) {
@@ -445,11 +441,15 @@ void CodaDecoder::CompareRocs(  )
   
 //_____________________________________________________________________________
 void CodaDecoder::FindUsedSlots() {
+  // Disable slots for which no module is defined.
+  // This speeds up the decoder.
   for (Int_t roc=0; roc<MAXROC; roc++) {
     for (Int_t slot=0; slot<MAXSLOT; slot++) {
       if ( !fMap->slotUsed(roc,slot) ) continue;
       if ( !crateslot[idx(roc,slot)]->GetModule() ) {
-	cout << "Warning:  No module defined for crate "<<roc<<"   slot "<<slot<<endl;
+	cout << "WARNING:  No module defined for crate "<<roc<<"   slot "<<slot<<endl;
+        cout << "Check db_cratemap.dat for module that is undefined"<<endl;
+        cout << "This crate, slot will be ignored"<<endl;
         fMap->setUnused(roc,slot);
       }
     }
@@ -474,7 +474,7 @@ void CodaDecoder::ChkFbSlot( Int_t roc, const UInt_t* evbuffer,
 void CodaDecoder::ChkFbSlots()
 {
   // This checks the fastbus slots to see if slots are appearing in both the
-  // data and the cratemap.  If they appear in one but not the other, an warning
+  // data and the cratemap.  If they appear in one but not the other, a warning
   // is issued, which usually means the cratemap is wrong.
   Int_t slotstat[MAXROC*MAXSLOT];
   for (Int_t iroc=0; iroc<MAXROC; iroc++) {
@@ -515,7 +515,7 @@ void CodaDecoder::ChkFbSlots()
 
 //_____________________________________________________________________________
 void CodaDecoder::SetRunTime( ULong64_t tloc )
-{// PUBLIC
+{
   // Set run time and re-initialize crate map (and possibly other
   // database parameters for the new time.
 
