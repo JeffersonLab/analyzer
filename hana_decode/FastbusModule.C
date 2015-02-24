@@ -26,14 +26,6 @@ FastbusModule::~FastbusModule() {
 }
 
 void FastbusModule::Init() {
-  if (fCrate < 0 || fCrate > MAXROC) {
-       cerr << "FastBusModule::ERROR: crate out of bounds"<<endl;
-       fCrate = 0;
-  }
-  if (fSlot < 0 || fSlot > MAXSLOT_FB) {
-       cerr << "FastBusModule::ERROR: slot out of bounds"<<endl;
-       fSlot = 0;
-  }
   fSlotMask = 0xf8000000;
   fSlotShift = 27;
   fDebugFile=0;
@@ -47,6 +39,18 @@ Int_t FastbusModule::Decode(const UInt_t *evbuffer) {
 }
 
 Int_t FastbusModule::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const UInt_t *pstop) {
+  static int first_load=kTRUE;
+  if (first_load) {
+    if (fCrate < 0 || fCrate > MAXROC) {
+       cerr << "FastBusModule::ERROR: crate out of bounds"<<endl;
+       fCrate = 0;
+    }
+    if (fSlot < 0 || fSlot > MAXSLOT_FB) {
+       cerr << "FastBusModule::ERROR: slot out of bounds"<<endl;
+       fSlot = 0;
+    }
+    first_load=kFALSE;
+  }
   fWordsSeen = 0;
   fHeader=0;
   const UInt_t *p = evbuffer;
