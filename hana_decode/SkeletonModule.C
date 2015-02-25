@@ -6,6 +6,8 @@
 //
 /////////////////////////////////////////////////////////////////////
 
+#define LIKEV792 1
+
 #include "SkeletonModule.h"
 #include "VmeModule.h"
 #include "THaEvData.h"
@@ -35,6 +37,30 @@ void SkeletonModule::Init() {
   IsInit = kTRUE;
   fName = "Skeleton Module (example)";
 }
+
+#ifdef LIKEV792
+Int_t SkeletonModule::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const UInt_t *pstop) {
+// This is a simple, default method for loading a slot
+  const UInt_t *p = evbuffer;
+  fWordsSeen = 0;
+  Int_t chan, raw, status;
+//  cout << "version like V792"<<endl;
+  ++p; 
+  Int_t nword=*p-2;
+  ++p;
+  for (Int_t i=0;i<nword;i++) {
+       ++p;
+       chan=((*p)&0x00ff0000)>>16;
+       raw=((*p)&0x00000fff);	      
+       status = sldat->loadData("adc",chan,raw,raw);
+       fWordsSeen++;
+       if (chan < fData.size()) fData[chan]=raw;
+//       cout << "word   "<<i<<"   "<<chan<<"   "<<raw<<endl;
+       if( status != SD_OK ) return -1;
+  }
+  return fWordsSeen;
+}
+#endif
 
 Int_t SkeletonModule::GetData(Int_t chan) {
   if (chan < 0 || chan > fNumChan) return 0;

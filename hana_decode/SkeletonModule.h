@@ -10,14 +10,18 @@
 //
 //   other steps
 //   1. Register in Module.C (add "DoRegister" call and include the header)
-//    note: the number (4444) that is registered must appear in db_cratemap.dat
+//   note: the number (4444) that is registered must appear in db_cratemap.dat
 //   2. Add to namespace Decoder.h
 //   3. Add to Makefile
 //   4. Add to haDecode_LinkDef.h
 //   5. Add line(s) for [crate,slot] in db_cratemap.dat
-//  
+//
+//   if the pre-compiler flag "LIKEV792" is defined, the decoding is
+//   sort of like a V792 ... as an example.  
 //
 /////////////////////////////////////////////////////////////////////
+
+#define LIKEV792 1
 
 #define NTDCCHAN   32
 #define MAXHIT    100
@@ -46,6 +50,11 @@ public:
    Int_t GetData(Int_t chan);
    void Init();
    void Clear(const Option_t *opt);
+
+#ifdef LIKEV792
+// Loads slot data.  if you don't define this, the base class's method is used
+  virtual Int_t LoadSlot(THaSlotData *sldat,  const UInt_t *evbuffer, const UInt_t *pstop );  
+#endif
 
 private:
 

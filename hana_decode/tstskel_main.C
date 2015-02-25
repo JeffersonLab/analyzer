@@ -30,7 +30,7 @@
 using namespace std;
 using namespace Decoder;
 
-TH1F *h1;
+TH1F *h1, *h2;
 
 void dump(UInt_t *buffer, ofstream *file);
 void process(Int_t i, THaEvData *evdata, ofstream *file);
@@ -51,13 +51,14 @@ int main(int argc, char* argv[])
    //   evdata->SetDebugFile(debugfile);
 
 // Initialize root and output
-  TROOT fadcana("tskelroot","Hall A test analysis");
-  TFile hfile("tskel.root","RECREATE","skeleton module data");
+  TROOT fadcana("tstskelroot","Hall A test analysis");
+  TFile hfile("tstskel.root","RECREATE","skeleton module data");
 
-  h1 = new TH1F("h1","raw data",201,-1,200.);
+  h1 = new TH1F("h1","num raw data",100,-1,100.);
+  h2 = new TH1F("h2","raw data",201,-1,200.);
 
     // Loop over events
-      int NUMEVT=22;
+      int NUMEVT=5000;
       Int_t jnum=1;
       for (int iev=0; iev<NUMEVT; iev++) {
    	 int status = datafile.codaRead();  
@@ -135,9 +136,11 @@ void process (Int_t iev, THaEvData *evdata, ofstream *debugfile) {
             
      if (fskel) {
 	   *debugfile << "fskel: num events "<<fskel->GetNumChan()<<endl;
+           h1->Fill(fskel->GetNumChan());
 	   for (Int_t i=0; i < fskel->GetNumChan(); i++) {
 	     *debugfile << "main:  fskel data on ch.   "<<dec<<i<<"   "<<fskel->GetData(i)<<"   what "<< -1.0e-6*fskel->GetData(i) << endl;
-             h1->Fill(-1.0e-6*fskel->GetData(i));
+	     //             h2->Fill(-1.0e-6*fskel->GetData(i));
+             h2->Fill(fskel->GetData(i));
 	   }
      }
 
