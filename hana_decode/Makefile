@@ -10,9 +10,9 @@
 # tdecpr   --  test of decoder with self-explanatory printouts.
 # tdecex   --  test of decoder, example for a use by a detector class.
 # etclient --  test of ET connection for online data.
-# prfact   --  standalone code to print the prescale factors and exit.  
+# prfact   --  standalone code to print the prescale factors and exit.
 # epicsd   --  test of EPICS data
-# 
+#
 # To understand how to use decoding classes, look at the 'main'
 # routines tstcoda_main.C, tstio_main.C, tdecpr_main.C, tdecex_main.C etc
 # corresponding to the above executables.  Also see haGenDetTest.C
@@ -25,7 +25,7 @@
 # name and version of this release
 VERS = hana_decode_1.6
 
-# If one defines STANDALONE, the library and test execs are compiled 
+# If one defines STANDALONE, the library and test execs are compiled
 # independently of the rest of the analyzer.  Normally this is commented out.
 # export STANDALONE = 1
 
@@ -39,8 +39,8 @@ export MAINDIR = ../src
 # CODA environment variable must be set.  Examples are
 #   CODA = /adaqfs/coda/2.2        (in adaq cluster)
 #   CODA = /data7/user/coda/2.2    (on haplix cluster)
-# User's $LD_LIBRARY_PATH must include $CODA/$OSNAME/lib  (OSNAME = SunOS or Linux) 
-# Example:  OSNAME=Linux ; export OSNAME 
+# User's $LD_LIBRARY_PATH must include $CODA/$OSNAME/lib  (OSNAME = SunOS or Linux)
+# Example:  OSNAME=Linux ; export OSNAME
 # LD_LIBRARY_PATH=/app/root/lib:$CODA/$OSNAME/lib:.   ; export LD_LIBRARY_PATH
 # export ONLINE_ET = 1
 
@@ -149,7 +149,7 @@ ifeq ($(OSNAME),SunOS)
    LIBET = $(CODA)/SunOS/lib/libet.so
    ONLIBS = $(LIBET) -lposix4 -lnsl -lsocket -lresolv
    LIBS = $(GLIB)
-   ALL_LIBS = $(LIBS) 
+   ALL_LIBS = $(LIBS)
 
 endif
 
@@ -199,14 +199,13 @@ GLIBS        += $(ROOTGLIBS) $(SYSLIBS)
 
 SRC = THaUsrstrutils.C THaCrateMap.C THaCodaData.C \
       THaEpics.C THaFastBusWord.C THaCodaFile.C THaSlotData.C \
-      THaEvData.C THaCodaDecoder.C \
+      THaEvData.C THaCodaDecoder.C SimDecoder.C \
       CodaDecoder.C Module.C VmeModule.C FastbusModule.C  \
       Lecroy1877Module.C Lecroy1881Module.C Lecroy1875Module.C \
       Fadc250Module.C GenScaler.C Scaler560.C Scaler1151.C \
       Scaler3800.C Scaler3801.C F1TDCModule.C SkeletonModule.C
-# SimDecoder.C \
 
-PROGS = tstoo tstfadc tstskel tstio tdecpr tdecex prfact epicsd 
+PROGS = tstoo tstfadc tstskel tstio tdecpr tdecex prfact epicsd
 # If you want to use the ET system at Jlab.
 ifdef ONLINE_ET
   SRC += THaEtClient.C
@@ -263,12 +262,12 @@ endif
 # Test programs for standalone tests of decoder.
 # Need a few objects from MAINDIR because of some links to those classes.
 ifdef STANDALONE
-   MAINOBJS =  
+   MAINOBJS =
 else
    MAINOBJS = ../libHallA.so ../libscaler.so
 endif
 
-tstoo: tstoo_main.o $(DECODE_OBJS) $(SRC) 
+tstoo: tstoo_main.o $(DECODE_OBJS) $(SRC)
 	rm -f $@
 	$(CXX) $(CXXFLAGS) -o $@ tstoo_main.o $(DECODE_OBJS) $(ALL_LIBS) $(EVIO_LIB) $(MAINOBJS)
 
@@ -288,7 +287,7 @@ tdecpr: $(DECODE_OBJS) $(SRC) tdecpr_main.o $(HEAD) $(SRC) $(MAINOBJS)
 	rm -f $@
 	$(CXX) $(CXXFLAGS) -o $@ tdecpr_main.o $(DECODE_OBJS) $(ALL_LIBS) $(EVIO_LIB) $(MAINOBJS)
 
-tdecex: $(DECODE_OBJS) $(SRC) tdecex_main.o THaGenDetTest.o $(HEAD) THaGenDetTest.h $(SRC) $(DECODE_OBJS) $(MAINOBJS)  
+tdecex: $(DECODE_OBJS) $(SRC) tdecex_main.o THaGenDetTest.o $(HEAD) THaGenDetTest.h $(SRC) $(DECODE_OBJS) $(MAINOBJS)
 	rm -f $@
 	$(CXX) $(CXXFLAGS) -o $@ tdecex_main.o THaGenDetTest.o $(DECODE_OBJS) $(ALL_LIBS) $(EVIO_LIB) $(MAINOBJS)
 
@@ -319,11 +318,11 @@ tarfile: clean version
 	tar cvf $(VERS).tar ./hana_decode
 
 version:
-	mkdir $(VERS) 
-	cp *.c ./$(VERS) 
-	cp *.C ./$(VERS) 
-	cp *.h ./$(VERS) 
-	cp Makefile ./$(VERS) 
+	mkdir $(VERS)
+	cp *.c ./$(VERS)
+	cp *.C ./$(VERS)
+	cp *.h ./$(VERS)
+	cp Makefile ./$(VERS)
 	cp snippet.dat ./$(VERS)
 	cp README* ./$(VERS)
 	cp ChangeLog ./$(VERS)

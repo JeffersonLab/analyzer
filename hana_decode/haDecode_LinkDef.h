@@ -5,18 +5,18 @@
 #pragma link off all functions;
 
 #pragma link C++ class Decoder::CodaDecoder+;
-#pragma link C++ class Decoder::Module+;  
-#pragma link C++ class Decoder::FastbusModule+;  
-#pragma link C++ class Decoder::VmeModule+;  
-#pragma link C++ class Decoder::GenScaler+;  
-#pragma link C++ class Decoder::Lecroy1877Module+;  
-#pragma link C++ class Decoder::Lecroy1881Module+;  
-#pragma link C++ class Decoder::Lecroy1875Module+;  
-#pragma link C++ class Decoder::Scaler1151+;  
-#pragma link C++ class Decoder::Scaler3800+;  
-#pragma link C++ class Decoder::Scaler3801+;  
-#pragma link C++ class Decoder::Scaler560+;  
-#pragma link C++ class Decoder::Fadc250Module+;  
+#pragma link C++ class Decoder::Module+;
+#pragma link C++ class Decoder::FastbusModule+;
+#pragma link C++ class Decoder::VmeModule+;
+#pragma link C++ class Decoder::GenScaler+;
+#pragma link C++ class Decoder::Lecroy1877Module+;
+#pragma link C++ class Decoder::Lecroy1881Module+;
+#pragma link C++ class Decoder::Lecroy1875Module+;
+#pragma link C++ class Decoder::Scaler1151+;
+#pragma link C++ class Decoder::Scaler3800+;
+#pragma link C++ class Decoder::Scaler3801+;
+#pragma link C++ class Decoder::Scaler560+;
+#pragma link C++ class Decoder::Fadc250Module+;
 #pragma link C++ class Decoder::F1TDCModule+;
 #pragma link C++ class Decoder::SkeletonModule+;
 #pragma link C++ class Decoder::THaCodaData+;
@@ -32,15 +32,13 @@
 #pragma link C++ class THaEvData+;
 #pragma link C++ class THaEvData::RocDat_t+;
 
-#ifdef IF_IT_WOULD_WORK
 #pragma link C++ class Podd::MCHitInfo+;
 #pragma link C++ class Podd::MCTrack+;
 #pragma link C++ class Podd::MCTrackPoint+;
 #pragma link C++ class Podd::SimDecoder+;
-#endif
 
 #ifdef ONLINE_ET
-#pragma link C++ class THaEtClient+;
+#pragma link C++ class Decoder::THaEtClient+;
 #endif
 
 #endif
