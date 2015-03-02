@@ -388,25 +388,9 @@ void THaScalerEvtHandler::DefVars() {
   }
 }
 
-vector<string> THaScalerEvtHandler::vsplit(const string& s) {
-// split a string into whitespace-separated strings
-  vector<string> ret;
-  typedef string::size_type string_size;
-  string_size i = 0;
-  while ( i != s.size()) {
-    while (i != s.size() && isspace(s[i])) ++i;
-      string_size j = i;
-      while (j != s.size() && !isspace(s[j])) ++j;
-      if (i != j) {
-         ret.push_back(s.substr(i, j-i));
-         i = j;
-      }
-  }
-  return ret;
-};
-
-size_t THaScalerEvtHandler::FindNoCase(const string sdata, const string skey) {
-// Find iterator of word "sdata" where "skey" starts.  Case insensitive.
+size_t THaScalerEvtHandler::FindNoCase(const string& sdata, const string& skey)
+{
+  // Find iterator of word "sdata" where "skey" starts.  Case insensitive.
   string sdatalc, skeylc;
   sdatalc = "";  skeylc = "";
   for (string::const_iterator p = 

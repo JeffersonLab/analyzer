@@ -59,8 +59,7 @@ private:
 
    void AddVars(TString name, TString desc, Int_t iscal, Int_t ichan, Int_t ikind);
    void DefVars();
-   vector<string> vsplit(const string& s);
-   size_t FindNoCase(const string sdata, const string skey);
+   size_t FindNoCase(const std::string& sdata, const std::string& skey);
 
    vector<GenScaler *> scalers;
    vector<ScalerLoc *> scalerloc;
