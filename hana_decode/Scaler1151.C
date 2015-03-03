@@ -11,6 +11,9 @@ using namespace std;
 
 namespace Decoder {
 
+Module::TypeIter_t Scaler1151::fgThisType =
+  DoRegister( ModuleType( "Decoder::Scaler1151" , 1151 ));
+
 Scaler1151::Scaler1151(Int_t crate, Int_t slot) : GenScaler(crate, slot) {
   Init();
 }

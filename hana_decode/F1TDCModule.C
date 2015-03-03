@@ -20,6 +20,9 @@ namespace Decoder {
   const Int_t NTDCCHAN = 32;
   const Int_t MAXHIT   = 100;
 
+  Module::TypeIter_t F1TDCModule::fgThisType =
+    DoRegister( ModuleType( "Decoder::F1TDCModule" , 3201 ));
+
 F1TDCModule::F1TDCModule(Int_t crate, Int_t slot) : VmeModule(crate, slot) {
   fDebugFile=0;
   Init();

@@ -15,6 +15,9 @@ using namespace std;
 
 namespace Decoder {
 
+Module::TypeIter_t SkeletonModule::fgThisType =
+  DoRegister( ModuleType( "Decoder::SkeletonModule" , 4444 ));
+
 SkeletonModule::SkeletonModule(Int_t crate, Int_t slot) : VmeModule(crate, slot) {
   fDebugFile=0;
   Init();

@@ -20,6 +20,9 @@ namespace Decoder {
   static const Int_t NADCCHAN = 16;
   static const Int_t MAXDAT   = 1000;
 
+  Module::TypeIter_t Fadc250Module::fgThisType =
+    DoRegister( ModuleType( "Decoder::Fadc250Module" , 250 ));
+
   Fadc250Module::Fadc250Module(Int_t crate, Int_t slot) : VmeModule(crate, slot) {
     fDebugFile=0;
     Init();

@@ -9,40 +9,12 @@
 /////////////////////////////////////////////////////////////////////
 
 #include "Module.h"
-#include "Lecroy1877Module.h"
-#include "Lecroy1881Module.h"
-#include "Lecroy1875Module.h"
-#include "Scaler560.h"
-#include "Scaler1151.h"
-#include "Scaler3800.h"
-#include "Scaler3801.h"
-#include "Fadc250Module.h"
-#include "F1TDCModule.h"
-#include "SkeletonModule.h"
-#include "THaSlotData.h"
 #include "TError.h"
 #include <iostream>
 
 using namespace std;
 
 namespace Decoder {
-
-typedef Module::TypeSet_t  TypeSet_t;
-typedef Module::TypeIter_t TypeIter_t;
-
-TypeIter_t Lecroy1877Module::fgThisType = DoRegister( ModuleType( "Decoder::Lecroy1877Module" , 1877));
-TypeIter_t Lecroy1881Module::fgThisType = DoRegister( ModuleType( "Decoder::Lecroy1881Module" , 1881));
-TypeIter_t Lecroy1875Module::fgThisType = DoRegister( ModuleType( "Decoder::Lecroy1875Module" , 1875));
-TypeIter_t Scaler560::fgThisType = DoRegister( ModuleType( "Decoder::Scaler560" , 560 ));
-TypeIter_t Scaler1151::fgThisType = DoRegister( ModuleType( "Decoder::Scaler1151" , 1151 ));
-TypeIter_t Scaler3800::fgThisType = DoRegister( ModuleType( "Decoder::Scaler3800" , 3800 ));
-TypeIter_t Scaler3801::fgThisType = DoRegister( ModuleType( "Decoder::Scaler3801" , 3801 ));
-TypeIter_t Fadc250Module::fgThisType = DoRegister( ModuleType( "Decoder::Fadc250Module" , 250 ));
-TypeIter_t F1TDCModule::fgThisType = DoRegister( ModuleType( "Decoder::F1TDCModule" , 3201 ));
-TypeIter_t SkeletonModule::fgThisType = DoRegister( ModuleType( "Decoder::SkeletonModule" , 4444 ));
-
-// Add your module here.
-
 
 Module::Module(Int_t crate, Int_t slot) : fCrate(crate), fSlot(slot), fWordsExpect(0) {
   // Warning: see comments at Init()
@@ -121,7 +93,7 @@ void Module::DoPrint() const {
 
 
 //_____________________________________________________________________________
-TypeSet_t& Module::fgModuleTypes()
+Module::TypeSet_t& Module::fgModuleTypes()
 {
   // Local storage for all defined Module types. Initialize here on first use
   // (cf. http://www.parashift.com/c++-faq/static-init-order-on-first-use-members.html)
@@ -132,9 +104,9 @@ TypeSet_t& Module::fgModuleTypes()
 }
 
 //_____________________________________________________________________________
-TypeIter_t Module::DoRegister( const ModuleType& info )
+Module::TypeIter_t Module::DoRegister( const ModuleType& info )
 {
-  // Add given info in fgBdataLocTypes
+  // Add given info in fgModuleTypes
 
   if( !info.fClassName ||!*info.fClassName ) {
     ::Error( "Module::DoRegister", "Attempt to register empty class name. "
@@ -145,7 +117,7 @@ TypeIter_t Module::DoRegister( const ModuleType& info )
   pair< TypeIter_t, bool > ins = fgModuleTypes().insert(info);
 
   if( !ins.second ) {
-    ::Error( "Module::DoRegister", "Attempt to register duplicate database "
+    ::Error( "Module::DoRegister", "Attempt to register duplicate decoder module "
 	     "class \"%s\". Coding error. Call expert.", info.fClassName );
     return fgModuleTypes().end();
   }
