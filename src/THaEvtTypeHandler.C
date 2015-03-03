@@ -29,7 +29,7 @@ Int_t THaEvtTypeHandler::Analyze(THaEvData *evdata)
   return 1;
 }
 
-void THaEvtTypeHandler::EvPrint()
+void THaEvtTypeHandler::EvPrint() const
 {
   cout << "Hello !  THaEvtTypeHandler name =  "<<GetName()<<endl;
   cout << "    description "<<GetTitle()<<endl;
@@ -40,7 +40,7 @@ void THaEvtTypeHandler::EvPrint()
   cout << "----------------- good bye ----------------- "<<endl;
 }
 
-void THaEvtTypeHandler::EvDump(THaEvData *evdata)
+void THaEvtTypeHandler::EvDump(THaEvData *evdata) const
 {
   // Dumps data to file, if fDebugFile was set.
   if (!fDebugFile) return;
@@ -73,7 +73,7 @@ THaAnalysisObject::EStatus THaEvtTypeHandler::Init(const TDatime& dt)
   return kOK;
 }
 
-Bool_t THaEvtTypeHandler::IsMyEvent(Int_t evnum)
+Bool_t THaEvtTypeHandler::IsMyEvent(Int_t evnum) const
 {
   for (UInt_t i=0; i < eventtypes.size(); i++) {
     if (evnum == eventtypes[i]) return kTRUE;

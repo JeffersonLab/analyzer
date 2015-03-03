@@ -22,7 +22,7 @@ class CodaDecoder : public THaEvData {
 
   virtual Int_t LoadEvent(const UInt_t* evbuffer);
 
-  virtual Int_t GetNslots() { return fNSlotUsed; };
+  virtual Int_t GetNslots() const { return fNSlotUsed; };
 
   virtual Int_t GetPrescaleFactor(Int_t trigger) const;
 
@@ -48,7 +48,7 @@ class CodaDecoder : public THaEvData {
   void FindUsedSlots();
 
   int init_slotdata(const THaCrateMap *map);
-  void dump(const UInt_t* evbuffer);
+  void dump(const UInt_t* evbuffer) const;
 
   ClassDef(CodaDecoder,0) // Decoder for CODA event buffer
 };

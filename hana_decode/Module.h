@@ -41,19 +41,19 @@ public:
   virtual ~Module();
 
 // inheriting classes need to implement one or more of these
-  virtual Int_t GetData(Int_t) { return 0; };
-  virtual Int_t GetData(Int_t, Int_t) { return 0; };
-  virtual Int_t GetData(Int_t, Int_t, Int_t) { return 0; };
+  virtual Int_t GetData(Int_t) const { return 0; };
+  virtual Int_t GetData(Int_t, Int_t) const { return 0; };
+  virtual Int_t GetData(Int_t, Int_t, Int_t) const { return 0; };
 
 // Making this class Abstract does not work (problem with Dictionary)
   virtual Int_t Decode(const UInt_t *p) {return 0;}; // implement in derived class
 // Loads slot data
   virtual Int_t LoadSlot(THaSlotData *sldat,  const UInt_t *evbuffer, const UInt_t *pstop );
 
-  virtual Int_t GetNumChan() { return fNumChan; };
+  virtual Int_t GetNumChan() const { return fNumChan; };
 
-  virtual Int_t GetNumEvents() { return 0; };
-  virtual Int_t GetMode() { return 0; };
+  virtual Int_t GetNumEvents() const { return 0; };
+  virtual Int_t GetMode() const { return 0; };
 
   virtual void SetSlot(Int_t crate, Int_t slot, Int_t header=0, Int_t mask=0, Int_t modelnum=0)
   { fCrate=crate; fSlot=slot; fHeader=header; fHeaderMask=mask; fModelNum=modelnum;};
@@ -64,8 +64,8 @@ public:
 
   virtual Bool_t IsSlot(UInt_t rdata);
 
-  virtual Int_t GetCrate() { return fCrate; };
-  virtual Int_t GetSlot() { return fSlot; };
+  virtual Int_t GetCrate() const { return fCrate; };
+  virtual Int_t GetSlot() const { return fSlot; };
 
   virtual void SetDebugFile(std::ofstream *file) { if (file!=0) fDebugFile = file; };
 
@@ -76,7 +76,7 @@ public:
 
   Module& operator=(const Module &rhs);
 
-  virtual void DoPrint();
+  virtual void DoPrint() const;
 
 protected:
 

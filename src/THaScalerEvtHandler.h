@@ -33,9 +33,8 @@ public:
    virtual ~THaScalerEvtHandler();
 
    Int_t Analyze(THaEvData *evdata);
-   using THaEvtTypeHandler::Init;
    virtual EStatus Init( const TDatime& run_time);
-   Int_t End( THaRunBase* r=0 );
+   virtual Int_t End( THaRunBase* r=0 );
    virtual void SetDebugFile(std::ofstream *file);
 
 
@@ -43,12 +42,12 @@ private:
 
    void AddVars(TString name, TString desc, Int_t iscal, Int_t ichan, Int_t ikind);
    void DefVars();
-   size_t FindNoCase(const std::string& sdata, const std::string& skey);
+   static size_t FindNoCase(const std::string& sdata, const std::string& skey);
 
    std::vector<Decoder::GenScaler*> scalers;
    std::vector<ScalerLoc*> scalerloc;
    Double_t evcount;
-   Int_t *rdata;
+   UInt_t *rdata;
    std::vector<Int_t> index;
    Int_t Nvars, ifound, fNormIdx, nscalers;
    Double_t *dvars;

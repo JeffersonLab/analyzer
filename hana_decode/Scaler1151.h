@@ -20,7 +20,7 @@ public:
    Scaler1151(Int_t crate, Int_t slot);
    virtual ~Scaler1151();
 
-   void Init();
+   virtual void Init();
 
 private:
 

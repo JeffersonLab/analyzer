@@ -20,25 +20,23 @@ public:
    F1TDCModule(Int_t crate, Int_t slot);
    virtual ~F1TDCModule();
 
+   using Module::GetData;
+
    enum EResolution { ILO = 0, IHI = 1 };
 
-   void Init();
-   Bool_t IsSlot(UInt_t rdata);
+   virtual void Init();
+   virtual Bool_t IsSlot(UInt_t rdata);
+   virtual Int_t GetData(Int_t chan, Int_t hit) const;
 
    void SetResolution(Int_t which=0) {
      fResol = IHI;
      if (which==0) fResol=ILO;
      return;
    }
-   EResolution GetResolution() { return fResol; };
-   Bool_t IsHiResolution() { return (fResol==IHI); };
+   EResolution GetResolution() const { return fResol; };
+   Bool_t IsHiResolution() const { return (fResol==IHI); };
 
-   Int_t GetNumHits() { return fNumHits; };
-
-   using Module::GetData;
-   using Module::LoadSlot;
-
-   Int_t GetData(Int_t chan, Int_t hit);
+   Int_t GetNumHits() const { return fNumHits; };
 
 private:
 

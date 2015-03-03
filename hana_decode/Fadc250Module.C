@@ -57,40 +57,40 @@ namespace Decoder {
     return ((rdata != 0xffffffff) & ((rdata & fHeaderMask)==fHeader));
   }
 
-  void Fadc250Module::CheckSetMode() {
+  void Fadc250Module::CheckSetMode() const {
     if (f250_setmode != F250_SAMPLE && f250_setmode != F250_INTEG) {
       cout << "Check the F250 setmode.  It is = "<<f250_setmode<<endl;
       cout << "And should be set to either "<<F250_SAMPLE<<"   or "<<F250_INTEG<<endl;
     }
   }
 
-  Int_t Fadc250Module::GetMode() {
+  Int_t Fadc250Module::GetMode() const {
     if (fDebugFile) *fDebugFile << "GetMode ... "<<f250_setmode<< "   "<<f250_foundmode<<endl;
     if (f250_setmode == f250_foundmode) return f250_setmode;
     return -1;
   }
 
-  void Fadc250Module::CheckFoundMode() {
+  void Fadc250Module::CheckFoundMode() const {
     if (f250_setmode != f250_foundmode) {
       cout << "Fadc250Module:: ERROR: The set mode "<<f250_setmode;
       cout << "   is not consistent with the found mode "<<f250_foundmode<<endl;
     }
   }
 
-  Int_t Fadc250Module::GetAdcData(Int_t chan, Int_t ievent) {
+  Int_t Fadc250Module::GetAdcData(Int_t chan, Int_t ievent) const {
     Int_t result = GetData(GET_ADC, chan, ievent);
     if (result < 0) cout << "Fadc250Module:: WARNING:  Strange ADC data "<<endl;
     return result;
   }
 
-  Int_t Fadc250Module::GetTdcData(Int_t chan, Int_t ievent) {
+  Int_t Fadc250Module::GetTdcData(Int_t chan, Int_t ievent) const {
     Int_t result = GetData(GET_TDC, chan, ievent);
     if (result < 0) cout << "Fadc250Module:: WARNING:  Strange TDC data "<<endl;
     return result;
   }
 
 
-  Int_t Fadc250Module::GetData(Int_t which, Int_t chan, Int_t ievent) {
+  Int_t Fadc250Module::GetData(Int_t which, Int_t chan, Int_t ievent) const {
 
     int index;
     int nevent;

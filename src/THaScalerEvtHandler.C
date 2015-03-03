@@ -50,7 +50,7 @@ static const UInt_t defaultDT = 4;
 THaScalerEvtHandler::THaScalerEvtHandler(const char *name, const char* description)
   : THaEvtTypeHandler(name,description)
 {
-  rdata = new Int_t[MAXTEVT];
+  rdata = new UInt_t[MAXTEVT];
   fDebugFile = 0;
   fScalerTree = 0;
   evcount = 0;
@@ -136,8 +136,8 @@ Int_t THaScalerEvtHandler::Analyze(THaEvData *evdata)
   for (Int_t i=0; i<ndata; i++) rdata[i] = evdata->GetRawData(i);
 
   Int_t nskip=0;
-  Int_t *p = rdata;
-  Int_t *pstop = rdata+ndata;
+  UInt_t *p = rdata;
+  UInt_t *pstop = rdata+ndata;
   int j=0;
 
   ifound = 0;

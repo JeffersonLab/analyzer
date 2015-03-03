@@ -20,7 +20,7 @@ public:
    Lecroy1881Module() {};
    Lecroy1881Module(Int_t crate, Int_t slot);
    virtual ~Lecroy1881Module();
-   void Init();
+   virtual void Init();
 
 private:
 

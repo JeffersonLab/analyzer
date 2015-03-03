@@ -379,7 +379,7 @@ int CodaDecoder::init_slotdata(const THaCrateMap* map)
 
 
 //_____________________________________________________________________________
-void CodaDecoder::dump(const UInt_t* evbuffer)
+void CodaDecoder::dump(const UInt_t* evbuffer) const
 {
   if( !evbuffer ) return;
   if ( !fDebugFile ) return;

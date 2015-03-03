@@ -108,7 +108,7 @@ Bool_t Module::IsSlot(UInt_t rdata) {
   return kFALSE;
 }
 
-void Module::DoPrint() {
+void Module::DoPrint() const {
   if (fDebugFile) {
     *fDebugFile << "Module   name = "<<fName<<endl;
     *fDebugFile << "Module::    Crate  "<<fCrate<<"     slot "<<fSlot<<endl;

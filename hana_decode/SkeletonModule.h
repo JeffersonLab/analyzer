@@ -38,15 +38,11 @@ public:
    SkeletonModule(Int_t crate, Int_t slot);
    virtual ~SkeletonModule();
 
-   using VmeModule::IsSlot;
-   using Module::GetNumChan;
-   using Module::Init;
    using Module::GetData;
-   using Module::LoadSlot;
 
-   Int_t GetData(Int_t chan);
-   void Init();
-   void Clear(const Option_t *opt);
+   virtual Int_t GetData(Int_t chan) const;
+   virtual void Init();
+   virtual void Clear(const Option_t *opt);
 
 #ifdef LIKEV792
 // Loads slot data.  if you don't define this, the base class's method is used

@@ -82,7 +82,7 @@ Int_t FastbusModule::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const 
   return fWordsSeen;
 }
 
-void FastbusModule::DoPrint() {
+void FastbusModule::DoPrint() const {
 
   if (fDebugFile) {
        *fDebugFile << "FastbusModule   DoPrint.   name = "<<fName<<

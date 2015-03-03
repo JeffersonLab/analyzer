@@ -42,12 +42,16 @@ void F1TDCModule::Init() {
 }
 
 
-Bool_t F1TDCModule::IsSlot(UInt_t rdata) {
-  if (fDebugFile) *fDebugFile << "is F1TDC slot ? "<<hex<<fHeader<<"  "<<fHeaderMask<<"  "<<rdata<<dec<<endl;
+Bool_t F1TDCModule::IsSlot(UInt_t rdata)
+{
+  if (fDebugFile)
+    *fDebugFile << "is F1TDC slot ? "<<hex<<fHeader
+		<<"  "<<fHeaderMask<<"  "<<rdata<<dec<<endl;
   return ((rdata != 0xffffffff) & ((rdata & fHeaderMask)==fHeader));
 }
 
-Int_t F1TDCModule::GetData(Int_t chan, Int_t hit) {
+Int_t F1TDCModule::GetData(Int_t chan, Int_t hit) const
+{
   Int_t idx = chan*MAXHIT + hit;
   if (idx < 0 || idx > MAXHIT*NTDCCHAN) return 0;
   return fTdcData[idx];

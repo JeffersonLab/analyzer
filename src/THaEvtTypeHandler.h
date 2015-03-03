@@ -22,9 +22,9 @@ public:
 
    virtual Int_t Analyze(THaEvData *evdata);
    virtual EStatus Init( const TDatime& run_time );
-   virtual void EvPrint();
-   virtual Bool_t IsMyEvent(Int_t evnum);
-   virtual void EvDump(THaEvData *evdata);
+   virtual void EvPrint() const;
+   virtual Bool_t IsMyEvent(Int_t evnum) const;
+   virtual void EvDump(THaEvData *evdata) const;
    virtual void SetDebugFile(std::ofstream *file) { if (file!=0) fDebugFile=file; };
 
 protected:

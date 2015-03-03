@@ -21,8 +21,8 @@ public:
    virtual ~VmeModule();
 
    virtual Bool_t IsSlot(UInt_t rdata);
-   virtual Int_t Slot(Int_t rdata) { return fSlot; };
-   virtual Int_t Data(Int_t rdata) { return rdata; };
+   virtual Int_t Slot(Int_t rdata) const { return fSlot; };
+   virtual Int_t Data(Int_t rdata) const { return rdata; };
 
 private:
 

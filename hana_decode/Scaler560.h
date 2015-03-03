@@ -20,7 +20,7 @@ public:
    Scaler560(Int_t crate, Int_t slot);
    virtual ~Scaler560();
 
-   void Init();
+   virtual void Init();
 
 private:
 

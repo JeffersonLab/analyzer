@@ -98,7 +98,7 @@ void GenScaler::LoadNormScaler(GenScaler *scal) {
   fNormScaler = scal;
 }
 
-Int_t GenScaler::Decode(const Int_t *evbuffer) {
+Int_t GenScaler::Decode(const UInt_t *evbuffer) {
   Int_t doload=0;
   Int_t nfound=1;
   if (IsDecoded()) return nfound;
@@ -122,7 +122,7 @@ Int_t GenScaler::Decode(const Int_t *evbuffer) {
   return nfound;
 }
 
-Double_t GenScaler::GetTimeSincePrev() {
+Double_t GenScaler::GetTimeSincePrev() const {
 // Time since previous reading.
 // If a normalization scaler was defined, use its time base.
 // Otherwise, if this scaler has a clock, use it to get the time precisely.
@@ -157,7 +157,7 @@ void GenScaler::LoadRates() {
   }
 }
 
-Int_t GenScaler::GetData(Int_t chan) {
+Int_t GenScaler::GetData(Int_t chan) const {
   if (checkchan(chan)) {
     return fDataArray[chan];
   } else {
@@ -165,7 +165,7 @@ Int_t GenScaler::GetData(Int_t chan) {
   }
 }
 
-Double_t GenScaler::GetRate(Int_t chan) {
+Double_t GenScaler::GetRate(Int_t chan) const {
   if (checkchan(chan)) {
     return fRate[chan];
   } else {
@@ -173,7 +173,7 @@ Double_t GenScaler::GetRate(Int_t chan) {
   }
 }
 
-void GenScaler::DoPrint() {
+void GenScaler::DoPrint() const {
   cout << "GenScaler::   crate "<<fCrate<<"   slot "<<fSlot<<endl;
   cout << "GenScaler::   Header 0x"<<hex<<fHeader<<"    Mask  0x"<<fHeaderMask<<dec<<endl;
   cout << "num words expected  "<<fWordsExpect<<endl;
@@ -182,7 +182,7 @@ void GenScaler::DoPrint() {
   cout << "Clock channel "<<fClockChan<<"   clock rate "<<fClockRate<<endl;
 }
 
-void GenScaler::DebugPrint(ofstream *file) {
+void GenScaler::DebugPrint(ofstream *file) const {
   if (!file) return;
   *file << "GenScaler::   crate "<<fCrate<<"   slot "<<fSlot<<endl;
   *file << "GenScaler::   Header 0x"<<hex<<fHeader<<"    Mask  0x"<<fHeaderMask<<dec<<endl;
@@ -197,7 +197,7 @@ void GenScaler::DebugPrint(ofstream *file) {
   }
 }
 
-Bool_t GenScaler::IsSlot(Int_t rdata) {
+Bool_t GenScaler::IsSlot(UInt_t rdata) {
   Bool_t result;
   result = ((rdata & fHeaderMask)==fHeader);
   if (result) {

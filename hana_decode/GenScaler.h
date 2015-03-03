@@ -20,22 +20,22 @@ public:
    GenScaler(Int_t crate, Int_t slot);
    virtual ~GenScaler();
 
+   using Module::GetData;
+
    virtual void Init() { return; };  // derived classes should implement
+   virtual void  Clear(const Option_t *opt) { fIsDecoded=kFALSE; };
+   virtual Int_t Decode(const UInt_t *evbuffer);
+   virtual Int_t GetData(Int_t chan) const;   // Raw scaler counts
+   virtual Bool_t IsSlot(UInt_t rdata);
+   virtual void DoPrint() const;
+
    void GenInit();
    Int_t SetClock(Double_t deltaT, Int_t clockchan=0, Double_t clockrate=0);
-   using Module::Decode;
-   Int_t Decode(const Int_t *evbuffer);
-   using Module::GetData;
-   Int_t GetData(Int_t chan);   // Raw scaler counts
-   Double_t GetRate(Int_t chan);  // Scaler rate
-   Double_t GetTimeSincePrev();  // returns deltaT since last reading
-   void Clear(const Option_t *opt) { fIsDecoded=kFALSE; };
-   Bool_t IsDecoded() { return fIsDecoded; };
-   using VmeModule::IsSlot;
-   Bool_t IsSlot(Int_t rdata);
+   Double_t GetRate(Int_t chan) const;  // Scaler rate
+   Double_t GetTimeSincePrev() const;  // returns deltaT since last reading
+   Bool_t IsDecoded() const { return fIsDecoded; };
    void LoadNormScaler(GenScaler *scal);  // loads pointer to norm. scaler
-   void DoPrint();
-   void DebugPrint(ofstream *file=0);
+   void DebugPrint(ofstream *file=0) const;
 
 // Loads sldat
   virtual Int_t LoadSlot(THaSlotData *sldat,  const UInt_t *evbuffer, const UInt_t *pstop );
@@ -43,7 +43,7 @@ public:
 protected:
 
    void LoadRates();
-   Bool_t checkchan(Int_t chan) { return (chan >=0 && chan < fWordsExpect); }
+   Bool_t checkchan(Int_t chan) const { return (chan >=0 && chan < fWordsExpect); }
    static TypeIter_t fgThisType;
    Bool_t fIsDecoded, fFirstTime, fDeltaT;
    Int_t *fDataArray, *fPrevData;

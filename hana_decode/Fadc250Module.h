@@ -20,16 +20,16 @@ public:
    Fadc250Module(Int_t crate, Int_t slot);
    virtual ~Fadc250Module();
 
-   void Init();
-   Bool_t IsSlot(UInt_t rdata);
-   Int_t Decode(const UInt_t *evbuffer);
-
-   Int_t GetNumEvents() { return fNumEvents; };
-
    using Module::GetData;
-   Int_t GetData(Int_t chan, Int_t event, Int_t which);
-   Int_t GetAdcData(Int_t chan, Int_t ievent);
-   Int_t GetTdcData(Int_t chan, Int_t ievent);
+
+   virtual void Init();
+   virtual Bool_t IsSlot(UInt_t rdata);
+   virtual Int_t Decode(const UInt_t *evbuffer);
+   virtual Int_t GetNumEvents() const { return fNumEvents; };
+   virtual Int_t GetData(Int_t chan, Int_t event, Int_t which) const;
+   virtual Int_t GetAdcData(Int_t chan, Int_t ievent) const;
+   virtual Int_t GetTdcData(Int_t chan, Int_t ievent) const;
+   virtual Int_t GetMode() const;
 
    void SetMode(Int_t mode) {
      f250_setmode = mode;
@@ -37,9 +37,8 @@ public:
      CheckSetMode();
    }
 
-   Bool_t IsSampleMode() { return (f250_setmode == F250_SAMPLE); };
-   Bool_t IsIntegMode() { return (f250_setmode == F250_INTEG); };
-   Int_t GetMode();
+   Bool_t IsSampleMode() const { return (f250_setmode == F250_SAMPLE); };
+   Bool_t IsIntegMode() const { return (f250_setmode == F250_INTEG); };
 
 private:
 
@@ -100,8 +99,8 @@ private:
    Int_t *fTdcData;
    Bool_t IsInit;
    void Clear(const Option_t *opt);
-   void CheckSetMode();
-   void CheckFoundMode();
+   void CheckSetMode() const;
+   void CheckFoundMode() const;
    static TypeIter_t fgThisType;
    Int_t slotmask, chanmask, datamask;
    ClassDef(Fadc250Module,0)  //  JLab FADC 250 Module
