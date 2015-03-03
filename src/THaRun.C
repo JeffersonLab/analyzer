@@ -27,7 +27,7 @@ static const int   fgMaxScan   = 5000;
 static const char* fgThisClass = "THaRun";
 
 //_____________________________________________________________________________
-THaRun::THaRun( const char* fname, const char* description ) : 
+THaRun::THaRun( const char* fname, const char* description ) :
   THaCodaRun(description), fFilename(fname), fMaxScan(fgMaxScan)
 {
   // Normal & default constructor
@@ -40,7 +40,7 @@ THaRun::THaRun( const char* fname, const char* description ) :
 }
 
 //_____________________________________________________________________________
-THaRun::THaRun( const THaRun& rhs ) : 
+THaRun::THaRun( const THaRun& rhs ) :
   THaCodaRun(rhs), fFilename(rhs.fFilename), fMaxScan(rhs.fMaxScan)
 {
   // Copy ctor
@@ -98,7 +98,7 @@ void THaRun::Clear( const Option_t* opt )
 //_____________________________________________________________________________
 Int_t THaRun::Compare( const TObject* obj ) const
 {
-  // Compare a THaRun object to another run. Returns 0 when equal, 
+  // Compare a THaRun object to another run. Returns 0 when equal,
   // -1 when 'this' is smaller and +1 when bigger (like strcmp).
   // Used by ROOT containers.
 
@@ -125,7 +125,7 @@ Int_t THaRun::Open()
     Error( here, "CODA file name not set. Cannot open the run." );
     return READ_FATAL;  // filename not set
   }
-  
+
   Int_t st = fCodaData->codaOpen( fFilename );
   if( st == 0 )
     fOpened = kTRUE;
@@ -159,7 +159,7 @@ Int_t THaRun::ReadInitInfo()
       evdata->EnableScalers(kFALSE);
       evdata->EnableHelicity(kFALSE);
       UInt_t nev = 0;
-      while( nev<fMaxScan && !HasInfo(fDataRequired) && 
+      while( nev<fMaxScan && !HasInfo(fDataRequired) &&
 	     (status = ReadEvent()) == READ_OK ) {
 
 	// Decode events. Skip bad events.
@@ -192,12 +192,12 @@ Int_t THaRun::ReadInitInfo()
 	       status, GetFilename());
 	return status;
       }
-    
+
     } else {
       // If this is a continuation segment, try finding segment 0
       // Since this class is Hall A-specific, look in typical directories.
-      // First look in the same directory as the continuation segment. 
-      // If the filename's dirname contains dataN, with N=1...9, also look in 
+      // First look in the same directory as the continuation segment.
+      // If the filename's dirname contains dataN, with N=1...9, also look in
       // all other dataN's.
       Ssiz_t dot = fFilename.Last('.');
       assert( dot != kNPOS );  // if fSegment>0, there must be a dot
@@ -280,7 +280,7 @@ void THaRun::SetNscan( UInt_t n )
 //_____________________________________________________________________________
 Int_t THaRun::FindSegmentNumber()
 {
-  // Determine the segment number, if any. For Hall A CODA disk files, we can 
+  // Determine the segment number, if any. For Hall A CODA disk files, we can
   // safely assume that the suffix of the file name will tell us.
   // Internal function.
 

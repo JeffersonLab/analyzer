@@ -2,13 +2,13 @@
 //
 //   THaScaler
 //
-//   Scaler Data in Hall A at Jlab.  
+//   Scaler Data in Hall A at Jlab.
 //   The usage covers several implementations:
 //
 //   1. Works within context of full analyzer, or standalone.
 //   2. Time dependent channel mapping to account for movement
 //      of channels or addition of new channels (scaler.map).
-//   3. Source of data is either THaEvData, CODA file, 
+//   3. Source of data is either THaEvData, CODA file,
 //      online (VME), or scaler-history-file.
 //   4. Optional displays of rates, counts, history.
 //
@@ -21,13 +21,13 @@
 //
 //   scaler.map file determines the layout.  See THaScalerDB class.
 //   *TO ADD A NEW SCALER* bank you need to add lines to DataMap in
-//   THaScaler::InitData 
+//   THaScaler::InitData
 //
 //   author  Robert Michaels (rom@jlab.org)
 //
 //   Modifications
-//   Jan 2, 2005    RWM      Added GeN scalers 
-//   Mar 12, 2008   RWM     Added Bigbite scalers 
+//   Jan 2, 2005    RWM      Added GeN scalers
+//   Mar 12, 2008   RWM     Added Bigbite scalers
 //
 /////////////////////////////////////////////////////////////////////
 
@@ -40,7 +40,7 @@
 #include <sys/types.h>
 #include <cstdio>
 #include <unistd.h>
-#include <sys/types.h> 
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -76,7 +76,7 @@ THaScaler::THaScaler( const char* bankgr ) {
   fcodafile = new THaCodaFile;
   rawdata = new Int_t[2*SCAL_NUMBANK*SCAL_NUMCHAN];
   memset(rawdata,0,2*SCAL_NUMBANK*SCAL_NUMCHAN*sizeof(Int_t));
-  clockrate = 1024;  // a default 
+  clockrate = 1024;  // a default
   isclockreset = false;
   fDebug = 0;
 };
@@ -88,7 +88,7 @@ THaScaler::~THaScaler() {
    if (normslot) delete [] normslot;
 };
 
-Int_t THaScaler::Init( const TDatime& time ) 
+Int_t THaScaler::Init( const TDatime& time )
 {
   // Initialize scalers for given date/time.
   // Accuracy is 1 day. Only date is used, time is ignored.
@@ -99,7 +99,7 @@ Int_t THaScaler::Init( const TDatime& time )
   return Init( date );
 };
 
-Int_t THaScaler::Init(const char* thetime ) 
+Int_t THaScaler::Init(const char* thetime )
 {
   // Init() is required to be run once in the life of object.
   // 'thetime' is the Day-Month-Year to look up scaler map related to data.
@@ -112,7 +112,7 @@ Int_t THaScaler::Init(const char* thetime )
   if (strtime == "now") {
     time_t t1 = time(0);
     struct tm* btm = gmtime(&t1);
-    year =  1900 + btm->tm_year;  
+    year =  1900 + btm->tm_year;
     month = 1 + btm->tm_mon;  // Jan,Feb,Mar = 1,2,3...
     day = btm->tm_mday;
   } else {
@@ -142,13 +142,13 @@ Int_t THaScaler::Init(const char* thetime )
     cout << "THaScaler:: WARNING:  Failed to extract scaler database"<<endl;
     delete database;
     database = 0;
-    return -1; 
+    return -1;
   }
 
   SetupNormMap();
 
   did_init = kTRUE;
-    
+
   return 0;
 };
 
@@ -157,7 +157,7 @@ Int_t THaScaler::InitData(const string& bankgroup, const Bdate& date_want) {
 // While in principle this should come from a "database", it basically
 // never changes.  However, to add a new scaler bank, imitate what is
 // done for "Left" or "Right" HRS.
-// Note: this routine must be called after database is new'd but 
+// Note: this routine must be called after database is new'd but
 // before it is loaded.
 
   crate = -1;
@@ -177,26 +177,26 @@ Int_t THaScaler::InitData(const string& bankgroup, const Bdate& date_want) {
 
   static const DataMap datamap[] = {
     // Event type 140's
-    { "Left",  0xabc00000, 8, 140, 4, 1024, "129.57.192.30",  5022, 
+    { "Left",  0xabc00000, 8, 140, 4, 1024, "129.57.192.30",  5022,
              {0,1,2,3,4,5,6,7,8,9,10,11} },
-    { "Right", 0xceb00000, 7, 140, 8, 1024, "129.57.192.28",  5021, 
+    { "Right", 0xceb00000, 7, 140, 8, 1024, "129.57.192.28",  5021,
              {0,7,8,9,1,2,3,4,5,6,10,11} },
-    { "dvcs",  0xd0c00000, 9, 140, 0, 105000, "129.57.192.51",  5064, 
+    { "dvcs",  0xd0c00000, 9, 140, 0, 105000, "129.57.192.51",  5064,
              {0,1,2,3,4,5,6,7,8,9,10,11} },
-    // default normslot is defined here (5th arg) in addition to scaler.map 
+    // default normslot is defined here (5th arg) in addition to scaler.map
     // but you can fix it in scaler.map as TS-accept.  Also don't forget
     // to define "clock" in scaler.map
-    { "bbite",  0xbbe00000, 9, 140, 4, 1024, "129.57.192.8",  5037, 
+    { "bbite",  0xbbe00000, 9, 140, 4, 1024, "129.57.192.8",  5037,
              {0,1,2,3,4,5,6,7,8,9,10,11} },
-    { "gen",  0xb0d00000, 9, 140, 2, 105000, "129.57.192.5",  5022, 
+    { "gen",  0xb0d00000, 9, 140, 2, 105000, "129.57.192.5",  5022,
              {0,1,2,3,4,5,6,7,8,9,10,11} },
-    { "evgen",  0xb0d00000, 23, 1, 2, 105000, "none",  0, 
+    { "evgen",  0xb0d00000, 23, 1, 2, 105000, "none",  0,
              {0,1,2,3,4,5,6,7,8,9,10,11} },
-    // N20: header 0xbba...,  crate=6 (our choice), 
-    { "N20",  0xbba00000, 6, 140, 1, 2048, "129.57.192.51",  5064, 
+    // N20: header 0xbba...,  crate=6 (our choice),
+    { "N20",  0xbba00000, 6, 140, 1, 2048, "129.57.192.51",  5064,
              {0,1,2,3,4,5,6,7,8,9,10,11} },
     // Data that are part of the event stream
-    { "evgen",  0xb0d00000, 23, 1, 2, 105000, "none",  0, 
+    { "evgen",  0xb0d00000, 23, 1, 2, 105000, "none",  0,
              {0,1,2,3,4,5,6,7,8,9,10,11} },
     { "evleft",  0xabc00000, 11, 1, 1, 1024, "none",  0, {0,0,0,0,0,0,0,0,0,0,0,0}},
     { "evright", 0xceb00000, 10, 1, 8, 1024, "none",  0, {0,0,0,0,0,0,0,0,0,0,0,0}},
@@ -208,43 +208,43 @@ Int_t THaScaler::InitData(const string& bankgroup, const Bdate& date_want) {
 
    string bank_to_find = "unknown";
    if (database) {
-     if ( database->FindNoCase(bankgroup,"Left") != string::npos  
+     if ( database->FindNoCase(bankgroup,"Left") != string::npos
         || bankgroup == "L" ) {
-          bank_to_find = "Left"; 
+          bank_to_find = "Left";
      }
-     if ( database->FindNoCase(bankgroup,"Right") != string::npos  
+     if ( database->FindNoCase(bankgroup,"Right") != string::npos
         || bankgroup == "R" ) {
-          bank_to_find = "Right"; 
+          bank_to_find = "Right";
      }
      if ( database->FindNoCase(bankgroup,"dvcs") != string::npos) {
-          bank_to_find = "dvcs"; 
+          bank_to_find = "dvcs";
      }
      if ( database->FindNoCase(bankgroup,"bbite") != string::npos) {
-          bank_to_find = "bbite"; 
+          bank_to_find = "bbite";
      }
      if ( database->FindNoCase(bankgroup,"gen") != string::npos) {
-          bank_to_find = "gen"; 
+          bank_to_find = "gen";
      }
      if ( database->FindNoCase(bankgroup,"evgen") != string::npos) {
-          bank_to_find = "evgen"; 
+          bank_to_find = "evgen";
      }
      if ( database->FindNoCase(bankgroup,"N20") != string::npos) {
-          bank_to_find = "N20"; 
+          bank_to_find = "N20";
      }
      if ( database->FindNoCase(bankgroup,"evleft") != string::npos) {
-          bank_to_find = "evleft"; 
+          bank_to_find = "evleft";
      }
      if ( database->FindNoCase(bankgroup,"evright") != string::npos) {
-          bank_to_find = "evright"; 
+          bank_to_find = "evright";
      }
      if ( database->FindNoCase(bankgroup,"evbbite") != string::npos) {
-          bank_to_find = "evbbite"; 
+          bank_to_find = "evbbite";
      }
 
    }
 
 // Handle the detector swap for data prior to Sept 15, 2000
-  Bdate dswap(15,9,2000);     
+  Bdate dswap(15,9,2000);
   if (date_want < dswap) {
     string stemp = bank_to_find;
     if (stemp == "Left") bank_to_find = "Right";  // swap
@@ -256,7 +256,7 @@ Int_t THaScaler::InitData(const string& bankgroup, const Bdate& date_want) {
   if( const DataMap* it = datamap ) {
     while( it->bank_name ) {
       string sbank = it->bank_name;
-      if( bank_to_find == sbank ) {  
+      if( bank_to_find == sbank ) {
         header = it->bank_header;
         crate = it->bank_cratenum;
         evstr_type = it->evstr_type;
@@ -293,9 +293,9 @@ Int_t THaScaler::InitData(const string& bankgroup, const Bdate& date_want) {
 #endif
 
 // Calibration of BCMs
-  calib_u1 = 1345;  calib_u3 = 4114;  calib_u10 = 12515; 
-  calib_d1 = 1303;  calib_d3 = 4034;  calib_d10 = 12728; 
-  off_u1 = 92.07;   off_u3 = 167.06;  off_u10 = 102.62;  
+  calib_u1 = 1345;  calib_u3 = 4114;  calib_u10 = 12515;
+  calib_d1 = 1303;  calib_d3 = 4034;  calib_d10 = 12728;
+  off_u1 = 92.07;   off_u3 = 167.06;  off_u10 = 102.62;
   off_d1 = 72.19;   off_d3 = 81.08;   off_d10 = 199.51;
 
   if (crate == -1) {
@@ -308,21 +308,21 @@ Int_t THaScaler::InitData(const string& bankgroup, const Bdate& date_want) {
   return 0;
 };
 
-void THaScaler::SetIpAddress(string ipaddress) 
-{ // Set IP address used by online code 
+void THaScaler::SetIpAddress(string ipaddress)
+{ // Set IP address used by online code
   vme_server = ipaddress;
 }
 
-void THaScaler::SetPort(Int_t port) 
-{ // Set port# used by online code 
+void THaScaler::SetPort(Int_t port)
+{ // Set port# used by online code
   vme_port = port;
 }
-   
+
 void THaScaler::SetClockLoc(Int_t slot, Int_t chan)
 { // Setup the clock.  If this is called, it over-rides the
   // definition of "clock" in the scaler.map file.  If this is
   // not called, then the "clock" is defined by scaler.map
-  if (slot == -1) {  // assume slot is the normalization scaler 
+  if (slot == -1) {  // assume slot is the normalization scaler
     clkslot = GetSlot("TS-accept");
   } else {
     clkslot = slot;
@@ -350,7 +350,7 @@ void THaScaler::SetupNormMap() {
 // Retrieve info about the normalization scaler, which
 // is the one that contains TS-accept.  This makes
 // subsequent code much faster.
- 
+
 // Initial defaults
   normslot[1] = normslot[0]-1;
   normslot[2] = normslot[0]+1;
@@ -367,7 +367,7 @@ void THaScaler::SetupNormMap() {
   clkchan = GetChan("clock");
 
   if (database) {
-// possible over-ride if target state defined 
+// possible over-ride if target state defined
     if (database->UsesTargetState(crate)) {
 #ifdef WITH_DEBUG
       if (fDebug) cout << "Using target state info "<<endl;
@@ -404,13 +404,13 @@ void THaScaler::SetupNormMap() {
 }
 
 void THaScaler::SetClockRate(Double_t rate)
-{ 
+{
   clockrate = rate;
   isclockreset = true;
 }
 
 void THaScaler::SetTimeInterval(Double_t time)
-{ 
+{
 // Set the average time interval between events.
 // Note, use this *ONLY IF* there is no clock in the datastream.
   if (time <= 0) {
@@ -430,11 +430,11 @@ Int_t THaScaler::LoadData(const THaEvData& evdata) {
   new_load = kFALSE;
   Int_t nlen = 0;
   if (evstr_type == 1) {  // data in the event stream (physics triggers)
-    if (!evdata.IsPhysicsTrigger()) return 0;  
-    nlen = evdata.GetRocLength(crate); 
+    if (!evdata.IsPhysicsTrigger()) return 0;
+    nlen = evdata.GetRocLength(crate);
     if (nlen == 0) return 0;
   } else {  // traditional scaler event type 140
-    if (evdata.GetEvType() != 140) return 0;   
+    if (evdata.GetEvType() != 140) return 0;
     nlen = evdata.GetEvLength();
   }
   if (ldebug) cout << "Loading evdata, bank =  "<<bankgroup<<"  "<<evstr_type<<"  "<<crate<<"  "<<evdata.GetEvType()<<"   "<<nlen<<endl;
@@ -448,33 +448,33 @@ Int_t THaScaler::LoadData(const THaEvData& evdata) {
     }
     if (ldebug) {
       cout << "  data["<<i<<"] = "<<data[i]<<"  =0x"<<hex<<data[i]<<dec<<endl;
-    } 
+    }
   }
-  ExtractRaw(data,nlen);  
+  ExtractRaw(data,nlen);
   return 0;
 };
 
-Int_t THaScaler::LoadDataCodaFile(const char* filename) { 
+Int_t THaScaler::LoadDataCodaFile(const char* filename) {
 // from CODA file 'filename'.  We'll open it for you. Return of 0 is ok.
   TString file(filename);
   return LoadDataCodaFile(file);
 };
 
-Int_t THaScaler::LoadDataCodaFile(TString filename) { 
+Int_t THaScaler::LoadDataCodaFile(TString filename) {
 // from CODA file 'filename'.  We'll open it for you. Return of 0 is ok.
   new_load = kFALSE;
   if ( !coda_open ) {
      fcodafile->codaOpen(filename);
      coda_open = kTRUE;
-  } 
+  }
   return LoadDataCodaFile(fcodafile);
 };
 
 Int_t THaScaler::LoadDataCodaFile(THaCodaFile *codafile) {
-// Load data from a CODA file, assumed to be already opened. 
+// Load data from a CODA file, assumed to be already opened.
 // Return of 0 means end of data, return of 1 means there is more data.
   new_load = kFALSE;
-// Turn the following 2 on to see if the code works. 
+// Turn the following 2 on to see if the code works.
   Int_t dodump=0;
   Int_t ldebug=0;
   Int_t MAXLEN=5000;
@@ -484,16 +484,16 @@ Int_t THaScaler::LoadDataCodaFile(THaCodaFile *codafile) {
   found_crate = kFALSE;
   codastat = CODA_OK;
   while (codastat == CODA_OK) {
-    codastat = codafile->codaRead();  
+    codastat = codafile->codaRead();
     if (codastat != CODA_OK ) return 0;
     const UInt_t* data = codafile->getEvBuffer();
     int evlen = data[0]+1;
     int evtype = data[1]>>16;
     int evnum = data[4];
-    if (ldebug) 
+    if (ldebug)
       cout << "LoadCoda check "<<evlen<<"  "<<evtype<<"  "<<evnum<<endl;
 // optional dump of data to check
-    if (dodump) { 
+    if (dodump) {
       cout << "\n\n Event number " << dec << evnum;
       cout << " length " << evlen << " type " << evtype << endl;
       int ipt = 0;
@@ -515,7 +515,7 @@ Int_t THaScaler::LoadDataCodaFile(THaCodaFile *codafile) {
 // ------ end of dump
     if (evstr_type == 1) {  // data in the event stream (physics triggers)
       if (evtype > 14) return 1;
-      if (ldebug) cout << "Loading for crate # "<<crate<<endl; 
+      if (ldebug) cout << "Loading for crate # "<<crate<<endl;
       for (int j=0; j<MAXLEN; j++) databuff[j]=0; // clear !
       int pos = data[2]+3;
          while (pos+1 < evlen) {
@@ -554,7 +554,7 @@ Int_t THaScaler::LoadDataCodaFile(THaCodaFile *codafile) {
 
 Int_t THaScaler::ExtractRaw(const UInt_t* data, int dlen) {
 // Extract rawdata from data if this event belongs to this scaler crate.
-// This works for CODA event data or VME data format but not 
+// This works for CODA event data or VME data format but not
 // for scaler history file (strings).
   int len, ndat, max, i, j, k, slot, numchan;
   found_crate = kFALSE;
@@ -590,7 +590,7 @@ Int_t THaScaler::ExtractRaw(const UInt_t* data, int dlen) {
          if (k >= 0 && k < SCAL_NUMBANK*SCAL_NUMCHAN) rawdata[k] = data[j];
       }
       found_crate = kTRUE;
-    }  
+    }
   }
   if (found_crate) {
      new_load = kTRUE;
@@ -598,7 +598,7 @@ Int_t THaScaler::ExtractRaw(const UInt_t* data, int dlen) {
      return 1;
   }
   return 0;
-};  
+};
 
 Int_t THaScaler::LoadDataHistoryFile(int run_num, int hdeci) {
 // Load data from scaler history file for run number
@@ -616,7 +616,7 @@ Int_t THaScaler::LoadDataHistoryFile(const char* filename, int run_num, int hdec
     cout << " does not exist."<<endl<<"Hence, no data."<<endl;
     return SCAL_ERROR;
   }
-  char *crun_num; crun_num = new char[20]; 
+  char *crun_num; crun_num = new char[20];
   sprintf(crun_num," %d",run_num);
   string runstr("run number");
   string myrun = runstr + crun_num;
@@ -636,7 +636,7 @@ Int_t THaScaler::LoadDataHistoryFile(const char* filename, int run_num, int hdec
             getline(hfile, dat);
 	    int k = slot*SCAL_NUMCHAN + j;
             if (k >= 0 && k < SCAL_NUMBANK*SCAL_NUMCHAN) {
-/* this line depends on whether the data was stored as hex or decimal */    
+/* this line depends on whether the data was stored as hex or decimal */
               if (hdeci == 0) {
    	         rawdata[k] = atoi(dat.c_str());
 	      } else { /* hexidecimal */
@@ -668,12 +668,12 @@ Int_t THaScaler::LoadDataOnline() {
 Int_t THaScaler::LoadDataOnline(const char* server, int port) {
 // Load data from VME 'server' and 'port'.
 
-// Structure for requests from this client to VME server 
+// Structure for requests from this client to VME server
 #define MAXBLK   20
 #define MSGSIZE  50
-struct request { 
+struct request {
    int reply;
-   int ibuf[16*MAXBLK]; 
+   int ibuf[16*MAXBLK];
    char message[MSGSIZE];
    int clearflag; int checkend;
 };
@@ -686,10 +686,10 @@ struct request {
   new_load = kFALSE;
   if (CheckInit() == SCAL_ERROR) return SCAL_ERROR;
 
-  int   sFd;      //  socket file descriptor 
+  int   sFd;      //  socket file descriptor
   int i, k, slot, nchan, ntot, sca;
   ssize_t nRead, nRead1;
-  struct request myRequest;           //  request to send to server 
+  struct request myRequest;           //  request to send to server
   struct request vmeReply;            //  reply from server
   struct sockaddr_in serverSockAddr;  //  socket addr of server
   static int lprint   = 0;
@@ -697,7 +697,7 @@ struct request {
   myRequest.checkend  = 0;
   UInt_t timeoutcnt=0;
 
-// create socket 
+// create socket
   if ((sFd = socket (PF_INET, SOCK_STREAM, 0)) == -1 ) {
       cout << "ERROR: THaScaler: LoadDataOnline: Cannot open socket"<<endl;
       return SCAL_ERROR;
@@ -710,7 +710,7 @@ struct request {
     cout << "Connecting to server "<<server<<"  at port "<<port<<endl;
   }
 
-// connect to server 
+// connect to server
   if(connect (sFd, (struct sockaddr *) &serverSockAddr, sizeof(serverSockAddr)) == -1) {
       cout << "ERROR: THaScaler: LoadDataOnline: Cannot connect "<<endl;
       cout << "to VME server"<<endl;
@@ -794,13 +794,13 @@ onldone:
   }
   return 0;
 };
-   
+
 void THaScaler::Print(Option_t* opt) const {
 // Print data contents
   int i,j;
   cout << "\n============== Print out ================"<<endl;
   cout << "THaScaler Data for bankgroup = "<<bankgroup<<endl;
-  cout << "Header "<<hex<<header<<"  crate num "<<dec<<crate<<endl;   
+  cout << "Header "<<hex<<header<<"  crate num "<<dec<<crate<<endl;
   cout << "Raw data = "<<endl;
   for (i = 0; i < SCAL_NUMBANK; i++) {
     for (j = 0; j < 8; j++) cout << hex << rawdata[i*32+j] << " ";
@@ -815,7 +815,7 @@ void THaScaler::Print(Option_t* opt) const {
 };
 
 void THaScaler::PrintSummary() {
-// Print out a summary of important scalers 
+// Print out a summary of important scalers
   if (CheckInit() == SCAL_ERROR) {
     cout << "THaScaler: WARNING:  You never initialized scalers."<<endl;
     cout << "Must call Init method once in the life of object."<<endl;
@@ -825,13 +825,13 @@ void THaScaler::PrintSummary() {
   //  Double_t time_sec = GetPulser("clock")/clockrate;
   cout << "Clock rate "<<clockrate<<endl;
   Double_t time_sec = GetScaler(clkslot,clkchan)/clockrate;
-  cout << "clock location "<<clkslot<<"  "<<clkchan<<endl; 
+  cout << "clock location "<<clkslot<<"  "<<clkchan<<endl;
   cout << "clock counts "<< GetScaler(clkslot,clkchan)<<"   clock rate "<<clockrate<<endl;
   if (time_sec == 0) {
     cout << "THaScaler: WARNING:  Time of run = ZERO (\?\?)\n"<<endl;
     return;
-  } 
-  Double_t time_min = time_sec/60;  
+  }
+  Double_t time_min = time_sec/60;
   Double_t curr_u1  = ((Double_t)GetBcm("bcm_u1")/time_sec - off_u1)/calib_u1;
   Double_t curr_u3  = ((Double_t)GetBcm("bcm_u3")/time_sec - off_u3)/calib_u3;
   Double_t curr_u10 = ((Double_t)GetBcm("bcm_u10")/time_sec - off_u10)/calib_u10;
@@ -880,11 +880,11 @@ Int_t THaScaler::GetScaler(const char* detector, Int_t chan) {
   return GetScaler(detector, "LR", chan);
 };
 
-Int_t THaScaler::GetScaler(const char* det, const char* pm, Int_t chan, 
-			   Int_t histor) 
+Int_t THaScaler::GetScaler(const char* det, const char* pm, Int_t chan,
+			   Int_t histor)
 {
 // Accum. counts on PMTs of detector = "s1", "s2", "gasc", "a1", "a2",
-// "leadgl", "edtm".   PMT = "left" or "right" or "LR"    
+// "leadgl", "edtm".   PMT = "left" or "right" or "LR"
   string detector = det;
   string PMT = pm;
   if ( !(did_init && one_load) ) return 0;
@@ -895,7 +895,7 @@ Int_t THaScaler::GetScaler(const char* det, const char* pm, Int_t chan,
   if (slot == -1) return 0;
   return GetScaler(slot,GetChan(detector,0,chan),histor);
 };
-  
+
 Int_t THaScaler::GetTrig(Int_t trigger) {
 // Non-helicity gated trigger counts for trig# 1,2,3...
    return GetTrig(0, trigger);
@@ -932,7 +932,7 @@ Int_t THaScaler::GetPulser(const char* which) {
 Int_t THaScaler::GetPulser(Int_t helicity, const char* which, Int_t histor) {
 // Obtain pulser values, by 'which' = 'clock', 'edt', 'edtat', 'strobe', etc
   return GetNormData(helicity, which, histor);
-};   
+};
 
 Int_t THaScaler::GetNormData(Int_t tgtstate, Int_t helicity, const char* which, Int_t histor) {
 // Get Normalization Data for channel 'which'
@@ -978,7 +978,7 @@ Int_t THaScaler::GetNormData(Int_t tgtstate, Int_t helicity, Int_t chan, Int_t h
   if (tgtstate == -1 && helicity == 1)  index=3;
   if (tgtstate == -1 && helicity == -1) index=4;
   if (normslot[index] == -1) return 0;
-  return GetScaler(normslot[index],chan,histor);  
+  return GetScaler(normslot[index],chan,histor);
 };
 
 Int_t THaScaler::GetNormData(Int_t helicity, Int_t chan, Int_t histor) {
@@ -991,7 +991,7 @@ Int_t THaScaler::GetNormData(Int_t helicity, Int_t chan, Int_t histor) {
   if (helicity == -1) index = 1;
   if (helicity ==  1) index = 2;
   if (normslot[index] == -1) return 0;
-  return GetScaler(normslot[index],chan,histor);  
+  return GetScaler(normslot[index],chan,histor);
 };
 
 Int_t THaScaler::GetSlot(string detector, Int_t helicity) {
@@ -1005,7 +1005,7 @@ Int_t THaScaler::GetSlot(Int_t tgtstate, Int_t helicity) {
 };
 
 Int_t THaScaler::GetChan(string detector, Int_t helicity, Int_t chan) {
-// No distinction by target state because it's assumed that diff tgt states 
+// No distinction by target state because it's assumed that diff tgt states
 // share the same channel map since that's how we fan out the signals.
   if (!database) return 0;
   return database->GetChan(crate, detector, helicity, chan);
@@ -1028,7 +1028,7 @@ Double_t THaScaler::GetScalerRate(Int_t slot, Int_t chan) {
   if (etime <= 0.0)
     return 0.0;
 
-  Double_t rate = 
+  Double_t rate =
     ( GetScaler(slot,chan,0)-GetScaler(slot,chan,1) ) / etime;
 
   return rate;
@@ -1043,7 +1043,7 @@ Double_t THaScaler::GetScalerRate(const char* detector, const char* PMT, Int_t c
 // PMT = "left", "right", "LR" (coinc),  and channel #chan.
   Double_t rate,etime;
   etime = GetTimeDiff(0);
-  if (etime > 0) { 
+  if (etime > 0) {
       rate = ( GetScaler(detector, PMT, chan, 0) -
                GetScaler(detector, PMT, chan, 1) ) / etime;
       return rate;
@@ -1058,7 +1058,7 @@ Double_t THaScaler::GetTrigRate(Int_t trigger) {
 Double_t THaScaler::GetTrigRate(Int_t helicity, Int_t trigger) {
   Double_t rate,etime;
   etime = GetTimeDiff(helicity);
-  if (etime > 0) { 
+  if (etime > 0) {
       rate = ( GetTrig(helicity, trigger, 0) -
                GetTrig(helicity, trigger, 1) ) / etime;
       return rate;
@@ -1068,12 +1068,12 @@ Double_t THaScaler::GetTrigRate(Int_t helicity, Int_t trigger) {
 
 Double_t THaScaler::GetBcmRate(const char* which) {
   return GetBcmRate(0, which);
-};      
+};
 
 Double_t THaScaler::GetBcmRate(Int_t helicity, const char* which) {
   Double_t rate,etime;
   etime = GetTimeDiff(helicity);
-  if (etime > 0) { 
+  if (etime > 0) {
       rate = ( GetBcm(helicity, which, 0) -
                GetBcm(helicity, which, 1) ) / etime;
       return rate;
@@ -1083,12 +1083,12 @@ Double_t THaScaler::GetBcmRate(Int_t helicity, const char* which) {
 
 Double_t THaScaler::GetPulserRate(const char* which) {
   return GetPulserRate(0, which);
-};   
+};
 
 Double_t THaScaler::GetPulserRate(Int_t helicity, const char* which) {
   Double_t rate,etime;
   etime = GetTimeDiff(helicity);
-  if (etime > 0) { 
+  if (etime > 0) {
       rate = ( GetPulser(helicity, which, 0) -
                GetPulser(helicity, which, 1) ) / etime;
       return rate;
@@ -1100,7 +1100,7 @@ Double_t THaScaler::GetNormRate(Int_t tgtstate, Int_t helicity, const char* whic
   Double_t rate,etime;
   etime = GetTimeDiff(tgtstate,helicity);
 
-  if (etime > 0) { 
+  if (etime > 0) {
     rate = ( GetNormData(tgtstate, helicity, which, 0) -
 	     GetNormData(tgtstate,helicity, which, 1) ) / etime;
       return rate;
@@ -1112,7 +1112,7 @@ Double_t THaScaler::GetNormRate(Int_t helicity, const char* which) {
   Double_t rate,etime;
   etime = GetTimeDiff(helicity);
 
-  if (etime > 0) { 
+  if (etime > 0) {
       rate = ( GetNormData(helicity, which, 0) -
                GetNormData(helicity, which, 1) ) / etime;
       return rate;
@@ -1123,7 +1123,7 @@ Double_t THaScaler::GetNormRate(Int_t helicity, const char* which) {
 Double_t THaScaler::GetNormRate(Int_t helicity, Int_t chan) {
   Double_t rate,etime;
   etime = GetTimeDiff(helicity);
-  if (etime > 0) { 
+  if (etime > 0) {
       rate = ( GetNormData(helicity, chan, 0) -
                GetNormData(helicity, chan, 1) ) / etime;
       return rate;
@@ -1134,7 +1134,7 @@ Double_t THaScaler::GetNormRate(Int_t helicity, Int_t chan) {
 Double_t THaScaler::GetNormRate(Int_t tgtstate, Int_t helicity, Int_t chan) {
   Double_t rate,etime;
   etime = GetTimeDiff(tgtstate, helicity);
-  if (etime > 0) { 
+  if (etime > 0) {
       rate = ( GetNormData(tgtstate, helicity, chan, 0) -
                GetNormData(tgtstate, helicity, chan, 1) ) / etime;
       return rate;
@@ -1160,7 +1160,7 @@ Double_t THaScaler::GetTimeDiffSlot(Int_t slot, Int_t chan) {
     return etime;
   }
   if (clockrate == 0) return 0;
-  return (GetScaler(slot, chan, 0) - 
+  return (GetScaler(slot, chan, 0) -
           GetScaler(slot, chan, 1))/clockrate;
 };
 
@@ -1181,7 +1181,7 @@ Double_t THaScaler::GetTimeDiff(Int_t helicity) {
              GetNormData(helicity, clkchan, 1)) /
   	          clockrate);
   } else {
-  
+
     return ((GetNormData(helicity,"clock",0) -
 	     GetNormData(helicity,"clock",1)) /
             	  clockrate) ;

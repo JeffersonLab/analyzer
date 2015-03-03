@@ -14,7 +14,7 @@ class THaFilter : public THaPostProcess {
  public:
   THaFilter( const char *cutexpr, const char* filename );
   virtual ~THaFilter();
-  
+
   virtual Int_t Init(const TDatime&);
   virtual Int_t Process( const THaEvData*, const THaRunBase*, Int_t code );
   virtual Int_t Close();
@@ -26,7 +26,7 @@ class THaFilter : public THaPostProcess {
   TString   fFileName;   // Name of CODA output file
   Decoder::THaCodaFile* fCodaOut; // The CODA output file
   THaCut*   fCut;        // Pointer to cut used for filtering
-  
+
  public:
   ClassDef(THaFilter,0)
 };

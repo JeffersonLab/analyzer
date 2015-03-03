@@ -8,7 +8,7 @@
   CodaDecoder (replaces THaCodaDecoder) which is chosen by
   the appropriate lines in /src/THaInterface.
         gHaDecoder = CodaDecoder::Class();
-  For now, the old decoder classes remain in place, but 
+  For now, the old decoder classes remain in place, but
   the following will eventually be obsolete
   THaCodaDecoder, THaFastBusWord, THaEpics (would be replaced
   by an event handler, as yet unwritten)
@@ -38,7 +38,7 @@
  II. Getting Started
 
      The easiest way to learn to use the decoder is to look at
-     the examples of executibles.  They are documented in the 
+     the examples of executibles.  They are documented in the
      Makefile.  Here are some more details.
 
      Test Executibles:
@@ -60,15 +60,15 @@
      etclient --  test of ET connection for online data.
                   Either does a printout of data, or a fast access to test speed.
 
-     prfact   --  standalone code to print the prescale factors and exit.  
+     prfact   --  standalone code to print the prescale factors and exit.
 
      (noted, 2015): a few more were added, see *main*.C
-   
+
     To understand how to use decoding classes, look at the 'main'
     routines corresponding to the above executibles.  They are
-    tstcoda_main.C, tstio_main.C, tdecpr_main.C, tdecex_main.C, 
+    tstcoda_main.C, tstio_main.C, tdecpr_main.C, tdecex_main.C,
     etclient_main.C, and prfact_main.C.  For developers of a detector
-    class, see THaGenDetTest.C which shows the proposed usage of 
+    class, see THaGenDetTest.C which shows the proposed usage of
     decoding for a detector class.  However, that example is dated.
     It is now preferable for users to look at Ole's guidlines and
     imitate, for example, THaScintillator class in the parent directory.
@@ -100,7 +100,7 @@
 
   2. ONLINE_ET flag in Makefile controls whether ET system
      is used.  For off-site, it should be left off.  See
-     the file README_ET for more details. 
+     the file README_ET for more details.
 
 
 

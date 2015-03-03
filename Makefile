@@ -48,8 +48,8 @@ SUBDIRS      := $(DCDIR) $(SCALERDIR)
 INCDIRS      := $(addprefix $(HA_DIR)/, src $(SUBDIRS))
 HA_DICT      := haDict
 
-LIBS         := 
-GLIBS        := 
+LIBS         :=
+GLIBS        :=
 
 INCLUDES     := $(addprefix -I, $(INCDIRS) )
 
@@ -97,7 +97,7 @@ CXXVER       := $(shell g++ --version | head -1 | sed 's/.* \([0-9]\)\..*/\1/')
 DEFINES      += $(shell getconf LFS_CFLAGS)
 ifeq ($(CXXVER),4)
 CXXFLAGS     += -Wextra -Wno-missing-field-initializers
-DICTCXXFLG   := -Wno-strict-aliasing 
+DICTCXXFLG   := -Wno-strict-aliasing
 endif
 endif
 
@@ -123,7 +123,7 @@ SONAME       := -Wl,-install_name,@rpath/
 CXXVER       := $(shell g++ --version | head -1 | sed 's/.* \([0-9]\)\..*/\1/')
 ifeq ($(CXXVER),4)
 CXXFLAGS     += -Wextra -Wno-missing-field-initializers
-DICTCXXFLG   := -Wno-strict-aliasing 
+DICTCXXFLG   := -Wno-strict-aliasing
 endif
 endif
 
@@ -208,7 +208,7 @@ SRC          := src/THaFormula.C src/THaVform.C src/THaVhist.C \
 		src/THaPhotoReaction.C src/THaSAProtonEP.C \
 		src/THaTextvars.C src/THaQWEAKHelicity.C \
 		src/THaQWEAKHelicityReader.C src/THaEvtTypeHandler.C \
-		src/THaScalerEvtHandler.C 
+		src/THaScalerEvtHandler.C
 
 ifdef ONLINE_ET
 SRC += src/THaOnlRun.C
@@ -385,7 +385,7 @@ endif
 .PHONY: all clean realclean srcdist subdirs
 
 
-###--- DO NOT CHANGE ANYTHING BELOW THIS LINE UNLESS YOU KNOW WHAT 
+###--- DO NOT CHANGE ANYTHING BELOW THIS LINE UNLESS YOU KNOW WHAT
 ###    YOU ARE DOING
 
 .SUFFIXES:

@@ -11,13 +11,13 @@
 #include "Decoder.h"
 
 class THaRun : public THaCodaRun {
-  
+
 public:
   THaRun( const char* filename="", const char* description="" );
   THaRun( const THaRun& run );
   virtual THaRun& operator=( const THaRunBase& rhs );
   virtual ~THaRun();
-  
+
   virtual void         Clear( Option_t* opt="" );
   virtual Int_t        Compare( const TObject* obj ) const;
           const char*  GetFilename() const { return fFilename.Data(); }
