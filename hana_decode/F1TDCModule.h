@@ -12,12 +12,6 @@
 
 namespace Decoder {
 
-  const Int_t NTDCCHAN = 32;
-  const Int_t MAXHIT   = 100;
-  const Int_t ILO      = 0;
-  const Int_t IHI      = 1;
-
-
 class F1TDCModule : public VmeModule {
 
 public:
@@ -25,6 +19,8 @@ public:
    F1TDCModule() {};
    F1TDCModule(Int_t crate, Int_t slot);
    virtual ~F1TDCModule();
+
+   enum EResolution { ILO = 0, IHI = 1 };
 
    void Init();
    Bool_t IsSlot(UInt_t rdata);
@@ -34,7 +30,7 @@ public:
      if (which==0) fResol=ILO;
      return;
    }
-   Int_t GetResolution() { return fResol; };
+   EResolution GetResolution() { return fResol; };
    Bool_t IsHiResolution() { return (fResol==IHI); };
 
    Int_t GetNumHits() { return fNumHits; };
@@ -50,7 +46,7 @@ private:
    Int_t LoadSlot(THaSlotData *sldat,  const UInt_t* evbuffer, const UInt_t *pstop );
 
    Int_t fNumHits;
-   Int_t fResol;
+   EResolution fResol;
    Int_t *fTdcData;  // Raw data (either samples or pulse integrals)
    Bool_t IsInit;
    void Clear(const Option_t *opt);

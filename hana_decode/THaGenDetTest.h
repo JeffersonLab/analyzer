@@ -34,9 +34,6 @@ class THaGenDetTest
          void process_event(THaEvData *evdata);
 
  private:
-
-         static const int PRINTOUT = 0;  // to printout (1) or not (0)
-         static const int MAX = 100;
          int mycrates[MAX];
          int myslots[MAX];
          int chanlo[MAX],chanhi[MAX];

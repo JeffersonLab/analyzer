@@ -41,6 +41,12 @@
 using namespace std;
 using namespace Decoder;
 
+static const UInt_t ICOUNT    = 1;
+static const UInt_t IRATE     = 2;
+static const UInt_t MAXCHAN   = 32;
+static const UInt_t MAXTEVT   = 5000;
+static const UInt_t defaultDT = 4;
+
 THaScalerEvtHandler::THaScalerEvtHandler(const char *name, const char* description)
   : THaEvtTypeHandler(name,description)
 {
@@ -118,7 +124,7 @@ Int_t THaScalerEvtHandler::Analyze(THaEvData *evdata)
   // Parse the data, load local data arrays.
 
   Int_t ndata = evdata->GetEvLength();
-  if (ndata >= MAXTEVT) {
+  if (ndata >= static_cast<Int_t>(MAXTEVT)) {
     cout << "THaScalerEvtHandler:: ERROR: Event length crazy "<<endl;
     ndata = MAXTEVT-1;
   }

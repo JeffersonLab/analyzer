@@ -9,12 +9,6 @@
 //
 /////////////////////////////////////////////////////////////////////
 
-#define ICOUNT  1
-#define IRATE   2
-#define MAXCHAN  32
-#define MAXTEVT 5000
-#define defaultDT 4
-
 #include "THaEvtTypeHandler.h"
 #include <string>
 #include <vector>

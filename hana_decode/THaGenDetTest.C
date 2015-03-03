@@ -19,6 +19,9 @@
 
 //#define SIMPLELOOP 
 
+static const int PRINTOUT = 0;  // to printout (1) or not (0)
+static const int MAX = 100;
+
 using namespace std;
 
 THaGenDetTest::THaGenDetTest()

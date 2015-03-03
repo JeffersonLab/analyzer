@@ -12,8 +12,6 @@
 
 namespace Decoder {
 
-const int DEFAULT_DELTAT = 4;
-
 class GenScaler : public VmeModule {
 
 public:

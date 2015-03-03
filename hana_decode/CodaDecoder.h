@@ -14,9 +14,6 @@
 
 namespace Decoder {
 
-  const Int_t MAX_EVTYPES = 200;
-  const Int_t MAX_PHYS_EVTYPES = 14;
-
 class CodaDecoder : public THaEvData {
   // public interface is SAME as before
  public:

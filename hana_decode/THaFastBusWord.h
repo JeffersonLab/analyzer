@@ -17,10 +17,6 @@
 
 #include "TString.h"
 
-// note to myself: all lower bits here 1.
-#define MAXIDX 0xf
-#define MAXMODULE 0x3
-
 namespace Decoder {
 
 class THaFastBusWord {
@@ -44,6 +40,10 @@ private:
   static const UInt_t   slotmask = 0xf8000000;
   static const UChar_t  slotshift = 27;
   static const UShort_t modoff = 1874;
+  // note to myself: all lower bits here 1.
+  static const UInt_t   MAXIDX = 0xf;
+  static const UInt_t   MAXMODULE = 0x3;
+
   UChar_t  modindex[MAXIDX];
   UShort_t module_type[MAXMODULE];
   struct module_information {

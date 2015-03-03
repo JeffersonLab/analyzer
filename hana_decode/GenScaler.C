@@ -16,6 +16,8 @@ using namespace std;
 
 namespace Decoder {
 
+  const int DEFAULT_DELTAT = 4;
+
 GenScaler::GenScaler(Int_t crate, Int_t slot) : VmeModule(crate, slot) {
   fNumChan = 0;
   fWordsExpect = 32;
