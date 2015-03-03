@@ -12,9 +12,6 @@
 
 namespace Decoder {
 
-  const Int_t NADCCHAN = 16;
-  const Int_t MAXDAT   = 1000;
-
 class Fadc250Module : public VmeModule {
 
 public:

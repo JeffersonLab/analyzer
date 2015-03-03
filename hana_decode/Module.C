@@ -154,8 +154,9 @@ TypeIter_t Module::DoRegister( const ModuleType& info )
   return ins.first;
 }
 
-Int_t Module::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const UInt_t *pstop) {
-// This is a simple, default method for loading a slot
+Int_t Module::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const UInt_t *pstop)
+{
+  // This is a simple, default method for loading a slot
   const UInt_t *p = evbuffer;
   if (fDebugFile) {
        *fDebugFile << "Module:: Loadslot "<<endl;
@@ -163,15 +164,14 @@ Int_t Module::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const UInt_t 
        *fDebugFile << "masks  "<<hex<<fHeaderMask<<endl;
   }
   if (!fHeader) cerr << "Module::LoadSlot::ERROR : no header ?"<<endl;
-  Int_t nchan,mdata,rdata;
   fWordsSeen=0;
   while (IsSlot( *p )) {
     if (p >= pstop) break;
     if (fDebugFile) *fDebugFile << "IsSlot ... data = "<<*p<<endl;
     p++;
     Decode(p);
-    nchan = GetNumChan();
-    for (Int_t ichan = 0; ichan < nchan; ichan++) {
+    for (size_t ichan = 0, nchan = GetNumChan(); ichan < nchan; ichan++) {
+      Int_t mdata,rdata;
       fWordsSeen++;
       p++;
       if (p >= pstop) break;

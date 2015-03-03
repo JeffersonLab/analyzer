@@ -39,16 +39,15 @@ Int_t SkeletonModule::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const
 // This is a simple, default method for loading a slot
   const UInt_t *p = evbuffer;
   fWordsSeen = 0;
-  Int_t chan, raw, status;
 //  cout << "version like V792"<<endl;
   ++p;
   Int_t nword=*p-2;
   ++p;
   for (Int_t i=0;i<nword;i++) {
        ++p;
-       chan=((*p)&0x00ff0000)>>16;
-       raw=((*p)&0x00000fff);
-       status = sldat->loadData("adc",chan,raw,raw);
+       UInt_t chan=((*p)&0x00ff0000)>>16;
+       UInt_t raw=((*p)&0x00000fff);
+       Int_t status = sldat->loadData("adc",chan,raw,raw);
        fWordsSeen++;
        if (chan < fData.size()) fData[chan]=raw;
 //       cout << "word   "<<i<<"   "<<chan<<"   "<<raw<<endl;

@@ -17,6 +17,9 @@ using namespace std;
 
 namespace Decoder {
 
+  static const Int_t NADCCHAN = 16;
+  static const Int_t MAXDAT   = 1000;
+
   Fadc250Module::Fadc250Module(Int_t crate, Int_t slot) : VmeModule(crate, slot) {
     fDebugFile=0;
     Init();
@@ -335,7 +338,7 @@ namespace Decoder {
 	    if(  (i_print == 1) && (fDebugFile > 0) )
 	      *fDebugFile << "Setting f250_foundmode "<<f250_foundmode<<endl;
 	    chan=0;
-	    if (fadc_data.chan >= 0 && fadc_data.chan < NADCCHAN) {
+	    if (fadc_data.chan >= 0 && fadc_data.chan < static_cast<UInt_t>(NADCCHAN)) {
 	      chan = fadc_data.chan;
 	    } else {
 	      cout << "ERROR:: Fadc250Module:: ADC channel makes no sense !"<<endl;
@@ -396,7 +399,7 @@ namespace Decoder {
 	fadc_data.quality = (data & 0x180000) >> 19;
 	fadc_data.integral = (data & 0x7FFFF);
 	chan=0;
-	if (fadc_data.chan >= 0 && fadc_data.chan < NADCCHAN) {
+	if (fadc_data.chan >= 0 && fadc_data.chan < static_cast<UInt_t>(NADCCHAN)) {
 	  chan = fadc_data.chan;
 	} else {
 	  cout << "ERROR:: Fadc250Module:: ADC channel makes no sense !"<<endl;
@@ -417,7 +420,7 @@ namespace Decoder {
 	fadc_data.quality = (data & 0x180000) >> 19;
 	fadc_data.time = (data & 0xFFFF);
 	chan=0;
-	if (fadc_data.chan >= 0 && fadc_data.chan < NADCCHAN) {
+	if (fadc_data.chan >= 0 && fadc_data.chan < static_cast<UInt_t>(NADCCHAN)) {
 	  chan = fadc_data.chan;
 	} else {
 	  cout << "ERROR:: Fadc250Module:: ADC channel makes no sense !"<<endl;
