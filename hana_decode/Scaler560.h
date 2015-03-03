@@ -8,22 +8,17 @@
 //
 /////////////////////////////////////////////////////////////////////
 
-#include <string>
-#include <map>
-#include <vector>
-#include "Rtypes.h"
-#include "Decoder.h"
-#include "Module.h"
 #include "GenScaler.h"
 
+namespace Decoder {
 
-class Decoder::Scaler560 : public GenScaler {
+class Scaler560 : public GenScaler {
 
 public:
 
-   Scaler560() {};  
-   Scaler560(Int_t crate, Int_t slot);  
-   virtual ~Scaler560();  
+   Scaler560() {};
+   Scaler560(Int_t crate, Int_t slot);
+   virtual ~Scaler560();
 
    void Init();
 
@@ -34,5 +29,7 @@ private:
    ClassDef(Scaler560,0)  // CAEN scaler model 560
 
 };
+
+}
 
 #endif

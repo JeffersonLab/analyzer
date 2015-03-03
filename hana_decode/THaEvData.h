@@ -84,7 +84,7 @@ public:
   virtual Int_t GetScaler(const TString& /*spec*/,
 			  Int_t /*slot*/, Int_t /*chan*/) const
   { return GetScaler(0,0,0); }
-  virtual void SetDebugFile( ofstream *file ) { fDebugFile = file; };
+  virtual void SetDebugFile( std::ofstream *file ) { fDebugFile = file; };
   virtual Decoder::Module* GetModule(Int_t roc, Int_t slot);
 
   // Access functions for EPICS (slow control) data
@@ -159,7 +159,7 @@ protected:
 
   const UInt_t *buffer;
 
-  ofstream *fDebugFile;  // debug output 
+  std::ofstream *fDebugFile;  // debug output
 
   Int_t  event_type,event_length,event_num,run_num,evscaler;
   Int_t  run_type;    // CODA run type from prestart event

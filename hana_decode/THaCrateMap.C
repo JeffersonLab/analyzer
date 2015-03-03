@@ -46,7 +46,8 @@
 #endif
 
 using namespace std;
-using namespace Decoder;
+
+namespace Decoder {
 
 const UShort_t THaCrateMap::MAXCHAN = 100;
 const UShort_t THaCrateMap::MAXDATA = 1024;
@@ -73,8 +74,8 @@ int THaCrateMap::getScalerCrate(int data) const {
     if (!crdat[crate].crate_used) continue;
     if (isScalerCrate(crate)) {
       int headtry = data&0xfff00000;
-      int zero = data&0x0000ff00;          
-      if ((zero == 0) && 
+      int zero = data&0x0000ff00;
+      if ((zero == 0) &&
 	  (headtry == crdat[crate].header[1])) return crate;
     }
   }
@@ -87,7 +88,7 @@ int THaCrateMap::setCrateType(int crate, const char* ctype) {
   TString type(ctype);
   crdat[crate].crate_used = true;
   crdat[crate].crate_type = type;
-  if (type == "fastbus") 
+  if (type == "fastbus")
     crdat[crate].crate_code = kFastbus;
   else if (type == "vme")
     crdat[crate].crate_code = kVME;
@@ -116,7 +117,7 @@ int THaCrateMap::setModel(int crate, int slot, UShort_t mod,
   return CM_OK;
 }
 
-int THaCrateMap::SetModelSize( int crate, int slot, UShort_t imodel ) 
+int THaCrateMap::SetModelSize( int crate, int slot, UShort_t imodel )
 {
   // Set the max number of channels and data words for some known modules
   assert( crate >= 0 && crate < MAXROC && slot >= 0 && slot < MAXSLOT );
@@ -170,7 +171,7 @@ int THaCrateMap::setMask(int crate, int slot, int mask) {
 
 int THaCrateMap::setScalerLoc(int crate, const char* loc) {
   assert( crate >= 0 && crate < MAXROC );
-  incrNslot(crate); 
+  incrNslot(crate);
   setCrateType(crate,"scaler");
   crdat[crate].scalerloc = loc;
   return CM_OK;
@@ -196,7 +197,7 @@ int THaCrateMap::init(ULong64_t tloc) {
 
   //FIXME: replace with TTimeStamp
   TDatime date((UInt_t)tloc);
-  
+
   TString db;
 
 #ifndef STANDALONE
@@ -233,11 +234,11 @@ void THaCrateMap::print(ofstream *file) const {
     *file << "#slot\tmodel\tclear\t  header\t  mask  \tnchan\tndata\n";
     for( int slot=0; slot<MAXSLOT; slot++ ) {
       if( !slotUsed(roc,slot) ) continue;
-      *file << "  " << slot << "\t" << crdat[roc].model[slot] 
+      *file << "  " << slot << "\t" << crdat[roc].model[slot]
 	   << "\t" << crdat[roc].slot_clear[slot];
       *file << "   \t0x" << hex << crdat[roc].header[slot]
 	   << "    \t0x" << hex  << crdat[roc].headmask[slot]
-	   << dec << "   " 
+	   << dec << "   "
 	   << "  \t" << crdat[roc].nchan[slot]
 	   << "  \t" << crdat[roc].ndata[slot]
 	   << endl;
@@ -247,7 +248,7 @@ void THaCrateMap::print(ofstream *file) const {
 
 }
 
-  
+
 void THaCrateMap::print() const
 {
   for( int roc=0; roc<MAXROC; roc++ ) {
@@ -258,7 +259,7 @@ void THaCrateMap::print() const
     cout << "#slot\tmodel\tclear\t  header\t  mask  \tnchan\tndata\n";
     for( int slot=0; slot<MAXSLOT; slot++ ) {
       if( !crdat[roc].slot_used[slot] ) continue;
-      cout << "  " << slot << "\t" << crdat[roc].model[slot] 
+      cout << "  " << slot << "\t" << crdat[roc].model[slot]
 	   << "\t" << crdat[roc].slot_clear[slot];
       // using this instead of manipulators again for bckwards compat with g++-2
       ios::fmtflags oldf = cout.setf(ios::right, ios::adjustfield);
@@ -277,16 +278,16 @@ int THaCrateMap::init(TString the_map)
 {
   // initialize the crate-map according to the lines in the string 'the_map'
   // parse each line separately, to ensure that the format is correct
-  
+
   // be certain the_map ends with a '\0' so we can make a stringstream from it
   the_map += '\0';
   ISSTREAM s(the_map.Data());
-  
+
   int linecnt = 0;
   string line;
   int crate; // current CRATE
   int slot;
-  
+
   typedef string::size_type ssiz_t;
 
   for(crate=0; crate<MAXROC; crate++) {
@@ -309,22 +310,22 @@ int THaCrateMap::init(TString the_map)
     linecnt++;
     ssiz_t l = line.find_first_of("!#");    // drop comments
     if (l != string::npos ) line.erase(l);
-    
+
     if ( line.length() <= 0 ) continue;
-    
+
     if ( line.find_first_not_of(" \t") == string::npos ) continue; // nothing useful
-   
+
     char ctype[21];
 
 // Make the line "==== Crate" not care about how many "=" chars or other
 // chars before "Crate", but lines beginning in # are still a comment
     ssiz_t st = line.find("Crate", 0, 5);
-    if (st != string::npos) {    
+    if (st != string::npos) {
       string lcopy = line;
       line.replace(0, lcopy.length(), lcopy, st, st+lcopy.length());
     }
 
-// set the next CRATE number and type 
+// set the next CRATE number and type
 
     if ( sscanf(line.c_str(),"Crate %d type %20s",&crate,ctype) == 2 ) {
       if ( setCrateType(crate,ctype) != CM_OK )  {
@@ -343,12 +344,12 @@ int THaCrateMap::init(TString the_map)
       }
       continue; // onto the next line
     }
-    
+
     // The line is of the format:
     //        slot#  model#  [clear header  mask  nchan ndata ]
     // where clear, header, mask, nchan and ndata are optional interpretted in
     // that order.
-    
+
     // Default values:
     int imodel, clear=1;
     unsigned int mask=0, iheader=0, ichan=MAXCHAN, idata=MAXDATA;
@@ -362,16 +363,16 @@ int THaCrateMap::init(TString the_map)
 	setModel(crate,slot,imodel,ichan,idata);
       else
 	setModel(crate,slot,imodel);
-      
-      if (nread>=3) 
+
+      if (nread>=3)
 	setClear(crate,slot,clear);
-      if (nread>=4) 
+      if (nread>=4)
 	setHeader(crate,slot,iheader);
       if (nread>=5)
 	setMask(crate,slot,mask);
       continue;
     }
-    
+
     // unexpected input
     cout << "THaCrateMap:: fatal ERROR 4   "<<endl<<"Bad line "<<endl<<line<<endl;
     cout << "    Warning: a bad line could cause wrong decoding !"<<endl;
@@ -393,6 +394,8 @@ int THaCrateMap::init(TString the_map)
   }
 
   return CM_OK;
+}
+
 }
 
 ClassImp(Decoder::THaCrateMap)

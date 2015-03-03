@@ -5,11 +5,11 @@
 //
 //   THaSlotData contains data from one slot of one crate
 //   from a CODA event.  Public methods allow to obtain
-//   raw data for this crate & slot, or to obtain TDC, ADC, 
-//   or scaler data for each channel in the slot.  Methods 
+//   raw data for this crate & slot, or to obtain TDC, ADC,
+//   or scaler data for each channel in the slot.  Methods
 //   clearEvent() and loadData() should only be used by
-//   the decoder.  WARNING: For efficiency, only the 
-//   hit counters are zero'd each event, not the data 
+//   the decoder.  WARNING: For efficiency, only the
+//   hit counters are zero'd each event, not the data
 //   arrays, see below.
 //
 //   author  Robert Michaels (rom@jlab.org)
@@ -26,22 +26,23 @@
 #include <cstring>
 
 using namespace std;
-using namespace Decoder;
+
+namespace Decoder {
 
 static const bool VERBOSE = true;
 const int THaSlotData::DEFNCHAN = 128;  // Default number of channels
 const int THaSlotData::DEFNDATA = 1024; // Default number of data words
 const int THaSlotData::DEFNHITCHAN = 1; // Default number of hits per channel
 
-THaSlotData::THaSlotData() : 
-  crate(-1), slot(-1), fModule(0), numhitperchan(0), numraw(0), numchanhit(0), firstfreedataidx(0), 
-  numholesdataidx(0), numHits(0), xnumHits(0), chanlist(0), idxlist (0), chanindex(0), dataindex(0), 
+THaSlotData::THaSlotData() :
+  crate(-1), slot(-1), fModule(0), numhitperchan(0), numraw(0), numchanhit(0), firstfreedataidx(0),
+  numholesdataidx(0), numHits(0), xnumHits(0), chanlist(0), idxlist (0), chanindex(0), dataindex(0),
   numMaxHits(0), rawData(0), data(0), fDebugFile(0), didini(false),
   maxc(0), maxd(0), allocd(0), alloci(0) {}
 
 THaSlotData::THaSlotData(int cra, int slo) :
-  crate(cra), slot(slo), fModule(0), numhitperchan(0), numraw(0), numchanhit(0), firstfreedataidx(0), 
-  numholesdataidx(0), numHits(0), xnumHits(0), chanlist(0), idxlist (0), chanindex(0), dataindex(0), 
+  crate(cra), slot(slo), fModule(0), numhitperchan(0), numraw(0), numchanhit(0), firstfreedataidx(0),
+  numholesdataidx(0), numHits(0), xnumHits(0), chanlist(0), idxlist (0), chanindex(0), dataindex(0),
   numMaxHits(0), rawData(0), data(0), fDebugFile(0), didini(false),
   maxc(0), maxd(0), allocd(0), alloci(0) {}
 
@@ -107,7 +108,7 @@ int THaSlotData::loadModule(const THaCrateMap *map) {
     const Module::ModuleType& loctype = *it;
 
     // Get the ROOT class for this type
-    
+
     if (fDebugFile) {
       *fDebugFile << "THaSlotData:: loctype.fClassName  "<< loctype.fClassName<<endl;
       *fDebugFile << "THaSlotData:: loctype.fMapNum  "<< loctype.fMapNum<<endl;
@@ -118,7 +119,7 @@ int THaSlotData::loadModule(const THaCrateMap *map) {
 
       loctype.fTClass = TClass::GetClass( loctype.fClassName );
       if (fDebugFile) {
-         *fDebugFile << "defining fTClass ptr =  "<<loctype.fTClass<<endl;
+	 *fDebugFile << "defining fTClass ptr =  "<<loctype.fTClass<<endl;
       }
 
     }
@@ -128,26 +129,26 @@ int THaSlotData::loadModule(const THaCrateMap *map) {
       if (fDebugFile) *fDebugFile << "THaSlotData::  Found Module !!!! "<<dec<<modelnum<<endl;
 
       if (loctype.fTClass) {
-  	 if (fDebugFile) *fDebugFile << "THaSlotData:: Creating fModule"<<endl;
-         fModule= static_cast<Module*>( loctype.fTClass->New() ); 
-	 if (fDebugFile) *fDebugFile << "fModule return "<<fModule<<endl;
-         
-         if (!fModule) {
-	   if (fDebugFile) *fDebugFile << "failure to make module on crate "<<dec<<crate<<"  slot "<<slot<<endl;
-           return -1;
-	 }
-// Init first, then SetSlot
-         fModule->Init(); 
-         fModule->SetSlot( crate, slot, map->getHeader(crate, slot), map->getMask(crate, slot), map->getModel(crate,slot));  
-         if (fDebugFile) *fDebugFile << "THaSlotData:: about to init  module   "<<crate<<"  "<<slot<<" mod ptr "<<fModule<<"  header "<<hex<<map->getHeader(crate,slot)<<"  model num "<<dec<<map->getModel(crate,slot)<<endl;
-         if (fDebugFile) { 
-            fModule->SetDebugFile(fDebugFile);
-   	    fModule->DoPrint();
-         }
+	if (fDebugFile) *fDebugFile << "THaSlotData:: Creating fModule"<<endl;
+	fModule= static_cast<Module*>( loctype.fTClass->New() );
+	if (fDebugFile) *fDebugFile << "fModule return "<<fModule<<endl;
+
+	if (!fModule) {
+	  if (fDebugFile) *fDebugFile << "failure to make module on crate "<<dec<<crate<<"  slot "<<slot<<endl;
+	  return -1;
+	}
+	// Init first, then SetSlot
+	fModule->Init();
+	fModule->SetSlot( crate, slot, map->getHeader(crate, slot), map->getMask(crate, slot), map->getModel(crate,slot));
+	if (fDebugFile) *fDebugFile << "THaSlotData:: about to init  module   "<<crate<<"  "<<slot<<" mod ptr "<<fModule<<"  header "<<hex<<map->getHeader(crate,slot)<<"  model num "<<dec<<map->getModel(crate,slot)<<endl;
+	if (fDebugFile) {
+	  fModule->SetDebugFile(fDebugFile);
+	  fModule->DoPrint();
+	}
       } else {
 	if (fDebugFile) *fDebugFile << "THaSlotData:: SERIOUS problem :  fTClass still zero "<<endl;
       }
- 
+
     }
 
    }
@@ -159,10 +160,10 @@ int THaSlotData::loadModule(const THaCrateMap *map) {
 Int_t THaSlotData::LoadIfSlot(const UInt_t* p, const UInt_t *pstop) {
   // returns how many words seen.
   Int_t wordseen = 0;
-  if ( !fModule ) {  
+  if ( !fModule ) {
 // This is bad and should not happen; it means you didn't define a module
 // for this slot.  Check db_cratemap.dat, e.g. erase things that dont exist.
-    cerr << "THaSlotData::ERROR:   No module defined for slot. "<<crate<<"  "<<slot<<endl;  
+    cerr << "THaSlotData::ERROR:   No module defined for slot. "<<crate<<"  "<<slot<<endl;
     return 0;
   }
   if (fDebugFile) *fDebugFile << "THaSlotData::LoadIfSlot:  " << dec<<crate<<"  "<<slot<<"   p "<<hex<<p<<"  "<<*p<<"  "<<dec<<((UInt_t(*p))>>27)<<hex<<"  "<<pstop<<"  "<<fModule<<dec<<endl;
@@ -202,9 +203,9 @@ int THaSlotData::loadData(const char* type, int chan, int dat, int raw) {
     if (VERBOSE) {
       cout << "(1) THaSlotData: Warning in loadData: too many "
 	   << ((numraw >= maxd ) ? "data words" : "(x) channels")
-	   << " for crate/slot = " 
+	   << " for crate/slot = "
 	   << crate << " " << slot;
-           cout << ": " << (numraw>=maxd ? numraw : numchanhit) << " seen." 
+	   cout << ": " << (numraw>=maxd ? numraw : numchanhit) << " seen."
 	   << endl;
     }
     return SD_WARN;
@@ -257,10 +258,10 @@ int THaSlotData::loadData(const char* type, int chan, int dat, int raw) {
   data[numraw++]  = dat;
   if( numHits[chan] == kMaxUShort ) {
     cout << "(2)  maxd, etc "<<maxd<< "  "<<numchanhit<<"  "<<numraw<<endl;
-    if( VERBOSE ) 
-      cout << "(2) THaSlotData: Warning in loadData: too many hits " 
-	   << "for module " << device << " in crate/slot = " 
-	   << dec << crate << " " << slot 
+    if( VERBOSE )
+      cout << "(2) THaSlotData: Warning in loadData: too many hits "
+	   << "for module " << device << " in crate/slot = "
+	   << dec << crate << " " << slot
 	   << " chan = " << chan << endl;
     return SD_WARN;
   }
@@ -270,7 +271,7 @@ int THaSlotData::loadData(const char* type, int chan, int dat, int raw) {
 }
 
 int THaSlotData::loadData(int chan, int dat, int raw) {
-  // NEW (6/2014).  
+  // NEW (6/2014).
   return loadData(NULL, chan, dat, raw);
 }
 
@@ -279,7 +280,7 @@ void THaSlotData::print() const {
   if (fDebugFile) {
     print_to_file();
     return;
-  }  
+  }
   cout << "\n THaSlotData contents : " << endl;
   cout << "This is crate "<<dec<<crate<<" and slot "<<slot<<endl;
   cout << "Total Amount of Data : " << dec << getNumRaw() << endl;
@@ -299,7 +300,7 @@ void THaSlotData::print() const {
   for (i=k; i<getNumRaw(); i++) cout << getRawData(i) << "  ";
   first = true;
   for (chan=0; chan<maxc; chan++) {
-    if (getNumHits(chan) > 0) { 
+    if (getNumHits(chan) > 0) {
       if (first) {
 	cout << "\nThis is "<<devType()<<" Data : "<<endl;
 	first = false;
@@ -339,7 +340,7 @@ void THaSlotData::print_to_file() const {
   for (i=k; i<getNumRaw(); i++) *fDebugFile << getRawData(i) << "  ";
   first = true;
   for (chan=0; chan<maxc; chan++) {
-    if (getNumHits(chan) > 0) { 
+    if (getNumHits(chan) > 0) {
       if (first) {
 	*fDebugFile << "\nThis is "<<devType()<<" Data : "<<endl;
 	first = false;
@@ -355,6 +356,8 @@ void THaSlotData::print_to_file() const {
     }
   }
   return;
+}
+
 }
 
 ClassImp(Decoder::THaSlotData)

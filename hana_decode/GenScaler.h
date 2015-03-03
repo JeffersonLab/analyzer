@@ -4,28 +4,23 @@
 /////////////////////////////////////////////////////////////////////
 //
 //   GenScaler
-//   Generic scaler.  
+//   Generic scaler.
 //
 /////////////////////////////////////////////////////////////////////
 
-#include <string>
-#include <map>
-#include <vector>
-#include <iostream>
-#include <fstream>
-#include "Rtypes.h"
 #include "VmeModule.h"
-#include "Decoder.h"
+
+namespace Decoder {
 
 const int DEFAULT_DELTAT = 4;
 
-class Decoder::GenScaler : public VmeModule {
+class GenScaler : public VmeModule {
 
 public:
 
-   GenScaler() {};  
-   GenScaler(Int_t crate, Int_t slot);  
-   virtual ~GenScaler();  
+   GenScaler() {};
+   GenScaler(Int_t crate, Int_t slot);
+   virtual ~GenScaler();
 
    virtual void Init() { return; };  // derived classes should implement
    void GenInit();
@@ -44,8 +39,8 @@ public:
    void DoPrint();
    void DebugPrint(ofstream *file=0);
 
-// Loads sldat 
-  virtual Int_t LoadSlot(THaSlotData *sldat,  const UInt_t *evbuffer, const UInt_t *pstop );  
+// Loads sldat
+  virtual Int_t LoadSlot(THaSlotData *sldat,  const UInt_t *evbuffer, const UInt_t *pstop );
 
 protected:
 
@@ -59,9 +54,11 @@ protected:
    Bool_t fHasClock;
    Double_t fClockRate;
    GenScaler *fNormScaler;
- 
-   ClassDef(Decoder::GenScaler,0)  //   A generic scaler.  Abstract class.
+
+   ClassDef(GenScaler,0)  //   A generic scaler.  Abstract class.
 
 };
+
+}
 
 #endif

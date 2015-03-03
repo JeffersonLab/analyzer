@@ -8,7 +8,6 @@
 //
 /////////////////////////////////////////////////////////////////////
 
-#include "Decoder.h"
 #include "Module.h"
 #include "Lecroy1877Module.h"
 #include "Lecroy1881Module.h"
@@ -20,15 +19,13 @@
 #include "Fadc250Module.h"
 #include "F1TDCModule.h"
 #include "SkeletonModule.h"
-#include "THaEvData.h"
 #include "THaSlotData.h"
-#include "TMath.h"
+#include "TError.h"
 #include <iostream>
-#include <string>
-#include <sstream>
 
 using namespace std;
-using namespace Decoder;
+
+namespace Decoder {
 
 typedef Module::TypeSet_t  TypeSet_t;
 typedef Module::TypeIter_t TypeIter_t;
@@ -44,10 +41,10 @@ TypeIter_t Fadc250Module::fgThisType = DoRegister( ModuleType( "Decoder::Fadc250
 TypeIter_t F1TDCModule::fgThisType = DoRegister( ModuleType( "Decoder::F1TDCModule" , 3201 ));
 TypeIter_t SkeletonModule::fgThisType = DoRegister( ModuleType( "Decoder::SkeletonModule" , 4444 ));
 
-// Add your module here.  
+// Add your module here.
 
 
-Module::Module(Int_t crate, Int_t slot) : fCrate(crate), fSlot(slot), fWordsExpect(0) { 
+Module::Module(Int_t crate, Int_t slot) : fCrate(crate), fSlot(slot), fWordsExpect(0) {
   // Warning: see comments at Init()
   fHeader=0;
   fHeaderMask=0xffffffff;
@@ -60,7 +57,7 @@ Module::Module(Int_t crate, Int_t slot) : fCrate(crate), fSlot(slot), fWordsExpe
   fNumChan = 0;
 }
 
-Module::~Module() { 
+Module::~Module() {
 }
 
 
@@ -70,12 +67,12 @@ Module::Module(const Module& rhs) {
 
 Module &Module::operator=(const Module& rhs) {
   if ( &rhs != this) {
-    //    Uncreate();  // need a destructor method if we allocate memory 
+    //    Uncreate();  // need a destructor method if we allocate memory
     //                 (so far that's not the design)
     Create(rhs);
   }
   return *this;
-} 
+}
 
 void Module::Create(const Module& rhs) {
   fCrate = rhs.fCrate;
@@ -161,8 +158,8 @@ Int_t Module::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const UInt_t 
 // This is a simple, default method for loading a slot
   const UInt_t *p = evbuffer;
   if (fDebugFile) {
-       *fDebugFile << "Module:: Loadslot "<<endl; 
-       *fDebugFile << "header  0x"<<hex<<fHeader<<dec<<endl; 
+       *fDebugFile << "Module:: Loadslot "<<endl;
+       *fDebugFile << "header  0x"<<hex<<fHeader<<dec<<endl;
        *fDebugFile << "masks  "<<hex<<fHeaderMask<<endl;
   }
   if (!fHeader) cerr << "Module::LoadSlot::ERROR : no header ?"<<endl;
@@ -173,7 +170,7 @@ Int_t Module::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const UInt_t 
     if (fDebugFile) *fDebugFile << "IsSlot ... data = "<<*p<<endl;
     p++;
     Decode(p);
-    nchan = GetNumChan(); 
+    nchan = GetNumChan();
     for (Int_t ichan = 0; ichan < nchan; ichan++) {
       fWordsSeen++;
       p++;
@@ -187,5 +184,6 @@ Int_t Module::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const UInt_t 
   return fWordsSeen;
 }
 
+}
 
 ClassImp(Decoder::Module)

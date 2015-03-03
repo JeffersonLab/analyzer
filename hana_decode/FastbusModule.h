@@ -4,42 +4,32 @@
 /////////////////////////////////////////////////////////////////////
 //
 //   FastbusModule
-//   Abstract fastbus module class.  
+//   Abstract fastbus module class.
 //   author  Robert Michaels (rom@jlab.org)
 //
 /////////////////////////////////////////////////////////////////////
 
-#include <string>
-#include <cstdio>
-#include <map>
-#include <vector>
-#include "Rtypes.h"
-#include "Decoder.h"
-#include "TNamed.h"
 #include "Module.h"
 
+namespace Decoder {
 
-#include "THaEvData.h"
-
-using namespace std;
-
-class Decoder::FastbusModule : public Module {
+class FastbusModule : public Module {
 
 public:
 
    FastbusModule() { fDebugFile=0; };
    FastbusModule(Int_t crate, Int_t slot);
-   virtual ~FastbusModule(); 
+   virtual ~FastbusModule();
 
    Int_t Slot(UInt_t rdata) { return (rdata>>fSlotShift); };
    Int_t Chan(UInt_t rdata) { return (rdata&fChanMask)>>fChanShift; };
    Int_t Data(UInt_t rdata) { return (rdata&fDataMask); };
-         
+
    Int_t Decode(const UInt_t *evbuffer);
    Bool_t IsSlot(UInt_t rdata) { return (Slot(rdata)==fSlot); };
    virtual Int_t LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const UInt_t *pstop);
    void DoPrint();
-  
+
 protected:
 
    Bool_t fHasHeader;
@@ -50,7 +40,7 @@ protected:
    Int_t fDataMask;
    Int_t fOptMask, fOptShift;
    Int_t fChan, fData, fRawData;
-   virtual void Init();  
+   virtual void Init();
 
 
 private:
@@ -62,5 +52,7 @@ private:
    ClassDef(FastbusModule,0)  // Fastbus module
 
 };
+
+}
 
 #endif

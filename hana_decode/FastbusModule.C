@@ -4,19 +4,13 @@
 //
 /////////////////////////////////////////////////////////////////////
 
-#include "DecoderGlobals.h"
-#include "Decoder.h"
 #include "FastbusModule.h"
-#include "Module.h"
-//#include "THaEvData.h"
-#include "TMath.h"
-#include "Rtypes.h"
+#include "THaSlotData.h"
 #include <iostream>
-#include <string>
-#include <sstream>
 
 using namespace std;
-using namespace Decoder;
+
+namespace Decoder {
 
 FastbusModule::FastbusModule(Int_t crate, Int_t slot) : Module(crate, slot) {
   SetSlot(crate, slot);
@@ -55,7 +49,7 @@ Int_t FastbusModule::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const 
   fHeader=0;
   const UInt_t *p = evbuffer;
   if (fDebugFile) {
-     *fDebugFile << "FastbusModule:: loadslot "<<endl; 
+     *fDebugFile << "FastbusModule:: loadslot "<<endl;
      if (fHasHeader) {
          *fDebugFile << "TFB:: Has header "<<endl;
      } else {
@@ -67,7 +61,7 @@ Int_t FastbusModule::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const 
     if (p >= pstop) break;
     if (fHasHeader && fWordsSeen==0) {
       fHeader = *p;
-      if (fDebugFile) *fDebugFile << "FastbusModule:: header "<<hex<<fHeader<<dec<<endl; 
+      if (fDebugFile) *fDebugFile << "FastbusModule:: header "<<hex<<fHeader<<dec<<endl;
     } else {
       Decode(p);
       if (fDebugFile) *fDebugFile << "FastbusModule:: chan "<<dec<<fChan<<"  data "<<fData<<"   raw "<<hex<<*p<<dec<<endl;
@@ -81,7 +75,7 @@ Int_t FastbusModule::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const 
     if (fDebugFile) *fDebugFile << "FastbusModule:: words expected  "<<dec<<fWordsExpect<<endl;
     if (fWordsExpect != fWordsSeen) {
       if (fDebugFile) *fDebugFile << "ERROR:  FastbusModule:  crate "<<fCrate<<"   slot "<<fSlot<<" number of words expected "<<fWordsExpect<<"  not equal num words seen "<<fWordsSeen<<endl;
-// This happens a lot for some modules, and appears to be harmless, so I suppress it. 
+// This happens a lot for some modules, and appears to be harmless, so I suppress it.
 //      cerr << "ERROR:  FastbusModule:   number of words expected "<<fWordsExpect<<"  not equal num words seen "<<fWordsSeen<<endl;
     }
   }
@@ -102,6 +96,8 @@ void FastbusModule::DoPrint() {
 
        }
   }
+
+}
 
 }
 

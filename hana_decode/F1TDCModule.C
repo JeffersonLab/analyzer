@@ -14,14 +14,15 @@
 #include <sstream>
 
 using namespace std;
-using namespace Decoder;
+
+namespace Decoder {
 
 F1TDCModule::F1TDCModule(Int_t crate, Int_t slot) : VmeModule(crate, slot) {
   fDebugFile=0;
   Init();
 }
 
-F1TDCModule::~F1TDCModule() { 
+F1TDCModule::~F1TDCModule() {
   if (fTdcData) delete [] fTdcData;
 }
 
@@ -49,14 +50,14 @@ Int_t F1TDCModule::GetData(Int_t chan, Int_t hit) {
   return fTdcData[idx];
 }
 
-void F1TDCModule::Clear(const Option_t *opt) { 
+void F1TDCModule::Clear(const Option_t *opt) {
   fNumHits = 0;
   memset(fTdcData, 0, NTDCCHAN*MAXHIT*sizeof(Int_t));
 }
 
 Int_t F1TDCModule::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, const UInt_t *pstop) {
 // this increments evbuffer
-  if (fDebugFile) *fDebugFile << "F1TDCModule:: loadslot "<<endl; 
+  if (fDebugFile) *fDebugFile << "F1TDCModule:: loadslot "<<endl;
   fWordsSeen = 0;
 
   // CAUTION: this routine re-numbers the channels
@@ -64,7 +65,7 @@ Int_t F1TDCModule::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, const UI
   // According to the labelling and internal numbering scheme,
   // the F1 module has odd numbered channels on one connector
   // and even numbered channels on the other.
-  // However we usually put neighboring blocks/wires into the same 
+  // However we usually put neighboring blocks/wires into the same
   // cable, connector etc.
   // => hana therefore uses a numbering scheme different from the module
   //
@@ -86,7 +87,7 @@ Int_t F1TDCModule::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, const UI
   //
   // In both modes:
   // it is assumed that we only get data from one single trigger
-  // if the F1 is run in multiblock mode (buffered mode) 
+  // if the F1 is run in multiblock mode (buffered mode)
   // this might not be the case anymore - but this will be interesting anyhow
   // triggertime and eventnumber are not yet read out, they will again
   // be useful when multiblock mode (buffered mode) is used
@@ -107,55 +108,56 @@ Int_t F1TDCModule::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, const UI
 	// header/trailer word, to be ignored
 	 if(fDebug > 1 && fDebugFile!=0)
 	    *fDebugFile<< "[" << (loc-evbuffer) << "] header/trailer  0x"
-      	      <<hex<<*loc<<dec<<endl;
-        } else {
+		       <<hex<<*loc<<dec<<endl;
+	} else {
 	    if (fDebug > 1 && fDebugFile!=0)
 	       *fDebugFile<< "[" << (loc-evbuffer) << "] data            0x"
-      	      <<hex<<*loc<<dec<<endl;
+			  <<hex<<*loc<<dec<<endl;
 	    Int_t chn = ((*loc)>>16) & 0x3f;  // internal channel number
 
 	    chan =0;
-            if (IsHiResolution()) {
-	        // drop last bit for channel renumbering
-           	 chan=(chn >> 1);
-            } else {
-	        // do the reordering of the channels, for contiguous groups
-                // odd numbered TDC channels from the board -> +16
+	    if (IsHiResolution()) {
+		// drop last bit for channel renumbering
+		 chan=(chn >> 1);
+	    } else {
+		// do the reordering of the channels, for contiguous groups
+		// odd numbered TDC channels from the board -> +16
 		chan = (chn & 0x20) + 16*(chn & 0x01) + ((chn & 0x1e)>>1);
 	    }
 	     Int_t f1slot = ((*loc)&0xf8000000)>>27;
-         	//FIXME: cross-check slot number here
+		//FIXME: cross-check slot number here
 	     if ( ((*loc) & DATA_CHK) != F1_RES_LOCK ) {
-               cout << "\tWarning: F1 TDC " << hex << (*loc) << dec;
+	       cout << "\tWarning: F1 TDC " << hex << (*loc) << dec;
 	       cout << "\tSlot (Ch) = " << f1slot << "(" << chan << ")";
 	       if ( (*loc) & F1_HIT_OFLW ) {
 		  cout << "\tHit-FIFO overflow";
 	       }
 	       if ( (*loc) & F1_OUT_OFLW ) {
-        	  cout << "\tOutput FIFO overflow";
+		  cout << "\tOutput FIFO overflow";
 	       }
 	       if ( ! ((*loc) & F1_RES_LOCK ) ) {
 		  cout << "\tResolution lock failure!";
 	       }
 	       cout << endl;
 	     }
-		
+
 	      Int_t raw= (*loc) & 0xffff;
 	      if(fDebug > 1 && fDebugFile!=0) {
 		*fDebugFile<<" int_chn chan data "<<dec<<chn<<"  "<<chan
-	            <<"  0x"<<hex<<raw<<dec<<endl;
+		    <<"  0x"<<hex<<raw<<dec<<endl;
 	      }
-              Int_t status;
+	      Int_t status;
 	      status = sldat->loadData("tdc",chan,raw,raw);
-              Int_t idx = chan*MAXHIT + 0;  // 1 hit per chan ???
-              if (idx >= 0 && idx < MAXHIT*NTDCCHAN) fTdcData[idx] = raw;
-              fWordsSeen++;
-          }
+	      Int_t idx = chan*MAXHIT + 0;  // 1 hit per chan ???
+	      if (idx >= 0 && idx < MAXHIT*NTDCCHAN) fTdcData[idx] = raw;
+	      fWordsSeen++;
+	  }
        loc++;
    }
-  
+
   return fWordsSeen;
 }
 
+}
 
 ClassImp(Decoder::F1TDCModule)

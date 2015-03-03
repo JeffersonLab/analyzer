@@ -17,7 +17,6 @@
 /////////////////////////////////////////////////////////////////////
 
 #include "THaCodaData.h"
-#include "Decoder.h"
 
 #define ET_CHUNK_SIZE 50
 #ifndef __CINT__
@@ -39,8 +38,9 @@ class TString;
 #define ADAQS2 "129.57.164.44"
 #define ADAQS3 "129.57.164.45"
 
+namespace Decoder {
 
-class Decoder::THaEtClient : public THaCodaData
+class THaEtClient : public THaCodaData
 {
 
 public:
@@ -88,5 +88,7 @@ private:
     ClassDef(THaEtClient,0)   // ET client connection for online data
 
 };
+
+}
 
 #endif

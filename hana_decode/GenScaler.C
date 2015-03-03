@@ -13,10 +13,10 @@
 #include <sstream>
 
 using namespace std;
-using namespace Decoder;
 
+namespace Decoder {
 
-GenScaler::GenScaler(Int_t crate, Int_t slot) : VmeModule(crate, slot) { 
+GenScaler::GenScaler(Int_t crate, Int_t slot) : VmeModule(crate, slot) {
   fNumChan = 0;
   fWordsExpect = 32;
   fDebugFile = 0;
@@ -29,7 +29,7 @@ void GenScaler::GenInit() {
   fIsDecoded = kFALSE;
   fClockChan = -1;
   fClockRate = 0;
-  fNormScaler = 0;  
+  fNormScaler = 0;
   fNumChanMask = 0xf0;
   fDeltaT = DEFAULT_DELTAT;  // a default time interval between readings
   fDataArray = new Int_t[fWordsExpect];
@@ -40,7 +40,7 @@ void GenScaler::GenInit() {
   memset(fRate, 0, fWordsExpect*sizeof(Double_t));
 }
 
-GenScaler::~GenScaler() { 
+GenScaler::~GenScaler() {
   delete [] fDataArray;
   delete [] fPrevData;
   delete [] fRate;
@@ -57,7 +57,7 @@ Int_t GenScaler::SetClock(Double_t deltaT, Int_t clockchan, Double_t clockrate) 
     Int_t retcode = 0;
     fHasClock = kFALSE;
     if (clockrate > 0) {
-       if (fNormScaler) { 
+       if (fNormScaler) {
           cout << "GenScaler:: WARNING:  Declaring this object to have"<<endl;
           cout << "   a clock even though this also has a normalization scaler ?"<<endl;
           cout << "  This makes no sense. "<<endl;
@@ -68,15 +68,15 @@ Int_t GenScaler::SetClock(Double_t deltaT, Int_t clockchan, Double_t clockrate) 
     if (clockchan < 0 || clockchan >= fWordsExpect) {
        cout << "GenScaler:: ERROR:  clock channel out of range "<<endl;
        retcode = -1;
-    } else { 
+    } else {
        fClockChan = clockchan;
     }
     fClockRate = clockrate;
     if (retcode >= 0 && fClockRate > 0) retcode=1;
     if (deltaT > 0) {
-       fDeltaT = deltaT;    
+       fDeltaT = deltaT;
        if (fClockRate <= 0 && retcode>=0) retcode=2;
-    } else { 
+    } else {
       cout << "GenScaler:: Warning: using default deltaT = "<<fDeltaT<<endl;
     }
     if (retcode == 0) cout << "GetScaler:: Warning:: no deltaT nor clockrate define for this scaler "<<endl;
@@ -84,7 +84,7 @@ Int_t GenScaler::SetClock(Double_t deltaT, Int_t clockchan, Double_t clockrate) 
 }
 
 void GenScaler::LoadNormScaler(GenScaler *scal) {
-  if (fHasClock) { 
+  if (fHasClock) {
     cout << "GenScaler:: WARNING:  loading norm scaler although this"<<endl;
     cout << "   object has a clock ?   This makes no sense. "<<endl;
   }
@@ -92,7 +92,7 @@ void GenScaler::LoadNormScaler(GenScaler *scal) {
     cout << "GenScaler:: ERROR:  attempting to load a non-existent "<<endl;
     cout << "normalization scaler !" <<endl;
     return;
-  }    
+  }
   fNormScaler = scal;
 }
 
@@ -181,7 +181,7 @@ void GenScaler::DoPrint() {
 }
 
 void GenScaler::DebugPrint(ofstream *file) {
-  if (!file) return; 
+  if (!file) return;
   *file << "GenScaler::   crate "<<fCrate<<"   slot "<<fSlot<<endl;
   *file << "GenScaler::   Header 0x"<<hex<<fHeader<<"    Mask  0x"<<fHeaderMask<<dec<<endl;
   *file << "num words expected  "<<fWordsExpect<<endl;
@@ -213,7 +213,7 @@ Int_t GenScaler::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const UInt
   const UInt_t *p = evbuffer;
   while ( p < pstop ) {
     if (IsSlot( *p )) {
-      if (fDebugFile) *fDebugFile << "GenScaler:: Loadslot "<<endl; 
+      if (fDebugFile) *fDebugFile << "GenScaler:: Loadslot "<<endl;
       if (!fHeader) cerr << "GenScaler::LoadSlot::ERROR : no header ?"<<endl;
       Decode(p);
       for (Int_t ichan = 0; ichan < fNumChan; ichan++) {
@@ -227,6 +227,6 @@ Int_t GenScaler::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const UInt
   return 0;
 }
 
-
+}
 
 ClassImp(Decoder::GenScaler)

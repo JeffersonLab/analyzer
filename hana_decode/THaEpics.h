@@ -13,9 +13,11 @@
 #include <map>
 #include <vector>
 #include "Rtypes.h"
-#include "Decoder.h"
+//#include "Decoder.h"
 
-class Decoder::EpicsChan {
+namespace Decoder {
+
+class EpicsChan {
 // utility class of one epics channel
 public:
   EpicsChan()  : tag(""), dtime(""), evnum(0), 
@@ -56,7 +58,7 @@ private:
 
 typedef std::map< std::string, std::vector<Decoder::EpicsChan> >::value_type epVal;
 
-class Decoder::THaEpics {
+class THaEpics {
 
 public:
 
@@ -77,8 +79,10 @@ private:
    std::vector<EpicsChan> GetChan(const char *tag) const;
    Int_t FindEvent(const std::vector<EpicsChan>& ep, int event) const;
 
-   ClassDef(Decoder::THaEpics,0)  // EPICS data 
+   ClassDef(THaEpics,0)  // EPICS data 
 
 };
+
+}
 
 #endif

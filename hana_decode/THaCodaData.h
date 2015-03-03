@@ -31,7 +31,9 @@
 #define CODA_VERBOSE 1    // Errors explained verbosely (recommended)
 #define CODA_DEBUG  0     // Lots of printout (recommend to set = 0)
 
-class Decoder::THaCodaData {
+namespace Decoder {
+
+class THaCodaData {
 
 public:
 
@@ -61,5 +63,7 @@ protected:
    ClassDef(THaCodaData,0) // Base class of CODA data (file, ET conn, etc)
 
 };
+
+}
 
 #endif

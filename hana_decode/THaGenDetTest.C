@@ -15,7 +15,11 @@
 /////////////////////////////////////////////////////////////////////
 
 #include "THaGenDetTest.h"
+#include "THaEvData.h"
+
 //#define SIMPLELOOP 
+
+using namespace std;
 
 THaGenDetTest::THaGenDetTest()
 {

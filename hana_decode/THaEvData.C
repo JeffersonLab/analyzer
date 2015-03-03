@@ -5,13 +5,13 @@
 //
 //   This is a pure virtual base class.  You should not
 //   instantiate this directly (and actually CAN not), but
-//   rather use THaCodaDecoder or (less likely) a sim class like 
+//   rather use THaCodaDecoder or (less likely) a sim class like
 //   THaVDCSimDecoder.
-//   
+//
 //   This class is intended to provide a crate/slot structure
-//   for derived classes to use.  All derived class must define and 
+//   for derived classes to use.  All derived class must define and
 //   implement LoadEvent(const int*).  See the header.
-//   
+//
 //   original author  Robert Michaels (rom@jlab.org)
 //
 //   modified for abstraction by Ken Rossato (rossato@jlab.org)
@@ -60,8 +60,8 @@ TString THaEvData::fgDefaultCrateMapName = "cratemap";
 
 THaEvData::THaEvData() :
   fMap(0), first_decode(true), fTrigSupPS(true),
-  buffer(0), fDebugFile(0), run_num(0), run_type(0), fRunTime(0), 
-  evt_time(0), recent_event(0), fNSlotUsed(0), fNSlotClear(0), 
+  buffer(0), fDebugFile(0), run_num(0), run_type(0), fRunTime(0),
+  evt_time(0), recent_event(0), fNSlotUsed(0), fNSlotClear(0),
   fDoBench(kFALSE), fBench(0), fNeedInit(true), fDebug(0)
 {
   fInstance = fgInstances.FirstNullBit();
@@ -75,7 +75,7 @@ THaEvData::THaEvData() :
   memset(crateslot,0,MAXROC*MAXSLOT*sizeof(THaSlotData*));
   fRunTime = time(0); // default fRunTime is NOW
 #ifndef STANDALONE
-// Register global variables. 
+// Register global variables.
   if( gHaVars ) {
     VarDef vars[] = {
       { "runnum",    "Run number",     kInt,    0, &run_num },
@@ -118,7 +118,7 @@ THaEvData::~THaEvData() {
   // We must delete every array element since not all may be in fSlotUsed.
   for( int i=0; i<MAXROC*MAXSLOT; i++ )
     delete crateslot[i];
-  delete [] crateslot;  
+  delete [] crateslot;
   delete [] fSlotUsed;
   delete [] fSlotClear;
   fInstance--;
@@ -135,7 +135,7 @@ void THaEvData::SetRunTime( ULong64_t tloc )
 {
   // Set run time and re-initialize crate map (and possibly other
   // database parameters for the new time.
-  if( fRunTime == tloc ) 
+  if( fRunTime == tloc )
     return;
   fRunTime = tloc;
 
@@ -155,20 +155,20 @@ void THaEvData::EnableBenchmarks( Bool_t enable )
   }
 }
 
-void THaEvData::EnableHelicity( Bool_t enable ) 
+void THaEvData::EnableHelicity( Bool_t enable )
 {
   // Enable/disable helicity decoding
   SetBit(kHelicityEnabled, enable);
 }
 
-void THaEvData::EnableScalers( Bool_t enable ) 
+void THaEvData::EnableScalers( Bool_t enable )
 {
   // Enable/disable scaler decoding
   SetBit(kScalersEnabled, enable);
 }
 
 void THaEvData::SetVerbose( UInt_t level )
-{ 
+{
   // Set verbosity level. Identical to SetDebug(). Kept for compatibility.
 
   SetDebug(level);
@@ -304,7 +304,7 @@ void THaEvData::PrintSlotData(int crate, int slot) const {
       cout << "\nexceeds limits.  Cannot print"<<endl;
   }
   return;
-}     
+}
 
 // To initialize the THaSlotData member on first call to decoder
 int THaEvData::init_slotdata(const THaCrateMap* map)
@@ -345,4 +345,3 @@ Module* THaEvData::GetModule(Int_t roc, Int_t slot)
 
 ClassImp(THaEvData)
 ClassImp(THaBenchmark)
-

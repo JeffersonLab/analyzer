@@ -17,12 +17,9 @@
 //
 /////////////////////////////////////////////////////////////////////
 
-#include <iostream>
-#include "Rtypes.h"
-#include "THaEvData.h"
-#include "THaSlotData.h"
+#include "TString.h"
 
-using namespace std;
+class THaEvData;
 
 class THaGenDetTest 
 {

@@ -15,26 +15,16 @@
 #define MAXTEVT 5000
 #define defaultDT 4
 
+#include "THaEvtTypeHandler.h"
 #include <string>
-#include <map>
-#include <iostream>
-#include <fstream>
 #include <vector>
-#include "Rtypes.h"
 #include "TTree.h"
-#include "Decoder.h"
-#include "THaEvData.h"
-#include "THaVarList.h"
-#include "VarDef.h"
+#include "TString.h"   // really both std::string and TString?
 #include "GenScaler.h"
-
-using namespace Decoder;
-
-class THaRunBase;
 
 class ScalerLoc { // Utility class used by THaScalerEvtHandler
  public:
- ScalerLoc(TString nm, TString desc, Int_t isc, Int_t ich, Int_t iki) : 
+ ScalerLoc(TString nm, TString desc, Int_t isc, Int_t ich, Int_t iki) :
    name(nm), description(desc), iscaler(isc), ichan(ich), ikind(iki) { };
   ~ScalerLoc();
   TString name, description;
@@ -46,13 +36,13 @@ class THaScalerEvtHandler : public THaEvtTypeHandler {
 public:
 
    THaScalerEvtHandler(const char*, const char*);
-   virtual ~THaScalerEvtHandler();  
+   virtual ~THaScalerEvtHandler();
 
    Int_t Analyze(THaEvData *evdata);
    using THaEvtTypeHandler::Init;
    virtual EStatus Init( const TDatime& run_time);
    Int_t End( THaRunBase* r=0 );
-   virtual void SetDebugFile(ofstream *file);
+   virtual void SetDebugFile(std::ofstream *file);
 
 
 private:
@@ -61,17 +51,17 @@ private:
    void DefVars();
    size_t FindNoCase(const std::string& sdata, const std::string& skey);
 
-   vector<GenScaler *> scalers;
-   vector<ScalerLoc *> scalerloc;
+   std::vector<Decoder::GenScaler*> scalers;
+   std::vector<ScalerLoc*> scalerloc;
    Double_t evcount;
    Int_t *rdata;
-   vector<Int_t> index;
+   std::vector<Int_t> index;
    Int_t Nvars, ifound, fNormIdx, nscalers;
    Double_t *dvars;
    TTree *fScalerTree;
 
-   THaScalerEvtHandler(const THaScalerEvtHandler &fh);
-   THaScalerEvtHandler& operator=(const THaScalerEvtHandler &fh);
+   THaScalerEvtHandler(const THaScalerEvtHandler& fh);
+   THaScalerEvtHandler& operator=(const THaScalerEvtHandler& fh);
 
    ClassDef(THaScalerEvtHandler,0)  // Scaler Event handler
 

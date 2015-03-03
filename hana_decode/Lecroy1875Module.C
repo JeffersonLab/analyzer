@@ -5,17 +5,10 @@
 /////////////////////////////////////////////////////////////////////
 
 #include "Lecroy1875Module.h"
-#include "Module.h"
-#include "THaEvData.h"
-#include "Decoder.h"
-#include "TMath.h"
-#include <iostream>
-#include <string>
-#include <sstream>
 
 using namespace std;
-using namespace Decoder;
 
+namespace Decoder {
 
 Lecroy1875Module::Lecroy1875Module(Int_t crate, Int_t slot) : FastbusModule(crate, slot) {
   Init();
@@ -35,8 +28,9 @@ void Lecroy1875Module::Init() {
 }
 
 
-Lecroy1875Module::~Lecroy1875Module() { 
+Lecroy1875Module::~Lecroy1875Module() {
 }
 
+}
 
 ClassImp(Decoder::Lecroy1875Module)

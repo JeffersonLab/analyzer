@@ -27,8 +27,8 @@
 #include <netdb.h>
 
 using namespace std;
-using namespace Decoder;
 
+namespace Decoder {
 
 THaEtClient::THaEtClient(Int_t smode)
 {
@@ -311,5 +311,6 @@ bool THaEtClient::isOpen() const {
   return (notopened==1&&didclose==0);
 }
 
+}
 
-ClassImp(THaEtClient)
+ClassImp(Decoder::THaEtClient)

@@ -15,7 +15,8 @@
 #include <iostream>
 
 using namespace std;
-using namespace Decoder;
+
+namespace Decoder {
 
 const UShort_t THaFastBusWord::FB_ERR = ~(UShort_t)0;
 
@@ -75,6 +76,8 @@ void THaFastBusWord::init() {
             module_info[imod].devtype = "";
        }
     }
+}
+
 }
 
 ClassImp(Decoder::THaFastBusWord)

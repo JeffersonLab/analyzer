@@ -296,7 +296,7 @@ etclient: etclient_main.o $(DECODE_OBJS) $(MAINOBJS)
 
 prfact: $(DECODE_OBJS) $(SRC) prfact_main.o $(HEAD) $(MAINOBJS)
 	rm -f $@
-	$(CXX) $(CXXFLAGS) -o $@ prfact_main.o $(DECODE_OBJS) $(EVIO_LIB) $(MAINOBJS)
+	$(CXX) $(CXXFLAGS) -o $@ prfact_main.o $(DECODE_OBJS) $(ALL_LIBS) $(EVIO_LIB) $(MAINOBJS)
 
 epicsd: $(DECODE_OBJS) $(SRC) epics_main.o $(HEAD) $(MAINOBJS)
 	rm -f $@

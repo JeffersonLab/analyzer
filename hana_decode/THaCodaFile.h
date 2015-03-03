@@ -21,7 +21,9 @@
 #include "Decoder.h"
 #include "TArrayI.h"
 
-class Decoder::THaCodaFile : public THaCodaData {
+namespace Decoder {
+
+class THaCodaFile : public THaCodaData {
 
 public:
 
@@ -55,5 +57,7 @@ private:
   ClassDef(THaCodaFile,0)   //  File of CODA data
 
 };
+
+}
 
 #endif

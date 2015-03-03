@@ -15,15 +15,15 @@
 /////////////////////////////////////////////////////////////////////
 
 
-#include "Rtypes.h"
 #include "TString.h"
-#include "Decoder.h"
-// note to myself: all lower bits here 1.
-#define MAXIDX 0xf     
-#define MAXMODULE 0x3  
 
-class Decoder::THaFastBusWord 
-{
+// note to myself: all lower bits here 1.
+#define MAXIDX 0xf
+#define MAXMODULE 0x3
+
+namespace Decoder {
+
+class THaFastBusWord {
 
 public:
 
@@ -32,7 +32,7 @@ public:
   UChar_t  Slot(UInt_t word);                    // returns the slot
   UShort_t Chan(UShort_t model, UInt_t word);    // returns fastbus channel
   UShort_t Data(UShort_t model, UInt_t word);    // returns fastbus data
-  UShort_t Wdcnt(UShort_t model, UInt_t word);   // returns word count 
+  UShort_t Wdcnt(UShort_t model, UInt_t word);   // returns word count
   UChar_t  Opt(UShort_t model, UInt_t word);     // returns fastbus opt
   const char* devType(UShort_t model);
   bool HasHeader(UShort_t model);    // true if header exists for this model
@@ -45,7 +45,7 @@ private:
   static const UChar_t  slotshift = 27;
   static const UShort_t modoff = 1874;
   UChar_t  modindex[MAXIDX];
-  UShort_t module_type[MAXMODULE]; 
+  UShort_t module_type[MAXMODULE];
   struct module_information {
     UInt_t  datamask,wdcntmask,chanmask,optmask;
     UChar_t chanshift,optshift;
@@ -55,27 +55,27 @@ private:
   void init();
   UChar_t idx(UShort_t model);
 
-  ClassDef(Decoder::THaFastBusWord,0)  // Definitions for fastbus data standard
+  ClassDef(THaFastBusWord,0)  // Definitions for fastbus data standard
 };
 
 //=============== inline functions ================================
 // returns fastbus slot
 inline
-UChar_t Decoder::THaFastBusWord::Slot(UInt_t word)
+UChar_t THaFastBusWord::Slot(UInt_t word)
 {
-  UChar_t slot = word>>slotshift; 
+  UChar_t slot = word>>slotshift;
   return (slot < MAXSLOT) ? slot : 0;
 }
 
 inline
-UChar_t Decoder::THaFastBusWord::idx(UShort_t model)
+UChar_t THaFastBusWord::idx(UShort_t model)
 {
   return modindex[(model-modoff)&MAXIDX]&MAXMODULE;
 }
 
 // returns fastbus channel
 inline
-UShort_t Decoder::THaFastBusWord::Chan(UShort_t model, UInt_t word)
+UShort_t THaFastBusWord::Chan(UShort_t model, UInt_t word)
 {
   UChar_t imod = idx(model);
   return ( ( word & module_info[imod].chanmask )
@@ -84,7 +84,7 @@ UShort_t Decoder::THaFastBusWord::Chan(UShort_t model, UInt_t word)
 
 // returns word count of header
 inline
-UShort_t Decoder::THaFastBusWord::Wdcnt(UShort_t model, UInt_t word)
+UShort_t THaFastBusWord::Wdcnt(UShort_t model, UInt_t word)
 {
   if (!HasHeader(model)) return FB_ERR;
   return ( word & module_info[idx(model)].wdcntmask );
@@ -93,14 +93,14 @@ UShort_t Decoder::THaFastBusWord::Wdcnt(UShort_t model, UInt_t word)
 
 // returns fastbus data
 inline
-UShort_t Decoder::THaFastBusWord::Data(UShort_t model, UInt_t word)
+UShort_t THaFastBusWord::Data(UShort_t model, UInt_t word)
 {
   return ( word & module_info[idx(model)].datamask);
 }
 
 // returns fastbus opt;
 inline
-UChar_t Decoder::THaFastBusWord::Opt(UShort_t model, UInt_t word)
+UChar_t THaFastBusWord::Opt(UShort_t model, UInt_t word)
 {
   UChar_t imod = idx(model);
   return ( ( word & module_info[imod].optmask )
@@ -109,7 +109,7 @@ UChar_t Decoder::THaFastBusWord::Opt(UShort_t model, UInt_t word)
 
 // answers if the model has a header
 inline
-bool Decoder::THaFastBusWord::HasHeader(UShort_t model)
+bool THaFastBusWord::HasHeader(UShort_t model)
 {
   return module_info[idx(model)].headexists;
 }
@@ -117,11 +117,12 @@ bool Decoder::THaFastBusWord::HasHeader(UShort_t model)
 
 // returns device type
 inline
-const char* Decoder::THaFastBusWord::devType(UShort_t model)
+const char* THaFastBusWord::devType(UShort_t model)
 {
   return module_info[idx(model)].devtype.Data();
 }
 
+}
 
 #endif
 

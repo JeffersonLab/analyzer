@@ -28,7 +28,8 @@
 #include <sstream>
 
 using namespace std;
-using namespace Decoder;
+
+namespace Decoder {
 
 void THaEpics::Print() {
   cout << "\n\n====================== \n";
@@ -178,6 +179,8 @@ int THaEpics::LoadData(const UInt_t* evbuffer, int evnum)
   }
   if(DEBUGL) Print();
   return 1;
+}
+
 }
 
 ClassImp(Decoder::THaEpics)

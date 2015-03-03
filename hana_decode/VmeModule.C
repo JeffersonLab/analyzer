@@ -5,21 +5,16 @@
 //
 /////////////////////////////////////////////////////////////////////
 
-#include "Decoder.h"
 #include "VmeModule.h"
-#include "TMath.h"
-#include <iostream>
-#include <string>
-#include <sstream>
 
 using namespace std;
-using namespace Decoder;
 
+namespace Decoder {
 
-VmeModule::VmeModule(Int_t crate, Int_t slot) : Module(crate,slot) { 
+VmeModule::VmeModule(Int_t crate, Int_t slot) : Module(crate,slot) {
 }
 
-VmeModule::~VmeModule() { 
+VmeModule::~VmeModule() {
 }
 
 Bool_t VmeModule::IsSlot(UInt_t rdata) {
@@ -29,6 +24,8 @@ Bool_t VmeModule::IsSlot(UInt_t rdata) {
     return kTRUE;
   }
   return kFALSE;
+}
+
 }
 
 ClassImp(Decoder::VmeModule)

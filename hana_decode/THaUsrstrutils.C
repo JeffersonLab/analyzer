@@ -17,11 +17,16 @@
 #include "TMath.h"
 #include "TRegexp.h"
 #include <cctype>
+#include <cstring>
+#include <cstdio>
+#include <cstdlib>
 #include <string>
 #include <vector>
+#include <iostream>
 
 using namespace std;
-using namespace Decoder;
+
+namespace Decoder {
 
 const int           THaUsrstrutils::MAX     = 5000;
 const unsigned long THaUsrstrutils::LONGMAX = 0x7FFFFFFF;
@@ -221,6 +226,7 @@ void THaUsrstrutils::string_from_file(const char *ffile_name)
   }
 }
 
+}
 
-ClassImp(THaUsrstrutils)
+ClassImp(Decoder::THaUsrstrutils)
 

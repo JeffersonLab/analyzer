@@ -8,20 +8,17 @@
 //
 /////////////////////////////////////////////////////////////////////
 
-#include <string>
-#include <map>
-#include <vector>
-#include "Rtypes.h"
-#include "Decoder.h"
 #include "GenScaler.h"
 
-class Decoder::Scaler3800 : public GenScaler {
+namespace Decoder {
+
+class Scaler3800 : public GenScaler {
 
 public:
 
-   Scaler3800() {};  
-   Scaler3800(Int_t crate, Int_t slot);  
-   virtual ~Scaler3800();  
+   Scaler3800() {};
+   Scaler3800(Int_t crate, Int_t slot);
+   virtual ~Scaler3800();
 
    void Init();
 
@@ -32,5 +29,7 @@ private:
    ClassDef(Scaler3800,0)  // SIS model 3800 scaler
 
 };
+
+}
 
 #endif

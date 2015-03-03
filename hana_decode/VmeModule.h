@@ -4,25 +4,21 @@
 /////////////////////////////////////////////////////////////////////
 //
 //   VmeModule
-//   A VME module.  
+//   A VME module.
 //
 /////////////////////////////////////////////////////////////////////
 
-#include <string>
-#include <map>
-#include <vector>
-#include "Decoder.h"
-#include "Rtypes.h"
 #include "Module.h"
 
+namespace Decoder {
 
-class Decoder::VmeModule : public Module {
+class VmeModule : public Module {
 
 public:
 
-   VmeModule() {};  
-   VmeModule(Int_t crate, Int_t slot);  
-   virtual ~VmeModule();  
+   VmeModule() {};
+   VmeModule(Int_t crate, Int_t slot);
+   virtual ~VmeModule();
 
    virtual Bool_t IsSlot(UInt_t rdata);
    virtual Int_t Slot(Int_t rdata) { return fSlot; };
@@ -36,5 +32,7 @@ private:
    ClassDef(Decoder::VmeModule,0)  // A VME module (abstract)
 
 };
+
+}
 
 #endif

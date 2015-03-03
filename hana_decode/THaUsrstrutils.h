@@ -6,23 +6,18 @@
 // R. Michaels, March 2000
 // THaUsrstrutils = USeR STRing UTILitieS.
 // The code below is what is used by DAQ to interpret strings
-// like prescale factors 
+// like prescale factors
 // Yes, this is mostly old-style C, but it
 // has the advantage that the interpretation should
-// be identical to what the DAQ used.  
+// be identical to what the DAQ used.
 //
 /////////////////////////////////////////////////////////////////////
 
 #include "TString.h"
-#include "Decoder.h"
-#include <iostream>
-#include <cstdlib>
-#include <cstdio>
-#include <cstring>
 
+namespace Decoder {
 
-class Decoder::THaUsrstrutils
-{
+class THaUsrstrutils {
 
 /* usrstrutils
 
@@ -47,8 +42,8 @@ class Decoder::THaUsrstrutils
                            the keyword.  Return null if keyword not present.
 			   return null string if keyword has no value.
 			   Caller must delete the string.
-	     
-    string_from_evbuffer(int evbuffer) - load the confuguration 
+
+    string_from_evbuffer(int evbuffer) - load the confuguration
                          string using event buffer 'evbuffer'
 
     string_from_file(char *ffile) -- read file *ffile to get config string.
@@ -108,7 +103,7 @@ public:
 protected:
 
   TString configstr;
-  void getflagpos(const char *s, const char **pos_ret, 
+  void getflagpos(const char *s, const char **pos_ret,
 		  const char **val_ret) const;
   static void getflagpos_instring(const char *constr, const char *s,
 				  const char **pos_ret, const char **val_ret);
@@ -116,15 +111,17 @@ protected:
    ClassDef(THaUsrstrutils,0)   //  User string utilities, DAQ parsing code.
 
 };
-     
+
 //=============== inline functions ================================
 
 inline
-void Decoder::THaUsrstrutils::getflagpos(const char *s, const char **pos_ret,
+void THaUsrstrutils::getflagpos(const char *s, const char **pos_ret,
 				const char **val_ret) const
 {
   getflagpos_instring(configstr,s,pos_ret,val_ret);
   return;
+}
+
 }
 
 #endif  /* _USRSTRUTILS_INCLUDED */

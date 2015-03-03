@@ -17,7 +17,7 @@
 //   5. Add line(s) for [crate,slot] in db_cratemap.dat
 //
 //   if the pre-compiler flag "LIKEV792" is defined, the decoding is
-//   sort of like a V792 ... as an example.  
+//   sort of like a V792 ... as an example.
 //
 /////////////////////////////////////////////////////////////////////
 
@@ -26,34 +26,31 @@
 #define NTDCCHAN   32
 #define MAXHIT    100
 
-#include <string>
-#include <map>
-#include <vector>
-#include "Rtypes.h"
-#include "Decoder.h"
 #include "VmeModule.h"
 
-class Decoder::SkeletonModule : public VmeModule {
+namespace Decoder {
+
+class SkeletonModule : public VmeModule {
 
 public:
 
-   SkeletonModule() {};  
-   SkeletonModule(Int_t crate, Int_t slot);  
-   virtual ~SkeletonModule();  
+   SkeletonModule() {};
+   SkeletonModule(Int_t crate, Int_t slot);
+   virtual ~SkeletonModule();
 
    using VmeModule::IsSlot;
    using Module::GetNumChan;
    using Module::Init;
    using Module::GetData;
    using Module::LoadSlot;
-   
+
    Int_t GetData(Int_t chan);
    void Init();
    void Clear(const Option_t *opt);
 
 #ifdef LIKEV792
 // Loads slot data.  if you don't define this, the base class's method is used
-  virtual Int_t LoadSlot(THaSlotData *sldat,  const UInt_t *evbuffer, const UInt_t *pstop );  
+  virtual Int_t LoadSlot(THaSlotData *sldat,  const UInt_t *evbuffer, const UInt_t *pstop );
 #endif
 
 private:
@@ -64,5 +61,7 @@ private:
    ClassDef(SkeletonModule,0)  //  Skeleton of a module; make your replacements
 
 };
+
+}
 
 #endif

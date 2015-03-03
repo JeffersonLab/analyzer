@@ -4,27 +4,23 @@
 /////////////////////////////////////////////////////////////////////
 //
 //   Lecroy1877Module
-//   1877 Lecroy Fastbus module. 
+//   1877 Lecroy Fastbus module.
 //   author  Robert Michaels (rom@jlab.org)
 //
 /////////////////////////////////////////////////////////////////////
 
-#include <string>
-#include <map>
-#include <vector>
-#include "Rtypes.h"
-#include "TNamed.h"
-#include "Decoder.h"
 #include "FastbusModule.h"
 
-class Decoder::Lecroy1877Module : public FastbusModule {
+namespace Decoder {
+
+class Lecroy1877Module : public FastbusModule {
 
 public:
 
-   Lecroy1877Module() {};  
+   Lecroy1877Module() {};
    Lecroy1877Module(Int_t crate, Int_t slot);
-   virtual ~Lecroy1877Module(); 
-   void Init();  
+   virtual ~Lecroy1877Module();
+   void Init();
 
 private:
 
@@ -36,5 +32,7 @@ private:
    ClassDef(Lecroy1877Module,0)  // Lecroy 1877 TDC module
 
 };
+
+}
 
 #endif

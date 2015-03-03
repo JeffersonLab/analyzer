@@ -8,23 +8,20 @@
 //
 /////////////////////////////////////////////////////////////////////
 
-#include <string>
-#include <map>
-#include <vector>
-#include "Rtypes.h"
-#include "Decoder.h"
 #include "VmeModule.h"
 
-#define NADCCHAN   16
-#define MAXDAT     1000
+namespace Decoder {
 
-class Decoder::Fadc250Module : public VmeModule {
+  const Int_t NADCCHAN = 16;
+  const Int_t MAXDAT   = 1000;
+
+class Fadc250Module : public VmeModule {
 
 public:
 
-   Fadc250Module() {};  
-   Fadc250Module(Int_t crate, Int_t slot);  
-   virtual ~Fadc250Module();  
+   Fadc250Module() {};
+   Fadc250Module(Int_t crate, Int_t slot);
+   virtual ~Fadc250Module();
 
    void Init();
    Bool_t IsSlot(UInt_t rdata);
@@ -34,10 +31,10 @@ public:
 
    using Module::GetData;
    Int_t GetData(Int_t chan, Int_t event, Int_t which);
-   Int_t GetAdcData(Int_t chan, Int_t ievent); 
-   Int_t GetTdcData(Int_t chan, Int_t ievent);  
+   Int_t GetAdcData(Int_t chan, Int_t ievent);
+   Int_t GetTdcData(Int_t chan, Int_t ievent);
 
-   void SetMode(Int_t mode) { 
+   void SetMode(Int_t mode) {
      f250_setmode = mode;
      IsInit = kTRUE;
      CheckSetMode();
@@ -48,14 +45,14 @@ public:
    Int_t GetMode();
 
 private:
- 
+
    enum { F250_SAMPLE = 1, F250_INTEG = 2 };  // supported modes
    Int_t f250_setmode, f250_foundmode;
-   enum { GET_ADC = 1, GET_TDC = 2 };  
+   enum { GET_ADC = 1, GET_TDC = 2 };
 
    struct fadc_data_struct {
-      unsigned int new_type;	
-      unsigned int type;	
+      unsigned int new_type;
+      unsigned int type;
       unsigned int slot_id_hd;
       unsigned int slot_id_tr;
       unsigned int n_evts;
@@ -95,16 +92,16 @@ private:
       unsigned int evt_num_int;
       unsigned int err_status_int;
    };
-  
+
    fadc_data_struct fadc_data;
 
 // Loads sldat and increments ptr to evbuffer
-   Int_t LoadSlot(THaSlotData *sldat,  const UInt_t* evbuffer, const UInt_t *pstop );  
+   Int_t LoadSlot(THaSlotData *sldat,  const UInt_t* evbuffer, const UInt_t *pstop );
 
    Int_t fNumTrig, fNumEvents, *fNumAInt, *fNumTInt,  *fNumSample;
    Int_t *fAdcData;  // Raw data (either samples or pulse integrals)
-   Int_t *fTdcData;  
-   Bool_t IsInit; 
+   Int_t *fTdcData;
+   Bool_t IsInit;
    void Clear(const Option_t *opt);
    void CheckSetMode();
    void CheckFoundMode();
@@ -113,5 +110,7 @@ private:
    ClassDef(Fadc250Module,0)  //  JLab FADC 250 Module
 
 };
+
+}
 
 #endif

@@ -8,18 +8,16 @@
 //
 /////////////////////////////////////////////////////////////////////
 
-#include <string>
-#include <map>
 #include <vector>
 #include <set>
-#include <iostream>
 #include <fstream>
-#include "Rtypes.h"
 #include "TNamed.h"
 #include "Decoder.h"
 #include "DecoderGlobals.h"
 
-class Decoder::Module : public TNamed  {
+namespace Decoder {
+
+class Module : public TNamed  {
 
 public:
 
@@ -33,14 +31,14 @@ public:
   };
 
   Module(Int_t crate, Int_t slot);
-    
+
   typedef std::set<ModuleType> TypeSet_t;
   typedef TypeSet_t::iterator TypeIter_t;
   static TypeSet_t& fgModuleTypes();
-  
+
   Module() { };  // for ROOT TClass & I/O
 
-  virtual ~Module();  
+  virtual ~Module();
 
 // inheriting classes need to implement one or more of these
   virtual Int_t GetData(Int_t) { return 0; };
@@ -50,14 +48,14 @@ public:
 // Making this class Abstract does not work (problem with Dictionary)
   virtual Int_t Decode(const UInt_t *p) {return 0;}; // implement in derived class
 // Loads slot data
-  virtual Int_t LoadSlot(THaSlotData *sldat,  const UInt_t *evbuffer, const UInt_t *pstop );  
+  virtual Int_t LoadSlot(THaSlotData *sldat,  const UInt_t *evbuffer, const UInt_t *pstop );
 
   virtual Int_t GetNumChan() { return fNumChan; };
 
-  virtual Int_t GetNumEvents() { return 0; };  
+  virtual Int_t GetNumEvents() { return 0; };
   virtual Int_t GetMode() { return 0; };
 
-  virtual void SetSlot(Int_t crate, Int_t slot, Int_t header=0, Int_t mask=0, Int_t modelnum=0) 
+  virtual void SetSlot(Int_t crate, Int_t slot, Int_t header=0, Int_t mask=0, Int_t modelnum=0)
   { fCrate=crate; fSlot=slot; fHeader=header; fHeaderMask=mask; fModelNum=modelnum;};
 
   virtual void Init();
@@ -69,7 +67,7 @@ public:
   virtual Int_t GetCrate() { return fCrate; };
   virtual Int_t GetSlot() { return fSlot; };
 
-  virtual void SetDebugFile(ofstream *file) { if (file>0) fDebugFile = file; };
+  virtual void SetDebugFile(std::ofstream *file) { if (file!=0) fDebugFile = file; };
 
   virtual void SetHeader(UInt_t header, UInt_t mask) {
     fHeader = header;
@@ -90,20 +88,22 @@ protected:
   Int_t fWordsExpect, fWordsSeen;
   Int_t fWdcntMask, fWdcntShift;
   Int_t fModelNum, fNumChan;
-  Bool_t IsInit; 
+  Bool_t IsInit;
 
   static TypeIter_t fgThisType;
 
-  ofstream *fDebugFile;
+  std::ofstream *fDebugFile;
 
-  Module(const Module& rhs); 
+  Module(const Module& rhs);
   void Create(const Module& rhs);
-  
+
 
 private:
 
-  ClassDef(Decoder::Module,0)  // A module in a crate and slot
+  ClassDef(Module,0)  // A module in a crate and slot
 
 };
+
+}
 
 #endif

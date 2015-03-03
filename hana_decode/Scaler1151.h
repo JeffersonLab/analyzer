@@ -8,20 +8,17 @@
 //
 /////////////////////////////////////////////////////////////////////
 
-#include <string>
-#include <map>
-#include <vector>
-#include "Rtypes.h"
-#include "Decoder.h"
 #include "GenScaler.h"
 
-class Decoder::Scaler1151 : public GenScaler {
+namespace Decoder {
+
+class Scaler1151 : public GenScaler {
 
 public:
 
-   Scaler1151() {};  
-   Scaler1151(Int_t crate, Int_t slot);  
-   virtual ~Scaler1151();  
+   Scaler1151() {};
+   Scaler1151(Int_t crate, Int_t slot);
+   virtual ~Scaler1151();
 
    void Init();
 
@@ -32,5 +29,7 @@ private:
    ClassDef(Scaler1151,0)  // LeCroy scaler model 1151
 
 };
+
+}
 
 #endif

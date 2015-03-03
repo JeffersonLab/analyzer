@@ -5,23 +5,17 @@
 //
 /////////////////////////////////////////////////////////////////////
 
-#include "Decoder.h"
 #include "Scaler3800.h"
-#include "THaEvData.h"
-#include "TMath.h"
-#include <iostream>
-#include <string>
-#include <sstream>
 
 using namespace std;
-using namespace Decoder;
 
+namespace Decoder {
 
-Scaler3800::Scaler3800(Int_t crate, Int_t slot) : GenScaler(crate, slot) { 
+Scaler3800::Scaler3800(Int_t crate, Int_t slot) : GenScaler(crate, slot) {
   Init();
 }
 
-Scaler3800::~Scaler3800() { 
+Scaler3800::~Scaler3800() {
 }
 
 void Scaler3800::Init() {
@@ -30,5 +24,6 @@ void Scaler3800::Init() {
   GenScaler::GenInit();
 }
 
+}
 
 ClassImp(Decoder::Scaler3800)

@@ -9,39 +9,29 @@
 //
 /////////////////////////////////////////////////////////////////////
 
-#include <string>
-#include <map>
-#include <vector>
-#include "TNamed.h"
-#include "Rtypes.h"
-#include "DecoderGlobals.h"
 #include "THaAnalysisObject.h"
-#include "TDatime.h"
-#include "Decoder.h"
-#include "THaEvData.h"
-
-using namespace Decoder;
-using namespace std;
+#include <vector>
+#include <fstream>
 
 class THaEvtTypeHandler : public THaAnalysisObject {
 
 public:
 
    THaEvtTypeHandler(const char*, const char*);
-   virtual ~THaEvtTypeHandler();  
+   virtual ~THaEvtTypeHandler();
 
-   virtual Int_t Analyze(THaEvData *evdata); 
+   virtual Int_t Analyze(THaEvData *evdata);
    virtual EStatus Init( const TDatime& run_time );
    virtual void EvPrint();
-   virtual Bool_t IsMyEvent(Int_t evnum); 
+   virtual Bool_t IsMyEvent(Int_t evnum);
    virtual void EvDump(THaEvData *evdata);
-   virtual void SetDebugFile(ofstream *file) { if (file>0) fDebugFile=file; };
+   virtual void SetDebugFile(std::ofstream *file) { if (file!=0) fDebugFile=file; };
 
 protected:
- 
-   vector<Int_t> eventtypes;
+
+   std::vector<Int_t> eventtypes;
    virtual void MakePrefix();
-   ofstream *fDebugFile;
+   std::ofstream *fDebugFile;
 
 private:
 

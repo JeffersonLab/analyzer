@@ -9,22 +9,18 @@
 #define LIKEV792 1
 
 #include "SkeletonModule.h"
-#include "VmeModule.h"
-#include "THaEvData.h"
-#include "TMath.h"
-#include <iostream>
-#include <string>
-#include <sstream>
+#include "THaSlotData.h"
 
 using namespace std;
-using namespace Decoder;
+
+namespace Decoder {
 
 SkeletonModule::SkeletonModule(Int_t crate, Int_t slot) : VmeModule(crate, slot) {
   fDebugFile=0;
   Init();
 }
 
-SkeletonModule::~SkeletonModule() { 
+SkeletonModule::~SkeletonModule() {
 
 }
 
@@ -45,13 +41,13 @@ Int_t SkeletonModule::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const
   fWordsSeen = 0;
   Int_t chan, raw, status;
 //  cout << "version like V792"<<endl;
-  ++p; 
+  ++p;
   Int_t nword=*p-2;
   ++p;
   for (Int_t i=0;i<nword;i++) {
        ++p;
        chan=((*p)&0x00ff0000)>>16;
-       raw=((*p)&0x00000fff);	      
+       raw=((*p)&0x00000fff);
        status = sldat->loadData("adc",chan,raw,raw);
        fWordsSeen++;
        if (chan < fData.size()) fData[chan]=raw;
@@ -67,11 +63,11 @@ Int_t SkeletonModule::GetData(Int_t chan) {
   return fData[chan];
 }
 
-void SkeletonModule::Clear(const Option_t *opt) { 
+void SkeletonModule::Clear(const Option_t *opt) {
   fNumHits = 0;
   for (Int_t i=0; i<fNumChan; i++) fData[i]=0;
 }
 
-
+}
 
 ClassImp(Decoder::SkeletonModule)
