@@ -34,57 +34,58 @@ int main(int argc, char* argv[])
    evdata->SetDebug(1);
    evdata->SetDebugFile(debugfile);
 
-    // Loop over events
-      int NUMEVT=10;
-      for (int iev=0; iev<NUMEVT; iev++) {
-   	 int status = datafile.codaRead();  
-         if (status != S_SUCCESS) {
-	   if ( status == EOF) {
-             *debugfile << "Normal end of file.  Bye bye." << endl;
-	   } else {
-  	     *debugfile << hex << "ERROR: codaRread status = " << status << endl;
- 	   }
-           exit(1);
-	 } else {
+   // Loop over events
+   int NUMEVT=10;
+   for (int iev=0; iev<NUMEVT; iev++) {
+     int status = datafile.codaRead();
+     if (status != S_SUCCESS) {
+       if ( status == EOF) {
+	 *debugfile << "Normal end of file.  Bye bye." << endl;
+       } else {
+	 *debugfile << hex << "ERROR: codaRread status = " << status << endl;
+       }
+       exit(1);
+     } else {
 
-            UInt_t *data = datafile.getEvBuffer();
-	    dump(data, debugfile);
+       UInt_t *data = datafile.getEvBuffer();
+       dump(data, debugfile);
 
-            *debugfile << "\nAbout to Load Event "<<endl;
-            evdata->LoadEvent( data );   
-            *debugfile << "\nFinished with Load Event "<<endl;
+       *debugfile << "\nAbout to Load Event "<<endl;
+       evdata->LoadEvent( data );
+       *debugfile << "\nFinished with Load Event "<<endl;
 
-            process (evdata, debugfile);
+       process (evdata, debugfile);
 
-	 }
-      }
+     }
+   }
 
- 
+
 }
-     
 
-void dump( UInt_t* data, ofstream *debugfile) {
-    // Crude event dump
-            int evnum = data[4];
-            int len = data[0] + 1;
-            int evtype = data[1]>>16;
-            *debugfile << "\n\n Event number " << dec << evnum << endl;
-            *debugfile << " length " << len << " type " << evtype << endl;
-            int ipt = 0;
-	    for (int j=0; j<(len/5); j++) {
-	      *debugfile << dec << "\n evbuffer[" << ipt << "] = ";
-              for (int k=j; k<j+5; k++) {
-		*debugfile << hex << data[ipt++] << " ";
-	      }
-              *debugfile << endl;
-	    }
-            if (ipt < len) {
-	      *debugfile << dec << "\n evbuffer[" << ipt << "] = ";
-              for (int k=ipt; k<len; k++) {
-		*debugfile << hex << data[ipt++] << " ";
-              }
-              *debugfile << endl;
-            }
+
+void dump( UInt_t* data, ofstream *debugfile)
+{
+  // Crude event dump
+  int evnum = data[4];
+  int len = data[0] + 1;
+  int evtype = data[1]>>16;
+  *debugfile << "\n\n Event number " << dec << evnum << endl;
+  *debugfile << " length " << len << " type " << evtype << endl;
+  int ipt = 0;
+  for (int j=0; j<(len/5); j++) {
+    *debugfile << dec << "\n evbuffer[" << ipt << "] = ";
+    for (int k=j; k<j+5; k++) {
+      *debugfile << hex << data[ipt++] << " ";
+    }
+    *debugfile << endl;
+  }
+  if (ipt < len) {
+    *debugfile << dec << "\n evbuffer[" << ipt << "] = ";
+    for (int k=ipt; k<len; k++) {
+      *debugfile << hex << data[ipt++] << " ";
+    }
+    *debugfile << endl;
+  }
 }
 
 void process (THaEvData *evdata, ofstream *debugfile) {
@@ -95,30 +96,26 @@ void process (THaEvData *evdata, ofstream *debugfile) {
      *debugfile << "Event number " << evdata->GetEvNum()  << endl;
      *debugfile << "Event length " << evdata->GetEvLength() << endl;
      if (evdata->IsPhysicsTrigger() ) { // triggers 1-14
-        *debugfile << "Physics trigger " << endl;
+	*debugfile << "Physics trigger " << endl;
      }
 
 // Now we want data from a particular crate and slot.
-// E.g. crates are 1,2,3,13,14,15 (roc numbers), Slots are 1,2,3... 
+// E.g. crates are 1,2,3,13,14,15 (roc numbers), Slots are 1,2,3...
 // This is like what one might do in a detector decode() routine.
 
       int crate = 1;    // for example
       int slot = 25;
 
 //  Here are raw 32-bit CODA words for this crate and slot
-      *debugfile << "Raw Data Dump for crate "<<dec<<crate<<" slot "<<slot<<endl; 
+      *debugfile << "Raw Data Dump for crate "<<dec<<crate<<" slot "<<slot<<endl;
       int hit;
       *debugfile << "Num raw "<<evdata->GetNumRaw(crate,slot)<<endl;
       for(hit=0; hit<evdata->GetNumRaw(crate,slot); hit++) {
-        *debugfile<<dec<<"raw["<<hit<<"] =   ";
-        *debugfile<<hex<<evdata->GetRawData(crate,slot,hit)<<endl;  
+	*debugfile<<dec<<"raw["<<hit<<"] =   ";
+	*debugfile<<hex<<evdata->GetRawData(crate,slot,hit)<<endl;
       }
 // You can alternatively let evdata print out the contents of a crate and slot:
       *debugfile << "To print slotdata "<<crate<<"  "<<slot<<endl;
       //      evdata->PrintSlotData(crate,slot);
       *debugfile << "finished with print slot data"<<endl;
 }
-
-
-
-
