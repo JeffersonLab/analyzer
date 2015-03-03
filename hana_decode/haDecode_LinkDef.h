@@ -6,6 +6,9 @@
 
 #pragma link C++ class Decoder::CodaDecoder+;
 #pragma link C++ class Decoder::Module+;
+#pragma link C++ class Decoder::Module::ModuleType+;
+#pragma link C++ class Decoder::Module::TypeSet_t+;
+#pragma link C++ class Decoder::Module::TypeIter_t+;
 #pragma link C++ class Decoder::FastbusModule+;
 #pragma link C++ class Decoder::VmeModule+;
 #pragma link C++ class Decoder::GenScaler+;
