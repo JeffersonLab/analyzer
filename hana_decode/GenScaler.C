@@ -18,14 +18,15 @@ namespace Decoder {
 
   const int DEFAULT_DELTAT = 4;
 
-GenScaler::GenScaler(Int_t crate, Int_t slot) : VmeModule(crate, slot) {
-  fNumChan = 0;
+GenScaler::GenScaler(Int_t crate, Int_t slot)
+  : VmeModule(crate, slot), fIsDecoded(kFALSE), fDataArray(0), fPrevData(0),
+    fRate(0), fNormScaler(0)
+{
   fWordsExpect = 32;
-  fDebugFile = 0;
-  fIsDecoded = kFALSE;
 }
 
-void GenScaler::GenInit() {
+void GenScaler::GenInit()
+{
   fHasClock = kFALSE;
   fFirstTime = kTRUE;
   fIsDecoded = kFALSE;
@@ -60,10 +61,10 @@ Int_t GenScaler::SetClock(Double_t deltaT, Int_t clockchan, Double_t clockrate) 
     fHasClock = kFALSE;
     if (clockrate > 0) {
        if (fNormScaler) {
-          cout << "GenScaler:: WARNING:  Declaring this object to have"<<endl;
-          cout << "   a clock even though this also has a normalization scaler ?"<<endl;
-          cout << "  This makes no sense. "<<endl;
-          retcode = -1;
+	  cout << "GenScaler:: WARNING:  Declaring this object to have"<<endl;
+	  cout << "   a clock even though this also has a normalization scaler ?"<<endl;
+	  cout << "  This makes no sense. "<<endl;
+	  retcode = -1;
        }
        fHasClock = kTRUE;
     }
@@ -203,8 +204,8 @@ Bool_t GenScaler::IsSlot(UInt_t rdata) {
   if (result) {
     fNumChan = rdata&fNumChanMask;
     if (fNumChan != fWordsExpect) {
-        cout << "GenScaler:: ERROR:  Inconsistent number of chan"<<endl;
-        if (fNumChan > fWordsExpect) fNumChan = fWordsExpect;
+	cout << "GenScaler:: ERROR:  Inconsistent number of chan"<<endl;
+	if (fNumChan > fWordsExpect) fNumChan = fWordsExpect;
     }
   }
   return result;
@@ -219,7 +220,7 @@ Int_t GenScaler::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const UInt
       if (!fHeader) cerr << "GenScaler::LoadSlot::ERROR : no header ?"<<endl;
       Decode(p);
       for (Int_t ichan = 0; ichan < fNumChan; ichan++) {
-        sldat->loadData(ichan, fDataArray[ichan], fDataArray[ichan]);
+	sldat->loadData(ichan, fDataArray[ichan], fDataArray[ichan]);
       }
       fWordsSeen = fNumChan;
       return fWordsSeen;

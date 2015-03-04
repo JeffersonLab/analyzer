@@ -16,12 +16,16 @@
 using namespace std;
 
 THaEvtTypeHandler::THaEvtTypeHandler(const char* name, const char* description)
-  : THaAnalysisObject(name, description)
+  : THaAnalysisObject(name, description), fDebugFile(0)
 {
 }
 
 THaEvtTypeHandler::~THaEvtTypeHandler()
 {
+  if (fDebugFile) {
+    fDebugFile->close();
+    delete fDebugFile;
+  }
 }
 
 Int_t THaEvtTypeHandler::Analyze(THaEvData *evdata)

@@ -20,7 +20,6 @@
 //#define SIMPLELOOP 
 
 static const int PRINTOUT = 0;  // to printout (1) or not (0)
-static const int MAX = 100;
 
 using namespace std;
 
@@ -38,8 +37,7 @@ void THaGenDetTest::init()
 // channels belong to my detector.  Here "my detector" is
 // the scint and VDC on both arms.
 
-       int i;
-       for (i=0; i<MAX; i++) mycrates[i]=0;
+       for (int i=0; i<MAX; i++) mycrates[i]=0;
 
   // E-arm Scintillators
        mydevice[0] = "E-arm S1 ADCs on Left PMTs";

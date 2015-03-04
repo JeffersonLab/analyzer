@@ -108,9 +108,7 @@ Int_t F1TDCModule::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, const UI
    const UInt_t DATA_CHK = F1_HIT_OFLW | F1_OUT_OFLW | F1_RES_LOCK;
    const UInt_t DATA_MARKER = 1<<23;
    // look at all the data
-   const UInt_t *loc;
-   loc = evbuffer;
-   Int_t chan, ihit;
+   const UInt_t *loc = evbuffer;
    Int_t fDebug=0;
    if(fDebug > 1 && fDebugFile!=0) *fDebugFile<< "Debug of F1TDC data, fResol =  "<<fResol<<"  model num  "<<fModelNum<<endl;
    while ( loc <= pstop && IsSlot(*loc) ) {
@@ -125,7 +123,7 @@ Int_t F1TDCModule::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, const UI
 			  <<hex<<*loc<<dec<<endl;
 	    Int_t chn = ((*loc)>>16) & 0x3f;  // internal channel number
 
-	    chan =0;
+	    Int_t chan;
 	    if (IsHiResolution()) {
 		// drop last bit for channel renumbering
 		 chan=(chn >> 1);

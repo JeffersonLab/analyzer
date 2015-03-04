@@ -357,7 +357,7 @@ int THaCrateMap::init(TString the_map)
     // must read at least the slot and model numbers
     if ( crate>=0 &&
 	 (nread=
-	  sscanf(line.c_str(),"%d %d %d %x %x %d %d",
+	  sscanf(line.c_str(),"%d %d %d %x %x %u %u",
 		 &slot,&imodel,&clear,&iheader,&mask,&ichan,&idata)) >=2 ) {
       if (nread>=6)
 	setModel(crate,slot,imodel,ichan,idata);

@@ -33,8 +33,6 @@ public:
 protected:
 
    Bool_t fHasHeader;
-   Int_t fHeader;
-   Int_t fWdcntMask;
    Int_t fSlotMask, fSlotShift;
    Int_t fChanMask, fChanShift;
    Int_t fDataMask;

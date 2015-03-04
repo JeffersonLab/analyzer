@@ -48,23 +48,15 @@ static const UInt_t MAXTEVT   = 5000;
 static const UInt_t defaultDT = 4;
 
 THaScalerEvtHandler::THaScalerEvtHandler(const char *name, const char* description)
-  : THaEvtTypeHandler(name,description)
+  : THaEvtTypeHandler(name,description), evcount(0), ifound(0), fNormIdx(-1),
+    dvars(0), fScalerTree(0)
 {
   rdata = new UInt_t[MAXTEVT];
-  fDebugFile = 0;
-  fScalerTree = 0;
-  evcount = 0;
-  ifound = 0;
-  fNormIdx = -1;
 }
 
 THaScalerEvtHandler::~THaScalerEvtHandler()
 {
   delete [] rdata;
-  if (fDebugFile) {
-    fDebugFile->close();
-    delete fDebugFile;
-  }
   if (fScalerTree) {
     delete fScalerTree;
   }
@@ -411,11 +403,11 @@ size_t THaScalerEvtHandler::FindNoCase(const string& sdata, const string& skey)
   string sdatalc, skeylc;
   sdatalc = "";  skeylc = "";
   for (string::const_iterator p =
-	 sdata.begin(); p != sdata.end(); p++) {
+	 sdata.begin(); p != sdata.end(); ++p) {
     sdatalc += tolower(*p);
   }
   for (string::const_iterator p =
-	 skey.begin(); p != skey.end(); p++) {
+	 skey.begin(); p != skey.end(); ++p) {
     skeylc += tolower(*p);
   }
   if (sdatalc.find(skeylc,0) == string::npos) return -1;

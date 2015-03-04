@@ -22,7 +22,6 @@ public:
 
    using Module::GetData;
 
-   virtual void Init() { return; };  // derived classes should implement
    virtual void  Clear(const Option_t *opt) { fIsDecoded=kFALSE; };
    virtual Int_t Decode(const UInt_t *evbuffer);
    virtual Int_t GetData(Int_t chan) const;   // Raw scaler counts
@@ -44,7 +43,6 @@ protected:
 
    void LoadRates();
    Bool_t checkchan(Int_t chan) const { return (chan >=0 && chan < fWordsExpect); }
-   static TypeIter_t fgThisType;
    Bool_t fIsDecoded, fFirstTime, fDeltaT;
    Int_t *fDataArray, *fPrevData;
    Double_t *fRate;

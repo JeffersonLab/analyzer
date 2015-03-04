@@ -8,12 +8,11 @@
 //
 /////////////////////////////////////////////////////////////////////
 
-#include <vector>
-#include <set>
-#include <fstream>
 #include "TNamed.h"
 #include "Decoder.h"
 #include "DecoderGlobals.h"
+#include <set>
+#include <fstream>
 
 namespace Decoder {
 
@@ -38,7 +37,7 @@ namespace Decoder {
     typedef TypeSet_t::iterator TypeIter_t;
     static TypeSet_t& fgModuleTypes();
 
-    Module() { };  // for ROOT TClass & I/O
+    Module();   // for ROOT TClass & I/O
 
     virtual ~Module();
 
@@ -49,15 +48,23 @@ namespace Decoder {
 
     virtual Int_t Decode(const UInt_t *p) = 0; // implement in derived class
     // Loads slot data
-    virtual Int_t LoadSlot(THaSlotData *sldat,  const UInt_t *evbuffer, const UInt_t *pstop );
+    virtual Int_t LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer,
+			   const UInt_t *pstop ) = 0;
 
     virtual Int_t GetNumChan() const { return fNumChan; };
 
     virtual Int_t GetNumEvents() const { return 0; };
     virtual Int_t GetMode() const { return 0; };
 
-    virtual void SetSlot(Int_t crate, Int_t slot, Int_t header=0, Int_t mask=0, Int_t modelnum=0)
-    { fCrate=crate; fSlot=slot; fHeader=header; fHeaderMask=mask; fModelNum=modelnum;};
+    virtual void SetSlot(Int_t crate, Int_t slot, Int_t header=0,
+			 Int_t mask=0, Int_t modelnum=0)
+    {
+      fCrate      = crate;
+      fSlot       = slot;
+      fHeader     = header;
+      fHeaderMask = mask;
+      fModelNum   = modelnum;
+    }
 
     virtual void Init();
 
@@ -68,7 +75,10 @@ namespace Decoder {
     virtual Int_t GetCrate() const { return fCrate; };
     virtual Int_t GetSlot() const { return fSlot; };
 
-    virtual void SetDebugFile(std::ofstream *file) { if (file!=0) fDebugFile = file; };
+    virtual void SetDebugFile(std::ofstream *file)
+    {
+      if (file!=0) fDebugFile = file;
+    }
 
     virtual void SetHeader(UInt_t header, UInt_t mask) {
       fHeader = header;
@@ -84,7 +94,6 @@ namespace Decoder {
     static TypeIter_t DoRegister( const ModuleType& registration_info );
 
     Int_t fCrate, fSlot;
-    std::vector<Int_t> fData;  // Raw data
     UInt_t fHeader, fHeaderMask;
     Int_t fWordsExpect, fWordsSeen;
     Int_t fWdcntMask, fWdcntShift;

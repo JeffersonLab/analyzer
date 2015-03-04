@@ -10,23 +10,25 @@
 
 #include "Module.h"
 #include "TError.h"
-#include <iostream>
 
 using namespace std;
 
 namespace Decoder {
 
-Module::Module(Int_t crate, Int_t slot) : fCrate(crate), fSlot(slot), fWordsExpect(0) {
+Module::Module()
+  : fCrate(0), fSlot(0), fHeader(0), fHeaderMask(0xffffffff),
+    fWordsExpect(0), fWordsSeen(0), fWdcntMask(0), fWdcntShift(0),
+    fModelNum(-1), fNumChan(0), fDebugFile(0)
+{
+}
+
+Module::Module(Int_t crate, Int_t slot)
+  : fCrate(crate), fSlot(slot), fHeader(0), fHeaderMask(0xffffffff),
+    fWordsExpect(0), fWordsSeen(0), fWdcntMask(0), fWdcntShift(0),
+    fModelNum(-1), fNumChan(0), fDebugFile(0)
+{
   // Warning: see comments at Init()
-  fHeader=0;
-  fHeaderMask=0xffffffff;
-  fWordsSeen = 0;
-  fWdcntMask=0;
-  fWdcntShift=0;
-  fDebugFile=0;
-  fModelNum = -1;
   fName = "";
-  fNumChan = 0;
 }
 
 Module::~Module() {
@@ -46,11 +48,12 @@ Module &Module::operator=(const Module& rhs) {
   return *this;
 }
 
-void Module::Create(const Module& rhs) {
+void Module::Create(const Module& rhs)
+{
   fCrate = rhs.fCrate;
   fSlot = rhs.fSlot;
   fWordsExpect = rhs.fWordsExpect;
-
+  fDebugFile = rhs.fDebugFile;
 }
 
 void Module::Init() {
@@ -124,36 +127,6 @@ Module::TypeIter_t Module::DoRegister( const ModuleType& info )
   // NB: std::set guarantees that iterators remain valid on further insertions,
   // so this return value will remain good, unlike, e.g., std::vector iterators.
   return ins.first;
-}
-
-Int_t Module::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const UInt_t *pstop)
-{
-  // This is a simple, default method for loading a slot
-  const UInt_t *p = evbuffer;
-  if (fDebugFile) {
-       *fDebugFile << "Module:: Loadslot "<<endl;
-       *fDebugFile << "header  0x"<<hex<<fHeader<<dec<<endl;
-       *fDebugFile << "masks  "<<hex<<fHeaderMask<<endl;
-  }
-  if (!fHeader) cerr << "Module::LoadSlot::ERROR : no header ?"<<endl;
-  fWordsSeen=0;
-  while (IsSlot( *p )) {
-    if (p >= pstop) break;
-    if (fDebugFile) *fDebugFile << "IsSlot ... data = "<<*p<<endl;
-    p++;
-    Decode(p);
-    for (size_t ichan = 0, nchan = GetNumChan(); ichan < nchan; ichan++) {
-      Int_t mdata,rdata;
-      fWordsSeen++;
-      p++;
-      if (p >= pstop) break;
-      rdata = *p;
-      mdata = rdata;
-      sldat->loadData(ichan, mdata, rdata);
-      if (ichan < fData.size()) fData[ichan]=rdata;
-    }
-  }
-  return fWordsSeen;
 }
 
 }

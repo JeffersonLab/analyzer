@@ -182,7 +182,7 @@ Int_t THaSlotData::LoadIfSlot(const UInt_t* p, const UInt_t *pstop) {
 
 int THaSlotData::loadData(const char* type, int chan, int dat, int raw) {
 
-  static int very_verb=1;
+  const int very_verb=1;
 
   if( !didini ) {
     if (very_verb) {  // this might be your problem.
