@@ -41,11 +41,9 @@ public:
       fPvect(kBig,kBig,kBig), fVertex(kBig,kBig,kBig),
       fVertexError(kBig,kBig,kBig),
       fPathl(kBig), fTime(kBig), fdTime(kBig), fBeta(kBig), fdBeta(kBig),
-#ifdef HALLC_MODS
       fDedx(kBig), fEnergy(kBig),
       fNPMT(0), fBetaChi2(kBig), fFPTime(kBig),
       fGoodPlane3(0), fGoodPlane4(0),
-#endif
       fID(0), fFlag(0), fType(0), fChi2(kBig), fNDoF(0)
   { memset(fClusters,0,kMAXCL*sizeof(THaCluster*)); }
 
@@ -63,11 +61,9 @@ public:
       fPvect(kBig,kBig,kBig), fVertex(kBig,kBig,kBig),
       fVertexError(kBig,kBig,kBig),
       fPathl(kBig), fTime(kBig), fdTime(kBig), fBeta(kBig), fdBeta(kBig),
-#ifdef HALLC_MODS
       fDedx(kBig), fEnergy(kBig),
       fNPMT(0), fBetaChi2(kBig), fFPTime(kBig),
       fGoodPlane3(0), fGoodPlane4(0),
-#endif
       fID(id), fFlag(0), fType(kHasFP), fChi2(kBig), fNDoF(0)
   { 
     memset(fClusters,0,kMAXCL*sizeof(THaCluster*)); 
@@ -125,15 +121,13 @@ public:
   Double_t          GetdTime()         const { return fdTime; } // (s)
   Double_t          GetBeta()          const { return fBeta; } // from scint.
   Double_t          GetdBeta()         const { return fdBeta; }
-#ifdef HALLC_MODS
-  Double_t          GetDedx()    const { return fDedx; }
-  Double_t          GetEnergy()  const { return fEnergy; }
-  Int_t             GetNPMT()    const { return fNPMT; }
-  Double_t          GetBetaChi2() const { return fBetaChi2; }
-  Double_t          GetFPTime()  const { return fFPTime; }
-  Int_t             GetGoodPlane3() const { return fGoodPlane3; }
-  Int_t             GetGoodPlane4() const { return fGoodPlane4; }
-#endif
+  Double_t          GetDedx()          const { return fDedx; }
+  Double_t          GetEnergy()        const { return fEnergy; }
+  Int_t             GetNPMT()          const { return fNPMT; }
+  Double_t          GetBetaChi2()      const { return fBetaChi2; }
+  Double_t          GetFPTime()        const { return fFPTime; }
+  Int_t             GetGoodPlane3()    const { return fGoodPlane3; }
+  Int_t             GetGoodPlane4()    const { return fGoodPlane4; }
   
   bool              HasDet()           const { return (fType&kHasDet); }
   bool              HasFP()            const { return (fType&kHasFP); }
@@ -163,15 +157,13 @@ public:
   void              SetdTime( Double_t dt )      { fdTime = dt; /* seconds */ }
   void              SetBeta( Double_t beta )     { fBeta = beta; }
   void              SetdBeta( Double_t db )      { fdBeta = db; }
-#ifdef HALLC_MODS
-  void              SetDedx(Double_t dedx)     { fDedx = dedx; }
-  void              SetEnergy(Double_t energy) { fEnergy = energy; }
-  void              SetNPMT(Int_t npmt)        { fNPMT = npmt; }
+  void              SetDedx(Double_t dedx)       { fDedx = dedx; }
+  void              SetEnergy(Double_t energy)   { fEnergy = energy; }
+  void              SetNPMT(Int_t npmt)          { fNPMT = npmt; }
   void              SetBetaChi2(Double_t betachi2) { fBetaChi2 = betachi2; }
-  void              SetFPTime(Double_t fptime)  { fFPTime = fptime; }
-  void              SetGoodPlane3(Int_t gdplane3) { fGoodPlane3 = gdplane3; }
-  void              SetGoodPlane4(Int_t gdplane4) { fGoodPlane4 = gdplane4; }
-#endif
+  void              SetFPTime(Double_t fptime)     { fFPTime = fptime; }
+  void              SetGoodPlane3(Int_t gdplane3)  { fGoodPlane3 = gdplane3; }
+  void              SetGoodPlane4(Int_t gdplane4)  { fGoodPlane4 = gdplane4; }
 
   void              SetChi2( Double_t chi2, Int_t ndof ) { fChi2=chi2; fNDoF=ndof; }
 
@@ -235,16 +227,14 @@ protected:
   Double_t          fdTime;  // uncertainty in fTime
   Double_t          fBeta;   // beta of track
   Double_t          fdBeta;  // uncertainty in fBeta
-#ifdef HALLC_MODS
   Double_t          fDedx;   // dEdX from hodoscopes
   Double_t          fEnergy; // Energy from calorimeter
   // Needed for "prune" select best track method
-  Int_t             fNPMT;   // Number of PMTs hit in track
-  Double_t          fBetaChi2; // (reduced) Chisq of fit on Beta
-  Double_t          fFPTime; // Focal Plane time (same as fTime?)
+  Int_t             fNPMT;       // Number of PMTs hit in track
+  Double_t          fBetaChi2;   // (reduced) Chisq of fit on Beta
+  Double_t          fFPTime;     // Focal Plane time (same as fTime?)
   Int_t             fGoodPlane3; // Track hit a plane 3 paddle
   Int_t             fGoodPlane4; // Track hit a plane 4 paddle
-#endif
   
   THaTrackID*       fID;     //! Track identifier
   UInt_t            fFlag;   // General status flag (for use by tracking det.)
