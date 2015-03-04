@@ -131,7 +131,13 @@ MAKEDEPEND    = g++
 
 export OSNAME := $(shell uname)
 
-EVIO_LIB      = -L$(EVIO_LIBDIR) -levio
+ifdef EVIO_LIBDIR
+  EVIO_LIB      = -L$(EVIO_LIBDIR) -levio
+else
+  EVIO_LIB      =
+  EVIO_SRC = evio.c eviofmt.c eviofmtswap.c evioswap.c
+  EVIO_OBJS = $(EVIO_SRC:.c=.o)
+endif
 
 ifeq ($(OSNAME),SunOS)
 
@@ -182,7 +188,9 @@ ifdef ONLINE_ET
 endif
 
 # External EVIO support
-INCLUDES     += -I$(EVIO_INCDIR)
+ifdef EVIO_INCDIR
+  INCLUDES     += -I$(EVIO_INCDIR)
+endif
 
 DEFINES      += $(DC_DEFINES)
 CFLAGS        = $(CXXFLG) $(ROOTCLAGS) $(INCLUDES) $(DEFINES)
@@ -229,7 +237,7 @@ endif
 
 # Library for main analyzer
 
-libdc.a: $(DECODE_OBJS)
+libdc.a: $(DECODE_OBJS) $(EVIO_OBJS)
 	rm -f $@
 	ar crs $@ $^
 ifndef STANDALONE
@@ -238,7 +246,7 @@ endif
 
 static:	libdc.a
 
-libdc.so: $(DECODE_OBJS)
+libdc.so: $(DECODE_OBJS) $(EVIO_OBJS)
 	rm -f $@
 ifeq ($(strip $(SONAME)),)
 	$(LD) $(LDFLAGS) $(SOFLAGS) -o $@ $^ $(EVIO_LIB)
