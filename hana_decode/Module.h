@@ -10,7 +10,6 @@
 
 #include "TNamed.h"
 #include "Decoder.h"
-#include "DecoderGlobals.h"
 #include <set>
 #include <fstream>
 

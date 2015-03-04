@@ -18,9 +18,8 @@
 /////////////////////////////////////////////////////////////////////
 
 
-#include "Rtypes.h"
 #include "TString.h"
-#include "DecoderGlobals.h"
+#include "Decoder.h"
 #include <fstream>
 #include <cassert>
 

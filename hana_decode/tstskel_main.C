@@ -25,7 +25,6 @@
 #include "TH2.h"
 #include "TProfile.h"
 #include "TNtuple.h"
-#include "DecoderGlobals.h"
 
 using namespace std;
 using namespace Decoder;

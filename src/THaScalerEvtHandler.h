@@ -10,11 +10,11 @@
 /////////////////////////////////////////////////////////////////////
 
 #include "THaEvtTypeHandler.h"
+#include "Decoder.h"
 #include <string>
 #include <vector>
 #include "TTree.h"
 #include "TString.h"   // really both std::string and TString?
-#include "GenScaler.h"
 
 class ScalerLoc { // Utility class used by THaScalerEvtHandler
  public:
