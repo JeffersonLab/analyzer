@@ -4,9 +4,10 @@
 #define PRINTOUT 1  // to test speed set to 0, else prints out
 
 #include "THaEtClient.h"
-#include <iostream.h>
+#include <iostream>
 
 using namespace std;
+using namespace Decoder;
 
 int main(int argc, char *argv[]) 
 {
@@ -15,7 +16,7 @@ int main(int argc, char *argv[])
        THaEtClient *et;
        et = new THaEtClient("adaqcp", mymode);  // opens connection to adaqcp computer.
  
-       int* evbuff = new int[et->getBuffSize()];   // raw data buffer
+       UInt_t* evbuff = new UInt_t[et->getBuffSize()];   // raw data buffer
 
        int NUMEVT = 10000;
        double lensum=0;

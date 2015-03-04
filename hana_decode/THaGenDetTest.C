@@ -15,7 +15,13 @@
 /////////////////////////////////////////////////////////////////////
 
 #include "THaGenDetTest.h"
+#include "THaEvData.h"
+
 //#define SIMPLELOOP 
+
+static const int PRINTOUT = 0;  // to printout (1) or not (0)
+
+using namespace std;
 
 THaGenDetTest::THaGenDetTest()
 {
@@ -31,8 +37,7 @@ void THaGenDetTest::init()
 // channels belong to my detector.  Here "my detector" is
 // the scint and VDC on both arms.
 
-       int i;
-       for (i=0; i<MAX; i++) mycrates[i]=0;
+       for (int i=0; i<MAX; i++) mycrates[i]=0;
 
   // E-arm Scintillators
        mydevice[0] = "E-arm S1 ADCs on Left PMTs";
@@ -105,7 +110,7 @@ void THaGenDetTest::init()
        chanlo[15] = 22;  chanhi[15] = 27;
       
   // E-arm VDCs
-       for (i=0; i<16; i++) {
+       for (int i=0; i<16; i++) {
            mydevice[i+16] = "E-arm VDCs";
            mycrates[i+16] = 1;
            myslots[i+16] = i+4;
@@ -115,7 +120,7 @@ void THaGenDetTest::init()
        }
 
   // H-arm VDCs
-       for (i=0; i<16; i++) {
+       for (int i=0; i<16; i++) {
            mydevice[i+33] = "H-arm VDCs";
            mycrates[i+33] = 2;
            myslots[i+33] = i+6;

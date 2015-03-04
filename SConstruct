@@ -139,7 +139,7 @@ if baseenv.subst('$CPPCHECK')==proceed:
                 print('!!! cppcheck not found on this system.  Check if cppcheck is installed and in your PATH.')
                 Exit(1)
         else:
-                cppcheck_command = baseenv.Command('cppcheck_report.txt',[],"cppcheck --quiet --enable=all src/ 2> $TARGET")
+                cppcheck_command = baseenv.Command('cppcheck_report.txt',[],"cppcheck --quiet --enable=all src/ hana_decode/ 2> $TARGET")
 		print "cppcheck_command = %s" % cppcheck_command
                 baseenv.AlwaysBuild(cppcheck_command)
 

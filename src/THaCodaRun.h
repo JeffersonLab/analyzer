@@ -8,8 +8,7 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaRunBase.h"
-
-class THaCodaData;
+#include "Decoder.h"
 
 class THaCodaRun : public THaRunBase {
   
@@ -27,7 +26,7 @@ public:
 protected:
   static Int_t ReturnCode( Int_t coda_retcode);
 
-  THaCodaData*  fCodaData;  //! CODA data associated with this run
+  Decoder::THaCodaData*  fCodaData;  //! CODA data associated with this run
 
   ClassDef(THaCodaRun,1)    // ABC for a run based on CODA data
 };

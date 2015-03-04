@@ -18,7 +18,10 @@
 /////////////////////////////////////////////////////////////////////
 
 #include "THaCodaData.h"
+#include "Decoder.h"
 #include "TArrayI.h"
+
+namespace Decoder {
 
 class THaCodaFile : public THaCodaData {
 
@@ -54,5 +57,7 @@ private:
   ClassDef(THaCodaFile,0)   //  File of CODA data
 
 };
+
+}
 
 #endif

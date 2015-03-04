@@ -16,7 +16,9 @@
 
 using namespace std;
 
-const UShort_t THaFastBusWord::FB_ERR = ~(UShort_t)0;
+namespace Decoder {
+
+  const UShort_t THaFastBusWord::FB_ERR = ~(UShort_t)0;
 
 // Definition of fastbus modules.
 void THaFastBusWord::init() {
@@ -76,4 +78,6 @@ void THaFastBusWord::init() {
     }
 }
 
-ClassImp(THaFastBusWord)
+}
+
+ClassImp(Decoder::THaFastBusWord)

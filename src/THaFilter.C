@@ -13,6 +13,7 @@
 #include "THaRunBase.h"
 
 using namespace std;
+using namespace Decoder;
 
 //_____________________________________________________________________________
 THaFilter::THaFilter( const char *cutexpr, const char* filename ) :
@@ -25,7 +26,7 @@ THaFilter::THaFilter( const char *cutexpr, const char* filename ) :
 THaFilter::~THaFilter()
 {
   // Destructor. Calls virtual Close(). NB: any derived class
-  // that overrides Close() must implement its own destructor and call its 
+  // that overrides Close() must implement its own destructor and call its
   // own Close() from there.
 
   Close();
@@ -34,7 +35,7 @@ THaFilter::~THaFilter()
 }
 
 //_____________________________________________________________________________
-Int_t THaFilter::Close() 
+Int_t THaFilter::Close()
 {
   // Close this filter. Closes output file if open.
 
@@ -60,7 +61,7 @@ Int_t THaFilter::Init(const TDatime& )
   if ( fCodaOut->codaOpen(fFileName, "w", 1) ) {
     Error("Init","Cannot open CODA file %s for writing.",fFileName.Data());
     return -3;
-  }      
+  }
 
   // Set up our cut
   fCut = new THaCut( "Filter_Test", fCutExpr, "PostProcess" );
@@ -77,14 +78,14 @@ Int_t THaFilter::Init(const TDatime& )
 
 //_____________________________________________________________________________
 Int_t THaFilter::Process( const THaEvData* /* evdata */, const THaRunBase* run,
-			  Int_t /* code */ ) 
+			  Int_t /* code */ )
 {
   // Process event. Write the event to output CODA file if and only if
   // the event passes the filter cut.
 
-  if (!fIsInit || !fCut->EvalCut()) 
+  if (!fIsInit || !fCut->EvalCut())
     return 0;
-  
+
   // write out the event
   return  fCodaOut->codaWrite(run->GetEvBuffer());
 }

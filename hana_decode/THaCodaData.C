@@ -16,7 +16,7 @@
 #include "evio.h"
 #include <cassert>
 
-ClassImp(THaCodaData)
+namespace Decoder {
 
 //_____________________________________________________________________________
 THaCodaData::THaCodaData() {
@@ -64,3 +64,7 @@ Int_t THaCodaData::ReturnCode( Int_t evio_retcode )
   }
   return CODA_FATAL; // not reached
 }
+
+}
+
+ClassImp(Decoder::THaCodaData)

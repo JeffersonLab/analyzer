@@ -13,6 +13,9 @@
 #include <map>
 #include <vector>
 #include "Rtypes.h"
+//#include "Decoder.h"
+
+namespace Decoder {
 
 class EpicsChan {
 // utility class of one epics channel
@@ -53,7 +56,7 @@ private:
   Double_t dvalue,timestamp;
 };
 
-typedef std::map< std::string, std::vector<EpicsChan> >::value_type epVal;
+typedef std::map< std::string, std::vector<Decoder::EpicsChan> >::value_type epVal;
 
 class THaEpics {
 
@@ -79,5 +82,7 @@ private:
    ClassDef(THaEpics,0)  // EPICS data 
 
 };
+
+}
 
 #endif

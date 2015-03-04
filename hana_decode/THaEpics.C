@@ -29,6 +29,8 @@
 
 using namespace std;
 
+namespace Decoder {
+
 void THaEpics::Print() {
   cout << "\n\n====================== \n";
   cout << "Print of Epics Data : "<<endl;
@@ -179,4 +181,6 @@ int THaEpics::LoadData(const UInt_t* evbuffer, int evnum)
   return 1;
 }
 
-ClassImp(THaEpics)
+}
+
+ClassImp(Decoder::THaEpics)

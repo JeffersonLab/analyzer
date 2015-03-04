@@ -8,16 +8,15 @@
 /////////////////////////////////////////////////////////////////////
 
 
+#include "Decoder.h"
 #include "TObject.h"
 #include "TString.h"
 #include "THaSlotData.h"
 #include "TBits.h"
 #include <cassert>
+#include <iostream>
 
 class THaBenchmark;
-class THaEpics;
-class THaCrateMap;
-class THaFastBusWord;
 
 class THaEvData : public TObject {
 
@@ -85,6 +84,8 @@ public:
   virtual Int_t GetScaler(const TString& /*spec*/,
 			  Int_t /*slot*/, Int_t /*chan*/) const
   { return GetScaler(0,0,0); }
+  virtual void SetDebugFile( std::ofstream *file ) { fDebugFile = file; };
+  virtual Decoder::Module* GetModule(Int_t roc, Int_t slot);
 
   // Access functions for EPICS (slow control) data
   virtual double GetEpicsData(const char* tag, Int_t event=0) const;
@@ -109,6 +110,8 @@ public:
   UInt_t  GetInstance() const { return fInstance; }
   static UInt_t GetInstances() { return fgInstances.CountBits(); }
 
+  Decoder::THaCrateMap* fMap;      // Pointer to active crate map
+
   // Reporting level
   void SetVerbose( UInt_t level );
   void SetDebug( UInt_t level );
@@ -128,33 +131,35 @@ protected:
     kScalersEnabled  = BIT(15),
   };
 
-  static const Int_t MAXROC = 32;
-  static const Int_t MAXSLOT = 27;
+  // static const Int_t MAXROC = 32;
+  // static const Int_t MAXSLOT = 27;
 
-  // Hall A Trigger Types
-  static const Int_t MAX_PHYS_EVTYPE  = 14;  // Types up to this are physics
-  static const Int_t SYNC_EVTYPE      = 16;
-  static const Int_t PRESTART_EVTYPE  = 17;
-  static const Int_t GO_EVTYPE        = 18;
-  static const Int_t PAUSE_EVTYPE     = 19;
-  static const Int_t END_EVTYPE       = 20;
-  static const Int_t TS_PRESCALE_EVTYPE  = 120;
-  static const Int_t EPICS_EVTYPE     = 131;
-  static const Int_t PRESCALE_EVTYPE  = 133;
-  static const Int_t DETMAP_FILE      = 135;
-  static const Int_t TRIGGER_FILE     = 136;
-  static const Int_t SCALER_EVTYPE    = 140;
+  // // Hall A Trigger Types
+  // static const Int_t MAX_PHYS_EVTYPE  = 14;  // Types up to this are physics
+  // static const Int_t SYNC_EVTYPE      = 16;
+  // static const Int_t PRESTART_EVTYPE  = 17;
+  // static const Int_t GO_EVTYPE        = 18;
+  // static const Int_t PAUSE_EVTYPE     = 19;
+  // static const Int_t END_EVTYPE       = 20;
+  // static const Int_t TS_PRESCALE_EVTYPE  = 120;
+  // static const Int_t EPICS_EVTYPE     = 131;
+  // static const Int_t PRESCALE_EVTYPE  = 133;
+  // static const Int_t DETMAP_FILE      = 135;
+  // static const Int_t TRIGGER_FILE     = 136;
+  // static const Int_t SCALER_EVTYPE    = 140;
 
   struct RocDat_t {           // ROC raw data descriptor
     Int_t pos;                // position in evbuffer[]
     Int_t len;                // length of data
-  } rocdat[MAXROC];
-  THaSlotData** crateslot;
+  } rocdat[Decoder::MAXROC];
+  Decoder::THaSlotData** crateslot;
 
   Bool_t first_decode;
   Bool_t fTrigSupPS;
 
   const UInt_t *buffer;
+
+  std::ofstream *fDebugFile;  // debug output
 
   Int_t  event_type,event_length,event_num,run_num,evscaler;
   Int_t  run_type;    // CODA run type from prestart event
@@ -169,15 +174,13 @@ protected:
   Bool_t GoodIndex(Int_t crate, Int_t slot) const;
 
   Int_t init_cmap();
-  Int_t init_slotdata(const THaCrateMap* map);
+  Int_t init_slotdata(const Decoder::THaCrateMap* map);
   void  makeidx(Int_t crate, Int_t slot);
 
   Int_t     fNSlotUsed;   // Number of elements of crateslot[] actually used
   Int_t     fNSlotClear;  // Number of elements of crateslot[] to clear
   UShort_t* fSlotUsed;    // [fNSlotUsed] Indices of crateslot[] used
   UShort_t* fSlotClear;   // [fNSlotClear] Indices of crateslot[] to clear
-
-  THaCrateMap* fMap;      // Pointer to active crate map
 
   Bool_t fDoBench;
   THaBenchmark *fBench;
@@ -202,18 +205,18 @@ protected:
 
 //Utility function to index into the crateslot array
 inline Int_t THaEvData::idx( Int_t crate, Int_t slot) const {
-  return slot+MAXSLOT*crate;
+  return slot+Decoder::MAXSLOT*crate;
 }
 //Like idx() const, but initializes empty slots
 inline Int_t THaEvData::idx( Int_t crate, Int_t slot) {
-  Int_t ix = slot+MAXSLOT*crate;
+  Int_t ix = slot+Decoder::MAXSLOT*crate;
   if( !crateslot[ix] ) makeidx(crate,slot);
   return ix;
 }
 
 inline Bool_t THaEvData::GoodCrateSlot( Int_t crate, Int_t slot ) const {
-  return ( crate >= 0 && crate < MAXROC &&
-	   slot >= 0 && slot < MAXSLOT );
+  return ( crate >= 0 && crate < Decoder::MAXROC &&
+	   slot >= 0 && slot < Decoder::MAXSLOT );
 }
 
 inline Bool_t THaEvData::GoodIndex( Int_t crate, Int_t slot ) const {
@@ -221,7 +224,7 @@ inline Bool_t THaEvData::GoodIndex( Int_t crate, Int_t slot ) const {
 }
 
 inline Int_t THaEvData::GetRocLength(Int_t crate) const {
-  assert(crate >= 0 && crate < MAXROC);
+  assert(crate >= 0 && crate < Decoder::MAXROC);
   return rocdat[crate].len;
 }
 
@@ -269,7 +272,7 @@ inline Int_t THaEvData::GetRawData(Int_t i) const {
 
 inline Int_t THaEvData::GetRawData(Int_t crate, Int_t i) const {
   // Raw words in evbuffer within crate #crate.
-  assert( crate >= 0 && crate < MAXROC );
+  assert( crate >= 0 && crate < Decoder::MAXROC );
   Int_t index = rocdat[crate].pos + i;
   return GetRawData(index);
 };
@@ -277,14 +280,14 @@ inline Int_t THaEvData::GetRawData(Int_t crate, Int_t i) const {
 inline const UInt_t* THaEvData::GetRawDataBuffer(Int_t crate) const {
   // Direct access to the event buffer for the given crate,
   // e.g. for fast header word searches
-  assert( crate >= 0 && crate < MAXROC );
+  assert( crate >= 0 && crate < Decoder::MAXROC );
   Int_t index = rocdat[crate].pos;
   return buffer+index;
 };
 
 inline Bool_t THaEvData::InCrate(Int_t crate, Int_t i) const {
   // To tell if the index "i" poInt_ts to a word inside crate #crate.
-  assert( crate >= 0 && crate < MAXROC );
+  assert( crate >= 0 && crate < Decoder::MAXROC );
   // Used for crawling through whole event
   if (crate == 0) return (i >= 0 && i < GetEvLength());
   if (rocdat[crate].pos == 0 || rocdat[crate].len == 0) return false;
@@ -310,7 +313,7 @@ inline Int_t THaEvData::GetNextChan(Int_t crate, Int_t slot,
 
 inline
 Bool_t THaEvData::IsPhysicsTrigger() const {
-  return ((event_type > 0) && (event_type <= MAX_PHYS_EVTYPE));
+  return ((event_type > 0) && (event_type <= Decoder::MAX_PHYS_EVTYPE));
 };
 
 inline
@@ -318,29 +321,29 @@ Bool_t THaEvData::IsScalerEvent() const {
   // Either 'event type 140' or events with the synchronous readout
   // of scalers (roc11, etc).
   // Important: A scaler event can also be a physics event.
-  return (event_type == SCALER_EVTYPE || evscaler == 1);
+  return (event_type == Decoder::SCALER_EVTYPE || evscaler == 1);
 };
 
 inline
 Bool_t THaEvData::IsPrestartEvent() const {
-  return (event_type == PRESTART_EVTYPE);
+  return (event_type == Decoder::PRESTART_EVTYPE);
 };
 
 inline
 Bool_t THaEvData::IsEpicsEvent() const {
-  return (event_type == EPICS_EVTYPE);
+  return (event_type == Decoder::EPICS_EVTYPE);
 };
 
 inline
 Bool_t THaEvData::IsPrescaleEvent() const {
-  return (event_type == TS_PRESCALE_EVTYPE ||
-	  event_type == PRESCALE_EVTYPE);
+  return (event_type == Decoder::TS_PRESCALE_EVTYPE ||
+	  event_type == Decoder::PRESCALE_EVTYPE);
 };
 
 inline
 Bool_t THaEvData::IsSpecialEvent() const {
-  return ( (event_type == DETMAP_FILE) ||
-	   (event_type == TRIGGER_FILE) );
+  return ( (event_type == Decoder::DETMAP_FILE) ||
+	   (event_type == Decoder::TRIGGER_FILE) );
 };
 
 inline

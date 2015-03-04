@@ -28,6 +28,8 @@
 
 using namespace std;
 
+namespace Decoder {
+
 THaEtClient::THaEtClient(Int_t smode)
 {
   // uses default server (where CODA runs)
@@ -309,5 +311,6 @@ bool THaEtClient::isOpen() const {
   return (notopened==1&&didclose==0);
 }
 
+}
 
-ClassImp(THaEtClient)
+ClassImp(Decoder::THaEtClient)

@@ -18,6 +18,7 @@
 
 #include "Rtypes.h"
 #include "TString.h"
+#include "Decoder.h"
 #include <cstdio>
 
 // Return cods from codaNNN routines
@@ -29,6 +30,8 @@
 #define MAXEVLEN 100005   // Maximum size of events
 #define CODA_VERBOSE 1    // Errors explained verbosely (recommended)
 #define CODA_DEBUG  0     // Lots of printout (recommend to set = 0)
+
+namespace Decoder {
 
 class THaCodaData {
 
@@ -60,5 +63,7 @@ protected:
    ClassDef(THaCodaData,0) // Base class of CODA data (file, ET conn, etc)
 
 };
+
+}
 
 #endif

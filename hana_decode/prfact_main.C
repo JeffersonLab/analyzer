@@ -10,6 +10,7 @@
 #include "evio.h"
 
 using namespace std;
+using namespace Decoder;
 
 int main(int argc, char* argv[])
 {

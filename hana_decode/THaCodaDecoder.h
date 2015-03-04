@@ -7,12 +7,14 @@
 //
 /////////////////////////////////////////////////////////////////////
 
-
 #include "TObject.h"
 #include "TString.h"
 #include "THaSlotData.h"
 #include "TBits.h"
 #include "THaEvData.h"
+#include "Decoder.h"
+
+namespace Decoder {
 
 class THaCodaDecoder : public THaEvData {
  public:
@@ -24,7 +26,7 @@ class THaCodaDecoder : public THaEvData {
   virtual Int_t GetPrescaleFactor(Int_t trigger) const;
   virtual Int_t GetScaler(const TString& spec, Int_t slot, Int_t chan) const;
   virtual Int_t GetScaler(Int_t roc, Int_t slot, Int_t chan) const;
-  
+
   virtual Bool_t IsLoadedEpics(const char* tag) const;
   virtual Double_t GetEpicsData(const char* tag, Int_t event=0) const;
   virtual Double_t GetEpicsTime(const char* tag, Int_t event=0) const;
@@ -64,5 +66,7 @@ class THaCodaDecoder : public THaEvData {
 
   ClassDef(THaCodaDecoder,0) // Decoder for CODA event buffer
 };
+
+}
 
 #endif

@@ -15,14 +15,11 @@
 /////////////////////////////////////////////////////////////////////
 
 
-#include "Rtypes.h"
 #include "TString.h"
-// note to myself: all lower bits here 1.
-#define MAXIDX 0xf     
-#define MAXMODULE 0x3  
 
-class THaFastBusWord 
-{
+namespace Decoder {
+
+class THaFastBusWord {
 
 public:
 
@@ -31,7 +28,7 @@ public:
   UChar_t  Slot(UInt_t word);                    // returns the slot
   UShort_t Chan(UShort_t model, UInt_t word);    // returns fastbus channel
   UShort_t Data(UShort_t model, UInt_t word);    // returns fastbus data
-  UShort_t Wdcnt(UShort_t model, UInt_t word);   // returns word count 
+  UShort_t Wdcnt(UShort_t model, UInt_t word);   // returns word count
   UChar_t  Opt(UShort_t model, UInt_t word);     // returns fastbus opt
   const char* devType(UShort_t model);
   bool HasHeader(UShort_t model);    // true if header exists for this model
@@ -43,8 +40,12 @@ private:
   static const UInt_t   slotmask = 0xf8000000;
   static const UChar_t  slotshift = 27;
   static const UShort_t modoff = 1874;
+  // note to myself: all lower bits here 1.
+  static const UInt_t   MAXIDX = 0xf;
+  static const UInt_t   MAXMODULE = 0x3;
+
   UChar_t  modindex[MAXIDX];
-  UShort_t module_type[MAXMODULE]; 
+  UShort_t module_type[MAXMODULE];
   struct module_information {
     UInt_t  datamask,wdcntmask,chanmask,optmask;
     UChar_t chanshift,optshift;
@@ -62,7 +63,7 @@ private:
 inline
 UChar_t THaFastBusWord::Slot(UInt_t word)
 {
-  UChar_t slot = word>>slotshift; 
+  UChar_t slot = word>>slotshift;
   return (slot < MAXSLOT) ? slot : 0;
 }
 
@@ -121,6 +122,7 @@ const char* THaFastBusWord::devType(UShort_t model)
   return module_info[idx(model)].devtype.Data();
 }
 
+}
 
 #endif
 
