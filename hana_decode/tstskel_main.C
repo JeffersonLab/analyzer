@@ -100,17 +100,17 @@ void dump( UInt_t* data, ofstream *debugfile)
   UInt_t evtype = data[1]>>16;
   *debugfile << "\n\n Event number " << dec << evnum << endl;
   *debugfile << " length " << len << " type " << evtype << endl;
-  int ipt = 0;
-  for (int j=0; j<(len/5); j++) {
+  UInt_t ipt = 0;
+  for (UInt_t j=0; j<(len/5); j++) {
     *debugfile << dec << "\n evbuffer[" << ipt << "] = ";
-    for (int k=j; k<j+5; k++) {
+    for (UInt_t k=j; k<j+5; k++) {
       *debugfile << hex << data[ipt++] << " ";
     }
     *debugfile << endl;
   }
   if (ipt < len) {
     *debugfile << dec << "\n evbuffer[" << ipt << "] = ";
-    for (int k=ipt; k<len; k++) {
+    for (UInt_t k=ipt; k<len; k++) {
       *debugfile << hex << data[ipt++] << " ";
     }
     *debugfile << endl;

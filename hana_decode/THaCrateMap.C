@@ -31,19 +31,10 @@
 #include <string>
 #include <iomanip>
 
-// for compatibility since strstream is being depreciated,
-// but not all platforms have stringstreams yet
-#ifdef HAS_SSTREAM
 #include <sstream>
 #define ISSTREAM istringstream
 #define OSSTREAM ostringstream
 #define ASSIGN_SSTREAM(a,b) a=b.str()
-#else
-#include <strstream>
-#define ISSTREAM istrstream
-#define OSSTREAM ostrstream
-#define ASSIGN_SSTREAM(a,b)  b<<'\0'; a=b.str()
-#endif
 
 using namespace std;
 
