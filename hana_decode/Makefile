@@ -137,28 +137,11 @@ export OSNAME := $(shell uname)
 
 EVIO_LIB      = -L$(EVIO_LIBDIR) -levio
 
-ifeq ($(OSNAME),SunOS)
-
-   GLIB =  -lm -lc -lgen -lw -lnsl -ldl
-   SLIB = -L/opt/SUNWspro/SC4.2/lib -lF77 -lM77 -lsunmath
-# all this needed for ET...  up to comment below
-   ET_AC_FLAGS = -D_REENTRANT -D_POSIX_THREAD_SEMANTICS
-   ET_CFLAGS = -mt -fast -xO5 -KPIC $(ET_AC_FLAGS) -DSUNVERS
-# CODA environment variable must be set.  Examples are
-#   CODA = /adaqfs/coda/2.2        (in adaq cluster)
-#   CODA = /data7/user/coda/2.2    (on haplix cluster)
-   LIBET = $(CODA)/SunOS/lib/libet.so
-   ONLIBS = $(LIBET) -lposix4 -lnsl -lsocket -lresolv
-   LIBS = $(GLIB)
-   ALL_LIBS = $(LIBS)
-
-endif
-
 ifeq ($(OSNAME),Linux)
 
    LIBS          =
    GLIBS         = -L/usr/X11R6/lib -lXpm -lX11
-   ALL_LIBS      = $(GLIBS) $(ROOTLIBS) $(ROOTGLIBS)
+   ALL_LIBS      = $(ROOTLIBS)
 
 # ONLIBS is needed for ET
    ET_AC_FLAGS = -D_REENTRANT -D_POSIX_PTHREAD_SEMANTICS
@@ -176,7 +159,7 @@ ifeq ($(OSNAME),Linux)
 endif
 
 ifeq ($(OSNAME),Darwin)
-  ALL_LIBS = $(ROOTLIBS) $(ROOTGLIBS)
+  ALL_LIBS = $(ROOTLIBS)
 endif
 
 # ... finished, what ET needs.
@@ -200,11 +183,15 @@ GLIBS        += $(ROOTGLIBS) $(SYSLIBS)
 
 SRC = THaUsrstrutils.C THaCrateMap.C THaCodaData.C \
       THaEpics.C THaFastBusWord.C THaCodaFile.C THaSlotData.C \
-      THaEvData.C THaCodaDecoder.C SimDecoder.C \
+      THaEvData.C THaCodaDecoder.C \
       CodaDecoder.C Module.C VmeModule.C FastbusModule.C  \
       Lecroy1877Module.C Lecroy1881Module.C Lecroy1875Module.C \
       Fadc250Module.C GenScaler.C Scaler560.C Scaler1151.C \
       Scaler3800.C Scaler3801.C F1TDCModule.C SkeletonModule.C
+
+ifndef STANDALONE
+  SRC += SimDecoder.C
+endif
 
 PROGS = tstoo tstfadc tstf1tdc tstskel tstio tdecpr tdecex prfact epicsd
 # If you want to use the ET system at Jlab.
@@ -225,13 +212,6 @@ DECODE_OBJS = $(patsubst %.c,%.o,$(SRC:%.C=%.o)) THaDecDict.o
 ifndef STANDALONE
   all:  $(LIBDIR)/libdc.so.$(VERSION)
 else
-  all:  libdc.a
-endif
-
-# To compile local test codes:  Uncomment "export STANDALONE = 1" at top of Makefile
-# Normally this should be commented out.
-
-ifdef STANDALONE
   all: $(PROGS) libdc.a
 endif
 
@@ -261,55 +241,54 @@ $(LIBDIR)/libdc.so.$(VERSION): libdc.so
 endif
 
 # Test programs for standalone tests of decoder.
-# Need a few objects from MAINDIR because of some links to those classes.
 ifdef STANDALONE
-   MAINOBJS =
-else
-   MAINOBJS = ../libHallA.so ../libscaler.so
+  DECODE_LIB = libdc.a
+  ALL_LIBS += $(EVIO_LIB)
 endif
 
-tstoo: tstoo_main.o $(DECODE_OBJS) $(SRC)
+ifdef STANDALONE
+tstoo: tstoo_main.o $(DECODE_LIB)
 	rm -f $@
-	$(CXX) $(CXXFLAGS) -o $@ tstoo_main.o $(DECODE_OBJS) $(ALL_LIBS) $(EVIO_LIB) $(MAINOBJS)
+	$(CXX) $(CXXFLAGS) -o $@ $< $(DECODE_LIB) $(ALL_LIBS)
 
-tstfadc: tstfadc_main.o $(DECODE_OBJS) $(SRC) $(MAINOBJS)
+tstfadc: tstfadc_main.o $(DECODE_LIB)
 	rm -f $@
-	$(CXX) $(CXXFLAGS) -o $@ tstfadc_main.o $(DECODE_OBJS) $(ALL_LIBS) $(EVIO_LIB) $(MAINOBJS)
+	$(CXX) $(CXXFLAGS) -o $@ tstfadc_main.o $(DECODE_LIB) $(ALL_LIBS)
 
-tstf1tdc: tstf1tdc_main.o $(DECODE_OBJS) $(SRC) $(MAINOBJS)
+tstf1tdc: tstf1tdc_main.o $(DECODE_LIB)
 	rm -f $@
-	$(CXX) $(CXXFLAGS) -o $@ tstf1tdc_main.o $(DECODE_OBJS) $(ALL_LIBS) $(EVIO_LIB) $(MAINOBJS)
+	$(CXX) $(CXXFLAGS) -o $@ tstf1tdc_main.o $(DECODE_LIB) $(ALL_LIBS)
 
-tstskel: tstskel_main.o $(DECODE_OBJS) $(SRC) $(MAINOBJS)
+tstskel: tstskel_main.o $(DECODE_LIB)
 	rm -f $@
-	$(CXX) $(CXXFLAGS) -o $@ tstskel_main.o $(DECODE_OBJS) $(ALL_LIBS) $(EVIO_LIB) $(MAINOBJS)
+	$(CXX) $(CXXFLAGS) -o $@ tstskel_main.o $(DECODE_LIB) $(ALL_LIBS)
 
-tstio: tstio_main.o $(DECODE_OBJS) $(SRC) $(MAINOBJS)
+tstio: tstio_main.o $(DECODE_LIB)
 	rm -f $@
-	$(CXX) $(CXXFLAGS) -o $@ tstio_main.o $(DECODE_OBJS) $(ALL_LIBS) $(EVIO_LIB) $(MAINOBJS)
+	$(CXX) $(CXXFLAGS) -o $@ tstio_main.o $(DECODE_LIB) $(ALL_LIBS)
 
-tdecpr: $(DECODE_OBJS) $(SRC) tdecpr_main.o $(HEAD) $(SRC) $(MAINOBJS)
+tdecpr: tdecpr_main.o $(DECODE_LIB)
 	rm -f $@
-	$(CXX) $(CXXFLAGS) -o $@ tdecpr_main.o $(DECODE_OBJS) $(ALL_LIBS) $(EVIO_LIB) $(MAINOBJS)
+	$(CXX) $(CXXFLAGS) -o $@ tdecpr_main.o $(DECODE_LIB) $(ALL_LIBS)
 
-tdecex: $(DECODE_OBJS) $(SRC) tdecex_main.o THaGenDetTest.o $(HEAD) THaGenDetTest.h $(SRC) $(DECODE_OBJS) $(MAINOBJS)
+tdecex: tdecex_main.o THaGenDetTest.o $(DECODE_LIB)
 	rm -f $@
-	$(CXX) $(CXXFLAGS) -o $@ tdecex_main.o THaGenDetTest.o $(DECODE_OBJS) $(ALL_LIBS) $(EVIO_LIB) $(MAINOBJS)
+	$(CXX) $(CXXFLAGS) -o $@ tdecex_main.o THaGenDetTest.o $(DECODE_LIB) $(ALL_LIBS)
 
-etclient: etclient_main.o $(DECODE_OBJS) $(MAINOBJS)
-	$(CXX) $(CXXFLAGS) -o $@ etclient_main.o $(DECODE_OBJS) $(ALL_LIBS) $(EVIO_LIB) $(MAINOBJS)
+etclient: etclient_main.o $(DECODE_LIB)
+	$(CXX) $(CXXFLAGS) -o $@ etclient_main.o $(DECODE_LIB) $(ALL_LIBS)
 
-prfact: $(DECODE_OBJS) $(SRC) prfact_main.o $(HEAD) $(MAINOBJS)
+prfact: prfact_main.o $(DECODE_LIB)
 	rm -f $@
-	$(CXX) $(CXXFLAGS) -o $@ prfact_main.o $(DECODE_OBJS) $(ALL_LIBS) $(EVIO_LIB) $(MAINOBJS)
+	$(CXX) $(CXXFLAGS) -o $@ prfact_main.o $(DECODE_LIB) $(ALL_LIBS)
 
-epicsd: $(DECODE_OBJS) $(SRC) epics_main.o $(HEAD) $(MAINOBJS)
+epicsd: epics_main.o $(DECODE_LIB)
 	rm -f $@
-	$(CXX) $(CXXFLAGS) -o $@ epics_main.o $(DECODE_OBJS) $(ALL_LIBS) $(EVIO_LIB) $(MAINOBJS)
+	$(CXX) $(CXXFLAGS) -o $@ epics_main.o $(DECODE_LIB) $(ALL_LIBS)
 
-tstcoda: tstcoda_main.o THaCodaFile.o THaEtClient.o THaCodaData.o THaCodaFile.h THaEtClient.h THaCodaData.h $(DECODE_OBJS) $(MAINOBJS)
-	$(CXX) $(CXXFLAGS) -o $@ tstcoda_main.o $(DECODE_OBJS) $(ALL_LIBS) $(EVIO_LIB) $(MAINOBJS)
-
+tstcoda: tstcoda_main.o $(DECODE_LIB)
+	$(CXX) $(CXXFLAGS) -o $@ tstcoda_main.o $(DECODE_LIB) $(ALL_LIBS)
+endif
 
 # Dictionary
 
