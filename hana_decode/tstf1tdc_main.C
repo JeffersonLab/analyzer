@@ -32,7 +32,7 @@ using namespace Decoder;
 TH1F *h1,*h2,*h3,*h4,*h5;
 TH1F *hinteg;
 
-void dump(int *buffer, ofstream *file);
+void dump(UInt_t *buffer, ofstream *file);
 void process(Int_t i, THaEvData *evdata, ofstream *file);
 
 int main(int argc, char* argv[])
@@ -75,7 +75,7 @@ int main(int argc, char* argv[])
       exit(1);
     } else {
 
-      int *data = datafile.getEvBuffer();
+      UInt_t* data = datafile.getEvBuffer();
       dump(data, debugfile);
 
       *debugfile << "\nAbout to Load Event "<<endl;
@@ -97,7 +97,7 @@ int main(int argc, char* argv[])
 }
 
 
-void dump( int* data, ofstream *debugfile) {
+void dump( UInt_t* data, ofstream *debugfile) {
     // Crude event dump
 	    int evnum = data[4];
 	    int len = data[0] + 1;

@@ -8,6 +8,7 @@ hana_decode/prfact
 hana_decode/tdecex
 hana_decode/tdecpr
 hana_decode/tstfadc
+hana_decode/tstf1tdc
 hana_decode/tstio
 hana_decode/tstoo
 hana_decode/tstskel

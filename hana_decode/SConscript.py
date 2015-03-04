@@ -10,7 +10,7 @@ standalone = baseenv.subst('$STANDALONE')
 print ('Compiling decoder executables:  STANDALONE = %s\n' % standalone)
 
 standalonelist = Split("""
-tstoo tstfadc tstskel tstio tdecpr prfact epicsd tdecex
+tstoo tstfadc tstf1tdc tstskel tstio tdecpr prfact epicsd tdecex
 """)
 # Still to come, perhaps, are (etclient, tstcoda) which should be compiled
 # if the ONLINE_ET variable is set.  

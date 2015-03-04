@@ -4,6 +4,7 @@
 # Test Executables:
 # tstoo    --  tests of OO decoder
 # tstfadc  --  tests of FADC 250 class
+# tstf1tdc --  tests of F1 TDC class
 # tstskel  --  test of SkeltonModule
 # tstcoda  --  test of abstract interface to THaCodaFile and THaEtClient.
 # tstio    --  simple tests of CODA I/O from a file.
@@ -78,12 +79,12 @@ else
      LD            = CC
      SOFLAGS       = -G
      ifdef DEBUG
-        CXXFLG      = -g -KPIC
-        LDFLAGS     = -g
+	CXXFLG      = -g -KPIC
+	LDFLAGS     = -g
      else
-        CXXFLG      = -O -KPIC
-        LDFLAGS     = -O
-        DEFINES    += -DNDEBUG
+	CXXFLG      = -O -KPIC
+	LDFLAGS     = -O
+	DEFINES    += -DNDEBUG
      endif
   endif
 
@@ -94,12 +95,12 @@ else
      LD            = g++
      SOFLAGS       = -shared
      ifdef DEBUG
-        CXXFLG      = -g -O0
-        LDFLAGS     = -g -O0
+	CXXFLG      = -g -O0
+	LDFLAGS     = -g -O0
      else
-        CXXFLG      = -O2
-        LDFLAGS     = -O2
-        DEFINES    += -DNDEBUG
+	CXXFLG      = -O2
+	LDFLAGS     = -O2
+	DEFINES    += -DNDEBUG
      endif
      CXXFLG        += -Wall -fPIC
      CXXEXTFLG      = -Woverloaded-virtual
@@ -113,12 +114,12 @@ else
      SOFLAGS       = -shared -Wl,-undefined,dynamic_lookup
      SONAME        = -Wl,-install_name,@rpath/
      ifdef DEBUG
-        CXXFLG      = -g -O0
-        LDFLAGS     = -g -O0
+	CXXFLG      = -g -O0
+	LDFLAGS     = -g -O0
      else
-        CXXFLG      = -O2
-        LDFLAGS     = -O2
-        DEFINES    += -DNDEBUG
+	CXXFLG      = -O2
+	LDFLAGS     = -O2
+	DEFINES    += -DNDEBUG
      endif
      CXXFLG        += -Wall -fPIC
      CXXEXTFLG      = -Woverloaded-virtual
@@ -205,7 +206,7 @@ SRC = THaUsrstrutils.C THaCrateMap.C THaCodaData.C \
       Fadc250Module.C GenScaler.C Scaler560.C Scaler1151.C \
       Scaler3800.C Scaler3801.C F1TDCModule.C SkeletonModule.C
 
-PROGS = tstoo tstfadc tstskel tstio tdecpr tdecex prfact epicsd
+PROGS = tstoo tstfadc tstf1tdc tstskel tstio tdecpr tdecex prfact epicsd
 # If you want to use the ET system at Jlab.
 ifdef ONLINE_ET
   SRC += THaEtClient.C
@@ -274,6 +275,10 @@ tstoo: tstoo_main.o $(DECODE_OBJS) $(SRC)
 tstfadc: tstfadc_main.o $(DECODE_OBJS) $(SRC) $(MAINOBJS)
 	rm -f $@
 	$(CXX) $(CXXFLAGS) -o $@ tstfadc_main.o $(DECODE_OBJS) $(ALL_LIBS) $(EVIO_LIB) $(MAINOBJS)
+
+tstf1tdc: tstf1tdc_main.o $(DECODE_OBJS) $(SRC) $(MAINOBJS)
+	rm -f $@
+	$(CXX) $(CXXFLAGS) -o $@ tstf1tdc_main.o $(DECODE_OBJS) $(ALL_LIBS) $(EVIO_LIB) $(MAINOBJS)
 
 tstskel: tstskel_main.o $(DECODE_OBJS) $(SRC) $(MAINOBJS)
 	rm -f $@
