@@ -21,6 +21,8 @@
 
 using namespace std;
 
+namespace Decoder {
+
 //Constructors
 
   THaCodaFile::THaCodaFile()
@@ -303,5 +305,6 @@ void THaCodaFile::staterr(const char* tried_to, Int_t status) {
     }
   };
 
+}
 
-ClassImp(THaCodaFile)
+ClassImp(Decoder::THaCodaFile)

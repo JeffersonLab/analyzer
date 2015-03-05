@@ -38,6 +38,7 @@ class TString;
 #define ADAQS2 "129.57.164.44"
 #define ADAQS3 "129.57.164.45"
 
+namespace Decoder {
 
 class THaEtClient : public THaCodaData
 {
@@ -87,5 +88,7 @@ private:
     ClassDef(THaEtClient,0)   // ET client connection for online data
 
 };
+
+}
 
 #endif

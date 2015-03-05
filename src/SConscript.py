@@ -37,6 +37,7 @@ THaCluster.C              THaFilter.C               THaPIDinfo.C
 THaRun.C                  THaTrack.C                THaVDCPlane.C
 THaCodaRun.C              THaFormula.C              THaParticleInfo.C         
 THaRunBase.C              THaTrackEloss.C           THaVDCTimeToDistConv.C
+THaEvtTypeHandler.C       THaScalerEvtHandler.C
 """)
 
 normanalist = ['THaNormAna.C']

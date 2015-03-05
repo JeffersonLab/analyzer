@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <cstdlib>
+#include "Decoder.h"
 #include "THaCodaFile.h"
 #include "THaCodaDecoder.h"
 #include "THaEvData.h"
@@ -11,6 +12,7 @@
 #include "TString.h"
 
 using namespace std;
+using namespace Decoder;
 
 int main(int argc, char* argv[])
 {
@@ -55,7 +57,7 @@ int main(int argc, char* argv[])
  	   }
            exit(1);
 	 } else {
-            int *data = datafile.getEvBuffer();
+            UInt_t *data = datafile.getEvBuffer();
             int len = data[0] + 1;
             int evtype = data[1]>>16;
     // Crude event dump
@@ -116,7 +118,7 @@ int main(int argc, char* argv[])
       int nevt=0;
       while (datafile.codaRead() == S_SUCCESS) {
           nevt++;
-          int* dbuff = datafile.getEvBuffer();
+          UInt_t* dbuff = datafile.getEvBuffer();
           int event_type = dbuff[1]>>16;
           if ((event_type >= 0) && (event_type < MAXEVTYPE)) {
               evtype_sum[event_type]++;

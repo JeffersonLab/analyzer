@@ -12,6 +12,7 @@
 #include "THaCodaData.h"
 
 using namespace std;
+using namespace Decoder;
 
 //_____________________________________________________________________________
 THaCodaRun::THaCodaRun( const char* description )

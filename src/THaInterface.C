@@ -20,7 +20,7 @@
 #include "TInterpreter.h"
 #include "THaVarList.h"
 #include "THaCutList.h"
-#include "THaCodaDecoder.h"
+#include "CodaDecoder.h"
 #include "THaGlobals.h"
 #include "THaAnalyzer.h"
 //#include "THaFileDB.h"
@@ -50,12 +50,12 @@ THaInterface* THaInterface::fgAint = NULL;  // Pointer to this interface
 static TString fgTZ;
 
 //_____________________________________________________________________________
-THaInterface::THaInterface( const char* appClassName, int* argc, char** argv, 
+THaInterface::THaInterface( const char* appClassName, int* argc, char** argv,
 			    void* options, int numOptions, Bool_t noLogo ) :
   TRint( appClassName, argc, argv, options, numOptions, kTRUE )
 {
-  // Create the Hall A analyzer application environment. The THaInterface 
-  // environment provides an interface to the the interactive ROOT system 
+  // Create the Hall A analyzer application environment. The THaInterface
+  // environment provides an interface to the the interactive ROOT system
   // via inheritance of TRint as well as access to the Hall A analyzer classes.
 
   if( fgAint ) {
@@ -74,7 +74,7 @@ THaInterface::THaInterface( const char* appClassName, int* argc, char** argv,
   gHaScalers = new TList;
   gHaPhysics = new TList;
   // Use the standard CODA file decoder by default
-  gHaDecoder = THaCodaDecoder::Class();
+  gHaDecoder = Decoder::CodaDecoder::Class();
   // File-based database by default
   //  gHaDB      = new THaFileDB();
   gHaTextvars = new THaTextvars;
@@ -85,9 +85,9 @@ THaInterface::THaInterface( const char* appClassName, int* argc, char** argv,
   //FIXME: investigate
   TTree::SetMaxTreeSize(1500000000);
 
-  // Make the Podd header directory(s) available so scripts don't have to 
+  // Make the Podd header directory(s) available so scripts don't have to
   // specify an explicit path.
-  // If $ANALYZER defined, we take our includes from there, otherwise we fall 
+  // If $ANALYZER defined, we take our includes from there, otherwise we fall
   // back to the compile-time directories (which may have moved!)
   TString s = gSystem->Getenv("ANALYZER");
   if( s.IsNull() ) {
@@ -99,7 +99,7 @@ THaInterface::THaInterface( const char* appClassName, int* argc, char** argv,
     if( dp ) {
       gSystem->FreeDirectory(dp);
       s = p;
-    } else 
+    } else
       s = s+"/src " + s+"/hana_decode " + s+"/hana_scaler";
   }
   // Directories names separated by blanks.
@@ -116,14 +116,14 @@ THaInterface::THaInterface( const char* appClassName, int* argc, char** argv,
     s.Remove(0,s.Index(re)+ss.Length());
     ss = s(re);
   }
-  
+
   // Because of lack of foresight, the analyzer uses TDatime objects,
   // which are kept in localtime() and hence are not portable, and also
   // uses localtime() directly in several places. As a result, database
-  // lookups depend on the timezone of the machine that the replay is done on! 
-  // If this timezone is different from the one in which the data were taken, 
+  // lookups depend on the timezone of the machine that the replay is done on!
+  // If this timezone is different from the one in which the data were taken,
   // mismatches may occur. This is bad.
-  // FIXME: Use TTimeStamp to keep time in UTC internally. 
+  // FIXME: Use TTimeStamp to keep time in UTC internally.
   // To be done in version 1.5
   //
   // As a temporary workaround, we assume that all data were taken in
@@ -132,7 +132,7 @@ THaInterface::THaInterface( const char* appClassName, int* argc, char** argv,
   fgTZ = gSystem->Getenv("TZ");
   gSystem->Setenv("TZ","US/Eastern");
 
-  
+
   fgAint = this;
 }
 
@@ -176,7 +176,7 @@ void THaInterface::PrintLogo( Bool_t lite )
    iday   = idatqq%100;
    imonth = (idatqq/100)%100;
    iyear  = (idatqq/10000);
-   if ( iyear < 90 ) 
+   if ( iyear < 90 )
      mille = 2000 + iyear;
    else if ( iyear < 1900 )
      mille = 1900 + iyear;
@@ -235,7 +235,7 @@ TClass* THaInterface::SetDecoder( TClass* c )
     return NULL;
   }
   if( !c->InheritsFrom("THaEvData")) {
-    ::Error("THaInterface::SetDecoder", 
+    ::Error("THaInterface::SetDecoder",
 	    "decoder class must inherit from THaEvData");
     return NULL;
   }

@@ -5,8 +5,8 @@
 //
 //   THaScaler
 //
-//   Scaler Data in Hall A at Jlab.  
-//  
+//   Scaler Data in Hall A at Jlab.
+//
 //   See comments in implementation.
 //
 //   author  Robert Michaels (rom@jlab.org)
@@ -21,6 +21,7 @@
 
 #include "TObject.h"
 #include "TString.h"
+#include "Decoder.h"
 #include <cstdlib>
 #include <iostream>
 #include <string>
@@ -31,7 +32,6 @@
 
 class Bdate;
 class THaScalerDB;
-class THaCodaFile;
 class THaEvData;
 class TDatime;
 
@@ -56,17 +56,17 @@ public:
 // 'event' of data.  Any CODA files are opened once, read sequentially
    Int_t LoadData(const THaEvData& evdata); // load from THaEvData (return if non-scaler evt)
 // from CODA file (assumed opened already)
-   Int_t LoadDataCodaFile(THaCodaFile *codafile);  
+   Int_t LoadDataCodaFile(Decoder::THaCodaFile *codafile);
 // from CODA file 'filename' (we'll open it for you)
-   Int_t LoadDataCodaFile(const char* filename);      
-   Int_t LoadDataCodaFile(TString filename);      
+   Int_t LoadDataCodaFile(const char* filename);
+   Int_t LoadDataCodaFile(TString filename);
 // Load data from scaler history file for run number
    Int_t LoadDataHistoryFile(int run_num, int hdeci=0); // default file "scaler_history.dat"
    Int_t LoadDataHistoryFile(const char* filename, int run_num, int hdeci=0);
 // Online 'server' may be Name or IP of VME cpu, or
 // 'server' may also be a mnemonic like "Left", "Right", etc
    Int_t LoadDataOnline();    // server and port is known for 'Bankgroup'
-   Int_t LoadDataOnline(const char* server, int port); 
+   Int_t LoadDataOnline(const char* server, int port);
 
    virtual void Print( Option_t* opt="" ) const;   // Prints data contents
    virtual void PrintSummary();  // Print out a summary of important scalers.
@@ -79,33 +79,33 @@ public:
    Int_t GetScaler(Int_t slot, Int_t chan, Int_t histor=0);
 
 // Get accumulated COUNTS on detector and channel
-// detector = "s1", "s2", "gasC", "a1", "a2", "leadgl", "edtm" 
+// detector = "s1", "s2", "gasC", "a1", "a2", "leadgl", "edtm"
    Int_t GetScaler(const char* detector, Int_t chan);  // if no L/R distinction.
 // PMT = "left", "right", "LR" (LR means left.AND.right)
-   Int_t GetScaler(const char* detector, const char* PMT, Int_t chan, Int_t histor=0);  
+   Int_t GetScaler(const char* detector, const char* PMT, Int_t chan, Int_t histor=0);
    Int_t GetTrig(Int_t trigger);   // counts for trig# 1,2,3,4,5,etc
 // Beam current, which= 'bcm_u1','bcm_d1','bcm_u3','bcm_d3','bcm_u10','bcm_d10'
-   Int_t GetBcm(const char* which); 
+   Int_t GetBcm(const char* which);
    Int_t GetPulser(const char* which);  // which = 'clock', 'edt', 'edtat', 'strobe'
 // Accumulated COUNTS by helicity state (-1, 0, +1),  0 is non-helicity gated
 // Get counts by history, histor = 1 = previous event, 0 = present.
-   Int_t GetTrig(Int_t helicity, Int_t trigger, Int_t histor=0);   
-   Int_t GetBcm(Int_t helicity, const char* which, Int_t histor=0);   
-   Int_t GetPulser(Int_t helicity, const char* which, Int_t histor=0);  
-   Int_t GetNormData(Int_t tgtstate, Int_t helicity, const char* which, Int_t histor=0);  
-   Int_t GetNormData(Int_t helicity, const char* which, Int_t histor=0);  
+   Int_t GetTrig(Int_t helicity, Int_t trigger, Int_t histor=0);
+   Int_t GetBcm(Int_t helicity, const char* which, Int_t histor=0);
+   Int_t GetPulser(Int_t helicity, const char* which, Int_t histor=0);
+   Int_t GetNormData(Int_t tgtstate, Int_t helicity, const char* which, Int_t histor=0);
+   Int_t GetNormData(Int_t helicity, const char* which, Int_t histor=0);
    Int_t GetNormData(Int_t tgtstate, Int_t helicity, Int_t chan, Int_t histor);
    Int_t GetNormData(Int_t helicity, Int_t chan, Int_t histor=0);
 // RATES (Hz) since last update, similar usage to above.
    Double_t GetScalerRate(Int_t slot, Int_t chan);
-   Double_t GetScalerRate(const char* plane, const char* PMT, Int_t chan);  
-   Double_t GetScalerRate(const char* plane, Int_t chan);  
-   Double_t GetTrigRate(Int_t trigger);   
-   Double_t GetTrigRate(Int_t helicity, Int_t trigger);   
-   Double_t GetBcmRate(const char* which);      
-   Double_t GetBcmRate(Int_t helicity, const char* which);      
-   Double_t GetPulserRate(const char* which);   
-   Double_t GetPulserRate(Int_t helicity, const char* which);   
+   Double_t GetScalerRate(const char* plane, const char* PMT, Int_t chan);
+   Double_t GetScalerRate(const char* plane, Int_t chan);
+   Double_t GetTrigRate(Int_t trigger);
+   Double_t GetTrigRate(Int_t helicity, Int_t trigger);
+   Double_t GetBcmRate(const char* which);
+   Double_t GetBcmRate(Int_t helicity, const char* which);
+   Double_t GetPulserRate(const char* which);
+   Double_t GetPulserRate(Int_t helicity, const char* which);
    Double_t GetNormRate(Int_t tgtstate, Int_t helicity, const char* which);
    Double_t GetNormRate(Int_t helicity, const char* which);
    Double_t GetNormRate(Int_t helicity, Int_t chan);
@@ -124,13 +124,13 @@ public:
    Int_t GetSlot(Int_t tgtstate, Int_t helicity);
    Int_t GetChan(std::string which, Int_t helicity=0, Int_t chan=0);
    THaScalerDB* GetDataBase() { return database; };
-   
+
 protected:
 
    std::string bankgroup;
-   THaCodaFile *fcodafile;
+   Decoder::THaCodaFile *fcodafile;
    std::vector<Int_t> onlmap;
-   THaScalerDB *database; 
+   THaScalerDB *database;
    std::multimap<std::string, Int_t> normmap;
    Int_t *rawdata;
    Bool_t coda_open;

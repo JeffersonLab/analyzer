@@ -4,19 +4,19 @@
 //   Hall A Event Data from one CODA "Event"
 //
 //   THaCodaDecoder contains facilities to load an event buffer
-//   from a CODA "event" and get information about the event, 
+//   from a CODA "event" and get information about the event,
 //   such as event type, TDC hits, scalers, prescale factors,
-//   etc.  The idea of an "event" is not just a physics trigger,   
-//   but more generally any separate record inserted into CODA, 
-//   e.g. EPICS insertion.  The user must "LoadEvent" each 
-//   event before extracting information about the event.  
-//   The "evbuffer" may come from a CODA file or ET connection.  
-//   There is no need to create/destroy an THaEvData object each 
-//   event because hit counters are cleared each event. 
+//   etc.  The idea of an "event" is not just a physics trigger,
+//   but more generally any separate record inserted into CODA,
+//   e.g. EPICS insertion.  The user must "LoadEvent" each
+//   event before extracting information about the event.
+//   The "evbuffer" may come from a CODA file or ET connection.
+//   There is no need to create/destroy an THaEvData object each
+//   event because hit counters are cleared each event.
 //   There are various kinds of events including:
 //      1. physics triggers
 //      2. scaler events (asynch insertion of scalers)
-//      3. EPICS "events" 
+//      3. EPICS "events"
 //      4. prescale factors (one "event" at start of run).
 //      5. etc, etc. (see the online DAQ documentation)
 //   Public routines allow to fetch these data.
@@ -44,6 +44,8 @@
 #endif
 
 using namespace std;
+using namespace Decoder;
+
 
 //_____________________________________________________________________________
 THaCodaDecoder::THaCodaDecoder() :
@@ -83,7 +85,7 @@ Int_t THaCodaDecoder::GetPrescaleFactor(Int_t trigger_type) const
 Int_t THaCodaDecoder::LoadEvent(const UInt_t* evbuffer )
 {
   // Public interface to decode the event.  Note, LoadEvent()
-  // MUST be called once per event BEFORE you can extract 
+  // MUST be called once per event BEFORE you can extract
   // information about the event.
   return gendecode(evbuffer);
 }
@@ -124,14 +126,14 @@ Int_t THaCodaDecoder::gendecode(const UInt_t* evbuffer )
     recent_event = event_num;
     ret = physics_decode(evbuffer);
   } else {
-    if( fDoBench && event_type != SCALER_EVTYPE ) 
+    if( fDoBench && event_type != SCALER_EVTYPE )
       fBench->Begin("ctrl_evt_decode");
     event_num = 0;
     switch (event_type) {
     case PRESTART_EVTYPE :
-      // Usually prestart is the first 'event'.  Call SetRunTime() to 
-      // re-initialize the crate map since we now know the run time.  
-      // This won't happen for split files (no prestart). For such files, 
+      // Usually prestart is the first 'event'.  Call SetRunTime() to
+      // re-initialize the crate map since we now know the run time.
+      // This won't happen for split files (no prestart). For such files,
       // the user should call SetRunTime() explicitly.
       SetRunTime(static_cast<ULong64_t>(evbuffer[2]));
       run_num  = evbuffer[3];
@@ -171,7 +173,7 @@ Int_t THaCodaDecoder::gendecode(const UInt_t* evbuffer )
 void THaCodaDecoder::dump(const UInt_t* evbuffer)
 {
   if( !evbuffer ) return;
-  Int_t len = evbuffer[0]+1;  
+  Int_t len = evbuffer[0]+1;
   Int_t type = evbuffer[1]>>16;
   Int_t num = evbuffer[4];
   cout << "\n\n Raw Data Dump  " << hex << endl;
@@ -228,7 +230,7 @@ Int_t THaCodaDecoder::physics_decode(const UInt_t* evbuffer )
   }
   if( fDoBench ) fBench->Stop("physics_decode");
   // Decode each ROC
-  // This is not part of the loop above because it may exit prematurely due 
+  // This is not part of the loop above because it may exit prematurely due
   // to errors, which would leave the rocdat[] array incomplete.
   for( Int_t i=0; i<nroc; i++ ) {
     Int_t iroc = irn[i];
@@ -262,7 +264,7 @@ Int_t THaCodaDecoder::epics_decode(const UInt_t* evbuffer)
 Int_t THaCodaDecoder::prescale_decode(const UInt_t* evbuffer)
 {
   // Decodes prescale factors from either
-  // TS_PRESCALE_EVTYPE(default) = PS factors 
+  // TS_PRESCALE_EVTYPE(default) = PS factors
   // read from Trig. Super. registors (since 11/03)
   //   - or -
   // PRESCALE_EVTYPE = PS factors from traditional
@@ -293,10 +295,10 @@ Int_t THaCodaDecoder::prescale_decode(const UInt_t* evbuffer)
       psfact[j]=ps;
       if (fDebug > 1)
 	cout << "%% TS psfact "<<dec<<j<<"  "<<psfact[j]<<endl;
-    }        
+    }
   }
   // "prescale.dat" -->
-  else if( event_type == PRESCALE_EVTYPE ) {  
+  else if( event_type == PRESCALE_EVTYPE ) {
     if( event_length <= HEAD_OFF2 )
       return HED_ERR;  //oops, event too short?
     THaUsrstrutils sut;
@@ -319,7 +321,7 @@ Int_t THaCodaDecoder::prescale_decode(const UInt_t* evbuffer)
     }
   }
   // Ok in any case
-  return HED_OK;  
+  return HED_OK;
 }
 
 //_____________________________________________________________________________
@@ -339,7 +341,7 @@ Int_t THaCodaDecoder::scaler_event_decode( const UInt_t* evbuffer )
       if (fMap->isScalerCrate(roc)) scaler_crate[numscaler_crate++] = roc;
     }
   }
-  for(Int_t cra=0; cra<numscaler_crate; cra++) {       
+  for(Int_t cra=0; cra<numscaler_crate; cra++) {
     Int_t roc = scaler_crate[cra];
     rocdat[roc].len  = 0;
   }
@@ -352,7 +354,7 @@ Int_t THaCodaDecoder::scaler_event_decode( const UInt_t* evbuffer )
       cout << "ipt "<<ipt<<" evbuffer "<<hex<<headerword<<dec;
       cout <<" evlen "<<event_length<<" roc "<<roc<<endl;
     }
-    if (!roc) continue;               
+    if (!roc) continue;
     const char* location = fMap->getScalerLoc(roc);
     if( scalerdef[roc] == "nothing" ) {
       if      (!strcmp(location,"rscaler")) scalerdef[roc] = "right";
@@ -368,7 +370,7 @@ Int_t THaCodaDecoder::scaler_event_decode( const UInt_t* evbuffer )
     Int_t ics = idx(roc,slot);
     crateslot[ics]->clearEvent();
     for (Int_t chan=0; chan<numchan; chan++) {
-      ipt++; 
+      ipt++;
       rocdat[roc].len++;
       UInt_t data = evbuffer[ipt];
       if (fDebug > 1) cout<<"scaler chan "<<chan<<" data "<<data<<endl;
@@ -391,7 +393,7 @@ Int_t THaCodaDecoder::GetScaler( const TString& spec, Int_t slot,
   // spec = "left" or "right" for the "scaler events" (type 140)
   // and spec = "evleft" and "evright" for scalers
   // that are part of the event (ev) readout.
-  for(Int_t cra=0; cra<numscaler_crate; cra++) {       
+  for(Int_t cra=0; cra<numscaler_crate; cra++) {
     Int_t roc = scaler_crate[cra];
     if (spec == scalerdef[roc])
       return GetScaler(roc, slot, chan);
@@ -462,7 +464,7 @@ Int_t THaCodaDecoder::fastbus_decode( Int_t roc, const UInt_t* evbuffer,
   Int_t xctr = 0;
   Int_t nspflag = 0;
   if (fDebug > 1) cout << "Fastbus roc  "<<roc<<endl;
-  while ( p++ < pstop ) {  
+  while ( p++ < pstop ) {
     xctr++;
     if(fDebug > 1) {
       cout << "evbuffer  " <<(p-evbuffer)<<"   ";
@@ -491,7 +493,7 @@ Int_t THaCodaDecoder::fastbus_decode( Int_t roc, const UInt_t* evbuffer,
       cout<<"slot slotold model "<<slot;
       cout<<"  "<<slotold<<"  "<<model<<endl;
     }
-    if (slot != slotold) {            
+    if (slot != slotold) {
       slotold = slot;
       if (fb->HasHeader(model)) {
 	Int_t n = fb->Wdcnt(model,*p);
@@ -509,7 +511,7 @@ Int_t THaCodaDecoder::fastbus_decode( Int_t roc, const UInt_t* evbuffer,
     if (fDebug > 1) {
       printf("roc %2d  slot %3d  chan %3d  data %5d  ipt %3d"
 	     "  raw %8x  device %s\n",
-	     roc, slot, chan, data, static_cast<Int_t>(p-evbuffer), 
+	     roc, slot, chan, data, static_cast<Int_t>(p-evbuffer),
 	     *p, fb->devType(model));
     }
     // At this point, roc and slot ranges have been checked
@@ -533,7 +535,7 @@ static UInt_t FADCWindowRawDecode( const UInt_t* p, const UInt_t* pstop,
 
   Int_t type, type_last = 15, time_last = 0, status = 0;
   Bool_t go = true, new_type = true, valid_1, valid_2;
-  //  Int_t slot_id_hd, slot_id_tr, n_evts, blk_num, n_words, evt_num_1, 
+  //  Int_t slot_id_hd, slot_id_tr, n_evts, blk_num, n_words, evt_num_1,
   // evt_num_2, time_1, time_2, time_3, time_4, n_samples
   Int_t chan = 0, time_now = 0, adc_1, adc_2;
   UInt_t nwords = 0;
@@ -552,7 +554,7 @@ static UInt_t FADCWindowRawDecode( const UInt_t* p, const UInt_t* pstop,
       new_type = false;
       type = type_last;
     }
-        
+
     switch( type ) {
 
       //TODO: ensure nothing gets processed without a block header first
@@ -591,7 +593,7 @@ static UInt_t FADCWindowRawDecode( const UInt_t* p, const UInt_t* pstop,
       } else if( time_last == 3 ) {
 	// time_4 = (data & 0xFFFFFF);
 	time_now = 4;
-      }    
+      }
       //else
       //TODO: warn of trigger time error
       time_last = time_now;
@@ -609,12 +611,12 @@ static UInt_t FADCWindowRawDecode( const UInt_t* p, const UInt_t* pstop,
 	valid_2 = !( data & 0x2000 );
 	if( valid_1 ) {
 	  status = crateslot->loadData( "adc", chan, adc_1, adc_1 );
-	  if( status != SD_OK ) return (status == SD_ERR) ? 
+	  if( status != SD_OK ) return (status == SD_ERR) ?
 	    THaEvData::HED_ERR : THaEvData::HED_WARN;
 	}
 	if( valid_2 ) {
 	  status = crateslot->loadData( "adc", chan, adc_2, adc_2 );
-	  if( status != SD_OK ) return (status == SD_ERR) ? 
+	  if( status != SD_OK ) return (status == SD_ERR) ?
 	    THaEvData::HED_ERR : THaEvData::HED_WARN;
 	}
 	//TODO: warn on invalid data
@@ -637,13 +639,13 @@ static UInt_t FADCWindowRawDecode( const UInt_t* p, const UInt_t* pstop,
     case 15:		// FILLER WORD
       break;
     }
-  
+
     type_last = type;	// save type of current data word
 
   }
   return nwords;
 }
-			   
+
 //_____________________________________________________________________________
 Int_t THaCodaDecoder::vme_decode( Int_t roc, const UInt_t* evbuffer,
 				  Int_t ipt, Int_t istop )
@@ -673,13 +675,13 @@ Int_t THaCodaDecoder::vme_decode( Int_t roc, const UInt_t* evbuffer,
     if(fDebug > 1) cout << "evbuff "<<(p-evbuffer)<<"  "<<hex<<*p<<dec<<endl;
     // look through all slots, since Nslot only gives number of occupied slots,
     // not the highest-numbered occupied slot.
-    // Note- the way the DAQ is set up, each module's VME header word contains 
+    // Note- the way the DAQ is set up, each module's VME header word contains
     // the slot number, so we can find the right module unambiguously with the
     // ((data&mask)==head) test below
     Int_t n_slots_checked = 0;
-    for (slot=first_slot_used; n_slots_checked<Nslot-n_slots_done 
+    for (slot=first_slot_used; n_slots_checked<Nslot-n_slots_done
 	   && slot<MAXSLOT; slot++) {
-      if (!fMap->slotUsed(roc,slot)) continue; 
+      if (!fMap->slotUsed(roc,slot)) continue;
       if (fMap->slotDone(slot)) continue;
       if (find_first_used) {
 	first_slot_used = slot;
@@ -758,8 +760,8 @@ Int_t THaCodaDecoder::vme_decode( Int_t roc, const UInt_t* evbuffer,
 	  // The CAEN 560 is a little tricky; sometimes only 1 channel was read,
 	  // so we don't increment ipt. (hmmm... could use time-dep crate map.)
 	  loc = p;
-	  for (chan=0; chan<16; chan++) {  
-	    if( ++loc >= pevlen ) goto SlotDone; 
+	  for (chan=0; chan<16; chan++) {
+	    if( ++loc >= pevlen ) goto SlotDone;
 	    if(fDebug > 1) {
 	      cout<<"560 chan data "<<chan<<"  0x"<<hex<<*loc<<dec<<endl;
 	    }
@@ -790,11 +792,11 @@ Int_t THaCodaDecoder::vme_decode( Int_t roc, const UInt_t* evbuffer,
 	  if( status != SD_OK ) goto err;
 	  break;
 
-	case 550:     // CAEN 550 for RICH 
-	  slotprime = 1+(((*p)&0xff0000)>>16);  
+	case 550:     // CAEN 550 for RICH
+	  slotprime = 1+(((*p)&0xff0000)>>16);
 	  if (fDebug > 1)
 	    cout << "CAEN 550 slot header_slot data = "
-		 <<slot<<" "<<slotprime<<" "<<loc<<" "<<hex<<*p<<dec<<endl; 
+		 <<slot<<" "<<slotprime<<" "<<loc<<" "<<hex<<*p<<dec<<endl;
 	  if (slot == slotprime) {    // They should agree, else problem.
 	    ndat = (*p)&0xfff;
 	    if (fDebug > 1) cout << "CAEN 550 ndat = "<<ndat<<endl;
@@ -806,10 +808,10 @@ Int_t THaCodaDecoder::vme_decode( Int_t roc, const UInt_t* evbuffer,
 	    } else {
 	      loc = p;
 	      while( ++loc <= p+ndat ) {
-		chan = ((*loc)&0x7ff000)>>12;    
+		chan = ((*loc)&0x7ff000)>>12;
 		// channel number
 		raw  = (*loc)&0xffffffff;
-		data = (*loc)&0x0fff;           
+		data = (*loc)&0x0fff;
 		if (fDebug > 1) cout << "CAEN 550 channel "<<chan
 					  <<"  data "<<hex<<data<<dec<<endl;
 		status = crateslot[idx(roc,slot)]
@@ -827,14 +829,14 @@ Int_t THaCodaDecoder::vme_decode( Int_t roc, const UInt_t* evbuffer,
 	case 775:     // CAEN 775 TDC
 	case 792:     // CAEN 792 QDC
 	  {
-	    ++p; 
+	    ++p;
 	    Int_t nword=*p-2;
 	    ++p;
 	    bool is775 = (model == 775);
 	    for (Int_t i=0;i<nword;i++) {
 	      ++p;
 	      chan=((*p)&0x00ff0000)>>16;
-	      raw=((*p)&0x00000fff);	      
+	      raw=((*p)&0x00000fff);
 	      if (is775) {
 		status = crateslot[idx(roc,slot)]
 		  ->loadData("tdc",chan,raw,raw);
@@ -857,7 +859,7 @@ Int_t THaCodaDecoder::vme_decode( Int_t roc, const UInt_t* evbuffer,
 	    // According to the labelling and internal numbering scheme,
 	    // the F1 module has odd numbered channels on one connector
 	    // and even numbered channels on the other.
-	    // However we usually put neighboring blocks/wires into the same 
+	    // However we usually put neighboring blocks/wires into the same
 	    // cable, connector etc.
 	    // => hana therefore uses a numbering scheme different from the module
 	    //
@@ -879,7 +881,7 @@ Int_t THaCodaDecoder::vme_decode( Int_t roc, const UInt_t* evbuffer,
 	    //
 	    // In both modes:
 	    // it is assumed that we only get data from one single trigger
-	    // if the F1 is run in multiblock mode (buffered mode) 
+	    // if the F1 is run in multiblock mode (buffered mode)
 	    // this might not be the case anymore - but this will be interesting anyhow
 	    // triggertime and eventnumber are not yet read out, they will again
 	    // be useful when multiblock mode (buffered mode) is used
@@ -929,7 +931,7 @@ Int_t THaCodaDecoder::vme_decode( Int_t roc, const UInt_t* evbuffer,
 		  }
 		  cout << endl;
 		}
-		
+
 		raw= (*loc) & 0xffff;
 		if(fDebug > 1) {
 		  cout<<" int_chn chan data "<<dec<<chn<<"  "<<chan
@@ -940,7 +942,7 @@ Int_t THaCodaDecoder::vme_decode( Int_t roc, const UInt_t* evbuffer,
 		if( status != SD_OK ) {
 		  if (fDebug > 1) {
 		    cout<<"Error found loadData tdc roc/slot/chan data"
-			<<dec<< roc << "  " << slot << "  " << chan 
+			<<dec<< roc << "  " << slot << "  " << chan
 			<<"  0x"<<hex<<raw<<endl;
 		    goto err;
 		  }
@@ -963,7 +965,7 @@ Int_t THaCodaDecoder::vme_decode( Int_t roc, const UInt_t* evbuffer,
 	    UInt_t nword=0;
 	    while ( (loc <= pevlen)&& ((*loc)&0x00600000)==0) {
 	      chan=((*loc)&0x7f000000)>>24;
-	      raw=((*loc)&0x000fffff);	      
+	      raw=((*loc)&0x000fffff);
 	      status = crateslot[idx(roc,slot)]->loadData("adc",chan,raw,raw);
 	      if( status != SD_OK ) goto err;
 	      loc++;
@@ -975,7 +977,7 @@ Int_t THaCodaDecoder::vme_decode( Int_t roc, const UInt_t* evbuffer,
 	      if (((*loc)&0xffff)!=nword) {
 		if (fDebug > 1) cout<<"WC mismatch "<<nword<<" "<<hex<<(*p)<<endl;
 		return HED_ERR;
-		//    Replace the above line with this to 
+		//    Replace the above line with this to
 		//    disable tossing out the event
 		//    when we get a bad thing.
 		//	return HED_OK;
@@ -1109,7 +1111,7 @@ Int_t THaCodaDecoder::vme_decode( Int_t roc, const UInt_t* evbuffer,
 	  break;
 	} //end switch(model)
 
-	goto SlotDone;  
+	goto SlotDone;
 
       } //end if(mask==head)
     } //end for(slot)
@@ -1149,8 +1151,8 @@ Int_t THaCodaDecoder::camac_decode(Int_t roc, const UInt_t* evbuffer,
 Int_t THaCodaDecoder::loadFlag(const UInt_t* evbuffer)
 {
   // Looks for buffer mode and synch problems.  The latter are recoverable
-  // but extremely rare, so I haven't bothered to write recovery a code yet, 
-  // but at least this warns you. 
+  // but extremely rare, so I haven't bothered to write recovery a code yet,
+  // but at least this warns you.
   assert( evbuffer );
   UInt_t word   = *evbuffer;
   UInt_t upword = word & 0xffff0000;
@@ -1188,11 +1190,11 @@ void THaCodaDecoder::SetRunTime( ULong64_t tloc )
   // Set run time and re-initialize crate map (and possibly other
   // database parameters for the new time.
 
-  if( fRunTime == tloc ) 
+  if( fRunTime == tloc )
     return;
   fRunTime = tloc;
   fNeedInit = true;  // force re-init
 }
 
 //_____________________________________________________________________________
-ClassImp(THaCodaDecoder)
+ClassImp(Decoder::THaCodaDecoder)

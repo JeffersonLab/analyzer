@@ -10,7 +10,7 @@ standalone = baseenv.subst('$STANDALONE')
 print ('Compiling decoder executables:  STANDALONE = %s\n' % standalone)
 
 standalonelist = Split("""
-tstio tdecpr prfact epicsd tdecex 
+tstoo tstfadc tstf1tdc tstskel tstio tdecpr prfact epicsd tdecex
 """)
 # Still to come, perhaps, are (etclient, tstcoda) which should be compiled
 # if the ONLINE_ET variable is set.  
@@ -19,6 +19,10 @@ list = Split("""
 THaUsrstrutils.C THaCrateMap.C THaCodaData.C 
 THaEpics.C THaFastBusWord.C THaCodaFile.C THaSlotData.C 
 THaEvData.C THaCodaDecoder.C SimDecoder.C
+CodaDecoder.C Module.C VmeModule.C FastbusModule.C
+Lecroy1877Module.C Lecroy1881Module.C Lecroy1875Module.C
+Fadc250Module.C GenScaler.C Scaler560.C Scaler1151.C
+Scaler3800.C Scaler3801.C F1TDCModule.C SkeletonModule.C
 """)
 #evio.C
 #swap_util.C swapped_intcpy.c
