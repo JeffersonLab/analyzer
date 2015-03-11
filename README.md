@@ -3,7 +3,7 @@ Hall A C++ Analyzer
 
 This is the standard data analysis software for
 [Hall A](http://hallaweb.jlab.org/) at [Jefferson Lab](http://www.jlab.org).
-The current stable version is 1.5.25.
+The current stable version is 1.5.28.
 
 Overview
 --------
@@ -40,7 +40,7 @@ software is prerequisite for analyzer 1.5
 
 For analyzer 1.6 or higher, you will also need
 
-* [EVIO](https://coda.jlab.org/wiki/index.php/Event_IO_%28evio%29) version 4.0
+* [EVIO](https://coda.jlab.org/drupal/content/event-io-evio) version 4.0
  or higher. EVIO_INCDIR and EVIO_LIBDIR must be set to point to the EVIO
  installation locations.
 
