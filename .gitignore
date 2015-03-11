@@ -20,6 +20,7 @@ hana_decode/tstskel
 ha_compiledata.h
 cppcheck_report.txt
 ChangeLog
+evio.h
 
 # Editor lint
 .#*
@@ -27,6 +28,7 @@ ChangeLog
 
 # Helpers
 /fix-filedates.sh
+hana_decode/evio
 
 # Standalone distribution support files
 /hana_scaler/scaler.map

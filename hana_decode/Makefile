@@ -135,7 +135,21 @@ MAKEDEPEND    = g++
 
 export OSNAME := $(shell uname)
 
-EVIO_LIB      = -L$(EVIO_LIBDIR) -levio
+# If EVIO environment not defined, get ready to build libevio.so locally
+ifndef EVIO_LIBDIR
+ ifndef STANDALONE
+   EVIO_LIBDIR := $(LIBDIR)
+ else
+   EVIO_LIBDIR := $(shell pwd)
+ endif
+ export EVIO_LIBDIR
+endif
+ifndef EVIO_INCDIR
+  export EVIO_INCDIR := $(shell pwd)
+endif
+
+EVIO_HDRS = $(EVIO_INCDIR)/evio.h
+EVIO_LIB  = -L$(EVIO_LIBDIR) -levio
 
 ifeq ($(OSNAME),Linux)
 
@@ -226,12 +240,12 @@ endif
 
 static:	libdc.a
 
-libdc.so: $(DECODE_OBJS)
+libdc.so: $(EVIO_LIBDIR)/libevio.so $(DECODE_OBJS)
 	rm -f $@
 ifeq ($(strip $(SONAME)),)
-	$(LD) $(LDFLAGS) $(SOFLAGS) -o $@ $^ $(EVIO_LIB)
+	$(LD) $(LDFLAGS) $(SOFLAGS) -o $@ $(filter %.o,$^) $(EVIO_LIB)
 else
-	$(LD) $(LDFLAGS) $(SOFLAGS) $(SONAME)libdc.so.$(SOVERSION) -o $@ $^ $(EVIO_LIB)
+	$(LD) $(LDFLAGS) $(SOFLAGS) $(SONAME)libdc.so.$(SOVERSION) -o $@ $(filter %.o,$^) $(EVIO_LIB)
 endif
 
 ifndef STANDALONE
@@ -239,6 +253,11 @@ $(LIBDIR)/libdc.so.$(VERSION): libdc.so
 	rm -f $@ $(LIBDIR)/libdc.so.$(SOVERSION)
 	cp -p $< $@
 endif
+
+$(EVIO_LIBDIR)/libevio.so:
+	set -e; make -C evio
+
+$(EVIO_INCDIR)/evio.h:	$(EVIO_LIBDIR)/libevio.so
 
 # Test programs for standalone tests of decoder.
 ifdef STANDALONE
@@ -314,6 +333,7 @@ version:
 
 clean:
 	rm -f *.{a,out,o,os} *.so.* core *~ THaDecDict* $(VERS).tar $(PROGS)
+	make -C evio clean
 
 realclean:  clean
 	rm -f *.d
@@ -326,7 +346,7 @@ install:	all
 .SUFFIXES:
 .SUFFIXES: .c .cc .cpp .C .o .os .d
 
-%.o:	%.C
+%.o:	%.C $(EVIO_HDRS)
 	$(CXX) $(CXXFLAGS) -c $<
 
 %.d:	%.C
