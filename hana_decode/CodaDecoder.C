@@ -200,7 +200,7 @@ Int_t CodaDecoder::roc_decode( Int_t roc, const UInt_t* evbuffer,
     slot = firstslot - incrslot;
     slotdone = kFALSE;
 
-    while(!slotdone && n_slots_checked < Nslot-n_slots_done && slot >= 0 && slot < MAXSLOT) {
+    while(!slotdone && n_slots_checked < Nslot-n_slots_done && slot >= 0 && slot < MAXSLOT-1) {
 
       slot = slot + incrslot;
       if (!fMap->slotUsed(roc,slot)) {
