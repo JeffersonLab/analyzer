@@ -28,7 +28,7 @@ THaRTTI.C                 THaSpectrometerDetector.C THaUnRasteredBeam.C       TH
 THaBeamEloss.C            THaElossCorrection.C      THaNonTrackingDetector.C  
 THaRaster.C               THaString.C               THaVDC.C                  THaVhist.C
 THaBeamInfo.C             THaEpicsEbeam.C              
-THaRasteredBeam.C         THaSubDetector.C          THaVDCAnalyticTTDConv.C
+THaRasteredBeam.C         THaSubDetector.C          THaVDCAnalyticTTDConv.C   VDCeff.C
 THaBeamModule.C           THaEvent.C               
 THaReacPointFoil.C        THaTextvars.C             THaVDCCluster.C
 THaCherenkov.C            THaExtTarCor.C            THaOutput.C               
@@ -37,6 +37,7 @@ THaCluster.C              THaFilter.C               THaPIDinfo.C
 THaRun.C                  THaTrack.C                THaVDCPlane.C
 THaCodaRun.C              THaFormula.C              THaParticleInfo.C         
 THaRunBase.C              THaTrackEloss.C           THaVDCTimeToDistConv.C
+THaEvtTypeHandler.C       THaScalerEvtHandler.C
 """)
 
 normanalist = ['THaNormAna.C']

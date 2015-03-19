@@ -8,13 +8,10 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaAnalysisObject.h"
-#include "Decoder.h"
-#include "THaEvData.h"
 
 class THaDetector;
+class THaEvData;
 class TList;
-
-using namespace Decoder;
 
 class THaApparatus : public THaAnalysisObject {
   
@@ -41,8 +38,6 @@ protected:
 
   THaApparatus( const char* name, const char* description );
   THaApparatus( );
-
-  virtual void MakePrefix();
 
   ClassDef(THaApparatus,1)   //A generic apparatus (collection of detectors)
 };

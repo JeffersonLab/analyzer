@@ -4,9 +4,10 @@
 #define PRINTOUT 1  // to test speed set to 0, else prints out
 
 #include "THaEtClient.h"
-#include <iostream.h>
+#include <iostream>
 
 using namespace std;
+using namespace Decoder;
 
 int main(int argc, char *argv[]) 
 {
@@ -15,10 +16,9 @@ int main(int argc, char *argv[])
        THaEtClient *et;
        et = new THaEtClient("adaqcp", mymode);  // opens connection to adaqcp computer.
  
-       int* evbuff = new int[et->getBuffSize()];   // raw data buffer
+       UInt_t* evbuff = new UInt_t[et->getBuffSize()];   // raw data buffer
 
        int NUMEVT = 10000;
-       int status;
        double lensum=0;
        double dummysum = 0;
 
@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
          if ((iev%1000) == 0) {
 	   cout << "Event "<<dec<<iev<<"  sums "<<lensum<<"  "<<dummysum<<endl;
 	 }
-         status = et->codaRead();  // This must be done once per event.
+         int status = et->codaRead();  // This must be done once per event.
          if (status != 0) {
              cout << "Error Status from codaRead " << status << endl;
              exit(0);
@@ -51,4 +51,5 @@ int main(int argc, char *argv[])
        }
        cout << "END, processes "<<NUMEVT<<" events,  sums "<<lensum<<"  "<<dummysum<<endl;
 
+       delete [] evbuff;
 }

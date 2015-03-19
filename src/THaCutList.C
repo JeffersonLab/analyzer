@@ -47,23 +47,33 @@ void THaHashList::PrintOpt( Option_t* opt ) const
 }
 
 //______________________________________________________________________________
-THaCutList::THaCutList() : fVarList(0)
+THaCutList::THaCutList()
+  : fCuts(new THaHashList()), fBlocks(new THaHashList()),
+    fVarList(0)
 {
   // Default constructor. No variable list is defined. Either define it
   // later with SetList() or pass the list as an argument to Define().
   // Allowing this constructor is not very safe ...
 
-  fCuts   = new THaHashList();
-  fBlocks = new THaHashList();
 }
 
 //______________________________________________________________________________
-THaCutList::THaCutList( const THaVarList* lst ) : fVarList(lst)
+THaCutList::THaCutList( const THaCutList& rhs )
+  : fCuts(new THaHashList(rhs.fCuts)), fBlocks(new THaHashList(rhs.fBlocks)),
+    fVarList(rhs.fVarList)
 {
-  // Normal constructor. Create the main lists and set the variable list.
+  // Copy constructor
+  
+}
 
-  fCuts   = new THaHashList();
-  fBlocks = new THaHashList();
+//______________________________________________________________________________
+THaCutList::THaCutList( const THaVarList* lst ) 
+  : fCuts(new THaHashList()), fBlocks(new THaHashList()),
+    fVarList(lst)
+{
+  // Constructor from variable list. Create the main lists and set the variable
+  // list.
+
 }
 
 //______________________________________________________________________________
@@ -413,7 +423,7 @@ void THaCutList::MakePrintOption( THaPrintOption& opt, const TList* plist )
   if( opt.IsLine() && !strcmp(opt.GetOption(1),"") ) {
     UInt_t width[NF] = { 0, 0, 0, 0 };
     TIter next( plist );
-    while( THaCut* pcut = (THaCut*)next() ) {
+    while( THaCut* pcut = static_cast<THaCut*>( next() )) {
       width[0] = max( width[0], static_cast<UInt_t>
 		      (strlen(pcut->GetName())) );
       width[1] = max( width[1], static_cast<UInt_t>

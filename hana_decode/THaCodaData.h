@@ -18,11 +18,20 @@
 
 #include "Rtypes.h"
 #include "TString.h"
-#define CODA_ERROR -128   // Generic error return code
-#define CODA_OK  0        // Means return is ok.
+#include "Decoder.h"
+#include <cstdio>
+
+// Return cods from codaNNN routines
+#define CODA_OK     0      // OK
+#define CODA_EOF    EOF    // End of file
+#define CODA_ERROR  -128   // Generic error return code
+#define CODA_FATAL  -255   // Fatal error
+
 #define MAXEVLEN 100005   // Maximum size of events
 #define CODA_VERBOSE 1    // Errors explained verbosely (recommended)
 #define CODA_DEBUG  0     // Lots of printout (recommend to set = 0)
+
+namespace Decoder {
 
 class THaCodaData {
 
@@ -30,13 +39,16 @@ public:
 
    THaCodaData();
    virtual ~THaCodaData();
-   virtual int codaOpen(const char* file_name, int mode=1)=0;
-   virtual int codaOpen(const char* file_name, const char* session, int mode=1)=0;
-   virtual int codaClose()=0;
-   virtual int codaRead()=0; 
-   virtual int *getEvBuffer() { return evbuffer; }
-   virtual int getBuffSize() const { return MAXEVLEN; }
-   virtual bool isOpen() const = 0;
+   virtual Int_t codaOpen(const char* file_name, Int_t mode=1)=0;
+   virtual Int_t codaOpen(const char* file_name, const char* session, Int_t mode=1)=0;
+   virtual Int_t codaClose()=0;
+   virtual Int_t codaRead()=0;
+   virtual UInt_t* getEvBuffer() { return evbuffer; }
+   virtual Int_t getBuffSize() const { return MAXEVLEN; }
+   virtual Bool_t isOpen() const = 0;
+
+protected:
+   static Int_t ReturnCode( Int_t evio_retcode );
 
 private:
 
@@ -45,18 +57,13 @@ private:
 
 protected:
 
-   TString filename;
-   int *evbuffer;                    // Raw data     
+   TString  filename;
+   UInt_t*  evbuffer;     // Raw data
 
    ClassDef(THaCodaData,0) // Base class of CODA data (file, ET conn, etc)
 
 };
 
+}
+
 #endif
-
-
-
-
-
-
-

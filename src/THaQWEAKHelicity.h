@@ -11,10 +11,6 @@
 
 #include "THaHelicityDet.h"
 #include "THaQWEAKHelicityReader.h"
-#include "Decoder.h"
-#include "THaEvData.h"
-
-using namespace Decoder;
 
 class TH1F;
 
@@ -57,7 +53,6 @@ protected:
 
 
   Int_t fQrt;
-  THaHelicityDet::EHelicity fHelicity;
   Int_t fTSettle;
   Bool_t fValidHel;
 
@@ -80,9 +75,10 @@ protected:
   Int_t fRing_reported_polarity;
   Int_t fRing_actual_polarity;
 
-  Int_t     fEvtype; // Current CODA event type
+  Int_t fEvtype; // Current CODA event type
  
-  TH1F *    fHisto[2];  
+  static const Int_t NHIST = 2;
+  TH1F* fHisto[NHIST];  
 
   virtual Int_t DefineVariables( EMode mode = kDefine );
   virtual Int_t ReadDatabase( const TDatime& date );

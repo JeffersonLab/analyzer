@@ -4,12 +4,9 @@
 //////////////////////////////////////////////////////////////////////////
 //
 // THaAnalyzer
-// 
+//
 //////////////////////////////////////////////////////////////////////////
 
-#include "Decoder.h"
-#include "THaEvData.h"
-#include "THaCrateMap.h"
 #include "TObject.h"
 #include "TString.h"
 
@@ -22,11 +19,9 @@ class TFile;
 class TDatime;
 class THaCut;
 class THaBenchmark;
-//class THaEvData;
+class THaEvData;
 class THaPostProcess;
 class THaCrateMap;
-
-using namespace Decoder;
 
 class THaAnalyzer : public TObject {
 
@@ -86,8 +81,8 @@ public:
 
 protected:
   // Test and histogram blocks
-  enum { 
-    kRawDecode = 0, kDecode, kCoarseTrack, kCoarseRecon, 
+  enum {
+    kRawDecode = 0, kDecode, kCoarseTrack, kCoarseRecon,
     kTracking, kReconstruct, kPhysics
   };
   struct Stage_t {
@@ -99,18 +94,18 @@ protected:
     THaCut*       master_cut;
   };
   // Statistics counters and message texts
-  enum { 
+  enum {
     kNevRead = 0, kNevGood, kNevPhysics, kNevScaler, kNevEpics, kNevOther,
     kNevPostProcess, kNevAnalyzed, kNevAccepted,
-    kEvFileTrunc, kCodaErr, kRawDecodeTest, kDecodeTest, kCoarseTrackTest, 
-    kCoarseReconTest, kTrackTest, kReconstructTest, kPhysicsTest 
+    kDecodeErr, kCodaErr, kRawDecodeTest, kDecodeTest, kCoarseTrackTest,
+    kCoarseReconTest, kTrackTest, kReconstructTest, kPhysicsTest
   };
   struct Counter_t {
     Int_t       key;
     const char* description;
     UInt_t      count;
   };
-    
+
   enum ECountMode { kCountPhysics, kCountAll, kCountRaw };
 
   TFile*         fFile;            //The ROOT output file.
@@ -178,7 +173,7 @@ protected:
   virtual void   InitCounters();
   virtual void   InitCuts();
   virtual void   InitStages();
-  virtual Int_t  InitModules( TList* module_list, TDatime& time, 
+  virtual Int_t  InitModules( TList* module_list, TDatime& time,
 			      Int_t erroff, const char* baseclass = NULL );
   virtual Int_t  InitOutput( const TList* module_list, Int_t erroff,
 			     const char* baseclass = NULL );
@@ -191,25 +186,24 @@ protected:
   // In-class constants
   static const char* const kMasterCutName;
   static const char* const kDefaultOdefFile;
-  Int_t fDebug;
 
 private:
   THaAnalyzer( const THaAnalyzer& );
   THaAnalyzer& operator=( const THaAnalyzer& );
-  
+
   ClassDef(THaAnalyzer,0)  //Hall A Analyzer Standard Event Loop
 
 };
 
 //---------------- inlines ----------------------------------------------------
 inline UInt_t THaAnalyzer::GetCount( Int_t i ) const
-{ 
+{
   return fCounters[i].count;
 }
 
 //_____________________________________________________________________________
 inline UInt_t THaAnalyzer::Incr( Int_t i )
-{ 
+{
   return ++(fCounters[i].count);
 }
 

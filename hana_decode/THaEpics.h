@@ -13,6 +13,9 @@
 #include <map>
 #include <vector>
 #include "Rtypes.h"
+//#include "Decoder.h"
+
+namespace Decoder {
 
 class EpicsChan {
 // utility class of one epics channel
@@ -37,9 +40,9 @@ public:
   void MakeTime() {
     // time is a continuous parameter.  funny things happen
     // at midnight or new month, but you'll figure it out.
-    char t1[40],t2[40],t3[40],t4[40];
+    char t1[41],t2[41],t3[41],t4[41];
     int day, hour, min, sec;
-    sscanf(dtime.c_str(),"%s %s %d %d:%d:%d %s %s",
+    sscanf(dtime.c_str(),"%40s %40s %6d %6d:%6d:%6d %40s %40s",
 	   t1,t2,&day,&hour,&min,&sec,t3,t4);
     timestamp = 3600*24*day + 3600*hour + 60*min + sec;
   }  
@@ -53,7 +56,7 @@ private:
   Double_t dvalue,timestamp;
 };
 
-typedef std::map< std::string, std::vector<EpicsChan> >::value_type epVal;
+typedef std::map< std::string, std::vector<Decoder::EpicsChan> >::value_type epVal;
 
 class THaEpics {
 
@@ -66,7 +69,7 @@ public:
 // Get tagged string value nearest 'event'
    std::string GetString (const char* tag, int event=0) const;
    Double_t GetTimeStamp(const char* tag, int event=0) const;
-   int LoadData (const int* evbuffer, int event=0);  // load the data
+   int LoadData (const UInt_t* evbuffer, int event=0);  // load the data
    Bool_t IsLoaded(const char* tag) const;
    void Print();
 
@@ -74,10 +77,12 @@ private:
 
    std::map< std::string, std::vector<EpicsChan> > epicsData;
    std::vector<EpicsChan> GetChan(const char *tag) const;
-   Int_t FindEvent(const std::vector<EpicsChan> ep, int event) const;
+   Int_t FindEvent(const std::vector<EpicsChan>& ep, int event) const;
 
    ClassDef(THaEpics,0)  // EPICS data 
 
 };
+
+}
 
 #endif

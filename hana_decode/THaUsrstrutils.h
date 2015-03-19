@@ -6,21 +6,18 @@
 // R. Michaels, March 2000
 // THaUsrstrutils = USeR STRing UTILitieS.
 // The code below is what is used by DAQ to interpret strings
-// like prescale factors 
+// like prescale factors
 // Yes, this is mostly old-style C, but it
 // has the advantage that the interpretation should
-// be identical to what the DAQ used.  
+// be identical to what the DAQ used.
 //
 /////////////////////////////////////////////////////////////////////
 
 #include "TString.h"
-#include <iostream>
-#include <cstdlib>
-#include <cstdio>
-#include <cstring>
 
-class THaUsrstrutils
-{
+namespace Decoder {
+
+class THaUsrstrutils {
 
 /* usrstrutils
 
@@ -45,8 +42,8 @@ class THaUsrstrutils
                            the keyword.  Return null if keyword not present.
 			   return null string if keyword has no value.
 			   Caller must delete the string.
-	     
-    string_from_evbuffer(int evbuffer) - load the confuguration 
+
+    string_from_evbuffer(int evbuffer) - load the confuguration
                          string using event buffer 'evbuffer'
 
     string_from_file(char *ffile) -- read file *ffile to get config string.
@@ -100,14 +97,13 @@ public:
   int getflag(const char *s) const;
   char *getstr(const char *s) const;
   unsigned int getint(const char *s) const;
-  void string_from_evbuffer(const int *evbuffer, int nlen=MAX);
+  void string_from_evbuffer(const UInt_t* evbuffer, int nlen=MAX);
   void string_from_file(const char *ffile_name);
 
 protected:
 
-  int max_size_string;
   TString configstr;
-  void getflagpos(const char *s, const char **pos_ret, 
+  void getflagpos(const char *s, const char **pos_ret,
 		  const char **val_ret) const;
   static void getflagpos_instring(const char *constr, const char *s,
 				  const char **pos_ret, const char **val_ret);
@@ -115,7 +111,7 @@ protected:
    ClassDef(THaUsrstrutils,0)   //  User string utilities, DAQ parsing code.
 
 };
-     
+
 //=============== inline functions ================================
 
 inline
@@ -124,6 +120,8 @@ void THaUsrstrutils::getflagpos(const char *s, const char **pos_ret,
 {
   getflagpos_instring(configstr,s,pos_ret,val_ret);
   return;
+}
+
 }
 
 #endif  /* _USRSTRUTILS_INCLUDED */

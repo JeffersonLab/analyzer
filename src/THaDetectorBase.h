@@ -10,15 +10,11 @@
 #include "THaAnalysisObject.h"
 #include "TVector3.h"
 #include <vector>
-#include "Decoder.h"
-#include "THaEvData.h"
-
-using namespace Decoder;
 
 class THaDetMap;
 
 class THaDetectorBase : public THaAnalysisObject {
-  
+
 public:
   virtual ~THaDetectorBase();
 
@@ -33,8 +29,13 @@ public:
   Float_t          GetXSize()  const { return 2.0*fSize[0]; }
   Float_t          GetYSize()  const { return 2.0*fSize[1]; }
   Float_t          GetZSize()  const { return fSize[2]; }
+  const TVector3&  GetXax()    const { return fXax; }
+  const TVector3&  GetYax()    const { return fYax; }
+  const TVector3&  GetZax()    const { return fZax; }
 
-  Int_t            FillDetMap( const std::vector<Int_t>& values, 
+  Bool_t           IsInActiveArea( Double_t x, Double_t y ) const;
+
+  Int_t            FillDetMap( const std::vector<Int_t>& values,
 			       UInt_t flags=0,
 			       const char* here = "FillDetMap" );
   void             PrintDetMap( Option_t* opt="") const;
@@ -47,10 +48,16 @@ protected:
   // Configuration
   Int_t       fNelem;     // Number of detector elements (paddles, mirrors)
 
-  // Geometry 
+  // Geometry
   TVector3    fOrigin;    // Center position of detector (m)
   Float_t     fSize[3];   // Detector size in x,y,z (m) - x,y are half-widths
-  
+
+  TVector3    fXax;       // X axis of the detector plane
+  TVector3    fYax;       // Y axis of the detector plane
+  TVector3    fZax;       // Normal to the detector plane
+
+  virtual void  DefineAxes( Double_t rotation_angle );
+
   virtual Int_t ReadGeometry( FILE* file, const TDatime& date,
 			      Bool_t required = kFALSE );
 

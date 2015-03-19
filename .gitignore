@@ -3,12 +3,24 @@
 *.os
 lib*.so*
 analyzer
+hana_decode/epicsd
+hana_decode/prfact
+hana_decode/tdecex
+hana_decode/tdecpr
+hana_decode/tstfadc
+hana_decode/tstf1tdc
+hana_decode/tstio
+hana_decode/tstoo
+hana_decode/tstskel
 
 # Generated files
 *Dict.[Ch]
+*Dict.cxx
 *Dict.so
 ha_compiledata.h
+cppcheck_report.txt
 ChangeLog
+evio.h
 
 # Editor lint
 .#*
@@ -16,6 +28,7 @@ ChangeLog
 
 # Helpers
 /fix-filedates.sh
+hana_decode/evio
 
 # Standalone distribution support files
 /hana_scaler/scaler.map
@@ -31,5 +44,13 @@ ChangeLog
 #scons stuff
 config.log
 *.pyc
+*Dict.C
 .sconsign.dblite
 .sconf_temp/
+dist/
+
+#eclipse stuff
+.project
+.cproject
+.pydevproject
+.settings/

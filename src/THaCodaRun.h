@@ -9,9 +9,6 @@
 
 #include "THaRunBase.h"
 #include "Decoder.h"
-#include "THaCodaData.h"
-
-using namespace Decoder;
 
 class THaCodaRun : public THaRunBase {
   
@@ -22,13 +19,14 @@ public:
   virtual ~THaCodaRun();
   
   virtual Int_t        Close();
-  virtual const Int_t* GetEvBuffer() const;
+  virtual const UInt_t* GetEvBuffer() const;
   virtual Bool_t       IsOpen() const;
   virtual Int_t        ReadEvent();
 
 protected:
+  static Int_t ReturnCode( Int_t coda_retcode);
 
-  THaCodaData*  fCodaData;  //! CODA data associated with this run
+  Decoder::THaCodaData*  fCodaData;  //! CODA data associated with this run
 
   ClassDef(THaCodaRun,1)    // ABC for a run based on CODA data
 };

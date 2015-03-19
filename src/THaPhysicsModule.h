@@ -8,10 +8,6 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaAnalysisObject.h"
-#include "Decoder.h"
-#include "THaEvData.h"
-
-using namespace Decoder;
 
 class THaPhysicsModule : public THaAnalysisObject {
   
@@ -35,7 +31,6 @@ public:
 protected:
 
   THaPhysicsModule( const char* name, const char* description );
-  virtual void MakePrefix();
 
   void PrintInitError( const char* here );
 

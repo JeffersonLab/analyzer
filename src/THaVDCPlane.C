@@ -124,7 +124,7 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
       break;
     // Get crate, slot, low channel and high channel from file
     Int_t crate, slot, lo, hi;
-    if( sscanf( buff, "%d%d%d%d", &crate, &slot, &lo, &hi ) != 4 ) {
+    if( sscanf( buff, "%6d %6d %6d %6d", &crate, &slot, &lo, &hi ) != 4 ) {
       if( *buff ) buff[strlen(buff)-1] = 0; //delete trailing newline
       Error( Here(here), "Error reading detector map line: %s", buff );
       fclose(file);
@@ -138,14 +138,14 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
     nWires += prev_nwires;
   } while( *buff );  // sanity escape
   // Load z, wire beginning postion, wire spacing, and wire angle
-  sscanf( buff, "%lf%lf%lf%lf", &fZ, &fWBeg, &fWSpac, &fWAngle );
+  sscanf( buff, "%15lf %15lf %15lf %15lf", &fZ, &fWBeg, &fWSpac, &fWAngle );
   fWAngle *= TMath::Pi()/180.0; // Convert to radians
   // FIXME: Read from file
   fTDCRes = 5.0e-10;  // 0.5 ns/chan = 5e-10 s /chan
 
   // Load drift velocity (will be used to initialize Crude Time to Distance
   // converter)
-  fscanf(file, "%lf", &fDriftVel);
+  fscanf(file, "%15lf", &fDriftVel);
   fgets(buff, LEN, file); // Read to end of line
   fgets(buff, LEN, file); // Skip line
 
@@ -163,7 +163,7 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
   for (int i = 0; i < nWires; i++) {
     int wnum = 0;
     float offset = 0.0;
-    fscanf(file, " %d %f", &wnum, &offset);
+    fscanf(file, " %6d %15f", &wnum, &offset);
     wire_nums[i] = wnum-1; // Wire numbers in file start at 1
     wire_offsets[i] = offset;
   }
@@ -511,11 +511,10 @@ Int_t THaVDCPlane::FitTracks()
 {    
   // Fit tracks to cluster positions and drift distances.
   
-  THaVDCCluster* clust;
   Int_t nClust = GetNClusters();
   for (int i = 0; i < nClust; i++) {
-    if( !(clust = static_cast<THaVDCCluster*>( (*fClusters)[i] )))
-      continue;
+    THaVDCCluster* clust = static_cast<THaVDCCluster*>( (*fClusters)[i] );
+    if( !clust ) continue;
 
     // Convert drift times to distances. 
     // The conversion algorithm is determined at wire initialization time,

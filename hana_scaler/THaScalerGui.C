@@ -38,29 +38,32 @@
 
 using namespace std;
 
-THaScalerGui::THaScalerGui(const TGWindow *p, UInt_t w, UInt_t h, string b) : TGMainFrame(p, w, h) { 
-  bankgroup = b;
+THaScalerGui::THaScalerGui(const TGWindow *p, UInt_t w, UInt_t h, string b)
+  : TGMainFrame(p, w, h), bankgroup(b) { 
   scaler = 0;
   timer = 0;
   crate = 0;
   scaler = new THaScaler(bankgroup.c_str());
   if (scaler->Init() == -1) {
     cout << "ERROR: Cannot initialize THaScaler member"<<endl;
+    delete scaler; scaler = 0;
+    return;
   }
   crate = scaler->GetCrate();
   InitFromDB();
   if (InitPlots() == -1) {
     cout << "ERROR: Cannot initialize a THaScalerGui"<<endl;
-    exit(0);
+    delete scaler; scaler = 0;
+    return;
   }
   timer = new TTimer(this, UPDATE_TIME);
   timer->TurnOn();
 };
 
 THaScalerGui::~THaScalerGui() {
-  delete [] yboxsize;
-  if (scaler) delete scaler;
-  if (timer) delete timer;
+  delete [] yboxsize; yboxsize = 0;
+  delete scaler; scaler = 0;
+  delete timer;  timer = 0;
 };
 
 
@@ -248,21 +251,20 @@ Int_t THaScalerGui::InitPlots() {
 };
 
 void THaScalerGui::InitPages() {
-  Int_t ipage, slot;
-  static char value[50];
   slotmap.clear();
   if (!scaler) return;
   if (scaler->GetDataBase())  
     npages = scaler->GetDataBase()->GetNumDirectives(crate, "xscaler-layout"); 
   if (npages == 0) npages = 10;  // reasonable default
-  for (ipage = 0; ipage < npages; ipage++) {
-    slot = ipage;
+  for (int ipage = 0; ipage < npages; ipage++) {
+    int slot = ipage;
     if ( scaler->GetDataBase()) {
+      char value[50];
       sprintf(value, "%d", ipage);
       string spage = value;
       string detname = scaler->GetDataBase()->GetStringDirectives(crate,"xscaler-pageslot",spage);
-      if (detname.find("slot") != std::string::npos) {
-	sscanf(detname.c_str(), "slot%d", &slot); 
+      if (detname.find("slot") != string::npos) {
+	sscanf(detname.c_str(), "slot%3d", &slot); 
       } else {
         if (detname != "none") {
           slot = scaler->GetSlot(detname);
@@ -331,30 +333,25 @@ Bool_t THaScalerGui::HandleTimer(TTimer *t) {
 };
 
 void THaScalerGui::updateValues() {
-  static int ipage,slot,chan,index;
-  static char value[50];
-  static Float_t farray_ntup[4];
-  static float rate,count,ratenormi;
-  static map< Int_t, TGTextEntry* >::iterator txt;
-  static map< Int_t, TNtuple* >::iterator ntu;
 #ifndef TESTONLY
   if (scaler->LoadDataOnline() == SCAL_ERROR) {
       cout << "Error loading data online"<<endl;
       return;
   }
 #endif
-  for (ipage = 0; ipage < npages; ipage++) {
-    slot = slotmap[ipage];
-    for (chan = 0; chan < SCAL_NUMCHAN; chan++) {
-       index = ipage*SCAL_NUMCHAN + chan;
+  for (int ipage = 0; ipage < npages; ipage++) {
+    int slot = slotmap[ipage];
+    for (int chan = 0; chan < SCAL_NUMCHAN; chan++) {
+       int index = ipage*SCAL_NUMCHAN + chan;
 #ifdef TESTONLY
-       rate = 1000*(slot+1) + 100*(chan+1) + iloop; 
-       count = rate + 100000;
+       float rate = 1000*(slot+1) + 100*(chan+1) + iloop; 
+       float count = rate + 100000;
 #else
-       count = (float)scaler->GetScaler(slot, chan);
-       rate  = (float)scaler->GetScalerRate(slot, chan);
-       ratenormi = (float)scaler->GetIRate(slot, chan);
+       float count = (float)scaler->GetScaler(slot, chan);
+       float rate  = (float)scaler->GetScalerRate(slot, chan);
+       float ratenormi = (float)scaler->GetIRate(slot, chan);
 #endif
+       char value[50];
        switch (showselect) {
            case SHOWRATE:
                sprintf(value,"%-6.3e Hz",rate);
@@ -371,12 +368,13 @@ void THaScalerGui::updateValues() {
         }      
         fDataBuff[index].Clear();
         fDataBuff[index].AddText(0,value);
-        txt = fDataEntry.find(index);
+        map< Int_t, TGTextEntry* >::iterator txt = fDataEntry.find(index);
         if (txt != fDataEntry.end()) {
              fClient->NeedRedraw(txt->second);
         }
-        ntu = fDataHistory.find(index);
+        map< Int_t, TNtuple* >::iterator ntu = fDataHistory.find(index);
         if (ntu != fDataHistory.end()) {
+	   Float_t farray_ntup[4];
 	   farray_ntup[0] = (float) iloop;
            farray_ntup[1] = count;
            farray_ntup[2] = rate;                      
@@ -389,28 +387,31 @@ void THaScalerGui::updateValues() {
 };
 
 void THaScalerGui::popPlot(int index) {
-  static char timecut[100],ctit[100];
-  static map< Int_t, TNtuple* >::iterator ntu = fDataHistory.find(index);
-  static float upd = UPDATE_TIME/1000;  
+  map< Int_t, TNtuple* >::iterator ntu = fDataHistory.find(index);
+  const float upd = UPDATE_TIME/1000;  
   if (ntu != fDataHistory.end()) {
+      char timecut[100];
       sprintf(timecut,"%6.1f-UpdateNum<%d",
          fDataHistory[index]->GetMaximum("UpdateNum"),TIME_CUT);        
       TCut tc(timecut);
       if (showselect == SHOWRATE) {
+	  char ctit[100];
   	  sprintf(ctit,"RECENT HISTORY of RATE (Hz) updated each %3.0f sec",upd);
 	  TCanvas *c1 = new TCanvas("Rate",ctit,500,400);
           fDataHistory[index]->SetMarkerColor(4);
           fDataHistory[index]->SetMarkerStyle(21);
           fDataHistory[index]->Draw("Rate:UpdateNum",tc);
       }
-      if (showselect == SHOWNORMI) {
+      else if (showselect == SHOWNORMI) {
+	  char ctit[100];
   	  sprintf(ctit,"RECENT HIS of NormRATE updated each %3.0f sec",upd);
 	  TCanvas *c1 = new TCanvas("Rate",ctit,500,400);
           fDataHistory[index]->SetMarkerColor(4);
           fDataHistory[index]->SetMarkerStyle(21);
           fDataHistory[index]->Draw("RateI:UpdateNum",tc);
       }
-      if (showselect == SHOWCOUNT) {
+      else if (showselect == SHOWCOUNT) {
+	  char ctit[100];
   	  sprintf(ctit,"RECENT HISTORY of COUNTS updated each %3.0f sec",upd);
 	  TCanvas *c1 = new TCanvas("Rate",ctit,500,400);
           fDataHistory[index]->SetMarkerColor(2);
@@ -421,13 +422,11 @@ void THaScalerGui::popPlot(int index) {
 };
 
 void THaScalerGui::clearNtuples() {
-  static int i,j,index;
-  static map< Int_t, TNtuple* >::iterator ntu;
-  for (i = 0; i < SCAL_NUMBANK; i++) {
-     for (j = 0; j < SCAL_NUMCHAN; j++) {
-       index = i*SCAL_NUMCHAN+j;
+  for (int i = 0; i < SCAL_NUMBANK; i++) {
+     for (int j = 0; j < SCAL_NUMCHAN; j++) {
+       int index = i*SCAL_NUMCHAN+j;
        if ( !occupied[index] ) continue;
-       ntu = fDataHistory.find(index);
+       map< Int_t, TNtuple* >::iterator ntu = fDataHistory.find(index);
        if (ntu != fDataHistory.end()) {
          fDataHistory[index]->Reset(0);
        }

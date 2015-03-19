@@ -302,7 +302,7 @@ void WordLoc::Load( const THaEvData& evdata )
 {
   // Load data at header/notoskip position from crate data buffer 
 
-  typedef const Int_t rawdata_t;
+  typedef const UInt_t rawdata_t;
 
   Int_t roclen = evdata.GetRocLength(crate);
   if( roclen < ntoskip+1 ) return;

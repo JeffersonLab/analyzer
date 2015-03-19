@@ -22,8 +22,9 @@ using namespace std;
 
 //_____________________________________________________________________________
 THaRaster::THaRaster( const char* name, const char* description,
-				  THaApparatus* apparatus ) :
-  THaBeamDet(name,description,apparatus), fRawPos(2), fRawSlope(2),fRasterFreq(2),fSlopePedestal(2),fRasterPedestal(2)
+				  THaApparatus* apparatus )
+  : THaBeamDet(name,description,apparatus), fRawPos(2), fRawSlope(2),
+    fRasterFreq(2), fSlopePedestal(2), fRasterPedestal(2)
 {
   // Constructor
   fRaw2Pos[0].ResizeTo(3,2);
@@ -77,7 +78,8 @@ Int_t THaRaster::ReadDatabase( const TDatime& date )
 
   do {
     fgets( buf, LEN, fi);
-    sscanf(buf,"%d %d %d %d %d %d %d",&first_chan, &crate, &dummy, &slot, &first, &last, &modulid);
+    sscanf(buf,"%6d %6d %6d %6d %6d %6d %6d", 
+	   &first_chan, &crate, &dummy, &slot, &first, &last, &modulid);
     if (first_chan>=0) {
       if ( fDetMap->AddModule (crate, slot, first, last, first_chan )<0) {
 	Error( Here(here), "Couldnt add Raster to DetMap. Good bye, blue sky, good bye!");
@@ -100,7 +102,8 @@ Int_t THaRaster::ReadDatabase( const TDatime& date )
   }
   double dummy1,dummy2,dummy3,dummy4,dummy5,dummy6,dummy7;
   fgets( buf, LEN, fi);
-  sscanf(buf,"%lf%lf%lf%lf%lf%lf%lf",&dummy1,&dummy2,&dummy3,&dummy4,&dummy5,&dummy6,&dummy7);
+  sscanf(buf,"%15lf %15lf %15lf %15lf %15lf %15lf %15lf",
+	 &dummy1,&dummy2,&dummy3,&dummy4,&dummy5,&dummy6,&dummy7);
   fRasterFreq(0)=dummy2;
   fRasterFreq(1)=dummy3;
 
@@ -111,13 +114,13 @@ Int_t THaRaster::ReadDatabase( const TDatime& date )
   fSlopePedestal(1)=dummy7;
 
   fgets( buf, LEN, fi);
-  sscanf(buf,"%lf",&dummy1);
+  sscanf(buf,"%15lf",&dummy1);
   fPosOff[0].SetZ(dummy1);
   fgets( buf, LEN, fi);
-  sscanf(buf,"%lf",&dummy1);
+  sscanf(buf,"%15lf",&dummy1);
   fPosOff[1].SetZ(dummy1);
   fgets( buf, LEN, fi);
-  sscanf(buf,"%lf",&dummy1);
+  sscanf(buf,"%15lf",&dummy1);
   fPosOff[2].SetZ(dummy1);
 
   // Find timestamp, if any, for the raster constants. 
@@ -126,7 +129,8 @@ Int_t THaRaster::ReadDatabase( const TDatime& date )
   SeekDBdate( fi, date, true );
 
   fgets( buf, LEN, fi);
-  sscanf(buf,"%lf%lf%lf%lf%lf%lf",&dummy1,&dummy2,&dummy3,&dummy4,&dummy5,&dummy6);
+  sscanf(buf,"%15lf %15lf %15lf %15lf %15lf %15lf",
+	 &dummy1,&dummy2,&dummy3,&dummy4,&dummy5,&dummy6);
   fRaw2Pos[0](0,0)=dummy3;
   fRaw2Pos[0](1,1)=dummy4;
   fRaw2Pos[0](0,1)=dummy5;
@@ -135,7 +139,8 @@ Int_t THaRaster::ReadDatabase( const TDatime& date )
   fPosOff[0].SetY(dummy2);
 
   fgets( buf, LEN, fi);
-  sscanf(buf,"%lf%lf%lf%lf%lf%lf",&dummy1,&dummy2,&dummy3,&dummy4,&dummy5,&dummy6);
+  sscanf(buf,"%15lf %15lf %15lf %15lf %15lf %15lf",
+	 &dummy1,&dummy2,&dummy3,&dummy4,&dummy5,&dummy6);
   fRaw2Pos[1](0,0)=dummy3;
   fRaw2Pos[1](1,1)=dummy4;
   fRaw2Pos[1](0,1)=dummy5;
@@ -144,7 +149,8 @@ Int_t THaRaster::ReadDatabase( const TDatime& date )
   fPosOff[1].SetY(dummy2);
 
   fgets( buf, LEN, fi);
-  sscanf(buf,"%lf%lf%lf%lf%lf%lf",&dummy1,&dummy2,&dummy3,&dummy4,&dummy5,&dummy6);
+  sscanf(buf,"%15lf %15lf %15lf %15lf %15lf %15lf",
+	 &dummy1,&dummy2,&dummy3,&dummy4,&dummy5,&dummy6);
   fRaw2Pos[2](0,0)=dummy3;
   fRaw2Pos[2](1,1)=dummy4;
   fRaw2Pos[2](0,1)=dummy5;

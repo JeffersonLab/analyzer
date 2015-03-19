@@ -35,25 +35,26 @@ ROOTCFLAGS   := $(shell root-config --cflags)
 ROOTLIBS     := $(shell root-config --libs)
 ROOTGLIBS    := $(shell root-config --glibs)
 ROOTBIN      := $(shell root-config --bindir)
+ROOTINC      := -I$(shell root-config --incdir)
+CXX          := $(shell root-config --cxx)
+CC           := $(shell root-config --cc)
 
 HA_DIR       := $(shell pwd)
-DCDIR        := oodecoder
+DCDIR        := hana_decode
 SCALERDIR    := hana_scaler
 LIBDIR       := $(shell pwd)
-HALLALIBS    := -L$(LIBDIR) -lHallA ./$(DCDIR)/libdc.so -lscaler
+HALLALIBS    := -L$(LIBDIR) -lHallA -ldc -lscaler
 SUBDIRS      := $(DCDIR) $(SCALERDIR)
 INCDIRS      := $(addprefix $(HA_DIR)/, src $(SUBDIRS))
 HA_DICT      := haDict
 
-LIBS         := 
-GLIBS        := 
+LIBS         :=
+GLIBS        :=
 
-INCLUDES     := $(ROOTCFLAGS) $(addprefix -I, $(INCDIRS) )
-INCLUDES     += -I./oodecoder
+INCLUDES     := $(addprefix -I, $(INCDIRS) )
 
 ifeq ($(ARCH),solarisCC5)
 # Solaris CC 5.0
-CXX          := CC
 ifdef DEBUG
   CXXFLG     := -g
   LDFLAGS    := -g
@@ -74,7 +75,6 @@ endif
 
 ifeq ($(ARCH),linux)
 # Linux with egcs (>= RedHat 5.2)
-CXX          := g++
 ifdef DEBUG
   CXXFLG     := -g -O0
   LDFLAGS    := -g -O0
@@ -97,13 +97,12 @@ CXXVER       := $(shell g++ --version | head -1 | sed 's/.* \([0-9]\)\..*/\1/')
 DEFINES      += $(shell getconf LFS_CFLAGS)
 ifeq ($(CXXVER),4)
 CXXFLAGS     += -Wextra -Wno-missing-field-initializers
-DICTCXXFLG   := -Wno-strict-aliasing 
+DICTCXXFLG   := -Wno-strict-aliasing
 endif
 endif
 
 ifeq ($(ARCH),macosx)
 # EXPERIMENTAL: Mac OS X with Xcode/gcc 3.x
-CXX          := g++
 ifdef DEBUG
   CXXFLG     := -g -O0
   LDFLAGS    := -g -O0
@@ -124,16 +123,12 @@ SONAME       := -Wl,-install_name,@rpath/
 CXXVER       := $(shell g++ --version | head -1 | sed 's/.* \([0-9]\)\..*/\1/')
 ifeq ($(CXXVER),4)
 CXXFLAGS     += -Wextra -Wno-missing-field-initializers
-DICTCXXFLG   := -Wno-strict-aliasing 
+DICTCXXFLG   := -Wno-strict-aliasing
 endif
 endif
 
 #FIXME: requires gcc 3 or up - test in configure script
 DEFINES       += -DHAS_SSTREAM
-
-ifeq ($(CXX),)
-$(error $(ARCH) invalid architecture)
-endif
 
 ifdef ONLINE_ET
 
@@ -157,14 +152,9 @@ ifdef WITH_DEBUG
 DEFINES      += -DWITH_DEBUG
 endif
 
-# External EVIO support
-INCLUDES     += -I$(EVIO_INCDIR) 
-SYSLIBS      += -L$(EVIO_LIBDIR) -levio
-
-CXXFLAGS      = $(CXXFLG) $(CXXEXTFLG) $(INCLUDES) $(DEFINES)
-CFLAGS        = $(CXXFLG) $(INCLUDES) $(DEFINES)
-LIBEVIO      = $(DCDIR)/libevio_linux.a
-LIBS         += $(ROOTLIBS) $(SYSLIBS) $(LIBEVIO)
+CXXFLAGS      = $(CXXFLG) $(CXXEXTFLG) $(ROOTCFLAGS) $(INCLUDES) $(DEFINES)
+CFLAGS        = $(CXXFLG) $(ROOTCFLAGS) $(INCLUDES) $(DEFINES)
+LIBS         += $(ROOTLIBS) $(SYSLIBS)
 GLIBS        += $(ROOTGLIBS) $(SYSLIBS)
 DEFINES      += $(PODD_EXTRA_DEFINES)
 
@@ -199,7 +189,7 @@ SRC          := src/THaFormula.C src/THaVform.C src/THaVhist.C \
 		src/THaVDCWire.C src/THaVDCHit.C src/THaVDCCluster.C \
 		src/THaVDCTimeToDistConv.C src/THaVDCTrackID.C \
                 src/THaVDCAnalyticTTDConv.C \
-		src/THaVDCTrackPair.C src/THaScalerGroup.C \
+		src/THaVDCTrackPair.C src/VDCeff.C src/THaScalerGroup.C \
 		src/THaElectronKine.C src/THaReactionPoint.C \
 		src/THaReacPointFoil.C \
 		src/THaTwoarmVertex.C src/THaAvgVertex.C \
@@ -217,9 +207,8 @@ SRC          := src/THaFormula.C src/THaVform.C src/THaVhist.C \
 		src/THaG0Helicity.C src/THaADCHelicity.C src/THaHelicity.C \
 		src/THaPhotoReaction.C src/THaSAProtonEP.C \
 		src/THaTextvars.C src/THaQWEAKHelicity.C \
-		src/THaQWEAKHelicityReader.C \
-		src/THaEvtTypeHandler.C src/ToyPhysicsEvtHandler.C \
-		src/THaScalerEvtHandler.C 
+		src/THaQWEAKHelicityReader.C src/THaEvtTypeHandler.C \
+		src/THaScalerEvtHandler.C
 
 ifdef ONLINE_ET
 SRC += src/THaOnlRun.C
@@ -249,6 +238,7 @@ LNA_LINKDEF  := src/$(LNA)_LinkDef.h
 #------------------------------------------------
 
 PROGRAMS     := analyzer $(LIBNORMANA)
+PODDLIBS     := $(LIBHALLA) $(LIBDC) $(LIBSCALER)
 
 all:            subdirs
 		set -e; for i in $(PROGRAMS); do $(MAKE) $$i; done
@@ -289,13 +279,13 @@ $(LIBHALLA):	$(LIBHALLA).$(SOVERSION)
 		rm -f $@
 		ln -s $(notdir $<) $@
 
-#$(LIBDC).$(SOVERSION):	$(LIBDC).$(VERSION)
-#ifneq ($(strip $(LDCONFIG)),)
-#		$(LDCONFIG)
-#else
-#		rm -f $@
-#		ln -s $(notdir $<) $@
-#endif
+$(LIBDC).$(SOVERSION):	$(LIBDC).$(VERSION)
+ifneq ($(strip $(LDCONFIG)),)
+		$(LDCONFIG)
+else
+		rm -f $@
+		ln -s $(notdir $<) $@
+endif
 
 $(LIBSCALER).$(SOVERSION):	$(LIBSCALER).$(VERSION)
 ifneq ($(strip $(LDCONFIG)),)
@@ -305,9 +295,9 @@ else
 		ln -s $(notdir $<) $@
 endif
 
-#$(LIBDC):	$(LIBDC).$(SOVERSION)
-#		rm -f @
-#		ln -s $(notdir $<) $@
+$(LIBDC):	$(LIBDC).$(SOVERSION)
+		rm -f $@
+		ln -s $(notdir $<) $@
 
 $(LIBSCALER):	$(LIBSCALER).$(SOVERSION)
 		rm -f $@
@@ -320,7 +310,7 @@ endif
 
 $(HA_DICT).C: $(RCHDR) $(HA_LINKDEF)
 	@echo "Generating dictionary $(HA_DICT)..."
-	$(ROOTBIN)/rootcint -f $@ -c $(INCLUDES) $(DEFINES) $^
+	$(ROOTBIN)/rootcint -f $@ -c $(ROOTINC) $(INCLUDES) $(DEFINES) $^
 
 
 #---------- Extra libraries ----------------------------------------
@@ -331,17 +321,16 @@ $(LIBNORMANA):	$(LNA_HDR) $(LNA_OBJS)
 
 $(LNA_DICT).C:	$(LNA_HDR) $(LNA_LINKDEF)
 		@echo "Generating dictionary $(LNA_DICT)..."
-		rootcint -f $@ -c $(INCLUDES) $(DEFINES) $^
+		rootcint -f $@ -c $(ROOTINC) $(INCLUDES) $(DEFINES) $^
 
 #---------- Main program -------------------------------------------
-analyzer:	src/main.o $(LIBSCALER) $(LIBHALLA) $(LIBEVIO)
-		$(LD) $(LDFLAGS) $< $(HALLALIBS) $(LIBEVIO) $(GLIBS) -o $@
+analyzer:	src/main.o $(LIBDC) $(LIBSCALER) $(LIBHALLA)
+		$(LD) $(LDFLAGS) $< $(HALLALIBS) $(GLIBS) -o $@
 
 #---------- Maintenance --------------------------------------------
 clean:
 		set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i clean; done
-		rm -f *.{so,a,o,os} *.so.* ; rm ./oodecoder/*.so ; 
-		rm -f ./oodecoder/*.d ;
+		rm -f *.{so,a,o,os} *.so.*
 		rm -f $(PROGRAMS) $(HA_DICT).* $(LNA_DICT).* *~
 		cd src; rm -f ha_compiledata.h *.{o,os} *~
 
@@ -352,20 +341,15 @@ realclean:	clean
 srcdist:
 		rm -f ../$(NAME)
 		ln -s $(PWD) ../$(NAME)
-		gtar czv -C .. -f ../$(NAME).tar.gz -X .exclude \
+		tar czv -C .. -f ../$(NAME).tar.gz -X .exclude \
 		 -V "JLab/Hall A C++ Analysis Software "$(VERSION)" `date -I`"\
-		 $(NAME)/.exclude $(NAME)/ChangeLog \
-		 $(NAME)/src $(NAME)/$(DCDIR) $(NAME)/$(SCALERDIR) \
-		 $(NAME)/Makefile 
-                 # $(NAME)/DB $(NAME)/examples \# $(NAME)/docs $(NAME)/Calib $(NAME)/contrib
+		 $(addprefix $(NAME)/, \
+		  ChangeLog $(wildcard README*) Makefile .exclude .gitignore \
+		  SConstruct $(wildcard *.py) scons \
+		  src $(DCDIR) $(SCALERDIR) )
 
-cvsdist:	srcdist
-		cp ../$(NAME).tar.gz ../$(NAME)-cvs.tar.gz
-		gunzip -f ../$(NAME)-cvs.tar.gz
-		gtar rv -C .. -f ../$(NAME)-cvs.tar \
-		 `find . -type d -name CVS 2>/dev/null | sed "s%^\.%$(NAME)%"`\
-		 `find . -type f -name .cvsignore 2>/dev/null | sed "s%^\./%$(NAME)/%"`
-		gzip -f ../$(NAME)-cvs.tar
+# $(NAME)/DB $(NAME)/examples \# $(NAME)/docs $(NAME)/Calib
+# $(NAME)/contrib
 
 install:	all
 ifndef ANALYZER
@@ -376,24 +360,32 @@ endif
 		cp -pu $(SRC) $(HDR) $(HA_LINKDEF) $(ANALYZER)/src/src
 		cp -pu $(LNA_SRC) $(LNA_HDR) $(LNA_LINKDEF) $(ANALYZER)/src/src
 		cp -pu $(HDR) $(LNA_HDR) $(ANALYZER)/include
-		gtar cf - `find examples docs SDK -type f | grep -Ev '(CVS|*~)'` | gtar xf - -C $(ANALYZER)
+		tar cf - `find examples docs SDK -type f | grep -v '*~'` | tar xf - -C $(ANALYZER)
 		cp -pu Makefile ChangeLog $(ANALYZER)/src
 		cp -pru DB $(ANALYZER)/
 		@echo "Installing in $(ANALYZER)/$(PLATFORM) ..."
-		rm -f $(ANALYZER)/$(PLATFORM)/lib*.so.$(SOVERSION)
-		rm -f $(ANALYZER)/$(PLATFORM)/lib*.so.$(SOVERSION).*
-		rm -f $(ANALYZER)/$(PLATFORM)/analyzer
-		rm -f $(ANALYZER)/$(PLATFORM)/analyzer-$(SOVERSION).*
-		cp -af lib*.so.$(SOVERSION) lib*.so.$(VERSION) $(ANALYZER)/$(PLATFORM)
+		for lib in $(PODDLIBS); do \
+			rm -f  $(ANALYZER)/$(PLATFORM)/$(notdir $$lib); \
+			rm -f  $(ANALYZER)/$(PLATFORM)/$(notdir $$lib).$(SOVERSION); \
+			rm -f  $(ANALYZER)/$(PLATFORM)/$(notdir $$lib).$(VERSION); \
+			cp -af $$lib $$lib.$(SOVERSION) $$lib.$(VERSION) $(ANALYZER)/$(PLATFORM); \
+		done
+		rm -f $(ANALYZER)/$(PLATFORM)/analyzer $(ANALYZER)/$(PLATFORM)/$(NAME)
 		cp -pf $(PROGRAMS) $(ANALYZER)/$(PLATFORM)/
+ifneq ($(PLATFORM),bin)
+		rm -f $(ANALYZER)/bin
+		ln -s $(ANALYZER)/$(PLATFORM) $(ANALYZER)/bin
+endif
+ifneq ($(NAME),analyzer)
 		mv $(ANALYZER)/$(PLATFORM)/analyzer $(ANALYZER)/$(PLATFORM)/$(NAME)
 		ln -s $(NAME) $(ANALYZER)/$(PLATFORM)/analyzer
+endif
 		set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i install; done
 
-.PHONY: all clean realclean srcdist cvsdist subdirs static
+.PHONY: all clean realclean srcdist subdirs
 
 
-###--- DO NOT CHANGE ANYTHING BELOW THIS LINE UNLESS YOU KNOW WHAT 
+###--- DO NOT CHANGE ANYTHING BELOW THIS LINE UNLESS YOU KNOW WHAT
 ###    YOU ARE DOING
 
 .SUFFIXES:
@@ -407,7 +399,7 @@ endif
 #	@$(SHELL) -ec '$(CXX) -MM $(CXXFLAGS) -c $< \
 #		| sed '\''s%\($*\)\.o[ :]*%\1.o $@ : %g'\'' > $@; \
 #		[ -s $@ ] || rm -f $@'
-	@$(SHELL) -ec '$(MAKEDEPEND) -MM $(INCLUDES) $(DEFINES) -c $< \
+	@$(SHELL) -ec '$(MAKEDEPEND) -MM $(ROOTINC) $(INCLUDES) $(DEFINES) -c $< \
 		| sed '\''s%^.*\.o%$*\.o%g'\'' \
 		| sed '\''s%\($*\)\.o[ :]*%\1.o $@ : %g'\'' > $@; \
 		[ -s $@ ] || rm -f $@'

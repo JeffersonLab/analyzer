@@ -21,12 +21,13 @@
 #include <cassert>
 
 using namespace std;
+using namespace Decoder;
 
 static const int   fgMaxScan   = 5000;
 static const char* fgThisClass = "THaRun";
 
 //_____________________________________________________________________________
-THaRun::THaRun( const char* fname, const char* description ) : 
+THaRun::THaRun( const char* fname, const char* description ) :
   THaCodaRun(description), fFilename(fname), fMaxScan(fgMaxScan)
 {
   // Normal & default constructor
@@ -39,7 +40,7 @@ THaRun::THaRun( const char* fname, const char* description ) :
 }
 
 //_____________________________________________________________________________
-THaRun::THaRun( const THaRun& rhs ) : 
+THaRun::THaRun( const THaRun& rhs ) :
   THaCodaRun(rhs), fFilename(rhs.fFilename), fMaxScan(rhs.fMaxScan)
 {
   // Copy ctor
@@ -97,7 +98,7 @@ void THaRun::Clear( const Option_t* opt )
 //_____________________________________________________________________________
 Int_t THaRun::Compare( const TObject* obj ) const
 {
-  // Compare a THaRun object to another run. Returns 0 when equal, 
+  // Compare a THaRun object to another run. Returns 0 when equal,
   // -1 when 'this' is smaller and +1 when bigger (like strcmp).
   // Used by ROOT containers.
 
@@ -122,13 +123,13 @@ Int_t THaRun::Open()
 
   if( fFilename.IsNull() ) {
     Error( here, "CODA file name not set. Cannot open the run." );
-    return -2;  // filename not set
+    return READ_FATAL;  // filename not set
   }
-  
+
   Int_t st = fCodaData->codaOpen( fFilename );
   if( st == 0 )
     fOpened = kTRUE;
-  return st;
+  return ReturnCode( st );
 }
 
 //_____________________________________________________________________________
@@ -150,7 +151,7 @@ Int_t THaRun::ReadInitInfo()
 
   // If pre-scanning of the data file requested, read up to fMaxScan events
   // and extract run parameters from the data.
-  Int_t status = S_SUCCESS;
+  Int_t status = READ_OK;
   if( fMaxScan > 0 ) {
     if( fSegment == 0 ) {
       THaEvData* evdata = static_cast<THaEvData*>(gHaDecoder->New());
@@ -158,8 +159,8 @@ Int_t THaRun::ReadInitInfo()
       evdata->EnableScalers(kFALSE);
       evdata->EnableHelicity(kFALSE);
       UInt_t nev = 0;
-      while( nev<fMaxScan && !HasInfo(fDataRequired) && 
-	     (status = ReadEvent()) == S_SUCCESS ) {
+      while( nev<fMaxScan && !HasInfo(fDataRequired) &&
+	     (status = ReadEvent()) == READ_OK ) {
 
 	// Decode events. Skip bad events.
 	nev++;
@@ -168,10 +169,10 @@ Int_t THaRun::ReadInitInfo()
 	  if( status == THaEvData::HED_ERR ||
 	      status == THaEvData::HED_FATAL ) {
 	    Error( here, "Error decoding event %u", nev );
-	    return S_FAILURE;
+	    return READ_ERROR;
 	  }
 	  Warning( here, "Skipping event %u due to warnings", nev );
-	  status = S_SUCCESS;
+	  status = READ_OK;
 	  continue;
 	}
 
@@ -186,17 +187,17 @@ Int_t THaRun::ReadInitInfo()
       }//end while
       delete evdata;
 
-      if( status != S_SUCCESS && status != EOF ) {
+      if( status != READ_OK && status != READ_EOF ) {
 	Error( here, "Error %d reading CODA file %s. Check file permissions.",
 	       status, GetFilename());
 	return status;
       }
-    
+
     } else {
       // If this is a continuation segment, try finding segment 0
       // Since this class is Hall A-specific, look in typical directories.
-      // First look in the same directory as the continuation segment. 
-      // If the filename's dirname contains dataN, with N=1...9, also look in 
+      // First look in the same directory as the continuation segment.
+      // If the filename's dirname contains dataN, with N=1...9, also look in
       // all other dataN's.
       Ssiz_t dot = fFilename.Last('.');
       assert( dot != kNPOS );  // if fSegment>0, there must be a dot
@@ -279,7 +280,7 @@ void THaRun::SetNscan( UInt_t n )
 //_____________________________________________________________________________
 Int_t THaRun::FindSegmentNumber()
 {
-  // Determine the segment number, if any. For Hall A CODA disk files, we can 
+  // Determine the segment number, if any. For Hall A CODA disk files, we can
   // safely assume that the suffix of the file name will tell us.
   // Internal function.
 

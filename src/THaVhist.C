@@ -61,7 +61,7 @@ THaVhist::~THaVhist()
   if (fMyCut) delete fCut;
   if( TROOT::Initialized() ) {
     for (std::vector<TH1*>::iterator ith = fH1.begin();
-	 ith != fH1.end(); ith++) delete *ith;
+	 ith != fH1.end(); ++ith) delete *ith;
   }
 }
 
@@ -100,7 +100,7 @@ Int_t THaVhist::Init( )
   //                   with ErrPrint();
 
   for (std::vector<TH1*>::iterator ith = fH1.begin();
-       ith != fH1.end(); ith++) delete *ith;
+       ith != fH1.end(); ++ith) delete *ith;
   fH1.clear();
   fInitStat = 0;
   Int_t status;
@@ -302,7 +302,7 @@ Int_t THaVhist::BookHisto(Int_t hfirst, Int_t hlast)
   string sname = fName;
   string stitle = fTitle;
   bool doing_array = (fSize>1);
-  for (Int_t i = hfirst; i < fSize; i++) {
+  for (Int_t i = hfirst; i < fSize; ++i) {
     if (fEye == 0 && doing_array) {
        sname = fName + Form("%d",i); 
        stitle = fTitle + Form(" %d",i);
@@ -367,18 +367,18 @@ Int_t THaVhist::Process()
     if( sizey == 0 ) {   // Y is a scalar
       Int_t sizex = fFormX->GetSize();
       if( fFormY ) {
-	for (Int_t i = 0; i < sizex; i++) {
+	for (Int_t i = 0; i < sizex; ++i) {
 	  if ( CheckCut()==0 ) continue; 
           fH1[0]->Fill(fFormX->GetData(i), fFormY->GetData());
 	} 
       } else {
-	for (Int_t i = 0; i < sizex; i++) {
+	for (Int_t i = 0; i < sizex; ++i) {
 	  if ( CheckCut()==0 ) continue; 
           fH1[0]->Fill(fFormX->GetData(i));
 	}
       }
     } else {   // Y is a vector 
-      for (Int_t i = 0; i < sizey; i++) {
+      for (Int_t i = 0; i < sizey; ++i) {
         if ( CheckCut()==0 ) continue; 
         fH1[0]->Fill(fFormX->GetData(), fFormY->GetData(i));
       }
@@ -398,12 +398,12 @@ Int_t THaVhist::Process()
     Int_t zero = 0, i;
     Int_t* idx = (fEye == 1) ? &zero : &i;
     if( fFormY ) {
-      for (i = 0; i < fSize; i++) {
+      for (i = 0; i < fSize; ++i) {
 	if ( CheckCut(i)==0 ) continue; 
 	fH1[*idx]->Fill(fFormX->GetData(i), fFormY->GetData(i));
       }
     } else {
-      for (i = 0; i < fSize; i++) {
+      for (i = 0; i < fSize; ++i) {
 	if ( CheckCut(i)==0 ) continue; 
 	fH1[*idx]->Fill(fFormX->GetData(i));
       }
@@ -417,7 +417,7 @@ Int_t THaVhist::Process()
 Int_t THaVhist::End() 
 {
   for (vector<TH1* >::iterator ith = fH1.begin(); 
-      ith != fH1.end(); ith++ ) (*ith)->Write();
+      ith != fH1.end(); ++ith ) (*ith)->Write();
   return 0;
 }
 

@@ -5,7 +5,7 @@
 //
 // THaDetector
 //
-// Abstract base class for a generic Hall A detector. This class 
+// Abstract base class for a generic Hall A detector. This class
 // describes an actual detector (not subdetector) and can be added to
 // an apparatus.
 //
@@ -13,18 +13,14 @@
 
 #include "THaDetectorBase.h"
 #include <TRef.h>
-#include "THaApparatus.h"
 
-//class THaApparatus;
+class THaApparatus;
 
 class THaDetector : public THaDetectorBase {
-  
+
 public:
   virtual ~THaDetector();
-  THaApparatus*  GetApparatus() const   {
-    return static_cast<THaApparatus*>(fApparatus.GetObject());
-  }
-  
+  THaApparatus*  GetApparatus() const;
   virtual void   SetApparatus( THaApparatus* );
 
   THaDetector();  // for ROOT I/O only
@@ -34,8 +30,8 @@ protected:
   virtual void MakePrefix();
 
   //Only derived classes may construct me
-  THaDetector( const char* name, const char* description, 
-	       THaApparatus* apparatus = NULL );  
+  THaDetector( const char* name, const char* description,
+	       THaApparatus* apparatus = 0 );
 
 private:
   TRef  fApparatus;         // Apparatus containing this detector

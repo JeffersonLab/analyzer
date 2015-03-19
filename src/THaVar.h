@@ -15,12 +15,12 @@
 class TMethodCall;
 
 class THaVar : public TNamed {
-  
+
 public:
   static const Int_t    kInvalidInt;
   static const Double_t kInvalid;
 
-  THaVar() : 
+  THaVar() :
     fValueP(0), fType(kDouble), fCount(0), fOffset(-1), fMethod(0), fDim(0) {}
   THaVar( const THaVar& rhs );
   THaVar& operator=( const THaVar& );
@@ -110,14 +110,14 @@ public:
     fCount(count), fOffset(-1), fMethod(0), fDim(0) {}
 
   THaVar( const char* name, const char* desc, const void* obj,
-	  VarType type, Int_t offset, TMethodCall* method=0, 
+	  VarType type, Int_t offset, TMethodCall* method=0,
 	  const Int_t* count=0 );
 
   virtual const char*  GetName() const { return fParsedName.GetName(); }
 
   Int_t           GetLen()       const;
-  Int_t           GetNdim()      const            
-    { return ( fCount != 0 || fOffset != -1 || IsVector() ) ? 1 : fParsedName.GetNdim(); } 
+  Int_t           GetNdim()      const
+    { return IsVarArray() ? 1 : fParsedName.GetNdim(); }
   const Int_t*    GetDim()       const;
   VarType         GetType()      const { return fType; }
   size_t          GetTypeSize()  const { return GetTypeSize( fType ); }
@@ -131,17 +131,19 @@ public:
   virtual Bool_t  HasSameSize( const THaVar* rhs ) const;
   virtual Int_t   Index( const char* ) const;
   virtual Int_t   Index( const THaArrayString& ) const;
-  Bool_t          IsArray() const            
-    { return ( fCount != 0 || fOffset != -1 ) || IsVector() || fParsedName.IsArray(); }
+  Bool_t          IsVarArray() const
+    { return ( fCount != 0 || fOffset != -1 || IsVector() ); }
+  Bool_t          IsArray() const
+    { return ( IsVarArray() || fParsedName.IsArray() ); }
   Bool_t          IsBasic() const
     { return ( fOffset == -1 && fMethod == 0 ); }
-  Bool_t          IsPointerArray() const 
+  Bool_t          IsPointerArray() const
     { return ( IsArray() && fType>=kDouble2P && fType <= kObject2P ); }
   Bool_t          IsVector() const
     { return ( fType >= kIntV && fType <= kDoubleV ); }
   virtual void    Print( Option_t* opt="FULL" ) const;
 
-  // The following are necessary to initialize empty THaVars such as those in arrays, 
+  // The following are necessary to initialize empty THaVars such as those in arrays,
   // where each element was constructed with the default constructor
   void SetVar( const Double_t& var ) { fValueD = &var; fType = kDouble; }
   void SetVar( const Float_t& var )  { fValueF = &var; fType = kFloat; }
@@ -230,7 +232,7 @@ protected:
 
   Int_t               fOffset;   //Offset of data w.r.t. object pointer
   TMethodCall*        fMethod;   //Member function to access data in object
-  Int_t*              fDim;      //Storage for current size of object array
+  mutable Int_t       fDim;      //Current size of object array
 
   ClassDef(THaVar,0)   //Global symbolic variable
 };

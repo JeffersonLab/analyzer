@@ -1,13 +1,13 @@
-CVS
 old
 new
 OLD
 NEW
 .#*
 *.o
+*.os
+*.pyc
 *.d
 *.so
 ha_compiledata.h
-.cvsignore
 *Dict.[Ch]
 *~

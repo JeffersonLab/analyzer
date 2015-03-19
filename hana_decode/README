@@ -2,8 +2,18 @@
         Hall A C++ Event Decoder
        ==========================
 
-  Robert Michaels,  rom@jlab.org,  updated March 29, 2000
+  Robert Michaels,  rom@jlab.org,  Updated Feb 2015
 
+  The interface is THaEvData.  There is a new "OO" decoder
+  CodaDecoder (replaces THaCodaDecoder) which is chosen by
+  the appropriate lines in /src/THaInterface.
+        gHaDecoder = CodaDecoder::Class();
+  For now, the old decoder classes remain in place, but
+  the following will eventually be obsolete
+  THaCodaDecoder, THaFastBusWord, THaEpics (would be replaced
+  by an event handler, as yet unwritten)
+
+ Notes from March 29, 2000
 
  I.  To Set Up
 
@@ -28,7 +38,7 @@
  II. Getting Started
 
      The easiest way to learn to use the decoder is to look at
-     the examples of executibles.  They are documented in the 
+     the examples of executibles.  They are documented in the
      Makefile.  Here are some more details.
 
      Test Executibles:
@@ -50,14 +60,15 @@
      etclient --  test of ET connection for online data.
                   Either does a printout of data, or a fast access to test speed.
 
-     prfact   --  standalone code to print the prescale factors and exit.  
+     prfact   --  standalone code to print the prescale factors and exit.
 
-   
+     (noted, 2015): a few more were added, see *main*.C
+
     To understand how to use decoding classes, look at the 'main'
     routines corresponding to the above executibles.  They are
-    tstcoda_main.C, tstio_main.C, tdecpr_main.C, tdecex_main.C, 
+    tstcoda_main.C, tstio_main.C, tdecpr_main.C, tdecex_main.C,
     etclient_main.C, and prfact_main.C.  For developers of a detector
-    class, see THaGenDetTest.C which shows the proposed usage of 
+    class, see THaGenDetTest.C which shows the proposed usage of
     decoding for a detector class.  However, that example is dated.
     It is now preferable for users to look at Ole's guidlines and
     imitate, for example, THaScintillator class in the parent directory.
@@ -73,72 +84,12 @@
     the THaScaler Makefile is looking for "libdc_local.a".
 
 
- III.  Contents of this Distribution
+ III.  Contents of this Distribution (this was old material, ca 2000, so
+       I will delete it)
 
-      Makefile  
-
-    ---> Files that Comprise the Decoding Package ------------>
-         ========================================
-      
-    ** "Public" Classes -- Users should be familiar with the
-          public methods of these classes to build an application.
- 
-         THaCodaFile.C      File of CODA data -- uses evio library, but has
-         THaCodaFile.h      added features like filtering, clear error messages, etc
-
-         THaEtClient.C      Online connection to 'ET' data, provides
-         THaEtClient.h      network access to data in real-time
-
-         THaCodaData.C      Abstract class extended by THaCodaFile and 
-         THaCodaData.h      THaEtClient.
-
-         THaEvData.C        Hall A Event Data.  The decoding is done here.
-         THaEvData.h        All access methods to data are here.
-
-    ** "Private" Classes -- Users probably don't need to understand
-           them, as they are used by the "public" classes.
-
-         THaSlotData.C      Data in one crate and one slot.  Objects of this
-         THaSlotData.h      type are private members of THaEvData.
-
-         THaEpicsStack.C    Stack of EPICS data extracted from CODA data stream.
-         THaEpicsStack.h    But users should use THaEvData interface.
-
-         THaCrateMap.C      Map of DAQ crate modules.  A default private member of
-         THaCrateMap.h      this type exists in THaEvData, but it can be over-ridden.
-
-         THaFastBusWord.C   Facility to decode bits of fastbus data.
-         THaFastBusWord.h
-
-         THaHelicity.C      Beam helicity information
-         THaHelicity.h 
-
-         evio.C             These three are the good old EVIO library from DAQ group,
-         evio.h             slightly modified by R. MacLeod and me to compile in C++.
-         swap_util.C        (Not renamed with THa prefix because they're mainly from DAQ group.)
-
-         THaUsrstrutils.C   String utilties (S. Wood, mods by me).  These are exactly 
-         THaUsrstrutils.h   what DAQ uses to decode prescaler, etc.  Hence same results.
-
-        <----------------- end of Decoding Package
-
-       Test executibles -- described in section II.
-     
-       tstcoda_main.C
-       tstio_main.C
-       tdecpr_main.C
-       tdecex_main.C
-       etclient_main.C
-       prfact_main.C
-
-       Example of a "Generic Detector Class".  Have fun imitating this.
-       (But it is better to follow Ole's instructions and imitate, for
-       example, THaScintillator.)
-
-       THaGenDetTest.C
-       THaGenDetTest.h
-
-       snippet.dat   -- a small sample of CODA format data.
+      See *.h *.C, the main interface is THaEvData, and the OO decoder
+      is choosen in /src/THaInterface.  See also *main*.C for some
+      examples of implementation in standalone codes.
 
  IV. How to make ana_0.XXX compatible with hana_decode_VERSION
      (e.g. XXX = 0.6 and VERSION = 1.5, or whatever it is).
@@ -149,7 +100,7 @@
 
   2. ONLINE_ET flag in Makefile controls whether ET system
      is used.  For off-site, it should be left off.  See
-     the file README_ET for more details. 
+     the file README_ET for more details.
 
 
 

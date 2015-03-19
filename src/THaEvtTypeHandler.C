@@ -15,19 +15,26 @@
 
 using namespace std;
 
-THaEvtTypeHandler::THaEvtTypeHandler(const char* name, const char* description)  : THaAnalysisObject(name, description) { 
+THaEvtTypeHandler::THaEvtTypeHandler(const char* name, const char* description)
+  : THaAnalysisObject(name, description), fDebugFile(0)
+{
 }
 
-THaEvtTypeHandler::~THaEvtTypeHandler() { 
+THaEvtTypeHandler::~THaEvtTypeHandler()
+{
+  if (fDebugFile) {
+    fDebugFile->close();
+    delete fDebugFile;
+  }
 }
 
-Int_t THaEvtTypeHandler::Analyze(THaEvData *evdata) {
-
+Int_t THaEvtTypeHandler::Analyze(THaEvData *evdata)
+{
   return 1;
-
 }
 
-void THaEvtTypeHandler::Print() {
+void THaEvtTypeHandler::EvPrint() const
+{
   cout << "Hello !  THaEvtTypeHandler name =  "<<GetName()<<endl;
   cout << "    description "<<GetTitle()<<endl;
   cout << "    event types handled are "<<endl;
@@ -37,7 +44,8 @@ void THaEvtTypeHandler::Print() {
   cout << "----------------- good bye ----------------- "<<endl;
 }
 
-void THaEvtTypeHandler::Dump(THaEvData *evdata) {
+void THaEvtTypeHandler::EvDump(THaEvData *evdata) const
+{
   // Dumps data to file, if fDebugFile was set.
   if (!fDebugFile) return;
   if (!evdata) return;  // get what you deserve
@@ -49,33 +57,33 @@ void THaEvtTypeHandler::Dump(THaEvData *evdata) {
   *fDebugFile << " length " << len << " type " << evtype << endl;
   int ipt = 0;
   for (int j=0; j<(len/5); j++) {
-       *fDebugFile << dec << "\n evbuffer[" << ipt << "] = ";
-       for (int k=j; k<j+5; k++) {
-	    *fDebugFile << hex << evdata->GetRawData(ipt++) << " ";
-       }
-       *fDebugFile << endl;
+    *fDebugFile << dec << "\n evbuffer[" << ipt << "] = ";
+    for (int k=j; k<j+5; k++) {
+      *fDebugFile << hex << evdata->GetRawData(ipt++) << " ";
+    }
+    *fDebugFile << endl;
   }
   if (ipt < len) {
-       *fDebugFile << dec << "\n evbuffer[" << ipt << "] = ";
-       for (int k=ipt; k<len; k++) {
-	    *fDebugFile << hex << evdata->GetRawData(ipt++) << " ";
-       }
-       *fDebugFile << endl;
+    *fDebugFile << dec << "\n evbuffer[" << ipt << "] = ";
+    for (int k=ipt; k<len; k++) {
+      *fDebugFile << hex << evdata->GetRawData(ipt++) << " ";
+    }
+    *fDebugFile << endl;
   }
 }
 
-THaAnalysisObject::EStatus THaEvtTypeHandler::Init(const TDatime& dt) {
+THaAnalysisObject::EStatus THaEvtTypeHandler::Init(const TDatime& dt)
+{
   return kOK;
 }
 
-Bool_t THaEvtTypeHandler::IsMyEvent(Int_t evnum) {
- 
+Bool_t THaEvtTypeHandler::IsMyEvent(Int_t evnum) const
+{
   for (UInt_t i=0; i < eventtypes.size(); i++) {
     if (evnum == eventtypes[i]) return kTRUE;
   }
 
   return kFALSE;
-
 }
 
 //_____________________________________________________________________________
@@ -83,7 +91,5 @@ void THaEvtTypeHandler::MakePrefix()
 {
   THaAnalysisObject::MakePrefix( NULL );
 }
-
-
 
 ClassImp(THaEvtTypeHandler)

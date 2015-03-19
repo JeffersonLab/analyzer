@@ -12,10 +12,6 @@
 #include <map>
 #include <string> 
 #include <cstring>
-#include "Decoder.h"
-#include "THaEvData.h"
-
-using namespace Decoder;
 
 class THaVar;
 class TH1F;
@@ -23,6 +19,7 @@ class TH2F;
 class THaVform;
 class THaVhist;
 class THaScalerGroup;
+class THaEvData;
 class TTree;
 
 class THaOdata {
@@ -96,7 +93,7 @@ protected:
   virtual Int_t ChkHistTitle(Int_t key, const std::string& sline);
   virtual Int_t BuildBlock(const std::string& blockn);
   virtual std::string StripBracket(const std::string& var) const; 
-  std::vector<std::string> reQuote(const std::vector<std::string> input) const;
+  std::vector<std::string> reQuote(const std::vector<std::string>& input) const;
   std::string CleanEpicsName(const std::string& var) const;
   void BuildList(const std::vector<std::string>& vdata);
   void AddScaler(const std::string& name, const std::string& bank, 

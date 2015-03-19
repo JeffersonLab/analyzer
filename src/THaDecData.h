@@ -7,13 +7,9 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-#include "Decoder.h"
-#include "THaEvData.h"
 #include "THaApparatus.h"
 #include "THashList.h"
 #include "BdataLoc.h"
-
-using namespace Decoder;
 
 class TString;
 

@@ -86,6 +86,7 @@
 #pragma link C++ class THaVDCAnalyticTTDConv+;
 #pragma link C++ class THaVDCTrackID+;
 #pragma link C++ class THaVDCTrackPair+;
+#pragma link C++ class VDCeff+;
 #pragma link C++ class THaRTTI+;
 #pragma link C++ class THaScalerGroup+;
 #pragma link C++ class THaElectronKine+;
@@ -125,11 +126,8 @@
 #pragma link C++ class THaQWEAKHelicity+;
 #pragma link C++ class THaQWEAKHelicityReader+;
 #pragma link C++ class THaQWEAKHelicityReader::ROCinfo+;
-
 #pragma link C++ class THaEvtTypeHandler+;
-#pragma link C++ class ToyPhysicsEvtHandler+;
 #pragma link C++ class THaScalerEvtHandler+;
-
 
 #ifdef ONLINE_ET
 #pragma link C++ class THaOnlRun+;

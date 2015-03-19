@@ -2,15 +2,16 @@
 // THaCodaFile and THaEtClient both inherit from THaCodaData.
 // R. Michaels, March 2001.
 
-#include <iostream.h>
 #include "THaCodaFile.h"
 #include "THaEtClient.h"
 #include "TString.h"
+#include <iostream>
 
 using namespace std;
+using namespace Decoder;
 
 void usage();
-void do_something(int* data);
+void do_something(UInt_t* data);
 
 int main(int argc, char* argv[])
 {
@@ -62,11 +63,10 @@ int main(int argc, char* argv[])
 
 // Loop over events
   int NUMEVT=20000;
-  int status;
 
   for (int iev = 0; iev < NUMEVT; iev++) {
 
-      status = coda->codaRead();  
+      int status = coda->codaRead();  
 
       if (status != 0) {
         if ( status == -1) {
@@ -101,7 +101,7 @@ void usage() {
   cout << "If ET connection, you have 3 choices "<<endl;
 };
 
-void do_something (int* data) {
+void do_something (UInt_t* data) {
   int len = data[0] + 1;
   int evtype = data[1]>>16;
   int evnum = data[4];

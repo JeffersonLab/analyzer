@@ -103,21 +103,21 @@ Int_t THaElossCorrection::ReadRunDatabase( const TDatime& date )
   FILE* f = OpenRunDBFile( date );
   if( !f ) return kFileError;
 
-  TagDef tags[] = {
-    { "M",           &fM, 1 },
-    { "Z",           &fZ, 0, 0, kInt },
-    { "Z_med",       &fZmed, 3 },
-    { "A_med",       &fAmed, 4 },
-    { "density",     &fDensity, 5 },
-    { "pathlength",  &fPathlength, 6 },
+  DBRequest req[] = {
+    { "M",          &fM,          kDouble, 0, 0, 0, "M (particle mass [GeV/c^2])" },
+    { "Z",          &fZ,          kInt,    0, 1, 0, "Z (particle Z)" },
+    { "Z_med",      &fZmed,       kDouble, 0, 0, 0, "Z_med (Z of medium)" },
+    { "A_med",      &fAmed,       kDouble, 0, 0, 0, "A_med (A of medium)" },
+    { "density",    &fDensity,    kDouble, 0, 0, 0, "density of medium [g/cm^3]" },
+    { "pathlength", &fPathlength, kDouble, 0, 0, 0, "pathlength through medium [m]" },
     { 0 }
   };
   // Ignore pathlength if variable pathlength mode
   if( fExtPathMode )
-    tags[5].name = 0;
+    req[5].optional = kFALSE;
 
   // Ignore database entries if parameter already set
-  TagDef* item = tags;
+  DBRequest* item = req;
   while( item->name ) {
     if( *((double*)item->var) != 0.0 )
       item->var = 0;
@@ -125,23 +125,10 @@ Int_t THaElossCorrection::ReadRunDatabase( const TDatime& date )
   }
 
   // Try to read any unset parameters from the database
-  err = LoadDB( f, date, tags, fPrefix );
+  err = LoadDB( f, date, req );
   fclose(f);
-
-  // Die if any required parameters still missing
-  if( err ) {
-    const char* errmsg[] = { "M (particle mass [GeV/c^2])", "Z (particle Z)", 
-			     "Z_med (Z of medium)", "A_med (A of medium)", 
-			     "density (of medium [g/cm^3])",
-			     "pathlength (through medium [m])" };
-    const char* here = Here("ReadRunDatabase");
-    if( err>0 && err<=6 )
-      Error( here, "Required database entry \"%s\" missing "
-	     "in the run database. Module not initialized", errmsg[err-1] );
-    else
-      Error( here, "Error reading run database. Module not initialized" );
+  if( err )
     return kInitError;
-  }
 
   return kOK;
 }
@@ -474,8 +461,8 @@ Double_t THaElossCorrection::ExEnerg( Double_t z_med, Double_t d_med )
     if(d_med<0.01)
       EXEN = 19.2;
     //-    Liquid Hydrogen
-    else if(d_med<0.1)
-      EXEN = 21.8;
+    //    else if(d_med<0.1)
+    //      EXEN = 21.8;
     //---- Liquid Deuterium
     else
       EXEN = 21.8;

@@ -14,8 +14,6 @@
 #include <vector>
 #include <iostream>
 
-using namespace std;
-
 class THaVar;
 class THaVarList;
 class THaCut;
@@ -26,7 +24,7 @@ class THaVform : public THaFormula {
 
 public:
 
-  THaVform() : THaFormula() {}
+  THaVform() : THaFormula(), fType(kUnknown), fVarPtr(0), fOdata(0) {}
   THaVform( const char *type, const char* name, const char* formula,
       const THaVarList* vlst=gHaVars, const THaCutList* clst=gHaCuts );
   virtual  ~THaVform();
@@ -34,7 +32,7 @@ public:
   THaVform& operator=(const THaVform& vform);
 
 // Over-rides base class DefinedGlobalVariables
-  Int_t DefinedGlobalVariable( const TString& variable );
+  Int_t DefinedGlobalVariable( TString& variable );
 // Self-explanatory printouts
   void  ShortPrint() const;
   void  LongPrint() const;
@@ -51,7 +49,7 @@ public:
 // Must 'Process' once per event before processing the things
 // that use this object.
   Int_t Process();
-// To get the data (from index of array).  In the case of a 
+// To get the data (from index of array).  In the case of a
 // cut this will be a 0 or 1 (false or true).
   Double_t GetData(Int_t index = 0) const;
 // This object is either a formula, a variable sized array, a cut, or
@@ -60,11 +58,11 @@ public:
   Bool_t IsVarray() const  { return (fVarPtr != NULL && fType == kVarArray); }
   Bool_t IsCut() const     { return (fType == kCut); }
   Bool_t IsEye() const     { return (fType == kEye); }
-// Get the size (dimension) of this object 
+// Get the size (dimension) of this object
   Int_t GetSize() const { return fObjSize; };
 // Get names of variable that are used by this formula.
-  std::vector<string> GetVars() const; 
-  
+  std::vector<std::string> GetVars() const;
+
 protected:
 
   enum FTy { kCut = 0, kForm, kEye, kVarArray, kUnknown };
@@ -78,22 +76,22 @@ protected:
 
   static const Int_t fgDebug  = 0;
   static const Int_t fgVFORM_HUGE = 10000;
-  string fgAndStr, fgOrStr, fgSumStr;
+  std::string fgAndStr, fgOrStr, fgSumStr;
 
   Int_t MakeFormula(Int_t flo, Int_t fhi);
-  string StripPrefix(const char* formula);
-  string StripBracket(const string& var) const; 
+  std::string StripPrefix(const char* formula);
+  std::string StripBracket(const std::string& var) const;
   void  GetForm(Int_t size);
-  void  Create(const THaVform& vf); 
+  void  Create(const THaVform& vf);
   void  Uncreate();
 
-  std::vector<string> fVarName;
+  std::vector<std::string> fVarName;
   std::vector<Int_t> fVarStat;
   std::vector<THaFormula*> fFormula;
   std::vector<THaCut*> fCut;
-  std::vector<string> fSarray;
-  std::vector<string> fVectSform;
-  string   fStitle;
+  std::vector<std::string> fSarray;
+  std::vector<std::string> fVectSform;
+  std::string   fStitle;
   THaVar   *fVarPtr;
   THaOdata *fOdata;
   Int_t fPrefix;

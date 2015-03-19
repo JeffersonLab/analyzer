@@ -10,11 +10,8 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "Rtypes.h"
-#include "Decoder.h"
-#include "THaEvData.h"
 
-using namespace Decoder;
-
+class THaEvData;
 class TDatime;
 
 class THaG0HelicityReader {

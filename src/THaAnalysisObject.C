@@ -25,6 +25,9 @@
 #include "TVector3.h"
 #include "TSystem.h"
 #include "TObjArray.h"
+#include "TVirtualMutex.h"
+#include "TThread.h"
+#include "Varargs.h"
 
 #include <cstring>
 #include <cctype>
@@ -44,6 +47,7 @@
 #endif
 #include <stdexcept>
 #include <cassert>
+#include <map>
 
 using namespace std;
 typedef string::size_type ssiz_t;
@@ -52,6 +56,9 @@ typedef vector<string>::iterator vsiter_t;
 TList* THaAnalysisObject::fgModules = NULL;
 
 const Double_t THaAnalysisObject::kBig = 1.e38;
+
+// Mutex for concurrent access to global Here function
+static TVirtualMutex* gHereMutex = 0;
 
 //_____________________________________________________________________________
 THaAnalysisObject::THaAnalysisObject( const char* name, 
@@ -67,7 +74,10 @@ THaAnalysisObject::THaAnalysisObject( const char* name,
 }
 
 //_____________________________________________________________________________
-THaAnalysisObject::THaAnalysisObject( ) : fPrefix(NULL), fIsSetup(false) {
+THaAnalysisObject::THaAnalysisObject( )
+  : fPrefix(NULL), fStatus(kNotinit), fDebug(0), fIsInit(false),
+    fIsSetup(false), fProperties(), fOKOut(false)
+{
   // only for ROOT I/O
 }
 
@@ -131,8 +141,10 @@ Int_t THaAnalysisObject::DefineVarsFromList( const void* list,
   // variables, using prefix of the current apparatus.
   // Internal function that can be called during initialization.
 
+  TString here(GetClassName());
+  here.Append("::DefineVarsFromList");
   return DefineVarsFromList( list, type, mode, var_prefix, this, 
-			     fPrefix, Here(ClassName()) );
+			     fPrefix, here.Data() );
 }
 
 //_____________________________________________________________________________
@@ -152,22 +164,23 @@ Int_t THaAnalysisObject::DefineVarsFromList( const void* list,
       action = "defined";
     else if( mode == kDelete )
       action = "deleted (this is safe when exiting)";
-    ::Warning( here, "No global variable list found. No variables %s.", 
-	     action.Data() );
+    ::Warning( ::Here(here,prefix), "No global variable list found. "
+	       "No variables %s.",  action.Data() );
     return (mode==kDefine ? kInitError : kOK);
   }
 
   if( mode == kDefine ) {
     if( type == kVarDef )
-      gHaVars->DefineVariables( (const VarDef*)list, prefix, here );
+      gHaVars->DefineVariables( static_cast<const VarDef*>(list),
+				prefix, ::Here(here,prefix) );
     else if( type == kRVarDef )
-      gHaVars->DefineVariables( (const RVarDef*)list, obj,
-				prefix, here, var_prefix );
+      gHaVars->DefineVariables( static_cast<const RVarDef*>(list), obj,
+				prefix, ::Here(here,prefix), var_prefix );
   }
   else if( mode == kDelete ) {
     if( type == kVarDef ) {
       const VarDef* item;
-      const VarDef* theList = (const VarDef*)list;
+      const VarDef* theList = static_cast<const VarDef*>(list);
       while( (item = theList++) && item->name ) {
 	TString name(prefix);
 	name.Append( item->name );
@@ -175,7 +188,7 @@ Int_t THaAnalysisObject::DefineVarsFromList( const void* list,
       }
     } else if( type == kRVarDef ) {
       const RVarDef* item;
-      const RVarDef* theList = (const RVarDef*)list;
+      const RVarDef* theList = static_cast<const RVarDef*>(list);
       while( (item = theList++) && item->name ) {
 	TString name(prefix);
 	name.Append( item->name );
@@ -328,12 +341,12 @@ vector<string> THaAnalysisObject::GetDBFileList( const char* name,
   // Search a date-coded subdirectory that corresponds to the requested date.
   if( time_dirs.size() > 0 ) {
     sort( time_dirs.begin(), time_dirs.end() );
-    for( it = time_dirs.begin(); it != time_dirs.end(); it++ ) {
+    for( it = time_dirs.begin(); it != time_dirs.end(); ++it ) {
       item_date = atoi((*it).c_str());
       if( it == time_dirs.begin() && date.GetDate() < item_date )
 	break;
       if( it != time_dirs.begin() && date.GetDate() < item_date ) {
-	it--;
+	--it;
 	found = true;
 	break;
       }
@@ -388,32 +401,93 @@ const char* THaAnalysisObject::GetDBFileName() const
 }
 
 //_____________________________________________________________________________
-const char* Here( const char* here, const char* prefix )
+const char* THaAnalysisObject::GetClassName() const
 {
-  // Utility function for error messages
+  const char* classname = "UnknownClass";
+  if( TROOT::Initialized() )
+    classname = ClassName();
+  return classname;
+}
 
-  // FIXME: STATIC BUFFER NOT THREAD SAFE!!!
-  static char buf[256];
-  buf[0] = 0;
-  if(prefix != NULL) {
-    strcpy( buf, "\"" );
-    strcat( buf, prefix );
-    *(buf+strlen(buf)-1) = 0;   // Delete trailing dot of prefix
-    strcat( buf, "\"::" );
+//_____________________________________________________________________________
+void THaAnalysisObject::DoError( int level, const char* here,
+				 const char* fmt, va_list va) const
+{
+  // Interface to ErrorHandler. Inserts this object's name after the class name.
+  // If 'here' = ("prefix")::method -> print <Class("prefix")::method>
+  // If 'here' = method             -> print <Class::method>
+
+  TString location(here);
+  if( !location.BeginsWith("(\"") )
+    location.Prepend("::");
+
+  location.Prepend(GetClassName());
+
+  ::ErrorHandler(level, location.Data(), fmt, va);
+}
+
+//_____________________________________________________________________________
+const char* Here( const char* method, const char* prefix )
+{
+  // Utility function for error messages. The return value points to a static
+  // string buffer that is unique to the current thread.
+  // There are two usage cases:
+  // ::Here("method","prefix")        -> returns ("prefix")::method
+  // ::Here("Class::method","prefix") -> returns Class("prefix")::method
+
+  // One static string buffer per thread ID
+  static map<Long_t,TString> buffers;
+
+  TString txt;
+  if( prefix && *prefix ) {
+    TString full_prefix(prefix);
+    // delete trailing dot of prefix, if any
+    if( full_prefix.EndsWith(".") )
+      full_prefix.Chop();
+    full_prefix.Prepend("(\""); full_prefix.Append("\")");
+    const char* scope;
+    if( method && *method && (scope = strstr(method, "::")) ) {
+      Ssiz_t pos = scope - method;
+      txt = method;
+      assert(pos >= 0 && pos < txt.Length());
+      txt.Insert(pos, full_prefix);
+      method = 0;
+    } else {
+      txt = full_prefix + "::";
+    }
   }
-  strcat( buf, here );
-  return buf;
+  if( method )
+    txt.Append(method);
+
+  R__LOCKGUARD2(gHereMutex);
+
+  TString& ret = (buffers[ TThread::SelfId() ] = txt);
+
+  return ret.Data(); // pointer to the C-string of a std::string in static map
 }
 
 //_____________________________________________________________________________
 const char* THaAnalysisObject::Here( const char* here ) const
 {
-  // Return a string consisting of 'here' followed by fPrefix.
+  // Return a string consisting of ("fPrefix")::here
   // Used for generating diagnostic messages.
   // The return value points to an internal static buffer that
   // one should not try to delete ;)
   
   return ::Here( here, fPrefix );
+}
+
+//_____________________________________________________________________________
+const char* THaAnalysisObject::ClassNameHere( const char* here ) const
+{
+  // Return a string consisting of Class("fPrefix")::here
+
+  TString method(here);
+  if( method.Index("::") == kNPOS ) {
+    method.Prepend("::");
+    method.Prepend(GetClassName());
+  }
+  return ::Here( method.Data(), fPrefix );
 }
 
 //_____________________________________________________________________________
@@ -442,7 +516,6 @@ THaAnalysisObject::EStatus THaAnalysisObject::Init( const TDatime& date )
 
   fInitDate = date;
   
-  Int_t status = kOK;
   const char* fnam = "run.";
 
   // Generate the name prefix for global variables. Do this here, not in
@@ -453,7 +526,7 @@ THaAnalysisObject::EStatus THaAnalysisObject::Init( const TDatime& date )
   // Open the run database and call the reader. If database cannot be opened,
   // fail only if this object needs the run database
   // Call this object's actual database reader
-  status = ReadRunDatabase(date);
+  Int_t status = ReadRunDatabase(date);
   if( status && (status != kFileError || (fProperties & kNeedsRunDB) != 0))
     goto err;
 
@@ -543,6 +616,14 @@ void THaAnalysisObject::MakePrefix( const char* basename )
 }
 
 //_____________________________________________________________________________
+void THaAnalysisObject::MakePrefix()
+{
+  // Make default prefix: GetName() + "."
+
+  MakePrefix(0);
+}
+
+//_____________________________________________________________________________
 FILE* THaAnalysisObject::OpenFile( const char *name, const TDatime& date,
 				   const char *here, const char *filemode, 
 				   const int debug_flag )
@@ -564,7 +645,7 @@ FILE* THaAnalysisObject::OpenFile( const char *name, const TDatime& date,
     vsiter_t it = fnames.begin();
     do {
       if( debug_flag>1 )
-      	cout << "<" << here << ">: Opening database file " << *it;
+	cout << "Info in <" << here << ">: Opening database file " << *it;
       // Open the database file
       fi = fopen( (*it).c_str(), filemode);
       
@@ -589,7 +670,7 @@ FILE* THaAnalysisObject::OpenFile( const TDatime& date )
 { 
   // Default method for opening database file
 
-  return OpenFile(GetDBFileName(), date, Here("OpenFile()"), "r", fDebug);
+  return OpenFile(GetDBFileName(), date, ClassNameHere("OpenFile()"), "r", fDebug);
 }
 
 //_____________________________________________________________________________
@@ -597,7 +678,7 @@ FILE* THaAnalysisObject::OpenRunDBFile( const TDatime& date )
 { 
   // Default method for opening run database file
 
-  return OpenFile("run", date, Here("OpenFile()"), "r", fDebug);
+  return OpenFile("run", date, ClassNameHere("OpenFile()"), "r", fDebug);
 }
 
 //_____________________________________________________________________________
@@ -813,7 +894,7 @@ static Int_t IsDBdate( const string& line, TDatime& date, bool warn = true )
   ssiz_t rbrk = line.find(']',lbrk);
   if( rbrk == string::npos || rbrk <= lbrk+11 ) return 0;
   Int_t yy, mm, dd, hh, mi, ss;
-  if( sscanf( line.substr(lbrk+1,rbrk-lbrk-1).c_str(), "%d-%d-%d %d:%d:%d",
+  if( sscanf( line.substr(lbrk+1,rbrk-lbrk-1).c_str(), "%4d-%2d-%2d %2d:%2d:%2d",
 	      &yy, &mm, &dd, &hh, &mi, &ss) != 6
       || yy < 1995 || mm < 1 || mm > 12 || dd < 1 || dd > 31
       || hh < 0 || hh > 23 || mi < 0 || mi > 59 || ss < 0 || ss > 59 ) {
@@ -847,8 +928,7 @@ static Int_t IsDBkey( const string& line, const char* key, string& text )
   const char* eq = strchr(ln, '=');
   if( !eq ) return 0;
   // Extract the key
-  if( *ln == ' ' )  // strspn is an expensive way to find out there are no leading blanks
-    ln += strspn(ln, " ");
+  while( *ln == ' ' ) ++ln; // find_first_not_of(" ")
   assert( ln <= eq );
   if( ln == eq ) return -1;
   register const char* p = eq-1;
@@ -858,7 +938,7 @@ static Int_t IsDBkey( const string& line, const char* key, string& text )
   // Key matches. Now extract the value, trimming leading whitespace.
   ln = eq+1;
   assert( !*ln || *(ln+strlen(ln)-1) != ' ' ); // Trailing space already trimmed
-  ln += strspn(ln, " ");
+  while( *ln == ' ' ) ++ln;
   text = ln;
 
   return 1;
@@ -907,6 +987,62 @@ bool THaAnalysisObject::IsTag( const char* buf )
 }
 
 //_____________________________________________________________________________
+static Int_t GetLine( FILE* file, char* buf, size_t bufsiz, string& line )
+{
+  // Get a line (possibly longer than 'bufsiz') from 'file' using
+  // using the provided buffer 'buf'. Put result into string 'line'.
+  // This is similar to std::getline, except that C-style I/O is used.
+  // Also, convert all tabs to spaces.
+  // Returns 0 on success, or EOF if no more data (or error).
+
+  char* r = buf;
+  line.clear();
+  while( (r = fgets(buf, bufsiz, file)) ) {
+    char* c = strchr(buf, '\n');
+    if( c )
+      *c = '\0';
+    // Convert all tabs to spaces
+    register char *p = buf;
+    while( (p = strchr(p,'\t')) ) *(p++) = ' ';
+    // Append to string
+    line.append(buf);
+    // If newline was read, the line is finished
+    if( c )
+      break;
+  }
+  // Don't report EOF if we have any data
+  if( !r && line.empty() )
+    return EOF;
+  return 0;
+}
+
+//_____________________________________________________________________________
+static void Trim( string& str )
+{
+  // Trim leading and trailing space from string 'str'
+
+  if( str.empty() )
+    return;
+  register const char* p = str.c_str();
+  while( *p == ' ' ) ++p;
+  if( *p == '\0' )
+    str.clear();
+  else if( p != str.c_str() ) {
+    ssiz_t pos = p-str.c_str();
+    str.substr(pos).swap(str);
+  }
+  if( !str.empty() ) {
+    const char* q = str.c_str() + str.length()-1;
+    p = q;
+    while( *p == ' ' ) --p;
+    if( p != q ) {
+      ssiz_t pos = p-str.c_str();
+      str.erase(pos+1);
+    }
+  }
+}
+
+//_____________________________________________________________________________
 Int_t THaAnalysisObject::ReadDBline( FILE* file, char* buf, size_t bufsiz,
 				     string& line )
 {
@@ -917,70 +1053,96 @@ Int_t THaAnalysisObject::ReadDBline( FILE* file, char* buf, size_t bufsiz,
 
   line.clear();
 
-  char *r = buf;
-  while( line.empty() && r ) {
-    bool continued = false, unfinished = true, do_trim = false;
-    // Must use C-style I/O because of the legacy FILE*
-    while( unfinished && (r = fgets(buf, bufsiz, file)) ) {
-      // Search for an end-of-data character
-      char *c = strpbrk(buf, "\n#\\");
-      if( !c ) c = buf+strlen(buf);
-      int t = *c;
-      *c = 0;
-      // Convert tabs to spaces
-      register char *p = buf;
-      while( (p = strchr(p,'\t')) ) *(p++) = ' ';
-      // Locate last non-blank character of the data
-      char* lastc = 0;
-      if( *buf ) {
-	p = c;
-	while( --p != buf && *p == ' ' );
-	if( *p != ' ' ) lastc = p;
-      }
-      // Ensure that the whole line was read after comments and continuations
-      bool read_more = ( t != '\n' && t != 0 && strchr(c+1,'\n') == 0 );
-
-      // Continue reading if there is a continuation, the line wasn't fully
-      // read yet, or the previous read was continued and now we have a pure 
-      // comment line in the middle of a continuation
-      bool only_comment = (t == '#' && !lastc);
-      continued = ( t == '\\' || (only_comment && continued) );
-      unfinished = (continued || !t );
-
-      // Append current line's data to the output string
-      if( !only_comment && (unfinished || lastc) ) {
-	size_t len;
-	if( unfinished ) {
-	  do_trim = true;  // May have trailing blanks
-	  len = c-buf;
-	} else {
-	  assert( lastc < c );
-	  *(++lastc) = 0;
-	  len = lastc-buf;
-	}
-	line.append(buf,len);
-      }
-      if( read_more ) do {
-	  r = fgets(buf, bufsiz, file);
-	} while( r && *r && buf[strlen(buf)-1] != '\n' );
+  Int_t r = 0;
+  bool maybe_continued = false, unfinished = true;
+  string linbuf;
+  fpos_t oldpos;
+  while( unfinished && fgetpos(file, &oldpos) == 0 &&
+	 (r = GetLine(file,buf,bufsiz,linbuf)) == 0 ) {
+    // Search for comment or continuation character.
+    // If found, remove it and everything that follows.
+    bool continued = false, comment = false, has_equal = false,
+      trailing_space = false, leading_space = false;
+    ssiz_t pos = linbuf.find_first_of("#\\");
+    if( pos != string::npos ) {
+      if( linbuf[pos] == '\\' )
+	continued = true;
+      else
+	comment = true;
+      linbuf.erase(pos);
     }
-    if( line.empty() )
+    // Trim leading and trailing space
+    if( !linbuf.empty() ) {
+      if( linbuf[0] == ' ')
+	leading_space = true;
+      if( linbuf[linbuf.length()-1] == ' ')
+	trailing_space = true;
+      if( leading_space || trailing_space )
+	Trim(linbuf);
+    }
+
+    if( line.empty() && linbuf.empty() )
+      // Nothing to do, i.e. no line building in progress and no data
       continue;
 
-    // Trim trailing whitespace
-    if( do_trim ) {
-      ssiz_t pos = line.find_last_not_of(" ");
-      if( pos == string::npos )
-	line.clear();
-      else if( pos+1 != line.length() )
-	line.erase(pos+1);
+    if( !linbuf.empty() ) {
+      has_equal = (linbuf.find('=') != string::npos);
+      // Tentative continuation is canceled by a subsequent line with a '='
+      if( maybe_continued && has_equal ) {
+	// We must have data at this point, so we can exit. However, the line
+	// we've just read is obviously a good one, so we must also rewind the
+	// file to the previous position so this line can be read again.
+	assert( !line.empty() );  // else maybe_continued not set correctly
+	fsetpos(file, &oldpos);
+	break;
+      }
+      // If the line has data, it isn't a comment, even if there was a '#'
+      //      comment = false;  // not used
+    } else if( continued || comment ) {
+      // Skip empty continuation lines and comments in the middle of a
+      // continuation block
+      continue;
+    } else {
+      // An empty line, except for a comment or continuation, ends continuation.
+      // Since we have data here, and this line is blank and would later be
+      // skipped anyay, we can simply exit
+      break;
     }
-  }
-  // Don't report EOF yet if the last line wasn't empty
-  if( r == 0 && !line.empty() )
-    r = buf; // this is ok, the actual value of r will not be used
 
-  return (r == 0) ? EOF : '\n';
+    if( line.empty() && !continued && has_equal ) {
+      // If the first line of a potential result contains a '=', this
+      // line may be continued by non-'=' lines up until the next blank line.
+      // However, do not use this logic if the line also contains a
+      // continuation mark '\'; the two continuation styles should not be mixed
+      maybe_continued = true;
+    }
+    unfinished = (continued || maybe_continued);
+
+    // Ensure that at least one space is preserved between continuations,
+    // if originally present
+    if( trailing_space && unfinished )
+      linbuf += ' ';
+    if( leading_space && !line.empty() && line[line.length()-1] != ' ')
+      line += ' ';
+
+    // Append current data to result
+    line.append(linbuf);
+  }
+
+  // Because of the '=' sign continuation logic, we may have hit EOF if the last
+  // line of the file is a key. In this case, we need to back out.
+  if( maybe_continued ) {
+    if( r == EOF ) {
+      fsetpos(file, &oldpos);
+      r = 0;
+    }
+    // Also, whether we hit EOF or not, tentative continuation may have
+    // added a tentative space, which we tidy up here
+    assert( !line.empty() );
+    if( line[line.length()-1] == ' ')
+      line.erase(line.length()-1);
+  }
+  return r;
 }
 
 //_____________________________________________________________________________
@@ -1146,16 +1308,25 @@ Int_t THaAnalysisObject::LoadDBmatrix( FILE* file, const TDatime& date,
 
 //_____________________________________________________________________________
 Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
+				 const DBRequest* req, Int_t search )
+{
+  // Member function version of LoadDB, uses current object's fPrefix and
+  // class name
+
+  TString here(GetClassName());
+  here.Append("::LoadDB");
+  return LoadDB( f, date, req, GetPrefix(), search, here.Data() );
+}
+//_____________________________________________________________________________
+Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 				 const DBRequest* req, const char* prefix,
-				 Int_t search )
+				 Int_t search, const char* here )
 {
   // Load a list of parameters from the database file 'f' according to 
   // the contents of the 'req' structure (see VarDef.h).
 
   // FIXME: handle item->nelem to read arrays!
 
-  const char* const here = "THaAnalysisObject::LoadDB";
-  
   if( !req ) return -255;
   if( !prefix ) prefix = "";
   Int_t ret = 0;
@@ -1228,14 +1399,14 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 			    item->nelem );
       } else {
       badtype:
-	const char* type_name;
 	if( item->type >= kDouble && item->type <= kObject2P )
-	  type_name = THaVar::GetEnumName(item->type);
+	  ::Error( ::Here(here,loaddb_prefix.c_str()),
+		   "Key \"%s\": Reading of data type \"%s\" not implemented",
+		   key, THaVar::GetEnumName(item->type) );
 	else
-	  type_name = Form("(#%d)", item->type );
-	::Error( ::Here(here,loaddb_prefix.c_str()),
-		 "Key \"%s\": Reading of data type \"%s\" not implemented",
-		 type_name, key );
+	  ::Error( ::Here(here,loaddb_prefix.c_str()),
+		   "Key \"%s\": Reading of data type \"(#%d)\" not implemented",
+		   key, item->type );
 	ret = -2;
 	break;
       }
@@ -1267,7 +1438,7 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 	    newreq->search = 0;
 	    if( newsearch < 0 )
 	      newsearch++;
-	    ret = LoadDB( f, date, newreq, newprefix.c_str(), newsearch );
+	    ret = LoadDB( f, date, newreq, newprefix.c_str(), newsearch, here );
 	    // If error, quit here. Error message printed at lowest level.
 	    if( ret != 0 )
 	      break;
@@ -1318,46 +1489,6 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 }
 
 //_____________________________________________________________________________
-Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
-				 const TagDef* keys, const char* prefix,
-				 Int_t search )
-{
-  // Compatibility function to read database with old 'TagDef' 
-  // request structure
-
-  if( !keys )
-    return -1;
-
-  const TagDef* item = keys;
-  Int_t nreq = 0;
-  while( (item++)->name )
-    nreq++;
-  if( nreq == 0 )
-    return 0;
-
-  DBRequest *req = new struct DBRequest[nreq+1], *theReq = req;
-  if( !req )
-    return -3;
-  item = keys;
-  while( item->name ) {
-    theReq->name      = item->name;
-    theReq->var       = item->var;
-    theReq->type      = item->type;
-    theReq->nelem     = item->expected;
-    theReq->optional  = item->fatal ? kFALSE : kTRUE;
-    theReq->search    = 0;
-    theReq->descript  = item->name;
-    item++; theReq++;
-  }
-  theReq->name = 0;
-
-  Int_t ret = LoadDB( f, date, req, prefix, search );
-
-  delete [] req;
-  return ret;
-}
-
-//_____________________________________________________________________________
 Int_t THaAnalysisObject::SeekDBconfig( FILE* file, const char* tag, 
 				       const char* label,
 				       Bool_t end_on_tag )
@@ -1386,13 +1517,14 @@ Int_t THaAnalysisObject::SeekDBconfig( FILE* file, const char* tag,
   }
   ssiz_t llen = _label.size();
 
-  bool found = false, quit = false;;
-  const int LEN = 256;
-  char buf[LEN];
+  bool found = false;
 
   errno = 0;
   off_t pos = ftello(file);
   if( pos != -1 ) {
+    bool quit = false;
+    const int LEN = 256;
+    char buf[LEN];
     while( !errno && !found && !quit && fgets( buf, LEN, file)) {
       size_t len = strlen(buf);
       if( len<2 || buf[0] == '#' ) continue;      //skip comments

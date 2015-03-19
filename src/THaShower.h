@@ -8,10 +8,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "THaPidDetector.h"
-#include "Decoder.h"
-#include "THaEvData.h"
 
-using namespace Decoder;
+class TClonesArray;
 
 class THaShower : public THaPidDetector {
 
@@ -64,18 +62,12 @@ protected:
   Int_t      fMult;      // Number of blocks in main cluster
   Int_t*     fNblk;      // [fNclublk] Numbers of blocks composing main cluster
   Float_t*   fEblk;      // [fNclublk] Energies of blocks composing main cluster
-  Float_t    fTRX;       // x position of track cross point
-  Float_t    fTRY;       // y position of track cross point
-
-  // Useful derived quantities for internal usage.
-
-  Double_t tan_angle, sin_angle, cos_angle;
 
   void           ClearEvent();
   void           DeleteArrays();
   virtual Int_t  ReadDatabase( const TDatime& date );
   virtual Int_t  DefineVariables( EMode mode = kDefine );
-  
+
   ClassDef(THaShower,0)     //Generic shower detector class
 };
 

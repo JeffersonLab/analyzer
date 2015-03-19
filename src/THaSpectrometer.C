@@ -487,57 +487,26 @@ void THaSpectrometer::LabToTransport( const TVector3& vertex,
 }
 
 //_____________________________________________________________________________
-Int_t THaSpectrometer::ReadRunDatabase( const TDatime& date )
+void THaSpectrometer::SetCentralAngles( Double_t th, Double_t ph,
+					Bool_t bend_down )
 {
-  // Query the run database for parameters specific to this spectrometer
-  // (central angles, momentum, offsets, drift, etc.)
-  
-  Int_t err = THaApparatus::ReadRunDatabase( date );
-  if( err ) return err;
-
-  FILE* file = OpenRunDBFile( date );
-  if( !file ) return kFileError;
-
-  static const Double_t degrad = TMath::Pi()/180.0;
-  Double_t th = 0.0, ph = 0.0;
-  Double_t off_x = 0.0, off_y = 0.0, off_z = 0.0;
-
-  const TagDef tags[] = { 
-    { "theta",    &th, 1 }, 
-    { "phi",      &ph },
-    { "pcentral", &fPcentral, 3 },
-    { "colldist", &fCollDist },
-    { "off_x",    &off_x },
-    { "off_y",    &off_y },
-    { "off_z",    &off_z },
-    { 0 }
-  };
-  err = LoadDB( file, date, tags, fPrefix );
-  if( err ) {    
-    if( err>0 )
-      Error( Here("ReadRunDatabase()"), "Required key %s%s missing in the "
-	     "run database.\nSpectrometer initialization failed.",
-	     fPrefix, tags[err-1].name );
-    fclose(file);
-    return kInitError;
-  }
-
-  // Compute central angles in spherical coordinates and save trig. values
-  // of angles for later use.
+  // Given geographical angles theta and phi (in degrees), compute the
+  // spectrometer's central angles in spherical coordinates and save trig.
+  // values of angles for later use.
   // Note: negative theta corresponds to beam RIGHT.
   // phi should be close to zero unless this is a true out-of-plane spectrometer.
-  fThetaGeo = degrad*th; fPhiGeo = degrad*ph;
+  // If 'bend_down' is true, the spectrometer bends downwards.
+
+  fThetaGeo = TMath::DegToRad()*th; fPhiGeo = TMath::DegToRad()*ph;
   GeoToSph( fThetaGeo, fPhiGeo, fThetaSph, fPhiSph );
-  fSinThGeo = sin( fThetaGeo ); fCosThGeo = cos( fThetaGeo );
-  fSinPhGeo = sin( fPhiGeo );   fCosPhGeo = cos( fPhiGeo );
+  fSinThGeo = TMath::Sin( fThetaGeo ); fCosThGeo = TMath::Cos( fThetaGeo );
+  fSinPhGeo = TMath::Sin( fPhiGeo );   fCosPhGeo = TMath::Cos( fPhiGeo );
   Double_t st, ct, sp, cp;
-  st = fSinThSph = sin( fThetaSph ); ct = fCosThSph = cos( fThetaSph );
-  sp = fSinPhSph = sin( fPhiSph );   cp = fCosPhSph = cos( fPhiSph );
+  st = fSinThSph = TMath::Sin( fThetaSph ); ct = fCosThSph = TMath::Cos( fThetaSph );
+  sp = fSinPhSph = TMath::Sin( fPhiSph );   cp = fCosPhSph = TMath::Cos( fPhiSph );
 
   // Compute the rotation from TRANSPORT to lab and vice versa.
-  // If 'bend_down' is true, the spectrometer bends downwards.
-  bool bend_down = false;
-  Double_t norm = sqrt(ct*ct + st*st*cp*cp);
+  Double_t norm = TMath::Sqrt(ct*ct + st*st*cp*cp);
   TVector3 nx( st*st*sp*cp/norm, -norm, st*ct*sp/norm );
   TVector3 ny( ct/norm,          0.0,   -st*cp/norm   );
   TVector3 nz( st*cp,            st*sp, ct            );
@@ -552,9 +521,42 @@ Int_t THaSpectrometer::ReadRunDatabase( const TDatime& date )
   fToLabRot.RotateAxes( nx, ny, nz );
 #endif
   fToTraRot = fToLabRot.Inverse();
+}
+
+//_____________________________________________________________________________
+Int_t THaSpectrometer::ReadRunDatabase( const TDatime& date )
+{
+  // Query the run database for parameters specific to this spectrometer
+  // (central angles, momentum, offsets, drift, etc.)
+  
+  Int_t err = THaApparatus::ReadRunDatabase( date );
+  if( err ) return err;
+
+  FILE* file = OpenRunDBFile( date );
+  if( !file ) return kFileError;
+
+  Double_t th = 0.0, ph = 0.0;
+  Double_t off_x = 0.0, off_y = 0.0, off_z = 0.0;
+
+  const DBRequest req[] = {
+    { "theta",    &th                       },
+    { "phi",      &ph,        kDouble, 0, 1 },
+    { "pcentral", &fPcentral                },
+    { "colldist", &fCollDist, kDouble, 0, 1 },
+    { "off_x",    &off_x,     kDouble, 0, 1 },
+    { "off_y",    &off_y,     kDouble, 0, 1 },
+    { "off_z",    &off_z,     kDouble, 0, 1 },
+    { 0 }
+  };
+  err = LoadDB( file, date, req );
+  fclose(file);
+  if( err )
+    return kInitError;
+
+  SetCentralAngles( th, ph, false );
+
   fPointingOffset.SetXYZ( off_x, off_y, off_z );
 
-  fclose(file);
   return kOK;
 }
 

@@ -9,10 +9,6 @@
 
 #include "THaBeamDet.h"
 #include "TVector.h"
-#include "Decoder.h"
-#include "THaEvData.h"
-
-using namespace Decoder;
 
 class THaRaster : public THaBeamDet {
 
@@ -59,7 +55,7 @@ protected:
 
   //  THaRaster() {}
   //  THaRaster( const THaRaster& ) {}
-  THaRaster& operator=( const THaRaster& ) { return *this; }
+  //  THaRaster& operator=( const THaRaster& ) { return *this; }
 
 
   TVector  fRawPos;        // current in Raster ADCs for position

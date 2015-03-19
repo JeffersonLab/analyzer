@@ -60,12 +60,12 @@ unsigned int iseed_earlier;    // iseed for predicted_reading
 
 int main(int argc, char* argv[]) {
    int helicity, qrt, gate, timestamp;
-   int len, data, status, nscaler, header;
-   int numread, badread, i, found, index;
+   int status, nscaler, header;
+   int found, index;
    int ring_clock, ring_qrt, ring_helicity;
    int ring_trig, ring_bcm, ring_l1a, ring_v2fh; 
    int sum_clock, sum_trig, sum_bcm, sum_l1a;
-   int inquad, nrread, q1_helicity;
+   int inquad, nrread;
    int ring_data[MAXRING], rloc;
    if (argc < 2) {
       cout << "You made a mistake... bye bye !\n" << endl;
@@ -75,20 +75,20 @@ int main(int argc, char* argv[]) {
    }
 // Setup 
 // Pedestals.  Left, Right Arms.  u1,u3,u10,d1,d3,d10
-   Float_t bcmpedL[NBCM] = { 188.2, 146.2, 271.6, 37.8, 94.2, 260.2 };
-   Float_t bcmpedR[NBCM] = { 53.0, 41.8, 104.1, 0., 101.6, 254.6 };
-   Float_t bcmped[NBCM];
-   if (MYROC == 11) {
-     cout << "Using Left Arm BCM pedestals"<<endl;
-     for (i = 0; i < NBCM; i++) {
-       bcmped[i] = bcmpedL[i];
-     }
-   } else {
-     cout << "Using Right Arm BCM pedestals"<<endl;
-     for (i = 0; i < NBCM; i++) {
-       bcmped[i] = bcmpedR[i];
-     }
-   }
+   // Float_t bcmpedL[NBCM] = { 188.2, 146.2, 271.6, 37.8, 94.2, 260.2 };
+   // Float_t bcmpedR[NBCM] = { 53.0, 41.8, 104.1, 0., 101.6, 254.6 };
+   // Float_t bcmped[NBCM];
+   // if (MYROC == 11) {
+   //   cout << "Using Left Arm BCM pedestals"<<endl;
+   //   for (i = 0; i < NBCM; i++) {
+   //     bcmped[i] = bcmpedL[i];
+   //   }
+   // } else {
+   //   cout << "Using Right Arm BCM pedestals"<<endl;
+   //   for (i = 0; i < NBCM; i++) {
+   //     bcmped[i] = bcmpedR[i];
+   //   }
+   // }
 // Initialize root and output.  
    TROOT scalana("scalroot","Hall A scaler analysis");
    TFile hfile("scaler.root","RECREATE","Scaler data in Hall A");
@@ -107,7 +107,6 @@ int main(int argc, char* argv[]) {
    THaCodaFile *coda = new THaCodaFile(TString(argv[1]));
    THaEvData *evdata = new THaCodaDecoder();
    inquad = 0;
-   q1_helicity = 0;
    rloc = 0;
    status = 0;
    sum_clock = 0;  sum_trig = 0;  sum_bcm = 0;  sum_l1a = 0;
@@ -117,9 +116,9 @@ int main(int argc, char* argv[]) {
      status = coda->codaRead();
      if (status != 0) break;
      evdata->LoadEvent(coda->getEvBuffer());
-     len = evdata->GetRocLength(MYROC);
+     int len = evdata->GetRocLength(MYROC);
      if (len <= 4) continue;
-     data = evdata->GetRawData(MYROC,3);   
+     int data = evdata->GetRawData(MYROC,3);   
      helicity = (data & 0x10) >> 4;
      qrt = (data & 0x20) >> 5;
      gate = (data & 0x40) >> 6;
@@ -157,8 +156,8 @@ int main(int argc, char* argv[]) {
 	   }
        }
      }         
-     numread = evdata->GetRawData(MYROC,index++);
-     badread = evdata->GetRawData(MYROC,index++);
+     int numread = evdata->GetRawData(MYROC,index++);
+     int badread = evdata->GetRawData(MYROC,index++);
      if (PRINTOUT) cout << "FIFO num of last good read " << dec << numread << endl;
      if (badread != 0) {
        cout << "DISASTER: There are bad readings " << endl;
@@ -188,7 +187,6 @@ int main(int argc, char* argv[]) {
         	cout << "DISASTER:  The helicity is wrong !!"<<endl;
                 recovery_flag = 1;  // ask for recovery
              }
-             q1_helicity = present_helicity;
 	  }
        } else {
          inquad++;
@@ -254,7 +252,6 @@ int main(int argc, char* argv[]) {
 // *************************************************************
 
 int loadHelicity() {
-  int i;
   static int nb;
   if (recovery_flag) nb = 0;
   recovery_flag = 0;
@@ -264,10 +261,10 @@ int loadHelicity() {
       return 0;
   } else if (nb == NBIT) {   // Have finished loading
       iseed_earlier = getSeed();
-      for (i = 0; i < NBIT+1; i++) 
+      for (int i = 0; i < NBIT+1; i++) 
           predicted_reading = ranBit(iseed_earlier);
       iseed = iseed_earlier;
-      for (i = 0; i < NDELAY; i++)
+      for (int i = 0; i < NDELAY; i++)
           present_helicity = ranBit(iseed);
       nb++;
       return 1;
@@ -297,11 +294,11 @@ int loadHelicity() {
 
 int ranBit(unsigned int& ranseed) {
 
-  static int IB1 = 1;           // Bit 1
-  static int IB3 = 4;           // Bit 3
-  static int IB4 = 8;           // Bit 4
-  static int IB24 = 8388608;    // Bit 24 
-  static int MASK = IB1+IB3+IB4+IB24;
+  const int IB1 = 1;           // Bit 1
+  const int IB3 = 4;           // Bit 3
+  const int IB4 = 8;           // Bit 4
+  const int IB24 = 8388608;    // Bit 24 
+  const int MASK = IB1+IB3+IB4+IB24;
 
   if(ranseed & IB24) {    
       ranseed = ((ranseed^MASK)<<1) | IB1;
@@ -343,12 +340,3 @@ unsigned int getSeed() {
   ranseed = ranseed&0xFFFFFF;
   return ranseed;
 }
-
-
-
-
-
-
-
-
-
