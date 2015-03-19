@@ -46,10 +46,11 @@ protected:
    Bool_t fIsDecoded, fFirstTime, fDeltaT;
    Int_t *fDataArray, *fPrevData;
    Double_t *fRate;
-   Int_t fNumChan, fClockChan, fNumChanMask;
+   Int_t fNumChan, fClockChan, fNumChanMask, fNumChanShift;
    Bool_t fHasClock;
    Double_t fClockRate;
    GenScaler *fNormScaler;
+   static const int fgNumChanDefault=32;
 
    ClassDef(GenScaler,0)  //   A generic scaler.  Abstract class.
 

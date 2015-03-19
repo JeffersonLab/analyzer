@@ -34,6 +34,7 @@ void GenScaler::GenInit()
   fClockRate = 0;
   fNormScaler = 0;
   fNumChanMask = 0xf0;
+  fNumChanShift = 0;
   fDeltaT = DEFAULT_DELTAT;  // a default time interval between readings
   fDataArray = new Int_t[fWordsExpect];
   fPrevData = new Int_t[fWordsExpect];
@@ -177,6 +178,8 @@ Double_t GenScaler::GetRate(Int_t chan) const {
 void GenScaler::DoPrint() const {
   cout << "GenScaler::   crate "<<fCrate<<"   slot "<<fSlot<<endl;
   cout << "GenScaler::   Header 0x"<<hex<<fHeader<<"    Mask  0x"<<fHeaderMask<<dec<<endl;
+  cout << "GenScaler::   fNumChanMask = "<< hex<< fNumChanMask<<dec<<endl;
+  cout << "GenScaler::   fNumChanShift = "<< hex<< fNumChanShift<<dec<<endl;
   cout << "num words expected  "<<fWordsExpect<<endl;
   if (fHasClock) cout << "Has a clock"<<endl;
   if (fNormScaler) cout << "Using norm scaler with ptr = "<<fNormScaler << endl;
@@ -200,11 +203,21 @@ void GenScaler::DebugPrint(ofstream *file) const {
 
 Bool_t GenScaler::IsSlot(UInt_t rdata) {
   Bool_t result;
+  static Bool_t firsttime=kTRUE;
   result = ((rdata & fHeaderMask)==fHeader);
   if (result) {
-    fNumChan = rdata&fNumChanMask;
+    fNumChan = (rdata&fNumChanMask)>>fNumChanShift;
+    if (fNumChan == 0) {
+      fNumChan=fgNumChanDefault;
+      if (firsttime) {
+  	 firsttime = kFALSE;
+         cout << "Warning::GenScaler:: using default num "<<fgNumChanDefault;
+         cout << "   channels"<<endl;
+      }
+    }
     if (fNumChan != fWordsExpect) {
-	cout << "GenScaler:: ERROR:  Inconsistent number of chan"<<endl;
+	cout << "GenScaler:: ERROR:  Inconsistent number of chan."<<endl;
+	//        DoPrint();
 	if (fNumChan > fWordsExpect) fNumChan = fWordsExpect;
     }
   }
