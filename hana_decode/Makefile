@@ -1,5 +1,5 @@
 # Makefile for "hana" (C++ Hall A Analyzer) Event Decoder.
-# R. Michaels, rom@jlab.org, Mar 2001
+# R. Michaels, rom@jlab.org, Mar 2015
 #
 # Test Executables:
 # tstoo    --  tests of OO decoder
@@ -24,7 +24,7 @@
 # $EVIO_LIBDIR, respectively.
 
 # name and version of this release
-VERS = hana_decode_1.6
+VERS = hana_decode_2.0
 
 # If one defines STANDALONE, the library and test execs are compiled
 # independently of the rest of the analyzer.  Normally this is commented out.
