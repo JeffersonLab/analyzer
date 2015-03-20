@@ -5,8 +5,6 @@
 //
 //   Module
 //   Abstract interface for a module that sits in a slot of a crate.
-//   But it's not technically abstract because if it were, the creation
-//   of modules using TClass::New would not work.
 //
 /////////////////////////////////////////////////////////////////////
 
@@ -47,10 +45,10 @@ namespace Decoder {
     virtual Int_t GetData(Int_t, Int_t) const { return 0; };
     virtual Int_t GetData(Int_t, Int_t, Int_t) const { return 0; };
 
-    virtual Int_t Decode(const UInt_t *p) { return 0; }; // implement in derived class
+    virtual Int_t Decode(const UInt_t *p) = 0; // implement in derived class
     // Loads slot data
     virtual Int_t LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer,
-			   const UInt_t *pstop ) { return 0;};
+			   const UInt_t *pstop ) = 0;
 
     virtual Int_t GetNumChan() const { return fNumChan; };
 
