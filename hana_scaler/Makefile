@@ -77,9 +77,10 @@ ARCH          = linux
     CXXFLG       += -KPIC
     LD            = CC
     SOFLAGS       = -G
-    endif
+    MAKEDEPEND    = g++ -MM
+  endif
 
-    ifeq ($(ARCH),linux)
+  ifeq ($(ARCH),linux)
     DEFINES   += -DLINUXVERS 
     # Linux with egcs (>= RedHat 5.2)
     ifdef DEBUG
@@ -117,8 +118,6 @@ ARCH          = linux
   endif
   DEFINES        += $(shell getconf LFS_CFLAGS)
 endif
-
-MAKEDEPEND    = g++
 
 export OSNAME := $(shell uname)
 
@@ -301,19 +300,21 @@ install:	all
 #	-cp -puvf libscaler.so $(ANALYZER)/$(PLATFORM)
 ###
 
+.PHONY: all static tarfile version clean realclean install
+
 .SUFFIXES:
-.SUFFIXES: .c .cc .cpp .C .o .os .d
 
 %.o:	%.C
-	$(CXX) $(CXXFLAGS) -c $<
-
-%.d:	%.C
-	@echo Creating dependencies for $<
-#	@$(SHELL) -ec '$(CXX) -MM $(CXXFLAGS) -c $< \
-#		| sed '\''s/\($*\)\.o[ :]*/\1.o $@ : /g'\'' > $@; \
-#		[ -s $@ ] || rm -f $@'
-	@$(SHELL) -ec '$(MAKEDEPEND) -MM $(ROOTINC) $(INCLUDES) $(DEFINES) -c $< \
-		| sed '\''s/\($*\)\.o[ :]*/\1.o $@ : /g'\'' > $@; \
-		[ -s $@ ] || rm -f $@'
+ifeq ($(strip $(MAKEDEPEND)),)
+	$(CXX) $(CXXFLAGS) -MMD -o $@ -c $<
+	@mv -f $*.d $*.d.tmp
+else
+	$(CXX) $(CXXFLAGS) -o $@ -c $<
+	$(MAKEDEPEND) $(ROOTINC) $(INCLUDES) $(DEFINES) -c $< > $*.d.tmp
+endif
+	@sed -e 's|.*:|$*.o:|' < $*.d.tmp > $*.d
+	@sed -e 's/.*://' -e 's/\\$$//' < $*.d.tmp | fmt -1 | \
+	  sed -e 's/^ *//' -e 's/$$/:/' >> $*.d
+	@rm -f $*.d.tmp
 
 -include $(DEPS)
