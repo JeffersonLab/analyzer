@@ -183,7 +183,7 @@ THaCut::EvalMode THaCut::ParsePrefix( TString& expr )
   // If a mode prefix seems to be present, but is not found in
   // the defined modes, return kModeErr.
 
-  const EvalMode kDefaultMode = kAND;
+  const EvalMode kDefaultMode = kOR;
   const char* const here = "THaCut";
 
   struct ModeDef_t {
@@ -191,7 +191,7 @@ THaCut::EvalMode THaCut::ParsePrefix( TString& expr )
     EvalMode    mode;
   };
   const ModeDef_t mode_defs[] = {
-    { "AND", kAND }, { "ALL", kAND }, { "OR", kOR }, { "ANY", kOR },
+    { "OR", kOR }, { "ANY", kOR }, { "AND", kAND }, { "ALL", kAND },
     { "XOR", kXOR }, { "ONE", kXOR }, { "ONEOF", kXOR }, { 0, kModeErr }
   };
 
