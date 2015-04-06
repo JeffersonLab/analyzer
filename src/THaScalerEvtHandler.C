@@ -198,7 +198,9 @@ THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& dt)
 {
   Int_t idebug=0;
 
-  //  cout << "Howdy !  We are initializing THaScalerEvtHandler !!   name =   "<<fName<<endl;
+  fStatus = kOK;
+
+  cout << "Howdy !  We are initializing THaScalerEvtHandler !!   name =   "<<fName<<endl;
 
   eventtypes.push_back(140);  // what events to look for
 

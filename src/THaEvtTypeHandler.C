@@ -74,6 +74,7 @@ void THaEvtTypeHandler::EvDump(THaEvData *evdata) const
 
 THaAnalysisObject::EStatus THaEvtTypeHandler::Init(const TDatime& dt)
 {
+  fStatus = kOK;
   return kOK;
 }
 
