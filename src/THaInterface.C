@@ -40,6 +40,7 @@ THaCutList*  gHaCuts     = NULL;  // List of global analyzer cuts/tests
 TList*       gHaApps     = NULL;  // List of Apparatuses
 TList*       gHaScalers  = NULL;  // List of scaler groups
 TList*       gHaPhysics  = NULL;  // List of physics modules
+TList*       gHaEvtHandlers  = NULL;  // List of event handlers
 THaRunBase*  gHaRun      = NULL;  // The currently active run
 TClass*      gHaDecoder  = NULL;  // Class(!) of decoder to use
 THaDB*       gHaDB       = NULL;  // Database system to use
@@ -73,6 +74,7 @@ THaInterface::THaInterface( const char* appClassName, int* argc, char** argv,
   gHaApps    = new TList;
   gHaScalers = new TList;
   gHaPhysics = new TList;
+  gHaEvtHandlers = new TList;
   // Use the standard CODA file decoder by default
   gHaDecoder = Decoder::CodaDecoder::Class();
   // File-based database by default
@@ -151,6 +153,7 @@ THaInterface::~THaInterface()
     //    delete gHaDB;           gHaDB = 0;
     delete gHaPhysics;   gHaPhysics=0;
     delete gHaScalers;   gHaScalers=0;
+    delete gHaEvtHandlers;  gHaEvtHandlers=0;
     delete gHaApps;         gHaApps=0;
     delete gHaVars;         gHaVars=0;
     delete gHaCuts;         gHaCuts=0;
