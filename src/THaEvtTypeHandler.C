@@ -78,6 +78,12 @@ THaAnalysisObject::EStatus THaEvtTypeHandler::Init(const TDatime& dt)
   return kOK;
 }
 
+void THaEvtTypeHandler::SetDebugFile(char *filename) {
+    delete fDebugFile;
+    fDebugFile = new ofstream;
+    fDebugFile->open(filename);
+}
+
 Bool_t THaEvtTypeHandler::IsMyEvent(Int_t evnum) const
 {
   for (UInt_t i=0; i < eventtypes.size(); i++) {

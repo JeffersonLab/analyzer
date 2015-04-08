@@ -14,7 +14,7 @@
 #include <string>
 #include <vector>
 #include "TTree.h"
-#include "TString.h"   // really both std::string and TString?
+#include "TString.h"  
 
 class ScalerLoc { // Utility class used by THaScalerEvtHandler
  public:
@@ -35,7 +35,6 @@ public:
    Int_t Analyze(THaEvData *evdata);
    virtual EStatus Init( const TDatime& run_time);
    virtual Int_t End( THaRunBase* r=0 );
-   virtual void SetDebugFile(std::ofstream *file);
 
 
 private:
