@@ -21,6 +21,7 @@ class THaVhist;
 class THaScalerGroup;
 class THaEvData;
 class TTree;
+class THaEvtTypeHandler;
 
 class THaOdata {
 // Utility class used by THaOutput to store arrays 
@@ -66,6 +67,7 @@ private:
 
 class THaEpicsKey;
 class THaScalerKey;
+class THaEpicsEvtHandler;
 
 class THaOutput {
   
@@ -77,7 +79,7 @@ public:
   virtual Int_t Init( const char* filename="output.def" );
   virtual Int_t Process();
   virtual Int_t ProcScaler(THaScalerGroup *sca);
-  virtual Int_t ProcEpics(THaEvData *ev);
+  virtual Int_t ProcEpics(THaEvData *ev, THaEpicsEvtHandler *han);
   virtual Int_t End();
   virtual Bool_t TreeDefined() const { return fTree != 0; };
   virtual TTree* GetTree() const { return fTree; };
@@ -130,6 +132,8 @@ private:
   THaOutput& operator=(const THaOutput& );
 
   std::string stitle, sfvarx, sfvary, scut, fScalBank;
+
+  THaEvtTypeHandler *fEpicsHandler;
 
   Int_t nx,ny,iscut, fScalRC;
   Float_t xlo,xhi,ylo,yhi;
