@@ -22,6 +22,7 @@ class THaBenchmark;
 class THaEvData;
 class THaPostProcess;
 class THaCrateMap;
+class THaEpicsEvtHandler;
 
 class THaAnalyzer : public TObject {
 
@@ -111,6 +112,7 @@ protected:
 
   TFile*         fFile;            //The ROOT output file.
   THaOutput*     fOutput;          //Flexible ROOT output (tree, histograms)
+  THaEpicsEvtHandler* fEpicsHandler; // EPICS event handler used by THaOutput
   TString        fOutFileName;     //Name of output ROOT file.
   TString        fCutFileName;     //Name of cut definition file to load
   TString        fLoadedCutFileName;//Name of last loaded cut definition file

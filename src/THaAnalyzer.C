@@ -35,6 +35,7 @@
 #include "THaPostProcess.h"
 #include "THaBenchmark.h"
 #include "THaEvtTypeHandler.h"
+#include "THaEpicsEvtHandler.h"
 #include "TList.h"
 #include "TTree.h"
 #include "TFile.h"
@@ -77,7 +78,7 @@ THaAnalyzer::THaAnalyzer() :
   fStages(NULL), fCounters(NULL), fNev(0), fMarkInterval(1000), fCompress(1),
   fVerbose(2), fCountMode(kCountRaw), fBench(NULL), fPrevEvent(NULL),
   fRun(NULL), fEvData(NULL), fApps(NULL), fPhysics(NULL), fScalers(NULL),
-  fPostProcess(NULL), fEvtHandlers(NULL),
+  fPostProcess(NULL), fEvtHandlers(NULL), fEpicsHandler(NULL), 
   fIsInit(kFALSE), fAnalysisStarted(kFALSE), fLocalEvent(kFALSE),
   fUpdateRun(kTRUE), fOverwrite(kTRUE), fDoBench(kFALSE),
   fDoHelicity(kFALSE), fDoPhysics(kTRUE), fDoOtherEvents(kTRUE),
@@ -98,6 +99,11 @@ THaAnalyzer::THaAnalyzer() :
   fScalers = gHaScalers;
   fPhysics = gHaPhysics;
   fEvtHandlers = gHaEvtHandlers;
+
+  // EPICs data
+  fEpicsHandler = new THaEpicsEvtHandler("epics","EPICS event type 131");
+  //  fEpicsHandler->SetDebugFile("epicsdat.txt");
+  fEvtHandlers->Add(fEpicsHandler);
 
   // Timers
   fBench = new THaBenchmark;
@@ -446,8 +452,6 @@ Int_t THaAnalyzer::InitModules( TList* module_list, TDatime& run_time,
       goto errexit;
     }
     if( retval != kOK || !theModule->IsOK() ) {
-      cout << "duh1 "<<retval<<"   "<<kOK<<endl;
-      cout << "duh2 "<<theModule->IsOK()<<endl;
       Error( here, "Error %d initializing module %s (%s). Analyzer initial"
 	     "ization failed.", retval, obj->GetName(), obj->GetTitle() );
       if( retval == kOK )
@@ -1156,8 +1160,9 @@ Int_t THaAnalyzer::SlowControlAnalysis( Int_t code )
 
   if( code == kFatal )
     return code;
+  if ( !fEpicsHandler ) return kOK;
   if( fDoBench ) fBench->Begin("Output");
-  if( fOutput ) fOutput->ProcEpics(fEvData);
+  if( fOutput ) fOutput->ProcEpics(fEvData, fEpicsHandler);
   if( fDoBench ) fBench->Stop("Output");
   if( code == kTerminate )
     return code;
@@ -1256,24 +1261,31 @@ Int_t THaAnalyzer::MainAnalysis()
     retval = PhysicsAnalysis(retval);
     evdone = true;
   }
+
   //=== EPICS data ===
   if( fEvData->IsEpicsEvent() && fDoSlowControl ) {
     Incr(kNevEpics);
     retval = SlowControlAnalysis(retval);
     evdone = true;
   }
-  //=== Scaler triggers ===
+ 
+// to be deleted
+#ifdef OLDWAY
+ //=== Scaler triggers ===
   if( fEvData->IsScalerEvent() && fDoScalers ) {
     Incr(kNevScaler);
     retval = ScalerAnalysis(retval);
     evdone = true;
   }
+#endif
+
   //=== Other events ===
   if( !evdone && fDoOtherEvents ) {
     Incr(kNevOther);
     retval = OtherAnalysis(retval);
 
   } // End trigger type test
+
 
   //=== Post-processing (e.g. event filtering) ===
   if( fPostProcess ) {

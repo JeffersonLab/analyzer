@@ -129,6 +129,7 @@
 #pragma link C++ class THaQWEAKHelicityReader::ROCinfo+;
 #pragma link C++ class THaEvtTypeHandler+;
 #pragma link C++ class THaScalerEvtHandler+;
+#pragma link C++ class THaEpicsEvtHandler+;
 
 #ifdef ONLINE_ET
 #pragma link C++ class THaOnlRun+;
