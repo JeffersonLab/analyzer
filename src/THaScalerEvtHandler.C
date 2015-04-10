@@ -362,19 +362,11 @@ THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& date)
   for (UInt_t i=0; i<scalers.size(); i++) {
     if(fDebugFile) {
       *fDebugFile << "Scaler  #  "<<i<<endl;
+      scalers[i]->SetDebugFile(fDebugFile);
       scalers[i]->DebugPrint(fDebugFile);
     }
   }
   return kOK;
-}
-
-void THaScalerEvtHandler::SetDebugFile(ofstream *file)
-{
-  if (file <= 0) return;
-  fDebugFile = file;
-  for (UInt_t i = 0; i < scalers.size(); i++) {
-    scalers[i]->SetDebugFile(fDebugFile);
-  }
 }
 
 void THaScalerEvtHandler::AddVars(TString name, TString desc, Int_t iscal,
