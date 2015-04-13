@@ -74,7 +74,13 @@ void THaEvtTypeHandler::EvDump(THaEvData *evdata) const
 
 THaAnalysisObject::EStatus THaEvtTypeHandler::Init(const TDatime& dt)
 {
+  fStatus = kOK;
   return kOK;
+}
+
+void THaEvtTypeHandler::SetDebugFile(char *filename) {
+    fDebugFile = new ofstream;
+    fDebugFile->open(filename);
 }
 
 Bool_t THaEvtTypeHandler::IsMyEvent(Int_t evnum) const

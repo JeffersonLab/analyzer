@@ -9,6 +9,7 @@
 #pragma link C++ global gHaApps;
 #pragma link C++ global gHaScalers;
 #pragma link C++ global gHaPhysics;
+#pragma link C++ global gHaEvtHandlers;
 #pragma link C++ global gHaRun;
 #pragma link C++ global gHaDB;
 #pragma link C++ global gHaTextvars;
@@ -128,6 +129,7 @@
 #pragma link C++ class THaQWEAKHelicityReader::ROCinfo+;
 #pragma link C++ class THaEvtTypeHandler+;
 #pragma link C++ class THaScalerEvtHandler+;
+#pragma link C++ class THaEpicsEvtHandler+;
 
 #ifdef ONLINE_ET
 #pragma link C++ class THaOnlRun+;

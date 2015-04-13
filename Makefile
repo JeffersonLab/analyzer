@@ -215,7 +215,7 @@ SRC          := src/THaFormula.C src/THaVform.C src/THaVhist.C \
 		src/THaPhotoReaction.C src/THaSAProtonEP.C \
 		src/THaTextvars.C src/THaQWEAKHelicity.C \
 		src/THaQWEAKHelicityReader.C src/THaEvtTypeHandler.C \
-		src/THaScalerEvtHandler.C
+		src/THaScalerEvtHandler.C src/THaEpicsEvtHandler.C
 
 ifdef ONLINE_ET
 SRC += src/THaOnlRun.C

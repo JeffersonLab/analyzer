@@ -19,6 +19,15 @@
 //      NOTE: if you don't have the scaler map file (e.g. Leftscalevt.map)
 //      there will be no variable output to the Trees.
 //
+//   To use in the analyzer, your setup script needs something like this
+//       gHaEvtHandlers->Add (new THaScalerEvtHandler("Left","HA scaler event type 140"));
+//
+//   To enable debugging you may try this in the setup script
+// 
+//     THaScalerEvtHandler *lscaler = new THaScalerEvtHandler("Left","HA scaler event type 140");
+//     lscaler->SetDebugFile("LeftScaler.txt");
+//     gHaEvtHandlers->Add (lscaler);
+//
 /////////////////////////////////////////////////////////////////////
 
 #include "THaEvtTypeHandler.h"
@@ -33,6 +42,9 @@
 #include "TNamed.h"
 #include "TMath.h"
 #include "TString.h"
+#include <cstring>
+#include <cstdio>
+#include <cstdlib>
 #include <iostream>
 #include <sstream>
 #include "THaVarList.h"
@@ -84,11 +96,9 @@ Int_t THaScalerEvtHandler::Analyze(THaEvData *evdata)
 
     lfirst = 0; // Can't do this in Init for some reason
 
-    //cout << "THaScalerEvtHandler   name = "<<fName<<endl;
-
     TString sname1 = "TS";
     TString sname2 = sname1 + fName;
-    TString sname3 = fName + "  Scaler Data  =================================";
+    TString sname3 = fName + "  Scaler Data";
 
     if (fDebugFile) {
       *fDebugFile << "\nAnalyze 1st time for fName = "<<fName<<endl;
@@ -194,42 +204,43 @@ Int_t THaScalerEvtHandler::Analyze(THaEvData *evdata)
   return 1;
 }
 
-THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& dt)
+THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& date)
 {
-  Int_t idebug=0;
+  const int LEN = 200;
+  char cbuf[LEN];
 
-  //  cout << "Howdy !  We are initializing THaScalerEvtHandler !!   name =   "<<fName<<endl;
+  fStatus = kOK;
+  fNormIdx = -1;
+
+  cout << "Howdy !  We are initializing THaScalerEvtHandler !!   name =   "<<fName<<endl;
 
   eventtypes.push_back(140);  // what events to look for
 
   TString dfile;
   dfile = fName + "scaler.txt";
 
-  if (idebug) {
-    fDebugFile = new ofstream();
-    fDebugFile->open(dfile.Data());
+// Parse the map file which defines what scalers exist and the global variables.
+
+  TString sname0 = "Scalevt";
+  TString sname;
+  sname = fName+sname0;
+
+  FILE *fi = OpenFile(sname.Data(), date);
+  if ( !fi ) {
+    cout << "Cannot find db file for "<<fName<<" scaler event handler"<<endl;
+    return kFileError;
   }
 
-  // Parse the map file which defines what scalers exist and the global variables.
-  ifstream mapfile;
-  TString sname = "scalevt.map";
-  TString sname1;
-  sname1 = fName+sname;
-  mapfile.open(sname1.Data());
-  if (!mapfile) {
-    cout << "THaScalerEvtHandler:: Cannot find scaler.map file "<<sname1<<endl;
-    return kInitError;
-  }
-  fNormIdx = -1;
-  //  cout << "fNormIdx here "<<fNormIdx<<endl;
-  string sinput;
   size_t minus1 = -1;
   size_t pos1;
   string scomment = "#";
   string svariable = "variable";
   string smap = "map";
   vector<string> dbline;
-  while( getline(mapfile, sinput)) {
+
+  while( fgets(cbuf, LEN, fi) != NULL) {
+    std::string sinput(cbuf);
+    if (fDebugFile) *fDebugFile << "string input "<<sinput<<endl;
     dbline = vsplit(sinput);
     if (dbline.size() > 0) {
       pos1 = FindNoCase(dbline[0],scomment);
@@ -351,19 +362,11 @@ THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& dt)
   for (UInt_t i=0; i<scalers.size(); i++) {
     if(fDebugFile) {
       *fDebugFile << "Scaler  #  "<<i<<endl;
+      scalers[i]->SetDebugFile(fDebugFile);
       scalers[i]->DebugPrint(fDebugFile);
     }
   }
   return kOK;
-}
-
-void THaScalerEvtHandler::SetDebugFile(ofstream *file)
-{
-  if (file <= 0) return;
-  fDebugFile = file;
-  for (UInt_t i = 0; i < scalers.size(); i++) {
-    scalers[i]->SetDebugFile(fDebugFile);
-  }
 }
 
 void THaScalerEvtHandler::AddVars(TString name, TString desc, Int_t iscal,
@@ -383,6 +386,7 @@ void THaScalerEvtHandler::DefVars()
   Nvars = scalerloc.size();
   if (Nvars == 0) return;
   dvars = new Double_t[Nvars];  // dvars is a member of this class
+  memset(dvars, 0, Nvars*sizeof(Double_t));
   if (gHaVars) {
     if(fDebugFile) *fDebugFile << "THaScalerEVtHandler:: Have gHaVars "<<gHaVars<<endl;
   } else {
