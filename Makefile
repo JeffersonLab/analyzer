@@ -53,6 +53,14 @@ GLIBS        :=
 
 INCLUDES     := $(addprefix -I, $(INCDIRS) )
 
+# If EVIO environment not defined, define it to point here and build locally
+ifndef EVIO_LIBDIR
+  EVIODIR := $(shell pwd)/evio
+  SUBDIRS += evio
+  export EVIO_LIBDIR := $(EVIODIR)
+  export EVIO_INCDIR := $(EVIODIR)
+endif
+
 ifeq ($(ARCH),solarisCC5)
 # Solaris CC 5.0
 ifdef DEBUG
@@ -71,6 +79,7 @@ SOFLAGS      := -G
 SONAME       := -h
 DEFINES      += -DSUNVERS
 DICTCXXFLG   :=
+MAKEDEPEND   = g++ -MM
 endif
 
 ifeq ($(ARCH),linux)
@@ -145,9 +154,6 @@ ifdef ONLINE_ET
   HALLALIBS += $(ONLIBS)
 endif
 
-
-MAKEDEPEND   := gcc
-
 ifdef WITH_DEBUG
 DEFINES      += -DWITH_DEBUG
 endif
@@ -158,7 +164,8 @@ LIBS         += $(ROOTLIBS) $(SYSLIBS)
 GLIBS        += $(ROOTGLIBS) $(SYSLIBS)
 DEFINES      += $(PODD_EXTRA_DEFINES)
 
-export ARCH LIBDIR CXX LD SOFLAGS SONAME CXXFLG LDFLAGS DEFINES VERSION SOVERSION VERCODE CXXEXTFLG
+export ARCH LIBDIR CXX LD SOFLAGS SONAME CXXFLG LDFLAGS DEFINES
+export VERSION SOVERSION VERCODE CXXEXTFLG MAKEDEPEND
 
 #------------------------------------------------------------------------------
 
@@ -208,7 +215,7 @@ SRC          := src/THaFormula.C src/THaVform.C src/THaVhist.C \
 		src/THaPhotoReaction.C src/THaSAProtonEP.C \
 		src/THaTextvars.C src/THaQWEAKHelicity.C \
 		src/THaQWEAKHelicityReader.C src/THaEvtTypeHandler.C \
-		src/THaScalerEvtHandler.C
+		src/THaScalerEvtHandler.C src/THaEpicsEvtHandler.C
 
 ifdef ONLINE_ET
 SRC += src/THaOnlRun.C
@@ -254,8 +261,12 @@ src/ha_compiledata.h:	Makefile
 		@echo "" >> $@
 		@echo "#endif" >> $@
 
-subdirs:
-		set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i; done
+src/THaInterface:  src/ha_compiledata.h
+
+subdirs:	$(SUBDIRS)
+
+$(SUBDIRS):
+		set -e; $(MAKE) -C $@
 
 #---------- Core libraries -----------------------------------------
 $(LIBHALLA).$(VERSION):	$(HDR) $(OBJS)
@@ -293,6 +304,10 @@ ifneq ($(strip $(LDCONFIG)),)
 else
 		rm -f $@
 		ln -s $(notdir $<) $@
+endif
+
+ifdef EVIODIR
+$(DCDIR):	evio
 endif
 
 $(LIBDC):	$(LIBDC).$(SOVERSION)
@@ -382,29 +397,25 @@ ifneq ($(NAME),analyzer)
 endif
 		set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i install; done
 
-.PHONY: all clean realclean srcdist subdirs
-
-
 ###--- DO NOT CHANGE ANYTHING BELOW THIS LINE UNLESS YOU KNOW WHAT
 ###    YOU ARE DOING
 
+.PHONY: all clean realclean srcdist subdirs $(SUBDIRS)
+
 .SUFFIXES:
-.SUFFIXES: .c .cc .cpp .C .o .os .d
 
 %.o:	%.C
+ifeq ($(strip $(MAKEDEPEND)),)
+	$(CXX) $(CXXFLAGS) -MMD -o $@ -c $<
+	@mv -f $*.d $*.d.tmp
+else
 	$(CXX) $(CXXFLAGS) -o $@ -c $<
-
-%.d:	%.C src/ha_compiledata.h
-	@echo Creating dependencies for $<
-#	@$(SHELL) -ec '$(CXX) -MM $(CXXFLAGS) -c $< \
-#		| sed '\''s%\($*\)\.o[ :]*%\1.o $@ : %g'\'' > $@; \
-#		[ -s $@ ] || rm -f $@'
-	@$(SHELL) -ec '$(MAKEDEPEND) -MM $(ROOTINC) $(INCLUDES) $(DEFINES) -c $< \
-		| sed '\''s%^.*\.o%$*\.o%g'\'' \
-		| sed '\''s%\($*\)\.o[ :]*%\1.o $@ : %g'\'' > $@; \
-		[ -s $@ ] || rm -f $@'
-
-###
+	$(MAKEDEPEND) $(ROOTINC) $(INCLUDES) $(DEFINES) -c $< > $*.d.tmp
+endif
+	@sed -e 's|.*:|$*.o:|' < $*.d.tmp > $*.d
+	@sed -e 's/.*://' -e 's/\\$$//' < $*.d.tmp | fmt -1 | \
+	  sed -e 's/^ *//' -e 's/$$/:/' >> $*.d
+	@rm -f $*.d.tmp
 
 -include $(DEP)
 

@@ -31,6 +31,9 @@
 #include "THaScalerGroup.h"
 #include "THaScaler.h"
 #include "THaEvData.h"
+#include "THaEvtTypeHandler.h"
+#include "THaEpicsEvtHandler.h"
+#include "THaScalerEvtHandler.h"
 #include "THaString.h"
 #include <algorithm>
 #include <fstream>
@@ -718,32 +721,31 @@ Int_t THaOutput::Attach()
 
 }
 
-
 //_____________________________________________________________________________
-Int_t THaOutput::ProcEpics(THaEvData *evdata) 
+Int_t THaOutput::ProcEpics(THaEvData *evdata, THaEpicsEvtHandler *epicshandle)  
 {
   // Process the EPICS data, this fills the trees.
-  // This function is called by THaAnalyzer.
 
-  if ( !evdata->IsEpicsEvent() 
+  if ( !epicshandle ) return 0;
+  if ( !epicshandle->IsMyEvent(evdata->GetEvType()) 
        || fEpicsKey.empty() || !fEpicsTree ) return 0;
   if( fgDoBench ) fgBench.Begin("EPICS");
   fEpicsVar[fEpicsKey.size()] = -1e32;
   for (UInt_t i = 0; i < fEpicsKey.size(); i++) {
-    if (evdata->IsLoadedEpics(fEpicsKey[i]->GetName().c_str())) {
-      //      cout << "EPICS name "<<fEpicsKey[i]->GetName()<<"    val "<< evdata->GetEpicsString(fEpicsKey[i]->GetName().c_str())<<endl;
+    if (epicshandle->IsLoaded(fEpicsKey[i]->GetName().c_str())) {
+      //      cout << "EPICS name "<<fEpicsKey[i]->GetName()<<"    val "<< epicshandle->GetString(fEpicsKey[i]->GetName().c_str())<<endl;
       if (fEpicsKey[i]->IsString()) {
         fEpicsVar[i] = fEpicsKey[i]->Eval(
-          evdata->GetEpicsString(
+          epicshandle->GetString(
              fEpicsKey[i]->GetName().c_str()));
       } else {
         fEpicsVar[i] = 
-           evdata->GetEpicsData(
+           epicshandle->GetData(
               fEpicsKey[i]->GetName().c_str());
       }
  // fill time stamp (once is ok since this is an EPICS event)
       fEpicsVar[fEpicsKey.size()] =
- 	 evdata->GetEpicsTime(
+ 	 epicshandle->GetTime(
            fEpicsKey[i]->GetName().c_str());
     } else {
       fEpicsVar[i] = -1e32;  // data not yet found

@@ -22,6 +22,7 @@ class THaBenchmark;
 class THaEvData;
 class THaPostProcess;
 class THaCrateMap;
+class THaEpicsEvtHandler;
 
 class THaAnalyzer : public TObject {
 
@@ -56,6 +57,7 @@ public:
   TList*         GetApps()             const  { return fApps; }
   TList*         GetPhysics()          const  { return fPhysics; }
   TList*         GetScalers()          const  { return fScalers; }
+  TList*         GetEvtHandlers()      const  { return fEvtHandlers; }
   TList*         GetPostProcess()      const  { return fPostProcess; }
   Bool_t         HasStarted()          const  { return fAnalysisStarted; }
   Bool_t         HelicityEnabled()     const  { return fDoHelicity; }
@@ -110,6 +112,7 @@ protected:
 
   TFile*         fFile;            //The ROOT output file.
   THaOutput*     fOutput;          //Flexible ROOT output (tree, histograms)
+  THaEpicsEvtHandler* fEpicsHandler; // EPICS event handler used by THaOutput
   TString        fOutFileName;     //Name of output ROOT file.
   TString        fCutFileName;     //Name of cut definition file to load
   TString        fLoadedCutFileName;//Name of last loaded cut definition file
@@ -133,7 +136,7 @@ protected:
   TList*         fPhysics;         //List of physics modules
   TList*         fScalers;         //List of scaler groups
   TList*         fPostProcess;     //List of post-processing modules
-  TList*         fEvtHandlers;     //List of Event Type Handlers
+  TList*         fEvtHandlers;     //List of event handlers
 
   // Status and control flags
   Bool_t         fIsInit;          // Init() called successfully

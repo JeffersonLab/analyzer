@@ -197,18 +197,16 @@ Int_t CodaDecoder::roc_decode( Int_t roc, const UInt_t* evbuffer,
     LoadIfFlagData(p);
 
     n_slots_checked = 0;
-    slot = firstslot - incrslot;
+    slot = firstslot;
     slotdone = kFALSE;
 
     while(!slotdone && n_slots_checked < Nslot-n_slots_done && slot >= 0 && slot < MAXSLOT) {
 
-      slot = slot + incrslot;
-      if (!fMap->slotUsed(roc,slot)) {
+      if (!fMap->slotUsed(roc,slot) || fMap->slotDone(slot)) {
+         slot = slot + incrslot;
 	 continue;
       }
-      if (fMap->slotDone(slot)) {
-	 continue;
-      }
+
       ++n_slots_checked;
 
      if (fDebugFile) {
@@ -227,6 +225,8 @@ Int_t CodaDecoder::roc_decode( Int_t roc, const UInt_t* evbuffer,
       if (fDebugFile) {
 	  *fDebugFile<< "CodaDecode:: roc_decode:: after LoadIfSlot "<<p << "  "<<pstop<<"  "<<"  "<<hex<<*p<<"  "<<dec<<nwords<<endl;
       }
+
+      slot = slot + incrslot;
 
     }
 

@@ -34,6 +34,8 @@
 #include "THaPhysicsModule.h"
 #include "THaPostProcess.h"
 #include "THaBenchmark.h"
+#include "THaEvtTypeHandler.h"
+#include "THaEpicsEvtHandler.h"
 #include "TList.h"
 #include "TTree.h"
 #include "TFile.h"
@@ -46,9 +48,6 @@
 #include "TMath.h"
 #include "TDirectory.h"
 #include "THaCrateMap.h"
-
-#include "THaEvtTypeHandler.h"
-#include "THaScalerEvtHandler.h"
 
 #include <fstream>
 #include <algorithm>
@@ -79,7 +78,7 @@ THaAnalyzer::THaAnalyzer() :
   fStages(NULL), fCounters(NULL), fNev(0), fMarkInterval(1000), fCompress(1),
   fVerbose(2), fCountMode(kCountRaw), fBench(NULL), fPrevEvent(NULL),
   fRun(NULL), fEvData(NULL), fApps(NULL), fPhysics(NULL), fScalers(NULL),
-  fPostProcess(NULL), fEvtHandlers(NULL),
+  fPostProcess(NULL), fEvtHandlers(NULL), fEpicsHandler(NULL), 
   fIsInit(kFALSE), fAnalysisStarted(kFALSE), fLocalEvent(kFALSE),
   fUpdateRun(kTRUE), fOverwrite(kTRUE), fDoBench(kFALSE),
   fDoHelicity(kFALSE), fDoPhysics(kTRUE), fDoOtherEvents(kTRUE),
@@ -99,6 +98,12 @@ THaAnalyzer::THaAnalyzer() :
   fApps    = gHaApps;
   fScalers = gHaScalers;
   fPhysics = gHaPhysics;
+  fEvtHandlers = gHaEvtHandlers;
+
+  // EPICs data
+  fEpicsHandler = new THaEpicsEvtHandler("epics","EPICS event type 131");
+  //  fEpicsHandler->SetDebugFile("epicsdat.txt");
+  fEvtHandlers->Add(fEpicsHandler);
 
   // Timers
   fBench = new THaBenchmark;
@@ -665,21 +670,6 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
   // for initializing the modules
   TDatime run_time = fRun->GetDate();
 
-  // Event type handlers -- these probably should be plug-ins (Bob)
-
-  THaScalerEvtHandler *h1 = new THaScalerEvtHandler("Left","Event type 140");
-  h1->Init(run_time);
-  //h1->Print();
-
-  THaScalerEvtHandler *h2 = new THaScalerEvtHandler("Right","Event type 140");
-  h2->Init(run_time);
-  //h2->Print();
-
-  fEvtHandlers = new TList();
-
-  fEvtHandlers->Add(h1);
-  fEvtHandlers->Add(h2);
-
   // Tell the decoder the run time. This will trigger decoder
   // initialization (reading of crate map data etc.)
   fEvData->SetRunTime( run_time.Convert());
@@ -688,7 +678,8 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
   // Quit if any errors.
   if( !((retval = InitModules( fApps,    run_time, 20, "THaApparatus")) ||
 	(retval = InitModules( fScalers, run_time, 30, "THaScalerGroup")) ||
-	(retval = InitModules( fPhysics, run_time, 40, "THaPhysicsModule"))
+	(retval = InitModules( fPhysics, run_time, 40, "THaPhysicsModule")) ||
+	(retval = InitModules( fEvtHandlers, run_time, 50, "THaEvtTypeHandler")) 
 	)) {
 
     // Set up cuts here, now that all global variables are available
@@ -969,6 +960,10 @@ Int_t THaAnalyzer::BeginAnalysis()
   while( THaAnalysisObject* obj = static_cast<THaAnalysisObject*>(nextp()) ) {
     obj->Begin( fRun );
   }
+  TIter nexte(fEvtHandlers);
+  while( THaAnalysisObject* obj = static_cast<THaAnalysisObject*>(nexte()) ) {
+    obj->Begin( fRun );
+  }
 
   return 0;
 }
@@ -988,7 +983,7 @@ Int_t THaAnalyzer::EndAnalysis()
     obj->End( fRun );
   }
   TIter nexte(fEvtHandlers);
-  while( THaEvtTypeHandler* obj = static_cast<THaEvtTypeHandler*>(nexte()) ) {
+  while( THaAnalysisObject* obj = static_cast<THaAnalysisObject*>(nexte()) ) {
     obj->End( fRun );
   }
   return 0;
@@ -1165,8 +1160,9 @@ Int_t THaAnalyzer::SlowControlAnalysis( Int_t code )
 
   if( code == kFatal )
     return code;
+  if ( !fEpicsHandler ) return kOK;
   if( fDoBench ) fBench->Begin("Output");
-  if( fOutput ) fOutput->ProcEpics(fEvData);
+  if( fOutput ) fOutput->ProcEpics(fEvData, fEpicsHandler);
   if( fDoBench ) fBench->Stop("Output");
   if( code == kTerminate )
     return code;
@@ -1265,24 +1261,31 @@ Int_t THaAnalyzer::MainAnalysis()
     retval = PhysicsAnalysis(retval);
     evdone = true;
   }
+
   //=== EPICS data ===
   if( fEvData->IsEpicsEvent() && fDoSlowControl ) {
     Incr(kNevEpics);
     retval = SlowControlAnalysis(retval);
     evdone = true;
   }
-  //=== Scaler triggers ===
+ 
+// to be deleted
+#ifdef OLDWAY
+ //=== Scaler triggers ===
   if( fEvData->IsScalerEvent() && fDoScalers ) {
     Incr(kNevScaler);
     retval = ScalerAnalysis(retval);
     evdone = true;
   }
+#endif
+
   //=== Other events ===
   if( !evdone && fDoOtherEvents ) {
     Incr(kNevOther);
     retval = OtherAnalysis(retval);
 
   } // End trigger type test
+
 
   //=== Post-processing (e.g. event filtering) ===
   if( fPostProcess ) {
