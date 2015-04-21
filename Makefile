@@ -42,7 +42,7 @@ CC           := $(shell root-config --cc)
 HA_DIR       := $(shell pwd)
 DCDIR        := hana_decode
 LIBDIR       := $(shell pwd)
-HALLALIBS    := -L$(LIBDIR) -lHallA -ldc -lscaler
+HALLALIBS    := -L$(LIBDIR) -lHallA -ldc 
 SUBDIRS      := $(DCDIR) 
 INCDIRS      := $(addprefix $(HA_DIR)/, src $(SUBDIRS))
 HA_DICT      := haDict
@@ -195,7 +195,7 @@ SRC          := src/THaFormula.C src/THaVform.C src/THaVhist.C \
 		src/THaVDCWire.C src/THaVDCHit.C src/THaVDCCluster.C \
 		src/THaVDCTimeToDistConv.C src/THaVDCTrackID.C \
                 src/THaVDCAnalyticTTDConv.C \
-		src/THaVDCTrackPair.C src/VDCeff.C src/THaScalerGroup.C \
+		src/THaVDCTrackPair.C src/VDCeff.C \
 		src/THaElectronKine.C src/THaReactionPoint.C \
 		src/THaReacPointFoil.C \
 		src/THaTwoarmVertex.C src/THaAvgVertex.C \
