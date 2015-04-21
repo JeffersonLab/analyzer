@@ -18,7 +18,6 @@ class TH1F;
 class TH2F;
 class THaVform;
 class THaVhist;
-class THaScalerGroup;
 class THaEvData;
 class TTree;
 class THaEvtTypeHandler;
@@ -66,7 +65,6 @@ private:
 
 
 class THaEpicsKey;
-class THaScalerKey;
 class THaEpicsEvtHandler;
 
 class THaOutput {
@@ -78,7 +76,6 @@ public:
 
   virtual Int_t Init( const char* filename="output.def" );
   virtual Int_t Process();
-  virtual Int_t ProcScaler(THaScalerGroup *sca);
   virtual Int_t ProcEpics(THaEvData *ev, THaEpicsEvtHandler *han);
   virtual Int_t End();
   virtual Bool_t TreeDefined() const { return fTree != 0; };
@@ -98,9 +95,6 @@ protected:
   std::vector<std::string> reQuote(const std::vector<std::string>& input) const;
   std::string CleanEpicsName(const std::string& var) const;
   void BuildList(const std::vector<std::string>& vdata);
-  void AddScaler(const std::string& name, const std::string& bank, 
-         Int_t helicity = 0, Int_t slot=-1, Int_t chan=-1); 
-  void DefScaler(Int_t hel = 0);
   void Print() const;
   // Variables, Formulas, Cuts, Histograms
   Int_t fNvar;
@@ -114,9 +108,7 @@ protected:
   std::vector<THaVhist* > fHistos;
   std::vector<THaOdata* > fOdata;
   std::vector<THaEpicsKey*>  fEpicsKey;
-  std::vector<THaScalerKey*> fScalerKey;
   TTree *fTree, *fEpicsTree; 
-  std::map<std::string, TTree*> fScalTree;
   bool fInit;
   
   enum EId {kVar = 1, kForm, kCut, kH1f, kH1d, kH2f, kH2d, kBlock,
@@ -131,13 +123,13 @@ private:
   THaOutput(const THaOutput&);
   THaOutput& operator=(const THaOutput& );
 
-  std::string stitle, sfvarx, sfvary, scut, fScalBank;
+  std::string stitle, sfvarx, sfvary, scut;
 
   THaEvtTypeHandler *fEpicsHandler;
 
-  Int_t nx,ny,iscut, fScalRC;
+  Int_t nx,ny,iscut;
   Float_t xlo,xhi,ylo,yhi;
-  Bool_t fOpenEpics,fOpenScal,fFirstEpics,fFirstScal;
+  Bool_t fOpenEpics,fFirstEpics;
 
   ClassDef(THaOutput,0)  
 };
