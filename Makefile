@@ -41,10 +41,9 @@ CC           := $(shell root-config --cc)
 
 HA_DIR       := $(shell pwd)
 DCDIR        := hana_decode
-SCALERDIR    := hana_scaler
 LIBDIR       := $(shell pwd)
-HALLALIBS    := -L$(LIBDIR) -lHallA -ldc -lscaler
-SUBDIRS      := $(DCDIR) $(SCALERDIR)
+HALLALIBS    := -L$(LIBDIR) -lHallA -ldc 
+SUBDIRS      := $(DCDIR) 
 INCDIRS      := $(addprefix $(HA_DIR)/, src $(SUBDIRS))
 HA_DICT      := haDict
 
@@ -196,7 +195,7 @@ SRC          := src/THaFormula.C src/THaVform.C src/THaVhist.C \
 		src/THaVDCWire.C src/THaVDCHit.C src/THaVDCCluster.C \
 		src/THaVDCTimeToDistConv.C src/THaVDCTrackID.C \
                 src/THaVDCAnalyticTTDConv.C \
-		src/THaVDCTrackPair.C src/VDCeff.C src/THaScalerGroup.C \
+		src/THaVDCTrackPair.C src/VDCeff.C \
 		src/THaElectronKine.C src/THaReactionPoint.C \
 		src/THaReacPointFoil.C \
 		src/THaTwoarmVertex.C src/THaAvgVertex.C \
@@ -230,22 +229,11 @@ HA_LINKDEF   := src/HallA_LinkDef.h
 
 LIBHALLA     := $(LIBDIR)/libHallA.so
 LIBDC        := $(LIBDIR)/libdc.so
-LIBSCALER    := $(LIBDIR)/libscaler.so
 
-#------ Extra libraries -------------------------
-LNA          := NormAna
-LIBNORMANA   := $(LIBDIR)/lib$(LNA).so
-LNA_DICT     := $(LNA)Dict
-LNA_SRC      := src/THa$(LNA).C
-LNA_OBJ      := $(LNA_SRC:.C=.o)
-LNA_HDR      := $(LNA_SRC:.C=.h)
-LNA_DEP      := $(LNA_SRC:.C=.d)
-LNA_OBJS     := $(LNA_OBJ) $(LNA_DICT).o
-LNA_LINKDEF  := src/$(LNA)_LinkDef.h
 #------------------------------------------------
 
-PROGRAMS     := analyzer $(LIBNORMANA)
-PODDLIBS     := $(LIBHALLA) $(LIBDC) $(LIBSCALER)
+PROGRAMS     := analyzer
+PODDLIBS     := $(LIBHALLA) $(LIBDC) 
 
 all:            subdirs
 		set -e; for i in $(PROGRAMS); do $(MAKE) $$i; done
@@ -298,7 +286,6 @@ else
 		ln -s $(notdir $<) $@
 endif
 
-$(LIBSCALER).$(SOVERSION):	$(LIBSCALER).$(VERSION)
 ifneq ($(strip $(LDCONFIG)),)
 		$(LDCONFIG)
 else
@@ -314,10 +301,6 @@ $(LIBDC):	$(LIBDC).$(SOVERSION)
 		rm -f $@
 		ln -s $(notdir $<) $@
 
-$(LIBSCALER):	$(LIBSCALER).$(SOVERSION)
-		rm -f $@
-		ln -s $(notdir $<) $@
-
 ifeq ($(ARCH),linux)
 $(HA_DICT).o:  $(HA_DICT).C
 	$(CXX) $(CXXFLAGS) $(DICTCXXFLG) -o $@ -c $^
@@ -328,25 +311,15 @@ $(HA_DICT).C: $(RCHDR) $(HA_LINKDEF)
 	$(ROOTBIN)/rootcint -f $@ -c $(ROOTINC) $(INCLUDES) $(DEFINES) $^
 
 
-#---------- Extra libraries ----------------------------------------
-
-$(LIBNORMANA):	$(LNA_HDR) $(LNA_OBJS)
-		$(LD) $(LDFLAGS) $(SOFLAGS) -o $@ $(LNA_OBJS)
-		@echo "$@ done"
-
-$(LNA_DICT).C:	$(LNA_HDR) $(LNA_LINKDEF)
-		@echo "Generating dictionary $(LNA_DICT)..."
-		rootcint -f $@ -c $(ROOTINC) $(INCLUDES) $(DEFINES) $^
-
 #---------- Main program -------------------------------------------
-analyzer:	src/main.o $(LIBDC) $(LIBSCALER) $(LIBHALLA)
+analyzer:	src/main.o $(LIBDC) $(LIBHALLA)
 		$(LD) $(LDFLAGS) $< $(HALLALIBS) $(GLIBS) -o $@
 
 #---------- Maintenance --------------------------------------------
 clean:
 		set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i clean; done
 		rm -f *.{so,a,o,os} *.so.*
-		rm -f $(PROGRAMS) $(HA_DICT).* $(LNA_DICT).* *~
+		rm -f $(PROGRAMS) $(HA_DICT).* *~
 		cd src; rm -f ha_compiledata.h *.{o,os} *~
 
 realclean:	clean
@@ -361,7 +334,7 @@ srcdist:
 		 $(addprefix $(NAME)/, \
 		  ChangeLog $(wildcard README*) Makefile .exclude .gitignore \
 		  SConstruct $(wildcard *.py) scons \
-		  src $(DCDIR) $(SCALERDIR) )
+		  src $(DCDIR)
 
 # $(NAME)/DB $(NAME)/examples \# $(NAME)/docs $(NAME)/Calib
 # $(NAME)/contrib
@@ -373,8 +346,7 @@ endif
 		@echo "Installing in $(ANALYZER) ..."
 		@mkdir -p $(ANALYZER)/{$(PLATFORM),include,src/src,docs,DB,examples,SDK}
 		cp -pu $(SRC) $(HDR) $(HA_LINKDEF) $(ANALYZER)/src/src
-		cp -pu $(LNA_SRC) $(LNA_HDR) $(LNA_LINKDEF) $(ANALYZER)/src/src
-		cp -pu $(HDR) $(LNA_HDR) $(ANALYZER)/include
+		cp -pu $(HDR) $(ANALYZER)/include
 		tar cf - `find examples docs SDK -type f | grep -v '*~'` | tar xf - -C $(ANALYZER)
 		cp -pu Makefile ChangeLog $(ANALYZER)/src
 		cp -pru DB $(ANALYZER)/

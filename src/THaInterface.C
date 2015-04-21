@@ -38,7 +38,6 @@ using namespace std;
 THaVarList*  gHaVars     = NULL;  // List of symbolic analyzer variables
 THaCutList*  gHaCuts     = NULL;  // List of global analyzer cuts/tests
 TList*       gHaApps     = NULL;  // List of Apparatuses
-TList*       gHaScalers  = NULL;  // List of scaler groups
 TList*       gHaPhysics  = NULL;  // List of physics modules
 TList*       gHaEvtHandlers  = NULL;  // List of event handlers
 THaRunBase*  gHaRun      = NULL;  // The currently active run
@@ -72,7 +71,6 @@ THaInterface::THaInterface( const char* appClassName, int* argc, char** argv,
   gHaVars    = new THaVarList;
   gHaCuts    = new THaCutList( gHaVars );
   gHaApps    = new TList;
-  gHaScalers = new TList;
   gHaPhysics = new TList;
   gHaEvtHandlers = new TList;
   // Use the standard CODA file decoder by default
@@ -102,7 +100,7 @@ THaInterface::THaInterface( const char* appClassName, int* argc, char** argv,
       gSystem->FreeDirectory(dp);
       s = p;
     } else
-      s = s+"/src " + s+"/hana_decode " + s+"/hana_scaler";
+      s = s+"/src " + s+"/hana_decode ";
   }
   // Directories names separated by blanks.
   // FIXME: allow blanks
@@ -152,7 +150,6 @@ THaInterface::~THaInterface()
     delete gHaTextvars; gHaTextvars=0;
     //    delete gHaDB;           gHaDB = 0;
     delete gHaPhysics;   gHaPhysics=0;
-    delete gHaScalers;   gHaScalers=0;
     delete gHaEvtHandlers;  gHaEvtHandlers=0;
     delete gHaApps;         gHaApps=0;
     delete gHaVars;         gHaVars=0;

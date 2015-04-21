@@ -30,7 +30,6 @@
 #include "THaNamedList.h"
 #include "THaCutList.h"
 #include "THaCut.h"
-#include "THaScalerGroup.h"
 #include "THaPhysicsModule.h"
 #include "THaPostProcess.h"
 #include "THaBenchmark.h"
@@ -73,16 +72,16 @@ THaAnalyzer* THaAnalyzer::fgAnalyzer = 0;
 
 //_____________________________________________________________________________
 THaAnalyzer::THaAnalyzer() :
-  fFile(NULL), fOutput(NULL), fOdefFileName(kDefaultOdefFile), fEvent(NULL),
-  fNStages(0), fNCounters(0),
+  fFile(NULL), fOutput(NULL), fEpicsHandler(NULL),
+  fOdefFileName(kDefaultOdefFile), fEvent(NULL), fNStages(0), fNCounters(0),
   fStages(NULL), fCounters(NULL), fNev(0), fMarkInterval(1000), fCompress(1),
   fVerbose(2), fCountMode(kCountRaw), fBench(NULL), fPrevEvent(NULL),
-  fRun(NULL), fEvData(NULL), fApps(NULL), fPhysics(NULL), fScalers(NULL),
-  fPostProcess(NULL), fEvtHandlers(NULL), fEpicsHandler(NULL), 
+  fRun(NULL), fEvData(NULL), fApps(NULL), fPhysics(NULL), 
+  fPostProcess(NULL), fEvtHandlers(NULL),
   fIsInit(kFALSE), fAnalysisStarted(kFALSE), fLocalEvent(kFALSE),
   fUpdateRun(kTRUE), fOverwrite(kTRUE), fDoBench(kFALSE),
   fDoHelicity(kFALSE), fDoPhysics(kTRUE), fDoOtherEvents(kTRUE),
-  fDoScalers(kTRUE), fDoSlowControl(kTRUE)
+  fDoSlowControl(kTRUE)
 {
   // Default constructor.
 
@@ -96,7 +95,6 @@ THaAnalyzer::THaAnalyzer() :
 
   // Use the global lists of analysis objects.
   fApps    = gHaApps;
-  fScalers = gHaScalers;
   fPhysics = gHaPhysics;
   fEvtHandlers = gHaEvtHandlers;
 
@@ -287,7 +285,7 @@ void THaAnalyzer::EnablePhysicsEvents( Bool_t b )
 //_____________________________________________________________________________
 void THaAnalyzer::EnableScalers( Bool_t b )
 {
-  fDoScalers = b;
+  cout << "Warning:: Scalers are handled by event handlers now"<<endl;
 }
 
 //_____________________________________________________________________________
@@ -361,7 +359,6 @@ void THaAnalyzer::InitCounters()
     { kNevRead,            "events read" },
     { kNevGood,            "events decoded" },
     { kNevPhysics,         "physics events" },
-    { kNevScaler,          "scaler events" },
     { kNevEpics,           "slow control events" },
     { kNevOther,           "other event types" },
     { kNevPostProcess,     "events post-processed" },
@@ -677,7 +674,6 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
   // Initialize all apparatuses, scalers, and physics modules.
   // Quit if any errors.
   if( !((retval = InitModules( fApps,    run_time, 20, "THaApparatus")) ||
-	(retval = InitModules( fScalers, run_time, 30, "THaScalerGroup")) ||
 	(retval = InitModules( fPhysics, run_time, 40, "THaPhysicsModule")) ||
 	(retval = InitModules( fEvtHandlers, run_time, 50, "THaEvtTypeHandler")) 
 	)) {
@@ -898,19 +894,18 @@ void THaAnalyzer::PrintCounters() const
 //_____________________________________________________________________________
 void THaAnalyzer::PrintScalers() const
 {
+  // may want to loop over scaler event handlers and use their print methods.
+  // but that can be done with the End method of the event handler
   // Print scaler statistics
   bool first = true;
-  TIter next(fScalers);
-  while( THaScalerGroup* theScaler =
-	 static_cast<THaScalerGroup*>( next() )) {
     if( first ) {
-      cout << "Scaler summary:";
+      cout << "Scalers are event handlers now and can be summarized by "<<endl;
+      cout << "those objects"<<endl;
       first = false;
     }
     cout << endl;
-    theScaler->PrintSummary();
-  }
-  if( !first ) cout << endl;
+    //OLD WAY    theScaler->PrintSummary();
+   if( !first ) cout << endl;
 }
 
 //_____________________________________________________________________________
@@ -1170,37 +1165,6 @@ Int_t THaAnalyzer::SlowControlAnalysis( Int_t code )
 }
 
 //_____________________________________________________________________________
-Int_t THaAnalyzer::ScalerAnalysis( Int_t code )
-{
-  //--- Loop over all defined scalers and execute THaScaler::LoadData()
-  //    Also, output scaler data to output file.
-  //
-  // NB: we ignore 'code' and fNev and always return kOK. In this way,
-  //scalers are always analyzed even if RawDecode tests fail and/or the event
-  // is before the first requested event number. This is necessary because
-  // LoadData() works incrementally and must see the entire stream of
-  // scaler data starting from the beginning of the run.
-
-  if( code == kFatal )
-    return code;
-  TIter next(fScalers);
-  while( THaScalerGroup* theScaler =
-	 static_cast<THaScalerGroup*>( next() )) {
-    if( fDoBench ) fBench->Begin("Scaler");
-    theScaler->LoadData( *fEvData );
-    if( fDoBench ) fBench->Stop("Scaler");
-    if ( fOutput ) {
-      if( fDoBench ) fBench->Begin("Output");
-      fOutput->ProcScaler(theScaler);
-      if( fDoBench ) fBench->Stop("Output");
-    }
-  }
-  if( code == kTerminate )
-    return code;
-  return kOK;
-}
-
-//_____________________________________________________________________________
 Int_t THaAnalyzer::OtherAnalysis( Int_t code )
 {
   // Analysis of other events (i.e. events that are not physics, scaler, or
@@ -1269,16 +1233,6 @@ Int_t THaAnalyzer::MainAnalysis()
     evdone = true;
   }
  
-// to be deleted
-#ifdef OLDWAY
- //=== Scaler triggers ===
-  if( fEvData->IsScalerEvent() && fDoScalers ) {
-    Incr(kNevScaler);
-    retval = ScalerAnalysis(retval);
-    evdone = true;
-  }
-#endif
-
   //=== Other events ===
   if( !evdone && fDoOtherEvents ) {
     Incr(kNevOther);
@@ -1342,8 +1296,6 @@ Int_t THaAnalyzer::Process( THaRunBase* run )
 
   // Enable/disable helicity decoding as requested
   fEvData->EnableHelicity( HelicityEnabled() );
-  // Decode scalers only if requested and fScalers is not empty
-  fEvData->EnableScalers( ScalersEnabled() && (fScalers->GetSize()>0) );
   // Set decoder reporting level. FIXME: update when THaEvData is updated
   fEvData->SetVerbose( (fVerbose>2) );
   fEvData->SetDebug( (fVerbose>3) );
@@ -1352,9 +1304,6 @@ Int_t THaAnalyzer::Process( THaRunBase* run )
   if( fVerbose>1 ) {
     cout << "Decoder: helicity "
 	 << (fEvData->HelicityEnabled() ? "enabled" : "disabled")
-	 << endl;
-    cout << "Decoder: scalers "
-	 << (fEvData->ScalersEnabled() ? "enabled" : "disabled")
 	 << endl;
     cout << endl << "Starting analysis" << endl;
   }
@@ -1503,7 +1452,6 @@ Int_t THaAnalyzer::Process( THaRunBase* run )
     fBench->Print("Physics");
     fBench->Print("Output");
     fBench->Print("Cuts");
-    fBench->Print("Scaler");
   }
   if( fVerbose>1 || fDoBench )
     fBench->Print("Total");
