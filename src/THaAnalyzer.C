@@ -899,7 +899,7 @@ void THaAnalyzer::PrintScalers() const
   // Print scaler statistics
   bool first = true;
     if( first ) {
-      cout << "Scalers are event handlers now, and can be summarized by "
+      cout << "Scalers are event handlers now and can be summarized by "<<endl;
       cout << "those objects"<<endl;
       first = false;
     }
