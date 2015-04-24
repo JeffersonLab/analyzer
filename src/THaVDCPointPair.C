@@ -17,6 +17,7 @@
 #include <cassert>
 
 using namespace std;
+using namespace VDC;
 
 //_____________________________________________________________________________
 void THaVDCPointPair::Analyze()

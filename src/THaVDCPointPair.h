@@ -23,7 +23,7 @@ public:
 
   void            Analyze();
   void            Associate( THaTrack* track );
-  chi2_t          CalcChi2() const;
+  VDC::chi2_t     CalcChi2() const;
   virtual Int_t   Compare( const TObject* ) const;
   Double_t        GetError()   const { return fError; }
   THaVDCPoint*    GetLower()   const { return fLowerPoint; }

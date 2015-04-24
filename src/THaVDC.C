@@ -43,6 +43,7 @@
 
 
 using namespace std;
+using namespace VDC;
 using THaString::Split;
 
 //_____________________________________________________________________________

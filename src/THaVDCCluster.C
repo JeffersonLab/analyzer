@@ -23,6 +23,7 @@
 
 #include <iostream>
 
+using namespace VDC;
 using namespace std;
 
 const Double_t VDC::kBig = 1e38;  // Arbitrary large value

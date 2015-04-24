@@ -36,7 +36,6 @@ namespace VDC {
     return a;
   };
 }
-using namespace VDC;
 
 class THaVDCCluster : public TObject {
 
@@ -53,7 +52,7 @@ public:
   virtual void   FitTrack( EMode mode = kT0 );
   virtual void   ClearFit();
   virtual void   CalcChisquare(Double_t& chi2, Int_t& nhits) const;
-  chi2_t         CalcDist();    // calculate global track to wire distances
+  VDC::chi2_t    CalcDist();    // calculate global track to wire distances
 
   // TObject functions redefined
   virtual void   Clear( Option_t* opt="" );
@@ -74,7 +73,7 @@ public:
   Int_t          GetPivotWireNum()   const;
   Double_t       GetTimeCorrection() const { return fTimeCorrection; }
   Double_t       GetT0()             const { return fT0; }
-  VDCpp_t*       GetPointPair()      const { return fPointPair; }
+  VDC::VDCpp_t*  GetPointPair()      const { return fPointPair; }
   THaTrack*      GetTrack()          const { return fTrack; }
   Int_t          GetTrackIndex()     const;
   Int_t          GetTrkNum()         const { return fTrkNum; }
@@ -89,13 +88,13 @@ public:
   void           SetSlope( Double_t slope)          { fSlope = slope;}
   void           SetPivot( THaVDCHit* piv)          { fPivot = piv; }
   void           SetTimeCorrection( Double_t dt )   { fTimeCorrection = dt; }
-  void           SetPointPair( VDCpp_t* pp )        { fPointPair = pp; }
+  void           SetPointPair( VDC::VDCpp_t* pp )   { fPointPair = pp; }
   void           SetTrack( THaTrack* track );
 
 protected:
-  Vhit_t         fHits;              // Hits associated w/this cluster
+  VDC::Vhit_t    fHits;              // Hits associated w/this cluster
   THaVDCPlane*   fPlane;             // Plane the cluster belongs to
-  VDCpp_t*       fPointPair;         // Lower/upper combo we're assigned to
+  VDC::VDCpp_t*  fPointPair;         // Lower/upper combo we're assigned to
   THaTrack*      fTrack;             // Track the cluster belongs to
   Int_t          fTrkNum;            // Number of the track using this cluster
 
@@ -116,14 +115,14 @@ protected:
   Int_t          fClsEnd;            // Ending wire number
 
   // Workspace for fitting routines
-  Vcoord_t       fCoord;             // coordinates to be fit
+  VDC::Vcoord_t  fCoord;             // coordinates to be fit
 
   void   CalcLocalDist();     // calculate the local track to wire distances
 
   void   FitSimpleTrack( Bool_t weighted = false );
   void   FitNLTrack();        // Non-linear 3-parameter fit
 
-  chi2_t CalcChisquare( Double_t slope, Double_t icpt, Double_t d0 ) const;
+  VDC::chi2_t CalcChisquare( Double_t slope, Double_t icpt, Double_t d0 ) const;
   void   Linear3DFit( Double_t& slope, Double_t& icpt, Double_t& d0 ) const;
   Int_t  LinearClusterFitWithT0();
 
