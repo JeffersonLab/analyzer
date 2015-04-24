@@ -427,7 +427,6 @@ Int_t THaVDCPlane::DefineVariables( EMode mode )
     { "cltrknum", "Cluster track number (0=unused)", "fClusters.THaVDCCluster.fTrkNum" },
     { "clbeg", "Cluster start wire",          "fClusters.THaVDCCluster.fClsBeg" },
     { "clend", "Cluster end wire",            "fClusters.THaVDCCluster.fClsEnd" },
-    { "ambig", "UV Association ambiguous",    "fClusters.THaVDCCluster.fAmbig" },
     { "npass", "Number of hit passes for cluster", "GetNpass()" },
     { 0 }
   };
