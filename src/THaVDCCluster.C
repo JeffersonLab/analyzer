@@ -68,8 +68,8 @@ void THaVDCCluster::Clear( const Option_t* )
   fPointPair = 0;
   fTrack   = 0;
   fTrkNum  = 0;
-  fClsBeg  = -1;
-  fClsEnd  = kMaxInt;
+  fClsBeg  = kMaxInt-1;
+  fClsEnd  = -1;
 }
 
 //_____________________________________________________________________________
