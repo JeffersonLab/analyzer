@@ -64,9 +64,7 @@ THaVDC::THaVDC( const char* name, const char* description,
   fLUpairs = new TClonesArray( "THaVDCPointPair", 20 );
 
   // Default behavior for now
-//  SetBit( kOnlyFastest | kHardTDCcut );
-  SetBit( kHardTDCcut );
-
+  SetBit( kOnlyFastest | kHardTDCcut );
 }
 
 //_____________________________________________________________________________
