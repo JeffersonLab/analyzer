@@ -41,10 +41,9 @@ CC           := $(shell root-config --cc)
 
 HA_DIR       := $(shell pwd)
 DCDIR        := hana_decode
-SCALERDIR    := hana_scaler
 LIBDIR       := $(shell pwd)
-HALLALIBS    := -L$(LIBDIR) -lHallA -ldc -lscaler
-SUBDIRS      := $(DCDIR) $(SCALERDIR)
+HALLALIBS    := -L$(LIBDIR) -lHallA -ldc 
+SUBDIRS      := $(DCDIR) 
 INCDIRS      := $(addprefix $(HA_DIR)/, src $(SUBDIRS))
 HA_DICT      := haDict
 
@@ -196,7 +195,7 @@ SRC          := src/THaFormula.C src/THaVform.C src/THaVhist.C \
 		src/THaVDCWire.C src/THaVDCHit.C src/THaVDCCluster.C \
 		src/THaVDCTimeToDistConv.C src/THaVDCTrackID.C \
                 src/THaVDCAnalyticTTDConv.C \
-		src/THaVDCTrackPair.C src/VDCeff.C src/THaScalerGroup.C \
+		src/THaVDCTrackPair.C src/VDCeff.C \
 		src/THaElectronKine.C src/THaReactionPoint.C \
 		src/THaReacPointFoil.C \
 		src/THaTwoarmVertex.C src/THaAvgVertex.C \
@@ -230,11 +229,8 @@ HA_LINKDEF   := src/HallA_LinkDef.h
 
 LIBHALLA     := $(LIBDIR)/libHallA.so
 LIBDC        := $(LIBDIR)/libdc.so
-LIBSCALER    := $(LIBDIR)/libscaler.so
 
 #------ Extra libraries -------------------------
-LNA          := NormAna
-LIBNORMANA   := $(LIBDIR)/lib$(LNA).so
 LNA_DICT     := $(LNA)Dict
 LNA_SRC      := src/THa$(LNA).C
 LNA_OBJ      := $(LNA_SRC:.C=.o)
@@ -245,7 +241,7 @@ LNA_LINKDEF  := src/$(LNA)_LinkDef.h
 #------------------------------------------------
 
 PROGRAMS     := analyzer $(LIBNORMANA)
-PODDLIBS     := $(LIBHALLA) $(LIBDC) $(LIBSCALER)
+PODDLIBS     := $(LIBHALLA) $(LIBDC) 
 
 all:            subdirs
 		set -e; for i in $(PROGRAMS); do $(MAKE) $$i; done
@@ -298,7 +294,6 @@ else
 		ln -s $(notdir $<) $@
 endif
 
-$(LIBSCALER).$(SOVERSION):	$(LIBSCALER).$(VERSION)
 ifneq ($(strip $(LDCONFIG)),)
 		$(LDCONFIG)
 else
@@ -311,10 +306,6 @@ $(DCDIR):	evio
 endif
 
 $(LIBDC):	$(LIBDC).$(SOVERSION)
-		rm -f $@
-		ln -s $(notdir $<) $@
-
-$(LIBSCALER):	$(LIBSCALER).$(SOVERSION)
 		rm -f $@
 		ln -s $(notdir $<) $@
 
@@ -339,7 +330,7 @@ $(LNA_DICT).C:	$(LNA_HDR) $(LNA_LINKDEF)
 		rootcint -f $@ -c $(ROOTINC) $(INCLUDES) $(DEFINES) $^
 
 #---------- Main program -------------------------------------------
-analyzer:	src/main.o $(LIBDC) $(LIBSCALER) $(LIBHALLA)
+analyzer:	src/main.o $(LIBDC) $(LIBHALLA)
 		$(LD) $(LDFLAGS) $< $(HALLALIBS) $(GLIBS) -o $@
 
 #---------- Maintenance --------------------------------------------
@@ -361,7 +352,7 @@ srcdist:
 		 $(addprefix $(NAME)/, \
 		  ChangeLog $(wildcard README*) Makefile .exclude .gitignore \
 		  SConstruct $(wildcard *.py) scons \
-		  src $(DCDIR) $(SCALERDIR) )
+		  src $(DCDIR)
 
 # $(NAME)/DB $(NAME)/examples \# $(NAME)/docs $(NAME)/Calib
 # $(NAME)/contrib

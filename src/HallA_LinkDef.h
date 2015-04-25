@@ -7,7 +7,6 @@
 #pragma link C++ global gHaVars;
 #pragma link C++ global gHaCuts;
 #pragma link C++ global gHaApps;
-#pragma link C++ global gHaScalers;
 #pragma link C++ global gHaPhysics;
 #pragma link C++ global gHaEvtHandlers;
 #pragma link C++ global gHaRun;
@@ -89,7 +88,6 @@
 #pragma link C++ class THaVDCTrackPair+;
 #pragma link C++ class VDCeff+;
 #pragma link C++ class THaRTTI+;
-#pragma link C++ class THaScalerGroup+;
 #pragma link C++ class THaElectronKine+;
 #pragma link C++ class THaReactionPoint+;
 #pragma link C++ class THaReacPointFoil+;
