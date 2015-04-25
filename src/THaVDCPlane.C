@@ -56,7 +56,8 @@ THaVDCPlane::THaVDCPlane( const char* name, const char* description,
   fWires    = new TClonesArray("THaVDCWire", 368 );
 
   fNpass = 0;
-  fMinTdiff = fMaxTdiff = 0.0;
+  fMinTdiff = 0.0;
+  fMaxTdiff = 2e-7;  // 200ns correspond to ~10mm, will accept all
 
   fVDC = dynamic_cast<THaVDC*>( GetMainDetector() );
 }
@@ -269,8 +270,8 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
     if( fscanf( file, "%d %d %d %d %d %lf %lf", &fMinClustSize, &fMaxClustSpan,
 		&fNMaxGap, &fMinTime, &fMaxTime, &fMinTdiff, &fMaxTdiff ) != 7 ) {
       Error( Here(here), "Error reading min_clust_size, max_clust_span, "
-	     "max_gap, min_time or max_time.\nLine = %s\nFix database.",
-	     buff );
+	     "max_gap, min_time, max_time, min_tdiff, max_tdiff.\n"
+	     "Line = %s\nFix database.", buff );
       fclose(file);
       return kInitError;
     }
@@ -354,6 +355,8 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
     fNMaxGap = 0;
     fMinTime = 800;
     fMaxTime = 2200;
+    fMinTdiff = 3e-8;   // 30ns  -> ~20 deg track angle
+    fMaxTdiff = 1.5e-7; // 150ns -> ~60 deg track angle
 
     if( THaVDCAnalyticTTDConv* analytic_conv =
 	dynamic_cast<THaVDCAnalyticTTDConv*>(fTTDConv) ) {
