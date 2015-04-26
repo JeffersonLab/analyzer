@@ -103,6 +103,8 @@ Int_t THaDetectorBase::ReadGeometry( FILE* file, const TDatime& date,
   // Read this detector's basic geometry information from the database.
   // Derived classes may override to read more advanced data.
 
+  const char* const here = __FUNCTION__;
+
   vector<double> position, size;
   Bool_t optional = !required;
   DBRequest request[] = {
@@ -118,21 +120,31 @@ Int_t THaDetectorBase::ReadGeometry( FILE* file, const TDatime& date,
 
   if( !position.empty() ) {
     if( position.size() != 3 ) {
-      Error( Here("ReadGeometry"), "Incorrect number of values for "
-	     "detector position" );
+      Error( Here(here), "Incorrect number of values = %u for "
+	     "detector position. Must be exactly 3. Fix database.",
+	     static_cast<unsigned int>(position.size()) );
       return 1;
     }
     fOrigin.SetXYZ( position[0], position[1], position[2] );
   }
   if( !size.empty() ) {
     if( size.size() != 3 ) {
-      Error( Here("ReadGeometry"), "Incorrect number of values for "
-	     "detector size" );
+      Error( Here(here), "Incorrect number of values = %u for "
+	     "detector size. Must be exactly 3. Fix database.",
+	     static_cast<unsigned int>(size.size()) );
       return 2;
     }
-    fSize[0] = size[0]/2.0;
-    fSize[1] = size[1]/2.0;
-    fSize[2] = size[2];
+    if( size[0] == 0 || size[1] == 0 || size[2] == 0 ) {
+      Error( Here(here), "Illegal zero detector dimension. Fix database." );
+      return 3;
+    }
+    if( size[0] < 0 || size[1] < 0 || size[2] < 0 ) {
+      Warning( Here(here), "Illegal negative value for detector dimension. "
+	       "Taking absolute. Check database." );
+    }
+    fSize[0] = 0.5 * TMath::Abs(size[0]);
+    fSize[1] = 0.5 * TMath::Abs(size[1]);
+    fSize[2] = TMath::Abs(size[2]);
   }
 
   return 0;

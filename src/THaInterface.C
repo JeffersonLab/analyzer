@@ -124,11 +124,11 @@ THaInterface::THaInterface( const char* appClassName, int* argc, char** argv,
   // If this timezone is different from the one in which the data were taken,
   // mismatches may occur. This is bad.
   // FIXME: Use TTimeStamp to keep time in UTC internally.
-  // To be done in version 1.5
+  // To be done in version 1.6
   //
   // As a temporary workaround, we assume that all data were taken in
   // US/Eastern time, and that the database has US/Eastern timestamps.
-  // This should be true for all JLab production data..
+  // This is certainly true for all JLab production data..
   fgTZ = gSystem->Getenv("TZ");
   gSystem->Setenv("TZ","US/Eastern");
 
@@ -195,7 +195,7 @@ void THaInterface::PrintLogo( Bool_t lite )
      Printf("  *            W E L C O M E  to  the            *");
      Printf("  *       H A L L A   C++  A N A L Y Z E R       *");
      Printf("  *                                              *");
-     Printf("  *        Release %12s %16s *",halla_version,__DATE__);
+     Printf("  *  Release %16s %18s *",halla_version,__DATE__);
      Printf("  *  Based on ROOT %8s %20s *",root_version,root_date);
      //   Printf("  *             Development version              *");
      Printf("  *                                              *");

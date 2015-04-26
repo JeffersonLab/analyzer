@@ -53,13 +53,12 @@
 #include "THaTriggerTime.h"
 #include "TMath.h"
 #include "TList.h"
-
-#include "TList.h"
-#include "TMath.h"
+#include <cassert>
 
 #ifdef WITH_DEBUG
 #include <iostream>
 #endif
+
 
 using namespace std;
 
@@ -122,9 +121,16 @@ Int_t THaHRS::FindVertices( TClonesArray& tracks )
   }
 
   // If enabled, sort the tracks by chi2/ndof
-  if( GetTrSorting() )
+  if( GetTrSorting() ) {
     fTracks->Sort();
-  
+    // Reassign track indexes. Sorting may have changed the order
+    for( int i = 0; i < fTracks->GetLast()+1; i++ ) {
+      THaTrack* theTrack = static_cast<THaTrack*>( fTracks->At(i) );
+      assert( theTrack );
+      theTrack->SetIndex(i);
+    }
+  }
+
   // Find the "Golden Track". 
   if( GetNTracks() > 0 ) {
     // Select first track in the array. If there is more than one track

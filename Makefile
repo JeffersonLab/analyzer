@@ -191,11 +191,11 @@ SRC          := src/THaFormula.C src/THaVform.C src/THaVhist.C \
 		src/THaScintillator.C src/THaShower.C \
 		src/THaTotalShower.C src/THaCherenkov.C \
 		src/THaEvent.C src/THaTrackID.C src/THaVDC.C \
-		src/THaVDCPlane.C src/THaVDCUVPlane.C src/THaVDCUVTrack.C \
+		src/THaVDCPlane.C src/THaVDCChamber.C src/THaVDCPoint.C \
 		src/THaVDCWire.C src/THaVDCHit.C src/THaVDCCluster.C \
 		src/THaVDCTimeToDistConv.C src/THaVDCTrackID.C \
                 src/THaVDCAnalyticTTDConv.C \
-		src/THaVDCTrackPair.C src/VDCeff.C \
+		src/THaVDCPointPair.C src/VDCeff.C \
 		src/THaElectronKine.C src/THaReactionPoint.C \
 		src/THaReacPointFoil.C \
 		src/THaTwoarmVertex.C src/THaAvgVertex.C \
