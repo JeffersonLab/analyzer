@@ -337,14 +337,14 @@ void THaVDCCluster::FitSimpleTrack( Bool_t weighted )
     G  = (W * sumXY - sumX * sumY) / Delta;
     sigmaF2 = ( sumXX / Delta );
     sigmaG2 = ( W / Delta );
-    sigmaFG = ( sumXW * W * sumXX - sumXXW * W * sumX
-		- WW * sumX * sumXX + sumXW * sumX * sumX ) / (Delta*Delta);
+    sigmaFG = ( -sumX / Delta );
 
     m  =   1/G;
     b  = - F/G;
 
     sigmaM = m * m * TMath::Sqrt( sigmaG2 );
-    sigmaB = TMath::Sqrt( sigmaF2/(G*G) + F*F/(G*G*G*G)*sigmaG2 - 2*F/(G*G*G)*sigmaFG);
+    sigmaB = TMath::Sqrt( sigmaF2 + F*F/(G*G)*sigmaG2 - 2*F/G*sigmaFG ) /
+      TMath::Abs(G);
 
     // calculate chi2 for the track given this slope and intercept
     chi2_t chi2 = CalcChisquare( m, b, 0 );
