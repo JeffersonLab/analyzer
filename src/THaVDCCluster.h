@@ -49,7 +49,7 @@ public:
   virtual void   AddHit( THaVDCHit* hit );
   virtual void   EstTrackParameters();
   virtual void   ConvertTimeToDist();
-  virtual void   FitTrack( EMode mode = kT0 );
+  virtual void   FitTrack( EMode mode = kSimple );
   virtual void   ClearFit();
   virtual void   CalcChisquare(Double_t& chi2, Int_t& nhits) const;
   VDC::chi2_t    CalcDist();    // calculate global track to wire distances
