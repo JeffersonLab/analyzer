@@ -14,8 +14,11 @@
 #include "THaVDCHit.h"
 #include <cassert>
 
+namespace VDC {
+  class TimeToDistConv;
+}
+
 class THaEvData;
-class THaVDCTimeToDistConv;
 class THaTriggerTime;
 class THaVDC;
 
@@ -108,7 +111,7 @@ protected:
 //   Int_t fNumBins;   // size of lookup table
 //   Float_t *fTable;  // time-to-distance lookup table
 
-  THaVDCTimeToDistConv* fTTDConv;  // Time-to-distance converter for this plane's wires
+  VDC::TimeToDistConv* fTTDConv;  // Time-to-distance converter for this plane's wires
 
   THaVDC* fVDC;           // VDC detector to which this plane belongs
 

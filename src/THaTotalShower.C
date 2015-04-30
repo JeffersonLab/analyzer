@@ -170,22 +170,24 @@ void THaTotalShower::Clear( Option_t* )
 //_____________________________________________________________________________
 Int_t THaTotalShower::ReadDatabase( const TDatime& date )
 {
-  // Read this detector's parameters from the database file 'fi'.
-  // This function is called by THaDetectorBase::Init() once at the
-  // beginning of the analysis.
+  // Read this detector's parameters from the database.
   // 'date' contains the date/time of the run being analyzed.
-
-  const int LEN = 100;
-  char line[LEN];
 
   FILE* fi = OpenFile( date );
   if( !fi ) return kFileError;
 
-  fgets ( line, LEN, fi ); fgets ( line, LEN, fi );          
-  fscanf ( fi, "%15f %15f", &fMaxDx, &fMaxDy );  // Max diff of shower centers
+  // Read configuration parameters
+  DBRequest request[] = {
+    { "max_dx",  &fMaxDx },
+    { "max_dy",  &fMaxDy },
+    { 0 }
+  };
+  Int_t err = LoadDB( fi, date, request, fPrefix );
+  fclose(fi);
+  if( err )
+    return err;
 
   fIsInit = true;
-  fclose(fi);
   return kOK;
 }
 

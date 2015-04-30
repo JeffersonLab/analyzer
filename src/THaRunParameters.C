@@ -128,28 +128,29 @@ Int_t THaRunParameters::ReadDatabase( const TDatime& date )
   // Return 0 if success, <0 if file error, >0 if not all required data found.
 
 #define OPEN THaAnalysisObject::OpenFile
-#define READ THaAnalysisObject::LoadDBvalue
+#define LOAD THaAnalysisObject::LoadDB
 
   FILE* f = OPEN( "run", date, "THaRunParameters::ReadDatabase", "r", 1 );
   if( !f ) 
     return -1;
 
-  Int_t iq, st;
   Double_t E, M = 0.511e-3, Q = -1.0, dE = 0.0;
 
-  if( (st = READ( f, date, "ebeam", E )) ) {
-    // Beam energy required
-    Error( "ReadDatabase", "Beam energy missing in run database. "
-	   "Run parameter initialization failed." );
-    return st;
-  }
-  READ( f, date, "mbeam", M );
-  READ( f, date, "qbeam", Q );
-  READ( f, date, "dEbeam", dE );
-  iq = int(Q);
+  DBRequest request[] = {
+    { "ebeam",  &E },
+    { "mbeam",  &M,  kDouble, 0, 1 },
+    { "qbeam",  &Q,  kDouble, 0, 1 },
+    { "dEbeam", &dE, kDouble, 0, 1 },
+    { 0 }
+  };
+  Int_t err = LOAD( f, date, request, "" );
+  fclose(f);
+  if( err )
+    return err;
+
+  Int_t iq = int(Q);
   SetBeam( E, M, iq, dE );
 
-  fclose(f);
   return 0;
 }
   

@@ -1,5 +1,5 @@
-#ifndef ROOT_THaVDC
-#define ROOT_THaVDC
+#ifndef PODD_HALLA_VDC
+#define PODD_HALLA_VDC
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //
@@ -9,6 +9,7 @@
 
 #include "THaTrackingDetector.h"
 #include <vector>
+#include <cassert>
 
 class THaVDCChamber;
 class THaTrack;
@@ -57,12 +58,37 @@ public:
     kHardTDCcut     = BIT(15), // Use hard TDC cuts (fMinTime, fMaxTime)
     kSoftTDCcut     = BIT(16), // Use soft TDC cut (reasonable estimated drifts)
     kIgnoreNegDrift = BIT(17), // Completely ignore negative drift times
-
+#ifdef MCDATA
+    kMCdata         = BIT(21), // Assume input is Monte Carlo data
+#endif
     kDecodeOnly     = BIT(22), // Only decode data, disable tracking
     kCoarseOnly     = BIT(23)  // Do only coarse tracking
   };
 
+  enum { kPORDER = 7 };
+
+  // Class for storing matrix element data
+  class THaMatrixElement {
+  public:
+    THaMatrixElement() : iszero(true), order(0), v(0)
+      { pw.reserve(5); poly.reserve(kPORDER); }
+    bool match( const THaMatrixElement& rhs ) const
+      { assert(pw.size() == rhs.pw.size()); return ( pw == rhs.pw ); }
+    void clear()
+      { iszero = true; pw.clear(); order = 0; v = 0.0; poly.clear(); }
+
+    bool iszero;             // whether the element is zero
+    std::vector<int> pw;     // exponents of matrix element
+                             //   e.g. D100 = { 1, 0, 0 }
+    int  order;
+    double v;                // its computed value
+    std::vector<double> poly;// the associated polynomial
+  };
+
 protected:
+
+  enum ECoordType { kTransport, kRotatingTransport };
+  enum EFPMatrixElemTag { T000 = 0, Y000, P000 };
 
   THaVDCChamber* fLower;    // Lower chamber
   THaVDCChamber* fUpper;    // Upper chamber
@@ -78,33 +104,13 @@ protected:
 
   Int_t    fNumIter;        // Number of iterations for FineTrack()
   Double_t fErrorCutoff;    // Cut on track matching error
+  ECoordType fCoordType;    // Coordinates to use as input for matrix calcs
 
   Double_t fCentralDist;    // the path length of the central ray from
                             // the origin of the transport coordinates to
                             // the s1 plane
 
   UInt_t   fEvNum;          // Event number from decoder (for diagnostics)
-
-  // declarations for target vertex reconstruction
-  enum ECoordTypes { kTransport, kRotatingTransport };
-  enum EFPMatrixElemTags { T000 = 0, Y000, P000 };
-  enum { kPORDER = 7 };
-
-  // private class for storing matrix element data
-  class THaMatrixElement;
-  friend class THaMatrixElement;
-  class THaMatrixElement {
-  public:
-    THaMatrixElement() : iszero(true), pw(3), order(0), v(0), poly(kPORDER) {}
-    bool match( const THaMatrixElement& rhs ) const;
-
-    bool iszero;             // whether the element is zero
-    std::vector<int> pw;     // exponents of matrix element
-                             //   e.g. D100 = { 1, 0, 0 }
-    int  order;
-    double v;                // its computed value
-    std::vector<double> poly;// the associated polynomial
-  };
 
   // initial matrix elements
   std::vector<THaMatrixElement> fTMatrixElems;
@@ -119,8 +125,8 @@ protected:
 
   std::vector<THaMatrixElement> fLMatrixElems;   // Path-length corrections (meters)
 
-  void CalcFocalPlaneCoords( THaTrack* track, const ECoordTypes mode);
-  void CalcTargetCoords(THaTrack *the_track, const ECoordTypes mode);
+  void CalcFocalPlaneCoords( THaTrack* track );
+  void CalcTargetCoords(THaTrack *the_track );
   void CalcMatrix(const double x, std::vector<THaMatrixElement> &matrix);
   Double_t DoPoly(const int n, const std::vector<double> &a, const double x);
   Double_t PolyInv(const double x1, const double x2, const double xacc,

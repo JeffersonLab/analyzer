@@ -103,7 +103,7 @@ Int_t THaDetectorBase::ReadGeometry( FILE* file, const TDatime& date,
   // Read this detector's basic geometry information from the database.
   // Derived classes may override to read more advanced data.
 
-  const char* const here = __FUNCTION__;
+  const char* const here = "ReadGeometry";
 
   vector<double> position, size;
   Bool_t optional = !required;

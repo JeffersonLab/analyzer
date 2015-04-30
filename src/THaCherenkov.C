@@ -19,6 +19,9 @@
 #include <cstring>
 #include <cstdlib>
 #include <cstdio>
+#include <vector>
+
+using namespace std;
 
 //_____________________________________________________________________________
 THaCherenkov::THaCherenkov( const char* name, const char* description,
@@ -40,102 +43,112 @@ THaCherenkov::THaCherenkov()
 //_____________________________________________________________________________
 Int_t THaCherenkov::ReadDatabase( const TDatime& date )
 {
-  // Read this detector's parameters from the database file 'fi'.
-  // This function is called by THaDetectorBase::Init() once at the
-  // beginning of the analysis.
+  // Read parameters from the database.
   // 'date' contains the date/time of the run being analyzed.
 
-  static const char* const here = "ReadDatabase()";
+  const char* const here = "ReadDatabase";
 
   // Read database
 
-  FILE* fi = OpenFile( date );
-  if( !fi ) return kFileError;
+  FILE* file = OpenFile( date );
+  if( !file ) return kFileError;
 
-  const int LEN = 100;
-  char buf[LEN];
+  // Read fOrigin and fSize (required!)
+  Int_t err = ReadGeometry( file, date, true );
+  if( err ) {
+    fclose(file);
+    return err;
+  }
+
+  vector<Int_t> detmap;
   Int_t nelem;
+  Double_t angle = 0.0;
 
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  fscanf ( fi, "%5d", &nelem );                      // Number of mirrors
+  // Read configuration parameters
+  DBRequest config_request[] = {
+    { "detmap",  &detmap,  kIntV },
+    { "npmt",    &nelem,   kInt },
+    { "angle",   &angle,   kDouble, 0, 1 },
+    { 0 }
+  };
+  err = LoadDB( file, date, config_request, fPrefix );
+
+  // Sanity checks
+  if( !err && nelem <= 0 ) {
+    Error( Here(here), "Invalid number of PMTs: %d. Must be > 0. "
+	   "Fix database.", nelem );
+    err = kInitError;
+  }
 
   // Reinitialization only possible for same basic configuration
-  if( fIsInit && nelem != fNelem ) {
-    Error( Here(here), "Cannot re-initalize with different number of mirrors. "
-	   "(was: %d, now: %d). Detector not re-initialized.", fNelem, nelem );
-    fclose(fi);
-    return kInitError;
+  if( !err ) {
+    if( fIsInit && nelem != fNelem ) {
+      Error( Here(here), "Cannot re-initalize with different number of PMTs. "
+	     "(was: %d, now: %d). Detector not re-initialized.", fNelem, nelem );
+      err = kInitError;
+    } else
+      fNelem = nelem;
   }
-  fNelem = nelem;
 
-  // Read detector map.  Assumes that the first half of the entries
-  // is for ADCs, and the second half, for TDCs
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  int i = 0;
-  fDetMap->Clear();
-  while (1) {
-    Int_t crate, slot, first, last, first_chan,model;
-    int pos;
-    fgets ( buf, LEN, fi );
-    sscanf( buf, "%6d %6d %6d %6d %6d %n",
-	    &crate, &slot, &first, &last, &first_chan, &pos );
-    model=atoi(buf+pos); // if there is no model number given, set to zero
-
-    if( crate < 0 ) break;
-    if( fDetMap->AddModule( crate, slot, first, last, first_chan, model ) < 0 ) {
-      Error( Here(here), "Too many DetMap modules (maximum allowed - %d).",
-	     THaDetMap::kDetMapSize);
-      fclose(fi);
-      return kInitError;
-    }
+  if( !err && FillDetMap(detmap, 0, here) <= 0 ) {
+    err = kInitError;  // Error already printed by FillDetMap
   }
-  fgets ( buf, LEN, fi );
 
-  // Read geometry
+  if( !err && (nelem = fDetMap->GetTotNumChan()) != 2*fNelem ) {
+    Error( Here(here), "Number of detector map channels (%d) "
+	   "inconsistent with 2*number of PMTs (%d)", nelem, 2*fNelem );
+    err = kInitError;
+  }
 
-  Float_t x,y,z;
-  fscanf ( fi, "%15f %15f %15f", &x, &y, &z );        // Detector's X,Y,Z coord
-  fOrigin.SetXYZ( x, y, z );
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  fscanf ( fi, "%15lf %15lf %15lf", fSize, fSize+1, fSize+2 );   // Sizes of det on X,Y,Z
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
+  if( err ) {
+    fclose(file);
+    return err;
+  }
 
-  Float_t angle;
-  fscanf ( fi, "%15f", &angle );                       // Rotation angle of det
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  const Double_t degrad = TMath::Pi()/180.0;
-
-  DefineAxes(angle*degrad);
+  DefineAxes( angle*TMath::DegToRad() );
 
   // Dimension arrays
+  //FIXME: use a structure!
+  UInt_t nval = fNelem;
   if( !fIsInit ) {
     // Calibration data
-    fOff = new Float_t[ fNelem ];
-    fPed = new Float_t[ fNelem ];
-    fGain = new Float_t[ fNelem ];
+    fOff  = new Float_t[ nval ];
+    fPed  = new Float_t[ nval ];
+    fGain = new Float_t[ nval ];
 
     // Per-event data
-    fT   = new Float_t[ fNelem ];
-    fT_c = new Float_t[ fNelem ];
-    fA   = new Float_t[ fNelem ];
-    fA_p = new Float_t[ fNelem ];
-    fA_c = new Float_t[ fNelem ];
+    fT    = new Float_t[ nval ];
+    fT_c  = new Float_t[ nval ];
+    fA    = new Float_t[ nval ];
+    fA_p  = new Float_t[ nval ];
+    fA_c  = new Float_t[ nval ];
 
     fIsInit = true;
   }
 
-  // Read calibrations
-  for (i=0;i<fNelem;i++)
-    fscanf( fi, "%15f", fOff+i );                   // TDC offsets
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  for (i=0;i<fNelem;i++)
-    fscanf( fi, "%15f", fPed+i );                   // ADC pedestals
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  for (i=0;i<fNelem;i++)
-    fscanf( fi, "%15f", fGain+i);                   // ADC gains
-  fgets ( buf, LEN, fi );
+  // Read calibration parameters
 
-  fclose(fi);
+  // Set DEFAULT values here
+  // TDC resolution (s/channel)
+  //  fTdc2T = 0.1e-9;      // seconds/channel
+
+  // Default TDC offsets (0), ADC pedestals (0) and ADC gains (1)
+  memset( fOff, 0, nval*sizeof(fOff[0]) );
+  memset( fPed, 0, nval*sizeof(fPed[0]) );
+  for( UInt_t i=0; i<nval; ++i ) { fGain[i] = 1.0; }
+
+  DBRequest calib_request[] = {
+    { "tdc.offsets",      fOff,         kFloat, nval, 1 },
+    { "adc.pedestals",    fPed,         kFloat, nval, 1 },
+    { "adc.gains",        fGain,        kFloat, nval, 1 },
+    //    { "tdc.res",          &fTdc2T,      kDouble },
+    { 0 }
+  };
+  err = LoadDB( file, date, calib_request, fPrefix );
+  fclose(file);
+  if( err )
+    return err;
+
   return kOK;
 }
 

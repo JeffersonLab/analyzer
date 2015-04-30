@@ -23,6 +23,7 @@
 
 #include <cstring>
 #include <iostream>
+#include <cassert>
 
 using namespace std;
 
@@ -48,188 +49,180 @@ THaShower::THaShower() :
 //_____________________________________________________________________________
 Int_t THaShower::ReadDatabase( const TDatime& date )
 {
-  // Read this detector's parameters from the database file 'fi'.
-  // This function is called by THaDetectorBase::Init() once at the
-  // beginning of the analysis.
+  // Read parameters from the database.
   // 'date' contains the date/time of the run being analyzed.
 
-  static const char* const here = "ReadDatabase()";
-  const int LEN = 100;
-  char buf[LEN];
-  Int_t nelem, ncols, nrows, nclbl;
+  const char* const here = "ReadDatabase";
 
-  // Read data from database
+  // Read database
 
-  FILE* fi = OpenFile( date );
-  if( !fi ) return kFileError;
+  FILE* file = OpenFile( date );
+  if( !file ) return kFileError;
 
-  // Blocks, rows, max blocks per cluster
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  fscanf ( fi, "%5d %5d", &ncols, &nrows );
+  // Read fOrigin and fSize (required!)
+  Int_t err = ReadGeometry( file, date, true );
+  if( err ) {
+    fclose(file);
+    return err;
+  }
 
-  nelem = ncols * nrows;
-  nclbl = TMath::Min( 3, nrows ) * TMath::Min( 3, ncols );
+  vector<Int_t> detmap, chanmap;
+  vector<Double_t> xy, dxy;
+  Int_t ncols, nrows;
+  Double_t angle = 0.0;
+
+  // Read mapping/geometry/configuration parameters
+  DBRequest config_request[] = {
+    { "detmap",       &detmap,  kIntV },
+    { "chanmap",      &chanmap, kIntV },
+    { "ncols",        &ncols,   kInt },
+    { "nrows",        &nrows,   kInt },
+    { "angle",        &angle,   kDouble, 0, 1 },
+    { "blk1_pos",     &xy,      kDoubleV, 2 },
+    { "blk_spacings", &dxy,     kDoubleV, 2 },
+    { "emin",         &fEmin,   kDouble },
+    { 0 }
+  };
+  err = LoadDB( file, date, config_request, fPrefix );
+
+  // Sanity checks
+  if( !err && (nrows <= 0 || ncols <= 0) ) {
+    Error( Here(here), "Illegal number of rows or columns: %d %d. Must be > 0. "
+	   "Fix database.", nrows, ncols );
+    err = kInitError;
+  }
+
+  Int_t nelem = ncols * nrows; 
+  Int_t nclbl = TMath::Min( 3, nrows ) * TMath::Min( 3, ncols );
+
   // Reinitialization only possible for same basic configuration
-  if( fIsInit && (nelem != fNelem || nclbl != fNclublk) ) {
-    Error( Here(here), "Cannot re-initalize with different number of blocks or "
-	   "blocks per cluster. Detector not re-initialized." );
-    fclose(fi);
-    return kInitError;
-  }
-
-  if( nrows <= 0 || ncols <= 0 || nclbl <= 0 ) {
-    Error( Here(here), "Illegal number of rows or columns: "
-	   "%d %d", nrows, ncols );
-    fclose(fi);
-    return kInitError;
-  }
-  fNelem = nelem;
-  fNrows = nrows;
-  fNclublk = nclbl;
-
-  // Clear out the old detector map before reading a new one
-  UShort_t mapsize = fDetMap->GetSize();
-  delete [] fNChan;
-  if( fChanMap ) {
-    for( UShort_t i = 0; i<mapsize; i++ )
-      delete [] fChanMap[i];
-  }
-  delete [] fChanMap;
-  fDetMap->Clear();
-
-  // Read detector map
-
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  while (1) {
-    Int_t crate, slot, first, last;
-    fscanf ( fi,"%6d %6d %6d %6d", &crate, &slot, &first, &last );
-    fgets ( buf, LEN, fi );
-    if( crate < 0 ) break;
-    if( fDetMap->AddModule( crate, slot, first, last ) < 0 ) {
-      Error( Here(here), "Too many DetMap modules (maximum allowed - %d).",
-	    THaDetMap::kDetMapSize);
-      fclose(fi);
-      return kInitError;
+  if( !err ) {
+    if( fIsInit && nelem != fNelem ) {
+      Error( Here(here), "Cannot re-initalize with different number of blocks or "
+	     "blocks per cluster (was: %d, now: %d). Detector not re-initialized.",
+	     fNelem, nelem );
+      err = kInitError;
+    } else {
+      fNelem = nelem;
+      fNrows = nrows;
+      fNclublk = nclbl;
     }
   }
 
-  // Set up the new channel map
-  mapsize = fDetMap->GetSize();
-  if( mapsize == 0 ) {
-    Error( Here(here), "No modules defined in detector map.");
-    fclose(fi);
-    return kInitError;
-  }
-
-  fNChan = new UShort_t[ mapsize ];
-  fChanMap = new UShort_t*[ mapsize ];
-  for( UShort_t i=0; i < mapsize; i++ ) {
-    THaDetMap::Module* module = fDetMap->GetModule(i);
-    fNChan[i] = module->hi - module->lo + 1;
-    if( fNChan[i] > 0 )
-      fChanMap[i] = new UShort_t[ fNChan[i] ];
-    else {
-      Error( Here(here), "No channels defined for module %d.", i);
-      delete [] fNChan; fNChan = 0;
-      for( UShort_t j=0; j<i; j++ )
-	delete [] fChanMap[j];
+  if( !err ) {
+    // Clear out the old channel map before reading a new one
+    UInt_t mapsize = fDetMap->GetSize();
+    delete [] fNChan; fNChan = 0;
+    if( fChanMap != 0 ) {
+      for( UInt_t i = 0; i<mapsize; i++ )
+	delete [] fChanMap[i];
       delete [] fChanMap; fChanMap = 0;
-      fclose(fi);
-      return kInitError;
+    }
+
+    if( FillDetMap(detmap, 0, here) <= 0 ) {
+      err = kInitError;  // Error already printed by FillDetMap
+    } else if( (nelem = fDetMap->GetTotNumChan()) != fNelem ) {
+      Error( Here(here), "Number of detector map channels (%d) "
+	     "inconsistent with number of blocks (%d)", nelem, fNelem );
+      err = kInitError;
     }
   }
-  // Read channel map
-  //
-  // Loosen the formatting restrictions: remove from each line the portion
-  // after a '#', and do the pattern matching to the remaining string
-  fgets ( buf, LEN, fi );
-
-  // get the line and end it at a '#' symbol
-  *buf = '\0';
-  char *ptr=buf;
-  int nchar=0;
-  for ( UShort_t i = 0; i < mapsize; i++ ) {
-    for ( UShort_t j = 0; j < fNChan[i]; j++ ) {
-      while ( !strpbrk(ptr,"0123456789") ) {
-	fgets ( buf, LEN, fi );
-	if( (ptr = strchr(buf,'#')) ) *ptr = '\0';
-	ptr = buf;
-	nchar=0;
+  if( !err ) {
+    if( !chanmap.empty() ) {
+      // If a map is found in the database, ensure it has the correct size
+      Int_t cmapsize = chanmap.size();
+      if( cmapsize != fNelem ) {
+	Error( Here(here), "Channel map size (%d) and number of detector "
+	       "channels (%d) must be equal. Fix database.", cmapsize, fNelem );
+	err = kInitError;
       }
-      sscanf (ptr, "%6hu %n", *(fChanMap+i)+j, &nchar );
-      ptr += nchar;
+    }
+    if( !err ) {
+      // Set up the new channel map
+      UInt_t mapsize = fDetMap->GetSize();
+      assert( mapsize > 0 );
+      fNChan = new UShort_t[ mapsize ];
+      fChanMap = new UShort_t*[ mapsize ];
+      UShort_t k = 1;
+      for( UInt_t i=0; i < mapsize && !err; i++ ) {
+	THaDetMap::Module* module = fDetMap->GetModule(i);
+	fNChan[i] = module->hi - module->lo + 1;
+	if( fNChan[i] > 0 ) {
+	  fChanMap[i] = new UShort_t[ fNChan[i] ];
+	  for( UInt_t j=0; j<fNChan[i]; ++j ) {
+	    assert( static_cast<Int_t>(k) <= fNelem );
+	    fChanMap[i][j] = chanmap.empty() ? k : chanmap[k];
+	    ++k;
+	  }
+	} else {
+	  Error( Here(here), "No channels defined for module %d.", i);
+	  delete [] fNChan; fNChan = 0;
+	  for( UShort_t j=0; j<i; j++ )
+	    delete [] fChanMap[j];
+	  delete [] fChanMap; fChanMap = 0;
+	  err = kInitError;
+	}
+      }
     }
   }
 
-  fgets ( buf, LEN, fi );
+  if( err ) {
+    fclose(file);
+    return err;
+  }
 
-  Float_t x,y,z;
-  fscanf ( fi, "%15f %15f %15f", &x, &y, &z );               // Detector's X,Y,Z coord
-  fOrigin.SetXYZ( x, y, z );
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  fscanf ( fi, "%15lf %15lf %15lf", fSize, fSize+1, fSize+2 );  // Sizes of det in X,Y,Z
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-
-  Float_t angle;
-  fscanf ( fi, "%15f", &angle );                       // Rotation angle of det
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  const Double_t degrad = TMath::Pi()/180.0;
-
-  DefineAxes(angle*degrad);
+  DefineAxes( angle*TMath::DegToRad() );
 
   // Dimension arrays
+  //FIXME: use a structure!
+  UInt_t nval = fNelem;
   if( !fIsInit ) {
-    fBlockX = new Float_t[ fNelem ];
-    fBlockY = new Float_t[ fNelem ];
-    fPed    = new Float_t[ fNelem ];
-    fGain   = new Float_t[ fNelem ];
+    // Geometry
+    fBlockX = new Float_t[ nval ];
+    fBlockY = new Float_t[ nval ];
+
+    // Calibrations
+    fPed    = new Float_t[ nval ];
+    fGain   = new Float_t[ nval ];
 
     // Per-event data
-    fA    = new Float_t[ fNelem ];
-    fA_p  = new Float_t[ fNelem ];
-    fA_c  = new Float_t[ fNelem ];
+    fA    = new Float_t[ nval ];
+    fA_p  = new Float_t[ nval ];
+    fA_c  = new Float_t[ nval ];
     fNblk = new Int_t[ fNclublk ];
     fEblk = new Float_t[ fNclublk ];
 
     fIsInit = true;
   }
 
-  fscanf ( fi, "%15f %15f", &x, &y );                  // Block 1 center position
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  Float_t dx, dy;
-  fscanf ( fi, "%15f %15f", &dx, &dy );                // Block spacings in x and y
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  fscanf ( fi, "%15f", &fEmin );                       // Emin thresh for center
-  fgets ( buf, LEN, fi );
-
-  // Read calibrations.
-  // Before doing this, search for any date tags that follow, and start reading from
-  // the best matching tag if any are found. If none found, but we have a configuration
-  // string, search for it.
-  if( SeekDBdate( fi, date ) == 0 && fConfig.Length() > 0 &&
-      SeekDBconfig( fi, fConfig.Data() )) {}
-
-  fgets ( buf, LEN, fi );
-  // Crude protection against a missed date/config tag
-  if( buf[0] == '[' ) fgets ( buf, LEN, fi );
-
-  // Read ADC pedestals and gains (in order of logical channel number)
-  for (int j=0; j<fNelem; j++)
-    fscanf (fi,"%15f",fPed+j);
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  for (int j=0; j<fNelem; j++)
-    fscanf (fi, "%15f",fGain+j);
-
-
   // Compute block positions
   for( int c=0; c<ncols; c++ ) {
     for( int r=0; r<nrows; r++ ) {
       int k = nrows*c + r;
-      fBlockX[k] = x + r*dx;                         // Units are meters
-      fBlockY[k] = y + c*dy;
+      // Units are meters
+      fBlockX[k] = xy[0] + r*dxy[0];
+      fBlockY[k] = xy[1] + c*dxy[1];
     }
   }
-  fclose(fi);
+
+  // Read calibration parameters
+
+  // Set DEFAULT values here
+  // Default ADC pedestals (0) and ADC gains (1)
+  memset( fPed, 0, nval*sizeof(fPed[0]) );
+  for( UInt_t i=0; i<nval; ++i ) { fGain[i] = 1.0; }
+
+  // Read ADC pedestals and gains (in order of logical channel number)
+  DBRequest calib_request[] = {
+    { "pedestals",    fPed,   kFloat, nval, 1 },
+    { "gains",        fGain,  kFloat, nval, 1 },
+    { 0 }
+  };
+  err = LoadDB( file, date, calib_request, fPrefix );
+  fclose(file);
+  if( err )
+    return err;
+
   return kOK;
 }
 

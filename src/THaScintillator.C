@@ -70,118 +70,113 @@ THaAnalysisObject::EStatus THaScintillator::Init( const TDatime& date )
 //_____________________________________________________________________________
 Int_t THaScintillator::ReadDatabase( const TDatime& date )
 {
-  // Read this detector's parameters from the database file 'fi'.
-  // This function is called by THaDetectorBase::Init() once at the
-  // beginning of the analysis.
-  // 'date' contains the date/time of the run being analyzed.
+  // Read this detector's parameters from the database
 
-  static const char* const here = "ReadDatabase()";
-  const int LEN = 200;
-  char buf[LEN];
+  const char* const here = "ReadDatabase";
+
+  FILE* file = OpenFile( date );
+  if( !file ) return kFileError;
+
+  // Read fOrigin and fSize (required!)
+  Int_t err = ReadGeometry( file, date, true );
+  if( err ) {
+    fclose(file);
+    return err;
+  }
+
+  vector<Int_t> detmap;
   Int_t nelem;
+  Double_t angle = 0.0;
 
-  // Read data from database
-  FILE* fi = OpenFile( date );
-  if( !fi ) return kFileError;
+  // Read configuration parameters
+  DBRequest config_request[] = {
+    { "detmap",    &detmap,  kIntV },
+    { "npaddles",  &nelem,   kInt },
+    { "angle",     &angle,   kDouble, 0, 1 },
+    { 0 }
+  };
+  err = LoadDB( file, date, config_request, fPrefix );
 
-  while ( ReadComment( fi, buf, LEN ) ) {}
-  fscanf ( fi, "%5d", &nelem );                        // Number of  paddles
-  fgets ( buf, LEN, fi );
+  // Sanity checks
+  if( !err && nelem <= 0 ) {
+    Error( Here(here), "Invalid number of paddles: %d", nelem );
+    err = kInitError;
+  }
 
   // Reinitialization only possible for same basic configuration
-  if( fIsInit && nelem != fNelem ) {
-    Error( Here(here), "Cannot re-initalize with different number of paddles. "
-	   "(was: %d, now: %d). Detector not re-initialized.", fNelem, nelem );
-    fclose(fi);
-    return kInitError;
+  if( !err ) {
+    if( fIsInit && nelem != fNelem ) {
+      Error( Here(here), "Cannot re-initalize with different number of paddles. "
+	     "(was: %d, now: %d). Detector not re-initialized.", fNelem, nelem );
+      err = kInitError;
+    } else
+      fNelem = nelem;
   }
-  fNelem = nelem;
 
-  // Read detector map. Unless a model-number is given
-  // for the detector type, this assumes that the first half of the entries
-  // are for ADCs and the second half, for TDCs.
-  while ( ReadComment( fi, buf, LEN ) ) {}
-  int i = 0;
-  fDetMap->Clear();
-  while (1) {
-    int pos;
-    Int_t first_chan, model;
-    Int_t crate, slot, first, last;
-    fgets ( buf, LEN, fi );
-    sscanf( buf, "%6d %6d %6d %6d %6d %n",
-	    &crate, &slot, &first, &last, &first_chan, &pos );
-    if( crate < 0 ) break;
-    model=atoi(buf+pos); // if there is no model number given, set to zero
-
-    if( fDetMap->AddModule( crate, slot, first, last, first_chan, model ) < 0 ) {
-      Error( Here(here), "Too many DetMap modules (maximum allowed - %d).",
-	     THaDetMap::kDetMapSize);
-      fclose(fi);
-      return kInitError;
-    }
+  if( !err && FillDetMap(detmap, 0, here) <= 0 ) {
+    err = kInitError;  // Error already printed by FillDetMap
   }
-  while ( ReadComment( fi, buf, LEN ) ) {}
 
-  Float_t x,y,z;
-  fscanf ( fi, "%15f %15f %15f", &x, &y, &z );       // Detector's X,Y,Z coord
-  fgets ( buf, LEN, fi );
-  fOrigin.SetXYZ( x, y, z );
-  fgets ( buf, LEN, fi );
-  while ( ReadComment( fi, buf, LEN ) ) {}
-  fscanf ( fi, "%15lf %15lf %15lf", fSize, fSize+1, fSize+2 ); // Sizes of det on X,Y,Z
-  fgets ( buf, LEN, fi );
-  while ( ReadComment( fi, buf, LEN ) ) {}
+  if( !err && (nelem = fDetMap->GetTotNumChan()) != 2*fNelem ) {
+    Error( Here(here), "Number of detector map channels (%d) "
+	   "inconsistent with 2*number of paddles (%d)", nelem, 2*fNelem );
+    err = kInitError;
+  }
 
-  Float_t angle;
-  fscanf ( fi, "%15f", &angle );                   // Rotation angle of detector
-  fgets ( buf, LEN, fi );
-  const Float_t degrad = TMath::Pi()/180.0;
+  if( err ) {
+    fclose(file);
+    return err;
+  }
 
-  DefineAxes(angle*degrad);
+  DefineAxes( angle*TMath::DegToRad() );
 
   // Dimension arrays
+  //FIXME: use a structure!
+  UInt_t nval = fNelem, nval_twalk = 2*nval;
   if( !fIsInit ) {
+    fNTWalkPar = nval_twalk;
     // Calibration data
-    fLOff  = new Double_t[ fNelem ];
-    fROff  = new Double_t[ fNelem ];
-    fLPed  = new Double_t[ fNelem ];
-    fRPed  = new Double_t[ fNelem ];
-    fLGain = new Double_t[ fNelem ];
-    fRGain = new Double_t[ fNelem ];
+    fLOff  = new Double_t[ nval ];
+    fROff  = new Double_t[ nval ];
+    fLPed  = new Double_t[ nval ];
+    fRPed  = new Double_t[ nval ];
+    fLGain = new Double_t[ nval ];
+    fRGain = new Double_t[ nval ];
 
-    fTrigOff = new Double_t[ fNelem ];
+    fTrigOff = new Double_t[ nval ];
 
     // Per-event data
-    fLT   = new Double_t[ fNelem ];
-    fLT_c = new Double_t[ fNelem ];
-    fRT   = new Double_t[ fNelem ];
-    fRT_c = new Double_t[ fNelem ];
-    fLA   = new Double_t[ fNelem ];
-    fLA_p = new Double_t[ fNelem ];
-    fLA_c = new Double_t[ fNelem ];
-    fRA   = new Double_t[ fNelem ];
-    fRA_p = new Double_t[ fNelem ];
-    fRA_c = new Double_t[ fNelem ];
+    fLT   = new Double_t[ nval ];
+    fLT_c = new Double_t[ nval ];
+    fRT   = new Double_t[ nval ];
+    fRT_c = new Double_t[ nval ];
+    fLA   = new Double_t[ nval ];
+    fLA_p = new Double_t[ nval ];
+    fLA_c = new Double_t[ nval ];
+    fRA   = new Double_t[ nval ];
+    fRA_p = new Double_t[ nval ];
+    fRA_c = new Double_t[ nval ];
 
-    fNTWalkPar = 2*fNelem; // 1 paramter per paddle
-    fTWalkPar = new Double_t[ fNTWalkPar ];
+    fTWalkPar = new Double_t[ nval_twalk ];
 
-    fHitPad = new Int_t[ fNelem ];
-    fTime   = new Double_t[ fNelem ]; // analysis indexed by paddle (yes, inefficient)
-    fdTime  = new Double_t[ fNelem ];
-    fAmpl   = new Double_t[ fNelem ];
+    fHitPad = new Int_t[ nval ];
+    fTime   = new Double_t[ nval ]; // analysis indexed by paddle (yes, inefficient)
+    fdTime  = new Double_t[ nval ];
+    fAmpl   = new Double_t[ nval ];
 
-    fYt     = new Double_t[ fNelem ];
-    fYa     = new Double_t[ fNelem ];
+    fYt     = new Double_t[ nval ];
+    fYa     = new Double_t[ nval ];
 
     fIsInit = true;
   }
-  memset(fTrigOff,0,fNelem*sizeof(fTrigOff[0]));
+  memset(fTrigOff,0,nval*sizeof(fTrigOff[0]));
+
+  // Read calibration parameters
 
   // Set DEFAULT values here
   // TDC resolution (s/channel)
   fTdc2T = 0.1e-9;      // seconds/channel
-  fResolution = fTdc2T; // actual timing resolution
+  fResolution = kBig;   // actual timing resolution
   // Speed of light in the scintillator material
   fCn = 1.7e+8;    // meters/second
   // Attenuation length
@@ -189,152 +184,45 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   // Time-walk correction parameters
   fAdcMIP = 1.e10;    // large number for offset, so reference is effectively disabled
   // timewalk coefficients for tw = coeff*(1./sqrt(ADC-Ped)-1./sqrt(ADCMip))
-  for (int i=0; i<fNTWalkPar; i++) fTWalkPar[i]=0;
+  memset( fTWalkPar, 0, nval_twalk*sizeof(fTWalkPar[0]) );
   // trigger-timing offsets (s)
-  for (int i=0; i<fNelem; i++) fTrigOff[i]=0;
+  memset( fTrigOff, 0, nval_twalk*sizeof(fTrigOff[0]) );
 
+  // Default TDC offsets (0), ADC pedestals (0) and ADC gains (1)
+  memset( fLOff, 0, nval*sizeof(fLOff[0]) );
+  memset( fROff, 0, nval*sizeof(fROff[0]) );
+  memset( fLPed, 0, nval*sizeof(fLPed[0]) );
+  memset( fRPed, 0, nval*sizeof(fRPed[0]) );
+  for( UInt_t i=0; i<nval; ++i ) { fLGain[i] = 1.0; fRGain[i] = 1.0; }
 
-  DBRequest list[] = {
-    { "TDC_offsetsL", fLOff, kDouble, static_cast<UInt_t>(fNelem) },
-    { "TDC_offsetsR", fROff, kDouble, static_cast<UInt_t>(fNelem) },
-    { "ADC_pedsL", fLPed, kDouble, static_cast<UInt_t>(fNelem) },
-    { "ADC_pedsR", fRPed, kDouble, static_cast<UInt_t>(fNelem) },
-    { "ADC_coefL", fLGain, kDouble, static_cast<UInt_t>(fNelem) },
-    { "ADC_coefR", fRGain, kDouble, static_cast<UInt_t>(fNelem) },
-    { "TDC_res",   &fTdc2T },
-    { "TransSpd",  &fCn },
-    { "AdcMIP",    &fAdcMIP },
-    { "NTWalk",    &fNTWalkPar, kInt },
-    { "Timewalk",  fTWalkPar, kDouble, 2*static_cast<UInt_t>(fNelem) },
-    { "ReTimeOff", fTrigOff, kDouble, static_cast<UInt_t>(fNelem) },
-    { "AvgRes",    &fResolution },
-    { "Atten",     &fAttenuation },
+  DBRequest calib_request[] = {
+    { "L.off",            fLOff,         kDouble, nval, 1 },
+    { "R.off",            fROff,         kDouble, nval, 1 },
+    { "L.ped",            fLPed,         kDouble, nval, 1 },
+    { "R.ped",            fRPed,         kDouble, nval, 1 },
+    { "L.gain",           fLGain,        kDouble, nval, 1 },
+    { "R.gain",           fRGain,        kDouble, nval, 1 },
+    { "tdc.res",          &fTdc2T,       kDouble },
+    { "Cn",               &fCn,          kDouble },
+    { "MIP",              &fAdcMIP,      kDouble, 0, 1 },
+    { "timewalk_params",  fTWalkPar,     kDouble, nval_twalk, 1 },
+    { "retiming_offsets", fTrigOff,      kDouble, nval, 1 },
+    { "avgres",           &fResolution,  kDouble, 0, 1 },
+    { "atten",            &fAttenuation, kDouble, 0, 1 },
     { 0 }
   };
+  err = LoadDB( file, date, calib_request, fPrefix );
+  fclose(file);
+  if( err )
+    return err;
 
-#if 0
-  if ( gHaDB && gHaDB->LoadValues(GetPrefix(),list,date) ) {
-    goto exit;  // the new database existed -- we're finished
-  }
-#endif
+  if( fResolution == kBig )
+    fResolution = fTdc2T;
 
-  // otherwise, gHaDB is unavailable, use the old file database
-
-  // Read in the timing/adc calibration constants
-  // For fine-tuning of these data, we seek to a matching time stamp, or
-  // if no time stamp found, to a "configuration" section. Examples:
-  //
-  // [ 2002-10-10 15:30:00 ]
-  // #comment line goes here
-  // <left TDC offsets>
-  // <right TDC offsets>
-  // <left ADC peds>
-  // <rigth ADC peds>
-  // <left ADC coeff>
-  // <right ADC coeff>
-  //
-  // if below aren't present, 'default' values are used
-  // <TDC resolution: seconds/channel>
-  // <speed-of-light in medium m/s>
-  // <attenuation length m^-1>
-  // <ADC of MIP>
-  // <number of timewalk parameters>
-  // <timewalk paramters>
-  //
-  //
-  // or
-  //
-  // [ config=highmom ]
-  // comment line
-  // ...etc.
-  //
-  if( SeekDBdate( fi, date ) == 0 && fConfig.Length() > 0 &&
-      SeekDBconfig( fi, fConfig.Data() )) {}
-
-  while ( ReadComment( fi, buf, LEN ) ) {}
-  // Read calibration data
-  for (i=0;i<fNelem;i++)
-    fscanf(fi,"%15lf",fLOff+i);                    // Left Pads TDC offsets
-  fgets ( buf, LEN, fi );   // finish line
-  while ( ReadComment( fi, buf, LEN ) ) {}
-  for (i=0;i<fNelem;i++)
-    fscanf(fi,"%15lf",fROff+i);                    // Right Pads TDC offsets
-  fgets ( buf, LEN, fi );   // finish line
-  while ( ReadComment( fi, buf, LEN ) ) {}
-  for (i=0;i<fNelem;i++)
-    fscanf(fi,"%15lf",fLPed+i);                    // Left Pads ADC Pedest-s
-  fgets ( buf, LEN, fi );   // finish line, etc.
-  while ( ReadComment( fi, buf, LEN ) ) {}
-  for (i=0;i<fNelem;i++)
-    fscanf(fi,"%15lf",fRPed+i);                    // Right Pads ADC Pedes-s
-  fgets ( buf, LEN, fi );
-  while ( ReadComment( fi, buf, LEN ) ) {}
-  for (i=0;i<fNelem;i++)
-    fscanf (fi,"%15lf",fLGain+i);                  // Left Pads ADC Coeff-s
-  fgets ( buf, LEN, fi );
-  while ( ReadComment( fi, buf, LEN ) ) {}
-  for (i=0;i<fNelem;i++)
-    fscanf (fi,"%15lf",fRGain+i);                  // Right Pads ADC Coeff-s
-  fgets ( buf, LEN, fi );
-
-
-  while ( ReadComment( fi, buf, LEN ) ) {}
-  // Here on down, look ahead line-by-line
-  // stop reading if a '[' is found on a line (corresponding to the next date-tag)
-  // read in TDC resolution (s/channel)
-  if ( ! fgets(buf, LEN, fi) || strchr(buf,'[') ) goto exit;
-  sscanf(buf,"%15lf",&fTdc2T);
-  fResolution = 3.*fTdc2T;      // guess at timing resolution
-
-  while ( ReadComment( fi, buf, LEN ) ) {}
-  // Speed of light in the scintillator material
-  if ( !fgets(buf, LEN, fi) ||  strchr(buf,'[') ) goto exit;
-  sscanf(buf,"%15lf",&fCn);
-
-  // Attenuation length (inverse meters)
-  while ( ReadComment( fi, buf, LEN ) ) {}
-  if ( !fgets ( buf, LEN, fi ) ||  strchr(buf,'[') ) goto exit;
-  sscanf(buf,"%15lf",&fAttenuation);
-
-  while ( ReadComment( fi, buf, LEN ) ) {}
-  // Time-walk correction parameters
-  if ( !fgets(buf, LEN, fi) ||  strchr(buf,'[') ) goto exit;
-  sscanf(buf,"%15lf",&fAdcMIP);
-
-  while ( ReadComment( fi, buf, LEN ) ) {}
-  // timewalk parameters
-  {
-    int cnt=0;
-    while ( cnt<fNTWalkPar && fgets( buf, LEN, fi ) && ! strchr(buf,'[') ) {
-      char *ptr = buf;
-      int pos=0;
-      while ( cnt < fNTWalkPar && sscanf(ptr,"%15lf%n",&fTWalkPar[cnt],&pos)>0 ) {
-	ptr += pos;
-	cnt++;
-      }
-    }
-  }
-
-  while ( ReadComment( fi, buf, LEN ) ) {}
-  // trigger timing offsets
-  {
-    int cnt=0;
-    while ( cnt<fNelem && fgets( buf, LEN, fi ) && ! strchr(buf,'[') ) {
-      char *ptr = buf;
-      int pos=0;
-      while ( cnt < fNelem && sscanf(ptr,"%15lf%n",&fTrigOff[cnt],&pos)>0 ) {
-	ptr += pos;
-	cnt++;
-      }
-    }
-  }
-
- exit:
-  fclose(fi);
-
+  // If doing debugging, print the calibration parameters we've just read
   if ( fDebug > 1 ) {
     cout << '\n' << GetPrefix() << " calibration parameters: " << endl;;
-    for ( DBRequest *li = list; li->name; li++ ) {
+    for ( DBRequest *li = calib_request; li->name; li++ ) {
       cout << "  " << li->name;
       UInt_t maxc = li->nelem;
       if (maxc==0)maxc=1;

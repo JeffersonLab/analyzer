@@ -34,6 +34,8 @@
 #include <vector>
 #include <iostream>
 #include <cassert>
+#include <stdexcept>
+#include <set>
 
 #ifdef CLUST_RAWDATA_HACK
 #include <fstream>
@@ -41,6 +43,7 @@
 
 using namespace std;
 
+#define ALL(c) (c).begin(), (c).end()
 
 //_____________________________________________________________________________
 THaVDCPlane::THaVDCPlane( const char* name, const char* description,
@@ -92,284 +95,162 @@ void THaVDCPlane::MakePrefix()
 //_____________________________________________________________________________
 Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
 {
-  // Allocate TClonesArray objects and load plane parameters from database
+  // Load VDCPlane parameters from database
+
+  const char* const here = "ReadDatabase";
 
   FILE* file = OpenFile( date );
   if( !file ) return kFileError;
 
-  // Use default values until ready to read from database
-
-  static const char* const here = "ReadDatabase";
-  const int LEN = 100;
-  char buff[LEN];
-
-  // Build the search tag and find it in the file. Search tags
-  // are of form [ <prefix> ], e.g. [ R.vdc.u1 ].
-  TString tag(fPrefix); tag.Chop(); // delete trailing dot of prefix
-  tag.Prepend("["); tag.Append("]");
-  TString line;
-  bool found = false;
-  while (!found && fgets (buff, LEN, file) != NULL) {
-    char* buf = ::Compress(buff);  //strip blanks
-    line = buf;
-    delete [] buf;
-    if( line.EndsWith("\n") ) line.Chop();  //delete trailing newline
-    if ( tag == line )
-      found = true;
+  // Read fOrigin and fSize (currently unused)
+  Int_t err = ReadGeometry( file, date );
+  if( err ) {
+    fclose(file);
+    return err;
   }
-  if( !found ) {
-    Error(Here(here), "Database section \"%s\" not found! "
-	  "Initialization failed", tag.Data() );
+  fZ = fOrigin.Z();
+
+  // Read configuration parameters
+  vector<Int_t> detmap, bad_wirelist;
+  vector<Double_t> ttd_param;
+  vector<Float_t> tdc_offsets;
+  TString ttd_conv;
+  // Default values for optional parameters
+  fTDCRes = 5.0e-10;  // 0.5 ns/chan = 5e-10 s /chan
+  fT0Resolution = 6e-8; // 60 ns --- crude guess
+  fMinClustSize = 3;
+  fMaxClustSpan = 7;
+  fNMaxGap = 1;
+  fMinTime = 800;
+  fMaxTime = 2200;
+  fMinTdiff = 3e-8;   // 30ns  -> ~20 deg track angle
+  //fMaxTdiff = 1.5e-7; // 150ns -> ~60 deg track angle
+  fMaxTdiff = 2.0e-7; // 200ns
+
+  DBRequest request[] = {
+    { "detmap",         &detmap,         kIntV },
+    { "nwires",         &fNelem,         kInt,     0, 0, -1 },
+    { "wire.start",     &fWBeg,          kDouble },
+    { "wire.spacing",   &fWSpac,         kDouble,  0, 0, -1 },
+    { "wire.angle",     &fWAngle,        kDouble,  0, 0, -1 },
+    { "wire.badlist",   &bad_wirelist,   kIntV,    0, 1, -1 },
+    { "driftvel",       &fDriftVel,      kDouble,  0, 0, -1 },
+    { "tdc.min",        &fMinTime,       kInt,     0, 1, -1 },
+    { "tdc.max",        &fMaxTime,       kInt,     0, 1, -1 },
+    { "tdc.res",        &fTDCRes,        kDouble,  0, 0, -1 },
+    { "tdc.offsets",    &tdc_offsets,    kFloatV },
+    { "ttd.converter",  &ttd_conv,       kTString, 0, 0, -1 },
+    { "ttd.param",      &ttd_param,      kDoubleV, 0, 0, -1 },
+    { "t0.res",         &fT0Resolution,  kDouble,  0, 1, -1 },
+    { "clust.minsize",  &fMinClustSize,  kInt,     0, 1, -1 },
+    { "clust.maxspan",  &fMaxClustSpan,  kInt,     0, 1, -1 },
+    { "maxgap",         &fNMaxGap,       kInt,     0, 1, -1 },
+    { "min_tdiff",      &fMinTdiff,      kDouble,  0, 1, -1 },
+    { "max_tdiff",      &fMaxTdiff,      kDouble,  0, 1, -1 },
+    { "description",    &fTitle,         kTString, 0, 1 },
+    { 0 }
+  };
+
+  err = LoadDB( file, date, request, fPrefix );
+  fclose(file);
+  if( err )
+    return err;
+
+  if( FillDetMap(detmap, 0, here) <= 0 )
+    return kInitError; // Error already printed by FillDetMap
+
+  fWAngle *= TMath::DegToRad(); // Convert to radians
+  fSinAngle = TMath::Sin( fWAngle );
+  fCosAngle = TMath::Cos( fWAngle );
+
+  set<Int_t> bad_wires( ALL(bad_wirelist) );
+  bad_wirelist.clear();
+
+  // Sanity checks
+  if( fNelem <= 0 ) {
+    Error( Here(here), "Invalid number of wires: %d", fNelem );
+    return kInitError;
+  }
+
+  Int_t nchan = fDetMap->GetTotNumChan();
+  if( nchan != fNelem ) {
+    Error( Here(here), "Number of detector map channels (%d) "
+	   "disagrees with number of wires (%d)", nchan, fNelem );
+    return kInitError;
+  }
+  nchan = tdc_offsets.size();
+  if( nchan != fNelem ) {
+    Error( Here(here), "Number of TDC offset values (%d) "
+	   "disagrees with number of wires (%d)", nchan, fNelem );
+    return kInitError;
+  }
+
+  if( fMinClustSize < 1 || fMinClustSize > 6 ) {
+    Error( Here(here), "Invalid min_clust_size = %d, must be betwwen 1 and "
+	   "6. Fix database.", fMinClustSize );
+    fclose(file);
+    return kInitError;
+  }
+  if( fMaxClustSpan < 2 || fMaxClustSpan > 12 ) {
+    Error( Here(here), "Invalid max_clust_span = %d, must be betwwen 1 and "
+	   "12. Fix database.", fMaxClustSpan );
+    fclose(file);
+    return kInitError;
+  }
+  if( fNMaxGap < 0 || fNMaxGap > 2 ) {
+    Error( Here(here), "Invalid max_gap = %d, must be betwwen 0 and 2. "
+	   "Fix database.", fNMaxGap );
+    fclose(file);
+    return kInitError;
+  }
+  if( fMinTime < 0 || fMinTime > 4095 ) {
+    Error( Here(here), "Invalid min_time = %d, must be betwwen 0 and 4095. "
+	   "Fix database.", fMinTime );
+    fclose(file);
+    return kInitError;
+  }
+  if( fMaxTime < 1 || fMaxTime > 4096 || fMinTime >= fMaxTime ) {
+    Error( Here(here), "Invalid max_time = %d. Must be between 1 and 4096 "
+	   "and >= min_time = %d. Fix database.", fMaxTime, fMinTime );
     fclose(file);
     return kInitError;
   }
 
-  //Found the entry for this plane, so read data
-  Int_t nWires = 0;    // Number of wires to create
-  Int_t prev_first = 0, prev_nwires = 0;
-  // Set up the detector map
-  fDetMap->Clear();
-  do {
-    fgets( buff, LEN, file );
-    // bad kludge to allow a variable number of detector map lines
-    if( strchr(buff, '.') ) // any floating point number indicates end of map
-      break;
-    // Get crate, slot, low channel and high channel from file
-    Int_t crate, slot, lo, hi;
-    if( sscanf( buff, "%6d %6d %6d %6d", &crate, &slot, &lo, &hi ) != 4 ) {
-      if( *buff ) buff[strlen(buff)-1] = 0; //delete trailing newline
-      Error( Here(here), "Error reading detector map line: %s", buff );
-      fclose(file);
-      return kInitError;
-    }
-    Int_t first = prev_first + prev_nwires;
-    // Add module to the detector map
-    fDetMap->AddModule(crate, slot, lo, hi, first);
-    prev_first = first;
-    prev_nwires = (hi - lo + 1);
-    nWires += prev_nwires;
-  } while( *buff );  // sanity escape
-  // Load z, wire beginning postion, wire spacing, and wire angle
-  sscanf( buff, "%15lf %15lf %15lf %15lf", &fZ, &fWBeg, &fWSpac, &fWAngle );
-  fWAngle *= TMath::Pi()/180.0; // Convert to radians
-  fSinAngle = TMath::Sin( fWAngle );
-  fCosAngle = TMath::Cos( fWAngle );
-
-  // Load drift velocity (will be used to initialize crude Time to Distance
-  // converter)
-  fscanf(file, "%15lf", &fDriftVel);
-  fgets(buff, LEN, file); // Read to end of line
-  fgets(buff, LEN, file); // Skip line
-
-  // first read in the time offsets for the wires
-  float* wire_offsets = new float[nWires];
-  int*   wire_nums    = new int[nWires];
-
-  for (int i = 0; i < nWires; i++) {
-    int wnum = 0;
-    float offset = 0.0;
-    fscanf(file, " %6d %15f", &wnum, &offset);
-    wire_nums[i] = wnum-1; // Wire numbers in file start at 1
-    wire_offsets[i] = offset;
+  // Create time-to-distance converter
+  if( !ttd_conv.Contains("::") )
+    ttd_conv.Prepend("VDC::");
+  const char* s = ttd_conv.Data();
+  TClass* cl = TClass::GetClass( s );
+  if( !cl ) {
+    Error( Here(here), "Drift time-to-distance converter \"%s\" not "
+	   "available. Load library or fix database.", s?s:"" );
+    return kInitError;
+  }
+  if( !cl->InheritsFrom( VDC::TimeToDistConv::Class() )) {
+    Error( Here(here), "Class \"%s\" is not a drift time-to-distance "
+	   "converter. Fix database.", s );
+    return kInitError;
+  }
+  fTTDConv = static_cast<VDC::TimeToDistConv*>( cl->New() );
+  if( !fTTDConv ) {
+    Error( Here(here), "Unexpected error creating drift time-to-distance "
+	   "converter object \"%s\". Call expert.", s );
+    return kInitError;
+  }
+  // Set the converters parameters
+  fTTDConv->SetDriftVel( fDriftVel );
+  if( fTTDConv->SetParameters( ttd_param ) != 0 ) {
+    Error( Here(here), "Error initializing drift time-to-distance converter "
+	   "\"%s\". Check ttd.param in database.", s );
+    return kInitError;
   }
 
-
-  // now read in the time-to-drift-distance lookup table
-  // data (if it exists)
-//   fgets(buff, LEN, file); // read to the end of line
-//   fgets(buff, LEN, file);
-//   if(strncmp(buff, "TTD Lookup Table", 16) == 0) {
-//     // if it exists, read the data in
-//     fscanf(file, "%le", &fT0);
-//     fscanf(file, "%d", &fNumBins);
-
-//     // this object is responsible for the memory management
-//     // of the lookup table
-//     delete [] fTable;
-//     fTable = new Float_t[fNumBins];
-//     for(int i=0; i<fNumBins; i++) {
-//       fscanf(file, "%e", &(fTable[i]));
-//     }
-//   } else {
-//     // if not, set some reasonable defaults and rewind the file
-//     fT0 = 0.0;
-//     fNumBins = 0;
-//     fTable = NULL;
-//     cout<<"Could not find lookup table header: "<<buff<<endl;
-//     fseek(file, -strlen(buff), SEEK_CUR);
-//   }
-
-  // Define time-to-drift-distance converter
-  // Currently, we use the analytic converter.
-  // FIXME: Let user choose this via a parameter
-  delete fTTDConv;
-  fTTDConv = new THaVDCAnalyticTTDConv(fDriftVel);
-
-  //THaVDCLookupTTDConv* ttdConv = new THaVDCLookupTTDConv(fT0, fNumBins, fTable);
-
-  // Now initialize wires (those wires... too lazy to initialize themselves!)
-  // Caution: This may not correspond at all to actual wire channels!
-  for (int i = 0; i < nWires; i++) {
+  // Initialize wires
+  for (int i = 0; i < fNelem; i++) {
     THaVDCWire* wire = new((*fWires)[i])
-      THaVDCWire( i, fWBeg+i*fWSpac, wire_offsets[i], fTTDConv );
-    if( wire_nums[i] < 0 )
+      THaVDCWire( i, fWBeg+i*fWSpac, tdc_offsets[i], fTTDConv );
+    if( bad_wires.find(i) != bad_wires.end() )
       wire->SetFlag(1);
-  }
-  delete [] wire_offsets;
-  delete [] wire_nums;
-
-  // Set location of chamber center (in detector coordinates)
-  fOrigin.SetXYZ( 0.0, 0.0, fZ );
-
-  // Read additional parameters (not in original database)
-  // For backward compatibility with database version 1, these parameters
-  // are in an optional section, labelled [ <prefix>.extra_param ]
-  // (e.g. [ R.vdc.u1.extra_param ]) or [ R.extra_param ].  If this tag is
-  // not found, a warning is printed and defaults are used.
-
-  tag = "["; tag.Append(fPrefix); tag.Append("extra_param]");
-  TString tag2(tag);
-  found = false;
-  rewind(file);
-  while (!found && fgets(buff, LEN, file) != NULL) {
-    char* buf = ::Compress(buff);  //strip blanks
-    line = buf;
-    delete [] buf;
-    if( line.EndsWith("\n") ) line.Chop();  //delete trailing newline
-    if ( tag == line )
-      found = true;
-  }
-  if( !found ) {
-    // Poor man's default key search
-    rewind(file);
-    tag2 = fPrefix;
-    Ssiz_t pos = tag2.Index(".");
-    if( pos != kNPOS )
-      tag2 = tag2(0,pos+1);
-    else
-      tag2.Append(".");
-    tag2.Prepend("[");
-    tag2.Append("extra_param]");
-    while (!found && fgets(buff, LEN, file) != NULL) {
-      char* buf = ::Compress(buff);  //strip blanks
-      line = buf;
-      delete [] buf;
-      if( line.EndsWith("\n") ) line.Chop();  //delete trailing newline
-      if ( tag2 == line )
-	found = true;
-    }
-  }
-  if( found ) {
-    if( fscanf(file, "%lf %lf", &fTDCRes, &fT0Resolution) != 2) {
-      Error( Here(here), "Error reading TDC scale and T0 resolution\n"
-	     "Line = %s\nFix database.", buff );
-      fclose(file);
-      return kInitError;
-    }
-    fgets(buff, LEN, file); // Read to end of line
-    if( fscanf( file, "%d %d %d %d %d %lf %lf", &fMinClustSize, &fMaxClustSpan,
-		&fNMaxGap, &fMinTime, &fMaxTime, &fMinTdiff, &fMaxTdiff ) != 7 ) {
-      Error( Here(here), "Error reading min_clust_size, max_clust_span, "
-	     "max_gap, min_time, max_time, min_tdiff, max_tdiff.\n"
-	     "Line = %s\nFix database.", buff );
-      fclose(file);
-      return kInitError;
-    }
-    fgets(buff, LEN, file); // Read to end of line
-    // Time-to-distance converter parameters
-    if( THaVDCAnalyticTTDConv* analytic_conv =
-	dynamic_cast<THaVDCAnalyticTTDConv*>(fTTDConv) ) {
-      // THaVDCAnalyticTTDConv
-      // Format: 4*A1 4*A2 dtime(s)  (9 floats)
-      Double_t A1[4], A2[4], dtime;
-      if( fscanf(file, "%lf %lf %lf %lf %lf %lf %lf %lf %lf",
-		 &A1[0], &A1[1], &A1[2], &A1[3],
-		 &A2[0], &A2[1], &A2[2], &A2[3], &dtime ) != 9) {
-	Error( Here(here), "Error reading THaVDCAnalyticTTDConv parameters\n"
-	       "Line = %s\nExpect 9 floating point numbers. Fix database.",
-	       buff );
-	fclose(file);
-	return kInitError;
-      } else {
-	analytic_conv->SetParameters( A1, A2, dtime );
-      }
-    }
-//     else if( (... *conv = dynamic_cast<...*>(fTTDConv)) ) {
-//       // handle parameters of other TTD converters here
-//     }
-
-    fgets(buff, LEN, file); // Read to end of line
-
-    Double_t h, w;
-
-    if( fscanf(file, "%lf %lf", &h, &w) != 2) {
-	Error( Here(here), "Error reading height/width parameters\n"
-	       "Line = %s\nExpect 2 floating point numbers. Fix database.",
-	       buff );
-	fclose(file);
-	return kInitError;
-      } else {
-	   fSize[0] = h/2.0;
-	   fSize[1] = w/2.0;
-      }
-
-    fgets(buff, LEN, file); // Read to end of line
-    // Sanity checks
-    if( fMinClustSize < 1 || fMinClustSize > 6 ) {
-      Error( Here(here), "Invalid min_clust_size = %d, must be betwwen 1 and "
-	     "6. Fix database.", fMinClustSize );
-      fclose(file);
-      return kInitError;
-    }
-    if( fMaxClustSpan < 2 || fMaxClustSpan > 12 ) {
-      Error( Here(here), "Invalid max_clust_span = %d, must be betwwen 1 and "
-	     "12. Fix database.", fMaxClustSpan );
-      fclose(file);
-      return kInitError;
-    }
-    if( fNMaxGap < 0 || fNMaxGap > 2 ) {
-      Error( Here(here), "Invalid max_gap = %d, must be betwwen 0 and 2. "
-	     "Fix database.", fNMaxGap );
-      fclose(file);
-      return kInitError;
-    }
-    if( fMinTime < 0 || fMinTime > 4095 ) {
-      Error( Here(here), "Invalid min_time = %d, must be betwwen 0 and 4095. "
-	     "Fix database.", fMinTime );
-      fclose(file);
-      return kInitError;
-    }
-    if( fMaxTime < 1 || fMaxTime > 4096 || fMinTime >= fMaxTime ) {
-      Error( Here(here), "Invalid max_time = %d. Must be between 1 and 4096 "
-	     "and >= min_time = %d. Fix database.", fMaxTime, fMinTime );
-      fclose(file);
-      return kInitError;
-    }
-  } else {
-    Warning( Here(here), "No database section \"%s\" or \"%s\" found. "
-	     "Using defaults.", tag.Data(), tag2.Data() );
-    fTDCRes = 5.0e-10;  // 0.5 ns/chan = 5e-10 s /chan
-    fT0Resolution = 6e-8; // 60 ns --- crude guess
-    fMinClustSize = 3;
-    fMaxClustSpan = 7;
-    fNMaxGap = 1;
-    fMinTime = 800;
-    fMaxTime = 2200;
-    fMinTdiff = 3e-8;   // 30ns  -> ~20 deg track angle
-    //fMaxTdiff = 1.5e-7; // 150ns -> ~60 deg track angle
-    fMaxTdiff = 2.0e-7; // 200ns
-
-    if( THaVDCAnalyticTTDConv* analytic_conv =
-	dynamic_cast<THaVDCAnalyticTTDConv*>(fTTDConv) ) {
-      Double_t A1[4], A2[4], dtime = 4e-9;
-      A1[0] = 2.12e-3;
-      A1[1] = A1[2] = A1[3] = 0.0;
-      A2[0] = -4.2e-4;
-      A2[1] = 1.3e-3;
-      A2[2] = 1.06e-4;
-      A2[3] = 0.0;
-      analytic_conv->SetParameters( A1, A2, dtime );
-    }
   }
 
   THaDetectorBase *sdet = GetParent();
@@ -388,8 +269,6 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
   }
 
   fIsInit = true;
-  fclose(file);
-
   return kOK;
 }
 

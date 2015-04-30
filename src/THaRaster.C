@@ -35,130 +35,88 @@ THaRaster::THaRaster( const char* name, const char* description,
 
 
 //_____________________________________________________________________________
-// ReadDatabase:  if detectors cant be added to detmap 
-//                or entry for bpms is missing           -> kInitError
-//                otherwise                              -> kOk
-//                CAUTION: i do not check for incomplete or 
-//                         inconsistent data
-//
 Int_t THaRaster::ReadDatabase( const TDatime& date )
 {
-  static const char* const here = "ReadDatabase()";
+  // ReadDatabase:  if detectors cant be added to detmap
+  //                or entry for bpms is missing           -> kInitError
+  //                otherwise                              -> kOk
 
-  const int LEN=100;
-  char buf[LEN];
-  char *filestatus;
-  char keyword[LEN];
-  
-  FILE* fi = OpenFile( date );
-  if( !fi ) return kFileError;
+  const char* const here = "ReadDatabase";
 
-  // okay, this needs to be changed, but since i dont want to re- or pre-invent 
-  // the wheel, i will keep it ugly and read in my own configuration file with 
-  // a very fixed syntax: 
+  vector<Int_t> detmap;
+  Double_t zpos[3], raw2pos[18];
+  Float_t freq[2], rped[2], sped[2];  // FIXME: change to double
 
-  // Seek our detmap section (e.g. "Raster_detmap")
-  sprintf(keyword,"[%s_detmap]",GetName());
-  Int_t n=strlen(keyword);
-
-  do {
-    filestatus=fgets( buf, LEN, fi);
-  } while ((filestatus!=NULL)&&(strncmp(buf,keyword,n)!=0));
-  if (filestatus==NULL) {
-    Error( Here("ReadDataBase()"), "Unexpected end of raster configuration file");
-    fclose(fi);
+  FILE* file = OpenFile( date );
+  if( !file )
     return kInitError;
+
+  // fOrigin.SetXYZ(0,0,0);
+  Int_t err = kOK;// = ReadGeometry( file, date );
+
+  if( !err ) {
+    memset( zpos, 0, sizeof(zpos) );
+    // Read configuration parameters
+    DBRequest config_request[] = {
+      { "detmap",   &detmap,  kIntV },
+      { "zpos",     zpos,     kDouble, 3, 1 },
+      { 0 }
+    };
+    err = LoadDB( file, date, config_request, fPrefix );
   }
 
-  // again that is not really nice, but since it will be changed anyhow:
-  // i dont check each time for end of file, needs to be improved
-
-  fDetMap->Clear();
-  int first_chan, crate, dummy, slot, first, last, modulid;
-
-  do {
-    fgets( buf, LEN, fi);
-    sscanf(buf,"%6d %6d %6d %6d %6d %6d %6d", 
-	   &first_chan, &crate, &dummy, &slot, &first, &last, &modulid);
-    if (first_chan>=0) {
-      if ( fDetMap->AddModule (crate, slot, first, last, first_chan )<0) {
-	Error( Here(here), "Couldnt add Raster to DetMap. Good bye, blue sky, good bye!");
-	fclose(fi);
-	return kInitError;
-      }
-    }
-  } while (first_chan>=0);
-
-  // Seek our database section
-  sprintf(keyword,"[%s]",GetName());
-  n=strlen(keyword);
-  do {
-    filestatus=fgets( buf, LEN, fi);
-  } while ((filestatus!=NULL)&&(strncmp(buf,keyword,n)!=0));
-  if (filestatus==NULL) {
-    Error( Here("ReadDataBase()"), "Unexpected end of raster configuration file");
-    fclose(fi);
-    return kInitError;
+  if( !err &&
+      FillDetMap(detmap, THaDetMap::kFillLogicalChannel |
+			 THaDetMap::kFillModel, here) <= 0 ) {
+    err = kInitError;  // Error already printed by FillDetMap
   }
-  double dummy1,dummy2,dummy3,dummy4,dummy5,dummy6,dummy7;
-  fgets( buf, LEN, fi);
-  sscanf(buf,"%15lf %15lf %15lf %15lf %15lf %15lf %15lf",
-	 &dummy1,&dummy2,&dummy3,&dummy4,&dummy5,&dummy6,&dummy7);
-  fRasterFreq(0)=dummy2;
-  fRasterFreq(1)=dummy3;
 
-  fRasterPedestal(0)=dummy4;
-  fRasterPedestal(1)=dummy5;
+  if( !err ) {
+    fPosOff[0].SetZ( zpos[0] );
+    fPosOff[1].SetZ( zpos[1] );
+    fPosOff[2].SetZ( zpos[2] );
 
-  fSlopePedestal(0)=dummy6;
-  fSlopePedestal(1)=dummy7;
+    memset( rped, 0, sizeof(rped) );
+    memset( sped, 0, sizeof(sped) );
 
-  fgets( buf, LEN, fi);
-  sscanf(buf,"%15lf",&dummy1);
-  fPosOff[0].SetZ(dummy1);
-  fgets( buf, LEN, fi);
-  sscanf(buf,"%15lf",&dummy1);
-  fPosOff[1].SetZ(dummy1);
-  fgets( buf, LEN, fi);
-  sscanf(buf,"%15lf",&dummy1);
-  fPosOff[2].SetZ(dummy1);
+    DBRequest calib_request[] = {
+      { "freqs",      freq,  kFloat, 2 },
+      { "rast_peds",  rped,  kFloat, 2, 1 },
+      { "slope_peds", sped,  kFloat, 2, 1 },
+      { "raw2pos",    raw2pos, kDouble, 18 },
+      { 0 }
+    };
+    err = LoadDB( file, date, calib_request, fPrefix );
+  }
+  fclose(file);
+  if( err )
+    return err;
 
-  // Find timestamp, if any, for the raster constants. 
-  // Give up and rewind to current file position on any non-matching tag.
-  // Timestamps should be in ascending order
-  SeekDBdate( fi, date, true );
+  fRasterFreq.SetElements( freq );
+  fRasterPedestal.SetElements( rped );
+  fSlopePedestal.SetElements( sped );
 
-  fgets( buf, LEN, fi);
-  sscanf(buf,"%15lf %15lf %15lf %15lf %15lf %15lf",
-	 &dummy1,&dummy2,&dummy3,&dummy4,&dummy5,&dummy6);
-  fRaw2Pos[0](0,0)=dummy3;
-  fRaw2Pos[0](1,1)=dummy4;
-  fRaw2Pos[0](0,1)=dummy5;
-  fRaw2Pos[0](1,0)=dummy6;
-  fPosOff[0].SetX(dummy1);
-  fPosOff[0].SetY(dummy2);
+  fPosOff[0].SetX(   raw2pos[0]);
+  fPosOff[0].SetY(   raw2pos[1]);
+  fRaw2Pos[0](0,0) = raw2pos[2];
+  fRaw2Pos[0](1,1) = raw2pos[3];
+  fRaw2Pos[0](0,1) = raw2pos[4];
+  fRaw2Pos[0](1,0) = raw2pos[5];
 
-  fgets( buf, LEN, fi);
-  sscanf(buf,"%15lf %15lf %15lf %15lf %15lf %15lf",
-	 &dummy1,&dummy2,&dummy3,&dummy4,&dummy5,&dummy6);
-  fRaw2Pos[1](0,0)=dummy3;
-  fRaw2Pos[1](1,1)=dummy4;
-  fRaw2Pos[1](0,1)=dummy5;
-  fRaw2Pos[1](1,0)=dummy6;
-  fPosOff[1].SetX(dummy1);
-  fPosOff[1].SetY(dummy2);
+  fPosOff[1].SetX(   raw2pos[6]);
+  fPosOff[1].SetY(   raw2pos[7]);
+  fRaw2Pos[1](0,0) = raw2pos[8];
+  fRaw2Pos[1](1,1) = raw2pos[9];
+  fRaw2Pos[1](0,1) = raw2pos[10];
+  fRaw2Pos[1](1,0) = raw2pos[11];
 
-  fgets( buf, LEN, fi);
-  sscanf(buf,"%15lf %15lf %15lf %15lf %15lf %15lf",
-	 &dummy1,&dummy2,&dummy3,&dummy4,&dummy5,&dummy6);
-  fRaw2Pos[2](0,0)=dummy3;
-  fRaw2Pos[2](1,1)=dummy4;
-  fRaw2Pos[2](0,1)=dummy5;
-  fRaw2Pos[2](1,0)=dummy6;
-  fPosOff[2].SetX(dummy1);
-  fPosOff[2].SetY(dummy2);
+  fPosOff[2].SetX(   raw2pos[12]);
+  fPosOff[2].SetY(   raw2pos[13]);
+  fRaw2Pos[2](0,0) = raw2pos[14];
+  fRaw2Pos[2](1,1) = raw2pos[15];
+  fRaw2Pos[2](0,1) = raw2pos[16];
+  fRaw2Pos[2](1,0) = raw2pos[17];
 
-  fclose(fi);
   return kOK;
 }
 

@@ -36,6 +36,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cassert>
+#include <cctype>
+#include <sstream>
 
 #ifdef WITH_DEBUG
 #include <iostream>
@@ -44,7 +46,18 @@
 
 using namespace std;
 using namespace VDC;
-using THaString::Split;
+
+// Helper structure for parsing tensor data
+typedef vector<THaVDC::THaMatrixElement> MEvec_t;
+struct MEdef_t {
+  MEdef_t() : npow(0), elems(0), isfp(false) {}
+  MEdef_t( Int_t npw, MEvec_t* elemp, Bool_t is_fp = false, Int_t fp_idx = 0 )
+    : npow(npw), elems(elemp), isfp(is_fp), fpidx(fp_idx) {}
+  MEvec_t::size_type npow; // Number of exponents for this element type
+  MEvec_t* elems;          // Pointer to member variable holding data
+  Bool_t isfp;             // This defines a focal plane matrix element
+  Int_t fpidx;             // Index into fFPMatrixElems
+};
 
 //_____________________________________________________________________________
 THaVDC::THaVDC( const char* name, const char* description,
@@ -88,83 +101,143 @@ THaAnalysisObject::EStatus THaVDC::Init( const TDatime& date )
 }
 
 //_____________________________________________________________________________
+static Int_t ParseMatrixElements( const string& MEstring,
+				  map<string,MEdef_t>& matrix_map,
+				  const char* prefix )
+{
+  // Parse the contents of MEstring (from the database) into the local
+  // member variables holding the matrix elements
+
+  //FIXME: move to HRS
+
+  const char* const here = "THaVDC::ParseMatrixElements";
+
+  istringstream ist(MEstring.c_str());
+  string word, w;
+  bool findnext = true, findpowers = true;
+  Int_t powers_left = 0;
+  map<string,MEdef_t>::iterator cur = matrix_map.end();
+  THaVDC::THaMatrixElement ME;
+  while( ist >> word ) {
+    if( !findnext ) {
+      assert( cur != matrix_map.end() );
+      bool havenext = isalpha(word[0]);
+      if( findpowers ) {
+	assert( powers_left > 0 );
+	if( havenext || word.find_first_not_of("0123456789") != string::npos ||
+	    atoi(word.c_str()) > 9 ) {
+	  Error( Here(here,prefix), "Bad exponent = %s for matrix element \"%s\". "
+		 "Must be integer between 0 and 9. Fix database.",
+		 word.c_str(), w.c_str() );
+	  return THaAnalysisObject::kInitError;
+	}
+	ME.pw.push_back( atoi(word.c_str()) );
+	if( --powers_left == 0 ) {
+	  // Read all exponents
+	  if( cur->second.isfp ) {
+	    // Currently only the "000" focal plane matrix elements are supported
+	    if( ME.pw[0] != 0 || ME.pw[1] != 0 || ME.pw[2] != 0 ) {
+	      Error( Here(here,prefix), "Bad coefficients of focal plane matrix "
+		    "element %s = %d %d %d. Fix database.",
+		    w.c_str(), ME.pw[0], ME.pw[1], ME.pw[2] );
+	      return THaAnalysisObject::kInitError;
+	    } else {
+	      findpowers = false;
+	    }
+	  }
+	  else {
+	    // Check if this element already exists, if so, skip
+	    MEvec_t* mat = cur->second.elems;
+	    assert(mat);
+	    bool match = false;
+	    for( MEvec_t::iterator it = mat->begin();
+		 it != mat->end() && !(match = it->match(ME)); ++it ) {}
+	    if( match ) {
+	      Warning( Here(here,prefix), "Duplicate definition of matrix element %s. "
+		      "Using first definition.", cur->first.c_str() );
+	      findnext = true;
+	    } else {
+	      findpowers = false;
+	    }
+	  }
+	}
+      } else {
+	if( !havenext ) {
+	  if( ME.poly.size() >= THaVDC::kPORDER )
+	    havenext = true;
+	  else {
+	    ME.poly.push_back( atof(word.c_str()) );
+	    if( ME.poly.back() != 0.0 ) {
+	      ME.iszero = false;
+	      ME.order = ME.poly.size();
+	    }
+	  }
+	}
+	if( havenext || ist.eof() ) {
+	  if( ME.poly.empty() ) {
+	    // No data read at all?
+	    Error( Here(here,prefix), "Could not read in Matrix Element %s%d%d%d!",
+		  w.c_str(), ME.pw[0], ME.pw[1], ME.pw[2]);
+	    return THaAnalysisObject::kInitError;
+	  }
+	  if( !ME.iszero ) {
+	    MEvec_t* mat = cur->second.elems;
+	    assert(mat);
+	    // The focal plane matrix elements are stored in a single vector
+	    if( cur->second.isfp ) {
+	      THaVDC::THaMatrixElement& m = (*mat)[cur->second.fpidx];
+	      if( m.order > 0 ) {
+		Warning( Here(here,prefix), "Duplicate definition of focal plane "
+			"matrix element %s. Using first definition.",
+			w.c_str() );
+	      } else
+		m = ME;
+	    } else
+	      mat->push_back(ME);
+	  }
+	  findnext = true;
+	  if( !havenext )
+	    continue;
+	} // if (havenext)
+      } // if (findpowers) else
+    } // if (!findnext)
+    if( findnext ) {
+      cur = matrix_map.find(word);
+      if( cur == matrix_map.end() ) {
+	// Error( Here(here,prefix), "Unknown matrix element type %s. Fix database.",
+	// 	 word.c_str() );
+	// return THaAnalysisObject::kInitError;
+	continue;
+      }
+      ME.clear();
+      findnext = false; findpowers = true;
+      powers_left = cur->second.npow;
+      w = word;
+    }
+  } // while(word)
+
+  return THaAnalysisObject::kOK;
+}
+
+//_____________________________________________________________________________
 Int_t THaVDC::ReadDatabase( const TDatime& date )
 {
   // Read VDC database
 
+  const char* const here = "ReadDatabase";
+
   FILE* file = OpenFile( date );
   if( !file ) return kFileError;
 
-  // load global VDC parameters
-  static const char* const here = "ReadDatabase";
-  const int LEN = 200;
-  char buff[LEN];
-
-  // Look for the section [<prefix>.global] in the file, e.g. [ R.global ]
-  TString tag(fPrefix);
-  Ssiz_t pos = tag.Index(".");
-  if( pos != kNPOS )
-    tag = tag(0,pos+1);
-  else
-    tag.Append(".");
-  tag.Prepend("[");
-  tag.Append("global]");
-
-  TString line;
-  bool found = false;
-  while (!found && fgets (buff, LEN, file) != 0) {
-    char* buf = ::Compress(buff);  //strip blanks
-    line = buf;
-    delete [] buf;
-    if( line.EndsWith("\n") ) line.Chop();
-    if ( tag == line )
-      found = true;
-  }
-  if( !found ) {
-    Error(Here(here), "Database section %s not found!", tag.Data() );
+  // Read fOrigin and fSize (currently unused)
+  Int_t err = ReadGeometry( file, date );
+  if( err ) {
     fclose(file);
-    return kInitError;
+    return err;
   }
 
-  // We found the section, now read the data
-
-  // read in some basic constants first
-  //  fscanf(file, "%lf", &fSpacing);
-  // fSpacing is now calculated from the actual z-positions in Init(),
-  // so skip the first line after [ global ] completely:
-  fgets(buff, LEN, file); // Skip rest of line
-
-  // Read in the focal plane transfer elements
-  // For fine-tuning of these data, we seek to a matching time stamp, or
-  // if no time stamp found, to a "configuration" section. Examples:
-  //
-  // [ 2002-10-10 15:30:00 ]
-  // comment line goes here
-  // t 0 0 0  ...
-  // y 0 0 0  ... etc.
-  //
-  // or
-  //
-  // [ config=highmom ]
-  // comment line
-  // t 0 0 0  ... etc.
-  //
-  if( (found = SeekDBdate( file, date )) == 0 && !fConfig.IsNull() &&
-      (found = SeekDBconfig( file, fConfig.Data() )) == 0 ) {
-    // Print warning if a requested (non-empty) config not found
-    Warning( Here(here), "Requested configuration section \"%s\" not "
-	     "found in database. Using default (first) section.",
-	     fConfig.Data() );
-  }
-
-  // Second line after [ global ] or first line after a found tag.
-  // After a found tag, it must be the comment line. If not found, then it
-  // can be either the comment or a non-found tag before the comment...
-  fgets(buff, LEN, file);  // Skip line
-  if( !found && IsTag(buff) )
-    // Skip one more line if this one was a non-found tag
-    fgets(buff, LEN, file);
-
+  // Read TRANSPORT matrices
+  //FIXME: move to HRS
   fTMatrixElems.clear();
   fDMatrixElems.clear();
   fPMatrixElems.clear();
@@ -176,126 +249,70 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   fFPMatrixElems.clear();
   fFPMatrixElems.resize(3);
 
-  typedef vector<string>::size_type vsiz_t;
-  map<string,vsiz_t> power;
-  power["t"] = 3;  // transport to focal-plane tensors
-  power["y"] = 3;
-  power["p"] = 3;
-  power["D"] = 3;  // focal-plane to target tensors
-  power["T"] = 3;
-  power["Y"] = 3;
-  power["YTA"] = 4;
-  power["P"] = 3;
-  power["PTA"] = 4;
-  power["L"] = 4;  // pathlength from z=0 (target) to focal plane (meters)
-  power["XF"] = 5; // forward: target to focal-plane (I think)
-  power["TF"] = 5;
-  power["PF"] = 5;
-  power["YF"] = 5;
+  map<string,MEdef_t> matrix_map;
 
-  map<string,vector<THaMatrixElement>*> matrix_map;
-  matrix_map["t"] = &fFPMatrixElems;
-  matrix_map["y"] = &fFPMatrixElems;
-  matrix_map["p"] = &fFPMatrixElems;
-  matrix_map["D"] = &fDMatrixElems;
-  matrix_map["T"] = &fTMatrixElems;
-  matrix_map["Y"] = &fYMatrixElems;
-  matrix_map["YTA"] = &fYTAMatrixElems;
-  matrix_map["P"] = &fPMatrixElems;
-  matrix_map["PTA"] = &fPTAMatrixElems;
-  matrix_map["L"] = &fLMatrixElems;
+  // TRANSPORT to focal-plane tensors
+  matrix_map["t"]   = MEdef_t( 3, &fFPMatrixElems, true, 0 );
+  matrix_map["y"]   = MEdef_t( 3, &fFPMatrixElems, true, 1 );
+  matrix_map["p"]   = MEdef_t( 3, &fFPMatrixElems, true, 2 );
+  // Standard focal-plane to target matrix elements (D=delta, T=theta, Y=y, P=phi)
+  matrix_map["D"]   = MEdef_t( 3, &fDMatrixElems );
+  matrix_map["T"]   = MEdef_t( 3, &fTMatrixElems );
+  matrix_map["Y"]   = MEdef_t( 3, &fYMatrixElems );
+  matrix_map["P"]   = MEdef_t( 3, &fPMatrixElems );
+  // Additional matrix elements describing the dependence of y-target and
+  // phi-target on the /absolute value/ of theta, found necessary in optimizing
+  // the septum magnet optics (R. Feuerbach, March 1, 2005)
+  matrix_map["YTA"] = MEdef_t( 4, &fYTAMatrixElems );
+  matrix_map["PTA"] = MEdef_t( 4, &fPTAMatrixElems );
+  // Matrix for calculating pathlength from z=0 (target) to focal plane (meters)
+  // (R. Feuerbach, October 16, 2003)
+  matrix_map["L"]   = MEdef_t( 4, &fLMatrixElems );
 
-  map <string,int> fp_map;
-  fp_map["t"] = 0;
-  fp_map["y"] = 1;
-  fp_map["p"] = 2;
+  string MEstring;
+  DBRequest request1[] = {
+    { "matrixelem",  &MEstring, kString },
+    { 0 }
+  };
+  err = LoadDB( file, date, request1, fPrefix );
+  if( err ) {
+    fclose(file);
+    return err;
+  }
+  if( MEstring.empty() ) {
+    Error( Here(here), "No matrix elements defined. Set \"maxtrixelem\" in database." );
+    fclose(file);
+    return kInitError;
+  }
+  // Parse the matrix elements
+  err = ParseMatrixElements( MEstring, matrix_map, fPrefix );
+  if( err ) {
+    fclose(file);
+    return err;
+  }
+  MEstring.clear();
 
-  // Read in as many of the matrix elements as there are.
-  // Read in line-by-line, so as to be able to handle tensors of
-  // different orders.
-  while( fgets(buff, LEN, file) ) {
-    string line(buff);
-    // Erase trailing newline
-    if( line.size() > 0 && line[line.size()-1] == '\n' ) {
-      buff[line.size()-1] = 0;
-      line.erase(line.size()-1,1);
-    }
-    // Split the line into whitespace-separated fields
-    vector<string> line_spl = Split(line);
+  // Ensure that we have all three focal plane matrix elements, else we cannot
+  // do anything sensible with the tracks
+  if( fFPMatrixElems[T000].order == 0 ) {
+    Error( Here(here), "Missing FP matrix element t000. Fix database." );
+    err = kInitError;
+  }
+  if( fFPMatrixElems[Y000].order == 0 ) {
+    Error( Here(here), "Missing FP matrix element y000. Fix database." );
+    err = kInitError;
+  }
+  if( fFPMatrixElems[P000].order == 0 ) {
+    Error( Here(here), "Missing FP matrix element p000. Fix database." );
+    err = kInitError;
+  }
+  if( err ) {
+    fclose(file);
+    return err;
+  }
 
-    // Stop if the line does not start with a string referring to
-    // a known type of matrix element. In particular, this will
-    // stop on a subsequent timestamp or configuration tag starting with "["
-    if(line_spl.empty())
-      continue; //ignore empty lines
-    const char* w = line_spl[0].c_str();
-    vsiz_t npow = power[w];
-    if( npow == 0 )
-      break;
-
-    // Looks like a good line, go parse it.
-    THaMatrixElement ME;
-    ME.pw.resize(npow);
-    ME.iszero = true;  ME.order = 0;
-    vsiz_t pos;
-    for (pos=1; pos<=npow && pos<line_spl.size(); pos++) {
-      ME.pw[pos-1] = atoi(line_spl[pos].c_str());
-    }
-    vsiz_t p_cnt;
-    for ( p_cnt=0; pos<line_spl.size() && p_cnt<kPORDER && pos<=npow+kPORDER;
-	  pos++,p_cnt++ ) {
-      ME.poly[p_cnt] = atof(line_spl[pos].c_str());
-      if (ME.poly[p_cnt] != 0.0) {
-	ME.iszero = false;
-	ME.order = p_cnt+1;
-      }
-    }
-    if (p_cnt < 1) {
-	Error(Here(here), "Could not read in Matrix Element %s%d%d%d!",
-	      w, ME.pw[0], ME.pw[1], ME.pw[2]);
-	Error(Here(here), "Line looks like: %s",line.c_str());
-	fclose(file);
-	return kInitError;
-    }
-    // Don't bother with all-zero matrix elements
-    if( ME.iszero )
-      continue;
-
-    // Add this matrix element to the appropriate array
-    vector<THaMatrixElement> *mat = matrix_map[w];
-    if (mat) {
-      // Special checks for focal plane matrix elements
-      if( mat == &fFPMatrixElems ) {
-	if( ME.pw[0] == 0 && ME.pw[1] == 0 && ME.pw[2] == 0 ) {
-	  THaMatrixElement& m = (*mat)[fp_map[w]];
-	  if( m.order > 0 ) {
-	    Warning(Here(here), "Duplicate definition of focal plane "
-		    "matrix element: %s. Using first definition.", buff);
-	  } else
-	    m = ME;
-	} else
-	  Warning(Here(here), "Bad coefficients of focal plane matrix "
-		  "element %s", buff);
-      }
-      else {
-	// All other matrix elements are just appended to the respective array
-	// but ensure that they are defined only once!
-	bool match = false;
-	for( vector<THaMatrixElement>::iterator it = mat->begin();
-	     it != mat->end() && !(match = it->match(ME)); ++it ) {}
-	if( match ) {
-	  Warning(Here(here), "Duplicate definition of "
-		  "matrix element: %s. Using first definition.", buff);
-	} else
-	  mat->push_back(ME);
-      }
-    }
-    else if ( fDebug > 0 )
-      Warning(Here(here), "Not storing matrix for: %s !", w);
-
-  } //while(fgets)
-
-  // Compute derived quantities and set some hardcoded parameters
+  // Compute derived geometry quantities
+  //FIXME: get VDC angle from parent HRS spectrometer?
   const Double_t degrad = TMath::Pi()/180.0;
   fTan_vdc  = fFPMatrixElems[T000].poly[0];
   fVDCAngle = TMath::ATan(fTan_vdc);
@@ -306,27 +323,97 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   // the detector system is identical to the VDC origin in the Hall A HRS.
   DefineAxes(0.0*degrad);
 
-  fNumIter = 1;      // Number of iterations for FineTrack()
-  fErrorCutoff = 1e100;
+  // Read configuration parameters
+  fErrorCutoff = 1e9;
+  fNumIter = 1;
+  fCoordType = kRotatingTransport;
+  Int_t disable_tracking = 0, disable_finetrack = 0, only_fastest_hit = 1;
+  Int_t do_tdc_hardcut = 1, do_tdc_softcut = 0, ignore_negdrift = 0;
+#ifdef MCDATA
+  Int_t mc_data = 0;
+#endif
+  string coord_type;
 
-  // figure out the track length from the origin to the s1 plane
+  DBRequest request[] = {
+    { "max_matcherr",      &fErrorCutoff,      kDouble, 0, 1 },
+    { "num_iter",          &fNumIter,          kInt,    0, 1 },
+    { "coord_type",        &coord_type,        kString, 0, 1 },
+    { "disable_tracking",  &disable_tracking,  kInt,    0, 1 },
+    { "disable_finetrack", &disable_finetrack, kInt,    0, 1 },
+    { "only_fastest_hit",  &only_fastest_hit,  kInt,    0, 1 },
+    { "do_tdc_hardcut",    &do_tdc_hardcut,    kInt,    0, 1 },
+    { "do_tdc_softcut",    &do_tdc_softcut,    kInt,    0, 1 },
+    { "ignore_negdrift",   &ignore_negdrift,   kInt,    0, 1 },
+#ifdef MCDATA
+    { "MCdata",            &mc_data,           kInt,    0, 1 },
+#endif
+    { 0 }
+  };
 
-  // since we take the VDC to be the origin of the coordinate
-  // space, this is actually pretty simple
-  const THaDetector* s1 = 0;
-  if( GetApparatus() )
-    s1 = GetApparatus()->GetDetector("s1");
-  if(s1 == 0)
-    fCentralDist = 0;
-  else
-    fCentralDist = s1->GetOrigin().Z();
+  err = LoadDB( file, date, request, fPrefix );
+  fclose(file);
+  if( err )
+    return err;
 
-  CalcMatrix(1.,fLMatrixElems); // tensor without explicit polynomial in x_fp
+  // Analysis control flags
+  SetBit( kOnlyFastest,     only_fastest_hit );
+  SetBit( kHardTDCcut,      do_tdc_hardcut );
+  SetBit( kSoftTDCcut,      do_tdc_softcut );
+  SetBit( kIgnoreNegDrift,  ignore_negdrift );
+#ifdef MCDATA
+  SetBit( kMCdata,          mc_data );
+#endif
+  SetBit( kDecodeOnly,      disable_tracking );
+  SetBit( kCoarseOnly,      !disable_tracking && disable_finetrack );
 
-  // FIXME: Set geometry data (fOrigin). Currently fOrigin = (0,0,0).
+  if( !coord_type.empty() ) {
+    if( THaString::CmpNoCase(coord_type, "Transport") == 0 )
+      fCoordType = kTransport;
+    else if( THaString::CmpNoCase(coord_type, "RotatingTransport") == 0 )
+      fCoordType = kRotatingTransport;
+    else {
+      Error( Here(here), "Invalid coordinate type coord_type = %s. "
+	     "Must be \"Transport\" or \"RotatingTransport\". Fix database.",
+	     coord_type.c_str() );
+      return kInitError;
+    }
+  }
+
+  // Sanity checks of parameters
+  if( fErrorCutoff < 0.0 ) {
+    Warning( Here(here), "Negative max_matcherr = %6.2lf makes no sense, "
+	     "taking absolute.", fErrorCutoff );
+    fErrorCutoff = -fErrorCutoff;
+  } else if( fErrorCutoff == 0.0 ) {
+    Error( Here(here), "Illegal parameter max_matcherr = 0.0. Must be > 0. "
+	   "Fix database." );
+    return kInitError;
+  }
+  if( fNumIter < 0) {
+    Warning( Here(here), "Negative num_iter = %d makes no sense, "
+	     "taking absolute.", fNumIter );
+    fNumIter = -fNumIter;
+  } else if( fNumIter > 10 ) {
+    Error( Here(here), "Illegal parameter num_iter = %d. Must be <= 10. "
+	   "Fix database.", fNumIter );
+    return kInitError;
+  }
+
+  if( fDebug > 0 ) {
+#ifdef MCDATA
+    Info( Here(here), "VDC flags fastest/hardcut/softcut/noneg/mcdata/"
+	  "decode/coarse = %d/%d/%d/%d/%d/%d/%d", TestBit(kOnlyFastest),
+	  TestBit(kHardTDCcut), TestBit(kSoftTDCcut), TestBit(kIgnoreNegDrift),
+	  TestBit(kMCdata), TestBit(kDecodeOnly), TestBit(kCoarseOnly) );
+#else
+    Info( Here(here), "VDC flags fastest/hardcut/softcut/noneg/"
+	  "decode/coarse = %d/%d/%d/%d/%d/%d", TestBit(kOnlyFastest),
+	  TestBit(kHardTDCcut), TestBit(kSoftTDCcut), TestBit(kIgnoreNegDrift),
+	  TestBit(kDecodeOnly), TestBit(kCoarseOnly) );
+#endif
+  }
 
   fIsInit = true;
-  fclose(file);
   return kOK;
 }
 
@@ -522,11 +609,11 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 
       if( found ) {
 #ifdef WITH_DEBUG
-        if( fDebug>1 )
-          cout << "Track " << t << " modified.\n";
+	if( fDebug>1 )
+	  cout << "Track " << t << " modified.\n";
 #endif
-        delete thisID;
-        ++n_mod;
+	delete thisID;
+	++n_mod;
       } else {
 #ifdef WITH_DEBUG
 	if( fDebug>1 )
@@ -549,7 +636,7 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
       theTrack->SetFlag( flag );
 
       // Calculate the TRANSPORT coordinates
-      CalcFocalPlaneCoords(theTrack, kRotatingTransport);
+      CalcFocalPlaneCoords(theTrack);
 
       // Calculate the chi2 of the track from the distances to the wires
       // in the associated clusters
@@ -692,14 +779,14 @@ Int_t THaVDC::FindVertices( TClonesArray& tracks )
   Int_t n_exist = tracks.GetLast()+1;
   for( Int_t t = 0; t < n_exist; t++ ) {
     THaTrack* theTrack = static_cast<THaTrack*>( tracks.At(t) );
-    CalcTargetCoords(theTrack, kRotatingTransport);
+    CalcTargetCoords(theTrack);
   }
 
   return 0;
 }
 
 //_____________________________________________________________________________
-void THaVDC::CalcFocalPlaneCoords( THaTrack* track, const ECoordTypes mode )
+void THaVDC::CalcFocalPlaneCoords( THaTrack* track )
 {
   // calculates focal plane coordinates from detector coordinates
 
@@ -724,10 +811,12 @@ void THaVDC::CalcFocalPlaneCoords( THaTrack* track, const ECoordTypes mode )
   r_x = x;
 
   // calculate the focal-plane matrix elements
-  if(mode == kTransport)
-    CalcMatrix( x, fFPMatrixElems );
-  else if (mode == kRotatingTransport)
-    CalcMatrix( r_x, fFPMatrixElems );
+  switch( fCoordType ) {
+  case kTransport:
+    CalcMatrix( x, fFPMatrixElems );    break;
+  case kRotatingTransport:
+    CalcMatrix( r_x, fFPMatrixElems );  break;
+  }
 
   r_y = y - fFPMatrixElems[Y000].v;  // Y000
 
@@ -747,7 +836,7 @@ void THaVDC::CalcFocalPlaneCoords( THaTrack* track, const ECoordTypes mode )
 }
 
 //_____________________________________________________________________________
-void THaVDC::CalcTargetCoords(THaTrack *track, const ECoordTypes mode)
+void THaVDC::CalcTargetCoords( THaTrack* track )
 {
   // calculates target coordinates from focal plane coordinates
 
@@ -758,16 +847,19 @@ void THaVDC::CalcTargetCoords(THaTrack *track, const ECoordTypes mode)
   Double_t x, y, theta, phi, dp, p, pathl;
 
   // first select the coords to use
-  if(mode == kTransport) {
+  switch( fCoordType ) {
+  case kTransport:
     x_fp = track->GetX();
     y_fp = track->GetY();
     th_fp = track->GetTheta();
     ph_fp = track->GetPhi();
-  } else {//if(mode == kRotatingTransport) {
+    break;
+  case kRotatingTransport:
     x_fp = track->GetRX();
     y_fp = track->GetRY();
     th_fp = track->GetRTheta();
     ph_fp = track->GetRPhi();
+    break;
   }
 
   // calculate the powers we need
@@ -850,8 +942,8 @@ Double_t THaVDC::CalcTargetVar(const vector<THaMatrixElement>& matrix,
 	v *= powers[it->pw[i]][i+1];
       retval += v;
   //      retval += it->v * powers[it->pw[0]][1]
-  //	              * powers[it->pw[1]][2]
-  //	              * powers[it->pw[2]][3];
+  //		      * powers[it->pw[1]][2]
+  //		      * powers[it->pw[2]][3];
     }
 
   return retval;
@@ -869,9 +961,9 @@ Double_t THaVDC::CalcTarget2FPLen(const vector<THaMatrixElement>& matrix,
        it!=matrix.end(); ++it )
     if(it->v != 0.0)
       retval += it->v * powers[it->pw[0]][0]
-	              * powers[it->pw[1]][1]
-	              * powers[it->pw[2]][2]
-	              * powers[it->pw[3]][3];
+		      * powers[it->pw[1]][1]
+		      * powers[it->pw[2]][2]
+		      * powers[it->pw[3]][3];
 
   return retval;
 }
@@ -1083,20 +1175,6 @@ void THaVDC::Print(const Option_t* opt) const
   }
 
   return;
-}
-
-//_____________________________________________________________________________
-bool THaVDC::THaMatrixElement::match(const THaMatrixElement& rhs) const
-{
-  // Compare coefficients of this matrix element to another
-
-  if( pw.size() != rhs.pw.size() )
-    return false;
-  for( vector<int>::size_type i=0; i<pw.size(); i++ ) {
-    if( pw[i] != rhs.pw[i] )
-      return false;
-  }
-  return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
