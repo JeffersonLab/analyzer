@@ -6,16 +6,35 @@
 
 #include "THaVDCTimeToDistConv.h"
 
+using namespace std;
 
-ClassImp(THaVDCTimeToDistConv)
+ClassImp(VDC::TimeToDistConv)
 
+namespace VDC {
 
-//______________________________________________________________________________
-THaVDCTimeToDistConv::~THaVDCTimeToDistConv()
+//_____________________________________________________________________________
+TimeToDistConv::TimeToDistConv( UInt_t npar )
+  : fNparam(npar), fDriftVel(kBig), fIsSet(false)
 {
-  // Destructor.
-
+  // Constructor
 }
 
+//_____________________________________________________________________________
+void TimeToDistConv::SetDriftVel( Double_t v )
+{
+  fDriftVel = v;
+  if( fNparam == 0 )
+    fIsSet = true;
+}
+
+//_____________________________________________________________________________
+Int_t TimeToDistConv::SetParameters( const vector<double>& )
+{
+  if( fNparam == 0 )
+    fIsSet = true;
+  return 0;
+}
+
+} // namespace VDC
 
 ////////////////////////////////////////////////////////////////////////////////

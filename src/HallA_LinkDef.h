@@ -85,8 +85,8 @@
 #pragma link C++ class THaVDCCluster+;
 #pragma link C++ class THaVDCHit+;
 #pragma link C++ class THaVDCWire+;
-#pragma link C++ class THaVDCTimeToDistConv+;
-#pragma link C++ class THaVDCAnalyticTTDConv+;
+#pragma link C++ class VDC::TimeToDistConv+;
+#pragma link C++ class VDC::AnalyticTTDConv+;
 #pragma link C++ class THaVDCPoint+;
 #pragma link C++ class THaVDCPointPair+;
 #pragma link C++ class THaVDCTrackID+;

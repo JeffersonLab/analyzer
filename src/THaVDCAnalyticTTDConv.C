@@ -5,55 +5,46 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "THaVDCAnalyticTTDConv.h"
+#include "TError.h"
 
-ClassImp(THaVDCAnalyticTTDConv)
+ClassImp(VDC::AnalyticTTDConv)
 
+using namespace std;
+
+namespace VDC {
 
 //_____________________________________________________________________________
-THaVDCAnalyticTTDConv::THaVDCAnalyticTTDConv() : fIsSet(false)
+AnalyticTTDConv::AnalyticTTDConv() : TimeToDistConv(9), fdtime(0)
+
 {
-  //Normal constructor
+  // Constructor
+
+  for( Int_t i=0; i<4; ++i ) {
+    fA1tdcCor[i] = fA2tdcCor[i] = kBig;
+  }
 }
 
 //_____________________________________________________________________________
-THaVDCAnalyticTTDConv::THaVDCAnalyticTTDConv( Double_t vel ) :
-  fDriftVel(vel), fIsSet(false)
-{
-  // Normal constructor
-}
-
-
-
-//_____________________________________________________________________________
-THaVDCAnalyticTTDConv::~THaVDCAnalyticTTDConv()
-{
-  // Destructor. Remove variables from global list.
-
-}
-
-//_____________________________________________________________________________
-Double_t THaVDCAnalyticTTDConv::ConvertTimeToDist(Double_t time,
-						  Double_t tanTheta,
-						  Double_t *ddist)
+Double_t AnalyticTTDConv::ConvertTimeToDist( Double_t time, Double_t tanTheta,
+					     Double_t* ddist) const
 {
   // Drift Velocity in m/s
   // time in s
   // Return m
 
   if( !fIsSet ) {
-    Error( "THaVDCAnalyticTTDConv::ConvertTimeToDist", "Parameters not set. "
+    Error( "VDC::AnalyticTTDConv::ConvertTimeToDist", "Parameters not set. "
 	   "Fix database." );
-    return 1e38;
+    return kBig;
   }
 
 //    printf("Converting Drift Time to Drift Distance!\n");
 
-  Double_t a1 = 0.0, a2 = 0.0;
   // Find the values of a1 and a2 by evaluating the proper polynomials
   // a = A_3 * x^3 + A_2 * x^2 + A_1 * x + A_0
+  Double_t a1 = 0.0, a2 = 0.0;
 
-  tanTheta = 1.0 / tanTheta;  // I assume this has to do w/ making the
-                              // polynomial have the proper variable...
+  tanTheta = 1.0 / tanTheta;
 
   for (Int_t i = 3; i >= 1; i--) {
     a1 = tanTheta * (a1 + fA1tdcCor[i]);
@@ -62,12 +53,6 @@ Double_t THaVDCAnalyticTTDConv::ConvertTimeToDist(Double_t time,
   a1 += fA1tdcCor[0];
   a2 += fA2tdcCor[0];
 
-//    printf("a1(%e) = %e\n", tanTheta, a1);
-//    printf("a2(%e) = %e\n", tanTheta, a2);
-
-  // ESPACE software includes corrections to the time for
-  // 1. Cluster t0 (offset applied to entire cluster)
-  // 2. Time of flight to scintillators
   Double_t dist = fDriftVel * time;
   Double_t unc  = fDriftVel * fdtime;  // watch uncertainty in the timing
   if (dist < 0) {
@@ -81,29 +66,56 @@ Double_t THaVDCAnalyticTTDConv::ConvertTimeToDist(Double_t time,
   }
 
   if (ddist) *ddist = unc;
-//    printf("D(%e) = %e\nUncorrected D = %e\n", time, dist,  fDriftVel * time);
 
   return dist;
-
 }
 
 //_____________________________________________________________________________
-void THaVDCAnalyticTTDConv::SetParameters( const Double_t* A1,
-					   const Double_t* A2, Double_t dtime )
+Double_t AnalyticTTDConv::GetParameter( UInt_t i ) const
+{
+  // Get i-th parameter
+
+  switch(i) {
+  case 0:
+  case 1:
+  case 2:
+  case 3:
+    return fA1tdcCor[i];
+  case 4:
+  case 5:
+  case 6:
+  case 7:
+    return fA2tdcCor[i-4];
+  case 8:
+    return fdtime;
+  }
+  return kBig;
+}
+
+//_____________________________________________________________________________
+Int_t AnalyticTTDConv::SetParameters( const vector<double>& parameters )
 {
   // Set coefficients of a1 and a2 4-th order polynomial and uncertainty
   // of drift time measurement
+  // 0-3: A1
+  // 4-7: A2
+  // 8: sigma_time (s)
 
-  for( int i=0; i<4; ++i ) {
-    fA1tdcCor[i] = A1[i];
-    fA2tdcCor[i] = A2[i];
+  if( (UInt_t)parameters.size() < fNparam )
+    return -1;
+
+  for( size_t i = 0; i<4; ++i ) {
+    fA1tdcCor[i] = parameters[i];
+    fA2tdcCor[i] = parameters[i+4];
   }
-  fdtime = dtime;
+  fdtime = parameters[8];
+
   fIsSet = true;
+  return 0;
 }
 
 //_____________________________________________________________________________
-// void THaVDCAnalyticTTDConv::SetDefaultParam()
+// void AnalyticTTDConv::SetDefaultParam()
 // {
 //   // Set some reasonable defaults for the polynomial coefficients and
 //   // drift time uncertainty. Applicable to Hall A VDCs.
@@ -119,5 +131,7 @@ void THaVDCAnalyticTTDConv::SetParameters( const Double_t* A1,
 
 //   fdtime    = 4.e-9; // 4ns -> 200 microns
 // }
+
+} //namespace VDC
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -1,5 +1,5 @@
-#ifndef ROOT_THaVDCAnalyticTTDConv
-#define ROOT_THaVDCAnalyticTTDConv
+#ifndef PODD_VDC_AnalyticTTDConv
+#define PODD_VDC_AnalyticTTDConv
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //
@@ -8,40 +8,33 @@
 // Uses a drift velocity (um/ns) to convert time (ns) into distance (cm)     //
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
+
 #include "THaVDCTimeToDistConv.h"
 
-class THaVDCAnalyticTTDConv : public THaVDCTimeToDistConv{
+namespace VDC {
 
-public:
-  THaVDCAnalyticTTDConv( );
-  THaVDCAnalyticTTDConv(Double_t vel);
+  class AnalyticTTDConv : public TimeToDistConv {
 
-  virtual ~THaVDCAnalyticTTDConv();
+  public:
+    AnalyticTTDConv();
+    virtual ~AnalyticTTDConv() {}
 
-  virtual Double_t ConvertTimeToDist(Double_t time, Double_t tanTheta,
-				     Double_t *ddist=0);
-
-
-  // Get and Set Functions
-  Double_t GetDriftVel() { return fDriftVel; }
-
-  void SetDriftVel(Double_t v) {fDriftVel = v; }
-  void SetParameters( const Double_t* A1, const Double_t* A2, Double_t dtime );
+    virtual Double_t ConvertTimeToDist( Double_t time, Double_t tanTheta,
+				        Double_t* ddist=0 ) const;
+    virtual Double_t GetParameter( UInt_t i ) const;
+    virtual Int_t    SetParameters( const std::vector<double>& param );
 
 protected:
 
-  Double_t fDriftVel;   // Drift velocity (m/s)
+    // Coefficients for a polynomial yielding correction parameters
+    Double_t fA1tdcCor[4];
+    Double_t fA2tdcCor[4];
 
-  // Coefficients for a polynomial yielding correction parameters
-  Double_t fA1tdcCor[4];
-  Double_t fA2tdcCor[4];
+    Double_t fdtime;      // uncertainty in the measured time
 
-  Double_t fdtime;      // uncertainty in the measured time
-  Bool_t   fIsSet;      // Flag to indicate that parameters are set
-
-  ClassDef(THaVDCAnalyticTTDConv,0)             // VDC Analytic TTD Conv class
-};
-
+    ClassDef(AnalyticTTDConv,0)   // VDC Analytic TTD Conv class
+  };
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
