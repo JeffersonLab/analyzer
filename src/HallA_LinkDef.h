@@ -7,11 +7,15 @@
 #pragma link C++ global gHaVars;
 #pragma link C++ global gHaCuts;
 #pragma link C++ global gHaApps;
-#pragma link C++ global gHaScalers;
 #pragma link C++ global gHaPhysics;
+#pragma link C++ global gHaEvtHandlers;
 #pragma link C++ global gHaRun;
 #pragma link C++ global gHaDB;
 #pragma link C++ global gHaTextvars;
+
+#pragma link C++ nestedclass;
+#pragma link C++ nestedtypedef;
+#pragma link C++ namespace VDC;
 
 #pragma link C++ class THaVar+;
 #pragma link C++ class THaVarList+;
@@ -76,19 +80,18 @@
 #pragma link C++ class THaCherenkov+;
 #pragma link C++ class THaTotalShower+;
 #pragma link C++ class THaVDC+;
-#pragma link C++ class THaVDCUVPlane+;
+#pragma link C++ class THaVDCChamber+;
 #pragma link C++ class THaVDCPlane+;
 #pragma link C++ class THaVDCCluster+;
 #pragma link C++ class THaVDCHit+;
 #pragma link C++ class THaVDCWire+;
-#pragma link C++ class THaVDCUVTrack+;
 #pragma link C++ class THaVDCTimeToDistConv+;
 #pragma link C++ class THaVDCAnalyticTTDConv+;
+#pragma link C++ class THaVDCPoint+;
+#pragma link C++ class THaVDCPointPair+;
 #pragma link C++ class THaVDCTrackID+;
-#pragma link C++ class THaVDCTrackPair+;
 #pragma link C++ class VDCeff+;
 #pragma link C++ class THaRTTI+;
-#pragma link C++ class THaScalerGroup+;
 #pragma link C++ class THaElectronKine+;
 #pragma link C++ class THaReactionPoint+;
 #pragma link C++ class THaReacPointFoil+;
@@ -128,6 +131,7 @@
 #pragma link C++ class THaQWEAKHelicityReader::ROCinfo+;
 #pragma link C++ class THaEvtTypeHandler+;
 #pragma link C++ class THaScalerEvtHandler+;
+#pragma link C++ class THaEpicsEvtHandler+;
 
 #ifdef ONLINE_ET
 #pragma link C++ class THaOnlRun+;

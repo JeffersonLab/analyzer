@@ -27,6 +27,7 @@ ChangeLog
 
 # Helpers
 /fix-filedates.sh
+evio/
 
 # Standalone distribution support files
 /hana_scaler/scaler.map

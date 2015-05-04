@@ -1,5 +1,5 @@
 # Makefile for "hana" (C++ Hall A Analyzer) Event Decoder.
-# R. Michaels, rom@jlab.org, Mar 2001
+# R. Michaels, rom@jlab.org, Mar 2015
 #
 # Test Executables:
 # tstoo    --  tests of OO decoder
@@ -24,7 +24,7 @@
 # $EVIO_LIBDIR, respectively.
 
 # name and version of this release
-VERS = hana_decode_1.6
+VERS = hana_decode_2.0
 
 # If one defines STANDALONE, the library and test execs are compiled
 # independently of the rest of the analyzer.  Normally this is commented out.
@@ -77,6 +77,7 @@ else
      # Solaris CC 5.0
      CXX           = CC
      LD            = CC
+     MAKEDEPEND    = g++ -MM
      SOFLAGS       = -G
      ifdef DEBUG
 	CXXFLG      = -g -KPIC
@@ -131,14 +132,9 @@ else
   DEFINES      += $(shell getconf LFS_CFLAGS)
 endif
 
-MAKEDEPEND    = g++
-
 export OSNAME := $(shell uname)
 
-EVIO_LIB      = -L$(EVIO_LIBDIR) -levio
-
 ifeq ($(OSNAME),Linux)
-
    LIBS          =
    GLIBS         = -L/usr/X11R6/lib -lXpm -lX11
    ALL_LIBS      = $(ROOTLIBS)
@@ -169,7 +165,8 @@ ifdef ONLINE_ET
 endif
 
 # External EVIO support
-INCLUDES     += -I$(EVIO_INCDIR)
+EVIO_LIB  = -L$(EVIO_LIBDIR) -levio
+INCLUDES += -I$(EVIO_INCDIR)
 
 DEFINES      += $(DC_DEFINES)
 CFLAGS        = $(CXXFLG) $(ROOTCLAGS) $(INCLUDES) $(DEFINES)
@@ -207,7 +204,7 @@ ifdef ONLINE_ET
   HEAD += et.h
 endif
 DEPS = $(patsubst %.c,%.d,$(SRC:.C=.d))
-DECODE_OBJS = $(patsubst %.c,%.o,$(SRC:%.C=%.o)) THaDecDict.o
+DECODE_OBJ = $(patsubst %.c,%.o,$(SRC:%.C=%.o)) THaDecDict.o
 
 ifndef STANDALONE
   all:  $(LIBDIR)/libdc.so.$(VERSION)
@@ -217,21 +214,21 @@ endif
 
 # Library for main analyzer
 
-libdc.a: $(DECODE_OBJS)
+libdc.a: $(DECODE_OBJ)
 	rm -f $@
-	ar crs $@ $^
+	ar crs $@ $(filter %.o,$^)
 ifndef STANDALONE
 	cp -p $@ $(LIBDIR)
 endif
 
 static:	libdc.a
 
-libdc.so: $(DECODE_OBJS)
+libdc.so: $(DECODE_OBJ)
 	rm -f $@
 ifeq ($(strip $(SONAME)),)
-	$(LD) $(LDFLAGS) $(SOFLAGS) -o $@ $^ $(EVIO_LIB)
+	$(LD) $(LDFLAGS) $(SOFLAGS) -o $@ $(filter %.o,$^) $(EVIO_LIB)
 else
-	$(LD) $(LDFLAGS) $(SOFLAGS) $(SONAME)libdc.so.$(SOVERSION) -o $@ $^ $(EVIO_LIB)
+	$(LD) $(LDFLAGS) $(SOFLAGS) $(SONAME)libdc.so.$(SOVERSION) -o $@ $(filter %.o,$^) $(EVIO_LIB)
 endif
 
 ifndef STANDALONE
@@ -323,19 +320,21 @@ install:	all
 	cp -pu $(SRC) $(HEAD) haDecode_LinkDef.h Makefile $(ANALYZER)/src/hana_decode
 	cp -pu $(HEAD) $(ANALYZER)/include
 
+.PHONY: all static evio tarfile version clean realclean install
+
 .SUFFIXES:
-.SUFFIXES: .c .cc .cpp .C .o .os .d
 
 %.o:	%.C
-	$(CXX) $(CXXFLAGS) -c $<
-
-%.d:	%.C
-	@echo Creating dependencies for $<
-#	@$(SHELL) -ec '$(CXX) -MM $(CXXFLAGS) -c $< \
-#		| sed '\''s/\($*\)\.o[ :]*/\1.o $@ : /g'\'' > $@; \
-#		[ -s $@ ] || rm -f $@'
-	@$(SHELL) -ec '$(MAKEDEPEND) -MM $(ROOTINC) $(INCLUDES) $(DEFINES) -c $< \
-		| sed '\''s/\($*\)\.o[ :]*/\1.o $@ : /g'\'' > $@; \
-		[ -s $@ ] || rm -f $@'
+ifeq ($(strip $(MAKEDEPEND)),)
+	$(CXX) $(CXXFLAGS) -MMD -o $@ -c $<
+	@mv -f $*.d $*.d.tmp
+else
+	$(CXX) $(CXXFLAGS) -o $@ -c $<
+	$(MAKEDEPEND) $(ROOTINC) $(INCLUDES) $(DEFINES) -c $< > $*.d.tmp
+endif
+	@sed -e 's|.*:|$*.o:|' < $*.d.tmp > $*.d
+	@sed -e 's/.*://' -e 's/\\$$//' < $*.d.tmp | fmt -1 | \
+	  sed -e 's/^ *//' -e 's/$$/:/' >> $*.d
+	@rm -f $*.d.tmp
 
 -include $(DEPS)

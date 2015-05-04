@@ -10,10 +10,10 @@
 #include "THaTrackingDetector.h"
 #include <vector>
 
-class THaVDCUVPlane;
+class THaVDCChamber;
 class THaTrack;
 class TClonesArray;
-class THaVDCUVTrack;
+class THaVDCPoint;
 
 class THaVDC : public THaTrackingDetector {
 
@@ -31,13 +31,13 @@ public:
   virtual EStatus Init( const TDatime& date );
 
   // Get and Set Functions
-  virtual THaVDCUVPlane* GetUpper() { return fUpper; }
-  virtual THaVDCUVPlane* GetLower() { return fLower; }
+  THaVDCChamber* GetUpper() const { return fUpper; }
+  THaVDCChamber* GetLower() const { return fLower; }
 
-  virtual Double_t GetVDCAngle() { return fVDCAngle; }
-  virtual Double_t GetSpacing()  { return fUSpacing;  }
+  Double_t GetVDCAngle() const { return fVDCAngle; }
+  Double_t GetSpacing()  const { return fSpacing;  }
 
-  virtual void Print(const Option_t* opt) const;
+  void Print(const Option_t* opt) const;
 
   // Bits & and bit masks for THaTrack
   enum {
@@ -58,30 +58,32 @@ public:
     kSoftTDCcut     = BIT(16), // Use soft TDC cut (reasonable estimated drifts)
     kIgnoreNegDrift = BIT(17), // Completely ignore negative drift times
 
-    kCoarseOnly     = BIT(23) // Do only coarse tracking
+    kDecodeOnly     = BIT(22), // Only decode data, disable tracking
+    kCoarseOnly     = BIT(23)  // Do only coarse tracking
   };
 
 protected:
 
-  THaVDCUVPlane* fLower;    // Lower UV plane
-  THaVDCUVPlane* fUpper;    // Upper UV plane
+  THaVDCChamber* fLower;    // Lower chamber
+  THaVDCChamber* fUpper;    // Upper chamber
 
-  TClonesArray*  fUVpairs;  // Pairs of matched UV tracks (THaVDCTrackPair obj)
+  TClonesArray*  fLUpairs;  // Candidate pairs of lower/upper points
 
   Double_t fVDCAngle;       // Angle from the VDC cs to TRANSPORT cs (rad)
   Double_t fSin_vdc;        // Sine of VDC angle
   Double_t fCos_vdc;        // Cosine of VDC angle
   Double_t fTan_vdc;        // Tangent of VDC angle
-  Double_t fUSpacing;       // Spacing between U1 and U2 (m)
-  Double_t fVSpacing;       // Spacing between V1 and V2 (m)
+  Double_t fSpacing;        // Spacing between lower and upper chambers (m)
   Int_t    fNtracks;        // Number of tracks found in ConstructTracks
 
   Int_t    fNumIter;        // Number of iterations for FineTrack()
   Double_t fErrorCutoff;    // Cut on track matching error
 
   Double_t fCentralDist;    // the path length of the central ray from
-                            // the origin of the transport coordinates to 
+                            // the origin of the transport coordinates to
                             // the s1 plane
+
+  UInt_t   fEvNum;          // Event number from decoder (for diagnostics)
 
   // declarations for target vertex reconstruction
   enum ECoordTypes { kTransport, kRotatingTransport };
@@ -121,10 +123,10 @@ protected:
   void CalcTargetCoords(THaTrack *the_track, const ECoordTypes mode);
   void CalcMatrix(const double x, std::vector<THaMatrixElement> &matrix);
   Double_t DoPoly(const int n, const std::vector<double> &a, const double x);
-  Double_t PolyInv(const double x1, const double x2, const double xacc, 
-		 const double y, const int norder, 
+  Double_t PolyInv(const double x1, const double x2, const double xacc,
+		 const double y, const int norder,
 		 const std::vector<double> &a);
-  Double_t CalcTargetVar(const std::vector<THaMatrixElement> &matrix, 
+  Double_t CalcTargetVar(const std::vector<THaMatrixElement> &matrix,
 			 const double powers[][5]);
   Double_t CalcTarget2FPLen(const std::vector<THaMatrixElement>& matrix,
 			    const Double_t powers[][5]);
@@ -136,7 +138,7 @@ protected:
   void FindBadTracks(TClonesArray &tracks);
 
   ClassDef(THaVDC,0)             // VDC class
-}; 
+};
 
 ////////////////////////////////////////////////////////////////////////////////
 
