@@ -414,7 +414,7 @@ Int_t THaVDCPlane::DefineVariables( EMode mode )
     { "trknum", "Track number (0=unused)",    "fHits.THaVDCHit.fTrkNum" },
     { "clsnum", "Cluster number (-1=unused)",    "fHits.THaVDCHit.fClsNum" },
     { "nclust", "Number of clusters",         "GetNClusters()" },
-    { "clsiz",  "Cluster sizes",              "fClusters.THaVDCCluster.fSize" },
+    { "clsiz",  "Cluster sizes",              "fClusters.THaVDCCluster.GetSize()" },
     { "clpivot","Cluster pivot wire num",     "fClusters.THaVDCCluster.GetPivotWireNum()" },
     { "clpos",  "Cluster intercepts (m)",     "fClusters.THaVDCCluster.fInt" },
     { "slope",  "Cluster best slope",         "fClusters.THaVDCCluster.fSlope" },
