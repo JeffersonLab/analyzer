@@ -88,7 +88,7 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
   fscanf ( fi, "%15f %15f %15f", &x, &y, &z );        // Detector's X,Y,Z coord
   fOrigin.SetXYZ( x, y, z );
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  fscanf ( fi, "%15f %15f %15f", fSize, fSize+1, fSize+2 );   // Sizes of det on X,Y,Z
+  fscanf ( fi, "%15lf %15lf %15lf", fSize, fSize+1, fSize+2 );   // Sizes of det on X,Y,Z
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
 
   Float_t angle;

@@ -124,7 +124,7 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   fOrigin.SetXYZ( x, y, z );
   fgets ( buf, LEN, fi );
   while ( ReadComment( fi, buf, LEN ) ) {}
-  fscanf ( fi, "%15f %15f %15f", fSize, fSize+1, fSize+2 ); // Sizes of det on X,Y,Z
+  fscanf ( fi, "%15lf %15lf %15lf", fSize, fSize+1, fSize+2 ); // Sizes of det on X,Y,Z
   fgets ( buf, LEN, fi );
   while ( ReadComment( fi, buf, LEN ) ) {}
 
