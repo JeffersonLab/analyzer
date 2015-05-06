@@ -42,9 +42,9 @@ EnsureSConsVersion(2,1,0)
 #
 baseenv.Append(MAIN_DIR = Dir('.').abspath)
 baseenv.Append(HA_DIR = baseenv.subst('$MAIN_DIR'))
-baseenv.Append(HA_SRC = baseenv.subst('$HA_DIR')+'/src ') 
-baseenv.Append(HA_DC = baseenv.subst('$HA_DIR')+'/hana_decode ') 
-#baseenv.Append(HA_SCALER = baseenv.subst('$HA_DIR')+'/hana_scaler ') 
+baseenv.Append(HA_SRC = baseenv.subst('$HA_DIR')+'/src ')
+baseenv.Append(HA_DC = baseenv.subst('$HA_DIR')+'/hana_decode ')
+#baseenv.Append(HA_SCALER = baseenv.subst('$HA_DIR')+'/hana_scaler ')
 baseenv.Append(MAJORVERSION = '1')
 baseenv.Append(MINORVERSION = '6')
 baseenv.Append(PATCH = '0')
@@ -58,7 +58,7 @@ print "Software Version = %s" % baseenv.subst('$VERSION')
 ivercode = 65536*int(float(baseenv.subst('$SOVERSION')))+ 256*int(10*(float(baseenv.subst('$SOVERSION'))-int(float(baseenv.subst('$SOVERSION')))))+ int(float(baseenv.subst('$PATCH')))
 baseenv.Append(VERCODE = ivercode)
 #
-# evio environment 
+# evio environment
 #
 evio_libdir = os.getenv('EVIO_LIBDIR')
 evio_incdir = os.getenv('EVIO_INCDIR')
@@ -75,8 +75,8 @@ if evio_instdir is None or evio_libdir is None or evio_incdir is None:
 	platform = uname[0];
 	machine = uname[4];
 	evio_name = platform + '-' + machine
-	print "evio_name = %s" % evio_name	
-	evio_local_lib = "%s/evio-%s/%s/lib" % (evio_local,evio_version,evio_name) 
+	print "evio_name = %s" % evio_name
+	evio_local_lib = "%s/evio-%s/%s/lib" % (evio_local,evio_version,evio_name)
 	evio_local_inc = "%s/evio-%s/%s/include" % (evio_local,evio_version,evio_name)
 	evio_tarfile = "%s/evio-%s.tgz" % (evio_local,evio_version)
 	if not os.path.isdir(evio_local_lib):
@@ -86,7 +86,7 @@ if evio_instdir is None or evio_libdir is None or evio_incdir is None:
 			evio_command_scons = "cd %s; tar xvfz evio-%s.tgz; cd evio-%s/ ; scons install --prefix=." % (evio_local,evio_version,evio_version)
 	else:
 			evio_command_scons = "cd %s; cd evio-%s/ ; scons install --prefix=." % (evio_local,evio_version)
-			
+
 	os.system(evio_command_scons)
 	baseenv.Append(EVIO_LIB = evio_local_lib)
 	baseenv.Append(EVIO_INC = evio_local_inc)
@@ -128,15 +128,15 @@ baseenv.Append(ROOTCONFIG = 'root-config')
 baseenv.Append(ROOTCINT = 'rootcint')
 
 try:
-        baseenv.ParseConfig('$ROOTCONFIG --cflags')
-        baseenv.ParseConfig('$ROOTCONFIG --libs')
-        baseenv.MergeFlags('-fPIC')
+	baseenv.ParseConfig('$ROOTCONFIG --cflags')
+	baseenv.ParseConfig('$ROOTCONFIG --libs')
+	baseenv.MergeFlags('-fPIC')
 except OSError:
 	try:
 		baseenv.Replace(ROOTCONFIG = baseenv['ENV']['ROOTSYS'] + '/bin/root-config')
 		baseenv.Replace(ROOTCINT = baseenv['ENV']['ROOTSYS'] + '/bin/rootcint')
-        	baseenv.ParseConfig('$ROOTCONFIG --cflags')
-        	baseenv.ParseConfig('$ROOTCONFIG --libs')
+		baseenv.ParseConfig('$ROOTCONFIG --cflags')
+		baseenv.ParseConfig('$ROOTCONFIG --libs')
 		baseenv.MergeFlags('-fPIC')
 	except KeyError:
        		print('!!! Cannot find ROOT.  Check if root-config is in your PATH.')
@@ -148,34 +148,34 @@ baseenv.Append(BUILDERS = {'RootCint': bld})
 ######## cppcheck ###########################
 
 def which(program):
-        import os
-        def is_exe(fpath):
-                return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+	import os
+	def is_exe(fpath):
+		return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
 
-        fpath, fname = os.path.split(program)
-        if fpath:
-                if is_exe(program):
-                        return program
-        else:
-                for path in os.environ["PATH"].split(os.pathsep):
-                        path = path.strip('"')
-                        exe_file = os.path.join(path, program)
-                        if is_exe(exe_file):
-                                return exe_file
-        return None
+	fpath, fname = os.path.split(program)
+	if fpath:
+		if is_exe(program):
+			return program
+	else:
+		for path in os.environ["PATH"].split(os.pathsep):
+			path = path.strip('"')
+			exe_file = os.path.join(path, program)
+			if is_exe(exe_file):
+				return exe_file
+	return None
 
 proceed = "1" or "y" or "yes" or "Yes" or "Y"
 if baseenv.subst('$CPPCHECK')==proceed:
-        is_cppcheck = which('cppcheck')
-        print "Path to cppcheck is %s\n" % is_cppcheck
+	is_cppcheck = which('cppcheck')
+	print "Path to cppcheck is %s\n" % is_cppcheck
 
-        if(is_cppcheck == None):
-                print('!!! cppcheck not found on this system.  Check if cppcheck is installed and in your PATH.')
-                Exit(1)
-        else:
-                cppcheck_command = baseenv.Command('cppcheck_report.txt',[],"cppcheck --quiet --enable=all src/ hana_decode/ 2> $TARGET")
+	if(is_cppcheck == None):
+		print('!!! cppcheck not found on this system.  Check if cppcheck is installed and in your PATH.')
+		Exit(1)
+	else:
+		cppcheck_command = baseenv.Command('cppcheck_report.txt',[],"cppcheck --quiet --enable=all src/ hana_decode/ 2> $TARGET")
 		print "cppcheck_command = %s" % cppcheck_command
-                baseenv.AlwaysBuild(cppcheck_command)
+		baseenv.AlwaysBuild(cppcheck_command)
 
 ####### build source distribution tarball #############
 
@@ -185,7 +185,7 @@ if baseenv.subst('$SRCDIST')==proceed:
 #	try:
 #		os.symlink(srcdist_link_source,srcdist_link_target)
 #	except:
-#		print "Continuing ... " 
+#		print "Continuing ... "
 
 	baseenv['DISTTAR_FORMAT']='gz'
 	baseenv.Append(
