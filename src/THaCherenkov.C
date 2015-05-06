@@ -184,10 +184,9 @@ void THaCherenkov::DeleteArrays()
 }
 
 //_____________________________________________________________________________
-inline
-void THaCherenkov::ClearEvent()
+void THaCherenkov::Clear( Option_t* )
 {
-  // Reset all local data to prepare for next event.
+  // Clear event data
 
   const int lf = fNelem*sizeof(Float_t);
   fNThit = 0;                             // Number of mirrors with TDC times
@@ -208,8 +207,6 @@ Int_t THaCherenkov::Decode( const THaEvData& evdata )
   // the data into the local data members.
   // This implementation assumes that the first half of the detector map
   // entries corresponds to ADCs, and the second half, to TDCs.
-
-  ClearEvent();
 
   // Loop over all modules defined for Cherenkov detector
   for( Int_t i = 0; i < fDetMap->GetSize(); i++ ) {

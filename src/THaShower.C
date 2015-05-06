@@ -289,10 +289,9 @@ void THaShower::DeleteArrays()
 }
 
 //_____________________________________________________________________________
-inline
-void THaShower::ClearEvent()
+void THaShower::Clear( Option_t* )
 {
-  // Reset all local data to prepare for next event.
+  // Clear event data
 
   const int lsh = fNelem*sizeof(Float_t);
   const int lsc = fNclublk*sizeof(Float_t);
@@ -325,8 +324,6 @@ Int_t THaShower::Decode( const THaEvData& evdata )
   // fA_c[]           -  Array of corrected ADC values of shower blocks;
   // fAsum_p          -  Sum of shower blocks ADC minus pedestal values;
   // fAsum_c          -  Sum of shower blocks corrected ADC values;
-
-  ClearEvent();
 
   // Loop over all modules defined for shower detector
   for( UShort_t i = 0; i < fDetMap->GetSize(); i++ ) {
