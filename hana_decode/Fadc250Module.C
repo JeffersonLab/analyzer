@@ -1,4 +1,4 @@
-/////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
 //
 //   Fadc250Module
 //   JLab FADC 250 Module
@@ -37,6 +37,13 @@ namespace Decoder {
   }
 
   void Fadc250Module::Init() {
+    Int_t debug=0;
+    if (debug) {   // this will make a HUGE output
+       fDebugFile=new ofstream;   
+       fDebugFile->open("fadcdebug.dat");
+    } else {
+       fDebugFile=0; 
+    }
     fNumAInt = new Int_t[NADCCHAN];
     fNumTInt = new Int_t[NADCCHAN];
     fNumSample = new Int_t[NADCCHAN];
@@ -45,7 +52,6 @@ namespace Decoder {
     memset(fNumAInt, 0, NADCCHAN*sizeof(Int_t));
     memset(fNumTInt, 0, NADCCHAN*sizeof(Int_t));
     memset(fNumSample, 0, NADCCHAN*sizeof(Int_t));
-    fDebugFile=0;
     f250_setmode=-1;
     f250_foundmode=-2;
     Clear("");
@@ -56,7 +62,10 @@ namespace Decoder {
 
 
   Bool_t Fadc250Module::IsSlot(UInt_t rdata) {
-    if (fDebugFile) *fDebugFile << "is slot ? "<<hex<<fHeader<<"  "<<fHeaderMask<<"  "<<rdata<<dec<<endl;
+    if (fDebugFile) {
+      *fDebugFile << "is slot ? "<<hex<<fHeader<<"  "<<fHeaderMask<<"  "<<rdata<<dec<<endl;
+      if ((rdata != 0xffffffff) & ((rdata & fHeaderMask)==fHeader)) *fDebugFile << "Yes, is slot "<<endl;
+    }
     return ((rdata != 0xffffffff) & ((rdata & fHeaderMask)==fHeader));
   }
 
@@ -92,6 +101,13 @@ namespace Decoder {
     return result;
   }
 
+  Int_t Fadc250Module::GetNumSamples(Int_t chan) const {
+    if (chan < 0 || chan > NADCCHAN) {
+      cout << "ERROR:: Fadc250Module:: GetAdcData:: invalid channel "<<chan<<endl;
+      return 0;
+    }
+    return fNumSample[chan];
+  }
 
   Int_t Fadc250Module::GetData(Int_t which, Int_t chan, Int_t ievent) const {
 
@@ -170,8 +186,10 @@ namespace Decoder {
     Int_t numwords = 0;
     if (IsSlot(*evbuffer)) {
       if (IsIntegMode()) numwords = *(evbuffer+2);
-      if (IsSampleMode()) numwords = *(evbuffer+4);
+      if (IsSampleMode()) numwords = *(evbuffer+4);  // Where is it ?
     }
+// This would not happen if CRL puts numwords into output
+    if (numwords < 0) cout << "Fadc250: warning: negative num words ?"<<endl;
     if (fDebugFile) *fDebugFile << "Fadc250Module:: num words "<<dec<<numwords<<endl;
     // Fill data structures of this class
     Clear("");
@@ -231,7 +249,7 @@ namespace Decoder {
     UInt_t data = *pdat;
     Int_t nsamples, index, chan;
 
-    if ((i_print==1) && (fDebugFile > 0)) *fDebugFile << "Fadc250::Decode   "<< data<<"   "<<iword<<endl;
+    if ((i_print==1) && (fDebugFile > 0)) *fDebugFile << "Fadc250::Decode   "<< hex<< data<<"   "<<dec<<iword<<endl;
     iword++;
 
     if( data & 0x80000000 )		/* data type defining word */

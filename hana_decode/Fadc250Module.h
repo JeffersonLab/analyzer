@@ -26,6 +26,7 @@ public:
    virtual Bool_t IsSlot(UInt_t rdata);
    virtual Int_t Decode(const UInt_t *evbuffer);
    virtual Int_t GetNumEvents() const { return fNumEvents; };
+   virtual Int_t GetNumSamples(Int_t chan) const;
    virtual Int_t GetData(Int_t chan, Int_t event, Int_t which) const;
    virtual Int_t GetAdcData(Int_t chan, Int_t ievent) const;
    virtual Int_t GetTdcData(Int_t chan, Int_t ievent) const;
