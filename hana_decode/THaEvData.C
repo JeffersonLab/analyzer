@@ -336,7 +336,7 @@ int THaEvData::init_slotdata(const THaCrateMap* map)
 }
 
 //_____________________________________________________________________________
-Module* THaEvData::GetModule(Int_t roc, Int_t slot)
+Module* THaEvData::GetModule(Int_t roc, Int_t slot) const
 {
   THaSlotData *sldat = crateslot[idx(roc,slot)];
   if (sldat) return sldat->GetModule();

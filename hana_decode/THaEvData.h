@@ -85,7 +85,7 @@ public:
 			  Int_t /*slot*/, Int_t /*chan*/) const
   { return GetScaler(0,0,0); }
   virtual void SetDebugFile( std::ofstream *file ) { fDebugFile = file; };
-  virtual Decoder::Module* GetModule(Int_t roc, Int_t slot);
+  virtual Decoder::Module* GetModule(Int_t roc, Int_t slot) const;
 
   // Access functions for EPICS (slow control) data
   virtual double GetEpicsData(const char* tag, Int_t event=0) const;
