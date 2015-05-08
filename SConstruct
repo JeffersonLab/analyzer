@@ -42,9 +42,8 @@ EnsureSConsVersion(2,1,0)
 #
 baseenv.Append(MAIN_DIR = Dir('.').abspath)
 baseenv.Append(HA_DIR = baseenv.subst('$MAIN_DIR'))
-baseenv.Append(HA_SRC = baseenv.subst('$HA_DIR')+'/src ')
-baseenv.Append(HA_DC = baseenv.subst('$HA_DIR')+'/hana_decode ')
-#baseenv.Append(HA_SCALER = baseenv.subst('$HA_DIR')+'/hana_scaler ')
+baseenv.Append(HA_SRC = baseenv.subst('$HA_DIR')+'/src ') 
+baseenv.Append(HA_DC = baseenv.subst('$HA_DIR')+'/hana_decode ') 
 baseenv.Append(MAJORVERSION = '1')
 baseenv.Append(MINORVERSION = '6')
 baseenv.Append(PATCH = '0')
@@ -58,7 +57,7 @@ print "Software Version = %s" % baseenv.subst('$VERSION')
 ivercode = 65536*int(float(baseenv.subst('$SOVERSION')))+ 256*int(10*(float(baseenv.subst('$SOVERSION'))-int(float(baseenv.subst('$SOVERSION')))))+ int(float(baseenv.subst('$PATCH')))
 baseenv.Append(VERCODE = ivercode)
 #
-# evio environment
+# evio environment 
 #
 evio_libdir = os.getenv('EVIO_LIBDIR')
 evio_incdir = os.getenv('EVIO_INCDIR')
@@ -75,8 +74,8 @@ if evio_instdir is None or evio_libdir is None or evio_incdir is None:
 	platform = uname[0];
 	machine = uname[4];
 	evio_name = platform + '-' + machine
-	print "evio_name = %s" % evio_name
-	evio_local_lib = "%s/evio-%s/%s/lib" % (evio_local,evio_version,evio_name)
+	print "evio_name = %s" % evio_name	
+	evio_local_lib = "%s/evio-%s/%s/lib" % (evio_local,evio_version,evio_name) 
 	evio_local_inc = "%s/evio-%s/%s/include" % (evio_local,evio_version,evio_name)
 	evio_tarfile = "%s/evio-%s.tgz" % (evio_local,evio_version)
 	if not os.path.isdir(evio_local_lib):
@@ -86,7 +85,6 @@ if evio_instdir is None or evio_libdir is None or evio_incdir is None:
 			evio_command_scons = "cd %s; tar xvfz evio-%s.tgz; cd evio-%s/ ; scons install --prefix=." % (evio_local,evio_version,evio_version)
 	else:
 			evio_command_scons = "cd %s; cd evio-%s/ ; scons install --prefix=." % (evio_local,evio_version)
-
 	os.system(evio_command_scons)
 	baseenv.Append(EVIO_LIB = evio_local_lib)
 	baseenv.Append(EVIO_INC = evio_local_inc)
@@ -101,7 +99,6 @@ baseenv.Append(CPPPATH = ['$EVIO_INC'])
 #
 # end evio environment
 #
-#baseenv.Append(CPPPATH = ['$HA_SRC','$HA_DC','$HA_SCALER'])
 baseenv.Append(CPPPATH = ['$HA_SRC','$HA_DC'])
 
 ######## Configure Section #######
@@ -180,13 +177,6 @@ if baseenv.subst('$CPPCHECK')==proceed:
 ####### build source distribution tarball #############
 
 if baseenv.subst('$SRCDIST')==proceed:
-#	srcdist_link_target = baseenv.subst('$HA_DIR')+'/../'+baseenv.subst('$NAME')
-#	srcdist_link_source = baseenv.subst('$HA_DIR')
-#	try:
-#		os.symlink(srcdist_link_source,srcdist_link_target)
-#	except:
-#		print "Continuing ... "
-
 	baseenv['DISTTAR_FORMAT']='gz'
 	baseenv.Append(
 		    DISTTAR_EXCLUDEEXTS=['.o','.os','.so','.a','.dll','.cache','.pyc','.cvsignore','.dblite','.log', '.gz', '.bz2', '.zip']
@@ -202,16 +192,13 @@ if baseenv.subst('$SRCDIST')==proceed:
 
 hallalib = 'HallA'
 dclib = 'dc'
-#scalerlib = 'scaler'
 eviolib = 'evio'
 
 baseenv.Append(LIBPATH=['$HA_DIR','$EVIO_LIB','$HA_SRC','$HA_DC'])
-#baseenv.Append(LIBS=[eviolib,hallalib,dclib,scalerlib])
 baseenv.Append(LIBS=[eviolib,hallalib,dclib])
 baseenv.Replace(SHLIBSUFFIX = '.so')
 baseenv.Append(SHLIBSUFFIX = '.'+baseenv.subst('$VERSION'))
 
-#SConscript(dirs = ['./','src/','hana_decode/','hana_scaler'],name='SConscript.py',exports='baseenv')
 SConscript(dirs = ['./','src/','hana_decode/'],name='SConscript.py',exports='baseenv')
 
 #######  End of SConstruct #########

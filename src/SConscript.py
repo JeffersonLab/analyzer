@@ -9,13 +9,13 @@ Import('baseenv')
 list = Split("""
 THaADCHelicity.C          THaCoincTime.C            THaG0Helicity.C
 THaPhotoReaction.C        THaRunParameters.C        THaTrackID.C              THaVDCTrackID.C
-THaAnalysisObject.C       THaCut.C                  THaG0HelicityReader.C
+THaAnalysisObject.C       THaCut.C                  THaG0HelicityReader.C     
 THaPhysicsModule.C        THaS2CoincTime.C          THaTrackInfo.C
-THaAnalyzer.C             THaCutList.C              THaGoldenTrack.C
+THaAnalyzer.C             THaCutList.C              THaGoldenTrack.C          
 THaPidDetector.C          THaSAProtonEP.C           THaTrackOut.C	      THaVDCPointPair.C
 THaApparatus.C            THaDebugModule.C          THaHRS.C                  THaVDCPoint.C
 THaPostProcess.C          THaTrackProj.C	    THaEpicsEvtHandler.C      THaVDCChamber.C
-THaArrayString.C          THaDecData.C              BdataLoc.C                THaHelicity.C
+THaArrayString.C          THaDecData.C              BdataLoc.C                THaHelicity.C             
 THaPrimaryKine.C          THaScintillator.C         THaTrackingDetector.C     THaVDCWire.C
 THaAvgVertex.C            THaDetMap.C               THaHelicityDet.C
 THaPrintOption.C          THaSecondaryKine.C        THaTrackingModule.C       THaVar.C
@@ -40,14 +40,10 @@ THaRunBase.C              THaTrackEloss.C           THaVDCTimeToDistConv.C
 THaEvtTypeHandler.C       THaScalerEvtHandler.C
 """)
 
-#normanalist = ['THaNormAna.C']
-
 baseenv.Object('main.C')
 
 sotarget = 'HallA'
-#normanatarget = 'NormAna'
 
-#srclib = baseenv.SharedLibrary(target = sotarget, source = list+['haDict.so'],SHLIBVERSION=['$VERSION'],SHLIBPREFIX='../lib',LIBS=[''])
 srclib = baseenv.SharedLibrary(target = sotarget, source = list+['haDict.so'],SHLIBPREFIX='../lib',LIBS=[''])
 print ('Source shared library = %s\n' % srclib)
 
@@ -71,35 +67,3 @@ except:
 Clean(srclib,cleantarget)
 Clean(srclib,localmajorcleantarget)
 Clean(srclib,localshortcleantarget)
-
-#baseenv.Install('../lib',srclib)
-#baseenv.Alias('install',['../lib'])
-
-#normanalib = baseenv.SharedLibrary(target = normanatarget,source = normanalist+['NormAnaDict.so'],SHLIBVERSION=['$VERSION'],SHLIBPREFIX='../lib',LIBS=[''])
-#normanalib = baseenv.SharedLibrary(target = normanatarget,source = normanalist+['NormAnaDict.so'],SHLIBPREFIX='../lib',LIBS=[''])
-#print ('NormAna shared library = %s\n' % normanalib)
-
-#nlinkbase = baseenv.subst('$SHLIBPREFIX')+normanatarget
-nlinkbase = baseenv.subst('$SHLIBPREFIX')
-
-ncleantarget = nlinkbase+'.so.'+baseenv.subst('$VERSION')
-nmajorcleantarget = nlinkbase+'.so'
-nlocalmajorcleantarget = '../'+nlinkbase+'.so'
-nshortcleantarget = nlinkbase+'.so.'+baseenv.subst('$SOVERSION')
-nlocalshortcleantarget = '../'+nlinkbase+'.so.'+baseenv.subst('$SOVERSION')
-
-print ('ncleantarget = %s\n' % ncleantarget)
-print ('nmajorcleantarget = %s\n' % nmajorcleantarget)
-print ('nshortcleantarget = %s\n' % nshortcleantarget)
-try:
-	os.symlink(ncleantarget,nlocalshortcleantarget)
-	os.symlink(nshortcleantarget,nlocalmajorcleantarget)
-except:
-	print " Continuing ... "
-
-#Clean(normanalib,ncleantarget)
-#Clean(normanalib,nlocalmajorcleantarget)
-#Clean(normanalib,nlocalshortcleantarget)
-
-#baseenv.Install('../lib',normanalib)
-#baseenv.Alias('install',['../lib'])
