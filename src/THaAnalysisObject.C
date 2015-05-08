@@ -1120,7 +1120,7 @@ Int_t THaAnalysisObject::ReadDBline( FILE* file, char* buf, size_t bufsiz,
 
     // Ensure that at least one space is preserved between continuations,
     // if originally present
-    if( trailing_space && unfinished )
+    if( maybe_continued || (trailing_space && continued) )
       linbuf += ' ';
     if( leading_space && !line.empty() && line[line.length()-1] != ' ')
       line += ' ';

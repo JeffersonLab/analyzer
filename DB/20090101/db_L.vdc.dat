@@ -25,6 +25,12 @@
 # Dp is tested on 1st pass H2 elastic runs 1396, 1408,1419, and 2nd pass H2 elastic runs 2610,2611,2614,2615
 ##################################################
 #
+##### Analysis control parameters #####
+[ L.extra_param ]
+5.0e-10   4.0e-8             TDC scale (ns/chan), t0 resolution (s)
+4 7 0 800 2200 3e-8 1.5e-7   min_clust_size, max_clust_span, max_gap, min_time, max_time, min_tdiff, max_tdiff (s)
+2.12e-3 0.0 0.0 0.0 -4.2e-4 1.3e-3 1.06e-4 0.0 4e-9    AnalyticTTD parameters
+#
 ############ LEFT VDC #########################
 No of Crate, Slot, First, Last chans
 [ L.vdc.u1 ]

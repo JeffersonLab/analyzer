@@ -159,6 +159,15 @@ THaAnalysisObject::EStatus THaTotalShower::Init( const TDatime& run_time )
 }
 
 //_____________________________________________________________________________
+void THaTotalShower::Clear( Option_t* )
+{
+  // Clear event data
+
+  fE = 0.0;
+  fID = 0;
+}
+
+//_____________________________________________________________________________
 Int_t THaTotalShower::ReadDatabase( const TDatime& date )
 {
   // Read this detector's parameters from the database file 'fi'.
@@ -206,8 +215,6 @@ Int_t THaTotalShower::Decode( const THaEvData& evdata )
 
   if( !IsOK() ) 
     return -1;
-
-  ClearEvent();
 
   fPreShower->Decode( evdata );
   return fShower->Decode( evdata );

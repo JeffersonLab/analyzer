@@ -19,6 +19,7 @@ public:
 		   THaApparatus* a = NULL );
   virtual ~THaScintillator();
 
+  virtual void       Clear( Option_t* ="" );
   virtual Int_t      Decode( const THaEvData& );
   virtual EStatus    Init( const TDatime& run_time );
   virtual Int_t      CoarseProcess( TClonesArray& tracks );
@@ -101,7 +102,6 @@ protected:
     Double_t*  gain;
   } fDataDest[NDEST];     // Lookup table for decoder
 
-  void           ClearEvent();
   void           DeleteArrays();
   virtual Int_t  ReadDatabase( const TDatime& date );
   virtual Int_t  DefineVariables( EMode mode = kDefine );

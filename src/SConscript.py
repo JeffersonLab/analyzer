@@ -7,45 +7,45 @@ import SCons.Util
 Import('baseenv')
 
 list = Split("""
-THaADCHelicity.C          THaCoincTime.C            THaG0Helicity.C           
+THaADCHelicity.C          THaCoincTime.C            THaG0Helicity.C
 THaPhotoReaction.C        THaRunParameters.C        THaTrackID.C              THaVDCTrackID.C
-THaAnalysisObject.C       THaCut.C                  THaG0HelicityReader.C     
-THaPhysicsModule.C        THaS2CoincTime.C          THaTrackInfo.C            THaVDCTrackPair.C
-THaAnalyzer.C             THaCutList.C              THaGoldenTrack.C          
-THaPidDetector.C          THaSAProtonEP.C           THaTrackOut.C             THaVDCUVPlane.C
-THaApparatus.C            THaDebugModule.C          THaHRS.C                  
-THaPostProcess.C          THaScalerGroup.C          THaTrackProj.C            THaVDCUVTrack.C
-THaArrayString.C          THaDecData.C              BdataLoc.C                THaHelicity.C             
+THaAnalysisObject.C       THaCut.C                  THaG0HelicityReader.C
+THaPhysicsModule.C        THaS2CoincTime.C          THaTrackInfo.C
+THaAnalyzer.C             THaCutList.C              THaGoldenTrack.C
+THaPidDetector.C          THaSAProtonEP.C           THaTrackOut.C	      THaVDCPointPair.C
+THaApparatus.C            THaDebugModule.C          THaHRS.C                  THaVDCPoint.C
+THaPostProcess.C          THaTrackProj.C	    THaEpicsEvtHandler.C      THaVDCChamber.C
+THaArrayString.C          THaDecData.C              BdataLoc.C                THaHelicity.C
 THaPrimaryKine.C          THaScintillator.C         THaTrackingDetector.C     THaVDCWire.C
-THaAvgVertex.C            THaDetMap.C               THaHelicityDet.C          
+THaAvgVertex.C            THaDetMap.C               THaHelicityDet.C
 THaPrintOption.C          THaSecondaryKine.C        THaTrackingModule.C       THaVar.C
-THaBPM.C                  THaDetector.C             THaIdealBeam.C            
+THaBPM.C                  THaDetector.C             THaIdealBeam.C
 THaQWEAKHelicity.C        THaShower.C               THaTriggerTime.C          THaVarList.C
-THaBeam.C                 THaDetectorBase.C         THaInterface.C            
+THaBeam.C                 THaDetectorBase.C         THaInterface.C
 THaQWEAKHelicityReader.C  THaSpectrometer.C         THaTwoarmVertex.C         THaVertexModule.C
-THaBeamDet.C              THaElectronKine.C         THaNamedList.C            
+THaBeamDet.C              THaElectronKine.C         THaNamedList.C
 THaRTTI.C                 THaSpectrometerDetector.C THaUnRasteredBeam.C       THaVform.C
-THaBeamEloss.C            THaElossCorrection.C      THaNonTrackingDetector.C  
+THaBeamEloss.C            THaElossCorrection.C      THaNonTrackingDetector.C
 THaRaster.C               THaString.C               THaVDC.C                  THaVhist.C
-THaBeamInfo.C             THaEpicsEbeam.C              
+THaBeamInfo.C             THaEpicsEbeam.C
 THaRasteredBeam.C         THaSubDetector.C          THaVDCAnalyticTTDConv.C   VDCeff.C
-THaBeamModule.C           THaEvent.C               
+THaBeamModule.C           THaEvent.C
 THaReacPointFoil.C        THaTextvars.C             THaVDCCluster.C
-THaCherenkov.C            THaExtTarCor.C            THaOutput.C               
+THaCherenkov.C            THaExtTarCor.C            THaOutput.C
 THaReactionPoint.C        THaTotalShower.C          THaVDCHit.C
-THaCluster.C              THaFilter.C               THaPIDinfo.C              
+THaCluster.C              THaFilter.C               THaPIDinfo.C
 THaRun.C                  THaTrack.C                THaVDCPlane.C
-THaCodaRun.C              THaFormula.C              THaParticleInfo.C         
+THaCodaRun.C              THaFormula.C              THaParticleInfo.C
 THaRunBase.C              THaTrackEloss.C           THaVDCTimeToDistConv.C
 THaEvtTypeHandler.C       THaScalerEvtHandler.C
 """)
 
-normanalist = ['THaNormAna.C']
+#normanalist = ['THaNormAna.C']
 
 baseenv.Object('main.C')
 
 sotarget = 'HallA'
-normanatarget = 'NormAna'
+#normanatarget = 'NormAna'
 
 #srclib = baseenv.SharedLibrary(target = sotarget, source = list+['haDict.so'],SHLIBVERSION=['$VERSION'],SHLIBPREFIX='../lib',LIBS=[''])
 srclib = baseenv.SharedLibrary(target = sotarget, source = list+['haDict.so'],SHLIBPREFIX='../lib',LIBS=[''])
@@ -65,7 +65,7 @@ print ('shortcleantarget = %s\n' % shortcleantarget)
 try:
 	os.symlink(cleantarget,localshortcleantarget)
 	os.symlink(shortcleantarget,localmajorcleantarget)
-except:	
+except:
 	print " Continuing ... "
 
 Clean(srclib,cleantarget)
@@ -76,10 +76,11 @@ Clean(srclib,localshortcleantarget)
 #baseenv.Alias('install',['../lib'])
 
 #normanalib = baseenv.SharedLibrary(target = normanatarget,source = normanalist+['NormAnaDict.so'],SHLIBVERSION=['$VERSION'],SHLIBPREFIX='../lib',LIBS=[''])
-normanalib = baseenv.SharedLibrary(target = normanatarget,source = normanalist+['NormAnaDict.so'],SHLIBPREFIX='../lib',LIBS=[''])
-print ('NormAna shared library = %s\n' % normanalib)
+#normanalib = baseenv.SharedLibrary(target = normanatarget,source = normanalist+['NormAnaDict.so'],SHLIBPREFIX='../lib',LIBS=[''])
+#print ('NormAna shared library = %s\n' % normanalib)
 
-nlinkbase = baseenv.subst('$SHLIBPREFIX')+normanatarget
+#nlinkbase = baseenv.subst('$SHLIBPREFIX')+normanatarget
+nlinkbase = baseenv.subst('$SHLIBPREFIX')
 
 ncleantarget = nlinkbase+'.so.'+baseenv.subst('$VERSION')
 nmajorcleantarget = nlinkbase+'.so'
@@ -93,13 +94,12 @@ print ('nshortcleantarget = %s\n' % nshortcleantarget)
 try:
 	os.symlink(ncleantarget,nlocalshortcleantarget)
 	os.symlink(nshortcleantarget,nlocalmajorcleantarget)
-except:	
+except:
 	print " Continuing ... "
 
-Clean(normanalib,ncleantarget)
-Clean(normanalib,nlocalmajorcleantarget)
-Clean(normanalib,nlocalshortcleantarget)
+#Clean(normanalib,ncleantarget)
+#Clean(normanalib,nlocalmajorcleantarget)
+#Clean(normanalib,nlocalshortcleantarget)
 
 #baseenv.Install('../lib',normanalib)
 #baseenv.Alias('install',['../lib'])
-
