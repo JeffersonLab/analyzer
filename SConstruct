@@ -61,10 +61,8 @@ baseenv.Append(VERCODE = ivercode)
 #
 evio_libdir = os.getenv('EVIO_LIBDIR')
 evio_incdir = os.getenv('EVIO_INCDIR')
-evio_instdir = os.getenv('INSTALL_DIR')
-if evio_instdir is None or evio_libdir is None or evio_incdir is None:
+if evio_libdir is None or evio_incdir is None:
 	print "No external EVIO environment configured !!!"
-	print "INSTALL_DIR = %s" % evio_instdir
 	print "EVIO_LIBDIR = %s" % evio_libdir
 	print "EVIO_INCDIR = %s" % evio_incdir
 	print "Using local installation ... "
@@ -89,8 +87,8 @@ if evio_instdir is None or evio_libdir is None or evio_incdir is None:
 	baseenv.Append(EVIO_LIB = evio_local_lib)
 	baseenv.Append(EVIO_INC = evio_local_inc)
 else:
-	evio_command_scons = "cd %s; scons install --prefix=." % evio_instdir
-	os.system(evio_command_scons)
+	# evio_command_scons = "cd %s; scons install --prefix=." % evio_instdir
+	# os.system(evio_command_scons)
 	baseenv.Append(EVIO_LIB = os.getenv('EVIO_LIBDIR'))
 	baseenv.Append(EVIO_INC = os.getenv('EVIO_INCDIR'))
 print "EVIO lib Directory = %s" % baseenv.subst('$EVIO_LIB')
