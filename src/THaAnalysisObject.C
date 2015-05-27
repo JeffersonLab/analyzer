@@ -1325,8 +1325,6 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
   // Load a list of parameters from the database file 'f' according to 
   // the contents of the 'req' structure (see VarDef.h).
 
-  // FIXME: handle item->nelem to read arrays!
-
   if( !req ) return -255;
   if( !prefix ) prefix = "";
   Int_t ret = 0;
@@ -1336,43 +1334,101 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
   const DBRequest* item = req;
   while( item->name ) {
     if( item->var ) {
-      string keystr(prefix); keystr.append(item->name);
+      string keystr = prefix; keystr.append(item->name);
+      UInt_t nelem = item->nelem;
       const char* key = keystr.c_str();
       if( item->type == kDouble || item->type == kFloat ) {
-	Double_t dval = 0.0;
-	ret = LoadDBvalue( f, date, key, dval );
-	if( ret == 0 ) {
-	  if( item->type == kDouble ) 
-	    *((Double_t*)item->var) = dval;
-	  else
-	    *((Float_t*)item->var) = dval;
+	if( nelem < 2 ) {
+	  Double_t dval;
+	  ret = LoadDBvalue( f, date, key, dval );
+	  if( ret == 0 ) {
+	    if( item->type == kDouble )
+	      *((Double_t*)item->var) = dval;
+	    else
+	      *((Float_t*)item->var) = dval;
+	  }
+	} else {
+	  // Array of reals requested
+	  vector<double> dvals;
+	  ret = LoadDBarray( f, date, key, dvals );
+	  if( static_cast<UInt_t>(dvals.size()) != nelem ) {
+	    nelem = dvals.size();
+	    ret = -130;
+	  } else if( ret == 0 ) {
+	    if( item->type == kDouble ) {
+	      for( UInt_t i = 0; i < nelem; i++ )
+		((Double_t*)item->var)[i] = dvals[i];
+	    } else {
+	      for( UInt_t i = 0; i < nelem; i++ )
+		((Float_t*)item->var)[i] = dvals[i];
+	    }
+	  }
 	}
       } else if( item->type >= kInt && item->type <= kByte ) {
 	// Implies a certain order of definitions in VarType.h
-	Int_t ival;
-	ret = LoadDBvalue( f, date, key, ival );
-	if( ret == 0 ) {
-	  switch( item->type ) {
-	  case kInt:
-	    *((Int_t*)item->var) = ival;
-	    break;
-	  case kUInt:
-	    *((UInt_t*)item->var) = ival;
-	    break;
-	  case kShort:
-	    *((Short_t*)item->var) = ival;
-	    break;
-	  case kUShort:
-	    *((UShort_t*)item->var) = ival;
-	    break;
-	  case kChar:
-	    *((Char_t*)item->var) = ival;
-	    break;
-	  case kByte:
-	    *((Byte_t*)item->var) = ival;
-	    break;
-	  default:
-	    goto badtype;
+	if( nelem < 2 ) {
+	  Int_t ival;
+	  ret = LoadDBvalue( f, date, key, ival );
+	  if( ret == 0 ) {
+	    switch( item->type ) {
+	    case kInt:
+	      *((Int_t*)item->var) = ival;
+	      break;
+	    case kUInt:
+	      *((UInt_t*)item->var) = ival;
+	      break;
+	    case kShort:
+	      *((Short_t*)item->var) = ival;
+	      break;
+	    case kUShort:
+	      *((UShort_t*)item->var) = ival;
+	      break;
+	    case kChar:
+	      *((Char_t*)item->var) = ival;
+	      break;
+	    case kByte:
+	      *((Byte_t*)item->var) = ival;
+	      break;
+	    default:
+	      goto badtype;
+	    }
+	  }
+	} else {
+	  // Array of integers requested
+	  vector<Int_t> ivals;
+	  ret = LoadDBarray( f, date, key, ivals );
+	  if( static_cast<UInt_t>(ivals.size()) != nelem ) {
+	    nelem = ivals.size();
+	    ret = -130;
+	  } else if( ret == 0 ) {
+	    switch( item->type ) {
+	    case kInt:
+	      for( UInt_t i = 0; i < nelem; i++ )
+		((Int_t*)item->var)[i] = ivals[i];
+	      break;
+	    case kUInt:
+	      for( UInt_t i = 0; i < nelem; i++ )
+		((UInt_t*)item->var)[i] = ivals[i];
+	      break;
+	    case kShort:
+	      for( UInt_t i = 0; i < nelem; i++ )
+		((Short_t*)item->var)[i] = ivals[i];
+	      break;
+	    case kUShort:
+	      for( UInt_t i = 0; i < nelem; i++ )
+		((UShort_t*)item->var)[i] = ivals[i];
+	      break;
+	    case kChar:
+	      for( UInt_t i = 0; i < nelem; i++ )
+		((Char_t*)item->var)[i] = ivals[i];
+	      break;
+	    case kByte:
+	      for( UInt_t i = 0; i < nelem; i++ )
+		((Byte_t*)item->var)[i] = ivals[i];
+	      break;
+	    default:
+	      goto badtype;
+	    }
 	  }
 	}
       } else if( item->type == kString ) {
@@ -1381,22 +1437,34 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 	ret = LoadDBvalue( f, date, key, *((TString*)item->var) );
       } else if( item->type == kFloatV ) {
 	ret = LoadDBarray( f, date, key, *((vector<float>*)item->var) );
+	if( ret == 0 && nelem > 0 && nelem !=
+	    static_cast<UInt_t>(((vector<float>*)item->var)->size()) ) {
+	  nelem = ((vector<float>*)item->var)->size();
+	  ret = -130;
+	}
       } else if( item->type == kDoubleV ) {
 	ret = LoadDBarray( f, date, key, *((vector<double>*)item->var) );
+	if( ret == 0 && nelem > 0 && nelem !=
+	    static_cast<UInt_t>(((vector<double>*)item->var)->size()) ) {
+	  nelem = ((vector<double>*)item->var)->size();
+	  ret = -130;
+	}
       } else if( item->type == kIntV ) {
 	ret = LoadDBarray( f, date, key, *((vector<Int_t>*)item->var) );
+	if( ret == 0 && nelem > 0 && nelem !=
+	    static_cast<UInt_t>(((vector<Int_t>*)item->var)->size()) ) {
+	  nelem = ((vector<Int_t>*)item->var)->size();
+	  ret = -130;
+	}
       } else if( item->type == kFloatM ) {
 	ret = LoadDBmatrix( f, date, key, 
-			    *((vector<vector<float> >*)item->var),
-			    item->nelem );
+			    *((vector<vector<float> >*)item->var), nelem );
       } else if( item->type == kDoubleM ) {
 	ret = LoadDBmatrix( f, date, key, 
-			    *((vector<vector<double> >*)item->var),
-			    item->nelem );
+			    *((vector<vector<double> >*)item->var), nelem );
       } else if( item->type == kIntM ) {
 	ret = LoadDBmatrix( f, date, key,
-			    *((vector<vector<Int_t> >*)item->var),
-			    item->nelem );
+			    *((vector<vector<Int_t> >*)item->var), nelem );
       } else {
       badtype:
 	if( item->type >= kDouble && item->type <= kObject2P )
@@ -1471,6 +1539,12 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 		 "Number of matrix elements not evenly divisible by requested "
 		 "number of columns. Fix the database!\n\"%s...\"",
 		 errtxt.c_str() );
+	break;
+      } else if( ret == -130 ) {  // Vector/array size mismatch
+	::Error( ::Here(here,loaddb_prefix.c_str()),
+		 "Incorrect number of array elements found for key = %s. "
+		 "%u requested, %u found. Fix database.", keystr.c_str(),
+		 item->nelem, nelem );
 	break;
       } else {  // other ret < 0: unexpected zero pointer etc.
 	::Error( ::Here(here,loaddb_prefix.c_str()), 
