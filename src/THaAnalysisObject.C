@@ -41,13 +41,16 @@
 #ifdef HAS_SSTREAM
  #include <sstream>
  #define ISSTREAM istringstream
+ #define OSSTREAM ostringstream
 #else
  #include <strstream>
  #define ISSTREAM istrstream
+ #define OSSTREAM ostrstream
 #endif
 #include <stdexcept>
 #include <cassert>
 #include <map>
+#include <limits>
 
 using namespace std;
 typedef string::size_type ssiz_t;
@@ -1317,6 +1320,24 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
   here.Append("::LoadDB");
   return LoadDB( f, date, req, GetPrefix(), search, here.Data() );
 }
+
+#define CheckLimits(T,val) \
+  if( (val) < std::numeric_limits<T>::min() ||     \
+      (val) > std::numeric_limits<T>::max() ) {	   \
+    OSSTREAM txt;				   \
+    txt << (val);				   \
+    errtxt = txt.str();                            \
+    goto rangeerr;				   \
+  }
+
+#define CheckLimitsUnsigned(T,val) \
+  if( (val) < 0 || static_cast<T>(val) > std::numeric_limits<T>::max() ) { \
+    OSSTREAM txt;				   \
+    txt << (val);				   \
+    errtxt = txt.str();                            \
+    goto rangeerr;                                 \
+  }
+
 //_____________________________________________________________________________
 Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 				 const DBRequest* req, const char* prefix,
@@ -1344,8 +1365,10 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 	  if( ret == 0 ) {
 	    if( item->type == kDouble )
 	      *((Double_t*)item->var) = dval;
-	    else
+	    else {
+	      CheckLimits( Float_t, dval );
 	      *((Float_t*)item->var) = dval;
+	    }
 	  }
 	} else {
 	  // Array of reals requested
@@ -1359,8 +1382,10 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 	      for( UInt_t i = 0; i < nelem; i++ )
 		((Double_t*)item->var)[i] = dvals[i];
 	    } else {
-	      for( UInt_t i = 0; i < nelem; i++ )
+	      for( UInt_t i = 0; i < nelem; i++ ) {
+		CheckLimits( Float_t, dvals[i] );
 		((Float_t*)item->var)[i] = dvals[i];
+	      }
 	    }
 	  }
 	}
@@ -1375,18 +1400,23 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 	      *((Int_t*)item->var) = ival;
 	      break;
 	    case kUInt:
+	      CheckLimitsUnsigned( UInt_t, ival );
 	      *((UInt_t*)item->var) = ival;
 	      break;
 	    case kShort:
+	      CheckLimits( Short_t, ival );
 	      *((Short_t*)item->var) = ival;
 	      break;
 	    case kUShort:
+	      CheckLimitsUnsigned( UShort_t, ival );
 	      *((UShort_t*)item->var) = ival;
 	      break;
 	    case kChar:
+	      CheckLimits( Char_t, ival );
 	      *((Char_t*)item->var) = ival;
 	      break;
 	    case kByte:
+	      CheckLimitsUnsigned( Byte_t, ival );
 	      *((Byte_t*)item->var) = ival;
 	      break;
 	    default:
@@ -1407,24 +1437,34 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 		((Int_t*)item->var)[i] = ivals[i];
 	      break;
 	    case kUInt:
-	      for( UInt_t i = 0; i < nelem; i++ )
+	      for( UInt_t i = 0; i < nelem; i++ ) {
+		CheckLimitsUnsigned( UInt_t, ivals[i] );
 		((UInt_t*)item->var)[i] = ivals[i];
+	      }
 	      break;
 	    case kShort:
-	      for( UInt_t i = 0; i < nelem; i++ )
+	      for( UInt_t i = 0; i < nelem; i++ ) {
+		CheckLimits( Short_t, ivals[i] );
 		((Short_t*)item->var)[i] = ivals[i];
+	      }
 	      break;
 	    case kUShort:
-	      for( UInt_t i = 0; i < nelem; i++ )
+	      for( UInt_t i = 0; i < nelem; i++ ) {
+		CheckLimitsUnsigned( UShort_t, ivals[i] );
 		((UShort_t*)item->var)[i] = ivals[i];
+	      }
 	      break;
 	    case kChar:
-	      for( UInt_t i = 0; i < nelem; i++ )
+	      for( UInt_t i = 0; i < nelem; i++ ) {
+		CheckLimits( Char_t, ivals[i] );
 		((Char_t*)item->var)[i] = ivals[i];
+	      }
 	      break;
 	    case kByte:
-	      for( UInt_t i = 0; i < nelem; i++ )
+	      for( UInt_t i = 0; i < nelem; i++ ) {
+		CheckLimitsUnsigned( Byte_t, ivals[i] );
 		((Byte_t*)item->var)[i] = ivals[i];
+	      }
 	      break;
 	    default:
 	      goto badtype;
@@ -1476,6 +1516,12 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 		   "Key \"%s\": Reading of data type \"(#%d)\" not implemented",
 		   key, item->type );
 	ret = -2;
+	break;
+      rangeerr:
+	::Error( ::Here(here,loaddb_prefix.c_str()),
+		 "Key \"%s\": Value %s out of range for requested type \"%s\"",
+		 key, errtxt.c_str(), THaVar::GetEnumName(item->type) );
+	ret = -3;
 	break;
       }
 
