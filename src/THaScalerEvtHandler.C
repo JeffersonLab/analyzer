@@ -60,7 +60,7 @@ static const UInt_t MAXTEVT   = 5000;
 static const UInt_t defaultDT = 4;
 
 THaScalerEvtHandler::THaScalerEvtHandler(const char *name, const char* description)
-  : THaEvtTypeHandler(name,description), evcount(0), ifound(0), fNormIdx(-1),
+  : THaEvtTypeHandler(name,description), evcount(0), fNormIdx(-1),
     dvars(0), fScalerTree(0)
 {
   rdata = new UInt_t[MAXTEVT];
@@ -142,7 +142,7 @@ Int_t THaScalerEvtHandler::Analyze(THaEvData *evdata)
   UInt_t *pstop = rdata+ndata;
   int j=0;
 
-  ifound = 0;
+  Int_t ifound = 0;
 
   while (p < pstop && j < ndata) {
     if (fDebugFile) {
@@ -299,11 +299,9 @@ THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& date)
       }
     }
   }
-  // can't compare UInt_t to Int_t (compiler warning), so do this
-  nscalers=0;
-  for (UInt_t i=0; i<scalers.size(); i++) nscalers++;
   // need to do LoadNormScaler after scalers created and if fNormIdx found.
-  if ((fNormIdx >= 0) && fNormIdx < nscalers) {
+  Int_t nscalers = static_cast<Int_t>(scalers.size());
+  if ( fNormIdx >= 0 && fNormIdx < nscalers ) {
     for (Int_t i = 0; i < nscalers; i++) {
       if (i==fNormIdx) continue;
       scalers[i]->LoadNormScaler(scalers[fNormIdx]);
@@ -384,7 +382,7 @@ void THaScalerEvtHandler::AddVars(TString name, TString desc, Int_t iscal,
 void THaScalerEvtHandler::DefVars()
 {
   // called after AddVars has finished being called.
-  Nvars = scalerloc.size();
+  Int_t Nvars = scalerloc.size();
   if (Nvars == 0) return;
   dvars = new Double_t[Nvars];  // dvars is a member of this class
   memset(dvars, 0, Nvars*sizeof(Double_t));

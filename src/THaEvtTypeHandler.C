@@ -28,11 +28,6 @@ THaEvtTypeHandler::~THaEvtTypeHandler()
   }
 }
 
-Int_t THaEvtTypeHandler::Analyze(THaEvData *evdata)
-{
-  return 1;
-}
-
 void THaEvtTypeHandler::EvPrint() const
 {
   cout << "Hello !  THaEvtTypeHandler name =  "<<GetName()<<endl;

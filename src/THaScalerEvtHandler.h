@@ -29,10 +29,10 @@ class THaScalerEvtHandler : public THaEvtTypeHandler {
 
 public:
 
-   THaScalerEvtHandler(const char*, const char*);
+   THaScalerEvtHandler(const char* name, const char* description);
    virtual ~THaScalerEvtHandler();
 
-   Int_t Analyze(THaEvData *evdata);
+   virtual Int_t Analyze(THaEvData *evdata);
    virtual EStatus Init( const TDatime& run_time);
    virtual Int_t End( THaRunBase* r=0 );
 
@@ -48,7 +48,7 @@ private:
    Double_t evcount;
    UInt_t *rdata;
    std::vector<Int_t> index;
-   Int_t Nvars, ifound, fNormIdx, nscalers;
+   Int_t fNormIdx;
    Double_t *dvars;
    TTree *fScalerTree;
 

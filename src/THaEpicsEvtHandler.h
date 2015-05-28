@@ -22,12 +22,12 @@ class THaEpicsEvtHandler : public THaEvtTypeHandler {
 
 public:
 
-   THaEpicsEvtHandler(const char*, const char*);
+   THaEpicsEvtHandler(const char* name, const char* description);
    virtual ~THaEpicsEvtHandler();
 
-   Int_t Analyze(THaEvData *evdata);
-   EStatus Init( const TDatime& run_time);
-   Int_t End( THaRunBase* r=0 );
+   virtual Int_t Analyze(THaEvData *evdata);
+   virtual EStatus Init( const TDatime& run_time);
+   virtual Int_t End( THaRunBase* r=0 );
    Bool_t IsLoaded(const char* tag) const; 
    Double_t GetData(const char* tag, Int_t event=0) const;  
    Double_t GetTime(const char* tag, Int_t event=0) const; 
