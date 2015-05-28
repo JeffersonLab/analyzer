@@ -42,16 +42,17 @@
 #include "TNamed.h"
 #include "TMath.h"
 #include "TString.h"
-#include <cstring>
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
 #include <sstream>
 #include "THaVarList.h"
 #include "VarDef.h"
+#include "THaString.h"
 
 using namespace std;
 using namespace Decoder;
+using namespace THaString;
 
 static const UInt_t ICOUNT    = 1;
 static const UInt_t IRATE     = 2;
@@ -232,11 +233,11 @@ THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& date)
     return kFileError;
   }
 
-  size_t minus1 = -1;
-  size_t pos1;
-  string scomment = "#";
-  string svariable = "variable";
-  string smap = "map";
+  string::size_type minus1 = string::npos;
+  string::size_type pos1;
+  const string scomment = "#";
+  const string svariable = "variable";
+  const string smap = "map";
   vector<string> dbline;
 
   while( fgets(cbuf, LEN, fi) != NULL) {
@@ -399,22 +400,5 @@ void THaScalerEvtHandler::DefVars()
 			  &dvars[i], kDouble, count);
   }
 }
-
-size_t THaScalerEvtHandler::FindNoCase(const string& sdata, const string& skey)
-{
-  // Find iterator of word "sdata" where "skey" starts.  Case insensitive.
-  string sdatalc, skeylc;
-  sdatalc = "";  skeylc = "";
-  for (string::const_iterator p =
-	 sdata.begin(); p != sdata.end(); ++p) {
-    sdatalc += tolower(*p);
-  }
-  for (string::const_iterator p =
-	 skey.begin(); p != skey.end(); ++p) {
-    skeylc += tolower(*p);
-  }
-  if (sdatalc.find(skeylc,0) == string::npos) return -1;
-  return sdatalc.find(skeylc,0);
-};
 
 ClassImp(THaScalerEvtHandler)

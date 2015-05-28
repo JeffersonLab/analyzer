@@ -41,7 +41,6 @@ private:
 
    void AddVars(TString name, TString desc, Int_t iscal, Int_t ichan, Int_t ikind);
    void DefVars();
-   static size_t FindNoCase(const std::string& sdata, const std::string& skey);
 
    std::vector<Decoder::GenScaler*> scalers;
    std::vector<ScalerLoc*> scalerloc;
