@@ -295,6 +295,8 @@ THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& date)
 	  UInt_t idx = scalers.size()-1;
 	  scalers[idx]->SetHeader(header, mask);
 	  if (clkchan >= 0) scalers[idx]->SetClock(defaultDT, clkchan, clkfreq);
+	  if (fDebugFile) *fDebugFile <<"Setting scaler clock ... channel = "<<clkchan<<" ... freq = "<<clkfreq<<endl;
+	  fNormIdx = idx;
 	}
       }
     }
