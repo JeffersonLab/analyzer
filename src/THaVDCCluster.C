@@ -76,7 +76,7 @@ void THaVDCCluster::ClearFit()
   fSigmaSlope = kBig;
   fInt        = kBig;
   fSigmaInt   = kBig;
-  fT0         = 0.0;
+  fT0         = kBig;
   fSigmaT0    = kBig;
   fFitOK      = false;
   fLocalSlope = kBig;
@@ -363,6 +363,7 @@ void THaVDCCluster::FitSimpleTrack( Bool_t weighted )
       fInt        = b;
       fSigmaSlope = sigmaM;
       fSigmaInt   = sigmaB;
+      fT0         = 0.0;
     }
   }
 
