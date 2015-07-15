@@ -1,0 +1,9 @@
+# Default run database with dummy values to allow quick checkout of Hall A replay scripts.
+# Only used if db_run.dat is missing from both the applicable date-coded directory and
+# the current working directory.
+
+ebeam      = 1.
+R.theta    = -16.
+R.pcentral = 0.8
+L.theta    = 16.
+L.pcentral = 0.8
