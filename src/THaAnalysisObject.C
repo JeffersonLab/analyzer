@@ -1784,5 +1784,29 @@ TString& THaAnalysisObject::GetObjArrayString( const TObjArray* array, Int_t i )
 }
 
 //_____________________________________________________________________________
+void THaAnalysisObject::Print( Option_t* ) const
+{
+  cout << "AOBJ: " << IsA()->GetName()
+       << "\t" << GetName()
+       << "\t\"";
+  if( fPrefix )
+    cout << fPrefix;
+  cout << "\"\t" << GetTitle()
+       << endl;
+}
+
+//_____________________________________________________________________________
+void THaAnalysisObject::PrintObjects( Option_t* opt )
+{
+  // Print all defined analysis objects (useful for debugging)
+
+  TIter next(fgModules);
+  TObject* obj;
+  while( (obj = next()) ) {
+    obj->Print(opt);
+  }
+}
+
+//_____________________________________________________________________________
 ClassImp(THaAnalysisObject)
 

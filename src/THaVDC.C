@@ -979,102 +979,107 @@ void THaVDC::FindBadTracks(TClonesArray& tracks)
 void THaVDC::Print(const Option_t* opt) const
 {
   THaTrackingDetector::Print(opt);
-  // Print out the optics matrices, to verify they make sense
-  printf("Matrix FP (t000, y000, p000)\n");
-  typedef vector<THaMatrixElement>::size_type vsiz_t;
-  for (vsiz_t i=0; i<fFPMatrixElems.size(); i++) {
-    const THaMatrixElement& m = fFPMatrixElems[i];
-    for (vsiz_t j=0; j<m.pw.size(); j++) {
-      printf("  %2d",m.pw[j]);
-    }
-    for (int j=0; j<m.order; j++) {
-      printf("  %g",m.poly[j]);
-    }
-    printf("\n");
-  }
 
-  printf("Transport Matrix:  D-terms\n");
-  for (vsiz_t i=0; i<fDMatrixElems.size(); i++) {
-    const THaMatrixElement& m = fDMatrixElems[i];
-    for (vsiz_t j=0; j<m.pw.size(); j++) {
-      printf("  %2d",m.pw[j]);
+  TString sopt(opt);
+  sopt.ToUpper();
+  if( sopt.Contains("ME") || sopt.Contains("MATRIX") ) {
+    // Print out the optics matrices, to verify they make sense
+    printf("Matrix FP (t000, y000, p000)\n");
+    typedef vector<THaMatrixElement>::size_type vsiz_t;
+    for (vsiz_t i=0; i<fFPMatrixElems.size(); i++) {
+      const THaMatrixElement& m = fFPMatrixElems[i];
+      for (vsiz_t j=0; j<m.pw.size(); j++) {
+	printf("  %2d",m.pw[j]);
+      }
+      for (int j=0; j<m.order; j++) {
+	printf("  %g",m.poly[j]);
+      }
+      printf("\n");
     }
-    for (int j=0; j<m.order; j++) {
-      printf("  %g",m.poly[j]);
-    }
-    printf("\n");
-  }
 
-  printf("Transport Matrix:  T-terms\n");
-  for (vsiz_t i=0; i<fTMatrixElems.size(); i++) {
-    const THaMatrixElement& m = fTMatrixElems[i];
-    for (vsiz_t j=0; j<m.pw.size(); j++) {
-      printf("  %2d",m.pw[j]);
+    printf("Transport Matrix:  D-terms\n");
+    for (vsiz_t i=0; i<fDMatrixElems.size(); i++) {
+      const THaMatrixElement& m = fDMatrixElems[i];
+      for (vsiz_t j=0; j<m.pw.size(); j++) {
+	printf("  %2d",m.pw[j]);
+      }
+      for (int j=0; j<m.order; j++) {
+	printf("  %g",m.poly[j]);
+      }
+      printf("\n");
     }
-    for (int j=0; j<m.order; j++) {
-      printf("  %g",m.poly[j]);
-    }
-    printf("\n");
-  }
 
-  printf("Transport Matrix:  Y-terms\n");
-  for (vsiz_t i=0; i<fYMatrixElems.size(); i++) {
-    const THaMatrixElement& m = fYMatrixElems[i];
-    for (vsiz_t j=0; j<m.pw.size(); j++) {
-      printf("  %2d",m.pw[j]);
+    printf("Transport Matrix:  T-terms\n");
+    for (vsiz_t i=0; i<fTMatrixElems.size(); i++) {
+      const THaMatrixElement& m = fTMatrixElems[i];
+      for (vsiz_t j=0; j<m.pw.size(); j++) {
+	printf("  %2d",m.pw[j]);
+      }
+      for (int j=0; j<m.order; j++) {
+	printf("  %g",m.poly[j]);
+      }
+      printf("\n");
     }
-    for (int j=0; j<m.order; j++) {
-      printf("  %g",m.poly[j]);
-    }
-    printf("\n");
-  }
 
-  printf("Transport Matrix:  YTA-terms (abs(theta))\n");
-  for (vsiz_t i=0; i<fYTAMatrixElems.size(); i++) {
-    const THaMatrixElement& m = fYTAMatrixElems[i];
-    for (vsiz_t j=0; j<m.pw.size(); j++) {
-      printf("  %2d",m.pw[j]);
+    printf("Transport Matrix:  Y-terms\n");
+    for (vsiz_t i=0; i<fYMatrixElems.size(); i++) {
+      const THaMatrixElement& m = fYMatrixElems[i];
+      for (vsiz_t j=0; j<m.pw.size(); j++) {
+	printf("  %2d",m.pw[j]);
+      }
+      for (int j=0; j<m.order; j++) {
+	printf("  %g",m.poly[j]);
+      }
+      printf("\n");
     }
-    for (int j=0; j<m.order; j++) {
-      printf("  %g",m.poly[j]);
-    }
-    printf("\n");
-  }
 
-  printf("Transport Matrix:  P-terms\n");
-  for (vsiz_t i=0; i<fPMatrixElems.size(); i++) {
-    const THaMatrixElement& m = fPMatrixElems[i];
-    for (vsiz_t j=0; j<m.pw.size(); j++) {
-      printf("  %2d",m.pw[j]);
+    printf("Transport Matrix:  YTA-terms (abs(theta))\n");
+    for (vsiz_t i=0; i<fYTAMatrixElems.size(); i++) {
+      const THaMatrixElement& m = fYTAMatrixElems[i];
+      for (vsiz_t j=0; j<m.pw.size(); j++) {
+	printf("  %2d",m.pw[j]);
+      }
+      for (int j=0; j<m.order; j++) {
+	printf("  %g",m.poly[j]);
+      }
+      printf("\n");
     }
-    for (int j=0; j<m.order; j++) {
-      printf("  %g",m.poly[j]);
-    }
-    printf("\n");
-  }
 
-  printf("Transport Matrix:  PTA-terms\n");
-  for (vsiz_t i=0; i<fPTAMatrixElems.size(); i++) {
-    const THaMatrixElement& m = fPTAMatrixElems[i];
-    for (vsiz_t j=0; j<m.pw.size(); j++) {
-      printf("  %2d",m.pw[j]);
+    printf("Transport Matrix:  P-terms\n");
+    for (vsiz_t i=0; i<fPMatrixElems.size(); i++) {
+      const THaMatrixElement& m = fPMatrixElems[i];
+      for (vsiz_t j=0; j<m.pw.size(); j++) {
+	printf("  %2d",m.pw[j]);
+      }
+      for (int j=0; j<m.order; j++) {
+	printf("  %g",m.poly[j]);
+      }
+      printf("\n");
     }
-    for (int j=0; j<m.order; j++) {
-      printf("  %g",m.poly[j]);
-    }
-    printf("\n");
-  }
 
-  printf("Matrix L\n");
-  for (vsiz_t i=0; i<fLMatrixElems.size(); i++) {
-    const THaMatrixElement& m = fLMatrixElems[i];
-    for (vsiz_t j=0; j<m.pw.size(); j++) {
-      printf("  %2d",m.pw[j]);
+    printf("Transport Matrix:  PTA-terms\n");
+    for (vsiz_t i=0; i<fPTAMatrixElems.size(); i++) {
+      const THaMatrixElement& m = fPTAMatrixElems[i];
+      for (vsiz_t j=0; j<m.pw.size(); j++) {
+	printf("  %2d",m.pw[j]);
+      }
+      for (int j=0; j<m.order; j++) {
+	printf("  %g",m.poly[j]);
+      }
+      printf("\n");
     }
-    for (int j=0; j<m.order; j++) {
-      printf("  %g",m.poly[j]);
+
+    printf("Matrix L\n");
+    for (vsiz_t i=0; i<fLMatrixElems.size(); i++) {
+      const THaMatrixElement& m = fLMatrixElems[i];
+      for (vsiz_t j=0; j<m.pw.size(); j++) {
+	printf("  %2d",m.pw[j]);
+      }
+      for (int j=0; j<m.order; j++) {
+	printf("  %g",m.poly[j]);
+      }
+      printf("\n");
     }
-    printf("\n");
   }
 
   return;
