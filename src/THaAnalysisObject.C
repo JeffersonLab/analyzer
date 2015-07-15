@@ -208,29 +208,59 @@ THaAnalysisObject* THaAnalysisObject::FindModule( const char* name,
   // Return pointer to valid object, else return NULL.
   // If do_error == true (default), also print error message and set fStatus
   // to kInitError.
-  // If do_error == false, do not test if object is initialized.
+  // If do_error == false, don't print error messages and not test if object is
+  // initialized.
+  //
+  // This function is intended to be called from physics module initialization
+  // routines.
 
-  static const char* const here = "FindModule()";
+  static const char* const here = "FindModule";
   static const char* const anaobj = "THaAnalysisObject";
 
-  EStatus save_status = fStatus;
-  if( do_error )
-    fStatus = kInitError;
   if( !name || !*name ) {
     if( do_error )
       Error( Here(here), "No module name given." );
+    fStatus = kInitError;
     return NULL;
   }
-  TObject* obj = fgModules->FindObject( name );
+
+  // Find the module in the list, comparing 'name' to the module's fPrefix
+  TIter next(fgModules);
+  TObject* obj = 0;
+  while( (obj = next()) ) {
+#ifdef NDEBUG
+    THaAnalysisObject* module = static_cast<THaAnalysisObject*>(obj);
+#else
+    THaAnalysisObject* module = dynamic_cast<THaAnalysisObject*>(obj);
+    assert(module);
+#endif
+    const char* cprefix = module->GetPrefix();
+    if( !cprefix )
+      module->MakePrefix();
+    if( !cprefix ) {
+      obj = 0;
+      break;
+    }
+    TString prefix(cprefix);
+    if( prefix.EndsWith(".") )
+      prefix.Chop();
+    if( prefix == name )
+      break;
+  }
   if( !obj ) {
     if( do_error )
       Error( Here(here), "Module %s does not exist.", name );
+    fStatus = kInitError;
     return NULL;
   }
+
+  // Type check (similar to dynamic_cast, except resolving the class name as
+  // a string at run time
   if( !obj->IsA()->InheritsFrom( anaobj )) {
     if( do_error )
       Error( Here(here), "Module %s (%s) is not a %s.",
 	     obj->GetName(), obj->GetTitle(), anaobj );
+    fStatus = kInitError;
     return NULL;
   }
   if( classname && *classname && strcmp(classname,anaobj) &&
@@ -238,6 +268,7 @@ THaAnalysisObject* THaAnalysisObject::FindModule( const char* name,
     if( do_error )
       Error( Here(here), "Module %s (%s) is not a %s.",
 	     obj->GetName(), obj->GetTitle(), classname );
+    fStatus = kInitError;
     return NULL;
   }
   THaAnalysisObject* aobj = static_cast<THaAnalysisObject*>( obj );
@@ -245,10 +276,10 @@ THaAnalysisObject* THaAnalysisObject::FindModule( const char* name,
     if( !aobj->IsOK() ) {
       Error( Here(here), "Module %s (%s) not initialized.",
 	     obj->GetName(), obj->GetTitle() );
+      fStatus = kInitError;
       return NULL;
     }
   }
-  fStatus = save_status;
   return aobj;
 }
 
