@@ -2100,11 +2100,11 @@ int Shower::Save( time_t start, const string& version ) const
 
   //TODO: chanmap
 
-  AddToMap( prefix+"ncols",         MakeValue(&fNcols), start, version );
-  AddToMap( prefix+"nrows",         MakeValue(&fNrows), start, version );
-  AddToMap( prefix+"blk1_pos",      MakeValue(fXY,2),  start, version );
-  AddToMap( prefix+"blk_spacings",  MakeValue(fDXY,2), start, version );
-  AddToMap( prefix+"emin",          MakeValue(&fEmin),  start, version );
+  AddToMap( prefix+"ncols",     MakeValue(&fNcols), start, version );
+  AddToMap( prefix+"nrows",     MakeValue(&fNrows), start, version );
+  AddToMap( prefix+"xy",        MakeValue(fXY,2),  start, version );
+  AddToMap( prefix+"dxdy",      MakeValue(fDXY,2), start, version );
+  AddToMap( prefix+"emin",      MakeValue(&fEmin),  start, version );
 
   AddToMap( prefix+"pedestals", MakeValueUnless(0.F,fPed,fNelem),  start, version );
   AddToMap( prefix+"gains",     MakeValueUnless(1.F,fGain,fNelem), start, version );

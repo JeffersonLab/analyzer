@@ -78,8 +78,8 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
     { "ncols",        &ncols,   kInt },
     { "nrows",        &nrows,   kInt },
     { "angle",        &angle,   kDouble, 0, 1 },
-    { "blk1_pos",     &xy,      kDoubleV, 2 },
-    { "blk_spacings", &dxy,     kDoubleV, 2 },
+    { "xy",           &xy,      kDoubleV, 2 },  // center pos of block 1
+    { "dxdy",         &dxy,     kDoubleV, 2 },  // dx and dy block spacings
     { "emin",         &fEmin,   kDouble },
     { 0 }
   };
