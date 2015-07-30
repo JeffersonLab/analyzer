@@ -44,8 +44,8 @@ Int_t THaRaster::ReadDatabase( const TDatime& date )
   const char* const here = "ReadDatabase";
 
   vector<Int_t> detmap;
-  Double_t zpos[3], raw2pos[18];
-  Float_t freq[2], rped[2], sped[2];  // FIXME: change to double
+  Double_t zpos[3], raw2posA[6], raw2posT[6], raw2posT[6];
+  Double_t freq[2], rped[2], sped[2];
 
   FILE* file = OpenFile( date );
   if( !file )
@@ -83,7 +83,9 @@ Int_t THaRaster::ReadDatabase( const TDatime& date )
       { "freqs",      freq,  kFloat, 2 },
       { "rast_peds",  rped,  kFloat, 2, 1 },
       { "slope_peds", sped,  kFloat, 2, 1 },
-      { "raw2pos",    raw2pos, kDouble, 18 },
+      { "raw2posA",   raw2posA, kDouble, 6 },
+      { "raw2posB",   raw2posB, kDouble, 6 },
+      { "raw2posT",   raw2posT, kDouble, 6 },
       { 0 }
     };
     err = LoadDB( file, date, calib_request, fPrefix );
@@ -96,26 +98,26 @@ Int_t THaRaster::ReadDatabase( const TDatime& date )
   fRasterPedestal.SetElements( rped );
   fSlopePedestal.SetElements( sped );
 
-  fPosOff[0].SetX(   raw2pos[0]);
-  fPosOff[0].SetY(   raw2pos[1]);
-  fRaw2Pos[0](0,0) = raw2pos[2];
-  fRaw2Pos[0](1,1) = raw2pos[3];
-  fRaw2Pos[0](0,1) = raw2pos[4];
-  fRaw2Pos[0](1,0) = raw2pos[5];
+  fPosOff[0].SetX(   raw2posA[0]);
+  fPosOff[0].SetY(   raw2posA[1]);
+  fRaw2Pos[0](0,0) = raw2posA[2];
+  fRaw2Pos[0](1,1) = raw2posA[3];
+  fRaw2Pos[0](0,1) = raw2posA[4];
+  fRaw2Pos[0](1,0) = raw2posA[5];
 
-  fPosOff[1].SetX(   raw2pos[6]);
-  fPosOff[1].SetY(   raw2pos[7]);
-  fRaw2Pos[1](0,0) = raw2pos[8];
-  fRaw2Pos[1](1,1) = raw2pos[9];
-  fRaw2Pos[1](0,1) = raw2pos[10];
-  fRaw2Pos[1](1,0) = raw2pos[11];
+  fPosOff[1].SetX(   raw2posB[0]);
+  fPosOff[1].SetY(   raw2posB[1]);
+  fRaw2Pos[1](0,0) = raw2posB[2];
+  fRaw2Pos[1](1,1) = raw2posB[3];
+  fRaw2Pos[1](0,1) = raw2posB[4];
+  fRaw2Pos[1](1,0) = raw2posB[5];
 
-  fPosOff[2].SetX(   raw2pos[12]);
-  fPosOff[2].SetY(   raw2pos[13]);
-  fRaw2Pos[2](0,0) = raw2pos[14];
-  fRaw2Pos[2](1,1) = raw2pos[15];
-  fRaw2Pos[2](0,1) = raw2pos[16];
-  fRaw2Pos[2](1,0) = raw2pos[17];
+  fPosOff[2].SetX(   raw2posT[0]);
+  fPosOff[2].SetY(   raw2posT[1]);
+  fRaw2Pos[2](0,0) = raw2posT[2];
+  fRaw2Pos[2](1,1) = raw2posT[3];
+  fRaw2Pos[2](0,1) = raw2posT[4];
+  fRaw2Pos[2](1,0) = raw2posT[5];
 
   return kOK;
 }

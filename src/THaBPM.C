@@ -73,7 +73,7 @@ Int_t THaBPM::ReadDatabase( const TDatime& date )
     DBRequest calib_request[] = {
       { "calib_rot",   &fCalibRot },
       { "pedestals",   pedestals, kFloat, 4, 1 },
-      { "rotations",   rotations, kFloat, 4, 1 },
+      { "rotmatrix",   rotations, kFloat, 4, 1 },
       { 0 }
     };
     err = LoadDB( file, date, calib_request, fPrefix );

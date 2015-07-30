@@ -52,7 +52,7 @@ static bool IsDBdate( const string& line, time_t& date );
 
 // Command line parameter defaults
 static int do_debug = 0, verbose = 0, do_file_copy = 1, do_subdirs = 0;
-static int do_clean = 1, do_verify = 1;
+static int do_clean = 1, do_verify = 1, do_dump = 0;
 static string srcdir;
 static string destdir;
 static const char* prgname = 0;
@@ -559,13 +559,19 @@ public:
   Detector( const string& name )
     : fName(name), fDetMap(new THaDetMap), fDetMapHasModel(false),
       fNelem(0), fAngle(0) /*, fXax(1.,0,0), fYax(0,1.,0), fZax(0,0,1.) */{
-    fSize[0] = fSize[1] = fSize[2] = kBig;
+    fSize[0] = fSize[1] = fSize[2] = 0.;
+    string::size_type pos = fName.find('.');
+    if( pos == string::npos )
+      pos = 0;
+    else
+      ++pos;
+    fRealName = fName.substr(pos);
   }
   virtual ~Detector() { delete fDetMap; }
 
   virtual void Clear() {
     fConfig = ""; fDetMap->Clear(); fDetMapHasModel = false;
-    fSize[0] = fSize[1] = fSize[2] = kBig;
+    fSize[0] = fSize[1] = fSize[2] = 0.;
     fAngle = 0; fOrigin.SetXYZ(0,0,0);
   }
   virtual int ReadDB( FILE* infile, time_t date_from, time_t date_until ) = 0;
@@ -584,7 +590,8 @@ protected:
   // }
   const char* Here( const char* here ) { return here; }
 
-  string      fName;
+  string      fName;    // Detector "name", actually the prefix without trailing dot
+  string      fRealName;// Actual detector name (top level dropped)
   TString     fConfig;  // TString for compatibility with old API
   THaDetMap*  fDetMap;
   bool        fDetMapHasModel;
@@ -668,7 +675,7 @@ private:
 
 // Global maps for detector types and names
 enum EDetectorType { kNone = 0, kKeep, kCopyFile, kCherenkov, kScintillator,
-		     kShower, kTotalShower, kVDC, kVDCeff };
+		     kShower, kTotalShower, kBPM, kRaster, kVDC, kVDCeff };
 typedef map<string,EDetectorType> NameTypeMap_t;
 static NameTypeMap_t detname_map;
 static NameTypeMap_t dettype_map;
@@ -683,8 +690,8 @@ struct StringToType_t {
 class Shower : public Detector {
 public:
   Shower( const string& name )
-    : Detector(name), fNChan(0), fChanMap(0), fPed(0), fGain(0) {}
-  virtual ~Shower() { DeleteChanMap(); DeleteArrays(); }
+    : Detector(name), fPed(0), fGain(0) {}
+  virtual ~Shower() { DeleteArrays(); }
 
   virtual int ReadDB( FILE* infile, time_t date_from, time_t date_until );
   virtual int Save( time_t start, const string& version = string() ) const;
@@ -692,8 +699,7 @@ public:
 
 private:
   // Mapping
-  UShort_t*  fNChan;
-  UShort_t** fChanMap;
+  vector<unsigned int> fChanMap;
 
   // Geometry, configuration
   Int_t      fNcols;
@@ -705,15 +711,54 @@ private:
   Float_t   *fPed, *fGain;
 
   void DeleteArrays() { delete [] fPed; delete [] fGain; }
-  void DeleteChanMap() {
-    delete [] fNChan; fNChan = 0;
-    if( fChanMap ) {
-      UShort_t mapsize = fDetMap->GetSize();
-      for( UShort_t i = 0; i<mapsize; i++ )
-	delete [] fChanMap[i];
-    }
-    delete [] fChanMap; fChanMap = 0;
-  }
+};
+
+//-----------------------------------------------------------------------------
+// TotalShower
+class TotalShower : public Detector {
+public:
+  TotalShower( const string& name ) : Detector(name) {}
+
+  virtual int ReadDB( FILE* infile, time_t date_from, time_t date_until );
+  virtual int Save( time_t start, const string& version = string() ) const;
+  virtual const char* GetClassName() const { return "TotalShower"; }
+
+private:
+  // Geometry, configuration
+  Float_t    fMaxDXY[2];
+};
+
+//-----------------------------------------------------------------------------
+// BPM
+class BPM : public Detector {
+public:
+  BPM( const string& name ) : Detector(name) {}
+
+  virtual int ReadDB( FILE* infile, time_t date_from, time_t date_until );
+  virtual int Save( time_t start, const string& version = string() ) const;
+  virtual const char* GetClassName() const { return "BPM"; }
+
+private:
+  Double_t fCalibRot;
+  Double_t fPed[4];
+  Double_t fRot[4];
+};
+
+//-----------------------------------------------------------------------------
+// Raster
+class Raster : public Detector {
+public:
+  Raster( const string& name ) : Detector(name) {}
+
+  virtual int ReadDB( FILE* infile, time_t date_from, time_t date_until );
+  virtual int Save( time_t start, const string& version = string() ) const;
+  virtual const char* GetClassName() const { return "Raster"; }
+  virtual bool SupportsTimestamps()  const { return true; }
+
+private:
+  Double_t fFreq[2], fRPed[2], fSPed[2];
+  Double_t fZpos[3];
+  Double_t fCalibA[6], fCalibB[6], fCalibT[6];
 };
 
 //-----------------------------------------------------------------------------
@@ -733,7 +778,11 @@ static Detector* MakeDetector( EDetectorType type, const string& name )
   case kShower:
     return new Shower(name);
   case kTotalShower:
-    return 0; //TODO
+    return new TotalShower(name);
+  case kBPM:
+    return new BPM(name);
+  case kRaster:
+    return new Raster(name);
   case kVDC:
     return 0; //TODO
   case kVDCeff:
@@ -824,8 +873,10 @@ static void DefaultMap()
     { "L.cer",      kCherenkov },
     { "L.aero1",    kCherenkov },
     { "L.aero2",    kCherenkov },
+    { "R.s0",       kScintillator },
     { "R.s1",       kScintillator },
     { "R.s2",       kScintillator },
+    { "L.s0",       kScintillator },
     { "L.s1",       kScintillator },
     { "L.s2",       kScintillator },
     { "R.sh",       kShower },
@@ -834,11 +885,42 @@ static void DefaultMap()
     { "L.ps",       kShower },
     { "L.prl1",     kShower },
     { "L.prl2",     kShower },
-    // { "R.ts",       kTotalShower },
-    // { "L.ts",       kTotalShower },
+    { "R.ts",       kTotalShower },
+    { "L.ts",       kTotalShower },
     // { "R.vdc",      kVDC },
     // { "L.vdc",      kVDC },
     // { "vdceff",     kVDCeff },
+    // Ignore top-level Beam apparatus db files - these are actually never read.
+    // Instead, the apparatus's detector read db_urb.BPMA.dat etc.
+    { "beam",       kNone },
+    { "rb",         kNone },
+    { "urb",        kNone },
+    // Apparently Bodo's database scheme was so confusing that people started
+    // defining BPM database for rastered beams, which only use the Raster
+    // detector, and Raster databases for unrastered beams, which only use
+    // BPM detectors. Ignore all these since they are never used.
+    { "rb.BPMA",    kNone },
+    { "rb.BPMB",    kNone },
+    { "Lrb.BPMA",   kNone },
+    { "Lrb.BPMB",   kNone },
+    { "Rrb.BPMA",   kNone },
+    { "Rrb.BPMB",   kNone },
+    { "urb.Raster", kNone },
+    { "Lurb.Raster",kNone },
+    { "Rurb.Raster",kNone },
+    // Actually used beam detectors follow here
+    { "urb.BPMA",   kBPM },
+    { "urb.BPMB",   kBPM },
+    { "Rurb.BPMA",  kBPM },
+    { "Rurb.BPMB",  kBPM },
+    { "Lurb.BPMA",  kBPM },
+    { "Lurb.BPMB",  kBPM }, 
+    { "BBurb.BPMA", kBPM },
+    { "BBurb.BPMB", kBPM }, 
+    { "rb.Raster",  kRaster },
+    { "Rrb.Raster", kRaster },
+    { "Lrb.Raster", kRaster },
+    { "BBrb.Raster",kRaster },
     { 0,            kNone }
   };
   for( StringToType_t* item = defaults; item->name; ++item ) {
@@ -1306,12 +1388,11 @@ int main( int argc, const char** argv )
     NameTypeMap_t::iterator it = detname_map.find(detname);
     if( it == detname_map.end() ) {
       //TODO: make behavior configurable
-      cerr << "WARNING: unknown detector name " << detname
-	   << ". Corresponding files will not be converted" << endl;
+      cerr << "WARNING: unknown detector name \"" << detname
+	   << "\", corresponding files will not be converted" << endl;
       continue;
     }
     EDetectorType type = (*it).second;
-    assert( type != kNone );
     Detector* det = MakeDetector( type, detname );
     if( !det )
       continue;
@@ -1391,7 +1472,8 @@ int main( int argc, const char** argv )
   // Special treatment for keys found in current directory: if requested
   // write the converted versions into a special subdirectory of target.
 
-  DumpMap();
+  if( do_dump )
+    DumpMap();
 
   if( PrepareOutputDir(destdir, subdirs) )
     exit(6);
@@ -1405,18 +1487,39 @@ int main( int argc, const char** argv )
 //-----------------------------------------------------------------------------
 static char* ReadComment( FILE* fp, char *buf, const int len )
 {
-  // Read database comment lines (those not starting with a space (' ')),
-  // returning the comment.
+  // Read fixed-format database comment lines. Data (non-comment) lines
+  // start with a space (' ') or a number (the latter is a modification of
+  // the original code).
+  // The return value is a pointer to the comment line.
   // If the line is data, then nothing is done and NULL is returned,
   // so one can search for the next data line with:
   //   while ( ReadComment(fp, buf, len) );
-  int ch = fgetc(fp);  // peak ahead one character
-  ungetc(ch,fp);
 
-  if (ch == EOF || ch == ' ')
-    return 0; // a real line of data
+  off_t pos = ftello(fp);
+  if( pos == -1 )
+    return 0;
 
-  return fgets(buf,len,fp); // read the comment;
+  char* s = fgets(buf,len,fp);
+  if( !s )
+    return 0;
+
+  int ch = *s;
+
+  if( ch == '#' )
+    goto comment;
+  if( ch == ' ' || strchr("0123456789",ch) )
+    goto data;
+  // Might be a negative number
+  if( ch == '-' && strlen(s) > 1 && strchr("0123456789",*(s+1)) )
+    goto data;
+
+ comment:
+  return s;
+
+ data:
+  // Data: rewind to start position
+  fseeko(fp, pos, SEEK_SET);
+  return 0;
 }
 
 //_____________________________________________________________________________
@@ -1664,7 +1767,7 @@ int Scintillator::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
   fDetMapHasModel = fHaveExtras = false;
 
   // Read data from database
-  while ( ReadComment( fi, buf, LEN ) ) {}
+  while( ReadComment(fi, buf, LEN) );
   Int_t n = fscanf ( fi, "%5d", &nelem );                  // Number of  paddles
   fgets ( buf, LEN, fi );
   if( n != 1 ) return kInitError;
@@ -1676,7 +1779,7 @@ int Scintillator::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
   // Read detector map. Unless a model-number is given
   // for the detector type, this assumes that the first half of the entries
   // are for ADCs and the second half, for TDCs.
-  while ( ReadComment( fi, buf, LEN ) ) {}
+  while( ReadComment(fi, buf, LEN) );
   int i = 0;
   fDetMap->Clear();
   while (1) {
@@ -1698,7 +1801,7 @@ int Scintillator::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
       return kInitError;
     }
   }
-  while ( ReadComment( fi, buf, LEN ) ) {}
+  while( ReadComment(fi, buf, LEN) );
 
   // Read geometry
   Float_t x,y,z;
@@ -1706,11 +1809,11 @@ int Scintillator::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
   if( n != 3 ) return kInitError;
   fOrigin.SetXYZ( x, y, z );
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  while ( ReadComment( fi, buf, LEN ) ) {}
+  while( ReadComment(fi, buf, LEN) );
   n = fscanf ( fi, "%15lf %15lf %15lf", fSize, fSize+1, fSize+2 ); // Sizes of det on X,Y,Z
   if( n != 3 ) return kInitError;
   fgets ( buf, LEN, fi );
-  while ( ReadComment( fi, buf, LEN ) ) {}
+  while( ReadComment(fi, buf, LEN) );
 
   n = fscanf ( fi, "%15f", &fAngle );               // Rotation angle of detector
   if( n != 1 ) return kInitError;
@@ -1780,45 +1883,45 @@ int Scintillator::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
   if( THaAnalysisObject::SeekDBdate( fi, datime ) == 0 && fConfig.Length() > 0 &&
       THaAnalysisObject::SeekDBconfig( fi, fConfig.Data() )) {}
 
-  while ( ReadComment( fi, buf, LEN ) ) {}
+  while( ReadComment(fi, buf, LEN) );
   // Read calibration data
   for (i=0;i<fNelem;i++) {
     n = fscanf(fi,"%15lf",fLOff+i);                // Left Pads TDC offsets
     if( n != 1 ) return kInitError;
   }
   fgets ( buf, LEN, fi );   // finish line
-  while ( ReadComment( fi, buf, LEN ) ) {}
+  while( ReadComment(fi, buf, LEN) );
   for (i=0;i<fNelem;i++) {
     n = fscanf(fi,"%15lf",fROff+i);                // Right Pads TDC offsets
     if( n != 1 ) return kInitError;
   }
   fgets ( buf, LEN, fi );   // finish line
-  while ( ReadComment( fi, buf, LEN ) ) {}
+  while( ReadComment(fi, buf, LEN) );
   for (i=0;i<fNelem;i++) {
     n = fscanf(fi,"%15lf",fLPed+i);                // Left Pads ADC Pedest-s
     if( n != 1 ) return kInitError;
   }
   fgets ( buf, LEN, fi );   // finish line, etc.
-  while ( ReadComment( fi, buf, LEN ) ) {}
+  while( ReadComment(fi, buf, LEN) );
   for (i=0;i<fNelem;i++) {
     n = fscanf(fi,"%15lf",fRPed+i);                // Right Pads ADC Pedes-s
     if( n != 1 ) return kInitError;
   }
   fgets ( buf, LEN, fi );
-  while ( ReadComment( fi, buf, LEN ) ) {}
+  while( ReadComment(fi, buf, LEN) );
   for (i=0;i<fNelem;i++) {
     n = fscanf (fi,"%15lf",fLGain+i);              // Left Pads ADC Coeff-s
     if( n != 1 ) return kInitError;
   }
   fgets ( buf, LEN, fi );
-  while ( ReadComment( fi, buf, LEN ) ) {}
+  while( ReadComment(fi, buf, LEN) );
   for (i=0;i<fNelem;i++) {
     n = fscanf (fi,"%15lf",fRGain+i);              // Right Pads ADC Coeff-s
     if( n != 1 ) return kInitError;
   }
   fgets ( buf, LEN, fi );
 
-  while ( ReadComment( fi, buf, LEN ) ) {}
+  while( ReadComment(fi, buf, LEN) );
 
   // Here on down, look ahead line-by-line
   // stop reading if a '[' is found on a line (corresponding to the next date-tag)
@@ -1829,25 +1932,25 @@ int Scintillator::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
   if( n != 1 ) return kInitError;
   fResolution = 3.*fTdc2T;      // guess at timing resolution
 
-  while ( ReadComment( fi, buf, LEN ) ) {}
+  while( ReadComment(fi, buf, LEN) );
   // Speed of light in the scintillator material
   if ( !fgets(buf, LEN, fi) ||  strchr(buf,'[') ) goto exit;
   n = sscanf(buf,"%15lf",&fCn);
   if( n != 1 ) return kInitError;
 
   // Attenuation length (inverse meters)
-  while ( ReadComment( fi, buf, LEN ) ) {}
+  while( ReadComment(fi, buf, LEN) );
   if ( !fgets ( buf, LEN, fi ) ||  strchr(buf,'[') ) goto exit;
   n = sscanf(buf,"%15lf",&fAttenuation);
   if( n != 1 ) return kInitError;
 
-  while ( ReadComment( fi, buf, LEN ) ) {}
+  while( ReadComment(fi, buf, LEN) );
   // Time-walk correction parameters
   if ( !fgets(buf, LEN, fi) ||  strchr(buf,'[') ) goto exit;
   n = sscanf(buf,"%15lf",&fAdcMIP);
   if( n != 1 ) return kInitError;
 
-  while ( ReadComment( fi, buf, LEN ) ) {}
+  while( ReadComment(fi, buf, LEN) );
   // timewalk parameters
   {
     int cnt=0;
@@ -1861,7 +1964,7 @@ int Scintillator::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
     }
   }
 
-  while ( ReadComment( fi, buf, LEN ) ) {}
+  while( ReadComment(fi, buf, LEN) );
   // trigger timing offsets
   {
     int cnt=0;
@@ -1902,9 +2005,6 @@ int Shower::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
     return kInitError;
   }
 
-  // Clear out the old detector map before reading a new one
-  DeleteChanMap();
-
   // Read detector map
   fDetMap->Clear();
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
@@ -1928,22 +2028,7 @@ int Shower::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
     return kInitError;
   }
 
-  fNChan = new UShort_t[ mapsize ];
-  fChanMap = new UShort_t*[ mapsize ];
-  for( UShort_t i=0; i < mapsize; i++ ) {
-    THaDetMap::Module* module = fDetMap->GetModule(i);
-    fNChan[i] = module->hi - module->lo + 1;
-    if( fNChan[i] > 0 )
-      fChanMap[i] = new UShort_t[ fNChan[i] ];
-    else {
-      Error( Here(here), "No channels defined for module %d.", i);
-      delete [] fNChan; fNChan = 0;
-      for( UShort_t j=0; j<i; j++ )
-	delete [] fChanMap[j];
-      delete [] fChanMap; fChanMap = 0;
-      return kInitError;
-    }
-  }
+  fChanMap.clear();
   // Read channel map
   //
   // Loosen the formatting restrictions: remove from each line the portion
@@ -1954,18 +2039,28 @@ int Shower::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
   *buf = '\0';
   char *ptr=buf;
   int nchar=0;
-  for ( UShort_t i = 0; i < mapsize; i++ ) {
-    for ( UShort_t j = 0; j < fNChan[i]; j++ ) {
-      while ( !strpbrk(ptr,"0123456789") ) {
-	fgets ( buf, LEN, fi );
-	if( (ptr = strchr(buf,'#')) ) *ptr = '\0';
-	ptr = buf;
-	nchar=0;
-      }
-      sscanf (ptr, "%6hu %n", *(fChanMap+i)+j, &nchar );
-      ptr += nchar;
+  bool trivial = true;
+  for ( UShort_t i = 0; i < nelem; i++ ) {
+    while ( !strpbrk(ptr,"0123456789") ) {
+      fgets ( buf, LEN, fi );
+      if( (ptr = strchr(buf,'#')) ) *ptr = '\0';
+      ptr = buf;
+      nchar=0;
     }
+    unsigned int chan;
+    sscanf (ptr, "%6u %n", &chan, &nchar );
+    fChanMap.push_back(chan);
+    if( trivial && fChanMap.size() > 1 && fChanMap[fChanMap.size()-1] != chan )
+      trivial = false;
+    ptr += nchar;
   }
+  if( fChanMap.size() != static_cast<vector<unsigned int>::size_type>(nelem) ) {
+    Error( Here(here), "Incorrect number of elements in mapping table = %d, "
+	   "need %d. Fix database.", (int)fChanMap.size(), nelem );
+    return kInitError;
+  }
+  if( trivial )
+    fChanMap.clear();
   fgets ( buf, LEN, fi );
 
   // Read geometry
@@ -2024,6 +2119,201 @@ int Shower::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
     n = fscanf (fi, "%15f",fGain+j);
     if( n != 1 ) return kInitError;
   }
+
+  return kOK;
+}
+
+//-----------------------------------------------------------------------------
+int TotalShower::ReadDB( FILE* fi, time_t, time_t )
+{
+  // Read legacy THaTotalShower database
+
+  const int LEN = 100;
+  char line[LEN];
+
+  fgets ( line, LEN, fi ); fgets ( line, LEN, fi );
+  int n = fscanf ( fi, "%15f %15f", fMaxDXY, fMaxDXY+1 );  // Max diff of shower centers
+  if( n != 2 ) return kInitError;
+
+  return kOK;
+}
+
+//-----------------------------------------------------------------------------
+int BPM::ReadDB( FILE* fi, time_t, time_t )
+{
+  // Read legacy THaBPM database
+
+  const char* const here = "ReadDatabase";
+
+  const int LEN=100;
+  char buf[LEN];
+  char *filestatus;
+  char keyword[LEN];
+
+  sprintf(keyword,"[%s_detmap]",fRealName.c_str());
+  Int_t n=strlen(keyword);
+  do {
+    filestatus=fgets( buf, LEN, fi);
+  } while ((filestatus!=NULL)&&(strncmp(buf,keyword,n)!=0));
+  if (filestatus==NULL) {
+    Error( Here(here), "Unexpected end of BPM configuration file");
+    return kInitError;
+  }
+
+  fDetMap->Clear();
+  int first_chan, crate, dummy, slot, first, last, modulid = 0;
+  do {
+    fgets( buf, LEN, fi);
+    n = sscanf(buf,"%6d %6d %6d %6d %6d %6d %6d",
+	       &first_chan, &crate, &dummy, &slot, &first, &last, &modulid);
+    if( n < 1 ) return kInitError;
+    if( n == 7 )
+      fDetMapHasModel = true;
+    if (first_chan>=0 && n >= 6 ) {
+      if ( fDetMap->AddModule(crate, slot, first, last, first_chan, modulid) <0 ) {
+	Error( Here(here), "Couldn't add BPM to DetMap");
+	return kInitError;
+      }
+    }
+  } while (first_chan>=0);
+  if( fDetMap->GetTotNumChan() != 4 ) {
+    Error( Here(here), "Invalid BPM detector map. Needs to define exactly 4 "
+	   "channels. Has %d.", fDetMap->GetTotNumChan() );
+    return kInitError;
+  }
+
+  sprintf(keyword,"[%s]",fRealName.c_str());
+  n=strlen(keyword);
+  do {
+    filestatus=fgets( buf, LEN, fi);
+  } while ((filestatus!=NULL)&&(strncmp(buf,keyword,n)!=0));
+  if (filestatus==NULL) {
+    Error( Here(here), "Unexpected end of BPM configuration file");
+    return kInitError;
+  }
+
+  double dummy1,dummy2,dummy3,dummy4,dummy5,dummy6;
+  fgets( buf, LEN, fi);
+  n = sscanf(buf,"%15lf %15lf %15lf %15lf",&dummy1,&dummy2,&dummy3,&dummy4);
+  if( n < 2 ) return kInitError;
+
+  // dummy 1 is the z position of the bpm. Used below to set fOrigin.
+
+  // calibration constant, historical
+  fCalibRot = dummy2;
+
+  // dummy3 and dummy4 are not used in this apparatus
+
+  // Pedestals
+  fgets( buf, LEN, fi);
+  n = sscanf(buf,"%15lf %15lf %15lf %15lf",fPed,fPed+1,fPed+2,fPed+3);
+  if( n != 4 ) return kInitError;
+
+  // 2x2 transformation matrix and x/y offset
+  fgets( buf, LEN, fi);
+  n = sscanf(buf,"%15lf %15lf %15lf %15lf %15lf %15lf",
+	     fRot,fRot+1,fRot+2,fRot+3,&dummy5,&dummy6);
+  if( n != 6 ) return kInitError;
+
+  fOrigin.SetXYZ(dummy5,dummy6,dummy1);
+
+  return kOK;
+}
+
+//-----------------------------------------------------------------------------
+int Raster::ReadDB( FILE* fi, time_t date, time_t )
+{
+  // Read legacy THaRaster database
+
+  const char* const here = "ReadDatabase";
+
+  const int LEN=100;
+  char buf[LEN];
+  char *filestatus;
+  char keyword[LEN];
+
+  // Seek our detmap section (e.g. "Raster_detmap")
+  sprintf(keyword,"[%s_detmap]",fRealName.c_str());
+  Int_t n=strlen(keyword);
+  do {
+    filestatus=fgets( buf, LEN, fi);
+  } while ((filestatus!=NULL)&&(strncmp(buf,keyword,n)!=0));
+  if (filestatus==NULL) {
+    Error( Here(here), "Unexpected end of raster configuration file");
+    return kInitError;
+  }
+
+  fDetMap->Clear();
+  int first_chan, crate, dummy, slot, first, last, modulid = 0;
+  do {
+    fgets( buf, LEN, fi);
+    n = sscanf(buf,"%6d %6d %6d %6d %6d %6d %6d",
+	       &first_chan, &crate, &dummy, &slot, &first, &last, &modulid);
+    if( n < 1 ) return kInitError;
+    if( n == 7 )
+      fDetMapHasModel = true;
+    if (first_chan>=0 && n >= 6 ) {
+      if ( fDetMap->AddModule(crate, slot, first, last, first_chan, modulid) <0 ) {
+	Error( Here(here), "Couldn't add Raster to DetMap");
+	return kInitError;
+      }
+    }
+  } while (first_chan>=0);
+  if( fDetMap->GetTotNumChan() != 4 ) {
+    Error( Here(here), "Invalid raster detector map. Needs to define exactly 4 "
+	   "channels. Has %d.", fDetMap->GetTotNumChan() );
+    return kInitError;
+  }
+
+  // Seek our database section
+  sprintf(keyword,"[%s]",fRealName.c_str());
+  n=strlen(keyword);
+  do {
+    filestatus=fgets( buf, LEN, fi);
+  } while ((filestatus!=NULL)&&(strncmp(buf,keyword,n)!=0));
+  if (filestatus==NULL) {
+    Error( Here(here), "Unexpected end of raster configuration file");
+    return kInitError;
+  }
+
+  fgets( buf, LEN, fi);
+  // NB: dummy1 is never used. Comment in old db files says it is "z-pos",
+  // which are read from the following lines - probably dummy1 is leftover junk
+  double dummy1;
+  n = sscanf(buf,"%15lf %15lf %15lf %15lf %15lf %15lf %15lf",
+	     &dummy1,fFreq,fFreq+1,fRPed,fRPed+1,fSPed,fSPed+1);
+  if( n != 7 ) return kInitError;
+
+  // z positions of BPMA, BPMB, and target reference point (usually 0)
+  fgets( buf, LEN, fi);
+  n = sscanf(buf,"%15lf",fZpos);
+  if( n != 1 ) return kInitError;
+  fgets( buf, LEN, fi);
+  n = sscanf(buf,"%15lf",fZpos+1);
+  if( n != 1 ) return kInitError;
+  fgets( buf, LEN, fi);
+  n = sscanf(buf,"%15lf",fZpos+2);
+  if( n != 1 ) return kInitError;
+
+  // Find timestamp, if any, for the raster constants
+  TDatime datime(date);
+  THaAnalysisObject::SeekDBdate( fi, datime, true );
+
+  // Raster constants: offx/y,amplx/y,slopex/y for BPMA, BPMB, target
+  fgets( buf, LEN, fi);
+  n = sscanf(buf,"%15lf %15lf %15lf %15lf %15lf %15lf",
+	     fCalibA,fCalibA+1,fCalibA+2,fCalibA+3,fCalibA+4,fCalibA+5);
+  if( n != 6 ) return kInitError;
+
+  fgets( buf, LEN, fi);
+  sscanf(buf,"%15lf %15lf %15lf %15lf %15lf %15lf",
+	 fCalibB,fCalibB+1,fCalibB+2,fCalibB+3,fCalibB+4,fCalibB+5);
+  if( n != 6 ) return kInitError;
+
+  fgets( buf, LEN, fi);
+  sscanf(buf,"%15lf %15lf %15lf %15lf %15lf %15lf",
+	 fCalibT,fCalibT+1,fCalibT+2,fCalibT+3,fCalibT+4,fCalibT+5);
+  if( n != 6 ) return kInitError;
 
   return kOK;
 }
@@ -2092,13 +2382,15 @@ int Scintillator::Save( time_t start, const string& version ) const
 //-----------------------------------------------------------------------------
 int Shower::Save( time_t start, const string& version ) const
 {
-  // Create database keys for current Cherenkov configuration data
+  // Create database keys for current Shower configuration data
 
   string prefix = fName + ".";
 
   Detector::Save( start, version );
 
-  //TODO: chanmap
+  if( !fChanMap.empty() )
+    AddToMap( prefix+"chanmap", MakeValue(&fChanMap[0], fChanMap.size()),
+	      start, version );
 
   AddToMap( prefix+"ncols",     MakeValue(&fNcols), start, version );
   AddToMap( prefix+"nrows",     MakeValue(&fNrows), start, version );
@@ -2108,6 +2400,56 @@ int Shower::Save( time_t start, const string& version ) const
 
   AddToMap( prefix+"pedestals", MakeValueUnless(0.F,fPed,fNelem),  start, version );
   AddToMap( prefix+"gains",     MakeValueUnless(1.F,fGain,fNelem), start, version );
+
+  return 0;
+}
+
+//-----------------------------------------------------------------------------
+int TotalShower::Save( time_t start, const string& version ) const
+{
+  // Create database keys for current TotalShower configuration data
+
+  string prefix = fName + ".";
+
+  //  Detector::Save( start, version );
+
+  AddToMap( prefix+"max_dxdy",  MakeValue(fMaxDXY,2), start, version );
+
+  return 0;
+}
+
+//-----------------------------------------------------------------------------
+int BPM::Save( time_t start, const string& version ) const
+{
+  // Create database keys for current TotalShower configuration data
+
+  string prefix = fName + ".";
+
+  Detector::Save( start, version );
+
+  AddToMap( prefix+"calib_rot",  MakeValue(&fCalibRot), start, version );
+  AddToMap( prefix+"pedestals",  MakeValueUnless(0.,fPed,4), start, version );
+  AddToMap( prefix+"rotmatrix",  MakeValueUnless(0.,fRot,4), start, version );
+
+  return 0;
+}
+
+//-----------------------------------------------------------------------------
+int Raster::Save( time_t start, const string& version ) const
+{
+  // Create database keys for current TotalShower configuration data
+
+  string prefix = fName + ".";
+
+  Detector::Save( start, version );
+
+  AddToMap( prefix+"zpos",        MakeValue(fZpos,3), start, version );
+  AddToMap( prefix+"freqs",       MakeValue(fFreq,2), start, version );
+  AddToMap( prefix+"rast_peds",   MakeValueUnless(0.,fRPed,2), start, version );
+  AddToMap( prefix+"slope_peds",  MakeValueUnless(0.,fSPed,2), start, version );
+  AddToMap( prefix+"raw2posA",    MakeValue(fCalibA,6), start, version );
+  AddToMap( prefix+"raw2posB",    MakeValue(fCalibB,6), start, version );
+  AddToMap( prefix+"raw2posT",    MakeValue(fCalibT,6), start, version );
 
   return 0;
 }
@@ -2714,102 +3056,6 @@ int CopyFile::AddToMap( const string& key, const string& value, time_t start,
 
 
 
-// ---- THaTotalShower ----
-
-  fgets ( line, LEN, fi ); fgets ( line, LEN, fi );
-  fscanf ( fi, "%15f %15f", &fMaxDx, &fMaxDy );  // Max diff of shower centers
-
-// ---- end TotalShower --------------
-
-
-// ----- THaBPM ---------
-
-  const int LEN=100;
-  char buf[LEN];
-  char *filestatus;
-  char keyword[LEN];
-
-  FILE* fi = OpenFile( date );
-  if( !fi) return kInitError;
-
-  // okay, this needs to be changed, but since i dont want to re- or pre-invent
-  // the wheel, i will keep it ugly and read in my own configuration file with
-  // a very fixed syntax:
-
-  sprintf(keyword,"[%s_detmap]",GetName());
-  Int_t n=strlen(keyword);
-  do {
-    filestatus=fgets( buf, LEN, fi);
-  } while ((filestatus!=NULL)&&(strncmp(buf,keyword,n)!=0));
-  if (filestatus==NULL) {
-    Error( Here(here), "Unexpected end of BPM configuration file");
-    fclose(fi);
-    return kInitError;
-  }
-
-  // again that is not really nice, but since it will be changed anyhow:
-  // i dont check each time for end of file, needs to be improved
-
-  fDetMap->Clear();
-  int first_chan, crate, dummy, slot, first, last, modulid;
-  do {
-    fgets( buf, LEN, fi);
-    sscanf(buf,"%6d %6d %6d %6d %6d %6d %6d",
-	   &first_chan, &crate, &dummy, &slot, &first, &last, &modulid);
-    if (first_chan>=0) {
-      if ( fDetMap->AddModule (crate, slot, first, last, first_chan )<0) {
-	Error( Here(here), "Couldnt add BPM to DetMap. Good bye, blue sky, good bye!");
-	fclose(fi);
-	return kInitError;
-      }
-    }
-  } while (first_chan>=0);
-
-
-  sprintf(keyword,"[%s]",GetName());
-  n=strlen(keyword);
-  do {
-    filestatus=fgets( buf, LEN, fi);
-  } while ((filestatus!=NULL)&&(strncmp(buf,keyword,n)!=0));
-  if (filestatus==NULL) {
-    Error( Here("ReadDataBase()"), "Unexpected end of BPM configuration file");
-    fclose(fi);
-    return kInitError;
-  }
-
-  double dummy1,dummy2,dummy3,dummy4,dummy5,dummy6;
-  fgets( buf, LEN, fi);
-  sscanf(buf,"%15lf %15lf %15lf %15lf",&dummy1,&dummy2,&dummy3,&dummy4);
-
-  fOffset(2)=dummy1;  // z position of the bpm
-  fCalibRot=dummy2;   // calibration constant, historical,
-		      // using 0.01887 results in matrix elements
-		      // between 0.0 and 1.0
-		      // dummy3 and dummy4 are not used in this
-		      // apparatus, but might be useful for the struck
-
-  fgets( buf, LEN, fi);
-  sscanf(buf,"%15lf %15lf %15lf %15lf",&dummy1,&dummy2,&dummy3,&dummy4);
-
-  fPedestals(0)=dummy1;
-  fPedestals(1)=dummy2;
-  fPedestals(2)=dummy3;
-  fPedestals(3)=dummy4;
-
-  fgets( buf, LEN, fi);
-  sscanf(buf,"%15lf %15lf %15lf %15lf %15lf %15lf",
-	 &dummy1,&dummy2,&dummy3,&dummy4,&dummy5,&dummy6);
-
-  fRot2HCSPos(0,0)=dummy1;
-  fRot2HCSPos(0,1)=dummy2;
-  fRot2HCSPos(1,0)=dummy3;
-  fRot2HCSPos(1,1)=dummy4;
-
-
-  fOffset(0)=dummy5;
-  fOffset(1)=dummy6;
-
-// ---- end THaBPM ----
 
 
 //--- THaCoincTime ----
@@ -2842,7 +3088,7 @@ int CopyFile::AddToMap( const string& key, const string& value, time_t start,
 
     Int_t crate, slot, first, last;
 
-    while ( ReadComment( fi, buf, LEN ) ) {}
+    while( ReadComment(fi, buf, LEN) );
 
     fgets ( buf, LEN, fi );
 
@@ -2903,122 +3149,6 @@ int CopyFile::AddToMap( const string& key, const string& value, time_t start,
 
 // --- end THaCoincTime ----
 
-// --- THaRaster -----
-
-  const int LEN=100;
-  char buf[LEN];
-  char *filestatus;
-  char keyword[LEN];
-
-  FILE* fi = OpenFile( date );
-  if( !fi ) return kFileError;
-
-  // okay, this needs to be changed, but since i dont want to re- or pre-invent
-  // the wheel, i will keep it ugly and read in my own configuration file with
-  // a very fixed syntax:
-
-  // Seek our detmap section (e.g. "Raster_detmap")
-  sprintf(keyword,"[%s_detmap]",GetName());
-  Int_t n=strlen(keyword);
-
-  do {
-    filestatus=fgets( buf, LEN, fi);
-  } while ((filestatus!=NULL)&&(strncmp(buf,keyword,n)!=0));
-  if (filestatus==NULL) {
-    Error( Here("ReadDataBase()"), "Unexpected end of raster configuration file");
-    fclose(fi);
-    return kInitError;
-  }
-
-  // again that is not really nice, but since it will be changed anyhow:
-  // i dont check each time for end of file, needs to be improved
-
-  fDetMap->Clear();
-  int first_chan, crate, dummy, slot, first, last, modulid;
-
-  do {
-    fgets( buf, LEN, fi);
-    sscanf(buf,"%6d %6d %6d %6d %6d %6d %6d",
-	   &first_chan, &crate, &dummy, &slot, &first, &last, &modulid);
-    if (first_chan>=0) {
-      if ( fDetMap->AddModule (crate, slot, first, last, first_chan )<0) {
-	Error( Here(here), "Couldnt add Raster to DetMap. Good bye, blue sky, good bye!");
-	fclose(fi);
-	return kInitError;
-      }
-    }
-  } while (first_chan>=0);
-
-  // Seek our database section
-  sprintf(keyword,"[%s]",GetName());
-  n=strlen(keyword);
-  do {
-    filestatus=fgets( buf, LEN, fi);
-  } while ((filestatus!=NULL)&&(strncmp(buf,keyword,n)!=0));
-  if (filestatus==NULL) {
-    Error( Here("ReadDataBase()"), "Unexpected end of raster configuration file");
-    fclose(fi);
-    return kInitError;
-  }
-  double dummy1,dummy2,dummy3,dummy4,dummy5,dummy6,dummy7;
-  fgets( buf, LEN, fi);
-  sscanf(buf,"%15lf %15lf %15lf %15lf %15lf %15lf %15lf",
-	 &dummy1,&dummy2,&dummy3,&dummy4,&dummy5,&dummy6,&dummy7);
-  fRasterFreq(0)=dummy2;
-  fRasterFreq(1)=dummy3;
-
-  fRasterPedestal(0)=dummy4;
-  fRasterPedestal(1)=dummy5;
-
-  fSlopePedestal(0)=dummy6;
-  fSlopePedestal(1)=dummy7;
-
-  fgets( buf, LEN, fi);
-  sscanf(buf,"%15lf",&dummy1);
-  fPosOff[0].SetZ(dummy1);
-  fgets( buf, LEN, fi);
-  sscanf(buf,"%15lf",&dummy1);
-  fPosOff[1].SetZ(dummy1);
-  fgets( buf, LEN, fi);
-  sscanf(buf,"%15lf",&dummy1);
-  fPosOff[2].SetZ(dummy1);
-
-  // Find timestamp, if any, for the raster constants.
-  // Give up and rewind to current file position on any non-matching tag.
-  // Timestamps should be in ascending order
-  SeekDBdate( fi, date, true );
-
-  fgets( buf, LEN, fi);
-  sscanf(buf,"%15lf %15lf %15lf %15lf %15lf %15lf",
-	 &dummy1,&dummy2,&dummy3,&dummy4,&dummy5,&dummy6);
-  fRaw2Pos[0](0,0)=dummy3;
-  fRaw2Pos[0](1,1)=dummy4;
-  fRaw2Pos[0](0,1)=dummy5;
-  fRaw2Pos[0](1,0)=dummy6;
-  fPosOff[0].SetX(dummy1);
-  fPosOff[0].SetY(dummy2);
-
-  fgets( buf, LEN, fi);
-  sscanf(buf,"%15lf %15lf %15lf %15lf %15lf %15lf",
-	 &dummy1,&dummy2,&dummy3,&dummy4,&dummy5,&dummy6);
-  fRaw2Pos[1](0,0)=dummy3;
-  fRaw2Pos[1](1,1)=dummy4;
-  fRaw2Pos[1](0,1)=dummy5;
-  fRaw2Pos[1](1,0)=dummy6;
-  fPosOff[1].SetX(dummy1);
-  fPosOff[1].SetY(dummy2);
-
-  fgets( buf, LEN, fi);
-  sscanf(buf,"%15lf %15lf %15lf %15lf %15lf %15lf",
-	 &dummy1,&dummy2,&dummy3,&dummy4,&dummy5,&dummy6);
-  fRaw2Pos[2](0,0)=dummy3;
-  fRaw2Pos[2](1,1)=dummy4;
-  fRaw2Pos[2](0,1)=dummy5;
-  fRaw2Pos[2](1,0)=dummy6;
-  fPosOff[2].SetX(dummy1);
-  fPosOff[2].SetY(dummy2);
-
-// ----- end Raster ----
 
 // ----- THaTriggerTime ----
 
@@ -3034,7 +3164,7 @@ int CopyFile::AddToMap( const string& key, const string& value, time_t start,
   // however, this is not unexpected since most of the time it is un-necessary
   if( !fi ) return kOK;
 
-  while ( ReadComment( fi, buf, LEN ) ) {}
+  while( ReadComment(fi, buf, LEN) );
 
   // Read in the time offsets, in the format below, to be subtracted from
   // the times measured in other detectors.

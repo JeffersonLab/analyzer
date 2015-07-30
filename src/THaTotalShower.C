@@ -177,15 +177,18 @@ Int_t THaTotalShower::ReadDatabase( const TDatime& date )
   if( !fi ) return kFileError;
 
   // Read configuration parameters
+  Double_t dxdy[2];
   DBRequest request[] = {
-    { "max_dx",  &fMaxDx },
-    { "max_dy",  &fMaxDy },
+    { "max_dxdy",  dxdy, kDouble, 2 },
     { 0 }
   };
   Int_t err = LoadDB( fi, date, request, fPrefix );
   fclose(fi);
   if( err )
     return err;
+
+  fMaxDx = dxdy[0];
+  fMaxDy = dxdy[1];
 
   fIsInit = true;
   return kOK;
