@@ -238,11 +238,11 @@ THaAnalysisObject* THaAnalysisObject::FindModule( const char* name,
     assert(module);
 #endif
     const char* cprefix = module->GetPrefix();
-    if( !cprefix )
-      module->MakePrefix();
     if( !cprefix ) {
-      obj = 0;
-      break;
+      module->MakePrefix();
+      cprefix = module->GetPrefix();
+      if( !cprefix )
+	continue;
     }
     TString prefix(cprefix);
     if( prefix.EndsWith(".") )
