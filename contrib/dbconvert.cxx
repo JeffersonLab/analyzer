@@ -1672,7 +1672,7 @@ int Cherenkov::ReadDB( FILE* fi, time_t /* date */, time_t /* date_until */ )
 {
   // Read legacy Cherenkov database
 
-  const char* const here = "ReadDatabase";
+  const char* const here = "Cherenkov::ReadDB";
 
   const int LEN = 256;
   char buf[LEN];
@@ -1759,7 +1759,7 @@ int Scintillator::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
 {
   // Read legacy Scintillator database
 
-  const char* const here = "ReadDatabase";
+  const char* const here = "Scintillator::ReadDB";
   const int LEN = 256;
   char buf[LEN];
   Int_t nelem;
@@ -1987,7 +1987,7 @@ int Shower::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
 {
   // Read legacy shower database
 
-  const char* const here = "ReadDatabase";
+  const char* const here = "Shower::ReadDB";
   const int LEN = 100;
   char buf[LEN];
 
@@ -2143,7 +2143,7 @@ int BPM::ReadDB( FILE* fi, time_t, time_t )
 {
   // Read legacy THaBPM database
 
-  const char* const here = "ReadDatabase";
+  const char* const here = "BPM::ReadDB";
 
   const int LEN=100;
   char buf[LEN];
@@ -2225,7 +2225,7 @@ int Raster::ReadDB( FILE* fi, time_t date, time_t )
 {
   // Read legacy THaRaster database
 
-  const char* const here = "ReadDatabase";
+  const char* const here = "Raster::ReadDB";
 
   const int LEN=100;
   char buf[LEN];
@@ -2531,7 +2531,7 @@ int CopyFile::AddToMap( const string& key, const string& value, time_t start,
   if( !file ) return kFileError;
 
   // load global VDC parameters
-  static const char* const here = "ReadDatabase";
+  const char* const here = "VDC::ReadDB";
   const int LEN = 200;
   char buff[LEN];
 
