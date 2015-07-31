@@ -1031,8 +1031,8 @@ public:
 	if( err < 0 )
 	  return err;
 	n_add = err;
-	if( n_add > 0 )
- 	  fSubdirs.push_back(fname);
+	// if( n_add > 0 )  // Must keep the directory, even if empty!
+	fSubdirs.push_back(fname);
       }
     }
     return n_add;
@@ -1109,8 +1109,6 @@ static int GetFilenames( const string& srcdir, const time_t start_time,
   assert( !srcdir.empty() );
 
   return ForAllFilesInDir( srcdir, CopyDBFileName(filenames, subdirs, start_time) );
-
-  return 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -1292,7 +1290,8 @@ private:
 static int InsertDefaultFiles( const vector<string>& subdirs,
 			       multiset<Filenames_t>& filenames )
 {
-  // If there are default files, select the one that the analyzer would pick
+  // If there are default files, select the one that the analyzer would pick,
+  // i.e. give preference to topdir/DEFAULT/ over topdir/
   Filenames_t defval(0);
   pair<fiter_t,fiter_t> defs = filenames.equal_range(defval);
   int ndef = distance( defs.first, defs.second );
@@ -1304,12 +1303,13 @@ static int InsertDefaultFiles( const vector<string>& subdirs,
     deffile = defs.first->path;
     break;
   case 2:
+    --defs.second;
     if( defs.first->path.find("/DEFAULT/db_") != string::npos ) {
-      filenames.erase( defs.second );
       deffile = defs.first->path;
+      filenames.erase( defs.second );
     } else if( defs.second->path.find("/DEFAULT/db_") != string::npos ) {
-      filenames.erase( defs.first );
       deffile = defs.second->path;
+      filenames.erase( defs.first );
     } else {
       cerr << "ERROR: Unrecognized default file location: " << endl
 	   << defs.first->path << ", " << defs.second->path << endl
@@ -1326,7 +1326,9 @@ static int InsertDefaultFiles( const vector<string>& subdirs,
   // If there is a default file and any date-coded subdirectories, we must
   // check if this detector has a file in each such subdirectory. For any
   // subdirectory where there is no file, the default file applies.
-  if( !deffile.empty() ) {
+  bool have_dated_subdirs = !subdirs.empty() &&
+    (subdirs.size() > 1 || subdirs[0] != "DEFAULT");
+  if( !deffile.empty() && have_dated_subdirs ) {
     vector<string> missing;
     MatchesOneOf match(filenames);
     remove_copy_if( ALL(subdirs), back_inserter(missing), match );
@@ -1370,9 +1372,6 @@ int main( int argc, const char** argv )
   if( GetFilenames(srcdir, 0, filemap, subdirs) < 0 )
     exit(4);  // Error message already printed
 
-  bool have_dated_subdirs = !subdirs.empty() &&
-    (subdirs.size() > 1 || subdirs[0] != "DEFAULT");
-
   // Assign a parser to each database file, based on the name mapping info.
   // Let the parsers translate each file to database keys.
   // If the original parser supported in-file timestamps, pre-parse the
@@ -1397,7 +1396,7 @@ int main( int argc, const char** argv )
     if( !det )
       continue;
 
-    if( have_dated_subdirs && InsertDefaultFiles(subdirs, filenames) )
+    if( InsertDefaultFiles(subdirs, filenames) )
       exit(8);
 
     fiter_t lastf = filenames.insert( Filenames_t(numeric_limits<time_t>::max()) );
