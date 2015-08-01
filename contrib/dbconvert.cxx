@@ -275,14 +275,23 @@ template <class T> string MakeValue( const T* array, int size = 0 )
 }
 
 //-----------------------------------------------------------------------------
+static inline string MakeDetmapElemValue( const THaDetMap* detmap, int n,
+					  int extras )
+{
+  ostringstream ostr;
+  THaDetMap::Module* d = detmap->GetModule(n);
+  ostr << d->crate << " " << d->slot << " " << d->lo << " " << d->hi;
+  if( extras >= 1 ) ostr << " " << d->first;
+  if( extras >= 2 ) ostr << " " << d->GetModel();
+  return ostr.str();
+}
+
+//-----------------------------------------------------------------------------
 template<> string MakeValue( const THaDetMap* detmap, int extras )
 {
   ostringstream ostr;
   for( Int_t i = 0; i < detmap->GetSize(); ++i ) {
-    THaDetMap::Module* d = detmap->GetModule(i);
-    ostr << d->crate << " " << d->slot << " " << d->lo << " " << d->hi;
-    if( extras >= 1 ) ostr << " " << d->first;
-    if( extras >= 2 ) ostr << " " << d->GetModel();
+    ostr << MakeDetmapElemValue( detmap, i, extras );
     if( i+1 != detmap->GetSize() ) ostr << " ";
   }
   return ostr.str();
@@ -675,7 +684,8 @@ private:
 
 // Global maps for detector types and names
 enum EDetectorType { kNone = 0, kKeep, kCopyFile, kCherenkov, kScintillator,
-		     kShower, kTotalShower, kBPM, kRaster, kVDC, kVDCeff };
+		     kShower, kTotalShower, kBPM, kRaster, kCoincTime,
+		     kVDC, kVDCeff };
 typedef map<string,EDetectorType> NameTypeMap_t;
 static NameTypeMap_t detname_map;
 static NameTypeMap_t dettype_map;
@@ -762,6 +772,22 @@ private:
 };
 
 //-----------------------------------------------------------------------------
+// CoincTime
+class CoincTime : public Detector {
+public:
+  CoincTime( const string& name ) : Detector(name) {
+    fTdcOff[0] = fTdcOff[1] = 0;
+  }
+  virtual int ReadDB( FILE* infile, time_t date_from, time_t date_until );
+  virtual int Save( time_t start, const string& version = string() ) const;
+  virtual const char* GetClassName() const { return "CoincTime"; }
+
+private:
+  Double_t fTdcRes[2], fTdcOff[2];
+  TString fTdcLabels[2];
+};
+
+//-----------------------------------------------------------------------------
 static Detector* MakeDetector( EDetectorType type, const string& name )
 {
   Detector* det = 0;
@@ -783,6 +809,8 @@ static Detector* MakeDetector( EDetectorType type, const string& name )
     return new BPM(name);
   case kRaster:
     return new Raster(name);
+  case kCoincTime:
+    return new CoincTime(name);
   case kVDC:
     return 0; //TODO
   case kVDCeff:
@@ -887,6 +915,7 @@ static void DefaultMap()
     { "L.prl2",     kShower },
     { "R.ts",       kTotalShower },
     { "L.ts",       kTotalShower },
+    { "CT",         kCoincTime },
     // { "R.vdc",      kVDC },
     // { "L.vdc",      kVDC },
     // { "vdceff",     kVDCeff },
@@ -894,7 +923,11 @@ static void DefaultMap()
     // Instead, the apparatus's detector read db_urb.BPMA.dat etc.
     { "beam",       kNone },
     { "rb",         kNone },
+    { "Rrb",        kNone },
+    { "Lrb",        kNone },
     { "urb",        kNone },
+    { "Rurb",       kNone },
+    { "Lurb",       kNone },
     // Apparently Bodo's database scheme was so confusing that people started
     // defining BPM database for rastered beams, which only use the Raster
     // detector, and Raster databases for unrastered beams, which only use
@@ -914,9 +947,9 @@ static void DefaultMap()
     { "Rurb.BPMA",  kBPM },
     { "Rurb.BPMB",  kBPM },
     { "Lurb.BPMA",  kBPM },
-    { "Lurb.BPMB",  kBPM }, 
+    { "Lurb.BPMB",  kBPM },
     { "BBurb.BPMA", kBPM },
-    { "BBurb.BPMB", kBPM }, 
+    { "BBurb.BPMB", kBPM },
     { "rb.Raster",  kRaster },
     { "Rrb.Raster", kRaster },
     { "Lrb.Raster", kRaster },
@@ -2318,13 +2351,78 @@ int Raster::ReadDB( FILE* fi, time_t date, time_t )
 }
 
 //-----------------------------------------------------------------------------
+int CoincTime::ReadDB( FILE* fi, time_t, time_t )
+{
+  // Read legacy THaCoincTime database
+
+  const char* const here = "CoincTime::ReadDB";
+
+  const int LEN = 200;
+  char buf[LEN];
+
+  fDetMap->Clear();
+  fDetMapHasModel = true;
+
+  Int_t k = 0;
+  while ( 1 ) {
+    Int_t crate, slot, first, model, nread;
+    Double_t tres;       // TDC resolution
+    Double_t toff = 0.;  // TDC offset (in seconds)
+    char label[21];      // string label for TDC = Stop_by_Start
+
+    while( ReadComment(fi, buf, LEN) );
+    fgets ( buf, LEN, fi );
+    nread = sscanf( buf, "%6d %6d %6d %6d %15lf %20s %15lf",
+		    &crate, &slot, &first, &model, &tres, label, &toff );
+    if( crate < 0 ) break;
+    if( k > 1 ) {
+      Warning( Here(here), "Too many detector map entries. Must be exactly 2.");
+      break;
+    }
+    // Heuristic check for old-format database (before ca. 2003)
+    if( tres > 1. ) {
+      // Old format (no TDC offset, but redundant "last" channel)
+      Int_t last;
+      nread = sscanf( buf, "%6d %6d %6d %6d %6d %15lf %20s",
+		      &crate, &slot, &first, &last, &model, &tres, label );
+      // Turn labels like "L_by_R" into "LbyR"
+      char* p = strstr(label, "_by_");
+      if( p && p != label && *(p+4) ) {
+	char *q = p+1, *r = p;
+	while( *q ) { if( q == p+3 ) ++q; *(r++) = *(q++); } *r = 0;
+      }
+    } else {
+      // New format (already read above)
+      // Turn labels like "ct_LbyR" into "LbyR"
+      char *q = label+3;
+      while( *q ) { *(q-3) = *q; ++q; } *(q-3) = 0;
+    }
+    if( nread < 6 ) {
+      Error( Here(here), "Invalid detector map! Need at least 6 columns." );
+      return kInitError;
+    }
+    if( fDetMap->AddModule( crate, slot, first, first, k, model ) < 0 ) {
+      Error( Here(here), "Too many DetMap modules (maximum allowed - %d).",
+	     THaDetMap::kDetMapSize);
+      return kInitError;
+    }
+    fTdcRes[k] = tres;
+    fTdcOff[k] = toff;
+    fTdcLabels[k] = label;
+    k++;
+  }
+
+  return kOK;
+}
+
+//-----------------------------------------------------------------------------
 int Detector::Save( time_t start, const string& version ) const
 {
   string prefix = fName + ".";
   int flags = 1;
   if( fDetMapHasModel )  flags++;
   AddToMap( prefix+"detmap",   MakeValue(fDetMap,flags), start, version, 4+flags );
-  AddToMap( prefix+"nelem",    MakeValue(&fNelem), start, version );
+  AddToMap( prefix+"nelem",    MakeValueUnless(0,&fNelem), start, version );
   AddToMap( prefix+"angle",    MakeValueUnless(0.F,&fAngle), start, version );
   AddToMap( prefix+"position", MakeValueUnless(0.,&fOrigin), start, version );
   AddToMap( prefix+"size",     MakeValueUnless(0.,fSize,3), start, version );
@@ -2449,6 +2547,24 @@ int Raster::Save( time_t start, const string& version ) const
   AddToMap( prefix+"raw2posA",    MakeValue(fCalibA,6), start, version );
   AddToMap( prefix+"raw2posB",    MakeValue(fCalibB,6), start, version );
   AddToMap( prefix+"raw2posT",    MakeValue(fCalibT,6), start, version );
+
+  return 0;
+}
+
+//-----------------------------------------------------------------------------
+int CoincTime::Save( time_t start, const string& version ) const
+{
+  // Create database keys for current TotalShower configuration data
+
+  string prefix0 = fName + "." + fTdcLabels[0].Data() + ".";
+  string prefix1 = fName + "." + fTdcLabels[1].Data() + ".";
+
+  AddToMap( prefix0+"detmap", MakeDetmapElemValue(fDetMap,0,2), start, version );
+  AddToMap( prefix0+"tdc_res",    MakeValue(fTdcRes), start, version );
+  AddToMap( prefix0+"tdc_offset", MakeValueUnless(0.,fTdcOff), start, version );
+  AddToMap( prefix1+"detmap", MakeDetmapElemValue(fDetMap,0,2), start, version );
+  AddToMap( prefix1+"tdc_res",    MakeValue(fTdcRes+1), start, version );
+  AddToMap( prefix1+"tdc_offset", MakeValueUnless(0.,fTdcOff+1), start, version );
 
   return 0;
 }
@@ -3053,100 +3169,6 @@ int CopyFile::AddToMap( const string& key, const string& value, time_t start,
   fIsInit = true;
   fclose(file);
 
-
-
-
-
-//--- THaCoincTime ----
-
-  const int LEN = 200;
-  char buf[LEN];
-
-  FILE* fi = OpenFile( date );
-  if( !fi ) {
-    // look for more general coincidence-timing database
-    fi = OpenFile( "CT", date );
-  }
-  if ( !fi )
-    return kFileError;
-
-  //  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  fDetMap->Clear();
-
-  int cnt = 0;
-
-  fTdcRes[0] = fTdcRes[1] = 0.;
-  fTdcOff[0] = fTdcOff[1] = 0.;
-
-  while ( 1 ) {
-    Int_t model;
-    Float_t tres;   //  TDC resolution
-    Float_t toff;   //  TDC offset (in seconds)
-    char label[21]; // string label for TDC = Stop_by_Start
-		    // Label is a space-holder to be used in the future
-
-    Int_t crate, slot, first, last;
-
-    while( ReadComment(fi, buf, LEN) );
-
-    fgets ( buf, LEN, fi );
-
-    int nread = sscanf( buf, "%6d %6d %6d %6d %15f %20s %15f",
-			&crate, &slot, &first, &model, &tres, label, &toff );
-    if ( crate < 0 ) break;
-    if ( nread < 6 ) {
-      Error( Here(here), "Invalid detector map! Need at least 6 columns." );
-      fclose(fi);
-      return kInitError;
-    }
-    last = first; // only one channel per entry (one ct measurement)
-    // look for the label in our list of spectrometers
-    int ind = -1;
-    for (int i=0; i<2; i++) {
-      // enforce logical channel number 0 == 2by1, etc.
-      // matching between fTdcLabels and the detector map
-      if ( fTdcLabels[i] == label ) {
-	ind = i;
-	break;
-      }
-    }
-    if (ind <0) {
-      TString listoflabels;
-      for (int i=0; i<2; i++) {
-	listoflabels += " " + fTdcLabels[i];
-      }
-      listoflabels += '\0';
-      Error( Here(here), "Invalid detector map! The timing measurement %s does not"
-	     " correspond\n to the spectrometers. Expected one of \n"
-	     "%s",label, listoflabels.Data());
-      fclose(fi);
-      return kInitError;
-    }
-
-    if( fDetMap->AddModule( crate, slot, first, last, ind, model ) < 0 ) {
-      Error( Here(here), "Too many DetMap modules (maximum allowed - %d).",
-	     THaDetMap::kDetMapSize);
-      fclose(fi);
-      return kInitError;
-    }
-
-    if ( ind+(last-first) < 2 )
-      for (int j=ind; j<=ind+(last-first); j++)  {
-	fTdcRes[j] = tres;
-	if (nread>6) fTdcOff[j] = toff;
-      }
-    else
-      Warning( Here(here), "Too many entries. Expected 2 but found %d",
-	       cnt+1);
-    cnt+= (last-first+1);
-  }
-
-  fclose(fi);
-
-  return kOK;
-}
-
-// --- end THaCoincTime ----
 
 
 // ----- THaTriggerTime ----

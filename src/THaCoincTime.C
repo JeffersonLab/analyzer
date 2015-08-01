@@ -51,12 +51,12 @@ THaCoincTime::THaCoincTime( const char* name,
   if (ch_name1 && strlen(ch_name1)>0) {
     fTdcLabels[0] = ch_name1;
   } else {
-    fTdcLabels[0] = Form("ct_%sby%s",spec2,spec1);
+    fTdcLabels[0] = Form("%sby%s",spec2,spec1);
   } 
   if (ch_name2 && strlen(ch_name2)>0) {
     fTdcLabels[1] = ch_name2;
   } else {
-    fTdcLabels[1] = Form("ct_%sby%s",spec1,spec2);
+    fTdcLabels[1] = Form("%sby%s",spec1,spec2);
   }
 
   // set aside the memory
@@ -175,7 +175,7 @@ Int_t THaCoincTime::ReadDatabase( const TDatime& date )
   fDetMap->Clear();
 
   // the list of detector names to use is in fTdcLabels, set
-  // at creation time as "ct_{spec2Name}by{spec1Name}"
+  // at creation time as "{spec2Name}by{spec1Name}"
   // and the inverse
 
   Int_t err = 0;
