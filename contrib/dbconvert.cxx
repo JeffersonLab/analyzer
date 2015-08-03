@@ -57,6 +57,7 @@ static string srcdir;
 static string destdir;
 static const char* prgname = 0;
 static char* mapfile = 0;
+static string current_filename;
 
 static struct poptOption options[] = {
   //  POPT_AUTOHELP
@@ -597,7 +598,40 @@ protected:
   //   fYax.SetXYZ( 0.0, 1.0, 0.0 );
   //   fZax = fXax.Cross(fYax);
   // }
-  const char* Here( const char* here ) { return here; }
+  const char* Here( const char* here ) {
+    if( !here ) return "";
+    fErrmsg  = here;
+    fErrmsg += "(file=\"";
+    fErrmsg += current_filename.c_str();
+    fErrmsg += "\")";
+    return fErrmsg.Data();
+  }
+  int ErrPrint( FILE* fi, const char* here )
+  {
+    ostringstream msg;
+    msg << "Unexpected data at file position " << ftello(fi);
+    Error( Here(here), msg.str().c_str() );
+    return kInitError;
+  }
+
+  // Bits for flags parameter of ReadBlock()
+  enum kReadBlockFlags {
+    kQuietOnErrors      = BIT(0),
+    kQuietOnTooMany     = BIT(1),
+    kQuietOnTooFew      = BIT(2),
+    kNoNegativeValues   = BIT(3),
+    kRequireGreaterZero = BIT(4),
+    kDisallowDataGuess  = BIT(5),
+    kWarnOnDataGuess    = BIT(6),
+    kErrOnTooManyValues = BIT(7),
+    kStopAtNval         = BIT(8),
+    kStopAtSection      = BIT(9)
+  };
+  enum kReadBlockRetvals {
+    kSuccess = 0, kNoValues = -1, kTooFewValues = -2, kTooManyValues = -3,
+    kFileError = -4, kNegativeFound = -5, kLessEqualZeroFound = -6 };
+  template <class T>
+  int ReadBlock( FILE* fi, T* data, int nval, const char* here, int flags = 0 );
 
   string      fName;    // Detector "name", actually the prefix without trailing dot
   string      fRealName;// Actual detector name (top level dropped)
@@ -606,8 +640,13 @@ protected:
   bool        fDetMapHasModel;
   Int_t       fNelem;
   Double_t    fSize[3];
-  Float_t     fAngle;
+  Double_t    fAngle;
   TVector3    fOrigin;//, fXax, fYax, fZax;
+
+private:
+  bool TestBit(int flags, int bit) { return (flags & bit) != 0; }
+
+  TString     fErrmsg;
 };
 
 //-----------------------------------------------------------------------------
@@ -706,6 +745,8 @@ public:
   virtual int ReadDB( FILE* infile, time_t date_from, time_t date_until );
   virtual int Save( time_t start, const string& version = string() ) const;
   virtual const char* GetClassName() const { return "Shower"; }
+  virtual bool SupportsTimestamps()  const { return true; }
+  virtual bool SupportsVariations()  const { return true; }
 
 private:
   // Mapping
@@ -1254,6 +1295,7 @@ static Int_t GetLine( FILE* file, char* buf, size_t bufsiz, string& line )
 
   char* r = buf;
   line.clear();
+  line.reserve(bufsiz);
   while( (r = fgets(buf, bufsiz, file)) ) {
     char* c = strchr(buf, '\n');
     if( c )
@@ -1420,8 +1462,8 @@ int main( int argc, const char** argv )
     NameTypeMap_t::iterator it = detname_map.find(detname);
     if( it == detname_map.end() ) {
       //TODO: make behavior configurable
-      cerr << "WARNING: unknown detector name \"" << detname
-	   << "\", corresponding files will not be converted" << endl;
+      // cerr << "WARNING: unknown detector name \"" << detname
+      // 	   << "\", corresponding files will not be converted" << endl;
       continue;
     }
     EDetectorType type = (*it).second;
@@ -1444,6 +1486,7 @@ int main( int argc, const char** argv )
 	perror(ss.str().c_str());
 	continue;
       }
+      current_filename = path;
 
       // Parse the file for any timestamps and "configurations" (=variations)
       set<time_t> timestamps;
@@ -1467,13 +1510,15 @@ int main( int argc, const char** argv )
 	  if( date_from  < val_from  )  date_from  = val_from;
 	  if( date_until > val_until )  date_until = val_until;
 	  rewind(fi);
-	  if( det->ReadDB(fi,date_from,date_until) )
-	    cerr << "Error reading " << path << " as " << det->GetClassName()
-		 << endl;
-	  else {
-	    cout << "Read " << path << endl;
+	  if( det->ReadDB(fi,date_from,date_until) == 0 ) {
+	  // } else {
+	  //   cout << "Read " << path << endl;
 	    //TODO: support variations
 	    det->Save( date_from );
+	  }
+	  else {
+	    cerr << "Error reading " << path << " as " << det->GetClassName()
+		 << endl;
 	  }
 	}
       }
@@ -1516,6 +1561,7 @@ int main( int argc, const char** argv )
   return 0;
 }
 
+//#if 0
 //-----------------------------------------------------------------------------
 static char* ReadComment( FILE* fp, char *buf, const int len )
 {
@@ -1553,6 +1599,7 @@ static char* ReadComment( FILE* fp, char *buf, const int len )
   fseeko(fp, pos, SEEK_SET);
   return 0;
 }
+//#endif
 
 //_____________________________________________________________________________
 static bool IsDBdate( const string& line, time_t& date )
@@ -1608,6 +1655,129 @@ static Int_t IsDBkey( const string& line, string& key, string& text )
   text = ln;
 
   return 1;
+}
+
+
+//-----------------------------------------------------------------------------
+template <class T>
+int Detector::ReadBlock( FILE* fi, T* data, int nval, const char* here, int flags )
+{
+  // Read exactly 'nval' values of type T from file 'fi' into array 'data'.
+  // Skip initial comment lines and comments at the end of each line.
+  // Comment lines are lines that start with non-whitespace.
+  // Data values may be spread over multiple lines. Each data line should
+  // start with whitespace. A comment line after data lines ends parsing.
+  // Error conditions: Not enough or too many data values in block
+  // Optionally: value < 0 or <= 0 encountered
+  // Warning if: comment line actually appears to be data (starts with
+  // a digit or "-" followed by a digit.
+
+  const char* const digits = "01234567890";
+  const int LEN = 128;
+  char buf[LEN];
+  string line;
+  int nread = 0;
+  bool got_data = false, maybe_data = false, found_section = false;
+  off_t pos, pos_on_entry = ftello(fi);
+  std::less<T> std_less;  // to suppress compiler warnings "< 0 is always false"
+
+  errno = 0;
+  while( GetLine(fi,buf,LEN,line) == 0 ) {
+    int c = line[0];
+    maybe_data = (c && strchr(digits,c)) ||
+      (c == '-' && line.length()>1 && strchr(digits,line[1]));
+    if( maybe_data && TestBit(flags,kWarnOnDataGuess) )
+      Warning( Here(here), "Suspicious data line:\n \"%s\"\n"
+	       " Should start with whitespace. Check input file.",
+	       line.c_str() );
+
+    if( c == ' ' || c == '\t' ||
+	(maybe_data && !TestBit(flags,kDisallowDataGuess)) ) {
+      // Data
+      if( nval <= 0 ) {
+	fseeko(fi,pos,SEEK_SET);
+	return kSuccess;
+      }
+      got_data = true;
+      istringstream is(line.c_str());
+      while( is && nread < nval ) {
+	is >> data[nread];
+	if( !is.fail() ) {
+	  if( TestBit(flags,kNoNegativeValues) && std_less(data[nread],T(0)) ) {
+	    if( !TestBit(flags,kQuietOnErrors) )
+	      Error( Here(here), "Negative values not allowed here:\n \"%s\"",
+		     line.c_str() );
+	    fseeko(fi,pos_on_entry,SEEK_SET);
+	    return kNegativeFound;
+	  }
+	  if( TestBit(flags,kRequireGreaterZero) && data[nread] <= 0 ) {
+	    if( !TestBit(flags,kQuietOnErrors) )
+	      Error( Here(here), "Values must be greater then zero:\n \"%s\"",
+		     line.c_str() );
+	    fseeko(fi,pos_on_entry,SEEK_SET);
+	    return kLessEqualZeroFound;
+	  }
+	  ++nread;
+	}
+	if( is.eof() )
+	  break;
+      }
+      if( nread == nval ) {
+	T x;
+	is >> x;
+	if( !is.fail() ) {
+	  if( !TestBit(flags,kQuietOnErrors) && !TestBit(flags,kQuietOnTooMany) ) {
+	    ostringstream msg;
+	    msg << "Too many values (expected " << nval << ") at file position "
+		<< ftello(fi) << endl
+		<< " Line: \"" << line << "\"";
+	    if( TestBit(flags,kErrOnTooManyValues) )
+	      Error( Here(here), msg.str().c_str() );
+	    else
+	      Warning( Here(here), msg.str().c_str() );
+	  }
+	  fseeko(fi,pos_on_entry,SEEK_SET);
+	  return kTooManyValues;
+	}
+	if( TestBit(flags,kStopAtNval) ) {
+	  // If requested, stop here, regardless of whether there is another data line
+	  return kSuccess;
+	}
+      }
+    } else {
+      // Comment
+      found_section = TestBit(flags,kStopAtSection)
+	&& line.find('[') != string::npos;
+      if( got_data || found_section ) {
+	if( nread < nval )
+	  goto toofew;
+	// Success
+	// Rewind to start of terminating line
+	fseeko(fi,pos,SEEK_SET);
+	return kSuccess;
+      }
+    }
+    pos = ftello(fi);
+  }
+  if( errno ) {
+    perror( Here(here) );
+    return kFileError;
+  }
+  if( nread < nval ) {
+  toofew:
+    if( !TestBit(flags,kQuietOnErrors) && !TestBit(flags,kQuietOnTooFew) ) {
+      ostringstream msg;
+      msg << "Too few values (expected " << nval << ") at file position "
+	  << ftello(fi) << endl
+	  << " Line: \"" << line << "\"";
+      Error( Here(here), msg.str().c_str() );
+    }
+    fseeko(fi,pos_on_entry,SEEK_SET);
+    if( nread == 0 )
+      return kNoValues;
+    return kTooFewValues;
+  }
+  return kSuccess;
 }
 
 //-----------------------------------------------------------------------------
@@ -1709,29 +1879,24 @@ int Cherenkov::ReadDB( FILE* fi, time_t /* date */, time_t /* date_until */ )
   const int LEN = 256;
   char buf[LEN];
   Int_t nelem;
+  Int_t flags = kErrOnTooManyValues|kWarnOnDataGuess;
 
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  Int_t n = fscanf ( fi, "%5d", &nelem );   // Number of mirrors
-  if( n != 1 ) return kInitError;
-  if( nelem <= 0 ) {
-    Error( Here(here), "Invalid number of mirrors = %d. Must be > 0.", nelem );
+  if( ReadBlock(fi,&nelem,1,here,flags|kNoNegativeValues) )
     return kInitError;
-  }
 
   // Read detector map.  Assumes that the first half of the entries
   // is for ADCs, and the second half, for TDCs
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  int i = 0;
+  while( ReadComment(fi,buf,LEN) );
   fDetMap->Clear();
   fDetMapHasModel = false;
   while (1) {
     Int_t crate, slot, first, last, first_chan,model;
     int pos;
     fgets ( buf, LEN, fi );
-    n = sscanf( buf, "%6d %6d %6d %6d %6d %n",
-		&crate, &slot, &first, &last, &first_chan, &pos );
+    int n = sscanf( buf, "%6d %6d %6d %6d %6d %n",
+		    &crate, &slot, &first, &last, &first_chan, &pos );
     if( crate < 0 ) break;
-    if( n < 5 ) return kInitError;
+    if( n < 5 ) return ErrPrint(fi,here);
     model=atoi(buf+pos); // if there is no model number given, set to zero
     if( model != 0 )
       fDetMapHasModel = true;
@@ -1741,21 +1906,24 @@ int Cherenkov::ReadDB( FILE* fi, time_t /* date */, time_t /* date_until */ )
       return kInitError;
     }
   }
-  fgets ( buf, LEN, fi );
+  if( fDetMap->GetTotNumChan() != 2*nelem ) {
+    Error( Here(here), "Database inconsistency.\n Defined %d channels in detector map, "
+	   "but have %d total channels (%d mirrors with 1 ADC and 1 TDC each)",
+	   fDetMap->GetTotNumChan(), 2*nelem, nelem );
+    return kInitError;
+  }
 
   // Read geometry
-  Float_t x,y,z;
-  n = fscanf ( fi, "%15f %15f %15f", &x, &y, &z );        // Detector's X,Y,Z coord
-  if( n != 3 ) return kInitError;
-  fOrigin.SetXYZ( x, y, z );
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  n = fscanf ( fi, "%15lf %15lf %15lf", fSize, fSize+1, fSize+2 );   // Sizes of det on X,Y,Z
-  if( n != 3 ) return kInitError;
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
+  Double_t dvals[3];
+  if( ReadBlock(fi,dvals,3,here,flags) )                   // Detector's X,Y,Z coord
+    return kInitError;
+  fOrigin.SetXYZ( dvals[0], dvals[1], dvals[2] );
 
-  n = fscanf ( fi, "%15f", &fAngle );                    // Rotation angle of det
-  if( n != 1 ) return kInitError;
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
+  if( ReadBlock(fi,fSize,3,here,flags|kNoNegativeValues) ) // Size of det in X,Y,Z
+    return kInitError;
+
+  if( ReadBlock(fi,&fAngle,1,here,flags) )                 // Rotation angle of det
+    return kInitError;
 
   // Calibration data
   if( nelem != fNelem ) {
@@ -1767,21 +1935,14 @@ int Cherenkov::ReadDB( FILE* fi, time_t /* date */, time_t /* date_until */ )
   }
 
   // Read calibrations
-  for (i=0;i<fNelem;i++) {
-    n = fscanf( fi, "%15f", fOff+i );               // TDC offsets
-    if( n != 1 ) return kInitError;
-  }
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  for (i=0;i<fNelem;i++) {
-    n = fscanf( fi, "%15f", fPed+i );               // ADC pedestals
-    if( n != 1 ) return kInitError;
-  }
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  for (i=0;i<fNelem;i++) {
-    n = fscanf( fi, "%15f", fGain+i);               // ADC gains
-    if( n != 1 ) return kInitError;
-  }
-  fgets ( buf, LEN, fi );
+  if( ReadBlock(fi,fOff,fNelem,here,flags) )
+    return kInitError;
+
+  if( ReadBlock(fi,fPed,fNelem,here,flags|kNoNegativeValues) )
+    return kInitError;
+
+  if( ReadBlock(fi,fGain,fNelem,here,flags|kNoNegativeValues) )
+    return kInitError;
 
   return kOK;
 }
@@ -1795,24 +1956,20 @@ int Scintillator::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
   const int LEN = 256;
   char buf[LEN];
   Int_t nelem;
+  Int_t flags = kErrOnTooManyValues|kWarnOnDataGuess;
+  int n;
 
   fDetMapHasModel = fHaveExtras = false;
 
   // Read data from database
-  while( ReadComment(fi, buf, LEN) );
-  Int_t n = fscanf ( fi, "%5d", &nelem );                  // Number of  paddles
-  fgets ( buf, LEN, fi );
-  if( n != 1 ) return kInitError;
-  if( nelem <= 0 ) {
-    Error( Here(here), "Invalid number of paddles = %d. Must be > 0.", nelem );
+
+  if( ReadBlock(fi,&nelem,1,here,flags|kNoNegativeValues) )
     return kInitError;
-  }
 
   // Read detector map. Unless a model-number is given
   // for the detector type, this assumes that the first half of the entries
   // are for ADCs and the second half, for TDCs.
   while( ReadComment(fi, buf, LEN) );
-  int i = 0;
   fDetMap->Clear();
   while (1) {
     int pos;
@@ -1822,34 +1979,34 @@ int Scintillator::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
     n = sscanf( buf, "%6d %6d %6d %6d %6d %n",
 		&crate, &slot, &first, &last, &first_chan, &pos );
     if( crate < 0 ) break;
-    if( n < 5 ) return kInitError;
+    if( n < 5 ) return ErrPrint(fi,here);
     model=atoi(buf+pos); // if there is no model number given, set to zero
     if( model != 0 )
       fDetMapHasModel = true;
-
     if( fDetMap->AddModule( crate, slot, first, last, first_chan, model ) < 0 ) {
       Error( Here(here), "Too many DetMap modules (maximum allowed - %d).",
 	     THaDetMap::kDetMapSize);
       return kInitError;
     }
   }
-  while( ReadComment(fi, buf, LEN) );
+  if( fDetMap->GetTotNumChan() != 4*nelem ) {
+    Error( Here(here), "Database inconsistency.\n Defined %d channels in detector map, "
+	   "but have %d total channels (%d paddles with 2 ADCs and 2 TDCs each)",
+	   fDetMap->GetTotNumChan(), 4*nelem, nelem );
+    return kInitError;
+  }
 
   // Read geometry
-  Float_t x,y,z;
-  n = fscanf ( fi, "%15f %15f %15f", &x, &y, &z );   // Detector's X,Y,Z coord
-  if( n != 3 ) return kInitError;
-  fOrigin.SetXYZ( x, y, z );
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  while( ReadComment(fi, buf, LEN) );
-  n = fscanf ( fi, "%15lf %15lf %15lf", fSize, fSize+1, fSize+2 ); // Sizes of det on X,Y,Z
-  if( n != 3 ) return kInitError;
-  fgets ( buf, LEN, fi );
-  while( ReadComment(fi, buf, LEN) );
+  Double_t dvals[3];
+  if( ReadBlock(fi,dvals,3,here,flags) )                   // Detector's X,Y,Z coord
+    return kInitError;
+  fOrigin.SetXYZ( dvals[0], dvals[1], dvals[2] );
 
-  n = fscanf ( fi, "%15f", &fAngle );               // Rotation angle of detector
-  if( n != 1 ) return kInitError;
-  fgets ( buf, LEN, fi );
+  if( ReadBlock(fi,fSize,3,here,flags|kNoNegativeValues) ) // Size of det in X,Y,Z
+    return kInitError;
+
+  if( ReadBlock(fi,&fAngle,1,here,flags) )                 // Rotation angle of det
+    return kInitError;
 
   // Calibration data
   if( nelem != fNelem ) {
@@ -1863,7 +2020,7 @@ int Scintillator::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
     fRGain = new Double_t[ fNelem ];
     fTrigOff = new Double_t[ fNelem ];
 
-    fNTWalkPar = 2*fNelem; // 1 paramter per paddle
+    fNTWalkPar = 2*fNelem; // 1 paramter per PMT
     fTWalkPar = new Double_t[ fNTWalkPar ];
   }
   memset(fTrigOff,0,fNelem*sizeof(fTrigOff[0]));
@@ -1915,102 +2072,88 @@ int Scintillator::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
   if( THaAnalysisObject::SeekDBdate( fi, datime ) == 0 && fConfig.Length() > 0 &&
       THaAnalysisObject::SeekDBconfig( fi, fConfig.Data() )) {}
 
-  while( ReadComment(fi, buf, LEN) );
   // Read calibration data
-  for (i=0;i<fNelem;i++) {
-    n = fscanf(fi,"%15lf",fLOff+i);                // Left Pads TDC offsets
-    if( n != 1 ) return kInitError;
-  }
-  fgets ( buf, LEN, fi );   // finish line
-  while( ReadComment(fi, buf, LEN) );
-  for (i=0;i<fNelem;i++) {
-    n = fscanf(fi,"%15lf",fROff+i);                // Right Pads TDC offsets
-    if( n != 1 ) return kInitError;
-  }
-  fgets ( buf, LEN, fi );   // finish line
-  while( ReadComment(fi, buf, LEN) );
-  for (i=0;i<fNelem;i++) {
-    n = fscanf(fi,"%15lf",fLPed+i);                // Left Pads ADC Pedest-s
-    if( n != 1 ) return kInitError;
-  }
-  fgets ( buf, LEN, fi );   // finish line, etc.
-  while( ReadComment(fi, buf, LEN) );
-  for (i=0;i<fNelem;i++) {
-    n = fscanf(fi,"%15lf",fRPed+i);                // Right Pads ADC Pedes-s
-    if( n != 1 ) return kInitError;
-  }
-  fgets ( buf, LEN, fi );
-  while( ReadComment(fi, buf, LEN) );
-  for (i=0;i<fNelem;i++) {
-    n = fscanf (fi,"%15lf",fLGain+i);              // Left Pads ADC Coeff-s
-    if( n != 1 ) return kInitError;
-  }
-  fgets ( buf, LEN, fi );
-  while( ReadComment(fi, buf, LEN) );
-  for (i=0;i<fNelem;i++) {
-    n = fscanf (fi,"%15lf",fRGain+i);              // Right Pads ADC Coeff-s
-    if( n != 1 ) return kInitError;
-  }
-  fgets ( buf, LEN, fi );
 
-  while( ReadComment(fi, buf, LEN) );
+  // Most scintillator databases have two data lines in each section, one for left,
+  // one for right paddles, without a separator comment. Hence we must read the first
+  // line without the check for "too many values".
+
+  // Left pads TDC offsets
+  Int_t err = ReadBlock(fi,fLOff,fNelem,here,flags|kStopAtNval|kQuietOnTooMany);
+  if( err ) {
+    if( fNelem > 1 || err != kTooManyValues )
+      return kInitError;
+    // Attempt to recover S0 databases with nelem == 1 that have L/R values
+    // on a single line
+    Double_t dval[2];
+    if( ReadBlock(fi,dval,2,here,flags) )
+      return kInitError;
+    fLOff[0] = dval[0];
+    fROff[0] = dval[1];
+  } else {
+    // Right pads TDC offsets
+    if( ReadBlock(fi,fROff,fNelem,here,flags) )
+      return kInitError;
+  }
+
+  // Left pads ADC pedestals
+  err = ReadBlock(fi,fLPed,fNelem,here,flags|kNoNegativeValues|kStopAtNval|kQuietOnTooMany);
+  if( err ) {
+    if( fNelem > 1 || err != kTooManyValues )
+      return kInitError;
+    Double_t dval[2];
+    if( ReadBlock(fi,dval,2,here,flags|kNoNegativeValues) )
+      return kInitError;
+    fLPed[0] = dval[0];
+    fRPed[0] = dval[1];
+  } else {
+    // Right pads ADC pedestals
+    if( ReadBlock(fi,fRPed,fNelem,here,flags|kNoNegativeValues) )
+      return kInitError;
+  }
+
+  // Left pads ADC gains
+  err = ReadBlock(fi,fLGain,fNelem,here,flags|kNoNegativeValues|kStopAtNval|kQuietOnTooMany);
+  if( err ) {
+    if( fNelem > 1 || err != kTooManyValues )
+      return kInitError;
+    Double_t dval[2];
+    if( ReadBlock(fi,dval,2,here,flags|kNoNegativeValues) )
+      return kInitError;
+    fLGain[0] = dval[0];
+    fRGain[0] = dval[1];
+  } else {
+    // Right pads ADC gains
+    if( ReadBlock(fi,fRGain,fNelem,here,flags|kNoNegativeValues) )
+      return kInitError;
+  }
 
   // Here on down, look ahead line-by-line
   // stop reading if a '[' is found on a line (corresponding to the next date-tag)
-  // read in TDC resolution (s/channel)
-  if ( ! fgets(buf, LEN, fi) || strchr(buf,'[') ) goto exit;
-  fHaveExtras = true;
-  n = sscanf(buf,"%15lf",&fTdc2T);
-  if( n != 1 ) return kInitError;
-  fResolution = 3.*fTdc2T;      // guess at timing resolution
 
-  while( ReadComment(fi, buf, LEN) );
-  // Speed of light in the scintillator material
-  if ( !fgets(buf, LEN, fi) ||  strchr(buf,'[') ) goto exit;
-  n = sscanf(buf,"%15lf",&fCn);
-  if( n != 1 ) return kInitError;
-
+  flags = kErrOnTooManyValues|kQuietOnTooFew|kStopAtNval|kStopAtSection;
+  // TDC resolution (s/channel)
+  if( (err = ReadBlock(fi,&fTdc2T,1,here,flags|kRequireGreaterZero)) )
+    goto exit;
+  fHaveExtras = true; // FIXME: should always be true?
+  // Speed of light in the scintillator material (m/s)
+  if( (err = ReadBlock(fi,&fCn,1,here,flags|kRequireGreaterZero)) )
+    goto exit;
   // Attenuation length (inverse meters)
-  while( ReadComment(fi, buf, LEN) );
-  if ( !fgets ( buf, LEN, fi ) ||  strchr(buf,'[') ) goto exit;
-  n = sscanf(buf,"%15lf",&fAttenuation);
-  if( n != 1 ) return kInitError;
-
-  while( ReadComment(fi, buf, LEN) );
-  // Time-walk correction parameters
-  if ( !fgets(buf, LEN, fi) ||  strchr(buf,'[') ) goto exit;
-  n = sscanf(buf,"%15lf",&fAdcMIP);
-  if( n != 1 ) return kInitError;
-
-  while( ReadComment(fi, buf, LEN) );
-  // timewalk parameters
-  {
-    int cnt=0;
-    while ( cnt<fNTWalkPar && fgets( buf, LEN, fi ) && ! strchr(buf,'[') ) {
-      char *ptr = buf;
-      int pos=0;
-      while ( cnt < fNTWalkPar && sscanf(ptr,"%15lf%n",&fTWalkPar[cnt],&pos)>0 ) {
-	ptr += pos;
-	cnt++;
-      }
-    }
-  }
-
-  while( ReadComment(fi, buf, LEN) );
-  // trigger timing offsets
-  {
-    int cnt=0;
-    while ( cnt<fNelem && fgets( buf, LEN, fi ) && ! strchr(buf,'[') ) {
-      char *ptr = buf;
-      int pos=0;
-      while ( cnt < fNelem && sscanf(ptr,"%15lf%n",&fTrigOff[cnt],&pos)>0 ) {
-	ptr += pos;
-	cnt++;
-      }
-    }
-  }
+  if( (err = ReadBlock(fi,&fAttenuation,1,here,flags|kRequireGreaterZero)) )
+    goto exit;
+  // Typical ADC value for minimum ionizing particle (MIP)
+  if( (err = ReadBlock(fi,&fAdcMIP,1,here,flags|kRequireGreaterZero)) )
+    goto exit;
+  // Timewalk coefficients (1 for each PMT) -- seconds*1/sqrt(ADC)
+  if( (err = ReadBlock(fi,fTWalkPar,fNTWalkPar,here,flags)) )
+    goto exit;
+  // Trigger-timing offsets -- seconds offset per paddle
+  err = ReadBlock(fi,fTrigOff,fNelem,here,flags);
 
  exit:
+  if( err && err != kNoValues )
+    return kInitError;
   return kOK;
 }
 
@@ -2022,103 +2165,78 @@ int Shower::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
   const char* const here = "Shower::ReadDB";
   const int LEN = 100;
   char buf[LEN];
+  Int_t flags = kErrOnTooManyValues; // TODO: make configurable
+  Int_t nclbl; //TODO: use this
+  bool old_format = false;
 
   // Read data from database
 
   // Blocks, rows, max blocks per cluster
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  Int_t n = fscanf ( fi, "%5d %5d", &fNcols, &fNrows );
-  if( n != 2 ) return kInitError;
-  Int_t nelem = fNcols * fNrows;
-  Int_t nclbl = TMath::Min( 3, fNrows ) * TMath::Min( 3, fNcols );
-  if( fNrows <= 0 || fNcols <= 0 || nclbl <= 0 ) {
-    Error( Here(here), "Illegal number of rows or columns: "
-	   "%d %d", fNrows, fNcols );
-    return kInitError;
+  Int_t ivals[3];
+  Int_t err = ReadBlock(fi,ivals,2,here,kRequireGreaterZero|kQuietOnTooMany);
+  if( err ) {
+    if( err != kTooManyValues )
+      return kInitError;
+    // > 2 values - may be an old-style DB with 3 numbers on first line
+    if( ReadBlock(fi,ivals,3,here,kRequireGreaterZero) )
+      return kInitError;
+    if( ivals[0] % ivals[1] ) {
+      Error( Here(here), "Total number of blocks = %d does not divide evenly into "
+	     "number of columns = %d", ivals[0], ivals[1] );
+      return kInitError;
+    }
+    fNcols = ivals[0] / ivals[1];
+    fNrows = ivals[1];
+    nclbl  = ivals[2];
+    old_format = true;
+  } else {
+    fNcols = ivals[0];
+    fNrows = ivals[1];
+    nclbl  = TMath::Min( 3, fNrows ) * TMath::Min( 3, fNcols );
   }
+  Int_t nelem = fNcols * fNrows;
 
   // Read detector map
   fDetMap->Clear();
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
+  while( ReadComment(fi,buf,LEN) );
   while (1) {
     Int_t crate, slot, first, last;
-    n = fscanf ( fi,"%6d %6d %6d %6d", &crate, &slot, &first, &last );
+    int n = fscanf ( fi,"%6d %6d %6d %6d", &crate, &slot, &first, &last );
     fgets ( buf, LEN, fi );
     if( crate < 0 ) break;
-    if( n < 4 ) return kInitError;
+    if( n < 4 ) return ErrPrint(fi,here);
     if( fDetMap->AddModule( crate, slot, first, last ) < 0 ) {
       Error( Here(here), "Too many DetMap modules (maximum allowed - %d).",
 	     THaDetMap::kDetMapSize);
       return kInitError;
     }
   }
-
-  // Set up the new channel map
-  UShort_t mapsize = fDetMap->GetSize();
-  if( mapsize == 0 ) {
-    Error( Here(here), "No modules defined in detector map.");
+  if( fDetMap->GetTotNumChan() != nelem ) {
+    Error( Here(here), "Database inconsistency.\n Defined %d channels in detector map, "
+	   "but have %d total channels (%d blocks with 1 ADC each)",
+	   fDetMap->GetTotNumChan(), nelem, nelem );
     return kInitError;
   }
 
-  fChanMap.clear();
   // Read channel map
-  //
-  // Loosen the formatting restrictions: remove from each line the portion
-  // after a '#', and do the pattern matching to the remaining string
-  fgets ( buf, LEN, fi );
-
-  // get the line and end it at a '#' symbol
-  *buf = '\0';
-  char *ptr=buf;
-  int nchar=0;
-  bool trivial = true;
-  for ( UShort_t i = 0; i < nelem; i++ ) {
-    while ( !strpbrk(ptr,"0123456789") ) {
-      fgets ( buf, LEN, fi );
-      if( (ptr = strchr(buf,'#')) ) *ptr = '\0';
-      ptr = buf;
-      nchar=0;
-    }
-    unsigned int chan;
-    sscanf (ptr, "%6u %n", &chan, &nchar );
-    fChanMap.push_back(chan);
-    if( trivial && fChanMap.size() > 1 && fChanMap[fChanMap.size()-1] != chan )
-      trivial = false;
-    ptr += nchar;
-  }
-  if( fChanMap.size() != static_cast<vector<unsigned int>::size_type>(nelem) ) {
-    Error( Here(here), "Incorrect number of elements in mapping table = %d, "
-	   "need %d. Fix database.", (int)fChanMap.size(), nelem );
+  fChanMap.resize(nelem);
+  if( ReadBlock(fi,&fChanMap[0],nelem,here,flags|kRequireGreaterZero) )
     return kInitError;
+
+  bool trivial = true;
+  for( Int_t i = 0; i < nelem; ++i ) {
+    if( (Int_t)fChanMap[i] > nelem ) {
+      Error( Here(here), "Illegal logical channel number %u. "
+	     "Must be between 1 and %d.", fChanMap[i], nelem );
+      return kInitError;
+    }
+    if( i>0 && fChanMap[i-1]+1 != fChanMap[i] ) {
+      trivial = false;
+      break;
+    }
   }
   if( trivial )
     fChanMap.clear();
-  fgets ( buf, LEN, fi );
-
-  // Read geometry
-  Float_t x,y,z;
-  n = fscanf ( fi, "%15f %15f %15f", &x, &y, &z );               // Detector's X,Y,Z coord
-  if( n != 3 ) return kInitError;
-  fOrigin.SetXYZ( x, y, z );
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  n = fscanf ( fi, "%15lf %15lf %15lf", fSize, fSize+1, fSize+2 );  // Sizes of det in X,Y,Z
-  if( n != 3 ) return kInitError;
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-
-  Float_t angle;
-  n = fscanf ( fi, "%15f", &angle );                       // Rotation angle of det
-  if( n != 1 ) return kInitError;
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-
-  n = fscanf ( fi, "%15f %15f", fXY, fXY+1 );              // Block 1 center position
-  if( n != 2 ) return kInitError;
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  n = fscanf ( fi, "%15f %15f", fDXY, fDXY+1 );            // Block spacings in x and y
-  if( n != 2 ) return kInitError;
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  n = fscanf ( fi, "%15f", &fEmin );                       // Emin thresh for center
-  if( n != 1 ) return kInitError;
-  fgets ( buf, LEN, fi );
 
   // Arrays for per-block geometry and calibration data
   if( nelem != fNelem ) {
@@ -2128,28 +2246,100 @@ int Shower::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
     fGain   = new Float_t[ fNelem ];
   }
 
-  // Read calibrations.
-  // Before doing this, search for any date tags that follow, and start reading from
-  // the best matching tag if any are found. If none found, but we have a configuration
-  // string, search for it.
-  TDatime datime(date);
-  if( THaAnalysisObject::SeekDBdate( fi, datime ) == 0 && fConfig.Length() > 0 &&
-      THaAnalysisObject::SeekDBconfig( fi, fConfig.Data() )) {}
+  // Read geometry
+  Double_t dvals[3];
+  if( ReadBlock(fi,dvals,3,here,flags) )                   // Detector's X,Y,Z coord
+    return kInitError;
+  fOrigin.SetXYZ( dvals[0], dvals[1], dvals[2] );
 
-  fgets ( buf, LEN, fi );
-  // Crude protection against a missed date/config tag
-  if( buf[0] == '[' ) fgets ( buf, LEN, fi );
+  if( ReadBlock(fi,fSize,3,here,flags|kNoNegativeValues) ) // Size in X,Y,Z
+    return kInitError;
 
-  // Read ADC pedestals and gains (in order of logical channel number)
-  for (int j=0; j<fNelem; j++) {
-    n = fscanf (fi,"%15f",fPed+j);
-    if( n != 1 ) return kInitError;
+  if( ReadBlock(fi,&fAngle,1,here,flags) )                 // Rotation angle of det
+    return kInitError;
+
+  // Try new format: two values here
+  err = ReadBlock(fi,fXY,2,here,flags|kQuietOnTooMany);    // Block 1 center position
+  if( err ) {
+    if( err != kTooManyValues )
+      return kInitError;
+    old_format = true;
   }
 
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  for (int j=0; j<fNelem; j++) {
-    n = fscanf (fi, "%15f",fGain+j);
-    if( n != 1 ) return kInitError;
+  if( old_format ) {
+    Double_t u = 1e-2; // Old database values are in cm
+    Double_t dx = 0, dy = 0, dx1, dy1, eps = 1e-4;
+    Double_t* xpos = new Double_t[ fNelem ];
+    Double_t* ypos = new Double_t[ fNelem ];
+
+    fOrigin *= u;
+    for( Int_t i = 0; i < 3; ++i )
+      fSize[i] *= u;
+
+    if( (err = ReadBlock(fi,xpos,fNelem,here,flags)) )     // Block x positions
+      goto err;
+    if( (err = ReadBlock(fi,ypos,fNelem,here,flags)) )     // Block y positions
+      goto err;
+
+    fXY[0] = u*xpos[0];
+    fXY[1] = u*ypos[0];
+
+    // Determine the block spacings. Irregular spacings are not supported.
+    for( Int_t i = 1; i < fNelem; ++i ) {
+      dx1 = xpos[i] - xpos[i-1];
+      dy1 = ypos[i] - ypos[i-1];
+      if( dx == 0 ) {
+	if( dx1 != 0 )
+	  dx = dx1;
+      } else if( dx1 != 0 && dx*dx1 > 0 && TMath::Abs(dx1-dx) > eps ) {
+	Error( Here(here), "Irregular x block positions not supported, "
+	       "dx = %lf, dx1 = %lf", dx, dx1 );
+	err = -1;
+	goto err;
+      }
+      if( dy == 0 ) {
+	if( dy1 != 0 )
+	  dy = dy1;
+      } else if( dy1 != 0 && dy*dy1 > 0 && TMath::Abs(dy1-dy) > eps ) {
+	Error( Here(here), "Irregular y block positions not supported, "
+	       "dy = %lf, dy1 = %lf", dy, dy1 );
+	err = -1;
+	goto err;
+      }
+    }
+    fDXY[0] = u*dx;
+    fDXY[1] = u*dy;
+  err:
+    delete [] xpos;
+    delete [] ypos;
+    if( err )
+      return kInitError;
+  }
+  else {
+    // New format
+    if( ReadBlock(fi,fDXY,2,here,flags) )                    // Block spacings in x and y
+      return kInitError;
+
+    if( ReadBlock(fi,&fEmin,1,here,flags|kNoNegativeValues) ) // Emin thresh for center
+      return kInitError;
+
+    // Search for optional time stamp or configuration section
+    TDatime datime(date);
+    if( THaAnalysisObject::SeekDBdate( fi, datime ) == 0 && fConfig.Length() > 0 &&
+	THaAnalysisObject::SeekDBconfig( fi, fConfig.Data() )) {}
+  }
+
+  // Read calibrations
+
+  // Read ADC pedestals and gains (in order of logical channel number)
+  if( ReadBlock(fi,fPed,fNelem,here,flags) )
+    return kInitError;
+  if( ReadBlock(fi,fGain,fNelem,here,flags|kNoNegativeValues) )
+    return kInitError;
+
+  if( old_format ) {
+    if( ReadBlock(fi,&fEmin,1,here,flags|kNoNegativeValues) ) // Emin thresh for center
+      return kInitError;
   }
 
   return kOK;
@@ -2160,12 +2350,11 @@ int TotalShower::ReadDB( FILE* fi, time_t, time_t )
 {
   // Read legacy THaTotalShower database
 
-  const int LEN = 100;
-  char line[LEN];
+  const char* const here = "TotalShower::ReadDB";
+  int flags = kErrOnTooManyValues|kRequireGreaterZero|kWarnOnDataGuess;
 
-  fgets ( line, LEN, fi ); fgets ( line, LEN, fi );
-  int n = fscanf ( fi, "%15f %15f", fMaxDXY, fMaxDXY+1 );  // Max diff of shower centers
-  if( n != 2 ) return kInitError;
+  if( ReadBlock(fi, fMaxDXY, 2, here, flags) )
+    return kInitError;
 
   return kOK;
 }
@@ -2198,7 +2387,7 @@ int BPM::ReadDB( FILE* fi, time_t, time_t )
     fgets( buf, LEN, fi);
     n = sscanf(buf,"%6d %6d %6d %6d %6d %6d %6d",
 	       &first_chan, &crate, &dummy, &slot, &first, &last, &modulid);
-    if( n < 1 ) return kInitError;
+    if( n < 1 ) return ErrPrint(fi,here);
     if( n == 7 )
       fDetMapHasModel = true;
     if (first_chan>=0 && n >= 6 ) {
@@ -2209,7 +2398,7 @@ int BPM::ReadDB( FILE* fi, time_t, time_t )
     }
   } while (first_chan>=0);
   if( fDetMap->GetTotNumChan() != 4 ) {
-    Error( Here(here), "Invalid BPM detector map. Needs to define exactly 4 "
+    Error( Here(here), "Invalid BPM detector map.\n Needs to define exactly 4 "
 	   "channels. Has %d.", fDetMap->GetTotNumChan() );
     return kInitError;
   }
@@ -2227,7 +2416,7 @@ int BPM::ReadDB( FILE* fi, time_t, time_t )
   double dummy1,dummy2,dummy3,dummy4,dummy5,dummy6;
   fgets( buf, LEN, fi);
   n = sscanf(buf,"%15lf %15lf %15lf %15lf",&dummy1,&dummy2,&dummy3,&dummy4);
-  if( n < 2 ) return kInitError;
+  if( n < 2 ) return ErrPrint(fi,here);
 
   // dummy 1 is the z position of the bpm. Used below to set fOrigin.
 
@@ -2239,13 +2428,13 @@ int BPM::ReadDB( FILE* fi, time_t, time_t )
   // Pedestals
   fgets( buf, LEN, fi);
   n = sscanf(buf,"%15lf %15lf %15lf %15lf",fPed,fPed+1,fPed+2,fPed+3);
-  if( n != 4 ) return kInitError;
+  if( n != 4 ) return ErrPrint(fi,here);
 
   // 2x2 transformation matrix and x/y offset
   fgets( buf, LEN, fi);
   n = sscanf(buf,"%15lf %15lf %15lf %15lf %15lf %15lf",
 	     fRot,fRot+1,fRot+2,fRot+3,&dummy5,&dummy6);
-  if( n != 6 ) return kInitError;
+  if( n != 6 ) return ErrPrint(fi,here);
 
   fOrigin.SetXYZ(dummy5,dummy6,dummy1);
 
@@ -2281,7 +2470,7 @@ int Raster::ReadDB( FILE* fi, time_t date, time_t )
     fgets( buf, LEN, fi);
     n = sscanf(buf,"%6d %6d %6d %6d %6d %6d %6d",
 	       &first_chan, &crate, &dummy, &slot, &first, &last, &modulid);
-    if( n < 1 ) return kInitError;
+    if( n < 1 ) return ErrPrint(fi,here);
     if( n == 7 )
       fDetMapHasModel = true;
     if (first_chan>=0 && n >= 6 ) {
@@ -2292,7 +2481,7 @@ int Raster::ReadDB( FILE* fi, time_t date, time_t )
     }
   } while (first_chan>=0);
   if( fDetMap->GetTotNumChan() != 4 ) {
-    Error( Here(here), "Invalid raster detector map. Needs to define exactly 4 "
+    Error( Here(here), "Invalid raster detector map.\n Needs to define exactly 4 "
 	   "channels. Has %d.", fDetMap->GetTotNumChan() );
     return kInitError;
   }
@@ -2314,18 +2503,18 @@ int Raster::ReadDB( FILE* fi, time_t date, time_t )
   double dummy1;
   n = sscanf(buf,"%15lf %15lf %15lf %15lf %15lf %15lf %15lf",
 	     &dummy1,fFreq,fFreq+1,fRPed,fRPed+1,fSPed,fSPed+1);
-  if( n != 7 ) return kInitError;
+  if( n != 7 ) return ErrPrint(fi,here);
 
   // z positions of BPMA, BPMB, and target reference point (usually 0)
   fgets( buf, LEN, fi);
   n = sscanf(buf,"%15lf",fZpos);
-  if( n != 1 ) return kInitError;
+  if( n != 1 ) return ErrPrint(fi,here);
   fgets( buf, LEN, fi);
   n = sscanf(buf,"%15lf",fZpos+1);
-  if( n != 1 ) return kInitError;
+  if( n != 1 ) return ErrPrint(fi,here);
   fgets( buf, LEN, fi);
   n = sscanf(buf,"%15lf",fZpos+2);
-  if( n != 1 ) return kInitError;
+  if( n != 1 ) return ErrPrint(fi,here);
 
   // Find timestamp, if any, for the raster constants
   TDatime datime(date);
@@ -2335,17 +2524,17 @@ int Raster::ReadDB( FILE* fi, time_t date, time_t )
   fgets( buf, LEN, fi);
   n = sscanf(buf,"%15lf %15lf %15lf %15lf %15lf %15lf",
 	     fCalibA,fCalibA+1,fCalibA+2,fCalibA+3,fCalibA+4,fCalibA+5);
-  if( n != 6 ) return kInitError;
+  if( n != 6 ) return ErrPrint(fi,here);
 
   fgets( buf, LEN, fi);
   sscanf(buf,"%15lf %15lf %15lf %15lf %15lf %15lf",
 	 fCalibB,fCalibB+1,fCalibB+2,fCalibB+3,fCalibB+4,fCalibB+5);
-  if( n != 6 ) return kInitError;
+  if( n != 6 ) return ErrPrint(fi,here);
 
   fgets( buf, LEN, fi);
   sscanf(buf,"%15lf %15lf %15lf %15lf %15lf %15lf",
 	 fCalibT,fCalibT+1,fCalibT+2,fCalibT+3,fCalibT+4,fCalibT+5);
-  if( n != 6 ) return kInitError;
+  if( n != 6 ) return ErrPrint(fi,here);
 
   return kOK;
 }
@@ -2423,7 +2612,7 @@ int Detector::Save( time_t start, const string& version ) const
   if( fDetMapHasModel )  flags++;
   AddToMap( prefix+"detmap",   MakeValue(fDetMap,flags), start, version, 4+flags );
   AddToMap( prefix+"nelem",    MakeValueUnless(0,&fNelem), start, version );
-  AddToMap( prefix+"angle",    MakeValueUnless(0.F,&fAngle), start, version );
+  AddToMap( prefix+"angle",    MakeValueUnless(0.,&fAngle), start, version );
   AddToMap( prefix+"position", MakeValueUnless(0.,&fOrigin), start, version );
   AddToMap( prefix+"size",     MakeValueUnless(0.,fSize,3), start, version );
 
