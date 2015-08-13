@@ -5,6 +5,9 @@
 // Utility to convert Podd 1.5 and earlier database files to Podd 1.6
 // and later format
 
+#define _BSD_SOURCE
+#define _XOPEN_SOURCE
+
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -54,10 +57,13 @@ static bool IsDBdate( const string& line, time_t& date );
 // Command line parameter defaults
 static int do_debug = 0, verbose = 0, do_file_copy = 1, do_subdirs = 0;
 static int do_clean = 1, do_verify = 1, do_dump = 0, purge_all_default_keys = 1;
+static int format_fp = 1;
 static string srcdir;
 static string destdir;
 static const char* prgname = 0;
-static char* mapfile = 0;
+static const char* mapfile = 0;
+static const char* inp_tz_arg = 0, *outp_tz_arg = 0;
+static string inp_tz, outp_tz, cur_tz;
 static string current_filename;
 
 static struct poptOption options[] = {
@@ -67,10 +73,12 @@ static struct poptOption options[] = {
   { "debug",    'd', POPT_ARG_VAL,    &do_debug, 1, 0, 0  },
   { "mapfile",  'm', POPT_ARG_STRING, &mapfile,  0, 0, 0  },
   // "detlist", 'l', ... // list of wildcards of detector names
-  { "preserve-subdirs",    's', POPT_ARG_VAL,    &do_subdirs, 1, 0, 0  },
+  { "preserve-subdirs",    's', POPT_ARG_VAL,  &do_subdirs, 1, 0, 0  },
   { "no-preserve-subdirs", 0, POPT_ARG_VAL,    &do_subdirs, 0, 0, 0  },
   { "no-clean",  0, POPT_ARG_VAL,    &do_clean, 0, 0, 0  },
   { "no-verify", 0, POPT_ARG_VAL,    &do_verify, 0, 0, 0  },
+  { "input-timezone", 'z', POPT_ARG_STRING, &inp_tz_arg,  0, 0, 0  },
+  { "output-timezone",  0, POPT_ARG_STRING, &outp_tz_arg, 0, 0, 0  },
   POPT_TABLEEND
 };
 
@@ -93,7 +101,7 @@ typedef string::size_type ssiz_t;
 typedef set<time_t>::iterator siter_t;
 
 //-----------------------------------------------------------------------------
-void help()
+static void help()
 {
   // Print help message and exit
 
@@ -113,7 +121,7 @@ void help()
 }
 
 //-----------------------------------------------------------------------------
-void usage( poptContext& pc )
+static void usage( poptContext& pc )
 {
   // Print usage message and exit with error code
 
@@ -122,7 +130,92 @@ void usage( poptContext& pc )
 }
 
 //-----------------------------------------------------------------------------
-void getargs( int argc, const char** argv )
+static inline string TZfromOffset( int off )
+{
+  // Convert integer timezone offset to string for TZ environment variable
+
+  div_t d = div( std::abs(off), 3600 );
+  if( d.quot > 24 )
+    return string();
+  ostringstream ostr;
+  // Flip the sign. Input is east of UTC, $TZ uses west of UTC.
+  ostr << "OFFS" << ((off >= 0) ? "-" : "+");
+  ostr << d.quot;
+  if( d.rem != 0 )
+    ostr << ":" << d.rem;
+  return ostr.str();
+}
+
+//-----------------------------------------------------------------------------
+static int MkTimezone( string& zone )
+{
+  // Check commmand-line timezone spec 'zone' and convert it to something that
+  // will work with tzset
+  // Allowed syntax:
+  // [+|-]nnnn:  Explicit timezone offset east of UTC (no DST) as HHMM. Must be
+  //             parseable as an integer with 0 <= HH <= 24 and 0 <= MM < 60.
+  //             Trailing characters are ignored.
+  // characters: Timezone file name.
+  if( zone.empty() )
+    return -1;
+  int off;
+  istringstream istr(zone.c_str());
+  if( istr >> off ) {
+    // Convert HHMM to seconds
+    div_t d = div( std::abs(off), 100 );
+    if( d.quot > 24 || d.rem > 59 )
+      return 1;
+    off = ((off < 0 ) ? -1 : 1) * 60 * (60*d.quot + d.rem);
+    zone = TZfromOffset( off );
+    if( zone.empty() )
+      return 1;
+  } else {
+    zone.insert( zone.begin(), ':' );
+  }
+  return 0;
+}
+
+//-----------------------------------------------------------------------------
+static inline void set_tz( const string& tz )
+{
+  if( !tz.empty() ) {
+    const char* z = getenv("TZ");
+    if( z )
+      cur_tz = z;
+    else
+      cur_tz.clear();
+    setenv("TZ", tz.c_str(), 1);
+    errno = 0;
+    tzset();
+  }
+}
+
+//-----------------------------------------------------------------------------
+static int set_tz_errcheck( const string& tz, const string& which )
+{
+  errno = 0;
+  set_tz( tz );
+  if( errno && !tz.empty() && tz[0] == ':' ) {
+    ostringstream ss;
+    ss << "Error setting " << which << " time zone TZ = \"" << tz << "\"";
+    perror(ss.str().c_str());
+    return errno;
+  }
+  return 0;
+}
+
+//-----------------------------------------------------------------------------
+static inline void reset_tz()
+{
+  if( !cur_tz.empty() )
+    setenv("TZ", cur_tz.c_str(), 1);
+  else
+    unsetenv("TZ");
+  tzset();
+}
+
+//-----------------------------------------------------------------------------
+static void getargs( int argc, const char** argv )
 {
   // Get command line parameters
 
@@ -147,6 +240,7 @@ void getargs( int argc, const char** argv )
     usage(pc);
   }
 
+  // TODO: add option have several files as input
   const char* arg = poptGetArg(pc);
   if( !arg ) {
     cerr << "Error: Must specify SRC_DIR and DEST_DIR" << endl;
@@ -163,6 +257,28 @@ void getargs( int argc, const char** argv )
     cerr << "Error: too many arguments" << endl;
     usage(pc);
   }
+  // Parse timezone specs
+  if( inp_tz_arg ) {
+    inp_tz = inp_tz_arg;
+    if( MkTimezone(inp_tz) ) {
+      cerr << "Invalid input timezone: \"" << inp_tz << "\"" << endl;
+      usage(pc);
+    }
+  }
+  if( outp_tz_arg ) {
+    outp_tz = outp_tz_arg;
+    if( MkTimezone(outp_tz) ) {
+      cerr << "Invalid output timezone: \"" << outp_tz << "\"" << endl;
+      usage(pc);
+    }
+  }
+  // If an input timezone is given and no explicit output timezone, set
+  // output timezone to input timezone. Hopefully, this makes the most common
+  // usage case, converting a JLab DB on a machine in a different timezone than
+  // JLab, the most convenient
+  if( !inp_tz.empty() && outp_tz.empty() )
+    outp_tz = inp_tz;
+
   //DEBUG
   if( mapfile )
     cout << "Mapfile name is \"" << mapfile << "\"" << endl;
@@ -172,8 +288,29 @@ void getargs( int argc, const char** argv )
 }
 
 //-----------------------------------------------------------------------------
+static inline time_t MkTime( struct tm& td, bool have_tz = false )
+{
+  string save_tz;
+  if( have_tz ) {
+    save_tz = cur_tz;
+    set_tz( TZfromOffset(td.tm_gmtoff) );
+  }
+
+  time_t ret = mktime( &td );
+
+  if( have_tz ) {
+    reset_tz();
+    cur_tz = save_tz;
+  }
+  return ret;
+}
+
+//-----------------------------------------------------------------------------
 static inline time_t MkTime( int yy, int mm, int dd, int hh, int mi, int ss )
 {
+  // Return Unix time representation (seconds since epoc in UTC) of given
+  // broken-down time
+
   struct tm td;
   td.tm_sec   = ss;
   td.tm_min   = mi;
@@ -182,7 +319,8 @@ static inline time_t MkTime( int yy, int mm, int dd, int hh, int mi, int ss )
   td.tm_mon   = mm-1;
   td.tm_mday  = dd;
   td.tm_isdst = -1;
-  return mktime( &td );
+
+  return MkTime( td );
 }
 
 //-----------------------------------------------------------------------------
@@ -203,8 +341,13 @@ static inline string format_time( time_t t )
 //-----------------------------------------------------------------------------
 static inline string format_tstamp( time_t t )
 {
+  // Generate timestamp string for database files. Timestamps are in UTC
+  // unless the user requests otherwise. The applicable timezone offset is
+  // written along with the timestamp.
+
   struct tm tms;
-  gmtime_r( &t, &tms );
+  localtime_r( &t, &tms );
+
   stringstream ss;
   ss << "--------[ ";
   ss << tms.tm_year+1900 << "-";
@@ -212,8 +355,14 @@ static inline string format_tstamp( time_t t )
   ss << setw(2) << setfill('0') << tms.tm_mday  << " ";
   ss << setw(2) << setfill('0') << tms.tm_hour  << ":";
   ss << setw(2) << setfill('0') << tms.tm_min   << ":";
-  ss << setw(2) << setfill('0') << tms.tm_sec;
+  ss << setw(2) << setfill('0') << tms.tm_sec   << " ";
+  // Timezone offset
+  ldiv_t offs = ldiv( std::abs(tms.tm_gmtoff), 3600 );
+  ss << (( tms.tm_gmtoff >= 0 ) ? "+" : "-");
+  ss << setw(2) << setfill('0') << offs.quot;
+  ss << setw(2) << setfill('0') << offs.rem/60;
   ss << " ]";
+
   return ss.str();
 }
 
@@ -265,15 +414,19 @@ static inline bool IsDBSubDir( const string& fname, time_t& date )
 }
 
 //-----------------------------------------------------------------------------
-static inline size_t Order( int n )
+static inline size_t Order( Int_t n )
 {
-  if( n >= 1000000 ) return 7;
-  if( n >=  100000 ) return 6;
-  if( n >=   10000 ) return 5;
-  if( n >=    1000 ) return 4;
-  if( n >=     100 ) return 3;
-  if( n >=      10 ) return 2;
-  if( n >=       1 ) return 1;
+  // Return number of digits of 32-bit integer argument
+
+  // This is much faster than computing log10
+  UInt_t u = std::abs(n), d = 1;
+  size_t c = 0;
+  while (1) {
+    if( u < d ) return c;
+    d *= 10;
+    ++c;
+    assert( c < 11 );
+  }
   return 0;
 }
 
@@ -281,17 +434,17 @@ static inline size_t Order( int n )
 template <class T> static inline
 size_t GetSignificantDigits( T x, T round_level )
 {
-  // Get number of significant *decimal* digits of x when rounded at level
+  // Get number of significant *decimal* digits of x, rounded at given level
 
   T xx;
   if( x >= 0.0 )
     xx = x - std::floor(x);
   else
     xx = std::ceil(x) - x;
-  int ix = xx/round_level + 0.5;
+  Int_t ix = xx/round_level + 0.5;
   size_t nn = Order(ix), n = nn;
   for( size_t j = 1; j < nn; ++j ) {
-    int ix1 = ix/10;
+    Int_t ix1 = ix/10;
     if( 10*ix1 != ix )
       break;
     --n;
@@ -315,7 +468,8 @@ void PrepareStreamImpl( ostringstream& str, vector<T> arr, T round_level )
   const T zero = 0.L, one = 1.L, ten = 10.L;
   typename vector<T>::size_type i;
   for( i = 0; i < arr.size(); ++i ) {
-    if( arr[i] != zero && std::abs(arr[i]) < 1e-3L ) {
+    T x = std::abs( arr[i] );
+    if( x != zero && (x < 1e-3L || x >= 1e6L) ) {
       sci = true;
       break;
     }
@@ -349,7 +503,7 @@ void PrepareStreamImpl( ostringstream& str, vector<T> arr, T round_level )
 template <class T> static inline
 void PrepareStream( ostringstream&, const T*, int )
 {
-  // Prepare formatting of stream 'str' based on data in array.
+  // Set formatting of stream 'str' based on data in array.
   // By default, do nothing.
 }
 
@@ -358,7 +512,7 @@ template <> inline
 void PrepareStream( ostringstream& str, const double* array, int size )
 {
   vector<double> arr( array, array+size );
-  PrepareStreamImpl( str, arr, 1e-7 );
+  PrepareStreamImpl<double>( str, arr, 1e-6 );
 }
 
 //-----------------------------------------------------------------------------
@@ -366,10 +520,13 @@ template <> inline
 void PrepareStream( ostringstream& str, const float* array, int size )
 {
   vector<float> arr( array, array+size );
-  PrepareStreamImpl( str, arr, 1e-5F );
+  PrepareStreamImpl<float>( str, arr, 1e-4 );
 }
 
 //-----------------------------------------------------------------------------
+// Structure returned by MakeValue functions, containing a database value
+// (possibly an array) as a string and metadata: number of array elements,
+// printing width needed to accommodate all values.
 struct Value_t {
   Value_t( const string& v, int n, ssiz_t w ) : value(v), nelem(n), width(w) {}
   string value;
@@ -384,7 +541,8 @@ Value_t MakeValue( const T* array, int size = 0 )
   ostringstream ostr;
   ssiz_t w = 0;
   if( size <= 0 ) size = 1;
-  PrepareStream( ostr, array, size );
+  if( format_fp )
+    PrepareStream( ostr, array, size );
   for( int i = 0; i < size; ++i ) {
     ssiz_t len = ostr.str().size();
     ostr << array[i];
@@ -457,21 +615,25 @@ struct DBvalue {
   DBvalue( const string& valstr, time_t start, const string& ver = string(),
 	   int maxv = 0 )
     : value(valstr), validity_start(start), version(ver), nelem(0),
-      max_per_line(maxv)
+      width(0), max_per_line(maxv)
   {
     istringstream istr; string item;
-    while( istr >> item )  ++nelem;
+    while( istr >> item ) {
+      width = max( width, item.length() );
+      ++nelem;
+    }
   }
   DBvalue( const Value_t& valobj, time_t start, const string& ver = string(),
 	   int max = 0 )
     : value(valobj.value), validity_start(start), version(ver),
-      nelem(valobj.nelem), max_per_line(max) {}
+      nelem(valobj.nelem), width(valobj.width), max_per_line(max) {}
   DBvalue( time_t start, const string& ver = string() )
-    : validity_start(start), version(ver), nelem(0), max_per_line(0) {}
+    : validity_start(start), version(ver), nelem(0), width(0), max_per_line(0) {}
   string value;
   time_t validity_start;
   string version;
   int    nelem;
+  ssiz_t width;
   int    max_per_line;    // Number of values per line (for formatting text db)
   // Order values by validity start time, then version
   bool operator<( const DBvalue& rhs ) const {
@@ -487,9 +649,8 @@ struct DBvalue {
 typedef set<DBvalue> ValSet_t;
 
 struct KeyAttr_t {
-  KeyAttr_t() : isCopy(false), width(0) {}
+  KeyAttr_t() : isCopy(false) {}
   bool isCopy;
-  ssiz_t width;
   string comment;
   ValSet_t values;
 };
@@ -504,7 +665,7 @@ static StrMap_t gKeyToDet;
 static MStrMap_t gDetToKey;
 
 //-----------------------------------------------------------------------------
-void DumpMap( ostream& os = std::cout )
+static void DumpMap( ostream& os = std::cout )
 {
   // Dump contents of the in-memory database to given output
 
@@ -529,7 +690,7 @@ void DumpMap( ostream& os = std::cout )
 }
 
 //-----------------------------------------------------------------------------
-int PruneMap()
+static int PruneMap()
 {
   // Remove duplicate entries for the same key and consecutive timestamps
 
@@ -544,7 +705,6 @@ int PruneMap()
       jt = kt;
     }
   }
-
   return 0;
 }
 
@@ -605,15 +765,18 @@ static int WriteAllKeysForTime( ofstream& ofs,
       ofs << endl;
       while( istr >> val ) {
 	if( num_to_do == ncol )
-	  ofs << "  "; // New line indentation
-	ofs << setw(attr.width + 1) << val;
+	  ofs << " "; // New line indentation
+	assert( vt->width > 0 );
+	ofs << setw(vt->width + 2);
+	ofs << val;
 	++nelem;
 	if( --num_to_do == 0 ) {
 	  ofs << endl;
 	  num_to_do = ncol;
-	} else {
-	  ofs << " ";
 	}
+	// else {
+	//   ofs << " ";
+	// }
       }
       if( num_to_do != ncol ) {
 	cerr << "Warning: number of elements of key " << key
@@ -631,7 +794,7 @@ static int WriteAllKeysForTime( ofstream& ofs,
 }
 
 //-----------------------------------------------------------------------------
-int WriteFileDB( const string& target_dir, const vector<string>& subdirs )
+static int WriteFileDB( const string& target_dir, const vector<string>& subdirs )
 {
   // Write all accumulated database keys in gDB to files in 'target_dir'.
   // If --preserve-subdirs was specified, split the information over
@@ -741,7 +904,27 @@ public:
       ++pos;
     fRealName = fName.substr(pos);
   }
-  virtual ~Detector() { delete fDetMap; }
+  Detector( const Detector& rhs )
+    : fName(rhs.fName), fRealName(rhs.fRealName), fConfig(rhs.fConfig),
+      fDetMapHasModel(rhs.fDetMapHasModel), fNelem(rhs.fNelem),
+      fAngle(rhs.fAngle), fOrigin(rhs.fOrigin), fDefaults(rhs.fDefaults)
+  {
+    memcpy( fSize, rhs.fSize, 3*sizeof(fSize[0]) );
+    fDetMap = new THaDetMap;
+  }
+  Detector& operator=( const Detector& rhs ) {
+    if( this != &rhs ) {
+      fName = rhs.fName; fRealName = rhs.fRealName; fConfig = rhs.fConfig;
+      fDetMapHasModel = rhs.fDetMapHasModel; fNelem = rhs.fNelem;
+      fAngle = rhs.fAngle; fOrigin = rhs.fOrigin; fDefaults = rhs.fDefaults;
+      memcpy( fSize, rhs.fSize, 3*sizeof(fSize[0]) );
+      delete fDetMap;
+      fDetMap = new THaDetMap(*rhs.fDetMap);
+      fErrmsg.Clear();
+    }
+    return *this;
+  }
+  virtual ~Detector() { delete fDetMap; fDetMap = 0; }
 
   virtual void Clear() {
     fConfig = ""; fDetMap->Clear(); fDetMapHasModel = false;
@@ -1130,7 +1313,6 @@ static void DefaultMap()
 
   StringToType_t defaults[] = {
     //TODO
-    { "run",        kCopyFile },
     { "R.cer",      kCherenkov },
     { "R.aero",     kCherenkov },
     { "R.aero1",    kCherenkov },
@@ -1153,6 +1335,7 @@ static void DefaultMap()
     { "L.ps",       kShower },
     { "L.prl1",     kShower },
     { "L.prl2",     kShower },
+    { "L.CSR",      kShower },  // NaI detector CSR experiment 2007
     { "BB.ts.ps",   kShower },
     { "BB.ts.sh",   kShower },
     { "R.ts",       kTotalShower },
@@ -1165,6 +1348,8 @@ static void DefaultMap()
     // Ignore top-level Beam apparatus db files - these are actually never read.
     // Instead, the apparatus's detector read db_urb.BPMA.dat etc.
     { "beam",       kNone },
+    { "R_beam",     kNone },
+    { "L_beam",     kNone },
     { "rb",         kNone },
     { "Rrb",        kNone },
     { "Lrb",        kNone },
@@ -1197,7 +1382,17 @@ static void DefaultMap()
     { "Rrb.Raster", kRaster },
     { "Lrb.Raster", kRaster },
     { "BBrb.Raster",kRaster },
+    // Databases already in new format
+    { "run",        kCopyFile },
+    { "hel",        kCopyFile },
+    { "he3",        kCopyFile },
+    { "he3_R",      kCopyFile },
+    { "vdceff",     kCopyFile },
+    { "L.fpp",      kCopyFile },
+    { "R.fpp",      kCopyFile },
     { "BB.mwdc",    kCopyFile },
+    { "L.gem",      kCopyFile },
+    { "L.rich",     kCopyFile },
     { 0,            kNone }
   };
   for( StringToType_t* item = defaults; item->name; ++item ) {
@@ -1647,6 +1842,13 @@ int main( int argc, const char** argv )
   // Parse command line
   getargs(argc,argv);
 
+  if( set_tz_errcheck( inp_tz, "input" ) )
+    exit(1);
+  reset_tz();
+  if( set_tz_errcheck( outp_tz, "output" ) )
+    exit(1);;
+  reset_tz();
+
   // Read the detector name mapping file. If unavailable, set up defaults.
   if( mapfile ) {
     if( ReadMapfile(mapfile) )
@@ -1654,6 +1856,10 @@ int main( int argc, const char** argv )
   } else {
     DefaultMap();
   }
+
+  // Interpret timestamps according to the user-specified timezone for
+  // input files. If no timezone was given, local time will be used.
+  set_tz( inp_tz );
 
   // Get list of all database files to convert
   FilenameMap_t filemap;
@@ -1753,6 +1959,8 @@ int main( int argc, const char** argv )
     delete det;
   } // end for ft = filemap
 
+  reset_tz();
+
   // Prune the key/value map to remove entries that have the exact
   // same keys/values and only differ by /consecutive/ timestamps.
   // Keep only the earliest timestamp.
@@ -1767,16 +1975,21 @@ int main( int argc, const char** argv )
   // Special treatment for keys found in current directory: if requested
   // write the converted versions into a special subdirectory of target.
 
+  set_tz( outp_tz );
+
   if( do_dump )
     DumpMap();
 
+  int err = 0;
   if( PrepareOutputDir(destdir, subdirs) )
-    exit(6);
+    err = 6;
 
-  if( WriteFileDB(destdir,subdirs) )
-    exit(7);
+  if( !err && WriteFileDB(destdir,subdirs) )
+    err = 7;
 
-  return 0;
+  reset_tz();
+
+  return err;
 }
 
 //#if 0
@@ -1831,14 +2044,19 @@ static bool IsDBdate( const string& line, time_t& date )
   if( lbrk == string::npos || lbrk >= line.size()-12 ) return false;
   ssiz_t rbrk = line.find(']',lbrk);
   if( rbrk == string::npos || rbrk <= lbrk+11 ) return false;
-  Int_t yy, mm, dd, hh, mi, ss;
-  if( sscanf( line.substr(lbrk+1,rbrk-lbrk-1).c_str(), "%4d-%2d-%2d %2d:%2d:%2d",
-	      &yy, &mm, &dd, &hh, &mi, &ss) != 6
-      || yy < 1995 || mm < 1 || mm > 12 || dd < 1 || dd > 31
-      || hh < 0 || hh > 23 || mi < 0 || mi > 59 || ss < 0 || ss > 59 ) {
-    return false;
+  string ts = line.substr(lbrk+1,rbrk-lbrk-1);
+
+  struct tm tm;
+  bool have_tz = true;
+  memset(&tm, 0, sizeof(tm));
+  const char* c = strptime(ts.c_str(), "%Y-%m-%d %H:%M:%S %z", &tm );
+  if( !c ) {
+    have_tz = false;
+    c = strptime(ts.c_str(), "%Y-%m-%d %H:%M:%S", &tm );
+    if( !c )
+      return false;
   }
-  date = MkTime( yy, mm, dd, hh, mi, ss );
+  date = MkTime( tm, have_tz );
   return (date != static_cast<time_t>(-1));
 }
 
@@ -2083,7 +2301,6 @@ int CopyFile::ReadDB( FILE* fi, time_t date, time_t date_until )
       KeyAttr_t attr = fDB[key];
       ValSet_t& vals = attr.values;
       ValSet_t::iterator pos = vals.find(val);
-      attr.width = max(attr.width,value.size());
       // If key already exists for this time & version, overwrite its value
       // (this is the behavior in THaAnalysisObject::LoadDBvalue)
       if( pos != vals.end() ) {
@@ -2131,7 +2348,7 @@ int CopyFile::Save( time_t start, const string& /*version*/ ) const
 	forwarded = true;
 #endif
       }
-      AddToMap( keyval.first, Value_t(vt->value,vt->nelem,attr.width),
+      AddToMap( keyval.first, Value_t(vt->value,vt->nelem,vt->width),
 		date, vt->version, vt->max_per_line );
     }
   }
@@ -3191,11 +3408,12 @@ int Detector::AddToMap( const string& key, const Value_t& v, time_t start,
 {
   // Add given key and value with given validity start time and optional
   // "version" (secondary index) to the in-memory database.
-  // If value is empty, do nothing.
+  // If value is empty, do nothing (i.e. bail if MakeValue fails).
 
   if( v.value.empty() )
     return 0;
   assert( v.nelem > 0 );
+  assert( v.width > 0 );
 
   // Ensure that each key can only be associated with one detector name
   StrMap_t::iterator itn = gKeyToDet.find( key );
@@ -3235,9 +3453,6 @@ int Detector::AddToMap( const string& key, const Value_t& v, time_t start,
 #else
   assert( vals.insert(val).second );
 #endif
-
-  attr.width = max(attr.width,v.width);
-
   return 0;
 }
 

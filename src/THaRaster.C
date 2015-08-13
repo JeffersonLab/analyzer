@@ -44,7 +44,7 @@ Int_t THaRaster::ReadDatabase( const TDatime& date )
   const char* const here = "ReadDatabase";
 
   vector<Int_t> detmap;
-  Double_t zpos[3], raw2posA[6], raw2posT[6], raw2posT[6];
+  Double_t zpos[3], raw2posA[6], raw2posB[6], raw2posT[6];
   Double_t freq[2], rped[2], sped[2];
 
   FILE* file = OpenFile( date );
@@ -238,7 +238,7 @@ Int_t THaRaster::Process( )
     //    are not defined, as well as adding a tvector and a tvector3
     //    so i have to do it by hand instead ):
 
-    TVector dum(fRawPos);
+    TVectorD dum(fRawPos);
     dum*=fRaw2Pos[i];
     fPosition[i].SetXYZ( dum(0)+fPosOff[i](0),
 			 dum(1)+fPosOff[i](1),
