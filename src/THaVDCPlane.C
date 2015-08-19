@@ -102,7 +102,7 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
   FILE* file = OpenFile( date );
   if( !file ) return kFileError;
 
-  // Read fOrigin and fSize (currently unused)
+  // Read fOrigin and fSize
   Int_t err = ReadGeometry( file, date );
   if( err ) {
     fclose(file);
@@ -132,8 +132,8 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
     { "nwires",         &fNelem,         kInt,     0, 0, -1 },
     { "wire.start",     &fWBeg,          kDouble },
     { "wire.spacing",   &fWSpac,         kDouble,  0, 0, -1 },
-    { "wire.angle",     &fWAngle,        kDouble,  0, 0, -1 },
-    { "wire.badlist",   &bad_wirelist,   kIntV,    0, 1, -1 },
+    { "wire.angle",     &fWAngle,        kDouble,  0, 0 },
+    { "wire.badlist",   &bad_wirelist,   kIntV,    0, 1 },
     { "driftvel",       &fDriftVel,      kDouble,  0, 0, -1 },
     { "tdc.min",        &fMinTime,       kInt,     0, 1, -1 },
     { "tdc.max",        &fMaxTime,       kInt,     0, 1, -1 },
@@ -145,8 +145,8 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
     { "clust.minsize",  &fMinClustSize,  kInt,     0, 1, -1 },
     { "clust.maxspan",  &fMaxClustSpan,  kInt,     0, 1, -1 },
     { "maxgap",         &fNMaxGap,       kInt,     0, 1, -1 },
-    { "min_tdiff",      &fMinTdiff,      kDouble,  0, 1, -1 },
-    { "max_tdiff",      &fMaxTdiff,      kDouble,  0, 1, -1 },
+    { "tdiff.min",      &fMinTdiff,      kDouble,  0, 1, -1 },
+    { "tdiff.max",      &fMaxTdiff,      kDouble,  0, 1, -1 },
     { "description",    &fTitle,         kTString, 0, 1 },
     { 0 }
   };
