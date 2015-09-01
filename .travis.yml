@@ -1,0 +1,19 @@
+os: linux
+compiler: gcc
+language: cpp
+before_install:
+  - sudo apt-get update -qq
+  - sudo apt-get install -y x11-common libx11-6 x11-utils gsl-bin
+  - sudo apt-get install -y libxpm libxft
+  - sudo apt-get install -y libjpeg-turbo8 libjpeg8 libtiff4 libxml2
+  - sudo apt-get install -y libssl libgnutls libgmp3 libpng12
+  - sudo apt-get install -y libldap2 libkrb5 freeglut3 libfftw3
+  - sudo apt-get install -y python libmysqlclient libgif libiodbc2
+  - sudo apt-get install -y libxext libxmu libimlib2 gccxml wget
+install:
+  - wget http://root.cern.ch/download/root_v5.34.32.Linux-ubuntu12-x86_64-gcc4.6.tar.gz -O /tmp/root.tar.gz
+  - tar -xzf /tmp/root.tar.gz
+  - source ./root/bin/thisroot.sh
+script:  make
+branches:
+  only: master
