@@ -35,6 +35,7 @@
 #include <cerrno>
 #include <cmath>
 #include <stdexcept>
+#include <cstddef>    // for offsetof
 
 #include "TString.h"
 #include "TDatime.h"
@@ -56,6 +57,8 @@ using namespace std;
 #define ALL(c) (c).begin(), (c).end()
 
 static bool IsDBdate( const string& line, time_t& date );
+static bool IsDBcomment( const string& line );
+static Int_t IsDBkey( const string& line, string& key, string& text );
 
 // Command line parameter defaults
 static int do_debug = 0, verbose = 0, do_file_copy = 1, do_subdirs = 0;
@@ -87,11 +90,11 @@ static struct poptOption options[] = {
 
 // Information for a single source database file
 struct Filenames_t {
-  Filenames_t( const string& _path, time_t _start )
-    : path(_path), val_start(_start) {}
-  Filenames_t( time_t _start ) : val_start(_start) {}
-  string    path;
+  Filenames_t( time_t _start, const string& _path = "" )
+    : val_start(_start), path(_path) {}
+  //  Filenames_t( time_t _start ) : val_start(_start) {}
   time_t    val_start;
+  string    path;
   // Order by validity time
   bool operator<( const Filenames_t& rhs ) const {
     return val_start < rhs.val_start;
@@ -297,7 +300,8 @@ static inline time_t MkTime( struct tm& td, bool have_tz = false )
   if( have_tz ) {
     save_tz = cur_tz;
     set_tz( TZfromOffset(td.tm_gmtoff) );
-  }
+  } else
+    td.tm_isdst = -1;
 
   time_t ret = mktime( &td );
 
@@ -329,6 +333,8 @@ static inline time_t MkTime( int yy, int mm, int dd, int hh, int mi, int ss )
 //-----------------------------------------------------------------------------
 static inline string format_time( time_t t )
 {
+  if( t < 0 || t == numeric_limits<time_t>::max() )
+    return "(inf)";
   char buf[32];
   ctime_r( &t, buf );
   // Translate date of the form "Wed Jun 30 21:49:08 1993\n" to
@@ -393,18 +399,19 @@ static inline bool IsDBSubDir( const string& fname, time_t& date )
   // Subdirectories have filenames of the form "YYYYMMDD" and "DEFAULT".
   // If so, extract its encoded time stamp to 'date'
 
+  const ssiz_t LEN = 8;
+
   if( fname == "DEFAULT" ) {
     date = 0;
     return true;
   }
-  if( fname.size() != 8 )
+  if( fname.size() != LEN )
     return false;
 
   ssiz_t pos = 0;
-  for( ; pos<8; ++pos )
-    if( !isdigit(fname[pos])) break;
-  if( pos != 8 )
-    return false;
+  while( pos != LEN )
+    if( !isdigit(fname[pos++]) )
+      return false;
 
   // Convert date encoded in directory name to time_t
   int year  = atoi( fname.substr(0,4).c_str() );
@@ -620,7 +627,7 @@ struct DBvalue {
     : value(valstr), validity_start(start), version(ver), nelem(0),
       width(0), max_per_line(maxv)
   {
-    istringstream istr; string item;
+    istringstream istr(value); string item;
     while( istr >> item ) {
       width = max( width, item.length() );
       ++nelem;
@@ -815,13 +822,10 @@ static int WriteFileDB( const string& target_dir, const vector<string>& subdirs 
   } else {
     for( vector<string>::size_type i = 0; i < subdirs.size(); ++i ) {
       time_t date;
-#ifdef NDEBUG
-      IsDBSubDir(subdirs[i],date);
-#else
-      assert( IsDBSubDir(subdirs[i],date) );
-#endif
-      dir_times.insert(date);
-      dir_names.insert( make_pair(date, MakePath(target_dir,subdirs[i])) );
+      if( IsDBSubDir(subdirs[i],date) ) {
+	dir_times.insert(date);
+	dir_names.insert( make_pair(date, MakePath(target_dir,subdirs[i])) );
+      }
     }
   }
   siter_t lastdt = dir_times.insert( numeric_limits<time_t>::max() ).first;
@@ -885,10 +889,11 @@ static int WriteFileDB( const string& target_dir, const vector<string>& subdirs 
 	     *tt < dir_until; ++tt ) {
 	nw += WriteAllKeysForTime( ofs, range.first, range.second, *tt );
       }
-      // Don't create empty files (may never happen?)
+      ofs.close();
+      // Don't create empty files (should never happen)
       assert( nw > 0 );
       // if( nw == 0 ) {
-      // 	unlink( fname.c_str() );
+      //	unlink( fname.c_str() );
       // }
     }
     it = range.second;
@@ -1589,7 +1594,7 @@ public:
 
     // Record regular files whose names match db_*.dat
     if( S_ISREG(sb.st_mode) && IsDBFileName(fname) ) {
-      fFilenames[GetDetName(fpath)].insert( Filenames_t(fpath,fStart) );
+      fFilenames[GetDetName(fpath)].insert( Filenames_t(fStart,fpath) );
       n_add = 1;
     }
 
@@ -1634,7 +1639,7 @@ public:
     if( !S_ISDIR(sb.st_mode) &&
 	(fDoAll || IsDBFileName(fname) || IsDBSubDir(fname,date)) ) {
       if( unlink(cpath) ) {
-      	perror(cpath);
+	perror(cpath);
 	return -2;
       }
       fMustRewind = true;
@@ -1649,7 +1654,7 @@ public:
 	// requested file is in that directory. This logic may fail if a closer-matching
 	// directory exists in the target than in the source for a certain timestamp.
 	bool delete_all = (fname != "DEFAULT");
- 	if( ForAllFilesInDir(fpath, DeleteDBFile(delete_all), depth+1) )
+	if( ForAllFilesInDir(fpath, DeleteDBFile(delete_all), depth+1) )
 	  return -2;
 	int err;
 	if( (err = rmdir(cpath)) && errno != ENOTEMPTY ) {
@@ -1813,21 +1818,29 @@ static Int_t GetLine( FILE* file, char* buf, size_t bufsiz, string& line )
 }
 
 //-----------------------------------------------------------------------------
-static int ParseTimestamps( FILE* fi, set<time_t>& timestamps )
+static bool ParseTimestamps( FILE* fi, set<time_t>& timestamps )
 {
-  // Put all timestamps from file 'fi' in given vector 'timestamps'
+  // Put all timestamps from file 'fi' in given vector 'timestamps'.
+  // If any data lines are present before the first timestamp,
+  // return 1, else return 0;
 
-  size_t LEN = 256;
+  const size_t LEN = 256;
   char buf[LEN];
   string line;
+  bool got_tstamp = false, have_unstamped = false;
 
   rewind(fi);
   while( GetLine(fi,buf,LEN,line) == 0 ) {
     time_t date;
-    if( IsDBdate(line, date) )
+    if( IsDBdate(line, date) ) {
       timestamps.insert(date);
+      got_tstamp = true;
+    } else if( !got_tstamp && !IsDBcomment(line) ) {
+      have_unstamped = true;
+    }
   }
-  return 0;
+
+  return have_unstamped;
 }
 
 //-----------------------------------------------------------------------------
@@ -1911,10 +1924,10 @@ static int InsertDefaultFiles( const vector<string>& subdirs,
 	time_t date;
 #ifdef NDEBUG
 	IsDBSubdir(subdir,date);
-	filenames.insert( Filenames_t(deffile,date) );
+	filenames.insert( Filenames_t(date,deffile) );
 #else
 	assert( IsDBSubDir(subdir,date) );
-	Filenames_t ins(deffile,date);
+	Filenames_t ins(date,deffile);
 	assert( filenames.find(ins) == filenames.end() );
 	filenames.insert(ins);
 #endif
@@ -1931,6 +1944,364 @@ static int InsertDefaultFiles( const vector<string>& subdirs,
     while( jt != filenames.end() && it->path == jt->path )
       filenames.erase( jt++ );
     it = jt;
+  }
+  return 0;
+}
+
+//-----------------------------------------------------------------------------
+static int ExtractKeys( Detector* det, const multiset<Filenames_t>& filenames )
+{
+  // Extract keys for given detector from the database files in 'filenames'
+
+  fiter_t lastf = filenames.end();
+  if( lastf != filenames.begin() )
+    --lastf;
+  for( fiter_t st = filenames.begin(); st != lastf; ) {
+    const string& path = st->path;
+    time_t val_from = st->val_start, val_until = (++st)->val_start;
+
+    FILE* fi = fopen( path.c_str(), "r" );
+    if( !fi ) {
+      stringstream ss("Error opening database file ",ios::out|ios::app);
+      ss << path;
+      perror(ss.str().c_str());
+      continue;
+    }
+    current_filename = path;
+
+    // Parse the file for any timestamps and "configurations" (=variations)
+    set<time_t> timestamps;
+    vector<string> variations;
+    timestamps.insert(val_from);
+    if( det->SupportsTimestamps() ) {
+      errno = 0;
+      ParseTimestamps(fi, timestamps);
+      if( errno ) {
+	stringstream ss("Error reading database file ",ios::out|ios::app);
+	ss << path;
+	perror(ss.str().c_str());
+	goto next;
+      }
+    }
+    if( det->SupportsVariations() ) {
+      ParseVariations(fi, variations);
+    }
+
+    timestamps.insert( numeric_limits<time_t>::max() );
+    {
+      siter_t it = timestamps.lower_bound( val_from );
+      siter_t lastt  = timestamps.lower_bound( val_until );
+      for( ; it != lastt; ) {
+	time_t date_from = *it, date_until = *(++it);
+	if( date_from  < val_from  )  date_from  = val_from;
+	if( date_until > val_until )  date_until = val_until;
+	rewind(fi);
+	det->Clear();
+	if( det->ReadDB(fi,date_from,date_until) == 0 ) {
+	  // } else {
+	  //   cout << "Read " << path << endl;
+	  //TODO: support variations
+	  det->Save( date_from );
+	}
+	else {
+	  cerr << "Failed to read " << path << " as " << det->GetClassName()
+	       << endl;
+	}
+      }
+    }
+
+  next:
+    fclose(fi);
+  } // end for st = filenames
+
+  return 0;
+}
+
+typedef map<time_t,pair<size_t,string> > SectionMap_t;
+typedef SectionMap_t::iterator SMiter_t;
+
+//-----------------------------------------------------------------------------
+static void AddSection( SectionMap_t& sections, time_t cur_date, size_t ndata,
+			string& chunk )
+{
+  pair<size_t,string>& secdata = sections[cur_date];
+  secdata.first = ndata;
+  if( secdata.second.empty() )
+    secdata.second.swap( chunk );
+  else {
+    if( *secdata.second.rbegin() != '\n' )
+      secdata.second.append( "\n" );
+    secdata.second.append( chunk );
+    chunk.clear();
+  }
+}
+
+//-----------------------------------------------------------------------------
+static int CopyFiles( const string& target_dir, const vector<string>& subdirs,
+		      FilenameMap_t::const_iterator ft )
+{
+  // Copy source files given in the map 'ft' to 'target_dir' and given set
+  // of subdirs. If 'subdirs' is empty or no output subdirs are requested,
+  // write all output to 'target_dir'. If files already exist, intelligently
+  // merge new keys. Remove any non-reachable time ranges.
+  // Should be called with current system timezone set.
+
+  const string& detname = ft->first;
+  const multiset<Filenames_t>& filenames = ft->second;
+  if( filenames.empty() )
+    return 0;  // nothing to do
+
+  fiter_t lastf = filenames.end();
+  assert( lastf != filenames.begin() );
+  --lastf;
+
+  set<time_t> dir_times;
+  map<time_t,string> dir_names;
+  if( !do_subdirs || subdirs.empty() ) {
+    dir_times.insert(0);
+    dir_names.insert(make_pair(0,target_dir));
+  } else {
+    for( vector<string>::size_type i = 0; i < subdirs.size(); ++i ) {
+      time_t date;
+      if( IsDBSubDir(subdirs[i],date) ) {
+	dir_times.insert(date);
+	dir_names.insert( make_pair(date, MakePath(target_dir,subdirs[i])) );
+      }
+    }
+  }
+  siter_t lastdt = dir_times.insert( numeric_limits<time_t>::max() ).first;
+
+  // For each output subdirectory, find the files that map into it
+  for( siter_t dt = dir_times.begin(); dt != lastdt; ) {
+    time_t dir_from = *dt, dir_until = *(++dt);
+
+    multiset<Filenames_t> these_files;
+    for( fiter_t st = filenames.begin(); st != lastf; ) {
+      fiter_t this_file = st;
+      time_t val_from = st->val_start, val_until = (++st)->val_start;
+      if( val_from < dir_until && dir_from < val_until )
+	these_files.insert(*this_file);
+    }
+    if( these_files.empty() )
+      continue;
+
+    fiter_t lasttf = these_files.end();
+    lasttf = these_files.insert( Filenames_t(numeric_limits<time_t>::max()) );
+
+    // Build the output file name and open the file
+    map<time_t,string>::iterator nt = dir_names.find(dir_from);
+    assert( nt != dir_names.end() );
+    const string& subdir = nt->second;
+    string fname = subdir + "/db_" + detname + ".dat";
+    ofstream ofs( fname.c_str() );
+    if( !ofs ) {
+      stringstream ss("Error opening ",ios::out|ios::app);
+      ss << fname;
+      perror(ss.str().c_str());
+      return 1;
+    }
+    //    size_t nlines = 0; // Number of non-comment lines written to output
+
+    for( fiter_t st = these_files.begin(); st != lasttf; ) {
+      const size_t LEN = 256;
+      char buf[LEN];
+      string line;
+      const string& path = st->path;
+      //      fiter_t this_st = st;
+      //      bool first_file = (st == these_files.begin());
+      time_t val_from = st->val_start, val_until = (++st)->val_start;
+      if( val_from  < dir_from  ) val_from = dir_from;
+      if( val_until > dir_until ) val_until = dir_until;
+      current_filename = path;
+
+      //DEBUG
+      cout << "Copy " << path << " val_from = " << format_time(val_from)
+	   << " val_until = " << format_time(val_until) << endl;
+
+      FILE* fi = fopen( path.c_str(), "r" );
+      assert(fi);   // already succeeded previously
+      if( !fi )
+	continue;
+
+      // Now copy this file. Processing depends on a number of factors:
+      //
+      // (1) If there is exactly one time range in the file (i.e. either
+      //     no timestamps at all or exactly one timestamp and no preceding
+      //     unstamped data), copy it exactly as it is, except:
+      //     - if there is no timestamp, insert a val_from timestamp
+      //       (converted to the output timezone) before the first data
+      //     - if there is a timestamp, and it is < val_from, change it to
+      //       val_from.
+      //
+      // (2) If there is more than one time range, and there is exactly one
+      //     time range starting before or at val_from, copy the file time
+      //     range by time range in order of ascending time. The first
+      //     timestamp is advanced
+      //     to val_from if necessary. (For the first file of several to be
+      //     merged, this is just cosmetic, but it's required for subsequent
+      //     files.) Any "unstamped" data at the beginning of the file are
+      //     considered to be in a separate time range (starting at 0).
+      //
+      //     Any time ranges starting on or after val_until of the current file
+      //     are not copied at all since they would never be reached when
+      //     reading the original database.
+      //
+      // (3) If there is more than one time range starting before or at
+      //     val_from, these "introductory" time ranges need to be collapsed
+      //     into a single one (starting at val_from). If identical keys are
+      //     present in several time ranges, only the latest one needs to be
+      //     kept. Although it is technically acceptable to have multiple
+      //     instances of a key in a single time range as long as they are
+      //     written in the correct order (ascending with time), users could
+      //     be confused by this, so multiple keys are eliminated.
+
+      set_tz( inp_tz );
+      bool got_initial_timestamp = false;
+      time_t cur_date = 0; // Timestamp of currect section
+      size_t ndata = 0;    // Non-comment lines in currect section
+      SectionMap_t sections;
+      string chunk;
+      bool skip = false;
+      while( GetLine(fi,buf,LEN,line) == 0 ) {
+	time_t date;
+	if( IsDBdate(line,date) ) {
+	  // Save the previous section's data
+	  if( !skip && !chunk.empty() && (cur_date == 0 || ndata > 0) ) {
+	    AddSection( sections, cur_date, ndata, chunk );
+	    //	    nlines += ndata;
+	  }
+	  cur_date = date;
+	  ndata = 0;
+	  // Skip sections whose time range is not applicable to this directory
+	  skip = ( date >= val_until );
+	}
+	else if( !skip ) {
+	  bool is_data = !IsDBcomment(line);
+	  chunk.append(line).append("\n");
+	  if( is_data )
+	    ++ndata;
+	}
+      }
+      if( !skip && !chunk.empty() && (cur_date == 0 || ndata > 0) ) {
+	AddSection( sections, cur_date, ndata, chunk );
+	//	nlines += ndata;
+      }
+
+      if( !sections.empty() ) {
+	// Process sections with time <= val_from
+	SMiter_t tt = sections.upper_bound(val_from), tf = sections.begin();
+	assert( tf != sections.end() );
+	iterator_traits<SMiter_t>::difference_type d = distance(tf,tt);
+	if( tf->first /*date*/ == 0 && tf->second.first /*ndata*/ == 0 ) --d;
+	// Now d holds the number of sections <= val_from that have data
+	if( d > 1 ) {
+	  // If more than one introductory section, keep only the most recent
+	  // key definitions
+	  assert( tt != sections.begin() );
+	  --tt;
+	  const size_t  tt_ndata = tt->second.first;
+	  const string& tt_chunk = tt->second.second;
+	  set<string> keys;
+	  if( tt_ndata > 0 ) {
+	    istringstream istr(tt_chunk);
+	    string line;
+	    while( getline(istr,line) ) {
+	      string key, value;
+	      if( IsDBkey(line,key,value) )
+		keys.insert(key);
+	    }
+	  }
+	  for( SectionMap_t::reverse_iterator rt(tt); rt != sections.rend(); ++rt ) {
+	    size_t& ndata = rt->second.first, ncomments = 0;
+	    if( ndata == 0 )
+	      continue;
+	    string& chunk = rt->second.second;
+	    istringstream istr(chunk);
+	    string new_chunk, line;
+	    bool copying = true;
+	    new_chunk.reserve(chunk.size());
+	    ndata = 0;
+	    while( getline(istr,line) ) {
+	      string key, value;
+	      if( IsDBkey(line,key,value) ) {
+		copying = (keys.find(key) == keys.end());
+		if( copying ) {
+		  new_chunk.append(line).append("\n");
+		  ++ndata;
+		  keys.insert(key);
+		}
+	      } else if( IsDBcomment(line) ) {
+		new_chunk.append(line).append("\n");
+		if( line.find_first_not_of(" \t") == string::npos )
+		  copying = true;
+		else
+		  ++ncomments;
+	      } else if( copying ) {
+		new_chunk.append(line).append("\n");
+		++ndata;
+	      }
+	    }
+	    if( ndata > 0 || ncomments > 0 ) {
+	      // Collapse 3 or more consecutive newlines to 2
+	      string::size_type pos;
+	      while( (pos = new_chunk.find("\n\n\n")) != string::npos )
+		new_chunk.replace(pos,3,2,'\n');
+	      // Save the pruned new text block
+	      chunk.swap( new_chunk );
+	    } else
+	      // Clear any blocks that are only whitespace
+	      chunk.clear();
+	  }
+	}
+
+	// Write processed sections to file
+	reset_tz();
+	set_tz( outp_tz );
+	for( SMiter_t it = sections.begin(); it != sections.end(); ++it ) {
+	  time_t date = it->first;
+	  size_t ndata = it->second.first;
+	  string& chunk = it->second.second;
+	  if( chunk.empty() )
+	    continue;
+	  if( date == 0 ) {
+	    if( ndata == 0 )
+	      ofs << chunk;
+	    else {
+	      istringstream istr(chunk);
+	      string line;
+	      while( getline(istr,line) ) {
+		if( !got_initial_timestamp && !IsDBcomment(line) ) {
+		  ofs << format_tstamp(val_from) << endl << endl;
+		  got_initial_timestamp = true;
+		}
+		ofs << line << endl;
+	      }
+	    }
+	  } else {
+	    //TODO: temporary
+	    if( date < val_from || (date == val_from && got_initial_timestamp) ) {
+	      ofs << "#";
+	      ofs << format_tstamp(date) << endl;
+	    }
+	    if( !got_initial_timestamp ) {
+	      if( date < val_from )
+		date = val_from;
+	      ofs << format_tstamp(date) << endl;
+	      got_initial_timestamp = true;
+	    } else if( date > val_from )
+	      ofs << format_tstamp(date) << endl;
+
+	    ofs << chunk;
+	  }
+	}
+	if( these_files.size() > 2 && st != lasttf )
+	  ofs << endl;
+      }
+      reset_tz();
+      fclose(fi);
+    }
+    ofs.close();
+    // TODO: check if file is empty (may happen because of in-file timestamps)
   }
   return 0;
 }
@@ -1963,6 +2334,7 @@ int main( int argc, const char** argv )
   // Get list of all database files to convert
   FilenameMap_t filemap;
   vector<string> subdirs;
+  set<string> copy_dets;
   if( GetFilenames(srcdir, 0, filemap, subdirs) < 0 )
     exit(4);  // Error message already printed
 
@@ -1993,67 +2365,18 @@ int main( int argc, const char** argv )
     if( InsertDefaultFiles(subdirs, filenames) )
       exit(8);
 
-    fiter_t lastf = filenames.insert( Filenames_t(numeric_limits<time_t>::max()) );
-    for( fiter_t st = filenames.begin(); st != lastf; ) {
-      const string& path = st->path;
-      time_t val_from = st->val_start, val_until = (++st)->val_start;
+    filenames.insert( Filenames_t(numeric_limits<time_t>::max()) );
 
-      FILE* fi = fopen( path.c_str(), "r" );
-      if( !fi ) {
-	stringstream ss("Error opening database file ",ios::out|ios::app);
-	ss << path;
-	perror(ss.str().c_str());
-	continue;
-      }
-      current_filename = path;
-
-      // Parse the file for any timestamps and "configurations" (=variations)
-      set<time_t> timestamps;
-      vector<string> variations;
-      timestamps.insert(val_from);
-      if( det->SupportsTimestamps() ) {
-	if( ParseTimestamps(fi, timestamps) )
-	  goto next;
-      }
-      if( det->SupportsVariations() ) {
-	if( ParseVariations(fi, variations) )
-	  goto next;
-      }
-
-      timestamps.insert( numeric_limits<time_t>::max() );
-      {
-	siter_t it = timestamps.lower_bound( val_from );
-	siter_t lastt  = timestamps.lower_bound( val_until );
-	for( ; it != lastt; ) {
-	  time_t date_from = *it, date_until = *(++it);
-	  if( date_from  < val_from  )  date_from  = val_from;
-	  if( date_until > val_until )  date_until = val_until;
-	  rewind(fi);
-	  det->Clear();
-	  if( det->ReadDB(fi,date_from,date_until) == 0 ) {
-	  // } else {
-	  //   cout << "Read " << path << endl;
-	    //TODO: support variations
-	    det->Save( date_from );
-	  }
-	  else {
-	    cerr << "Failed to read " << path << " as " << det->GetClassName()
-		 << endl;
-	  }
-	}
-      }
-
-      // Save names of new-format database files to be copied
-      if( do_file_copy && type == kCopyFile ) {
-
-      }
-    next:
-      fclose(fi);
-    } // end for st = filenames
+    ExtractKeys( det, filenames );
 
     // If requested, remove keys for this detector that only have default values
     if( purge_all_default_keys )
       det->PurgeAllDefaultKeys();
+
+    // Save detector names whose database files are to be copied
+    if( do_file_copy && type == kCopyFile )
+      copy_dets.insert( detname );
+
     // Done with this detector
     delete det;
   } // end for ft = filemap
@@ -2071,8 +2394,6 @@ int main( int argc, const char** argv )
   // in the source will also appear at least once in the target.
   // User may request that original directory structure be preserved,
   // otherwise just write one file per detector name.
-  // Special treatment for keys found in current directory: if requested
-  // write the converted versions into a special subdirectory of target.
 
   set_tz( outp_tz );
 
@@ -2080,13 +2401,24 @@ int main( int argc, const char** argv )
     DumpMap();
 
   int err = 0;
-  if( PrepareOutputDir(destdir, subdirs) )
+  if( PrepareOutputDir(destdir,subdirs) )
     err = 6;
 
   if( !err && WriteFileDB(destdir,subdirs) )
     err = 7;
 
   reset_tz();
+
+  if( do_file_copy ) {
+    for( set<string>::const_iterator it = copy_dets.begin();
+	 !err && it != copy_dets.end(); ++it ) {
+      const string& detname = *it;
+      FilenameMap_t::const_iterator ft = filemap.find( detname );
+      assert( ft != filemap.end() );
+      if( CopyFiles(destdir,subdirs,ft) )
+	err = 8;
+    }
+  }
 
   return err;
 }
@@ -2166,32 +2498,40 @@ static Int_t IsDBkey( const string& line, string& key, string& text )
   // - If there is no '=', then return 0.
   // - If key found, parse the line, set 'text' to the whitespace-trimmed
   //   text after the "=" and return +1.
-  //
-  // Note: By construction in ReadDBline, 'line' is not empty, any comments
-  // starting with '#' have been removed, and trailing whitespace has been
-  // trimmed. Also, all tabs have been converted to spaces.
 
   // Search for "="
   register const char* ln = line.c_str();
   const char* eq = strchr(ln, '=');
   if( !eq ) return 0;
   // Extract the key
-  while( *ln == ' ' ) ++ln; // find_first_not_of(" ")
+  while( *ln == ' ' || *ln == '\t' ) ++ln; // find_first_not_of(" \t")
   assert( ln <= eq );
   if( ln == eq ) return -1;
   register const char* p = eq-1;
   assert( p >= ln );
-  while( *p == ' ' ) --p; // find_last_not_of(" ")
+  while( *p == ' ' || *p == '\t' ) --p; // find_last_not_of(" \t")
   key = string(ln,p-ln+1);
-  // Extract the value, trimming leading whitespace.
+  // Extract the value, trimming leading and trailing whitespace
   ln = eq+1;
-  assert( !*ln || *(ln+strlen(ln)-1) != ' ' ); // Trailing space already trimmed
-  while( *ln == ' ' ) ++ln;
+  while( *ln == ' ' || *ln == '\t' ) ++ln;
   text = ln;
-
+  if( !text.empty() ) {
+    string::size_type pos = text.find_last_not_of(" \t");
+    text.erase(pos+1);
+  }
   return 1;
 }
 
+//_____________________________________________________________________________
+static bool IsDBcomment( const string& line )
+{
+  // Return true if 'line' is entirely a comment line in a new-format database
+  // file. Comments start with '#', possibly preceded by whitespace, or are
+  // completely empty lines.
+
+  ssiz_t pos = line.find_first_not_of(" \t");
+  return ( pos == string::npos || line[pos] == '#' );
+}
 
 //-----------------------------------------------------------------------------
 template <class T>
@@ -2391,13 +2731,13 @@ int CopyFile::ReadDB( FILE* fi, time_t date, time_t date_until )
     string key, value;
     if( !ignore && IsDBkey(line, key, value) ) {
       // cout << "CopyFile date/key/value:"
-      // 	   << format_time(curdate) << ", " << key << " = " << value << endl;
+      //	   << format_time(curdate) << ", " << key << " = " << value << endl;
 
       // TODO: add support for "text variables"?
 
       // Add this key/value pair to our local database
       DBvalue val( value, curdate, version );
-      KeyAttr_t attr = fDB[key];
+      KeyAttr_t& attr = fDB[key];
       ValSet_t& vals = attr.values;
       ValSet_t::iterator pos = vals.find(val);
       // If key already exists for this time & version, overwrite its value
@@ -3426,7 +3766,7 @@ int VDC::ReadDB( FILE* file, time_t date, time_t date_until )
     assert( p_cnt >= 1 );
     // if (p_cnt < 1) {
     //   Error(Here(here), "Could not read in Matrix Element %s%d%d%d!",
-    // 	    w, ME.pw[0], ME.pw[1], ME.pw[2]);
+    //	    w, ME.pw[0], ME.pw[1], ME.pw[2]);
     //   Error(Here(here), "Line = \"%s\"",line.c_str());
     //   return kInitError;
     // }
@@ -3539,7 +3879,7 @@ int VDC::ReadDB( FILE* file, time_t date, time_t date_until )
 }
 
 //-----------------------------------------------------------------------------
-int VDC::Plane::ReadDB( FILE* file, time_t date, time_t )
+int VDC::Plane::ReadDB( FILE* file, time_t /* date */, time_t )
 {
   // Legacy VDCPlane database reader
 
@@ -3728,7 +4068,7 @@ int VDC::Plane::ReadDB( FILE* file, time_t date, time_t )
     fgets(buff, LEN, file); // Read to end of line
   } else {
     // Warning( Here(here), "No database section \"%s\" or \"%s\" found. "
-    // 	     "Using defaults.", tag.Data(), tag2.Data() );
+    //	     "Using defaults.", tag.Data(), tag2.Data() );
     fTDCRes = 5.0e-10;  // 0.5 ns/chan = 5e-10 s /chan
     fT0Resolution = 6e-8; // 60 ns --- crude guess
     fMinClustSize = 4;
