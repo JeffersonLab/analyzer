@@ -3,7 +3,12 @@
 // R. Michaels, Aug 2014
 
 
+// MYTYPE = 0 for TEDF,  1 for HCAL
 #define MYTYPE 0
+
+// MYCHAN = 11 for TEDF,  0 for HCAL
+#define MYCHAN 11
+#define DEBUG 1
 
 #include <iostream>
 #include <fstream>
@@ -39,9 +44,12 @@ int main(int argc, char* argv[])
 
    TString filename("snippet.dat");
 
-   ofstream *debugfile = new ofstream;;
+   ofstream *debugfile = 0;
+#ifdef DEBUG
+   debugfile = new ofstream;
    debugfile->open ("oodecoder1.txt");
    *debugfile << "Debug of OO decoder\n\n";
+#endif
 
    THaCodaFile datafile(filename);
    THaEvData *evdata = new CodaDecoder();
@@ -67,9 +75,9 @@ int main(int argc, char* argv[])
     int status = datafile.codaRead();
     if (status != S_SUCCESS) {
       if ( status == EOF) {
-	*debugfile << "Normal end of file.  Bye bye." << endl;
+	if (debugfile) *debugfile << "Normal end of file.  Bye bye." << endl;
       } else {
-	*debugfile << hex << "ERROR: codaRread status = " << status << endl;
+	if (debugfile) *debugfile << hex << "ERROR: codaRread status = " << status << endl;
       }
       exit(1);
     } else {
@@ -77,9 +85,9 @@ int main(int argc, char* argv[])
       UInt_t *data = datafile.getEvBuffer();
       dump(data, debugfile);
 
-      *debugfile << "\nAbout to Load Event "<<endl;
+      if (debugfile) *debugfile << "\nAbout to Load Event "<<endl;
       evdata->LoadEvent( data );
-      *debugfile << "\nFinished with Load Event "<<endl;
+      if (debugfile) *debugfile << "\nFinished with Load Event "<<endl;
 
       if (evdata->GetEvType() == MYTYPE) {
 	process (jnum, evdata, debugfile);
@@ -98,16 +106,18 @@ int main(int argc, char* argv[])
 
 void dump( UInt_t* data, ofstream *debugfile) {
     // Crude event dump
+            if (!debugfile) return;
 	    int evnum = data[4];
 	    int len = data[0] + 1;
 	    int evtype = data[1]>>16;
+            
 	    *debugfile << "\n\n Event number " << dec << evnum << endl;
 	    *debugfile << " length " << len << " type " << evtype << endl;
 	    int ipt = 0;
 	    for (int j=0; j<(len/5); j++) {
 	      *debugfile << dec << "\n evbuffer[" << ipt << "] = ";
 	      for (int k=j; k<j+5; k++) {
-		*debugfile << hex << data[ipt++] << " ";
+	        *debugfile << hex << data[ipt++] << " ";
 	      }
 	      *debugfile << endl;
 	    }
@@ -122,35 +132,37 @@ void dump( UInt_t* data, ofstream *debugfile) {
 
 void process (Int_t iev, THaEvData *evdata, ofstream *debugfile) {
 
+    if (debugfile) {
      *debugfile << "\n\nHello.  Now we process evdata : "<<endl;
 
      *debugfile << "\nEvent type   " << dec << evdata->GetEvType() << endl;
      *debugfile << "Event number " << evdata->GetEvNum()  << endl;
      *debugfile << "Event length " << evdata->GetEvLength() << endl;
-     if (evdata->GetEvType() != MYTYPE) return;
-     if (evdata->IsPhysicsTrigger() ) { // triggers 1-14
-	*debugfile << "Physics trigger " << endl;
-     }
+    }
+    if (evdata->GetEvType() != MYTYPE) return;
+    if (evdata->IsPhysicsTrigger() ) { // triggers 1-14
+	if (debugfile) *debugfile << "Physics trigger " << endl;
+    }
 
      Module *fadc;
 
-     fadc = evdata->GetModule(9,5);
-     *debugfile << "main:  fadc ptr = "<<fadc<<endl;
+     fadc = evdata->GetModule(9,10);  // 9,10 for TEDF    10,3 for HCAL
+     if (debugfile) *debugfile << "main:  fadc ptr = "<<fadc<<endl;
 
      if (fadc) {
-	   *debugfile << "main: num events "<<fadc->GetNumEvents()<<endl;
-	   *debugfile << "main: fadc mode "<<fadc->GetMode()<<endl;
+	   if (debugfile) *debugfile << "main: num events "<<fadc->GetNumEvents()<<endl;
+	   if (debugfile) *debugfile << "main: fadc mode "<<fadc->GetMode()<<endl;
 	   for (Int_t i=0; i < 500; i++) {
-	     *debugfile << "main:  fadc data on ch. 11   "<<dec<<i<<"  "<<fadc->GetData(1, 11,i)<<endl;
+	     if (debugfile) *debugfile << "main:  fadc data on ch.   "<<dec<<MYCHAN<<"  "<<i<<"  "<<fadc->GetData(1, MYCHAN,i)<<endl;
 	     if (fadc->GetMode()==1) {
-	       if (iev==5) h1->Fill(i,fadc->GetData(1,11,i));
-	       if (iev==6) h2->Fill(i,fadc->GetData(1,11,i));
-	       if (iev==7) h3->Fill(i,fadc->GetData(1,11,i));
-	       if (iev==8) h4->Fill(i,fadc->GetData(1,11,i));
-	       if (iev==9) h5->Fill(i,fadc->GetData(1,11,i));
+	       if (iev==5) h1->Fill(i,fadc->GetData(1,MYCHAN,i));
+	       if (iev==6) h2->Fill(i,fadc->GetData(1,MYCHAN,i));
+	       if (iev==7) h3->Fill(i,fadc->GetData(1,MYCHAN,i));
+	       if (iev==8) h4->Fill(i,fadc->GetData(1,MYCHAN,i));
+	       if (iev==9) h5->Fill(i,fadc->GetData(1,MYCHAN,i));
 	     }
 	     if (fadc->GetMode()==2) {
-	       hinteg->Fill(fadc->GetData(1,11,i),1.);
+	       hinteg->Fill(fadc->GetData(1,MYCHAN,i),1.);
 	     }
 	   }
      }
@@ -163,15 +175,15 @@ void process (Int_t iev, THaEvData *evdata, ofstream *debugfile) {
       int slot = 25;
 
 //  Here are raw 32-bit CODA words for this crate and slot
-      *debugfile << "Raw Data Dump for crate "<<dec<<crate<<" slot "<<slot<<endl;
+      if (debugfile) *debugfile << "Raw Data Dump for crate "<<dec<<crate<<" slot "<<slot<<endl;
       int hit;
-      *debugfile << "Num raw "<<evdata->GetNumRaw(crate,slot)<<endl;
+      if (debugfile) *debugfile << "Num raw "<<evdata->GetNumRaw(crate,slot)<<endl;
       for(hit=0; hit<evdata->GetNumRaw(crate,slot); hit++) {
-	*debugfile<<dec<<"raw["<<hit<<"] =   ";
-	*debugfile<<hex<<evdata->GetRawData(crate,slot,hit)<<endl;
+	if (debugfile) *debugfile<<dec<<"raw["<<hit<<"] =   ";
+	if (debugfile) *debugfile<<hex<<evdata->GetRawData(crate,slot,hit)<<endl;
       }
 // You can alternatively let evdata print out the contents of a crate and slot:
-      *debugfile << "To print slotdata "<<crate<<"  "<<slot<<endl;
+      if (debugfile) *debugfile << "To print slotdata "<<crate<<"  "<<slot<<endl;
       //      evdata->PrintSlotData(crate,slot);
-      *debugfile << "finished with print slot data"<<endl;
+      if (debugfile) *debugfile << "finished with print slot data"<<endl;
 }
