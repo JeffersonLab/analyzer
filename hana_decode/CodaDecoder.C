@@ -125,6 +125,13 @@ Int_t CodaDecoder::LoadEvent(const UInt_t* evbuffer)
 	  }
       }
 
+ // If at least one module is in a bank, must split the banks for this roc
+      if (fMap->isBankStructure(iroc)) {
+ 	  if (fDebugFile) *fDebugFile << "\nCodaDecode::Calling bank_decode "<<i<<"   "<<iroc<<"  "<<ipt<<"  "<<iptmax<<endl;       
+
+          bank_decode(iroc,evbuffer,ipt,iptmax);
+      }
+
       if (fDebugFile) *fDebugFile << "\nCodaDecode::Calling roc_decode "<<i<<"   "<<iroc<<"  "<<ipt<<"  "<<iptmax<<endl;
 
       Int_t status = roc_decode(iroc,evbuffer, ipt, iptmax);
@@ -199,9 +206,15 @@ Int_t CodaDecoder::roc_decode( Int_t roc, const UInt_t* evbuffer,
     n_slots_checked = 0;
     slot = firstslot;
     slotdone = kFALSE;
+// bank structure is decoded with bank_decode
+    if (fMap->getBank(roc,slot) >= 0) {
+      n_slots_done++;
+      slotdone=kTRUE;
+    }
 
     while(!slotdone && n_slots_checked < Nslot-n_slots_done && slot >= 0 && slot < MAXSLOT) {
 
+ 
       if (!fMap->slotUsed(roc,slot) || fMap->slotDone(slot)) {
          slot = slot + incrslot;
 	 continue;
@@ -237,6 +250,60 @@ Int_t CodaDecoder::roc_decode( Int_t roc, const UInt_t* evbuffer,
   retval = (status == SD_ERR) ? HED_ERR : HED_WARN;
  exit:
   if( fDoBench ) fBench->Stop("roc_decode");
+  return retval;
+}
+
+//_____________________________________________________________________________
+Int_t CodaDecoder::bank_decode( Int_t roc, const UInt_t* evbuffer,
+				  Int_t ipt, Int_t istop )
+{
+  // Split a roc into banks, if using bank structure
+  // Then loop over slots and decode it from a bank if the slot 
+  // belongs to a blank.
+  assert( evbuffer && fMap );
+  if( fDoBench ) fBench->Begin("bank_decode");
+  Int_t retval = HED_OK;
+  if (!fMap->isBankStructure(roc)) return retval;
+
+  Int_t pos,len,bank,head;
+
+  memset(bankdat,0,MAXBANK*sizeof(BankDat_t));
+
+  if (fDebugFile) *fDebugFile << "CodaDecode:: bank_decode  ... "<<roc<<"   "<<ipt<<"  "<<istop<<endl;
+
+  pos = ipt+1;  // ipt points to ROC ID word
+
+  while (pos < istop) {
+    len = evbuffer[pos];
+    head = evbuffer[pos+1];
+    bank = (head>>16)&0xffff;
+    if (fDebugFile) *fDebugFile << "bank 0x"<<hex<<bank<<"  head 0x"<<head<<"    len 0x"<<len<<dec<<endl;
+
+    if (bank >= 0 && bank < MAXBANK) {
+      bankdat[bank].pos=pos+2;
+      bankdat[bank].len=len-2;
+    }
+
+    pos += len+1;
+
+  }
+
+  Int_t minslot = fMap->getMinSlot(roc);
+  Int_t maxslot = fMap->getMaxSlot(roc);
+
+  for (Int_t slot = minslot; slot <= maxslot; slot++) {
+    bank=fMap->getBank(roc,slot);
+    if (bank < 0 || bank >= Decoder::MAXBANK) {
+      cerr << "CodaDecoder::ERROR:  bank number out of range "<<endl;
+      return 0;
+    }
+    pos = bankdat[bank].pos;
+    len = bankdat[bank].len;
+    if (fDebugFile) *fDebugFile << "CodaDecode:: loading bank "<<roc<<"  "<<slot<<"   "<<bank<<"  "<<pos<<"   "<<len<<endl;
+    crateslot[idx(roc,slot)]->LoadBank(evbuffer,pos,len);
+  }
+
+  if( fDoBench ) fBench->Stop("bank_decode");
   return retval;
 }
 
