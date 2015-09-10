@@ -28,11 +28,6 @@ THaEvtTypeHandler::~THaEvtTypeHandler()
   }
 }
 
-Int_t THaEvtTypeHandler::Analyze(THaEvData *evdata)
-{
-  return 1;
-}
-
 void THaEvtTypeHandler::EvPrint() const
 {
   cout << "Hello !  THaEvtTypeHandler name =  "<<GetName()<<endl;
@@ -74,7 +69,14 @@ void THaEvtTypeHandler::EvDump(THaEvData *evdata) const
 
 THaAnalysisObject::EStatus THaEvtTypeHandler::Init(const TDatime& dt)
 {
+  fStatus = kOK;
   return kOK;
+}
+
+void THaEvtTypeHandler::SetDebugFile(char *filename) {
+    delete fDebugFile;
+    fDebugFile = new ofstream;
+    fDebugFile->open(filename);
 }
 
 Bool_t THaEvtTypeHandler::IsMyEvent(Int_t evnum) const

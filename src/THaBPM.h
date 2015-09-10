@@ -17,6 +17,7 @@ public:
 		   THaApparatus* a = NULL );
   virtual ~THaBPM();
 
+  virtual void       Clear( Option_t* ="" );
   virtual Int_t      Decode( const THaEvData& );
   virtual Int_t      Process();
 
@@ -34,7 +35,6 @@ public:
 
 protected:
 
-  void           ClearEvent();
   virtual Int_t  ReadDatabase( const TDatime& date );
   virtual Int_t  DefineVariables( EMode mode = kDefine );
 

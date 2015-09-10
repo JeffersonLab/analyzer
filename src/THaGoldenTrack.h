@@ -21,23 +21,22 @@ public:
 		  const char* spectro="" );
   virtual ~THaGoldenTrack();
   
-  virtual void      Clear( Option_t* opt="" ) { 
-    THaPhysicsModule::Clear(opt);
-    fTrkIfo.Clear(opt); fIndex = -1; fTrack = NULL;
-  }
+  virtual void      Clear( Option_t* opt="" );
+  virtual EStatus   Init( const TDatime& run_time );
+  virtual Int_t     Process( const THaEvData& evdata );
 
   THaTrack*         GetTrack()     const { return fTrack; }
   const THaTrackInfo* GetTrackInfo() const { return &fTrkIfo; }
   Int_t             GetIndex()     const { return fIndex; }
+  Double_t          GetGoldBeta()  const { return fGoldBeta; }
 
-  virtual EStatus   Init( const TDatime& run_time );
-  virtual Int_t     Process( const THaEvData& evdata );
-          void      SetSpectrometer( const char* name );
+  void              SetSpectrometer( const char* name );
 
 protected:
 
   THaTrackInfo            fTrkIfo;       // Data of Golden Track
   Int_t                   fIndex;        // Index of the Golden Track
+  Double_t                fGoldBeta;     // Beta of the Golden Track
   THaTrack*               fTrack;        // Pointer to Golden Track
 
   TString                 fSpectroName;  // Name of spectrometer

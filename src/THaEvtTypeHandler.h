@@ -17,15 +17,16 @@ class THaEvtTypeHandler : public THaAnalysisObject {
 
 public:
 
-   THaEvtTypeHandler(const char*, const char*);
+   THaEvtTypeHandler(const char* name, const char* description);
    virtual ~THaEvtTypeHandler();
 
-   virtual Int_t Analyze(THaEvData *evdata);
+   virtual Int_t Analyze(THaEvData *evdata) = 0;
    virtual EStatus Init( const TDatime& run_time );
    virtual void EvPrint() const;
    virtual Bool_t IsMyEvent(Int_t evnum) const;
    virtual void EvDump(THaEvData *evdata) const;
    virtual void SetDebugFile(std::ofstream *file) { if (file!=0) fDebugFile=file; };
+   virtual void SetDebugFile(char *filename);
 
 protected:
 

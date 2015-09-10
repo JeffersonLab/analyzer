@@ -38,8 +38,8 @@ using namespace std;
 THaVarList*  gHaVars     = NULL;  // List of symbolic analyzer variables
 THaCutList*  gHaCuts     = NULL;  // List of global analyzer cuts/tests
 TList*       gHaApps     = NULL;  // List of Apparatuses
-TList*       gHaScalers  = NULL;  // List of scaler groups
 TList*       gHaPhysics  = NULL;  // List of physics modules
+TList*       gHaEvtHandlers  = NULL;  // List of event handlers
 THaRunBase*  gHaRun      = NULL;  // The currently active run
 TClass*      gHaDecoder  = NULL;  // Class(!) of decoder to use
 THaDB*       gHaDB       = NULL;  // Database system to use
@@ -71,8 +71,8 @@ THaInterface::THaInterface( const char* appClassName, int* argc, char** argv,
   gHaVars    = new THaVarList;
   gHaCuts    = new THaCutList( gHaVars );
   gHaApps    = new TList;
-  gHaScalers = new TList;
   gHaPhysics = new TList;
+  gHaEvtHandlers = new TList;
   // Use the standard CODA file decoder by default
   gHaDecoder = Decoder::CodaDecoder::Class();
   // File-based database by default
@@ -100,7 +100,7 @@ THaInterface::THaInterface( const char* appClassName, int* argc, char** argv,
       gSystem->FreeDirectory(dp);
       s = p;
     } else
-      s = s+"/src " + s+"/hana_decode " + s+"/hana_scaler";
+      s = s+"/src " + s+"/hana_decode ";
   }
   // Directories names separated by blanks.
   // FIXME: allow blanks
@@ -124,11 +124,11 @@ THaInterface::THaInterface( const char* appClassName, int* argc, char** argv,
   // If this timezone is different from the one in which the data were taken,
   // mismatches may occur. This is bad.
   // FIXME: Use TTimeStamp to keep time in UTC internally.
-  // To be done in version 1.5
+  // To be done in version 1.6
   //
   // As a temporary workaround, we assume that all data were taken in
   // US/Eastern time, and that the database has US/Eastern timestamps.
-  // This should be true for all JLab production data..
+  // This is certainly true for all JLab production data..
   fgTZ = gSystem->Getenv("TZ");
   gSystem->Setenv("TZ","US/Eastern");
 
@@ -150,7 +150,7 @@ THaInterface::~THaInterface()
     delete gHaTextvars; gHaTextvars=0;
     //    delete gHaDB;           gHaDB = 0;
     delete gHaPhysics;   gHaPhysics=0;
-    delete gHaScalers;   gHaScalers=0;
+    delete gHaEvtHandlers;  gHaEvtHandlers=0;
     delete gHaApps;         gHaApps=0;
     delete gHaVars;         gHaVars=0;
     delete gHaCuts;         gHaCuts=0;
@@ -195,12 +195,12 @@ void THaInterface::PrintLogo( Bool_t lite )
      Printf("  *            W E L C O M E  to  the            *");
      Printf("  *       H A L L A   C++  A N A L Y Z E R       *");
      Printf("  *                                              *");
-     Printf("  *        Release %12s %16s *",halla_version,__DATE__);
+     Printf("  *  Release %16s %18s *",halla_version,__DATE__);
      Printf("  *  Based on ROOT %8s %20s *",root_version,root_date);
      //   Printf("  *             Development version              *");
      Printf("  *                                              *");
      Printf("  *            For information visit             *");
-     Printf("  *        http://hallaweb.jlab.org/root/        *");
+     Printf("  *        http://hallaweb.jlab.org/podd/        *");
      Printf("  *                                              *");
      Printf("  ************************************************");
 #if ROOT_VERSION_CODE >= ROOT_VERSION(5,18,0)

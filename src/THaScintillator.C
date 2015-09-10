@@ -124,7 +124,7 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   fOrigin.SetXYZ( x, y, z );
   fgets ( buf, LEN, fi );
   while ( ReadComment( fi, buf, LEN ) ) {}
-  fscanf ( fi, "%15f %15f %15f", fSize, fSize+1, fSize+2 ); // Sizes of det on X,Y,Z
+  fscanf ( fi, "%15lf %15lf %15lf", fSize, fSize+1, fSize+2 ); // Sizes of det on X,Y,Z
   fgets ( buf, LEN, fi );
   while ( ReadComment( fi, buf, LEN ) ) {}
 
@@ -433,8 +433,7 @@ void THaScintillator::DeleteArrays()
 }
 
 //_____________________________________________________________________________
-inline
-void THaScintillator::ClearEvent()
+void THaScintillator::Clear( Option_t* )
 {
   // Reset per-event data.
 
@@ -474,9 +473,7 @@ Int_t THaScintillator::Decode( const THaEvData& evdata )
   //   right hand side, the next fNelem channels, to the left hand side.
   //   (Thus channel numbering for each module must be consecutive.)
 
-  ClearEvent();
-
-  // Loop over all modules defined for Scintillator 1 detector
+  // Loop over all modules defined for this detector
 
   for( Int_t i = 0; i < fDetMap->GetSize(); i++ ) {
     THaDetMap::Module* d = fDetMap->GetModule( i );

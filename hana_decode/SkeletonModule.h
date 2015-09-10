@@ -9,7 +9,7 @@
 //   Feel free to copy this and make appropriate changes.
 //
 //   other steps
-//   1. Register in Module.C (add "DoRegister" call and include the header)
+//   1. Register (add "DoRegister" call and include the header)
 //   note: the number (4444) that is registered must appear in db_cratemap.dat
 //   2. Add to namespace Decoder.h
 //   3. Add to Makefile
@@ -43,6 +43,7 @@ public:
    virtual Int_t GetData(Int_t chan) const;
    virtual void Init();
    virtual void Clear(const Option_t *opt);
+   virtual Int_t Decode(const UInt_t *p) { return 0; };
 
 #ifdef LIKEV792
 // Loads slot data.  if you don't define this, the base class's method is used

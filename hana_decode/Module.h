@@ -53,6 +53,7 @@ namespace Decoder {
     virtual Int_t GetNumChan() const { return fNumChan; };
 
     virtual Int_t GetNumEvents() const { return 0; };
+    virtual Int_t GetNumSamples(Int_t i) const { return 0; };
     virtual Int_t GetMode() const { return 0; };
 
     virtual void SetSlot(Int_t crate, Int_t slot, Int_t header=0,

@@ -170,8 +170,7 @@ THaBPM::~THaBPM()
 }
 
 //_____________________________________________________________________________
-inline 
-void THaBPM::ClearEvent()
+void THaBPM::Clear( Option_t* )
 {
   // Reset per-event data.
   fPosition.SetXYZ(0.,0.,-10000.);
@@ -198,7 +197,6 @@ Int_t THaBPM::Decode( const THaEvData& evdata )
   // copies raw data into local variables
   // performs pedestal subtraction
 
-  ClearEvent();
   for (Int_t i = 0; i < fDetMap->GetSize(); i++ ){
     THaDetMap::Module* d = fDetMap->GetModule( i );
     for (Int_t j=0; j< evdata.GetNumChan( d->crate, d->slot ); j++) {

@@ -207,8 +207,7 @@ THaRaster::~THaRaster()
 }
 
 //_____________________________________________________________________________
-inline 
-void THaRaster::ClearEvent()
+void THaRaster::Clear( Option_t* )
 {
   // Reset per-event data.
   fRawPos(0)=-1;
@@ -230,9 +229,6 @@ Int_t THaRaster::Decode( const THaEvData& evdata )
   // loops over all modules defined in the detector map
   // copies raw data into local variables
   // pedestal subtraction is not foreseen for the raster
-
-
-  ClearEvent();
 
   UInt_t chancnt = 0;
 
