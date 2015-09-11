@@ -21,6 +21,7 @@ public:
    virtual ~GenScaler();
 
    using Module::GetData;
+   using Module::LoadSlot;
 
    virtual void  Clear(const Option_t *opt) { fIsDecoded=kFALSE; };
    virtual Int_t Decode(const UInt_t *evbuffer);
