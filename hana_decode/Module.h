@@ -49,6 +49,9 @@ namespace Decoder {
     // Loads slot data
     virtual Int_t LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer,
 			   const UInt_t *pstop ) = 0;
+    // Loads slot data from pos to pos+len
+    virtual Int_t LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer,
+				   Int_t pos, Int_t len);
 
     virtual Int_t GetNumChan() const { return fNumChan; };
 
@@ -65,6 +68,8 @@ namespace Decoder {
       fHeaderMask = mask;
       fModelNum   = modelnum;
     }
+
+    virtual void SetBank(Int_t bank) { fBank = bank; };
 
     virtual void Init();
 
@@ -91,10 +96,13 @@ namespace Decoder {
 
   protected:
 
+    std::vector<Int_t> fData;  // Raw data
+
     static TypeIter_t DoRegister( const ModuleType& registration_info );
 
     Int_t fCrate, fSlot;
     UInt_t fHeader, fHeaderMask;
+    Int_t fBank;
     Int_t fWordsExpect, fWordsSeen;
     Int_t fWdcntMask, fWdcntShift;
     Int_t fModelNum, fNumChan;
