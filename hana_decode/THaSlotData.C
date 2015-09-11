@@ -141,7 +141,7 @@ int THaSlotData::loadModule(const THaCrateMap *map) {
 	fModule->Init();
 	fModule->SetSlot( crate, slot, map->getHeader(crate, slot), map->getMask(crate, slot), map->getModel(crate,slot));
         fModule->SetBank(map->getBank(crate,slot));
-	if (fDebugFile) *fDebugFile << "THaSlotData:: about to init  module   "<<crate<<"  "<<slot<<" mod ptr "<<fModule<<"  header "<<hex<<map->getHeader(crate,slot)<<"  model num "<<dec<<map->getModel(crate,slot)<<"  bank = "<<map->getBank(crate,slot))<<endl;
+	if (fDebugFile) *fDebugFile << "THaSlotData:: about to init  module   "<<crate<<"  "<<slot<<" mod ptr "<<fModule<<"  header "<<hex<<map->getHeader(crate,slot)<<"  model num "<<dec<<map->getModel(crate,slot)<<"  bank = "<<map->getBank(crate,slot)<<endl;
 	if (fDebugFile) {
 	  fModule->SetDebugFile(fDebugFile);
 	  fModule->DoPrint();
