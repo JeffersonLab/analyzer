@@ -283,6 +283,75 @@ namespace Decoder {
     return fWordsSeen;
   }
 
+
+  Int_t Fadc250Module::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, const Int_t pos, const Int_t len) {
+#ifdef WITH_DEBUG
+    if (fDebugFile) *fDebugFile << "Fadc250Module:: loadslot(2) "<<pos<<"  "<<len<<endl;
+#endif
+
+    fWordsSeen = 0;
+    Clear("");
+    Int_t index=0;
+    fWordsSeen=0;
+    while ( fWordsSeen<len ) {
+        index = pos+fWordsSeen;
+        Decode(&evbuffer[index]);
+        fWordsSeen++;
+#ifdef WITH_DEBUG
+        if (fDebugFile) *fDebugFile << "Raw bank data in FADC  0x"<<hex<<evbuffer[index]<<"  #words = "<<dec<<fWordsSeen<<endl;
+#endif
+
+    }
+
+#ifdef WITH_DEBUG
+    if (fDebugFile) *fDebugFile << "Fadc250Module:: mode info "<<dec<<f250_setmode<<"   "<<f250_foundmode<<endl;
+#endif
+
+    CheckFoundMode();
+  
+    // Now load the THaSlotData
+
+    for (Int_t chan=0; chan<NADCCHAN; chan++) {
+#ifdef WITH_DEBUG
+      if (fDebugFile) *fDebugFile << "Fadc250:: Chan  "<<chan<<"  num sample "<<fNumSample[chan]<<"  MAXDAT "<<MAXDAT<<endl;
+#endif
+      for (Int_t i=0; i<fNumAInt[chan]; i++) {
+	Int_t index = MAXDAT*chan + i;
+#ifdef WITH_DEBUG
+	if (fDebugFile) *fDebugFile << "Fadc250:: indexing  "<<index<<"  "<<NADCCHAN*MAXDAT<<endl;	
+#endif
+        if (index < 0 || index > NADCCHAN*MAXDAT) {
+	  if (fDebugFile) *fDebugFile << "Fadc250:: INDEX problem !  "<<index<<endl;
+	  cerr << "Fadc250:: WARN: index out of range "<<dec<<index<<endl;
+	} else {
+	  sldat->loadData("adc", chan, fAdcData[index], fAdcData[index]);
+	}
+      }
+      for (Int_t i=0; i<fNumTInt[chan]; i++) {
+	Int_t index = MAXDAT*chan + i;
+	if (index < 0 || index > NADCCHAN*MAXDAT) {
+	  cerr << "Fadc250:: WARN: index out of range "<<dec<<index<<endl;
+	} else {
+	  sldat->loadData("tdc", chan, fTdcData[index], fTdcData[index]);
+	}
+      }
+      for (Int_t i=0; i<fNumSample[chan]; i++) {
+	Int_t index = MAXDAT*chan + i;
+#ifdef WITH_DEBUG
+	if (fDebugFile) *fDebugFile << "channel "<<dec<<chan<<"  "<<i<<"  "<<index<<"   data "<<fAdcData[index]<<endl;
+#endif
+	if (index < 0 || index > NADCCHAN*MAXDAT) {
+	  cerr << "Fadc250:: WARN: index out of range "<<dec<<index<<endl;
+	} else {
+	  sldat->loadData("adc", chan, fAdcData[index], fAdcData[index]);
+	}
+      }
+    }
+
+    return fWordsSeen;
+  }
+
+
   Int_t Fadc250Module::Decode(const UInt_t *pdat)
   { // Routine from B. Moffit, adapted by R. Michaels for this class.
     // Note, there are several modes, but for now (Aug 2014) we only use two.
@@ -443,6 +512,8 @@ namespace Decoder {
 			  << fadc_data.adc_1<< "  "<<fadc_data.valid_2<<"   "
 			  << fadc_data.adc_2<<endl;
 #endif
+// load into fAdcData, if it is this slot
+          if (fadc_data.slot_id_hd == fSlot) {
 	    f250_foundmode = F250_SAMPLE;
 #ifdef WITH_DEBUG
 	    if(  (i_print == 1) && (fDebugFile != 0) )
@@ -472,6 +543,7 @@ namespace Decoder {
 	      *fDebugFile <<"Chan "<<chan<<"    Num samples "
 			  <<fNumSample[chan]<<"   mode "<<f250_foundmode<<endl;
 #endif
+	  }  // Load if slot is fSlot
 	  }
 	break;
       case 5:		/* WINDOW SUM */
@@ -522,6 +594,8 @@ namespace Decoder {
 	  }
 	break;
       case 7:		/* PULSE INTEGRAL */
+// load into fAdcData, if it is this slot
+      if (fadc_data.slot_id_hd == fSlot) {
 	f250_foundmode = F250_INTEG;
 	fadc_data.chan = (data & 0x7800000) >> 23;
 	fadc_data.pulse_num = (data & 0x600000) >> 21;
@@ -548,8 +622,11 @@ namespace Decoder {
 		      << fadc_data.pulse_num<<"  "<< fadc_data.quality<<"  "
 		      << fadc_data.integral<<endl;
 #endif
+        } // load if slot = fSlot
 	break;
       case 8:		/* PULSE TIME */
+// load into fTdcData, if it is this slot
+      if (fadc_data.slot_id_hd == fSlot) {
 	fadc_data.chan = (data & 0x7800000) >> 23;
 	fadc_data.pulse_num = (data & 0x600000) >> 21;
 	fadc_data.quality = (data & 0x180000) >> 19;
@@ -574,6 +651,7 @@ namespace Decoder {
 		      <<"   "<< fadc_data.chan<<"  "<< fadc_data.pulse_num
 		      <<"  "<<fadc_data.quality<< "  "<< fadc_data.time<<endl;
 #endif
+        } // load if slot = fSlot
 	break;
       case 9:		/* STREAMING RAW DATA */
 	if( fadc_data.new_type )

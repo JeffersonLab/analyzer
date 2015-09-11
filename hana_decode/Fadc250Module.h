@@ -21,6 +21,7 @@ public:
    virtual ~Fadc250Module();
 
    using Module::GetData;
+   using Module::LoadSlot;
 
    virtual void Init();
    virtual Bool_t IsSlot(UInt_t rdata);
