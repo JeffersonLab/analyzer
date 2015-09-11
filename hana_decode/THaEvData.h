@@ -152,6 +152,10 @@ protected:
     Int_t pos;                // position in evbuffer[]
     Int_t len;                // length of data
   } rocdat[Decoder::MAXROC];
+  struct BankDat_t {           // Bank raw data descriptor
+    Int_t pos;                 // position in evbuffer[]
+    Int_t len;                 // length of data
+  } bankdat[Decoder::MAXBANK];
   Decoder::THaSlotData** crateslot;
 
   Bool_t first_decode;

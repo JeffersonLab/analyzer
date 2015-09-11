@@ -94,6 +94,7 @@ private:
 
 // Loads sldat and increments ptr to evbuffer
    Int_t LoadSlot(THaSlotData *sldat,  const UInt_t* evbuffer, const UInt_t *pstop );
+   Int_t LoadSlot(THaSlotData *sldat,  const UInt_t* evbuffer, const Int_t pos, const Int_t len);
 
    Int_t fNumTrig, fNumEvents, *fNumAInt, *fNumTInt,  *fNumSample;
    Int_t *fAdcData;  // Raw data (either samples or pulse integrals)

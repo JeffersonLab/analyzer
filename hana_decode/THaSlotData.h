@@ -58,6 +58,7 @@ public:
 
        // new
        Int_t LoadIfSlot(const UInt_t* evbuffer, const UInt_t *pstop);
+       Int_t LoadBank(const UInt_t* p, Int_t pos, Int_t len); 
        void SetDebugFile(std::ofstream *file) { fDebugFile = file; };
        Module* GetModule() { return fModule; };
 
