@@ -21,6 +21,8 @@ public:
    VmeModule(Int_t crate, Int_t slot);
    virtual ~VmeModule();
 
+   using Module::LoadSlot;
+
    virtual Bool_t IsSlot(UInt_t rdata);
    virtual Int_t Slot(Int_t rdata) const { return fSlot; };
    virtual Int_t Data(Int_t rdata) const { return rdata; };
@@ -29,8 +31,6 @@ public:
 			  const UInt_t *pstop );
 
 protected:
-
-   std::vector<Int_t> fData;  // Raw data
 
 private:
 
