@@ -199,6 +199,7 @@ namespace Decoder {
       memset(fNumTInt, 0, NADCCHAN*sizeof(Int_t));
     }
     if (IsSampleMode()) memset(fNumSample, 0, NADCCHAN*sizeof(Int_t));
+    fadc_data.slot_id_hd = -1;
   }
 
   Int_t Fadc250Module::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, const UInt_t *pstop) {
