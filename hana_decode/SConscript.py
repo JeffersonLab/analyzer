@@ -22,7 +22,8 @@ THaEvData.C THaCodaDecoder.C SimDecoder.C
 CodaDecoder.C Module.C VmeModule.C FastbusModule.C
 Lecroy1877Module.C Lecroy1881Module.C Lecroy1875Module.C
 Fadc250Module.C GenScaler.C Scaler560.C Scaler1151.C
-Scaler3800.C Scaler3801.C F1TDCModule.C SkeletonModule.C
+Scaler3800.C Scaler3801.C F1TDCModule.C Caen1190Module.C
+SkeletonModule.C
 """)
 #evio.C
 #swap_util.C swapped_intcpy.c
