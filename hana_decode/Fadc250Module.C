@@ -25,6 +25,11 @@ namespace Decoder {
   Module::TypeIter_t Fadc250Module::fgThisType =
     DoRegister( ModuleType( "Decoder::Fadc250Module" , 250 ));
 
+  Fadc250Module::Fadc250Module()
+    : VmeModule(), fNumAInt(0), fNumTInt(0), fNumSample(0),
+      fAdcData(0), fTdcData(0)
+  {}
+
   Fadc250Module::Fadc250Module(Int_t crate, Int_t slot)
     : VmeModule(crate, slot), fNumAInt(0), fNumTInt(0), fNumSample(0),
       fAdcData(0), fTdcData(0)
@@ -44,18 +49,18 @@ namespace Decoder {
   }
 
   void Fadc250Module::Init() {
-    // Delete memory in case of re-Init()
-    delete [] fNumAInt;
-    delete [] fNumTInt;
-    delete [] fNumSample;
-    delete [] fAdcData;
-    delete [] fTdcData;
 #if defined DEBUG && defined WITH_DEBUG
     // this will make a HUGE output
-    if( fDebugFile ) fDebugFile->close();
+    delete fDebugFile; fDebugFile = 0;
     fDebugFile=new ofstream;
     fDebugFile->open("fadcdebug.dat");
 #endif
+    // Delete memory in case of re-Init()
+    delete [] fNumAInt;   fNumAInt = 0;
+    delete [] fNumTInt;   fNumTInt = 0;
+    delete [] fNumSample; fNumSample = 0;
+    delete [] fAdcData;   fAdcData = 0;
+    delete [] fTdcData;   fTdcData = 0;
     fNumAInt = new Int_t[NADCCHAN];
     fNumTInt = new Int_t[NADCCHAN];
     fNumSample = new Int_t[NADCCHAN];
@@ -212,7 +217,7 @@ namespace Decoder {
     Int_t numwords = 0;
     if (IsSlot(*evbuffer)) {
       if (IsIntegMode()) numwords = *(evbuffer+2);
-      if (IsSampleMode()) numwords = *(evbuffer+4);  // Where is it ?
+      if (IsSampleMode()) numwords = 10000;  // Where is it ?
     }
 // This would not happen if CRL puts numwords into output
     if (numwords < 0) cout << "Fadc250: warning: negative num words ?"<<endl;
@@ -222,8 +227,10 @@ namespace Decoder {
 #endif
     // Fill data structures of this class
     Clear("");
-    while ( evbuffer < pstop && fWordsSeen < numwords ) {
-      Decode(evbuffer);
+    // Read until out of data or until Decode says that the slot is finished
+    Int_t btrail=0;
+    while ( evbuffer < pstop && fWordsSeen < numwords && btrail==0) {
+      btrail=Decode(evbuffer);
       fWordsSeen++;
       evbuffer++;
     }
@@ -361,6 +368,8 @@ namespace Decoder {
     static unsigned int time_last = 0;
     static unsigned int iword=0;
 
+    Int_t return_value=0;
+
     int i_print = 1;
     UInt_t data = *pdat;
     Int_t nsamples, index, chan;
@@ -398,6 +407,7 @@ namespace Decoder {
       case 1:		/* BLOCK TRAILER */
 	fadc_data.slot_id_tr = (data & 0x7C00000) >> 22;
 	fadc_data.n_words = (data & 0x3FFFFF);
+	return_value = 1;	// Indicate block trailer found
 #ifdef WITH_DEBUG
 	if(  (i_print == 1) && (fDebugFile != 0) )
 	  *fDebugFile <<"%8X - BLOCK TRAILER - slot = %d   n_words = %d\n  "
@@ -757,7 +767,7 @@ namespace Decoder {
 
     type_last = fadc_data.type;	/* save type of current data word */
 
-    return 1;
+    return return_value;
 
   }
 

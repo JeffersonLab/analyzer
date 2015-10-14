@@ -16,7 +16,7 @@ class Fadc250Module : public VmeModule {
 
 public:
 
-   Fadc250Module() {};
+   Fadc250Module();
    Fadc250Module(Int_t crate, Int_t slot);
    virtual ~Fadc250Module();
 
