@@ -565,7 +565,7 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 
   // Delete tracks that were not updated
   if( tracks && n_exist > n_mod ) {
-    bool modified = false;
+    //    bool modified = false;
     for( int i = 0; i < tracks->GetLast()+1; i++ ) {
       THaTrack* theTrack = static_cast<THaTrack*>( tracks->At(i) );
       // Track created by this class and not updated?
@@ -583,7 +583,7 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 	}
 	// Then, remove the track
 	tracks->RemoveAt(i);
-	modified = true;
+	//	modified = true;
 #ifdef WITH_DEBUG
 	if( fDebug>1 )
 	  cout << "Track " << i << " deleted.\n";
