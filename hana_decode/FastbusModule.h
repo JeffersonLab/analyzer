@@ -21,14 +21,16 @@ public:
    FastbusModule(Int_t crate, Int_t slot);
    virtual ~FastbusModule();
 
+   using Module::LoadSlot;
+
    virtual Int_t Decode(const UInt_t *evbuffer);
    virtual Bool_t IsSlot(UInt_t rdata) { return (Slot(rdata)==fSlot); };
    virtual Int_t LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const UInt_t *pstop);
    void DoPrint() const;
 
-   Int_t Slot(UInt_t rdata) { return (rdata>>fSlotShift); };
-   Int_t Chan(UInt_t rdata) { return (rdata&fChanMask)>>fChanShift; };
-   Int_t Data(UInt_t rdata) { return (rdata&fDataMask); };
+   UInt_t Slot(UInt_t rdata) { return (rdata>>fSlotShift); };
+   UInt_t Chan(UInt_t rdata) { return (rdata&fChanMask)>>fChanShift; };
+   UInt_t Data(UInt_t rdata) { return (rdata&fDataMask); };
 
 protected:
 

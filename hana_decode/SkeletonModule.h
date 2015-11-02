@@ -39,6 +39,7 @@ public:
    virtual ~SkeletonModule();
 
    using Module::GetData;
+   using Module::LoadSlot;
 
    virtual Int_t GetData(Int_t chan) const;
    virtual void Init();

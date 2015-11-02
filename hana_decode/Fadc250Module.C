@@ -292,7 +292,7 @@ namespace Decoder {
   }
 
 
-  Int_t Fadc250Module::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, const Int_t pos, const Int_t len) {
+  Int_t Fadc250Module::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, Int_t pos, Int_t len) {
 #ifdef WITH_DEBUG
     if (fDebugFile) *fDebugFile << "Fadc250Module:: loadslot(2) "<<pos<<"  "<<len<<endl;
 #endif
@@ -372,7 +372,7 @@ namespace Decoder {
 
     int i_print = 1;
     UInt_t data = *pdat;
-    Int_t nsamples, index, chan;
+    Int_t index, chan;
 
 #ifdef WITH_DEBUG
     if ((i_print==1) && (fDebugFile !=0))
@@ -497,7 +497,7 @@ namespace Decoder {
 	  {
 	    fadc_data.chan = (data & 0x7800000) >> 23;
 	    fadc_data.width = (data & 0xFFF);
-	    nsamples = fadc_data.width;
+	    //	    nsamples = fadc_data.width;
 #ifdef WITH_DEBUG
 	    if(  (i_print == 1) && (fDebugFile != 0) )
 	      *fDebugFile <<"%8X - WINDOW RAW DATA - chan = %d   nsamples = %d\n  "
