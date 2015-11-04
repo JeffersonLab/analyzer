@@ -43,6 +43,7 @@ evio/
 *.cdef
 *.png
 *.patch
+/work/
 
 #scons stuff
 config.log
