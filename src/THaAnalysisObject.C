@@ -1184,7 +1184,7 @@ Int_t THaAnalysisObject::LoadDBvalue( FILE* file, const TDatime& date,
 				      const char* key, string& text )
 {
   // Load a data value tagged with 'key' from the database 'file'.
-  // Lines before the first valid time stamp or starting with "#" are ignored.
+  // Lines starting with "#" are ignored.
   // If 'key' is found, then the most recent value seen (based on time stamps
   // and position within the file) is returned in 'text'.
   // Values with time stamps later than 'date' are ignored.
