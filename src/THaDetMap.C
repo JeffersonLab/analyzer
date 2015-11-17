@@ -243,8 +243,9 @@ Int_t THaDetMap::Fill( const vector<Int_t>& values, UInt_t flags )
   // Defaults for optional values
   UInt_t first = 0, model = 0;
   Int_t rchan = -1, ref = -1;
+#ifdef HALLC_MODS
   UInt_t plane=0, signal=0;
-
+#endif
   Int_t ret = 0;
   for( vsiz_t i = 0; i < values.size(); i += tuple_size ) {
     // For compatibility with older maps, crate < 0 means end of data
@@ -268,11 +269,12 @@ Int_t THaDetMap::Fill( const vector<Int_t>& values, UInt_t flags )
       rchan = values[i+k++];
     if( flags & kFillRefIndex )
       ref   = values[i+k++];
+#ifdef HALLC_MODS
     if( flags & kFillPlane )
       plane   = values[i+k++];
     if( flags & kFillSignal )
       signal  = values[i+k++];
-
+#endif
     ret = AddModule( values[i], values[i+1], values[i+2], values[i+3],
 		     first, model, ref, rchan
 #ifdef HALLC_MODS
