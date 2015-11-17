@@ -197,6 +197,10 @@ SRC = THaUsrstrutils.C THaCrateMap.C THaCodaData.C \
       THaEpics.C THaFastBusWord.C THaCodaFile.C THaSlotData.C \
       THaEvData.C evio.C THaCodaDecoder.C
 
+ifndef STANDALONE
+  SRC += SimDecoder.C
+endif
+
 PROGS = tstio tdecpr tdecex prfact epicsd 
 # If you want to use the ET system at Jlab.
 ifdef ONLINE_ET
