@@ -4368,40 +4368,41 @@ int VDC::Plane::Save( time_t start, const string& version ) const
 
   // TODO: write detmap
 
-  if( !TestBit(fVDC->GetCommon(),kNelem) )
+  UInt_t cbits = fVDC->GetCommon();
+  if( !TestBit(cbits,kNelem) )
     AddToMap( prefix+"nwires",        MakeValue(&fNelem),         start, version );
   AddToMap( prefix+"wire.start",      MakeValue(&fWBeg),          start, version );
-  if( !TestBit(fVDC->GetCommon(),kWSpac) )
+  if( !TestBit(cbits,kWSpac) )
     AddToMap( prefix+"wire.spacing",  MakeValue(&fWSpac),         start, version );
   AddToMap( prefix+"wire.angle",      MakeValue(&fWAngle),        start, version );
   if( !fBadWires.empty() )
     AddToMap( prefix+"wire.badlist",    MakeValue(&fBadWires[0],fBadWires.size()),
 	      start, version );
-  if( !TestBit(fVDC->GetCommon(),kDriftVel) )
+  if( !TestBit(cbits,kDriftVel) )
     AddToMap( prefix+"driftvel",      MakeValue(&fDriftVel),      start, version );
-  if( !TestBit(fVDC->GetCommon(),kMinTime) )
+  if( !TestBit(cbits,kMinTime) )
     AddToMap( prefix+"tdc.min",       MakeValue(&fMinTime),       start, version );
-  if( !TestBit(fVDC->GetCommon(),kMaxTime) )
+  if( !TestBit(cbits,kMaxTime) )
     AddToMap( prefix+"tdc.max",       MakeValue(&fMaxTime),       start, version );
-  if( !TestBit(fVDC->GetCommon(),kTDCRes) )
+  if( !TestBit(cbits,kTDCRes) )
     AddToMap( prefix+"tdc.res",       MakeValue(&fTDCRes),        start, version );
   AddToMap( prefix+"tdc.offsets",     MakeValue(&fTDCOffsets[0],fNelem),
 	    start, version, 8 );
-  if( !TestBit(fVDC->GetCommon(),kTTDConv) )
+  if( !TestBit(cbits,kTTDConv) )
     AddToMap( prefix+"ttd.converter", MakeValue(&fTTDConv),       start, version );
-  if( !TestBit(fVDC->GetCommon(),kTTDPar) )
+  if( !TestBit(cbits,kTTDPar) )
     AddToMap( prefix+"ttd.param",     MakeValue(&fTTDPar[0],9),   start, version, -4 );
-  if( !TestBit(fVDC->GetCommon(),kT0Resolution) )
+  if( !TestBit(cbits,kT0Resolution) )
     AddToMap( prefix+"t0.res",        MakeValue(&fT0Resolution),  start, version );
-  if( !TestBit(fVDC->GetCommon(),kMinClustSize) )
+  if( !TestBit(cbits,kMinClustSize) )
     AddToMap( prefix+"clust.minsize", MakeValue(&fMinClustSize),  start, version );
-  if( !TestBit(fVDC->GetCommon(),kMaxClustSpan) )
+  if( !TestBit(cbits,kMaxClustSpan) )
     AddToMap( prefix+"clust.maxspan", MakeValue(&fMaxClustSpan),  start, version );
-  if( !TestBit(fVDC->GetCommon(),kNMaxGap) )
+  if( !TestBit(cbits,kNMaxGap) )
     AddToMap( prefix+"maxgap",        MakeValue(&fNMaxGap),       start, version );
-  if( !TestBit(fVDC->GetCommon(),kMinTdiff) )
+  if( !TestBit(cbits,kMinTdiff) )
     AddToMap( prefix+"tdiff.min",     MakeValue(&fMinTdiff),      start, version );
-  if( !TestBit(fVDC->GetCommon(),kMaxTdiff) )
+  if( !TestBit(cbits,kMaxTdiff) )
     AddToMap( prefix+"tdiff.max",     MakeValue(&fMaxTdiff),      start, version );
   AddToMap( prefix+"description",     MakeValue(&fDescription),   start, version );
 
