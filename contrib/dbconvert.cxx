@@ -59,6 +59,7 @@ using namespace std;
 static bool IsDBdate( const string& line, time_t& date );
 static bool IsDBcomment( const string& line );
 static Int_t IsDBkey( const string& line, string& key, string& text );
+static bool IsDBSubDir( const string& fname, time_t& date );
 
 // Command line parameter defaults
 static int do_debug = 0, verbose = 0, do_file_copy = 1, do_subdirs = 0;
@@ -71,6 +72,8 @@ static const char* mapfile = 0;
 static const char* inp_tz_arg = 0, *outp_tz_arg = 0;
 static string inp_tz, outp_tz, cur_tz;
 static string current_filename;
+static const char* c_out_subdirs = 0;
+static vector<string> out_subdirs;
 
 static struct poptOption options[] = {
   //  POPT_AUTOHELP
@@ -79,6 +82,7 @@ static struct poptOption options[] = {
   { "debug",    'd', POPT_ARG_VAL,    &do_debug, 1, 0, 0  },
   { "mapfile",  'm', POPT_ARG_STRING, &mapfile,  0, 0, 0  },
   // "detlist", 'l', ... // list of wildcards of detector names
+  { "subdirs",  's', POPT_ARG_STRING, &c_out_subdirs, 0, 0, 0  },  // overrides preserve-subdirs
   { "preserve-subdirs",    's', POPT_ARG_VAL,  &do_subdirs, 1, 0, 0  },
   { "no-preserve-subdirs", 0, POPT_ARG_VAL,    &do_subdirs, 0, 0, 0  },
   { "no-clean",  0, POPT_ARG_VAL,    &do_clean, 0, 0, 0  },
@@ -92,7 +96,6 @@ static struct poptOption options[] = {
 struct Filenames_t {
   Filenames_t( time_t _start, const string& _path = "" )
     : val_start(_start), path(_path) {}
-  //  Filenames_t( time_t _start ) : val_start(_start) {}
   time_t    val_start;
   string    path;
   // Order by validity time
@@ -119,6 +122,7 @@ static void help()
   cerr << " -h, --help\t\t\tshow this help message" << endl;
   cerr << " -v, --verbose\t\t\tincrease verbosity" << endl;
   cerr << " -d, --debug\t\t\tprint extensive debug info" << endl;
+  //TODO...
   // cerr << " -o <outfile>: Write output to <outfile>. Default: "
   //      << OUTFILE_DEFAULT << endl;
   // cerr << " <infile>: Read input from <infile>. Default: "
@@ -285,6 +289,18 @@ static void getargs( int argc, const char** argv )
   if( !inp_tz.empty() && outp_tz.empty() )
     outp_tz = inp_tz;
 
+  out_subdirs.clear();
+  if( c_out_subdirs && *c_out_subdirs ) {
+    istringstream istr(c_out_subdirs);
+    string item;
+    time_t date;
+    while( getline(istr,item,',') ) {
+      if( item != "DEFAULT" && IsDBSubDir(item,date) )
+	out_subdirs.push_back(item);
+    }
+    do_subdirs = true;
+  }
+
   //DEBUG
   if( mapfile )
     cout << "Mapfile name is \"" << mapfile << "\"" << endl;
@@ -393,7 +409,7 @@ static inline bool IsDBFileName( const string& fname )
 }
 
 //-----------------------------------------------------------------------------
-static inline bool IsDBSubDir( const string& fname, time_t& date )
+static bool IsDBSubDir( const string& fname, time_t& date )
 {
   // Check if the given file name corresponds to a database subdirectory.
   // Subdirectories have filenames of the form "YYYYMMDD" and "DEFAULT".
@@ -1461,7 +1477,7 @@ static void DefaultMap()
     { "Rurb",       kNone },
     { "Lurb",       kNone },
     // Apparently Bodo's database scheme was so confusing that people started
-    // defining BPM database for rastered beams, which only use the Raster
+    // defining BPM databases for rastered beams, which only use the Raster
     // detector, and Raster databases for unrastered beams, which only use
     // BPM detectors. Ignore all these since they are never used.
     { "rb.BPMA",    kNone },
@@ -2400,11 +2416,14 @@ int main( int argc, const char** argv )
   if( do_dump )
     DumpMap();
 
+  if( do_subdirs && out_subdirs.empty() )
+    out_subdirs = subdirs;
+
   int err = 0;
-  if( PrepareOutputDir(destdir,subdirs) )
+  if( PrepareOutputDir(destdir,out_subdirs) )
     err = 6;
 
-  if( !err && WriteFileDB(destdir,subdirs) )
+  if( !err && WriteFileDB(destdir,out_subdirs) )
     err = 7;
 
   reset_tz();
@@ -2415,7 +2434,7 @@ int main( int argc, const char** argv )
       const string& detname = *it;
       FilenameMap_t::const_iterator ft = filemap.find( detname );
       assert( ft != filemap.end() );
-      if( CopyFiles(destdir,subdirs,ft) )
+      if( CopyFiles(destdir,out_subdirs,ft) )
 	err = 8;
     }
   }
@@ -2423,7 +2442,6 @@ int main( int argc, const char** argv )
   return err;
 }
 
-//#if 0
 //-----------------------------------------------------------------------------
 static char* ReadComment( FILE* fp, char *buf, const int len )
 {
@@ -2461,7 +2479,6 @@ static char* ReadComment( FILE* fp, char *buf, const int len )
   fseeko(fp, pos, SEEK_SET);
   return 0;
 }
-//#endif
 
 //_____________________________________________________________________________
 static bool IsDBdate( const string& line, time_t& date )
