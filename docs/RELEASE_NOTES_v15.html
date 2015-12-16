@@ -1,0 +1,114 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+<META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>Release Notes Podd v1.5</title>
+</head>
+
+<body background="wallpaper.gif">
+<h2>Podd version 1.5</h2>
+
+28 April 2008
+<p>
+The Hall A software team is pleased to present version 1.5 of the
+C++ analysis software Podd.  This version contains many significant
+improvements that were driven by the experience with analyzing
+recent experiments in Hall A as well as the requirements
+of the complex BigBite spectrometer tracking code. 
+
+<p>
+Several parts of the programming interface in this release have changed
+compared to Podd version 1.4. As a result, plug-ins for version 1.4 will have
+to be recompiled. In some cases, source code changes will be necessary.
+However, most of the bug fixes as well as some of the additional functionality of
+this release have been (or will shortly be) backported to version 1.4. We plan to
+support version 1.4 for several years into the future because many earlier
+Hall A experiments have spent considerable effort on developing complex libraries.
+They should not be forced to upgrade. For new development, however, version 1.5
+should be used.
+
+<p>
+The main improvements in this release are the database system, which now
+supports a much more user-friendly free file format and additional data
+types, and the helicity classes, which have been restructured and integrated
+into Podd. The old <tt>THaHelicty</tt> class has been replaced with
+a new version which performs a reasonable default action for standard
+polarization experiments.
+
+<hr>
+
+<h3>What's new</h3>
+Compared to <a href="RELEASE_NOTES_v14.html">Release 1.4</a>,
+the following features have been added (as of patch version 1.5.12):
+
+<ul>
+  <li>Expanded database capabilities (arrays, strings, free format files). Database
+      reader functions no longer need to be written by hand using cumbersome raw I/O
+      calls, but can be reduced to the definition of a database request
+      (<tt>DBRequest</tt> structure) followed by a call to <tt>THaAnalysisObject::LoadDB</tt>.
+  <li>Support for "reference channels" in detector maps.
+  <li>Restructured and fully-integrated helicity classes (user classes <tt>THaHelicity</tt>,
+      <tt>THaADCHelicity</tt>, and <tt>THaG0Helicity</tt>).
+  <li>Intelligent handling of split CODA raw data files (continuation segments).
+  <li>Improved scaler code (helicity sorting).
+  <li>Speed improvements in writing the output ROOT file.
+  <li>Ability to sort multiple HRS tracks (rare) by Chi2/ndof of the track fit
+      (<tt>THaHRS::SetTrSorting()</tt>). This redefines the meaning of the "golden track" in the HRS,
+      probably for the better.
+  <li>Ability to use arbitrary crate map database files (<tt>THaAnalyzer::SetCrateMapFileName()</tt>)
+  <li>Run-time configurable verbosity of decoder messages.
+  <li>Preliminary support for JLab 250 MHz Flash ADC (non-pipelined "window raw data" mode).
+  <li>Support for large CODA input files (&gt; 2GB).
+  <li>Support for current versions of ROOT and gcc/g++.
+  <li>Miscellaneous minor bug fixes.
+</ul>
+
+<h3>Compatibility</h3>
+Version 1.5 is neither source-compatible nor binary-compatible with version 1.4 and
+prior releases. Plug-ins and user libraries will need to be recompiled and possibly
+changed. Please contact the developers if you need to do this and run into problems.
+
+<h3>System requirements</h3>
+<ul>
+  <li>Linux with gcc/g++ 3.2 or higher; or Solaris with the Sun Workshop 5 compiler.
+  <li>ROOT 5.10 or higher. 5.18 or higher recommended.
+  <li>GNU make
+  <li>Reasonably powerful hardware (2GHz CPU, 1GB RAM). Less will work, but it won't be fun.
+</ul>
+The following platforms have been explicitly tested:
+<ul>
+  <li>RedHat Enterprise Linux 3 and 5 with default compilers (gcc/g++ 3.2.3 and 4.1.2)
+      and ROOT 5.10 through 5.24.
+  <li>Fedora 6, 9, and 11 with default compilers (gcc/g++ 4.1.2 through 4.4.1)
+      and ROOT 5.16 through 5.24.
+</ul>
+Most other recent Linux and Solaris installations should work as well.
+Other Unix platforms require (probably fairly simple) changes to the Makefiles.
+An unofficial port to Mac OS X exists. Please contact the developers for details.
+
+<h3>Building and installing the software</h3>
+Please see <a href="install.html">docs/install.html</a>
+
+<h3>Running the program / How to analyze data</h3>
+Please see <a href="quickstart.html">docs/quickstart.html</a> and
+the <a href="index.html">main documentation page</a>.
+
+<h3>Example Scripts</h3>
+Example scripts can be found in the "examples" and "examples/BPM" subdirectories.
+
+<h3>Documentation</h3>
+Further documentation is available in the "docs" subdirectory and
+at the <a href="http://hallaweb.jlab.org/root/">project home page</a>.
+
+<h3>Credits</h3>
+Special thanks to Robert Michaels and Jin Huang, who made valuable contributions
+to this version.
+
+<p>
+<hr>
+Contact: <address><a href="mailto:ole@jlab.org">Ole Hansen &lt;ole@jlab.org&gt;</a>
+</address>
+<!-- hhmts start -->
+Last modified: Fri Dec 11 19:33:37 EST 2009
+<!-- hhmts end -->
+</body> 
+</html>
