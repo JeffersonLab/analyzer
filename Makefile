@@ -330,11 +330,11 @@ srcdist:
 		rm -f ../$(NAME)
 		ln -s $(PWD) ../$(NAME)
 		tar czv -C .. -f ../$(NAME).tar.gz -X .exclude \
-		 -V "JLab/Hall A C++ Analysis Software "$(VERSION)" `date -I`"\
+		 -V "JLab/Hall A C++ Analysis Software "$(VERSION)$(EXTVERS)" `date -I`"\
 		 $(addprefix $(NAME)/, \
 		  ChangeLog $(wildcard README*) Makefile .exclude .gitignore \
 		  SConstruct $(wildcard *.py) scons \
-		  src $(DCDIR)
+		  src $(DCDIR))
 
 # $(NAME)/DB $(NAME)/examples \# $(NAME)/docs $(NAME)/Calib
 # $(NAME)/contrib
