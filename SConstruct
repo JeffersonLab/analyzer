@@ -67,7 +67,7 @@ if evio_libdir is None or evio_incdir is None:
 	print "EVIO_INCDIR = %s" % evio_incdir
 	print "Using local installation ... "
 	evio_local = baseenv.subst('$HA_DIR')+'/evio'
-	evio_version = '4.4.5'
+	evio_version = '4.4.6'
 	uname = os.uname();
 	platform = uname[0];
 	machine = uname[4];
@@ -78,7 +78,7 @@ if evio_libdir is None or evio_incdir is None:
 	evio_tarfile = "%s/evio-%s.tgz" % (evio_local,evio_version)
 	if not os.path.isdir(evio_local_lib):
 		if not os.path.exists(evio_tarfile):
-			evio_command_scons = "cd %s; wget --no-check-certificate https://coda.jlab.org/drupal/system/files/coda/evio/evio-4.4/evio-%s.tgz; tar xvfz evio-%s.tgz; cd evio-%s/ ; scons install --prefix=." % (evio_local,evio_version,evio_version,evio_version)
+			evio_command_scons = "cd %s; wget --no-check-certificate https://coda.jlab.org/drupal/system/files/evio-%s.tgz; tar xvfz evio-%s.tgz; cd evio-%s/ ; scons install --prefix=." % (evio_local,evio_version,evio_version,evio_version)
 		else:
 			evio_command_scons = "cd %s; tar xvfz evio-%s.tgz; cd evio-%s/ ; scons install --prefix=." % (evio_local,evio_version,evio_version)
 	else:

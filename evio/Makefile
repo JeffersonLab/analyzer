@@ -1,6 +1,6 @@
 # Makefile for local EVIO build
 
-EVIO = evio-4.4.5
+EVIO = evio-4.4.6
 SRCDIR = $(EVIO)/src/libsrc
 TAR = $(EVIO).tgz
 WGET = $(shell which wget)
@@ -22,7 +22,7 @@ ifeq ($(strip $(WGET)),)
 	$(error No EVIO tar ball and cannot find wget to get it)
 endif
 	$(shell $(WGET) --no-check-certificate \
-	 https://coda.jlab.org/drupal/system/files/coda/evio/evio-4.4/$(EVIO).tgz)
+	 https://coda.jlab.org/drupal/system/files/$(EVIO).tgz)
 
 clean:
 	if [ -d $(SRCDIR) ]; then $(MAKE) -C $(SRCDIR) clean; touch -r $(TAR) $(SRCDIR); fi
