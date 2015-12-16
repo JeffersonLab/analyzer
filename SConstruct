@@ -112,7 +112,8 @@ if not conf.CheckCXX():
 	print('!!! Your compiler and/or environment is not correctly configured.')
 	Exit(0)
 
-if not conf.CheckFunc('printf'):
+#if not conf.CheckFunc('printf'):
+if not conf.CheckCC():
        	print('!!! Your compiler and/or environment is not correctly configured.')
        	Exit(0)
 
