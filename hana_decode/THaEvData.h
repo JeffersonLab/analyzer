@@ -30,6 +30,8 @@ public:
   // Load CODA data evbuffer. Derived classes MUST implement this function.
   virtual Int_t LoadEvent(const UInt_t* evbuffer) = 0;
 
+  virtual Int_t Init();
+
   // Basic access to the decoded data
   Int_t     GetEvType()   const { return event_type; }
   Int_t     GetEvLength() const { return event_length; }
@@ -180,6 +182,7 @@ protected:
   Int_t init_cmap();
   Int_t init_slotdata(const Decoder::THaCrateMap* map);
   void  makeidx(Int_t crate, Int_t slot);
+  void FindUsedSlots();
 
   Int_t     fNSlotUsed;   // Number of elements of crateslot[] actually used
   Int_t     fNSlotClear;  // Number of elements of crateslot[] to clear
