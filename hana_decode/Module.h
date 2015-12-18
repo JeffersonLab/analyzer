@@ -71,6 +71,8 @@ namespace Decoder {
 
     virtual void SetBank(Int_t bank) { fBank = bank; };
 
+    virtual void SetMode(Int_t mode) { fMode = mode; };
+
     virtual void Init();
 
     virtual void Clear(const Option_t *opt) { fWordsSeen = 0; };
@@ -100,12 +102,12 @@ namespace Decoder {
 
     static TypeIter_t DoRegister( const ModuleType& registration_info );
 
-    UInt_t fCrate, fSlot;
+    Int_t fCrate, fSlot;
     UInt_t fHeader, fHeaderMask;
     Int_t fBank;
     Int_t fWordsExpect, fWordsSeen;
     Int_t fWdcntMask, fWdcntShift;
-    Int_t fModelNum, fNumChan;
+    Int_t fModelNum, fNumChan, fMode;
     Bool_t IsInit;
 
     std::ofstream *fDebugFile;
