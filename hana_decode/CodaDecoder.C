@@ -30,6 +30,7 @@ CodaDecoder::CodaDecoder()
   fDebugFile = 0;
   fDebug=0;
   fNeedInit=true;
+  first_decode=kFALSE;
 }
 
 //_____________________________________________________________________________
@@ -49,12 +50,22 @@ Int_t CodaDecoder::GetPrescaleFactor(Int_t trigger_type) const
 }
 
 //_____________________________________________________________________________
+Int_t CodaDecoder::Init() {
+  Int_t ret = HED_OK;
+  ret = init_cmap();
+  if (fMap) fMap->print();
+  if (ret != HED_OK) return ret;
+  ret = init_slotdata(fMap);
+  first_decode = kFALSE;
+  fNeedInit = kFALSE;
+  return ret;
+}
+
+//_____________________________________________________________________________
 Int_t CodaDecoder::LoadEvent(const UInt_t* evbuffer)
 {
   // Main engine for decoding, called by public LoadEvent() methods
-  // The crate map argument is ignored. Use SetCrateMapName instead
  static Int_t fdfirst=1;
- static Bool_t first_decode=kTRUE;
  static Int_t chkfbstat=1;
  if (fDebugFile) *fDebugFile << "CodaDecode:: Loading event  ... "<<endl;
   assert( evbuffer );
@@ -77,7 +88,7 @@ Int_t CodaDecoder::LoadEvent(const UInt_t* evbuffer)
     ret = init_slotdata(fMap);
     if( ret != HED_OK ) return ret;
     FindUsedSlots();
-    if(first_decode) first_decode=kFALSE;
+    first_decode=kFALSE;
   }
   if( fDoBench ) fBench->Begin("clearEvent");
   for( Int_t i=0; i<fNSlotClear; i++ ) crateslot[fSlotClear[i]]->clearEvent();
@@ -497,24 +508,6 @@ void CodaDecoder::CompareRocs(  )
     if (!ifound) *fDebugFile << "ERROR: CompareRocs:  roc "<<iroc1<<" in cratemap but not found data"<<endl;
   }
 }
-
-//_____________________________________________________________________________
-void CodaDecoder::FindUsedSlots() {
-  // Disable slots for which no module is defined.
-  // This speeds up the decoder.
-  for (Int_t roc=0; roc<MAXROC; roc++) {
-    for (Int_t slot=0; slot<MAXSLOT; slot++) {
-      if ( !fMap->slotUsed(roc,slot) ) continue;
-      if ( !crateslot[idx(roc,slot)]->GetModule() ) {
-	cout << "WARNING:  No module defined for crate "<<roc<<"   slot "<<slot<<endl;
-	cout << "Check db_cratemap.dat for module that is undefined"<<endl;
-	cout << "This crate, slot will be ignored"<<endl;
-	fMap->setUnused(roc,slot);
-      }
-    }
-  }
-}
-
 
 //_____________________________________________________________________________
 void CodaDecoder::ChkFbSlot( Int_t roc, const UInt_t* evbuffer,
