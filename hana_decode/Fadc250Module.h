@@ -16,7 +16,7 @@ class Fadc250Module : public VmeModule {
 
 public:
 
-   Fadc250Module() {};
+   Fadc250Module();
    Fadc250Module(Int_t crate, Int_t slot);
    virtual ~Fadc250Module();
 
@@ -26,6 +26,7 @@ public:
    virtual Bool_t IsSlot(UInt_t rdata);
    virtual Int_t Decode(const UInt_t *evbuffer);
    virtual Int_t GetNumEvents() const { return fNumEvents; };
+   virtual Int_t GetNumSamples(Int_t chan) const;
    virtual Int_t GetData(Int_t chan, Int_t event, Int_t which) const;
    virtual Int_t GetAdcData(Int_t chan, Int_t ievent) const;
    virtual Int_t GetTdcData(Int_t chan, Int_t ievent) const;
@@ -92,7 +93,10 @@ private:
    fadc_data_struct fadc_data;
 
 // Loads sldat and increments ptr to evbuffer
-   Int_t LoadSlot(THaSlotData *sldat,  const UInt_t* evbuffer, const UInt_t *pstop );
+   virtual Int_t LoadSlot(THaSlotData *sldat,  const UInt_t* evbuffer,
+			  const UInt_t *pstop );
+   virtual Int_t LoadSlot(THaSlotData *sldat,  const UInt_t* evbuffer,
+			  Int_t pos, Int_t len);
 
    Int_t fNumTrig, fNumEvents, *fNumAInt, *fNumTInt,  *fNumSample;
    Int_t *fAdcData;  // Raw data (either samples or pulse integrals)

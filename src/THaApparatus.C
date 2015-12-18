@@ -213,7 +213,10 @@ void THaApparatus::Print( Option_t* opt ) const
   // Print info about the apparatus and all its detectors
 
   THaAnalysisObject::Print(opt);
-  fDetectors->Print(opt);
+  TString sopt(opt);
+  sopt.ToUpper();
+  if( sopt.Contains("DET") )
+    fDetectors->Print(opt);
 }
 
 //_____________________________________________________________________________

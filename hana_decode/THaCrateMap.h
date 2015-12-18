@@ -38,6 +38,7 @@ class THaCrateMap {
      bool isVme(int crate) const;                   // True if VME crate;
      bool isCamac(int crate) const;                 // True if CAMAC crate;
      bool isScalerCrate(int crate) const;           // True if a Scaler crate
+     bool isBankStructure(int crate) const;         // True if modules in banks
      int getNslot(int crate) const;                 // Returns num occupied slots
      int getMinSlot(int crate) const;               // Returns min slot number
      int getMaxSlot(int crate) const;               // Returns max slot number
@@ -47,6 +48,7 @@ class THaCrateMap {
      int getModel(int crate, int slot) const;       // Return module type
      int getHeader(int crate, int slot) const;      // Return header
      int getMask(int crate, int slot) const;        // Return header mask
+     int getBank(int crate, int slot) const;        // Return bank number
      int getScalerCrate(int word) const;            // Return scaler crate if word=header
      const char* getScalerLoc(int crate) const;     // Return scaler crate location
      int setCrateType(int crate, const char* type); // set the crate type
@@ -55,6 +57,7 @@ class THaCrateMap {
 		  UShort_t ndata=MAXDATA);          // set the module type
      int setHeader(int crate, int slot, int head);  // set the header
      int setMask(int crate, int slot, int mask);    // set the header mask
+     int setBank(int crate, int slot, int bank);    // set the bank
      int setScalerLoc(int crate, const char* location); // Sets the scaler location
      UShort_t getNchan(int crate, int slot) const;  // Max number of channels
      UShort_t getNdata(int crate, int slot) const;  // Max number of data words
@@ -82,12 +85,14 @@ class THaCrateMap {
      TString fDBfileName;             // Database file name
      struct CrateInfo_t {           // Crate Information data descriptor
        TString crate_type;
+       bool bank_structure;
        ECrateCode crate_code;
        Int_t nslot, minslot, maxslot;
        bool crate_used;
        bool slot_used[MAXSLOT], slot_clear[MAXSLOT];
        UShort_t model[MAXSLOT];
        Int_t header[MAXSLOT], headmask[MAXSLOT];
+       Int_t bank[MAXSLOT];
        UShort_t nchan[MAXSLOT], ndata[MAXSLOT];
        TString scalerloc;
      } crdat[MAXROC];
@@ -131,6 +136,13 @@ bool THaCrateMap::isScalerCrate(int crate) const
 }
 
 inline
+bool THaCrateMap::isBankStructure(int crate) const
+{
+  assert( crate >= 0 && crate < MAXROC );
+  return (crdat[crate].bank_structure);
+}
+
+inline
 bool THaCrateMap::crateUsed(int crate) const
 {
   assert( crate >= 0 && crate < MAXROC );
@@ -165,6 +177,13 @@ int THaCrateMap::getMask(int crate, int slot) const
 {
   assert( crate >= 0 && crate < MAXROC && slot >= 0 && slot < MAXSLOT );
   return crdat[crate].headmask[slot];
+}
+
+inline
+int THaCrateMap::getBank(int crate, int slot) const
+{
+  assert( crate >= 0 && crate < MAXROC && slot >= 0 && slot < MAXSLOT );
+  return crdat[crate].bank[slot];
 }
 
 inline

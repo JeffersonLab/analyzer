@@ -21,6 +21,7 @@ public:
    virtual ~F1TDCModule();
 
    using Module::GetData;
+   using Module::LoadSlot;
 
    enum EResolution { ILO = 0, IHI = 1 };
 
@@ -37,6 +38,7 @@ public:
    Bool_t IsHiResolution() const { return (fResol==IHI); };
 
    Int_t GetNumHits() const { return fNumHits; };
+   Int_t Decode(const UInt_t *p) { return 0; };
 
 private:
 

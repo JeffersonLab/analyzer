@@ -8,20 +8,16 @@
 ///////////////////////////////////////////////////////////////////////////////
 #include "THaTrackID.h"
 
-class THaVDCUVTrack;
+class THaVDCPoint;
 
 class THaVDCTrackID : public THaTrackID {
 
 public:
-  THaVDCTrackID() : THaTrackID(),
-    fLowerU(0), fLowerV(0), fUpperU(0), fUpperV(0) {}
-  THaVDCTrackID( Int_t lowerU, Int_t lowerV,
-		 Int_t upperU, Int_t upperV ) : THaTrackID(),
-    fLowerU(lowerU), fLowerV(lowerV), fUpperU(upperU), fUpperV(upperV) {}
-  THaVDCTrackID( const THaVDCUVTrack* lower, const THaVDCUVTrack* upper );
-  THaVDCTrackID( const THaVDCTrackID& );
-  THaVDCTrackID& operator=( const THaVDCTrackID& );
-  
+  THaVDCTrackID()
+    : fLowerU(0), fLowerV(0), fUpperU(0), fUpperV(0) {}
+  THaVDCTrackID( Int_t lowerU, Int_t lowerV, Int_t upperU, Int_t upperV )
+    : fLowerU(lowerU), fLowerV(lowerV), fUpperU(upperU), fUpperV(upperV) {}
+  THaVDCTrackID( const THaVDCPoint* lower, const THaVDCPoint* upper );
   virtual ~THaVDCTrackID() {}
 
   virtual Bool_t  operator==( const THaTrackID& );

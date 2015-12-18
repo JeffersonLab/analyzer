@@ -58,7 +58,6 @@ Int_t FastbusModule::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const 
      *fDebugFile << "FBModule::  Model number  "<<dec<<fModelNum<<endl;
   }
   while (IsSlot( *p )) {
-    if (p >= pstop) break;
     if (fHasHeader && fWordsSeen==0) {
       fHeader = *p;
       if (fDebugFile) *fDebugFile << "FastbusModule:: header "<<hex<<fHeader<<dec<<endl;
@@ -69,6 +68,7 @@ Int_t FastbusModule::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const 
     }
     fWordsSeen++;
     p++;
+    if (p > pstop) break;
   }
   if (fHeader) {
     Int_t fWordsExpect = (fHeader&fWdcntMask);

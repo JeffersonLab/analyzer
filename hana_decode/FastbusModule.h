@@ -4,11 +4,7 @@
 /////////////////////////////////////////////////////////////////////
 //
 //   FastbusModule
-<<<<<<< HEAD:oodecoder/FastbusModule.h
 //   fastbus module class.  
-=======
-//   Abstract fastbus module class.
->>>>>>> upstream/master:hana_decode/FastbusModule.h
 //   author  Robert Michaels (rom@jlab.org)
 //
 /////////////////////////////////////////////////////////////////////

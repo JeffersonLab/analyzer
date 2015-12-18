@@ -20,6 +20,7 @@ public:
 	      THaApparatus* a = NULL );
   virtual ~THaCherenkov();
 
+  virtual void       Clear( Option_t* ="" );
   virtual Int_t      Decode( const THaEvData& );
   virtual Int_t      CoarseProcess( TClonesArray& tracks );
   virtual Int_t      FineProcess( TClonesArray& tracks );
@@ -43,7 +44,6 @@ protected:
   Float_t    fASUM_p;     // Sum of ADC minus pedestal values of channels
   Float_t    fASUM_c;     // Sum of corrected ADC amplitudes of channels
 
-          void   ClearEvent();
   virtual Int_t  DefineVariables( EMode mode = kDefine );
           void   DeleteArrays();
   virtual Int_t  ReadDatabase( const TDatime& date );

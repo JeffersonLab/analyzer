@@ -19,6 +19,9 @@ namespace THaString {
   // case insensitive compare
   int CmpNoCase( const string&, const string& );
 
+  // case insensitive find
+  string::size_type FindNoCase( string data, string chunk );
+
   // split on whitespace
   vector<string> Split( const string& );
 

@@ -29,7 +29,7 @@ public:
   void SetNum  (Int_t num)  {fNum = num;}
   void SetFlag (Int_t flag) {fFlag = flag;}
   void SetPos  (Double_t pos)       { fPos = pos; }
-  void SetTOffset (Double_t tOffset){ fTOffset = tOffset; } 
+  void SetTOffset (Double_t tOffset){ fTOffset = tOffset; }
   void SetTTDConv (THaVDCTimeToDistConv * ttdConv){ fTTDConv = ttdConv;}
 
 protected:
@@ -42,7 +42,7 @@ protected:
 private:
   THaVDCWire( const THaVDCWire& );
   THaVDCWire& operator=( const THaVDCWire& );
- 
+
   ClassDef(THaVDCWire,1)             // VDCWire class
 };
 

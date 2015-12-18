@@ -1,89 +1,102 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html><head>
 <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-<title>Release Notes Podd v1.5</title>
+<title>Release Notes Podd v1.6</title>
 </head>
 
 <body background="wallpaper.gif">
-<h2>Podd version 1.5</h2>
+<h2>Podd version 1.6-alpha1</h2>
 
-28 April 2008
+16 December 2015
 <p>
-The Hall A software team is pleased to present version 1.5 of the
-C++ analysis software Podd.  This version contains many significant
-improvements that were driven by the experience with analyzing
-recent experiments in Hall A as well as the requirements
-of the complex BigBite spectrometer tracking code. 
-
-<p>
-Several parts of the programming interface in this release have changed
-compared to Podd version 1.4. As a result, plug-ins for version 1.4 will have
-to be recompiled. In some cases, source code changes will be necessary.
-However, most of the bug fixes as well as some of the additional functionality of
-this release have been (or will shortly be) backported to version 1.4. We plan to
-support version 1.4 for several years into the future because many earlier
-Hall A experiments have spent considerable effort on developing complex libraries.
-They should not be forced to upgrade. For new development, however, version 1.5
-should be used.
+The Hall A software team is pleased to present the first alpha release
+of version 1.6 of the C++ analysis software Podd.  This version
+contains many significant improvements motivated by the long
+experience with version 1.5.  This is still an alpha release, i.e. not
+all features have yet been frozen.  The first beta release will follow
+within the next few weeks.
 
 <p>
-The main improvements in this release are the database system, which now
-supports a much more user-friendly free file format and additional data
-types, and the helicity classes, which have been restructured and integrated
-into Podd. The old <tt>THaHelicty</tt> class has been replaced with
-a new version which performs a reasonable default action for standard
-polarization experiments.
+Version 1.6 is not binary compatible nor fully source-compatible with
+the previous release 1.5. Several parts of the programming interface
+have changed.  As a result, libraries and plug-ins for version 1.5
+will have to be recompiled and, in some cases, minor source code
+changes may be necessary.
+
+<p>
+As much as possible, the bug fixes as well as some of the additional
+functionality of this release will be) backported to version 1.5. We
+plan to support version 1.5 for several years into the future because
+many earlier Hall A experiments have spent considerable effort on
+developing complex libraries for this release. They should not be
+forced to upgrade. For new development, however, version 1.6 is
+strongly recommended.
+
+<p>
+The main improvements in this release are the modular decoder, the
+unbundled EVIO library, and a rewrite of the VDC reconstruction code.
+Additionally, we plan to switch all analysis classes to the a
+database API (introduced in version 1.5 and generalized since then),
+but this part is not yet included in this alpha version.
 
 <hr>
 
 <h3>What's new</h3>
-Compared to <a href="RELEASE_NOTES_v14.html">Release 1.4</a>,
-the following features have been added (as of patch version 1.5.12):
+Compared to <a href="RELEASE_NOTES_v15.html">Release 1.5</a>,
+the following features have been added:
 
 <ul>
-  <li>Expanded database capabilities (arrays, strings, free format files). Database
-      reader functions no longer need to be written by hand using cumbersome raw I/O
-      calls, but can be reduced to the definition of a database request
-      (<tt>DBRequest</tt> structure) followed by a call to <tt>THaAnalysisObject::LoadDB</tt>.
-  <li>Support for "reference channels" in detector maps.
-  <li>Restructured and fully-integrated helicity classes (user classes <tt>THaHelicity</tt>,
-      <tt>THaADCHelicity</tt>, and <tt>THaG0Helicity</tt>).
-  <li>Intelligent handling of split CODA raw data files (continuation segments).
-  <li>Improved scaler code (helicity sorting).
-  <li>Speed improvements in writing the output ROOT file.
-  <li>Ability to sort multiple HRS tracks (rare) by Chi2/ndof of the track fit
-      (<tt>THaHRS::SetTrSorting()</tt>). This redefines the meaning of the "golden track" in the HRS,
-      probably for the better.
-  <li>Ability to use arbitrary crate map database files (<tt>THaAnalyzer::SetCrateMapFileName()</tt>)
-  <li>Run-time configurable verbosity of decoder messages.
-  <li>Preliminary support for JLab 250 MHz Flash ADC (non-pipelined "window raw data" mode).
-  <li>Support for large CODA input files (&gt; 2GB).
-  <li>Support for current versions of ROOT and gcc/g++.
+  <li>The <a href="https://coda.jlab.org/drupal/content/event-io-evio">EVIO subsystem</a>
+    is loaded from an external shared library. This brings support for the latest
+    version of EVIO (currently 4.4.6) and permits updating of EVIO without having to
+    rebuild the core analyzer. If EVIO is not installed on the user's system, the
+    analyzer build system will attempt to download and install it automatically.
+  <li>The decoder has been rewritten to support drivers for front-end hardware as
+    plug-ins. New decoding routines for new hardware can be added easily via user-written
+    shared libraries. Documentation can be found
+    <a href="http://hallaweb.jlab.org/podd/doc/decoder.html">here</a>
+  <li>The new decoder makes the processing of different event or trigger types
+    configurable via "event type handler" plug-ins.
+  <li>Preliminary support is available for JLab 12 GeV pipelined electronics
+    (FADC250, F1TDC, etc.)
+  <li>The generic hardware channel decoder, <tt>THaDecData</tt> has been completely
+    rewritten, using an object-oriented design.
+  <li>The track reconstruction of the VDCs of the Hall A HRS spectrometers has been
+    rewritten. Known bugs have been fixed. The reconstruction of multi-cluster
+    events should be greatly improved.
+  <li>The VDC efficiency calculation code has been moved from <tt>THaDecData</tt>
+    into a standalone physics module, <tt>VDCeff</tt>.
+  <li>Many limitations of the formula and test package have been removed.
+    It is now possible to define formulas and tests on variable-sized arrays,
+    including std::vector global variables.
+  <li>Explicit support for simulation input data has been added, simplifying the
+    handling of Monte Carlo truth data (base class <tt>Podd::SimDecoder</tt>).
+  <li>There is experimental support for building the analyzer with the <tt>scons</tt>
+    build system. Users will have to install <tt>scons</tt> version 2.1 or greater themselves.
+  <li>Support for the most recent version 5 of ROOT and current versions of gcc/g++.
   <li>Miscellaneous minor bug fixes.
 </ul>
 
 <h3>Compatibility</h3>
-Version 1.5 is neither source-compatible nor binary-compatible with version 1.4 and
+Version 1.6 is neither source-compatible nor binary-compatible with version 1.5 and
 prior releases. Plug-ins and user libraries will need to be recompiled and possibly
 changed. Please contact the developers if you need to do this and run into problems.
 
 <h3>System requirements</h3>
 <ul>
-  <li>Linux with gcc/g++ 3.2 or higher; or Solaris with the Sun Workshop 5 compiler.
-  <li>ROOT 5.10 or higher. 5.18 or higher recommended.
+  <li>Linux with gcc/g++ 4 or higher; or Mac OS X 10.6 or higher with gcc/g++ 4 or higher
+  <li>ROOT 5.10 or higher. Version 5.34 stongly recommended.
   <li>GNU make
   <li>Reasonably powerful hardware (2GHz CPU, 1GB RAM). Less will work, but it won't be fun.
 </ul>
 The following platforms have been explicitly tested:
 <ul>
-  <li>RedHat Enterprise Linux 3 and 5 with default compilers (gcc/g++ 3.2.3 and 4.1.2)
-      and ROOT 5.10 through 5.24.
-  <li>Fedora 6, 9, and 11 with default compilers (gcc/g++ 4.1.2 through 4.4.1)
-      and ROOT 5.16 through 5.24.
+  <li>RedHat Enterprise Linux 5, 6 and 7 with default compilers (gcc/g++ 4.1.2, 4.4.7 and 4.8.5)
+      and ROOT 5.30 and 5.34.
+  <li>Fedora 14 and up with default compilers and ROOT 5.28 and 5.34.
+  <li>Mac OS X 10.6 through 10.11 with the default command-line development tools.
 </ul>
-Most other recent Linux and Solaris installations should work as well.
-Other Unix platforms require (probably fairly simple) changes to the Makefiles.
-An unofficial port to Mac OS X exists. Please contact the developers for details.
+Most other recent Unix-like installations should work as well.
 
 <h3>Building and installing the software</h3>
 Please see <a href="install.html">docs/install.html</a>
@@ -97,10 +110,10 @@ Example scripts can be found in the "examples" and "examples/BPM" subdirectories
 
 <h3>Documentation</h3>
 Further documentation is available in the "docs" subdirectory and
-at the <a href="http://hallaweb.jlab.org/root/">project home page</a>.
+at the <a href="http://hallaweb.jlab.org/podd/">project home page</a>.
 
 <h3>Credits</h3>
-Special thanks to Robert Michaels and Jin Huang, who made valuable contributions
+Special thanks to Robert Michaels, Steve Wood and Ed Brash, who made valuable contributions
 to this version.
 
 <p>
@@ -108,7 +121,7 @@ to this version.
 Contact: <address><a href="mailto:ole@jlab.org">Ole Hansen &lt;ole@jlab.org&gt;</a>
 </address>
 <!-- hhmts start -->
-Last modified: Fri Dec 11 19:33:37 EST 2009
+Last modified: Wed Dec 16 13:15 EST 2015
 <!-- hhmts end -->
 </body> 
 </html>

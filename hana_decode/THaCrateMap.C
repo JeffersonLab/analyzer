@@ -130,6 +130,7 @@ int THaCrateMap::SetModelSize( int crate, int slot, UShort_t imodel )
     { 3201, 32, 512 },  // JLab F1 TDC high resolution
     { 792, 32, 32 },  // CAEN V792 QDC
     { 1190, 128, 1024 }, //CAEN 1190A
+    { 250, 16, 10000 }, // FADC 250
     { 0 }
   };
   const ModelPar_t* item = modelpar;
@@ -157,6 +158,14 @@ int THaCrateMap::setMask(int crate, int slot, int mask) {
   incrNslot(crate);
   setUsed(crate,slot);
   crdat[crate].headmask[slot] = mask;
+  return CM_OK;
+}
+
+int THaCrateMap::setBank(int crate, int slot, int bank) {
+  assert( crate >= 0 && crate < MAXROC && slot >= 0 && slot < MAXSLOT );
+  incrNslot(crate);
+  setUsed(crate,slot);
+  crdat[crate].bank[slot] = bank;
   return CM_OK;
 }
 
@@ -223,6 +232,7 @@ void THaCrateMap::print(ofstream *file) const {
     if( !crdat[roc].scalerloc.IsNull() )  *file << " \"" << crdat[roc].scalerloc << "\"";
     *file << endl;
     *file << "#slot\tmodel\tclear\t  header\t  mask  \tnchan\tndata\n";
+    if (isBankStructure(roc)) *file << "crate has bank structure"<<endl;
     for( int slot=0; slot<MAXSLOT; slot++ ) {
       if( !slotUsed(roc,slot) ) continue;
       *file << "  " << slot << "\t" << crdat[roc].model[slot]
@@ -233,6 +243,9 @@ void THaCrateMap::print(ofstream *file) const {
 	   << "  \t" << crdat[roc].nchan[slot]
 	   << "  \t" << crdat[roc].ndata[slot]
 	   << endl;
+      Int_t bank = getBank(roc,slot);
+      if (bank >= 0) *file << "Bank number "<< bank<<endl;
+
     }
   }
 }
@@ -284,6 +297,7 @@ int THaCrateMap::init(TString the_map)
   for(crate=0; crate<MAXROC; crate++) {
     crdat[crate].nslot = 0;
     crdat[crate].crate_used = false;
+    crdat[crate].bank_structure = false;
     setCrateType(crate,"unknown"); //   crate_type[crate] = "unknown";
     crdat[crate].minslot=MAXSLOT;
     crdat[crate].maxslot=0;
@@ -292,6 +306,7 @@ int THaCrateMap::init(TString the_map)
       crdat[crate].model[slot] = 0;
       crdat[crate].header[slot] = 0;
       crdat[crate].slot_clear[slot] = true;
+      crdat[crate].bank[slot] = -1;
     }
   }
 
@@ -340,23 +355,28 @@ int THaCrateMap::init(TString the_map)
     //        slot#  model#  [clear header  mask  nchan ndata ]
     // where clear, header, mask, nchan and ndata are optional interpretted in
     // that order.
+    // Another option is "bank decoding" :  all data in this CODA bank
+    // belongs to this slot and model.  The line has the format
+    //        slot#  model#  bank#
 
     // Default values:
-    int imodel, clear=1;
+    int imodel, cword=1;
     unsigned int mask=0, iheader=0, ichan=MAXCHAN, idata=MAXDATA;
     int nread;
     // must read at least the slot and model numbers
     if ( crate>=0 &&
 	 (nread=
 	  sscanf(line.c_str(),"%d %d %d %x %x %u %u",
-		 &slot,&imodel,&clear,&iheader,&mask,&ichan,&idata)) >=2 ) {
+		 &slot,&imodel,&cword,&iheader,&mask,&ichan,&idata)) >=2 ) {
       if (nread>=6)
 	setModel(crate,slot,imodel,ichan,idata);
       else
 	setModel(crate,slot,imodel);
 
-      if (nread>=3)
-	setClear(crate,slot,clear);
+      if (nread==3) 
+        setBank(crate, slot, cword);
+      if (nread>3)
+	setClear(crate,slot,cword);
       if (nread>=4)
 	setHeader(crate,slot,iheader);
       if (nread>=5)
@@ -375,6 +395,7 @@ int THaCrateMap::init(TString the_map)
     Int_t imin=MAXSLOT;
     Int_t imax=0;
     for(slot=0; slot<MAXSLOT; slot++) {
+      if (crdat[crate].bank[slot]>=0) crdat[crate].bank_structure=true;
       if (crdat[crate].slot_used[slot]) {
 	if (slot < imin) imin=slot;
         if (slot > imax) imax=slot;

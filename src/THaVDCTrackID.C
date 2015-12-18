@@ -11,7 +11,7 @@
 
 #include "THaVDCTrackID.h"
 #include "THaVDCCluster.h"
-#include "THaVDCUVTrack.h"
+#include "THaVDCPoint.h"
 #include <iostream>
 #include <iomanip>
 #include <cstring>
@@ -19,12 +19,12 @@
 using namespace std;
 
 //_____________________________________________________________________________
-THaVDCTrackID::THaVDCTrackID( const THaVDCUVTrack* lower,
-			      const THaVDCUVTrack* upper) :
+THaVDCTrackID::THaVDCTrackID( const THaVDCPoint* lower,
+			      const THaVDCPoint* upper) :
   THaTrackID()
 {
   // Constructor that automatically determines pivot numbers
-  // from the given THaVDCUVTracks.
+  // from the given THaVDCPoints.
 
   THaVDCCluster* cluster;
   if( lower ) {
@@ -42,34 +42,11 @@ THaVDCTrackID::THaVDCTrackID( const THaVDCUVTrack* lower,
 }
 
 //_____________________________________________________________________________
-THaVDCTrackID::THaVDCTrackID( const THaVDCTrackID& rhs ) : THaTrackID(rhs),
-  fLowerU(rhs.fLowerU), fLowerV(rhs.fLowerV),
-  fUpperU(rhs.fUpperU), fUpperV(rhs.fUpperV)
-{
-  // Copy constructor.
-}
-
-//_____________________________________________________________________________
-THaVDCTrackID& THaVDCTrackID::operator=( const THaVDCTrackID& rhs )
-{
-  // Assignment operator.
-
-  THaTrackID::operator=(rhs);
-  if ( this != &rhs ) {
-    fLowerU = rhs.fLowerU;
-    fLowerV = rhs.fLowerV;
-    fUpperU = rhs.fUpperU;
-    fUpperV = rhs.fUpperV;
-  }
-  return *this;
-}
-
-//_____________________________________________________________________________
 void THaVDCTrackID::Print( Option_t* ) const
 {
   // Print ID description
 
-  cout << " " 
+  cout << " "
        << setw(5) << fLowerU
        << setw(5) << fLowerV
        << setw(5) << fUpperU
