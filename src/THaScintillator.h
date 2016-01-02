@@ -17,6 +17,7 @@ class THaScintillator : public THaNonTrackingDetector {
 public:
   THaScintillator( const char* name, const char* description = "",
 		   THaApparatus* a = NULL );
+  THaScintillator();
   virtual ~THaScintillator();
 
   virtual void       Clear( Option_t* ="" );

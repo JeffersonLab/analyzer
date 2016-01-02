@@ -28,23 +28,27 @@ using namespace std;
 //_____________________________________________________________________________
 THaScintillator::THaScintillator( const char* name, const char* description,
 				  THaApparatus* apparatus )
-  : THaNonTrackingDetector(name,description,apparatus)
+  : THaNonTrackingDetector(name,description,apparatus),
+    fLOff(0), fROff(0), fLPed(0), fRPed(0), fLGain(0), fRGain(0),
+    fNTWalkPar(0), fTWalkPar(0), fTrigOff(0),
+    fLTNhit(0), fLT(0), fLT_c(0), fRTNhit(0), fRT(0), fRT_c(0),
+    fLANhit(0), fLA(0), fLA_p(0), fLA_c(0), fRANhit(0), fRA(0), fRA_p(0), fRA_c(0),
+    fNhit(0), fHitPad(0), fTime(0), fdTime(0), fAmpl(0), fYt(0), fYa(0)
 {
   // Constructor
-  fTWalkPar = 0;
 }
 
 //_____________________________________________________________________________
-// THaScintillator::THaScintillator()
-//   : THaNonTrackingDetector(), fLOff(0), fROff(0), fLPed(0), fRPed(0),
-//     fLGain(0), fRGain(0), fTWalkPar(0), fAdcMIP(0), fTrigOff(0),
-//     fLT(0), fLT_c(0), fRT(0), fRT_c(0), fLA(0), fLA_p(0), fLA_c(0),
-//     fRA(0), fRA_p(0), fRA_c(0), fHitPad(0), fTime(0), fdTime(0), fAmpl(0),
-//     fYt(0), fYa(0)
-// {
-//   // Default constructor (for ROOT I/O)
+THaScintillator::THaScintillator()
+  : THaNonTrackingDetector(), fLOff(0), fROff(0), fLPed(0), fRPed(0),
+    fLGain(0), fRGain(0), fTWalkPar(0), fAdcMIP(0), fTrigOff(0),
+    fLT(0), fLT_c(0), fRT(0), fRT_c(0), fLA(0), fLA_p(0), fLA_c(0),
+    fRA(0), fRA_p(0), fRA_c(0), fHitPad(0), fTime(0), fdTime(0), fAmpl(0),
+    fYt(0), fYa(0)
+{
+  // Default constructor (for ROOT I/O)
 
-// }
+}
 
 //_____________________________________________________________________________
 THaAnalysisObject::EStatus THaScintillator::Init( const TDatime& date )
@@ -433,32 +437,34 @@ void THaScintillator::DeleteArrays()
 }
 
 //_____________________________________________________________________________
-void THaScintillator::Clear( Option_t* )
+void THaScintillator::Clear( Option_t* opt )
 {
   // Reset per-event data.
 
-  const int lf = fNelem*sizeof(Double_t);
-  fLTNhit = 0;                            // Number of Left paddles TDC times
-  memset( fLT, 0, lf );                   // Left paddles TDCs
-  memset( fLT_c, 0, lf );                 // Left paddles corrected times
-  fRTNhit = 0;                            // Number of Right paddles TDC times
-  memset( fRT, 0, lf );                   // Right paddles TDCs
-  memset( fRT_c, 0, lf );                 // Right paddles corrected times
-  fLANhit = 0;                            // Number of Left paddles ADC amps
-  memset( fLA, 0, lf );                   // Left paddles ADCs
-  memset( fLA_p, 0, lf );                 // Left paddles ADC minus pedestal
-  memset( fLA_c, 0, lf );                 // Left paddles corrected ADCs
-  fRANhit = 0;                            // Number of Right paddles ADC smps
-  memset( fRA, 0, lf );                   // Right paddles ADCs
-  memset( fRA_p, 0, lf );                 // Right paddles ADC minus pedestal
-  memset( fRA_c, 0, lf );                 // Right paddles corrected ADCs
-
   fNhit = 0;
-  memset( fHitPad, 0, fNelem*sizeof(fHitPad[0]) );
-  memset( fTime, 0, lf );
-  memset( fdTime, 0, lf );
-  memset( fYt, 0, lf );
-  memset( fYa, 0, lf );
+  fLTNhit = 0;                            // Number of Left paddles TDC times
+  fRTNhit = 0;                            // Number of Right paddles TDC times
+  fLANhit = 0;                            // Number of Left paddles ADC amps
+  fRANhit = 0;                            // Number of Right paddles ADC smps
+  if( !strchr(opt,'I') ) {
+    const int lf = fNelem*sizeof(Double_t);
+    memset( fLT, 0, lf );                 // Left paddles TDCs
+    memset( fLT_c, 0, lf );               // Left paddles corrected times
+    memset( fRT, 0, lf );                 // Right paddles TDCs
+    memset( fRT_c, 0, lf );               // Right paddles corrected times
+    memset( fLA, 0, lf );                 // Left paddles ADCs
+    memset( fLA_p, 0, lf );               // Left paddles ADC minus pedestal
+    memset( fLA_c, 0, lf );               // Left paddles corrected ADCs
+    memset( fRA, 0, lf );                 // Right paddles ADCs
+    memset( fRA_p, 0, lf );               // Right paddles ADC minus pedestal
+    memset( fRA_c, 0, lf );               // Right paddles corrected ADCs
+
+    memset( fHitPad, 0, fNelem*sizeof(fHitPad[0]) );
+    memset( fTime, 0, lf );
+    memset( fdTime, 0, lf );
+    memset( fYt, 0, lf );
+    memset( fYa, 0, lf );
+  }
 }
 
 //_____________________________________________________________________________
