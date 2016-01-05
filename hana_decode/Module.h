@@ -102,7 +102,7 @@ namespace Decoder {
 
     static TypeIter_t DoRegister( const ModuleType& registration_info );
 
-    UInt_t fCrate, fSlot;
+    Int_t fCrate, fSlot;
     UInt_t fHeader, fHeaderMask;
     Int_t fBank;
     Int_t fWordsExpect, fWordsSeen;
