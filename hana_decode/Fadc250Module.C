@@ -524,7 +524,7 @@ namespace Decoder {
 			  << fadc_data.adc_2<<endl;
 #endif
 // load into fAdcData, if it is this slot
-          if (fadc_data.slot_id_hd == fSlot) {
+	  if (fadc_data.slot_id_hd == static_cast<unsigned int>(fSlot)) {
 	    f250_foundmode = F250_SAMPLE;
 #ifdef WITH_DEBUG
 	    if(  (i_print == 1) && (fDebugFile != 0) )
@@ -606,7 +606,7 @@ namespace Decoder {
 	break;
       case 7:		/* PULSE INTEGRAL */
 // load into fAdcData, if it is this slot
-      if (fadc_data.slot_id_hd == fSlot) {
+      if (fadc_data.slot_id_hd == static_cast<unsigned int>(fSlot)) {
 	f250_foundmode = F250_INTEG;
 	fadc_data.chan = (data & 0x7800000) >> 23;
 	fadc_data.pulse_num = (data & 0x600000) >> 21;
@@ -637,7 +637,7 @@ namespace Decoder {
 	break;
       case 8:		/* PULSE TIME */
 // load into fTdcData, if it is this slot
-      if (fadc_data.slot_id_hd == fSlot) {
+      if (fadc_data.slot_id_hd == static_cast<unsigned int>(fSlot)) {
 	fadc_data.chan = (data & 0x7800000) >> 23;
 	fadc_data.pulse_num = (data & 0x600000) >> 21;
 	fadc_data.quality = (data & 0x180000) >> 19;

@@ -57,10 +57,10 @@ namespace Decoder {
 
     virtual Int_t GetNumEvents() const { return 0; };
     virtual Int_t GetNumSamples(Int_t i) const { return 0; };
-    virtual Int_t GetMode() const { return 0; };
+    virtual Int_t GetMode() const { return fMode; };
 
-    virtual void SetSlot(Int_t crate, Int_t slot, Int_t header=0,
-			 Int_t mask=0, Int_t modelnum=0)
+    virtual void SetSlot(Int_t crate, Int_t slot, UInt_t header=0,
+			 UInt_t mask=0, Int_t modelnum=0)
     {
       fCrate      = crate;
       fSlot       = slot;
@@ -80,7 +80,7 @@ namespace Decoder {
     virtual Bool_t IsSlot(UInt_t rdata);
 
     virtual Int_t GetCrate() const { return fCrate; };
-    virtual Int_t GetSlot() const { return fSlot; };
+    virtual Int_t GetSlot()  const { return fSlot; };
 
     virtual void SetDebugFile(std::ofstream *file)
     {
