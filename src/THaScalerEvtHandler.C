@@ -42,16 +42,17 @@
 #include "TNamed.h"
 #include "TMath.h"
 #include "TString.h"
-#include <cstring>
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
 #include <sstream>
 #include "THaVarList.h"
 #include "VarDef.h"
+#include "THaString.h"
 
 using namespace std;
 using namespace Decoder;
+using namespace THaString;
 
 static const UInt_t ICOUNT    = 1;
 static const UInt_t IRATE     = 2;
@@ -60,7 +61,7 @@ static const UInt_t MAXTEVT   = 5000;
 static const UInt_t defaultDT = 4;
 
 THaScalerEvtHandler::THaScalerEvtHandler(const char *name, const char* description)
-  : THaEvtTypeHandler(name,description), evcount(0), ifound(0), fNormIdx(-1),
+  : THaEvtTypeHandler(name,description), evcount(0), fNormIdx(-1),
     dvars(0), fScalerTree(0)
 {
   rdata = new UInt_t[MAXTEVT];
@@ -142,7 +143,7 @@ Int_t THaScalerEvtHandler::Analyze(THaEvData *evdata)
   UInt_t *pstop = rdata+ndata;
   int j=0;
 
-  ifound = 0;
+  Int_t ifound = 0;
 
   while (p < pstop && j < ndata) {
     if (fDebugFile) {
@@ -232,11 +233,11 @@ THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& date)
     return kFileError;
   }
 
-  size_t minus1 = -1;
-  size_t pos1;
-  string scomment = "#";
-  string svariable = "variable";
-  string smap = "map";
+  string::size_type minus1 = string::npos;
+  string::size_type pos1;
+  const string scomment = "#";
+  const string svariable = "variable";
+  const string smap = "map";
   vector<string> dbline;
 
   while( fgets(cbuf, LEN, fi) != NULL) {
@@ -295,15 +296,15 @@ THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& date)
 	  UInt_t idx = scalers.size()-1;
 	  scalers[idx]->SetHeader(header, mask);
 	  if (clkchan >= 0) scalers[idx]->SetClock(defaultDT, clkchan, clkfreq);
+	  if (fDebugFile) *fDebugFile <<"Setting scaler clock ... channel = "<<clkchan<<" ... freq = "<<clkfreq<<endl;
+	  fNormIdx = idx;
 	}
       }
     }
   }
-  // can't compare UInt_t to Int_t (compiler warning), so do this
-  nscalers=0;
-  for (UInt_t i=0; i<scalers.size(); i++) nscalers++;
   // need to do LoadNormScaler after scalers created and if fNormIdx found.
-  if ((fNormIdx >= 0) && fNormIdx < nscalers) {
+  Int_t nscalers = static_cast<Int_t>(scalers.size());
+  if ( fNormIdx >= 0 && fNormIdx < nscalers ) {
     for (Int_t i = 0; i < nscalers; i++) {
       if (i==fNormIdx) continue;
       scalers[i]->LoadNormScaler(scalers[fNormIdx]);
@@ -384,7 +385,7 @@ void THaScalerEvtHandler::AddVars(TString name, TString desc, Int_t iscal,
 void THaScalerEvtHandler::DefVars()
 {
   // called after AddVars has finished being called.
-  Nvars = scalerloc.size();
+  Int_t Nvars = scalerloc.size();
   if (Nvars == 0) return;
   dvars = new Double_t[Nvars];  // dvars is a member of this class
   memset(dvars, 0, Nvars*sizeof(Double_t));
@@ -401,22 +402,5 @@ void THaScalerEvtHandler::DefVars()
 			  &dvars[i], kDouble, count);
   }
 }
-
-size_t THaScalerEvtHandler::FindNoCase(const string& sdata, const string& skey)
-{
-  // Find iterator of word "sdata" where "skey" starts.  Case insensitive.
-  string sdatalc, skeylc;
-  sdatalc = "";  skeylc = "";
-  for (string::const_iterator p =
-	 sdata.begin(); p != sdata.end(); ++p) {
-    sdatalc += tolower(*p);
-  }
-  for (string::const_iterator p =
-	 skey.begin(); p != skey.end(); ++p) {
-    skeylc += tolower(*p);
-  }
-  if (sdatalc.find(skeylc,0) == string::npos) return -1;
-  return sdatalc.find(skeylc,0);
-};
 
 ClassImp(THaScalerEvtHandler)

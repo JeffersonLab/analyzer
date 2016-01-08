@@ -18,6 +18,7 @@ class THaCherenkov : public THaPidDetector {
 public:
   THaCherenkov( const char* name, const char* description = "",
 	      THaApparatus* a = NULL );
+  THaCherenkov(); // for ROOT I/O
   virtual ~THaCherenkov();
 
   virtual void       Clear( Option_t* ="" );

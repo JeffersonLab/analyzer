@@ -19,6 +19,7 @@
 class THaPidDetector : public THaNonTrackingDetector {
   
 public:
+  THaPidDetector() {} // for ROOT I/O
   virtual ~THaPidDetector();
   
           Bool_t   IsPid() { return kTRUE; }

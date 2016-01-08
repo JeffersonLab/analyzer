@@ -3,7 +3,7 @@ Hall A C++ Analyzer
 
 This is the standard data analysis software for
 [Hall A](http://hallaweb.jlab.org/) at [Jefferson Lab](http://www.jlab.org).
-The current stable version is 1.5.28.
+The current stable version is 1.5.29.
 
 Overview
 --------
@@ -26,7 +26,7 @@ Currently, major efforts are underway (1) to develop an improved
 analysis framework jointly with [Hall C](http://www.jlab.org/Hall-C/)
 which will be based on the current Hall A software, and (2) to update
 the analyzer for the more demanding analysis requirements of 12 GeV
-experiments. Version 2.0 is expected to be available in 2014.
+experiments.
 
 Further information can be found online [here](http://hallaweb.jlab.org/podd/).
 

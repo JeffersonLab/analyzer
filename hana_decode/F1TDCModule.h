@@ -21,6 +21,7 @@ public:
    virtual ~F1TDCModule();
 
    using Module::GetData;
+   using Module::LoadSlot;
 
    enum EResolution { ILO = 0, IHI = 1 };
 

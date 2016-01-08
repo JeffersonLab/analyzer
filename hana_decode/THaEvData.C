@@ -131,6 +131,17 @@ const char* THaEvData::DevType(int crate, int slot) const {
     crateslot[idx(crate,slot)]->devType() : " ";
 }
 
+Int_t THaEvData::Init() {
+  Int_t ret = HED_OK;
+  ret = init_cmap();
+  if (fMap) fMap->print();
+  if (ret != HED_OK) return ret;
+  ret = init_slotdata(fMap);
+  first_decode = kFALSE;
+  fNeedInit = kFALSE;
+  return ret;
+}
+
 void THaEvData::SetRunTime( ULong64_t tloc )
 {
   // Set run time and re-initialize crate map (and possibly other
@@ -336,7 +347,24 @@ int THaEvData::init_slotdata(const THaCrateMap* map)
 }
 
 //_____________________________________________________________________________
-Module* THaEvData::GetModule(Int_t roc, Int_t slot)
+void THaEvData::FindUsedSlots() {
+  // Disable slots for which no module is defined.
+  // This speeds up the decoder.
+  for (Int_t roc=0; roc<MAXROC; roc++) {
+    for (Int_t slot=0; slot<MAXSLOT; slot++) {
+      if ( !fMap->slotUsed(roc,slot) ) continue;
+      if ( !crateslot[idx(roc,slot)]->GetModule() ) {
+	cout << "WARNING:  No module defined for crate "<<roc<<"   slot "<<slot<<endl;
+	cout << "Check db_cratemap.dat for module that is undefined"<<endl;
+	cout << "This crate, slot will be ignored"<<endl;
+	fMap->setUnused(roc,slot);
+      }
+    }
+  }
+}
+
+//_____________________________________________________________________________
+Module* THaEvData::GetModule(Int_t roc, Int_t slot) const
 {
   THaSlotData *sldat = crateslot[idx(roc,slot)];
   if (sldat) return sldat->GetModule();
