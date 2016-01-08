@@ -20,8 +20,8 @@ ClassImp(THaGoldenTrack)
 //_____________________________________________________________________________
 THaGoldenTrack::THaGoldenTrack( const char* name, const char* description,
 				const char* spectro ) :
-  THaPhysicsModule(name,description), fIndex(-1), fTrack(NULL),
-  fSpectroName(spectro), fSpectro(NULL)
+  THaPhysicsModule(name,description), fIndex(-1), fGoldBeta(kBig), fTrack(0),
+  fSpectroName(spectro), fSpectro(0)
 {
   // Normal constructor.
 
@@ -33,6 +33,13 @@ THaGoldenTrack::~THaGoldenTrack()
   // Destructor
 
   DefineVariables( kDelete );
+}
+
+//_____________________________________________________________________________
+void THaGoldenTrack::Clear( Option_t* opt )
+{
+  THaPhysicsModule::Clear(opt);
+  fTrkIfo.Clear(opt); fIndex = -1; fGoldBeta = kBig; fTrack = 0;
 }
 
 //_____________________________________________________________________________
@@ -78,7 +85,8 @@ Int_t THaGoldenTrack::DefineVariables( EMode mode )
   DefineVarsFromList( var1, mode, var_prefix );
 
   const RVarDef var2[] = {
-    { "index",    "Index of Golden Track",          "fIndex" },
+    { "index",    "Index of Golden Track",         "fIndex" },
+    { "beta", "Beta of Golden Track",          "fGoldBeta" },
     { 0 }
   };
   DefineVarsFromList( var2, mode );
@@ -101,6 +109,8 @@ Int_t THaGoldenTrack::Process( const THaEvData& )
   // currently does not handle this)
   fTrkIfo = *fTrack;
 
+  fGoldBeta = fTrack->GetBeta();
+
   // Find the track's index
   Int_t ntracks = fSpectro->GetNTracks();
   if( ntracks == 1 )
@@ -119,4 +129,3 @@ Int_t THaGoldenTrack::Process( const THaEvData& )
   fDataValid = true;
   return 0;
 }
-

@@ -50,7 +50,7 @@ baseenv.Append(PATCH = '0')
 baseenv.Append(SOVERSION = baseenv.subst('$MAJORVERSION')+'.'+baseenv.subst('$MINORVERSION'))
 baseenv.Append(VERSION = baseenv.subst('$SOVERSION')+'.'+baseenv.subst('$PATCH'))
 baseenv.Append(NAME = 'analyzer-'+baseenv.subst('$VERSION'))
-baseenv.Append(EXTVERS = '-devel')
+baseenv.Append(EXTVERS = '-alpha1')
 baseenv.Append(HA_VERSION = baseenv.subst('$VERSION')+baseenv.subst('$EXTVERS'))
 print "Main Directory = %s" % baseenv.subst('$HA_DIR')
 print "Software Version = %s" % baseenv.subst('$VERSION')
@@ -67,7 +67,7 @@ if evio_libdir is None or evio_incdir is None:
 	print "EVIO_INCDIR = %s" % evio_incdir
 	print "Using local installation ... "
 	evio_local = baseenv.subst('$HA_DIR')+'/evio'
-	evio_version = '4.4.5'
+	evio_version = '4.4.6'
 	uname = os.uname();
 	platform = uname[0];
 	machine = uname[4];
@@ -78,7 +78,7 @@ if evio_libdir is None or evio_incdir is None:
 	evio_tarfile = "%s/evio-%s.tgz" % (evio_local,evio_version)
 	if not os.path.isdir(evio_local_lib):
 		if not os.path.exists(evio_tarfile):
-			evio_command_scons = "cd %s; wget --no-check-certificate https://coda.jlab.org/drupal/system/files/coda/evio/evio-4.4/evio-%s.tgz; tar xvfz evio-%s.tgz; cd evio-%s/ ; scons install --prefix=." % (evio_local,evio_version,evio_version,evio_version)
+			evio_command_scons = "cd %s; wget --no-check-certificate https://coda.jlab.org/drupal/system/files/evio-%s.tgz; tar xvfz evio-%s.tgz; cd evio-%s/ ; scons install --prefix=." % (evio_local,evio_version,evio_version,evio_version)
 		else:
 			evio_command_scons = "cd %s; tar xvfz evio-%s.tgz; cd evio-%s/ ; scons install --prefix=." % (evio_local,evio_version,evio_version)
 	else:
@@ -112,7 +112,8 @@ if not conf.CheckCXX():
 	print('!!! Your compiler and/or environment is not correctly configured.')
 	Exit(0)
 
-if not conf.CheckFunc('printf'):
+#if not conf.CheckFunc('printf'):
+if not conf.CheckCC():
        	print('!!! Your compiler and/or environment is not correctly configured.')
        	Exit(0)
 

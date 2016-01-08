@@ -30,6 +30,8 @@ public:
   // Load CODA data evbuffer. Derived classes MUST implement this function.
   virtual Int_t LoadEvent(const UInt_t* evbuffer) = 0;
 
+  virtual Int_t Init();
+
   // Basic access to the decoded data
   Int_t     GetEvType()   const { return event_type; }
   Int_t     GetEvLength() const { return event_length; }
@@ -85,7 +87,7 @@ public:
 			  Int_t /*slot*/, Int_t /*chan*/) const
   { return GetScaler(0,0,0); }
   virtual void SetDebugFile( std::ofstream *file ) { fDebugFile = file; };
-  virtual Decoder::Module* GetModule(Int_t roc, Int_t slot);
+  virtual Decoder::Module* GetModule(Int_t roc, Int_t slot) const;
 
   // Access functions for EPICS (slow control) data
   virtual double GetEpicsData(const char* tag, Int_t event=0) const;
@@ -152,6 +154,10 @@ protected:
     Int_t pos;                // position in evbuffer[]
     Int_t len;                // length of data
   } rocdat[Decoder::MAXROC];
+  struct BankDat_t {           // Bank raw data descriptor
+    Int_t pos;                 // position in evbuffer[]
+    Int_t len;                 // length of data
+  } bankdat[Decoder::MAXBANK];
   Decoder::THaSlotData** crateslot;
 
   Bool_t first_decode;
@@ -176,6 +182,7 @@ protected:
   Int_t init_cmap();
   Int_t init_slotdata(const Decoder::THaCrateMap* map);
   void  makeidx(Int_t crate, Int_t slot);
+  void FindUsedSlots();
 
   Int_t     fNSlotUsed;   // Number of elements of crateslot[] actually used
   Int_t     fNSlotClear;  // Number of elements of crateslot[] to clear

@@ -38,6 +38,16 @@ int CmpNoCase( const string& r, const string& s )
 }
 
 //_____________________________________________________________________________
+string::size_type FindNoCase( string data, string chunk )
+{
+  // Find position of "chunk" in "data".  Case insensitive.
+
+  Lower(data);
+  Lower(chunk);
+  return data.find(chunk);
+};
+
+//_____________________________________________________________________________
 vector<string> Split( const string& s )
 {
   // Split on whitespace.

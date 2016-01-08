@@ -22,6 +22,8 @@ class CodaDecoder : public THaEvData {
 
   virtual Int_t LoadEvent(const UInt_t* evbuffer);
 
+  virtual Int_t Init();
+
   virtual Int_t GetNslots() const { return fNSlotUsed; };
 
   virtual Int_t GetPrescaleFactor(Int_t trigger) const;
@@ -32,6 +34,7 @@ class CodaDecoder : public THaEvData {
 
   Int_t FindRocs(const UInt_t *evbuffer);
   Int_t roc_decode( Int_t roc, const UInt_t* evbuffer, Int_t ipt, Int_t istop );
+  Int_t bank_decode( Int_t roc, const UInt_t* evbuffer, Int_t ipt, Int_t istop );
   Int_t nroc;
   Int_t *irn;
 
@@ -45,7 +48,6 @@ class CodaDecoder : public THaEvData {
   void CompareRocs();
   void ChkFbSlot( Int_t roc, const UInt_t* evbuffer, Int_t ipt, Int_t istop );
   void ChkFbSlots();
-  void FindUsedSlots();
 
   int init_slotdata(const THaCrateMap *map);
   void dump(const UInt_t* evbuffer) const;

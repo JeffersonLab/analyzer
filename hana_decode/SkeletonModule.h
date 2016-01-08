@@ -39,10 +39,12 @@ public:
    virtual ~SkeletonModule();
 
    using Module::GetData;
+   using Module::LoadSlot;
 
    virtual Int_t GetData(Int_t chan) const;
    virtual void Init();
    virtual void Clear(const Option_t *opt);
+   virtual Int_t Decode(const UInt_t *p) { return 0; };
 
 #ifdef LIKEV792
 // Loads slot data.  if you don't define this, the base class's method is used
