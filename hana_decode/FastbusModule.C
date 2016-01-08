@@ -28,7 +28,7 @@ void FastbusModule::Init() {
 Int_t FastbusModule::Decode(const UInt_t *evbuffer) {
   fChan = Chan(*evbuffer);
   fData = Data(*evbuffer);
-  fRawData = fData;
+  fRawData = *evbuffer;
   return 1;
 }
 
