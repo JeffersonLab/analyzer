@@ -292,7 +292,7 @@ Int_t CodaDecoder::bank_decode( Int_t roc, const UInt_t* evbuffer,
 
     if (bank >= 0 && bank < MAXBANK) {
       bankdat[bank].pos=pos+2;
-      bankdat[bank].len=len-2;
+      bankdat[bank].len=len-1;
     }
 
     pos += len+1;
