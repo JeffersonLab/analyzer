@@ -17,6 +17,7 @@
 #include "TClass.h"
 #include "TList.h"
 
+#include <cstring>
 #ifdef WITH_DEBUG
 #include <iostream>
 #endif
@@ -96,16 +97,20 @@ void THaApparatus::Clear( Option_t* opt )
 {
   // Call the Clear() method for all detectors defined for this apparatus.
 
-  TIter next(fDetectors);
-  while( THaDetector* theDetector = static_cast<THaDetector*>( next() )) {
+  // No point in doing this during Init. Our own Init will call the detectors'
+  // Init() anyway, which will call the detectors' Clear() in turn
+  if( !strchr(opt,'I') ) {
+    TIter next(fDetectors);
+    while( THaDetector* theDetector = static_cast<THaDetector*>( next() )) {
 #ifdef WITH_DEBUG
-    if( fDebug>1 ) cout << "Clearing " << theDetector->GetName()
-			<< "... " << flush;
+      if( fDebug>1 ) cout << "Clearing " << theDetector->GetName()
+			  << "... " << flush;
 #endif
-    theDetector->Clear(opt);
+      theDetector->Clear(opt);
 #ifdef WITH_DEBUG
-    if( fDebug>1 ) cout << "done.\n" << flush;
+      if( fDebug>1 ) cout << "done.\n" << flush;
 #endif
+    }
   }
 }
 

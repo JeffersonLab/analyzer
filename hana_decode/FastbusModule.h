@@ -28,9 +28,9 @@ public:
    virtual Int_t LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const UInt_t *pstop);
    void DoPrint() const;
 
-   UInt_t Slot(UInt_t rdata) { return (rdata>>fSlotShift); };
-   UInt_t Chan(UInt_t rdata) { return (rdata&fChanMask)>>fChanShift; };
-   UInt_t Data(UInt_t rdata) { return (rdata&fDataMask); };
+   Int_t Slot(UInt_t rdata) { return (rdata>>fSlotShift); };
+   Int_t Chan(UInt_t rdata) { return (rdata&fChanMask)>>fChanShift; };
+   Int_t Data(UInt_t rdata) { return (rdata&fDataMask); };
 
 protected:
 

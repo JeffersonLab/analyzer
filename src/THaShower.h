@@ -16,6 +16,7 @@ class THaShower : public THaPidDetector {
 public:
   THaShower( const char* name, const char* description = "",
 	     THaApparatus* a = NULL );
+  THaShower();
   virtual ~THaShower();
 
   virtual void       Clear( Option_t* ="" );

@@ -29,9 +29,20 @@ using namespace std;
 //_____________________________________________________________________________
 THaShower::THaShower( const char* name, const char* description,
 		      THaApparatus* apparatus ) :
-  THaPidDetector(name,description,apparatus), fNChan(0), fChanMap(0)
+  THaPidDetector(name,description,apparatus), fNChan(0), fChanMap(0),
+  fNclublk(0), fNrows(0), fBlockX(0), fBlockY(0), fPed(0), fGain(0),
+  fNhits(0), fA(0), fA_p(0), fA_c(0), fNblk(0), fEblk(0)
 {
   // Constructor
+}
+
+//_____________________________________________________________________________
+THaShower::THaShower() :
+  THaPidDetector(), fNChan(0), fChanMap(0),
+  fNclublk(0), fNrows(0), fBlockX(0), fBlockY(0), fPed(0), fGain(0),
+  fNhits(0), fA(0), fA_p(0), fA_c(0), fNblk(0), fEblk(0)
+{
+  // Default constructor (for ROOT I/O)
 }
 
 //_____________________________________________________________________________
@@ -289,18 +300,11 @@ void THaShower::DeleteArrays()
 }
 
 //_____________________________________________________________________________
-void THaShower::Clear( Option_t* )
+void THaShower::Clear( Option_t* opt )
 {
   // Clear event data
 
-  const int lsh = fNelem*sizeof(Float_t);
-  const int lsc = fNclublk*sizeof(Float_t);
-  const int lsi = fNclublk*sizeof(Int_t);
-
   fNhits = 0;
-  memset( fA, 0, lsh );
-  memset( fA_p, 0, lsh );
-  memset( fA_c, 0, lsh );
   fAsum_p = 0.0;
   fAsum_c = 0.0;
   fNclust = 0;
@@ -308,8 +312,16 @@ void THaShower::Clear( Option_t* )
   fX = 0.0;
   fY = 0.0;
   fMult = 0;
-  memset( fNblk, 0, lsi );
-  memset( fEblk, 0, lsc );
+  if( !strchr(opt,'I') ) {
+    const int lsh = fNelem*sizeof(Float_t);
+    const int lsc = fNclublk*sizeof(Float_t);
+    const int lsi = fNclublk*sizeof(Int_t);
+    memset( fA, 0, lsh );
+    memset( fA_p, 0, lsh );
+    memset( fA_c, 0, lsh );
+    memset( fNblk, 0, lsi );
+    memset( fEblk, 0, lsc );
+  }
 }
 
 //_____________________________________________________________________________
