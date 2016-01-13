@@ -34,6 +34,20 @@ public:
   const Double_t* GetAmplitudes() const { return fAmpl; }
   const Double_t* GetYtime() const { return fYt; }
   const Double_t* GetYampl() const { return fYa; }
+  
+  static const Int_t NDEST = 2;
+  struct DataDest {
+    Int_t*    nthit;
+    Int_t*    nahit;
+    Double_t*  tdc;
+    Double_t*  tdc_c;
+    Double_t*  adc;
+    Double_t*  adc_p;
+    Double_t*  adc_c;
+    Double_t*  offset;
+    Double_t*  ped;
+    Double_t*  gain;
+  } fDataDest[NDEST];     // Lookup table for decoder
 
   friend class THaScCalib;
 
@@ -88,20 +102,6 @@ protected:
   Double_t*   fAmpl;       // [fNelem] overall amplitude for the paddle
   Double_t*   fYt;         // [fNelem] y-position of hit in paddle from TDC (m)
   Double_t*   fYa;         // [fNelem] y-position of hit in paddle from ADC (m)
-
-  static const Int_t NDEST = 2;
-  struct DataDest {
-    Int_t*    nthit;
-    Int_t*    nahit;
-    Double_t*  tdc;
-    Double_t*  tdc_c;
-    Double_t*  adc;
-    Double_t*  adc_p;
-    Double_t*  adc_c;
-    Double_t*  offset;
-    Double_t*  ped;
-    Double_t*  gain;
-  } fDataDest[NDEST];     // Lookup table for decoder
 
   void           DeleteArrays();
   virtual Int_t  ReadDatabase( const TDatime& date );

@@ -24,6 +24,13 @@ public:
   virtual Int_t  Decode( const THaEvData& evdata );
 
   THaADCHelicity() {}  // For ROOT I/O only
+  
+  // Simplified detector map for the two data channels
+  struct ChanDef_t {
+    Int_t roc;            // ROC to read out
+    Int_t slot;           // Slot of module
+    Int_t chan;           // Channel within module
+  };
 
 protected:
   // ADC data for helicity and gate
@@ -36,11 +43,6 @@ protected:
   Bool_t     fInvertGate; // Invert polarity of gate signal, so that 0=active
 
   // Simplified detector map for the two data channels
-  struct ChanDef_t {
-    Int_t roc;            // ROC to read out
-    Int_t slot;           // Slot of module
-    Int_t chan;           // Channel within module
-  };
   ChanDef_t  fAddr[2];    // Definitions of helicity and gate channels
   Int_t      fNchan;      // Number of channels to read out (1 or 2)
 
