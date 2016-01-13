@@ -26,6 +26,12 @@ public:
   Int_t  GetQrt()      const { return fQrt; }
   Int_t  GetGate()     const { return fGate; }
   Int_t  GetReading()  const { return fPresentReading; }
+  
+  struct ROCinfo {
+    Int_t  roc;               // ROC to read out
+    Int_t  header;            // Headers to search for (0 = ignore)
+    Int_t  index;             // Index into buffer
+  };
 
 protected:
 
@@ -52,11 +58,6 @@ protected:
   // If a header is zero the index is taken to be from the start of
   // the ROC (0 = first word of ROC), otherwise it's from the header
   // (0 = first word after header).
-  struct ROCinfo {
-    Int_t  roc;               // ROC to read out
-    Int_t  header;            // Headers to search for (0 = ignore)
-    Int_t  index;             // Index into buffer
-  };
   ROCinfo  fROCinfo[kROC3+1]; // Primary readouts and two redundant clocks
 
   Int_t    fG0Debug;          // Debug level

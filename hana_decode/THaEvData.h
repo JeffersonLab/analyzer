@@ -126,6 +126,11 @@ public:
 
   enum { MAX_PSFACT = 12 };
 
+  struct RocDat_t {           // ROC raw data descriptor
+    Int_t pos;                // position in evbuffer[]
+    Int_t len;                // length of data
+  } rocdat[Decoder::MAXROC];
+
 protected:
   // Control bits in TObject::fBits used by decoders
   enum {
@@ -150,10 +155,6 @@ protected:
   // static const Int_t TRIGGER_FILE     = 136;
   // static const Int_t SCALER_EVTYPE    = 140;
 
-  struct RocDat_t {           // ROC raw data descriptor
-    Int_t pos;                // position in evbuffer[]
-    Int_t len;                // length of data
-  } rocdat[Decoder::MAXROC];
   struct BankDat_t {           // Bank raw data descriptor
     Int_t pos;                 // position in evbuffer[]
     Int_t len;                 // length of data
