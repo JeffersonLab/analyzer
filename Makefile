@@ -60,27 +60,6 @@ ifndef EVIO_LIBDIR
   export EVIO_INCDIR := $(EVIODIR)
 endif
 
-ifeq ($(ARCH),solarisCC5)
-# Solaris CC 5.0
-ifdef DEBUG
-  CXXFLG     := -g
-  LDFLAGS    := -g
-  DEFINES    :=
-else
-  CXXFLG     := -O
-  LDFLAGS    := -O
-  DEFINES    := -DNDEBUG
-endif
-CXXFLG       += -KPIC
-LD           := CC
-LDCONFIG     :=
-SOFLAGS      := -G
-SONAME       := -h
-DEFINES      += -DSUNVERS
-DICTCXXFLG   :=
-MAKEDEPEND   = g++ -MM
-endif
-
 ifeq ($(ARCH),linux)
 # Linux with egcs (>= RedHat 5.2)
 ifdef DEBUG
@@ -138,20 +117,17 @@ endif
 #FIXME: requires gcc 3 or up - test in configure script
 DEFINES       += -DHAS_SSTREAM
 
-ifdef ONLINE_ET
+# ifdef ONLINE_ET
 
-# ONLIBS is needed for ET
-  ET_AC_FLAGS := -D_REENTRANT -D_POSIX_PTHREAD_SEMANTICS
-  ET_CFLAGS := -02 -fPIC -I. $(ET_AC_FLAGS) -DLINUXVERS
-# CODA environment variable must be set.  Examples are
-#   CODA:= /adaqfs/coda/2.2        (in adaq cluster)
-#   CODA:= /data7/user/coda/2.2    (on haplix cluster)
-  LIBET  := $(CODA)/Linux/lib/libet.so
-  ONLIBS := $(LIBET) -lieee -lpthread -ldl -lresolv
+# # ONLIBS is needed for ET
+#   ET_AC_FLAGS := -D_REENTRANT -D_POSIX_PTHREAD_SEMANTICS
+#   ET_CFLAGS := -02 -fPIC -I. $(ET_AC_FLAGS) -DLINUXVERS
+#   LIBET  := $(CODA)/Linux/lib/libet.so
+#   ONLIBS := $(LIBET) -lieee -lpthread -ldl -lresolv
 
-  DEFINES  += -DONLINE_ET
-  HALLALIBS += $(ONLIBS)
-endif
+#   DEFINES  += -DONLINE_ET
+#   HALLALIBS += $(ONLIBS)
+# endif
 
 ifdef WITH_DEBUG
 DEFINES      += -DWITH_DEBUG
@@ -216,9 +192,9 @@ SRC          := src/THaFormula.C src/THaVform.C src/THaVhist.C \
 		src/THaQWEAKHelicityReader.C src/THaEvtTypeHandler.C \
 		src/THaScalerEvtHandler.C src/THaEpicsEvtHandler.C
 
-ifdef ONLINE_ET
-SRC += src/THaOnlRun.C
-endif
+# ifdef ONLINE_ET
+# SRC += src/THaOnlRun.C
+# endif
 
 OBJ          := $(SRC:.C=.o)
 RCHDR        := $(SRC:.C=.h) src/THaGlobals.h
