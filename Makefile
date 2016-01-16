@@ -231,7 +231,7 @@ src/ha_compiledata.h:	Makefile
 		@echo "" >> $@
 		@echo "#endif" >> $@
 
-src/THaInterface:  src/ha_compiledata.h
+src/THaInterface.o:  src/ha_compiledata.h
 
 subdirs:	$(SUBDIRS)
 
