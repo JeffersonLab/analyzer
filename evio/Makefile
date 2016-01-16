@@ -19,11 +19,14 @@ endif
 
 all:	$(EVIO_LIBDIR)/$(EVIOLIB)
 
-$(EVIO_LIBDIR)/$(EVIOLIB): $(SRCDIR)/Makefile
+$(EVIO_LIBDIR)/$(EVIOLIB): $(SRCDIR)/$(EVIOLIB)
+	$(MAKE) -C $(SRCDIR) install
+
+$(SRCDIR)/$(EVIOLIB): $(SRCDIR)/Makefile
+	$(MAKE) -C $(SRCDIR)
 
 $(SRCDIR)/Makefile:  $(SRCDIR) Makefile.libsrc
 	cp -f Makefile.libsrc $(SRCDIR)/Makefile
-	$(MAKE) -C $(SRCDIR) install
 
 $(SRCDIR): $(TAR)
 	tar xf $(TAR)

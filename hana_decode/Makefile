@@ -209,9 +209,9 @@ static:	libdc.a
 libdc.so: $(DECODE_OBJ)
 	rm -f $@
 ifeq ($(strip $(SONAME)),)
-	$(LD) $(LDFLAGS) $(SOFLAGS) -o $@ $(filter %.o,$^) $(EVIO_LIB)
+	$(LD) $(LDFLAGS) $(SOFLAGS) -o $@ $(filter %.o,$^)
 else
-	$(LD) $(LDFLAGS) $(SOFLAGS) $(SONAME)libdc.so.$(SOVERSION) -o $@ $(filter %.o,$^) $(EVIO_LIB)
+	$(LD) $(LDFLAGS) $(SOFLAGS) $(SONAME)libdc.so.$(SOVERSION) -o $@ $(filter %.o,$^)
 endif
 
 ifndef STANDALONE

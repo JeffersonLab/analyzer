@@ -60,6 +60,8 @@ ifndef EVIO_LIBDIR
   export EVIO_INCDIR := $(EVIODIR)
 endif
 
+HALLALIBS += -L$(EVIO_LIBDIR) -levio
+
 ifeq ($(ARCH),linux)
 # Linux with egcs (>= RedHat 5.2)
 ifdef DEBUG
