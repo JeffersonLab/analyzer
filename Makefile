@@ -56,8 +56,9 @@ INCLUDES     := $(addprefix -I, $(INCDIRS) )
 ifndef EVIO_LIBDIR
   EVIODIR := $(shell pwd)/evio
   SUBDIRS += evio
-  export EVIO_LIBDIR := $(shell pwd)
+  export EVIO_LIBDIR := $(LIBDIR)
   export EVIO_INCDIR := $(EVIODIR)
+  LIBEVIO := $(LIBDIR)/libevio.so
 endif
 
 HALLALIBS += -L$(EVIO_LIBDIR) -levio
@@ -211,7 +212,10 @@ LIBDC        := $(LIBDIR)/libdc.so
 #------------------------------------------------
 
 PROGRAMS     := analyzer
-PODDLIBS     := $(LIBHALLA) $(LIBDC) 
+PODDLIBS     := $(LIBHALLA) $(LIBDC)
+ifdef EVIODIR
+PODDLIBS     += $(LIBEVIO)
+endif
 
 all:            subdirs
 		set -e; for i in $(PROGRAMS); do $(MAKE) $$i; done
@@ -290,7 +294,7 @@ $(HA_DICT).C: $(RCHDR) $(HA_LINKDEF)
 
 
 #---------- Main program -------------------------------------------
-analyzer:	src/main.o $(LIBDC) $(LIBHALLA)
+analyzer:	src/main.o $(PODDLIBS)
 		$(LD) $(LDFLAGS) $< $(HALLALIBS) $(GLIBS) -o $@
 
 #---------- Maintenance --------------------------------------------
@@ -321,20 +325,27 @@ install:	all
 ifndef ANALYZER
 		$(error $$ANALYZER environment variable not defined)
 endif
+ifneq ($(ANALYZER),$(shell pwd))
 		@echo "Installing in $(ANALYZER) ..."
 		@mkdir -p $(ANALYZER)/{$(PLATFORM),include,src/src,docs,DB,examples,SDK}
 		cp -pu $(SRC) $(HDR) $(HA_LINKDEF) $(ANALYZER)/src/src
 		cp -pu $(HDR) $(ANALYZER)/include
-		tar cf - `find examples docs SDK -type f | grep -v '*~'` | tar xf - -C $(ANALYZER)
+		tar cf - $(shell find examples docs SDK -type f | grep -v '*~') | \
+			tar xf - -C $(ANALYZER)
 		cp -pu Makefile ChangeLog $(ANALYZER)/src
 		cp -pru DB $(ANALYZER)/
 		@echo "Installing in $(ANALYZER)/$(PLATFORM) ..."
-		for lib in $(PODDLIBS); do \
+		for lib in $(filter-out $(LIBEVIO), $(PODDLIBS)); do \
 			rm -f  $(ANALYZER)/$(PLATFORM)/$(notdir $$lib); \
 			rm -f  $(ANALYZER)/$(PLATFORM)/$(notdir $$lib).$(SOVERSION); \
 			rm -f  $(ANALYZER)/$(PLATFORM)/$(notdir $$lib).$(VERSION); \
-			cp -af $$lib $$lib.$(SOVERSION) $$lib.$(VERSION) $(ANALYZER)/$(PLATFORM); \
+			cp -af $$lib $$lib.$(SOVERSION) $$lib.$(VERSION) \
+			   $(ANALYZER)/$(PLATFORM) 2>/dev/null; \
 		done
+		rm -f $(ANALYZER)/$(PLATFORM)/libevio.so
+ifdef LIBEVIO
+		cp -af $(LIBEVIO) $(ANALYZER)/$(PLATFORM)
+endif
 		rm -f $(ANALYZER)/$(PLATFORM)/analyzer $(ANALYZER)/$(PLATFORM)/$(NAME)
 		cp -pf $(PROGRAMS) $(ANALYZER)/$(PLATFORM)/
 ifneq ($(PLATFORM),bin)
@@ -346,6 +357,9 @@ ifneq ($(NAME),analyzer)
 		ln -s $(NAME) $(ANALYZER)/$(PLATFORM)/analyzer
 endif
 		set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i install; done
+else
+		@echo "Everything already installed"
+endif
 
 ###--- DO NOT CHANGE ANYTHING BELOW THIS LINE UNLESS YOU KNOW WHAT
 ###    YOU ARE DOING

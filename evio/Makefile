@@ -25,7 +25,7 @@ $(EVIO_LIBDIR)/$(EVIOLIB): $(SRCDIR)/$(EVIOLIB)
 $(SRCDIR)/$(EVIOLIB): $(SRCDIR)/Makefile
 	$(MAKE) -C $(SRCDIR)
 
-$(SRCDIR)/Makefile:  $(SRCDIR) Makefile.libsrc
+$(SRCDIR)/Makefile:  Makefile.libsrc
 	cp -f Makefile.libsrc $(SRCDIR)/Makefile
 
 $(SRCDIR): $(TAR)
@@ -38,8 +38,11 @@ endif
 	$(shell $(WGET) --no-check-certificate \
 	 https://coda.jlab.org/drupal/system/files/$(EVIO).tgz)
 
+install: all
+	cp -pu evio.h $(ANALYZER)/include
+
 clean:
-	if [ -d $(SRCDIR) ]; then $(MAKE) -C $(SRCDIR) clean; touch -r $(TAR) $(SRCDIR); fi
+	if [ -d $(SRCDIR) ]; then $(MAKE) -C $(SRCDIR) clean; fi
 
 realclean:
 	if [ -d $(SRCDIR) ]; then $(MAKE) -C $(SRCDIR) realclean; fi
