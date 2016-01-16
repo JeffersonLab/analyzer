@@ -56,7 +56,7 @@ INCLUDES     := $(addprefix -I, $(INCDIRS) )
 ifndef EVIO_LIBDIR
   EVIODIR := $(shell pwd)/evio
   SUBDIRS += evio
-  export EVIO_LIBDIR := $(EVIODIR)
+  export EVIO_LIBDIR := $(shell pwd)
   export EVIO_INCDIR := $(EVIODIR)
 endif
 

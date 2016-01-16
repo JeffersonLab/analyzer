@@ -1,14 +1,25 @@
 # Makefile for local EVIO build
 
 EVIO = evio-4.4.6
+EVIOLIB = libevio.so
 SRCDIR = $(EVIO)/src/libsrc
 TAR = $(EVIO).tgz
 WGET = $(shell which wget)
-export EVIO_INSTALL_DIR = $(shell pwd)
+export EVIOLIB
+# For standalone build
+ifndef EVIO_LIBDIR
+  export EVIO_LIBDIR = $(shell pwd)
+endif
+ifndef EVIO_INCDIR
+  export EVIO_INCDIR = $(shell pwd)
+endif
+ifndef SOFLAGS
+  export SOFLAGS = -shared
+endif
 
-all:	$(EVIO_INSTALL_DIR)/libevio.a
+all:	$(EVIO_LIBDIR)/$(EVIOLIB)
 
-$(EVIO_INSTALL_DIR)/libevio.a: $(SRCDIR)/Makefile
+$(EVIO_LIBDIR)/$(EVIOLIB): $(SRCDIR)/Makefile
 
 $(SRCDIR)/Makefile:  $(SRCDIR) Makefile.libsrc
 	cp -f Makefile.libsrc $(SRCDIR)/Makefile

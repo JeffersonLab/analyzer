@@ -1,7 +1,7 @@
-# -*- Mode: Makefile -*-
-# Simple Makefile for static libevio.a (C API only)
+# -*- Mode: makefile-gmake -*-
+# Simple Makefile for C API only libevio.so
 
-LIB = libevio.a
+LIB = $(EVIOLIB)
 SRC = evio.c eviofmt.c eviofmtswap.c evioswap.c
 HDR = evio.h
 OBJ = $(SRC:.c=.o)
@@ -9,42 +9,39 @@ OBJ = $(SRC:.c=.o)
 CC = gcc
 CCFLAGS = -O3 -fPIC -I.
 
-# For shared library
-#LIB = libevio.so
-#LDFLAGS = -shared
-#
-#$(LIB):  $(OBJ)
-#	$(CC) $(LDFLAGS) -o $@ $(OBJ)
-
-ifndef EVIO_INSTALL_DIR
-  $(error $$EVIO_INSTALL_DIR not defined)
+ifndef EVIO_LIBDIR
+  $(error $$EVIO_LIBDIR not defined)
+endif
+ifndef EVIO_INCDIR
+  $(error $$EVIO_INCDIR not defined)
 endif
 
 all:	$(LIB)
 
 $(LIB): $(OBJ)
-	ar crs $@ $^
+	$(CC) $(LDFLAGS) $(SOFLAGS) -o $@ $(OBJ)
 
 %.o:	%.c $(HDR)
 	$(CC) $(CCFLAGS) -o $@ -c $<
 
-install: $(addprefix $(EVIO_INSTALL_DIR)/,$(LIB) $(HDR))
+install: $(addprefix $(EVIO_LIBDIR)/,$(LIB)) $(addprefix $(EVIO_INCDIR)/,$(HDR))
 
 uninstall:
-	rm -f $(addprefix $(EVIO_INSTALL_DIR)/,$(LIB) $(HDR))
+	rm -f $(addprefix $(EVIO_LIBDIR)/,$(LIB))
+	rm -f $(addprefix $(EVIO_INCDIR)/,$(HDR))
 
 clean:
 	rm -f *.o $(LIB)
 
 realclean:	clean uninstall
 
-$(EVIO_INSTALL_DIR)/$(LIB):	$(LIB)
-	@mkdir -p $(EVIO_INSTALL_DIR)
-	cp -pu $(LIB) $(EVIO_INSTALL_DIR)
+$(EVIO_LIBDIR)/$(LIB):	$(LIB)
+	@mkdir -p $(EVIO_LIBDIR)
+	cp -pu $(LIB) $(EVIO_LIBDIR)
 
-$(EVIO_INSTALL_DIR)/%.h:	%.h
-	@mkdir -p $(EVIO_INSTALL_DIR)
-	cp -pu $< $(EVIO_INSTALL_DIR)
+$(EVIO_INCDIR)/%.h:	%.h
+	@mkdir -p $(EVIO_INCDIR)
+	cp -pu $< $(EVIO_INCDIR)
 
 .SUFFIXES:
 
