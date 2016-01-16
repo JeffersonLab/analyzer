@@ -25,7 +25,7 @@ $(EVIO_LIBDIR)/$(EVIOLIB): $(SRCDIR)/$(EVIOLIB)
 $(SRCDIR)/$(EVIOLIB): $(SRCDIR)/Makefile
 	$(MAKE) -C $(SRCDIR)
 
-$(SRCDIR)/Makefile:  Makefile.libsrc
+$(SRCDIR)/Makefile:  $(SRCDIR) Makefile.libsrc
 	cp -f Makefile.libsrc $(SRCDIR)/Makefile
 
 $(SRCDIR): $(TAR)
