@@ -458,7 +458,7 @@ void THaVDCPlane::Clear( Option_t* )
   // Clears the contents of the and hits and clusters
   fNHits = fNWiresHit = 0;
   fHits->Clear();
-  fClusters->Clear();
+  fClusters->Delete();
 }
 
 //_____________________________________________________________________________
