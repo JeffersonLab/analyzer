@@ -49,6 +49,7 @@ THaVform::THaVform( const char *type, const char* name, const char* formula,
       fType = kEye;
     else if( !strcmp(buf,"vararray") )
       fType = kVarArray;
+    delete [] buf;
   }
 
   // Call THaFormula's Compile()

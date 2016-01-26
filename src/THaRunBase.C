@@ -75,6 +75,7 @@ THaRunBase& THaRunBase::operator=(const THaRunBase& rhs)
      fDataSet    = rhs.fDataSet;
      fDataRead   = rhs.fDataRead;
      fDataRequired = rhs.fDataRequired;
+     delete fParam;
      if( rhs.fParam ) {
        fParam = static_cast<THaRunParameters*>(rhs.fParam->IsA()->New());
        *fParam = *rhs.fParam;

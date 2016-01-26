@@ -121,6 +121,7 @@ THaEvData::~THaEvData() {
   delete [] crateslot;
   delete [] fSlotUsed;
   delete [] fSlotClear;
+  delete fMap;
   fInstance--;
   fgInstances.ResetBitNumber(fInstance);
 }

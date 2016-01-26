@@ -48,8 +48,8 @@ THaSlotData::THaSlotData(int cra, int slo) :
 
 
 THaSlotData::~THaSlotData() {
+  delete fModule;
   if( !didini ) return;
-  if(fModule) delete fModule;
   delete [] numHits;
   delete [] xnumHits;
   delete [] chanlist;
@@ -130,6 +130,7 @@ int THaSlotData::loadModule(const THaCrateMap *map) {
 
       if (loctype.fTClass) {
 	if (fDebugFile) *fDebugFile << "THaSlotData:: Creating fModule"<<endl;
+	delete fModule;
 	fModule= static_cast<Module*>( loctype.fTClass->New() );
 	if (fDebugFile) *fDebugFile << "fModule return "<<fModule<<endl;
 
