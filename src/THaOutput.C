@@ -272,44 +272,42 @@ Int_t THaOutput::Init( const char* filename )
       cout << "There is probably a typo error... "<<endl;
     }
   }
-  string tinfo;
-  Int_t status;
   Int_t k = 0;
   for (Iter_s_t inam = fFormnames.begin(); inam != fFormnames.end(); ++inam, ++k) {
-    tinfo = Form("f%d",k);
+    string tinfo = Form("f%d",k);
     // FIXME: avoid duplicate formulas
-    // FIXME: create and Init() first, then add to array?
-    fFormulas.push_back(new THaVform("formula",inam->c_str(),fFormdef[k].c_str()));
-    THaVform* pform = fFormulas[k];
-    status = pform->Init();
+    THaVform* pform = new THaVform("formula",inam->c_str(),fFormdef[k].c_str());
+    Int_t status = pform->Init();
     if ( status != 0) {
       cout << "THaOutput::Init: WARNING: Error in formula ";
       cout << *inam << endl;
       cout << "There is probably a typo error... " << endl;
-      if( fgVerbose<=2 )
-	pform->ErrPrint(status);
-      else
-	pform->LongPrint();  // for debug
-    } else {
-      pform->SetOutput(fTree);
+      pform->ErrPrint(status);
+      delete pform;
+      --k;
+      continue;
+    }
+    pform->SetOutput(fTree);
+    fFormulas.push_back(pform);
+    if( fgVerbose > 2 )
+      pform->LongPrint();  // for debug
 // Add variables (i.e. those var's used by the formula) to tree.
 // Reason is that TTree::Draw() may otherwise fail with ERROR 26 
-      vector<string> avar = pform->GetVars();
-      for (Iter_s_t it = avar.begin(); it != avar.end(); ++it) {
-        string svar = StripBracket(*it);
-        pvar = gHaVars->Find(svar.c_str());
-        if (pvar) {
-          if (pvar->IsArray()) {
-	    Iter_s_t it = find(fArrayNames.begin(),fArrayNames.end(),svar);
-	    if( it == fArrayNames.end() ) {
-	      fArrayNames.push_back(svar);
-	      fOdata.push_back(new THaOdata());
-	    }
-          } else {
-	    Iter_s_t it = find(fVNames.begin(),fVNames.end(),svar);
-	    if( it == fVNames.end() )
-	      fVNames.push_back(svar);
+    vector<string> avar = pform->GetVars();
+    for (Iter_s_t it = avar.begin(); it != avar.end(); ++it) {
+      string svar = StripBracket(*it);
+      pvar = gHaVars->Find(svar.c_str());
+      if (pvar) {
+	if (pvar->IsArray()) {
+	  Iter_s_t it = find(fArrayNames.begin(),fArrayNames.end(),svar);
+	  if( it == fArrayNames.end() ) {
+	    fArrayNames.push_back(svar);
+	    fOdata.push_back(new THaOdata());
 	  }
+	} else {
+	  Iter_s_t it = find(fVNames.begin(),fVNames.end(),svar);
+	  if( it == fVNames.end() )
+	    fVNames.push_back(svar);
 	}
       }
     }
@@ -320,24 +318,25 @@ Int_t THaOutput::Init( const char* filename )
   fNvar = fVNames.size();
   fVar = new Double_t[fNvar];
   for (k = 0; k < fNvar; ++k) {
-    tinfo = fVNames[k] + "/D";
+    string tinfo = fVNames[k] + "/D";
     fTree->Branch(fVNames[k].c_str(), &fVar[k], tinfo.c_str(), kNbout);
   }
   k = 0;
   for (Iter_s_t inam = fCutnames.begin(); inam != fCutnames.end(); ++inam, ++k ) {
     // FIXME: avoid duplicate cuts
-    // FIXME: create and Init() first, then add to array?
-    fCuts.push_back(new THaVform("cut", inam->c_str(), fCutdef[k].c_str()));
-    THaVform* pcut = fCuts[k];
-    status = pcut->Init(); 
+    THaVform* pcut = new THaVform("cut", inam->c_str(), fCutdef[k].c_str());
+    Int_t status = pcut->Init();
     if ( status != 0 ) {
       cout << "THaOutput::Init: WARNING: Error in formula ";
       cout << *inam << endl;
       cout << "There is probably a typo error... " << endl;
       pcut->ErrPrint(status);
-    } else {
-      pcut->SetOutput(fTree);
+      delete pcut;
+      --k;
+      continue;
     }
+    pcut->SetOutput(fTree);
+    fCuts.push_back(pcut);
     if( fgVerbose>2 )
       pcut->LongPrint();  // for debug
   }
@@ -377,7 +376,7 @@ Int_t THaOutput::Init( const char* filename )
 	 it != fEpicsKey.end(); ++it, ++i) {
       fEpicsVar[i] = -1e32;
       string epicsbr = CleanEpicsName((*it)->GetName());
-      tinfo = epicsbr + "/D";
+      string tinfo = epicsbr + "/D";
       fTree->Branch(epicsbr.c_str(), &fEpicsVar[i], 
         tinfo.c_str(), kNbout);
       fEpicsTree->Branch(epicsbr.c_str(), &fEpicsVar[i], 
@@ -398,12 +397,6 @@ Int_t THaOutput::Init( const char* filename )
   if( fgDoBench ) fgBench.Stop("Attach");
   if ( st )
     return -4;
-
-  for (Iter_f_t icut=fCuts.begin(); icut!=fCuts.end(); ++icut) 
-      (*icut)->SetOutput(fTree);
-
-  for (Iter_f_t iform=fFormulas.begin(); iform!=fFormulas.end(); ++iform) 
-      (*iform)->SetOutput(fTree);
 
   return 0;
 }
