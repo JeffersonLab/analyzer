@@ -23,6 +23,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <cctype>
+#include <cassert>
 
 using namespace std;
 
@@ -124,6 +125,7 @@ void THaVform::Create(const THaVform &rhs)
   fNvar = rhs.fNvar;
   fVarPtr = rhs.fVarPtr;
   fObjSize = rhs.fObjSize;
+  delete fOdata; fOdata = 0;
   if( rhs.fOdata )
     fOdata = new THaOdata(*rhs.fOdata);
   fVarName = rhs.fVarName;
@@ -165,8 +167,7 @@ void THaVform::Create(const THaVform &rhs)
 //_____________________________________________________________________________
 void THaVform::Uncreate()
 {
-  if (fOdata) delete fOdata;
-  fOdata = NULL;
+  delete fOdata; fOdata = 0;
   for (vector<THaCut*>::iterator itc = fCut.begin();
        itc != fCut.end(); ++itc) delete *itc;
   for (vector<THaFormula*>::iterator itf = fFormula.begin();
@@ -378,6 +379,7 @@ Int_t THaVform::Init()
   if (fVarPtr) {
     fObjSize = fVarPtr->GetLen();
     if (fPrefix == kNoPrefix) {
+       delete fOdata;
        fOdata = new THaOdata();
     } else {
        fObjSize = 1;
@@ -592,8 +594,10 @@ Int_t THaVform::SetOutput(TTree *tree)
 {
   if (IsEye()) return 0;
   string mydata = string(GetName());
-  if (fOdata) fOdata->AddBranches(tree, mydata);
-  if (!IsVarray() && fObjSize <= 1) {
+  if (fOdata) {
+    fOdata->AddBranches(tree, mydata);
+  } else {
+    assert(!IsVarray() && fObjSize == 1);
     string tinfo;
     tinfo = mydata + "/D";
     string tmp = mydata;
