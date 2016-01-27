@@ -1,18 +1,32 @@
 # Makefile for local EVIO build
 
 EVIO = evio-4.4.6
+EVIOLIB = libevio.so
 SRCDIR = $(EVIO)/src/libsrc
 TAR = $(EVIO).tgz
 WGET = $(shell which wget)
-export EVIO_INSTALL_DIR = $(shell pwd)
+export EVIOLIB
+# For standalone build
+ifndef EVIO_LIBDIR
+  export EVIO_LIBDIR = $(shell pwd)
+endif
+ifndef EVIO_INCDIR
+  export EVIO_INCDIR = $(shell pwd)
+endif
+ifndef SOFLAGS
+  export SOFLAGS = -shared
+endif
 
-all:	$(EVIO_INSTALL_DIR)/libevio.a
+all:	$(EVIO_LIBDIR)/$(EVIOLIB)
 
-$(EVIO_INSTALL_DIR)/libevio.a: $(SRCDIR)/Makefile
+$(EVIO_LIBDIR)/$(EVIOLIB): $(SRCDIR)/$(EVIOLIB)
+	$(MAKE) -C $(SRCDIR) install
+
+$(SRCDIR)/$(EVIOLIB): $(SRCDIR)/Makefile
+	$(MAKE) -C $(SRCDIR)
 
 $(SRCDIR)/Makefile:  $(SRCDIR) Makefile.libsrc
 	cp -f Makefile.libsrc $(SRCDIR)/Makefile
-	$(MAKE) -C $(SRCDIR) install
 
 $(SRCDIR): $(TAR)
 	tar xf $(TAR)
@@ -24,8 +38,11 @@ endif
 	$(shell $(WGET) --no-check-certificate \
 	 https://coda.jlab.org/drupal/system/files/$(EVIO).tgz)
 
+install: all
+	cp -pu evio.h $(ANALYZER)/include
+
 clean:
-	if [ -d $(SRCDIR) ]; then $(MAKE) -C $(SRCDIR) clean; touch -r $(TAR) $(SRCDIR); fi
+	if [ -d $(SRCDIR) ]; then $(MAKE) -C $(SRCDIR) clean; fi
 
 realclean:
 	if [ -d $(SRCDIR) ]; then $(MAKE) -C $(SRCDIR) realclean; fi

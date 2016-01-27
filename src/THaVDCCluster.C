@@ -339,15 +339,15 @@ void THaVDCCluster::FitSimpleTrack( Bool_t weighted )
     sigmaG2 = ( W / Delta );
     sigmaFG = ( -sumX / Delta );
 
+    // calculate chi2 for the track given this slope and intercept
+    chi2_t chi2 = CalcChisquare( G, F, 0 );
+
     m  =   1/G;
     b  = - F/G;
 
     sigmaM = m * m * TMath::Sqrt( sigmaG2 );
     sigmaB = TMath::Sqrt( sigmaF2 + F*F/(G*G)*sigmaG2 - 2*F/G*sigmaFG ) /
       TMath::Abs(G);
-
-    // calculate chi2 for the track given this slope and intercept
-    chi2_t chi2 = CalcChisquare( m, b, 0 );
 
     // scale the uncertainty of the fit parameters based upon the
     // quality of the fit. This really should not be necessary if

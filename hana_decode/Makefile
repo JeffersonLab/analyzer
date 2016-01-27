@@ -72,23 +72,6 @@ else
 # top-level Makefile
 
   DEFINES = -DSTANDALONE
-  ifeq ($(ARCH),solarisCC5)
-     DEFINES      += -DSUNVERS
-     # Solaris CC 5.0
-     CXX           = CC
-     LD            = CC
-     MAKEDEPEND    = g++ -MM
-     SOFLAGS       = -G
-     ifdef DEBUG
-	CXXFLG      = -g -KPIC
-	LDFLAGS     = -g
-     else
-	CXXFLG      = -O -KPIC
-	LDFLAGS     = -O
-	DEFINES    += -DNDEBUG
-     endif
-  endif
-
   ifeq ($(ARCH),linux)
      DEFINES      += -DLINUXVERS
      # Linux with egcs (>= RedHat 5.2)
@@ -159,10 +142,10 @@ ifeq ($(OSNAME),Darwin)
 endif
 
 # ... finished, what ET needs.
-ifdef ONLINE_ET
-  DC_DEFINES += -DONLINE_ET
-  ALL_LIBS   += $(ONLIBS)
-endif
+# ifdef ONLINE_ET
+#   DC_DEFINES += -DONLINE_ET
+#   ALL_LIBS   += $(ONLIBS)
+# endif
 
 # External EVIO support
 EVIO_LIB  = -L$(EVIO_LIBDIR) -levio
@@ -192,17 +175,17 @@ endif
 
 PROGS = tstoo tstfadc tstf1tdc tstskel tstio tdecpr tdecex prfact epicsd
 # If you want to use the ET system at Jlab.
-ifdef ONLINE_ET
-  SRC += THaEtClient.C
-  PROGS += etclient
-  PROGS += tstcoda
-endif
+# ifdef ONLINE_ET
+#   SRC += THaEtClient.C
+#   PROGS += etclient
+#   PROGS += tstcoda
+# endif
 
 RCHEAD := $(SRC:.C=.h) THaBenchmark.h
 HEAD = $(RCHEAD)
-ifdef ONLINE_ET
-  HEAD += et.h
-endif
+# ifdef ONLINE_ET
+#   HEAD += et.h
+# endif
 DEPS = $(patsubst %.c,%.d,$(SRC:.C=.d))
 DECODE_OBJ = $(patsubst %.c,%.o,$(SRC:%.C=%.o)) THaDecDict.o
 
@@ -226,9 +209,9 @@ static:	libdc.a
 libdc.so: $(DECODE_OBJ)
 	rm -f $@
 ifeq ($(strip $(SONAME)),)
-	$(LD) $(LDFLAGS) $(SOFLAGS) -o $@ $(filter %.o,$^) $(EVIO_LIB)
+	$(LD) $(LDFLAGS) $(SOFLAGS) -o $@ $(filter %.o,$^)
 else
-	$(LD) $(LDFLAGS) $(SOFLAGS) $(SONAME)libdc.so.$(SOVERSION) -o $@ $(filter %.o,$^) $(EVIO_LIB)
+	$(LD) $(LDFLAGS) $(SOFLAGS) $(SONAME)libdc.so.$(SOVERSION) -o $@ $(filter %.o,$^)
 endif
 
 ifndef STANDALONE

@@ -16,7 +16,7 @@ export DEBUG = 1
 SOVERSION  := 1.6
 PATCH   := 0
 VERSION := $(SOVERSION).$(PATCH)
-EXTVERS := -alpha2
+EXTVERS := -alpha3
 #EXTVERS := -et
 NAME    := analyzer-$(VERSION)
 VERCODE := $(shell echo $(subst ., ,$(SOVERSION)) $(PATCH) | \
@@ -56,30 +56,12 @@ INCLUDES     := $(addprefix -I, $(INCDIRS) )
 ifndef EVIO_LIBDIR
   EVIODIR := $(shell pwd)/evio
   SUBDIRS += evio
-  export EVIO_LIBDIR := $(EVIODIR)
+  export EVIO_LIBDIR := $(LIBDIR)
   export EVIO_INCDIR := $(EVIODIR)
+  LIBEVIO := $(LIBDIR)/libevio.so
 endif
 
-ifeq ($(ARCH),solarisCC5)
-# Solaris CC 5.0
-ifdef DEBUG
-  CXXFLG     := -g
-  LDFLAGS    := -g
-  DEFINES    :=
-else
-  CXXFLG     := -O
-  LDFLAGS    := -O
-  DEFINES    := -DNDEBUG
-endif
-CXXFLG       += -KPIC
-LD           := CC
-LDCONFIG     :=
-SOFLAGS      := -G
-SONAME       := -h
-DEFINES      += -DSUNVERS
-DICTCXXFLG   :=
-MAKEDEPEND   = g++ -MM
-endif
+HALLALIBS += -L$(EVIO_LIBDIR) -levio
 
 ifeq ($(ARCH),linux)
 # Linux with egcs (>= RedHat 5.2)
@@ -138,20 +120,17 @@ endif
 #FIXME: requires gcc 3 or up - test in configure script
 DEFINES       += -DHAS_SSTREAM
 
-ifdef ONLINE_ET
+# ifdef ONLINE_ET
 
-# ONLIBS is needed for ET
-  ET_AC_FLAGS := -D_REENTRANT -D_POSIX_PTHREAD_SEMANTICS
-  ET_CFLAGS := -02 -fPIC -I. $(ET_AC_FLAGS) -DLINUXVERS
-# CODA environment variable must be set.  Examples are
-#   CODA:= /adaqfs/coda/2.2        (in adaq cluster)
-#   CODA:= /data7/user/coda/2.2    (on haplix cluster)
-  LIBET  := $(CODA)/Linux/lib/libet.so
-  ONLIBS := $(LIBET) -lieee -lpthread -ldl -lresolv
+# # ONLIBS is needed for ET
+#   ET_AC_FLAGS := -D_REENTRANT -D_POSIX_PTHREAD_SEMANTICS
+#   ET_CFLAGS := -02 -fPIC -I. $(ET_AC_FLAGS) -DLINUXVERS
+#   LIBET  := $(CODA)/Linux/lib/libet.so
+#   ONLIBS := $(LIBET) -lieee -lpthread -ldl -lresolv
 
-  DEFINES  += -DONLINE_ET
-  HALLALIBS += $(ONLIBS)
-endif
+#   DEFINES  += -DONLINE_ET
+#   HALLALIBS += $(ONLIBS)
+# endif
 
 ifdef WITH_DEBUG
 DEFINES      += -DWITH_DEBUG
@@ -216,9 +195,9 @@ SRC          := src/THaFormula.C src/THaVform.C src/THaVhist.C \
 		src/THaQWEAKHelicityReader.C src/THaEvtTypeHandler.C \
 		src/THaScalerEvtHandler.C src/THaEpicsEvtHandler.C
 
-ifdef ONLINE_ET
-SRC += src/THaOnlRun.C
-endif
+# ifdef ONLINE_ET
+# SRC += src/THaOnlRun.C
+# endif
 
 OBJ          := $(SRC:.C=.o)
 RCHDR        := $(SRC:.C=.h) src/THaGlobals.h
@@ -233,7 +212,10 @@ LIBDC        := $(LIBDIR)/libdc.so
 #------------------------------------------------
 
 PROGRAMS     := analyzer
-PODDLIBS     := $(LIBHALLA) $(LIBDC) 
+PODDLIBS     := $(LIBHALLA) $(LIBDC)
+ifdef EVIODIR
+PODDLIBS     += $(LIBEVIO)
+endif
 
 all:            subdirs
 		set -e; for i in $(PROGRAMS); do $(MAKE) $$i; done
@@ -249,7 +231,7 @@ src/ha_compiledata.h:	Makefile
 		@echo "" >> $@
 		@echo "#endif" >> $@
 
-src/THaInterface:  src/ha_compiledata.h
+src/THaInterface.o:  src/ha_compiledata.h
 
 subdirs:	$(SUBDIRS)
 
@@ -312,7 +294,7 @@ $(HA_DICT).C: $(RCHDR) $(HA_LINKDEF)
 
 
 #---------- Main program -------------------------------------------
-analyzer:	src/main.o $(LIBDC) $(LIBHALLA)
+analyzer:	src/main.o $(PODDLIBS)
 		$(LD) $(LDFLAGS) $< $(HALLALIBS) $(GLIBS) -o $@
 
 #---------- Maintenance --------------------------------------------
@@ -343,20 +325,27 @@ install:	all
 ifndef ANALYZER
 		$(error $$ANALYZER environment variable not defined)
 endif
+ifneq ($(ANALYZER),$(shell pwd))
 		@echo "Installing in $(ANALYZER) ..."
 		@mkdir -p $(ANALYZER)/{$(PLATFORM),include,src/src,docs,DB,examples,SDK}
 		cp -pu $(SRC) $(HDR) $(HA_LINKDEF) $(ANALYZER)/src/src
 		cp -pu $(HDR) $(ANALYZER)/include
-		tar cf - `find examples docs SDK -type f | grep -v '*~'` | tar xf - -C $(ANALYZER)
+		tar cf - $(shell find examples docs SDK -type f | grep -v '*~') | \
+			tar xf - -C $(ANALYZER)
 		cp -pu Makefile ChangeLog $(ANALYZER)/src
 		cp -pru DB $(ANALYZER)/
 		@echo "Installing in $(ANALYZER)/$(PLATFORM) ..."
-		for lib in $(PODDLIBS); do \
+		for lib in $(filter-out $(LIBEVIO), $(PODDLIBS)); do \
 			rm -f  $(ANALYZER)/$(PLATFORM)/$(notdir $$lib); \
 			rm -f  $(ANALYZER)/$(PLATFORM)/$(notdir $$lib).$(SOVERSION); \
 			rm -f  $(ANALYZER)/$(PLATFORM)/$(notdir $$lib).$(VERSION); \
-			cp -af $$lib $$lib.$(SOVERSION) $$lib.$(VERSION) $(ANALYZER)/$(PLATFORM); \
+			cp -af $$lib $$lib.$(SOVERSION) $$lib.$(VERSION) \
+			   $(ANALYZER)/$(PLATFORM) 2>/dev/null; \
 		done
+		rm -f $(ANALYZER)/$(PLATFORM)/libevio.so
+ifdef LIBEVIO
+		cp -af $(LIBEVIO) $(ANALYZER)/$(PLATFORM)
+endif
 		rm -f $(ANALYZER)/$(PLATFORM)/analyzer $(ANALYZER)/$(PLATFORM)/$(NAME)
 		cp -pf $(PROGRAMS) $(ANALYZER)/$(PLATFORM)/
 ifneq ($(PLATFORM),bin)
@@ -368,6 +357,9 @@ ifneq ($(NAME),analyzer)
 		ln -s $(NAME) $(ANALYZER)/$(PLATFORM)/analyzer
 endif
 		set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i install; done
+else
+		@echo "Everything already installed"
+endif
 
 ###--- DO NOT CHANGE ANYTHING BELOW THIS LINE UNLESS YOU KNOW WHAT
 ###    YOU ARE DOING

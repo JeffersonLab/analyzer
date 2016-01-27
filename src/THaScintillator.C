@@ -432,6 +432,7 @@ void THaScintillator::DeleteArrays()
   delete [] fHitPad;  fHitPad  = NULL;
   delete [] fTime;    fTime    = NULL;
   delete [] fdTime;   fdTime   = NULL;
+  delete [] fAmpl;    fAmpl    = NULL;
   delete [] fYt;      fYt      = NULL;
   delete [] fYa;      fYa      = NULL;
 }
