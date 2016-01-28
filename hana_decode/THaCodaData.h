@@ -48,7 +48,7 @@ public:
    virtual Bool_t isOpen() const = 0;
 
 protected:
-   static Int_t ReturnCode( Int_t evio_retcode );
+   static Int_t ReturnCode( Long64_t evio_retcode );
 
 private:
 
