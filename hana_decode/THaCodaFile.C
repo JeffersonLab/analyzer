@@ -243,7 +243,7 @@ Finish:
 
 
 
-void THaCodaFile::staterr(const char* tried_to, Int_t status) {
+void THaCodaFile::staterr(const char* tried_to, Long64_t status) {
 // staterr gives the non-expert user a reasonable clue
 // of what the status returns from evio mean.
 // Note: severe errors can cause job to exit(0)

@@ -47,7 +47,7 @@ private:
   THaCodaFile& operator=(const THaCodaFile &fn);
   void init(const char* fname="");
   void initFilter();
-  void staterr(const char* tried_to, Int_t status);  // Can cause job to exit(0)
+  void staterr(const char* tried_to, Long64_t status);  // Can cause job to exit(0)
   Int_t ffirst;
   Int_t max_to_filt;
   Int_t handle;
