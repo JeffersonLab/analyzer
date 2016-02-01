@@ -53,6 +53,8 @@ src/THaTrackOut.h src/THaTriggerTime.h src/THaHelicityDet.h src/THaG0HelicityRea
 src/THaG0Helicity.h src/THaADCHelicity.h src/THaHelicity.h src/THaPhotoReaction.h 
 src/THaSAProtonEP.h src/THaTextvars.h src/THaQWEAKHelicity.h src/THaQWEAKHelicityReader.h
 src/THaEvtTypeHandler.h src/THaScalerEvtHandler.h src/THaEpicsEvtHandler.h
+src/Variable.h src/VariableArrayVar.h src/FixedArrayVar.h
+src/VectorVar.h src/MethodVar.h src/SeqCollectionVar.h src/SeqCollectionMethodVar.h
 src/THaVDCChamber.h src/THaVDCPoint.h src/THaVDCPointPair.h
 src/THaGlobals.h src/HallA_LinkDef.h
 """)
