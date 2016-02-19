@@ -6,7 +6,7 @@
 // THaArrayString
 //
 // This class parses the array subscript(s) of variable.
-// In the trivial case of a scalar, it simply stores the variable name.  
+// In the trivial case of a scalar, it simply stores the variable name.
 // Otherwise, it extracts the individual subscript(s) and number of
 // dimensions.
 //
@@ -29,22 +29,23 @@
 #include <cstring>
 #include <cstdlib>
 #include "THaArrayString.h"
-#include "TMath.h"
 
 using namespace std;
 
 //_____________________________________________________________________________
 THaArrayString::THaArrayString( const THaArrayString& rhs )
-  : fName(rhs.fName), fNdim(rhs.fNdim), fDim(NULL), fLen(rhs.fLen), 
-  fStatus(rhs.fStatus)
+  : fName(rhs.fName), fNdim(rhs.fNdim), fLen(rhs.fLen), fStatus(rhs.fStatus)
 {
   // Copy constructor
 
-  if( fNdim > 0 ) {
+  if( fNdim > kMaxA ) {
     fDim = new Int_t[fNdim];
     for( Int_t i = 0; i<fNdim; i++ )
       fDim[i] = rhs.fDim[i];
-  } 
+  } else {
+    for( Int_t i = 0; i<fNdim; i++ )
+      fDimA[i] = rhs.fDimA[i];
+  }
 }
 
 //_____________________________________________________________________________
@@ -53,17 +54,20 @@ THaArrayString& THaArrayString::operator=( const THaArrayString& rhs )
   // Assignment operator
 
   if( this != &rhs ) {
+    if( fNdim>kMaxA )
+      delete [] fDim;
     fName    = rhs.fName;
     fNdim    = rhs.fNdim;
     fLen     = rhs.fLen;
     fStatus  = rhs.fStatus;
-    delete [] fDim;
-    if( fNdim > 0 ) {
+    if( fNdim>kMaxA ) {
       fDim = new Int_t[fNdim];
       for( Int_t i = 0; i<fNdim; i++ )
 	fDim[i] = rhs.fDim[i];
-    } else
-      fDim = NULL;
+    } else {
+      for( Int_t i = 0; i<fNdim; i++ )
+	fDimA[i] = rhs.fDimA[i];
+    }
   }
   return *this;
 }
@@ -72,9 +76,9 @@ THaArrayString& THaArrayString::operator=( const THaArrayString& rhs )
 Int_t THaArrayString::Parse( const char* string )
 {
   // Parse the given string for array syntax.
-  // For multidimensional arrays, both C-style and comma-separated subscripts 
+  // For multidimensional arrays, both C-style and comma-separated subscripts
   // are supported.
-  // 
+  //
   // Examples of legal expressions:
   //
   //    "x"           scalar "x"
@@ -87,18 +91,17 @@ Int_t THaArrayString::Parse( const char* string )
   // GetName(), GetNdim(), GetDim(), and GetLen().
   //
   // The maximum length of the input string is 255 characters.
-  // 
+  //
   // Returns 0 if ok, or EStatus error code otherwise (see header).
 
   static const size_t MAXLEN = 255;
-  static const Double_t LOGMAXINT = 2.14875625968926443e+01;
-  bool changed = false;
+  bool changed = false, dyn = false;
   char *str = 0, *s, *t;
   const char *cs;
   size_t len;
   Int_t ncomma = 0, nl = 0, nr = 0;
   Int_t j;
-  Double_t lsum = 0.0;
+  Long64_t llen;;
 
   if( !string || !*string ) {
     // No string or empty string?
@@ -114,7 +117,7 @@ Int_t THaArrayString::Parse( const char* string )
   if( len > MAXLEN ) goto toolong;
 
   // Copy string to local buffer and get rid of all whitespace
-    
+
   str = new char[ len+1 ];
   t = str;
   cs = string;
@@ -135,15 +138,16 @@ Int_t THaArrayString::Parse( const char* string )
   while( *t && *t != '[' ) {
     if( *t != ',' && *t != ']' && *t != '(' && *t != ')' )
       t++;
-    else 
+    else
       goto illegalchars;
   }
 
   // No name? Error.
   if( t == str ) goto badsyntax;
 
+  if( fNdim>kMaxA )
+    delete [] fDim;
   fNdim = 0; fLen = 1;
-  delete [] fDim; fDim = NULL;
 
   // No bracket found? No array, we're done.
   if( !*t ) {
@@ -186,7 +190,10 @@ Int_t THaArrayString::Parse( const char* string )
     fNdim = ncomma+1;
   else
     fNdim = nl;
-  fDim = new Int_t[ fNdim ];
+  if( fNdim>kMaxA ) {
+    dyn = true;
+    fDim = new Int_t[ fNdim ];
+  }
 
   for( int i=0; i<fNdim; i++ ) {
     s = t;
@@ -204,10 +211,11 @@ Int_t THaArrayString::Parse( const char* string )
 
     // Ok, we got a number.
     j = atoi( s );
-    lsum += TMath::Log(j);
-    if( lsum > LOGMAXINT ) goto toolarge;
-    fDim[i] = j;
-    fLen *= j;
+    llen = static_cast<Long64_t>(fLen) * static_cast<Long64_t>(j);
+    if( llen > kMaxInt ) goto toolarge;
+    if( dyn ) fDim[i]  = j;
+    else      fDimA[i] = j;
+    fLen = llen;
 
     t++;
 
@@ -222,7 +230,7 @@ Int_t THaArrayString::Parse( const char* string )
 
   fName = str;
   goto ok;
-  
+
  badsyntax:
   fStatus = kBadsyntax;
   goto cleanup;
@@ -245,7 +253,7 @@ Int_t THaArrayString::Parse( const char* string )
 
  ok:
   fStatus = kOK;
-  
+
  cleanup:
   delete [] str;
 
@@ -253,7 +261,7 @@ Int_t THaArrayString::Parse( const char* string )
 }
 
 //_____________________________________________________________________________
-static void WriteDims( Int_t ndim, Int_t* dims )
+static void WriteDims( Int_t ndim, const Int_t* dims )
 {
   for( Int_t i = 0; i<ndim; i++ ) {
     cout << dims[i];
@@ -261,7 +269,7 @@ static void WriteDims( Int_t ndim, Int_t* dims )
       cout << ",";
   }
 }
-      
+
 //_____________________________________________________________________________
 void THaArrayString::Print( Option_t* option ) const
 {
@@ -273,13 +281,16 @@ void THaArrayString::Print( Option_t* option ) const
     cout << fName ;
     if( fNdim > 0 ) {
       cout << "[";
-      WriteDims(fNdim,fDim);
+      if( fNdim > kMaxA ) WriteDims(fNdim,fDim);
+      else                WriteDims(fNdim,fDimA);
       cout << "]";
     }
     cout << endl;
   }
-  else 
-    WriteDims(fNdim,fDim);
+  else {
+    if( fNdim > kMaxA ) WriteDims(fNdim,fDim);
+    else                WriteDims(fNdim,fDimA);
+  }
 }
 //_____________________________________________________________________________
 ClassImp(THaArrayString);
