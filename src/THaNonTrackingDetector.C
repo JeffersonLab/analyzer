@@ -83,7 +83,7 @@ Int_t THaNonTrackingDetector::CalcTrackProj( TClonesArray& tracks )
     Double_t xc = kBig, yc = kBig, pathl = kBig;
     Bool_t found = CalcTrackIntercept( theTrack, pathl, xc, yc );
     THaTrackProj* proj = new ( (*fTrackProj)[i] ) THaTrackProj(xc,yc,pathl);
-    if( !IsInActiveArea(xc,yc) )
+    if( found && !IsInActiveArea(xc,yc) )
       found = false;
     proj->SetOK(found);
     if( found )
