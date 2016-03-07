@@ -503,7 +503,8 @@ Int_t THaScintillator::Decode( const THaEvData& evdata )
 
 #ifdef WITH_DEBUG      
       Int_t nhit = evdata.GetNumHits(d->crate, d->slot, chan);
-      if( nhit > 1 )
+      // if( nhit > 1 )
+      if( nhit > 3 )
 	Warning( Here("Decode"), "Event %d: %d hits on %s channel %d/%d/%d",
 		 evdata.GetEvNum(),
 		 nhit, adc ? "ADC" : "TDC", d->crate, d->slot, chan );
