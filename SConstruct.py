@@ -6,6 +6,7 @@ import sys
 import platform
 import commands
 import SCons
+import subprocess
 
 def rootcint(target,source,env):
 	"""Executes the ROOT dictionary generator over a list of headers."""
@@ -56,6 +57,30 @@ ivercode = 65536*int(float(baseenv.subst('$SOVERSION')))+ 256*int(10*(float(base
 baseenv.Append(VERCODE = ivercode)
 baseenv.Append(CPPPATH = ['$HA_SRC','$HA_DC','$HA_SCALER'])
 
+####### ROOT Definitions ####################
+baseenv.Append(ROOTCONFIG = 'root-config')
+baseenv.Append(ROOTCINT = 'rootcint')
+
+try:
+        baseenv.ParseConfig('$ROOTCONFIG --cflags')
+        baseenv.ParseConfig('$ROOTCONFIG --libs')
+        cmd = baseenv['ROOTCONFIG'] + " --cxx"
+        baseenv.Replace(CXX = subprocess.check_output(cmd, shell=True).rstrip())
+except OSError:
+	try:
+		baseenv.Replace(ROOTCONFIG = baseenv['ENV']['ROOTSYS'] + '/bin/root-config')
+		baseenv.Replace(ROOTCINT = baseenv['ENV']['ROOTSYS'] + '/bin/rootcint')
+        	baseenv.ParseConfig('$ROOTCONFIG --cflags')
+        	baseenv.ParseConfig('$ROOTCONFIG --libs')
+                cmd = baseenv['ROOTCONFIG'] + " --cxx"
+                baseenv.Replace(CXX = subprocess.check_output(cmd, shell=True).rstrip())
+	except KeyError:
+       		print('!!! Cannot find ROOT.  Check if root-config is in your PATH.')
+		Exit(1)
+
+bld = Builder(action=rootcint)
+baseenv.Append(BUILDERS = {'RootCint': bld})
+
 ######## Configure Section #######
 
 import configure
@@ -70,32 +95,10 @@ if not conf.CheckCXX():
 	Exit(0)
 
 if not conf.CheckFunc('printf'):
-       	print('!!! Your compiler and/or environment is not correctly configured.')
-       	Exit(0)
+        print('!!! Your compiler and/or environment is not correctly configured.')
+        Exit(0)
 
 baseenv = conf.Finish()
-
-####### ROOT Definitions ####################
-baseenv.Append(ROOTCONFIG = 'root-config')
-baseenv.Append(ROOTCINT = 'rootcint')
-
-try:
-        baseenv.ParseConfig('$ROOTCONFIG --cflags')
-        baseenv.ParseConfig('$ROOTCONFIG --libs')
-        baseenv.MergeFlags('-fPIC')
-except OSError:
-	try:
-		baseenv.Replace(ROOTCONFIG = baseenv['ENV']['ROOTSYS'] + '/bin/root-config')
-		baseenv.Replace(ROOTCINT = baseenv['ENV']['ROOTSYS'] + '/bin/rootcint')
-        	baseenv.ParseConfig('$ROOTCONFIG --cflags')
-        	baseenv.ParseConfig('$ROOTCONFIG --libs')
-		baseenv.MergeFlags('-fPIC')
-	except KeyError:
-       		print('!!! Cannot find ROOT.  Check if root-config is in your PATH.')
-		Exit(1)
-
-bld = Builder(action=rootcint)
-baseenv.Append(BUILDERS = {'RootCint': bld})
 
 ####### Start of main SConstruct ############
 

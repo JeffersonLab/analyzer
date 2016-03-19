@@ -14,7 +14,13 @@ def config(env,args):
 	if int(standalone):
 		env.Append(STANDALONE= '1')
 
-	env.Append(CXXFLAGS = '-Wall -Woverloaded-virtual -pthread -rdynamic')
+        cxx = env.subst('$CXX')
+        if cxx == 'g++':
+                env.Append(CXXFLAGS = '-Wall -Woverloaded-virtual -pthread -rdynamic')
+        elif cxx == 'clang++':
+                env.Append(CXXFLAGS = '-Wall')
+                env.Replace(LINKFLAGS = '')
+
 	env.Append(CPPDEFINES = '-DMACVERS')
 
 	cxxversion = env.subst('$CXXVERSION')
