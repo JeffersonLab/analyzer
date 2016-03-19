@@ -119,6 +119,9 @@ ARCH          = linux
 endif
 
 MAKEDEPEND    = g++
+ifeq ($(shell root-config --version | cut -c1),6)
+  MAKEDEPEND += -std=c++11
+endif
 
 export OSNAME := $(shell uname)
 

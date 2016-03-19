@@ -147,6 +147,9 @@ endif
 
 
 MAKEDEPEND   := gcc
+ifeq ($(shell root-config --version | cut -c1),6)
+  MAKEDEPEND += -std=c++11
+endif
 
 ifdef WITH_DEBUG
 DEFINES      += -DWITH_DEBUG
