@@ -820,7 +820,7 @@ void THaAnalysisObject::SphToGeo( Double_t  th_sph, Double_t  ph_sph,
     if( cp<0.0 ) th_geo = -th_geo;
   }
   ph_geo = acos( sqrt( st*st*cp*cp + ct*ct ));
-  if( ph_sph/twopi - floor(ph_sph/twopi) > 0.5 ) ph_geo =- ph_geo;
+  if( ph_sph/twopi - floor(ph_sph/twopi) > 0.5 ) ph_geo = -ph_geo;
 }
 
 //---------- Database utility functions ---------------------------------------

@@ -668,7 +668,7 @@ struct request {
 
   int   sFd;      //  socket file descriptor 
   int i, k, slot, nchan, ntot, sca;
-  unsigned long nRead, nRead1;
+  ssize_t nRead, nRead1;
   struct request myRequest;           //  request to send to server 
   struct request vmeReply;            //  reply from server
   struct sockaddr_in serverSockAddr;  //  socket addr of server
