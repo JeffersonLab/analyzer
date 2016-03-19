@@ -5,11 +5,13 @@ lib*.so*
 analyzer
 
 # Generated files
-*Dict.[Ch]
+*Dict.C
+*Dict.h
 *Dict.cxx
 *Dict.so
 ha_compiledata.h
 ChangeLog
+*.pcm
 
 # Editor lint
 .#*
