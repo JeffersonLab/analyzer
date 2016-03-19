@@ -5,9 +5,12 @@ OLD
 NEW
 .#*
 *.o
+*.os
 *.d
 *.so
 ha_compiledata.h
 .cvsignore
 *Dict.[Ch]
 *~
+.git
+examples/runR.dat
