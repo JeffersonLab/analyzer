@@ -347,13 +347,13 @@ realclean:	clean
 srcdist:
 		rm -f ../$(NAME)
 		ln -s $(PWD) ../$(NAME)
-		tar czv -C .. -f ../$(NAME).tar.gz -X .exclude \
-		 -V "JLab/Hall A C++ Analysis Software "$(VERSION)" `date -I`"\
+		tar -czvf ../$(NAME).tar.gz -X .exclude -C .. \
 		 $(NAME)/.exclude $(NAME)/ChangeLog \
 		 $(NAME)/src $(NAME)/$(DCDIR) $(NAME)/$(SCALERDIR) \
 		 $(NAME)/Makefile \
 		 $(NAME)/DB $(NAME)/examples $(NAME)/SDK \
-		 $(NAME)/docs $(NAME)/Calib $(NAME)/contrib
+		 $(NAME)/docs $(NAME)/Calib $(NAME)/contrib $(NAME)/scons \
+		 $(NAME)/SConstruct $(NAME)/SConstruct.py $(NAME)/SConscript.py
 
 install:	all
 ifndef ANALYZER
