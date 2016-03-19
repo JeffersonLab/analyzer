@@ -79,10 +79,10 @@ static ssiz_t Index( const string& s, ssiz_t& ext, ssiz_t start )
   if( s.empty() || start == string::npos || start+2 >= s.length() )
     return string::npos;
 
-  register const char* c = s.c_str() + start, *end;
+  const char* c = s.c_str() + start, *end;
   if( (c = strchr(c,'$')) && *(++c) == '{' ) {
     if( !(end = strchr(++c,'}')) ) return string::npos;
-    register const char *c2;
+    const char *c2;
     do {
       // Find innermost bracket, allowing nesting
       if( (c2 = strchr(c,'$')) && *(++c2) != '{' ) c2 = 0;
