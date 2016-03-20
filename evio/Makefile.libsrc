@@ -37,11 +37,11 @@ realclean:	clean uninstall
 
 $(EVIO_LIBDIR)/$(LIB):	$(LIB)
 	@mkdir -p $(EVIO_LIBDIR)
-	cp -pu $(LIB) $(EVIO_LIBDIR)
+	cp -p $(LIB) $(EVIO_LIBDIR)
 
 $(EVIO_INCDIR)/%.h:	%.h
 	@mkdir -p $(EVIO_INCDIR)
-	cp -pu $< $(EVIO_INCDIR)
+	cp -p $< $(EVIO_INCDIR)
 
 .SUFFIXES:
 
