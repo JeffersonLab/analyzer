@@ -11,3 +11,5 @@ NEW
 ha_compiledata.h
 *Dict.[Ch]
 *~
+.git
+examples/runR.dat

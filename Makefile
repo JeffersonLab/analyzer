@@ -311,15 +311,11 @@ realclean:	clean
 srcdist:
 		rm -f ../$(NAME)
 		ln -s $(PWD) ../$(NAME)
-		tar czv -C .. -f ../$(NAME).tar.gz -X .exclude \
-		 -V "JLab/Hall A C++ Analysis Software "$(VERSION)$(EXTVERS)" `date -I`"\
+		tar -czv -f ../$(NAME).tar.gz -X .exclude -C .. \
 		 $(addprefix $(NAME)/, \
 		  ChangeLog $(wildcard README*) Makefile .exclude .gitignore \
 		  SConstruct $(wildcard *.py) scons \
-		  src $(DCDIR))
-
-# $(NAME)/DB $(NAME)/examples \# $(NAME)/docs $(NAME)/Calib
-# $(NAME)/contrib
+		  src $(DCDIR) Calib DB examples contrib docs SDK)
 
 install:	all
 ifndef ANALYZER
