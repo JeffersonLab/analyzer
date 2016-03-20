@@ -18,7 +18,7 @@ tstio tdecpr prfact epicsd tdecex
 list = Split("""
 THaUsrstrutils.C THaCrateMap.C THaCodaData.C 
 THaEpics.C THaFastBusWord.C THaCodaFile.C THaSlotData.C 
-THaEvData.C evio.C THaCodaDecoder.C
+THaEvData.C evio.C THaCodaDecoder.C SimDecoder.C
 swap_util.C swapped_intcpy.c
 """)
 
