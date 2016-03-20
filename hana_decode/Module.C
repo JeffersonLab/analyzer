@@ -36,7 +36,7 @@ Module::~Module() {
 }
 
 
-Module::Module(const Module& rhs) {
+Module::Module(const Module& rhs) : TNamed(rhs) {
    Create(rhs);
 }
 

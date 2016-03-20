@@ -370,11 +370,11 @@ namespace Decoder {
 
     Int_t return_value=0;
 
-    int i_print = 1;
     UInt_t data = *pdat;
     Int_t index, chan;
 
 #ifdef WITH_DEBUG
+    int i_print = 1;
     if ((i_print==1) && (fDebugFile !=0))
       *fDebugFile << "Fadc250::Decode   "<< hex<< data<<"   "<<dec<<iword<<endl;
 #endif
