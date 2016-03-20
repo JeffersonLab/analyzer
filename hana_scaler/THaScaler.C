@@ -709,7 +709,7 @@ struct request {
        printf("ERROR: THaScaler: reading from scaler server\n");
        exit(0);
     }
-    while (nRead < sizeof(vmeReply)) {
+    while (nRead < static_cast<ssize_t>(sizeof(vmeReply))) {
        nRead1 = read (sFd, ((char *) &vmeReply)+nRead,
                     sizeof(vmeReply)-nRead);
        if (timeoutcnt++ > 50) break;
