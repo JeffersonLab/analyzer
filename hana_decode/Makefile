@@ -275,6 +275,9 @@ endif
 THaDecDict.C: $(RCHEAD) haDecode_LinkDef.h
 	@echo "Generating Decoder Dictionary..."
 	$(ROOTBIN)/rootcint -f THaDecDict.C -c $(ROOTINC) $(INCLUDES) $(DEFINES) $^
+ifndef STANDALONE
+	[ -r THaDecDict_rdict.pcm ] && cp -p THaDecDict_rdict.pcm  $(LIBDIR)
+endif
 
 # create a tar file of ./$(VERS)/* (all code)
 
