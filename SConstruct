@@ -130,16 +130,22 @@ baseenv.Append(ROOTCINT = 'rootcint')
 try:
 	baseenv.ParseConfig('$ROOTCONFIG --cflags')
 	baseenv.ParseConfig('$ROOTCONFIG --libs')
-        cmd = baseenv['ROOTCONFIG'] + " --cxx"
-        baseenv.Replace(CXX = subprocess.check_output(cmd, shell=True).rstrip())
+        if sys.version_info >= (2, 7):
+                cmd = baseenv['ROOTCONFIG'] + " --cxx"
+                baseenv.Replace(CXX = subprocess.check_output(cmd, shell=True).rstrip())
+        else:
+                baseenv.Replace(CXX = subprocess.Popen([baseenv['ROOTCONFIG'], '--cxx'], stdout=subprocess.PIPE).communicate()[0].rstrip())
 except OSError:
 	try:
 		baseenv.Replace(ROOTCONFIG = baseenv['ENV']['ROOTSYS'] + '/bin/root-config')
 		baseenv.Replace(ROOTCINT = baseenv['ENV']['ROOTSYS'] + '/bin/rootcint')
 		baseenv.ParseConfig('$ROOTCONFIG --cflags')
 		baseenv.ParseConfig('$ROOTCONFIG --libs')
-                cmd = baseenv['ROOTCONFIG'] + " --cxx"
-                baseenv.Replace(CXX = subprocess.check_output(cmd, shell=True).rstrip())
+                if sys.version_info >= (2, 7):
+                      cmd = baseenv['ROOTCONFIG'] + " --cxx"
+                      baseenv.Replace(CXX = subprocess.check_output(cmd, shell=True).rstrip())
+                else:
+                      baseenv.Replace(CXX = subprocess.Popen([baseenv['ROOTCONFIG'], '--cxx'], stdout=subprocess.PIPE).communicate()[0].rstrip())
 	except KeyError:
        		print('!!! Cannot find ROOT.  Check if root-config is in your PATH.')
 		Exit(1)
