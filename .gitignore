@@ -1,5 +1,6 @@
 # Compiled stuff
-*.[od]
+*.o
+*.d
 *.os
 lib*.so*
 analyzer
@@ -14,12 +15,14 @@ hana_decode/tstoo
 hana_decode/tstskel
 
 # Generated files
-*Dict.[Ch]
+*Dict.C
+*Dict.h
 *Dict.cxx
 *Dict.so
 ha_compiledata.h
 cppcheck_report.txt
 ChangeLog
+*.pcm
 
 # Editor lint
 .#*
@@ -43,7 +46,6 @@ evio/
 #scons stuff
 config.log
 *.pyc
-*Dict.C
 .sconsign.dblite
 .sconf_temp/
 dist/
