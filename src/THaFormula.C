@@ -311,7 +311,7 @@ Double_t THaFormula::DefinedValue( Int_t i )
 	SetBit(kInvalid);
 	return 1.0;
       }
-      Double_t y;
+      Double_t y = kBig;
       if( code == kNumSetBits ) {
 	// Number of set bits is intended for unsigned int-type expressions
 	y = func->EvalInstance(fInstance);

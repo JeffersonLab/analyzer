@@ -178,14 +178,12 @@ Int_t THaScalerEvtHandler::Analyze(THaEvData *evdata)
   // The correspondance between dvars and the scaler and the channel
   // will be driven by a scaler.map file  -- later
 
-  for (UInt_t i = 0; i < scalerloc.size(); i++) {
-    UInt_t ivar = scalerloc[i]->ivar;
-    UInt_t isca = scalerloc[i]->iscaler;
-    UInt_t ichan = scalerloc[i]->ichan;
+  for (size_t i = 0; i < scalerloc.size(); i++) {
+    size_t ivar = scalerloc[i]->ivar;
+    size_t isca = scalerloc[i]->iscaler;
+    size_t ichan = scalerloc[i]->ichan;
     if (fDebugFile) *fDebugFile << "Debug dvars "<<i<<"   "<<ivar<<"  "<<isca<<"  "<<ichan<<endl;
-    if ((ivar >= 0 && ivar < scalerloc.size()) &&
-	(isca >= 0 && isca < scalers.size()) &&
-	(ichan >= 0 && ichan < MAXCHAN)) {
+    if( ivar < scalerloc.size() && isca < scalers.size() && ichan < MAXCHAN ) {
       if (scalerloc[ivar]->ikind == ICOUNT) dvars[ivar] = scalers[isca]->GetData(ichan);
       if (scalerloc[ivar]->ikind == IRATE)  dvars[ivar] = scalers[isca]->GetRate(ichan);
       if (fDebugFile) *fDebugFile << "   dvars  "<<scalerloc[ivar]->ikind<<"  "<<dvars[ivar]<<endl;
@@ -196,7 +194,7 @@ Int_t THaScalerEvtHandler::Analyze(THaEvData *evdata)
 
   evcount = evcount + 1.0;
 
-  for (UInt_t j=0; j<scalers.size(); j++) scalers[j]->Clear("");
+  for (size_t j=0; j<scalers.size(); j++) scalers[j]->Clear("");
 
   if (fDebugFile) *fDebugFile << "scaler tree ptr  "<<fScalerTree<<endl;
 

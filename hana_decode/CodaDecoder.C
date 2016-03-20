@@ -17,8 +17,8 @@ using namespace std;
 
 namespace Decoder {
 
-  static const Int_t MAX_EVTYPES = 200;
-  static const Int_t MAX_PHYS_EVTYPES = 14;
+//   static const Int_t MAX_EVTYPES = 200;
+//   static const Int_t MAX_PHYS_EVTYPES = 14;
 
 //_____________________________________________________________________________
 CodaDecoder::CodaDecoder()
