@@ -111,7 +111,7 @@ Int_t THaQWEAKHelicityReader::FindWord( const THaEvData& evdata,
     i = info.index;
   else {
     for( i=0; i<len &&
-	   (evdata.GetRawData(info.roc, i)&& 0xffff000) != info.header; 
+	   (evdata.GetRawData(info.roc, i) & 0xffff000) != info.header;
 	 ++i) {}
     i += info.index;
   }
