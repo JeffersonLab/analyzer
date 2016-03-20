@@ -277,6 +277,9 @@ tscalring23: tscalring23_main.o $(SCALER_OBJS) $(SRC) $(HEAD) $(LIBDC)
 THaScalDict.C: $(HEAD) haScal_LinkDef.h
 	@echo "Generating Scaler Package Dictionary..."
 	$(ROOTBIN)/rootcint -f THaScalDict.C -c $(ROOTINC) $(INCLUDES) $(DEFINES) $^
+ifndef STANDALONE
+	[ -r THaScalDict_rdict.pcm ] && cp -p THaScalDict_rdict.pcm  $(LIBDIR)
+endif
 
 tarfile: clean version
 	tar cvf $(VERS).tar ./hana_scaler
