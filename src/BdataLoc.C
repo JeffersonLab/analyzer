@@ -318,7 +318,7 @@ void WordLoc::Load( const THaEvData& evdata )
 
   // Get the first byte of the header, regardless of byte order
   int h = ((UChar_t*)&header)[0];
-  register rawdata_t* p = cratebuf;
+  rawdata_t* p = cratebuf;
   while( (p = (rawdata_t*)memchr(p,h,sizeof(rawdata_t)*(endp-p-1)+1)) && 
 	 p <= endp-ntoskip-1 ) {
     // The header must be aligned at a word boundary

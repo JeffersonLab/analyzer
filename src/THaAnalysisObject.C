@@ -877,7 +877,7 @@ void THaAnalysisObject::GeoToSph( Double_t  th_geo, Double_t  ph_geo,
 
   static const Double_t twopi = 2.0*TMath::Pi();
   Double_t ct = cos(th_geo), cp = cos(ph_geo);
-  register Double_t tmp = ct*cp;
+  Double_t tmp = ct*cp;
   th_sph = acos( tmp );
   tmp = sqrt(1.0 - tmp*tmp);
   ph_sph = (fabs(tmp) < 1e-6 ) ? 0.0 : acos( sqrt(1.0-ct*ct)*cp/tmp );
@@ -958,14 +958,14 @@ static Int_t IsDBkey( const string& line, const char* key, string& text )
   // trimmed. Also, all tabs have been converted to spaces.
 
   // Search for "="
-  register const char* ln = line.c_str();
+  const char* ln = line.c_str();
   const char* eq = strchr(ln, '=');
   if( !eq ) return 0;
   // Extract the key
   while( *ln == ' ' ) ++ln; // find_first_not_of(" ")
   assert( ln <= eq );
   if( ln == eq ) return -1;
-  register const char* p = eq-1;
+  const char* p = eq-1;
   assert( p >= ln );
   while( *p == ' ' ) --p; // find_last_not_of(" ")
   if( strncmp(ln, key, p-ln+1) ) return -1;
@@ -1010,7 +1010,7 @@ bool THaAnalysisObject::IsTag( const char* buf )
   // Return true if the string in 'buf' matches regexp ".*\[.+\].*",
   // i.e. it is a database tag.  Generic utility function.
 
-  register const char* p = buf;
+  const char* p = buf;
   while( *p && *p != '[' ) p++;
   if( !*p ) return false;
   p++;
@@ -1036,7 +1036,7 @@ static Int_t GetLine( FILE* file, char* buf, size_t bufsiz, string& line )
     if( c )
       *c = '\0';
     // Convert all tabs to spaces
-    register char *p = buf;
+    char *p = buf;
     while( (p = strchr(p,'\t')) ) *(p++) = ' ';
     // Append to string
     line.append(buf);
@@ -1057,7 +1057,7 @@ static void Trim( string& str )
 
   if( str.empty() )
     return;
-  register const char* p = str.c_str();
+  const char* p = str.c_str();
   while( *p == ' ' ) ++p;
   if( *p == '\0' )
     str.clear();
