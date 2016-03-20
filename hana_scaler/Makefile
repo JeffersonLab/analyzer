@@ -278,7 +278,7 @@ THaScalDict.C: $(HEAD) haScal_LinkDef.h
 	@echo "Generating Scaler Package Dictionary..."
 	$(ROOTBIN)/rootcint -f THaScalDict.C -c $(ROOTINC) $(INCLUDES) $(DEFINES) $^
 ifndef STANDALONE
-	[ -r THaScalDict_rdict.pcm ] && cp -p THaScalDict_rdict.pcm  $(LIBDIR)
+	if [ -r THaScalDict_rdict.pcm ]; then cp -p THaScalDict_rdict.pcm $(LIBDIR); fi
 endif
 
 tarfile: clean version
