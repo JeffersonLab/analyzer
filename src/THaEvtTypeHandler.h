@@ -26,7 +26,7 @@ public:
    virtual Bool_t IsMyEvent(Int_t evnum) const;
    virtual void EvDump(THaEvData *evdata) const;
    virtual void SetDebugFile(std::ofstream *file) { if (file!=0) fDebugFile=file; };
-   virtual void SetDebugFile(char *filename);
+   virtual void SetDebugFile(const char *filename);
 
 protected:
 

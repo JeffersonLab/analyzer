@@ -73,7 +73,7 @@ THaAnalysisObject::EStatus THaEvtTypeHandler::Init(const TDatime& dt)
   return kOK;
 }
 
-void THaEvtTypeHandler::SetDebugFile(char *filename) {
+void THaEvtTypeHandler::SetDebugFile(const char *filename) {
     delete fDebugFile;
     fDebugFile = new ofstream;
     fDebugFile->open(filename);
