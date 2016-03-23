@@ -226,7 +226,7 @@ dclib = 'dc'
 eviolib = 'evio'
 
 baseenv.Append(LIBPATH=['$HA_DIR','$EVIO_LIB','$HA_SRC','$HA_DC'])
-baseenv.Append(LIBS=[eviolib,hallalib,dclib])
+baseenv.Prepend(LIBS=[hallalib,dclib,eviolib])
 baseenv.Replace(SHLIBSUFFIX = '.so')
 baseenv.Append(SHLIBSUFFIX = '.'+baseenv.subst('$VERSION'))
 
