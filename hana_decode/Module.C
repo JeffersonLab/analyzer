@@ -9,6 +9,7 @@
 /////////////////////////////////////////////////////////////////////
 
 #include "Module.h"
+#include "THaSlotData.h"
 #include "TError.h"
 
 using namespace std;
@@ -16,16 +17,16 @@ using namespace std;
 namespace Decoder {
 
 Module::Module()
-  : fCrate(0), fSlot(0), fHeader(0), fHeaderMask(0xffffffff),
+  : fCrate(0), fSlot(0), fHeader(0), fHeaderMask(0xffffffff), fBank(-1),
     fWordsExpect(0), fWordsSeen(0), fWdcntMask(0), fWdcntShift(0),
-    fModelNum(-1), fNumChan(0), fDebugFile(0)
+    fModelNum(-1), fNumChan(0), fMode(0), fDebugFile(0)
 {
 }
 
 Module::Module(Int_t crate, Int_t slot)
-  : fCrate(crate), fSlot(slot), fHeader(0), fHeaderMask(0xffffffff),
+  : fCrate(crate), fSlot(slot), fHeader(0), fHeaderMask(0xffffffff), fBank(-1),
     fWordsExpect(0), fWordsSeen(0), fWdcntMask(0), fWdcntShift(0),
-    fModelNum(-1), fNumChan(0), fDebugFile(0)
+    fModelNum(-1), fNumChan(0), fMode(0), fDebugFile(0)
 {
   // Warning: see comments at Init()
   fName = "";
@@ -35,7 +36,7 @@ Module::~Module() {
 }
 
 
-Module::Module(const Module& rhs) {
+Module::Module(const Module& rhs) : TNamed(rhs) {
    Create(rhs);
 }
 
@@ -63,6 +64,7 @@ void Module::Init() {
 // Make sure all your variables are defined.
   fHeader=0;
   fHeaderMask=0xffffffff;
+  fBank=-1;
   fWordsSeen = 0;
   fWordsExpect = 0;
   fWdcntMask=0;
@@ -127,6 +129,29 @@ Module::TypeIter_t Module::DoRegister( const ModuleType& info )
   // NB: std::set guarantees that iterators remain valid on further insertions,
   // so this return value will remain good, unlike, e.g., std::vector iterators.
   return ins.first;
+}
+
+Int_t Module::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer,
+			  const Int_t pos, const Int_t len)
+{
+  // Load slot from pos to pos+len
+  if (fDebugFile) {
+       *fDebugFile << "Module:: Loadslot "<<endl;
+       *fDebugFile << "pos"<<dec<<pos<<"   len "<<len<<endl;
+  }
+  fWordsSeen=0;
+  while ( fWordsSeen<len ) {
+    if (fDebugFile) *fDebugFile <<endl;
+    for (size_t ichan = 0, nchan = GetNumChan(); ichan < nchan; ichan++) {
+      Int_t mdata,rdata;
+      rdata = evbuffer[pos+fWordsSeen];
+      mdata = rdata;
+      sldat->loadData(ichan, mdata, rdata);
+      if (ichan < fData.size()) fData[ichan]=rdata;
+      fWordsSeen++;
+    }
+  }
+  return fWordsSeen;
 }
 
 }

@@ -29,7 +29,7 @@ THaCodaData::~THaCodaData() {
 };
 
 //_____________________________________________________________________________
-Int_t THaCodaData::ReturnCode( Int_t evio_retcode )
+Int_t THaCodaData::ReturnCode( Long64_t evio_retcode )
 {
   // Convert EVIO return codes to THaRunBase codes
 

@@ -16,7 +16,7 @@ export DEBUG = 1
 SOVERSION  := 1.6
 PATCH   := 0
 VERSION := $(SOVERSION).$(PATCH)
-EXTVERS := -devel
+EXTVERS := -alpha4
 #EXTVERS := -et
 NAME    := analyzer-$(VERSION)
 VERCODE := $(shell echo $(subst ., ,$(SOVERSION)) $(PATCH) | \
@@ -41,10 +41,9 @@ CC           := $(shell root-config --cc)
 
 HA_DIR       := $(shell pwd)
 DCDIR        := hana_decode
-SCALERDIR    := hana_scaler
 LIBDIR       := $(shell pwd)
-HALLALIBS    := -L$(LIBDIR) -lHallA -ldc -lscaler
-SUBDIRS      := $(DCDIR) $(SCALERDIR)
+HALLALIBS    := -L$(LIBDIR) -lHallA -ldc 
+SUBDIRS      := $(DCDIR) 
 INCDIRS      := $(addprefix $(HA_DIR)/, src $(SUBDIRS))
 HA_DICT      := haDict
 
@@ -53,25 +52,16 @@ GLIBS        :=
 
 INCLUDES     := $(addprefix -I, $(INCDIRS) )
 
-ifeq ($(ARCH),solarisCC5)
-# Solaris CC 5.0
-ifdef DEBUG
-  CXXFLG     := -g
-  LDFLAGS    := -g
-  DEFINES    :=
-else
-  CXXFLG     := -O
-  LDFLAGS    := -O
-  DEFINES    := -DNDEBUG
+# If EVIO environment not defined, define it to point here and build locally
+ifndef EVIO_LIBDIR
+  EVIODIR := $(shell pwd)/evio
+  SUBDIRS += evio
+  export EVIO_LIBDIR := $(LIBDIR)
+  export EVIO_INCDIR := $(EVIODIR)
+  LIBEVIO := $(LIBDIR)/libevio.so
 endif
-CXXFLG       += -KPIC
-LD           := CC
-LDCONFIG     :=
-SOFLAGS      := -G
-SONAME       := -h
-DEFINES      += -DSUNVERS
-DICTCXXFLG   :=
-endif
+
+HALLALIBS += -L$(EVIO_LIBDIR) -levio
 
 ifeq ($(ARCH),linux)
 # Linux with egcs (>= RedHat 5.2)
@@ -96,13 +86,13 @@ SONAME       := -Wl,-soname=
 CXXVER       := $(shell g++ --version | head -1 | sed 's/.* \([0-9]\)\..*/\1/')
 DEFINES      += $(shell getconf LFS_CFLAGS)
 ifeq ($(CXXVER),4)
-CXXFLAGS     += -Wextra -Wno-missing-field-initializers
+CXXEXTFLG    += -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
 DICTCXXFLG   := -Wno-strict-aliasing
 endif
 endif
 
 ifeq ($(ARCH),macosx)
-# EXPERIMENTAL: Mac OS X with Xcode/gcc 3.x
+# Mac OS X with gcc >= 3.x or clang++ >= 5
 ifdef DEBUG
   CXXFLG     := -g -O0
   LDFLAGS    := -g -O0
@@ -119,34 +109,32 @@ LD           := g++
 LDCONFIG     :=
 SOFLAGS      := -shared -Wl,-undefined,dynamic_lookup
 SONAME       := -Wl,-install_name,@rpath/
+ifeq ($(CXX),clang++)
+CXXEXTFLG    += -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
+else
 #FIXME: should be configure'd:
 CXXVER       := $(shell g++ --version | head -1 | sed 's/.* \([0-9]\)\..*/\1/')
 ifeq ($(CXXVER),4)
-CXXFLAGS     += -Wextra -Wno-missing-field-initializers
+CXXEXTFLG    += -Wextra -Wno-missing-field-initializers
 DICTCXXFLG   := -Wno-strict-aliasing
+endif
 endif
 endif
 
 #FIXME: requires gcc 3 or up - test in configure script
 DEFINES       += -DHAS_SSTREAM
 
-ifdef ONLINE_ET
+# ifdef ONLINE_ET
 
-# ONLIBS is needed for ET
-  ET_AC_FLAGS := -D_REENTRANT -D_POSIX_PTHREAD_SEMANTICS
-  ET_CFLAGS := -02 -fPIC -I. $(ET_AC_FLAGS) -DLINUXVERS
-# CODA environment variable must be set.  Examples are
-#   CODA:= /adaqfs/coda/2.2        (in adaq cluster)
-#   CODA:= /data7/user/coda/2.2    (on haplix cluster)
-  LIBET  := $(CODA)/Linux/lib/libet.so
-  ONLIBS := $(LIBET) -lieee -lpthread -ldl -lresolv
+# # ONLIBS is needed for ET
+#   ET_AC_FLAGS := -D_REENTRANT -D_POSIX_PTHREAD_SEMANTICS
+#   ET_CFLAGS := -02 -fPIC -I. $(ET_AC_FLAGS) -DLINUXVERS
+#   LIBET  := $(CODA)/Linux/lib/libet.so
+#   ONLIBS := $(LIBET) -lieee -lpthread -ldl -lresolv
 
-  DEFINES  += -DONLINE_ET
-  HALLALIBS += $(ONLIBS)
-endif
-
-
-MAKEDEPEND   := gcc
+#   DEFINES  += -DONLINE_ET
+#   HALLALIBS += $(ONLIBS)
+# endif
 
 ifdef WITH_DEBUG
 DEFINES      += -DWITH_DEBUG
@@ -158,7 +146,8 @@ LIBS         += $(ROOTLIBS) $(SYSLIBS)
 GLIBS        += $(ROOTGLIBS) $(SYSLIBS)
 DEFINES      += $(PODD_EXTRA_DEFINES)
 
-export ARCH LIBDIR CXX LD SOFLAGS SONAME CXXFLG LDFLAGS DEFINES VERSION SOVERSION VERCODE CXXEXTFLG
+export ARCH LIBDIR CXX LD SOFLAGS SONAME CXXFLG LDFLAGS DEFINES
+export VERSION SOVERSION VERCODE CXXEXTFLG MAKEDEPEND
 
 #------------------------------------------------------------------------------
 
@@ -185,11 +174,11 @@ SRC          := src/THaFormula.C src/THaVform.C src/THaVhist.C \
 		src/THaScintillator.C src/THaShower.C \
 		src/THaTotalShower.C src/THaCherenkov.C \
 		src/THaEvent.C src/THaTrackID.C src/THaVDC.C \
-		src/THaVDCPlane.C src/THaVDCUVPlane.C src/THaVDCUVTrack.C \
+		src/THaVDCPlane.C src/THaVDCChamber.C src/THaVDCPoint.C \
 		src/THaVDCWire.C src/THaVDCHit.C src/THaVDCCluster.C \
 		src/THaVDCTimeToDistConv.C src/THaVDCTrackID.C \
                 src/THaVDCAnalyticTTDConv.C \
-		src/THaVDCTrackPair.C src/VDCeff.C src/THaScalerGroup.C \
+		src/THaVDCPointPair.C src/VDCeff.C \
 		src/THaElectronKine.C src/THaReactionPoint.C \
 		src/THaReacPointFoil.C \
 		src/THaTwoarmVertex.C src/THaAvgVertex.C \
@@ -208,11 +197,11 @@ SRC          := src/THaFormula.C src/THaVform.C src/THaVhist.C \
 		src/THaPhotoReaction.C src/THaSAProtonEP.C \
 		src/THaTextvars.C src/THaQWEAKHelicity.C \
 		src/THaQWEAKHelicityReader.C src/THaEvtTypeHandler.C \
-		src/THaScalerEvtHandler.C
+		src/THaScalerEvtHandler.C src/THaEpicsEvtHandler.C
 
-ifdef ONLINE_ET
-SRC += src/THaOnlRun.C
-endif
+# ifdef ONLINE_ET
+# SRC += src/THaOnlRun.C
+# endif
 
 OBJ          := $(SRC:.C=.o)
 RCHDR        := $(SRC:.C=.h) src/THaGlobals.h
@@ -223,22 +212,14 @@ HA_LINKDEF   := src/HallA_LinkDef.h
 
 LIBHALLA     := $(LIBDIR)/libHallA.so
 LIBDC        := $(LIBDIR)/libdc.so
-LIBSCALER    := $(LIBDIR)/libscaler.so
 
-#------ Extra libraries -------------------------
-LNA          := NormAna
-LIBNORMANA   := $(LIBDIR)/lib$(LNA).so
-LNA_DICT     := $(LNA)Dict
-LNA_SRC      := src/THa$(LNA).C
-LNA_OBJ      := $(LNA_SRC:.C=.o)
-LNA_HDR      := $(LNA_SRC:.C=.h)
-LNA_DEP      := $(LNA_SRC:.C=.d)
-LNA_OBJS     := $(LNA_OBJ) $(LNA_DICT).o
-LNA_LINKDEF  := src/$(LNA)_LinkDef.h
 #------------------------------------------------
 
-PROGRAMS     := analyzer $(LIBNORMANA)
-PODDLIBS     := $(LIBHALLA) $(LIBDC) $(LIBSCALER)
+PROGRAMS     := analyzer
+PODDLIBS     := $(LIBHALLA) $(LIBDC)
+ifdef EVIODIR
+PODDLIBS     += $(LIBEVIO)
+endif
 
 all:            subdirs
 		set -e; for i in $(PROGRAMS); do $(MAKE) $$i; done
@@ -254,8 +235,12 @@ src/ha_compiledata.h:	Makefile
 		@echo "" >> $@
 		@echo "#endif" >> $@
 
-subdirs:
-		set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i; done
+src/THaInterface.o:  src/ha_compiledata.h
+
+subdirs:	$(SUBDIRS)
+
+$(SUBDIRS):
+		set -e; $(MAKE) -C $@
 
 #---------- Core libraries -----------------------------------------
 $(LIBHALLA).$(VERSION):	$(HDR) $(OBJS)
@@ -287,7 +272,6 @@ else
 		ln -s $(notdir $<) $@
 endif
 
-$(LIBSCALER).$(SOVERSION):	$(LIBSCALER).$(VERSION)
 ifneq ($(strip $(LDCONFIG)),)
 		$(LDCONFIG)
 else
@@ -295,11 +279,11 @@ else
 		ln -s $(notdir $<) $@
 endif
 
-$(LIBDC):	$(LIBDC).$(SOVERSION)
-		rm -f $@
-		ln -s $(notdir $<) $@
+ifdef EVIODIR
+$(DCDIR):	evio
+endif
 
-$(LIBSCALER):	$(LIBSCALER).$(SOVERSION)
+$(LIBDC):	$(LIBDC).$(SOVERSION)
 		rm -f $@
 		ln -s $(notdir $<) $@
 
@@ -313,25 +297,15 @@ $(HA_DICT).C: $(RCHDR) $(HA_LINKDEF)
 	$(ROOTBIN)/rootcint -f $@ -c $(ROOTINC) $(INCLUDES) $(DEFINES) $^
 
 
-#---------- Extra libraries ----------------------------------------
-
-$(LIBNORMANA):	$(LNA_HDR) $(LNA_OBJS)
-		$(LD) $(LDFLAGS) $(SOFLAGS) -o $@ $(LNA_OBJS)
-		@echo "$@ done"
-
-$(LNA_DICT).C:	$(LNA_HDR) $(LNA_LINKDEF)
-		@echo "Generating dictionary $(LNA_DICT)..."
-		rootcint -f $@ -c $(ROOTINC) $(INCLUDES) $(DEFINES) $^
-
 #---------- Main program -------------------------------------------
-analyzer:	src/main.o $(LIBDC) $(LIBSCALER) $(LIBHALLA)
+analyzer:	src/main.o $(PODDLIBS)
 		$(LD) $(LDFLAGS) $< $(HALLALIBS) $(GLIBS) -o $@
 
 #---------- Maintenance --------------------------------------------
 clean:
 		set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i clean; done
 		rm -f *.{so,a,o,os} *.so.*
-		rm -f $(PROGRAMS) $(HA_DICT).* $(LNA_DICT).* *~
+		rm -f $(PROGRAMS) $(HA_DICT).* *~
 		cd src; rm -f ha_compiledata.h *.{o,os} *~
 
 realclean:	clean
@@ -341,35 +315,37 @@ realclean:	clean
 srcdist:
 		rm -f ../$(NAME)
 		ln -s $(PWD) ../$(NAME)
-		tar czv -C .. -f ../$(NAME).tar.gz -X .exclude \
-		 -V "JLab/Hall A C++ Analysis Software "$(VERSION)" `date -I`"\
+		tar -czv -f ../$(NAME).tar.gz -X .exclude -C .. \
 		 $(addprefix $(NAME)/, \
 		  ChangeLog $(wildcard README*) Makefile .exclude .gitignore \
 		  SConstruct $(wildcard *.py) scons \
-		  src $(DCDIR) $(SCALERDIR) )
-
-# $(NAME)/DB $(NAME)/examples \# $(NAME)/docs $(NAME)/Calib
-# $(NAME)/contrib
+		  src $(DCDIR) Calib DB examples contrib docs SDK)
 
 install:	all
 ifndef ANALYZER
 		$(error $$ANALYZER environment variable not defined)
 endif
+ifneq ($(ANALYZER),$(shell pwd))
 		@echo "Installing in $(ANALYZER) ..."
 		@mkdir -p $(ANALYZER)/{$(PLATFORM),include,src/src,docs,DB,examples,SDK}
 		cp -pu $(SRC) $(HDR) $(HA_LINKDEF) $(ANALYZER)/src/src
-		cp -pu $(LNA_SRC) $(LNA_HDR) $(LNA_LINKDEF) $(ANALYZER)/src/src
-		cp -pu $(HDR) $(LNA_HDR) $(ANALYZER)/include
-		tar cf - `find examples docs SDK -type f | grep -v '*~'` | tar xf - -C $(ANALYZER)
+		cp -pu $(HDR) $(ANALYZER)/include
+		tar cf - $(shell find examples docs SDK -type f | grep -v '*~') | \
+			tar xf - -C $(ANALYZER)
 		cp -pu Makefile ChangeLog $(ANALYZER)/src
 		cp -pru DB $(ANALYZER)/
 		@echo "Installing in $(ANALYZER)/$(PLATFORM) ..."
-		for lib in $(PODDLIBS); do \
+		for lib in $(filter-out $(LIBEVIO), $(PODDLIBS)); do \
 			rm -f  $(ANALYZER)/$(PLATFORM)/$(notdir $$lib); \
 			rm -f  $(ANALYZER)/$(PLATFORM)/$(notdir $$lib).$(SOVERSION); \
 			rm -f  $(ANALYZER)/$(PLATFORM)/$(notdir $$lib).$(VERSION); \
-			cp -af $$lib $$lib.$(SOVERSION) $$lib.$(VERSION) $(ANALYZER)/$(PLATFORM); \
+			cp -af $$lib $$lib.$(SOVERSION) $$lib.$(VERSION) \
+			   $(ANALYZER)/$(PLATFORM) 2>/dev/null; \
 		done
+		rm -f $(ANALYZER)/$(PLATFORM)/libevio.so
+ifdef LIBEVIO
+		cp -af $(LIBEVIO) $(ANALYZER)/$(PLATFORM)
+endif
 		rm -f $(ANALYZER)/$(PLATFORM)/analyzer $(ANALYZER)/$(PLATFORM)/$(NAME)
 		cp -pf $(PROGRAMS) $(ANALYZER)/$(PLATFORM)/
 ifneq ($(PLATFORM),bin)
@@ -381,30 +357,29 @@ ifneq ($(NAME),analyzer)
 		ln -s $(NAME) $(ANALYZER)/$(PLATFORM)/analyzer
 endif
 		set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i install; done
-
-.PHONY: all clean realclean srcdist subdirs
-
+else
+		@echo "Everything already installed"
+endif
 
 ###--- DO NOT CHANGE ANYTHING BELOW THIS LINE UNLESS YOU KNOW WHAT
 ###    YOU ARE DOING
 
+.PHONY: all clean realclean srcdist subdirs $(SUBDIRS)
+
 .SUFFIXES:
-.SUFFIXES: .c .cc .cpp .C .o .os .d
 
 %.o:	%.C
+ifeq ($(strip $(MAKEDEPEND)),)
+	$(CXX) $(CXXFLAGS) -MMD -o $@ -c $<
+	@mv -f $*.d $*.d.tmp
+else
 	$(CXX) $(CXXFLAGS) -o $@ -c $<
-
-%.d:	%.C src/ha_compiledata.h
-	@echo Creating dependencies for $<
-#	@$(SHELL) -ec '$(CXX) -MM $(CXXFLAGS) -c $< \
-#		| sed '\''s%\($*\)\.o[ :]*%\1.o $@ : %g'\'' > $@; \
-#		[ -s $@ ] || rm -f $@'
-	@$(SHELL) -ec '$(MAKEDEPEND) -MM $(ROOTINC) $(INCLUDES) $(DEFINES) -c $< \
-		| sed '\''s%^.*\.o%$*\.o%g'\'' \
-		| sed '\''s%\($*\)\.o[ :]*%\1.o $@ : %g'\'' > $@; \
-		[ -s $@ ] || rm -f $@'
-
-###
+	$(MAKEDEPEND) $(ROOTINC) $(INCLUDES) $(DEFINES) -c $< > $*.d.tmp
+endif
+	@sed -e 's|.*:|$*.o:|' < $*.d.tmp > $*.d
+	@sed -e 's/.*://' -e 's/\\$$//' < $*.d.tmp | fmt -1 | \
+	  sed -e 's/^ *//' -e 's/$$/:/' >> $*.d
+	@rm -f $*.d.tmp
 
 -include $(DEP)
 

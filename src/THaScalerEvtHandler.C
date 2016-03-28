@@ -19,6 +19,15 @@
 //      NOTE: if you don't have the scaler map file (e.g. Leftscalevt.map)
 //      there will be no variable output to the Trees.
 //
+//   To use in the analyzer, your setup script needs something like this
+//       gHaEvtHandlers->Add (new THaScalerEvtHandler("Left","HA scaler event type 140"));
+//
+//   To enable debugging you may try this in the setup script
+// 
+//     THaScalerEvtHandler *lscaler = new THaScalerEvtHandler("Left","HA scaler event type 140");
+//     lscaler->SetDebugFile("LeftScaler.txt");
+//     gHaEvtHandlers->Add (lscaler);
+//
 /////////////////////////////////////////////////////////////////////
 
 #include "THaEvtTypeHandler.h"
@@ -33,13 +42,17 @@
 #include "TNamed.h"
 #include "TMath.h"
 #include "TString.h"
+#include <cstdio>
+#include <cstdlib>
 #include <iostream>
 #include <sstream>
 #include "THaVarList.h"
 #include "VarDef.h"
+#include "THaString.h"
 
 using namespace std;
 using namespace Decoder;
+using namespace THaString;
 
 static const UInt_t ICOUNT    = 1;
 static const UInt_t IRATE     = 2;
@@ -48,7 +61,7 @@ static const UInt_t MAXTEVT   = 5000;
 static const UInt_t defaultDT = 4;
 
 THaScalerEvtHandler::THaScalerEvtHandler(const char *name, const char* description)
-  : THaEvtTypeHandler(name,description), evcount(0), ifound(0), fNormIdx(-1),
+  : THaEvtTypeHandler(name,description), evcount(0), fNormIdx(-1),
     dvars(0), fScalerTree(0)
 {
   rdata = new UInt_t[MAXTEVT];
@@ -84,11 +97,9 @@ Int_t THaScalerEvtHandler::Analyze(THaEvData *evdata)
 
     lfirst = 0; // Can't do this in Init for some reason
 
-    //cout << "THaScalerEvtHandler   name = "<<fName<<endl;
-
     TString sname1 = "TS";
     TString sname2 = sname1 + fName;
-    TString sname3 = fName + "  Scaler Data  =================================";
+    TString sname3 = fName + "  Scaler Data";
 
     if (fDebugFile) {
       *fDebugFile << "\nAnalyze 1st time for fName = "<<fName<<endl;
@@ -132,7 +143,7 @@ Int_t THaScalerEvtHandler::Analyze(THaEvData *evdata)
   UInt_t *pstop = rdata+ndata;
   int j=0;
 
-  ifound = 0;
+  Int_t ifound = 0;
 
   while (p < pstop && j < ndata) {
     if (fDebugFile) {
@@ -167,14 +178,12 @@ Int_t THaScalerEvtHandler::Analyze(THaEvData *evdata)
   // The correspondance between dvars and the scaler and the channel
   // will be driven by a scaler.map file  -- later
 
-  for (UInt_t i = 0; i < scalerloc.size(); i++) {
-    UInt_t ivar = scalerloc[i]->ivar;
-    UInt_t isca = scalerloc[i]->iscaler;
-    UInt_t ichan = scalerloc[i]->ichan;
+  for (size_t i = 0; i < scalerloc.size(); i++) {
+    size_t ivar = scalerloc[i]->ivar;
+    size_t isca = scalerloc[i]->iscaler;
+    size_t ichan = scalerloc[i]->ichan;
     if (fDebugFile) *fDebugFile << "Debug dvars "<<i<<"   "<<ivar<<"  "<<isca<<"  "<<ichan<<endl;
-    if ((ivar >= 0 && ivar < scalerloc.size()) &&
-	(isca >= 0 && isca < scalers.size()) &&
-	(ichan >= 0 && ichan < MAXCHAN)) {
+    if( ivar < scalerloc.size() && isca < scalers.size() && ichan < MAXCHAN ) {
       if (scalerloc[ivar]->ikind == ICOUNT) dvars[ivar] = scalers[isca]->GetData(ichan);
       if (scalerloc[ivar]->ikind == IRATE)  dvars[ivar] = scalers[isca]->GetRate(ichan);
       if (fDebugFile) *fDebugFile << "   dvars  "<<scalerloc[ivar]->ikind<<"  "<<dvars[ivar]<<endl;
@@ -185,7 +194,7 @@ Int_t THaScalerEvtHandler::Analyze(THaEvData *evdata)
 
   evcount = evcount + 1.0;
 
-  for (UInt_t j=0; j<scalers.size(); j++) scalers[j]->Clear("");
+  for (size_t j=0; j<scalers.size(); j++) scalers[j]->Clear("");
 
   if (fDebugFile) *fDebugFile << "scaler tree ptr  "<<fScalerTree<<endl;
 
@@ -194,42 +203,44 @@ Int_t THaScalerEvtHandler::Analyze(THaEvData *evdata)
   return 1;
 }
 
-THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& dt)
+THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& date)
 {
-  Int_t idebug=0;
+  const int LEN = 200;
+  char cbuf[LEN];
 
-  //  cout << "Howdy !  We are initializing THaScalerEvtHandler !!   name =   "<<fName<<endl;
+  fStatus = kOK;
+  fNormIdx = -1;
+
+  // cout << "Howdy !  We are initializing THaScalerEvtHandler !!   name =   "
+  //      << fName << endl;
 
   eventtypes.push_back(140);  // what events to look for
 
   TString dfile;
   dfile = fName + "scaler.txt";
 
-  if (idebug) {
-    fDebugFile = new ofstream();
-    fDebugFile->open(dfile.Data());
+// Parse the map file which defines what scalers exist and the global variables.
+
+  TString sname0 = "Scalevt";
+  TString sname;
+  sname = fName+sname0;
+
+  FILE *fi = OpenFile(sname.Data(), date);
+  if ( !fi ) {
+    cout << "Cannot find db file for "<<fName<<" scaler event handler"<<endl;
+    return kFileError;
   }
 
-  // Parse the map file which defines what scalers exist and the global variables.
-  ifstream mapfile;
-  TString sname = "scalevt.map";
-  TString sname1;
-  sname1 = fName+sname;
-  mapfile.open(sname1.Data());
-  if (!mapfile) {
-    cout << "THaScalerEvtHandler:: Cannot find scaler.map file "<<sname1<<endl;
-    return kInitError;
-  }
-  fNormIdx = -1;
-  //  cout << "fNormIdx here "<<fNormIdx<<endl;
-  string sinput;
-  size_t minus1 = -1;
-  size_t pos1;
-  string scomment = "#";
-  string svariable = "variable";
-  string smap = "map";
+  string::size_type minus1 = string::npos;
+  string::size_type pos1;
+  const string scomment = "#";
+  const string svariable = "variable";
+  const string smap = "map";
   vector<string> dbline;
-  while( getline(mapfile, sinput)) {
+
+  while( fgets(cbuf, LEN, fi) != NULL) {
+    std::string sinput(cbuf);
+    if (fDebugFile) *fDebugFile << "string input "<<sinput<<endl;
     dbline = vsplit(sinput);
     if (dbline.size() > 0) {
       pos1 = FindNoCase(dbline[0],scomment);
@@ -283,15 +294,15 @@ THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& dt)
 	  UInt_t idx = scalers.size()-1;
 	  scalers[idx]->SetHeader(header, mask);
 	  if (clkchan >= 0) scalers[idx]->SetClock(defaultDT, clkchan, clkfreq);
+	  if (fDebugFile) *fDebugFile <<"Setting scaler clock ... channel = "<<clkchan<<" ... freq = "<<clkfreq<<endl;
+	  fNormIdx = idx;
 	}
       }
     }
   }
-  // can't compare UInt_t to Int_t (compiler warning), so do this
-  nscalers=0;
-  for (UInt_t i=0; i<scalers.size(); i++) nscalers++;
   // need to do LoadNormScaler after scalers created and if fNormIdx found.
-  if ((fNormIdx >= 0) && fNormIdx < nscalers) {
+  Int_t nscalers = static_cast<Int_t>(scalers.size());
+  if ( fNormIdx >= 0 && fNormIdx < nscalers ) {
     for (Int_t i = 0; i < nscalers; i++) {
       if (i==fNormIdx) continue;
       scalers[i]->LoadNormScaler(scalers[fNormIdx]);
@@ -351,19 +362,11 @@ THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& dt)
   for (UInt_t i=0; i<scalers.size(); i++) {
     if(fDebugFile) {
       *fDebugFile << "Scaler  #  "<<i<<endl;
+      scalers[i]->SetDebugFile(fDebugFile);
       scalers[i]->DebugPrint(fDebugFile);
     }
   }
   return kOK;
-}
-
-void THaScalerEvtHandler::SetDebugFile(ofstream *file)
-{
-  if (file <= 0) return;
-  fDebugFile = file;
-  for (UInt_t i = 0; i < scalers.size(); i++) {
-    scalers[i]->SetDebugFile(fDebugFile);
-  }
 }
 
 void THaScalerEvtHandler::AddVars(TString name, TString desc, Int_t iscal,
@@ -380,9 +383,10 @@ void THaScalerEvtHandler::AddVars(TString name, TString desc, Int_t iscal,
 void THaScalerEvtHandler::DefVars()
 {
   // called after AddVars has finished being called.
-  Nvars = scalerloc.size();
+  Int_t Nvars = scalerloc.size();
   if (Nvars == 0) return;
   dvars = new Double_t[Nvars];  // dvars is a member of this class
+  memset(dvars, 0, Nvars*sizeof(Double_t));
   if (gHaVars) {
     if(fDebugFile) *fDebugFile << "THaScalerEVtHandler:: Have gHaVars "<<gHaVars<<endl;
   } else {
@@ -396,22 +400,5 @@ void THaScalerEvtHandler::DefVars()
 			  &dvars[i], kDouble, count);
   }
 }
-
-size_t THaScalerEvtHandler::FindNoCase(const string& sdata, const string& skey)
-{
-  // Find iterator of word "sdata" where "skey" starts.  Case insensitive.
-  string sdatalc, skeylc;
-  sdatalc = "";  skeylc = "";
-  for (string::const_iterator p =
-	 sdata.begin(); p != sdata.end(); ++p) {
-    sdatalc += tolower(*p);
-  }
-  for (string::const_iterator p =
-	 skey.begin(); p != skey.end(); ++p) {
-    skeylc += tolower(*p);
-  }
-  if (sdatalc.find(skeylc,0) == string::npos) return -1;
-  return sdatalc.find(skeylc,0);
-};
 
 ClassImp(THaScalerEvtHandler)

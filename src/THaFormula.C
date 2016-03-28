@@ -252,7 +252,7 @@ Double_t THaFormula::DefinedValue( Int_t i )
   // If the variable is a string, return value of its character value
 
   typedef vector<Double_t>::size_type vsiz_t;
-  typedef vector<Double_t>::iterator  viter_t;
+  //  typedef vector<Double_t>::iterator  viter_t;
 
   assert( i>=0 && i<(Int_t)fVarDef.size() );
 
@@ -311,7 +311,7 @@ Double_t THaFormula::DefinedValue( Int_t i )
 	SetBit(kInvalid);
 	return 1.0;
       }
-      Double_t y;
+      Double_t y = kBig;
       if( code == kNumSetBits ) {
 	// Number of set bits is intended for unsigned int-type expressions
 	y = func->EvalInstance(fInstance);
@@ -365,6 +365,41 @@ Double_t THaFormula::DefinedValue( Int_t i )
 }
 
 //_____________________________________________________________________________
+static Int_t CheckBlacklistedNames( const TString& name )
+{
+  // Check for function name not supported by THaFormula
+
+  const char* const numbers = "0123456789";
+
+  Ssiz_t len = name.Length();
+
+  // gaus, xgaus, pol0 etc.
+  const char* blacklist[] = { "expo", "gaus", "landau", "pol", 0 };
+  const char** item = blacklist;
+  while( *item ) {
+    TString func( *(item++) );
+    Ssiz_t pos = name.Index(func);
+    if( pos == kNPOS ) continue;
+    Ssiz_t n = func.Length();
+    if( func != "pol" ) {
+      if( (pos == 0 || (pos == 1 && strchr("xyzt",name[0])) ||
+	   (pos == 2 && name(0,2) == "xy")) && len == pos+n )
+	return 1;
+    } else {
+      if( (pos == 0 || (pos == 1 && strchr("xyzt",name[0]))) &&
+	  len > pos+n && strchr(numbers,name[pos+n]) )
+	return 1;
+    }
+  }
+
+  // Plain parameters "[0]" etc. Reject any bare square brackets expression
+  if( len > 1 && name[0] == '[' && name[len-1] == ']' ) {
+    return 1;
+  }
+  return 0;
+}
+
+//_____________________________________________________________________________
 Int_t THaFormula::DefinedVariable( TString& name, Int_t& action )
 {
   // Check if name is in the list of global objects
@@ -381,6 +416,7 @@ Int_t THaFormula::DefinedVariable( TString& name, Int_t& action )
   //   -3  error parsing variable name, error already printed
 
   action = kDefinedVariable;
+  fNpar = 0;
 
   Int_t k = DefinedSpecialFunction( name );
   if( k != -1 )
@@ -409,7 +445,18 @@ Int_t THaFormula::DefinedVariable( TString& name, Int_t& action )
   if( k != -1 )
     return k;
 
-  return DefinedCut( name );
+  k = DefinedCut( name );
+  if( k != -1 )
+    return k;
+
+  // Filter out TFormula's parameterized functions and parameter expressions.
+  // THaFormula does not support parameters (fNpar>0) or dimensions (fNdim>0).
+  if( CheckBlacklistedNames(name) != 0 ) {
+    Error("Compile", " Unknown name : %s", name.Data());
+    return -3;
+  }
+
+  return k;
 }
 
 //_____________________________________________________________________________
@@ -429,7 +476,6 @@ Int_t THaFormula::DefinedCut( TString& name )
 	  return i;
       }
       fVarDef.push_back( FVarDef_t(kCut,pcut,0) );
-      fNpar = 0;
       return fVarDef.size()-1;
     }
   }
@@ -495,9 +541,6 @@ Int_t THaFormula::DefinedGlobalVariable( TString& name )
   }
   // If this is a new variable, add it to the list
   fVarDef.push_back( FVarDef_t(type,var,index) );
-
-  // No parameters ever for a THaFormula
-  fNpar = 0;
 
   return fVarDef.size()-1;
 }

@@ -28,9 +28,10 @@
 #include "TFile.h"
 #include "TRegexp.h"
 #include "TError.h"
-#include "THaScalerGroup.h"
-#include "THaScaler.h"
 #include "THaEvData.h"
+#include "THaEvtTypeHandler.h"
+#include "THaEpicsEvtHandler.h"
+#include "THaScalerEvtHandler.h"
 #include "THaString.h"
 #include <algorithm>
 #include <fstream>
@@ -122,79 +123,6 @@ private:
 };
 
 //_____________________________________________________________________________
-class THaScalerKey {
-// Utility class used by THaOutput to store a list
-// of 'keys' to access scaler data for output.
-public:
-  THaScalerKey(const string& nm, const string& bk, Int_t rc,
-	       Int_t hel, Int_t sl, Int_t ch) : 
-    fData(0.0), fName(nm), fBank(bk), fRC(rc), fHelicity(hel),
-    fSlot(sl), fChan(ch) {}
-  THaScalerKey(const string& nm, const string& bk) : 
-    fData(0.0), fName(nm), fBank(bk), fRC(0), fHelicity(0),
-    fSlot(-1), fChan(-1) {}
-  virtual ~THaScalerKey() {}
-  void AddBranches(TTree *T, Bool_t addprefix = kTRUE);
-  void Fill(Double_t dat) { fData = dat; };
-  void Print() const;
-  Double_t GetData() { return fData; };
-  const string& GetChanName() { return fName; };
-  const string& GetBank() { return fBank; };
-  Bool_t SlotDefined() { return (fSlot >= 0); };
-  Bool_t IsRate() { return (fRC == 0); };
-  Bool_t IsCounts() { return !IsRate(); };
-  Int_t GetHelicity() { return fHelicity; }; // 0 = none, +1,-1 = helicity
-  Int_t GetSlot()  { return fSlot; };
-  Int_t GetChan() { return fChan; };
-
-private:
-
-  THaScalerKey(const THaScalerKey& key);
-  THaScalerKey& operator=(const THaScalerKey& key);
-  static string DashToUbar(const string& var);
-  Double_t fData;
-  string fName, fBank;
-  Int_t fRC, fHelicity, fSlot, fChan;
-  //  ClassDef(THaScalerKey,0)  // Scaler data for output
-};
-
-//_____________________________________________________________________________
-void THaScalerKey::AddBranches(TTree *T, Bool_t addprefix ) 
-{
-  string name;
-  if (addprefix) name = fBank + "_";  
-  if (GetHelicity() > 0) name += "P_"; 
-  if (GetHelicity() < 0) name += "M_";
-  name += fName;
-  name = DashToUbar(name); // Can't have "-", replace with "_".
-  string tinfo = name + "/D";
-  T->Branch(name.c_str(), &fData, tinfo.c_str(), 4000);
-}
-
-//_____________________________________________________________________________
-void THaScalerKey::Print() const 
-{
-  cout << "Scaler key name = "<<fName<<"   bank = "<<fBank;
-  cout << "  sl = "<<fSlot;
-  cout << "  ch = "<<fChan<<"  RC = "<<fRC<<"  hel = "<<fHelicity;
-  cout << "  data = "<<fData<<endl;
-}
-
-//_____________________________________________________________________________
-string THaScalerKey::DashToUbar(const string& var)
-{
-  // Replace "-" with "_" because "-" does not work in
-  // a tree variable name: Draw() thinks it's minus.
-  int pos0=0;
-  string output = var;
-  while (1) {
-    int pos = output.find("-");
-    if (pos > pos0) {
-      output.replace(pos, 1, "_"); pos0 = pos;
-    } else { break; }
-  }
-  return output;
-}
 
 //_____________________________________________________________________________
 THaOdata::THaOdata( const THaOdata& other )
@@ -270,10 +198,6 @@ THaOutput::~THaOutput()
   }
   if (fVar) delete [] fVar;
   if (fEpicsVar) delete [] fEpicsVar;
-  if( alive ) {
-    for (map<string, TTree*>::iterator mt = fScalTree.begin();
-	 mt != fScalTree.end(); ++mt) delete mt->second;
-  }
   for (Iter_o_t od = fOdata.begin();
        od != fOdata.end(); ++od) delete *od;
   for (Iter_f_t itf = fFormulas.begin();
@@ -282,8 +206,6 @@ THaOutput::~THaOutput()
        itf != fCuts.end(); ++itf) delete *itf;
   for (Iter_h_t ith = fHistos.begin();
        ith != fHistos.end(); ++ith) delete *ith;
-  for (vector<THaScalerKey* >::iterator isca = fScalerKey.begin();
-       isca != fScalerKey.end(); ++isca) delete *isca;
   for (vector<THaEpicsKey* >::iterator iep = fEpicsKey.begin();
        iep != fEpicsKey.end(); ++iep) delete *iep;
 }
@@ -317,11 +239,7 @@ Int_t THaOutput::Init( const char* filename )
   fTree = new TTree("T","Hall A Analyzer Output DST");
   fTree->SetAutoSave(200000000);
   fOpenEpics  = kFALSE;
-  fOpenScal   = kFALSE;
   fFirstEpics = kTRUE; 
-  fFirstScal  = kTRUE;
-  fScalBank   = "nothing";
-  fScalRC     = kRate;
 
   Int_t err = LoadFile( filename );
   if( fgDoBench && err != 0 ) fgBench.Stop("Init");
@@ -354,44 +272,42 @@ Int_t THaOutput::Init( const char* filename )
       cout << "There is probably a typo error... "<<endl;
     }
   }
-  string tinfo;
-  Int_t status;
   Int_t k = 0;
   for (Iter_s_t inam = fFormnames.begin(); inam != fFormnames.end(); ++inam, ++k) {
-    tinfo = Form("f%d",k);
+    string tinfo = Form("f%d",k);
     // FIXME: avoid duplicate formulas
-    // FIXME: create and Init() first, then add to array?
-    fFormulas.push_back(new THaVform("formula",inam->c_str(),fFormdef[k].c_str()));
-    THaVform* pform = fFormulas[k];
-    status = pform->Init();
+    THaVform* pform = new THaVform("formula",inam->c_str(),fFormdef[k].c_str());
+    Int_t status = pform->Init();
     if ( status != 0) {
       cout << "THaOutput::Init: WARNING: Error in formula ";
       cout << *inam << endl;
       cout << "There is probably a typo error... " << endl;
-      if( fgVerbose<=2 )
-	pform->ErrPrint(status);
-      else
-	pform->LongPrint();  // for debug
-    } else {
-      pform->SetOutput(fTree);
+      pform->ErrPrint(status);
+      delete pform;
+      --k;
+      continue;
+    }
+    pform->SetOutput(fTree);
+    fFormulas.push_back(pform);
+    if( fgVerbose > 2 )
+      pform->LongPrint();  // for debug
 // Add variables (i.e. those var's used by the formula) to tree.
 // Reason is that TTree::Draw() may otherwise fail with ERROR 26 
-      vector<string> avar = pform->GetVars();
-      for (Iter_s_t it = avar.begin(); it != avar.end(); ++it) {
-        string svar = StripBracket(*it);
-        pvar = gHaVars->Find(svar.c_str());
-        if (pvar) {
-          if (pvar->IsArray()) {
-	    Iter_s_t it = find(fArrayNames.begin(),fArrayNames.end(),svar);
-	    if( it == fArrayNames.end() ) {
-	      fArrayNames.push_back(svar);
-	      fOdata.push_back(new THaOdata());
-	    }
-          } else {
-	    Iter_s_t it = find(fVNames.begin(),fVNames.end(),svar);
-	    if( it == fVNames.end() )
-	      fVNames.push_back(svar);
+    vector<string> avar = pform->GetVars();
+    for (Iter_s_t it = avar.begin(); it != avar.end(); ++it) {
+      string svar = StripBracket(*it);
+      pvar = gHaVars->Find(svar.c_str());
+      if (pvar) {
+	if (pvar->IsArray()) {
+	  Iter_s_t it = find(fArrayNames.begin(),fArrayNames.end(),svar);
+	  if( it == fArrayNames.end() ) {
+	    fArrayNames.push_back(svar);
+	    fOdata.push_back(new THaOdata());
 	  }
+	} else {
+	  Iter_s_t it = find(fVNames.begin(),fVNames.end(),svar);
+	  if( it == fVNames.end() )
+	    fVNames.push_back(svar);
 	}
       }
     }
@@ -402,24 +318,25 @@ Int_t THaOutput::Init( const char* filename )
   fNvar = fVNames.size();
   fVar = new Double_t[fNvar];
   for (k = 0; k < fNvar; ++k) {
-    tinfo = fVNames[k] + "/D";
+    string tinfo = fVNames[k] + "/D";
     fTree->Branch(fVNames[k].c_str(), &fVar[k], tinfo.c_str(), kNbout);
   }
   k = 0;
   for (Iter_s_t inam = fCutnames.begin(); inam != fCutnames.end(); ++inam, ++k ) {
     // FIXME: avoid duplicate cuts
-    // FIXME: create and Init() first, then add to array?
-    fCuts.push_back(new THaVform("cut", inam->c_str(), fCutdef[k].c_str()));
-    THaVform* pcut = fCuts[k];
-    status = pcut->Init(); 
+    THaVform* pcut = new THaVform("cut", inam->c_str(), fCutdef[k].c_str());
+    Int_t status = pcut->Init();
     if ( status != 0 ) {
       cout << "THaOutput::Init: WARNING: Error in formula ";
       cout << *inam << endl;
       cout << "There is probably a typo error... " << endl;
       pcut->ErrPrint(status);
-    } else {
-      pcut->SetOutput(fTree);
+      delete pcut;
+      --k;
+      continue;
     }
+    pcut->SetOutput(fTree);
+    fCuts.push_back(pcut);
     if( fgVerbose>2 )
       pcut->LongPrint();  // for debug
   }
@@ -459,7 +376,7 @@ Int_t THaOutput::Init( const char* filename )
 	 it != fEpicsKey.end(); ++it, ++i) {
       fEpicsVar[i] = -1e32;
       string epicsbr = CleanEpicsName((*it)->GetName());
-      tinfo = epicsbr + "/D";
+      string tinfo = epicsbr + "/D";
       fTree->Branch(epicsbr.c_str(), &fEpicsVar[i], 
         tinfo.c_str(), kNbout);
       fEpicsTree->Branch(epicsbr.c_str(), &fEpicsVar[i], 
@@ -467,19 +384,6 @@ Int_t THaOutput::Init( const char* filename )
     }
     fEpicsVar[siz] = -1e32;
     fEpicsTree->Branch("timestamp",&fEpicsVar[siz],"timestamp/D", kNbout);
-  }
-  for (vector<THaScalerKey*>::iterator it = fScalerKey.begin(); 
-       it != fScalerKey.end(); ++it) {
-    THaScalerKey* pkey(*it);
-    pkey->AddBranches(fTree);
-    for (map<string, TTree*>::iterator mt = fScalTree.begin();
-	 mt != fScalTree.end(); ++mt) {
-           string thisbank(mt->first);
-           TTree *sctree = mt->second;
-           if ( CmpNoCase(thisbank,pkey->GetBank()) != 0) 
-	     continue;
-           pkey->AddBranches(sctree,kFALSE);
-    }
   }
 
   Print();
@@ -494,12 +398,6 @@ Int_t THaOutput::Init( const char* filename )
   if ( st )
     return -4;
 
-  for (Iter_f_t icut=fCuts.begin(); icut!=fCuts.end(); ++icut) 
-      (*icut)->SetOutput(fTree);
-
-  for (Iter_f_t iform=fFormulas.begin(); iform!=fFormulas.end(); ++iform) 
-      (*iform)->SetOutput(fTree);
-
   return 0;
 }
 
@@ -512,14 +410,12 @@ void THaOutput::BuildList( const vector<string>& vdata)
     if (CmpNoCase(vdata[0],"begin") == 0) {
       if (vdata.size() < 2) return;
       if (CmpNoCase(vdata[1],"epics") == 0) fOpenEpics = kTRUE;
-      if (CmpNoCase(vdata[1],"scalers") == 0) fOpenScal = kTRUE;
     }
     if (CmpNoCase(vdata[0],"end") == 0) {
       if (vdata.size() < 2) return;
       if (CmpNoCase(vdata[1],"epics") == 0) fOpenEpics = kFALSE;
-      if (CmpNoCase(vdata[1],"scalers") == 0) fOpenScal = kFALSE;
     }
-    if (fOpenEpics && fOpenScal) {
+    if (fOpenEpics) {
        cout << "THaOutput::ERROR: Syntax error in output.def"<<endl;
        cout << "Must 'begin' and 'end' before 'begin' again."<<endl;
        cout << "e.g. 'begin epics' ..... 'end epics'"<<endl;
@@ -543,107 +439,8 @@ void THaOutput::BuildList( const vector<string>& vdata)
     } else {
        fFirstEpics = kTRUE;
     }
-    if (fOpenScal) {
-       if (fFirstScal) {
-         fFirstScal = kFALSE;
-         if (vdata.size() < 3) {
-           cout << "THaOutput: ERROR: need to specify scaler bank."<<endl;
-           cout << "Syntax is 'begin scaler right' for right bank."<<endl;
-           return;
-	 }
-         fScalBank = ToLower( vdata[2] );
-         string desc = "Hall A Scalers on " + fScalBank;
-         fScalTree.insert
-	   ( make_pair(fScalBank,
-		       new TTree( ToUpper(fScalBank).c_str(), desc.c_str() )
-		       )
-	     );
-         return;
-       } else {
-  	 fScalRC = kRate;
-         if (vdata.size() >= 3) {
-// This is like 'mypulser 4 5' for slot 4, chan 5
-// or 'mypulser 4 5 rate' or 'mupulser 4 5 counts'
-             if (vdata.size() >= 4) {
-	       if ((CmpNoCase(vdata[3],"count") == 0) || 
-                   (CmpNoCase(vdata[3],"counts") == 0)) {
-		 fScalRC = kCount;
-	       }
-	     }
-             AddScaler(vdata[0], fScalBank, 0,
-		    atoi(vdata[1].c_str()),atoi(vdata[2].c_str()));
-	 } else {
-	   // Default scalers = normalization scalers, like charge and triggers
-	   fScalRC = kRate;
-	   if (vdata.size() >= 2) {
-	     if ((CmpNoCase(vdata[1],"count") == 0) || 
-		 (CmpNoCase(vdata[1],"counts") == 0)) {
-	       fScalRC = kCount;
-	     }
-	   }
-	   if (CmpNoCase(vdata[0],"default") == 0) {
-	     DefScaler();
-	     return;
-	   } else if (CmpNoCase(vdata[0],"default_helicity") == 0) {
-	     DefScaler(1);
-	     return;
-	   } else {
-	     AddScaler(vdata[0],fScalBank);           
-	   }
-	 }
-       } 
-    } else {
-      fFirstScal = kTRUE;
-    }
     return;
 }
-
-//_____________________________________________________________________________
-void THaOutput::DefScaler(Int_t hel) {
-// Set up a default list of normalization scalers.
-// This is what most users care about.
-// hel = helicity flag.  hel=0 --> not gated by helicity.
-// hel=1 --> load the two helicity gated scaler banks.
-
-// Note: All the dashes ("-") get converted to underbar ("_")
-// in the tree variable names, since "-" is interpreted as
-// the minus operation in TTree::Draw().  Sorry.
-
-  string norm_scaler[] = {"trigger-1", "trigger-2", "trigger-3",
-			  "trigger-4", "trigger-5", "trigger-6",
-			  "trigger-7", "trigger-8", "trigger-9",
-			  "trigger-10", "trigger-11", "trigger-12",
-			  "bcm_u1", "bcm_u3", "bcm_u10",
-			  "bcm_d1", "bcm_d3", "bcm_d10",
-			  "clock", "TS-accept", "edtpulser",
-			  "strobe", "dclock" };
-
-  Int_t nscal = 1;
-  Int_t jhel = 0;
-  if (hel == 1) {
-     nscal = 2;  jhel = -1;
-  }
-  Int_t numchan = sizeof(norm_scaler)/sizeof(string);
-
-  for (Int_t i = 0; i < nscal; i++) {
-     jhel = jhel + 2*i; // 0, or (-1,1)
-     for (Int_t j = 0; j < numchan; j++) {
-        AddScaler(norm_scaler[j], fScalBank, jhel);
-     }
-  }
-
-}
-
-
-//_____________________________________________________________________________
-void THaOutput::AddScaler(const string& name, const string& bank,
-			  Int_t helicity, Int_t slot, Int_t chan) 
-{
-  Int_t scal_rc = 0;  // default: data are rates.
-  if (fScalRC == kCount) scal_rc = 1;  // data are counts.
-  fScalerKey.push_back(new THaScalerKey(name, bank, scal_rc, 
-					helicity, slot, chan));
-} 
 
 
 //_____________________________________________________________________________
@@ -718,32 +515,31 @@ Int_t THaOutput::Attach()
 
 }
 
-
 //_____________________________________________________________________________
-Int_t THaOutput::ProcEpics(THaEvData *evdata) 
+Int_t THaOutput::ProcEpics(THaEvData *evdata, THaEpicsEvtHandler *epicshandle)  
 {
   // Process the EPICS data, this fills the trees.
-  // This function is called by THaAnalyzer.
 
-  if ( !evdata->IsEpicsEvent() 
+  if ( !epicshandle ) return 0;
+  if ( !epicshandle->IsMyEvent(evdata->GetEvType()) 
        || fEpicsKey.empty() || !fEpicsTree ) return 0;
   if( fgDoBench ) fgBench.Begin("EPICS");
   fEpicsVar[fEpicsKey.size()] = -1e32;
   for (UInt_t i = 0; i < fEpicsKey.size(); i++) {
-    if (evdata->IsLoadedEpics(fEpicsKey[i]->GetName().c_str())) {
-      //      cout << "EPICS name "<<fEpicsKey[i]->GetName()<<"    val "<< evdata->GetEpicsString(fEpicsKey[i]->GetName().c_str())<<endl;
+    if (epicshandle->IsLoaded(fEpicsKey[i]->GetName().c_str())) {
+      //      cout << "EPICS name "<<fEpicsKey[i]->GetName()<<"    val "<< epicshandle->GetString(fEpicsKey[i]->GetName().c_str())<<endl;
       if (fEpicsKey[i]->IsString()) {
         fEpicsVar[i] = fEpicsKey[i]->Eval(
-          evdata->GetEpicsString(
+          epicshandle->GetString(
              fEpicsKey[i]->GetName().c_str()));
       } else {
         fEpicsVar[i] = 
-           evdata->GetEpicsData(
+           epicshandle->GetData(
               fEpicsKey[i]->GetName().c_str());
       }
  // fill time stamp (once is ok since this is an EPICS event)
       fEpicsVar[fEpicsKey.size()] =
- 	 evdata->GetEpicsTime(
+ 	 epicshandle->GetTime(
            fEpicsKey[i]->GetName().c_str());
     } else {
       fEpicsVar[i] = -1e32;  // data not yet found
@@ -751,65 +547,6 @@ Int_t THaOutput::ProcEpics(THaEvData *evdata)
   }
   if (fEpicsTree != 0) fEpicsTree->Fill();  
   if( fgDoBench ) fgBench.Stop("EPICS");
-  return 1;
-}
-
-//_____________________________________________________________________________
-Int_t THaOutput::ProcScaler(THaScalerGroup *scagrp) 
-{
-  // Process the scaler data, this fills the trees.
-  // This function is called by THaAnalyzer.
-  THaScaler *scaler = scagrp->GetScalerObj();
-  if (!scaler || !scaler->IsRenewed()) return 0;
-  if( fgDoBench ) fgBench.Begin("Scalers");
-
-  Bool_t did_fill = kFALSE;
-  string thisbank(scaler->GetName());
-
-  for (vector<THaScalerKey*>::iterator it = fScalerKey.begin(); 
-       it != fScalerKey.end(); ++it) {
-    THaScalerKey* pkey(*it);
-
-    if (CmpNoCase( thisbank,pkey->GetBank()) != 0) continue;
-
-    did_fill = kTRUE;
-
-    if (pkey->SlotDefined()) {
-
-      if (pkey->IsRate()) {
-	pkey->Fill(scaler->GetScalerRate(pkey->GetSlot(), pkey->GetChan()));
-      } else {
-	pkey->Fill(scaler->GetScaler(pkey->GetSlot(), pkey->GetChan()));
-      }     
-
-    } else {
-      if (pkey->GetChanName()=="dclock") {
-	pkey->Fill(scaler->GetNormData(pkey->GetHelicity(),
-				       "clock",0) -
-		   scaler->GetNormData(pkey->GetHelicity(),
-				       "clock",1) );
-      } else 
-	if (pkey->IsRate()) {
-	  pkey->Fill(scaler->GetNormRate(pkey->GetHelicity(), 
-					  pkey->GetChanName().c_str()));
-	} else {
-	  pkey->Fill(scaler->GetNormData(pkey->GetHelicity(), 
-					  pkey->GetChanName().c_str(), 0));
-	}
-
-    }
-
-// DEBUG
-// pkey->Print();
-
-  }
-			  
-  
-  string key = ToLower(thisbank);
-  TTree *sctree = fScalTree[key];
-  if (did_fill && sctree) sctree->Fill();
-
-  if( fgDoBench ) fgBench.Stop("Scalers");
   return 1;
 }
 
@@ -877,13 +614,6 @@ Int_t THaOutput::End()
 
   if (fTree != 0) fTree->Write();
   if (fEpicsTree != 0) fEpicsTree->Write();
-  if( fgVerbose>1 )
-    cout << "End:: fScalTree size "<<fScalTree.size()<<endl;
-  for (map<string, TTree*>::iterator mt = fScalTree.begin();
-       mt != fScalTree.end(); ++mt) {
-      TTree* tree = mt->second;
-      if (tree) tree->Write();
-  }
   for (Iter_h_t ihist = fHistos.begin(); ihist != fHistos.end(); ++ihist)
     (*ihist)->End();
   if( fgDoBench ) fgBench.Stop("End");
@@ -898,7 +628,6 @@ Int_t THaOutput::End()
     fgBench.Print("Histos");
     fgBench.Print("TreeFill");
     fgBench.Print("EPICS");
-    fgBench.Print("Scalers");
     fgBench.Print("End");
   }
   return 0;
@@ -942,9 +671,9 @@ Int_t THaOutput::LoadFile( const char* filename )
       // Split the line into tokens separated by whitespace
       const string& str = *it;
       strvect = Split(str);
-      bool special_before = (fOpenEpics || fOpenScal);
+      bool special_before = (fOpenEpics);
       BuildList(strvect);
-      bool special_now = (fOpenEpics || fOpenScal);
+      bool special_now = (fOpenEpics);
       if( special_before || special_now )
 	continue; // strvect already processed
       if (strvect.size() < 2) {
@@ -1173,7 +902,7 @@ void THaOutput::ErrFile(Int_t iden, const string& sline) const
       "(this may be all you want).\n";
     return;
   }
-  if (fOpenEpics || fOpenScal) return;  // No error
+  if (fOpenEpics) return;  // No error
   cerr << "THaOutput::ERROR: Syntax error in output definition file."<<endl;
   cerr << "The offending line is :\n"<<sline<<endl<<endl;
   switch (iden) {
@@ -1383,6 +1112,5 @@ void THaOutput::SetVerbosity( Int_t level )
 }
 
 //_____________________________________________________________________________
-//ClassImp(THaScalerKey)
 //ClassImp(THaOdata)
 ClassImp(THaOutput)

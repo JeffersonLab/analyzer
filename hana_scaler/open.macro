@@ -1,6 +1,0 @@
-{
-   f = new TFile("scaler.root");
-   TNtuple *ntup = (TNtuple*)gROOT.FindObject("ascal");
-   TNtuple *ring = (TNtuple*)gROOT.FindObject("aring");
-
-}

@@ -48,8 +48,8 @@ THaSlotData::THaSlotData(int cra, int slo) :
 
 
 THaSlotData::~THaSlotData() {
+  delete fModule;
   if( !didini ) return;
-  if(fModule) delete fModule;
   delete [] numHits;
   delete [] xnumHits;
   delete [] chanlist;
@@ -130,6 +130,7 @@ int THaSlotData::loadModule(const THaCrateMap *map) {
 
       if (loctype.fTClass) {
 	if (fDebugFile) *fDebugFile << "THaSlotData:: Creating fModule"<<endl;
+	delete fModule;
 	fModule= static_cast<Module*>( loctype.fTClass->New() );
 	if (fDebugFile) *fDebugFile << "fModule return "<<fModule<<endl;
 
@@ -140,7 +141,8 @@ int THaSlotData::loadModule(const THaCrateMap *map) {
 	// Init first, then SetSlot
 	fModule->Init();
 	fModule->SetSlot( crate, slot, map->getHeader(crate, slot), map->getMask(crate, slot), map->getModel(crate,slot));
-	if (fDebugFile) *fDebugFile << "THaSlotData:: about to init  module   "<<crate<<"  "<<slot<<" mod ptr "<<fModule<<"  header "<<hex<<map->getHeader(crate,slot)<<"  model num "<<dec<<map->getModel(crate,slot)<<endl;
+        fModule->SetBank(map->getBank(crate,slot));
+	if (fDebugFile) *fDebugFile << "THaSlotData:: about to init  module   "<<crate<<"  "<<slot<<" mod ptr "<<fModule<<"  header "<<hex<<map->getHeader(crate,slot)<<"  model num "<<dec<<map->getModel(crate,slot)<<"  bank = "<<map->getBank(crate,slot)<<endl;
 	if (fDebugFile) {
 	  fModule->SetDebugFile(fDebugFile);
 	  fModule->DoPrint();
@@ -167,7 +169,6 @@ Int_t THaSlotData::LoadIfSlot(const UInt_t* p, const UInt_t *pstop) {
     return 0;
   }
   if (fDebugFile) *fDebugFile << "THaSlotData::LoadIfSlot:  " << dec<<crate<<"  "<<slot<<"   p "<<hex<<p<<"  "<<*p<<"  "<<dec<<((UInt_t(*p))>>27)<<hex<<"  "<<pstop<<"  "<<fModule<<dec<<endl;
-  fModule->DoPrint();
   if ( !fModule->IsSlot( *p ) ) {
     if(fDebugFile) *fDebugFile << "THaSlotData:: Not slot ... return ... "<<endl;
     return 0;
@@ -179,6 +180,22 @@ Int_t THaSlotData::LoadIfSlot(const UInt_t* p, const UInt_t *pstop) {
   return wordseen;
 }
 
+  Int_t THaSlotData::LoadBank(const UInt_t* p, Int_t pos, Int_t len) {
+  // returns how many words seen.
+  Int_t wordseen = 0;
+  if ( !fModule ) {
+// This is bad and should not happen; it means you didn't define a module
+// for this slot.  Check db_cratemap.dat, e.g. erase things that dont exist.
+    cerr << "THaSlotData::ERROR:   No module defined for slot. "<<crate<<"  "<<slot<<endl;
+    return 0;
+  }
+  if (fDebugFile) *fDebugFile << "THaSlotData::LoadBank:  " << dec<<crate<<"  "<<slot<<"  pos "<<pos<<"   len "<<len<<"   start word "<<hex<<*p<<"  module ptr  "<<fModule<<dec<<endl;
+  if (fDebugFile) fModule->DoPrint();
+  fModule->Clear("");
+  wordseen = fModule->LoadSlot(this, p, pos, len);
+  if (fDebugFile) *fDebugFile << "THaSlotData:: after LoadBank:  wordseen =  "<<dec<<"  "<<wordseen<<endl;
+  return wordseen;
+}
 
 int THaSlotData::loadData(const char* type, int chan, int dat, int raw) {
 

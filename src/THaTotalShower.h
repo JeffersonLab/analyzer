@@ -21,6 +21,7 @@ public:
 		  THaApparatus* a = NULL );
   virtual ~THaTotalShower();
 
+  virtual void       Clear( Option_t* ="" );
   virtual Int_t      Decode( const THaEvData& );
   virtual Int_t      CoarseProcess( TClonesArray& tracks );
   virtual Int_t      FineProcess( TClonesArray& tracks );
@@ -45,7 +46,6 @@ protected:
   Float_t    fE;           // Total shower energy
   Int_t      fID;          // ID of Presh and Shower coincidence
 
-  void           ClearEvent() { fE = 0.0; fID = 0; }
   virtual Int_t  ReadDatabase( const TDatime& date );
   virtual Int_t  DefineVariables( EMode mode = kDefine );
 

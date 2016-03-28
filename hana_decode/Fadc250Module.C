@@ -1,4 +1,4 @@
-/////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
 //
 //   Fadc250Module
 //   JLab FADC 250 Module
@@ -15,6 +15,8 @@
 
 using namespace std;
 
+//#define DEBUG
+
 namespace Decoder {
 
   static const Int_t NADCCHAN = 16;
@@ -23,20 +25,42 @@ namespace Decoder {
   Module::TypeIter_t Fadc250Module::fgThisType =
     DoRegister( ModuleType( "Decoder::Fadc250Module" , 250 ));
 
-  Fadc250Module::Fadc250Module(Int_t crate, Int_t slot) : VmeModule(crate, slot) {
-    fDebugFile=0;
+  Fadc250Module::Fadc250Module()
+    : VmeModule(), fNumAInt(0), fNumTInt(0), fNumSample(0),
+      fAdcData(0), fTdcData(0)
+  {}
+
+  Fadc250Module::Fadc250Module(Int_t crate, Int_t slot)
+    : VmeModule(crate, slot), fNumAInt(0), fNumTInt(0), fNumSample(0),
+      fAdcData(0), fTdcData(0)
+  {
     Init();
   }
 
   Fadc250Module::~Fadc250Module() {
-    if (fNumAInt) delete [] fNumAInt;
-    if (fNumTInt) delete [] fNumTInt;
-    if (fNumSample) delete [] fNumSample;
-    if (fAdcData) delete [] fAdcData;
-    if (fTdcData) delete [] fTdcData;
+    delete [] fNumAInt;
+    delete [] fNumTInt;
+    delete [] fNumSample;
+    delete [] fAdcData;
+    delete [] fTdcData;
+#if defined DEBUG && defined WITH_DEBUG
+    delete fDebugFile; fDebugFile = 0;
+#endif
   }
 
   void Fadc250Module::Init() {
+#if defined DEBUG && defined WITH_DEBUG
+    // this will make a HUGE output
+    delete fDebugFile; fDebugFile = 0;
+    fDebugFile=new ofstream;
+    fDebugFile->open("fadcdebug.dat");
+#endif
+    // Delete memory in case of re-Init()
+    delete [] fNumAInt;   fNumAInt = 0;
+    delete [] fNumTInt;   fNumTInt = 0;
+    delete [] fNumSample; fNumSample = 0;
+    delete [] fAdcData;   fAdcData = 0;
+    delete [] fTdcData;   fTdcData = 0;
     fNumAInt = new Int_t[NADCCHAN];
     fNumTInt = new Int_t[NADCCHAN];
     fNumSample = new Int_t[NADCCHAN];
@@ -45,7 +69,6 @@ namespace Decoder {
     memset(fNumAInt, 0, NADCCHAN*sizeof(Int_t));
     memset(fNumTInt, 0, NADCCHAN*sizeof(Int_t));
     memset(fNumSample, 0, NADCCHAN*sizeof(Int_t));
-    fDebugFile=0;
     f250_setmode=-1;
     f250_foundmode=-2;
     Clear("");
@@ -56,7 +79,13 @@ namespace Decoder {
 
 
   Bool_t Fadc250Module::IsSlot(UInt_t rdata) {
-    if (fDebugFile) *fDebugFile << "is slot ? "<<hex<<fHeader<<"  "<<fHeaderMask<<"  "<<rdata<<dec<<endl;
+#ifdef WITH_DEBUG
+    if (fDebugFile) {
+      *fDebugFile << "is slot ? "<<hex<<fHeader<<"  "<<fHeaderMask<<"  "<<rdata<<dec<<endl;
+      if ((rdata != 0xffffffff) & ((rdata & fHeaderMask)==fHeader))
+	*fDebugFile << "Yes, is slot "<<endl;
+    }
+#endif
     return ((rdata != 0xffffffff) & ((rdata & fHeaderMask)==fHeader));
   }
 
@@ -68,7 +97,10 @@ namespace Decoder {
   }
 
   Int_t Fadc250Module::GetMode() const {
-    if (fDebugFile) *fDebugFile << "GetMode ... "<<f250_setmode<< "   "<<f250_foundmode<<endl;
+#ifdef WITH_DEBUG
+    if (fDebugFile)
+      *fDebugFile << "GetMode ... "<<f250_setmode<< "   "<<f250_foundmode<<endl;
+#endif
     if (f250_setmode == f250_foundmode) return f250_setmode;
     return -1;
   }
@@ -92,6 +124,13 @@ namespace Decoder {
     return result;
   }
 
+  Int_t Fadc250Module::GetNumSamples(Int_t chan) const {
+    if (chan < 0 || chan > NADCCHAN) {
+      cout << "ERROR:: Fadc250Module:: GetAdcData:: invalid channel "<<chan<<endl;
+      return 0;
+    }
+    return fNumSample[chan];
+  }
 
   Int_t Fadc250Module::GetData(Int_t which, Int_t chan, Int_t ievent) const {
 
@@ -110,8 +149,10 @@ namespace Decoder {
 
     nevent = 0;
 
-    if (fDebugFile) *fDebugFile << "GetData:  f250_foundmode "<<f250_foundmode<<endl;
-
+#ifdef WITH_DEBUG
+    if (fDebugFile)
+      *fDebugFile << "GetData:  f250_foundmode "<<f250_foundmode<<endl;
+#endif
     if (f250_foundmode == F250_INTEG) {
       if (which == GET_ADC) {
 	nevent = fNumAInt[chan];
@@ -124,10 +165,12 @@ namespace Decoder {
     }
 
     if (ievent < 0 || ievent > nevent) {
+#ifdef WITH_DEBUG
       if (fDebugFile) {
 	*fDebugFile << "Fadc250:: info "<<which<<"   "<<f250_foundmode<<"   "<<f250_setmode<<endl;
 	*fDebugFile << "ERROR:: Fadc250Module:: GetData:: invalid event "<<ievent<<"  "<<nevent<<endl;
       }
+#endif
       return -1;
     }
 
@@ -161,36 +204,131 @@ namespace Decoder {
       memset(fNumTInt, 0, NADCCHAN*sizeof(Int_t));
     }
     if (IsSampleMode()) memset(fNumSample, 0, NADCCHAN*sizeof(Int_t));
+    fadc_data.slot_id_hd = -1;
   }
 
   Int_t Fadc250Module::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, const UInt_t *pstop) {
     // this increments evbuffer
-    if (fDebugFile) *fDebugFile << "Fadc250Module:: loadslot "<<endl;
+#ifdef WITH_DEBUG
+    if (fDebugFile)
+      *fDebugFile << "Fadc250Module:: loadslot "<<endl;
+#endif
     fWordsSeen = 0;
     Int_t numwords = 0;
     if (IsSlot(*evbuffer)) {
       if (IsIntegMode()) numwords = *(evbuffer+2);
-      if (IsSampleMode()) numwords = *(evbuffer+4);
+      if (IsSampleMode()) numwords = 10000;  // Where is it ?
     }
-    if (fDebugFile) *fDebugFile << "Fadc250Module:: num words "<<dec<<numwords<<endl;
+// This would not happen if CRL puts numwords into output
+    if (numwords < 0) cout << "Fadc250: warning: negative num words ?"<<endl;
+#ifdef WITH_DEBUG
+    if (fDebugFile)
+      *fDebugFile << "Fadc250Module:: num words "<<dec<<numwords<<endl;
+#endif
     // Fill data structures of this class
     Clear("");
-    while ( evbuffer < pstop && fWordsSeen < numwords ) {
-      Decode(evbuffer);
+    // Read until out of data or until Decode says that the slot is finished
+    Int_t btrail=0;
+    while ( evbuffer < pstop && fWordsSeen < numwords && btrail==0) {
+      btrail=Decode(evbuffer);
       fWordsSeen++;
       evbuffer++;
     }
-    if (fDebugFile) *fDebugFile << "Fadc250Module:: mode info "<<dec<<f250_setmode<<"   "<<f250_foundmode<<endl;
+#ifdef WITH_DEBUG
+    if (fDebugFile)
+      *fDebugFile << "Fadc250Module:: mode info "<<dec
+		  <<f250_setmode<<"   "<<f250_foundmode<<endl;
+#endif
     CheckFoundMode();
 
     // Now load the THaSlotData
 
     for (Int_t chan=0; chan<NADCCHAN; chan++) {
-      if (fDebugFile) *fDebugFile << "Fadc250:: Chan  "<<chan<<"  num sample "<<fNumSample[chan]<<"  MAXDAT "<<MAXDAT<<endl;
+#ifdef WITH_DEBUG
+      if (fDebugFile)
+	*fDebugFile << "Fadc250:: Chan  "<<chan<<"  num sample "
+		    <<fNumSample[chan]<<"  MAXDAT "<<MAXDAT<<endl;
+#endif
       for (Int_t i=0; i<fNumAInt[chan]; i++) {
 	Int_t index = MAXDAT*chan + i;
-	if (fDebugFile) *fDebugFile << "Fadc250:: indexing  "<<index<<"  "<<NADCCHAN*MAXDAT<<endl;
+#ifdef WITH_DEBUG
+	if (fDebugFile)
+	  *fDebugFile << "Fadc250:: indexing  "<<index<<"  "<<NADCCHAN*MAXDAT<<endl;
+#endif
 	if (index < 0 || index > NADCCHAN*MAXDAT) {
+#ifdef WITH_DEBUG
+	  if (fDebugFile)
+	    *fDebugFile << "Fadc250:: INDEX problem !  "<<index<<endl;
+#endif
+	  cerr << "Fadc250:: WARN: index out of range "<<dec<<index<<endl;
+	} else {
+	  sldat->loadData("adc", chan, fAdcData[index], fAdcData[index]);
+	}
+      }
+      for (Int_t i=0; i<fNumTInt[chan]; i++) {
+	Int_t index = MAXDAT*chan + i;
+	if (index < 0 || index > NADCCHAN*MAXDAT) {
+	  cerr << "Fadc250:: WARN: index out of range "<<dec<<index<<endl;
+	} else {
+	  sldat->loadData("tdc", chan, fTdcData[index], fTdcData[index]);
+	}
+      }
+      for (Int_t i=0; i<fNumSample[chan]; i++) {
+	Int_t index = MAXDAT*chan + i;
+#ifdef WITH_DEBUG
+	if (fDebugFile)
+	  *fDebugFile << "channel "<<dec<<chan<<"  "<<i<<"  "
+		      <<index<<"   data "<<fAdcData[index]<<endl;
+#endif
+	if (index < 0 || index > NADCCHAN*MAXDAT) {
+	  cerr << "Fadc250:: WARN: index out of range "<<dec<<index<<endl;
+	} else {
+	  sldat->loadData("adc", chan, fAdcData[index], fAdcData[index]);
+	}
+      }
+    }
+
+    return fWordsSeen;
+  }
+
+
+  Int_t Fadc250Module::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, Int_t pos, Int_t len) {
+#ifdef WITH_DEBUG
+    if (fDebugFile) *fDebugFile << "Fadc250Module:: loadslot(2) "<<pos<<"  "<<len<<endl;
+#endif
+
+    fWordsSeen = 0;
+    Clear("");
+    Int_t index=0;
+    fWordsSeen=0;
+    while ( fWordsSeen<len ) {
+        index = pos+fWordsSeen;
+        Decode(&evbuffer[index]);
+        fWordsSeen++;
+#ifdef WITH_DEBUG
+        if (fDebugFile) *fDebugFile << "Raw bank data in FADC  0x"<<hex<<evbuffer[index]<<"  #words = "<<dec<<fWordsSeen<<endl;
+#endif
+
+    }
+
+#ifdef WITH_DEBUG
+    if (fDebugFile) *fDebugFile << "Fadc250Module:: mode info "<<dec<<f250_setmode<<"   "<<f250_foundmode<<endl;
+#endif
+
+    CheckFoundMode();
+  
+    // Now load the THaSlotData
+
+    for (Int_t chan=0; chan<NADCCHAN; chan++) {
+#ifdef WITH_DEBUG
+      if (fDebugFile) *fDebugFile << "Fadc250:: Chan  "<<chan<<"  num sample "<<fNumSample[chan]<<"  MAXDAT "<<MAXDAT<<endl;
+#endif
+      for (Int_t i=0; i<fNumAInt[chan]; i++) {
+	Int_t index = MAXDAT*chan + i;
+#ifdef WITH_DEBUG
+	if (fDebugFile) *fDebugFile << "Fadc250:: indexing  "<<index<<"  "<<NADCCHAN*MAXDAT<<endl;	
+#endif
+        if (index < 0 || index > NADCCHAN*MAXDAT) {
 	  if (fDebugFile) *fDebugFile << "Fadc250:: INDEX problem !  "<<index<<endl;
 	  cerr << "Fadc250:: WARN: index out of range "<<dec<<index<<endl;
 	} else {
@@ -207,7 +345,9 @@ namespace Decoder {
       }
       for (Int_t i=0; i<fNumSample[chan]; i++) {
 	Int_t index = MAXDAT*chan + i;
+#ifdef WITH_DEBUG
 	if (fDebugFile) *fDebugFile << "channel "<<dec<<chan<<"  "<<i<<"  "<<index<<"   data "<<fAdcData[index]<<endl;
+#endif
 	if (index < 0 || index > NADCCHAN*MAXDAT) {
 	  cerr << "Fadc250:: WARN: index out of range "<<dec<<index<<endl;
 	} else {
@@ -219,19 +359,25 @@ namespace Decoder {
     return fWordsSeen;
   }
 
+
   Int_t Fadc250Module::Decode(const UInt_t *pdat)
   { // Routine from B. Moffit, adapted by R. Michaels for this class.
     // Note, there are several modes, but for now (Aug 2014) we only use two.
 
-    int i_print = 1;
     static unsigned int type_last = 15;	/* initialize to type FILLER WORD */
     static unsigned int time_last = 0;
     static unsigned int iword=0;
 
-    UInt_t data = *pdat;
-    Int_t nsamples, index, chan;
+    Int_t return_value=0;
 
-    if ((i_print==1) && (fDebugFile > 0)) *fDebugFile << "Fadc250::Decode   "<< data<<"   "<<iword<<endl;
+    UInt_t data = *pdat;
+    Int_t index, chan;
+
+#ifdef WITH_DEBUG
+    int i_print = 1;
+    if ((i_print==1) && (fDebugFile !=0))
+      *fDebugFile << "Fadc250::Decode   "<< hex<< data<<"   "<<dec<<iword<<endl;
+#endif
     iword++;
 
     if( data & 0x80000000 )		/* data type defining word */
@@ -251,14 +397,23 @@ namespace Decoder {
 	fadc_data.slot_id_hd = ((data) & 0x7C00000) >> 22;
 	fadc_data.n_evts = (data & 0x3FF800) >> 11;
 	fadc_data.blk_num = (data & 0x7FF);
-	if(  (i_print == 1) && (fDebugFile > 0) )
-	  *fDebugFile <<"%8X - BLOCK HEADER - slot = %d   n_evts = %d   n_blk = %d\n"<<hex<<data<<dec<<"  "<< fadc_data.slot_id_hd<<"  "<< fadc_data.n_evts<<"  "<< fadc_data.blk_num<<endl;
+#ifdef WITH_DEBUG
+	if(  (i_print == 1) && (fDebugFile != 0) )
+	  *fDebugFile <<"%8X - BLOCK HEADER - slot = %d   n_evts = %d   n_blk = %d\n"
+		      <<hex<<data<<dec<<"  "<< fadc_data.slot_id_hd<<"  "
+		      << fadc_data.n_evts<<"  "<< fadc_data.blk_num<<endl;
+#endif
 	break;
       case 1:		/* BLOCK TRAILER */
 	fadc_data.slot_id_tr = (data & 0x7C00000) >> 22;
 	fadc_data.n_words = (data & 0x3FFFFF);
-	if(  (i_print == 1) && (fDebugFile > 0) )
-	  *fDebugFile <<"%8X - BLOCK TRAILER - slot = %d   n_words = %d\n"<<"  "<<hex<< data<<dec<<"  "<< fadc_data.slot_id_tr<<"  "<< fadc_data.n_words<<endl;
+	return_value = 1;	// Indicate block trailer found
+#ifdef WITH_DEBUG
+	if(  (i_print == 1) && (fDebugFile != 0) )
+	  *fDebugFile <<"%8X - BLOCK TRAILER - slot = %d   n_words = %d\n  "
+		      <<hex<< data<<dec<<"  "<< fadc_data.slot_id_tr<<"  "
+		      << fadc_data.n_words<<endl;
+#endif
 	break;
       case 2:		/* EVENT HEADER */
 	if( fadc_data.new_type )
@@ -266,22 +421,32 @@ namespace Decoder {
 	    fadc_data.evt_num_1 = (data & 0x7FFFFFF);
 	    fNumEvents++;
 	    fNumTrig = fadc_data.evt_num_1;
-	    if(  (i_print == 1) && (fDebugFile > 0) )
-	      *fDebugFile <<"%8X - EVENT HEADER 1 - evt_num = %d\n"<<"  "<< hex<<data<<dec<<"  "<< fadc_data.evt_num_1<<"  "<<fNumEvents<<endl;
+#ifdef WITH_DEBUG
+	    if(  (i_print == 1) && (fDebugFile != 0) )
+	      *fDebugFile <<"%8X - EVENT HEADER 1 - evt_num = %d\n  "
+			  << hex<<data<<dec<<"  "<< fadc_data.evt_num_1<<"  "
+			  <<fNumEvents<<endl;
+#endif
 	  }
 	else
 	  {
 	    fadc_data.evt_num_2 = (data & 0x7FFFFFF);
-	    if(  (i_print == 1) && (fDebugFile > 0) )
-	      *fDebugFile <<"%8X - EVENT HEADER 2 - evt_num = %d\n"<< "  "<<hex<<data<<dec<<"  "<< fadc_data.evt_num_2<<endl;
+#ifdef WITH_DEBUG
+	    if(  (i_print == 1) && (fDebugFile != 0) )
+	      *fDebugFile <<"%8X - EVENT HEADER 2 - evt_num = %d\n  "
+			  <<hex<<data<<dec<<"  "<< fadc_data.evt_num_2<<endl;
+#endif
 	  }
 	break;
       case 3:		/* TRIGGER TIME */
 	if( fadc_data.new_type )
 	  {
 	    fadc_data.time_1 = (data & 0xFFFFFF);
-	    if(  (i_print == 1) && (fDebugFile > 0) )
-	      *fDebugFile <<"%8X - TRIGGER TIME 1 - time = %08x\n"<<"  "<<data<<"  "<< fadc_data.time_1<<endl;
+#ifdef WITH_DEBUG
+	    if(  (i_print == 1) && (fDebugFile != 0) )
+	      *fDebugFile <<"%8X - TRIGGER TIME 1 - time = %08x\n  "
+			  <<data<<"  "<< fadc_data.time_1<<endl;
+#endif
 	    fadc_data.time_now = 1;
 	    time_last = 1;
 	  }
@@ -290,28 +455,39 @@ namespace Decoder {
 	    if( time_last == 1 )
 	      {
 		fadc_data.time_2 = (data & 0xFFFFFF);
-		if(  (i_print == 1) && (fDebugFile > 0) )
-		  *fDebugFile <<"%8X - TRIGGER TIME 2 - time = %08x\n"<<"  "<< hex<< data<<dec<<"  "<< fadc_data.time_2<<endl;
+#ifdef WITH_DEBUG
+		if(  (i_print == 1) && (fDebugFile != 0) )
+		  *fDebugFile <<"%8X - TRIGGER TIME 2 - time = %08x\n  "
+			      << hex<< data<<dec<<"  "<< fadc_data.time_2<<endl;
+#endif
 		fadc_data.time_now = 2;
 	      }
 	    else if( time_last == 2 )
 	      {
 		fadc_data.time_3 = (data & 0xFFFFFF);
-		if(  (i_print == 1) && (fDebugFile > 0) )
-		  *fDebugFile <<"%8X - TRIGGER TIME 3 - time = %08x\n"<<"  "<< hex<<data<<dec<<"  "<<fadc_data.time_3<<endl;
+#ifdef WITH_DEBUG
+		if(  (i_print == 1) && (fDebugFile != 0) )
+		  *fDebugFile <<"%8X - TRIGGER TIME 3 - time = %08x\n  "
+			      << hex<<data<<dec<<"  "<<fadc_data.time_3<<endl;
+#endif
 		fadc_data.time_now = 3;
 	      }
 	    else if( time_last == 3 )
 	      {
 		fadc_data.time_4 = (data & 0xFFFFFF);
-		if(  (i_print == 1) && (fDebugFile > 0) )
-		  *fDebugFile <<"%8X - TRIGGER TIME 4 - time = %08x\n"<<"  "<<hex<< data<<dec<<"   "<< fadc_data.time_4<<endl;
+#ifdef WITH_DEBUG
+		if(  (i_print == 1) && (fDebugFile != 0) )
+		  *fDebugFile <<"%8X - TRIGGER TIME 4 - time = %08x\n  "
+			      <<hex<< data<<dec<<"   "<< fadc_data.time_4<<endl;
+#endif
 		fadc_data.time_now = 4;
 	      }
 	    else
-	      if(  (i_print == 1) && (fDebugFile > 0) )
-		*fDebugFile <<"%8X - TRIGGER TIME - (ERROR)\n"<<"  "<<hex<< data<<dec<<endl;
-
+#ifdef WITH_DEBUG
+	      if(  (i_print == 1) && (fDebugFile != 0) )
+		*fDebugFile <<"%8X - TRIGGER TIME - (ERROR)\n  "
+			    <<hex<< data<<dec<<endl;
+#endif
 	    time_last = fadc_data.time_now;
 	  }
 	break;
@@ -321,9 +497,13 @@ namespace Decoder {
 	  {
 	    fadc_data.chan = (data & 0x7800000) >> 23;
 	    fadc_data.width = (data & 0xFFF);
-	    nsamples = fadc_data.width;
-	    if(  (i_print == 1) && (fDebugFile > 0) )
-	      *fDebugFile <<"%8X - WINDOW RAW DATA - chan = %d   nsamples = %d\n"<<"  "<<	data<<"   "<< fadc_data.chan<<"  "<< fadc_data.width<<endl;
+	    //	    nsamples = fadc_data.width;
+#ifdef WITH_DEBUG
+	    if(  (i_print == 1) && (fDebugFile != 0) )
+	      *fDebugFile <<"%8X - WINDOW RAW DATA - chan = %d   nsamples = %d\n  "
+			  <<data<<"   "<< fadc_data.chan
+			  <<"  "<< fadc_data.width<<endl;
+#endif
 	  }
 	else
 	  {
@@ -335,11 +515,21 @@ namespace Decoder {
 	    fadc_data.adc_2 = (data & 0x1FFF);
 	    if( data & 0x2000 )
 	      fadc_data.valid_2 = 0;
-	    if(  (i_print == 1) && (fDebugFile > 0) )
-	      *fDebugFile <<"%8X - RAW SAMPLES - valid = %d  adc = %4d   valid = %d  adc = %4d\n"<< "  "<<hex<<data<<"   "<<dec<< fadc_data.valid_1<<"   "<< fadc_data.adc_1<< "  "<<fadc_data.valid_2<<"   "<< fadc_data.adc_2<<endl;
+#ifdef WITH_DEBUG
+	    if(  (i_print == 1) && (fDebugFile != 0) )
+	      *fDebugFile <<"%8X - RAW SAMPLES - valid = %d  adc = %4d   "
+			  <<"valid = %d  adc = %4d\n  "
+			  <<hex<<data<<"   "<<dec<< fadc_data.valid_1<<"   "
+			  << fadc_data.adc_1<< "  "<<fadc_data.valid_2<<"   "
+			  << fadc_data.adc_2<<endl;
+#endif
+// load into fAdcData, if it is this slot
+	  if (fadc_data.slot_id_hd == static_cast<unsigned int>(fSlot)) {
 	    f250_foundmode = F250_SAMPLE;
-	    if(  (i_print == 1) && (fDebugFile > 0) )
+#ifdef WITH_DEBUG
+	    if(  (i_print == 1) && (fDebugFile != 0) )
 	      *fDebugFile << "Setting f250_foundmode "<<f250_foundmode<<endl;
+#endif
 	    chan=0;
 	    if (fadc_data.chan < static_cast<UInt_t>(NADCCHAN)) {
 	      chan = fadc_data.chan;
@@ -359,8 +549,12 @@ namespace Decoder {
 		cout << "Fadc250Module:: too many raw data words ? "<<endl;
 	      }
 	    }
-	    if(  (i_print == 1) && (fDebugFile > 0) )
-	      *fDebugFile <<"Chan "<<chan<<"    Num samples "<<fNumSample[chan]<<"   mode "<<f250_foundmode<<endl;
+#ifdef WITH_DEBUG
+	    if(  (i_print == 1) && (fDebugFile != 0) )
+	      *fDebugFile <<"Chan "<<chan<<"    Num samples "
+			  <<fNumSample[chan]<<"   mode "<<f250_foundmode<<endl;
+#endif
+	  }  // Load if slot is fSlot
 	  }
 	break;
       case 5:		/* WINDOW SUM */
@@ -369,8 +563,12 @@ namespace Decoder {
 	fadc_data.adc_sum = (data & 0x3FFFFF);
 	if( data & 0x400000 )
 	  fadc_data.over = 1;
-	if(  (i_print == 1) && (fDebugFile > 0) )
-	  *fDebugFile <<"%8X - WINDOW SUM - chan = %d   over = %d   adc_sum = %08x\n"<<"  "<<hex<<data<<"  "<<dec<< fadc_data.chan<<"  "<< fadc_data.over<<"  "<< fadc_data.adc_sum<<endl;
+#ifdef WITH_DEBUG
+	if(  (i_print == 1) && (fDebugFile != 0) )
+	  *fDebugFile <<"%8X - WINDOW SUM - chan = %d   over = %d   adc_sum = %08x\n  "
+		      <<hex<<data<<"  "<<dec<< fadc_data.chan<<"  "
+		      << fadc_data.over<<"  "<< fadc_data.adc_sum<<endl;
+#endif
 	break;
       case 6:		/* PULSE RAW DATA */
 	if( fadc_data.new_type )
@@ -378,8 +576,13 @@ namespace Decoder {
 	    fadc_data.chan = (data & 0x7800000) >> 23;
 	    fadc_data.pulse_num = (data & 0x600000) >> 21;
 	    fadc_data.thres_bin = (data & 0x3FF);
-	    if(  (i_print == 1) && (fDebugFile > 0) )
-	      *fDebugFile <<"%8X - PULSE RAW DATA - chan = %d   pulse # = %d   threshold bin = %d\n"<<"  "<<hex<<data<<dec<<"  "<< fadc_data.chan<<"   "<< fadc_data.pulse_num<<"  "<< fadc_data.thres_bin<<endl;
+#ifdef WITH_DEBUG
+	    if(  (i_print == 1) && (fDebugFile != 0) )
+	      *fDebugFile <<"%8X - PULSE RAW DATA - chan = %d   pulse # = %d   "
+			  <<"threshold bin = %d\n  "
+			  <<hex<<data<<dec<<"  "<< fadc_data.chan<<"   "
+			  << fadc_data.pulse_num<<"  "<< fadc_data.thres_bin<<endl;
+#endif
 	  }
 	else
 	  {
@@ -391,11 +594,19 @@ namespace Decoder {
 	    fadc_data.adc_2 = (data & 0x1FFF);
 	    if( data & 0x2000 )
 	      fadc_data.valid_2 = 0;
-	    if(  (i_print == 1) && (fDebugFile > 0) )
-	      *fDebugFile <<"%8X - PULSE RAW SAMPLES - valid = %d  adc = %d   valid = %d  adc = %d\n"<<"  "<<hex<<data<<dec<<"  "<< fadc_data.valid_1<<"  "<< fadc_data.adc_1<<"  "<< fadc_data.valid_2<<"  "<< fadc_data.adc_2<<endl;
+#ifdef WITH_DEBUG
+	    if(  (i_print == 1) && (fDebugFile != 0) )
+	      *fDebugFile <<"%8X - PULSE RAW SAMPLES - valid = %d  adc = %d   "
+			  <<"valid = %d  adc = %d\n  "
+			  <<hex<<data<<dec<<"  "<< fadc_data.valid_1<<"  "
+			  << fadc_data.adc_1<<"  "<< fadc_data.valid_2<<"  "
+			  << fadc_data.adc_2<<endl;
+#endif
 	  }
 	break;
       case 7:		/* PULSE INTEGRAL */
+// load into fAdcData, if it is this slot
+      if (fadc_data.slot_id_hd == static_cast<unsigned int>(fSlot)) {
 	f250_foundmode = F250_INTEG;
 	fadc_data.chan = (data & 0x7800000) >> 23;
 	fadc_data.pulse_num = (data & 0x600000) >> 21;
@@ -414,10 +625,19 @@ namespace Decoder {
 	} else {
 	  cout << "Fadc250Module:: too many raw data words ? "<<endl;
 	}
-	if(  (i_print == 1) && (fDebugFile > 0) )
-	  *fDebugFile <<"%8X - PULSE INTEGRAL - chan = %d   pulse # = %d   quality = %d   integral = %d\n"<<"  "<< data<<"  "<< fadc_data.chan<<"  "<< fadc_data.pulse_num<<"  "<< fadc_data.quality<<"  "<< fadc_data.integral<<endl;
+#ifdef WITH_DEBUG
+	if(  (i_print == 1) && (fDebugFile != 0) )
+	  *fDebugFile <<"%8X - PULSE INTEGRAL - chan = %d   pulse # = %d   "
+		      <<"quality = %d   integral = %d\n  "
+		      << data<<"  "<< fadc_data.chan<<"  "
+		      << fadc_data.pulse_num<<"  "<< fadc_data.quality<<"  "
+		      << fadc_data.integral<<endl;
+#endif
+        } // load if slot = fSlot
 	break;
       case 8:		/* PULSE TIME */
+// load into fTdcData, if it is this slot
+      if (fadc_data.slot_id_hd == static_cast<unsigned int>(fSlot)) {
 	fadc_data.chan = (data & 0x7800000) >> 23;
 	fadc_data.pulse_num = (data & 0x600000) >> 21;
 	fadc_data.quality = (data & 0x180000) >> 19;
@@ -435,8 +655,14 @@ namespace Decoder {
 	} else {
 	  cout << "Fadc250Module:: too many raw data words ? "<<endl;
 	}
-	if(  (i_print == 1) && (fDebugFile > 0) )
-	  *fDebugFile <<"%8X - PULSE TIME - chan = %d   pulse # = %d   quality = %d   time = %d\n"<<"  "<<hex<<data<<dec<<"   "<< fadc_data.chan<<"  "<< fadc_data.pulse_num<<"  "<<fadc_data.quality<< "  "<< fadc_data.time<<endl;
+#ifdef WITH_DEBUG
+	if(  (i_print == 1) && (fDebugFile != 0) )
+	  *fDebugFile <<"%8X - PULSE TIME - chan = %d   pulse # = %d  "
+		      <<"quality = %d   time = %d\n  "<<hex<<data<<dec
+		      <<"   "<< fadc_data.chan<<"  "<< fadc_data.pulse_num
+		      <<"  "<<fadc_data.quality<< "  "<< fadc_data.time<<endl;
+#endif
+        } // load if slot = fSlot
 	break;
       case 9:		/* STREAMING RAW DATA */
 	if( fadc_data.new_type )
@@ -445,8 +671,13 @@ namespace Decoder {
 	    fadc_data.source_a = (data & 0x4000000) >> 26;
 	    fadc_data.chan_b = (data & 0x1E0000) >> 17;
 	    fadc_data.source_b = (data & 0x200000) >> 21;
-	    if(  (i_print == 1) && (fDebugFile > 0) )
-	      *fDebugFile <<"%8X - STREAMING RAW DATA - ena A = %d  chan A = %d   ena B = %d  chan B = %d\n"<<"  "<<hex<<data<<dec<<"  "<< fadc_data.source_a<<"  "<< fadc_data.chan_a<<"  "<< fadc_data.source_b<<"   "<< fadc_data.chan_b<<endl;
+#ifdef WITH_DEBUG
+	    if(  (i_print == 1) && (fDebugFile != 0) )
+	      *fDebugFile <<"%8X - STREAMING RAW DATA - ena A = %d  chan A = %d  "
+			  <<"ena B = %d  chan B = %d\n  "<<hex<<data<<dec
+			  <<"  "<< fadc_data.source_a<<"  "<< fadc_data.chan_a
+			  <<"  "<< fadc_data.source_b<<"   "<< fadc_data.chan_b<<endl;
+#endif
 	  }
 	else
 	  {
@@ -459,14 +690,23 @@ namespace Decoder {
 	    if( data & 0x2000 )
 	      fadc_data.valid_2 = 0;
 	    fadc_data.group = (data & 0x40000000) >> 30;
-	    if( fadc_data.group )
+#ifdef WITH_DEBUG
+	    if(  (i_print == 1) && (fDebugFile != 0) )
 	      {
-		if(  (i_print == 1) && (fDebugFile > 0) )
-		  *fDebugFile <<"%8X - RAW SAMPLES B - valid = %d  adc = %d   valid = %d  adc = %d\n"<< "  "<<hex<<data<<dec<<"  "<< fadc_data.valid_1<< "  "<< fadc_data.adc_1<<"  "<< fadc_data.valid_2 <<"  "<< fadc_data.adc_2<<endl;
+		if( fadc_data.group )
+		  *fDebugFile <<"%8X - RAW SAMPLES B - valid = %d  adc = %d  "
+			      <<"valid = %d  adc = %d\n  "<<hex<<data
+			      <<dec<<"  "<< fadc_data.valid_1<< "  "
+			      << fadc_data.adc_1<<"  "<< fadc_data.valid_2
+			      <<"  "<< fadc_data.adc_2<<endl;
+		else
+		  *fDebugFile <<"%8X - RAW SAMPLES A - valid = %d  adc = %d  "
+			      <<"valid = %d  adc = %d\n  "<<hex<<data<<dec
+			      <<"  "<< fadc_data.valid_1<<"  "<< fadc_data.adc_1
+			      <<"  "<< fadc_data.valid_2 << "  "
+			      << fadc_data.adc_2<<endl;
 	      }
-	    else
-	      if(  (i_print == 1) && (fDebugFile > 0) )
-		*fDebugFile <<"%8X - RAW SAMPLES A - valid = %d  adc = %d   valid = %d  adc = %d\n"<<"  "<<hex<<data<<dec<<"  "<< fadc_data.valid_1<<"  "<< fadc_data.adc_1<<"  "<< fadc_data.valid_2 << "  "<< fadc_data.adc_2<<endl;
+#endif
 	  }
 	break;
       case 10:		/* PULSE AMPLITUDE DATA */
@@ -474,8 +714,13 @@ namespace Decoder {
 	fadc_data.pulse_num = (data & 0x600000) >> 21;
 	fadc_data.vmin = (data & 0x1FF000) >> 12;
 	fadc_data.vpeak = (data & 0xFFF);
-	if(  (i_print == 1) && (fDebugFile > 0) )
-	  *fDebugFile <<"%8X - PULSE V - chan = %d   pulse # = %d   vmin = %d   vpeak = %d\n" << "   "<<hex<<data<<dec<<"   "<< fadc_data.chan<<"  "<< fadc_data.pulse_num<<"  "<< fadc_data.vmin<<"   "<< fadc_data.vpeak<<endl;
+#ifdef WITH_DEBUG
+	if(  (i_print == 1) && (fDebugFile != 0) )
+	  *fDebugFile <<"%8X - PULSE V - chan = %d   pulse # = %d   vmin = %d   "
+		      <<"vpeak = %d\n   "<<hex<<data<<dec<<"   "
+		      << fadc_data.chan<<"  "<< fadc_data.pulse_num<<"  "
+		      << fadc_data.vmin<<"   "<< fadc_data.vpeak<<endl;
+#endif
 	break;
 
       case 11:		/* INTERNAL TRIGGER WORD */
@@ -483,29 +728,46 @@ namespace Decoder {
 	fadc_data.trig_state_int = (data & 0x8) >> 3;
 	fadc_data.evt_num_int = (data & 0xFFF0) >> 4;
 	fadc_data.err_status_int = (data & 0x10000) >> 16;
-	if(  (i_print == 1) && (fDebugFile > 0) )
-	  *fDebugFile <<"%8X - INTERNAL TRIGGER - type = %d   state = %d   num = %d   error = %d\n"<<"  "<<hex<<data<<dec<<"  "<< fadc_data.trig_type_int<<"  "<< fadc_data.trig_state_int<<"  "<< fadc_data.evt_num_int <<"  "<<fadc_data.err_status_int<<endl;
-      case 12:		/* UNDEFINED TYPE */
-	if(  (i_print == 1) && (fDebugFile > 0) )
-	  *fDebugFile <<"%8X - UNDEFINED TYPE = %d\n"<<"  "<< data<<"  "<< fadc_data.type<<endl;
+#ifdef WITH_DEBUG
+	if(  (i_print == 1) && (fDebugFile != 0) )
+	  *fDebugFile <<"%8X - INTERNAL TRIGGER - type = %d   state = %d   "
+		      <<"num = %d   error = %d\n  "
+		      <<hex<<data<<dec<<"  "<<fadc_data.trig_type_int
+		      <<"  "<<fadc_data.trig_state_int
+		      <<"  "<< fadc_data.evt_num_int
+		      <<"  "<<fadc_data.err_status_int
+		      <<endl;
+#endif
 	break;
+      case 12:		/* UNDEFINED TYPE */
+#ifdef WITH_DEBUG
+	if(  (i_print == 1) && (fDebugFile != 0) )
+	  *fDebugFile <<"%8X - UNDEFINED TYPE = %d\n  "<< data<<"  "<< fadc_data.type<<endl;
+	break;
+#endif
       case 13:		/* END OF EVENT */
-	if(  (i_print == 1) && (fDebugFile > 0) )
-	  *fDebugFile <<"%8X - END OF EVENT = %d\n"<< "  " << data<< "  " << fadc_data.type<<endl;
+#ifdef WITH_DEBUG
+	if(  (i_print == 1) && (fDebugFile != 0) )
+	  *fDebugFile <<"%8X - END OF EVENT = %d\n  " << data<< "  " << fadc_data.type<<endl;
+#endif
 	break;
       case 14:		/* DATA NOT VALID (no data available) */
-	if(  (i_print == 1) && (fDebugFile > 0) )
-	  *fDebugFile <<"%8X - DATA NOT VALID = %d\n"<< "  " << data<< "  " << fadc_data.type<<endl;
+#ifdef WITH_DEBUG
+	if(  (i_print == 1) && (fDebugFile != 0) )
+	  *fDebugFile <<"%8X - DATA NOT VALID = %d\n  " << data<< "  " << fadc_data.type<<endl;
+#endif
 	break;
       case 15:		/* FILLER WORD */
-	if(  (i_print == 1) && (fDebugFile > 0) )
-	  *fDebugFile <<"%8X - FILLER WORD = %d\n"<< "  " << data<< "  " << fadc_data.type<<endl;
+#ifdef WITH_DEBUG
+	if(  (i_print == 1) && (fDebugFile != 0) )
+	  *fDebugFile <<"%8X - FILLER WORD = %d\n  " << data<< "  " << fadc_data.type<<endl;
+#endif
 	break;
       }
 
     type_last = fadc_data.type;	/* save type of current data word */
 
-    return 1;
+    return return_value;
 
   }
 

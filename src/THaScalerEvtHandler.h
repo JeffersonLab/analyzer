@@ -14,7 +14,7 @@
 #include <string>
 #include <vector>
 #include "TTree.h"
-#include "TString.h"   // really both std::string and TString?
+#include "TString.h"  
 
 class ScalerLoc { // Utility class used by THaScalerEvtHandler
  public:
@@ -29,27 +29,25 @@ class THaScalerEvtHandler : public THaEvtTypeHandler {
 
 public:
 
-   THaScalerEvtHandler(const char*, const char*);
+   THaScalerEvtHandler(const char* name, const char* description);
    virtual ~THaScalerEvtHandler();
 
-   Int_t Analyze(THaEvData *evdata);
+   virtual Int_t Analyze(THaEvData *evdata);
    virtual EStatus Init( const TDatime& run_time);
    virtual Int_t End( THaRunBase* r=0 );
-   virtual void SetDebugFile(std::ofstream *file);
 
 
 private:
 
    void AddVars(TString name, TString desc, Int_t iscal, Int_t ichan, Int_t ikind);
    void DefVars();
-   static size_t FindNoCase(const std::string& sdata, const std::string& skey);
 
    std::vector<Decoder::GenScaler*> scalers;
    std::vector<ScalerLoc*> scalerloc;
    Double_t evcount;
    UInt_t *rdata;
    std::vector<Int_t> index;
-   Int_t Nvars, ifound, fNormIdx, nscalers;
+   Int_t fNormIdx;
    Double_t *dvars;
    TTree *fScalerTree;
 

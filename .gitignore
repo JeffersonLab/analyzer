@@ -1,5 +1,6 @@
 # Compiled stuff
-*.[od]
+*.o
+*.d
 *.os
 lib*.so*
 analyzer
@@ -14,13 +15,14 @@ hana_decode/tstoo
 hana_decode/tstskel
 
 # Generated files
-*Dict.[Ch]
+*Dict.C
+*Dict.h
 *Dict.cxx
 *Dict.so
 ha_compiledata.h
 cppcheck_report.txt
 ChangeLog
-evio.h
+*.pcm
 
 # Editor lint
 .#*
@@ -28,7 +30,7 @@ evio.h
 
 # Helpers
 /fix-filedates.sh
-hana_decode/evio
+evio/
 
 # Standalone distribution support files
 /hana_scaler/scaler.map
@@ -44,7 +46,6 @@ hana_decode/evio
 #scons stuff
 config.log
 *.pyc
-*Dict.C
 .sconsign.dblite
 .sconf_temp/
 dist/

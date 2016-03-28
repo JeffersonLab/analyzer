@@ -4,11 +4,8 @@
 /////////////////////////////////////////////////////////////////////
 //
 //   FastbusModule
-<<<<<<< HEAD:oodecoder/FastbusModule.h
-//   fastbus module class.  
-=======
 //   Abstract fastbus module class.
->>>>>>> upstream/master:hana_decode/FastbusModule.h
+//   fastbus module class.  
 //   author  Robert Michaels (rom@jlab.org)
 //
 /////////////////////////////////////////////////////////////////////
@@ -24,6 +21,8 @@ public:
    FastbusModule() { fDebugFile=0; };
    FastbusModule(Int_t crate, Int_t slot);
    virtual ~FastbusModule();
+
+   using Module::LoadSlot;
 
    virtual Int_t Decode(const UInt_t *evbuffer);
    virtual Bool_t IsSlot(UInt_t rdata) { return (Slot(rdata)==fSlot); };

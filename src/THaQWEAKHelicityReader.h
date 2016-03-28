@@ -34,6 +34,11 @@ public:
   // let call it kHelRingDepth for now
   void Print();
 
+  struct ROCinfo {
+    Int_t  roc;               // ROC to read out
+    Int_t  header;            // Headers to search for (0 = ignore)
+    Int_t  index;             // Index into buffer
+  };
   
 protected:
 
@@ -71,11 +76,6 @@ protected:
   // If a header is zero the index is taken to be from the start of
   // the ROC (0 = first word of ROC), otherwise it's from the header
   // (0 = first word after header).
-  struct ROCinfo {
-    Int_t  roc;               // ROC to read out
-    Int_t  header;            // Headers to search for (0 = ignore)
-    Int_t  index;             // Index into buffer
-  };
   ROCinfo  fROCinfo[3]; // for now only work with one roc (roc 11),
   //should be extended to read helicity info from adc 
 

@@ -50,7 +50,7 @@ THaVDCSimRun& THaVDCSimRun::operator=(const THaRunBase& rhs)
 Int_t THaVDCSimRun::Init()
 {
   // Use the date we're familiar with, so we can use those channel mappings
-  fDate.Set(2003,4,15,12,0,0);
+  fDate.Set(2009,12,22,12,0,0);
   fAssumeDate = kTRUE;
   fDataSet |= kDate;
 

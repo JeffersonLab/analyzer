@@ -62,6 +62,7 @@ public:
 
   virtual Int_t        InitOutput( THaOutput * );
           Bool_t       IsOKOut()                 { return fOKOut; }
+  virtual void         Print( Option_t* opt="" ) const;
 
   // Static functions to provide easy access to database files
   // from CINT scripts etc.
@@ -124,6 +125,8 @@ public:
 				      const TObject* obj, 
 				      const char* prefix, 
 				      const char* here );
+
+  static void     PrintObjects( Option_t* opt="" );
 
 protected:
 

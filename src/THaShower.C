@@ -29,9 +29,20 @@ using namespace std;
 //_____________________________________________________________________________
 THaShower::THaShower( const char* name, const char* description,
 		      THaApparatus* apparatus ) :
-  THaPidDetector(name,description,apparatus), fNChan(0), fChanMap(0)
+  THaPidDetector(name,description,apparatus), fNChan(0), fChanMap(0),
+  fNclublk(0), fNrows(0), fBlockX(0), fBlockY(0), fPed(0), fGain(0),
+  fNhits(0), fA(0), fA_p(0), fA_c(0), fNblk(0), fEblk(0)
 {
   // Constructor
+}
+
+//_____________________________________________________________________________
+THaShower::THaShower() :
+  THaPidDetector(), fNChan(0), fChanMap(0),
+  fNclublk(0), fNrows(0), fBlockX(0), fBlockY(0), fPed(0), fGain(0),
+  fNhits(0), fA(0), fA_p(0), fA_c(0), fNblk(0), fEblk(0)
+{
+  // Default constructor (for ROOT I/O)
 }
 
 //_____________________________________________________________________________
@@ -156,7 +167,7 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
   fscanf ( fi, "%15f %15f %15f", &x, &y, &z );               // Detector's X,Y,Z coord
   fOrigin.SetXYZ( x, y, z );
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  fscanf ( fi, "%15f %15f %15f", fSize, fSize+1, fSize+2 );  // Sizes of det in X,Y,Z
+  fscanf ( fi, "%15lf %15lf %15lf", fSize, fSize+1, fSize+2 );  // Sizes of det in X,Y,Z
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
 
   Float_t angle;
@@ -289,19 +300,11 @@ void THaShower::DeleteArrays()
 }
 
 //_____________________________________________________________________________
-inline
-void THaShower::ClearEvent()
+void THaShower::Clear( Option_t* opt )
 {
-  // Reset all local data to prepare for next event.
-
-  const int lsh = fNelem*sizeof(Float_t);
-  const int lsc = fNclublk*sizeof(Float_t);
-  const int lsi = fNclublk*sizeof(Int_t);
+  // Clear event data
 
   fNhits = 0;
-  memset( fA, 0, lsh );
-  memset( fA_p, 0, lsh );
-  memset( fA_c, 0, lsh );
   fAsum_p = 0.0;
   fAsum_c = 0.0;
   fNclust = 0;
@@ -309,8 +312,16 @@ void THaShower::ClearEvent()
   fX = 0.0;
   fY = 0.0;
   fMult = 0;
-  memset( fNblk, 0, lsi );
-  memset( fEblk, 0, lsc );
+  if( !strchr(opt,'I') ) {
+    const int lsh = fNelem*sizeof(Float_t);
+    const int lsc = fNclublk*sizeof(Float_t);
+    const int lsi = fNclublk*sizeof(Int_t);
+    memset( fA, 0, lsh );
+    memset( fA_p, 0, lsh );
+    memset( fA_c, 0, lsh );
+    memset( fNblk, 0, lsi );
+    memset( fEblk, 0, lsc );
+  }
 }
 
 //_____________________________________________________________________________
@@ -325,8 +336,6 @@ Int_t THaShower::Decode( const THaEvData& evdata )
   // fA_c[]           -  Array of corrected ADC values of shower blocks;
   // fAsum_p          -  Sum of shower blocks ADC minus pedestal values;
   // fAsum_c          -  Sum of shower blocks corrected ADC values;
-
-  ClearEvent();
 
   // Loop over all modules defined for shower detector
   for( UShort_t i = 0; i < fDetMap->GetSize(); i++ ) {

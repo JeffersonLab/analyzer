@@ -21,6 +21,7 @@ public:
    virtual ~GenScaler();
 
    using Module::GetData;
+   using Module::LoadSlot;
 
    virtual void  Clear(const Option_t *opt) { fIsDecoded=kFALSE; };
    virtual Int_t Decode(const UInt_t *evbuffer);
@@ -34,7 +35,7 @@ public:
    Double_t GetTimeSincePrev() const;  // returns deltaT since last reading
    Bool_t IsDecoded() const { return fIsDecoded; };
    void LoadNormScaler(GenScaler *scal);  // loads pointer to norm. scaler
-   void DebugPrint(ofstream *file=0) const;
+   void DebugPrint(std::ofstream *file=0) const;
 
 // Loads sldat
   virtual Int_t LoadSlot(THaSlotData *sldat,  const UInt_t *evbuffer, const UInt_t *pstop );
@@ -46,10 +47,11 @@ protected:
    Bool_t fIsDecoded, fFirstTime, fDeltaT;
    Int_t *fDataArray, *fPrevData;
    Double_t *fRate;
-   Int_t fNumChan, fClockChan, fNumChanMask;
+   Int_t fNumChan, fClockChan, fNumChanMask, fNumChanShift;
    Bool_t fHasClock;
    Double_t fClockRate;
    GenScaler *fNormScaler;
+   static const int fgNumChanDefault=32;
 
    ClassDef(GenScaler,0)  //   A generic scaler.  Abstract class.
 

@@ -23,9 +23,18 @@
 //_____________________________________________________________________________
 THaCherenkov::THaCherenkov( const char* name, const char* description,
 			    THaApparatus* apparatus )
-  : THaPidDetector(name,description,apparatus)
+  : THaPidDetector(name,description,apparatus), fOff(0), fPed(0), fGain(0),
+    fNThit(0), fT(0), fT_c(0), fNAhit(0), fA(0), fA_p(0), fA_c(0)
 {
   // Constructor
+}
+
+//_____________________________________________________________________________
+THaCherenkov::THaCherenkov()
+  : THaPidDetector(), fOff(0), fPed(0), fGain(0), fT(0), fT_c(0),
+    fA(0), fA_p(0), fA_c(0)
+{
+  // Default constructor (for ROOT I/O)
 }
 
 //_____________________________________________________________________________
@@ -88,7 +97,7 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
   fscanf ( fi, "%15f %15f %15f", &x, &y, &z );        // Detector's X,Y,Z coord
   fOrigin.SetXYZ( x, y, z );
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  fscanf ( fi, "%15f %15f %15f", fSize, fSize+1, fSize+2 );   // Sizes of det on X,Y,Z
+  fscanf ( fi, "%15lf %15lf %15lf", fSize, fSize+1, fSize+2 );   // Sizes of det on X,Y,Z
   fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
 
   Float_t angle;
@@ -184,21 +193,22 @@ void THaCherenkov::DeleteArrays()
 }
 
 //_____________________________________________________________________________
-inline
-void THaCherenkov::ClearEvent()
+void THaCherenkov::Clear( Option_t* opt )
 {
-  // Reset all local data to prepare for next event.
+  // Clear event data
 
-  const int lf = fNelem*sizeof(Float_t);
   fNThit = 0;                             // Number of mirrors with TDC times
-  memset( fT, 0, lf );                    // TDC times of channels
-  memset( fT_c, 0, lf );                  // Corrected TDC times of channels
   fNAhit = 0;                             // Number of mirrors with ADC ampls
-  memset( fA, 0, lf );                    // ADC amplitudes of channels
-  memset( fA_p, 0, lf );                  // ADC minus ped values of channels
-  memset( fA_c, 0, lf );                  // Corrected ADC amplitudes of chans
   fASUM_p = 0.0;                          // Sum of ADC minus pedestal values
   fASUM_c = 0.0;                          // Sum of corrected ADC amplitudes
+  if( !strchr(opt,'I') ) {
+    const int lf = fNelem*sizeof(Float_t);
+    memset( fT, 0, lf );                  // TDC times of channels
+    memset( fT_c, 0, lf );                // Corrected TDC times of channels
+    memset( fA, 0, lf );                  // ADC amplitudes of channels
+    memset( fA_p, 0, lf );                // ADC minus ped values of channels
+    memset( fA_c, 0, lf );                // Corrected ADC amplitudes of chans
+  }
 }
 
 //_____________________________________________________________________________
@@ -208,8 +218,6 @@ Int_t THaCherenkov::Decode( const THaEvData& evdata )
   // the data into the local data members.
   // This implementation assumes that the first half of the detector map
   // entries corresponds to ADCs, and the second half, to TDCs.
-
-  ClearEvent();
 
   // Loop over all modules defined for Cherenkov detector
   for( Int_t i = 0; i < fDetMap->GetSize(); i++ ) {

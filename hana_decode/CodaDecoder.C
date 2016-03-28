@@ -17,8 +17,8 @@ using namespace std;
 
 namespace Decoder {
 
-  static const Int_t MAX_EVTYPES = 200;
-  static const Int_t MAX_PHYS_EVTYPES = 14;
+//   static const Int_t MAX_EVTYPES = 200;
+//   static const Int_t MAX_PHYS_EVTYPES = 14;
 
 //_____________________________________________________________________________
 CodaDecoder::CodaDecoder()
@@ -30,6 +30,7 @@ CodaDecoder::CodaDecoder()
   fDebugFile = 0;
   fDebug=0;
   fNeedInit=true;
+  first_decode=kFALSE;
 }
 
 //_____________________________________________________________________________
@@ -49,12 +50,22 @@ Int_t CodaDecoder::GetPrescaleFactor(Int_t trigger_type) const
 }
 
 //_____________________________________________________________________________
+Int_t CodaDecoder::Init() {
+  Int_t ret = HED_OK;
+  ret = init_cmap();
+  if (fMap) fMap->print();
+  if (ret != HED_OK) return ret;
+  ret = init_slotdata(fMap);
+  first_decode = kFALSE;
+  fNeedInit = kFALSE;
+  return ret;
+}
+
+//_____________________________________________________________________________
 Int_t CodaDecoder::LoadEvent(const UInt_t* evbuffer)
 {
   // Main engine for decoding, called by public LoadEvent() methods
-  // The crate map argument is ignored. Use SetCrateMapName instead
  static Int_t fdfirst=1;
- static Bool_t first_decode=kTRUE;
  static Int_t chkfbstat=1;
  if (fDebugFile) *fDebugFile << "CodaDecode:: Loading event  ... "<<endl;
   assert( evbuffer );
@@ -77,7 +88,7 @@ Int_t CodaDecoder::LoadEvent(const UInt_t* evbuffer)
     ret = init_slotdata(fMap);
     if( ret != HED_OK ) return ret;
     FindUsedSlots();
-    if(first_decode) first_decode=kFALSE;
+    first_decode=kFALSE;
   }
   if( fDoBench ) fBench->Begin("clearEvent");
   for( Int_t i=0; i<fNSlotClear; i++ ) crateslot[fSlotClear[i]]->clearEvent();
@@ -100,7 +111,7 @@ Int_t CodaDecoder::LoadEvent(const UInt_t* evbuffer)
      event_num = evbuffer[4];
      recent_event = event_num;
      FindRocs(evbuffer);
-     if ((fdfirst==1) & (fDebugFile>0)) {
+     if ((fdfirst==1) & (fDebugFile!=0)) {
        fdfirst=0;
        CompareRocs();
      }
@@ -123,6 +134,13 @@ Int_t CodaDecoder::LoadEvent(const UInt_t* evbuffer)
 	      ChkFbSlots();
 	      chkfbstat = 3;
 	  }
+      }
+
+ // If at least one module is in a bank, must split the banks for this roc
+      if (fMap->isBankStructure(iroc)) {
+ 	  if (fDebugFile) *fDebugFile << "\nCodaDecode::Calling bank_decode "<<i<<"   "<<iroc<<"  "<<ipt<<"  "<<iptmax<<endl;       
+
+          bank_decode(iroc,evbuffer,ipt,iptmax);
       }
 
       if (fDebugFile) *fDebugFile << "\nCodaDecode::Calling roc_decode "<<i<<"   "<<iroc<<"  "<<ipt<<"  "<<iptmax<<endl;
@@ -197,18 +215,22 @@ Int_t CodaDecoder::roc_decode( Int_t roc, const UInt_t* evbuffer,
     LoadIfFlagData(p);
 
     n_slots_checked = 0;
-    slot = firstslot - incrslot;
+    slot = firstslot;
     slotdone = kFALSE;
+// bank structure is decoded with bank_decode
+    if (fMap->getBank(roc,slot) >= 0) {
+      n_slots_done++;
+      slotdone=kTRUE;
+    }
 
     while(!slotdone && n_slots_checked < Nslot-n_slots_done && slot >= 0 && slot < MAXSLOT) {
 
-      slot = slot + incrslot;
-      if (!fMap->slotUsed(roc,slot)) {
+ 
+      if (!fMap->slotUsed(roc,slot) || fMap->slotDone(slot)) {
+         slot = slot + incrslot;
 	 continue;
       }
-      if (fMap->slotDone(slot)) {
-	 continue;
-      }
+
       ++n_slots_checked;
 
      if (fDebugFile) {
@@ -228,6 +250,8 @@ Int_t CodaDecoder::roc_decode( Int_t roc, const UInt_t* evbuffer,
 	  *fDebugFile<< "CodaDecode:: roc_decode:: after LoadIfSlot "<<p << "  "<<pstop<<"  "<<"  "<<hex<<*p<<"  "<<dec<<nwords<<endl;
       }
 
+      slot = slot + incrslot;
+
     }
 
   } //end while(p++<pstop)
@@ -237,6 +261,60 @@ Int_t CodaDecoder::roc_decode( Int_t roc, const UInt_t* evbuffer,
   retval = (status == SD_ERR) ? HED_ERR : HED_WARN;
  exit:
   if( fDoBench ) fBench->Stop("roc_decode");
+  return retval;
+}
+
+//_____________________________________________________________________________
+Int_t CodaDecoder::bank_decode( Int_t roc, const UInt_t* evbuffer,
+				  Int_t ipt, Int_t istop )
+{
+  // Split a roc into banks, if using bank structure
+  // Then loop over slots and decode it from a bank if the slot 
+  // belongs to a blank.
+  assert( evbuffer && fMap );
+  if( fDoBench ) fBench->Begin("bank_decode");
+  Int_t retval = HED_OK;
+  if (!fMap->isBankStructure(roc)) return retval;
+
+  Int_t pos,len,bank,head;
+
+  memset(bankdat,0,MAXBANK*sizeof(BankDat_t));
+
+  if (fDebugFile) *fDebugFile << "CodaDecode:: bank_decode  ... "<<roc<<"   "<<ipt<<"  "<<istop<<endl;
+
+  pos = ipt+1;  // ipt points to ROC ID word
+
+  while (pos < istop) {
+    len = evbuffer[pos];
+    head = evbuffer[pos+1];
+    bank = (head>>16)&0xffff;
+    if (fDebugFile) *fDebugFile << "bank 0x"<<hex<<bank<<"  head 0x"<<head<<"    len 0x"<<len<<dec<<endl;
+
+    if (bank >= 0 && bank < MAXBANK) {
+      bankdat[bank].pos=pos+2;
+      bankdat[bank].len=len-1;
+    }
+
+    pos += len+1;
+
+  }
+
+  Int_t minslot = fMap->getMinSlot(roc);
+  Int_t maxslot = fMap->getMaxSlot(roc);
+
+  for (Int_t slot = minslot; slot <= maxslot; slot++) {
+    bank=fMap->getBank(roc,slot);
+    if (bank < 0 || bank >= Decoder::MAXBANK) {
+      cerr << "CodaDecoder::ERROR:  bank number out of range "<<endl;
+      return 0;
+    }
+    pos = bankdat[bank].pos;
+    len = bankdat[bank].len;
+    if (fDebugFile) *fDebugFile << "CodaDecode:: loading bank "<<roc<<"  "<<slot<<"   "<<bank<<"  "<<pos<<"   "<<len<<endl;
+    crateslot[idx(roc,slot)]->LoadBank(evbuffer,pos,len);
+  }
+
+  if( fDoBench ) fBench->Stop("bank_decode");
   return retval;
 }
 
@@ -430,24 +508,6 @@ void CodaDecoder::CompareRocs(  )
     if (!ifound) *fDebugFile << "ERROR: CompareRocs:  roc "<<iroc1<<" in cratemap but not found data"<<endl;
   }
 }
-
-//_____________________________________________________________________________
-void CodaDecoder::FindUsedSlots() {
-  // Disable slots for which no module is defined.
-  // This speeds up the decoder.
-  for (Int_t roc=0; roc<MAXROC; roc++) {
-    for (Int_t slot=0; slot<MAXSLOT; slot++) {
-      if ( !fMap->slotUsed(roc,slot) ) continue;
-      if ( !crateslot[idx(roc,slot)]->GetModule() ) {
-	cout << "WARNING:  No module defined for crate "<<roc<<"   slot "<<slot<<endl;
-	cout << "Check db_cratemap.dat for module that is undefined"<<endl;
-	cout << "This crate, slot will be ignored"<<endl;
-	fMap->setUnused(roc,slot);
-      }
-    }
-  }
-}
-
 
 //_____________________________________________________________________________
 void CodaDecoder::ChkFbSlot( Int_t roc, const UInt_t* evbuffer,

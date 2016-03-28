@@ -7,16 +7,28 @@
 //                                                                      //
 //////////////////////////////////////////////////////////////////////////
 
-#include "TFormula.h"
-#include "THaGlobals.h"
 #include "RVersion.h"
+
+#if ROOT_VERSION_CODE < 394240
+#include "TFormula.h"
+#else
+#include "v5/TFormula.h"
+#endif
+
+#include "THaGlobals.h"
 #include <vector>
+#include <iostream>
 
 class THaVarList;
 class THaCutList;
 class THaVar;
 
+
+#if ROOT_VERSION_CODE < 394240
 class THaFormula : public TFormula {
+#else
+class THaFormula : public ROOT::v5::TFormula {
+#endif
 
 public:
   static const Option_t* const kPRINTFULL;

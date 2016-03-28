@@ -11,6 +11,7 @@ def config(env,args):
 
 	if int(debug):
 		env.Append(CXXFLAGS = '-g -O0')
+		env.Append(CPPDEFINES= '-DWITH_DEBUG')
 	else:	
 		env.Append(CXXFLAGS = '-O')
 		env.Append(CPPDEFINES= '-DNDEBUG')
@@ -32,8 +33,10 @@ def config(env,args):
 
 	cxxversion = env.subst('$CXXVERSION')
 
-#	if float(cxxversion[0:2])>=4.0:
-#			env.Append(CXXFLAGS = '-Wextra -Wno-missing-field-initializers')
+	if float(cxxversion[0:2])>=4.0:
+			env.Append(CXXFLAGS = '-Wextra')
+			env.Append(CXXFLAGS = '-Wno-missing-field-initializers')
+			env.Append(CXXFLAGS = '-Wno-unused-parameter')
 	
 	if float(cxxversion[0:2])>=3.0:
 			env.Append(CPPDEFINES = '-DHAS_SSTREAM')

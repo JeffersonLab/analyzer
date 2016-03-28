@@ -16,8 +16,10 @@ class THaShower : public THaPidDetector {
 public:
   THaShower( const char* name, const char* description = "",
 	     THaApparatus* a = NULL );
+  THaShower();
   virtual ~THaShower();
 
+  virtual void       Clear( Option_t* ="" );
   virtual Int_t      Decode( const THaEvData& );
   virtual Int_t      CoarseProcess( TClonesArray& tracks );
   virtual Int_t      FineProcess( TClonesArray& tracks );
@@ -63,7 +65,6 @@ protected:
   Int_t*     fNblk;      // [fNclublk] Numbers of blocks composing main cluster
   Float_t*   fEblk;      // [fNclublk] Energies of blocks composing main cluster
 
-  void           ClearEvent();
   void           DeleteArrays();
   virtual Int_t  ReadDatabase( const TDatime& date );
   virtual Int_t  DefineVariables( EMode mode = kDefine );

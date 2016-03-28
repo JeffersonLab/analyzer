@@ -22,6 +22,7 @@ class THaBenchmark;
 class THaEvData;
 class THaPostProcess;
 class THaCrateMap;
+class THaEpicsEvtHandler;
 
 class THaAnalyzer : public TObject {
 
@@ -43,7 +44,7 @@ public:
   void           EnableOverwrite( Bool_t b = kTRUE );
   void           EnablePhysicsEvents( Bool_t b = kTRUE );
   void           EnableRunUpdate( Bool_t b = kTRUE );
-  void           EnableScalers( Bool_t b = kTRUE );
+  void           EnableScalers( Bool_t b = kTRUE );   // archaic
   void           EnableSlowControl( Bool_t b = kTRUE );
   const char*    GetOutFileName()      const  { return fOutFileName.Data(); }
   const char*    GetCutFileName()      const  { return fCutFileName.Data(); }
@@ -55,13 +56,12 @@ public:
   THaEvData*     GetDecoder()          const  { return fEvData; }
   TList*         GetApps()             const  { return fApps; }
   TList*         GetPhysics()          const  { return fPhysics; }
-  TList*         GetScalers()          const  { return fScalers; }
+  TList*         GetEvtHandlers()      const  { return fEvtHandlers; }
   TList*         GetPostProcess()      const  { return fPostProcess; }
   Bool_t         HasStarted()          const  { return fAnalysisStarted; }
   Bool_t         HelicityEnabled()     const  { return fDoHelicity; }
   Bool_t         PhysicsEnabled()      const  { return fDoPhysics; }
   Bool_t         OtherEventsEnabled()  const  { return fDoOtherEvents; }
-  Bool_t         ScalersEnabled()      const  { return fDoScalers; }
   Bool_t         SlowControlEnabled()  const  { return fDoSlowControl; }
   virtual Int_t  SetCountMode( Int_t mode );
   void           SetCrateMapFileName( const char* name );
@@ -95,7 +95,7 @@ protected:
   };
   // Statistics counters and message texts
   enum {
-    kNevRead = 0, kNevGood, kNevPhysics, kNevScaler, kNevEpics, kNevOther,
+    kNevRead = 0, kNevGood, kNevPhysics, kNevEpics, kNevOther,
     kNevPostProcess, kNevAnalyzed, kNevAccepted,
     kDecodeErr, kCodaErr, kRawDecodeTest, kDecodeTest, kCoarseTrackTest,
     kCoarseReconTest, kTrackTest, kReconstructTest, kPhysicsTest
@@ -110,6 +110,7 @@ protected:
 
   TFile*         fFile;            //The ROOT output file.
   THaOutput*     fOutput;          //Flexible ROOT output (tree, histograms)
+  THaEpicsEvtHandler* fEpicsHandler; // EPICS event handler used by THaOutput
   TString        fOutFileName;     //Name of output ROOT file.
   TString        fCutFileName;     //Name of cut definition file to load
   TString        fLoadedCutFileName;//Name of last loaded cut definition file
@@ -131,9 +132,8 @@ protected:
   THaEvData*     fEvData;          //Instance of decoder used by us
   TList*         fApps;            //List of apparatuses
   TList*         fPhysics;         //List of physics modules
-  TList*         fScalers;         //List of scaler groups
   TList*         fPostProcess;     //List of post-processing modules
-  TList*         fEvtHandlers;     //List of Event Type Handlers
+  TList*         fEvtHandlers;     //List of event handlers
 
   // Status and control flags
   Bool_t         fIsInit;          // Init() called successfully
@@ -145,7 +145,6 @@ protected:
   Bool_t         fDoHelicity;      // Enable helicity decoding
   Bool_t         fDoPhysics;       // Enable physics event processing
   Bool_t         fDoOtherEvents;   // Enable other event processing
-  Bool_t         fDoScalers;       // Enable scaler processing
   Bool_t         fDoSlowControl;   // Enable slow control processing
 
   // Variables used by analysis functions
@@ -157,7 +156,6 @@ protected:
   virtual Int_t  EndAnalysis();
   virtual Int_t  MainAnalysis();
   virtual Int_t  PhysicsAnalysis( Int_t code );
-  virtual Int_t  ScalerAnalysis( Int_t code );
   virtual Int_t  SlowControlAnalysis( Int_t code );
   virtual Int_t  OtherAnalysis( Int_t code );
   virtual Int_t  PostProcess( Int_t code );
@@ -178,7 +176,7 @@ protected:
   virtual Int_t  InitOutput( const TList* module_list, Int_t erroff,
 			     const char* baseclass = NULL );
   virtual void   PrintCounters() const;
-  virtual void   PrintScalers() const;
+  virtual void   PrintScalers() const;  // archaic
   virtual void   PrintCutSummary() const;
 
   static THaAnalyzer* fgAnalyzer;  //Pointer to instance of this class
