@@ -18,11 +18,11 @@
 
 class ScalerLoc { // Utility class used by THaScalerEvtHandler
  public:
- ScalerLoc(TString nm, TString desc, Int_t isc, Int_t ich, Int_t iki) :
-   name(nm), description(desc), iscaler(isc), ichan(ich), ikind(iki) { };
+ ScalerLoc(TString nm, TString desc, Int_t idx, Int_t sl, Int_t ich, Int_t iki) :
+  name(nm), description(desc), index(idx), islot(sl), ichan(ich), ikind(iki) { };
   ~ScalerLoc();
   TString name, description;
-  UInt_t iscaler, ichan, ivar, ikind;
+  UInt_t index, islot, ichan, ivar, ikind;
 };
 
 class THaScalerEvtHandler : public THaEvtTypeHandler {
@@ -46,8 +46,7 @@ private:
    std::vector<ScalerLoc*> scalerloc;
    Double_t evcount;
    UInt_t *rdata;
-   std::vector<Int_t> index;
-   Int_t fNormIdx;
+   Int_t fNormIdx, fNormSlot;
    Double_t *dvars;
    TTree *fScalerTree;
 
