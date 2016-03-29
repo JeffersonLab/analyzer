@@ -4,6 +4,7 @@
 /////////////////////////////////////////////////////////////////////
 //
 //   FastbusModule
+//   Abstract fastbus module class.
 //   fastbus module class.  
 //   author  Robert Michaels (rom@jlab.org)
 //
