@@ -353,7 +353,7 @@ srcdist:
 		 $(NAME)/Makefile \
 		 $(NAME)/DB $(NAME)/examples $(NAME)/SDK \
 		 $(NAME)/docs $(NAME)/Calib $(NAME)/contrib $(NAME)/scons \
-		 $(NAME)/SConstruct $(NAME)/*.py
+		 $(NAME)/SConstruct $(wildcard $(NAME)/*.py)
 
 install:	all
 ifndef ANALYZER
