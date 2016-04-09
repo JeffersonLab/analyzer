@@ -29,7 +29,6 @@
 
 #include "TTree.h"
 
-
 //#include "TGXW.h"
 //#include "TVirtualX.h"
 
@@ -245,5 +244,24 @@ TClass* THaInterface::SetDecoder( TClass* c )
 }
 
 //_____________________________________________________________________________
-ClassImp(THaInterface)
+const char* THaInterface::SetPrompt( const char* newPrompt )
+{
+  // Make sure the prompt is and stays "analyzer [%d]". ROOT 6 resets the
+  // interpreter prompt for every line without respect to any user-set
+  // default prompt.
 
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,0,0)
+  return TRint::SetPrompt(newPrompt);
+#else
+  TString s;
+  if( newPrompt ) {
+    s = newPrompt;
+    if( s.Index("root") == 0 )
+      s.Replace(0,4,"analyzer");
+  }
+  return TRint::SetPrompt(s.Data());
+#endif
+}
+
+//_____________________________________________________________________________
+ClassImp(THaInterface)
