@@ -15,7 +15,7 @@ int main(int argc, char **argv)
 
   TApplication *theApp = 
     new THaInterface( "The Hall A analyzer", &argc, argv );
-  theApp->Run(kTRUE);
+  theApp->Run(kFALSE);
 
   cout << endl;
 
