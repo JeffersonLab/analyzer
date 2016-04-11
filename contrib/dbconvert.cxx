@@ -83,7 +83,7 @@ static struct poptOption options[] = {
   { "mapfile",  'm', POPT_ARG_STRING, &mapfile,  0, 0, 0  },
   // "detlist", 'l', ... // list of wildcards of detector names
   { "subdirs",  's', POPT_ARG_STRING, &c_out_subdirs, 0, 0, 0  },  // overrides preserve-subdirs
-  { "preserve-subdirs",    's', POPT_ARG_VAL,  &do_subdirs, 1, 0, 0  },
+  { "preserve-subdirs",    'p', POPT_ARG_VAL,  &do_subdirs, 1, 0, 0  },
   { "no-preserve-subdirs", 0, POPT_ARG_VAL,    &do_subdirs, 0, 0, 0  },
   { "no-clean",  0, POPT_ARG_VAL,    &do_clean, 0, 0, 0  },
   { "no-verify", 0, POPT_ARG_VAL,    &do_verify, 0, 0, 0  },
