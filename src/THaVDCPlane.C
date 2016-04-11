@@ -114,7 +114,7 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
   vector<Int_t> detmap, bad_wirelist;
   vector<Double_t> ttd_param;
   vector<Float_t> tdc_offsets;
-  TString ttd_conv;
+  TString ttd_conv = "AnalyticTTDConv";
   // Default values for optional parameters
   fTDCRes = 5.0e-10;  // 0.5 ns/chan = 5e-10 s /chan
   fT0Resolution = 6e-8; // 60 ns --- crude guess
@@ -139,7 +139,7 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
     { "tdc.max",        &fMaxTime,       kInt,     0, 1, -1 },
     { "tdc.res",        &fTDCRes,        kDouble,  0, 0, -1 },
     { "tdc.offsets",    &tdc_offsets,    kFloatV },
-    { "ttd.converter",  &ttd_conv,       kTString, 0, 0, -1 },
+    { "ttd.converter",  &ttd_conv,       kTString, 0, 1, -1 },
     { "ttd.param",      &ttd_param,      kDoubleV, 0, 0, -1 },
     { "t0.res",         &fT0Resolution,  kDouble,  0, 1, -1 },
     { "clust.minsize",  &fMinClustSize,  kInt,     0, 1, -1 },
@@ -156,7 +156,7 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
   if( err )
     return err;
 
-  if( FillDetMap(detmap, 0, here) <= 0 )
+  if( FillDetMap(detmap, THaDetMap::kFillLogicalChannel, here) <= 0 )
     return kInitError; // Error already printed by FillDetMap
 
   fWAngle *= TMath::DegToRad(); // Convert to radians
@@ -264,8 +264,8 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
   const char* nm = "trg"; // inside an apparatus, the apparatus name is assumed
   if( !app ||
       !(fglTrg = dynamic_cast<THaTriggerTime*>(app->GetDetector(nm))) ) {
-    Warning(Here(here),"Trigger-time detector \"%s\" not found. "
-	    "Event-by-event time offsets will NOT be used!!",nm);
+    // Warning(Here(here),"Trigger-time detector \"%s\" not found. "
+    // 	    "Event-by-event time offsets will NOT be used!!",nm);
   }
 
   fIsInit = true;

@@ -516,13 +516,15 @@ void PrepareStreamImpl( ostringstream& str, vector<T> arr, T round_level )
     return;
   }
   else {
+    // FIXME: this doesn't work as expected
+
     // Fixed format
-    for( i = 0; i < arr.size(); ++i ) {
-      T x = std::abs(arr[i]);
-      ndigits = max( ndigits, GetSignificantDigits(x,round_level) );
-    }
-    if( ndigits > 0 )
-      str << fixed << setprecision(ndigits);
+    // for( i = 0; i < arr.size(); ++i ) {
+    //   T x = std::abs(arr[i]);
+    //   ndigits = max( ndigits, GetSignificantDigits(x,round_level) );
+    // }
+    // if( ndigits > 0 )
+    //   str << fixed << setprecision(ndigits);
   }
 }
 
@@ -940,7 +942,7 @@ public:
       fDefaults(rhs.fDefaults)
   {
     memcpy( fSize, rhs.fSize, 3*sizeof(fSize[0]) );
-    fDetMap = new THaDetMap;
+    fDetMap = new THaDetMap(*rhs.fDetMap);
   }
   Detector& operator=( const Detector& rhs ) {
     if( this != &rhs ) {
@@ -4395,7 +4397,9 @@ int VDC::Plane::Save( time_t start, const string& version ) const
 {
   string prefix = fName + ".";
 
-  // TODO: write detmap
+  int flags = 1;
+  AddToMap( prefix+"detmap", MakeValue(fDetMap,flags), start, version, 4+flags );
+  AddToMap( prefix+"position", MakeValue(&fOrigin),      start, version );
 
   UInt_t cbits = fVDC->GetCommon();
   if( !TestBit(cbits,kNelem) )
