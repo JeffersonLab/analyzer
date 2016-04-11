@@ -5,10 +5,7 @@
 // THaHRS
 //
 // The standard Hall A High Resolution Spectrometers (HRS).
-// Contains three standard detectors,
-//    VDC
-//    Scintillator S1
-//    Scintillator S2
+// Contains one standard detector: VDC
 //
 // The usual name of this object is either "R" or "L", for Left 
 // and Right HRS, respectively.
@@ -38,16 +35,16 @@
 //      method since Reconstruct() relies on the presence of the 
 //      standard detectors to some extent.)
 //
-//  For timing calculations, S1 is treated as the scintillator at the
-//  'reference distance', corresponding to the pathlength correction
-//  matrix.
+//  For timing calculations, one can specify a reference detector via SetRefDet
+//  (usually a scintillator) as the detector at the 'reference distance',
+//  corresponding to the pathlength correction matrix.
 //
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaHRS.h"
 #include "THaTrackingDetector.h"
 #include "THaTrack.h"
-#include "THaScintillator.h"
+#include "THaScintillator.h"  // includes THaNonTrackingDetector
 #include "THaVDC.h"
 #include "THaTrackProj.h"
 #include "THaTriggerTime.h"
@@ -64,15 +61,10 @@ using namespace std;
 
 //_____________________________________________________________________________
 THaHRS::THaHRS( const char* name, const char* description ) :
-  THaSpectrometer( name, description )
+  THaSpectrometer( name, description ), fRefDet(0)
 {
   // Constructor. Defines the standard detectors for the HRS.
-  AddDetector( new THaTriggerTime("trg","Trigger-based time offset"));
   AddDetector( new THaVDC("vdc", "Vertical Drift Chamber"));
-  AddDetector( new THaScintillator("s1", "S1 scintillator"));
-  AddDetector( new THaScintillator("s2", "S2 scintillator"));
-
-  sc_ref = static_cast<THaScintillator*>(GetDetector("s1"));
 
   SetTrSorting(kFALSE);
 }
@@ -100,6 +92,52 @@ Bool_t THaHRS::GetTrSorting() const
   return ((fProperties & kSortTracks) != 0);
 }
  
+//_____________________________________________________________________________
+Int_t THaHRS::SetRefDet( const char* name )
+{
+  // Set reference detector for TrackTimes calculation to the detector
+  // with the given name (typically a scintillator)
+
+  const char* const here = "SetRefDet";
+
+  if( !name || !*name ) {
+    Error( Here(here), "Invalid detector name" );
+    return 1;
+  }
+
+  fRefDet = static_cast<THaNonTrackingDetector*>
+    ( fNonTrackingDetectors->FindObject(name) );
+
+  if( !fRefDet ) {
+    Error( Here(here), "Can't find detector \"%s\"", name );
+    return 1;
+  }
+
+  return 0;
+}
+
+//_____________________________________________________________________________
+Int_t THaHRS::SetRefDet( const THaNonTrackingDetector* obj )
+{
+  const char* const here = "SetRefDet";
+
+  if( !obj ) {
+    Error( Here(here), "Invalid detector pointer" );
+    return 1;
+  }
+
+  fRefDet = static_cast<THaNonTrackingDetector*>
+    ( fNonTrackingDetectors->FindObject(obj) );
+
+  if( !fRefDet ) {
+    Error( Here(here), "Can't find given detector. "
+	   "Is it a THaNonTrackingDetector?");
+    return 1;
+  }
+
+  return 0;
+}
+
 //_____________________________________________________________________________
 Int_t THaHRS::FindVertices( TClonesArray& tracks )
 {
@@ -171,18 +209,18 @@ Int_t THaHRS::TrackTimes( TClonesArray* Tracks )
   // To be useful, a meaningful timing resolution should be assigned
   // to each Scintillator object (part of the database).
   
-  if ( !Tracks ) return -1;
+  if ( !Tracks || !fRefDet ) return -1;
   
   Int_t ntrack = GetNTracks();
 
   // linear regression to:  t = t0 + pathl/(beta*c)
-  //   where t0 is the time of the track at the reference plane (sc_ref).
+  //   where t0 is the time of the track at the reference plane (fRefDet).
   //   t0 and beta are solved for.
   //
   for ( Int_t i=0; i < ntrack; i++ ) {
     THaTrack* track = static_cast<THaTrack*>(Tracks->At(i));
     THaTrackProj* tr_ref = static_cast<THaTrackProj*>
-      (sc_ref->GetTrackHits()->At(i));
+      (fRefDet->GetTrackHits()->At(i));
     
     Double_t pathlref = tr_ref->GetPathLen();
     
