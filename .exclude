@@ -13,3 +13,4 @@ ha_compiledata.h
 *~
 .git
 examples/runR.dat
+contrib/dbconvert
