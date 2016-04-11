@@ -113,13 +113,14 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
       fNelem = nelem;
   }
 
-  if( !err && FillDetMap(detmap, 0, here) <= 0 ) {
+  UInt_t flags = THaDetMap::kFillLogicalChannel | THaDetMap::kFillModel;
+  if( !err && FillDetMap(detmap, flags, here) <= 0 ) {
     err = kInitError;  // Error already printed by FillDetMap
   }
 
-  if( !err && (nelem = fDetMap->GetTotNumChan()) != 2*fNelem ) {
+  if( !err && (nelem = fDetMap->GetTotNumChan()) != 4*fNelem ) {
     Error( Here(here), "Number of detector map channels (%d) "
-	   "inconsistent with 2*number of paddles (%d)", nelem, 2*fNelem );
+	   "inconsistent with 4*number of paddles (%d)", nelem, 4*fNelem );
     err = kInitError;
   }
 
@@ -169,9 +170,8 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
 
     fIsInit = true;
   }
-  memset(fTrigOff,0,nval*sizeof(fTrigOff[0]));
 
-  // Read calibration parameters
+ // Read calibration parameters
 
   // Set DEFAULT values here
   // TDC resolution (s/channel)
@@ -186,7 +186,7 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   // timewalk coefficients for tw = coeff*(1./sqrt(ADC-Ped)-1./sqrt(ADCMip))
   memset( fTWalkPar, 0, nval_twalk*sizeof(fTWalkPar[0]) );
   // trigger-timing offsets (s)
-  memset( fTrigOff, 0, nval_twalk*sizeof(fTrigOff[0]) );
+  memset( fTrigOff, 0, nval*sizeof(fTrigOff[0]) );
 
   // Default TDC offsets (0), ADC pedestals (0) and ADC gains (1)
   memset( fLOff, 0, nval*sizeof(fLOff[0]) );
