@@ -923,7 +923,7 @@ static int WriteFileDB( const string& target_dir, const vector<string>& subdirs 
 class Detector {
 public:
   Detector( const string& name )
-    : fName(name), fDetMap(new THaDetMap), fDetMapHasModel(false),
+    : fName(name), fDBName(name), fDetMap(new THaDetMap), fDetMapHasModel(false),
       fNelem(0), fAngle(0) /*, fXax(1.,0,0), fYax(0,1.,0), fZax(0,0,1.) */{
     fSize[0] = fSize[1] = fSize[2] = 0.;
     string::size_type pos = fName.find('.');
@@ -934,16 +934,18 @@ public:
     fRealName = fName.substr(pos);
   }
   Detector( const Detector& rhs )
-    : fName(rhs.fName), fRealName(rhs.fRealName), fConfig(rhs.fConfig),
-      fDetMapHasModel(rhs.fDetMapHasModel), fNelem(rhs.fNelem),
-      fAngle(rhs.fAngle), fOrigin(rhs.fOrigin), fDefaults(rhs.fDefaults)
+    : fName(rhs.fName), fDBName(rhs.fDBName), fRealName(rhs.fRealName),
+      fConfig(rhs.fConfig), fDetMapHasModel(rhs.fDetMapHasModel),
+      fNelem(rhs.fNelem), fAngle(rhs.fAngle), fOrigin(rhs.fOrigin),
+      fDefaults(rhs.fDefaults)
   {
     memcpy( fSize, rhs.fSize, 3*sizeof(fSize[0]) );
     fDetMap = new THaDetMap;
   }
   Detector& operator=( const Detector& rhs ) {
     if( this != &rhs ) {
-      fName = rhs.fName; fRealName = rhs.fRealName; fConfig = rhs.fConfig;
+      fName = rhs.fName; fDBName = rhs.fDBName; fRealName = rhs.fRealName;
+      fConfig = rhs.fConfig;
       fDetMapHasModel = rhs.fDetMapHasModel; fNelem = rhs.fNelem;
       fAngle = rhs.fAngle; fOrigin = rhs.fOrigin; fDefaults = rhs.fDefaults;
       memcpy( fSize, rhs.fSize, 3*sizeof(fSize[0]) );
@@ -967,6 +969,9 @@ public:
   virtual bool SupportsVariations()  const { return false; }
   virtual void RegisterDefaults();
   virtual int  PurgeAllDefaultKeys();
+
+  void SetDBName( const string& s ) { fDBName = s; }
+  const string& GetDBName() const { return fDBName; }
 
 protected:
   virtual int AddToMap( const string& key, const Value_t& value, time_t start,
@@ -1012,6 +1017,7 @@ protected:
   int ReadBlock( FILE* fi, T* data, int nval, const char* here, int flags = 0 );
 
   string      fName;    // Detector "name", actually the prefix without trailing dot
+  string      fDBName;  // Database file name for this detector
   string      fRealName;// Actual detector name (top level dropped)
   TString     fConfig;  // TString for compatibility with old API
   THaDetMap*  fDetMap;
@@ -1230,6 +1236,7 @@ public:
   virtual int ReadDB( FILE* infile, time_t date_from, time_t date_until );
   virtual int Save( time_t start, const string& version = string() ) const;
   virtual const char* GetClassName() const { return "VDC"; }
+  virtual void RegisterDefaults();
 
   UInt_t GetCommon() const { return fCommon; }
 
@@ -3828,6 +3835,7 @@ int VDC::ReadDB( FILE* file, time_t date, time_t date_until )
   const char* plane_name[] = { "u1", "v1", "u2", "v2" };
   for( int i = 0; i < 4; ++i ) {
     fPlanes.push_back( Plane(fName+"."+plane_name[i],this) );
+    fPlanes.back().SetDBName(fName);
     rewind(file);
     Int_t err = fPlanes.back().ReadDB( file, date, date_until );
     if( err )
@@ -3892,6 +3900,9 @@ int VDC::ReadDB( FILE* file, time_t date, time_t date_until )
     if( is_common )
       fCommon |= e;
   }
+
+  fErrorCutoff = 1e9;
+  fNumIter = 1;
 
   return kOK;
 }
@@ -4503,6 +4514,16 @@ void CoincTime::RegisterDefaults()
 }
 
 //-----------------------------------------------------------------------------
+void VDC::RegisterDefaults()
+{
+  // Register default values for certain keys
+
+  Detector::RegisterDefaults();
+  fDefaults["max_matcherr"] = "1e+09";
+  fDefaults["num_iter"] = "1";
+}
+
+//-----------------------------------------------------------------------------
 int Detector::AddToMap( const string& key, const Value_t& v, time_t start,
 			const string& version, int maxv ) const
 {
@@ -4518,12 +4539,12 @@ int Detector::AddToMap( const string& key, const Value_t& v, time_t start,
   // Ensure that each key can only be associated with one detector name
   StrMap_t::iterator itn = gKeyToDet.find( key );
   if( itn == gKeyToDet.end() ) {
-    gKeyToDet.insert( make_pair(key,fName) );
-    gDetToKey.insert( make_pair(fName,key) );
+    gKeyToDet.insert( make_pair(key,fDBName) );
+    gDetToKey.insert( make_pair(fDBName,key) );
   }
-  else if( itn->second != fName ) {
+  else if( itn->second != fDBName ) {
     cerr << "Error: key " << key << " already previously found for "
-	 << "detector " << itn->second << ", now for " << fName << endl;
+	 << "detector " << itn->second << ", now for " << fDBName << endl;
     return 1;
   }
 
