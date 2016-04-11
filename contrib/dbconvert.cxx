@@ -136,6 +136,7 @@ static void usage( poptContext& pc )
   // Print usage message and exit with error code
 
   poptPrintUsage(pc, stderr, 0);
+  poptFreeContext(pc);
   exit(1);
 }
 
@@ -2570,7 +2571,7 @@ int Detector::ReadBlock( FILE* fi, T* data, int nval, const char* here, int flag
   string line;
   int nread = 0;
   bool got_data = false, maybe_data = false, found_section = false;
-  off_t pos, pos_on_entry = ftello(fi);
+  off_t pos_on_entry = ftello(fi), pos = pos_on_entry;
   std::less<T> std_less;  // to suppress compiler warnings "< 0 is always false"
 
   errno = 0;
@@ -3108,7 +3109,7 @@ int Shower::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
   const int LEN = 100;
   char buf[LEN];
   Int_t flags = kErrOnTooManyValues; // TODO: make configurable
-  Int_t nclbl; //TODO: use this
+  //  Int_t nclbl; //TODO: use this
   bool old_format = false;
 
   // Read data from database
@@ -3129,12 +3130,12 @@ int Shower::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
     }
     fNcols = ivals[0] / ivals[1];
     fNrows = ivals[1];
-    nclbl  = ivals[2];
+    //    nclbl  = ivals[2];
     old_format = true;
   } else {
     fNcols = ivals[0];
     fNrows = ivals[1];
-    nclbl  = TMath::Min( 3, fNrows ) * TMath::Min( 3, fNcols );
+    //    nclbl  = TMath::Min( 3, fNrows ) * TMath::Min( 3, fNcols );
   }
   Int_t nelem = fNcols * fNrows;
 

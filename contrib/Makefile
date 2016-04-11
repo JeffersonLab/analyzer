@@ -1,6 +1,7 @@
 all: dbconvert
 
-CXXFLAGS    = -g -O0 -Wall -Wextra -std=c++11
+#CXXFLAGS    = -g -O0 -Wall -Wextra -std=c++11
+CXXFLAGS    = -g -O -Wall
 
 INCDIRS     = ../src ../hana_decode
 INCLUDES    = $(addprefix -I, $(INCDIRS))
@@ -13,6 +14,12 @@ LDFLAGS     = $(shell root-config --ldflags)
 CXXFLAGS   += $(ROOTCFLAGS) $(INCLUDES)
 #ALLINCLUDES  = -I$(shell root-config --incdir) $(INCLUDES)
 LIBS        = $(shell root-config --libs) -L.. -lHallA -ldc -lpopt
+
+# Add EVIO lib, needed by libdc
+ifndef EVIO_LIBDIR
+  EVIO_LIBDIR = ..
+endif
+LIBS += -L$(EVIO_LIBDIR) -levio
 
 dbconvert:	dbconvert.o
 		$(LD) $(LDFLAGS) $(LIBS) -o $@ $^
