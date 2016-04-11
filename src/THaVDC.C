@@ -413,6 +413,18 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
 #endif
   }
 
+  // figure out the track length from the origin to the s1 plane
+  // since we take the VDC to be the origin of the coordinate
+  // space, this is actually pretty simple
+  const THaDetector* s1 = 0;
+  if( GetApparatus() )
+    // TODO: neeed? if so, change to HRS reference detector
+    s1 = GetApparatus()->GetDetector("s1");
+  if(s1 == 0)
+    fCentralDist = 0;
+  else
+    fCentralDist = s1->GetOrigin().Z();
+
   fIsInit = true;
   return kOK;
 }
