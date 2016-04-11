@@ -5,7 +5,6 @@
 // THaHRS
 //
 // The standard Hall A High Resolution Spectrometers (HRS).
-// Contains one standard detector: VDC
 //
 // The usual name of this object is either "R" or "L", for Left 
 // and Right HRS, respectively.
@@ -63,8 +62,7 @@ using namespace std;
 THaHRS::THaHRS( const char* name, const char* description ) :
   THaSpectrometer( name, description ), fRefDet(0)
 {
-  // Constructor. Defines the standard detectors for the HRS.
-  AddDetector( new THaVDC("vdc", "Vertical Drift Chamber"));
+  // Constructor
 
   SetTrSorting(kFALSE);
 }
