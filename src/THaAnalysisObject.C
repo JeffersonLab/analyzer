@@ -1353,7 +1353,7 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 }
 
 #define CheckLimits(T,val) \
-  if( (val) < std::numeric_limits<T>::min() ||     \
+  if( (val) < -std::numeric_limits<T>::max() ||     \
       (val) > std::numeric_limits<T>::max() ) {	   \
     OSSTREAM txt;				   \
     txt << (val);				   \
@@ -1405,7 +1405,7 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 	  // Array of reals requested
 	  vector<double> dvals;
 	  ret = LoadDBarray( f, date, key, dvals );
-	  if( static_cast<UInt_t>(dvals.size()) != nelem ) {
+	  if( ret == 0 && static_cast<UInt_t>(dvals.size()) != nelem ) {
 	    nelem = dvals.size();
 	    ret = -130;
 	  } else if( ret == 0 ) {
@@ -1458,7 +1458,7 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 	  // Array of integers requested
 	  vector<Int_t> ivals;
 	  ret = LoadDBarray( f, date, key, ivals );
-	  if( static_cast<UInt_t>(ivals.size()) != nelem ) {
+	  if( ret == 0 && static_cast<UInt_t>(ivals.size()) != nelem ) {
 	    nelem = ivals.size();
 	    ret = -130;
 	  } else if( ret == 0 ) {

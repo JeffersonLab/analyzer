@@ -19,15 +19,16 @@
 
 #include <vector>
 
-using namespace std;
+static const UInt_t NCHAN = 4;
 
-ClassImp(THaBPM)
+using namespace std;
 
 //_____________________________________________________________________________
 THaBPM::THaBPM( const char* name, const char* description,
 				  THaApparatus* apparatus ) :
   THaBeamDet(name,description,apparatus),
-  fRawSignal(4),fPedestals(4),fCorSignal(4),fRotPos(2),fRot2HCSPos(2,2)
+  fRawSignal(NCHAN),fPedestals(NCHAN),fCorSignal(NCHAN),fRotPos(NCHAN),
+  fRot2HCSPos(NCHAN/2,NCHAN/2)
 {
   // Constructor
 }
@@ -43,7 +44,7 @@ Int_t THaBPM::ReadDatabase( const TDatime& date )
   const char* const here = "ReadDatabase";
 
   vector<Int_t> detmap;
-  Float_t pedestals[4], rotations[4];  // FIXME: change to double
+  Double_t pedestals[NCHAN], rotations[NCHAN];
 
   FILE* file = OpenFile( date );
   if( !file )
@@ -63,7 +64,8 @@ Int_t THaBPM::ReadDatabase( const TDatime& date )
     err = LoadDB( file, date, config_request, fPrefix );
   }
 
-  if( !err && FillDetMap(detmap, 0, here) <= 0 ) {
+  UInt_t flags = THaDetMap::kFillLogicalChannel | THaDetMap::kFillModel;
+  if( !err && FillDetMap(detmap, flags, here) <= 0 ) {
     err = kInitError;  // Error already printed by FillDetMap
   }
 
@@ -72,8 +74,8 @@ Int_t THaBPM::ReadDatabase( const TDatime& date )
     memset( rotations, 0, sizeof(rotations) );
     DBRequest calib_request[] = {
       { "calib_rot",   &fCalibRot },
-      { "pedestals",   pedestals, kFloat, 4, 1 },
-      { "rotmatrix",   rotations, kFloat, 4, 1 },
+      { "pedestals",   pedestals, kDouble, NCHAN, 1 },
+      { "rotmatrix",   rotations, kDouble, NCHAN, 1 },
       { 0 }
     };
     err = LoadDB( file, date, calib_request, fPrefix );
@@ -136,16 +138,10 @@ void THaBPM::Clear( Option_t* )
   fPosition.SetXYZ(0.,0.,-10000.);
   fDirection.SetXYZ(0.,0.,1.);
   fNfired=0;
-  fRawSignal(0)=-1;
-  fRawSignal(1)=-1;
-  fRawSignal(2)=-1;
-  fRawSignal(3)=-1;  
-  fCorSignal(0)=-1;
-  fCorSignal(1)=-1;
-  fCorSignal(2)=-1;
-  fCorSignal(3)=-1;
-
-
+  for( UInt_t k=0; k<NCHAN; ++k ) {
+    fRawSignal(k)=-1;
+    fCorSignal(k)=-1;
+  }
 }
 
 //_____________________________________________________________________________
@@ -157,34 +153,34 @@ Int_t THaBPM::Decode( const THaEvData& evdata )
   // copies raw data into local variables
   // performs pedestal subtraction
 
+  const char* const here = "Decode()";
+
   for (Int_t i = 0; i < fDetMap->GetSize(); i++ ){
     THaDetMap::Module* d = fDetMap->GetModule( i );
     for (Int_t j=0; j< evdata.GetNumChan( d->crate, d->slot ); j++) {
       Int_t chan = evdata.GetNextChan( d->crate, d->slot, j);
       if ((chan>=d->lo)&&(chan<=d->hi)) {
 	Int_t data = evdata.GetData( d->crate, d->slot, chan, 0 );
-	Int_t k = d->first + chan - d->lo -1;
-	if ((k<4)&&(fRawSignal(k)==-1)) {
+	UInt_t k = d->first + chan - d->lo -1;
+	if ((k<NCHAN)&&(fRawSignal(k)==-1)) {
 	  fRawSignal(k)= data;
 	  fNfired++;
 	}
 	else {
-	  Warning( Here("Decode()"), "Illegal detector channel: %d", k );
+	  Warning( Here(here), "Illegal detector channel: %d", k );
 	}
       }
     }
   }
 
-  if (fNfired!=4) {
-      Warning( Here("Decode()"), "Number of fired Channels out of range. Setting beam position to nominal values");
+  if (fNfired!=NCHAN) {
+    Warning( Here(here), "Number of fired Channels out of range. "
+	     "Setting beam position to nominal values");
   }
   else {
-
     fCorSignal=fRawSignal;
     fCorSignal-=fPedestals;
-
   }
-
 
   return 0;
 }
@@ -203,18 +199,18 @@ Int_t THaBPM::Process( )
 
   Double_t ap, am;
 
-  for (Int_t k=0; k<2; k++) {
-    if (fCorSignal(2*k)+fCorSignal(2*k+1)!=0.0) {
-      ap=fCorSignal(2*k);
-      am=fCorSignal(2*k+1);
-      fRotPos(k)=fCalibRot*(ap-am)/(ap+am);
+  for( UInt_t k=0; k<NCHAN; k+=2 ) {
+    if( fCorSignal(k)+fCorSignal(k+1)!=0.0 ) {
+      ap=fCorSignal(k);
+      am=fCorSignal(k+1);
+      fRotPos(k/2)=fCalibRot*(ap-am)/(ap+am);
     }
     else {
-      fRotPos(k)=0.0;
+      fRotPos(k/2)=0.0;
     }
   }
 
-  TVector dum(fRotPos);
+  TVectorD dum(fRotPos);
 
   dum*=fRot2HCSPos;
 
@@ -229,3 +225,4 @@ Int_t THaBPM::Process( )
 
 
 ////////////////////////////////////////////////////////////////////////////////
+ClassImp(THaBPM)

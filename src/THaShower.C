@@ -74,10 +74,10 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
   // Read mapping/geometry/configuration parameters
   DBRequest config_request[] = {
     { "detmap",       &detmap,  kIntV },
-    { "chanmap",      &chanmap, kIntV },
+    { "chanmap",      &chanmap, kIntV,    0, 1 },
     { "ncols",        &ncols,   kInt },
     { "nrows",        &nrows,   kInt },
-    { "angle",        &angle,   kDouble, 0, 1 },
+    { "angle",        &angle,   kDouble,  0, 1 },
     { "xy",           &xy,      kDoubleV, 2 },  // center pos of block 1
     { "dxdy",         &dxy,     kDoubleV, 2 },  // dx and dy block spacings
     { "emin",         &fEmin,   kDouble },
@@ -364,6 +364,7 @@ Int_t THaShower::Decode( const THaEvData& evdata )
     }
   }
 
+#ifdef WITH_DEBUG
   if ( fDebug > 3 ) {
     printf("\nShower Detector %s:\n",GetPrefix());
     int ncol=3;
@@ -385,6 +386,7 @@ Int_t THaShower::Decode( const THaEvData& evdata )
       printf("\n");
     }
   }
+#endif
 
   return fNhits;
 }

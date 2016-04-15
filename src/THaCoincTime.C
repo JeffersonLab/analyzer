@@ -192,9 +192,9 @@ Int_t THaCoincTime::ReadDatabase( const TDatime& date )
     err = LoadDB( file, date, request, pref );
 
     if( !err ) {
-      if( detmap.size() != 5 ) {
+      if( detmap.size() != 6 ) {
 	Error( Here(here), "Invalid number of detector map values = %d for "
-	       "database key %sdetmap. Must be exactly 5. Fix database.",
+	       "database key %sdetmap. Must be exactly 6. Fix database.",
 	       static_cast<Int_t>(detmap.size()), pref.Data() );
 	err = kInitError;
       } else {
@@ -204,8 +204,14 @@ Int_t THaCoincTime::ReadDatabase( const TDatime& date )
 		   pref.Data() );
 	  detmap[3] = detmap[2];
 	}
-	err = fDetMap->Fill( detmap,
-			     THaDetMap::kDoNotClear|THaDetMap::kFillModel );
+	Int_t ret =
+	  fDetMap->Fill( detmap, THaDetMap::kDoNotClear|THaDetMap::kFillModel|
+			 THaDetMap::kFillLogicalChannel );
+	if( ret <= 0 ) {
+	  Error( Here(here), "Error %d filling detector map element %d",
+		 ret, i );
+	  err = kInitError;
+	}
       }
     }
   }

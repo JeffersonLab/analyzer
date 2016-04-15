@@ -20,16 +20,19 @@
 
 using namespace std;
 
+static const UInt_t NPOS = 3;
+static const UInt_t NBPM = 2;
+
 //_____________________________________________________________________________
 THaRaster::THaRaster( const char* name, const char* description,
 				  THaApparatus* apparatus )
-  : THaBeamDet(name,description,apparatus), fRawPos(2), fRawSlope(2),
-    fRasterFreq(2), fSlopePedestal(2), fRasterPedestal(2)
+  : THaBeamDet(name,description,apparatus), fRawPos(NBPM), fRawSlope(NBPM),
+    fRasterFreq(NBPM), fSlopePedestal(NBPM), fRasterPedestal(NBPM)
 {
   // Constructor
-  fRaw2Pos[0].ResizeTo(3,2);
-  fRaw2Pos[1].ResizeTo(3,2);
-  fRaw2Pos[2].ResizeTo(3,2);
+  fRaw2Pos[0].ResizeTo(NPOS,NBPM);
+  fRaw2Pos[1].ResizeTo(NPOS,NBPM);
+  fRaw2Pos[2].ResizeTo(NPOS,NBPM);
 
 }
 
@@ -42,10 +45,10 @@ Int_t THaRaster::ReadDatabase( const TDatime& date )
   //                otherwise                              -> kOk
 
   const char* const here = "ReadDatabase";
-
   vector<Int_t> detmap;
-  Double_t zpos[3], raw2posA[6], raw2posB[6], raw2posT[6];
-  Double_t freq[2], rped[2], sped[2];
+  Double_t zpos[NPOS];
+  Double_t freq[NBPM], rped[NBPM], sped[NBPM];
+  Double_t raw2posA[NBPM*NPOS], raw2posB[NBPM*NPOS], raw2posT[NBPM*NPOS];
 
   FILE* file = OpenFile( date );
   if( !file )
@@ -59,15 +62,14 @@ Int_t THaRaster::ReadDatabase( const TDatime& date )
     // Read configuration parameters
     DBRequest config_request[] = {
       { "detmap",   &detmap,  kIntV },
-      { "zpos",     zpos,     kDouble, 3, 1 },
+      { "zpos",     zpos,     kDouble, NPOS, 1 },
       { 0 }
     };
     err = LoadDB( file, date, config_request, fPrefix );
   }
 
-  if( !err &&
-      FillDetMap(detmap, THaDetMap::kFillLogicalChannel |
-			 THaDetMap::kFillModel, here) <= 0 ) {
+  UInt_t flags = THaDetMap::kFillLogicalChannel | THaDetMap::kFillModel;
+  if( !err && FillDetMap(detmap, flags, here) <= 0 ) {
     err = kInitError;  // Error already printed by FillDetMap
   }
 
@@ -80,12 +82,12 @@ Int_t THaRaster::ReadDatabase( const TDatime& date )
     memset( sped, 0, sizeof(sped) );
 
     DBRequest calib_request[] = {
-      { "freqs",      freq,  kFloat, 2 },
-      { "rast_peds",  rped,  kFloat, 2, 1 },
-      { "slope_peds", sped,  kFloat, 2, 1 },
-      { "raw2posA",   raw2posA, kDouble, 6 },
-      { "raw2posB",   raw2posB, kDouble, 6 },
-      { "raw2posT",   raw2posT, kDouble, 6 },
+      { "freqs",      freq,     kDouble, NBPM },
+      { "rast_peds",  rped,     kDouble, NBPM, 1 },
+      { "slope_peds", sped,     kDouble, NBPM, 1 },
+      { "raw2posA",   raw2posA, kDouble, NBPM*NPOS },
+      { "raw2posB",   raw2posB, kDouble, NBPM*NPOS },
+      { "raw2posT",   raw2posT, kDouble, NBPM*NPOS },
       { 0 }
     };
     err = LoadDB( file, date, calib_request, fPrefix );
@@ -190,6 +192,8 @@ Int_t THaRaster::Decode( const THaEvData& evdata )
   // copies raw data into local variables
   // pedestal subtraction is not foreseen for the raster
 
+  const char* const here = "Decode()";
+
   UInt_t chancnt = 0;
 
   for (Int_t i = 0; i < fDetMap->GetSize(); i++ ){
@@ -199,17 +203,17 @@ Int_t THaRaster::Decode( const THaEvData& evdata )
       Int_t chan = evdata.GetNextChan( d->crate, d->slot, j);
       if ((chan>=d->lo)&&(chan<=d->hi)) {
 	Int_t data = evdata.GetData( d->crate, d->slot, chan, 0 );
-       Int_t k = chancnt+d->first + chan - d->lo -1;
-	if (k<2) {
+       UInt_t k = chancnt+d->first + chan - d->lo -1;
+	if (k<NBPM) {
 	  fRawPos(k)= data;
 	  fNfired++;
 	}
-	else if (k<4) {
-	  fRawSlope(k-2)= data;
+	else if (k<2*NBPM) {
+	  fRawSlope(k-NBPM)= data;
 	  fNfired++;
 	}
 	else {
-	  Warning( Here("Decode()"), "Illegal detector channel: %d", k );
+	  Warning( Here(here), "Illegal detector channel: %d", k );
 	}
       }
 
@@ -219,8 +223,9 @@ Int_t THaRaster::Decode( const THaEvData& evdata )
     chancnt+=d->hi-d->lo+1;
   }
 
-  if (fNfired!=4) {
-      Warning( Here("Decode()"), "Number of fired Channels out of range. Setting beam position to nominal values");
+  if (fNfired!=2*NBPM) {
+      Warning( Here(here), "Number of fired Channels out of range. "
+	       "Setting beam position to nominal values");
   }
   return 0;
 }
@@ -230,7 +235,7 @@ Int_t THaRaster::Decode( const THaEvData& evdata )
 Int_t THaRaster::Process( )
 {
 
-  for ( Int_t i = 0; i<3; i++) {
+  for ( UInt_t i = 0; i<NPOS; i++) {
     
     //      fPosition[i] = fRaw2Pos[i]*fRawPos+fPosOff[i] ;
     //    this is how i wish it would look like,

@@ -90,7 +90,8 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
       fNelem = nelem;
   }
 
-  if( !err && FillDetMap(detmap, 0, here) <= 0 ) {
+  UInt_t flags = THaDetMap::kFillLogicalChannel;
+  if( !err && FillDetMap(detmap, flags, here) <= 0 ) {
     err = kInitError;  // Error already printed by FillDetMap
   }
 

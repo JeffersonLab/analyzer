@@ -925,7 +925,8 @@ static int WriteFileDB( const string& target_dir, const vector<string>& subdirs 
 class Detector {
 public:
   Detector( const string& name )
-    : fName(name), fDBName(name), fDetMap(new THaDetMap), fDetMapHasModel(false),
+    : fName(name), fDBName(name), fDetMap(new THaDetMap),
+      fDetMapHasLogicalChan(true), fDetMapHasModel(false),
       fNelem(0), fAngle(0) /*, fXax(1.,0,0), fYax(0,1.,0), fZax(0,0,1.) */{
     fSize[0] = fSize[1] = fSize[2] = 0.;
     string::size_type pos = fName.find('.');
@@ -937,7 +938,8 @@ public:
   }
   Detector( const Detector& rhs )
     : fName(rhs.fName), fDBName(rhs.fDBName), fRealName(rhs.fRealName),
-      fConfig(rhs.fConfig), fDetMapHasModel(rhs.fDetMapHasModel),
+      fConfig(rhs.fConfig), fDetMapHasLogicalChan(rhs.fDetMapHasLogicalChan),
+      fDetMapHasModel(rhs.fDetMapHasModel),
       fNelem(rhs.fNelem), fAngle(rhs.fAngle), fOrigin(rhs.fOrigin),
       fDefaults(rhs.fDefaults)
   {
@@ -947,7 +949,7 @@ public:
   Detector& operator=( const Detector& rhs ) {
     if( this != &rhs ) {
       fName = rhs.fName; fDBName = rhs.fDBName; fRealName = rhs.fRealName;
-      fConfig = rhs.fConfig;
+      fConfig = rhs.fConfig; fDetMapHasLogicalChan = rhs.fDetMapHasLogicalChan,
       fDetMapHasModel = rhs.fDetMapHasModel; fNelem = rhs.fNelem;
       fAngle = rhs.fAngle; fOrigin = rhs.fOrigin; fDefaults = rhs.fDefaults;
       memcpy( fSize, rhs.fSize, 3*sizeof(fSize[0]) );
@@ -960,7 +962,8 @@ public:
   virtual ~Detector() { delete fDetMap; fDetMap = 0; }
 
   virtual void Clear() {
-    fConfig = ""; fDetMap->Clear(); fDetMapHasModel = false;
+    fConfig = ""; fDetMap->Clear();
+    fDetMapHasModel = false;
     fSize[0] = fSize[1] = fSize[2] = 0.;
     fAngle = 0; fOrigin.SetXYZ(0,0,0);
   }
@@ -1023,6 +1026,7 @@ protected:
   string      fRealName;// Actual detector name (top level dropped)
   TString     fConfig;  // TString for compatibility with old API
   THaDetMap*  fDetMap;
+  bool        fDetMapHasLogicalChan;
   bool        fDetMapHasModel;
   Int_t       fNelem;
   Double_t    fSize[3];
@@ -1118,7 +1122,7 @@ private:
 class Shower : public Detector {
 public:
   Shower( const string& name )
-    : Detector(name), fPed(0), fGain(0) {}
+    : Detector(name), fPed(0), fGain(0) { fDetMapHasLogicalChan = false; }
   virtual ~Shower() { DeleteArrays(); }
 
   virtual void Clear() { Detector::Clear(); fMaxCl = -1; }
@@ -4126,8 +4130,12 @@ int VDC::Plane::ReadDB( FILE* file, time_t /* date */, time_t )
 int Detector::Save( time_t start, const string& version ) const
 {
   string prefix = fName + ".";
-  int flags = 1;
-  if( fDetMapHasModel )  flags++;
+  int flags = 0;
+  if( fDetMapHasLogicalChan ) {
+    flags++;
+    if( fDetMapHasModel )
+      flags++;
+  }
   AddToMap( prefix+"detmap",   MakeValue(fDetMap,flags), start, version, 4+flags );
   if( !fNelemName.empty() )
     AddToMap( prefix+fNelemName, MakeValue(&fNelem),     start, version );
@@ -4277,7 +4285,7 @@ int CoincTime::Save( time_t start, const string& version ) const
   AddToMap( prefix0+"detmap",     MakeDetmapElemValue(fDetMap,0,2), start, version );
   AddToMap( prefix0+"tdc_res",    MakeValue(fTdcRes), start, version );
   AddToMap( prefix0+"tdc_offset", MakeValue(fTdcOff), start, version );
-  AddToMap( prefix1+"detmap",     MakeDetmapElemValue(fDetMap,0,2), start, version );
+  AddToMap( prefix1+"detmap",     MakeDetmapElemValue(fDetMap,1,2), start, version );
   AddToMap( prefix1+"tdc_res",    MakeValue(fTdcRes+1), start, version );
   AddToMap( prefix1+"tdc_offset", MakeValue(fTdcOff+1), start, version );
 

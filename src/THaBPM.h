@@ -8,7 +8,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "THaBeamDet.h"
-#include "TVector.h"
+#include "TVectorT.h"
 
 class THaBPM : public THaBeamDet {
 
@@ -43,11 +43,11 @@ protected:
   //  THaBPM& operator=( const THaBPM& ) { return *this; }
 
 
-  TVector  fRawSignal;     // induced signal of the antennas
-  TVector  fPedestals;
-  TVector  fCorSignal;     // pedestal subtracted signal
+  TVectorD  fRawSignal;     // induced signal of the antennas
+  TVectorD  fPedestals;
+  TVectorD  fCorSignal;     // pedestal subtracted signal
 
-  TVector fRotPos;         // position in the BPM system, arbitrary units
+  TVectorD  fRotPos;        // position in the BPM system, arbitrary units
   
   TMatrix fRot2HCSPos;     
   
