@@ -57,3 +57,7 @@ dist/
 .cproject
 .pydevproject
 .settings/
+
+#Doxygen stuff
+docs/Doxygen.tag
+html
