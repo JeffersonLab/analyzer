@@ -60,4 +60,5 @@ dist/
 
 #Doxygen stuff
 docs/Doxygen.tag
-html
+docs/ROOT.tag
+docs/html
