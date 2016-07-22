@@ -379,8 +379,11 @@ Int_t THaVDCPlane::Decode( const THaEvData& evData )
       if (chan < d->lo || chan > d->hi)
 	continue; //Not part of this detector
 
-      // Wire numbers and channels go in the same order ...
-      Int_t wireNum  = d->first + chan - d->lo;
+      // Wire numbers count up in the order in which channels are defined
+      // in the detector map. That order may be forward or reverse, e.g.
+      // forward: lo hi first = 0  95 1 --> channels 0..95 -> wire# = 1...96
+      // reverse: lo hi first = 95  0 1 --> channels 0..95 -> wire# = 96...1
+      Int_t wireNum  = d->first + ((d->reverse) ? d->hi - chan : chan - d->lo);
       THaVDCWire* wire = GetWire(wireNum);
       if( !wire || wire->GetFlag() != 0 ) continue;
 
