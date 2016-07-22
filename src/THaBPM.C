@@ -203,7 +203,7 @@ Int_t THaBPM::Decode( const THaEvData& evdata )
       Int_t chan = evdata.GetNextChan( d->crate, d->slot, j);
       if ((chan>=d->lo)&&(chan<=d->hi)) {
 	Int_t data = evdata.GetData( d->crate, d->slot, chan, 0 );
-	Int_t k = d->first + chan - d->lo -1;
+	Int_t k = d->first + ((d->reverse) ? d->hi - chan : chan - d->lo) -1;
 	if ((k<4)&&(fRawSignal(k)==-1)) {
 	  fRawSignal(k)= data;
 	  fNfired++;

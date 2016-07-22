@@ -237,7 +237,8 @@ Int_t THaRaster::Decode( const THaEvData& evdata )
       Int_t chan = evdata.GetNextChan( d->crate, d->slot, j);
       if ((chan>=d->lo)&&(chan<=d->hi)) {
 	Int_t data = evdata.GetData( d->crate, d->slot, chan, 0 );
-       Int_t k = chancnt+d->first + chan - d->lo -1;
+	Int_t k = chancnt + d->first +
+	  ((d->reverse) ? d->hi - chan : chan - d->lo) -1;
 	if (k<2) {
 	  fRawPos(k)= data;
 	  fNfired++;

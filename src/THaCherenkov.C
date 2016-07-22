@@ -233,7 +233,7 @@ Int_t THaCherenkov::Decode( const THaEvData& evdata )
       Int_t data = evdata.GetData( d->crate, d->slot, chan, 0 );
 
       // Get the detector channel number, starting at 0
-      Int_t k = d->first + chan - d->lo - 1;
+      Int_t k = d->first + ((d->reverse) ? d->hi - chan : chan - d->lo) - 1;
 
 #ifdef WITH_DEBUG
       if( k<0 || k>= fNelem ) {
