@@ -344,7 +344,7 @@ Int_t THaShower::Decode( const THaEvData& evdata )
       Int_t data = evdata.GetData( d->crate, d->slot, chan, 0 );
 
       // Copy the data to the local variables.
-      Int_t k = *(*(fChanMap+i)+(chan-d->lo)) - 1;
+      Int_t k = *(*(fChanMap+i)+((d->reverse) ? d->hi - chan : chan-d->lo)) - 1;
 #ifdef WITH_DEBUG
       if( k<0 || k>=fNelem )
 	Warning( Here("Decode()"), "Bad array index: %d. Your channel map is "
