@@ -28,9 +28,21 @@ public:
    virtual Int_t GetNumEvents() const { return fNumEvents; };
    virtual Int_t GetNumSamples(Int_t chan) const;
    virtual Int_t GetData(Int_t chan, Int_t event, Int_t which) const;
+   virtual Int_t GetData(Decoder::EModuleType type, Int_t chan, Int_t hit) const;
+   virtual Int_t GetData(Decoder::EModuleType type, Int_t chan, Int_t hit, Int_t sample) const;
    virtual Int_t GetAdcData(Int_t chan, Int_t ievent) const;
    virtual Int_t GetTdcData(Int_t chan, Int_t ievent) const;
+// I know that Eric Poosier's version has these methods.  But that code is not yet available.
+// I put placeholders here for now.
+   virtual Int_t GetPulseIntegralData(Int_t chan, Int_t hit) const;
+   virtual Int_t GetPulseTimeData(Int_t chan, Int_t hit) const;
+   virtual Int_t GetPulsePeakData(Int_t chan, Int_t hit) const;
+   virtual Int_t GetPulsePedestalData(Int_t chan, Int_t hit) const;
+   virtual Int_t GetPulseSampleData(Int_t chan, Int_t hit, Int_t isample) const;
+
    virtual Int_t GetMode() const;
+   Bool_t IsMultiFunction();
+   Bool_t HasCapability(Decoder::EModuleType type);
 
    void SetMode(Int_t mode) {
      f250_setmode = mode;

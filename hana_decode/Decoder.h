@@ -49,6 +49,14 @@ namespace Decoder {
   static const Int_t DETMAP_FILE      = 135;
   static const Int_t TRIGGER_FILE     = 136;
   static const Int_t SCALER_EVTYPE    = 140;
+
+ // Access processed data for multi-function modules
+  enum EModuleType { kSampleADC, kPulseIntegral, kPulseTime, 
+            kPulsePeak, kPulsePedestal };  
+
+
 }
+
+
 
 #endif

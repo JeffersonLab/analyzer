@@ -44,6 +44,8 @@ namespace Decoder {
     virtual Int_t GetData(Int_t) const { return 0; };
     virtual Int_t GetData(Int_t, Int_t) const { return 0; };
     virtual Int_t GetData(Int_t, Int_t, Int_t) const { return 0; };
+    virtual Int_t GetData(Decoder::EModuleType type, Int_t chan, Int_t hit) const { return 0; };
+    virtual Int_t GetData(Decoder::EModuleType type, Int_t chan, Int_t hit, Int_t sample) const {return 0;};
 
     virtual Int_t Decode(const UInt_t *p) = 0; // implement in derived class
     // Loads slot data
@@ -95,6 +97,9 @@ namespace Decoder {
     Module& operator=(const Module &rhs);
 
     virtual void DoPrint() const;
+
+    Bool_t IsMultiFunction() { return kFALSE; };
+    Bool_t HasCapability(Decoder::EModuleType type) { return kFALSE; };
 
   protected:
 

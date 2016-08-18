@@ -77,6 +77,18 @@ namespace Decoder {
     SetMode(F250_SAMPLE);  // needs to be driven by cratemap ... later
   }
 
+  Bool_t Fadc250Module::IsMultiFunction() { 
+     return kTRUE; 
+  }
+
+  Bool_t Fadc250Module::HasCapability(Decoder::EModuleType type) { 
+    if (type == kSampleADC || type == kPulseIntegral || type == kPulseTime 
+        || type == kPulsePeak || type == kPulsePedestal) {
+      return kTRUE;
+    } else {
+      return kFALSE; 
+    }
+  }
 
   Bool_t Fadc250Module::IsSlot(UInt_t rdata) {
 #ifdef WITH_DEBUG
@@ -110,6 +122,40 @@ namespace Decoder {
       cout << "Fadc250Module:: ERROR: The set mode "<<f250_setmode;
       cout << "   is not consistent with the found mode "<<f250_foundmode<<endl;
     }
+  }
+
+  Int_t Fadc250Module::GetData(Decoder::EModuleType type, Int_t chan, Int_t hit) const {
+    if (type == kPulseIntegral) return GetPulseIntegralData(chan, hit);
+    if (type == kPulseTime) return GetPulseTimeData(chan, hit);
+    if (type == kPulsePeak) return GetPulsePeakData(chan, hit);
+    if (type == kPulsePedestal) return GetPulsePedestalData(chan, hit);
+    return -1;
+  }
+
+  // FIXME: when to call this from EvData ?   
+  Int_t Fadc250Module::GetData(Decoder::EModuleType type, Int_t chan, Int_t hit, Int_t sample) const {
+    if (type == kSampleADC) return GetPulseSampleData(chan, hit, sample);
+  }
+
+
+  Int_t Fadc250Module::GetPulseIntegralData(Int_t chan, Int_t hit) const { 
+      return 0; // awaiting Eric Poosier's version
+  }
+
+  Int_t Fadc250Module::GetPulseTimeData(Int_t chan, Int_t hit) const {
+      return 0; // awaiting Eric Poosier's version
+  }
+
+  Int_t Fadc250Module::GetPulsePeakData(Int_t chan, Int_t hit) const {
+      return 0; // awaiting Eric Poosier's version
+  }
+	
+  Int_t Fadc250Module::GetPulsePedestalData(Int_t chan, Int_t hit) const {
+      return 0; // awaiting Eric Poosier's version
+  }
+
+  Int_t Fadc250Module::GetPulseSampleData(Int_t chan, Int_t hit, Int_t isample) const {
+      return 0; // awaiting Eric Poosier's version
   }
 
   Int_t Fadc250Module::GetAdcData(Int_t chan, Int_t ievent) const {

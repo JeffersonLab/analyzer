@@ -9,6 +9,7 @@
 
 
 #include "Decoder.h"
+#include "Module.h"
 #include "TObject.h"
 #include "TString.h"
 #include "THaSlotData.h"
@@ -69,6 +70,36 @@ public:
   Int_t     GetNextChan(Int_t crate, Int_t slot, Int_t index) const;
   const char* DevType(Int_t crate, Int_t slot) const;
 
+  Bool_t HasCapability( Decoder::EModuleType type, Int_t crate, Int_t slot ) const
+  {
+    Decoder::Module* module = GetModule(crate, slot);
+    if (!module) { 
+      std::cout << "No module at crate "<<crate<<"   slot "<<slot<<std::endl;
+      return false;
+    }
+    return module->HasCapability(type);
+  }
+  Bool_t IsMultifunction( Int_t crate, Int_t slot ) const
+  {
+    Decoder::Module* module = GetModule(crate, slot);
+    if (!module) { 
+      std::cout << "No module at crate "<<crate<<"   slot "<<slot<<std::endl;
+      return false;
+    }
+    return module->IsMultiFunction();
+  }
+
+  Int_t GetData( Decoder::EModuleType type, Int_t crate, Int_t slot, Int_t chan, Int_t hit ) const
+  {
+    Decoder::Module* module = GetModule(crate, slot);
+    if (!module) return false;
+    if (module->HasCapability( type )) {
+      return module->GetData(type, chan, hit);
+    } else {
+      return GetData( crate, slot, chan, hit );
+    }
+  }
+  
   // Optional functionality that may be implemented by derived classes
   virtual ULong64_t GetEvTime() const { return evt_time; }
    // Returns Beam Helicity (-1,0,+1)  '0' is 'unknown'
