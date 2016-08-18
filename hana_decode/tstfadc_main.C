@@ -1,10 +1,15 @@
 // Test of FADC decoding
 //
 // R. Michaels, Aug 2014
-
+//
+// Aug 2016  testing the THaEvData::GetData methods, switch with "use_module"
 
 // MYTYPE = 0 for TEDF,  1 for HCAL
 #define MYTYPE 0
+
+// (9,10) for TEDF,  (10,3) for HCAL 
+#define MYCRATE 9
+#define MYSLOT 10
 
 // MYCHAN = 11 for TEDF,  0 for HCAL
 #define MYCHAN 11
@@ -36,11 +41,14 @@ using namespace Decoder;
 TH1F *h1,*h2,*h3,*h4,*h5;
 TH1F *hinteg;
 
+Int_t use_module = 0;
+
 void dump(UInt_t *buffer, ofstream *file);
 void process(Int_t i, THaEvData *evdata, ofstream *file);
 
 int main(int argc, char* argv[])
 {
+
 
    TString filename("snippet.dat");
 
@@ -144,28 +152,46 @@ void process (Int_t iev, THaEvData *evdata, ofstream *debugfile) {
 	if (debugfile) *debugfile << "Physics trigger " << endl;
     }
 
+    if (use_module) {  // Using the module scheme.  Get a module from THaEvData
+
      Module *fadc;
 
-     fadc = evdata->GetModule(9,10);  // 9,10 for TEDF    10,3 for HCAL
-     if (debugfile) *debugfile << "main:  fadc ptr = "<<fadc<<endl;
+     fadc = evdata->GetModule(MYCRATE,MYSLOT);  // 9,10 for TEDF    10,3 for HCAL
+     if (debugfile) *debugfile << "main:  using module, fadc ptr = "<<fadc<<endl;
 
      if (fadc) {
-	   if (debugfile) *debugfile << "main: num events "<<fadc->GetNumEvents()<<endl;
-	   if (debugfile) *debugfile << "main: fadc mode "<<fadc->GetMode()<<endl;
-	   for (Int_t i=0; i < 500; i++) {
-	     if (debugfile) *debugfile << "main:  fadc data on ch.   "<<dec<<MYCHAN<<"  "<<i<<"  "<<fadc->GetData(1, MYCHAN,i)<<endl;
-	     if (fadc->GetMode()==1) {
-	       if (iev==5) h1->Fill(i,fadc->GetData(1,MYCHAN,i));
-	       if (iev==6) h2->Fill(i,fadc->GetData(1,MYCHAN,i));
-	       if (iev==7) h3->Fill(i,fadc->GetData(1,MYCHAN,i));
-	       if (iev==8) h4->Fill(i,fadc->GetData(1,MYCHAN,i));
-	       if (iev==9) h5->Fill(i,fadc->GetData(1,MYCHAN,i));
-	     }
-	     if (fadc->GetMode()==2) {
-	       hinteg->Fill(fadc->GetData(1,MYCHAN,i),1.);
-	     }
+	 if (debugfile) *debugfile << "main: num events "<<fadc->GetNumEvents()<<endl;
+	 if (debugfile) *debugfile << "main: fadc mode "<<fadc->GetMode()<<endl;
+	 for (Int_t i=0; i < 500; i++) {
+	 if (debugfile) *debugfile << "main:  fadc data on ch.   "<<dec<<MYCHAN<<"  "<<i<<"  "<<fadc->GetData(1, MYCHAN,i)<<endl;
+	   if (fadc->GetMode()==1) {
+	     if (iev==5) h1->Fill(i,fadc->GetData(1,MYCHAN,i));
+	     if (iev==6) h2->Fill(i,fadc->GetData(1,MYCHAN,i));
+	     if (iev==7) h3->Fill(i,fadc->GetData(1,MYCHAN,i));
+	     if (iev==8) h4->Fill(i,fadc->GetData(1,MYCHAN,i));
+	     if (iev==9) h5->Fill(i,fadc->GetData(1,MYCHAN,i));
 	   }
+	   if (fadc->GetMode()==2) {
+	     hinteg->Fill(fadc->GetData(1,MYCHAN,i),1.);
+	   }
+	 }
      }
+
+
+    } else { // alternative is to use the THaEvData::GetData interface
+
+       if (debugfile) *debugfile << "main:  using THaEvDAta = "<<endl;
+
+	for (Int_t i=0; i < 500; i++) {
+  	 if (iev==5) h1->Fill(i,evdata->GetData(kSampleADC,MYCRATE,MYSLOT,MYCHAN,i));
+         if (iev==6) h2->Fill(i,evdata->GetData(kSampleADC,MYCRATE,MYSLOT,MYCHAN,i));
+	 if (iev==7) h3->Fill(i,evdata->GetData(kSampleADC,MYCRATE,MYSLOT,MYCHAN,i));
+         if (iev==8) h4->Fill(i,evdata->GetData(kSampleADC,MYCRATE,MYSLOT,MYCHAN,i));
+	 if (iev==9) h5->Fill(i,evdata->GetData(kSampleADC,MYCRATE,MYSLOT,MYCHAN,i));
+         hinteg->Fill(evdata->GetData(kPulseIntegral,MYCRATE,MYSLOT,MYCHAN,i),1.);
+
+	}
+    }
 
 // Now we want data from a particular crate and slot.
 // E.g. crates are 1,2,3,13,14,15 (roc numbers), Slots are 1,2,3...
