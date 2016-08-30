@@ -40,8 +40,8 @@ using namespace std;
 
 namespace Decoder {
 
-const UShort_t THaCrateMap::MAXCHAN = 100;
-const UShort_t THaCrateMap::MAXDATA = 1024;
+const UShort_t THaCrateMap::MAXCHAN = 4096;
+const UShort_t THaCrateMap::MAXDATA = 32768;
 const int THaCrateMap::CM_OK = 1;
 const int THaCrateMap::CM_ERR = -1;
 
