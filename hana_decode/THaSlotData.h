@@ -92,7 +92,8 @@ private:
        std::ofstream *fDebugFile; // debug output to this file, if nonzero
        bool didini;          // true if object initialized via define()
        UShort_t maxc;        // Number of channels for this device
-       UShort_t maxd;        // Max number of data words per event
+       //UShort_t maxd;        // Max number of data words per event
+       Int_t maxd;        // Max number of data words per event
        UShort_t allocd;      // Allocated size of data arrays
        UShort_t alloci;      // Allocated size of dataindex array
 

@@ -68,7 +68,8 @@ void THaSlotData::define(int cra, int slo, UShort_t nchan, UShort_t ndata, UShor
   slot = slo;
   didini = true;
   maxc = nchan;
-  maxd = ndata;
+  //maxd = ndata;
+  maxd = 40000;
   numhitperchan=nhitperchan;
   // Initial allocation of data arrays
   allocd = nchan;

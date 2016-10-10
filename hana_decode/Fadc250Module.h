@@ -8,121 +8,89 @@
 //
 /////////////////////////////////////////////////////////////////////
 
+#define NADCCHAN 16
+
 #include "VmeModule.h"
+#include "stdint.h"
+#include <vector>
+
+using namespace std;
 
 namespace Decoder {
 
-class Fadc250Module : public VmeModule {
+  class Fadc250Module : public VmeModule {   // Inheritance
 
-public:
+  public:
+    
+    Fadc250Module();                         // Default constructor
+    Fadc250Module(Int_t crate, Int_t slot);  // Constructor
+    virtual ~Fadc250Module();                // Virtual constructor
 
-   Fadc250Module();
-   Fadc250Module(Int_t crate, Int_t slot);
-   virtual ~Fadc250Module();
+    using Module::GetData;
+    using Module::LoadSlot;
 
-   using Module::GetData;
+    virtual void Init();
+    virtual void CheckDecoderStatus() const;
+    virtual void CheckDecoderStatus(Int_t crate, Int_t slot) const;
+    virtual Int_t GetPulseIntegralData(Int_t chan, Int_t ievent) const;
+    virtual Int_t GetEmulatedPulseIntegralData(Int_t chan) const;
+    virtual Int_t GetPulseTimeData(Int_t chan, Int_t ievent) const;
+    virtual Int_t GetPulsePeakData(Int_t chan, Int_t ievent) const;
+    virtual Int_t GetPulsePedestalData(Int_t chan, Int_t ievent) const;
+    virtual Int_t GetPulseSamplesData(Int_t chan, Int_t ievent) const;
+    virtual vector<uint32_t> GetPulseSamplesVector(Int_t chan) const;
+    virtual Int_t GetNumFadcEvents(Int_t chan) const;
+    virtual Int_t GetNumFadcSamples(Int_t chan, Int_t ievent) const;
+    virtual Int_t GetFadcMode(Int_t chan) const;
+    virtual Int_t LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const UInt_t *pstop);
+    virtual Int_t LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, Int_t pos, Int_t len);
+    virtual Int_t Decode(const UInt_t *pdat);
+    Bool_t IsMultiFunction();
+    Bool_t HasCapability(Decoder::EModuleType type);
+            
+  private:
 
-   virtual void Init();
-   virtual Bool_t IsSlot(UInt_t rdata);
-   virtual Int_t Decode(const UInt_t *evbuffer);
-   virtual Int_t GetNumEvents() const { return fNumEvents; };
-   virtual Int_t GetNumSamples(Int_t chan) const;
-   virtual Int_t GetData(Int_t chan, Int_t event, Int_t which) const;
-   virtual Int_t GetData(Decoder::EModuleType type, Int_t chan, Int_t hit) const;
-   virtual Int_t GetData(Decoder::EModuleType type, Int_t chan, Int_t hit, Int_t sample) const;
-   virtual Int_t GetAdcData(Int_t chan, Int_t ievent) const;
-   virtual Int_t GetTdcData(Int_t chan, Int_t ievent) const;
-// I know that Eric Poosier's version has these methods.  But that code is not yet available.
-// I put placeholders here for now.
-   virtual Int_t GetPulseIntegralData(Int_t chan, Int_t hit) const;
-   virtual Int_t GetPulseTimeData(Int_t chan, Int_t hit) const;
-   virtual Int_t GetPulsePeakData(Int_t chan, Int_t hit) const;
-   virtual Int_t GetPulsePedestalData(Int_t chan, Int_t hit) const;
-   virtual Int_t GetPulseSampleData(Int_t chan, Int_t hit, Int_t isample) const;
+    struct fadc_data_struct {
+      // Header data objects
+      uint32_t slot_blk_hdr, mod_id, iblock_num, nblock_events;  // Block header objects
+      uint32_t PL, NSA, NSB;                                     // Block header objects cont.
+      uint32_t slot_blk_trl, nwords_inblock;                     // Block trailer objects
+      uint32_t slot_evt_hdr, evt_num;                            // Event header objects
+      uint32_t trig_time;                                        // Trigger time objects
+      // Window raw data objects
+      uint32_t chan, win_width;                                  // FADC channel, window width
+      uint32_t samples;                                          // FADC raw data samples
+      bool overflow, invalid_samples;                            // True if any sample's "overflow" or "not valid" bit set, respectively
+      // Pulse raw data objects
+      uint32_t pulse_num, sample_num_tc;                         // FADC pulse number, sample number of threshold crossing
+      // Pulse integral data objects
+      uint32_t qual_factor, pulse_integral;                      // FADC quality factor, pulse integral
+      // Pulse time data objects
+      uint32_t coarse_pulse_time, fine_pulse_time, time;         // FADC pulse coarse time, pulse fine time, pulse time
+      // Pulse pedestal data objects
+      uint32_t pedestal, pulse_peak;                             // FADC pedestal, pulse peak value
+      // Scaler data objects
+      uint32_t scaler_words;                                     // FADC scaler words
+    } fadc_data;  //  fadc_data_struct
 
-   virtual Int_t GetMode() const;
-   Bool_t IsMultiFunction();
-   Bool_t HasCapability(Decoder::EModuleType type);
+    vector<uint32_t> fPulseIntegral[NADCCHAN], fPulseTime[NADCCHAN];
+    vector<uint32_t> fPulsePeak[NADCCHAN], fPulsePedestal[NADCCHAN];
+    vector<uint32_t> fPulseSamples[NADCCHAN];
 
-   void SetMode(Int_t mode) {
-     f250_setmode = mode;
-     IsInit = kTRUE;
-     CheckSetMode();
-   }
+    Bool_t data_type_4, data_type_6, data_type_7, data_type_8, data_type_10;
+    Bool_t block_header_found, block_trailer_found, event_header_found;
 
-   Bool_t IsSampleMode() const { return (f250_setmode == F250_SAMPLE); };
-   Bool_t IsIntegMode() const { return (f250_setmode == F250_INTEG); };
+    void ClearDataVectors();
+    void PopulateDataVector(vector<uint32_t> data_vector[NADCCHAN], uint32_t chan, uint32_t data);
+    Int_t SumVectorElements(vector<uint32_t> data_vector) const;
 
-private:
+    Bool_t slots_match;
+   
+    static TypeIter_t fgThisType;
+    ClassDef(Fadc250Module,0)  //  JLab FADC 250 Module
 
-   enum { F250_SAMPLE = 1, F250_INTEG = 2 };  // supported modes
-   Int_t f250_setmode, f250_foundmode;
-   enum { GET_ADC = 1, GET_TDC = 2 };
+      } ;  // Fadc250Module class
 
-   struct fadc_data_struct {
-      unsigned int new_type;
-      unsigned int type;
-      unsigned int slot_id_hd;
-      unsigned int slot_id_tr;
-      unsigned int n_evts;
-      unsigned int blk_num;
-      unsigned int n_words;
-      unsigned int evt_num_1;
-      unsigned int evt_num_2;
-      unsigned int time_now;
-      unsigned int time_1;
-      unsigned int time_2;
-      unsigned int time_3;
-      unsigned int time_4;
-      unsigned int chan;
-      unsigned int width;
-      unsigned int valid_1;
-      unsigned int adc_1;
-      unsigned int valid_2;
-      unsigned int adc_2;
-      unsigned int over;
-      unsigned int adc_sum;
-      unsigned int pulse_num;
-      unsigned int thres_bin;
-      unsigned int quality;
-      unsigned int integral;
-      unsigned int time;
-      unsigned int chan_a;
-      unsigned int source_a;
-      unsigned int chan_b;
-      unsigned int source_b;
-      unsigned int group;
-      unsigned int time_coarse;
-      unsigned int time_fine;
-      unsigned int vmin;
-      unsigned int vpeak;
-      unsigned int trig_type_int;	/* next 4 for internal trigger data */
-      unsigned int trig_state_int;	/* e.g. helicity */
-      unsigned int evt_num_int;
-      unsigned int err_status_int;
-   };
-
-   fadc_data_struct fadc_data;
-
-// Loads sldat and increments ptr to evbuffer
-   virtual Int_t LoadSlot(THaSlotData *sldat,  const UInt_t* evbuffer,
-			  const UInt_t *pstop );
-   virtual Int_t LoadSlot(THaSlotData *sldat,  const UInt_t* evbuffer,
-			  Int_t pos, Int_t len);
-
-   Int_t fNumTrig, fNumEvents, *fNumAInt, *fNumTInt,  *fNumSample;
-   Int_t *fAdcData;  // Raw data (either samples or pulse integrals)
-   Int_t *fTdcData;
-   Bool_t IsInit;
-   void Clear(const Option_t *opt);
-   void CheckSetMode() const;
-   void CheckFoundMode() const;
-   static TypeIter_t fgThisType;
-   Int_t slotmask, chanmask, datamask;
-   ClassDef(Fadc250Module,0)  //  JLab FADC 250 Module
-
-};
-
-}
+}  // Decoder namespace
 
 #endif

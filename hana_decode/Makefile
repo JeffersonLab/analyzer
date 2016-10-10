@@ -28,7 +28,7 @@ VERS = hana_decode_2.0
 
 # If one defines STANDALONE, the library and test execs are compiled
 # independently of the rest of the analyzer.  Normally this is commented out.
-# export STANDALONE = 1
+#export STANDALONE = 1
 
 # MAINDIR is the source of headers for main code.
 # Also need objects from MAINDIR for standalone test executables,
