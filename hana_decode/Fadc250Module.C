@@ -24,6 +24,7 @@
 #include <cmath>
 #include <iomanip>
 #include <numeric>
+#include <cassert>
 
 using namespace std;
 
@@ -35,11 +36,11 @@ namespace Decoder {
     DoRegister( ModuleType( "Decoder::Fadc250Module" , 250 ));
 
   Fadc250Module::Fadc250Module()
-    : VmeModule()
+    : VmeModule(), fPulseData(NADCCHAN)
   { memset(&fadc_data, 0, sizeof(fadc_data)); }
 
   Fadc250Module::Fadc250Module(Int_t crate, Int_t slot)
-    : VmeModule(crate, slot)
+    : VmeModule(crate, slot), fPulseData(NADCCHAN)
   {
     memset(&fadc_data, 0, sizeof(fadc_data));
     IsInit = kFALSE;
@@ -57,29 +58,24 @@ namespace Decoder {
   }
 
   Bool_t Fadc250Module::HasCapability(Decoder::EModuleType type) { 
-    if (type == kSampleADC || type == kPulseIntegral || type == kPulseTime 
-        || type == kPulsePeak || type == kPulsePedestal) {
-      return kTRUE;
-    } else {
-      return kFALSE; 
-    }
+    return ( type == kSampleADC || type == kPulseIntegral || type == kPulseTime
+	     || type == kPulsePeak || type == kPulsePedestal );
   }
 
   // Clear all data vectors
   void Fadc250Module::ClearDataVectors() {
     // Clear all data objects
+    assert( fPulseData.size() == NADCCHAN ); // initialization error in constructor
     for (uint32_t i = 0; i < NADCCHAN; i++) {
-      fPulseIntegral[i].clear(); fPulseTime[i].clear();
-      fPulsePeak[i].clear(); fPulsePedestal[i].clear();
-      fPulseSamples[i].clear();
+      fPulseData[i].clear();
     }
   }
 
   // Require that slot from base class and slot from 
   //   data match before populating data vectors
-  void Fadc250Module::PopulateDataVector(vector<uint32_t> data_vector[NADCCHAN], uint32_t chan, uint32_t data) {
+  void Fadc250Module::PopulateDataVector(vector<uint32_t> data_vector, uint32_t data) {
     if (static_cast <uint32_t> (fSlot) == fadc_data.slot_blk_hdr)
-      data_vector[chan].push_back(data);
+      data_vector.push_back(data);
   }
 
   // Sum elements contained in data vector
@@ -110,14 +106,9 @@ namespace Decoder {
 
     Clear();
     
-    // Initialize data types to false
-    data_type_4 = false; data_type_6 = false; 
-    data_type_7 = false; data_type_8 = false; 
-    data_type_10 = false;
-    block_header_found  = false; 
-    block_trailer_found = false;  
-    event_header_found  = false;  
-    slots_match = false;
+    // FIXME: this mimics the behavior of the original static variable definition in Decode()
+    // Move the following line to Clear() if data_type_def is actually an event-by-event flag
+    data_type_def = 0;
 
     IsInit = kTRUE;
     fName = "FADC250Devel Module (example)"; 
@@ -133,7 +124,7 @@ namespace Decoder {
 
   Int_t Fadc250Module::GetPulseIntegralData(Int_t chan, Int_t ievent) const {
     Int_t nevent = 0;
-    nevent = fPulseIntegral[chan].size();
+    nevent = fPulseData[chan].integral.size();
     if (ievent < 0 || ievent > nevent) {
       cout << "ERROR:: Fadc250Module:: GetPulseIntegralData:: invalid event number for slot = " << fSlot << ", channel = " << chan << endl;
       return -1;
@@ -143,37 +134,37 @@ namespace Decoder {
       return -1;
     }
     else {
-      return fPulseIntegral[chan][ievent];
+      return fPulseData[chan].integral[ievent];
 #ifdef WITH_DEBUG
       if (fDebugFile != 0)
 	*fDebugFile << "Fadc250Module::GetPulseIntegralData channel " 
 		    << chan << ", event " << ievent << " = " 
-		    <<  fPulseIntegral[chan][ievent] << endl;
+		    <<  fPulseData[chan].integral[ievent] << endl;
 #endif
     }
   }
   
   Int_t Fadc250Module::GetEmulatedPulseIntegralData(Int_t chan) const {
     Int_t nevent = 0;
-    nevent = fPulseSamples[chan].size();
+    nevent = fPulseData[chan].samples.size();
     if (nevent == 0) {
       cout << "ERROR:: Fadc250Module:: GetEmulatedPulseIntegralData:: data vector empty  for slot = " << fSlot << ", channel = " << chan << "\n" 
 	   << "Ensure that FADC is operating in mode 1 OR 8" << endl;
       return -1;
     }
     else {
-    return SumVectorElements(fPulseSamples[chan]);
+    return SumVectorElements(fPulseData[chan].samples);
 #ifdef WITH_DEBUG
       if (fDebugFile != 0)
 	*fDebugFile << "Fadc250Module::GetEmulatedPulseIntegralData channel " 
-		    << chan << " = " <<  SumVectorElements(fPulseSamples[chan]) << endl;
+		    << chan << " = " <<  SumVectorElements(fPulseData[chan].samples) << endl;
 #endif
     }
   }
 
   Int_t Fadc250Module::GetPulseTimeData(Int_t chan, Int_t ievent) const {
     Int_t nevent = 0;
-    nevent = fPulseTime[chan].size();
+    nevent = fPulseData[chan].time.size();
     if (ievent < 0 || ievent > nevent) {
       cout << "ERROR:: Fadc250Module:: GetPulseTimeData:: invalid event number for slot = " << fSlot << ", channel = " << chan << endl;
       return -1;
@@ -183,19 +174,19 @@ namespace Decoder {
       return -1;
     }
     else {
-      return fPulseTime[chan][ievent];
+      return fPulseData[chan].time[ievent];
 #ifdef WITH_DEBUG
       if (fDebugFile != 0)
 	*fDebugFile << "Fadc250Module::GetPulseTimeData channel " 
 		    << chan << ", event " << ievent << " = " 
-		    <<  fPulseTime[chan][ievent] << endl;
+		    <<  fPulseData[chan].time[ievent] << endl;
 #endif
     }
   }
 
   Int_t Fadc250Module::GetPulsePeakData(Int_t chan, Int_t ievent) const {
     Int_t nevent = 0;
-    nevent = fPulsePeak[chan].size();
+    nevent = fPulseData[chan].peak.size();
     if (ievent < 0 || ievent > nevent) {
       cout << "ERROR:: Fadc250Module:: GetPulsePeakData:: invalid event number for slot = " << fSlot << ", channel = " << chan << endl;
       return -1;
@@ -205,19 +196,19 @@ namespace Decoder {
       return -1;
     }
     else {
-      return fPulsePeak[chan][ievent];
+      return fPulseData[chan].peak[ievent];
 #ifdef WITH_DEBUG
       if (fDebugFile != 0)
 	*fDebugFile << "Fadc250Module::GetPulsePeakData channel " 
 		    << chan << ", event " << ievent << " = " 
-		    <<  fPulsePeak[chan][ievent] << endl;
+		    <<  fPulseData[chan].peak[ievent] << endl;
 #endif
     }
   }
       
   Int_t Fadc250Module::GetPulsePedestalData(Int_t chan, Int_t ievent) const {
     Int_t nevent = 0;
-    nevent = fPulsePedestal[chan].size();
+    nevent = fPulseData[chan].pedestal.size();
     if (ievent < 0 || ievent > nevent) {
       cout << "ERROR:: Fadc250Module:: GetPulsePedestalData:: invalid event number for slot = " << fSlot << ", channel = " << chan << endl;
       return -1;
@@ -227,19 +218,19 @@ namespace Decoder {
       return -1;
     }
     else {
-      return fPulsePedestal[chan][ievent];
+      return fPulseData[chan].pedestal[ievent];
 #ifdef WITH_DEBUG
       if (fDebugFile != 0)
 	*fDebugFile << "Fadc250Module::GetPulsePedestalData channel " 
 		    << chan << ", event " << ievent << " = " 
-		    <<  fPulsePedestal[chan][ievent] << endl;
+		    <<  fPulseData[chan].pedestal[ievent] << endl;
 #endif
     }
   }
 
   Int_t Fadc250Module::GetPulseSamplesData(Int_t chan, Int_t ievent) const {
     Int_t nevent = 0;
-    nevent = fPulseSamples[chan].size();
+    nevent = fPulseData[chan].samples.size();
     if (ievent < 0 || ievent > nevent) {
       cout << "ERROR:: Fadc250Module:: GetPulseSamplesData:: invalid event number for slot = " << fSlot << ", channel = " << chan << endl;
       return -1;
@@ -249,56 +240,58 @@ namespace Decoder {
       return -1;
     }
     else {
-      return fPulseSamples[chan][ievent];
+      return fPulseData[chan].samples[ievent];
 #ifdef WITH_DEBUG
       if (fDebugFile != 0)
 	*fDebugFile << "Fadc250Module::GetPulseSamplesData channel " 
 		    << chan << ", event " << ievent << " = " 
-		    <<  fPulseSamples[chan][ievent] << endl;
+		    <<  fPulseData[chan].samples[ievent] << endl;
 #endif
     }
   }
 
 vector<uint32_t> Fadc250Module::GetPulseSamplesVector(Int_t chan) const {
     Int_t nevent = 0;
-    nevent = fPulseSamples[chan].size();
+    nevent = fPulseData[chan].samples.size();
     if (nevent == 0) {
       cout << "ERROR:: Fadc250Module:: GetPulseSamplesVector:: data vector empty for slot = " << fSlot << ", channel = " << chan << endl;
       return vector<uint32_t>();
     }
     else {
-      return fPulseSamples[chan];
+      return fPulseData[chan].samples;
 #ifdef WITH_DEBUG
       if (fDebugFile != 0)
 	*fDebugFile << "Fadc250Module::GetPulseSamplesVector channel " 
-		    << chan << " = " <<  &fPulseSamples[chan] << endl;
+		    << chan << " = " <<  &fPulseData[chan].samples << endl;
 #endif
   }
 }
 
 Int_t Fadc250Module::GetNumFadcEvents(Int_t chan) const {
+    assert( chan >= 0 && static_cast<size_t>(chan) < NADCCHAN );
+    size_t sz = 0;
     if (data_type_4 && !data_type_8 && !data_type_10)  // Mode 1 data
       return 1;
     else if ((data_type_7 && data_type_8 && data_type_10) &&  // Mode 7 data
-	     (fPulseIntegral[chan].size() == fPulseTime[chan].size()) &&
-	     (fPulseTime[chan].size() == fPulsePedestal[chan].size()) &&
-	     (fPulsePedestal[chan].size() == fPulsePeak[chan].size())) {
-      return fPulseIntegral[chan].size();
+	     ((sz = fPulseData[chan].integral.size()) == fPulseData[chan].time.size()) &&
+	     (fPulseData[chan].pedestal.size() == sz ) &&
+	     (fPulseData[chan].peak.size() == sz)) {
 #ifdef WITH_DEBUG
       if (fDebugFile != 0)
 	*fDebugFile << "Fadc250Module::GetNumFadcEvents channel " 
-		    << chan << " = " <<  fPulseIntegral[chan].size() << endl;
+		    << chan << " = " <<  sz << endl;
 #endif
+      return sz;
     }
     else if ((data_type_4 && data_type_8 && data_type_10) &&  // Mode 8 data
-	     (fPulseTime[chan].size() == fPulsePedestal[chan].size()) &&
-	     (fPulsePedestal[chan].size() == fPulsePeak[chan].size())) {
-      return fPulseTime[chan].size();
+	     ((sz = fPulseData[chan].time.size()) == fPulseData[chan].pedestal.size()) &&
+	     (fPulseData[chan].peak.size() == sz)) {
 #ifdef WITH_DEBUG
       if (fDebugFile != 0)
 	*fDebugFile << "Fadc250Module::GetNumFadcEvents channel " 
-		    << chan << " = " <<  fPulseTime[chan].size() << endl;
+		    << chan << " = " <<  sz << endl;
 #endif
+      return sz;
     }
     else {
       cout << "ERROR:: Fadc250Module:: GetNumFadcEvents:: FADC not in acceptable mode or data vector sizes do not match for for slot = " << fSlot << ", channel = " << chan << endl;
@@ -310,7 +303,7 @@ Int_t Fadc250Module::GetNumFadcEvents(Int_t chan) const {
   Int_t Fadc250Module::GetNumFadcSamples(Int_t chan, Int_t ievent) const {
     if (data_type_4 && !data_type_8 && !data_type_10) { // Ensure fadc is in mode 1
       Int_t nsamples = 0;
-      nsamples = fPulseSamples[chan].size();
+      nsamples = fPulseData[chan].samples.size();
       if (ievent < 0) {
 	cout << "ERROR:: Fadc250Module:: GetNumFadcSamples:: invalid event number for slot = " << fSlot << ", channel = " << chan << endl;
 	return -1;
@@ -320,18 +313,18 @@ Int_t Fadc250Module::GetNumFadcEvents(Int_t chan) const {
 	return -1;
       }
       else  {
-	return fPulseSamples[chan].size();
+	return fPulseData[chan].samples.size();
 #ifdef WITH_DEBUG
 	if (fDebugFile != 0)
 	  *fDebugFile << "Fadc250Module::GetNumFadcSamples channel " 
 		      << chan << ", event " << ievent << " = " 
-		      <<  fPulseSamples[chan].size() << endl;
+		      <<  fPulseData[chan].samples.size() << endl;
 #endif
       }
     }  // Mode 1 condition
     else if (data_type_4 && data_type_8 && data_type_10) {  // Ensure fadc is in mode 8
       Int_t nsamples = 0;
-      nsamples = fPulseSamples[chan].size();
+      nsamples = fPulseData[chan].samples.size();
       if (ievent < 0) {
 	cout << "ERROR:: Fadc250Module:: GetNumFadcSamples:: invalid event number for slot = " << fSlot << ", channel = " << chan << endl;
 	return -1;
@@ -341,12 +334,12 @@ Int_t Fadc250Module::GetNumFadcEvents(Int_t chan) const {
 	return -1;
       }
       else {
-	return fPulseSamples[chan].size();
+	return fPulseData[chan].samples.size();
 #ifdef WITH_DEBUG
 	if (fDebugFile != 0)
 	  *fDebugFile << "Fadc250Module::GetNumFadcSamples channel " 
 		      << chan << ", event " << ievent << " = " 
-		      <<  fPulseSamples[chan].size() << endl;
+		      <<  fPulseData[chan].samples.size() << endl;
 #endif
       }
     }  // Mode 8 condition
@@ -385,20 +378,20 @@ Int_t Fadc250Module::GetNumFadcEvents(Int_t chan) const {
     // Load THaSlotData
     for (uint32_t chan = 0; chan < NADCCHAN; chan++) {
       // Pulse Integral
-      for (uint32_t ievent = 0; ievent < fPulseIntegral[chan].size(); ievent++)
-	sldat->loadData("adc", chan, fPulseIntegral[chan][ievent], fPulseIntegral[chan][ievent]);
+      for (uint32_t ievent = 0; ievent < fPulseData[chan].integral.size(); ievent++)
+	sldat->loadData("adc", chan, fPulseData[chan].integral[ievent], fPulseData[chan].integral[ievent]);
       // Pulse Time
-      for (uint32_t ievent = 0; ievent < fPulseTime[chan].size(); ievent++)
-	sldat->loadData("adc", chan, fPulseTime[chan][ievent], fPulseTime[chan][ievent]);
+      for (uint32_t ievent = 0; ievent < fPulseData[chan].time.size(); ievent++)
+	sldat->loadData("adc", chan, fPulseData[chan].time[ievent], fPulseData[chan].time[ievent]);
       // Pulse Peak
-      for (uint32_t ievent = 0; ievent < fPulsePeak[chan].size(); ievent++)
-	sldat->loadData("adc", chan, fPulsePeak[chan][ievent], fPulsePeak[chan][ievent]);
+      for (uint32_t ievent = 0; ievent < fPulseData[chan].peak.size(); ievent++)
+	sldat->loadData("adc", chan, fPulseData[chan].peak[ievent], fPulseData[chan].peak[ievent]);
       // Pulse Pedestal
-      for (uint32_t ievent = 0; ievent < fPulsePedestal[chan].size(); ievent++)
-	sldat->loadData("adc", chan, fPulsePedestal[chan][ievent], fPulsePedestal[chan][ievent]);
+      for (uint32_t ievent = 0; ievent < fPulseData[chan].pedestal.size(); ievent++)
+	sldat->loadData("adc", chan, fPulseData[chan].pedestal[ievent], fPulseData[chan].pedestal[ievent]);
       // Pulse Samples
-      for (uint32_t ievent = 0; ievent < fPulseSamples[chan].size(); ievent++)
-	sldat->loadData("adc", chan, fPulseSamples[chan][ievent], fPulseSamples[chan][ievent]);  
+      for (uint32_t ievent = 0; ievent < fPulseData[chan].samples.size(); ievent++)
+	sldat->loadData("adc", chan, fPulseData[chan].samples[ievent], fPulseData[chan].samples[ievent]);
     }  // Channel loop
 	      
     return fWordsSeen;
@@ -409,7 +402,6 @@ Int_t Fadc250Module::GetNumFadcEvents(Int_t chan) const {
     // Fill data structures of this class
     // Read until out of data or until decode says that the slot is finished
     // len = ndata in event, pos = word number for block header in event
-    fWordsSeen = 0;
     Clear();
     Int_t index = 0;
 
@@ -430,20 +422,20 @@ Int_t Fadc250Module::GetNumFadcEvents(Int_t chan) const {
     // Load THaSlotData
     for (uint32_t chan = 0; chan < NADCCHAN; chan++) {
       // Pulse Integral
-      for (uint32_t ievent = 0; ievent < fPulseIntegral[chan].size(); ievent++)
-	sldat->loadData("adc", chan, fPulseIntegral[chan][ievent], fPulseIntegral[chan][ievent]);
+      for (uint32_t ievent = 0; ievent < fPulseData[chan].integral.size(); ievent++)
+	sldat->loadData("adc", chan, fPulseData[chan].integral[ievent], fPulseData[chan].integral[ievent]);
       // Pulse Time
-      for (uint32_t ievent = 0; ievent < fPulseTime[chan].size(); ievent++)
-	sldat->loadData("adc", chan, fPulseTime[chan][ievent], fPulseTime[chan][ievent]);
+      for (uint32_t ievent = 0; ievent < fPulseData[chan].time.size(); ievent++)
+	sldat->loadData("adc", chan, fPulseData[chan].time[ievent], fPulseData[chan].time[ievent]);
       // Pulse Peak
-      for (uint32_t ievent = 0; ievent < fPulsePeak[chan].size(); ievent++)
-	sldat->loadData("adc", chan, fPulsePeak[chan][ievent], fPulsePeak[chan][ievent]);
+      for (uint32_t ievent = 0; ievent < fPulseData[chan].peak.size(); ievent++)
+	sldat->loadData("adc", chan, fPulseData[chan].peak[ievent], fPulseData[chan].peak[ievent]);
       // Pulse Pedestal
-      for (uint32_t ievent = 0; ievent < fPulsePedestal[chan].size(); ievent++)
-	sldat->loadData("adc", chan, fPulsePedestal[chan][ievent], fPulsePedestal[chan][ievent]);
+      for (uint32_t ievent = 0; ievent < fPulseData[chan].pedestal.size(); ievent++)
+	sldat->loadData("adc", chan, fPulseData[chan].pedestal[ievent], fPulseData[chan].pedestal[ievent]);
       // Pulse Samples
-      for (uint32_t ievent = 0; ievent < fPulseSamples[chan].size(); ievent++)
-	sldat->loadData("adc", chan, fPulseSamples[chan][ievent], fPulseSamples[chan][ievent]);
+      for (uint32_t ievent = 0; ievent < fPulseData[chan].samples.size(); ievent++)
+	sldat->loadData("adc", chan, fPulseData[chan].samples[ievent], fPulseData[chan].samples[ievent]);
     }  // Channel loop
         
     return fWordsSeen;  
@@ -454,9 +446,8 @@ Int_t Fadc250Module::GetNumFadcEvents(Int_t chan) const {
   {
     UInt_t data = *pdat;  // Pointer to event buffer  
     uint32_t data_type_id = (data >> 31) & 0x1;  // Data type identification, mask 1 bit
-    static uint32_t data_type_def;               // Data type defining words, mask 4 bits
     if (data_type_id == 1)
-      data_type_def = (data >> 27) & 0xF;
+      data_type_def = (data >> 27) & 0xF;        // Data type defining words, mask 4 bits
     // Debug output
 #ifdef WITH_DEBUG
     if (fDebugFile != 0)
@@ -575,12 +566,12 @@ Int_t Fadc250Module::GetNumFadcEvents(Int_t chan) const {
 	  if (!invalid_1) sample_1 = (data >> 16) & 0x1FFF;  // If sample x is valid, assign value
 	  if (!invalid_2) sample_2 = (data >> 0) & 0x1FFF;   // If sample x+1 is valid, assign value
 		  
-	  PopulateDataVector(fPulseSamples, fadc_data.chan, sample_1);   // Sample 1
+	  PopulateDataVector(fPulseData[fadc_data.chan].samples, sample_1); // Sample 1
 	  fadc_data.invalid_samples |= invalid_1;                        // Invalid samples
 	  fadc_data.overflow = (sample_1 >> 12) & 0x1;                   // Sample 1 overflow bit
 	  if((sample_1 + 2) == fadc_data.win_width && invalid_2) break;  // Skip last sample if flagged as invalid
 	  
-	  PopulateDataVector(fPulseSamples, fadc_data.chan, sample_2);   // Sample 2 
+	  PopulateDataVector(fPulseData[fadc_data.chan].samples, sample_2); // Sample 2
 	  fadc_data.invalid_samples |= invalid_2;                        // Invalid samples
 	  fadc_data.overflow = (sample_2 >> 12) & 0x1;                   // Sample 2 overflow bit
 	  	  // Debug output
@@ -591,7 +582,7 @@ Int_t Fadc250Module::GetNumFadcEvents(Int_t chan) const {
 			<< " >> sample 1 = " << sample_1 
 			<< " >> sample 2 = " << sample_2 
 			<< " >> size of fPulseSamples = " 
-			<< fPulseSamples[fadc_data.chan].size() << endl;
+			<< fPulseData[fadc_data.chan].samples.size() << endl;
 #endif
 	}  // FADC data sample for window raw data
 	break;
@@ -626,12 +617,12 @@ Int_t Fadc250Module::GetNumFadcEvents(Int_t chan) const {
 	  if (!invalid_1) sample_1 = (data >> 16) & 0x1FFF;  // If sample x is valid, assign value
 	  if (!invalid_2) sample_2 = (data >> 0) & 0x1FFF;   // If sample x+1 is valid, assign value
 
-	  PopulateDataVector(fPulseSamples, fadc_data.chan, sample_1);    // Sample 1
+	  PopulateDataVector(fPulseData[fadc_data.chan].samples, sample_1);  // Sample 1
 	  fadc_data.invalid_samples |= invalid_1;                         // Invalid samples
 	  fadc_data.overflow = (sample_1 >> 12) & 0x1;                    // Sample 1 overflow bit
 	  if ((sample_1 + 2) == fadc_data.win_width && invalid_2) break;  // Skip last sample if flagged as invalid
 	  
-	  PopulateDataVector(fPulseSamples, fadc_data.chan, sample_2);    // Sample 2
+	  PopulateDataVector(fPulseData[fadc_data.chan].samples, sample_2);  // Sample 2
 	  fadc_data.invalid_samples |= invalid_2;                         // Invalid samples
 	  fadc_data.overflow = (sample_2 >> 12) & 0x1;                    // Sample 2 overflow bit
 	  // Debug output
@@ -641,7 +632,7 @@ Int_t Fadc250Module::GetNumFadcEvents(Int_t chan) const {
 			<< data << dec << " >> sample 1 = " << sample_1 
 			<< " >> sample 2 = " << sample_2
 			<< " >> size of fPulseSamples = " 
-			<< fPulseSamples[fadc_data.chan].size() << endl;
+			<< fPulseData[fadc_data.chan].samples.size() << endl;
 #endif
 	}  // FADC data sample loop for pulse raw data
 	break;
@@ -652,7 +643,7 @@ Int_t Fadc250Module::GetNumFadcEvents(Int_t chan) const {
 	fadc_data.qual_factor = (data >> 19) & 0x3;        // FADC qulatity factor (0-3)
 	fadc_data.pulse_integral = (data >> 0) & 0x7FFFF;  // FADC pulse integral
 	// Store data in arrays of vectors
-	PopulateDataVector(fPulseIntegral, fadc_data.chan, fadc_data.pulse_integral);
+	PopulateDataVector(fPulseData[fadc_data.chan].integral, fadc_data.pulse_integral);
 	// Debug output
 #ifdef WITH_DEBUG
 	if (fDebugFile != 0)
@@ -672,7 +663,7 @@ Int_t Fadc250Module::GetNumFadcEvents(Int_t chan) const {
 	fadc_data.fine_pulse_time = (data >> 0) & 0x3F;     // FADC fine time (0.0625 ns/count)
 	fadc_data.time = (data >> 0) & 0x7FFF;              // FADC time (0.0625 ns/count, bmoffit)
 	// Store data in arrays of vectors 
-	PopulateDataVector(fPulseTime, fadc_data.chan, fadc_data.time);
+	PopulateDataVector(fPulseData[fadc_data.chan].time, fadc_data.time);
 	// Debug output
 #ifdef WITH_DEBUG
 	if (fDebugFile != 0)
@@ -700,8 +691,8 @@ Int_t Fadc250Module::GetNumFadcEvents(Int_t chan) const {
 	fadc_data.pedestal = (data >> 12) & 0x1FF;    // FADC pulse pedestal
 	fadc_data.pulse_peak = (data >> 0) & 0xFFF;   // FADC pulse peak
 	// Store data in arrays of vectors 
-	PopulateDataVector(fPulsePedestal, fadc_data.chan, fadc_data.pedestal);
-	PopulateDataVector(fPulsePeak, fadc_data.chan, fadc_data.pulse_peak);
+	PopulateDataVector(fPulseData[fadc_data.chan].pedestal, fadc_data.pedestal);
+	PopulateDataVector(fPulseData[fadc_data.chan].peak, fadc_data.pulse_peak);
 	// Debug output
 #ifdef WITH_DEBUG
 	if (fDebugFile != 0)

@@ -8,8 +8,6 @@
 //
 /////////////////////////////////////////////////////////////////////
 
-#define NADCCHAN 16
-
 #include "VmeModule.h"
 #include "stdint.h"
 #include <vector>
@@ -49,6 +47,8 @@ namespace Decoder {
             
   private:
 
+    static const size_t NADCCHAN = 16;
+
     struct fadc_data_struct {
       // Header data objects
       uint32_t slot_blk_hdr, mod_id, iblock_num, nblock_events;  // Block header objects
@@ -72,24 +72,27 @@ namespace Decoder {
       uint32_t scaler_words;                                     // FADC scaler words
     } fadc_data;  //  fadc_data_struct
 
-    // FIXME: perhaps better as a vector of a structure?
-    std::vector<uint32_t> fPulseIntegral[NADCCHAN], fPulseTime[NADCCHAN];
-    std::vector<uint32_t> fPulsePeak[NADCCHAN], fPulsePedestal[NADCCHAN];
-    std::vector<uint32_t> fPulseSamples[NADCCHAN];
+    struct fadc_pulse_data {
+      std::vector<uint32_t> samples;
+      std::vector<uint32_t> integral, time, peak, pedestal;
+      void clear() {
+	samples.clear(); integral.clear(); time.clear(); peak.clear(); pedestal.clear();
+      }
+    };
+    std::vector<fadc_pulse_data> fPulseData; // Pulse data for each channel
 
     Bool_t data_type_4, data_type_6, data_type_7, data_type_8, data_type_10;
-    Bool_t block_header_found, block_trailer_found, event_header_found;
+    Bool_t block_header_found, block_trailer_found, event_header_found, slots_match;
+    uint32_t data_type_def;
 
     void ClearDataVectors();
-    void PopulateDataVector(std::vector<uint32_t> data_vector[NADCCHAN], uint32_t chan, uint32_t data);
+    void PopulateDataVector(std::vector<uint32_t> data_vector, uint32_t data);
     Int_t SumVectorElements(std::vector<uint32_t> data_vector) const;
 
-    Bool_t slots_match;
-   
     static TypeIter_t fgThisType;
     ClassDef(Fadc250Module,0)  //  JLab FADC 250 Module
 
-      } ;  // Fadc250Module class
+  };  // Fadc250Module class
 
 }  // Decoder namespace
 
