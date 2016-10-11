@@ -209,9 +209,9 @@ int main(int argc, char* argv[])
       for(uint32_t islot = 3; islot < NUMSLOTS; islot++) {
       	//if (evdata->GetNumRaw(CRATE5, islot) != 0) {
 	if (evdata->GetNumRaw(CRATE10, islot) != 0) {
-	  Module *fadc = NULL;
+	  Fadc250Module *fadc = NULL;
 	  //fadc = evdata->GetModule(CRATE5, islot);  // Bryan's setup
-	  fadc = evdata->GetModule(CRATE10, islot);  // Alex's setup
+	  fadc = dynamic_cast<Decoder::Fadc250Module*>( evdata->GetModule(CRATE10, islot) );  // Alex's setup
 	  if (fadc != NULL) {
 	    //fadc->CheckDecoderStatus(fadc->GetCrate(), fadc->GetSlot());
 	    if (debugfile) *debugfile << "\n///////////////////////////////\n"

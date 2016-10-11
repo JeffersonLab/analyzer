@@ -14,8 +14,6 @@
 #include "stdint.h"
 #include <vector>
 
-using namespace std;
-
 namespace Decoder {
 
   class Fadc250Module : public VmeModule {   // Inheritance
@@ -38,15 +36,15 @@ namespace Decoder {
     virtual Int_t GetPulsePeakData(Int_t chan, Int_t ievent) const;
     virtual Int_t GetPulsePedestalData(Int_t chan, Int_t ievent) const;
     virtual Int_t GetPulseSamplesData(Int_t chan, Int_t ievent) const;
-    virtual vector<uint32_t> GetPulseSamplesVector(Int_t chan) const;
+    virtual std::vector<uint32_t> GetPulseSamplesVector(Int_t chan) const;
     virtual Int_t GetNumFadcEvents(Int_t chan) const;
     virtual Int_t GetNumFadcSamples(Int_t chan, Int_t ievent) const;
     virtual Int_t GetFadcMode(Int_t chan) const;
     virtual Int_t LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const UInt_t *pstop);
     virtual Int_t LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, Int_t pos, Int_t len);
     virtual Int_t Decode(const UInt_t *pdat);
-    Bool_t IsMultiFunction();
-    Bool_t HasCapability(Decoder::EModuleType type);
+    virtual Bool_t IsMultiFunction();
+    virtual Bool_t HasCapability(Decoder::EModuleType type);
             
   private:
 
@@ -73,16 +71,17 @@ namespace Decoder {
       uint32_t scaler_words;                                     // FADC scaler words
     } fadc_data;  //  fadc_data_struct
 
-    vector<uint32_t> fPulseIntegral[NADCCHAN], fPulseTime[NADCCHAN];
-    vector<uint32_t> fPulsePeak[NADCCHAN], fPulsePedestal[NADCCHAN];
-    vector<uint32_t> fPulseSamples[NADCCHAN];
+    // FIXME: perhaps better as a vector of a structure?
+    std::vector<uint32_t> fPulseIntegral[NADCCHAN], fPulseTime[NADCCHAN];
+    std::vector<uint32_t> fPulsePeak[NADCCHAN], fPulsePedestal[NADCCHAN];
+    std::vector<uint32_t> fPulseSamples[NADCCHAN];
 
     Bool_t data_type_4, data_type_6, data_type_7, data_type_8, data_type_10;
     Bool_t block_header_found, block_trailer_found, event_header_found;
 
     void ClearDataVectors();
-    void PopulateDataVector(vector<uint32_t> data_vector[NADCCHAN], uint32_t chan, uint32_t data);
-    Int_t SumVectorElements(vector<uint32_t> data_vector) const;
+    void PopulateDataVector(std::vector<uint32_t> data_vector[NADCCHAN], uint32_t chan, uint32_t data);
+    Int_t SumVectorElements(std::vector<uint32_t> data_vector) const;
 
     Bool_t slots_match;
    

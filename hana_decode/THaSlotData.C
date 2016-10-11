@@ -69,6 +69,8 @@ void THaSlotData::define(int cra, int slo, UShort_t nchan, UShort_t ndata, UShor
   didini = true;
   maxc = nchan;
   //maxd = ndata;
+  // increase to avoid run-time warnings about "too many data words"
+  // FIXME: we should probably use dynamically growing arrays instead of a fixed maximum
   maxd = 40000;
   numhitperchan=nhitperchan;
   // Initial allocation of data arrays

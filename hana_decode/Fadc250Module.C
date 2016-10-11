@@ -13,11 +13,11 @@
 #include "THaSlotData.h"
 #include "TMath.h"
 
-#include "unistd.h"
-#include "stdint.h"
-#include "stdio.h"      
-#include "stdlib.h"
-
+#include <unistd.h>
+#include <stdint.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>  // for memset
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -36,18 +36,19 @@ namespace Decoder {
 
   Fadc250Module::Fadc250Module()
     : VmeModule()
-  {}
+  { memset(&fadc_data, 0, sizeof(fadc_data)); }
 
   Fadc250Module::Fadc250Module(Int_t crate, Int_t slot)
     : VmeModule(crate, slot)
   {
+    memset(&fadc_data, 0, sizeof(fadc_data));
     IsInit = kFALSE;
     Init();
   }
 
   Fadc250Module::~Fadc250Module() {
 #if defined DEBUG && defined WITH_DEBUG
-    fDebugFile = 0; delete fDebugFile;
+    delete fDebugFile; fDebugFile = 0;
 #endif
   }
 
@@ -91,7 +92,7 @@ namespace Decoder {
   void Fadc250Module::Init() {
 #if defined DEBUG && defined WITH_DEBUG
     // This will make a HUGE output
-    fDebugFile = 0; delete fDebugFile; 
+    delete fDebugFile; fDebugFile = 0;
     fDebugFile = new ofstream;
     fDebugFile->open("fadcdebug.dat");
 #endif

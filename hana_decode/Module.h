@@ -12,10 +12,6 @@
 #include "Decoder.h"
 #include <set>
 #include <fstream>
-#include <vector>
-#include "stdint.h"
-
-using namespace std;
 
 namespace Decoder {
 
@@ -48,6 +44,10 @@ namespace Decoder {
     virtual Int_t GetData(Int_t) const { return 0; };
     virtual Int_t GetData(Int_t, Int_t) const { return 0; };
     virtual Int_t GetData(Int_t, Int_t, Int_t) const { return 0; };
+    virtual Int_t GetData(Decoder::EModuleType type, Int_t chan, Int_t hit) const { return 0; };
+    virtual Int_t GetData(Decoder::EModuleType type, Int_t chan, Int_t hit, Int_t sample) const {return 0;};
+
+    virtual Int_t Decode(const UInt_t *p) = 0; // implement in derived class
 
     // Loads slot data
     virtual Int_t LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer,
@@ -62,21 +62,6 @@ namespace Decoder {
     virtual Int_t GetNumSamples(Int_t i) const { return 0; };
     virtual Int_t GetMode() const { return fMode; };
 
-    // Public functions from Fadc250ModuleDevel
-    virtual Int_t Decode(const UInt_t *p) = 0; // implement in derived class
-    virtual void CheckDecoderStatus() const {};
-    virtual void CheckDecoderStatus(Int_t, Int_t) const {};
-    virtual Int_t GetPulseIntegralData(Int_t, Int_t) const { return 0; };
-    virtual Int_t GetEmulatedPulseIntegralData(Int_t) const { return 0; };
-    virtual Int_t GetPulseTimeData(Int_t, Int_t) const { return 0; };
-    virtual Int_t GetPulsePeakData(Int_t, Int_t) const { return 0; };
-    virtual Int_t GetPulsePedestalData(Int_t, Int_t) const { return 0; };
-    virtual Int_t GetPulseSamplesData(Int_t, Int_t) const { return 0; };
-    virtual Int_t GetNumFadcEvents(Int_t) const { return 0; };
-    virtual Int_t GetNumFadcSamples(Int_t, Int_t) const { return 0; };
-    virtual Int_t GetFadcMode(Int_t) const { return 0; };
-    virtual vector<uint32_t> GetPulseSamplesVector(Int_t) const { return vector<uint32_t>(); };
-            
     virtual void SetSlot(Int_t crate, Int_t slot, UInt_t header=0,
 			 UInt_t mask=0, Int_t modelnum=0)
     {
@@ -113,8 +98,8 @@ namespace Decoder {
     Module& operator=(const Module &rhs);
 
     virtual void DoPrint() const;
-    Bool_t IsMultiFunction() { return kFALSE; };
-    Bool_t HasCapability(Decoder::EModuleType type) { return kFALSE; };
+    virtual Bool_t IsMultiFunction() { return kFALSE; };
+    virtual Bool_t HasCapability(Decoder::EModuleType type) { return kFALSE; };
 
   protected:
 
