@@ -21,6 +21,7 @@ public:
    virtual ~Caen1190Module();
 
    using Module::GetData;
+   using Module::LoadSlot;
 
    virtual Int_t GetData(Int_t chan, Int_t hit) const;
    virtual void Init();
