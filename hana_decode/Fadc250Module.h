@@ -27,6 +27,7 @@ namespace Decoder {
     using Module::GetData;
     using Module::LoadSlot;
 
+    virtual void Clear(const Option_t *opt="");
     virtual void Init();
     virtual void CheckDecoderStatus() const;
     virtual void CheckDecoderStatus(Int_t crate, Int_t slot) const;

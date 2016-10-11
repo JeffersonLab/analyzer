@@ -37,7 +37,7 @@ void Caen1190Module::Init() {
   fNumHits = new Int_t[NTDCCHAN];
   fTdcData = new Int_t[NTDCCHAN*MAXHIT];
   fDebugFile=0;
-  Clear("");
+  Clear();
   IsInit = kTRUE;
   fName = "Caen TDC 1190 Module";
 }
@@ -134,7 +134,8 @@ Int_t Caen1190Module::GetData(Int_t chan, Int_t hit) const {
   return fTdcData[idx];
 }
 
-void Caen1190Module::Clear(const Option_t *opt) {
+void Caen1190Module::Clear(const Option_t* opt) {
+  VmeModule::Clear(opt);
   memset(fNumHits, 0, NTDCCHAN*sizeof(Int_t));
   memset(fTdcData, 0, NTDCCHAN*MAXHIT*sizeof(Int_t));
 }

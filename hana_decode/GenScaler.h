@@ -23,7 +23,7 @@ public:
    using Module::GetData;
    using Module::LoadSlot;
 
-   virtual void  Clear(const Option_t *opt) { fIsDecoded=kFALSE; };
+   virtual void  Clear(const Option_t* opt="");
    virtual Int_t Decode(const UInt_t *evbuffer);
    virtual Int_t GetData(Int_t chan) const;   // Raw scaler counts
    virtual Bool_t IsSlot(UInt_t rdata);

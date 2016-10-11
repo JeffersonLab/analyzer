@@ -89,6 +89,17 @@ namespace Decoder {
     return sum_of_elements;
   }
 
+  void Fadc250Module::Clear( const Option_t* opt) {
+    // Clear event-by-event data
+    VmeModule::Clear(opt);
+
+    ClearDataVectors();
+
+    // Initialize data types to false
+    data_type_4 = data_type_6 = data_type_7 = data_type_8 = data_type_10 = false;
+    block_header_found = block_trailer_found = event_header_found = slots_match = false;
+  }
+
   void Fadc250Module::Init() {
 #if defined DEBUG && defined WITH_DEBUG
     // This will make a HUGE output
@@ -97,8 +108,7 @@ namespace Decoder {
     fDebugFile->open("fadcdebug.dat");
 #endif
 
-    // Clear all data vectors
-    ClearDataVectors();
+    Clear();
     
     // Initialize data types to false
     data_type_4 = false; data_type_6 = false; 
@@ -363,8 +373,7 @@ Int_t Fadc250Module::GetNumFadcEvents(Int_t chan) const {
         
     // Fill data structures of this class
     // Read until out of data or until Decode says that the slot is finished
-    fWordsSeen = 0;
-    ClearDataVectors();
+    Clear();
     Int_t blk_trailer = 0;
     
     while (evbuffer < pstop && blk_trailer == 0) {
@@ -401,7 +410,7 @@ Int_t Fadc250Module::GetNumFadcEvents(Int_t chan) const {
     // Read until out of data or until decode says that the slot is finished
     // len = ndata in event, pos = word number for block header in event
     fWordsSeen = 0;
-    ClearDataVectors();
+    Clear();
     Int_t index = 0;
 
     while (fWordsSeen < len) {   

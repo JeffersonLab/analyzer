@@ -78,7 +78,7 @@ namespace Decoder {
 
     virtual void Init();
 
-    virtual void Clear(const Option_t *opt) { fWordsSeen = 0; };
+    virtual void Clear(const Option_t* = "") { fWordsSeen = 0; };
 
     virtual Bool_t IsSlot(UInt_t rdata);
 

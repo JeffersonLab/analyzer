@@ -32,7 +32,7 @@ void SkeletonModule::Init() {
   fNumChan=32;
   for (Int_t i=0; i<fNumChan; i++) fData.push_back(0);
   fDebugFile=0;
-  Clear("");
+  Clear();
   IsInit = kTRUE;
   fName = "Skeleton Module (example)";
 }
@@ -65,7 +65,8 @@ Int_t SkeletonModule::GetData(Int_t chan) const {
   return fData[chan];
 }
 
-void SkeletonModule::Clear(const Option_t *opt) {
+void SkeletonModule::Clear(const Option_t* opt) {
+  VmeModule::Clear(opt);
   fNumHits = 0;
   for (Int_t i=0; i<fNumChan; i++) fData[i]=0;
 }

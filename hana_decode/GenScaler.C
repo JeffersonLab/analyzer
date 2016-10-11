@@ -25,6 +25,12 @@ GenScaler::GenScaler(Int_t crate, Int_t slot)
   fWordsExpect = 32;
 }
 
+void GenScaler::Clear(const Option_t* opt) {
+  // Clear event-by-event data
+  VmeModule::Clear(opt);
+  fIsDecoded=kFALSE;
+}
+
 void GenScaler::GenInit()
 {
   fHasClock = kFALSE;
@@ -224,9 +230,11 @@ Bool_t GenScaler::IsSlot(UInt_t rdata) {
   return result;
 }
 
-Int_t GenScaler::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const UInt_t *pstop) {
-// This is a simple, default method for loading a slot
+Int_t GenScaler::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const UInt_t *pstop)
+{
+  // This is a simple, default method for loading a slot
   const UInt_t *p = evbuffer;
+  Clear();
   while ( p < pstop ) {
     if (IsSlot( *p )) {
       if (fDebugFile) *fDebugFile << "GenScaler:: Loadslot "<<endl;

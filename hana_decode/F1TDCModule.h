@@ -26,6 +26,7 @@ public:
    enum EResolution { ILO = 0, IHI = 1 };
 
    virtual void Init();
+   virtual void Clear(const Option_t *opt="");
    virtual Bool_t IsSlot(UInt_t rdata);
    virtual Int_t GetData(Int_t chan, Int_t hit) const;
 
@@ -49,9 +50,9 @@ private:
    EResolution fResol;
    Int_t *fTdcData;  // Raw data (either samples or pulse integrals)
    Bool_t IsInit;
-   void Clear(const Option_t *opt);
-   static TypeIter_t fgThisType;
    Int_t slotmask, chanmask, datamask;
+
+   static TypeIter_t fgThisType;
    ClassDef(F1TDCModule,0)  //  JLab F1 TDC Module
 
 };
