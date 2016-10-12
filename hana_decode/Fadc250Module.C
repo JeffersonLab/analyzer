@@ -49,7 +49,7 @@ namespace Decoder {
 
   Fadc250Module::~Fadc250Module() {
 #if defined DEBUG && defined WITH_DEBUG
-    delete fDebugFile; fDebugFile = 0;
+    // delete fDebugFile; fDebugFile = 0;
 #endif
   }
 
@@ -73,13 +73,13 @@ namespace Decoder {
 
   // Require that slot from base class and slot from 
   //   data match before populating data vectors
-  void Fadc250Module::PopulateDataVector(vector<uint32_t> data_vector, uint32_t data) {
+  void Fadc250Module::PopulateDataVector(vector<uint32_t>& data_vector, uint32_t data) {
     if (static_cast <uint32_t> (fSlot) == fadc_data.slot_blk_hdr)
       data_vector.push_back(data);
   }
 
   // Sum elements contained in data vector
-  Int_t Fadc250Module::SumVectorElements(vector<uint32_t> data_vector) const {
+  Int_t Fadc250Module::SumVectorElements(const vector<uint32_t>& data_vector) const {
     Int_t sum_of_elements = 0;
     sum_of_elements = accumulate(data_vector.begin(), data_vector.end(), 0);
     return sum_of_elements;
@@ -99,9 +99,9 @@ namespace Decoder {
   void Fadc250Module::Init() {
 #if defined DEBUG && defined WITH_DEBUG
     // This will make a HUGE output
-    delete fDebugFile; fDebugFile = 0;
-    fDebugFile = new ofstream;
-    fDebugFile->open("fadcdebug.dat");
+    // delete fDebugFile; fDebugFile = 0;
+    // fDebugFile = new ofstream;
+    // fDebugFile->open("fadcdebug.dat");
 #endif
 
     Clear();

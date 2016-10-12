@@ -86,8 +86,8 @@ namespace Decoder {
     uint32_t data_type_def;
 
     void ClearDataVectors();
-    void PopulateDataVector(std::vector<uint32_t> data_vector, uint32_t data);
-    Int_t SumVectorElements(std::vector<uint32_t> data_vector) const;
+    void PopulateDataVector(std::vector<uint32_t>& data_vector, uint32_t data);
+    Int_t SumVectorElements(const std::vector<uint32_t>& data_vector) const;
 
     static TypeIter_t fgThisType;
     ClassDef(Fadc250Module,0)  //  JLab FADC 250 Module
