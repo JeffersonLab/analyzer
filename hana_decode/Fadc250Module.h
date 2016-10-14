@@ -84,7 +84,8 @@ namespace Decoder {
       std::vector<uint32_t> integral, time, peak, pedestal;
       std::vector<uint32_t> samples, coarse_time, fine_time;
       void clear() {
-	samples.clear(); integral.clear(); time.clear(); peak.clear(); pedestal.clear();
+	integral.clear(); time.clear(); peak.clear(); pedestal.clear();
+	samples.clear(); coarse_time.clear(); fine_time.clear();
       }
     };
     std::vector<fadc_pulse_data> fPulseData; // Pulse data for each channel
