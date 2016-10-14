@@ -89,7 +89,7 @@ Int_t THaRTTI::Find( TClass* cl, const TString& var,
     else if( typnam == "Char_t" || typnam == "Text_t" )
       type = kChar;
     else if( typnam == "Byte_t" || typnam == "UChar_t" ||
-	     typnam == "Bool_t" )
+	     typnam == "Bool_t" || typnam == "bool" )
       type = kByte;
     else if( m->IsEnum() )
       // Enumeration types are all treated as integers
