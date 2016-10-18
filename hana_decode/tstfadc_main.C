@@ -31,7 +31,7 @@
 //#define WITH_DEBUG
 #define CRATE5 5         // Brian's setup
 #define CRATE10 10       // Alex's setup
-#define CRATE12 12       // Mark's setup
+#define CRATE12 12       // Mark's setup in Hall A
 #define SLOTMIN 3
 #define NUMSLOTS 21
 #define NADCCHAN 16
