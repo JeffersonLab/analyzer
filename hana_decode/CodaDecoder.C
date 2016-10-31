@@ -31,6 +31,8 @@ CodaDecoder::CodaDecoder()
   fDebug=0;
   fNeedInit=true;
   first_decode=kFALSE;
+  fMultiBlockMode=kFALSE;
+  fBlockIsDone=kFALSE;
 }
 
 //_____________________________________________________________________________
@@ -68,6 +70,7 @@ Int_t CodaDecoder::LoadEvent(const UInt_t* evbuffer)
  static Int_t fdfirst=1;
  static Int_t chkfbstat=1;
  if (fDebugFile) *fDebugFile << "CodaDecode:: Loading event  ... "<<endl;
+ if (fDebugFile) *fDebugFile << "evbuffer ptr "<<evbuffer<<endl;
   assert( evbuffer );
   assert( fMap || fNeedInit );
   Int_t ret = HED_OK;
@@ -136,16 +139,18 @@ Int_t CodaDecoder::LoadEvent(const UInt_t* evbuffer)
 	  }
       }
 
- // If at least one module is in a bank, must split the banks for this roc
-      if (fMap->isBankStructure(iroc)) {
- 	  if (fDebugFile) *fDebugFile << "\nCodaDecode::Calling bank_decode "<<i<<"   "<<iroc<<"  "<<ipt<<"  "<<iptmax<<endl;       
+      Int_t status;
 
-          bank_decode(iroc,evbuffer,ipt,iptmax);
+ // If at least one module is in a bank, must split the banks for this roc
+
+      if (fMap->isBankStructure(iroc)) {
+	  if (fDebugFile) *fDebugFile << "\nCodaDecode::Calling bank_decode "<<i<<"   "<<iroc<<"  "<<ipt<<"  "<<iptmax<<endl;
+	  status = bank_decode(iroc,evbuffer,ipt,iptmax);
       }
 
-      if (fDebugFile) *fDebugFile << "\nCodaDecode::Calling roc_decode "<<i<<"   "<<iroc<<"  "<<ipt<<"  "<<iptmax<<endl;
+      if (fDebugFile) *fDebugFile << "\nCodaDecode::Calling roc_decode "<<i<<"   "<<evbuffer<<"  "<<iroc<<"  "<<ipt<<"  "<<iptmax<<endl;
 
-      Int_t status = roc_decode(iroc,evbuffer, ipt, iptmax);
+      status = roc_decode(iroc,evbuffer, ipt, iptmax);
 
       // do something with status
       if (status == -1) break;
@@ -155,6 +160,37 @@ Int_t CodaDecoder::LoadEvent(const UInt_t* evbuffer)
 
   return ret;
 }
+
+//_____________________________________________________________________________
+Int_t CodaDecoder::LoadFromMultiBlock()
+{
+  // LoadFromMultiBlock : This assumes the data are in multiblock mode.
+
+  // For modules that are in multiblock mode, the next event is loaded.
+  // For other modules not in multiblock mode (e.g. scalers) or other data (e.g. flags)
+  // the data remain "stale" until the next block of events.
+
+  if (!fMultiBlockMode) return HED_ERR;
+  fBlockIsDone = kFALSE;
+
+  for( Int_t i=0; i<fNSlotClear; i++ ) {
+    if (crateslot[fSlotClear[i]]->GetModule()->IsMultiBlockMode()) crateslot[fSlotClear[i]]->clearEvent();
+  }
+
+  for( Int_t i=0; i<nroc; i++ ) {
+
+      Int_t roc = irn[i];
+      Int_t minslot = fMap->getMinSlot(roc);
+      Int_t maxslot = fMap->getMaxSlot(roc);
+      for (Int_t slot = minslot; slot <= maxslot; slot++) {
+	if (fMap->slotUsed(roc,slot) && crateslot[idx(roc,slot)]->GetModule()->IsMultiBlockMode()) {
+	  crateslot[idx(roc,slot)]->LoadNextEvBuffer();
+	  if (crateslot[idx(roc,slot)]->BlockIsDone()) fBlockIsDone = kTRUE;
+	}
+      }
+  }
+}
+
 
 //_____________________________________________________________________________
 Int_t CodaDecoder::roc_decode( Int_t roc, const UInt_t* evbuffer,
@@ -174,6 +210,7 @@ Int_t CodaDecoder::roc_decode( Int_t roc, const UInt_t* evbuffer,
   buffmode = false;
   const UInt_t* p      = evbuffer+ipt;    // Points to ROC ID word (1 before data)
   const UInt_t* pstop  =evbuffer+istop;   // Points to last word of data
+  fBlockIsDone = kFALSE;
 
   Int_t firstslot, incrslot;
   Int_t n_slots_checked, n_slots_done;
@@ -225,9 +262,9 @@ Int_t CodaDecoder::roc_decode( Int_t roc, const UInt_t* evbuffer,
 
     while(!slotdone && n_slots_checked < Nslot-n_slots_done && slot >= 0 && slot < MAXSLOT) {
 
- 
+
       if (!fMap->slotUsed(roc,slot) || fMap->slotDone(slot)) {
-         slot = slot + incrslot;
+	 slot = slot + incrslot;
 	 continue;
       }
 
@@ -238,6 +275,7 @@ Int_t CodaDecoder::roc_decode( Int_t roc, const UInt_t* evbuffer,
      }
 
       nwords = crateslot[idx(roc,slot)]->LoadIfSlot(p, pstop);
+
       if (nwords > 0) {
 	   p = p + nwords - 1;
 	   fMap->setSlotDone(slot);
@@ -245,6 +283,9 @@ Int_t CodaDecoder::roc_decode( Int_t roc, const UInt_t* evbuffer,
 	   if(fDebugFile) *fDebugFile << "CodaDecode::  slot "<<slot<<"  is DONE    "<<nwords<<endl;
 	   slotdone = kTRUE;
       }
+
+      if (crateslot[idx(roc,slot)]->IsMultiBlockMode()) fMultiBlockMode = kTRUE;
+      if (crateslot[idx(roc,slot)]->BlockIsDone()) fBlockIsDone = kTRUE;
 
       if (fDebugFile) {
 	  *fDebugFile<< "CodaDecode:: roc_decode:: after LoadIfSlot "<<p << "  "<<pstop<<"  "<<"  "<<hex<<*p<<"  "<<dec<<nwords<<endl;
@@ -269,12 +310,13 @@ Int_t CodaDecoder::bank_decode( Int_t roc, const UInt_t* evbuffer,
 				  Int_t ipt, Int_t istop )
 {
   // Split a roc into banks, if using bank structure
-  // Then loop over slots and decode it from a bank if the slot 
-  // belongs to a blank.
+  // Then loop over slots and decode it from a bank if the slot
+  // belongs to a bank.
   assert( evbuffer && fMap );
   if( fDoBench ) fBench->Begin("bank_decode");
   Int_t retval = HED_OK;
   if (!fMap->isBankStructure(roc)) return retval;
+  fBlockIsDone = kFALSE;
 
   Int_t pos,len,bank,head;
 
@@ -313,6 +355,8 @@ Int_t CodaDecoder::bank_decode( Int_t roc, const UInt_t* evbuffer,
     len = bankdat[bank].len;
     if (fDebugFile) *fDebugFile << "CodaDecode:: loading bank "<<roc<<"  "<<slot<<"   "<<bank<<"  "<<pos<<"   "<<len<<endl;
     crateslot[idx(roc,slot)]->LoadBank(evbuffer,pos,len);
+    if (crateslot[idx(roc,slot)]->IsMultiBlockMode()) fMultiBlockMode = kTRUE;
+    if (crateslot[idx(roc,slot)]->BlockIsDone()) fBlockIsDone = kTRUE;
   }
 
   if( fDoBench ) fBench->Stop("bank_decode");

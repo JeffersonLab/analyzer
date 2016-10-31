@@ -131,7 +131,7 @@ int THaCrateMap::SetModelSize( int crate, int slot, UShort_t imodel )
     { 775, 32, 32 },     // CAEN V775 TDC
     { 792, 32, 32 },     // CAEN V792 QDC
     { 1190, 128, 1024 }, //CAEN 1190A
-    { 250, 16, 10000 },  // FADC 250
+    { 250, 16, 20000 },  // FADC 250
     { 0 }
   };
   const ModelPar_t* item = modelpar;

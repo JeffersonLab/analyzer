@@ -31,6 +31,12 @@ public:
   // Load CODA data evbuffer. Derived classes MUST implement this function.
   virtual Int_t LoadEvent(const UInt_t* evbuffer) = 0;
 
+  virtual Bool_t IsMultiBlockMode() { return fMultiBlockMode; };
+  virtual Bool_t BlockIsDone() { return fBlockIsDone; };
+
+  // Derived class to implement this
+  virtual Int_t LoadFromMultiBlock() { return 0;};
+
   virtual Int_t Init();
 
   // Basic access to the decoded data
@@ -73,7 +79,7 @@ public:
   Bool_t HasCapability( Decoder::EModuleType type, Int_t crate, Int_t slot ) const
   {
     Decoder::Module* module = GetModule(crate, slot);
-    if (!module) { 
+    if (!module) {
       std::cout << "No module at crate "<<crate<<"   slot "<<slot<<std::endl;
       return false;
     }
@@ -82,24 +88,36 @@ public:
   Bool_t IsMultifunction( Int_t crate, Int_t slot ) const
   {
     Decoder::Module* module = GetModule(crate, slot);
-    if (!module) { 
+    if (!module) {
       std::cout << "No module at crate "<<crate<<"   slot "<<slot<<std::endl;
       return false;
     }
     return module->IsMultiFunction();
   }
 
+  Int_t GetNumEvents( Decoder::EModuleType type, Int_t crate, Int_t slot, Int_t chan) const
+  {
+    Decoder::Module* module = GetModule(crate, slot);
+    if (!module) return 0;
+    if (module->HasCapability( type )) {
+       return module->GetNumEvents(type, chan);
+    } else {
+      return GetNumHits(crate, slot, chan);
+    }
+  }
+
   Int_t GetData( Decoder::EModuleType type, Int_t crate, Int_t slot, Int_t chan, Int_t hit ) const
   {
     Decoder::Module* module = GetModule(crate, slot);
-    if (!module) return false;
+    if (!module) return 0;
     if (module->HasCapability( type )) {
+      if (hit >= module->GetNumEvents(type, chan)) return 0;
       return module->GetData(type, chan, hit);
     } else {
       return GetData( crate, slot, chan, hit );
     }
   }
-  
+
   // Optional functionality that may be implemented by derived classes
   virtual ULong64_t GetEvTime() const { return evt_time; }
    // Returns Beam Helicity (-1,0,+1)  '0' is 'unknown'
@@ -194,6 +212,7 @@ protected:
 
   Bool_t first_decode;
   Bool_t fTrigSupPS;
+  Bool_t  fMultiBlockMode, fBlockIsDone;
 
   const UInt_t *buffer;
 

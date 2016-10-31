@@ -8,13 +8,13 @@
 //
 /////////////////////////////////////////////////////////////////////
 
-#include "VmeModule.h"
+#include "PipeliningModule.h"
 #include "stdint.h"
 #include <vector>
 
 namespace Decoder {
 
-  class Fadc250Module : public VmeModule {   // Inheritance
+  class Fadc250Module : public PipeliningModule {   // Inheritance
 
   public:
     
@@ -38,13 +38,23 @@ namespace Decoder {
     virtual Int_t GetPulseSamplesData(Int_t chan, Int_t ievent) const;
     virtual std::vector<uint32_t> GetPulseSamplesVector(Int_t chan) const;
     virtual Int_t GetFadcMode() const;
+    virtual Int_t GetMode() const { return GetFadcMode(); };
     virtual Int_t GetNumFadcEvents(Int_t chan) const;
     virtual Int_t GetNumFadcSamples(Int_t chan, Int_t ievent) const;
     virtual Int_t LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const UInt_t *pstop);
     virtual Int_t LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, Int_t pos, Int_t len);
-    virtual Int_t Decode(const UInt_t *pdat);
+    virtual Int_t DecodeOneWord(UInt_t pdat);
+// We dont use the Decode() but if you dont define it the class is abstract and wont be instantiated
+    Int_t Decode(const UInt_t *pdat) { return 0; }; // use DecodeOneWord instead
     virtual Bool_t IsMultiFunction();
     virtual Bool_t HasCapability(Decoder::EModuleType type);
+    Int_t LoadNextEvBuffer(THaSlotData *sldat);
+    Int_t GetData(EModuleType mtype, Int_t chan, Int_t ievent) const;
+    Int_t GetNumEvents(EModuleType mtype, Int_t ichan) const;
+    Int_t GetNumEvents() const { return GetNumEvents(0); } ;
+    Int_t GetNumEvents(Int_t ichan) const { return GetNumFadcEvents(ichan); } ;
+    Int_t GetNumSamples(Int_t ichan) const { return GetNumFadcSamples(ichan, 0);};
+
             
   private:
 
@@ -99,6 +109,9 @@ namespace Decoder {
     void ClearDataVectors();
     void PopulateDataVector(std::vector<uint32_t>& data_vector, uint32_t data);
     Int_t SumVectorElements(const std::vector<uint32_t>& data_vector) const;
+    void LoadTHaSlotDataObj(THaSlotData *sldat);
+    Int_t LoadThisBlock(THaSlotData *sldat, std::vector<UInt_t > evb);
+    void PrintDataType() const;
 
     static TypeIter_t fgThisType;
     ClassDef(Fadc250Module,0)  //  JLab FADC 250 Module

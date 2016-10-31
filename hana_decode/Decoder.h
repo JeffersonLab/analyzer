@@ -6,6 +6,7 @@
 namespace Decoder {
   class Module;               // abstract module
   class VmeModule;            // abstract VME module
+  class PipeliningModule;     // piplelining module
   class FastbusModule;        // abstract Fastbus module
   class GenScaler;            // abstract general scaler
   class THaCodaDecoder;       // older decoder, obsolescent
@@ -18,7 +19,7 @@ namespace Decoder {
   class THaCodaData;
   class THaCodaFile;
   class THaEtClient;
-  class CodaDecoder;          // OO decoder; this and the following are new
+  class CodaDecoder;
   class Lecroy1875Module;
   class Lecroy1877Module;
   class Lecroy1881Module;
@@ -52,8 +53,8 @@ namespace Decoder {
   static const Int_t SCALER_EVTYPE    = 140;
 
  // Access processed data for multi-function modules
-  enum EModuleType { kSampleADC, kPulseIntegral, kPulseTime, 
-            kPulsePeak, kPulsePedestal };  
+  enum EModuleType { kSampleADC, kPulseIntegral, kPulseTime,
+		     kPulsePeak, kPulsePedestal, kCoarseTime, kFineTime };
 
 
 }

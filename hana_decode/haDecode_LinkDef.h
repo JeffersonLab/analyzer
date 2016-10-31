@@ -10,6 +10,7 @@
 #pragma link C++ class Decoder::Module::TypeSet_t+;
 #pragma link C++ class Decoder::Module::TypeIter_t+;
 #pragma link C++ class Decoder::FastbusModule+;
+#pragma link C++ class Decoder::PipeliningModule+;
 #pragma link C++ class Decoder::VmeModule+;
 #pragma link C++ class Decoder::GenScaler+;
 #pragma link C++ class Decoder::Lecroy1877Module+;

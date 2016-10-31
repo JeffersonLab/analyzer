@@ -21,7 +21,9 @@
 
 #include "TString.h"
 #include "Decoder.h"
+#include "Module.h"
 #include <cassert>
+#include <iostream>
 #include <fstream>
 
 const int SD_WARN = -2;
@@ -59,6 +61,10 @@ public:
        // new
        Int_t LoadIfSlot(const UInt_t* evbuffer, const UInt_t *pstop);
        Int_t LoadBank(const UInt_t* p, Int_t pos, Int_t len); 
+       Int_t LoadNextEvBuffer();
+       Bool_t IsMultiBlockMode() { if (fModule) return fModule->IsMultiBlockMode(); return kFALSE; };
+       Bool_t BlockIsDone() { if (fModule) return fModule->BlockIsDone(); return kFALSE; };
+
        void SetDebugFile(std::ofstream *file) { fDebugFile = file; };
        Module* GetModule() { return fModule; };
 

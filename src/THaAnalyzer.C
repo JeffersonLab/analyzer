@@ -76,7 +76,7 @@ THaAnalyzer::THaAnalyzer() :
   fOdefFileName(kDefaultOdefFile), fEvent(NULL), fNStages(0), fNCounters(0),
   fStages(NULL), fCounters(NULL), fNev(0), fMarkInterval(1000), fCompress(1),
   fVerbose(2), fCountMode(kCountRaw), fBench(NULL), fPrevEvent(NULL),
-  fRun(NULL), fEvData(NULL), fApps(NULL), fPhysics(NULL), 
+  fRun(NULL), fEvData(NULL), fApps(NULL), fPhysics(NULL),
   fPostProcess(NULL), fEvtHandlers(NULL),
   fIsInit(kFALSE), fAnalysisStarted(kFALSE), fLocalEvent(kFALSE),
   fUpdateRun(kTRUE), fOverwrite(kTRUE), fDoBench(kFALSE),
@@ -616,7 +616,7 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
   // FIXME: generalize event range business?
   if( fAnalysisStarted && !new_run && fCountMode!=kCountRaw &&
       ((fRun->GetLastEvent()  >= run->GetFirstEvent() &&
-        fRun->GetFirstEvent() <  run->GetLastEvent()) ||
+	fRun->GetFirstEvent() <  run->GetLastEvent()) ||
        (fRun->GetFirstEvent() <= run->GetLastEvent() &&
 	fRun->GetLastEvent()  >  run->GetFirstEvent()) )) {
     Warning( here, "You are analyzing the same run twice with "
@@ -675,7 +675,7 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
   // Quit if any errors.
   if( !((retval = InitModules( fApps,    run_time, 20, "THaApparatus")) ||
 	(retval = InitModules( fPhysics, run_time, 40, "THaPhysicsModule")) ||
-	(retval = InitModules( fEvtHandlers, run_time, 50, "THaEvtTypeHandler")) 
+	(retval = InitModules( fEvtHandlers, run_time, 50, "THaEvtTypeHandler"))
 	)) {
 
     // Set up cuts here, now that all global variables are available
@@ -763,18 +763,18 @@ Int_t THaAnalyzer::InitOutput( const TList* module_list,
   while( !fail && (obj = next())) {
     if( baseclass && !obj->IsA()->InheritsFrom( baseclass )) {
       Error( here, "Object %s (%s) is not a %s. Analyzer initialization "
-             "failed.", obj->GetName(), obj->GetTitle(), baseclass );
+	     "failed.", obj->GetName(), obj->GetTitle(), baseclass );
       retval = -2;
       fail = true;
     } else {
       THaAnalysisObject* theModule = dynamic_cast<THaAnalysisObject*>( obj );
       theModule->InitOutput( fOutput );
       if( !theModule->IsOKOut() ) {
-        Error( here, "Error initializing output for  %s (%s). "
-               "Analyzer initialization failed.",
-               obj->GetName(), obj->GetTitle() );
-        retval = -1;
-        fail = true;
+	Error( here, "Error initializing output for  %s (%s). "
+	       "Analyzer initialization failed.",
+	       obj->GetName(), obj->GetTitle() );
+	retval = -1;
+	fail = true;
       }
     }
   }
@@ -790,12 +790,21 @@ Int_t THaAnalyzer::ReadOneEvent()
 
   if( fDoBench ) fBench->Begin("RawDecode");
 
+  Int_t to_read_file=0;
+  if (!fEvData->IsMultiBlockMode() || (fEvData->IsMultiBlockMode() && fEvData->BlockIsDone())) to_read_file=1;
+
   // Find next event buffer in CODA file. Quit if error.
-  Int_t status = fRun->ReadEvent();
+  Int_t status = THaRunBase::READ_OK;
+  if (to_read_file) status = fRun->ReadEvent();
+
   switch( status ) {
   case THaRunBase::READ_OK:
     // Decode the event
-    status = fEvData->LoadEvent( fRun->GetEvBuffer() );
+    if (to_read_file) {
+      status = fEvData->LoadEvent( fRun->GetEvBuffer() );
+    } else {
+      status = fEvData->LoadFromMultiBlock( );  // load next event in block
+    }
     switch( status ) {
     case THaEvData::HED_OK:     // fall through
     case THaEvData::HED_WARN:
@@ -1232,7 +1241,7 @@ Int_t THaAnalyzer::MainAnalysis()
     retval = SlowControlAnalysis(retval);
     evdone = true;
   }
- 
+
   //=== Other events ===
   if( !evdone && fDoOtherEvents ) {
     Incr(kNevOther);
@@ -1467,4 +1476,3 @@ Int_t THaAnalyzer::Process( THaRunBase* run )
 //_____________________________________________________________________________
 
 ClassImp(THaAnalyzer)
-

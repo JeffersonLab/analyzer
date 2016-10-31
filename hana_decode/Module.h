@@ -38,6 +38,10 @@ namespace Decoder {
 
     Module();   // for ROOT TClass & I/O
 
+    Bool_t IsMultiBlockMode() {return fMultiBlockMode; };
+    Bool_t BlockIsDone() { return fBlockIsDone; };
+    virtual void SetFirmware(Int_t fw) {fFirmwareVers=fw;};
+
     virtual ~Module();
 
     // inheriting classes need to implement one or more of these
@@ -48,16 +52,18 @@ namespace Decoder {
     virtual Int_t GetData(Decoder::EModuleType type, Int_t chan, Int_t hit, Int_t sample) const {return 0;};
 
     virtual Int_t Decode(const UInt_t *p) = 0; // implement in derived class
-
     // Loads slot data
     virtual Int_t LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer,
 			   const UInt_t *pstop ) = 0;
     // Loads slot data from pos to pos+len
     virtual Int_t LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer,
 				   Int_t pos, Int_t len);
+    virtual Int_t LoadNextEvBuffer(THaSlotData *sldat) { return 0; };
 
     virtual Int_t GetNumChan() const { return fNumChan; };
 
+    virtual Int_t GetNumEvents(Decoder::EModuleType type, Int_t i) const { return 0; };
+    virtual Int_t GetNumEvents(Int_t i) const { return 0; };
     virtual Int_t GetNumEvents() const { return 0; };
     virtual Int_t GetNumSamples(Int_t i) const { return 0; };
     virtual Int_t GetMode() const { return fMode; };
@@ -98,6 +104,7 @@ namespace Decoder {
     Module& operator=(const Module &rhs);
 
     virtual void DoPrint() const;
+
     virtual Bool_t IsMultiFunction() { return kFALSE; };
     virtual Bool_t HasCapability(Decoder::EModuleType type) { return kFALSE; };
 
@@ -114,11 +121,14 @@ namespace Decoder {
     Int_t fWdcntMask, fWdcntShift;
     Int_t fModelNum, fNumChan, fMode;
     Bool_t IsInit;
+    Bool_t fMultiBlockMode, fBlockIsDone;
+    Int_t fFirmwareVers;
 
     std::ofstream *fDebugFile;
 
     Module(const Module& rhs);
     void Create(const Module& rhs);
+
 
   private:
 

@@ -138,6 +138,8 @@ int THaSlotData::loadModule(const THaCrateMap *map) {
 	if (fDebugFile) *fDebugFile << "fModule return "<<fModule<<endl;
 
 	if (!fModule) {
+	  cout << "ERROR: Failure to make module on crate "<<dec<<crate<<"  slot "<<slot<<endl;
+	  cout << "usually because the module class is abstract; make sure base class methods are defined"<<endl;
 	  if (fDebugFile) *fDebugFile << "failure to make module on crate "<<dec<<crate<<"  slot "<<slot<<endl;
 	  return -1;
 	}
@@ -199,6 +201,16 @@ Int_t THaSlotData::LoadIfSlot(const UInt_t* p, const UInt_t *pstop) {
   if (fDebugFile) *fDebugFile << "THaSlotData:: after LoadBank:  wordseen =  "<<dec<<"  "<<wordseen<<endl;
   return wordseen;
 }
+
+Int_t THaSlotData::LoadNextEvBuffer() {
+// for modules that are in multiblock mode, load the next event in the block
+  if ( !fModule ) {
+    cerr << "THaSlotData::ERROR:   No module defined for slot. "<<crate<<"  "<<slot<<endl;
+    return 0;
+  }
+  return fModule->LoadNextEvBuffer(this);
+}
+
 
 int THaSlotData::loadData(const char* type, int chan, int dat, int raw) {
 

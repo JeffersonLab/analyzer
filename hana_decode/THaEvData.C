@@ -62,7 +62,8 @@ THaEvData::THaEvData() :
   fMap(0), first_decode(true), fTrigSupPS(true),
   buffer(0), fDebugFile(0), run_num(0), run_type(0), fRunTime(0),
   evt_time(0), recent_event(0), fNSlotUsed(0), fNSlotClear(0),
-  fDoBench(kFALSE), fBench(0), fNeedInit(true), fDebug(0)
+  fDoBench(kFALSE), fBench(0), fNeedInit(true), fDebug(0),
+  fMultiBlockMode(kFALSE), fBlockIsDone(kFALSE)
 {
   fInstance = fgInstances.FirstNullBit();
   fgInstances.SetBitNumber(fInstance);

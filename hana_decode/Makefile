@@ -4,6 +4,7 @@
 # Test Executables:
 # tstoo    --  tests of OO decoder
 # tstfadc  --  tests of FADC 250 class
+# tstfadcblk   tests of FADC 250 class in multiblock mode
 # tstf1tdc --  tests of F1 TDC class
 # tstskel  --  test of SkeltonModule
 # tstcoda  --  test of abstract interface to THaCodaFile and THaEtClient.
@@ -28,7 +29,7 @@ VERS = hana_decode_2.0
 
 # If one defines STANDALONE, the library and test execs are compiled
 # independently of the rest of the analyzer.  Normally this is commented out.
-#export STANDALONE = 1
+# export STANDALONE = 1
 
 # MAINDIR is the source of headers for main code.
 # Also need objects from MAINDIR for standalone test executables,
@@ -164,7 +165,7 @@ GLIBS        += $(ROOTGLIBS) $(SYSLIBS)
 SRC = THaUsrstrutils.C THaCrateMap.C THaCodaData.C \
       THaEpics.C THaFastBusWord.C THaCodaFile.C THaSlotData.C \
       THaEvData.C THaCodaDecoder.C \
-      CodaDecoder.C Module.C VmeModule.C FastbusModule.C  \
+      CodaDecoder.C Module.C VmeModule.C PipeliningModule.C FastbusModule.C  \
       Lecroy1877Module.C Lecroy1881Module.C Lecroy1875Module.C \
       Fadc250Module.C GenScaler.C Scaler560.C Scaler1151.C \
       Scaler3800.C Scaler3801.C F1TDCModule.C Caen1190Module.C \
@@ -174,7 +175,7 @@ ifndef STANDALONE
   SRC += SimDecoder.C
 endif
 
-PROGS = tstoo tstfadc tstf1tdc tst1190 tstskel tstio tdecpr tdecex prfact epicsd
+PROGS = tstoo tstfadc tstfadcblk tstfadcblk tstf1tdc tst1190 tstskel tstio tdecpr tdecex prfact epicsd
 # If you want to use the ET system at Jlab.
 # ifdef ONLINE_ET
 #   SRC += THaEtClient.C
@@ -235,6 +236,10 @@ tstoo: tstoo_main.o $(DECODE_LIB)
 tstfadc: tstfadc_main.o $(DECODE_LIB)
 	rm -f $@
 	$(CXX) $(CXXFLAGS) -o $@ tstfadc_main.o $(DECODE_LIB) $(ALL_LIBS)
+
+tstfadcblk: tstfadcblk_main.o $(DECODE_LIB)
+	rm -f $@
+	$(CXX) $(CXXFLAGS) -o $@ tstfadcblk_main.o $(DECODE_LIB) $(ALL_LIBS)
 
 tstf1tdc: tstf1tdc_main.o $(DECODE_LIB)
 	rm -f $@

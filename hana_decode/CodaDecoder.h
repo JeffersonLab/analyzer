@@ -21,6 +21,7 @@ class CodaDecoder : public THaEvData {
   ~CodaDecoder();
 
   virtual Int_t LoadEvent(const UInt_t* evbuffer);
+  virtual Int_t LoadFromMultiBlock();
 
   virtual Int_t Init();
 
