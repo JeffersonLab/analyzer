@@ -557,14 +557,25 @@ Int_t THaScaler::ExtractRaw(const Int_t* data, int dlen) {
   for (i = 0; i < ndat; i++) {
     if (((data[i]&0xfff00000) == header) &&
     ((data[i]&0x0000ff00) == 0) ) { // found this crate's data
+      //  Unpack slot and channel number from header
+      slot = (data[i]&0xf0000)>>16;
+      numchan = (data[i]&0xff);
+      if (numchan == 0) numchan = 32;  // happens for event stream
+      //  Skip this header word if the slot number or number of channels are out of
+      //  range, or if the data bank does not have enough words left.
+      if (slot>=SCAL_NUMBANK || numchan>SCAL_NUMCHAN || i+numchan>=ndat){
+	cout <<  "THaScaler:: WARNING: Found bad scaler header word: "<< hex << data[i] << dec
+	     << ", at position "<< i << " out of " << ndat << " words in the buffer"
+	     << "; decoded as slot "<< slot <<" (SCAL_NUMBANK="<<SCAL_NUMBANK
+	     << ") with numchan="<<numchan << " (SCAL_NUMCHAN="<<SCAL_NUMCHAN << ")."
+	     << "  Ignore this header word." << endl;
+	continue;
+      }
       if (lfirst) {
         lfirst = 0;
         LoadPrevious();
         Clear();
       }
-      slot = (data[i]&0xf0000)>>16;
-      numchan = (data[i]&0xff);
-      if (numchan == 0) numchan = 32;  // happens for event stream
       for (j = i+1; j < i+numchan+1; j++) {
          k = slot*SCAL_NUMCHAN + j-i-1;
          if (k >= 0 && k < SCAL_NUMBANK*SCAL_NUMCHAN) rawdata[k] = data[j];
