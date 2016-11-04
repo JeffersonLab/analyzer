@@ -211,7 +211,7 @@ int THaSlotData::loadData(const char* type, int chan, int dat, int raw) {
     }
     return SD_ERR;
   }
-  if (chan < 0 || chan >= maxc) {
+  if (chan < 0 || chan >= (int)maxc) {
     if (VERBOSE) {
       cout << "THaSlotData: Warning in loadData: channel ";
       cout <<chan<<" out of bounds, ignored,"
@@ -319,7 +319,7 @@ void THaSlotData::print() const {
   }
   for (i=k; i<getNumRaw(); i++) cout << getRawData(i) << "  ";
   first = true;
-  for (chan=0; chan<maxc; chan++) {
+  for (chan=0; chan<(int)maxc; chan++) {
     if (getNumHits(chan) > 0) {
       if (first) {
 	cout << "\nThis is "<<devType()<<" Data : "<<endl;
@@ -359,7 +359,7 @@ void THaSlotData::print_to_file() const {
   }
   for (i=k; i<getNumRaw(); i++) *fDebugFile << getRawData(i) << "  ";
   first = true;
-  for (chan=0; chan<maxc; chan++) {
+  for (chan=0; chan<(int)maxc; chan++) {
     if (getNumHits(chan) > 0) {
       if (first) {
 	*fDebugFile << "\nThis is "<<devType()<<" Data : "<<endl;

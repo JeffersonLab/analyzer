@@ -44,7 +44,7 @@ public:
        const char* devType() const;             // "adc", "tdc", "scaler"
        int loadModule(const THaCrateMap *map);
        int getNumRaw() const { return numraw; };  // Amount of raw CODA data
-       int getRawData(int ihit) const;            // Returns raw data words
+       int getRawData(int ihit) const;         // Returns raw data words
        int getRawData(int chan, int hit) const;
        int getNumHits(int chan) const;      // Num hits on a channel
        int getNumChan() const;              // Num unique channels hit
@@ -102,8 +102,8 @@ private:
 //______________ inline functions _____________________________________________
 inline int THaSlotData::getRawData(int hit) const {
   // Returns the raw data (all bits)
-  assert( hit >= 0 && hit < numraw );
-  if (hit >= 0 && hit < numraw) return rawData[hit];
+  assert( hit >= 0 && hit < (int)numraw );
+  if (hit >= 0 && hit < (int)numraw) return rawData[hit];
   return 0;
 };
 
@@ -111,12 +111,12 @@ inline int THaSlotData::getRawData(int hit) const {
 // Data (words on 1 chan)
 inline
 int THaSlotData::getRawData(int chan, int hit) const {
-  assert( chan >= 0 && chan < maxc && hit >= 0 &&  hit < numHits[chan] );
-  if (chan < 0 || chan >= maxc || numHits[chan]<=hit || hit<0 )
+  assert( chan >= 0 && chan < (int)maxc && hit >= 0 &&  hit < numHits[chan] );
+  if (chan < 0 || chan >= (int)maxc || numHits[chan]<=hit || hit<0 )
     return 0;
   int index = dataindex[idxlist[chan]+hit];
-  assert(index >= 0 && index < numraw);
-  if (index >= 0 && index < numraw) return rawData[index];
+  assert(index >= 0 && index < (int)numraw);
+  if (index >= 0 && index < (int)numraw) return rawData[index];
   return 0;
 };
 
@@ -124,8 +124,8 @@ int THaSlotData::getRawData(int chan, int hit) const {
 inline
 int THaSlotData::getNumHits(int chan) const {
   // Num hits on a channel
-  assert( chan >= 0 && chan < maxc );
-  return (chan >= 0 && chan < maxc) ? numHits[chan] : 0;
+  assert( chan >= 0 && chan < (int)maxc );
+  return (chan >= 0 && chan < (int)maxc) ? numHits[chan] : 0;
 };
 
 //_____________________________________________________________________________
@@ -149,12 +149,12 @@ int THaSlotData::getNextChan(int index) const {
 // Data (words on 1 chan)
 inline
 int THaSlotData::getData(int chan, int hit) const {
-  assert( chan >= 0 && chan < maxc && hit >= 0 &&  hit < numHits[chan] );
-  if (chan < 0 || chan >= maxc || numHits[chan]<=hit || hit<0 )
+  assert( chan >= 0 && chan < (int)maxc && hit >= 0 &&  hit < numHits[chan] );
+  if (chan < 0 || chan >= (int)maxc || numHits[chan]<=hit || hit<0 )
     return 0;
   int index = dataindex[idxlist[chan]+hit];
-  assert(index >= 0 && index < numraw);
-  if (index >= 0 && index < numraw) return data[index];
+  assert(index >= 0 && index < (int)numraw);
+  if (index >= 0 && index < (int)numraw) return data[index];
   return 0;
 };
 
@@ -181,7 +181,7 @@ inline
 int THaSlotData::compressdataindex(int numidx) {
 
   // first check if it is more favourable to expand it, or to reshuffle
-  if (firstfreedataidx+numidx>=alloci){
+  if (firstfreedataidx+numidx>=(int)alloci){
     if (((numholesdataidx/alloci)>0.5)&&(numholesdataidx>numidx)) {
       // reshuffle, lots of holes
       UShort_t* tmp = new UShort_t[alloci];
