@@ -28,7 +28,8 @@ def config(env,args):
 	if int(srcdist):
 		env.Append(SRCDIST= '1')
 	
-	env.Append(CXXFLAGS = '-Wall -Woverloaded-virtual')
+	env.Append(CXXFLAGS = '-Wall')
+	env.Append(CXXFLAGS = '-Woverloaded-virtual')
 	env.Append(CPPDEFINES = '-DLINUXVERS')
 
 	cxxversion = env.subst('$CXXVERSION')
