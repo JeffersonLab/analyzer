@@ -76,7 +76,7 @@ private:
        TString device;
        Module *fModule;
        UShort_t numhitperchan; // expected number of hits per channel
-       UShort_t numraw;      // Hit counters (numraw, numHits, numchanhit)
+       UInt_t numraw;      // Hit counters (numraw, numHits, numchanhit)
        UShort_t numchanhit;  // can be zero'd by clearEvent each event.
        UShort_t firstfreedataidx;     // pointer to first free space in dataindex array
        UShort_t numholesdataidx;
@@ -91,10 +91,10 @@ private:
        int* data;            // data[hit] (only data bits)
        std::ofstream *fDebugFile; // debug output to this file, if nonzero
        bool didini;          // true if object initialized via define()
-       UShort_t maxc;        // Number of channels for this device
+       UInt_t maxc;        // Number of channels for this device
        UInt_t maxd;          // Max number of data words per event
-       UShort_t allocd;      // Allocated size of data arrays
-       UShort_t alloci;      // Allocated size of dataindex array
+       UInt_t allocd;      // Allocated size of data arrays
+       UInt_t alloci;      // Allocated size of dataindex array
 
        ClassDef(THaSlotData,0)   //  Data in one slot of fastbus, vme, camac
 };
