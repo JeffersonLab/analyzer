@@ -33,7 +33,7 @@ namespace Decoder {
   class SkeletonModule;
 
   static const Int_t MAXROC = 32;
-  static const Int_t MAXBANK = 50;
+  static const Int_t MAXBANK = 4095;
   static const Int_t MAXSLOT = 30;
   static const Int_t MAXSLOT_FB = 26;
 

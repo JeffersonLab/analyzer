@@ -29,6 +29,7 @@
 
 //#define DEBUG
 //#define WITH_DEBUG
+#define CRATE1 1         // HMS single arm setup
 #define CRATE5 5         // Brian's setup
 #define CRATE10 10       // Alex's setup
 #define CRATE12 12       // Mark's setup
@@ -145,13 +146,15 @@ int main(int argc, char* argv[])
 
       // Loop over slots
       for(uint32_t islot = SLOTMIN; islot < NUMSLOTS; islot++) {
+	if (evdata->GetNumRaw(CRATE1, islot) != 0) {  // HMS Single arm setup
       	//if (evdata->GetNumRaw(CRATE5, islot) != 0) {
 	//if (evdata->GetNumRaw(CRATE10, islot) != 0) {
-	if (evdata->GetNumRaw(CRATE12, islot) != 0) {
+	//if (evdata->GetNumRaw(CRATE12, islot) != 0) {
 	  Fadc250Module *fadc = NULL;
+	  fadc = dynamic_cast <Fadc250Module*> (evdata->GetModule(CRATE1, islot));   // HMS single arm setup
 	  //fadc = dynamic_cast <Fadc250Module*> (evdata->GetModule(CRATE5, islot));   // Bryan's setup
 	  //fadc = dynamic_cast <Fadc250Module*> (evdata->GetModule(CRATE10, islot));  // Alex's setup
-	  fadc = dynamic_cast <Fadc250Module*> (evdata->GetModule(CRATE12, islot));    // Mark's setup
+	  //fadc = dynamic_cast <Fadc250Module*> (evdata->GetModule(CRATE12, islot));    // Mark's setup
 	  if (fadc != NULL) {
 	    //fadc->CheckDecoderStatus();
 	    if (debugfile) *debugfile << "\n///////////////////////////////\n"
