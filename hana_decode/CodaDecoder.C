@@ -303,6 +303,7 @@ Int_t CodaDecoder::bank_decode( Int_t roc, const UInt_t* evbuffer,
   Int_t maxslot = fMap->getMaxSlot(roc);
 
   for (Int_t slot = minslot; slot <= maxslot; slot++) {
+    if (!fMap->slotUsed(roc,slot)) continue;
     bank=fMap->getBank(roc,slot);
     if (bank < 0 || bank >= Decoder::MAXBANK) {
       cerr << "CodaDecoder::ERROR:  bank number out of range "<<endl;
