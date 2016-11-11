@@ -8,16 +8,6 @@
 #include "Decoder.h"
 #include "THaCodaFile.h"
 #include "CodaDecoder.h"
-#include <iostream>
-#include <fstream>
-#include <cstdlib>
-#include <cstdio>
-#include <numeric>
-#include <vector>
-#include <time.h>
-#include "Decoder.h"
-#include "THaCodaFile.h"
-#include "CodaDecoder.h"
 #include "THaEvData.h"
 #include "Module.h"
 #include "Fadc250Module.h"
@@ -37,8 +27,8 @@
 #include "TRandom3.h"
 #include "TCanvas.h"
 
-#define DEBUG
-#define WITH_DEBUG
+//#define DEBUG
+//#define WITH_DEBUG
 #define CRATE1 1         // HMS single arm setup
 #define CRATE5 5         // Brian's setup
 #define CRATE10 10       // Alex's setup
