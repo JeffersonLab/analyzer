@@ -1446,18 +1446,21 @@ Int_t THaAnalyzer::Process( THaRunBase* run )
     else if ( terminate )
       cout << "Terminated during processing.";
     cout << endl;
-    
-    PrintCounters();
 
-    if( fVerbose>1 )
-      PrintScalers();
+    if( !fatal ) {
+      PrintCounters();
+
+      if( fVerbose>1 )
+	PrintScalers();
+    }
   }
 
   // Print cut summary (also to file if one given)
-  PrintCutSummary();
+  if( !fatal )
+    PrintCutSummary();
 
   // Print timing statistics, if benchmarking enabled
-  if( fDoBench ) {
+  if( fDoBench && !fatal ) {
     cout << "Timing summary:" << endl;
     fBench->Print("Init");
     fBench->Print("RawDecode");
@@ -1471,7 +1474,7 @@ Int_t THaAnalyzer::Process( THaRunBase* run )
     fBench->Print("Cuts");
     fBench->Print("Scaler");
   }
-  if( fVerbose>1 || fDoBench )
+  if( (fVerbose>1 || fDoBench) && !fatal )
     fBench->Print("Total");
   
   //keep the last run available
