@@ -28,7 +28,7 @@ VERS = hana_decode_2.0
 
 # If one defines STANDALONE, the library and test execs are compiled
 # independently of the rest of the analyzer.  Normally this is commented out.
-#export STANDALONE = 1
+export STANDALONE = 1
 
 # MAINDIR is the source of headers for main code.
 # Also need objects from MAINDIR for standalone test executables,
@@ -174,7 +174,7 @@ ifndef STANDALONE
   SRC += SimDecoder.C
 endif
 
-PROGS = tstoo tstfadc tstf1tdc tstskel tstio tdecpr tdecex prfact epicsd
+PROGS = tstoo tstfadc tstf1tdc tst1190 tstskel tstio tdecpr tdecex prfact epicsd
 # If you want to use the ET system at Jlab.
 # ifdef ONLINE_ET
 #   SRC += THaEtClient.C
@@ -239,6 +239,10 @@ tstfadc: tstfadc_main.o $(DECODE_LIB)
 tstf1tdc: tstf1tdc_main.o $(DECODE_LIB)
 	rm -f $@
 	$(CXX) $(CXXFLAGS) -o $@ tstf1tdc_main.o $(DECODE_LIB) $(ALL_LIBS)
+
+tst1190: tst1190_main.o $(DECODE_LIB)
+	rm -f $@
+	$(CXX) $(CXXFLAGS) -o $@ tst1190_main.o $(DECODE_LIB) $(ALL_LIBS)
 
 tstskel: tstskel_main.o $(DECODE_LIB)
 	rm -f $@

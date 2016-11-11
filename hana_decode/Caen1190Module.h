@@ -12,34 +12,42 @@
 
 namespace Decoder {
 
-class Caen1190Module : public VmeModule {
+  class Caen1190Module : public VmeModule {
 
-public:
+  public:
 
-   Caen1190Module() {};
-   Caen1190Module(Int_t crate, Int_t slot);
-   virtual ~Caen1190Module();
+    Caen1190Module() {};
+    Caen1190Module(Int_t crate, Int_t slot);
+    virtual ~Caen1190Module();
 
-   using Module::GetData;
-   using Module::LoadSlot;
+    using Module::GetData;
 
-   virtual Int_t GetData(Int_t chan, Int_t hit) const;
-   virtual void Init();
-   virtual void Clear(const Option_t *opt="");
-   virtual Int_t Decode(const UInt_t *p) { return 0; };
+    virtual void Init();
+    virtual void Clear(const Option_t *opt);
+    virtual Int_t Decode(const UInt_t *p);
+    virtual Int_t GetData(Int_t chan, Int_t hit) const;
 
-// Loads slot data.  if you don't define this, the base class's method is used
-  virtual Int_t LoadSlot(THaSlotData *sldat,  const UInt_t *evbuffer, const UInt_t *pstop );
+    // Loads slot data.  if you don't define this, the base class's method is used
+    virtual Int_t LoadSlot(THaSlotData *sldat,  const UInt_t *evbuffer, const UInt_t *pstop );
+    // Loads slot data for bank structures
+    virtual Int_t LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, Int_t pos, Int_t len);
 
-private:
+  private:
 
-   Int_t *fNumHits;
-   Int_t *fTdcData;  // Raw data	
+    Int_t *fNumHits;
+    Int_t *fTdcData;  // Raw data
 
-   static TypeIter_t fgThisType;
-   ClassDef(Caen1190Module,0)  //  Caen1190 of a module; make your replacements
+    THaSlotData *slot_data;  // Need to fix if multi-threading becomes available
+   
+    struct tdc_data_struct {
+      UInt_t evno, slot, chan, raw, chip_nr_hd, flags;
+      Int_t status;
+    } tdc_data;
 
-};
+    static TypeIter_t fgThisType;
+    ClassDef(Caen1190Module,0)  //  Caen1190 of a module; make your replacements
+
+      };
 
 }
 
