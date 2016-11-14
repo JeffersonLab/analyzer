@@ -55,8 +55,10 @@ namespace Decoder {
       uint32_t slot_blk_hdr, mod_id, iblock_num, nblock_events;     // Block header objects
       uint32_t PL, NSA, NSB;                                        // Block header objects cont.
       uint32_t slot_blk_trl, nwords_inblock;                        // Block trailer objects
-      uint32_t slot_evt_hdr, evt_num;                               // Event header objects
-      uint32_t trig_time;                                           // Trigger time objects
+      uint32_t slot_evt_hdr, evt_num;                               // Event header objects (pre  0x0C00) 
+      uint32_t eh_trig_time, trig_num;                              // Event header objects (post 0x0C00)
+      uint32_t trig_time_w1, trig_time_w2;                          // Trigger time objects
+      uint64_t trig_time;                                           // Trigger time objects cont.
       // Window raw data objects
       uint32_t chan, win_width;                                     // FADC channel, window width
       uint32_t samples;                                             // FADC raw data samples

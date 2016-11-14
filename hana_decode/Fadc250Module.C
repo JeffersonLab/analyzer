@@ -590,26 +590,40 @@ vector<uint32_t> Fadc250Module::GetPulseSamplesVector(Int_t chan) const {
 	break;
       case 2: // Event header, indicates start of an event, includes the trigger number
 	event_header_found = true;
-	fadc_data.slot_evt_hdr = (data >> 22) & 0x1F;  // Slot number (set by VME64x backplane), mask 5 bits
-	fadc_data.evt_num = (data >> 0) & 0x3FFFFF;    // Event number, mask 22 bits
+	// For firware versions pre 0x0C00 (06/09/2016)
+	// fadc_data.slot_evt_hdr = (data >> 22) & 0x1F;  // Slot number (set by VME64x backplane), mask 5 bits
+	// fadc_data.evt_num = (data >> 0) & 0x3FFFFF;    // Event number, mask 22 bits
+	// For firmware versions post 0x0C00 (06/09/2016)
+	fadc_data.eh_trig_time = (data >> 12) & 0x3FF;  // Event header trigger time
+	fadc_data.trig_num = (data >> 0) & 0xFFF;       // Trigger number 
 	// Debug output
+// #ifdef WITH_DEBUG
+// 	if (fDebugFile != 0)
+// 	  *fDebugFile << "Fadc250Module::Decode:: FADC EVENT HEADER >> data = " << hex 
+// 		      << data << dec << " >> slot = " << fadc_data.slot_evt_hdr 
+// 		      << " >> event number = " << fadc_data.evt_num << endl;
+// #endif
 #ifdef WITH_DEBUG
 	if (fDebugFile != 0)
 	  *fDebugFile << "Fadc250Module::Decode:: FADC EVENT HEADER >> data = " << hex 
-		      << data << dec << " >> slot = " << fadc_data.slot_evt_hdr 
-		      << " >> event number = " << fadc_data.evt_num << endl;
+		      << data << dec << " >> event header trigger time = " << fadc_data.eh_trig_time 
+		      << " >> trigger number = " << fadc_data.trig_num << endl;
 #endif
 	break;	  
       case 3:  // Trigger time, time of trigger occurence relative to the most recent global reset
 	if (data_type_id)  // Trigger time word 1
-	  fadc_data.trig_time = (data >> 0) & 0xFFFFFF;  // Time = T_D T_E T_F
+	  fadc_data.trig_time_w1 = (data >> 0) & 0xFFFFFF;  // Time = T_D T_E T_F
 	else  // Trigger time word 2
-	  fadc_data.trig_time = (data >> 0) & 0xFFFFFF;  // Time = T_A T_B T_C
+	  fadc_data.trig_time_w2 = (data >> 0) & 0xFFFFFF;  // Time = T_A T_B T_C
+	// Time = T_A T_B T_C T_D T_E T_F
+	fadc_data.trig_time = (fadc_data.trig_time_w2 << 24) | fadc_data.trig_time_w1;
 	// Debug output
 #ifdef WITH_DEBUG
 	if (fDebugFile != 0)
 	  *fDebugFile << "Fadc250Module::Decode:: FADC TRIGGER TIME >> data = " << hex 
-		      << data << dec << " >> time = " << fadc_data.trig_time << endl;
+		      << data << dec << " >> trigger time word 1 = " << fadc_data.trig_time_w1
+		      << " >> trigger time word 2 = " << fadc_data.trig_time_w2
+		      << " >> trigger time = " << fadc_data.trig_time << endl;
 #endif
 	break;
       case 4: // Window raw data
