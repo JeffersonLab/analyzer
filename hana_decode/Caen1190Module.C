@@ -14,6 +14,9 @@
 
 using namespace std;
 
+//#define DEBUG
+//#define WITH_DEBUG
+
 namespace Decoder {
 
   const Int_t NTDCCHAN = 128;
@@ -65,10 +68,8 @@ namespace Decoder {
     slot_data = sldat;
     fWordsSeen = 0;
     Int_t index = 0;
-    //Int_t glbl_trl = 0;
     while(fWordsSeen < len) {
       index = pos + fWordsSeen;
-      //glbl_trl = Decode(&evbuffer[index]);
       Decode(&evbuffer[index]);
       fWordsSeen++;
     }
@@ -83,6 +84,13 @@ namespace Decoder {
     case 0x40000000 : 		// Global header
       tdc_data.evno=(*p & 0x07ffffe0) >> 5;
       tdc_data.slot=(*p & 0x0000001f);
+#ifdef WITH_DEBUG
+      if (fDebugFile != 0)
+	*fDebugFile << "Caen1190Module:: 1190 GLOBAL HEADER >> data = " 
+		    << hex << *p << " >> event number = " << dec 
+		    << tdc_data.evno << " >> slot number = "  
+		    << tdc_data.slot << endl;
+#endif
       break;
     case 0x08000000 :  // chip header; contains: chip nr., ev. nr, bunch ID
       //chip_nr_hd = ((*p)&0x03000000) >> 24; // bits 25-24
@@ -92,6 +100,14 @@ namespace Decoder {
       tdc_data.chan=((*p)&0x03f80000)>>19; // bits 25-19
       tdc_data.raw=((*p)&0x0007ffff); // bits 18-0
       tdc_data.status = slot_data->loadData("tdc", tdc_data.chan, tdc_data.raw, tdc_data.raw);
+#ifdef WITH_DEBUG
+      if (fDebugFile != 0)
+	*fDebugFile << "Caen1190Module:: 1190 MEASURED DATA >> data = " 
+		    << hex << *p << " >> channel = " << dec
+		    << tdc_data.chan << " >> raw time = "
+		    << tdc_data.raw << " >> status = "
+		    << tdc_data.status << endl;
+#endif
       if(Int_t (tdc_data.chan) < NTDCCHAN) { 
 	if(fNumHits[tdc_data.chan] < MAXHIT) {
 	  fTdcData[tdc_data.chan*MAXHIT + fNumHits[tdc_data.chan]++] = tdc_data.raw;
@@ -135,6 +151,13 @@ namespace Decoder {
       tdc_data.flags = *p&0x7fff;			   // Error flags
       cout << "TDC1190 Error: Slot " << tdc_data.slot << ", Chip " << tdc_data.chip_nr_hd << 
 	", Flags " << hex << tdc_data.flags << dec << " " << ", Ev #" << tdc_data.evno << endl;
+#ifdef WITH_DEBUG
+      if (fDebugFile != 0)
+	*fDebugFile << "Caen1190Module:: 1190 TDC ERROR >> data = " 
+		    << hex << *p << " >> chip header = " << dec
+		    << tdc_data.chip_nr_hd << " >> error flags = " << hex
+		    << tdc_data.flags << dec << endl;
+#endif
       break;
     default:			// Unknown word
       cout << "unknown word for TDC1190: " << hex << (*p) << dec << endl;

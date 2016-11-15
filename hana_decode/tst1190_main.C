@@ -34,8 +34,8 @@
 #define SLOTMIN 3
 #define NUMSLOTS 21
 #define NTDCCHAN 128
-#define NUMEVENTS 25
-#define NUMRAWEVENTS 25
+#define NUMEVENTS 10
+#define NUMRAWEVENTS 10
 
 using namespace std;
 using namespace Decoder;
@@ -56,7 +56,7 @@ void GeneratePlots(uint32_t islot, uint32_t chan) {
   if (!chan_dir[chan]) {chan_dir[chan] = slot_dir[islot]->mkdir(Form("chan_%d", chan)); chan_dir[chan]->cd();}
   else hfile->cd(Form("/slot_%d/chan_%d", islot, chan));
   // Histos
-  if (!h_rawtdc[islot][chan]) h_rawtdc[islot][chan] = new TH1I("h_rawtdc", Form("CAEN1190 RAW TDC Slot %d Channel %d", islot, chan), 4096, 0, 4095);
+  if (!h_rawtdc[islot][chan]) h_rawtdc[islot][chan] = new TH1I("h_rawtdc", Form("CAEN1190 RAW TDC Slot %d Channel %d", islot, chan), 10001, 0, 10000);
 }
 
 int main(int argc, char* argv[])
@@ -89,8 +89,8 @@ int main(int argc, char* argv[])
   cout << NUMEVENTS << " events will be processed" << endl;
   cout << "***************************************" << endl;
   uint32_t iievent = 1;
-  //for(uint32_t ievent = 0; ievent < NUMEVENTS; ievent++) {
-  for(uint32_t ievent = 0; ievent < iievent; ievent++) {
+  for(uint32_t ievent = 0; ievent < NUMEVENTS + 1; ievent++) {
+    //for(uint32_t ievent = 0; ievent < iievent; ievent++) {
     // Read in data file
     int status = datafile.codaRead();
     if (status == S_SUCCESS) {
@@ -119,7 +119,7 @@ int main(int argc, char* argv[])
 	    for (uint32_t chan = 0; chan < NTDCCHAN; chan++) {
 	      // Generate FADC plots
 	      GeneratePlots(islot, chan);
-	      for (Int_t hitno = 1; hitno < 17; hitno++) {  // Assume for now up-to 16 hits?
+	      for (Int_t hitno = 0; hitno < 16; hitno++) {  // Assume for now up-to 16 hits???
 		if (tdc->GetData(chan, hitno) != 0)
 		  h_rawtdc[islot][chan]->Fill(tdc->GetData(chan, hitno));
 	      } // TDC hit loop
