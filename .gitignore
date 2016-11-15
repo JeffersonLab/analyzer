@@ -2,6 +2,7 @@
 *.[od]
 *.os
 lib*.so*
+lib*.dylib
 analyzer
 
 # Generated files
