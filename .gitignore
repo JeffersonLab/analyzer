@@ -3,6 +3,7 @@
 *.d
 *.os
 lib*.so*
+lib*.dylib
 analyzer
 hana_decode/epicsd
 hana_decode/prfact
