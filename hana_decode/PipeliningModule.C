@@ -159,7 +159,7 @@ Int_t PipeliningModule::SplitBuffer(std::vector< UInt_t > codabuffer ) {
     return 1;
   }
   if (IsMultiBlockMode() == kTRUE) {
-    if (nblock_events != eventblock.size()) {
+    if (static_cast<size_t>(nblock_events) != eventblock.size()) {
       cout << "PipeliningModule::ERROR:  num events in block inconsistent"<<endl;
       if (fDebugFile != 0) *fDebugFile << "nblock_events = "<<dec<<nblock_events<<"   "<<eventblock.size()<<endl;
     }
@@ -221,7 +221,8 @@ std::vector< UInt_t > PipeliningModule::GetNextBlock() {
 
 UInt_t PipeliningModule::GetIndex() {
   UInt_t idx = index_buffer - 1;
-  if (idx >= 0 && idx < eventblock.size()) return idx;
+  if (index_buffer > 0 && idx < eventblock.size())
+    return idx;
   cout << "Warning:  index problem in PipeliningModule "<<idx<<"  "<<eventblock.size()<<endl;
   return 0;
 }

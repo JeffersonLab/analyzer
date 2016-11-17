@@ -561,7 +561,8 @@ void Fadc250Module::LoadTHaSlotDataObj(THaSlotData *sldat) {
     Clear();
 
     Int_t index = 0;
-    for (UInt_t i; i<evbuffer.size(); i++) DecodeOneWord(evbuffer[index++]);
+    for (UInt_t i = 0; i<evbuffer.size(); i++)
+      DecodeOneWord(evbuffer[index++]);
 
     LoadTHaSlotDataObj(sldat);
 

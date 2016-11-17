@@ -189,6 +189,7 @@ Int_t CodaDecoder::LoadFromMultiBlock()
 	}
       }
   }
+  return HED_OK;
 }
 
 
