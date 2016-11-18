@@ -19,7 +19,7 @@ list = Split("""
 THaUsrstrutils.C THaCrateMap.C THaCodaData.C 
 THaEpics.C THaFastBusWord.C THaCodaFile.C THaSlotData.C 
 THaEvData.C THaCodaDecoder.C SimDecoder.C
-CodaDecoder.C Module.C VmeModule.C FastbusModule.C
+CodaDecoder.C Module.C VmeModule.C PipeliningModule.C FastbusModule.C
 Lecroy1877Module.C Lecroy1881Module.C Lecroy1875Module.C
 Fadc250Module.C GenScaler.C Scaler560.C Scaler1151.C
 Scaler3800.C Scaler3801.C F1TDCModule.C Caen1190Module.C
