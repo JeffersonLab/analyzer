@@ -31,6 +31,7 @@
 //#define WITH_DEBUG
 
 #define CRATE1 1         // HMS single arm setup
+#define CRATE3 3         // HMS DC setup
 #define SLOTMIN 3
 #define NUMSLOTS 21
 #define NTDCCHAN 128
@@ -56,7 +57,7 @@ void GeneratePlots(uint32_t islot, uint32_t chan) {
   if (!chan_dir[chan]) {chan_dir[chan] = slot_dir[islot]->mkdir(Form("chan_%d", chan)); chan_dir[chan]->cd();}
   else hfile->cd(Form("/slot_%d/chan_%d", islot, chan));
   // Histos
-  if (!h_rawtdc[islot][chan]) h_rawtdc[islot][chan] = new TH1I("h_rawtdc", Form("CAEN1190 RAW TDC Slot %d Channel %d", islot, chan), 10001, 0, 10000);
+  if (!h_rawtdc[islot][chan]) h_rawtdc[islot][chan] = new TH1I("h_rawtdc", Form("CAEN1190 RAW TDC Slot %d Channel %d", islot, chan), 50001, 0, 50000);
 }
 
 int main(int argc, char* argv[])
@@ -89,8 +90,8 @@ int main(int argc, char* argv[])
   cout << NUMEVENTS << " events will be processed" << endl;
   cout << "***************************************" << endl;
   uint32_t iievent = 1;
-  for(uint32_t ievent = 0; ievent < NUMEVENTS + 1; ievent++) {
-    //for(uint32_t ievent = 0; ievent < iievent; ievent++) {
+  //for(uint32_t ievent = 0; ievent < NUMEVENTS + 1; ievent++) {
+  for(uint32_t ievent = 0; ievent < iievent; ievent++) {
     // Read in data file
     int status = datafile.codaRead();
     if (status == S_SUCCESS) {
@@ -103,9 +104,9 @@ int main(int argc, char* argv[])
 
       // Loop over slots
       for(uint32_t islot = SLOTMIN; islot < NUMSLOTS; islot++) {
-	if (evdata->GetNumRaw(CRATE1, islot) != 0) {  // HMS Single arm setup
+	if (evdata->GetNumRaw(CRATE3, islot) != 0) {  // HMS Single arm setup
 	  Caen1190Module *tdc = NULL;
-	  tdc = dynamic_cast <Caen1190Module*> (evdata->GetModule(CRATE1, islot));   // HMS single arm setup
+	  tdc = dynamic_cast <Caen1190Module*> (evdata->GetModule(CRATE3, islot));   // HMS single arm setup
 	  if (tdc != NULL) {
 	    if (debugfile) *debugfile << "\n///////////////////////////////\n"
 				      << "Results for crate " 
