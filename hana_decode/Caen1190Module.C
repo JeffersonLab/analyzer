@@ -84,36 +84,40 @@ namespace Decoder {
     case 0x40000000 : 		// Global header
       tdc_data.evno=(*p & 0x07ffffe0) >> 5;
       tdc_data.slot=(*p & 0x0000001f);
+      if (tdc_data.slot == static_cast <UInt_t> (fSlot)) {
 #ifdef WITH_DEBUG
-      if (fDebugFile != 0)
-	*fDebugFile << "Caen1190Module:: 1190 GLOBAL HEADER >> data = " 
-		    << hex << *p << " >> event number = " << dec 
-		    << tdc_data.evno << " >> slot number = "  
-		    << tdc_data.slot << endl;
+	if (fDebugFile != 0)
+	  *fDebugFile << "Caen1190Module:: 1190 GLOBAL HEADER >> data = " 
+		      << hex << *p << " >> event number = " << dec 
+		      << tdc_data.evno << " >> slot number = "  
+		      << tdc_data.slot << endl;
 #endif
+      }
       break;
     case 0x08000000 :  // chip header; contains: chip nr., ev. nr, bunch ID
       //chip_nr_hd = ((*p)&0x03000000) >> 24; // bits 25-24
       //bunch_id = ((*p)&0x00000fff); // bits 11-0
       break;
     case  0x00000000 : 		// measurement data
-      tdc_data.chan=((*p)&0x03f80000)>>19; // bits 25-19
-      tdc_data.raw=((*p)&0x0007ffff); // bits 18-0
-      tdc_data.status = slot_data->loadData("tdc", tdc_data.chan, tdc_data.raw, tdc_data.raw);
+      if (tdc_data.slot == static_cast <UInt_t> (fSlot)) {
+	tdc_data.chan=((*p)&0x03f80000)>>19; // bits 25-19
+	tdc_data.raw=((*p)&0x0007ffff); // bits 18-0
+	tdc_data.status = slot_data->loadData("tdc", tdc_data.chan, tdc_data.raw, tdc_data.raw);
 #ifdef WITH_DEBUG
-      if (fDebugFile != 0)
-	*fDebugFile << "Caen1190Module:: 1190 MEASURED DATA >> data = " 
-		    << hex << *p << " >> channel = " << dec
-		    << tdc_data.chan << " >> raw time = "
-		    << tdc_data.raw << " >> status = "
-		    << tdc_data.status << endl;
+	if (fDebugFile != 0)
+	  *fDebugFile << "Caen1190Module:: 1190 MEASURED DATA >> data = " 
+		      << hex << *p << " >> channel = " << dec
+		      << tdc_data.chan << " >> raw time = "
+		      << tdc_data.raw << " >> status = "
+		      << tdc_data.status << endl;
 #endif
-      if(Int_t (tdc_data.chan) < NTDCCHAN) { 
-	if(fNumHits[tdc_data.chan] < MAXHIT) {
-	  fTdcData[tdc_data.chan*MAXHIT + fNumHits[tdc_data.chan]++] = tdc_data.raw;
+	if(Int_t (tdc_data.chan) < NTDCCHAN) { 
+	  if(fNumHits[tdc_data.chan] < MAXHIT) {
+	    fTdcData[tdc_data.chan*MAXHIT + fNumHits[tdc_data.chan]++] = tdc_data.raw;
+	  }
 	}
+	if (tdc_data.status != SD_OK ) return -1;
       }
-      if (tdc_data.status != SD_OK ) return -1;
       break;
     case 0x18000000 : // chip trailer:  contains chip nr. & ev nr & word count
       // chip_nr_tr = ((*p)&0x03000000) >> 24; // bits 25-24
@@ -144,24 +148,27 @@ namespace Decoder {
       //	      << " " << "trailer says: " << " " << slot_from_gl_tr << endl;
       //      };
       //      nword_mod++;
-      glbl_trl = 1;
+      if (tdc_data.slot == static_cast <UInt_t> (fSlot))
+	glbl_trl = 1;
       break;
     case 0x20000000:		// Output Buffer: TDC Error
-      tdc_data.chip_nr_hd = ((*p)&0x03000000) >> 24; // bits 25-24
-      tdc_data.flags = *p&0x7fff;			   // Error flags
-      cout << "TDC1190 Error: Slot " << tdc_data.slot << ", Chip " << tdc_data.chip_nr_hd << 
-	", Flags " << hex << tdc_data.flags << dec << " " << ", Ev #" << tdc_data.evno << endl;
+      if (tdc_data.slot == static_cast <UInt_t> (fSlot)) {
+	tdc_data.chip_nr_hd = ((*p)&0x03000000) >> 24; // bits 25-24
+	tdc_data.flags = *p&0x7fff;			   // Error flags
+	cout << "TDC1190 Error: Slot " << tdc_data.slot << ", Chip " << tdc_data.chip_nr_hd << 
+	  ", Flags " << hex << tdc_data.flags << dec << " " << ", Ev #" << tdc_data.evno << endl;
 #ifdef WITH_DEBUG
-      if (fDebugFile != 0)
-	*fDebugFile << "Caen1190Module:: 1190 TDC ERROR >> data = " 
-		    << hex << *p << " >> chip header = " << dec
-		    << tdc_data.chip_nr_hd << " >> error flags = " << hex
-		    << tdc_data.flags << dec << endl;
+	if (fDebugFile != 0)
+	  *fDebugFile << "Caen1190Module:: 1190 TDC ERROR >> data = " 
+		      << hex << *p << " >> chip header = " << dec
+		      << tdc_data.chip_nr_hd << " >> error flags = " << hex
+		      << tdc_data.flags << dec << endl;
 #endif
-      break;
-    default:			// Unknown word
-      cout << "unknown word for TDC1190: " << hex << (*p) << dec << endl;
-      cout << "according to global header ev. nr. is: " << " " << tdc_data.evno << endl;
+	break;
+      default:			// Unknown word
+	cout << "unknown word for TDC1190: " << hex << (*p) << dec << endl;
+	cout << "according to global header ev. nr. is: " << " " << tdc_data.evno << endl;
+      }
       break;
     }
     return glbl_trl;

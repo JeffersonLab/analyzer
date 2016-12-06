@@ -581,9 +581,10 @@ THaAnalysisObject::EStatus THaAnalysisObject::Init( const TDatime& date )
 	     "Call expert." );
       status = kInitError;
     }
-    catch( ... ) {
-      Error( Here(here), "Exception caught in ReadDatabase. Not initialized. "
-	     "Call expert." );
+    catch( std::exception& e ) {
+      Error( Here(here), "Exception %s caught in ReadDatabase. "
+	     "Module not initialized. Check database or call expert.",
+	     e.what() );
       status = kInitError;
     }
     if( status )

@@ -9,6 +9,7 @@
 #include "PipeliningModule.h"
 #include "THaSlotData.h"
 #include <iostream>
+#include <cstdlib>  // for exit()
 
 using namespace std;
 
@@ -142,7 +143,8 @@ Int_t PipeliningModule::SplitBuffer(std::vector< UInt_t > codabuffer ) {
       default:
 	if (slot_blk_hdr != slot_evt_hdr) {
 	  // for some older firmware, slot_evt_hdr is zero
-	  if ((fNWarnings++ % 100)==0) cout << "PipeliningModule::WARNING : inconsistent slot num  "<<endl;
+	  if ((fNWarnings++ % 100)==0)
+	    cerr << "PipeliningModule::WARNING : inconsistent slot num  "<<endl;
 	}
 // all other data goes here
 	if ((fMultiBlockMode==kTRUE) && (slot_blk_hdr==fSlot)) oneEventBuffer.push_back(data);
@@ -160,7 +162,7 @@ Int_t PipeliningModule::SplitBuffer(std::vector< UInt_t > codabuffer ) {
   }
   if (IsMultiBlockMode() == kTRUE) {
     if (static_cast<size_t>(nblock_events) != eventblock.size()) {
-      cout << "PipeliningModule::ERROR:  num events in block inconsistent"<<endl;
+      cerr << "PipeliningModule::ERROR:  num events in block inconsistent"<<endl;
       if (fDebugFile != 0) *fDebugFile << "nblock_events = "<<dec<<nblock_events<<"   "<<eventblock.size()<<endl;
     }
     if (debug >= 1) PrintBlocks();  // debug
@@ -188,9 +190,9 @@ void PipeliningModule::PrintBlocks() {
   }
   Int_t iblk=1;
   Int_t icnt=0;
-  while (BlockIsDone() == kFALSE) {
+  while (!BlockIsDone()) {
     if (icnt++ > maxloops) {
-       cout << "PipeliningModule:: ERROR: infinite loop PrintBlocks "<<endl;
+       cerr << "PipeliningModule:: ERROR: infinite loop PrintBlocks "<<endl;
        exit(0);  //  should never happen
     }
     std::vector<UInt_t> evbuffer = GetNextBlock();
@@ -210,7 +212,7 @@ void PipeliningModule::ReStart() {
 std::vector< UInt_t > PipeliningModule::GetNextBlock() {
   std::vector< UInt_t > vnothing;  vnothing.clear();
   if (eventblock.size()==0) {
-      cout << "ERROR:  No event buffers ! "<<endl;   // Should never happen
+      cerr << "ERROR:  No event buffers ! "<<endl;   // Should never happen
       return vnothing;
   }
   if (IsMultiBlockMode() == kFALSE ) return eventblock[0];
@@ -223,7 +225,8 @@ UInt_t PipeliningModule::GetIndex() {
   UInt_t idx = index_buffer - 1;
   if (index_buffer > 0 && idx < eventblock.size())
     return idx;
-  cout << "Warning:  index problem in PipeliningModule "<<idx<<"  "<<eventblock.size()<<endl;
+  cerr << "Warning:  index problem in PipeliningModule "
+       << idx << "  " << eventblock.size() << endl;
   return 0;
 }
 
