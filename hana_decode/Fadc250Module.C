@@ -482,7 +482,7 @@ vector<uint32_t> Fadc250Module::GetPulseSamplesVector(Int_t chan) const {
 	return -1;
       }
       if (nsamples == 0) {
-	cout << "ERROR:: Fadc250Module:: GetNumFadcSamples:: data vector empty for slot = " << fSlot << ", channel = " << chan << endl;
+	//cout << "ERROR:: Fadc250Module:: GetNumFadcSamples:: data vector empty for slot = " << fSlot << ", channel = " << chan << endl;
 	return -1;
       }
       else  {
