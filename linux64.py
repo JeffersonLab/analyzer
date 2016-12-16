@@ -11,7 +11,6 @@ def config(env,args):
 	
 	if int(debug):
 		env.Append(CXXFLAGS = '-g -O0')
-		env.Append(CPPDEFINES= '-DWITH_DEBUG')
 	else:	
 		env.Append(CXXFLAGS = '-O')
 		env.Append(CPPDEFINES= '-DNDEBUG')
