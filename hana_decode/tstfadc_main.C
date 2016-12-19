@@ -84,7 +84,7 @@ void GeneratePlots(Int_t mode, uint32_t islot, uint32_t chan) {
   }
   // Graphs
   if (!mg_psamp[islot][chan] && ((mode == 1) || (mode == 8) || (mode == 10))) {
-    mg_psamp[islot][chan] = new TMultiGraph();
+    mg_psamp[islot][chan] = new TMultiGraph("samples", "samples");
   }
   // Canvas'
   if (!c_psamp[islot][chan] && ((mode == 1) || (mode == 8) || (mode == 10))) {
