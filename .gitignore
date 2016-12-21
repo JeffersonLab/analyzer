@@ -7,6 +7,7 @@ lib*.dylib
 analyzer
 hana_decode/epicsd
 hana_decode/prfact
+hana_decode/tst1190
 hana_decode/tdecex
 hana_decode/tdecpr
 hana_decode/tstfadc
@@ -15,6 +16,7 @@ hana_decode/tstio
 hana_decode/tstoo
 hana_decode/tstskel
 contrib/dbconvert
+bin/
 
 # Generated files
 *Dict.C
