@@ -66,10 +66,10 @@ void GeneratePlots(Int_t mode, uint32_t islot, uint32_t chan) {
   if (!slot_dir[islot]) {slot_dir[islot] = mode_dir->mkdir(Form("slot_%d", islot)); slot_dir[islot]->cd();}
   else hfile->cd(Form("/mode_%d_data/slot_%d", mode, islot));
   if (mode !=1) {
-    if (!h2_pinteg[islot]) h2_pinteg[islot] = new TH2I("h2_pinteg", Form("FADC Mode %d Pulse Integral Data Slot %d; Channel Number; FADC Units (Channels)", mode, islot), 16, 0.5, 16.5, 4096, 0, 40095);
-    if (!h2_ptime[islot]) h2_ptime[islot]   = new TH2I("h2_ptime", Form("FADC Mode %d Pulse Time Data Slot %d; Channel Number; FADC Units (Channels)", mode, islot), 16, 0.5, 16.5, 40096, 0, 40095);
-    if (!h2_pped[islot]) h2_pped[islot]     = new TH2I("h2_pped", Form("FADC Mode %d Pulse Pedestal Data Slot %d; Channel Number; FADC Units (Channels)", mode, islot), 16, 0.5, 16.5, 4096, 0, 4095);
-    if (!h2_ppeak[islot]) h2_ppeak[islot]   = new TH2I("h2_ppeak", Form("FADC Mode %d Pulse Peak Data Slot %d; Channel Number; FADC Units (Channels)", mode, islot), 16, 0.5, 16.5, 4096, 0, 4095);
+    if (!h2_pinteg[islot]) h2_pinteg[islot] = new TH2I("h2_pinteg", Form("FADC Mode %d Pulse Integral Data Slot %d; Channel Number; FADC Units (Channels)", mode, islot), 16, -0.5, 15.5, 4096, 0, 40095);
+    if (!h2_ptime[islot]) h2_ptime[islot]   = new TH2I("h2_ptime", Form("FADC Mode %d Pulse Time Data Slot %d; Channel Number; FADC Units (Channels)", mode, islot), 16, -0.5, 15.5, 40096, 0, 40095);
+    if (!h2_pped[islot]) h2_pped[islot]     = new TH2I("h2_pped", Form("FADC Mode %d Pulse Pedestal Data Slot %d; Channel Number; FADC Units (Channels)", mode, islot), 16, -0.5, 15.5, 4096, 0, 4095);
+    if (!h2_ppeak[islot]) h2_ppeak[islot]   = new TH2I("h2_ppeak", Form("FADC Mode %d Pulse Peak Data Slot %d; Channel Number; FADC Units (Channels)", mode, islot), 16, -0.5, 15.5, 4096, 0, 4095);
   }
   // Channel directory
   chan_dir[chan] = dynamic_cast <TDirectory*> (slot_dir[islot]->Get(Form("chan_%d", chan)));
@@ -84,7 +84,7 @@ void GeneratePlots(Int_t mode, uint32_t islot, uint32_t chan) {
   }
   // Graphs
   if (!mg_psamp[islot][chan] && ((mode == 1) || (mode == 8) || (mode == 10))) {
-    mg_psamp[islot][chan] = new TMultiGraph();
+    mg_psamp[islot][chan] = new TMultiGraph("samples", "samples");
   }
   // Canvas'
   if (!c_psamp[islot][chan] && ((mode == 1) || (mode == 8) || (mode == 10))) {
