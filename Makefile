@@ -24,9 +24,12 @@ VERCODE := $(shell echo $(subst ., ,$(SOVERSION)) $(PATCH) | \
 
 #------------------------------------------------------------------------------
 
-ARCH          := linux
-#ARCH          := macosx
-#ARCH          := solarisCC5
+MACHINE := $(shell uname -s)
+ARCH    := linux
+ifeq ($(MACHINE),Darwin)
+  ARCH := macosx
+endif
+
 ifndef PLATFORM
 PLATFORM = bin
 endif
@@ -53,26 +56,6 @@ GLIBS        :=
 
 INCLUDES     := $(addprefix -I, $(INCDIRS) )
 
-ifeq ($(ARCH),solarisCC5)
-# Solaris CC 5.0
-ifdef DEBUG
-  CXXFLG     := -g
-  LDFLAGS    := -g
-  DEFINES    :=
-else
-  CXXFLG     := -O
-  LDFLAGS    := -O
-  DEFINES    := -DNDEBUG
-endif
-CXXFLG       += -KPIC
-LD           := CC
-LDCONFIG     :=
-SOFLAGS      := -G
-SONAME       := -h
-DEFINES      += -DSUNVERS
-DICTCXXFLG   :=
-endif
-
 ifeq ($(ARCH),linux)
 # Linux with egcs (>= RedHat 5.2)
 ifdef DEBUG
@@ -88,7 +71,7 @@ endif
 DEFINES      += -DLINUXVERS
 CXXFLG       += -Wall -fPIC
 CXXEXTFLG     = -Woverloaded-virtual
-LD           := g++
+LD           := $(CXX)
 LDCONFIG     := /sbin/ldconfig -n $(LIBDIR)
 SOFLAGS      := -shared
 SONAME       := -Wl,-soname=
@@ -96,13 +79,13 @@ SONAME       := -Wl,-soname=
 CXXVER       := $(shell g++ --version | head -1 | sed 's/.* \([0-9]\)\..*/\1/')
 DEFINES      += $(shell getconf LFS_CFLAGS)
 ifeq ($(CXXVER),4)
-CXXFLAGS     += -Wextra -Wno-missing-field-initializers
+CXXEXTFLG    += -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
 DICTCXXFLG   := -Wno-strict-aliasing
 endif
 endif
 
 ifeq ($(ARCH),macosx)
-# EXPERIMENTAL: Mac OS X with Xcode/gcc 3.x
+# Mac OS X with Xcode/gcc 3.x
 ifdef DEBUG
   CXXFLG     := -g -O0
   LDFLAGS    := -g -O0
@@ -115,15 +98,19 @@ endif
 DEFINES      += -DMACVERS
 CXXFLG       += -Wall -fPIC
 CXXEXTFLG     = -Woverloaded-virtual
-LD           := g++
+LD           := $(CXX)
 LDCONFIG     :=
 SOFLAGS      := -shared -Wl,-undefined,dynamic_lookup
-SONAME       := -Wl,-install_name,@rpath/
+SONAME       := -Wl,-install_name,
+ifeq ($(CXX),clang++)
+CXXEXTFLG    += -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
+else
 #FIXME: should be configure'd:
 CXXVER       := $(shell g++ --version | head -1 | sed 's/.* \([0-9]\)\..*/\1/')
 ifeq ($(CXXVER),4)
-CXXFLAGS     += -Wextra -Wno-missing-field-initializers
+CXXEXTFLG    += -Wextra -Wno-missing-field-initializers
 DICTCXXFLG   := -Wno-strict-aliasing
+endif
 endif
 endif
 
@@ -162,6 +149,8 @@ GLIBS        += $(ROOTGLIBS) $(SYSLIBS)
 DEFINES      += $(PODD_EXTRA_DEFINES)
 
 export ARCH LIBDIR CXX LD SOFLAGS SONAME CXXFLG LDFLAGS DEFINES VERSION SOVERSION VERCODE CXXEXTFLG
+
+$(info Compiling for $(ARCH) with $(CXX))
 
 #------------------------------------------------------------------------------
 
