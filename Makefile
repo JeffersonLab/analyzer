@@ -24,9 +24,12 @@ VERCODE := $(shell echo $(subst ., ,$(SOVERSION)) $(PATCH) | \
 
 #------------------------------------------------------------------------------
 
-ARCH          := linux
-#ARCH          := macosx
-#ARCH          := solarisCC5
+MACHINE := $(shell uname -s)
+ARCH    := linux
+ifeq ($(MACHINE),Darwin)
+  ARCH := macosx
+endif
+
 ifndef PLATFORM
 PLATFORM = bin
 endif
@@ -52,8 +55,12 @@ GLIBS        :=
 
 INCLUDES     := $(addprefix -I, $(INCDIRS) )
 
+ifdef CODA
+  EVIO_ARCH := $(shell uname -s)-$(shell uname -m)
+  export EVIO_LIBDIR := $(CODA)/$(EVIO_ARCH)/lib
+  export EVIO_INCDIR := $(CODA)/$(EVIO_ARCH)/include
+else
 # If EVIO environment not defined, define it to point here and build locally
-ifndef EVIO_LIBDIR
   EVIODIR := $(shell pwd)/evio
   SUBDIRS += evio
   export EVIO_LIBDIR := $(LIBDIR)
@@ -78,7 +85,7 @@ endif
 DEFINES      += -DLINUXVERS
 CXXFLG       += -Wall -fPIC
 CXXEXTFLG     = -Woverloaded-virtual
-LD           := g++
+LD           := $(CXX)
 LDCONFIG     := /sbin/ldconfig -n $(LIBDIR)
 SOFLAGS      := -shared
 SONAME       := -Wl,-soname=
@@ -105,10 +112,10 @@ endif
 DEFINES      += -DMACVERS
 CXXFLG       += -Wall -fPIC
 CXXEXTFLG     = -Woverloaded-virtual
-LD           := g++
+LD           := $(CXX)
 LDCONFIG     :=
 SOFLAGS      := -shared -Wl,-undefined,dynamic_lookup
-SONAME       := -Wl,-install_name,@rpath/
+SONAME       := -Wl,-install_name,
 ifeq ($(CXX),clang++)
 CXXEXTFLG    += -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
 else
@@ -148,6 +155,8 @@ DEFINES      += $(PODD_EXTRA_DEFINES)
 
 export ARCH LIBDIR CXX LD SOFLAGS SONAME CXXFLG LDFLAGS DEFINES
 export VERSION SOVERSION VERCODE CXXEXTFLG MAKEDEPEND
+
+$(info Compiling for $(ARCH) with $(CXX))
 
 #------------------------------------------------------------------------------
 
