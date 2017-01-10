@@ -54,6 +54,7 @@ src/THaTrackOut.h src/THaTriggerTime.h src/THaHelicityDet.h src/THaG0HelicityRea
 src/THaG0Helicity.h src/THaADCHelicity.h src/THaHelicity.h src/THaPhotoReaction.h 
 src/THaSAProtonEP.h src/THaTextvars.h src/THaQWEAKHelicity.h src/THaQWEAKHelicityReader.h
 src/THaEvtTypeHandler.h src/THaScalerEvtHandler.h src/THaEpicsEvtHandler.h
+src/THaExampleEvtHandler.h src/THaEvt125Handler.h
 src/THaVDCChamber.h src/THaVDCPoint.h src/THaVDCPointPair.h
 src/THaGlobals.h src/HallA_LinkDef.h
 """)

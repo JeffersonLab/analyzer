@@ -1,0 +1,183 @@
+////////////////////////////////////////////////////////////////////
+//
+//   THaExampleEvtHandler
+//   author  Robert Michaels (rom@jlab.org), Jan 2017
+//
+//   Example of an Event Type Handler.
+//   This class handles events of the type specified in the vector eventtypes.
+//   It was tested on some EPICS data in hall A, and so it is a primitive
+//   EPICS event type handler.
+//
+//   The idea would be to copy this and modify it for your purposes.
+//
+//   To use as a plugin with your own modifications, you can do this in
+//   your analysis script
+//     gHaEvtHandlers->Add (new THaExampleEvtHandler("example1","for evtype 131"));
+//
+//   The data specified in the dataKeys array appear in Podd's global variables.
+//   and can be sent to the ROOT output, and plotted or analyzed from the 
+//   ROOT Tree "T".
+//   Example:  T->Draw("IPM1H04B.YPOS:fEvtHdr.fEvtNum")
+//
+/////////////////////////////////////////////////////////////////////
+
+#include "THaEvtTypeHandler.h"
+#include "THaExampleEvtHandler.h"
+#include "THaCodaData.h"
+#include "THaEvData.h"
+#include "THaEpics.h"
+#include "TNamed.h"
+#include "TMath.h"
+#include "TString.h"
+#include <cstring>
+#include <cstdio>
+#include <cstdlib>
+#include <iostream>
+#include <sstream>
+#include "THaVarList.h"
+#include "VarDef.h"
+
+using namespace std;
+using namespace Decoder;
+
+THaExampleEvtHandler::THaExampleEvtHandler(const char *name, const char* description)
+  : THaEvtTypeHandler(name,description)
+{
+}
+
+THaExampleEvtHandler::~THaExampleEvtHandler()
+{
+
+}
+
+Int_t THaExampleEvtHandler::End( THaRunBase* r)
+{
+  return 0;
+}
+
+// GetData is a public method which other classes may use
+Float_t THaExampleEvtHandler::GetData(std::string tag) {
+  if (theDataMap.find(tag) != theDataMap.end()) return theDataMap[tag];
+  return 0;
+}
+
+
+Int_t THaExampleEvtHandler::Analyze(THaEvData *evdata) 
+{  
+
+  if ( !IsMyEvent(evdata->GetEvType()) ) return -1;
+
+  Int_t ldebug=1;
+
+  UInt_t evbuffer[MAXDATA];
+
+  if (evdata->GetEvLength() >= MAXDATA) 
+      cerr << "EpicsHandler:  need a bigger buffer ! "<<endl;
+
+// Copy the buffer.  If the events are infrequent this causes no harm.
+  for (Int_t i = 0; i < evdata->GetEvLength(); i++) 
+         evbuffer[i] = evdata->GetRawData(i);
+
+  char* cbuff = (char*)evbuffer;
+  size_t len = sizeof(int)*(evbuffer[0]+1);  
+  if (ldebug>1) cout << "Evt Handler Data, len = "<<len<<endl;
+  if( len<16 ) return 0;
+  // The first 16 bytes of the buffer are the event header
+  len -= 16;
+  cbuff += 16;
+  
+  // Copy data to internal string buffer
+  string buf( cbuff, len );
+
+  // The first line is the time stamp
+  string date;
+  istringstream ib(buf);
+
+  string line;
+  while( getline(ib,line) ) {
+    if(ldebug) cout << "data line : "<<line<<endl;
+    istringstream il(line);
+    string wtag, wval, sunit;
+    il >> wtag;
+    if( wtag.empty() || wtag[0] == 0 ) continue;
+    istringstream::pos_type spos = il.tellg();
+    il >> wval >> sunit; 
+    Double_t dval;
+    istringstream iv(wval);
+    if( !(iv >> dval) ) {
+      string::size_type lpos = line.find_first_not_of(" \t",spos);
+      wval = ( lpos != string::npos ) ? line.substr(lpos) : "";
+      dval = 0;
+      sunit.clear();
+    }
+    if(ldebug) cout << "wtag = "<<wtag<<"   wval = "<<wval
+		      << "   dval = "<<dval<<"   sunit = "<<sunit<<endl;
+    if (theDataMap.find(wtag) != theDataMap.end()) 
+         theDataMap[wtag] = (Float_t)atof(wval.c_str());
+
+  }
+
+  // Fill global variables
+  if (ldebug) cout << "---------------------------------------------"<<endl<<endl;
+  for (UInt_t i=0; i < dataKeys.size(); i++) {
+    dvars[i] = GetData(dataKeys[i]);  
+
+    if (ldebug) cout << "GetData ::  key "<<i<<"   "<<dataKeys[i]<<"   data = "<<GetData(dataKeys[i])<<endl;
+
+  }
+
+  return 1;
+}
+
+
+THaAnalysisObject::EStatus THaExampleEvtHandler::Init(const TDatime& date)
+{
+
+  cout << "Howdy !  We are initializing THaExampleEvtHandler !!   name =   "<<fName<<endl;
+
+  eventtypes.push_back(131);  // what events to look for
+
+  // data keys to look for in this fun example
+  dataKeys.push_back("hac_bcm_average");
+  dataKeys.push_back("HacL_Q2_HP3458A:IOUT");
+  dataKeys.push_back("hac_bcm_dvm2_read");
+  dataKeys.push_back("MCZ1H04VM");
+  dataKeys.push_back("IPM1H04B.YPOS"); 
+
+  // initialize map elements to -1 (means not found yet)
+  for (UInt_t i=0; i < dataKeys.size(); i++) {
+    if(theDataMap.insert(std::make_pair(dataKeys[i],-1)).second == false) {
+      cout << "Element with "<<dataKeys[i]<<" already in map"<<endl;
+    }
+  }
+
+  // After adding the dataKeys to the global variables (using lines below)
+  // one can obtain them in the ROOT output using lines like this in the
+  // output definition file.  like, T->Draw("IPM1H04B.YPOS:fEvtHdr.fEvtNum")
+  // (Careful:  variables with ":" in the name don't plot well, i.e. T->Draw() 
+  // has a problem with the ":".  Also arithmetic characters.)
+  //    variable hac_bcm_average
+  //    variable IPM1H04B.YPOS
+
+  Int_t Nvars = dataKeys.size();
+  if (Nvars > 0) {
+    dvars = new Double_t[Nvars];  // dvars is a member of this class
+                 // the index of the dvars array tracks the index of dataKeys
+    memset(dvars, 0, Nvars*sizeof(Double_t));
+    if (gHaVars) {
+      cout << "EvtHandler:: Have gHaVars.  Good thing. "<<gHaVars<<endl;
+    } else {
+      cout << "EvtHandler:: No gHaVars ?!  Well, that is a problem !!"<<endl;
+    }
+    const Int_t* count = 0;
+    for (UInt_t i = 0; i < dataKeys.size(); i++) {
+       gHaVars->DefineByType(dataKeys[i].c_str(), "epics data",
+			  &dvars[i], kDouble, count);
+    }
+  }
+
+  fStatus = kOK;
+  return kOK;
+}
+
+ClassImp(THaExampleEvtHandler)
