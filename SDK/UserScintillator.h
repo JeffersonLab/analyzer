@@ -16,9 +16,10 @@ public:
 		   THaApparatus* a = NULL );
   virtual ~UserScintillator();
 
-  virtual Int_t      Decode( const THaEvData& );
+  virtual void       Clear( Option_t* ="" );
+  //  virtual Int_t      Decode( const THaEvData& );
   virtual Int_t      FineProcess( TClonesArray& tracks );
-  
+
 protected:
   Int_t     fPaddle;      // Paddle number hit by first track
   Double_t  fYtdc;        // Transverse position within paddle from TDCs (m)

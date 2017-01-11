@@ -98,7 +98,7 @@ Int_t UserDetector::ReadDatabase( const TDatime& date )
     const DBRequest request[] = {
       // Required items
       { "detmap",    &detmap, kIntV },         // Detector map
-      { "nelem",     &nelem,  kInt },          // Number of elements (e.g. PMTs)
+      { "nelem",     &nelem,  kInt, 0, 0, -1}, // Number of elements (e.g. PMTs)
       // Optional items
       { "angle",     &angle,  kDouble, 0, 1 }, // Rotation angle about y (deg)
       { "pedestals", &fPed,   kFloatV, 0, 1 }, // Pedestals
