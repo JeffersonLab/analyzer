@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////
 //
-//   THaExampleEvtHandler
+//   UserEvtHandler
 //   author  Robert Michaels (rom@jlab.org), Jan 2017
 //
 //   Example of an Event Type Handler.
@@ -12,80 +12,73 @@
 //
 //   To use as a plugin with your own modifications, you can do this in
 //   your analysis script
-//     gHaEvtHandlers->Add (new THaExampleEvtHandler("example1","for evtype 131"));
+//     gHaEvtHandlers->Add (new UserEvtHandler("example1","for evtype 131"));
 //
 //   The data specified in the dataKeys array appear in Podd's global variables.
-//   and can be sent to the ROOT output, and plotted or analyzed from the 
+//   and can be sent to the ROOT output, and plotted or analyzed from the
 //   ROOT Tree "T".
 //   Example:  T->Draw("IPM1H04B.YPOS:fEvtHdr.fEvtNum")
 //
 /////////////////////////////////////////////////////////////////////
 
-#include "THaEvtTypeHandler.h"
-#include "THaExampleEvtHandler.h"
-#include "THaCodaData.h"
+#include "UserEvtHandler.h"
 #include "THaEvData.h"
-#include "THaEpics.h"
-#include "TNamed.h"
-#include "TMath.h"
-#include "TString.h"
-#include <cstring>
-#include <cstdio>
-#include <cstdlib>
+#include "THaVarList.h"
+#include <cstdlib>   // for atof
 #include <iostream>
 #include <sstream>
-#include "THaVarList.h"
-#include "VarDef.h"
 
 using namespace std;
-using namespace Decoder;
 
-THaExampleEvtHandler::THaExampleEvtHandler(const char *name, const char* description)
+static const Int_t MAXDATA=20000;
+
+UserEvtHandler::UserEvtHandler(const char *name, const char* description)
   : THaEvtTypeHandler(name,description)
 {
 }
 
-THaExampleEvtHandler::~THaExampleEvtHandler()
+UserEvtHandler::~UserEvtHandler()
 {
-
-}
-
-Int_t THaExampleEvtHandler::End( THaRunBase* r)
-{
-  return 0;
 }
 
 // GetData is a public method which other classes may use
-Float_t THaExampleEvtHandler::GetData(std::string tag) {
-  if (theDataMap.find(tag) != theDataMap.end()) return theDataMap[tag];
-  return 0;
+Float_t UserEvtHandler::GetData(const std::string& tag)
+{
+  if (theDataMap.find(tag) == theDataMap.end())
+    return kBig;
+
+  return theDataMap[tag];
 }
 
 
-Int_t THaExampleEvtHandler::Analyze(THaEvData *evdata) 
-{  
+Int_t UserEvtHandler::Analyze(THaEvData *evdata)
+{
 
-  if ( !IsMyEvent(evdata->GetEvType()) ) return -1;
+  if( fDebug < 1 ) fDebug = 1; // force debug messages
 
-  Int_t ldebug=1;
+  if ( !IsMyEvent(evdata->GetEvType()) )
+    return -1;
 
   UInt_t evbuffer[MAXDATA];
 
-  if (evdata->GetEvLength() >= MAXDATA) 
-      cerr << "EpicsHandler:  need a bigger buffer ! "<<endl;
+  if (evdata->GetEvLength() >= MAXDATA)  {
+      cerr << "UserEvtHandler:  need a bigger buffer ! "<<endl;
+      return -1;
+  }
 
 // Copy the buffer.  If the events are infrequent this causes no harm.
-  for (Int_t i = 0; i < evdata->GetEvLength(); i++) 
-         evbuffer[i] = evdata->GetRawData(i);
+  for (Int_t i = 0; i < evdata->GetEvLength(); i++)
+	 evbuffer[i] = evdata->GetRawData(i);
 
   char* cbuff = (char*)evbuffer;
-  size_t len = sizeof(int)*(evbuffer[0]+1);  
-  if (ldebug>1) cout << "Evt Handler Data, len = "<<len<<endl;
-  if( len<16 ) return 0;
+  size_t len = sizeof(int)*(evbuffer[0]+1);
+  if (fDebug>1) cout << "Evt Handler Data, len = "<<len<<endl;
+  if( len<16 )
+    return 0;
   // The first 16 bytes of the buffer are the event header
   len -= 16;
   cbuff += 16;
-  
+
   // Copy data to internal string buffer
   string buf( cbuff, len );
 
@@ -95,13 +88,13 @@ Int_t THaExampleEvtHandler::Analyze(THaEvData *evdata)
 
   string line;
   while( getline(ib,line) ) {
-    if(ldebug) cout << "data line : "<<line<<endl;
+    if(fDebug) cout << "data line : "<<line<<endl;
     istringstream il(line);
     string wtag, wval, sunit;
     il >> wtag;
     if( wtag.empty() || wtag[0] == 0 ) continue;
     istringstream::pos_type spos = il.tellg();
-    il >> wval >> sunit; 
+    il >> wval >> sunit;
     Double_t dval;
     istringstream iv(wval);
     if( !(iv >> dval) ) {
@@ -110,30 +103,33 @@ Int_t THaExampleEvtHandler::Analyze(THaEvData *evdata)
       dval = 0;
       sunit.clear();
     }
-    if(ldebug) cout << "wtag = "<<wtag<<"   wval = "<<wval
+    if(fDebug) cout << "wtag = "<<wtag<<"   wval = "<<wval
 		      << "   dval = "<<dval<<"   sunit = "<<sunit<<endl;
-    if (theDataMap.find(wtag) != theDataMap.end()) 
-         theDataMap[wtag] = (Float_t)atof(wval.c_str());
+    if (theDataMap.find(wtag) != theDataMap.end())
+	 theDataMap[wtag] = (Float_t)atof(wval.c_str());
 
   }
 
   // Fill global variables
-  if (ldebug) cout << "---------------------------------------------"<<endl<<endl;
+  if (fDebug) cout << "---------------------------------------------"<<endl<<endl;
+
   for (UInt_t i=0; i < dataKeys.size(); i++) {
-    dvars[i] = GetData(dataKeys[i]);  
+    dvars[i] = GetData(dataKeys[i]);
 
-    if (ldebug) cout << "GetData ::  key "<<i<<"   "<<dataKeys[i]<<"   data = "<<GetData(dataKeys[i])<<endl;
-
+    if (fDebug)
+      cout << "GetData ::  key " << i << "   " << dataKeys[i]
+	   << "   data = " << GetData(dataKeys[i])
+	   << endl;
   }
 
   return 1;
 }
 
 
-THaAnalysisObject::EStatus THaExampleEvtHandler::Init(const TDatime& date)
+THaAnalysisObject::EStatus UserEvtHandler::Init(const TDatime& date)
 {
 
-  cout << "Howdy !  We are initializing THaExampleEvtHandler !!   name =   "<<fName<<endl;
+  cout << "Howdy !  We are initializing UserEvtHandler !!   name =   "<<fName<<endl;
 
   eventtypes.push_back(131);  // what events to look for
 
@@ -142,7 +138,7 @@ THaAnalysisObject::EStatus THaExampleEvtHandler::Init(const TDatime& date)
   dataKeys.push_back("HacL_Q2_HP3458A:IOUT");
   dataKeys.push_back("hac_bcm_dvm2_read");
   dataKeys.push_back("MCZ1H04VM");
-  dataKeys.push_back("IPM1H04B.YPOS"); 
+  dataKeys.push_back("IPM1H04B.YPOS");
 
   // initialize map elements to -1 (means not found yet)
   for (UInt_t i=0; i < dataKeys.size(); i++) {
@@ -154,7 +150,7 @@ THaAnalysisObject::EStatus THaExampleEvtHandler::Init(const TDatime& date)
   // After adding the dataKeys to the global variables (using lines below)
   // one can obtain them in the ROOT output using lines like this in the
   // output definition file.  like, T->Draw("IPM1H04B.YPOS:fEvtHdr.fEvtNum")
-  // (Careful:  variables with ":" in the name don't plot well, i.e. T->Draw() 
+  // (Careful:  variables with ":" in the name don't plot well, i.e. T->Draw()
   // has a problem with the ":".  Also arithmetic characters.)
   //    variable hac_bcm_average
   //    variable IPM1H04B.YPOS
@@ -162,7 +158,7 @@ THaAnalysisObject::EStatus THaExampleEvtHandler::Init(const TDatime& date)
   Int_t Nvars = dataKeys.size();
   if (Nvars > 0) {
     dvars = new Double_t[Nvars];  // dvars is a member of this class
-                 // the index of the dvars array tracks the index of dataKeys
+		 // the index of the dvars array tracks the index of dataKeys
     memset(dvars, 0, Nvars*sizeof(Double_t));
     if (gHaVars) {
       cout << "EvtHandler:: Have gHaVars.  Good thing. "<<gHaVars<<endl;
@@ -180,4 +176,4 @@ THaAnalysisObject::EStatus THaExampleEvtHandler::Init(const TDatime& date)
   return kOK;
 }
 
-ClassImp(THaExampleEvtHandler)
+ClassImp(UserEvtHandler)

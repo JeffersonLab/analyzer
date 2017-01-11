@@ -133,7 +133,6 @@
 #pragma link C++ class THaScalerEvtHandler+;
 #pragma link C++ class THaEpicsEvtHandler+;
 #pragma link C++ class THaEvt125Handler+;
-#pragma link C++ class THaExampleEvtHandler+;
 
 #ifdef ONLINE_ET
 #pragma link C++ class THaOnlRun+;

@@ -30,24 +30,15 @@
 //
 /////////////////////////////////////////////////////////////////////
 
-#include "THaEvtTypeHandler.h"
 #include "THaEvt125Handler.h"
-#include "THaCodaData.h"
 #include "THaEvData.h"
-#include "THaEpics.h"
-#include "TNamed.h"
-#include "TMath.h"
-#include "TString.h"
+#include "THaVarList.h"
 #include <cstring>
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
-#include <sstream>
-#include "THaVarList.h"
-#include "VarDef.h"
 
 using namespace std;
-using namespace Decoder;
 
 THaEvt125Handler::THaEvt125Handler(const char *name, const char* description)
   : THaEvtTypeHandler(name,description)
@@ -56,27 +47,23 @@ THaEvt125Handler::THaEvt125Handler(const char *name, const char* description)
 
 THaEvt125Handler::~THaEvt125Handler()
 {
-
 }
 
-Int_t THaEvt125Handler::End( THaRunBase* r)
+Float_t THaEvt125Handler::GetData(const std::string& tag)
 {
-  return 0;
-}
-
-// A public method which other classes may use
-Float_t THaEvt125Handler::GetData(std::string tag) {
-  if (theDataMap.find(tag) != theDataMap.end()) return theDataMap[tag];
-  return 0;
+  // A public method which other classes may use
+  if (theDataMap.find(tag) == theDataMap.end()) 
+    return 0;
+  return theDataMap[tag];
 }
 
 
 Int_t THaEvt125Handler::Analyze(THaEvData *evdata) 
 {
 
-  Int_t ldebug=1;
-  Int_t index;
-  Int_t startidx = 3;
+  Bool_t ldebug = true;  // FIXME: use fDebug
+  UInt_t index;
+  const Int_t startidx = 3;
 
   if ( !IsMyEvent(evdata->GetEvType()) ) return -1;
 
@@ -92,7 +79,7 @@ Int_t THaEvt125Handler::Analyze(THaEvData *evdata)
 
     if (i >= startidx) {
       index = i-startidx;
-      if (index >=0 && index < NVars) dvars[index] = evdata->GetRawData(i);
+      if (index < NVars) dvars[index] = evdata->GetRawData(i);
     }
 
   }      

@@ -154,7 +154,7 @@ GLIBS        += $(ROOTGLIBS) $(SYSLIBS)
 DEFINES      += $(PODD_EXTRA_DEFINES)
 
 export ARCH LIBDIR CXX LD SOFLAGS SONAME CXXFLG LDFLAGS DEFINES
-export VERSION SOVERSION VERCODE CXXEXTFLG MAKEDEPEND
+export VERSION SOVERSION VERCODE CXXEXTFLG
 
 $(info Compiling for $(ARCH) with $(CXX))
 
@@ -207,7 +207,7 @@ SRC          := src/THaFormula.C src/THaVform.C src/THaVhist.C \
 		src/THaTextvars.C src/THaQWEAKHelicity.C \
 		src/THaQWEAKHelicityReader.C src/THaEvtTypeHandler.C \
 		src/THaScalerEvtHandler.C src/THaEpicsEvtHandler.C \
-		src/THaEvt125Handler.C src/THaExampleEvtHandler.C
+		src/THaEvt125Handler.C
 
 
 # ifdef ONLINE_ET

@@ -8,5 +8,6 @@
 #pragma link C++ class UserScintillator+;
 #pragma link C++ class UserApparatus+;
 #pragma link C++ class UserModule+;
+#pragma link C++ class UserEvtHandler+;
 
 #endif

@@ -7,7 +7,8 @@
 # List only the implementation files (*.cxx). For every implementation file
 # there must be a corresponding header file (*.h).
 
-SRC  = UserDetector.cxx UserModule.cxx UserApparatus.cxx UserScintillator.cxx
+SRC  = UserDetector.cxx UserModule.cxx UserApparatus.cxx \
+       UserScintillator.cxx UserEvtHandler.cxx
 
 # Name of your package. 
 # The shared library that will be built will get the name lib$(PACKAGE).so

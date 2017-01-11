@@ -1,11 +1,11 @@
-#ifndef THaEvt125Handler_
-#define THaEvt125Handler_
+#ifndef UserEvtHandler_
+#define UserEvtHandler_
 
 /////////////////////////////////////////////////////////////////////
 //
-//   THaEvt125Handler
+//   UserEvtHandler
 //   For more details see the implementation file.
-//   This handles hall C's event type 125.
+//   The idea would be to copy this and modify it for your purposes.
 //   author  Robert Michaels (rom@jlab.org)
 //
 /////////////////////////////////////////////////////////////////////
@@ -15,12 +15,12 @@
 #include <vector>
 #include <map>
 
-class THaEvt125Handler : public THaEvtTypeHandler {
+class UserEvtHandler : public THaEvtTypeHandler {
 
 public:
 
-   THaEvt125Handler(const char* name, const char* description);
-   virtual ~THaEvt125Handler();
+   UserEvtHandler(const char* name, const char* description);
+   virtual ~UserEvtHandler();
 
    virtual Int_t Analyze(THaEvData *evdata);
    virtual EStatus Init( const TDatime& run_time);
@@ -30,13 +30,12 @@ private:
 
    std::map<std::string, Float_t> theDataMap;
    std::vector<std::string> dataKeys;
-   UInt_t NVars;
-   Double_t *dvars; 
+   Double_t *dvars;
 
-   THaEvt125Handler(const THaEvt125Handler& fh);
-   THaEvt125Handler& operator=(const THaEvt125Handler& fh);
+   UserEvtHandler(const UserEvtHandler& fh);
+   UserEvtHandler& operator=(const UserEvtHandler& fh);
 
-   ClassDef(THaEvt125Handler,0)  // Hall C event type 125
+   ClassDef(UserEvtHandler,0)  // Example of an Event handler
 
 };
 
