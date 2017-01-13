@@ -37,7 +37,7 @@ THaCluster.C              THaFilter.C               THaPIDinfo.C
 THaRun.C                  THaTrack.C                THaVDCPlane.C
 THaCodaRun.C              THaFormula.C              THaParticleInfo.C
 THaRunBase.C              THaTrackEloss.C           THaVDCTimeToDistConv.C
-THaEvtTypeHandler.C       THaScalerEvtHandler.C
+THaEvtTypeHandler.C       THaScalerEvtHandler.C     THaEvt125Handler.C
 """)
 
 baseenv.Object('main.C')
