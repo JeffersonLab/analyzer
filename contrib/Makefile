@@ -13,7 +13,7 @@ LDFLAGS     = $(shell root-config --ldflags)
 
 CXXFLAGS   += $(ROOTCFLAGS) $(INCLUDES)
 #ALLINCLUDES  = -I$(shell root-config --incdir) $(INCLUDES)
-LIBS        = $(shell root-config --libs) -L.. -lHallA -ldc -lpopt
+LIBS        = $(shell root-config --libs) -L.. -lHallA -ldc
 
 # Add EVIO lib, needed by libdc
 ifndef EVIO_LIBDIR

@@ -17,25 +17,26 @@
 #include <cstdlib>
 #include <cstdio>
 #include <cassert>
-#include <cstring>    // for GNU basename()
-#include <unistd.h>   // for getopt
-#include <popt.h>
+#include <cstring>    // for strdup
 #include <ctime>
+#include <cctype>     // for isdigit, tolower
+#include <cerrno>
+#include <cmath>
+#include <stdexcept>
+#include <cstddef>    // for offsetof
+#include <cassert>
 #include <map>
 #include <set>
 #include <limits>
 #include <utility>
 #include <iterator>
 #include <algorithm>
-#include <cassert>
 #include <sys/types.h>
 #include <sys/stat.h> // for stat/lstat
+#include <sys/ioctl.h> // for ioctl to get terminal windows size
 #include <dirent.h>   // for opendir/readdir
-#include <cctype>     // for isdigit, tolower
-#include <cerrno>
-#include <cmath>
-#include <stdexcept>
-#include <cstddef>    // for offsetof
+#include <getopt.h>   // got getopt_long
+#include <libgen.h>   // for POSIX basename()
 
 #include "TString.h"
 #include "TDatime.h"
@@ -67,7 +68,7 @@ static int do_clean = 1, do_verify = 1, do_dump = 0, purge_all_default_keys = 1;
 static int format_fp = 1;
 static string srcdir;
 static string destdir;
-static const char* prgname = 0;
+static string prgname;
 static const char* mapfile = 0;
 static const char* inp_tz_arg = 0, *outp_tz_arg = 0;
 static string inp_tz, outp_tz, cur_tz;
@@ -75,21 +76,57 @@ static string current_filename;
 static const char* c_out_subdirs = 0;
 static vector<string> out_subdirs;
 
-static struct poptOption options[] = {
-  //  POPT_AUTOHELP
-  { "help",     'h', POPT_ARG_NONE,   0, 'h', 0, 0  },
-  { "verbose",  'v', POPT_ARG_VAL,    &verbose,  1, 0, 0  },
-  { "debug",    'd', POPT_ARG_VAL,    &do_debug, 1, 0, 0  },
-  { "mapfile",  'm', POPT_ARG_STRING, &mapfile,  0, 0, 0  },
-  // "detlist", 'l', ... // list of wildcards of detector names
-  { "subdirs",  's', POPT_ARG_STRING, &c_out_subdirs, 0, 0, 0  },  // overrides preserve-subdirs
-  { "preserve-subdirs",    'p', POPT_ARG_VAL,  &do_subdirs, 1, 0, 0  },
-  { "no-preserve-subdirs", 0, POPT_ARG_VAL,    &do_subdirs, 0, 0, 0  },
-  { "no-clean",  0, POPT_ARG_VAL,    &do_clean, 0, 0, 0  },
-  { "no-verify", 0, POPT_ARG_VAL,    &do_verify, 0, 0, 0  },
-  { "input-timezone", 'z', POPT_ARG_STRING, &inp_tz_arg,  0, 0, 0  },
-  { "output-timezone",  0, POPT_ARG_STRING, &outp_tz_arg, 0, 0, 0  },
-  POPT_TABLEEND
+static const string prgargs("SRC_DIR DEST_DIR");
+static const string whtspc = " \t";
+
+static struct option longopts[] = {
+  // Flags
+  { "help",                 no_argument,       0,     'h' },
+  { "verbose",              no_argument,       0,     'v' },
+  { "debug",                no_argument,       0,     'd' },
+  { "preserve-subdirs",     no_argument,       0,     'p' },
+  { "no-preserve-subdirs",  no_argument, &do_subdirs,  0  },
+  { "no-clean",             no_argument, &do_clean,    0  },
+  { "no-verify",            no_argument, &do_verify,   0  },
+  // Parameters
+  { "mapfile",              required_argument, 0,     'm' },
+  { "detlist",              required_argument, 0,     'l' },  // wildcard list detector names
+  { "subdirs",              required_argument, 0,     's' },  // overrides preserve-subdirs
+  { "input-timezone",       required_argument, 0,     'z' },
+  { "output-timezone",      required_argument, 0,      1  },
+  { 0, 0, 0, 0 }
+};
+
+static const char* const opthelp[] = {
+  "show this help message",
+  "increase verbosity",
+  "print extensive debug info",
+  "preserve subdirectory structure",
+  "don't preserve subdirectory structure (negates -p)",
+  "don't erase all existing files from DEST_DIR if it exists",
+  "don't ask for confirmation before deleting any files",
+  "read mapping from file names to detector types from <ARG>",
+  "convert only detectors given in <ARG>. ARG is a comma-separated "
+    "list of detector names which may contain wildcards * and ?.",
+  "split output files into new set of sudirectories given in <ARG>. "
+    "ARG is a comma-separated list of directory names which must be "
+    "in YYYYMMDD format. Overrides -p.",
+  "interpret all validity timestamps in the input that don't have a timezone "
+    "indicator to be in timezone <ARG>. "
+    "ARG may be the name of a system timezone file (e.g. 'US/Eastern'), "
+    "which supports DST, or a fixed offset specified as [+|-]nnnn "
+    "(e.g. +0100 for central European standard time). The default is "
+    "to use the current timezone at run time.",
+  "write all output timestamps relative to timezone ARG, specified in the "
+    "same way as --input-timezone. The default is to use the current "
+    "timezone at run time."
+  /*
+  //TODO...
+  // cout << " -o <outfile>: Write output to <outfile>. Default: "
+  //      << OUTFILE_DEFAULT << endl;
+  // cout << " <infile>: Read input from <infile>. Default: "
+  //      << INFILE_DEFAULT << endl;
+  */
 };
 
 // Information for a single source database file
@@ -110,34 +147,220 @@ typedef string::size_type ssiz_t;
 typedef set<time_t>::iterator siter_t;
 
 //-----------------------------------------------------------------------------
-static void help()
+static size_t get_term_width()
 {
-  // Print help message and exit
-
-  cerr << "Usage: " << prgname << " [options] SRC_DIR  DEST_DIR" << endl;
-  cerr << " Convert Podd 1.5 and earlier database files under SRC_DIR to Podd 1.6" << endl;
-  cerr << " and later format, written to DEST_DIR" << endl;
-  //  cerr << endl;
-  cerr << "Options:" << endl;
-  cerr << " -h, --help\t\t\tshow this help message" << endl;
-  cerr << " -v, --verbose\t\t\tincrease verbosity" << endl;
-  cerr << " -d, --debug\t\t\tprint extensive debug info" << endl;
-  //TODO...
-  // cerr << " -o <outfile>: Write output to <outfile>. Default: "
-  //      << OUTFILE_DEFAULT << endl;
-  // cerr << " <infile>: Read input from <infile>. Default: "
-  //      << INFILE_DEFAULT << endl;
-  exit(0);
+  struct winsize w;
+  ioctl(STDOUT_FILENO, TIOCGWINSZ, &w); //FIXME: should be the file no of the stream
+  return w.ws_col;
 }
 
 //-----------------------------------------------------------------------------
-static void usage( poptContext& pc )
+// Helper class for usage()/help() printing
+class wrapping_ostream {
+public:
+  wrapping_ostream( ostream& _os )
+    : os(_os), pos(0), width(get_term_width()), first_line(true),
+      first_item(true)
+  {
+    if( width == 0 )
+      width = 80;
+    set_indent(8);
+  }
+  void set_width( string::size_type n )  { width = n; }
+  void reset() { pos = 0; first_line = first_item = true; }
+
+  wrapping_ostream& set_indent( string::size_type n )
+  {
+    indent.assign(n, ' ');
+    return *this;
+  }
+  wrapping_ostream& operator<<( const string& str ) { return write_item(str); }
+  wrapping_ostream& advance( string::size_type tab )
+  {
+    // Move to tab position 'tab'. If already at or past 'tab', start a new line
+    if( tab > width )
+      tab = width;
+    if( pos >= tab ) {
+      os << endl;
+      pos = 0;
+    }
+    for( ; pos < tab; ++pos )
+      os << " ";
+    return *this;
+  }
+  wrapping_ostream& end_line() { os << endl; reset(); return *this; }
+  wrapping_ostream& write( const string& str )
+  {
+    os << str;
+    pos += str.size();
+    return *this;
+  }
+  wrapping_ostream& write_trimmed( string str )
+  {
+    // Trim leading whitespace before writing the string
+    string::size_type pos = str.find_first_not_of(whtspc);
+    if( pos == string::npos )
+      return *this;
+    str.erase( 0, pos );
+    return write(str);
+  }
+  wrapping_ostream& write_item( const string& str )
+  {
+    // Write 'str' to output stream. If the output width is exceeded, start
+    // a new line and indent it by 'indent'. The first item is always written to
+    // the current line, even if it exceeds the width, and items are not broken.
+    // This may give odd-looking results if width is very small or items are
+    // very long.
+    bool ind = false;
+    if( first_item && !first_line ) {
+      write(indent);
+      ind = true;
+    }
+    if( pos + str.size() + (first_item ? 0 : 1) >= width ) {
+      if( first_item ) {
+	if( ind ) write_trimmed(str);
+	else os << str;
+      }
+      os << endl;
+      pos = 0;
+      if( !first_item ) {
+	if( str.find_first_not_of(whtspc) != string::npos ) {
+	  write(indent);
+	  write_trimmed(str);
+	} else
+	  // The item is all-whitespace and at the beginning of the line
+	  first_item = true;
+      }
+      first_line = false;
+    }
+    else {
+      write(str);
+      first_item = false;
+    }
+    return *this;
+  }
+  wrapping_ostream& write_items( const string& str )
+  {
+    istringstream istr(str);
+    string item;
+    bool next = false;
+    while( istr >> item ) {
+      if( next)
+	*this << " ";
+      *this << item;
+      next = true;
+    }
+    return *this;
+  }
+
+private:
+  ostream& os;
+  string::size_type pos, width;
+  bool first_line, first_item;
+  string indent;
+};
+
+//-----------------------------------------------------------------------------
+static void print_usage( ostream& os, const string& program_name,
+			 const string& nonoptions,
+			 const struct option optarray[] )
+{
+  // Print usage info, including all defined short/long options
+
+  wrapping_ostream ps(os);
+
+  // Write "Usage: program_name "
+  ps << "Usage: " << program_name;
+
+  // Write all defined options in short and long form, as applicable.
+  // This assumes that every short option has a corresponding long form,
+  // however not all long options need to have a short form.
+  const struct option* opt = optarray;
+  while( opt && opt->name ) {
+    ostringstream ostr;
+    ostr << " [";
+    if( (opt->val != 0) && isalnum(opt->val) )
+      ostr << "-" << static_cast<char>(opt->val) << "|";
+    ostr << "--" << opt->name;
+    if( opt->has_arg )
+      ostr << " ARG";
+    ostr << "]";
+    ps << ostr.str();
+    ++opt;
+  }
+
+  // Write non-option arguments
+  ps.write_items( nonoptions );
+  ps.end_line();
+}
+
+//-----------------------------------------------------------------------------
+static void print_help( ostream& os, const string& program_name,
+			const string& nonoptions,
+			const string& description,
+			const struct option optarray[],
+			const char* const helptxts[] )
+{
+  // Print help message with program and option descriptions
+
+  const string::size_type col2 = 30;
+  wrapping_ostream ps(os);
+  const struct option* opt = optarray;
+
+  ps << "Usage: " << program_name << " ";
+  if( opt )
+    ps << "[options] ";
+  ps.write_items(nonoptions);
+  ps.end_line().set_indent(1).advance(1);
+  ps.write_items(description);
+  ps.end_line();
+
+  if( !opt )
+    return;
+  ps.write("Options:");
+  ps.end_line();
+
+  ps.set_indent(col2+2);
+  while( opt->name ) {
+    ostringstream ostr;
+    ostr << " ";
+    if( (opt->val != 0) && isalnum(opt->val) )
+      ostr << "-" << static_cast<char>(opt->val) << ",";
+    else
+      ostr << "   ";
+    ostr << " ";
+    ostr << "--" << opt->name;
+    if( opt->has_arg )
+      ostr << " ARG";
+
+    ps << ostr.str();
+    ps.advance(col2);
+    ps.write_items( *(helptxts+(opt-optarray)) );
+    ps.end_line();
+    ++opt;
+  }
+}
+
+//-----------------------------------------------------------------------------
+static void usage()
 {
   // Print usage message and exit with error code
 
-  poptPrintUsage(pc, stderr, 0);
-  poptFreeContext(pc);
-  exit(1);
+  print_usage( cerr, prgname, prgargs, longopts );
+  exit(EXIT_FAILURE);
+}
+
+//-----------------------------------------------------------------------------
+static void help()
+{
+  // Print help and exit
+
+  print_help( cout, prgname, prgargs,
+	      "Convert Podd 1.5 and earlier database files under SRC_DIR "
+	      "to Podd 1.6 and later format, written to DEST_DIR",
+	      longopts, opthelp );
+
+  exit(EXIT_SUCCESS);
 }
 
 //-----------------------------------------------------------------------------
@@ -160,7 +383,7 @@ static inline string TZfromOffset( int off )
 //-----------------------------------------------------------------------------
 static int MkTimezone( string& zone )
 {
-  // Check commmand-line timezone spec 'zone' and convert it to something that
+  // Check command-line timezone spec 'zone' and convert it to something that
   // will work with tzset
   // Allowed syntax:
   // [+|-]nnnn:  Explicit timezone offset east of UTC (no DST) as HHMM. Must be
@@ -226,61 +449,83 @@ static inline void reset_tz()
 }
 
 //-----------------------------------------------------------------------------
-static void getargs( int argc, const char** argv )
+static void getargs( int argc, char* const argv[] )
 {
   // Get command line parameters
 
-  prgname = basename(argv[0]);
-
-  poptContext pc = poptGetContext("dbconvert", argc, argv, options, 0);
-  poptSetOtherOptionHelp(pc, "SRC_DIR DEST_DIR");
+  char* argv0 = strdup(argv[0]);
+  prgname = basename(argv0);
+  free(argv0);
 
   int opt;
-  while( (opt = poptGetNextOpt(pc)) > 0 ) {
+  while( (opt = getopt_long(argc, argv, "hvdpm:s:z:", longopts, 0)) != -1) {
     switch( opt ) {
     case 'h':
       help();
+    case 'v':
+      verbose = 1;
+      break;
+    case 'd':
+      do_debug = 1;
+      break;
+    case 'p':
+      do_subdirs = 1;
+      break;
+    case 'm':
+      mapfile = optarg;
+      break;
+    case 's':
+      c_out_subdirs = optarg;
+      break;
+    case 'z':
+      inp_tz_arg = optarg;
+      break;
+    case 0:
+      break;
+    case 1:
+      outp_tz_arg = optarg;
+      break;
+    case ':':
+    case '?':
+      usage();
     default:
       cerr << "Unhandled option " << (char)opt << endl;
-      exit(1);
+      usage();
     }
   }
-  if( opt < -1 ) {
-    cerr << poptBadOption(pc, POPT_BADOPTION_NOALIAS) << ": "
-	 << poptStrerror(opt) << endl;
-    usage(pc);
-  }
+  argc -= optind;
+  argv += optind;
 
+  // Retrieve non-option arguments (source and destination directories)
   // TODO: add option have several files as input
-  const char* arg = poptGetArg(pc);
-  if( !arg ) {
+  if( argc < 1 ) {
     cerr << "Error: Must specify SRC_DIR and DEST_DIR" << endl;
-    usage(pc);
+    usage();
   }
-  srcdir = arg;
-  arg = poptGetArg(pc);
-  if( !arg ) {
+  if( argc == 1 ) {
     cerr << "Error: Must specify DEST_DIR" << endl;
-    usage(pc);
+    usage();
   }
-  destdir = arg;
-  if( poptPeekArg(pc) ) {
+  if( argc > 2 ) {
     cerr << "Error: too many arguments" << endl;
-    usage(pc);
+    usage();
   }
+  srcdir  = argv[0];
+  destdir = argv[argc-1];
+
   // Parse timezone specs
   if( inp_tz_arg ) {
     inp_tz = inp_tz_arg;
     if( MkTimezone(inp_tz) ) {
       cerr << "Invalid input timezone: \"" << inp_tz << "\"" << endl;
-      usage(pc);
+      usage();
     }
   }
   if( outp_tz_arg ) {
     outp_tz = outp_tz_arg;
     if( MkTimezone(outp_tz) ) {
       cerr << "Invalid output timezone: \"" << outp_tz << "\"" << endl;
-      usage(pc);
+      usage();
     }
   }
   // If an input timezone is given and no explicit output timezone, set
@@ -307,7 +552,6 @@ static void getargs( int argc, const char** argv )
     cout << "Mapfile name is \"" << mapfile << "\"" << endl;
   cout << "Converting from \"" << srcdir << "\" to \"" << destdir << "\"" << endl;
 
-  poptFreeContext(pc);
 }
 
 //-----------------------------------------------------------------------------
@@ -2337,16 +2581,16 @@ static int CopyFiles( const string& target_dir, const vector<string>& subdirs,
 }
 
 //-----------------------------------------------------------------------------
-int main( int argc, const char** argv )
+int main( int argc, char* const argv[] )
 {
   // Parse command line
   getargs(argc,argv);
 
   if( set_tz_errcheck( inp_tz, "input" ) )
-    exit(1);
+    exit(EXIT_FAILURE);
   reset_tz();
   if( set_tz_errcheck( outp_tz, "output" ) )
-    exit(1);;
+    exit(EXIT_FAILURE);;
   reset_tz();
 
   // Read the detector name mapping file. If unavailable, set up defaults.
