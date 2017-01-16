@@ -1242,7 +1242,7 @@ protected:
   {
     ostringstream msg;
     msg << "Unexpected data at file position " << ftello(fi);
-    Error( Here(here), msg.str().c_str() );
+    Error( Here(here), "%s", msg.str().c_str() );
     return kInitError;
   }
 
@@ -2077,7 +2077,7 @@ static Int_t GetLine( FILE* file, char* buf, size_t bufsiz, string& line )
     if( c )
       *c = '\0';
     // Convert all tabs to spaces
-    register char *p = buf;
+    char *p = buf;
     while( (p = strchr(p,'\t')) ) *(p++) = ' ';
     // Append to string
     line.append(buf);
@@ -2775,14 +2775,14 @@ static Int_t IsDBkey( const string& line, string& key, string& text )
   //   text after the "=" and return +1.
 
   // Search for "="
-  register const char* ln = line.c_str();
+  const char* ln = line.c_str();
   const char* eq = strchr(ln, '=');
   if( !eq ) return 0;
   // Extract the key
   while( *ln == ' ' || *ln == '\t' ) ++ln; // find_first_not_of(" \t")
   assert( ln <= eq );
   if( ln == eq ) return -1;
-  register const char* p = eq-1;
+  const char* p = eq-1;
   assert( p >= ln );
   while( *p == ' ' || *p == '\t' ) --p; // find_last_not_of(" \t")
   key = string(ln,p-ln+1);
@@ -2882,9 +2882,9 @@ int Detector::ReadBlock( FILE* fi, T* data, int nval, const char* here, int flag
 		<< ftello(fi) << endl
 		<< " Line: \"" << line << "\"";
 	    if( TestBit(flags,kErrOnTooManyValues) )
-	      Error( Here(here), msg.str().c_str() );
+	      Error( Here(here), "%s", msg.str().c_str() );
 	    else
-	      Warning( Here(here), msg.str().c_str() );
+	      Warning( Here(here), "%s", msg.str().c_str() );
 	  }
 	  fseeko(fi,pos_on_entry,SEEK_SET);
 	  return kTooManyValues;
@@ -2920,7 +2920,7 @@ int Detector::ReadBlock( FILE* fi, T* data, int nval, const char* here, int flag
       msg << "Too few values (expected " << nval << ", got " << nread << ") "
 	  << "at file position " << ftello(fi) << endl
 	  << " Line: \"" << line << "\"";
-      Error( Here(here), msg.str().c_str() );
+      Error( Here(here), "%s", msg.str().c_str() );
     }
     fseeko(fi,pos_on_entry,SEEK_SET);
     if( nread == 0 )
