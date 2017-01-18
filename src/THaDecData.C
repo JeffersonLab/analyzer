@@ -94,6 +94,12 @@ using namespace std;
 static Int_t kInitHashCapacity = 100;
 static Int_t kRehashLevel = 3;
 
+#if __cplusplus <= 199711L
+# define SMART_PTR auto_ptr
+#else
+# define SMART_PTR unique_ptr
+#endif
+
 //_____________________________________________________________________________
 THaDecData::THaDecData( const char* name, const char* descript )
   : THaApparatus( name, descript ), evtype(0), evtypebits(0),
@@ -168,7 +174,7 @@ Int_t THaDecData::DefineLocType( const BdataLoc::BdataLocType& loctype,
 
   // Split the string from the database into values separated by commas,
   // spaces, and/or tabs
-  auto_ptr<TObjArray> config( configstr.Tokenize(", \t") );
+  SMART_PTR<TObjArray> config( configstr.Tokenize(", \t") );
   if( !config->IsEmpty() ) {
     Int_t nparams = config->GetLast()+1;
     assert( nparams > 0 );   // else bug in IsEmpty() or GetLast()
@@ -323,7 +329,7 @@ static Int_t ReadOldFormatDB( FILE* file, map<TString,TString>& configstr_map )
     if( dbline.empty() ) continue;
     // Tokenize each line read
     TString line( dbline.c_str() );
-    auto_ptr<TObjArray> tokens( line.Tokenize(" \t") );
+    SMART_PTR<TObjArray> tokens( line.Tokenize(" \t") );
     TObjArray* params = tokens.get();
     if( params->IsEmpty() || params->GetLast() < 4 ) continue;
     // Determine data type

@@ -37,6 +37,12 @@ using namespace std;
 const TString nhit_suffix( "nhit" );
 const TString eff_suffix(  "eff" );
 
+#if __cplusplus <= 199711L
+# define SMART_PTR auto_ptr
+#else
+# define SMART_PTR unique_ptr
+#endif
+
 //_____________________________________________________________________________
 static void SafeDeleteHist( const TString& name, TH1F*& the_hist )
 {
@@ -288,7 +294,7 @@ Int_t VDCeff::ReadDatabase( const TDatime& date )
     return kInitError;
   };
   // Parse the vdcvars string and set up definition structure for each item
-  auto_ptr<TObjArray> vdcvars( configstr.Tokenize(separators) );
+  SMART_PTR<TObjArray> vdcvars( configstr.Tokenize(separators) );
   Int_t nparams = vdcvars->GetLast()+1;
   if( nparams == 0 ) {
     Error( Here(here), "No VDC variable names in vdcvars = %s. Fix database.",
