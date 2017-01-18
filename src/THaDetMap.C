@@ -73,7 +73,8 @@ THaDetMap::THaDetMap( const THaDetMap& rhs )
   if( fMaplength > 0 ) {
     fMap = new Module[fMaplength];
     memcpy(fMap,rhs.fMap,fNmodules*sizeof(Module));
-  }
+  } else
+    fMap = 0;
 }
 
 //_____________________________________________________________________________
@@ -83,13 +84,14 @@ THaDetMap& THaDetMap::operator=( const THaDetMap& rhs )
 
   if ( this != &rhs ) {
     if ( fMaplength != rhs.fMaplength ) {
-      delete [] fMap;
+      delete [] fMap; fMap = 0;
       fMaplength = rhs.fMaplength;
       if( fMaplength > 0 )
 	fMap = new Module[fMaplength];
     }
     fNmodules = rhs.fNmodules;
-    memcpy(fMap,rhs.fMap,fNmodules*sizeof(Module));
+    if( fMap )
+      memcpy(fMap,rhs.fMap,fNmodules*sizeof(Module));
   }
   return *this;
 }

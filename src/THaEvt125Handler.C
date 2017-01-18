@@ -107,6 +107,7 @@ THaAnalysisObject::EStatus THaEvt125Handler::Init(const TDatime& date)
       cout << "EvtHandler:: Have gHaVars.  Good thing. "<<gHaVars<<endl;
   } else {
       cout << "EvtHandler:: No gHaVars ?!  Well, that is a problem !!"<<endl;
+      return kInitError;
   }
   const Int_t* count = 0;
   char cname[80];

@@ -657,7 +657,7 @@ void THaVDCCluster::CalcChisquare(Double_t& chi2, Int_t& nhits ) const
       Double_t ox = -x;
       Double_t oY =  fSlope * ox + fInt;
       if ( TMath::Abs(y-Y) > TMath::Abs(y-oY) ) {
-	x = ox;
+	//	x = ox;
 	Y = oY;
       }
     }

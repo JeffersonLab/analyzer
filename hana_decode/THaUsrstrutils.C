@@ -126,9 +126,7 @@ void THaUsrstrutils::string_from_evbuffer(const UInt_t* evbuffer, int nlen )
   string strbuff = ctemp;
   string strdynamic = strbuff;
   delete [] ctemp;
-  string::size_type pos,pos1,pos2;
   vector<string> strlines;
-  string sline,stemp;
   
   if (DEBUG >= 1) {
     cout << "Check THaUsrstrutils::string_from_buffer "<<endl;
@@ -140,22 +138,22 @@ void THaUsrstrutils::string_from_evbuffer(const UInt_t* evbuffer, int nlen )
 // we first unpack the buffer into lines seperated by '\n'.  
 // This is like the reading of the prescale.dat file done
 // by fgets(s,255,fd) in usrstrutils.c
-  pos=0;  pos1=0;  pos2=0;
+  string::size_type pos = 0;
   while (pos < strbuff.length()) {
-     pos1 = strdynamic.find_first_of("\n",0);
+     string::size_type pos1 = strdynamic.find_first_of("\n",0), pos2;
      if (pos1 != string::npos) {
        pos2 = pos1;
      } else {   // It may happen that the last line has no '\n'
        pos2 = strdynamic.length(); 
      } 
-     sline = strdynamic.substr(0,pos2);
+     string sline = strdynamic.substr(0,pos2);
      strlines.push_back(sline);
      pos += pos2 + 1;
      if (DEBUG >= 2) {
          cout << "pos = "<< pos << "   pos1 "<<pos1<<"  pos2 "<<pos2<<"  sline =  "<<sline<<"\n dynamic str  "<<strdynamic<<"  len "<<strdynamic.length()<<endl;
      }
      if (pos < strbuff.length()) {
-        stemp = strdynamic.substr(pos2+1,pos2+strdynamic.length());
+        string stemp = strdynamic.substr(pos2+1,pos2+strdynamic.length());
         strdynamic = stemp;
      } 
    }

@@ -145,7 +145,7 @@ Int_t CodaDecoder::LoadEvent(const UInt_t* evbuffer)
 
       if (fMap->isBankStructure(iroc)) {
 	  if (fDebugFile) *fDebugFile << "\nCodaDecode::Calling bank_decode "<<i<<"   "<<iroc<<"  "<<ipt<<"  "<<iptmax<<endl;
-	  status = bank_decode(iroc,evbuffer,ipt,iptmax);
+	  /*status =*/ bank_decode(iroc,evbuffer,ipt,iptmax);
       }
 
       if (fDebugFile) *fDebugFile << "\nCodaDecode::Calling roc_decode "<<i<<"   "<<evbuffer<<"  "<<iroc<<"  "<<ipt<<"  "<<iptmax<<endl;
