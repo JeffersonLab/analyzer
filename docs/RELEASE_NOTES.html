@@ -5,16 +5,15 @@
 </head>
 
 <body background="wallpaper.gif">
-<h2>Podd version 1.6-alpha1</h2>
+<h2>Podd version 1.6-beta3</h2>
 
-16 December 2015
+18 January 2017
 <p>
-The Hall A software team is pleased to present the first alpha release
+The Hall A software team is pleased to present the third beta release
 of version 1.6 of the C++ analysis software Podd.  This version
 contains many significant improvements motivated by the long
-experience with version 1.5.  This is still an alpha release, i.e. not
-all features have yet been frozen.  The first beta release will follow
-within the next few weeks.
+experience with version 1.5.  This is still an unstable release, i.e. not
+all features have yet been frozen.
 
 <p>
 Version 1.6 is not binary compatible nor fully source-compatible with
@@ -34,18 +33,27 @@ strongly recommended.
 
 <p>
 The main improvements in this release are the modular decoder, the
-unbundled EVIO library, and a rewrite of the VDC reconstruction code.
-Additionally, we plan to switch all analysis classes to the a
-database API (introduced in version 1.5 and generalized since then),
-but this part is not yet included in this alpha version.
+unbundled EVIO library, and a partial rewrite of the VDC reconstruction code.
+Additionally, all analysis classes now use the new
+database API that was introduced in version 1.5 and has been
+generalized since then.
 
 <hr>
 
 <h3>What's new</h3>
-Compared to <a href="RELEASE_NOTES_v15.html">Release 1.5</a>,
+Compared to <a href="doc/RELEASE_NOTES_v15.html">Release 1.5</a>,
 the following features have been added:
 
 <ul>
+  <li>All analysis objects (detectors, spectrometers, etc.)
+    that are part of the core analyzer now use the
+    <a href=doc/html_v16/src/THaAnalysisObject.cxx.html#JaaxwD>LoadDB</a>
+    database API, which reads database files in key/value format.
+    <b>This means that existing fixed-format databases for these detectors etc.
+      must be converted to the new free-format key/value style.</b>
+    Release 1.6 includes a conversion
+    program, dbconvert, that automates this task as much as possible.
+    Please see the <a href=doc/dbconvert.html>documentation</a> for details.
   <li>The <a href="https://coda.jlab.org/drupal/content/event-io-evio">EVIO subsystem</a>
     is loaded from an external shared library. This brings support for the latest
     version of EVIO (currently 4.4.6) and permits updating of EVIO without having to
@@ -62,7 +70,7 @@ the following features have been added:
   <li>The generic hardware channel decoder, <tt>THaDecData</tt> has been completely
     rewritten, using an object-oriented design.
   <li>The track reconstruction of the VDCs of the Hall A HRS spectrometers has been
-    rewritten. Known bugs have been fixed. The reconstruction of multi-cluster
+    partly rewritten. Known bugs have been fixed. The reconstruction of multi-cluster
     events should be greatly improved.
   <li>The VDC efficiency calculation code has been moved from <tt>THaDecData</tt>
     into a standalone physics module, <tt>VDCeff</tt>.
@@ -73,7 +81,10 @@ the following features have been added:
     handling of Monte Carlo truth data (base class <tt>Podd::SimDecoder</tt>).
   <li>There is experimental support for building the analyzer with the <tt>scons</tt>
     build system. Users will have to install <tt>scons</tt> version 2.1 or greater themselves.
-  <li>Support for the most recent version 5 of ROOT and current versions of gcc/g++.
+  <li>Support for ROOT 6 and current compilers.
+  <li>Compatibility fixes for Mac OS X. The analyzer has been tested on OS X 10.6
+    (Snow Leopard) through 10.12 (Sierra) with the matching command line tools
+    for Xcode. A full installation of Xcode is not required.
   <li>Miscellaneous minor bug fixes.
 </ul>
 
@@ -84,17 +95,20 @@ changed. Please contact the developers if you need to do this and run into probl
 
 <h3>System requirements</h3>
 <ul>
-  <li>Linux with gcc/g++ 4 or higher; or Mac OS X 10.6 or higher with gcc/g++ 4 or higher
-  <li>ROOT 5.10 or higher. Version 5.34 stongly recommended.
+  <li>Linux with gcc/g++ 4 or higher; or Mac OS X 10.6 or higher with Apple's
+    command line tools for Xcode (providing gcc/g++ or clang/clang++).
+    Both 32-bit and 64-bit platforms are supported.
+  <li>ROOT 5.10 or higher, including ROOT 6. Version 6.08 stongly recommended.
   <li>GNU make
-  <li>Reasonably powerful hardware (2GHz CPU, 1GB RAM). Less will work, but it won't be fun.
+  <li>Reasonably powerful hardware (2GHz CPU, 1GB RAM).
+    Less will work, but it won't be fun.
 </ul>
 The following platforms have been explicitly tested:
 <ul>
-  <li>RedHat Enterprise Linux 5, 6 and 7 with default compilers (gcc/g++ 4.1.2, 4.4.7 and 4.8.5)
-      and ROOT 5.30 and 5.34.
-  <li>Fedora 14 and up with default compilers and ROOT 5.28 and 5.34.
-  <li>Mac OS X 10.6 through 10.11 with the default command-line development tools.
+  <li>RedHat Enterprise Linux 5, 6 and 7
+  <li>Fedora 14 through 25
+  <li>Ubuntu 12.04 LTS (Precise)
+  <li>Mac OS X 10.6 through 10.12
 </ul>
 Most other recent Unix-like installations should work as well.
 
@@ -113,15 +127,15 @@ Further documentation is available in the "docs" subdirectory and
 at the <a href="http://hallaweb.jlab.org/podd/">project home page</a>.
 
 <h3>Credits</h3>
-Special thanks to Robert Michaels, Steve Wood and Ed Brash, who made valuable contributions
-to this version.
+Special thanks to Robert Michaels, Steve Wood, Ed Brash and everyone else
+who made valuable contributions to this version.
 
 <p>
 <hr>
 Contact: <address><a href="mailto:ole@jlab.org">Ole Hansen &lt;ole@jlab.org&gt;</a>
 </address>
 <!-- hhmts start -->
-Last modified: Wed Dec 16 13:15 EST 2015
+Last modified: Wed Jan 18 15:45 EST 2017
 <!-- hhmts end -->
 </body> 
 </html>
