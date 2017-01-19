@@ -85,7 +85,7 @@ Int_t UserScintillator::ReadDatabase( const TDatime& date )
   // We use the same database file as the base class and
   // search for our own keys
 
-  const char* const here = "ReadDatabase";
+  // const char* const here = "ReadDatabase";
 
   // Now read the database file
   // First read base class parameters
@@ -97,18 +97,18 @@ Int_t UserScintillator::ReadDatabase( const TDatime& date )
   FILE* file = OpenFile( date );
   if( !file ) return kFileError;
 
-  // Storage and default values for data from database
-  fC = fTDCscale = 0.0;
-  Int_t stop = 0;
+  // Storage and default values for data from database.
+  // We might want to read a lot more here, for example calibration data.
+  // See THaScintillator::ReadDatabase and other standard detectors for
+  // extensive examples.
+  Int_t stop = 1;
 
   // Read the database. This may throw exceptions, so we put it in a try block.
   Int_t err = 0;
   try {
     // Set up an array of database requests. See VarDef.h for details.
     const DBRequest request[] = {
-      { "c",        &fC },           // Speed of light in medium
-      { "tdcscale", &fTDCscale },    // TDC scale (ns/chan)
-      { "stop",     &stop, kInt },   // Common stop mode (1=yes)
+      { "stop", &stop, kInt, 1 },    // Common stop mode (1=yes)
       { 0 }                          // Last element must be NULL
     };
 
@@ -200,7 +200,7 @@ Int_t UserScintillator::FineProcess( TClonesArray& tracks )
   // transverse position from track data
   fYtrk = fpe_y + fpe_ph * fOrigin.Z() - fpe_ph * sin_angle * x;
 
-  fPaddle = (Int_t) TMath::Floor((x+fSize[0])/fSize[0]/2*fNelem);
+  fPaddle = (Int_t) TMath::Floor(0.5*(x+fSize[0])/fSize[0]*fNelem);
   // Mark garbage as invalid
   if(fPaddle <0 || fPaddle >= fNelem)
     fPaddle = -255;
@@ -208,9 +208,9 @@ Int_t UserScintillator::FineProcess( TClonesArray& tracks )
   // Compute y-position from TDC data if possible
   else {
     if( fCommonStop )
-      fYtdc = (fC*.30*fTDCscale*(fRT_c[fPaddle]-fLT_c[fPaddle])+2*fSize[1])/2;
+      fYtdc = 0.5*fCn*(fRT_c[fPaddle]-fLT_c[fPaddle]);
     else
-      fYtdc = (fC*.30*fTDCscale*(fLT_c[fPaddle]-fRT_c[fPaddle])+2*fSize[1])/2;
+      fYtdc = 0.5*fCn*(fLT_c[fPaddle]-fRT_c[fPaddle]);
   }
 
   return 0;

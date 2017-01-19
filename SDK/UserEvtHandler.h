@@ -24,7 +24,7 @@ public:
 
    virtual Int_t Analyze(THaEvData *evdata);
    virtual EStatus Init( const TDatime& run_time);
-   Float_t GetData(const std::string& tag);
+   Float_t GetData(const std::string& tag) const;
 
 private:
 

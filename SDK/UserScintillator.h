@@ -29,8 +29,6 @@ protected:
 
   // Parameters from database
   Bool_t    fCommonStop;  // True if TDCs use common stop mode
-  Double_t  fTDCscale;    // TDC scale (ns/channel)
-  Double_t  fC;           // Speed of light in scintillator medium (m/s)
 
   virtual Int_t  ReadDatabase( const TDatime& date );
   virtual Int_t  DefineVariables( EMode mode = kDefine );

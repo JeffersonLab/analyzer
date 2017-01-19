@@ -27,13 +27,14 @@
 #include <cstdlib>   // for atof
 #include <iostream>
 #include <sstream>
+#include <cassert>
 
 using namespace std;
 
 static const Int_t MAXDATA=20000;
 
 UserEvtHandler::UserEvtHandler(const char *name, const char* description)
-  : THaEvtTypeHandler(name,description)
+  : THaEvtTypeHandler(name,description), dvars(0)
 {
 }
 
@@ -42,19 +43,25 @@ UserEvtHandler::~UserEvtHandler()
 }
 
 // GetData is a public method which other classes may use
-Float_t UserEvtHandler::GetData(const std::string& tag)
+Float_t UserEvtHandler::GetData(const std::string& tag) const
 {
-  if (theDataMap.find(tag) == theDataMap.end())
+  map<string, Float_t>::const_iterator elem = theDataMap.find(tag);
+  if (elem == theDataMap.end())
     return kBig;
 
-  return theDataMap[tag];
+  return elem->second;
 }
 
 
 Int_t UserEvtHandler::Analyze(THaEvData *evdata)
 {
 
-  if( fDebug < 1 ) fDebug = 1; // force debug messages
+  assert( fStatus == kOK );  // should never get here if Init() failed
+  assert( dataKeys.size() == 0 || dvars != 0 ); // else logic error in Init()
+
+#ifdef WITH_DEBUG
+  if( fDebug < 1 ) fDebug = 1; // force debug messages for now (testing)
+#endif
 
   if ( !IsMyEvent(evdata->GetEvType()) )
     return -1;
@@ -62,8 +69,8 @@ Int_t UserEvtHandler::Analyze(THaEvData *evdata)
   UInt_t evbuffer[MAXDATA];
 
   if (evdata->GetEvLength() >= MAXDATA)  {
-      cerr << "UserEvtHandler:  need a bigger buffer ! "<<endl;
-      return -1;
+    Error( Here("UserEvtHandler::Analyze"), "need a bigger buffer!" );
+    return 1;
   }
 
 // Copy the buffer.  If the events are infrequent this causes no harm.
@@ -72,7 +79,9 @@ Int_t UserEvtHandler::Analyze(THaEvData *evdata)
 
   char* cbuff = (char*)evbuffer;
   size_t len = sizeof(int)*(evbuffer[0]+1);
+#ifdef WITH_DEBUG
   if (fDebug>1) cout << "Evt Handler Data, len = "<<len<<endl;
+#endif
   if( len<16 )
     return 0;
   // The first 16 bytes of the buffer are the event header
@@ -88,7 +97,9 @@ Int_t UserEvtHandler::Analyze(THaEvData *evdata)
 
   string line;
   while( getline(ib,line) ) {
+#ifdef WITH_DEBUG
     if(fDebug) cout << "data line : "<<line<<endl;
+#endif
     istringstream il(line);
     string wtag, wval, sunit;
     il >> wtag;
@@ -103,23 +114,29 @@ Int_t UserEvtHandler::Analyze(THaEvData *evdata)
       dval = 0;
       sunit.clear();
     }
+#ifdef WITH_DEBUG
     if(fDebug) cout << "wtag = "<<wtag<<"   wval = "<<wval
 		      << "   dval = "<<dval<<"   sunit = "<<sunit<<endl;
+#endif
     if (theDataMap.find(wtag) != theDataMap.end())
 	 theDataMap[wtag] = (Float_t)atof(wval.c_str());
 
   }
 
   // Fill global variables
+#ifdef WITH_DEBUG
   if (fDebug) cout << "---------------------------------------------"<<endl<<endl;
+#endif
 
   for (UInt_t i=0; i < dataKeys.size(); i++) {
     dvars[i] = GetData(dataKeys[i]);
 
+#ifdef WITH_DEBUG
     if (fDebug)
       cout << "GetData ::  key " << i << "   " << dataKeys[i]
 	   << "   data = " << GetData(dataKeys[i])
 	   << endl;
+#endif
   }
 
   return 1;
@@ -129,7 +146,11 @@ Int_t UserEvtHandler::Analyze(THaEvData *evdata)
 THaAnalysisObject::EStatus UserEvtHandler::Init(const TDatime& date)
 {
 
-  cout << "Howdy !  We are initializing UserEvtHandler !!   name =   "<<fName<<endl;
+#ifdef WITH_DEBUG
+  if( fDebug>1 )
+    cout << "Howdy !  We are initializing UserEvtHandler !!   name =   "
+	 <<fName<<endl;
+#endif
 
   eventtypes.push_back(131);  // what events to look for
 
@@ -142,8 +163,9 @@ THaAnalysisObject::EStatus UserEvtHandler::Init(const TDatime& date)
 
   // initialize map elements to -1 (means not found yet)
   for (UInt_t i=0; i < dataKeys.size(); i++) {
-    if(theDataMap.insert(std::make_pair(dataKeys[i],-1)).second == false) {
-      cout << "Element with "<<dataKeys[i]<<" already in map"<<endl;
+    if(theDataMap.insert(make_pair(dataKeys[i],-1)).second == false) {
+      Warning( Here("UserEvtHandler::Init"), "Element %s already defined",
+	       dataKeys[i].c_str() );
     }
   }
 
@@ -155,18 +177,23 @@ THaAnalysisObject::EStatus UserEvtHandler::Init(const TDatime& date)
   //    variable hac_bcm_average
   //    variable IPM1H04B.YPOS
 
-  Int_t Nvars = dataKeys.size();
+  UInt_t Nvars = dataKeys.size();
   if (Nvars > 0) {
     dvars = new Double_t[Nvars];  // dvars is a member of this class
 		 // the index of the dvars array tracks the index of dataKeys
     memset(dvars, 0, Nvars*sizeof(Double_t));
     if (gHaVars) {
-      cout << "EvtHandler:: Have gHaVars.  Good thing. "<<gHaVars<<endl;
+#ifdef WITH_DEBUG
+      if( fDebug>1 )
+	cout << "EvtHandler:: Have gHaVars.  Good thing. "<<gHaVars<<endl;
+#endif
     } else {
-      cout << "EvtHandler:: No gHaVars ?!  Well, that is a problem !!"<<endl;
+      Error( Here("UserEvtHandler::Init"),
+	     "No gHaVars ?!  Well, that is a problem !!" );
+      return kInitError;
     }
     const Int_t* count = 0;
-    for (UInt_t i = 0; i < dataKeys.size(); i++) {
+    for (UInt_t i = 0; i < Nvars; i++) {
        gHaVars->DefineByType(dataKeys[i].c_str(), "epics data",
 			  &dvars[i], kDouble, count);
     }

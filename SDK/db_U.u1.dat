@@ -1,0 +1,24 @@
+# Example database for the UserDetector embedded in UserApparatus
+# The following can be freely formatted.
+#
+# One may use validity time stamps here as needed:
+# [ 1995-01-01 13:45:00 ]
+# These time stamps follow the same incremental validity scheme
+# as the run database
+
+# The database keys need to be prefixed with the detector's prefix
+# (usually <apparatus-name>.<detector-name>)
+# This may seem redundant since the prefix is already implied by the
+# name of this file, but it allows for easy migration of keys to
+# other (non file-based) database systems.
+
+U.u1.detmap = 3 2 0 4 0
+U.u1.nelem = 5
+
+# The following keys are optional. If missing, defaults will apply:
+# angle = 0, pedestals = 0, gains = 1
+# This behavior needs to be implemented in the detector's ReadDatabase function
+
+U.u1.angle = 0.0
+U.u1.pedestals = 15. 22. 14.5 11.2 17.6
+U.u1.gains = 3.3 3.22 3.54 4.05 3.42
