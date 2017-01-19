@@ -330,7 +330,7 @@ srcdist:
 		 $(addprefix $(NAME)/, \
 		  ChangeLog $(wildcard README*) Makefile .exclude .gitignore \
 		  SConstruct $(wildcard *.py) scons \
-		  src $(DCDIR) Calib DB examples contrib docs SDK \
+		  src $(DCDIR) Calib DB examples contrib utils docs SDK \
 		  evio/Makefile evio/Makefile.libsrc)
 
 install:	all
