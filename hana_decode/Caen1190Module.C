@@ -151,6 +151,8 @@ namespace Decoder {
       if (tdc_data.slot == static_cast <UInt_t> (fSlot))
 	glbl_trl = 1;
       break;
+    case 0x88000000:  // Global Trigger Time Tag: trigger arrival time relatively to the Count Reset.
+      break;
     case 0x20000000:		// Output Buffer: TDC Error
       if (tdc_data.slot == static_cast <UInt_t> (fSlot)) {
 	tdc_data.chip_nr_hd = ((*p)&0x03000000) >> 24; // bits 25-24
