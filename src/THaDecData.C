@@ -94,7 +94,7 @@ using namespace std;
 static Int_t kInitHashCapacity = 100;
 static Int_t kRehashLevel = 3;
 
-#if __cplusplus <= 199711L
+#if __cplusplus < 201103L
 # define SMART_PTR auto_ptr
 #else
 # define SMART_PTR unique_ptr

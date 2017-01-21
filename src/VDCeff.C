@@ -37,7 +37,7 @@ using namespace std;
 const TString nhit_suffix( "nhit" );
 const TString eff_suffix(  "eff" );
 
-#if __cplusplus <= 199711L
+#if __cplusplus < 201103L
 # define SMART_PTR auto_ptr
 #else
 # define SMART_PTR unique_ptr
