@@ -7,6 +7,7 @@ import platform
 import commands
 import SCons
 import subprocess
+import configure
 
 def rootcint(target,source,env):
 	"""Executes the ROOT dictionary generator over a list of headers."""
@@ -36,6 +37,8 @@ baseenv = Environment(ENV = os.environ)
 print('!!! Building the Hall A analyzer and libraries with SCons requires')
 print('!!! SCons version 2.1.0 or newer.')
 EnsureSConsVersion(2,1,0)
+
+configure.config(baseenv,ARGUMENTS)
 
 ####### Hall A Build Environment #############
 #
@@ -89,9 +92,6 @@ baseenv.Append(BUILDERS = {'RootCint': bld})
 
 ######## Configure Section #######
 
-import configure
-configure.config(baseenv,ARGUMENTS)
-
 Export('baseenv')
 
 conf = Configure(baseenv)
@@ -114,7 +114,7 @@ scalerlib = 'scaler'
 
 baseenv.Append(LIBPATH=['$HA_DIR','$HA_SRC','$HA_DC','$HA_SCALER'])
 #baseenv.Append(LIBPATH=['$HA_LIB'])
-baseenv.Append(LIBS=[hallalib,dclib,scalerlib])
+baseenv.Prepend(LIBS=[hallalib,dclib,scalerlib])
 baseenv.Replace(SHLIBSUFFIX = '.so')
 baseenv.Append(SHLIBSUFFIX = '.'+baseenv.subst('$VERSION'))
 
