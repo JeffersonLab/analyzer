@@ -363,24 +363,35 @@ Int_t THaVhist::Process()
   if (fCut && fMyCut) fCut->Process();
 
   if ( IsScaler() ) {  
-    Int_t sizey = (fFormY) ? fFormY->GetSize() : 0;
-    if( sizey == 0 ) {   // Y is a scalar
-      Int_t sizex = fFormX->GetSize();
-      if( fFormY ) {
-	for (Int_t i = 0; i < sizex; ++i) {
-	  if ( CheckCut()==0 ) continue; 
-          fH1[0]->Fill(fFormX->GetData(i), fFormY->GetData());
-	} 
-      } else {
-	for (Int_t i = 0; i < sizex; ++i) {
-	  if ( CheckCut()==0 ) continue; 
-          fH1[0]->Fill(fFormX->GetData(i));
-	}
+    // The following is my interpretation of the original code with a bugfix
+    // for the case where both X and Y are variable-size arrays (23-Jan-17 joh)
+    Int_t sizex = fFormX->GetSize();
+    if( fFormY ) {  // 2D histo
+      Int_t sizey = fFormY->GetSize();
+      // Vararrys that report zero size are empty; nothing to do
+      if( (sizex == 0 && fFormX->IsVarray()) ||
+	  (sizey == 0 && fFormY->IsVarray()) )
+	return 0;
+      // Slightly tricky coding here to avoid redundant testing inside the loop
+      Int_t zero = 0, i = 0;
+      // If GetSize()==0 for either variable, retrieve index = 0
+      Int_t *ix = (sizex == 0) ? &zero : &i;
+      Int_t *iy = (sizey == 0) ? &zero : &i;
+      // Number of valid elements:
+      // If GetSize()==0 for X or Y, it's the size of the other variable
+      //  (one or more entries in Y (X) vs one fixed X (Y))
+      // If both have size > 0, it's the smaller of the two
+      //  (diagonal elements of the XY index matrix)
+      Int_t n = (sizex == 0 || sizey == 0) ? max(sizex,sizey) : min(sizex,sizey);
+      for ( ; i < n; ++i) {
+	if ( CheckCut()==0 ) continue;
+	fH1[0]->Fill(fFormX->GetData(*ix), fFormY->GetData(*iy));
       }
-    } else {   // Y is a vector 
-      for (Int_t i = 0; i < sizey; ++i) {
-        if ( CheckCut()==0 ) continue; 
-        fH1[0]->Fill(fFormX->GetData(), fFormY->GetData(i));
+
+    } else {  // 1D histo
+      for (Int_t i = 0; i < sizex; ++i) {
+	if ( CheckCut()==0 ) continue;
+	fH1[0]->Fill(fFormX->GetData(i));
       }
     }
 
