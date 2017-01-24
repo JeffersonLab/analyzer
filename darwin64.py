@@ -10,7 +10,8 @@ def config(env,args):
 	srcdist = args.get('srcdist',0)
 
 	if int(debug):
-		env.Append(CXXFLAGS = '-g -O0')
+		env.Append(CXXFLAGS = '-g')
+		env.Append(CXXFLAGS = '-O0')
 		env.Append(CPPDEFINES= '-DWITH_DEBUG')
 	else:	
 		env.Append(CXXFLAGS = '-O')
