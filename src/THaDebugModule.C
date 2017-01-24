@@ -185,7 +185,7 @@ Int_t THaDebugModule::Process( const THaEvData& evdata )
   if( (fFlags & kStop) && good ) {
     // Wait for user input
     cout << "RETURN: continue, H: run 100 events, R: run to end, F: finish quietly, Q: quit\n";
-    char c;
+    char c = 0;
     cin.clear();
     while( !cin.eof() && cin.get(c) && !strchr("\nqQhHrRfF",c)) {}
     if( c != '\n' )
