@@ -9,6 +9,7 @@ import commands
 import SCons
 import time
 import subprocess
+import configure
 
 def rootcint(target,source,env):
 	"""Executes the ROOT dictionary generator over a list of headers."""
@@ -38,6 +39,8 @@ baseenv = Environment(ENV = os.environ,tools=["default","disttar"],toolpath='.')
 print('!!! Building the Hall A analyzer and libraries with SCons requires')
 print('!!! SCons version 2.1.0 or newer.')
 EnsureSConsVersion(2,1,0)
+
+configure.config(baseenv,ARGUMENTS)
 
 ####### Hall A Build Environment #############
 #
@@ -154,9 +157,6 @@ bld = Builder(action=rootcint)
 baseenv.Append(BUILDERS = {'RootCint': bld})
 
 ######## Configure Section #######
-
-import configure
-configure.config(baseenv,ARGUMENTS)
 
 Export('baseenv')
 
