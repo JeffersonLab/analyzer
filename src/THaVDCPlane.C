@@ -79,39 +79,33 @@ void THaVDCPlane::MakePrefix()
 }
 
 //_____________________________________________________________________________
-Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
+Int_t THaVDCPlane::DoReadDatabase( FILE* file, const TDatime& date )
 {
   // Allocate TClonesArray objects and load plane parameters from database
 
-  FILE* file = OpenFile( date );
-  if( !file ) return kFileError;
-
-  // Use default values until ready to read from database
-  
-  static const char* const here = "ReadDatabase";
+  const char* const here = "ReadDatabase";
   const int LEN = 100;
   char buff[LEN];
-  
+
   // Build the search tag and find it in the file. Search tags
   // are of form [ <prefix> ], e.g. [ R.vdc.u1 ].
   TString tag(fPrefix); tag.Chop(); // delete trailing dot of prefix
-  tag.Prepend("["); tag.Append("]"); 
+  tag.Prepend("["); tag.Append("]");
   TString line;
   bool found = false;
-  while (!found && fgets (buff, LEN, file) != NULL) {
+  while( !found && fgets(buff, LEN, file) ) {
     char* buf = ::Compress(buff);  //strip blanks
     line = buf;
     delete [] buf;
     if( line.EndsWith("\n") ) line.Chop();  //delete trailing newline
-    if ( tag == line ) 
+    if ( tag == line )
       found = true;
   }
   if( !found ) {
     Error(Here(here), "Database entry \"%s\" not found!", tag.Data() );
-    fclose(file);
     return kInitError;
   }
-  
+
   //Found the entry for this plane, so read data
   Int_t nWires = 0;    // Number of wires to create
   Int_t prev_first = 0, prev_nwires = 0;
@@ -124,10 +118,9 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
       break;
     // Get crate, slot, low channel and high channel from file
     Int_t crate, slot, lo, hi;
-    if( sscanf( buff, "%d%d%d%d", &crate, &slot, &lo, &hi ) != 4 ) {
+    if( sscanf( buff, "%6d %6d %6d %6d", &crate, &slot, &lo, &hi ) != 4 ) {
       if( *buff ) buff[strlen(buff)-1] = 0; //delete trailing newline
       Error( Here(here), "Error reading detector map line: %s", buff );
-      fclose(file);
       return kInitError;
     }
     Int_t first = prev_first + prev_nwires;
@@ -137,33 +130,38 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
     prev_nwires = (hi - lo + 1);
     nWires += prev_nwires;
   } while( *buff );  // sanity escape
+
   // Load z, wire beginning postion, wire spacing, and wire angle
-  sscanf( buff, "%lf%lf%lf%lf", &fZ, &fWBeg, &fWSpac, &fWAngle );
+  Int_t n =
+    sscanf( buff, "%15lf %15lf %15lf %15lf", &fZ, &fWBeg, &fWSpac, &fWAngle );
+  if( n != 4 ) return ErrPrint(file,here);
   fWAngle *= TMath::Pi()/180.0; // Convert to radians
   // FIXME: Read from file
   fTDCRes = 5.0e-10;  // 0.5 ns/chan = 5e-10 s /chan
 
   // Load drift velocity (will be used to initialize Crude Time to Distance
   // converter)
-  fscanf(file, "%lf", &fDriftVel);
+  n = fscanf(file, "%15lf", &fDriftVel);
+  if( n != 1 ) return ErrPrint(file,here);
   fgets(buff, LEN, file); // Read to end of line
   fgets(buff, LEN, file); // Skip line
 
   fNWiresHit = 0;
-  
+
   // Values are the same for each plane
   fNMaxGap = 1;
   fMinTime = 800;
   fMaxTime = 2200;
 
   // first read in the time offsets for the wires
-  float* wire_offsets = new float[nWires];
-  int*   wire_nums    = new int[nWires];
+  vector<Double_t> wire_offsets(nWires);
+  vector<Int_t> wire_nums(nWires);
 
   for (int i = 0; i < nWires; i++) {
-    int wnum = 0;
-    float offset = 0.0;
-    fscanf(file, " %d %f", &wnum, &offset);
+    Int_t wnum = 0;
+    Double_t offset = 0.0;
+    n = fscanf(file, " %6d %15lf", &wnum, &offset);
+    if( n != 2 ) return ErrPrint(file,here);
     wire_nums[i] = wnum-1; // Wire numbers in file start at 1
     wire_offsets[i] = offset;
   }
@@ -176,8 +174,8 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
 //     // if it exists, read the data in
 //     fscanf(file, "%le", &fT0);
 //     fscanf(file, "%d", &fNumBins);
-    
-//     // this object is responsible for the memory management 
+
+//     // this object is responsible for the memory management
 //     // of the lookup table
 //     delete [] fTable;
 //     fTable = new Float_t[fNumBins];
@@ -194,7 +192,7 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
 //   }
 
   // Define time-to-drift-distance converter
-  // Currently, we use the analytic converter. 
+  // Currently, we use the analytic converter.
   // FIXME: Let user choose this via a parameter
   delete fTTDConv;
   fTTDConv = new THaVDCAnalyticTTDConv(fDriftVel);
@@ -204,13 +202,11 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
   // Now initialize wires (those wires... too lazy to initialize themselves!)
   // Caution: This may not correspond at all to actual wire channels!
   for (int i = 0; i < nWires; i++) {
-    THaVDCWire* wire = new((*fWires)[i]) 
+    THaVDCWire* wire = new((*fWires)[i])
       THaVDCWire( i, fWBeg+i*fWSpac, wire_offsets[i], fTTDConv );
     if( wire_nums[i] < 0 )
       wire->SetFlag(1);
   }
-  delete [] wire_offsets;
-  delete [] wire_nums;
 
   fOrigin.SetXYZ( 0.0, 0.0, fZ );
 
@@ -223,16 +219,29 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
   //since not doing so leads to exactly this kind of mess:
   THaApparatus* app = GetApparatus();
   const char* nm = "trg"; // inside an apparatus, the apparatus name is assumed
-  if( !app || 
+  if( !app ||
       !(fglTrg = dynamic_cast<THaTriggerTime*>(app->GetDetector(nm))) ) {
     Warning(Here(here),"Trigger-time detector \"%s\" not found. "
 	    "Event-by-event time offsets will NOT be used!!",nm);
   }
 
   fIsInit = true;
-  fclose(file);
-
   return kOK;
+}
+
+//_____________________________________________________________________________
+Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
+{
+  // Wrapper around actual database reader. Using a wrapper makes it much
+  // to close the input file in case of an error.
+
+  FILE* fi = OpenFile( date );
+  if( !fi ) return kFileError;
+
+  Int_t ret = DoReadDatabase( fi, date );
+
+  fclose(fi);
+  return ret;
 }
 
 //_____________________________________________________________________________

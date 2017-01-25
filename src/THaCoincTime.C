@@ -51,12 +51,12 @@ THaCoincTime::THaCoincTime( const char* name,
   if (ch_name1 && strlen(ch_name1)>0) {
     fTdcLabels[0] = ch_name1;
   } else {
-    fTdcLabels[0] = Form("ct_%sby%s",spec2,spec1);
+    fTdcLabels[0] = Form("%sby%s",spec2,spec1);
   } 
   if (ch_name2 && strlen(ch_name2)>0) {
     fTdcLabels[1] = ch_name2;
   } else {
-    fTdcLabels[1] = Form("ct_%sby%s",spec1,spec2);
+    fTdcLabels[1] = Form("%sby%s",spec1,spec2);
   }
 
   // set aside the memory
@@ -133,23 +133,19 @@ Int_t THaCoincTime::DefineVariables( EMode mode )
 THaAnalysisObject::EStatus THaCoincTime::Init( const TDatime& run_time )
 {
   // Initialize the module.
-  
 
-  // Locate the spectrometer apparatus named in fSpectroName and save
-  // pointer to it.
-  if (!fIsInit) {
-    fIsInit = true;
-  }
+  fIsInit = kFALSE;
 
-  // Standard initialization. Calls this object's DefineVariables().
+  // Standard initialization. Calls our ReadDatabase() and DefineVariables()
   if( THaPhysicsModule::Init( run_time ) != kOK )
     return fStatus;
 
+  // Locate the spectrometer modules with given names and save pointers to them
   fSpect1 = dynamic_cast<THaSpectrometer*>
     ( FindModule( fSpectN1, "THaSpectrometer"));
   fSpect2 = dynamic_cast<THaSpectrometer*>
     ( FindModule( fSpectN2, "THaSpectrometer"));
-  
+
   if( !fSpect1 || !fSpect2 )
     fStatus = kInitError;
 
@@ -157,54 +153,67 @@ THaAnalysisObject::EStatus THaCoincTime::Init( const TDatime& run_time )
 }
 
 //_____________________________________________________________________________
-Int_t THaCoincTime::ReadDatabase( const TDatime& date )
+Int_t THaCoincTime::DoReadDatabase( FILE* fi, const TDatime& date )
 {
   // Read this the TDC channels (and resolutions) from the database.
   // 'date' contains the date/time of the run being analyzed.
 
-  static const char* const here = "ReadDatabase()";
+  const char* const here = "ReadDatabase";
   const int LEN = 200;
   char buf[LEN];
 
-  FILE* fi = OpenFile( date );
-  if( !fi ) {
-    // look for more general coincidence-timing database
-    fi = OpenFile( "CT", date );
-  }
-  if ( !fi )
-    return kFileError;
-
   //  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
   fDetMap->Clear();
-  
-  int cnt = 0;
-  
+
   fTdcRes[0] = fTdcRes[1] = 0.;
   fTdcOff[0] = fTdcOff[1] = 0.;
-  
+
+  Int_t k = 0;
   while ( 1 ) {
-    Int_t model;
-    Float_t tres;   //  TDC resolution
-    Float_t toff;   //  TDC offset (in seconds)
-    char label[21]; // string label for TDC = Stop_by_Start
-                    // Label is a space-holder to be used in the future
-    
-    Int_t crate, slot, first, last;
+    Int_t crate, slot, first, model, nread;
+    Double_t tres;        // TDC resolution
+    Double_t toff = 0.0;  // TDC offset (in seconds)
+    char label[21];       // label for TDC = Stop_by_Start
 
     while ( ReadComment( fi, buf, LEN ) ) {}
-
     fgets ( buf, LEN, fi );
-    
-    int nread = sscanf( buf, "%d %d %d %d %f %20s %f", &crate, &slot, &first,
-		        &model, &tres, label, &toff );
-    if ( crate < 0 ) break;
+    nread = sscanf( buf, "%6d %6d %6d %6d %15lf %20s %15lf",
+		    &crate, &slot, &first, &model, &tres, label, &toff );
+    if( crate < 0 ) break;
+    if( k > 1 ) {
+      Warning( Here(here), "Too many detector map entries. Must be exactly 2.");
+      break;
+    }
     if ( nread < 6 ) {
       Error( Here(here), "Invalid detector map! Need at least 6 columns." );
-      fclose(fi);
       return kInitError;
     }
-    last = first; // only one channel per entry (one ct measurement)
-    // look for the label in our list of spectrometers
+    // Heuristic check for old-format database (before ca. 2003)
+    if( tres > 1. ) {
+      // Old format (no TDC offset, but redundant "last" channel)
+      Int_t last;
+      nread = sscanf( buf, "%6d %6d %6d %6d %6d %15lf %20s",
+		      &crate, &slot, &first, &last, &model, &tres, label );
+      if ( nread < 7 ) {
+	Error( Here(here), "Invalid detector map! Need at least 7 columns." );
+	return kInitError;
+      }
+      // Turn labels like "L_by_R" into "LbyR"
+      char* p = strstr(label, "_by_");
+      if( p && p != label && *(p+4) ) {
+	char *q = p+1, *r = p;
+	while( *q ) { if( q == p+3 ) ++q; *(r++) = *(q++); } *r = 0;
+      }
+    } else {
+      // New format (already read above)
+      // Turn labels like "ct_LbyR" into "LbyR"
+      if( !strncmp(label,"ct_",3) ) {
+	char *q = label+3;
+	while( *q ) { *(q-3) = *q; ++q; } *(q-3) = 0;
+      }
+    }
+
+    // Look for the label in our list of spectrometers
     int ind = -1;
     for (int i=0; i<2; i++) {
       // enforce logical channel number 0 == 2by1, etc.
@@ -215,97 +224,42 @@ Int_t THaCoincTime::ReadDatabase( const TDatime& date )
       }
     }
     if (ind <0) {
-      TString listoflabels;
-      for (int i=0; i<2; i++) {
-	listoflabels += " " + fTdcLabels[i];
-      }
-      listoflabels += '\0';
-      Error( Here(here), "Invalid detector map! The timing measurement %s does not"
-	     " correspond\n to the spectrometers. Expected one of \n"
-	     "%s",label, listoflabels.Data());
-      fclose(fi);
-      return kInitError;
-    }
-    
-    if( fDetMap->AddModule( crate, slot, first, last, ind, model ) < 0 ) {
-      Error( Here(here), "Too many DetMap modules (maximum allowed - %d).", 
-             THaDetMap::kDetMapSize);
-      fclose(fi);
+      TString listoflabels = fTdcLabels[0] + " " + fTdcLabels[1];
+      Error( Here(here), "Invalid detector map. Label %s does "
+	     "not correspond to the spectrometers.\n Expected one of %s",
+	     label, listoflabels.Data() );
       return kInitError;
     }
 
-    if ( ind+(last-first) < 2 )
-      for (int j=ind; j<=ind+(last-first); j++)  {
-	fTdcRes[j] = tres;
-	if (nread>6) fTdcOff[j] = toff;
-      }
-    else 
-      Warning( Here(here), "Too many entries. Expected 2 but found %d",
-	       cnt+1);
-    cnt+= (last-first+1);
+    if( fDetMap->AddModule(crate, slot, first, first, ind, model) < 0 ) {
+      // Should never happen
+      Error( Here(here), "Error filling detector map. Call expert." );
+      return kInitError;
+    }
+    fTdcRes[ind] = tres;
+    fTdcOff[ind] = toff;
+    ++k;
   }
 
-  fclose(fi);
-
+  fIsInit = kTRUE;
   return kOK;
 }
 
-#if 0
 //_____________________________________________________________________________
-Int_t THaCoincTime::ReadDB( const TDatime& date )
+Int_t THaCoincTime::ReadDatabase( const TDatime& date )
 {
-  // Read this the TDC channels (and resolutions) from the database.
-  // 'date' contains the date/time of the run being analyzed.
+  // Wrapper around actual database reader, for easier error handling
 
-  static const char* const here = "ReadDB()";
-
-  if (!gHaDB) return kInitError;
-
-  //  THaString detnm;
-  
-  // clear out the detector map before reading a new one
-  fDetMap->Clear();
-
-  // the list of detector names to use is in fTdcLabels, set
-  // at creation time or automatically generated as
-  // "ct_{spec2Name}by{spec1Name}"
-  // and the inverse
-
-  for (int i=0; i<2; i++) {
-    // Read in detmap entries
-    Int_t nrd = gHaDB->GetDetMap(fTdcLabels[i],*fDetMap,date);
-    if (nrd < 0) {
-      Error( Here(here), "Too many DetMap modules (maximum allowed - %d).", 
-	     THaDetMap::kDetMapSize);
-      return kInitError;
-    }
-
-    // read in calibration constants
-    DBRequest list[] = {
-      { "TDC_res", &fTdcRes[i] },
-      { "TDC_offset", &fTdcOff[i] },
-      { 0 }
-    };
-    TString pref("CT." + fTdcLabels[i] + ".");
-    if (! gHaDB->LoadValues(pref,list,date) ) {
-      Warning( Here(here),"Cannot read calibration constants for %s. "
-	       "Using defaults of 50ps/ch and 0seconds offset.",
-	       fTdcLabels[i].Data());
-      fTdcRes[i] = 50e-12;
-      fTdcOff[i]=0.;
-    }
+  FILE* fi = OpenFile( date );
+  if( !fi ) {
+    // look for more general coincidence-timing database
+    fi = OpenFile( "CT", date );
   }
+  if ( !fi )
+    return kFileError;
 
-  Int_t mapsize = fDetMap->GetSize();
-  if (mapsize!=2) {
-    Error( Here(here), "Expected an entry for only %s and %s.", 
-	   fTdcLabels[0].Data(),fTdcLabels[1].Data());
-    return kInitError;
-  }
-    
-  return kOK;
+  return DoReadDatabase( fi, date );
 }
-#endif
 
 //_____________________________________________________________________________
 Int_t THaCoincTime::Process( const THaEvData& evdata )

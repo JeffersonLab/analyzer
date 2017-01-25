@@ -55,6 +55,7 @@ protected:
           void   ClearEvent();
   virtual Int_t  DefineVariables( EMode mode = kDefine );
           void   DeleteArrays();
+          Int_t  DoReadDatabase( FILE* fi, const TDatime& date );
   virtual Int_t  ReadDatabase( const TDatime& date );
 
   ClassDef(THaCherenkov,0)    //Generic Cherenkov class

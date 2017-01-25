@@ -68,165 +68,135 @@ THaAnalysisObject::EStatus THaScintillator::Init( const TDatime& date )
 }
 
 //_____________________________________________________________________________
-Int_t THaScintillator::ReadDatabase( const TDatime& date )
+Int_t THaScintillator::DoReadDatabase( FILE* fi, const TDatime& date )
 {
   // Read this detector's parameters from the database file 'fi'.
   // This function is called by THaDetectorBase::Init() once at the
   // beginning of the analysis.
   // 'date' contains the date/time of the run being analyzed.
 
-  static const char* const here = "ReadDatabase()";
-  const int LEN = 200;
+  const char* const here = "ReadDatabase";
+  const int LEN = 256;
   char buf[LEN];
   Int_t nelem;
 
-  // Read data from database 
-  FILE* fi = OpenFile( date );
-  if( !fi ) return kFileError;
+  Int_t flags = kErrOnTooManyValues|kWarnOnDataGuess;
 
-  while ( ReadComment( fi, buf, LEN ) ) {}
-  fscanf ( fi, "%d", &nelem );                        // Number of  paddles
-  fgets ( buf, LEN, fi );
+  //  fDetMapHasModel = fHaveExtras = false;
 
-  // Reinitialization only possible for same basic configuration 
+  if( ReadBlock(fi,&nelem,1,here,flags|kNoNegativeValues) ) // Number of paddles
+    return kInitError;
+
+  // Reinitialization only possible for same basic configuration
   if( fIsInit && nelem != fNelem ) {
     Error( Here(here), "Cannot re-initalize with different number of paddles. "
 	   "(was: %d, now: %d). Detector not re-initialized.", fNelem, nelem );
-    fclose(fi);
     return kInitError;
   }
   fNelem = nelem;
 
   // Read detector map. Unless a model-number is given
-  // for the detector type, this assumes that the first half of the entries 
+  // for the detector type, this assumes that the first half of the entries
   // are for ADCs and the second half, for TDCs.
-  while ( ReadComment( fi, buf, LEN ) ) {}
-  int i = 0;
+  while( ReadComment(fi, buf, LEN) );
   fDetMap->Clear();
   while (1) {
-    int pos;
-    Int_t first_chan, model;
-    Int_t crate, slot, first, last;
+    Int_t pos, first_chan, model, crate, slot, first, last;
     fgets ( buf, LEN, fi );
-    sscanf( buf, "%d%d%d%d%d%n", &crate, &slot, &first, &last, &first_chan, &pos );
+    Int_t n = sscanf( buf, "%6d %6d %6d %6d %6d %n",
+		      &crate, &slot, &first, &last, &first_chan, &pos );
     if( crate < 0 ) break;
+    if( n < 5 ) return ErrPrint(fi,here);
     model=atoi(buf+pos); // if there is no model number given, set to zero
-    
+    // if( model != 0 )
+    //   fDetMapHasModel = true;
     if( fDetMap->AddModule( crate, slot, first, last, first_chan, model ) < 0 ) {
-      Error( Here(here), "Too many DetMap modules (maximum allowed - %d).", 
+      Error( Here(here), "Too many DetMap modules (maximum allowed - %d).",
 	     THaDetMap::kDetMapSize);
-      fclose(fi);
       return kInitError;
     }
   }
-  while ( ReadComment( fi, buf, LEN ) ) {}
+  if( fDetMap->GetTotNumChan() != 4*nelem ) {
+    Error( Here(here), "Database inconsistency.\n Defined %d channels in detector map, "
+	   "but have %d total channels (%d paddles with 2 ADCs and 2 TDCs each)",
+	   fDetMap->GetTotNumChan(), 4*nelem, nelem );
+    return kInitError;
+  }
 
-  Float_t x,y,z;
-  fscanf ( fi, "%f%f%f", &x, &y, &z );             // Detector's X,Y,Z coord
-  fgets ( buf, LEN, fi );
-  fOrigin.SetXYZ( x, y, z );
-  fgets ( buf, LEN, fi );
-  while ( ReadComment( fi, buf, LEN ) ) {}
-  fscanf ( fi, "%f%f%f", fSize, fSize+1, fSize+2 ); // Sizes of det on X,Y,Z
-  fgets ( buf, LEN, fi );
-  while ( ReadComment( fi, buf, LEN ) ) {}
+  // Read geometry
+  Double_t dvals[3], angle;
+  if( ReadBlock(fi,dvals,3,here,flags) )          // Detector X,Y,Z coordinates
+    return kInitError;
+  fOrigin.SetXYZ( dvals[0], dvals[1], dvals[2] );
 
-  Float_t angle;
-  fscanf ( fi, "%f", &angle );                     // Rotation angle of detector
-  fgets ( buf, LEN, fi );
-  const Float_t degrad = TMath::Pi()/180.0;
+  if( ReadBlock(fi,fSize,3,here,flags|kNoNegativeValues) ) // Size of detector in X,Y,Z
+    return kInitError;
+
+  if( ReadBlock(fi,&angle,1,here,flags) )         // Rotation angle of detector
+    return kInitError;
+
+  const Double_t degrad = TMath::Pi()/180.0;
   tan_angle = TMath::Tan(angle*degrad);
   sin_angle = TMath::Sin(angle*degrad);
   cos_angle = TMath::Cos(angle*degrad);
 
   DefineAxes(angle*degrad);
 
-  // Dimension arrays
+  // Dimension arrays when initializing for the first time
   if( !fIsInit ) {
+    fNTWalkPar = 2*fNelem; // 1 parameter per paddle
+
     // Calibration data
-    fLOff  = new Double_t[ fNelem ];
-    fROff  = new Double_t[ fNelem ];
-    fLPed  = new Double_t[ fNelem ];
-    fRPed  = new Double_t[ fNelem ];
-    fLGain = new Double_t[ fNelem ];
-    fRGain = new Double_t[ fNelem ];
-
-    fTrigOff = new Double_t[ fNelem ];
-
-    // Per-event data
-    fLT   = new Double_t[ fNelem ];
-    fLT_c = new Double_t[ fNelem ];
-    fRT   = new Double_t[ fNelem ];
-    fRT_c = new Double_t[ fNelem ];
-    fLA   = new Double_t[ fNelem ];
-    fLA_p = new Double_t[ fNelem ];
-    fLA_c = new Double_t[ fNelem ];
-    fRA   = new Double_t[ fNelem ];
-    fRA_p = new Double_t[ fNelem ];
-    fRA_c = new Double_t[ fNelem ];
-
-    fNTWalkPar = 2*fNelem; // 1 paramter per paddle
+    fLOff     = new Double_t[ fNelem ];
+    fROff     = new Double_t[ fNelem ];
+    fLPed     = new Double_t[ fNelem ];
+    fRPed     = new Double_t[ fNelem ];
+    fLGain    = new Double_t[ fNelem ];
+    fRGain    = new Double_t[ fNelem ];
+    fTrigOff  = new Double_t[ fNelem ];
     fTWalkPar = new Double_t[ fNTWalkPar ];
 
-    fHitPad = new Int_t[ fNelem ];   
-    fTime   = new Double_t[ fNelem ]; // analysis indexed by paddle (yes, inefficient)
-    fdTime  = new Double_t[ fNelem ];
-    fAmpl   = new Double_t[ fNelem ];
-    
-    fYt     = new Double_t[ fNelem ];
-    fYa     = new Double_t[ fNelem ];
-    
+    // Per-event data
+    fLT       = new Double_t[ fNelem ];
+    fLT_c     = new Double_t[ fNelem ];
+    fRT       = new Double_t[ fNelem ];
+    fRT_c     = new Double_t[ fNelem ];
+    fLA       = new Double_t[ fNelem ];
+    fLA_p     = new Double_t[ fNelem ];
+    fLA_c     = new Double_t[ fNelem ];
+    fRA       = new Double_t[ fNelem ];
+    fRA_p     = new Double_t[ fNelem ];
+    fRA_c     = new Double_t[ fNelem ];
+
+    fHitPad   = new Int_t[ fNelem ];
+    fTime     = new Double_t[ fNelem ]; // analysis indexed by paddle (yes, inefficient)
+    fdTime    = new Double_t[ fNelem ];
+    fAmpl     = new Double_t[ fNelem ];
+    fYt       = new Double_t[ fNelem ];
+    fYa       = new Double_t[ fNelem ];
+
     fIsInit = true;
   }
-  memset(fTrigOff,0,fNelem*sizeof(fTrigOff[0]));
 
   // Set DEFAULT values here
   // TDC resolution (s/channel)
   fTdc2T = 0.1e-9;      // seconds/channel
-  fResolution = fTdc2T; // actual timing resolution 
+  fResolution = fTdc2T; // actual timing resolution
   // Speed of light in the scintillator material
-  fCn = 1.7e+8;    // meters/second
+  fCn = 1.7e+8;         // meters/second
   // Attenuation length
-  fAttenuation = 0.7; // inverse meters
+  fAttenuation = 0.7;   // inverse meters
   // Time-walk correction parameters
-  fAdcMIP = 1.e10;    // large number for offset, so reference is effectively disabled
+  fAdcMIP = 1.e10;      // large number for offset, so reference is effectively disabled
   // timewalk coefficients for tw = coeff*(1./sqrt(ADC-Ped)-1./sqrt(ADCMip))
-  for (int i=0; i<fNTWalkPar; i++) fTWalkPar[i]=0;
+  memset( fTWalkPar,0, fNTWalkPar*sizeof(fTWalkPar[0]) );
   // trigger-timing offsets (s)
-  for (int i=0; i<fNelem; i++) fTrigOff[i]=0;
-  
-  
-  //FIXME (BCI): The static_cast is a kludge, THaDetectorBase::fNelem should be UInt_t
-  DBRequest list[] = {
-    { "TDC_offsetsL", fLOff, kDouble, static_cast<UInt_t>(fNelem) },
-    { "TDC_offsetsR", fROff, kDouble, static_cast<UInt_t>(fNelem) },
-    { "ADC_pedsL", fLPed, kDouble, static_cast<UInt_t>(fNelem) },
-    { "ADC_pedsR", fRPed, kDouble, static_cast<UInt_t>(fNelem) },
-    { "ADC_coefL", fLGain, kDouble, static_cast<UInt_t>(fNelem) },
-    { "ADC_coefR", fRGain, kDouble, static_cast<UInt_t>(fNelem) },
-    { "TDC_res",   &fTdc2T },
-    { "TransSpd",  &fCn },
-    { "AdcMIP",    &fAdcMIP },
-    { "NTWalk",    &fNTWalkPar, kInt },
-    { "Timewalk",  fTWalkPar, kDouble, 2*static_cast<UInt_t>(fNelem) },
-    { "ReTimeOff", fTrigOff, kDouble, static_cast<UInt_t>(fNelem) },
-    { "AvgRes",    &fResolution },
-    { "Atten",     &fAttenuation },
-    { 0 }
-  };
+  memset( fTrigOff, 0, fNelem*sizeof(fTrigOff[0]) );
 
-#if 0
-  if ( gHaDB && gHaDB->LoadValues(GetPrefix(),list,date) ) {
-    goto exit;  // the new database existed -- we're finished
-  }
-#endif
-  
-  // otherwise, gHaDB is unavailable, use the old file database
-  
   // Read in the timing/adc calibration constants
   // For fine-tuning of these data, we seek to a matching time stamp, or
   // if no time stamp found, to a "configuration" section. Examples:
-  // 
+  //
   // [ 2002-10-10 15:30:00 ]
   // #comment line goes here
   // <left TDC offsets>
@@ -246,110 +216,142 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   //
   //
   // or
-  // 
+  //
   // [ config=highmom ]
   // comment line
   // ...etc.
   //
-  if( SeekDBdate( fi, date ) == 0 && fConfig.Length() > 0 && 
+  TDatime datime(date);
+  if( SeekDBdate( fi, datime ) == 0 && fConfig.Length() > 0 &&
       SeekDBconfig( fi, fConfig.Data() )) {}
 
-  while ( ReadComment( fi, buf, LEN ) ) {}
   // Read calibration data
-  for (i=0;i<fNelem;i++) 
-    fscanf(fi,"%lf",fLOff+i);                    // Left Pads TDC offsets
-  fgets ( buf, LEN, fi );   // finish line
-  while ( ReadComment( fi, buf, LEN ) ) {}
-  for (i=0;i<fNelem;i++) 
-    fscanf(fi,"%lf",fROff+i);                    // Right Pads TDC offsets
-  fgets ( buf, LEN, fi );   // finish line
-  while ( ReadComment( fi, buf, LEN ) ) {}
-  for (i=0;i<fNelem;i++) 
-    fscanf(fi,"%lf",fLPed+i);                    // Left Pads ADC Pedest-s
-  fgets ( buf, LEN, fi );   // finish line, etc.
-  while ( ReadComment( fi, buf, LEN ) ) {}
-  for (i=0;i<fNelem;i++) 
-    fscanf(fi,"%lf",fRPed+i);                    // Right Pads ADC Pedes-s
-  fgets ( buf, LEN, fi );
-  while ( ReadComment( fi, buf, LEN ) ) {}
-  for (i=0;i<fNelem;i++) 
-    fscanf (fi,"%lf",fLGain+i);                  // Left Pads ADC Coeff-s
-  fgets ( buf, LEN, fi );
-  while ( ReadComment( fi, buf, LEN ) ) {}
-  for (i=0;i<fNelem;i++) 
-    fscanf (fi,"%lf",fRGain+i);                  // Right Pads ADC Coeff-s
-  fgets ( buf, LEN, fi ); 
 
+  // Most scintillator databases have two data lines in each section, one for left,
+  // one for right paddles, without a separator comment. Hence we read the first
+  // line without the check for "too many values".
 
-  while ( ReadComment( fi, buf, LEN ) ) {}
+  // Left pads TDC offsets
+  Int_t err = ReadBlock(fi,fLOff,fNelem,here,flags|kStopAtNval|kQuietOnTooMany);
+  if( err ) {
+    if( fNelem > 1 || err != kTooManyValues )
+      return kInitError;
+    // Attempt to recover S0 databases with nelem == 1 that have L/R values
+    // on a single line
+    Double_t dval[2];
+    if( ReadBlock(fi,dval,2,here,flags) )
+      return kInitError;
+    fLOff[0] = dval[0];
+    fROff[0] = dval[1];
+  } else {
+    // Right pads TDC offsets
+    if( ReadBlock(fi,fROff,fNelem,here,flags) )
+      return kInitError;
+  }
+
+  // Left pads ADC pedestals
+  err = ReadBlock(fi,fLPed,fNelem,here,flags|kNoNegativeValues|kStopAtNval|kQuietOnTooMany);
+  if( err ) {
+    if( fNelem > 1 || err != kTooManyValues )
+      return kInitError;
+    Double_t dval[2];
+    if( ReadBlock(fi,dval,2,here,flags|kNoNegativeValues) )
+      return kInitError;
+    fLPed[0] = dval[0];
+    fRPed[0] = dval[1];
+  } else {
+    // Right pads ADC pedestals
+    if( ReadBlock(fi,fRPed,fNelem,here,flags|kNoNegativeValues) )
+      return kInitError;
+  }
+
+  // Left pads ADC gains
+  err = ReadBlock(fi,fLGain,fNelem,here,flags|kNoNegativeValues|kStopAtNval|kQuietOnTooMany);
+  if( err ) {
+    if( fNelem > 1 || err != kTooManyValues )
+      return kInitError;
+    Double_t dval[2];
+    if( ReadBlock(fi,dval,2,here,flags|kNoNegativeValues) )
+      return kInitError;
+    fLGain[0] = dval[0];
+    fRGain[0] = dval[1];
+  } else {
+    // Right pads ADC gains
+    if( ReadBlock(fi,fRGain,fNelem,here,flags|kNoNegativeValues) )
+      return kInitError;
+  }
+
   // Here on down, look ahead line-by-line
   // stop reading if a '[' is found on a line (corresponding to the next date-tag)
-  // read in TDC resolution (s/channel)
-  if ( ! fgets(buf, LEN, fi) || strchr(buf,'[') ) goto exit;
-  sscanf(buf,"%lf",&fTdc2T);
-  fResolution = 3.*fTdc2T;      // guess at timing resolution
 
-  while ( ReadComment( fi, buf, LEN ) ) {}
-  // Speed of light in the scintillator material
-  if ( !fgets(buf, LEN, fi) ||  strchr(buf,'[') ) goto exit;
-  sscanf(buf,"%lf",&fCn);
-  
+  flags = kErrOnTooManyValues|kQuietOnTooFew|kStopAtNval|kStopAtSection;
+  // TDC resolution (s/channel)
+  if( (err = ReadBlock(fi,&fTdc2T,1,here,flags|kRequireGreaterZero)) )
+    goto exit;
+  //  fHaveExtras = true; // FIXME: should always be true?
+  // Speed of light in the scintillator material (m/s)
+  if( (err = ReadBlock(fi,&fCn,1,here,flags|kRequireGreaterZero)) )
+    goto exit;
   // Attenuation length (inverse meters)
-  while ( ReadComment( fi, buf, LEN ) ) {}
-  if ( !fgets ( buf, LEN, fi ) ||  strchr(buf,'[') ) goto exit;
-  sscanf(buf,"%lf",&fAttenuation);
-  
-  while ( ReadComment( fi, buf, LEN ) ) {}
-  // Time-walk correction parameters
-  if ( !fgets(buf, LEN, fi) ||  strchr(buf,'[') ) goto exit;
-  sscanf(buf,"%lf",&fAdcMIP);
-  
-  while ( ReadComment( fi, buf, LEN ) ) {}
-  // timewalk parameters
-  {
-    int cnt=0;
-    while ( cnt<fNTWalkPar && fgets( buf, LEN, fi ) && ! strchr(buf,'[') ) {
-      char *ptr = buf;
-      int pos=0;
-      while ( cnt < fNTWalkPar && sscanf(ptr,"%lf%n",&fTWalkPar[cnt],&pos)>0 ) {
-	ptr += pos;
-	cnt++;
-      }
-    }
-  }
+  if( (err = ReadBlock(fi,&fAttenuation,1,here,flags|kRequireGreaterZero)) )
+    goto exit;
+  // Typical ADC value for minimum ionizing particle (MIP)
+  if( (err = ReadBlock(fi,&fAdcMIP,1,here,flags|kRequireGreaterZero)) )
+    goto exit;
+  // Timewalk coefficients (1 for each PMT) -- seconds*1/sqrt(ADC)
+  if( (err = ReadBlock(fi,fTWalkPar,fNTWalkPar,here,flags)) )
+    goto exit;
+  // Trigger-timing offsets -- seconds offset per paddle
+  err = ReadBlock(fi,fTrigOff,fNelem,here,flags);
 
-  while ( ReadComment( fi, buf, LEN ) ) {}
-  // trigger timing offsets
-  {
-    int cnt=0;
-    while ( cnt<fNelem && fgets( buf, LEN, fi ) && ! strchr(buf,'[') ) {
-      char *ptr = buf;
-      int pos=0;
-      while ( cnt < fNelem && sscanf(ptr,"%lf%n",&fTrigOff[cnt],&pos)>0 ) {
-	ptr += pos;
-	cnt++;
-      }
-    }
-  }
-  
  exit:
-  fclose(fi);
+  if( err && err != kNoValues )
+    return kInitError;
 
+  // Debug printout
   if ( fDebug > 1 ) {
-    cout << '\n' << GetPrefix() << " calibration parameters: " << endl;;
-    for ( DBRequest *li = list; li->name; li++ ) {
-      cout << "  " << li->name;
-      UInt_t maxc = li->nelem;
-      if (maxc==0)maxc=1;
-      for (UInt_t i=0; i<maxc; i++) {
-	if (li->type==kDouble) cout << "  " << ((Double_t*)li->var)[i];
-	if (li->type==kInt) cout << "  " << ((Int_t*)li->var)[i];
-      }
-      cout << endl;
-    }
+    const UInt_t N = static_cast<UInt_t>(fNelem);
+    Double_t pos[3]; fOrigin.GetXYZ(pos);
+    DBRequest list[] = {
+      { "Number of paddles",    &fNelem,     kInt         },
+      { "Detector position",    pos,         kDouble, 3   },
+      { "Detector size",        fSize,       kFloat,  3   },
+      { "Detector angle",       &angle,                   },
+      { "TDC offsets Left",     fLOff,       kDouble, N   },
+      { "TDC offsets Right",    fROff,       kDouble, N   },
+      { "ADC pedestals Left",   fLPed,       kDouble, N   },
+      { "ADC pedestals Right",  fRPed,       kDouble, N   },
+      { "ADC gains Left",       fLGain,      kDouble, N   },
+      { "ADC gains Right",      fRGain,      kDouble, N   },
+      { "TDC resolution",       &fTdc2T                   },
+      { "Light propag. speed",  &fCn                      },
+      { "ADC MIP",              &fAdcMIP                  },
+      { "Num timewalk params",  &fNTWalkPar, kInt         },
+      { "Timewalk params",      fTWalkPar,   kDouble, 2*N },
+      { "Trigger time offsets", fTrigOff,    kDouble, N   },
+      { "Time resolution",      &fResolution              },
+      { "Attenuation",          &fAttenuation             },
+      { 0 }
+    };
+    DebugPrint( list );
   }
-  
+
   return kOK;
+}
+
+//_____________________________________________________________________________
+Int_t THaScintillator::ReadDatabase( const TDatime& date )
+{
+  // Wrapper around actual database reader. Using a wrapper makes it much
+  // easier to close the input file in case of an error.
+
+  FILE* fi = OpenFile( date );
+  if( !fi ) return kFileError;
+
+  Int_t ret = DoReadDatabase( fi, date );
+
+  fclose(fi);
+  return ret;
 }
 
 //_____________________________________________________________________________

@@ -41,6 +41,7 @@ Int_t THaTriggerTime::ReadDatabase( const TDatime& date )
   // beginning of the analysis.
   // 'date' contains the date/time of the run being analyzed.
 
+  const char* const here = "ReadDatabase";
   const int LEN = 200;
   char buf[LEN];
 
@@ -48,13 +49,13 @@ Int_t THaTriggerTime::ReadDatabase( const TDatime& date )
   // This could just come from THaDecData, but for robustness we need
   // another copy.
 
-  // Read data from database 
+  // Read data from database
   FILE* fi = OpenFile( date );
   // however, this is not unexpected since most of the time it is un-necessary
   if( !fi ) return kOK;
-  
+
   while ( ReadComment( fi, buf, LEN ) ) {}
-  
+
   // Read in the time offsets, in the format below, to be subtracted from
   // the times measured in other detectors.
   //
@@ -62,37 +63,37 @@ Int_t THaTriggerTime::ReadDatabase( const TDatime& date )
   //  to all triggers. This gives us a simple single value for adjustments.
   //
   // Trigger types NOT listed are assumed to have a zero offset.
-  // 
+  //
   // <TrgType>   <time offset in seconds>
   // eg:
   //   0              10   -0.5e-9  # global-offset shared by all triggers and s/TDC
   //   1               0       crate slot chan
   //   2              10.e-9
-  int trg;
-  float toff;
-  float ch2t=-0.5e-9;
-  int fnd=0;
-  int crate,slot,chan;
+  double toff, ch2t = -0.5e-9;   // assume 1872 TDCs
+  int trg, crate, slot, chan;
   fTrgTypes.clear();
   fToffsets.clear();
-  fTDCRes = -0.5e-9; // assume 1872 TDC's.
-  
-  while ( fgets(buf,LEN,fi) ) {
-    if ( (fnd=sscanf(buf,"%d %f %f",&trg,&toff,&ch2t)) < 2) continue;
-    if (trg==0) {
-      fGlOffset=toff;
-      fTDCRes=ch2t;
-    }
-    else {
-      if ( (fnd=sscanf(buf,"%d %f %d %d %d",&trg,&toff,&crate,&slot,&chan)!=5) ) {
-	cerr << "Cannot parse line: " << buf << endl;
-	continue;
+  fTDCRes = ch2t;
+
+  while( fgets(buf,LEN,fi) ) {
+    int fnd = sscanf( buf, "%8d %16lf %16lf",&trg,&toff,&ch2t);
+    if( fnd < 2) goto err;
+    if( trg == 0 ) {
+      fGlOffset = toff;
+      fTDCRes = ch2t;
+    } else {
+      fnd = sscanf( buf, "%8d %16lf %8d %8d %8d",&trg,&toff,&crate,&slot,&chan);
+      if( fnd !=5 ) {
+      err:
+	Error( Here(here), "Cannot parse line:\n \"%s\"", buf );
+	goto exit;
       }
       fTrgTypes.push_back(trg);
       fToffsets.push_back(toff);
       fDetMap->AddModule(crate,slot,chan,chan,trg);
     }
-  }    
+  }
+ exit:
   fclose(fi);
 
   // now construct the appropriate arrays
@@ -102,7 +103,7 @@ Int_t THaTriggerTime::ReadDatabase( const TDatime& date )
 //   for (unsigned int i=0; i<fTrgTypes.size(); i++) {
 //     if (fTrgTypes[i]==0) continue;
 //     fTrg_gl.push_back(gHaVars->Find(Form("%s.bit%d",fDecDataNm.Data(),
-// 					 fTrgTypes[i])));
+//					 fTrgTypes[i])));
 //   }
   return kOK;
 }

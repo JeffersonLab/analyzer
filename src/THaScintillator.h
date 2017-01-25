@@ -111,13 +111,14 @@ protected:
 
   void           ClearEvent();
   void           DeleteArrays();
+  Int_t          DoReadDatabase( FILE* fi, const TDatime& date );
   virtual Int_t  ReadDatabase( const TDatime& date );
   virtual Int_t  DefineVariables( EMode mode = kDefine );
 
   enum ESide { kLeft = 0, kRight = 1 };
   
-  virtual  Double_t TimeWalkCorrection(const Int_t& paddle,
-					   const ESide side);
+  virtual  Double_t TimeWalkCorrection( const Int_t& paddle,
+				        const ESide side );
 
   ClassDef(THaScintillator,1)   // Generic scintillator class
 };

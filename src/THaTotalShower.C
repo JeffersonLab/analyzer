@@ -59,8 +59,8 @@ void THaTotalShower::Setup( const char* name,
 {
   // Set up the total shower counter. Called by constructor.
 
-  static const char* const here = "Setup()";
-  static const char* const message = 
+  const char* const here = "Setup";
+  const char* const message =
     "Must construct %s detector with valid name! Object construction failed.";
 
   // Base class constructor failed?
@@ -166,16 +166,22 @@ Int_t THaTotalShower::ReadDatabase( const TDatime& date )
   // beginning of the analysis.
   // 'date' contains the date/time of the run being analyzed.
 
-  const int LEN = 100;
-  char line[LEN];
+  const char* const here = "ReadDatabase";
+  int flags = kErrOnTooManyValues|kRequireGreaterZero|kWarnOnDataGuess;
 
   FILE* fi = OpenFile( date );
   if( !fi ) return kFileError;
 
-  fgets ( line, LEN, fi ); fgets ( line, LEN, fi );          
-  fscanf ( fi, "%f%f", &fMaxDx, &fMaxDy );  // Max diff of shower centers
+  Double_t maxdxy[2];
+  if( ReadBlock(fi, maxdxy, 2, here, flags) ) { // Max pos diff of shower centers
+    fclose(fi);
+    return kInitError;
+  }
+  fMaxDx = maxdxy[0];
+  fMaxDy = maxdxy[1];
 
   fIsInit = true;
+  ClearEvent();
   fclose(fi);
   return kOK;
 }

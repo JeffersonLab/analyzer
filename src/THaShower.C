@@ -38,194 +38,302 @@ THaShower::THaShower( const char* name, const char* description,
 }
 
 //_____________________________________________________________________________
-Int_t THaShower::ReadDatabase( const TDatime& date )
+Int_t THaShower::DoReadDatabase( FILE* fi, const TDatime& date )
 {
   // Read this detector's parameters from the database file 'fi'.
   // This function is called by THaDetectorBase::Init() once at the
   // beginning of the analysis.
   // 'date' contains the date/time of the run being analyzed.
 
-  static const char* const here = "ReadDatabase()";
+  const char* const here = "ReadDatabase";
   const int LEN = 100;
   char buf[LEN];
-  Int_t nelem, ncols, nrows, nclbl;
-
-  // Read data from database
-
-  FILE* fi = OpenFile( date );
-  if( !fi ) return kFileError;
+  Int_t flags = kErrOnTooManyValues; // TODO: make configurable
+  bool old_format = false;
 
   // Blocks, rows, max blocks per cluster
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );          
-  fscanf ( fi, "%d%d", &ncols, &nrows );  
+  Int_t nclbl, ncols, nrows, ivals[3];
+  Int_t err = ReadBlock(fi,ivals,2,here,kRequireGreaterZero|kQuietOnTooMany);
+  if( err ) {
+    if( err != kTooManyValues )
+      return kInitError;
+    // > 2 values - may be an old-style DB with 3 numbers on first line
+    if( ReadBlock(fi,ivals,3,here,kRequireGreaterZero) )
+      return kInitError;
+    if( ivals[0] % ivals[1] ) {
+      Error( Here(here), "Total number of blocks = %d does not divide evenly into "
+	     "number of columns = %d", ivals[0], ivals[1] );
+      return kInitError;
+    }
+    ncols = ivals[0] / ivals[1];
+    nrows = ivals[1];
+    nclbl = ivals[2];
+    //    old_format = true;  //FIXME: require consistency with block geometry later?
+  } else {
+    ncols = ivals[0];
+    nrows = ivals[1];
+    nclbl = TMath::Min( 3, nrows ) * TMath::Min( 3, ncols );
+  }
+  Int_t nelem = ncols * nrows;
 
-  nelem = ncols * nrows;
-  nclbl = TMath::Min( 3, nrows ) * TMath::Min( 3, ncols );
-  // Reinitialization only possible for same basic configuration 
+  // Reinitialization only possible for same basic configuration
   if( fIsInit && (nelem != fNelem || nclbl != fNclublk) ) {
     Error( Here(here), "Cannot re-initalize with different number of blocks or "
 	   "blocks per cluster. Detector not re-initialized." );
-    fclose(fi);
-    return kInitError;
-  }
-
-  if( nrows <= 0 || ncols <= 0 || nclbl <= 0 ) {
-    Error( Here(here), "Illegal number of rows or columns: "
-	   "%d %d", nrows, ncols );
-    fclose(fi);
     return kInitError;
   }
   fNelem = nelem;
   fNrows = nrows;
   fNclublk = nclbl;
 
-  // Clear out the old detector map before reading a new one
-  UShort_t mapsize = fDetMap->GetSize();
-  delete [] fNChan;
+  // Clear out the old detector and channel map before reading new ones
+  Int_t mapsize = fDetMap->GetSize();
+  delete [] fNChan; fNChan = 0;
   if( fChanMap ) {
-    for( UShort_t i = 0; i<mapsize; i++ )
+    for( Int_t i = 0; i<mapsize; i++ )
       delete [] fChanMap[i];
   }
-  delete [] fChanMap;
+  delete [] fChanMap; fChanMap = 0;
   fDetMap->Clear();
 
   // Read detector map
-
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
+  while( ReadComment(fi,buf,LEN) );
   while (1) {
     Int_t crate, slot, first, last;
-    fscanf ( fi,"%d%d%d%d", &crate, &slot, &first, &last );
+    Int_t n = fscanf( fi,"%6d %6d %6d %6d", &crate, &slot, &first, &last );
     fgets ( buf, LEN, fi );
     if( crate < 0 ) break;
+    if( n < 4 ) return ErrPrint(fi,here);
     if( fDetMap->AddModule( crate, slot, first, last ) < 0 ) {
-      Error( Here(here), "Too many DetMap modules (maximum allowed - %d).", 
-	    THaDetMap::kDetMapSize);
-      fclose(fi);
+      Error( Here(here), "Too many DetMap modules (maximum allowed - %d).",
+	     THaDetMap::kDetMapSize);
       return kInitError;
     }
   }
-
-  // Set up the new channel map
-  mapsize = fDetMap->GetSize();
-  if( mapsize == 0 ) {
-    Error( Here(here), "No modules defined in detector map.");
-    fclose(fi);
+  if( fDetMap->GetTotNumChan() != fNelem ) {
+    Error( Here(here), "Database inconsistency.\n Defined %d channels in detector map, "
+	   "but have %d total channels (%d blocks with 1 ADC each)",
+	   fDetMap->GetTotNumChan(), fNelem, fNelem );
     return kInitError;
   }
 
-  fNChan = new UShort_t[ mapsize ];
-  fChanMap = new UShort_t*[ mapsize ];
-  for( UShort_t i=0; i < mapsize; i++ ) {
-    THaDetMap::Module* module = fDetMap->GetModule(i);
-    fNChan[i] = module->hi - module->lo + 1;
-    if( fNChan[i] > 0 )
-      fChanMap[i] = new UShort_t[ fNChan[i] ];
-    else {
-      Error( Here(here), "No channels defined for module %d.", i);
-      delete [] fNChan; fNChan = NULL;
-      for( UShort_t j=0; j<i; j++ )
-	delete [] fChanMap[j];
-      delete [] fChanMap; fChanMap = NULL;
-      fclose(fi);
+  // Read channel map
+  vector<int> chanmap;
+  chanmap.resize(fNelem);
+  if( ReadBlock(fi,&chanmap[0],fNelem,here,flags|kRequireGreaterZero) )
+    return kInitError;
+
+  // Consistency check
+  for( Int_t i = 0; i < fNelem; ++i ) {
+    if( (Int_t)chanmap[i] > fNelem ) {
+      Error( Here(here), "Illegal logical channel number %d. "
+	     "Must be between 1 and %d.", chanmap[i], fNelem );
       return kInitError;
     }
   }
-  // Read channel map
-  //
-  // Loosen the formatting restrictions: remove from each line the portion
-  // after a '#', and do the pattern matching to the remaining string
-  fgets ( buf, LEN, fi );
 
-  // get the line and end it at a '#' symbol
-  *buf = '\0';
-  char *ptr=buf;
-  int nchar=0;
-  for ( UShort_t i = 0; i < mapsize; i++ ) {
-    for ( UShort_t j = 0; j < fNChan[i]; j++ ) {
-      while ( !strpbrk(ptr,"0123456789") ) {
-	fgets ( buf, LEN, fi );
-	if( (ptr = strchr(buf,'#')) ) *ptr = '\0';
-	ptr = buf;
-	nchar=0;
+  // Copy channel map to the per-module array
+  // Set up the new channel map
+  mapsize = fDetMap->GetSize();
+  assert( mapsize > 0 );
+  fNChan = new UShort_t[ mapsize ];
+  fChanMap = new UShort_t*[ mapsize ];
+  Int_t k = 1;
+  for( Int_t i=0; i < mapsize; i++ ) {
+    THaDetMap::Module* module = fDetMap->GetModule(i);
+    fNChan[i] = module->hi - module->lo + 1;
+    if( fNChan[i] > 0 ) {
+      fChanMap[i] = new UShort_t[ fNChan[i] ];
+      for( Int_t j=0; j<fNChan[i]; ++j ) {
+	assert( k <= fNelem );
+	fChanMap[i][j] = chanmap[k];
+	++k;
       }
-      sscanf (ptr, "%hu%n", *(fChanMap+i)+j, &nchar );
-      ptr += nchar;
+    } else {
+      Error( Here(here), "No channels defined for module %d.", i );
+      delete [] fNChan; fNChan = 0;
+      for( Int_t j=0; j<i; j++ )
+	delete [] fChanMap[j];
+      delete [] fChanMap; fChanMap = 0;
+      return kInitError;
     }
   }
-  
-  fgets ( buf, LEN, fi );
 
-  Float_t x,y,z;
-  fscanf ( fi, "%f%f%f", &x, &y, &z );               // Detector's X,Y,Z coord
-  fOrigin.SetXYZ( x, y, z );
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  fscanf ( fi, "%f%f%f", fSize, fSize+1, fSize+2 );  // Sizes of det in X,Y,Z
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
+  // Read geometry
+  Double_t dvals[3], angle;
+  if( ReadBlock(fi,dvals,3,here,flags) )                   // Detector's X,Y,Z coord
+    return kInitError;
+  fOrigin.SetXYZ( dvals[0], dvals[1], dvals[2] );
 
-  Float_t angle;
-  fscanf ( fi, "%f", &angle );                       // Rotation angle of det
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
+  if( ReadBlock(fi,fSize,3,here,flags|kNoNegativeValues) ) // Size in X,Y,Z
+    return kInitError;
+
+  if( ReadBlock(fi,&angle,1,here,flags) )                  // Rotation angle of det
+    return kInitError;
+
   const Double_t degrad = TMath::Pi()/180.0;
   tan_angle = TMath::Tan(angle*degrad);
   sin_angle = TMath::Sin(angle*degrad);
   cos_angle = TMath::Cos(angle*degrad);
-
   DefineAxes(angle*degrad);
 
-  // Dimension arrays
+  // Dimension arrays if initializing for the first time
   if( !fIsInit ) {
+    // Geometry (block positions)
     fBlockX = new Float_t[ fNelem ];
     fBlockY = new Float_t[ fNelem ];
+
+    // Calibrations
     fPed    = new Float_t[ fNelem ];
     fGain   = new Float_t[ fNelem ];
 
     // Per-event data
-    fA    = new Float_t[ fNelem ];
-    fA_p  = new Float_t[ fNelem ];
-    fA_c  = new Float_t[ fNelem ];
-    fNblk = new Int_t[ fNclublk ];
-    fEblk = new Float_t[ fNclublk ];
+    fA      = new Float_t[ fNelem ];
+    fA_p    = new Float_t[ fNelem ];
+    fA_c    = new Float_t[ fNelem ];
+    fNblk   = new Int_t  [ fNclublk ];
+    fEblk   = new Float_t[ fNclublk ];
 
     fIsInit = true;
   }
 
-  fscanf ( fi, "%f%f", &x, &y );                     // Block 1 center position
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  Float_t dx, dy;
-  fscanf ( fi, "%f%f", &dx, &dy );                   // Block spacings in x and y
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  fscanf ( fi, "%f", &fEmin );                       // Emin thresh for center
-  fgets ( buf, LEN, fi );
+  // Try new format: two values here
+  Double_t xy[2], dxy[2];
+  err = ReadBlock(fi,xy,2,here,flags|kQuietOnTooMany);    // Block 1 center position
+  if( err ) {
+    if( err != kTooManyValues )
+      return kInitError;
+    old_format = true;
+  }
 
-  // Read calibrations.
-  // Before doing this, search for any date tags that follow, and start reading from
-  // the best matching tag if any are found. If none found, but we have a configuration
-  // string, search for it.
-  if( SeekDBdate( fi, date ) == 0 && fConfig.Length() > 0 && 
-      SeekDBconfig( fi, fConfig.Data() )) {}
+  if( old_format ) {
+    const Double_t u = 1e-2;   // Old database values are in cm
+    const Double_t eps = 1e-4; // Rounding error tolerance for block spacings
+    Double_t dx = 0, dy = 0, dx1, dy1;
+    Double_t* xpos = new Double_t[ fNelem ];
+    Double_t* ypos = new Double_t[ fNelem ];
 
-  fgets ( buf, LEN, fi );  
-  // Crude protection against a missed date/config tag
-  if( buf[0] == '[' ) fgets ( buf, LEN, fi );
+    // Convert old cm units to meters
+    fOrigin *= u;
+    for( Int_t i = 0; i < 3; ++i )
+      fSize[i] *= u;
 
-  // Read ADC pedestals and gains (in order of logical channel number)
-  for (int j=0; j<fNelem; j++)
-    fscanf (fi,"%f",fPed+j);
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  for (int j=0; j<fNelem; j++) 
-    fscanf (fi, "%f",fGain+j);
+    if( (err = ReadBlock(fi,xpos,fNelem,here,flags)) )     // Block x positions
+      goto err;
+    if( (err = ReadBlock(fi,ypos,fNelem,here,flags)) )     // Block y positions
+      goto err;
 
+    xy[0] = u*xpos[0];
+    xy[1] = u*ypos[0];
+
+    // Determine the block spacings. Irregular spacings are not supported.
+    for( Int_t i = 1; i < fNelem; ++i ) {
+      dx1 = xpos[i] - xpos[i-1];
+      dy1 = ypos[i] - ypos[i-1];
+      if( dx == 0 ) {
+	if( dx1 != 0 )
+	  dx = dx1;
+      } else if( dx1 != 0 && dx*dx1 > 0 && TMath::Abs(dx1-dx) > eps ) {
+	Error( Here(here), "Irregular x block positions not supported, "
+	       "dx = %lf, dx1 = %lf", dx, dx1 );
+	err = -1;
+	goto err;
+      }
+      if( dy == 0 ) {
+	if( dy1 != 0 )
+	  dy = dy1;
+      } else if( dy1 != 0 && dy*dy1 > 0 && TMath::Abs(dy1-dy) > eps ) {
+	Error( Here(here), "Irregular y block positions not supported, "
+	       "dy = %lf, dy1 = %lf", dy, dy1 );
+	err = -1;
+	goto err;
+      }
+    }
+    dxy[0] = u*dx;
+    dxy[1] = u*dy;
+  err:
+    delete [] xpos;
+    delete [] ypos;
+    if( err )
+      return kInitError;
+  }
+  else {
+    // New format
+    if( ReadBlock(fi,dxy,2,here,flags) )                    // Block spacings in x and y
+      return kInitError;
+
+    if( ReadBlock(fi,&fEmin,1,here,flags|kNoNegativeValues) ) // Emin thresh for center
+      return kInitError;
+  }
 
   // Compute block positions
-  for( int c=0; c<ncols; c++ ) {
-    for( int r=0; r<nrows; r++ ) {
-      int k = nrows*c + r;
-      fBlockX[k] = x + r*dx;                         // Units are meters
-      fBlockY[k] = y + c*dy;
+  for( Int_t c=0; c<ncols; c++ ) {
+    for( Int_t r=0; r<fNrows; r++ ) {
+      Int_t k = fNrows*c + r;
+      // Units are meters
+      fBlockX[k] = xy[0] + r*dxy[0];
+      fBlockY[k] = xy[1] + c*dxy[1];
     }
   }
-  fclose(fi);
+
+  if( !old_format ) {
+    // Search for optional time stamp or configuration section
+    TDatime datime(date);
+    if( SeekDBdate( fi, datime ) == 0 && fConfig.Length() > 0 &&
+	SeekDBconfig( fi, fConfig.Data() )) {}
+  }
+
+  // Read calibrations
+  // ADC pedestals (in order of logical channel number)
+  if( ReadBlock(fi,fPed,fNelem,here,flags) )
+    return kInitError;
+  // ADC gains
+  if( ReadBlock(fi,fGain,fNelem,here,flags|kNoNegativeValues) )
+    return kInitError;
+
+  if( old_format ) {
+    // Emin thresh for center (occurs earlier in new format, see above)
+    if( ReadBlock(fi,&fEmin,1,here,flags|kNoNegativeValues) )
+      return kInitError;
+  }
+
+  // Debug printout
+  if ( fDebug > 1 ) {
+    const UInt_t N = static_cast<UInt_t>(fNelem);
+    Double_t pos[3]; fOrigin.GetXYZ(pos);
+    DBRequest list[] = {
+      { "Number of blocks",       &fNelem,     kInt        },
+      { "Detector center",        pos,         kDouble, 3  },
+      { "Detector size",          fSize,       kFloat,  3  },
+      { "Detector angle",         &angle,                  },
+      { "Channel map",            &chanmap[0], kInt,    N  },
+      { "Position of block 1",    xy,          kDouble, 2  },
+      { "Block x/y spacings",     dxy,         kDouble, 2  },
+      { "Minimum cluster energy", &fEmin,      kFloat,  1  },
+      { "ADC pedestals",          fPed,        kFloat,  N  },
+      { "ADC pedestals",          fPed,        kFloat,  N  },
+      { "ADC gains",              fGain,       kFloat,  N  },
+      { 0 }
+    };
+    DebugPrint( list );
+  }
+
   return kOK;
+}
+
+//_____________________________________________________________________________
+Int_t THaShower::ReadDatabase( const TDatime& date )
+{
+  // Wrapper around actual database reader. Using a wrapper makes it much
+  // easier to close the input file in case of an error.
+
+  FILE* fi = OpenFile( date );
+  if( !fi ) return kFileError;
+
+  Int_t ret = DoReadDatabase( fi, date );
+
+  fclose(fi);
+  return ret;
 }
 
 //_____________________________________________________________________________

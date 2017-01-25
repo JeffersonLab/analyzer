@@ -34,126 +34,142 @@ THaRaster::THaRaster( const char* name, const char* description,
 
 
 //_____________________________________________________________________________
-// ReadDatabase:  if detectors cant be added to detmap 
-//                or entry for bpms is missing           -> kInitError
-//                otherwise                              -> kOk
-//                CAUTION: i do not check for incomplete or 
-//                         inconsistent data
-//
-Int_t THaRaster::ReadDatabase( const TDatime& date )
+Int_t THaRaster::DoReadDatabase( FILE* fi, const TDatime& date )
 {
-  static const char* const here = "ReadDatabase()";
+  // ReadDatabase:  if detectors cant be added to detmap
+  //                or entry for bpms is missing           -> kInitError
+  //                otherwise                              -> kOk
+
+  const char* const here = "ReadDatabase";
 
   const int LEN=100;
-  char buf[LEN];
-  char *filestatus;
-  char keyword[LEN];
-  
-  FILE* fi = OpenFile( date );
-  if( !fi ) return kFileError;
-
-  // okay, this needs to be changed, but since i dont want to re- or pre-invent 
-  // the wheel, i will keep it ugly and read in my own configuration file with 
-  // a very fixed syntax: 
+  char buf[LEN], keyword[LEN];
+  const char *filestatus;
 
   // Seek our detmap section (e.g. "Raster_detmap")
   sprintf(keyword,"[%s_detmap]",GetName());
-  Int_t n=strlen(keyword);
+  Int_t n = strlen(keyword);
 
   do {
-    filestatus=fgets( buf, LEN, fi);
-  } while ((filestatus!=NULL)&&(strncmp(buf,keyword,n)!=0));
-  if (filestatus==NULL) {
-    Error( Here("ReadDataBase()"), "Unexpected end of raster configuration file");
-    fclose(fi);
+    filestatus = fgets( buf, LEN, fi );
+  } while( filestatus && strncmp(buf,keyword,n) );
+  if( !filestatus ) {
+    Error( Here(here), "Unexpected end of raster configuration file");
     return kInitError;
   }
 
-  // again that is not really nice, but since it will be changed anyhow:
-  // i dont check each time for end of file, needs to be improved
-
   fDetMap->Clear();
-  int first_chan, crate, dummy, slot, first, last, modulid;
-
+  Int_t first_chan, crate, dummy, slot, first, last, modulid = 0;
   do {
-    fgets( buf, LEN, fi);
-    sscanf(buf,"%d %d %d %d %d %d %d",&first_chan, &crate, &dummy, &slot, &first, &last, &modulid);
-    if (first_chan>=0) {
-      if ( fDetMap->AddModule (crate, slot, first, last, first_chan )<0) {
-	Error( Here(here), "Couldnt add Raster to DetMap. Good bye, blue sky, good bye!");
-	fclose(fi);
+    fgets( buf, LEN, fi );
+    n = sscanf( buf, "%6d %6d %6d %6d %6d %6d %6d",
+		&first_chan, &crate, &dummy, &slot, &first, &last, &modulid );
+    if( n < 6 ) return ErrPrint(fi,here);
+    if( first_chan >= 0 ) {
+      if ( fDetMap->AddModule(crate, slot, first, last, first_chan) < 0 ) {
+	Error( Here(here), "Couldn't read raster detector map" );
 	return kInitError;
       }
     }
-  } while (first_chan>=0);
+  } while( first_chan >= 0 );
+  if( fDetMap->GetTotNumChan() != 4 ) {
+    Error( Here(here), "Invalid raster detector map.\n Needs to define exactly 4"
+	   " channels. Has %d.", fDetMap->GetTotNumChan() );
+    return kInitError;
+  }
 
   // Seek our database section
   sprintf(keyword,"[%s]",GetName());
-  n=strlen(keyword);
+  n = strlen(keyword);
   do {
-    filestatus=fgets( buf, LEN, fi);
-  } while ((filestatus!=NULL)&&(strncmp(buf,keyword,n)!=0));
-  if (filestatus==NULL) {
-    Error( Here("ReadDataBase()"), "Unexpected end of raster configuration file");
-    fclose(fi);
+    filestatus = fgets( buf, LEN, fi );
+  } while( filestatus && strncmp(buf,keyword,n) );
+  if( !filestatus ) {
+    Error( Here(here), "Unexpected end of raster configuration file");
     return kInitError;
   }
-  double dummy1,dummy2,dummy3,dummy4,dummy5,dummy6,dummy7;
-  fgets( buf, LEN, fi);
-  sscanf(buf,"%lf%lf%lf%lf%lf%lf%lf",&dummy1,&dummy2,&dummy3,&dummy4,&dummy5,&dummy6,&dummy7);
-  fRasterFreq(0)=dummy2;
-  fRasterFreq(1)=dummy3;
 
-  fRasterPedestal(0)=dummy4;
-  fRasterPedestal(1)=dummy5;
+  double dval[7];
+  // NB: dval[0] is never used. Comment in old db files says it is "z-pos",
+  // which are read from the following lines - probably dval[0] is leftover junk
+  fgets( buf, LEN, fi );
+  n = sscanf(buf,"%15lf %15lf %15lf %15lf %15lf %15lf %15lf",
+	     dval,dval+1,dval+2,dval+3,dval+4,dval+5,dval+6);
+  if( n != 7 ) return ErrPrint(fi,here);
+  fRasterFreq(0)     = dval[1];
+  fRasterFreq(1)     = dval[2];
+  fRasterPedestal(0) = dval[3];
+  fRasterPedestal(1) = dval[4];
+  fSlopePedestal(0)  = dval[5];
+  fSlopePedestal(1)  = dval[6];
 
-  fSlopePedestal(0)=dummy6;
-  fSlopePedestal(1)=dummy7;
+  // z positions of BPMA, BPMB, and target reference point (usually 0)
+  fgets( buf, LEN, fi );
+  n = sscanf( buf, "%15lf", dval);
+  if( n != 1 ) return ErrPrint(fi,here);
+  fPosOff[0].SetZ(dval[0]);
+  fgets( buf, LEN, fi );
+  n = sscanf( buf, "%15lf", dval);
+  if( n != 1 ) return ErrPrint(fi,here);
+  fPosOff[1].SetZ(dval[0]);
+  fgets( buf, LEN, fi );
+  n = sscanf( buf, "%15lf", dval);
+  if( n != 1 ) return ErrPrint(fi,here);
+  fPosOff[2].SetZ(dval[0]);
 
-  fgets( buf, LEN, fi);
-  sscanf(buf,"%lf",&dummy1);
-  fPosOff[0].SetZ(dummy1);
-  fgets( buf, LEN, fi);
-  sscanf(buf,"%lf",&dummy1);
-  fPosOff[1].SetZ(dummy1);
-  fgets( buf, LEN, fi);
-  sscanf(buf,"%lf",&dummy1);
-  fPosOff[2].SetZ(dummy1);
-
-  // Find timestamp, if any, for the raster constants. 
-  // Give up and rewind to current file position on any non-matching tag.
-  // Timestamps should be in ascending order
+  // Find timestamp, if any, for the raster constants.
   SeekDBdate( fi, date, true );
 
-  fgets( buf, LEN, fi);
-  sscanf(buf,"%lf%lf%lf%lf%lf%lf",&dummy1,&dummy2,&dummy3,&dummy4,&dummy5,&dummy6);
-  fRaw2Pos[0](0,0)=dummy3;
-  fRaw2Pos[0](1,1)=dummy4;
-  fRaw2Pos[0](0,1)=dummy5;
-  fRaw2Pos[0](1,0)=dummy6;
-  fPosOff[0].SetX(dummy1);
-  fPosOff[0].SetY(dummy2);
+  // Raster constants: offx/y,amplx/y,slopex/y for BPMA, BPMB, target
+  fgets( buf, LEN, fi );
+  n = sscanf( buf, "%15lf %15lf %15lf %15lf %15lf %15lf",
+	      dval,dval+1,dval+2,dval+3,dval+4,dval+5 );
+  if( n != 6 ) return ErrPrint(fi,here);
+  fRaw2Pos[0](0,0) = dval[2];
+  fRaw2Pos[0](1,1) = dval[3];
+  fRaw2Pos[0](0,1) = dval[4];
+  fRaw2Pos[0](1,0) = dval[5];
+  fPosOff[0].SetX(dval[0]);
+  fPosOff[0].SetY(dval[1]);
 
-  fgets( buf, LEN, fi);
-  sscanf(buf,"%lf%lf%lf%lf%lf%lf",&dummy1,&dummy2,&dummy3,&dummy4,&dummy5,&dummy6);
-  fRaw2Pos[1](0,0)=dummy3;
-  fRaw2Pos[1](1,1)=dummy4;
-  fRaw2Pos[1](0,1)=dummy5;
-  fRaw2Pos[1](1,0)=dummy6;
-  fPosOff[1].SetX(dummy1);
-  fPosOff[1].SetY(dummy2);
+  fgets( buf, LEN, fi );
+  sscanf( buf, "%15lf %15lf %15lf %15lf %15lf %15lf",
+	  dval,dval+1,dval+2,dval+3,dval+4,dval+5 );
+  if( n != 6 ) return ErrPrint(fi,here);
+  fRaw2Pos[1](0,0) = dval[2];
+  fRaw2Pos[1](1,1) = dval[3];
+  fRaw2Pos[1](0,1) = dval[4];
+  fRaw2Pos[1](1,0) = dval[5];
+  fPosOff[1].SetX(dval[0]);
+  fPosOff[1].SetY(dval[1]);
 
-  fgets( buf, LEN, fi);
-  sscanf(buf,"%lf%lf%lf%lf%lf%lf",&dummy1,&dummy2,&dummy3,&dummy4,&dummy5,&dummy6);
-  fRaw2Pos[2](0,0)=dummy3;
-  fRaw2Pos[2](1,1)=dummy4;
-  fRaw2Pos[2](0,1)=dummy5;
-  fRaw2Pos[2](1,0)=dummy6;
-  fPosOff[2].SetX(dummy1);
-  fPosOff[2].SetY(dummy2);
+  fgets( buf, LEN, fi );
+  sscanf( buf, "%15lf %15lf %15lf %15lf %15lf %15lf",
+	  dval,dval+1,dval+2,dval+3,dval+4,dval+5 );
+  if( n != 6 ) return ErrPrint(fi,here);
+  fRaw2Pos[2](0,0) = dval[2];
+  fRaw2Pos[2](1,1) = dval[3];
+  fRaw2Pos[2](0,1) = dval[4];
+  fRaw2Pos[2](1,0) = dval[5];
+  fPosOff[2].SetX(dval[0]);
+  fPosOff[2].SetY(dval[1]);
+
+  return kOK;
+}
+
+//_____________________________________________________________________________
+Int_t THaRaster::ReadDatabase( const TDatime& date )
+{
+  // Wrapper around actual database reader. Using a wrapper makes it much
+  // easier to close the input file in case of an error.
+
+  FILE* fi = OpenFile( date );
+  if( !fi ) return kFileError;
+
+  Int_t ret = DoReadDatabase( fi, date );
 
   fclose(fi);
-  return kOK;
+  return ret;
 }
 
 //_____________________________________________________________________________

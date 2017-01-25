@@ -33,78 +33,76 @@ THaCherenkov::THaCherenkov( const char* name, const char* description,
 }
 
 //_____________________________________________________________________________
-Int_t THaCherenkov::ReadDatabase( const TDatime& date )
+Int_t THaCherenkov::DoReadDatabase( FILE* fi, const TDatime& date )
 {
   // Read this detector's parameters from the database file 'fi'.
   // This function is called by THaDetectorBase::Init() once at the
   // beginning of the analysis.
   // 'date' contains the date/time of the run being analyzed.
 
-  static const char* const here = "ReadDatabase()";
-
-  // Read database
-
-  FILE* fi = OpenFile( date );
-  if( !fi ) return kFileError;
-
+  const char* const here = "ReadDatabase";
   const int LEN = 100;
   char buf[LEN];
   Int_t nelem;
+  Int_t flags = kErrOnTooManyValues|kWarnOnDataGuess;
 
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  fscanf ( fi, "%d", &nelem );                      // Number of mirrors
+  if( ReadBlock(fi,&nelem,1,here,flags|kNoNegativeValues) ) // Number of mirrors
+    return kInitError;
 
-  // Reinitialization only possible for same basic configuration 
+  // Reinitialization only possible for same basic configuration
   if( fIsInit && nelem != fNelem ) {
     Error( Here(here), "Cannot re-initalize with different number of mirrors. "
 	   "(was: %d, now: %d). Detector not re-initialized.", fNelem, nelem );
-    fclose(fi);
     return kInitError;
   }
   fNelem = nelem;
 
-  // Read detector map.  Assumes that the first half of the entries 
+  // Read detector map.  Assumes that the first half of the entries
   // is for ADCs, and the second half, for TDCs
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  int i = 0;
+  while( ReadComment(fi,buf,LEN) );
   fDetMap->Clear();
   while (1) {
     Int_t crate, slot, first, last, first_chan,model;
     int pos;
     fgets ( buf, LEN, fi );
-    sscanf( buf, "%d%d%d%d%d%n", &crate, &slot, &first, &last, &first_chan, &pos );
-    model=atoi(buf+pos); // if there is no model number given, set to zero
-
+    int n = sscanf( buf, "%6d %6d %6d %6d %6d %n",
+		    &crate, &slot, &first, &last, &first_chan, &pos );
     if( crate < 0 ) break;
+    if( n < 5 )
+      return ErrPrint(fi,here);
+    model=atoi(buf+pos); // if there is no model number given, set to zero
     if( fDetMap->AddModule( crate, slot, first, last, first_chan, model ) < 0 ) {
-      Error( Here(here), "Too many DetMap modules (maximum allowed - %d).", 
+      Error( Here(here), "Too many DetMap modules (maximum allowed - %d).",
 	     THaDetMap::kDetMapSize);
-      fclose(fi);
       return kInitError;
     }
   }
-  fgets ( buf, LEN, fi );
-  
+  if( fDetMap->GetTotNumChan() != 2*fNelem ) {
+    Error( Here(here), "Database inconsistency.\n Defined %d channels in detector map, "
+	   "but have %d total channels (%d mirrors with 1 ADC and 1 TDC each)",
+	   fDetMap->GetTotNumChan(), 2*fNelem, fNelem );
+    return kInitError;
+  }
+
   // Read geometry
+  Double_t dvals[3], angle;
+  if( ReadBlock(fi,dvals,3,here,flags) )                   // Detector's X,Y,Z coord
+    return kInitError;
+  fOrigin.SetXYZ( dvals[0], dvals[1], dvals[2] );
 
-  Float_t x,y,z;
-  fscanf ( fi, "%f%f%f", &x, &y, &z );             // Detector's X,Y,Z coord
-  fOrigin.SetXYZ( x, y, z );
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  fscanf ( fi, "%f%f%f", fSize, fSize+1, fSize+2 );   // Sizes of det on X,Y,Z
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
+  if( ReadBlock(fi,fSize,3,here,flags|kNoNegativeValues) ) // Size of det in X,Y,Z
+    return kInitError;
 
-  Float_t angle;
-  fscanf ( fi, "%f", &angle );                     // Rotation angle of det
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
+  if( ReadBlock(fi,&angle,1,here,flags) )                  // Rotation angle of det
+    return kInitError;
+
   const Double_t degrad = TMath::Pi()/180.0;
   tan_angle = TMath::Tan(angle*degrad);
   sin_angle = TMath::Sin(angle*degrad);
   cos_angle = TMath::Cos(angle*degrad);
-
   DefineAxes(angle*degrad);
 
-  // Dimension arrays
+  // Dimension arrays when initizalizing for the first time
   if( !fIsInit ) {
     // Calibration data
     fOff = new Float_t[ fNelem ];
@@ -122,18 +120,48 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
   }
 
   // Read calibrations
-  for (i=0;i<fNelem;i++) 
-    fscanf( fi, "%f", fOff+i );                   // TDC offsets
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  for (i=0;i<fNelem;i++) 
-    fscanf( fi, "%f", fPed+i );                   // ADC pedestals
-  fgets ( buf, LEN, fi ); fgets ( buf, LEN, fi );
-  for (i=0;i<fNelem;i++) 
-    fscanf( fi, "%f", fGain+i);                   // ADC gains
-  fgets ( buf, LEN, fi );
+  if( ReadBlock(fi,fOff,fNelem,here,flags) )                    // TDC offsets
+    return kInitError;
+
+  if( ReadBlock(fi,fPed,fNelem,here,flags|kNoNegativeValues) )  // ADC pedestals
+    return kInitError;
+
+  if( ReadBlock(fi,fGain,fNelem,here,flags|kNoNegativeValues) ) // ADC gains
+    return kInitError;
+
+  // Debug printout
+  if ( fDebug > 1 ) {
+    const UInt_t N = static_cast<UInt_t>(fNelem);
+    Double_t pos[3]; fOrigin.GetXYZ(pos);
+    DBRequest list[] = {
+      { "Number of mirrors", &fNelem,     kInt       },
+      { "Detector position", pos,         kDouble, 3 },
+      { "Detector size",     fSize,       kFloat,  3 },
+      { "Detector angle",    &angle,                 },
+      { "TDC offsets",       fOff,        kFloat,  N },
+      { "ADC pedestals",     fPed,        kFloat,  N },
+      { "ADC gains",         fGain,       kFloat,  N },
+      { 0 }
+    };
+    DebugPrint( list );
+  }
+
+  return kOK;
+}
+
+//_____________________________________________________________________________
+Int_t THaCherenkov::ReadDatabase( const TDatime& date )
+{
+  // Wrapper around actual database reader. Using a wrapper makes it much
+  // easier to close the input file in case of an error.
+
+  FILE* fi = OpenFile( date );
+  if( !fi ) return kFileError;
+
+  Int_t ret = DoReadDatabase( fi, date );
 
   fclose(fi);
-  return kOK;
+  return ret;
 }
 
 //_____________________________________________________________________________

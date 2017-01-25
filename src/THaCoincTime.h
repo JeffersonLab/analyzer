@@ -67,10 +67,9 @@ public:
   Double_t*         fDiffT1by2;    //[fNtimes] overall time difference at vtx
   
   
+  Int_t         DoReadDatabase( FILE* fi, const TDatime& date );
   virtual Int_t DefineVariables( EMode mode = kDefine );
-
   virtual Int_t ReadDatabase( const TDatime& date );
-  //  virtual Int_t ReadDB( const TDatime& date );
 
   THaDetMap *fDetMap;
 

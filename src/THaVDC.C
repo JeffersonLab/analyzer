@@ -87,25 +87,24 @@ THaAnalysisObject::EStatus THaVDC::Init( const TDatime& date )
 //_____________________________________________________________________________
 Int_t THaVDC::ReadDatabase( const TDatime& date )
 {
-  // Read VDC database
+  // Read global VDC parameters from the VDC database
+
+  const char* const here = "ReadDatabase";
+  const int LEN = 200;
+  char buff[LEN];
 
   FILE* file = OpenFile( date );
   if( !file ) return kFileError;
 
-  // load global VDC parameters
-  static const char* const here = "ReadDatabase";
-  const int LEN = 200;
-  char buff[LEN];
-  
   // Look for the section [<prefix>.global] in the file, e.g. [ R.global ]
   TString tag(fPrefix);
-  Ssiz_t pos = tag.Index("."); 
+  Ssiz_t pos = tag.Index(".");
   if( pos != kNPOS )
     tag = tag(0,pos+1);
   else
     tag.Append(".");
   tag.Prepend("[");
-  tag.Append("global]"); 
+  tag.Append("global]");
 
   TString line;
   bool found = false;
@@ -114,7 +113,7 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
     line = buf;
     delete [] buf;
     if( line.EndsWith("\n") ) line.Chop();
-    if ( tag == line ) 
+    if ( tag == line )
       found = true;
   }
   if( !found ) {
@@ -130,32 +129,32 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   // fSpacing is now calculated from the actual z-positions in Init(),
   // so skip the first line after [ global ] completely:
   fgets(buff, LEN, file); // Skip rest of line
- 
+
   // Read in the focal plane transfer elements
   // For fine-tuning of these data, we seek to a matching time stamp, or
   // if no time stamp found, to a "configuration" section. Examples:
-  // 
+  //
   // [ 2002-10-10 15:30:00 ]
   // comment line goes here
   // t 0 0 0  ...
   // y 0 0 0  ... etc.
   //
   // or
-  // 
+  //
   // [ config=highmom ]
   // comment line
   // t 0 0 0  ... etc.
   //
-  if( (found = SeekDBdate( file, date )) == 0 && !fConfig.IsNull() && 
+  if( (found = SeekDBdate( file, date )) == 0 && !fConfig.IsNull() &&
       (found = SeekDBconfig( file, fConfig.Data() )) == 0 ) {
     // Print warning if a requested (non-empty) config not found
     Warning( Here(here), "Requested configuration section \"%s\" not "
-	     "found in database. Using default (first) section.", 
+	     "found in database. Using default (first) section.",
 	     fConfig.Data() );
   }
 
   // Second line after [ global ] or first line after a found tag.
-  // After a found tag, it must be the comment line. If not found, then it 
+  // After a found tag, it must be the comment line. If not found, then it
   // can be either the comment or a non-found tag before the comment...
   fgets(buff, LEN, file);  // Skip line
   if( !found && IsTag(buff) )
@@ -169,7 +168,7 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   fYMatrixElems.clear();
   fYTAMatrixElems.clear();
   fLMatrixElems.clear();
-  
+
   fFPMatrixElems.clear();
   fFPMatrixElems.resize(3);
 
@@ -189,7 +188,7 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   power["TF"] = 5;
   power["PF"] = 5;
   power["YF"] = 5;
-  
+
   map<string,vector<THaMatrixElement>*> matrix_map;
   matrix_map["t"] = &fFPMatrixElems;
   matrix_map["y"] = &fFPMatrixElems;
@@ -217,7 +216,7 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
       buff[line.size()-1] = 0;
       line.erase(line.size()-1,1);
     }
-    // Split the line into whitespace-separated fields    
+    // Split the line into whitespace-separated fields
     vector<string> line_spl = Split(line);
 
     // Stop if the line does not start with a string referring to
@@ -227,7 +226,7 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
       continue; //ignore empty lines
     const char* w = line_spl[0].c_str();
     vsiz_t npow = power[w];
-    if( npow == 0 ) 
+    if( npow == 0 )
       break;
 
     // Looks like a good line, go parse it.
@@ -257,7 +256,7 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
     // Don't bother with all-zero matrix elements
     if( ME.iszero )
       continue;
-    
+
     // Add this matrix element to the appropriate array
     vector<THaMatrixElement> *mat = matrix_map[w];
     if (mat) {
@@ -273,7 +272,7 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
 	} else
 	  Warning(Here(here), "Bad coefficients of focal plane matrix "
 		  "element %s", buff);
-      } 
+      }
       else {
 	// All other matrix elements are just appended to the respective array
 	// but ensure that they are defined only once!
@@ -289,7 +288,7 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
     }
     else if ( fDebug > 0 )
       Warning(Here(here), "Not storing matrix for: %s !", w);
-    
+
   } //while(fgets)
 
   // Compute derived quantities and set some hardcoded parameters
@@ -319,7 +318,7 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
     fCentralDist = s1->GetOrigin().Z();
 
   CalcMatrix(1.,fLMatrixElems); // tensor without explicit polynomial in x_fp
-  
+
   // FIXME: Set geometry data (fOrigin). Currently fOrigin = (0,0,0).
 
   fIsInit = true;

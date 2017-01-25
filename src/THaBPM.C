@@ -31,102 +31,110 @@ THaBPM::THaBPM( const char* name, const char* description,
 
 
 //_____________________________________________________________________________
-//
-// ReadDatabase:  if detectors cant be added to detmap 
-//                or entry for bpms is missing           -> kInitError
-//                otherwise                              -> kOk
-//                CAUTION: i do not check for incomplete or 
-//                         inconsistent data
-//
-Int_t THaBPM::ReadDatabase( const TDatime& date )
+Int_t THaBPM::DoReadDatabase( FILE* fi, const TDatime& date )
 {
-  static const char* const here = "ReadDatabase()";
+  // ReadDatabase:  if detectors cant be added to detmap
+  //                or entry for bpms is missing           -> kInitError
+  //                otherwise                              -> kOk
+
+  const char* const here = "ReadDatabase";
 
   const int LEN=100;
-  char buf[LEN];
-  char *filestatus;
-  char keyword[LEN];
-
-  FILE* fi = OpenFile( date );
-  if( !fi) return kInitError;
-
-  // okay, this needs to be changed, but since i dont want to re- or pre-invent 
-  // the wheel, i will keep it ugly and read in my own configuration file with 
-  // a very fixed syntax: 
+  char buf[LEN], keyword[LEN];
+  const char *filestatus;
 
   sprintf(keyword,"[%s_detmap]",GetName());
-  Int_t n=strlen(keyword);
+  Int_t n = strlen(keyword);
   do {
-    filestatus=fgets( buf, LEN, fi);
-  } while ((filestatus!=NULL)&&(strncmp(buf,keyword,n)!=0));
-  if (filestatus==NULL) {
+    filestatus=fgets( buf, LEN, fi );
+  } while( filestatus && strncmp(buf,keyword,n) );
+  if( !filestatus ) {
     Error( Here(here), "Unexpected end of BPM configuration file");
-    fclose(fi);
     return kInitError;
   }
 
-  // again that is not really nice, but since it will be changed anyhow:
-  // i dont check each time for end of file, needs to be improved
-
   fDetMap->Clear();
-  int first_chan, crate, dummy, slot, first, last, modulid;
+  Int_t first_chan, crate, dummy, slot, first, last, modulid = 0;
   do {
-    fgets( buf, LEN, fi);
-    sscanf(buf,"%d %d %d %d %d %d %d",&first_chan, &crate, &dummy, &slot, &first, &last, &modulid);
-    if (first_chan>=0) {
-      if ( fDetMap->AddModule (crate, slot, first, last, first_chan )<0) {
-	Error( Here(here), "Couldnt add BPM to DetMap. Good bye, blue sky, good bye!");
-	fclose(fi);
+    fgets( buf, LEN, fi );
+    n = sscanf( buf, "%6d %6d %6d %6d %6d %6d %6d",
+		&first_chan, &crate, &dummy, &slot, &first, &last, &modulid );
+    if( n < 6 ) return ErrPrint(fi,here);
+    if( first_chan >= 0 ) {
+      if ( fDetMap->AddModule(crate, slot, first, last, first_chan) < 0 ) {
+	Error( Here(here), "Could not load BPM detector map");
 	return kInitError;
       }
     }
-  } while (first_chan>=0);
-
-
-  sprintf(keyword,"[%s]",GetName());
-  n=strlen(keyword);
-  do {
-    filestatus=fgets( buf, LEN, fi);
-  } while ((filestatus!=NULL)&&(strncmp(buf,keyword,n)!=0));
-  if (filestatus==NULL) {
-    Error( Here("ReadDataBase()"), "Unexpected end of BPM configuration file");
-    fclose(fi);
+  } while( first_chan >=0 );
+  if( fDetMap->GetTotNumChan() != 4 ) {
+    Error( Here(here), "Invalid BPM detector map.\n Needs to define exactly 4 "
+	   "channels. Has %d.", fDetMap->GetTotNumChan() );
     return kInitError;
   }
 
-  double dummy1,dummy2,dummy3,dummy4,dummy5,dummy6;
-  fgets( buf, LEN, fi);
-  sscanf(buf,"%lf%lf%lf%lf",&dummy1,&dummy2,&dummy3,&dummy4);
+  sprintf(keyword,"[%s]",GetName());
+  n = strlen(keyword);
+  do {
+    filestatus = fgets( buf, LEN, fi );
+  } while( filestatus && strncmp(buf,keyword,n) );
+  if( !filestatus ) {
+    Error( Here(here), "Unexpected end of BPM configuration file");
+    return kInitError;
+  }
 
-  fOffset(2)=dummy1;  // z position of the bpm
-  fCalibRot=dummy2;   // calibration constant, historical,
-                      // using 0.01887 results in matrix elements 
-                      // between 0.0 and 1.0
-                      // dummy3 and dummy4 are not used in this 
-                      // apparatus, but might be useful for the struck
+  double dval[6];
+  fgets( buf, LEN, fi );
+  n = sscanf( buf, "%15lf %15lf %15lf %15lf", dval,dval+1,dval+2,dval+3 );
+  if( n < 2 ) return ErrPrint(fi,here);
 
-  fgets( buf, LEN, fi);
-  sscanf(buf,"%lf%lf%lf%lf",&dummy1,&dummy2,&dummy3,&dummy4);
+  fOffset(2) = dval[0]; // z position of the bpm
+  fCalibRot  = dval[1]; // calibration constant, historical,
+			// using 0.01887 results in matrix elements
+			// between 0.0 and 1.0
+			// dval[3 and dval[4 are not used in this
+			// apparatus, but might be useful for the struck
 
-  fPedestals(0)=dummy1;
-  fPedestals(1)=dummy2;
-  fPedestals(2)=dummy3;
-  fPedestals(3)=dummy4;
+  fgets( buf, LEN, fi );
+  n = sscanf( buf, "%15lf %15lf %15lf %15lf", dval,dval+1,dval+2,dval+3 );
+  if( n != 4 ) return ErrPrint(fi,here);
 
-  fgets( buf, LEN, fi);
-  sscanf(buf,"%lf%lf%lf%lf%lf%lf",&dummy1,&dummy2,&dummy3,&dummy4,&dummy5,&dummy6);
+  fPedestals(0) = dval[0];
+  fPedestals(1) = dval[1];
+  fPedestals(2) = dval[2];
+  fPedestals(3) = dval[3];
 
-  fRot2HCSPos(0,0)=dummy1;
-  fRot2HCSPos(0,1)=dummy2;
-  fRot2HCSPos(1,0)=dummy3;
-  fRot2HCSPos(1,1)=dummy4;
-  
+  fgets( buf, LEN, fi );
+  n = sscanf( buf, "%15lf %15lf %15lf %15lf %15lf %15lf",
+	      dval,dval+1,dval+2,dval+3,dval+4,dval+5 );
+  if( n != 6 ) return ErrPrint(fi,here);
 
-  fOffset(0)=dummy5;
-  fOffset(1)=dummy6;
+  fRot2HCSPos(0,0) = dval[0];
+  fRot2HCSPos(0,1) = dval[1];
+  fRot2HCSPos(1,0) = dval[2];
+  fRot2HCSPos(1,1) = dval[3];
+
+  fOffset(0) = dval[4];
+  fOffset(1) = dval[5];
+
+  fOrigin.SetXYZ( dval[4], dval[5], dval[0] );
+
+  return kOK;
+}
+
+//_____________________________________________________________________________
+Int_t THaBPM::ReadDatabase( const TDatime& date )
+{
+  // Wrapper around actual database reader. Using a wrapper makes it much
+  // easier to close the input file in case of an error.
+
+  FILE* fi = OpenFile( date );
+  if( !fi ) return kFileError;
+
+  Int_t ret = DoReadDatabase( fi, date );
 
   fclose(fi);
-  return kOK;
+  return ret;
 }
 
 //_____________________________________________________________________________
