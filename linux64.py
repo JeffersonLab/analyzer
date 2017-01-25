@@ -7,6 +7,7 @@ def config(env,args):
 	standalone = args.get('standalone',0)
 	if int(debug):
 		env.Append(CXXFLAGS = '-g -O0')
+                env.Append(CPPDEFINES= '-DWITH_DEBUG')
 	else:	
 		env.Append(CXXFLAGS = '-O')
 		env.Append(CPPDEFINES= '-DNDEBUG')
