@@ -169,6 +169,32 @@ protected:
   
   static char* ReadComment( FILE* fp, char* buf, const int len );
 
+  Int_t ErrPrint( FILE* fi, const char* here );
+  void  DebugPrint( const DBRequest* list );
+
+#ifndef __CINT__
+  enum EReadBlockFlags {
+    kQuietOnErrors      = BIT(0),
+    kQuietOnTooMany     = BIT(1),
+    kQuietOnTooFew      = BIT(2),
+    kNoNegativeValues   = BIT(3),
+    kRequireGreaterZero = BIT(4),
+    kDisallowDataGuess  = BIT(5),
+    kWarnOnDataGuess    = BIT(6),
+    kErrOnTooManyValues = BIT(7),
+    kStopAtNval         = BIT(8),
+    kStopAtSection      = BIT(9)
+  };
+  enum EReadBlockRetval {
+    kSuccess = 0, kNoValues = -1, kTooFewValues = -2, kTooManyValues = -3,
+    kIOError = -4, kNegativeFound = -5, kLessEqualZeroFound = -6 };
+
+  // Explicit instantiations for supported types provided in implementation
+  template <class T>
+  EReadBlockRetval ReadBlock( FILE* fi, T* data, int nval, const char* here,
+			      int flags );
+#endif
+
   // Only derived classes may construct
   THaAnalysisObject( const char* name, const char* description );
 

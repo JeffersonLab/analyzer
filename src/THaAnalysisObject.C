@@ -43,6 +43,8 @@
 #endif
 #include <stdexcept>
 #include <cassert>
+#include <cstddef>
+#include <functional>
 
 using namespace std;
 typedef string::size_type ssiz_t;
@@ -1603,6 +1605,191 @@ vector<string> THaAnalysisObject::vsplit(const string& s)
   }
   return ret;
 }
+
+//_____________________________________________________________________________
+Int_t THaAnalysisObject::ErrPrint( FILE* fi, const char* here )
+{
+  ostringstream msg;
+  msg << "Unexpected data at file position " << ftello(fi);
+  Error( Here(here), "%s", msg.str().c_str() );
+  return kInitError;
+}
+
+//-----------------------------------------------------------------------------
+void THaAnalysisObject::DebugPrint( const DBRequest* list )
+{
+  // Print values of database parameters given in 'list'
+
+  TString prefix(fPrefix);
+  if( prefix.EndsWith(".") ) prefix.Chop();
+  cout << prefix << " database parameters: " << endl;
+  size_t maxw = 1;
+  for( const DBRequest* it = list; it->name; ++it )
+    maxw = TMath::Max(maxw,strlen(it->name));
+  for( const DBRequest* it = list; it->name; ++it ) {
+    cout << "  " << std::left << setw(maxw) << it->name;
+    UInt_t maxc = it->nelem;
+    if( maxc == 0 ) maxc = 1;
+    for (UInt_t i=0; i<maxc; i++) {
+      cout << "  ";
+      switch( it->type ) {
+      case kDouble:
+	cout << ((Double_t*)it->var)[i];
+	break;
+      case kFloat:
+	cout << ((Float_t*)it->var)[i];
+	break;
+      case kInt:
+	cout << ((Int_t*)it->var)[i];
+	break;
+      default:
+	break;
+      }
+    }
+    cout << endl;
+  }
+}
+
+//-----------------------------------------------------------------------------
+inline static bool BitTest(UInt_t flags, UInt_t bit)
+{
+  return (flags & bit) != 0;
+}
+
+//-----------------------------------------------------------------------------
+// Helper function for reading Podd 1.5 and earlier legacy database files.
+// Adapted from Podd 1.6 utils/dbconvert.cxx
+template <class T> THaAnalysisObject::EReadBlockRetval
+THaAnalysisObject::ReadBlock( FILE* fi, T* data, int nval, const char* here,
+			      int flags )
+{
+  // Read exactly 'nval' values of type T from file 'fi' into array 'data'.
+  // Skip initial comment lines and comments at the end of each line.
+  // Comment lines are lines that start with non-whitespace.
+  // Data values may be spread over multiple lines. Each data line should
+  // start with whitespace. A comment line after data lines ends parsing.
+  // Error conditions: Not enough or too many data values in block
+  // Optionally: value < 0 or <= 0 encountered
+  // Warning if: comment line actually appears to be data (starts with
+  // a digit or "-" followed by a digit.
+
+  const char* const digits = "01234567890";
+  const int LEN = 128;
+  char buf[LEN];
+  string line;
+  int nread = 0;
+  bool got_data = false, maybe_data = false, found_section = false;
+  off_t pos_on_entry = ftello(fi), pos = pos_on_entry;
+  std::less<T> std_less;  // to suppress compiler warnings "< 0 is always false"
+
+  errno = 0;
+  while( GetLine(fi,buf,LEN,line) == 0 ) {
+    int c = line[0];
+    maybe_data = (c && strchr(digits,c)) ||
+      (c == '-' && line.length()>1 && strchr(digits,line[1]));
+    if( maybe_data && BitTest(flags,kWarnOnDataGuess) )
+      Warning( Here(here), "Suspicious data line:\n \"%s\"\n"
+	       " Should start with whitespace. Check input file.",
+	       line.c_str() );
+
+    if( c == ' ' || c == '\t' ||
+	(maybe_data && !BitTest(flags,kDisallowDataGuess)) ) {
+      // Data
+      if( nval <= 0 ) {
+	fseeko(fi,pos,SEEK_SET);
+	return kSuccess;
+      }
+      got_data = true;
+      istringstream is(line.c_str());
+      while( is && nread < nval ) {
+	is >> data[nread];
+	if( !is.fail() ) {
+	  if( BitTest(flags,kNoNegativeValues) && std_less(data[nread],T(0)) ) {
+	    if( !BitTest(flags,kQuietOnErrors) )
+	      Error( Here(here), "Negative values not allowed here:\n \"%s\"",
+		     line.c_str() );
+	    fseeko(fi,pos_on_entry,SEEK_SET);
+	    return kNegativeFound;
+	  }
+	  if( BitTest(flags,kRequireGreaterZero) && data[nread] <= 0 ) {
+	    if( !BitTest(flags,kQuietOnErrors) )
+	      Error( Here(here), "Values must be greater than zero:\n \"%s\"",
+		     line.c_str() );
+	    fseeko(fi,pos_on_entry,SEEK_SET);
+	    return kLessEqualZeroFound;
+	  }
+	  ++nread;
+	}
+	if( is.eof() )
+	  break;
+      }
+      if( nread == nval ) {
+	T x;
+	is >> x;
+	if( !is.fail() ) {
+	  if( !BitTest(flags,kQuietOnErrors) && !BitTest(flags,kQuietOnTooMany) ) {
+	    ostringstream msg;
+	    msg << "Too many values (expected " << nval << ") at file position "
+		<< ftello(fi) << endl
+		<< " Line: \"" << line << "\"";
+	    if( BitTest(flags,kErrOnTooManyValues) )
+	      Error( Here(here), "%s", msg.str().c_str() );
+	    else
+	      Warning( Here(here), "%s", msg.str().c_str() );
+	  }
+	  fseeko(fi,pos_on_entry,SEEK_SET);
+	  return kTooManyValues;
+	}
+	if( BitTest(flags,kStopAtNval) ) {
+	  // If requested, stop here, regardless of whether there is another data line
+	  return kSuccess;
+	}
+      }
+    } else {
+      // Comment
+      found_section = BitTest(flags,kStopAtSection)
+	&& line.find('[') != string::npos;
+      if( got_data || found_section ) {
+	if( nread < nval )
+	  goto toofew;
+	// Success
+	// Rewind to start of terminating line
+	fseeko(fi,pos,SEEK_SET);
+	return kSuccess;
+      }
+    }
+    pos = ftello(fi);
+  }
+  if( errno ) {
+    perror( Here(here) );
+    return kIOError;
+  }
+  if( nread < nval ) {
+  toofew:
+    if( !BitTest(flags,kQuietOnErrors) && !BitTest(flags,kQuietOnTooFew) ) {
+      ostringstream msg;
+      msg << "Too few values (expected " << nval << ", got " << nread << ") "
+	  << "at file position " << ftello(fi) << endl
+	  << " Line: \"" << line << "\"";
+      Error( Here(here), "%s", msg.str().c_str() );
+    }
+    fseeko(fi,pos_on_entry,SEEK_SET);
+    if( nread == 0 )
+      return kNoValues;
+    return kTooFewValues;
+  }
+  return kSuccess;
+}
+
+//_____________________________________________________________________________
+// Explicit template instantiations for supported types
+
+template THaAnalysisObject::EReadBlockRetval
+THaAnalysisObject::ReadBlock( FILE*, double*, int, const char*, int );
+template THaAnalysisObject::EReadBlockRetval
+THaAnalysisObject::ReadBlock( FILE*, float*, int, const char*, int );
+template THaAnalysisObject::EReadBlockRetval
+THaAnalysisObject::ReadBlock( FILE*, int*, int, const char*, int );
 
 //_____________________________________________________________________________
 ClassImp(THaAnalysisObject)
