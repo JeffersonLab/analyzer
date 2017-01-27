@@ -3,6 +3,10 @@
 
 import os
 import re
+import sys
+import subprocess
+import platform
+import time
 import SCons.Util
 Import ('baseenv')
 
@@ -68,12 +72,26 @@ baseenv.SharedObject(target = roothaobj, source = roothadict)
 
 #######  write src/ha_compiledata.h header file ######
 
+try:
+    if sys.version_info >= (2, 7):
+        cmd = "git rev-parse HEAD 2>/dev/null"
+        gitrel = subprocess.check_output(cmd, shell=True).rstrip()
+    else:
+        gitrel = subprocess.Popen(['git', 'rev-parse', 'HEAD'], stdout=subprocess.PIPE).communicate()[0].rstrip()
+except OSError:
+    gitrel = ''
+
 f=open('src/ha_compiledata.h','w')
 f.write('#ifndef ANALYZER_COMPILEDATA_H\n')
 f.write('#define ANALYZER_COMPILEDATA_H\n')
 f.write('\n')
 f.write('#define HA_INCLUDEPATH "%s %s %s"\n' % (baseenv.subst('$HA_SRC'),baseenv.subst('$HA_DC'),baseenv.subst('$HA_SCALER'))) 
 f.write('#define HA_VERSION "%s"\n' % baseenv.subst('$HA_VERSION'))
+f.write('#define HA_DATE "%s"\n' % time.strftime("%b %d %Y"))
+f.write('#define HA_DATETIME "%s"\n' % time.strftime("%a %b %d %Y"))
+#f.write('#define HA_DATETIME "%s"\n' % time.strftime("%a %b %d %H:%M:%S %Z %Y"))
+f.write('#define HA_PLATFORM "%s"\n' % platform.platform())
+f.write('#define HA_GITVERS "%s"\n' % gitrel[:7])
 f.write('#define ANALYZER_VERSION_CODE %s\n' % baseenv.subst('$VERCODE'))
 f.write('#define ANALYZER_VERSION(a,b,c) (((a) << 16) + ((b) << 8) + (c))\n')
 f.write('\n')
