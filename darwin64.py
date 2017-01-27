@@ -15,25 +15,20 @@ def config(env,args):
         if int(standalone):
                 env.Append(STANDALONE= '1')
 
-        cxx = env.subst('$CXX')
-        if cxx == 'g++':
-                env.Append(CXXFLAGS = '-Wall -Woverloaded-virtual')
-        elif cxx == 'clang++':
-                env.Append(CXXFLAGS = '-Wall')
-                env.Replace(LINKFLAGS = '')
-
+        env.Append(CXXFLAGS = '-Wall -Woverloaded-virtual')
         env.Append(CPPDEFINES = '-DMACVERS')
 
         cxxversion = env.subst('$CXXVERSION')
 
-	if float(cxxversion[0:2])>=4.0:
-			env.Append(CXXFLAGS = '-Wextra -Wno-missing-field-initializers')
-			env.Append(CXXFLAGS = '-Wno-unused-parameter')
+        if float(cxxversion[0:2])>=4.0:
+		env.Append(CXXFLAGS = '-Wextra -Wno-missing-field-initializers')
+		env.Append(CXXFLAGS = '-Wno-unused-parameter')
 
         if float(cxxversion[0:2])>=3.0:
-                        env.Append(CPPDEFINES = '-DHAS_SSTREAM')
+                env.Append(CPPDEFINES = '-DHAS_SSTREAM')
 
-        env['SHLINKFLAGS'] = '$LINKFLAGS -shared -Wl,-undefined,dynamic_lookup'
+        env['LINKFLAGS'] = ''
+        env['SHLINKFLAGS'] = '-shared -Wl,-undefined,dynamic_lookup'
         env['SHLIBSUFFIX'] = '.so'
 
 
