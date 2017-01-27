@@ -20,13 +20,17 @@
 #include <cstring>
 #include <cstdlib>
 #include <cstdio>
+#include <cassert>
 
-ClassImp(THaCherenkov)
+using namespace std;
 
 //_____________________________________________________________________________
 THaCherenkov::THaCherenkov( const char* name, const char* description,
 			    THaApparatus* apparatus )
-  : THaPidDetector(name,description,apparatus)
+  : THaPidDetector(name,description,apparatus),
+    fOff(0), fPed(0), fGain(0),
+    fNThit(0), fT(0), fT_c(0), fNAhit(0), fA(0), fA_p(0), fA_c(0),
+    tan_angle(0), sin_angle(0), cos_angle(1.)
 {
   // Constructor
   fTrackProj = new TClonesArray( "THaTrackProj", 5 );
@@ -56,6 +60,9 @@ Int_t THaCherenkov::DoReadDatabase( FILE* fi, const TDatime& date )
     return kInitError;
   }
   fNelem = nelem;
+
+  if( fIsInit )
+    ClearEvent();
 
   // Read detector map.  Assumes that the first half of the entries
   // is for ADCs, and the second half, for TDCs
@@ -117,6 +124,7 @@ Int_t THaCherenkov::DoReadDatabase( FILE* fi, const TDatime& date )
     fA_c = new Float_t[ fNelem ];
 
     fIsInit = true;
+    ClearEvent();
   }
 
   // Read calibrations
@@ -223,16 +231,12 @@ void THaCherenkov::ClearEvent()
 {
   // Reset all local data to prepare for next event.
 
-  const int lf = fNelem*sizeof(Float_t);
-  fNThit = 0;                             // Number of mirrors with TDC times
-  memset( fT, 0, lf );                    // TDC times of channels
-  memset( fT_c, 0, lf );                  // Corrected TDC times of channels
-  fNAhit = 0;                             // Number of mirrors with ADC ampls
-  memset( fA, 0, lf );                    // ADC amplitudes of channels
-  memset( fA_p, 0, lf );                  // ADC minus ped values of channels
-  memset( fA_c, 0, lf );                  // Corrected ADC amplitudes of chans
-  fASUM_p = 0.0;                          // Sum of ADC minus pedestal values
-  fASUM_c = 0.0;                          // Sum of corrected ADC amplitudes
+  fNThit = fNAhit = 0;
+  assert(fIsInit);
+  for( Int_t i=0; i<fNelem; ++i ) {
+    fT[i] = fT_c[i] = fA[i] = fA_p[i] = fA_c[i] = kBig;
+  }
+  fASUM_p = fASUM_c = kBig;
   fTrackProj->Clear();
 }
 
@@ -368,4 +372,6 @@ Int_t THaCherenkov::GetNTracks() const
 {
   return fTrackProj->GetLast()+1;
 }
+
 ///////////////////////////////////////////////////////////////////////////////
+ClassImp(THaCherenkov)

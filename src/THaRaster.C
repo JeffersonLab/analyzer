@@ -22,8 +22,11 @@ using namespace std;
 
 //_____________________________________________________________________________
 THaRaster::THaRaster( const char* name, const char* description,
-				  THaApparatus* apparatus ) :
-  THaBeamDet(name,description,apparatus), fRawPos(2), fRawSlope(2),fRasterFreq(2),fSlopePedestal(2),fRasterPedestal(2)
+				  THaApparatus* apparatus )
+  : THaBeamDet(name,description,apparatus),
+    fRawPos(2), fRawSlope(2), fRasterFreq(2),
+    fSlopePedestal(2), fRasterPedestal(2),
+    fNfired(0)
 {
   // Constructor
   fRaw2Pos[0].ResizeTo(3,2);

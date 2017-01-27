@@ -24,7 +24,8 @@ ClassImp(THaBPM)
 THaBPM::THaBPM( const char* name, const char* description,
 				  THaApparatus* apparatus ) :
   THaBeamDet(name,description,apparatus),
-  fRawSignal(4),fPedestals(4),fCorSignal(4),fRotPos(2),fRot2HCSPos(2,2)
+  fRawSignal(4),fPedestals(4),fCorSignal(4),fRotPos(2),fRot2HCSPos(2,2),
+  fNfired(0)
 {
   // Constructor
 }

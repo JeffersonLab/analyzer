@@ -23,15 +23,19 @@
 
 #include <cstring>
 #include <iostream>
-
-ClassImp(THaShower)
+#include <cassert>
 
 using namespace std;
 
 //_____________________________________________________________________________
 THaShower::THaShower( const char* name, const char* description,
-		      THaApparatus* apparatus ) :
-  THaPidDetector(name,description,apparatus), fNChan(NULL), fChanMap(NULL)
+		      THaApparatus* apparatus )
+  : THaPidDetector(name,description,apparatus),
+    fNChan(0), fChanMap(0), fNclublk(0), fNrows(0),
+    fBlockX(0), fBlockY(0), fPed(0), fGain(0),
+    fNhits(0), fA(0), fA_p(0), fA_c(0),
+    fNclust(0), fMult(0), fNblk(0), fEblk(0),
+    tan_angle(0), sin_angle(0), cos_angle(1.)
 {
   // Constructor.
 
@@ -85,6 +89,9 @@ Int_t THaShower::DoReadDatabase( FILE* fi, const TDatime& date )
   fNelem = nelem;
   fNrows = nrows;
   fNclublk = nclbl;
+
+  if( fIsInit )
+    ClearEvent();
 
   // Clear out the old detector and channel map before reading new ones
   Int_t mapsize = fDetMap->GetSize();
@@ -195,6 +202,7 @@ Int_t THaShower::DoReadDatabase( FILE* fi, const TDatime& date )
     fEblk   = new Float_t[ fNclublk ];
 
     fIsInit = true;
+    ClearEvent();
   }
 
   // Try new format: two values here
@@ -407,25 +415,16 @@ void THaShower::ClearEvent()
 {
   // Reset all local data to prepare for next event.
 
-  const int lsh = fNelem*sizeof(Float_t);
-  const int lsc = fNclublk*sizeof(Float_t);
-  const int lsi = fNclublk*sizeof(Int_t);
-
-  fNhits = 0;
-  memset( fA, 0, lsh );
-  memset( fA_p, 0, lsh );
-  memset( fA_c, 0, lsh );
-  fAsum_p = 0.0;
-  fAsum_c = 0.0;
-  fNclust = 0;
-  fE = 0.0;
-  fX = 0.0;
-  fY = 0.0;
-  fMult = 0;
-  memset( fNblk, 0, lsi );
-  memset( fEblk, 0, lsc );
-  fTRX = 0.0;
-  fTRY = 0.0;
+  fNhits = fNclust = fMult = 0;
+  assert(fIsInit);
+  for( Int_t i=0; i<fNelem; ++i ) {
+    fA[i] = fA_p[i] = fA_c[i] = kBig;
+  }
+  fAsum_p = fAsum_c = fE = fX = fY = fTRX = fTRY = kBig;
+  memset( fNblk, 0, fNclublk*sizeof(fNblk[0]) );
+  for( Int_t i=0; i<fNclublk; ++i ) {
+    fEblk[i] = kBig;
+  }
 }
 
 //_____________________________________________________________________________
@@ -598,4 +597,5 @@ Int_t THaShower::FineProcess( TClonesArray& /* tracks */ )
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+ClassImp(THaShower)
 

@@ -45,7 +45,7 @@ protected:
   Float_t    fE;           // Total shower energy
   Int_t      fID;          // ID of Presh and Shower coincidence
 
-  void           ClearEvent() { fE = 0.0; fID = 0; }
+  void           ClearEvent() { fE = kBig; fID = -1; }
   virtual Int_t  ReadDatabase( const TDatime& date );
   virtual Int_t  DefineVariables( EMode mode = kDefine );
 

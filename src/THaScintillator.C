@@ -22,32 +22,38 @@
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
+#include <cassert>
 
 using namespace std;
 
 //_____________________________________________________________________________
 THaScintillator::THaScintillator( const char* name, const char* description,
-				  THaApparatus* apparatus ) :
-  THaNonTrackingDetector(name,description,apparatus)
+				  THaApparatus* apparatus )
+  : THaNonTrackingDetector(name,description,apparatus),
+    fLOff(0), fROff(0), fLPed(0), fRPed(0), fLGain(0), fRGain(0),
+    fNTWalkPar(0), fTWalkPar(0), fTrigOff(0),
+    fLTNhit(0), fLT(0), fLT_c(0), fRTNhit(0), fRT(0), fRT_c(0),
+    fLANhit(0), fLA(0), fLA_p(0), fLA_c(0),
+    fRANhit(0), fRA(0), fRA_p(0), fRA_c(0),
+    fNhit(0), fHitPad(0), fTime(0), fdTime(0), fAmpl(0), fYt(0), fYa(0),
+    tan_angle(0), sin_angle(0), cos_angle(1.)
 {
   // Constructor
-  fTWalkPar = 0;
-
   fTrackProj = new TClonesArray( "THaTrackProj", 5 );
 }
 
 //_____________________________________________________________________________
-THaScintillator::THaScintillator( ) :
-  THaNonTrackingDetector()
+THaScintillator::THaScintillator( )
+  : THaNonTrackingDetector(),
+    fLOff(0), fROff(0), fLPed(0), fRPed(0), fLGain(0), fRGain(0),
+    fNTWalkPar(0), fTWalkPar(0), fTrigOff(0),
+    fLTNhit(0), fLT(0), fLT_c(0), fRTNhit(0), fRT(0), fRT_c(0),
+    fLANhit(0), fLA(0), fLA_p(0), fLA_c(0),
+    fRANhit(0), fRA(0), fRA_p(0), fRA_c(0),
+    fNhit(0), fHitPad(0), fTime(0), fdTime(0), fAmpl(0), fYt(0), fYa(0),
+    fTrackProj(0)
 {
-  // Constructor
-  fTWalkPar = NULL;
-  fTrackProj = NULL;
-  fRA_c = fRA_p = fRA = fLA_c = fLA_p = fLA = NULL;
-  fRT_c = fRT = fLT_c = fLT = NULL;
-  fRGain = fLGain = fRPed = fLPed = fROff = fLOff = NULL;
-  fTrigOff = fTime = fdTime = fYt = fYa = NULL;
-  fHitPad = NULL;
+  // Default constructor (for ROOT I/O)
 }
 
 //_____________________________________________________________________________
@@ -94,6 +100,9 @@ Int_t THaScintillator::DoReadDatabase( FILE* fi, const TDatime& date )
     return kInitError;
   }
   fNelem = nelem;
+
+  if( fIsInit )
+    ClearEvent();
 
   // Read detector map. Unless a model-number is given
   // for the detector type, this assumes that the first half of the entries
@@ -176,6 +185,7 @@ Int_t THaScintillator::DoReadDatabase( FILE* fi, const TDatime& date )
     fYa       = new Double_t[ fNelem ];
 
     fIsInit = true;
+    ClearEvent();
   }
 
   // Set DEFAULT values here
@@ -441,6 +451,7 @@ void THaScintillator::DeleteArrays()
   delete [] fHitPad;  fHitPad  = NULL;
   delete [] fTime;    fTime    = NULL;
   delete [] fdTime;   fdTime   = NULL;
+  delete [] fAmpl;    fAmpl    = NULL;
   delete [] fYt;      fYt      = NULL;
   delete [] fYa;      fYa      = NULL;
 }
@@ -451,28 +462,14 @@ void THaScintillator::ClearEvent()
 {
   // Reset per-event data.
 
-  const int lf = fNelem*sizeof(Double_t);
-  fLTNhit = 0;                            // Number of Left paddles TDC times
-  memset( fLT, 0, lf );                   // Left paddles TDCs
-  memset( fLT_c, 0, lf );                 // Left paddles corrected times
-  fRTNhit = 0;                            // Number of Right paddles TDC times
-  memset( fRT, 0, lf );                   // Right paddles TDCs
-  memset( fRT_c, 0, lf );                 // Right paddles corrected times
-  fLANhit = 0;                            // Number of Left paddles ADC amps
-  memset( fLA, 0, lf );                   // Left paddles ADCs
-  memset( fLA_p, 0, lf );                 // Left paddles ADC minus pedestal
-  memset( fLA_c, 0, lf );                 // Left paddles corrected ADCs
-  fRANhit = 0;                            // Number of Right paddles ADC smps
-  memset( fRA, 0, lf );                   // Right paddles ADCs
-  memset( fRA_p, 0, lf );                 // Right paddles ADC minus pedestal
-  memset( fRA_c, 0, lf );                 // Right paddles corrected ADCs
-  
-  fNhit = 0;
+  fNhit = fLTNhit = fRTNhit = fLANhit = fRANhit = 0;
+  assert(fIsInit);
+  for( Int_t i=0; i<fNelem; ++i ) {
+    fLT[i] = fLT_c[i] = fRT[i] = fRT_c[i] = kBig;
+    fLA[i] = fLA_p[i] = fLA_c[i] = fRA[i] = fRA_p[i] = fRA_c[i] = kBig;
+    fTime[i] = fdTime[i] = fAmpl[i] = fYt[i] = fYa[i] = kBig;
+  }
   memset( fHitPad, 0, fNelem*sizeof(fHitPad[0]) );
-  memset( fTime, 0, lf );
-  memset( fdTime, 0, lf );
-  memset( fYt, 0, lf );
-  memset( fYa, 0, lf );
   
   fTrackProj->Clear();
 }

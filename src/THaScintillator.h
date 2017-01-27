@@ -10,8 +10,6 @@
 #include "TClonesArray.h"
 #include "THaNonTrackingDetector.h"
 
-class THaScCalib;
-
 class THaScintillator : public THaNonTrackingDetector {
 
 public:
@@ -36,9 +34,8 @@ public:
         Int_t GetNTracks() const { return fTrackProj->GetLast()+1; }
   const TClonesArray* GetTrackHits() const { return fTrackProj; }
   
-  friend class THaScCalib;
-
   THaScintillator();  // for ROOT I/O
+
 protected:
 
   // Calibration
