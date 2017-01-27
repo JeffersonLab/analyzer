@@ -184,9 +184,6 @@ void THaInterface::PrintLogo( Bool_t lite )
      mille = iyear;
    char* root_date = Form("%s %d %4d",months[imonth-1],iday,mille);
 
-   const char* halla_version = HA_VERSION;
-   //   const char* halla_date = Form("%d %s %4d",24,months[2-1],2003);
-
 #if ROOT_VERSION_CODE >= ROOT_VERSION(5,18,0)
    if( !lite ) {
 #endif
@@ -195,7 +192,7 @@ void THaInterface::PrintLogo( Bool_t lite )
      Printf("  *            W E L C O M E  to  the            *");
      Printf("  *       H A L L A   C++  A N A L Y Z E R       *");
      Printf("  *                                              *");
-     Printf("  *        Release %10s %18s *",halla_version,HA_DATE);
+     Printf("  *        Release %10s %18s *",HA_VERSION,HA_DATE);
      Printf("  *  Based on ROOT %8s %20s *",root_version,root_date);
      //   Printf("  *             Development version              *");
      Printf("  *                                              *");
@@ -221,6 +218,13 @@ TClass* THaInterface::GetDecoder()
 {
   // Get class of the current decoder
   return gHaDecoder;
+}
+
+//_____________________________________________________________________________
+const char* THaInterface::GetVersion()
+{
+  // Get software version
+  return HA_VERSION;
 }
 
 //_____________________________________________________________________________

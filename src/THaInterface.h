@@ -26,6 +26,7 @@ public:
 #endif
   static TClass* GetDecoder();
   static TClass* SetDecoder( TClass* c );
+  static const char* GetVersion();
 
 protected:
   static THaInterface*  fgAint;  //Pointer indicating that interface already exists
