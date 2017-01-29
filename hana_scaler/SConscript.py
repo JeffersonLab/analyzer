@@ -7,7 +7,7 @@ import SCons.Util
 Import('baseenv')
 
 standalone = baseenv.subst('$STANDALONE')
-print ('Compiling scaler executables:  STANDALONE = %s\n' % standalone)
+#print ('Compiling scaler executables:  STANDALONE = %s' % standalone)
 
 standalonelist = Split("""
 tscalfile tscalasy
@@ -29,15 +29,14 @@ if baseenv.subst('$STANDALONE')==proceed:
 	for scalex in standalonelist:
 		pname = scalex
 		main = scalex+'_main.C'
-		pname = baseenv.Program(target = pname, source = list+[main,'THaScalDict.so'])
+		pname = baseenv.Program(target = pname, source = list+[main,'THaScalDict.os'])
 		baseenv.Install('../bin',pname)
 		baseenv.Alias('install',['../bin'])
 
 sotarget = 'scaler'
 
-#scalerlib = baseenv.SharedLibrary(target=sotarget, source = list+['THaScalDict.so'],SHLIBPREFIX='../lib',SHLIBVERSION=['$VERSION'],LIBS=[''])
-scalerlib = baseenv.SharedLibrary(target=sotarget, source = list+['THaScalDict.so'],SHLIBPREFIX='../lib',LIBS=[''])
-print ('Scaler shared library = %s\n' % scalerlib)
+scalerlib = baseenv.SharedLibrary(target=sotarget, source = list+['THaScalDict.os'],SHLIBPREFIX='../lib',LIBS=[''])
+#print ('Scaler shared library = %s' % scalerlib)
 
 linkbase = baseenv.subst('$SHLIBPREFIX')+sotarget
 
@@ -47,14 +46,15 @@ localmajorcleantarget = '../'+linkbase+'.so'
 shortcleantarget = linkbase+'.so.'+baseenv.subst('$SOVERSION')
 localshortcleantarget = '../'+linkbase+'.so.'+baseenv.subst('$SOVERSION')
 
-print ('cleantarget = %s\n' % cleantarget)
-print ('majorcleantarget = %s\n' % majorcleantarget)
-print ('shortcleantarget = %s\n' % shortcleantarget)
+#print ('cleantarget = %s' % cleantarget)
+#print ('majorcleantarget = %s' % majorcleantarget)
+#print ('shortcleantarget = %s' % shortcleantarget)
 try:
 	os.symlink(cleantarget,localshortcleantarget)
 	os.symlink(shortcleantarget,localmajorcleantarget)
-except:	
-	print " Continuing ... "
+except:
+        pass
+        #	print " Continuing ... "
 
 Clean(scalerlib,cleantarget)
 Clean(scalerlib,localmajorcleantarget)

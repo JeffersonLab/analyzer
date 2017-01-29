@@ -46,9 +46,8 @@ baseenv.Object('main.C')
 sotarget = 'HallA'
 normanatarget = 'NormAna'
 
-#srclib = baseenv.SharedLibrary(target = sotarget, source = list+['haDict.so'],SHLIBVERSION=['$VERSION'],SHLIBPREFIX='../lib',LIBS=[''])
-srclib = baseenv.SharedLibrary(target = sotarget, source = list+['haDict.so'],SHLIBPREFIX='../lib',LIBS=[''])
-print ('Source shared library = %s\n' % srclib)
+srclib = baseenv.SharedLibrary(target = sotarget, source = list+['haDict.os'],SHLIBPREFIX='../lib',LIBS=[''])
+#print ('Source shared library = %s' % srclib)
 
 linkbase = baseenv.subst('$SHLIBPREFIX')+sotarget
 
@@ -58,14 +57,15 @@ localmajorcleantarget = '../'+linkbase+'.so'
 shortcleantarget = linkbase+'.so.'+baseenv.subst('$SOVERSION')
 localshortcleantarget = '../'+linkbase+'.so.'+baseenv.subst('$SOVERSION')
 
-print ('cleantarget = %s\n' % cleantarget)
-print ('majorcleantarget = %s\n' % majorcleantarget)
-print ('shortcleantarget = %s\n' % shortcleantarget)
+#print ('cleantarget = %s' % cleantarget)
+#print ('majorcleantarget = %s' % majorcleantarget)
+#print ('shortcleantarget = %s' % shortcleantarget)
 try:
 	os.symlink(cleantarget,localshortcleantarget)
 	os.symlink(shortcleantarget,localmajorcleantarget)
 except:	
-	print " Continuing ... "
+        pass
+        #	print " Continuing ... "
 
 Clean(srclib,cleantarget)
 Clean(srclib,localmajorcleantarget)
@@ -74,9 +74,8 @@ Clean(srclib,localshortcleantarget)
 #baseenv.Install('../lib',srclib)
 #baseenv.Alias('install',['../lib'])
 
-#normanalib = baseenv.SharedLibrary(target = normanatarget,source = normanalist+['NormAnaDict.so'],SHLIBVERSION=['$VERSION'],SHLIBPREFIX='../lib',LIBS=[''])
-normanalib = baseenv.SharedLibrary(target = normanatarget,source = normanalist+['NormAnaDict.so'],SHLIBPREFIX='../lib',LIBS=[''])
-print ('NormAna shared library = %s\n' % normanalib)
+normanalib = baseenv.SharedLibrary(target = normanatarget,source = normanalist+['NormAnaDict.os'],SHLIBPREFIX='../lib',LIBS=[''])
+#print ('NormAna shared library = %s' % normanalib)
 
 nlinkbase = baseenv.subst('$SHLIBPREFIX')+normanatarget
 
@@ -86,14 +85,15 @@ nlocalmajorcleantarget = '../'+nlinkbase+'.so'
 nshortcleantarget = nlinkbase+'.so.'+baseenv.subst('$SOVERSION')
 nlocalshortcleantarget = '../'+nlinkbase+'.so.'+baseenv.subst('$SOVERSION')
 
-print ('ncleantarget = %s\n' % ncleantarget)
-print ('nmajorcleantarget = %s\n' % nmajorcleantarget)
-print ('nshortcleantarget = %s\n' % nshortcleantarget)
+#print ('ncleantarget = %s' % ncleantarget)
+#print ('nmajorcleantarget = %s' % nmajorcleantarget)
+#print ('nshortcleantarget = %s' % nshortcleantarget)
 try:
 	os.symlink(ncleantarget,nlocalshortcleantarget)
 	os.symlink(nshortcleantarget,nlocalmajorcleantarget)
 except:	
-	print " Continuing ... "
+        pass
+#	print " Continuing ... "
 
 Clean(normanalib,ncleantarget)
 Clean(normanalib,nlocalmajorcleantarget)

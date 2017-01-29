@@ -7,7 +7,7 @@ import SCons.Util
 Import('baseenv')
 
 standalone = baseenv.subst('$STANDALONE')
-print ('Compiling decoder executables:  STANDALONE = %s\n' % standalone)
+#print ('Compiling decoder executables:  STANDALONE = %s' % standalone)
 
 standalonelist = Split("""
 tstio tdecpr prfact epicsd tdecex 
@@ -35,18 +35,17 @@ if baseenv.subst('$STANDALONE')==proceed:
                 	main = scalex+'_main.C'
 
                 if scalex=='tdecex':
-			pname = baseenv.Program(target = pname, source = list+[main,'THaGenDetTest.C','THaDecDict.so'])
+			pname = baseenv.Program(target = pname, source = list+[main,'THaGenDetTest.C','THaDecDict.os'])
 		else:	
-			pname = baseenv.Program(target = pname, source = list+[main,'THaDecDict.so'])
+			pname = baseenv.Program(target = pname, source = list+[main,'THaDecDict.os'])
 			
                 baseenv.Install('../bin',pname)
                 baseenv.Alias('install',['../bin'])
 
 sotarget = 'dc'
 
-#dclib = baseenv.SharedLibrary(target=sotarget, source = list+['THaDecDict.so'],SHLIBPREFIX='../lib',SHLIBVERSION=['$VERSION'],LIBS=[''])
-dclib = baseenv.SharedLibrary(target=sotarget, source = list+['THaDecDict.so'],SHLIBPREFIX='../lib',LIBS=[''])
-print ('Decoder shared library = %s\n' % dclib)
+dclib = baseenv.SharedLibrary(target=sotarget, source = list+['THaDecDict.os'],SHLIBPREFIX='../lib',LIBS=[''])
+#print ('Decoder shared library = %s' % dclib)
 
 linkbase = baseenv.subst('$SHLIBPREFIX')+sotarget
 
@@ -56,14 +55,15 @@ localmajorcleantarget = '../'+linkbase+'.so'
 shortcleantarget = linkbase+'.so.'+baseenv.subst('$SOVERSION')
 localshortcleantarget = '../'+linkbase+'.so.'+baseenv.subst('$SOVERSION')
 
-print ('cleantarget = %s\n' % cleantarget)
-print ('majorcleantarget = %s\n' % majorcleantarget)
-print ('shortcleantarget = %s\n' % shortcleantarget)
+#print ('cleantarget = %s' % cleantarget)
+#print ('majorcleantarget = %s' % majorcleantarget)
+#print ('shortcleantarget = %s' % shortcleantarget)
 try:
 	os.symlink(cleantarget,localshortcleantarget)
 	os.symlink(shortcleantarget,localmajorcleantarget)
 except:	
-	print " Continuing ... "
+        pass
+        #	print " Continuing ... "
 
 Clean(dclib,cleantarget)
 Clean(dclib,localmajorcleantarget)
