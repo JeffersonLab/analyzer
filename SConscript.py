@@ -73,31 +73,54 @@ baseenv.SharedObject(target = roothaobj, source = roothadict)
 
 #######  write src/ha_compiledata.h header file ######
 
-try:
-    if sys.version_info >= (2, 7):
+if sys.version_info >= (2, 7):
+    try:
         cmd = "git rev-parse HEAD 2>/dev/null"
-        gitrel = subprocess.check_output(cmd, shell=True).rstrip()
-    else:
-        gitrel = subprocess.Popen(['git', 'rev-parse', 'HEAD'], stdout=subprocess.PIPE).communicate()[0].rstrip()
-except OSError:
-    gitrel = ''
+        gitrev = subprocess.check_output(cmd, shell=True).rstrip()
+    except:
+        gitrev = ''
+    try:
+        cmd = baseenv.subst('$CXX') + " --version 2>/dev/null | head -1"
+        cxxver = subprocess.check_output(cmd, shell=True).rstrip()
+    except:
+        cxxver = ''
+else:
+    FNULL = open(os.devnull, 'w')
+    try:
+        gitrev = subprocess.Popen(['git', 'rev-parse', 'HEAD', '2>dev/null'],\
+                    stdout=subprocess.PIPE, stderr=FNULL).communicate()[0].rstrip()
+    except:
+        gitrev =''
+    try:
+        outp = subprocess.Popen([baseenv.subst('$CXX'), '--version'],\
+                                stdout=subprocess.PIPE, stderr=FNULL).communicate()[0]
+        lines = outp.splitlines()
+        cxxver = lines[0]
+    except:
+        cxxver = ''
 
 f=open('src/ha_compiledata.h','w')
 f.write('#ifndef ANALYZER_COMPILEDATA_H\n')
 f.write('#define ANALYZER_COMPILEDATA_H\n')
 f.write('\n')
-f.write('#define HA_INCLUDEPATH "%s %s %s"\n' % (baseenv.subst('$HA_SRC'),baseenv.subst('$HA_DC'),baseenv.subst('$HA_SCALER'))) 
+f.write('#define HA_INCLUDEPATH "%s %s %s"\n'\
+        % (baseenv.subst('$HA_SRC'),baseenv.subst('$HA_DC'),baseenv.subst('$HA_SCALER')))
 f.write('#define HA_VERSION "%s"\n' % baseenv.subst('$HA_VERSION'))
 f.write('#define HA_DATE "%s"\n' % time.strftime("%b %d %Y"))
 f.write('#define HA_DATETIME "%s"\n' % time.strftime("%a %b %d %Y"))
 #f.write('#define HA_DATETIME "%s"\n' % time.strftime("%a %b %d %H:%M:%S %Z %Y"))
 f.write('#define HA_PLATFORM "%s"\n' % platform.platform())
-f.write('#define HA_GITVERS "%s"\n' % gitrel[:7])
+f.write('#define HA_BUILDNODE "%s"\n' % platform.node())
+f.write('#define HA_BUILDDIR "%s"\n' % os.getcwd())
+f.write('#define HA_BUILDUSER "%s"\n' % os.getlogin())
+f.write('#define HA_GITVERS "%s"\n' % gitrev[:7])
+f.write('#define HA_CXXVERS "%s"\n' % cxxver)
+f.write('#define HA_ROOTVERS "%s"\n' % baseenv.subst('$ROOTVERS'))
 f.write('#define ANALYZER_VERSION_CODE %s\n' % baseenv.subst('$VERCODE'))
 f.write('#define ANALYZER_VERSION(a,b,c) (((a) << 16) + ((b) << 8) + (c))\n')
 f.write('\n')
 f.write('#endif\n')
-f.close() 
+f.close()
 
 #######  Start of main SConscript ###########
 

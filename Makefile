@@ -241,9 +241,15 @@ src/ha_compiledata.h:	Makefile
 		@echo "#define HA_INCLUDEPATH \"$(INCDIRS)\"" >> $@
 		@echo "#define HA_VERSION \"$(VERSION)$(EXTVERS)\"" >> $@
 		@echo "#define HA_DATE \"$(shell date '+%b %d %Y')\"" >> $@
-		@echo "#define HA_DATETIME \"$(shell date '+%a %b %d %H:%M:%S %Z %Y')\"" >> $@
+#		@echo "#define HA_DATETIME \"$(shell date '+%a %b %d %H:%M:%S %Z %Y')\"" >> $@
+		@echo "#define HA_DATETIME \"$(shell date '+%a %b %d %Y')\"" >> $@
 		@echo "#define HA_PLATFORM \"$(shell uname -s)-$(shell uname -r)-$(shell uname -m)\"" >> $@
+		@echo "#define HA_BUILDNODE \"$(shell uname -n)\"" >> $@
+		@echo "#define HA_BUILDDIR \"$(shell pwd)\"" >> $@
+		@echo "#define HA_BUILDUSER \"$(shell whoami)\"" >> $@
 		@echo "#define HA_GITVERS \"$(shell git rev-parse HEAD 2>/dev/null | cut -c1-7)\"" >> $@
+		@echo "#define HA_CXXVERS \"$(shell $(CXX) --version 2>/dev/null | head -1)\"" >> $@
+		@echo "#define HA_ROOTVERS \"$(shell root-config --version)\"" >> $@
 		@echo "#define ANALYZER_VERSION_CODE $(VERCODE)" >> $@
 		@echo "#define ANALYZER_VERSION(a,b,c) (((a) << 16) + ((b) << 8) + (c))" >> $@
 		@echo "" >> $@
