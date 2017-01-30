@@ -107,7 +107,7 @@ Int_t THaScintillator::DoReadDatabase( FILE* fi, const TDatime& date )
   // Read detector map. Unless a model-number is given
   // for the detector type, this assumes that the first half of the entries
   // are for ADCs and the second half, for TDCs.
-  while( ReadComment(fi, buf, LEN) );
+  while( ReadComment(fi, buf, LEN) ) {}
   fDetMap->Clear();
   while (1) {
     Int_t pos, first_chan, model, crate, slot, first, last;

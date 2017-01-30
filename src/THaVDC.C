@@ -689,10 +689,10 @@ Int_t THaVDC::FineTrack( TClonesArray& tracks )
 
 #ifdef WITH_DEBUG
   // Wait for user to hit Return
-  static char c;
+  static char c = '\0';
   if( fDebug>1 ) {
     cin.clear();
-    while( !cin.eof() && cin.get(c) && c != '\n');
+    while( !cin.eof() && cin.get(c) && c != '\n') {}
   }
 #endif
 

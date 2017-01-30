@@ -66,7 +66,7 @@ Int_t THaCherenkov::DoReadDatabase( FILE* fi, const TDatime& date )
 
   // Read detector map.  Assumes that the first half of the entries
   // is for ADCs, and the second half, for TDCs
-  while( ReadComment(fi,buf,LEN) );
+  while( ReadComment(fi,buf,LEN) ) {}
   fDetMap->Clear();
   while (1) {
     Int_t crate, slot, first, last, first_chan,model;

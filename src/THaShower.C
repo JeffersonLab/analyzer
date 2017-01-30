@@ -104,7 +104,7 @@ Int_t THaShower::DoReadDatabase( FILE* fi, const TDatime& date )
   fDetMap->Clear();
 
   // Read detector map
-  while( ReadComment(fi,buf,LEN) );
+  while( ReadComment(fi,buf,LEN) ) {}
   while (1) {
     Int_t crate, slot, first, last;
     Int_t n = fscanf( fi,"%6d %6d %6d %6d", &crate, &slot, &first, &last );

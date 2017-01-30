@@ -108,7 +108,7 @@ else
 #FIXME: should be configure'd:
 CXXVER       := $(shell g++ --version | head -1 | sed 's/.* \([0-9]\)\..*/\1/')
 ifeq ($(CXXVER),4)
-CXXEXTFLG    += -Wextra -Wno-missing-field-initializers
+CXXEXTFLG    += -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
 DICTCXXFLG   := -Wno-strict-aliasing
 endif
 endif
