@@ -341,12 +341,9 @@ srcdist:
 		rm -f ../$(NAME)
 		ln -s $(PWD) ../$(NAME)
 		tar -czvf ../$(NAME).tar.gz -X .exclude -C .. \
-		 $(NAME)/.exclude $(NAME)/ChangeLog \
-		 $(NAME)/src $(NAME)/$(DCDIR) $(NAME)/$(SCALERDIR) \
-		 $(NAME)/Makefile \
-		 $(NAME)/DB $(NAME)/examples $(NAME)/SDK \
-		 $(NAME)/docs $(NAME)/Calib $(NAME)/contrib $(NAME)/scons \
-		 $(NAME)/SConstruct $(wildcard $(NAME)/*.py)
+		$(addprefix $(NAME)/, \
+                  ChangeLog Makefile .exclude SConstruct $(wildcard *.py) \
+                  src $(DCDIR) $(SCALERDIR) Calib DB examples contrib docs SDK)
 
 install:	all
 ifndef ANALYZER
