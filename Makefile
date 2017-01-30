@@ -348,7 +348,7 @@ srcdist:
 		ln -s $(PWD) ../$(NAME)
 		tar -czvf ../$(NAME).tar.gz -X .exclude -C .. \
 		$(addprefix $(NAME)/, \
-                  ChangeLog Makefile .exclude SConstruct $(wildcard *.py) \
+                  ChangeLog Makefile .exclude $(wildcard SCons*) site_scons \
                   src $(DCDIR) $(SCALERDIR) Calib DB examples contrib docs SDK)
 
 install:	all
