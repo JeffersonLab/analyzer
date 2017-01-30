@@ -99,7 +99,8 @@ else:
     except:
         cxxver = ''
 
-f=open('src/ha_compiledata.h','w')
+compiledata = 'src/ha_compiledata.h'
+f=open(compiledata,'w')
 f.write('#ifndef ANALYZER_COMPILEDATA_H\n')
 f.write('#define ANALYZER_COMPILEDATA_H\n')
 f.write('\n')
@@ -127,3 +128,4 @@ f.close()
 analyzer = baseenv.Program(target = 'analyzer', source = 'src/main.o')
 baseenv.Install('./bin',analyzer)
 baseenv.Alias('install',['./bin'])
+baseenv.Clean(analyzer,compiledata)
