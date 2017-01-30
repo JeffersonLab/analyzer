@@ -86,7 +86,7 @@ baseenv.Append(BUILDERS = {'RootCint': bld})
 
 ######## Configure Section #######
 
-if not baseenv.GetOption('clean'):
+if not (baseenv.GetOption('clean') or baseenv.GetOption('help')):
 
         configure.config(baseenv,ARGUMENTS)
 

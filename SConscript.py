@@ -125,7 +125,7 @@ f.close()
 
 #######  Start of main SConscript ###########
 
-analyzer = baseenv.Program(target = 'analyzer', source = 'src/main.o')
+analyzer = baseenv.Program(target = 'analyzer', source = 'src/main.C')
 baseenv.Install('./bin',analyzer)
 baseenv.Alias('install',['./bin'])
 baseenv.Clean(analyzer,compiledata)
