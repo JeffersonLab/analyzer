@@ -231,10 +231,13 @@ LNA_LINKDEF  := src/$(LNA)_LinkDef.h
 PROGRAMS     := analyzer $(LIBNORMANA)
 PODDLIBS     := $(LIBHALLA) $(LIBDC) $(LIBSCALER)
 
+GITHEADFILE  := $(shell [ -d .git ] && cat .git/HEAD | head -1 | cut -c6-)
+GITHEAD      := $(shell [ -n "$(GITHEADFILE)" ] && echo .git/$(GITHEADFILE))  # empty if nonexistent
+
 all:            subdirs
 		set -e; for i in $(PROGRAMS); do $(MAKE) $$i; done
 
-src/ha_compiledata.h:	Makefile
+src/ha_compiledata.h:	Makefile $(GITHEAD)
 		@echo "#ifndef ANALYZER_COMPILEDATA_H" > $@
 		@echo "#define ANALYZER_COMPILEDATA_H" >> $@
 		@echo "" >> $@
@@ -329,7 +332,7 @@ libPodd.a:	$(OBJS) $(LNA_OBJS) subdirs
 		ar rcs $@ $(OBJS) $(LNA_OBJS) $(DCDIR)/*.o $(SCALERDIR)/*.o
 
 #---------- Main program -------------------------------------------
-analyzer:	src/main.o $(LIBDC) $(LIBSCALER) $(LIBHALLA)
+analyzer:	src/main.o $(PODDLIBS)
 		$(LD) $(LDFLAGS) $< $(HALLALIBS) $(GLIBS) -o $@
 
 #---------- Maintenance --------------------------------------------
