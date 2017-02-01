@@ -39,6 +39,11 @@ public:
 
 // Loads sldat
   virtual Int_t LoadSlot(THaSlotData *sldat,  const UInt_t *evbuffer, const UInt_t *pstop );
+// Load slot for bank structures 
+   virtual Int_t LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, Int_t pos, Int_t len);
+
+   virtual void SetBank(Int_t bank);
+
 
 protected:
 

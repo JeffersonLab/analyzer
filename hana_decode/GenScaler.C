@@ -39,7 +39,7 @@ void GenScaler::GenInit()
   fClockChan = -1;
   fClockRate = 0;
   fNormScaler = 0;
-  fNumChanMask = 0xf0;
+  fNumChanMask = 0xff;
   fNumChanShift = 0;
   fDeltaT = DEFAULT_DELTAT;  // a default time interval between readings
   fDataArray = new Int_t[fWordsExpect];
@@ -48,6 +48,15 @@ void GenScaler::GenInit()
   memset(fDataArray, 0, fWordsExpect*sizeof(Int_t));
   memset(fPrevData, 0, fWordsExpect*sizeof(Int_t));
   memset(fRate, 0, fWordsExpect*sizeof(Double_t));
+}
+
+void GenScaler::SetBank(Int_t bank) {
+  /// Define scaler header format for modules in banks
+  fBank = bank;
+  if(fBank > 0) {
+    fHeader = fSlot << 8;
+    fHeaderMask = 0xff00;
+  }
 }
 
 GenScaler::~GenScaler() {
@@ -110,21 +119,19 @@ Int_t GenScaler::Decode(const UInt_t *evbuffer) {
   Int_t doload=0;
   Int_t nfound=1;
   if (IsDecoded()) return nfound;
-  if (IsSlot(*evbuffer)) {
-    if (fFirstTime) {
-      fFirstTime = kFALSE;
-    } else {
-      doload=1;
-      memcpy(fPrevData, fDataArray, fWordsExpect*sizeof(Int_t));
-    }
-    if (fDebugFile) *fDebugFile << "is slot 0x"<<hex<<*evbuffer<<dec<<endl;
-    fIsDecoded = kTRUE;
-    evbuffer++;
-    for (Int_t i=0; i<fWordsExpect; i++) {
-      fDataArray[i] = *(evbuffer++);
-      nfound++;
-      if (fDebugFile) *fDebugFile << "   data["<<i<<"] = 0x"<<hex<<fDataArray[i]<<dec<<endl;
-    }
+  if (fFirstTime) {
+    fFirstTime = kFALSE;
+  } else {
+    doload=1;
+    memcpy(fPrevData, fDataArray, fWordsExpect*sizeof(Int_t));
+  }
+  if (fDebugFile) *fDebugFile << "is slot 0x"<<hex<<*evbuffer<<dec<<endl;
+  fIsDecoded = kTRUE;
+  evbuffer++;
+  for (Int_t i=0; i<fWordsExpect; i++) {
+    fDataArray[i] = *(evbuffer++);
+    nfound++;
+    if (fDebugFile) *fDebugFile << "   data["<<i<<"] = 0x"<<hex<<fDataArray[i]<<dec<<endl;
   }
   if (doload) LoadRates();
   return nfound;
@@ -208,19 +215,23 @@ void GenScaler::DebugPrint(ofstream *file) const {
 }
 
 Bool_t GenScaler::IsSlot(UInt_t rdata) {
+  /// Check if this word is the header for the slot we are looking for
+  /// Get the number of channels in this module from the header and
+  /// save so that bank version of LoadSlot can skip over this module if
+  /// it is not the correct one.
   Bool_t result;
   static Bool_t firsttime=kTRUE;
   result = ((rdata & fHeaderMask)==fHeader);
-  if (result) {
-    fNumChan = (rdata&fNumChanMask)>>fNumChanShift;
-    if (fNumChan == 0) {
-      fNumChan=fgNumChanDefault;
-      if (firsttime) {
-  	 firsttime = kFALSE;
-         cout << "Warning::GenScaler:: using default num "<<fgNumChanDefault;
-         cout << "   channels"<<endl;
-      }
+  fNumChan = (rdata&fNumChanMask)>>fNumChanShift;
+  if (fNumChan == 0) {
+    fNumChan=fgNumChanDefault;
+    if (firsttime) {
+      firsttime = kFALSE;
+      cout << "Warning::GenScaler:: using default num "<<fgNumChanDefault;
+      cout << "   channels"<<endl;
     }
+  }
+  if (result) {
     if (fNumChan != fWordsExpect) {
 	cout << "GenScaler:: ERROR:  Inconsistent number of chan."<<endl;
 	//        DoPrint();
@@ -250,6 +261,33 @@ Int_t GenScaler::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const UInt
   }
   return 0;
 }
+
+  Int_t GenScaler::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, Int_t pos, Int_t len) {
+    /// Fill data structures of this class, utilizing bank structure
+    /// Read until out of data or until decode says that the slot is finished
+    /// len = ndata in event, pos = word number for block header in event
+    fWordsSeen = 0;
+    Clear();
+    Int_t index = 0;
+
+    // How can set set this just once?
+    //    fHeader = fSlot << 8;
+    //    fHeaderMask = 0x3f00;
+
+    while(fWordsSeen < len) {
+      index = pos + fWordsSeen;
+      if(IsSlot(evbuffer[index])) {
+	Decode(&evbuffer[index]);
+	for (Int_t ichan = 0; ichan < fNumChan; ichan++) {
+	  sldat->loadData(ichan, fDataArray[ichan], fDataArray[ichan]);
+	}
+	fWordsSeen += (fNumChan+1);
+	break;
+      }
+      fWordsSeen += (fNumChan+1); // Skip to next header
+    }
+    return fWordsSeen;
+  }
 
 }
 
