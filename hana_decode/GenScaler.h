@@ -52,7 +52,7 @@ namespace Decoder {
     Bool_t fIsDecoded, fFirstTime, fDeltaT;
     Int_t *fDataArray, *fPrevData;
     Double_t *fRate;
-    Int_t fNumChan, fClockChan, fNumChanMask, fNumChanShift;
+    Int_t fClockChan, fNumChanMask, fNumChanShift;
     Bool_t fHasClock;
     Double_t fClockRate;
     GenScaler *fNormScaler;
