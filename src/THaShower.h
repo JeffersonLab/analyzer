@@ -8,6 +8,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "THaPidDetector.h"
+#include <vector>
 
 class TClonesArray;
 
@@ -32,8 +33,8 @@ public:
 protected:
 
   // Mapping (see also fDetMap)
-  UShort_t*  fNChan;     // Number of channels for each module
-  UShort_t** fChanMap;   // Logical channel numbers
+  std::vector< std::vector<UShort_t> > fChanMap; // Logical channel numbers
+                                                 // for each detector map module
 
   // Configuration
   Int_t      fNclublk;   // Max. number of blocks composing a cluster

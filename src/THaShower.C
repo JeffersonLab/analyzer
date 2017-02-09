@@ -30,7 +30,7 @@ using namespace std;
 //_____________________________________________________________________________
 THaShower::THaShower( const char* name, const char* description,
 		      THaApparatus* apparatus ) :
-  THaPidDetector(name,description,apparatus), fNChan(0), fChanMap(0),
+  THaPidDetector(name,description,apparatus),
   fNclublk(0), fNrows(0), fBlockX(0), fBlockY(0), fPed(0), fGain(0),
   fNhits(0), fA(0), fA_p(0), fA_c(0), fNblk(0), fEblk(0)
 {
@@ -39,7 +39,7 @@ THaShower::THaShower( const char* name, const char* description,
 
 //_____________________________________________________________________________
 THaShower::THaShower() :
-  THaPidDetector(), fNChan(0), fChanMap(0),
+  THaPidDetector(),
   fNclublk(0), fNrows(0), fBlockX(0), fBlockY(0), fPed(0), fGain(0),
   fNhits(0), fA(0), fA_p(0), fA_c(0), fNblk(0), fEblk(0)
 {
@@ -111,14 +111,7 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
 
   if( !err ) {
     // Clear out the old channel map before reading a new one
-    UInt_t mapsize = fDetMap->GetSize();
-    delete [] fNChan; fNChan = 0;
-    if( fChanMap != 0 ) {
-      for( UInt_t i = 0; i<mapsize; i++ )
-	delete [] fChanMap[i];
-      delete [] fChanMap; fChanMap = 0;
-    }
-
+    fChanMap.clear();
     if( FillDetMap(detmap, 0, here) <= 0 ) {
       err = kInitError;  // Error already printed by FillDetMap
     } else if( (nelem = fDetMap->GetTotNumChan()) != fNelem ) {
@@ -139,26 +132,22 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
     }
     if( !err ) {
       // Set up the new channel map
-      Int_t mapsize = fDetMap->GetSize();
-      assert( mapsize > 0 );
-      fNChan = new UShort_t[ mapsize ];
-      fChanMap = new UShort_t*[ mapsize ];
-      for( Int_t i=0, k=0; i < mapsize && !err; i++ ) {
+      Int_t nmodules = fDetMap->GetSize();
+      assert( nmodules > 0 );
+      fChanMap.resize(nmodules);
+      for( Int_t i=0, k=0; i < nmodules && !err; i++ ) {
 	THaDetMap::Module* module = fDetMap->GetModule(i);
-	fNChan[i] = module->hi - module->lo + 1;
-	if( fNChan[i] > 0 ) {
-	  fChanMap[i] = new UShort_t[ fNChan[i] ];
-	  for( UInt_t j=0; j<fNChan[i]; ++j ) {
+	Int_t nchan = module->hi - module->lo + 1;
+	if( nchan > 0 ) {
+	  fChanMap.at(i).resize(nchan);
+	  for( Int_t j=0; j<nchan; ++j ) {
 	    assert( k < fNelem );
-	    fChanMap[i][j] = chanmap.empty() ? k+1 : chanmap[k];
+	    fChanMap.at(i).at(j) = chanmap.empty() ? k+1 : chanmap[k];
 	    ++k;
 	  }
 	} else {
 	  Error( Here(here), "No channels defined for module %d.", i);
-	  delete [] fNChan; fNChan = 0;
-	  for( UShort_t j=0; j<i; j++ )
-	    delete [] fChanMap[j];
-	  delete [] fChanMap; fChanMap = 0;
+	  fChanMap.clear();
 	  err = kInitError;
 	}
       }
@@ -273,13 +262,7 @@ void THaShower::DeleteArrays()
 {
   // Delete member arrays. Internal function used by destructor.
 
-  delete [] fNChan; fNChan = 0;
-  UShort_t mapsize = fDetMap->GetSize();
-  if( fChanMap ) {
-    for( UShort_t i = 0; i<mapsize; i++ )
-      delete [] fChanMap[i];
-  }
-  delete [] fChanMap; fChanMap = 0;
+  fChanMap.clear();
   delete [] fBlockX;  fBlockX  = 0;
   delete [] fBlockY;  fBlockY  = 0;
   delete [] fPed;     fPed     = 0;
@@ -330,7 +313,8 @@ Int_t THaShower::Decode( const THaEvData& evdata )
   // fAsum_c          -  Sum of shower blocks corrected ADC values;
 
   // Loop over all modules defined for shower detector
-  for( UShort_t i = 0; i < fDetMap->GetSize(); i++ ) {
+  Int_t nmodules = fDetMap->GetSize();
+  for( Int_t i = 0; i < nmodules; i++ ) {
     THaDetMap::Module* d = fDetMap->GetModule( i );
 
     // Loop over all channels that have a hit.
@@ -342,8 +326,12 @@ Int_t THaShower::Decode( const THaEvData& evdata )
       // Get the data. shower blocks are assumed to have only single hit (hit=0)
       Int_t data = evdata.GetData( d->crate, d->slot, chan, 0 );
 
-      // Copy the data to the local variables.
-      Int_t k = *(*(fChanMap+i)+((d->reverse) ? d->hi - chan : chan-d->lo)) - 1;
+      Int_t jchan = (d->reverse) ? d->hi - chan : chan-d->lo;
+#ifdef NDEBUG
+      Int_t k = fChanMap[i][jchan] - 1;
+#else
+      Int_t k = fChanMap.at(i).at(jchan) - 1;
+#endif
 #ifdef WITH_DEBUG
       if( k<0 || k>=fNelem )
 	Warning( Here("Decode()"), "Bad array index: %d. Your channel map is "
@@ -351,6 +339,7 @@ Int_t THaShower::Decode( const THaEvData& evdata )
       else
 #endif
       {
+        // Copy the data and apply calibrations
 	fA[k]   = data;                   // ADC value
 	fA_p[k] = data - fPed[k];         // ADC minus ped
 	fA_c[k] = fA_p[k] * fGain[k];     // ADC corrected
