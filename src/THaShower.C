@@ -139,19 +139,18 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
     }
     if( !err ) {
       // Set up the new channel map
-      UInt_t mapsize = fDetMap->GetSize();
+      Int_t mapsize = fDetMap->GetSize();
       assert( mapsize > 0 );
       fNChan = new UShort_t[ mapsize ];
       fChanMap = new UShort_t*[ mapsize ];
-      UShort_t k = 1;
-      for( UInt_t i=0; i < mapsize && !err; i++ ) {
+      for( Int_t i=0, k=0; i < mapsize && !err; i++ ) {
 	THaDetMap::Module* module = fDetMap->GetModule(i);
 	fNChan[i] = module->hi - module->lo + 1;
 	if( fNChan[i] > 0 ) {
 	  fChanMap[i] = new UShort_t[ fNChan[i] ];
 	  for( UInt_t j=0; j<fNChan[i]; ++j ) {
-	    assert( static_cast<Int_t>(k) <= fNelem );
-	    fChanMap[i][j] = chanmap.empty() ? k : chanmap[k];
+	    assert( k < fNelem );
+	    fChanMap[i][j] = chanmap.empty() ? k+1 : chanmap[k];
 	    ++k;
 	  }
 	} else {
