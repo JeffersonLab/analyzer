@@ -145,14 +145,13 @@ Int_t THaShower::DoReadDatabase( FILE* fi, const TDatime& date )
   assert( mapsize > 0 );
   fNChan = new UShort_t[ mapsize ];
   fChanMap = new UShort_t*[ mapsize ];
-  Int_t k = 1;
-  for( Int_t i=0; i < mapsize; i++ ) {
+  for( Int_t i=0, k=0; i < mapsize; i++ ) {
     THaDetMap::Module* module = fDetMap->GetModule(i);
     fNChan[i] = module->hi - module->lo + 1;
     if( fNChan[i] > 0 ) {
       fChanMap[i] = new UShort_t[ fNChan[i] ];
       for( Int_t j=0; j<fNChan[i]; ++j ) {
-	assert( k <= fNelem );
+	assert( k < fNelem );
 	fChanMap[i][j] = chanmap[k];
 	++k;
       }
