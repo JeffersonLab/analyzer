@@ -29,16 +29,11 @@
 
 //#define DEBUG
 //#define WITH_DEBUG
-#define CRATE1 1         // HMS single arm setup
-#define CRATE5 5         // Brian's setup
-#define CRATE10 10       // Alex's setup
-#define CRATE11 11       // Temp HMS multicrate
-#define CRATE12 12       // Mark's setup
-#define SLOTMIN 3
-#define NUMSLOTS 21
+
+#define SLOTMIN 1
+#define NUMSLOTS 22
 #define NADCCHAN 16
-#define NUMEVENTS 500
-#define NUMRAWEVENTS 25
+#define NUMRAWEVENTS 100
 #define NPED 4
 
 using namespace std;
@@ -65,7 +60,7 @@ void GeneratePlots(Int_t mode, uint32_t islot, uint32_t chan) {
   slot_dir[islot] = dynamic_cast <TDirectory*> (mode_dir->Get(Form("slot_%d", islot)));
   if (!slot_dir[islot]) {slot_dir[islot] = mode_dir->mkdir(Form("slot_%d", islot)); slot_dir[islot]->cd();}
   else hfile->cd(Form("/mode_%d_data/slot_%d", mode, islot));
-  if (mode !=1) {
+  if (mode != 1) {
     if (!h2_pinteg[islot]) h2_pinteg[islot] = new TH2I("h2_pinteg", Form("FADC Mode %d Pulse Integral Data Slot %d; Channel Number; FADC Units (Channels)", mode, islot), 16, -0.5, 15.5, 4096, 0, 40095);
     if (!h2_ptime[islot]) h2_ptime[islot]   = new TH2I("h2_ptime", Form("FADC Mode %d Pulse Time Data Slot %d; Channel Number; FADC Units (Channels)", mode, islot), 16, -0.5, 15.5, 40096, 0, 40095);
     if (!h2_pped[islot]) h2_pped[islot]     = new TH2I("h2_pped", Form("FADC Mode %d Pulse Pedestal Data Slot %d; Channel Number; FADC Units (Channels)", mode, islot), 16, -0.5, 15.5, 4096, 0, 4095);
@@ -113,6 +108,56 @@ Int_t SumVectorElements(vector<uint32_t> data_vector) {
 
 int main(int argc, char* argv[])
 {
+
+  Int_t runNumber = 0;
+  Int_t maxEvent = 0;
+  Int_t crateNumber = 0;
+  TString spectrometer = "";
+  TString runFile, rootFile;
+
+  // Acquire run number, max number of events, spectrometer name, and crate number
+  if (runNumber == 0) {
+    cout << "\nEnter a Run Number (-1 to exit): ";
+    cin >> runNumber;
+    if (runNumber <= 0) {
+      cerr << "...Invalid entry\n" << endl;; 
+      return 1;
+    }
+  }
+  if (maxEvent == 0) {
+    cout << "\nEnter Number of Events to Analyze (-1 = All): ";
+    cin >> maxEvent;
+    if (maxEvent <= 0 && maxEvent != -1) {
+      cerr << "...Invalid entry\n" << endl;;
+      return 1;
+    }
+    if (maxEvent == -1)
+      cout << "\nAll Events in Run " << runNumber << " Will be Analayzed" << endl;
+  }
+  if (spectrometer = "") {
+    cout << "\nEnter the Spectrometer Name (hms or shms): ";
+    cin >> spectrometer;
+    if (spectrometer != "hms" && spectrometer != "shms") {
+      cerr << "...Invalid entry\n"; 
+      return 1;
+    }
+  }
+  if (crateNumber == 0) {
+    cout << "\nEnter the Crate Number to be Analyzed: ";
+    cin >> crateNumber;
+    if (crateNumber <= 0) {
+      cerr << "...Invalid entry\n"; 
+      return 1;
+    }
+  }
+
+  // Create file name patterns
+  if (spectrometer == "hms")
+    runFile = Form("raw/hms_all_%05d.dat", runNumber);
+  if (spectrometer == "shms")
+    runFile = Form("raw/shms_all_%05d.dat", runNumber);
+  rootFile = Form("ROOTfiles/raw_fadc_%d.root", runNumber);
+
   // Initialize raw samples index array
   memset(raw_samp_index, 0, sizeof(raw_samp_index));
   
@@ -121,7 +166,7 @@ int main(int argc, char* argv[])
   t = clock();
 
   // Define the data file to be analyzed
-  TString filename("snippet.dat");
+  TString filename(runFile);
 
   // Define the analysis debug output
   ofstream *debugfile = new ofstream;;
@@ -137,11 +182,14 @@ int main(int argc, char* argv[])
 
   // Initialize root and output
   TROOT fadcana("tstfadcroot", "Hall C analysis");
-  hfile = new TFile("tstfadc.root", "RECREATE", "fadc module data");
+  hfile = new TFile("fadc_data.root", "RECREATE", "fadc module data");
+
+  // Set the number of event to be analyzed
+  uint32_t iievent;
+  if (maxEvent == -1) iievent = 1;
+  else iievent = maxEvent;   
 
   // Loop over events
-  uint32_t iievent = 1;
-  //for(uint32_t ievent = 0; ievent < NUMEVENTS; ievent++) {
   for(uint32_t ievent = 0; ievent < iievent; ievent++) {
     // Read in data file
     int status = datafile.codaRead();
@@ -150,9 +198,10 @@ int main(int argc, char* argv[])
       evdata->LoadEvent(data);
       // Loop over slots
       for(uint32_t islot = SLOTMIN; islot < NUMSLOTS; islot++) {
-	if (evdata->GetNumRaw(CRATE11, islot) != 0) {  // HMS Single arm setup
+	// if (evdata->GetNumRaw(CRATE11, islot) != 0) {  // HMS Single arm setup
+	if (evdata->GetNumRaw(crateNumber, islot) != 0) {
 	  Fadc250Module *fadc = NULL;
-	  fadc = dynamic_cast <Fadc250Module*> (evdata->GetModule(CRATE11, islot));   // HMS single arm setup
+	  fadc = dynamic_cast <Fadc250Module*> (evdata->GetModule(crateNumber, islot));   // HMS single arm setup
 	  if (fadc != NULL) {
 	    //fadc->CheckDecoderStatus();
 	    // Loop over channels
@@ -224,9 +273,8 @@ int main(int argc, char* argv[])
       }  // Slot loop
     }  // CODA file read status condition
     if (iievent % 1000 == 0)
-      //if (iievent % 1 == 0)
       cout << iievent << " events have been processed" << endl;
-    iievent++;
+    if (maxEvent == -1) iievent++;
     if (status == EOF) break;
   }  // Event loop 
 
