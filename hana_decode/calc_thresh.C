@@ -16,11 +16,9 @@
 #define SLOTMIN  1
 #define NUMSLOTS 22
 #define NADCCHAN 16
-#define FADCMODE 9
 #define NPOINTS 100
 #define NSIGMAFIT 7
 #define NSIGMATHRESH 3
-#define CHANTHRESH 40
 
 using namespace std;
 
@@ -36,6 +34,17 @@ Double_t fr_low[NUMSLOTS][NADCCHAN], fr_high[NUMSLOTS][NADCCHAN];
 TDirectory *mode_dir, *slot_dir[NUMSLOTS], *chan_dir[NADCCHAN];
 
 void calc_thresh() {
+
+  Int_t fadc_mode  = 0;
+  // Acquire number of channels above baseline the thresholds should be
+  if (fadc_mode == 0) {
+    cout << "\nEnter The Mode of The F250's: ";
+    cin >> fadc_mode;
+    if (fadc_mode <= 0) {
+      cerr << "...Invalid entry\n" << endl;
+      exit(EXIT_FAILURE);
+    }
+  }
 
   Int_t nchan  = 0;
   // Acquire number of channels above baseline the thresholds should be
@@ -55,34 +64,34 @@ void calc_thresh() {
   // Declare the output text file
   ofstream outputfile;
   
-  mode_dir = dynamic_cast <TDirectory*> (rof->Get(Form("mode_%d_data", FADCMODE)));
+  mode_dir = dynamic_cast <TDirectory*> (rof->Get(Form("mode_%d_data", fadc_mode)));
   if(!mode_dir) {
-    mode_dir = rof->mkdir(Form("mode_%d_data", FADCMODE)); 
-    rof->cd(Form("/mode_%d_data", FADCMODE));
+    mode_dir = rof->mkdir(Form("mode_%d_data", fadc_mode)); 
+    rof->cd(Form("/mode_%d_data", fadc_mode));
   }
-  else rof->cd(Form("/mode_%d_data", FADCMODE));
+  else rof->cd(Form("/mode_%d_data", fadc_mode));
 
   for (uint32_t islot = SLOTMIN; islot < NUMSLOTS; islot++) {
     if (islot == 11 || islot == 12) continue;
 
     slot_dir[islot] = dynamic_cast <TDirectory*> (mode_dir->Get(Form("slot_%d", islot)));
     if(!slot_dir[islot]) {
-      slot_dir[islot] = rof->mkdir(Form("mode_%d_data/slot_%d", FADCMODE, islot)); 
-      rof->cd(Form("/mode_%d_data/slot_%d", FADCMODE, islot));
+      slot_dir[islot] = rof->mkdir(Form("mode_%d_data/slot_%d", fadc_mode, islot)); 
+      rof->cd(Form("/mode_%d_data/slot_%d", fadc_mode, islot));
     }
-    else rof->cd(Form("/mode_%d_data/slot_%d", FADCMODE, islot));
+    else rof->cd(Form("/mode_%d_data/slot_%d", fadc_mode, islot));
 
     for (uint32_t ichan = 0; ichan < NADCCHAN; ichan++) {
 
       // Write pedestal histos and fits to rof
       chan_dir[ichan] = dynamic_cast <TDirectory*> (slot_dir[islot]->Get(Form("chan_%d", ichan)));
       if(!chan_dir[ichan]) {
-	chan_dir[ichan] = rof->mkdir(Form("mode_%d_data/slot_%d/chan_%d", FADCMODE, islot, ichan)); 
-	rof->cd(Form("/mode_%d_data/slot_%d/chan_%d", FADCMODE, islot, ichan));
+	chan_dir[ichan] = rof->mkdir(Form("mode_%d_data/slot_%d/chan_%d", fadc_mode, islot, ichan)); 
+	rof->cd(Form("/mode_%d_data/slot_%d/chan_%d", fadc_mode, islot, ichan));
       }
-      else rof->cd(Form("/mode_%d_data/slot_%d/chan_%d", FADCMODE, islot, ichan));
+      else rof->cd(Form("/mode_%d_data/slot_%d/chan_%d", fadc_mode, islot, ichan));
 
-      if (!h_pped[islot][ichan]) h_pped[islot][ichan] = (TH1I*) (rif->Get(Form("mode_%d_data/slot_%d/chan_%d/h_pped", FADCMODE, islot, ichan)));
+      if (!h_pped[islot][ichan]) h_pped[islot][ichan] = (TH1I*) (rif->Get(Form("mode_%d_data/slot_%d/chan_%d/h_pped", fadc_mode, islot, ichan)));
       // Acquire the number of entries as a restriction for a good fit
       if (h_pped[islot][ichan]) nentries[islot][ichan] = h_pped[islot][ichan]->GetEntries();
       // cout << "CHANNEL NO PED = " << ichan << ", HISTO PTR = "
@@ -129,11 +138,11 @@ void calc_thresh() {
 	finl_mean[islot][ichan]   = gfit[islot][ichan]->GetParameter(1);
 	finl_stddev[islot][ichan] = gfit[islot][ichan]->GetParameter(2);
 
-	if ((NSIGMATHRESH * (UInt_t (finl_stddev[islot][ichan] + 0.5))) < CHANTHRESH)
-	  threshhold[islot][ichan] = UInt_t (finl_mean[islot][ichan] + 0.5) + CHANTHRESH;
+	if ((NSIGMATHRESH * (UInt_t (finl_stddev[islot][ichan] + 0.5))) < nchan)
+	  threshhold[islot][ichan] = UInt_t (finl_mean[islot][ichan] + 0.5) + nchan;
 	else
 	  threshhold[islot][ichan] = UInt_t (finl_mean[islot][ichan] + 0.5) + NSIGMATHRESH * (UInt_t (finl_stddev[islot][ichan] + 0.5));
-	//threshhold[islot][ichan]  = UInt_t (finl_mean[islot][ichan] + 0.5) + CHANTHRESH; // Handle rounding correctly
+	//threshhold[islot][ichan]  = UInt_t (finl_mean[islot][ichan] + 0.5) + nchan; // Handle rounding correctly
 	//threshhold[islot][ichan]  = UInt_t (finl_mean[islot][ichan] + 0.5) + NSIGMATHRESH * (UInt_t (finl_stddev[islot][ichan] + 0.5)); // Handle rounding correctly
 	// cout << "Slot = " << islot << ", Channel = " << ichan
 	//      << ", Mean = " << finl_mean[islot][ichan]
