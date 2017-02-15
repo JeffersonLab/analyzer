@@ -231,13 +231,10 @@ LNA_LINKDEF  := src/$(LNA)_LinkDef.h
 PROGRAMS     := analyzer $(LIBNORMANA)
 PODDLIBS     := $(LIBHALLA) $(LIBDC) $(LIBSCALER)
 
-GITHEADFILE  := $(shell [ -d .git ] && cat .git/HEAD | head -1 | cut -c6-)
-GITHEAD      := $(shell [ -n "$(GITHEADFILE)" ] && echo .git/$(GITHEADFILE))  # empty if nonexistent
-
 all:            subdirs
 		set -e; for i in $(PROGRAMS); do $(MAKE) $$i; done
 
-src/ha_compiledata.h:	Makefile $(GITHEAD)
+src/ha_compiledata.h:	Makefile
 		@echo "#ifndef ANALYZER_COMPILEDATA_H" > $@
 		@echo "#define ANALYZER_COMPILEDATA_H" >> $@
 		@echo "" >> $@
@@ -397,7 +394,7 @@ endif
 %.o:	%.C
 	$(CXX) $(CXXFLAGS) -o $@ -c $<
 
-%.d:	%.C src/ha_compiledata.h
+%.d:	%.C   src/ha_compiledata.h
 	@echo Creating dependencies for $<
 #	@$(SHELL) -ec '$(CXX) -MM $(CXXFLAGS) -c $< \
 #		| sed '\''s%\($*\)\.o[ :]*%\1.o $@ : %g'\'' > $@; \
