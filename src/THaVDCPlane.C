@@ -31,6 +31,7 @@
 #include <cstring>
 #include <vector>
 #include <iostream>
+#include <iomanip>
 
 using namespace std;
 
@@ -229,6 +230,29 @@ Int_t THaVDCPlane::DoReadDatabase( FILE* file, const TDatime& /* date */ )
 	    "Event-by-event time offsets will NOT be used!!",nm);
   }
 
+#ifdef WITH_DEBUG
+  if( fDebug > 2 ) {
+    Double_t pos[3]; fOrigin.GetXYZ(pos);
+    Double_t angle = fWAngle*TMath::RadToDeg();
+    DBRequest list[] = {
+      { "Number of wires",         &fNelem,     kInt       },
+      { "Detector position",       pos,         kDouble, 3 },
+      { "Detector size",           fSize,       kFloat,  3 },
+      { "Wire angle (deg)",        &angle,                 },
+      { "Wire start pos (m)",      &fWBeg,                 },
+      { "Wire spacing (m)",        &fWSpac,                },
+      { "Wire angle (deg)",        &angle,                 },
+      { "TDC resolution (s/chan)", &fTDCRes,               },
+      { "Drift Velocity (m/s) ",   &fDriftVel              },
+      { "Max gap in cluster",      &fNMaxGap,   kInt       },
+      { "Min TDC raw time",        &fMinTime,   kInt       },
+      { "Max TDC raw time",        &fMaxTime,   kInt       },
+      { 0 }
+    };
+    DebugPrint( list );
+  }
+#endif
+
   fIsInit = true;
   return kOK;
 }
@@ -403,28 +427,31 @@ Int_t THaVDCPlane::Decode( const THaEvData& evData)
 
   fHits->Sort();
 
+#ifdef WITH_DEBUG
   if ( fDebug > 3 ) {
-    printf("\nVDC %s:\n",GetPrefix());
+    cout << endl << "VDC plane " << GetPrefix() << endl;
     int ncol=4;
     for (int i=0; i<ncol; i++) {
-      printf("     Wire    TDC  ");
+      cout << "     Wire    TDC  ";
     }
-    printf("\n");
+    cout << endl;
     
     for (int i=0; i<(nextHit+ncol-1)/ncol; i++ ) {
       for (int c=0; c<ncol; c++) {
 	int ind = c*nextHit/ncol+i;
 	if (ind < nextHit) {
 	  THaVDCHit* hit = static_cast<THaVDCHit*>(fHits->At(ind));
-	  printf("     %3d    %5d ",hit->GetWireNum(),hit->GetRawTime());
+	  cout << "     " << setw(3) << hit->GetWireNum()
+	       << "    "  << setw(5) << hit->GetRawTime() << " ";
 	} else {
-	  //	  printf("\n");
+	  //	  cout << endl;
 	  break;
 	}
       }
-      printf("\n");
+      cout << endl;
     }
   }
+#endif
 
   return 0;
 

@@ -36,6 +36,7 @@
 
 #ifdef WITH_DEBUG
 #include <iostream>
+#include <limits>
 #endif
 
 using namespace std;
@@ -690,7 +691,12 @@ Int_t THaVDC::FineTrack( TClonesArray& tracks )
 #ifdef WITH_DEBUG
   // Wait for user to hit Return
   static char c = '\0';
+  static bool first = true;
   if( fDebug>1 ) {
+    if( first ) {
+      cin.ignore(numeric_limits<streamsize>::max(), '\n');
+      first = false;
+    }
     cin.clear();
     while( !cin.eof() && cin.get(c) && c != '\n') {}
   }

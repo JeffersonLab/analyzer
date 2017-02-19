@@ -23,6 +23,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <cassert>
+#include <iomanip>
 
 using namespace std;
 
@@ -475,6 +476,18 @@ void THaScintillator::ClearEvent()
 }
 
 //_____________________________________________________________________________
+#ifdef WITH_DEBUG
+static void WriteValue( Double_t val )
+{
+  // Helper function for printing debug information
+  if( val < THaAnalysisObject::kBig )
+    cout << fixed << setprecision(0) << setw(5) << val;
+  else
+    cout << " --- ";
+}
+#endif
+
+//_____________________________________________________________________________
 Int_t THaScintillator::Decode( const THaEvData& evdata )
 {
   // Decode scintillator data, correct TDC times and ADC amplitudes, and copy
@@ -485,6 +498,8 @@ Int_t THaScintillator::Decode( const THaEvData& evdata )
   // - The first fNelem detector channels correspond to the PMTs on the
   //   right hand side, the next fNelem channels, to the left hand side.
   //   (Thus channel numbering for each module must be consecutive.)
+
+  static const char* const here = "Decode";
 
   ClearEvent();
 
@@ -504,7 +519,7 @@ Int_t THaScintillator::Decode( const THaEvData& evdata )
       Int_t nhit = evdata.GetNumHits(d->crate, d->slot, chan);
       // if( nhit > 1 )
       if( nhit > 3 )
-	Warning( Here("Decode"), "Event %d: %d hits on %s channel %d/%d/%d",
+	Warning( Here(here), "Event %d: %d hits on %s channel %d/%d/%d",
 		 evdata.GetEvNum(),
 		 nhit, adc ? "ADC" : "TDC", d->crate, d->slot, chan );
 #endif
@@ -514,14 +529,12 @@ Int_t THaScintillator::Decode( const THaEvData& evdata )
       // Get the detector channel number, starting at 0
       Int_t k = d->first + ((d->reverse) ? d->hi - chan : chan - d->lo) - 1;
 
-#ifdef WITH_DEBUG      
       if( k<0 || k>NDEST*fNelem ) {
 	// Indicates bad database
-	Warning( Here("Decode()"), "Illegal detector channel: %d", k );
+	Warning( Here(here), "Event %d: Illegal detector channel: %d", evdata.GetEvNum(), k );
 	continue;
       }
 //        cout << "adc,j,k = " <<adc<<","<<j<< ","<<k<< endl;
-#endif
       // Copy the data to the local variables.
       DataDest* dest = fDataDest + k/fNelem;
       k = k % fNelem;
@@ -537,16 +550,28 @@ Int_t THaScintillator::Decode( const THaEvData& evdata )
       }
     }
   }
+
+#ifdef WITH_DEBUG
   if ( fDebug > 3 ) {
-    printf("\n\nEvent %d   Trigger %d Scintillator %s\n:",
-	   evdata.GetEvNum(), evdata.GetEvType(), GetPrefix() );
-    printf("   paddle  Left(TDC    ADC   ADC_p)   Right(TDC   ADC   ADC_p)\n");
+    cout << endl << endl;
+    cout << "Event " << evdata.GetEvNum() << "   Trigger " << evdata.GetEvType()
+	 << " Scintillator " << GetPrefix() << endl;
+    cout << "   paddle  Left(TDC    ADC   ADC_p)  Right(TDC    ADC   ADC_p)" << endl;
+    cout << right;
     for ( int i=0; i<fNelem; i++ ) {
-      printf("     %2d     %5.0f    %5.0f  %5.0f     %5.0f    %5.0f  %5.0f\n",
-	     i+1,fLT[i],fLA[i],fLA_p[i],fRT[i],fRA[i],fRA_p[i]);
+      cout << "     "     << setw(2) << i+1;
+      cout << "        "; WriteValue(fLT[i]);
+      cout << "  ";       WriteValue(fLA[i]);
+      cout << "  ";       WriteValue(fLA_p[i]);
+      cout << "        "; WriteValue(fRT[i]);
+      cout << "  ";       WriteValue(fRA[i]);
+      cout << "  ";       WriteValue(fRA_p[i]);
+      cout << endl;
     }
+    cout << left;
   }
-  
+#endif
+
   return fLTNhit+fRTNhit;
 }
 
