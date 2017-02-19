@@ -140,6 +140,8 @@ Int_t THaVDCPlane::DoReadDatabase( FILE* file, const TDatime& /* date */ )
     nWires += prev_nwires;
   } while( *buff );  // sanity escape
 
+  fNelem = nWires;
+
   // Load z, wire beginning postion, wire spacing, and wire angle
   Int_t n =
     sscanf( buff, "%15lf %15lf %15lf %15lf", &fZ, &fWBeg, &fWSpac, &fWAngle );
