@@ -37,7 +37,7 @@ THaCherenkov::THaCherenkov( const char* name, const char* description,
 }
 
 //_____________________________________________________________________________
-Int_t THaCherenkov::DoReadDatabase( FILE* fi, const TDatime& date )
+Int_t THaCherenkov::DoReadDatabase( FILE* fi, const TDatime& /* date */ )
 {
   // Read this detector's parameters from the database file 'fi'.
   // This function is called by THaDetectorBase::Init() once at the

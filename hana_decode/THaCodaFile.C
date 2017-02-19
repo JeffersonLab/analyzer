@@ -41,14 +41,14 @@ using namespace std;
        staterr("close",status);
   };       
 
-  int THaCodaFile::codaOpen(const char* fname, int mode) {  
+  int THaCodaFile::codaOpen(const char* fname, int /* mode */ ) {
        init(fname);
        int status = evOpen(fname,"r",&handle);
        staterr("open",status);
        return status;
   };
 
-  int THaCodaFile::codaOpen(const char* fname, const char* readwrite, int mode) {  
+  int THaCodaFile::codaOpen(const char* fname, const char* readwrite, int /* mode */ ) {
       init(fname);
       int status = evOpen(fname,readwrite,&handle);
       staterr("open",status);

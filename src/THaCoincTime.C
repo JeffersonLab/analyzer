@@ -152,7 +152,7 @@ THaAnalysisObject::EStatus THaCoincTime::Init( const TDatime& run_time )
 }
 
 //_____________________________________________________________________________
-Int_t THaCoincTime::DoReadDatabase( FILE* fi, const TDatime& date )
+Int_t THaCoincTime::DoReadDatabase( FILE* fi, const TDatime& /* date */ )
 {
   // Read this the TDC channels (and resolutions) from the database.
   // 'date' contains the date/time of the run being analyzed.

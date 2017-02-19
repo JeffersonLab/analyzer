@@ -58,7 +58,8 @@ void SimDecoder::Clear( Option_t* opt )
 }
 
 //_____________________________________________________________________________
-MCHitInfo SimDecoder::GetMCHitInfo( Int_t crate, Int_t slot, Int_t chan ) const
+MCHitInfo SimDecoder::GetMCHitInfo( Int_t /* crate */, Int_t /* slot */,
+				    Int_t /* chan */ ) const
 {
   // Return MCHitInfo for the given digitized hardware channel.
   // This is a dummy function that derived classes should override if they

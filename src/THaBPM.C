@@ -32,7 +32,7 @@ THaBPM::THaBPM( const char* name, const char* description,
 
 
 //_____________________________________________________________________________
-Int_t THaBPM::DoReadDatabase( FILE* fi, const TDatime& date )
+Int_t THaBPM::DoReadDatabase( FILE* fi, const TDatime& /* date */ )
 {
   // ReadDatabase:  if detectors cant be added to detmap
   //                or entry for bpms is missing           -> kInitError

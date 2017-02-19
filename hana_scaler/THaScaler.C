@@ -786,7 +786,7 @@ onldone:
   return 0;
 };
    
-void THaScaler::Print(Option_t* opt) const {
+void THaScaler::Print(Option_t* /* opt */) const {
 // Print data contents
   int i,j;
   cout << "\n============== Print out ================"<<endl;
@@ -1248,7 +1248,7 @@ Int_t THaScaler::CheckInit() {
   return 0;
 };
 
-void THaScaler::Clear(Option_t* opt) {
+void THaScaler::Clear(Option_t* /* opt */) {
    memset(rawdata,0,SCAL_NUMBANK*SCAL_NUMCHAN*sizeof(Int_t));
 };
 

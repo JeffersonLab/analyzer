@@ -79,7 +79,7 @@ void THaVDCPlane::MakePrefix()
 }
 
 //_____________________________________________________________________________
-Int_t THaVDCPlane::DoReadDatabase( FILE* file, const TDatime& date )
+Int_t THaVDCPlane::DoReadDatabase( FILE* file, const TDatime& /* date */ )
 {
   // Allocate TClonesArray objects and load plane parameters from database
 

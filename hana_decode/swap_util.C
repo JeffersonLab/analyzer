@@ -207,7 +207,7 @@ int swapped_fread(void *ptr,int size,int n_items,FILE *stream)
  * swapped memory copy from source to buffer accroding     *
  * to data type                                            *
  **********************************************************/
-void swapped_memcpy(char *buffer,char *source,int size)
+void swapped_memcpy(char *buffer,char *source,int /* size */)
 {
   evStack  *head, *p;
   LK_AHEAD lk;

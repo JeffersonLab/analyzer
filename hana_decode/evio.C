@@ -890,7 +890,7 @@ static void evFindEventBlockNum(EVFILE *a, EVBSEARCH *b, int *bknum)
  *     Find out whether there is a real event inside this block          *
  *     return 1: yes, return 0: no                                       *
  ************************************************************************/
-static int isRealEventsInsideBlock(EVFILE *a, int bknum, int old_left)
+static int isRealEventsInsideBlock(EVFILE *a, int /* bknum */, int old_left)
 {
   int nleft = old_left;
   int ev_size, temp, ev_type;
