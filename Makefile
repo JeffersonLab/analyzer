@@ -335,7 +335,7 @@ analyzer:	src/main.o $(PODDLIBS)
 #---------- Maintenance --------------------------------------------
 clean:
 		set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i clean; done
-		rm -f *.{so,a,o,os} *.so.* *~
+		rm -f *.{so,a,o,os} *.so.* *~ *.pyc
 		rm -f $(PROGRAMS) $(HA_DICT).* $(LNA_DICT).* *_rdict.pcm
 		cd src; rm -f ha_compiledata.h *.{o,os} *~
 
