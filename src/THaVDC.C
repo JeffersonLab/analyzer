@@ -1110,5 +1110,33 @@ bool THaVDC::THaMatrixElement::match(const THaMatrixElement& rhs) const
   return true;
 }
 
+//_____________________________________________________________________________
+void THaVDC::SetNMaxGap( Int_t val )
+{
+  fUpper->SetNMaxGap(val);
+  fLower->SetNMaxGap(val);
+}
+
+//_____________________________________________________________________________
+void THaVDC::SetMinTime( Int_t val )
+{
+  fUpper->SetMinTime(val);
+  fLower->SetMinTime(val);
+}
+
+//_____________________________________________________________________________
+void THaVDC::SetMaxTime( Int_t val )
+{
+  fUpper->SetMaxTime(val);
+  fLower->SetMaxTime(val);
+}
+
+//_____________________________________________________________________________
+void THaVDC::SetTDCRes( Double_t val )
+{
+  fUpper->SetTDCRes(val);
+  fLower->SetTDCRes(val);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 ClassImp(THaVDC)

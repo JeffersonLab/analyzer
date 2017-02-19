@@ -34,12 +34,21 @@
 
 using namespace std;
 
+// Defaults for typical VDC operation. Can be overridden via set functions.
+// Configurable via database in version 1.6 and later.
+
+static const Int_t kDefaultNMaxGap = 1;
+static const Int_t kDefaultMinTime = 800;
+static const Int_t kDefaultMaxTime = 2200;
+static const Double_t kDefaultTDCRes = 5.0e-10;  // 0.5 ns/chan = 5e-10 s /chan
 
 //_____________________________________________________________________________
 THaVDCPlane::THaVDCPlane( const char* name, const char* description,
 			  THaDetectorBase* parent )
-  : THaSubDetector(name,description,parent), /*fTable(NULL),*/ fTTDConv(NULL),
-    fVDC(NULL), fglTrg(NULL)
+  : THaSubDetector(name,description,parent), fNWiresHit(0),
+    fNMaxGap(kDefaultNMaxGap), fMinTime(kDefaultMinTime),
+    fMaxTime(kDefaultMaxTime), fFlags(0), fTDCRes(kDefaultTDCRes),
+    /*fTable(NULL),*/ fTTDConv(0), fVDC(0), fglTrg(0)
 {
   // Constructor
 
@@ -136,8 +145,6 @@ Int_t THaVDCPlane::DoReadDatabase( FILE* file, const TDatime& /* date */ )
     sscanf( buff, "%15lf %15lf %15lf %15lf", &fZ, &fWBeg, &fWSpac, &fWAngle );
   if( n != 4 ) return ErrPrint(file,here);
   fWAngle *= TMath::Pi()/180.0; // Convert to radians
-  // FIXME: Read from file
-  fTDCRes = 5.0e-10;  // 0.5 ns/chan = 5e-10 s /chan
 
   // Load drift velocity (will be used to initialize Crude Time to Distance
   // converter)
@@ -147,11 +154,6 @@ Int_t THaVDCPlane::DoReadDatabase( FILE* file, const TDatime& /* date */ )
   fgets(buff, LEN, file); // Skip line
 
   fNWiresHit = 0;
-
-  // Values are the same for each plane
-  fNMaxGap = 1;
-  fMinTime = 800;
-  fMaxTime = 2200;
 
   // first read in the time offsets for the wires
   vector<Double_t> wire_offsets(nWires);
@@ -541,6 +543,31 @@ Int_t THaVDCPlane::FitTracks()
   }
   return 0;
 }
+
+//_____________________________________________________________________________
+void THaVDCPlane::SetNMaxGap( Int_t val )
+{
+  fNMaxGap = val;
+}
+
+//_____________________________________________________________________________
+void THaVDCPlane::SetMinTime( Int_t val )
+{
+  fMinTime = val;
+}
+
+//_____________________________________________________________________________
+void THaVDCPlane::SetMaxTime( Int_t val )
+{
+  fMaxTime = val;
+}
+
+//_____________________________________________________________________________
+void THaVDCPlane::SetTDCRes( Double_t val )
+{
+  fTDCRes = val;
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 ClassImp(THaVDCPlane)

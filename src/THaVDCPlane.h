@@ -64,6 +64,11 @@ public:
 //   Int_t GetNumBins() const { return fNumBins; }
 //   Float_t *GetTable() const { return fTable; }
 
+  void     SetNMaxGap( Int_t val );
+  void     SetMinTime( Int_t val );
+  void     SetMaxTime( Int_t val );
+  void     SetTDCRes( Double_t val );
+
 protected:
 
   //Use TClonesArray::GetLast()+1 to get the number of wires, hits, & clusters 

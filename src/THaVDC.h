@@ -39,6 +39,11 @@ public:
 
   virtual void Print(const Option_t* opt) const;
 
+  void  SetNMaxGap( Int_t val );
+  void  SetMinTime( Int_t val );
+  void  SetMaxTime( Int_t val );
+  void  SetTDCRes( Double_t val );
+
   // Bits & and bit masks for THaTrack
   enum {
     kStageMask     = BIT(14) | BIT(15),  // Track processing stage bits

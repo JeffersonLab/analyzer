@@ -247,5 +247,33 @@ Int_t THaVDCUVPlane::FineTrack( )
   return 0;
 }
 
+//_____________________________________________________________________________
+void THaVDCUVPlane::SetNMaxGap( Int_t val )
+{
+  fU->SetNMaxGap(val);
+  fV->SetNMaxGap(val);
+}
+
+//_____________________________________________________________________________
+void THaVDCUVPlane::SetMinTime( Int_t val )
+{
+  fU->SetMinTime(val);
+  fV->SetMinTime(val);
+}
+
+//_____________________________________________________________________________
+void THaVDCUVPlane::SetMaxTime( Int_t val )
+{
+  fU->SetMaxTime(val);
+  fV->SetMaxTime(val);
+}
+
+//_____________________________________________________________________________
+void THaVDCUVPlane::SetTDCRes( Double_t val )
+{
+  fU->SetTDCRes(val);
+  fV->SetTDCRes(val);
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////

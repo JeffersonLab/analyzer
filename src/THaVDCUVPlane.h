@@ -42,6 +42,11 @@ public:
     { assert( i>=0 && i<GetNUVTracks() );
       return (THaVDCUVTrack*)fUVTracks->UncheckedAt(i); }
 
+  void  SetNMaxGap( Int_t val );
+  void  SetMinTime( Int_t val );
+  void  SetMaxTime( Int_t val );
+  void  SetTDCRes( Double_t val );
+
 protected:
 
   THaVDCPlane*  fU;           // The U plane
