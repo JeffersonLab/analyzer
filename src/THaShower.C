@@ -419,7 +419,8 @@ void THaShower::ClearEvent()
   for( Int_t i=0; i<fNelem; ++i ) {
     fA[i] = fA_p[i] = fA_c[i] = kBig;
   }
-  fAsum_p = fAsum_c = fE = fX = fY = fTRX = fTRY = kBig;
+  fAsum_p = fAsum_c = 0.0;
+  fE = fX = fY = fTRX = fTRY = kBig;
   memset( fNblk, 0, fNclublk*sizeof(fNblk[0]) );
   for( Int_t i=0; i<fNclublk; ++i ) {
     fEblk[i] = kBig;

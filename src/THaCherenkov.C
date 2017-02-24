@@ -236,7 +236,7 @@ void THaCherenkov::ClearEvent()
   for( Int_t i=0; i<fNelem; ++i ) {
     fT[i] = fT_c[i] = fA[i] = fA_p[i] = fA_c[i] = kBig;
   }
-  fASUM_p = fASUM_c = kBig;
+  fASUM_p = fASUM_c = 0.0;
   fTrackProj->Clear();
 }
 
