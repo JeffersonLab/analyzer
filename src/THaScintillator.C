@@ -297,7 +297,7 @@ Int_t THaScintillator::DoReadDatabase( FILE* fi, const TDatime& date )
 
   flags = kErrOnTooManyValues|kQuietOnTooFew|kStopAtNval|kStopAtSection;
   // TDC resolution (s/channel)
-  if( (err = ReadBlock(fi,&fTdc2T,1,here,flags|kRequireGreaterZero)) )
+  if( (err = ReadBlock(fi,&fTdc2T,1,here,flags)) )
     goto exit;
   //  fHaveExtras = true; // FIXME: should always be true?
   // Speed of light in the scintillator material (m/s)
