@@ -21,9 +21,10 @@
 #include "TDatime.h"
 #include "TMath.h"
 
-#include <cstring>
-#include <iostream>
+#include <cstring>   // for memset
 #include <cassert>
+#include <iostream>
+#include <iomanip>
 
 using namespace std;
 
@@ -477,24 +478,28 @@ Int_t THaShower::Decode( const THaEvData& evdata )
   }
 
   if ( fDebug > 3 ) {
-    printf("\nShower Detector %s:\n",GetPrefix());
+    cout << endl;
+    cout << "Shower Detector " << GetPrefix() << endl;
     int ncol=3;
     for (int i=0; i<ncol; i++) {
-      printf("  Block  ADC  ADC_p  ");
+      cout << "  Block  ADC  ADC_p  ";
     }
-    printf("\n");
-    
+    cout << endl;
+
     for (int i=0; i<(fNelem+ncol-1)/ncol; i++ ) {
       for (int c=0; c<ncol; c++) {
 	int ind = c*fNelem/ncol+i;
 	if (ind < fNelem) {
-	  printf("  %3d  %5.0f  %5.0f  ",ind+1,fA[ind],fA_p[ind]);
+	  cout << "  " << setw(3) << ind+1
+	       << "  " << setw(5) << setprecision(0) << fA[ind]
+	       << "  " << setw(5) << setprecision(0) << fA_p[ind]
+	       << "  ";
 	} else {
-	  //	  printf("\n");
+	  //	  cout << endl;
 	  break;
 	}
       }
-      printf("\n");
+      cout << endl;
     }
   }
 

@@ -17,10 +17,10 @@
 #include "TDatime.h"
 #include "TMath.h"
 
-#include <cstring>
-#include <cstdlib>
-#include <cstdio>
+#include <cstdlib>   // for atoi
 #include <cassert>
+#include <iostream>
+#include <iomanip>
 
 using namespace std;
 
@@ -261,7 +261,7 @@ Int_t THaCherenkov::Decode( const THaEvData& evdata )
       Int_t chan = evdata.GetNextChan( d->crate, d->slot, j );
       if( chan < d->lo || chan > d->hi ) continue;     // Not one of my channels
 
-      // Get the data. Aero mirrors are assumed to have only single hit (hit=0)
+      // Get the data. Mirrors are assumed to have only single hit (hit=0)
       Int_t data = evdata.GetData( d->crate, d->slot, chan, 0 );
 
       // Get the detector channel number, starting at 0
@@ -294,24 +294,29 @@ Int_t THaCherenkov::Decode( const THaEvData& evdata )
   }
 
   if ( fDebug > 3 ) {
-    printf("\nCherenkov %s:\n",GetPrefix());
+    cout << endl;
+    cout << "Cherenkov " << GetPrefix() << endl;
     int ncol=3;
     for (int i=0; i<ncol; i++) {
-      printf("  Mirror TDC   ADC  ADC_p  ");
+      cout << "  Mirror TDC   ADC  ADC_p  ";
     }
-    printf("\n");
+    cout << endl;
     
     for (int i=0; i<(fNelem+ncol-1)/ncol; i++ ) {
       for (int c=0; c<ncol; c++) {
 	int ind = c*fNelem/ncol+i;
 	if (ind < fNelem) {
-	  printf("  %3d  %5.0f  %5.0f  %5.0f  ",ind+1,fT[ind],fA[ind],fA_p[ind]);
+	  cout << "  " << setw(3) << ind+1
+	       << "  " << setw(5) << setprecision(0) << fT[ind]
+	       << "  " << setw(5) << setprecision(0) << fA[ind]
+	       << "  " << setw(5) << setprecision(0) << fA_p[ind]
+	       << "  ";
 	} else {
-	  //	  printf("\n");
+	  //	  cout << endl;
 	  break;
 	}
       }
-      printf("\n");
+      cout << endl;
     }
   }
   
