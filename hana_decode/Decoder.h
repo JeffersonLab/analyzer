@@ -46,7 +46,7 @@ namespace Decoder {
   static const Int_t END_EVTYPE       = 20;
   static const Int_t TS_PRESCALE_EVTYPE  = 120;
   // should be able to load special event types from crate map
-  static const Int_t EPICS_EVTYPE     = 131;
+  static const Int_t EPICS_EVTYPE     = 131; // default in Hall A
   static const Int_t PRESCALE_EVTYPE  = 133;
   static const Int_t DETMAP_FILE      = 135;
   static const Int_t TRIGGER_FILE     = 136;

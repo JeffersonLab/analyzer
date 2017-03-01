@@ -75,6 +75,7 @@ THaEvData::THaEvData() :
   //memset(psfact,0,MAX_PSFACT*sizeof(int));
   memset(crateslot,0,MAXROC*MAXSLOT*sizeof(THaSlotData*));
   fRunTime = time(0); // default fRunTime is NOW
+  fEpicsEvtType = Decoder::EPICS_EVTYPE;  // default for Hall A
 #ifndef STANDALONE
 // Register global variables.
   if( gHaVars ) {

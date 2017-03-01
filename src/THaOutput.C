@@ -416,12 +416,6 @@ void THaOutput::BuildList( const vector<string>& vdata)
       if (CmpNoCase(vdata[1],"epics") == 0) fOpenEpics = kFALSE;
     }
     if (fOpenEpics) {
-       cout << "THaOutput::ERROR: Syntax error in output.def"<<endl;
-       cout << "Must 'begin' and 'end' before 'begin' again."<<endl;
-       cout << "e.g. 'begin epics' ..... 'end epics'"<<endl;
-       return ;
-    }
-    if (fOpenEpics) {
        if (fFirstEpics) {
            if (!fEpicsTree)
               fEpicsTree = new TTree("E","Hall A Epics Data");

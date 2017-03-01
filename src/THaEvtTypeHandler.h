@@ -27,6 +27,14 @@ public:
    virtual void EvDump(THaEvData *evdata) const;
    virtual void SetDebugFile(std::ofstream *file) { if (file!=0) fDebugFile=file; };
    virtual void SetDebugFile(const char *filename);
+   virtual void AddEvtType(int evtype);
+   virtual void SetEvtType(int evtype);
+   virtual Int_t GetNumTypes() { return eventtypes.size(); };
+   virtual Int_t GetEvtType() {
+     if (eventtypes.size()==0) return -1;
+     return eventtypes[0];
+   }
+   virtual std::vector<Int_t> GetEvtTypes() { return eventtypes; };
 
 protected:
 

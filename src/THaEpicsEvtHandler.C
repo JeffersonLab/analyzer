@@ -102,7 +102,8 @@ THaAnalysisObject::EStatus THaEpicsEvtHandler::Init(const TDatime& date)
 
   cout << "Howdy !  We are initializing THaEpicsEvtHandler !!   name =   "<<fName<<endl;
 
-  eventtypes.push_back(131);  // what events to look for
+// Set the event type to the default unless the client has already defined it.
+  if (GetNumTypes()==0) SetEvtType(Decoder::EPICS_EVTYPE); 
 
   fStatus = kOK;
   return kOK;

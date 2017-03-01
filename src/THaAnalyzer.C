@@ -82,6 +82,7 @@ THaAnalyzer::THaAnalyzer() :
   fUpdateRun(kTRUE), fOverwrite(kTRUE), fDoBench(kFALSE),
   fDoHelicity(kFALSE), fDoPhysics(kTRUE), fDoOtherEvents(kTRUE),
   fDoSlowControl(kTRUE)
+
 {
   // Default constructor.
 
@@ -99,9 +100,10 @@ THaAnalyzer::THaAnalyzer() :
   fEvtHandlers = gHaEvtHandlers;
 
   // EPICs data
-  fEpicsHandler = new THaEpicsEvtHandler("epics","EPICS event type 131");
+  fEpicsHandler = new THaEpicsEvtHandler("epics","EPICS event type");
   //  fEpicsHandler->SetDebugFile("epicsdat.txt");
   fEvtHandlers->Add(fEpicsHandler);
+  
 
   // Timers
   fBench = new THaBenchmark;
@@ -839,6 +841,13 @@ Int_t THaAnalyzer::ReadOneEvent()
 }
 
 //_____________________________________________________________________________
+void THaAnalyzer::SetEpicsEvtType(Int_t itype)
+{
+    if (fEpicsHandler) fEpicsHandler->SetEvtType(itype);
+    if (fEvData) fEvData->SetEpicsEvtType(itype);
+};
+
+//_____________________________________________________________________________
 Int_t THaAnalyzer::SetCountMode( Int_t mode )
 {
   // Set event counting mode. The default mode is kCountPhysics.
@@ -1238,7 +1247,8 @@ Int_t THaAnalyzer::MainAnalysis()
     evdone = true;
   }
 
-  //=== EPICS data ===
+  //=== EPICS data === 
+  fEvData->SetEpicsEvtType(fEpicsHandler->GetEvtType());
   if( fEvData->IsEpicsEvent() && fDoSlowControl ) {
     Incr(kNevEpics);
     retval = SlowControlAnalysis(retval);
