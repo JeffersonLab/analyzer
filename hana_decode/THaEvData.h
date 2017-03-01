@@ -39,6 +39,9 @@ public:
 
   virtual Int_t Init();
 
+  // Set the EPICS event type
+  void      SetEpicsEvtType(Int_t itype) { fEpicsEvtType = itype; };
+
   // Basic access to the decoded data
   Int_t     GetEvType()   const { return event_type; }
   Int_t     GetEvLength() const { return event_length; }
@@ -116,6 +119,21 @@ public:
     } else {
       return GetData( crate, slot, chan, hit );
     }
+  }
+
+  Int_t GetLEbit(Int_t crate, Int_t slot, Int_t chan, Int_t hit ) const 
+  { // get the Leading Edge bit (works for fastbus)
+    return GetOpt(crate, slot, chan, hit );
+  }
+
+  Int_t GetOpt( Int_t crate, Int_t slot, Int_t chan, Int_t hit ) const 
+  {// get the "Opt" bit (works for fastbus, is otherwise zero)
+    Decoder::Module* module = GetModule(crate, slot);
+    if (!module) {
+      std::cout << "No module at crate "<<crate<<"   slot "<<slot<<std::endl;
+      return 0;
+    }
+    return module->GetOpt(GetRawData(crate, slot, hit));
   }
 
   // Optional functionality that may be implemented by derived classes
@@ -198,7 +216,7 @@ protected:
   // static const Int_t PAUSE_EVTYPE     = 19;
   // static const Int_t END_EVTYPE       = 20;
   // static const Int_t TS_PRESCALE_EVTYPE  = 120;
-  // static const Int_t EPICS_EVTYPE     = 131;
+  // static const Int_t EPICS_EVTYPE     = 131;  (default in Hall A)
   // static const Int_t PRESCALE_EVTYPE  = 133;
   // static const Int_t DETMAP_FILE      = 135;
   // static const Int_t TRIGGER_FILE     = 136;
@@ -213,6 +231,8 @@ protected:
   Bool_t first_decode;
   Bool_t fTrigSupPS;
   Bool_t  fMultiBlockMode, fBlockIsDone;
+
+  Int_t fEpicsEvtType;
 
   const UInt_t *buffer;
 
@@ -389,7 +409,7 @@ Bool_t THaEvData::IsPrestartEvent() const {
 
 inline
 Bool_t THaEvData::IsEpicsEvent() const {
-  return (event_type == Decoder::EPICS_EVTYPE);
+  return (event_type == fEpicsEvtType);
 };
 
 inline
