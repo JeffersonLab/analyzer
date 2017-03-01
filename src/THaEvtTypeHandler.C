@@ -28,6 +28,16 @@ THaEvtTypeHandler::~THaEvtTypeHandler()
   }
 }
 
+void THaEvtTypeHandler::AddEvtType(int evtype) {
+  eventtypes.push_back(evtype);
+}
+  
+void THaEvtTypeHandler::SetEvtType(int evtype) {
+  eventtypes.clear();
+  AddEvtType(evtype);
+}
+
+
 void THaEvtTypeHandler::EvPrint() const
 {
   cout << "Hello !  THaEvtTypeHandler name =  "<<GetName()<<endl;

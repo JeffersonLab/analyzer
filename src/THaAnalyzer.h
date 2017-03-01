@@ -74,6 +74,9 @@ public:
   void           SetMarkInterval( UInt_t interval ) { fMarkInterval = interval; }
   void           SetVerbosity( Int_t level )        { fVerbose = level; }
 
+  // Set the EPICS event type
+  void           SetEpicsEvtType(Int_t itype);
+
   static THaAnalyzer* GetInstance() { return fgAnalyzer; }
 
   // Return codes for analysis routines inside event loop
