@@ -17,19 +17,20 @@
 #define NUMSLOTS 22
 #define NADCCHAN 16
 #define NPOINTS 100
-#define NSIGMAFIT 7
-#define NSIGMATHRESH 3
+#define NSIGMAFIT 5
+#define NSIGMATHRESH 5
 
 using namespace std;
 
 TFile *rif, *rof;
 TH1I *h_pped[NUMSLOTS][NADCCHAN];
 TF1 *init_gfit[NUMSLOTS][NADCCHAN], *gfit[NUMSLOTS][NADCCHAN];
-uint32_t nentries[NUMSLOTS][NADCCHAN], threshhold[NUMSLOTS][NADCCHAN];
+UInt_t nentries[NUMSLOTS][NADCCHAN], threshhold[NUMSLOTS][NADCCHAN];
 Double_t init_max[NUMSLOTS][NADCCHAN], init_mean[NUMSLOTS][NADCCHAN], init_stddev[NUMSLOTS][NADCCHAN];
 Double_t iter_max[NUMSLOTS][NADCCHAN], iter_mean[NUMSLOTS][NADCCHAN], iter_stddev[NUMSLOTS][NADCCHAN];
 Double_t finl_max[NUMSLOTS][NADCCHAN], finl_mean[NUMSLOTS][NADCCHAN], finl_stddev[NUMSLOTS][NADCCHAN];
 Double_t finl_max_err[NUMSLOTS][NADCCHAN], finl_mean_err[NUMSLOTS][NADCCHAN], finl_stddev_err[NUMSLOTS][NADCCHAN];
+Double_t init_fr_low[NUMSLOTS][NADCCHAN], init_fr_high[NUMSLOTS][NADCCHAN];
 Double_t fr_low[NUMSLOTS][NADCCHAN], fr_high[NUMSLOTS][NADCCHAN];
 TDirectory *mode_dir, *slot_dir[NUMSLOTS], *chan_dir[NADCCHAN];
 
@@ -71,7 +72,7 @@ void calc_thresh() {
   }
   else rof->cd(Form("/mode_%d_data", fadc_mode));
 
-  for (uint32_t islot = SLOTMIN; islot < NUMSLOTS; islot++) {
+  for (UInt_t islot = SLOTMIN; islot < NUMSLOTS; islot++) {
     if (islot == 11 || islot == 12) continue;
 
     slot_dir[islot] = dynamic_cast <TDirectory*> (mode_dir->Get(Form("slot_%d", islot)));
@@ -81,7 +82,7 @@ void calc_thresh() {
     }
     else rof->cd(Form("/mode_%d_data/slot_%d", fadc_mode, islot));
 
-    for (uint32_t ichan = 0; ichan < NADCCHAN; ichan++) {
+    for (UInt_t ichan = 0; ichan < NADCCHAN; ichan++) {
 
       // Write pedestal histos and fits to rof
       chan_dir[ichan] = dynamic_cast <TDirectory*> (slot_dir[islot]->Get(Form("chan_%d", ichan)));
@@ -102,15 +103,34 @@ void calc_thresh() {
 	// Define the fit
 	init_gfit[islot][ichan] = new TF1(Form("init_fit_slot_%d_chan_%d", islot, ichan), "gaus(0)");
 	init_gfit[islot][ichan]->SetLineColor(2);
-	// Acquire the initial fit parameters and initialize the fit
-	init_max[islot][ichan]    = h_pped[islot][ichan]->GetMaximum();
-	init_mean[islot][ichan]   = h_pped[islot][ichan]->GetMean();
-	init_stddev[islot][ichan] = h_pped[islot][ichan]->GetStdDev();
+
+	// Obtain intial fit parameters
+	Int_t    init_max_bin = h_pped[islot][ichan]->GetMaximumBin();
+	Double_t init_max_val = h_pped[islot][ichan]->GetMaximum();
+	Double_t init_max_bin_center = h_pped[islot][ichan]->GetBinCenter(init_max_bin);
+
+	Int_t curr_bin = init_max_bin+1;
+	while (true) {
+	  Double_t curr_val = h_pped[islot][ichan]->GetBinContent(curr_bin);
+	  if (curr_val < init_max_val/2.) break;
+	  ++curr_bin;
+	}
+	Double_t init_sigma = h_pped[islot][ichan]->GetBinCenter(curr_bin) - init_max_bin_center;
+
+	// Define the initial fit parameters and initialize the fit
+	init_max[islot][ichan]    = init_max_val;
+	init_mean[islot][ichan]   = init_max_bin_center;
+	init_stddev[islot][ichan] = init_sigma;
 	init_gfit[islot][ichan]->SetParameters(init_max[islot][ichan],
 					       init_mean[islot][ichan],
 					       init_stddev[islot][ichan]);
+
 	// Perform the initial fit over the full range of the histo
-	h_pped[islot][ichan]->Fit(Form("init_fit_slot_%d_chan_%d", islot, ichan), "Q");
+	init_fr_low[islot][ichan]  = init_mean[islot][ichan] - NSIGMAFIT*init_stddev[islot][ichan];
+	init_fr_high[islot][ichan] = init_mean[islot][ichan] + NSIGMAFIT*init_stddev[islot][ichan];
+	init_gfit[islot][ichan]->SetRange(init_fr_low[islot][ichan], init_fr_high[islot][ichan]); 
+	h_pped[islot][ichan]->Fit(Form("init_fit_slot_%d_chan_%d", islot, ichan), "QR");
+	//h_pped[islot][ichan]->Fit(Form("init_fit_slot_%d_chan_%d", islot, ichan));
 	init_gfit[islot][ichan]->Draw();
 	// Declare and initialize the second and final fit
 	gfit[islot][ichan] = new TF1(Form("iter_fit_slot_%d_chan_%d", islot, ichan), "gaus(0)");
@@ -132,6 +152,7 @@ void calc_thresh() {
 	gfit[islot][ichan]->SetRange(fr_low[islot][ichan], fr_high[islot][ichan]); 
 	// Perform the fit and store the parameters
 	h_pped[islot][ichan]->Fit(Form("iter_fit_slot_%d_chan_%d", islot, ichan), "QR");
+	//h_pped[islot][ichan]->Fit(Form("iter_fit_slot_%d_chan_%d", islot, ichan), "R");
 	gfit[islot][ichan]->Draw("same");
 	// Acquire the final fit paramters
 	finl_max[islot][ichan]    = gfit[islot][ichan]->GetParameter(0);
@@ -161,10 +182,10 @@ void calc_thresh() {
   //rof->Write();
 
   outputfile.open("thresholds.dat");
-  for (uint32_t islot = SLOTMIN; islot < NUMSLOTS; islot++) {
+  for (UInt_t islot = SLOTMIN; islot < NUMSLOTS; islot++) {
     if (islot == 11 || islot == 12) continue;
     outputfile << "slot=" << islot << endl;
-    for (uint32_t ichan = 0; ichan < NADCCHAN; ichan++)
+    for (UInt_t ichan = 0; ichan < NADCCHAN; ichan++)
       if (threshhold[islot][ichan] == 0)
 	outputfile << 4095 << endl;
       else 
