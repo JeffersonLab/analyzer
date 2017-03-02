@@ -173,7 +173,7 @@ void calc_thresh() {
 	finl_mean_err[islot][ichan]   = gfit[islot][ichan]->GetParError(1);
 	finl_stddev_err[islot][ichan] = gfit[islot][ichan]->GetParError(2);
 
-	// Write histos and fits to rof
+	// Write histos and fits to root output file
 	h_pped[islot][ichan]->Write();
       }  // Histo object and nentries requirement
     }  // Channel loop
