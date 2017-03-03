@@ -587,21 +587,21 @@ Int_t THaScintillator::ApplyCorrections( void )
   //
   Int_t nlt=0, nrt=0, nla=0, nra=0;
   for (Int_t i=0; i<fNelem; i++) {
-    if (fLA[i] != 0.) {
+    if (fLA[i] > 0. && fLA[i] < 0.5*kBig) {
       fLA_p[i] = fLA[i] - fLPed[i];
       fLA_c[i] = fLA_p[i]*fLGain[i];
       nla++;
     }
-    if (fRA[i] != 0.) {
+    if (fRA[i] > 0. && fRA[i] < 0.5*kBig) {
       fRA_p[i] = fRA[i] - fRPed[i];
       fRA_c[i] = fRA_p[i]*fRGain[i];
       nra++;
     }
-    if (fLT[i] != 0.) {
+    if (fLT[i] < 0.5*kBig) {
       fLT_c[i] = (fLT[i] - fLOff[i])*fTdc2T - TimeWalkCorrection(i,kLeft);
       nlt++;
     }
-    if (fRT[i] != 0.) {
+    if (fRT[i] < 0.5*kBig) {
       fRT_c[i] = (fRT[i] - fROff[i])*fTdc2T - TimeWalkCorrection(i,kRight);
       nrt++;
     }
@@ -617,30 +617,30 @@ Double_t THaScintillator::TimeWalkCorrection(const Int_t& paddle,
   // Calculate the time-walk correction. The timewalk might be
   // dependent upon the specific PMT, so information about exactly
   // which PMT fired is required.
-  Double_t adc=0;
+
+  if (fNTWalkPar<=0 || !fTWalkPar || fNelem == 0)
+    return 0.; // uninitialized return safe 0
+
+  Double_t adc, ref = fAdcMIP;
   if (side == kLeft)
     adc = fLA_p[paddle];
   else
     adc = fRA_p[paddle];
 
-  if (fNTWalkPar<=0 || !fTWalkPar) return 0.; // uninitialized return safe 0
-
   // get the ADC value above the pedestal
-  if ( adc <=0. ) return 0.;
-  
-  // we have an arbitrary timing offset, and will declare here that
-  // for a MIP ( peak ~2000 ADC channels ) the timewalk correction is 0
-  
-  Double_t ref = fAdcMIP;
-  Double_t tw(0), tw_ref(0.);
+  if ( adc <=0. || ref <= 0.)
+    return 0.;
+
   int npar = fNTWalkPar/(2*fNelem);
-  
-  Double_t *par = &(fTWalkPar[npar*(side*fNelem+paddle)]);
 
-  tw = par[0]*pow(adc,-.5);
-  tw_ref = par[0]*pow(ref,-.5);
+  Double_t par = fTWalkPar[npar*(fNelem*side+paddle)];
 
-  return tw-tw_ref;
+  // Traditional correction according to
+  // J.S.Brown et al., NIM A221, 503 (1984); T.Dreyer et al., NIM A309, 184 (1991)
+  // Assume that for a MIP (peak ~2000 ADC channels) the correction is 0
+  Double_t corr = par * ( 1./TMath::Sqrt(adc) - 1./TMath::Sqrt(ref) );
+
+  return corr;
 }
 
 //_____________________________________________________________________________
@@ -660,7 +660,7 @@ Int_t THaScintillator::CoarseProcess( TClonesArray& /* tracks */ )
   // Fill in information available from timing
   fNhit = 0;
   for (int i=0; i<fNelem; i++) {
-    if (fLT[i]>0 && fRT[i]>0) {
+    if( fLT[i]<0.5*kBig && fRT[i]<0.5*kBig ) {
       fHitPad[fNhit++] = i;
       fTime[i] = .5*(fLT_c[i]+fRT_c[i])-fSize[1]/fCn;
       fdTime[i] = fResolution/sqrt2;
@@ -668,7 +668,7 @@ Int_t THaScintillator::CoarseProcess( TClonesArray& /* tracks */ )
     }
 
     // rough calculation of position from ADC reading
-    if (fLA_c[i]>0&&fRA_c[i]>0) {
+    if( fLA[i]<0.5*kBig && fRA[i]<0.5*kBig && fLA_c[i]>0 && fRA_c[i]>0 ) {
       fYa[i] = TMath::Log(fLA_c[i]/fRA_c[i])/(2.*fAttenuation);
       // rough dE/dX-like quantity, not correcting for track angle
       fAmpl[i] = TMath::Sqrt(fLA_c[i]*fRA_c[i]*TMath::Exp(fAttenuation*2*fSize[1]))
