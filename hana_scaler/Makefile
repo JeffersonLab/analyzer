@@ -118,11 +118,6 @@ ARCH          = linux
   DEFINES        += $(shell getconf LFS_CFLAGS)
 endif
 
-MAKEDEPEND    = g++
-ifeq ($(shell root-config --version | cut -c1),6)
-  MAKEDEPEND += -std=c++11
-endif
-
 export OSNAME := $(shell uname)
 
 ifeq ($(OSNAME),SunOS)
@@ -307,19 +302,21 @@ install:	all
 #	-cp -puvf libscaler.so $(ANALYZER)/$(PLATFORM)
 ###
 
+.PHONY: all static tarfile version clean realclean install
+
 .SUFFIXES:
-.SUFFIXES: .c .cc .cpp .C .o .d
 
 %.o:	%.C
-	$(CXX) $(CXXFLAGS) -c $<
-
-%.d:	%.C
-	@echo Creating dependencies for $<
-#	@$(SHELL) -ec '$(CXX) -MM $(CXXFLAGS) -c $< \
-#		| sed '\''s/\($*\)\.o[ :]*/\1.o $@ : /g'\'' > $@; \
-#		[ -s $@ ] || rm -f $@'
-	@$(SHELL) -ec '$(MAKEDEPEND) -MM $(ROOTINC) $(INCLUDES) $(DEFINES) -c $< \
-		| sed '\''s/\($*\)\.o[ :]*/\1.o $@ : /g'\'' > $@; \
-		[ -s $@ ] || rm -f $@'
+ifeq ($(strip $(MAKEDEPEND)),)
+	$(CXX) $(CXXFLAGS) -MMD -o $@ -c $<
+	@mv -f $*.d $*.d.tmp
+else
+	$(CXX) $(CXXFLAGS) -o $@ -c $<
+	$(MAKEDEPEND) $(ROOTINC) $(INCLUDES) $(DEFINES) -c $< > $*.d.tmp
+endif
+	@sed -e 's|.*:|$*.o:|' < $*.d.tmp > $*.d
+	@sed -e 's/.*://' -e 's/\\$$//' < $*.d.tmp | fmt -1 | \
+	  sed -e 's/^ *//' -e 's/$$/:/' >> $*.d
+	@rm -f $*.d.tmp
 
 -include $(DEPS)

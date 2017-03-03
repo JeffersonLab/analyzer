@@ -133,11 +133,6 @@ ifdef ONLINE_ET
 endif
 
 
-MAKEDEPEND   := gcc
-ifeq ($(shell root-config --version | cut -c1),6)
-  MAKEDEPEND += -std=c++11
-endif
-
 ifdef WITH_DEBUG
 DEFINES      += -DWITH_DEBUG
 endif
@@ -255,8 +250,12 @@ src/ha_compiledata.h:	Makefile
 		@echo "" >> $@
 		@echo "#endif" >> $@
 
-subdirs:
-		set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i; done
+src/THaInterface.o:  src/ha_compiledata.h
+
+subdirs:	$(SUBDIRS)
+
+$(SUBDIRS):
+		set -e; $(MAKE) -C $@
 
 #---------- Core libraries -----------------------------------------
 $(LIBHALLA).$(VERSION):	$(HDR) $(OBJS)
@@ -382,29 +381,25 @@ ifneq ($(NAME),analyzer)
 endif
 		set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i install; done
 
-.PHONY: all clean realclean srcdist cvsdist subdirs static
-
-
 ###--- DO NOT CHANGE ANYTHING BELOW THIS LINE UNLESS YOU KNOW WHAT
 ###    YOU ARE DOING
 
+.PHONY: all clean realclean srcdist cvsdist subdirs $(SUBDIRS)
+
 .SUFFIXES:
-.SUFFIXES: .c .cc .cpp .C .o .d
 
 %.o:	%.C
+ifeq ($(strip $(MAKEDEPEND)),)
+	$(CXX) $(CXXFLAGS) -MMD -o $@ -c $<
+	@mv -f $*.d $*.d.tmp
+else
 	$(CXX) $(CXXFLAGS) -o $@ -c $<
-
-%.d:	%.C   src/ha_compiledata.h
-	@echo Creating dependencies for $<
-#	@$(SHELL) -ec '$(CXX) -MM $(CXXFLAGS) -c $< \
-#		| sed '\''s%\($*\)\.o[ :]*%\1.o $@ : %g'\'' > $@; \
-#		[ -s $@ ] || rm -f $@'
-	@$(SHELL) -ec '$(MAKEDEPEND) -MM $(ROOTINC) $(INCLUDES) $(DEFINES) -c $< \
-		| sed '\''s%^.*\.o%$*\.o%g'\'' \
-		| sed '\''s%\($*\)\.o[ :]*%\1.o $@ : %g'\'' > $@; \
-		[ -s $@ ] || rm -f $@'
-
-###
+	$(MAKEDEPEND) $(ROOTINC) $(INCLUDES) $(DEFINES) -c $< > $*.d.tmp
+endif
+	@sed -e 's|.*:|$*.o:|' < $*.d.tmp > $*.d
+	@sed -e 's/.*://' -e 's/\\$$//' < $*.d.tmp | fmt -1 | \
+	  sed -e 's/^ *//' -e 's/$$/:/' >> $*.d
+	@rm -f $*.d.tmp
 
 -include $(DEP)
 
