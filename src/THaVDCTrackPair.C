@@ -11,6 +11,7 @@
 
 #include "THaVDCTrackPair.h"
 #include "THaVDCUVTrack.h"
+#include "THaVDCCluster.h"
 #include "TClass.h"
 
 #include <iostream>
@@ -94,7 +95,14 @@ void THaVDCTrackPair::Print( Option_t* ) const
 {
   // Print this object
 
-  cout << fError << endl;
+  cout << "UV pair TU TV BU BV = "
+       << GetUpper()->GetUCluster()->GetPivotWireNum() << " "
+       << GetUpper()->GetVCluster()->GetPivotWireNum() << " "
+       << GetLower()->GetUCluster()->GetPivotWireNum() << " "
+       << GetLower()->GetVCluster()->GetPivotWireNum() << ", "
+    //       << "status = " << fStatus << ", "
+       << "err = " << fError
+       << endl;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -393,21 +393,19 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
     return 0;
   }
 
-  THaVDCUVTrack *track, *partner;
-  THaVDCTrackPair *thePair;
-
   for( int i = 0; i < nLowerTracks; i++ ) {
-    track = fLower->GetUVTrack(i);
+    pUV track = fLower->GetUVTrack(i);
     if( !track ) 
       continue;
 
     for( int j = 0; j < nUpperTracks; j++ ) {
-      partner = fUpper->GetUVTrack(j);
+      pUV partner = fUpper->GetUVTrack(j);
       if( !partner ) 
 	continue;
 
       // Create new UV track pair.
-      thePair = new( (*fUVpairs)[nPairs++] ) THaVDCTrackPair( track, partner );
+      THaVDCTrackPair* thePair =
+	new( (*fUVpairs)[nPairs++] ) THaVDCTrackPair( track, partner );
 
       // Explicitly mark these UV tracks as unpartnered
       track->SetPartner( NULL );
@@ -418,14 +416,8 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
     }
   }
       
-#ifdef WITH_DEBUG
-  if( fDebug>1 )
-    cout << nPairs << " pairs.\n";
-#endif
-
   // Initialize some counters
-  int n_exist = 0, n_mod = 0;
-  int n_oops = 0;
+  int n_exist = 0, n_mod = 0, n_oops = 0;
   // How many tracks already exist in the global track array?
   if( tracks )
     n_exist = tracks->GetLast()+1;
@@ -434,20 +426,25 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
   if( nPairs > 1 )
     fUVpairs->Sort();
 
+#ifdef WITH_DEBUG
+  if( fDebug>1 ) {
+    cout << nPairs << " pairs.\n";
+    fUVpairs->Print();
+  }
+#endif
+
   // Mark pairs as partners, starting with the best matches,
   // until all tracks are marked.
   for( int i = 0; i < nPairs; i++ ) {
-    if( !(thePair = static_cast<THaVDCTrackPair*>( fUVpairs->At(i) )) )
+    THaVDCTrackPair* thePair =
+      static_cast<THaVDCTrackPair*>( fUVpairs->At(i) );
+    if( !thePair )
       continue;
 
 #ifdef WITH_DEBUG
     if( fDebug>1 ) {
-      cout << "Pair " << i << ":  " 
-	   << thePair->GetUpper()->GetUCluster()->GetPivotWireNum() << " "
-	   << thePair->GetUpper()->GetVCluster()->GetPivotWireNum() << " "
-	   << thePair->GetLower()->GetUCluster()->GetPivotWireNum() << " "
-	   << thePair->GetLower()->GetVCluster()->GetPivotWireNum() << " "
-	   << thePair->GetError() << endl;
+      cout << "Pair " << i << ":  ";
+      thePair->Print();
     }
 #endif
     // Stop if track matching error too big.
@@ -462,10 +459,15 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
       break;
 
     // Get the tracks of the pair
-    track   = thePair->GetLower();
-    partner = thePair->GetUpper();
-    if( !track || !partner ) 
+    pUV track   = thePair->GetLower();
+    pUV partner = thePair->GetUpper();
+    if( !track || !partner )
       continue;
+    THaVDCCluster
+      *tu = track->GetUCluster(),
+      *tv = track->GetVCluster(),
+      *pu = partner->GetUCluster(),
+      *pv = partner->GetVCluster();
 
     //FIXME: debug
 #ifdef WITH_DEBUG
@@ -500,12 +502,6 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
     // Compute global track values and get TRANSPORT coordinates for tracks.
     // Replace local cluster slopes with global ones, 
     // which have higher precision.
-
-    THaVDCCluster 
-      *tu = track->GetUCluster(), 
-      *tv = track->GetVCluster(), 
-      *pu = partner->GetUCluster(),
-      *pv = partner->GetVCluster();
 
     Double_t du = pu->GetIntercept() - tu->GetIntercept();
     Double_t dv = pv->GetIntercept() - tv->GetIntercept();
@@ -589,6 +585,14 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
       partner->CalcChisquare(chi2,nhits);
       theTrack->SetChi2(chi2,nhits-4); // Nconstraints - Nparameters
 
+#ifdef WITH_DEBUG
+      if( fDebug>2 ) {
+	cout << " chi2/ndof = " << chi2 << "/" << nhits-4;
+	if( nhits > 4 )
+	  cout << " = " << chi2/(nhits-4);
+	cout << endl;
+      }
+#endif
       // calculate the TRANSPORT coordinates
       CalcFocalPlaneCoords(theTrack, kRotatingTransport);
     }
@@ -699,7 +703,7 @@ Int_t THaVDC::FineTrack( TClonesArray& tracks )
   // Wait for user to hit Return
   static char c = '\0';
   static bool first = true;
-  if( fDebug>1 ) {
+  if( fDebug>3 ) {
     if( first ) {
       cin.ignore(numeric_limits<streamsize>::max(), '\n');
       first = false;
@@ -950,8 +954,7 @@ void THaVDC::CorrectTimeOfFlight(TClonesArray& tracks)
     // apply the correction
     Int_t n_clust = track->GetNclusters();
     for( Int_t i = 0; i < n_clust; i++ ) {
-      THaVDCUVTrack* the_uvtrack = 
-	static_cast<THaVDCUVTrack*>( track->GetCluster(i) );
+      pUV the_uvtrack = static_cast<pUV>( track->GetCluster(i) );
       if( !the_uvtrack )
 	continue;
       
