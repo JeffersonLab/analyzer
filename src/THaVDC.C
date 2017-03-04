@@ -482,10 +482,31 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
     if( track->GetPartner() || partner->GetPartner() ) {
 #ifdef WITH_DEBUG
       if( fDebug>1 )
-	cout << " ... skipped.\n";
+	cout << " ... skipped (UV pair already used).\n";
 #endif
       continue;
     }
+    // Skip pairs with clusters that have already been used in a better match.
+    bool has_used_cluster = false;
+    for( int j = 0; j < i; ++j ) {
+      THaVDCTrackPair* betterPair =
+	static_cast<THaVDCTrackPair*>( fUVpairs->At(j) );
+      if( betterPair->GetUpper()->GetUCluster() == pu ||
+	  betterPair->GetUpper()->GetVCluster() == pv ||
+	  betterPair->GetLower()->GetUCluster() == tu ||
+	  betterPair->GetLower()->GetVCluster() == tv ) {
+	has_used_cluster = true;
+	break;
+      }
+    }
+    if( has_used_cluster ) {
+#ifdef WITH_DEBUG
+      if( fDebug>1 )
+	cout << " ... skipped (cluster already used).\n";
+#endif
+      continue;
+    }
+
 #ifdef WITH_DEBUG
     if( fDebug>1 )
       cout << " ... good.\n";
