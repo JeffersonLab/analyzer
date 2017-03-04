@@ -16,9 +16,11 @@
 
 #include <cstring>
 #include <cstdio>
+#include <cassert>
 
 ClassImp(THaVDCUVPlane)
 
+using namespace std;
 
 //_____________________________________________________________________________
 THaVDCUVPlane::THaVDCUVPlane( const char* name, const char* description,
@@ -97,77 +99,51 @@ Int_t THaVDCUVPlane::MatchUVClusters()
     return 0;
   }
   
-  THaVDCUVTrack* uvTrack = NULL;
-  
   // There are two cases:
   // 1) One cluster per plane
   // 2) Multiple clusters per plane
 
   // One cluster per plane case
   if ( nu == 1 && nv == 1) {
-    uvTrack = new ( (*fUVTracks)[0] ) THaVDCUVTrack();
+    THaVDCUVTrack* uvTrack = new ( (*fUVTracks)[0] ) THaVDCUVTrack();
     uvTrack->SetUVPlane(this);
 
     // Set the U & V clusters
     uvTrack->SetUCluster( fU->GetCluster(0) );
     uvTrack->SetVCluster( fV->GetCluster(0) );
 
-  } else { 
+  } else if( nu == 1 || nv == 1 ) {
     // At least one plane has multiple clusters
-    // FIXME: This is a crucial part of the algorithm. Really the right approach?
-    // Cope with different numbers of clusters per plane by ensuring that
-    // p1 has more clusters than p2
-    THaVDCPlane *p1, *p2; // Plane 1 and plane 2
+    // The simple algorithm used here is not able to handle multiple clusters
+    // in both planes. We don't create any UV tracks for such events.
+
+    // Select the higher-occupancy plane: p1 has more clusters than p2
+    THaVDCPlane *p1, *p2;
     if ( nu > nv ) { 
-      // More U clusters than V clusters
       p1 = fU;
       p2 = fV;
     } else {  
       p1 = fV;
       p2 = fU;
     }       
-    // Match clusters by time
-    THaVDCCluster *p1Clust, *p2Clust; //Cluster from p1, p2 respectively
-    THaVDCCluster *minClust;     //Cluster in p2 with time closest to p1Clust
-    THaVDCHit     *p1Pivot, *p2Pivot;
-    Double_t minTimeDif;      // Time difference between p1Clust and minClust
+    assert( p1->GetNClusters() > 1 );
+    assert( p2->GetNClusters() == 1 );
+    // Create cluster pair candidates
     for (int i = 0; i < p1->GetNClusters(); i++) {
-      
-      p1Clust = p1->GetCluster(i);
-      p1Pivot = p1Clust->GetPivot();
-      if( !p1Pivot ) {
-	Warning( "THaVDCUVPlane", "Cluster without pivot in p1, %d!", i );
-	continue;
-      }
-      minClust = NULL;
-      minTimeDif = 1e307;  //Arbitrary large value
-      for (int j = 0; j < p2->GetNClusters(); j++) {
-	p2Clust = p2->GetCluster(j);
-	p2Pivot = p2Clust->GetPivot();
-	if( !p2Pivot ) {
-	  Warning( "THaVDCUVPlane", 
-		   "Cluster without pivot in p2, %d, %d!", i, j );
-	  continue;
-	}
-	Double_t timeDif = TMath::Abs(p1Pivot->GetTime() - p2Pivot->GetTime());
-	
-	if (timeDif < minTimeDif) {
-	  minTimeDif = timeDif;
-	  minClust = p2Clust;
-	}
-	  
-      }
-      uvTrack = new ( (*fUVTracks)[i] ) THaVDCUVTrack();
+      THaVDCUVTrack* uvTrack = new ( (*fUVTracks)[i] ) THaVDCUVTrack();
       uvTrack->SetUVPlane(this);
 
       // Set the UV tracks U & V clusters
-      if (p1 == fU) { // If p1 is the U plane	
+      THaVDCCluster* p1Clust = p1->GetCluster(i);
+      THaVDCCluster* p2Clust = p2->GetCluster(0);
+      if (p1 == fU) {
 	uvTrack->SetUCluster( p1Clust );
-	uvTrack->SetVCluster( minClust );
-      } else {  // p2 is the U plane
-	uvTrack->SetUCluster( minClust );
+	uvTrack->SetVCluster( p2Clust );
+      } else {
+	uvTrack->SetUCluster( p2Clust );
 	uvTrack->SetVCluster( p1Clust );
       }
+      assert( uvTrack->GetUCluster() != 0 && uvTrack->GetVCluster() != 0 );
     }   
   }
   // return the number of UV tracks found
