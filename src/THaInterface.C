@@ -16,6 +16,7 @@
 #include "TSystem.h"
 #include "TString.h"
 #include "TRegexp.h"
+#include "TTree.h"
 #include "THaInterface.h"
 #include "TInterpreter.h"
 #include "THaVarList.h"
@@ -26,8 +27,8 @@
 //#include "THaFileDB.h"
 #include "THaTextvars.h"
 #include "ha_compiledata.h"
-
-#include "TTree.h"
+#include <cstring>
+#include <sstream>
 
 
 //#include "TGXW.h"
@@ -225,6 +226,25 @@ const char* THaInterface::GetVersion()
 {
   // Get software version
   return HA_VERSION;
+}
+
+//_____________________________________________________________________________
+const char* THaInterface::GetVersionString()
+{
+  // Get software version string (printed by analyzer -v)
+
+  static TString version_string;
+
+  if( version_string.IsNull() ) {
+    ostringstream ostr;
+    ostr << "Podd " << HA_VERSION << " " << HA_PLATFORM;
+    if( strlen(HA_GITVERS) > 0 )
+      ostr << " git @" << HA_GITVERS;
+    if( strlen(HA_ROOTVERS) )
+      ostr << " ROOT " << HA_ROOTVERS;
+    version_string = ostr.str().c_str();
+  }
+  return version_string.Data();
 }
 
 //_____________________________________________________________________________

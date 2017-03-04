@@ -7,7 +7,6 @@
 #include "THaInterface.h"
 #include <iostream>
 #include <cstring>
-#include "ha_compiledata.h"
 
 using namespace std;
 
@@ -27,38 +26,7 @@ int main(int argc, char **argv)
   }
 
   if( print_version ) {
-    cout << "Podd " << HA_VERSION << " " << HA_PLATFORM;
-    if( strlen(HA_GITVERS) > 0 )
-      cout << " git @" << HA_GITVERS;
-    if( strlen(HA_ROOTVERS) )
-      cout << " ROOT " << HA_ROOTVERS;
-    cout << endl;
-//     cout << "Jefferson Lab Hall A/C Data Analysis Software (Podd)" << endl;
-//     cout << "Version " << HA_VERSION;
-// #ifdef LINUXVERS
-//     cout << " for Linux";
-// #endif
-// #ifdef MACVERS
-//     cout << " for Mac OS X";
-// #endif
-//     if( print_buildinfo ) {
-//       cout << " built " << HA_DATETIME << endl;
-//       cout << "by " << HA_BUILDUSER << " on " HA_BUILDNODE
-// 	   << " in " << HA_BUILDDIR;
-// if( strlen(HA_GITVERS) > 0 )
-//   cout << " git @" << HA_GITVERS;
-// cout << endl;
-//       cout << "Build platform" << endl;
-//       cout << "  " << HA_PLATFORM << endl;
-//       if( strlen(HA_CXXVERS) > 0 ) {
-// 	cout << "  " << HA_CXXVERS << endl;
-//       }
-//       if( strlen(HA_ROOTVERS) ) {
-// 	cout << "  ROOT " << HA_ROOTVERS << endl;
-//       }
-//     } else {
-//       cout << " built " << HA_DATE << endl;
-//     }
+    cout << THaInterface::GetVersionString() << endl;
     return 0;
   }
 
