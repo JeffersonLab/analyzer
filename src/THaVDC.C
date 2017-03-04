@@ -45,7 +45,10 @@ using THaString::Split;
 //_____________________________________________________________________________
 THaVDC::THaVDC( const char* name, const char* description,
 		THaApparatus* apparatus ) :
-  THaTrackingDetector(name,description,apparatus), fNtracks(0)
+  THaTrackingDetector(name,description,apparatus), fNtracks(0),
+  fNumIter(1),       // Number of iterations for FineTrack()
+  fErrorCutoff(10.), // Very conservative value
+  fCentralDist(0.)
 {
   // Constructor
 
@@ -303,9 +306,6 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   // the detector system is identical to the VDC origin in the Hall A HRS.
   DefineAxes(0.0*degrad);
 
-  fNumIter = 1;      // Number of iterations for FineTrack()
-  fErrorCutoff = 1e100;
-
   // figure out the track length from the origin to the s1 plane
 
   // since we take the VDC to be the origin of the coordinate
@@ -450,8 +450,15 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 	   << thePair->GetError() << endl;
     }
 #endif
-    // Stop if track matching error too big
-    if( thePair->GetError() > fErrorCutoff )
+    // Stop if track matching error too big.
+    // In practice, this cut is not very effective. While it does remove more
+    // misreconstructed tracks than good tracks, it definitely cuts into the
+    // good track reconstruction efficiency as well. For a well-calibrated
+    // chamber fErrorCutoff = 0.2 typically results in < 5% efficiency loss.
+    // Tighten this cut (down to about 0.01, where you can expect about 15%
+    // loss) if accuracy is more important than efficiency.
+    // However, the reconstruction is better cleaned up by improving algorithms.
+    if( thePair->GetError() > fErrorCutoff * (theStage == kFine ? 0.1 : 1.0) )
       break;
 
     // Get the tracks of the pair
@@ -1142,6 +1149,14 @@ void THaVDC::SetTDCRes( Double_t val )
 {
   fUpper->SetTDCRes(val);
   fLower->SetTDCRes(val);
+}
+
+//_____________________________________________________________________________
+void THaVDC::SetErrorCutoff( Double_t val )
+{
+  // Set cutoff value for the Bottom-Top UV cluster pair matching
+
+  fErrorCutoff = val;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

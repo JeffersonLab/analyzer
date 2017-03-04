@@ -43,6 +43,7 @@ public:
   void  SetMinTime( Int_t val );
   void  SetMaxTime( Int_t val );
   void  SetTDCRes( Double_t val );
+  void  SetErrorCutoff( Double_t val );
 
   // Bits & and bit masks for THaTrack
   enum {
