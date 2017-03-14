@@ -455,7 +455,8 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
     // Tighten this cut (down to about 0.01, where you can expect about 15%
     // loss) if accuracy is more important than efficiency.
     // However, the reconstruction is better cleaned up by improving algorithms.
-    if( thePair->GetError() > fErrorCutoff * (theStage == kFine ? 0.1 : 1.0) )
+    if( !TestBit(kBadOldAlgorithm) && // old algo tested against 1e100, basically never true
+	thePair->GetError() > fErrorCutoff * (theStage == kFine ? 0.1 : 1.0) )
       break;
 
     // Get the tracks of the pair
@@ -486,25 +487,27 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 #endif
       continue;
     }
-    // Skip pairs with clusters that have already been used in a better match.
-    bool has_used_cluster = false;
-    for( int j = 0; j < i; ++j ) {
-      THaVDCTrackPair* betterPair =
-	static_cast<THaVDCTrackPair*>( fUVpairs->At(j) );
-      if( betterPair->GetUpper()->GetUCluster() == pu ||
-	  betterPair->GetUpper()->GetVCluster() == pv ||
-	  betterPair->GetLower()->GetUCluster() == tu ||
-	  betterPair->GetLower()->GetVCluster() == tv ) {
-	has_used_cluster = true;
-	break;
+    if( !TestBit(kBadOldAlgorithm) ) {
+      // Skip pairs with clusters that have already been used in a better match.
+      bool has_used_cluster = false;
+      for( int j = 0; j < i; ++j ) {
+	THaVDCTrackPair* betterPair =
+	  static_cast<THaVDCTrackPair*>( fUVpairs->At(j) );
+	if( betterPair->GetUpper()->GetUCluster() == pu ||
+	    betterPair->GetUpper()->GetVCluster() == pv ||
+	    betterPair->GetLower()->GetUCluster() == tu ||
+	    betterPair->GetLower()->GetVCluster() == tv ) {
+	  has_used_cluster = true;
+	  break;
+	}
       }
-    }
-    if( has_used_cluster ) {
+      if( has_used_cluster ) {
 #ifdef WITH_DEBUG
-      if( fDebug>1 )
-	cout << " ... skipped (cluster already used).\n";
+	if( fDebug>1 )
+	  cout << " ... skipped (cluster already used).\n";
 #endif
-      continue;
+	continue;
+      }
     }
 
 #ifdef WITH_DEBUG
@@ -1181,6 +1184,17 @@ void THaVDC::SetErrorCutoff( Double_t val )
   // Set cutoff value for the Bottom-Top UV cluster pair matching
 
   fErrorCutoff = val;
+}
+
+//_____________________________________________________________________________
+void THaVDC::EnableMultiClusterAnalysis( Bool_t set )
+{
+  // Enable analysis of events with multiple clusters in more than one plane.
+  // With this feature enabled, certain events will report multiple tracks.
+  // Because of limitations in both the algorithm and the VDC hardware,
+  // tracks for such events may be poorly reconstructed. Use with caution!
+
+  SetBit( kAllowMultiClusters, set );
 }
 
 ////////////////////////////////////////////////////////////////////////////////

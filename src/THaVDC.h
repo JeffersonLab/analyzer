@@ -44,6 +44,7 @@ public:
   void  SetMaxTime( Int_t val );
   void  SetTDCRes( Double_t val );
   void  SetErrorCutoff( Double_t val );
+  void  EnableMultiClusterAnalysis( Bool_t set = kTRUE );
 
   // Bits & and bit masks for THaTrack
   enum {
@@ -63,6 +64,9 @@ public:
     kHardTDCcut     = BIT(15), // Use hard TDC cuts (fMinTime, fMaxTime)
     kSoftTDCcut     = BIT(16), // Use soft TDC cut (reasonable estimated drifts)
     kIgnoreNegDrift = BIT(17), // Completely ignore negative drift times
+
+    kAllowMultiClusters = BIT(21), // enable multi-cluster analysis (improved algorithm)
+    kBadOldAlgorithm    = BIT(22), // use old algorithm (incorrect multi-cluster analysis)
 
     kCoarseOnly     = BIT(23) // Do only coarse tracking
   };

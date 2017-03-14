@@ -119,60 +119,100 @@ Int_t THaVDCUVPlane::MatchUVClusters()
   Int_t nu = fU->GetNClusters();
   Int_t nv = fV->GetNClusters();
 
-  // Need at least one cluster per plane in order to match
-  if ( nu < 1 || nv < 1) {
+  // No clusters in one or both planes.
+  // It is not realistic to recover from this situation since no accurate
+  // UV position can be determined for this chamber. Accordingly, this
+  // chamber should report zero UV matches.
+  if( nu == 0 || nv == 0 )
     return 0;
+
+  Bool_t multi_cluster = false, old_algorithm = false;
+  THaDetector* vdc = GetMainDetector();
+  if( vdc ) {
+    multi_cluster = vdc->TestBit(THaVDC::kAllowMultiClusters);
+    old_algorithm = vdc->TestBit(THaVDC::kBadOldAlgorithm);
   }
-  
-  // There are two cases:
-  // 1) One cluster per plane
-  // 2) Multiple clusters per plane
 
-  // One cluster per plane case
-  if ( nu == 1 && nv == 1) {
-    THaVDCUVTrack* uvTrack = new ( (*fUVTracks)[0] ) THaVDCUVTrack();
-    uvTrack->SetUVPlane(this);
+  // Multiple clusters in both planes are not supported, unless
+  // (a) we turn on experimental multi-cluster analysis or
+  // (b) we insist on using the old algorithm, which is known to be incorrect
+  if( nu > 1 && nv > 1 && !(multi_cluster || old_algorithm) )
+    return 0;
 
-    // Set the U & V clusters
-    uvTrack->SetUCluster( fU->GetCluster(0) );
-    uvTrack->SetVCluster( fV->GetCluster(0) );
+  Int_t nuv = 0;
 
-  } else if( nu == 1 || nv == 1 ) {
-    // At least one plane has multiple clusters
-    // The simple algorithm used here is not able to handle multiple clusters
-    // in both planes. We don't create any UV tracks for such events.
+  if( !old_algorithm ) {
+    // Consider all possible uv cluster combinations
+    for( Int_t iu = 0; iu < nu; ++iu ) {
+      THaVDCCluster* uClust = fU->GetCluster(iu);
+
+      for( Int_t iv = 0; iv < nv; ++iv ) {
+	THaVDCCluster* vClust = fV->GetCluster(iv);
+
+	// Test position to be within drift chambers
+	const PointCoords_t c = CalcDetCoords(uClust,vClust);
+	if( !fU->IsInActiveArea( c.x, c.y ) ) {
+	  continue;
+	}
+
+	// This cluster pair passes preliminary tests, so we save it, regardless
+	// of possible ambiguities, which will be sorted out later
+#ifndef NDEBUG
+	THaVDCUVTrack* uvTrack =
+#endif
+	  new( (*fUVTracks)[nuv++] ) THaVDCUVTrack( uClust, vClust, this );
+	assert( uvTrack->GetUCluster() != 0 && uvTrack->GetVCluster() != 0 );
+      }
+    }
+  }
+  else {
+    // BAD old algorithm, for comparison studies and similar
 
     // Select the higher-occupancy plane: p1 has more clusters than p2
     THaVDCPlane *p1, *p2;
-    if ( nu > nv ) { 
+    if ( nu > nv ) {
       p1 = fU;
       p2 = fV;
-    } else {  
+    } else {
       p1 = fV;
       p2 = fU;
-    }       
-    assert( p1->GetNClusters() > 1 );
-    assert( p2->GetNClusters() == 1 );
-    // Create cluster pair candidates
-    for (int i = 0; i < p1->GetNClusters(); i++) {
-      THaVDCUVTrack* uvTrack = new ( (*fUVTracks)[i] ) THaVDCUVTrack();
-      uvTrack->SetUVPlane(this);
+    }
 
-      // Set the UV tracks U & V clusters
+    // Match clusters by time (Note: this is known to be wrong)
+    for (int i = 0; i < p1->GetNClusters(); i++) {
       THaVDCCluster* p1Clust = p1->GetCluster(i);
-      THaVDCCluster* p2Clust = p2->GetCluster(0);
+      THaVDCHit* p1Pivot = p1Clust->GetPivot();
+      assert( p1Pivot );
+
+      THaVDCCluster* minClust = 0;
+      Double_t minTimeDif = 1e307;  //Arbitrary large value
+      for (int j = 0; j < p2->GetNClusters(); j++) {
+	THaVDCCluster* p2Clust = p2->GetCluster(j);
+	THaVDCHit* p2Pivot = p2Clust->GetPivot();
+	assert( p2Pivot );
+
+	Double_t timeDif = TMath::Abs(p1Pivot->GetTime() - p2Pivot->GetTime());
+	if (timeDif < minTimeDif) {
+	  minTimeDif = timeDif;
+	  minClust = p2Clust;
+	}
+      }
+      assert( nuv == i );
+      THaVDCUVTrack* uvTrack = new ( (*fUVTracks)[nuv++] ) THaVDCUVTrack();
+
       if (p1 == fU) {
 	uvTrack->SetUCluster( p1Clust );
-	uvTrack->SetVCluster( p2Clust );
+	uvTrack->SetVCluster( minClust );
       } else {
-	uvTrack->SetUCluster( p2Clust );
+	uvTrack->SetUCluster( minClust );
 	uvTrack->SetVCluster( p1Clust );
       }
-      assert( uvTrack->GetUCluster() != 0 && uvTrack->GetVCluster() != 0 );
-    }   
-  }
+    } // p1 clusters
+  } // BAD old algorithm
+
+  assert( nuv == GetNUVTracks() );
   // return the number of UV tracks found
-  return GetNUVTracks();
+  return nuv;
 }
 
 //_____________________________________________________________________________

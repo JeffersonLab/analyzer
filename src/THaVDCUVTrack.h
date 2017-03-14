@@ -21,6 +21,10 @@ public:
     fUClust(NULL), fVClust(NULL), fUVPlane(NULL), fTrack(NULL), fPartner(NULL),
     fX(0.0), fY(0.0), fTheta(0.0), fPhi(0.0) {}
 
+  THaVDCUVTrack( THaVDCCluster* ucl, THaVDCCluster* vcl, THaVDCUVPlane* plane ) :
+    fUClust(ucl), fVClust(vcl), fUVPlane(plane), fTrack(NULL), fPartner(NULL),
+    fX(0.0), fY(0.0), fTheta(0.0), fPhi(0.0) {}
+
   virtual ~THaVDCUVTrack() {}
 
   void CalcDetCoords();
