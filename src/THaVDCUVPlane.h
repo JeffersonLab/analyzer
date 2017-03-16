@@ -17,8 +17,6 @@ class THaEvData;
 
 class THaVDCUVPlane : public THaSubDetector {
 
-  friend class THaVDCUVTrack;
-
 public:
 
   THaVDCUVPlane( const char* name="", const char* description="",
@@ -46,6 +44,16 @@ public:
   void  SetMinTime( Int_t val );
   void  SetMaxTime( Int_t val );
   void  SetTDCRes( Double_t val );
+
+  // Coordinates of a point in this UV chamber
+  struct PointCoords_t {
+    Double_t x;
+    Double_t y;
+    Double_t theta;  // TRANSPORT x' = dx/dz
+    Double_t phi;    // TRANSPORT y' = dy/dz
+  };
+  PointCoords_t CalcDetCoords( const THaVDCCluster* u,
+			       const THaVDCCluster* v ) const;
 
 protected:
 
