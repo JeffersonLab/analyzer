@@ -30,6 +30,8 @@ public:
   Float_t          GetYSize()  const { return 2.0*fSize[1]; }
   Float_t          GetZSize()  const { return fSize[2]; }
 
+  Bool_t           IsInActiveArea( Double_t x, Double_t y ) const;
+
   Int_t            FillDetMap( const std::vector<Int_t>& values, 
 			       UInt_t flags=0,
 			       const char* here = "FillDetMap" );
