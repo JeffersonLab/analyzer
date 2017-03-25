@@ -8,6 +8,7 @@
 
 #include "THaVDCHit.h"
 #include "THaVDCTimeToDistConv.h"
+#include "TError.h"
 
 ClassImp(THaVDCHit)
 

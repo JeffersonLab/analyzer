@@ -9,13 +9,13 @@
 
 #include "TObject.h"
 #include "THaVDCWire.h"
-#include <cstdio>
 
 class THaVDCHit : public TObject {
 
 public:
   THaVDCHit( THaVDCWire* wire=NULL, Int_t rawtime=0, Double_t time=0.0 ) : 
-    fWire(wire), fRawTime(rawtime), fTime(time), fDist(0.0), ftrDist(kBig) {}
+    fWire(wire), fRawTime(rawtime), fTime(time), fDist(0), fdDist(1e-3),
+    ftrDist(kBig) {}
   virtual ~THaVDCHit() {}
 
   virtual Double_t ConvertTimeToDist(Double_t slope);
