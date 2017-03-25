@@ -91,6 +91,8 @@ protected:
   virtual void   CalcDist();         // calculate the track to wire distances
   virtual void   FitSimpleTrack();
   virtual void   FitSimpleTrackWgt(); // present for testing
+          void   DoCalcChisquare(Double_t& chi2, Int_t& nhits,
+				 Double_t slope, bool do_print = false) const;
 
   ClassDef(THaVDCCluster,0)          // A group of VDC hits
 };
