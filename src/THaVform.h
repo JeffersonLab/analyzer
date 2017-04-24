@@ -52,8 +52,11 @@ public:
 // To get the data (from index of array).  In the case of a
 // cut this will be a 0 or 1 (false or true).
   Double_t GetData(Int_t index = 0) const;
+  // Set the eye offset if this IsEye()
+  void SetEyeOffset(Int_t offset) { if(IsEye()) fEyeOffset = offset; };
 // This object is either a formula, a variable sized array, a cut, or
 // an "eye" ("[I]" variable)
+
   Bool_t IsFormula() const { return (fType == kForm); }
   Bool_t IsVarray() const  { return (fVarPtr != NULL && fType == kVarArray); }
   Bool_t IsCut() const     { return (fType == kCut); }
@@ -70,7 +73,7 @@ protected:
   enum FAp { kNoPrefix = 0, kAnd, kOr, kSum };
   enum FEr { kOK = 0, kIllVar, kIllTyp, kNoGlo,
              kIllMix, kArrZer, kArrSiz, kUnkPre, kIllPre};
-  Int_t fNvar, fObjSize;
+  Int_t fNvar, fObjSize, fEyeOffset;
   Double_t fData;
   FTy fType;
 
@@ -105,7 +108,7 @@ private:
 inline
 Double_t THaVform::GetData(Int_t index) const {
   if (IsEye())
-    return (Double_t)index;
+    return (Double_t)(index + fEyeOffset);
   if (fOdata == 0)
     return fData;
   return (fObjSize > 1) ? fOdata->Get(index) : fOdata->Get();

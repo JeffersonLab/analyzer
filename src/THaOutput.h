@@ -92,6 +92,7 @@ protected:
   virtual Int_t ChkHistTitle(Int_t key, const std::string& sline);
   virtual Int_t BuildBlock(const std::string& blockn);
   virtual std::string StripBracket(const std::string& var) const; 
+  std::string svPrefix(std::string& histype);
   std::vector<std::string> reQuote(const std::vector<std::string>& input) const;
   std::string CleanEpicsName(const std::string& var) const;
   void BuildList(const std::vector<std::string>& vdata);
@@ -129,7 +130,7 @@ private:
 
   Int_t nx,ny,iscut;
   Float_t xlo,xhi,ylo,yhi;
-  Bool_t fOpenEpics,fFirstEpics;
+  Bool_t fOpenEpics,fFirstEpics,fIsScalar;
 
   ClassDef(THaOutput,0)  
 };

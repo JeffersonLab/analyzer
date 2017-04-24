@@ -33,6 +33,7 @@ public:
    void  SetY(THaVform *vary);
    void  SetCut(const string& cut);
    void  SetCut(THaVform *cut);
+   void  SetScalarTrue() { fScalar = 1; };
    const string& GetVarX() const { return fVarX; };
    const string& GetVarY() const { return fVarY; };
    const string& GetCutStr() const  { return fScut; };
@@ -53,8 +54,8 @@ public:
 // CheckValid() checks if this histogram is valid.
 // If invalid, you get no output.
    void CheckValidity();
-// IsScaler() is kTRUE if histogram is a scaler (which it will then always be)
-   Bool_t IsScaler() { return (fScaler==1); };
+// IsScalar() is kTRUE if histogram is a scalar.
+   Bool_t IsScalar() { return (fScalar==1); };
    Int_t GetSize() { return fSize; };
 
 protected:
@@ -63,6 +64,7 @@ protected:
    Int_t BookHisto(Int_t hfirst, Int_t hlast);
    Int_t FindVarSize();
    Bool_t FindEye(const string& var);
+   Bool_t FindEyeOffset(const string& var);
    Int_t GetCut(Int_t index=0); 
 
    enum FEr { kOK = 0, kNoBinX, kIllFox, kIllFoy, kIllCut,
@@ -73,7 +75,7 @@ protected:
    static const int fgVHIST_HUGE = 10000;
 
    string fType, fName, fTitle, fVarX, fVarY, fScut;
-   Int_t fNbinX, fNbinY, fSize, fInitStat, fScaler, fEye;
+   Int_t fNbinX, fNbinY, fSize, fInitStat, fScalar, fEye, fEyeOffset;
    Double_t fXlo, fXhi, fYlo, fYhi;
    Bool_t fFirst, fProc;
 
