@@ -769,6 +769,11 @@ std::string THaOutput::svPrefix(std::string& histtype)
   if (ldebug) cout << "sfirst = "<<sfirst<<endl;
   if(CmpNoCase(sfirst,"s")==0) fIsScalar = kTRUE;
   sresult=histtype.substr(1);
+// Needs to be a histogram, not something else like block
+  if( (CmpNoCase(sresult,"th1f")!=0) &&
+      (CmpNoCase(sresult,"th2f")!=0) &&
+      (CmpNoCase(sresult,"th1d")!=0) &&
+      (CmpNoCase(sresult,"th2d")!=0) ) return histtype;  // return original
   if (ldebug) {
       cout << "result  "<<sresult<< endl;
       if (fIsScalar) cout << "fScalar is TRUE"<<endl;
