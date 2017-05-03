@@ -1,0 +1,38 @@
+# Compiled stuff
+*.o
+*.d
+*.os
+lib*.so*
+lib*.dylib
+
+# Generated files
+*Dict.C
+*Dict.h
+*Dict.cxx
+*Dict.so
+ChangeLog
+*.pcm
+
+# Editor lint
+.#*
+*~
+
+# Work directory clutter, test files, replay output etc.
+/db*.dat
+*.root
+*.odef
+*.cdef
+*.png
+*.patch
+
+#scons stuff
+config.log
+*.pyc
+.sconsign.dblite
+.sconf_temp/
+
+#eclipse stuff
+.project
+.cproject
+.pydevproject
+.settings/
