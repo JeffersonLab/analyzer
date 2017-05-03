@@ -108,7 +108,6 @@ baseenv.Append(LIBPATH=['$HA_DIR','$MAIN_DIR','$HA_SRC','$HA_DC'])
 baseenv.Prepend(LIBS=[SDKlib])
 baseenv.Replace(SHLIBSUFFIX = '.so')
 
-Exit(2)
 SConscript(dirs = ['./'],name='SConscript.py',exports='baseenv')
 
 #######  End of SConstruct #########
