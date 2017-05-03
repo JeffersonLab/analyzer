@@ -8,8 +8,8 @@ Import ('baseenv')
 
 ######## ROOT Dictionaries #########
 
-rootuserdict = baseenv.subst('$MAIN_DIR')+'/UserDict.C'
-rootuserobj = baseenv.subst('$MAIN_DIR')+'/UserDict.so'
+rootuserdict = baseenv.subst('$MAIN_DIR')+'/RootUserDict.C'
+rootuserobj = baseenv.subst('$MAIN_DIR')+'/RootUserDict.so'
 userheaders = Split("""
 UserApparatus.h    UserDetector.h     UserEvtHandler.h   UserModule.h       
 UserScintillator.h User_LinkDef.h
@@ -25,7 +25,7 @@ UserDetector.cxx     UserEvtHandler.cxx   UserScintillator.cxx
 """)
 
 sotarget = 'User'
-srclib = baseenv.SharedLibrary(target = sotarget, source = list+['UserDict.so'],SHLIBPREFIX='lib',LIBS=[''])
+srclib = baseenv.SharedLibrary(target = sotarget, source = list+['RootUserDict.so'],SHLIBPREFIX='lib',LIBS=[''])
 print ('Source shared library = %s\n' % srclib)
 
 linkbase = baseenv.subst('$SHLIBPREFIX')+sotarget
