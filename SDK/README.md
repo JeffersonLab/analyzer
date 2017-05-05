@@ -4,6 +4,7 @@ Hall A C++ Analyzer Software Development Kit
 This is the standard Software Development Kit (SDK) for
 [Hall A](http://hallaweb.jlab.org/) at [Jefferson Lab](http://www.jlab.org).
 This version has been tested with Version 1.6 of the Analyzer.
+
 5 May 2017
 
 Overview
@@ -74,11 +75,14 @@ Compiling
 To build, just type
 
    scons
+            
+To clean up object files, ROOT dictionary files, and libary:
 
-In addition,
+   scons -c
 
-   scons -c         -> clean up object files, ROOT dictionary files, and libary
-   scons debug=1    -> build in debug mode
+To build in debug mode:
+
+   scons debug=1
 
 If all goes well, you a shared library callled lib$PACKAGE.so will
 be created, e.g. libUser.so.
