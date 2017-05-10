@@ -1,7 +1,14 @@
 Hall A C++ Analyzer Software Development Kit
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-For Analyzer 1.1 and 1.2
-6 December 2003
+============================================
+
+This is the standard Software Development Kit (SDK) for
+[Hall A](http://hallaweb.jlab.org/) at [Jefferson Lab](http://www.jlab.org).
+This version has been tested with Version 1.6 of the Analyzer.
+
+5 May 2017
+
+Overview
+--------
 
 This package contains a examples of user code for the C++ Analyzer.
 It is a good starting point for building experiment-specific 
@@ -15,13 +22,20 @@ UserModule:	      new Physics Module
 UserScintillator:     a THaScintillator extended by user code
 UserDetector:	      new detector
 UserApparatus:	      new apparatus
+UserEvtHandler:	      an example of an Event Type handler
 
-db_u1.dat:	      database for UserDetector with name "u1"
+db_U.u1.dat:	      database for UserDetector with name "u1"
 db_R.s1.dat:	      dto. for UserScintillator with name "s1" contained in
 		      apparatus named "R" (right HRS), based on standard R.s1
 
-Makefile:	      Makefile, configured to build all four example modules
-		      and to create a user library named libUser.so.
+SConstruct:	      Main scons build file
+SConscript.py:	      Library build script for scons, configured to build all 
+		      five example modules and to create a user library named libUser.so.
+
+configure.py:	      configure module for scons
+darwin64.py:	      MacOSX environment module for scons
+linux64.py:	      Linux 64-bit environment module for scons
+linux32.py:	      Linux 32-bit environment module for scons
 
 User_LinkDef.h:	      ROOT dictionary link file, required to build the CINT
 		      dictionary. Even though you will not get compilation
@@ -29,17 +43,20 @@ User_LinkDef.h:	      ROOT dictionary link file, required to build the CINT
 		      are not completely listed in this file at build time.
 
 Incorporating your own code
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------
 
 - Write header (.h) and implementation (.cxx) files as needed, along the lines
   of the provided examples. The module(s) can have any name(s) you like,
   but for every implementation file there must be a corresponding header file.
   You may define more than one class per header/implementation file.
-- Adapt the Makefile. At the minimum:
-  * Change SRC to specify your own .cxx files
-  * Change PACKAGE to give your library a clear and meaningful name 
+- Adapt SConscript.py 
+
+  At the minimum:
+  * Edit userheaders to specify your own .h files (necessary for ROOT dictionary)
+  * Edit list to specify your own .cxx files 
+  * Change sotarget to give your library a clear and meaningful name 
     (don't want dozens of libUser.so containing mystery code)
-- Rename User_LinkDef.h to <PACKAGE>_LinkDef.h and modify to specify your own
+- Rename User_LinkDef.h to <sotarget>_LinkDef.h and modify to specify your own
   class name(s). All classes defined with ClassDef macros MUST be listed here.
 
 Of course, you can delete the User* files once you don't need them for
@@ -48,30 +65,33 @@ guidance any more. They are not required for building a user library.
 Before building, verify that ANALYZER is set and points to the root
 of the C++ Analyzer installation that you want to build against.
 $ANALYZER should contain the header files in either $ANALYZER/include
-or $ANALYZER/{src,hana_decode,hana_scaler}. Normally, all you have to do is
+or $ANALYZER/{src,hana_decode}. Normally, all you have to do is
 to set $ANALYZER; the Makefile will determine the include directories 
 automatically.
 
+Compiling
+---------
+
 To build, just type
 
-   make
+   scons
+            
+To clean up object files, ROOT dictionary files, and libary:
 
-In addition,
+   scons -c
 
-   make clean       -> clean up object files
-   make realclean   -> clean up object and dependency files
-   make srcdist	    -> make a tarball of your source code
+To build in debug mode:
 
+   scons debug=1
 
 If all goes well, you a shared library callled lib$PACKAGE.so will
 be created, e.g. libUser.so.
 
-You can add your own "install" target to the Makefile if you like, 
-for example to copy the library to a library directory such as
-$EXPERIMENT/lib.
+You will need to move the newly built library to the appropriate location
+(replay directory or analyzer directory) to be used in analysis.
 
 Using your library
-~~~~~~~~~~~~~~~~~~
+------------------
 
 Somewhere in your analysis macro/script, or interactively on the CINT
 command line, issue the following command:
@@ -100,13 +120,6 @@ For modules/detectors etc. that need database files, be sure to
 put appropriate files in your database directory.
 
 Compatibility
-~~~~~~~~~~~~~
-The examples have been tested with C++ Analyzer 1.1 and 1.2.
-They do not work out of the box with Analyzer 1.0, but the required changes 
-are minor. Database files need explicit timestamps if used with Analyzer 1.1
-(see comments in the example db*.dat files).
+-------------
 
-
-
-
-  
+The examples have been tested with C++ Analyzer 1.6
