@@ -319,7 +319,8 @@ Int_t CodaDecoder::bank_decode( Int_t roc, const UInt_t* evbuffer,
   if (!fMap->isBankStructure(roc)) return retval;
   fBlockIsDone = kFALSE;
 
-  Int_t pos,len,bank,head;
+  //Int_t pos,len,bank,head;
+  size_t pos,len,bank,head;
 
   memset(bankdat,0,MAXBANK*sizeof(BankDat_t));
 
