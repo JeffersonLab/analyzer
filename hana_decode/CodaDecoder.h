@@ -35,7 +35,7 @@ class CodaDecoder : public THaEvData {
 
   Int_t FindRocs(const UInt_t *evbuffer);
   Int_t roc_decode( Int_t roc, const UInt_t* evbuffer, Int_t ipt, Int_t istop );
-  Int_t bank_decode( Int_t roc, const UInt_t* evbuffer, Int_t ipt, Int_t istop );
+  Int_t bank_decode( UInt_t roc, const UInt_t* evbuffer, UInt_t ipt, UInt_t istop );
   Int_t nroc;
   Int_t *irn;
 

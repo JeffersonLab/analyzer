@@ -307,8 +307,8 @@ Int_t CodaDecoder::roc_decode( Int_t roc, const UInt_t* evbuffer,
 }
 
 //_____________________________________________________________________________
-Int_t CodaDecoder::bank_decode( Int_t roc, const UInt_t* evbuffer,
-				  Int_t ipt, Int_t istop )
+Int_t CodaDecoder::bank_decode( UInt_t roc, const UInt_t* evbuffer,
+				  UInt_t ipt, UInt_t istop )
 {
   // Split a roc into banks, if using bank structure
   // Then loop over slots and decode it from a bank if the slot
@@ -319,7 +319,7 @@ Int_t CodaDecoder::bank_decode( Int_t roc, const UInt_t* evbuffer,
   if (!fMap->isBankStructure(roc)) return retval;
   fBlockIsDone = kFALSE;
 
-  Int_t pos,len,bank,head;
+  UInt_t pos,len,bank,head;
 
   memset(bankdat,0,MAXBANK*sizeof(BankDat_t));
 
@@ -329,6 +329,7 @@ Int_t CodaDecoder::bank_decode( Int_t roc, const UInt_t* evbuffer,
 
   while (pos < istop) {
     len = evbuffer[pos];
+    if (fDebugFile) *fDebugFile << "pos " << pos << " istop " << istop << " len " << len << endl;
     head = evbuffer[pos+1];
     bank = (head>>16)&0xffff;
     if (fDebugFile) *fDebugFile << "bank 0x"<<hex<<bank<<"  head 0x"<<head<<"    len 0x"<<len<<dec<<endl;
@@ -338,6 +339,7 @@ Int_t CodaDecoder::bank_decode( Int_t roc, const UInt_t* evbuffer,
       bankdat[bank].len=len-1;
     }
 
+    if (fDebugFile) *fDebugFile << "Update pos -- New " << pos << endl;
     pos += len+1;
 
   }
