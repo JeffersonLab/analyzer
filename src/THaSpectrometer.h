@@ -37,7 +37,8 @@ public:
   virtual Int_t            TrackCalc() = 0;
 
   // Auxiliary functions
-  virtual Int_t            AddDetector( THaDetector* det );
+  virtual Int_t            AddDetector( THaDetector* det, Bool_t quiet = false,
+					Bool_t first = false );
   virtual Int_t            AddPidParticle( const char* shortname, 
 					   const char* name,
 					   Double_t mass, Int_t charge = 0 );

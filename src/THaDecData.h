@@ -26,7 +26,7 @@ public:
   virtual void    Print( Option_t* opt="" ) const;
 
   // Disabled functions from THaApparatus
-  virtual Int_t   AddDetector( THaDetector* det ) { return 0; }
+  virtual Int_t   AddDetector( THaDetector*, Bool_t, Bool_t ) { return 0; }
   virtual Int_t   Reconstruct() { return 0; }
 
 protected:

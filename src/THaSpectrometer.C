@@ -77,11 +77,9 @@ THaSpectrometer::~THaSpectrometer()
 }
 
 //_____________________________________________________________________________
-Int_t THaSpectrometer::AddDetector( THaDetector* pdet )
+Int_t THaSpectrometer::AddDetector( THaDetector* pdet, Bool_t quiet, Bool_t first )
 {
   // Add a detector to the internal lists of spectrometer detectors.
-  // This method is useful for quick testing of a new detector class that 
-  // one doesn't want to include permanently in an Apparatus yet.
   // Duplicate detector names are not allowed.
   //
   // NOTE: The detector object must be allocated by the caller, but will be
@@ -89,15 +87,17 @@ Int_t THaSpectrometer::AddDetector( THaDetector* pdet )
   // to an apparatus/spectrometer. Recommended: AddDetector( new MyDetector )
 
   if( !pdet || !pdet->IsA()->InheritsFrom("THaSpectrometerDetector")) {
-    Error("AddDetector", "Detector is not a THaSpectrometerDetector. "
-	  "Detector not added.");
+    if( !quiet )
+      Error("AddDetector", "Detector is not a THaSpectrometerDetector. "
+	    "Detector not added.");
+    delete pdet;
     return -1;
   }
+  Int_t status = THaApparatus::AddDetector( pdet, quiet, first );
+  if( status != 0 ) return status;
+
   THaSpectrometerDetector* sdet = 
     static_cast<THaSpectrometerDetector*>( pdet );
-
-  Int_t status = THaApparatus::AddDetector( sdet );
-  if( status != 0 ) return status;
 
   if( sdet->IsTracking() )
     fTrackingDetectors->Add( sdet );

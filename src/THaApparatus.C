@@ -52,7 +52,7 @@ THaApparatus::~THaApparatus()
 }
 
 //_____________________________________________________________________________
-Int_t THaApparatus::AddDetector( THaDetector* pdet )
+Int_t THaApparatus::AddDetector( THaDetector* pdet, Bool_t quiet, Bool_t first )
 {
   // Add a detector to this apparatus. This is the standard way to 
   // configure an apparatus for data analysis.
@@ -71,12 +71,20 @@ Int_t THaApparatus::AddDetector( THaDetector* pdet )
   THaDetector* pfound = 
     static_cast<THaDetector*>( fDetectors->FindObject( pdet->GetName() ));
   if( pfound ) {
-    Error("THaApparatus", "Detector with name %s already exists for this"
-	  " apparatus. Not added.", pdet->GetName() );
+    if( !quiet )
+      Error("THaApparatus", "Detector with name %s already exists for this"
+	    " apparatus. Not added.", pdet->GetName() );
+    // If not adding, detete the detector since it was given to us
+    // with the assumption that we will manage it
+    delete pdet;
     return -1;
   }
   pdet->SetApparatus(this);
-  fDetectors->AddLast( pdet );
+  if( first )
+    fDetectors->AddFirst( pdet );
+  else
+    fDetectors->AddLast( pdet );
+
   return 0;
 }
 
