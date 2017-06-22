@@ -3333,7 +3333,7 @@ int Scintillator::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
 
   flags = kErrOnTooManyValues|kQuietOnTooFew|kStopAtNval|kStopAtSection;
   // TDC resolution (s/channel)
-  if( (err = ReadBlock(fi,&fTdc2T,1,here,flags|kRequireGreaterZero)) )
+  if( (err = ReadBlock(fi,&fTdc2T,1,here,flags)) )
     goto exit;
   fHaveExtras = true; // FIXME: should always be true?
   // Speed of light in the scintillator material (m/s)
