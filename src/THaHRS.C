@@ -105,8 +105,7 @@ THaAnalysisObject::EStatus THaHRS::Init( const TDatime& run_time )
 #endif
 	AddDetector( new THaVDC("vdc", "Vertical Drift Chamber"), true, true );
       assert(ret==0);  // else "vdc" was already defined after all
-      AddDetector( new THaTriggerTime("trg","Trigger-based time offset"), true, true );
-      assert( fDetectors->GetSize() >= 4 );
+      assert( fDetectors->GetSize() >= 3 );
     }
   }
 
