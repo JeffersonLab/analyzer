@@ -3113,6 +3113,26 @@ int Cherenkov::ReadDB( FILE* fi, time_t /* date */, time_t /* date_until */ )
     return kInitError;
   }
 
+  // If the detector map did not specify models, make it so. The Cherenkov
+  // detector need models numbers in the data base
+  if( !fDetMapHasModel ) {
+    // If there are no model numbers, we must have an even number of modules
+    // where the first half are ADCs, the second, TDCs
+    if( (fDetMap->GetSize() % 2) != 0 ) {
+      Error( Here(here), "Detector map without model numbers must have an "
+	     "even number of modules." );
+      return kInitError;
+    }
+    for( Int_t i = 0; i < fDetMap->GetSize(); i++ ) {
+      THaDetMap::Module* d = fDetMap->GetModule( i );
+      if( i < fDetMap->GetSize()/2 )
+	d->model = 1881; // Standard ADC
+      else
+	d->model = 1877; // Standard TDC
+    }
+    fDetMapHasModel = true;
+  }
+
   // Read geometry
   Double_t dvals[3];
   if( ReadBlock(fi,dvals,3,here,flags) )                   // Detector's X,Y,Z coord
