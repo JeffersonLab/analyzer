@@ -154,7 +154,7 @@ void THaOdata::AddBranches( TTree* _tree, string _name )
   string leaf = sname;
   tree->Branch(sname.c_str(),&ndata,(leaf+"/I").c_str());
   // FIXME: defined this way, ROOT always thinks we are variable-size
-  leaf = "data["+leaf+"]/D";
+  leaf = name + "[" + leaf + "]/D";
   tree->Branch(name.c_str(),data,leaf.c_str());
 }
 
