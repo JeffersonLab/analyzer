@@ -53,7 +53,8 @@ THaVform::THaVform( const char *type, const char* name, const char* formula,
     delete [] buf;
   }
 
-  // Call THaFormula's Compile()
+  // Call THaFormula's Compile() unless it's an "eye"
+  if (IsEye()) return;
   Compile();
 }
 
