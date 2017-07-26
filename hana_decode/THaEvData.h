@@ -31,6 +31,9 @@ public:
   // Load CODA data evbuffer. Derived classes MUST implement this function.
   virtual Int_t LoadEvent(const UInt_t* evbuffer) = 0;
 
+// return a pointer to a full event
+  const UInt_t* GetRawDataBuffer() const { return buffer;}  
+
   virtual Bool_t IsMultiBlockMode() { return fMultiBlockMode; };
   virtual Bool_t BlockIsDone() { return fBlockIsDone; };
 
