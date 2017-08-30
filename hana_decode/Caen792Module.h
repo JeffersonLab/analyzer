@@ -1,0 +1,33 @@
+#ifndef Caen792Module_
+#define Caen792Module_
+
+/////////////////////////////////////////////////////////////////////
+//
+//   Caen792Module
+//   Single Hit ADC
+//
+/////////////////////////////////////////////////////////////////////
+
+#include "Caen775Module.h"
+
+namespace Decoder {
+
+  class Caen792Module : public Caen775Module {
+
+  public:
+
+    Caen792Module() {};
+    Caen792Module(Int_t crate, Int_t slot);
+    virtual void Init();
+
+  private:
+
+    static TypeIter_t fgThisType;
+
+    ClassDef(Caen792Module,0)  //  Caen792 module
+
+  };
+
+}
+
+#endif

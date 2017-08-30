@@ -20,7 +20,7 @@ hana_decode/Lecroy1881Module.h hana_decode/Lecroy1875Module.h
 hana_decode/Fadc250Module.h hana_decode/GenScaler.h hana_decode/Scaler560.h
 hana_decode/Scaler1151.h hana_decode/Scaler3800.h hana_decode/Scaler3801.h
 hana_decode/F1TDCModule.h hana_decode/Caen1190Module.h
-hana_decode/Caen775Module.h
+hana_decode/Caen775Module.h hana_decode/Caen792Module.h
 hana_decode/SkeletonModule.h
 hana_decode/THaBenchmark.h hana_decode/haDecode_LinkDef.h
 """)

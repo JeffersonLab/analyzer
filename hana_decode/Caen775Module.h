@@ -30,6 +30,9 @@ public:
    virtual Int_t LoadSlot(THaSlotData *sldat,  const UInt_t *evbuffer, const UInt_t *pstop );
    virtual Int_t LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, Int_t pos, Int_t len);
 
+protected:
+   char fModType[4];
+
 private:
 
    static const size_t NTDCCHAN = 32;

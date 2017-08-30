@@ -48,6 +48,7 @@ void Caen775Module::Init() {
   Clear();
   IsInit = kTRUE;
   fName = "Caen TDC 775 Module";
+  strcpy(fModType,"tdc");
 }
 
 Int_t Caen775Module::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const UInt_t *pstop) {
@@ -62,7 +63,7 @@ Int_t Caen775Module::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const 
        ++p;
        UInt_t chan=((*p)&0x00ff0000)>>16;
        UInt_t raw=((*p)&0x00000fff);
-       Int_t status = sldat->loadData("adc",chan,raw,raw);
+       Int_t status = sldat->loadData(fModType,chan,raw,raw);
        fWordsSeen++;
        if (chan < fData.size()) fData[chan]=raw;
 //       cout << "word   "<<i<<"   "<<chan<<"   "<<raw<<endl;
@@ -97,7 +98,7 @@ Int_t Caen775Module::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, Int_t 
     } else if (fWordsSeen <= nword) { // excludes the End of Block (EOB) word
       UInt_t chan=((p[index])&0x00ff0000)>>16; // number of channel which data are coming from bits 16-20
       UInt_t raw=((p[index])&0x00000fff);      // raw datum bits 0-11
-      Int_t status = sldat->loadData("tdc",chan,raw,raw);
+      Int_t status = sldat->loadData(fModType,chan,raw,raw);
       fWordsSeen++;
       counter++;
       if (chan < fData.size()) fData[chan]=raw;
