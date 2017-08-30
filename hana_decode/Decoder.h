@@ -35,7 +35,7 @@ namespace Decoder {
 
   static const Int_t MAXROC = 32;
   static const Int_t MAXBANK = 4095;
-  static const Int_t MAXSLOT = 30;
+  static const Int_t MAXSLOT = 32;
   static const Int_t MAXSLOT_FB = 26;
 
   static const Int_t MAX_PHYS_EVTYPE  = 14;  // Types up to this are physics
