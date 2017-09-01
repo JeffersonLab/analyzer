@@ -12,6 +12,7 @@
 
 #include "Caen775Module.h"
 #include "THaSlotData.h"
+#include "THaString.h"
 #include <iostream>
 
 using namespace std;
@@ -35,20 +36,20 @@ Caen775Module::~Caen775Module() {
 
 void Caen775Module::Init() {
   Module::Init();
-  cout << endl << "Initializing v775!" << endl << endl;
+  cout << endl << "Initializing v" << MyModName() << "!" << endl << endl;
   fNumChan=NTDCCHAN;
   for (Int_t i=0; i<fNumChan; i++) fData.push_back(0);
 #if defined DEBUG && defined WITH_DEBUG
   // This will make a HUGE output
   delete fDebugFile; fDebugFile = 0;
   fDebugFile = new ofstream;
-  fDebugFile->open("v775debug.txt");
+  fDebugFile->open("v"+MyModName()+"debug.txt");
 #endif
   //fDebugFile=0;
   Clear();
   IsInit = kTRUE;
-  fName = "Caen TDC 775 Module";
-  strcpy(fModType,"tdc");
+  string modnameup=THaString::ToUpper(MyModName());
+  fName = Form("Caen %s %s Module",MyModType(),modnameup.c_str());
 }
 
 Int_t Caen775Module::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const UInt_t *pstop) {
@@ -63,7 +64,7 @@ Int_t Caen775Module::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const 
        ++p;
        UInt_t chan=((*p)&0x00ff0000)>>16;
        UInt_t raw=((*p)&0x00000fff);
-       Int_t status = sldat->loadData(fModType,chan,raw,raw);
+       Int_t status = sldat->loadData(MyModType(),chan,raw,raw);
        fWordsSeen++;
        if (chan < fData.size()) fData[chan]=raw;
 //       cout << "word   "<<i<<"   "<<chan<<"   "<<raw<<endl;
@@ -88,7 +89,7 @@ Int_t Caen775Module::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, Int_t 
 #ifdef WITH_DEBUG
   //cout << "Number of words from 775: \t" << len << endl << endl;
 #endif
-
+  
   while (fWordsSeen < len) {   
     index = pos + fWordsSeen;
     // first word is the header
@@ -98,7 +99,7 @@ Int_t Caen775Module::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, Int_t 
     } else if (fWordsSeen <= nword) { // excludes the End of Block (EOB) word
       UInt_t chan=((p[index])&0x00ff0000)>>16; // number of channel which data are coming from bits 16-20
       UInt_t raw=((p[index])&0x00000fff);      // raw datum bits 0-11
-      Int_t status = sldat->loadData(fModType,chan,raw,raw);
+      Int_t status = sldat->loadData(MyModType(),chan,raw,raw);
       fWordsSeen++;
       counter++;
       if (chan < fData.size()) fData[chan]=raw;
@@ -118,7 +119,7 @@ Int_t Caen775Module::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, Int_t 
 		  << " >> len = " << len << " >> index = " << index << "\n" << endl;
 #endif
   }
-  if (counter != nword) cout << Form("Warning in v775 Number of converted channels, %d, is not equal to number of decoded words, %d!",
+  if (counter != nword) cout << Form("Warning in v%s Number of converted channels, %d, is not equal to number of decoded words, %d!",MyModName(),
 				     nword,counter) << endl << endl;
   return fWordsSeen;
 }

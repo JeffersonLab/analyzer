@@ -18,7 +18,8 @@ namespace Decoder {
 
     Caen792Module() {};
     Caen792Module(Int_t crate, Int_t slot);
-    virtual void Init();
+    virtual const char* MyModType() {return "adc";};
+    virtual const char* MyModName() {return "792";};
 
   private:
 

@@ -29,10 +29,9 @@ public:
    virtual Int_t Decode(const UInt_t *p) { return 0; };
    virtual Int_t LoadSlot(THaSlotData *sldat,  const UInt_t *evbuffer, const UInt_t *pstop );
    virtual Int_t LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, Int_t pos, Int_t len);
-
-protected:
-   char fModType[4];
-
+   virtual const char* MyModType() {return "tdc";};
+   virtual const char* MyModName() {return "775";};
+ 
 private:
 
    static const size_t NTDCCHAN = 32;

@@ -20,16 +20,8 @@ namespace Decoder {
 
   Caen792Module::Caen792Module(Int_t crate, Int_t slot) : Caen775Module(crate, slot) {
     fDebugFile=0;
-    Init();
-    fName = "Caen ADC 792 Module";
   }
 
-  void Caen792Module::Init() {
-    cout << endl << "Initializing v792 using v775 decoder";
-    Caen775Module::Init();
-    strcpy(fModType,"adc");
-  }
-  
 }
     
 ClassImp(Decoder::Caen792Module)
