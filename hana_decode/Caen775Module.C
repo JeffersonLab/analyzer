@@ -43,7 +43,11 @@ void Caen775Module::Init() {
   // This will make a HUGE output
   delete fDebugFile; fDebugFile = 0;
   fDebugFile = new ofstream;
-  fDebugFile->open(string("v")+string(MyModName())+"debug.txt");
+#if __cplusplus >= 201103L
+  fDebugFile->open(string("v")+MyModName()+"debug.txt");
+#else
+  fDebugFile->open((string("v")+MyModName()+"debug.txt").c_str());
+#endif
 #endif
   //fDebugFile=0;
   Clear();
