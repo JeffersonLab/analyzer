@@ -54,8 +54,6 @@ Int_t THaBPM::ReadDatabase( const TDatime& date )
   Int_t err = ReadGeometry( file, date );
 
   if( !err ) {
-    fOffset = fOrigin;   // FIXME: redundant
-
     // Read configuration parameters
     DBRequest config_request[] = {
       { "detmap",    &detmap,  kIntV },
@@ -220,9 +218,9 @@ Int_t THaBPM::Process( )
   dum*=fRot2HCSPos;
 
   fPosition.SetXYZ(
-		   dum(0)+fOffset(0),
-		   dum(1)+fOffset(1),
-		   fOffset(2)
+		   dum(0)+fOrigin(0)+fOffset(0),
+		   dum(1)+fOrigin(1)+fOffset(1),
+		   fOrigin(2)
 		   );
 
   return 0 ;
