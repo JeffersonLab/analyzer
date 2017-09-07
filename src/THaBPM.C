@@ -72,12 +72,12 @@ Int_t THaBPM::ReadDatabase( const TDatime& date )
   if( !err ) {
     memset( pedestals, 0, sizeof(pedestals) );
     memset( rotations, 0, sizeof(rotations) );
-	memset( offsets	 , 0, sizeof( offsets ) );
+    memset( offsets  , 0, sizeof( offsets ) );
     DBRequest calib_request[] = {
       { "calib_rot",   &fCalibRot },
       { "pedestals",   pedestals, kDouble, NCHAN, 1 },
       { "rotmatrix",   rotations, kDouble, NCHAN, 1 },
-	  { "offsets"  ,   offsets,   kDouble, 2    , 1 },
+      { "offsets"  ,   offsets,   kDouble, 2    , 1 },
       { 0 }
     };
     err = LoadDB( file, date, calib_request, fPrefix );
@@ -86,8 +86,8 @@ Int_t THaBPM::ReadDatabase( const TDatime& date )
   if( err )
     return err;
 
-	fOffset(0) = offsets[0];
-	fOffset(1) = offsets[1];
+  fOffset(0) = offsets[0];
+  fOffset(1) = offsets[1];
 
   fPedestals.SetElements( pedestals );
   fRot2HCSPos(0,0) = rotations[0];
