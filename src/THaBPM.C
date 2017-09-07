@@ -44,7 +44,7 @@ Int_t THaBPM::ReadDatabase( const TDatime& date )
   const char* const here = "ReadDatabase";
 
   vector<Int_t> detmap;
-  Double_t pedestals[NCHAN], rotations[NCHAN], offsets[2]={0};
+  Double_t pedestals[NCHAN], rotations[NCHAN], offsets[2];
 
   FILE* file = OpenFile( date );
   if( !file )
@@ -72,6 +72,7 @@ Int_t THaBPM::ReadDatabase( const TDatime& date )
   if( !err ) {
     memset( pedestals, 0, sizeof(pedestals) );
     memset( rotations, 0, sizeof(rotations) );
+	memset( offsets	 , 0, sizeof( offsets ) );
     DBRequest calib_request[] = {
       { "calib_rot",   &fCalibRot },
       { "pedestals",   pedestals, kDouble, NCHAN, 1 },
