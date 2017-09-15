@@ -15,6 +15,7 @@ class THaRun : public THaCodaRun {
 public:
   THaRun( const char* filename="", const char* description="" );
   THaRun( const THaRun& run );
+  THaRun( const char** pathList, const TString filename, const char* description="" );
   virtual THaRun& operator=( const THaRunBase& rhs );
   virtual ~THaRun();
 
