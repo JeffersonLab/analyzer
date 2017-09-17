@@ -20,6 +20,7 @@
 #include <cstdlib>
 #include <cassert>
 #include <sys/stat.h>
+#include <vector>
 
 using namespace std;
 using namespace Decoder;
@@ -32,6 +33,33 @@ THaRun::THaRun( const char* fname, const char* description ) :
   THaCodaRun(description), fFilename(fname), fMaxScan(fgMaxScan)
 {
   // Normal & default constructor
+
+  fCodaData = new THaCodaFile;  //Specifying the file name would open the file
+  FindSegmentNumber();
+
+  // Hall A runs normally contain all these items
+  fDataRequired = kDate|kRunNumber|kRunType|kPrescales;
+}
+
+//_____________________________________________________________________________
+THaRun::THaRun(
+    std::vector<TString> pathList,
+    const TString filename,
+    const char* description
+  ) : THaCodaRun(description), fMaxScan(fgMaxScan)
+{
+  struct stat buffer;
+
+  fFilename="";
+
+  cout << "Looking for file:\n";
+  for(vector<TString>::size_type i=0; i<pathList.size(); i++) {
+    fFilename = Form( "%s/%s", pathList[i].Data(), filename.Data() );
+    cout << "\t'" << fFilename << "'" << endl;
+
+    if( stat (fFilename.Data(), &buffer) == 0 ) break;
+  }
+  cout << endl << "--> Opening file:  " << fFilename << endl;
 
   fCodaData = new THaCodaFile;  //Specifying the file name would open the file
   FindSegmentNumber();
