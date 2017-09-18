@@ -16,7 +16,6 @@ public:
   THaRun( const char* filename="", const char* description="" );
   THaRun( const THaRun& run );
   THaRun( std::vector<TString> pathList, const TString filename, const char* description="" );
-  THaRun( const char** pathList, const TString filename, const char* description="" );
   virtual THaRun& operator=( const THaRunBase& rhs );
   virtual ~THaRun();
 
