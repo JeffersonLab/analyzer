@@ -19,8 +19,6 @@
 #include <iostream>
 #include <cstdlib>
 #include <cassert>
-#include <sys/stat.h>
-#include <vector>
 
 using namespace std;
 using namespace Decoder;
@@ -42,24 +40,19 @@ THaRun::THaRun( const char* fname, const char* description ) :
 }
 
 //_____________________________________________________________________________
-THaRun::THaRun(
-    std::vector<TString> pathList,
-    const TString filename,
-    const char* description
-  ) : THaCodaRun(description), fMaxScan(fgMaxScan)
+THaRun::THaRun( const vector<TString>& pathList, const char* filename,
+		const char* description )
+  : THaCodaRun(description), fMaxScan(fgMaxScan)
 {
-  struct stat buffer;
-
-  fFilename="";
-
-  cout << "Looking for file:\n";
+  //  cout << "Looking for file:\n";
   for(vector<TString>::size_type i=0; i<pathList.size(); i++) {
-    fFilename = Form( "%s/%s", pathList[i].Data(), filename.Data() );
-    cout << "\t'" << fFilename << "'" << endl;
+    fFilename = Form( "%s/%s", pathList[i].Data(), filename );
+    //cout << "\t'" << fFilename << "'" << endl;
 
-    if( stat (fFilename.Data(), &buffer) == 0 ) break;
+    if( !gSystem->AccessPathName(fFilename, kReadPermission) )
+      break;
   }
-  cout << endl << "--> Opening file:  " << fFilename << endl;
+  //cout << endl << "--> Opening file:  " << fFilename << endl;
 
   fCodaData = new THaCodaFile;  //Specifying the file name would open the file
   FindSegmentNumber();

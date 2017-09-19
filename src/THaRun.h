@@ -8,14 +8,16 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaCodaRun.h"
-#include "Decoder.h"
+#include "TString.h"
+#include <vector>
 
 class THaRun : public THaCodaRun {
 
 public:
   THaRun( const char* filename="", const char* description="" );
   THaRun( const THaRun& run );
-  THaRun( std::vector<TString> pathList, const TString filename, const char* description="" );
+  THaRun( const std::vector<TString>& pathList, const char* filename,
+	  const char* description="" );
   virtual THaRun& operator=( const THaRunBase& rhs );
   virtual ~THaRun();
 
