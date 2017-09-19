@@ -38,6 +38,7 @@ static const ModuleType module_list[] = {
   { 3201, 0, 1 },
   { 6401, 0, 1 },
   { 1190, 0, 1 },
+  {  250, 1, 0 },
   { 0 }
 };
 
