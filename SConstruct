@@ -18,7 +18,7 @@ def rootcint(target,source,env):
 	cpppath = env.subst('$_CCCOMCOM')
 	ccflags = env.subst('$CCFLAGS')
 	rootcint = env.subst('$ROOTCINT')
-	print "Doing rootcint call now ..."
+	print ("Doing rootcint call now ...")
 	for f in source:
 		headers += str(f) + " "
 	command = rootcint + " -f %s -c -pthread -fPIC %s %s" % (dictname,cpppath,headers)
@@ -56,8 +56,8 @@ baseenv.Append(VERSION = baseenv.subst('$SOVERSION')+'.'+baseenv.subst('$PATCH')
 baseenv.Append(NAME = 'analyzer-'+baseenv.subst('$VERSION'))
 baseenv.Append(EXTVERS = '-beta3')
 baseenv.Append(HA_VERSION = baseenv.subst('$VERSION')+baseenv.subst('$EXTVERS'))
-print "Main Directory = %s" % baseenv.subst('$HA_DIR')
-print "Software Version = %s" % baseenv.subst('$VERSION')
+print ("Main Directory = %s" % baseenv.subst('$HA_DIR'))
+print ("Software Version = %s" % baseenv.subst('$VERSION'))
 ivercode = 65536*int(float(baseenv.subst('$SOVERSION')))+ 256*int(10*(float(baseenv.subst('$SOVERSION'))-int(float(baseenv.subst('$SOVERSION')))))+ int(float(baseenv.subst('$PATCH')))
 baseenv.Append(VERCODE = ivercode)
 #
@@ -66,10 +66,10 @@ baseenv.Append(VERCODE = ivercode)
 evio_libdir = os.getenv('EVIO_LIBDIR')
 evio_incdir = os.getenv('EVIO_INCDIR')
 if evio_libdir is None or evio_incdir is None:
-	print "No external EVIO environment configured !!!"
-	print "EVIO_LIBDIR = %s" % evio_libdir
-	print "EVIO_INCDIR = %s" % evio_incdir
-	print "Using local installation ... "
+	print ("No external EVIO environment configured !!!")
+	print ("EVIO_LIBDIR = %s" % evio_libdir)
+	print ("EVIO_INCDIR = %s" % evio_incdir)
+	print ("Using local installation ... ")
 	evio_local = baseenv.subst('$HA_DIR')+'/evio'
 	evio_command_dircreate = "mkdir -p %s" % (evio_local)
 	os.system(evio_command_dircreate)
@@ -78,7 +78,7 @@ if evio_libdir is None or evio_incdir is None:
 	platform = uname[0];
 	machine = uname[4];
 	evio_name = platform + '-' + machine
-	print "evio_name = %s" % evio_name	
+	print ("evio_name = %s" % evio_name)
 	evio_local_lib = "%s/evio-%s/%s/lib" % (evio_local,evio_version,evio_name) 
 	evio_local_inc = "%s/evio-%s/%s/include" % (evio_local,evio_version,evio_name)
 	evio_tarfile = "%s/evio-%s.tar.gz" % (evio_local,evio_version)
@@ -94,7 +94,7 @@ if evio_libdir is None or evio_incdir is None:
 				evio_command_scons = "rm libevio*.*; cd %s; tar xvfz evio-%s.tar.gz; mv hallac_evio-evio-%s evio-%s; cd evio-%s/ ; scons install -c --prefix=." % (evio_local,evio_version,evio_version,evio_version,evio_version)
 		else:
 			evio_command_scons = "rm libevio*.*; cd %s; cd evio-%s/ ; scons install -c --prefix=." % (evio_local,evio_version)
-		print "evio_command_scons = %s" % evio_command_scons
+		print ("evio_command_scons = %s" % evio_command_scons)
 		os.system(evio_command_scons)
 	else:
 		if not os.path.isdir(evio_local_lib):
@@ -104,11 +104,11 @@ if evio_libdir is None or evio_incdir is None:
 				evio_command_scons = "cd %s; tar xvfz evio-%s.tar.gz; mv hallac_evio-evio-%s evio-%s; cd evio-%s/ ; scons install --prefix=." % (evio_local,evio_version,evio_version,evio_version,evio_version)
 		else:
 			evio_command_scons = "cd %s; cd evio-%s/ ; scons install --prefix=." % (evio_local,evio_version)
-		print "evio_command_scons = %s" % evio_command_scons
+		print ("evio_command_scons = %s" % evio_command_scons)
 		os.system(evio_command_scons)
 		evio_local_lib_files = "%s/*.*" % (evio_local_lib)
 		evio_command_libcopy = "cp %s ." % (evio_local_lib_files)
-		print "evio_command_libcopy = %s" % evio_command_libcopy
+		print ("evio_command_libcopy = %s" % evio_command_libcopy)
 		os.system(evio_command_libcopy)
 
 	baseenv.Append(EVIO_LIB = evio_local_lib)
@@ -118,8 +118,8 @@ else:
 	# os.system(evio_command_scons)
 	baseenv.Append(EVIO_LIB = os.getenv('EVIO_LIBDIR'))
 	baseenv.Append(EVIO_INC = os.getenv('EVIO_INCDIR'))
-print "EVIO lib Directory = %s" % baseenv.subst('$EVIO_LIB')
-print "EVIO include Directory = %s" % baseenv.subst('$EVIO_INC')
+print ("EVIO lib Directory = %s" % baseenv.subst('$EVIO_LIB'))
+print ("EVIO include Directory = %s" % baseenv.subst('$EVIO_INC'))
 baseenv.Append(CPPPATH = ['$EVIO_INC'])
 #
 # end evio environment
@@ -195,14 +195,14 @@ def which(program):
 proceed = "1" or "y" or "yes" or "Yes" or "Y"
 if baseenv.subst('$CPPCHECK')==proceed:
 	is_cppcheck = which('cppcheck')
-	print "Path to cppcheck is %s\n" % is_cppcheck
+	print ("Path to cppcheck is %s\n" % is_cppcheck)
 
 	if(is_cppcheck == None):
 		print('!!! cppcheck not found on this system.  Check if cppcheck is installed and in your PATH.')
 		Exit(1)
 	else:
 		cppcheck_command = baseenv.Command('cppcheck_report.txt',[],"cppcheck --quiet --enable=all src/ hana_decode/ 2> $TARGET")
-		print "cppcheck_command = %s" % cppcheck_command
+		print ("cppcheck_command = %s" % cppcheck_command)
 		baseenv.AlwaysBuild(cppcheck_command)
 
 ####### build source distribution tarball #############
@@ -215,7 +215,7 @@ if baseenv.subst('$SRCDIST')==proceed:
 		    , DISTTAR_EXCLUDERES=[r'Dict\.C$', r'Dict\.h$',r'analyzer',r'\~$',r'\.so\.',r'\.#']
 	)
 	tar = baseenv.DistTar("dist/analyzer-"+baseenv.subst('$VERSION'),[baseenv.Dir('#')])
-	print "tarball target = %s" % tar
+	print ("tarball target = %s" % tar)
 
 ###	tar_command = 'tar cvz -C .. -f ../' + baseenv.subst('$NAME') + '.tar.gz -X .exclude -V "JLab/Hall A C++ Analysis Software '+baseenv.subst('$VERSION') + ' `date -I`" ' + '../' + baseenv.subst('$NAME') + '/.exclude ' + '../' + baseenv.subst('$NAME') + '/Changelog ' + '../' + baseenv.subst('$NAME') + '/src ' + '../' + baseenv.subst('$NAME') + '/hana_decode ' + '../' + baseenv.subst('$NAME') + '/Makefile ' + '../' + baseenv.subst('$NAME') + '/*.py' + '../' + baseenv.subst('$NAME') + '/SConstruct'
 
