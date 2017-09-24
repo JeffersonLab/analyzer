@@ -26,6 +26,7 @@
 #include <cassert>
 
 using namespace std;
+using namespace THaString;
 
 //_____________________________________________________________________________
 THaVform::THaVform( const char *type, const char* name, const char* formula,

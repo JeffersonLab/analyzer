@@ -40,7 +40,7 @@
 #include <iostream>
 
 using namespace std;
-using THaString::CmpNoCase;
+using namespace THaString;
 
 //_____________________________________________________________________________
 THaVhist::THaVhist( const string& type, const string& name, 
