@@ -145,6 +145,8 @@ public:
 protected:
   std::vector<UInt_t> rdata;     // raw data
 
+  void  PrintMultiData( Option_t* opt="" ) const;
+
 private:
   static TypeIter_t fgThisType;
 
@@ -216,6 +218,7 @@ public:
   virtual Int_t   GetNparams() const      { return fgThisType->fNparams; }
   virtual const char* GetTypeKey() const  { return fgThisType->fDBkey; };
   virtual Int_t   OptionPtr( void* ptr );
+  virtual void    Print( Option_t* opt="" ) const;
 
 protected:
   UInt_t  bitnum;        // Bit number for this variable (0-31)
