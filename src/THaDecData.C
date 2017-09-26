@@ -133,6 +133,15 @@ void THaDecData::Clear( Option_t* )
 }
 
 //_____________________________________________________________________________
+void THaDecData::Reset( Option_t* opt )
+{
+  // Reset the class. Removes all data channel definitions
+
+  Clear(opt);
+  fBdataLoc.Clear();
+}
+
+//_____________________________________________________________________________
 Int_t THaDecData::DefineVariables( EMode mode )
 {
   // Register global variables, open decdata map file, and parse it.
