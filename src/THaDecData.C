@@ -337,18 +337,22 @@ static Int_t ReadOldFormatDB( FILE* file, map<TString,TString>& configstr_map )
     int idx = is_slot ? 0 : 1;
     TString name = GetString(params,0);
     // TrigBits are crate types with special names
-    if( is_slot && name.BeginsWith("bit") ) {
-      if( name.Length() > 3 ) {
-	TString name2 = name(3,name.Length());
-	if( name2.IsDigit() && name2.Atoi() < 32 )
-	  idx = 2;
-      }
+    bool is_bit = ( is_slot && name.BeginsWith("bit") && name.Length() > 3  );
+    if( is_bit ) {
+      TString name2 = name(3,name.Length());
+      if( name2.IsDigit() && name2.Atoi() < 32 )
+	idx = 2;
     }
     confval[idx] += name;
     confval[idx] += " ";
     for( int i = 2; i < 5; ++ i ) {
       confval[idx] += GetString(params,i).Data();
       confval[idx] += " ";
+    }
+    if( is_bit ) {
+      // Simulate the hardcoded cut range for event type bit TDC channels
+      // from the old THaDecData
+      confval[idx] += "0 2000 ";
     }
   }
   delete [] buf;
@@ -437,7 +441,7 @@ Int_t THaDecData::ReadDatabase( const TDatime& date )
   // Configure the trigger bits with a pointer to our evtypebits
   TIter next( &fBdataLoc );
   while( BdataLoc* dataloc = static_cast<BdataLoc*>( next() ) ) {
-    if( dataloc->Class() == TrigBitLoc::Class() )
+    if( dataloc->IsA() == TrigBitLoc::Class() )
       dataloc->OptionPtr( &evtypebits );
   }
 // ======= END FIXME: Hall A lib ============================================
