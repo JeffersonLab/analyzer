@@ -66,3 +66,16 @@ dist/
 docs/Doxygen.tag
 docs/ROOT.tag
 docs/html
+
+#cdaq cluster stuff
+hana_decode/ROOTfiles
+hana_decode/db_cratemap.dat
+hana_decode/raw
+hana_decode/snippet.dat
+
+#decoder debug stuff
+hana_decode/tst1190_main_debug.txt
+hana_decode/tstfadc_main_debug.txt
+
+#user specific stuff
+setup.csh
