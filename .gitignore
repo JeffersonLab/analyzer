@@ -71,6 +71,9 @@ docs/html
 hana_decode/ROOTfiles
 hana_decode/db_cratemap.dat
 hana_decode/raw
+hana_decode/cache
+hana_decode/runfadc.csh
+hana_decode/runftdc.csh
 hana_decode/snippet.dat
 
 #decoder debug stuff

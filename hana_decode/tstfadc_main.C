@@ -27,8 +27,8 @@
 #include "TRandom3.h"
 #include "TCanvas.h"
 
-//#define DEBUG
-//#define WITH_DEBUG
+#define DEBUG
+#define WITH_DEBUG
 
 #define SLOTMIN 1
 #define NUMSLOTS 22
@@ -113,9 +113,18 @@ int main(int argc, char* argv[])
   Int_t maxEvent = 0;
   Int_t crateNumber = 0;
   TString spectrometer = "";
+  TString fileLocation = "";
   TString runFile, rootFile;
 
   // Acquire run number, max number of events, spectrometer name, and crate number
+  if (fileLocation = "") {
+    cout << "\nEnter the location of the raw CODA file (raw or cache): ";
+    cin >> fileLocation;
+    if (fileLocation != "raw" && fileLocation != "cache") {
+      cerr << "...Invalid entry\n"; 
+      return 1;
+    }
+  }
   if (runNumber == 0) {
     cout << "\nEnter a Run Number (-1 to exit): ";
     cin >> runNumber;
@@ -152,10 +161,14 @@ int main(int argc, char* argv[])
   }
 
   // Create file name patterns
+  if (fileLocation == "raw")
+    runFile = fileLocation+"/";
+  if (fileLocation == "cache")
+    runFile = fileLocation+"/";
   if (spectrometer == "hms")
-    runFile = Form("raw/hms_all_%05d.dat", runNumber);
+    runFile += Form("hms_all_%05d.dat", runNumber);
   if (spectrometer == "shms")
-    runFile = Form("raw/shms_all_%05d.dat", runNumber);
+    runFile += Form("shms_all_%05d.dat", runNumber);
   rootFile = Form("ROOTfiles/raw_fadc_%d.root", runNumber);
 
   // Initialize raw samples index array
