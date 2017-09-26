@@ -47,3 +47,14 @@ D.multi =
 # Coincidence time
 	 ctimel  	 4	23	72
 	 ctimer  	 2	11	56
+
+D.bit =
+# trigger bit          crate   slot   channel  cutlo  cuthi
+	 bit1            4      11      64       0    2000
+	 bit2            4      11      65       0    2000
+	 bit3            4      11      66       0    2000
+	 bit4            4      11      67       0    2000
+	 bit5            4      11      68       0    2000
+	 bit6            4      11      69       0    2000
+	 bit7            4      11      70       0    2000
+	 bit8            4      11      71       0    2000
