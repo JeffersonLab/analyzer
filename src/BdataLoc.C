@@ -287,6 +287,7 @@ Int_t WordLoc::Configure( const TObjArray* params, Int_t start )
   // Convert header word, given as a hex string, to unsigned int32
   const char* hs = GetString( params, start+2 ).Data();
   char* p = 0;
+  errno = 0;
   unsigned long li = strtoul( hs, &p, 16 );
   if( errno || *p )   return 10;
   if( li > kMaxUInt ) return 11;
