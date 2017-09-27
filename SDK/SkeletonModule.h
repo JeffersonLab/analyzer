@@ -23,14 +23,9 @@
 
 #define LIKEV792 1
 
-#define NTDCCHAN   32
-#define MAXHIT    100
-
 #include "VmeModule.h"
 
-namespace Decoder {
-
-class SkeletonModule : public VmeModule {
+class SkeletonModule : public Decoder::VmeModule {
 
 public:
 
@@ -38,17 +33,18 @@ public:
    SkeletonModule(Int_t crate, Int_t slot);
    virtual ~SkeletonModule();
 
-   using Module::GetData;
-   using Module::LoadSlot;
+   using Decoder::Module::GetData;
+   using Decoder::Module::LoadSlot;
 
    virtual Int_t GetData(Int_t chan) const;
-   virtual void Init();
-   virtual void Clear(const Option_t *opt="");
+   virtual void  Init();
+   virtual void  Clear(const Option_t *opt="");
    virtual Int_t Decode(const UInt_t *p) { return 0; };
 
 #ifdef LIKEV792
 // Loads slot data.  if you don't define this, the base class's method is used
-  virtual Int_t LoadSlot(THaSlotData *sldat,  const UInt_t *evbuffer, const UInt_t *pstop );
+  virtual Int_t LoadSlot(Decoder::THaSlotData *sldat,
+			 const UInt_t *evbuffer, const UInt_t *pstop );
 #endif
 
 private:
@@ -59,7 +55,5 @@ private:
    ClassDef(SkeletonModule,0)  //  Skeleton of a module; make your replacements
 
 };
-
-}
 
 #endif

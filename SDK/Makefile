@@ -8,7 +8,7 @@
 # there must be a corresponding header file (*.h).
 
 SRC  = UserDetector.cxx UserModule.cxx UserApparatus.cxx \
-       UserScintillator.cxx UserEvtHandler.cxx
+       UserScintillator.cxx UserEvtHandler.cxx SkeletonModule.cxx
 
 # Name of your package. 
 # The shared library that will be built will get the name lib$(PACKAGE).so

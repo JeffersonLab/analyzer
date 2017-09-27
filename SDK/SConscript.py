@@ -12,7 +12,7 @@ rootuserdict = baseenv.subst('$MAIN_DIR')+'/RootUserDict.C'
 rootuserobj = baseenv.subst('$MAIN_DIR')+'/RootUserDict.so'
 userheaders = Split("""
 UserApparatus.h    UserDetector.h     UserEvtHandler.h   UserModule.h       
-UserScintillator.h User_LinkDef.h
+UserScintillator.h SkeletonModule.h   User_LinkDef.h
 """)
 baseenv.RootCint(rootuserdict,userheaders)
 baseenv.SharedObject(target = rootuserobj, source = rootuserdict)
@@ -21,7 +21,7 @@ baseenv.SharedObject(target = rootuserobj, source = rootuserdict)
 
 list = Split("""
 UserApparatus.cxx    UserModule.cxx
-UserDetector.cxx     UserEvtHandler.cxx   UserScintillator.cxx
+UserDetector.cxx     UserEvtHandler.cxx   UserScintillator.cxx SkeletonModule.cxx
 """)
 
 sotarget = 'User'

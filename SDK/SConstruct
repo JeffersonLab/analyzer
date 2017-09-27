@@ -18,7 +18,7 @@ def rootcint(target,source,env):
 	cpppath = env.subst('$_CCCOMCOM')
 	ccflags = env.subst('$CCFLAGS')
 	rootcint = env.subst('$ROOTCINT')
-	print "Doing rootcint call now ..."
+	print ("Doing rootcint call now ...")
 	for f in source:
 		headers += str(f) + " "
 	command = rootcint + " -f %s -c -pthread -fPIC %s %s" % (dictname,cpppath,headers)
@@ -40,7 +40,7 @@ configure.config(baseenv,ARGUMENTS)
 
 halla_dir = os.getenv('ANALYZER')
 if halla_dir is None:
-    print "Hall A Analyzer environment not configured !!!!"
+    print ("Hall A Analyzer environment not configured !!!!")
     Exit(2)
 
 baseenv.Append(MAIN_DIR = Dir('.').abspath)
@@ -48,8 +48,8 @@ baseenv.Append(HA_DIR = halla_dir)
 baseenv.Append(HA_SRC = baseenv.subst('$HA_DIR')+'/src ') 
 baseenv.Append(HA_DC = baseenv.subst('$HA_DIR')+'/hana_decode ') 
 
-print "Hall A Analyzer main directory = %s" % halla_dir
-print "Hall A SDK main directory = %s" % baseenv.subst('$MAIN_DIR')
+print ("Hall A Analyzer main directory = %s" % halla_dir)
+print ("Hall A SDK main directory = %s" % baseenv.subst('$MAIN_DIR'))
 
 baseenv.Append(CPPPATH = ['$MAIN_DIR','$HA_DIR','$HA_SRC','$HA_DC'])
 

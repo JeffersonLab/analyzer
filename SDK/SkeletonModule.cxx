@@ -11,9 +11,8 @@
 #include "SkeletonModule.h"
 #include "THaSlotData.h"
 
+using namespace Decoder;
 using namespace std;
-
-namespace Decoder {
 
 Module::TypeIter_t SkeletonModule::fgThisType =
   DoRegister( ModuleType( "Decoder::SkeletonModule" , 4444 ));
@@ -71,6 +70,4 @@ void SkeletonModule::Clear(const Option_t* opt) {
   for (Int_t i=0; i<fNumChan; i++) fData[i]=0;
 }
 
-}
-
-ClassImp(Decoder::SkeletonModule)
+ClassImp(SkeletonModule)
