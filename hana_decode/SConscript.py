@@ -53,14 +53,7 @@ VmeModule.C
 #baseenv.Append(LIBPATH=['$HA_DIR'])
 
 proceed = "1" or "y" or "yes" or "Yes" or "Y"
-if baseenv.GetOption('clean'):
-	print ('!!!!!! Cleaning hana_decode standalone executables !!!!!!')
-	for scalex in standalonelist:
-		hana_decode_clean_command = "rm %s; rm ../bin/%s" % (scalex,scalex)
-		print ("hana_decode_clean_command = %s" % hana_decode_clean_command)
-		os.system(hana_decode_clean_command)
-
-if baseenv.subst('$STANDALONE')==proceed:
+if baseenv.subst('$STANDALONE')==proceed or baseenv.GetOption('clean'):
         for scalex in standalonelist:
                 pname = scalex
 
