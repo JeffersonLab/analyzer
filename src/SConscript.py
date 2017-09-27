@@ -9,13 +9,13 @@ Import('baseenv')
 list = Split("""
 THaADCHelicity.C          THaCoincTime.C            THaG0Helicity.C
 THaPhotoReaction.C        THaRunParameters.C        THaTrackID.C              THaVDCTrackID.C
-THaAnalysisObject.C       THaCut.C                  THaG0HelicityReader.C     
+THaAnalysisObject.C       THaCut.C                  THaG0HelicityReader.C
 THaPhysicsModule.C        THaS2CoincTime.C          THaTrackInfo.C
-THaAnalyzer.C             THaCutList.C              THaGoldenTrack.C          
-THaPidDetector.C          THaSAProtonEP.C           THaTrackOut.C	      THaVDCPointPair.C
+THaAnalyzer.C             THaCutList.C              THaGoldenTrack.C
+THaPidDetector.C          THaSAProtonEP.C           THaTrackOut.C             THaVDCPointPair.C
 THaApparatus.C            THaDebugModule.C          THaHRS.C                  THaVDCPoint.C
-THaPostProcess.C          THaTrackProj.C	    THaEpicsEvtHandler.C      THaVDCChamber.C
-THaArrayString.C          THaDecData.C              BdataLoc.C                THaHelicity.C             
+THaPostProcess.C          THaTrackProj.C            THaEpicsEvtHandler.C      THaVDCChamber.C
+THaArrayString.C          THaDecData.C              BdataLoc.C                THaHelicity.C
 THaPrimaryKine.C          THaScintillator.C         THaTrackingDetector.C     THaVDCWire.C
 THaAvgVertex.C            THaDetMap.C               THaHelicityDet.C
 THaPrintOption.C          THaSecondaryKine.C        THaTrackingModule.C       THaVar.C
@@ -44,25 +44,27 @@ baseenv.Object('main.C')
 
 sotarget = 'HallA'
 
-srclib = baseenv.SharedLibrary(target = sotarget, source = list+['haDict.so'],SHLIBPREFIX='../lib',LIBS=[''])
-print ('Source shared library = %s\n' % srclib)
+srclib = baseenv.SharedLibrary(target = sotarget, source = list+['haDict.os'],\
+                               SHLIBPREFIX='../lib',LIBS=[''],LIBPATH=[''])
+#print ('Source shared library = %s\n' % srclib)
 
 linkbase = baseenv.subst('$SHLIBPREFIX')+sotarget
 
-cleantarget = linkbase+'.so.'+baseenv.subst('$VERSION')
-majorcleantarget = linkbase+'.so'
-localmajorcleantarget = '../'+linkbase+'.so'
-shortcleantarget = linkbase+'.so.'+baseenv.subst('$SOVERSION')
-localshortcleantarget = '../'+linkbase+'.so.'+baseenv.subst('$SOVERSION')
+cleantarget = linkbase+baseenv.subst('$SHLIBSUFFIX')
+majorcleantarget = linkbase+baseenv.subst('$SOSUFFIX')
+localmajorcleantarget = '../'+linkbase+baseenv.subst('$SOSUFFIX')
+shortcleantarget = linkbase+baseenv.subst('$SOSUFFIX')+'.'+baseenv.subst('$SOVERSION')
+localshortcleantarget = '../'+linkbase+baseenv.subst('$SOSUFFIX')+'.'+\
+                        baseenv.subst('$SOVERSION')
 
-print ('cleantarget = %s\n' % cleantarget)
-print ('majorcleantarget = %s\n' % majorcleantarget)
-print ('shortcleantarget = %s\n' % shortcleantarget)
+#print ('cleantarget = %s\n' % cleantarget)
+#print ('majorcleantarget = %s\n' % majorcleantarget)
+#print ('shortcleantarget = %s\n' % shortcleantarget)
 try:
-	os.symlink(cleantarget,localshortcleantarget)
-	os.symlink(shortcleantarget,localmajorcleantarget)
+        os.symlink(cleantarget,localshortcleantarget)
+        os.symlink(shortcleantarget,localmajorcleantarget)
 except:
-	print (" Continuing ... ")
+        pass
 
 Clean(srclib,cleantarget)
 Clean(srclib,localmajorcleantarget)

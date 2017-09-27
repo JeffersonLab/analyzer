@@ -1,51 +1,43 @@
-import platform
-import os
+# darwin64.py
+# Mac OS X platform specific configuration
 
 def config(env,args):
 
-	debug = args.get('debug',0)
-	standalone = args.get('standalone',0)
-	cppcheck = args.get('cppcheck',0)
-	checkheaders = args.get('checkheaders',0)
-	srcdist = args.get('srcdist',0)
+        debug = args.get('debug',0)
+        standalone = args.get('standalone',0)
+        cppcheck = args.get('cppcheck',0)
+        checkheaders = args.get('checkheaders',0)
+        srcdist = args.get('srcdist',0)
 
-	if int(debug):
-		env.Append(CXXFLAGS = '-g')
-		env.Append(CXXFLAGS = '-O0')
-		env.Append(CPPDEFINES= '-DWITH_DEBUG')
-	else:	
-		env.Append(CXXFLAGS = '-O')
-		env.Append(CPPDEFINES= '-DNDEBUG')
+        if int(debug):
+                env.Append(CXXFLAGS = env.Split('-g -O0'))
+                env.Append(CPPDEFINES= 'WITH_DEBUG')
+        else:
+                env.Append(CXXFLAGS = '-O')
+                env.Append(CPPDEFINES= 'NDEBUG')
 
-	if int(standalone):
-		env.Append(STANDALONE= '1')
+        if int(standalone):
+                env.Append(STANDALONE= '1')
 
-	if int(cppcheck):
-		env.Append(CPPCHECK= '1')
-	
-	if int(checkheaders):
-		env.Append(CHECKHEADERS= '1')
+        if int(cppcheck):
+                env.Append(CPPCHECK= '1')
 
-	if int(srcdist):
-		env.Append(SRCDIST= '1')
+        if int(checkheaders):
+                env.Append(CHECKHEADERS= '1')
 
-	#env.Append(CXXFLAGS = '-Wall -Woverloaded-virtual -pthread -rdynamic')
-	env.Append(CXXFLAGS = '-Wall')
-	env.Append(CXXFLAGS = '-Woverloaded-virtual')
-	env.Append(CPPDEFINES = '-DMACVERS')
+        if int(srcdist):
+                env.Append(SRCDIST= '1')
 
-	cxxversion = env.subst('$CXXVERSION')
+        env.Append(CXXFLAGS = env.Split('-Wall -Woverloaded-virtual'))
+        env.Append(CPPDEFINES = 'MACVERS')
 
-	if float(cxxversion[0:2])>=4.0:
-			env.Append(CXXFLAGS = '-Wextra')
-                        env.Append(CXXFLAGS = '-Wno-missing-field-initializers')
+        cxxversion = env.subst('$CXXVERSION')
+
+        if float(cxxversion[0:2])>=4.0:
+                env.Append(CXXFLAGS = env.Split('-Wextra -Wno-missing-field-initializers'))
+                if not int(debug):
                         env.Append(CXXFLAGS = '-Wno-unused-parameter')
-	
-	if float(cxxversion[0:2])>=3.0:
-			env.Append(CPPDEFINES = '-DHAS_SSTREAM')
-	
-	env['SHLINKFLAGS'] = '$LINKFLAGS -shared -Wl,-undefined,dynamic_lookup'
-	env['SHLIBSUFFIX'] = '.so'
 
+        env.Append(SHLINKFLAGS = '-Wl,-undefined,dynamic_lookup')
 
 #end darwin64.py
