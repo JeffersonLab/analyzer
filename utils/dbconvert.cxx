@@ -5,9 +5,6 @@
 // Utility to convert Podd 1.5 and earlier database files to Podd 1.6
 // and later format
 
-#define _BSD_SOURCE
-#define _XOPEN_SOURCE
-
 #include <iostream>
 #include <fstream>
 #include <sstream>
