@@ -15,11 +15,40 @@ tstoo tstfadc tstf1tdc tstio tdecpr prfact epicsd tdecex tst1190
 # Still to come, perhaps, are (etclient, tstcoda) which should be compiled
 # if the ONLINE_ET variable is set.  
 
-list = Glob('*.C',exclude=['*_main.C','*_onl.C','calc_thresh.C',
-                           'THaEtClient.C','THaGenDetTest.C'])
+list = Split("""
+Caen1190Module.C
+Caen775Module.C
+Caen792Module.C
+CodaDecoder.C
+F1TDCModule.C
+Fadc250Module.C
+FastbusModule.C
+GenScaler.C
+Lecroy1875Module.C
+Lecroy1877Module.C
+Lecroy1881Module.C
+Module.C
+PipeliningModule.C
+Scaler1151.C
+Scaler3800.C
+Scaler3801.C
+Scaler560.C
+SimDecoder.C
+THaCodaData.C
+THaCodaDecoder.C
+THaCodaFile.C
+THaCrateMap.C
+THaEpics.C
+THaEvData.C
+THaFastBusWord.C
+THaSlotData.C
+THaUsrstrutils.C
+VmeModule.C
+""")
 
-#evio.C
-#swap_util.C swapped_intcpy.c
+# Requires SCons >= 2.3.5 for "exclude" keyword
+#list = Glob('*.C',exclude=['*_main.C','*_onl.C','calc_thresh.C',
+#                           'THaEtClient.C','THaGenDetTest.C'])
 
 #baseenv.Append(LIBPATH=['$HA_DIR'])
 

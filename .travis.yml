@@ -13,6 +13,8 @@ install:
   - wget http://root.cern.ch/download/root_v6.10.02.Linux-ubuntu14-x86_64-gcc4.8.tar.gz -O /tmp/root.tar.gz
   - tar -xzf /tmp/root.tar.gz
   - source ./root/bin/thisroot.sh
+  - python --version
+  - scons --version
 script:
   - make
   - scons
