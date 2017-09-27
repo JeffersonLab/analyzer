@@ -1628,7 +1628,9 @@ static void DefineTypes()
     { 0,                kNone }
   };
   for( StringToType_t* item = deftypes; item->name; ++item ) {
+#ifndef NDEBUG
     pair<NameTypeMap_t::iterator, bool> ins =
+#endif
       dettype_map.insert( make_pair(string(item->name),item->type) );
     assert( ins.second ); // else typo in definition of deftypes[]
   }
@@ -1771,7 +1773,9 @@ static void DefaultMap()
     { 0,            kNone }
   };
   for( StringToType_t* item = defaults; item->name; ++item ) {
+#ifndef NDEBUG
     pair<NameTypeMap_t::iterator, bool> ins =
+#endif
       detname_map.insert( make_pair(string(item->name),item->type) );
     assert( ins.second ); // else typo in definition of defaults[]
   }
@@ -2194,10 +2198,11 @@ static int InsertDefaultFiles( const vector<string>& subdirs,
 	const string& subdir = *mt;
 	time_t date;
 #ifdef NDEBUG
-	IsDBSubdir(subdir,date);
+	IsDBSubDir(subdir,date);
 	filenames.insert( Filenames_t(date,deffile) );
 #else
-	assert( IsDBSubDir(subdir,date) );
+	bool good = IsDBSubDir(subdir,date);
+	assert(good);
 	Filenames_t ins(date,deffile);
 	assert( filenames.find(ins) == filenames.end() );
 	filenames.insert(ins);
