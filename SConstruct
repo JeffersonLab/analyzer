@@ -107,13 +107,7 @@ if evio_libdir is None or evio_incdir is None:
 
         if baseenv.GetOption('clean'):
                 subprocess.call(['echo', '!!!!!!!!!!!!!! EVIO Cleaning Process !!!!!!!!!!!! '])
-                if not os.path.isdir(evio_local_lib):
-                        if not os.path.exists(evio_tarfile):
-                                evio_command_scons = "rm libevio*.*; cd %s; curl -LO https://github.com/JeffersonLab/hallac_evio/archive/evio-%s.tar.gz; tar xvfz evio-%s.tar.gz; mv hallac_evio-evio-%s evio-%s; cd evio-%s/ ; scons install -c --prefix=." % (evio_local,evio_version,evio_version,evio_version,evio_version,evio_version)
-                        else:
-                                evio_command_scons = "rm libevio*.*; cd %s; tar xvfz evio-%s.tar.gz; mv hallac_evio-evio-%s evio-%s; cd evio-%s/ ; scons install -c --prefix=." % (evio_local,evio_version,evio_version,evio_version,evio_version)
-                else:
-                        evio_command_scons = "rm libevio*.*; cd %s; cd evio-%s/ ; scons install -c --prefix=." % (evio_local,evio_version)
+		evio_command_scons = "rm -f libevio*.*; cd %s; rm -rf evio-%s" % (evio_local,evio_version)
                 print ("evio_command_scons = %s" % evio_command_scons)
                 os.system(evio_command_scons)
         else:
