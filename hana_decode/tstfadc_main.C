@@ -27,8 +27,8 @@
 #include "TRandom3.h"
 #include "TCanvas.h"
 
-#define DEBUG
-#define WITH_DEBUG
+//#define DEBUG
+//#define WITH_DEBUG
 
 #define SLOTMIN 1
 #define NUMSLOTS 22
@@ -41,6 +41,7 @@ using namespace Decoder;
 
 TFile *hfile;
 TDirectory *mode_dir, *slot_dir[NUMSLOTS], *chan_dir[NADCCHAN], *raw_samples_dir[NADCCHAN];
+TDirectory *raw_samples_npeak1_dir[NADCCHAN], *raw_samples_npeak2_dir[NADCCHAN], *raw_samples_npeak3_dir[NADCCHAN], *raw_samples_npeak4_dir[NADCCHAN];
 TH1I *h_pinteg[NUMSLOTS][NADCCHAN], *h_ptime[NUMSLOTS][NADCCHAN], *h_pped[NUMSLOTS][NADCCHAN], *h_ppeak[NUMSLOTS][NADCCHAN];
 TH2I *h2_pinteg[NUMSLOTS], *h2_ptime[NUMSLOTS], *h2_pped[NUMSLOTS], *h2_ppeak[NUMSLOTS];
 TGraph *g_psamp_event[NUMSLOTS][NADCCHAN][NUMRAWEVENTS];
@@ -91,6 +92,11 @@ void GeneratePlots(Int_t mode, uint32_t islot, uint32_t chan) {
     raw_samples_dir[chan] = dynamic_cast <TDirectory*> (chan_dir[chan]->Get("raw_samples"));
     if (!raw_samples_dir[chan]) {raw_samples_dir[chan] = chan_dir[chan]->mkdir("raw_samples"); raw_samples_dir[chan]->cd();}
     else hfile->cd(Form("/mode_%d_data/slot_%d/chan_%d/raw_samples", mode, islot, chan));
+
+    raw_samples_npeak1_dir[chan] = dynamic_cast <TDirectory*> (raw_samples_dir[chan]->Get("raw_samples_npeak1"));
+    if (!raw_samples_npeak1_dir[chan]) {raw_samples_npeak1_dir[chan] = raw_samples_dir[chan]->mkdir("raw_samples_npeak1"); raw_samples_npeak1_dir[chan]->cd();}
+    else hfile->cd(Form("/mode_%d_data/slot_%d/chan_%d/raw_samples/raw_samples_npeak1", mode, islot, chan));
+
     for (uint32_t raw_index = 0; raw_index < NUMRAWEVENTS; raw_index++) {
       if (!g_psamp_event[islot][chan][raw_index]) {
 	g_psamp_event[islot][chan][raw_index] = new TGraph();
