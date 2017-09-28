@@ -285,7 +285,7 @@ void THaAnalyzer::EnablePhysicsEvents( Bool_t b )
 }
 
 //_____________________________________________________________________________
-void THaAnalyzer::EnableScalers( Bool_t b )
+void THaAnalyzer::EnableScalers( Bool_t )
 {
   cout << "Warning:: Scalers are handled by event handlers now"<<endl;
 }

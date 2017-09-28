@@ -16,7 +16,7 @@ class F1TDCModule : public VmeModule {
 
 public:
 
-   F1TDCModule() {};
+   F1TDCModule() : VmeModule() {}
    F1TDCModule(Int_t crate, Int_t slot);
    virtual ~F1TDCModule();
 
@@ -39,7 +39,7 @@ public:
    Bool_t IsHiResolution() const { return (fResol==IHI); };
 
    Int_t GetNumHits() const { return fNumHits; };
-   Int_t Decode(const UInt_t *p) { return 0; };
+   Int_t Decode(const UInt_t*) { return 0; };
 
 private:
 

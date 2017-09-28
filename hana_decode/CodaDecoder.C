@@ -43,11 +43,12 @@ CodaDecoder::~CodaDecoder()
 }
 
 //_____________________________________________________________________________
-Int_t CodaDecoder::GetPrescaleFactor(Int_t trigger_type) const
+Int_t CodaDecoder::GetPrescaleFactor(Int_t /*trigger_type*/) const
 {
   // To get the prescale factors for trigger number "trigger_type"
   // (valid types are 1,2,3...)
   //  if (fgPsFact) return fgPsFact->GetPrescaleFactor(trigger_type);
+  //FIXME: TODO
   return 0;
 }
 

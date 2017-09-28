@@ -44,13 +44,12 @@ namespace Decoder {
     virtual Int_t LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const UInt_t *pstop);
     virtual Int_t LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, Int_t pos, Int_t len);
     virtual Int_t DecodeOneWord(UInt_t pdat);
-// We dont use the Decode() but if you dont define it the class is abstract and wont be instantiated
-    Int_t Decode(const UInt_t *pdat) { return 0; }; // use DecodeOneWord instead
+    Int_t Decode(const UInt_t*) { return 0; }
     virtual Bool_t IsMultiFunction();
     virtual Bool_t HasCapability(Decoder::EModuleType type);
     Int_t LoadNextEvBuffer(THaSlotData *sldat);
-    Int_t GetData(EModuleType mtype, Int_t chan, Int_t ievent) const;
-    Int_t GetNumEvents(EModuleType mtype, Int_t ichan) const;
+    Int_t GetData(Decoder::EModuleType mtype, Int_t chan, Int_t ievent) const;
+    Int_t GetNumEvents(Decoder::EModuleType mtype, Int_t ichan) const;
     Int_t GetNumEvents() const { return GetNumEvents(0); } ;
     Int_t GetNumEvents(Int_t ichan) const { return GetNumFadcEvents(ichan); } ;
     Int_t GetNumSamples(Int_t ichan) const { return GetNumFadcSamples(ichan, 0);};

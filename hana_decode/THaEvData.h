@@ -129,7 +129,7 @@ public:
     return GetOpt(crate, slot, chan, hit );
   }
 
-  Int_t GetOpt( Int_t crate, Int_t slot, Int_t chan, Int_t hit ) const 
+  Int_t GetOpt( Int_t crate, Int_t slot, Int_t /*chan*/, Int_t hit ) const
   {// get the "Opt" bit (works for fastbus, is otherwise zero)
     Decoder::Module* module = GetModule(crate, slot);
     if (!module) {

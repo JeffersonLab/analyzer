@@ -16,7 +16,7 @@ namespace Decoder {
 
   public:
 
-    GenScaler() {};
+    GenScaler() : VmeModule() {}
     GenScaler(Int_t crate, Int_t slot);
     virtual ~GenScaler();
 

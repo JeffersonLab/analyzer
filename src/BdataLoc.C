@@ -258,7 +258,7 @@ void CrateLocMulti::Load( const THaEvData& evdata )
 }
 
 //_____________________________________________________________________________
-void CrateLocMulti::PrintMultiData( Option_t* opt ) const
+void CrateLocMulti::PrintMultiData( Option_t* ) const
 {
   // Print the data array
 

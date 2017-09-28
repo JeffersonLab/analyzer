@@ -40,27 +40,6 @@ Module::~Module() {
 }
 
 
-Module::Module(const Module& rhs) : TNamed(rhs) {
-   Create(rhs);
-}
-
-Module &Module::operator=(const Module& rhs) {
-  if ( &rhs != this) {
-    //    Uncreate();  // need a destructor method if we allocate memory
-    //                 (so far that's not the design)
-    Create(rhs);
-  }
-  return *this;
-}
-
-void Module::Create(const Module& rhs)
-{
-  fCrate = rhs.fCrate;
-  fSlot = rhs.fSlot;
-  fWordsExpect = rhs.fWordsExpect;
-  fDebugFile = rhs.fDebugFile;
-}
-
 void Module::Init() {
 // Suggestion: call this Init() before calling the inherting class's Init.
 // Otherwise some variables may be undefined.  The "factory" method

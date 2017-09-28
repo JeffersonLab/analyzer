@@ -47,7 +47,7 @@ THaEpicsEvtHandler::~THaEpicsEvtHandler()
   delete fEpics;
 }
 
-Int_t THaEpicsEvtHandler::End( THaRunBase* r)
+Int_t THaEpicsEvtHandler::End( THaRunBase* )
 {
   return 0;
 }
@@ -97,7 +97,7 @@ Int_t THaEpicsEvtHandler::Analyze(THaEvData *evdata)
   return 1;
 }
 
-THaAnalysisObject::EStatus THaEpicsEvtHandler::Init(const TDatime& date)
+THaAnalysisObject::EStatus THaEpicsEvtHandler::Init(const TDatime&)
 {
 
   cout << "Howdy !  We are initializing THaEpicsEvtHandler !!   name =   "<<fName<<endl;

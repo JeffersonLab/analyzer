@@ -67,6 +67,8 @@ Int_t Caen775Module::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const 
   ++p;
   for (Int_t i=0;i<nword;i++) {
        ++p;
+       if (p>pstop)
+	 break;
        UInt_t chan=((*p)&0x00ff0000)>>16;
        UInt_t raw=((*p)&0x00000fff);
        Int_t status = sldat->loadData(MyModType(),chan,raw,raw);

@@ -16,7 +16,7 @@ namespace Decoder {
 
   public:
 
-    Caen1190Module() {};
+    Caen1190Module() : VmeModule() {}
     Caen1190Module(Int_t crate, Int_t slot);
     virtual ~Caen1190Module();
 
