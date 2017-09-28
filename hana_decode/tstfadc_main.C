@@ -149,7 +149,7 @@ int main(int argc, char* argv[])
     if (maxEvent == -1)
       cout << "\nAll Events in Run " << runNumber << " Will be Analayzed" << endl;
   }
-  if (spectrometer = "") {
+  if (spectrometer == "") {
     cout << "\nEnter the Spectrometer Name (hms or shms): ";
     cin >> spectrometer;
     if (spectrometer != "hms" && spectrometer != "shms") {

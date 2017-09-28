@@ -1,0 +1,48 @@
+## -*- mode: Python -*-
+
+import os
+import subprocess
+import SCons
+import sys
+
+analyzer_dir = '..'
+
+env = Environment(ENV = os.environ)
+flags = { 'LIBS'    : Split('HallA dc'),
+          'LIBPATH' : [analyzer_dir],
+          'CPPPATH' : Split('-I'+analyzer_dir+'/src -I'+analyzer_dir+'/hana_decode') }
+env.MergeFlags(flags)
+
+# Initial configuration using our custom configure.py module
+sys.path.append(analyzer_dir)
+import configure
+configure.config(env,ARGUMENTS)
+
+# Find ROOT
+env.Append(ROOTCONFIG = 'root-config')
+try:
+    env.ParseConfig('$ROOTCONFIG --cflags --libs')
+    cmd = env['ROOTCONFIG'] + " --cxx"
+    env.Replace(CXX = subprocess.check_output(cmd, shell=True).rstrip())
+except OSError:
+    try:
+	env.Replace(ROOTCONFIG = env['ENV']['ROOTSYS'] + '/bin/root-config')
+	env.Replace(ROOTCINT = env['ENV']['ROOTSYS'] + '/bin/rootcint')
+	env.ParseConfig('$ROOTCONFIG --cflags --libs')
+        cmd = env['ROOTCONFIG'] + " --cxx"
+        env.Replace(CXX = subprocess.check_output(cmd, shell=True).rstrip())
+    except KeyError:
+       	print('!!! Cannot find ROOT.  Check if root-config is in your PATH.')
+	Exit(1)
+
+        
+# Configure
+Export('env')
+conf = Configure(env)
+if not conf.CheckCXX():
+	print('!!! Your compiler and/or environment is not correctly configured.')
+	Exit(1)
+env = conf.Finish()
+
+# Build targets
+env.Program('dbconvert', 'dbconvert.cxx')

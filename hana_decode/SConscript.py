@@ -10,29 +10,50 @@ standalone = baseenv.subst('$STANDALONE')
 print ('Compiling decoder executables:  STANDALONE = %s\n' % standalone)
 
 standalonelist = Split("""
-tstoo tstfadc tstf1tdc tstskel tstio tdecpr prfact epicsd tdecex tst1190
+tstoo tstfadc tstf1tdc tstio tdecpr prfact epicsd tdecex tst1190
 """)
 # Still to come, perhaps, are (etclient, tstcoda) which should be compiled
 # if the ONLINE_ET variable is set.  
 
 list = Split("""
-THaUsrstrutils.C THaCrateMap.C THaCodaData.C 
-THaEpics.C THaFastBusWord.C THaCodaFile.C THaSlotData.C 
-THaEvData.C THaCodaDecoder.C SimDecoder.C
-CodaDecoder.C Module.C VmeModule.C PipeliningModule.C FastbusModule.C
-Lecroy1877Module.C Lecroy1881Module.C Lecroy1875Module.C
-Fadc250Module.C GenScaler.C Scaler560.C Scaler1151.C
-Scaler3800.C Scaler3801.C F1TDCModule.C Caen1190Module.C
-Caen775Module.C Caen792Module.C
-SkeletonModule.C
+Caen1190Module.C
+Caen775Module.C
+Caen792Module.C
+CodaDecoder.C
+F1TDCModule.C
+Fadc250Module.C
+FastbusModule.C
+GenScaler.C
+Lecroy1875Module.C
+Lecroy1877Module.C
+Lecroy1881Module.C
+Module.C
+PipeliningModule.C
+Scaler1151.C
+Scaler3800.C
+Scaler3801.C
+Scaler560.C
+SimDecoder.C
+THaCodaData.C
+THaCodaDecoder.C
+THaCodaFile.C
+THaCrateMap.C
+THaEpics.C
+THaEvData.C
+THaFastBusWord.C
+THaSlotData.C
+THaUsrstrutils.C
+VmeModule.C
 """)
-#evio.C
-#swap_util.C swapped_intcpy.c
+
+# Requires SCons >= 2.3.5 for "exclude" keyword
+#list = Glob('*.C',exclude=['*_main.C','*_onl.C','calc_thresh.C',
+#                           'THaEtClient.C','THaGenDetTest.C'])
 
 #baseenv.Append(LIBPATH=['$HA_DIR'])
 
 proceed = "1" or "y" or "yes" or "Yes" or "Y"
-if baseenv.subst('$STANDALONE')==proceed:
+if baseenv.subst('$STANDALONE')==proceed or baseenv.GetOption('clean'):
         for scalex in standalonelist:
                 pname = scalex
 
@@ -42,9 +63,9 @@ if baseenv.subst('$STANDALONE')==proceed:
                 	main = scalex+'_main.C'
 
                 if scalex=='tdecex':
-			pname = baseenv.Program(target = pname, source = list+[main,'THaGenDetTest.C','THaDecDict.so'])
+			pname = baseenv.Program(target = pname, source = [main,'THaGenDetTest.C'])
 		else:	
-			pname = baseenv.Program(target = pname, source = list+[main,'THaDecDict.so'])
+			pname = baseenv.Program(target = pname, source = [main])
 			
                 baseenv.Install('../bin',pname)
                 baseenv.Alias('install',['../bin'])
