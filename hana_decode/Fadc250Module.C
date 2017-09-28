@@ -39,6 +39,14 @@
 //   Mode 9:  data type  9
 //   Mode 10: data types 4 & 9
 //
+//   fFirmwareVers == 2	
+//   Current version (0x0C0D, 9/28/17) of the FADC firmware only
+//   reports the pedestal once for up to four identifiable pulses in
+//   in the readout window.  For now, it is best to tell THaEvData
+//   that there are n pedestals associated with n identified pulses
+//   and point the GetData method to the first entry in the pedestal
+//   data vector.  This is now the non firmware specific behavior.
+//
 /////////////////////////////////////////////////////////////////////
 
 #include "Fadc250Module.h"
@@ -158,7 +166,8 @@ namespace Decoder {
       case kPulsePeak:
 	return fPulseData[chan].peak.size();
       case kPulsePedestal:
-	return fPulseData[chan].pedestal.size();
+	if (fFirmwareVers == 2) return fPulseData[chan].pedestal.size();
+	else return fPulseData[chan].integral.size();
       case kCoarseTime:
 	return fPulseData[chan].coarse_time.size();
       case kFineTime:
@@ -321,7 +330,7 @@ namespace Decoder {
   Int_t Fadc250Module::GetPulsePedestalData(Int_t chan, Int_t ievent) const {
     Int_t nevent = 0;
     nevent = fPulseData[chan].pedestal.size();
-    if (ievent < 0 || ievent > nevent) {
+    if (ievent < 0) {
       cout << "ERROR:: Fadc250Module:: GetPulsePedestalData:: invalid event number for slot = " << fSlot << ", channel = " << chan << endl;
       return -1;
     }
@@ -329,16 +338,36 @@ namespace Decoder {
       cout << "ERROR:: Fadc250Module:: GetPulsePedestalData:: data vector empty for slot = " << fSlot << ", channel = " << chan << endl;
       return -1;
     }
-    else {
-      return fPulseData[chan].pedestal[ievent];
+    if (fFirmwareVers == 2) {
+      if (ievent > nevent) {
+	cout << "ERROR:: Fadc250Module:: GetPulsePedestalData:: invalid data vector size = " << fSlot << ", channel = " << chan << endl;
+	return -1;
+      }
+      else {    
+	return fPulseData[chan].pedestal[ievent];
+#ifdef WITH_DEBUG
+	if (fDebugFile != 0)
+	  *fDebugFile << "Fadc250Module::GetPulsePedestalData channel "
+		      << chan << ", event " << ievent << " = "
+		      <<  fPulseData[chan].pedestal[ievent] << endl;
+#endif
+      }
+    }
+    if (nevent != 1) {
+      cout << "ERROR:: Fadc250Module:: GetPulsePedestalData:: invalid data vector size = " << fSlot << ", channel = " << chan << endl;
+      return -1;
+    }
+    else {    
+      return fPulseData[chan].pedestal[0];
 #ifdef WITH_DEBUG
       if (fDebugFile != 0)
 	*fDebugFile << "Fadc250Module::GetPulsePedestalData channel "
 		    << chan << ", event " << ievent << " = "
-		    <<  fPulseData[chan].pedestal[ievent] << endl;
+		    <<  fPulseData[chan].pedestal[0] << endl;
 #endif
     }
   }
+
 
   Int_t Fadc250Module::GetPulseSamplesData(Int_t chan, Int_t ievent) const {
     Int_t nevent = 0;
@@ -445,7 +474,7 @@ vector<uint32_t> Fadc250Module::GetPulseSamplesVector(Int_t chan) const {
 #endif
       return sz;
     }
-    else if ((GetFadcMode() == 9) &&
+    else if ((GetFadcMode() == 9 && fFirmwareVers == 2) &&
 	     ((sz = fPulseData[chan].integral.size()) == fPulseData[chan].time.size()) &&
 	     (fPulseData[chan].pedestal.size() == sz) &&
 	     (fPulseData[chan].peak.size() == sz)) {
@@ -456,9 +485,31 @@ vector<uint32_t> Fadc250Module::GetPulseSamplesVector(Int_t chan) const {
 #endif
       return sz;
     }
-    else if ((GetFadcMode() == 10) &&
+    else if ((GetFadcMode() == 10 && fFirmwareVers == 2) &&
 	     ((sz = fPulseData[chan].integral.size()) == fPulseData[chan].time.size()) &&
 	     (fPulseData[chan].pedestal.size() == sz) &&
+	     (fPulseData[chan].peak.size() == sz)) {
+#ifdef WITH_DEBUG
+      if (fDebugFile != 0)
+	*fDebugFile << "Fadc250Module::GetNumFadcEvents channel "
+		    << chan << " = " <<  sz << endl;
+#endif
+      return sz;
+    }
+    else if ((GetFadcMode() == 9) &&
+	     ((sz = fPulseData[chan].integral.size()) == fPulseData[chan].time.size()) &&
+	     (fPulseData[chan].pedestal.size() == 1 || fPulseData[chan].pedestal.size() == 0) &&
+	     (fPulseData[chan].peak.size() == sz)) {
+#ifdef WITH_DEBUG
+      if (fDebugFile != 0)
+	*fDebugFile << "Fadc250Module::GetNumFadcEvents channel "
+		    << chan << " = " <<  sz << endl;
+#endif
+      return sz;
+    }
+    else if ((GetFadcMode() == 10) &&
+	     ((sz = fPulseData[chan].integral.size()) == fPulseData[chan].time.size()) &&
+	     (fPulseData[chan].pedestal.size() == 1 || fPulseData[chan].pedestal.size() == 0) &&
 	     (fPulseData[chan].peak.size() == sz)) {
 #ifdef WITH_DEBUG
       if (fDebugFile != 0)
