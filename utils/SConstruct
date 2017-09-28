@@ -14,7 +14,7 @@ flags = { 'LIBS'    : Split('HallA dc'),
 env.MergeFlags(flags)
 
 # Initial configuration using our custom configure.py module
-sys.path.append(analyzer_dir)
+sys.path.append(analyzer_dir + '/site_scons')
 import configure
 configure.config(env,ARGUMENTS)
 

@@ -325,7 +325,7 @@ analyzer:	src/main.o $(PODDLIBS)
 #---------- Maintenance --------------------------------------------
 clean:
 		set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i clean; done
-		rm -f *.{so,a,o,os} *.so.*
+		rm -f *.{so,a,o,os} *.so.* site_scons/*.pyc
 		rm -f $(PROGRAMS) $(HA_DICT).* *~
 		cd src; rm -f ha_compiledata.h *.{o,os} *~
 
@@ -339,7 +339,7 @@ srcdist:
 		tar -czv -f ../$(NAME).tar.gz -X .exclude -C .. \
 		 $(addprefix $(NAME)/, \
 		  ChangeLog $(wildcard README*) Makefile .exclude .gitignore \
-		  SConstruct $(wildcard *.py) scons \
+		  $(wildcard SCons*) site_scons \
 		  src $(DCDIR) Calib DB examples contrib utils docs SDK \
 		  evio/Makefile evio/Makefile.libsrc)
 

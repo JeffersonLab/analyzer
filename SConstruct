@@ -11,7 +11,7 @@ import configure
 
 EnsureSConsVersion(2,1,0)
 
-baseenv = Environment(ENV = os.environ,tools=["default","disttar"],toolpath='.')
+baseenv = Environment(ENV = os.environ,tools=["default","disttar"],toolpath=['site_scons'])
 
 ####### Hall A Build Environment #############
 baseenv.Append(MAIN_DIR = Dir('.').abspath)
