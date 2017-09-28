@@ -42,17 +42,15 @@ def rootcint(target,source,env):
         headers = ""
         cpppath = env.subst('$_CCCOMCOM')
         ccflags = env.subst('$CCFLAGS')
-        rootcint = env.subst('$ROOTCINT')
-        print ("Doing rootcint call now ...")
+#        print ("Doing rootcint call now ...")
         for f in source:
                 headers += str(f) + " "
-        command = rootcint + " -f %s -c -pthread -fPIC %s %s" % (dictname,cpppath,headers)
+        command = "rootcint -f %s -c -pthread -fPIC %s %s" % (dictname,cpppath,headers)
 #	print ('RootCint Command = %s\n' % command)
         ok = os.system(command)
         return ok
 
 baseenv.Append(ROOTCONFIG = 'root-config')
-baseenv.Append(ROOTCINT = 'rootcint')
 try:
         baseenv.AppendENVPath('PATH',baseenv['ENV']['ROOTSYS'] + '/bin')
 except KeyError:

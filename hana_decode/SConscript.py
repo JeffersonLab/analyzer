@@ -72,8 +72,10 @@ if baseenv.subst('$STANDALONE')==proceed or baseenv.GetOption('clean'):
 
 sotarget = 'dc'
 
-dclib = baseenv.SharedLibrary(target=sotarget, source = list+['THaDecDict.os'],\
-                              SHLIBPREFIX='../lib',LIBS=[''],LIBPATH=[''])
+dclib = baseenv.SharedLibrary(target = sotarget,\
+                              source = list+[baseenv.subst('$MAIN_DIR')+'/THaDecDict.C'],\
+                              SHLIBPREFIX = baseenv.subst('$MAIN_DIR')+'/lib',\
+                              LIBS = [''], LIBPATH = [''])
 #print ('Decoder shared library = %s\n' % dclib)
 
 linkbase = baseenv.subst('$SHLIBPREFIX')+sotarget

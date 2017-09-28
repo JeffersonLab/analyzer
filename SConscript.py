@@ -13,7 +13,6 @@ Import ('baseenv')
 ######## ROOT Dictionaries #########
 
 rootdecdict = baseenv.subst('$MAIN_DIR')+'/THaDecDict.C'
-rootdecobj = baseenv.subst('$HA_DC')+'/THaDecDict.os'
 decheaders = Split("""
 hana_decode/THaUsrstrutils.h hana_decode/THaCrateMap.h
 hana_decode/THaCodaData.h hana_decode/THaEpics.h
@@ -31,10 +30,8 @@ hana_decode/Caen775Module.h hana_decode/Caen792Module.h
 hana_decode/THaBenchmark.h hana_decode/haDecode_LinkDef.h
 """)
 baseenv.RootCint(rootdecdict,decheaders)
-baseenv.SharedObject(target = rootdecobj, source = rootdecdict)
 
 roothadict = baseenv.subst('$MAIN_DIR')+'/haDict.C'
-roothaobj = baseenv.subst('$HA_SRC')+'/haDict.os'
 haheaders = Split("""
 src/THaFormula.h src/THaVform.h src/THaVhist.h src/THaVar.h
 src/THaVarList.h src/THaCut.h src/THaNamedList.h src/THaCutList.h
@@ -72,7 +69,6 @@ src/THaVDCPoint.h src/THaVDCPointPair.h src/THaGlobals.h
 src/HallA_LinkDef.h
 """)
 baseenv.RootCint(roothadict,haheaders)
-baseenv.SharedObject(target = roothaobj, source = roothadict)
 
 #######  write src/ha_compiledata.h header file ######
 

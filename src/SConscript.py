@@ -44,8 +44,10 @@ baseenv.Object('main.C')
 
 sotarget = 'HallA'
 
-srclib = baseenv.SharedLibrary(target = sotarget, source = list+['haDict.os'],\
-                               SHLIBPREFIX='../lib',LIBS=[''],LIBPATH=[''])
+srclib = baseenv.SharedLibrary(target = sotarget,\
+                               source = list+[baseenv.subst('$MAIN_DIR')+'/haDict.C'],\
+                               SHLIBPREFIX = baseenv.subst('$MAIN_DIR')+'/lib',\
+                               LIBS = [''], LIBPATH = [''])
 #print ('Source shared library = %s\n' % srclib)
 
 linkbase = baseenv.subst('$SHLIBPREFIX')+sotarget
