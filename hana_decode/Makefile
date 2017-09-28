@@ -88,7 +88,7 @@ else
 	DEFINES    += -DNDEBUG
      endif
      CXXFLG        += -Wall -fPIC
-     CXXEXTFLG      = -Woverloaded-virtual
+     CXXEXTFLG      =
   endif
 
   ifeq ($(ARCH),macosx)
@@ -107,7 +107,7 @@ else
 	DEFINES    += -DNDEBUG
      endif
      CXXFLG        += -Wall -fPIC
-     CXXEXTFLG      = -Woverloaded-virtual
+     CXXEXTFLG      =
   endif
 
   ifdef WITH_DEBUG

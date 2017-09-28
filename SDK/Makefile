@@ -80,7 +80,7 @@ else
   LDFLAGS     = -g -O
   DEFINES     = -DNDEBUG
 endif
-CXXFLAGS     += -Wall -Woverloaded-virtual -fPIC
+CXXFLAGS     += -Wall -fPIC
 LD            = g++
 SOFLAGS       = -shared
 DEFINES      += $(shell getconf LFS_CFLAGS)
@@ -99,7 +99,7 @@ else
 endif
 DEFINES      += -DMACVERS
 CXXFLG       += -Wall -fPIC
-CXXEXTFLG     = -Woverloaded-virtual
+CXXEXTFLG     =
 LD           := $(CXX)
 LDCONFIG     :=
 SOFLAGS      := -shared -Wl,-undefined,dynamic_lookup

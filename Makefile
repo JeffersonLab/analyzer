@@ -84,7 +84,7 @@ else
 endif
 DEFINES      += -DLINUXVERS
 CXXFLG       += -Wall -fPIC
-CXXEXTFLG     = -Woverloaded-virtual
+CXXEXTFLG     =
 LD           := $(CXX)
 LDCONFIG     := /sbin/ldconfig -n $(LIBDIR)
 SOFLAGS      := -shared
@@ -111,7 +111,7 @@ else
 endif
 DEFINES      += -DMACVERS
 CXXFLG       += -Wall -fPIC
-CXXEXTFLG     = -Woverloaded-virtual
+CXXEXTFLG     =
 LD           := $(CXX)
 LDCONFIG     :=
 SOFLAGS      := -shared -Wl,-undefined,dynamic_lookup
