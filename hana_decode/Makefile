@@ -63,11 +63,13 @@ CC           := $(shell root-config --cc)
 INCLUDES =
 
 ifndef STANDALONE
-   INCLUDES += -I$(MAINDIR)
+  INCLUDES += -I$(MAINDIR)
 else
-   ARCH          = linux
-  # ARCH           = macosx
-  # ARCH          = solarisCC5
+  MACHINE := $(shell uname -s)
+  ARCH    := linux
+  ifeq ($(MACHINE),Darwin)
+     ARCH := macosx
+  endif
 
 # Only define compiler options for STANDALONE, otherwise inherit them from
 # top-level Makefile
