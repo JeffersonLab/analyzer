@@ -111,7 +111,11 @@ f.write('#define HA_DATETIME "%s"\n' % time.strftime("%a %b %d %Y"))
 f.write('#define HA_PLATFORM "%s"\n' % platform.platform())
 f.write('#define HA_BUILDNODE "%s"\n' % platform.node())
 f.write('#define HA_BUILDDIR "%s"\n' % os.getcwd())
-f.write('#define HA_BUILDUSER "%s"\n' % os.getlogin())
+try:
+    builduser = baseenv['ENV']['LOGNAME']
+except:
+    builduser = ''
+f.write('#define HA_BUILDUSER "%s"\n' % builduser)
 f.write('#define HA_GITVERS "%s"\n' % gitrev[:7])
 f.write('#define HA_CXXVERS "%s"\n' % cxxver)
 f.write('#define HA_ROOTVERS "%s"\n' % baseenv.subst('$ROOTVERS'))

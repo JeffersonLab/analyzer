@@ -20,6 +20,7 @@ script:
   - scons
 after_success:
   - ldd $ANALYZER/analyzer
+  - $ANALYZER/analyzer --version
   - $ANALYZER/analyzer -q
 branches:
   only: master
