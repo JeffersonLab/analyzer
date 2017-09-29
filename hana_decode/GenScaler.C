@@ -221,21 +221,28 @@ namespace Decoder {
     /// it is not the correct one.
     Bool_t result;
     static Bool_t firsttime=kTRUE;
+    static Bool_t firstwarn=kTRUE;
     result = ((rdata & fHeaderMask)==fHeader);
     fNumChan = (rdata&fNumChanMask)>>fNumChanShift;
     if (fNumChan == 0) {
       fNumChan=fgNumChanDefault;
       if (firsttime) {
 	firsttime = kFALSE;
-	cout << "Warning::GenScaler:: using default num "<<fgNumChanDefault;
-	cout << "   channels"<<endl;
+	cout << "Warning::GenScaler:: (" << fCrate << "," << fSlot << ") "
+	  "using default num "<<fgNumChanDefault << " channels" << endl;
       }
     }
-    if (result) {
-      if (fNumChan != fWordsExpect) {
-	cout << "GenScaler:: ERROR:  Inconsistent number of chan."<<endl;
+    if (result && fNumChan != fWordsExpect) {
+      if (fNumChan > fWordsExpect)
+	fNumChan = fWordsExpect;
+
+      // Print warning once to alert user to potential problems,
+      // or for every suspect event if debugging enabled
+      if( firstwarn || fDebugFile ) {
+	cout << "GenScaler:: ERROR:  (" << fCrate << "," << fSlot << ") "
+	     << "inconsistent number of chan."<<endl;
 	//        DoPrint();
-	if (fNumChan > fWordsExpect) fNumChan = fWordsExpect;
+	firstwarn = false;
       }
     }
     return result;

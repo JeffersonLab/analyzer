@@ -12,31 +12,19 @@
 // Defines the functions FindVertices() and TrackCalc(), which are common
 // to both the LeftHRS and the RightHRS.
 //
-// Special configurations of the HRS (e.g. more detectors, different 
-// detectors) can be supported in on e of three ways:
+// By default, the THaHRS class does not define any detectors. (This is new
+// in analyzer 1.6 and later.) In this way, the user has full control over
+// the detector configuration in the analysis script.
+// Detectors should be added with AddDetector() as usual.
 //
-//   1. Use the AddDetector() method to include a new detector
-//      in this apparatus.  The detector will be decoded properly,
-//      and its variables will be available for cuts and histograms.
-//      Its processing methods will also be called by the generic Reconstruct()
-//      algorithm implemented in THaSpectrometer::Reconstruct() and should
-//      be correctly handled if the detector class follows the standard 
-//      interface design.
+// However: To maintain backward compatibility with old scripts, the THaHRS
+// will auto-create the previous set of standard detectors, "vdc", "s1" and
+// "s2", if no "vdc" detector is defined at Init() time.
+// This can be turned off by calling AutoStandardDetectors(kFALSE).
 //
-//   2. Write a derived class that creates the detector in the
-//      constructor.  Write a new Reconstruct() method or extend the existing
-//      one if necessary.
-//
-//   3. Write a new class inheriting from THaSpectrometer, using this
-//      class as an example.  This is appropriate if your HRS 
-//      configuration has fewer or different detectors than the 
-//      standard HRS. (It might not be sensible to provide a RemoveDetector() 
-//      method since Reconstruct() relies on the presence of the 
-//      standard detectors to some extent.)
-//
-//  For timing calculations, one can specify a reference detector via SetRefDet
-//  (usually a scintillator) as the detector at the 'reference distance',
-//  corresponding to the pathlength correction matrix.
+// For timing calculations, one can specify a reference detector via SetRefDet
+// (usually a scintillator) as the detector at the 'reference distance',
+// corresponding to the pathlength correction matrix.
 //
 //////////////////////////////////////////////////////////////////////////
 
@@ -65,6 +53,7 @@ THaHRS::THaHRS( const char* name, const char* description ) :
   // Constructor
 
   SetTrSorting(kFALSE);
+  AutoStandardDetectors(kTRUE); // for backward compatibility
 }
 
 //_____________________________________________________________________________
@@ -76,20 +65,59 @@ THaHRS::~THaHRS()
 //_____________________________________________________________________________
 Bool_t THaHRS::SetTrSorting( Bool_t set )
 {
-  if( set )
-    fProperties |= kSortTracks;
-  else
-    fProperties &= ~kSortTracks;
-
-  return set;
+  Bool_t oldset = TestBit(kSortTracks);
+  SetBit( kSortTracks, set );
+  return oldset;
 }
 
 //_____________________________________________________________________________
 Bool_t THaHRS::GetTrSorting() const
 {
-  return ((fProperties & kSortTracks) != 0);
+  return TestBit(kSortTracks);
 }
  
+//_____________________________________________________________________________
+Bool_t THaHRS::AutoStandardDetectors( Bool_t set )
+{
+  Bool_t oldset = TestBit(kAutoStdDets);
+  SetBit( kAutoStdDets, set );
+  return oldset;
+}
+
+//_____________________________________________________________________________
+THaAnalysisObject::EStatus THaHRS::Init( const TDatime& run_time )
+{
+  // Special HRS Init method for approximate backward compatibility with old
+  // scripts. If no "vdc" detector has been defined by the user, assume we
+  // are being run from an old script and create the old set of "standard
+  // detectors" ("vdc", "s1", "s2") at the beginning of the detector list.
+  // Note that the old script may have defined non-standard detectors, e.g.
+  // Cherenkov, Shower, FPP etc.
+  // This behavior can be turned off by calling AutoStandardDetectors(kFALSE).
+
+  if( TestBit(kAutoStdDets) ) {
+    THaDetector* pdet = static_cast<THaDetector*>( fDetectors->FindObject("vdc") );
+    if( !pdet ) {
+      AddDetector( new THaScintillator("s2", "S2 scintillator"), true, true );
+      AddDetector( new THaScintillator("s1", "S1 scintillator"), true, true );
+#ifndef NDEBUG
+      Int_t ret =
+#endif
+	AddDetector( new THaVDC("vdc", "Vertical Drift Chamber"), true, true );
+      assert(ret==0);  // else "vdc" was already defined after all
+      assert( fDetectors->GetSize() >= 3 );
+    }
+  }
+
+  // If the reference detector hasn't been defined yet (via SetRefDet),
+  // use "s1", if it exists.
+  if( !fRefDet )
+    fRefDet = static_cast<THaScintillator*>( GetDetector("s1") );
+
+  // Continue with standard initialization as before
+  return THaSpectrometer::Init(run_time);
+}
+
 //_____________________________________________________________________________
 Int_t THaHRS::SetRefDet( const char* name )
 {

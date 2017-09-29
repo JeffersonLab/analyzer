@@ -16,6 +16,7 @@
 #include "TSystem.h"
 #include "TString.h"
 #include "TRegexp.h"
+#include "TTree.h"
 #include "THaInterface.h"
 #include "TInterpreter.h"
 #include "THaVarList.h"
@@ -26,8 +27,8 @@
 //#include "THaFileDB.h"
 #include "THaTextvars.h"
 #include "ha_compiledata.h"
-
-#include "TTree.h"
+#include <cstring>
+#include <sstream>
 
 //#include "TGXW.h"
 //#include "TVirtualX.h"
@@ -183,9 +184,6 @@ void THaInterface::PrintLogo( Bool_t lite )
      mille = iyear;
    char* root_date = Form("%s %d %4d",months[imonth-1],iday,mille);
 
-   const char* halla_version = HA_VERSION;
-   //   const char* halla_date = Form("%d %s %4d",24,months[2-1],2003);
-
 #if ROOT_VERSION_CODE >= ROOT_VERSION(5,18,0)
    if( !lite ) {
 #endif
@@ -194,7 +192,7 @@ void THaInterface::PrintLogo( Bool_t lite )
      Printf("  *            W E L C O M E  to  the            *");
      Printf("  *       H A L L A   C++  A N A L Y Z E R       *");
      Printf("  *                                              *");
-     Printf("  *  Release %16s %18s *",halla_version,__DATE__);
+     Printf("  *  Release %16s %18s *",HA_VERSION,HA_DATE);
      Printf("  *  Based on ROOT %8s %20s *",root_version,root_date);
      //   Printf("  *             Development version              *");
      Printf("  *                                              *");
@@ -220,6 +218,32 @@ TClass* THaInterface::GetDecoder()
 {
   // Get class of the current decoder
   return gHaDecoder;
+}
+
+//_____________________________________________________________________________
+const char* THaInterface::GetVersion()
+{
+  // Get software version
+  return HA_VERSION;
+}
+
+//_____________________________________________________________________________
+const char* THaInterface::GetVersionString()
+{
+  // Get software version string (printed by analyzer -v)
+
+  static TString version_string;
+
+  if( version_string.IsNull() ) {
+    ostringstream ostr;
+    ostr << "Podd " << HA_VERSION << " " << HA_PLATFORM;
+    if( strlen(HA_GITVERS) > 0 )
+      ostr << " git @" << HA_GITVERS;
+    if( strlen(HA_ROOTVERS) )
+      ostr << " ROOT " << HA_ROOTVERS;
+    version_string = ostr.str().c_str();
+  }
+  return version_string.Data();
 }
 
 //_____________________________________________________________________________

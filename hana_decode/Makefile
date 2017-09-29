@@ -63,11 +63,13 @@ CC           := $(shell root-config --cc)
 INCLUDES =
 
 ifndef STANDALONE
-   INCLUDES += -I$(MAINDIR)
+  INCLUDES += -I$(MAINDIR)
 else
-   ARCH          = linux
-  # ARCH           = macosx
-  # ARCH          = solarisCC5
+  MACHINE := $(shell uname -s)
+  ARCH    := linux
+  ifeq ($(MACHINE),Darwin)
+     ARCH := macosx
+  endif
 
 # Only define compiler options for STANDALONE, otherwise inherit them from
 # top-level Makefile
@@ -88,7 +90,7 @@ else
 	DEFINES    += -DNDEBUG
      endif
      CXXFLG        += -Wall -fPIC
-     CXXEXTFLG      = -Woverloaded-virtual
+     CXXEXTFLG      =
   endif
 
   ifeq ($(ARCH),macosx)
@@ -107,7 +109,7 @@ else
 	DEFINES    += -DNDEBUG
      endif
      CXXFLG        += -Wall -fPIC
-     CXXEXTFLG      = -Woverloaded-virtual
+     CXXEXTFLG      =
   endif
 
   ifdef WITH_DEBUG
@@ -169,7 +171,7 @@ SRC = THaUsrstrutils.C THaCrateMap.C THaCodaData.C \
       Lecroy1877Module.C Lecroy1881Module.C Lecroy1875Module.C \
       Fadc250Module.C GenScaler.C Scaler560.C Scaler1151.C \
       Scaler3800.C Scaler3801.C F1TDCModule.C Caen1190Module.C \
-      SkeletonModule.C
+      Caen775Module.C Caen792Module.C
 
 ifndef STANDALONE
   SRC += SimDecoder.C

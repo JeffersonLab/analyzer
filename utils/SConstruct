@@ -1,0 +1,61 @@
+## -*- mode: Python -*-
+
+import os
+import subprocess
+import SCons.Util
+import sys
+import platform
+
+analyzer_dir = '..'
+
+env = Environment(ENV = os.environ)
+flags = { 'LIBS'    : Split('HallA dc'),
+          'LIBPATH' : [analyzer_dir],
+          'CPPPATH' : Split('-I'+analyzer_dir+'/src -I'+analyzer_dir+'/hana_decode') }
+env.MergeFlags(flags)
+
+# Find ROOT
+env.Append(ROOTCONFIG = 'root-config')
+try:
+        env.AppendENVPath('PATH',env['ENV']['ROOTSYS'] + '/bin')
+except KeyError:
+        pass    # ROOTSYS not defined
+
+try:
+        env.ParseConfig('$ROOTCONFIG --cflags --libs')
+        if sys.version_info >= (2, 7):
+                cmd = env['ROOTCONFIG'] + " --cxx"
+                env.Replace(CXX = subprocess.check_output(cmd, shell=True).rstrip())
+                cmd = env['ROOTCONFIG'] + " --version"
+                env.Replace(ROOTVERS = subprocess.check_output(cmd, shell=True).rstrip())
+        else:
+                env.Replace(CXX = subprocess.Popen([env['ROOTCONFIG'], '--cxx'],\
+                                        stdout=subprocess.PIPE).communicate()[0].rstrip())
+                env.Replace(ROOTVERS = subprocess.Popen([env['ROOTCONFIG'],\
+                        '--version'],stdout=subprocess.PIPE).communicate()[0].rstrip())
+        if platform.system() == 'Darwin':
+                try:
+                        env.Replace(LINKFLAGS = env['LINKFLAGS'].remove('-pthread'))
+                except:
+                        pass #  '-pthread' was not present in LINKFLAGS
+except OSError:
+        print('!!! Cannot find ROOT.  Check if root-config is in your PATH.')
+        Exit(1)
+
+# Configure
+if not (env.GetOption('clean') or env.GetOption('help')):
+        # Initial configuration using our custom configure.py module
+        sys.path.append(analyzer_dir + '/site_scons')
+        import configure
+        configure.config(env,ARGUMENTS)
+
+        conf = Configure(env)
+        if not conf.CheckCXX():
+                print('!!! Your compiler and/or environment is not correctly configured.')
+                Exit(1)
+        env = conf.Finish()
+
+Export('env')
+
+# Build targets
+env.Program('dbconvert', 'dbconvert.cxx')

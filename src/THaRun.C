@@ -40,6 +40,28 @@ THaRun::THaRun( const char* fname, const char* description ) :
 }
 
 //_____________________________________________________________________________
+THaRun::THaRun( const vector<TString>& pathList, const char* filename,
+		const char* description )
+  : THaCodaRun(description), fMaxScan(fgMaxScan)
+{
+  //  cout << "Looking for file:\n";
+  for(vector<TString>::size_type i=0; i<pathList.size(); i++) {
+    fFilename = Form( "%s/%s", pathList[i].Data(), filename );
+    //cout << "\t'" << fFilename << "'" << endl;
+
+    if( !gSystem->AccessPathName(fFilename, kReadPermission) )
+      break;
+  }
+  //cout << endl << "--> Opening file:  " << fFilename << endl;
+
+  fCodaData = new THaCodaFile;  //Specifying the file name would open the file
+  FindSegmentNumber();
+
+  // Hall A runs normally contain all these items
+  fDataRequired = kDate|kRunNumber|kRunType|kPrescales;
+}
+
+//_____________________________________________________________________________
 THaRun::THaRun( const THaRun& rhs ) :
   THaCodaRun(rhs), fFilename(rhs.fFilename), fMaxScan(rhs.fMaxScan)
 {

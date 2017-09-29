@@ -88,7 +88,7 @@ Int_t THaEvt125Handler::Analyze(THaEvData *evdata)
 }
 
 
-THaAnalysisObject::EStatus THaEvt125Handler::Init(const TDatime& date)
+THaAnalysisObject::EStatus THaEvt125Handler::Init(const TDatime&)
 {
 
   cout << "Howdy !  We are initializing THaEvt125Handler !!   name =   "<<fName<<endl;

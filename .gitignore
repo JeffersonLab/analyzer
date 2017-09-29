@@ -3,7 +3,7 @@
 *.d
 *.os
 lib*.so*
-lib*.dylib
+lib*.dylib*
 analyzer
 hana_decode/epicsd
 hana_decode/prfact
@@ -31,6 +31,7 @@ ChangeLog
 # Editor lint
 .#*
 *~
+*.sw?
 
 # Helpers
 /fix-filedates.sh

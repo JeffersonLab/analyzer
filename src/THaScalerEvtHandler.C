@@ -75,7 +75,7 @@ THaScalerEvtHandler::~THaScalerEvtHandler()
   }
 }
 
-Int_t THaScalerEvtHandler::End( THaRunBase* r)
+Int_t THaScalerEvtHandler::End( THaRunBase* )
 {
   if (fScalerTree) fScalerTree->Write();
   return 0;

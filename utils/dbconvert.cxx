@@ -5,9 +5,6 @@
 // Utility to convert Podd 1.5 and earlier database files to Podd 1.6
 // and later format
 
-#define _BSD_SOURCE
-#define _XOPEN_SOURCE
-
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -1631,7 +1628,9 @@ static void DefineTypes()
     { 0,                kNone }
   };
   for( StringToType_t* item = deftypes; item->name; ++item ) {
+#ifndef NDEBUG
     pair<NameTypeMap_t::iterator, bool> ins =
+#endif
       dettype_map.insert( make_pair(string(item->name),item->type) );
     assert( ins.second ); // else typo in definition of deftypes[]
   }
@@ -1774,7 +1773,9 @@ static void DefaultMap()
     { 0,            kNone }
   };
   for( StringToType_t* item = defaults; item->name; ++item ) {
+#ifndef NDEBUG
     pair<NameTypeMap_t::iterator, bool> ins =
+#endif
       detname_map.insert( make_pair(string(item->name),item->type) );
     assert( ins.second ); // else typo in definition of defaults[]
   }
@@ -2197,10 +2198,11 @@ static int InsertDefaultFiles( const vector<string>& subdirs,
 	const string& subdir = *mt;
 	time_t date;
 #ifdef NDEBUG
-	IsDBSubdir(subdir,date);
+	IsDBSubDir(subdir,date);
 	filenames.insert( Filenames_t(date,deffile) );
 #else
-	assert( IsDBSubDir(subdir,date) );
+	bool good = IsDBSubDir(subdir,date);
+	assert(good);
 	Filenames_t ins(date,deffile);
 	assert( filenames.find(ins) == filenames.end() );
 	filenames.insert(ins);
@@ -3113,6 +3115,26 @@ int Cherenkov::ReadDB( FILE* fi, time_t /* date */, time_t /* date_until */ )
     return kInitError;
   }
 
+  // If the detector map did not specify models, make it so. The Cherenkov
+  // detector need models numbers in the data base
+  if( !fDetMapHasModel ) {
+    // If there are no model numbers, we must have an even number of modules
+    // where the first half are ADCs, the second, TDCs
+    if( (fDetMap->GetSize() % 2) != 0 ) {
+      Error( Here(here), "Detector map without model numbers must have an "
+	     "even number of modules." );
+      return kInitError;
+    }
+    for( Int_t i = 0; i < fDetMap->GetSize(); i++ ) {
+      THaDetMap::Module* d = fDetMap->GetModule( i );
+      if( i < fDetMap->GetSize()/2 )
+	d->model = 1881; // Standard ADC
+      else
+	d->model = 1877; // Standard TDC
+    }
+    fDetMapHasModel = true;
+  }
+
   // Read geometry
   Double_t dvals[3];
   if( ReadBlock(fi,dvals,3,here,flags) )                   // Detector's X,Y,Z coord
@@ -3333,7 +3355,7 @@ int Scintillator::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
 
   flags = kErrOnTooManyValues|kQuietOnTooFew|kStopAtNval|kStopAtSection;
   // TDC resolution (s/channel)
-  if( (err = ReadBlock(fi,&fTdc2T,1,here,flags|kRequireGreaterZero)) )
+  if( (err = ReadBlock(fi,&fTdc2T,1,here,flags)) )
     goto exit;
   fHaveExtras = true; // FIXME: should always be true?
   // Speed of light in the scintillator material (m/s)

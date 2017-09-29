@@ -27,7 +27,7 @@ using namespace std;
 THaBPM::THaBPM( const char* name, const char* description,
 				  THaApparatus* apparatus ) :
   THaBeamDet(name,description,apparatus),
-  fRawSignal(NCHAN),fPedestals(NCHAN),fCorSignal(NCHAN),fRotPos(NCHAN),
+  fRawSignal(NCHAN),fPedestals(NCHAN),fCorSignal(NCHAN),fRotPos(NCHAN/2),
   fRot2HCSPos(NCHAN/2,NCHAN/2)
 {
   // Constructor
@@ -44,7 +44,7 @@ Int_t THaBPM::ReadDatabase( const TDatime& date )
   const char* const here = "ReadDatabase";
 
   vector<Int_t> detmap;
-  Double_t pedestals[NCHAN], rotations[NCHAN];
+  Double_t pedestals[NCHAN], rotations[NCHAN], offsets[2];
 
   FILE* file = OpenFile( date );
   if( !file )
@@ -54,8 +54,6 @@ Int_t THaBPM::ReadDatabase( const TDatime& date )
   Int_t err = ReadGeometry( file, date );
 
   if( !err ) {
-    fOffset = fOrigin;   // FIXME: redundant
-
     // Read configuration parameters
     DBRequest config_request[] = {
       { "detmap",    &detmap,  kIntV },
@@ -72,10 +70,12 @@ Int_t THaBPM::ReadDatabase( const TDatime& date )
   if( !err ) {
     memset( pedestals, 0, sizeof(pedestals) );
     memset( rotations, 0, sizeof(rotations) );
+    memset( offsets  , 0, sizeof( offsets ) );
     DBRequest calib_request[] = {
       { "calib_rot",   &fCalibRot },
       { "pedestals",   pedestals, kDouble, NCHAN, 1 },
       { "rotmatrix",   rotations, kDouble, NCHAN, 1 },
+      { "offsets"  ,   offsets,   kDouble, 2    , 1 },
       { 0 }
     };
     err = LoadDB( file, date, calib_request, fPrefix );
@@ -83,6 +83,9 @@ Int_t THaBPM::ReadDatabase( const TDatime& date )
   fclose(file);
   if( err )
     return err;
+
+  fOffset(0) = offsets[0];
+  fOffset(1) = offsets[1];
 
   fPedestals.SetElements( pedestals );
   fRot2HCSPos(0,0) = rotations[0];
@@ -215,9 +218,9 @@ Int_t THaBPM::Process( )
   dum*=fRot2HCSPos;
 
   fPosition.SetXYZ(
-		   dum(0)+fOffset(0),
-		   dum(1)+fOffset(1),
-		   fOffset(2)
+		   dum(0)+fOrigin(0)+fOffset(0),
+		   dum(1)+fOrigin(1)+fOffset(1),
+		   fOrigin(2)
 		   );
 
   return 0 ;

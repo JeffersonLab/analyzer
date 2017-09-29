@@ -158,7 +158,8 @@ Int_t THaFormula::Init( const char* name, const char* expression )
 
 //_____________________________________________________________________________
 THaFormula::THaFormula( const THaFormula& rhs ) :
-  TFormula(rhs), fVarList(rhs.fVarList), fCutList(rhs.fCutList), fInstance(0)
+  TFormula(rhs), fVarDef(rhs.fVarDef),
+  fVarList(rhs.fVarList), fCutList(rhs.fCutList), fInstance(0)
 {
   // Copy ctor
 }
@@ -167,15 +168,6 @@ THaFormula::THaFormula( const THaFormula& rhs ) :
 THaFormula::~THaFormula()
 {
   // Destructor
-
-  // Delete any subformulas we may have created
-  for( vector<FVarDef_t>::size_type i=0; i<fVarDef.size(); ++i ) {
-    FVarDef_t& def = fVarDef[i];
-    if( def.type == kFormula ) {
-      delete static_cast<THaFormula*>(def.obj);
-      def.obj = 0;
-    }
-  }
 }
 
 //_____________________________________________________________________________
@@ -183,11 +175,66 @@ THaFormula& THaFormula::operator=( const THaFormula& rhs )
 {
   if( this != &rhs ) {
     TFormula::operator=(rhs);
+    fVarDef  = rhs.fVarDef;
     fVarList = rhs.fVarList;
     fCutList = rhs.fCutList;
     fInstance = 0;
   }
   return *this;
+}
+
+//_____________________________________________________________________________
+THaFormula::FVarDef_t::FVarDef_t( const FVarDef_t& rhs )
+  : type(rhs.type), obj(rhs.obj), index(rhs.index)
+{
+  if( (type == kFormula || type == kVarFormula) && rhs.obj != 0 )
+    obj = new THaFormula(*static_cast<THaFormula*>(rhs.obj));
+}
+
+//_____________________________________________________________________________
+THaFormula::FVarDef_t& THaFormula::FVarDef_t::operator=( const FVarDef_t& rhs )
+{
+  if( this != &rhs ) {
+    if( type == kFormula || type == kVarFormula )
+      delete static_cast<THaFormula*>(obj);
+    type = rhs.type;
+    if( (type == kFormula || type == kVarFormula) && rhs.obj != 0 )
+      obj = new THaFormula(*static_cast<THaFormula*>(rhs.obj));
+    else
+      obj = rhs.obj;
+    index = rhs.index;
+  }
+  return *this;
+}
+
+#if __cplusplus >= 201103L
+//_____________________________________________________________________________
+THaFormula::FVarDef_t::FVarDef_t( FVarDef_t&& rhs ) noexcept
+  : type(rhs.type), obj(rhs.obj), index(rhs.index)
+{
+  rhs.obj = nullptr;
+}
+
+//_____________________________________________________________________________
+THaFormula::FVarDef_t& THaFormula::FVarDef_t::operator=( FVarDef_t&& rhs ) noexcept
+{
+  if( this != &rhs ) {
+    if( type == kFormula || type == kVarFormula )
+      delete static_cast<THaFormula*>(obj);
+    type  = rhs.type;
+    obj   = rhs.obj;
+    index = rhs.index;
+    rhs.obj = nullptr;
+  }
+  return *this;
+}
+#endif
+
+//_____________________________________________________________________________
+THaFormula::FVarDef_t::~FVarDef_t()
+{
+  if( type == kFormula || type == kVarFormula )
+    delete static_cast<THaFormula*>(obj);
 }
 
 //_____________________________________________________________________________
@@ -227,7 +274,7 @@ char* THaFormula::DefinedString( Int_t i )
   // a string, return pointer to an empty string.
 
   assert( i>=0 && i<(Int_t)fVarDef.size() );
-  FVarDef_t& def = fVarDef[i];
+  const FVarDef_t& def = fVarDef[i];
   if( def.type == kString ) {
     const THaVar* pvar = static_cast<const THaVar*>( def.obj );
     char** ppc = (char**)pvar->GetValuePointer(); //truly gruesome cast
@@ -259,7 +306,7 @@ Double_t THaFormula::DefinedValue( Int_t i )
   if( IsInvalid() )
     return 1.0;
 
-  FVarDef_t& def = fVarDef[i];
+  const FVarDef_t& def = fVarDef[i];
   switch( def.type ) {
   case kVariable:
   case kString:
@@ -471,7 +518,7 @@ Int_t THaFormula::DefinedCut( TString& name )
     if( pcut ) {
       // See if this cut already used earlier in the expression
       for( vector<FVarDef_t>::size_type i=0; i<fVarDef.size(); ++i ) {
-	FVarDef_t& def = fVarDef[i];
+	const FVarDef_t& def = fVarDef[i];
 	if( def.type == kCut && pcut == def.obj )
 	  return i;
       }
@@ -533,7 +580,7 @@ Int_t THaFormula::DefinedGlobalVariable( TString& name )
 
   // Check if this variable already used in this formula
   for( vector<FVarDef_t>::size_type i=0; i<fVarDef.size(); ++i ) {
-    FVarDef_t& def = fVarDef[i];
+    const FVarDef_t& def = fVarDef[i];
     if( var == def.obj && index == def.index ) {
       assert( type == def.type );
       return i;

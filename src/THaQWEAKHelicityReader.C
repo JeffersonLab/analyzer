@@ -119,10 +119,10 @@ Int_t THaQWEAKHelicityReader::FindWord( const THaEvData& evdata,
 }
 
 //_____________________________________________________________________________
-Int_t THaQWEAKHelicityReader::ReadDatabase( const char* dbfilename,
-					 const char* prefix,
-					 const TDatime& date,
-					 int debug_flag )
+Int_t THaQWEAKHelicityReader::ReadDatabase( const char* /*dbfilename*/,
+					    const char* /*prefix*/,
+					    const TDatime& /*date*/,
+					    int /*debug_flag*/ )
 {
   // Read parameters from database:  ROC info (detector map), QWEAK delay value
   // TODO: for now I will bypass this call and just hardcode the data I need

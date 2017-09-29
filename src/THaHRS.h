@@ -26,14 +26,20 @@ public:
 
   THaNonTrackingDetector* GetRefDet() const { return fRefDet; }
 
-  Bool_t SetTrSorting( Bool_t set = kFALSE );
   Bool_t GetTrSorting() const;
+  Bool_t SetTrSorting( Bool_t set = kFALSE );
+  Bool_t AutoStandardDetectors( Bool_t set = kTRUE );
   
+  virtual EStatus Init( const TDatime& run_time );
+
 protected:
   THaNonTrackingDetector* fRefDet;  // calculate time track hits this plane
 
-  // Flag for fProperties indicating that tracks are to be sorted by chi2
-  static const UInt_t kSortTracks = BIT(16);
+  // Bit flags
+  enum {
+    kSortTracks   = BIT(14), // Tracks are to be sorted by chi2
+    kAutoStdDets  = BIT(15)  // Auto-create standard detectors if no "vdc"
+  };
 
   ClassDef(THaHRS,0) //A Hall A High Resolution Spectrometer
 };

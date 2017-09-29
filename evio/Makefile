@@ -1,10 +1,11 @@
 # Makefile for local EVIO build
 
 EVIO = evio-4.4.6
-URL = https://coda.jlab.org/drupal/system/files
+TAR = $(EVIO).tar.gz
+REPO = hallac_evio
+URL = https://github.com/JeffersonLab/$(REPO)/archive/$(TAR)
 EVIOLIB = libevio.so
 SRCDIR = $(EVIO)/src/libsrc
-TAR = $(EVIO).tgz
 WGET = $(shell which wget)
 CURL = $(shell which curl)
 export EVIOLIB
@@ -31,17 +32,19 @@ $(SRCDIR)/Makefile:  $(SRCDIR) Makefile.libsrc
 	cp -f Makefile.libsrc $(SRCDIR)/Makefile
 
 $(SRCDIR): $(TAR)
+	rm -rf $(EVIO)
 	tar xf $(TAR)
+	mv $(REPO)-$(EVIO) $(EVIO)
 
 $(TAR):
 ifeq ($(strip $(WGET)),)
 ifeq ($(strip $(CURL)),)
 	$(error No EVIO tar ball and cannot find wget or curl to get it)
 else
-	$(shell $(CURL) $(URL)/$(EVIO).tgz -o $(EVIO).tgz)
+	$(shell $(CURL) $(URL) -o $(TAR))
 endif
 else
-	$(shell $(WGET) --no-check-certificate $(URL)/$(EVIO).tgz)
+	$(shell $(WGET) $(URL))
 endif
 
 install: all

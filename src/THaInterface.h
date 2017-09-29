@@ -27,6 +27,8 @@ public:
 #endif
   static TClass* GetDecoder();
   static TClass* SetDecoder( TClass* c );
+  static const char* GetVersion();
+  static const char* GetVersionString();
 
   virtual const char* SetPrompt(const char *newPrompt);
 

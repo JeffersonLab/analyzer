@@ -17,7 +17,7 @@ class FastbusModule : public Module {
 
 public:
 
-   FastbusModule() { fDebugFile=0; };
+   FastbusModule() : Module() {}
    FastbusModule(Int_t crate, Int_t slot);
    virtual ~FastbusModule();
 
@@ -49,8 +49,6 @@ protected:
 private:
 
    static TypeIter_t fgThisType;
-   FastbusModule(const FastbusModule &fh);
-   FastbusModule& operator=(const FastbusModule &fh);
 
    ClassDef(FastbusModule,0)  // Fastbus module
 

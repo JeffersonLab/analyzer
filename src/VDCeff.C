@@ -175,10 +175,11 @@ THaAnalysisObject::EStatus VDCeff::Init( const TDatime& run_time )
 }
 
 //_____________________________________________________________________________
-Int_t VDCeff::Process( const THaEvData& evdata )
+Int_t VDCeff::Process( const THaEvData& /*evdata*/ )
 {
-  // Update VDC efficiency histograms with current event data
-
+  // Update VDC efficiency histograms with current event data.
+  // The data come from the VDC detetcor and are accessed via global variables
+  
   const char* const here = "Process";
 
   if( !IsOK() ) return -1;

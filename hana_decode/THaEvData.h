@@ -31,6 +31,9 @@ public:
   // Load CODA data evbuffer. Derived classes MUST implement this function.
   virtual Int_t LoadEvent(const UInt_t* evbuffer) = 0;
 
+// return a pointer to a full event
+  const UInt_t* GetRawDataBuffer() const { return buffer;}  
+
   virtual Bool_t IsMultiBlockMode() { return fMultiBlockMode; };
   virtual Bool_t BlockIsDone() { return fBlockIsDone; };
 
@@ -126,7 +129,7 @@ public:
     return GetOpt(crate, slot, chan, hit );
   }
 
-  Int_t GetOpt( Int_t crate, Int_t slot, Int_t chan, Int_t hit ) const 
+  Int_t GetOpt( Int_t crate, Int_t slot, Int_t /*chan*/, Int_t hit ) const
   {// get the "Opt" bit (works for fastbus, is otherwise zero)
     Decoder::Module* module = GetModule(crate, slot);
     if (!module) {

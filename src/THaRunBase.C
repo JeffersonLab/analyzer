@@ -12,6 +12,7 @@
 #include "THaRunParameters.h"
 #include "THaEvData.h"
 #include "TClass.h"
+#include "TError.h"
 #include <iostream>
 #if ROOT_VERSION_CODE < ROOT_VERSION(3,1,6)
 #include <ctime>
@@ -21,13 +22,15 @@ using namespace std;
 
 static const int UNDEFDATE = 19950101;
 static const char* NOTINIT = "uninitialized run";
+static const char* DEFRUNPARAM = "THaRunParameters";
 
 //_____________________________________________________________________________
 THaRunBase::THaRunBase( const char* description ) : 
   TNamed(NOTINIT, description ), 
   fNumber(-1), fType(0), fDate(UNDEFDATE,0), fNumAnalyzed(0),
   fDBRead(kFALSE), fIsInit(kFALSE), fOpened(kFALSE), fAssumeDate(kFALSE), 
-  fDataSet(0), fDataRead(0), fDataRequired(kDate), fParam(0)
+  fDataSet(0), fDataRead(0), fDataRequired(kDate), fParam(0),
+  fRunParamClass(DEFRUNPARAM)
 {
   // Normal & default constructor
 
@@ -247,20 +250,45 @@ Int_t THaRunBase::Init()
   // whether the data source can be opened, and if so, initializes the
   // run parameters (run number, time, etc.)
 
-  static const char* const here = "Init";
+  static const char* const here = "THaRunBase::Init";
 
-  // Make sure we have a run parameter structure. This object will 
-  // allocate THaRunParameters automatically. If a derived class needs
-  // a different structure, then its Init() method must allocate it
-  // before calling this Init().
-  if( !fParam )
-    fParam = new THaRunParameters;
+  Int_t retval = READ_OK;
+
+  // Set up the run parameter object
+  delete fParam; fParam = 0;
+  const char* s = fRunParamClass.Data();
+  TClass* cl = TClass::GetClass(s);
+  if( !cl ) {
+    Error( here, "Run parameter class \"%s\" not "
+	   "available. Load library or fix configuration.", s?s:"" );
+    retval = READ_FATAL;
+    goto err;
+  }
+  if( !cl->InheritsFrom( THaRunParameters::Class() )) {
+    Error( here, "Class \"%s\" is not a run parameter class.", s );
+    retval = READ_FATAL;
+    goto err;
+  }
+
+  fParam = static_cast<THaRunParameters*>( cl->New() );
+
+  if( !fParam ) {
+    Error( here, "Unexpected error creating run parameter object "
+	   "\"%s\". Call expert.", s );
+    retval = READ_FATAL;
+    goto err;
+  }
+ err:
+  if( retval != READ_OK ) {
+    delete fParam; fParam = 0;
+    return retval;
+  }
 
   // Clear selected parameters (matters for re-init)
   Clear("INIT");
 
   // Open the data source.
-  Int_t retval = 0;
+  retval = 0;
   if( !IsOpen() ) {
     retval = Open();
     if( retval )
@@ -497,6 +525,14 @@ void THaRunBase::SetType( Int_t type )
   // Set run type
   fType = type;
   fDataSet |= kRunType;
+}
+
+//_____________________________________________________________________________
+void THaRunBase::SetRunParamClass( const char* classname )
+{
+  // Set class of run parameters to use
+
+  fRunParamClass = classname;
 }
 
 //_____________________________________________________________________________

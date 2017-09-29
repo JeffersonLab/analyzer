@@ -17,7 +17,7 @@ class Lecroy1875Module : public FastbusModule {
 
 public:
 
-   Lecroy1875Module() {};
+   Lecroy1875Module() : FastbusModule() {}
    Lecroy1875Module(Int_t crate, Int_t slot);
    virtual ~Lecroy1875Module();
    virtual void Init();
@@ -25,9 +25,6 @@ public:
 private:
 
    static TypeIter_t fgThisType;
-
-   Lecroy1875Module(const Lecroy1875Module &fh);
-   Lecroy1875Module& operator=(const Lecroy1875Module &fh);
 
    ClassDef(Lecroy1875Module,0)  // Lecroy 1875 TDC module
 

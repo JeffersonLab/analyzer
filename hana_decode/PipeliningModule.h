@@ -27,9 +27,8 @@
 //
 /////////////////////////////////////////////////////////////////////
 
-#include <iostream>
 #include "VmeModule.h"
-#include <vector>
+#include <iostream>
 
 namespace Decoder {
 
@@ -37,7 +36,7 @@ class PipeliningModule : public VmeModule  {
 
 public:
 
-   PipeliningModule() {};
+   PipeliningModule() : VmeModule() {}
    PipeliningModule(Int_t crate, Int_t slot);
    virtual ~PipeliningModule();
 
@@ -61,8 +60,6 @@ protected:
 
 private:
 
-   PipeliningModule(const PipeliningModule &fh);
-   PipeliningModule& operator=(const PipeliningModule &fh);
    ClassDef(Decoder::PipeliningModule,0)  // A pipelining module
 
 };

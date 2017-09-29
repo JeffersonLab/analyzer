@@ -529,7 +529,7 @@ Int_t THaCodaDecoder::fastbus_decode( Int_t roc, const UInt_t* evbuffer,
 
 //_____________________________________________________________________________
 static UInt_t FADCWindowRawDecode( const UInt_t* p, const UInt_t* pstop,
-				   Int_t slot, THaSlotData* crateslot )
+				   Int_t /*slot*/, THaSlotData* crateslot )
 {
   // Decode "Window Raw Data" fields in event data from JLab 250 MHz Flash ADC
 
@@ -1137,8 +1137,8 @@ Int_t THaCodaDecoder::vme_decode( Int_t roc, const UInt_t* evbuffer,
 }
 
 //_____________________________________________________________________________
-Int_t THaCodaDecoder::camac_decode(Int_t roc, const UInt_t* evbuffer,
-				   Int_t ipt, Int_t istop)
+Int_t THaCodaDecoder::camac_decode(Int_t /*roc*/, const UInt_t* evbuffer,
+				   Int_t /*ipt*/, Int_t /*istop*/)
 {
   assert( evbuffer && fMap );
   if (fDebug > 0) {

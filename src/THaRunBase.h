@@ -66,6 +66,7 @@ public:
           void         SetLastEvent(  UInt_t n );
           void         SetEventRange( UInt_t first, UInt_t last );
   virtual void         SetNumber( Int_t number );
+          void         SetRunParamClass( const char* classname );
   virtual void         SetType( Int_t type );
   virtual Int_t        Update( const THaEvData* evdata );
 
@@ -88,6 +89,7 @@ protected:
   UInt_t        fDataRead;     //  Flags for info found in data (see EInfoType)
   UInt_t        fDataRequired; //  Info required for Init() to succeed
   THaRunParameters* fParam;    //  Run parameters
+  TString       fRunParamClass; // Class of object in fParam
 
   virtual Int_t ReadDatabase();
   virtual Int_t ReadInitInfo();

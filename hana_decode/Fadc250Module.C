@@ -94,7 +94,8 @@ namespace Decoder {
 
   Bool_t Fadc250Module::HasCapability(Decoder::EModuleType type) {
     return ( type == kSampleADC || type == kPulseIntegral || type == kPulseTime
-	     || type == kPulsePeak || type == kPulsePedestal || type == kCoarseTime || type == kFineTime);
+	     || type == kPulsePeak || type == kPulsePedestal
+	     || type == kCoarseTime || type == kFineTime);
   }
 
   // Clear all data vectors
@@ -145,7 +146,7 @@ namespace Decoder {
     cout << "FADC250 Decoder has been called" << endl;
   }
 
-  Int_t Fadc250Module::GetNumEvents(EModuleType emode, Int_t chan) const {
+  Int_t Fadc250Module::GetNumEvents(Decoder::EModuleType emode, Int_t chan) const {
    switch(emode)
       {
       case kSampleADC:

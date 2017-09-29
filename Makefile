@@ -84,7 +84,7 @@ else
 endif
 DEFINES      += -DLINUXVERS
 CXXFLG       += -Wall -fPIC
-CXXEXTFLG     = -Woverloaded-virtual
+CXXEXTFLG     =
 LD           := $(CXX)
 LDCONFIG     := /sbin/ldconfig -n $(LIBDIR)
 SOFLAGS      := -shared
@@ -111,7 +111,7 @@ else
 endif
 DEFINES      += -DMACVERS
 CXXFLG       += -Wall -fPIC
-CXXEXTFLG     = -Woverloaded-virtual
+CXXEXTFLG     =
 LD           := $(CXX)
 LDCONFIG     :=
 SOFLAGS      := -shared -Wl,-undefined,dynamic_lookup
@@ -241,6 +241,16 @@ src/ha_compiledata.h:	Makefile
 		@echo "" >> $@
 		@echo "#define HA_INCLUDEPATH \"$(INCDIRS)\"" >> $@
 		@echo "#define HA_VERSION \"$(VERSION)$(EXTVERS)\"" >> $@
+		@echo "#define HA_DATE \"$(shell date '+%b %d %Y')\"" >> $@
+#		@echo "#define HA_DATETIME \"$(shell date '+%a %b %d %H:%M:%S %Z %Y')\"" >> $@
+		@echo "#define HA_DATETIME \"$(shell date '+%a %b %d %Y')\"" >> $@
+		@echo "#define HA_PLATFORM \"$(shell uname -s)-$(shell uname -r)-$(shell uname -m)\"" >> $@
+		@echo "#define HA_BUILDNODE \"$(shell uname -n)\"" >> $@
+		@echo "#define HA_BUILDDIR \"$(shell pwd)\"" >> $@
+		@echo "#define HA_BUILDUSER \"$(shell whoami)\"" >> $@
+		@echo "#define HA_GITVERS \"$(shell git rev-parse HEAD 2>/dev/null | cut -c1-7)\"" >> $@
+		@echo "#define HA_CXXVERS \"$(shell $(CXX) --version 2>/dev/null | head -1)\"" >> $@
+		@echo "#define HA_ROOTVERS \"$(shell root-config --version)\"" >> $@
 		@echo "#define ANALYZER_VERSION_CODE $(VERCODE)" >> $@
 		@echo "#define ANALYZER_VERSION(a,b,c) (((a) << 16) + ((b) << 8) + (c))" >> $@
 		@echo "" >> $@
@@ -315,7 +325,7 @@ analyzer:	src/main.o $(PODDLIBS)
 #---------- Maintenance --------------------------------------------
 clean:
 		set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i clean; done
-		rm -f *.{so,a,o,os} *.so.*
+		rm -f *.{so,a,o,os} *.so.* site_scons/*.pyc
 		rm -f $(PROGRAMS) $(HA_DICT).* *~
 		cd src; rm -f ha_compiledata.h *.{o,os} *~
 
@@ -329,7 +339,7 @@ srcdist:
 		tar -czv -f ../$(NAME).tar.gz -X .exclude -C .. \
 		 $(addprefix $(NAME)/, \
 		  ChangeLog $(wildcard README*) Makefile .exclude .gitignore \
-		  SConstruct $(wildcard *.py) scons \
+		  $(wildcard SCons*) site_scons \
 		  src $(DCDIR) Calib DB examples contrib utils docs SDK \
 		  evio/Makefile evio/Makefile.libsrc)
 

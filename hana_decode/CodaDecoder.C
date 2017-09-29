@@ -43,11 +43,12 @@ CodaDecoder::~CodaDecoder()
 }
 
 //_____________________________________________________________________________
-Int_t CodaDecoder::GetPrescaleFactor(Int_t trigger_type) const
+Int_t CodaDecoder::GetPrescaleFactor(Int_t /*trigger_type*/) const
 {
   // To get the prescale factors for trigger number "trigger_type"
   // (valid types are 1,2,3...)
   //  if (fgPsFact) return fgPsFact->GetPrescaleFactor(trigger_type);
+  //FIXME: TODO
   return 0;
 }
 
@@ -55,7 +56,7 @@ Int_t CodaDecoder::GetPrescaleFactor(Int_t trigger_type) const
 Int_t CodaDecoder::Init() {
   Int_t ret = HED_OK;
   ret = init_cmap();
-  if (fMap) fMap->print();
+  //  if (fMap) fMap->print();
   if (ret != HED_OK) return ret;
   ret = init_slotdata(fMap);
   first_decode = kFALSE;
@@ -85,7 +86,7 @@ Int_t CodaDecoder::LoadEvent(const UInt_t* evbuffer)
 	 *fDebugFile << "\n CodaDecode:: Print of Crate Map"<<endl;
 	 fMap->print(fDebugFile);
     } else {
-      fMap->print();
+      //      fMap->print();
     }
     if( ret != HED_OK ) return ret;
     ret = init_slotdata(fMap);
@@ -594,13 +595,15 @@ void CodaDecoder::ChkFbSlots()
       }
     }
   }
-  for (Int_t iroc=0; iroc<MAXROC; iroc++) {
-    if ( !fMap->isFastBus(iroc) ) continue;
-    for (Int_t islot=0; islot<MAXSLOT; islot++) {
-      Int_t index = MAXSLOT*iroc + islot;
-      if (slotstat[index]==2) cout << "Decoder:: WARNING:  Fastbus module in (roc,slot) = ("<<iroc<<","<<islot<<")  found in cratemap but NOT in data !"<<endl;
-    }
-  }
+  // Why do we care? If the cratemap has info about additional hardware
+  // that just wasn't read out by the DAQ, so what?
+  // for (Int_t iroc=0; iroc<MAXROC; iroc++) {
+  //   if ( !fMap->isFastBus(iroc) ) continue;
+  //   for (Int_t islot=0; islot<MAXSLOT; islot++) {
+  //     Int_t index = MAXSLOT*iroc + islot;
+  //     if (slotstat[index]==2) cout << "Decoder:: WARNING:  Fastbus module in (roc,slot) = ("<<iroc<<","<<islot<<")  found in cratemap but NOT in data !"<<endl;
+  //   }
+  // }
   for (Int_t iroc=0; iroc<MAXROC; iroc++) {
     if ( !fMap->isFastBus(iroc) ) continue;
     for (Int_t islot=0; islot<MAXSLOT; islot++) {

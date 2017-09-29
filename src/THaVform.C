@@ -26,11 +26,12 @@
 #include <cassert>
 
 using namespace std;
+using namespace THaString;
 
 //_____________________________________________________________________________
 THaVform::THaVform( const char *type, const char* name, const char* formula,
 		    const THaVarList* vlst, const THaCutList* clst )
-  : THaFormula(), fNvar(0), fObjSize(0), fData(0.0), fEyeOffset(0),
+  : THaFormula(), fNvar(0), fObjSize(0), fEyeOffset(0), fData(0.0),
     fType(kUnknown), fVarPtr(NULL), fOdata(NULL), fPrefix(kNoPrefix)
 {
   SetName(name);
@@ -53,7 +54,8 @@ THaVform::THaVform( const char *type, const char* name, const char* formula,
     delete [] buf;
   }
 
-  // Call THaFormula's Compile()
+  // Call THaFormula's Compile() unless it's an "eye"
+  if (IsEye()) return;
   Compile();
 }
 

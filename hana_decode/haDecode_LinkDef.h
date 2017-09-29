@@ -23,7 +23,8 @@
 #pragma link C++ class Decoder::Fadc250Module+;
 #pragma link C++ class Decoder::F1TDCModule+;
 #pragma link C++ class Decoder::Caen1190Module+;
-#pragma link C++ class Decoder::SkeletonModule+;
+#pragma link C++ class Decoder::Caen775Module+;
+#pragma link C++ class Decoder::Caen792Module+;
 #pragma link C++ class Decoder::THaCodaData+;
 #pragma link C++ class Decoder::THaCodaFile+;
 #pragma link C++ class Decoder::THaCrateMap+;

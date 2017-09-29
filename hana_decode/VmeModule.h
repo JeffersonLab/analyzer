@@ -9,7 +9,6 @@
 /////////////////////////////////////////////////////////////////////
 
 #include "Module.h"
-#include <vector>
 
 namespace Decoder {
 
@@ -17,15 +16,15 @@ class VmeModule : public Module {
 
 public:
 
-   VmeModule() {};
    VmeModule(Int_t crate, Int_t slot);
+   VmeModule() : Module() {}
    virtual ~VmeModule();
 
    using Module::LoadSlot;
 
    virtual Bool_t IsSlot(UInt_t rdata);
-   virtual Int_t Slot(Int_t rdata) const { return fSlot; };
-   virtual Int_t Data(Int_t rdata) const { return rdata; };
+   // virtual Int_t Slot(Int_t) const { return fSlot; };
+   // virtual Int_t Data(Int_t rdata) const { return rdata; };
 
    virtual Int_t LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer,
 			  const UInt_t *pstop );
@@ -34,8 +33,6 @@ protected:
 
 private:
 
-   VmeModule(const VmeModule &fh);
-   VmeModule& operator=(const VmeModule &fh);
    ClassDef(Decoder::VmeModule,0)  // A VME module (abstract)
 
 };

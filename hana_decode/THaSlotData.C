@@ -61,7 +61,8 @@ THaSlotData::~THaSlotData() {
   delete [] data;
 }
 
-void THaSlotData::define(int cra, int slo, UShort_t nchan, UShort_t ndata, UShort_t nhitperchan ) {
+void THaSlotData::define(int cra, int slo, UShort_t nchan, UShort_t /*ndata*/,
+			 UShort_t nhitperchan ) {
   // Must call define once if you are really going to use this slot.
   // Otherwise its an empty slot which does not use much memory.
   crate = cra;

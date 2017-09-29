@@ -258,11 +258,10 @@ void CrateLocMulti::Load( const THaEvData& evdata )
 }
 
 //_____________________________________________________________________________
-void CrateLocMulti::Print( Option_t* opt ) const
+void CrateLocMulti::PrintMultiData( Option_t* ) const
 {
-  // Print name and all data values
+  // Print the data array
 
-  PrintCrateLocHeader(opt);
   cout << "\t data = ";
   if( rdata.empty() )
     cout << "(no hits)";
@@ -272,6 +271,15 @@ void CrateLocMulti::Print( Option_t* opt ) const
       cout << " " << *it;
     }
   }
+}
+
+//_____________________________________________________________________________
+void CrateLocMulti::Print( Option_t* opt ) const
+{
+  // Print name and all data values
+
+  PrintCrateLocHeader(opt);
+  PrintMultiData(opt);
   cout << endl;
 }
 
@@ -287,6 +295,7 @@ Int_t WordLoc::Configure( const TObjArray* params, Int_t start )
   // Convert header word, given as a hex string, to unsigned int32
   const char* hs = GetString( params, start+2 ).Data();
   char* p = 0;
+  errno = 0;
   unsigned long li = strtoul( hs, &p, 16 );
   if( errno || *p )   return 10;
   if( li > kMaxUInt ) return 11;
@@ -444,6 +453,20 @@ Int_t TrigBitLoc::OptionPtr( void* ptr )
 
   bitloc = static_cast<UInt_t*>(ptr);
   return 0;
+}
+
+//_____________________________________________________________________________
+void TrigBitLoc::Print( Option_t* opt ) const
+{
+  // Print name and all data values
+
+  PrintCrateLocHeader(opt);
+  TString option(opt);
+  if( option.Contains("FULL") ) {
+    cout << "\t cutlo/cuthi = " << cutlo << "/" << cuthi;
+  }
+  PrintMultiData(opt);
+  cout << endl;
 }
 
 //_____________________________________________________________________________
