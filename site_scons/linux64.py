@@ -15,6 +15,7 @@ def config(env,args):
         else:
                 env.Append(CXXFLAGS = '-O')
                 env.Append(CPPDEFINES= 'NDEBUG')
+                env.Append(CPPDEFINES= 'WITH_DEBUG')
 
         if int(standalone):
                 env.Append(STANDALONE= '1')
@@ -34,7 +35,7 @@ def config(env,args):
         cxxversion = env.subst('$CXXVERSION')
 
         if float(cxxversion[0:2])>=4.0:
-                env.Append(CXXFLAGS = env.Split('-Wextra -Wno-missing-field-initializers'))
+                env.Append(CXXFLAGS = env.Split('-Wextra -Wno-missing-field-initializers -MMD'))
                 if not int(debug):
                         env.Append(CXXFLAGS = '-Wno-unused-parameter')
 
