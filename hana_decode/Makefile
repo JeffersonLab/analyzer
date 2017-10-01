@@ -78,8 +78,7 @@ else
   ifeq ($(ARCH),linux)
      DEFINES      += -DLINUXVERS
      # Linux with egcs (>= RedHat 5.2)
-     CXX           = g++
-     LD            = g++
+     LD            = $(CXX)
      SOFLAGS       = -shared
      ifdef DEBUG
 	CXXFLG      = -g -O0
@@ -91,13 +90,13 @@ else
      endif
      CXXFLG        += -Wall -fPIC
      CXXEXTFLG      =
+     DEFINES      += $(shell getconf LFS_CFLAGS)
   endif
 
   ifeq ($(ARCH),macosx)
      # EXPERIMENTAL: Mac OS X with Xcode 3.x/gcc 4.x
      DEFINES      += -DMACVERS
-     CXX           = g++
-     LD            = g++
+     LD            = $(CXX)
      SOFLAGS       = -shared -Wl,-undefined,dynamic_lookup
      SONAME        = -Wl,-install_name,@rpath/
      ifdef DEBUG
@@ -115,7 +114,6 @@ else
   ifdef WITH_DEBUG
      DEFINES     += -DWITH_DEBUG
   endif
-  DEFINES      += $(shell getconf LFS_CFLAGS)
 endif
 
 export OSNAME := $(shell uname)
@@ -155,7 +153,7 @@ EVIO_LIB  = -L$(EVIO_LIBDIR) -levio
 INCLUDES += -I$(EVIO_INCDIR)
 
 DEFINES      += $(DC_DEFINES)
-CFLAGS        = $(CXXFLG) $(ROOTCLAGS) $(INCLUDES) $(DEFINES)
+CFLAGS        = $(CXXFLG) $(ROOTCFLAGS) $(INCLUDES) $(DEFINES)
 CXXFLAGS      = $(CXXFLG) $(CXXEXTFLG) $(ROOTCFLAGS) $(INCLUDES) $(DEFINES)
 LIBS         += $(ROOTLIBS) $(SYSLIBS)
 GLIBS        += $(ROOTGLIBS) $(SYSLIBS)
@@ -177,7 +175,7 @@ ifndef STANDALONE
   SRC += SimDecoder.C
 endif
 
-PROGS = tstoo tstfadc tstfadcblk tstfadcblk tstf1tdc tst1190 tstskel tstio tdecpr tdecex prfact epicsd
+PROGS = tstoo tstfadc tstfadcblk tstfadcblk tstf1tdc tst1190 tstio tdecpr tdecex prfact epicsd
 # If you want to use the ET system at Jlab.
 # ifdef ONLINE_ET
 #   SRC += THaEtClient.C
@@ -233,53 +231,49 @@ endif
 ifdef STANDALONE
 tstoo: tstoo_main.o $(DECODE_LIB)
 	rm -f $@
-	$(CXX) $(CXXFLAGS) -o $@ $< $(DECODE_LIB) $(ALL_LIBS)
+	$(CXX) $(LDFLAGS) -o $@ $< $(DECODE_LIB) $(ALL_LIBS)
 
 tstfadc: tstfadc_main.o $(DECODE_LIB)
 	rm -f $@
-	$(CXX) $(CXXFLAGS) -o $@ tstfadc_main.o $(DECODE_LIB) $(ALL_LIBS)
+	$(CXX) $(LDFLAGS) -o $@ tstfadc_main.o $(DECODE_LIB) $(ALL_LIBS)
 
 tstfadcblk: tstfadcblk_main.o $(DECODE_LIB)
 	rm -f $@
-	$(CXX) $(CXXFLAGS) -o $@ tstfadcblk_main.o $(DECODE_LIB) $(ALL_LIBS)
+	$(CXX) $(LDFLAGS) -o $@ tstfadcblk_main.o $(DECODE_LIB) $(ALL_LIBS)
 
 tstf1tdc: tstf1tdc_main.o $(DECODE_LIB)
 	rm -f $@
-	$(CXX) $(CXXFLAGS) -o $@ tstf1tdc_main.o $(DECODE_LIB) $(ALL_LIBS)
+	$(CXX) $(LDFLAGS) -o $@ tstf1tdc_main.o $(DECODE_LIB) $(ALL_LIBS)
 
 tst1190: tst1190_main.o $(DECODE_LIB)
 	rm -f $@
-	$(CXX) $(CXXFLAGS) -o $@ tst1190_main.o $(DECODE_LIB) $(ALL_LIBS)
-
-tstskel: tstskel_main.o $(DECODE_LIB)
-	rm -f $@
-	$(CXX) $(CXXFLAGS) -o $@ tstskel_main.o $(DECODE_LIB) $(ALL_LIBS)
+	$(CXX) $(LDFLAGS) -o $@ tst1190_main.o $(DECODE_LIB) $(ALL_LIBS)
 
 tstio: tstio_main.o $(DECODE_LIB)
 	rm -f $@
-	$(CXX) $(CXXFLAGS) -o $@ tstio_main.o $(DECODE_LIB) $(ALL_LIBS)
+	$(CXX) $(LDFLAGS) -o $@ tstio_main.o $(DECODE_LIB) $(ALL_LIBS)
 
 tdecpr: tdecpr_main.o $(DECODE_LIB)
 	rm -f $@
-	$(CXX) $(CXXFLAGS) -o $@ tdecpr_main.o $(DECODE_LIB) $(ALL_LIBS)
+	$(CXX) $(LDFLAGS) -o $@ tdecpr_main.o $(DECODE_LIB) $(ALL_LIBS)
 
 tdecex: tdecex_main.o THaGenDetTest.o $(DECODE_LIB)
 	rm -f $@
-	$(CXX) $(CXXFLAGS) -o $@ tdecex_main.o THaGenDetTest.o $(DECODE_LIB) $(ALL_LIBS)
+	$(CXX) $(LDFLAGS) -o $@ tdecex_main.o THaGenDetTest.o $(DECODE_LIB) $(ALL_LIBS)
 
 etclient: etclient_main.o $(DECODE_LIB)
-	$(CXX) $(CXXFLAGS) -o $@ etclient_main.o $(DECODE_LIB) $(ALL_LIBS)
+	$(CXX) $(LDFLAGS) -o $@ etclient_main.o $(DECODE_LIB) $(ALL_LIBS)
 
 prfact: prfact_main.o $(DECODE_LIB)
 	rm -f $@
-	$(CXX) $(CXXFLAGS) -o $@ prfact_main.o $(DECODE_LIB) $(ALL_LIBS)
+	$(CXX) $(LDFLAGS) -o $@ prfact_main.o $(DECODE_LIB) $(ALL_LIBS)
 
 epicsd: epics_main.o $(DECODE_LIB)
 	rm -f $@
-	$(CXX) $(CXXFLAGS) -o $@ epics_main.o $(DECODE_LIB) $(ALL_LIBS)
+	$(CXX) $(LDFLAGS) -o $@ epics_main.o $(DECODE_LIB) $(ALL_LIBS)
 
 tstcoda: tstcoda_main.o $(DECODE_LIB)
-	$(CXX) $(CXXFLAGS) -o $@ tstcoda_main.o $(DECODE_LIB) $(ALL_LIBS)
+	$(CXX) $(LDFLAGS) -o $@ tstcoda_main.o $(DECODE_LIB) $(ALL_LIBS)
 endif
 
 # Dictionary
