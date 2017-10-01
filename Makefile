@@ -55,11 +55,37 @@ GLIBS        :=
 
 INCLUDES     := $(addprefix -I, $(INCDIRS) )
 
-ifdef CODA
-  EVIO_ARCH := $(shell uname -s)-$(shell uname -m)
-  export EVIO_LIBDIR := $(CODA)/$(EVIO_ARCH)/lib
-  export EVIO_INCDIR := $(CODA)/$(EVIO_ARCH)/include
-else
+HAVE_EVIO    = no
+ifneq ($(EVIO_LIBDIR),)
+ifneq ($(EVIO_INCDIR),)
+ifneq ($(wildcard $(EVIO_INCDIR)/evio.h),)
+ifneq ($(wildcard $(EVIO_LIBDIR)/libevio.*),)
+  HAVE_EVIO = yes
+endif
+endif
+endif
+endif
+ifeq ($(HAVE_EVIO),no)
+EVIO_ARCH    := $(shell uname -s)-$(shell uname -m)
+ifdef EVIO
+  ifneq ($(wildcard $(EVIO)/$(EVIO_ARCH)/include/evio.h),)
+  ifneq ($(wildcard $(EVIO)/$(EVIO_ARCH)/lib/libevio.*),)
+    export EVIO_INCDIR := $(EVIO)/$(EVIO_ARCH)/include
+    export EVIO_LIBDIR := $(EVIO)/$(EVIO_ARCH)/lib
+    HAVE_EVIO = yes
+endif
+  endif
+else ifdef CODA
+  ifneq ($(wildcard $(CODA)/$(EVIO_ARCH)/include/evio.h),)
+  ifneq ($(wildcard $(CODA)/$(EVIO_ARCH)/lib/libevio.*),)
+    export EVIO_LIBDIR := $(CODA)/$(EVIO_ARCH)/lib
+    export EVIO_INCDIR := $(CODA)/$(EVIO_ARCH)/include
+    HAVE_EVIO = yes
+  endif
+  endif
+endif
+endif
+ifeq ($(HAVE_EVIO),no)
 # If EVIO environment not defined, define it to point here and build locally
   EVIODIR := $(shell pwd)/evio
   SUBDIRS += evio
