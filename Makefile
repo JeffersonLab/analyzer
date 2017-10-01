@@ -26,8 +26,10 @@ VERCODE := $(shell echo $(subst ., ,$(SOVERSION)) $(PATCH) | \
 
 MACHINE := $(shell uname -s)
 ARCH    := linux
+SOSUF   := so
 ifeq ($(MACHINE),Darwin)
   ARCH := macosx
+  SOSUF := dylib
 endif
 
 ifndef PLATFORM
@@ -91,7 +93,7 @@ ifeq ($(HAVE_EVIO),no)
   SUBDIRS += evio
   export EVIO_LIBDIR := $(LIBDIR)
   export EVIO_INCDIR := $(EVIODIR)
-  LIBEVIO := $(LIBDIR)/libevio.so
+  LIBEVIO := $(LIBDIR)/libevio.$(SOSUF)
 endif
 
 HALLALIBS += -L$(EVIO_LIBDIR) -levio
@@ -162,7 +164,7 @@ DEFINES       += -DHAS_SSTREAM
 # # ONLIBS is needed for ET
 #   ET_AC_FLAGS := -D_REENTRANT -D_POSIX_PTHREAD_SEMANTICS
 #   ET_CFLAGS := -02 -fPIC -I. $(ET_AC_FLAGS) -DLINUXVERS
-#   LIBET  := $(CODA)/Linux/lib/libet.so
+#   LIBET  := $(CODA)/Linux/lib/libet.$(SOSUF)
 #   ONLIBS := $(LIBET) -lieee -lpthread -ldl -lresolv
 
 #   DEFINES  += -DONLINE_ET
@@ -179,7 +181,7 @@ LIBS         += $(ROOTLIBS) $(SYSLIBS)
 GLIBS        += $(ROOTGLIBS) $(SYSLIBS)
 DEFINES      += $(PODD_EXTRA_DEFINES)
 
-export ARCH LIBDIR CXX LD SOFLAGS SONAME CXXFLG LDFLAGS DEFINES
+export ARCH LIBDIR CXX LD SOFLAGS SONAME SOSUF CXXFLG LDFLAGS DEFINES
 export VERSION SOVERSION VERCODE CXXEXTFLG
 
 $(info Compiling for $(ARCH) with $(CXX))
@@ -247,8 +249,8 @@ DEP          := $(SRC:.C=.d) src/main.d
 OBJS         := $(OBJ) $(HA_DICT).o
 HA_LINKDEF   := src/HallA_LinkDef.h
 
-LIBHALLA     := $(LIBDIR)/libHallA.so
-LIBDC        := $(LIBDIR)/libdc.so
+LIBHALLA     := $(LIBDIR)/libHallA.$(SOSUF)
+LIBDC        := $(LIBDIR)/libdc.$(SOSUF)
 
 #------------------------------------------------
 
@@ -351,7 +353,7 @@ analyzer:	src/main.o $(PODDLIBS)
 #---------- Maintenance --------------------------------------------
 clean:
 		set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i clean; done
-		rm -f *.{so,a,o,os} *.so.* site_scons/*.pyc
+		rm -f *.$(SOSUF) *.{a,o,os} *.$(SOSUF).* site_scons/*.pyc
 		rm -f $(PROGRAMS) $(HA_DICT).* *~
 		cd src; rm -f ha_compiledata.h *.{o,os} *~
 
@@ -390,7 +392,7 @@ ifneq ($(ANALYZER),$(shell pwd))
 			cp -af $$lib $$lib.$(SOVERSION) $$lib.$(VERSION) \
 			   $(ANALYZER)/$(PLATFORM) 2>/dev/null; \
 		done
-		rm -f $(ANALYZER)/$(PLATFORM)/libevio.so
+		rm -f $(ANALYZER)/$(PLATFORM)/libevio.$(SOSUF)
 ifdef LIBEVIO
 		cp -af $(LIBEVIO) $(ANALYZER)/$(PLATFORM)
 endif

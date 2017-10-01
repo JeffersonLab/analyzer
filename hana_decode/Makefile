@@ -67,8 +67,10 @@ ifndef STANDALONE
 else
   MACHINE := $(shell uname -s)
   ARCH    := linux
+  SOSUF   := so
   ifeq ($(MACHINE),Darwin)
      ARCH := macosx
+     SOSUF := dylib
   endif
 
 # Only define compiler options for STANDALONE, otherwise inherit them from
@@ -129,7 +131,7 @@ ifeq ($(OSNAME),Linux)
 # CODA environment variable must be set.  Examples are
 #   CODA = /adaqfs/coda/2.2        (in adaq cluster)
 #   CODA = /data7/user/coda/2.2    (on haplix cluster)
-   LIBET = $(CODA)/Linux/lib/libet.so
+   LIBET = $(CODA)/Linux/lib/libet.$(SOSUF)
    ONLIBS = $(LIBET) -lieee -lpthread -ldl -lresolv
 
    ifdef PROFILE
@@ -192,7 +194,7 @@ DEPS = $(patsubst %.c,%.d,$(SRC:.C=.d))
 DECODE_OBJ = $(patsubst %.c,%.o,$(SRC:%.C=%.o)) THaDecDict.o
 
 ifndef STANDALONE
-  all:  $(LIBDIR)/libdc.so.$(VERSION)
+  all:  $(LIBDIR)/libdc.$(SOSUF).$(VERSION)
 else
   all: $(PROGS) libdc.a
 endif
@@ -208,17 +210,17 @@ endif
 
 static:	libdc.a
 
-libdc.so: $(DECODE_OBJ)
+libdc.$(SOSUF): $(DECODE_OBJ)
 	rm -f $@
 ifeq ($(strip $(SONAME)),)
 	$(LD) $(LDFLAGS) $(SOFLAGS) -o $@ $(filter %.o,$^)
 else
-	$(LD) $(LDFLAGS) $(SOFLAGS) $(SONAME)libdc.so.$(SOVERSION) -o $@ $(filter %.o,$^)
+	$(LD) $(LDFLAGS) $(SOFLAGS) $(SONAME)libdc.$(SOSUF).$(SOVERSION) -o $@ $(filter %.o,$^)
 endif
 
 ifndef STANDALONE
-$(LIBDIR)/libdc.so.$(VERSION): libdc.so
-	rm -f $@ $(LIBDIR)/libdc.so.$(SOVERSION)
+$(LIBDIR)/libdc.$(SOSUF).$(VERSION): libdc.$(SOSUF)
+	rm -f $@ $(LIBDIR)/libdc.$(SOSUF).$(SOVERSION)
 	cp -p $< $@
 endif
 
@@ -302,7 +304,7 @@ version:
 	tar cvf $(VERS).tar ./$(VERS)
 
 clean:
-	rm -f *.{a,out,o,os} *.so.* core *~ THaDecDict* $(VERS).tar $(PROGS)
+	rm -f *.{a,out,o,os} *.$(SOSUF).* core *~ THaDecDict* $(VERS).tar $(PROGS)
 
 realclean:  clean
 	rm -f *.d
