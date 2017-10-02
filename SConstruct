@@ -86,49 +86,98 @@ baseenv.Append(BUILDERS = {'RootCint': bld})
 uname = os.uname();
 platform = uname[0];
 machine = uname[4];
+if platform == 'Linux':
+	sosuf = 'so'
+if platform == 'Darwin':
+	sosuf = 'dylib'
+evio_header_file = 'evio.h'
+evio_library_file = 'libevio.'+ sosuf
+#
+evio_inc_dir = os.getenv('EVIO_INCDIR')
+evio_lib_dir = os.getenv('EVIO_LIBDIR')
+th1 = FindFile(evio_header_file,evio_inc_dir)
+tl1 = FindFile(evio_library_file,evio_lib_dir)
+#print '%-12s' % ('%s:' % evio_header_file), FindFile(evio_header_file, evio_inc_dir)
+#print '%-12s' % ('%s:' % evio_library_file), FindFile(evio_library_file, evio_lib_dir)
+#
+evio_dir = os.getenv('EVIO')
 evio_arch = platform + '-' + machine
-coda_dir = os.getenv('CODA')
-if coda_dir is None:
-        print ("No external EVIO environment configured !!!")
-        print ("Using local installation ... ")
-        evio_version = '4.4.6'
-        evio_local = baseenv.subst('$HA_DIR')+'/evio'
-        evio_local_lib = "%s/evio-%s/src/libsrc/.%s" % (evio_local,evio_version,evio_arch)
-        evio_local_inc = "%s/evio-%s/src/libsrc" % (evio_local,evio_version)
-        evio_tarfile = "%s/evio-%s.tar.gz" % (evio_local,evio_version)
-        evio_command_dircreate = "mkdir -p %s" % (evio_local)
-        os.system(evio_command_dircreate)
-
-        ####### Check to see if scons -c has been called #########
-        if baseenv.GetOption('clean'):
-                subprocess.call(['echo', '!!!!!!!!!!!!!! EVIO Cleaning Process !!!!!!!!!!!! '])
-		evio_command_cleanup = "rm -f libevio*.*; cd %s; rm -rf evio-%s" % (evio_local,evio_version)
-                print ("evio_command_cleanup = %s" % evio_command_cleanup)
-                os.system(evio_command_cleanup)
-        else:
-                if not os.path.isdir(evio_local_lib):
-                        if not os.path.exists(evio_tarfile):
-                                evio_command_download = "cd %s; curl -LO https://github.com/JeffersonLab/hallac_evio/archive/evio-%s.tar.gz" % (evio_local,evio_version)
-                                print ("evio_command_download = %s" % evio_command_download)
-                                os.system(evio_command_download)
-
-                        evio_command_unpack = "cd %s; tar xvfz evio-%s.tar.gz; mv hallac_evio-evio-%s evio-%s; patch -p0 < evio-4.4.6-scons-3.0.patch" % (evio_local,evio_version,evio_version,evio_version)
-                        print ("evio_command_unpack = %s" % evio_command_unpack)
-                        os.system(evio_command_unpack)
-
-                evio_command_scons = "cd %s/evio-%s; scons src/libsrc/.%s/" % (evio_local,evio_version,evio_arch)
-                print ("evio_command_scons = %s" % evio_command_scons)
-                os.system(evio_command_scons)
-                evio_local_lib_files = "%s/libevio.*" % (evio_local_lib)
-                evio_command_libcopy = "cp -vf %s ." % (evio_local_lib_files)
-                print ("evio_command_libcopy = %s" % evio_command_libcopy)
-                os.system(evio_command_libcopy)
-
-        baseenv.Append(EVIO_LIB = evio_local_lib)
-        baseenv.Append(EVIO_INC = evio_local_inc)
+if evio_dir is not None:
+	evio_lib_dir2 = evio_dir + '/' + evio_arch + '/lib'  
+	evio_inc_dir2 = evio_dir + '/' + evio_arch + '/include' 
+	th2 = FindFile(evio_header_file,evio_inc_dir2)
+	tl2 = FindFile(evio_library_file,evio_lib_dir2)
 else:
-        baseenv.Append(EVIO_LIB = coda_dir + '/' + evio_arch + '/lib')
-        baseenv.Append(EVIO_INC = coda_dir + '/' + evio_arch + '/include')
+	evio_lib_dir2 = None
+	evio_inc_dir2 = None
+	th2 = None
+	tl2 = None
+#print '%-12s' % ('%s:' % evio_header_file), FindFile(evio_header_file, evio_inc_dir2)
+#print '%-12s' % ('%s:' % evio_library_file), FindFile(evio_library_file, evio_lib_dir2)
+#
+coda_dir = os.getenv('CODA')
+if coda_dir is not None:
+	evio_lib_dir3 = coda_dir + '/' + evio_arch + '/lib'  
+	evio_inc_dir3 = coda_dir + '/' + evio_arch + '/include'  
+	th3 = FindFile(evio_header_file,evio_inc_dir3)
+	tl3 = FindFile(evio_library_file,evio_lib_dir3)
+else:
+	evio_lib_dir3 = None
+	evio_inc_dir3 = None
+	th3 = None
+	tl3 = None
+#print '%-12s' % ('%s:' % evio_header_file), FindFile(evio_header_file, evio_inc_dir3)
+#print '%-12s' % ('%s:' % evio_library_file), FindFile(evio_library_file, evio_lib_dir3)
+#
+if th1 is not None and tl1 is not None:
+        baseenv.Append(EVIO_LIB = evio_lib_dir)
+        baseenv.Append(EVIO_INC = evio_inc_dir)
+else:
+	if th2 is not None and tl2 is not None:
+        	baseenv.Append(EVIO_LIB = evio_lib_dir2)
+        	baseenv.Append(EVIO_INC = evio_inc_dir2)
+	else:
+		if th3 is not None and tl3 is not None:
+        		baseenv.Append(EVIO_LIB = evio_lib_dir3)
+        		baseenv.Append(EVIO_INC = evio_inc_dir3)
+		else:
+        		print ("No external EVIO environment configured !!!")
+        		print ("Using local installation ... ")
+        		evio_version = '4.4.6'
+        		evio_local = baseenv.subst('$HA_DIR')+'/evio'
+        		evio_local_lib = "%s/evio-%s/src/libsrc/.%s" % (evio_local,evio_version,evio_arch)
+        		evio_local_inc = "%s/evio-%s/src/libsrc" % (evio_local,evio_version)
+        		evio_tarfile = "%s/evio-%s.tar.gz" % (evio_local,evio_version)
+        		evio_command_dircreate = "mkdir -p %s" % (evio_local)
+        		os.system(evio_command_dircreate)
+
+        		####### Check to see if scons -c has been called #########
+        		if baseenv.GetOption('clean'):
+                		subprocess.call(['echo', '!!!!!!!!!!!!!! EVIO Cleaning Process !!!!!!!!!!!! '])
+				evio_command_cleanup = "rm -f libevio*.*; cd %s; rm -rf evio-%s" % (evio_local,evio_version)
+                		print ("evio_command_cleanup = %s" % evio_command_cleanup)
+                		os.system(evio_command_cleanup)
+        		else:
+                		if not os.path.isdir(evio_local_lib):
+                        		if not os.path.exists(evio_tarfile):
+                                		evio_command_download = "cd %s; curl -LO https://github.com/JeffersonLab/hallac_evio/archive/evio-%s.tar.gz" % (evio_local,evio_version)
+                                		print ("evio_command_download = %s" % evio_command_download)
+                                		os.system(evio_command_download)
+
+                        		evio_command_unpack = "cd %s; tar xvfz evio-%s.tar.gz; mv hallac_evio-evio-%s evio-%s; patch -p0 < evio-4.4.6-scons-3.0.patch" % (evio_local,evio_version,evio_version,evio_version)
+                        		print ("evio_command_unpack = %s" % evio_command_unpack)
+                        		os.system(evio_command_unpack)
+
+                		evio_command_scons = "cd %s/evio-%s; scons src/libsrc/.%s/" % (evio_local,evio_version,evio_arch)
+                		print ("evio_command_scons = %s" % evio_command_scons)
+                		os.system(evio_command_scons)
+                		evio_local_lib_files = "%s/libevio.*" % (evio_local_lib)
+                		evio_command_libcopy = "cp -vf %s ." % (evio_local_lib_files)
+                		print ("evio_command_libcopy = %s" % evio_command_libcopy)
+                		os.system(evio_command_libcopy)
+
+        		baseenv.Append(EVIO_LIB = evio_local_lib)
+        		baseenv.Append(EVIO_INC = evio_local_inc)
 
 print ("EVIO lib Directory = %s" % baseenv.subst('$EVIO_LIB'))
 print ("EVIO include Directory = %s" % baseenv.subst('$EVIO_INC'))

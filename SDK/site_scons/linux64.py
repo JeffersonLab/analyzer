@@ -14,6 +14,8 @@ def config(env,args):
         else:
                 env.Append(CXXFLAGS = '-O')
                 env.Append(CPPDEFINES= 'NDEBUG')
+        
+        env.Append(CPPDEFINES= 'WITH_DEBUG')
 
         env.Append(CPPDEFINES= 'WITH_DEBUG')
 
