@@ -23,11 +23,7 @@ EnsureSConsVersion(2,1,0)
 
 halla_dir = os.getenv('ANALYZER')
 if halla_dir is None:
-<<<<<<< HEAD
-    print "Hall A Analyzer environment not configured !!!!"
-=======
     print ("Hall A Analyzer environment not configured !!!!")
->>>>>>> upstream/master
     Exit(2)
 
 baseenv.Append(MAIN_DIR = Dir('.').abspath)
@@ -35,44 +31,12 @@ baseenv.Append(HA_DIR = halla_dir)
 baseenv.Append(HA_SRC = baseenv.subst('$HA_DIR')+'/src ') 
 baseenv.Append(HA_DC = baseenv.subst('$HA_DIR')+'/hana_decode ') 
 
-<<<<<<< HEAD
-print "Hall A Analyzer main directory = %s" % halla_dir
-print "Hall A SDK main directory = %s" % baseenv.subst('$MAIN_DIR')
-=======
 print ("Hall A Analyzer main directory = %s" % halla_dir)
 print ("Hall A SDK main directory = %s" % baseenv.subst('$MAIN_DIR'))
->>>>>>> upstream/master
 
 baseenv.Append(CPPPATH = ['$MAIN_DIR','$HA_DIR','$HA_SRC','$HA_DC'])
 
 ####### ROOT Definitions ####################
-<<<<<<< HEAD
-baseenv.Append(ROOTCONFIG = 'root-config')
-baseenv.Append(ROOTCINT = 'rootcint')
-
-try:
-	baseenv.ParseConfig('$ROOTCONFIG --cflags')
-	baseenv.ParseConfig('$ROOTCONFIG --libs')
-        if sys.version_info >= (2, 7):
-                cmd = baseenv['ROOTCONFIG'] + " --cxx"
-                baseenv.Replace(CXX = subprocess.check_output(cmd, shell=True).rstrip())
-        else:
-                baseenv.Replace(CXX = subprocess.Popen([baseenv['ROOTCONFIG'], '--cxx'], stdout=subprocess.PIPE).communicate()[0].rstrip())
-except OSError:
-	try:
-		baseenv.Replace(ROOTCONFIG = baseenv['ENV']['ROOTSYS'] + '/bin/root-config')
-		baseenv.Replace(ROOTCINT = baseenv['ENV']['ROOTSYS'] + '/bin/rootcint')
-		baseenv.ParseConfig('$ROOTCONFIG --cflags')
-		baseenv.ParseConfig('$ROOTCONFIG --libs')
-                if sys.version_info >= (2, 7):
-                      cmd = baseenv['ROOTCONFIG'] + " --cxx"
-                      baseenv.Replace(CXX = subprocess.check_output(cmd, shell=True).rstrip())
-                else:
-                      baseenv.Replace(CXX = subprocess.Popen([baseenv['ROOTCONFIG'], '--cxx'], stdout=subprocess.PIPE).communicate()[0].rstrip())
-	except KeyError:
-       		print('!!! Cannot find ROOT.  Check if root-config is in your PATH.')
-		Exit(1)
-=======
 def rootcint(target,source,env):
         """Executes the ROOT dictionary generator over a list of headers."""
         dictname = target[0]
@@ -94,7 +58,7 @@ except KeyError:
         pass    # ROOTSYS not defined
 
 try:
-        baseenv.ParseConfig('$ROOTCONFIG --cflags --libs')
+        baseenv.ParseConfig('$ROOTCONFIG --cflags --glibs')
         if sys.version_info >= (2, 7):
                 cmd = baseenv['ROOTCONFIG'] + " --cxx"
                 baseenv.Replace(CXX = subprocess.check_output(cmd, shell=True).rstrip())
@@ -113,29 +77,12 @@ try:
 except OSError:
         print('!!! Cannot find ROOT.  Check if root-config is in your PATH.')
         Exit(1)
->>>>>>> upstream/master
 
 bld = Builder(action=rootcint)
 baseenv.Append(BUILDERS = {'RootCint': bld})
 
 ######## Configure Section #######
 
-<<<<<<< HEAD
-Export('baseenv')
-
-conf = Configure(baseenv)
-
-if not conf.CheckCXX():
-	print('!!! Your compiler and/or environment is not correctly configured.')
-	Exit(0)
-
-#if not conf.CheckFunc('printf'):
-if not conf.CheckCC():
-        print('!!! Your compiler and/or environment is not correctly configured.')
-        Exit(0)
-
-baseenv = conf.Finish()
-=======
 if not (baseenv.GetOption('clean') or baseenv.GetOption('help')):
 
         configure.config(baseenv,ARGUMENTS)
@@ -147,7 +94,6 @@ if not (baseenv.GetOption('clean') or baseenv.GetOption('help')):
         baseenv = conf.Finish()
 
 Export('baseenv')
->>>>>>> upstream/master
 
 ####### Start of main SConstruct ############
 
@@ -155,10 +101,6 @@ SDKlib = 'User'
 
 baseenv.Append(LIBPATH=['$HA_DIR','$MAIN_DIR','$HA_SRC','$HA_DC'])
 baseenv.Prepend(LIBS=[SDKlib])
-<<<<<<< HEAD
-baseenv.Replace(SHLIBSUFFIX = '.so')
-=======
->>>>>>> upstream/master
 
 SConscript(dirs = ['./'],name='SConscript.py',exports='baseenv')
 
