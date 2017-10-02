@@ -11,12 +11,13 @@ def config(env,args):
 
         if int(debug):
                 env.Append(CXXFLAGS = env.Split('-g -O0'))
-                env.Append(CPPDEFINES= 'WITH_DEBUG')
         else:
                 env.Append(CXXFLAGS = '-O')
                 env.Append(CPPDEFINES= 'NDEBUG')
 
-        if int(standalone):
+        env.Append(CPPDEFINES= 'WITH_DEBUG')
+
+	if int(standalone):
                 env.Append(STANDALONE= '1')
 
         if int(cppcheck):
@@ -28,7 +29,7 @@ def config(env,args):
         if int(srcdist):
                 env.Append(SRCDIST= '1')
 
-        env.Append(CXXFLAGS = env.Split('-m32 -Wall'))
+        env.Append(CXXFLAGS = env.Split('-m32 -Wall -fPIC'))
         env.Append(CPPDEFINES = 'LINUXVERS')
 
         cxxversion = env.subst('$CXXVERSION')

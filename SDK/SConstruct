@@ -58,7 +58,7 @@ except KeyError:
         pass    # ROOTSYS not defined
 
 try:
-        baseenv.ParseConfig('$ROOTCONFIG --cflags --libs')
+        baseenv.ParseConfig('$ROOTCONFIG --cflags --glibs')
         if sys.version_info >= (2, 7):
                 cmd = baseenv['ROOTCONFIG'] + " --cxx"
                 baseenv.Replace(CXX = subprocess.check_output(cmd, shell=True).rstrip())
