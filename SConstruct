@@ -86,22 +86,60 @@ baseenv.Append(BUILDERS = {'RootCint': bld})
 uname = os.uname();
 platform = uname[0];
 machine = uname[4];
-evio_arch = platform + '-' + machine
-evio_lib_dir = os.getenv('EVIO_LIBDIR')
+if platform == 'Linux':
+	sosuf = 'so'
+if platform == 'Darwin':
+	sosuf = 'dylib'
+evio_header_file = 'evio.h'
+evio_library_file = 'libevio.'+ sosuf
+#
 evio_inc_dir = os.getenv('EVIO_INCDIR')
+evio_lib_dir = os.getenv('EVIO_LIBDIR')
+th1 = FindFile(evio_header_file,evio_inc_dir)
+tl1 = FindFile(evio_library_file,evio_lib_dir)
+#print '%-12s' % ('%s:' % evio_header_file), FindFile(evio_header_file, evio_inc_dir)
+#print '%-12s' % ('%s:' % evio_library_file), FindFile(evio_library_file, evio_lib_dir)
+#
 evio_dir = os.getenv('EVIO')
+evio_arch = platform + '-' + machine
+if evio_dir is not None:
+	evio_lib_dir2 = evio_dir + '/' + evio_arch + '/lib'  
+	evio_inc_dir2 = evio_dir + '/' + evio_arch + '/include' 
+	th2 = FindFile(evio_header_file,evio_inc_dir2)
+	tl2 = FindFile(evio_library_file,evio_lib_dir2)
+else:
+	evio_lib_dir2 = None
+	evio_inc_dir2 = None
+	th2 = None
+	tl2 = None
+#print '%-12s' % ('%s:' % evio_header_file), FindFile(evio_header_file, evio_inc_dir2)
+#print '%-12s' % ('%s:' % evio_library_file), FindFile(evio_library_file, evio_lib_dir2)
+#
 coda_dir = os.getenv('CODA')
-if evio_lib_dir is not None and evio_inc_dir is not None:
+if coda_dir is not None:
+	evio_lib_dir3 = coda_dir + '/' + evio_arch + '/lib'  
+	evio_inc_dir3 = coda_dir + '/' + evio_arch + '/include'  
+	th3 = FindFile(evio_header_file,evio_inc_dir3)
+	tl3 = FindFile(evio_library_file,evio_lib_dir3)
+else:
+	evio_lib_dir3 = None
+	evio_inc_dir3 = None
+	th3 = None
+	tl3 = None
+#print '%-12s' % ('%s:' % evio_header_file), FindFile(evio_header_file, evio_inc_dir3)
+#print '%-12s' % ('%s:' % evio_library_file), FindFile(evio_library_file, evio_lib_dir3)
+#
+if th1 is not None and tl1 is not None:
         baseenv.Append(EVIO_LIB = evio_lib_dir)
         baseenv.Append(EVIO_INC = evio_inc_dir)
 else:
-	if evio_dir is not None:
-        	baseenv.Append(EVIO_LIB = evio_dir + '/' + evio_arch + '/lib')
-        	baseenv.Append(EVIO_INC = evio_dir + '/' + evio_arch + '/include')
+	if th2 is not None and tl2 is not None:
+        	baseenv.Append(EVIO_LIB = evio_lib_dir2)
+        	baseenv.Append(EVIO_INC = evio_inc_dir2)
 	else:
-		if coda_dir is not None:
-        		baseenv.Append(EVIO_LIB = coda_dir + '/' + evio_arch + '/lib')
-        		baseenv.Append(EVIO_INC = coda_dir + '/' + evio_arch + '/include')
+		if th3 is not None and tl3 is not None:
+        		baseenv.Append(EVIO_LIB = evio_lib_dir3)
+        		baseenv.Append(EVIO_INC = evio_inc_dir3)
 		else:
         		print ("No external EVIO environment configured !!!")
         		print ("Using local installation ... ")
