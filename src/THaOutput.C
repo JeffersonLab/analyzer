@@ -1044,12 +1044,14 @@ void THaOutput::ErrFile(Int_t iden, const string& sline) const
        cerr << "    variable  variable-name"<<endl;
        cerr << "Example: "<<endl;
        cerr << "    variable   R.vdc.v2.nclust"<<endl;;
+       break;
      case kCut:
      case kForm:
        cerr << "For formulas or cuts, the syntax is: "<<endl;
        cerr << "    formula(or cut)  formula-name  formula-expression"<<endl;
        cerr << "Example: "<<endl;
        cerr << "    formula targetX 1.464*B.bpm4b.x-0.464*B.bpm4a.x"<<endl;
+       break;
      case kH1f:
      case kH1d:
        cerr << "For 1D histograms, the syntax is: "<<endl;

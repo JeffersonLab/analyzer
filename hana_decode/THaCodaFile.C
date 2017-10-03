@@ -261,6 +261,7 @@ void THaCodaFile::staterr(const char* tried_to, Long64_t status) {
       case S_EVFILE_TRUNC :
 	cerr << "Truncated event on file read. Evbuffer size is too small. "
 	     << endl;
+        break;
       case S_EVFILE_BADBLOCK :
         cerr << "Bad block number encountered " << endl;
         break;

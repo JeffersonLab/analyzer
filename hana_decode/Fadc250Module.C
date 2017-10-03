@@ -786,6 +786,7 @@ void Fadc250Module::LoadTHaSlotDataObj(THaSlotData *sldat) {
 			<< dec << " >> data type id = " << data_type_id << endl;
 #endif
 	}
+        break;
       case 6:  // Pulse raw data
 	data_type_6 = true;
 	if (data_type_id == 1) {
@@ -968,6 +969,7 @@ void Fadc250Module::LoadTHaSlotDataObj(THaSlotData *sldat) {
 			<< dec << " >> data type id = " << data_type_id << endl;
 #endif
 	}
+        break;
       case 12:  // Scaler header
 	{
 	  fadc_data.scaler_words = (data >> 0) & 0x3F;  // FADC scaler words
@@ -979,6 +981,7 @@ void Fadc250Module::LoadTHaSlotDataObj(THaSlotData *sldat) {
 			<< hex << fadc_data.scaler_words << dec << endl;
 #endif
 	}
+        break;
       case 13:  // Undefined type
 	{
 	  // Debug output
@@ -988,6 +991,7 @@ void Fadc250Module::LoadTHaSlotDataObj(THaSlotData *sldat) {
 			<< dec << " >> data type id = " << data_type_id << endl;
 #endif
 	}
+        break;
       case 14:  // Data not valid
 	{
 	  // Debug output
@@ -997,6 +1001,7 @@ void Fadc250Module::LoadTHaSlotDataObj(THaSlotData *sldat) {
 			<< dec << " >> data type id = " << data_type_id << endl;
 #endif
 	}
+        break;
       case 15:  // Filler Word, should be ignored
 	{
 	  // Debug output
@@ -1006,7 +1011,7 @@ void Fadc250Module::LoadTHaSlotDataObj(THaSlotData *sldat) {
 			<< dec << " >> data type id = " << data_type_id << endl;
 #endif
 	}
-
+        break;
       }  // data_type_def switch
 
     return block_trailer_found;
