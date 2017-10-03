@@ -4,12 +4,7 @@
 
 import os
 import sys
-import platform
-import commands
 import SCons
-import time
-import subprocess
-import configure
 
 baseenv = Environment(ENV = os.environ)
 
@@ -19,12 +14,15 @@ baseenv = Environment(ENV = os.environ)
 EnsureSConsVersion(2,1,0)
 
 ####### Hall A Build Environment #############
-#
 
 halla_dir = os.getenv('ANALYZER')
 if halla_dir is None:
     print ("Hall A Analyzer environment not configured !!!!")
     Exit(2)
+
+sys.path.append(halla_dir + '/site_scons')
+import configure
+from rootcint import rootcint
 
 baseenv.Append(MAIN_DIR = Dir('.').abspath)
 baseenv.Append(HA_DIR = halla_dir)
@@ -36,47 +34,7 @@ print ("Hall A SDK main directory = %s" % baseenv.subst('$MAIN_DIR'))
 
 baseenv.Append(CPPPATH = ['$MAIN_DIR','$HA_DIR','$HA_SRC','$HA_DC'])
 
-####### ROOT Definitions ####################
-def rootcint(target,source,env):
-        """Executes the ROOT dictionary generator over a list of headers."""
-        dictname = target[0]
-        headers = ""
-        cpppath = env.subst('$_CCCOMCOM')
-        ccflags = env.subst('$CCFLAGS')
-#        print ("Doing rootcint call now ...")
-        for f in source:
-                headers += str(f) + " "
-        command = "rootcint -f %s -c -pthread -fPIC %s %s" % (dictname,cpppath,headers)
-#	print ('RootCint Command = %s\n' % command)
-        ok = os.system(command)
-        return ok
-
-baseenv.Append(ROOTCONFIG = 'root-config')
-try:
-        baseenv.AppendENVPath('PATH',baseenv['ENV']['ROOTSYS'] + '/bin')
-except KeyError:
-        pass    # ROOTSYS not defined
-
-try:
-        baseenv.ParseConfig('$ROOTCONFIG --cflags --glibs')
-        if sys.version_info >= (2, 7):
-                cmd = baseenv['ROOTCONFIG'] + " --cxx"
-                baseenv.Replace(CXX = subprocess.check_output(cmd, shell=True).rstrip())
-                cmd = baseenv['ROOTCONFIG'] + " --version"
-                baseenv.Replace(ROOTVERS = subprocess.check_output(cmd, shell=True).rstrip())
-        else:
-                baseenv.Replace(CXX = subprocess.Popen([baseenv['ROOTCONFIG'], '--cxx'],\
-                                        stdout=subprocess.PIPE).communicate()[0].rstrip())
-                baseenv.Replace(ROOTVERS = subprocess.Popen([baseenv['ROOTCONFIG'],\
-                        '--version'],stdout=subprocess.PIPE).communicate()[0].rstrip())
-        if platform.system() == 'Darwin':
-                try:
-                        baseenv.Replace(LINKFLAGS = baseenv['LINKFLAGS'].remove('-pthread'))
-                except:
-                        pass #  '-pthread' was not present in LINKFLAGS
-except OSError:
-        print('!!! Cannot find ROOT.  Check if root-config is in your PATH.')
-        Exit(1)
+configure.FindROOT(baseenv, need_glibs = False)
 
 bld = Builder(action=rootcint)
 baseenv.Append(BUILDERS = {'RootCint': bld})
