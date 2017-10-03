@@ -7,10 +7,11 @@ import sys
 import platform
 
 analyzer_dir = '..'
+evio_libdir = os.getenv('EVIO_LIBDIR')
 
 env = Environment(ENV = os.environ)
-flags = { 'LIBS'    : Split('HallA dc'),
-          'LIBPATH' : [analyzer_dir],
+flags = { 'LIBS'    : Split('HallA dc evio'),
+          'LIBPATH' : [analyzer_dir,evio_libdir],
           'CPPPATH' : Split('-I'+analyzer_dir+'/src -I'+analyzer_dir+'/hana_decode') }
 env.MergeFlags(flags)
 
