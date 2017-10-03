@@ -459,6 +459,7 @@ static void getargs( int argc, char* const argv[] )
     switch( opt ) {
     case 'h':
       help();
+      break;
     case 'v':
       verbose = 1;
       break;
@@ -485,6 +486,7 @@ static void getargs( int argc, char* const argv[] )
     case ':':
     case '?':
       usage();
+      break;
     default:
       cerr << "Unhandled option " << (char)opt << endl;
       usage();
@@ -1816,15 +1818,15 @@ static int ForAllFilesInDir( const string& sdir, Action action, int depth = 0 )
   }
 
   // Loop over all directory entries and pass their names to action
-  size_t len = offsetof(struct dirent, d_name) + pathconf(cdir, _PC_NAME_MAX) + 1;
-  struct dirent *ent = (struct dirent*)malloc(len), *result;
-  int err;
+  struct dirent *ent = 0;
+  int err = 0;
   bool unfinished;
+  errno = 0;
   do {
     unfinished = false;
-    while( (err = readdir_r(dir,ent,&result)) == 0 && result != 0 ) {
+    while( (ent = readdir(dir)) ) {
       // Skip trivial file names
-      string fname(result->d_name);
+      string fname(ent->d_name);
       if( fname.empty() || fname == "." || fname == ".." )
 	continue;
       // Operate on the name
@@ -1832,6 +1834,13 @@ static int ForAllFilesInDir( const string& sdir, Action action, int depth = 0 )
 	break;
       n_add += err;
       err = 0;
+    }
+    if( errno ) {
+      stringstream ss("Error reading directory ",ios::out|ios::app);
+      ss << sdir;
+      perror(ss.str().c_str());
+      closedir(dir);
+      return -1;
     }
     // In case 'action' caused the directory contents to change, rewind the
     // directory and scan it again (needed for MacOS HFS file systems, perhaps
@@ -1842,7 +1851,6 @@ static int ForAllFilesInDir( const string& sdir, Action action, int depth = 0 )
     }
   } while( unfinished );
 
-  free(ent);
   closedir(dir);
   if( err )
     return err;
