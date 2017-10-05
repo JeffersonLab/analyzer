@@ -30,6 +30,7 @@ hana_decode/Caen775Module.h hana_decode/Caen792Module.h
 hana_decode/THaBenchmark.h hana_decode/haDecode_LinkDef.h
 """)
 baseenv.RootCint(rootdecdict,decheaders)
+baseenv.Clean(rootdecdict,re.sub(r'\.C\Z','_rdict.pcm',rootdecdict))
 
 roothadict = baseenv.subst('$MAIN_DIR')+'/haDict.C'
 haheaders = Split("""
@@ -69,6 +70,7 @@ src/THaVDCPoint.h src/THaVDCPointPair.h src/THaGlobals.h
 src/HallA_LinkDef.h
 """)
 baseenv.RootCint(roothadict,haheaders)
+baseenv.Clean(roothadict,re.sub(r'\.C\Z','_rdict.pcm',roothadict))
 
 #######  write src/ha_compiledata.h header file ######
 
