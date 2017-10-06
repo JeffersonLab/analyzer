@@ -113,7 +113,7 @@ def FindROOT(env, need_glibs = True):
                 env.Exit(1)
 
 # EVIO environment
-def FindEVIO(env,build_it = True):
+def FindEVIO(env, build_it = True, fail_if_missing = True):
         uname = os.uname();
         platform = uname[0];
         machine = uname[4];
@@ -207,9 +207,11 @@ def FindEVIO(env,build_it = True):
 
                 env.Append(EVIO_LIB = evio_local_lib)
                 env.Append(EVIO_INC = evio_local_inc)
-        else:
+        elif fail_if_missing:
                 print('!!! Cannot find EVIO library.  Set EVIO_LIBDIR/EVIO_INCDIR, EVIO or CODA.')
                 env.Exit(1)
+        else:
+                return
 
         print ("EVIO lib Directory = %s" % env.subst('$EVIO_LIB'))
         print ("EVIO include Directory = %s" % env.subst('$EVIO_INC'))
