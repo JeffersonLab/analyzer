@@ -44,7 +44,7 @@ else
 	$(shell $(CURL) $(URL) -o $(TAR))
 endif
 else
-	$(shell $(WGET) $(URL))
+	$(shell $(WGET) $(URL) -O $(TAR))
 endif
 
 install: all
