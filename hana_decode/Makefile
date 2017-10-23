@@ -186,7 +186,7 @@ PROGS = tstoo tstfadc tstfadcblk tstfadcblk tstf1tdc tst1190 tstio tdecpr tdecex
 # endif
 
 RCHEAD := $(SRC:.C=.h) THaBenchmark.h
-HEAD = $(RCHEAD)
+HEAD = $(RCHEAD) Decoder.h
 # ifdef ONLINE_ET
 #   HEAD += et.h
 # endif
@@ -310,7 +310,7 @@ realclean:  clean
 	rm -f *.d
 
 install:	all
-	mkdir -p $(ANALYZER)/src/hana_decode
+	mkdir -p $(ANALYZER)/src/hana_decode $(ANALYZER)/include
 	cp -pu $(SRC) $(HEAD) haDecode_LinkDef.h Makefile $(ANALYZER)/src/hana_decode
 	cp -pu $(HEAD) $(ANALYZER)/include
 
