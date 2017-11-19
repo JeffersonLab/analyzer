@@ -36,6 +36,9 @@ namespace Decoder {
     virtual Int_t GetPulsePeakData(Int_t chan, Int_t ievent) const;
     virtual Int_t GetPulsePedestalData(Int_t chan, Int_t ievent) const;
     virtual Int_t GetPulseSamplesData(Int_t chan, Int_t ievent) const;
+    virtual Int_t GetPedestalQuality(Int_t chan, Int_t ievent) const;
+    virtual Int_t GetOverflowBit(Int_t chan, Int_t ievent) const;
+    virtual Int_t GetUnderflowBit(Int_t chan, Int_t ievent) const;
     virtual std::vector<uint32_t> GetPulseSamplesVector(Int_t chan) const;
     virtual Int_t GetFadcMode() const;
     virtual Int_t GetMode() const { return GetFadcMode(); };
@@ -94,9 +97,11 @@ namespace Decoder {
     struct fadc_pulse_data {
       std::vector<uint32_t> integral, time, peak, pedestal;
       std::vector<uint32_t> samples, coarse_time, fine_time;
+      std::vector<uint32_t> pedestal_quality, overflow, underflow;
       void clear() {
 	integral.clear(); time.clear(); peak.clear(); pedestal.clear();
 	samples.clear(); coarse_time.clear(); fine_time.clear();
+	pedestal_quality.clear(); overflow.clear(); underflow.clear();
       }
     };
     std::vector<fadc_pulse_data> fPulseData; // Pulse data for each channel

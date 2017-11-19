@@ -78,7 +78,7 @@ namespace Decoder {
   Module::TypeIter_t Fadc250Module::fgThisType =
     DoRegister( ModuleType( "Decoder::Fadc250Module" , 250 ));
 
- Fadc250Module::Fadc250Module()
+  Fadc250Module::Fadc250Module()
     : PipeliningModule(), fPulseData(NADCCHAN), data_type_def(0)
   { memset(&fadc_data, 0, sizeof(fadc_data)); }
 
@@ -97,7 +97,7 @@ namespace Decoder {
   }
 
   Bool_t Fadc250Module::IsMultiFunction() {
-     return kTRUE;
+    return kTRUE;
   }
 
   Bool_t Fadc250Module::HasCapability(Decoder::EModuleType type) {
@@ -155,7 +155,7 @@ namespace Decoder {
   }
 
   Int_t Fadc250Module::GetNumEvents(Decoder::EModuleType emode, Int_t chan) const {
-   switch(emode)
+    switch(emode)
       {
       case kSampleADC:
 	return fPulseData[chan].samples.size();
@@ -173,31 +173,29 @@ namespace Decoder {
       case kFineTime:
 	return fPulseData[chan].fine_time.size();
       }
-   return 0;
+    return 0;
   }
 
   Int_t Fadc250Module::GetData(Decoder::EModuleType emode, Int_t chan, Int_t ievent) const {
-   switch(emode)
+    switch(emode)
       {
       case kSampleADC:
-	 return GetPulseSamplesData(chan, ievent);
+	return GetPulseSamplesData(chan, ievent);
       case kPulseIntegral:
-	 return  GetPulseIntegralData(chan, ievent);
+	return  GetPulseIntegralData(chan, ievent);
       case kPulseTime:
-	 return  GetPulseTimeData(chan, ievent);
+	return  GetPulseTimeData(chan, ievent);
       case kPulsePeak:
-	 return GetPulsePeakData(chan, ievent);
+	return GetPulsePeakData(chan, ievent);
       case kPulsePedestal:
-	 return GetPulsePedestalData(chan, ievent);
+	return GetPulsePedestalData(chan, ievent);
       case kCoarseTime:
-	 return GetPulseCoarseTimeData(chan, ievent);
+	return GetPulseCoarseTimeData(chan, ievent);
       case kFineTime:
-	 return GetPulseFineTimeData(chan, ievent);
+	return GetPulseFineTimeData(chan, ievent);
       }
-   return 0;
+    return 0;
   }
-
-
 
   Int_t Fadc250Module::GetPulseIntegralData(Int_t chan, Int_t ievent) const {
     Int_t nevent = 0;
@@ -230,7 +228,7 @@ namespace Decoder {
       return -1;
     }
     else {
-    return SumVectorElements(fPulseData[chan].samples);
+      return SumVectorElements(fPulseData[chan].samples);
 #ifdef WITH_DEBUG
       if (fDebugFile != 0)
 	*fDebugFile << "Fadc250Module::GetEmulatedPulseIntegralData channel "
@@ -368,7 +366,77 @@ namespace Decoder {
     }
   }
 
+  Int_t Fadc250Module::GetPedestalQuality(Int_t chan, Int_t ievent) const {
+    Int_t nevent = 0;
+    nevent = fPulseData[chan].pedestal_quality.size();
+    if (ievent < 0) {
+      cout << "ERROR:: Fadc250Module:: GetPedestalQuality:: invalid event number for slot = " << fSlot << ", channel = " << chan << endl;
+      return -1;
+    }
+    if (nevent == 0) {
+      cout << "ERROR:: Fadc250Module:: GetPedestalQuality:: data vector empty for slot = " << fSlot << ", channel = " << chan << endl;
+      return -1;
+    }
+    if (nevent != 1) {
+      cout << "ERROR:: Fadc250Module:: GetPedestalQuality:: invalid data vector size = " << fSlot << ", channel = " << chan << endl;
+      return -1;
+    }
+    else {    
+      return fPulseData[chan].pedestal_quality[0];
+#ifdef WITH_DEBUG
+      if (fDebugFile != 0)
+	*fDebugFile << "Fadc250Module::GetPedestalQuality channel "
+		    << chan << ", event " << ievent << " = "
+		    <<  fPulseData[chan].pedestal_quality[0] << endl;
+#endif
+    }
+  }
 
+  Int_t Fadc250Module::GetOverflowBit(Int_t chan, Int_t ievent) const {
+    Int_t nevent = 0;
+    nevent = fPulseData[chan].overflow.size();
+    if (ievent < 0) {
+      cout << "ERROR:: Fadc250Module:: GetOverflowBit:: invalid event number for slot = " << fSlot << ", channel = " << chan << endl;
+      return -1;
+    }
+    if (nevent == 0) {
+      cout << "ERROR:: Fadc250Module:: GetOverflowBit:: data vector empty for slot = " << fSlot << ", channel = " << chan << endl;
+      return -1;
+    }
+    else {
+      return fPulseData[chan].overflow[ievent];
+#ifdef WITH_DEBUG
+      if (fDebugFile != 0)
+	*fDebugFile << "Fadc250Module::GetOverflowBit channel "
+		    << chan << ", event " << ievent << " = "
+		    <<  fPulseData[chan].overflow[ievent] << endl;
+#endif
+    }
+  }
+  
+  Int_t Fadc250Module::GetUnderflowBit(Int_t chan, Int_t ievent) const {
+    Int_t nevent = 0;
+    nevent = fPulseData[chan].underflow.size();
+    if (ievent < 0) {
+      cout << "ERROR:: Fadc250Module:: GetUnderflowBit:: invalid event number for slot = " << fSlot << ", channel = " << chan << endl;
+      return -1;
+    }
+    if (nevent == 0) {
+      cout << "ERROR:: Fadc250Module:: GetUnderflowBit:: data vector empty for slot = " << fSlot << ", channel = " << chan << endl;
+      return -1;
+    }
+    else {
+      return fPulseData[chan].underflow[ievent];
+#ifdef WITH_DEBUG
+      if (fDebugFile != 0)
+	*fDebugFile << "Fadc250Module::GetUnderflowBit channel "
+		    << chan << ", event " << ievent << " = "
+		    <<  fPulseData[chan].underflow[ievent] << endl;
+#endif
+    }
+  }
+
+  
   Int_t Fadc250Module::GetPulseSamplesData(Int_t chan, Int_t ievent) const {
     Int_t nevent = 0;
     nevent = fPulseData[chan].samples.size();
@@ -391,7 +459,7 @@ namespace Decoder {
     }
   }
 
-vector<uint32_t> Fadc250Module::GetPulseSamplesVector(Int_t chan) const {
+  vector<uint32_t> Fadc250Module::GetPulseSamplesVector(Int_t chan) const {
     Int_t nevent = 0;
     nevent = fPulseData[chan].samples.size();
     if (nevent == 0) {
@@ -405,8 +473,8 @@ vector<uint32_t> Fadc250Module::GetPulseSamplesVector(Int_t chan) const {
 	*fDebugFile << "Fadc250Module::GetPulseSamplesVector channel "
 		    << chan << " = " <<  &fPulseData[chan].samples << endl;
 #endif
+    }
   }
-}
 
   void Fadc250Module::PrintDataType() const {
     if (fDebugFile == 0) return;
@@ -422,8 +490,8 @@ vector<uint32_t> Fadc250Module::GetPulseSamplesVector(Int_t chan) const {
 
   Int_t Fadc250Module::GetFadcMode() const {
     if (fFirmwareVers==1) {  // some "older" firmware
-       if (data_type_4 && data_type_6) return 8;
-       if (data_type_7) return 7;
+      if (data_type_4 && data_type_6) return 8;
+      if (data_type_7) return 7;
     }
     if      (data_type_4    && !(data_type_6) && !(data_type_7) && !(data_type_8) && !(data_type_9) && !(data_type_10)) return 1;
     else if (!(data_type_4) && data_type_6    && !(data_type_7) && !(data_type_8) && !(data_type_9) && !(data_type_10)) return 2;
@@ -445,12 +513,12 @@ vector<uint32_t> Fadc250Module::GetPulseSamplesVector(Int_t chan) const {
     assert(chan >= 0 && static_cast <size_t> (chan) < NADCCHAN);
     size_t sz = 0;
     if (fDebugFile != 0) PrintDataType();
-// For some "old" firmware version
+    // For some "old" firmware version
     if (fFirmwareVers==1) {
       if (GetFadcMode() == 7 && ((sz = fPulseData[chan].integral.size()) == fPulseData[chan].time.size())) return sz;
       if (GetFadcMode() == 8) return fPulseData[chan].samples.size();
     }
-// The rest for "modern" firmware
+    // The rest for "modern" firmware
     if (GetFadcMode() == 1)
       return 1;
     else if ((GetFadcMode() == 7) &&
@@ -559,24 +627,22 @@ vector<uint32_t> Fadc250Module::GetPulseSamplesVector(Int_t chan) const {
     std::vector< UInt_t > evb;
     while (evbuffer < pstop) evb.push_back(*evbuffer++);
 
- // Note, methods SplitBuffer, GetNextBlock  are defined in PipeliningModule
+    // Note, methods SplitBuffer, GetNextBlock  are defined in PipeliningModule
 
     SplitBuffer(evb);
     return LoadThisBlock(sldat, GetNextBlock());
 
   }
 
-
   Int_t Fadc250Module::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, Int_t pos, Int_t len) {
-// the 4-arg version of LoadSlot.  Let it call the 3-arg version.
-// I'm not sure we need both (historical)
+    // the 4-arg version of LoadSlot.  Let it call the 3-arg version.
+    // I'm not sure we need both (historical)
 
     return LoadSlot(sldat, evbuffer+pos, evbuffer+pos+len);
 
   }
 
-
-void Fadc250Module::LoadTHaSlotDataObj(THaSlotData *sldat) {
+  void Fadc250Module::LoadTHaSlotDataObj(THaSlotData *sldat) {
     // Load THaSlotData
     for (uint32_t chan = 0; chan < NADCCHAN; chan++) {
       // Pulse Integral
@@ -595,20 +661,17 @@ void Fadc250Module::LoadTHaSlotDataObj(THaSlotData *sldat) {
       for (uint32_t ievent = 0; ievent < fPulseData[chan].samples.size(); ievent++)
 	sldat->loadData("adc", chan, fPulseData[chan].samples[ievent], fPulseData[chan].samples[ievent]);
     }  // Channel loop
-}
-
-
+  }
 
   Int_t Fadc250Module::LoadNextEvBuffer(THaSlotData *sldat) {
     // Note, GetNextBlock belongs to PipeliningModule
     return LoadThisBlock(sldat, GetNextBlock());
   }
 
+  Int_t Fadc250Module::LoadThisBlock(THaSlotData *sldat, std::vector< UInt_t>evbuffer) {
 
-    Int_t Fadc250Module::LoadThisBlock(THaSlotData *sldat, std::vector< UInt_t>evbuffer) {
-
-// Fill data structures of this class using the event buffer of one "event".
-// An "event" is defined in the traditional way -- a scattering from a target, etc.
+    // Fill data structures of this class using the event buffer of one "event".
+    // An "event" is defined in the traditional way -- a scattering from a target, etc.
 
     Clear();
 
@@ -620,7 +683,7 @@ void Fadc250Module::LoadTHaSlotDataObj(THaSlotData *sldat) {
 
     return index;
 
-    }
+  }
 
   Int_t Fadc250Module::DecodeOneWord(UInt_t data)
   {
@@ -707,12 +770,12 @@ void Fadc250Module::LoadTHaSlotDataObj(THaSlotData *sldat) {
 	fadc_data.eh_trig_time = (data >> 12) & 0x3FF;  // Event header trigger time
 	fadc_data.trig_num = (data >> 0) & 0xFFF;       // Trigger number
 	// Debug output
-// #ifdef WITH_DEBUG
-//	if (fDebugFile != 0)
-//	  *fDebugFile << "Fadc250Module::Decode:: FADC EVENT HEADER >> data = " << hex
-//		      << data << dec << " >> slot = " << fadc_data.slot_evt_hdr
-//		      << " >> event number = " << fadc_data.evt_num << endl;
-// #endif
+	// #ifdef WITH_DEBUG
+	//	if (fDebugFile != 0)
+	//	  *fDebugFile << "Fadc250Module::Decode:: FADC EVENT HEADER >> data = " << hex
+	//		      << data << dec << " >> slot = " << fadc_data.slot_evt_hdr
+	//		      << " >> event number = " << fadc_data.evt_num << endl;
+	// #endif
 #ifdef WITH_DEBUG
 	if (fDebugFile != 0)
 	  *fDebugFile << "Fadc250Module::Decode:: FADC EVENT HEADER >> data = " << hex
@@ -766,7 +829,7 @@ void Fadc250Module::LoadTHaSlotDataObj(THaSlotData *sldat) {
 	  PopulateDataVector(fPulseData[fadc_data.chan].samples, sample_2); // Sample 2
 	  fadc_data.invalid_samples |= invalid_2;                        // Invalid samples
 	  fadc_data.overflow = (sample_2 >> 12) & 0x1;                   // Sample 2 overflow bit
-		  // Debug output
+	  // Debug output
 #ifdef WITH_DEBUG
 	  if (fDebugFile != 0)
 	    *fDebugFile << "Fadc250Module::Decode:: FADC WINDOW RAW DATA >> data = " << hex
@@ -880,6 +943,7 @@ void Fadc250Module::LoadTHaSlotDataObj(THaSlotData *sldat) {
 	  fadc_data.pedestal_sum = (data >> 0) & 0x3FFF;    // Pedestal sum
 	  // Populate data vectors
 	  PopulateDataVector(fPulseData[fadc_data.chan].pedestal, fadc_data.pedestal_sum);
+	  PopulateDataVector(fPulseData[fadc_data.chan].pedestal_quality, fadc_data.qual_factor);
 	  // Debug output
 #ifdef WITH_DEBUG
 	  if (fDebugFile != 0)
@@ -900,6 +964,8 @@ void Fadc250Module::LoadTHaSlotDataObj(THaSlotData *sldat) {
 	    fadc_data.samp_over_thresh = (data >> 0) & 0x1FF;  // Number of samples within NSA that the pulse is above threshold
 	    // Populate data vectors
 	    PopulateDataVector(fPulseData[fadc_data.chan].integral, fadc_data.sample_sum);
+	    PopulateDataVector(fPulseData[fadc_data.chan].overflow, fadc_data.samp_overflow);
+	    PopulateDataVector(fPulseData[fadc_data.chan].underflow, fadc_data.samp_underflow);
 	    // Debug output
 #ifdef WITH_DEBUG
 	    if (fDebugFile != 0)
@@ -1017,9 +1083,9 @@ void Fadc250Module::LoadTHaSlotDataObj(THaSlotData *sldat) {
     return block_trailer_found;
 
 #ifdef WITH_DEBUG
-	  if (fDebugFile != 0)
-	    *fDebugFile << "**********************************************************************"
-			<< "\n" << endl;
+    if (fDebugFile != 0)
+      *fDebugFile << "**********************************************************************"
+		  << "\n" << endl;
 #endif
 
   }  // Fadc250Module::Decode method
