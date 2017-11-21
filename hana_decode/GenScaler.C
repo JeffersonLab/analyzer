@@ -42,8 +42,8 @@ namespace Decoder {
     fNumChanMask = 0xff;
     fNumChanShift = 0;
     fDeltaT = DEFAULT_DELTAT;  // a default time interval between readings
-    fDataArray = new Int_t[fWordsExpect];
-    fPrevData = new Int_t[fWordsExpect];
+    fDataArray = new UInt_t[fWordsExpect];
+    fPrevData = new UInt_t[fWordsExpect];
     fRate = new Double_t[fWordsExpect];
     memset(fDataArray, 0, fWordsExpect*sizeof(Int_t));
     memset(fPrevData, 0, fWordsExpect*sizeof(Int_t));
@@ -123,7 +123,7 @@ namespace Decoder {
       fFirstTime = kFALSE;
     } else {
       doload=1;
-      memcpy(fPrevData, fDataArray, fWordsExpect*sizeof(Int_t));
+      memcpy(fPrevData, fDataArray, fWordsExpect*sizeof(UInt_t));
     }
     if (fDebugFile) *fDebugFile << "is slot 0x"<<hex<<*evbuffer<<dec<<endl;
     fIsDecoded = kTRUE;
@@ -151,7 +151,14 @@ namespace Decoder {
       if (fHasClock) *fDebugFile << "has Clock "<<endl;
     }
     if (IsDecoded() && fHasClock && fClockRate>0 && checkchan(fClockChan)) {
-      dtime = (fDataArray[fClockChan]-fPrevData[fClockChan])/fClockRate;
+      // Check for scaler overflow
+      UInt_t clockdif;
+      if(fDataArray[fClockChan] < fPrevData[fClockChan]) {
+	clockdif = (4294967296-fPrevData[fClockChan]) + fDataArray[fClockChan];
+      } else {
+	clockdif = fDataArray[fClockChan]-fPrevData[fClockChan];
+      }
+      dtime = clockdif/fClockRate;
       if (fDebugFile) *fDebugFile << "GetTimeSincePrev  "<<fClockRate<<"   "<<fClockChan<<"   "<<dtime<<endl;
     } else {
       if (fDeltaT > 0) dtime = fDeltaT;   // default
@@ -167,12 +174,19 @@ namespace Decoder {
 	return;
       }
       for (Int_t i=0; i<fWordsExpect; i++) {
-	fRate[i] = (fDataArray[i]-fPrevData[i])/dtime;
+	// Check for scaler overflow
+	UInt_t diff;
+	if(fDataArray[i] < fPrevData[i]) {
+	  diff = (4294967296-fPrevData[i]) + fDataArray[i];
+	} else {
+	  diff = fDataArray[i]-fPrevData[i];
+	}
+	fRate[i] = diff/dtime;
       }
     }
   }
 
-  Int_t GenScaler::GetData(Int_t chan) const {
+  UInt_t GenScaler::GetData(Int_t chan) const {
     if (checkchan(chan)) {
       return fDataArray[chan];
     } else {

@@ -131,7 +131,8 @@ Int_t Caen775Module::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, Int_t 
   return fWordsSeen;
 }
 
-Int_t Caen775Module::GetData(Int_t chan) const {
+  /* Does anything use this method */
+UInt_t Caen775Module::GetData(Int_t chan) const {
   if (chan < 0 || chan > fNumChan) return 0;
   return fData[chan];
 }

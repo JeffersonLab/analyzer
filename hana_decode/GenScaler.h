@@ -25,7 +25,7 @@ namespace Decoder {
 
     virtual void  Clear(const Option_t* opt="");
     virtual Int_t Decode(const UInt_t *evbuffer);
-    virtual Int_t GetData(Int_t chan) const;   // Raw scaler counts
+    virtual UInt_t GetData(Int_t chan) const;   // Raw scaler counts
     virtual Bool_t IsSlot(UInt_t rdata);
     virtual void DoPrint() const;
 
@@ -50,7 +50,7 @@ namespace Decoder {
     void LoadRates();
     Bool_t checkchan(Int_t chan) const { return (chan >=0 && chan < fWordsExpect); }
     Bool_t fIsDecoded, fFirstTime, fDeltaT;
-    Int_t *fDataArray, *fPrevData;
+    UInt_t *fDataArray, *fPrevData;
     Double_t *fRate;
     Int_t fClockChan, fNumChanMask, fNumChanShift;
     Bool_t fHasClock;

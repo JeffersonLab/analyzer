@@ -23,7 +23,7 @@ public:
    using Module::GetData;
    using Module::LoadSlot;
 
-   virtual Int_t GetData(Int_t chan) const;
+   virtual UInt_t GetData(Int_t chan) const;
    virtual void Init();
    virtual void Clear(const Option_t *opt="");
    virtual Int_t Decode(const UInt_t*) { return 0; }

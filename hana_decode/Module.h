@@ -44,7 +44,7 @@ namespace Decoder {
     virtual void SetFirmware(Int_t fw) {fFirmwareVers=fw;};
 
     // inheriting classes need to implement one or more of these
-    virtual Int_t GetData(Int_t) const { return 0; };
+    virtual UInt_t GetData(Int_t) const { return 0; };
     virtual Int_t GetData(Int_t, Int_t) const { return 0; };
     virtual Int_t GetData(Int_t, Int_t, Int_t) const { return 0; };
     virtual Int_t GetData(Decoder::EModuleType,
