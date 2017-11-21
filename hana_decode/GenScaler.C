@@ -154,7 +154,8 @@ namespace Decoder {
       // Check for scaler overflow
       UInt_t clockdif;
       if(fDataArray[fClockChan] < fPrevData[fClockChan]) {
-	clockdif = (4294967296-fPrevData[fClockChan]) + fDataArray[fClockChan];
+	clockdif = (kMaxUInt-(fPrevData[fClockChan]-1))
+	  + fDataArray[fClockChan];
       } else {
 	clockdif = fDataArray[fClockChan]-fPrevData[fClockChan];
       }
@@ -177,7 +178,7 @@ namespace Decoder {
 	// Check for scaler overflow
 	UInt_t diff;
 	if(fDataArray[i] < fPrevData[i]) {
-	  diff = (4294967296-fPrevData[i]) + fDataArray[i];
+	  diff = (kMaxUInt-(fPrevData[i]-1)) + fDataArray[i];
 	} else {
 	  diff = fDataArray[i]-fPrevData[i];
 	}
