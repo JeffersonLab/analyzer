@@ -1776,6 +1776,41 @@ vector<string> THaAnalysisObject::vsplit(const string& s)
   return ret;
 }
 
+//-----------------------------------------------------------------------------
+void THaAnalysisObject::DebugPrint( const DBRequest* list )
+{
+  // Print values of database parameters given in 'list'
+
+  TString prefix(fPrefix);
+  if( prefix.EndsWith(".") ) prefix.Chop();
+  cout << prefix << " database parameters: " << endl;
+  size_t maxw = 1;
+  for( const DBRequest* it = list; it->name; ++it )
+    maxw = TMath::Max(maxw,strlen(it->name));
+  for( const DBRequest* it = list; it->name; ++it ) {
+    cout << "  " << std::left << setw(maxw) << it->name;
+    UInt_t maxc = it->nelem;
+    if( maxc == 0 ) maxc = 1;
+    for (UInt_t i=0; i<maxc; i++) {
+      cout << "  ";
+      switch( it->type ) {
+      case kDouble:
+	cout << ((Double_t*)it->var)[i];
+	break;
+      case kFloat:
+	cout << ((Float_t*)it->var)[i];
+	break;
+      case kInt:
+	cout << ((Int_t*)it->var)[i];
+	break;
+      default:
+	break;
+      }
+    }
+    cout << endl;
+  }
+}
+
 //_____________________________________________________________________________
 TString& THaAnalysisObject::GetObjArrayString( const TObjArray* array, Int_t i )
 {

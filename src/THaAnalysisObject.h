@@ -180,6 +180,8 @@ protected:
   
   static char* ReadComment( FILE* fp, char* buf, const int len );
 
+  void  DebugPrint( const DBRequest* list );
+
   // Only derived classes may construct
   THaAnalysisObject( const char* name, const char* description );
 
