@@ -329,6 +329,18 @@ bool THaAnalyzer::EvalStage( int n )
 }
 
 //_____________________________________________________________________________
+THaEvData* THaAnalyzer::GetDecoder() const
+{
+  // Return the decoder object that this analyzer uses to process the input
+
+  if( !fEvData ) {
+    Warning( "GetDecoder", "Decoder not yet set up. You need to intialize "
+	     "the analyzer with Init(run) first." );
+  }
+  return fEvData;
+}
+
+//_____________________________________________________________________________
 void THaAnalyzer::InitStages()
 {
   // Define analysis stages. Called from Init(). Does nothing if called again.
