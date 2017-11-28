@@ -10,6 +10,7 @@
 #include "CodaDecoder.h"
 #include "THaCrateMap.h"
 #include "THaBenchmark.h"
+#include "THaUsrstrutils.h"
 #include "TError.h"
 #include <iostream>
 
@@ -33,6 +34,8 @@ CodaDecoder::CodaDecoder()
   first_decode=kFALSE;
   fMultiBlockMode=kFALSE;
   fBlockIsDone=kFALSE;
+  for(int i=0; i<MAX_PSFACT; ++i)
+    psfact[i] = -1;
 }
 
 //_____________________________________________________________________________
@@ -43,12 +46,17 @@ CodaDecoder::~CodaDecoder()
 }
 
 //_____________________________________________________________________________
-Int_t CodaDecoder::GetPrescaleFactor(Int_t /*trigger_type*/) const
+Int_t CodaDecoder::GetPrescaleFactor(Int_t trigger_type) const
 {
   // To get the prescale factors for trigger number "trigger_type"
   // (valid types are 1,2,3...)
-  //  if (fgPsFact) return fgPsFact->GetPrescaleFactor(trigger_type);
-  //FIXME: TODO
+  if ( (trigger_type > 0) && (trigger_type <= MAX_PSFACT)) {
+    return psfact[trigger_type - 1];
+  }
+  if (fDebug > 0) {
+    Warning( "CodaDecoder::GetPrescaleFactor", "Requested prescale factor for "
+	     "undefined trigger type %d", trigger_type );
+  }
   return 0;
 }
 
@@ -110,6 +118,10 @@ Int_t CodaDecoder::LoadEvent(const UInt_t* evbuffer)
      run_num  = evbuffer[3];
      run_type = evbuffer[4];
      evt_time = fRunTime;
+  } else if( event_type == PRESCALE_EVTYPE || event_type == TS_PRESCALE_EVTYPE ) {
+    ret = prescale_decode(evbuffer);
+    if( ret != HED_OK )
+      return ret;
   }
   if (event_type <= MAX_PHYS_EVTYPE) {
      event_num = evbuffer[4];
@@ -626,7 +638,72 @@ void CodaDecoder::SetRunTime( ULong64_t tloc )
   fNeedInit = true;  // force re-init
 }
 
+//_____________________________________________________________________________
+Int_t CodaDecoder::prescale_decode(const UInt_t* evbuffer)
+{
+  // Decodes prescale factors from either
+  // TS_PRESCALE_EVTYPE(default) = PS factors
+  // read from Trig. Super. registors (since 11/03)
+  //   - or -
+  // PRESCALE_EVTYPE = PS factors from traditional
+  //     "prescale.dat" file.
+
+  assert( evbuffer );
+  assert( event_type == TS_PRESCALE_EVTYPE ||
+	  event_type == PRESCALE_EVTYPE );
+  const Int_t HEAD_OFF1 = 2;
+  const Int_t HEAD_OFF2 = 4;
+  static const char* const pstr[] = { "ps1", "ps2", "ps3", "ps4",
+				      "ps5", "ps6", "ps7", "ps8",
+				      "ps9", "ps10", "ps11", "ps12" };
+  // TS registers -->
+  if( event_type == TS_PRESCALE_EVTYPE) {
+    // this is more authoritative
+    for (Int_t j = 0; j < 8; j++) {
+      Int_t k = j + HEAD_OFF1;
+      Int_t ps = 0;
+      if (k < event_length) {
+	ps = evbuffer[k];
+	if (psfact[j]!=0 && ps != psfact[j]) {
+	  Warning("prescale_decode","Mismatch in prescale factor: "
+		  "Trig %d  oldps %d   TS_PRESCALE %d. Setting to TS_PRESCALE",
+		  j+1,psfact[j],ps);
+	}
+      }
+      psfact[j]=ps;
+      if (fDebug > 1)
+	cout << "%% TS psfact "<<dec<<j<<"  "<<psfact[j]<<endl;
+    }
+  }
+  // "prescale.dat" -->
+  else if( event_type == PRESCALE_EVTYPE ) {
+    if( event_length <= HEAD_OFF2 )
+      return HED_ERR;  //oops, event too short?
+    THaUsrstrutils sut;
+    sut.string_from_evbuffer(evbuffer+HEAD_OFF2, event_length-HEAD_OFF2);
+    for(Int_t trig=0; trig<MAX_PSFACT; trig++) {
+      Int_t ps =  sut.getint(pstr[trig]);
+      Int_t psmax = 65536; // 2^16 for trig > 3
+      if (trig < 4) psmax = 16777216;  // 2^24 for 1st 4 trigs
+      if (trig > 7) ps = 1;  // cannot prescale trig 9-12
+      ps = ps % psmax;
+      if (psfact[trig]==-1) // not read before
+	psfact[trig] = ps;
+      else if (ps != psfact[trig]) {
+	Warning("prescale_decode","Mismatch in prescale factor: "
+		"Trig %d  oldps %d   prescale.dat %d, Keeping old value",
+		trig+1,psfact[trig],ps);
+      }
+      if (fDebug > 1)
+	cout << "** psfact[ "<<trig+1<< " ] = "<<psfact[trig]<<endl;
+    }
+  }
+  // Ok in any case
+  return HED_OK;
 }
 
 //_____________________________________________________________________________
+
+} // namespace Decoder
+
 ClassImp(Decoder::CodaDecoder)

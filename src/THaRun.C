@@ -191,7 +191,8 @@ Int_t THaRun::ReadInitInfo()
 	  if( status == THaEvData::HED_ERR ||
 	      status == THaEvData::HED_FATAL ) {
 	    Error( here, "Error decoding event %u", nev );
-	    return READ_ERROR;
+	    status = READ_ERROR;
+	    break;
 	  }
 	  Warning( here, "Skipping event %u due to warnings", nev );
 	  status = READ_OK;
@@ -205,13 +206,16 @@ Int_t THaRun::ReadInitInfo()
 	  cout << "Prestart at " << nev << endl;
 	else if( st == 2 )
 	  cout << "Prescales at " << nev << endl;
-
+	else if ( st < 0 ) {
+	  status = READ_ERROR;
+	  break;
+	}
       }//end while
       delete evdata;
 
       if( status != READ_OK && status != READ_EOF ) {
-	Error( here, "Error %d reading CODA file %s. Check file permissions.",
-	       status, GetFilename());
+	Error( here, "Error %d reading CODA file %s. Check file type & "
+	       "permissions.", status, GetFilename());
 	return status;
       }
 

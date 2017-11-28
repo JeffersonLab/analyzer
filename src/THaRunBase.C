@@ -119,8 +119,15 @@ Int_t THaRunBase::Update( const THaEvData* evdata )
   } 
   // Prescale factors
   if( evdata->IsPrescaleEvent() ) {
-    for(int i=0; i<fParam->GetPrescales().GetSize(); i++)
-      fParam->Prescales()[i] = evdata->GetPrescaleFactor(i+1);
+    for(int i=0; i<fParam->GetPrescales().GetSize(); i++) {
+      Int_t psfact = evdata->GetPrescaleFactor(i+1);
+      if( psfact == -1 ) {
+	Error( "THaRunBase", "Failed to decode prescale factor for trigger %d. "
+	       "Check raw data file for format errors.", i );
+	return -2;
+      }
+      fParam->Prescales()[i] = psfact;
+    }
     fDataSet  |= kPrescales;
     fDataRead |= kPrescales;
     ret = 2;
