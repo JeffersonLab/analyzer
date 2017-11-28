@@ -42,7 +42,7 @@ namespace Decoder {
        staterr("close",status);
   };
 
-  Int_t THaCodaFile::codaOpen(const char* fname, Int_t mode) {
+  Int_t THaCodaFile::codaOpen(const char* fname, Int_t /* mode */ ) {
        init(fname);
        // evOpen really wants char*, so we need to do this safely. (The string
        // _might_ be modified internally ...) Silly, really.
@@ -53,7 +53,8 @@ namespace Decoder {
        return ReturnCode(status);
   };
 
-  Int_t THaCodaFile::codaOpen(const char* fname, const char* readwrite, Int_t mode) {
+  Int_t THaCodaFile::codaOpen(const char* fname, const char* readwrite,
+			      Int_t /* mode */ ) {
       init(fname);
       char *d_fname = strdup(fname), *d_flags = strdup(readwrite);
       Int_t status = evOpen(d_fname,d_flags,&handle);
