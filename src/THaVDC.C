@@ -425,6 +425,8 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   else
     fCentralDist = s1->GetOrigin().Z();
 
+  CalcMatrix(1.,fLMatrixElems); // tensor without explicit polynomial in x_fp
+
   fIsInit = true;
   return kOK;
 }

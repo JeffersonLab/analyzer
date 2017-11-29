@@ -188,31 +188,26 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
   if( fMinClustSize < 1 || fMinClustSize > 6 ) {
     Error( Here(here), "Invalid min_clust_size = %d, must be betwwen 1 and "
 	   "6. Fix database.", fMinClustSize );
-    fclose(file);
     return kInitError;
   }
   if( fMaxClustSpan < 2 || fMaxClustSpan > 12 ) {
     Error( Here(here), "Invalid max_clust_span = %d, must be betwwen 1 and "
 	   "12. Fix database.", fMaxClustSpan );
-    fclose(file);
     return kInitError;
   }
   if( fNMaxGap < 0 || fNMaxGap > 2 ) {
     Error( Here(here), "Invalid max_gap = %d, must be betwwen 0 and 2. "
 	   "Fix database.", fNMaxGap );
-    fclose(file);
     return kInitError;
   }
   if( fMinTime < 0 || fMinTime > 4095 ) {
     Error( Here(here), "Invalid min_time = %d, must be betwwen 0 and 4095. "
 	   "Fix database.", fMinTime );
-    fclose(file);
     return kInitError;
   }
   if( fMaxTime < 1 || fMaxTime > 4096 || fMinTime >= fMaxTime ) {
     Error( Here(here), "Invalid max_time = %d. Must be between 1 and 4096 "
 	   "and >= min_time = %d. Fix database.", fMaxTime, fMinTime );
-    fclose(file);
     return kInitError;
   }
 
