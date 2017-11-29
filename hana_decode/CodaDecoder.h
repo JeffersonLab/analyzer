@@ -11,41 +11,34 @@
 /////////////////////////////////////////////////////////////////////
 
 #include "THaEvData.h"
+#include <vector>
 
 namespace Decoder {
 
 class CodaDecoder : public THaEvData {
-  // public interface is SAME as before
- public:
+public:
   CodaDecoder();
   ~CodaDecoder();
 
   virtual Int_t LoadEvent(const UInt_t* evbuffer);
   virtual Int_t LoadFromMultiBlock();
-
-  virtual Int_t Init();
-
-  virtual Int_t GetNslots() const { return fNSlotUsed; };
+  virtual Int_t LoadIfFlagData(const UInt_t* evbuffer);
 
   virtual Int_t GetPrescaleFactor(Int_t trigger) const;
-
-  virtual Int_t LoadIfFlagData(const UInt_t *p);
-
-  virtual void SetRunTime(ULong64_t tloc);
+  virtual void  SetRunTime(ULong64_t tloc);
 
   Int_t FindRocs(const UInt_t *evbuffer);
   Int_t roc_decode( Int_t roc, const UInt_t* evbuffer, Int_t ipt, Int_t istop );
   Int_t bank_decode( Int_t roc, const UInt_t* evbuffer, Int_t ipt, Int_t istop );
+
+protected:
+  //  Int_t   synchflag; // unused
+  //  Bool_t  buffmode,synchmiss,synchextra; // already defined in base class
+
   Int_t nroc;
-  Int_t *irn;
-
- protected:
-
-  Int_t   synchflag,datascan;
-  Bool_t  buffmode,synchmiss,synchextra;
-
-  Int_t *fbfound;
-  Int_t psfact[MAX_PSFACT];
+  std::vector<Int_t> irn;
+  std::vector<bool>  fbfound;
+  std::vector<Int_t> psfact;
 
   void CompareRocs();
   void ChkFbSlot( Int_t roc, const UInt_t* evbuffer, Int_t ipt, Int_t istop );

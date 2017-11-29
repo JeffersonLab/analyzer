@@ -166,6 +166,7 @@ public:
   virtual Bool_t IsLoadedEpics(const char* /*tag*/ ) const
   { return false; }
 
+  Int_t GetNslots() const { return fNSlotUsed; };
   virtual void PrintSlotData(Int_t crate, Int_t slot) const;
   virtual void PrintOut() const;
   virtual void SetRunTime( ULong64_t tloc );

@@ -22,27 +22,18 @@ namespace Decoder {
 //   static const Int_t MAX_PHYS_EVTYPES = 14;
 
 //_____________________________________________________________________________
-CodaDecoder::CodaDecoder()
+CodaDecoder::CodaDecoder() :
+  nroc(0), irn(MAXROC,0), fbfound(MAXROC*MAXSLOT,false), psfact(MAX_PSFACT,-1)
 {
-  irn = new Int_t[MAXROC];
-  fbfound = new Int_t[MAXROC*MAXSLOT];
-  memset(irn, 0, MAXROC*sizeof(Int_t));
-  memset(fbfound, 0, MAXROC*MAXSLOT*sizeof(Int_t));
-  fDebugFile = 0;
-  fDebug=0;
   fNeedInit=true;
   first_decode=kFALSE;
   fMultiBlockMode=kFALSE;
   fBlockIsDone=kFALSE;
-  for(int i=0; i<MAX_PSFACT; ++i)
-    psfact[i] = -1;
 }
 
 //_____________________________________________________________________________
 CodaDecoder::~CodaDecoder()
 {
-  delete [] irn;
-  delete [] fbfound;
 }
 
 //_____________________________________________________________________________
@@ -58,18 +49,6 @@ Int_t CodaDecoder::GetPrescaleFactor(Int_t trigger_type) const
 	     "undefined trigger type %d", trigger_type );
   }
   return 0;
-}
-
-//_____________________________________________________________________________
-Int_t CodaDecoder::Init() {
-  Int_t ret = HED_OK;
-  ret = init_cmap();
-  //  if (fMap) fMap->print();
-  if (ret != HED_OK) return ret;
-  ret = init_slotdata(fMap);
-  first_decode = kFALSE;
-  fNeedInit = kFALSE;
-  return ret;
 }
 
 //_____________________________________________________________________________
@@ -401,7 +380,7 @@ Int_t CodaDecoder::LoadIfFlagData(const UInt_t* evbuffer)
     }
   }
   if( upword == 0xfabc0000) {
-    datascan = *(evbuffer+3);
+    Int_t datascan = *(evbuffer+3);
     if(fDebug>0 && (synchmiss || synchextra)) {
       cout << "THaEvData: WARNING: Synch problems !"<<endl;
       cout << "Data scan word 0x"<<hex<<datascan<<dec<<endl;
@@ -410,7 +389,7 @@ Int_t CodaDecoder::LoadIfFlagData(const UInt_t* evbuffer)
   if( upword == 0xfabb0000) buffmode = false;
   if((word&0xffffff00) == 0xfafbbf00) {
     buffmode = true;
-    synchflag = word&0xff;
+    //    synchflag = word&0xff; // not used
   }
   return HED_OK;
 }
@@ -577,7 +556,7 @@ void CodaDecoder::ChkFbSlot( Int_t roc, const UInt_t* evbuffer,
   while (p++ < pstop) {
     Int_t slot = (UInt_t(*p))>>27;  // A "self-reported" slot.
     Int_t index = MAXSLOT*roc + slot;
-    if ((slot > 0) && (index >=0 && index < MAXROC*MAXSLOT)) fbfound[index]=1;
+    if ((slot > 0) && (index >=0 && index < MAXROC*MAXSLOT)) fbfound[index]=true;
   }
 }
 
