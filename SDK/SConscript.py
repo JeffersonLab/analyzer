@@ -1,6 +1,8 @@
 ###### Hall A SDK Main SConscript File #####
 ###### Author:	Edward Brash (brash@jlab.org) May 2017
 
+import re
+
 Import ('baseenv')
 
 ######## ROOT Dictionaries #########
@@ -11,6 +13,7 @@ UserApparatus.h    UserDetector.h     UserEvtHandler.h   UserModule.h
 UserScintillator.h SkeletonModule.h   User_LinkDef.h
 """)
 baseenv.RootCint(rootuserdict,userheaders)
+baseenv.Clean(rootuserdict,re.sub(r'\.C\Z','_rdict.pcm',rootuserdict))
 
 #######  Start of main SConscript ###########
 

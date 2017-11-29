@@ -353,8 +353,8 @@ analyzer:	src/main.o $(PODDLIBS)
 #---------- Maintenance --------------------------------------------
 clean:
 		set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i clean; done
-		rm -f *.$(SOSUF) *.{a,o,os} *.$(SOSUF).* site_scons/*.pyc
-		rm -f $(PROGRAMS) $(HA_DICT).* *~
+		rm -f *.$(SOSUF) *.{a,o,os} *.$(SOSUF).* site_scons/*.pyc *~
+		rm -f $(PROGRAMS) $(HA_DICT).* $(HA_DICT)_rdict.pcm THaDecDict_rdict.pcm
 		cd src; rm -f ha_compiledata.h *.{o,os} *~
 
 realclean:	clean

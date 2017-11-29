@@ -10,7 +10,7 @@
 SRC  = UserDetector.cxx UserModule.cxx UserApparatus.cxx \
        UserScintillator.cxx UserEvtHandler.cxx SkeletonModule.cxx
 
-# Name of your package. 
+# Name of your package.
 # The shared library that will be built will get the name lib$(PACKAGE).so
 PACKAGE = User
 
@@ -67,8 +67,8 @@ INCLUDES      = $(addprefix -I, $(INCDIRS) ) -I$(shell pwd)
 USERLIB       = lib$(PACKAGE).so
 USERDICT      = $(PACKAGE)Dict
 
-LIBS          = 
-GLIBS         = 
+LIBS          =
+GLIBS         =
 
 ifeq ($(ARCH),linux)
 # Linux with egcs (>= RedHat 5.2)
@@ -154,7 +154,7 @@ install:	all
 #		cp $(USERLIB) $(LIBDIR)
 
 clean:
-		rm -f *.o *~ $(USERLIB) $(USERDICT).*
+		rm -f *.o *~ $(USERLIB) $(USERDICT).* $(USERDICT)_rdict.pcm
 
 realclean:	clean
 		rm -f *.d
@@ -189,4 +189,3 @@ endif
 ###
 
 -include $(DEP)
-
