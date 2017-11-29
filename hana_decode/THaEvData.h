@@ -254,10 +254,11 @@ protected:
   Bool_t GoodCrateSlot(Int_t crate, Int_t slot) const;
   Bool_t GoodIndex(Int_t crate, Int_t slot) const;
 
-  Int_t init_cmap();
-  Int_t init_slotdata(const Decoder::THaCrateMap* map);
-  void  makeidx(Int_t crate, Int_t slot);
-  void FindUsedSlots();
+  // Initialization routines
+  virtual Int_t init_cmap();
+  virtual Int_t init_slotdata();
+  virtual void  makeidx(Int_t crate, Int_t slot);
+  virtual void  FindUsedSlots();
 
   Int_t     fNSlotUsed;   // Number of elements of crateslot[] actually used
   Int_t     fNSlotClear;  // Number of elements of crateslot[] to clear

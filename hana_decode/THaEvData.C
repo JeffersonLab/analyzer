@@ -139,9 +139,9 @@ const char* THaEvData::DevType(int crate, int slot) const {
 Int_t THaEvData::Init() {
   Int_t ret = HED_OK;
   ret = init_cmap();
-  if (fMap) fMap->print();
+  //  if (fMap) fMap->print();
   if (ret != HED_OK) return ret;
-  ret = init_slotdata(fMap);
+  ret = init_slotdata();
   first_decode = kFALSE;
   fNeedInit = kFALSE;
   return ret;
@@ -303,6 +303,7 @@ void THaEvData::makeidx(int crate, int slot)
     fSlotUsed[fNSlotUsed++] = idx;
     if( fMap->slotClear(crate,slot))
       fSlotClear[fNSlotClear++] = idx;
+    crateslot[idx]->loadModule(fMap);
   }
 }
 
@@ -323,16 +324,16 @@ void THaEvData::PrintSlotData(int crate, int slot) const {
 }
 
 // To initialize the THaSlotData member on first call to decoder
-int THaEvData::init_slotdata(const THaCrateMap* map)
+int THaEvData::init_slotdata()
 {
   // Update lists of used/clearable slots in case crate map changed
-  if(!map) return HED_ERR;
+  if(!fMap) return HED_ERR;
   for( int i=0; i<fNSlotUsed; i++ ) {
     THaSlotData* module = crateslot[fSlotUsed[i]];
     int crate = module->getCrate();
     int slot  = module->getSlot();
-    if( !map->crateUsed(crate) || !map->slotUsed(crate,slot) ||
-	!map->slotClear(crate,slot)) {
+    if( !fMap->crateUsed(crate) || !fMap->slotUsed(crate,slot) ||
+	!fMap->slotClear(crate,slot)) {
       for( int k=0; k<fNSlotClear; k++ ) {
 	if( module == crateslot[fSlotClear[k]] ) {
 	  for( int j=k+1; j<fNSlotClear; j++ )
@@ -342,7 +343,7 @@ int THaEvData::init_slotdata(const THaCrateMap* map)
 	}
       }
     }
-    if( !map->crateUsed(crate) || !map->slotUsed(crate,slot)) {
+    if( !fMap->crateUsed(crate) || !fMap->slotUsed(crate,slot)) {
       for( int j=i+1; j<fNSlotUsed; j++ )
 	fSlotUsed[j-1] = fSlotUsed[j];
       fNSlotUsed--;

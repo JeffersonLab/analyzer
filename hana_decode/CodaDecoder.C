@@ -76,7 +76,7 @@ Int_t CodaDecoder::LoadEvent(const UInt_t* evbuffer)
       //      fMap->print();
     }
     if( ret != HED_OK ) return ret;
-    ret = init_slotdata(fMap);
+    ret = init_slotdata();
     if( ret != HED_OK ) return ret;
     FindUsedSlots();
     first_decode=kFALSE;
@@ -445,52 +445,40 @@ Int_t CodaDecoder::FindRocs(const UInt_t *evbuffer) {
 
 
 // To initialize the THaSlotData member on first call to decoder
-int CodaDecoder::init_slotdata(const THaCrateMap* map)
+int CodaDecoder::init_slotdata()
 {
-  // Update lists of used/clearable slots in case crate map changed
-  if(!map) return HED_ERR;
+  // Initialize all slots defined in the crate map as "used".
+  //
+  // This defeats the clever on-demand mechanism of the original decoder,
+  // which would only allocate resources for a crate/slot if data for that
+  // slot were actually encountered in the data stream. Now, resources
+  // are allocated for everything, whether actually active or not.
+  // The advantage is that one can configure the module objects associated
+  // with each crate/slot. Of course, that could be done via database
+  // parameters as well. Presumably the resource waste is minor on today's
+  // computers, so fine.
+  // Also note that all crateslots and modules will be deleted and recreated
+  // right away every time this routine is called, even if there are no
+  // changes to the map. This should be fixed.
+
+  if(!fMap) return HED_ERR;
 
   for (Int_t iroc = 0; iroc<MAXROC; iroc++) {
-    if (  !map->crateUsed(iroc)  ) continue;
-
+    if( !fMap->crateUsed(iroc) ) continue;
     for (Int_t islot=0; islot < MAXSLOT; islot++) {
-
-      if ( !map->slotUsed(iroc,islot) ) continue;
-
-	makeidx(iroc,islot);
-
+      if( !fMap->slotUsed(iroc,islot) ) continue;
+      makeidx(iroc,islot);
+      if (fDebugFile)
+	*fDebugFile << "CodaDecode::  crate, slot " << iroc << "  " << islot
+		    << "   Dev type  = " << crateslot[idx(iroc,islot)]->devType()
+		    << endl;
     }
   }
 
   if (fDebugFile) *fDebugFile << "CodaDecode:: fNSlotUsed "<<fNSlotUsed<<endl;
 
-  for( int i=0; i<fNSlotUsed; i++ ) {
-    THaSlotData* crslot = crateslot[fSlotUsed[i]];
-    int crate = crslot->getCrate();
-    int slot  = crslot->getSlot();
-    crslot->loadModule(map);
-    if (fDebugFile) *fDebugFile << "CodaDecode::  crate, slot "<<crate<<"  "<<slot<<"   Dev type  = "<<crslot->devType()<<endl;
-    if( !map->crateUsed(crate) || !map->slotUsed(crate,slot) ||
-	!map->slotClear(crate,slot)) {
-      for( int k=0; k<fNSlotClear; k++ ) {
-	if( crslot == crateslot[fSlotClear[k]] ) {
-	  for( int j=k+1; j<fNSlotClear; j++ )
-	    fSlotClear[j-1] = fSlotClear[j];
-	  fNSlotClear--;
-	  break;
-	}
-      }
-    }
-    if( !map->crateUsed(crate) || !map->slotUsed(crate,slot)) {
-      for( int j=i+1; j<fNSlotUsed; j++ )
-	fSlotUsed[j-1] = fSlotUsed[j];
-      fNSlotUsed--;
-    }
-  }
-
-
-  return HED_OK;
-
+  // Update lists of used/clearable slots in case crate map changed
+  return THaEvData::init_slotdata();
 }
 
 

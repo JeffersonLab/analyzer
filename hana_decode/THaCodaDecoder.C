@@ -102,7 +102,7 @@ Int_t THaCodaDecoder::gendecode(const UInt_t* evbuffer )
   if (first_decode || fNeedInit) {
     ret = init_cmap();
     if( ret != HED_OK ) return ret;
-    ret = init_slotdata(fMap);
+    ret = init_slotdata();
     if( ret != HED_OK ) return ret;
     if(first_decode) {
       for (Int_t crate=0; crate<MAXROC; crate++)

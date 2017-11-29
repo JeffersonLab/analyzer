@@ -44,7 +44,7 @@ protected:
   void ChkFbSlot( Int_t roc, const UInt_t* evbuffer, Int_t ipt, Int_t istop );
   void ChkFbSlots();
 
-  int init_slotdata(const THaCrateMap *map);
+  virtual Int_t init_slotdata();
   Int_t prescale_decode(const UInt_t* evbuffer);
   void dump(const UInt_t* evbuffer) const;
 
