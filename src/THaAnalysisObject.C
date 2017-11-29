@@ -51,6 +51,7 @@
 #include <cassert>
 #include <map>
 #include <limits>
+#include <iomanip>
 
 using namespace std;
 typedef string::size_type ssiz_t;
