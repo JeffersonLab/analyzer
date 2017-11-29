@@ -124,8 +124,7 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
   fMinTime = 800;
   fMaxTime = 2200;
   fMinTdiff = 3e-8;   // 30ns  -> ~20 deg track angle
-  //fMaxTdiff = 1.5e-7; // 150ns -> ~60 deg track angle
-  fMaxTdiff = 2.0e-7; // 200ns
+  fMaxTdiff = 2.0e-7; // 200ns -> ~67 deg track angle
 
   DBRequest request[] = {
     { "detmap",         &detmap,         kIntV },

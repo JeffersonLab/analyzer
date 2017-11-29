@@ -4380,13 +4380,13 @@ int VDC::Plane::ReadDB( FILE* file, time_t /* date */, time_t )
     //	     "Using defaults.", tag.Data(), tag2.Data() );
     fTDCRes = 5.0e-10;  // 0.5 ns/chan = 5e-10 s /chan
     fT0Resolution = 6e-8; // 60 ns --- crude guess
-    fMinClustSize = 4;
+    fMinClustSize = 3;
     fMaxClustSpan = 7;
-    fNMaxGap = 0;
+    fNMaxGap = 1;
     fMinTime = 800;
     fMaxTime = 2200;
     fMinTdiff = 3e-8;   // 30ns  -> ~20 deg track angle
-    fMaxTdiff = 1.5e-7; // 150ns -> ~60 deg track angle
+    fMaxTdiff = 2e-7;   // 200ns -> ~67 deg track angle
 
     fTTDPar[0] = 2.12e-3;
     fTTDPar[1] = fTTDPar[2] = fTTDPar[3] = 0.0;
