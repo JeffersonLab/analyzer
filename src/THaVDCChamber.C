@@ -89,6 +89,16 @@ THaDetectorBase::EStatus THaVDCChamber::Init( const TDatime& date )
 }
 
 //_____________________________________________________________________________
+void THaVDCChamber::SetDebug( Int_t level )
+{
+  // Set debug level of this chamber and its plane subdetectors
+
+  THaSubDetector::SetDebug(level);
+  fU->SetDebug(level);
+  fV->SetDebug(level);
+}
+
+//_____________________________________________________________________________
 PointCoords_t THaVDCChamber::CalcDetCoords( const THaVDCCluster* ucl,
 					      const THaVDCCluster* vcl ) const
 {

@@ -1195,5 +1195,15 @@ void THaVDC::Print(const Option_t* opt) const
   return;
 }
 
+//_____________________________________________________________________________
+void THaVDC::SetDebug( Int_t level )
+{
+  // Set debug level of the VDC and the chamber/plane subdetectors
+
+  THaTrackingDetector::SetDebug(level);
+  fLower->SetDebug(level);
+  fUpper->SetDebug(level);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 ClassImp(THaVDC)

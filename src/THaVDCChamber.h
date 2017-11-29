@@ -38,6 +38,7 @@ public:
   virtual Int_t   CoarseTrack();          // Find clusters & estimate track
   virtual Int_t   FineTrack();            // More precisely calculate track
   virtual EStatus Init( const TDatime& date );
+  virtual void    SetDebug( Int_t level );
 
   PointCoords_t   CalcDetCoords( const THaVDCCluster* u,
 				 const THaVDCCluster* v ) const;

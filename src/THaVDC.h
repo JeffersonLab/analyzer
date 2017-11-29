@@ -30,6 +30,7 @@ public:
   virtual Int_t FineTrack( TClonesArray& tracks );
   virtual Int_t FindVertices( TClonesArray& tracks );
   virtual EStatus Init( const TDatime& date );
+  virtual void  SetDebug( Int_t level );
 
   // Get and Set Functions
   THaVDCChamber* GetUpper() const { return fUpper; }
