@@ -54,28 +54,28 @@ VmeModule.C
 
 proceed = "1" or "y" or "yes" or "Yes" or "Y"
 if baseenv.subst('$STANDALONE')==proceed or baseenv.GetOption('clean'):
-        for scalex in standalonelist:
-                pname = scalex
+    for scalex in standalonelist:
+        pname = scalex
 
-                if scalex=='epicsd':
-                        main = 'epics_main.C'
-                else:
-                        main = scalex+'_main.C'
+        if scalex=='epicsd':
+            main = 'epics_main.C'
+        else:
+            main = scalex+'_main.C'
 
-                if scalex=='tdecex':
-                        pname = baseenv.Program(target = pname, source = [main,'THaGenDetTest.C'])
-                else:
-                        pname = baseenv.Program(target = pname, source = [main])
+        if scalex=='tdecex':
+            pname = baseenv.Program(target = pname, source = [main,'THaGenDetTest.C'])
+        else:
+            pname = baseenv.Program(target = pname, source = [main])
 
-                baseenv.Install('../bin',pname)
-                baseenv.Alias('install',['../bin'])
+        baseenv.Install('../bin',pname)
+        baseenv.Alias('install',['../bin'])
 
 sotarget = 'dc'
 
 dclib = baseenv.SharedLibrary(target = sotarget,\
-                              source = list+[baseenv.subst('$MAIN_DIR')+'/THaDecDict.C'],\
-                              SHLIBPREFIX = baseenv.subst('$MAIN_DIR')+'/lib',\
-                              LIBS = [''], LIBPATH = [''])
+            source = list+[baseenv.subst('$MAIN_DIR')+'/THaDecDict.C'],\
+            SHLIBPREFIX = baseenv.subst('$MAIN_DIR')+'/lib',\
+            LIBS = [''], LIBPATH = [''])
 #print ('Decoder shared library = %s\n' % dclib)
 
 linkbase = baseenv.subst('$SHLIBPREFIX')+sotarget
@@ -91,10 +91,10 @@ localshortcleantarget = '../'+linkbase+baseenv.subst('$SOSUFFIX')+'.'+\
 #print ('majorcleantarget = %s\n' % majorcleantarget)
 #print ('shortcleantarget = %s\n' % shortcleantarget)
 try:
-        os.symlink(cleantarget,localshortcleantarget)
-        os.symlink(shortcleantarget,localmajorcleantarget)
+    os.symlink(cleantarget,localshortcleantarget)
+    os.symlink(shortcleantarget,localmajorcleantarget)
 except:
-        pass
+    pass
 
 Clean(dclib,cleantarget)
 Clean(dclib,localmajorcleantarget)

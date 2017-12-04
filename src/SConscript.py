@@ -45,9 +45,9 @@ baseenv.Object('main.C')
 sotarget = 'HallA'
 
 srclib = baseenv.SharedLibrary(target = sotarget,\
-                               source = list+[baseenv.subst('$MAIN_DIR')+'/haDict.C'],\
-                               SHLIBPREFIX = baseenv.subst('$MAIN_DIR')+'/lib',\
-                               LIBS = [''], LIBPATH = [''])
+             source = list+[baseenv.subst('$MAIN_DIR')+'/haDict.C'],\
+             SHLIBPREFIX = baseenv.subst('$MAIN_DIR')+'/lib',\
+             LIBS = [''], LIBPATH = [''])
 #print ('Source shared library = %s\n' % srclib)
 
 linkbase = baseenv.subst('$SHLIBPREFIX')+sotarget
@@ -63,10 +63,10 @@ localshortcleantarget = '../'+linkbase+baseenv.subst('$SOSUFFIX')+'.'+\
 #print ('majorcleantarget = %s\n' % majorcleantarget)
 #print ('shortcleantarget = %s\n' % shortcleantarget)
 try:
-        os.symlink(cleantarget,localshortcleantarget)
-        os.symlink(shortcleantarget,localmajorcleantarget)
+    os.symlink(cleantarget,localshortcleantarget)
+    os.symlink(shortcleantarget,localmajorcleantarget)
 except:
-        pass
+    pass
 
 Clean(srclib,cleantarget)
 Clean(srclib,localmajorcleantarget)
