@@ -15,4 +15,3 @@ def rootcint(target,source,env):
 #    print ('RootCint Command = %s\n' % command)
     ok = os.system(command)
     return ok
-

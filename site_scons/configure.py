@@ -79,7 +79,7 @@ def FindROOT(env, need_glibs = True):
             cmd = root_config + ' --version'
             env.Replace(ROOTVERS = os.fsdecode(subprocess.check_output(cmd, shell=True).rstrip()))
             print ('CXX value Version 3 = ',env['CXX'])
-            print ('ROOTVERS value Version 3 = ',env['ROOTVERS'])  
+            print ('ROOTVERS value Version 3 = ',env['ROOTVERS'])
         if sys.version_info >= (2, 7) and sys.version_info < (3, 0):
             cmd = root_config + ' --cxx'
             env.Replace(CXX = subprocess.check_output(cmd, shell=True).rstrip())

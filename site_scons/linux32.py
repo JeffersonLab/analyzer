@@ -16,6 +16,7 @@ def config(env,args):
         env.Append(CPPDEFINES= 'NDEBUG')
 
     env.Append(CPPDEFINES= 'WITH_DEBUG'
+
     if int(standalone):
         env.Append(STANDALONE= '1')
 
