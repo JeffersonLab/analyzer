@@ -43,28 +43,28 @@ baseenv.Append(BUILDERS = {'RootCint': bld})
 
 proceed = "1" or "y" or "yes" or "Yes" or "Y"
 if baseenv.subst('$CPPCHECK')==proceed:
-        is_cppcheck = configure.which('cppcheck')
-        print ("Path to cppcheck is %s\n" % is_cppcheck)
+    is_cppcheck = configure.which('cppcheck')
+    print ("Path to cppcheck is %s\n" % is_cppcheck)
 
-        if(is_cppcheck == None):
-                print('!!! cppcheck not found on this system.  Check if cppcheck is installed and in your PATH.')
-                Exit(1)
-        else:
-                cppcheck_command = baseenv.Command('cppcheck_report.txt',[],"cppcheck --quiet --enable=all src/ hana_decode/ 2> $TARGET")
-                print ("cppcheck_command = %s" % cppcheck_command)
-                baseenv.AlwaysBuild(cppcheck_command)
+    if(is_cppcheck == None):
+        print('!!! cppcheck not found on this system.  Check if cppcheck is installed and in your PATH.')
+        Exit(1)
+    else:
+        cppcheck_command = baseenv.Command('cppcheck_report.txt',[],"cppcheck --quiet --enable=all src/ hana_decode/ 2> $TARGET")
+        print ("cppcheck_command = %s" % cppcheck_command)
+        baseenv.AlwaysBuild(cppcheck_command)
 
 ####### build source distribution tarball #############
 
 if baseenv.subst('$SRCDIST')==proceed:
-        baseenv['DISTTAR_FORMAT']='gz'
-        baseenv.Append(
-                    DISTTAR_EXCLUDEEXTS=['.o','.os','.so','.a','.dll','.cache','.pyc','.cvsignore','.dblite','.log', '.gz', '.bz2', '.zip','.pcm','.supp','.patch','.txt','.dylib']
-                    , DISTTAR_EXCLUDEDIRS=['.git','VDCsim','bin','scripts','.sconf_temp','tests','work','hana_scaler']
-                    , DISTTAR_EXCLUDERES=[r'Dict\.C$', r'Dict\.h$',r'analyzer',r'\~$',r'\.so\.',r'\.#', r'\.dylib\.']
+    baseenv['DISTTAR_FORMAT']='gz'
+    baseenv.Append(
+        DISTTAR_EXCLUDEEXTS=['.o','.os','.so','.a','.dll','.cache','.pyc','.cvsignore','.dblite','.log', '.gz', '.bz2', '.zip','.pcm','.supp','.patch','.txt','.dylib']
+        , DISTTAR_EXCLUDEDIRS=['.git','VDCsim','bin','scripts','.sconf_temp','tests','work','hana_scaler']
+        , DISTTAR_EXCLUDERES=[r'Dict\.C$', r'Dict\.h$',r'analyzer',r'\~$',r'\.so\.',r'\.#', r'\.dylib\.']
         )
-        tar = baseenv.DistTar("dist/analyzer-"+baseenv.subst('$VERSION'),[baseenv.Dir('#')])
-        print ("tarball target = %s" % tar)
+    tar = baseenv.DistTar("dist/analyzer-"+baseenv.subst('$VERSION'),[baseenv.Dir('#')])
+    print ("tarball target = %s" % tar)
 
 ###	tar_command = 'tar cvz -C .. -f ../' + baseenv.subst('$NAME') + '.tar.gz -X .exclude -V "JLab/Hall A C++ Analysis Software '+baseenv.subst('$VERSION') + ' `date -I`" ' + '../' + baseenv.subst('$NAME') + '/.exclude ' + '../' + baseenv.subst('$NAME') + '/Changelog ' + '../' + baseenv.subst('$NAME') + '/src ' + '../' + baseenv.subst('$NAME') + '/hana_decode ' + '../' + baseenv.subst('$NAME') + '/Makefile ' + '../' + baseenv.subst('$NAME') + '/*.py' + '../' + baseenv.subst('$NAME') + '/SConstruct'
 
@@ -72,18 +72,18 @@ if baseenv.subst('$SRCDIST')==proceed:
 
 if not (baseenv.GetOption('clean') or baseenv.GetOption('help')):
 
-        configure.config(baseenv,ARGUMENTS)
+   configure.config(baseenv,ARGUMENTS)
 
-        conf = Configure(baseenv)
-        if not conf.CheckCXX():
-                print('!!! Your compiler and/or environment is not correctly configured.')
-                Exit(1)
-        # if not conf.CheckFunc('printf'):
-        #         print('!!! Your compiler and/or environment is not correctly configured.')
-        #         Exit(1)
-        if conf.CheckCXXHeader('sstream'):
-                conf.env.Append(CPPDEFINES = 'HAS_SSTREAM')
-        baseenv = conf.Finish()
+   conf = Configure(baseenv)
+   if not conf.CheckCXX():
+       print('!!! Your compiler and/or environment is not correctly configured.')
+       #Exit(1)
+       # if not conf.CheckFunc('printf'):
+       #         print('!!! Your compiler and/or environment is not correctly configured.')
+       #         Exit(1)
+   if conf.CheckCXXHeader('sstream'):
+       conf.env.Append(CPPDEFINES = 'HAS_SSTREAM')
+   baseenv = conf.Finish()
 
 Export('baseenv')
 
