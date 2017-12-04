@@ -22,44 +22,44 @@ import re
 
 def disttar_emitter(target,source,env):
 
-        source,origsource = [], source
+    source,origsource = [], source
 
-        excludeexts = env.Dictionary().get('DISTTAR_EXCLUDEEXTS',[])
-        excludedirs = env.Dictionary().get('DISTTAR_EXCLUDEDIRS',[])
-        re1 = env.Dictionary().get('DISTTAR_EXCLUDERES',[])
-        excluderes = [re.compile(r) for r in re1]
+    excludeexts = env.Dictionary().get('DISTTAR_EXCLUDEEXTS',[])
+    excludedirs = env.Dictionary().get('DISTTAR_EXCLUDEDIRS',[])
+    re1 = env.Dictionary().get('DISTTAR_EXCLUDERES',[])
+    excluderes = [re.compile(r) for r in re1]
 
-        # assume the sources are directories... need to check that
-        for item in origsource:
-		#print "item = %s" % item
-                for root, dirs, files in os.walk(str(item)):
+    # assume the sources are directories... need to check that
+    for item in origsource:
+    #print "item = %s" % item
+        for root, dirs, files in os.walk(str(item)):
 
-                        # don't make directory dependences as that triggers full build
-                        # of that directory
-                        if root in source:
-                                #print "Removing directory %s" % root
-                                source.remove(root)
+            # don't make directory dependences as that triggers full build
+            # of that directory
+            if root in source:
+                #print "Removing directory %s" % root
+                source.remove(root)
 
-                        # loop through files in a directory
-                        for name in files:
-                                ext = os.path.splitext(name)
-                                if not ext[1] in excludeexts:
-                                        relpath = os.path.join(root,name)
-                                        failre = False
-                                        for r in excluderes:
-                                                #print "Match(  %s   against   %s)" % (r,relpath)
-                                                if r.search(relpath):
-                                                        failre = True
-                                                        #print "Excluding '%s' from tarball" % relpath
-                                                        break
-                                        if not failre:
-                                                #print "Adding source",relpath
-                                                source.append(relpath)
-                        for d in excludedirs:
-                                if d in dirs:
-                                        dirs.remove(d)  # don't visit CVS directories etc
+            # loop through files in a directory
+            for name in files:
+                ext = os.path.splitext(name)
+                if not ext[1] in excludeexts:
+                    relpath = os.path.join(root,name)
+                    failre = False
+                    for r in excluderes:
+                        #print "Match(  %s   against   %s)" % (r,relpath)
+                        if r.search(relpath):
+                            failre = True
+                            #print "Excluding '%s' from tarball" % relpath
+                            break
+                    if not failre:
+                        #print "Adding source",relpath
+                        source.append(relpath)
+            for d in excludedirs:
+                if d in dirs:
+                    dirs.remove(d)  # don't visit CVS directories etc
 
-        return target, source
+    return target, source
 
 def disttar_string(target, source, env):
     """This is what gets printed on the console. We'll strip out the list
@@ -69,76 +69,76 @@ def disttar_string(target, source, env):
     return 'DistTar(%s,...)' % target[0]
 
 def disttar(target, source, env):
-        """tar archive builder"""
+    """tar archive builder"""
 
-        import tarfile
+    import tarfile
 
-        env_dict = env.Dictionary()
+    env_dict = env.Dictionary()
 
-        if env_dict.get("DISTTAR_FORMAT") in ["gz", "bz2"]:
-                tar_format = env_dict["DISTTAR_FORMAT"]
-        else:
-                tar_format = ""
+    if env_dict.get("DISTTAR_FORMAT") in ["gz", "bz2"]:
+        tar_format = env_dict["DISTTAR_FORMAT"]
+    else:
+        tar_format = ""
 
-        # split the target directory, filename, and stuffix
-        base_name = str(target[0]).split('.tar')[0]
-        (target_dir, dir_name) = os.path.split(base_name)
+    # split the target directory, filename, and stuffix
+    base_name = str(target[0]).split('.tar')[0]
+    (target_dir, dir_name) = os.path.split(base_name)
 
-        # create the target directory if it does not exist
-        if target_dir and not os.path.exists(target_dir):
-                os.makedirs(target_dir)
+    # create the target directory if it does not exist
+    if target_dir and not os.path.exists(target_dir):
+        os.makedirs(target_dir)
 
-        # open our tar file for writing
-        sys.stderr.write("DistTar: Writing "+str(target[0]))
-        tar = tarfile.open(str(target[0]), "w:%s" % tar_format)
+    # open our tar file for writing
+    sys.stderr.write("DistTar: Writing "+str(target[0]))
+    tar = tarfile.open(str(target[0]), "w:%s" % tar_format)
 
-        # write sources to our tar file
-        for item in source:
-                item = str(item)
-                sys.stderr.write(".")
-                print "Adding to TAR file: %s/%s" % (dir_name,item)
-                tar.add(item,'%s/%s' % (dir_name,item))
+    # write sources to our tar file
+    for item in source:
+        item = str(item)
+        sys.stderr.write(".")
+        print ("Adding to TAR file: %s/%s" % (dir_name,item))
+        tar.add(item,'%s/%s' % (dir_name,item))
 
-        # all done
-        sys.stderr.write("\n") #print "Closing TAR file"
-        tar.close()
+    # all done
+    sys.stderr.write("\n") #print ("Closing TAR file")
+    tar.close()
 
 def disttar_suffix(env, sources):
-        """tar archive suffix generator"""
+    """tar archive suffix generator"""
 
-        env_dict = env.Dictionary()
-        if env_dict.has_key("DISTTAR_FORMAT") and env_dict["DISTTAR_FORMAT"] in ["gz", "bz2"]:
-                return ".tar." + env_dict["DISTTAR_FORMAT"]
-        else:
-                return ".tar"
+    env_dict = env.Dictionary()
+    if env_dict.has_key("DISTTAR_FORMAT") and env_dict["DISTTAR_FORMAT"] in ["gz", "bz2"]:
+        return ".tar." + env_dict["DISTTAR_FORMAT"]
+    else:
+        return ".tar"
 
 def generate(env):
-        """
-        Add builders and construction variables for the DistTar builder.
-        """
+    """
+    Add builders and construction variables for the DistTar builder.
+    """
 
-        disttar_action=SCons.Action.Action(disttar, disttar_string)
-        env['BUILDERS']['DistTar'] =  Builder(
-                action=disttar_action
-                , emitter=disttar_emitter
-                , suffix = disttar_suffix
-                , target_factory = env.fs.Entry
-        )
+    disttar_action=SCons.Action.Action(disttar, disttar_string)
+    env['BUILDERS']['DistTar'] =  Builder(
+        action=disttar_action
+        , emitter=disttar_emitter
+        , suffix = disttar_suffix
+        , target_factory = env.fs.Entry
+    )
 
-        env.AppendUnique(
-            DISTTAR_FORMAT = 'gz'
-        )
+    env.AppendUnique(
+        DISTTAR_FORMAT = 'gz'
+    )
 
 def exists(env):
-        """
-        Make sure this tool exists.
-        """
-        try:
-                import os
-                import tarfile
-        except ImportError:
-                return False
-        else:
-                return True
+    """
+    Make sure this tool exists.
+    """
+    try:
+        import os
+        import tarfile
+    except ImportError:
+        return False
+    else:
+        return True
 
 # vim:set ts=4 sw=4 noexpandtab:
