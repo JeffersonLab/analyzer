@@ -4415,7 +4415,12 @@ int Detector::Save( time_t start, const string& version ) const
     AddToMap( prefix+fNelemName, MakeValue(&fNelem),     start, version );
   AddToMap( prefix+"angle",    MakeValue(&fAngle),       start, version );
   AddToMap( prefix+"position", MakeValue(&fOrigin),      start, version );
-  AddToMap( prefix+"size",     MakeValue(fSize,3),       start, version );
+  // Old databases define the x and y size as half the actual size, but z as the
+  // full detector thickness. New databases specify full sizes for all coordinates.
+  // Internally, fSize[0] and fSize[1] continue to be half-sizes.
+  Double_t fullSize[3];
+  fullSize[0] = 2.0*fSize[0]; fullSize[1] = 2.0*fSize[1]; fullSize[2] = fSize[2];
+  AddToMap( prefix+"size",     MakeValue(fullSize,3),    start, version );
 
   return 0;
 }
