@@ -63,10 +63,6 @@ Int_t THaNonTrackingDetector::CalcTrackProj( TClonesArray& tracks )
 {
   // Calculate projections of all given tracks onto detector reference plane.
   //
-  // Does not calculate position residual or channel number. This is detector-
-  // specific and should be done in the detector code after calling this
-  // function.
-  //
   // fTrackProj will hold as many entries as the given track array. Entries
   // corresponding to non-crossing tracks will have fIsOK = false
   //
@@ -83,6 +79,9 @@ Int_t THaNonTrackingDetector::CalcTrackProj( TClonesArray& tracks )
     Double_t xc = kBig, yc = kBig, pathl = kBig;
     Bool_t found = CalcTrackIntercept( theTrack, pathl, xc, yc );
     THaTrackProj* proj = new ( (*fTrackProj)[i] ) THaTrackProj(xc,yc,pathl);
+    proj->SetOffset(fOrigin);
+    xc = proj->GetXAbs();
+    yc = proj->GetYAbs();
     if( found && !IsInActiveArea(xc,yc) )
       found = false;
     proj->SetOK(found);
