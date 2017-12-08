@@ -555,9 +555,8 @@ Int_t THaScintillator::FineProcess( TClonesArray& tracks )
 
   // Find the closest hits to the track crossing points
   if( n_cross > 0 ) {
-    Double_t dpadx = fSize[0]/fNelem;      // 1/2 width of a paddle
-    Double_t padx0 = -dpadx*(fNelem-1);    // center of paddle '0'
-    dpadx *= 2.0;                          // now full width of a paddle
+    Double_t dpadx = 2.0*fSize[0]/fNelem;   // Width of a paddle
+    Double_t padx0 = -fSize[0]+0.5*dpadx;   // center of paddle '0'
     for( Int_t i=0; i<fTrackProj->GetLast()+1; i++ ) {
       THaTrackProj* proj = static_cast<THaTrackProj*>( fTrackProj->At(i) );
       assert( proj );
@@ -565,9 +564,9 @@ Int_t THaScintillator::FineProcess( TClonesArray& tracks )
 	continue;
       Int_t pad = -1;                      // paddle number of closest hit
       Double_t xc = proj->GetX();          // track intercept x-coordinate
-      Double_t dx = kBig;                  // distance paddle center - xc
+      Double_t dx = kBig;                  // xc - distance paddle center
       for( Int_t j = 0; j < fNhit; j++ ) {
-	Double_t dx2 = padx0 + fHitPad[j]*dpadx - xc;
+	Double_t dx2 = xc - (padx0 + fHitPad[j]*dpadx);
 	if (TMath::Abs(dx2) < TMath::Abs(dx) ) {
 	  pad = fHitPad[j];
 	  dx = dx2;
@@ -576,6 +575,7 @@ Int_t THaScintillator::FineProcess( TClonesArray& tracks )
       assert( pad >= 0 || fNhit == 0 ); // Must find a pad unless no hits
       if( pad >= 0 ) {
 	proj->SetdX(dx);
+	proj->SetdY(proj->GetY());
 	proj->SetChannel(pad);
       }
     }
