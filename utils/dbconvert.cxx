@@ -62,7 +62,7 @@ static bool IsDBSubDir( const string& fname, time_t& date );
 // Command line parameter defaults
 static int do_debug = 0, verbose = 0, do_file_copy = 1, do_subdirs = 0;
 static int do_clean = 1, do_verify = 1, do_dump = 0, purge_all_default_keys = 1;
-static int format_fp = 1;
+static int format_fp = 1, format_fixed = 0;
 static string srcdir;
 static string destdir;
 static string prgname;
@@ -711,9 +711,15 @@ size_t GetSignificantDigits( T x, T round_level )
     xx = x - std::floor(x);
   else
     xx = std::ceil(x) - x;
+  if( xx < 0.5*round_level )
+    return 0;
+  // Now 0 <= xx < 1. Deal with leading zeros
+  if( xx < 0.1 )
+    xx += 0.1;
   Int_t ix = xx/round_level + 0.5;
   size_t nn = Order(ix), n = nn;
   for( size_t j = 1; j < nn; ++j ) {
+    // Remove trailing zeros until we find a non-zero digit
     Int_t ix1 = ix/10;
     if( 10*ix1 != ix )
       break;
@@ -725,7 +731,7 @@ size_t GetSignificantDigits( T x, T round_level )
 
 //-----------------------------------------------------------------------------
 template <class T> static inline
-void PrepareStreamImpl( ostringstream& str, vector<T> arr, T round_level )
+void PrepareStreamImpl( ostringstream& str, const vector<T>& arr, T round_level )
 {
   // Determine formatting for floating point data
 
@@ -758,16 +764,14 @@ void PrepareStreamImpl( ostringstream& str, vector<T> arr, T round_level )
       str << scientific << setprecision(ndigits-1);
     return;
   }
-  else {
-    // FIXME: this doesn't work as expected
-
+  else if( format_fixed ) {
     // Fixed format
-    // for( i = 0; i < arr.size(); ++i ) {
-    //   T x = std::abs(arr[i]);
-    //   ndigits = max( ndigits, GetSignificantDigits(x,round_level) );
-    // }
-    // if( ndigits > 0 )
-    //   str << fixed << setprecision(ndigits);
+    for( i = 0; i < arr.size(); ++i ) {
+      T x = std::abs(arr[i]);
+      ndigits = max( ndigits, GetSignificantDigits(x,round_level) );
+    }
+    if( ndigits > 0 )
+      str << fixed << setprecision(ndigits);
   }
 }
 
@@ -792,7 +796,7 @@ template <> inline
 void PrepareStream( ostringstream& str, const float* array, int size )
 {
   vector<float> arr( array, array+size );
-  PrepareStreamImpl<float>( str, arr, 1e-4 );
+  PrepareStreamImpl<float>( str, arr, 1e-5 );
 }
 
 //-----------------------------------------------------------------------------
