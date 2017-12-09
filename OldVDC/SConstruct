@@ -1,0 +1,70 @@
+#!/usr/bin/env python
+###### Hall A SDK SConstruct Build File #####
+###### Author:	Edward Brash (brash@jlab.org) May 2017
+
+import os
+import sys
+import SCons
+
+baseenv = Environment(ENV = os.environ)
+
+####### Check SCons version ##################
+#print('!!! Building the Hall A SDK with SCons requires')
+#print('!!! SCons version 2.1.0 or newer.')
+EnsureSConsVersion(2,1,0)
+
+####### Hall A Build Environment #############
+
+halla_dir = os.getenv('ANALYZER')
+if halla_dir is None:
+    print ("Hall A Analyzer environment not configured !!!!")
+    Exit(2)
+
+sys.path.append(halla_dir + '/site_scons')
+import configure
+from rootcint import rootcint
+
+baseenv.Append(MAIN_DIR = Dir('.').abspath)
+baseenv.Append(HA_DIR = halla_dir)
+baseenv.Append(HA_SRC = baseenv.subst('$HA_DIR')+'/src ') 
+baseenv.Append(HA_DC = baseenv.subst('$HA_DIR')+'/hana_decode ') 
+
+print ("Hall A Analyzer main directory = %s" % halla_dir)
+print ("Hall A SDK main directory = %s" % baseenv.subst('$MAIN_DIR'))
+
+baseenv.Append(CPPPATH = ['$MAIN_DIR','$HA_DIR','$HA_SRC','$HA_DC'])
+
+configure.FindROOT(baseenv, need_glibs = False)
+
+bld = Builder(action=rootcint)
+baseenv.Append(BUILDERS = {'RootCint': bld})
+
+######## Configure Section #######
+
+if not (baseenv.GetOption('clean') or baseenv.GetOption('help')):
+
+        configure.config(baseenv,ARGUMENTS)
+
+        conf = Configure(baseenv)
+        if not conf.CheckCXX():
+                print('!!! Your compiler and/or environment is not correctly configured.')
+                Exit(1)
+        baseenv = conf.Finish()
+
+Export('baseenv')
+
+####### Start of main SConstruct ############
+
+SDKlib = 'OldVDC'
+
+baseenv.Append(LIBPATH=['$HA_DIR','$MAIN_DIR','$HA_SRC','$HA_DC'])
+baseenv.Prepend(LIBS=[SDKlib])
+
+SConscript(dirs = ['./'],name='SConscript.py',exports='baseenv')
+
+#######  End of SConstruct #########
+
+# Local Variables:
+# mode: python
+# End:
+
