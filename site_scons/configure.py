@@ -181,11 +181,11 @@ def FindEVIO(env, build_it = True, fail_if_missing = True):
         else:
             if not os.path.isdir(evio_local_lib):
                 if not os.path.exists(evio_tarfile):
-                    evio_command_download = "cd %s; curl -LO https://github.com/JeffersonLab/hallac_evio/archive/evio-%s.tar.gz" % (evio_local,evio_version)
+                    evio_command_download = "cd %s; curl -LO https://github.com/JeffersonLab/hallac_evio/archive/master.tar.gz" % (evio_local)
                     print ("evio_command_download = %s" % evio_command_download)
                     os.system(evio_command_download)
 
-                evio_command_unpack = "cd %s; tar xvfz evio-%s.tar.gz; mv hallac_evio-evio-%s evio-%s; patch -p0 < evio-4.4.6-scons-3.0.patch" % (evio_local,evio_version,evio_version,evio_version)
+                evio_command_unpack = "cd %s; tar xvfz master.tar.gz; mv hallac_evio-master evio-%s" % (evio_local,evio_version)
                 print ("evio_command_unpack = %s" % evio_command_unpack)
                 os.system(evio_command_unpack)
 
