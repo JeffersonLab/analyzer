@@ -235,7 +235,7 @@ SRC          := src/THaFormula.C src/THaVform.C src/THaVhist.C \
 		src/THaTextvars.C src/THaQWEAKHelicity.C \
 		src/THaQWEAKHelicityReader.C src/THaEvtTypeHandler.C \
 		src/THaScalerEvtHandler.C src/THaEpicsEvtHandler.C \
-		src/THaEvt125Handler.C
+		src/THaEvt125Handler.C src/FileInclude.C
 
 
 # ifdef ONLINE_ET

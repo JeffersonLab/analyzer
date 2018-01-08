@@ -29,7 +29,7 @@ THaBeamEloss.C            THaElossCorrection.C      THaNonTrackingDetector.C
 THaRaster.C               THaString.C               THaVDC.C                  THaVhist.C
 THaBeamInfo.C             THaEpicsEbeam.C
 THaRasteredBeam.C         THaSubDetector.C          THaVDCAnalyticTTDConv.C   VDCeff.C
-THaBeamModule.C           THaEvent.C
+THaBeamModule.C           THaEvent.C                FileInclude.C
 THaReacPointFoil.C        THaTextvars.C             THaVDCCluster.C
 THaCherenkov.C            THaExtTarCor.C            THaOutput.C
 THaReactionPoint.C        THaTotalShower.C          THaVDCHit.C

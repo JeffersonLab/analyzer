@@ -16,6 +16,7 @@
 #pragma link C++ nestedclass;
 #pragma link C++ nestedtypedef;
 #pragma link C++ namespace VDC;
+#pragma link C++ namespace Podd;
 
 #pragma link C++ class THaVar+;
 #pragma link C++ class THaVarList+;
