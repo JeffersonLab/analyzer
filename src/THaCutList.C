@@ -15,6 +15,7 @@
 #include "THaPrintOption.h"
 #include "THaTextvars.h"
 #include "THaGlobals.h"
+#include "FileInclude.h"
 #include "TError.h"
 #include "TList.h"
 #include "TString.h"
@@ -22,6 +23,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <iomanip>
 #include <algorithm>
 #include <cstring>
@@ -30,6 +32,7 @@
 #include <cassert>
 
 using namespace std;
+using namespace Podd;
 
 const char* const THaCutList::kDefaultBlockName = "Default";
 const char* const THaCutList::kDefaultCutFile   = "default.cuts";
@@ -343,6 +346,34 @@ Int_t THaCutList::Load( const char* filename )
   Int_t nlines_read = 0, nlines_ok = 0;
 
   while( getline(ifile,line) ) {
+
+    // #include
+    if( line.substr(0,kIncTag.length()) == kIncTag &&
+	line.length() > kIncTag.length() ) {
+      string incfilename;
+      if( GetIncludeFileName(line,incfilename) != 0 ) {
+	ostringstream ostr;
+	ostr << "Error in #include specification: " << line;
+	::Error( here, "%s", ostr.str().c_str() );
+	return -3;
+      }
+      if( CheckIncludeFilePath(incfilename) != 0 ) {
+	ostringstream ostr;
+	ostr << "Error opening include file: " << line;
+	::Error( here, "%s", ostr.str().c_str() );
+	return -3;
+      }
+      if( incfilename == filename ) {
+	// File including itself?
+	// FIXME: does not catch including the same file via full pathname or similar
+	ostringstream ostr;
+	ostr << "File cannot include itself: " << line;
+	::Error( here, "%s", ostr.str().c_str() );
+	return -3;
+      }
+      Load( incfilename.c_str() );
+      continue;
+    }
 
     // Blank line or comment?
     string::size_type start, pos = 0;
