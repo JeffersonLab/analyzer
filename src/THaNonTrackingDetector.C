@@ -44,6 +44,16 @@ THaNonTrackingDetector::~THaNonTrackingDetector()
 }
 
 //_____________________________________________________________________________
+void THaNonTrackingDetector::Clear( Option_t* opt )
+{
+  // Reset per-event data.
+
+  THaSpectrometerDetector::Clear(opt);
+
+  fTrackProj->Clear();
+}
+
+//_____________________________________________________________________________
 Int_t THaNonTrackingDetector::GetNTracks() const
 {
   // Return number of tracks found to be crossing this detector
@@ -70,7 +80,7 @@ Int_t THaNonTrackingDetector::CalcTrackProj( TClonesArray& tracks )
 
   Int_t n_track = tracks.GetLast()+1;   // Number of tracks
 
-  fTrackProj->Clear();
+  //fTrackProj->Clear();  // already done in Clear()
   Int_t n_cross = 0;
   for( Int_t i=0; i<n_track; i++ ) {
     THaTrack* theTrack = static_cast<THaTrack*>( tracks.At(i) );

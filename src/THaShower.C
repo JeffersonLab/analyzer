@@ -279,23 +279,17 @@ void THaShower::Clear( Option_t* opt )
 {
   // Clear event data
 
-  fNhits = 0;
-  fAsum_p = 0.0;
-  fAsum_c = 0.0;
-  fNclust = 0;
-  fE = 0.0;
-  fX = 0.0;
-  fY = 0.0;
-  fMult = 0;
-  if( !strchr(opt,'I') ) {
-    const int lsh = fNelem*sizeof(Float_t);
-    const int lsc = fNclublk*sizeof(Float_t);
-    const int lsi = fNclublk*sizeof(Int_t);
-    memset( fA, 0, lsh );
-    memset( fA_p, 0, lsh );
-    memset( fA_c, 0, lsh );
-    memset( fNblk, 0, lsi );
-    memset( fEblk, 0, lsc );
+  THaPidDetector::Clear(opt);
+  fNhits = fNclust = fMult = 0;
+  assert(fIsInit);
+  for( Int_t i=0; i<fNelem; ++i ) {
+    fA[i] = fA_p[i] = fA_c[i] = kBig;
+  }
+  fAsum_p = fAsum_c = 0.0;
+  fE = fX = fY = kBig;
+  memset( fNblk, 0, fNclublk*sizeof(fNblk[0]) );
+  for( Int_t i=0; i<fNclublk; ++i ) {
+    fEblk[i] = kBig;
   }
 }
 

@@ -20,6 +20,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include <vector>
+#include <cassert>
 
 using namespace std;
 
@@ -211,18 +212,13 @@ void THaCherenkov::Clear( Option_t* opt )
 {
   // Clear event data
 
-  fNThit = 0;                             // Number of mirrors with TDC times
-  fNAhit = 0;                             // Number of mirrors with ADC ampls
-  fASUM_p = 0.0;                          // Sum of ADC minus pedestal values
-  fASUM_c = 0.0;                          // Sum of corrected ADC amplitudes
-  if( !strchr(opt,'I') ) {
-    const int lf = fNelem*sizeof(Float_t);
-    memset( fT, 0, lf );                  // TDC times of channels
-    memset( fT_c, 0, lf );                // Corrected TDC times of channels
-    memset( fA, 0, lf );                  // ADC amplitudes of channels
-    memset( fA_p, 0, lf );                // ADC minus ped values of channels
-    memset( fA_c, 0, lf );                // Corrected ADC amplitudes of chans
+  THaPidDetector::Clear(opt);
+  fNThit = fNAhit = 0;
+  assert(fIsInit);
+  for( Int_t i=0; i<fNelem; ++i ) {
+    fT[i] = fT_c[i] = fA[i] = fA_p[i] = fA_c[i] = kBig;
   }
+  fASUM_p = fASUM_c = 0.0;
 }
 
 //_____________________________________________________________________________

@@ -27,7 +27,8 @@ static const UInt_t NBPM = 2;
 THaRaster::THaRaster( const char* name, const char* description,
 				  THaApparatus* apparatus )
   : THaBeamDet(name,description,apparatus), fRawPos(NBPM), fRawSlope(NBPM),
-    fRasterFreq(NBPM), fSlopePedestal(NBPM), fRasterPedestal(NBPM)
+    fRasterFreq(NBPM), fSlopePedestal(NBPM), fRasterPedestal(NBPM),
+    fNfired(0)
 {
   // Constructor
   fRaw2Pos[0].ResizeTo(NPOS,NBPM);

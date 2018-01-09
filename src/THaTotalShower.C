@@ -163,8 +163,8 @@ void THaTotalShower::Clear( Option_t* )
 {
   // Clear event data
 
-  fE = 0.0;
-  fID = 0;
+  fE = kBig;
+  fID = -1;
 }
 
 //_____________________________________________________________________________

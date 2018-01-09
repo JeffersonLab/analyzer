@@ -9,7 +9,6 @@
 
 #include "THaNonTrackingDetector.h"
 
-class THaScCalib;
 class TClonesArray;
 
 class THaScintillator : public THaNonTrackingDetector {
@@ -49,9 +48,6 @@ public:
     Double_t*  gain;
   } fDataDest[NDEST];     // Lookup table for decoder
 
-  friend class THaScCalib;
-
-  //  THaScintillator();  // for ROOT I/O
 protected:
 
   // Calibration

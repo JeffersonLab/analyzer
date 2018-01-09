@@ -18,6 +18,7 @@ public:
 
   virtual ~THaNonTrackingDetector();
 
+  virtual void     Clear( Option_t* ="" );
   virtual Int_t    CoarseProcess( TClonesArray& tracks ) = 0;
   virtual Int_t    FineProcess( TClonesArray& tracks )  = 0;
           Bool_t   IsTracking() { return kFALSE; }
