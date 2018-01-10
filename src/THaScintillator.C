@@ -18,10 +18,10 @@
 #include "TMath.h"
 
 #include <cstring>
-#include <cstdio>
 #include <cstdlib>
 #include <iostream>
 #include <cassert>
+#include <iomanip>
 
 using namespace std;
 
@@ -219,20 +219,35 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   if( fResolution == kBig )
     fResolution = fTdc2T;
 
-  // If doing debugging, print the calibration parameters we've just read
-  if ( fDebug > 1 ) {
-    cout << '\n' << GetPrefix() << " calibration parameters: " << endl;;
-    for ( DBRequest *li = calib_request; li->name; li++ ) {
-      cout << "  " << li->name;
-      UInt_t maxc = li->nelem;
-      if (maxc==0)maxc=1;
-      for (UInt_t i=0; i<maxc; i++) {
-	if (li->type==kDouble) cout << "  " << ((Double_t*)li->var)[i];
-	if (li->type==kInt) cout << "  " << ((Int_t*)li->var)[i];
-      }
-      cout << endl;
-    }
+#ifdef WITH_DEBUG
+  // Debug printout
+  if ( fDebug > 2 ) {
+    const UInt_t N = static_cast<UInt_t>(fNelem);
+    Double_t pos[3]; fOrigin.GetXYZ(pos);
+    DBRequest list[] = {
+      { "Number of paddles",    &fNelem,     kInt         },
+      { "Detector position",    pos,         kDouble, 3   },
+      { "Detector size",        fSize,       kDouble, 3   },
+      { "Detector angle",       &angle,                   },
+      { "TDC offsets Left",     fLOff,       kDouble, N   },
+      { "TDC offsets Right",    fROff,       kDouble, N   },
+      { "ADC pedestals Left",   fLPed,       kDouble, N   },
+      { "ADC pedestals Right",  fRPed,       kDouble, N   },
+      { "ADC gains Left",       fLGain,      kDouble, N   },
+      { "ADC gains Right",      fRGain,      kDouble, N   },
+      { "TDC resolution",       &fTdc2T                   },
+      { "Light propag. speed",  &fCn                      },
+      { "ADC MIP",              &fAdcMIP                  },
+      { "Num timewalk params",  &fNTWalkPar, kInt         },
+      { "Timewalk params",      fTWalkPar,   kDouble, 2*N },
+      { "Trigger time offsets", fTrigOff,    kDouble, N   },
+      { "Time resolution",      &fResolution              },
+      { "Attenuation",          &fAttenuation             },
+      { 0 }
+    };
+    DebugPrint( list );
   }
+#endif
 
   return kOK;
 }
@@ -400,15 +415,27 @@ Int_t THaScintillator::Decode( const THaEvData& evdata )
       }
     }
   }
+
+#ifdef WITH_DEBUG
   if ( fDebug > 3 ) {
-    printf("\n\nEvent %d   Trigger %d Scintillator %s\n:",
-	   evdata.GetEvNum(), evdata.GetEvType(), GetPrefix() );
-    printf("   paddle  Left(TDC    ADC   ADC_p)   Right(TDC   ADC   ADC_p)\n");
+    cout << endl << endl;
+    cout << "Event " << evdata.GetEvNum() << "   Trigger " << evdata.GetEvType()
+	 << " Scintillator " << GetPrefix() << endl;
+    cout << "   paddle  Left(TDC    ADC   ADC_p)  Right(TDC    ADC   ADC_p)" << endl;
+    cout << right;
     for ( int i=0; i<fNelem; i++ ) {
-      printf("     %2d     %5.0f    %5.0f  %5.0f     %5.0f    %5.0f  %5.0f\n",
-	     i+1,fLT[i],fLA[i],fLA_p[i],fRT[i],fRA[i],fRA_p[i]);
+      cout << "     "     << setw(2) << i+1;
+      cout << "        "; WriteValue(fLT[i]);
+      cout << "  ";       WriteValue(fLA[i]);
+      cout << "  ";       WriteValue(fLA_p[i]);
+      cout << "        "; WriteValue(fRT[i]);
+      cout << "  ";       WriteValue(fRA[i]);
+      cout << "  ";       WriteValue(fRA_p[i]);
+      cout << endl;
     }
+    cout << left;
   }
+#endif
 
   return fLTNhit+fRTNhit;
 }

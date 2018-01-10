@@ -15,7 +15,7 @@
 #include <vector>
 #include <string>
 #include <cstdio>
-#include <stdarg.h>
+//#include <stdarg.h>
 
 class THaEvData; //needed by derived classes
 class TList;
@@ -180,7 +180,12 @@ protected:
   
   static char* ReadComment( FILE* fp, char* buf, const int len );
 
-  void  DebugPrint( const DBRequest* list );
+#ifdef WITH_DEBUG
+  void DebugPrint( const DBRequest* list );
+
+  template <typename T>  // available for double and float
+  static void WriteValue( T val, int p=0, int w=5 );
+#endif
 
   // Only derived classes may construct
   THaAnalysisObject( const char* name, const char* description );

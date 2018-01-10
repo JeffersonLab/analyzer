@@ -1777,7 +1777,8 @@ vector<string> THaAnalysisObject::vsplit(const string& s)
   return ret;
 }
 
-//-----------------------------------------------------------------------------
+#ifdef WITH_DEBUG
+//_____________________________________________________________________________
 void THaAnalysisObject::DebugPrint( const DBRequest* list )
 {
   // Print values of database parameters given in 'list'
@@ -1792,6 +1793,8 @@ void THaAnalysisObject::DebugPrint( const DBRequest* list )
     cout << "  " << std::left << setw(maxw) << it->name;
     UInt_t maxc = it->nelem;
     if( maxc == 0 ) maxc = 1;
+    if( it->type == kDoubleV )
+      maxc = static_cast<UInt_t>( ((vector<Double_t>*)it->var)->size() );
     for (UInt_t i=0; i<maxc; i++) {
       cout << "  ";
       switch( it->type ) {
@@ -1804,6 +1807,8 @@ void THaAnalysisObject::DebugPrint( const DBRequest* list )
       case kInt:
 	cout << ((Int_t*)it->var)[i];
 	break;
+      case kDoubleV:
+	cout << ((vector<Double_t>*)it->var)->at(i);
       default:
 	break;
       }
@@ -1811,6 +1816,23 @@ void THaAnalysisObject::DebugPrint( const DBRequest* list )
     cout << endl;
   }
 }
+
+//_____________________________________________________________________________
+template <typename T>
+void THaAnalysisObject::WriteValue( T val, int p, int w )
+{
+  // Helper function for printing debug information
+  if( val < kBig )
+    cout << fixed << setprecision(p) << setw(w) << val;
+  else
+    cout << " --- ";
+}
+
+// Explicit instantiations
+template void THaAnalysisObject::WriteValue<Double_t>( Double_t val, int p=0, int w=5 );
+template void THaAnalysisObject::WriteValue<Float_t>( Float_t val, int p=0, int w=5 );
+
+#endif
 
 //_____________________________________________________________________________
 TString& THaAnalysisObject::GetObjArrayString( const TObjArray* array, Int_t i )

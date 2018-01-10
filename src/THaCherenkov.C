@@ -18,9 +18,10 @@
 
 #include <cstring>
 #include <cstdlib>
-#include <cstdio>
 #include <vector>
 #include <cassert>
+#include <iostream>
+#include <iomanip>
 
 using namespace std;
 
@@ -151,6 +152,25 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
   if( err )
     return err;
 
+#ifdef WITH_DEBUG
+  // Debug printout
+  if ( fDebug > 2 ) {
+    const UInt_t N = static_cast<UInt_t>(fNelem);
+    Double_t pos[3]; fOrigin.GetXYZ(pos);
+    DBRequest list[] = {
+      { "Number of mirrors", &fNelem,     kInt       },
+      { "Detector position", pos,         kDouble, 3 },
+      { "Detector size",     fSize,       kDouble, 3 },
+      { "Detector angle",    &angle                  },
+      { "TDC offsets",       fOff,        kFloat,  N },
+      { "ADC pedestals",     fPed,        kFloat,  N },
+      { "ADC gains",         fGain,       kFloat,  N },
+      { 0 }
+    };
+    DebugPrint( list );
+  }
+#endif
+
   return kOK;
 }
 
@@ -272,27 +292,33 @@ Int_t THaCherenkov::Decode( const THaEvData& evdata )
     }
   }
 
+#ifdef WITH_DEBUG
   if ( fDebug > 3 ) {
-    printf("\nCherenkov %s:\n",GetPrefix());
+    cout << endl << "Cherenkov " << GetPrefix() << ":" << endl;
     int ncol=3;
     for (int i=0; i<ncol; i++) {
-      printf("  Mirror TDC   ADC  ADC_p  ");
+      cout << "  Mirror TDC   ADC  ADC_p  ";
     }
-    printf("\n");
+    cout << endl;
 
     for (int i=0; i<(fNelem+ncol-1)/ncol; i++ ) {
       for (int c=0; c<ncol; c++) {
 	int ind = c*fNelem/ncol+i;
 	if (ind < fNelem) {
-	  printf("  %3d  %5.0f  %5.0f  %5.0f  ",ind+1,fT[ind],fA[ind],fA_p[ind]);
+	  cout << "  " << setw(3) << ind+1;
+	  cout << "  "; WriteValue(fT[ind]);
+	  cout << "  "; WriteValue(fA[ind]);
+	  cout << "  "; WriteValue(fA_p[ind]);
+	  cout << "  ";
 	} else {
-	  //	  printf("\n");
+	  //	  cout << endl;
 	  break;
 	}
       }
-      printf("\n");
+      cout << endl;
     }
   }
+#endif
 
   return fNThit;
 }
