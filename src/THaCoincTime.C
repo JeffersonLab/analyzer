@@ -33,6 +33,9 @@
 
 using namespace std;
 
+// Default to a maximum of 10 tracks per spectrometer
+#define NTR 10
+// If true, allow dynamic increase of number of allowed tracks
 #define CAN_RESIZE 0
 
 //_____________________________________________________________________________
@@ -41,9 +44,9 @@ THaCoincTime::THaCoincTime( const char* name,
 			    const char* spec1, const char* spec2,
 			    Double_t m1, Double_t m2,
 			    const char* ch_name1, const char* ch_name2 )
-  : THaPhysicsModule(name,description),
-    fSpectN1(spec1), fSpectN2(spec2),
-    fpmass1(m1),fpmass2(m2)
+  : THaPhysicsModule(name,description), fSpectN1(spec1), fSpectN2(spec2),
+    fpmass1(m1), fpmass2(m2), fSz1(NTR), fSz2(NTR), fNTr1(0), fNTr2(0),
+    fSzNtr(NTR*NTR), fNtimes(0)
 {
   // Normal constructor.
   fDetMap = new THaDetMap();
@@ -59,17 +62,13 @@ THaCoincTime::THaCoincTime( const char* name,
     fTdcLabels[1] = Form("%sby%s",spec1,spec2);
   }
 
-  // set aside the memory
-  // only permit for a maximum of 10 tracks per spectrometer
-  fSz1 = fSz2 = 10;
-  fVxTime1 = new Double_t[fSz1];
-  fVxTime2 = new Double_t[fSz2];
-  fSzNtr = fSz1*fSz2;
-  fTrInd1 = new Int_t[fSzNtr];
-  fTrInd2 = new Int_t[fSzNtr];
+  // Allocate arrays
+  fVxTime1   = new Double_t[fSz1];
+  fVxTime2   = new Double_t[fSz2];
+  fTrInd1    = new Int_t   [fSzNtr];
+  fTrInd2    = new Int_t   [fSzNtr];
   fDiffT2by1 = new Double_t[fSzNtr];
   fDiffT1by2 = new Double_t[fSzNtr];
-  fNTr1 = fNTr2 = fNtimes = 0;
 }
 
 //_____________________________________________________________________________
@@ -232,8 +231,10 @@ Int_t THaCoincTime::ReadDatabase( const TDatime& date )
 Int_t THaCoincTime::Process( const THaEvData& evdata )
 {
   // Read in coincidence TDC's
-  if( !IsOK() ) return -1;
 
+  const char* const here = "Process";
+
+  if( !IsOK() ) return -1;
   if (!fDetMap) return -1;
 
   // read in the two relevant channels
@@ -249,42 +250,43 @@ Int_t THaCoincTime::Process( const THaEvData& evdata )
       detmap_pos++;
     }
   }
-  
+
   // Calculate the time at the vertex (relative to the trigger time)
   // for each track in each spectrometer
   // Use the Beta of the assumed particle type.
   struct Spec_short {
     THaSpectrometer* Sp;
-    Int_t*           Ntr;
-    Double_t**       Vxtime;
-    Int_t*           Sz;
+    Int_t&           Ntr;
+    Double_t*&       Vxtime;
+    Int_t&           Sz;
     Double_t         Mass;
   };
 
   Spec_short SpList[] = {
-    { fSpect1, &fNTr1, &fVxTime1, &fSz1, fpmass1 },
-    { fSpect2, &fNTr2, &fVxTime2, &fSz2, fpmass2 },
-    { 0 }
-  }; 
-  
-  for (Spec_short* sp=SpList; sp->Sp != NULL; sp++) {
-    *(sp->Ntr) = sp->Sp->GetNTracks();
-    if (*(sp->Ntr) > *(sp->Sz)) {  // expand array if necessary
+    { fSpect1, fNTr1, fVxTime1, fSz1, fpmass1 },
+    { fSpect2, fNTr2, fVxTime2, fSz2, fpmass2 },
+  };
+
+  for (Spec_short* sp=SpList; sp-SpList < 2; ++sp) {
+    sp->Ntr = sp->Sp->GetNTracks();
+    if( sp->Ntr > sp->Sz ) {  // expand array if necessary
     // disable the automatic array re-sizing for now
 #if CAN_RESIZE
-      delete [] *(sp->Vxtime);
-      *(sp->Sz) = *(sp->Ntr)+5;
-      *(sp->Vxtime) = new Double_t[*(sp->Sz)];
+      //FIXME: this looks buggy. What about fSzNtr? Better to use vectors anyway ...
+      delete [] sp->Vxtime;
+      sp->Sz = sp->Ntr+5;
+      sp->Vxtime = new Double_t[sp->Sz];
 #else
-      Warning(Here("Process()"), "Using only first %d out of %d tracks in spectrometer.", *(sp->Sz), *(sp->Ntr));
-      *(sp->Ntr) = *(sp->Sz); // only look at the permitted number of tracks
+      Warning(Here(here), "Using only first %d out of %d tracks in "
+	      "spectrometer.", sp->Sz, sp->Ntr);
+      sp->Ntr = sp->Sz; // only look at the permitted number of tracks
 #endif
     }
 
     TClonesArray* tracks = sp->Sp->GetTracks();
-    for ( Int_t i=0; i<*(sp->Ntr) && i<*(sp->Sz); i++ ) {
+    for ( Int_t i=0; i<sp->Ntr && i<sp->Sz; i++ ) {
       THaTrack* tr = dynamic_cast<THaTrack*>(tracks->At(i));
-#ifdef DEBUG
+#ifdef WITH_DEBUG
       // this should be safe to assume -- only THaTrack's go into the tracks array
       if (!tr) {
 	Warning(Here(here),"non-THaTrack in %s's tracks array at %d.",
@@ -300,14 +302,14 @@ Int_t THaCoincTime::Process( const THaEvData& evdata )
 #else
 	Double_t c = 2.99792458e8;
 #endif
-	(*(sp->Vxtime))[i] = tr->GetTime() - tr->GetPathLen()/(beta*c);
+	sp->Vxtime[i] = tr->GetTime() - tr->GetPathLen()/(beta*c);
       } else {
 	// Using (i+1)*kBig here prevents differences from being zero
-	(*(sp->Vxtime))[i] = (i+1)*kBig;  
+	sp->Vxtime[i] = (i+1)*kBig;
       }
     }
   }
-  
+
   // now, we have the vertex times -- go through the combinations
   fNtimes = fNTr1*fNTr2;
   if (fNtimes > fSzNtr) {  // expand the array if necessary
@@ -327,7 +329,7 @@ Int_t THaCoincTime::Process( const THaEvData& evdata )
     fNtimes = fSzNtr; // only look at the permitted number of tracks
 #endif
   }
-  
+
   // Take the tracks and the coincidence TDC and construct
   // the coincidence time
   Int_t cnt=0;
@@ -341,11 +343,11 @@ Int_t THaCoincTime::Process( const THaEvData& evdata )
       cnt++;
     }
   }
-  
+
   fDataValid = true;
   return 0;
 }
-  
+
 ClassImp(THaCoincTime)
 
 ///////////////////////////////////////////////////////////////////////////////
