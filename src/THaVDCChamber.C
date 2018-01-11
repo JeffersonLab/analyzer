@@ -100,7 +100,7 @@ void THaVDCChamber::SetDebug( Int_t level )
 
 //_____________________________________________________________________________
 PointCoords_t THaVDCChamber::CalcDetCoords( const THaVDCCluster* ucl,
-					      const THaVDCCluster* vcl ) const
+					    const THaVDCCluster* vcl ) const
 {
   // Convert U,V coordinates of the given uv cluster pair to the detector
   // coordinate system of this chamber. Takes u as the reference plane.

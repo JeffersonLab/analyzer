@@ -249,7 +249,7 @@ void THaVDCCluster::FitSimpleTrack( Bool_t weighted )
   fFitOK = false;
   if( GetSize() < 3 ) {
     return;  // Too few hits to get meaningful results
-             // Do keep current values of slope and intercept
+	     // Do keep current values of slope and intercept
   }
 
   Double_t m, sigmaM;  // Slope, St. Dev. in slope
@@ -355,7 +355,7 @@ void THaVDCCluster::FitSimpleTrack( Bool_t weighted )
     // sigmaM *= chi2/(nhits - 2);
     // sigmaB *= chi2/(nhits - 2);
 
-    // Pick the best value
+    // Pick the better value
     if (i == 0 || chi2.first < bestFit) {
       bestFit     = fChi2 = chi2.first;
       fNDoF       = chi2.second - 2;
@@ -400,7 +400,7 @@ Int_t THaVDCCluster::LinearClusterFitWithT0()
   fFitOK = false;
   if( GetSize() < 4 ) {
     return -1;  // Too few hits to get meaningful results
-                // Do keep current values of slope and intercept
+		// Do keep current values of slope and intercept
   }
 
   Double_t m, sigmaM;   // Slope, St. Dev. in slope
@@ -468,7 +468,7 @@ Int_t THaVDCCluster::LinearClusterFitWithT0()
 //     sigmaM *= chi2/(nhits - 2);
 //     sigmaB *= chi2/(nhits - 2);
 
-    // Pick the best value
+    // Pick the better value
     if( ipivot == 0 || chi2.first < bestFit ) {
       bestFit     = fChi2 = chi2.first;
       fNDoF       = chi2.second - 3;
@@ -569,7 +569,7 @@ void THaVDCCluster::Linear3DFit( Double_t& m, Double_t& b, Double_t& d0 ) const
   //     sigmaF2 = ( sumXX / Delta );
   //     sigmaG2 = ( sumW / Delta );
   //     sigmaFG = ( sumXW * sumW * sumXX - sumXXW * sumW * sumX
-  // 		- sumWW * sumX * sumXX + sumXW * sumX * sumX ) / (Delta*Delta);
+  //		- sumWW * sumX * sumXX + sumXW * sumX * sumX ) / (Delta*Delta);
 
   //     m  =   1/G;
   //     b  = - F/G;
@@ -628,97 +628,148 @@ chi2_t THaVDCCluster::CalcChisquare( Double_t slope, Double_t icpt,
   return make_pair( chi2, npt );
 }
 
-
 //_____________________________________________________________________________
-void THaVDCCluster::CalcChisquare(Double_t& chi2, Int_t& nhits ) const
+void THaVDCCluster::DoCalcChisquare( Double_t& chi2, Int_t& nhits,
+				     Double_t slope, bool do_print ) const
 {
-  // given the parameters of the track (slope and intercept), calculate
-  // chi2 for the cluster
+  // Implementation of chi2 calculation for this cluster.
 
-  Int_t pivotNum = 0;
-  for (int j = 0; j < GetSize(); j++) {
-    if (fHits[j] == fPivot) {
-      pivotNum = j;
-    }
+  if( TMath::Abs(slope) < 1e-3 ) {
+    // Near zero slope = perpendicular incidence. No meaningful chi2 can be
+    // calculated because such a track would only cross one, maybe two, cells.
+    chi2 += kBig;
+    nhits += GetSize();
+    return;
   }
 
-  for (int j = 0; j < GetSize(); j++) {
-    Double_t x = fHits[j]->GetDist() + fTimeCorrection;
-    if (j>pivotNum) x = -x;
+  // Parameters of the track in the flipped coordinate system where the
+  // independent, uncertainty-free variable x is the wire position.
+  Double_t m = 1.0/slope;
+  Double_t b = -fInt*m;
 
-    Double_t y = fHits[j]->GetPos();
-    Double_t dx = fHits[j]->GetdDist();
-    Double_t Y = fSlope * x + fInt;
-    Double_t dY = fSlope * dx;
-    if (dx <= 0) continue;
+  bool past_pivot = false;
+  Int_t nHits = GetSize();
+  for (int j = 0; j < nHits; ++j) {
+    Double_t x  = fHits[j]->GetPos();
+    Double_t y  = fHits[j]->GetDist() + fTimeCorrection;
+    Double_t dy = fHits[j]->GetdDist();
+    // The Y calculation is numerically not quite optimal since it is a
+    // difference of two relatively large numbers. The result is 2 to 4 orders
+    // of magnitude smaller than each term. This should fit easily within
+    // double precision, however.
+    Double_t Y  = m*x + b;
 
-    if ( fHits[j] == fPivot ) {
-      // test the other side of the pivot wire, take the 'best' choice
-      Double_t ox = -x;
-      Double_t oY =  fSlope * ox + fInt;
-      if ( TMath::Abs(y-Y) > TMath::Abs(y-oY) ) {
-	//	x = ox;
-	Y = oY;
-      }
+    // Handle negative slopes correctly for generality. With the VDCs,
+    // negative slopes never correspond to signal tracks.
+    if (m<0) y = -y;
+
+    if (past_pivot)
+      y = -y;
+    else if (fHits[j] == fPivot) {
+      // Test the other side of the pivot wire, take the 'best' choice.
+      // This isn't statistically correct, but it's the best one can do
+      // since the sign of the drift distances isn't measured.
+      if (TMath::Abs(y-Y) > TMath::Abs(y+Y))
+	y = -y;
+      past_pivot = true;
     }
-    chi2 += (Y - y)/dY * (Y - y)/dY;
+    if (dy <= 0) continue;
+
+    if (do_print) {
+      cout << " " << (y-Y)/dy;
+      if( fHits[j] == fPivot )
+	cout << "*";
+    }
+
+    chi2 += (Y - y)/dy * (Y - y)/dy;
     nhits++;
   }
 }
 
+//_____________________________________________________________________________
+void THaVDCCluster::CalcChisquare( Double_t& chi2, Int_t& nhits ) const
+{
+  // Given the parameters of the track (global slope and intercept), calculate
+  // the chi2 for the cluster.
+
+  DoCalcChisquare( chi2, nhits, fSlope, false );
+}
 
 //_____________________________________________________________________________
 void THaVDCCluster::Print( Option_t* ) const
 {
   // Print contents of cluster
 
+  Int_t nHits = GetSize();
   if( fPlane )
     cout << "Plane: " << fPlane->GetPrefix() << endl;
-  cout << "Size: " << GetSize() << endl;
+  cout << "Size: " << nHits << endl;
 
   cout << "Wire numbers:";
-  for( int i = 0; i < GetSize(); i++ ) {
+  for( int i = 0; i < nHits; i++ ) {
     cout << " " << fHits[i]->GetWireNum();
     if( fHits[i] == fPivot )
       cout << "*";
   }
   cout << endl;
   cout << "Wire raw times:";
-  for( int i = 0; i < GetSize(); i++ ) {
+  for( int i = 0; i < nHits; i++ ) {
     cout << " " << fHits[i]->GetRawTime();
     if( fHits[i] == fPivot )
       cout << "*";
   }
   cout << endl;
   cout << "Wire times:";
-  for( int i = 0; i < GetSize(); i++ ) {
+  for( int i = 0; i < nHits; i++ ) {
     cout << " " << fHits[i]->GetTime();
     if( fHits[i] == fPivot )
       cout << "*";
   }
   cout << endl;
   cout << "Wire positions:";
-  for( int i = 0; i < GetSize(); i++ ) {
+  for( int i = 0; i < nHits; i++ ) {
     cout << " " << fHits[i]->GetPos();
     if( fHits[i] == fPivot )
       cout << "*";
   }
   cout << endl;
   cout << "Wire drifts:";
-  for( int i = 0; i < GetSize(); i++ ) {
+  for( int i = 0; i < nHits; i++ ) {
     cout << " " << fHits[i]->GetDist();
     if( fHits[i] == fPivot )
       cout << "*";
   }
   cout << endl;
+  cout << "Wire drifts sigmas:";
+  for( int i = 0; i < nHits; i++ ) {
+    cout << " " << fHits[i]->GetdDist();
+    if( fHits[i] == fPivot )
+      cout << "*";
+  }
+  cout << endl;
 
-  cout << "intercept(err), local slope(err), global slope, t0(err): "
-       << fInt   << " (" << fSigmaInt   << "), "
-       << fLocalSlope << " (" << fSigmaSlope << "), "
-       << fSlope << ", "
-       << fT0    << " (" << fSigmaT0 << "), fit ok: " << fFitOK
-       << endl;
+  cout << "Fit done: " << fFitOK << endl;
+  cout << "Crossing pos (err) = "
+       << fInt        << " (" << fSigmaInt   << ")" << endl
+       << "Local slope (err)  = "
+       << fLocalSlope << " (" << fSigmaSlope << ")" << endl
+       << "Global slope       = "
+       << fSlope << endl
+       << "Time offset (err)  = "
+       << fT0         << " (" << fSigmaT0    << ")" << endl;
 
+  if( fFitOK ) {
+    Double_t chi2 = 0, lchi2 = 0;
+    Int_t nhits = 0;
+    cout << "Local residuals  = ";
+    DoCalcChisquare( lchi2, nhits, fLocalSlope, true );
+    cout << endl;
+    nhits = 0;
+    cout << "Global residuals = ";
+    DoCalcChisquare( chi2, nhits, fSlope, true );
+    cout << endl;
+    cout << "Local/global chi2 = " << lchi2 << ", " << chi2 << endl;;
+  }
 }
 
 ///////////////////////////////////////////////////////////////////////////////

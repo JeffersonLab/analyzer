@@ -8,6 +8,7 @@
 
 #include "THaVDCHit.h"
 #include "THaVDCTimeToDistConv.h"
+#include "TError.h"
 
 const Double_t THaVDCHit::kBig = 1.e38; // Arbitrary large value
 

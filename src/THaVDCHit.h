@@ -9,7 +9,6 @@
 
 #include "TObject.h"
 #include "THaVDCWire.h"
-#include <cstdio>
 #include <cassert>
 #include <functional>
 

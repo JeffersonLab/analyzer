@@ -107,11 +107,11 @@ protected:
   THaVDCHit*     fPivot;             // Pivot - hit with smallest drift time
   //FIXME: in the code, this is used as a distance correction!!
   Double_t       fTimeCorrection;    // correction to be applied when fitting
-                                     // drift times
+				     // drift times
   Bool_t         fFitOK;             // Flag indicating that fit results valid
   Double_t       fChi2;              // chi2 for the cluster (using fSlope)
   Double_t       fNDoF;              // NDoF in local chi2 calculation
-  Int_t          fClsBeg; 	     // Starting wire number
+  Int_t          fClsBeg;	     // Starting wire number
   Int_t          fClsEnd;            // Ending wire number
 
   // Workspace for fitting routines
@@ -123,6 +123,8 @@ protected:
   void   FitNLTrack();        // Non-linear 3-parameter fit
 
   VDC::chi2_t CalcChisquare( Double_t slope, Double_t icpt, Double_t d0 ) const;
+  void   DoCalcChisquare( Double_t& chi2, Int_t& nhits,
+			  Double_t slope, bool do_print = false ) const;
   void   Linear3DFit( Double_t& slope, Double_t& icpt, Double_t& d0 ) const;
   Int_t  LinearClusterFitWithT0();
 

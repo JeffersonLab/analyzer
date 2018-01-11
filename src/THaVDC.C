@@ -62,7 +62,10 @@ struct MEdef_t {
 //_____________________________________________________________________________
 THaVDC::THaVDC( const char* name, const char* description,
 		THaApparatus* apparatus ) :
-  THaTrackingDetector(name,description,apparatus), fNtracks(0), fEvNum(0)
+  THaTrackingDetector(name,description,apparatus),
+  fVDCAngle(TMath::PiOver4()), fSin_vdc(0.5*TMath::Sqrt2()), fCos_vdc(fSin_vdc),
+  fSpacing(1.0), fNtracks(0), fNumIter(1), fErrorCutoff(1e9),
+  fCoordType(kRotatingTransport), fCentralDist(0.), fEvNum(0)
 {
   // Constructor
 
@@ -504,12 +507,13 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
       Double_t error =
 	THaVDCPointPair::CalcError( lowerPoint, upperPoint, fSpacing );
 
+      // Don't create pairs whose matching error is too big
       if( error >= fErrorCutoff )
 	continue;
 
       // Create new point pair
       THaVDCPointPair* thePair = new( (*fLUpairs)[nPairs++] )
-	THaVDCPointPair( lowerPoint, upperPoint, GetSpacing() );
+	THaVDCPointPair( lowerPoint, upperPoint, fSpacing );
 
       // Explicitly mark these points as unpartnered
       lowerPoint->SetPartner( 0 );
@@ -527,11 +531,6 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
     }
   }
 
-#ifdef WITH_DEBUG
-  if( fDebug>1 )
-    cout << nPairs << " pairs.\n";
-#endif
-
   // Initialize counters
   int n_exist = 0, n_mod = 0;
 #ifdef WITH_DEBUG
@@ -545,7 +544,14 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
   if( nPairs > 1 )
     fLUpairs->Sort();
 
-  Int_t nTracks = 0;  // Number of reconstructed tracks
+#ifdef WITH_DEBUG
+  if( fDebug>1 ) {
+    cout << nPairs << " pairs.\n";
+    fLUpairs->Print();
+  }
+#endif
+
+ Int_t nTracks = 0;  // Number of reconstructed tracks
 
   // Mark pairs as partners, starting with the best matches,
   // until all tracks are marked.
@@ -565,13 +571,13 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
     if( thePair->HasUsedCluster() ) {
 #ifdef WITH_DEBUG
       if( fDebug>1 )
-	cout << " ... skipped.\n";
+	cout << " ... skipped (cluster already used)." << endl;
 #endif
       continue;
     }
 #ifdef WITH_DEBUG
     if( fDebug>1 )
-      cout << " ... good.\n";
+      cout << " ... good." << endl;
 #endif
 
     // Get the points of the pair
@@ -658,6 +664,17 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
       // in the associated clusters
       chi2_t chi2 = thePair->CalcChi2();
       theTrack->SetChi2( chi2.first, chi2.second - 4 );
+
+#ifdef WITH_DEBUG
+      if( fDebug>2 ) {
+	Double_t chisq = chi2.first;
+	Int_t nhits = chi2.second;
+	cout << " chi2/ndof = " << chisq << "/" << nhits-4;
+	if( nhits > 4 )
+	  cout << " = " << chisq/(nhits-4);
+	cout << endl;
+      }
+#endif
     }
   }
 
