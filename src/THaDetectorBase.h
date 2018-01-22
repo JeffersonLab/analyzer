@@ -9,7 +9,6 @@
 
 #include "THaAnalysisObject.h"
 #include "TVector3.h"
-#include <vector>
 
 class THaDetMap;
 

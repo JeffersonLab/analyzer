@@ -17,6 +17,7 @@
 #include "THaDetMap.h"
 #include "TMath.h"
 #include "VarType.h"
+#include "TRotation.h"
 
 using std::vector;
 
@@ -106,13 +107,15 @@ Int_t THaDetectorBase::ReadGeometry( FILE* file, const TDatime& date,
 
   const char* const here = "ReadGeometry";
 
-  vector<double> position, size;
+  vector<double> position, size, angles;
   Bool_t optional = !required;
   DBRequest request[] = {
     { "position", &position, kDoubleV, 0, optional, 0,
       "\"position\" (detector position [m])" },
     { "size",     &size,     kDoubleV, 0, optional, 0,
-      "\"size\" (detector size [m])"},
+      "\"size\" (detector size [m])" },
+    { "angle",    &angles,   kDoubleV, 0, 1, 0,
+      "\"angle\" (detector angles(s) [deg]" },
     { 0 }
   };
   Int_t err = LoadDB( file, date, request );
@@ -128,6 +131,9 @@ Int_t THaDetectorBase::ReadGeometry( FILE* file, const TDatime& date,
     }
     fOrigin.SetXYZ( position[0], position[1], position[2] );
   }
+  else
+    fOrigin.SetXYZ(0,0,0);
+
   if( !size.empty() ) {
     if( size.size() != 3 ) {
       Error( Here(here), "Incorrect number of values = %u for "
@@ -147,10 +153,44 @@ Int_t THaDetectorBase::ReadGeometry( FILE* file, const TDatime& date,
     fSize[1] = 0.5 * TMath::Abs(size[1]);
     fSize[2] = TMath::Abs(size[2]);
   }
+  else
+    fSize[0] = fSize[1] = fSize[2] = kBig;
+
+  if( !angles.empty() ) {
+    if( angles.size() != 1 && angles.size() != 3 ) {
+      Error( Here(here), "Incorrect number of values = %u for "
+	     "detector angle(s). Must be either 1 or 3. Fix database.",
+	     static_cast<unsigned int>(angles.size()) );
+      return 4;
+    }
+    // If one angle is given, it indicates a rotation about y, as before.
+    // If three angles are given, they are interpreted as Euler angles
+    // following the y-convention, i.e. rotation about z, rotation about y',
+    // rotation about z''. The sign of a rotation is defined by the right-hand
+    // rule (mathematics definition): if the thumb points along the positive
+    // direction of the axis, the fingers indicate a positive rotation.
+    if( angles.size() == 1 ) {
+      DefineAxes( angles[0] * TMath::DegToRad() );
+    }
+    else {
+      TRotation m;
+      // For TRotation (and only TRotation, it seems), ROOT's definition of the
+      // sense of rotation seems to be the left-hand rule: "A rotation around a
+      // specified axis means counterclockwise rotation around the positive
+      // direction of the axis." But we define rotations by the right-hand rule,
+      // so we need to invert all angles.
+      m.SetYEulerAngles( -angles[0] * TMath::DegToRad(),
+			 -angles[1] * TMath::DegToRad(),
+			 -angles[2] * TMath::DegToRad() );
+      fXax.SetXYZ( m.XX(), m.XY(), m.XZ() );
+      fYax.SetXYZ( m.YX(), m.YY(), m.YZ() );
+      fZax.SetXYZ( m.ZX(), m.ZY(), m.ZZ() );
+    }
+  } else
+    DefineAxes(0);
 
   return 0;
 }
-
 
 //_____________________________________________________________________________
 ClassImp(THaDetectorBase)

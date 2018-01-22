@@ -70,7 +70,6 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
   DBRequest config_request[] = {
     { "detmap",  &detmap,  kIntV },
     { "npmt",    &nelem,   kInt },
-    { "angle",   &angle,   kDouble, 0, 1 },
     { 0 }
   };
   err = LoadDB( file, date, config_request, fPrefix );
@@ -107,8 +106,6 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
     fclose(file);
     return err;
   }
-
-  DefineAxes( angle*TMath::DegToRad() );
 
   // Dimension arrays
   //FIXME: use a structure!
@@ -161,7 +158,6 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
       { "Number of mirrors", &fNelem,     kInt       },
       { "Detector position", pos,         kDouble, 3 },
       { "Detector size",     fSize,       kDouble, 3 },
-      { "Detector angle",    &angle                  },
       { "TDC offsets",       fOff,        kFloat,  N },
       { "ADC pedestals",     fPed,        kFloat,  N },
       { "ADC gains",         fGain,       kFloat,  N },

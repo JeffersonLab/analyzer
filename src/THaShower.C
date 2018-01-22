@@ -70,7 +70,6 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
   vector<Int_t> detmap, chanmap;
   vector<Double_t> xy, dxy;
   Int_t ncols, nrows;
-  Double_t angle = 0.0;
 
   // Read mapping/geometry/configuration parameters
   DBRequest config_request[] = {
@@ -78,7 +77,6 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
     { "chanmap",      &chanmap, kIntV,    0, 1 },
     { "ncols",        &ncols,   kInt },
     { "nrows",        &nrows,   kInt },
-    { "angle",        &angle,   kDouble,  0, 1 },
     { "xy",           &xy,      kDoubleV, 2 },  // center pos of block 1
     { "dxdy",         &dxy,     kDoubleV, 2 },  // dx and dy block spacings
     { "emin",         &fEmin,   kDouble },
@@ -160,8 +158,6 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
     return err;
   }
 
-  DefineAxes( angle*TMath::DegToRad() );
-
   // Dimension arrays
   //FIXME: use a structure!
   UInt_t nval = fNelem;
@@ -221,7 +217,6 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
       { "Number of blocks",       &fNelem,     kInt        },
       { "Detector center",        pos,         kDouble, 3  },
       { "Detector size",          fSize,       kDouble, 3  },
-      { "Detector angle",         &angle                   },
       { "Channel map",            &chanmap[0], kInt,    N  },
       { "Position of block 1",    &xy,         kDoubleV    },
       { "Block x/y spacings",     &dxy,        kDoubleV    },
