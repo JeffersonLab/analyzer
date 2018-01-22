@@ -47,10 +47,11 @@ THaDetectorBase::~THaDetectorBase()
 //_____________________________________________________________________________
 void THaDetectorBase::DefineAxes( Double_t rotation_angle )
 {
-  // Define detector orientation, assuming a tilt by rotation_angle around
-  // the y-axis
+  // Define detector orientation, assuming a tilt by rotation_angle (in rad)
+  // around the y-axis
 
-  fXax.SetXYZ( TMath::Cos(rotation_angle), 0.0, TMath::Sin(rotation_angle) );
+  fXax.SetXYZ( 1.0, 0.0, 0.0 );
+  fXax.RotateY( rotation_angle );
   fYax.SetXYZ( 0.0, 1.0, 0.0 );
   fZax = fXax.Cross(fYax);
 
