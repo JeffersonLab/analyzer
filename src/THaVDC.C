@@ -63,8 +63,9 @@ struct MEdef_t {
 THaVDC::THaVDC( const char* name, const char* description,
 		THaApparatus* apparatus ) :
   THaTrackingDetector(name,description,apparatus),
-  fVDCAngle(TMath::PiOver4()), fSin_vdc(0.5*TMath::Sqrt2()), fCos_vdc(fSin_vdc),
-  fSpacing(1.0), fNtracks(0), fNumIter(1), fErrorCutoff(1e9),
+  fVDCAngle(-TMath::PiOver4()), fSin_vdc(-0.5*TMath::Sqrt2()),
+  fCos_vdc(0.5*TMath::Sqrt2()), fTan_vdc(-1.0),
+  fSpacing(0.33), fNtracks(0), fNumIter(1), fErrorCutoff(1e9),
   fCoordType(kRotatingTransport), fCentralDist(0.), fEvNum(0)
 {
   // Constructor
@@ -315,16 +316,15 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   }
 
   // Compute derived geometry quantities
-  //FIXME: get VDC angle from parent HRS spectrometer?
-  const Double_t degrad = TMath::Pi()/180.0;
   fTan_vdc  = fFPMatrixElems[T000].poly[0];
   fVDCAngle = TMath::ATan(fTan_vdc);
   fSin_vdc  = TMath::Sin(fVDCAngle);
   fCos_vdc  = TMath::Cos(fVDCAngle);
 
-  // Define the VDC coordinate axes in the "detector system". By definition,
-  // the detector system is identical to the VDC origin in the Hall A HRS.
-  DefineAxes(0.0*degrad);
+  // Define the VDC coordinate axes in the "TRANSPORT system" (z along particle
+  // direction at central momentum)
+  // This overrides any "angle" settings picked up by ReadGeometry above.
+  DefineAxes(fVDCAngle);
 
   // Read configuration parameters
   fErrorCutoff = 1e9;
@@ -820,54 +820,73 @@ Int_t THaVDC::FindVertices( TClonesArray& tracks )
   return 0;
 }
 
+#if 0
+//_____________________________________________________________________________
+void THaVDC::DetToTrackTransportCoords( Double_t& x, Double_t& y,
+					Double_t& theta, Double_t& phi ) const
+{
+  // Convert given Transport coordinates from detector (VDC) frame to
+  // track (TRANSPORT) frame.
+
+  // This algorithm gives the exact same results as the explicit formulas
+  // in CalcFocalPlaneCoords if DetToTrackCoords is a simple rotation
+  // about y by fVDCAngle. Because the VDC frame is assumed to be the
+  // track reference frame, this is always true, so we don't need the full
+  // generality of the coordinate transformation, and the explicit formulas
+  // are more efficient.
+
+  // Define two points along the track in VDC coordinates
+  TVector3 x0( x, y, 0. );
+  TVector3 x1( x0 + TVector3(theta, phi, 1.) );
+  // Convert these two points to the TRANSPORT frame
+  x0 = DetToTrackCoord(x0);
+  x1 = DetToTrackCoord(x1);
+  // Calculate the new direction vector
+  TVector3 t = x1 - x0;
+  // Normalize it to z=1, and we have the projected TRANSPORT angles
+  Double_t invz = 1./t.Z();
+  theta = t.X()*invz;
+  phi   = t.Y()*invz;
+  // Project one of the points back to z=0 along the direction vector
+  // to get the TRANSPORT positions
+  x     = x0.X() - x0.Z()*theta;
+  y     = x0.Y() - x0.Z()*phi;
+}
+#endif
+
 //_____________________________________________________________________________
 void THaVDC::CalcFocalPlaneCoords( THaTrack* track )
 {
   // calculates focal plane coordinates from detector coordinates
 
-  Double_t tan_rho, cos_rho, tan_rho_loc, cos_rho_loc;
-  // TRANSPORT coordinates (projected to z=0)
-  Double_t x, y, theta, phi;
-  // Rotating TRANSPORT coordinates
-  Double_t r_x, r_y, r_theta, r_phi;
-
-  // tan rho (for the central ray) is stored as a matrix element
-  tan_rho = fFPMatrixElems[T000].poly[0];
-  cos_rho = 1.0/sqrt(1.0+tan_rho*tan_rho);
-
   // first calculate the transport frame coordinates
-  theta = (track->GetDTheta()+tan_rho) /
-    (1.0-track->GetDTheta()*tan_rho);
-  x = track->GetDX() * cos_rho * (1.0 + theta * tan_rho);
-  phi = track->GetDPhi() / (1.0-track->GetDTheta()*tan_rho) / cos_rho;
-  y = track->GetDY() + tan_rho*phi*track->GetDX()*cos_rho;
+  // (see DetToTrackTransportCoords above for the general algorithm)
+  Double_t theta = (track->GetDTheta()+fTan_vdc) /
+    (1.0-track->GetDTheta()*fTan_vdc);
+  Double_t x = track->GetDX() * (fCos_vdc + theta * fSin_vdc);
+  Double_t phi = track->GetDPhi() / (fCos_vdc - track->GetDTheta() * fSin_vdc);
+  Double_t y = track->GetDY() + fSin_vdc*phi*track->GetDX();
 
   // then calculate the rotating transport frame coordinates
-  r_x = x;
+  Double_t r_x = x;
 
   // calculate the focal-plane matrix elements
-  switch( fCoordType ) {
-  case kTransport:
-    CalcMatrix( x, fFPMatrixElems );    break;
-  case kRotatingTransport:
-    CalcMatrix( r_x, fFPMatrixElems );  break;
-  }
+  CalcMatrix( r_x, fFPMatrixElems );
 
-  r_y = y - fFPMatrixElems[Y000].v;  // Y000
+  Double_t r_y = y - fFPMatrixElems[Y000].v;  // Y000
 
   // Calculate now the tan(rho) and cos(rho) of the local rotation angle.
-  tan_rho_loc = fFPMatrixElems[T000].v;   // T000
-  cos_rho_loc = 1.0/sqrt(1.0+tan_rho_loc*tan_rho_loc);
+  Double_t tan_rho_loc = fFPMatrixElems[T000].v;   // T000
+  Double_t cos_rho_loc = 1.0/sqrt(1.0+tan_rho_loc*tan_rho_loc);
 
-  r_phi = (track->GetDPhi() - fFPMatrixElems[P000].v /* P000 */ ) /
+  Double_t r_phi = (track->GetDPhi() - fFPMatrixElems[P000].v /* P000 */ ) /
     (1.0-track->GetDTheta()*tan_rho_loc) / cos_rho_loc;
-  r_theta = (track->GetDTheta()+tan_rho_loc) /
+  Double_t r_theta = (track->GetDTheta()+tan_rho_loc) /
     (1.0-track->GetDTheta()*tan_rho_loc);
 
   // set the values we calculated
   track->Set(x, y, theta, phi);
   track->SetR(r_x, r_y, r_theta, r_phi);
-
 }
 
 //_____________________________________________________________________________
