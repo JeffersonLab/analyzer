@@ -582,7 +582,6 @@ Int_t THaScintillator::FineProcess( TClonesArray& tracks )
       assert( pad >= 0 || fNhit == 0 ); // Must find a pad unless no hits
       if( pad >= 0 ) {
 	proj->SetdX(dx);
-	proj->SetdY(proj->GetY());
 	proj->SetChannel(pad);
       }
     }
