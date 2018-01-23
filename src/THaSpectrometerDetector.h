@@ -15,6 +15,7 @@
 #include "THaDetector.h"
 
 class THaTrack;
+class TVector3;
 
 class THaSpectrometerDetector : public THaDetector {
 
@@ -24,18 +25,18 @@ public:
   virtual Bool_t   IsTracking() = 0;
   virtual Bool_t   IsPid()      = 0;
 
-          bool     CheckIntercept( THaTrack* track );
-          bool     CalcInterceptCoords( THaTrack* track,
+          Bool_t   CheckIntercept( THaTrack* track );
+          Bool_t   CalcInterceptCoords( THaTrack* track,
 					Double_t& x, Double_t& y );
-          bool     CalcPathLen( THaTrack* track, Double_t& t );
+          Bool_t   CalcPathLen( THaTrack* track, Double_t& t );
+          Bool_t   CalcTrackIntercept( THaTrack* track, TVector3& icept,
+				       Double_t& pathl );
+          Bool_t   CalcTrackIntercept( THaTrack* track, Double_t& pathl,
+				       Double_t& xdet, Double_t& ydet );
 
   THaSpectrometerDetector();       // for ROOT I/O only
 
 protected:
-
-          bool  CalcTrackIntercept( THaTrack* track, Double_t& t,
-				    Double_t& ycross, Double_t& xcross);
-
   //Only derived classes may construct me
   THaSpectrometerDetector( const char* name, const char* description,
 			   THaApparatus* a = NULL );
