@@ -33,7 +33,7 @@ public:
   const Double_t* GetAmplitudes() const { return fAmpl; }
   const Double_t* GetYtime() const { return fYt; }
   const Double_t* GetYampl() const { return fYa; }
-  
+
   static const Int_t NDEST = 2;
   struct DataDest {
     Int_t*    nthit;
@@ -66,8 +66,8 @@ protected:
   Double_t    fAdcMIP;     // nominal ADC above pedestal for MIP
 
   Double_t*   fTrigOff;     // [fNelem] Induced offset of trigger time from
-                            // diff between trigger and retiming.
-                            // Visible in coincidence data.
+			    // diff between trigger and retiming.
+			    // Visible in coincidence data.
 
   Double_t    fAttenuation; // in m^-1: attenuation length of material
   Double_t    fResolution;  // average time resolution per PMT (s)
@@ -89,8 +89,8 @@ protected:
   Double_t*   fRA_c;       // [fNelem] Array of Right paddles corrected ADC ampl-s
 
 
-  Int_t      fNhit;       // Number of paddles with complete TDC hits (l&r)
-  Int_t*     fHitPad;     // [fNhit] list of paddles with complete TDC hits
+  Int_t       fNhit;       // Number of paddles with complete TDC hits (l&r)
+  Int_t*      fHitPad;     // [fNhit] list of paddles with complete TDC hits
 
   // could be done on a per-hit basis instead
   Double_t*   fTime;       // [fNelem] corrected time for the paddle (s)
@@ -105,8 +105,8 @@ protected:
 
   enum ESide { kLeft = 0, kRight = 1 };
 
-  virtual  Double_t TimeWalkCorrection(const Int_t& paddle,
-					   const ESide side);
+  virtual  Double_t TimeWalkCorrection( const Int_t& paddle,
+					const ESide side );
 
   ClassDef(THaScintillator,1)   // Generic scintillator class
 };

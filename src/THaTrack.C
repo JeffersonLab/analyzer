@@ -71,11 +71,11 @@ void THaTrack::Print( Option_t* opt ) const
 {
   // Print track parameters
   TObject::Print( opt );
-  cout << "Momentum = " << fP << " GeV/c\n";
-  cout << "x_fp     = " << fX   << " m\n";
-  cout << "y_fp     = " << fY   << " m\n";
-  cout << "theta_fp = " << fTheta << " rad\n";
-  cout << "phi_fp   = " << fPhi << " rad\n";
+  cout << "Momentum = " << fP     << " GeV/c" << endl;
+  cout << "x_fp     = " << fX     << " m"     << endl;
+  cout << "y_fp     = " << fY     << " m"     << endl;
+  cout << "theta_fp = " << fTheta << " rad"   << endl;
+  cout << "phi_fp   = " << fPhi   << " rad"   << endl;
 
   for( int i=0; i<fNclusters; i++ )
     fClusters[i]->Print();

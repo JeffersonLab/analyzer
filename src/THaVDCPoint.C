@@ -2,7 +2,7 @@
 //                                                                           //
 // THaVDCPoint                                                               //
 //                                                                           //
-// Class for UV Tracks                                                       //
+// A pair of one U and one V VDC cluster in a given VDC chamber              //
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -43,7 +43,7 @@ Double_t THaVDCPoint::GetZU() const
 //_____________________________________________________________________________
 Double_t THaVDCPoint::GetZV() const
 {
-  // Return intercept of u cluster
+  // Return z-position of v cluster
 
   return fChamber->GetZ() + fChamber->GetSpacing();
 }
