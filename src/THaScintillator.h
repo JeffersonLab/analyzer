@@ -8,6 +8,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "THaNonTrackingDetector.h"
+#include <map>
 
 class TClonesArray;
 
@@ -19,11 +20,14 @@ public:
   THaScintillator();
   virtual ~THaScintillator();
 
-  virtual void       Clear( Option_t* ="" );
+  virtual Int_t      Begin( THaRunBase* r=0 );
+  virtual void       Clear( Option_t* opt="" );
+  virtual Int_t      End( THaRunBase* r=0 );
   virtual Int_t      Decode( const THaEvData& );
   virtual EStatus    Init( const TDatime& run_time );
   virtual Int_t      CoarseProcess( TClonesArray& tracks );
   virtual Int_t      FineProcess( TClonesArray& tracks );
+  virtual void       Print( Option_t* opt="" ) const;
 
   virtual Int_t      ApplyCorrections( void );
 
@@ -99,6 +103,9 @@ protected:
   Double_t*   fYt;         // [fNelem] y-position of hit in paddle from TDC (m)
   Double_t*   fYa;         // [fNelem] y-position of hit in paddle from ADC (m)
 
+  std::map<std::string,UInt_t> fMessages; // Warning messages & count
+  UInt_t      fNEventsWithWarnings; // Events with warnings
+
   void           DeleteArrays();
   virtual Int_t  ReadDatabase( const TDatime& date );
   virtual Int_t  DefineVariables( EMode mode = kDefine );
@@ -108,7 +115,7 @@ protected:
   virtual  Double_t TimeWalkCorrection( const Int_t& paddle,
 					const ESide side );
 
-  ClassDef(THaScintillator,1)   // Generic scintillator class
+  ClassDef(THaScintillator,2)   // Generic scintillator class
 };
 
 ////////////////////////////////////////////////////////////////////////////////
