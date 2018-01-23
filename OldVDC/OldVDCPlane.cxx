@@ -61,6 +61,11 @@ OldVDCPlane::OldVDCPlane( const char* name, const char* description,
   fWires    = new TClonesArray("OldVDCWire", 368 );
 
   fVDC = GetMainDetector();
+
+  ResetBit(kMaxGapSet);
+  ResetBit(kMinTimeSet);
+  ResetBit(kMaxTimeSet);
+  ResetBit(kTDCResSet);
 }
 
 //_____________________________________________________________________________
@@ -108,11 +113,10 @@ Int_t OldVDCPlane::DoReadDatabase( FILE* file, const TDatime& date )
   vector<Int_t> detmap, bad_wirelist;
   vector<Double_t> ttd_param;
   vector<Float_t> tdc_offsets;
-  // Default values for optional parameters
-  fTDCRes  = kDefaultTDCRes;
-  fNMaxGap = kDefaultNMaxGap;
-  fMinTime = kDefaultMinTime;
-  fMaxTime = kDefaultMaxTime;
+  Int_t maxgap  = kDefaultNMaxGap;
+  Int_t mintime = kDefaultMinTime;
+  Int_t maxtime = kDefaultMaxTime;
+  Double_t tdcres = kDefaultTDCRes;
 
   DBRequest request[] = {
     { "detmap",         &detmap,         kIntV },
@@ -122,12 +126,12 @@ Int_t OldVDCPlane::DoReadDatabase( FILE* file, const TDatime& date )
     { "wire.angle",     &fWAngle,        kDouble,  0, 0 },
     { "wire.badlist",   &bad_wirelist,   kIntV,    0, 1 },
     { "driftvel",       &fDriftVel,      kDouble,  0, 0, -1 },
-    // { "tdc.min",        &fMinTime,       kInt,     0, 1, -1 },
-    // { "tdc.max",        &fMaxTime,       kInt,     0, 1, -1 },
-    // { "tdc.res",        &fTDCRes,        kDouble,  0, 0, -1 },
+    { "maxgap",         &maxgap,         kInt,     0, 1, -1 },
+    { "tdc.min",        &mintime,        kInt,     0, 1, -1 },
+    { "tdc.max",        &maxtime,        kInt,     0, 1, -1 },
+    { "tdc.res",        &tdcres,         kDouble,  0, 0, -1 },
     { "tdc.offsets",    &tdc_offsets,    kFloatV },
     { "ttd.param",      &ttd_param,      kDoubleV, 0, 0, -1 },
-    // { "maxgap",         &fNMaxGap,       kInt,     0, 1, -1 },
     { "description",    &fTitle,         kTString, 0, 1 },
     { 0 }
   };
@@ -163,6 +167,16 @@ Int_t OldVDCPlane::DoReadDatabase( FILE* file, const TDatime& date )
     return kInitError;
   }
 
+  // Values set via Set functions override database values
+  if( !TestBit(kMaxGapSet) )
+    fNMaxGap = maxgap;
+  if( !TestBit(kMinTimeSet) )
+    fMinTime = mintime;
+  if( !TestBit(kMaxTimeSet) )
+    fMaxTime = maxtime;
+  if( !TestBit(kTDCResSet) )
+    fTDCRes = tdcres;
+
   if( fNMaxGap < 0 || fNMaxGap > 2 ) {
     Error( Here(here), "Invalid max_gap = %d, must be betwwen 0 and 2. "
 	   "Fix database.", fNMaxGap );
@@ -176,6 +190,11 @@ Int_t OldVDCPlane::DoReadDatabase( FILE* file, const TDatime& date )
   if( fMaxTime < 1 || fMaxTime > 4096 || fMinTime >= fMaxTime ) {
     Error( Here(here), "Invalid max_time = %d. Must be between 1 and 4096 "
 	   "and >= min_time = %d. Fix database.", fMaxTime, fMinTime );
+    return kInitError;
+  }
+  if( fTDCRes < 0 || fTDCRes > 1e-6 ) {
+    Error( Here(here), "Nonsense TDC resolution = %8.1le s/channel. "
+	   "Fix database.", fTDCRes );
     return kInitError;
   }
 
@@ -551,25 +570,49 @@ Int_t OldVDCPlane::FitTracks()
 //_____________________________________________________________________________
 void OldVDCPlane::SetNMaxGap( Int_t val )
 {
+  if( val < 0 || val > 2 ) {
+    Error( Here("SetNMaxGap"),
+	   "Invalid max_gap = %d, must be betwwen 0 and 2.", val );
+    return;
+  }
   fNMaxGap = val;
+  SetBit(kMaxGapSet);
 }
 
 //_____________________________________________________________________________
 void OldVDCPlane::SetMinTime( Int_t val )
 {
+  if( val < 0 || val > 4095 ) {
+    Error( Here("SetMinTime"),
+	   "Invalid min_time = %d, must be betwwen 0 and 4095.", val );
+    return;
+  }
   fMinTime = val;
+  SetBit(kMinTimeSet);
 }
 
 //_____________________________________________________________________________
 void OldVDCPlane::SetMaxTime( Int_t val )
 {
+  if( val < 1 || val > 4096 ) {
+    Error( Here("SetMaxTime"),
+	   "Invalid max_time = %d. Must be between 1 and 4096.", val );
+    return;
+  }
   fMaxTime = val;
+  SetBit(kMaxTimeSet);
 }
 
 //_____________________________________________________________________________
 void OldVDCPlane::SetTDCRes( Double_t val )
 {
+  if( val < 0 || val > 1e-6 ) {
+    Error( Here("SetTDCRes"),
+	   "Nonsense TDC resolution = %8.1le s/channel.", val );
+    return;
+  }
   fTDCRes = val;
+  SetBit(kTDCResSet);
 }
 
 

@@ -1189,6 +1189,11 @@ bool OldVDC::OldVDCMatrixElement::match(const OldVDCMatrixElement& rhs) const
 //_____________________________________________________________________________
 void OldVDC::SetNMaxGap( Int_t val )
 {
+  if( val < 0 || val > 2 ) {
+    Error( Here("SetNMaxGap"),
+	   "Invalid max_gap = %d, must be betwwen 0 and 2.", val );
+    return;
+  }
   fUpper->SetNMaxGap(val);
   fLower->SetNMaxGap(val);
 }
@@ -1196,6 +1201,11 @@ void OldVDC::SetNMaxGap( Int_t val )
 //_____________________________________________________________________________
 void OldVDC::SetMinTime( Int_t val )
 {
+  if( val < 0 || val > 4095 ) {
+    Error( Here("SetMinTime"),
+	   "Invalid min_time = %d, must be betwwen 0 and 4095.", val );
+    return;
+  }
   fUpper->SetMinTime(val);
   fLower->SetMinTime(val);
 }
@@ -1203,6 +1213,11 @@ void OldVDC::SetMinTime( Int_t val )
 //_____________________________________________________________________________
 void OldVDC::SetMaxTime( Int_t val )
 {
+  if( val < 1 || val > 4096 ) {
+    Error( Here("SetMaxTime"),
+	   "Invalid max_time = %d. Must be between 1 and 4096.", val );
+    return;
+  }
   fUpper->SetMaxTime(val);
   fLower->SetMaxTime(val);
 }
@@ -1210,6 +1225,11 @@ void OldVDC::SetMaxTime( Int_t val )
 //_____________________________________________________________________________
 void OldVDC::SetTDCRes( Double_t val )
 {
+  if( val < 0 || val > 1e-6 ) {
+    Error( Here("SetTDCRes"),
+	   "Nonsense TDC resolution = %8.1le s/channel.", val );
+    return;
+  }
   fUpper->SetTDCRes(val);
   fLower->SetTDCRes(val);
 }

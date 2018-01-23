@@ -260,6 +260,11 @@ Int_t OldVDCUVPlane::FineTrack( )
 //_____________________________________________________________________________
 void OldVDCUVPlane::SetNMaxGap( Int_t val )
 {
+  if( val < 0 || val > 2 ) {
+    Error( Here("SetNMaxGap"),
+	   "Invalid max_gap = %d, must be betwwen 0 and 2.", val );
+    return;
+  }
   fU->SetNMaxGap(val);
   fV->SetNMaxGap(val);
 }
@@ -267,6 +272,11 @@ void OldVDCUVPlane::SetNMaxGap( Int_t val )
 //_____________________________________________________________________________
 void OldVDCUVPlane::SetMinTime( Int_t val )
 {
+  if( val < 0 || val > 4095 ) {
+    Error( Here("SetMinTime"),
+	   "Invalid min_time = %d, must be betwwen 0 and 4095.", val );
+    return;
+  }
   fU->SetMinTime(val);
   fV->SetMinTime(val);
 }
@@ -274,6 +284,11 @@ void OldVDCUVPlane::SetMinTime( Int_t val )
 //_____________________________________________________________________________
 void OldVDCUVPlane::SetMaxTime( Int_t val )
 {
+  if( val < 1 || val > 4096 ) {
+    Error( Here("SetMaxTime"),
+	   "Invalid max_time = %d. Must be between 1 and 4096.", val );
+    return;
+  }
   fU->SetMaxTime(val);
   fV->SetMaxTime(val);
 }
@@ -281,6 +296,11 @@ void OldVDCUVPlane::SetMaxTime( Int_t val )
 //_____________________________________________________________________________
 void OldVDCUVPlane::SetTDCRes( Double_t val )
 {
+  if( val < 0 || val > 1e-6 ) {
+    Error( Here("SetTDCRes"),
+	   "Nonsense TDC resolution = %8.1le s/channel.", val );
+    return;
+  }
   fU->SetTDCRes(val);
   fV->SetTDCRes(val);
 }

@@ -92,6 +92,15 @@ protected:
   Double_t fTDCRes;       // TDC Resolution ( s / channel)
   Double_t fDriftVel;     // Drift velocity in the wire plane (m/s)
 
+  // Bits indicating that the corresponding Set function has been called.
+  // If set, the corresponding parameter is NOT taken from the database.
+  enum {
+    kMaxGapSet  = BIT(14),
+    kMinTimeSet = BIT(15),
+    kMaxTimeSet = BIT(16),
+    kTDCResSet  = BIT(17)
+  };
+
   // Lookup table parameters
 //   Double_t fT0;     // calculated zero time 
 //   Int_t fNumBins;   // size of lookup table
