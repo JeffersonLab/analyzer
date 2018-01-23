@@ -79,15 +79,48 @@ Int_t THaDetectorBase::FillDetMap( const vector<Int_t>& values, UInt_t flags,
 }
 
 //_____________________________________________________________________________
+TVector3 THaDetectorBase::DetToTrackCoord( const TVector3& p ) const
+{
+  // Convert coordinates of point 'p' from the detector to the track
+  // reference frame.
+
+  return TVector3( p.X()*fXax + p.Y()*fYax + p.Z()*fZax + fOrigin );
+}
+
+//_____________________________________________________________________________
+TVector3 THaDetectorBase::TrackToDetCoord( const TVector3& point ) const
+{
+  // Convert/project coordinates of the given 'point' to coordinates in this
+  // detector's reference frame (defined by fOrigin, fXax, and fYax).
+
+  TVector3 v = point - fOrigin;
+  // This works out to exactly the same as a multiplication with TRotation
+  return TVector3( v.Dot(fXax), v.Dot(fYax), v.Dot(fZax) );
+}
+
+//_____________________________________________________________________________
 Bool_t THaDetectorBase::IsInActiveArea( Double_t x, Double_t y ) const
 {
   // Check if given (x,y) coordinates are inside this detector's active area
-  // (defined by fOrigin/fSize)
+  // (defined by fSize). x and y MUST be given in coordinates of this detector
+  // plane, i.e. relative to fOrigin and measured along fXax and fYax.
 
-  return ( x >= fOrigin.X()-fSize[0] &&
-	   x <= fOrigin.X()+fSize[0] &&
-	   y >= fOrigin.Y()-fSize[1] &&
-	   y <= fOrigin.Y()+fSize[1] );
+  return ( TMath::Abs(x) <= fSize[0] &&
+	   TMath::Abs(y) <= fSize[1] );
+}
+
+//_____________________________________________________________________________
+Bool_t THaDetectorBase::IsInActiveArea( const TVector3& point ) const
+{
+  // Check if given point 'point' is inside this detector's active area
+  // (defined by fSize). 'point' is first projected onto the detector
+  // plane (defined by fOrigin, fXax and fYax), and then the projected
+  // (x,y) coordinates are checked against fSize.
+  // Usually 'point' lies within the detector plane. If it does not,
+  // be sure you know what you are doing.
+
+  TVector3 v = TrackToDetCoord( point );
+  return IsInActiveArea( v.X(), v.Y() );
 }
 
 //_____________________________________________________________________________

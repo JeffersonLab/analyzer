@@ -32,7 +32,10 @@ public:
   const TVector3&  GetYax()    const { return fYax; }
   const TVector3&  GetZax()    const { return fZax; }
 
-  Bool_t           IsInActiveArea( Double_t x, Double_t y ) const;
+  virtual Bool_t   IsInActiveArea( Double_t x, Double_t y ) const;
+  virtual Bool_t   IsInActiveArea( const TVector3& point ) const;
+  TVector3         DetToTrackCoord( const TVector3& point ) const;
+  TVector3         TrackToDetCoord( const TVector3& point ) const;
 
   Int_t            FillDetMap( const std::vector<Int_t>& values,
 			       UInt_t flags=0,
