@@ -324,6 +324,7 @@ Int_t OldVDC::ReadDatabase( const TDatime& date )
   // Read configuration parameters
   fErrorCutoff = 1e9;
   fNumIter = 1;
+  fCoordType = kRotatingTransport;
   Int_t disable_tracking = 0, disable_finetrack = 0, only_fastest_hit = 1;
   Int_t do_tdc_hardcut = 1, do_tdc_softcut = 0, ignore_negdrift = 0;
   string coord_type;
@@ -331,6 +332,7 @@ Int_t OldVDC::ReadDatabase( const TDatime& date )
   DBRequest request[] = {
     { "max_matcherr",      &fErrorCutoff,      kDouble, 0, 1 },
     { "num_iter",          &fNumIter,          kInt,    0, 1 },
+    { "coord_type",        &coord_type,        kString, 0, 1 },
     { "disable_tracking",  &disable_tracking,  kInt,    0, 1 },
     { "disable_finetrack", &disable_finetrack, kInt,    0, 1 },
     { "only_fastest_hit",  &only_fastest_hit,  kInt,    0, 1 },
@@ -351,6 +353,19 @@ Int_t OldVDC::ReadDatabase( const TDatime& date )
   SetBit( kSoftTDCcut,      do_tdc_softcut );
   SetBit( kIgnoreNegDrift,  ignore_negdrift );
   SetBit( kCoarseOnly,      !disable_tracking && disable_finetrack );
+
+  if( !coord_type.empty() ) {
+    if( THaString::CmpNoCase(coord_type, "Transport") == 0 )
+      fCoordType = kTransport;
+    else if( THaString::CmpNoCase(coord_type, "RotatingTransport") == 0 )
+      fCoordType = kRotatingTransport;
+    else {
+      Error( Here(here), "Invalid coordinate type coord_type = %s. "
+	     "Must be \"Transport\" or \"RotatingTransport\". Fix database.",
+	     coord_type.c_str() );
+      return kInitError;
+    }
+  }
 
   // Sanity checks of parameters
   if( fErrorCutoff < 0.0 ) {
@@ -653,7 +668,7 @@ Int_t OldVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
       theTrack->SetChi2(chi2,nhits-4); // Nconstraints - Nparameters
 
       // calculate the TRANSPORT coordinates
-      CalcFocalPlaneCoords(theTrack, kRotatingTransport);
+      CalcFocalPlaneCoords(theTrack, fCoordType);
     }
   }
 
@@ -784,7 +799,7 @@ Int_t OldVDC::FindVertices( TClonesArray& tracks )
   Int_t n_exist = tracks.GetLast()+1;
   for( Int_t t = 0; t < n_exist; t++ ) {
     THaTrack* theTrack = static_cast<THaTrack*>( tracks.At(t) );
-    CalcTargetCoords(theTrack, kRotatingTransport);
+    CalcTargetCoords(theTrack, fCoordType);
   }
 
   return 0;

@@ -114,6 +114,7 @@ protected:
 
   Int_t    fNumIter;        // Number of iterations for FineTrack()
   Double_t fErrorCutoff;    // Cut on track matching error
+  ECoordTypes fCoordType;   // Coordinates to use as input for matrix calcs
 
   Double_t fCentralDist;    // the path length of the central ray from
                             // the origin of the transport coordinates to 
