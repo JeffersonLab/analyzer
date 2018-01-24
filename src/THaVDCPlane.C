@@ -103,13 +103,12 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
   FILE* file = OpenFile( date );
   if( !file ) return kFileError;
 
-  // Read fOrigin and fSize
+  // Read fCenter and fSize
   Int_t err = ReadGeometry( file, date );
   if( err ) {
     fclose(file);
     return err;
   }
-  fZ = fOrigin.Z();
 
   // Read configuration parameters
   vector<Int_t> detmap, bad_wirelist;
@@ -132,7 +131,7 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
     { "nwires",         &fNelem,         kInt,     0, 0, -1 },
     { "wire.start",     &fWBeg,          kDouble },
     { "wire.spacing",   &fWSpac,         kDouble,  0, 0, -1 },
-    { "wire.angle",     &fWAngle,        kDouble,  0, 0 },
+    { "wire.angle",     &fWAngle,        kDouble },
     { "wire.badlist",   &bad_wirelist,   kIntV,    0, 1 },
     { "driftvel",       &fDriftVel,      kDouble,  0, 0, -1 },
     { "tdc.min",        &fMinTime,       kInt,     0, 1, -1 },
@@ -158,13 +157,6 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
 
   if( FillDetMap(detmap, THaDetMap::kFillLogicalChannel, here) <= 0 )
     return kInitError; // Error already printed by FillDetMap
-
-  fWAngle *= TMath::DegToRad(); // Convert to radians
-  fSinAngle = TMath::Sin( fWAngle );
-  fCosAngle = TMath::Cos( fWAngle );
-
-  set<Int_t> bad_wires( ALL(bad_wirelist) );
-  bad_wirelist.clear();
 
   // Sanity checks
   if( fNelem <= 0 ) {
@@ -211,6 +203,20 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
     return kInitError;
   }
 
+  // Derived geometry quatities
+  fWAngle *= TMath::DegToRad();
+  fSinWAngle = TMath::Sin( fWAngle );
+  fCosWAngle = TMath::Cos( fWAngle );
+
+  if( fVDC )
+    DefineAxes( fVDC->GetVDCAngle() );
+  else
+    DefineAxes( 0 );
+
+  // Searchable list of bad wire numbers, if any (usually none :-) )
+  set<Int_t> bad_wires( ALL(bad_wirelist) );
+  bad_wirelist.clear();
+
   // Create time-to-distance converter
   if( !ttd_conv.Contains("::") )
     ttd_conv.Prepend("VDC::");
@@ -248,10 +254,6 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
       wire->SetFlag(1);
   }
 
-  THaDetectorBase *sdet = GetParent();
-  if( sdet )
-    fOrigin += sdet->GetOrigin();
-
   // finally, find the timing-offset to apply on an event-by-event basis
   //FIXME: time offset handling should go into the enclosing apparatus -
   //since not doing so leads to exactly this kind of mess:
@@ -260,16 +262,18 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
   if( !app ||
       !(fglTrg = dynamic_cast<THaTriggerTime*>(app->GetDetector(nm))) ) {
     // Warning(Here(here),"Trigger-time detector \"%s\" not found. "
-    // 	    "Event-by-event time offsets will NOT be used!!",nm);
+    //	    "Event-by-event time offsets will NOT be used!!",nm);
   }
 
 #ifdef WITH_DEBUG
   if( fDebug > 2 ) {
-    Double_t pos[3]; fOrigin.GetXYZ(pos);
+    Double_t org[3]; fOrigin.GetXYZ(org);
+    Double_t pos[3]; fCenter.GetXYZ(pos);
     Double_t angle = fWAngle*TMath::RadToDeg();
     DBRequest list[] = {
       { "Number of wires",         &fNelem,     kInt       },
-      { "Detector position",       pos,         kDouble, 3 },
+      { "Detector origin",         org,         kDouble, 3 },
+      { "Detector pos VDC coord",  pos,         kDouble, 3 },
       { "Detector size",           fSize,       kDouble, 3 },
       { "Wire angle (deg)",        &angle                  },
       { "Wire start pos (m)",      &fWBeg                  },
@@ -293,6 +297,85 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
 
   fIsInit = true;
   return kOK;
+}
+
+//_____________________________________________________________________________
+Int_t THaVDCPlane::ReadGeometry( FILE* file, const TDatime& date, Bool_t )
+{
+  // Custom geometry reader for VDC planes.
+  //
+  // Reads:
+  //  "position": Plane center in VDC coordinate system (m) -> fCenter
+  //              This parameter is required because we need Z
+  //  "size":     full x/y/z size of active area (m) -> fSize
+  //              This parameter is optional, but recommended
+  //              If not given, defaults for the HRS VDCs are used
+
+  const char* const here = "ReadGeometry";
+
+  vector<double> position, size;
+  DBRequest request[] = {
+    { "position", &position, kDoubleV, 0, 0, 0, "\"position\" (detector position [m])" },
+    { "size",     &size,     kDoubleV, 0, 1, 0, "\"size\" (detector size [m])" },
+    { 0 }
+  };
+  Int_t err = LoadDB( file, date, request );
+  if( err )
+    return kInitError;
+
+  assert( !position.empty() );  // else LoadDB didn't honor "required" flag
+  if( position.size() != 3 ) {
+    Error( Here(here), "Incorrect number of values = %u for "
+	   "detector position. Must be exactly 3. Fix database.",
+	   static_cast<unsigned int>(position.size()) );
+    return 1;
+  }
+  fCenter.SetXYZ( position[0], position[1], position[2] );
+
+  if( !size.empty() ) {
+    if( size.size() != 3 ) {
+      Error( Here(here), "Incorrect number of values = %u for "
+	     "detector size. Must be exactly 3. Fix database.",
+	     static_cast<unsigned int>(size.size()) );
+      return 2;
+    }
+    if( size[0] == 0 || size[1] == 0 || size[2] == 0 ) {
+      Error( Here(here), "Illegal zero detector dimension. Fix database." );
+      return 3;
+    }
+    if( size[0] < 0 || size[1] < 0 || size[2] < 0 ) {
+      Warning( Here(here), "Illegal negative value for detector dimension. "
+	       "Taking absolute. Check database." );
+    }
+    fSize[0] = 0.5 * TMath::Abs(size[0]);
+    fSize[1] = 0.5 * TMath::Abs(size[1]);
+    fSize[2] = TMath::Abs(size[2]);
+  }
+  else {
+    // Conservative defaults for HRS VDCs
+    // NB: these are used by the IsInActiveArea cut in THaVDCChamber::
+    // MatchUVClusters. Too small values lead to loss of acceptance.
+    fSize[0] = 1.2; // half size
+    fSize[1] = 0.2; // half size
+    fSize[2] = 0.026;
+  }
+
+  return 0;
+}
+
+//_____________________________________________________________________________
+void THaVDCPlane::UpdateGeometry( Double_t x, Double_t y, bool force )
+{
+  // Set the xy coordinates of this plane's center unless already set.
+  // Then set fOrigin to fCenter of this plane, rotated by the VDC angle
+
+  if( force ||
+      (TMath::Abs(fCenter.X()) < 1e-6 && TMath::Abs(fCenter.Y()) < 1e-6) ) {
+    fCenter.SetX(x);
+    fCenter.SetY(y);
+  }
+  if( fVDC )
+    fOrigin = fVDC->DetToTrackCoord( fCenter );
 }
 
 //_____________________________________________________________________________
@@ -725,6 +808,17 @@ Int_t THaVDCPlane::FitTracks()
   }
 
   return 0;
+}
+
+//_____________________________________________________________________________
+Bool_t THaVDCPlane::IsInActiveArea( Double_t x, Double_t y ) const
+{
+  // Check if given (x,y) coordinates are inside this plane's active area
+  // (defined by fCenter and fSize).
+  // x and y must be given in the VDC coordinate system.
+
+  return ( TMath::Abs(x-fCenter.X()) <= fSize[0] &&
+	   TMath::Abs(y-fCenter.Y()) <= fSize[1] );
 }
 
 ///////////////////////////////////////////////////////////////////////////////

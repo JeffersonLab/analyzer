@@ -78,8 +78,23 @@ protected:
   Int_t MatchUVClusters();    // Match clusters in U with clusters in V
   Int_t CalcPointCoords();
 
+  Double_t UVtoX( Double_t u, Double_t v ) const;
+  Double_t UVtoY( Double_t u, Double_t v ) const;
+
   ClassDef(THaVDCChamber,0)   // VDC chamber (pair of a U and a V plane)
 };
+
+//_____________________________________________________________________________
+inline Double_t THaVDCChamber::UVtoX( Double_t u, Double_t v ) const
+{
+  return (u*fSin_v - v*fSin_u) * fInv_sin_vu;
+}
+
+//_____________________________________________________________________________
+inline Double_t THaVDCChamber::UVtoY( Double_t u, Double_t v ) const
+{
+  return (v*fCos_u - u*fCos_v) * fInv_sin_vu;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 

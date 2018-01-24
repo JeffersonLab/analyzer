@@ -44,7 +44,6 @@ THaVDCChamber::THaVDCChamber( const char* name, const char* description,
   fVDC = dynamic_cast<THaVDC*>( GetMainDetector() );
 }
 
-
 //_____________________________________________________________________________
 THaVDCChamber::~THaVDCChamber()
 {
@@ -64,9 +63,6 @@ THaDetectorBase::EStatus THaVDCChamber::Init( const TDatime& date )
   if( IsZombie() || !fV || !fU )
     return fStatus = kInitError;
 
-  if( GetParent() )
-    fOrigin = GetParent()->GetOrigin();
-
   EStatus status;
   if( (status = THaSubDetector::Init( date )) ||
       (status = fU->Init( date )) ||
@@ -75,15 +71,36 @@ THaDetectorBase::EStatus THaVDCChamber::Init( const TDatime& date )
 
   fSpacing = fV->GetZ() - fU->GetZ();  // Space between U & V planes
 
-  TVector3 z( 0.0, 0.0, fU->GetZ() );
-  fOrigin += z;
-
   // Precompute and store values for efficiency
-  fSin_u   = fU->GetSinAngle();
-  fCos_u   = fU->GetCosAngle();
-  fSin_v   = fV->GetSinAngle();
-  fCos_v   = fV->GetCosAngle();
+  fSin_u   = fU->GetSinWAngle();
+  fCos_u   = fU->GetCosWAngle();
+  fSin_v   = fV->GetSinWAngle();
+  fCos_v   = fV->GetCosWAngle();
   fInv_sin_vu = 1.0/TMath::Sin( fV->GetWAngle() - fU->GetWAngle() );
+
+  // Use the same coordinate system as the planes
+  fXax = fU->GetXax();
+  fYax = fU->GetYax();
+  fZax = fU->GetZax();
+
+  // Calculate plane center x/y coordinates, assuming that the plane's
+  // wires are arranged symmetrically around the center
+  Double_t ubeg = fU->GetWBeg();
+  Double_t vbeg = fV->GetWBeg();
+  Double_t uend = fU->GetWBeg() + (fU->GetNWires()-1)*fU->GetWSpac();
+  Double_t vend = fV->GetWBeg() + (fV->GetNWires()-1)*fV->GetWSpac();;
+  Double_t xc = 0.5 * ( UVtoX(ubeg,vbeg) + UVtoX(uend,vend) );
+  Double_t yc = 0.5 * ( UVtoY(ubeg,vbeg) + UVtoY(uend,vend) );
+  fU->UpdateGeometry(xc,yc);
+  fV->UpdateGeometry(xc,yc);
+
+  // Take the u plane as our reference plane
+  fOrigin = fU->GetOrigin();
+
+  // Estimate our size
+  fSize[0] = 0.5*TMath::Max( fU->GetXSize(), fU->GetXSize() );
+  fSize[1] = 0.5*TMath::Max( fU->GetYSize(), fU->GetYSize() );
+  fSize[2] = fSpacing + TMath::Max( fU->GetZSize(), fV->GetZSize() );
 
   return fStatus = kOK;
 }
@@ -114,10 +131,10 @@ PointCoords_t THaVDCChamber::CalcDetCoords( const THaVDCCluster* ucl,
   Double_t v = v0 - mv * GetSpacing();
 
   PointCoords_t c;
-  c.x     = (u*fSin_v - v*fSin_u) * fInv_sin_vu;
-  c.y     = (v*fCos_u - u*fCos_v) * fInv_sin_vu;
-  c.theta = (mu*fSin_v - mv*fSin_u) * fInv_sin_vu;
-  c.phi   = (mv*fCos_u - mu*fCos_v) * fInv_sin_vu;
+  c.x     = UVtoX(u,v);
+  c.y     = UVtoY(u,v);
+  c.theta = UVtoX(mu,mv);
+  c.phi   = UVtoY(mu,mv);
 
   return c;
 }

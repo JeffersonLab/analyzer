@@ -144,6 +144,9 @@ protected:
   void CorrectTimeOfFlight(TClonesArray& tracks);
   void FindBadTracks(TClonesArray &tracks);
 
+  virtual Int_t ReadGeometry( FILE* file, const TDatime& date,
+			      Bool_t required = kFALSE );
+
   ClassDef(THaVDC,0)             // VDC class
 };
 

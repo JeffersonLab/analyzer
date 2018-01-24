@@ -173,8 +173,8 @@ chi2_t THaVDCCluster::CalcDist()
     if( fHits[j]->GetTrkNum() != fTrack->GetTrkNum() )
       continue;
     Double_t u     = fHits[j]->GetPos();    // u (v) coordinate of wire
-    Double_t sina  = fPlane->GetSinAngle();
-    Double_t cosa  = fPlane->GetCosAngle();
+    Double_t sina  = fPlane->GetSinWAngle();
+    Double_t cosa  = fPlane->GetCosWAngle();
     Double_t denom = cosa*fTrack->GetDTheta() + sina*fTrack->GetDPhi();
     Double_t z     = (u - cosa*fTrack->GetDX() - sina*fTrack->GetDY()) / denom;
     Double_t dz    = z - fPlane->GetZ();

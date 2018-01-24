@@ -98,7 +98,7 @@ THaAnalysisObject::EStatus THaVDC::Init( const TDatime& date )
       (status = fUpper->Init( date )) )
     return fStatus = status;
 
-  // Get the spacing between the VDC planes
+  // Get the spacing between the VDC chambers
   fSpacing = fUpper->GetUPlane()->GetZ() - fLower->GetUPlane()->GetZ();
 
   return fStatus = kOK;
@@ -323,7 +323,6 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
 
   // Define the VDC coordinate axes in the "TRANSPORT system" (z along particle
   // direction at central momentum)
-  // This overrides any "angle" settings picked up by ReadGeometry above.
   DefineAxes(fVDCAngle);
 
   // Read configuration parameters
@@ -1104,8 +1103,7 @@ void THaVDC::FindBadTracks(TClonesArray& tracks)
 
     // if the tracks go out of the bounds of the s2 plane,
     // toss the track out
-    if( (TMath::Abs(x2 - s2->GetOrigin().X()) > s2->GetSize()[0]) ||
-	(TMath::Abs(y2 - s2->GetOrigin().Y()) > s2->GetSize()[1]) ) {
+    if( !s2->IsInActiveArea(x2,y2) ) {
 
       // for now, we just flag the tracks as bad
       track->SetFlag( track->GetFlag() | kBadTrack );
@@ -1229,6 +1227,53 @@ void THaVDC::Print(const Option_t* opt) const
   }
 
   return;
+}
+
+//_____________________________________________________________________________
+Int_t THaVDC::ReadGeometry( FILE* file, const TDatime& date, Bool_t )
+{
+  // Special VDC geometry reader. Reads only the optional "size" parameters and
+  // ignores "position" and "angle".
+  // Since the VDC defines the origin of the TRANSPORT coordinate system, we
+  // always have fOrigin = (0,0,0). The VDC angle is the T000 focal plane matrix
+  // element and so should not be read separately here.
+
+  const char* const here = "ReadGeometry";
+
+  fOrigin.SetXYZ(0,0,0); // by definition
+
+  vector<double> size;
+  DBRequest request[] = {
+    { "size", &size, kDoubleV, 0, 1, 0, "\"size\" (detector size [m])" },
+    { 0 }
+  };
+  Int_t err = LoadDB( file, date, request );
+  if( err )
+    return kInitError;
+
+  if( !size.empty() ) {
+    if( size.size() != 3 ) {
+      Error( Here(here), "Incorrect number of values = %u for "
+	     "detector size. Must be exactly 3. Fix database.",
+	     static_cast<unsigned int>(size.size()) );
+      return 2;
+    }
+    if( size[0] == 0 || size[1] == 0 || size[2] == 0 ) {
+      Error( Here(here), "Illegal zero detector dimension. Fix database." );
+      return 3;
+    }
+    if( size[0] < 0 || size[1] < 0 || size[2] < 0 ) {
+      Warning( Here(here), "Illegal negative value for detector dimension. "
+	       "Taking absolute. Check database." );
+    }
+    fSize[0] = 0.5 * TMath::Abs(size[0]);
+    fSize[1] = 0.5 * TMath::Abs(size[1]);
+    fSize[2] = TMath::Abs(size[2]);
+  }
+  else
+    fSize[0] = fSize[1] = fSize[2] = kBig;
+
+  return 0;
 }
 
 //_____________________________________________________________________________
