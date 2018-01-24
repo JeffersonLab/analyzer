@@ -79,6 +79,8 @@ protected:
   Double_t UVtoX( Double_t u, Double_t v ) const;
   Double_t UVtoY( Double_t u, Double_t v ) const;
 
+  virtual Int_t DefineVariables( EMode mode = kDefine );
+
   ClassDef(THaVDCChamber,0)   // VDC chamber (pair of a U and a V plane)
 };
 

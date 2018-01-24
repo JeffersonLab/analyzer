@@ -103,6 +103,31 @@ THaDetectorBase::EStatus THaVDCChamber::Init( const TDatime& date )
 }
 
 //_____________________________________________________________________________
+Int_t THaVDCChamber::DefineVariables( EMode mode )
+{
+  // initialize global variables
+
+  if( mode == kDefine && fIsSetup ) return kOK;
+  fIsSetup = ( mode == kDefine );
+
+  // Register variables in global list
+
+  RVarDef vars[] = {
+    { "npt",       "Number of space points", "GetNPoints()" },
+    { "pt.x",      "Point center x (m)",     "fPoints.THaVDCPoint.X()" },
+    { "pt.y",      "Point center y (m)",     "fPoints.THaVDCPoint.Y()" },
+    { "pt.z",      "Point center z (m)",     "fPoints.THaVDCPoint.Z()" },
+    { "pt.d_x",    "Point VDC x (m)",        "fPoints.THaVDCPoint.fX" },
+    { "pt.d_y",    "Point VDC y (m)",        "fPoints.THaVDCPoint.fY" },
+    { "pt.d_th",   "Point VDC tan(theta)",   "fPoints.THaVDCPoint.fTheta" },
+    { "pt.d_ph",   "Point VDC tan(phi)",     "fPoints.THaVDCPoint.fPhi" },
+    { "pt.paired", "Point is paired",        "fPoints.THaVDCPoint.HasPartner()" },
+    { 0 }
+  };
+  return DefineVarsFromList( vars, mode );
+}
+
+//_____________________________________________________________________________
 void THaVDCChamber::SetDebug( Int_t level )
 {
   // Set debug level of this chamber and its plane subdetectors
