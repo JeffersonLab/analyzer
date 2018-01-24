@@ -1094,17 +1094,12 @@ void THaVDC::FindBadTracks(TClonesArray& tracks)
   Int_t n_exist = tracks.GetLast()+1;
   for( Int_t t = 0; t < n_exist; t++ ) {
     THaTrack* track = static_cast<THaTrack*>( tracks.At(t) );
-    Double_t x2, y2;
 
     // project the current x and y positions into the s2 plane
-    if(!s2->CalcInterceptCoords(track, x2, y2)) {
-      x2 = 0.0;
-      y2 = 0.0;
-    }
-
     // if the tracks go out of the bounds of the s2 plane,
     // toss the track out
-    if( !s2->IsInActiveArea(x2,y2) ) {
+    Double_t x2, y2;
+    if( !s2->CalcInterceptCoords(track, x2, y2) || !s2->IsInActiveArea(x2,y2) ) {
 
       // for now, we just flag the tracks as bad
       track->SetFlag( track->GetFlag() | kBadTrack );
