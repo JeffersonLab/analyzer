@@ -9,6 +9,7 @@
 #include "THaVDCPoint.h"
 #include "THaVDCChamber.h"
 #include "THaTrack.h"
+#include <cassert>
 
 //_____________________________________________________________________________
 THaVDCPoint::THaVDCPoint( THaVDCCluster* u_cl, THaVDCCluster* v_cl,
@@ -29,7 +30,8 @@ void THaVDCPoint::CalcDetCoords()
   // coordinate system.
 
   const PointCoords_t c = fChamber->CalcDetCoords(fUClust,fVClust);
-  Set( c.x, c.y, c.theta, c.phi, fChamber->GetOrigin() );
+  Set( c.x, c.y, c.theta, c.phi );
+  SetCenter( fChamber->DetToTrackCoord(c.x,c.y) );
 }
 
 //_____________________________________________________________________________

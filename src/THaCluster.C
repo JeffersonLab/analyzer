@@ -11,24 +11,14 @@
 
 using namespace std;
 
-//_____________________________________________________________________________
-THaCluster& THaCluster::operator=( const THaCluster& rhs )
-{
-  // Assignment operator
-
-  TObject::operator=( rhs );
-  if( this != &rhs ) {
-    fCenter     = rhs.fCenter;
-  }
-  return *this;
-}
+const Double_t THaCluster::kBig = 1e38;
 
 //_____________________________________________________________________________
 void THaCluster::Clear( const Option_t* )
 {
   // Clear the contents of the cluster
 
-  fCenter.SetXYZ( 0.0, 0.0, 0.0 );
+  fCenter.SetXYZ( kBig, kBig, kBig );
 }
 
 //_____________________________________________________________________________

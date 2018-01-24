@@ -13,9 +13,7 @@
 class THaCluster : public TObject {
 
 public:
-  THaCluster() {}
-  THaCluster( const THaCluster& rhs ) : TObject(rhs), fCenter(rhs.fCenter) {}
-  THaCluster& operator=( const THaCluster& );
+  THaCluster() : fCenter(kBig,kBig,kBig) {}
   virtual ~THaCluster() {}
 
   TVector3&        GetCenter()       { return fCenter; }
@@ -23,10 +21,15 @@ public:
   { fCenter.SetXYZ(x,y,z); }
   virtual void     SetCenter( const TVector3& vec3 )
   { fCenter = vec3; }
+  Double_t         X() const { return fCenter.X(); }
+  Double_t         Y() const { return fCenter.Y(); }
+  Double_t         Z() const { return fCenter.Z(); }
 
   // TObject functions redefined
   virtual void     Clear( Option_t* opt="" );
   virtual void     Print( Option_t* opt="" ) const;
+
+  static const Double_t kBig;
 
 protected:
 

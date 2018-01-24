@@ -11,8 +11,6 @@
 
 #include "THaCluster.h"
 #include "THaVDCCluster.h"
-#include "TVector3.h"
-#include <cassert>
 
 class THaVDCChamber;
 class THaTrack;
@@ -42,6 +40,7 @@ public:
   Double_t       GetZU()       const;
   Double_t       GetZV()       const;
   Double_t       GetZ()        const { return GetZU(); }
+  Bool_t         HasPartner()  const { return (fPartner != 0); }
 
   void CalcChisquare(Double_t &chi2, Int_t &nhits) const;
 
@@ -56,18 +55,16 @@ protected:
   THaVDCChamber* fChamber;      // Chamber of this cluster pair
   THaTrack*      fTrack;        // Track that this point is associated with
   THaVDCPoint*   fPartner;      // Point associated with this one in
-                                //  the other chamber
-  // Detector coordinates derived from the cluster coordinates
+				//  the other chamber
+  // Detector system coordinates derived from fUClust and fVClust
   // at the U plane (z = GetZ()).  X,Y in m; theta, phi in tan(angle)
-  Double_t fX;     // X position of point in U wire-plane
-  Double_t fY;     // Y position of point in U wire-plane
-  Double_t fTheta; // Angle between z-axis and projection of track into xz plane
-  Double_t fPhi;   // Angle between z-axis and projection of track into yz plane
+  Double_t fX;     // X position of point in U wire plane
+  Double_t fY;     // Y position of point in U wire plane
+  Double_t fTheta; // tan(angle between z-axis and track proj onto xz plane)
+  Double_t fPhi;   // tan(angle between z-axis and track proj onto yz plane)
 
   void Set( Double_t x, Double_t y, Double_t theta, Double_t phi )
   { fX = x; fY = y; fTheta = theta; fPhi = phi; }
-  void Set( Double_t x, Double_t y, Double_t theta, Double_t phi,
-	    const TVector3& offset );
 
 private:
   // Hide copy ctor and op=
@@ -78,18 +75,6 @@ private:
 };
 
 //-------------------- inlines ------------------------------------------------
-inline
-void THaVDCPoint::Set( Double_t x, Double_t y, Double_t theta, Double_t phi,
-			 const TVector3& offset )
-{
-  // Set coordinates of this point. Also set absolute position vector.
-
-  Set( x, y, theta, phi );
-  fCenter.SetXYZ( x, y, 0.0 );
-  fCenter += offset;
-}
-
-//_____________________________________________________________________________
 inline
 Double_t THaVDCPoint::GetU() const
 {
