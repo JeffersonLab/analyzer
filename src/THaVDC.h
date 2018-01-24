@@ -8,7 +8,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "THaTrackingDetector.h"
-#include <vector>
 #include <cassert>
 
 class THaVDCChamber;
@@ -80,7 +79,7 @@ public:
 
     bool iszero;             // whether the element is zero
     std::vector<int> pw;     // exponents of matrix element
-                             //   e.g. D100 = { 1, 0, 0 }
+			     //   e.g. D100 = { 1, 0, 0 }
     int  order;
     double v;                // its computed value
     std::vector<double> poly;// the associated polynomial
@@ -91,29 +90,32 @@ protected:
   enum ECoordType { kTransport, kRotatingTransport };
   enum EFPMatrixElemTag { T000 = 0, Y000, P000 };
 
+  // Subdetectors
   THaVDCChamber* fLower;    // Lower chamber
   THaVDCChamber* fUpper;    // Upper chamber
 
+  // Event data
   TClonesArray*  fLUpairs;  // Candidate pairs of lower/upper points
+  Int_t    fNtracks;        // Number of tracks found in ConstructTracks
+  UInt_t   fEvNum;          // Event number from decoder (for diagnostics)
 
+  // Geometry
   Double_t fVDCAngle;       // Angle from the VDC cs to TRANSPORT cs (rad)
   Double_t fSin_vdc;        // Sine of VDC angle
   Double_t fCos_vdc;        // Cosine of VDC angle
   Double_t fTan_vdc;        // Tangent of VDC angle
   Double_t fSpacing;        // Spacing between lower and upper chambers (m)
-  Int_t    fNtracks;        // Number of tracks found in ConstructTracks
 
+  Double_t fCentralDist;    // the path length of the central ray from
+			    // the origin of the transport coordinates to
+			    // the s1 plane
+
+  // Configuration
   Int_t    fNumIter;        // Number of iterations for FineTrack()
   Double_t fErrorCutoff;    // Cut on track matching error
   ECoordType fCoordType;    // Coordinates to use as input for matrix calcs
 
-  Double_t fCentralDist;    // the path length of the central ray from
-                            // the origin of the transport coordinates to
-                            // the s1 plane
-
-  UInt_t   fEvNum;          // Event number from decoder (for diagnostics)
-
-  // initial matrix elements
+  // Optics matrix elements (FIXME: move to HRS)
   std::vector<THaMatrixElement> fTMatrixElems;
   std::vector<THaMatrixElement> fDMatrixElems;
   std::vector<THaMatrixElement> fPMatrixElems;
@@ -121,8 +123,8 @@ protected:
   std::vector<THaMatrixElement> fYMatrixElems;
   std::vector<THaMatrixElement> fYTAMatrixElems; // involves abs(theta_fp)
   std::vector<THaMatrixElement> fFPMatrixElems;  // matrix elements used in
-                                            // focal plane transformations
-                                            // { T, Y, P }
+					    // focal plane transformations
+					    // { T, Y, P }
 
   std::vector<THaMatrixElement> fLMatrixElems;   // Path-length corrections (meters)
 

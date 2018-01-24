@@ -15,7 +15,6 @@
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "THaVDC.h"
 #include "THaVDCChamber.h"
 #include "THaVDCPlane.h"
 #include "THaVDCPoint.h"
@@ -40,8 +39,6 @@ THaVDCChamber::THaVDCChamber( const char* name, const char* description,
 
   // Create array for cluster pairs (points) representing hits
   fPoints = new TClonesArray("THaVDCPoint", 10); // 10 is arbitrary
-
-  fVDC = dynamic_cast<THaVDC*>( GetMainDetector() );
 }
 
 //_____________________________________________________________________________

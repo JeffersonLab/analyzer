@@ -11,7 +11,6 @@
 #include "TClonesArray.h"
 #include "THaVDCPlane.h"
 #include "THaVDCPoint.h"
-#include "THaVDC.h"
 #include <cassert>
 
 class THaVDCPlane;
@@ -48,8 +47,6 @@ public:
   THaVDCPlane*    GetVPlane()      const { return fV; }
   Int_t           GetNPoints()     const { return fPoints->GetLast()+1; }
   TClonesArray*   GetPoints()      const { return fPoints; }
-  THaVDC*         GetVDC()         const
-  { return static_cast<THaVDC*>(GetDetector()); }
   Double_t        GetSpacing()     const { return fSpacing;}
   THaVDCPoint*    GetPoint( Int_t i ) const
     { assert( i>=0 && i<GetNPoints() );
@@ -58,9 +55,11 @@ public:
 
 protected:
 
+  // Subdetectors
   THaVDCPlane*  fU;           // The U plane
   THaVDCPlane*  fV;           // The V plane
 
+  // Event data
   TClonesArray* fPoints;      // Pairs of possibly matching U and V clusters
 
   // Geometry
@@ -71,7 +70,6 @@ protected:
   Double_t fCos_v;            //
   Double_t fInv_sin_vu;       // 1/Sine of the difference between the
                               // V axis angle and the U axis angle
-  THaVDC*  fVDC;              // Parent VDC detector of this chamber
 
   void  FindClusters();       // Find clusters in U and V planes
   void  FitTracks();          // Fit local tracks for each cluster

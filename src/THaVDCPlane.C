@@ -49,8 +49,8 @@ using namespace std;
 //_____________________________________________________________________________
 THaVDCPlane::THaVDCPlane( const char* name, const char* description,
 			  THaDetectorBase* parent )
-  : THaSubDetector(name,description,parent), /*fTable(0),*/ fTTDConv(0),
-    fVDC(0), fglTrg(0)
+  : THaSubDetector(name,description,parent),
+    /*fTable(0),*/ fTTDConv(0), fVDC(0), fglTrg(0)
 {
   // Constructor
 
@@ -58,10 +58,6 @@ THaVDCPlane::THaVDCPlane( const char* name, const char* description,
   fHits     = new TClonesArray("THaVDCHit", 20 );
   fClusters = new TClonesArray("THaVDCCluster", 5 );
   fWires    = new TClonesArray("THaVDCWire", 368 );
-
-  fNpass = 0;
-  fMinTdiff = 0.0;
-  fMaxTdiff = 2e-7;  // 200ns correspond to ~10mm, will accept all
 
   fVDC = dynamic_cast<THaVDC*>( GetMainDetector() );
 }
@@ -398,7 +394,7 @@ Int_t THaVDCPlane::DefineVariables( EMode mode )
     { "trdist", "Dist. from track",           "fHits.THaVDCHit.ftrDist" },
     { "ltrdist","Dist. from local track",     "fHits.THaVDCHit.fltrDist" },
     { "trknum", "Track number (0=unused)",    "fHits.THaVDCHit.fTrkNum" },
-    { "clsnum", "Cluster number (-1=unused)",    "fHits.THaVDCHit.fClsNum" },
+    { "clsnum", "Cluster number (-1=unused)", "fHits.THaVDCHit.fClsNum" },
     { "nclust", "Number of clusters",         "GetNClusters()" },
     { "clsiz",  "Cluster sizes",              "fClusters.THaVDCCluster.GetSize()" },
     { "clpivot","Cluster pivot wire num",     "fClusters.THaVDCCluster.GetPivotWireNum()" },
@@ -416,7 +412,7 @@ Int_t THaVDCPlane::DefineVariables( EMode mode )
     { "cltrknum", "Cluster track number (0=unused)", "fClusters.THaVDCCluster.fTrkNum" },
     { "clbeg", "Cluster start wire",          "fClusters.THaVDCCluster.fClsBeg" },
     { "clend", "Cluster end wire",            "fClusters.THaVDCCluster.fClsEnd" },
-    { "npass", "Number of hit passes for cluster", "GetNpass()" },
+    { "npass", "Number of hit passes for cluster", "fNpass" },
     { 0 }
   };
   return DefineVarsFromList( vars, mode );
@@ -664,7 +660,7 @@ Int_t THaVDCPlane::FindClusters()
 	       continue;
        }
        if( hit->GetClsNum() != -1 )
-       	  { ++i; continue; }
+	  { ++i; continue; }
        // Ensures we don't use this to try and start a new
        // cluster
        hit->SetClsNum(-3);
@@ -680,7 +676,7 @@ Int_t THaVDCPlane::FindClusters()
 		  continue;
 	  if(    nextHit->GetClsNum() != -1   // -1 is virgin
 	      && nextHit->GetClsNum() != -3 ) // -3 was considered to start
-		  			      //a clus but is not in cluster
+					      //a clus but is not in cluster
 		  continue;
 	  Int_t ndif = nextHit->GetWireNum() - hit->GetWireNum();
 	  // Do not consider adding hits from a wire that was already

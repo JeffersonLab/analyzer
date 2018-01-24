@@ -63,10 +63,11 @@ struct MEdef_t {
 THaVDC::THaVDC( const char* name, const char* description,
 		THaApparatus* apparatus ) :
   THaTrackingDetector(name,description,apparatus),
+  fNtracks(0), fEvNum(0),
   fVDCAngle(-TMath::PiOver4()), fSin_vdc(-0.5*TMath::Sqrt2()),
   fCos_vdc(0.5*TMath::Sqrt2()), fTan_vdc(-1.0),
-  fSpacing(0.33), fNtracks(0), fNumIter(1), fErrorCutoff(1e9),
-  fCoordType(kRotatingTransport), fCentralDist(0.), fEvNum(0)
+  fSpacing(0.33), fCentralDist(0.),
+  fNumIter(1), fErrorCutoff(1e9), fCoordType(kRotatingTransport)
 {
   // Constructor
 
