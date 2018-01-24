@@ -27,7 +27,7 @@ void THaTrackProj::Clear( Option_t* )
 }
 
 //_____________________________________________________________________________
-void THaTrackProj::Print( Option_t* opt )
+void THaTrackProj::Print( Option_t* opt ) const
 {
   // Print track projection info
 

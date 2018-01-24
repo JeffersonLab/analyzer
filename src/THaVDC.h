@@ -39,7 +39,7 @@ public:
   Double_t GetVDCAngle() const { return fVDCAngle; }
   Double_t GetSpacing()  const { return fSpacing;  }
 
-  void Print(const Option_t* opt) const;
+  void Print(const Option_t* opt="") const;
 
   // Bits & and bit masks for THaTrack
   enum {

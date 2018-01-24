@@ -45,7 +45,7 @@ public:
   virtual Double_t GetVDCAngle() { return fVDCAngle; }
   virtual Double_t GetSpacing()  { return fUSpacing;  }
 
-  virtual void Print(const Option_t* opt) const;
+  virtual void Print(const Option_t* opt="") const;
 
   void  SetNMaxGap( Int_t val );
   void  SetMinTime( Int_t val );

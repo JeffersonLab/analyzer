@@ -27,7 +27,7 @@ public:
   virtual void      CombinePID();
           Double_t  GetProb( UInt_t detector, UInt_t particle ) const;
           Double_t  GetCombinedProb( UInt_t particle ) const;
-  virtual void      Print( Option_t* opt ) const;
+  virtual void      Print( Option_t* opt="" ) const;
           void      SetProb( UInt_t detector, UInt_t particle, Double_t prob );
           void      SetSize( UInt_t ndet, UInt_t prob );
 

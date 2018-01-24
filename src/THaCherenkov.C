@@ -64,7 +64,6 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
 
   vector<Int_t> detmap;
   Int_t nelem;
-  Double_t angle = 0.0;
 
   // Read configuration parameters
   DBRequest config_request[] = {

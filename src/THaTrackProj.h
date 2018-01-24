@@ -21,7 +21,7 @@ public:
   virtual ~THaTrackProj() {}
 
   virtual void Clear( Option_t* opt="" );
-  virtual void Print( Option_t* opt="" );
+  virtual void Print( Option_t* opt="" ) const;
 
   Double_t  GetX()       const { return fX; }
   Double_t  GetY()       const { return fY; }
