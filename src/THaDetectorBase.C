@@ -88,6 +88,14 @@ TVector3 THaDetectorBase::DetToTrackCoord( const TVector3& p ) const
 }
 
 //_____________________________________________________________________________
+TVector3 THaDetectorBase::DetToTrackCoord( Double_t x, Double_t y ) const
+{
+  // Convert x/y coordinates in detector plane to the track reference frame.
+
+  return TVector3( x*fXax + y*fYax + fOrigin );
+}
+
+//_____________________________________________________________________________
 TVector3 THaDetectorBase::TrackToDetCoord( const TVector3& point ) const
 {
   // Convert/project coordinates of the given 'point' to coordinates in this
