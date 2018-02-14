@@ -55,12 +55,16 @@
 #include "TString.h"
 #include "TClass.h"
 #include "TMethodCall.h"
+#include "TFunction.h"
 #include "TROOT.h"
 #include "TMath.h"
 
 #include <cstring>
+#include <string>  // for TFunction::GetReturnTypeNormalizedName
 
 ClassImp(THaVarList)
+
+using namespace std;
 
 static const Int_t kInitVarListCapacity = 100;
 static const Int_t kVarListRehashLevel  = 3;
@@ -310,36 +314,81 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
       break;
     }
 
-    if( !theMethod ) {
+    if( !theMethod || !theMethod->IsValid() ) {
       Warning( errloc, "Error getting function information for variable %s. "
 	       "Not defined.", name.Data() );
       return 0;
     }
-    if( !theMethod->GetMethod() ) {
+    TFunction* func = theMethod->GetMethod();
+    if( !func ) {
       Warning( errloc, "Function %s does not exist. "
 	       "Variable %s not defined.", s[ndot].Data(), name.Data() );
       delete theMethod;
       return 0;
     }
 
-    VarType type;
-    switch( theMethod->ReturnType()) {
-    case TMethodCall::kLong:
-      type = kLong;
-      break;
-    case TMethodCall::kDouble:
-      type = kDouble;
-      break;
-    default:
-      Warning( errloc, "Undefined return type for function %s. "
-	       "Variable %s not defined.", s[ndot].Data(), name.Data() );
+    TMethodCall::EReturnType rtype = theMethod->ReturnType();
+    if( rtype != TMethodCall::kLong && rtype != TMethodCall::kDouble ) {
+      Error( errloc, "Unsupported return type for function %s. "
+	     "Variable %s not defined.", s[ndot].Data(), name.Data() );
       delete theMethod;
       return 0;
-      break;
     }
+    // Attempt to get the real function return type
+    VarType type = kVarTypeEnd;
+    string ntype = func->GetReturnTypeNormalizedName();
+    if( ntype == "double" )
+      type = kDouble;
+    else if( (sizeof(int) == 4 && ntype == "int") ||
+	     (sizeof(long) == 4 && ntype == "long") )
+      type = kInt;
+    else if( (sizeof(unsigned int) == 4 && ntype == "unsigned int") ||
+	     (sizeof(unsigned long) == 4 && ntype == "unsigned long") )
+      type = kUInt;
+    else if( ntype == "float" )
+      type = kFloat;
+    else if( ntype == "bool" ) {
+      if( sizeof(bool) == 1 )
+	type = kChar;
+      else if( sizeof(bool) == 2 )
+	type = kShort;
+      else if( sizeof(bool) == 4 )
+	type = kInt;
+    }
+    else if( (sizeof(long) == 8 && ntype == "long") ||
+	     (sizeof(long long) == 8 && ntype == "long long") ||
+	     (sizeof(int) == 8 && ntype == "int") )
+      type = kLong;
+    else if( (sizeof(unsigned long) == 8 && ntype == "unsigned long") ||
+	     (sizeof(unsigned long long) == 8 && ntype == "unsigned long long") ||
+	     (sizeof(unsigned int) == 8 && ntype == "unsigned int") )
+      type = kULong;
+    else if( (sizeof(short) == 4 && ntype == "short") )
+      type = kShort;
+    else if( (sizeof(unsigned short) == 4 && ntype == "unsigned short") )
+      type = kUShort;
+    else if( ntype == "char" )
+      type = kChar;
+    else if( ntype == "unsigned char" )
+      type = kUChar;
+
+    if( type == kVarTypeEnd ) {
+      Error( errloc, "Unsupported return type for function %s. "
+	     "Variable %s not defined.", s[ndot].Data(), name.Data() );
+      delete theMethod;
+      return 0;
+    }
+    if( (rtype == TMethodCall::kDouble && type != kDouble && type != kFloat) ||
+	(rtype == TMethodCall::kLong && (type == kDouble || type == kFloat)) ) {
+      // Someone lied to us
+      Error( errloc, "Ill-formed TMethodCall returned from ROOT for function %s, "
+	     "variable %s. Call expert.", s[ndot].Data(), name.Data() );
+      delete theMethod;
+      return 0;
+    }
+
     var = new THaVar( name, desc, (void*)loc, type, ((ndot==2) ? 0 : -1),
 		      theMethod);
-    
     if( var )
       AddLast( var );
     else {

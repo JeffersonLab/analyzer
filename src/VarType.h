@@ -15,15 +15,15 @@
 
 // NB: When updating this list, must also update var_type_info[] in THaVar.C
 enum VarType { kVarTypeBegin = 0, kDouble = kVarTypeBegin,
-	       kFloat, kLong, kULong, kInt, kUInt, 
-	       kShort, kUShort, kChar, kByte, 
+	       kFloat, kLong, kULong, kInt, kUInt,
+	       kShort, kUShort, kChar, kUChar, kByte = kUChar,
 	       kObject, kTString, kString,
 	       kIntV, kUIntV, kFloatV, kDoubleV, kIntM, kFloatM, kDoubleM,
-	       kDoubleP, kFloatP, kLongP, kULongP, kIntP, kUIntP, 
-	       kShortP, kUShortP, kCharP, kByteP,
+	       kDoubleP, kFloatP, kLongP, kULongP, kIntP, kUIntP,
+	       kShortP, kUShortP, kCharP, kUCharP, kByteP = kUCharP,
 	       kObjectP,
-	       kDouble2P, kFloat2P, kLong2P, kULong2P, kInt2P, kUInt2P, 
-	       kShort2P, kUShort2P, kChar2P, kByte2P,
+	       kDouble2P, kFloat2P, kLong2P, kULong2P, kInt2P, kUInt2P,
+	       kShort2P, kUShort2P, kChar2P, kUChar2P, kByte2P = kUChar2P,
 	       kObject2P,
 	       kVarTypeEnd };
 

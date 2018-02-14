@@ -11,6 +11,7 @@
 
 #include "THaRTTI.h"
 #include "THaVar.h"
+#include "THaArrayString.h"
 #include "TROOT.h"
 #include "TClass.h"
 #include "TClassEdit.h"

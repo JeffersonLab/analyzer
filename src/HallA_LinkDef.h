@@ -139,5 +139,39 @@
 #pragma link C++ class THaOnlRun+;
 #endif
 
+#pragma link C++ function THaVar::THaVar( const char*, const char*, Double_t&, const Int_t* );
+#pragma link C++ function THaVar::THaVar( const char*, const char*, Float_t&, const Int_t* );
+#pragma link C++ function THaVar::THaVar( const char*, const char*, Long64_t&, const Int_t* );
+#pragma link C++ function THaVar::THaVar( const char*, const char*, ULong64_t&, const Int_t* );
+#pragma link C++ function THaVar::THaVar( const char*, const char*, Int_t&, const Int_t* );
+#pragma link C++ function THaVar::THaVar( const char*, const char*, UInt_t&, const Int_t* );
+#pragma link C++ function THaVar::THaVar( const char*, const char*, Short_t&, const Int_t* );
+#pragma link C++ function THaVar::THaVar( const char*, const char*, UShort_t&, const Int_t* );
+#pragma link C++ function THaVar::THaVar( const char*, const char*, Char_t&, const Int_t* );
+#pragma link C++ function THaVar::THaVar( const char*, const char*, UChar_t&, const Int_t* );
+#pragma link C++ function THaVar::THaVar( const char*, const char*, Double_t*&, const Int_t* );
+#pragma link C++ function THaVar::THaVar( const char*, const char*, Float_t*&, const Int_t* );
+#pragma link C++ function THaVar::THaVar( const char*, const char*, Long64_t*&, const Int_t* );
+#pragma link C++ function THaVar::THaVar( const char*, const char*, ULong64_t*&, const Int_t* );
+#pragma link C++ function THaVar::THaVar( const char*, const char*, Int_t*&, const Int_t* );
+#pragma link C++ function THaVar::THaVar( const char*, const char*, UInt_t*&, const Int_t* );
+#pragma link C++ function THaVar::THaVar( const char*, const char*, Short_t*&, const Int_t* );
+#pragma link C++ function THaVar::THaVar( const char*, const char*, UShort_t*&, const Int_t* );
+#pragma link C++ function THaVar::THaVar( const char*, const char*, Char_t*&, const Int_t* );
+#pragma link C++ function THaVar::THaVar( const char*, const char*, UChar_t*&, const Int_t* );
+#pragma link C++ function THaVar::THaVar( const char*, const char*, Double_t**&, const Int_t* );
+#pragma link C++ function THaVar::THaVar( const char*, const char*, Float_t**&, const Int_t* );
+#pragma link C++ function THaVar::THaVar( const char*, const char*, Long64_t**&, const Int_t* );
+#pragma link C++ function THaVar::THaVar( const char*, const char*, ULong64_t**&, const Int_t* );
+#pragma link C++ function THaVar::THaVar( const char*, const char*, Int_t**&, const Int_t* );
+#pragma link C++ function THaVar::THaVar( const char*, const char*, UInt_t**&, const Int_t* );
+#pragma link C++ function THaVar::THaVar( const char*, const char*, Short_t**&, const Int_t* );
+#pragma link C++ function THaVar::THaVar( const char*, const char*, UShort_t**&, const Int_t* );
+#pragma link C++ function THaVar::THaVar( const char*, const char*, Char_t**&, const Int_t* );
+#pragma link C++ function THaVar::THaVar( const char*, const char*, UChar_t**&, const Int_t* );
+#pragma link C++ function THaVar::THaVar( const char*, const char*, std::vector<int>&, const Int_t* );
+#pragma link C++ function THaVar::THaVar( const char*, const char*, std::vector<unsigned int>&, const Int_t* );
+#pragma link C++ function THaVar::THaVar( const char*, const char*, std::vector<double>&, const Int_t* );
+#pragma link C++ function THaVar::THaVar( const char*, const char*, std::vector<float>&, const Int_t* );
 
 #endif
