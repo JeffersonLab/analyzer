@@ -52,7 +52,7 @@
 #include "VariableArrayVar.h"
 #include "VectorVar.h"
 #include "SeqCollectionMethodVar.h"
-#include "VectorVar.h"
+#include "VectorObjMethodVar.h"
 #include "TError.h"
 #include <cassert>
 #include <typeinfo>
@@ -90,6 +90,8 @@ static struct VarTypeInfo_t {
     { kUIntV,    "kUIntV",    "vector<unsigned int>",     sizeof(unsigned int),&typeid(std::vector<unsigned int>) },
     { kFloatV,   "kFloatV",   "vector<float>",            sizeof(float),       &typeid(std::vector<float>) },
     { kDoubleV,  "kDoubleV",  "vector<double>",           sizeof(double),      &typeid(std::vector<double>) },
+    { kObjectV,  "kObjectV",  "vector<TObject>",          0,    &typeid(std::vector<TObject>) },
+    { kObjectPV, "kObjectPV", "vector<TObject*>",         0,    &typeid(std::vector<TObject*>) },
     { kIntM,     "kIntM",     "vector< vector<int> >",    sizeof(int),         &typeid(std::vector<std::vector<int> >) },
     { kFloatM,   "kFloatM",   "vector< vector<float> >",  sizeof(float),       &typeid(std::vector<std::vector<float> >) },
     { kDoubleM,  "kDoubleM",  "vector< vector<double> >", sizeof(double),      &typeid(std::vector<std::vector<double> >) },
@@ -275,6 +277,40 @@ THaVar::THaVar( const char* name, const char* descript, const void* obj,
     fImpl = new Podd::FixedArrayVar( this, obj, type );
   else
     fImpl = new Podd::Variable( this, obj, type );
+
+  if( fImpl->IsError() )
+    MakeZombie();
+}
+
+//_____________________________________________________________________________
+THaVar::THaVar( const char* name, const char* descript, const void* obj,
+	VarType type, Int_t elem_size, Int_t offset, TMethodCall* method )
+  : TNamed(name,descript), fImpl(0)
+{
+  // Generic constructor for std::vector<TObject(*)>
+  // (used by THaVarList::DefineByType)
+
+  if( type > kByte ) {
+    Error( "THaVar", "Variable %s: Illegal type %s for data in std::vector "
+	   "of objects", name, GetTypeName(type) );
+    MakeZombie();
+    return;
+  }
+  else if( elem_size < 0 || offset < 0 ) {
+    Error( "THaVar", "Variable %s: Illegal parameters elem_size = %d, "
+	   "offset = %d. Must be >= 0", name, elem_size, offset );
+    MakeZombie();
+    return;
+  }
+  if( method ) {
+    if( offset > 0 ) {
+      Warning( "THaVar", "Variable %s: Offset > 0 ignored for method call on "
+	       "object", name );
+    }
+    fImpl = new Podd::VectorObjMethodVar( this, obj, type, elem_size, method );
+  } else {
+    fImpl = new Podd::VectorObjVar( this, obj, type, elem_size, offset );
+  }
 
   if( fImpl->IsError() )
     MakeZombie();

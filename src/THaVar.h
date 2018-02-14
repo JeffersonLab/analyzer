@@ -30,6 +30,9 @@ public:
   THaVar( const char* name, const char* descript, const void* obj,
 	  VarType type, Int_t offset, TMethodCall* method=0, const Int_t* count=0 );
 
+  THaVar( const char* name, const char* descript, const void* obj,
+	  VarType type, Int_t elem_size, Int_t offset, TMethodCall* method=0 );
+
   //TODO: copy, assignment
   virtual ~THaVar();
 

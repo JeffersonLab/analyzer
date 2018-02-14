@@ -22,7 +22,7 @@ public:
 
   THaRTTI() :
     fOffset(-1), fType(kDouble), fArrayType(kScalar), fCountOffset(-1),
-    fDataMember(NULL), fRealData(NULL) {}
+    fDataMember(0), fRealData(0), fElemClass(0) {}
   virtual ~THaRTTI() {}
 
   Int_t        Find( TClass* cl, const TString& var,
@@ -39,10 +39,16 @@ public:
   Bool_t       IsArray()        const { return (fArrayType != kScalar); }
   Bool_t       IsObject()       const { return (fType == kObject ||
 						fType == kObjectP ||
-						fType == kObject2P ); }
+						fType == kObject2P); }
+  Bool_t       IsObjVector()    const { return (fType == kObjectV ||
+						fType == kObjectPV); }
   Bool_t       IsPointer()      const;
   Bool_t       IsValid()        const { return (fOffset != -1); }
-  virtual void Print( Option_t* opt="" ) const;
+  void         Print( Option_t* opt="" ) const;
+  void         Reset() {
+    fOffset = -1; fType = kDouble; fArrayType = kScalar; fCountOffset = -1;
+    fDataMember = 0; fRealData = 0; fElemClass = 0;
+  }
 
 protected:
 
@@ -53,8 +59,9 @@ protected:
   Int_t        fCountOffset;  // For var array: Offset of length specifier
   TDataMember* fDataMember;   // Associated ROOT TDataMember
   TRealData*   fRealData;     // Associated ROOT TRealData
+  TClass*      fElemClass;    // Class of object vector element type
 
-  ClassDef(THaRTTI,0)   //RTTI information for a member variable of a ROOT class
+  ClassDef(THaRTTI,0)   //Parsed type information for a ROOT class member variable
 };
 
 #endif

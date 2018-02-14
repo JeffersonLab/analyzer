@@ -38,9 +38,9 @@ THaRun.C                  THaTrack.C                THaVDCPlane.C
 THaCodaRun.C              THaFormula.C              THaParticleInfo.C
 THaRunBase.C              THaTrackEloss.C           THaVDCTimeToDistConv.C
 THaEvtTypeHandler.C       THaScalerEvtHandler.C     THaEvt125Handler.C
-Variable.C                VariableArrayVar.C
-FixedArrayVar.C           VectorVar.C               MethodVar.C
-SeqCollectionVar.C        SeqCollectionMethodVar.C
+Variable.C                VariableArrayVar.C        FixedArrayVar.C
+VectorVar.C               MethodVar.C               SeqCollectionVar.C
+SeqCollectionMethodVar.C  VectorObjVar.C            VectorObjMethodVar.C
 """)
 
 baseenv.Object('main.C')

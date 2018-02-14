@@ -69,6 +69,7 @@ Int_t THaRTTI::Find( TClass* cl, const TString& var,
     return -1;
 
   VarType type;
+  TClass* elemClass = 0;
   if( m->IsBasic() || m->IsEnum() ) {
     TString typnam( m->GetTypeName() );
     if( typnam == "Double_t" || typnam == "double" )
@@ -126,8 +127,21 @@ Int_t THaRTTI::Find( TClass* cl, const TString& var,
       type = kFloatV;
     else if( typnam == "Double_t" || typnam == "double" )
       type = kDoubleV;
-    else
-      return -1;
+    else {
+      // Check for vector of defined object class or vector of pointers
+      // to such objects
+      Int_t nstar = 0;
+      while( nstar < 2 && typnam.EndsWith("*") ) {
+	typnam.Chop();
+	++nstar;
+      }
+      if( nstar > 1 )
+	return -1;  // Vector of pointer-to-pointers not supported
+      elemClass = gROOT->GetClass( typnam );
+      if( !elemClass )
+	return -1;
+      type = ( nstar == 0 ) ? kObjectV : kObjectPV;
+    }
 
   } else {
     type = (m->IsaPointer()) ? kObjectP : kObject;
@@ -208,6 +222,7 @@ Int_t THaRTTI::Find( TClass* cl, const TString& var,
   fArrayType  = atype;
   fDataMember = m;
   fRealData   = rd;
+  fElemClass  = elemClass;
 
   switch( atype ) {
   case kScalar:
@@ -258,6 +273,8 @@ TClass* THaRTTI::GetClass() const
 
   if( IsObject() && fDataMember )
     return gROOT->GetClass( fDataMember->GetTypeName() );
+  if( IsObjVector() )
+    return fElemClass;
 
   return NULL;
 }
@@ -280,7 +297,7 @@ void THaRTTI::Print( Option_t* ) const
   if( fOffset == -1 )
     return;
   cout << "Type:         ";
-  if( fType != kObject )
+  if( !IsObject() && !(fType == kObjectV || fType == kObjectPV) )
     cout << THaVar::GetTypeName( fType );
   else if( fDataMember )
     cout << fDataMember->GetFullTypeName();
@@ -296,8 +313,11 @@ void THaRTTI::Print( Option_t* ) const
       cout << "variable" << endl;
       cout << "Count offset: " << fCountOffset << endl;
       break;
-    default:
-      cout << "(unknown)" << endl;
+    case kVector:
+      cout << "vector" << endl;
+      break;
+    case kScalar:
+      assert(false); // not reached
       break;
     }
   }

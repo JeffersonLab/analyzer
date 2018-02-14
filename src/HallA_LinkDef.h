@@ -19,6 +19,7 @@
 #pragma link C++ namespace Podd;
 
 #pragma link C++ class THaVar+;
+#pragma link C++ class THaVecObjVar+;
 #pragma link C++ class THaVarList+;
 #pragma link C++ class THaNamedList+;
 #pragma link C++ class THaFormula+;
