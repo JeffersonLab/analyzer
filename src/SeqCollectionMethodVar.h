@@ -19,7 +19,7 @@ namespace Podd {
 
   public:
     SeqCollectionMethodVar( THaVar* pvar, const void* addr, VarType type,
-			    TMethodCall* method, Int_t offset );
+			    TMethodCall* method );
 
     virtual const void*  GetDataPointer( Int_t i = 0 ) const;
     virtual Bool_t       IsBasic() const;

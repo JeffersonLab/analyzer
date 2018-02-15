@@ -29,6 +29,16 @@ SeqCollectionVar::SeqCollectionVar( THaVar* pvar, const void* addr,
 {
   // Constructor
   assert( offset >= 0 );
+
+  // Currently supported data types
+  if( !(fType >= kDouble && fType <= kUChar) &&
+      !(fType >= kDoubleP && fType <= kUCharP) ) {
+    Error( "SeqCollectionVar::SeqCollectionVar", "Variable %s: "
+	   "Illegal data type = %s. Only basic types or pointers to basic "
+	   "types allowed", pvar->GetName(), THaVar::GetTypeName(fType) );
+    fValueP = 0; // Make invalid
+    return;
+  }
 }
 
 //_____________________________________________________________________________
@@ -80,11 +90,13 @@ const void* SeqCollectionVar::GetDataPointer( Int_t i ) const
   assert( sizeof(ULong_t) == sizeof(void*) );
   assert( fValueP );
 
-  if( GetLen() == 0 )
+  Int_t len = GetLen();
+  if( len == 0 || len == kInvalidInt )
     return 0;
 
-  if( i<0 || i>=GetLen() ) {
-    fSelf->Error( here, "Index out of range, variable %s, index %d", GetName(), i );
+  if( i<0 || i>=len ) {
+    fSelf->Error( here, "Index out of range, variable %s, index %d",
+		  GetName(), i );
     return 0;
   }
 
@@ -96,13 +108,15 @@ const void* SeqCollectionVar::GetDataPointer( Int_t i ) const
   }
 
   // Compute location using the offset.
-  ULong_t loc = reinterpret_cast<ULong_t>(obj) + fOffset;
-  if( !loc || (fType >= kDoubleP && (*(void**)loc == 0)) )
-    return 0;
-
-  return reinterpret_cast<const void*>(loc);
-
-  return 0;
+  if( fOffset > 0 ) {
+    ULong_t loc = reinterpret_cast<ULong_t>(obj) + fOffset;
+    assert( loc ); // obj != 0 already assured
+    if( fType >= kDoubleP && fType <= kUCharP )
+      obj = *reinterpret_cast<void**>(loc);
+    else
+      obj = reinterpret_cast<void*>(loc);
+  }
+  return obj;
 }
 
 //_____________________________________________________________________________

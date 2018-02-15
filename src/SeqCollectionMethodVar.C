@@ -9,7 +9,6 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-#include "MethodVar.h"
 #include "SeqCollectionMethodVar.h"
 
 using namespace std;
@@ -18,9 +17,9 @@ namespace Podd {
 
 //_____________________________________________________________________________
 SeqCollectionMethodVar::SeqCollectionMethodVar( THaVar* pvar, const void* addr,
-	VarType type, TMethodCall* method, Int_t offset )
+	VarType type, TMethodCall* method )
   : Variable(pvar,addr,type), MethodVar(pvar,addr,type,method),
-    SeqCollectionVar(pvar,addr,type,offset)
+    SeqCollectionVar(pvar,addr,type,0)
 {
   // Constructor
 }

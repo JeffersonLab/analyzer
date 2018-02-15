@@ -33,7 +33,8 @@ MethodVar::MethodVar( THaVar* pvar, const void* addr,
 //_____________________________________________________________________________
 const void* MethodVar::GetDataPointer( Int_t i ) const
 {
-  // Get pointer to data in objects stored in a TSeqCollection (TClonesArray)
+  // Get pointer to data via method call on the object pointed to by fValueP.
+  // Requesting "elements" other than i==0 is not allowed.
 
   const char* const here = "GetDataPointer()";
 

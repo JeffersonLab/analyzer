@@ -51,8 +51,6 @@
 #include "FixedArrayVar.h"
 #include "VariableArrayVar.h"
 #include "VectorVar.h"
-#include "MethodVar.h"
-#include "SeqCollectionVar.h"
 #include "SeqCollectionMethodVar.h"
 #include "VectorVar.h"
 #include "TError.h"
@@ -230,34 +228,31 @@ THaVar::THaVar( const char* name, const char* descript, T& var,
 
 //_____________________________________________________________________________
 THaVar::THaVar( const char* name, const char* descript, const void* obj,
-		VarType type, Int_t offset, TMethodCall* method,
-		const Int_t* count )
+	VarType type, Int_t offset, TMethodCall* method, const Int_t* count )
   : TNamed(name,descript), fImpl(0)
 {
   // Generic constructor (used by THaVarList::DefineByType)
 
   if( type == kObject || type == kObjectP || type == kObject2P ) {
-    Error( "THaVar", "Wrong constructor call for variable %s. Use object-type "
-	   "constructor instead", name );
+    Error( "THaVar", "Variable %s: Object types not (yet) supported", name );
     MakeZombie();
     return;
   }
   else if( type >= kIntM && type <= kDoubleM ) {
-    Error( "THaVar", "Variable %s: Matrix type not (yet) supported", name );
+    Error( "THaVar", "Variable %s: Matrix types not (yet) supported", name );
     MakeZombie();
     return;
   }
   else if( type >= kIntV && type <= kDoubleV ) {
     if( count ) {
-      Error( "THaVar", "Ignoring size counter for std::vector variable %s", name );
-      MakeZombie();
-      return;
+      Warning( "THaVar", "Ignoring size counter for std::vector variable %s. "
+	       "Fix code or call expert", name );
     }
     fImpl = new Podd::VectorVar( this, obj, type );
   }
   else if( count ) {
     if( offset >= 0 || method ) {
-      Error( "THaVar", "Variable %s: Inconsistent arguments. May not specify "
+      Error( "THaVar", "Variable %s: Inconsistent arguments. Cannot specify "
 	     "both count and offset/method", name );
       MakeZombie();
       return;
@@ -265,9 +260,13 @@ THaVar::THaVar( const char* name, const char* descript, const void* obj,
     fImpl = new Podd::VariableArrayVar( this, obj, type, count );
   }
   else if( method || offset >= 0 ) {
-    if( method && offset >= 0 )
-      fImpl = new Podd::SeqCollectionMethodVar( this, obj, type, method, offset );
-    else if( !method )
+    if( method && offset >= 0 ) {
+      if( offset > 0 ) {
+	Warning( "THaVar", "Variable %s: Offset > 0 ignored for method call on "
+		 "object in collection. Fix code or call expert", name );
+      }
+      fImpl = new Podd::SeqCollectionMethodVar( this, obj, type, method );
+    } else if( !method )
       fImpl = new Podd::SeqCollectionVar( this, obj, type, offset );
     else
       fImpl = new Podd::MethodVar( this, obj, type, method );
