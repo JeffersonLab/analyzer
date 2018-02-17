@@ -161,111 +161,113 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
     if( s[i++].Length() == 0 )
       return 0;
 
-  Bool_t        function   =  s[ndot].EndsWith("()");
-  TClass*       theClass   =  0;
-  ULong_t       loc        =  (ULong_t)obj;
-  void**        ploc;
+  TClass* theClass   =  0;
+  ULong_t loc        =  (ULong_t)obj;
 
-  THaRTTI rtti, objrtti;
+  THaRTTI objrtti;
   Int_t vecidx = -1;
 
-  // Access via member function?
-  if( !function ) {
-
-   // Process member variables
-    switch( ndot ) {
-    case 0:
-      // Simple member variable or pointer to basic type
-      rtti.Find( cl, s[0], obj );
-      break;
-    case 1:
-      // Member variable contained in a member object, or pointer to it (->scalar);
-      // or member variable contained in an object inside a vector (->vararray)
-      // (like ndot==2, except element type is known)
-      objrtti.Find( cl, s[0], obj );
-      if( !objrtti.IsValid() ||
-	  !(objrtti.IsObject() || objrtti.IsObjVector()) ) {
+  // Parse RTTI info
+  switch( ndot ) {
+  case 0:
+    // Simple member variable or pointer to basic type
+    theClass = cl;
+    break;
+  case 1:
+    // Member variable contained in a member object, or pointer to it (->scalar);
+    // or member variable contained in an object inside a vector (->vararray)
+    // (like ndot==2, except element type is known)
+    objrtti.Find( cl, s[0], obj );
+    if( !objrtti.IsValid() ||
+	!(objrtti.IsObject() || objrtti.IsObjVector()) ) {
+      Warning( errloc, "Unsupported type of data member %s. "
+	       "Variable %s (%s) not defined.",
+	       s[0].Data(), name.Data(), desc.Data() );
+      return 0;
+    }
+    loc += objrtti.GetOffset();
+    if( objrtti.IsPointer() ) {
+      void** ploc = (void**)loc;
+      loc  = (ULong_t)*ploc;
+    }
+    theClass = objrtti.GetClass();
+    assert( theClass ); // else objrtti.Find should not have succeeded
+    break;
+  case 2:
+    // TSeqCollection member object, or pointer to it, or std::vector<TSeqCollection*>
+    objrtti.Find( cl, s[0], obj );
+    if( !objrtti.IsValid() || !objrtti.IsObject() ) {
+      // Check for vector element
+      bool good = false;
+      THaArrayString s0(s[0]);
+      if( s0 && s0.IsArray() && s0.GetNdim() == 1 ) {
+	objrtti.Find( cl, s0, obj );
+	if( objrtti.IsValid() && objrtti.IsObjVector() &&
+	    objrtti.GetType() == kObjectPV ) {
+	  vecidx = s0[0];
+	  good = true;
+	}
+      }
+      if( !good ) {
 	Warning( errloc, "Unsupported type of data member %s. "
 		 "Variable %s (%s) not defined.",
 		 s[0].Data(), name.Data(), desc.Data() );
 	return 0;
       }
-      loc += objrtti.GetOffset();
-      if( objrtti.IsPointer() ) {
-	ploc = (void**)loc;
-	loc  = (ULong_t)*ploc;
+    }
+    theClass = objrtti.GetClass();
+    assert( theClass );
+    if( !theClass->InheritsFrom( "TSeqCollection" )) {
+      Warning( errloc, "Data member %s is not a TSeqCollection. "
+	       "Variable %s (%s) not defined.",
+	       s[0].Data(), name.Data(), desc.Data() );
+      return 0;
+    }
+    loc += objrtti.GetOffset();
+    if( objrtti.IsPointer() ) {
+      void** ploc = (void**)loc;
+      loc  = (ULong_t)*ploc;
+    }
+    // For std::vector<TSeqCollection*>, get the requested vector element
+    if( objrtti.IsObjVector() ) {
+      VecSC_t vec = *reinterpret_cast<VecSC_t*>(loc);
+      if( vecidx < 0 || vecidx >= (Int_t)vec.size() ) {
+	Warning( errloc, "Illegal index %d into std::vector %s. "
+		 "Current size = %d. Variable %s (%s) not defined.",
+		 vecidx, s[0].Data(), (Int_t)vec.size(), name.Data(),
+		 desc.Data() );
+	return 0;
       }
-      theClass = objrtti.GetClass();
-      assert( theClass ); // else objrtti.Find should not have succeeded
-      rtti.Find( theClass, s[1] );
-      break;
-    case 2:
-      // TSeqCollection member object, or pointer to it, or std::vector<TSeqCollection*>
-      objrtti.Find( cl, s[0], obj );
-      if( !objrtti.IsValid() || !objrtti.IsObject() ) {
-	// Check for vector element
-	bool good = false;
-	THaArrayString s0(s[0]);
-	if( s0 && s0.IsArray() && s0.GetNdim() == 1 ) {
-	  objrtti.Find( cl, s0, obj );
-	  if( objrtti.IsValid() && objrtti.IsObjVector() &&
-	      objrtti.GetType() == kObjectPV ) {
-	    vecidx = s0[0];
-	    good = true;
-	  }
-	}
-	if( !good ) {
-	  Warning( errloc, "Unsupported type of data member %s. "
-		   "Variable %s (%s) not defined.",
-		   s[0].Data(), name.Data(), desc.Data() );
-	  return 0;
-	}
-      }
-      theClass = objrtti.GetClass();
-      assert( theClass );
-      if( !theClass->InheritsFrom( "TSeqCollection" )) {
-	Warning( errloc, "Data member %s is not a TSeqCollection. "
+      loc = reinterpret_cast<ULong_t>(vec[vecidx]);
+      if( !loc ) {
+	Warning( errloc, "Null pointer in std::vector %s. "
 		 "Variable %s (%s) not defined.",
 		 s[0].Data(), name.Data(), desc.Data() );
 	return 0;
       }
-      loc += objrtti.GetOffset();
-      if( objrtti.IsPointer() ) {
-	ploc = (void**)loc;
-	loc  = (ULong_t)*ploc;
-      }
-      // For std::vector<TSeqCollection*>, get the requested vector element
-      if( objrtti.IsObjVector() ) {
-	VecSC_t vec = *reinterpret_cast<VecSC_t*>(loc);
-	if( vecidx < 0 || vecidx >= (Int_t)vec.size() ) {
-	  Warning( errloc, "Illegal index %d into std::vector %s. "
-		   "Current size = %d. Variable %s (%s) not defined.",
-		   vecidx, s[0].Data(), (Int_t)vec.size(), name.Data(),
-		   desc.Data() );
-	  return 0;
-	}
-	loc = reinterpret_cast<ULong_t>(vec[vecidx]);
-	if( !loc ) {
-	  Warning( errloc, "Null pointer in std::vector %s. "
-		   "Variable %s (%s) not defined.",
-		   s[0].Data(), name.Data(), desc.Data() );
-	  return 0;
-	}
-	objrtti.Reset(); // clear objrtti.IsObjVector()
-      }
-
-      theClass = gROOT->GetClass( s[1] );
-      if( !theClass ) {
-	Warning( errloc, "Cannot determine class of container "
-		 "member object %s. Variable %s (%s) not defined.",
-		 s[1].Data(), name.Data(), desc.Data() );
-	return 0;
-      }
-      rtti.Find( theClass, s[2] );
-      break;
-    default:
-      break;
+      objrtti.Reset(); // clear objrtti.IsObjVector()
     }
+
+    theClass = gROOT->GetClass( s[1] );
+    if( !theClass ) {
+      Warning( errloc, "Cannot determine class of container "
+	       "member object %s. Variable %s (%s) not defined.",
+	       s[1].Data(), name.Data(), desc.Data() );
+      return 0;
+    }
+    break;
+  default:
+    assert(false); // not reached
+    break;
+  }
+
+  // Define the variable based on the parse results
+  Bool_t function = s[ndot].EndsWith("()");
+  if( !function ) {
+    // Member variables
+
+    THaRTTI rtti;
+    rtti.Find( theClass, s[ndot], (ndot==0) ? obj : 0 );
     if( !rtti.IsValid() ) {
       Warning( errloc, "No RTTI information for variable %s. "
 	       "Not defined.", name.Data() );
@@ -318,105 +320,15 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
     }
 
   } else { // if( !function )
-    // Process member functions
-    TMethodCall* theMethod = 0;
+    // Member functions
 
     TString funcName(s[ndot]);
     Ssiz_t i = funcName.Index( '(' );
-    if( i == kNPOS )
-      return 0; // Oops
+    assert( i != kNPOS );  // else EndsWith("()") lied
     funcName = funcName(0,i);
 
-    switch( ndot ) {
-    case 0:
-      theMethod = new TMethodCall( cl, funcName, "" );
-      break;
-    case 1:
-      objrtti.Find( cl, s[0], obj );
-      if( !objrtti.IsValid() ||
-	  !(objrtti.IsObject() || objrtti.IsObjVector()) ) {
-	Warning( errloc, "Unsupported type of data member %s. "
-		 "Variable %s (%s) not defined.",
-		 s[0].Data(), name.Data(), desc.Data() );
-	return 0;
-      }
-      loc += objrtti.GetOffset();
-      if( objrtti.IsPointer() ) {
-	ploc = (void**)loc;
-	loc  = (ULong_t)*ploc;
-      }
-      theClass = objrtti.GetClass();
-      assert( theClass );
-      theMethod = new TMethodCall( theClass, funcName, "" );
-      break;
-    case 2:
-      objrtti.Find( cl, s[0], obj );
-      if( !objrtti.IsValid() || !objrtti.IsObject() ) {
-	// Check for vector element
-	bool good = false;
-	THaArrayString s0(s[0]);
-	if( s0 && s0.IsArray() && s0.GetNdim() == 1 ) {
-	  objrtti.Find( cl, s0, obj );
-	  if( objrtti.IsValid() && objrtti.IsObjVector() &&
-	      objrtti.GetType() == kObjectPV ) {
-	    vecidx = s0[0];
-	    good = true;
-	  }
-	}
-	if( !good ) {
-	  Warning( errloc, "Unsupported type of data member %s. "
-		   "Variable %s (%s) not defined.",
-		   s[0].Data(), name.Data(), desc.Data() );
-	  return 0;
-	}
-      }
-      theClass = objrtti.GetClass();
-      assert( theClass );
-      if( !theClass->InheritsFrom( "TSeqCollection" )) {
-	Warning( errloc, "Data member %s is not a TSeqCollection. "
-		 "Variable %s (%s) not defined.",
-		 s[0].Data(), name.Data(), desc.Data() );
-	return 0;
-      }
-      loc += objrtti.GetOffset();
-      if( objrtti.IsPointer() ) {
-	ploc = (void**)loc;
-	loc  = (ULong_t)*ploc;
-      }
-      // For std::vector<TSeqCollection*>, get the requested vector element
-      if( objrtti.IsObjVector() ) {
-	VecSC_t vec = *reinterpret_cast<VecSC_t*>(loc);
-	if( vecidx < 0 || vecidx >= (Int_t)vec.size() ) {
-	  Warning( errloc, "Illegal index %d into std::vector %s. "
-		   "Current size = %d. Variable %s (%s) not defined.",
-		   vecidx, s[0].Data(), (Int_t)vec.size(), name.Data(),
-		   desc.Data() );
-	  return 0;
-	}
-	loc = reinterpret_cast<ULong_t>(vec[vecidx]);
-	if( !loc ) {
-	  Warning( errloc, "Null pointer in std::vector %s. "
-		   "Variable %s (%s) not defined.",
-		   s[0].Data(), name.Data(), desc.Data() );
-	  return 0;
-	}
-	objrtti.Reset(); // clear objrtti.IsObjVector()
-      }
-
-      theClass = gROOT->GetClass( s[1] );
-      if( !theClass ) {
-	Warning( errloc, "Cannot determine class of container "
-		 "member object %s. Variable %s (%s) not defined.",
-		 s[1].Data(), name.Data(), desc.Data() );
-	return 0;
-      }
-      theMethod = new TMethodCall( theClass, funcName, "" );
-      break;
-    default:
-      break;
-    }
-
-    if( !theMethod || !theMethod->IsValid() ) {
+    TMethodCall* theMethod = new TMethodCall( theClass, funcName, "" );
+    if( !theMethod->IsValid() ) {
       Warning( errloc, "Error getting function information for variable %s. "
 	       "Not defined.", name.Data() );
       delete theMethod;
