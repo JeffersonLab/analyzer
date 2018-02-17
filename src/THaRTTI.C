@@ -80,18 +80,18 @@ Int_t THaRTTI::Find( TClass* cl, const TString& var,
       type = kInt;
     else if( typnam == "UInt_t" || typnam == "unsigned int" )
       type = kUInt;
-    else if( typnam == "Short_t" )
+    else if( typnam == "Short_t" || typnam == "short" )
       type = kShort;
-    else if( typnam == "UShort_t" )
+    else if( typnam == "UShort_t" || typnam == "unsigned short" )
       type = kUShort;
-    else if( typnam == "Long_t" )
+    else if( typnam == "Long_t" || typnam == "long" )
       type = kLong;
-    else if( typnam == "ULong_t" )
+    else if( typnam == "ULong_t" || typnam == "unsigned long" )
       type = kULong;
-    else if( typnam == "Char_t" || typnam == "Text_t" )
+    else if( typnam == "Char_t" || typnam == "Text_t" || typnam == "char" )
       type = kChar;
     else if( typnam == "Byte_t" || typnam == "UChar_t" ||
-	     typnam == "Bool_t" || typnam == "bool" )
+	     typnam == "Bool_t" || typnam == "bool" || typnam == "unsigned char" )
       type = kByte;
     else if( m->IsEnum() )
       // Enumeration types are all treated as integers

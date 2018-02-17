@@ -374,33 +374,33 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
     string ntype = func->GetReturnTypeNormalizedName();
     if( ntype == "double" )
       type = kDouble;
-    else if( (sizeof(int) == 4 && ntype == "int") ||
-	     (sizeof(long) == 4 && ntype == "long") )
+    else if( (sizeof(int) == sizeof(Int_t) && ntype == "int") ||
+	     (sizeof(long) == sizeof(Int_t) && ntype == "long") )
       type = kInt;
-    else if( (sizeof(unsigned int) == 4 && ntype == "unsigned int") ||
-	     (sizeof(unsigned long) == 4 && ntype == "unsigned long") )
+    else if( (sizeof(unsigned int) == sizeof(UInt_t) && ntype == "unsigned int") ||
+	     (sizeof(unsigned long) == sizeof(UInt_t) && ntype == "unsigned long") )
       type = kUInt;
     else if( ntype == "float" )
       type = kFloat;
     else if( ntype == "bool" ) {
-      if( sizeof(bool) == 1 )
+      if( sizeof(bool) == sizeof(Char_t) )
 	type = kChar;
-      else if( sizeof(bool) == 2 )
+      else if( sizeof(bool) == sizeof(Short_t) )
 	type = kShort;
-      else if( sizeof(bool) == 4 )
+      else if( sizeof(bool) == sizeof(Int_t) )
 	type = kInt;
     }
-    else if( (sizeof(long) == 8 && ntype == "long") ||
-	     (sizeof(long long) == 8 && ntype == "long long") ||
-	     (sizeof(int) == 8 && ntype == "int") )
+    else if( (sizeof(long) == sizeof(Long_t) && ntype == "long") ||
+	     (sizeof(long long) == sizeof(Long_t) && ntype == "long long") ||
+	     (sizeof(int) == sizeof(Long_t) && ntype == "int") )
       type = kLong;
-    else if( (sizeof(unsigned long) == 8 && ntype == "unsigned long") ||
-	     (sizeof(unsigned long long) == 8 && ntype == "unsigned long long") ||
-	     (sizeof(unsigned int) == 8 && ntype == "unsigned int") )
+    else if( (sizeof(unsigned long) == sizeof(ULong_t) && ntype == "unsigned long") ||
+	     (sizeof(unsigned long long) == sizeof(ULong_t) && ntype == "unsigned long long") ||
+	     (sizeof(unsigned int) == sizeof(ULong_t) && ntype == "unsigned int") )
       type = kULong;
-    else if( (sizeof(short) == 4 && ntype == "short") )
+    else if( (sizeof(short) == sizeof(Short_t) && ntype == "short") )
       type = kShort;
-    else if( (sizeof(unsigned short) == 4 && ntype == "unsigned short") )
+    else if( (sizeof(unsigned short) == sizeof(UShort_t) && ntype == "unsigned short") )
       type = kUShort;
     else if( ntype == "char" )
       type = kChar;
