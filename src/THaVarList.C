@@ -51,6 +51,7 @@
 #include "THaVarList.h"
 #include "THaVar.h"
 #include "THaRTTI.h"
+#include "THaArrayString.h"
 #include "TRegexp.h"
 #include "TString.h"
 #include "TClass.h"
@@ -118,6 +119,8 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
 {
   // Define variable via its ROOT RTTI
 
+  typedef vector<TSeqCollection*> VecSC_t;
+
   assert( sizeof(ULong_t) == sizeof(void*) ); // ULong_t must be of pointer size
 
   if( !obj || !cl ) {
@@ -164,6 +167,7 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
   void**        ploc;
 
   THaRTTI rtti, objrtti;
+  Int_t vecidx = -1;
 
   // Access via member function?
   if( !function ) {
@@ -196,13 +200,26 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
       rtti.Find( theClass, s[1] );
       break;
     case 2:
-      // TSeqCollection member object, or pointer to it
+      // TSeqCollection member object, or pointer to it, or std::vector<TSeqCollection*>
       objrtti.Find( cl, s[0], obj );
       if( !objrtti.IsValid() || !objrtti.IsObject() ) {
-	Warning( errloc, "Unsupported type of data member %s. "
-		 "Variable %s (%s) not defined.",
-		 s[0].Data(), name.Data(), desc.Data() );
-	return 0;
+	// Check for vector element
+	bool good = false;
+	THaArrayString s0(s[0]);
+	if( s0 && s0.IsArray() && s0.GetNdim() == 1 ) {
+	  objrtti.Find( cl, s0, obj );
+	  if( objrtti.IsValid() && objrtti.IsObjVector() &&
+	      objrtti.GetType() == kObjectPV ) {
+	    vecidx = s0[0];
+	    good = true;
+	  }
+	}
+	if( !good ) {
+	  Warning( errloc, "Unsupported type of data member %s. "
+		   "Variable %s (%s) not defined.",
+		   s[0].Data(), name.Data(), desc.Data() );
+	  return 0;
+	}
       }
       theClass = objrtti.GetClass();
       assert( theClass );
@@ -216,6 +233,25 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
       if( objrtti.IsPointer() ) {
 	ploc = (void**)loc;
 	loc  = (ULong_t)*ploc;
+      }
+      // For std::vector<TSeqCollection*>, get the requested vector element
+      if( objrtti.IsObjVector() ) {
+	VecSC_t vec = *reinterpret_cast<VecSC_t*>(loc);
+	if( vecidx < 0 || vecidx >= (Int_t)vec.size() ) {
+	  Warning( errloc, "Illegal index %d into std::vector %s. "
+		   "Current size = %d. Variable %s (%s) not defined.",
+		   vecidx, s[0].Data(), (Int_t)vec.size(), name.Data(),
+		   desc.Data() );
+	  return 0;
+	}
+	loc = reinterpret_cast<ULong_t>(vec[vecidx]);
+	if( !loc ) {
+	  Warning( errloc, "Null pointer in std::vector %s. "
+		   "Variable %s (%s) not defined.",
+		   s[0].Data(), name.Data(), desc.Data() );
+	  return 0;
+	}
+	objrtti.Reset(); // clear objrtti.IsObjVector()
       }
 
       theClass = gROOT->GetClass( s[1] );
@@ -316,10 +352,23 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
     case 2:
       objrtti.Find( cl, s[0], obj );
       if( !objrtti.IsValid() || !objrtti.IsObject() ) {
-	Warning( errloc, "Unsupported type of data member %s. "
-		 "Variable %s (%s) not defined.",
-		 s[0].Data(), name.Data(), desc.Data() );
-	return 0;
+	// Check for vector element
+	bool good = false;
+	THaArrayString s0(s[0]);
+	if( s0 && s0.IsArray() && s0.GetNdim() == 1 ) {
+	  objrtti.Find( cl, s0, obj );
+	  if( objrtti.IsValid() && objrtti.IsObjVector() &&
+	      objrtti.GetType() == kObjectPV ) {
+	    vecidx = s0[0];
+	    good = true;
+	  }
+	}
+	if( !good ) {
+	  Warning( errloc, "Unsupported type of data member %s. "
+		   "Variable %s (%s) not defined.",
+		   s[0].Data(), name.Data(), desc.Data() );
+	  return 0;
+	}
       }
       theClass = objrtti.GetClass();
       assert( theClass );
@@ -333,6 +382,25 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
       if( objrtti.IsPointer() ) {
 	ploc = (void**)loc;
 	loc  = (ULong_t)*ploc;
+      }
+      // For std::vector<TSeqCollection*>, get the requested vector element
+      if( objrtti.IsObjVector() ) {
+	VecSC_t vec = *reinterpret_cast<VecSC_t*>(loc);
+	if( vecidx < 0 || vecidx >= (Int_t)vec.size() ) {
+	  Warning( errloc, "Illegal index %d into std::vector %s. "
+		   "Current size = %d. Variable %s (%s) not defined.",
+		   vecidx, s[0].Data(), (Int_t)vec.size(), name.Data(),
+		   desc.Data() );
+	  return 0;
+	}
+	loc = reinterpret_cast<ULong_t>(vec[vecidx]);
+	if( !loc ) {
+	  Warning( errloc, "Null pointer in std::vector %s. "
+		   "Variable %s (%s) not defined.",
+		   s[0].Data(), name.Data(), desc.Data() );
+	  return 0;
+	}
+	objrtti.Reset(); // clear objrtti.IsObjVector()
       }
 
       theClass = gROOT->GetClass( s[1] );
