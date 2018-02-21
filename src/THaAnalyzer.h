@@ -76,6 +76,7 @@ public:
 
   // Set the EPICS event type
   void           SetEpicsEvtType(Int_t itype);
+  void           AddEpicsEvtType(Int_t itype);
 
   static THaAnalyzer* GetInstance() { return fgAnalyzer; }
 

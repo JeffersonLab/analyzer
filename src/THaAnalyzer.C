@@ -860,6 +860,12 @@ void THaAnalyzer::SetEpicsEvtType(Int_t itype)
 };
 
 //_____________________________________________________________________________
+void THaAnalyzer::AddEpicsEvtType(Int_t itype)
+{
+    if (fEpicsHandler) fEpicsHandler->AddEvtType(itype);
+}
+
+//_____________________________________________________________________________
 Int_t THaAnalyzer::SetCountMode( Int_t mode )
 {
   // Set event counting mode. The default mode is kCountPhysics.
@@ -1261,7 +1267,7 @@ Int_t THaAnalyzer::MainAnalysis()
 
   //=== EPICS data === 
   fEvData->SetEpicsEvtType(fEpicsHandler->GetEvtType());
-  if( fEvData->IsEpicsEvent() && fDoSlowControl ) {
+  if( fDoSlowControl && fEpicsHandler->IsMyEvent(fEvData->GetEvType()) ) {
     Incr(kNevEpics);
     retval = SlowControlAnalysis(retval);
     evdone = true;
