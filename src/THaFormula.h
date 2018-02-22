@@ -48,6 +48,7 @@ public:
   virtual Int_t       DefinedVariable( TString& variable, Int_t& action );
   virtual Int_t       DefinedCut( TString& variable );
   virtual Int_t       DefinedGlobalVariable( TString& variable );
+  virtual Int_t       DefinedGlobalVariableExtraList( TString& variable, const THaVarList* extralist );
   virtual Int_t       DefinedSpecialFunction( TString& name );
   virtual Double_t    Eval();
   // Requires ROOT >= 4.02/04
@@ -81,8 +82,10 @@ protected:
   };
 
   enum EVariableType {  kVariable, kCut, kString, kArray,
-			kFunction, kFormula, kVarFormula };
+			kFunction, kFormula, kVarFormula,
+                        kCutScaler, kCutNCalled }; // These for hcana
 
+  virtual Int_t       DefinedCutWithType( TString& variable, EVariableType type );
   struct FVarDef_t {
     EVariableType type;                //Type of variable in the formula
     void*         obj;                 //Pointer to the respective object

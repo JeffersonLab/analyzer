@@ -297,6 +297,10 @@ Double_t THaFormula::DefinedValue( Int_t i )
   // If the i-th variable is a cut, return its last result
   // (calculated at the last evaluation).
   // If the variable is a string, return value of its character value
+  // kCutScaler and kCutNCalled give # times a cut passed and # times
+  // a cut has been evaluated.  These types can only exist if hcana's
+  // THcFormula is used.
+  // 
 
   typedef vector<Double_t>::size_type vsiz_t;
   //  typedef vector<Double_t>::iterator  viter_t;
@@ -406,6 +410,20 @@ Double_t THaFormula::DefinedValue( Int_t i )
       return y;
     }
     break;
+  case kCutScaler:
+    {
+      const THaCut* cut = static_cast<const THaCut*>(def.obj);
+      assert(cut);
+      return cut->GetNPassed();
+    }
+    break;
+  case kCutNCalled:
+    {
+      const THaCut* cut = static_cast<const THaCut*>(def.obj);
+      assert(cut);
+      return cut->GetNCalled();
+    }
+    break;
   }
   assert(false); // not reached
   return kBig;
@@ -512,6 +530,14 @@ Int_t THaFormula::DefinedCut( TString& name )
   // Check if 'name' is a known cut. If so, enter it in the local list of
   // variables used in this formula.
 
+  return DefinedCutWithType (name, kCut);
+}
+//_____________________________________________________________________________
+Int_t THaFormula::DefinedCutWithType( TString& name, EVariableType type )
+{
+  // Check if 'name' is a known cut. If so, enter it in the local list of
+  // variables used in this formula.
+
   // Cut names are obviously only valid if there is a list of existing cuts
   if( fCutList ) {
     THaCut* pcut = fCutList->FindCut( name );
@@ -519,10 +545,10 @@ Int_t THaFormula::DefinedCut( TString& name )
       // See if this cut already used earlier in the expression
       for( vector<FVarDef_t>::size_type i=0; i<fVarDef.size(); ++i ) {
 	const FVarDef_t& def = fVarDef[i];
-	if( def.type == kCut && pcut == def.obj )
+	if( def.type == type && pcut == def.obj )
 	  return i;
       }
-      fVarDef.push_back( FVarDef_t(kCut,pcut,0) );
+      fVarDef.push_back( FVarDef_t(type,pcut,0) );
       return fVarDef.size()-1;
     }
   }
@@ -532,21 +558,33 @@ Int_t THaFormula::DefinedCut( TString& name )
 //_____________________________________________________________________________
 Int_t THaFormula::DefinedGlobalVariable( TString& name )
 {
+  return DefinedGlobalVariableExtraList(name, 0);
+}
+//_____________________________________________________________________________
+Int_t THaFormula::DefinedGlobalVariableExtraList( TString& name, const THaVarList* extralist)
+{
   // Check if 'name' is a known global variable. If so, enter it in the
   // local list of variables used in this formula.
 
   // No global variable list?
-  if( !fVarList )
+  if( !fVarList && !extralist)
     return -1;
 
   // Parse name for array syntax
   THaArrayString parsed_name(name);
   if( parsed_name.IsError() ) return -1;
 
-  // Find the variable with this name
-  THaVar* var = fVarList->Find( parsed_name.GetName() );
-  if( !var )
+  // Find the variable with this name in the extralist (Hall C Parameter)
+  THaVar* var = 0;
+  if(extralist) {
+    var = extralist->Find( parsed_name.GetName() );
+  }
+  if (!var) {
+    var = fVarList->Find( parsed_name.GetName() );
+  }
+  if(!var) {
     return -1;
+  }
 
   EVariableType type = kVariable;
   Int_t index = 0;
@@ -591,6 +629,7 @@ Int_t THaFormula::DefinedGlobalVariable( TString& name )
 
   return fVarDef.size()-1;
 }
+
 
 //_____________________________________________________________________________
 Int_t THaFormula::DefinedSpecialFunction( TString& name )
