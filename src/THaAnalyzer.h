@@ -165,7 +165,7 @@ protected:
   virtual Int_t  PostProcess( Int_t code );
   virtual Int_t  ReadOneEvent();
 
-  // Support methods
+  // Support methods & data
   void           ClearCounters();
   Stage_t*       DefineStage( const Stage_t* stage );
   Counter_t*     DefineCounter( const Counter_t* counter );
@@ -184,6 +184,8 @@ protected:
   virtual void   PrintCutSummary() const;
 
   static THaAnalyzer* fgAnalyzer;  //Pointer to instance of this class
+
+  TObject*        fExtra;   // Additional member data (for binary compat.)
 
   // In-class constants
   static const char* const kMasterCutName;

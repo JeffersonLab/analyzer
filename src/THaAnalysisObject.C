@@ -69,7 +69,7 @@ THaAnalysisObject::THaAnalysisObject( const char* name,
 				      const char* description ) :
   TNamed(name,description), fPrefix(NULL), fStatus(kNotinit), 
   fDebug(0), fIsInit(false), fIsSetup(false), fProperties(0),
-  fOKOut(false), fInitDate(19950101,0)
+  fOKOut(false), fInitDate(19950101,0), fExtra(0)
 {
   // Constructor
 
@@ -80,7 +80,7 @@ THaAnalysisObject::THaAnalysisObject( const char* name,
 //_____________________________________________________________________________
 THaAnalysisObject::THaAnalysisObject( )
   : fPrefix(NULL), fStatus(kNotinit), fDebug(0), fIsInit(false),
-    fIsSetup(false), fProperties(), fOKOut(false)
+    fIsSetup(false), fProperties(), fOKOut(false), fExtra(0)
 {
   // only for ROOT I/O
 }
@@ -89,6 +89,8 @@ THaAnalysisObject::THaAnalysisObject( )
 THaAnalysisObject::~THaAnalysisObject()
 {
   // Destructor
+
+  delete fExtra; fExtra = 0;
 
   if (fgModules) {
     fgModules->Remove( this );

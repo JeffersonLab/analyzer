@@ -141,9 +141,10 @@ protected:
   TString         fConfig;    // Configuration to use from database
   UInt_t          fProperties;// Properties of this object (see EProperties)
   Bool_t          fOKOut;     // Flag indicating object-output prepared
-
   TDatime         fInitDate;  // Date passed to Init
-  
+
+  TObject*        fExtra;     // Additional member data (for binary compat.)
+
   virtual Int_t        DefineVariables( EMode mode = kDefine );
           Int_t        DefineVarsFromList( const VarDef* list, 
 					   EMode mode = kDefine,

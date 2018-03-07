@@ -30,7 +30,7 @@ THaRunBase::THaRunBase( const char* description ) :
   fNumber(-1), fType(0), fDate(UNDEFDATE,0), fNumAnalyzed(0),
   fDBRead(kFALSE), fIsInit(kFALSE), fOpened(kFALSE), fAssumeDate(kFALSE), 
   fDataSet(0), fDataRead(0), fDataRequired(kDate), fParam(0),
-  fRunParamClass(DEFRUNPARAM)
+  fRunParamClass(DEFRUNPARAM), fExtra(0)
 {
   // Normal & default constructor
 
@@ -43,7 +43,8 @@ THaRunBase::THaRunBase( const THaRunBase& rhs ) :
   fDate(rhs.fDate), fNumAnalyzed(rhs.fNumAnalyzed), fDBRead(rhs.fDBRead), 
   fIsInit(rhs.fIsInit), fOpened(kFALSE), fAssumeDate(rhs.fAssumeDate),
   fDataSet(rhs.fDataSet), fDataRead(rhs.fDataRead), 
-  fDataRequired(rhs.fDataRequired)
+  fDataRequired(rhs.fDataRequired),
+  fParam(0), fRunParamClass(rhs.fRunParamClass), fExtra(0)
 {
   // Copy ctor
 
@@ -53,8 +54,9 @@ THaRunBase::THaRunBase( const THaRunBase& rhs ) :
   if( rhs.fParam ) {
     fParam = static_cast<THaRunParameters*>(rhs.fParam->IsA()->New());
     *fParam = *rhs.fParam;
-  } else
-    fParam    = 0;
+  }
+  if( rhs.fExtra )
+    fExtra = rhs.fExtra->Clone();
 }
 
 //_____________________________________________________________________________
@@ -84,6 +86,12 @@ THaRunBase& THaRunBase::operator=(const THaRunBase& rhs)
        *fParam = *rhs.fParam;
      } else
        fParam    = 0;
+     fRunParamClass = rhs.fRunParamClass;
+     delete fExtra;
+     if( rhs.fExtra )
+       fExtra = rhs.fExtra->Clone();
+     else
+       fExtra = 0;
   }
   return *this;
 }
@@ -93,7 +101,8 @@ THaRunBase::~THaRunBase()
 {
   // Destructor
 
-  delete fParam   ; fParam    = 0;
+  delete fExtra; fExtra = 0;
+  delete fParam; fParam = 0;
 }
 
 //_____________________________________________________________________________

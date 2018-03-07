@@ -183,7 +183,7 @@ Bool_t THaOdata::Resize(Int_t i)
 //_____________________________________________________________________________
 THaOutput::THaOutput() :
    fNvar(0), fVar(NULL), fEpicsVar(0), fTree(NULL), 
-   fEpicsTree(NULL), fInit(false)
+   fEpicsTree(NULL), fInit(false), fExtra(0)
 {
   // Constructor
 }
@@ -193,13 +193,14 @@ THaOutput::~THaOutput()
 {
   // Destructor
 
+  delete fExtra; fExtra = 0;
+
   // Delete Trees and histograms only if ROOT system is initialized.
   // ROOT will report being uninitialized if we're called from the TSystem
   // destructor, at which point the trees already have been deleted.
   // FIXME: Trees would also be deleted if deleting the output file, right?
   // Can we use this here?
-  Bool_t alive = TROOT::Initialized();
-  if( alive ) {
+  if( TROOT::Initialized() ) {
     if (fTree) delete fTree;
     if (fEpicsTree) delete fEpicsTree;
   }

@@ -81,7 +81,7 @@ THaAnalyzer::THaAnalyzer() :
   fIsInit(kFALSE), fAnalysisStarted(kFALSE), fLocalEvent(kFALSE),
   fUpdateRun(kTRUE), fOverwrite(kTRUE), fDoBench(kFALSE),
   fDoHelicity(kFALSE), fDoPhysics(kTRUE), fDoOtherEvents(kTRUE),
-  fDoSlowControl(kTRUE)
+  fDoSlowControl(kTRUE), fExtra(0)
 
 {
   // Default constructor.
@@ -115,6 +115,7 @@ THaAnalyzer::~THaAnalyzer()
   // Destructor.
 
   Close();
+  delete fExtra; fExtra = 0;
   delete fPostProcess;  //deletes PostProcess objects
   delete fBench;
   delete [] fStages;

@@ -118,6 +118,7 @@ protected:
   static const Int_t fgNocut = -1;
 
   static Int_t fgVerbose;
+  TObject*  fExtra;     // Additional member data (for binary compat.)
 
 private:
 

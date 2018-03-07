@@ -76,20 +76,21 @@ public:
 		   kPrescales = BIT(3) };
 
 protected:
-  Int_t         fNumber;       //  Run number
-  Int_t         fType;         //  Run type/mode/etc.
-  TDatime       fDate;         //  Run date and time
-  UInt_t        fEvtRange[2];  //  Event range to analyze
-  UInt_t        fNumAnalyzed;  //  Number of physics events actually analyzed 
-  Bool_t        fDBRead;       //  True if database successfully read.
-  Bool_t        fIsInit;       //  True if run successfully initialized
-  Bool_t        fOpened;       //  True if opened successfully
-  Bool_t        fAssumeDate;   //  True if run date explicitly set
-  UInt_t        fDataSet;      //  Flags for info that is valid (see EInfoType)
-  UInt_t        fDataRead;     //  Flags for info found in data (see EInfoType)
-  UInt_t        fDataRequired; //  Info required for Init() to succeed
-  THaRunParameters* fParam;    //  Run parameters
+  Int_t         fNumber;        // Run number
+  Int_t         fType;          // Run type/mode/etc.
+  TDatime       fDate;          // Run date and time
+  UInt_t        fEvtRange[2];   // Event range to analyze
+  UInt_t        fNumAnalyzed;   // Number of physics events actually analyzed
+  Bool_t        fDBRead;        // True if database successfully read.
+  Bool_t        fIsInit;        // True if run successfully initialized
+  Bool_t        fOpened;        // True if opened successfully
+  Bool_t        fAssumeDate;    // True if run date explicitly set
+  UInt_t        fDataSet;       // Flags for info that is valid (see EInfoType)
+  UInt_t        fDataRead;      // Flags for info found in data (see EInfoType)
+  UInt_t        fDataRequired;  // Info required for Init() to succeed
+  THaRunParameters* fParam;     // Run parameters
   TString       fRunParamClass; // Class of object in fParam
+  TObject*      fExtra;         // Additional member data (for binary compat.)
 
   virtual Int_t ReadDatabase();
   virtual Int_t ReadInitInfo();
