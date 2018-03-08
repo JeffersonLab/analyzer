@@ -29,6 +29,9 @@ public:
 
 protected:
 
+  // Configuration
+  Double_t   fTdc2T;      // Conversion coefficient from raw TDC to time (s/ch)
+
   // Calibration
   Float_t*   fOff;        // [fNelem] TDC offsets (chan)
   Float_t*   fPed;        // [fNelem] ADC pedestals (chan)

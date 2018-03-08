@@ -93,12 +93,14 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
 
   vector<Int_t> detmap;
   Int_t nelem;
-  Int_t tdc_mode = 0;
+  Int_t tdc_mode = -255; // indicates unset
+  fTdc2T = 5e-10;  // TDC resolution (s/channel), for reference, required anyway
 
   // Read configuration parameters
   DBRequest config_request[] = {
     { "detmap",       &detmap,   kIntV },
     { "npaddles",     &nelem,    kInt  },
+    { "tdc.res",      &fTdc2T,   kDouble },
     { "tdc.cmnstart", &tdc_mode, kInt, 0, 1 },
     { 0 }
   };
@@ -130,14 +132,27 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
 	   "inconsistent with 4*number of paddles (%d)", nelem, 4*fNelem );
     err = kInitError;
   }
+
   // Set TDCs to common start mode, if set
-  if( tdc_mode != 0 ) {
-    Int_t nmodules = fDetMap->GetSize();
-    for( Int_t i = 0; i < nmodules; i++ ) {
-      THaDetMap::Module* d = fDetMap->GetModule(i);
-      if( d->IsTDC() )
-	d->SetTDCMode(tdc_mode);
+  if( tdc_mode != -255 ) {
+    // TDC mode was specified
+    if( tdc_mode != 0 ) {
+      // Database indicates common start mode
+      Int_t nmodules = fDetMap->GetSize();
+      for( Int_t i = 0; i < nmodules; i++ ) {
+	THaDetMap::Module* d = fDetMap->GetModule(i);
+	if( d->model ? d->IsTDC() : i>=nmodules/2 ) {
+	  if( !d->model ) d->MakeTDC();
+	  d->SetTDCMode(tdc_mode);
+	}
+      }
     }
+    // If the TDC mode was set explicitly, override negative TDC
+    // resolutions that historically have indicated the TDC mode
+    if( fDebug > 0 )
+      Warning( Here(here), "Negative TDC resolution = %lf converted to "
+	       "positive since TDC mode explicitly set.", fTdc2T );
+    fTdc2T = TMath::Abs(fTdc2T);
   }
 
   if( err ) {
@@ -188,15 +203,13 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
  // Read calibration parameters
 
   // Set DEFAULT values here
-  // TDC resolution (s/channel)
-  fTdc2T = 0.1e-9;      // seconds/channel
   fResolution = kBig;   // actual timing resolution
   // Speed of light in the scintillator material
-  fCn = 1.7e+8;    // meters/second
+  fCn = 1.7e+8;         // meters/second (for reference, required anyway)
   // Attenuation length
-  fAttenuation = 0.7; // inverse meters
+  fAttenuation = 0.7;   // inverse meters
   // Time-walk correction parameters
-  fAdcMIP = 1.e10;    // large number for offset, so reference is effectively disabled
+  fAdcMIP = 1.e10;      // large number for offset, so reference is effectively disabled
   // timewalk coefficients for tw = coeff*(1./sqrt(ADC-Ped)-1./sqrt(ADCMip))
   memset( fTWalkPar, 0, nval_twalk*sizeof(fTWalkPar[0]) );
   // trigger-timing offsets (s)
@@ -219,7 +232,6 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
     { "R.ped",            fRPed,         kDouble, nval, 1 },
     { "L.gain",           fLGain,        kDouble, nval, 1 },
     { "R.gain",           fRGain,        kDouble, nval, 1 },
-    { "tdc.res",          &fTdc2T,       kDouble },
     { "Cn",               &fCn,          kDouble },
     { "MIP",              &fAdcMIP,      kDouble, 0, 1 },
     { "timewalk_params",  fTWalkPar,     kDouble, nval_twalk, 1 },
@@ -284,14 +296,14 @@ Int_t THaScintillator::DefineVariables( EMode mode )
     { "nlahit", "Number of Left paddles ADCs amps",  "fLANhit" },
     { "nrahit", "Number of Right paddles ADCs amps", "fRANhit" },
     { "lt",     "TDC values left side",              "fLT" },
-    { "lt_c",   "Corrected times left side",         "fLT_c" },
+    { "lt_c",   "Calibrated times left side (s)",    "fLT_c" },
     { "rt",     "TDC values right side",             "fRT" },
-    { "rt_c",   "Corrected times right side",        "fRT_c" },
+    { "rt_c",   "Calibrated times right side (s)",   "fRT_c" },
     { "la",     "ADC values left side",              "fLA" },
-    { "la_p",   "Corrected ADC values left side",    "fLA_p" },
+    { "la_p",   "Ped-sub ADC values left side",      "fLA_p" },
     { "la_c",   "Corrected ADC values left side",    "fLA_c" },
     { "ra",     "ADC values right side",             "fRA" },
-    { "ra_p",   "Corrected ADC values right side",   "fRA_p" },
+    { "ra_p",   "Ped-sub ADC values right side",     "fRA_p" },
     { "ra_c",   "Corrected ADC values right side",   "fRA_c" },
     { "nthit",  "Number of paddles with l&r TDCs",   "fNhit" },
     { "t_pads", "Paddles with l&r coincidence TDCs", "fHitPad" },
@@ -447,6 +459,14 @@ Int_t THaScintillator::Decode( const THaEvData& evdata )
       } else {
 	dest->tdc[k]   = static_cast<Double_t>( data );
 	dest->tdc_c[k] = (data - dest->offset[k])*fTdc2T;
+	if( fTdc2T > 0.0 && !not_common_stop_tdc ) {
+	  // For common stop TDCs, time is negatively correlated to raw data
+	  // time = (offset-data)*res, so reverse the sign.
+	  // However, historically, people have been using negative TDC
+	  // resolutions to indicate common stop mode, so in that case
+	  // the sign flip has already been applied.
+	  dest->tdc_c[k] *= -1.0;
+	}
 	(*dest->nthit)++;
       }
     }

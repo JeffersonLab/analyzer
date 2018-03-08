@@ -71,12 +71,14 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
 
   vector<Int_t> detmap;
   Int_t nelem;
-  Int_t tdc_mode = 0;
+  Int_t tdc_mode = -255; // indicates unset
+  fTdc2T = 0.5e-9; // TDC resolution (s/channel)
 
   // Read configuration parameters
   DBRequest config_request[] = {
     { "detmap",       &detmap,   kIntV },
     { "npmt",         &nelem,    kInt  },
+    { "tdc.res",      &fTdc2T,   kDouble, 0, 1 }, // optional to support old DBs
     { "tdc.cmnstart", &tdc_mode, kInt, 0, 1 },
     { 0 }
   };
@@ -109,14 +111,26 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
 	   "inconsistent with 2*number of PMTs (%d)", nelem, 2*fNelem );
     err = kInitError;
   }
+
   // Set TDCs to common start mode, if set
-  if( tdc_mode != 0 ) {
-    Int_t nmodules = fDetMap->GetSize();
-    for( Int_t i = 0; i < nmodules; i++ ) {
-      THaDetMap::Module* d = fDetMap->GetModule(i);
-      if( d->IsTDC() )
-	d->SetTDCMode(tdc_mode);
+  if( tdc_mode != -255 ) {
+    // TDC mode was specified
+    if( tdc_mode != 0 ) {
+      // Database indicates common start mode
+      Int_t nmodules = fDetMap->GetSize();
+      for( Int_t i = 0; i < nmodules; i++ ) {
+	THaDetMap::Module* d = fDetMap->GetModule(i);
+	if( d->model ? d->IsTDC() : i>=nmodules/2 ) {
+	  if( !d->model ) d->MakeTDC();
+	  d->SetTDCMode(tdc_mode);
+	}
+      }
     }
+    // If the TDC mode was set explicitly, assume that negative TDC
+    // resolutions are database errors
+    Warning( Here(here), "Negative TDC resolution = %lf converted to "
+	     "positive since TDC mode explicitly set.", fTdc2T );
+    fTdc2T = TMath::Abs(fTdc2T);
   }
 
   if( err ) {
@@ -146,9 +160,6 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
   // Read calibration parameters
 
   // Set DEFAULT values here
-  // TDC resolution (s/channel)
-  //  fTdc2T = 0.1e-9;      // seconds/channel
-
   // Default TDC offsets (0), ADC pedestals (0) and ADC gains (1)
   memset( fOff, 0, nval*sizeof(fOff[0]) );
   memset( fPed, 0, nval*sizeof(fPed[0]) );
@@ -160,7 +171,6 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
     { "tdc.offsets",      fOff,         kFloat, nval, 1 },
     { "adc.pedestals",    fPed,         kFloat, nval, 1 },
     { "adc.gains",        fGain,        kFloat, nval, 1 },
-    //    { "tdc.res",          &fTdc2T,      kDouble },
     { 0 }
   };
   err = LoadDB( file, date, calib_request, fPrefix );
@@ -201,7 +211,7 @@ Int_t THaCherenkov::DefineVariables( EMode mode )
     { "nthit",  "Number of PMTs with valid TDC",     "fNThit" },
     { "nahit",  "Number of PMTs with ADC signal",    "fNAhit" },
     { "t",      "Raw TDC values",                    "fT" },
-    { "t_c",    "Offset-corrected TDC values",       "fT_c" },
+    { "t_c",    "Calibrated TDC times (s)",          "fT_c" },
     { "a",      "Raw ADC values",                    "fA" },
     { "a_p",    "Pedestal-subtracted ADC values ",   "fA_p" },
     { "a_c",    "Gain-corrected ADC values",         "fA_c" },
@@ -327,7 +337,14 @@ Int_t THaCherenkov::Decode( const THaEvData& evdata )
 	fNAhit++;
       } else {
 	fT[k]   = data;
-	fT_c[k] = data - fOff[k];
+	fT_c[k] = (data - fOff[k]) * fTdc2T;
+	if( fTdc2T > 0.0 && !not_common_stop_tdc ) {
+	  // For common stop TDCs, time is negatively correlated to raw data
+	  // time = (offset-data)*res, so reverse the sign.
+	  // Assume that a negative TDC resolution indicates common stop mode
+	  // as well, so the sign flip has already been applied.
+	  fT_c[k] *= -1.0;
+	}
 	fNThit++;
       }
     }
