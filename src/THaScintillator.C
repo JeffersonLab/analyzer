@@ -93,11 +93,13 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
 
   vector<Int_t> detmap;
   Int_t nelem;
+  Int_t tdc_mode = 0;
 
   // Read configuration parameters
   DBRequest config_request[] = {
-    { "detmap",    &detmap,  kIntV },
-    { "npaddles",  &nelem,   kInt },
+    { "detmap",       &detmap,   kIntV },
+    { "npaddles",     &nelem,    kInt  },
+    { "tdc.cmnstart", &tdc_mode, kInt, 0, 1 },
     { 0 }
   };
   err = LoadDB( file, date, config_request, fPrefix );
@@ -127,6 +129,15 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
     Error( Here(here), "Number of detector map channels (%d) "
 	   "inconsistent with 4*number of paddles (%d)", nelem, 4*fNelem );
     err = kInitError;
+  }
+  // Set TDCs to common start mode, if set
+  if( tdc_mode != 0 ) {
+    Int_t nmodules = fDetMap->GetSize();
+    for( Int_t i = 0; i < nmodules; i++ ) {
+      THaDetMap::Module* d = fDetMap->GetModule(i);
+      if( d->IsTDC() )
+	d->SetTDCMode(tdc_mode);
+    }
   }
 
   if( err ) {
@@ -196,7 +207,10 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   memset( fROff, 0, nval*sizeof(fROff[0]) );
   memset( fLPed, 0, nval*sizeof(fLPed[0]) );
   memset( fRPed, 0, nval*sizeof(fRPed[0]) );
-  for( UInt_t i=0; i<nval; ++i ) { fLGain[i] = 1.0; fRGain[i] = 1.0; }
+  for( UInt_t i=0; i<nval; ++i ) {
+    fLGain[i] = 1.0;
+    fRGain[i] = 1.0;
+  }
 
   DBRequest calib_request[] = {
     { "L.off",            fLOff,         kDouble, nval, 1 },
@@ -378,6 +392,7 @@ Int_t THaScintillator::Decode( const THaEvData& evdata )
   for( Int_t i = 0; i < fDetMap->GetSize(); i++ ) {
     THaDetMap::Module* d = fDetMap->GetModule( i );
     bool adc = ( d->model ? d->IsADC() : (i < fDetMap->GetSize()/2) );
+    bool not_common_stop_tdc = (adc || d->IsCommonStart());
 
     // Loop over all channels that have a hit.
     for( Int_t j = 0; j < evdata.GetNumChan( d->crate, d->slot ); j++) {
@@ -409,7 +424,7 @@ Int_t THaScintillator::Decode( const THaEvData& evdata )
       // Get the data. If multiple hits on a TDC channel, take
       // either first or last hit, depending on TDC mode
       assert( nhit>0 );
-      Int_t ihit = ( adc || d->IsCommonStart() ) ? 0 : nhit-1;
+      Int_t ihit = ( not_common_stop_tdc ) ? 0 : nhit-1;
       Int_t data = evdata.GetData( d->crate, d->slot, chan, ihit );
 
       // Get the detector channel number, starting at 0
