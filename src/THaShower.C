@@ -25,6 +25,13 @@
 #include <iostream>
 #include <iomanip>
 #include <cassert>
+#ifdef HAS_SSTREAM
+ #include <sstream>
+ #define OSSTREAM ostringstream
+#else
+ #include <strstream>
+ #define OSSTREAM ostrstream
+#endif
 
 using namespace std;
 
@@ -325,7 +332,10 @@ Int_t THaShower::Decode( const THaEvData& evdata )
   // fAsum_p          -  Sum of shower blocks ADC minus pedestal values;
   // fAsum_c          -  Sum of shower blocks corrected ADC values;
 
+  const char* const here = "Decode";
+
   // Loop over all modules defined for shower detector
+  bool has_warning = false;
   Int_t nmodules = fDetMap->GetSize();
   for( Int_t i = 0; i < nmodules; i++ ) {
     THaDetMap::Module* d = fDetMap->GetModule( i );
@@ -336,34 +346,59 @@ Int_t THaShower::Decode( const THaEvData& evdata )
       Int_t chan = evdata.GetNextChan( d->crate, d->slot, j );
       if( chan > d->hi || chan < d->lo ) continue;    // Not one of my channels.
 
-      // Get the data. shower blocks are assumed to have only single hit (hit=0)
+      Int_t nhit = evdata.GetNumHits(d->crate, d->slot, chan);
+      if( nhit > 1 || nhit == 0 ) {
+	OSSTREAM msg;
+	msg << nhit << " hits on " << "ADC channel "
+	    << d->crate << "/" << d->slot << "/" << chan;
+	++fMessages[msg.str()];
+	has_warning = true;
+	if( nhit == 0 ) {
+	  msg << ". Should never happen. Decoder bug. Call expert.";
+	  Warning( Here(here), "Event %d: %s", evdata.GetEvNum(),
+		   msg.str().c_str() );
+	  continue;
+	}
+#ifdef WITH_DEBUG
+	if( fDebug>0 ) {
+	  Warning( Here(here), "Event %d: %s", evdata.GetEvNum(),
+		   msg.str().c_str() );
+	}
+#endif
+      }
+      // Get the data. If multiple hits on a channel, take the first (ADC)
       Int_t data = evdata.GetData( d->crate, d->slot, chan, 0 );
 
       Int_t jchan = (d->reverse) ? d->hi - chan : chan-d->lo;
+      if( jchan<0 || jchan>=fNelem ) {
+	Error( Here(here), "Illegal detector channel: %d", jchan );
+	continue;
+      }
 #ifdef NDEBUG
       Int_t k = fChanMap[i][jchan] - 1;
 #else
       Int_t k = fChanMap.at(i).at(jchan) - 1;
 #endif
-#ifdef WITH_DEBUG
-      if( k<0 || k>=fNelem )
-	Warning( Here("Decode()"), "Bad array index: %d. Your channel map is "
-		 "invalid. Data skipped.", k );
-      else
-#endif
-      {
-        // Copy the data and apply calibrations
-	fA[k]   = data;                   // ADC value
-	fA_p[k] = data - fPed[k];         // ADC minus ped
-	fA_c[k] = fA_p[k] * fGain[k];     // ADC corrected
-	if( fA_p[k] > 0.0 )
-	  fAsum_p += fA_p[k];             // Sum of ADC minus ped
-	if( fA_c[k] > 0.0 )
-	  fAsum_c += fA_c[k];             // Sum of ADC corrected
-	fNhits++;
+      if( k<0 || k>=fNelem ) {
+	Error( Here(here), "Bad array index: %d. Your channel map is "
+	       "invalid. Data skipped.", k );
+	continue;
       }
+
+      // Copy the data and apply calibrations
+      fA[k]   = data;                   // ADC value
+      fA_p[k] = data - fPed[k];         // ADC minus ped
+      fA_c[k] = fA_p[k] * fGain[k];     // ADC corrected
+      if( fA_p[k] > 0.0 )
+	fAsum_p += fA_p[k];             // Sum of ADC minus ped
+      if( fA_c[k] > 0.0 )
+	fAsum_c += fA_c[k];             // Sum of ADC corrected
+      fNhits++;
     }
   }
+
+  if( has_warning )
+    ++fNEventsWithWarnings;
 
 #ifdef WITH_DEBUG
   if ( fDebug > 3 ) {

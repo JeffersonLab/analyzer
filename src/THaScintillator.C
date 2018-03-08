@@ -22,7 +22,13 @@
 #include <iostream>
 #include <cassert>
 #include <iomanip>
-#include <sstream>
+#ifdef HAS_SSTREAM
+ #include <sstream>
+ #define OSSTREAM ostringstream
+#else
+ #include <strstream>
+ #define OSSTREAM ostrstream
+#endif
 
 using namespace std;
 
@@ -337,70 +343,6 @@ void THaScintillator::DeleteArrays()
 }
 
 //_____________________________________________________________________________
-Int_t THaScintillator::Begin( THaRunBase* r )
-{
-  // Clear warning message buffer at the beginning of analysis
-
-  THaNonTrackingDetector::Begin(r);
-
-  fMessages.clear();
-  fNEventsWithWarnings = 0;
-  return 0;
-}
-
-//_____________________________________________________________________________
-Int_t THaScintillator::End( THaRunBase* r )
-{
-  // Print warning message summary at end of analysis
-
-  THaNonTrackingDetector::End(r);
-
-  if( !fMessages.empty() ) {
-    ULong64_t ntot = 0;
-    map<string,UInt_t> chan_count;
-    for( map<string,UInt_t>::const_iterator it = fMessages.begin();
-	 it != fMessages.end(); ++it ) {
-      ntot += it->second;
-      const string& m = it->first;
-      string::size_type pos = m.find("channel");
-      if( pos > 3 ) pos -= 4;
-      ++chan_count[m.substr(pos)]; // e.g. substr = "TDC channel 1/2/3"
-    }
-    ostringstream msg;
-    msg << endl
-	<< "  Encountered " << fNEventsWithWarnings << " events with "
-	<< "multihit warnings, " << ntot << " total warnings"
-	<< endl
-	<< "  affecting " << chan_count.size() << " out of "
-	<< fDetMap->GetTotNumChan() << " channels. Check signals for noise!"
-	<< endl
-	<< "  Call Print(\"WARN\") for channel list. "
-	<< "Re-run with fDebug>0 for per-event details.";
-    Warning( Here("End"), "%s", msg.str().c_str() );
-  }
-  return 0;
-}
-
-//_____________________________________________________________________________
-void THaScintillator::Print( Option_t* opt ) const
-{
-  // Print scintillator details
-
-  THaNonTrackingDetector::Print(opt);
-
-  if( opt && strstr(opt,"WARN") != 0 && !fMessages.empty() ) {
-    string name = GetPrefix();
-    if( !name.empty() && name[name.length()-1] == '.' )
-      name.erase(name.length()-1);
-    cout << "Scintillator \"" << name << "\" multihit warnings:" << endl;
-    for( map<string,UInt_t>::const_iterator it = fMessages.begin();
-	 it != fMessages.end(); ++it ) {
-      cout << "  " << it->first << ": " << it->second << " times" << endl;
-    }
-  }
-}
-
-//_____________________________________________________________________________
 void THaScintillator::Clear( Option_t* opt )
 {
   // Reset per-event data.
@@ -430,10 +372,12 @@ Int_t THaScintillator::Decode( const THaEvData& evdata )
 
   // Loop over all modules defined for this detector
 
-  bool multihit_warning = false;
+  const char* const here = "Decode";
+
+  bool has_warning = false;
   for( Int_t i = 0; i < fDetMap->GetSize(); i++ ) {
     THaDetMap::Module* d = fDetMap->GetModule( i );
-    bool adc = ( d->model ? fDetMap->IsADC(d) : (i < fDetMap->GetSize()/2) );
+    bool adc = ( d->model ? d->IsADC() : (i < fDetMap->GetSize()/2) );
 
     // Loop over all channels that have a hit.
     for( Int_t j = 0; j < evdata.GetNumChan( d->crate, d->slot ); j++) {
@@ -442,29 +386,39 @@ Int_t THaScintillator::Decode( const THaEvData& evdata )
       if( chan < d->lo || chan > d->hi ) continue;     // Not one of my channels
 
       Int_t nhit = evdata.GetNumHits(d->crate, d->slot, chan);
-      if( nhit > 1 ) {
-	ostringstream msg;
+      if( nhit > 1 || nhit == 0 ) {
+	OSSTREAM msg;
 	msg << nhit << " hits on " << (adc ? "ADC" : "TDC")
 	    << " channel " << d->crate << "/" << d->slot << "/" << chan;
 	++fMessages[msg.str()];
+	has_warning = true;
+	if( nhit == 0 ) {
+	  msg << ". Should never happen. Decoder bug. Call expert.";
+	  Warning( Here(here), "Event %d: %s", evdata.GetEvNum(),
+		   msg.str().c_str() );
+	  continue;
+	}
 #ifdef WITH_DEBUG
 	if( fDebug>0 ) {
-	  Warning( Here("Decode"), "Event %d: %s", evdata.GetEvNum(),
+	  Warning( Here(here), "Event %d: %s", evdata.GetEvNum(),
 		   msg.str().c_str() );
 	}
 #endif
-	multihit_warning = true;
       }
-      // Get the data. Scintillators are assumed to have only single hit (hit=0)
-      Int_t data = evdata.GetData( d->crate, d->slot, chan, 0 );
+
+      // Get the data. If multiple hits on a TDC channel, take
+      // either first or last hit, depending on TDC mode
+      assert( nhit>0 );
+      Int_t ihit = ( adc || d->IsCommonStart() ) ? 0 : nhit-1;
+      Int_t data = evdata.GetData( d->crate, d->slot, chan, ihit );
 
       // Get the detector channel number, starting at 0
       Int_t k = d->first + ((d->reverse) ? d->hi - chan : chan - d->lo) - 1;
 
       if( k<0 || k>NDEST*fNelem ) {
 	// Indicates bad database
-	Warning( Here("Decode()"), "Illegal detector channel: %d. "
-		 "Fix detector map in database", k );
+	Error( Here(here), "Illegal detector channel: %d. "
+	       "Fix detector map in database", k );
 	continue;
       }
       // Copy the data to the local variables.
@@ -483,7 +437,7 @@ Int_t THaScintillator::Decode( const THaEvData& evdata )
     }
   }
 
-  if( multihit_warning )
+  if( has_warning )
     ++fNEventsWithWarnings;
 
 #ifdef WITH_DEBUG

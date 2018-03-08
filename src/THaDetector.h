@@ -15,11 +15,13 @@
 #include <TRef.h>
 
 class THaApparatus;
+class THaRunBase;
 
 class THaDetector : public THaDetectorBase {
 
 public:
   virtual ~THaDetector();
+  virtual Int_t  End( THaRunBase* r=0 );
   THaApparatus*  GetApparatus() const;
   virtual void   SetApparatus( THaApparatus* );
 

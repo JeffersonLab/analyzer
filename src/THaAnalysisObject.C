@@ -69,7 +69,8 @@ THaAnalysisObject::THaAnalysisObject( const char* name,
 				      const char* description ) :
   TNamed(name,description), fPrefix(NULL), fStatus(kNotinit), 
   fDebug(0), fIsInit(false), fIsSetup(false), fProperties(0),
-  fOKOut(false), fInitDate(19950101,0), fExtra(0)
+  fOKOut(false), fInitDate(19950101,0), fNEventsWithWarnings(0),
+  fExtra(0)
 {
   // Constructor
 
@@ -78,9 +79,10 @@ THaAnalysisObject::THaAnalysisObject( const char* name,
 }
 
 //_____________________________________________________________________________
-THaAnalysisObject::THaAnalysisObject( )
+THaAnalysisObject::THaAnalysisObject()
   : fPrefix(NULL), fStatus(kNotinit), fDebug(0), fIsInit(false),
-    fIsSetup(false), fProperties(), fOKOut(false), fExtra(0)
+    fIsSetup(false), fProperties(), fOKOut(false), fNEventsWithWarnings(0),
+    fExtra(0)
 {
   // only for ROOT I/O
 }
@@ -105,14 +107,44 @@ THaAnalysisObject::~THaAnalysisObject()
 //_____________________________________________________________________________
 Int_t THaAnalysisObject::Begin( THaRunBase* /* run */ )
 {
-  // Method usually called right before the start of the event loop
+  // Method called right before the start of the event loop
   // for 'run'. Begin() is similar to Init(), but since there is a default
   // Init() implementing standard database and global variable setup,
   // Begin() can be used to implement start-of-run setup tasks for each
   // module cleanly without interfering with the standard Init() prodecure.
   //
-  // The default Begin() method does nothing.
+  // The default Begin() method clears the history of warning messages
+  // and warning message event counter
 
+  fMessages.clear();
+  fNEventsWithWarnings = 0;
+
+  return 0;
+}
+
+//_____________________________________________________________________________
+Int_t THaAnalysisObject::End( THaRunBase* /* run */ )
+{
+  // Method called right after the end of the event loop for 'run'.
+  // May be used by modules to clean up, compute averages, write summaries, etc.
+  //
+  // The default End() method prints warning message summary
+
+  if( !fMessages.empty() ) {
+    ULong64_t ntot = 0;
+    for( map<string,UInt_t>::const_iterator it = fMessages.begin();
+	 it != fMessages.end(); ++it ) {
+      ntot += it->second;
+    }
+    OSSTREAM msg;
+    msg << endl
+	<< "  Encountered " << fNEventsWithWarnings << " events with "
+	<< "warnings, " << ntot << " total warnings"
+	<< endl
+	<< "  Call Print(\"WARN\") for channel list. "
+	<< "Re-run with fDebug>0 for per-event details.";
+    Warning( Here("End"), "%s", msg.str().c_str() );
+  }
   return 0;
 }
 
@@ -204,17 +236,6 @@ Int_t THaAnalysisObject::DefineVarsFromList( const void* list,
   }
 
   return kOK;
-}
-
-//_____________________________________________________________________________
-Int_t THaAnalysisObject::End( THaRunBase* /* run */ )
-{
-  // Method usually called right after the end of the event loop for 'run'.
-  // May be used by modules to clean up, compute averages, write summaries, etc.
-  //
-  // The default End() method does nothing.
-
-  return 0;
 }
 
 //_____________________________________________________________________________
@@ -1845,7 +1866,7 @@ TString& THaAnalysisObject::GetObjArrayString( const TObjArray* array, Int_t i )
 }
 
 //_____________________________________________________________________________
-void THaAnalysisObject::Print( Option_t* ) const
+void THaAnalysisObject::Print( Option_t* opt ) const
 {
   cout << "AOBJ: " << IsA()->GetName()
        << "\t" << GetName()
@@ -1854,6 +1875,19 @@ void THaAnalysisObject::Print( Option_t* ) const
     cout << fPrefix;
   cout << "\"\t" << GetTitle()
        << endl;
+
+  // Print warning details
+  if( opt && strstr(opt,"WARN") != 0 && !fMessages.empty() ) {
+    string name = GetPrefix();
+    string::size_type len = name.length();
+    if( len>0 && name[len-1] == '.' )
+      name.erase(len-1);
+    cout << "Module \"" << name << "\" encountered warnings:" << endl;
+    for( map<string,UInt_t>::const_iterator it = fMessages.begin();
+	 it != fMessages.end(); ++it ) {
+      cout << "  " << it->first << ": " << it->second << " times" << endl;
+    }
+  }
 }
 
 //_____________________________________________________________________________

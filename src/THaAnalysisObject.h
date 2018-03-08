@@ -15,6 +15,7 @@
 #include <vector>
 #include <string>
 #include <cstdio>
+#include <map>
 //#include <stdarg.h>
 
 class THaEvData; //needed by derived classes
@@ -143,6 +144,9 @@ protected:
   Bool_t          fOKOut;     // Flag indicating object-output prepared
   TDatime         fInitDate;  // Date passed to Init
 
+  std::map<std::string,UInt_t> fMessages; // Warning messages & count
+  UInt_t          fNEventsWithWarnings;   // Events with warnings
+
   TObject*        fExtra;     // Additional member data (for binary compat.)
 
   virtual Int_t        DefineVariables( EMode mode = kDefine );
@@ -198,7 +202,7 @@ private:
 
   static TList* fgModules;  // List of all currently existing Analysis Modules
 
-  ClassDef(THaAnalysisObject,1)   //ABC for a data analysis object
+  ClassDef(THaAnalysisObject,2)   //ABC for a data analysis object
 };
 
 //____________ inline functions _______________________________________________

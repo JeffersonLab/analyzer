@@ -22,6 +22,13 @@
 #include <cassert>
 #include <iostream>
 #include <iomanip>
+#ifdef HAS_SSTREAM
+ #include <sstream>
+ #define OSSTREAM ostringstream
+#else
+ #include <strstream>
+ #define OSSTREAM ostrstream
+#endif
 
 using namespace std;
 
@@ -244,10 +251,13 @@ Int_t THaCherenkov::Decode( const THaEvData& evdata )
   // This implementation assumes that the first half of the detector map
   // entries corresponds to ADCs, and the second half, to TDCs.
 
+  const char* const here = "Decode";
+
   // Loop over all modules defined for Cherenkov detector
+  bool has_warning = false;
   for( Int_t i = 0; i < fDetMap->GetSize(); i++ ) {
     THaDetMap::Module* d = fDetMap->GetModule( i );
-    bool adc = (d->model ? fDetMap->IsADC(d) : i < fDetMap->GetSize()/2 );
+    bool adc = (d->model ? d->IsADC() : i < fDetMap->GetSize()/2 );
 
     // Loop over all channels that have a hit.
     for( Int_t j = 0; j < evdata.GetNumChan( d->crate, d->slot ); j++) {
@@ -255,18 +265,40 @@ Int_t THaCherenkov::Decode( const THaEvData& evdata )
       Int_t chan = evdata.GetNextChan( d->crate, d->slot, j );
       if( chan < d->lo || chan > d->hi ) continue;     // Not one of my channels
 
-      // Get the data. Aero mirrors are assumed to have only single hit (hit=0)
-      Int_t data = evdata.GetData( d->crate, d->slot, chan, 0 );
+      Int_t nhit = evdata.GetNumHits(d->crate, d->slot, chan);
+      if( nhit > 1 || nhit == 0 ) {
+	OSSTREAM msg;
+	msg << nhit << " hits on " << (adc ? "ADC" : "TDC")
+	    << " channel " << d->crate << "/" << d->slot << "/" << chan;
+	++fMessages[msg.str()];
+	has_warning = true;
+	if( nhit == 0 ) {
+	  msg << ". Should never happen. Decoder bug. Call expert.";
+	  Warning( Here(here), "Event %d: %s", evdata.GetEvNum(),
+		   msg.str().c_str() );
+	  continue;
+	}
+#ifdef WITH_DEBUG
+	if( fDebug>0 ) {
+	  Warning( Here(here), "Event %d: %s", evdata.GetEvNum(),
+		   msg.str().c_str() );
+	}
+#endif
+      }
+
+      // Get the data. If multiple hits on a TDC channel, take
+      // either first or last hit, depending on TDC mode
+      assert( nhit>0 );
+      Int_t ihit = ( adc || d->IsCommonStart() ) ? 0 : nhit-1;
+      Int_t data = evdata.GetData( d->crate, d->slot, chan, ihit );
 
       // Get the detector channel number, starting at 0
       Int_t k = d->first + ((d->reverse) ? d->hi - chan : chan - d->lo) - 1;
 
-#ifdef WITH_DEBUG
       if( k<0 || k>= fNelem ) {
-	Warning( Here("Decode()"), "Illegal detector channel: %d", k );
+	Error( Here(here), "Illegal detector channel: %d", k );
         continue;
       }
-#endif
 
       // Copy the data to the local variables.
       if ( adc ) {
@@ -286,6 +318,9 @@ Int_t THaCherenkov::Decode( const THaEvData& evdata )
       }
     }
   }
+
+  if( has_warning )
+    ++fNEventsWithWarnings;
 
 #ifdef WITH_DEBUG
   if ( fDebug > 3 ) {
