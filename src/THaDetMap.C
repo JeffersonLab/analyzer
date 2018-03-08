@@ -157,6 +157,7 @@ Int_t THaDetMap::AddModule( UShort_t crate, UShort_t slot,
   m.signal = signal;
   m.SetResolution( 0.0 );
   m.reverse = reverse;
+  m.cmnstart = false;
 
   return ++fNmodules;
 }

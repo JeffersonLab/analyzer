@@ -45,6 +45,7 @@ public:
     Int_t    refindex;   // for pipeline TDCs: index into reference channel map
     Double_t resolution; // Resolution (s/chan) for TDCs
     Bool_t   reverse;    // Indicates that "first" corresponds to hi, not lo
+    Bool_t   cmnstart;   // TDC in common start mode (default false)
 
     bool   operator==( const Module& rhs ) const
     { return crate == rhs.crate && slot == rhs.slot; }
@@ -54,8 +55,10 @@ public:
     UInt_t GetModel() const { return model & kModelMask; }
     Bool_t IsTDC()    const { return model & kTDCBit; }
     Bool_t IsADC()    const { return model & kADCBit; }
+    Bool_t IsCommonStart() const { return (IsTDC() && cmnstart); }
     void   SetModel( UInt_t model );
     void   SetResolution( Double_t resolution );
+    void   SetTDCMode( Bool_t cstart ) { cmnstart = cstart; }
     void   MakeTDC()  { model |= kTDCBit; }
     void   MakeADC()  { model |= kADCBit; }
   };
@@ -85,8 +88,7 @@ public:
 			       UShort_t chan_lo, UShort_t chan_hi,
 			       UInt_t first=0, UInt_t model=0,
 			       Int_t refindex=-1, Int_t refchan = -1, 
-			       UInt_t plane=0, UInt_t signal=0
-			       );
+			       UInt_t plane=0, UInt_t signal=0 );
           void      Clear()  { fNmodules = 0; }
   virtual Module*   Find( UShort_t crate, UShort_t slot, UShort_t chan );
   virtual Int_t     Fill( const std::vector<Int_t>& values, UInt_t flags = 0 );
