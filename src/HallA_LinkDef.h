@@ -56,7 +56,6 @@
 #pragma link C++ class THaDetMap+;
 #pragma link C++ class THaDetMap::Module+;
 #pragma link C++ class THaScintillator+;
-#pragma link C++ class THaScintillator::DataDest+;
 #pragma link C++ class THaEvent+;
 #pragma link C++ class THaEventHeader+;
 #pragma link C++ class THaOutput+;

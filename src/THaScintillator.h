@@ -34,6 +34,8 @@ public:
   const Double_t* GetYtime() const { return fYt; }
   const Double_t* GetYampl() const { return fYa; }
 
+protected:
+
   static const Int_t NDEST = 2;
   struct DataDest {
     Int_t*    nthit;
@@ -46,9 +48,7 @@ public:
     Double_t*  offset;
     Double_t*  ped;
     Double_t*  gain;
-  } fDataDest[NDEST];     // Lookup table for decoder
-
-protected:
+  } fDataDest[NDEST];      // Lookup table for decoder
 
   // Calibration
   Double_t*   fLOff;       // [fNelem] TDC offsets for left paddles
@@ -73,20 +73,20 @@ protected:
   Double_t    fResolution;  // average time resolution per PMT (s)
 
   // Per-event data
-  Int_t       fLTNhit;     // Number of Left paddles TDC times
-  Double_t*   fLT;         // [fNelem] Array of Left paddles TDC times (channels)
-  Double_t*   fLT_c;       // [fNelem] Array of Left PMT corrected TDC times (s)
-  Int_t       fRTNhit;     // Number of Right paddles TDC times
-  Double_t*   fRT;         // [fNelem] Array of Right paddles TDC times (channels)
-  Double_t*   fRT_c;       // [fNelem] Array of Right PMT corrected TDC times (s)
-  Int_t       fLANhit;     // Number of Left paddles ADC amplitudes
-  Double_t*   fLA;         // [fNelem] Array of Left paddles ADC amplitudes
-  Double_t*   fLA_p;       // [fNelem] Array of Left paddles ADC minus ped values
-  Double_t*   fLA_c;       // [fNelem] Array of Left paddles corrected ADC ampl-s
-  Int_t       fRANhit;     // Number of Right paddles ADC amplitudes
-  Double_t*   fRA;         // [fNelem] Array of Right paddles ADC amplitudes
-  Double_t*   fRA_p;       // [fNelem] Array of Right paddles ADC minus ped values
-  Double_t*   fRA_c;       // [fNelem] Array of Right paddles corrected ADC ampl-s
+  Int_t       fLTNhit;     // Number of Left paddles with TDC hits
+  Double_t*   fLT;         // [fNelem] Left paddles TDC times (channels)
+  Double_t*   fLT_c;       // [fNelem] Left PMT corrected TDC times (s)
+  Int_t       fRTNhit;     // Number of Right paddles with TDC signals
+  Double_t*   fRT;         // [fNelem] Right paddles TDC times (channels)
+  Double_t*   fRT_c;       // [fNelem] Right PMT corrected TDC times (s)
+  Int_t       fLANhit;     // Number of Left paddles with ADC hits
+  Double_t*   fLA;         // [fNelem] Left paddles ADC amplitudes
+  Double_t*   fLA_p;       // [fNelem] Left paddles ADC minus ped values
+  Double_t*   fLA_c;       // [fNelem] Left paddles corrected ADC ampl-s
+  Int_t       fRANhit;     // Number of Right paddles with ADC hits
+  Double_t*   fRA;         // [fNelem] Right paddles ADC amplitudes
+  Double_t*   fRA_p;       // [fNelem] Right paddles ADC minus ped values
+  Double_t*   fRA_c;       // [fNelem] Right paddles corrected ADC ampl-s
 
 
   Int_t       fNhit;       // Number of paddles with complete TDC hits (l&r)
