@@ -280,6 +280,8 @@ protected:
 
   Int_t  fDebug;     // Debug/verbosity level
 
+  TObject* fExtra;   // additional member data, for binary compatibility
+
   ClassDef(THaEvData,0)  // Decoder for CODA event buffer
 
 };

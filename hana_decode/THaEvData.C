@@ -65,7 +65,7 @@ THaEvData::THaEvData() :
   evt_time(0), recent_event(0),
   buffmode(false), synchmiss(false), synchextra(false),
   fNSlotUsed(0), fNSlotClear(0),
-  fDoBench(kFALSE), fBench(0), fNeedInit(true), fDebug(0)
+  fDoBench(kFALSE), fBench(0), fNeedInit(true), fDebug(0), fExtra(0)
 {
   fInstance = fgInstances.FirstNullBit();
   fgInstances.SetBitNumber(fInstance);

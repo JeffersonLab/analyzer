@@ -123,6 +123,8 @@ namespace Decoder {
 
     std::ofstream *fDebugFile;
 
+    TObject* fExtra;  // additional member data, for binary compatibility
+
   private:
 
     ClassDef(Module,0)  // A module in a crate and slot
