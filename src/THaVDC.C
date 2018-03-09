@@ -780,7 +780,7 @@ Int_t THaVDC::CoarseTrack( TClonesArray& tracks )
 }
 
 //_____________________________________________________________________________
-Int_t THaVDC::FineTrack( TClonesArray& tracks )
+Int_t THaVDC::FineTrack( TClonesArray& /* tracks */ )
 {
   // Calculate exact track position and angle using drift time information.
   // Assumes that CoarseTrack has been called (ie - clusters are matched)
@@ -901,19 +901,16 @@ void THaVDC::CalcTargetCoords( THaTrack* track )
   Double_t x, y, theta, phi, dp, p, pathl;
 
   // first select the coords to use
-  switch( fCoordType ) {
-  case kTransport:
+  if( fCoordType == kTransport ) {
     x_fp = track->GetX();
     y_fp = track->GetY();
     th_fp = track->GetTheta();
     ph_fp = track->GetPhi();
-    break;
-  case kRotatingTransport:
+  } else {  // kRotatingTransport
     x_fp = track->GetRX();
     y_fp = track->GetRY();
     th_fp = track->GetRTheta();
     ph_fp = track->GetRPhi();
-    break;
   }
 
   // calculate the powers we need

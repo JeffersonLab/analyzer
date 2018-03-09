@@ -28,7 +28,7 @@ THaBPM::THaBPM( const char* name, const char* description,
 				  THaApparatus* apparatus ) :
   THaBeamDet(name,description,apparatus),
   fRawSignal(NCHAN),fPedestals(NCHAN),fCorSignal(NCHAN),fRotPos(NCHAN/2),
-  fRot2HCSPos(NCHAN/2,NCHAN/2), fNfired(0)
+  fRot2HCSPos(NCHAN/2,NCHAN/2)
 {
   // Constructor
 }
@@ -140,7 +140,6 @@ void THaBPM::Clear( Option_t* )
   // Reset per-event data.
   fPosition.SetXYZ(0.,0.,-10000.);
   fDirection.SetXYZ(0.,0.,1.);
-  fNfired=0;
   for( UInt_t k=0; k<NCHAN; ++k ) {
     fRawSignal(k)=-1;
     fCorSignal(k)=-1;
@@ -158,6 +157,7 @@ Int_t THaBPM::Decode( const THaEvData& evdata )
 
   const char* const here = "Decode()";
 
+  UInt_t nfired = 0;
   for (Int_t i = 0; i < fDetMap->GetSize(); i++ ){
     THaDetMap::Module* d = fDetMap->GetModule( i );
     for (Int_t j=0; j< evdata.GetNumChan( d->crate, d->slot ); j++) {
@@ -167,7 +167,7 @@ Int_t THaBPM::Decode( const THaEvData& evdata )
 	UInt_t k = d->first + ((d->reverse) ? d->hi - chan : chan - d->lo) -1;
 	if ((k<NCHAN)&&(fRawSignal(k)==-1)) {
 	  fRawSignal(k)= data;
-	  fNfired++;
+	  nfired++;
 	}
 	else {
 	  Warning( Here(here), "Illegal detector channel: %d", k );
@@ -176,7 +176,7 @@ Int_t THaBPM::Decode( const THaEvData& evdata )
     }
   }
 
-  if (fNfired!=NCHAN) {
+  if (nfired!=NCHAN) {
     Warning( Here(here), "Number of fired Channels out of range. "
 	     "Setting beam position to nominal values");
   }

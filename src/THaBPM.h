@@ -56,7 +56,6 @@ protected:
   TVector3  fDirection;  // Beam direction at the BPM
                          // always points along z-axis
 
-  Int_t fNfired;
   Double_t fCalibRot;
 
   ClassDef(THaBPM,0)   // Generic BPM class
