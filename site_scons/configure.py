@@ -168,7 +168,7 @@ def FindEVIO(env, build_it = True, fail_if_missing = True):
         evio_local = env.subst('$HA_DIR')+'/evio'
         evio_local_lib = "%s/evio-%s/src/libsrc/.%s" % (evio_local,evio_version,evio_arch)
         evio_local_inc = "%s/evio-%s/src/libsrc" % (evio_local,evio_version)
-        evio_tarfile = "%s/evio-%s.tar.gz" % (evio_local,evio_version)
+        evio_tarfile = "%s/master.tar.gz" % (evio_local)
         evio_command_dircreate = "mkdir -p %s" % (evio_local)
         os.system(evio_command_dircreate)
 
