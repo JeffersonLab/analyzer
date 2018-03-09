@@ -114,16 +114,13 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
 
   // Set TDCs to common start mode, if set
   if( tdc_mode != -255 ) {
-    // TDC mode was specified
-    if( tdc_mode != 0 ) {
-      // Database indicates common start mode
-      Int_t nmodules = fDetMap->GetSize();
-      for( Int_t i = 0; i < nmodules; i++ ) {
-	THaDetMap::Module* d = fDetMap->GetModule(i);
-	if( d->model ? d->IsTDC() : i>=nmodules/2 ) {
-	  if( !d->model ) d->MakeTDC();
-	  d->SetTDCMode(tdc_mode);
-	}
+    // TDC mode was specified. Configure all TDC modules accordingly
+    Int_t nmodules = fDetMap->GetSize();
+    for( Int_t i = 0; i < nmodules; i++ ) {
+      THaDetMap::Module* d = fDetMap->GetModule(i);
+      if( d->model ? d->IsTDC() : i>=nmodules/2 ) {
+	if( !d->model ) d->MakeTDC();
+	d->SetTDCMode(tdc_mode);
       }
     }
     // If the TDC mode was set explicitly, assume that negative TDC

@@ -135,23 +135,23 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
 
   // Set TDCs to common start mode, if set
   if( tdc_mode != -255 ) {
-    // TDC mode was specified
-    if( tdc_mode != 0 ) {
-      // Database indicates common start mode
-      Int_t nmodules = fDetMap->GetSize();
-      for( Int_t i = 0; i < nmodules; i++ ) {
-	THaDetMap::Module* d = fDetMap->GetModule(i);
-	if( d->model ? d->IsTDC() : i>=nmodules/2 ) {
-	  if( !d->model ) d->MakeTDC();
-	  d->SetTDCMode(tdc_mode);
-	}
+    // TDC mode was specified. Configure all TDC modules accordingly
+    Int_t nmodules = fDetMap->GetSize();
+    for( Int_t i = 0; i < nmodules; i++ ) {
+      THaDetMap::Module* d = fDetMap->GetModule(i);
+      if( d->model ? d->IsTDC() : i>=nmodules/2 ) {
+	if( !d->model ) d->MakeTDC();
+	d->SetTDCMode(tdc_mode);
       }
     }
     // If the TDC mode was set explicitly, override negative TDC
     // resolutions that historically have indicated the TDC mode
-    if( fDebug > 0 )
+    if( tdc_mode != 0 && fTdc2T < 0.0 )
+      // Warn user if tdc_mode and fTdc2T seem to indicate different things.
+      // tdc_mode takes preference
       Warning( Here(here), "Negative TDC resolution = %lf converted to "
-	       "positive since TDC mode explicitly set.", fTdc2T );
+	       "positive since TDC mode explicitly set to common start.",
+	       fTdc2T );
     fTdc2T = TMath::Abs(fTdc2T);
   }
 
