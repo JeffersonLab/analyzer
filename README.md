@@ -2,13 +2,13 @@ Hall A C++ Analyzer
 ===================
 
 This is the standard data analysis software for
-[Hall A](http://hallaweb.jlab.org/) at [Jefferson Lab](http://www.jlab.org).
-The current stable version is 1.5.29.
+[Hall A](http://hallaweb.jlab.org/) at [Jefferson Lab](https://www.jlab.org).
+The current stable version is 1.6.0.
 
 Overview
 --------
 The analyzer is an object-oriented, highly modular and extensible
-framework built on top of the [ROOT](http://root.cern.ch) framework
+framework built on top of the [ROOT](https://root.cern.ch) framework
 from CERN.  Classes are available for the most common analysis tasks
 involving data from the standard Hall A experimental equipment, in
 particular the HRS spectrometers and detectors. Standard physics
@@ -23,26 +23,23 @@ libraries. One can quickly implement new detectors, physics computation
 modules and even entire spectrometers.
 
 Currently, major efforts are underway (1) to develop an improved
-analysis framework jointly with [Hall C](http://www.jlab.org/Hall-C/)
+analysis framework jointly with [Hall C](https://www.jlab.org/Hall-C/)
 which will be based on the current Hall A software, and (2) to update
 the analyzer for the more demanding analysis requirements of 12 GeV
 experiments.
 
-Further information can be found online [here](http://hallaweb.jlab.org/podd/).
+For more information, please see the [Wiki](https://redmine.jlab.org/projects/podd/wiki/).
 
 Compiling
 ---------
-The analyzer may be compiled with either make or SCons. The following
-software is prerequisite for analyzer 1.5
+The analyzer may be compiled with either make or SCons (recommended). The following
+are the main prerequisites for analyzer 1.6:
 
-* [ROOT](http://root.cern.ch) version 4 or higher, latest version (5.34)
-  strongly recommended. root-config must be in your PATH.
-
-For analyzer 1.6 or higher, you will also need
+* [ROOT](https://root.cern.ch) version 5 or higher. The latest version
+  (currently 6.12/06) is strongly recommended. root-config must be in your PATH.
 
 * [EVIO](https://coda.jlab.org/drupal/content/event-io-evio) version 4.0
- or higher. EVIO_INCDIR and EVIO_LIBDIR must be set to point to the EVIO
- installation locations.
+  or higher. CODA must be set to point to the top of the installation location.
 
 ### Compiling with make
     make
@@ -60,10 +57,10 @@ To compile with debug capabilities, do
 
 Contributing
 ------------
-To participate in development, please contact Ole Hansen.
+To participate in development, please contact
+[the developers](https://redmine.jlab.org/projects/podd/)
 
-Note that issues may be submitted to the
-[github issue tracker](https://github.com/JeffersonLab/analyzer/issues?state=open)
-by anyone. For issues that may be of general interest, you are strongly
-encouraged to use the issue tracker system. In this way, all active
-developers are notified and able to respond quickly.
+Bug reports and other issues may be submitted to the
+[Redmine issue tracker](https://redmine.jlab.org/projects/podd/issues/)
+by anyone. You are strongly encouraged to use the issue tracker system.
+In this way, all active developers are notified and able to respond quickly.
