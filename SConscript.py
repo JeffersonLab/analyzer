@@ -88,6 +88,11 @@ if sys.version_info >= (2, 7):
         cxxver = subprocess.check_output(cmd, shell=True).rstrip()
     except:
         cxxver = ''
+    # subprocess gives us byte string literals in Python 3, but we'd like
+    # Unicode strings
+    if sys.version_info >= (3, 0):
+        gitrev = gitrev.decode()
+        cxxver = cxxver.decode()
 else:
     FNULL = open(os.devnull, 'w')
     try:
