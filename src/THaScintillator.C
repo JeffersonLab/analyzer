@@ -246,7 +246,7 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
     return err;
 
   if( fResolution == kBig )
-    fResolution = fTdc2T;
+    fResolution = 3.*fTdc2T; // guess at timing resolution
 
 #ifdef WITH_DEBUG
   // Debug printout
