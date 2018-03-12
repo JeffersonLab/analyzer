@@ -21,13 +21,14 @@ namespace Decoder {
      fFirstTime = kTRUE;
      fBlockHeader = 0;
      fNWarnings = 0;
+     data_type_def = 15;  /* initialize to FILLER WORD */
      ReStart();
 }
 
 PipeliningModule::~PipeliningModule() {
 }
 
-Int_t PipeliningModule::SplitBuffer(std::vector< UInt_t > codabuffer ) {
+Int_t PipeliningModule::SplitBuffer(const std::vector< UInt_t >& codabuffer) {
 
 // Split a CODA buffer into blocks.   A block is data from a traditional physics event.
 // In MultiBlock Mode, a pipelining module can have several events in each CODA buffer.
