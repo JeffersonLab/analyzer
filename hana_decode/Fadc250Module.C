@@ -79,11 +79,11 @@ namespace Decoder {
     DoRegister( ModuleType( "Decoder::Fadc250Module" , 250 ));
 
   Fadc250Module::Fadc250Module()
-    : PipeliningModule(), fPulseData(NADCCHAN), data_type_def(0)
+    : PipeliningModule(), fPulseData(NADCCHAN), data_type_def(15)
   { memset(&fadc_data, 0, sizeof(fadc_data)); }
 
   Fadc250Module::Fadc250Module(Int_t crate, Int_t slot)
-    : PipeliningModule(crate, slot), fPulseData(NADCCHAN), data_type_def(0)
+    : PipeliningModule(crate, slot), fPulseData(NADCCHAN), data_type_def(15)
   {
     memset(&fadc_data, 0, sizeof(fadc_data));
     IsInit = kFALSE;
@@ -133,9 +133,12 @@ namespace Decoder {
     // Clear event-by-event data
     VmeModule::Clear(opt);
     ClearDataVectors();
+    // Initialize data_type_def to FILLER and data types to false
+    data_type_def = 15;
     // Initialize data types to false
     data_type_4 = data_type_6 = data_type_7 = data_type_8 = data_type_9 = data_type_10 = false;
     block_header_found = block_trailer_found = event_header_found = slots_match = false;
+
   }
 
   void Fadc250Module::Init() {
