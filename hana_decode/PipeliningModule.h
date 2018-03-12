@@ -44,13 +44,14 @@ public:
 
 protected:
 
-   Int_t SplitBuffer(std::vector< UInt_t > bigbuffer);
+   Int_t SplitBuffer(const std::vector< UInt_t >& bigbuffer);
    void ReStart();
    std::vector< UInt_t >GetNextBlock();
    Int_t LoadNextEvBuffer(THaSlotData *sldat)=0;
    virtual Int_t LoadThisBlock(THaSlotData *sldat, std::vector<UInt_t > evb)=0;
    Int_t fNWarnings;
    UInt_t fBlockHeader;
+   UInt_t data_type_def;
 
    Bool_t fFirstTime;
 
@@ -60,6 +61,8 @@ protected:
 
 private:
 
+   PipeliningModule(const PipeliningModule &fh);
+   PipeliningModule& operator=(const PipeliningModule &fh);
    ClassDef(Decoder::PipeliningModule,0)  // A pipelining module
 
 };
