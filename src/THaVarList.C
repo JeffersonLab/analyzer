@@ -70,6 +70,7 @@ using namespace std;
 
 static const Int_t kInitVarListCapacity = 100;
 static const Int_t kVarListRehashLevel  = 3;
+
 //_____________________________________________________________________________
 THaVarList::THaVarList() : THashList(kInitVarListCapacity, kVarListRehashLevel)
 {
@@ -466,10 +467,12 @@ Int_t THaVarList::DefineVariables( const VarDef* list, const char* prefix,
     return -1;
   }
 
+  if( !prefix )
+    prefix = "";
+
   const VarDef* item = list;
   Int_t ndef = 0;
-  size_t nlen = 64;
-  char* name = new char[nlen];
+  TString name;
 
   while( item->name ) {
 
@@ -477,27 +480,20 @@ Int_t THaVarList::DefineVariables( const VarDef* list, const char* prefix,
     if( !description || !*description )
       description = item->name;
 
-    size_t len = strlen( item->name ), slen = 0, plen = 0;
-
-    // size>1 means 1-d array
-    if( item->size>1 ) {
-      slen = static_cast<size_t>( TMath::Log10( item->size )) + 3;
-    }
-    if( prefix ) {
-      plen = strlen( prefix );
-    }
-    // Resize name string buffer if necessay
-    if( plen+len+slen+1 > nlen ) {
-      delete [] name;
-      name = new char[plen+len+slen+1];
-      nlen = plen+len+slen+1;
-    }
     // Assemble the name string
-    if( plen )
-      strcpy( name, prefix );
-    strcpy( name+plen, item->name );
-    if( slen ) {
-      sprintf( name+plen+len, "[%d]", item->size );
+    name = prefix;
+    name.Append(item->name);
+    // size>1 means fixed-size 1-d array
+    bool fixed_array = (item->size > 1);
+    bool var_array = (item->count != 0) ||
+      (item->type >= kIntV && item->type <= kDoubleV);
+    if( item->size>0 && var_array ) {
+      Warning( errloc, "Variable %s: variable-size arrays must have size=0. "
+	       "Ignoring size.", name.Data() );
+    } else if( fixed_array ) {
+      char dimstr[256];
+      sprintf( dimstr, "[%d]", item->size );
+      name.Append(dimstr);
     }
 
     // Define this variable, using the indicated type
@@ -509,7 +505,6 @@ Int_t THaVarList::DefineVariables( const VarDef* list, const char* prefix,
       ndef++;
     item++;
   }
-  delete [] name;
 
   return ndef;
 }
