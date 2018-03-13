@@ -108,7 +108,6 @@ namespace Decoder {
 
     Bool_t data_type_4, data_type_6, data_type_7, data_type_8, data_type_9, data_type_10;
     Bool_t block_header_found, block_trailer_found, event_header_found, slots_match;
-    uint32_t data_type_def;
 
     void ClearDataVectors();
     void PopulateDataVector(std::vector<uint32_t>& data_vector, uint32_t data);

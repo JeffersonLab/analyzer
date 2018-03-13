@@ -79,11 +79,11 @@ namespace Decoder {
     DoRegister( ModuleType( "Decoder::Fadc250Module" , 250 ));
 
   Fadc250Module::Fadc250Module()
-    : PipeliningModule(), fPulseData(NADCCHAN), data_type_def(15)
+    : PipeliningModule(), fPulseData(NADCCHAN)
   { memset(&fadc_data, 0, sizeof(fadc_data)); }
 
   Fadc250Module::Fadc250Module(Int_t crate, Int_t slot)
-    : PipeliningModule(crate, slot), fPulseData(NADCCHAN), data_type_def(15)
+    : PipeliningModule(crate, slot), fPulseData(NADCCHAN)
   {
     memset(&fadc_data, 0, sizeof(fadc_data));
     IsInit = kFALSE;
