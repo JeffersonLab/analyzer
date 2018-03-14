@@ -26,6 +26,11 @@ VectorVar::VectorVar( THaVar* pvar, const void* addr, VarType type )
   : Variable(pvar,addr,type)
 {
   // Constructor
+
+  if( !VerifyNonArrayName(GetName()) ) {
+    fValueP = 0;
+    return;
+  }
 }
 
 //_____________________________________________________________________________

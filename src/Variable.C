@@ -38,6 +38,24 @@ Variable::~Variable()
 }
 
 //_____________________________________________________________________________
+Bool_t Variable::VerifyNonArrayName( const char* name ) const
+{
+  // Return true if the variable string is NOT an array
+
+  const char* const here = "Variable::VerifyNonArrayName";
+
+  THaArrayString parsed_name(name);
+
+  if( parsed_name.IsError() || parsed_name.IsArray() ) {
+    fSelf->Error( here, "Illegal name for variable \"%s\". "
+		  "Brackets and commans not allowed.", name );
+    return false;
+  }
+
+  return true;
+}
+
+//_____________________________________________________________________________
 const char* Variable::GetName() const
 {
   return fSelf->TNamed::GetName();
@@ -496,6 +514,9 @@ void Variable::SetName( const char* name )
 {
   // Set the name of the variable
 
+  if( !VerifyNonArrayName(name) )
+    return;
+
   fSelf->TNamed::SetName( name );
 }
 
@@ -503,6 +524,9 @@ void Variable::SetName( const char* name )
 void Variable::SetNameTitle( const char* name, const char* descript )
 {
   // Set name and description of the variable
+
+  if( !VerifyNonArrayName(name) )
+    return;
 
   fSelf->TNamed::SetNameTitle( name, descript );
 }

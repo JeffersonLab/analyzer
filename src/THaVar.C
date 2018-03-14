@@ -64,6 +64,8 @@ using namespace std;
 const Long64_t THaVar::kInvalidInt = kMaxLong64;
 const Double_t THaVar::kInvalid    = 1e38;
 
+static const char* const here = "THaVar";
+
 // NB: Must match definition order in VarDef.h
 static struct VarTypeInfo_t {
   VarType      type;
@@ -208,7 +210,7 @@ THaVar::THaVar( const char* name, const char* descript, T& var,
   VarType type = FindType( typeid(T) );
   if( type >= kIntV && type <= kDoubleV ) {
     if( count )
-      Warning( "THaVar", "Ignoring size counter for std::vector variable %s", name );
+      Warning( here, "Ignoring size counter for std::vector variable %s", name );
     fImpl = new Podd::VectorVar( this, &var, type );
   }
   else if( type != kVarTypeEnd ) {
@@ -223,7 +225,7 @@ THaVar::THaVar( const char* name, const char* descript, T& var,
       MakeZombie();
   }
   else {
-    Error( "THaVar", "Unsupported data type for variable %s", name );
+    Error( here, "Unsupported data type for variable %s", name );
     MakeZombie();
   }
 }
@@ -235,26 +237,27 @@ THaVar::THaVar( const char* name, const char* descript, const void* obj,
 {
   // Generic constructor (used by THaVarList::DefineByType)
 
-  if( type == kObject || type == kObjectP || type == kObject2P ) {
-    Error( "THaVar", "Variable %s: Object types not (yet) supported", name );
+  if( type == kObject  || type == kObjectP  || type == kObject2P ||
+      type == kObjectV || type == kObjectPV ) {
+    Error( here, "Variable %s: Object types not (yet) supported", name );
     MakeZombie();
     return;
   }
   else if( type >= kIntM && type <= kDoubleM ) {
-    Error( "THaVar", "Variable %s: Matrix types not (yet) supported", name );
+    Error( here, "Variable %s: Matrix types not (yet) supported", name );
     MakeZombie();
     return;
   }
   else if( type >= kIntV && type <= kDoubleV ) {
     if( count ) {
-      Warning( "THaVar", "Ignoring size counter for std::vector variable %s. "
+      Warning( here, "Ignoring size counter for std::vector variable %s. "
 	       "Fix code or call expert", name );
     }
     fImpl = new Podd::VectorVar( this, obj, type );
   }
   else if( count ) {
     if( offset >= 0 || method ) {
-      Error( "THaVar", "Variable %s: Inconsistent arguments. Cannot specify "
+      Error( here, "Variable %s: Inconsistent arguments. Cannot specify "
 	     "both count and offset/method", name );
       MakeZombie();
       return;
@@ -264,7 +267,7 @@ THaVar::THaVar( const char* name, const char* descript, const void* obj,
   else if( method || offset >= 0 ) {
     if( method && offset >= 0 ) {
       if( offset > 0 ) {
-	Warning( "THaVar", "Variable %s: Offset > 0 ignored for method call on "
+	Warning( here, "Variable %s: Offset > 0 ignored for method call on "
 		 "object in collection. Fix code or call expert", name );
       }
       fImpl = new Podd::SeqCollectionMethodVar( this, obj, type, method );
@@ -291,20 +294,20 @@ THaVar::THaVar( const char* name, const char* descript, const void* obj,
   // (used by THaVarList::DefineByType)
 
   if( type > kByte ) {
-    Error( "THaVar", "Variable %s: Illegal type %s for data in std::vector "
+    Error( here, "Variable %s: Illegal type %s for data in std::vector "
 	   "of objects", name, GetTypeName(type) );
     MakeZombie();
     return;
   }
   else if( elem_size < 0 || offset < 0 ) {
-    Error( "THaVar", "Variable %s: Illegal parameters elem_size = %d, "
+    Error( here, "Variable %s: Illegal parameters elem_size = %d, "
 	   "offset = %d. Must be >= 0", name, elem_size, offset );
     MakeZombie();
     return;
   }
   if( method ) {
     if( offset > 0 ) {
-      Warning( "THaVar", "Variable %s: Offset > 0 ignored for method call on "
+      Warning( here, "Variable %s: Offset > 0 ignored for method call on "
 	       "object", name );
     }
     fImpl = new Podd::VectorObjMethodVar( this, obj, type, elem_size, method );

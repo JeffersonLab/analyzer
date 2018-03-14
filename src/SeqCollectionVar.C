@@ -30,6 +30,10 @@ SeqCollectionVar::SeqCollectionVar( THaVar* pvar, const void* addr,
   // Constructor
   assert( offset >= 0 );
 
+  if( !VerifyNonArrayName(GetName()) ) {
+    fValueP = 0;
+    return;
+  }
   // Currently supported data types
   if( !(fType >= kDouble && fType <= kUChar) &&
       !(fType >= kDoubleP && fType <= kUCharP) ) {

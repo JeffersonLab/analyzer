@@ -28,6 +28,11 @@ MethodVar::MethodVar( THaVar* pvar, const void* addr,
 {
   // Constructor
   assert( fMethod );
+
+  if( !VerifyNonArrayName(GetName()) ) {
+    fValueP = 0;
+    return;
+  }
 }
 
 //_____________________________________________________________________________

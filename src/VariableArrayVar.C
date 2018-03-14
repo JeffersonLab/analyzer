@@ -27,6 +27,11 @@ VariableArrayVar::VariableArrayVar( THaVar* pvar, const void* addr,
   // Constructor
 
   assert( fCount );
+
+  if( !VerifyNonArrayName(GetName()) ) {
+    fValueP = 0;
+    return;
+  }
 }
 
 //_____________________________________________________________________________

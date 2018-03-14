@@ -29,12 +29,12 @@ namespace Podd {
     virtual void         Print( Option_t* opt="FULL" ) const;
 
     virtual void         SetName( const char* );
-    virtual void         SetNameTitle( const char* name, const char* descript );
+    virtual void         SetNameTitle( const char* name, const char* desc );
 
   protected:
     THaArrayString       fParsedName;
   
-    Bool_t               CheckName( const THaArrayString& parsed_name ) const;
+    Bool_t               VerifyArrayName( const THaArrayString& astr ) const;
   };
 
 }// namespace Podd

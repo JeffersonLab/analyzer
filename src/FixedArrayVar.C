@@ -25,35 +25,32 @@ FixedArrayVar::FixedArrayVar( THaVar* pvar, const void* addr, VarType type )
 {
   // Constructor
 
-  assert( pvar == fSelf );
-
-  if( !CheckName(fParsedName) ) {
+  if( !VerifyArrayName(fParsedName) ) {
     fValueP = 0;
     return;
   }
 
-  pvar->TNamed::SetName( fParsedName.GetName() );
+  fSelf->TNamed::SetName( fParsedName.GetName() );
 }
 
 //_____________________________________________________________________________
-Bool_t FixedArrayVar::CheckName( const THaArrayString& parsed_name ) const
+Bool_t FixedArrayVar::VerifyArrayName( const THaArrayString& parsed_name ) const
 {
-  // Return true if name seems to be OK
+  // Return true if the variable string has valid array syntax
 
-  const char* const here = "FixedArrayVar::CheckName";
-
-  bool good = true;
+  const char* const here = "FixedArrayVar::VerifyArrayName";
 
   if( parsed_name.IsError() ) {
-    fSelf->Error( here, "Malformed array specification for variable %s", GetName() );
-    good = false;
+    fSelf->Error( here, "Malformed array specification for variable %s",
+		  GetName() );
+    return false;
   } else if( !parsed_name.IsArray() ) {
     fSelf->Error( here, "Specification \"%s\" for variable %s is not a "
 		 "fixed array", parsed_name.GetName(), GetName() );
-    good = false;
+    return false;
   }
 
-  return good;
+  return true;
 }
 
 //_____________________________________________________________________________
@@ -151,7 +148,7 @@ void FixedArrayVar::SetName( const char* name )
   // Set the name of the variable
 
   THaArrayString new_name = name;
-  if( !CheckName(new_name) )
+  if( !VerifyArrayName(new_name) )
     return;
 
   fSelf->TNamed::SetName( new_name );
@@ -164,7 +161,7 @@ void FixedArrayVar::SetNameTitle( const char* name, const char* descript )
   // Set name and description of the variable
 
   THaArrayString new_name = name;
-  if( !CheckName(new_name) )
+  if( !VerifyArrayName(new_name) )
     return;
 
   fSelf->TNamed::SetNameTitle( new_name, descript );

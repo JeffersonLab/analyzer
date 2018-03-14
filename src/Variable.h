@@ -62,6 +62,8 @@ namespace Podd {
     const char*          GetName() const;
     size_t               GetTypeSize() const;
     const char*          GetTypeName() const;
+    Bool_t               VerifyNonArrayName( const char* name ) const;
+
   };
 
 } //namespace Podd
