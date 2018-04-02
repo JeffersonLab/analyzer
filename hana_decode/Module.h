@@ -43,6 +43,8 @@ namespace Decoder {
     Bool_t BlockIsDone() { return fBlockIsDone; };
     virtual void SetFirmware(Int_t fw) {fFirmwareVers=fw;};
 
+    virtual Int_t GetTriggerTime() const {return 0;};
+
     // inheriting classes need to implement one or more of these
     virtual UInt_t GetData(Int_t) const { return 0; };
     virtual Int_t GetData(Int_t, Int_t) const { return 0; };

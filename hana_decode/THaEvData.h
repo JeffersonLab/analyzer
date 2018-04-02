@@ -100,7 +100,15 @@ public:
     }
     return module->IsMultiFunction();
   }
-
+  Int_t GetTriggerTime(Int_t crate, Int_t slot) const
+  {
+    Decoder::Module* module = GetModule(crate, slot);
+    if (!module) {
+      std::cout << "No module at crate "<<crate<<"   slot "<<slot<<std::endl;
+      return false;
+    }
+    return module->GetTriggerTime();
+  }
   Int_t GetNumEvents( Decoder::EModuleType type, Int_t crate, Int_t slot, Int_t chan) const
   {
     Decoder::Module* module = GetModule(crate, slot);
