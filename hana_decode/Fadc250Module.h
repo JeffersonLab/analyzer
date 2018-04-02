@@ -56,7 +56,7 @@ namespace Decoder {
     Int_t GetNumEvents() const { return GetNumEvents(0); } ;
     Int_t GetNumEvents(Int_t ichan) const { return GetNumFadcEvents(ichan); } ;
     Int_t GetNumSamples(Int_t ichan) const { return GetNumFadcSamples(ichan, 0);};
-
+    Int_t GetTriggerTime() const;
             
   private:
 
