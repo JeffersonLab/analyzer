@@ -183,6 +183,8 @@ public:
   UInt_t  GetInstance() const { return fInstance; }
   static UInt_t GetInstances() { return fgInstances.CountBits(); }
 
+  Decoder::THaCrateMap* GetCrateMap() const { return fMap; }
+
   Decoder::THaCrateMap* fMap;      // Pointer to active crate map
 
   // Reporting level
