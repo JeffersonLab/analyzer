@@ -39,6 +39,7 @@ namespace Decoder {
     virtual Int_t GetPedestalQuality(Int_t chan, Int_t ievent) const;
     virtual Int_t GetOverflowBit(Int_t chan, Int_t ievent) const;
     virtual Int_t GetUnderflowBit(Int_t chan, Int_t ievent) const;
+    virtual Int_t GetTriggerTime() const;
     virtual std::vector<uint32_t> GetPulseSamplesVector(Int_t chan) const;
     virtual Int_t GetFadcMode() const;
     virtual Int_t GetMode() const { return GetFadcMode(); };

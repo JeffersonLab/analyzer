@@ -70,8 +70,8 @@
 
 using namespace std;
 
-//#define DEBUG
-//#define WITH_DEBUG
+// #define DEBUG
+// #define WITH_DEBUG
 
 namespace Decoder {
 
@@ -138,7 +138,6 @@ namespace Decoder {
     // Initialize data types to false
     data_type_4 = data_type_6 = data_type_7 = data_type_8 = data_type_9 = data_type_10 = false;
     block_header_found = block_trailer_found = event_header_found = slots_match = false;
-
   }
 
   void Fadc250Module::Init() {
@@ -439,6 +438,16 @@ namespace Decoder {
     }
   }
 
+  Int_t Fadc250Module::GetTriggerTime() const {
+    // Truncate to 32 bits
+    Int_t shorttime=fadc_data.trig_time;
+    return shorttime;
+#ifdef WITH_DEBUG
+    if (fDebugFile != 0)
+      *fDebugFile << "Fadc250Module::GetTriggerTime = "
+      << fadc_data.trig_time << " " << stime << endl;
+#endif	
+  }
   
   Int_t Fadc250Module::GetPulseSamplesData(Int_t chan, Int_t ievent) const {
     Int_t nevent = 0;
@@ -634,7 +643,6 @@ namespace Decoder {
 
     SplitBuffer(evb);
     return LoadThisBlock(sldat, GetNextBlock());
-
   }
 
   Int_t Fadc250Module::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, Int_t pos, Int_t len) {
@@ -642,7 +650,6 @@ namespace Decoder {
     // I'm not sure we need both (historical)
 
     return LoadSlot(sldat, evbuffer+pos, evbuffer+pos+len);
-
   }
 
   void Fadc250Module::LoadTHaSlotDataObj(THaSlotData *sldat) {
@@ -685,7 +692,6 @@ namespace Decoder {
     LoadTHaSlotDataObj(sldat);
 
     return index;
-
   }
 
   Int_t Fadc250Module::DecodeOneWord(UInt_t data)
