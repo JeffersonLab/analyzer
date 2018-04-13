@@ -95,7 +95,7 @@ protected:
   virtual Int_t ReadDatabase();
   virtual Int_t ReadInitInfo();
 
-  ClassDef(THaRunBase,2)       // Base class for run objects
+  ClassDef(THaRunBase,3)       // Base class for run objects
 };
 
 
