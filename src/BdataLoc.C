@@ -316,7 +316,7 @@ void WordLoc::Load( const THaEvData& evdata )
   Int_t roclen = evdata.GetRocLength(crate);
   if( roclen < ntoskip+1 ) return;
 
-  rawdata_t* cratebuf = evdata.GetRawDataBuffer(crate), *endp = cratebuf+roclen;
+  rawdata_t* cratebuf = evdata.GetRawDataBuffer(crate), *endp = cratebuf+roclen+1;
   assert(cratebuf);  // Must exist if roclen > 0
 
   // Accelerated search for the header word. Coded explicitly because there
@@ -327,13 +327,14 @@ void WordLoc::Load( const THaEvData& evdata )
 
   // Get the first byte of the header, regardless of byte order
   int h = ((UChar_t*)&header)[0];
-  rawdata_t* p = cratebuf;
-  while( (p = (rawdata_t*)memchr(p,h,sizeof(rawdata_t)*(endp-p-1)+1)) && 
+  rawdata_t* p = cratebuf+2;
+  while( p < endp &&
+	 (p = (rawdata_t*)memchr(p,h,sizeof(rawdata_t)*(endp-p-1)+1)) &&
 	 p <= endp-ntoskip-1 ) {
     // The header must be aligned at a word boundary
-    int off = (p-cratebuf) & (sizeof(rawdata_t)-1);  // same as % sizeof()
+    int off = ((char*)p-(char*)cratebuf) & (sizeof(rawdata_t)-1);  // same as % sizeof()
     if( off != 0 ) {
-      p += sizeof(rawdata_t)-off;
+      p = (rawdata_t*)((char*)p + sizeof(rawdata_t)-off);
       continue;
     }
     // Compare all 4 bytes of the header word
