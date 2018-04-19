@@ -50,8 +50,10 @@ endif
 
 MACHINE := $(shell uname -s)
 ARCH    := linux
+SOSUF   := so
 ifeq ($(MACHINE),Darwin)
   ARCH := macosx
+  SOSUF := dylib
 endif
 
 ROOTCFLAGS   := $(shell root-config --cflags)
@@ -64,7 +66,7 @@ CC           := $(shell root-config --cc)
 
 INCLUDES      = $(addprefix -I, $(INCDIRS) ) -I$(shell pwd)
 
-USERLIB       = lib$(PACKAGE).so
+USERLIB       = lib$(PACKAGE).$(SOSUF)
 USERDICT      = $(PACKAGE)Dict
 
 LIBS          =
