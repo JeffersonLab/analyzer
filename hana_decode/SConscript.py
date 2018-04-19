@@ -16,39 +16,39 @@ tstoo tstfadc tstf1tdc tstio tdecpr prfact epicsd tdecex tst1190
 # if the ONLINE_ET variable is set.
 
 list = Split("""
-Caen1190Module.C
-Caen775Module.C
-Caen792Module.C
-CodaDecoder.C
-F1TDCModule.C
-Fadc250Module.C
-FastbusModule.C
-GenScaler.C
-Lecroy1875Module.C
-Lecroy1877Module.C
-Lecroy1881Module.C
-Module.C
-PipeliningModule.C
-Scaler1151.C
-Scaler3800.C
-Scaler3801.C
-Scaler560.C
-SimDecoder.C
-THaCodaData.C
-THaCodaDecoder.C
-THaCodaFile.C
-THaCrateMap.C
-THaEpics.C
-THaEvData.C
-THaFastBusWord.C
-THaSlotData.C
-THaUsrstrutils.C
-VmeModule.C
+Caen1190Module.cxx
+Caen775Module.cxx
+Caen792Module.cxx
+CodaDecoder.cxx
+F1TDCModule.cxx
+Fadc250Module.cxx
+FastbusModule.cxx
+GenScaler.cxx
+Lecroy1875Module.cxx
+Lecroy1877Module.cxx
+Lecroy1881Module.cxx
+Module.cxx
+PipeliningModule.cxx
+Scaler1151.cxx
+Scaler3800.cxx
+Scaler3801.cxx
+Scaler560.cxx
+SimDecoder.cxx
+THaCodaData.cxx
+THaCodaDecoder.cxx
+THaCodaFile.cxx
+THaCrateMap.cxx
+THaEpics.cxx
+THaEvData.cxx
+THaFastBusWord.cxx
+THaSlotData.cxx
+THaUsrstrutils.cxx
+VmeModule.cxx
 """)
 
 # Requires SCons >= 2.3.5 for "exclude" keyword
-#list = Glob('*.C',exclude=['*_main.C','*_onl.C','calc_thresh.C',
-#                           'THaEtClient.C','THaGenDetTest.C'])
+#list = Glob('*.cxx',exclude=['*_main.cxx','*_onl.cxx','calc_thresh.cxx',
+#                           'THaEtClient.cxx','THaGenDetTest.cxx'])
 
 #baseenv.Append(LIBPATH=['$HA_DIR'])
 
@@ -58,12 +58,12 @@ if baseenv.subst('$STANDALONE')==proceed or baseenv.GetOption('clean'):
         pname = scalex
 
         if scalex=='epicsd':
-            main = 'epics_main.C'
+            main = 'epics_main.cxx'
         else:
-            main = scalex+'_main.C'
+            main = scalex+'_main.cxx'
 
         if scalex=='tdecex':
-            pname = baseenv.Program(target = pname, source = [main,'THaGenDetTest.C'])
+            pname = baseenv.Program(target = pname, source = [main,'THaGenDetTest.cxx'])
         else:
             pname = baseenv.Program(target = pname, source = [main])
 
@@ -73,7 +73,7 @@ if baseenv.subst('$STANDALONE')==proceed or baseenv.GetOption('clean'):
 sotarget = 'dc'
 
 dclib = baseenv.SharedLibrary(target = sotarget,\
-            source = list+[baseenv.subst('$MAIN_DIR')+'/THaDecDict.C'],\
+            source = list+[baseenv.subst('$MAIN_DIR')+'/THaDecDict.cxx'],\
             SHLIBPREFIX = baseenv.subst('$MAIN_DIR')+'/lib',\
             LIBS = [''], LIBPATH = [''])
 #print ('Decoder shared library = %s\n' % dclib)

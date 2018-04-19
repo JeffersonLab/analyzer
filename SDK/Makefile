@@ -173,7 +173,7 @@ srcdist:
 .PHONY: all clean realclean srcdist
 
 .SUFFIXES:
-.SUFFIXES: .c .cc .cpp .cxx .C .o .d
+.SUFFIXES: .c .cc .cpp .cxx .o .d
 
 %.o:	%.cxx
 ifeq ($(strip $(MAKEDEPEND)),)

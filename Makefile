@@ -188,67 +188,67 @@ $(info Compiling for $(ARCH) with $(CXX))
 
 #------------------------------------------------------------------------------
 
-SRC          := src/THaFormula.C src/THaVform.C src/THaVhist.C \
-		src/THaVar.C src/THaVarList.C src/THaCut.C \
-		src/THaNamedList.C src/THaCutList.C src/THaInterface.C \
-		src/THaRunBase.C src/THaCodaRun.C src/THaRun.C \
-		src/THaRunParameters.C \
-		src/THaDetMap.C src/THaApparatus.C src/THaDetector.C \
-		src/THaSpectrometer.C src/THaSpectrometerDetector.C \
-		src/THaHRS.C \
-                src/THaDecData.C src/BdataLoc.C src/THaOutput.C src/THaString.C \
-		src/THaTrackingDetector.C src/THaNonTrackingDetector.C \
-		src/THaPidDetector.C src/THaSubDetector.C \
-		src/THaAnalysisObject.C src/THaDetectorBase.C src/THaRTTI.C \
-		src/THaPhysicsModule.C src/THaVertexModule.C \
-		src/THaTrackingModule.C \
-		src/THaAnalyzer.C src/THaPrintOption.C \
-		src/THaBeam.C src/THaIdealBeam.C \
-		src/THaRasteredBeam.C src/THaRaster.C\
-		src/THaBeamDet.C src/THaBPM.C src/THaUnRasteredBeam.C\
-		src/THaTrack.C src/THaPIDinfo.C src/THaParticleInfo.C \
-		src/THaCluster.C src/THaArrayString.C \
-		src/THaScintillator.C src/THaShower.C \
-		src/THaTotalShower.C src/THaCherenkov.C \
-		src/THaEvent.C src/THaTrackID.C src/THaVDC.C \
-		src/THaVDCPlane.C src/THaVDCChamber.C src/THaVDCPoint.C \
-		src/THaVDCWire.C src/THaVDCHit.C src/THaVDCCluster.C \
-		src/THaVDCTimeToDistConv.C src/THaVDCTrackID.C \
-                src/THaVDCAnalyticTTDConv.C \
-		src/THaVDCPointPair.C src/VDCeff.C \
-		src/THaElectronKine.C src/THaReactionPoint.C \
-		src/THaReacPointFoil.C \
-		src/THaTwoarmVertex.C src/THaAvgVertex.C \
-		src/THaExtTarCor.C src/THaDebugModule.C src/THaTrackInfo.C \
-		src/THaGoldenTrack.C \
-		src/THaPrimaryKine.C src/THaSecondaryKine.C \
-	        src/THaCoincTime.C src/THaS2CoincTime.C \
-                src/THaTrackProj.C \
-		src/THaPostProcess.C src/THaFilter.C \
-		src/THaElossCorrection.C src/THaTrackEloss.C \
-		src/THaBeamModule.C src/THaBeamInfo.C src/THaEpicsEbeam.C \
-		src/THaBeamEloss.C \
-		src/THaTrackOut.C src/THaTriggerTime.C \
-		src/THaHelicityDet.C src/THaG0HelicityReader.C \
-		src/THaG0Helicity.C src/THaADCHelicity.C src/THaHelicity.C \
-		src/THaPhotoReaction.C src/THaSAProtonEP.C \
-		src/THaTextvars.C src/THaQWEAKHelicity.C \
-		src/THaQWEAKHelicityReader.C src/THaEvtTypeHandler.C \
-		src/THaScalerEvtHandler.C src/THaEpicsEvtHandler.C \
-		src/THaEvt125Handler.C src/FileInclude.C \
-		src/Variable.C src/VariableArrayVar.C src/FixedArrayVar.C \
-		src/VectorVar.C src/MethodVar.C src/SeqCollectionVar.C \
-		src/SeqCollectionMethodVar.C src/VectorObjVar.C \
-		src/VectorObjMethodVar.C
+SRC          := src/THaFormula.cxx src/THaVform.cxx src/THaVhist.cxx \
+		src/THaVar.cxx src/THaVarList.cxx src/THaCut.cxx \
+		src/THaNamedList.cxx src/THaCutList.cxx src/THaInterface.cxx \
+		src/THaRunBase.cxx src/THaCodaRun.cxx src/THaRun.cxx \
+		src/THaRunParameters.cxx \
+		src/THaDetMap.cxx src/THaApparatus.cxx src/THaDetector.cxx \
+		src/THaSpectrometer.cxx src/THaSpectrometerDetector.cxx \
+		src/THaHRS.cxx src/THaDecData.cxx src/BdataLoc.cxx \
+		src/THaOutput.cxx src/THaString.cxx \
+		src/THaTrackingDetector.cxx src/THaNonTrackingDetector.cxx \
+		src/THaPidDetector.cxx src/THaSubDetector.cxx \
+		src/THaAnalysisObject.cxx src/THaDetectorBase.cxx \
+		src/THaRTTI.cxx src/THaPhysicsModule.cxx \
+		src/THaVertexModule.cxx src/THaTrackingModule.cxx \
+		src/THaAnalyzer.cxx src/THaPrintOption.cxx \
+		src/THaBeam.cxx src/THaIdealBeam.cxx \
+		src/THaRasteredBeam.cxx src/THaRaster.cxx\
+		src/THaBeamDet.cxx src/THaBPM.cxx src/THaUnRasteredBeam.cxx\
+		src/THaTrack.cxx src/THaPIDinfo.cxx src/THaParticleInfo.cxx \
+		src/THaCluster.cxx src/THaArrayString.cxx \
+		src/THaScintillator.cxx src/THaShower.cxx \
+		src/THaTotalShower.cxx src/THaCherenkov.cxx \
+		src/THaEvent.cxx src/THaTrackID.cxx src/THaVDC.cxx \
+		src/THaVDCPlane.cxx src/THaVDCChamber.cxx src/THaVDCPoint.cxx \
+		src/THaVDCWire.cxx src/THaVDCHit.cxx src/THaVDCCluster.cxx \
+		src/THaVDCTimeToDistConv.cxx src/THaVDCTrackID.cxx \
+                src/THaVDCAnalyticTTDConv.cxx \
+		src/THaVDCPointPair.cxx src/VDCeff.cxx \
+		src/THaElectronKine.cxx src/THaReactionPoint.cxx \
+		src/THaReacPointFoil.cxx \
+		src/THaTwoarmVertex.cxx src/THaAvgVertex.cxx \
+		src/THaExtTarCor.cxx src/THaDebugModule.cxx \
+		src/THaTrackInfo.cxx src/THaGoldenTrack.cxx \
+		src/THaPrimaryKine.cxx src/THaSecondaryKine.cxx \
+	        src/THaCoincTime.cxx src/THaS2CoincTime.cxx \
+                src/THaTrackProj.cxx src/THaPostProcess.cxx src/THaFilter.cxx \
+		src/THaElossCorrection.cxx src/THaTrackEloss.cxx \
+		src/THaBeamModule.cxx src/THaBeamInfo.cxx \
+		src/THaEpicsEbeam.cxx src/THaBeamEloss.cxx \
+		src/THaTrackOut.cxx src/THaTriggerTime.cxx \
+		src/THaHelicityDet.cxx src/THaG0HelicityReader.cxx \
+		src/THaG0Helicity.cxx src/THaADCHelicity.cxx \
+		src/THaHelicity.cxx src/THaPhotoReaction.cxx \
+		src/THaSAProtonEP.cxx \
+		src/THaTextvars.cxx src/THaQWEAKHelicity.cxx \
+		src/THaQWEAKHelicityReader.cxx src/THaEvtTypeHandler.cxx \
+		src/THaScalerEvtHandler.cxx src/THaEpicsEvtHandler.cxx \
+		src/THaEvt125Handler.cxx src/FileInclude.cxx \
+		src/Variable.cxx src/VariableArrayVar.cxx \
+		src/FixedArrayVar.cxx src/VectorVar.cxx src/MethodVar.cxx \
+		src/SeqCollectionVar.cxx src/SeqCollectionMethodVar.cxx \
+		src/VectorObjVar.cxx src/VectorObjMethodVar.cxx
 
 # ifdef ONLINE_ET
-# SRC += src/THaOnlRun.C
+# SRC += src/THaOnlRun.cxx
 # endif
 
-OBJ          := $(SRC:.C=.o)
-RCHDR        := $(SRC:.C=.h) src/THaGlobals.h
+OBJ          := $(SRC:.cxx=.o)
+RCHDR        := $(SRC:.cxx=.h) src/THaGlobals.h
 HDR          := $(RCHDR) src/VarDef.h src/VarType.h src/ha_compiledata.h
-DEP          := $(SRC:.C=.d) src/main.d
+DEP          := $(SRC:.cxx=.d) src/main.d
 OBJS         := $(OBJ) $(HA_DICT).o
 HA_LINKDEF   := src/HallA_LinkDef.h
 
@@ -340,11 +340,11 @@ $(LIBDC):	$(LIBDC).$(SOVERSION)
 		ln -s $(notdir $<) $@
 
 ifeq ($(ARCH),linux)
-$(HA_DICT).o:  $(HA_DICT).C
+$(HA_DICT).o:  $(HA_DICT).cxx
 	$(CXX) $(CXXFLAGS) $(DICTCXXFLG) -o $@ -c $^
 endif
 
-$(HA_DICT).C: $(RCHDR) $(HA_LINKDEF)
+$(HA_DICT).cxx: $(RCHDR) $(HA_LINKDEF)
 	@echo "Generating dictionary $(HA_DICT)..."
 	$(ROOTBIN)/rootcint -f $@ -c $(ROOTINC) $(INCLUDES) $(DEFINES) $^
 
@@ -420,8 +420,9 @@ endif
 .PHONY: all clean realclean srcdist subdirs $(SUBDIRS)
 
 .SUFFIXES:
+.SUFFIXES: .c .cc .cpp .cxx .o .os .d
 
-%.o:	%.C
+%.o:	%.cxx
 ifeq ($(strip $(MAKEDEPEND)),)
 	$(CXX) $(CXXFLAGS) -MMD -o $@ -c $<
 	@mv -f $*.d $*.d.tmp

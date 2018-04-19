@@ -12,7 +12,7 @@ Import ('baseenv')
 
 ######## ROOT Dictionaries #########
 
-rootdecdict = baseenv.subst('$MAIN_DIR')+'/THaDecDict.C'
+rootdecdict = baseenv.subst('$MAIN_DIR')+'/THaDecDict.cxx'
 decheaders = Split("""
 hana_decode/THaUsrstrutils.h hana_decode/THaCrateMap.h
 hana_decode/THaCodaData.h hana_decode/THaEpics.h
@@ -30,9 +30,9 @@ hana_decode/Caen775Module.h hana_decode/Caen792Module.h
 hana_decode/THaBenchmark.h hana_decode/haDecode_LinkDef.h
 """)
 baseenv.RootCint(rootdecdict,decheaders)
-baseenv.Clean(rootdecdict,re.sub(r'\.C\Z','_rdict.pcm',rootdecdict))
+baseenv.Clean(rootdecdict,re.sub(r'\.cxx\Z','_rdict.pcm',rootdecdict))
 
-roothadict = baseenv.subst('$MAIN_DIR')+'/haDict.C'
+roothadict = baseenv.subst('$MAIN_DIR')+'/haDict.cxx'
 haheaders = Split("""
 src/THaFormula.h src/THaVform.h src/THaVhist.h src/THaVar.h
 src/THaVarList.h src/THaCut.h src/THaNamedList.h src/THaCutList.h
@@ -73,7 +73,7 @@ src/THaVDCPoint.h src/THaVDCPointPair.h src/THaGlobals.h
 src/FileInclude.h src/HallA_LinkDef.h
 """)
 baseenv.RootCint(roothadict,haheaders)
-baseenv.Clean(roothadict,re.sub(r'\.C\Z','_rdict.pcm',roothadict))
+baseenv.Clean(roothadict,re.sub(r'\.cxx\Z','_rdict.pcm',roothadict))
 
 #######  write src/ha_compiledata.h header file ######
 
@@ -137,7 +137,7 @@ f.close()
 
 #######  Start of main SConscript ###########
 
-analyzer = baseenv.Program(target = 'analyzer', source = 'src/main.C')
+analyzer = baseenv.Program(target = 'analyzer', source = 'src/main.cxx')
 baseenv.Install('./bin',analyzer)
 baseenv.Alias('install',['./bin'])
 baseenv.Clean(analyzer,compiledata)

@@ -7,13 +7,13 @@ Import ('baseenv')
 
 ######## ROOT Dictionaries #########
 
-rootuserdict = baseenv.subst('$MAIN_DIR')+'/RootUserDict.C'
+rootuserdict = baseenv.subst('$MAIN_DIR')+'/RootUserDict.cxx'
 userheaders = Split("""
 UserApparatus.h    UserDetector.h     UserEvtHandler.h   UserModule.h       
 UserScintillator.h SkeletonModule.h   User_LinkDef.h
 """)
 baseenv.RootCint(rootuserdict,userheaders)
-baseenv.Clean(rootuserdict,re.sub(r'\.C\Z','_rdict.pcm',rootuserdict))
+baseenv.Clean(rootuserdict,re.sub(r'\.cxx\Z','_rdict.pcm',rootuserdict))
 
 #######  Start of main SConscript ###########
 

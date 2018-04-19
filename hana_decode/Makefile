@@ -16,8 +16,8 @@
 # epicsd   --  test of EPICS data
 #
 # To understand how to use decoding classes, look at the 'main'
-# routines tstcoda_main.C, tstio_main.C, tdecpr_main.C, tdecex_main.C etc
-# corresponding to the above executables.  Also see haGenDetTest.C
+# routines tstcoda_main.cxx, tstio_main.cxx, tdecpr_main.cxx, tdecex_main.cxx
+# etc., corresponding to the above executables.  Also see haGenDetTest.cxx
 # which shows proposed usage in a 'generic' detector class.
 
 # Note regarding software from DAQ group:
@@ -41,7 +41,7 @@ export MAINDIR = ../src
 # CODA environment variable must be set.  Examples are
 #   CODA = /adaqfs/coda/2.2        (in adaq cluster)
 #   CODA = /data7/user/coda/2.2    (on haplix cluster)
-# User's $LD_LIBRARY_PATH must include $CODA/$OSNAME/lib  (OSNAME = SunOS or Linux)
+# User's $LD_LIBRARY_PATH must include $CODA/$OSNAME/lib  (OSNAME = Darwin or Linux)
 # Example:  OSNAME=Linux ; export OSNAME
 # LD_LIBRARY_PATH=/app/root/lib:$CODA/$OSNAME/lib:.   ; export LD_LIBRARY_PATH
 # export ONLINE_ET = 1
@@ -164,34 +164,34 @@ GLIBS        += $(ROOTGLIBS) $(SYSLIBS)
 # DECODE_OBJS is the package for CODA I/O and decoder written by R. Michaels.
 # This, together with libevio, is what other developers need.
 
-SRC = THaUsrstrutils.C THaCrateMap.C THaCodaData.C \
-      THaEpics.C THaFastBusWord.C THaCodaFile.C THaSlotData.C \
-      THaEvData.C THaCodaDecoder.C \
-      CodaDecoder.C Module.C VmeModule.C PipeliningModule.C FastbusModule.C  \
-      Lecroy1877Module.C Lecroy1881Module.C Lecroy1875Module.C \
-      Fadc250Module.C GenScaler.C Scaler560.C Scaler1151.C \
-      Scaler3800.C Scaler3801.C F1TDCModule.C Caen1190Module.C \
-      Caen775Module.C Caen792Module.C
+SRC = THaUsrstrutils.cxx THaCrateMap.cxx THaCodaData.cxx \
+      THaEpics.cxx THaFastBusWord.cxx THaCodaFile.cxx THaSlotData.cxx \
+      THaEvData.cxx THaCodaDecoder.cxx \
+      CodaDecoder.cxx Module.cxx VmeModule.cxx PipeliningModule.cxx FastbusModule.cxx  \
+      Lecroy1877Module.cxx Lecroy1881Module.cxx Lecroy1875Module.cxx \
+      Fadc250Module.cxx GenScaler.cxx Scaler560.cxx Scaler1151.cxx \
+      Scaler3800.cxx Scaler3801.cxx F1TDCModule.cxx Caen1190Module.cxx \
+      Caen775Module.cxx Caen792Module.cxx
 
 ifndef STANDALONE
-  SRC += SimDecoder.C
+  SRC += SimDecoder.cxx
 endif
 
 PROGS = tstoo tstfadc tstfadcblk tstfadcblk tstf1tdc tst1190 tstio tdecpr tdecex prfact epicsd
 # If you want to use the ET system at Jlab.
 # ifdef ONLINE_ET
-#   SRC += THaEtClient.C
+#   SRC += THaEtClient.cxx
 #   PROGS += etclient
 #   PROGS += tstcoda
 # endif
 
-RCHEAD := $(SRC:.C=.h) THaBenchmark.h
+RCHEAD := $(SRC:.cxx=.h) THaBenchmark.h
 HEAD = $(RCHEAD) Decoder.h
 # ifdef ONLINE_ET
 #   HEAD += et.h
 # endif
-DEPS = $(patsubst %.c,%.d,$(SRC:.C=.d))
-DECODE_OBJ = $(patsubst %.c,%.o,$(SRC:%.C=%.o)) THaDecDict.o
+DEPS = $(patsubst %.c,%.d,$(SRC:.cxx=.d))
+DECODE_OBJ = $(patsubst %.c,%.o,$(SRC:%.cxx=%.o)) THaDecDict.o
 
 ifndef STANDALONE
   all:  $(LIBDIR)/libdc.$(SOSUF).$(VERSION)
@@ -280,9 +280,9 @@ endif
 
 # Dictionary
 
-THaDecDict.C: $(RCHEAD) haDecode_LinkDef.h
+THaDecDict.cxx: $(RCHEAD) haDecode_LinkDef.h
 	@echo "Generating Decoder Dictionary..."
-	$(ROOTBIN)/rootcint -f THaDecDict.C -c $(ROOTINC) $(INCLUDES) $(DEFINES) $^
+	$(ROOTBIN)/rootcint -f THaDecDict.cxx -c $(ROOTINC) $(INCLUDES) $(DEFINES) $^
 ifndef STANDALONE
 	if [ -r THaDecDict_rdict.pcm ]; then cp -p THaDecDict_rdict.pcm  $(LIBDIR); fi
 endif
@@ -295,7 +295,7 @@ tarfile: clean version
 version:
 	mkdir $(VERS)
 	cp *.c ./$(VERS)
-	cp *.C ./$(VERS)
+	cp *.cxx ./$(VERS)
 	cp *.h ./$(VERS)
 	cp Makefile ./$(VERS)
 	cp snippet.dat ./$(VERS)
@@ -318,7 +318,7 @@ install:	all
 
 .SUFFIXES:
 
-%.o:	%.C
+%.o:	%.cxx
 ifeq ($(strip $(MAKEDEPEND)),)
 	$(CXX) $(CXXFLAGS) -MMD -o $@ -c $<
 	@mv -f $*.d $*.d.tmp
