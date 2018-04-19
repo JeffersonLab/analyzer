@@ -59,7 +59,7 @@ Int_t SkeletonModule::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const
 }
 #endif
 
-Int_t SkeletonModule::GetData(Int_t chan) const {
+UInt_t SkeletonModule::GetData(Int_t chan) const {
   if (chan < 0 || chan > fNumChan) return 0;
   return fData[chan];
 }
