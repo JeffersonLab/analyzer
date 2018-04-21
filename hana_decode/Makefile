@@ -165,9 +165,9 @@ GLIBS        += $(ROOTGLIBS) $(SYSLIBS)
 # This, together with libevio, is what other developers need.
 
 SRC = THaUsrstrutils.cxx THaCrateMap.cxx THaCodaData.cxx \
-      THaEpics.cxx THaFastBusWord.cxx THaCodaFile.cxx THaSlotData.cxx \
-      THaEvData.cxx THaCodaDecoder.cxx \
-      CodaDecoder.cxx Module.cxx VmeModule.cxx PipeliningModule.cxx FastbusModule.cxx  \
+      THaEpics.cxx THaCodaFile.cxx THaSlotData.cxx \
+      THaEvData.cxx CodaDecoder.cxx Module.cxx VmeModule.cxx \
+      PipeliningModule.cxx FastbusModule.cxx  \
       Lecroy1877Module.cxx Lecroy1881Module.cxx Lecroy1875Module.cxx \
       Fadc250Module.cxx GenScaler.cxx Scaler560.cxx Scaler1151.cxx \
       Scaler3800.cxx Scaler3801.cxx F1TDCModule.cxx Caen1190Module.cxx \

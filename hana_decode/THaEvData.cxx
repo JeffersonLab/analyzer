@@ -22,9 +22,7 @@
 #include "THaEvData.h"
 #include "Module.h"
 #include "THaSlotData.h"
-#include "THaFastBusWord.h"
 #include "THaCrateMap.h"
-#include "THaUsrstrutils.h"
 #include "THaBenchmark.h"
 #include "TError.h"
 #include <cstring>

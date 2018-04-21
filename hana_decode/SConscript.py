@@ -35,12 +35,10 @@ Scaler3801.cxx
 Scaler560.cxx
 SimDecoder.cxx
 THaCodaData.cxx
-THaCodaDecoder.cxx
 THaCodaFile.cxx
 THaCrateMap.cxx
 THaEpics.cxx
 THaEvData.cxx
-THaFastBusWord.cxx
 THaSlotData.cxx
 THaUsrstrutils.cxx
 VmeModule.cxx

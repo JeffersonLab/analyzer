@@ -29,10 +29,8 @@
 #pragma link C++ class Decoder::THaCodaFile+;
 #pragma link C++ class Decoder::THaCrateMap+;
 #pragma link C++ class Decoder::THaEpics+;
-#pragma link C++ class Decoder::THaFastBusWord+;
 #pragma link C++ class Decoder::THaSlotData+;
 #pragma link C++ class Decoder::THaUsrstrutils+;
-#pragma link C++ class Decoder::THaCodaDecoder+;
 
 #pragma link C++ class THaBenchmark+;
 #pragma link C++ class THaEvData+;

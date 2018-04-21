@@ -16,9 +16,8 @@ rootdecdict = baseenv.subst('$MAIN_DIR')+'/THaDecDict.cxx'
 decheaders = Split("""
 hana_decode/THaUsrstrutils.h hana_decode/THaCrateMap.h
 hana_decode/THaCodaData.h hana_decode/THaEpics.h
-hana_decode/THaFastBusWord.h hana_decode/THaCodaFile.h
+hana_decode/THaCodaFile.h hana_decode/SimDecoder.h
 hana_decode/THaSlotData.h hana_decode/THaEvData.h
-hana_decode/THaCodaDecoder.h hana_decode/SimDecoder.h
 hana_decode/CodaDecoder.h hana_decode/Module.h hana_decode/VmeModule.h
 hana_decode/FastbusModule.h hana_decode/Lecroy1877Module.h
 hana_decode/Lecroy1881Module.h hana_decode/Lecroy1875Module.h
