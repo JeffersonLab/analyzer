@@ -1,5 +1,5 @@
-#ifndef ROOT_THaRTTI
-#define ROOT_THaRTTI
+#ifndef Podd_THaRTTI_h_
+#define Podd_THaRTTI_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

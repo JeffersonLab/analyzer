@@ -1,5 +1,5 @@
-#ifndef THaEpics_
-#define THaEpics_
+#ifndef Podd_THaEpics_h_
+#define Podd_THaEpics_h_
 
 /////////////////////////////////////////////////////////////////////
 //

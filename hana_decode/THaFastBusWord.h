@@ -1,5 +1,5 @@
-#ifndef THaFastBusWord_
-#define THaFastBusWord_
+#ifndef Podd_THaFastBusWord_h_
+#define Podd_THaFastBusWord_h_
 
 /////////////////////////////////////////////////////////////////////
 //

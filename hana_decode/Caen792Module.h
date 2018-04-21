@@ -1,5 +1,5 @@
-#ifndef Caen792Module_
-#define Caen792Module_
+#ifndef Podd_Caen792Module_h_
+#define Podd_Caen792Module_h_
 
 /////////////////////////////////////////////////////////////////////
 //

@@ -1,5 +1,5 @@
-#ifndef ROOT_UserModule
-#define ROOT_UserModule
+#ifndef Podd_UserModule_h_
+#define Podd_UserModule_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

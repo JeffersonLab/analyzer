@@ -1,5 +1,5 @@
-#ifndef CodaDecoder_
-#define CodaDecoder_
+#ifndef Podd_CodaDecoder_h_
+#define Podd_CodaDecoder_h_
 
 /////////////////////////////////////////////////////////////////////
 //

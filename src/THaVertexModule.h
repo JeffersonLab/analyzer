@@ -1,5 +1,5 @@
-#ifndef ROOT_THaVertexModule
-#define ROOT_THaVertexModule
+#ifndef Podd_THaVertexModule_h_
+#define Podd_THaVertexModule_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

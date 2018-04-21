@@ -1,5 +1,5 @@
-#ifndef ROOT_THaCherenkov
-#define ROOT_THaCherenkov
+#ifndef Podd_THaCherenkov_h_
+#define Podd_THaCherenkov_h_
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //

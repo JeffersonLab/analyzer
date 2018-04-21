@@ -1,5 +1,5 @@
-#ifndef ROOT_THaPidDetector
-#define ROOT_THaPidDetector
+#ifndef Podd_THaPidDetector_h_
+#define Podd_THaPidDetector_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

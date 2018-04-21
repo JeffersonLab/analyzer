@@ -1,5 +1,5 @@
-#ifndef ROOT_THaCutList
-#define ROOT_THaCutList
+#ifndef Podd_THaCutList_h_
+#define Podd_THaCutList_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

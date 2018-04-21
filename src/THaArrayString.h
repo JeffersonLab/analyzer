@@ -1,5 +1,5 @@
-#ifndef ROOT_THaArrayString
-#define ROOT_THaArrayString
+#ifndef Podd_THaArrayString_h_
+#define Podd_THaArrayString_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

@@ -1,5 +1,5 @@
-#ifndef ROOT_THaBeamEloss
-#define ROOT_THaBeamEloss
+#ifndef Podd_THaBeamEloss_h_
+#define Podd_THaBeamEloss_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

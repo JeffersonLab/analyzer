@@ -1,5 +1,5 @@
-#ifndef ROOT_THaOutput
-#define ROOT_THaOutput
+#ifndef Podd_THaOutput_h_
+#define Podd_THaOutput_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

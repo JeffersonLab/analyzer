@@ -1,5 +1,5 @@
-#ifndef ROOT_THaPrintOption
-#define ROOT_THaPrintOption
+#ifndef Podd_THaPrintOption_h_
+#define Podd_THaPrintOption_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

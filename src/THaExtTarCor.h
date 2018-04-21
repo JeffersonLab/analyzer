@@ -1,5 +1,5 @@
-#ifndef ROOT_THaExtTarCor
-#define ROOT_THaExtTarCor
+#ifndef Podd_THaExtTarCor_h_
+#define Podd_THaExtTarCor_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

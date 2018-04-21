@@ -1,5 +1,5 @@
-#ifndef ROOT_THaElectronKine
-#define ROOT_THaElectronKine
+#ifndef Podd_THaElectronKine_h_
+#define Podd_THaElectronKine_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

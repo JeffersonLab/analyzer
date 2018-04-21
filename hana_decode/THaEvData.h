@@ -1,5 +1,5 @@
-#ifndef THaEvData_
-#define THaEvData_
+#ifndef Podd_THaEvData_h_
+#define Podd_THaEvData_h_
 
 /////////////////////////////////////////////////////////////////////
 //

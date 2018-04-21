@@ -1,5 +1,5 @@
-#ifndef ROOT_THaS2CoincTime
-#define ROOT_THaS2CoincTime
+#ifndef Podd_THaS2CoincTime_h_
+#define Podd_THaS2CoincTime_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

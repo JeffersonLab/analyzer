@@ -1,5 +1,5 @@
-#ifndef ROOT_THaSecondaryKine
-#define ROOT_THaSecondaryKine
+#ifndef Podd_THaSecondaryKine_h_
+#define Podd_THaSecondaryKine_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

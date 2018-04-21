@@ -1,5 +1,5 @@
-#ifndef Podd_Tests_UnitTest
-#define Podd_Tests_UnitTest
+#ifndef Podd_Tests_UnitTest_h_
+#define Podd_Tests_UnitTest_h_
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //

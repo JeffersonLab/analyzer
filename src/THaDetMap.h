@@ -1,5 +1,5 @@
-#ifndef ROOT_THaDetMap
-#define ROOT_THaDetMap
+#ifndef Podd_THaDetMap_h_
+#define Podd_THaDetMap_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

@@ -1,5 +1,5 @@
-#ifndef SkeletonModule_
-#define SkeletonModule_
+#ifndef Podd_SkeletonModule_h_
+#define Podd_SkeletonModule_h_
 
 /////////////////////////////////////////////////////////////////////
 //

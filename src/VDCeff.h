@@ -1,5 +1,5 @@
-#ifndef HALLA_VDCeff
-#define HALLA_VDCeff
+#ifndef Podd_VDCeff_h_
+#define Podd_VDCeff_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

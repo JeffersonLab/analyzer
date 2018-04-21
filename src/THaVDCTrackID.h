@@ -1,5 +1,5 @@
-#ifndef ROOT_THaVDCTrackID
-#define ROOT_THaVDCTrackID
+#ifndef Podd_THaVDCTrackID_h_
+#define Podd_THaVDCTrackID_h_
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //

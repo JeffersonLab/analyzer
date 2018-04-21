@@ -1,5 +1,5 @@
-#ifndef ROOT_THaApparatus
-#define ROOT_THaApparatus
+#ifndef Podd_THaApparatus_h_
+#define Podd_THaApparatus_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

@@ -1,5 +1,5 @@
-#ifndef THaSlotData_
-#define THaSlotData_
+#ifndef Podd_THaSlotData_h_
+#define Podd_THaSlotData_h_
 
 /////////////////////////////////////////////////////////////////////
 //

@@ -1,5 +1,5 @@
-#ifndef ROOT_THaPhysicsModule
-#define ROOT_THaPhysicsModule
+#ifndef Podd_THaPhysicsModule_h_
+#define Podd_THaPhysicsModule_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

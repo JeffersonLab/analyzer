@@ -1,5 +1,5 @@
-#ifndef Lecroy1881Module_
-#define Lecroy1881Module_
+#ifndef Podd_Lecroy1881Module_h_
+#define Podd_Lecroy1881Module_h_
 
 /////////////////////////////////////////////////////////////////////
 //

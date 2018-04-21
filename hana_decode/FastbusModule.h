@@ -1,5 +1,5 @@
-#ifndef FastbusModule_
-#define FastbusModule_
+#ifndef Podd_FastbusModule_h_
+#define Podd_FastbusModule_h_
 
 /////////////////////////////////////////////////////////////////////
 //

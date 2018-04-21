@@ -1,5 +1,5 @@
-#ifndef ROOT_OldVDCHit
-#define ROOT_OldVDCHit
+#ifndef Podd_OldVDCHit_h_
+#define Podd_OldVDCHit_h_
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //

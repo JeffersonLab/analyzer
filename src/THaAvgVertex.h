@@ -1,5 +1,5 @@
-#ifndef ROOT_THaAvgVertex
-#define ROOT_THaAvgVertex
+#ifndef Podd_THaAvgVertex_h_
+#define Podd_THaAvgVertex_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

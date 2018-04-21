@@ -1,8 +1,8 @@
-#ifndef ROOT_THaGlobals
-#define ROOT_THaGlobals
+#ifndef Podd_THaGlobals_h_
+#define Podd_THaGlobals_h_
 
 // Pick up definition of R__EXTERN
-#ifndef ROOT_DllImport
+#ifndef Podd_DllImport_h_
 #include "DllImport.h"
 #endif
 

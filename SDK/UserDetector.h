@@ -1,5 +1,5 @@
-#ifndef ROOT_UserDetector
-#define ROOT_UserDetector
+#ifndef Podd_UserDetector_h_
+#define Podd_UserDetector_h_
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //

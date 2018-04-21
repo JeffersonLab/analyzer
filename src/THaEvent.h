@@ -1,5 +1,5 @@
-#ifndef ROOT_THaEvent
-#define ROOT_THaEvent
+#ifndef Podd_THaEvent_h_
+#define Podd_THaEvent_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

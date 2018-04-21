@@ -1,5 +1,5 @@
-#ifndef ROOT_THaString
-#define ROOT_THaString
+#ifndef Podd_THaString_h_
+#define Podd_THaString_h_
 
 //**********************************************************************
 //

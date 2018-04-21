@@ -1,5 +1,5 @@
-#ifndef PODD_HALLA_VDC
-#define PODD_HALLA_VDC
+#ifndef Podd_HALLA_VDC_h_
+#define Podd_HALLA_VDC_h_
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //

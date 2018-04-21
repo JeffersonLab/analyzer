@@ -1,5 +1,5 @@
-#ifndef ROOT_THaCodaRun
-#define ROOT_THaCodaRun
+#ifndef Podd_THaCodaRun_h_
+#define Podd_THaCodaRun_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

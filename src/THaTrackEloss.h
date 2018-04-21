@@ -1,5 +1,5 @@
-#ifndef ROOT_THaTrackEloss
-#define ROOT_THaTrackEloss
+#ifndef Podd_THaTrackEloss_h_
+#define Podd_THaTrackEloss_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

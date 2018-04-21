@@ -1,5 +1,5 @@
-#ifndef THaVDCSimRun_
-#define THaVDCSimRun_
+#ifndef Podd_THaVDCSimRun_h_
+#define Podd_THaVDCSimRun_h_
 
 #include "THaRunBase.h"
 #include "THaVDCSim.h"

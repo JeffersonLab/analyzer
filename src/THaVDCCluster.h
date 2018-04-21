@@ -1,5 +1,5 @@
-#ifndef ROOT_THaVDCCluster
-#define ROOT_THaVDCCluster
+#ifndef Podd_THaVDCCluster_h_
+#define Podd_THaVDCCluster_h_
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //

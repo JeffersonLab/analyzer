@@ -1,5 +1,5 @@
-#ifndef PODD_BdataLoc
-#define PODD_BdataLoc
+#ifndef Podd_BdataLoc_h_
+#define Podd_BdataLoc_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

@@ -1,5 +1,5 @@
-#ifndef ROOT_THaTRACKOUT
-#define ROOT_THaTRACKOUT
+#ifndef Podd_THaTRACKOUT_h_
+#define Podd_THaTRACKOUT_h_
 
 ///////////////////////////////////////////////////////////////////////////
 //

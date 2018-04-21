@@ -1,5 +1,5 @@
-#ifndef ROOT_OldVDCAnalyticTTDConv
-#define ROOT_OldVDCAnalyticTTDConv
+#ifndef Podd_OldVDCAnalyticTTDConv_h_
+#define Podd_OldVDCAnalyticTTDConv_h_
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //

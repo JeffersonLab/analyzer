@@ -1,5 +1,5 @@
-#ifndef PODD_VDC_AnalyticTTDConv
-#define PODD_VDC_AnalyticTTDConv
+#ifndef Podd_VDC_AnalyticTTDConv_h_
+#define Podd_VDC_AnalyticTTDConv_h_
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //

@@ -1,5 +1,5 @@
-#ifndef ROOT_THaCluster
-#define ROOT_THaCluster
+#ifndef Podd_THaCluster_h_
+#define Podd_THaCluster_h_
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //

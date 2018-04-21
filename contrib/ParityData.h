@@ -1,5 +1,5 @@
-#ifndef ROOT_ParityData
-#define ROOT_ParityData
+#ifndef Podd_ParityData_h_
+#define Podd_ParityData_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

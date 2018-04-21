@@ -1,5 +1,5 @@
-#ifndef ROOT_THaParticleInfo
-#define ROOT_THaParticleInfo
+#ifndef Podd_THaParticleInfo_h_
+#define Podd_THaParticleInfo_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

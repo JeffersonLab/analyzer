@@ -1,5 +1,5 @@
-#ifndef ROOT_THaQWEAKHelicity
-#define ROOT_THaQWEAKHelicity
+#ifndef Podd_THaQWEAKHelicity_h_
+#define Podd_THaQWEAKHelicity_h_
 
 ////////////////////////////////////////////////////////////////////////
 //

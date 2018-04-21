@@ -1,5 +1,5 @@
-#ifndef ROOT_THaReactionPoint
-#define ROOT_THaReactionPoint
+#ifndef Podd_THaReactionPoint_h_
+#define Podd_THaReactionPoint_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

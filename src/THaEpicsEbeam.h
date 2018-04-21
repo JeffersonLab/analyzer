@@ -1,5 +1,5 @@
-#ifndef ROOT_THaEpicsEbeam
-#define ROOT_THaEpicsEbeam
+#ifndef Podd_THaEpicsEbeam_h_
+#define Podd_THaEpicsEbeam_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

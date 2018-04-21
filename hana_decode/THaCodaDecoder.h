@@ -1,5 +1,5 @@
-#ifndef THaCodaDecoder_
-#define THaCodaDecoder_
+#ifndef Podd_THaCodaDecoder_h_
+#define Podd_THaCodaDecoder_h_
 
 /////////////////////////////////////////////////////////////////////
 //

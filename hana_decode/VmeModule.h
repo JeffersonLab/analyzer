@@ -1,5 +1,5 @@
-#ifndef VmeModule_
-#define VmeModule_
+#ifndef Podd_VmeModule_h_
+#define Podd_VmeModule_h_
 
 /////////////////////////////////////////////////////////////////////
 //

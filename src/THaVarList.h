@@ -1,6 +1,6 @@
 
-#ifndef ROOT_THaVarList
-#define ROOT_THaVarList
+#ifndef Podd_THaVarList_h_
+#define Podd_THaVarList_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

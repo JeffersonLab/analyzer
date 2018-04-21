@@ -1,5 +1,5 @@
-#ifndef Podd_VectorObjMethodVar
-#define Podd_VectorObjMethodVar
+#ifndef Podd_VectorObjMethodVar_h_
+#define Podd_VectorObjMethodVar_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

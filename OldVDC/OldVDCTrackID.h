@@ -1,5 +1,5 @@
-#ifndef ROOT_OldVDCTrackID
-#define ROOT_OldVDCTrackID
+#ifndef Podd_OldVDCTrackID_h_
+#define Podd_OldVDCTrackID_h_
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //

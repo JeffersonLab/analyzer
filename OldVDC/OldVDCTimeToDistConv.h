@@ -1,5 +1,5 @@
-#ifndef ROOT_OldVDCTimeToDistConv
-#define ROOT_OldVDCTimeToDistConv
+#ifndef Podd_OldVDCTimeToDistConv_h_
+#define Podd_OldVDCTimeToDistConv_h_
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //

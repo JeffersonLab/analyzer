@@ -6,8 +6,8 @@
 // author Ken Rossato (rossato@jlab.org)
 //
 
-#ifndef THaVDCSim_
-#define THaVDCSim_
+#ifndef Podd_THaVDCSim_h_
+#define Podd_THaVDCSim_h_
 
 #include "TList.h"
 #include "TVector3.h"

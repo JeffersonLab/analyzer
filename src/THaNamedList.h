@@ -1,5 +1,5 @@
-#ifndef ROOT_THaNamedList
-#define ROOT_THaNamedList
+#ifndef Podd_THaNamedList_h_
+#define Podd_THaNamedList_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

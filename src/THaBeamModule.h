@@ -1,5 +1,5 @@
-#ifndef ROOT_THaBeamModule
-#define ROOT_THaBeamModule
+#ifndef Podd_THaBeamModule_h_
+#define Podd_THaBeamModule_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

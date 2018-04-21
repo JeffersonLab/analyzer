@@ -1,5 +1,5 @@
-#ifndef Podd_Variable
-#define Podd_Variable
+#ifndef Podd_Variable_h_
+#define Podd_Variable_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

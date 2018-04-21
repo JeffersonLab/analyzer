@@ -1,5 +1,5 @@
-#ifndef PODD_VDC_TimeToDistConv
-#define PODD_VDC_TimeToDistConv
+#ifndef Podd_VDC_TimeToDistConv_h_
+#define Podd_VDC_TimeToDistConv_h_
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //

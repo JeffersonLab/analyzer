@@ -1,5 +1,5 @@
-#ifndef ROOT_THaShower
-#define ROOT_THaShower
+#ifndef Podd_THaShower_h_
+#define Podd_THaShower_h_
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //

@@ -1,5 +1,5 @@
-#ifndef THaEvtTypeHandler_
-#define THaEvtTypeHandler_
+#ifndef Podd_THaEvtTypeHandler_h_
+#define Podd_THaEvtTypeHandler_h_
 
 /////////////////////////////////////////////////////////////////////
 //

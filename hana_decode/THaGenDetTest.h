@@ -1,5 +1,5 @@
-#ifndef THaGenDetTest_
-#define THaGenDetTest_
+#ifndef Podd_THaGenDetTest_h_
+#define Podd_THaGenDetTest_h_
 
 /////////////////////////////////////////////////////////////////////
 //

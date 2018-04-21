@@ -1,5 +1,5 @@
-#ifndef Podd_Tests_ArrayRTTI
-#define Podd_Tests_ArrayRTTI
+#ifndef Podd_Tests_ArrayRTTI_h_
+#define Podd_Tests_ArrayRTTI_h_
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //

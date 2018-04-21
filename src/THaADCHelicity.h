@@ -1,5 +1,5 @@
-#ifndef ROOT_THaADCHelicity
-#define ROOT_THaADCHelicity
+#ifndef Podd_THaADCHelicity_h_
+#define Podd_THaADCHelicity_h_
 
 ////////////////////////////////////////////////////////////////////////
 //

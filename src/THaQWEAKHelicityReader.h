@@ -1,5 +1,5 @@
-#ifndef ROOT_THaQWEAKHelicityReader
-#define ROOT_THaQWEAKHelicityReader
+#ifndef Podd_THaQWEAKHelicityReader_h_
+#define Podd_THaQWEAKHelicityReader_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

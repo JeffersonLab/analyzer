@@ -1,5 +1,5 @@
-#ifndef Podd_SeqCollectionVar
-#define Podd_SeqCollectionVar
+#ifndef Podd_SeqCollectionVar_h_
+#define Podd_SeqCollectionVar_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

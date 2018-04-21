@@ -1,5 +1,5 @@
-#ifndef ROOT_THaTwoarmVertex
-#define ROOT_THaTwoarmVertex
+#ifndef Podd_THaTwoarmVertex_h_
+#define Podd_THaTwoarmVertex_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

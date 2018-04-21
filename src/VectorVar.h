@@ -1,5 +1,5 @@
-#ifndef Podd_VectorVar
-#define Podd_VectorVar
+#ifndef Podd_VectorVar_h_
+#define Podd_VectorVar_h_
 
 //////////////////////////////////////////////////////////////////////////
 //
