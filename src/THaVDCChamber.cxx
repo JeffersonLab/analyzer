@@ -46,6 +46,8 @@ THaVDCChamber::~THaVDCChamber()
 {
   // Destructor. Delete plane objects and point array.
 
+  if( fIsSetup )
+    RemoveVariables();
   delete fU;
   delete fV;
   delete fPoints;
