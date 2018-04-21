@@ -186,7 +186,7 @@ Int_t THaSlotData::LoadIfSlot(const UInt_t* p, const UInt_t *pstop) {
   return wordseen;
 }
 
-  Int_t THaSlotData::LoadBank(const UInt_t* p, Int_t pos, Int_t len) {
+Int_t THaSlotData::LoadBank(const UInt_t* p, Int_t pos, Int_t len) {
   // returns how many words seen.
   Int_t wordseen = 0;
   if ( !fModule ) {

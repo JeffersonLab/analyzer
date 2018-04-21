@@ -29,31 +29,31 @@ class SkeletonModule : public Decoder::VmeModule {
 
 public:
 
-   SkeletonModule() {};
-   SkeletonModule(Int_t crate, Int_t slot);
-   virtual ~SkeletonModule();
+  SkeletonModule() {};
+  SkeletonModule(Int_t crate, Int_t slot);
+  virtual ~SkeletonModule();
 
-   using Decoder::Module::GetData;
-   using Decoder::Module::LoadSlot;
+  using Decoder::Module::GetData;
+  using Decoder::Module::LoadSlot;
 
-   virtual UInt_t GetData(Int_t chan) const;
-   virtual void   Init();
-   virtual void   Clear(const Option_t *opt="");
-   virtual Int_t  Decode(const UInt_t *p) { return 0; };
+  virtual UInt_t GetData(Int_t chan) const;
+  virtual void   Init();
+  virtual void   Clear(const Option_t* opt="");
+  virtual Int_t  Decode(const UInt_t* /* p */ ) { return 0; };
 
 #ifdef LIKEV792
-// Loads slot data.  if you don't define this, the base class's method is used
-  virtual Int_t LoadSlot(Decoder::THaSlotData *sldat,
-			 const UInt_t *evbuffer, const UInt_t *pstop );
+  // Loads slot data.  if you don't define this, the base class's method is used
+  virtual Int_t LoadSlot(Decoder::THaSlotData* sldat,
+			 const UInt_t* evbuffer, const UInt_t* pstop );
 #endif
 
 private:
 
-   Int_t fNumHits;
+  Int_t fNumHits;
 
-   static TypeIter_t fgThisType;
-   ClassDef(SkeletonModule,0)  //  Skeleton of a module; make your replacements
+  static TypeIter_t fgThisType;
 
+  ClassDef(SkeletonModule,0)  //  Skeleton of a module; make your replacements
 };
 
 #endif

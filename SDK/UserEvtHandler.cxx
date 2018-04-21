@@ -143,7 +143,7 @@ Int_t UserEvtHandler::Analyze(THaEvData *evdata)
 }
 
 
-THaAnalysisObject::EStatus UserEvtHandler::Init(const TDatime& date)
+THaAnalysisObject::EStatus UserEvtHandler::Init(const TDatime& /* date */ )
 {
 
 #ifdef WITH_DEBUG

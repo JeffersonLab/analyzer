@@ -74,7 +74,7 @@ UserApparatus::~UserApparatus()
 }
 
 //_____________________________________________________________________________
-void UserApparatus::Clear( Option_t* opt )
+void UserApparatus::Clear( Option_t* /* opt */ )
 {
   // Clear this apparatus. The standard analyzer calls this function
   // before calling Decode(), so it is guaranteed to be called for
