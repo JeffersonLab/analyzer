@@ -1,5 +1,5 @@
-#ifndef ROOT_THaG0Helicity
-#define ROOT_THaG0Helicity
+#ifndef Podd_THaG0Helicity_h_
+#define Podd_THaG0Helicity_h_
 
 ////////////////////////////////////////////////////////////////////////
 //

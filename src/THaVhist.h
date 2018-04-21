@@ -1,5 +1,5 @@
-#ifndef ROOT_THaVhist
-#define ROOT_THaVhist
+#ifndef Podd_THaVhist_h_
+#define Podd_THaVhist_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

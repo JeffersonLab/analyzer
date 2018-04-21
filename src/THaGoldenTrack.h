@@ -1,5 +1,5 @@
-#ifndef ROOT_THaGoldenTrack
-#define ROOT_THaGoldenTrack
+#ifndef Podd_THaGoldenTrack_h_
+#define Podd_THaGoldenTrack_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

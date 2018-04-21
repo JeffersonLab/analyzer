@@ -1,5 +1,5 @@
-#ifndef ROOT_THaRunParameters
-#define ROOT_THaRunParameters
+#ifndef Podd_THaRunParameters_h_
+#define Podd_THaRunParameters_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

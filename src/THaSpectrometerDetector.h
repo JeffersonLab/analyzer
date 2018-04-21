@@ -1,5 +1,5 @@
-#ifndef ROOT_THaSpectrometerDetector
-#define ROOT_THaSpectrometerDetector
+#ifndef Podd_THaSpectrometerDetector_h_
+#define Podd_THaSpectrometerDetector_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

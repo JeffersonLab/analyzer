@@ -1,5 +1,5 @@
-#ifndef ROOT_THaDecData
-#define ROOT_THaDecData
+#ifndef Podd_THaDecData_h_
+#define Podd_THaDecData_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

@@ -1,5 +1,5 @@
-#ifndef ROOT_THaVDCWire
-#define ROOT_THaVDCWire
+#ifndef Podd_THaVDCWire_h_
+#define Podd_THaVDCWire_h_
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //

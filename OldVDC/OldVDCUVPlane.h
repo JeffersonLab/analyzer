@@ -1,5 +1,5 @@
-#ifndef ROOT_OldVDCUVPlane
-#define ROOT_OldVDCUVPlane
+#ifndef Podd_OldVDCUVPlane_h_
+#define Podd_OldVDCUVPlane_h_
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //
 // OldVDCUVPlane                                                             //

@@ -1,5 +1,5 @@
-#ifndef ROOT_THaVDCHit
-#define ROOT_THaVDCHit
+#ifndef Podd_THaVDCHit_h_
+#define Podd_THaVDCHit_h_
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //

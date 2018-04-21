@@ -1,5 +1,5 @@
-#ifndef ROOT_THaElossCorrection
-#define ROOT_THaElossCorrection
+#ifndef Podd_THaElossCorrection_h_
+#define Podd_THaElossCorrection_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

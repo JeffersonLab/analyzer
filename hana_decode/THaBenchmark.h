@@ -1,5 +1,5 @@
-#ifndef THaBenchmark_
-#define THaBenchmark_
+#ifndef Podd_THaBenchmark_h_
+#define Podd_THaBenchmark_h_
 
 //_____________________________________________________________________________
 //

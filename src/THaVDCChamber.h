@@ -1,5 +1,5 @@
-#ifndef ROOT_THaVDCChamber
-#define ROOT_THaVDCChamber
+#ifndef Podd_THaVDCChamber_h_
+#define Podd_THaVDCChamber_h_
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //

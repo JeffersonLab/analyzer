@@ -1,5 +1,5 @@
-#ifndef ROOT_THaPhotoReaction
-#define ROOT_THaPhotoReaction
+#ifndef Podd_THaPhotoReaction_h_
+#define Podd_THaPhotoReaction_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

@@ -1,5 +1,5 @@
-#ifndef Decoder_
-#define Decoder_
+#ifndef Podd_Decoder_h_
+#define Podd_Decoder_h_
 
 #include "Rtypes.h"
 

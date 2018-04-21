@@ -1,5 +1,5 @@
-#ifndef HALLA_THaPostProcess
-#define HALLA_THaPostProcess
+#ifndef Podd_THaPostProcess_h_
+#define Podd_THaPostProcess_h_
 
 #include "TObject.h"
 

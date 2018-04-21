@@ -1,5 +1,5 @@
-#ifndef ROOT_THaFormula
-#define ROOT_THaFormula
+#ifndef Podd_THaFormula_h_
+#define Podd_THaFormula_h_
 
 //////////////////////////////////////////////////////////////////////////
 //                                                                      //

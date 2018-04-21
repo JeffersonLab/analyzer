@@ -1,5 +1,5 @@
-#ifndef THaScalerEvtHandler_
-#define THaScalerEvtHandler_
+#ifndef Podd_THaScalerEvtHandler_h_
+#define Podd_THaScalerEvtHandler_h_
 
 /////////////////////////////////////////////////////////////////////
 //

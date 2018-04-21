@@ -1,5 +1,5 @@
-#ifndef Podd_FixedArrayVar
-#define Podd_FixedArrayVar
+#ifndef Podd_FixedArrayVar_h_
+#define Podd_FixedArrayVar_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

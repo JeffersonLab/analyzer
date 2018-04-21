@@ -1,5 +1,5 @@
-#ifndef ROOT_OldVDCCluster
-#define ROOT_OldVDCCluster
+#ifndef Podd_OldVDCCluster_h_
+#define Podd_OldVDCCluster_h_
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //

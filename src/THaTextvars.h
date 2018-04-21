@@ -1,5 +1,5 @@
-#ifndef ROOT_THaTextvars
-#define ROOT_THaTextvars
+#ifndef Podd_THaTextvars_h_
+#define Podd_THaTextvars_h_
 
 //////////////////////////////////////////////////////////////////////////
 //                                                                      //

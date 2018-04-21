@@ -1,5 +1,5 @@
-#ifndef Podd_OldVDC
-#define Podd_OldVDC
+#ifndef Podd_OldVDC_h_
+#define Podd_OldVDC_h_
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //

@@ -1,5 +1,5 @@
-#ifndef ROOT_THaTrackProj
-#define ROOT_THaTrackProj
+#ifndef Podd_THaTrackProj_h_
+#define Podd_THaTrackProj_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

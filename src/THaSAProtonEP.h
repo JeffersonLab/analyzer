@@ -1,5 +1,5 @@
-#ifndef ROOT_THaSAProtonEP
-#define ROOT_THaSAProtonEP
+#ifndef Podd_THaSAProtonEP_h_
+#define Podd_THaSAProtonEP_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

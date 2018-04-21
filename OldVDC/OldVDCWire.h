@@ -1,5 +1,5 @@
-#ifndef ROOT_OldVDCWire
-#define ROOT_OldVDCWire
+#ifndef Podd_OldVDCWire_h_
+#define Podd_OldVDCWire_h_
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //

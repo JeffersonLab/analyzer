@@ -1,5 +1,5 @@
-#ifndef ROOT_OldVDCPlane
-#define ROOT_OldVDCPlane
+#ifndef Podd_OldVDCPlane_h_
+#define Podd_OldVDCPlane_h_
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //

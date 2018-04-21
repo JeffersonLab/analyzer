@@ -1,5 +1,5 @@
-#ifndef ROOT_THaVDCPlane
-#define ROOT_THaVDCPlane
+#ifndef Podd_THaVDCPlane_h_
+#define Podd_THaVDCPlane_h_
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //

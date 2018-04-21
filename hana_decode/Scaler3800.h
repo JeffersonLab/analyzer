@@ -1,5 +1,5 @@
-#ifndef Scaler3800_
-#define Scaler3800_
+#ifndef Podd_Scaler3800_h_
+#define Podd_Scaler3800_h_
 
 /////////////////////////////////////////////////////////////////////
 //

@@ -1,5 +1,5 @@
-#ifndef ROOT_THaAnalysisObject
-#define ROOT_THaAnalysisObject
+#ifndef Podd_THaAnalysisObject_h_
+#define Podd_THaAnalysisObject_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

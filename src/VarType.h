@@ -1,5 +1,5 @@
-#ifndef ROOT_VarType
-#define ROOT_VarType
+#ifndef Podd_VarType_h_
+#define Podd_VarType_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

@@ -1,5 +1,5 @@
-#ifndef ROOT_THaUnRasteredBeam
-#define ROOT_THaUnRasteredBeam
+#ifndef Podd_THaUnRasteredBeam_h_
+#define Podd_THaUnRasteredBeam_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

@@ -1,5 +1,5 @@
-#ifndef ROOT_THaDetector
-#define ROOT_THaDetector
+#ifndef Podd_THaDetector_h_
+#define Podd_THaDetector_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

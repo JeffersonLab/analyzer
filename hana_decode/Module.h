@@ -1,5 +1,5 @@
-#ifndef Module_
-#define Module_
+#ifndef Podd_Module_h_
+#define Podd_Module_h_
 
 /////////////////////////////////////////////////////////////////////
 //

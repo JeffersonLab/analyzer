@@ -1,5 +1,5 @@
-#ifndef ROOT_THaRunBase
-#define ROOT_THaRunBase
+#ifndef Podd_THaRunBase_h_
+#define Podd_THaRunBase_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

@@ -1,5 +1,5 @@
-#ifndef ROOT_THaPIDinfo
-#define ROOT_THaPIDinfo
+#ifndef Podd_THaPIDinfo_h_
+#define Podd_THaPIDinfo_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

@@ -1,5 +1,5 @@
-#ifndef GenScaler_
-#define GenScaler_
+#ifndef Podd_GenScaler_h_
+#define Podd_GenScaler_h_
 
 /////////////////////////////////////////////////////////////////////
 //

@@ -1,5 +1,5 @@
-#ifndef ROOT_THaScintillator
-#define ROOT_THaScintillator
+#ifndef Podd_THaScintillator_h_
+#define Podd_THaScintillator_h_
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //

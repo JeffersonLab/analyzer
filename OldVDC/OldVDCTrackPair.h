@@ -1,5 +1,5 @@
-#ifndef ROOT_OldVDCTrackPair
-#define ROOT_OldVDCTrackPair
+#ifndef Podd_OldVDCTrackPair_h_
+#define Podd_OldVDCTrackPair_h_
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //

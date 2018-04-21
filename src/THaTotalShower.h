@@ -1,5 +1,5 @@
-#ifndef ROOT_THaTotalShower
-#define ROOT_THaTotalShower
+#ifndef Podd_THaTotalShower_h_
+#define Podd_THaTotalShower_h_
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //

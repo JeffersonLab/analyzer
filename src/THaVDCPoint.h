@@ -1,5 +1,5 @@
-#ifndef ROOT_THaVDCPoint
-#define ROOT_THaVDCPoint
+#ifndef Podd_THaVDCPoint_h_
+#define Podd_THaVDCPoint_h_
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //

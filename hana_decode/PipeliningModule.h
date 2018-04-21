@@ -1,5 +1,5 @@
-#ifndef PipeliningModule_
-#define PipeliningModule_
+#ifndef Podd_PipeliningModule_h_
+#define Podd_PipeliningModule_h_
 
 /////////////////////////////////////////////////////////////////////
 //

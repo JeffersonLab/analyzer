@@ -1,5 +1,5 @@
-#ifndef THaVDCSimDecoder_
-#define THaVDCSimDecoder_
+#ifndef Podd_THaVDCSimDecoder_h_
+#define Podd_THaVDCSimDecoder_h_
 
 /////////////////////////////////////////////////////////////////////
 //

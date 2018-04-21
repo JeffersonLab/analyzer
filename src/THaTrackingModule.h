@@ -1,5 +1,5 @@
-#ifndef ROOT_THaTrackingModule
-#define ROOT_THaTrackingModule
+#ifndef Podd_THaTrackingModule_h_
+#define Podd_THaTrackingModule_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

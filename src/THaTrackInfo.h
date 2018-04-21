@@ -1,5 +1,5 @@
-#ifndef ROOT_THaTrackInfo
-#define ROOT_THaTrackInfo
+#ifndef Podd_THaTrackInfo_h_
+#define Podd_THaTrackInfo_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

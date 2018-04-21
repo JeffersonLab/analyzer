@@ -1,5 +1,5 @@
-#ifndef ROOT_THaRaster
-#define ROOT_THaRaster
+#ifndef Podd_THaRaster_h_
+#define Podd_THaRaster_h_
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //

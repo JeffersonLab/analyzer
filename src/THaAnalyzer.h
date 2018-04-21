@@ -1,5 +1,5 @@
-#ifndef ROOT_THaAnalyzer
-#define ROOT_THaAnalyzer
+#ifndef Podd_THaAnalyzer_h_
+#define Podd_THaAnalyzer_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

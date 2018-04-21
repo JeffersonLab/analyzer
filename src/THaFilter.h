@@ -1,5 +1,5 @@
-#ifndef HALLA_THaFilter
-#define HALLA_THaFilter
+#ifndef Podd_THaFilter_h_
+#define Podd_THaFilter_h_
 
 #include "THaPostProcess.h"
 #include "TString.h"

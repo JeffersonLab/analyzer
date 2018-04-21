@@ -1,5 +1,5 @@
-#ifndef ROOT_THaNonTrackingDetector
-#define ROOT_THaNonTrackingDetector
+#ifndef Podd_THaNonTrackingDetector_h_
+#define Podd_THaNonTrackingDetector_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

@@ -1,5 +1,5 @@
-#ifndef Podd_MethodVar
-#define Podd_MethodVar
+#ifndef Podd_MethodVar_h_
+#define Podd_MethodVar_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

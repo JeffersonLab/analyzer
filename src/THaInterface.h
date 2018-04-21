@@ -1,5 +1,5 @@
-#ifndef ROOT_THaInterface
-#define ROOT_THaInterface
+#ifndef Podd_THaInterface_h_
+#define Podd_THaInterface_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

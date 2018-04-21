@@ -1,5 +1,5 @@
-#ifndef ROOT_THaDebugModule
-#define ROOT_THaDebugModule
+#ifndef Podd_THaDebugModule_h_
+#define Podd_THaDebugModule_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

@@ -1,5 +1,5 @@
-#ifndef Fadc250Module_
-#define Fadc250Module_
+#ifndef Podd_Fadc250Module_h_
+#define Podd_Fadc250Module_h_
 
 /////////////////////////////////////////////////////////////////////
 //

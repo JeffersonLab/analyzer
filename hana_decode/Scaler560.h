@@ -1,5 +1,5 @@
-#ifndef Scaler560_
-#define Scaler560_
+#ifndef Podd_Scaler560_h_
+#define Podd_Scaler560_h_
 
 /////////////////////////////////////////////////////////////////////
 //

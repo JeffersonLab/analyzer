@@ -1,5 +1,5 @@
-#ifndef THaEtClient_
-#define THaEtClient_
+#ifndef Podd_THaEtClient_h_
+#define Podd_THaEtClient_h_
 
 //////////////////////////////////////////////////////////////////////
 //

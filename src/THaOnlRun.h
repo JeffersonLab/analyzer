@@ -1,5 +1,5 @@
-#ifndef ROOT_THaOnlRun
-#define ROOT_THaOnlRun
+#ifndef Podd_THaOnlRun_h_
+#define Podd_THaOnlRun_h_
 
 //////////////////////////////////////////////////////////////////////////
 //

@@ -1,5 +1,5 @@
-#ifndef THaEpicsEvtHandler_
-#define THaEpicsEvtHandler_
+#ifndef Podd_THaEpicsEvtHandler_h_
+#define Podd_THaEpicsEvtHandler_h_
 
 /////////////////////////////////////////////////////////////////////
 //

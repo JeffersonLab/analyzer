@@ -1,5 +1,5 @@
-#ifndef ROOT_OldVDCUVTrack
-#define ROOT_OldVDCUVTrack
+#ifndef Podd_OldVDCUVTrack_h_
+#define Podd_OldVDCUVTrack_h_
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //

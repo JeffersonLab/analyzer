@@ -1,5 +1,5 @@
-#ifndef THaCrateMap_
-#define THaCrateMap_
+#ifndef Podd_THaCrateMap_h_
+#define Podd_THaCrateMap_h_
 
 /////////////////////////////////////////////////////////////////////
 //
