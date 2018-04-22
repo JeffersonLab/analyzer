@@ -1,7 +1,10 @@
 all: dbconvert
 
-#CXXFLAGS    = -g -O0 -Wall -Wextra -std=c++11
-CXXFLAGS    = -g -O -Wall
+ifdef DEBUG
+  CXXFLAGS    = -g -O0 -Wall -Wextra
+else
+  CXXFLAGS    = -g -O2 -Wall -Wextra
+endif
 
 INCDIRS     = ../src ../hana_decode
 INCLUDES    = $(addprefix -I, $(INCDIRS))
