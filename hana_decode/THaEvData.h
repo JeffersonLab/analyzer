@@ -190,8 +190,6 @@ public:
 
   Decoder::THaCrateMap* GetCrateMap() const { return fMap; }
 
-  Decoder::THaCrateMap* fMap;      // Pointer to active crate map
-
   // Reporting level
   void SetVerbose( UInt_t level );
   void SetDebug( UInt_t level );
@@ -204,12 +202,14 @@ public:
 
   enum { MAX_PSFACT = 12 };
 
+protected:
+  Decoder::THaCrateMap* fMap;      // Pointer to active crate map
+
   struct RocDat_t {           // ROC raw data descriptor
     Int_t pos;                // position in evbuffer[]
     Int_t len;                // length of data
   } rocdat[Decoder::MAXROC];
 
-protected:
   // Control bits in TObject::fBits used by decoders
   enum {
     kHelicityEnabled = BIT(14),
