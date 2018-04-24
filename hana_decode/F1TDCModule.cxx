@@ -66,6 +66,10 @@ void F1TDCModule::Clear(const Option_t* opt) {
   memset(fTdcData, 0, NTDCCHAN*MAXHIT*sizeof(Int_t));
 }
 
+Int_t F1TDCModule::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, Int_t pos, Int_t len) {
+  return LoadSlot(sldat, evbuffer+pos, evbuffer+pos+len);
+}
+
 Int_t F1TDCModule::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, const UInt_t *pstop) {
 // this increments evbuffer
   if (fDebugFile) *fDebugFile << "F1TDCModule:: loadslot "<<endl;
