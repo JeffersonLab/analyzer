@@ -118,23 +118,30 @@ Int_t Module::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer,
 			  const Int_t pos, const Int_t len)
 {
   // Load slot from pos to pos+len
-  if (fDebugFile) {
-       *fDebugFile << "Module:: Loadslot "<<endl;
-       *fDebugFile << "pos"<<dec<<pos<<"   len "<<len<<endl;
-  }
-  fWordsSeen=0;
-  while ( fWordsSeen<len ) {
-    if (fDebugFile) *fDebugFile <<endl;
-    for (size_t ichan = 0, nchan = GetNumChan(); ichan < nchan; ichan++) {
-      Int_t mdata,rdata;
-      rdata = evbuffer[pos+fWordsSeen];
-      mdata = rdata;
-      sldat->loadData(ichan, mdata, rdata);
-      if (ichan < fData.size()) fData[ichan]=rdata;
-      fWordsSeen++;
-    }
-  }
-  return fWordsSeen;
+
+  // Basic example of how this could be done
+  // if (fDebugFile) {
+  //      *fDebugFile << "Module:: Loadslot "<<endl;
+  //      *fDebugFile << "pos"<<dec<<pos<<"   len "<<len<<endl;
+  // }
+  // fWordsSeen=0;
+  // while ( fWordsSeen<len ) {
+  //   if (fDebugFile) *fDebugFile <<endl;
+  //   for (size_t ichan = 0, nchan = GetNumChan(); ichan < nchan; ichan++) {
+  //     Int_t mdata,rdata;
+  //     rdata = evbuffer[pos+fWordsSeen];
+  //     mdata = rdata;
+  //     sldat->loadData(ichan, mdata, rdata);
+  //     if (ichan < fData.size()) fData[ichan]=rdata;
+  //     fWordsSeen++;
+  //   }
+  // }
+  // return fWordsSeen;
+
+  // By default, this is just a wrapper for the 3-parameter version of LoadSlot,
+  // which every module is required to implement
+
+  return LoadSlot(sldat, evbuffer+pos, evbuffer+pos+len);
 }
 
 }
