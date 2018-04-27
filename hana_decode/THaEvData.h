@@ -36,6 +36,7 @@ public:
 
   virtual Bool_t IsMultiBlockMode() { return fMultiBlockMode; };
   virtual Bool_t BlockIsDone() { return fBlockIsDone; };
+  virtual void FillBankData(UInt_t* rdat, Int_t roc, Int_t bank, Int_t offset=0, Int_t num=1) const { return; };
 
   // Derived class to implement this
   virtual Int_t LoadFromMultiBlock() { return 0;};
@@ -231,7 +232,7 @@ protected:
   struct BankDat_t {           // Bank raw data descriptor
     Int_t pos;                 // position in evbuffer[]
     Int_t len;                 // length of data
-  } bankdat[Decoder::MAXBANK];
+  } bankdat[Decoder::MAXBANK * Decoder::MAXROC];
   Decoder::THaSlotData** crateslot;
 
   Bool_t first_decode;

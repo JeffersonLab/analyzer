@@ -313,8 +313,6 @@ Int_t CodaDecoder::bank_decode( Int_t roc, const UInt_t* evbuffer,
 
   Int_t pos,len,bank,head;
 
-  memset(bankdat,0,MAXBANK*sizeof(BankDat_t));
-
   if (fDebugFile) *fDebugFile << "CodaDecode:: bank_decode  ... "<<roc<<"   "<<ipt<<"  "<<istop<<endl;
 
   pos = ipt+1;  // ipt points to ROC ID word
@@ -326,8 +324,8 @@ Int_t CodaDecoder::bank_decode( Int_t roc, const UInt_t* evbuffer,
     if (fDebugFile) *fDebugFile << "bank 0x"<<hex<<bank<<"  head 0x"<<head<<"    len 0x"<<len<<dec<<endl;
 
     if (bank >= 0 && bank < MAXBANK) {
-      bankdat[bank].pos=pos+2;
-      bankdat[bank].len=len-1;
+      bankdat[MAXBANK*roc+bank].pos=pos+2;
+      bankdat[MAXBANK*roc+bank].len=len-1;
     }
 
     pos += len+1;
@@ -344,8 +342,8 @@ Int_t CodaDecoder::bank_decode( Int_t roc, const UInt_t* evbuffer,
       cerr << "CodaDecoder::ERROR:  bank number out of range "<<endl;
       return 0;
     }
-    pos = bankdat[bank].pos;
-    len = bankdat[bank].len;
+    pos = bankdat[MAXBANK*roc+bank].pos;
+    len = bankdat[MAXBANK*roc+bank].len;
     if (fDebugFile) *fDebugFile << "CodaDecode:: loading bank "<<roc<<"  "<<slot<<"   "<<bank<<"  "<<pos<<"   "<<len<<endl;
     crateslot[idx(roc,slot)]->LoadBank(evbuffer,pos,len);
     if (crateslot[idx(roc,slot)]->IsMultiBlockMode()) fMultiBlockMode = kTRUE;
@@ -356,6 +354,33 @@ Int_t CodaDecoder::bank_decode( Int_t roc, const UInt_t* evbuffer,
   return retval;
 }
 
+//_____________________________________________________________________________
+ void CodaDecoder::FillBankData(UInt_t *rdat, Int_t roc, Int_t bank, Int_t offset, Int_t num) const
+{
+  Int_t ldebug=0;
+  Int_t pos,len,i,ilo,ihi,jk;
+  jk =  MAXBANK*roc + bank;
+
+  if (ldebug) cout << "Into FillBankData v1 "<<dec<<roc<<"  "<<bank<<"  "<<offset<<"  "<<num<<"   "<<jk<<endl;  
+  if(fDebugFile) *fDebugFile << "Check FillBankData "<<roc<<"  "<<bank<<"   "<<jk<<endl;
+
+ if (jk < 0 || jk >= MAXROC*MAXBANK) {
+      cerr << "FillBankData::ERROR:  bankdat index out of range "<<endl;
+      return;
+  }  
+  pos = bankdat[jk].pos;
+  len = bankdat[jk].len;
+  if (ldebug) cout << "FillBankData: pos "<<pos<<"  "<<len<<endl;
+  if(fDebugFile) *fDebugFile << "FillBankData  pos, len "<<pos<<"   "<<len<<endl;
+  if (offset > len-2) return;
+  if (num > len) num = len;
+  ilo = pos+offset;
+  ihi = pos+offset+num;
+  if (ihi >  GetEvLength()) ihi=GetEvLength();
+  for (i=ilo; i<ihi; i++) rdat[i-ilo] = GetRawData(i);
+ 
+  return;
+}
 
 //_____________________________________________________________________________
 Int_t CodaDecoder::LoadIfFlagData(const UInt_t* evbuffer)
