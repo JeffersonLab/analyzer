@@ -27,6 +27,8 @@ public:
   virtual Int_t GetPrescaleFactor(Int_t trigger) const;
   virtual void  SetRunTime(ULong64_t tloc);
 
+  void FillBankData(UInt_t *rdat, Int_t roc, Int_t bank, Int_t offset=0, Int_t num=1) const;
+
   Int_t FindRocs(const UInt_t *evbuffer);
   Int_t roc_decode( Int_t roc, const UInt_t* evbuffer, Int_t ipt, Int_t istop );
   Int_t bank_decode( Int_t roc, const UInt_t* evbuffer, Int_t ipt, Int_t istop );
