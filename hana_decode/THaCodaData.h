@@ -46,6 +46,7 @@ public:
    virtual UInt_t* getEvBuffer() { return evbuffer; }
    virtual Int_t getBuffSize() const { return MAXEVLEN; }
    virtual Bool_t isOpen() const = 0;
+   virtual Int_t getCodaVersion() { return fCodaVersion; };
 
 protected:
    static Int_t ReturnCode( Long64_t evio_retcode );
@@ -59,6 +60,7 @@ protected:
 
    TString  filename;
    UInt_t*  evbuffer;     // Raw data
+   Int_t fCodaVersion;
 
    ClassDef(THaCodaData,0) // Base class of CODA data (file, ET conn, etc)
 

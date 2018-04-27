@@ -20,6 +20,7 @@ namespace Decoder {
 
 //_____________________________________________________________________________
 THaCodaData::THaCodaData() {
+   fCodaVersion = 2; // default
    evbuffer = new UInt_t[MAXEVLEN];         // Raw data
 };
 
