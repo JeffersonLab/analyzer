@@ -54,6 +54,7 @@ public:
           UInt_t       GetFirstEvent()  const { return fEvtRange[0]; }
           UInt_t       GetLastEvent()   const { return fEvtRange[1]; }
   THaRunParameters*    GetParameters()  const { return fParam; }
+          Int_t        GetCodaVersion() const { return fCodaVersion; }
   virtual Bool_t       HasInfo( UInt_t bits ) const;
   virtual Bool_t       HasInfoRead( UInt_t bits ) const;
           Bool_t       IsInit()         const { return fIsInit; }
@@ -67,6 +68,7 @@ public:
           void         SetEventRange( UInt_t first, UInt_t last );
   virtual void         SetNumber( Int_t number );
           void         SetRunParamClass( const char* classname );
+          void         SetCodaVersion(Int_t ver) { fCodaVersion = ver; }
   virtual void         SetType( Int_t type );
   virtual Int_t        Update( const THaEvData* evdata );
 
@@ -88,6 +90,7 @@ protected:
   UInt_t        fDataSet;       // Flags for info that is valid (see EInfoType)
   UInt_t        fDataRead;      // Flags for info found in data (see EInfoType)
   UInt_t        fDataRequired;  // Info required for Init() to succeed
+  Int_t         fCodaVersion;   // Version of CODA that wrote the data.
   THaRunParameters* fParam;     // Run parameters
   TString       fRunParamClass; // Class of object in fParam
   TObject*      fExtra;         // Additional member data (for binary compat.)
