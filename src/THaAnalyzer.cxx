@@ -815,6 +815,9 @@ Int_t THaAnalyzer::ReadOneEvent()
   if (to_read_file)
     status = fRun->ReadEvent();
 
+  // there may be a better place to do this, but this works
+  fEvData->SetCodaVersion(fRun->GetCodaVersion());
+
   switch( status ) {
   case THaRunBase::READ_OK:
     // Decode the event

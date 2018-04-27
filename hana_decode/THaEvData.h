@@ -46,6 +46,9 @@ public:
   // Set the EPICS event type
   void      SetEpicsEvtType(Int_t itype) { fEpicsEvtType = itype; };
 
+  // Set the CODA version which affects some decoding behaviour
+  void      SetCodaVersion(Int_t vers) { fCodaVersion = vers; };
+
   // Basic access to the decoded data
   Int_t     GetEvType()   const { return event_type; }
   Int_t     GetEvLength() const { return event_length; }
@@ -238,6 +241,7 @@ protected:
   Bool_t first_decode;
   Bool_t fTrigSupPS;
   Bool_t  fMultiBlockMode, fBlockIsDone;
+  Int_t fCodaVersion;
 
   Int_t fEpicsEvtType;
 
@@ -246,6 +250,7 @@ protected:
   std::ofstream *fDebugFile;  // debug output
 
   Int_t  event_type,event_length,event_num,run_num,evscaler;
+  Int_t  bank_tag, data_type, block_size, tbLen, evcnt_coda3;
   Int_t  run_type;    // CODA run type from prestart event
   ULong64_t fRunTime; // CODA run time (Unix time) from prestart event
   ULong64_t evt_time; // Event time. Not directly supported by CODA

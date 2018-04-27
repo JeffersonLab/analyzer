@@ -149,6 +149,8 @@ Int_t THaRun::Open()
   }
 
   Int_t st = fCodaData->codaOpen( fFilename );
+  fCodaVersion = fCodaData->getCodaVersion();
+  cout << "in THaRun::Open:  coda version "<<fCodaVersion<<endl;
   if( st == 0 )
     fOpened = kTRUE;
   return ReturnCode( st );
@@ -180,6 +182,7 @@ Int_t THaRun::ReadInitInfo()
       // Disable advanced processing
       evdata->EnableScalers(kFALSE);
       evdata->EnableHelicity(kFALSE);
+      evdata->SetCodaVersion(fCodaVersion);
       UInt_t nev = 0;
       while( nev<fMaxScan && !HasInfo(fDataRequired) &&
 	     (status = ReadEvent()) == READ_OK ) {
@@ -255,6 +258,7 @@ Int_t THaRun::ReadInitInfo()
 	  fSegment  = 0;
 	  if( fCodaData->codaOpen(s) == 0 )
 	    status = ReadInitInfo();
+          fCodaVersion = fCodaData->getCodaVersion();
 	  delete fCodaData;
 	  fSegment  = save_seg;
 	  fCodaData = save_coda;
