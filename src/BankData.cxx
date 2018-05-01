@@ -75,39 +75,13 @@ Int_t BankData::Process( const THaEvData& evdata )
 
   Int_t k=0;
   for (UInt_t i=0; i<banklocs.size(); i++) {
-    //    cout << "BankData proc "<<dec<<i<<"  "<<banklocs[i]->roc<<"  "<<banklocs[i]->bank<<"  "<<banklocs[i]->numwords<<endl;
    evdata.FillBankData(vardata, banklocs[i]->roc, banklocs[i]->bank, banklocs[i]->offset, banklocs[i]->numwords);
-   //   cout << "numwords "<<i<<"  "<<banklocs[i]->numwords<<endl;
     for (Int_t j=0; j<banklocs[i]->numwords; j++) {
-      //      cout << "     data  "<<j<<"   "<<k<<"  0x"<<hex<<vardata[j]<<dec<<endl;
       dvars[k] = 1.0*vardata[j];
       k++;
     }
   }
-  //  for (Int_t i=0; i<k; i++) cout << "dvars["<<i<<"] = "<<dvars[i]<<endl;
 
-#ifdef TEST1
-  Int_t myroc=20;
-  Int_t mybank=7;
-  Int_t mydata[100];
-  cout << "BankData:: process, evnum =  "<<evdata.GetEvNum()<<"  "<<evdata.GetEvType()<<endl;
-  evdata.FillBankData(mydata,20,7,0,10);
-  for (UInt_t i=0; i<10; i++) {
-    cout << "Mydata 20, 7, 0, 10 "<<i<<"   0x"<<hex<<mydata[i]<<"   dec "<<dec<<mydata[i]<<endl;
-  }
-  cout << "-----------------------"<<endl;
-  evdata.FillBankData(mydata,20,7,5,20);
-  for (UInt_t i=0; i<20; i++) {
-    cout << "Mydata 20, 7, 5, 20 "<<i<<"   0x"<<hex<<mydata[i]<<"   dec "<<dec<<mydata[i]<<endl;
-  }
-  cout << "-----------------------"<<endl;
-  evdata.FillBankData(mydata,20,250,0,40);
-  for (UInt_t i=0; i<40; i++) {
-    cout << "Mydata 20, 250, 0, 40 "<<i<<"   0x"<<hex<<mydata[i]<<"   dec "<<dec<<mydata[i]<<endl;
-  }
-#endif
-
-  // That's it
   fDataValid = true;
   return 0;
 }
@@ -117,7 +91,7 @@ Int_t BankData::ReadRunDatabase( const TDatime& date )
 {
   // Read the parameters of this module from the run database
 
-  int ldebug=1;
+  int ldebug=0;
   const int LEN = 200;
   char cbuf[LEN];
   string::size_type minus1 = string::npos;
@@ -126,11 +100,7 @@ Int_t BankData::ReadRunDatabase( const TDatime& date )
   vector<string> dbline;
   FILE *fi;
 
-  Int_t err = THaPhysicsModule::ReadRunDatabase( date );
-  if( err ) return err;
-
-  FILE* f = OpenRunDBFile( date );
-  if( !f ) return kFileError;
+// I don't really understand the rules for where it gets the database file
 
   vector<string> fnames (GetDBFileList(GetName(), date, ""));
  
@@ -175,10 +145,9 @@ Int_t BankData::ReadRunDatabase( const TDatime& date )
 
   }
 
-  cout << "banklocs size "<<banklocs.size()<<endl;
-
 // warning to myself:  do NOT call DefineVariables() here, it will lead to
-// stale global data.  Let the analyzer mechanisms call it (in the right sequence).
+// stale global data.  Let the analyzer mechanisms call it (in the 
+// right sequence).
 
   fStatus = kOK;
 
@@ -189,7 +158,7 @@ Int_t BankData::ReadRunDatabase( const TDatime& date )
 //_____________________________________________________________________________
 Int_t BankData::DefineVariables( EMode mode ) {
   // Define/delete global variables.
-  Int_t ldebug=1;
+  Int_t ldebug=0;
   char svarstem[100],svarname[100],cdesc[100];
   Nvars = 0;
   Int_t maxwords=-999;
