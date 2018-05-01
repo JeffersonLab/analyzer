@@ -196,7 +196,7 @@ SRC          := src/THaFormula.cxx src/THaVform.cxx src/THaVhist.cxx \
 		src/THaDetMap.cxx src/THaApparatus.cxx src/THaDetector.cxx \
 		src/THaSpectrometer.cxx src/THaSpectrometerDetector.cxx \
 		src/THaHRS.cxx src/THaDecData.cxx src/BdataLoc.cxx \
-		src/THaOutput.cxx src/THaString.cxx \
+		src/THaOutput.cxx src/THaString.cxx src/BankData.cxx \
 		src/THaTrackingDetector.cxx src/THaNonTrackingDetector.cxx \
 		src/THaPidDetector.cxx src/THaSubDetector.cxx \
 		src/THaAnalysisObject.cxx src/THaDetectorBase.cxx \
