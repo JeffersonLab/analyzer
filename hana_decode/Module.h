@@ -43,6 +43,8 @@ namespace Decoder {
     Bool_t BlockIsDone() { return fBlockIsDone; };
     virtual void SetFirmware(Int_t fw) {fFirmwareVers=fw;};
 
+    Int_t GetBlockSize() { return block_size; };
+
     // inheriting classes need to implement one or more of these
     virtual UInt_t GetData(Int_t) const { return 0; };
     virtual Int_t GetData(Int_t, Int_t) const { return 0; };
@@ -117,6 +119,7 @@ namespace Decoder {
     Int_t fWordsExpect, fWordsSeen;
     Int_t fWdcntMask, fWdcntShift;
     Int_t fModelNum, fNumChan, fMode;
+    Int_t block_size;
     Bool_t IsInit;
     Bool_t fMultiBlockMode, fBlockIsDone;
     Int_t fFirmwareVers;

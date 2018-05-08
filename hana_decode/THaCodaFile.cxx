@@ -48,6 +48,17 @@ namespace Decoder {
        // _might_ be modified internally ...) Silly, really.
        char *d_fname = strdup(fname), *d_flags = strdup("r");
        Int_t status = evOpen(d_fname,d_flags,&handle);
+       Int_t EvioVersion;
+       Int_t status2 = evIoctl(handle, "v", &EvioVersion);
+       fCodaVersion = 0; 
+       if (status2 == S_SUCCESS) {
+  	   cout << "Evio file EvioVersion = "<< EvioVersion<<endl;
+           if (EvioVersion < 4) {
+               fCodaVersion = 2;
+	   } else { 
+	     fCodaVersion = 3;
+	   }
+       }
        free(d_fname); free(d_flags);
        staterr("open",status);
        return ReturnCode(status);
@@ -58,6 +69,17 @@ namespace Decoder {
       init(fname);
       char *d_fname = strdup(fname), *d_flags = strdup(readwrite);
       Int_t status = evOpen(d_fname,d_flags,&handle);
+      Int_t EvioVersion;
+      Int_t status2 = evIoctl(handle, "v", &EvioVersion);
+      fCodaVersion = 0; 
+      if (status2 == S_SUCCESS) {
+  	  cout << "Evio file EvioVersion = "<< EvioVersion<<endl;
+          if (EvioVersion < 4) {
+              fCodaVersion = 2;
+	  } else { 
+	      fCodaVersion = 3;
+	  }
+      }
       free(d_fname); free(d_flags);
       staterr("open",status);
       return ReturnCode(status);

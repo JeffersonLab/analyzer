@@ -27,7 +27,8 @@ public:
   virtual Int_t GetPrescaleFactor(Int_t trigger) const;
   virtual void  SetRunTime(ULong64_t tloc);
 
-  Int_t FindRocs(const UInt_t *evbuffer);
+  Int_t FindRocs(const UInt_t *evbuffer);  // CODA2 version
+  Int_t FindRocsCoda3(const UInt_t *evbuffer); // CODA3 version
   Int_t roc_decode( Int_t roc, const UInt_t* evbuffer, Int_t ipt, Int_t istop );
   Int_t bank_decode( Int_t roc, const UInt_t* evbuffer, Int_t ipt, Int_t istop );
 
@@ -40,11 +41,30 @@ protected:
   std::vector<bool>  fbfound;
   std::vector<Int_t> psfact;
 
+// CODA3 stuff
+  typedef struct trigBankObject {
+     int      blksize;              /* total number of triggers in the Bank */
+     uint16_t tag;                  /* Trigger Bank Tag ID = 0xff2x */
+     uint16_t nrocs;                /* Number of ROC Banks in the Event Block (val = 1-256) */
+     uint32_t len;                  /* Total Length of the Trigger Bank - including Bank header */
+     int      withTimeStamp;        /* =1 if Time Stamps are available */
+     int      withRunInfo;          /* =1 if Run Informaion is available - Run # and Run Type */
+     uint64_t evtNum;               /* Starting Event # of the Block */
+     uint64_t runInfo;              /* Run Info Data */
+     uint32_t *start;               /* Pointer to start of the Trigger Bank */
+     uint64_t *evTS;                /* Pointer to the array of Time Stamps */
+     uint16_t *evType;              /* Pointer to the array of Event Types */
+   } TBOBJ;
+
+  TBOBJ tbank;
+
   void CompareRocs();
   void ChkFbSlot( Int_t roc, const UInt_t* evbuffer, Int_t ipt, Int_t istop );
   void ChkFbSlots();
 
   virtual Int_t init_slotdata();
+  virtual Int_t interpretCoda3(const UInt_t* buffer);
+  virtual Int_t trigBankDecode(const UInt_t *tb, int blkSize);
   Int_t prescale_decode(const UInt_t* evbuffer);
   void dump(const UInt_t* evbuffer) const;
 
