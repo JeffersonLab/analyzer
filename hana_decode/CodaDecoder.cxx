@@ -31,11 +31,12 @@ CodaDecoder::CodaDecoder() :
   first_decode=kFALSE;
   fMultiBlockMode=kFALSE;
   fBlockIsDone=kFALSE;
-
+  // Please leave these 3 lines for me to debug if I need to.  thanks, Bob
+#ifdef WANTDEBUG
   fDebugFile = new ofstream();
   fDebugFile->open("bobstuff.txt");
   *fDebugFile<< "Debug my stuff "<<endl<<endl;
-
+#endif
 }
 
 //_____________________________________________________________________________
@@ -63,48 +64,49 @@ Int_t CodaDecoder::LoadEvent(const UInt_t* evbuffer)
 {
   // Main engine for decoding, called by public LoadEvent() methods
 
- if (fCodaVersion == 0) {
-    cout << "This makes no sense, coda version zero ??  Exit !!"<<endl;
-    exit(0);
- }
- static Int_t fdfirst=1;
- static Int_t chkfbstat=1;
- if (fDebugFile) *fDebugFile << "CodaDecode:: Loading event  ... "<<endl;
- if (fDebugFile) *fDebugFile << "evbuffer ptr "<<evbuffer<<endl;
+  if (fCodaVersion == 0) {
+     cout << "This makes no sense, coda version zero ??  Exit !!"<<endl;
+     exit(0);
+  }
+  event_length = evbuffer[0]+1;  // in longwords (4 bytes)
+  event_num = 0;
+  event_type = 0;
+  static Int_t fdfirst=1;
+  static Int_t chkfbstat=1;
+  if (fDebugFile) *fDebugFile << "CodaDecode:: Loading event  ... "<<endl;
+  if (fDebugFile) *fDebugFile << "evbuffer ptr "<<evbuffer<<endl;
   assert( evbuffer );
   assert( fMap || fNeedInit );
   Int_t ret = HED_OK;
   buffer = evbuffer;
-  if(fDebugFile) {
-    *fDebugFile << "CodaDecode:: dumping "<<endl;
-    dump(evbuffer);
-  }
   if (first_decode || fNeedInit) {
-    ret = init_cmap();
-    if (fDebugFile) {
+     ret = init_cmap();
+     if (fDebugFile) {
 	 *fDebugFile << "\n CodaDecode:: Print of Crate Map"<<endl;
 	 fMap->print(fDebugFile);
-    } else {
+     } else {
       //      fMap->print();
-    }
-    if( ret != HED_OK ) return ret;
-    ret = init_slotdata();
-    if( ret != HED_OK ) return ret;
-    FindUsedSlots();
-    first_decode=kFALSE;
+     }
+     if( ret != HED_OK ) return ret;
+     ret = init_slotdata();
+     if( ret != HED_OK ) return ret;
+     FindUsedSlots();
+     first_decode=kFALSE;
   }
   if( fDoBench ) fBench->Begin("clearEvent");
   for( Int_t i=0; i<fNSlotClear; i++ ) crateslot[fSlotClear[i]]->clearEvent();
   if( fDoBench ) fBench->Stop("clearEvent");
-  event_length = evbuffer[0]+1;  // in longwords (4 bytes)
-  event_num = 0;
   if (fCodaVersion == 2) {
     event_type = evbuffer[1]>>16;
     if(event_type < 0) return HED_ERR;
   } else {  // CODA version 3
     interpretCoda3(evbuffer);
   }
-
+  if(fDebugFile) {
+      *fDebugFile << "CodaDecode:: dumping "<<endl;
+      dump(evbuffer);
+  }
+ 
   if (event_type == PRESTART_EVTYPE) {
      // Usually prestart is the first 'event'.  Call SetRunTime() to
      // re-initialize the crate map since we now know the run time.
@@ -298,6 +300,11 @@ Int_t CodaDecoder::LoadFromMultiBlock()
       Int_t minslot = fMap->getMinSlot(roc);
       Int_t maxslot = fMap->getMaxSlot(roc);
       for (Int_t slot = minslot; slot <= maxslot; slot++) {
+ // for CODA3, cross-check the block size (found in trigger bank and, separately, in modules)
+        if(fDebugFile) *fDebugFile << "cross chk blk size "<<roc<<"  "<<slot<<"  "<<crateslot[idx(roc,slot)]->GetModule()->GetBlockSize()<<"   "<<block_size<<endl;;
+        if (fCodaVersion > 2 && (crateslot[idx(roc,slot)]->GetModule()->GetBlockSize() != block_size)) {
+	  cout << "ERROR::CodaDecoder:: inconsistent block size between trig. bank and module"<<endl;
+	}
 	if (fMap->slotUsed(roc,slot) && crateslot[idx(roc,slot)]->GetModule()->IsMultiBlockMode()) {
 	  crateslot[idx(roc,slot)]->LoadNextEvBuffer();
 	  if (crateslot[idx(roc,slot)]->BlockIsDone()) fBlockIsDone = kTRUE;
@@ -666,22 +673,19 @@ void CodaDecoder::dump(const UInt_t* evbuffer) const
 {
   if( !evbuffer ) return;
   if ( !fDebugFile ) return;
-  Int_t len = evbuffer[0]+1;
-  Int_t type = evbuffer[1]>>16;
-  Int_t num = evbuffer[4];
-  *fDebugFile << "\n\n Raw Data Dump  " << hex << endl;
-  *fDebugFile << "\n Event number  " << dec << num;
-  *fDebugFile << "  length " << len << "  type " << type << endl;
+  *fDebugFile << "\n\n Raw Data Dump  " << endl;
+  *fDebugFile << "\n Event number  " << dec << event_num;
+  *fDebugFile << "  length " << event_length << "  type " << event_type << endl;
   Int_t ipt = 0;
-  for (Int_t j=0; j<(len/5); j++) {
+  for (Int_t j=0; j<(event_length/5); j++) {
     *fDebugFile << dec << "\n evbuffer[" << ipt << "] = ";
     for (Int_t k=j; k<j+5; k++) {
       *fDebugFile << hex << evbuffer[ipt++] << " ";
     }
   }
-  if (ipt < len) {
+  if (ipt < event_length) {
     *fDebugFile << dec << "\n evbuffer[" << ipt << "] = ";
-    for (Int_t k=ipt; k<len; k++) {
+    for (Int_t k=ipt; k<event_length; k++) {
       *fDebugFile << hex << evbuffer[ipt++] << " ";
     }
     *fDebugFile << endl;
