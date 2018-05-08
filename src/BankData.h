@@ -20,15 +20,7 @@
 #include <stdarg.h>
 
 class THaTrackingModule;
-
-class BankLoc { // Utility class used by BankData
- public:
-   BankLoc(std::string svar, Int_t iroc, Int_t ibank, Int_t ioff, Int_t inum)
-     : svarname(svar), roc(iroc), bank(ibank), offset(ioff), numwords(inum) {}
-   ~BankLoc();
-   std::string svarname;
-   Int_t roc,bank,offset,numwords;
-};
+class BankLoc;
 
 class BankData : public THaPhysicsModule {
 
