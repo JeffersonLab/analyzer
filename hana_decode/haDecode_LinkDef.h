@@ -34,8 +34,6 @@
 
 #pragma link C++ class THaBenchmark+;
 #pragma link C++ class THaEvData+;
-#pragma link C++ class THaEvData::RocDat_t+;
-#pragma link C++ class THaEvData::BankDat_t+;
 
 #ifndef STANDALONE
 #pragma link C++ class Podd::MCHitInfo+;

@@ -17,6 +17,7 @@
 #include "THaVar.h"
 #include "VarType.h"
 #include "THaVarList.h"
+#include <sstream>
 
 using namespace std;
 typedef string::size_type ssiz_t;
@@ -26,7 +27,7 @@ using namespace THaString;
 BankData::BankData( const char* name, const char* description) :
   THaPhysicsModule(name,description), Nvars(0), dvars(0), vardata(0)
 {
-  // Normal constructor. 
+  // Normal constructor.
 
 
 }
@@ -35,36 +36,9 @@ BankData::BankData( const char* name, const char* description) :
 BankData::~BankData()
 {
   // Destructor
-  if(dvars) delete[] dvars;
-  if(vardata) delete[] vardata;
+  delete[] dvars;
+  delete[] vardata;
   RemoveVariables();
-}
-
-//_____________________________________________________________________________
-void BankData::Clear( Option_t* opt )
-{
-  // Clear all internal variables.
-
-  THaPhysicsModule::Clear(opt);
-
-  fDataValid = false;
-}
-
-//_____________________________________________________________________________
-THaAnalysisObject::EStatus BankData::Init( const TDatime& run_time )
-{
-  // Standard initialization. Calls this object's ReadDatabase(),
-  // ReadRunDatabase(), and DefineVariables()
-  // (see THaAnalysisObject::Init)
-
-  cout << "BankData init called "<<endl;
-
-  if( THaPhysicsModule::Init( run_time ) != kOK ) {
-    cout << "init not ok ?"<<endl;
-  }
-
-  fStatus = kOK;
-  return kOK;
 }
 
 //_____________________________________________________________________________
@@ -87,7 +61,7 @@ Int_t BankData::Process( const THaEvData& evdata )
 }
 
 //_____________________________________________________________________________
-Int_t BankData::ReadRunDatabase( const TDatime& date )
+Int_t BankData::ReadDatabase( const TDatime& date )
 {
   // Read the parameters of this module from the run database
 
@@ -98,24 +72,15 @@ Int_t BankData::ReadRunDatabase( const TDatime& date )
   string::size_type pos1;
   const string scomment = "#";
   vector<string> dbline;
-  FILE *fi;
 
 // I don't really understand the rules for where it gets the database file
 
-  vector<string> fnames (GetDBFileList(GetName(), date, ""));
- 
-  if(ldebug) cout << "fnames size "<<fnames.size()<<endl;
+//  const char* const here = "ReadDatabase";
 
-  for (UInt_t i=0; i<fnames.size(); i++) {
-    if (ldebug) cout << "BankData:  trying database file "<<fnames[i]<<endl;
-    fi = OpenFile(fnames[i].c_str(), date);
-    if (fi != NULL) break;
-  }
+  // Read database
 
-  if (fi == NULL) {
-    cout << "Failed to open database file for BankData"<<endl;
-    return -1;
-  }
+  FILE* fi = OpenFile( date );
+  if( !fi ) return kFileError;
 
   Int_t iroc, ibank, ioff, inum;
   std::string svar;
@@ -131,22 +96,24 @@ Int_t BankData::ReadRunDatabase( const TDatime& date )
       iroc = 0;  ibank = 0; ioff = 0;  inum = 1;
       svar = dbline[0];
       iroc  = atoi(dbline[1].c_str());
-      ibank = atoi(dbline[2].c_str());      
+      ibank = atoi(dbline[2].c_str());
       if (dbline.size()>3) {
-          ioff = atoi(dbline[3].c_str()); 
-          if (dbline.size()>4) {
-            inum = atoi(dbline[4].c_str()); 
+	  ioff = atoi(dbline[3].c_str());
+	  if (dbline.size()>4) {
+	    inum = atoi(dbline[4].c_str());
 	  }
 	}
       }
      if(svar.length()==0) continue;
-     if (ldebug) cout << "svar "<<svar<<"  len "<<svar.length()<<"  iroc "<<iroc<<"  ibank "<<ibank<<"  offset "<<ioff<<"  num "<<inum<<endl;      
+     if (ldebug) cout << "svar "<<svar<<"  len "<<svar.length()
+		      <<"  iroc "<<iroc<<"  ibank "<<ibank
+		      <<"  offset "<<ioff<<"  num "<<inum<<endl;
      banklocs.push_back( new BankLoc(svar, iroc, ibank, ioff, inum) );
 
   }
 
 // warning to myself:  do NOT call DefineVariables() here, it will lead to
-// stale global data.  Let the analyzer mechanisms call it (in the 
+// stale global data.  Let the analyzer mechanisms call it (in the
 // right sequence).
 
   fStatus = kOK;
@@ -156,29 +123,34 @@ Int_t BankData::ReadRunDatabase( const TDatime& date )
 }
 
 //_____________________________________________________________________________
-Int_t BankData::DefineVariables( EMode mode ) {
+Int_t BankData::DefineVariables( EMode mode )
+{
   // Define/delete global variables.
   Int_t ldebug=0;
-  char svarstem[100],svarname[100],cdesc[100];
   Nvars = 0;
   Int_t maxwords=-999;
   Int_t too_big = 1000000;
   for (UInt_t i=0; i<banklocs.size(); i++) {
-      if (ldebug) cout << "bankloc "<<i<<"   "<<banklocs[i]->roc<<"   "<<banklocs[i]->bank<<"  "<<banklocs[i]->offset<<"  "<<banklocs[i]->numwords<<endl;
+      if (ldebug) cout << "bankloc "<<i<<"   "<<banklocs[i]->roc<<"   "
+		       <<banklocs[i]->bank<<"  "<<banklocs[i]->offset<<"  "
+		       <<banklocs[i]->numwords<<endl;
       if(banklocs[i]->numwords > maxwords) maxwords = banklocs[i]->numwords;
       Nvars += banklocs[i]->numwords;
   }
   // maxwords is the biggest number of words for all banklocs.
-  // dvars must be of length Nvars in order to fit all the data 
+  // dvars must be of length Nvars in order to fit all the data
   // for this class; it's the global data.
   // Check that neither of these are "too_big" for some reason.
   if (maxwords > too_big || Nvars > too_big) {
     cerr << "BankData::ERROR:  very huge number of words "<<maxwords<<"  "<<Nvars<<endl;
     return kInitError;
   }
+  delete [] vardata;
+  delete [] dvars;
   vardata = new UInt_t[maxwords];
   dvars = new Double_t[Nvars];
-  for (Int_t i=0; i<Nvars; i++) dvars[i]=40+i;
+  for (Int_t i=0; i<Nvars; i++)
+    dvars[i]=40+i;
   if (!gHaVars) {
     cerr << "BankData::ERROR: No gHaVars ?!  Well, that's a problem !!"<<endl;
     return kInitError;
@@ -187,40 +159,25 @@ Int_t BankData::DefineVariables( EMode mode ) {
   const Int_t* count = 0;
   Int_t k=0;
   for (UInt_t i = 0; i < banklocs.size(); i++) {
-    sprintf(svarname,fName);
-    strcat(svarname,".");
-    strcat(svarname,banklocs[i]->svarname.c_str());
-    sprintf(cdesc,"Bank Data ");
-    strcat(cdesc,banklocs[i]->svarname.c_str());
+    string svarname = std::string(fName.Data()) + "." + banklocs[i]->svarname;
+    string cdesc = "Bank Data " + banklocs[i]->svarname;
     if (banklocs[i]->numwords == 1) {
        if (ldebug) cout << "numwords = 1, svarname = "<<svarname<<endl;
-       gHaVars->DefineByType(svarname, cdesc, &dvars[k], kDouble, count);
+       gHaVars->DefineByType(svarname.c_str(), cdesc.c_str(), &dvars[k], kDouble, count);
        k++;
     } else {
       for (Int_t j=0; j<banklocs[i]->numwords; j++) {
-        char cnum[100];
-        sprintf(cnum,"%d",j);
-        strcpy(svarstem,svarname);
-        strcat(svarstem,cnum);
-        if (ldebug) cout << "numwords > 1, svarname = "<<svarstem<<endl;
-        gHaVars->DefineByType(svarstem, cdesc, &dvars[k], kDouble, count);
-        k++;
+	ostringstream os;
+	os << svarname << j;
+	if (ldebug) cout << "numwords > 1, svarname = "<<os.str()<<endl;
+	gHaVars->DefineByType(os.str().c_str(), cdesc.c_str(), &dvars[k], kDouble, count);
+	k++;
       }
     }
   }
   fIsSetup = ( mode == kDefine );
   return kOK;
-} 
-
-  
-//_____________________________________________________________________________
-void BankData::PrintInitError( const char* here )
-{
-  Error( Here(here), "Cannot set. Module already initialized." );
 }
-
-
 
 //_____________________________________________________________________________
 ClassImp(BankData)
-

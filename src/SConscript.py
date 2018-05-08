@@ -46,6 +46,7 @@ THaScalerEvtHandler.cxx     THaEvt125Handler.cxx        Variable.cxx
 VariableArrayVar.cxx        FixedArrayVar.cxx           VectorVar.cxx
 MethodVar.cxx               SeqCollectionVar.cxx 
 SeqCollectionMethodVar.cxx  VectorObjVar.cxx            VectorObjMethodVar.cxx
+BankData.cxx
 """)
 
 baseenv.Object('main.cxx')

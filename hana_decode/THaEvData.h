@@ -36,7 +36,8 @@ public:
 
   virtual Bool_t IsMultiBlockMode() { return fMultiBlockMode; };
   virtual Bool_t BlockIsDone() { return fBlockIsDone; };
-  virtual void FillBankData(UInt_t* rdat, Int_t roc, Int_t bank, Int_t offset=0, Int_t num=1) const { return; };
+  virtual void   FillBankData(UInt_t* /*rdat*/, Int_t /*roc*/, Int_t /*bank*/,
+			      Int_t /*offset*/=0, Int_t /*num*/=1) const { return; };
 
   // Derived class to implement this
   virtual Int_t LoadFromMultiBlock() { return 0;};

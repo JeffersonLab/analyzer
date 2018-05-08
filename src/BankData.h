@@ -23,29 +23,26 @@ class THaTrackingModule;
 
 class BankLoc { // Utility class used by BankData
  public:
-   BankLoc(std::string svar, Int_t iroc, Int_t ibank, Int_t ioff, Int_t inum): svarname(svar), roc(iroc), bank(ibank), offset(ioff), numwords(inum) {};
+   BankLoc(std::string svar, Int_t iroc, Int_t ibank, Int_t ioff, Int_t inum)
+     : svarname(svar), roc(iroc), bank(ibank), offset(ioff), numwords(inum) {}
    ~BankLoc();
    std::string svarname;
    Int_t roc,bank,offset,numwords;
 };
 
 class BankData : public THaPhysicsModule {
-  
+
 public:
 
   BankData( const char* name, const char* description);
   virtual ~BankData();
-  
-  virtual void  Clear( Option_t* opt="" );
-  virtual EStatus Init( const TDatime& run_time );
-  virtual Int_t   Process( const THaEvData& );
+
+  virtual Int_t Process( const THaEvData& );
 
 protected:
 
   virtual Int_t DefineVariables( EMode mode = kDefine );
-  virtual Int_t ReadRunDatabase( const TDatime& date );
-
-  void PrintInitError( const char* here );
+  virtual Int_t ReadDatabase( const TDatime& date );
 
 private:
 
