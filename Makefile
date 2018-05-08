@@ -247,7 +247,7 @@ SRC          := src/THaFormula.cxx src/THaVform.cxx src/THaVhist.cxx \
 
 OBJ          := $(SRC:.cxx=.o)
 RCHDR        := $(SRC:.cxx=.h) src/THaGlobals.h
-HDR          := $(RCHDR) src/VarDef.h src/VarType.h src/ha_compiledata.h
+HDR          := $(RCHDR) src/Helper.h src/VarDef.h src/VarType.h src/ha_compiledata.h
 DEP          := $(SRC:.cxx=.d) src/main.d
 OBJS         := $(OBJ) $(HA_DICT).o
 HA_LINKDEF   := src/HallA_LinkDef.h
