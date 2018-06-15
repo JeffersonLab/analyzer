@@ -84,7 +84,7 @@ Int_t THaNonTrackingDetector::CalcTrackProj( TClonesArray& tracks )
 
   Int_t n_track = tracks.GetLast()+1;   // Number of tracks
 
-  //fTrackProj->Clear();  // already done in Clear()
+  fTrackProj->Clear();  // already done in Clear(), but do for safety
   Int_t n_cross = 0;
   for( Int_t i=0; i<n_track; i++ ) {
     THaTrack* theTrack = static_cast<THaTrack*>( tracks.At(i) );
