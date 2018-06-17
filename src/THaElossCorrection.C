@@ -112,9 +112,17 @@ Int_t THaElossCorrection::ReadRunDatabase( const TDatime& date )
     { "pathlength", &fPathlength, kDouble, 0, 0, 0, "pathlength through medium [m]" },
     { 0 }
   };
-  // Ignore pathlength if variable pathlength mode
-  if( fExtPathMode )
-    req[5].optional = kFALSE;
+  // Allow pathlength key to be absent in variable pathlength mode
+  if( fExtPathMode ) {
+    int i = 0;
+    while( req[i].name ) {
+      if( TString(req[i].name) == "pathlength" ) {
+	req[i].optional = kTRUE;
+	break;
+      }
+      ++i;
+    }
+  }
 
   // Ignore database entries if parameter already set
   DBRequest* item = req;
