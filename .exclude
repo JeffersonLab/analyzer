@@ -8,9 +8,13 @@ NEW
 *.pyc
 *.d
 *.so
+*_rdict.pcm
 ha_compiledata.h
 *Dict.[Ch]
 *~
 .git
 examples/runR.dat
 utils/dbconvert
+.sconf_temp
+.sconsign.dblite
+config.log
