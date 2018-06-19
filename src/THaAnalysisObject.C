@@ -600,12 +600,12 @@ THaAnalysisObject::EStatus THaAnalysisObject::Init( const TDatime& date )
     try {
       status = ReadDatabase(date);
     }
-    catch( std::bad_alloc ) {
+    catch( const std::bad_alloc& ) {
       Error( Here(here), "Out of memory in ReadDatabase. Machine too busy? "
 	     "Call expert." );
       status = kInitError;
     }
-    catch( std::exception& e ) {
+    catch( const std::exception& e ) {
       Error( Here(here), "Exception %s caught in ReadDatabase. "
 	     "Module not initialized. Check database or call expert.",
 	     e.what() );
