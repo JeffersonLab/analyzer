@@ -82,3 +82,6 @@ hana_decode/tstfadc_main_debug.txt
 
 #user specific stuff
 setup.csh
+
+# macOS pollution
+.DS_Store
