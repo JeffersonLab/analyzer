@@ -1,5 +1,5 @@
-#ifndef ROOT_THaTriggerTime  
-#define ROOT_THaTriggerTime  
+#ifndef Podd_THaTriggerTime_h_
+#define Podd_THaTriggerTime_h_
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //
@@ -53,4 +53,4 @@ class THaTriggerTime : public THaNonTrackingDetector {
   ClassDef(THaTriggerTime,0)
 };
 
-#endif  /*  ROOT_THaTriggerTime  */
+#endif  /*  Podd_THaTriggerTime_h_  */
