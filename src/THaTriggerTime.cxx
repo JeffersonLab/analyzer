@@ -27,9 +27,9 @@ using namespace std;
 
 //____________________________________________________________________________
 THaTriggerTime::THaTriggerTime( const char* name, const char* desc,
-				THaApparatus* apparatus ) :
+        THaApparatus* apparatus ) :
   THaNonTrackingDetector(name, desc, apparatus),
-  fGlOffset(0), fNTrgType(0), fTrgTimes(NULL)
+  fGlOffset(0), fCommonStop(0),fNTrgType(0), fTrgTimes(NULL)
 {
   // basic do-nothing-else contructor
 }
@@ -47,6 +47,7 @@ Int_t THaTriggerTime::ReadDatabase( const TDatime& date )
     return kFileError;
 
   fGlOffset = 0.0;
+  fCommonStop = 0.0;
   fTrgTypes.clear();
   fToffsets.clear();
   fDetMap->Clear();
@@ -59,6 +60,7 @@ Int_t THaTriggerTime::ReadDatabase( const TDatime& date )
     { "tdc_res",  &fTDCRes },
     { "trigdef",  &trigdef,   kDoubleV },
     { "glob_off", &fGlOffset, kDouble, 0, 1 },
+    { "common_stop", &fCommonStop, kInt, 0, 1 },
     { 0 }
   };
   Int_t err = LoadDB( file, date, config_request, fPrefix );
@@ -69,8 +71,8 @@ Int_t THaTriggerTime::ReadDatabase( const TDatime& date )
   // Sanity checks
   if( trigdef.size() % 5 != 0 ) {
     Error( Here(here), "Incorrect number of elements in \"trigdef\" "
-	   "parameter = %u. Must be a multiple of 5. Fix database.",
-	   static_cast<unsigned int>(trigdef.size()) );
+     "parameter = %u. Must be a multiple of 5. Fix database.",
+     static_cast<unsigned int>(trigdef.size()) );
     return kInitError;
   }
 
@@ -110,7 +112,7 @@ void THaTriggerTime::Clear(Option_t* )
   // Reset all variables to their default/unknown state
   fEvtType = -1;
   fEvtTime = fGlOffset;
-  for (Int_t i=0; i<fNTrgType; i++) fTrgTimes[i]=kBig;
+  for (Int_t i=0; i<fNTrgType; i++) fTrgTimes[i]=kBig * fCommonStop;
 }
 
 //____________________________________________________________________________
@@ -129,6 +131,8 @@ Int_t THaTriggerTime::Decode(const THaEvData& evdata)
     // parallel.
 
     // look through each channel and take the earliest hit
+    if(fCommonStop) fTDCRes *=-1;
+
     for( Int_t j = 0; j < evdata.GetNumHits(d->crate, d->slot, d->lo); j++ ) {
       Double_t t = fTDCRes*evdata.GetData(d->crate,d->slot,d->lo,j);
       if (t < fTrgTimes[i]) fTrgTimes[i] = t;
