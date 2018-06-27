@@ -55,6 +55,41 @@ To do the equivalent of "make clean", do
 To compile with debug capabilities, do
 `scons debug=1`
 
+### Compiling with CMAKE
+
+CMake build will do a **proper** build and install.
+Here we are using the install prefix `$HOME/my_exp_soft` which is like the 
+standard `/usr/local`. To use it make sure you your environment is setup (e.g., 
+towards the end of your `.bashrc`):
+```
+export PATH=$HOME/my_exp_soft/bin:$PATH
+export LD_LIBRARY_PATH=$HOME/my_exp_soft/lib:$HOME/my_exp_soft/lib64:$LD_LIBRARY_PATH
+```
+
+#### Build EVIO with cmake
+
+```
+git clone https://github.com/whit2333/hallac_evio.git
+cd hallac_evio
+mkdir build && cd build
+cmake ../. -DCMAKE_INSTALL_PREFIX=$HOME/my_exp_soft
+make -j4 install
+```
+
+#### Build analyzer (PODD)
+
+```
+git clone https://github.com/whit2333/analyzer.git
+cd analyzer
+mkdir build && cd build
+cmake ../. -DCMAKE_INSTALL_PREFIX=$HOME/my_exp_soft
+make -j4 install
+```
+
+All done.  Now you can run "analyzer" or use PODD in your own library.
+See https://github.com/whit2333/hcana.git for an example which does this.
+
+
 Contributing
 ------------
 To participate in development, please contact
