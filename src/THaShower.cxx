@@ -21,17 +21,12 @@
 #include "TDatime.h"
 #include "TMath.h"
 
-#include <cstring>
-#include <iostream>
-#include <iomanip>
 #include <cassert>
-#ifdef HAS_SSTREAM
- #include <sstream>
- #define OSSTREAM ostringstream
-#else
- #include <strstream>
- #define OSSTREAM ostrstream
-#endif
+#include <cstring>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+#define OSSTREAM ostringstream
 
 using namespace std;
 

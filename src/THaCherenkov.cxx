@@ -22,13 +22,8 @@
 #include <cassert>
 #include <iostream>
 #include <iomanip>
-#ifdef HAS_SSTREAM
- #include <sstream>
- #define OSSTREAM ostringstream
-#else
- #include <strstream>
- #define OSSTREAM ostrstream
-#endif
+#include <sstream>
+#define OSSTREAM ostringstream
 
 using namespace std;
 

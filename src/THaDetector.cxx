@@ -11,13 +11,8 @@
 #include "THaDetMap.h"
 
 #include <cassert>
-#ifdef HAS_SSTREAM
- #include <sstream>
- #define OSSTREAM ostringstream
-#else
- #include <strstream>
- #define OSSTREAM ostrstream
-#endif
+#include <sstream>
+#define OSSTREAM ostringstream
 
 using namespace std;
 

@@ -8,11 +8,7 @@
 #include <algorithm>
 #include <cctype>
 
-#ifdef HAS_SSTREAM
 #include <sstream>
-#else
-#include <strstream>
-#endif
 
 using namespace std;
 
@@ -51,11 +47,7 @@ string::size_type FindNoCase( string data, string chunk )
 vector<string> Split( const string& s )
 {
   // Split on whitespace.
-#ifdef HAS_SSTREAM
   istringstream ist(s.c_str());
-#else
-  istrstream ist(s.c_str());
-#endif
   string w;
   vector<string> v;
 
@@ -68,11 +60,7 @@ vector<string> Split( const string& s )
 unsigned int Hex( const string& s )
 {
   // Conversion to unsigned interpreting as hex.
-#ifdef HAS_SSTREAM
   istringstream ist(s.c_str());
-#else
-  istrstream ist(s.c_str());
-#endif
   unsigned int in;
   ist >> hex >> in;
   return in;
