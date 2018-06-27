@@ -109,7 +109,7 @@ target_link_libraries(HallA
   PRIVATE PODD::Decode
 )
 #This is required so that the exported target has the name JSONUtils and not jsonutils
-#set_target_properties(HallA PROPERTIES EXPORT_NAME halla)
+set_target_properties(HallA PROPERTIES EXPORT_NAME HallA)
 
 add_executable(analyzer main.cxx)
 target_include_directories(analyzer
@@ -131,7 +131,7 @@ target_link_libraries(analyzer
 )
 
 install(TARGETS HallA analyzer
-  EXPORT PODD-targets
+  EXPORT podd-targets
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -142,11 +142,11 @@ install(FILES ${headers} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/podd)
 install(FILES ${PCM_FILE} DESTINATION lib)
 
 #Export the targets to a script
-install(EXPORT PODD-targets
+install(EXPORT podd-targets
   FILE
   PODDTargets.cmake
   NAMESPACE
   PODD::
   DESTINATION
-    ${INSTALL_CONFIGDIR}
+    lib/podd
 )

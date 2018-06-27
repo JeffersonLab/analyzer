@@ -75,25 +75,25 @@ target_link_libraries(dc
 #include(GNUInstallDirs)
 #set(INSTALL_CONFIGDIR ${CMAKE_INSTALL_LIBDIR}/cmake/JSONUtils)
 
-install(TARGETS dc
-  EXPORT PODD-targets
+install(TARGETS dc 
+  EXPORT podd-targets
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
   )
+set_target_properties(dc PROPERTIES EXPORT_NAME Decode)
 
 #This is required so that the exported target has the name JSONUtils and not jsonutils
 #set_target_properties(HallA PROPERTIES EXPORT_NAME halla)
-
 
 install(FILES ${headers} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/podd)
 install(FILES ${PCM_FILE} DESTINATION lib)
 
 #Export the targets to a script
-install(EXPORT PODD-targets
+install(EXPORT podd-targets
   FILE
   PODDTargets.cmake
   NAMESPACE
   PODD::
   DESTINATION
-    ${INSTALL_CONFIGDIR}
+    lib/podd
 )

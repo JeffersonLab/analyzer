@@ -4,6 +4,8 @@ include("@PACKAGE_TARGETS_INSTALL_PATH@")
 
 check_required_components(PODD)
 
+set(PODD_INCLUDE_DIR "@CMAKE_INSTALL_PREFIX@/include")
+
 #get_filename_component(PODD_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
 #include(CMakeFindDependencyMacro)
 #

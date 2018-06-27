@@ -16,12 +16,11 @@ include(cmake/os.cmake)
 include(cmake/modules/CompileTimeInfo.cmake)
 
 include(GNUInstallDirs)
-set(INSTALL_CONFIGDIR ${CMAKE_INSTALL_LIBDIR}/cmake/PODD)
+set(INSTALL_CONFIGDIR lib/podd)
 
 find_package(EXPAT REQUIRED COMPONENTS EXPAT )
 find_package(Threads REQUIRED)
 find_package(ZLIB REQUIRED)
-
 find_package(EVIO REQUIRED)
 
 list(APPEND CMAKE_PREFIX_PATH $ENV{ROOTSYS})
@@ -33,19 +32,20 @@ include_directories(${ROOT_INCLUDE_DIRS})
 link_directories(${ROOT_LIBRARY_DIR})
 include(cmake/root.cmake)
 
+
 # this helps with the circular headers
 include_directories(src)
-
 
 configure_file(ha_compiledata.h.in 
   src/ha_compiledata.h)
 
 add_subdirectory(hana_decode)
 add_subdirectory(src)
-#add_subdirectory(src/libsrc++)
-#add_subdirectory(src/execsrc)
-#src/examples
-#src/test
+
+install(FILES
+  ${CMAKE_CURRENT_BINARY_DIR}/src/ha_compiledata.h
+  DESTINATION include/podd
+  )
 
 ##############################################
 # Installation instructions
@@ -53,23 +53,33 @@ add_subdirectory(src)
 #Create a ConfigVersion.cmake file
 include(CMakePackageConfigHelpers)
 
+# Install and export targets
+install(EXPORT podd-targets
+  FILE PODDTargets.cmake
+  NAMESPACE PODD::
+  DESTINATION lib/podd
+  )
+
+set(TARGETS_INSTALL_PATH lib/podd/PODDTargets.cmake)
+configure_package_config_file(${CMAKE_CURRENT_LIST_DIR}/cmake/PODDConfig.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/PODDConfig.cmake
+    INSTALL_DESTINATION lib/podd
+    PATH_VARS TARGETS_INSTALL_PATH
+)
+
 write_basic_package_version_file(
   ${CMAKE_CURRENT_BINARY_DIR}/PODDConfigVersion.cmake
   VERSION ${PROJECT_VERSION}
   COMPATIBILITY AnyNewerVersion
   )
 
-configure_package_config_file(${CMAKE_CURRENT_LIST_DIR}/cmake/PODDConfig.cmake.in
-    ${CMAKE_CURRENT_BINARY_DIR}/PODDConfig.cmake
-    INSTALL_DESTINATION ${INSTALL_CONFIGDIR}
-)
 
 #Install the config, configversion and custom find modules
 install(FILES
   #    ${CMAKE_CURRENT_LIST_DIR}/cmake/FindRapidJSON.cmake
   ${CMAKE_CURRENT_BINARY_DIR}/PODDConfig.cmake
   ${CMAKE_CURRENT_BINARY_DIR}/PODDConfigVersion.cmake
-  DESTINATION ${INSTALL_CONFIGDIR}
+  DESTINATION lib/podd
 )
 
 ##############################################
@@ -78,7 +88,7 @@ install(FILES
 #    ${CMAKE_CURRENT_BINARY_DIR}/FindRapidJSON.cmake
 #    COPYONLY)
 
-export(EXPORT PODD-targets FILE ${CMAKE_CURRENT_BINARY_DIR}/PODDTargets.cmake NAMESPACE PODD::)
+export(EXPORT podd-targets FILE ${CMAKE_CURRENT_BINARY_DIR}/PODDTargets.cmake NAMESPACE PODD::)
 
 #Register package in user's package registry
 export(PACKAGE PODD) 
