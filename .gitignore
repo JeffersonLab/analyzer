@@ -17,6 +17,7 @@ hana_decode/tstoo
 hana_decode/tstskel
 utils/dbconvert
 bin/
+build/
 
 # Generated files
 *Dict.C

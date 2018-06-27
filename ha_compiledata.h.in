@@ -1,0 +1,39 @@
+#ifndef ANALYZER_COMPILEDATA_H
+#define ANALYZER_COMPILEDATA_H
+
+#define HA_INCLUDEPATH "@CMAKE_INSTALL_PREFIX@/include"
+#define HA_VERSION     "@PROJECT_VERSION@"
+#define HA_DATE        "@PODD_BUILD_DATE@"
+#define HA_DATETIME    "@PODD_BUILD_DATETIME@"
+#define HA_PLATFORM    "@PODD_PLATFORM@"
+#define HA_BUILDNODE   "@PODD_NODE@"
+#define HA_BUILDDIR    "@PODD_BUILD_DIR@"
+#define HA_BUILDUSER   "@PODD_BUILD_USER@"
+#define HA_GITVERS     "@PODD_GIT_VERSION@"
+#define HA_CXXVERS     "@PODD_CXX_VERSION@"
+#define HA_ROOTVERS    "@PODD_ROOT_VERSION@"
+
+#define ANALYZER_VERSION_CODE  @PODD_VERCODE@
+#define ANALYZER_VERSION(a,b,c) (((a) << 16) + ((b) << 8) + (c))
+#endif
+
+
+// Example:
+//#ifndef ANALYZER_COMPILEDATA_H
+//#define ANALYZER_COMPILEDATA_H
+//
+//#define HA_INCLUDEPATH "/mnt/old_home/whit/projects/hall_AC_projects/hcana/podd/src /mnt/old_home/whit/projects/hall_AC_projects/hcana/podd/hana_decode"
+//#define HA_VERSION "1.6.0"
+//#define HA_DATE "Jun 26 2018"
+//#define HA_DATETIME "Tue Jun 26 2018"
+//#define HA_PLATFORM "Linux-4.13.0-45-generic-x86_64-with-Ubuntu-17.10-artful"
+//#define HA_BUILDNODE "wpad"
+//#define HA_BUILDDIR "/mnt/old_home/whit/projects/hall_AC_projects/hcana/podd"
+//#define HA_BUILDUSER "whit"
+//#define HA_GITVERS "5b48832"
+//#define HA_CXXVERS "c++ (GCC) 8.1.0"
+//#define HA_ROOTVERS "6.15/01"
+//#define ANALYZER_VERSION_CODE 67072
+//#define ANALYZER_VERSION(a,b,c) (((a) << 16) + ((b) << 8) + (c))
+//
+//#endif
