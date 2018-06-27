@@ -46,7 +46,7 @@ set(PCM_FILE  ${CMAKE_CURRENT_BINARY_DIR}/haDecodeDict_rdict.pcm)
 
 ADD_CUSTOM_TARGET(haDecode_ROOTDICTS DEPENDS ${haDecode_src} ${headers} haDecode_LinkDef.h haDecodeDict.cxx)
 
-add_library(dc SHARED
+add_library(dc STATIC
   ${haDecode_src}
   haDecodeDict.cxx
   )
@@ -70,7 +70,7 @@ target_link_libraries(dc
   #PUBLIC ${CMAKE_THREAD_LIBS_INIT}
   PUBLIC ${ROOT_LIBRARIES} 
   PUBLIC EVIO::EVIO
-  #PRIVATE PODD::HallA
+  PRIVATE PODD::HallA
 )
 #include(GNUInstallDirs)
 #set(INSTALL_CONFIGDIR ${CMAKE_INSTALL_LIBDIR}/cmake/JSONUtils)

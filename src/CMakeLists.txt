@@ -80,9 +80,11 @@ set(PCM_FILE  ${CMAKE_CURRENT_BINARY_DIR}/HallADict_rdict.pcm)
 #    SOVERSION "${lib_MAJOR_VERSION}"
 #    SUFFIX ".so")
 
+include_directories(${PROJECT_SOURCE_DIR}/hana_decode)
+
 ADD_CUSTOM_TARGET(HallA_ROOTDICTS DEPENDS ${podd_src} ${headers} HallA_LinkDef.h HallADict.cxx)
 
-add_library(HallA SHARED
+add_library(HallA STATIC
   ${podd_src} HallADict.cxx
   )
 
@@ -100,13 +102,12 @@ target_include_directories(HallA
 )
 
 #target_compile_features(HallA PRIVATE cxx_auto_type)
-target_compile_options(HallA PRIVATE $<$<CXX_COMPILER_ID:GNU>:-DHAS_SSTREAM=1>)
 
 target_link_libraries(HallA
   #PUBLIC ${EXPAT_LIBRARIES}
   #PUBLIC ${CMAKE_THREAD_LIBS_INIT}
   PUBLIC ${ROOT_LIBRARIES} 
-  PRIVATE PODD::Decode
+  PRIVATE PODD::Decode 
 )
 #This is required so that the exported target has the name JSONUtils and not jsonutils
 set_target_properties(HallA PROPERTIES EXPORT_NAME HallA)
