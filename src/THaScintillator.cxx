@@ -17,18 +17,13 @@
 #include "TClonesArray.h"
 #include "TMath.h"
 
-#include <cstring>
-#include <cstdlib>
-#include <iostream>
 #include <cassert>
+#include <cstdlib>
+#include <cstring>
 #include <iomanip>
-#ifdef HAS_SSTREAM
- #include <sstream>
- #define OSSTREAM ostringstream
-#else
- #include <strstream>
- #define OSSTREAM ostrstream
-#endif
+#include <iostream>
+#include <sstream>
+#define OSSTREAM ostringstream
 
 using namespace std;
 

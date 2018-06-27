@@ -29,24 +29,18 @@
 #include "TThread.h"
 #include "Varargs.h"
 
-#include <cstring>
-#include <cctype>
-#include <errno.h>
 #include <algorithm>
-#include <iostream>
+#include <cctype>
 #include <cmath>
-#include <cstdlib>
 #include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <errno.h>
+#include <iostream>
+#include <sstream>
 #include <string>
-#ifdef HAS_SSTREAM
- #include <sstream>
- #define ISSTREAM istringstream
- #define OSSTREAM ostringstream
-#else
- #include <strstream>
- #define ISSTREAM istrstream
- #define OSSTREAM ostrstream
-#endif
+#define ISSTREAM istringstream
+#define OSSTREAM ostringstream
 #include <stdexcept>
 #include <cassert>
 #include <map>
