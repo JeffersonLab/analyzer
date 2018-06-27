@@ -19,7 +19,7 @@
 class THaTriggerTime : public THaNonTrackingDetector {
  public:
   THaTriggerTime( const char* name="trg", const char* description = "",
-		  THaApparatus* a = NULL );
+      THaApparatus* a = NULL );
 
   ~THaTriggerTime();
   
@@ -40,6 +40,7 @@ class THaTriggerTime : public THaNonTrackingDetector {
 
   Double_t  fTDCRes;      // time-per-channel
   Double_t  fGlOffset;    // overall offset shared by all
+  Int_t     fCommonStop;     // default =0 => TDC type is common-start 
 
   Int_t     fNTrgType;    // number of trigger types
   Double_t *fTrgTimes;    //[fNTrgType] array of the read-out trigger times
