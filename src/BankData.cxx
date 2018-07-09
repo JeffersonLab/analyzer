@@ -94,18 +94,15 @@ Int_t BankData::ReadDatabase( const TDatime& date )
   RemoveVariables();
   Podd::DeleteContainer(banklocs);
 
-  Int_t iroc, ibank, ioff, inum;
-  std::string svar;
-
   while( fgets(cbuf, LEN, fi) != NULL) {
     std::string sinput(cbuf);
     if(ldebug) cout << "database line = "<<sinput<<endl;
     dbline = vsplit(sinput);
-    svar="";
+    std::string svar="";
+    Int_t iroc = 0,  ibank = 0, ioff = 0,  inum = 1;
     if(dbline.size() > 2) {
       pos1 = FindNoCase(dbline[0],scomment);
       if (pos1 != minus1) continue;
-      iroc = 0;  ibank = 0; ioff = 0;  inum = 1;
       svar = dbline[0];
       iroc  = atoi(dbline[1].c_str());
       ibank = atoi(dbline[2].c_str());
