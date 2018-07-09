@@ -56,7 +56,6 @@
 #include "TMath.h"
 
 #include <unistd.h>
-#include <stdint.h>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>  // for memset
