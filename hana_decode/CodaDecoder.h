@@ -12,6 +12,11 @@
 
 #include "THaEvData.h"
 #include <vector>
+#if __cplusplus >= 201103L
+#include <cstdint>
+#else
+#include <stdint.h>
+#endif
 
 namespace Decoder {
 
