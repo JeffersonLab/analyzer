@@ -79,7 +79,7 @@ hana_decode/raw
 hana_decode/cache
 hana_decode/runfadc.csh
 hana_decode/runftdc.csh
-hana_decode/snippet.dat
+snippet.dat
 
 #decoder debug stuff
 hana_decode/tst1190_main_debug.txt

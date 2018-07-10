@@ -50,8 +50,6 @@
 /////////////////////////////////////////////////////////////////////
 
 #include "Fadc250Module.h"
-#include "PipeliningModule.h"
-#include "THaEvData.h"
 #include "THaSlotData.h"
 #include "TMath.h"
 

@@ -5,13 +5,8 @@
 #include <iostream>
 #include <fstream>
 #include <cstdlib>
-#include <cstdio>
-#include "Decoder.h"
 #include "THaCodaFile.h"
 #include "CodaDecoder.h"
-#include "THaEvData.h"
-#include "evio.h"
-#include "THaSlotData.h"
 #include "TString.h"
 
 using namespace std;
@@ -20,46 +15,56 @@ using namespace Decoder;
 void dump(UInt_t *buffer, ofstream *file);
 void process(THaEvData *evdata, ofstream *file);
 
-int main(int argc, char* argv[])
+int main(int /* argc */, char** /* argv */)
 {
+  TString filename("snippet.dat");
 
-   TString filename("snippet.dat");
+  ofstream *debugfile = new ofstream;;
+  debugfile->open ("oodecoder1.txt");
+  *debugfile << "Debug of OO decoder"<<endl<<endl;
 
-   ofstream *debugfile = new ofstream;;
-   debugfile->open ("oodecoder1.txt");
-   *debugfile << "Debug of OO decoder\n\n";
+  THaCodaFile datafile;
+  if (datafile.codaOpen(filename) != CODA_OK) {
+    cerr << "ERROR:  Cannot open CODA data" << endl;
+    cerr << "Perhaps you mistyped it" << endl;
+    cerr << "... exiting." << endl;
+    exit(2);
+  }
+  CodaDecoder *evdata = new CodaDecoder;
+  evdata->SetDebug(1);
+  evdata->SetDebugFile(debugfile);
 
-   THaCodaFile datafile(filename);
-   THaEvData *evdata = new CodaDecoder();
-   evdata->SetDebug(1);
-   evdata->SetDebugFile(debugfile);
+  // Loop over events
+  int NUMEVT=10;
+  for (int iev=0; iev<NUMEVT; iev++) {
+    int status = datafile.codaRead();
+    if (status != CODA_OK) {
+      if ( status == EOF) {
+        *debugfile << "Normal end of file.  Bye bye." << endl;
+        break;
+      } else {
+        *debugfile << hex << "ERROR: codaRread status = " << status << endl;
+        exit(status);
+      }
+    } else {
 
-   // Loop over events
-   int NUMEVT=10;
-   for (int iev=0; iev<NUMEVT; iev++) {
-     int status = datafile.codaRead();
-     if (status != S_SUCCESS) {
-       if ( status == EOF) {
-	 *debugfile << "Normal end of file.  Bye bye." << endl;
-       } else {
-	 *debugfile << hex << "ERROR: codaRread status = " << status << endl;
-       }
-       exit(1);
-     } else {
+      UInt_t *data = datafile.getEvBuffer();
+      dump(data, debugfile);
 
-       UInt_t *data = datafile.getEvBuffer();
-       dump(data, debugfile);
+      *debugfile << "\nAbout to Load Event "<<endl;
+      status = evdata->LoadEvent( data );
+      *debugfile << "\nFinished with Load Event, status = "<<status<<endl;
+      if( status != CodaDecoder::HED_OK && status != CodaDecoder::HED_WARN ) {
+        cerr << "ERROR " << status << " while decoding event " << iev
+            << ". Exiting." << endl;
+        exit(status);
+      }
+      process (evdata, debugfile);
 
-       *debugfile << "\nAbout to Load Event "<<endl;
-       evdata->LoadEvent( data );
-       *debugfile << "\nFinished with Load Event "<<endl;
-
-       process (evdata, debugfile);
-
-     }
-   }
-
-
+    }
+  }
+  datafile.codaClose();
+  return 0;
 }
 
 

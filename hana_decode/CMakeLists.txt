@@ -9,6 +9,7 @@ set(SUBPROJECT_NAME Decode)
 #----------------------------------------------------------------------------
 # Configuration options
 option(ONLINE_ET "Enable support ET message system" OFF)
+option(STANDALONE "Enable building of test/example programs" OFF)
 
 #----------------------------------------------------------------------------
 # Required dependencies
@@ -158,7 +159,6 @@ if(STANDALONE)
       PRIVATE
       Podd::HallA
       Podd::Decode
-      EVIO::EVIO
       ${ONLIBS}
       ROOT::Libraries
       )

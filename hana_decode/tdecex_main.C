@@ -9,11 +9,10 @@
 #include <iostream>
 #include <cstdlib>
 #include "THaCodaFile.h"
-#include "THaCodaDecoder.h"
-#include "THaSlotData.h"
+#include "CodaDecoder.h"
 #include "THaGenDetTest.h"
 #include "TString.h"
-#include "evio.h"
+//#include "evio.h"
 
 using namespace std;
 using namespace Decoder;
@@ -22,21 +21,21 @@ int main(int argc, char* argv[])
 {
 
    if (argc < 2) {
-      cout << "You made a mistake... \n" << endl;
+      cout << "You made a mistake... " << endl << endl;
       cout << "Usage:   tdecex filename" << endl;
       cout << "  where 'filename' is the CODA file"<<endl;
-      cout << "\n... exiting." << endl;
-      exit(0);
+      cout << endl << "... exiting." << endl;
+      exit(1);
    }
    TString filename = argv[1];
    THaCodaFile datafile;
-   if (datafile.codaOpen(filename) != S_SUCCESS) {
+   if (datafile.codaOpen(filename) != CODA_OK) {
         cout << "ERROR:  Cannot open CODA data" << endl;
         cout << "Perhaps you mistyped it" << endl;
         cout << "... exiting." << endl;
-        exit(0);
+        exit(2);
    }
-   THaEvData *evdata = new THaCodaDecoder();
+   CodaDecoder *evdata = new CodaDecoder();
    THaGenDetTest mydetector;
    mydetector.init();
 
@@ -48,25 +47,32 @@ int main(int argc, char* argv[])
      if ( ievent > 0 && (
         ( (ievent <= 1000) && ((ievent%100) == 0) ) ||
         ( (ievent > 1000) && ((ievent%1000) == 0) ) ) )
-              cout << "\n ---- Event " << ievent <<endl;
+              cout << endl << " ---- Event " << ievent <<endl;
      int status = datafile.codaRead();  
-     if ( status != S_SUCCESS ) {
+     if ( status != CODA_OK ) {
         if ( status == EOF) {
            cout << "This is end of file !" << endl;
            cout << "... exiting " << endl;
            goto Finish;
         } else {
   	   cout << hex << "ERROR: codaRread status = " << status << endl;
-           exit(0);
+           exit(3);
         }
      }
-     evdata->LoadEvent( datafile.getEvBuffer() );   
+     status = evdata->LoadEvent( datafile.getEvBuffer() );
+     if( status != CodaDecoder::HED_OK && status != CodaDecoder::HED_WARN ) {
+       cerr << "ERROR " << status << " while decoding event " << ievent
+           << ". Exiting." << endl;
+       exit(status);
+     }
      mydetector.process_event(evdata);
 
    }  //  end of event loop
 
 Finish:
-   cout << "\n Finished processing " << ievent << " events " << endl;
+   cout << endl << " Finished processing " << ievent << " events " << endl;
+   datafile.codaClose();
+   return 0;
 }
 
 

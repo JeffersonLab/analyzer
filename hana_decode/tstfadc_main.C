@@ -5,21 +5,14 @@
 #include <numeric>
 #include <vector>
 #include <time.h>
-#include "Decoder.h"
 #include "THaCodaFile.h"
 #include "CodaDecoder.h"
-#include "THaEvData.h"
-#include "Module.h"
 #include "Fadc250Module.h"
-#include "evio.h"
-#include "THaSlotData.h"
 #include "TString.h"
 #include "TROOT.h"
 #include "TFile.h"
 #include "TH1.h"
 #include "TH2.h"
-#include "TProfile.h"
-#include "TNtuple.h"
 #include "TDirectory.h"
 #include "TGraph.h"
 #include "TVector.h"
@@ -120,13 +113,13 @@ void GeneratePlots(Int_t mode, uint32_t islot, uint32_t chan) {
   }
 }
 
-Int_t SumVectorElements(vector<uint32_t> data_vector) {
+Int_t SumVectorElements(const vector<uint32_t>& data_vector) {
   Int_t sum_of_elements = 0;
   sum_of_elements = accumulate(data_vector.begin(), data_vector.end(), 0);
   return sum_of_elements;
 }
 
-int main(int argc, char* argv[])
+int main(int /* argc */, char** /* argv */)
 {
 
   Int_t runNumber = 0;
@@ -207,8 +200,14 @@ int main(int argc, char* argv[])
   debugfile->open ("tstfadc_main_debug.txt");
   
   // Initialize the CODA decoder
-  THaCodaFile datafile(filename);
-  THaEvData *evdata = new CodaDecoder();
+  THaCodaFile datafile;
+  if (datafile.codaOpen(filename) != CODA_OK) {
+    cerr << "ERROR:  Cannot open CODA data" << endl;
+    cerr << "Perhaps you mistyped it" << endl;
+    cerr << "... exiting." << endl;
+    exit(2);
+  }
+  CodaDecoder *evdata = new CodaDecoder();
 
   // Initialize the evdata debug output
   evdata->SetDebug(1);
@@ -223,12 +222,17 @@ int main(int argc, char* argv[])
   if (maxEvent == -1) iievent = 1;
   else iievent = maxEvent;   
   // Loop over events
+  int status = 0;
   for(uint32_t ievent = 0; ievent < iievent; ievent++) {
     // Read in data file
-    int status = datafile.codaRead();
-    if (status == S_SUCCESS) {
-      UInt_t *data = datafile.getEvBuffer();
-      evdata->LoadEvent(data);
+    status = datafile.codaRead();
+    if (status == CODA_OK) {
+      status = evdata->LoadEvent(datafile.getEvBuffer());
+      if( status != CodaDecoder::HED_OK && status != CodaDecoder::HED_WARN ) {
+        cerr << "ERROR " << status << " while decoding event " << ievent
+             << ". Exiting." << endl;
+        break;;
+      }
       // Loop over slots
       for(uint32_t islot = SLOTMIN; islot < NUMSLOTS; islot++) {
         if (evdata->GetNumRaw(crateNumber, islot) != 0) {
@@ -314,6 +318,10 @@ int main(int argc, char* argv[])
             if (debugfile) *debugfile << "FADC MODULE NOT FOUND!!!" << endl;
         }  // Number raw words condition
       }  // Slot loop
+    } else if( status != EOF ) {
+      cerr << "ERROR " << status << " while reading CODA event " << ievent
+          << ". Twonk." << endl;
+      break;
     }  // CODA file read status condition
     if (ievent % 1000 == 0 && ievent != 0)
       cout << ievent << " events have been processed" << endl;
@@ -326,20 +334,20 @@ int main(int argc, char* argv[])
   for(uint32_t islot = 3; islot < NUMSLOTS; islot++) {
     for (uint32_t chan = 0; chan < NADCCHAN; chan++) {
       for( uint32_t raw_index = 0; raw_index < NUMRAWEVENTS; raw_index++) {
-	// Raw sample plots
-  	if (g_psamp_event[islot][chan][raw_index] != NULL) {
-  	  UInt_t rand_int = 1 + rand->Integer(9);
-  	  hfile->cd(Form("/mode_%d_data/slot_%d/chan_%d/raw_samples", fadc_mode_const, islot, chan));
-  	  c_psamp[islot][chan]->cd(raw_index + 1);
-  	  g_psamp_event[islot][chan][raw_index]->Draw("ACP");
-  	  g_psamp_event[islot][chan][raw_index]->SetTitle(Form("FADC Mode %d Pulse Peak Data Slot %d Channel %d Event %d", fadc_mode_const, islot, chan, raw_index+1));
-  	  g_psamp_event[islot][chan][raw_index]->GetXaxis()->SetTitle("Sample Number");
-  	  g_psamp_event[islot][chan][raw_index]->GetYaxis()->SetTitle("Sample Value");
-  	  g_psamp_event[islot][chan][raw_index]->SetLineColor(rand_int);
-  	  g_psamp_event[islot][chan][raw_index]->SetMarkerColor(rand_int);
-  	  g_psamp_event[islot][chan][raw_index]->SetMarkerStyle(20);
-  	  g_psamp_event[islot][chan][raw_index]->SetDrawOption("ACP");
-  	}  // Graph condition
+        // Raw sample plots
+        if (g_psamp_event[islot][chan][raw_index] != NULL) {
+          UInt_t rand_int = 1 + rand->Integer(9);
+          hfile->cd(Form("/mode_%d_data/slot_%d/chan_%d/raw_samples", fadc_mode_const, islot, chan));
+          c_psamp[islot][chan]->cd(raw_index + 1);
+          g_psamp_event[islot][chan][raw_index]->Draw("ACP");
+          g_psamp_event[islot][chan][raw_index]->SetTitle(Form("FADC Mode %d Pulse Peak Data Slot %d Channel %d Event %d", fadc_mode_const, islot, chan, raw_index+1));
+          g_psamp_event[islot][chan][raw_index]->GetXaxis()->SetTitle("Sample Number");
+          g_psamp_event[islot][chan][raw_index]->GetYaxis()->SetTitle("Sample Value");
+          g_psamp_event[islot][chan][raw_index]->SetLineColor(rand_int);
+          g_psamp_event[islot][chan][raw_index]->SetMarkerColor(rand_int);
+          g_psamp_event[islot][chan][raw_index]->SetMarkerStyle(20);
+          g_psamp_event[islot][chan][raw_index]->SetDrawOption("ACP");
+        }  // Graph condition
       }  // Raw event loop
       // Write the canvas to file
       if (c_psamp[islot][chan] != NULL) c_psamp[islot][chan]->Write();
@@ -383,6 +391,7 @@ int main(int argc, char* argv[])
   // Write and clode the data file
   hfile->Write();
   hfile->Close();
+  datafile.codaClose();
 
   // Calculate the analysis rate
   t = clock() - t;
