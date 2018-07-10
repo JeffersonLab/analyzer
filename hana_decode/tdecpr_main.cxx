@@ -7,7 +7,7 @@
 #include <iostream>
 #include <cstdlib>
 #include "THaCodaFile.h"
-#include "THaCodaDecoder.h"
+#include "CodaDecoder.h"
 #include "TString.h"
 #include "evio.h"
 
@@ -17,8 +17,8 @@ using namespace Decoder;
 int main(int argc, char* argv[])
 {
 
-   int debug=0;
-   if (argc > 1) debug=1;
+  // int debug=0;
+  //  if (argc > 1) debug=1;
 
 // CODA file "snippet.dat" is a disk file of CODA data.  
    THaCodaFile datafile;   //     We could also open the data using a 
@@ -31,7 +31,7 @@ int main(int argc, char* argv[])
         exit(0);
    }
       
-   THaEvData *evdata = new THaCodaDecoder();
+   THaEvData *evdata = new CodaDecoder();
 
 // Loop over events
  

@@ -5,7 +5,7 @@
 #include <cstdlib>
 #include "Decoder.h"
 #include "THaCodaFile.h"
-#include "THaCodaDecoder.h"
+//#include "CodaDecoder.h"
 #include "THaEvData.h"
 #include "evio.h"
 #include "THaSlotData.h"

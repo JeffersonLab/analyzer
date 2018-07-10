@@ -9,7 +9,7 @@
 #include <iostream>
 #include <cstdlib>
 #include "THaCodaFile.h"
-#include "THaCodaDecoder.h"
+#include "CodaDecoder.h"
 #include "THaSlotData.h"
 #include "THaGenDetTest.h"
 #include "TString.h"
@@ -36,7 +36,7 @@ int main(int argc, char* argv[])
         cout << "... exiting." << endl;
         exit(0);
    }
-   THaEvData *evdata = new THaCodaDecoder();
+   THaEvData *evdata = new CodaDecoder();
    THaGenDetTest mydetector;
    mydetector.init();
 
