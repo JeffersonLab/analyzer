@@ -156,9 +156,6 @@ endif
 endif
 endif
 
-#FIXME: requires gcc 3 or up - test in configure script
-DEFINES       += -DHAS_SSTREAM
-
 # ifdef ONLINE_ET
 
 # # ONLIBS is needed for ET

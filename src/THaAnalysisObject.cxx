@@ -38,15 +38,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include <string>
-#ifdef HAS_SSTREAM
- #include <sstream>
- #define ISSTREAM istringstream
- #define OSSTREAM ostringstream
-#else
- #include <strstream>
- #define ISSTREAM istrstream
- #define OSSTREAM ostrstream
-#endif
+#include <sstream>
 #include <stdexcept>
 #include <cassert>
 #include <map>
@@ -136,7 +128,7 @@ Int_t THaAnalysisObject::End( THaRunBase* /* run */ )
 	 it != fMessages.end(); ++it ) {
       ntot += it->second;
     }
-    OSSTREAM msg;
+    ostringstream msg;
     msg << endl
 	<< "  Encountered " << fNEventsWithWarnings << " events with "
 	<< "warnings, " << ntot << " total warnings"
@@ -1316,7 +1308,7 @@ Int_t THaAnalysisObject::LoadDBarray( FILE* file, const TDatime& date,
     return err;
   values.clear();
   text += " ";
-  ISSTREAM inp(text);
+  istringstream inp(text);
   T dval;
   while( 1 ) {
     inp >> dval;
@@ -1380,7 +1372,7 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 #define CheckLimits(T,val) \
   if( (val) < -std::numeric_limits<T>::max() ||     \
       (val) > std::numeric_limits<T>::max() ) {	   \
-    OSSTREAM txt;				   \
+    ostringstream txt;				   \
     txt << (val);				   \
     errtxt = txt.str();                            \
     goto rangeerr;				   \
@@ -1388,7 +1380,7 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 
 #define CheckLimitsUnsigned(T,val) \
   if( (val) < 0 || static_cast<T>(val) > std::numeric_limits<T>::max() ) { \
-    OSSTREAM txt;				   \
+    ostringstream txt;				   \
     txt << (val);				   \
     errtxt = txt.str();                            \
     goto rangeerr;                                 \

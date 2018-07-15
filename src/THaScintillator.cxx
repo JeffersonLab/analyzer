@@ -22,13 +22,7 @@
 #include <iostream>
 #include <cassert>
 #include <iomanip>
-#ifdef HAS_SSTREAM
- #include <sstream>
- #define OSSTREAM ostringstream
-#else
- #include <strstream>
- #define OSSTREAM ostrstream
-#endif
+#include <sstream>
 
 using namespace std;
 
@@ -414,7 +408,7 @@ Int_t THaScintillator::Decode( const THaEvData& evdata )
 
       Int_t nhit = evdata.GetNumHits(d->crate, d->slot, chan);
       if( nhit > 1 || nhit == 0 ) {
-	OSSTREAM msg;
+	ostringstream msg;
 	msg << nhit << " hits on " << (adc ? "ADC" : "TDC")
 	    << " channel " << d->crate << "/" << d->slot << "/" << chan;
 	++fMessages[msg.str()];

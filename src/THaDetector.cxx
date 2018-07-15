@@ -11,13 +11,7 @@
 #include "THaDetMap.h"
 
 #include <cassert>
-#ifdef HAS_SSTREAM
- #include <sstream>
- #define OSSTREAM ostringstream
-#else
- #include <strstream>
- #define OSSTREAM ostrstream
-#endif
+#include <sstream>
 
 using namespace std;
 
@@ -105,7 +99,7 @@ Int_t THaDetector::End( THaRunBase* run )
 	++chan_count[m];
       }
     }
-    OSSTREAM msg;
+    ostringstream msg;
     msg << endl
 	<< "  Encountered " << fNEventsWithWarnings << " events with "
 	<< "warnings, " << ntot << " total warnings"
