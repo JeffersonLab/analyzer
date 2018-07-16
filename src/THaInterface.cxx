@@ -237,8 +237,8 @@ const char* THaInterface::GetVersionString()
   if( version_string.IsNull() ) {
     ostringstream ostr;
     ostr << "Podd " << HA_VERSION << " " << HA_PLATFORM;
-    if( strlen(HA_GITVERS) > 0 )
-      ostr << " git @" << HA_GITVERS;
+    if( strlen(HA_GITREV) > 0 )
+      ostr << " git @" << HA_GITREV;
     if( strlen(HA_ROOTVERS) )
       ostr << " ROOT " << HA_ROOTVERS;
     version_string = ostr.str().c_str();
