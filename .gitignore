@@ -11,12 +11,16 @@ hana_decode/tst1190
 hana_decode/tdecex
 hana_decode/tdecpr
 hana_decode/tstfadc
+hana_decode/tstfadcblk
 hana_decode/tstf1tdc
 hana_decode/tstio
 hana_decode/tstoo
 hana_decode/tstskel
+hana_decode/etclient
+hana_decode/tstcoda
 utils/dbconvert
 bin/
+build/
 
 # Generated files
 *Dict.C

@@ -279,7 +279,7 @@ src/ha_compiledata.h:	Makefile
 		@echo "#define HA_BUILDNODE \"$(shell uname -n)\"" >> $@
 		@echo "#define HA_BUILDDIR \"$(shell pwd)\"" >> $@
 		@echo "#define HA_BUILDUSER \"$(shell whoami)\"" >> $@
-		@echo "#define HA_GITVERS \"$(shell git rev-parse HEAD 2>/dev/null | cut -c1-7)\"" >> $@
+		@echo "#define HA_GITREV \"$(shell git rev-parse HEAD 2>/dev/null | cut -c1-7)\"" >> $@
 		@echo "#define HA_CXXVERS \"$(shell $(CXX) --version 2>/dev/null | head -1)\"" >> $@
 		@echo "#define HA_ROOTVERS \"$(shell root-config --version)\"" >> $@
 		@echo "#define ANALYZER_VERSION_CODE $(VERCODE)" >> $@

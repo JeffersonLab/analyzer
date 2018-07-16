@@ -1,0 +1,87 @@
+#----------------------------------------------------------------------------
+# Set up project properties
+cmake_minimum_required(VERSION 3.5)
+
+project(EVIO VERSION @EVIO_VERSION@ LANGUAGES C)
+string(TOLOWER ${PROJECT_NAME} PROJECT_NAME_LC)
+string(TOUPPER ${PROJECT_NAME} PROJECT_NAME_UC)
+
+#----------------------------------------------------------------------------
+# Name(s) of the main item(s) built here
+set(LIBNAME ${PROJECT_NAME_LC})
+
+#----------------------------------------------------------------------------
+# Sources and headers
+set(src evio.c eviofmt.c eviofmtswap.c evioswap.c)
+set(hdr evio.h)
+
+#----------------------------------------------------------------------------
+# EVIO library
+add_library(${LIBNAME} SHARED ${src} ${hdr})
+add_library(EVIO::${PROJECT_NAME} ALIAS ${LIBNAME})
+set_property(TARGET ${LIBNAME} PROPERTY EXPORT_NAME ${PROJECT_NAME})
+
+target_include_directories(${LIBNAME}
+  PUBLIC
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+  )
+target_compile_options(${LIBNAME}
+  PRIVATE
+    $<$<CONFIG:Debug>:-O0>
+    $<$<CONFIG:RelWithDebInfo>:-fno-omit-frame-pointer>
+  )
+set_target_properties(${LIBNAME} PROPERTIES
+  SOVERSION ${PROJECT_VERSION_MAJOR}
+  VERSION ${PROJECT_VERSION}
+  )
+
+if(NOT DEFINED CMAKE_INSTALL_LIBDIR)
+  include(GNUInstallDirs)
+endif()
+install(TARGETS ${LIBNAME}
+  EXPORT ${PROJECT_NAME}-exports
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  )
+install(FILES ${hdr} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+#----------------------------------------------------------------------------
+# Create exports and project configuration file
+set(${PROJECT_NAME_UC}_INSTALL_CONFIGDIR ${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME_LC})
+set(_configdir ${${PROJECT_NAME_UC}_INSTALL_CONFIGDIR})
+
+install(EXPORT ${PROJECT_NAME}-exports
+  FILE ${PROJECT_NAME}Targets.cmake
+  NAMESPACE ${PROJECT_NAME}::
+  DESTINATION ${_configdir}
+  )
+
+include(CMakePackageConfigHelpers)
+
+set(TARGETS_FILE ${_configdir}/${PROJECT_NAME}Targets.cmake)
+configure_package_config_file(
+  ${PROJECT_NAME}Config.cmake.in
+  ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
+  INSTALL_DESTINATION ${_configdir}
+  PATH_VARS
+    CMAKE_INSTALL_PREFIX
+    ${PROJECT_NAME_UC}_INSTALL_CONFIGDIR
+    TARGETS_FILE
+  NO_SET_AND_CHECK_MACRO
+  NO_CHECK_REQUIRED_COMPONENTS_MACRO
+  )
+
+write_basic_package_version_file(
+  ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
+  VERSION ${PROJECT_VERSION}
+  COMPATIBILITY SameMajorVersion
+  )
+
+install(FILES
+  ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
+  ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
+  DESTINATION ${_configdir}
+  )
+
+unset(_configdir)

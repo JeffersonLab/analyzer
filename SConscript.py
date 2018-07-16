@@ -126,7 +126,7 @@ try:
 except:
     builduser = ''
 f.write('#define HA_BUILDUSER "%s"\n' % builduser)
-f.write('#define HA_GITVERS "%s"\n' % gitrev[:7])
+f.write('#define HA_GITREV "%s"\n' % gitrev[:7])
 f.write('#define HA_CXXVERS "%s"\n' % cxxver)
 f.write('#define HA_ROOTVERS "%s"\n' % baseenv.subst('$ROOTVERS'))
 f.write('#define ANALYZER_VERSION_CODE %s\n' % baseenv.subst('$VERCODE'))
