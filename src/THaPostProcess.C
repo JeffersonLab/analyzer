@@ -17,6 +17,10 @@ THaPostProcess::THaPostProcess() : fIsInit(0)
 
   if( !fgModules ) fgModules = new TList;
   fgModules->Add( this );
+
+  // Tell analyzer not to use the return code from Process by default
+  // (backwards compatibility for existing modules)
+  ResetBit(kUseReturnCode);
 }
 
 //_____________________________________________________________________________
