@@ -81,6 +81,7 @@ public:
   static THaAnalyzer* GetInstance() { return fgAnalyzer; }
 
   // Return codes for analysis routines inside event loop
+  // These should be ordered by severity
   enum ERetVal { kOK, kSkip, kTerminate, kFatal };
 
 protected:

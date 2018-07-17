@@ -1233,10 +1233,12 @@ Int_t THaAnalyzer::PostProcess( Int_t code )
     return code;
   TIter next(fPostProcess);
   while( THaPostProcess* obj = static_cast<THaPostProcess*>(next())) {
-    obj->Process(fEvData,fRun,code);
+    Int_t ret = obj->Process(fEvData,fRun,code);
+    if( obj->TestBits(THaPostProcess::kUseReturnCode) &&
+	ret > code )
+      code = ret;
   }
   if( fDoBench ) fBench->Stop("PostProcess");
-  // Just pass through the previous status code
   return code;
 }
 
