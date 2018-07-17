@@ -58,15 +58,7 @@ install(FILES ${headers} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 #----------------------------------------------------------------------------
 # ROOT dictionary
-get_target_definitions(${LIBNAME} defines)
-get_target_property(podd_includes Podd::HallA INTERFACE_INCLUDE_DIRECTORIES)
-ROOT_GENERATE_DICTIONARY(${LIBNAME} ${defines} ${headers}
+ROOT_GENERATE_DICTIONARY(${LIBNAME} ${headers}
   TARGETS ${LIBNAME}
   LINKDEF ${LIBNAME}_LinkDef.h
   )
-set(PCM_FILE ${CMAKE_CURRENT_BINARY_DIR}/lib${LIBNAME}_rdict.pcm)
-
-add_custom_target(${LIBNAME}_ROOTDICT
-  DEPENDS ${src} ${headers} ${LIBNAME}_LinkDef.h ${LIBNAME}Dict.cxx)
-
-install(FILES ${PCM_FILE} DESTINATION ${CMAKE_INSTALL_LIBDIR})

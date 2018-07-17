@@ -179,35 +179,68 @@ endif(NOT TARGET ROOT::Libraries)
 ## is done by only allowing for explicitly speficied header locations/include
 ## directories, instead of using the full search path for this module.
 function(root_generate_dictionary dictionary)
+  find_program(ROOTCLING rootcling HINTS "${ROOTSYS}/bin")
+  if(NOT ROOTCLING)
+    find_program(ROOTCINT rootcint HINTS "${ROOTSYS}/bin")
+    if(NOT ROOTCINT)
+      message(FATAL_ERROR "root_generate_dictionary: Cannot find either rootcling or rootcint. Is ROOT set up?")
+    endif()
+  endif()
+
   cmake_parse_arguments(RGD "" "PCMNAME" "INCLUDEDIRS;LINKDEF;OPTIONS;TARGETS" ${ARGN})
 
-  # Include directories: everything from any given targets, plus any
-  # explicitly given directories
+  if(NOT RGD_LINKDEF)
+    message(FATAL_ERROR "root_generate_dictionary: Required argument LINKDEF missing")
+  endif()
+
+  # Compile definitions and include directories from the given target(s)
+  set(defines)
   set(incdirs)
   foreach(tgt IN LISTS RGD_TARGETS)
+    list(APPEND defines $<TARGET_PROPERTY:${tgt},COMPILE_DEFINITIONS>)
     list(APPEND incdirs $<TARGET_PROPERTY:${tgt},INCLUDE_DIRECTORIES>)
   endforeach()
+  # Add any explicitly specified include directories
   list(APPEND incdirs ${RGD_INCLUDEDIRS})
 
-  if(RGD_PCMNAME)
-    set(pcmname ${RGD_PCMNAME})
+  if(ROOTCLING)
+    # ROOT6
+    if(RGD_PCMNAME)
+      set(pcmname ${RGD_PCMNAME})
+    else()
+      set(pcmname ${dictionary})
+    endif()
+    add_custom_command(
+      OUTPUT ${dictionary}Dict.cxx lib${pcmname}_rdict.pcm
+      COMMAND ${MK_ROOTDICT}
+      ARGS
+	${ROOTCLING}
+	-f ${dictionary}Dict.cxx
+	-s lib${pcmname}
+	${RGD_OPTIONS}
+	-I\"${incdirs}\"
+	${RGD_UNPARSED_ARGUMENTS}
+	${RGD_LINKDEF}
+	DEPENDS ${RGD_UNPARSED_ARGUMENTS} ${RGD_LINKDEF}
+      )
+    set(PCM_FILE ${CMAKE_CURRENT_BINARY_DIR}/lib${pcmname}_rdict.pcm)
+    install(FILES ${PCM_FILE} DESTINATION ${CMAKE_INSTALL_LIBDIR})
   else()
-    set(pcmname ${dictionary})
+    # ROOT5
+    add_custom_command(
+      OUTPUT ${dictionary}Dict.cxx
+      COMMAND ${MK_ROOTDICT}
+      ARGS
+	${ROOTCINT}
+	-f ${dictionary}Dict.cxx
+	-c ${RGD_OPTIONS}
+	-I\"${incdirs}\"
+	${RGD_UNPARSED_ARGUMENTS}
+	${RGD_LINKDEF}
+	DEPENDS ${RGD_UNPARSED_ARGUMENTS} ${RGD_LINKDEF}
+      )
   endif()
-  ## find and call ROOTCLING
-  find_program(ROOTCLING rootcling)
-  add_custom_command(
-    OUTPUT ${dictionary}Dict.cxx lib${pcmname}_rdict.pcm
-    COMMAND ${MK_ROOTDICT}
-    ARGS
-      ${ROOTCLING}
-      -f ${dictionary}Dict.cxx
-      -s lib${pcmname}
-      ${RGD_OPTIONS}
-      -I\"${incdirs}\"
-      ${RGD_UNPARSED_ARGUMENTS}
-      ${RGD_LINKDEF}
-    DEPENDS ${RGD_LINKDEF}
-    )
-# FIXME: needs to depend on all include files as well; this macro is so broken
+  add_custom_target(${dictionary}_ROOTDICT
+    DEPENDS ${dictionary}Dict.cxx
+  )
 endfunction(root_generate_dictionary)

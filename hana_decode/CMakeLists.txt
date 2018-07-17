@@ -119,15 +119,8 @@ install(FILES ${allheaders} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 #----------------------------------------------------------------------------
 # libdcDict dictionary
-get_target_definitions(${LIBNAME} defines)
-root_generate_dictionary(lib${LIBNAME} ${defines} ${headers}
+root_generate_dictionary(lib${LIBNAME} ${headers}
   TARGETS ${LIBNAME}
   PCMNAME ${LIBNAME}
   LINKDEF ${ALTLIBNAME}_LinkDef.h
   )
-set(PCM_FILE ${CMAKE_CURRENT_BINARY_DIR}/lib${LIBNAME}_rdict.pcm)
-
-add_custom_target(lib${LIBNAME}_ROOTDICT
-  DEPENDS ${src} ${headers} ${ALTLIBNAME}_LinkDef.h lib${LIBNAME}Dict.cxx
-  )
-install(FILES ${PCM_FILE} DESTINATION ${CMAKE_INSTALL_LIBDIR})
