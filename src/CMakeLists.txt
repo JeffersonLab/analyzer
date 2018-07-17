@@ -56,6 +56,10 @@ set(allheaders ${headers} Helper.h VarDef.h VarType.h)
 
 #----------------------------------------------------------------------------
 # Generate ha_compiledata.h
+
+# Be sure there's no old ha_compiledata.h hanging around from a non-CMake build
+file(REMOVE "${CMAKE_CURRENT_SOURCE_DIR}/ha_compiledata.h")
+
 include(PoddCompileInfo)
 configure_file(ha_compiledata.h.in ha_compiledata.h)
 list(APPEND allheaders "${CMAKE_CURRENT_BINARY_DIR}/ha_compiledata.h")
