@@ -175,16 +175,44 @@ find_package_handle_standard_args(ROOT
 
 endif(NOT TARGET ROOT::Libraries)
 
-## Override root's ROOT_GENERATE_DICTIONARY macro to be less error-prone. This
-## is done by only allowing for explicitly speficied header locations/include
-## directories, instead of using the full search path for this module.
+# ROOT_GENERATE_DICTIONARY(dictionary
+#                          LINKDEF <theLinkDef.h>
+#                          [ TARGETS <target> [ <target> ... ]
+#                          [ INCLUDEDIRS <dir> [ <dir ... ]
+#                          [ OPTIONS [ <options> ]
+#                          [ PCMNAME <pcmname> ]
+#                          <header> [ <header> ... ] )
+#
+# Generate ROOT dictionary for ROOT 5 and 6
+#
+# Arguments:
+#   dictionary:    dictionary base name (required). Output file will be
+#                  ${dictionary}Dict.cxx
+#   LINKDEF:       name of LinkDef.h file (required)
+#   TARGETS:       CMake targets from which to get -I arguments and -D definitions
+#   INCLUDEDIRS:   paths to use for -I arguments
+#   OPTIONS:       additional options for rootcling/rootcint
+#   PCMNAME:       base name of PCM file (ROOT 6 only). Defaults to ${dictionary}.
+#                  Output will be lib${pcmname}_rdict.pcm.
+#
 function(root_generate_dictionary dictionary)
-  find_program(ROOTCLING rootcling HINTS "${ROOTSYS}/bin")
-  if(NOT ROOTCLING)
-    find_program(ROOTCINT rootcint HINTS "${ROOTSYS}/bin")
-    if(NOT ROOTCINT)
-      message(FATAL_ERROR "root_generate_dictionary: Cannot find either rootcling or rootcint. Is ROOT set up?")
+
+  if(DEFINED ROOT_VERSION AND DEFINED ROOTSYS)
+    if(NOT ${ROOT_VERSION} VERSION_LESS 6)
+      find_program(ROOTCLING rootcling HINTS "${ROOTSYS}/bin")
+      if(NOT ROOTCLING)
+	message(FATAL_ERROR
+	  "root_generate_dictionary: Cannot find rootcling. Check ROOT installation.")
+      endif()
+    else()
+      find_program(ROOTCINT rootcint HINTS "${ROOTSYS}/bin")
+      if(NOT ROOTCINT)
+	message(FATAL_ERROR
+	  "root_generate_dictionary: Cannot find rootcint. Check ROOT installation.")
+      endif()
     endif()
+  else()
+    message(FATAL_ERROR "root_generate_dictionary: ROOT is not set up")
   endif()
 
   cmake_parse_arguments(RGD "" "PCMNAME" "INCLUDEDIRS;LINKDEF;OPTIONS;TARGETS" ${ARGN})
