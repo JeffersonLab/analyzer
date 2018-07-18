@@ -9,13 +9,11 @@ set(SUBPROJECT_NAME Decode)
 #----------------------------------------------------------------------------
 # Configuration options
 option(ONLINE_ET "Enable support ET message system" OFF)
-option(EVIO_HAS_CMAKE_CONFIG "Find EVIO only in CMake Config mode" OFF)
 
 #----------------------------------------------------------------------------
 # Required dependencies
-if(EVIO_HAS_CMAKE_CONFIG)
-  find_package(EVIO CONFIG REQUIRED)
-else()
+find_package(EVIO CONFIG)
+if(NOT EVIO_FOUND)
   find_package(EVIO REQUIRED)
 endif()
 
