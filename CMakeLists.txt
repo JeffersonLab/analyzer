@@ -22,7 +22,7 @@ endif()
 #----------------------------------------------------------------------------
 # Install in GNU-style directory layout
 include(GNUInstallDirs)
-set(INSTALL_CONFIGDIR ${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME_LC})
+set(INSTALL_CONFIGDIR ${CMAKE_INSTALL_LIBDIR}/${MAIN_PROJECT_NAME_LC})
 
 #----------------------------------------------------------------------------
 # Find ROOT (using our custom FindROOT.cmake)
@@ -45,14 +45,6 @@ if(${PROJECT_NAME_UC}_BUILD_UTILS)
   add_subdirectory(utils)
 endif()
 add_subdirectory(cmake)
-
-#----------------------------------------------------------------------------
-# Install and export targets defined in the subdirectories
-install(EXPORT ${PROJECT_NAME_LC}-exports
-  FILE ${PROJECT_NAME}Targets.cmake
-  NAMESPACE ${PROJECT_NAME}::
-  DESTINATION ${INSTALL_CONFIGDIR}
-  )
 
 #----------------------------------------------------------------------------
 # Install additional components
