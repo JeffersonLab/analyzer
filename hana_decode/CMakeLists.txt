@@ -117,7 +117,7 @@ install(FILES ${allheaders} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 #----------------------------------------------------------------------------
 # libdcDict dictionary
-root_generate_dictionary(lib${LIBNAME} ${headers}
+build_root_dictionary(lib${LIBNAME} ${headers}
   TARGETS ${LIBNAME}
   PCMNAME ${LIBNAME}
   LINKDEF ${ALTLIBNAME}_LinkDef.h

@@ -23,8 +23,5 @@ set_target_properties(EVIO::ET PROPERTIES
   IMPORTED_LOCATION "${ET_LIBRARY}"
   )
 
-# Register this dependency
-config_add_dependency(ET)
-
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(ET ET_INCLUDE_DIR ET_LIBRARY)

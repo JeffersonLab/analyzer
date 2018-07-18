@@ -107,7 +107,7 @@ install(FILES ${allheaders} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 #----------------------------------------------------------------------------
 # libHallADict
-root_generate_dictionary(${LIBNAME} ${headers}
+build_root_dictionary(${LIBNAME} ${headers}
   TARGETS ${LIBNAME}
   LINKDEF ${LIBNAME}_LinkDef.h
   )

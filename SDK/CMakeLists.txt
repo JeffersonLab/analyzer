@@ -20,16 +20,15 @@ set(src
 string(REPLACE .cxx .h headers "${src}")
 
 #----------------------------------------------------------------------------
-# Load Podd configuration, if needed. It finds its required dependencies
-# in turn, including ROOT
+# Load Podd configuration, if needed
 if(NOT TARGET Podd::HallA)
   if(DEFINED ENV{ANALYZER})
     set(CMAKE_PREFIX_PATH "$ENV{ANALYZER}" "${CMAKE_PREFIX_PATH}")
   endif()
 
   find_package(Podd 1.7 REQUIRED)
-
 endif()
+include(PoddCMakeEnv)
 
 set_diagnostic_flags(WALL WEXTRA)
 #report_build_info()
@@ -58,7 +57,7 @@ install(FILES ${headers} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 #----------------------------------------------------------------------------
 # ROOT dictionary
-ROOT_GENERATE_DICTIONARY(${LIBNAME} ${headers}
+build_root_dictionary(${LIBNAME} ${headers}
   TARGETS ${LIBNAME}
   LINKDEF ${LIBNAME}_LinkDef.h
   )

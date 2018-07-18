@@ -163,9 +163,6 @@ foreach(_remaining ${ROOT_FIND_COMPONENTS})
   unset(ROOT_FIND_REQUIRED_${_remaining})
 endforeach()
 
-# Register this dependency
-config_add_dependency(ROOT ${ROOT_FIND_VERSION})
-
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(ROOT
   REQUIRED_VARS ROOTSYS ROOT_LIBRARY_DIR ROOT_BINARY_DIR ROOT_INCLUDE_DIR
@@ -175,15 +172,16 @@ find_package_handle_standard_args(ROOT
 
 endif(NOT TARGET ROOT::Libraries)
 
-# ROOT_GENERATE_DICTIONARY(dictionary
-#                          LINKDEF <theLinkDef.h>
-#                          [ TARGETS <target> [ <target> ... ]
-#                          [ INCLUDEDIRS <dir> [ <dir ... ]
-#                          [ OPTIONS [ <options> ]
-#                          [ PCMNAME <pcmname> ]
-#                          <header> [ <header> ... ] )
+
+# BUILD_ROOT_DICTIONARY(dictionary
+#                       LINKDEF <theLinkDef.h>
+#                       [ TARGETS <target> [ <target> ... ]
+#                       [ INCLUDEDIRS <dir> [ <dir ... ]
+#                       [ OPTIONS [ <options> ]
+#                       [ PCMNAME <pcmname> ]
+#                       <header> [ <header> ... ] )
 #
-# Generate ROOT dictionary for ROOT 5 and 6
+# Build ROOT dictionary for ROOT 5 and 6
 #
 # Arguments:
 #   dictionary:    dictionary base name (required). Output file will be
@@ -195,7 +193,10 @@ endif(NOT TARGET ROOT::Libraries)
 #   PCMNAME:       base name of PCM file (ROOT 6 only). Defaults to ${dictionary}.
 #                  Output will be lib${pcmname}_rdict.pcm.
 #
-function(root_generate_dictionary dictionary)
+# Creates a custom target ${dictionary}_ROOTDICT.
+# With ROOT 6, also installs the PCM file in ${CMAKE_INSTALL_LIBDIR}
+#
+function(build_root_dictionary dictionary)
 
   if(DEFINED ROOT_VERSION AND DEFINED ROOTSYS)
     if(NOT ${ROOT_VERSION} VERSION_LESS 6)
@@ -271,4 +272,4 @@ function(root_generate_dictionary dictionary)
   add_custom_target(${dictionary}_ROOTDICT
     DEPENDS ${dictionary}Dict.cxx
   )
-endfunction(root_generate_dictionary)
+endfunction()

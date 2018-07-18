@@ -6,11 +6,10 @@ set_and_check(PODD_DIR "@PACKAGE_CMAKE_INSTALL_PREFIX@")
 set_and_check(PODD_INCLUDE_DIR "@PACKAGE_CMAKE_INSTALL_INCLUDEDIR@")
 
 list(APPEND CMAKE_MODULE_PATH "@PACKAGE_INSTALL_CONFIGDIR@/Modules")
-include(PoddCMakeEnv)
 
 @FIND_DEPENDENCY_COMMANDS@
 
 include("@PACKAGE_TARGETS_FILE@")
 
-check_required_components(${PROJECT_NAME_UC})
+check_required_components(@PROJECT_NAME_UC@)
 

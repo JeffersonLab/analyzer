@@ -41,9 +41,6 @@ set_target_properties(EVIO::EVIO PROPERTIES
   IMPORTED_LOCATION "${EVIO_LIBRARY}"
   )
 
-# Register this dependency
-config_add_dependency(EVIO ${EVIO_FIND_VERSION})
-
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(EVIO
   REQUIRED_VARS EVIO_LIBRARY EVIO_INCLUDE_DIR
