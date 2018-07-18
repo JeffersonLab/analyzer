@@ -46,7 +46,8 @@ find_program(MK_ROOTDICT mk_rootdict.sh
   DOC "Wrapper script for ROOT dictionary generator"
   )
 if(NOT MK_ROOTDICT)
-  message(FATAL_ERROR "PoddCMakeEnv: Cannot find mk_rootdict.sh. Check your Podd installation.")
+  message(FATAL_ERROR
+    "PoddCMakeEnv: Cannot find mk_rootdict.sh. Check your Podd installation.")
 endif()
 
 #============================================================================

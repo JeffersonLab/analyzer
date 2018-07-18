@@ -5,9 +5,19 @@
 # to select a platform-specfic script/program
 set(_compileinfo_cmd get_compileinfo.sh)
 
-execute_process(
-  COMMAND
-    "${CMAKE_CURRENT_LIST_DIR}/../../scripts/${_compileinfo_cmd}" "${CMAKE_CXX_COMPILER}"
+find_program(GET_COMPILEINFO ${_compileinfo_cmd}
+  HINTS
+    ${CMAKE_CURRENT_LIST_DIR}/../..
+    ${CMAKE_CURRENT_LIST_DIR}/../../..
+  PATH_SUFFIXES scripts
+  DOC "External helper program to report current build metadata"
+  )
+if(NOT GET_COMPILEINFO)
+  message(FATAL_ERROR
+    "PoddCompileInfo: Cannot find ${_compileinfo_cmd}. Check your Podd installation.")
+endif()
+
+execute_process(COMMAND "${GET_COMPILEINFO}" "${CMAKE_CXX_COMPILER}"
   OUTPUT_VARIABLE _compileinfo_out
   ERROR_VARIABLE _compileinfo_err
   OUTPUT_STRIP_TRAILING_WHITESPACE
