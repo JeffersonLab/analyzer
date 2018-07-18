@@ -15,6 +15,7 @@ POSITIONAL=()
 PREOPTIONS=()
 OPTIONS=()
 INCDIRS=()
+DEFINES=()
 PCMNAME=()
 while [[ $# -gt 0 ]]; do
     key="$1"
@@ -47,19 +48,41 @@ while [[ $# -gt 0 ]]; do
 	-I)
 	    # Turn a possible CMake list into a sequence of -I options
 	    if echo $2 | grep -q ';'; then
-		INCDIRS+=("$(echo $2 | sed -E -e 's|^([^ ]+);|-I\1;|' -e 's|;([^ ;]+)| -I\1|g' | sed 's|-I ||g' | tr ' ' '\n' | sort -u | tr '\n' ' ')")
+		incdirs="$(echo $2 | sed -E -e 's|^([^ ]+);|-I\1;|' -e 's|;([^ ;]+)| -I\1|g' -e 's|-I ||g')"
 	    else
-		INCDIRS+=("$(echo $2| sed -E -e 's|^([^ ]+) +|-I\1 |' -e 's| ([^ ]+)| -I\1|g' | sed 's|-I ||g' | tr ' ' '\n' | sort -u | tr '\n' ' ')")
+		incdirs="$(echo $2| sed -E -e 's|^([^ ]+) +|-I\1 |' -e 's| ([^ ]+)| -I\1|g' -e 's|-I ||g')"
 	    fi
+	    INCDIRS+=("$(echo $incdirs | tr ' ' '\n' | sort -u | tr '\n' ' ')")
 	    shift 2
 	    ;;
 	-I*)
 	    # Turn a possible CMake list into a sequence of -I options
 	    if echo $1 | grep -q ';'; then
-		INCDIRS+=("$(echo $1 | sed -E -e 's|^-I||' -e 's|^([^ ]+);|-I\1;|' -e 's|;([^ ;]+)| -I\1|g' | sed 's|-I ||g' | tr ' ' '\n' | sort -u | tr '\n' ' ')")
+		incdirs=("$(echo $1 | sed -E -e 's|^-I||' -e 's|^([^ ]+);|-I\1;|' -e 's|;([^ ;]+)| -I\1|g' -e 's|-I ||g')")
 	    else
-		INCDIRS+=("$(echo $1 | sed -E -e 's|^-I||' -e 's|^([^ ]+) |-I\1 |' -e 's| ([^ ]+)| -I\1|g' | sed 's|-I ||g' | tr ' ' '\n' | sort -u | tr '\n' ' ')")
+		incdirs=("$(echo $1 | sed -E -e 's|^-I||' -e 's|^([^ ]+) +|-I\1 |' -e 's|^([^ ]+)$|-I\1|' -e 's| +([^ ]+)| -I\1|g' -e 's|-I ||g')")
 	    fi
+	    INCDIRS+=("$(echo $incdirs | tr ' ' '\n' | sort -u | tr '\n' ' ')")
+	    shift
+	    ;;
+	-D)
+	    # Turn a possible CMake list into a sequence of -D options
+	    if echo $2 | grep -q ';'; then
+		defs="$(echo $2 | sed -E -e 's|^([^ ]+);|-D\1;|' -e 's|;([^ ;]+)| -D\1|g' -e 's|-D ||g')"
+	    else
+		defs="$(echo $2| sed -E -e 's|^([^ ]+) +|-D\1 |' -e 's| ([^ ]+)| -D\1|g' -e 's|-D ||g')"
+	    fi
+	    DEFINES+=("$(echo $defs | tr ' ' '\n' | sort -u | tr '\n' ' ')")
+	    shift 2
+	    ;;
+	-D*)
+	    # Turn a possible CMake list into a sequence of -D options
+	    if echo $1 | grep -q ';'; then
+		defs=("$(echo $1 | sed -E -e 's|^-D||' -e 's|^([^ ]+);|-D\1;|' -e 's|;([^ ;]+)| -D\1|g' -e 's|-D ||g')")
+	    else
+		defs=("$(echo $1 | sed -E -e 's|^-D||' -e 's|^([^ ]+) +|-D\1 |' -e 's|^([^ ]+)$|-D\1|' -e 's| +([^ ]+)| -D\1|g' -e 's|-D ||g')")
+	    fi
+	    DEFINES+=("$(echo $defs | tr ' ' '\n' | sort -u | tr '\n' ' ')")
 	    shift
 	    ;;
 	-*)
@@ -73,4 +96,4 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-eval $ROOTCLING ${PREOPTIONS[@]} $DICTNAME ${PCMNAME[@]} ${OPTIONS[@]} ${INCDIRS[@]} ${POSITIONAL[@]}
+eval $ROOTCLING ${PREOPTIONS[@]} $DICTNAME ${PCMNAME[@]} ${OPTIONS[@]} ${INCDIRS[@]} ${DEFINES[@]} ${POSITIONAL[@]}

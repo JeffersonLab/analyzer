@@ -218,7 +218,7 @@ function(root_generate_dictionary dictionary)
 	-f ${dictionary}Dict.cxx
 	-s lib${pcmname}
 	${RGD_OPTIONS}
-	-I\"${incdirs}\"
+	-I\"${incdirs}\" -D\"${defines}\"
 	${RGD_UNPARSED_ARGUMENTS}
 	${RGD_LINKDEF}
 	DEPENDS ${RGD_UNPARSED_ARGUMENTS} ${RGD_LINKDEF}
@@ -234,7 +234,7 @@ function(root_generate_dictionary dictionary)
 	${ROOTCINT}
 	-f ${dictionary}Dict.cxx
 	-c ${RGD_OPTIONS}
-	-I\"${incdirs}\"
+	-I\"${incdirs}\" -D\"${defines}\"
 	${RGD_UNPARSED_ARGUMENTS}
 	${RGD_LINKDEF}
 	DEPENDS ${RGD_UNPARSED_ARGUMENTS} ${RGD_LINKDEF}
