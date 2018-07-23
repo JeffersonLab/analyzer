@@ -23,23 +23,24 @@ find_library(EVIO_LIBRARY evio
 find_path(EVIO_INCLUDE_DIR
   NAMES evio.h
   PATHS ENV EVIO_INCDIR ${evio_arch_inc} ${coda_arch_inc} NO_DEFAULT_PATHS
-  DOC "EVIO C-API header file"
+  DOC "EVIO C-API header include directory"
   )
 find_path(EVIO_INCLUDE_DIR
   NAMES evio.h
-  DOC "EVIO C-API header file"
+  DOC "EVIO C-API header include directory"
   )
 if(EVIO_INCLUDE_DIR)
   set(VERSION_REGEX "#define[ \t]+EV_VERSION[ \t]+([^ ]+)")
   file(STRINGS "${EVIO_INCLUDE_DIR}/evio.h" VERSION_STRING REGEX "${VERSION_REGEX}")
   string(REGEX REPLACE "${VERSION_REGEX}" "\\1" EVIO_VERSION "${VERSION_STRING}")
 endif()
-
-add_library(EVIO::EVIO SHARED IMPORTED)
-set_target_properties(EVIO::EVIO PROPERTIES
-  INTERFACE_INCLUDE_DIRECTORIES "${EVIO_INCLUDE_DIR}"
-  IMPORTED_LOCATION "${EVIO_LIBRARY}"
-  )
+if(NOT TARGET EVIO::EVIO AND EVIO_LIBRARY AND EVIO_INCLUDE_DIR)
+  add_library(EVIO::EVIO SHARED IMPORTED)
+  set_target_properties(EVIO::EVIO PROPERTIES
+    INTERFACE_INCLUDE_DIRECTORIES "${EVIO_INCLUDE_DIR}"
+    IMPORTED_LOCATION "${EVIO_LIBRARY}"
+    )
+endif()
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(EVIO
