@@ -14,7 +14,10 @@ option(ONLINE_ET "Enable support ET message system" OFF)
 # Required dependencies
 find_package(EVIO CONFIG QUIET)
 if(NOT EVIO_FOUND)
-  find_package(EVIO REQUIRED)
+  find_package(EVIO MODULE)
+  if(NOT EVIO_FOUND)
+    include(FetchBuildEVIO)
+  endif()
 endif()
 
 if(ONLINE_ET)
