@@ -26,6 +26,11 @@ target_include_directories(${LIBNAME}
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   )
+target_compile_options(${LIBNAME}
+  PRIVATE
+    $<$<CONFIG:Debug>:-O0>
+    $<$<CONFIG:RelWithDebInfo>:-fno-omit-frame-pointer>
+  )
 
 if(NOT DEFINED CMAKE_INSTALL_LIBDIR)
   include(GNUInstallDirs)
