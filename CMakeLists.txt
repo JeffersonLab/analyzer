@@ -12,14 +12,6 @@ set(CMAKE_MODULE_PATH
 include(PoddCMakeEnv)
 
 #----------------------------------------------------------------------------
-# Build utility programs by default unless we are a submodule
-if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
-  option(${PROJECT_NAME_UC}_BUILD_UTILS "Build utility programs" ON)
-else()
-  option(${PROJECT_NAME_UC}_BUILD_UTILS "Build utility programs" OFF)
-endif()
-
-#----------------------------------------------------------------------------
 # Install in GNU-style directory layout
 include(GNUInstallDirs)
 set(INSTALL_CONFIGDIR ${CMAKE_INSTALL_LIBDIR}/${MAIN_PROJECT_NAME_LC})
@@ -40,16 +32,17 @@ report_build_info()
 #----------------------------------------------------------------------------
 # Directories in which we build things
 add_subdirectory(hana_decode)
-add_subdirectory(src)
-if(${PROJECT_NAME_UC}_BUILD_UTILS)
-  add_subdirectory(utils)
+add_subdirectory(Podd)
+add_subdirectory(HallA)
+if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
+  add_subdirectory(apps)
 endif()
 add_subdirectory(cmake)
 
 #----------------------------------------------------------------------------
-# Install additional components
-install(DIRECTORY scripts/ DESTINATION scripts
-  USE_SOURCE_PERMISSIONS
-  PATTERN "*.C"
-  PATTERN "*.sh"
-  )
+# Install support files
+# install(DIRECTORY scripts/ DESTINATION scripts
+#   USE_SOURCE_PERMISSIONS
+#   PATTERN "*.C"
+#   PATTERN "*.sh"
+#   )

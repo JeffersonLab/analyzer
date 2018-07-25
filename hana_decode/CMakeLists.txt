@@ -44,7 +44,6 @@ set(src
   Scaler3800.cxx
   Scaler3801.cxx
   Scaler560.cxx
-  SimDecoder.cxx
   THaCodaData.cxx
   THaCodaFile.cxx
   THaCrateMap.cxx
@@ -96,7 +95,7 @@ target_include_directories(${LIBNAME}
     $<INSTALL_INTERFACE:include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src
+    ${CMAKE_CURRENT_SOURCE_DIR}/../Podd
   )
 target_link_libraries(${LIBNAME}
   PUBLIC

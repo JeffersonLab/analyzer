@@ -35,13 +35,6 @@
 #pragma link C++ class THaBenchmark+;
 #pragma link C++ class THaEvData+;
 
-#ifndef STANDALONE
-#pragma link C++ class Podd::MCHitInfo+;
-#pragma link C++ class Podd::MCTrack+;
-#pragma link C++ class Podd::MCTrackPoint+;
-#pragma link C++ class Podd::SimDecoder+;
-#endif
-
 #ifdef ONLINE_ET
 #pragma link C++ class Decoder::THaEtClient+;
 #endif
