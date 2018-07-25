@@ -229,6 +229,7 @@ function(build_root_dictionary dictionary)
     list(APPEND defines $<TARGET_PROPERTY:${tgt},COMPILE_DEFINITIONS>)
     list(APPEND incdirs $<TARGET_PROPERTY:${tgt},INCLUDE_DIRECTORIES>)
   endforeach()
+
   # Add any explicitly specified include directories
   list(APPEND incdirs ${RGD_INCLUDEDIRS})
 
@@ -247,9 +248,11 @@ function(build_root_dictionary dictionary)
 	-f ${dictionary}Dict.cxx
 	-s lib${pcmname}
 	${RGD_OPTIONS}
-	-I\"${incdirs}\" -D\"${defines}\"
+	INCDIRS "${incdirs}"
+	DEFINES "${defines}"
 	${RGD_UNPARSED_ARGUMENTS}
 	${RGD_LINKDEF}
+	VERBATIM
 	DEPENDS ${RGD_UNPARSED_ARGUMENTS} ${RGD_LINKDEF}
       )
     set(PCM_FILE ${CMAKE_CURRENT_BINARY_DIR}/lib${pcmname}_rdict.pcm)
@@ -263,9 +266,11 @@ function(build_root_dictionary dictionary)
 	${ROOTCINT}
 	-f ${dictionary}Dict.cxx
 	-c ${RGD_OPTIONS}
-	-I\"${incdirs}\" -D\"${defines}\"
+	INCDIRS "${incdirs}"
+	DEFINES "${defines}"
 	${RGD_UNPARSED_ARGUMENTS}
 	${RGD_LINKDEF}
+	VERBATIM
 	DEPENDS ${RGD_UNPARSED_ARGUMENTS} ${RGD_LINKDEF}
       )
   endif()

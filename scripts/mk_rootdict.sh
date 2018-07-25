@@ -1,12 +1,25 @@
 #!/bin/bash
 #
-# Call rootcling after cleaning up -I include directives followed by CMake ;-lists or
-# a single space-separated list of directories.
+# mk_rootdict.sh. Wrapper script around rootcling/rootcont.
 #
-# This is a workaround for what seems to be a CMake bug.
-# Apparently CMake (up to 3.11) is too dumb to pass a single type of argument. If it
-# starts out as a ;-list, it is passed as a space-separated list to add_custom_command;
+# Process INCDIRS followed by ""-quoted ;-list into sequence of -I directives;
+# similarly, translate DEFINES followed by ;-list into sequence of -D arguments.
+# Remove duplicates while preserving order (keep only first occurrence found).
+# Quote any paths and definitions containing spaces.
+# Call rootcling/rootcint with the translated arguments, preserving the rest
+# of the command line.
+#
+# In part, this is a workaround for what seems to be a CMake bug.
+# Apparently CMake (up to 3.12.0) passes inconsistent arguments. If it starts out
+# as a ;-list, it is passed as a space-separated list to add_custom_command();
 # if it starts out as a generator expression, it is passed as a ;-list.
+#
+# Even if this bug were fixed, we'd still benefit form this script because
+# (a) it removes duplicates, which CMake won't be able to do with generator
+# expressions, and (b) passing quoted strings and arguments containing spaces
+# to add_custom_command() is apparently not really possible from CMake. The
+# developers recommend to write an external script for that purpose anyway.
+# So here we are.
 
 ROOTCLING="$1"
 shift
@@ -45,45 +58,29 @@ while [[ $# -gt 0 ]]; do
 	    PCMNAME+=("$1")
 	    shift
 	    ;;
-	-I)
-	    # Turn a possible CMake list into a sequence of -I options
-	    if echo $2 | grep -q ';'; then
-		incdirs="$(echo $2 | sed -E -e 's|^([^ ]+);|-I\1;|' -e 's|;([^ ;]+)| -I\1|g' -e 's|-I ||g')"
-	    else
-		incdirs="$(echo $2| sed -E -e 's|^([^ ]+) +|-I\1 |' -e 's| ([^ ]+)| -I\1|g' -e 's|-I ||g')"
+	INCDIRS)
+	    if [ "$2"x != "x" ]; then
+		while read inc; do
+		    if echo $inc | grep -q " "; then
+			inc=\""$inc"\"
+		    fi
+		    INCDIRS+=("-I$inc")
+		done < <(echo $2 | sed -e 's/^;//' -e 's/;$//' -e 's/;;/;/g' | tr ';' '\n' | \
+		    awk '!nseen[$0]++')
 	    fi
-	    INCDIRS+=("$(echo $incdirs | tr ' ' '\n' | sort -u | tr '\n' ' ')")
 	    shift 2
 	    ;;
-	-I*)
-	    # Turn a possible CMake list into a sequence of -I options
-	    if echo $1 | grep -q ';'; then
-		incdirs=("$(echo $1 | sed -E -e 's|^-I||' -e 's|^([^ ]+);|-I\1;|' -e 's|;([^ ;]+)| -I\1|g' -e 's|-I ||g')")
-	    else
-		incdirs=("$(echo $1 | sed -E -e 's|^-I||' -e 's|^([^ ]+) +|-I\1 |' -e 's|^([^ ]+)$|-I\1|' -e 's| +([^ ]+)| -I\1|g' -e 's|-I ||g')")
+	DEFINES)
+	    if [ "$2"x != "x" ]; then
+		while read def; do
+		    if echo $def | grep -q " "; then
+			def=\""$def"\"
+		    fi
+		    INCDIRS+=("-D$def")
+		done < <(echo $2 | sed -e 's/^;//' -e 's/;$//' -e 's/;;/;/g' | tr ';' '\n' | \
+		    awk '!nseen[$0]++')
 	    fi
-	    INCDIRS+=("$(echo $incdirs | tr ' ' '\n' | sort -u | tr '\n' ' ')")
-	    shift
-	    ;;
-	-D)
-	    # Turn a possible CMake list into a sequence of -D options
-	    if echo $2 | grep -q ';'; then
-		defs="$(echo $2 | sed -E -e 's|^([^ ]+);|-D\1;|' -e 's|;([^ ;]+)| -D\1|g' -e 's|-D ||g')"
-	    else
-		defs="$(echo $2| sed -E -e 's|^([^ ]+) +|-D\1 |' -e 's| ([^ ]+)| -D\1|g' -e 's|-D ||g')"
-	    fi
-	    DEFINES+=("$(echo $defs | tr ' ' '\n' | sort -u | tr '\n' ' ')")
 	    shift 2
-	    ;;
-	-D*)
-	    # Turn a possible CMake list into a sequence of -D options
-	    if echo $1 | grep -q ';'; then
-		defs=("$(echo $1 | sed -E -e 's|^-D||' -e 's|^([^ ]+);|-D\1;|' -e 's|;([^ ;]+)| -D\1|g' -e 's|-D ||g')")
-	    else
-		defs=("$(echo $1 | sed -E -e 's|^-D||' -e 's|^([^ ]+) +|-D\1 |' -e 's|^([^ ]+)$|-D\1|' -e 's| +([^ ]+)| -D\1|g' -e 's|-D ||g')")
-	    fi
-	    DEFINES+=("$(echo $defs | tr ' ' '\n' | sort -u | tr '\n' ' ')")
-	    shift
 	    ;;
 	-*)
 	    OPTIONS+=("$1")
@@ -96,4 +93,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# echo "=========== translated command: ================"
+# echo $ROOTCLING ${PREOPTIONS[@]} $DICTNAME ${PCMNAME[@]} ${OPTIONS[@]} ${INCDIRS[@]} ${DEFINES[@]} ${POSITIONAL[@]}
+# echo "=========== end translated command ============="
 eval $ROOTCLING ${PREOPTIONS[@]} $DICTNAME ${PCMNAME[@]} ${OPTIONS[@]} ${INCDIRS[@]} ${DEFINES[@]} ${POSITIONAL[@]}
