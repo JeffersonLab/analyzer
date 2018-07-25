@@ -9,17 +9,14 @@
 # Call rootcling/rootcint with the translated arguments, preserving the rest
 # of the command line.
 #
-# In part, this is a workaround for what seems to be a CMake bug.
-# Apparently CMake (up to 3.12.0) passes inconsistent arguments. If it starts out
-# as a ;-list, it is passed as a space-separated list to add_custom_command();
-# if it starts out as a generator expression, it is passed as a ;-list.
-#
-# Even if this bug were fixed, we'd still benefit form this script because
-# (a) it removes duplicates, which CMake won't be able to do with generator
-# expressions, and (b) passing quoted strings and arguments containing spaces
-# to add_custom_command() is apparently not really possible from CMake. The
-# developers recommend to write an external script for that purpose anyway.
-# So here we are.
+# In part, this is a workaround for a CMake limitation. Until version 3.8,
+# CMake was unable to pass ;-lists properly to an external command via
+# add_custom_command. Version 3.8 added the COMMAND_EXPAND_LISTS option
+# that removes this limitation. However, even with this option,
+# parsing command line arguments instead with this script still has advantages:
+# (a) it removes duplicate list entries, which CMake is still unable to do with
+# generator expressions; and (b) it allows us to support lower CMake versions
+# than the rather recent 3.8 (April 2017). The downside is the dependence on bash.
 
 ROOTCLING="$1"
 shift
