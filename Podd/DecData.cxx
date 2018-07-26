@@ -2,17 +2,17 @@
 
 //////////////////////////////////////////////////////////////////////////
 //
-// THaDecData
+// Podd::DecData
 //
-// Hall A miscellaneous decoder data, which typically do not belong to a
+// Miscellaneous decoder data, which typically do not belong to a
 // detector class. Provides a place to rapidly add new channels and to
 // make their data available as analyzer global variables.
 //
 // To use this class, add something like the following to your analysis
 // script:
 //
-// gHaApps->Add( new THaDecData("D","Decoder raw data") );
-// 
+// gHaApps->Add( new Podd::DecData("D","Decoder raw data") );
+//
 // This will give your class the name "D", which will be the prefix for
 // all its database keys and global variables.
 //
@@ -28,9 +28,6 @@
 //    event buffer by a 32-bit header word and an offset. Offset = 1
 //    means the data word following the header, etc.
 // 4. "roclen" variables contain the event length of a given crate.
-// 5. Hall A-specific: "bitNN" variables, where NN is a number 0-31,
-//    report the value of a trigger bit read via a multihit TDC.
-//    Ask the DAQ expert for details.
 //
 // In the key/value database format, define one database key for ALL
 // the variables of a given type. The key's value is then a long string
@@ -52,10 +49,10 @@
 // Alternatively, use the "decdata.map" example file to define channels
 // line by line. (This file format will be phased out in the future.)
 // To add a new variable, if it is on a single-hit channel, you may
-// imitate 'synchadc1' if you know the (crate,slot,chan), and 
+// imitate 'synchadc1' if you know the (crate,slot,chan), and
 // imitate 'timeroc2' if you know the (crate,header,offset).
 //
-// If your variable is more complicated and relies on several 
+// If your variable is more complicated and relies on several
 // channels, you may easily write you own plug-in class derived
 // from BdataLoc (see BdataLoc.[Ch]). Decoding is done in Load().
 // You'll have to define a new, unique type name (like "crate") and
@@ -70,7 +67,7 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-#include "THaDecData.h"
+#include "DecData.h"
 #include "THaVarList.h"
 #include "THaGlobals.h"
 #include "TDatime.h"
@@ -87,8 +84,6 @@
 #include <cassert>
 #include <memory>
 
-#define DECDATA_LEGACY_DB
-
 using namespace std;
 
 static Int_t kInitHashCapacity = 100;
@@ -100,8 +95,10 @@ static Int_t kRehashLevel = 3;
 # define SMART_PTR unique_ptr
 #endif
 
+namespace Podd {
+
 //_____________________________________________________________________________
-THaDecData::THaDecData( const char* name, const char* descript )
+DecData::DecData( const char* name, const char* descript )
   : THaApparatus( name, descript ), evtype(0), evtypebits(0),
     fBdataLoc( kInitHashCapacity, kRehashLevel )
 {
@@ -110,7 +107,7 @@ THaDecData::THaDecData( const char* name, const char* descript )
 }
 
 //_____________________________________________________________________________
-THaDecData::~THaDecData()
+DecData::~DecData()
 {
   // Destructor. Delete data location objects and global variables.
 
@@ -119,7 +116,7 @@ THaDecData::~THaDecData()
 }
 
 //_____________________________________________________________________________
-void THaDecData::Clear( Option_t* )
+void DecData::Clear( Option_t* )
 {
   // Reset event-by-event data
 
@@ -133,7 +130,7 @@ void THaDecData::Clear( Option_t* )
 }
 
 //_____________________________________________________________________________
-void THaDecData::Reset( Option_t* opt )
+void DecData::Reset( Option_t* opt )
 {
   // Reset the class. Removes all data channel definitions
 
@@ -142,7 +139,7 @@ void THaDecData::Reset( Option_t* opt )
 }
 
 //_____________________________________________________________________________
-Int_t THaDecData::DefineVariables( EMode mode )
+Int_t DecData::DefineVariables( EMode mode )
 {
   // Register global variables, open decdata map file, and parse it.
   // If mode == kDelete, remove global variables.
@@ -164,16 +161,16 @@ Int_t THaDecData::DefineVariables( EMode mode )
   fIsSetup = ( mode == kDefine );
 
   RVarDef vars[] = {
-    { "evtype",     "CODA event type",             "evtype" },  
-    { "evtypebits", "event type bit pattern",      "evtypebits" },  
+    { "evtype",     "CODA event type",             "evtype" },
+    { "evtypebits", "event type bit pattern",      "evtypebits" },
     { 0 }
   };
   return DefineVarsFromList( vars, mode );
 }
 
 //_____________________________________________________________________________
-Int_t THaDecData::DefineLocType( const BdataLoc::BdataLocType& loctype,
-				 const TString& configstr, bool re_init )
+Int_t DecData::DefineLocType( const BdataLoc::BdataLocType& loctype,
+			      const TString& configstr, bool re_init )
 {
   // Define variables for given loctype using parameters in configstr
 
@@ -187,7 +184,7 @@ Int_t THaDecData::DefineLocType( const BdataLoc::BdataLocType& loctype,
   if( !config->IsEmpty() ) {
     Int_t nparams = config->GetLast()+1;
     assert( nparams > 0 );   // else bug in IsEmpty() or GetLast()
-      
+
     if( nparams % loctype.fNparams != 0 ) {
       Error( Here(here), "Incorrect number of parameters in database key "
 	     "%s%s. Have %d, but must be a multiple of %d. Fix database.",
@@ -213,7 +210,7 @@ Int_t THaDecData::DefineLocType( const BdataLoc::BdataLocType& loctype,
 		   loctype.fTClass->GetName() );
 	    return -1;
 	  }
-	  if( fDebug>2 ) 
+	  if( fDebug>2 )
 	    Info( Here(here), "Updating variable %s", bname.Data() );
 	} else {
 	  // Duplicate variable name (i.e. duplicate names in database)
@@ -232,7 +229,7 @@ Int_t THaDecData::DefineLocType( const BdataLoc::BdataLocType& loctype,
 	  return -1;
 	}
       }
-      // Configure the new or existing BdataLoc with current database parameters. 
+      // Configure the new or existing BdataLoc with current database parameters.
       // The first parameter is always the name. Note that this object's prefix
       // was already prepended above.
       err = item->Configure( params, ip );
@@ -263,22 +260,6 @@ Int_t THaDecData::DefineLocType( const BdataLoc::BdataLocType& loctype,
 }
 
 //_____________________________________________________________________________
-FILE* THaDecData::OpenFile( const TDatime& date )
-{ 
-  // Open DecData database file. First look for standard file name,
-  // e.g. "db_D.dat", then for legacy file name "decdata.map"
-
-  FILE* fi = THaApparatus::OpenFile( date );
-  if( fi )
-    return fi;
-  return THaAnalysisObject::OpenFile("decdata.dat", date,
-				     Here("OpenFile()"), "r", fDebug);
-}
-
-//_____________________________________________________________________________
-#ifdef DECDATA_LEGACY_DB
-#include <map>
-
 static Int_t CheckDBVersion( FILE* file )
 {
   // Check database version. Similar to emacs mode specs, versions are
@@ -312,72 +293,30 @@ static Int_t CheckDBVersion( FILE* file )
 }
 
 //_____________________________________________________________________________
-inline
-static TString& GetString( const TObjArray* params, Int_t pos )
+Int_t DecData::SetupDBVersion( FILE* file, Int_t db_version )
 {
-  return THaAnalysisObject::GetObjArrayString(params,pos);
-}
-
-//_____________________________________________________________________________
-static Int_t ReadOldFormatDB( FILE* file, map<TString,TString>& configstr_map )
-{
-  // Read old-style THaDecData database file and put results into a map from
-  // database key to value (simulating the new-style key/value database info).
-  // Old-style "crate" objects are all assumed to be multihit channels, even
-  // though they usually are not.
-
-  const size_t bufsiz = 256;
-  char* buf = new char[bufsiz];
-  string dbline;
-  const int nkeys = 3;
-  TString confkey[nkeys] = { "multi", "word", "bit" };
-  TString confval[nkeys];
-  // Read all non-comment lines
-  rewind(file);
-  while( THaAnalysisObject::ReadDBline(file, buf, bufsiz, dbline) != EOF ) {
-    if( dbline.empty() ) continue;
-    // Tokenize each line read
-    TString line( dbline.c_str() );
-    SMART_PTR<TObjArray> tokens( line.Tokenize(" \t") );
-    TObjArray* params = tokens.get();
-    if( params->IsEmpty() || params->GetLast() < 4 ) continue;
-    // Determine data type
-    bool is_slot = ( GetString(params,1) == "crate" );
-    int idx = is_slot ? 0 : 1;
-    TString name = GetString(params,0);
-    // TrigBits are crate types with special names
-    bool is_bit = ( is_slot && name.BeginsWith("bit") && name.Length() > 3  );
-    if( is_bit ) {
-      TString name2 = name(3,name.Length());
-      if( name2.IsDigit() && name2.Atoi() < 32 )
-	idx = 2;
-    }
-    confval[idx] += name;
-    confval[idx] += " ";
-    for( int i = 2; i < 5; ++ i ) {
-      confval[idx] += GetString(params,i).Data();
-      confval[idx] += " ";
-    }
-    if( is_bit ) {
-      // Simulate the hardcoded cut range for event type bit TDC channels
-      // from the old THaDecData
-      confval[idx] += "0 2000 ";
-    }
-  }
-  delete [] buf;
-  // Put the retrieved strings into the key/value map
-  for( int i = 0; i < nkeys; ++ i ) {
-    if( !confval[i].IsNull() )
-      configstr_map[confkey[i]] = confval[i];
+  if( db_version == 1 ) {
+    Warning( Here("ReadDatabase"), "Unsupported database format found. "
+	     "Check database." );
   }
   return 0;
 }
-#endif
 
 //_____________________________________________________________________________
-Int_t THaDecData::ReadDatabase( const TDatime& date )
+Int_t DecData::GetConfigstr( FILE* file, const TDatime& date,
+			     Int_t /* db_version */,
+			     const BdataLoc::BdataLocType& loctype,
+			     TString& configstr )
 {
-  // Read THaDecData database
+  TString dbkey = loctype.fDBkey;
+  dbkey.Prepend( GetPrefix() );
+  return LoadDBvalue( file, date, dbkey, configstr );
+}
+
+//_____________________________________________________________________________
+Int_t DecData::ReadDatabase( const TDatime& date )
+{
+  // Read DecData database
 
   static const char* const here = "ReadDatabase";
 
@@ -390,12 +329,8 @@ Int_t THaDecData::ReadDatabase( const TDatime& date )
     fBdataLoc.Clear();
   }
 
-#ifdef DECDATA_LEGACY_DB
-  bool old_format = (CheckDBVersion(file) == 1);
-  map<TString,TString> configstr_map;
-  if( old_format )
-    ReadOldFormatDB( file, configstr_map );
-#endif
+  Int_t db_version = CheckDBVersion(file);
+  SetupDBVersion( file, db_version );
 
   Int_t err = 0;
   for( BdataLoc::TypeIter_t it = BdataLoc::fgBdataLocTypes().begin();
@@ -422,23 +357,9 @@ Int_t THaDecData::ReadDatabase( const TDatime& date )
     }
 
     TString configstr;
-#ifdef DECDATA_LEGACY_DB
-    // Retrieve old-format database parameters read above for this type
-    if( old_format ) {
-      map<TString,TString>::const_iterator found =
-	configstr_map.find(loctype.fDBkey);
-      if( found == configstr_map.end() )
-	continue;
-      configstr = found->second;
-    } else
-#endif
-    {
-      // Read key/value database format
-      TString dbkey = loctype.fDBkey;
-      dbkey.Prepend( GetPrefix() );
-      if( LoadDBvalue( file, date, dbkey, configstr ) != 0 )
-	continue;  // No definitions in database for this BdataLoc type
-    }
+    if( GetConfigstr(file, date, db_version, loctype, configstr) != 0 )
+      continue;  // No definitions in database for this BdataLoc type
+
     err = DefineLocType( loctype, configstr, re_init );
   }
 
@@ -446,22 +367,13 @@ Int_t THaDecData::ReadDatabase( const TDatime& date )
   if( err )
     return kInitError;
 
-// ======= FIXME: Hall A lib ================================================
-  // Configure the trigger bits with a pointer to our evtypebits
-  TIter next( &fBdataLoc );
-  while( BdataLoc* dataloc = static_cast<BdataLoc*>( next() ) ) {
-    if( dataloc->IsA() == TrigBitLoc::Class() )
-      dataloc->OptionPtr( &evtypebits );
-  }
-// ======= END FIXME: Hall A lib ============================================
-
   fIsInit = kTRUE;
   return kOK;
 }
 
 
 //_____________________________________________________________________________
-THaAnalysisObject::EStatus THaDecData::Init( const TDatime& run_time ) 
+THaAnalysisObject::EStatus DecData::Init( const TDatime& run_time )
 {
   // Custom Init() method. Since this apparatus has no traditional "detectors",
   // we skip the detector initialization.
@@ -472,7 +384,7 @@ THaAnalysisObject::EStatus THaDecData::Init( const TDatime& run_time )
 }
 
 //_____________________________________________________________________________
-Int_t THaDecData::Decode(const THaEvData& evdata)
+Int_t DecData::Decode(const THaEvData& evdata)
 {
   // Extract the requested variables from the event data
 
@@ -481,9 +393,9 @@ Int_t THaDecData::Decode(const THaEvData& evdata)
 
   Clear();
 
-  evtype = evdata.GetEvType();   // CODA event type 
+  evtype = evdata.GetEvType();   // CODA event type
 
-  // For each raw data source registered in fBdataLoc, get the data 
+  // For each raw data source registered in fBdataLoc, get the data
 
   //TODO: accelerate search for multiple header words in same crate
   //- group WordLoc objects by crate
@@ -494,7 +406,7 @@ Int_t THaDecData::Decode(const THaEvData& evdata)
   while( BdataLoc *dataloc = static_cast<BdataLoc*>( next() ) ) {
     dataloc->Load( evdata );
   }
-  
+
   if( fDebug>1 )
     Print();
 
@@ -502,9 +414,9 @@ Int_t THaDecData::Decode(const THaEvData& evdata)
 }
 
 //_____________________________________________________________________________
-void THaDecData::Print( Option_t* opt ) const
+void DecData::Print( Option_t* opt ) const
 {
-  // Print current status of all THaDecData variables
+  // Print current status of all DecData variables
 
   THaAnalysisObject::Print(opt);
 
@@ -533,6 +445,8 @@ void THaDecData::Print( Option_t* opt ) const
   }
 }
 
-//_____________________________________________________________________________
-ClassImp(THaDecData)
+////////////////////////////////////////////////////////////////////////////////
 
+} // end namespace Podd
+
+ClassImp(Podd::DecData)

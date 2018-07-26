@@ -1,9 +1,9 @@
-#ifndef Podd_THaDecData_h_
-#define Podd_THaDecData_h_
+#ifndef Podd_DecData_h_
+#define Podd_DecData_h_
 
 //////////////////////////////////////////////////////////////////////////
 //
-// THaDecData
+// Podd::DecData
 //
 //////////////////////////////////////////////////////////////////////////
 
@@ -13,12 +13,14 @@
 
 class TString;
 
-class THaDecData : public THaApparatus {
-  
+namespace Podd {
+
+class DecData : public THaApparatus {
+
 public:
-  THaDecData( const char* name = "D",
-	      const char* description = "Raw decoder data" );
-  virtual ~THaDecData();
+  DecData( const char* name = "D",
+	   const char* description = "Raw decoder data" );
+  virtual ~DecData();
 
   virtual EStatus Init( const TDatime& run_time );
   virtual void    Clear( Option_t* opt="" );
@@ -36,13 +38,21 @@ protected:
   THashList       fBdataLoc;   // Raw data channels
 
   virtual Int_t   DefineVariables( EMode mode = kDefine );
-  virtual FILE*   OpenFile( const TDatime& date );
   virtual Int_t   ReadDatabase( const TDatime& date );
 
   Int_t           DefineLocType( const BdataLoc::BdataLocType& loctype,
 				 const TString& configstr, bool re_init );
 
-  ClassDef(THaDecData,0)
+  // Expansion hooks for ReadDatabase
+  virtual Int_t   SetupDBVersion( FILE* file, Int_t db_version );
+  virtual Int_t   GetConfigstr( FILE* file, const TDatime& date,
+				Int_t db_version,
+				const BdataLoc::BdataLocType& loctype,
+				TString& configstr );
+
+  ClassDef(DecData,0)
 };
+
+} // namespace Podd
 
 #endif

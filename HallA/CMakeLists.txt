@@ -7,13 +7,14 @@ set(LIBNAME HallA)
 #----------------------------------------------------------------------------
 # Sources and headers
 set(src
-  THaADCHelicity.cxx          THaG0Helicity.cxx           THaG0HelicityReader.cxx
-  THaHRS.cxx                  THaHelicity.cxx             THaQWEAKHelicity.cxx
-  THaQWEAKHelicityReader.cxx  THaS2CoincTime.cxx          THaVDC.cxx
-  THaVDCAnalyticTTDConv.cxx   THaVDCChamber.cxx           THaVDCCluster.cxx
-  THaVDCHit.cxx               THaVDCPlane.cxx             THaVDCPoint.cxx
-  THaVDCPointPair.cxx         THaVDCTimeToDistConv.cxx    THaVDCTrackID.cxx
-  THaVDCWire.cxx              VDCeff.cxx
+  THaADCHelicity.cxx         THaDecData.cxx              THaG0Helicity.cxx
+  THaG0HelicityReader.cxx    THaHelicity.cxx             THaHRS.cxx
+  THaQWEAKHelicity.cxx       THaQWEAKHelicityReader.cxx  THaS2CoincTime.cxx
+  THaVDCAnalyticTTDConv.cxx  THaVDCChamber.cxx           THaVDCCluster.cxx
+  THaVDC.cxx                 THaVDCHit.cxx               THaVDCPlane.cxx
+  THaVDCPoint.cxx            THaVDCPointPair.cxx         THaVDCTimeToDistConv.cxx
+  THaVDCTrackID.cxx          THaVDCWire.cxx              TrigBitLoc.cxx
+  VDCeff.cxx
   )
 
 string(REPLACE .cxx .h headers "${src}")

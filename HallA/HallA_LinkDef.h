@@ -31,5 +31,7 @@
 #pragma link C++ class THaQWEAKHelicity+;
 #pragma link C++ class THaQWEAKHelicityReader+;
 #pragma link C++ class THaQWEAKHelicityReader::ROCinfo+;
+#pragma link C++ class THaDecData+;
+#pragma link C++ class TrigBitLoc+;
 
 #endif

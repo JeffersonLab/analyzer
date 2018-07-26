@@ -33,13 +33,12 @@
 #pragma link C++ class THaRunParameters+;
 #pragma link C++ class THaApparatus+;
 #pragma link C++ class THaSpectrometer+;
-#pragma link C++ class THaDecData+;
+#pragma link C++ class Podd::DecData+;
 #pragma link C++ class BdataLoc+;
 #pragma link C++ class CrateLoc+;
 #pragma link C++ class CrateLocMulti+;
 #pragma link C++ class WordLoc+;
 #pragma link C++ class RoclenLoc+;
-#pragma link C++ class TrigBitLoc+;
 #pragma link C++ class BankData+;
 #pragma link C++ class THaAnalysisObject+;
 #pragma link C++ class THaDetectorBase+;
