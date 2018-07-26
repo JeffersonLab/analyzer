@@ -41,18 +41,6 @@ endif()
 math(EXPR ${PROJECT_NAME_UC}_VERCODE
   "${PROJECT_VERSION_MAJOR} * 65536 + ${PROJECT_VERSION_MINOR} * 256 + ${PROJECT_VERSION_PATCH}")
 
-find_program(MK_ROOTDICT mk_rootdict.sh
-  HINTS
-    ${CMAKE_CURRENT_LIST_DIR}/../..
-    ${CMAKE_CURRENT_LIST_DIR}/../../..
-  PATH_SUFFIXES scripts
-  DOC "Wrapper script for ROOT dictionary generator"
-  )
-if(NOT MK_ROOTDICT)
-  message(FATAL_ERROR
-    "PoddCMakeEnv: Cannot find mk_rootdict.sh. Check your Podd installation.")
-endif()
-
 #============================================================================
 # Remove duplicates from space-separated list of items
 function(remove_duplicates _invar _outvar)

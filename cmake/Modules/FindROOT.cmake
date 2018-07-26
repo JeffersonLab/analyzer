@@ -172,6 +172,17 @@ find_package_handle_standard_args(ROOT
 
 endif(NOT TARGET ROOT::Libraries)
 
+find_program(MK_ROOTDICT mk_rootdict.sh
+  HINTS
+    ${CMAKE_CURRENT_LIST_DIR}/../..
+    ${CMAKE_CURRENT_LIST_DIR}/../../..
+  PATH_SUFFIXES scripts
+  DOC "Wrapper script for ROOT dictionary generator"
+  )
+if(NOT MK_ROOTDICT)
+  message(FATAL_ERROR
+    "FindROOT: Cannot find mk_rootdict.sh. Check your Podd installation.")
+endif()
 
 # BUILD_ROOT_DICTIONARY(dictionary
 #                       LINKDEF <theLinkDef.h>
