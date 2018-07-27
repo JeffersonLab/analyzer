@@ -778,7 +778,7 @@ void THaVform::GetForm(Int_t size)
   string::size_type pos,pos1,pos2;
   vector<Int_t> ipos;
 
-  char num[10];
+  char num[11];
   string aline,acopy;
   for (int idx = 0; idx < size; ++idx) {
     acopy = fStitle;
