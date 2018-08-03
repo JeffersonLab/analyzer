@@ -44,6 +44,7 @@ public:
   size_t       GetTypeSize()                    const { return GetTypeSize(GetType()); }
   const char*  GetTypeName()                    const { return GetTypeName(GetType()); }
 
+  std::vector<Double_t>     GetValues()         const { return fImpl->GetValues(); }
   Double_t     GetValue( Int_t i = 0 )          const { return fImpl->GetValue(i); }
   Long64_t     GetValueInt( Int_t i = 0 )       const { return fImpl->GetValueInt(i); }
 
