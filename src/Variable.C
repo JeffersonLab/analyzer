@@ -98,6 +98,14 @@ const Int_t* Variable::GetDim() const
 }
 
 //_____________________________________________________________________________
+std::vector<Double_t> Variable::GetValues() const
+{
+  std::vector<Double_t> res;
+  for(int i = 0 ; i < GetLen(); i++) {
+    res.push_back(GetValue(i));
+  }
+  return res;
+}
 Double_t Variable::GetValue( Int_t i ) const
 {
   // Retrieve current value of this global variable as double.

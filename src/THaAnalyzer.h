@@ -56,6 +56,7 @@ public:
   THaEvData*     GetDecoder()          const;
   TList*         GetApps()             const  { return fApps; }
   TList*         GetPhysics()          const  { return fPhysics; }
+  THaEpicsEvtHandler* GetEpicsEvtHandler() { return fEpicsHandler; }
   TList*         GetEvtHandlers()      const  { return fEvtHandlers; }
   TList*         GetPostProcess()      const  { return fPostProcess; }
   Bool_t         HasStarted()          const  { return fAnalysisStarted; }

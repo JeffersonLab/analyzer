@@ -45,6 +45,8 @@ public:
   // Set the EPICS event type
   void      SetEpicsEvtType(Int_t itype) { fEpicsEvtType = itype; };
 
+  void SetEvTime(const ULong64_t evtime) { evt_time = evtime; }
+
   // Basic access to the decoded data
   Int_t     GetEvType()   const { return event_type; }
   Int_t     GetEvLength() const { return event_length; }
