@@ -165,9 +165,16 @@ Int_t THaEtClient::codaRead()
   struct timespec twait;
   Int_t *data;
   Int_t err;
-  Int_t lencpy, nbytes;
+  size_t lencpy;
+#if ET_SYSTEM_NSTATS > 10
+  // CODA >= 2.6.2, including CODA 3
+  size_t nbytes;
+  const size_t bpi = sizeof(int);
+#else
+  Int_t nbytes;
+  const Int_t bpi = sizeof(int);
+#endif
   Int_t swapflg;
-  const Int_t bpi = sizeof(Int_t);
 
   if (firstread) {
     firstread = 0;
@@ -206,9 +213,16 @@ Int_t THaEtClient::codaRead()
 
       et_event_getdata(evs[j], (void **) &data);
       et_event_needtoswap(evs[j], &swapflg);
+// The function et_event_CODAswap was removed in CODA 3.05
+// Since there seems to be no easy way to detect the ET software version,
+// we test on ET_ERROR_JAVASYS, which happens to be defined as of that version
+#if !defined(ET_ERROR_JAVASYS)
       if (swapflg == ET_SWAP) {
 	et_event_CODAswap(evs[j]);
       }
+#else
+// TODO: how to do CODAsawp with CODA >= 3.05?
+#endif
       Int_t* pdata = data;
       Int_t event_size = *pdata + 1;
       if ( event_size > MAXEVLEN ) {

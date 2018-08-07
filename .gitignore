@@ -17,6 +17,7 @@ hana_decode/tstoo
 hana_decode/tstskel
 utils/dbconvert
 bin/
+build*
 
 # Generated files
 *Dict.C
@@ -82,3 +83,6 @@ hana_decode/tstfadc_main_debug.txt
 
 #user specific stuff
 setup.csh
+
+# macOS pollution
+.DS_Store

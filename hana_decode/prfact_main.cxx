@@ -5,7 +5,7 @@
 #include <iostream>
 #include <cstdlib>
 #include "THaCodaFile.h"
-#include "THaCodaDecoder.h"
+#include "CodaDecoder.h"
 #include "TString.h"
 #include "evio.h"
 
@@ -31,7 +31,7 @@ int main(int argc, char* argv[])
         exit(0);
    }
       
-   THaEvData *evdata = new THaCodaDecoder();
+   THaEvData *evdata = new CodaDecoder();
 
    // Can tell evdata whether to use evtype 
    // 133 or 120 for prescale data.  Default is 120.

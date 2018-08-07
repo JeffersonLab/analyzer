@@ -81,8 +81,6 @@ if not (baseenv.GetOption('clean') or baseenv.GetOption('help')):
        # if not conf.CheckFunc('printf'):
        #         print('!!! Your compiler and/or environment is not correctly configured.')
        #         Exit(1)
-   if conf.CheckCXXHeader('sstream'):
-       conf.env.Append(CPPDEFINES = 'HAS_SSTREAM')
    baseenv = conf.Finish()
 
 Export('baseenv')

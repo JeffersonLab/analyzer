@@ -3,7 +3,7 @@ Hall A C++ Analyzer
 
 This is the standard data analysis software for
 [Hall A](http://hallaweb.jlab.org/) at [Jefferson Lab](https://www.jlab.org).
-The current stable version is 1.6.0.
+The current stable version is 1.6.3.
 
 Overview
 --------
@@ -41,9 +41,6 @@ are the main prerequisites for analyzer 1.6:
 * [EVIO](https://coda.jlab.org/drupal/content/event-io-evio) version 4.0
   or higher. CODA must be set to point to the top of the installation location.
 
-### Compiling with make
-    make
-
 ### Compiling with scons
 Ensure that you have SCons version is 2.1.0 or higher. Then simply do
 
@@ -54,6 +51,32 @@ To do the equivalent of "make clean", do
 `scons -c`
 To compile with debug capabilities, do
 `scons debug=1`
+
+### Compiling with CMake (experimental)
+
+Do the usual CMake setup
+
+```
+mkdir build
+cd build
+cmake -DCMAKE_INSTALL_PREFIX=$HOME/local/analyzer ..
+make -jN install
+```
+
+Here `$HOME/local/analyzer` is an example installation destination;
+modify as appropriate. You will need to add the `bin` and `lib` sub-directories
+under the installation prefix to your environment:
+
+```
+export PATH=$HOME/local/analyzer/bin:$PATH
+export LD_LIBRARY_PATH=$HOME/local/analyzer/lib:$LD_LIBRARY_PATH
+```
+
+On 64-bit Linux, the library directory is usually `lib64` instead of `lib`.
+
+### Compiling with make (deprecated)
+    make
+
 
 Contributing
 ------------

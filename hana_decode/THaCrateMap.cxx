@@ -32,9 +32,6 @@
 #include <iomanip>
 
 #include <sstream>
-#define ISSTREAM istringstream
-#define OSSTREAM ostringstream
-#define ASSIGN_SSTREAM(a,b) a=b.str()
 
 using namespace std;
 
@@ -286,7 +283,7 @@ int THaCrateMap::init(TString the_map)
 
   // be certain the_map ends with a '\0' so we can make a stringstream from it
   the_map += '\0';
-  ISSTREAM s(the_map.Data());
+  istringstream s(the_map.Data());
 
   int linecnt = 0;
   string line;

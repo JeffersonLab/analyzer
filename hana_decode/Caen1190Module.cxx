@@ -78,30 +78,41 @@ namespace Decoder {
 
   Int_t Caen1190Module::Decode(const UInt_t *p) {
     Int_t glbl_trl = 0;
-    switch( (*p) & 0xf8000000) {
-    case 0xc0000000 :		// buffer alignment filler word; skip
+    switch( *p & 0xf8000000) {
+    case 0xc0000000 : // buffer alignment filler word; skip
       break;
-    case 0x40000000 : 		// Global header
-      tdc_data.evno=(*p & 0x07ffffe0) >> 5;
-      tdc_data.slot=(*p & 0x0000001f);
-      if (tdc_data.slot == static_cast <UInt_t> (fSlot)) {
+    case 0x40000000 : // global header
+      	tdc_data.glb_hdr_evno = (*p & 0x07ffffe0) >> 5; // bits 26-5
+	tdc_data.glb_hdr_slno =  *p & 0x0000001f;       // bits 4-0
+	if (tdc_data.glb_hdr_slno == static_cast <UInt_t> (fSlot)) {
 #ifdef WITH_DEBUG
 	if (fDebugFile != 0)
 	  *fDebugFile << "Caen1190Module:: 1190 GLOBAL HEADER >> data = " 
 		      << hex << *p << " >> event number = " << dec 
-		      << tdc_data.evno << " >> slot number = "  
-		      << tdc_data.slot << endl;
+		      << tdc_data.glb_hdr_evno << " >> slot number = "  
+		      << tdc_data.glb_hdr_slno << endl;
 #endif
       }
       break;
-    case 0x08000000 :  // chip header; contains: chip nr., ev. nr, bunch ID
-      //chip_nr_hd = ((*p)&0x03000000) >> 24; // bits 25-24
-      //bunch_id = ((*p)&0x00000fff); // bits 11-0
+    case 0x08000000 : // tdc header
+      if (tdc_data.glb_hdr_slno == static_cast <UInt_t> (fSlot)) {
+	tdc_data.hdr_chip_id  = (*p & 0x03000000) >> 24; // bits 25-24
+	tdc_data.hdr_event_id = (*p & 0x00fff000) >> 12; // bits 23-12
+	tdc_data.hdr_bunch_id =  *p & 0x00000fff;        // bits 11-0
+#ifdef WITH_DEBUG
+	if (fDebugFile != 0)
+	  *fDebugFile << "Caen1190Module:: 1190 TDC HEADER >> data = " 
+		      << hex << *p << " >> chip id = " << dec 
+		      << tdc_data.hdr_chip_id  << " >> event id = "
+		      << tdc_data.hdr_event_id << " >> bunch_id = "
+		      << tdc_data.hdr_bunch_id << endl;
+#endif
+      }
       break;
-    case  0x00000000 : 		// measurement data
-      if (tdc_data.slot == static_cast <UInt_t> (fSlot)) {
-	tdc_data.chan=((*p)&0x03f80000)>>19; // bits 25-19
-	tdc_data.raw=((*p)&0x0007ffff); // bits 18-0
+    case  0x00000000 : // tdc measurement
+      if (tdc_data.glb_hdr_slno == static_cast <UInt_t> (fSlot)) {
+	tdc_data.chan   = (*p & 0x03f80000)>>19; // bits 25-19
+	tdc_data.raw    =  *p & 0x0007ffff;      // bits 18-0
 	tdc_data.status = slot_data->loadData("tdc", tdc_data.chan, tdc_data.raw, tdc_data.raw);
 #ifdef WITH_DEBUG
 	if (fDebugFile != 0)
@@ -111,54 +122,33 @@ namespace Decoder {
 		      << tdc_data.raw << " >> status = "
 		      << tdc_data.status << endl;
 #endif
-	if(Int_t (tdc_data.chan) < NTDCCHAN) { 
-	  if(fNumHits[tdc_data.chan] < MAXHIT) {
+	if(Int_t (tdc_data.chan) < NTDCCHAN) 
+	  if(fNumHits[tdc_data.chan] < MAXHIT)
 	    fTdcData[tdc_data.chan*MAXHIT + fNumHits[tdc_data.chan]++] = tdc_data.raw;
-	  }
-	}
 	if (tdc_data.status != SD_OK ) return -1;
       }
       break;
-    case 0x18000000 : // chip trailer:  contains chip nr. & ev nr & word count
-      // chip_nr_tr = ((*p)&0x03000000) >> 24; // bits 25-24
-      /* If there is a chip trailer we assume there is a header too so we
-       * cross check if chip nr stored in header matches chip nr. stored in
-       * trailer.
-       */
-      // if (chip_nr_tr != chip_nr_hd) {
-      // cerr  << "mismatch in chip nr between chip header and trailer"
-      //      << " " << "header says: " << " " << chip_nr_hd
-      //	      << " " << "trailer says: " << " " << chip_nr_tr << endl;
-      //};
-      //chip_nr_words = ((*p)&0x00000fff); // bits 11-0
-      //nword_mod++;
+    case 0x18000000 : // tdc trailer
+      if (tdc_data.glb_hdr_slno == static_cast <UInt_t> (fSlot)) {
+	tdc_data.trl_chip_id     = (*p & 0x03000000) >> 24; // bits 25-24
+	tdc_data.trl_event_id    = (*p & 0x00fff000) >> 12; // bits 23-12
+	tdc_data.trl_word_cnt    =  *p & 0x00000fff;        // bits 11-0
+#ifdef WITH_DEBUG
+	if (fDebugFile != 0)
+	  *fDebugFile << "Caen1190Module:: 1190 TDC TRAILER >> data = " 
+		      << hex << *p << " >> chip id = " << dec 
+		      << tdc_data.trl_chip_id  << " >> event id = "
+		      << tdc_data.trl_event_id << " >> word count = "
+		      << tdc_data.trl_word_cnt << endl;
+#endif
+      }
       break;
-    case 0x80000000 :  // global trailer: contains error status & word count per module & slot nr.
-      //      status_err = ((*p)&0x07000000) >> 24; // bits 26-24
-      //      if(status_err != 0) {
-      //	cerr << "(evt: " << event_num << ", slot: "<< slot_from_gl_hd << ") ";
-      //	cerr << "Error in 1190 status word: " << hex << status_err << dec << endl;
-      //      }
-      //      module_nr_words = ((*p)&0x001fffe0) >> 5; // bits 20-5
-      //      slot_from_gl_tr = ((*p)&0x0000001f); // bits 4-0
-      //      if (slot_from_gl_tr != slot_from_gl_hd) {
-      //	cerr << "(evt: " << event_num << ", slot: "<< slot_from_gl_hd << ") ";
-      //	cerr  << "mismatch in slot between global header and trailer"
-      //	      << " " << "header says: " << " " << slot_from_gl_hd
-      //	      << " " << "trailer says: " << " " << slot_from_gl_tr << endl;
-      //      };
-      //      nword_mod++;
-      if (tdc_data.slot == static_cast <UInt_t> (fSlot))
-	glbl_trl = 1;
-      break;
-    case 0x88000000:  // Global Trigger Time Tag: trigger arrival time relatively to the Count Reset.
-      break;
-    case 0x20000000:		// Output Buffer: TDC Error
-      if (tdc_data.slot == static_cast <UInt_t> (fSlot)) {
-	tdc_data.chip_nr_hd = ((*p)&0x03000000) >> 24; // bits 25-24
-	tdc_data.flags = *p&0x7fff;			   // Error flags
-	cout << "TDC1190 Error: Slot " << tdc_data.slot << ", Chip " << tdc_data.chip_nr_hd << 
-	  ", Flags " << hex << tdc_data.flags << dec << " " << ", Ev #" << tdc_data.evno << endl;
+    case 0x20000000 : // tdc error
+      if (tdc_data.glb_hdr_slno == static_cast <UInt_t> (fSlot)) {
+	tdc_data.chip_nr_hd = (*p & 0x03000000) >> 24; // bits 25-24
+	tdc_data.flags      =  *p & 0x00007fff;	       // bits 14-0
+	cout << "TDC1190 Error: Slot " << tdc_data.glb_hdr_slno << ", Chip " << tdc_data.chip_nr_hd << 
+	  ", Flags " << hex << tdc_data.flags << dec << " " << ", Ev #" << tdc_data.glb_hdr_evno << endl;
 #ifdef WITH_DEBUG
 	if (fDebugFile != 0)
 	  *fDebugFile << "Caen1190Module:: 1190 TDC ERROR >> data = " 
@@ -167,9 +157,36 @@ namespace Decoder {
 		      << tdc_data.flags << dec << endl;
 #endif
 	break;
-      default:			// Unknown word
+      default:	// unknown word
 	cout << "unknown word for TDC1190: " << hex << (*p) << dec << endl;
-	cout << "according to global header ev. nr. is: " << " " << tdc_data.evno << endl;
+	cout << "according to global header ev. nr. is: " << " " << tdc_data.glb_hdr_evno << endl;
+      }
+      break;
+    case 0x88000000 :  // extended trigger time tag
+      if (tdc_data.glb_hdr_slno == static_cast <UInt_t> (fSlot)) {
+	tdc_data.trig_time = *p & 0x7ffffff; // bits 27-0
+#ifdef WITH_DEBUG
+	if (fDebugFile != 0)
+	  *fDebugFile << "Caen1190Module:: 1190 GLOBAL TRIGGER TIME >> data = " 
+		      << hex << *p << " >> trigger time = " << dec
+		      << tdc_data.trig_time << endl;
+#endif
+      }
+      break;
+    case 0x80000000 : // global trailer
+     if (tdc_data.glb_hdr_slno == static_cast <UInt_t> (fSlot)) {
+       tdc_data.glb_trl_status  = (*p & 0x07000000) >> 24; // bits 24-26
+       tdc_data.glb_trl_wrd_cnt = (*p & 0x001fffe0) >> 5;  // bits 20-5
+       tdc_data.glb_trl_slno    =  *p & 0x0000001f;        // bits 4-0   
+#ifdef WITH_DEBUG
+	if (fDebugFile != 0)
+	  *fDebugFile << "Caen1190Module:: 1190 GLOBAL TRAILER >> data = " 
+		      << hex << *p << " >> status = "
+		      << tdc_data.glb_trl_status << " >> word count = " << dec 
+		      << tdc_data.glb_trl_wrd_cnt << " >> slot number = "  
+		      << tdc_data.glb_trl_slno << endl;
+#endif
+	glbl_trl = 1;
       }
       break;
     }
@@ -190,4 +207,3 @@ namespace Decoder {
 }
 
 ClassImp(Decoder::Caen1190Module)
-

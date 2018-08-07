@@ -56,6 +56,7 @@ public:
   THaEvData*     GetDecoder()          const;
   TList*         GetApps()             const  { return fApps; }
   TList*         GetPhysics()          const  { return fPhysics; }
+  THaEpicsEvtHandler* GetEpicsEvtHandler() { return fEpicsHandler; }
   TList*         GetEvtHandlers()      const  { return fEvtHandlers; }
   TList*         GetPostProcess()      const  { return fPostProcess; }
   Bool_t         HasStarted()          const  { return fAnalysisStarted; }
@@ -81,6 +82,7 @@ public:
   static THaAnalyzer* GetInstance() { return fgAnalyzer; }
 
   // Return codes for analysis routines inside event loop
+  // These should be ordered by severity
   enum ERetVal { kOK, kSkip, kTerminate, kFatal };
 
 protected:

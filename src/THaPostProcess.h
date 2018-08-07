@@ -15,7 +15,10 @@ class THaPostProcess : public TObject {
   virtual Int_t Init(const TDatime& )=0;
   virtual Int_t Process( const THaEvData*, const THaRunBase*, Int_t code )=0;
   virtual Int_t Close()=0;
- protected:
+
+  enum { kUseReturnCode = BIT(23) };
+
+protected:
   Int_t fIsInit;
 
   static TList* fgModules; // List of all current PostProcess modules

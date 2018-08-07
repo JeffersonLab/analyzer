@@ -18,8 +18,8 @@
 // 
 //////////////////////////////////////////////////////////////////////////
 
-#include "THaPrimaryKine.h"
 #include "THaSecondaryKine.h"
+#include "THaPrimaryKine.h"
 #include "THaTrackingModule.h"
 #include "VarDef.h"
 #include "TLorentzVector.h"

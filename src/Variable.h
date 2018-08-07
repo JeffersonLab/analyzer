@@ -28,6 +28,7 @@ namespace Podd {
 
             VarType      GetType() const { return fType; }
 
+    virtual std::vector<Double_t>     GetValues() const;
     virtual Double_t     GetValue( Int_t i = 0 ) const;
     virtual Long64_t     GetValueInt( Int_t i = 0 ) const;
 
