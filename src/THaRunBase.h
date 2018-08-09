@@ -68,7 +68,7 @@ public:
           void         SetEventRange( UInt_t first, UInt_t last );
   virtual void         SetNumber( Int_t number );
           void         SetRunParamClass( const char* classname );
-          void         SetCodaVersion(Int_t ver) { fCodaVersion = ver; }
+          void         SetCodaVersion(Int_t vers) { fCodaVersion = vers; }
   virtual void         SetType( Int_t type );
   virtual Int_t        Update( const THaEvData* evdata );
 
