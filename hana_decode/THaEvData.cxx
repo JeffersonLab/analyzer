@@ -1,4 +1,4 @@
-/////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
 //
 //   THaEvData
 //   Hall A Event Data from One "Event"
@@ -60,7 +60,7 @@ THaEvData::THaEvData() :
   fMap(0), first_decode(true), fTrigSupPS(true),
   fMultiBlockMode(kFALSE), fBlockIsDone(kFALSE),
   buffer(0), fDebugFile(0), run_num(0), run_type(0), fRunTime(0),
-  evt_time(0), recent_event(0), 
+  evt_time(0), recent_event(0), fCodaVersion(0), 
   buffmode(false), synchmiss(false), synchextra(false),
   fNSlotUsed(0), fNSlotClear(0), 
   fDoBench(kFALSE), fBench(0), fNeedInit(true), fDebug(0), fExtra(0)
@@ -240,6 +240,17 @@ void THaEvData::hexdump(const char* cbuff, size_t nlen)
     } cout << endl;
     p += NW;
   }
+}
+
+void THaEvData::SetCodaVersion(Int_t vers)
+{
+  if (vers != 2 && vers != 3) {
+    cout << "ERROR::THaEvData::SetCodaVersion version "<<vers;
+    cout << "  must be 2 or 3 only."<<endl;
+    cout << "Not setting CODA version ! "<<endl;
+    return;
+  }
+  fCodaVersion = vers;
 }
 
 void THaEvData::SetDefaultCrateMapName( const char* name )
