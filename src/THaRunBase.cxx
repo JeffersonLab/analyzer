@@ -25,12 +25,12 @@ static const char* NOTINIT = "uninitialized run";
 static const char* DEFRUNPARAM = "THaRunParameters";
 
 //_____________________________________________________________________________
-THaRunBase::THaRunBase( const char* description ) : 
-  TNamed(NOTINIT, description ), 
+THaRunBase::THaRunBase( const char* description ) :
+  TNamed(NOTINIT, description ),
   fNumber(-1), fType(0), fDate(UNDEFDATE,0), fNumAnalyzed(0),
-  fDBRead(kFALSE), fIsInit(kFALSE), fOpened(kFALSE), fAssumeDate(kFALSE), 
+  fDBRead(kFALSE), fIsInit(kFALSE), fOpened(kFALSE), fAssumeDate(kFALSE),
   fDataSet(0), fDataRead(0), fDataRequired(kDate), fParam(0),
-  fRunParamClass(DEFRUNPARAM), fExtra(0)
+  fRunParamClass(DEFRUNPARAM), fExtra(0), fCodaVersion(0)
 {
   // Normal & default constructor
 
@@ -38,11 +38,11 @@ THaRunBase::THaRunBase( const char* description ) :
 }
 
 //_____________________________________________________________________________
-THaRunBase::THaRunBase( const THaRunBase& rhs ) : 
-  TNamed( rhs ), fNumber(rhs.fNumber), fType(rhs.fType), 
-  fDate(rhs.fDate), fNumAnalyzed(rhs.fNumAnalyzed), fDBRead(rhs.fDBRead), 
+THaRunBase::THaRunBase( const THaRunBase& rhs ) :
+  TNamed( rhs ), fNumber(rhs.fNumber), fType(rhs.fType),
+  fDate(rhs.fDate), fNumAnalyzed(rhs.fNumAnalyzed), fDBRead(rhs.fDBRead),
   fIsInit(rhs.fIsInit), fOpened(kFALSE), fAssumeDate(rhs.fAssumeDate),
-  fDataSet(rhs.fDataSet), fDataRead(rhs.fDataRead), 
+  fDataSet(rhs.fDataSet), fDataRead(rhs.fDataRead),
   fDataRequired(rhs.fDataRequired),
   fParam(0), fRunParamClass(rhs.fRunParamClass), fExtra(0)
 {
@@ -125,7 +125,7 @@ Int_t THaRunBase::Update( const THaEvData* evdata )
     SetType( evdata->GetRunType() );
     fDataRead |= kDate|kRunNumber|kRunType;
     ret = 1;
-  } 
+  }
   // Prescale factors
   if( evdata->IsPrescaleEvent() ) {
     for(int i=0; i<fParam->GetPrescales().GetSize(); i++) {
@@ -232,7 +232,7 @@ void THaRunBase::ClearEventRange()
 //_____________________________________________________________________________
 Int_t THaRunBase::Compare( const TObject* obj ) const
 {
-  // Compare two THaRunBase objects via run numbers. Returns 0 when equal, 
+  // Compare two THaRunBase objects via run numbers. Returns 0 when equal,
   // -1 when 'this' is smaller and +1 when bigger (like strcmp).
 
   if (this == obj) return 0;
@@ -246,7 +246,7 @@ Int_t THaRunBase::Compare( const TObject* obj ) const
 //_____________________________________________________________________________
 Bool_t THaRunBase::HasInfo( UInt_t bits ) const
 {
-  // Test if all the bits set in 'bits' are also set in fDataSet. 
+  // Test if all the bits set in 'bits' are also set in fDataSet.
   // 'bits' should consist of the bits defined in EInfoType.
   return ((bits & fDataSet) == bits);
 }
@@ -254,7 +254,7 @@ Bool_t THaRunBase::HasInfo( UInt_t bits ) const
 //_____________________________________________________________________________
 Bool_t THaRunBase::HasInfoRead( UInt_t bits ) const
 {
-  // Test if all the bits set in 'bits' are also set in fDataRead. 
+  // Test if all the bits set in 'bits' are also set in fDataRead.
   // 'bits' should consist of the bits defined in EInfoType.
   return ((bits & fDataRead) == bits);
 }
@@ -262,7 +262,7 @@ Bool_t THaRunBase::HasInfoRead( UInt_t bits ) const
 //_____________________________________________________________________________
 Int_t THaRunBase::Init()
 {
-  // Initialize the run. This reads the run database, checks 
+  // Initialize the run. This reads the run database, checks
   // whether the data source can be opened, and if so, initializes the
   // run parameters (run number, time, etc.)
 
@@ -323,7 +323,7 @@ Int_t THaRunBase::Init()
     return retval;
 
   if( !HasInfo(fDataRequired) ) {
-    const char* errmsg[] = { "run date", "run number", "run type", 
+    const char* errmsg[] = { "run date", "run number", "run type",
 			     "prescale factors", 0 };
     TString errtxt("Missing run parameters: ");
     UInt_t i = 0, n = 0;
@@ -400,7 +400,7 @@ void THaRunBase::Print( Option_t* opt ) const
 Int_t THaRunBase::ReadDatabase()
 {
   // Query the run database for the parameters of this run. The actual
-  // work is done in the THaRunParameters object. Usually, the beam and target 
+  // work is done in the THaRunParameters object. Usually, the beam and target
   // parameters are read.  Internal function called by Init().
   //
   // Return 0 if success.
@@ -425,7 +425,7 @@ Int_t THaRunBase::ReadDatabase()
   fDBRead = true;
   return READ_OK;
 }
-  
+
 //_____________________________________________________________________________
 Int_t THaRunBase::ReadInitInfo()
 {
@@ -433,7 +433,7 @@ Int_t THaRunBase::ReadInitInfo()
   // Internal function called by Init(). The default version checks
   // if run date set and prints an error if not.
 
-  // The data source can be assumed to be open at the time this 
+  // The data source can be assumed to be open at the time this
   // routine is called.
 
   if( !fAssumeDate )
@@ -489,7 +489,7 @@ void THaRunBase::SetDataRequired( UInt_t mask )
   //
   // run->SetDataRequired( THaRunBase::kDate );
   //
-  
+
   UInt_t all_info = kDate | kRunNumber | kRunType | kPrescales;
   if( (mask & all_info) != mask ) {
     Warning( "THaRunBase::SetDataRequired", "Illegal bit(s) 0x%x in bitmask "

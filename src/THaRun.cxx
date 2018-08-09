@@ -149,7 +149,9 @@ Int_t THaRun::Open()
   }
 
   Int_t st = fCodaData->codaOpen( fFilename );
-  fCodaVersion = fCodaData->getCodaVersion();
+// Get fCodaVersion from data; however, if it was already defined
+// by the analyzer script use that instead.
+  if (fCodaVersion == 0) fCodaVersion = fCodaData->getCodaVersion();
   cout << "in THaRun::Open:  coda version "<<fCodaVersion<<endl;
   if( st == 0 )
     fOpened = kTRUE;
