@@ -64,8 +64,8 @@ Int_t CodaDecoder::LoadEvent(const UInt_t* evbuffer)
 {
   // Main engine for decoding, called by public LoadEvent() methods
 
-  if (fCodaVersion == 0) {
-     cout << "This makes no sense, coda version zero ??  Exit !!"<<endl;
+  if (fCodaVersion <= 0) {
+     cout << "This makes no sense, coda version "<<fCodaVersion<<" ??  Exit !!"<<endl;
      exit(0);
   }
   event_length = evbuffer[0]+1;  // in longwords (4 bytes)
@@ -627,6 +627,11 @@ Int_t CodaDecoder::FindRocsCoda3(const UInt_t *evbuffer) {
   /* Sanity check:  Check if number of ROCs matches */
   if(nroc != tbank.nrocs) {
       printf(" ****ERROR: Trigger and Physics Block sizes do not match (%d != %d)\n",nroc,tbank.nrocs);
+// If you are reading a data file orignally written with CODA 2 and then
+// processed (written out) with EVIO 4, it will segfault. Do as it says below.
+      printf("This might indicate a file written with EVIO 4 that was a CODA 2 file\n");
+      printf("Try  analyzer->SetCodaVersion(2)  in the analyzer script.\n");
+
   }
 
   if (fDebugFile) {  // debug   

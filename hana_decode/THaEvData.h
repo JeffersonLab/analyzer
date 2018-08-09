@@ -48,7 +48,8 @@ public:
   void      SetEpicsEvtType(Int_t itype) { fEpicsEvtType = itype; };
 
   // Set the CODA version which affects some decoding behaviour
-  void      SetCodaVersion(Int_t vers) { fCodaVersion = vers; };
+  void      SetCodaVersion(Int_t vers);
+  Int_t     GetCodaVersion() const { return fCodaVersion; }
 
   // Basic access to the decoded data
   Int_t     GetEvType()   const { return event_type; }

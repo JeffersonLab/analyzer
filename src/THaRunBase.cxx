@@ -30,7 +30,7 @@ THaRunBase::THaRunBase( const char* description ) :
   fNumber(-1), fType(0), fDate(UNDEFDATE,0), fNumAnalyzed(0),
   fDBRead(kFALSE), fIsInit(kFALSE), fOpened(kFALSE), fAssumeDate(kFALSE), 
   fDataSet(0), fDataRead(0), fDataRequired(kDate), fParam(0),
-  fRunParamClass(DEFRUNPARAM), fExtra(0)
+  fRunParamClass(DEFRUNPARAM), fExtra(0), fCodaVersion(0)
 {
   // Normal & default constructor
 
@@ -339,9 +339,9 @@ Int_t THaRunBase::Init()
       msg++;
     }
     errtxt += ". Run not initialized.";
-    Error( here, "%s", errtxt.Data() );
+    Error( here, "%s", errtxt.Data() );  
 
-    return READ_FATAL;
+    return READ_FATAL;  
   }
 
   // Read the database to obtain additional parameters that are not set
