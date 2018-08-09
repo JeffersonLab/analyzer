@@ -339,9 +339,9 @@ Int_t THaRunBase::Init()
       msg++;
     }
     errtxt += ". Run not initialized.";
-    //    Error( here, "%s", errtxt.Data() );  // temp !!
+    Error( here, "%s", errtxt.Data() );  
 
-    return READ_OK;  // temp !!
+    return READ_FATAL;  
   }
 
   // Read the database to obtain additional parameters that are not set
