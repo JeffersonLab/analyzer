@@ -98,7 +98,7 @@ protected:
   Int_t fNMaxGap;         // Max gap in wire numbers in a cluster
   Int_t fMinTime;         // Min and Max limits of TDC times for clusters
   Int_t fMaxTime;
-
+  Int_t fMaxThits;        // Max allowed number of hits per wire per event
   Double_t fMinTdiff;     // Min and Max limits of times between wires in cluster
   Double_t fMaxTdiff;
   Double_t fTDCRes;       // TDC Resolution ( s / channel)
