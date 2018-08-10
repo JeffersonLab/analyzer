@@ -15,8 +15,8 @@
 class THaVDCHit : public TObject {
 
 public:
-  THaVDCHit( THaVDCWire* wire=0, Int_t rawtime=0, Double_t time=0.0 )
-    : fWire(wire), fRawTime(rawtime), fTime(time), fDist(kBig), fdDist(1.0),
+  THaVDCHit( THaVDCWire* wire=0, Int_t rawtime=0, Double_t time=0.0, Int_t nthit=0 )
+    : fWire(wire), fRawTime(rawtime), fTime(time), fNthit(nthit), fDist(kBig), fdDist(1.0),
       ftrDist(kBig), fTrkNum(0), fClsNum(-1) {}
   virtual ~THaVDCHit() {}
 
@@ -34,6 +34,7 @@ public:
   Double_t GetdDist()   const { return fdDist; }
   Int_t    GetTrkNum()  const { return fTrkNum; }
   Int_t    GetClsNum()  const { return fClsNum; }
+  Int_t    GetNthit()   const { return fNthit; }
 
   void     SetWire(THaVDCWire * wire) { fWire = wire; }
   void     SetRawTime(Int_t time)     { fRawTime = time; }
@@ -44,6 +45,7 @@ public:
   void     SetLocalFitDist(Double_t dist)  { fltrDist = dist; }
   void     SetTrkNum(Int_t num)       { fTrkNum = num; }
   void     SetClsNum(Int_t num)       { fClsNum = num; }
+  void     SetNthit(Int_t num)        { fNthit  = num; }
 
   // Functor for ordering hits
   struct ByWireThenTime :
@@ -64,6 +66,7 @@ protected:
   THaVDCWire* fWire;     // Wire on which the hit occurred
   Int_t       fRawTime;  // TDC value (channels)
   Double_t    fTime;     // Raw drift time, corrected for trigger time (s)
+  Double_t    fNthit;     // number of tdc hits per channel per event
   Double_t    fDist;     // (Perpendicular) Drift Distance
   Double_t    fdDist;    // uncertainty in fDist (for chi2 calc)
   Double_t    ftrDist;   // (Perpendicular) distance from the global track (m)
