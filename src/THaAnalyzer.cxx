@@ -81,7 +81,7 @@ THaAnalyzer::THaAnalyzer() :
   fIsInit(kFALSE), fAnalysisStarted(kFALSE), fLocalEvent(kFALSE),
   fUpdateRun(kTRUE), fOverwrite(kTRUE), fDoBench(kFALSE),
   fDoHelicity(kFALSE), fDoPhysics(kTRUE), fDoOtherEvents(kTRUE),
-  fDoSlowControl(kTRUE), fExtra(0)
+  fDoSlowControl(kTRUE), fExtra(0), fWantCodaVers(-1)
 
 {
   // Default constructor.
@@ -103,7 +103,7 @@ THaAnalyzer::THaAnalyzer() :
   fEpicsHandler = new THaEpicsEvtHandler("epics","EPICS event type");
   //  fEpicsHandler->SetDebugFile("epicsdat.txt");
   fEvtHandlers->Add(fEpicsHandler);
-  
+
 
   // Timers
   fBench = new THaBenchmark;
@@ -504,6 +504,8 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
   static const char* const here = "Init";
   Int_t retval = 0;
 
+  if (fWantCodaVers > 0) run->SetCodaVersion(fWantCodaVers);
+
   //--- Open the output file if necessary so that Trees and Histograms
   //    are created on disk.
 
@@ -610,6 +612,8 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
     }
     new_decoder = true;
   }
+
+  if (fWantCodaVers > 0) fEvData->SetCodaVersion(fWantCodaVers);
 
   // Make sure the run is initialized.
   bool run_init = false;
@@ -816,7 +820,11 @@ Int_t THaAnalyzer::ReadOneEvent()
     status = fRun->ReadEvent();
 
   // there may be a better place to do this, but this works
-  fEvData->SetCodaVersion(fRun->GetCodaVersion());
+  if (fWantCodaVers > 0) {
+    fEvData->SetCodaVersion(fWantCodaVers);
+  } else {
+    fEvData->SetCodaVersion(fRun->GetCodaVersion());
+  }
 
   switch( status ) {
   case THaRunBase::READ_OK:
@@ -1271,7 +1279,7 @@ Int_t THaAnalyzer::MainAnalysis()
     evdone = true;
   }
 
-  //=== EPICS data === 
+  //=== EPICS data ===
   fEvData->SetEpicsEvtType(fEpicsHandler->GetEvtType());
   if( fDoSlowControl && fEpicsHandler->IsMyEvent(fEvData->GetEvType()) ) {
     Incr(kNevEpics);
@@ -1509,6 +1517,19 @@ Int_t THaAnalyzer::Process( THaRunBase* run )
   //  gHaRun = NULL;
   return fNev;
 }
+
+//_____________________________________________________________________________
+void THaAnalyzer::SetCodaVersion(Int_t vers)
+{
+  if (vers != 2 && vers != 3) {
+    cout << "ERROR:THaRunBase:SetCodaVersion versions must be 2 or 3"<<endl;
+    cout << "Setting version = 2 by default "<<endl;
+    fWantCodaVers = 2;
+    return;
+  }
+  fWantCodaVers = vers;
+}
+
 
 //_____________________________________________________________________________
 
