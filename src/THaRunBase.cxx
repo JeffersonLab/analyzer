@@ -29,8 +29,8 @@ THaRunBase::THaRunBase( const char* description ) :
   TNamed(NOTINIT, description ),
   fNumber(-1), fType(0), fDate(UNDEFDATE,0), fNumAnalyzed(0),
   fDBRead(kFALSE), fIsInit(kFALSE), fOpened(kFALSE), fAssumeDate(kFALSE),
-  fDataSet(0), fDataRead(0), fDataRequired(kDate), fParam(0),
-  fRunParamClass(DEFRUNPARAM), fExtra(0), fCodaVersion(0)
+  fDataSet(0), fDataRead(0), fDataRequired(kDate), fCodaVersion(0), fParam(0),
+  fRunParamClass(DEFRUNPARAM), fExtra(0)
 {
   // Normal & default constructor
 

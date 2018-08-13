@@ -74,6 +74,7 @@ THaAnalyzer* THaAnalyzer::fgAnalyzer = 0;
 THaAnalyzer::THaAnalyzer() :
   fFile(NULL), fOutput(NULL), fEpicsHandler(NULL),
   fOdefFileName(kDefaultOdefFile), fEvent(NULL), fNStages(0), fNCounters(0),
+  fWantCodaVers(-1),
   fStages(NULL), fCounters(NULL), fNev(0), fMarkInterval(1000), fCompress(1),
   fVerbose(2), fCountMode(kCountRaw), fBench(NULL), fPrevEvent(NULL),
   fRun(NULL), fEvData(NULL), fApps(NULL), fPhysics(NULL),
@@ -81,7 +82,7 @@ THaAnalyzer::THaAnalyzer() :
   fIsInit(kFALSE), fAnalysisStarted(kFALSE), fLocalEvent(kFALSE),
   fUpdateRun(kTRUE), fOverwrite(kTRUE), fDoBench(kFALSE),
   fDoHelicity(kFALSE), fDoPhysics(kTRUE), fDoOtherEvents(kTRUE),
-  fDoSlowControl(kTRUE), fExtra(0), fWantCodaVers(-1)
+  fDoSlowControl(kTRUE), fExtra(0)
 
 {
   // Default constructor.
