@@ -28,7 +28,7 @@ THaBPM::THaBPM( const char* name, const char* description,
 				  THaApparatus* apparatus ) :
   THaBeamDet(name,description,apparatus),
   fRawSignal(NCHAN),fPedestals(NCHAN),fCorSignal(NCHAN),fRotPos(NCHAN/2),
-  fRot2HCSPos(NCHAN/2,NCHAN/2)
+  fRot2HCSPos(NCHAN/2,NCHAN/2), fCalibRot(0)
 {
   // Constructor
 }

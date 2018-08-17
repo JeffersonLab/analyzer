@@ -13,7 +13,6 @@
 #include "THaVDCPoint.h"
 #include <cassert>
 
-class THaVDCPlane;
 class THaEvData;
 
 // Coordinates of a point in this chamber

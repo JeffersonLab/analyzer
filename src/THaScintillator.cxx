@@ -31,7 +31,8 @@ THaScintillator::THaScintillator( const char* name, const char* description,
 				  THaApparatus* apparatus )
   : THaNonTrackingDetector(name,description,apparatus),
     fLOff(0), fROff(0), fLPed(0), fRPed(0), fLGain(0), fRGain(0),
-    fNTWalkPar(0), fTWalkPar(0), fTrigOff(0),
+    fTdc2T(0), fCn(0), fNTWalkPar(0), fTWalkPar(0), fAdcMIP(0), fTrigOff(0),
+    fAttenuation(0), fResolution(0),
     fLTNhit(0), fLT(0), fLT_c(0), fRTNhit(0), fRT(0), fRT_c(0),
     fLANhit(0), fLA(0), fLA_p(0), fLA_c(0), fRANhit(0), fRA(0), fRA_p(0), fRA_c(0),
     fNhit(0), fHitPad(0), fTime(0), fdTime(0), fAmpl(0), fYt(0), fYa(0)
@@ -41,11 +42,13 @@ THaScintillator::THaScintillator( const char* name, const char* description,
 
 //_____________________________________________________________________________
 THaScintillator::THaScintillator()
-  : THaNonTrackingDetector(), fLOff(0), fROff(0), fLPed(0), fRPed(0),
-    fLGain(0), fRGain(0), fTWalkPar(0), fAdcMIP(0), fTrigOff(0),
-    fLT(0), fLT_c(0), fRT(0), fRT_c(0), fLA(0), fLA_p(0), fLA_c(0),
-    fRA(0), fRA_p(0), fRA_c(0), fHitPad(0), fTime(0), fdTime(0), fAmpl(0),
-    fYt(0), fYa(0)
+  : THaNonTrackingDetector(),
+    fLOff(0), fROff(0), fLPed(0), fRPed(0), fLGain(0), fRGain(0),
+    fTdc2T(0), fCn(0), fNTWalkPar(0), fTWalkPar(0), fAdcMIP(0), fTrigOff(0),
+    fAttenuation(0), fResolution(0),
+    fLTNhit(0), fLT(0), fLT_c(0), fRTNhit(0), fRT(0), fRT_c(0),
+    fLANhit(0), fLA(0), fLA_p(0), fLA_c(0), fRANhit(0), fRA(0), fRA_p(0), fRA_c(0),
+    fNhit(0), fHitPad(0), fTime(0), fdTime(0), fAmpl(0), fYt(0), fYa(0)
 {
   // Default constructor (for ROOT I/O)
 

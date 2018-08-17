@@ -181,9 +181,11 @@ Bool_t THaOdata::Resize(Int_t i)
 }
 
 //_____________________________________________________________________________
-THaOutput::THaOutput() :
-   fNvar(0), fVar(NULL), fEpicsVar(0), fTree(NULL), 
-   fEpicsTree(NULL), fInit(false), fExtra(0)
+THaOutput::THaOutput()
+  : fNvar(0), fVar(0), fEpicsVar(0), fTree(0), fEpicsTree(0), fInit(false),
+    fExtra(0), fEpicsHandler(0),
+    nx(0), ny(0), iscut(0), xlo(0), xhi(0), ylo(0), yhi(0),
+    fOpenEpics(false), fFirstEpics(false), fIsScalar(false)
 {
   // Constructor
 }
@@ -349,31 +351,32 @@ Int_t THaOutput::Init( const char* filename )
       pcut->LongPrint();  // for debug
   }
   for (Iter_h_t ihist = fHistos.begin(); ihist != fHistos.end(); ++ihist) {
+    THaVhist* vhist = *ihist;
 // After initializing formulas and cuts, must sort through
 // histograms and potentially reassign variables.  
 // A histogram variable or cut is either a string (which can 
 // encode a formula) or an externally defined THaVform. 
-    sfvarx = (*ihist)->GetVarX();
-    sfvary = (*ihist)->GetVarY();
+    sfvarx = vhist->GetVarX();
+    sfvary = vhist->GetVarY();
     for (Iter_f_t iform = fFormulas.begin(); iform != fFormulas.end(); ++iform) {
       string stemp((*iform)->GetName());
       if (CmpNoCase(sfvarx,stemp) == 0) { 
-	(*ihist)->SetX(*iform);
+	vhist->SetX(*iform);
       }
       if (CmpNoCase(sfvary,stemp) == 0) { 
-	(*ihist)->SetY(*iform);
+	vhist->SetY(*iform);
       }
     }
-    if ((*ihist)->HasCut()) {
-      scut   = (*ihist)->GetCutStr();
+    if (vhist->HasCut()) {
+      scut   = vhist->GetCutStr();
       for (Iter_f_t icut = fCuts.begin(); icut != fCuts.end(); ++icut) {
         string stemp((*icut)->GetName());
         if (CmpNoCase(scut,stemp) == 0) { 
-	  (*ihist)->SetCut(*icut);
+	  vhist->SetCut(*icut);
         }
       }
     }
-    (*ihist)->Init();
+    vhist->Init();
   }
 
   if (!fEpicsKey.empty()) {
@@ -743,8 +746,7 @@ Int_t THaOutput::LoadFile( const char* filename )
 	  ErrFile(ikey, str);
 	  continue;
 	}
-	fHistos.push_back(
-			  new THaVhist(svkey,sname,stitle));
+	fHistos.push_back(new THaVhist(svkey,sname,stitle));
 	// Tentatively assign variables and cuts as strings. 
 	// Later will check if they are actually THaVform's.
 	fHistos.back()->SetX(nx, xlo, xhi, sfvarx);

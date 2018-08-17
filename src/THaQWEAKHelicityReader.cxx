@@ -19,12 +19,14 @@
 using namespace std;
 
 //____________________________________________________________________
-THaQWEAKHelicityReader::THaQWEAKHelicityReader() 
+THaQWEAKHelicityReader::THaQWEAKHelicityReader()
+  : fPatternTir(0), fHelicityTir(0), fTSettleTir(0), fTimeStampTir(0),
+    fOldTimeStampTir(0), fIRing(0),
+    fQWEAKDebug(0),      // Debug level
+    fHaveROCs(kFALSE),   // Required ROCs are defined
+    fNegGate(kFALSE)     // Invert polarity of gate, so that 0=active
 {
   // Default constructor
-  fQWEAKDebug=0;          // Debug level
-  fHaveROCs=kFALSE;         // Required ROCs are defined
-  fNegGate=kFALSE;          // Invert polarity of gate, so that 0=active
   
   memset( fROCinfo, 0, 3*sizeof(ROCinfo) );
   for( Int_t i = 0; i < NHISTR; ++i )
@@ -33,6 +35,9 @@ THaQWEAKHelicityReader::THaQWEAKHelicityReader()
 //____________________________________________________________________
 THaQWEAKHelicityReader::~THaQWEAKHelicityReader() 
 {
+  // Destructor
+
+  // Histograms will be deleted by ROOT
   // for( Int_t i = 0; i < NHISTR; ++i ) {
   //   delete fHistoR[i];
   // }

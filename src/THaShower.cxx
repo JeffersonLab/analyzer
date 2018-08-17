@@ -33,8 +33,9 @@ using namespace std;
 THaShower::THaShower( const char* name, const char* description,
 		      THaApparatus* apparatus ) :
   THaPidDetector(name,description,apparatus),
-  fNclublk(0), fNrows(0), fBlockX(0), fBlockY(0), fPed(0), fGain(0),
-  fNhits(0), fA(0), fA_p(0), fA_c(0), fNblk(0), fEblk(0)
+  fNclublk(0), fNrows(0), fBlockX(0), fBlockY(0), fPed(0), fGain(0), fEmin(0),
+  fNhits(0), fA(0), fA_p(0), fA_c(0), fAsum_p(kBig), fAsum_c(kBig),
+  fNclust(0), fE(kBig), fX(kBig), fY(kBig), fMult(0), fNblk(0), fEblk(0)
 {
   // Constructor
 }
@@ -42,8 +43,9 @@ THaShower::THaShower( const char* name, const char* description,
 //_____________________________________________________________________________
 THaShower::THaShower() :
   THaPidDetector(),
-  fNclublk(0), fNrows(0), fBlockX(0), fBlockY(0), fPed(0), fGain(0),
-  fNhits(0), fA(0), fA_p(0), fA_c(0), fNblk(0), fEblk(0)
+  fNclublk(0), fNrows(0), fBlockX(0), fBlockY(0), fPed(0), fGain(0), fEmin(0),
+  fNhits(0), fA(0), fA_p(0), fA_c(0), fAsum_p(kBig), fAsum_c(kBig),
+  fNclust(0), fE(kBig), fX(kBig), fY(kBig), fMult(0), fNblk(0), fEblk(0)
 {
   // Default constructor (for ROOT I/O)
 }

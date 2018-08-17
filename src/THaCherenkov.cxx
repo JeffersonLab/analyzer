@@ -28,17 +28,19 @@ using namespace std;
 
 //_____________________________________________________________________________
 THaCherenkov::THaCherenkov( const char* name, const char* description,
-			    THaApparatus* apparatus )
-  : THaPidDetector(name,description,apparatus), fOff(0), fPed(0), fGain(0),
-    fNThit(0), fT(0), fT_c(0), fNAhit(0), fA(0), fA_p(0), fA_c(0)
+                            THaApparatus* apparatus )
+  : THaPidDetector(name,description,apparatus), fTdc2T(0), fOff(0), fPed(0),
+    fGain(0), fNThit(0), fT(0), fT_c(0), fNAhit(0), fA(0), fA_p(0), fA_c(0),
+    fASUM_p(kBig), fASUM_c(kBig)
 {
   // Constructor
 }
 
 //_____________________________________________________________________________
 THaCherenkov::THaCherenkov()
-  : THaPidDetector(), fOff(0), fPed(0), fGain(0), fT(0), fT_c(0),
-    fA(0), fA_p(0), fA_c(0)
+  : THaPidDetector(), fTdc2T(0), fOff(0), fPed(0),
+    fGain(0), fNThit(0), fT(0), fT_c(0), fNAhit(0), fA(0), fA_p(0), fA_c(0),
+    fASUM_p(kBig), fASUM_c(kBig)
 {
   // Default constructor (for ROOT I/O)
 }

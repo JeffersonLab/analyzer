@@ -18,11 +18,13 @@
 
 class ScalerLoc { // Utility class used by THaScalerEvtHandler
  public:
- ScalerLoc(TString nm, TString desc, Int_t idx, Int_t sl, Int_t ich, Int_t iki) :
-  name(nm), description(desc), index(idx), islot(sl), ichan(ich), ikind(iki) { };
+  ScalerLoc(TString nm, TString desc, Int_t idx, Int_t sl, Int_t ich,
+      Int_t iki, Int_t iv)
+   : name(nm), description(desc), index(idx), islot(sl), ichan(ich),
+     ikind(iki), ivar(iv) {};
   ~ScalerLoc();
   TString name, description;
-  UInt_t index, islot, ichan, ivar, ikind;
+  UInt_t index, islot, ichan, ikind, ivar;
 };
 
 class THaScalerEvtHandler : public THaEvtTypeHandler {

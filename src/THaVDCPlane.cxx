@@ -50,14 +50,18 @@ using namespace std;
 THaVDCPlane::THaVDCPlane( const char* name, const char* description,
 			  THaDetectorBase* parent )
   : THaSubDetector(name,description,parent),
-    /*fTable(0),*/ fTTDConv(0), fVDC(0), fglTrg(0)
+    fNHits(0), fNWiresHit(0), fNpass(0), fMinClustSize(0),
+    fMaxClustSpan(kMaxInt), fNMaxGap(0), fMinTime(0), fMaxTime(kMaxInt),
+    fMaxThits(0), fMinTdiff(0), fMaxTdiff(kBig), fTDCRes(0), fDriftVel(0),
+    fT0Resolution(0), fWBeg(0), fWSpac(0), fWAngle(0), fSinWAngle(0),
+    fCosWAngle(1), /*fTable(0),*/ fTTDConv(0), fVDC(0), fglTrg(0)
 {
   // Constructor
 
   // Since TCloneArrays can resize, the size here is fairly unimportant
+  fWires    = new TClonesArray("THaVDCWire", 368 );
   fHits     = new TClonesArray("THaVDCHit", 20 );
   fClusters = new TClonesArray("THaVDCCluster", 5 );
-  fWires    = new TClonesArray("THaVDCWire", 368 );
 
   fVDC = dynamic_cast<THaVDC*>( GetMainDetector() );
 }

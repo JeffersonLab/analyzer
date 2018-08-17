@@ -24,10 +24,8 @@ THaQWEAKHelicity::THaQWEAKHelicity( const char* name, const char* description,
 				    THaApparatus* app ):
   THaHelicityDet( name, description, app ), 
   fOffsetTIRvsRing(3), fQWEAKDelay(8), fMAXBIT(30), 
-  fQWEAKNPattern(4), HWPIN(kTRUE),
-  fQrt(1),
-  fTSettle(0),fHelicityLastTIR(0),fPatternLastTIR(0),
-  fRing_NSeed(0),
+  fQWEAKNPattern(4), HWPIN(kTRUE), fQrt(1), fTSettle(0),fValidHel(kFALSE),
+  fHelicityLastTIR(0),fPatternLastTIR(0), fErrorCode(0), fRing_NSeed(0),
   fRingU3plus(0),fRingU3minus(0),
   fRingT3plus(0),fRingT3minus(0),
   fRingT5plus(0),fRingT5minus(0),
@@ -35,7 +33,7 @@ THaQWEAKHelicity::THaQWEAKHelicity( const char* name, const char* description,
   fRingTimeplus(0), fRingTimeminus(0),
   fRingSeed_reported(0),fRingSeed_actual(0),
   fRingPhase_reported(0),fRing_reported_polarity(0),
-  fRing_actual_polarity(0)
+  fRing_actual_polarity(0), fEvtype(-1)
 {
   for( Int_t i = 0; i < NHIST; ++i )
     fHisto[i] = 0;
@@ -44,6 +42,17 @@ THaQWEAKHelicity::THaQWEAKHelicity( const char* name, const char* description,
 
 //_____________________________________________________________________________
 THaQWEAKHelicity::THaQWEAKHelicity()
+  : fOffsetTIRvsRing(3), fQWEAKDelay(8), fMAXBIT(30),
+    fQWEAKNPattern(4), HWPIN(kTRUE), fQrt(1), fTSettle(0),fValidHel(kFALSE),
+    fHelicityLastTIR(0),fPatternLastTIR(0), fErrorCode(0), fRing_NSeed(0),
+    fRingU3plus(0),fRingU3minus(0),
+    fRingT3plus(0),fRingT3minus(0),
+    fRingT5plus(0),fRingT5minus(0),
+    fRingT10plus(0),fRingT10minus(0),
+    fRingTimeplus(0), fRingTimeminus(0),
+    fRingSeed_reported(0),fRingSeed_actual(0),
+    fRingPhase_reported(0),fRing_reported_polarity(0),
+    fRing_actual_polarity(0), fEvtype(-1)
 {
   // Default constructor for ROOT I/O
 

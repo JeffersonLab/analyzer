@@ -17,7 +17,7 @@ hana_decode/tstoo
 hana_decode/tstskel
 utils/dbconvert
 bin/
-build*
+/build*
 
 # Generated files
 *Dict.C
@@ -48,14 +48,13 @@ evio/
 *.cdef
 *.png
 *.patch
-/work/
 
 #scons stuff
 config.log
 *.pyc
 .sconsign.dblite
 .sconf_temp/
-dist/
+/dist/
 
 #eclipse stuff
 .project
@@ -78,8 +77,7 @@ hana_decode/runftdc.csh
 hana_decode/snippet.dat
 
 #decoder debug stuff
-hana_decode/tst1190_main_debug.txt
-hana_decode/tstfadc_main_debug.txt
+hana_decode/*_debug.txt
 
 #user specific stuff
 setup.csh

@@ -81,7 +81,7 @@ void VDCeff::VDCvar_t::Reset( Option_t* )
 
 //_____________________________________________________________________________
 VDCeff::VDCeff( const char* name, const char* description )
-  : THaPhysicsModule(name,description), fNevt(0)
+  : THaPhysicsModule(name,description), fNevt(0), fCycle(500), fMaxOcc(0.25)
 {
   // VDCeff module constructor
 

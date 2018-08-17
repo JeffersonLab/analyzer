@@ -43,7 +43,7 @@ THaRunBase::THaRunBase( const THaRunBase& rhs ) :
   fDate(rhs.fDate), fNumAnalyzed(rhs.fNumAnalyzed), fDBRead(rhs.fDBRead),
   fIsInit(rhs.fIsInit), fOpened(kFALSE), fAssumeDate(rhs.fAssumeDate),
   fDataSet(rhs.fDataSet), fDataRead(rhs.fDataRead),
-  fDataRequired(rhs.fDataRequired),
+  fDataRequired(rhs.fDataRequired), fCodaVersion(rhs.fCodaVersion),
   fParam(0), fRunParamClass(rhs.fRunParamClass), fExtra(0)
 {
   // Copy ctor
@@ -80,6 +80,7 @@ THaRunBase& THaRunBase::operator=(const THaRunBase& rhs)
      fDataSet    = rhs.fDataSet;
      fDataRead   = rhs.fDataRead;
      fDataRequired = rhs.fDataRequired;
+     fCodaVersion  = rhs.fCodaVersion;
      delete fParam;
      if( rhs.fParam ) {
        fParam = static_cast<THaRunParameters*>(rhs.fParam->IsA()->New());
@@ -181,7 +182,7 @@ bool THaRunBase::operator>=( const THaRunBase& rhs ) const
 }
 
 //_____________________________________________________________________________
-void THaRunBase::Clear( const Option_t* opt )
+void THaRunBase::Clear( Option_t* opt )
 {
   // Reset the run object as if freshly constructed.
   // However, when opt=="INIT", keep an explicitly set event range and run date

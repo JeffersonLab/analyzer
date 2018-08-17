@@ -14,7 +14,7 @@ using namespace std;
 const Double_t THaCluster::kBig = 1e38;
 
 //_____________________________________________________________________________
-void THaCluster::Clear( const Option_t* )
+void THaCluster::Clear( Option_t* )
 {
   // Clear the contents of the cluster
 

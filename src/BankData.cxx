@@ -35,7 +35,7 @@ public:
 
 //_____________________________________________________________________________
 BankData::BankData( const char* name, const char* description) :
-  THaPhysicsModule(name,description), Nvars(0), dvars(0), vardata(0)
+  THaPhysicsModule(name,description), fDebug(0), Nvars(0), dvars(0), vardata(0)
 {
   // Normal constructor.
 

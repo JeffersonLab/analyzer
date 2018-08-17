@@ -27,7 +27,8 @@ THaADCHelicity::THaADCHelicity( const char* name, const char* description,
 				THaApparatus* app ) : 
   THaHelicityDet( name, description, app ),
   fADC_hdata(kBig), fADC_Gate(kBig), fADC_Hel(kUnknown), 
-  fThreshold(kDefaultThreshold), fIgnoreGate(kFALSE), fNchan(0)
+  fThreshold(kDefaultThreshold), fIgnoreGate(kFALSE),
+  fInvertGate(kFALSE), fNchan(0)
 {
   // Constructor
 }

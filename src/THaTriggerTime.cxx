@@ -29,6 +29,7 @@ using namespace std;
 THaTriggerTime::THaTriggerTime( const char* name, const char* desc,
         THaApparatus* apparatus ) :
   THaNonTrackingDetector(name, desc, apparatus),
+  fEvtTime(kBig), fEvtType(-1), fTDCRes(0),
   fGlOffset(0), fCommonStop(0),fNTrgType(0), fTrgTimes(NULL)
 {
   // basic do-nothing-else contructor

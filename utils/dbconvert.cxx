@@ -1338,8 +1338,10 @@ private:
 class Scintillator : public Detector {
 public:
   Scintillator( const string& name )
-    : Detector(name), fLOff(0), fROff(0), fLPed(0), fRPed(0), fLGain(0),
-      fRGain(0), fTWalkPar(0), fTrigOff(0) {}
+    : Detector(name), fTdc2T(0), fCn(3e8), fAdcMIP(0), fAttenuation(0),
+      fResolution(5e-10), fNTWalkPar(0),
+      fLOff(0), fROff(0), fLPed(0), fRPed(0), fLGain(0),
+      fRGain(0), fTWalkPar(0), fTrigOff(0), fHaveExtras(false) {}
   virtual ~Scintillator() { DeleteArrays(); }
 
   virtual int ReadDB( FILE* infile, time_t date_from, time_t date_until );
@@ -1369,7 +1371,8 @@ private:
 class Shower : public Detector {
 public:
   Shower( const string& name )
-    : Detector(name), fPed(0), fGain(0) { fDetMapHasLogicalChan = false; }
+    : Detector(name), fNcols(0), fNrows(0), fEmin(0),fMaxCl(kMaxInt),
+      fPed(0), fGain(0) { fDetMapHasLogicalChan = false; }
   virtual ~Shower() { DeleteArrays(); }
 
   virtual void Clear() { Detector::Clear(); fMaxCl = -1; }
@@ -1416,7 +1419,7 @@ private:
 // BPM
 class BPM : public Detector {
 public:
-  BPM( const string& name ) : Detector(name) {}
+  BPM( const string& name ) : Detector(name), fCalibRot(0) {}
 
   virtual int ReadDB( FILE* infile, time_t date_from, time_t date_until );
   virtual int Save( time_t start, const string& version = string() ) const;
@@ -1484,7 +1487,8 @@ private:
 // VDC
 class VDC : public Detector {
 public:
-  VDC( const string& name ) : Detector(name), fCommon(0) {}
+  VDC( const string& name )
+    : Detector(name), fErrorCutoff(kBig), fNumIter(0), fCommon(0) {}
 
   virtual int ReadDB( FILE* infile, time_t date_from, time_t date_until );
   virtual int Save( time_t start, const string& version = string() ) const;
@@ -1519,7 +1523,12 @@ private:
   class Plane : public Detector {
   public:
     friend class VDC;
-    Plane( const string& name, VDC* vdc ) : Detector(name), fVDC(vdc)
+    Plane( const string& name, VDC* vdc )
+      : Detector(name), fZ(0), fWBeg(0), fWSpac(0), fWAngle(0),
+        fDriftVel(0), fTDCRes(0), fT0Resolution(0),
+        fMinTdiff(0), fMaxTdiff(kBig), fMinClustSize(0),
+        fMaxClustSpan(kMaxInt), fNMaxGap(0), fMinTime(0),
+        fMaxTime(kMaxInt), fVDC(0)
     { fTTDPar.resize(9); }
 
     virtual int ReadDB( FILE* infile, time_t date_from, time_t date_until );

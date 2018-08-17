@@ -402,9 +402,8 @@ void THaScalerEvtHandler::AddVars(TString name, TString desc, Int_t islot,
   TString desc1 = fName + desc;
 // We don't yet know the correspondence between index of scalers[] and slots.
 // Will put that in later.
-  ScalerLoc *loc = new ScalerLoc(name1, desc1, 0, islot, ichan, ikind);
-  loc->ivar = scalerloc.size();  // ivar will be the pointer to the dvars array.
-  scalerloc.push_back(loc);
+  scalerloc.push_back( new ScalerLoc(name1, desc1, 0, islot, ichan, ikind,
+                                     scalerloc.size()) );
 }
 
 void THaScalerEvtHandler::DefVars()

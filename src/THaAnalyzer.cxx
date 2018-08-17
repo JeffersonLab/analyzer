@@ -82,7 +82,7 @@ THaAnalyzer::THaAnalyzer() :
   fIsInit(kFALSE), fAnalysisStarted(kFALSE), fLocalEvent(kFALSE),
   fUpdateRun(kTRUE), fOverwrite(kTRUE), fDoBench(kFALSE),
   fDoHelicity(kFALSE), fDoPhysics(kTRUE), fDoOtherEvents(kTRUE),
-  fDoSlowControl(kTRUE), fExtra(0)
+  fDoSlowControl(kTRUE), fFirstPhysics(true), fExtra(0)
 
 {
   // Default constructor.

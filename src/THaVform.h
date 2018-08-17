@@ -24,7 +24,8 @@ class THaVform : public THaFormula {
 
 public:
 
-  THaVform() : THaFormula(), fType(kUnknown), fVarPtr(0), fOdata(0) {}
+  THaVform() : THaFormula(), fNvar(0), fObjSize(0), fEyeOffset(0),
+    fData(0), fType(kUnknown), fVarPtr(0), fOdata(0), fPrefix(0) {}
   THaVform( const char *type, const char* name, const char* formula,
       const THaVarList* vlst=gHaVars, const THaCutList* clst=gHaCuts );
   virtual  ~THaVform();
@@ -79,7 +80,7 @@ protected:
 
   static const Int_t fgDebug  = 0;
   static const Int_t fgVFORM_HUGE = 10000;
-  std::string fgAndStr, fgOrStr, fgSumStr;
+  std::string fAndStr, fOrStr, fSumStr;
 
   Int_t MakeFormula(Int_t flo, Int_t fhi);
   std::string StripPrefix(const char* formula);

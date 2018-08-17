@@ -23,7 +23,7 @@ namespace Podd {
 
 //_____________________________________________________________________________
 VectorVar::VectorVar( THaVar* pvar, const void* addr, VarType type )
-  : Variable(pvar,addr,type)
+  : Variable(pvar,addr,type), fDim(0)
 {
   // Constructor
 

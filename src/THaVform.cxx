@@ -61,39 +61,42 @@ THaVform::THaVform( const char *type, const char* name, const char* formula,
 
 //_____________________________________________________________________________
 THaVform::THaVform( const THaVform& rhs ) :
-  THaFormula(rhs), fNvar(rhs.fNvar), fObjSize(rhs.fObjSize), fData(rhs.fData),
-  fType(rhs.fType), fgAndStr(rhs.fgAndStr), fgOrStr(rhs.fgOrStr),
-  fgSumStr(rhs.fgSumStr), fVarName(rhs.fVarName), fVarStat(rhs.fVarStat),
+  THaFormula(rhs), fNvar(rhs.fNvar), fObjSize(rhs.fObjSize),
+  fEyeOffset(rhs.fEyeOffset), fData(rhs.fData),
+  fType(rhs.fType), fAndStr(rhs.fAndStr), fOrStr(rhs.fOrStr),
+  fSumStr(rhs.fSumStr), fVarName(rhs.fVarName), fVarStat(rhs.fVarStat),
   fSarray(rhs.fSarray), fVectSform(rhs.fVectSform), fStitle(rhs.fStitle),
-  fVarPtr(rhs.fVarPtr), fOdata(NULL), fPrefix(rhs.fPrefix)
+  fVarPtr(rhs.fVarPtr), fOdata(0), fPrefix(rhs.fPrefix)
 {
   // Copy ctor
 
   for (vector<THaCut*>::const_iterator itc = rhs.fCut.begin();
        itc != rhs.fCut.end(); ++itc) {
-    if( *itc ) {
+    THaCut* theCut = *itc;
+    if( theCut ) {
       //FIXME: do we really need to make copies?
       // The more formulas, the more stuff to evaluate...
 #if ROOT_VERSION_CODE >= ROOT_VERSION(3,10,0)
-      fCut.push_back(new THaCut(**itc));
+      fCut.push_back(new THaCut(*theCut));
 #else
       // work around buggy TFormula copy constructor
       THaCut* c = new THaCut;
-      *c = **itc;
+      *c = *theCut;
       fCut.push_back(c);
 #endif
     }
   }
   for (vector<THaFormula*>::const_iterator itf = rhs.fFormula.begin();
        itf != rhs.fFormula.end(); ++itf) {
-    if( *itf ) {
+    THaFormula* theForm = *itf;
+    if( theForm ) {
       //FIXME: do we really need to make copies?
 #if ROOT_VERSION_CODE >= ROOT_VERSION(3,10,0)
-      fFormula.push_back(new THaFormula(**itf));
+      fFormula.push_back(new THaFormula(*theForm));
 #else
       // work around buggy TFormula copy constructor
       THaFormula* f = new THaFormula;
-      *f = **itf;
+      *f = *theForm;
       fFormula.push_back(f);
 #endif
     }
@@ -123,33 +126,17 @@ THaVform &THaVform::operator=(const THaVform &fv)
 void THaVform::Create(const THaVform &rhs)
 {
   THaFormula::operator=(rhs);
-  fType = rhs.fType;
   fNvar = rhs.fNvar;
-  fVarPtr = rhs.fVarPtr;
   fObjSize = rhs.fObjSize;
-  delete fOdata; fOdata = 0;
-  if( rhs.fOdata )
-    fOdata = new THaOdata(*rhs.fOdata);
+  fEyeOffset = rhs.fEyeOffset;
+  fData = rhs.fData;
+  fType = rhs.fType;
+  fAndStr = rhs.fAndStr;
+  fOrStr = rhs.fOrStr;
+  fSumStr = rhs.fSumStr;
   fVarName = rhs.fVarName;
   fVarStat = rhs.fVarStat;
-  fVectSform = rhs.fVectSform;
-  fgAndStr = rhs.fgAndStr;
-  fgOrStr = rhs.fgOrStr;
-  fgSumStr = rhs.fgSumStr;
-  for (vector<THaCut*>::const_iterator itc = rhs.fCut.begin();
-       itc != rhs.fCut.end(); ++itc) {
-    if( *itc ) {
-      //FIXME: do we really need to make copies?
-#if ROOT_VERSION_CODE >= ROOT_VERSION(3,10,0)
-      fCut.push_back(new THaCut(**itc));
-#else
-    // work around buggy TFormula copy constructor
-      THaCut* c = new THaCut;
-      *c = **itc;
-      fCut.push_back(c);
-#endif
-    }
-  }
+
   for (vector<THaFormula*>::const_iterator itf = rhs.fFormula.begin();
        itf != rhs.fFormula.end(); ++itf) {
     if( *itf ) {
@@ -164,6 +151,29 @@ void THaVform::Create(const THaVform &rhs)
 #endif
     }
   }
+  for (vector<THaCut*>::const_iterator itc = rhs.fCut.begin();
+       itc != rhs.fCut.end(); ++itc) {
+    if( *itc ) {
+      //FIXME: do we really need to make copies?
+#if ROOT_VERSION_CODE >= ROOT_VERSION(3,10,0)
+      fCut.push_back(new THaCut(**itc));
+#else
+    // work around buggy TFormula copy constructor
+      THaCut* c = new THaCut;
+      *c = **itc;
+      fCut.push_back(c);
+#endif
+    }
+  }
+
+  fSarray = rhs.fSarray;
+  fVectSform = rhs.fVectSform;
+  fStitle = rhs.fStitle;
+  fVarPtr = rhs.fVarPtr;
+  delete fOdata; fOdata = 0;
+  if( rhs.fOdata )
+    fOdata = new THaOdata(*rhs.fOdata);
+  fPrefix = rhs.fPrefix;
 }
 
 //_____________________________________________________________________________
@@ -529,12 +539,12 @@ string THaVform::StripPrefix(const char* expr)
   string result,stitle;
   vector<string> sprefix;
   vector<Int_t> ipflg;
-  fgAndStr = "AND:";
-  fgOrStr  = "OR:";
-  fgSumStr = "SUM:";
-  sprefix.push_back(fgAndStr);  ipflg.push_back(kAnd);
-  sprefix.push_back(fgOrStr);   ipflg.push_back(kOr);
-  sprefix.push_back(fgSumStr);  ipflg.push_back(kSum);
+  fAndStr = "AND:";
+  fOrStr  = "OR:";
+  fSumStr = "SUM:";
+  sprefix.push_back(fAndStr);  ipflg.push_back(kAnd);
+  sprefix.push_back(fOrStr);   ipflg.push_back(kOr);
+  sprefix.push_back(fSumStr);  ipflg.push_back(kSum);
 // If we ever invent new prefixes, add them here...
 
   stitle = string(expr);

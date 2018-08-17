@@ -51,7 +51,7 @@ void THaVDCCluster::AddHit( THaVDCHit* hit )
 }
 
 //_____________________________________________________________________________
-void THaVDCCluster::Clear( const Option_t* )
+void THaVDCCluster::Clear( Option_t* )
 {
   // Clear the contents of the cluster and reset status
 

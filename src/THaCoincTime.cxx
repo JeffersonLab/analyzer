@@ -45,8 +45,8 @@ THaCoincTime::THaCoincTime( const char* name,
 			    Double_t m1, Double_t m2,
 			    const char* ch_name1, const char* ch_name2 )
   : THaPhysicsModule(name,description), fSpectN1(spec1), fSpectN2(spec2),
-    fpmass1(m1), fpmass2(m2), fSz1(NTR), fSz2(NTR), fNTr1(0), fNTr2(0),
-    fSzNtr(NTR*NTR), fNtimes(0)
+    fpmass1(m1), fpmass2(m2), fSpect1(0), fSpect2(0), fSz1(NTR), fSz2(NTR),
+    fNTr1(0), fNTr2(0), fSzNtr(NTR*NTR), fNtimes(0)
 {
   // Normal constructor.
   fDetMap = new THaDetMap();

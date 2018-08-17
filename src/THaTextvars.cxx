@@ -162,10 +162,10 @@ const char* THaTextvars::Get( const string& name, Int_t idx ) const
   Textvars_t::const_iterator it = fVars.find(name);
   if( it == fVars.end() )
     return 0;
-  if( (ssiz_t)idx >= (*it).second.size() )
+  if( (ssiz_t)idx >= it->second.size() )
     return 0;
 
-  return (*it).second[idx].c_str();
+  return it->second[idx].c_str();
 }
 
 //_____________________________________________________________________________
@@ -223,13 +223,13 @@ void THaTextvars::Print( Option_t* /*opt*/ ) const
   Ssiz_t maxw = 0;
   for( Textvars_t::const_iterator it = fVars.begin();
        it != fVars.end(); ++it ) {
-    Ssiz_t len = ((*it).first).length();
+    Ssiz_t len = it->first.length();
     if( len > maxw )
       maxw = len;
   }
   for( Textvars_t::const_iterator it = fVars.begin();
        it != fVars.end(); ++it ) {
-    cout << "Textvar:  " << setw(maxw) << (*it).first << " = " 
+    cout << "Textvar:  " << setw(maxw) << it->first << " = "
 	 << ValStr((*it).second) << endl;
   }
 }

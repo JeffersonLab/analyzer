@@ -36,9 +36,15 @@ THaSecondaryKine::THaSecondaryKine( const char* name, const char* description,
 				    const char* secondary_spectro, 
 				    const char* primary_kine, 
 				    Double_t secondary_mass ) :
-  THaPhysicsModule(name,description), fMX(secondary_mass), 
-  fSpectroName(secondary_spectro), fSpectro(NULL), 
-  fPrimaryName(primary_kine), fPrimary(NULL)
+  THaPhysicsModule(name,description),
+  fTheta_xq(kBig), fPhi_xq(kBig), fTheta_bq(kBig), fPhi_bq(kBig),
+  fXangle(kBig), fPmiss(kBig), fPmiss_x(kBig), fPmiss_y(kBig), fPmiss_z(kBig),
+  fEmiss(kBig), fMrecoil(kBig), fErecoil(kBig), fTX(kBig), fTB(kBig),
+  fPX_cm(kBig), fTheta_x_cm(kBig), fPhi_x_cm(kBig), fTheta_b_cm(kBig),
+  fPhi_b_cm(kBig), fTX_cm(kBig), fTB_cm(kBig), fTtot_cm(kBig), fMandelS(kBig),
+  fMandelT(kBig), fMandelU(kBig),
+  fMX(secondary_mass), fSpectroName(secondary_spectro), fSpectro(0),
+  fPrimaryName(primary_kine), fPrimary(0)
 {
   // Constructor
 

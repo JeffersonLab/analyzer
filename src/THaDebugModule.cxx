@@ -124,9 +124,10 @@ void THaDebugModule::Print( Option_t* opt ) const
 	cout << "Test name: " << fTestExpr << " (undefined)\n";
     }
     cout << "Number of variables: " << fVars.size() << endl;
-    VIter_t it = fVars.begin();
-    for( ; it != fVars.end(); ++it )
-      cout << (*it)->GetName() << "  ";
+    for( VIter_t it = fVars.begin(); it != fVars.end(); ++it ) {
+      const TObject* obj = *it;
+      cout << obj->GetName() << "  ";
+    }
     cout << endl;
   } else {
     if( !fTestExpr.IsNull()) 
