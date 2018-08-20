@@ -21,7 +21,9 @@
 #include "TString.h"
 #include "Decoder.h"
 #include <fstream>
+#include <cstdio>  // for FILE
 #include <cassert>
+#include <iostream>
 
 namespace Decoder {
 
@@ -70,8 +72,8 @@ class THaCrateMap {
      void setUnused(int crate,int slot);            // Disables this crate,slot
      int init(TString the_map);                     // Initialize from text-block
      int init(ULong64_t time = 0);                  // Initialize by Unix time.
-     void print() const;
-     void print(std::ofstream *file) const;
+     int init( FILE* fi, const TString& fname );    // Initialize from given file
+     void print(std::ostream& os = std::cout) const;
 
      static const int CM_OK;
      static const int CM_ERR;

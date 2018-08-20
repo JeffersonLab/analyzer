@@ -7,6 +7,8 @@
 /////////////////////////////////////////////////////////////////////
 
 #include "SimDecoder.h"
+#include "THaVarList.h"
+#include "THaGlobals.h"
 #include <iostream>
 
 using namespace std;
@@ -26,7 +28,31 @@ SimDecoder::SimDecoder()
   // Constructor. Derived classes must allocate the track and hit
   // TClonesArrays using their respective hit and track classes
 
+  const char* const here = "SimDecoder::SimDecoder";
+
   fMCPoints = new TClonesArray( "Podd::MCTrackPoint", 50 );
+
+  // Register standard global variables for event header data
+  // (It is up to the actual implementation of SimDecoder to fill these)
+  if( gHaVars ) {
+    VarDef vars[] = {
+        { "runnum",    "Run number",     kInt,    0, &run_num },
+        { "runtype",   "CODA run type",  kInt,    0, &run_type },
+        { "runtime",   "CODA run time",  kULong,  0, &fRunTime },
+        { "evnum",     "Event number",   kInt,    0, &event_num },
+        { "evtyp",     "Event type",     kInt,    0, &event_type },
+        { "evlen",     "Event Length",   kInt,    0, &event_length },
+        { "evtime",    "Event time",     kULong,  0, &evt_time },
+        { 0 }
+    };
+    TString prefix("g");
+    // Prevent global variable clash if there are several instances of us
+    if( fInstance > 1 )
+      prefix.Append(Form("%d",fInstance));
+    prefix.Append(".");
+    gHaVars->DefineVariables( vars, prefix, here );
+  } else
+    Warning(here,"No global variable list found. Variables not registered.");
 }
 
 //_____________________________________________________________________________
@@ -39,6 +65,15 @@ SimDecoder::~SimDecoder()
   SafeDelete(fMCPoints);
   SafeDelete(fMCTracks);
   SafeDelete(fMCHits);
+
+  // Unregister global variables registered in the constructor
+  if( gHaVars ) {
+    TString prefix("g");
+    if( fInstance > 1 )
+      prefix.Append(Form("%d",fInstance));
+    prefix.Append(".*");
+    gHaVars->RemoveRegexp( prefix );
+  }
 }
 
 //_____________________________________________________________________________
@@ -144,6 +179,18 @@ Int_t SimDecoder::DefineVariables( THaAnalysisObject::EMode mode )
 			mode, "", this, MC_PREFIX, here );
 }
 
+//_____________________________________________________________________________
+Int_t SimDecoder::init_cmap_openfile( FILE*& fi, TString& fname )
+{
+  // Use the analyzer file name search logic to find the crate map database file
+
+  const char* const here = "SimDecoder::init_cmap";
+
+  TDatime date(GetRunTime());    //FIXME: replace with TTimeStamp
+  fi = THaAnalysisObject::OpenFile(fCrateMapName,date,here,"r",0);
+  fname = "db_" + fCrateMapName + ".dat";
+  return 1;
+}
 //_____________________________________________________________________________
 MCTrack::MCTrack( Int_t number, Int_t pid,
 		  const TVector3& vertex, const TVector3& momentum )

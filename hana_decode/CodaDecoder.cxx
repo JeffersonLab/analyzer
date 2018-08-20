@@ -83,7 +83,7 @@ Int_t CodaDecoder::LoadEvent(const UInt_t* evbuffer)
      ret = init_cmap();
      if (fDebugFile) {
 	 *fDebugFile << "\n CodaDecode:: Print of Crate Map"<<endl;
-	 fMap->print(fDebugFile);
+	 fMap->print(*fDebugFile);
      } else {
       //      fMap->print();
      }

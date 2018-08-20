@@ -111,6 +111,7 @@
 #pragma link C++ class Podd::MCTrack+;
 #pragma link C++ class Podd::MCTrackPoint+;
 #pragma link C++ class Podd::SimDecoder+;
+#pragma link C++ class Podd::CodaRawDecoder+;
 
 #ifdef ONLINE_ET
 #pragma link C++ class THaOnlRun+;

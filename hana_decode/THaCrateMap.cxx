@@ -20,17 +20,14 @@
 #include <iostream>
 #include <ctime>
 
-#ifndef STANDALONE
-#include "THaAnalysisObject.h"
-#endif
-
 #include "TDatime.h"
 #include "TError.h"
 
 #include <cstdio>
+#include <cstring>  // for strerror_r
+#include <errno.h>  // for errno
 #include <string>
 #include <iomanip>
-
 #include <sstream>
 
 using namespace std;
@@ -185,93 +182,85 @@ void THaCrateMap::incrNslot(int crate) {
   }
 }
 
-int THaCrateMap::init(ULong64_t tloc) {
-  // Modify the interface to be able to use a database file.
-  // The real work is done by the init(TString&) method
 
-  // Only print warning/error messages exactly once
-  //  static bool first = true;
-  static const char* const here = "THaCrateMap::init";
+int THaCrateMap::init( FILE* fi, const TString& fname )
+{
+  // Get the crate map definition string from the given database file.
+  // The file is read completely into an internal string, which is then
+  // parsed by init(TString).
 
-  //FIXME: replace with TTimeStamp
-  TDatime date((UInt_t)tloc);
+  const char* const here = "THaCrateMap::init";
+  const size_t BUFLEN = 128;
+  char buf[BUFLEN];
 
-  TString db;
-
-#ifndef STANDALONE
-  FILE* fi = THaAnalysisObject::OpenFile(fDBfileName,date,here,"r",0);
-#else
-  TString fname = "db_"; fname.Append(fDBfileName); fname.Append(".dat");
-  FILE* fi = fopen(fname,"r");
-#endif
-  if ( fi ) {
-    // just build the string to parse later
-    int ch;
-    while ( (ch = fgetc(fi)) != EOF ) {
-      db += static_cast<char>(ch);
-    }
-    fclose(fi);
-  }
-
-  if ( db.Length() <= 0 ) {
-    // Die if we can't open the crate map file
-    ::Error( here, "Error reading crate map database file db_%s.dat",
-	    fDBfileName.Data() );
+  if ( !fi ) {
+    strerror_r(errno, buf, BUFLEN);
+    ::Error( here, "Error opening crate map database file %s: %s",
+        fname.Data(), buf );
     return CM_ERR;
   }
+  // Build the string to parse
+  TString db;
+  int ch;
+  while ( (ch = fgetc(fi)) != EOF ) {
+    db += static_cast<char>(ch);
+  }
+  if( ferror(fi) ) {
+    strerror_r(errno, buf, BUFLEN);
+    ::Error( here, "Error reading crate map database file %s: %s",
+        fname.Data(), buf );
+    fclose(fi);
+    return CM_ERR;
+  }
+  fclose(fi);
+
+  // Parse the crate map definition
   return init(db);
 }
 
-void THaCrateMap::print(ofstream *file) const {
+int THaCrateMap::init(ULong64_t /*tloc*/)
 {
-  for( int roc=0; roc<MAXROC; roc++ ) {
-    if( !crdat[roc].crate_used || crdat[roc].nslot ==0 ) continue;
-    *file << "==== Crate " << roc << " type " << crdat[roc].crate_type;
-    if( !crdat[roc].scalerloc.IsNull() )  *file << " \"" << crdat[roc].scalerloc << "\"";
-    *file << endl;
-    *file << "#slot\tmodel\tclear\t  header\t  mask  \tnchan\tndata\n";
-    if (isBankStructure(roc)) *file << "crate has bank structure"<<endl;
-    for( int slot=0; slot<MAXSLOT; slot++ ) {
-      if( !slotUsed(roc,slot) ) continue;
-      *file << "  " << slot << "\t" << crdat[roc].model[slot]
-	   << "\t" << crdat[roc].slot_clear[slot];
-      *file << "   \t0x" << hex << crdat[roc].header[slot]
-	   << "    \t0x" << hex  << crdat[roc].headmask[slot]
-	   << dec << "   "
-	   << "  \t" << crdat[roc].nchan[slot]
-	   << "  \t" << crdat[roc].ndata[slot]
-	   << endl;
-      Int_t bank = getBank(roc,slot);
-      if (bank >= 0) *file << "Bank number "<< bank<<endl;
+  // Initialize the crate map from the database using given Unix time stamp
+  // tloc
+  // If the database file name (fDBfileName) contains any slashes, it is
+  // assumed to be the actual file path.
+  //
+  // If opening fDBfileName fails, no slash is present in the name, and the
+  // name does not already have the format "db_*.dat", the routine will also
+  // try to open "db_<fDBfileName>.dat".
 
-    }
+  TString fname(fDBfileName);
+
+  FILE* fi = fopen(fname,"r");
+  if( !fi && fname.Index('/') == kNPOS &&
+      !fname.BeginsWith("db_") && !fname.EndsWith(".dat") ) {
+    fname.Prepend("db_").Append(".dat");
+    fi = fopen(fname,"r");
   }
+  return init(fi, fname);
 }
 
-}
-
-
-void THaCrateMap::print() const
+void THaCrateMap::print(ostream& os) const
 {
   for( int roc=0; roc<MAXROC; roc++ ) {
     if( !crdat[roc].crate_used || crdat[roc].nslot ==0 ) continue;
-    cout << "==== Crate " << roc << " type " << crdat[roc].crate_type;
-    if( !crdat[roc].scalerloc.IsNull() )  cout << " \"" << crdat[roc].scalerloc << "\"";
-    cout << endl;
-    cout << "#slot\tmodel\tclear\t  header\t  mask  \tnchan\tndata\n";
+    os << "==== Crate " << roc << " type " << crdat[roc].crate_type;
+    if( !crdat[roc].scalerloc.IsNull() )  os << " \"" << crdat[roc].scalerloc << "\"";
+    os << endl;
+    os << "#slot\tmodel\tclear\t  header\t  mask  \tnchan\tndata\n";
     for( int slot=0; slot<MAXSLOT; slot++ ) {
       if( !crdat[roc].slot_used[slot] ) continue;
-      cout << "  " << slot << "\t" << crdat[roc].model[slot]
+      os << "  " << slot << "\t" << crdat[roc].model[slot]
 	   << "\t" << crdat[roc].slot_clear[slot];
       // using this instead of manipulators again for bckwards compat with g++-2
-      ios::fmtflags oldf = cout.setf(ios::right, ios::adjustfield);
-      cout << "\t0x" << hex << setfill('0') << setw(8) << crdat[roc].header[slot]
+      ios::fmtflags oldf = os.setf(ios::right, ios::adjustfield);
+      os << "\t0x" << hex << setfill('0') << setw(8) << crdat[roc].header[slot]
 	   << "\t0x" << hex << setfill('0') << setw(8) << crdat[roc].headmask[slot]
 	   << dec << setfill(' ') << setw(0)
 	   << "\t" << crdat[roc].nchan[slot]
 	   << "\t" << crdat[roc].ndata[slot]
 	   << endl;
-      cout.flags(oldf);
+      os.flags(oldf);
     }
   }
 }
@@ -281,6 +270,13 @@ int THaCrateMap::init(TString the_map)
   // initialize the crate-map according to the lines in the string 'the_map'
   // parse each line separately, to ensure that the format is correct
 
+  const char* const here = "THaCrateMap::init";
+
+  if ( the_map.IsNull() ) {
+    // Warn if we didn't get any data
+    ::Warning( here, "Empty crate map definition. Decoder will not be usable. "
+        "Check database." );
+  }
   // be certain the_map ends with a '\0' so we can make a stringstream from it
   the_map += '\0';
   istringstream s(the_map.Data());
