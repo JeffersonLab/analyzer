@@ -19,8 +19,8 @@ int main(int argc, char *argv[])
        UInt_t* evbuff = new UInt_t[et->getBuffSize()];   // raw data buffer
 
        int NUMEVT = 10000;
-       double lensum=0;
-       double dummysum = 0;
+       ULong64_t lensum=0;
+       ULong64_t dummysum = 0;
 
        if (argc > 1) NUMEVT = atoi(argv[1]);
 
@@ -36,8 +36,8 @@ int main(int argc, char *argv[])
          evbuff = et->getEvBuffer();
          if (PRINTOUT) 
            cout << "Event "<<dec<<iev<<" length "<<evbuff[0]+1<<endl;
-         for (int i=0; i<evbuff[0]+1; i++) {
-           if(i<et->getBuffSize()) {
+         for (UInt_t i=0; i<evbuff[0]+1; i++) {
+           if(i < static_cast<UInt_t>(et->getBuffSize())) {
              if(PRINTOUT) {
 	       cout<<"evbuffer " <<dec<<i<< "  = "<<hex<<evbuff[i]<<endl;
 	     } else {
