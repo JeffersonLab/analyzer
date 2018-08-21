@@ -5,19 +5,21 @@
 lib*.so*
 lib*.dylib*
 analyzer
-hana_decode/epicsd
-hana_decode/prfact
-hana_decode/tst1190
-hana_decode/tdecex
-hana_decode/tdecpr
-hana_decode/tstfadc
-hana_decode/tstf1tdc
-hana_decode/tstio
-hana_decode/tstoo
-hana_decode/tstskel
+hana_decode/apps/epicsd
+hana_decode/apps/prfact
+hana_decode/apps/tst1190
+hana_decode/apps/tdecex
+hana_decode/apps/tdecpr
+hana_decode/apps/tstfadc
+hana_decode/apps/tstfadcblk
+hana_decode/apps/tstf1tdc
+hana_decode/apps/tstio
+hana_decode/apps/tstoo
+hana_decode/apps/etclient
+hana_decode/apps/tstcoda
 utils/dbconvert
 bin/
-build*
+build/
 
 # Generated files
 *Dict.C
@@ -76,6 +78,7 @@ hana_decode/cache
 hana_decode/runfadc.csh
 hana_decode/runftdc.csh
 hana_decode/snippet.dat
+hana_decode/apps/snippet.dat
 
 #decoder debug stuff
 hana_decode/tst1190_main_debug.txt

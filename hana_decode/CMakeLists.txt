@@ -122,3 +122,9 @@ build_root_dictionary(lib${LIBNAME} ${headers}
   PCMNAME ${LIBNAME}
   LINKDEF ${ALTLIBNAME}_LinkDef.h
   )
+
+#----------------------------------------------------------------------------
+# Standalone excutables
+if(STANDALONE)
+  add_subdirectory(apps)
+endif()
