@@ -41,7 +41,7 @@ target_compile_options(${LIBNAME} PRIVATE ${${PROJECT_NAME_UC}_DIAG_FLAGS_LIST})
 
 target_include_directories(${LIBNAME}
   PUBLIC
-    $<INSTALL_INTERFACE:include>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   )
 target_link_libraries(${LIBNAME} PUBLIC Podd::HallA)

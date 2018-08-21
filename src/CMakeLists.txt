@@ -71,7 +71,7 @@ add_library(${PROJECT_NAME}::${LIBNAME} ALIAS ${LIBNAME})
 
 target_include_directories(${LIBNAME}
   PUBLIC
-    $<INSTALL_INTERFACE:include>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>  # for ha_compiledata.h
   )
