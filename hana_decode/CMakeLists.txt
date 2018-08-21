@@ -68,7 +68,7 @@ if(ONLINE_ET)
   else()
     message(WARNING
       "Cannot find ET system. Check $CODA environment variable. Disabling ONLINE_ET")
-    set(ONLINE_ET FALSE)
+    set(ONLINE_ET FALSE CACHE BOOL "ET system not found, disabled" FORCE)
   endif()
 endif()
 
@@ -104,9 +104,9 @@ target_include_directories(${LIBNAME}
 target_link_libraries(${LIBNAME}
   PUBLIC
     ROOT::Core
+    ${ONLIBS}    # et.h is in the THaEtClient.h public interface
   PRIVATE
     EVIO::EVIO
-    ${ONLIBS}
   )
 set_target_properties(${LIBNAME} PROPERTIES
   SOVERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
