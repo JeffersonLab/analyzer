@@ -28,7 +28,7 @@ namespace Decoder {
     public:
       ModuleType ( const char *c1, Int_t i1 )
 	: fClassName(c1), fMapNum(i1), fTClass(0) {}
-      ModuleType() : fClassName(0), fTClass(0) {} // For ROOT RTTI
+      ModuleType() : fClassName(0), fMapNum(0), fTClass(0) {} // For ROOT RTTI
       bool operator<( const ModuleType& rhs ) const { return fMapNum < rhs.fMapNum; }
       const char*      fClassName;
       Int_t            fMapNum;
@@ -87,7 +87,7 @@ namespace Decoder {
 
     virtual void Init();
 
-    virtual void Clear(const Option_t* = "") { fWordsSeen = 0; };
+    virtual void Clear(Option_t* = "") { fWordsSeen = 0; };
 
     virtual Bool_t IsSlot(UInt_t rdata);
 

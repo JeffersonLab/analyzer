@@ -1824,6 +1824,7 @@ void THaAnalysisObject::DebugPrint( const DBRequest* list )
 	break;
       case kDoubleV:
 	cout << ((vector<Double_t>*)it->var)->at(i);
+	break;
       default:
 	break;
       }
