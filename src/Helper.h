@@ -14,6 +14,7 @@
 #include <cassert>
 #include <functional>
 #include <algorithm>
+#include <iterator>
 
 namespace Podd {
 
@@ -146,6 +147,20 @@ namespace Podd {
     v = v - ((v >> 1) & 0x55555555);
     v = (v & 0x33333333) + ((v >> 2) & 0x33333333);
     return (((v + (v >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
+  }
+
+  //_____________________________________________________________________________
+  template <typename VectorElem>
+  void PrintArray( const std::vector<VectorElem>& arr )
+  {
+    if( arr.empty() ) {
+      std::cout << "(empty)";
+    } else {
+      std::copy( arr.begin(), --arr.end(),
+          std::ostream_iterator<VectorElem>(std::cout, ", ") );
+      std::cout << arr.back();
+    }
+    std::cout << std::endl;
   }
 
 ///////////////////////////////////////////////////////////////////////////////
