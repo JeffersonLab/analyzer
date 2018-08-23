@@ -54,7 +54,7 @@ THaVDCPlane::THaVDCPlane( const char* name, const char* description,
     fMaxClustSpan(kMaxInt), fNMaxGap(0), fMinTime(0), fMaxTime(kMaxInt),
     fMaxThits(0), fMinTdiff(0), fMaxTdiff(kBig), fTDCRes(0), fDriftVel(0),
     fT0Resolution(0), fWBeg(0), fWSpac(0), fWAngle(0), fSinWAngle(0),
-    fCosWAngle(1), /*fTable(0),*/ fTTDConv(0), fVDC(0), fglTrg(0)
+    fCosWAngle(1), /*fTable(0),*/ fTTDConv(0), fglTrg(0)
 {
   // Constructor
 
@@ -440,9 +440,10 @@ THaVDCPlane::~THaVDCPlane()
 }
 
 //_____________________________________________________________________________
-void THaVDCPlane::Clear( Option_t* )
+void THaVDCPlane::Clear( Option_t* opt )
 {
   // Clears the contents of the and hits and clusters
+  THaSubDetector::Clear(opt);
   fNHits = fNWiresHit = 0;
   fHits->Clear();
   fClusters->Delete();

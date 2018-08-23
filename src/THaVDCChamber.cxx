@@ -27,7 +27,7 @@
 #include <cassert>
 
 //_____________________________________________________________________________
-THaVDCChamber::THaVDCChamber( const char* name, const char* description,
+THaVDCChamber::THaVDCChamber( const char* name, const char* description, // @suppress("Class members should be properly initialized")
 			      THaDetectorBase* parent )
   : THaSubDetector(name,description,parent),
     fSpacing(0), fSin_u(0), fCos_u(1), fSin_v(1), fCos_v(0), fInv_sin_vu(0)
@@ -227,6 +227,7 @@ Int_t THaVDCChamber::CalcPointCoords()
 void THaVDCChamber::Clear( Option_t* opt )
 {
   // Clear event-by-event data
+  THaSubDetector::Clear(opt);
   fU->Clear(opt);
   fV->Clear(opt);
   fPoints->Clear();

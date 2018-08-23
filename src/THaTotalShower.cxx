@@ -159,10 +159,11 @@ THaAnalysisObject::EStatus THaTotalShower::Init( const TDatime& run_time )
 }
 
 //_____________________________________________________________________________
-void THaTotalShower::Clear( Option_t* )
+void THaTotalShower::Clear( Option_t* opt )
 {
   // Clear event data
 
+  THaPidDetector::Clear(opt);
   fE = kBig;
   fID = -1;
 }

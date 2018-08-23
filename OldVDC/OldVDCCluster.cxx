@@ -82,7 +82,7 @@ void OldVDCCluster::AddHit(OldVDCHit * hit)
 }
 
 //_____________________________________________________________________________
-void OldVDCCluster::Clear( const Option_t* )
+void OldVDCCluster::Clear( Option_t* )
 {
   // Clear the contents of the cluster
 

@@ -44,13 +44,13 @@
 using namespace std;
 
 //_____________________________________________________________________________
-UserApparatus::UserApparatus( const char* name, const char* description ) : 
-  THaApparatus(name,description)
+UserApparatus::UserApparatus( const char* name, const char* description ) :
+  THaApparatus(name,description), fNtotal(0)
 {
   // Constructor. Defines the _standard_ detectors for this apparatus.
   // These are the detectors that are _always_ present in the apparatus.
   // Optional detectors should be added with calls to AddDetector()
-  // in the analysis macro. 
+  // in the analysis macro.
   // NB: If in doubt, do not create detectors here.
   // Adding them later from a script costs nothing in terms of analysis
   // performance. Also, hardcoding detectors here means fixing their names,
@@ -74,12 +74,13 @@ UserApparatus::~UserApparatus()
 }
 
 //_____________________________________________________________________________
-void UserApparatus::Clear( Option_t* /* opt */ )
+void UserApparatus::Clear( Option_t* opt )
 {
   // Clear this apparatus. The standard analyzer calls this function
   // before calling Decode(), so it is guaranteed to be called for
   // every physics event.
 
+  THaApparatus::Clear(opt);
   fNtotal = 0;
 }
 
@@ -111,8 +112,8 @@ Int_t UserApparatus::Reconstruct()
 
   TIter next(fDetectors);
   while( TObject* theDetector = next()) {
-    // NB: dynamic_cast returns NULL if the cast object does not 
-    // inherit from the requested type. 
+    // NB: dynamic_cast returns NULL if the cast object does not
+    // inherit from the requested type.
     // One could also use TClass::InheritsFrom, but dynamic_cast is faster.
     if( THaScintillator* d = dynamic_cast<THaScintillator*>( theDetector )) {
       fNtotal += d->GetNHits();

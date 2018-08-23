@@ -135,9 +135,10 @@ THaBPM::~THaBPM()
 }
 
 //_____________________________________________________________________________
-void THaBPM::Clear( Option_t* )
+void THaBPM::Clear( Option_t* opt )
 {
   // Reset per-event data.
+  THaBeamDet::Clear(opt);
   fPosition.SetXYZ(0.,0.,-10000.);
   fDirection.SetXYZ(0.,0.,1.);
   for( UInt_t k=0; k<NCHAN; ++k ) {

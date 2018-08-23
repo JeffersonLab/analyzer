@@ -170,9 +170,10 @@ THaRaster::~THaRaster()
 }
 
 //_____________________________________________________________________________
-void THaRaster::Clear( Option_t* )
+void THaRaster::Clear( Option_t* opt )
 {
   // Reset per-event data.
+  THaBeamDet::Clear(opt);
   fRawPos(0)=-1;
   fRawPos(1)=-1;
   fRawSlope(0)=-1;

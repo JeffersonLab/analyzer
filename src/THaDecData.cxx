@@ -119,9 +119,11 @@ THaDecData::~THaDecData()
 }
 
 //_____________________________________________________________________________
-void THaDecData::Clear( Option_t* )
+void THaDecData::Clear( Option_t* opt )
 {
   // Reset event-by-event data
+
+  THaApparatus::Clear(opt);
 
   TIter next( &fBdataLoc );
   while( TObject* obj = next() ) {

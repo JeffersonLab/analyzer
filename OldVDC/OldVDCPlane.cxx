@@ -49,9 +49,10 @@ static const Double_t kDefaultTDCRes = 5.0e-10;  // 0.5 ns/chan = 5e-10 s /chan
 OldVDCPlane::OldVDCPlane( const char* name, const char* description,
 			  THaDetectorBase* parent )
   : THaSubDetector(name,description,parent), fNWiresHit(0),
-    fNMaxGap(kDefaultNMaxGap), fMinTime(kDefaultMinTime),
-    fMaxTime(kDefaultMaxTime), fFlags(0), fTDCRes(kDefaultTDCRes),
-    /*fTable(NULL),*/ fTTDConv(0), fVDC(0), fglTrg(0)
+    fNWiresHit(0), fNMaxGap(kDefaultNMaxGap), fMinTime(kDefaultMinTime),
+    fMaxTime(kDefaultMaxTime), fFlags(0), fZ(0), fWBeg(0), fWSpac(0),
+    fWAngle(0), fDriftVel(0), fTDCRes(kDefaultTDCRes),
+    /*fTable(NULL),*/ fTTDConv(0), fglTrg(0)
 {
   // Constructor
 
@@ -318,9 +319,10 @@ OldVDCPlane::~OldVDCPlane()
 }
 
 //_____________________________________________________________________________
-void OldVDCPlane::Clear( Option_t* )
+void OldVDCPlane::Clear( Option_t* opt )
 {    
   // Clears the contents of the and hits and clusters
+  THaSubDetector::Clear(opt);
   fNWiresHit = 0;
   fHits->Clear();
   fClusters->Clear();

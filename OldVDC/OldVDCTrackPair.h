@@ -16,7 +16,7 @@ class OldVDCTrackPair : public TObject {
 
 public:
   OldVDCTrackPair() : 
-    fLowerTrack(NULL), fUpperTrack(NULL), fError(1e307) {}
+    fLowerTrack(0), fUpperTrack(0), fError(1e38), fStatus(0) {}
   OldVDCTrackPair( pUV lt, pUV ut ) :
     fLowerTrack(lt), fUpperTrack(ut), fError(1e307), fStatus(0) {}
   OldVDCTrackPair( const OldVDCTrackPair& rhs ) : TObject(rhs),

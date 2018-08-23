@@ -108,9 +108,10 @@ Int_t THaTriggerTime::ReadDatabase( const TDatime& date )
 }
 
 //____________________________________________________________________________
-void THaTriggerTime::Clear(Option_t* )
+void THaTriggerTime::Clear(Option_t* opt)
 {
   // Reset all variables to their default/unknown state
+  THaNonTrackingDetector::Clear(opt);
   fEvtType = -1;
   fEvtTime = fGlOffset;
   for (Int_t i=0; i<fNTrgType; i++) fTrgTimes[i]=kBig * fCommonStop;

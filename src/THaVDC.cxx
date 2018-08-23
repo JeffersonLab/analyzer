@@ -738,6 +738,7 @@ void THaVDC::Clear( Option_t* opt )
 {
   // Clear event-by-event data
 
+  THaTrackingDetector::Clear(opt);
   fLower->Clear(opt);
   fUpper->Clear(opt);
 }

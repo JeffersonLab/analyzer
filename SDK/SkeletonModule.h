@@ -29,7 +29,7 @@ class SkeletonModule : public Decoder::VmeModule {
 
 public:
 
-  SkeletonModule() {};
+  SkeletonModule() : fNumHits(0) {};
   SkeletonModule(Int_t crate, Int_t slot);
   virtual ~SkeletonModule();
 

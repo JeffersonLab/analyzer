@@ -26,9 +26,10 @@ THaTrackOut::~THaTrackOut()
 }
 
 //_____________________________________________________________________________
-void THaTrackOut::Clear( Option_t* )
+void THaTrackOut::Clear( Option_t* opt )
 {  
   // Set vector to default (junk) values
+  THaPhysicsModule::Clear(opt);
   fP4->SetXYZT(kBig,kBig,kBig,0); // also gives a large - Mag2()
 }
 
