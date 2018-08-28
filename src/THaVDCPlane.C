@@ -29,6 +29,7 @@
 #include "VarDef.h"
 #include "THaApparatus.h"
 #include "THaTriggerTime.h"
+#include "ExtraData.h"
 
 #include <cstring>
 #include <vector>
@@ -47,6 +48,40 @@ using namespace std;
 #define ALL(c) (c).begin(), (c).end()
 
 //_____________________________________________________________________________
+class VDCPlaneExtraData : public Podd::ExtraData {
+public:
+  VDCPlaneExtraData( TObject* obj, TObject* prev )
+    : Podd::ExtraData(obj,prev), fMaxTDCHits(kMaxInt)
+  {
+    fNumTDCHits.reserve(32);
+  }
+  virtual ~VDCPlaneExtraData() {}
+
+  virtual void Clear( Option_t* ) { fNumTDCHits.clear(); }
+  virtual void Print( Option_t* opt ) const
+  {
+    ExtraData::Print(opt);
+    THaVDCPlane* plane = dynamic_cast<THaVDCPlane*>(fOwner);
+    assert(plane);
+    if( plane ) {
+      cout << "Max. TDC hits: " << fMaxTDCHits << endl;
+      cout << "nTDCHits(ihit) = ";
+      for( size_t i=0; i<fNumTDCHits.size(); ++i ) {
+        cout << fNumTDCHits[i];
+        if( i+1 != fNumTDCHits.size() ) cout << ", ";
+      }
+      cout << endl;
+    }
+  }
+  Int_t          GetMaxTDCHits() const { return fMaxTDCHits; }
+  vector<Int_t>& GetNumTDCHits()       { return fNumTDCHits; }
+  void           SetMaxTDCHits( Int_t maxhits ) { fMaxTDCHits = maxhits; }
+private:
+  Int_t          fMaxTDCHits;
+  vector<Int_t>  fNumTDCHits;
+};
+
+//_____________________________________________________________________________
 THaVDCPlane::THaVDCPlane( const char* name, const char* description,
 			  THaDetectorBase* parent )
   : THaSubDetector(name,description,parent),
@@ -60,6 +95,8 @@ THaVDCPlane::THaVDCPlane( const char* name, const char* description,
   fWires    = new TClonesArray("THaVDCWire", 368 );
 
   fVDC = dynamic_cast<THaVDC*>( GetMainDetector() );
+
+  fExtra = new VDCPlaneExtraData(this,fExtra);
 }
 
 //_____________________________________________________________________________
@@ -121,6 +158,7 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
   fMaxTime = 2200;
   fMinTdiff = 3e-8;   // 30ns  -> ~20 deg track angle
   fMaxTdiff = 2.0e-7; // 200ns -> ~67 deg track angle
+  Int_t max_tdc_hits = kMaxInt; // by default, no limit on TDC hits
 
   DBRequest request[] = {
     { "detmap",         &detmap,         kIntV },
@@ -132,6 +170,7 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
     { "driftvel",       &fDriftVel,      kDouble,  0, 0, -1 },
     { "tdc.min",        &fMinTime,       kInt,     0, 1, -1 },
     { "tdc.max",        &fMaxTime,       kInt,     0, 1, -1 },
+    { "tdc.hits"     ,  &max_tdc_hits,   kInt,     0, 1, -1 },
     { "tdc.res",        &fTDCRes,        kDouble,  0, 0, -1 },
     { "tdc.offsets",    &tdc_offsets,    kFloatV },
     { "ttd.converter",  &ttd_conv,       kTString, 0, 1, -1 },
@@ -198,6 +237,14 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
 	   "and >= min_time = %d. Fix database.", fMaxTime, fMinTime );
     return kInitError;
   }
+  if( max_tdc_hits < 1 ) {
+    Error( Here(here), "Invalid tdc.hits = %d. Must be at least 1. Fix database.",
+           max_tdc_hits );
+    return kInitError;
+  }
+  Podd::ExtraData* extraData = static_cast<Podd::ExtraData*>(fExtra);
+  VDCPlaneExtraData* vdcExtraData = static_cast<VDCPlaneExtraData*>( extraData->Find(this) );
+  vdcExtraData->SetMaxTDCHits( max_tdc_hits );
 
   // Derived geometry quatities
   fWAngle *= TMath::DegToRad();
@@ -278,6 +325,7 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
       { "Drift Velocity (m/s) ",   &fDriftVel              },
       { "Min TDC raw time",        &fMinTime,      kInt    },
       { "Max TDC raw time",        &fMaxTime,      kInt    },
+      { "Max # of TDC hits",       &max_tdc_hits,  kInt    },
       { "Min adj wire tdiff (s)",  &fMinTdiff              },
       { "Max adj wire tdiff (s)",  &fMaxTdiff              },
       { "Time-to-dist conv param", &ttd_param, kDoubleV    },
@@ -388,6 +436,7 @@ Int_t THaVDCPlane::DefineVariables( EMode mode )
     { "nhit",   "Number of hits",             "GetNHits()" },
     { "wire",   "Active wire numbers",        "fHits.THaVDCHit.GetWireNum()" },
     { "rawtime","Raw TDC values of wires",    "fHits.THaVDCHit.fRawTime" },
+    { "nthit",  "tdc hits per channel",       "fHits.THaVDCHit.fNthit" },
     { "time",   "TDC values of active wires", "fHits.THaVDCHit.fTime" },
     { "dist",   "Drift distances",            "fHits.THaVDCHit.fDist" },
     { "ddist",  "Drft dist uncertainty",      "fHits.THaVDCHit.fdDist" },
@@ -431,6 +480,7 @@ THaVDCPlane::~THaVDCPlane()
   delete fClusters;
   delete fTTDConv;
 //   delete [] fTable;
+  // fExtra will be deleted by base class
 }
 
 //_____________________________________________________________________________
@@ -440,6 +490,7 @@ void THaVDCPlane::Clear( Option_t* )
   fNHits = fNWiresHit = 0;
   fHits->Clear();
   fClusters->Delete();
+  fExtra->Clear();
 }
 
 //_____________________________________________________________________________
@@ -448,8 +499,6 @@ Int_t THaVDCPlane::Decode( const THaEvData& evData )
   // Converts the raw data into hit information
   // Logical wire numbers a defined by the detector map. Wire number 0
   // corresponds to the first defined channel, etc.
-
-  // TODO: Support "reversed" detector map modules a la MWDC
 
   if (!evData.IsPhysicsTrigger()) return -1;
 
@@ -467,6 +516,10 @@ Int_t THaVDCPlane::Decode( const THaEvData& evData )
     // If true, ignore negative drift times completely
     no_negative      = fVDC->TestBit(THaVDC::kIgnoreNegDrift);
   }
+
+  Podd::ExtraData* extraData = static_cast<Podd::ExtraData*>(fExtra);
+  VDCPlaneExtraData* vdcExtraData = static_cast<VDCPlaneExtraData*>( extraData->Find(this) );
+  vector<Int_t>& nTDCHits = vdcExtraData->GetNumTDCHits();
 
   // Loop over all detector modules for this wire plane
   for (Int_t i = 0; i < fDetMap->GetSize(); i++) {
@@ -516,8 +569,11 @@ Int_t THaVDCPlane::Decode( const THaEvData& evData )
 	  if( only_fastest_hit ) {
 	    if( data > max_data )
 	      max_data = data;
-	  } else
-	    new( (*fHits)[nextHit++] )  THaVDCHit( wire, data, time );
+	  } else {
+	    new( (*fHits)[nextHit++] ) THaVDCHit( wire, data, time );
+	    nTDCHits.push_back(nHits);
+	    assert( nTDCHits.size() == (size_t)nextHit );
+	  }
 	}
 
     // Count all hits and wires with hits
@@ -531,6 +587,8 @@ Int_t THaVDCPlane::Decode( const THaEvData& evData )
 	Double_t xdata = static_cast<Double_t>(max_data) + 0.5;
 	Double_t time = fTDCRes * (toff - xdata) - evtT0;
 	new( (*fHits)[nextHit++] ) THaVDCHit( wire, max_data, time );
+        nTDCHits.push_back(nHits);
+        assert( nTDCHits.size() == (size_t)nextHit );
       }
     } // End channel index loop
   } // End slot loop
@@ -628,104 +686,112 @@ Int_t THaVDCPlane::FindClusters()
 //     only_fastest_hit = fVDC->TestBit(THaVDC::kOnlyFastest);
 // #endif
 
-  Int_t nHits     = GetNHits();   // Number of hits in the plane
-  Int_t nUsed = 0;                // Number of wires used in clustering
+  Int_t nHits     =  GetNHits();   // Number of hits in the plane
+  Int_t nUsed     =  0;            // Number of wires used in clustering
   Int_t nLastUsed = -1;
-  Int_t nextClust = 0;            // Current cluster number
+  Int_t nextClust =  0;            // Current cluster number
   assert( GetNClusters() == 0 );
 
-  vector <THaVDCHit *> clushits;
-  Double_t deltat;
-  Bool_t falling;
-
+  vector<THaVDCHit*> clushits;
+  clushits.reserve(fMaxClustSpan);
   fNpass = 0;
 
-  Int_t nwires, span;
-  UInt_t j;
+  Podd::ExtraData* extraData = static_cast<Podd::ExtraData*>(fExtra);
+  VDCPlaneExtraData* vdcExtraData = static_cast<VDCPlaneExtraData*>( extraData->Find(this) );
+  Int_t max_tdc_hits = vdcExtraData->GetMaxTDCHits();
+  vector<Int_t>& nTDCHits = vdcExtraData->GetNumTDCHits();
 
   //  Loop while we're making new clusters
   while( nLastUsed != nUsed ){
-     fNpass++;
+     ++fNpass;
      nLastUsed = nUsed;
      //Loop through all TDC hits
      for( Int_t i = 0; i < nHits; ) {
        clushits.clear();
-       falling = kTRUE;
+       Bool_t falling = kTRUE;
 
        THaVDCHit* hit = GetHit(i);
        assert(hit);
 
-       if( !timecut(hit) ) {
-	       ++i;
-	       continue;
+       if( !timecut(hit) ||         // drift time not reasonable
+           hit->GetClsNum() != -1   // hit already used
+       ) {
+         ++i;
+         continue;
        }
-       if( hit->GetClsNum() != -1 )
-	  { ++i; continue; }
-       // Ensures we don't use this to try and start a new
-       // cluster
+       // Don't use this hit to try and start a new cluster
        hit->SetClsNum(-3);
 
        // Consider this hit the beginning of a potential new cluster.
        // Find the end of the cluster.
-       span = 0;
-       nwires = 1;
+       Int_t nwires = 1, span = 0;
+       Int_t nskip = 0; // use this to skip bad signal (but do not want to break a possible cluster)
        while( ++i < nHits ) {
 	  THaVDCHit* nextHit = GetHit(i);
 	  assert( nextHit );    // should never happen, else bug in Decode
 	  if( !timecut(nextHit) )
-		  continue;
+	    continue;
 	  if(    nextHit->GetClsNum() != -1   // -1 is virgin
 	      && nextHit->GetClsNum() != -3 ) // -3 was considered to start
-					      //a clus but is not in cluster
-		  continue;
+	                                      //    a clus but is not in cluster
+	    continue;
+
+	  // If the hits per wire is more than the TDC set limit, it's just noise.
+	  // Skip this wire but continue the cluster searching
+
+	  if (nTDCHits[i] >= max_tdc_hits) {
+	    nskip++;
+	    continue;
+	  }
 	  Int_t ndif = nextHit->GetWireNum() - hit->GetWireNum();
 	  // Do not consider adding hits from a wire that was already
 	  // added
-	  if( ndif == 0 ) { continue; }
+	  if( ndif == 0 )
+	    continue;
 	  assert( ndif >= 0 );
+
 	  // The cluster ends when we encounter a gap in wire numbers.
-	  // TODO: cluster should also end if
-	  //  DONE (a) it is too big
-	  //  DONE (b) drift times decrease again after initial fall/rise (V-shape)
-	  //  DONE (c) Enforce reasonable changes in wire-to-wire V-shape
-
-	  // Times are sorted by earliest first when on same wire
-	  deltat = nextHit->GetTime() - hit->GetTime();
-
+	  // Cluster also ends if
+	  //  (a) it is too big
+	  //  (b) drift times decrease again after initial fall/rise (V-shape)
+	  //  (c) wire-to-wire time differences are too large
 	  span += ndif;
-	  if( ndif > fNMaxGap+1 || span > fMaxClustSpan ){
-		  break;
+	  if( ndif > fNMaxGap+1+nskip || span > fMaxClustSpan ) {
+	    break;
 	  }
+
+          // Times are sorted by earliest first when on same wire
+          Double_t deltat = nextHit->GetTime() - hit->GetTime();
 
 	  // Make sure the time structure is sensible
 	  // If this cluster is rising, wire with falling time
 	  // should not be associated in the cluster
-	  if( !falling ){
-		  if( deltat < fMinTdiff*ndif ||
-		      deltat > fMaxTdiff*ndif )
-		  { continue; }
+	  if( !falling ) {
+	    if( deltat < fMinTdiff*ndif || deltat > fMaxTdiff*ndif )
+	      continue;
 	  }
 
-	  if( falling ){
-		  // Step is too big, can't be associated
-		  if( deltat < -fMaxTdiff*ndif ){ continue; }
-		  if( deltat > 0.0 ){
-			  // if rise is reasonable and we don't
-			  // have a monotonically increasing cluster
-			  if( deltat < fMaxTdiff*ndif && span > 1 ){
-				  // now we're rising
-				  falling = kFALSE;
-			  } else {
-				  continue;
-			  }
-		  }
+	  if( falling ) {
+	    // Step is too big, can't be associated
+	    if( deltat < -fMaxTdiff*ndif )
+	      continue;
+	    if( deltat > 0.0 ) {
+	      // if rise is reasonable and we don't
+	      // have a monotonically increasing cluster
+	      if( deltat < fMaxTdiff*ndif && span > 1 ) {
+	        // now we're rising
+	        falling = kFALSE;
+	      } else {
+	        continue;
+	      }
+	    }
 	  }
 
 	  nwires++;
-	  if( clushits.size() == 0 ){
-		  clushits.push_back(hit);
-		  hit->SetClsNum(-2);
-		  nUsed++;
+	  if( clushits.empty() ) {
+	    clushits.push_back(hit);
+	    hit->SetClsNum(-2);
+	    nUsed++;
 	  }
 	  clushits.push_back(nextHit);
 	  nextHit->SetClsNum(-2);
@@ -738,17 +804,17 @@ Int_t THaVDCPlane::FindClusters()
        // Also, make sure that we did indeed see the time
        // spectrum turn around at some point
        if( nwires >= fMinClustSize && !falling ) {
-	  THaVDCCluster* clust =
-	     new ( (*fClusters)[nextClust++] ) THaVDCCluster(this);
+         THaVDCCluster* clust =
+             new ( (*fClusters)[nextClust++] ) THaVDCCluster(this);
 
-	  for( j = 0; j < clushits.size(); j++ ){
-	     clushits[j]->SetClsNum(nextClust-1);
-	     clust->AddHit( clushits[j] );
-	  }
+         for( size_t j = 0; j < clushits.size(); j++ ){
+           clushits[j]->SetClsNum(nextClust-1);
+           clust->AddHit( clushits[j] );
+         }
 
-	  assert( clust->GetSize() > 0 && clust->GetSize() >= nwires );
-	  // This is a good cluster candidate. Estimate its position/slope
-	  clust->EstTrackParameters();
+         assert( clust->GetSize() > 0 && clust->GetSize() >= nwires );
+         // This is a good cluster candidate. Estimate its position/slope
+         clust->EstTrackParameters();
        } //end new cluster
 
      } //end loop over hits

@@ -27,6 +27,7 @@ ha_compiledata.h
 cppcheck_report.txt
 ChangeLog
 *.pcm
+.DS_Store
 
 # Editor lint
 .#*
