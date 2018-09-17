@@ -71,11 +71,12 @@ int main(int argc, char* argv[])
 
   // Define the analysis debug output
   ofstream *debugfile = new ofstream;;
-  debugfile->open ("tst1190_main_debug.txt");
+  // debugfile->open ("tst1190_main_debug.txt");
   
   // Initialize the CODA decoder
   THaCodaFile datafile(filename);
   THaEvData *evdata = new CodaDecoder();
+  evdata->SetCodaVersion(datafile.getCodaVersion());
 
   // Initialize the evdata debug output
   evdata->SetDebug(1);
