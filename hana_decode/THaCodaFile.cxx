@@ -102,7 +102,7 @@ namespace Decoder {
 // Must be called once per event.
     Int_t status;
     if ( handle ) {
-       status = evRead(handle, evbuffer, MAXEVLEN);
+      status = evRead(handle, evbuffer, MAXEVLEN); // @suppress("Invalid arguments")
        staterr("read",status);
     } else {
       if(CODA_VERBOSE) {
@@ -120,7 +120,7 @@ namespace Decoder {
 // codaWrite: Writes data from 'evbuf' to file
      Int_t status;
      if ( handle ) {
-       status = evWrite(handle, evbuf);
+       status = evWrite(handle, evbuf); // @suppress("Invalid arguments")
        staterr("write",status);
      } else {
        cout << "codaWrite ERROR: tried to access file with handle = 0" << endl;

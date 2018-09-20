@@ -116,7 +116,7 @@ DecData::~DecData()
 }
 
 //_____________________________________________________________________________
-void DecData::Clear( Option_t* )
+void DecData::Clear( Option_t* opt )
 {
   // Reset event-by-event data
 
@@ -293,7 +293,7 @@ static Int_t CheckDBVersion( FILE* file )
 }
 
 //_____________________________________________________________________________
-Int_t DecData::SetupDBVersion( FILE* file, Int_t db_version )
+Int_t DecData::SetupDBVersion( FILE* /* file */, Int_t db_version )
 {
   if( db_version == 1 ) {
     Warning( Here("ReadDatabase"), "Unsupported database format found. "
