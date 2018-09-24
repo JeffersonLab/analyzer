@@ -70,7 +70,7 @@ src/VariableArrayVar.h src/FixedArrayVar.h src/VectorVar.h
 src/MethodVar.h src/SeqCollectionVar.h src/SeqCollectionMethodVar.h
 src/VectorObjVar.h src/VectorObjMethodVar.h src/THaVDCChamber.h
 src/THaVDCPoint.h src/THaVDCPointPair.h src/THaGlobals.h
-src/FileInclude.h src/HallA_LinkDef.h
+src/FileInclude.h src/ExtraData.h src/HallA_LinkDef.h
 """)
 baseenv.RootCint(roothadict,haheaders)
 baseenv.Clean(roothadict,re.sub(r'\.C\Z','_rdict.pcm',roothadict))

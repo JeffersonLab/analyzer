@@ -239,7 +239,7 @@ SRC          := src/THaFormula.C src/THaVform.C src/THaVhist.C \
 		src/Variable.C src/VariableArrayVar.C src/FixedArrayVar.C \
 		src/VectorVar.C src/MethodVar.C src/SeqCollectionVar.C \
 		src/SeqCollectionMethodVar.C src/VectorObjVar.C \
-		src/VectorObjMethodVar.C
+		src/VectorObjMethodVar.C src/ExtraData.C
 
 # ifdef ONLINE_ET
 # SRC += src/THaOnlRun.C
