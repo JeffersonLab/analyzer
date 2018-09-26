@@ -30,6 +30,7 @@
 #include "THaApparatus.h"
 #include "THaTriggerTime.h"
 #include "ExtraData.h"
+#include "THaVarList.h"
 
 #include <cstring>
 #include <vector>
@@ -425,7 +426,7 @@ void THaVDCPlane::UpdateGeometry( Double_t x, Double_t y, bool force )
 //_____________________________________________________________________________
 Int_t THaVDCPlane::DefineVariables( EMode mode )
 {
-  // initialize global variables
+  // Initialize global variables
 
   if( mode == kDefine && fIsSetup ) return kOK;
   fIsSetup = ( mode == kDefine );
@@ -436,7 +437,6 @@ Int_t THaVDCPlane::DefineVariables( EMode mode )
     { "nhit",   "Number of hits",             "GetNHits()" },
     { "wire",   "Active wire numbers",        "fHits.THaVDCHit.GetWireNum()" },
     { "rawtime","Raw TDC values of wires",    "fHits.THaVDCHit.fRawTime" },
-    { "nthit",  "tdc hits per channel",       "fHits.THaVDCHit.fNthit" },
     { "time",   "TDC values of active wires", "fHits.THaVDCHit.fTime" },
     { "dist",   "Drift distances",            "fHits.THaVDCHit.fDist" },
     { "ddist",  "Drft dist uncertainty",      "fHits.THaVDCHit.fdDist" },
@@ -464,8 +464,19 @@ Int_t THaVDCPlane::DefineVariables( EMode mode )
     { "npass", "Number of hit passes for cluster", "fNpass" },
     { 0 }
   };
-  return DefineVarsFromList( vars, mode );
+  Int_t ret = DefineVarsFromList( vars, mode );
+  if( ret != kOK )
+    return ret;
 
+  // Export nTDCHits array from fExtra
+  Podd::ExtraData* extraData = static_cast<Podd::ExtraData*>(fExtra);
+  VDCPlaneExtraData* vdcExtraData = static_cast<VDCPlaneExtraData*>( extraData->Find(this) );
+  vector<Int_t>& nTDCHits = vdcExtraData->GetNumTDCHits();
+  TString nthit(fPrefix); nthit.Append("nthit");
+  gHaVars->DefineByType( nthit.Data(), "TDC hits per channel", &nTDCHits,
+      kIntV, 0, Here("DefineVariables") );
+
+  return kOK;
 }
 
 //_____________________________________________________________________________
