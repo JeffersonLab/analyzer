@@ -611,26 +611,24 @@ Int_t THaVDCPlane::Decode( const THaEvData& evData )
 
 #ifdef WITH_DEBUG
   if ( fDebug > 3 ) {
-    cout << endl << "VDC plane " << GetPrefix() << endl;
-    int ncol=4;
-    for (int i=0; i<ncol; i++) {
-      cout << "     Wire    TDC  ";
-    }
-    cout << endl;
-
-    for (int i=0; i<(nextHit+ncol-1)/ncol; i++ ) {
-      for (int c=0; c<ncol; c++) {
-	int ind = c*nextHit/ncol+i;
-	if (ind < nextHit) {
-	  THaVDCHit* hit = static_cast<THaVDCHit*>(fHits->At(ind));
-	  cout << "     " << setw(3) << hit->GetWireNum()
-	       << "    "  << setw(5) << hit->GetRawTime() << " ";
-	} else {
-	  //	  cout << endl;
-	  break;
-	}
+    TString prefix(fPrefix != 0 ? fPrefix : ".");
+    prefix.Chop();
+    cout << "VDC plane \"" << prefix << "\": " << nextHit << " hits" << endl;
+    if( nextHit > 0 ) {
+      const Int_t ncol=4;
+      for( Int_t i=0; i<ncol; i++ ) {
+        cout << "     Wire    TDC  ";
       }
       cout << endl;
+      Int_t i = 0;
+      while( i<nextHit ) {
+        for( Int_t c=0; c<ncol && i<nextHit; c++, i++ ) {
+          THaVDCHit* hit = static_cast<THaVDCHit*>(fHits->At(i));
+          cout << "     " << setw(3) << hit->GetWireNum()
+                 << "    "  << setw(5) << hit->GetRawTime() << " ";
+        }
+        cout << endl;
+      }
     }
   }
 #endif

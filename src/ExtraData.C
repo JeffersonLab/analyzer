@@ -9,9 +9,10 @@
 /////////////////////////////////////////////////////////////////////////////
 
 #include "ExtraData.h"
-#include "TNamed.h"
+#include "THaAnalysisObject.h"
 #include <cassert>
 #include <iostream>
+#include <string>
 
 using namespace std;
 
@@ -54,12 +55,21 @@ ExtraData* ExtraData::Find( TObject* obj ) const
 //___________________________________________________________________________
 void ExtraData::Print( Option_t* ) const
 {
-  TNamed* named = dynamic_cast<TNamed*>(fOwner);
-  if( named ) {
-    cout << "Extra data for object \""
-         << named->GetName() << "\" (\""
-         << named->GetTitle() << "\"):" << endl;
+  cout << "Extra data for object";
+  TNamed* named;
+  THaAnalysisObject* aobj = dynamic_cast<THaAnalysisObject*>(fOwner);
+  const char* cprefix;
+  if( aobj && (cprefix = aobj->GetPrefix()) != 0 ) {
+    string prefix(cprefix);
+    prefix.erase(prefix.length()-1);
+    cout << " \""  << prefix << "\" "
+         << "(\""  << aobj->GetTitle() << "\"):";
   }
+  else if( (named = dynamic_cast<TNamed*>(fOwner)) != 0 ) {
+    cout << " \"" << named->GetName() << "\" "
+         << "(\"" << named->GetTitle() << "\"):";
+  }
+  cout << endl;
 }
 
 //===========================================================================
