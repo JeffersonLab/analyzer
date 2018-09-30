@@ -17,7 +17,7 @@ hana_decode/apps/tstio
 hana_decode/apps/tstoo
 hana_decode/apps/etclient
 hana_decode/apps/tstcoda
-utils/dbconvert
+apps/dbconvert
 bin/
 build/
 

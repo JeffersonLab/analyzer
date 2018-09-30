@@ -5,9 +5,20 @@ import sys
 import os
 import platform
 import subprocess
+import SCons
 
 # Platform configuration
 def config(env,args):
+
+    standalone = args.get('standalone',0)
+    cppcheck = args.get('cppcheck',0)
+    srcdist = args.get('srcdist',0)
+    if int(standalone):
+        env.Append(STANDALONE= '1')
+    if int(cppcheck):
+        env.Append(CPPCHECK = '1')
+    if int(srcdist):
+        env.Append(SRCDIST = '1')
 
     if env['PLATFORM'] == 'posix':
         if (platform.machine() == 'x86_64'):
@@ -43,22 +54,10 @@ def config(env,args):
     else:
         print ('ERROR! unrecognized platform.  Twonk.')
 
-# which() utility
-def which(program):
-    def is_exe(fpath):
-        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
-
-    fpath, fname = os.path.split(program)
-    if fpath:
-        if is_exe(program):
-            return program
-    else:
-        for path in os.environ["PATH"].split(os.pathsep):
-            path = path.strip('"')
-            exe_file = os.path.join(path, program)
-            if is_exe(exe_file):
-                return exe_file
-    return None
+    libsubdir = 'lib'
+    if env['PLATFORM'] == 'posix' and env['MEMORYMODEL'] == '64bit':
+        libsubdir += '64'
+    env.Replace(LIBSUBDIR = libsubdir)
 
 ####### ROOT Definitions ####################
 def FindROOT(env, need_glibs = True):
@@ -80,14 +79,14 @@ def FindROOT(env, need_glibs = True):
             env.Replace(ROOTVERS = os.fsdecode(subprocess.check_output(cmd, shell=True).rstrip()))
             print ('CXX value Version 3 = ',env['CXX'])
             print ('ROOTVERS value Version 3 = ',env['ROOTVERS'])
-        if sys.version_info >= (2, 7) and sys.version_info < (3, 0):
+        elif sys.version_info >= (2, 7) and sys.version_info < (3, 0):
             cmd = root_config + ' --cxx'
             env.Replace(CXX = subprocess.check_output(cmd, shell=True).rstrip())
             cmd = root_config + ' --version'
             env.Replace(ROOTVERS = subprocess.check_output(cmd, shell=True).rstrip())
             print ('CXX value Version 2 = ',env['CXX'])
             print ('ROOTVERS value Version 2 = ',env['ROOTVERS'])
-        if sys.version_info < (2, 7):
+        elif sys.version_info < (2, 7):
             env.Replace(CXX = subprocess.Popen([root_config, '--cxx'],\
                 stdout=subprocess.PIPE).communicate()[0].rstrip())
             env.Replace(ROOTVERS = subprocess.Popen([root_config,\
@@ -207,6 +206,5 @@ def FindEVIO(env, build_it = True, fail_if_missing = True):
 
     print ("EVIO lib Directory = %s" % env.subst('$EVIO_LIB'))
     print ("EVIO include Directory = %s" % env.subst('$EVIO_INC'))
-    env.Append(CPPPATH = ['$EVIO_INC'])
 
 #end configure.py
