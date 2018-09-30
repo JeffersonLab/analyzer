@@ -1519,7 +1519,12 @@ private:
   class Plane : public Detector {
   public:
     friend class VDC;
-    Plane( const string& name, VDC* vdc ) : Detector(name), fVDC(vdc)
+    Plane( const string& name, VDC* vdc )
+      : Detector(name), fZ(0), fWBeg(0), fWSpac(0), fWAngle(0),
+        fDriftVel(0), fTDCRes(0), fT0Resolution(0),
+        fMinTdiff(0), fMaxTdiff(kBig), fMinClustSize(0),
+        fMaxClustSpan(kMaxInt), fNMaxGap(0), fMinTime(0),
+        fMaxTime(kMaxInt), fVDC(vdc)
     { fTTDPar.resize(9); }
 
     virtual int ReadDB( FILE* infile, time_t date_from, time_t date_until );
