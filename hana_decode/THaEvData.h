@@ -47,6 +47,8 @@ public:
   // Set the EPICS event type
   void      SetEpicsEvtType(Int_t itype) { fEpicsEvtType = itype; };
 
+  void SetEvTime(const ULong64_t evtime) { evt_time = evtime; }
+
   // Set the CODA version which affects some decoding behaviour
   void      SetCodaVersion(Int_t vers);
   Int_t     GetCodaVersion() const { return fCodaVersion; }
