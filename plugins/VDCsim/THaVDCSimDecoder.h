@@ -19,11 +19,11 @@ class THaVDCSimDecoder : public THaEvData {
   THaVDCSimDecoder();
   virtual ~THaVDCSimDecoder();
 
-  virtual Int_t  LoadEvent( const int* evbuffer);
+  virtual Int_t  LoadEvent( const UInt_t* evbuffer);
 
   void   Clear( Option_t* opt="" );
   Int_t  GetNTracks() const;
-  Int_t  DefineVariables( THaAnalysisObject::EMode mode = 
+  Int_t  DefineVariables( THaAnalysisObject::EMode mode =
 			  THaAnalysisObject::kDefine );
 
  protected:

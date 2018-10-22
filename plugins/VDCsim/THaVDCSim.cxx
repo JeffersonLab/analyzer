@@ -11,7 +11,7 @@ ClassImp(THaVDCSimTrack);
 #include <cstdio>
 using namespace std;
 
-void THaVDCSimWireHit::Print( const Option_t* opt ) const
+void THaVDCSimWireHit::Print( Option_t* opt ) const
 {
   cout << "Hit: wire: " << wirenum << " TDC: " << time
        << " time: " << rawTime << " pos: " << pos
@@ -19,19 +19,19 @@ void THaVDCSimWireHit::Print( const Option_t* opt ) const
        << endl;
 }
 
-void THaVDCSimTrack::Clear( const Option_t* opt ) {
+void THaVDCSimTrack::Clear( Option_t* opt ) {
   for (int i = 0; i < 4; i++)
     hits[i].Clear(opt);
 }
 
-void THaVDCSimTrack::Print( const Option_t* opt ) const
+void THaVDCSimTrack::Print( Option_t* opt ) const
 {
   //TObject::Print(opt);
-  cout << "Track number = " << track_num << ", type = " << type 
+  cout << "Track number = " << track_num << ", type = " << type
        << ", layer = " << layer << ", obj = " << hex << this << dec << endl;
-  cout << "  Origin    = (" << origin.X() << ", " << origin.Y() << ", " 
+  cout << "  Origin    = (" << origin.X() << ", " << origin.Y() << ", "
        << origin.Z() << ")" << endl;
-  cout << "  Momentum  = (" << momentum.X() << ", " << momentum.Y() << ", " 
+  cout << "  Momentum  = (" << momentum.X() << ", " << momentum.Y() << ", "
        << momentum.Z() << ")" << endl;
   cout << "  TRANSPORT = (" << ray[0] << ", " << ray[1] << ", " << ray[2] << ", "
        << ray[3] << ", " << ray[4] << ")" << endl;
@@ -48,14 +48,13 @@ void THaVDCSimTrack::Print( const Option_t* opt ) const
   cout << endl;
 }
 
-THaVDCSimEvent::THaVDCSimEvent() {
-}
+THaVDCSimEvent::THaVDCSimEvent() : event_num(0) {}
 
 THaVDCSimEvent::~THaVDCSimEvent() {
   Clear();
 }
 
-void THaVDCSimEvent::Clear( const Option_t* opt ) {
+void THaVDCSimEvent::Clear( Option_t* opt ) {
   for (Int_t i = 0; i < 4; i++)
     wirehits[i].Delete(opt);
 
@@ -72,14 +71,14 @@ void THaVDCSimEvent::Clear( const Option_t* opt ) {
 }
 
 THaVDCSimConditions::THaVDCSimConditions()
- //set defaults conditions
-    : filename("vdctracks.root"), numTrials(10000), 
-      numWires(368), noiseSigma(4.5), noiseMean(0.0), wireEff(1.0), tdcTimeLimit(900.0), 
-      emissionRate(0.000002), probWireNoise(0.0), x1(-1.8), x2(-0.1),ymean(0.0), 
-      ysigma(0.01), z0(-1.0), 
-      pthetamean(TMath::Pi()/4.0), pthetasigma(atan(1.1268) - TMath::Pi()/4.0), 
-      pphimean(0.0), pphisigma(atan(0.01846)), pmag0(1.0), tdcConvertFactor(2.0), 
-      cellWidth(0.0042426), cellHeight(0.026)
+  //set defaults conditions
+  : filename("vdctracks.root"), numTrials(10000),
+    numWires(368), noiseSigma(4.5), noiseMean(0.0), wireEff(1.0), tdcTimeLimit(900.0),
+    emissionRate(0.000002), probWireNoise(0.0), x1(-1.8), x2(-0.1),ymean(0.0),
+    ysigma(0.01), z0(-1.0),
+    pthetamean(TMath::Pi()/4.0), pthetasigma(atan(1.1268) - TMath::Pi()/4.0),
+    pphimean(0.0), pphisigma(atan(0.01846)), pmag0(1.0), tdcConvertFactor(2.0),
+    cellWidth(0.0042426), cellHeight(0.026)
 {
   // Constructor - determine the name of the database file
 
@@ -122,12 +121,12 @@ Int_t THaVDCSimConditions::ReadDatabase(Double_t* timeOffsets)
 
   const int LEN = 100;
   char buff[LEN];
-  
+
   for( int j = 0; j<4; j++ ) {
     rewind(file);
     // Build the search tag and find it in the file. Search tags
     // are of form [ <prefix> ], e.g. [ R.vdc.u1 ].
-    TString tag(Prefixes[j]); tag.Prepend("["); tag.Append("]"); 
+    TString tag(Prefixes[j]); tag.Prepend("["); tag.Append("]");
     TString line, tag2(tag);
     tag.ToLower();
     // cout << "ReadDatabase:  tag = " << tag.Data() << endl;
@@ -138,14 +137,14 @@ Int_t THaVDCSimConditions::ReadDatabase(Double_t* timeOffsets)
       delete [] buf;
       if( line.EndsWith("\n") ) line.Chop();  //delete trailing newline
       line.ToLower();
-      if ( tag == line ) 
+      if ( tag == line )
 	found = true;
     }
     if( !found ) {
       fclose(file);
       return 1;
     }
-    
+
     for(int i = 0; i<5; i++)
       fgets(buff, LEN, file);  //skip 5 lines to get to drift velocity
 
@@ -156,7 +155,7 @@ Int_t THaVDCSimConditions::ReadDatabase(Double_t* timeOffsets)
 
     fgets(buff, LEN, file); // Read to end of line
     fgets(buff, LEN, file); // Skip line
-  
+
     //Found the offset entries for this plane, so read time offsets and wire numbers
 
     for (int i = j*numWires; i < (j+1)*numWires; i++) {

@@ -39,7 +39,7 @@
 //   Mode 9:  data type  9
 //   Mode 10: data types 4 & 9
 //
-//   fFirmwareVers == 2	
+//   fFirmwareVers == 2
 //   Current version (0x0C0D, 9/28/17) of the FADC firmware only
 //   reports the pedestal once for up to four identifiable pulses in
 //   in the readout window.  For now, it is best to tell THaEvData
@@ -78,7 +78,11 @@ namespace Decoder {
     DoRegister( ModuleType( "Decoder::Fadc250Module" , 250 ));
 
   Fadc250Module::Fadc250Module()
-    : PipeliningModule(), fPulseData(NADCCHAN)
+    : PipeliningModule(), fPulseData(NADCCHAN),
+      data_type_4(false), data_type_6(false), data_type_7(false),
+      data_type_8(false), data_type_9(false), data_type_10(false),
+      block_header_found(false), block_trailer_found(false),
+      event_header_found(false), slots_match(false)
   { memset(&fadc_data, 0, sizeof(fadc_data)); }
 
   Fadc250Module::Fadc250Module(Int_t crate, Int_t slot)
@@ -342,7 +346,7 @@ namespace Decoder {
 	cout << "ERROR:: Fadc250Module:: GetPulsePedestalData:: invalid data vector size = " << fSlot << ", channel = " << chan << endl;
 	return -1;
       }
-      else {    
+      else {
 	return fPulseData[chan].pedestal[ievent];
 #ifdef WITH_DEBUG
 	if (fDebugFile != 0)
@@ -356,7 +360,7 @@ namespace Decoder {
       cout << "ERROR:: Fadc250Module:: GetPulsePedestalData:: invalid data vector size = " << fSlot << ", channel = " << chan << endl;
       return -1;
     }
-    else {    
+    else {
       return fPulseData[chan].pedestal[0];
 #ifdef WITH_DEBUG
       if (fDebugFile != 0)
@@ -382,7 +386,7 @@ namespace Decoder {
       cout << "ERROR:: Fadc250Module:: GetPedestalQuality:: invalid data vector size = " << fSlot << ", channel = " << chan << endl;
       return -1;
     }
-    else {    
+    else {
       return fPulseData[chan].pedestal_quality[0];
 #ifdef WITH_DEBUG
       if (fDebugFile != 0)
@@ -414,7 +418,7 @@ namespace Decoder {
 #endif
     }
   }
-  
+
   Int_t Fadc250Module::GetUnderflowBit(Int_t chan, Int_t ievent) const {
     Int_t nevent = 0;
     nevent = fPulseData[chan].underflow.size();
@@ -444,10 +448,10 @@ namespace Decoder {
     if (fDebugFile != 0)
       *fDebugFile << "Fadc250Module::GetTriggerTime = "
       << fadc_data.trig_time << " " << shorttime << endl;
-#endif	
+#endif
     return shorttime;
   }
-  
+
   Int_t Fadc250Module::GetPulseSamplesData(Int_t chan, Int_t ievent) const {
     Int_t nevent = 0;
     nevent = fPulseData[chan].samples.size();
@@ -729,8 +733,9 @@ namespace Decoder {
 	    *fDebugFile << "Fadc250Module::Decode:: Slot from FADC block header = " << fadc_data.slot_blk_hdr << endl;
 #endif
 	  // Ensure that slots from cratemap and FADC match
-	  if (uint32_t (fSlot) == fadc_data.slot_blk_hdr) slots_match = true;
-	  else { slots_match = false; return -1; }
+	  slots_match = (uint32_t (fSlot) == fadc_data.slot_blk_hdr);
+	  if( !slots_match )
+	    return -1;
 	  fadc_data.mod_id = (data >> 18) & 0xF;         // Module ID ('1' for FADC250), mask 4 bits
 	  fadc_data.iblock_num = (data >> 8) & 0x3FF;    // Event block number, mask 10 bits
 	  fadc_data.nblock_events = (data >> 0) & 0xFF;  // Number of events in block, mask 8 bits

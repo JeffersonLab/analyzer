@@ -27,18 +27,18 @@ class THaVDCSimConditions : public TObject {
   TString databaseFile;       //name of database file to read
   int numWires;               //number of wires in each chamber
   double noiseSigma;          //sigma value of noise distribution
-  double noiseMean;           //mean of noise distribution 
+  double noiseMean;           //mean of noise distribution
   double wireEff;             //wire efficiency (decimal form)
   double tdcTimeLimit;        //window of time the tdc reads (in ns)
   double emissionRate;        //rate particles are emitted from target (in particles/ns)
   double probWireNoise;     //probability of random chamber wires firing
-  const Double_t x1;      
+  const Double_t x1;
   const Double_t x2;           //x coordinate limits for origin of tracks
   const Double_t ymean;
   const Double_t ysigma;       //mean and sigma value for origin  y coord. distribution
   const Double_t z0;           //z coordinate of track origin
   const Double_t pthetamean;
-  const Double_t pthetasigma;  //mean and sigma for momentum theta distribution 
+  const Double_t pthetasigma;  //mean and sigma for momentum theta distribution
   const Double_t pphimean;
   const Double_t pphisigma;    //mean and sigma of momentum phi distribution
   const Double_t pmag0;        //magnitude of momentum
@@ -50,24 +50,25 @@ class THaVDCSimConditions : public TObject {
 	   Double_t a, Double_t b, Double_t c, Double_t d);
 
   Int_t ReadDatabase(Double_t* timeOffsets);
- 
+
  ClassDef (THaVDCSimConditions, 5) // Simulation Conditions
 };
 
 class THaVDCSimWireHit : public TObject {
 public:
   THaVDCSimWireHit()
-    : wirenum(0), type(0), rawTime(0), rawTDCtime(0), time(0), distance(0), wireFail(false) {}
+    : wirenum(0), type(0), rawTime(0), rawTDCtime(0), time(0), distance(0),
+      wireFail(false), pos(0) {}
   Int_t wirenum;      // Wire number
   Int_t type;         // flag for tyep of hit. actual = 0, noise = 1
   Double_t rawTime;    // Time of wire hit in nanoseconds
   Int_t rawTDCtime; //tdc time w/out noise
   Int_t time;       //tdctime w/additional noise
-  Double_t distance;   //drift distance 
+  Double_t distance;   //drift distance
   bool wireFail;      //set to true when the wire fails
   Double_t pos;       //wire position (m) along u(v) coordinate
 
-  virtual void Print( const Option_t* opt="" ) const;
+  virtual void Print( Option_t* opt="" ) const;
 
   ClassDef (THaVDCSimWireHit, 4) // Simple Wirehit class
 };
@@ -84,15 +85,15 @@ public:
   TList wirehits[4]; //list of hits for each set of wires (u1,v1,u2,v2)
   TList tracks;      //list of tracks for each plane
 
-  virtual void Clear( const Option_t* opt="" );
+  virtual void Clear( Option_t* opt="" );
 
   ClassDef (THaVDCSimEvent, 3) // Simple simulated track class
 };
 
 class THaVDCSimTrack : public TObject {
- public: 
+ public:
   THaVDCSimTrack(Int_t type = 0, Int_t num = 0)
-    : type(type), layer(0), track_num(num) {}
+    : type(type), layer(0), track_num(num), timeOffset(0) {}
 
   TVector3 origin; // Origin of track
   TVector3 momentum; // Momentum of track
@@ -115,7 +116,7 @@ class THaVDCSimTrack : public TObject {
   Double_t V2Pos()  { return xover[3]; }
 
   Int_t type;   //type of track. 0 = trigger, 1 = coincident, 2 = delta ray, 3 = cosmic ray
-  Int_t layer;  //layer of material track originated from. 0 = target, 1 = vacuum window, 
+  Int_t layer;  //layer of material track originated from. 0 = target, 1 = vacuum window,
                 // 2 = vdc frame etc.
   Int_t track_num;  //track index
   Double_t timeOffset; //time offset of the track (0 if trigger, random otherwise)
@@ -124,9 +125,9 @@ class THaVDCSimTrack : public TObject {
 
   TList hits[4]; // Hits of this track only in each wire plane
 
-  virtual void Clear( const Option_t* opt="" );
-  virtual void Print( const Option_t* opt="" ) const;
-  
+  virtual void Clear( Option_t* opt="" );
+  virtual void Print( Option_t* opt="" ) const;
+
   ClassDef (THaVDCSimTrack, 4) // Simluated VDC track
 };
 
