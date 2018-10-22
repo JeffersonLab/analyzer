@@ -5,7 +5,13 @@ import sys
 import os
 import platform
 import subprocess
-import SCons
+import shutil
+import glob
+import tarfile
+try:
+    import urllib2
+except ImportError:
+    import urllib.request as urllib2
 
 # Platform configuration
 def config(env,args):
@@ -20,50 +26,46 @@ def config(env,args):
     if int(srcdist):
         env.Append(SRCDIST = '1')
 
+    env.Replace(LIBSUBDIR = 'lib')
+    env.Replace(RPATH_ORIGIN_TAG = '$$ORIGIN')
+
     if env['PLATFORM'] == 'posix':
+        import linux32, linux64
         if (platform.machine() == 'x86_64'):
             print ("Got a 64-bit processor, I can do a 64-bit build in theory...")
             for element in platform.architecture():
                 if (element == '32bit'):
                     print ('32-bit Linux build')
                     env['MEMORYMODEL'] = '32bit'
-                    import linux32
                     linux32.config(env, args)
                     break
                 elif (element == '64bit'):
                     print ('64-bit Linux build')
                     env['MEMORYMODEL'] = '64bit'
-                    import linux64
                     linux64.config(env, args)
                     break
                 else:
                     print ('Memory model not specified, so I\'m building 32-bit...')
                     env['MEMORYMODEL'] = '32bit'
-                    import linux32
                     linux32.config(env, args)
         else:
             print ('32-bit Linux Build.')
             env['MEMORYMODEL'] = '32bit'
-            import linux32
             linux32.config(env, args)
     elif env['PLATFORM'] == 'darwin':
+        import darwin64
         print ('OS X Darwin is a 64-bit build.')
         env['MEMORYMODEL'] = '64bit'
-        import darwin64
         darwin64.config(env, args)
     else:
         print ('ERROR! unrecognized platform.  Twonk.')
-
-    libsubdir = 'lib'
-    if env['PLATFORM'] == 'posix' and env['MEMORYMODEL'] == '64bit':
-        libsubdir += '64'
-    env.Replace(LIBSUBDIR = libsubdir)
 
 ####### ROOT Definitions ####################
 def FindROOT(env, need_glibs = True):
     root_config = 'root-config'
     try:
-        env.PrependENVPath('PATH',env['ENV']['ROOTSYS'] + '/bin')
+        rootsys = env['ENV']['ROOTSYS']
+        env.PrependENVPath('PATH', os.path.join(rootsys,'bin'))
     except KeyError:
         pass    # ROOTSYS not defined
 
@@ -74,9 +76,9 @@ def FindROOT(env, need_glibs = True):
             env.ParseConfig(root_config + ' --cflags --libs')
         if sys.version_info >= (3, 0):
             cmd = root_config + ' --cxx'
-            env.Replace(CXX = os.fsdecode(subprocess.check_output(cmd, shell=True).rstrip()))
+            env.Replace(CXX = os.fsdecode(subprocess.check_output(cmd, shell=True).rstrip()))  # @UndefinedVariable
             cmd = root_config + ' --version'
-            env.Replace(ROOTVERS = os.fsdecode(subprocess.check_output(cmd, shell=True).rstrip()))
+            env.Replace(ROOTVERS = os.fsdecode(subprocess.check_output(cmd, shell=True).rstrip()))  # @UndefinedVariable
             print ('CXX value Version 3 = ',env['CXX'])
             print ('ROOTVERS value Version 3 = ',env['ROOTVERS'])
         elif sys.version_info >= (2, 7) and sys.version_info < (3, 0):
@@ -93,7 +95,7 @@ def FindROOT(env, need_glibs = True):
                 '--version'],stdout=subprocess.PIPE).communicate()[0].rstrip())
             print ('CXX value Version 1 = ',env['CXX'])
             print ('ROOTVERS value Version 1 = ',env['ROOTVERS'])
-        if platform.system() == 'Darwin':
+        if env['PLATFORM'] == 'darwin':
             try:
                 env.Replace(LINKFLAGS = env['LINKFLAGS'].remove('-pthread'))
             except:
@@ -105,15 +107,12 @@ def FindROOT(env, need_glibs = True):
 
 # EVIO environment
 def FindEVIO(env, build_it = True, fail_if_missing = True):
+    env.Replace(LOCAL_EVIO = 0)
     uname = os.uname();
     platform = uname[0];
     machine = uname[4];
-    if platform == 'Linux':
-        sosuf = 'so'
-    elif platform == 'Darwin':
-        sosuf = 'dylib'
     evio_header_file = 'evio.h'
-    evio_library_file = 'libevio.'+ sosuf
+    evio_library_file = 'libevio' + env.subst('$SHLIBSUFFIX')
 
     evio_inc_dir = os.getenv('EVIO_INCDIR')
     evio_lib_dir = os.getenv('EVIO_LIBDIR')
@@ -124,9 +123,9 @@ def FindEVIO(env, build_it = True, fail_if_missing = True):
     #
     evio_dir = os.getenv('EVIO')
     evio_arch = platform + '-' + machine
-    if evio_dir is not None:
-        evio_lib_dir2 = evio_dir + '/' + evio_arch + '/lib'
-        evio_inc_dir2 = evio_dir + '/' + evio_arch + '/include'
+    if evio_dir:
+        evio_lib_dir2 = os.path.join(evio_dir,evio_arch,'lib')
+        evio_inc_dir2 = os,path.join(evio_dir,evio_arch,'include')
         th2 = env.FindFile(evio_header_file,evio_inc_dir2)
         tl2 = env.FindFile(evio_library_file,evio_lib_dir2)
     else:
@@ -138,9 +137,9 @@ def FindEVIO(env, build_it = True, fail_if_missing = True):
     #print ('%-12s' % ('%s:' % evio_library_file), FindFile(evio_library_file, evio_lib_dir2))
     #
     coda_dir = os.getenv('CODA')
-    if coda_dir is not None:
-        evio_lib_dir3 = coda_dir + '/' + evio_arch + '/lib'
-        evio_inc_dir3 = coda_dir + '/' + evio_arch + '/include'
+    if coda_dir:
+        evio_lib_dir3 = os.path.join(coda_dir,evio_arch,'lib')
+        evio_inc_dir3 = os.path.join(coda_dir,evio_arch,'include')
         th3 = env.FindFile(evio_header_file,evio_inc_dir3)
         tl3 = env.FindFile(evio_library_file,evio_lib_dir3)
     else:
@@ -151,53 +150,60 @@ def FindEVIO(env, build_it = True, fail_if_missing = True):
         #print ('%-12s' % ('%s:' % evio_header_file), FindFile(evio_header_file, evio_inc_dir3))
         #print ('%-12s' % ('%s:' % evio_library_file), FindFile(evio_library_file, evio_lib_dir3))
         #
-    if th1 is not None and tl1 is not None:
+    if th1 and tl1:
         env.Append(EVIO_LIB = evio_lib_dir)
         env.Append(EVIO_INC = evio_inc_dir)
-    elif th2 is not None and tl2 is not None:
+    elif th2 and tl2:
         env.Append(EVIO_LIB = evio_lib_dir2)
         env.Append(EVIO_INC = evio_inc_dir2)
-    elif th3 is not None and tl3 is not None:
+    elif th3 and tl3:
         env.Append(EVIO_LIB = evio_lib_dir3)
         env.Append(EVIO_INC = evio_inc_dir3)
     elif build_it:
         print ("No external EVIO environment configured !!!")
         print ("Using local installation ... ")
         evio_version = '4.4.6'
-        evio_local = env.subst('$HA_DIR')+'/evio'
-        evio_local_lib = "%s/evio-%s/src/libsrc/.%s" % (evio_local,evio_version,evio_arch)
-        evio_local_inc = "%s/evio-%s/src/libsrc" % (evio_local,evio_version)
-        evio_tarfile = "%s/master.tar.gz" % (evio_local)
-        evio_command_dircreate = "mkdir -p %s" % (evio_local)
-        os.system(evio_command_dircreate)
+        evio_revision = 'evio-%s' % evio_version
+        evio_tarfile = evio_revision + ".tar.gz"
+        evio_local = os.path.join(env.Dir('.').abspath,'evio')
+        evio_unpack_dir = os.path.join(evio_local,evio_revision)
+        evio_libsrc =  os.path.join(evio_unpack_dir,"src","libsrc")
+        if not os.path.exists(evio_local):
+            os.makedirs(evio_local, mode=0755)
+        evio_tarpath = os.path.join(evio_local,evio_tarfile)
 
-        ####### Check to see if scons -c has been called #########
-        if env.GetOption('clean'):
-            subprocess.call(['echo', '!!!!!!!!!!!!!! EVIO Cleaning Process !!!!!!!!!!!! '])
-            evio_command_cleanup = "rm -f libevio*.*; cd %s; rm -rf evio-%s" % (evio_local,evio_version)
-            print ("evio_command_cleanup = %s" % evio_command_cleanup)
-            os.system(evio_command_cleanup)
-        else:
-            if not os.path.isdir(evio_local_lib):
-                if not os.path.exists(evio_tarfile):
-                    evio_command_download = "cd %s; curl -LO https://github.com/JeffersonLab/hallac_evio/archive/master.tar.gz" % (evio_local)
-                    print ("evio_command_download = %s" % evio_command_download)
-                    os.system(evio_command_download)
+        if not os.path.isfile(os.path.join(evio_local,'evio.h')):
+            # If needed, download EVIO archive
+            if not os.path.exists(evio_tarpath):
+                evio_url = 'https://github.com/JeffersonLab/hallac_evio/archive/%s' % evio_tarfile
+                print('Dowloading EVIO tarball %s' % evio_url)
+                urlhandle = urllib2.urlopen(evio_url)
+                with open(evio_tarpath,'wb') as out_file:
+                    shutil.copyfileobj( urlhandle, out_file )
+                urlhandle.close()
+            # Extract EVIO C-API sources (libsrc directory)
+            print('Extracting EVIO tarball %s' % evio_tarpath)
+            tar = tarfile.open(evio_tarpath,'r')
+            tar_members = tar.getmembers()
+            top_dir = tar_members[0].name.split('/')[0]
+            to_extract = []
+            for m in tar_members:
+                if '/libsrc/' in m.name:
+                    to_extract.append(m)
+            tar.extractall( evio_local, to_extract )
+            tar.close()
+            os.rename( os.path.join(evio_local,top_dir), evio_unpack_dir )
+            have_win32 = (env['PLATFORM']=='win32')
+            for f in glob.glob(os.path.join(evio_libsrc,"*.[ch]")):
+                if have_win32 or not 'msinttypes' in f:
+                    shutil.copy2(f, evio_local)
+            shutil.rmtree(evio_unpack_dir)
+        # Build EVIO libsrc
+        env.SConscript(os.path.join(evio_local,"SConscript.py"))
 
-                evio_command_unpack = "cd %s; tar xvfz master.tar.gz; mv hallac_evio-master evio-%s" % (evio_local,evio_version)
-                print ("evio_command_unpack = %s" % evio_command_unpack)
-                os.system(evio_command_unpack)
-
-            evio_command_scons = "cd %s/evio-%s; scons src/libsrc/.%s/" % (evio_local,evio_version,evio_arch)
-            print ("evio_command_scons = %s" % evio_command_scons)
-            os.system(evio_command_scons)
-            evio_local_lib_files = "%s/libevio.*" % (evio_local_lib)
-            evio_command_libcopy = "cp -vf %s ." % (evio_local_lib_files)
-            print ("evio_command_libcopy = %s" % evio_command_libcopy)
-            os.system(evio_command_libcopy)
-
-        env.Append(EVIO_LIB = evio_local_lib)
-        env.Append(EVIO_INC = evio_local_inc)
+        env.Append(EVIO_LIB = evio_local)
+        env.Append(EVIO_INC = evio_local)
+        env.Replace(LOCAL_EVIO = 1)
     elif fail_if_missing:
         print('!!! Cannot find EVIO library.  Set EVIO_LIBDIR/EVIO_INCDIR, EVIO or CODA.')
         env.Exit(1)

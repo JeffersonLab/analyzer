@@ -22,4 +22,6 @@ def config(env,args):
         if not int(debug):
             env.Append(CXXFLAGS = '-Wno-unused-parameter')
 
+    env.Append(LIBSUBDIR = '64')
+
 #end linux64.py

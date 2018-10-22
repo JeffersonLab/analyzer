@@ -50,5 +50,6 @@ write_compiledata(baseenv,compiledata)
 extrahdrs = ['Helper.h','VarDef.h','VarType.h',compiledata]
 
 poddlib = build_library(baseenv, libname, src, extrahdrs,
-                        extradicthdrs = ['THaGlobals.h'], useenv = False)
+                        extradicthdrs = ['THaGlobals.h'], useenv = False,
+                        versioned = True)
 Clean(poddlib, compiledata)

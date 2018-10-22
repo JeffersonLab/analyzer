@@ -12,17 +12,27 @@ thisdir = os.path.basename(os.path.normpath(thisdir_fullpath))
 appnames = ['analyzer', 'dbconvert']
 apps = []
 sources = []
+# SCons seems to ignore $RPATH on macOS... sigh
+env = baseenv.Clone()
+if env['PLATFORM'] == 'darwin':
+    try:
+        for rp in env['RPATH']:
+            env.Append(LINKFLAGS = ['-Wl,-rpath,'+rp])
+    except KeyError:
+        pass
+
 for a in appnames:
-    app = baseenv.Program(target = a, source = a+'.cxx')
+    app = env.Program(target = a, source = a+'.cxx')
     apps.append(app)
     sources.append(a+'.cxx')
 
 # Installation
-install_prefix = baseenv.subst('$INSTALLDIR')
+install_prefix = env.subst('$INSTALLDIR')
 bin_dir = os.path.join(install_prefix,'bin')
 #lib_dir = os.path.join(install_prefix,'lib')
-rel_lib_dir = '$$'+os.path.join('ORIGIN',os.path.join('..',baseenv.subst('$LIBSUBDIR')))
-src_dir = os.path.join(install_prefix,os.path.join('src',thisdir))
+rel_lib_dir = os.path.join(env['RPATH_ORIGIN_TAG'],
+                           os.path.join('..',env.subst('$LIBSUBDIR')))
+src_dir = os.path.join(install_prefix,os.path.join('src',thisdir_fullpath))
 
-baseenv.InstallWithRPATH(bin_dir,apps,rel_lib_dir)
-baseenv.Install(src_dir,sources)
+env.InstallWithRPATH(bin_dir,apps,[rel_lib_dir])
+env.Install(src_dir,sources)

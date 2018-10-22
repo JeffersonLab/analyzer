@@ -4,16 +4,11 @@
 ###### Modified for Podd 1.7 directory layout: Ole Hansen (ole@jlab.org) Sep 2018
 
 import os
-import SCons
+import glob
 import configure
-import re
 import podd_util
 
 EnsureSConsVersion(2,3,0)
-
-from SCons.Script.SConscript import SConsEnvironment
-SConsEnvironment.OSCommand = SCons.Action.ActionFactory(os.system,
-            lambda command : 'os.system("%s")' % command)
 
 baseenv = Environment(ENV = os.environ,tools=["default","disttar","symlink","rootcint"],
                       toolpath=['site_scons'])
@@ -41,14 +36,13 @@ ivercode = 65536*int(float(baseenv.subst('$SOVERSION'))) + \
                        int(float(baseenv.subst('$SOVERSION'))))) + \
                        int(float(baseenv.subst('$PATCH')))
 baseenv.Append(VERCODE = ivercode)
-baseenv.Append(CPPPATH = ['$HA_DIR','$HA_Podd','$HA_DC','$HA_HallA'])
-env_analyzer = os.getenv('ANALYZER')
-if not env_analyzer:
-    env_analyzer = '.'
-baseenv.Append(INSTALLDIR = env_analyzer)
-print ('Will install in INSTALLDIR = "%s"' % baseenv.subst('$INSTALLDIR'))
+baseenv.Append(CPPPATH = ['$HA_DIR','$HA_HallA','$HA_Podd','$HA_DC'])
+install_prefix = os.getenv('SCONS_INSTALL_PREFIX')
+if not install_prefix:
+    install_prefix = os.path.join(os.getenv('HOME'),'.local')
+baseenv.Append(INSTALLDIR = install_prefix)
+print ('Will use INSTALLDIR = "%s"' % baseenv.subst('$INSTALLDIR'))
 baseenv.Alias('install',baseenv.subst('$INSTALLDIR'))
-baseenv.Append(RPATH = ['$HA_Podd','$HA_DC','$HA_HallA'])
 
 # Default RPATH handling like CMake's default: always set in build location,
 #    delete when installing
@@ -56,26 +50,23 @@ baseenv.Append(RPATH = ['$HA_Podd','$HA_DC','$HA_HallA'])
 if int(ARGUMENTS.get('rpath',0)):
     baseenv.Replace(ADD_INSTALL_RPATH = '1')
 baseenv.AddMethod(podd_util.InstallWithRPATH)
-baseenv.AddMethod(podd_util.InstallLibWithRPATH)
-
-configure.FindROOT(baseenv)
-configure.FindEVIO(baseenv)
 
 ######## Configure Section #######
 
-if not baseenv.GetOption('help'):
+configure.config(baseenv,ARGUMENTS)
+configure.FindROOT(baseenv)
 
-   configure.config(baseenv,ARGUMENTS)
+conf = Configure(baseenv)
+if not baseenv.GetOption('clean') and not baseenv.GetOption('help') \
+    and not 'uninstall' in COMMAND_LINE_TARGETS:
 
-   conf = Configure(baseenv)
-   if not baseenv.GetOption('clean'):
-       if not conf.CheckCXX():
-           print('!!! Your compiler and/or environment is not correctly configured.')
-           #Exit(1)
-           # if not conf.CheckFunc('printf'):
-           #         print('!!! Your compiler and/or environment is not correctly configured.')
-           #         Exit(1)
-   baseenv = conf.Finish()
+    if not conf.CheckCXX():
+        print('!!! Your compiler and/or environment is not correctly configured.')
+        Exit(1)
+        # if not conf.CheckFunc('printf'):
+        #         print('!!! Your compiler and/or environment is not correctly configured.')
+        #         Exit(1)
+baseenv = conf.Finish()
 
 ######## cppcheck ###########################
 
@@ -103,9 +94,9 @@ if baseenv.subst('$SRCDIST') == '1':
     tar = baseenv.DistTar("dist/analyzer-"+baseenv.subst('$VERSION'),[baseenv.Dir('#')])
     print ("tarball target = %s" % tar)
 
-Export('baseenv')
-
 ###    tar_command = 'tar cvz -C .. -f ../' + baseenv.subst('$NAME') + '.tar.gz -X .exclude -V "JLab/Hall A C++ Analysis Software '+baseenv.subst('$VERSION') + ' `date -I`" ' + '../' + baseenv.subst('$NAME') + '/.exclude ' + '../' + baseenv.subst('$NAME') + '/Changelog ' + '../' + baseenv.subst('$NAME') + '/src ' + '../' + baseenv.subst('$NAME') + '/hana_decode ' + '../' + baseenv.subst('$NAME') + '/Makefile ' + '../' + baseenv.subst('$NAME') + '/*.py' + '../' + baseenv.subst('$NAME') + '/SConstruct'
+
+Export('baseenv')
 
 #print (baseenv.Dump())
 #print ('CXXFLAGS = ', baseenv['CXXFLAGS'])
@@ -114,10 +105,16 @@ Export('baseenv')
 
 ####### Start of main SConstruct ############
 
-baseenv.Append(LIBPATH=['$HA_Podd','$HA_HallA','$HA_DC'])
+baseenv.Append(LIBPATH=['$HA_HallA','$HA_Podd','$HA_DC'])
 baseenv.Prepend(LIBS=['HallA','Podd','dc'])
+baseenv.Append(RPATH = ['$HA_HallA','$HA_Podd','$HA_DC'])
 
-SConscript(dirs = ['Podd', 'HallA', 'hana_decode', 'apps'],name='SConscript.py',exports='baseenv')
+SConscript(dirs = ['Podd', 'HallA', 'hana_decode', 'apps', 'hana_decode/apps'],
+           name='SConscript.py',exports='baseenv')
+
+# Install site_scons so that modules can be built against the installation
+baseenv.Install(os.path.join('$INSTALLDIR','site_scons'),
+                glob.glob(os.path.join('site_scons','*')))
 
 if 'uninstall' in COMMAND_LINE_TARGETS:
     baseenv.Command("uninstall-scons-installed-files", None, Delete(FindInstalledFiles()))

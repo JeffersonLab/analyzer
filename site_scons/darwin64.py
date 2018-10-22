@@ -23,5 +23,7 @@ def config(env,args):
             env.Append(CXXFLAGS = '-Wno-unused-parameter')
 
     env.Append(SHLINKFLAGS = '-Wl,-undefined,dynamic_lookup')
+    env.Append(SHLINKFLAGS = '-Wl,-headerpad_max_install_names')
+    env.Replace(RPATH_ORIGIN_TAG = '@loader_path')
 
 #end darwin64.py

@@ -3,6 +3,7 @@
 ###### Modified for Podd 1.7 directory layout: Ole Hansen (ole@jlab.org) Sep 2018
 
 from podd_util import build_library
+
 Import('baseenv')
 
 libname = 'HallA'
@@ -19,4 +20,4 @@ THaVDCTrackID.cxx          THaVDCWire.cxx              TrigBitLoc.cxx
 VDCeff.cxx
 """
 
-build_library(baseenv, libname, src, useenv = False)
+build_library(baseenv, libname, src, useenv = False, versioned = True)

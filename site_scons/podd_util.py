@@ -2,6 +2,12 @@
 # Ultility functions for Podd SCons build
 
 import os
+from SCons.Action import ActionFactory
+from SCons.Script.SConscript import SConsEnvironment
+
+SConsEnvironment.OSCommand = ActionFactory(os.system,
+            lambda command : 'os.system("%s")' % command)
+
 import SCons.Util
 
 def list_to_path(lst):
@@ -18,36 +24,37 @@ def list_to_path(lst):
 def InstallWithRPATH(env, dest, files, rpath):
     obj = env.Install(dest, files)
     if env['PLATFORM'] == 'posix':
-        if env.WhereIs("chrpath"):
-            rpathstr = list_to_path(rpath)
+        rpathstr = list_to_path(rpath)
+        if env.WhereIs('patchelf'):
             if env.subst('$ADD_INSTALL_RPATH') and rpathstr:
-                chrpath_cmd = "chrpath -r '"+rpathstr+"' "
+                patch_cmd = "patchelf --force-rpath --set-rpath '"+rpathstr+"' "
             else:
-                chrpath_cmd = "chrpath -d "
+                patch_cmd = "patchelf --remove-rpath "
             for i in obj:
-                env.AddPostAction(i, env.OSCommand(chrpath_cmd+str(i)))
+                env.AddPostAction(i, env.OSCommand(patch_cmd+str(i)))
+        elif env.WhereIs('chrpath') \
+                and not (env.subst('$ADD_INSTALL_RPATH') and rpathstr):
+            # chrpath can only reliably delete RPATH
+            for i in obj:
+                env.AddPostAction(i, env.OSCommand('chrpath -d '+str(i)))
+        else:
+            print('WARNING: patchelf not found, cannot set RPATH')
     elif env['PLATFORM'] == 'darwin':
-        # TODO
-        pass
+        for i in obj:
+            env.AddPostAction(i, env.OSCommand("site_scons/clear_macos_rpath.sh "+str(i)))
+            if env.subst('$ADD_INSTALL_RPATH') and rpath:
+                tool_cmd = "install_name_tool"
+                # rpath could contain empty strings or be ['']
+                add_to_cmd = ''
+                for rp in rpath:
+                    if rp:
+                        add_to_cmd += " -add_rpath "+str(rp)
+                if add_to_cmd:
+                    tool_cmd += add_to_cmd+" "+str(i)
+                    env.AddPostAction(i, env.OSCommand(tool_cmd))
     return obj
 
-def InstallLibWithRPATH(env, dest, library, rpath):
-    obj = env.InstallVersionedLib(dest, library)
-    if env['PLATFORM'] == 'posix':
-        if env.WhereIs("chrpath"):
-            rpathstr = list_to_path(rpath)
-            if env.subst('$ADD_INSTALL_RPATH') and rpathstr:
-                chrpath_cmd = "chrpath -r '"+rpathstr+"' "
-            else:
-                chrpath_cmd = "chrpath -d "
-            for i in obj:
-                env.AddPostAction(i, env.OSCommand(chrpath_cmd+str(i)))
-    elif env['PLATFORM'] == 'darwin':
-        # TODO
-        pass
-    return obj
-
-def create_uninstall_target(env, path, is_glob):
+def create_uninstall_target(env, path, is_glob = False):
     if is_glob:
         all_files = env.Glob(path,strings=True)
         for filei in all_files:
@@ -59,11 +66,11 @@ def create_uninstall_target(env, path, is_glob):
             env.Alias("uninstall", os.remove(path))
 
 import SCons.Script
-from SCons.Defaults import Delete
 import re
 
 def build_library(env, sotarget, src, extrahdrs = [], extradicthdrs = [],
-                  dictname = None, useenv = True, install_rpath = ['']):
+                  dictname = None, useenv = True, versioned = False,
+                  install_rpath = []):
     '''
     Build shared library lib<sotarget> of ROOT classes from given sources "src"
     (space separated string). For each .cxx source file, a .h header file is
@@ -101,8 +108,8 @@ def build_library(env, sotarget, src, extrahdrs = [], extradicthdrs = [],
         dictname = sotarget
 
     if useenv:
-        linklibs = env.subst('$LIBS')
-        linklibpath = env.subst('$LIBPATH')
+        linklibs = env['LIBS']
+        linklibpath = env['LIBPATH']
     else:
         linklibs = ['']
         linklibpath = ['']
@@ -126,36 +133,60 @@ def build_library(env, sotarget, src, extrahdrs = [], extradicthdrs = [],
 
     # Versioned shared library symlink names
     libname_so = libbase+env.subst('$SHLIBSUFFIX')
-    if env['PLATFORM'] != 'darwin':
+    if env['PLATFORM'] == 'posix':
         # Linux
-        libname_soname = libname_so+'.'+env.subst('$SOVERSION')
-        libname_versioned = libname_so+'.'+env.subst('$VERSION')
-        shlibsuffix = env.subst('$SHLIBSUFFIX')+'.'+env.subst('$VERSION')
-    else:
+        if versioned:
+            libname_soname = libname_so+'.'+env.subst('$SOVERSION')
+            libname_versioned = libname_so+'.'+env.subst('$VERSION')
+            shlibsuffix = env.subst('$SHLIBSUFFIX')+'.'+env.subst('$VERSION')
+        else:
+            libname_soname = libname_so
+            shlibsuffix = env.subst('$SHLIBSUFFIX')
+            shlinkflags = ''
+        shlinkflags = ['-Wl,-soname='+libname_soname]
+    elif env['PLATFORM'] == 'darwin':
         # macOS
-        libname_soname = libbase+'.'+env.subst('$SOVERSION')+env.subst('$SHLIBSUFFIX')
-        libname_versioned = libbase+'.'+env.subst('$VERSION')+env.subst('$SHLIBSUFFIX')
-        shlibsuffix = '.'+env.subst('$VERSION')+env.subst('$SHLIBSUFFIX')
+        if versioned:
+            libname_soname = libbase+'.'+env.subst('$SOVERSION')+env.subst('$SHLIBSUFFIX')
+            libname_versioned = libbase+'.'+env.subst('$VERSION')+env.subst('$SHLIBSUFFIX')
+            shlibsuffix = '.'+env.subst('$VERSION')+env.subst('$SHLIBSUFFIX')
+        else:
+            libname_soname = libname_so
+            shlibsuffix = env.subst('$SHLIBSUFFIX')
+        shlinkflags = ['-Wl,-install_name,'+'@rpath/'+libname_soname]
+        if versioned:
+            shlinkflags.append(['-Wl,-compatibility_version,'+env.subst('$SOVERSION'),
+                                '-Wl,-current_version,'+env.subst('$VERSION')])
+        try:
+            for rp in env['RPATH']:
+                shlinkflags.append('-Wl,-rpath,'+rp)
+        except KeyError:
+            pass
+    else:
+        print('build_library: Error: unsupported platform')
+        Exit(3)
 
-    # Build the libary
+    # Build the library
     thislib = env.SharedLibrary(target = sotarget,
                  source = srclist+[rootdict],
                  LIBS = linklibs, LIBPATH = linklibpath,
                  SHLIBSUFFIX = shlibsuffix,
-                 SONAME = libname_soname)
+                 SONAME = libname_soname,
+                 SHLINKFLAGS = env['SHLINKFLAGS']+shlinkflags)
 
-    # Create symlinks
-    env.SymLink(libname_soname,thislib)
-    env.SymLink(libname_so,libname_soname)
+    if versioned:
+        # Create symlinks
+        env.SymLink(libname_soname,thislib)
+        env.SymLink(libname_so,libname_soname)
 
     # Installation
     install_prefix = env.subst('$INSTALLDIR')
     lib_dir = os.path.join(install_prefix,env.subst('$LIBSUBDIR'))
-    bin_dir = os.path.join(install_prefix,'bin')
+    #bin_dir = os.path.join(install_prefix,'bin')
     inc_dir = os.path.join(install_prefix,'include')
-    src_dir = os.path.join(install_prefix,os.path.join('src',thisdir))
+    src_dir = os.path.join(install_prefix,'src',thisdir)
 
-    thislib_installed = env.InstallLibWithRPATH(lib_dir,thislib,install_rpath)
+    InstallWithRPATH(env,lib_dir,thislib,install_rpath)
     # Install PCM file generated by RootCint, if any
     if len(thedict) > 1:
         env.Install(lib_dir,thedict[1])
@@ -163,15 +194,16 @@ def build_library(env, sotarget, src, extrahdrs = [], extradicthdrs = [],
     env.Install(src_dir,srclist)
 
     libname_so_installpath = os.path.join(lib_dir,libname_so)
-    libname_soname_installpath = os.path.join(lib_dir,libname_soname)
-    libname_versioned_installpath = os.path.join(lib_dir,libname_versioned)
-    #Kludge for SCons's inability to install symlinks
-    env.SymLink(libname_soname_installpath,libname_versioned_installpath)
-    env.SymLink(libname_so_installpath,libname_soname_installpath)
+    if versioned:
+        libname_soname_installpath = os.path.join(lib_dir,libname_soname)
+        libname_versioned_installpath = os.path.join(lib_dir,libname_versioned)
+        #Kludge for SCons's inability to install symlinks
+        env.SymLink(libname_soname_installpath,libname_versioned_installpath)
+        env.SymLink(libname_so_installpath,libname_soname_installpath)
 
-    if 'uninstall' in SCons.Script.COMMAND_LINE_TARGETS:
-        create_uninstall_target(env, libname_so_installpath, False)
-        create_uninstall_target(env, libname_soname_installpath, False)
+        if 'uninstall' in SCons.Script.COMMAND_LINE_TARGETS:
+            create_uninstall_target(env, libname_so_installpath)
+            create_uninstall_target(env, libname_soname_installpath)
 
     return thislib
 

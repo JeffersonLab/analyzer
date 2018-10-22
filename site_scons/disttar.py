@@ -16,8 +16,9 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 
-import os,sys
-from SCons.Script import *
+import os
+import SCons
+from SCons.Script import Builder
 import re
 
 def disttar_emitter(target,source,env):
@@ -72,6 +73,7 @@ def disttar(target, source, env):
     """tar archive builder"""
 
     import tarfile
+    import sys
 
     env_dict = env.Dictionary()
 
@@ -134,8 +136,8 @@ def exists(env):
     Make sure this tool exists.
     """
     try:
-        import os
-        import tarfile
+        import os       # @UnusedImport
+        import tarfile  # @UnusedImport
     except ImportError:
         return False
     else:
