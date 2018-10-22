@@ -44,7 +44,6 @@ set(src
   Scaler3800.cxx
   Scaler3801.cxx
   Scaler560.cxx
-  SimDecoder.cxx
   THaCodaData.cxx
   THaCodaFile.cxx
   THaCrateMap.cxx
@@ -65,7 +64,7 @@ if(ONLINE_ET)
   else()
     message(WARNING
       "Cannot find ET system. Check $CODA environment variable. Disabling ONLINE_ET")
-    set(ONLINE_ET FALSE)
+    set(ONLINE_ET FALSE CACHE BOOL "ET system not found, disabled" FORCE)
   endif()
 endif()
 
@@ -95,15 +94,13 @@ target_include_directories(${LIBNAME}
   PUBLIC
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src
   )
 target_link_libraries(${LIBNAME}
   PUBLIC
     ROOT::Core
+    ${ONLIBS}    # et.h is in the THaEtClient.h public interface
   PRIVATE
     EVIO::EVIO
-    ${ONLIBS}
   )
 set_target_properties(${LIBNAME} PROPERTIES
   SOVERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
@@ -125,3 +122,9 @@ build_root_dictionary(lib${LIBNAME} ${headers}
   PCMNAME ${LIBNAME}
   LINKDEF ${ALTLIBNAME}_LinkDef.h
   )
+
+#----------------------------------------------------------------------------
+# Standalone excutables
+if(STANDALONE)
+  add_subdirectory(apps)
+endif()

@@ -16,6 +16,7 @@
 #include "TBits.h"
 #include <cassert>
 #include <iostream>
+#include <cstdio>
 
 class THaBenchmark;
 
@@ -94,7 +95,7 @@ public:
   {
     Decoder::Module* module = GetModule(crate, slot);
     if (!module) {
-      std::cout << "No module at crate "<<crate<<"   slot "<<slot<<std::endl;
+      std::cerr << "No module at crate "<<crate<<"   slot "<<slot<<std::endl;
       return false;
     }
     return module->HasCapability(type);
@@ -103,7 +104,7 @@ public:
   {
     Decoder::Module* module = GetModule(crate, slot);
     if (!module) {
-      std::cout << "No module at crate "<<crate<<"   slot "<<slot<<std::endl;
+      std::cerr << "No module at crate "<<crate<<"   slot "<<slot<<std::endl;
       return false;
     }
     return module->IsMultiFunction();
@@ -114,7 +115,7 @@ public:
     Decoder::Module* module = GetModule(crate, slot);
     if (!module) return 0;
     if (module->HasCapability( type )) {
-       return module->GetNumEvents(type, chan);
+      return module->GetNumEvents(type, chan);
     } else {
       return GetNumHits(crate, slot, chan);
     }
@@ -141,7 +142,7 @@ public:
   {// get the "Opt" bit (works for fastbus, is otherwise zero)
     Decoder::Module* module = GetModule(crate, slot);
     if (!module) {
-      std::cout << "No module at crate "<<crate<<"   slot "<<slot<<std::endl;
+      std::cerr << "No module at crate "<<crate<<"   slot "<<slot<<std::endl;
       return 0;
     }
     return module->GetOpt(GetRawData(crate, slot, hit));
@@ -268,6 +269,7 @@ protected:
 
   // Initialization routines
   virtual Int_t init_cmap();
+  virtual Int_t init_cmap_openfile(FILE*&, TString&) { return 0; }
   virtual Int_t init_slotdata();
   virtual void  makeidx(Int_t crate, Int_t slot);
   virtual void  FindUsedSlots();

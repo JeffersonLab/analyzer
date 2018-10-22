@@ -174,8 +174,7 @@ endif(NOT TARGET ROOT::Libraries)
 
 find_program(MK_ROOTDICT mk_rootdict.sh
   HINTS
-    ${CMAKE_CURRENT_LIST_DIR}/../..
-    ${CMAKE_CURRENT_LIST_DIR}/../../..
+    ${CMAKE_CURRENT_LIST_DIR}/..
   PATH_SUFFIXES scripts
   DOC "Wrapper script for ROOT dictionary generator"
   )

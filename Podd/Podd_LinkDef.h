@@ -15,7 +15,6 @@
 
 #pragma link C++ nestedclass;
 #pragma link C++ nestedtypedef;
-#pragma link C++ namespace VDC;
 #pragma link C++ namespace Podd;
 
 #pragma link C++ class THaVar+;
@@ -34,14 +33,12 @@
 #pragma link C++ class THaRunParameters+;
 #pragma link C++ class THaApparatus+;
 #pragma link C++ class THaSpectrometer+;
-#pragma link C++ class THaHRS+;
-#pragma link C++ class THaDecData+;
+#pragma link C++ class Podd::DecData+;
 #pragma link C++ class BdataLoc+;
 #pragma link C++ class CrateLoc+;
 #pragma link C++ class CrateLocMulti+;
 #pragma link C++ class WordLoc+;
 #pragma link C++ class RoclenLoc+;
-#pragma link C++ class TrigBitLoc+;
 #pragma link C++ class BankData+;
 #pragma link C++ class THaAnalysisObject+;
 #pragma link C++ class THaDetectorBase+;
@@ -60,8 +57,6 @@
 #pragma link C++ class THaEvent+;
 #pragma link C++ class THaEventHeader+;
 #pragma link C++ class THaOutput+;
-//#pragma link C++ class THaOdata+;
-//#pragma link C++ class THaScalerKey+;
 #pragma link C++ class THaAnalyzer+;
 #pragma link C++ class THaPrintOption+;
 #pragma link C++ class THaBeam+;
@@ -80,18 +75,6 @@
 #pragma link C++ class THaArrayString+;
 #pragma link C++ class THaCherenkov+;
 #pragma link C++ class THaTotalShower+;
-#pragma link C++ class THaVDC+;
-#pragma link C++ class THaVDCChamber+;
-#pragma link C++ class THaVDCPlane+;
-#pragma link C++ class THaVDCCluster+;
-#pragma link C++ class THaVDCHit+;
-#pragma link C++ class THaVDCWire+;
-#pragma link C++ class VDC::TimeToDistConv+;
-#pragma link C++ class VDC::AnalyticTTDConv+;
-#pragma link C++ class THaVDCPoint+;
-#pragma link C++ class THaVDCPointPair+;
-#pragma link C++ class THaVDCTrackID+;
-#pragma link C++ class VDCeff+;
 #pragma link C++ class THaRTTI+;
 #pragma link C++ class THaElectronKine+;
 #pragma link C++ class THaReactionPoint+;
@@ -105,7 +88,6 @@
 #pragma link C++ class THaPrimaryKine+;
 #pragma link C++ class THaSecondaryKine+;
 #pragma link C++ class THaCoincTime+;
-#pragma link C++ class THaS2CoincTime+;
 #pragma link C++ class THaTrackProj+;
 #pragma link C++ class THaPostProcess+;
 #pragma link C++ class THaFilter+;
@@ -118,22 +100,18 @@
 #pragma link C++ class THaTriggerTime+;
 #pragma link C++ class THaTrackOut+;
 #pragma link C++ class THaHelicityDet+;
-#pragma link C++ class THaADCHelicity+;
-#pragma link C++ class THaADCHelicity::ChanDef_t+;
-#pragma link C++ class THaHelicity+;
-#pragma link C++ class THaG0HelicityReader+;
-#pragma link C++ class THaG0HelicityReader::ROCinfo+;
-#pragma link C++ class THaG0Helicity+;
 #pragma link C++ class THaPhotoReaction+;
 #pragma link C++ class THaSAProtonEP+;
 #pragma link C++ class THaTextvars+;
-#pragma link C++ class THaQWEAKHelicity+;
-#pragma link C++ class THaQWEAKHelicityReader+;
-#pragma link C++ class THaQWEAKHelicityReader::ROCinfo+;
 #pragma link C++ class THaEvtTypeHandler+;
 #pragma link C++ class THaScalerEvtHandler+;
 #pragma link C++ class THaEpicsEvtHandler+;
 #pragma link C++ class THaEvt125Handler+;
+#pragma link C++ class Podd::MCHitInfo+;
+#pragma link C++ class Podd::MCTrack+;
+#pragma link C++ class Podd::MCTrackPoint+;
+#pragma link C++ class Podd::SimDecoder+;
+#pragma link C++ class Podd::CodaRawDecoder+;
 
 #ifdef ONLINE_ET
 #pragma link C++ class THaOnlRun+;

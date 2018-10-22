@@ -7,8 +7,7 @@ set(_compileinfo_cmd get_compileinfo.sh)
 
 find_program(GET_COMPILEINFO ${_compileinfo_cmd}
   HINTS
-    ${CMAKE_CURRENT_LIST_DIR}/../..
-    ${CMAKE_CURRENT_LIST_DIR}/../../..
+    ${CMAKE_CURRENT_LIST_DIR}/..
   PATH_SUFFIXES scripts
   DOC "External helper program to report current build metadata"
   )

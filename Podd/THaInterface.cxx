@@ -21,7 +21,7 @@
 #include "TInterpreter.h"
 #include "THaVarList.h"
 #include "THaCutList.h"
-#include "CodaDecoder.h"
+#include "CodaRawDecoder.h"
 #include "THaGlobals.h"
 #include "THaAnalyzer.h"
 //#include "THaFileDB.h"
@@ -74,7 +74,7 @@ THaInterface::THaInterface( const char* appClassName, int* argc, char** argv,
   gHaPhysics = new TList;
   gHaEvtHandlers = new TList;
   // Use the standard CODA file decoder by default
-  gHaDecoder = Decoder::CodaDecoder::Class();
+  gHaDecoder = Podd::CodaRawDecoder::Class();
   // File-based database by default
   //  gHaDB      = new THaFileDB();
   gHaTextvars = new THaTextvars;

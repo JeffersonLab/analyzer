@@ -28,7 +28,7 @@ THaOnlRun::THaOnlRun() : THaCodaRun()
   TDatime now;
   SetDate(now);
   // Use ET client as data source
-  fCodaData = new THaEtClient();
+  fCodaData = new Decoder::THaEtClient();
   fMode = 1;
 }
 
@@ -43,7 +43,7 @@ THaOnlRun::THaOnlRun( const char* computer, const char* session, UInt_t mode) :
   SetDate(now);
 
   // Use ET client as data source
-  fCodaData = new THaEtClient();
+  fCodaData = new Decoder::THaEtClient();
 }
 
 //______________________________________________________________________________
@@ -57,7 +57,7 @@ THaOnlRun::THaOnlRun( const THaOnlRun& rhs ) :
   TDatime now;
   SetDate(now);
 
-  fCodaData = new THaEtClient();
+  fCodaData = new Decoder::THaEtClient();
 }
 
 //_____________________________________________________________________________
@@ -73,7 +73,7 @@ THaOnlRun& THaOnlRun::operator=(const THaRunBase& rhs)
        fMode     = static_cast<const THaOnlRun&>(rhs).fMode;
      }
      //     delete fCodaData; //already done in THaCodaRun
-     fCodaData = new THaEtClient;
+     fCodaData = new Decoder::THaEtClient;
   }
   return *this;
 }
