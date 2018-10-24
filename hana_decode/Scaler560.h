@@ -16,7 +16,7 @@ class Scaler560 : public GenScaler {
 
 public:
 
-   Scaler560() : GenScaler() {}
+   Scaler560() {}
    Scaler560(Int_t crate, Int_t slot);
    virtual ~Scaler560();
 

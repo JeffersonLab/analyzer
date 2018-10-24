@@ -15,14 +15,18 @@ namespace Decoder {
 Module::TypeIter_t Scaler3801::fgThisType =
   DoRegister( ModuleType( "Decoder::Scaler3801" , 3801 ));
 
-Scaler3801::Scaler3801(Int_t crate, Int_t slot) : GenScaler(crate, slot) {
+Scaler3801::Scaler3801(Int_t crate, Int_t slot)
+  : GenScaler(crate, slot)
+{
   Init();
 }
 
-Scaler3801::~Scaler3801() {
+Scaler3801::~Scaler3801()
+{
 }
 
-void Scaler3801::Init() {
+void Scaler3801::Init()
+{
   fNumChan = 32;
   fWordsExpect = 32;
   GenScaler::GenInit();

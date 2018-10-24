@@ -200,7 +200,7 @@ namespace Decoder {
     return fTdcData[idx];
   }
 
-  void Caen1190Module::Clear(const Option_t*) {
+  void Caen1190Module::Clear(Option_t*) {
     memset(fNumHits, 0, NTDCCHAN*sizeof(Int_t));
     memset(fTdcData, 0, NTDCCHAN*MAXHIT*sizeof(Int_t));
   }

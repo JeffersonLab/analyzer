@@ -16,14 +16,19 @@ namespace Decoder {
 
   public:
 
-    GenScaler() : VmeModule() {}
+    GenScaler()
+      : fIsDecoded(false), fFirstTime(true), fDeltaT(0),
+        fDataArray(0), fPrevData(0), fRate(0),
+        fClockChan(0), fNumChanMask(0), fNumChanShift(0),
+        fHasClock(false), fClockRate(0), fNormScaler(0)
+        {}
     GenScaler(Int_t crate, Int_t slot);
     virtual ~GenScaler();
 
     using Module::GetData;
     using Module::LoadSlot;
 
-    virtual void  Clear(const Option_t* opt="");
+    virtual void  Clear(Option_t* opt="");
     virtual Int_t Decode(const UInt_t *evbuffer);
     virtual UInt_t GetData(Int_t chan) const;   // Raw scaler counts
     virtual Bool_t IsSlot(UInt_t rdata);

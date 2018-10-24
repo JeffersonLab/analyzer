@@ -36,7 +36,9 @@ class PipeliningModule : public VmeModule  {
 
 public:
 
-   PipeliningModule() : VmeModule() {}
+   PipeliningModule()
+    : fNWarnings(0), fBlockHeader(0), data_type_def(15), fFirstTime(kTRUE),
+      index_buffer(0) {}
    PipeliningModule(Int_t crate, Int_t slot);
    virtual ~PipeliningModule();
 

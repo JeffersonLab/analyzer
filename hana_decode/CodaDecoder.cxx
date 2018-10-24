@@ -636,20 +636,26 @@ Int_t CodaDecoder::FindRocsCoda3(const UInt_t *evbuffer) {
 
   if (fDebugFile) {  // debug   
 
-    *fDebugFile << "\n  FindRocsCoda3 :: Starting Event number = "<<dec<<tbank.evtNum<<endl;
+    *fDebugFile << endl << "  FindRocsCoda3 :: Starting Event number = " << dec << tbank.evtNum;
+    *fDebugFile << endl;
     *fDebugFile << "    Trigger Bank Len = "<<tbLen<<" words "<<endl;
     *fDebugFile << "    There are "<<nroc<<"  ROCs"<<endl;
     for(Int_t i=0;i<nroc;i++) {
-      *fDebugFile << "     ROC ID = "<<irn[i]<<"  pos = "<<rocdat[irn[i]].pos<<"  Len = "<<rocdat[irn[i]].len<<endl;
+      *fDebugFile << "     ROC ID = "<<irn[i]<<"  pos = "<<rocdat[irn[i]].pos
+          <<"  Len = "<<rocdat[irn[i]].len<<endl;
     }
     *fDebugFile << "    Trigger BANK INFO,  TAG = "<<hex<<tbank.tag<<dec<<endl;
-    *fDebugFile << "    start "<<hex<<tbank.start<<"      blksize "<<dec<<tbank.blksize<<"  len "<<tbank.len<<"   tag "<<tbank.tag<<"   nrocs "<<tbank.nrocs<<"   evtNum "<<tbank.evtNum<<endl;
+    *fDebugFile << "    start "<<hex<<tbank.start<<"      blksize "<<dec<<tbank.blksize
+        <<"  len "<<tbank.len<<"   tag "<<tbank.tag<<"   nrocs "<<tbank.nrocs<<"   evtNum "<<tbank.evtNum;
+    *fDebugFile << endl;
     *fDebugFile << "         Event #       Time Stamp       Event Type"<<endl;
     for(Int_t i=0; i<tbank.blksize; i++) {
        if(tbank.evTS != NULL) {
-          *fDebugFile << "      "<<dec<<tbank.evtNum+i<<"   "<<tbank.evTS[i]<<"   "<<tbank.evType[i]<<endl;
+          *fDebugFile << "      "<<dec<<tbank.evtNum+i<<"   "<<tbank.evTS[i]<<"   "<<tbank.evType[i];
+          *fDebugFile << endl;
        } else {
-	  *fDebugFile << "     "<<tbank.evtNum+i<<"(No Time Stamp)   "<<tbank.evType[i]<<endl;
+	  *fDebugFile << "     "<<tbank.evtNum+i<<"(No Time Stamp)   "<<tbank.evType[i];
+	  *fDebugFile << endl;
        }
        *fDebugFile << endl<<endl;
     }

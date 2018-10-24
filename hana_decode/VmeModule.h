@@ -17,7 +17,7 @@ class VmeModule : public Module {
 public:
 
    VmeModule(Int_t crate, Int_t slot);
-   VmeModule() : Module() {}
+   VmeModule() {}
    virtual ~VmeModule();
 
    using Module::LoadSlot;

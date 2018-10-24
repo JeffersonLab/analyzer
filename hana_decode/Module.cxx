@@ -40,7 +40,8 @@ Module::~Module() {
 }
 
 
-void Module::Init() {
+void Module::Init()
+{
 // Suggestion: call this Init() before calling the inherting class's Init.
 // Otherwise some variables may be undefined.  The "factory" method
 // using TClass::New does NOT call the c'tor of this base class !!

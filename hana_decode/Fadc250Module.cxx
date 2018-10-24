@@ -78,7 +78,7 @@ namespace Decoder {
     DoRegister( ModuleType( "Decoder::Fadc250Module" , 250 ));
 
   Fadc250Module::Fadc250Module()
-    : PipeliningModule(), fPulseData(NADCCHAN),
+    : fPulseData(NADCCHAN),
       data_type_4(false), data_type_6(false), data_type_7(false),
       data_type_8(false), data_type_9(false), data_type_10(false),
       block_header_found(false), block_trailer_found(false),
@@ -132,7 +132,7 @@ namespace Decoder {
     return sum_of_elements;
   }
 
-  void Fadc250Module::Clear( const Option_t* opt) {
+  void Fadc250Module::Clear(Option_t* opt) {
     // Clear event-by-event data
     VmeModule::Clear(opt);
     ClearDataVectors();

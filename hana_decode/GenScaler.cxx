@@ -19,13 +19,16 @@ namespace Decoder {
   const int DEFAULT_DELTAT = 4;
 
   GenScaler::GenScaler(Int_t crate, Int_t slot)
-    : VmeModule(crate, slot), fIsDecoded(kFALSE), fDataArray(0), fPrevData(0),
-      fRate(0), fNormScaler(0)
+    : VmeModule(crate, slot),
+      fIsDecoded(false), fFirstTime(true), fDeltaT(0),
+      fDataArray(0), fPrevData(0), fRate(0),
+      fClockChan(0), fNumChanMask(0), fNumChanShift(0),
+      fHasClock(false), fClockRate(0), fNormScaler(0)
   {
     fWordsExpect = 32;
   }
 
-  void GenScaler::Clear(const Option_t* opt) {
+  void GenScaler::Clear(Option_t* opt) {
     // Clear event-by-event data
     VmeModule::Clear(opt);
     fIsDecoded=kFALSE;

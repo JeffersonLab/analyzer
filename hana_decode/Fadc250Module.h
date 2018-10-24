@@ -9,6 +9,7 @@
 /////////////////////////////////////////////////////////////////////
 
 #include "PipeliningModule.h"
+#include "evio.h"
 #include <vector>
 #if __cplusplus >= 201103L
 #include <cstdint>
@@ -29,7 +30,7 @@ namespace Decoder {
     using Module::GetData;
     using Module::LoadSlot;
 
-    virtual void Clear(const Option_t *opt="");
+    virtual void Clear(Option_t *opt="");
     virtual void Init();
     virtual void CheckDecoderStatus() const;
     virtual Int_t GetPulseIntegralData(Int_t chan, Int_t ievent) const;
