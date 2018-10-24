@@ -1,6 +1,8 @@
 Hall A C++ Analyzer
 ===================
 
+[![Build Status](https://travis-ci.org/JeffersonLab/analyzer.svg?branch=master)](https://travis-ci.org/JeffersonLab/analyzer)
+
 This is the standard data analysis software for
 [Hall A](http://hallaweb.jlab.org/) at [Jefferson Lab](https://www.jlab.org).
 The current stable version is 1.6.3.
