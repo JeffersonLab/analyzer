@@ -17,9 +17,9 @@ install:
 script:
   - scons
 after_success:
-  - ldd $ANALYZER/analyzer
-  - $ANALYZER/analyzer --version
-  - $ANALYZER/analyzer -q
+  - ldd $ANALYZER/apps/analyzer
+  - $ANALYZER/apps/analyzer --version
+  - $ANALYZER/apps/analyzer -q
 branches:
   only: master
 notifications:
