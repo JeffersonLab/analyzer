@@ -5,7 +5,6 @@ compiler: gcc
 language: cpp
 env:
   global:
-    - MAKEFLAGS="-j2"
     - SCONSFLAGS="-j2"
     - ANALYZER="."
     - LD_LIBRARY_PATH=$ANALYZER:$LD_LIBRARY_PATH
@@ -16,7 +15,6 @@ install:
   - python --version
   - scons --version
 script:
-  - make
   - scons
 after_success:
   - ldd $ANALYZER/analyzer
