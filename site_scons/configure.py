@@ -169,7 +169,7 @@ def FindEVIO(env, build_it = True, fail_if_missing = True):
         evio_unpack_dir = os.path.join(evio_local,evio_revision)
         evio_libsrc =  os.path.join(evio_unpack_dir,"src","libsrc")
         if not os.path.exists(evio_local):
-            os.makedirs(evio_local, mode=0755)
+            os.makedirs(evio_local, mode=0o755)
         evio_tarpath = os.path.join(evio_local,evio_tarfile)
 
         if not os.path.isfile(os.path.join(evio_local,'evio.h')):
