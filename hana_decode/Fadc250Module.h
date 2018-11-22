@@ -9,7 +9,6 @@
 /////////////////////////////////////////////////////////////////////
 
 #include "PipeliningModule.h"
-#include "evio.h"
 #include <vector>
 #if __cplusplus >= 201103L
 #include <cstdint>

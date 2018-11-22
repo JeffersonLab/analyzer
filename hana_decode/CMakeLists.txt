@@ -9,6 +9,7 @@ set(SUBPROJECT_NAME Decode)
 #----------------------------------------------------------------------------
 # Configuration options
 option(ONLINE_ET "Enable support ET message system" OFF)
+option(STANDALONE "Enable building of test/example programs" OFF)
 
 #----------------------------------------------------------------------------
 # Required dependencies

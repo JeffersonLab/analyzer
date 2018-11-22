@@ -2,55 +2,53 @@
 ###### Ole Hansen (ole@jlab.org) Oct 2018
 
 import os
-Import ('baseenv')
+from configure import FindROOT
+Import ('dcenv')
 
-proceed = "1" or "y" or "yes" or "Yes" or "Y"
-if baseenv.subst('$STANDALONE')==proceed or baseenv.GetOption('clean') \
-    or 'uninstall' in COMMAND_LINE_TARGETS:
+thisdir_fullpath = Dir('.').path
+thisdir = os.path.basename(os.path.normpath(thisdir_fullpath))
 
-    thisdir_fullpath = Dir('.').path
-    thisdir = os.path.basename(os.path.normpath(thisdir_fullpath))
+# Executables
+appnames = ['tstfadc', 'tstfadcblk', 'tstf1tdc', 'tstio',
+            'tstoo', 'tdecpr', 'prfact', 'epicsd', 'tdecex',
+            'tst1190']
+apps = []
+sources = []
+env = dcenv.Clone()
+# Link only with decoder 'libdc', not EVIO or any other libs
+env.Replace(LIBS = ['dc'])
+env.Replace(LIBPATH = [env.subst('$HA_DC')])
+env.Replace(RPATH = [env.subst('$HA_DC')])
+# Also need to link with ROOT - can be made more elegant by
+# setting up a ROOT-only aware environment in parent project
+FindROOT(env)
+# SCons seems to ignore $RPATH on macOS... sigh
+if env['PLATFORM'] == 'darwin':
+    try:
+        for rp in env['RPATH']:
+            env.Append(LINKFLAGS = ['-Wl,-rpath,'+rp])
+    except KeyError:
+        pass
 
-    # Executables
-    appnames = Split("""
-    tstfadc tstfadcblk tstf1tdc tstio tstoo tdecpr prfact epicsd tdecex tst1190
-    """)
+for a in appnames:
+    if a == 'epicsd':
+        src = ['epics_main.cxx']
+    else:
+        src = [a+'_main.cxx']
+    if a == 'tdecex':
+        src.append('THaGenDetTest.cxx')
 
-    # Configure environment. We need to build against EVIO
-    env = baseenv.Clone()
-    env.Append(CPPPATH = baseenv.subst('$EVIO_INC'))
-    env.Append(LIBS = ['evio'])
-    env.Append(LIBPATH = [baseenv.subst('$EVIO_LIB')])
-    env.Append(RPATH = [baseenv.subst('$EVIO_LIB')])
-    # SCons seems to ignore $RPATH on macOS... sigh
-    if env['PLATFORM'] == 'darwin':
-        try:
-            for rp in env['RPATH']:
-                env.Append(LINKFLAGS = ['-Wl,-rpath,'+rp])
-        except KeyError:
-            pass
+    app = env.Program(target = a, source = src)
+    apps.append(app)
+    sources.append(src)
 
-    apps = []
-    sources = []
-    for a in appnames:
-        if a == 'epicsd':
-            src = ['epics_main.cxx']
-        else:
-            src = [a+'_main.cxx']
-        if a == 'tdecex':
-            src.append('THaGenDetTest.cxx')
+# Installation
+install_prefix = env.subst('$INSTALLDIR')
+bin_dir = os.path.join(install_prefix,'bin')
+#lib_dir = os.path.join(install_prefix,'lib')
+rel_lib_dir = os.path.join(env['RPATH_ORIGIN_TAG'],
+                           os.path.join('..',env.subst('$LIBSUBDIR')))
+src_dir = os.path.join(install_prefix,os.path.join('src',thisdir_fullpath))
 
-        app = env.Program(target = a, source = src)
-        apps.append(app)
-        sources.append(src)
-
-    # Installation
-    install_prefix = env.subst('$INSTALLDIR')
-    bin_dir = os.path.join(install_prefix,'bin')
-    #lib_dir = os.path.join(install_prefix,'lib')
-    rel_lib_dir = os.path.join(env['RPATH_ORIGIN_TAG'],
-                               os.path.join('..',env.subst('$LIBSUBDIR')))
-    src_dir = os.path.join(install_prefix,os.path.join('src',thisdir_fullpath))
-
-    env.InstallWithRPATH(bin_dir,apps,[rel_lib_dir])
-    env.Install(src_dir,sources)
+env.InstallWithRPATH(bin_dir,apps,[rel_lib_dir])
+env.Install(src_dir,sources)

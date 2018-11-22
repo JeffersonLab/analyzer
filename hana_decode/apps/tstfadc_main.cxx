@@ -11,7 +11,7 @@
 #include "THaEvData.h"
 #include "Module.h"
 #include "Fadc250Module.h"
-#include "evio.h"
+//#include "evio.h"
 #include "THaSlotData.h"
 #include "TString.h"
 #include "TROOT.h"
@@ -227,7 +227,7 @@ int main(int argc, char* argv[])
   for(uint32_t ievent = 0; ievent < iievent; ievent++) {
     // Read in data file
     int status = datafile.codaRead();
-    if (status == S_SUCCESS) {
+    if (status == CODA_OK) {
       UInt_t *data = datafile.getEvBuffer();
       evdata->LoadEvent(data);
       // Loop over slots

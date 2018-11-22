@@ -7,7 +7,7 @@
 #include "THaCodaFile.h"
 //#include "CodaDecoder.h"
 #include "THaEvData.h"
-#include "evio.h"
+//#include "evio.h"
 #include "THaSlotData.h"
 #include "TString.h"
 
@@ -40,7 +40,7 @@ int main(int argc, char* argv[])
 
    // codaOpen is only necessary if one uses the constructor
    // without the filename arg.
-   //   if (datafile.codaOpen(filename) != S_SUCCESS) {
+   //   if (datafile.codaOpen(filename) != CODA_OK) {
    //        cout << "ERROR:  Cannot open CODA data" << endl;
    //        exit(0);
    //   }
@@ -49,7 +49,7 @@ int main(int argc, char* argv[])
       int NUMEVT=100;
       for (int iev=0; iev<NUMEVT; iev++) {
    	 int status = datafile.codaRead();  
-         if (status != S_SUCCESS) {
+         if (status != CODA_OK) {
 	   if ( status == EOF) {
              cout << "Normal end of file.  Bye bye." << endl;
 	   } else {
@@ -116,7 +116,7 @@ int main(int argc, char* argv[])
       int evtype_sum[MAXEVTYPE];
       for (int kk=0; kk<MAXEVTYPE; kk++) evtype_sum[kk] = 0;
       int nevt=0;
-      while (datafile.codaRead() == S_SUCCESS) {
+      while (datafile.codaRead() == CODA_OK) {
           nevt++;
           UInt_t* dbuff = datafile.getEvBuffer();
           int event_type = dbuff[1]>>16;

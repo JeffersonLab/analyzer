@@ -24,7 +24,7 @@
 #include "THaEvData.h"
 #include "Module.h"
 #include "Fadc250Module.h"
-#include "evio.h"
+//#include "evio.h"
 #include "THaSlotData.h"
 #include "TString.h"
 #include "TROOT.h"
@@ -113,7 +113,7 @@ int main(int argc, char* argv[])
       int status;
       status = datafile.codaRead();
 
-      if (status != S_SUCCESS) {
+      if (status != CODA_OK) {
 
 	if ( status == EOF) {
 	  cout << "Normal end of file.  Bye bye." << endl;

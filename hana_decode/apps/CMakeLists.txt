@@ -28,7 +28,6 @@ foreach(exe IN LISTS allexe)
   target_link_libraries(${exe}
     PRIVATE
       Podd::Decode
-      EVIO::EVIO
       ${ONLIBS}
       ROOT::Libraries
   )

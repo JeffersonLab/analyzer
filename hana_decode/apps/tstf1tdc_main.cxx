@@ -15,7 +15,7 @@
 #include "THaEvData.h"
 #include "Module.h"
 #include "F1TDCModule.h"
-#include "evio.h"
+//#include "evio.h"
 #include "THaSlotData.h"
 #include "TString.h"
 #include "TROOT.h"
@@ -65,7 +65,7 @@ int main(int argc, char* argv[])
   Int_t jnum=1;
   for (int iev=0; iev<NUMEVT; iev++) {
     int status = datafile.codaRead();
-    if (status != S_SUCCESS) {
+    if (status != CODA_OK) {
       if ( status == EOF) {
 	*debugfile << "Normal end of file.  Bye bye." << endl;
       } else {

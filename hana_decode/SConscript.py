@@ -61,6 +61,12 @@ dclib = build_library(dcenv, libname, src,
                       install_rpath = dc_install_rpath,
                       versioned = True
                       )
+
+proceed = "1" or "y" or "yes" or "Yes" or "Y"
+if dcenv.subst('$STANDALONE')==proceed or dcenv.GetOption('clean') \
+    or 'uninstall' in COMMAND_LINE_TARGETS:
+    SConscript(dirs = ['apps'], name='SConscript.py', exports='dcenv')
+
 # Needed for locally built EVIO library
 # (Versioning in build_library sets SHLIBSUFFIX, so plain libevio.so is no longer found ... sigh)
 if local_evio:

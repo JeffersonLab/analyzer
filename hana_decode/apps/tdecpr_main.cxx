@@ -9,7 +9,7 @@
 #include "THaCodaFile.h"
 #include "CodaDecoder.h"
 #include "TString.h"
-#include "evio.h"
+//#include "evio.h"
 
 using namespace std;
 using namespace Decoder;
@@ -26,7 +26,7 @@ int main(int argc, char* argv[])
                         //     THaCodaFile datafile("snippet.dat");
 
    TString filename("snippet.dat");
-   if (datafile.codaOpen(filename) != S_SUCCESS) {
+   if (datafile.codaOpen(filename) != CODA_OK) {
         cout << "ERROR:  Cannot open CODA data" << endl;
         exit(0);
    }
@@ -41,7 +41,7 @@ int main(int argc, char* argv[])
 
      int status = datafile.codaRead();  
 	                                            
-     if ( status != S_SUCCESS ) {
+     if ( status != CODA_OK ) {
         if ( status == EOF) {
            cout << "This is normal end of file.  Goodbye !" << endl;
         } else {
