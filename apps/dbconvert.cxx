@@ -1276,7 +1276,7 @@ protected:
   };
   enum EReadBlockRetval {
     kSuccess = 0, kNoValues = -1, kTooFewValues = -2, kTooManyValues = -3,
-    kNegativeFound = -4, kLessEqualZeroFound = -5, kBadChar = -6,
+    kNegativeFound = -4, kLessEqualZeroFound = -5, kBadInput = -6,
     kFileError = -7 };
   template <class T>
   EReadBlockRetval ReadBlock( FILE* fi, T* data, int nval, const char* here,
@@ -2881,6 +2881,12 @@ Detector::EReadBlockRetval Detector::ReadBlock( FILE* fi, T* data, int nval,
   while( GetLine(fi,buf,LEN,line) == 0 ) {
     assert( !line.empty() );  // Should never happen by construction in GetLine
     if( line.empty() ) continue;
+    if( line.length() > 4096 ) {  // Arbitrary limit. No single database line
+                                  // should ever be even close to this
+      Error( Here(here), "Runaway database line:\n \"%s ...\"\n",
+          line.substr(0,48).c_str() );
+      return kBadInput;
+    }
     int c = line[0];
     maybe_data = (c && strchr(digits,c)) ||
       (c == '-' && line.length()>1 && strchr(digits,line[1]));
