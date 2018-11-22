@@ -194,7 +194,7 @@ int THaCrateMap::init( FILE* fi, const TString& fname )
   char buf[BUFLEN];
 
   if ( !fi ) {
-    strerror_r(errno, buf, BUFLEN);
+    (void)strerror_r(errno, buf, BUFLEN);
     ::Error( here, "Error opening crate map database file %s: %s",
         fname.Data(), buf );
     return CM_ERR;
@@ -206,7 +206,7 @@ int THaCrateMap::init( FILE* fi, const TString& fname )
     db += static_cast<char>(ch);
   }
   if( ferror(fi) ) {
-    strerror_r(errno, buf, BUFLEN);
+    (void)strerror_r(errno, buf, BUFLEN);
     ::Error( here, "Error reading crate map database file %s: %s",
         fname.Data(), buf );
     fclose(fi);

@@ -3157,7 +3157,7 @@ int Cherenkov::ReadDB( FILE* fi, time_t /* date */, time_t /* date_until */ )
   while (1) {
     Int_t crate, slot, first, last, first_chan,model;
     int pos;
-    fgets ( buf, LEN, fi );
+    if( fgets(buf,LEN,fi) == 0 ) return ErrPrint(fi,here);
     int n = sscanf( buf, "%6d %6d %6d %6d %6d %n",
 		    &crate, &slot, &first, &last, &first_chan, &pos );
     if( crate < 0 ) break;
@@ -3262,7 +3262,7 @@ int Scintillator::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
     int pos;
     Int_t first_chan, model;
     Int_t crate, slot, first, last;
-    fgets ( buf, LEN, fi );
+    if( fgets(buf,LEN,fi ) == 0 ) return ErrPrint(fi,here);
     n = sscanf( buf, "%6d %6d %6d %6d %6d %n",
 		&crate, &slot, &first, &last, &first_chan, &pos );
     if( crate < 0 ) break;
@@ -3490,7 +3490,7 @@ int Shower::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
   while( ReadComment(fi,buf,LEN) );
   while (1) {
     Int_t crate, slot, first, last;
-    fgets ( buf, LEN, fi );
+    if( fgets(buf,LEN,fi ) == 0 ) return ErrPrint(fi,here);
     int n = sscanf( buf, "%6d %6d %6d %6d", &crate, &slot, &first, &last );
     if( crate < 0 ) break;
     if( n < 4 ) return ErrPrint(fi,here);
@@ -3686,7 +3686,7 @@ int BPM::ReadDB( FILE* fi, time_t, time_t )
   fDetMap->Clear();
   int first_chan, crate, dummy, slot, first, last, modulid = 0;
   do {
-    fgets( buf, LEN, fi);
+    if( fgets(buf,LEN,fi ) == 0 ) return ErrPrint(fi,here);
     n = sscanf(buf,"%6d %6d %6d %6d %6d %6d %6d",
 	       &first_chan, &crate, &dummy, &slot, &first, &last, &modulid);
     if( n < 1 ) return ErrPrint(fi,here);
@@ -3718,7 +3718,7 @@ int BPM::ReadDB( FILE* fi, time_t, time_t )
   }
 
   double dummy1,dummy2,dummy3,dummy4,dummy5,dummy6;
-  fgets( buf, LEN, fi);
+  if( fgets(buf,LEN,fi ) == 0 ) return ErrPrint(fi,here);
   n = sscanf(buf,"%15lf %15lf %15lf %15lf",&dummy1,&dummy2,&dummy3,&dummy4);
   if( n < 2 ) return ErrPrint(fi,here);
 
@@ -3730,12 +3730,12 @@ int BPM::ReadDB( FILE* fi, time_t, time_t )
   // dummy3 and dummy4 are not used in this apparatus
 
   // Pedestals
-  fgets( buf, LEN, fi);
+  if( fgets(buf,LEN,fi ) == 0 ) return ErrPrint(fi,here);
   n = sscanf(buf,"%15lf %15lf %15lf %15lf",fPed,fPed+1,fPed+2,fPed+3);
   if( n != 4 ) return ErrPrint(fi,here);
 
   // 2x2 transformation matrix and x/y offset
-  fgets( buf, LEN, fi);
+  if( fgets(buf,LEN,fi ) == 0 ) return ErrPrint(fi,here);
   n = sscanf(buf,"%15lf %15lf %15lf %15lf %15lf %15lf",
 	     fRot,fRot+1,fRot+2,fRot+3,&dummy5,&dummy6);
   if( n != 6 ) return ErrPrint(fi,here);
@@ -3771,7 +3771,7 @@ int Raster::ReadDB( FILE* fi, time_t date, time_t )
   fDetMap->Clear();
   int first_chan, crate, dummy, slot, first, last, modulid = 0;
   do {
-    fgets( buf, LEN, fi);
+    if( fgets(buf,LEN,fi ) == 0 ) return ErrPrint(fi,here);
     n = sscanf(buf,"%6d %6d %6d %6d %6d %6d %6d",
 	       &first_chan, &crate, &dummy, &slot, &first, &last, &modulid);
     if( n < 1 ) return ErrPrint(fi,here);
@@ -3803,7 +3803,7 @@ int Raster::ReadDB( FILE* fi, time_t date, time_t )
     return kInitError;
   }
 
-  fgets( buf, LEN, fi);
+  if( fgets(buf,LEN,fi ) == 0 ) return ErrPrint(fi,here);
   // NB: dummy1 is never used. Comment in old db files says it is "z-pos",
   // which are read from the following lines - probably dummy1 is leftover junk
   double dummy1;
@@ -3812,13 +3812,13 @@ int Raster::ReadDB( FILE* fi, time_t date, time_t )
   if( n != 7 ) return ErrPrint(fi,here);
 
   // z positions of BPMA, BPMB, and target reference point (usually 0)
-  fgets( buf, LEN, fi);
+  if( fgets(buf,LEN,fi ) == 0 ) return ErrPrint(fi,here);
   n = sscanf(buf,"%15lf",fZpos);
   if( n != 1 ) return ErrPrint(fi,here);
-  fgets( buf, LEN, fi);
+  if( fgets(buf,LEN,fi ) == 0 ) return ErrPrint(fi,here);
   n = sscanf(buf,"%15lf",fZpos+1);
   if( n != 1 ) return ErrPrint(fi,here);
-  fgets( buf, LEN, fi);
+  if( fgets(buf,LEN,fi ) == 0 ) return ErrPrint(fi,here);
   n = sscanf(buf,"%15lf",fZpos+2);
   if( n != 1 ) return ErrPrint(fi,here);
 
@@ -3827,17 +3827,17 @@ int Raster::ReadDB( FILE* fi, time_t date, time_t )
   THaAnalysisObject::SeekDBdate( fi, datime, true );
 
   // Raster constants: offx/y,amplx/y,slopex/y for BPMA, BPMB, target
-  fgets( buf, LEN, fi);
+  if( fgets(buf,LEN,fi ) == 0 ) return ErrPrint(fi,here);
   n = sscanf(buf,"%15lf %15lf %15lf %15lf %15lf %15lf",
 	     fCalibA,fCalibA+1,fCalibA+2,fCalibA+3,fCalibA+4,fCalibA+5);
   if( n != 6 ) return ErrPrint(fi,here);
 
-  fgets( buf, LEN, fi);
+  if( fgets(buf,LEN,fi ) == 0 ) return ErrPrint(fi,here);
   n = sscanf(buf,"%15lf %15lf %15lf %15lf %15lf %15lf",
 	 fCalibB,fCalibB+1,fCalibB+2,fCalibB+3,fCalibB+4,fCalibB+5);
   if( n != 6 ) return ErrPrint(fi,here);
 
-  fgets( buf, LEN, fi);
+  if( fgets(buf,LEN,fi ) == 0 ) return ErrPrint(fi,here);
   n = sscanf(buf,"%15lf %15lf %15lf %15lf %15lf %15lf",
 	 fCalibT,fCalibT+1,fCalibT+2,fCalibT+3,fCalibT+4,fCalibT+5);
   if( n != 6 ) return ErrPrint(fi,here);
@@ -3866,7 +3866,7 @@ int CoincTime::ReadDB( FILE* fi, time_t, time_t )
     char label[21];      // string label for TDC = Stop_by_Start
 
     while( ReadComment(fi, buf, LEN) );
-    fgets ( buf, LEN, fi );
+    if( fgets(buf,LEN,fi ) == 0 ) return ErrPrint(fi,here);
     nread = sscanf( buf, "%6d %6d %6d %6d %15lf %20s %15lf",
 		    &crate, &slot, &first, &model, &tres, label, &toff );
     if( crate < 0 ) break;
@@ -3990,7 +3990,7 @@ int VDC::ReadDB( FILE* file, time_t date, time_t date_until )
 
   TString line;
   bool found = false;
-  while (!found && fgets (buff, LEN, file) != 0) {
+  while (!found && fgets(buff, LEN, file) != 0) {
     char* buf = ::Compress(buff);  //strip blanks
     line = buf;
     delete [] buf;
@@ -4009,7 +4009,7 @@ int VDC::ReadDB( FILE* file, time_t date, time_t date_until )
   //  fscanf(file, "%lf", &fSpacing);
   // fSpacing is now calculated from the actual z-positions in Init(),
   // so skip the first line after [ global ] completely:
-  fgets(buff, LEN, file); // Skip rest of line
+  if( fgets(buff,LEN,file ) == 0 ) return kInitError;  // Skip rest of line
 
   // Read in the focal plane transfer elements
   // For fine-tuning of these data, we seek to a matching time stamp, or
@@ -4039,10 +4039,10 @@ int VDC::ReadDB( FILE* file, time_t date, time_t date_until )
   // Second line after [ global ] or first line after a found tag.
   // After a found tag, it must be the comment line. If not found, then it
   // can be either the comment or a non-found tag before the comment...
-  fgets(buff, LEN, file);  // Skip line
+  if( fgets(buff,LEN,file) == 0 ) return kInitError;
   if( !found && THaAnalysisObject::IsTag(buff) )
     // Skip one more line if this one was a non-found tag
-    fgets(buff, LEN, file);
+    if( fgets(buff,LEN,file) == 0 ) return kInitError;
 
   fTMatrixElems.clear();
   fDMatrixElems.clear();
@@ -4274,7 +4274,7 @@ int VDC::Plane::ReadDB( FILE* file, time_t /* date */, time_t )
   tag.Prepend("["); tag.Append("]");
   TString line;
   bool found = false;
-  while (!found && fgets (buff, LEN, file) != 0) {
+  while (!found && fgets(buff, LEN, file) != 0) {
     char* buf = ::Compress(buff);  //strip blanks
     line = buf;
     delete [] buf;
@@ -4294,7 +4294,7 @@ int VDC::Plane::ReadDB( FILE* file, time_t /* date */, time_t )
   // Set up the detector map
   fDetMap->Clear();
   do {
-    if( fgets( buff, LEN, file ) == 0 ) {
+    if( fgets(buff,LEN,file) == 0 ) {
       Error( Here(here), "Error reading detector map" );
       return kInitError;
     }
@@ -4337,8 +4337,8 @@ int VDC::Plane::ReadDB( FILE* file, time_t /* date */, time_t )
     Error( Here(here), "Error reading drift velocity, line: %s", buff );
     return kInitError;
   }
-  fgets(buff, LEN, file); // Read to end of line
-  fgets(buff, LEN, file); // Skip line
+  if( fgets(buff,LEN,file) == 0 ) return kInitError;  // Read to end of line
+  if( fgets(buff,LEN,file) == 0 ) return kInitError;  // Skip line
 
   // first read in the time offsets for the wires
   fTDCOffsets.clear();
@@ -4392,7 +4392,7 @@ int VDC::Plane::ReadDB( FILE* file, time_t /* date */, time_t )
   TString tag2(tag);
   found = false;
   rewind(file);
-  while (!found && fgets(buff, LEN, file) != NULL) {
+  while (!found && fgets(buff,LEN,file) != NULL) {
     char* buf = ::Compress(buff);  //strip blanks
     line = buf;
     delete [] buf;
@@ -4411,7 +4411,7 @@ int VDC::Plane::ReadDB( FILE* file, time_t /* date */, time_t )
       tag2.Append(".");
     tag2.Prepend("[");
     tag2.Append("extra_param]");
-    while (!found && fgets(buff, LEN, file) != NULL) {
+    while (!found && fgets(buff,LEN,file) != NULL) {
       char* buf = ::Compress(buff);  //strip blanks
       line = buf;
       delete [] buf;
@@ -4426,7 +4426,7 @@ int VDC::Plane::ReadDB( FILE* file, time_t /* date */, time_t )
 	     "Line = %s\nFix database.", buff );
       return kInitError;
     }
-    fgets(buff, LEN, file); // Read to end of line
+    if( fgets(buff,LEN,file) == 0 ) return kInitError;  // Read to end of line
     if( fscanf( file, "%d %d %d %d %d %lf %lf", &fMinClustSize, &fMaxClustSpan,
 		&fNMaxGap, &fMinTime, &fMaxTime, &fMinTdiff, &fMaxTdiff ) != 7 ) {
       Error( Here(here), "Error reading min_clust_size, max_clust_span, "
@@ -4434,7 +4434,7 @@ int VDC::Plane::ReadDB( FILE* file, time_t /* date */, time_t )
 	     "Line = %s\nFix database.", buff );
       return kInitError;
     }
-    fgets(buff, LEN, file); // Read to end of line
+    if( fgets(buff,LEN,file) == 0 ) return kInitError;  // Read to end of line
     // Time-to-distance converter parameters
     // THaVDCAnalyticTTDConv
     // Format: 4*A1 4*A2 dtime(s)  (9 floats)
@@ -4448,7 +4448,7 @@ int VDC::Plane::ReadDB( FILE* file, time_t /* date */, time_t )
       return kInitError;
     }
     fTTDPar.assign( par, par+9 );
-    fgets(buff, LEN, file); // Read to end of line
+    if( fgets(buff,LEN,file) == 0 ) return kInitError;  // Read to end of line
 
     Double_t h, w;
 
@@ -4462,7 +4462,7 @@ int VDC::Plane::ReadDB( FILE* file, time_t /* date */, time_t )
       fSize[1] = w/2.0;
     }
 
-    fgets(buff, LEN, file); // Read to end of line
+    if( fgets(buff,LEN,file) == 0 ) return kInitError;  // Read to end of line
   } else {
     // Warning( Here(here), "No database section \"%s\" or \"%s\" found. "
     //	     "Using defaults.", tag.Data(), tag2.Data() );
