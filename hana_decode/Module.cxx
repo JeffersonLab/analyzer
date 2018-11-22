@@ -21,7 +21,7 @@ Module::Module()
     fWordsExpect(0), fWordsSeen(0), fWdcntMask(0), fWdcntShift(0),
     fModelNum(-1), fNumChan(0), fMode(0), block_size(1), IsInit(false),
     fMultiBlockMode(false), fBlockIsDone(false), fFirmwareVers(0),
-    fDebugFile(0), fExtra(0)
+    fDebug(0), fDebugFile(0), fExtra(0)
 {
 }
 
@@ -30,7 +30,7 @@ Module::Module(Int_t crate, Int_t slot)
     fWordsExpect(0), fWordsSeen(0), fWdcntMask(0), fWdcntShift(0),
     fModelNum(-1), fNumChan(0), fMode(0), block_size(1), IsInit(false),
     fMultiBlockMode(false), fBlockIsDone(false), fFirmwareVers(0),
-    fDebugFile(0), fExtra(0)
+    fDebug(0), fDebugFile(0), fExtra(0)
 {
   // Warning: see comments at Init()
   fName = "";
@@ -53,6 +53,7 @@ void Module::Init()
   fWordsExpect = 0;
   fWdcntMask=0;
   fWdcntShift=0;
+  fDebug = 0;
   fDebugFile=0;
   fModelNum = -1;
   fName = "";

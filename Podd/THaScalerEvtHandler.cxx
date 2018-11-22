@@ -390,7 +390,7 @@ THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& date)
     }
   }
 
-
+  fclose(fi);
   return kOK;
 }
 

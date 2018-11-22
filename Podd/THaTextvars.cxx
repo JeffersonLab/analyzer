@@ -45,13 +45,11 @@ static void Tokenize( const string& s, const string& delim,
   ssiz_t start = s.find_first_not_of(delim);
   ssiz_t pos   = s.find_first_of(delim,start);
 
-  while( pos != string::npos || start != string::npos ) {
+  while( start != string::npos ) {
     tokens.push_back( s.substr(start,pos-start));
     start = s.find_first_not_of(delim,pos);
     pos = s.find_first_of(delim,start);
   } 
-  if( start != string::npos )
-    tokens.push_back( s.substr(start) );
 }
 
 //_____________________________________________________________________________

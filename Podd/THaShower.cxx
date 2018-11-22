@@ -220,7 +220,7 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
       { "Number of blocks",       &fNelem,     kInt        },
       { "Detector center",        pos,         kDouble, 3  },
       { "Detector size",          fSize,       kDouble, 3  },
-      { "Channel map",            &chanmap[0], kInt,    N  },
+      { "Channel map",            &chanmap,    kIntV       },
       { "Position of block 1",    &xy,         kDoubleV    },
       { "Block x/y spacings",     &dxy,        kDoubleV    },
       { "Minimum cluster energy", &fEmin,      kFloat,  1  },

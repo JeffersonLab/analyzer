@@ -341,7 +341,7 @@ Int_t CodaDecoder::roc_decode( Int_t roc, const UInt_t* evbuffer,
 
   Bool_t slotdone;
 
-  Int_t status = SD_ERR;
+//  Int_t status = SD_ERR;
 
   n_slots_done = 0;
 
@@ -423,7 +423,8 @@ Int_t CodaDecoder::roc_decode( Int_t roc, const UInt_t* evbuffer,
   goto exit;
 
  err:
-  retval = (status == SD_ERR) ? HED_ERR : HED_WARN;
+  //  retval = (status == SD_ERR) ? HED_ERR : HED_WARN;
+  retval = HED_ERR;
  exit:
   if( fDoBench ) fBench->Stop("roc_decode");
   return retval;
@@ -488,7 +489,7 @@ Int_t CodaDecoder::bank_decode( Int_t roc, const UInt_t* evbuffer,
 //_____________________________________________________________________________
  void CodaDecoder::FillBankData(UInt_t *rdat, Int_t roc, Int_t bank, Int_t offset, Int_t num) const
 {
-  Int_t ldebug=0;
+  const int ldebug=0;
   Int_t pos,len,i,ilo,ihi,jk;
   jk =  MAXBANK*roc + bank;
 

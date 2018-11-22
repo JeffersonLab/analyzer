@@ -796,7 +796,7 @@ std::string THaOutput::svPrefix(std::string& histtype)
 {
 // If the arg is a string for a histogram type, we strip the initial 
 // "s" or "v".  If the first character is "s" we set fIsScalar true.
-  int ldebug=0;
+  const int ldebug=0;
   fIsScalar = kFALSE;
   string sresult = histtype;
   if (ldebug) cout << "svPrefix  histogram  type = "<<histtype<<"   histtype length  "<<histtype.length()<<endl;

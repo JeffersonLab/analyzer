@@ -576,10 +576,10 @@ Int_t THaFormula::DefinedGlobalVariableExtraList( TString& name, const THaVarLis
 
   // Find the variable with this name in the extralist (Hall C Parameter)
   THaVar* var = 0;
-  if(extralist) {
+  if( extralist ) {
     var = extralist->Find( parsed_name.GetName() );
   }
-  if (!var) {
+  if( !var && fVarList ) {
     var = fVarList->Find( parsed_name.GetName() );
   }
   if(!var) {

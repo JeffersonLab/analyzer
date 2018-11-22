@@ -165,9 +165,14 @@ void THaUsrstrutils::string_from_evbuffer(const UInt_t* evbuffer, int nlen )
       configstr="";
       return;
    }
-   for (int i=0; i<(Int_t)strlines.size(); i++) {
-     strcpy(s,strlines[i].c_str());
-     if (DEBUG >= 1) printf("prescale line[%d]  =  %s \n",i,s);
+   for( size_t i=0; i<strlines.size(); ++i ) {
+     if( strlines[i].size() > sizeof(s)-1 ) {
+       cerr << "WARNING: string_from_evbuffer: line \""
+            << strlines[i].substr(0,32) << "...\" truncated, "
+            << "prescales may be decoded incorrectly!" << endl;
+     }
+     strncpy(s,strlines[i].c_str(),sizeof(s)-1);
+     if (DEBUG >= 1) printf("prescale line[%lu]  =  %s \n",i,s);
      char *arg;
      arg = strchr(s,COMMENT_CHAR);
      if(arg) *arg = '\0';       /* Blow away comments */

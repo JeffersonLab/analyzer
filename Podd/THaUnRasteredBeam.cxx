@@ -31,7 +31,8 @@ ClassImp(THaUnRasteredBeam)
 THaUnRasteredBeam::THaUnRasteredBeam( const char* name, 
 				      const char* description,
 				      Int_t runningsum_depth )
-  : THaBeam( name, description ) , fRunningSumDepth(runningsum_depth)
+  : THaBeam( name, description ), fRunningSumDepth(runningsum_depth),
+    fRunningSumWrap(false), fRunningSumNext(0)
 {
 
 
@@ -39,8 +40,6 @@ THaUnRasteredBeam::THaUnRasteredBeam( const char* name,
   AddDetector( new THaBPM("BPMB","2nd bpm",this) );
 
   if (fRunningSumDepth>1) {
-    fRunningSumWrap = false ; 
-    fRunningSumNext = 0 ;
     fRSPosition.clear();
     fRSDirection.clear();
     fRSPosition.resize(fRunningSumDepth);

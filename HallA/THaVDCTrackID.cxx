@@ -20,8 +20,8 @@ using namespace std;
 
 //_____________________________________________________________________________
 THaVDCTrackID::THaVDCTrackID( const THaVDCPoint* lower,
-			      const THaVDCPoint* upper) :
-  THaTrackID()
+			      const THaVDCPoint* upper)
+  : fLowerU(-1), fLowerV(-1), fUpperU(-1), fUpperV(-1)
 {
   // Constructor that automatically determines pivot numbers
   // from the given THaVDCPoints.

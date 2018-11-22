@@ -27,17 +27,15 @@ public:
   Int_t  GetGate()     const { return fGate; }
   Int_t  GetReading()  const { return fPresentReading; }
   
+protected:
+
+  // Used by ReadDatabase
+  enum EROC { kHel = 0, kTime, kROC2, kROC3 };
   struct ROCinfo {
     Int_t  roc;               // ROC to read out
     Int_t  header;            // Headers to search for (0 = ignore)
     Int_t  index;             // Index into buffer
   };
-
-protected:
-
-  // Used by ReadDatabase
-  enum EROC { kHel = 0, kTime, kROC2, kROC3 };
-  Int_t SetROCinfo( EROC which, Int_t roc, Int_t header, Int_t index );
 
   virtual void  Clear( Option_t* opt="" );
   virtual Int_t ReadData( const THaEvData& evdata );
@@ -59,7 +57,7 @@ protected:
   // the ROC (0 = first word of ROC), otherwise it's from the header
   // (0 = first word after header).
   ROCinfo  fROCinfo[kROC3+1]; // Primary readouts and two redundant clocks
-
+                              // helroc, timeroc, time2roc, time3roc
   Int_t    fG0Debug;          // Debug level
   Bool_t   fHaveROCs;         // Required ROCs are defined
   Bool_t   fNegGate;          // Invert polarity of gate, so that 0=active

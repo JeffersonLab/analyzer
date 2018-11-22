@@ -49,7 +49,7 @@ Bool_t F1TDCModule::IsSlot(UInt_t rdata)
 {
   if (fDebugFile)
     *fDebugFile << "is F1TDC slot ? "<<hex<<fHeader
-		<<"  "<<fHeaderMask<<"  "<<rdata<<dec<<endl;
+                <<"  "<<fHeaderMask<<"  "<<rdata<<dec<<endl;
   return ((rdata != 0xffffffff) & ((rdata & fHeaderMask)==fHeader));
 }
 
@@ -110,57 +110,65 @@ Int_t F1TDCModule::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, const UI
    const UInt_t DATA_MARKER = 1<<23;
    // look at all the data
    const UInt_t *loc = evbuffer;
-   Int_t fDebug=0;
-   if(fDebug > 1 && fDebugFile!=0) *fDebugFile<< "Debug of F1TDC data, fResol =  "<<fResol<<"  model num  "<<fModelNum<<endl;
+#ifdef WITH_DEBUG
+   if(fDebug > 1 && fDebugFile!=0)
+     *fDebugFile<< "Debug of F1TDC data, fResol =  "<<fResol<<"  model num  "<<fModelNum<<endl;
+#endif
    while ( loc <= pstop && IsSlot(*loc) ) {
-      if ( !( (*loc) & DATA_MARKER ) ) {
-	// header/trailer word, to be ignored
-	 if(fDebug > 1 && fDebugFile!=0)
-	    *fDebugFile<< "[" << (loc-evbuffer) << "] header/trailer  0x"
-		       <<hex<<*loc<<dec<<endl;
-	} else {
-	    if (fDebug > 1 && fDebugFile!=0)
-	       *fDebugFile<< "[" << (loc-evbuffer) << "] data            0x"
-			  <<hex<<*loc<<dec<<endl;
-	    Int_t chn = ((*loc)>>16) & 0x3f;  // internal channel number
+     if ( !( (*loc) & DATA_MARKER ) ) {
+       // header/trailer word, to be ignored
+#ifdef WITH_DEBUG
+       if(fDebug > 1 && fDebugFile!=0)
+         *fDebugFile<< "[" << (loc-evbuffer) << "] header/trailer  0x"
+         <<hex<<*loc<<dec<<endl;
+#endif
+     } else {
+#ifdef WITH_DEBUG
+       if (fDebug > 1 && fDebugFile!=0)
+         *fDebugFile<< "[" << (loc-evbuffer) << "] data            0x"
+         <<hex<<*loc<<dec<<endl;
+#endif
+       Int_t chn = ((*loc)>>16) & 0x3f;  // internal channel number
 
-	    Int_t chan;
-	    if (IsHiResolution()) {
-		// drop last bit for channel renumbering
-		 chan=(chn >> 1);
-	    } else {
-		// do the reordering of the channels, for contiguous groups
-		// odd numbered TDC channels from the board -> +16
-		chan = (chn & 0x20) + 16*(chn & 0x01) + ((chn & 0x1e)>>1);
-	    }
-	     Int_t f1slot = ((*loc)&0xf8000000)>>27;
-		//FIXME: cross-check slot number here
-	     if ( ((*loc) & DATA_CHK) != F1_RES_LOCK ) {
-	       cout << "\tWarning: F1 TDC " << hex << (*loc) << dec;
-	       cout << "\tSlot (Ch) = " << f1slot << "(" << chan << ")";
-	       if ( (*loc) & F1_HIT_OFLW ) {
-		  cout << "\tHit-FIFO overflow";
-	       }
-	       if ( (*loc) & F1_OUT_OFLW ) {
-		  cout << "\tOutput FIFO overflow";
-	       }
-	       if ( ! ((*loc) & F1_RES_LOCK ) ) {
-		  cout << "\tResolution lock failure!";
-	       }
-	       cout << endl;
-	     }
+       Int_t chan;
+       if (IsHiResolution()) {
+         // drop last bit for channel renumbering
+         chan=(chn >> 1);
+       } else {
+         // do the reordering of the channels, for contiguous groups
+         // odd numbered TDC channels from the board -> +16
+         chan = (chn & 0x20) + 16*(chn & 0x01) + ((chn & 0x1e)>>1);
+       }
+       Int_t f1slot = ((*loc)&0xf8000000)>>27;
+       //FIXME: cross-check slot number here
+       if ( ((*loc) & DATA_CHK) != F1_RES_LOCK ) {
+         cout << "\tWarning: F1 TDC " << hex << (*loc) << dec;
+         cout << "\tSlot (Ch) = " << f1slot << "(" << chan << ")";
+         if ( (*loc) & F1_HIT_OFLW ) {
+           cout << "\tHit-FIFO overflow";
+         }
+         if ( (*loc) & F1_OUT_OFLW ) {
+           cout << "\tOutput FIFO overflow";
+         }
+         if ( ! ((*loc) & F1_RES_LOCK ) ) {
+           cout << "\tResolution lock failure!";
+         }
+         cout << endl;
+       }
 
-	      Int_t raw= (*loc) & 0xffff;
-	      if(fDebug > 1 && fDebugFile!=0) {
-		*fDebugFile<<" int_chn chan data "<<dec<<chn<<"  "<<chan
-		    <<"  0x"<<hex<<raw<<dec<<endl;
-	      }
-	      /*Int_t status = */sldat->loadData("tdc",chan,raw,raw);
-	      Int_t idx = chan*MAXHIT + 0;  // 1 hit per chan ???
-	      if (idx >= 0 && idx < MAXHIT*NTDCCHAN) fTdcData[idx] = raw;
-	      fWordsSeen++;
-	  }
-       loc++;
+       Int_t raw= (*loc) & 0xffff;
+#ifdef WITH_DEBUG
+       if(fDebug > 1 && fDebugFile!=0) {
+         *fDebugFile<<" int_chn chan data "<<dec<<chn<<"  "<<chan
+             <<"  0x"<<hex<<raw<<dec<<endl;
+       }
+#endif
+       /*Int_t status = */sldat->loadData("tdc",chan,raw,raw);
+       Int_t idx = chan*MAXHIT + 0;  // 1 hit per chan ???
+       if (idx >= 0 && idx < MAXHIT*NTDCCHAN) fTdcData[idx] = raw;
+       fWordsSeen++;
+     }
+     loc++;
    }
 
   return fWordsSeen;

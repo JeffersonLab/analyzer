@@ -398,7 +398,7 @@ Int_t THaVDCCluster::LinearClusterFitWithT0()
 
 
   fFitOK = false;
-  if( GetSize() < 4 ) {
+  if( GetSize() < 4 || !fPlane ) {
     return -1;  // Too few hits to get meaningful results
 		// Do keep current values of slope and intercept
   }
@@ -483,11 +483,9 @@ Int_t THaVDCCluster::LinearClusterFitWithT0()
 
   // Rotate the coordinate system to match the VDC definition of "slope"
   fLocalSlope = 1.0/fLocalSlope;  // 1/m
-  fInt   = -fInt * fLocalSlope;   // -b/m
-  if( fPlane ) {
-    fT0      /= fPlane->GetDriftVel();
-    fSigmaT0 /= fPlane->GetDriftVel();
-  }
+  fInt        = -fInt * fLocalSlope;   // -b/m
+  fT0        /= fPlane->GetDriftVel();
+  fSigmaT0   /= fPlane->GetDriftVel();
 
   fFitOK = true;
 

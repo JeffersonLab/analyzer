@@ -10,18 +10,16 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "BankData.h"
-#include "THaAnalysisObject.h"
-#include "Varargs.h"
 #include "VarDef.h"
 #include "THaString.h"
 #include "THaVar.h"
-#include "VarType.h"
 #include "THaVarList.h"
+#include "THaEvData.h"
+#include "THaGlobals.h"
 #include "Helper.h"
 #include <sstream>
 
 using namespace std;
-typedef string::size_type ssiz_t;
 using namespace THaString;
 
 //_____________________________________________________________________________
@@ -38,8 +36,6 @@ BankData::BankData( const char* name, const char* description) :
   THaPhysicsModule(name,description), fDebug(0), Nvars(0), dvars(0), vardata(0)
 {
   // Normal constructor.
-
-
 }
 
 //_____________________________________________________________________________
@@ -60,10 +56,10 @@ Int_t BankData::Process( const THaEvData& evdata )
 
   Int_t k=0;
   for (UInt_t i=0; i<banklocs.size(); i++) {
-   evdata.FillBankData(vardata, banklocs[i]->roc, banklocs[i]->bank, banklocs[i]->offset, banklocs[i]->numwords);
-    for (Int_t j=0; j<banklocs[i]->numwords; j++) {
-      dvars[k] = 1.0*vardata[j];
-      k++;
+    evdata.FillBankData(vardata, banklocs[i]->roc, banklocs[i]->bank,
+        banklocs[i]->offset, banklocs[i]->numwords);
+    for (Int_t j=0; j<banklocs[i]->numwords; j++, k++) {
+      dvars[k] = vardata[j];
     }
   }
 
@@ -121,7 +117,7 @@ Int_t BankData::ReadDatabase( const TDatime& date )
 
   }
 
-  Int_t maxwords=-999;
+  Int_t maxwords = 1;
   const Int_t too_big = 1000000;
   Nvars = 0;
   for (UInt_t i=0; i<banklocs.size(); i++) {
@@ -141,12 +137,14 @@ Int_t BankData::ReadDatabase( const TDatime& date )
   }
 
   delete [] vardata;
-  delete [] dvars;
+  delete [] dvars; dvars = 0;
   vardata = new UInt_t[maxwords];
-  dvars = new Double_t[Nvars];
-  //DEBUG?
-  for (Int_t i=0; i<Nvars; i++)
-    dvars[i]=40+i;
+  if( Nvars > 0 ) {
+    dvars = new Double_t[Nvars];
+    //DEBUG?
+    for (Int_t i=0; i<Nvars; i++)
+      dvars[i]=40+i;
+  }
 
   // warning to myself:  do NOT call DefineVariables() here, it will lead to
   // stale global data.  Let the analyzer mechanisms call it (in the

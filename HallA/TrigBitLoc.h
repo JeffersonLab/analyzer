@@ -19,7 +19,7 @@ public:
 	      UInt_t num, UInt_t lo, UInt_t hi, UInt_t* loc )
     : CrateLocMulti(nm,cra,slo,cha), bitnum(num), cutlo(lo), cuthi(hi),
       bitloc(loc) { }
-  TrigBitLoc() : bitloc(0) {}
+  TrigBitLoc() : bitnum(0), cutlo(0), cuthi(kMaxUInt), bitloc(0) {}
   virtual ~TrigBitLoc() {}
 
   virtual void    Load( const THaEvData& evt );

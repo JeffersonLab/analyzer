@@ -38,6 +38,8 @@ THaScintillator::THaScintillator( const char* name, const char* description,
     fNhit(0), fHitPad(0), fTime(0), fdTime(0), fAmpl(0), fYt(0), fYa(0)
 {
   // Constructor
+
+  memset( fDataDest, 0, sizeof(fDataDest) );
 }
 
 //_____________________________________________________________________________
@@ -51,7 +53,7 @@ THaScintillator::THaScintillator()
     fNhit(0), fHitPad(0), fTime(0), fdTime(0), fAmpl(0), fYt(0), fYa(0)
 {
   // Default constructor (for ROOT I/O)
-
+  memset( fDataDest, 0, sizeof(fDataDest) );
 }
 
 //_____________________________________________________________________________

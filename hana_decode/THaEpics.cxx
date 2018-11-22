@@ -160,7 +160,8 @@ int THaEpics::LoadData(const UInt_t* evbuffer, int evnum)
     il >> wtag;
     if( wtag.empty() || wtag[0] == 0 ) continue;
     istringstream::pos_type spos = il.tellg();
-    il >> wval >> sunit; // Assumes that sunit contains no whitespace
+    il >> wval;
+    il >> sunit; // Assumes that sunit contains no whitespace
     Double_t dval;
     istringstream iv(wval);
     if( !(iv >> dval) ) {

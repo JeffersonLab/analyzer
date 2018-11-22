@@ -12,11 +12,13 @@
 #include "VarType.h"
 #include "VarDef.h"
 #include "TMath.h"
-#include <cstring>
+#include <string>
 
 class THaEvData;
 class TClonesArray;
 class TDatime;
+
+using namespace std;
 
 ClassImp(THaTotalShower)
 
@@ -24,7 +26,7 @@ ClassImp(THaTotalShower)
 THaTotalShower::THaTotalShower( const char* name, const char* description,
 				THaApparatus* apparatus ) :
   THaPidDetector(name,description,apparatus), 
-  fShower(NULL), fPreShower(NULL), fMaxDx(0.0), fMaxDy(0.0)
+  fShower(0), fPreShower(0), fMaxDx(0.0), fMaxDy(0.0)
 {
   // Constructor. With this method, the subdetectors are created using
   // this detector's prefix followed by "sh" and "ps", respectively,
@@ -40,7 +42,7 @@ THaTotalShower::THaTotalShower( const char* name,
 				const char* description,
 				THaApparatus* apparatus ) :
   THaPidDetector(name,description,apparatus),
-  fShower(NULL), fPreShower(NULL), fMaxDx(0.0), fMaxDy(0.0)
+  fShower(0), fPreShower(0), fMaxDx(0.0), fMaxDy(0.0)
 {
   // Constructor. With this method, the subdetectors are created using
   // the given names 'shower_name' and 'preshower_name', and variable 
@@ -66,65 +68,44 @@ void THaTotalShower::Setup( const char* name,
   // Base class constructor failed?
   if( IsZombie()) return;
 
-  size_t sh, ps;
-  if( !shower_name || (sh = strlen(shower_name)) == 0 ) {
+  if( !shower_name || !*shower_name ) {
     Error( Here(here), message, "shower" );
     MakeZombie();
     return;
   }
-  if( !preshower_name || (ps = strlen(preshower_name)) == 0 ) {
+  if( !preshower_name || !*preshower_name ) {
     Error( Here(here), message, "preshower" );
     MakeZombie();
     return;
   }
 
-  size_t nlen = strlen(name);
-  size_t slen = TMath::Max(ps,sh);
-  size_t len = slen;
-  if( subnames )
-    len += nlen+1;
-  char* subname = new char[ len+1 ];
-  const char* sname;
+  string sname, psname;
   if( subnames ) {
-    strcpy( subname, name );
-    strcat( subname, "." );
-    strcat( subname, shower_name );
-    sname = subname;
-  } else 
-    sname = shower_name;
-  
-  char* desc = new char[ 50+strlen(description) ];
-  if( description && *description )
-    strcpy( desc, description );
-  else {
-    strcpy( desc, "Total shower counter" );
-    SetTitle( desc );
+    sname  = string(name) + "." + shower_name;
+    psname = string(name) + "." + preshower_name;
+  } else {
+    sname  = shower_name;
+    psname = preshower_name;
   }
-  size_t dlen = strlen(desc);
-  strcat( desc, " shower subdetector" );
 
-  fShower = new THaShower( sname, desc, apparatus );
+  if( !description || !*description ) {
+    description = "Total shower counter";
+    SetTitle( description );
+  }
+  string desc(description), sdesc(desc), psdesc(desc);
+  sdesc.append(" shower subdetector" );
+  psdesc.append(" preshower subdetector");
+
+  fShower = new THaShower( sname.c_str(), sdesc.c_str(), apparatus );
   if( !fShower || fShower->IsZombie() ) {
     MakeZombie();
-    goto exit;
+    return;
   }
-
-  if( subnames )
-    strcpy( subname+nlen+1, preshower_name );
-  else
-    sname = preshower_name;
-  strcpy( desc+dlen, " preshower subdetector" );
-
-  fPreShower = new THaShower( sname, desc, apparatus );
+  fPreShower = new THaShower( psname.c_str(), psdesc.c_str(), apparatus );
   if( !fPreShower || fPreShower->IsZombie() ) {
     MakeZombie();
-    goto exit;
+    return;
   }
-
- exit:
-  delete [] subname;
-  delete [] desc;
-  return;
 }
 
 //_____________________________________________________________________________

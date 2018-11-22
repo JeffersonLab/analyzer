@@ -168,13 +168,14 @@ void THaInterface::PrintLogo( Bool_t lite )
    // Print the Hall A analyzer logo on standard output.
 
    Int_t iday,imonth,iyear,mille;
-   static const char* months[] = {"Jan","Feb","Mar","Apr","May",
-                                  "Jun","Jul","Aug","Sep","Oct",
-                                  "Nov","Dec"};
+   static const char* months[] = {"???","Jan","Feb","Mar","Apr","May",
+                                  "Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
    const char* root_version = gROOT->GetVersion();
    Int_t idatqq = gROOT->GetVersionDate();
    iday   = idatqq%100;
    imonth = (idatqq/100)%100;
+   if( imonth < 1 || imonth > 12 ) // should never happen, but to be safe,
+     imonth = 0;                   // print "???"
    iyear  = (idatqq/10000);
    if ( iyear < 90 )
      mille = 2000 + iyear;
@@ -182,7 +183,7 @@ void THaInterface::PrintLogo( Bool_t lite )
      mille = 1900 + iyear;
    else
      mille = iyear;
-   char* root_date = Form("%s %d %4d",months[imonth-1],iday,mille);
+   char* root_date = Form("%s %d %4d",months[imonth],iday,mille);
 
 #if ROOT_VERSION_CODE >= ROOT_VERSION(5,18,0)
    if( !lite ) {

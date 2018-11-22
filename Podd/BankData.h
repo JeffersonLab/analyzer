@@ -8,20 +8,12 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaPhysicsModule.h"
-#include "THaEvData.h"
-#include "TTree.h"
-#include "TNamed.h"
-#include "THaGlobals.h"
 #include "TDatime.h"
-#include "VarDef.h"
 #include <vector>
-#include <string>
-#include <cstdio>
-#include <stdarg.h>
 
-class THaTrackingModule;
 class BankLoc;
 
+// FIXME: why is this a PhysicsModule?
 class BankData : public THaPhysicsModule {
 
 public:
@@ -29,7 +21,7 @@ public:
   BankData( const char* name, const char* description);
   virtual ~BankData();
 
-  virtual Int_t Process( const THaEvData& );
+  virtual Int_t Process( const THaEvData& evdata );
 
 protected:
 
@@ -40,7 +32,7 @@ private:
 
   Int_t fDebug;
   Int_t Nvars;
-  Double_t *dvars;
+  Double_t *dvars;  // FIXME: make UInt_t once THaOutput supports integer branches
   UInt_t *vardata;
 
   std::vector<BankLoc*> banklocs;

@@ -124,6 +124,7 @@ namespace Decoder {
     Bool_t fMultiBlockMode, fBlockIsDone;
     Int_t fFirmwareVers;
 
+    Int_t fDebug;
     std::ofstream *fDebugFile;
 
     TObject* fExtra;  // additional member data, for binary compatibility

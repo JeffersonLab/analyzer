@@ -23,7 +23,7 @@ ClassImp(THaPrintOption);
 
 //_____________________________________________________________________________
 THaPrintOption::THaPrintOption() : 
-  fString(0), fTokenStr(0), fParsed(false), fNTokens(0), fTokens(0), fParam(0)
+  fString(0), fTokenStr(0), fNTokens(0), fTokens(0), fParam(0)
 {
   // Default constructor
 

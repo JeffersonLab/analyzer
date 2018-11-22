@@ -13,7 +13,6 @@
 #include "VarDef.h"
 #include "THaAnalysisObject.h"   // For LoadDB
 #include <iostream>
-#include <vector>
 
 using namespace std;
 
@@ -75,15 +74,14 @@ Int_t THaG0HelicityReader::ReadDatabase( const char* dbfilename,
     THaAnalysisObject::OpenFile( dbfilename, date, here, "r", debug_flag );
   if( !file ) return THaAnalysisObject::kFileError;
 
-  EROC rocname[4] = { kHel, kTime, kROC2, kROC3 };
-  vector< vector<Int_t> > rocaddr(4); // helroc, timeroc, time2roc, time3roc
   Int_t invert_gate = 0;
+  fROCinfo[kROC2].roc = fROCinfo[kROC3].roc = -1;
   DBRequest req[] = {
-    { "helroc",      &rocaddr[0],  kIntV,   0, 0, -2 },
-    { "timeroc",     &rocaddr[1],  kIntV,   0, 0, -2 },
-    { "time2roc",    &rocaddr[2],  kIntV,   0, 1, -2 },
-    { "time3roc",    &rocaddr[3],  kIntV,   0, 1, -2 },
-    { "neg_g0_gate", &invert_gate, kInt,    0, 1, -2 },
+    { "helroc",      &fROCinfo[kHel],  kInt, 3, 0, -2 },
+    { "timeroc",     &fROCinfo[kTime], kInt, 3, 0, -2 },
+    { "time2roc",    &fROCinfo[kROC2], kInt, 3, 1, -2 },
+    { "time3roc",    &fROCinfo[kROC3], kInt, 3, 1, -2 },
+    { "neg_g0_gate", &invert_gate,     kInt, 0, 1, -2 },
     { 0 }
   };
   Int_t st = THaAnalysisObject::LoadDB( file, date, req, prefix );
@@ -91,15 +89,16 @@ Int_t THaG0HelicityReader::ReadDatabase( const char* dbfilename,
   if( st )
     return THaAnalysisObject::kInitError;
 
-  // TODO: implement reading into C-style arrays in LoadDB,
-  // then read fROCinfo directly
-  
-  for( vector<Int_t>::size_type i = 0; i < rocaddr.size() && !st; ++i ) {
-    vector<Int_t>& r = rocaddr[i];
-    if( r.size() >= 3 )
-      st = SetROCinfo( rocname[i], r[0], r[1], r[2] );
-  }
-  if( !fHaveROCs || st ) {
+  EROC rocID[4] = { kHel, kTime, kROC2, kROC3 };
+  Int_t nrocs = kROC3-kHel+1;
+  for( Int_t i = 0; i < nrocs; ++i )
+    if( fROCinfo[rocID[i]].roc <= 0 || fROCinfo[rocID[i]].roc > 255 ) {
+      st = -2;
+      break;
+    }
+  fHaveROCs = ( fROCinfo[kHel].roc > 0 && fROCinfo[kTime].roc > 0 );
+
+  if( st || !fHaveROCs ) {
     ::Error( here, "Invalid ROC data. Fix database." );
     return THaAnalysisObject::kInitError;
   }
@@ -180,32 +179,6 @@ Int_t THaG0HelicityReader::ReadData( const THaEvData& evdata )
        
   fValidTime = true;
 
-  return 0;
-}
-
-//TODO: this should not be needed once LoadDB can fill fROCinfo directly
-//____________________________________________________________________
-Int_t THaG0HelicityReader::SetROCinfo( EROC which, Int_t roc,
-				       Int_t header, Int_t index )
-{
-  // Define source and offset of data.  Normally called by ReadDatabase
-  // of the detector that is a THaG0HelicityReader.
-  //
-  // "which" is one of  { kHel, kTime, kROC2, kROC3 }.
-  // You must define at least the kHel and kTime ROCs.
-  // Returns <0 if parameter error, 0 if success
-
-  if( which<kHel || which>kROC3 )
-    return -1;
-  if( roc <= 0 || roc > 255 )
-    return -2;
-
-  fROCinfo[which].roc    = roc;
-  fROCinfo[which].header = header;
-  fROCinfo[which].index  = index;
-
-  fHaveROCs = ( fROCinfo[kHel].roc > 0 && fROCinfo[kTime].roc > 0 );
-    
   return 0;
 }
 

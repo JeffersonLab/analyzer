@@ -239,9 +239,9 @@ Int_t VDCeff::Process( const THaEvData& /*evdata*/ )
     }
   }
 
-  // FIXME: repeated WriteHist seems to cause problems with splits files
+  // FIXME: repeated WriteHist seems to cause problems with split files
   // (multiple cycles left in output)
-  if( (cycle_event && fNevt < 4*fCycle) ||
+  if( (cycle_event && fNevt < 4*static_cast<Long64_t>(fCycle)) ||
       (fNevt % (10*fCycle) == 0) )
     WriteHist();
 

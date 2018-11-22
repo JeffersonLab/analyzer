@@ -1370,8 +1370,8 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 }
 
 #define CheckLimits(T,val) \
-  if( (val) < -std::numeric_limits<T>::max() ||     \
-      (val) > std::numeric_limits<T>::max() ) {	   \
+  if( (val) < -std::numeric_limits<T>::max() ||    \
+      (val) >  std::numeric_limits<T>::max() ) {   \
     ostringstream txt;				   \
     txt << (val);				   \
     errtxt = txt.str();                            \
@@ -1379,7 +1379,8 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
   }
 
 #define CheckLimitsUnsigned(T,val) \
-  if( (val) < 0 || static_cast<T>(val) > std::numeric_limits<T>::max() ) { \
+  if( (val) < 0 || static_cast<ULong64_t>(val)     \
+      > std::numeric_limits<T>::max() ) {          \
     ostringstream txt;				   \
     txt << (val);				   \
     errtxt = txt.str();                            \
@@ -1678,6 +1679,8 @@ Int_t THaAnalysisObject::SeekDBconfig( FILE* file, const char* tag,
   // Useful for segmenting databases (esp. VDC) for different
   // experimental configurations.
 
+  static const char* const here = "THaAnalysisObject::SeekDBconfig";
+
   if( !file || !tag || !*tag ) return 0;
   string _label("[");
   if( label && *label ) {
@@ -1712,11 +1715,13 @@ Int_t THaAnalysisObject::SeekDBconfig( FILE* file, const char* tag,
     }
   }
   if( errno ) {
-    perror( "THaAnalysisObject::SeekDBconfig" );
+    perror(here);
     found = false;
   }
-  if( !found && pos >= 0 )
-    fseeko( file, pos, SEEK_SET ); 
+  // If not found, rewind to previous position
+  if( !found && pos >= 0 && fseeko(file, pos, SEEK_SET) )
+    perror(here); // TODO: should throw exception
+
   return found;
 }
 
@@ -1768,7 +1773,10 @@ Int_t THaAnalysisObject::SeekDBdate( FILE* file, const TDatime& date,
     perror(here);
     found = false;
   }
-  fseeko( file, (found ? foundpos: pos), SEEK_SET );
+  if( fseeko(file, (found ? foundpos : pos), SEEK_SET) ) {
+    perror(here); // TODO: should throw exception
+    found = false;
+  }
   return found;
 }
 
@@ -1802,15 +1810,18 @@ void THaAnalysisObject::DebugPrint( const DBRequest* list )
   if( prefix.EndsWith(".") ) prefix.Chop();
   cout << prefix << " database parameters: " << endl;
   size_t maxw = 1;
+  ios_base::fmtflags fmt = cout.flags();
   for( const DBRequest* it = list; it->name; ++it )
     maxw = TMath::Max(maxw,strlen(it->name));
   for( const DBRequest* it = list; it->name; ++it ) {
     cout << "  " << std::left << setw(maxw) << it->name;
-    UInt_t maxc = it->nelem;
+    size_t maxc = it->nelem;
     if( maxc == 0 ) maxc = 1;
     if( it->type == kDoubleV )
-      maxc = static_cast<UInt_t>( ((vector<Double_t>*)it->var)->size() );
-    for (UInt_t i=0; i<maxc; i++) {
+      maxc = ((vector<Double_t>*)it->var)->size();
+    else if( it->type == kIntV )
+      maxc = ((vector<Int_t>*)it->var)->size();
+    for( size_t i=0; i<maxc; ++i ) {
       cout << "  ";
       switch( it->type ) {
       case kDouble:
@@ -1822,15 +1833,19 @@ void THaAnalysisObject::DebugPrint( const DBRequest* list )
       case kInt:
 	cout << ((Int_t*)it->var)[i];
 	break;
+      case kIntV:
+        cout << ((vector<Int_t>*)it->var)->at(i);
+        break;
       case kDoubleV:
-	cout << ((vector<Double_t>*)it->var)->at(i);
-	break;
+        cout << ((vector<Double_t>*)it->var)->at(i);
+        break;
       default:
 	break;
       }
     }
     cout << endl;
   }
+  cout.flags(fmt); // Restore previous cout formatting
 }
 
 //_____________________________________________________________________________
@@ -1838,10 +1853,14 @@ template <typename T>
 void THaAnalysisObject::WriteValue( T val, int p, int w )
 {
   // Helper function for printing debug information
+  ios_base::fmtflags fmt = cout.flags();
+  streamsize prec = cout.precision();
   if( val < kBig )
     cout << fixed << setprecision(p) << setw(w) << val;
   else
     cout << " --- ";
+  cout.flags(fmt);
+  cout.precision(prec);
 }
 
 // Explicit instantiations

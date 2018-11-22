@@ -99,7 +99,7 @@ Int_t THaVhist::Init( )
   // fInitStat !=0 --> various errors, interpreted 
   //                   with ErrPrint();
 
-  Int_t ldebug = 0;
+  const int ldebug = 0;
 
   for (std::vector<TH1*>::iterator ith = fH1.begin();
        ith != fH1.end(); ++ith) delete *ith;
@@ -221,7 +221,7 @@ void THaVhist::ReAttach( )
 Bool_t THaVhist::FindEye(const string& var) {
 // If the variable is "[I]" it is an "Eye" variable.
 // This means we will simply use I = 0,1,2, to fill that axis.
-  int debug=0;
+  const int debug=0;
   string::size_type pos, pos1,pos2;
   string eye  = "[I]";
   if(debug) cout << "FindEye for var = "<<var<<endl;
@@ -314,7 +314,7 @@ Int_t THaVhist::FindVarSize()
  //     -3 = Cut size inconsistent with X.
  //     -4 = Cut size inconsistent with Y.
 
-  Int_t ldebug=0;
+  const int ldebug=0;
 
   if (!fFormX) return -2;  // Error, must have at least an X.
   Int_t sizex = 0, sizey = 0, sizec = 0;
@@ -384,7 +384,7 @@ Int_t THaVhist::BookHisto(Int_t hfirst, Int_t hlast)
   // Using ROOT Histogram classes, set up the vector
   // of histograms of type fType (th1f, th1d, th2f, th2d) 
   // for vector indices that run from hfirst to hlast.
-  int ldebug=0;
+  const int ldebug=0;
   fSize = hlast;
   if(ldebug) cout << "BookHisto:: "<<hfirst<<"  "<<hlast<<endl;
   if (hfirst > hlast) return -1;
@@ -453,7 +453,7 @@ Int_t THaVhist::Process()
   // sensible limit) if the inputs grow in size.
 
   // Check validity just once for efficiency.  
-  Int_t ldebug=0;
+  const int ldebug=0;
   if (ldebug) cout << "----------------  THaVhist :: Process  "<<fName<<"   //  "<<fTitle<<endl<<flush;
   if (fFirst) {
     fFirst = kFALSE;  

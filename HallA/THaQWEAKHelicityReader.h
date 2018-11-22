@@ -76,7 +76,7 @@ protected:
   // If a header is zero the index is taken to be from the start of
   // the ROC (0 = first word of ROC), otherwise it's from the header
   // (0 = first word after header).
-  ROCinfo  fROCinfo[3]; // for now only work with one roc (roc 11),
+  ROCinfo  fROCinfo[kROC3+1]; // for now only work with one roc (roc 11),
   //should be extended to read helicity info from adc 
 
   Int_t    fQWEAKDebug;          // Debug level

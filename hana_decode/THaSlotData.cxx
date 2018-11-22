@@ -309,7 +309,8 @@ int THaSlotData::loadData(int chan, int dat, int raw) {
 }
 
 
-void THaSlotData::print() const {
+void THaSlotData::print() const
+{
   if (fDebugFile) {
     print_to_file();
     return;
@@ -332,6 +333,7 @@ void THaSlotData::print() const {
   }
   for (i=k; i<getNumRaw(); i++) cout << getRawData(i) << "  ";
   first = true;
+  ios_base::fmtflags fmt = cout.flags();
   for (chan=0; chan<(int)maxc; chan++) {
     if (getNumHits(chan) > 0) {
       if (first) {
@@ -348,6 +350,7 @@ void THaSlotData::print() const {
       }
     }
   }
+  cout.flags(fmt);
   return;
 }
 

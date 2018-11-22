@@ -22,19 +22,18 @@ public:
   THaPrintOption& operator=( const char* rhs );
   virtual ~THaPrintOption();
 
-  Int_t        GetNOptions()            const { return fNTokens; }
-  const char*  GetOption( Int_t i = 0 ) const;
-  Int_t        GetValue( Int_t i = 0 )  const;
-  Bool_t       IsLine()                 const;
-  const char*  Data() const { return fString; }
-  operator const char*() const { return Data(); }
-  const char* operator[]( Int_t i ) const { return GetOption(i); }
-  const char* operator()( Int_t i ) const { return GetOption(i); }
+  Int_t        GetNOptions()          const { return fNTokens; }
+  const char*  GetOption( Int_t i=0 ) const;
+  Int_t        GetValue( Int_t i=0 )  const;
+  Bool_t       IsLine()               const;
+  const char*  Data()                 const { return fString; }
+  operator const char*()              const { return Data(); }
+  const char* operator[]( Int_t i )   const { return GetOption(i); }
+  const char* operator()( Int_t i )   const { return GetOption(i); }
 
 protected:
   char*       fString;      //Pointer to local copy of string
   char*       fTokenStr;    //Copy of string parsed by strtok()
-  Bool_t      fParsed;      //Indicator whether string has been parsed
   Int_t       fNTokens;     //Number of tokens
   char**      fTokens;      //Array of pointers to the tokens in the string
   Int_t*      fParam;       //Array of the parameter values in the string

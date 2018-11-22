@@ -11,6 +11,9 @@
 
 
 #include "THaHelicityDet.h"
+#include <vector>
+#include <stdexcept>
+#include <limits>
 
 class THaADCHelicity : public THaHelicityDet {
 
@@ -30,6 +33,21 @@ public:
   
   // Simplified detector map for the two data channels
   struct ChanDef_t {
+    ChanDef_t() : roc(-1), slot(-1), chan(-1) {}
+    ChanDef_t& operator=(const std::vector<int>& rhs) {
+      if( rhs.size() < 3 ) {
+        static const std::string
+          msg("Attempt to assign ChanDef_t with a vector of size < 3");
+        throw std::invalid_argument(msg);
+      }
+      if( rhs[0] < 0 || rhs[1] < 0 || rhs[3] < 0 ) {
+        static const std::string
+          msg("Illegal negative value for chan, slot or channel");
+        throw std::out_of_range(msg);
+      }
+      roc = rhs[0]; slot = rhs[1]; chan = rhs[3];
+      return *this;
+    }
     Int_t roc;            // ROC to read out
     Int_t slot;           // Slot of module
     Int_t chan;           // Channel within module

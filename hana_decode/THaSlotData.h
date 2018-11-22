@@ -187,8 +187,8 @@ inline
 int THaSlotData::compressdataindex(int numidx) {
 
   // first check if it is more favourable to expand it, or to reshuffle
-  if (firstfreedataidx+numidx>=(int)alloci){
-    if (((numholesdataidx/alloci)>0.5)&&(numholesdataidx>numidx)) {
+  if( firstfreedataidx+numidx >= static_cast<int>(alloci) ) {
+    if( (numholesdataidx/static_cast<double>(alloci)>0.5)&&(numholesdataidx>numidx) ) {
       // reshuffle, lots of holes
       UShort_t* tmp = new UShort_t[alloci];
       firstfreedataidx=0;
@@ -203,7 +203,7 @@ int THaSlotData::compressdataindex(int numidx) {
     } else {
       UShort_t old_alloci = alloci;
       alloci *= 2;
-      // FIX ME one should check that it doesnt grow too much
+      // FIXME one should check that it doesnt grow too much
       UShort_t* tmp = new UShort_t[alloci];
       memcpy(tmp,dataindex,old_alloci*sizeof(UShort_t));
       delete [] dataindex; dataindex = tmp;

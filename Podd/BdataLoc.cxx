@@ -320,6 +320,7 @@ void WordLoc::Load( const THaEvData& evdata )
 
   //FIXME: Can this be made faster because each header is followed by the offset
   // to the next header?
+  //FIXME: What about byte order? Are the raw data always a certain endianness?
 
   // Get the first byte of the header, regardless of byte order
   int h = ((UChar_t*)&header)[0];
@@ -327,7 +328,7 @@ void WordLoc::Load( const THaEvData& evdata )
   while( p < endp &&
 	 (p = (rawdata_t*)memchr(p,h,sizeof(rawdata_t)*(endp-p-1)+1)) &&
 	 p <= endp-ntoskip-1 ) {
-    // The header must be aligned at a word boundary
+    // The header must be aligned to a word boundary
     int off = ((char*)p-(char*)cratebuf) & (sizeof(rawdata_t)-1);  // same as % sizeof()
     if( off != 0 ) {
       p = (rawdata_t*)((char*)p + sizeof(rawdata_t)-off);
@@ -340,7 +341,7 @@ void WordLoc::Load( const THaEvData& evdata )
       data = *(p+ntoskip);
       break;
     }
-    p += sizeof(rawdata_t);
+    ++p;  // Next rawdata_t word
   }
 }
 

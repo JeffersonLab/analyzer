@@ -48,7 +48,7 @@ namespace Decoder {
        // _might_ be modified internally ...) Silly, really.
        char *d_fname = strdup(fname), *d_flags = strdup("r"), *d_v = strdup("v");
        Int_t status = evOpen(d_fname,d_flags,&handle);
-       Int_t EvioVersion;
+       Int_t EvioVersion = 0;
        Int_t status2 = evIoctl(handle, d_v, &EvioVersion);
        fCodaVersion = 0;
        if (status2 == S_SUCCESS) {
@@ -69,7 +69,7 @@ namespace Decoder {
       init(fname);
       char *d_fname = strdup(fname), *d_flags = strdup(readwrite), *d_v = strdup("v");
       Int_t status = evOpen(d_fname,d_flags,&handle);
-      Int_t EvioVersion;
+      Int_t EvioVersion = 0;
       Int_t status2 = evIoctl(handle, d_v, &EvioVersion);
       fCodaVersion = 0;
       if (status2 == S_SUCCESS) {

@@ -210,6 +210,7 @@ protected:
   Decoder::THaCrateMap* fMap;      // Pointer to active crate map
 
   struct RocDat_t {           // ROC raw data descriptor
+    RocDat_t() : pos(0), len(0) {}
     Int_t pos;                // position in evbuffer[]
     Int_t len;                // length of data
   } rocdat[Decoder::MAXROC];
