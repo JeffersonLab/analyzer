@@ -102,7 +102,7 @@ namespace Decoder {
 // Must be called once per event.
     Int_t status;
     if ( handle ) {
-      status = evRead(handle, evbuffer, MAXEVLEN); // @suppress("Invalid arguments")
+      status = evRead(handle, evbuffer, MAXEVLEN);
        staterr("read",status);
     } else {
       if(CODA_VERBOSE) {
@@ -120,7 +120,7 @@ namespace Decoder {
 // codaWrite: Writes data from 'evbuf' to file
      Int_t status;
      if ( handle ) {
-       status = evWrite(handle, evbuf); // @suppress("Invalid arguments")
+       status = evWrite(handle, evbuf);
        staterr("write",status);
      } else {
        cout << "codaWrite ERROR: tried to access file with handle = 0" << endl;
@@ -274,12 +274,13 @@ void THaCodaFile::staterr(const char* tried_to, Long64_t status) {
     if (status == S_SUCCESS) return;  // everything is fine.
     if (status == EOF) {
       if(CODA_VERBOSE) {
-	cout << "Normal end of file " << filename << " encountered" << endl;
+	cout << endl << "Normal end of file " << filename << " encountered"
+	     << endl;
       }
       return;
     }
-    cerr << Form("THaCodaFile: ERROR while trying to %s %s: ",
-		 tried_to, filename.Data());
+    cerr << endl << Form("THaCodaFile: ERROR while trying to %s %s: ",
+        tried_to, filename.Data());
     switch (status) {
       case S_EVFILE_TRUNC :
 	cerr << "Truncated event on file read. Evbuffer size is too small. "

@@ -76,8 +76,7 @@ hana_decode/raw
 hana_decode/cache
 hana_decode/runfadc.csh
 hana_decode/runftdc.csh
-hana_decode/snippet.dat
-hana_decode/apps/snippet.dat
+snippet.dat
 
 #decoder debug stuff
 hana_decode/*_debug.txt

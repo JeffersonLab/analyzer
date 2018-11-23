@@ -14,7 +14,7 @@
 using namespace std;
 using namespace Decoder;
 
-int main(int argc, char* argv[])
+int main(int /* argc */, char** /* argv */ )
 {
 
   // int debug=0;
@@ -28,10 +28,11 @@ int main(int argc, char* argv[])
    TString filename("snippet.dat");
    if (datafile.codaOpen(filename) != CODA_OK) {
         cout << "ERROR:  Cannot open CODA data" << endl;
-        exit(0);
+        exit(1);
    }
       
-   THaEvData *evdata = new CodaDecoder();
+   CodaDecoder *evdata = new CodaDecoder();
+   evdata->SetCodaVersion(datafile.getCodaVersion());
 
 // Loop over events
  
@@ -45,7 +46,7 @@ int main(int argc, char* argv[])
         if ( status == EOF) {
            cout << "This is normal end of file.  Goodbye !" << endl;
         } else {
-  	   cout << hex << "ERROR: codaRread status = " << status << endl;
+  	   cout << hex << "ERROR: codaRread status = " << status <<dec<<endl;
         }
         goto Finish;
      }
@@ -55,9 +56,14 @@ int main(int argc, char* argv[])
 // evdata uses its private crate map (recommended).
 // Alternatively you could use load_evbuffer(int* evbuffer, haCrateMap& map)
      
-     evdata->LoadEvent( datafile.getEvBuffer() );   
+     status = evdata->LoadEvent( datafile.getEvBuffer() );
 
-     cout << "\nEvent type   " << dec << evdata->GetEvType() << endl;
+     if( status != CodaDecoder::HED_OK && status != CodaDecoder::HED_WARN ) {
+       cerr << "ERROR " << status << " while decoding event " << ievent
+           << ". Exiting." << endl;
+       exit(status);
+     }
+     cout << endl << "Event type   " << evdata->GetEvType() << endl;
      cout << "Event number " << evdata->GetEvNum()  << endl;
      cout << "Event length " << evdata->GetEvLength() << endl;
      if (evdata->IsPhysicsTrigger() ) { // triggers 1-14
@@ -73,11 +79,11 @@ int main(int argc, char* argv[])
       int slot = 24;
 
 //  Here are raw 32-bit CODA words for this crate and slot
-      cout << "Raw Data Dump for crate "<<dec<<crate<<" slot "<<slot<<endl; 
+      cout << "Raw Data Dump for crate "<<crate<<" slot "<<slot<<endl;
       int hit;
       for(hit=0; hit<evdata->GetNumRaw(crate,slot); hit++) {
-        cout<<dec<<"raw["<<hit<<"] =   ";
-        cout<<hex<<evdata->GetRawData(crate,slot,hit)<<endl;  
+        cout<<"raw["<<hit<<"] =   ";
+        cout<<hex<<evdata->GetRawData(crate,slot,hit)<<dec<<endl;
       }
 // You can alternatively let evdata print out the contents of a crate and slot:
       evdata->PrintSlotData(crate,slot);
@@ -89,7 +95,7 @@ int main(int argc, char* argv[])
         cout << "Device type = ";
         cout << evdata->DevType(crate,slot) << endl;
         for (hit=0; hit<evdata->GetNumHits(crate,slot,channel); hit++) {
-	   cout << "Channel " <<dec<<channel<<" hit # "<<hit<<"  ";
+	   cout << "Channel " <<channel<<" hit # "<<hit<<"  ";
            cout << "data = " << evdata->GetData(crate,slot,channel,hit)<<endl;
         }
 // Helicity data
@@ -101,21 +107,23 @@ int main(int argc, char* argv[])
 // Scalers:  Although the getData methods works if you happen
 // to know what crate & slot contain scaler data, here is
 // another way to get scalers directly from evdata
-
+//FIXME: needs update for Podd 1.6+
+#if 0
       for (slot=0; slot<5; slot++) {
-        cout << "\n scaler slot -> " << dec << slot << endl;; 
+        cout << endl << " scaler slot -> " << slot << endl;;
         for (int chan=0; chan<16; chan++) {
 	  cout << "Scaler chan " <<  chan << "  ";
           cout << evdata->GetScaler("left",slot,chan);
           cout << "  "  << evdata->GetScaler(7,slot,chan) << endl;
 	}
       }
- 
-
+#endif
    }  //  end of event loop
 
 Finish:
-   cout<<"\nAll done; processed "<<dec<<ievent<<" events"<<endl;
+  cout<<endl<<"All done; processed "<<dec<<ievent<<" events"<<endl;
+  datafile.codaClose();
+  return 0;
 }
 
 

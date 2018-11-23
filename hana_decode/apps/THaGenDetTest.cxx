@@ -19,7 +19,7 @@
 
 //#define SIMPLELOOP 
 
-static const int PRINTOUT = 0;  // to printout (1) or not (0)
+static const int PRINTOUT = 1;  // to printout (1) or not (0)
 
 using namespace std;
 
@@ -131,8 +131,6 @@ void THaGenDetTest::init()
 
        //       mycrates[50] = 14;
 
-       
-  
 };
 
 void THaGenDetTest::process_event(THaEvData *evdata)
@@ -156,6 +154,9 @@ void THaGenDetTest::process_event(THaEvData *evdata)
     if (evdata->IsScalerEvent()) {
      cout << "Scaler data. (it will remain static until";
      cout << " next scaler event): "<<endl;
+//FIXME: needs update for Podd 1.6+
+     cout << "Scaler handling not (yet) implemented in this example class" << endl;
+#if 0
      for (int sca = 0; sca < 3; sca++) { // 1st 3 scaler banks, left spectrom.
        for (int cha = 0; cha < 16; cha++)  {
         cout << "Scaler " << dec << sca << " channel " << cha;
@@ -163,10 +164,14 @@ void THaGenDetTest::process_event(THaEvData *evdata)
         cout << "  data = (hex) "<<hex<<evdata->GetScaler("left",sca,cha)<<endl;
        }
      }
+#endif
     }
   }
   if (evdata->IsEpicsEvent()) {
+//FIXME: needs update for Podd 1.6+
     if (PRINTOUT) {
+      cout << "EPICS data handling not (yet) implemented in this example class" << endl;
+#if 0
       cout << "BPM 3A, X   IPM1H03A.XPOS  =  ";
       cout << evdata->GetEpicsData("IPM1H03A.XPOS")<<endl;
       cout << "BPM 3A, Y   IPM1H03A.YPOS  =  ";
@@ -179,9 +184,11 @@ void THaGenDetTest::process_event(THaEvData *evdata)
       cout << evdata->GetEpicsData("hac_bcm_average")<<endl;
       cout << "Energy   halla_MeV  =  ";
       cout << evdata->GetEpicsData("halla_MeV")<<endl; 
+#endif
     }
-   }
+  }
   if (!evdata->IsPhysicsTrigger()) return;
+#if 0
   if (PRINTOUT) {
   int crate = 16;  
   cout << "--------  Test of RICH raw data  ---------"<<endl;
@@ -195,6 +202,7 @@ void THaGenDetTest::process_event(THaEvData *evdata)
     }
   }
   }
+#endif
   unsigned long sum = 0;
   for (int j = 0; j < MAX; j++) {
       if (!mycrates[j]) continue;

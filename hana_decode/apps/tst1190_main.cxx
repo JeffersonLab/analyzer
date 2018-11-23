@@ -5,21 +5,14 @@
 #include <numeric>
 #include <vector>
 #include <time.h>
-#include "Decoder.h"
 #include "THaCodaFile.h"
 #include "CodaDecoder.h"
-#include "THaEvData.h"
-#include "Module.h"
 #include "Caen1190Module.h"
-//#include "evio.h"
-#include "THaSlotData.h"
 #include "TString.h"
 #include "TROOT.h"
 #include "TFile.h"
 #include "TH1.h"
 #include "TH2.h"
-#include "TProfile.h"
-#include "TNtuple.h"
 #include "TDirectory.h"
 #include "TGraph.h"
 #include "TVector.h"
@@ -60,7 +53,7 @@ void GeneratePlots(uint32_t islot, uint32_t chan) {
   if (!h_rawtdc[islot][chan]) h_rawtdc[islot][chan] = new TH1I("h_rawtdc", Form("CAEN1190 RAW TDC Slot %d Channel %d", islot, chan), 50001, 0, 50000);
 }
 
-int main(int argc, char* argv[])
+int main(int /* argc */, char** /* argv */)
 {
   // Initialize the analysis clock
   clock_t t;
@@ -74,8 +67,14 @@ int main(int argc, char* argv[])
   // debugfile->open ("tst1190_main_debug.txt");
   
   // Initialize the CODA decoder
-  THaCodaFile datafile(filename);
-  THaEvData *evdata = new CodaDecoder();
+  THaCodaFile datafile;
+  if (datafile.codaOpen(filename) != CODA_OK) {
+    cerr << "ERROR:  Cannot open CODA data" << endl;
+    cerr << "Perhaps you mistyped it" << endl;
+    cerr << "... exiting." << endl;
+    exit(2);
+  }
+  CodaDecoder *evdata = new CodaDecoder();
   evdata->SetCodaVersion(datafile.getCodaVersion());
 
   // Initialize the evdata debug output
@@ -90,14 +89,19 @@ int main(int argc, char* argv[])
   cout << "***************************************" << endl;
   cout << NUMEVENTS << " events will be processed" << endl;
   cout << "***************************************" << endl;
+  int status = 0;
   uint32_t iievent = 1;
   //for(uint32_t ievent = 0; ievent < NUMEVENTS + 1; ievent++) {
   for(uint32_t ievent = 0; ievent < iievent; ievent++) {
     // Read in data file
-    int status = datafile.codaRead();
+    status = datafile.codaRead();
     if (status == CODA_OK) {
-      UInt_t *data = datafile.getEvBuffer();
-      evdata->LoadEvent(data);
+      status = evdata->LoadEvent(datafile.getEvBuffer());
+      if( status != CodaDecoder::HED_OK && status != CodaDecoder::HED_WARN ) {
+        cerr << "ERROR " << status << " while decoding event " << ievent
+             << ". Exiting." << endl;
+        break;
+      }
 
       if (debugfile) *debugfile << "****************" << endl;
       if (debugfile) *debugfile << "Event Number = " << evdata->GetEvNum() << endl;
@@ -106,8 +110,8 @@ int main(int argc, char* argv[])
       // Loop over slots
       for(uint32_t islot = SLOTMIN; islot < NUMSLOTS; islot++) {
 	if (evdata->GetNumRaw(CRATE3, islot) != 0) {  // HMS Single arm setup
-	  Caen1190Module *tdc = NULL;
-	  tdc = dynamic_cast <Caen1190Module*> (evdata->GetModule(CRATE3, islot));   // HMS single arm setup
+	  Caen1190Module *tdc =
+	      dynamic_cast <Caen1190Module*> (evdata->GetModule(CRATE3, islot));   // HMS single arm setup
 	  if (tdc != NULL) {
 	    if (debugfile) *debugfile << "\n///////////////////////////////\n"
 				      << "Results for crate " 
@@ -131,7 +135,11 @@ int main(int argc, char* argv[])
 	    if (debugfile) *debugfile << "TDC MODULE NOT FOUND!!!" << endl;
 	}  // Number raw words condition
       }  // Slot loop
-    }  // CODA file read status condition
+    } else if( status != EOF ) {
+      cerr << "ERROR " << status << " while reading CODA event " << ievent
+           << ". Twonk." << endl;
+      break;
+    } // CODA file read status condition
     if (iievent % 1000 == 0)
       //if (iievent % 1 == 0)
       cout << iievent << " events have been processed" << endl;
@@ -146,10 +154,12 @@ int main(int argc, char* argv[])
   // Write and clode the data file
   hfile->Write();
   hfile->Close();
+  datafile.codaClose();
 
   // Calculate the analysis rate
   t = clock() - t;
   printf ("The analysis took %.1f seconds \n", ((float) t) / CLOCKS_PER_SEC);
   printf ("The analysis event rate is %.1f Hz \n", (iievent - 1) / (((float) t) / CLOCKS_PER_SEC));
 
+  return status;
 }  // main()
