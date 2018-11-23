@@ -23,14 +23,11 @@
 #pragma link C++ class VDCeff+;
 #pragma link C++ class THaS2CoincTime+;
 #pragma link C++ class THaADCHelicity+;
-#pragma link C++ class THaADCHelicity::ChanDef_t+;
 #pragma link C++ class THaHelicity+;
 #pragma link C++ class THaG0HelicityReader+;
-#pragma link C++ class THaG0HelicityReader::ROCinfo+;
 #pragma link C++ class THaG0Helicity+;
 #pragma link C++ class THaQWEAKHelicity+;
 #pragma link C++ class THaQWEAKHelicityReader+;
-#pragma link C++ class THaQWEAKHelicityReader::ROCinfo+;
 #pragma link C++ class THaDecData+;
 #pragma link C++ class TrigBitLoc+;
 

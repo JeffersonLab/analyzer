@@ -31,6 +31,17 @@ public:
       fThreshold(0), fIgnoreGate(kFALSE), fInvertGate(kFALSE),
       fNchan(0) {}  // For ROOT I/O only
   
+protected:
+  // ADC data for helicity and gate
+  Double_t   fADC_hdata;  // Helicity ADC raw data
+  Double_t   fADC_Gate;   // Gate ADC raw data
+  EHelicity  fADC_Hel;    // Calculated beam helicity from ADC data
+
+  Double_t   fThreshold;  // Min ADC amplitude required for Hel = Plus
+  Bool_t     fIgnoreGate; // Ignore the gate info and always assign helicity
+  Bool_t     fInvertGate; // Invert polarity of gate signal, so that 0=active
+
+  // Simplified detector map for the two data channels
   // Simplified detector map for the two data channels
   struct ChanDef_t {
     ChanDef_t() : roc(-1), slot(-1), chan(-1) {}
@@ -53,17 +64,6 @@ public:
     Int_t chan;           // Channel within module
   };
 
-protected:
-  // ADC data for helicity and gate
-  Double_t   fADC_hdata;  // Helicity ADC raw data
-  Double_t   fADC_Gate;   // Gate ADC raw data
-  EHelicity  fADC_Hel;    // Calculated beam helicity from ADC data
-
-  Double_t   fThreshold;  // Min ADC amplitude required for Hel = Plus
-  Bool_t     fIgnoreGate; // Ignore the gate info and always assign helicity
-  Bool_t     fInvertGate; // Invert polarity of gate signal, so that 0=active
-
-  // Simplified detector map for the two data channels
   ChanDef_t  fAddr[2];    // Definitions of helicity and gate channels
   Int_t      fNchan;      // Number of channels to read out (1 or 2)
 
