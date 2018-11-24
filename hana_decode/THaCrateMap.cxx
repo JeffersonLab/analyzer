@@ -25,14 +25,34 @@
 #include "TSystem.h"
 
 #include <cstdio>
-#include <cstring>  // for strerror_r
 #include <errno.h>  // for errno
 #include <string>
 #include <iomanip>
 #include <sstream>
 #include <unistd.h>
+#include <cstring>  // for strerror_r
+
+// This is a well-known problem with strerror_r
+#if defined(__linux__) && (defined(_GNU_SOURCE) || !(_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE > 600))
+# define GNU_STRERROR_R
+#endif
 
 using namespace std;
+
+static string StrError()
+{
+  // Return description of current errno as a std::string
+  const size_t BUFLEN = 128;
+  char buf[BUFLEN];
+
+#ifdef GNU_STRERROR_R
+  string ret = strerror_r(errno, buf, BUFLEN);
+#else
+  strerror_r(errno, buf, BUFLEN);
+  string ret = buf;
+#endif
+  return ret;
+}
 
 namespace Decoder {
 
@@ -192,13 +212,10 @@ int THaCrateMap::init( FILE* fi, const TString& fname )
   // parsed by init(TString).
 
   const char* const here = "THaCrateMap::init";
-  const size_t BUFLEN = 128;
-  char buf[BUFLEN];
 
   if ( !fi ) {
-    (void)strerror_r(errno, buf, BUFLEN);
     ::Error( here, "Error opening crate map database file %s: %s",
-        fname.Data(), buf );
+        fname.Data(), StrError().c_str() );
     return CM_ERR;
   }
   // Build the string to parse
@@ -208,9 +225,8 @@ int THaCrateMap::init( FILE* fi, const TString& fname )
     db += static_cast<char>(ch);
   }
   if( ferror(fi) ) {
-    (void)strerror_r(errno, buf, BUFLEN);
     ::Error( here, "Error reading crate map database file %s: %s",
-        fname.Data(), buf );
+        fname.Data(), StrError().c_str() );
     fclose(fi);
     return CM_ERR;
   }
