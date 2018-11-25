@@ -19,9 +19,8 @@
 namespace Decoder {
 
 //_____________________________________________________________________________
-THaCodaData::THaCodaData()
+THaCodaData::THaCodaData() : fCodaVersion(2), fIsGood(true)
 {
-   fCodaVersion = 2; // default
    evbuffer = new UInt_t[MAXEVLEN];         // Raw data
 };
 
@@ -42,9 +41,9 @@ Int_t THaCodaData::ReturnCode( Long64_t evio_retcode )
     return CODA_OK;
 
   case EOF:
-  case S_EVFILE_UNXPTDEOF:
     return CODA_EOF;
 
+  case S_EVFILE_UNXPTDEOF:
   case S_EVFILE_TRUNC:
     return CODA_ERROR;
 

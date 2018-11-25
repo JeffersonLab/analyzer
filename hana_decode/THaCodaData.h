@@ -47,12 +47,12 @@ public:
    virtual Int_t getBuffSize() const { return MAXEVLEN; }
    virtual Bool_t isOpen() const = 0;
    virtual Int_t getCodaVersion() { return fCodaVersion; };
+   Bool_t isGood() const { return fIsGood; }
 
 protected:
    static Int_t ReturnCode( Long64_t evio_retcode );
 
 private:
-
    THaCodaData(const THaCodaData &fn);
    THaCodaData& operator=(const THaCodaData &fn);
 
@@ -61,6 +61,7 @@ protected:
    TString  filename;
    UInt_t*  evbuffer;     // Raw data
    Int_t fCodaVersion;
+   Bool_t fIsGood;
 
    ClassDef(THaCodaData,0) // Base class of CODA data (file, ET conn, etc)
 
