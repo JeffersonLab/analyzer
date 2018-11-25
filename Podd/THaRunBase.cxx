@@ -305,7 +305,6 @@ Int_t THaRunBase::Init()
   Clear("INIT");
 
   // Open the data source.
-  retval = 0;
   if( !IsOpen() ) {
     retval = Open();
     if( retval )

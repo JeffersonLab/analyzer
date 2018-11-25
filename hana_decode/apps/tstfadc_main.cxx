@@ -244,19 +244,16 @@ int main(int /* argc */, char** /* argv */)
             // Loop over channels
             for (uint32_t chan = 0; chan < NADCCHAN; chan++) {
               // Initilize variables
-              Int_t  fadc_mode, num_fadc_events, num_fadc_samples;
-              Bool_t raw_mode;
-              fadc_mode = num_fadc_events = num_fadc_samples = raw_mode = 0;
+              Int_t num_fadc_events = 0, num_fadc_samples = 0;
               // Acquire the FADC mode
-              fadc_mode = fadc->GetFadcMode(); fadc_mode_const = fadc_mode;
+              Int_t fadc_mode = fadc->GetFadcMode(); fadc_mode_const = fadc_mode;
               if (debugfile) *debugfile << "Channel " << chan << " is in FADC Mode " << fadc_mode << endl;
-              raw_mode  = ((fadc_mode == 1) || (fadc_mode == 8) || (fadc_mode == 10));
+              Bool_t raw_mode  = ((fadc_mode == 1) || (fadc_mode == 8) || (fadc_mode == 10));
 
               // Acquire the number of FADC events
               num_fadc_events = fadc->GetNumFadcEvents(chan);
               // If in raw mode, acquire the number of FADC samples
               if (raw_mode) {
-                num_fadc_samples = 0;
                 num_fadc_samples = fadc->GetNumFadcSamples(chan, ievent);
               }
               if (num_fadc_events > 0) {

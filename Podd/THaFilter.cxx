@@ -100,7 +100,7 @@ Int_t THaFilter::Process( const THaEvData* evdata, const THaRunBase* run,
   if( ret == CODA_FATAL ) {
     Error( here, "Fatal error writing to CODA output file %s. Check if you have "
 	   "write permission", fFileName.Data() );
-    ret = THaAnalyzer::kFatal;
+    return THaAnalyzer::kFatal;
   } else if( ret != CODA_OK ) {
     Error( here, "Error writing to CODA output file %s. Event %d not written",
 	   fFileName.Data(), (evdata != NULL) ? evdata->GetEvNum() : -1 );

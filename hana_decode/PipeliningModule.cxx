@@ -50,13 +50,9 @@ Int_t PipeliningModule::SplitBuffer(const std::vector< UInt_t >& codabuffer) {
 
   int debug=1;
 
-  Int_t slot_blk_hdr, slot_evt_hdr, slot_blk_trl;
-  Int_t iblock_num, nwords_inblock, evt_num;
+  Int_t slot_blk_hdr = 0, slot_evt_hdr = 0;
   Int_t BlockStart=0;
 
-  slot_blk_hdr = 0;
-  slot_evt_hdr = 0;
-  slot_blk_trl = 0;
   block_size = 0;   // member of the base class Module.h
 
   for (UInt_t i=0;  i < codabuffer.size(); i++) {
@@ -80,79 +76,82 @@ Int_t PipeliningModule::SplitBuffer(const std::vector< UInt_t >& codabuffer) {
     switch(data_type_def)
       {
       case 0: // Block header, indicates the begining of a block of events
-	if (data_type_id)
-	  {
-	    fBlockHeader = data;
-	    slot_blk_hdr = (data >> 22) & 0x1F;  // Slot number (set by VME64x backplane), mask 5 bits
-	    iblock_num = (data >> 8) & 0x3FF;    // Event block number, mask 10 bits
-	    block_size = (data >> 0) & 0xFF;  // Number of events in block, mask 8 bits
-	    if (block_size > 1) fMultiBlockMode = kTRUE;
-	    if ((fMultiBlockMode==kTRUE) && (slot_blk_hdr==fSlot)) BlockStart=1;
-	    // Debug output
-	    if (debug >= 1) {
-	      if (fDebugFile != 0) *fDebugFile << "SplitBuffer:  %% data BLOCK header: slot_blk_hdr = " << dec<<slot_blk_hdr
-		   << " iblock_num = " << iblock_num << " block_size = " << block_size << endl;
-	    }
-	  }
-	 break;
+        if (data_type_id) {
+          fBlockHeader = data;
+          slot_blk_hdr = (data >> 22) & 0x1F;  // Slot number (set by VME64x backplane), mask 5 bits
+          block_size = (data >> 0) & 0xFF;  // Number of events in block, mask 8 bits
+          if (block_size > 1) fMultiBlockMode = kTRUE;
+          if ((fMultiBlockMode==kTRUE) && (slot_blk_hdr==fSlot)) BlockStart=1;
+          // Debug output
+          if (debug >= 1 && fDebugFile != 0) {
+            Int_t iblock_num = (data >> 8) & 0x3FF;  // Event block number, mask 10 bits
+            *fDebugFile << "SplitBuffer:  %% data BLOCK header: slot_blk_hdr = " << dec<<slot_blk_hdr
+                << " iblock_num = " << iblock_num << " block_size = " << block_size << endl;
+          }
+        }
+        break;
       case 1: // Block trailer, indicates the end of a block of events
-	slot_blk_trl = (data >> 22) & 0x1F;       // Slot number (set by VME64x backplane), mask 5 bits
-	nwords_inblock = (data >> 0) & 0x3FFFFF;  // Total number of words in block of events, mask 22 bits
-	if ((fMultiBlockMode==kTRUE) && (slot_blk_trl==fSlot)) {
-	    BlockStart++;
-	    oneEventBuffer.push_back(data);
- // There is no "event trailer", but a block trailer indicates the last event in a block.
-	    eventblock.push_back(oneEventBuffer);
-	    oneEventBuffer.clear();
-	}
+        {
+          Int_t slot_blk_trl = (data >> 22) & 0x1F;  // Slot number (set by VME64x backplane), mask 5 bits
+          if ((fMultiBlockMode==kTRUE) && (slot_blk_trl==fSlot)) {
+            BlockStart++;
+            oneEventBuffer.push_back(data);
+            // There is no "event trailer", but a block trailer indicates the last event in a block.
+            eventblock.push_back(oneEventBuffer);
+            oneEventBuffer.clear();
+          }
 
-	// Debug output
-	if (debug >= 1) {
-	      if (fDebugFile != 0) *fDebugFile << "SplitBuffer: %% data BLOCK trailer: slot_blk_trl = " <<  slot_blk_trl
-			  << " nwords_inblock = " << nwords_inblock << endl;
-	}
-	break;
+          // Debug output
+          if (debug >= 1 && fDebugFile != 0) {
+            Int_t nwords_inblock = (data >> 0) & 0x3FFFFF;  // Total number of words in block of events, mask 22 bits
+            *fDebugFile << "SplitBuffer: %% data BLOCK trailer: slot_blk_trl = " <<  slot_blk_trl
+                << " nwords_inblock = " << nwords_inblock << endl;
+          }
+        }
+        break;
       case 2: // Event header, indicates start of an event, includes the trigger number
-	slot_evt_hdr = (data >> 22) & 0x1F;  // Slot number (set by VME64x backplane), mask 5 bits
-	evt_num = (data & 0x3FFFFF);        // Total number of words in block of events, mask 22 bits
- 	if (block_size==0) {
- 	  evt_num_modblock=0;
-        } else {
-           evt_num_modblock = (evt_num%block_size);
- 	}        
-	if (slot_blk_hdr==fSlot) {
-	   BlockStart++;
-	   if (fDebugFile != 0) *fDebugFile << "evt_num logic "<< evt_num<<"  "<<block_size<<"  "<<evt_num_modblock<<"   "<<eventnum<<endl;
-	}
-	// for some older firmware, slot_evt_hdr is zero, so use slot_blk_hdr
-	if ((fMultiBlockMode==kTRUE) && (slot_blk_hdr==fSlot)) {
+        {
+          slot_evt_hdr = (data >> 22) & 0x1F;  // Slot number (set by VME64x backplane), mask 5 bits
+          Int_t evt_num = (data & 0x3FFFFF);   // Total number of words in block of events, mask 22 bits
+          if (block_size==0) {
+            evt_num_modblock=0;
+          } else {
+            evt_num_modblock = (evt_num%block_size);
+          }
+          if (slot_blk_hdr==fSlot) {
+            BlockStart++;
+            if (fDebugFile != 0) *fDebugFile << "evt_num logic "<< evt_num<<"  "<<block_size<<"  "<<evt_num_modblock<<"   "<<eventnum<<endl;
+          }
+          // for some older firmware, slot_evt_hdr is zero, so use slot_blk_hdr
+          if ((fMultiBlockMode==kTRUE) && (slot_blk_hdr==fSlot)) {
 // There is no "event trailer", so we use the change to next event to recognize the end of an event.
 // One could look for the (evt_num_modblock != eventnum) but I find that for some data files the
 // evt_num makes no sense and is a random number.  Instead, the following logic works.
-	  if (BlockStart != 2) {
-	     eventblock.push_back(oneEventBuffer);
-	     oneEventBuffer.clear();
-	  }
-	  eventnum = evt_num_modblock;
-	  oneEventBuffer.push_back(fBlockHeader);  // put block header with each event, e.g. FADC250 needs it.
-	  oneEventBuffer.push_back(data);
-	}
+            if (BlockStart != 2) {
+              eventblock.push_back(oneEventBuffer);
+              oneEventBuffer.clear();
+            }
+            eventnum = evt_num_modblock;
+            oneEventBuffer.push_back(fBlockHeader);  // put block header with each event, e.g. FADC250 needs it.
+            oneEventBuffer.push_back(data);
+          }
 
-	// Debug output
-	if (debug >= 1) {
-	   if (fDebugFile != 0) *fDebugFile << "SplitBuffer:  %% data EVENT header: slot_evt_hdr = " << slot_evt_hdr
-		   << " evt_num = " << evt_num << "  "
-		   << oneEventBuffer.size() <<"   "<<eventblock.size()<<endl;
-	}
-	break;
+          // Debug output
+          if (debug >= 1 && fDebugFile != 0) {
+            *fDebugFile << "SplitBuffer:  %% data EVENT header: slot_evt_hdr = " << slot_evt_hdr
+                << " evt_num = " << evt_num << "  "
+                << oneEventBuffer.size() <<"   "<<eventblock.size()<<endl;
+          }
+        }
+        break;
       default:
-	if (slot_blk_hdr != slot_evt_hdr) {
-	  // for some older firmware, slot_evt_hdr is zero
-	  if ((fNWarnings++ % 100)==0)
-	    cerr << "PipeliningModule::WARNING : inconsistent slot num  "<<endl;
-	}
-// all other data goes here
-	if ((fMultiBlockMode==kTRUE) && (slot_blk_hdr==fSlot)) oneEventBuffer.push_back(data);
+        if (slot_blk_hdr != slot_evt_hdr) {
+          // for some older firmware, slot_evt_hdr is zero
+          if ((fNWarnings++ % 100)==0)
+            cerr << "PipeliningModule::WARNING : inconsistent slot num  "<<endl;
+        }
+        // all other data goes here
+        if ((fMultiBlockMode==kTRUE) && (slot_blk_hdr==fSlot)) oneEventBuffer.push_back(data);
 
       }
 
