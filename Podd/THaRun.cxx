@@ -148,13 +148,21 @@ Int_t THaRun::Open()
     return READ_FATAL;  // filename not set
   }
 
+  fOpened = kFALSE;
   Int_t st = fCodaData->codaOpen( fFilename );
-// Get fCodaVersion from data; however, if it was already defined
-// by the analyzer script use that instead.
-  if (fCodaVersion == 0) fCodaVersion = fCodaData->getCodaVersion();
-  cout << "in THaRun::Open:  coda version "<<fCodaVersion<<endl;
-  if( st == 0 )
-    fOpened = kTRUE;
+  if( st == CODA_OK ) {
+    // Get CODA version from data; however, if a version was set by
+    // explicitly by the user, use that instead
+    if( GetCodaVersion() < 0 ) {
+      Error( here, "Cannot determine CODA version from file. "
+          "Try analyzer->SetCodaVersion(2)");
+      st = CODA_ERROR;
+      Close();
+    }
+    cout << "in THaRun::Open:  coda version "<<fDataVersion<<endl;
+    if( st == CODA_OK )
+      fOpened = kTRUE;
+  }
   return ReturnCode( st );
 }
 
@@ -184,7 +192,7 @@ Int_t THaRun::ReadInitInfo()
       // Disable advanced processing
       evdata->EnableScalers(kFALSE);
       evdata->EnableHelicity(kFALSE);
-      evdata->SetCodaVersion(fCodaVersion);
+      evdata->SetDataVersion(GetCodaVersion());
       UInt_t nev = 0;
       while( nev<fMaxScan && !HasInfo(fDataRequired) &&
 	     (status = ReadEvent()) == READ_OK ) {
@@ -258,9 +266,8 @@ Int_t THaRun::ReadInitInfo()
 	  Int_t        save_seg  = fSegment;
 	  fCodaData = new THaCodaFile;
 	  fSegment  = 0;
-	  if( fCodaData->codaOpen(s) == 0 )
+	  if( fCodaData->codaOpen(s) == CODA_OK )
 	    status = ReadInitInfo();
-          fCodaVersion = fCodaData->getCodaVersion();
 	  delete fCodaData;
 	  fSegment  = save_seg;
 	  fCodaData = save_coda;

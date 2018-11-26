@@ -29,10 +29,11 @@ public:
   // Return codes for LoadEvent
   enum { HED_OK = 0, HED_WARN = -63, HED_ERR = -127, HED_FATAL = -255 };
 
-  // Load CODA data evbuffer. Derived classes MUST implement this function.
+  // Parse raw data in 'evbuffer'. Actual decoding/unpacking takes place here.
+  // Derived classes MUST implement this function.
   virtual Int_t LoadEvent(const UInt_t* evbuffer) = 0;
 
-// return a pointer to a full event
+  // return a pointer to a full event
   const UInt_t* GetRawDataBuffer() const { return buffer;}  
 
   virtual Bool_t IsMultiBlockMode() { return fMultiBlockMode; };
@@ -40,8 +41,8 @@ public:
   virtual void   FillBankData(UInt_t* /*rdat*/, Int_t /*roc*/, Int_t /*bank*/,
 			      Int_t /*offset*/=0, Int_t /*num*/=1) const { return; };
 
-  // Derived class to implement this
-  virtual Int_t LoadFromMultiBlock() { return 0;};
+  // Derived class to implement this if multiblock mode supported
+  virtual Int_t LoadFromMultiBlock() { assert(fgAllowUnimpl); return HED_ERR;};
 
   virtual Int_t Init();
 
@@ -50,26 +51,23 @@ public:
 
   void SetEvTime(const ULong64_t evtime) { evt_time = evtime; }
 
-  // Set the CODA version which affects some decoding behaviour
-  void      SetCodaVersion(Int_t vers);
-  Int_t     GetCodaVersion() const { return fCodaVersion; }
-
   // Basic access to the decoded data
-  Int_t     GetEvType()   const { return event_type; }
-  Int_t     GetEvLength() const { return event_length; }
-  Int_t     GetEvNum()    const { return event_num; }
-  Int_t     GetRunNum()   const { return run_num; }
+  Int_t     GetEvType()      const { return event_type; }
+  Int_t     GetEvLength()    const { return event_length; }
+  Int_t     GetEvNum()       const { return event_num; }
+  Int_t     GetRunNum()      const { return run_num; }
+  Int_t     GetDataVersion() const { return fDataVersion; }
   // Run time/date. Time of prestart event (UNIX time).
-  ULong64_t GetRunTime()  const { return fRunTime; }
-  Int_t     GetRunType()  const { return run_type; }
+  ULong64_t GetRunTime()     const { return fRunTime; }
+  Int_t     GetRunType()     const { return run_type; }
   Int_t     GetRocLength(Int_t crate) const;   // Get the ROC length
 
   Bool_t    IsPhysicsTrigger() const;  // physics trigger (event types 1-14)
-  Bool_t    IsScalerEvent() const;     // scalers from datastream
-  Bool_t    IsPrestartEvent() const;   // prestart event
-  Bool_t    IsEpicsEvent() const;      // epics data inserted in datastream
-  Bool_t    IsPrescaleEvent() const;   // prescale factors
-  Bool_t    IsSpecialEvent() const;    // e.g. detmap or trigger file insertion
+  Bool_t    IsScalerEvent()    const;  // scalers from datastream
+  Bool_t    IsPrestartEvent()  const;  // prestart event
+  Bool_t    IsEpicsEvent()     const;  // slow control data
+  Bool_t    IsPrescaleEvent()  const;  // prescale factors
+  Bool_t    IsSpecialEvent()   const;  // e.g. detmap or trigger file insertion
   // number of raw words in crate, slot
   Int_t     GetNumRaw(Int_t crate, Int_t slot) const;
   // raw words for hit 0,1,2.. on crate, slot
@@ -179,6 +177,7 @@ public:
   virtual void PrintSlotData(Int_t crate, Int_t slot) const;
   virtual void PrintOut() const;
   virtual void SetRunTime( ULong64_t tloc );
+  virtual Int_t SetDataVersion( Int_t version );
 
   // Status control
   void    EnableBenchmarks( Bool_t enable=true );
@@ -207,6 +206,20 @@ public:
   enum { MAX_PSFACT = 12 };
 
 protected:
+  // Initialization routines
+  virtual Int_t init_cmap();
+  virtual Int_t init_cmap_openfile(FILE*&, TString&) { return 0; }
+  virtual Int_t init_slotdata();
+  virtual void  makeidx(Int_t crate, Int_t slot);
+  virtual void  FindUsedSlots();
+
+  // Helper functions
+  Int_t  idx(Int_t crate, Int_t slot) const;
+  Int_t  idx(Int_t crate, Int_t slot);
+  Bool_t GoodCrateSlot(Int_t crate, Int_t slot) const;
+  Bool_t GoodIndex(Int_t crate, Int_t slot) const;
+
+  // Data
   Decoder::THaCrateMap* fMap;      // Pointer to active crate map
 
   struct RocDat_t {           // ROC raw data descriptor
@@ -221,23 +234,6 @@ protected:
     kScalersEnabled  = BIT(15),
   };
 
-  // static const Int_t MAXROC = 32;
-  // static const Int_t MAXSLOT = 27;
-
-  // // Hall A Trigger Types
-  // static const Int_t MAX_PHYS_EVTYPE  = 14;  // Types up to this are physics
-  // static const Int_t SYNC_EVTYPE      = 16;
-  // static const Int_t PRESTART_EVTYPE  = 17;
-  // static const Int_t GO_EVTYPE        = 18;
-  // static const Int_t PAUSE_EVTYPE     = 19;
-  // static const Int_t END_EVTYPE       = 20;
-  // static const Int_t TS_PRESCALE_EVTYPE  = 120;
-  // static const Int_t EPICS_EVTYPE     = 131;  (default in Hall A)
-  // static const Int_t PRESCALE_EVTYPE  = 133;
-  // static const Int_t DETMAP_FILE      = 135;
-  // static const Int_t TRIGGER_FILE     = 136;
-  // static const Int_t SCALER_EVTYPE    = 140;
-
   struct BankDat_t {           // Bank raw data descriptor
     Int_t pos;                 // position in evbuffer[]
     Int_t len;                 // length of data
@@ -246,34 +242,21 @@ protected:
 
   Bool_t first_decode;
   Bool_t fTrigSupPS;
-  Bool_t  fMultiBlockMode, fBlockIsDone;
-  Int_t fCodaVersion;
-
+  Bool_t fMultiBlockMode, fBlockIsDone;
+  Int_t fDataVersion;    // Data format version (implementation-defined)
   Int_t fEpicsEvtType;
 
   const UInt_t *buffer;
 
   std::ofstream *fDebugFile;  // debug output
 
-  Int_t  event_type,event_length,event_num,run_num,evscaler;
-  Int_t  bank_tag, data_type, block_size, tbLen, evcnt_coda3;
-  Int_t  run_type;    // CODA run type from prestart event
-  ULong64_t fRunTime; // CODA run time (Unix time) from prestart event
-  ULong64_t evt_time; // Event time. Not directly supported by CODA
+  Int_t  event_type, event_length, event_num, run_num, evscaler;
+  Int_t  bank_tag, data_type, block_size, tbLen;
+  Int_t  run_type;    // Run type
+  ULong64_t fRunTime; // Run start time (Unix time)
+  ULong64_t evt_time; // Event time
   Int_t  recent_event;
-
   Bool_t buffmode,synchmiss,synchextra;
-  Int_t  idx(Int_t crate, Int_t slot) const;
-  Int_t  idx(Int_t crate, Int_t slot);
-  Bool_t GoodCrateSlot(Int_t crate, Int_t slot) const;
-  Bool_t GoodIndex(Int_t crate, Int_t slot) const;
-
-  // Initialization routines
-  virtual Int_t init_cmap();
-  virtual Int_t init_cmap_openfile(FILE*&, TString&) { return 0; }
-  virtual Int_t init_slotdata();
-  virtual void  makeidx(Int_t crate, Int_t slot);
-  virtual void  FindUsedSlots();
 
   Int_t     fNSlotUsed;   // Number of elements of crateslot[] actually used
   Int_t     fNSlotClear;  // Number of elements of crateslot[] to clear
@@ -297,7 +280,7 @@ protected:
 
   TObject* fExtra;   // additional member data, for binary compatibility
 
-  ClassDef(THaEvData,0)  // Decoder for CODA event buffer
+  ClassDef(THaEvData,0)  // Base class for raw data decoders
 
 };
 

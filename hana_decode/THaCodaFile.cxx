@@ -26,13 +26,13 @@ namespace Decoder {
 //Constructors
 
   THaCodaFile::THaCodaFile()
-    : ffirst(0), max_to_filt(0), handle(0), maxflist(0), maxftype(0)
+    : ffirst(0), max_to_filt(0), maxflist(0), maxftype(0)
   {
     // Default constructor. Do nothing (must open file separately).
   }
 
   THaCodaFile::THaCodaFile(const char* fname, const char* readwrite)
-    : ffirst(0), max_to_filt(0), handle(0), maxflist(0), maxftype(0)
+    : ffirst(0), max_to_filt(0), maxflist(0), maxftype(0)
   {
     // Standard constructor. Pass read or write flag
     if( codaOpen(fname,readwrite) != CODA_OK )
@@ -55,33 +55,13 @@ namespace Decoder {
   {
     // Open CODA file 'fname' with 'readwrite' access
     init(fname);
-    Int_t EvioVersion = 0, ioctl_status;
     // evOpen really wants char*, so we need to do this safely. (The string
     // _might_ be modified internally ...) Silly, really.
-    char *d_fname = strdup(fname), *d_flags = strdup(readwrite), *d_v = strdup("v");
+    char *d_fname = strdup(fname), *d_flags = strdup(readwrite);
     Int_t status = evOpen(d_fname,d_flags,&handle);
     fIsGood = (status == S_SUCCESS);
-    if( status != S_SUCCESS )
-      goto openfail;
-    ioctl_status = evIoctl(handle, d_v, &EvioVersion);
-    fIsGood = (ioctl_status == S_SUCCESS);
-    fCodaVersion = 0;
-    if( ioctl_status == S_SUCCESS ) {
-      cout << "Evio file EvioVersion = "<< EvioVersion<<endl;
-      if (EvioVersion < 4) {
-        fCodaVersion = 2;
-      } else {
-        fCodaVersion = 3;
-      }
-    } else {
-      staterr("ioctl",ioctl_status);
-      codaClose();
-      goto cleanup;
-    }
-  openfail:
     staterr("open",status);
-  cleanup:
-    free(d_fname); free(d_flags), free(d_v);
+    free(d_fname); free(d_flags);
     return ReturnCode(status);
   };
 
@@ -90,6 +70,7 @@ namespace Decoder {
     if( handle ) {
       Int_t status = evClose(handle);
       handle = 0;
+      fIsGood = (status == S_SUCCESS);
       staterr("close",status);
       return ReturnCode(status);
     }
@@ -101,8 +82,8 @@ namespace Decoder {
 // codaRead: Reads data from file, stored in evbuffer.
 // Must be called once per event.
     Int_t status;
-    if ( handle ) {
-      status = evRead(handle, evbuffer, MAXEVLEN); // @suppress("Invalid arguments")
+    if( handle ) {
+      status = evRead(handle, evbuffer, MAXEVLEN);
       fIsGood = (status == S_SUCCESS || status == EOF );
       staterr("read",status);
     } else {
@@ -121,7 +102,7 @@ namespace Decoder {
 // codaWrite: Writes data from 'evbuf' to file
      Int_t status;
      if ( handle ) {
-       status = evWrite(handle, evbuf); // @suppress("Invalid arguments")
+       status = evWrite(handle, evbuf);
        fIsGood = (status == S_SUCCESS);
        staterr("write",status);
      } else {
@@ -130,8 +111,6 @@ namespace Decoder {
      }
      return ReturnCode(status);
    };
-
-
 
   bool THaCodaFile::isOpen() const {
     return (handle!=0);
@@ -274,52 +253,6 @@ namespace Decoder {
   {
      max_to_filt = max_event;
      return;
-  };
-
-
-
-void THaCodaFile::staterr(const char* tried_to, Long64_t status) {
-// staterr gives the non-expert user a reasonable clue
-// of what the status returns from evio mean.
-// Note: severe errors can cause job to exit(0)
-// and the user has to pay attention to why.
-    if (status == S_SUCCESS) return;  // everything is fine.
-    if (status == EOF) {
-      if(CODA_VERBOSE) {
-	cout << endl << "Normal end of file " << filename << " encountered"
-	     << endl;
-      }
-      return;
-    }
-    cerr << endl << Form("THaCodaFile: ERROR while trying to %s %s: ",
-        tried_to, filename.Data());
-    switch (status) {
-      case S_EVFILE_TRUNC :
-	cerr << "Truncated event on file read. Evbuffer size is too small. "
-	     << endl;
-	break;
-      case S_EVFILE_BADBLOCK :
-	cerr << "Bad block number encountered " << endl;
-	break;
-      case S_EVFILE_BADHANDLE :
-	cerr << "Bad handle (file/stream not open) " << endl;
-	break;
-      case S_EVFILE_ALLOCFAIL :
-	cerr << "Failed to allocate event I/O" << endl;
-	break;
-      case S_EVFILE_BADFILE :
-	cerr << "File format error" << endl;
-	break;
-      case S_EVFILE_UNKOPTION :
-	cerr << "Unknown file open option specified" << endl;
-	break;
-      case S_EVFILE_UNXPTDEOF :
-	cerr << "Unexpected end of file while reading event" << endl;
-	break;
-      default:
-	errno = status;
-	perror(0);
-      }
   };
 
   void THaCodaFile::init(const char* fname) {

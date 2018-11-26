@@ -53,10 +53,10 @@ TString THaEvData::fgDefaultCrateMapName = "cratemap";
 
 THaEvData::THaEvData() :
   fMap(0), first_decode(true), fTrigSupPS(true),
-  fMultiBlockMode(false), fBlockIsDone(false), fCodaVersion(0),
+  fMultiBlockMode(false), fBlockIsDone(false),
   fEpicsEvtType(0), buffer(0), fDebugFile(0), event_type(0), event_length(0),
   event_num(0), run_num(0), evscaler(0), bank_tag(0), data_type(0),
-  block_size(0), tbLen(0), evcnt_coda3(0), run_type(0), fRunTime(0),
+  block_size(0), tbLen(0), run_type(0), fRunTime(0),
   evt_time(0), recent_event(0), buffmode(false), synchmiss(false),
   synchextra(false), fNSlotUsed(0), fNSlotClear(0),
   fDoBench(kFALSE), fBench(0), fNeedInit(true), fDebug(0), fExtra(0)
@@ -162,15 +162,19 @@ void THaEvData::SetDebug( UInt_t level )
 
 void THaEvData::SetOrigPS(Int_t evtyp)
 {
-  fTrigSupPS = true;  // default after Nov 2003
-  if (evtyp == PRESCALE_EVTYPE) {
+  switch(evtyp) {
+  case TS_PRESCALE_EVTYPE: // default after Nov 2003
+    fTrigSupPS = true;
+    break;
+  case PRESCALE_EVTYPE:
     fTrigSupPS = false;
-    return;
-  } else if (evtyp != TS_PRESCALE_EVTYPE) {
-    cout << "SetOrigPS::Warn: PS factors";
-    cout << " originate only from evtype ";
-    cout << PRESCALE_EVTYPE << "  or ";
-    cout << TS_PRESCALE_EVTYPE << endl;
+    break;
+  default:
+    cerr << "SetOrigPS::Warn: PS factors";
+    cerr << " originate only from evtype ";
+    cerr << PRESCALE_EVTYPE << "  or ";
+    cerr << TS_PRESCALE_EVTYPE << endl;
+    break;
   }
 }
 
@@ -204,17 +208,6 @@ void THaEvData::hexdump(const char* cbuff, size_t nlen)
     } cout << endl;
     p += NW;
   }
-}
-
-void THaEvData::SetCodaVersion(Int_t vers)
-{
-  if (vers != 2 && vers != 3) {
-    cout << "ERROR::THaEvData::SetCodaVersion version "<<vers;
-    cout << "  must be 2 or 3 only."<<endl;
-    cout << "Not setting CODA version ! "<<endl;
-    return;
-  }
-  fCodaVersion = vers;
 }
 
 void THaEvData::SetDefaultCrateMapName( const char* name )
@@ -360,6 +353,12 @@ Module* THaEvData::GetModule(Int_t roc, Int_t slot) const
   THaSlotData *sldat = crateslot[idx(roc,slot)];
   if (sldat) return sldat->GetModule();
   return NULL;
+}
+
+//_____________________________________________________________________________
+Int_t THaEvData::SetDataVersion( Int_t version )
+{
+  return (fDataVersion = version);
 }
 
 ClassImp(THaEvData)

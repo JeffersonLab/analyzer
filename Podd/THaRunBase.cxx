@@ -29,8 +29,8 @@ THaRunBase::THaRunBase( const char* description ) :
   TNamed(NOTINIT, description ),
   fNumber(-1), fType(0), fDate(UNDEFDATE,0), fNumAnalyzed(0),
   fDBRead(kFALSE), fIsInit(kFALSE), fOpened(kFALSE), fAssumeDate(kFALSE),
-  fDataSet(0), fDataRead(0), fDataRequired(kDate), fCodaVersion(0), fParam(0),
-  fRunParamClass(DEFRUNPARAM), fExtra(0)
+  fDataSet(0), fDataRead(0), fDataRequired(kDate), fParam(0),
+  fRunParamClass(DEFRUNPARAM), fDataVersion(0), fExtra(0)
 {
   // Normal & default constructor
 
@@ -43,8 +43,9 @@ THaRunBase::THaRunBase( const THaRunBase& rhs ) :
   fDate(rhs.fDate), fNumAnalyzed(rhs.fNumAnalyzed), fDBRead(rhs.fDBRead),
   fIsInit(rhs.fIsInit), fOpened(kFALSE), fAssumeDate(rhs.fAssumeDate),
   fDataSet(rhs.fDataSet), fDataRead(rhs.fDataRead),
-  fDataRequired(rhs.fDataRequired), fCodaVersion(rhs.fCodaVersion),
-  fParam(0), fRunParamClass(rhs.fRunParamClass), fExtra(0)
+  fDataRequired(rhs.fDataRequired), fParam(0),
+  fRunParamClass(rhs.fRunParamClass), fDataVersion(rhs.fDataVersion),
+  fExtra(0)
 {
   // Copy ctor
 
@@ -80,7 +81,6 @@ THaRunBase& THaRunBase::operator=(const THaRunBase& rhs)
      fDataSet    = rhs.fDataSet;
      fDataRead   = rhs.fDataRead;
      fDataRequired = rhs.fDataRequired;
-     fCodaVersion  = rhs.fCodaVersion;
      delete fParam;
      if( rhs.fParam ) {
        fParam = static_cast<THaRunParameters*>(rhs.fParam->IsA()->New());
@@ -88,6 +88,7 @@ THaRunBase& THaRunBase::operator=(const THaRunBase& rhs)
      } else
        fParam    = 0;
      fRunParamClass = rhs.fRunParamClass;
+     fDataVersion   = rhs.fDataVersion;
      delete fExtra;
      if( rhs.fExtra )
        fExtra = rhs.fExtra->Clone();
@@ -498,6 +499,14 @@ void THaRunBase::SetDataRequired( UInt_t mask )
   fDataRequired = (mask & all_info);
 }
 
+//_____________________________________________________________________________
+Int_t THaRunBase::SetDataVersion( Int_t version )
+{
+  // Set data format version (meaning is dependent on the underlying
+  // data source). THaRunBase does not use this variable.
+
+  return (fDataVersion = version);
+}
 //_____________________________________________________________________________
 void THaRunBase::SetEventRange( UInt_t first, UInt_t last )
 {

@@ -23,10 +23,9 @@ namespace Decoder {
 
 //_____________________________________________________________________________
 CodaDecoder::CodaDecoder() :
-  nroc(0), irn(MAXROC,0), fbfound(MAXROC*MAXSLOT,false), psfact(MAX_PSFACT,-1)
+  nroc(0), irn(MAXROC,0), fbfound(MAXROC*MAXSLOT,false), psfact(MAX_PSFACT,-1),
+  fdfirst(kTRUE), chkfbstat(1), evcnt_coda3(0)
 {
-  fCodaVersion=0;
-  evcnt_coda3=0;
   fNeedInit=true;
   first_decode=kFALSE;
   fMultiBlockMode=kFALSE;
@@ -64,17 +63,27 @@ Int_t CodaDecoder::LoadEvent(const UInt_t* evbuffer)
 {
   // Main engine for decoding, called by public LoadEvent() methods
 
-  if (fCodaVersion <= 0) {
-     cout << "This makes no sense, coda version "<<fCodaVersion<<" ??  Exit !!"<<endl;
-     exit(0);
+  if (fDataVersion <= 0) {
+     cout << "CODA version not set (="<<fDataVersion<<"). "
+          << "Do SetCodaVersion(codaData->getCodaVersion()) first"<<endl;
+     return HED_FATAL;
   }
+  if (fDataVersion != 2 && fDataVersion != 3) {
+     cout << "Unsupported CODA version = "<<fDataVersion<<"). Need 2 or 3."
+          << "Cannot analyze these data. Twonk."<<endl;
+     return HED_FATAL;
+  }
+
   event_length = evbuffer[0]+1;  // in longwords (4 bytes)
+  if( event_length < 0 ) { // FIXME: would be no issue if event_length was UInt_t
+    cerr << "ERROR: CodaDecoder::LoadEvent: unsupported event length = "
+         << evbuffer[0]+1 << endl;
+    return HED_ERR;
+  }
   event_num = 0;
   event_type = 0;
-  static Int_t fdfirst=1;
-  static Int_t chkfbstat=1;
   if (fDebugFile) *fDebugFile << "CodaDecode:: Loading event  ... "<<endl;
-  if (fDebugFile) *fDebugFile << "evbuffer ptr "<<evbuffer<<endl;
+  if (fDebugFile) *fDebugFile << "evbuffer ptr "<<hex<<evbuffer<<dec<<endl;
   assert( evbuffer );
   assert( fMap || fNeedInit );
   Int_t ret = HED_OK;
@@ -82,7 +91,7 @@ Int_t CodaDecoder::LoadEvent(const UInt_t* evbuffer)
   if (first_decode || fNeedInit) {
      ret = init_cmap();
      if (fDebugFile) {
-	 *fDebugFile << "\n CodaDecode:: Print of Crate Map"<<endl;
+	 *fDebugFile << endl << " CodaDecode:: Print of Crate Map"<<endl;
 	 fMap->print(*fDebugFile);
      } else {
       //      fMap->print();
@@ -96,9 +105,9 @@ Int_t CodaDecoder::LoadEvent(const UInt_t* evbuffer)
   if( fDoBench ) fBench->Begin("clearEvent");
   for( Int_t i=0; i<fNSlotClear; i++ ) crateslot[fSlotClear[i]]->clearEvent();
   if( fDoBench ) fBench->Stop("clearEvent");
-  if (fCodaVersion == 2) {
+  if (fDataVersion == 2) {
     event_type = evbuffer[1]>>16;
-    if(event_type < 0) return HED_ERR;
+    //if(event_type < 0) return HED_ERR; // can never happen 8-)
   } else {  // CODA version 3
     interpretCoda3(evbuffer);
   }
@@ -107,26 +116,26 @@ Int_t CodaDecoder::LoadEvent(const UInt_t* evbuffer)
       dump(evbuffer);
   }
  
-  if (event_type == PRESTART_EVTYPE) {
-     // Usually prestart is the first 'event'.  Call SetRunTime() to
-     // re-initialize the crate map since we now know the run time.
-     // This won't happen for split files (no prestart). For such files,
-     // the user should call SetRunTime() explicitly.
-     if (fCodaVersion == 2) { // for CODA3 these are set in interpretCoda3
-       SetRunTime(static_cast<ULong64_t>(evbuffer[2]));
-       run_num  = evbuffer[3];
-       run_type = evbuffer[4];
-       evt_time = fRunTime;
-     } 
+  if (event_type == PRESTART_EVTYPE ) {
+    // Usually prestart is the first 'event'.  Call SetRunTime() to
+    // re-initialize the crate map since we now know the run time.
+    // This won't happen for split files (no prestart). For such files,
+    // the user should call SetRunTime() explicitly.
+    // For CODA3 these are set in interpretCoda3 above.
+    if( fDataVersion == 2 ) {
+      SetRunTime(static_cast<ULong64_t>(evbuffer[2]));
+      run_num  = evbuffer[3];
+      run_type = evbuffer[4];
+      evt_time = fRunTime;
+    }
   } else if( event_type == PRESCALE_EVTYPE || event_type == TS_PRESCALE_EVTYPE ) {
     ret = prescale_decode(evbuffer);
     if( ret != HED_OK )
       return ret;
   }
   if (event_type <= MAX_PHYS_EVTYPE) {
-     if (fCodaVersion == 3) {
-         evcnt_coda3++;
-         event_num = evcnt_coda3;
+     if (fDataVersion == 3) {
+         event_num = ++evcnt_coda3;
          FindRocsCoda3(evbuffer);
      } else {
          event_num = evbuffer[4];
@@ -134,15 +143,13 @@ Int_t CodaDecoder::LoadEvent(const UInt_t* evbuffer)
      }
      recent_event = event_num;
 
-     if ((fdfirst==1) & (fDebugFile!=0)) {
-       fdfirst=0;
+     if (fdfirst && (fDebugFile!=0)) {
+       fdfirst=kFALSE;
        CompareRocs();
      }
 
    // Decode each ROC
    // From this point onwards there is no diff between CODA 2.* and CODA 3.*
-   // This is not part of the loop above because it may exit prematurely due
-   // to errors, which would leave the rocdat[] array incomplete.
 
     for( Int_t i=0; i<nroc; i++ ) {
 
@@ -302,7 +309,7 @@ Int_t CodaDecoder::LoadFromMultiBlock()
       for (Int_t slot = minslot; slot <= maxslot; slot++) {
  // for CODA3, cross-check the block size (found in trigger bank and, separately, in modules)
         if(fDebugFile) *fDebugFile << "cross chk blk size "<<roc<<"  "<<slot<<"  "<<crateslot[idx(roc,slot)]->GetModule()->GetBlockSize()<<"   "<<block_size<<endl;;
-        if (fCodaVersion > 2 && (crateslot[idx(roc,slot)]->GetModule()->GetBlockSize() != block_size)) {
+        if (fDataVersion > 2 && (crateslot[idx(roc,slot)]->GetModule()->GetBlockSize() != block_size)) {
 	  cout << "ERROR::CodaDecoder:: inconsistent block size between trig. bank and module"<<endl;
 	}
 	if (fMap->slotUsed(roc,slot) && crateslot[idx(roc,slot)]->GetModule()->IsMultiBlockMode()) {
@@ -313,8 +320,6 @@ Int_t CodaDecoder::LoadFromMultiBlock()
   }
   return HED_OK;
 }
-
-
 
 //_____________________________________________________________________________
 Int_t CodaDecoder::roc_decode( Int_t roc, const UInt_t* evbuffer,
@@ -532,14 +537,14 @@ Int_t CodaDecoder::LoadIfFlagData(const UInt_t* evbuffer)
     Int_t slot = (word&0xf800)>>11;
     Int_t nhit = (word&0x7ff);
     if(fDebug>0) {
-      cout << "THaEvData: WARNING: Fastbus slot ";
+      cout << "CodaDecoder: WARNING: Fastbus slot ";
       cout << slot << "  has extra hits "<<nhit<<endl;
     }
   }
   if( upword == 0xfabc0000) {
     Int_t datascan = *(evbuffer+3);
     if(fDebug>0 && (synchmiss || synchextra)) {
-      cout << "THaEvData: WARNING: Synch problems !"<<endl;
+      cout << "CodaDecoder: WARNING: Synch problems !"<<endl;
       cout << "Data scan word 0x"<<hex<<datascan<<dec<<endl;
     }
   }
@@ -731,7 +736,7 @@ void CodaDecoder::dump(const UInt_t* evbuffer) const
 }
 
 //_____________________________________________________________________________
-void CodaDecoder::CompareRocs(  )
+void CodaDecoder::CompareRocs()
 {
   if (!fMap || !fDebugFile) return;
   *fDebugFile<< "Comparing cratemap rocs with found rocs"<<endl;
@@ -887,6 +892,18 @@ Int_t CodaDecoder::prescale_decode(const UInt_t* evbuffer)
   }
   // Ok in any case
   return HED_OK;
+}
+
+//_____________________________________________________________________________
+Int_t CodaDecoder::SetCodaVersion( Int_t version )
+{
+  if (version != 2 && version != 3) {
+    cout << "ERROR::CodaDecoder::SetCodaVersion version " << version;
+    cout << "  must be 2 or 3 only." << endl;
+    cout << "Not setting CODA version ! " << endl;
+    return -1;
+  }
+  return (fDataVersion = version);
 }
 
 //_____________________________________________________________________________

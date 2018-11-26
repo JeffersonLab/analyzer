@@ -48,13 +48,13 @@ public:
           void         IncrNumAnalyzed( Int_t n=1 ) { fNumAnalyzed += n; }
   const   TDatime&     GetDate()        const { return fDate; }
           UInt_t       GetDataRequired() const { return fDataRequired; }
+  virtual Int_t        GetDataVersion()       { return fDataVersion; }
           UInt_t       GetNumAnalyzed() const { return fNumAnalyzed; }
           Int_t        GetNumber()      const { return fNumber; }
           Int_t        GetType()        const { return fType; }
           UInt_t       GetFirstEvent()  const { return fEvtRange[0]; }
           UInt_t       GetLastEvent()   const { return fEvtRange[1]; }
   THaRunParameters*    GetParameters()  const { return fParam; }
-          Int_t        GetCodaVersion() const { return fCodaVersion; }
   virtual Bool_t       HasInfo( UInt_t bits ) const;
   virtual Bool_t       HasInfoRead( UInt_t bits ) const;
           Bool_t       IsInit()         const { return fIsInit; }
@@ -63,12 +63,12 @@ public:
   virtual void         SetDate( const TDatime& date );
           void         SetDate( UInt_t tloc );
 	  void         SetDataRequired( UInt_t mask ); // mask is OR of EInfoType
+  virtual Int_t        SetDataVersion( Int_t version );
           void         SetFirstEvent( UInt_t n );
           void         SetLastEvent(  UInt_t n );
           void         SetEventRange( UInt_t first, UInt_t last );
   virtual void         SetNumber( Int_t number );
           void         SetRunParamClass( const char* classname );
-          void         SetCodaVersion(Int_t vers) { fCodaVersion = vers; }
   virtual void         SetType( Int_t type );
   virtual Int_t        Update( const THaEvData* evdata );
 
@@ -90,15 +90,15 @@ protected:
   UInt_t        fDataSet;       // Flags for info that is valid (see EInfoType)
   UInt_t        fDataRead;      // Flags for info found in data (see EInfoType)
   UInt_t        fDataRequired;  // Info required for Init() to succeed
-  Int_t         fCodaVersion;   // Version of CODA that wrote the data.
   THaRunParameters* fParam;     // Run parameters
   TString       fRunParamClass; // Class of object in fParam
+  Int_t         fDataVersion;   // Data format version (implementation-dependent)
   TObject*      fExtra;         // Additional member data (for binary compat.)
 
   virtual Int_t ReadDatabase();
   virtual Int_t ReadInitInfo();
 
-  ClassDef(THaRunBase,3)       // Base class for run objects
+  ClassDef(THaRunBase,4)       // Base class for run objects
 };
 
 

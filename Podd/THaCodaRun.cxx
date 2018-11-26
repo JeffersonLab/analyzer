@@ -10,6 +10,7 @@
 
 #include "THaCodaRun.h"
 #include "THaCodaData.h"
+#include <cassert>
 
 using namespace std;
 using namespace Decoder;
@@ -86,17 +87,47 @@ Int_t THaCodaRun::Close()
 }
 
 //_____________________________________________________________________________
+Int_t THaCodaRun::GetCodaVersion()
+{
+  // Get CODA format version of current data source.
+  // Returns either 2 or 3, or -1 on error (file not open, etc.)
+
+  assert(fCodaData);
+  if( fDataVersion > 0 ) // Override with user-specified value
+    return fDataVersion;
+  return (fDataVersion = fCodaData->getCodaVersion());
+}
+
+//_____________________________________________________________________________
+Int_t THaCodaRun::SetCodaVersion( Int_t vers )
+{
+  const char* const here = "THaCodaRun::SetCodaVersion";
+
+  if (vers != 2 && vers != 3) {
+    Warning( here, "Illegal CODA version = %d. Must be 2 or 3.", vers );
+    return -1;
+  }
+  if( IsOpen() ) {
+    Error( here, "CODA data source is open, cannot set version" );
+    return -1;
+  }
+  return (fDataVersion = vers);
+}
+
+//_____________________________________________________________________________
 const UInt_t* THaCodaRun::GetEvBuffer() const
 {
   // Return address of the event buffer allocated and filled
   // by fCodaData->codaRead()
 
+  assert( fCodaData );
   return fCodaData->getEvBuffer();
 }
 
 //_____________________________________________________________________________
 Bool_t THaCodaRun::IsOpen() const
 {
+  assert( fCodaData );
   return fCodaData->isOpen();
 }
 
@@ -105,6 +136,7 @@ Int_t THaCodaRun::ReadEvent()
 {
   // Read one event from CODA file.
 
+  assert( fCodaData );
   return ReturnCode( fCodaData->codaRead() );
 }
 

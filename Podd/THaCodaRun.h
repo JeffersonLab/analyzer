@@ -18,10 +18,14 @@ public:
   virtual THaCodaRun& operator=( const THaRunBase& );
   virtual ~THaCodaRun();
   
-  virtual Int_t        Close();
+  virtual Int_t  Close();
   virtual const UInt_t* GetEvBuffer() const;
-  virtual Bool_t       IsOpen() const;
-  virtual Int_t        ReadEvent();
+  virtual Bool_t IsOpen() const;
+  virtual Int_t  ReadEvent();
+  virtual Int_t  GetDataVersion() { return GetCodaVersion(); }
+  virtual Int_t  SetDataVersion( Int_t version ) { return SetCodaVersion(version); }
+  Int_t GetCodaVersion();
+  Int_t SetCodaVersion( Int_t version );
 
 protected:
   static Int_t ReturnCode( Int_t coda_retcode);
