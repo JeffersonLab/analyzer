@@ -172,7 +172,8 @@ def FindEVIO(env, build_it = True, fail_if_missing = True):
             os.makedirs(evio_local, mode=0o755)
         evio_tarpath = os.path.join(evio_local,evio_tarfile)
 
-        if not os.path.isfile(os.path.join(evio_local,'evio.h')):
+        if not os.path.isfile(os.path.join(evio_local,'evio.h')) \
+                 or not os.path.exists(evio_tarpath):
             # If needed, download EVIO archive
             if not os.path.exists(evio_tarpath):
                 evio_url = 'https://github.com/JeffersonLab/hallac_evio/archive/%s' % evio_tarfile
