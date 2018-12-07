@@ -1,27 +1,82 @@
-os: linux
-dist: trusty
-sudo: false
-compiler: gcc
 language: cpp
-env:
-  global:
-    - SCONSFLAGS="-j2"
-    - ANALYZER="."
-    - LD_LIBRARY_PATH=$ANALYZER:$LD_LIBRARY_PATH
+
+matrix:
+  include:
+  - os: linux
+    dist: xenial
+    name: "Ubuntu Xenial 16.04 LTS"
+    compiler: gcc
+  - os: linux
+    dist: trusty
+    name: "Ubuntu Trusty 14.04 LTS"
+    compiler: gcc
+  - os: osx
+    name: "macOS 10.13 Xcode 10.1"
+    osx_image: xcode10.1
+  - os: osx
+    name: "macOS 10.12 Xcode 9.2"
+    osx_image: xcode9.2
+
+addons:
+  homebrew:
+    packages:
+    - scons
+
+before_install:
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+      sudo apt-get update;
+      sudo apt-get install -y scons;
+      if [[ "$TRAVIS_JOB_NAME" == "Ubuntu Xenial 16.04 LTS" ]]; then
+        sudo apt-get install -y patchelf;
+      fi;
+    fi
+
 install:
-  - wget https://root.cern.ch/download/root_v6.12.06.Linux-ubuntu14-x86_64-gcc4.8.tar.gz -O /tmp/root.tar.gz
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+      if [[ "$TRAVIS_JOB_NAME" == "Ubuntu Xenial 16.04 LTS" ]]; then
+        wget https://root.cern.ch/download/root_v6.14.06.Linux-ubuntu16-x86_64-gcc5.4.tar.gz -O /tmp/root.tar.gz;
+      else
+        wget https://root.cern.ch/download/root_v6.12.06.Linux-ubuntu14-x86_64-gcc4.8.tar.gz -O /tmp/root.tar.gz;
+      fi;
+    fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+      if [[ "$TRAVIS_JOB_NAME" == "macOS 10.13 Xcode 10.1" ]]; then
+        wget https://root.cern.ch/download/root_v6.14.06.macosx64-10.13-clang100.tar.gz -O /tmp/root.tar.gz;
+      else
+         wget https://root.cern.ch/download/root_v6.14.06.macosx64-10.12-clang90.tar.gz -O /tmp/root.tar.gz;
+        ln -s python2 /usr/local/bin/python;
+        export PATH=/usr/local/opt/python/libexec/bin:$PATH;
+      fi;
+    fi
   - tar -xzf /tmp/root.tar.gz
   - source ./root/bin/thisroot.sh
+  - root-config --version
   - python --version
+  - python -c "import ssl; print(ssl.OPENSSL_VERSION)"
   - scons --version
+  - cmake --version
+
+env:
+  global:
+    - MAKEFLAGS="-j2"
+    - SCONSFLAGS="-j2"
+    - ANALYZER="$(pwd)"
+    - LD_LIBRARY_PATH=$ANALYZER:$LD_LIBRARY_PATH
+    - DYLD_LIBRARY_PATH=$ANALYZER:$DYLD_LIBRARY_PATH
+
 script:
   - scons
+  - mkdir build; cd build; cmake ..; make; cd ..
+
 after_success:
-  - ldd $ANALYZER/apps/analyzer
   - $ANALYZER/apps/analyzer --version
   - $ANALYZER/apps/analyzer -q
+  - $ANALYZER/build/apps/analyzer --version
+  - $ANALYZER/build/apps/analyzer -q
+
 branches:
   only: master
+
 notifications:
   email:
     recipients: ole@jlab.org
