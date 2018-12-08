@@ -29,7 +29,10 @@ unset(_errval)
 
 # This command is system dependent. It requires GNU tar or macOS BSD tar in PATH.
 # cmake -E tar does not support --strip-components and extracting a filename glob.
-execute_process(COMMAND tar -x --strip-components=3 -f ${EVIO_TARFILE} "*/libsrc"
+if(UNIX AND NOT APPLE)
+  set(TAR_WILDCARDS_FLAG "--wildcards")
+endif()
+execute_process(COMMAND tar -x --strip-components=3 -f ${EVIO_TARFILE} ${TAR_WILDCARDS_FLAG} "*/libsrc"
   WORKING_DIRECTORY ${EVIO_SOURCE_DIR})
 configure_file(evio/CMakeLists.txt.in ${EVIO_SOURCE_DIR}/CMakeLists.txt @ONLY)
 file(COPY evio/EVIOConfig.cmake.in DESTINATION ${EVIO_SOURCE_DIR})
