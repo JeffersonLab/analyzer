@@ -102,6 +102,8 @@ private:
        UInt_t allocd;      // Allocated size of data arrays
        UInt_t alloci;      // Allocated size of dataindex array
 
+       int compressdataindexImpl(int numidx);
+
        ClassDef(THaSlotData,0)   //  Data in one slot of fastbus, vme, camac
 };
 
@@ -186,31 +188,11 @@ void THaSlotData::clearEvent() {
 inline
 int THaSlotData::compressdataindex(int numidx) {
 
-  // first check if it is more favourable to expand it, or to reshuffle
-  if( firstfreedataidx+numidx >= static_cast<int>(alloci) ) {
-    if( (numholesdataidx/static_cast<double>(alloci)>0.5)&&(numholesdataidx>numidx) ) {
-      // reshuffle, lots of holes
-      UShort_t* tmp = new UShort_t[alloci];
-      firstfreedataidx=0;
-      for (UShort_t i=0; i<numchanhit; i++) {
-	UShort_t chan=chanlist[i];
-	for (UShort_t j=0; j<numHits[chan]; j++) {
-	  tmp[firstfreedataidx+j]=dataindex[idxlist[chan]+j];
-	}
-	firstfreedataidx=firstfreedataidx+numMaxHits[chan];
-      }
-      delete [] dataindex; dataindex=tmp;
-    } else {
-      UShort_t old_alloci = alloci;
-      alloci *= 2;
-      // FIXME one should check that it doesnt grow too much
-      UShort_t* tmp = new UShort_t[alloci];
-      memcpy(tmp,dataindex,old_alloci*sizeof(UShort_t));
-      delete [] dataindex; dataindex = tmp;
-    }
-  }
+  if( firstfreedataidx+numidx >= static_cast<int>(alloci) )
+    return compressdataindexImpl(numidx);
+
   return 0;
-};
+}
 
 }
 
