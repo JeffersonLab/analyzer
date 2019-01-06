@@ -20,6 +20,7 @@ namespace Podd {
   public:
     MethodVar( THaVar* pvar, const void* addr, VarType type,
 	       TMethodCall* method );
+    virtual ~MethodVar();
 
     virtual const void*  GetDataPointer( Int_t i = 0 ) const;
     virtual Bool_t       IsBasic() const;

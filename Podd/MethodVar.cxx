@@ -36,6 +36,14 @@ MethodVar::MethodVar( THaVar* pvar, const void* addr,
 }
 
 //_____________________________________________________________________________
+MethodVar::~MethodVar()
+{
+  // Destructor
+
+  delete fMethod;
+}
+
+//_____________________________________________________________________________
 const void* MethodVar::GetDataPointer( Int_t i ) const
 {
   // Get pointer to data via method call on the object pointed to by fValueP.
