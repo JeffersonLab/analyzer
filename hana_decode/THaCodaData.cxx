@@ -18,6 +18,7 @@
 #include <iostream>
 #include <cstring>  // for strdup
 #include <cstdlib>  // for free
+#include <errno.h>
 
 using namespace std;
 

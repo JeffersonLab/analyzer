@@ -125,7 +125,7 @@ def FindEVIO(env, build_it = True, fail_if_missing = True):
     evio_arch = platform + '-' + machine
     if evio_dir:
         evio_lib_dir2 = os.path.join(evio_dir,evio_arch,'lib')
-        evio_inc_dir2 = os,path.join(evio_dir,evio_arch,'include')
+        evio_inc_dir2 = os.path.join(evio_dir,evio_arch,'include')
         th2 = env.FindFile(evio_header_file,evio_inc_dir2)
         tl2 = env.FindFile(evio_library_file,evio_lib_dir2)
     else:
