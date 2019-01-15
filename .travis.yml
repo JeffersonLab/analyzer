@@ -25,7 +25,7 @@ addons:
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
       sudo apt-get update;
-      sudo apt-get install -y scons;
+      sudo apt-get install -y scons libtbb2;
       if [[ "$TRAVIS_JOB_NAME" == "Ubuntu Xenial 16.04 LTS" ]]; then
         sudo apt-get install -y patchelf;
       fi;
