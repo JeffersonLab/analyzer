@@ -2,11 +2,11 @@
 
 message(STATUS "Will build local copy of EVIO")
 
-set(EVIO_VERSION 4.4.6)
+set(EVIO_VERSION 5.2)
 set(repo hallac_evio)
-set(release evio-${EVIO_VERSION})
+set(release hallac-evio-${EVIO_VERSION})
 set(tarfile ${release}.tar.gz)
-set(EVIO_HASH 926a3314889a90afeb41725c6a2055f9)
+set(EVIO_HASH d7fc44ce1ddc1d9e0011307621a6f3b5)
 
 set(EVIO_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/evio/src)
 set(EVIO_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/evio/build)
