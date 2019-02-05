@@ -5,13 +5,16 @@
 
 import os
 import glob
-import configure
-import podd_util
+import sys
 
 EnsureSConsVersion(2,3,0)
 
 baseenv = Environment(ENV = os.environ,tools=["default","disttar","symlink","rootcint"],
                       toolpath=['site_scons'])
+
+sys.path.insert(0,'./site_scons')
+import configure
+import podd_util
 
 #baseenv.Append(verbose = 5)
 
