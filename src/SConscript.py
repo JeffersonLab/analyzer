@@ -1,12 +1,13 @@
 ###### Hall A Software src SConscript Build File #####
 ###### Author:  Edward Brash (brash@jlab.org) June 2013
 
-import os
-import re
-import SCons.Util
+from podd_util import build_library, write_compiledata
 Import('baseenv')
 
-list = Split("""
+libname = 'HallA'
+
+# Sources and headers
+src = """
 BdataLoc.C                ExtraData.C                FileInclude.C
 FixedArrayVar.C           MethodVar.C                SeqCollectionMethodVar.C
 SeqCollectionVar.C        THaADCHelicity.C           THaAnalysisObject.C
@@ -45,36 +46,18 @@ THaVDCTimeToDistConv.C    THaVDCTrackID.C            THaVDCWire.C
 THaVertexModule.C         THaVform.C                 THaVhist.C
 VariableArrayVar.C        Variable.C                 VDCeff.C
 VectorObjMethodVar.C      VectorObjVar.C             VectorVar.C
-""")
+"""
 
-baseenv.Object('main.C')
+# Generate ha_compiledata.h header file
+compiledata = 'ha_compiledata.h'
+write_compiledata(baseenv,compiledata)
 
-sotarget = 'HallA'
+extrahdrs = ['VarDef.h','VarType.h',compiledata]
 
-srclib = baseenv.SharedLibrary(target = sotarget,\
-             source = list+[baseenv.subst('$MAIN_DIR')+'/haDict.C'],\
-             SHLIBPREFIX = baseenv.subst('$MAIN_DIR')+'/lib',\
-             LIBS = [''], LIBPATH = [''])
-#print ('Source shared library = %s\n' % srclib)
-
-linkbase = baseenv.subst('$SHLIBPREFIX')+sotarget
-
-cleantarget = linkbase+baseenv.subst('$SHLIBSUFFIX')
-majorcleantarget = linkbase+baseenv.subst('$SOSUFFIX')
-localmajorcleantarget = '../'+linkbase+baseenv.subst('$SOSUFFIX')
-shortcleantarget = linkbase+baseenv.subst('$SOSUFFIX')+'.'+baseenv.subst('$SOVERSION')
-localshortcleantarget = '../'+linkbase+baseenv.subst('$SOSUFFIX')+'.'+\
-                        baseenv.subst('$SOVERSION')
-
-#print ('cleantarget = %s\n' % cleantarget)
-#print ('majorcleantarget = %s\n' % majorcleantarget)
-#print ('shortcleantarget = %s\n' % shortcleantarget)
-try:
-    os.symlink(cleantarget,localshortcleantarget)
-    os.symlink(shortcleantarget,localmajorcleantarget)
-except:
-    pass
-
-Clean(srclib,cleantarget)
-Clean(srclib,localmajorcleantarget)
-Clean(srclib,localshortcleantarget)
+poddlib = build_library(baseenv, libname, src, extrahdrs,
+                        extradicthdrs = ['THaGlobals.h'],
+                        useenv = False,
+                        versioned = True,
+                        destdir = baseenv.subst('$HA_DIR')
+                        )
+Clean(poddlib, compiledata)

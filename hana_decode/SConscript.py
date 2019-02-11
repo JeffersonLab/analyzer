@@ -2,20 +2,14 @@
 ###### Author:  Edward Brash (brash@jlab.org) June 2013
 
 import os
-import re
-import SCons.Util
+from configure import FindEVIO
+from podd_util import build_library
 Import('baseenv')
 
-standalone = baseenv.subst('$STANDALONE')
-#print ('Compiling decoder executables:  STANDALONE = %s\n' % standalone)
+libname = 'dc'
+altname = 'haDecode'
 
-standalonelist = Split("""
-tstoo tstfadc tstf1tdc tstio tdecpr prfact epicsd tdecex tst1190
-""")
-# Still to come, perhaps, are (etclient, tstcoda) which should be compiled
-# if the ONLINE_ET variable is set.
-
-list = Split("""
+src = """
 Caen1190Module.C
 Caen775Module.C
 Caen792Module.C
@@ -44,61 +38,81 @@ THaFastBusWord.C
 THaSlotData.C
 THaUsrstrutils.C
 VmeModule.C
-""")
+"""
 
-# Requires SCons >= 2.3.5 for "exclude" keyword
-#list = Glob('*.C',exclude=['*_main.C','*_onl.C','calc_thresh.C',
-#                           'THaEtClient.C','THaGenDetTest.C'])
+dcenv = baseenv.Clone()
 
-#baseenv.Append(LIBPATH=['$HA_DIR'])
+# Find/build EVIO and configure the decoder build environment for it
+FindEVIO(dcenv)
+local_evio = (dcenv['LOCAL_EVIO'] == 1)
+evioname = 'evio'
+eviolib = dcenv.subst('$SHLIBPREFIX')+evioname+dcenv.subst('$SHLIBSUFFIX')
+dcenv.Append(CPPPATH = dcenv.subst('$EVIO_INC'))
+dcenv.Replace(LIBS = evioname, LIBPATH = dcenv.subst('$EVIO_LIB'),
+              RPATH = [dcenv.subst('$EVIO_LIB')])
+if local_evio:
+    dc_install_rpath = []  # analyzer already contains the installation libdir
+else:
+    dc_install_rpath = dcenv['RPATH']
 
+# Decoder library
+dclib = build_library(dcenv, libname, src,
+                      extrahdrs = ['Decoder.h'],
+                      extradicthdrs = ['THaBenchmark.h'],
+                      dictname = altname,
+                      install_rpath = dc_install_rpath,
+                      versioned = True,
+                      destdir = dcenv.subst('$HA_DIR')
+                      )
+
+# Needed for locally built EVIO library
+# (Versioning in build_library sets SHLIBSUFFIX, so plain libevio.so is no
+# longer found ... sigh)
+if local_evio:
+    dcenv.Depends(dclib, os.path.join(dcenv.subst('$EVIO_LIB'), eviolib))
+
+# ----- Standalone executables -----
 proceed = "1" or "y" or "yes" or "Yes" or "Y"
-if baseenv.subst('$STANDALONE')==proceed or baseenv.GetOption('clean'):
-    for scalex in standalonelist:
-        pname = scalex
+if dcenv.subst('$STANDALONE')==proceed or dcenv.GetOption('clean') \
+    or 'uninstall' in COMMAND_LINE_TARGETS:
 
-        if scalex=='epicsd':
-            main = 'epics_main.C'
+    thisdir_fullpath = Dir('.').path
+    thisdir = os.path.basename(os.path.normpath(thisdir_fullpath))
+
+    # Executables
+    appnames = ['tstfadc', 'tstfadcblk', 'tstf1tdc', 'tstio',
+                'tstoo', 'tdecpr', 'prfact', 'epicsd', 'tdecex',
+                'tst1190']
+    apps = []
+    sources = []
+    env = baseenv.Clone()
+    # SCons seems to ignore $RPATH on macOS... sigh
+    if env['PLATFORM'] == 'darwin':
+        try:
+            for rp in env['RPATH']:
+                env.Append(LINKFLAGS = ['-Wl,-rpath,'+rp])
+        except KeyError:
+            pass
+
+    for a in appnames:
+        if a == 'epicsd':
+            src = ['epics_main.C']
         else:
-            main = scalex+'_main.C'
+            src = [a+'_main.C']
+            if a == 'tdecex':
+                src.append('THaGenDetTest.C')
 
-        if scalex=='tdecex':
-            pname = baseenv.Program(target = pname, source = [main,'THaGenDetTest.C'])
-        else:
-            pname = baseenv.Program(target = pname, source = [main])
+        app = env.Program(target = a, source = src)
+        apps.append(app)
+        sources.append(src)
 
-        baseenv.Install('../bin',pname)
-        baseenv.Alias('install',['../bin'])
+        # Installation
+        install_prefix = env.subst('$INSTALLDIR')
+        bin_dir = os.path.join(install_prefix,'bin')
+        #lib_dir = os.path.join(install_prefix,env.subst('$LIBSUBDIR'))
+        rel_lib_dir = os.path.join(env['RPATH_ORIGIN_TAG'],
+                                   os.path.join('..',env.subst('$LIBSUBDIR')))
+        src_dir = os.path.join(install_prefix,'src',thisdir)
 
-sotarget = 'dc'
-
-dclib = baseenv.SharedLibrary(target = sotarget,\
-            source = list+[baseenv.subst('$MAIN_DIR')+'/THaDecDict.C'],\
-            SHLIBPREFIX = baseenv.subst('$MAIN_DIR')+'/lib',\
-            LIBS = [''], LIBPATH = [''])
-#print ('Decoder shared library = %s\n' % dclib)
-
-linkbase = baseenv.subst('$SHLIBPREFIX')+sotarget
-
-cleantarget = linkbase+baseenv.subst('$SHLIBSUFFIX')
-majorcleantarget = linkbase+baseenv.subst('$SOSUFFIX')
-localmajorcleantarget = '../'+linkbase+baseenv.subst('$SOSUFFIX')
-shortcleantarget = linkbase+baseenv.subst('$SOSUFFIX')+'.'+baseenv.subst('$SOVERSION')
-localshortcleantarget = '../'+linkbase+baseenv.subst('$SOSUFFIX')+'.'+\
-                        baseenv.subst('$SOVERSION')
-
-#print ('cleantarget = %s\n' % cleantarget)
-#print ('majorcleantarget = %s\n' % majorcleantarget)
-#print ('shortcleantarget = %s\n' % shortcleantarget)
-try:
-    os.symlink(cleantarget,localshortcleantarget)
-    os.symlink(shortcleantarget,localmajorcleantarget)
-except:
-    pass
-
-Clean(dclib,cleantarget)
-Clean(dclib,localmajorcleantarget)
-Clean(dclib,localshortcleantarget)
-
-#baseenv.Install('../lib',dclib)
-#baseenv.Alias('install',['../lib'])
+        env.InstallWithRPATH(bin_dir,apps,[rel_lib_dir])
+        env.Install(src_dir,sources)

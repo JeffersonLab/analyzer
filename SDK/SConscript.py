@@ -1,27 +1,21 @@
 ###### Hall A SDK Main SConscript File #####
-###### Author:	Edward Brash (brash@jlab.org) May 2017
 
-import re
+### Modify 'libname' and the list of source files 'src' as needed
 
+from podd_util import build_library
 Import ('baseenv')
 
-######## ROOT Dictionaries #########
+# Library name (lib<libname>.so will be built)
+libname = 'User'
 
-rootuserdict = baseenv.subst('$MAIN_DIR')+'/RootUserDict.C'
-userheaders = Split("""
-UserApparatus.h    UserDetector.h     UserEvtHandler.h   UserModule.h       
-UserScintillator.h SkeletonModule.h   User_LinkDef.h
-""")
-baseenv.RootCint(rootuserdict,userheaders)
-baseenv.Clean(rootuserdict,re.sub(r'\.C\Z','_rdict.pcm',rootuserdict))
+# Sources (each must have a corresponding .h header file)
+# This must be a space-separated string, not a Python list
+src = """
+UserApparatus.cxx    UserDetector.cxx     UserEvtHandler.cxx   UserModule.cxx
+UserScintillator.cxx SkeletonModule.cxx
+"""
 
-#######  Start of main SConscript ###########
-
-list = Split("""
-UserApparatus.cxx    UserModule.cxx
-UserDetector.cxx     UserEvtHandler.cxx   UserScintillator.cxx SkeletonModule.cxx
-""")
-
-sotarget = 'User'
-srclib = baseenv.SharedLibrary(target = sotarget, source = list+[rootuserdict],\
-                               LIBS = [''], LIBPATH = [''])
+# Tell SCons to build this library from these sources.
+# A ROOT dictionary, defined in <libname>_LinkDef.h, will be built as well.
+# For more info, see the documention in $ANALYZER/site_scons/podd_util.py
+build_library(baseenv, libname, src)

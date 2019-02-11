@@ -1,20 +1,27 @@
 #!/usr/bin/env python
 ###### Hall A Software Main SConstruct Build File #####
 ###### Author:	Edward Brash (brash@jlab.org) June 2013
+###### Modified for Podd 1.7 directory layout: Ole Hansen (ole@jlab.org) Sep 2018
 
 import os
-import SCons
+import glob
+import sys
+
+EnsureSConsVersion(2,3,5)
+
+baseenv = Environment(ENV = os.environ,tools=["default","disttar","symlink","rootcint"],
+                      toolpath=['site_scons'])
+
+sys.path.insert(0,'./site_scons')
 import configure
-from rootcint import rootcint
+import podd_util
 
-EnsureSConsVersion(2,1,0)
-
-baseenv = Environment(ENV = os.environ,tools=["default","disttar"],toolpath=['site_scons'])
+#baseenv.Append(verbose = 5)
 
 ####### Hall A Build Environment #############
 baseenv.Append(MAIN_DIR = Dir('.').abspath)
 baseenv.Append(HA_DIR = baseenv.subst('$MAIN_DIR'))
-baseenv.Append(HA_SRC = baseenv.subst('$HA_DIR')+'/src ')
+baseenv.Append(HA_SRC = baseenv.subst('$HA_DIR')+'/src')
 baseenv.Append(HA_DC = baseenv.subst('$HA_DIR')+'/hana_decode ')
 baseenv.Append(MAJORVERSION = '1')
 baseenv.Append(MINORVERSION = '6')
@@ -31,20 +38,42 @@ ivercode = 65536*int(float(baseenv.subst('$SOVERSION'))) + \
                        int(float(baseenv.subst('$SOVERSION'))))) + \
                        int(float(baseenv.subst('$PATCH')))
 baseenv.Append(VERCODE = ivercode)
-baseenv.Append(CPPPATH = ['$HA_SRC','$HA_DC'])
+baseenv.Append(CPPPATH = ['$HA_DIR','$HA_SRC','$HA_DC'])
+install_prefix = os.getenv('SCONS_INSTALL_PREFIX')
+if not install_prefix:
+    install_prefix = os.path.join(os.getenv('HOME'),'.local')
+baseenv.Append(INSTALLDIR = install_prefix)
+print ('Will use INSTALLDIR = "%s"' % baseenv.subst('$INSTALLDIR'))
+baseenv.Alias('install',baseenv.subst('$INSTALLDIR'))
 
+# Default RPATH handling like CMake's default: always set in build location,
+#    delete when installing
+# If rpath=1 given, then set installation RPATH to installation libdir
+if int(ARGUMENTS.get('rpath',0)):
+    baseenv.Replace(ADD_INSTALL_RPATH = '1')
+baseenv.AddMethod(podd_util.InstallWithRPATH)
+
+######## Configure Section #######
+
+configure.config(baseenv,ARGUMENTS)
 configure.FindROOT(baseenv)
-configure.FindEVIO(baseenv)
 
-bld = Builder(action=rootcint)
-baseenv.Append(BUILDERS = {'RootCint': bld})
+conf = Configure(baseenv)
+if not baseenv.GetOption('clean') and not baseenv.GetOption('help') \
+    and not 'uninstall' in COMMAND_LINE_TARGETS:
+
+    if not conf.CheckCXX():
+        print('!!! Your compiler and/or environment is not correctly configured.')
+        Exit(1)
+    if conf.CheckCXXHeader('sstream'):
+        conf.env.Append(CPPDEFINES = 'HAS_SSTREAM')
+baseenv = conf.Finish()
 
 ######## cppcheck ###########################
 
-proceed = "1" or "y" or "yes" or "Yes" or "Y"
-if baseenv.subst('$CPPCHECK')==proceed:
-    is_cppcheck = configure.which('cppcheck')
-    print ("Path to cppcheck is %s\n" % is_cppcheck)
+if baseenv.subst('$CPPCHECK') == '1':
+    is_cppcheck = baseenv.WhereIs('cppcheck')
+    print ("Path to cppcheck is %s" % is_cppcheck)
 
     if(is_cppcheck == None):
         print('!!! cppcheck not found on this system.  Check if cppcheck is installed and in your PATH.')
@@ -56,7 +85,7 @@ if baseenv.subst('$CPPCHECK')==proceed:
 
 ####### build source distribution tarball #############
 
-if baseenv.subst('$SRCDIST')==proceed:
+if baseenv.subst('$SRCDIST') == '1':
     baseenv['DISTTAR_FORMAT']='gz'
     baseenv.Append(
         DISTTAR_EXCLUDEEXTS=['.o','.os','.so','.a','.dll','.cache','.pyc','.cvsignore','.dblite','.log', '.gz', '.bz2', '.zip','.pcm','.supp','.patch','.txt','.dylib']
@@ -66,24 +95,7 @@ if baseenv.subst('$SRCDIST')==proceed:
     tar = baseenv.DistTar("dist/analyzer-"+baseenv.subst('$VERSION'),[baseenv.Dir('#')])
     print ("tarball target = %s" % tar)
 
-###	tar_command = 'tar cvz -C .. -f ../' + baseenv.subst('$NAME') + '.tar.gz -X .exclude -V "JLab/Hall A C++ Analysis Software '+baseenv.subst('$VERSION') + ' `date -I`" ' + '../' + baseenv.subst('$NAME') + '/.exclude ' + '../' + baseenv.subst('$NAME') + '/Changelog ' + '../' + baseenv.subst('$NAME') + '/src ' + '../' + baseenv.subst('$NAME') + '/hana_decode ' + '../' + baseenv.subst('$NAME') + '/Makefile ' + '../' + baseenv.subst('$NAME') + '/*.py' + '../' + baseenv.subst('$NAME') + '/SConstruct'
-
-######## Configure Section #######
-
-if not (baseenv.GetOption('clean') or baseenv.GetOption('help')):
-
-   configure.config(baseenv,ARGUMENTS)
-
-   conf = Configure(baseenv)
-   if not conf.CheckCXX():
-       print('!!! Your compiler and/or environment is not correctly configured.')
-       #Exit(1)
-       # if not conf.CheckFunc('printf'):
-       #         print('!!! Your compiler and/or environment is not correctly configured.')
-       #         Exit(1)
-   if conf.CheckCXXHeader('sstream'):
-       conf.env.Append(CPPDEFINES = 'HAS_SSTREAM')
-   baseenv = conf.Finish()
+###    tar_command = 'tar cvz -C .. -f ../' + baseenv.subst('$NAME') + '.tar.gz -X .exclude -V "JLab/Hall A C++ Analysis Software '+baseenv.subst('$VERSION') + ' `date -I`" ' + '../' + baseenv.subst('$NAME') + '/.exclude ' + '../' + baseenv.subst('$NAME') + '/Changelog ' + '../' + baseenv.subst('$NAME') + '/src ' + '../' + baseenv.subst('$NAME') + '/hana_decode ' + '../' + baseenv.subst('$NAME') + '/Makefile ' + '../' + baseenv.subst('$NAME') + '/*.py' + '../' + baseenv.subst('$NAME') + '/SConstruct'
 
 Export('baseenv')
 
@@ -94,17 +106,21 @@ Export('baseenv')
 
 ####### Start of main SConstruct ############
 
-hallalib = 'HallA'
-dclib = 'dc'
-eviolib = 'evio'
+baseenv.Append(LIBPATH=['$HA_SRC','$HA_DC'])
+baseenv.Prepend(LIBS=['HallA','dc'])
+baseenv.Prepend(LIBPATH=['$HA_DIR'])
+baseenv.Append(RPATH = ['$HA_DIR'])
 
-baseenv.Append(LIBPATH=['$HA_DIR','$EVIO_LIB','$HA_SRC','$HA_DC'])
-baseenv.Prepend(LIBS=[hallalib,dclib,eviolib])
-baseenv.Replace(SOSUFFIX = baseenv.subst('$SHLIBSUFFIX'))
-#baseenv.Replace(SHLIBSUFFIX = '.so')
-baseenv.Append(SHLIBSUFFIX = '.'+baseenv.subst('$VERSION'))
+SConscript(dirs = ['src', 'hana_decode','.'],
+           name='SConscript.py',exports='baseenv')
 
-SConscript(dirs = ['./','src/','hana_decode/'],name='SConscript.py',exports='baseenv')
+# Install site_scons so that modules can be built against the installation
+baseenv.Install(os.path.join('$INSTALLDIR','site_scons'),
+                glob.glob(os.path.join('site_scons','*')))
+
+if 'uninstall' in COMMAND_LINE_TARGETS:
+    baseenv.Command("uninstall-scons-installed-files", None, Delete(FindInstalledFiles()))
+    baseenv.Alias("uninstall", "uninstall-scons-installed-files")
 
 #######  End of SConstruct #########
 
