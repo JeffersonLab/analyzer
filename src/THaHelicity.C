@@ -24,6 +24,8 @@ THaHelicity::THaHelicity( const char* name, const char* description,
 
 //____________________________________________________________________
 THaHelicity::THaHelicity()
+  : THaADCHelicity(), fG0_Hel(kUnknown),
+    fGoodHel(false), fGoodHel2(false)
 {
   // Default constructor - for ROOT I/O only
 }

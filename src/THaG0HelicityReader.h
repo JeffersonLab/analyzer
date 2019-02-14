@@ -59,7 +59,7 @@ protected:
   // the ROC (0 = first word of ROC), otherwise it's from the header
   // (0 = first word after header).
   ROCinfo  fROCinfo[kROC3+1]; // Primary readouts and two redundant clocks
-
+                              // helroc, timeroc, time2roc, time3roc
   Int_t    fG0Debug;          // Debug level
   Bool_t   fHaveROCs;         // Required ROCs are defined
   Bool_t   fNegGate;          // Invert polarity of gate, so that 0=active

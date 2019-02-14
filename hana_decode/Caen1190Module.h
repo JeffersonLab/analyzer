@@ -9,6 +9,7 @@
 
 
 #include "VmeModule.h"
+#include <cstring>  // for memset
 
 namespace Decoder {
 
@@ -16,14 +17,15 @@ namespace Decoder {
 
   public:
 
-    Caen1190Module() : VmeModule() {}
+    Caen1190Module() : fNumHits(0), fTdcData(0), slot_data(0)
+    { memset(&tdc_data, 0, sizeof(tdc_data)); }
     Caen1190Module(Int_t crate, Int_t slot);
     virtual ~Caen1190Module();
 
     using Module::GetData;
 
     virtual void Init();
-    virtual void Clear(const Option_t *opt);
+    virtual void Clear(Option_t *opt);
     virtual Int_t Decode(const UInt_t *p);
     virtual Int_t GetData(Int_t chan, Int_t hit) const;
 

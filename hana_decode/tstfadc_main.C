@@ -231,91 +231,88 @@ int main(int argc, char* argv[])
       evdata->LoadEvent(data);
       // Loop over slots
       for(uint32_t islot = SLOTMIN; islot < NUMSLOTS; islot++) {
-	if (evdata->GetNumRaw(crateNumber, islot) != 0) {
-	  Fadc250Module *fadc = NULL;
-	  fadc = dynamic_cast <Fadc250Module*> (evdata->GetModule(crateNumber, islot));
-	  if (fadc != NULL) {
-	    //fadc->CheckDecoderStatus();
-	    // Loop over channels
-	    for (uint32_t chan = 0; chan < NADCCHAN; chan++) {
-	      // Initilize variables
-	      Int_t  fadc_mode, num_fadc_events, num_fadc_samples;
-	      Bool_t raw_mode; 
-	      fadc_mode = num_fadc_events = num_fadc_samples = raw_mode = 0;
-	      // Acquire the FADC mode
-	      fadc_mode = fadc->GetFadcMode(); fadc_mode_const = fadc_mode;
-	      if (debugfile) *debugfile << "Channel " << chan << " is in FADC Mode " << fadc_mode << endl;
-	      raw_mode  = ((fadc_mode == 1) || (fadc_mode == 8) || (fadc_mode == 10));
-	      
-	      // Acquire the number of FADC events
-	      num_fadc_events = fadc->GetNumFadcEvents(chan);
-	      // If in raw mode, acquire the number of FADC samples
-	      if (raw_mode) {
-		num_fadc_samples = 0;
-		num_fadc_samples = fadc->GetNumFadcSamples(chan, ievent);
-	      }
-	      if (num_fadc_events > 0) {
-		// Generate FADC plots
-		GeneratePlots(fadc_mode, islot, chan);
-	      	for (Int_t jevent = 0; jevent < num_fadc_events; jevent++) {
-		  // Debug output
-		  if ((fadc_mode == 1 || fadc_mode == 8) && num_fadc_samples > 0) 
-		    if (debugfile) *debugfile << "FADC EMULATED PI DATA = " << fadc->GetEmulatedPulseIntegralData(chan) << endl;
-		  if (fadc_mode == 7 || fadc_mode == 8 || fadc_mode == 9 || fadc_mode == 10) {
-		    if (fadc_mode != 8) {if (debugfile) *debugfile << "FADC PI DATA = " << fadc->GetPulseIntegralData(chan, jevent) << endl;}
-		    if (debugfile) *debugfile << "FADC PT DATA = " << fadc->GetPulseTimeData(chan, jevent) << endl;
-		    if (debugfile) *debugfile << "FADC PPED DATA = " << fadc->GetPulsePedestalData(chan, jevent) / NPED << endl;
-		    if (debugfile) *debugfile << "FADC PPEAK DATA = " << fadc->GetPulsePeakData(chan, jevent) << endl;
-		  }
-		  // Fill histos
-	      	  if ((fadc_mode == 1 || fadc_mode == 8) && num_fadc_samples > 0) h_pinteg[islot][chan]->Fill(fadc->GetEmulatedPulseIntegralData(chan));
-		  else if (fadc_mode == 7 || fadc_mode == 8 || fadc_mode == 9 || fadc_mode == 10) {
-		    if (fadc_mode != 8) {h_pinteg[islot][chan]->Fill(fadc->GetPulseIntegralData(chan, jevent));}
-		    if (fadc_mode == 8 || fadc_mode == 1) {h_pinteg[islot][chan]->Fill(fadc->GetEmulatedPulseIntegralData(chan));}
-		    h_ptime[islot][chan]->Fill(fadc->GetPulseTimeData(chan, jevent));
-		    h_pped[islot][chan]->Fill(fadc->GetPulsePedestalData(chan, jevent) / NPED);
-		    h_ppeak[islot][chan]->Fill(fadc->GetPulsePeakData(chan, jevent));
-		    // 2D Histos
-		    if (fadc_mode != 8) {h2_pinteg[islot]->Fill(chan, fadc->GetPulseIntegralData(chan, jevent));}
-		    if (fadc_mode == 8 || fadc_mode == 1) {h2_pinteg[islot]->Fill(chan, fadc->GetEmulatedPulseIntegralData(chan));}
-		    h2_ptime[islot]->Fill(chan, fadc->GetPulseTimeData(chan, jevent));
-		    h2_pped[islot]->Fill(chan, fadc->GetPulsePedestalData(chan, jevent) / NPED);
-		    h2_ppeak[islot]->Fill(chan, fadc->GetPulsePeakData(chan, jevent));
-		  }
-		  // Raw sample events
-	      	  if (raw_mode && num_fadc_samples > 0) {
-		    // Debug output
-	      	    if (debugfile) *debugfile << "NUM FADC SAMPLES = " << num_fadc_samples << endl;
-		    // Acquire the raw samples vector and populate graphs
-		    raw_samples_vector[islot][chan] = fadc->GetPulseSamplesVector(chan);
-		    for (uint32_t ipeak = 0; ipeak < NPEAK; ipeak++) {
-		      if (uint32_t (num_fadc_events) == ipeak+1) 
-			raw_samples_npeak_vector[islot][chan][ipeak] = fadc->GetPulseSamplesVector(chan);
-		    }
-		    if (raw_samp_index[islot][chan] < NUMRAWEVENTS) {
-		      for (Int_t sample_num = 0; sample_num < Int_t (raw_samples_vector[islot][chan].size()); sample_num++)
-			g_psamp_event[islot][chan][raw_samp_index[islot][chan]]->SetPoint(sample_num, sample_num + 1, Int_t (raw_samples_vector[islot][chan][sample_num]));
-		      mg_psamp[islot][chan]->Add(g_psamp_event[islot][chan][raw_samp_index[islot][chan]], "ACP");
-		      raw_samp_index[islot][chan] += 1;
-		    }  // NUMRAWEVENTS condition
-		    for (uint32_t ipeak = 0; ipeak < NPEAK; ipeak++) {
-		      if (uint32_t (num_fadc_events) == ipeak+1) {
-			if (raw_samp_npeak_index[islot][chan][ipeak] < NUMRAWEVENTS) {
-			  for (Int_t sample_num = 0; sample_num < Int_t (raw_samples_npeak_vector[islot][chan][ipeak].size()); sample_num++)
-			    g_psamp_npeak_event[islot][chan][ipeak][raw_samp_npeak_index[islot][chan][ipeak]]->SetPoint(sample_num, sample_num + 1, Int_t (raw_samples_npeak_vector[islot][chan][ipeak][sample_num]));
-			  mg_psamp_npeak[islot][chan][ipeak]->Add(g_psamp_npeak_event[islot][chan][ipeak][raw_samp_npeak_index[islot][chan][ipeak]], "ACP");
-			  raw_samp_npeak_index[islot][chan][ipeak] += 1;
-			} // NUMRAWEVENTS condition
-		      } // npeak condition
-		    } // npeak loop
-		  } // Raw mode condition
-	      	} // FADC event loop
-	      } // Number of FADC events condition
-	    } // FADC channel loop
-	  } // FADC module found condition
-	  else 
-	    if (debugfile) *debugfile << "FADC MODULE NOT FOUND!!!" << endl;
-	}  // Number raw words condition
+        if (evdata->GetNumRaw(crateNumber, islot) != 0) {
+          Fadc250Module *fadc =
+              dynamic_cast <Fadc250Module*> (evdata->GetModule(crateNumber, islot));
+          if (fadc != NULL) {
+            //fadc->CheckDecoderStatus();
+            // Loop over channels
+            for (uint32_t chan = 0; chan < NADCCHAN; chan++) {
+              // Initialize variables
+              Int_t num_fadc_events = 0, num_fadc_samples = 0;
+              // Acquire the FADC mode
+              Int_t fadc_mode = fadc->GetFadcMode(); fadc_mode_const = fadc_mode;
+              if (debugfile) *debugfile << "Channel " << chan << " is in FADC Mode " << fadc_mode << endl;
+              Bool_t raw_mode  = ((fadc_mode == 1) || (fadc_mode == 8) || (fadc_mode == 10));
+
+              // Acquire the number of FADC events
+              num_fadc_events = fadc->GetNumFadcEvents(chan);
+              // If in raw mode, acquire the number of FADC samples
+              if (raw_mode) {
+                num_fadc_samples = fadc->GetNumFadcSamples(chan, ievent);
+              }
+              if (num_fadc_events > 0) {
+                // Generate FADC plots
+                GeneratePlots(fadc_mode, islot, chan);
+                for (Int_t jevent = 0; jevent < num_fadc_events; jevent++) {
+                  // Debug output
+                  if ((fadc_mode == 1 || fadc_mode == 8) && num_fadc_samples > 0)
+                    if (debugfile) *debugfile << "FADC EMULATED PI DATA = " << fadc->GetEmulatedPulseIntegralData(chan) << endl;
+                  if (fadc_mode == 7 || fadc_mode == 8 || fadc_mode == 9 || fadc_mode == 10) {
+                    if (fadc_mode != 8) {if (debugfile) *debugfile << "FADC PI DATA = " << fadc->GetPulseIntegralData(chan, jevent) << endl;}
+                    if (debugfile) *debugfile << "FADC PT DATA = " << fadc->GetPulseTimeData(chan, jevent) << endl;
+                    if (debugfile) *debugfile << "FADC PPED DATA = " << fadc->GetPulsePedestalData(chan, jevent) / NPED << endl;
+                    if (debugfile) *debugfile << "FADC PPEAK DATA = " << fadc->GetPulsePeakData(chan, jevent) << endl;
+                  }
+                  // Fill histos
+                  if ((fadc_mode == 1 || fadc_mode == 8) && num_fadc_samples > 0) h_pinteg[islot][chan]->Fill(fadc->GetEmulatedPulseIntegralData(chan));
+                  else if (fadc_mode == 7 || fadc_mode == 8 || fadc_mode == 9 || fadc_mode == 10) {
+                    if (fadc_mode != 8) {h_pinteg[islot][chan]->Fill(fadc->GetPulseIntegralData(chan, jevent));}
+                    if (fadc_mode == 8 || fadc_mode == 1) {h_pinteg[islot][chan]->Fill(fadc->GetEmulatedPulseIntegralData(chan));}
+                    h_ptime[islot][chan]->Fill(fadc->GetPulseTimeData(chan, jevent));
+                    h_pped[islot][chan]->Fill(fadc->GetPulsePedestalData(chan, jevent) / NPED);
+                    h_ppeak[islot][chan]->Fill(fadc->GetPulsePeakData(chan, jevent));
+                    // 2D Histos
+                    if (fadc_mode != 8) {h2_pinteg[islot]->Fill(chan, fadc->GetPulseIntegralData(chan, jevent));}
+                    if (fadc_mode == 8 || fadc_mode == 1) {h2_pinteg[islot]->Fill(chan, fadc->GetEmulatedPulseIntegralData(chan));}
+                    h2_ptime[islot]->Fill(chan, fadc->GetPulseTimeData(chan, jevent));
+                    h2_pped[islot]->Fill(chan, fadc->GetPulsePedestalData(chan, jevent) / NPED);
+                    h2_ppeak[islot]->Fill(chan, fadc->GetPulsePeakData(chan, jevent));
+                  }
+                  // Raw sample events
+                  if (raw_mode && num_fadc_samples > 0) {
+                    // Debug output
+                    if (debugfile) *debugfile << "NUM FADC SAMPLES = " << num_fadc_samples << endl;
+                    // Acquire the raw samples vector and populate graphs
+                    raw_samples_vector[islot][chan] = fadc->GetPulseSamplesVector(chan);
+                    for (uint32_t ipeak = 0; ipeak < NPEAK; ipeak++) {
+                      if (uint32_t (num_fadc_events) == ipeak+1)
+                        raw_samples_npeak_vector[islot][chan][ipeak] = fadc->GetPulseSamplesVector(chan);
+                    }
+                    if (raw_samp_index[islot][chan] < NUMRAWEVENTS) {
+                      for (Int_t sample_num = 0; sample_num < Int_t (raw_samples_vector[islot][chan].size()); sample_num++)
+                        g_psamp_event[islot][chan][raw_samp_index[islot][chan]]->SetPoint(sample_num, sample_num + 1, Int_t (raw_samples_vector[islot][chan][sample_num]));
+                      mg_psamp[islot][chan]->Add(g_psamp_event[islot][chan][raw_samp_index[islot][chan]], "ACP");
+                      raw_samp_index[islot][chan] += 1;
+                    }  // NUMRAWEVENTS condition
+                    for (uint32_t ipeak = 0; ipeak < NPEAK; ipeak++) {
+                      if (uint32_t (num_fadc_events) == ipeak+1) {
+                        if (raw_samp_npeak_index[islot][chan][ipeak] < NUMRAWEVENTS) {
+                          for (Int_t sample_num = 0; sample_num < Int_t (raw_samples_npeak_vector[islot][chan][ipeak].size()); sample_num++)
+                            g_psamp_npeak_event[islot][chan][ipeak][raw_samp_npeak_index[islot][chan][ipeak]]->SetPoint(sample_num, sample_num + 1, Int_t (raw_samples_npeak_vector[islot][chan][ipeak][sample_num]));
+                          mg_psamp_npeak[islot][chan][ipeak]->Add(g_psamp_npeak_event[islot][chan][ipeak][raw_samp_npeak_index[islot][chan][ipeak]], "ACP");
+                          raw_samp_npeak_index[islot][chan][ipeak] += 1;
+                        } // NUMRAWEVENTS condition
+                      } // npeak condition
+                    } // npeak loop
+                  } // Raw mode condition
+                } // FADC event loop
+              } // Number of FADC events condition
+            } // FADC channel loop
+          } // FADC module found condition
+          else
+            if (debugfile) *debugfile << "FADC MODULE NOT FOUND!!!" << endl;
+        }  // Number raw words condition
       }  // Slot loop
     }  // CODA file read status condition
     if (ievent % 1000 == 0 && ievent != 0)

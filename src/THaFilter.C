@@ -87,7 +87,7 @@ Int_t THaFilter::Process( const THaEvData* /* evdata */, const THaRunBase* run,
     return 0;
 
   // write out the event
-  return  fCodaOut->codaWrite(run->GetEvBuffer());
+  return fCodaOut->codaWrite(run->GetEvBuffer());
 }
 
 //_____________________________________________________________________________

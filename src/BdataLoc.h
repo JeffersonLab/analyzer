@@ -41,7 +41,7 @@ public:
   // Returns set of all defined (i.e. compiled & loaded) BdataLoc classes
   static TypeSet_t& fgBdataLocTypes();
 
-  BdataLoc() {}   // For ROOT TClass & I/O
+  BdataLoc() : crate(0), data(0) {}   // For ROOT TClass & I/O
   virtual ~BdataLoc();
 
   // Main function: extract the defined data from the event
@@ -99,7 +99,7 @@ public:
   // c'tor for (crate,slot,channel) selection
   CrateLoc( const char* nm, Int_t cra, Int_t slo, Int_t cha )
     : BdataLoc(nm,cra), slot(slo), chan(cha) { ResetBit(kIsSetup); }
-  CrateLoc() {}
+  CrateLoc() : slot(-1), chan(-1) {}
   virtual ~CrateLoc() {}
 
   virtual void   Load( const THaEvData& evt );
@@ -159,7 +159,7 @@ public:
   // c'tor for header search 
   WordLoc( const char* nm, Int_t cra, UInt_t head, Int_t skip )
     : BdataLoc(nm,cra), header(head), ntoskip(skip) { }
-  WordLoc() {}
+  WordLoc() : header(0), ntoskip(1) {}
   virtual ~WordLoc() {}
 
   virtual void   Load( const THaEvData& evt );
@@ -209,7 +209,7 @@ public:
 	      UInt_t num, UInt_t lo, UInt_t hi, UInt_t* loc )
     : CrateLocMulti(nm,cra,slo,cha), bitnum(num), cutlo(lo), cuthi(hi),
       bitloc(loc) { }
-  TrigBitLoc() : bitloc(0) {}
+  TrigBitLoc() : bitnum(0), cutlo(0), cuthi(kMaxUInt), bitloc(0) {}
   virtual ~TrigBitLoc() {}
 
   virtual void    Load( const THaEvData& evt );

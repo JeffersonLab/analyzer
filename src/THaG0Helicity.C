@@ -47,7 +47,20 @@ THaG0Helicity::THaG0Helicity( const char* name, const char* description,
 }
 
 //_____________________________________________________________________________
-THaG0Helicity::THaG0Helicity() : fHisto(NULL)
+THaG0Helicity::THaG0Helicity()
+  : THaHelicityDet(),
+    fG0delay(kDefaultDelay), fEvtype(0), fTdavg(kDefaultTdavg), fTdiff(0.),
+    fT0(0.), fT9(0.), fT0T9(kFALSE), fQuad_calibrated(kFALSE),
+    fValidHel(kFALSE), fRecovery_flag(kTRUE),
+    fTlastquad(0), fTtol(kDefaultTtol), fQuad(0),
+    fFirstquad(0), fLastTimestamp(0.0), fTimeLastQ1(0.0),
+    fT9count(0), fPredicted_reading(0), fQ1_reading(0),
+    fPresent_helicity(kUnknown), fSaved_helicity(kUnknown),
+    fQ1_present_helicity(kUnknown), fMaxMissed(kDefaultMissQ),
+    fNqrt(0), fHisto(NULL), fNB(0), fIseed(0), fIseed_earlier(0),
+    fInquad(0), fTET9Index(0), fTELastEvtQrt(-1), fTELastEvtTime(-1.),
+    fTELastTime(-1.), fTEPresentReadingQ1(-1), fTEStartup(3), fTETime(-1.),
+    fTEType9(kFALSE), fManuallySet(0)
 {
   // Default constructor for ROOT I/O
 }

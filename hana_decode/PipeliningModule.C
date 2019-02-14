@@ -15,14 +15,15 @@ using namespace std;
 
 namespace Decoder {
 
-  PipeliningModule::PipeliningModule(Int_t crate, Int_t slot) : VmeModule(crate,slot) {
-     fMultiBlockMode = kFALSE;
-     fBlockIsDone = kFALSE;
-     fFirstTime = kTRUE;
-     fBlockHeader = 0;
-     fNWarnings = 0;
-     data_type_def = 15;  /* initialize to FILLER WORD */
-     ReStart();
+PipeliningModule::PipeliningModule(Int_t crate, Int_t slot)
+  : VmeModule(crate,slot),
+    fNWarnings(0), fBlockHeader(0),
+    data_type_def(15),  // initialize to FILLER WORD
+    fFirstTime(kTRUE), index_buffer(0)
+{
+  fMultiBlockMode = kFALSE;
+  fBlockIsDone = kFALSE;
+  ReStart();
 }
 
 PipeliningModule::~PipeliningModule() {

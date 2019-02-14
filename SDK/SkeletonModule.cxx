@@ -37,15 +37,17 @@ void SkeletonModule::Init() {
 }
 
 #ifdef LIKEV792
-Int_t SkeletonModule::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const UInt_t *pstop) {
-// This is a simple, default method for loading a slot
-  const UInt_t *p = evbuffer;
+Int_t SkeletonModule::LoadSlot(THaSlotData* sldat, const UInt_t* evbuffer,
+			       const UInt_t* pstop ) {
+  // This is a simple, default method for loading a slot
+  // pstop points to last word of data
+  const UInt_t* p = evbuffer;
   fWordsSeen = 0;
 //  cout << "version like V792"<<endl;
   ++p;
   Int_t nword=*p-2;
   ++p;
-  for (Int_t i=0;i<nword;i++) {
+  for (Int_t i=0;i<nword && p<pstop;i++) {
        ++p;
        UInt_t chan=((*p)&0x00ff0000)>>16;
        UInt_t raw=((*p)&0x00000fff);

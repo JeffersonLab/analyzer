@@ -19,12 +19,14 @@
 namespace Decoder {
 
 //_____________________________________________________________________________
-THaCodaData::THaCodaData() {
+THaCodaData::THaCodaData()
+{
    evbuffer = new UInt_t[MAXEVLEN];         // Raw data
 };
 
 //_____________________________________________________________________________
-THaCodaData::~THaCodaData() {
+THaCodaData::~THaCodaData()
+{
    delete [] evbuffer;
 };
 

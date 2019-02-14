@@ -16,7 +16,7 @@ namespace Decoder {
 
   public:
 
-    Caen792Module() : Caen775Module() {}
+    Caen792Module() {}
     Caen792Module(Int_t crate, Int_t slot);
     virtual const char* MyModType() {return "adc";}
     virtual const char* MyModName() {return "792";}

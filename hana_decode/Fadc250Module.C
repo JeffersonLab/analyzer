@@ -79,7 +79,11 @@ namespace Decoder {
     DoRegister( ModuleType( "Decoder::Fadc250Module" , 250 ));
 
   Fadc250Module::Fadc250Module()
-    : PipeliningModule(), fPulseData(NADCCHAN)
+    : fPulseData(NADCCHAN),
+      data_type_4(false), data_type_6(false), data_type_7(false),
+      data_type_8(false), data_type_9(false), data_type_10(false),
+      block_header_found(false), block_trailer_found(false),
+      event_header_found(false), slots_match(false)
   { memset(&fadc_data, 0, sizeof(fadc_data)); }
 
   Fadc250Module::Fadc250Module(Int_t crate, Int_t slot)
@@ -129,7 +133,7 @@ namespace Decoder {
     return sum_of_elements;
   }
 
-  void Fadc250Module::Clear( const Option_t* opt) {
+  void Fadc250Module::Clear(Option_t* opt) {
     // Clear event-by-event data
     VmeModule::Clear(opt);
     ClearDataVectors();
@@ -211,13 +215,13 @@ namespace Decoder {
       return -1;
     }
     else {
-      return fPulseData[chan].integral[ievent];
 #ifdef WITH_DEBUG
       if (fDebugFile != 0)
 	*fDebugFile << "Fadc250Module::GetPulseIntegralData channel "
 		    << chan << ", event " << ievent << " = "
 		    <<  fPulseData[chan].integral[ievent] << endl;
 #endif
+      return fPulseData[chan].integral[ievent];
     }
   }
 
@@ -230,12 +234,12 @@ namespace Decoder {
       return -1;
     }
     else {
-      return SumVectorElements(fPulseData[chan].samples);
 #ifdef WITH_DEBUG
       if (fDebugFile != 0)
 	*fDebugFile << "Fadc250Module::GetEmulatedPulseIntegralData channel "
 		    << chan << " = " <<  SumVectorElements(fPulseData[chan].samples) << endl;
 #endif
+      return SumVectorElements(fPulseData[chan].samples);
     }
   }
 
@@ -251,13 +255,13 @@ namespace Decoder {
       return -1;
     }
     else {
-      return fPulseData[chan].time[ievent];
 #ifdef WITH_DEBUG
       if (fDebugFile != 0)
 	*fDebugFile << "Fadc250Module::GetPulseTimeData channel "
 		    << chan << ", event " << ievent << " = "
 		    <<  fPulseData[chan].time[ievent] << endl;
 #endif
+      return fPulseData[chan].time[ievent];
     }
   }
 
@@ -273,13 +277,13 @@ namespace Decoder {
       return -1;
     }
     else {
-      return fPulseData[chan].coarse_time[ievent];
 #ifdef WITH_DEBUG
       if (fDebugFile != 0)
-	*fDebugFile << "Fadc250Module::GetPulseCoarseTimeData channel "
-		    << chan << ", event " << ievent << " = "
-		    <<  fPulseData[chan].coarse_time[ievent] << endl;
+        *fDebugFile << "Fadc250Module::GetPulseCoarseTimeData channel "
+                    << chan << ", event " << ievent << " = "
+                    <<  fPulseData[chan].coarse_time[ievent] << endl;
 #endif
+      return fPulseData[chan].coarse_time[ievent];
     }
   }
 
@@ -295,13 +299,13 @@ namespace Decoder {
       return -1;
     }
     else {
-      return fPulseData[chan].fine_time[ievent];
 #ifdef WITH_DEBUG
       if (fDebugFile != 0)
 	*fDebugFile << "Fadc250Module::GetPulseFineTimeData channel "
 		    << chan << ", event " << ievent << " = "
 		    <<  fPulseData[chan].fine_time[ievent] << endl;
 #endif
+      return fPulseData[chan].fine_time[ievent];
     }
   }
 
@@ -317,13 +321,13 @@ namespace Decoder {
       return -1;
     }
     else {
-      return fPulseData[chan].peak[ievent];
 #ifdef WITH_DEBUG
       if (fDebugFile != 0)
 	*fDebugFile << "Fadc250Module::GetPulsePeakData channel "
 		    << chan << ", event " << ievent << " = "
 		    <<  fPulseData[chan].peak[ievent] << endl;
 #endif
+      return fPulseData[chan].peak[ievent];
     }
   }
 
@@ -343,14 +347,14 @@ namespace Decoder {
 	cout << "ERROR:: Fadc250Module:: GetPulsePedestalData:: invalid data vector size = " << fSlot << ", channel = " << chan << endl;
 	return -1;
       }
-      else {    
-	return fPulseData[chan].pedestal[ievent];
+      else {
 #ifdef WITH_DEBUG
 	if (fDebugFile != 0)
 	  *fDebugFile << "Fadc250Module::GetPulsePedestalData channel "
 		      << chan << ", event " << ievent << " = "
 		      <<  fPulseData[chan].pedestal[ievent] << endl;
 #endif
+        return fPulseData[chan].pedestal[ievent];
       }
     }
     if (nevent != 1) {
@@ -358,13 +362,13 @@ namespace Decoder {
       return -1;
     }
     else {    
-      return fPulseData[chan].pedestal[0];
 #ifdef WITH_DEBUG
       if (fDebugFile != 0)
 	*fDebugFile << "Fadc250Module::GetPulsePedestalData channel "
 		    << chan << ", event " << ievent << " = "
 		    <<  fPulseData[chan].pedestal[0] << endl;
 #endif
+      return fPulseData[chan].pedestal[0];
     }
   }
 
@@ -384,13 +388,13 @@ namespace Decoder {
       return -1;
     }
     else {    
-      return fPulseData[chan].pedestal_quality[0];
 #ifdef WITH_DEBUG
       if (fDebugFile != 0)
 	*fDebugFile << "Fadc250Module::GetPedestalQuality channel "
 		    << chan << ", event " << ievent << " = "
 		    <<  fPulseData[chan].pedestal_quality[0] << endl;
 #endif
+      return fPulseData[chan].pedestal_quality[0];
     }
   }
 
@@ -406,13 +410,13 @@ namespace Decoder {
       return -1;
     }
     else {
-      return fPulseData[chan].overflow[ievent];
 #ifdef WITH_DEBUG
       if (fDebugFile != 0)
 	*fDebugFile << "Fadc250Module::GetOverflowBit channel "
 		    << chan << ", event " << ievent << " = "
 		    <<  fPulseData[chan].overflow[ievent] << endl;
 #endif
+      return fPulseData[chan].overflow[ievent];
     }
   }
   
@@ -428,13 +432,13 @@ namespace Decoder {
       return -1;
     }
     else {
-      return fPulseData[chan].underflow[ievent];
 #ifdef WITH_DEBUG
       if (fDebugFile != 0)
 	*fDebugFile << "Fadc250Module::GetUnderflowBit channel "
 		    << chan << ", event " << ievent << " = "
 		    <<  fPulseData[chan].underflow[ievent] << endl;
 #endif
+      return fPulseData[chan].underflow[ievent];
     }
   }
 
@@ -461,13 +465,13 @@ namespace Decoder {
       return -1;
     }
     else {
-      return fPulseData[chan].samples[ievent];
 #ifdef WITH_DEBUG
       if (fDebugFile != 0)
 	*fDebugFile << "Fadc250Module::GetPulseSamplesData channel "
 		    << chan << ", event " << ievent << " = "
 		    <<  fPulseData[chan].samples[ievent] << endl;
 #endif
+      return fPulseData[chan].samples[ievent];
     }
   }
 
@@ -479,16 +483,17 @@ namespace Decoder {
       return vector<uint32_t>();
     }
     else {
-      return fPulseData[chan].samples;
 #ifdef WITH_DEBUG
       if (fDebugFile != 0)
 	*fDebugFile << "Fadc250Module::GetPulseSamplesVector channel "
 		    << chan << " = " <<  &fPulseData[chan].samples << endl;
 #endif
+      return fPulseData[chan].samples;
     }
   }
 
   void Fadc250Module::PrintDataType() const {
+#ifdef WITH_DEBUG
     if (fDebugFile == 0) return;
     *fDebugFile << "start,  Print Data Type "<<endl;
     if (data_type_4) *fDebugFile << "data type 4"<<endl;
@@ -498,6 +503,7 @@ namespace Decoder {
     if (data_type_9) *fDebugFile << "data type 9"<<endl;
     if (data_type_10) *fDebugFile << "data type 10"<<endl;
     *fDebugFile << "end,  Print Data Type "<<endl;
+#endif
   }
 
   Int_t Fadc250Module::GetFadcMode() const {
@@ -618,13 +624,13 @@ namespace Decoder {
 	return -1;
       }
       else  {
-	return fPulseData[chan].samples.size();
 #ifdef WITH_DEBUG
 	if (fDebugFile != 0)
 	  *fDebugFile << "Fadc250Module::GetNumFadcSamples channel "
 		      << chan << ", event " << ievent << " = "
 		      <<  fPulseData[chan].samples.size() << endl;
 #endif
+        return fPulseData[chan].samples.size();
       }
     }
     else {
@@ -822,7 +828,7 @@ namespace Decoder {
 #endif
 	}
 	else {
-	  if (data_type_id != 0) break;                      // Ensure this is a data continuation word
+          assert( data_type_id == 0 );                       // Ensure this is a data continuation word
 	  Bool_t invalid_1 = (data >> 29) & 0x1;             // Check if sample x is invalid
 	  Bool_t invalid_2 = (data >> 13) & 0x1;             // Check if sample x+1 is invalid
 	  uint32_t sample_1 = 0;                             // ADC sample x (includes overflow bit)
@@ -874,7 +880,7 @@ namespace Decoder {
 #endif
 	}
 	else {
-	  if (data_type_id != 0) break;                      // Ensure this is a data continuation word
+          assert( data_type_id == 0 );                       // Ensure this is a data continuation word
 	  Bool_t invalid_1 = (data >> 29) & 0x1;             // Check if sample x is invalid
 	  Bool_t invalid_2 = (data >> 13) & 0x1;             // Check if sample x+1 is invalid
 	  uint32_t sample_1 = 0;                             // ADC sample x (includes overflow bit)
@@ -964,7 +970,7 @@ namespace Decoder {
 #endif
 	}
 	else {
-	  if (data_type_id != 0) break;                        // Ensure this is a data continuation word
+	  assert( data_type_id == 0 );                         // Ensure this is a data continuation word
 	  if (((data >> 30) & 0x1) == 1) {                     // Ensure that data is the integral of pulse window word
 	    fadc_data.sample_sum = (data >> 12) & 0x3FFFF;     // 18-bit sum of raw samples that constitute the pulse data set
 	    fadc_data.nsa_ext = (data >> 11) & 0x1;            // NSA extended beyond PTW
@@ -1089,13 +1095,13 @@ namespace Decoder {
         break;
       }  // data_type_def switch
 
-    return block_trailer_found;
-
 #ifdef WITH_DEBUG
     if (fDebugFile != 0)
       *fDebugFile << "**********************************************************************"
 		  << "\n" << endl;
 #endif
+
+    return block_trailer_found;
 
   }  // Fadc250Module::Decode method
 

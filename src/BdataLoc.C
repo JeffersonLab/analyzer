@@ -324,6 +324,7 @@ void WordLoc::Load( const THaEvData& evdata )
 
   //FIXME: Can this be made faster because each header is followed by the offset
   // to the next header?
+  //FIXME: What about byte order? Are the raw data always a certain endianness?
 
   // Get the first byte of the header, regardless of byte order
   int h = ((UChar_t*)&header)[0];
@@ -344,7 +345,7 @@ void WordLoc::Load( const THaEvData& evdata )
       data = *(p+ntoskip);
       break;
     }
-    p += sizeof(rawdata_t);
+    ++p;  // Next rawdata_t word
   }
 }
 

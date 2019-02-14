@@ -130,6 +130,7 @@ int THaEpics::LoadData(const UInt_t* evbuffer, int evnum)
   // for event nearest 'evnum'.
 
   const unsigned int DEBUGL = 0;
+  const string::size_type MAX_VAL_LEN = 32;
 
   const char* cbuff = (const char*)evbuffer;
   size_t len = sizeof(int)*(evbuffer[0]+1);  
@@ -152,30 +153,37 @@ int THaEpics::LoadData(const UInt_t* evbuffer, int evnum)
   if(DEBUGL>1) cout << "Timestamp: " << date <<endl;
 
   string line;
+  istringstream il, iv;
   while( getline(ib,line) ) {
     // Here we parse each line
     if(DEBUGL>2) cout << "epics line : "<<line<<endl;
-    istringstream il(line);
-    string wtag, wval, sunit;
+    il.clear(); il.str(line);
+    string wtag, wval, wunits;
     il >> wtag;
     if( wtag.empty() || wtag[0] == 0 ) continue;
     istringstream::pos_type spos = il.tellg();
-    il >> wval >> sunit; // Assumes that sunit contains no whitespace
+    il >> wval;
     Double_t dval;
-    istringstream iv(wval);
-    if( !(iv >> dval) ) {
+    bool got_val = false;
+    if( !wval.empty() && wval.length() <= MAX_VAL_LEN ) {
+      iv.clear(); iv.str(wval);
+      if( iv >> dval )
+        got_val = true;
+    }
+    if( got_val ) {
+      il >> wunits; // Assumes that wunits contains no whitespace
+    } else {
       // Mimic the old behavior: if the string doesn't convert to a number,
       // then wval = rest of string after tag, dval = 0, sunit = empty
       string::size_type lpos = line.find_first_not_of(" \t",spos);
       wval = ( lpos != string::npos ) ? line.substr(lpos) : "";
       dval = 0;
-      sunit.clear();
     }
     if(DEBUGL>2) cout << "wtag = "<<wtag<<"   wval = "<<wval
-		      << "   dval = "<<dval<<"   sunit = "<<sunit<<endl;
+		      << "   dval = "<<dval<<"   wunits = "<<wunits<<endl;
 
     // Add tag/value/units to the EPICS data.    
-    epicsData[wtag].push_back( EpicsChan(wtag,date,evnum,wval,sunit,dval) );
+    epicsData[wtag].push_back( EpicsChan(wtag,date,evnum,wval,wunits,dval) );
   }
   if(DEBUGL) Print();
   return 1;

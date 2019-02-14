@@ -29,9 +29,9 @@ THaG0HelicityReader::THaG0HelicityReader() :
 }
 
 //____________________________________________________________________
-THaG0HelicityReader::~THaG0HelicityReader() 
+THaG0HelicityReader::~THaG0HelicityReader()
 {
-
+  // Destructor
 }
 
 //____________________________________________________________________

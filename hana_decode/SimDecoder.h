@@ -112,7 +112,7 @@ public:
 		const TVector3& pvect )
     : fMCTrack(mctrk), fPlane(plane), fType(type), fStatus(0), fNFound(0),
       fClustSize(0), fMCPoint(point), fMCP(pvect), fMCTime(KBIG), fDeltaE(KBIG),
-      fDeflect(KBIG), fHitResid(KBIG), fTrackResid(KBIG)  {}
+      fDeflect(KBIG), fToF(KBIG), fHitResid(KBIG), fTrackResid(KBIG)  {}
   virtual ~MCTrackPoint() {}
 
   virtual Int_t  Compare( const TObject* obj ) const;

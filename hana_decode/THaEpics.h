@@ -21,7 +21,7 @@ class EpicsChan {
 // utility class of one epics channel
 public:
   EpicsChan()  : tag(""), dtime(""), evnum(0), 
-          svalue(""), units(""), dvalue(0) {}
+          svalue(""), units(""), dvalue(0), timestamp(0) {}
   EpicsChan( const std::string& _tg, const std::string& _dt, Int_t _ev,
 	     const std::string& _sv, const std::string& _un, Double_t _dv ) :
     tag(_tg), dtime(_dt), evnum(_ev), svalue(_sv), units(_un), dvalue(_dv)

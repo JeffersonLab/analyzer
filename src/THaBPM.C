@@ -28,7 +28,7 @@ THaBPM::THaBPM( const char* name, const char* description,
 				  THaApparatus* apparatus ) :
   THaBeamDet(name,description,apparatus),
   fRawSignal(NCHAN),fPedestals(NCHAN),fCorSignal(NCHAN),fRotPos(NCHAN/2),
-  fRot2HCSPos(NCHAN/2,NCHAN/2)
+  fRot2HCSPos(NCHAN/2,NCHAN/2), fCalibRot(0)
 {
   // Constructor
 }
@@ -135,9 +135,10 @@ THaBPM::~THaBPM()
 }
 
 //_____________________________________________________________________________
-void THaBPM::Clear( Option_t* )
+void THaBPM::Clear( Option_t* opt )
 {
   // Reset per-event data.
+  THaBeamDet::Clear(opt);
   fPosition.SetXYZ(0.,0.,-10000.);
   fDirection.SetXYZ(0.,0.,1.);
   for( UInt_t k=0; k<NCHAN; ++k ) {

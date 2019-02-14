@@ -181,7 +181,7 @@ bool THaRunBase::operator>=( const THaRunBase& rhs ) const
 }
 
 //_____________________________________________________________________________
-void THaRunBase::Clear( const Option_t* opt )
+void THaRunBase::Clear( Option_t* opt )
 {
   // Reset the run object as if freshly constructed.
   // However, when opt=="INIT", keep an explicitly set event range and run date
@@ -304,7 +304,6 @@ Int_t THaRunBase::Init()
   Clear("INIT");
 
   // Open the data source.
-  retval = 0;
   if( !IsOpen() ) {
     retval = Open();
     if( retval )

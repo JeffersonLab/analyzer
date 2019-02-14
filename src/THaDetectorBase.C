@@ -34,7 +34,7 @@ THaDetectorBase::THaDetectorBase( const char* name,
 }
 
 //_____________________________________________________________________________
-THaDetectorBase::THaDetectorBase() : fDetMap(0) {
+THaDetectorBase::THaDetectorBase() : fDetMap(0), fNelem(0) {
   // for ROOT I/O only
 }
 

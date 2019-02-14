@@ -11,6 +11,7 @@ ClassImp(OldVDCAnalyticTTDConv)
 
 //______________________________________________________________________________
 OldVDCAnalyticTTDConv::OldVDCAnalyticTTDConv()
+  : fDriftVel(0), fdtime(0)
 {
   //Normal constructor
 }

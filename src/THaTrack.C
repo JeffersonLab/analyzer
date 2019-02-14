@@ -26,7 +26,7 @@ THaTrack::~THaTrack()
 }
 
 //_____________________________________________________________________________
-void THaTrack::Clear( const Option_t* opt )
+void THaTrack::Clear( Option_t* opt )
 {
   // If *opt == 'F' then reset all track quantities, else just
   // delete memory managed by this track.

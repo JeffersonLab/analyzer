@@ -240,6 +240,8 @@ void THaCut::Print( Option_t* option ) const
 
   // Print data according to the requested format
 
+  ios_base::fmtflags fmt = cout.flags();
+  streamsize prec = cout.precision();
   if ( s.IsLine() ) {
 
     cout.flags( ios::left );
@@ -267,13 +269,15 @@ void THaCut::Print( Option_t* option ) const
 	 << "Block:  " << fBlockname << endl;
     cout << "Called: " << setw(9) << fNCalled << "  "
 	 << "Passed: " << setw(9) << fNPassed;
-    if( fNCalled > 0 )
+    if( fNCalled > 0 ) {
       cout << setprecision(3)
-	   <<"  (" << 100.0*((float)fNPassed)/((float)fNCalled) << "%)\n";
-    else
-      cout << "  (0.00%)\n";
-
+	   <<"  (" << 100.0*((float)fNPassed)/((float)fNCalled) << "%)";
+    } else
+      cout << "  (0.00%)";
+    cout << endl;
   }
+  cout.flags(fmt);
+  cout.precision(prec);
 }
 
 //_____________________________________________________________________________

@@ -203,7 +203,7 @@ int THaSlotData::compressdataindex(int numidx) {
     } else {
       UShort_t old_alloci = alloci;
       alloci *= 2;
-      // FIX ME one should check that it doesnt grow too much
+      // FIXME one should check that it doesnt grow too much
       UShort_t* tmp = new UShort_t[alloci];
       memcpy(tmp,dataindex,old_alloci*sizeof(UShort_t));
       delete [] dataindex; dataindex = tmp;

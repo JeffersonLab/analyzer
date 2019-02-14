@@ -41,7 +41,7 @@
 using namespace std;
 
 THaEvt125Handler::THaEvt125Handler(const char *name, const char* description)
-  : THaEvtTypeHandler(name,description)
+  : THaEvtTypeHandler(name,description), NVars(0), dvars(0)
 {
 }
 

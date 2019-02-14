@@ -39,9 +39,10 @@ using namespace std;
 
 //_____________________________________________________________________________
 UserScintillator::UserScintillator( const char* name, const char* description,
-				  THaApparatus* apparatus ) :
+				    THaApparatus* apparatus ) :
   // Make sure to initialize member variables to sane values/defaults here!
-  THaScintillator(name,description,apparatus), fGoodToGo(kFALSE)
+  THaScintillator(name,description,apparatus),
+  fPaddle(0), fYtdc(kBig), fYtrk(kBig), fGoodToGo(false), fCommonStop(true)
 {
   // Constructor
 }
@@ -141,9 +142,11 @@ Int_t UserScintillator::ReadDatabase( const TDatime& date )
 }
 
 //_____________________________________________________________________________
-void UserScintillator::Clear( Option_t* )
+void UserScintillator::Clear( Option_t* opt )
 {
   // Reset per-event data
+
+  THaScintillator::Clear(opt);
 
   fPaddle = -255;
   fYtdc = fYtrk = kBig;

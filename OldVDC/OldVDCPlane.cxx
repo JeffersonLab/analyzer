@@ -49,16 +49,18 @@ static const Double_t kDefaultTDCRes = 5.0e-10;  // 0.5 ns/chan = 5e-10 s /chan
 OldVDCPlane::OldVDCPlane( const char* name, const char* description,
 			  THaDetectorBase* parent )
   : THaSubDetector(name,description,parent), fNWiresHit(0),
-    fNMaxGap(kDefaultNMaxGap), fMinTime(kDefaultMinTime),
-    fMaxTime(kDefaultMaxTime), fFlags(0), fTDCRes(kDefaultTDCRes),
-    /*fTable(NULL),*/ fTTDConv(0), fVDC(0), fglTrg(0)
+    fNMaxGap(kDefaultNMaxGap),
+    fMinTime(kDefaultMinTime), fMaxTime(kDefaultMaxTime),
+    fFlags(0), fZ(0), fWBeg(0), fWSpac(0), fWAngle(0),
+    fTDCRes(kDefaultTDCRes),
+    fDriftVel(0), /*fTable(NULL),*/ fTTDConv(0), fglTrg(0)
 {
   // Constructor
 
   // Since TCloneArrays can resize, the size here is fairly unimportant
+  fWires    = new TClonesArray("OldVDCWire", 368 );
   fHits     = new TClonesArray("OldVDCHit", 20 );
   fClusters = new TClonesArray("OldVDCCluster", 5 );
-  fWires    = new TClonesArray("OldVDCWire", 368 );
 
   fVDC = GetMainDetector();
 
@@ -318,9 +320,10 @@ OldVDCPlane::~OldVDCPlane()
 }
 
 //_____________________________________________________________________________
-void OldVDCPlane::Clear( Option_t* )
-{    
+void OldVDCPlane::Clear( Option_t* opt )
+{
   // Clears the contents of the and hits and clusters
+  THaSubDetector::Clear(opt);
   fNWiresHit = 0;
   fHits->Clear();
   fClusters->Clear();
@@ -328,7 +331,7 @@ void OldVDCPlane::Clear( Option_t* )
 
 //_____________________________________________________________________________
 Int_t OldVDCPlane::Decode( const THaEvData& evData)
-{    
+{
   // Converts the raw data into hit information
   // Assumes channels & wires  are numbered in order
   // TODO: Make sure the wires are numbered in order, even if the channels
@@ -362,7 +365,7 @@ Int_t OldVDCPlane::Decode( const THaEvData& evData)
       // Use channel index to loop through channels that have hits
 
       Int_t chan = evData.GetNextChan(d->crate, d->slot, chNdx);
-      if (chan < d->lo || chan > d->hi) 
+      if (chan < d->lo || chan > d->hi)
 	continue; //Not part of this detector
 
       // Wire numbers count up in the order in which channels are defined
@@ -385,18 +388,18 @@ Int_t OldVDCPlane::Decode( const THaEvData& evData)
 	Int_t data = evData.GetData(d->crate, d->slot, chan, hit);
 
 	// Convert the TDC value to the drift time.
-	// Being perfectionist, we apply a 1/2 channel correction to the raw 
+	// Being perfectionist, we apply a 1/2 channel correction to the raw
 	// TDC data to compensate for the fact that the TDC truncates, not
 	// rounds, the data.
 	Double_t xdata = static_cast<Double_t>(data) + 0.5;
 	Double_t time = fTDCRes * (toff - xdata) - evtT0;
 
-	// If requested, ignore hits with negative drift times 
+	// If requested, ignore hits with negative drift times
 	// (due to noise or miscalibration). Use with care.
 	// If only fastest hit requested, find maximum TDC value and record the
-	// hit after the hit loop is done (see below). 
+	// hit after the hit loop is done (see below).
 	// Otherwise just record all hits.
-	if( !no_negative || time > 0.0 ) {	  
+	if( !no_negative || time > 0.0 ) {
 	  if( only_fastest_hit ) {
 	    if( data > max_data )
 	      max_data = data;
@@ -406,7 +409,7 @@ Int_t OldVDCPlane::Decode( const THaEvData& evData)
 	  
       } // End hit loop
 
-      // If we are only interested in the hit with the largest TDC value 
+      // If we are only interested in the hit with the largest TDC value
       // (shortest drift time), it is recorded here.
       if( only_fastest_hit && max_data>0 ) {
 	Double_t xdata = static_cast<Double_t>(max_data) + 0.5;
@@ -480,7 +483,7 @@ Int_t OldVDCPlane::FindClusters()
   OldVDCHit* hit;               // current hit
 
 //    Int_t minTime = 0;        // Smallest TDC time for a given cluster
-//    OldVDCHit * minHit = NULL; // Hit with the smallest TDC time for 
+//    OldVDCHit * minHit = NULL; // Hit with the smallest TDC time for
                              // a given cluster
   //  const Double_t sqrt2 = 0.707106781186547462;
 
@@ -494,7 +497,7 @@ Int_t OldVDCPlane::FindClusters()
     // Time within sanity cuts?
     if( hard_cut ) {
       Double_t rawtime = hit->GetRawTime();
-      if( rawtime < fMinTime || rawtime > fMaxTime) 
+      if( rawtime < fMinTime || rawtime > fMaxTime)
 	continue;
     }
     if( soft_cut ) {
@@ -503,7 +506,7 @@ Int_t OldVDCPlane::FindClusters()
 	continue;
     }
 
-    wireNum = hit->GetWire()->GetNum();  
+    wireNum = hit->GetWire()->GetNum();
 
     // Ignore multiple hits per wire
     if ( wireNum == pwireNum )
@@ -523,14 +526,14 @@ Int_t OldVDCPlane::FindClusters()
     pwireNum = wireNum;
     if ( ndif > fNMaxGap+1 ) {
       // Found a new cluster
-      if (clust) 
+      if (clust)
 	// Estimate the track parameters for this cluster
 	// (Pivot, intercept, and slope)
 	clust->EstTrackParameters();
 
-      // Make a new OldVDCCluster (using space from fCluster array)  
+      // Make a new OldVDCCluster (using space from fCluster array)
       clust = new ( (*fClusters)[nextClust++] ) OldVDCCluster(this);
-    } 
+    }
     //Add hit to the cluster
     clust->AddHit(hit);
 
@@ -538,14 +541,14 @@ Int_t OldVDCPlane::FindClusters()
 
   // Estimate track parameters for the last cluster found
   if (clust)
-    clust->EstTrackParameters(); 
+    clust->EstTrackParameters();
 
   return GetNClusters();  // return the number of clusters found
 }
 
 //_____________________________________________________________________________
 Int_t OldVDCPlane::FitTracks()
-{    
+{
   // Fit tracks to cluster positions and drift distances.
   
   OldVDCCluster* clust;
@@ -554,7 +557,7 @@ Int_t OldVDCPlane::FitTracks()
     if( !(clust = static_cast<OldVDCCluster*>( (*fClusters)[i] )))
       continue;
 
-    // Convert drift times to distances. 
+    // Convert drift times to distances.
     // The conversion algorithm is determined at wire initialization time,
     // i.e. currently in the ReadDatabase() function of this class.
     // Current best estimates of the track parameters will be passed to

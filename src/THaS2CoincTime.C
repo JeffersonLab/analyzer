@@ -45,6 +45,8 @@ THaS2CoincTime::THaS2CoincTime( const char* name,
 				const char* ch_name1, const char* ch_name2,
 				const char* detname1, const char* detname2)
   : THaCoincTime(name,description,spec1,spec2,m1,m2,ch_name1,ch_name2),
+    fTrPads1(0), fS2TrPath1(0), fS2Times1(0), fTrPath1(0),
+    fTrPads2(0), fS2TrPath2(0), fS2Times2(0), fTrPath2(0),
     fDetName1(detname1)
 {
   // To construct, specify the name of the module (usually "CT"),

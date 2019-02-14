@@ -45,6 +45,7 @@
 #include "THaVDC.h"
 #include "THaDetMap.h"
 #include "THaString.h"  // for Split()
+#include "Decoder.h"    // for MAXROC, MAXSLOT
 
 #define kInitError THaAnalysisObject::kInitError
 #define kOK        THaAnalysisObject::kOK
@@ -390,7 +391,7 @@ static int MkTimezone( string& zone )
   if( zone.empty() )
     return -1;
   int off;
-  istringstream istr(zone.c_str());
+  istringstream istr(zone);
   if( istr >> off ) {
     // Convert HHMM to seconds
     div_t d = div( std::abs(off), 100 );
@@ -1248,6 +1249,17 @@ protected:
     Error( Here(here), "%s", msg.str().c_str() );
     return kInitError;
   }
+  Bool_t CheckDetMapInp( Int_t crate, Int_t slot, Int_t lo, Int_t hi,
+      const char* buff, const char* here )
+  {
+    Bool_t is_err = ( crate <= 0 || crate > Decoder::MAXROC  ||
+        slot  <= 0 || slot  > Decoder::MAXSLOT ||
+        lo < 0 || lo > std::numeric_limits<UShort_t>::max() ||
+        hi < 0 || lo > std::numeric_limits<UShort_t>::max() );
+    if( is_err )
+      Error( Here(here), "Illegal detector map parameter, line: %s", buff );
+    return is_err;
+  }
 
   // Bits for flags parameter of ReadBlock()
   enum EReadBlockFlags {
@@ -1262,11 +1274,13 @@ protected:
     kStopAtNval         = BIT(8),
     kStopAtSection      = BIT(9)
   };
-  enum EReadBlockRetvals {
+  enum EReadBlockRetval {
     kSuccess = 0, kNoValues = -1, kTooFewValues = -2, kTooManyValues = -3,
-    kFileError = -4, kNegativeFound = -5, kLessEqualZeroFound = -6 };
+    kNegativeFound = -4, kLessEqualZeroFound = -5, kBadInput = -6,
+    kFileError = -7 };
   template <class T>
-  int ReadBlock( FILE* fi, T* data, int nval, const char* here, int flags = 0 );
+  EReadBlockRetval ReadBlock( FILE* fi, T* data, int nval, const char* here,
+      int flags = 0 );
 
   string      fName;    // Detector "name", actually the prefix without trailing dot
   string      fDBName;  // Database file name for this detector
@@ -1338,8 +1352,10 @@ private:
 class Scintillator : public Detector {
 public:
   Scintillator( const string& name )
-    : Detector(name), fLOff(0), fROff(0), fLPed(0), fRPed(0), fLGain(0),
-      fRGain(0), fTWalkPar(0), fTrigOff(0) {}
+    : Detector(name), fTdc2T(0), fCn(3e8), fAdcMIP(0), fAttenuation(0),
+      fResolution(5e-10), fNTWalkPar(0),
+      fLOff(0), fROff(0), fLPed(0), fRPed(0), fLGain(0),
+      fRGain(0), fTWalkPar(0), fTrigOff(0), fHaveExtras(false) {}
   virtual ~Scintillator() { DeleteArrays(); }
 
   virtual int ReadDB( FILE* infile, time_t date_from, time_t date_until );
@@ -1369,7 +1385,8 @@ private:
 class Shower : public Detector {
 public:
   Shower( const string& name )
-    : Detector(name), fPed(0), fGain(0) { fDetMapHasLogicalChan = false; }
+    : Detector(name), fNcols(0), fNrows(0), fEmin(0),fMaxCl(kMaxInt),
+      fPed(0), fGain(0) { fDetMapHasLogicalChan = false; }
   virtual ~Shower() { DeleteArrays(); }
 
   virtual void Clear() { Detector::Clear(); fMaxCl = -1; }
@@ -1416,7 +1433,7 @@ private:
 // BPM
 class BPM : public Detector {
 public:
-  BPM( const string& name ) : Detector(name) {}
+  BPM( const string& name ) : Detector(name), fCalibRot(0) {}
 
   virtual int ReadDB( FILE* infile, time_t date_from, time_t date_until );
   virtual int Save( time_t start, const string& version = string() ) const;
@@ -1484,7 +1501,8 @@ private:
 // VDC
 class VDC : public Detector {
 public:
-  VDC( const string& name ) : Detector(name), fCommon(0) {}
+  VDC( const string& name )
+    : Detector(name), fErrorCutoff(kBig), fNumIter(0), fCommon(0) {}
 
   virtual int ReadDB( FILE* infile, time_t date_from, time_t date_until );
   virtual int Save( time_t start, const string& version = string() ) const;
@@ -1519,7 +1537,12 @@ private:
   class Plane : public Detector {
   public:
     friend class VDC;
-    Plane( const string& name, VDC* vdc ) : Detector(name), fVDC(vdc)
+    Plane( const string& name, VDC* vdc )
+      : Detector(name), fZ(0), fWBeg(0), fWSpac(0), fWAngle(0),
+        fDriftVel(0), fTDCRes(0), fT0Resolution(0),
+        fMinTdiff(0), fMaxTdiff(kBig), fMinClustSize(0),
+        fMaxClustSpan(kMaxInt), fNMaxGap(0), fMinTime(0),
+        fMaxTime(kMaxInt), fVDC(vdc)
     { fTTDPar.resize(9); }
 
     virtual int ReadDB( FILE* infile, time_t date_from, time_t date_until );
@@ -1865,7 +1888,7 @@ static int ForAllFilesInDir( const string& sdir, Action action, int depth = 0 )
 class CopyDBFileName {
 public:
   CopyDBFileName( FilenameMap_t& filenames, vector<string>& subdirs,
-		  const time_t start_time )
+                  const time_t start_time )
     : fFilenames(filenames), fSubdirs(subdirs), fStart(start_time) {}
 
   int operator() ( const string& dir, const string& fname, int depth )
@@ -1889,13 +1912,14 @@ public:
     else if( S_ISDIR(sb.st_mode) && depth == 0 ) {
       time_t date;
       if( IsDBSubDir(fname,date) ) {
-	int err =
-	  ForAllFilesInDir(fpath,CopyDBFileName(fFilenames,fSubdirs,date),depth+1);
-	if( err < 0 )
-	  return err;
-	n_add = err;
-	// if( n_add > 0 )  // Must keep the directory, even if empty!
-	fSubdirs.push_back(fname);
+        int ret =
+          ForAllFilesInDir(fpath, CopyDBFileName(fFilenames,fSubdirs,date),
+              depth+1);
+        if( ret < 0 )
+          return ret;
+        n_add = ret;
+        // if( n_add > 0 )  // Must keep the directory, even if empty!
+        fSubdirs.push_back(fname);
       }
     }
     return n_add;
@@ -1911,46 +1935,45 @@ private:
 class DeleteDBFile {
 public:
   DeleteDBFile( bool do_all = false ) : fDoAll(do_all), fMustRewind(false) {}
+
   int operator() ( const string& dir, const string& fname, int depth )
   {
-    string fpath = MakePath( dir, fname );
-    const char* cpath = fpath.c_str();
     time_t date;
     struct stat sb;
 
-    if( lstat(cpath, &sb) ) {
+    string fpath = MakePath(dir, fname);
+    const char* cpath = fpath.c_str();
+    bool is_db_subdir = IsDBSubDir(fname, date);
+
+    if( lstat(cpath, &sb) ) { // Use lstat here - we don't want to follow links!
       perror(cpath);
       return -1;
     }
+    // Recurse down into valid subdirectories ("YYYYMMDD" and "DEFAULT")
+    if( S_ISDIR(sb.st_mode) ) {
+      if( depth > 0 || is_db_subdir ) {
+        // Wipe everything in date-coded subdirectories, except "DEFAULT",
+        // where we only delete database files
+        bool delete_all = (depth > 0 || fname != "DEFAULT");
+        if( ForAllFilesInDir(fpath, DeleteDBFile(delete_all), depth+1) )
+          return -2;
+        int err;
+        if( (err = rmdir(cpath)) && errno != ENOTEMPTY ) {
+          perror(cpath);
+          return -2;
+        }
+        errno = 0;
+        if( !err )
+          fMustRewind = true;
+      }
+    }
     // Non-directory (regular, links) files matching db_*.dat or a subdirectory name
-    if( !S_ISDIR(sb.st_mode) &&
-	(fDoAll || IsDBFileName(fname) || IsDBSubDir(fname,date)) ) {
+    else if( fDoAll || is_db_subdir || IsDBFileName(fname) ) {
       if( unlink(cpath) ) {
-	perror(cpath);
-	return -2;
+        perror(cpath);
+        return -2;
       }
       fMustRewind = true;
-    }
-
-    // Recurse down into valid subdirectories ("YYYYMMDD" and "DEFAULT")
-    else if( S_ISDIR(sb.st_mode) ) {
-      if( depth > 0 || IsDBSubDir(fname,date) ) {
-	// Complete wipe all date-coded subdirectories, otherwise the logic in
-	// THaAnalsysisObject::GetDBFileList may not work correctly. That function finds
-	// the closest-matching date-coded directory and then assumes that the
-	// requested file is in that directory. This logic may fail if a closer-matching
-	// directory exists in the target than in the source for a certain timestamp.
-	bool delete_all = (fname != "DEFAULT");
-	if( ForAllFilesInDir(fpath, DeleteDBFile(delete_all), depth+1) )
-	  return -2;
-	int err;
-	if( (err = rmdir(cpath)) && errno != ENOTEMPTY ) {
-	  perror(cpath);
-	  return -2;
-	}
-	if( !err )
-	  fMustRewind = true;
-      }
     }
     return 0;
   }
@@ -1997,7 +2020,7 @@ static int CheckDir( string path, bool writable )
   int mode = R_OK|X_OK;
   if( writable )  mode |= W_OK;
 
-  if( lstat(cpath,&sb) ) {
+  if( stat(cpath,&sb) ) {
     return 1;
   }
   if( !S_ISDIR(sb.st_mode) ) {
@@ -2209,12 +2232,16 @@ static int InsertDefaultFiles( const vector<string>& subdirs,
 	   ++mt ) {
 	const string& subdir = *mt;
 	time_t date;
-#ifdef NDEBUG
-	IsDBSubDir(subdir,date);
-	filenames.insert( Filenames_t(date,deffile) );
-#else
 	bool good = IsDBSubDir(subdir,date);
 	assert(good);
+	if( !good ) {
+	  cerr << "ERROR: subdir = " << subdir << " is not a DB subdir? "
+	       << "Should never happen. Call expert." << endl;
+	  return -1;
+	}
+#ifdef NDEBUG
+	filenames.insert( Filenames_t(date,deffile) );
+#else
 	Filenames_t ins(date,deffile);
 	assert( filenames.find(ins) == filenames.end() );
 	filenames.insert(ins);
@@ -2727,7 +2754,7 @@ static char* ReadComment( FILE* fp, char *buf, const int len )
 
   off_t pos = ftello(fp);
   if( pos == -1 )
-    return 0;
+    return 0;  // TODO: throw exception
 
   char* s = fgets(buf,len,fp);
   if( !s )
@@ -2748,7 +2775,9 @@ static char* ReadComment( FILE* fp, char *buf, const int len )
 
  data:
   // Data: rewind to start position
-  fseeko(fp, pos, SEEK_SET);
+  if( fseeko(fp, pos, SEEK_SET) ) {
+    perror("ReadComment");  // TODO: throw exception
+  }
   return 0;
 }
 
@@ -2824,7 +2853,8 @@ static bool IsDBcomment( const string& line )
 
 //-----------------------------------------------------------------------------
 template <class T>
-int Detector::ReadBlock( FILE* fi, T* data, int nval, const char* here, int flags )
+Detector::EReadBlockRetval Detector::ReadBlock( FILE* fi, T* data, int nval,
+    const char* here, int flags )
 {
   // Read exactly 'nval' values of type T from file 'fi' into array 'data'.
   // Skip initial comment lines and comments at the end of each line.
@@ -2845,8 +2875,18 @@ int Detector::ReadBlock( FILE* fi, T* data, int nval, const char* here, int flag
   off_t pos_on_entry = ftello(fi), pos = pos_on_entry;
   std::less<T> std_less;  // to suppress compiler warnings "< 0 is always false"
 
+  if( pos_on_entry < 0 )
+    goto file_err;
   errno = 0;
   while( GetLine(fi,buf,LEN,line) == 0 ) {
+    assert( !line.empty() );  // Should never happen by construction in GetLine
+    if( line.empty() ) continue;
+    if( line.length() > 4096 ) {  // Arbitrary limit. No single database line
+                                  // should ever be even close to this
+      Error( Here(here), "Runaway database line:\n \"%s ...\"\n",
+          line.substr(0,48).c_str() );
+      return kBadInput;
+    }
     int c = line[0];
     maybe_data = (c && strchr(digits,c)) ||
       (c == '-' && line.length()>1 && strchr(digits,line[1]));
@@ -2859,11 +2899,14 @@ int Detector::ReadBlock( FILE* fi, T* data, int nval, const char* here, int flag
 	(maybe_data && !TestBit(flags,kDisallowDataGuess)) ) {
       // Data
       if( nval <= 0 ) {
-	fseeko(fi,pos,SEEK_SET);
+        if( fseeko(fi,pos,SEEK_SET) )
+          goto file_err;
 	return kSuccess;
       }
       got_data = true;
-      istringstream is(line.c_str());
+      istringstream is(line);
+      if( is.bad() )
+        goto file_err;
       while( is && nread < nval ) {
 	is >> data[nread];
 	if( !is.fail() ) {
@@ -2871,14 +2914,16 @@ int Detector::ReadBlock( FILE* fi, T* data, int nval, const char* here, int flag
 	    if( !TestBit(flags,kQuietOnErrors) )
 	      Error( Here(here), "Negative values not allowed here:\n \"%s\"",
 		     line.c_str() );
-	    fseeko(fi,pos_on_entry,SEEK_SET);
+	    if( fseeko(fi,pos_on_entry,SEEK_SET) )
+	      goto file_err;
 	    return kNegativeFound;
 	  }
 	  if( TestBit(flags,kRequireGreaterZero) && data[nread] <= 0 ) {
 	    if( !TestBit(flags,kQuietOnErrors) )
 	      Error( Here(here), "Values must be greater then zero:\n \"%s\"",
 		     line.c_str() );
-	    fseeko(fi,pos_on_entry,SEEK_SET);
+	    if( fseeko(fi,pos_on_entry,SEEK_SET) )
+	      goto file_err;
 	    return kLessEqualZeroFound;
 	  }
 	  ++nread;
@@ -2900,7 +2945,8 @@ int Detector::ReadBlock( FILE* fi, T* data, int nval, const char* here, int flag
 	    else
 	      Warning( Here(here), "%s", msg.str().c_str() );
 	  }
-	  fseeko(fi,pos_on_entry,SEEK_SET);
+	  if( fseeko(fi,pos_on_entry,SEEK_SET) )
+	    goto file_err;
 	  return kTooManyValues;
 	}
 	if( TestBit(flags,kStopAtNval) ) {
@@ -2910,20 +2956,24 @@ int Detector::ReadBlock( FILE* fi, T* data, int nval, const char* here, int flag
       }
     } else {
       // Comment
-      found_section = TestBit(flags,kStopAtSection)
-	&& line.find('[') != string::npos;
+      found_section = ( TestBit(flags,kStopAtSection)
+          && (line.find('[') != string::npos) );
       if( got_data || found_section ) {
 	if( nread < nval )
 	  goto toofew;
 	// Success
 	// Rewind to start of terminating line
-	fseeko(fi,pos,SEEK_SET);
+	if( fseeko(fi,pos,SEEK_SET) )
+	  goto file_err;
 	return kSuccess;
       }
     }
     pos = ftello(fi);
+    if( pos < 0 )
+      break;
   }
   if( errno ) {
+  file_err:
     perror( Here(here) );
     return kFileError;
   }
@@ -2936,7 +2986,8 @@ int Detector::ReadBlock( FILE* fi, T* data, int nval, const char* here, int flag
 	  << " Line: \"" << line << "\"";
       Error( Here(here), "%s", msg.str().c_str() );
     }
-    fseeko(fi,pos_on_entry,SEEK_SET);
+    if( fseeko(fi,pos_on_entry,SEEK_SET) )
+      goto file_err;
     if( nread == 0 )
       return kNoValues;
     return kTooFewValues;
@@ -2969,7 +3020,7 @@ int Detector::PurgeAllDefaultKeys()
     bool all_defaults = true;
     for( ValSet_t::const_iterator vt = vals.begin();
 	 vt != vals.end() && all_defaults; ++vt ) {
-      istringstream istr( vt->value.c_str() );
+      istringstream istr( vt->value );
       string val;
       while( istr >> val ) {
 	if( val != defval ) {
@@ -3106,7 +3157,7 @@ int Cherenkov::ReadDB( FILE* fi, time_t /* date */, time_t /* date_until */ )
   while (1) {
     Int_t crate, slot, first, last, first_chan,model;
     int pos;
-    fgets ( buf, LEN, fi );
+    if( fgets(buf,LEN,fi) == 0 ) return ErrPrint(fi,here);
     int n = sscanf( buf, "%6d %6d %6d %6d %6d %n",
 		    &crate, &slot, &first, &last, &first_chan, &pos );
     if( crate < 0 ) break;
@@ -3114,6 +3165,8 @@ int Cherenkov::ReadDB( FILE* fi, time_t /* date */, time_t /* date_until */ )
     model=atoi(buf+pos); // if there is no model number given, set to zero
     if( model != 0 )
       fDetMapHasModel = true;
+    if( CheckDetMapInp(crate,slot,first,last,buf,here) )
+      return kInitError;
     if( fDetMap->AddModule( crate, slot, first, last, first_chan, model ) < 0 ) {
       Error( Here(here), "Too many DetMap modules (maximum allowed - %d).",
 	     THaDetMap::kDetMapSize);
@@ -3209,7 +3262,7 @@ int Scintillator::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
     int pos;
     Int_t first_chan, model;
     Int_t crate, slot, first, last;
-    fgets ( buf, LEN, fi );
+    if( fgets(buf,LEN,fi ) == 0 ) return ErrPrint(fi,here);
     n = sscanf( buf, "%6d %6d %6d %6d %6d %n",
 		&crate, &slot, &first, &last, &first_chan, &pos );
     if( crate < 0 ) break;
@@ -3217,6 +3270,8 @@ int Scintillator::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
     model=atoi(buf+pos); // if there is no model number given, set to zero
     if( model != 0 )
       fDetMapHasModel = true;
+    if( CheckDetMapInp(crate,slot,first,last,buf,here) )
+      return kInitError;
     if( fDetMap->AddModule( crate, slot, first, last, first_chan, model ) < 0 ) {
       Error( Here(here), "Too many DetMap modules (maximum allowed - %d).",
 	     THaDetMap::kDetMapSize);
@@ -3435,10 +3490,12 @@ int Shower::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
   while( ReadComment(fi,buf,LEN) );
   while (1) {
     Int_t crate, slot, first, last;
-    int n = fscanf ( fi,"%6d %6d %6d %6d", &crate, &slot, &first, &last );
-    fgets ( buf, LEN, fi );
+    if( fgets(buf,LEN,fi ) == 0 ) return ErrPrint(fi,here);
+    int n = sscanf( buf, "%6d %6d %6d %6d", &crate, &slot, &first, &last );
     if( crate < 0 ) break;
     if( n < 4 ) return ErrPrint(fi,here);
+    if( CheckDetMapInp(crate,slot,first,last,buf,here) )
+      return kInitError;
     if( fDetMap->AddModule( crate, slot, first, last ) < 0 ) {
       Error( Here(here), "Too many DetMap modules (maximum allowed - %d).",
 	     THaDetMap::kDetMapSize);
@@ -3629,12 +3686,14 @@ int BPM::ReadDB( FILE* fi, time_t, time_t )
   fDetMap->Clear();
   int first_chan, crate, dummy, slot, first, last, modulid = 0;
   do {
-    fgets( buf, LEN, fi);
+    if( fgets(buf,LEN,fi ) == 0 ) return ErrPrint(fi,here);
     n = sscanf(buf,"%6d %6d %6d %6d %6d %6d %6d",
 	       &first_chan, &crate, &dummy, &slot, &first, &last, &modulid);
     if( n < 1 ) return ErrPrint(fi,here);
     if( n == 7 )
       fDetMapHasModel = true;
+    if( CheckDetMapInp(crate,slot,first,last,buf,here) )
+      return kInitError;
     if (first_chan>=0 && n >= 6 ) {
       if ( fDetMap->AddModule(crate, slot, first, last, first_chan, modulid) <0 ) {
 	Error( Here(here), "Couldn't add BPM to DetMap");
@@ -3659,7 +3718,7 @@ int BPM::ReadDB( FILE* fi, time_t, time_t )
   }
 
   double dummy1,dummy2,dummy3,dummy4,dummy5,dummy6;
-  fgets( buf, LEN, fi);
+  if( fgets(buf,LEN,fi ) == 0 ) return ErrPrint(fi,here);
   n = sscanf(buf,"%15lf %15lf %15lf %15lf",&dummy1,&dummy2,&dummy3,&dummy4);
   if( n < 2 ) return ErrPrint(fi,here);
 
@@ -3671,12 +3730,12 @@ int BPM::ReadDB( FILE* fi, time_t, time_t )
   // dummy3 and dummy4 are not used in this apparatus
 
   // Pedestals
-  fgets( buf, LEN, fi);
+  if( fgets(buf,LEN,fi ) == 0 ) return ErrPrint(fi,here);
   n = sscanf(buf,"%15lf %15lf %15lf %15lf",fPed,fPed+1,fPed+2,fPed+3);
   if( n != 4 ) return ErrPrint(fi,here);
 
   // 2x2 transformation matrix and x/y offset
-  fgets( buf, LEN, fi);
+  if( fgets(buf,LEN,fi ) == 0 ) return ErrPrint(fi,here);
   n = sscanf(buf,"%15lf %15lf %15lf %15lf %15lf %15lf",
 	     fRot,fRot+1,fRot+2,fRot+3,&dummy5,&dummy6);
   if( n != 6 ) return ErrPrint(fi,here);
@@ -3712,12 +3771,14 @@ int Raster::ReadDB( FILE* fi, time_t date, time_t )
   fDetMap->Clear();
   int first_chan, crate, dummy, slot, first, last, modulid = 0;
   do {
-    fgets( buf, LEN, fi);
+    if( fgets(buf,LEN,fi ) == 0 ) return ErrPrint(fi,here);
     n = sscanf(buf,"%6d %6d %6d %6d %6d %6d %6d",
 	       &first_chan, &crate, &dummy, &slot, &first, &last, &modulid);
     if( n < 1 ) return ErrPrint(fi,here);
     if( n == 7 )
       fDetMapHasModel = true;
+    if( CheckDetMapInp(crate,slot,first,last,buf,here) )
+      return kInitError;
     if (first_chan>=0 && n >= 6 ) {
       if ( fDetMap->AddModule(crate, slot, first, last, first_chan, modulid) <0 ) {
 	Error( Here(here), "Couldn't add Raster to DetMap");
@@ -3742,7 +3803,7 @@ int Raster::ReadDB( FILE* fi, time_t date, time_t )
     return kInitError;
   }
 
-  fgets( buf, LEN, fi);
+  if( fgets(buf,LEN,fi ) == 0 ) return ErrPrint(fi,here);
   // NB: dummy1 is never used. Comment in old db files says it is "z-pos",
   // which are read from the following lines - probably dummy1 is leftover junk
   double dummy1;
@@ -3751,13 +3812,13 @@ int Raster::ReadDB( FILE* fi, time_t date, time_t )
   if( n != 7 ) return ErrPrint(fi,here);
 
   // z positions of BPMA, BPMB, and target reference point (usually 0)
-  fgets( buf, LEN, fi);
+  if( fgets(buf,LEN,fi ) == 0 ) return ErrPrint(fi,here);
   n = sscanf(buf,"%15lf",fZpos);
   if( n != 1 ) return ErrPrint(fi,here);
-  fgets( buf, LEN, fi);
+  if( fgets(buf,LEN,fi ) == 0 ) return ErrPrint(fi,here);
   n = sscanf(buf,"%15lf",fZpos+1);
   if( n != 1 ) return ErrPrint(fi,here);
-  fgets( buf, LEN, fi);
+  if( fgets(buf,LEN,fi ) == 0 ) return ErrPrint(fi,here);
   n = sscanf(buf,"%15lf",fZpos+2);
   if( n != 1 ) return ErrPrint(fi,here);
 
@@ -3766,18 +3827,18 @@ int Raster::ReadDB( FILE* fi, time_t date, time_t )
   THaAnalysisObject::SeekDBdate( fi, datime, true );
 
   // Raster constants: offx/y,amplx/y,slopex/y for BPMA, BPMB, target
-  fgets( buf, LEN, fi);
+  if( fgets(buf,LEN,fi ) == 0 ) return ErrPrint(fi,here);
   n = sscanf(buf,"%15lf %15lf %15lf %15lf %15lf %15lf",
 	     fCalibA,fCalibA+1,fCalibA+2,fCalibA+3,fCalibA+4,fCalibA+5);
   if( n != 6 ) return ErrPrint(fi,here);
 
-  fgets( buf, LEN, fi);
-  sscanf(buf,"%15lf %15lf %15lf %15lf %15lf %15lf",
+  if( fgets(buf,LEN,fi ) == 0 ) return ErrPrint(fi,here);
+  n = sscanf(buf,"%15lf %15lf %15lf %15lf %15lf %15lf",
 	 fCalibB,fCalibB+1,fCalibB+2,fCalibB+3,fCalibB+4,fCalibB+5);
   if( n != 6 ) return ErrPrint(fi,here);
 
-  fgets( buf, LEN, fi);
-  sscanf(buf,"%15lf %15lf %15lf %15lf %15lf %15lf",
+  if( fgets(buf,LEN,fi ) == 0 ) return ErrPrint(fi,here);
+  n = sscanf(buf,"%15lf %15lf %15lf %15lf %15lf %15lf",
 	 fCalibT,fCalibT+1,fCalibT+2,fCalibT+3,fCalibT+4,fCalibT+5);
   if( n != 6 ) return ErrPrint(fi,here);
 
@@ -3805,10 +3866,12 @@ int CoincTime::ReadDB( FILE* fi, time_t, time_t )
     char label[21];      // string label for TDC = Stop_by_Start
 
     while( ReadComment(fi, buf, LEN) );
-    fgets ( buf, LEN, fi );
+    if( fgets(buf,LEN,fi ) == 0 ) return ErrPrint(fi,here);
     nread = sscanf( buf, "%6d %6d %6d %6d %15lf %20s %15lf",
 		    &crate, &slot, &first, &model, &tres, label, &toff );
     if( crate < 0 ) break;
+    if( CheckDetMapInp(crate,slot,first,1,buf,here) )
+      return kInitError;
     if( k > 1 ) {
       Warning( Here(here), "Too many detector map entries. Must be exactly 2.");
       break;
@@ -3835,6 +3898,8 @@ int CoincTime::ReadDB( FILE* fi, time_t, time_t )
       Error( Here(here), "Invalid detector map! Need at least 6 columns." );
       return kInitError;
     }
+    if( CheckDetMapInp(crate,slot,first,1,buf,here) )
+      return kInitError;
     if( fDetMap->AddModule( crate, slot, first, first, k, model ) < 0 ) {
       Error( Here(here), "Too many DetMap modules (maximum allowed - %d).",
 	     THaDetMap::kDetMapSize);
@@ -3925,7 +3990,7 @@ int VDC::ReadDB( FILE* file, time_t date, time_t date_until )
 
   TString line;
   bool found = false;
-  while (!found && fgets (buff, LEN, file) != 0) {
+  while (!found && fgets(buff, LEN, file) != 0) {
     char* buf = ::Compress(buff);  //strip blanks
     line = buf;
     delete [] buf;
@@ -3944,7 +4009,7 @@ int VDC::ReadDB( FILE* file, time_t date, time_t date_until )
   //  fscanf(file, "%lf", &fSpacing);
   // fSpacing is now calculated from the actual z-positions in Init(),
   // so skip the first line after [ global ] completely:
-  fgets(buff, LEN, file); // Skip rest of line
+  if( fgets(buff,LEN,file ) == 0 ) return kInitError;  // Skip rest of line
 
   // Read in the focal plane transfer elements
   // For fine-tuning of these data, we seek to a matching time stamp, or
@@ -3974,10 +4039,10 @@ int VDC::ReadDB( FILE* file, time_t date, time_t date_until )
   // Second line after [ global ] or first line after a found tag.
   // After a found tag, it must be the comment line. If not found, then it
   // can be either the comment or a non-found tag before the comment...
-  fgets(buff, LEN, file);  // Skip line
+  if( fgets(buff,LEN,file) == 0 ) return kInitError;
   if( !found && THaAnalysisObject::IsTag(buff) )
     // Skip one more line if this one was a non-found tag
-    fgets(buff, LEN, file);
+    if( fgets(buff,LEN,file) == 0 ) return kInitError;
 
   fTMatrixElems.clear();
   fDMatrixElems.clear();
@@ -4031,7 +4096,6 @@ int VDC::ReadDB( FILE* file, time_t date, time_t date_until )
     string line(buff);
     // Erase trailing newline
     if( line.size() > 0 && line[line.size()-1] == '\n' ) {
-      buff[line.size()-1] = 0;
       line.erase(line.size()-1,1);
     }
     // Split the line into whitespace-separated fields
@@ -4092,12 +4156,13 @@ int VDC::ReadDB( FILE* file, time_t date, time_t date_until )
 	  THaMatrixElement& m = (*mat)[fp_map[w]];
 	  if( m.order > 0 ) {
 	    Warning(Here(here), "Duplicate definition of focal plane "
-		    "matrix element: %s. Using first definition.", buff);
+		    "matrix element: %s. Using first definition.",
+		    line.c_str());
 	  } else
 	    m = ME;
 	} else
 	  Warning(Here(here), "Bad coefficients of focal plane matrix "
-		  "element %s", buff);
+		  "element %s", line.c_str() );
       }
       else {
 	// All other matrix elements are just appended to the respective array
@@ -4107,7 +4172,8 @@ int VDC::ReadDB( FILE* file, time_t date, time_t date_until )
 	     it != mat->end() && !(match = it->match(ME)); ++it ) {}
 	if( match ) {
 	  Warning(Here(here), "Duplicate definition of "
-		  "matrix element: %s. Using first definition.", buff);
+		  "matrix element: %s. Using first definition.",
+		  line.c_str() );
 	} else
 	  mat->push_back(ME);
       }
@@ -4174,7 +4240,7 @@ int VDC::ReadDB( FILE* file, time_t date, time_t date_until )
       case kMaxTdiff:
 	is_common = ( fPlanes[i].fMaxTdiff == fPlanes[i+1].fMaxTdiff );
 	break;
-      case kFlagsEnd:
+      default:
 	assert(false); // not reached
 	break;
       }
@@ -4208,7 +4274,7 @@ int VDC::Plane::ReadDB( FILE* file, time_t /* date */, time_t )
   tag.Prepend("["); tag.Append("]");
   TString line;
   bool found = false;
-  while (!found && fgets (buff, LEN, file) != NULL) {
+  while (!found && fgets(buff, LEN, file) != 0) {
     char* buf = ::Compress(buff);  //strip blanks
     line = buf;
     delete [] buf;
@@ -4228,7 +4294,10 @@ int VDC::Plane::ReadDB( FILE* file, time_t /* date */, time_t )
   // Set up the detector map
   fDetMap->Clear();
   do {
-    fgets( buff, LEN, file );
+    if( fgets(buff,LEN,file) == 0 ) {
+      Error( Here(here), "Error reading detector map" );
+      return kInitError;
+    }
     // bad kludge to allow a variable number of detector map lines
     if( strchr(buff, '.') ) // any floating point number indicates end of map
       break;
@@ -4239,14 +4308,23 @@ int VDC::Plane::ReadDB( FILE* file, time_t /* date */, time_t )
       Error( Here(here), "Error reading detector map line: %s", buff );
       return kInitError;
     }
+    if( CheckDetMapInp(crate,slot,lo,hi,buff,here) )
+      return kInitError;
     Int_t first = prev_first + prev_nwires;
     // Add module to the detector map
     fDetMap->AddModule(crate, slot, lo, hi, first);
     prev_first = first;
-    prev_nwires = (hi - lo + 1);
+    prev_nwires = (TMath::Abs(hi - lo) + 1);
     nWires += prev_nwires;
   } while( *buff );  // sanity escape
 
+  static const Int_t max_nWires = std::numeric_limits<Short_t>::max();
+  if( nWires > max_nWires ) {
+    Error( Here(here), "Illegal number of wires %d in VDC plane %s. "
+        "Should be 368, but at most %d. Fix database.",
+        nWires, fName.c_str(), max_nWires );
+    return kInitError;
+  }
   fNelem = nWires;
 
   // Load z, wire beginning postion, wire spacing, and wire angle
@@ -4255,9 +4333,12 @@ int VDC::Plane::ReadDB( FILE* file, time_t /* date */, time_t )
 
   // Load drift velocity (will be used to initialize crude Time to Distance
   // converter)
-  fscanf(file, "%15lf", &fDriftVel);
-  fgets(buff, LEN, file); // Read to end of line
-  fgets(buff, LEN, file); // Skip line
+  if( fscanf(file, "%15lf", &fDriftVel) != 1 ) {
+    Error( Here(here), "Error reading drift velocity, line: %s", buff );
+    return kInitError;
+  }
+  if( fgets(buff,LEN,file) == 0 ) return kInitError;  // Read to end of line
+  if( fgets(buff,LEN,file) == 0 ) return kInitError;  // Skip line
 
   // first read in the time offsets for the wires
   fTDCOffsets.clear();
@@ -4266,7 +4347,10 @@ int VDC::Plane::ReadDB( FILE* file, time_t /* date */, time_t )
   for (int i = 0; i < nWires; i++) {
     Int_t wnum;
     Double_t offset;
-    fscanf(file, " %6d %15lf", &wnum, &offset);
+    if( fscanf(file, " %6d %15lf", &wnum, &offset) != 2 ) {
+      Error( Here(here), "Error reading TDC offsets, line: %s", buff );
+      return kInitError;
+    }
     fTDCOffsets[wnum-1] = offset;
     if( wnum < 0 )
       fBadWires.push_back(wnum-1); // Wire numbers in file start at 1
@@ -4308,7 +4392,7 @@ int VDC::Plane::ReadDB( FILE* file, time_t /* date */, time_t )
   TString tag2(tag);
   found = false;
   rewind(file);
-  while (!found && fgets(buff, LEN, file) != NULL) {
+  while (!found && fgets(buff,LEN,file) != NULL) {
     char* buf = ::Compress(buff);  //strip blanks
     line = buf;
     delete [] buf;
@@ -4327,7 +4411,7 @@ int VDC::Plane::ReadDB( FILE* file, time_t /* date */, time_t )
       tag2.Append(".");
     tag2.Prepend("[");
     tag2.Append("extra_param]");
-    while (!found && fgets(buff, LEN, file) != NULL) {
+    while (!found && fgets(buff,LEN,file) != NULL) {
       char* buf = ::Compress(buff);  //strip blanks
       line = buf;
       delete [] buf;
@@ -4342,7 +4426,7 @@ int VDC::Plane::ReadDB( FILE* file, time_t /* date */, time_t )
 	     "Line = %s\nFix database.", buff );
       return kInitError;
     }
-    fgets(buff, LEN, file); // Read to end of line
+    if( fgets(buff,LEN,file) == 0 ) return kInitError;  // Read to end of line
     if( fscanf( file, "%d %d %d %d %d %lf %lf", &fMinClustSize, &fMaxClustSpan,
 		&fNMaxGap, &fMinTime, &fMaxTime, &fMinTdiff, &fMaxTdiff ) != 7 ) {
       Error( Here(here), "Error reading min_clust_size, max_clust_span, "
@@ -4350,7 +4434,7 @@ int VDC::Plane::ReadDB( FILE* file, time_t /* date */, time_t )
 	     "Line = %s\nFix database.", buff );
       return kInitError;
     }
-    fgets(buff, LEN, file); // Read to end of line
+    if( fgets(buff,LEN,file) == 0 ) return kInitError;  // Read to end of line
     // Time-to-distance converter parameters
     // THaVDCAnalyticTTDConv
     // Format: 4*A1 4*A2 dtime(s)  (9 floats)
@@ -4364,7 +4448,7 @@ int VDC::Plane::ReadDB( FILE* file, time_t /* date */, time_t )
       return kInitError;
     }
     fTTDPar.assign( par, par+9 );
-    fgets(buff, LEN, file); // Read to end of line
+    if( fgets(buff,LEN,file) == 0 ) return kInitError;  // Read to end of line
 
     Double_t h, w;
 
@@ -4378,7 +4462,7 @@ int VDC::Plane::ReadDB( FILE* file, time_t /* date */, time_t )
       fSize[1] = w/2.0;
     }
 
-    fgets(buff, LEN, file); // Read to end of line
+    if( fgets(buff,LEN,file) == 0 ) return kInitError;  // Read to end of line
   } else {
     // Warning( Here(here), "No database section \"%s\" or \"%s\" found. "
     //	     "Using defaults.", tag.Data(), tag2.Data() );
@@ -4598,9 +4682,13 @@ static void WriteME( ostream& s, const THaVDC::THaMatrixElement& ME,
     s << " " << ME.pw[k];
   }
   assert( ME.order <= (int)ME.poly.size() );
+  ios_base::fmtflags fmt = s.flags();
+  streamsize prec = s.precision();
   for( int k = 0; k < ME.order; ++k ) {
     s << scientific << setw(w) << setprecision(6) << ME.poly[k];
   }
+  s.flags(fmt);
+  s.precision(prec);
 }
 
 //-----------------------------------------------------------------------------

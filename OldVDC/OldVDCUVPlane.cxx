@@ -23,7 +23,8 @@ ClassImp(OldVDCUVPlane)
 //_____________________________________________________________________________
 OldVDCUVPlane::OldVDCUVPlane( const char* name, const char* description,
 			      THaDetectorBase* parent )
-  : THaSubDetector(name,description,parent)
+  : THaSubDetector(name,description,parent),
+    fSpacing(0), fSin_u(0), fCos_u(1), fSin_v(1), fCos_v(0), fInv_sin_vu(0)
 {
   // Constructor
 
@@ -206,6 +207,7 @@ Int_t OldVDCUVPlane::CalcUVTrackCoords()
 void OldVDCUVPlane::Clear( Option_t* opt )
 { 
   // Clear event-by-event data
+  THaSubDetector::Clear(opt);
   fU->Clear(opt);
   fV->Clear(opt);
   fUVTracks->Clear();

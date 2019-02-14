@@ -29,6 +29,7 @@ using namespace std;
 THaTriggerTime::THaTriggerTime( const char* name, const char* desc,
 				THaApparatus* apparatus ) :
   THaNonTrackingDetector(name, desc, apparatus),
+  fEvtTime(kBig), fEvtType(-1), fTDCRes(0),
   fGlOffset(0), fNTrgType(0), fTrgTimes(NULL)
 {
   // basic do-nothing-else contructor
@@ -105,9 +106,10 @@ Int_t THaTriggerTime::ReadDatabase( const TDatime& date )
 }
 
 //____________________________________________________________________________
-void THaTriggerTime::Clear(Option_t* )
+void THaTriggerTime::Clear(Option_t* opt)
 {
   // Reset all variables to their default/unknown state
+  THaNonTrackingDetector::Clear(opt);
   fEvtType = -1;
   fEvtTime = fGlOffset;
   for (Int_t i=0; i<fNTrgType; i++) fTrgTimes[i]=kBig;

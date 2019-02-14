@@ -27,8 +27,11 @@ ClassImp(THaPrimaryKine)
 THaPrimaryKine::THaPrimaryKine( const char* name, const char* description,
 				const char* spectro, Double_t particle_mass,
 				Double_t target_mass ) :
-  THaPhysicsModule(name,description), fM(particle_mass), 
-  fMA(target_mass), fSpectroName(spectro), fSpectro(NULL), fBeam(NULL)
+  THaPhysicsModule(name,description),
+  fQ2(kBig), fOmega(kBig), fW2(kBig), fXbj(kBig), fScatAngle(kBig),
+  fEpsilon(kBig), fQ3mag(kBig), fThetaQ(kBig), fPhiQ(kBig),
+  fM(particle_mass), fMA(target_mass),
+  fSpectroName(spectro), fSpectro(0), fBeam(0)
 {
   // Standard constructor. Must specify particle mass. Incident particles
   // are assumed to be along z_lab.
@@ -39,8 +42,11 @@ THaPrimaryKine::THaPrimaryKine( const char* name, const char* description,
 THaPrimaryKine::THaPrimaryKine( const char* name, const char* description,
 				const char* spectro, const char* beam, 
 				Double_t target_mass ) 
-  : THaPhysicsModule(name,description), fM(-1.0), fMA(target_mass), 
-    fSpectroName(spectro), fBeamName(beam), fSpectro(NULL), fBeam(NULL)
+  : THaPhysicsModule(name,description),
+    fQ2(kBig), fOmega(kBig), fW2(kBig), fXbj(kBig), fScatAngle(kBig),
+    fEpsilon(kBig), fQ3mag(kBig), fThetaQ(kBig), fPhiQ(kBig),
+    fM(-1.0), fMA(target_mass),
+    fSpectroName(spectro), fBeamName(beam), fSpectro(0), fBeam(0)
 {
   // Constructor with specification of optional beam module.
   // Particle mass will normally come from the beam module.

@@ -10,9 +10,9 @@
 #include "THaApparatus.h"
 
 class UserApparatus : public THaApparatus {
-  
+
 public:
-  UserApparatus( const char* name="U", 
+  UserApparatus( const char* name="U",
 		 const char* description="User Apparatus" );
   virtual ~UserApparatus();
 
@@ -20,7 +20,7 @@ public:
   virtual Int_t Reconstruct();
 
 protected:
-  
+
   Int_t  fNtotal;  // Total number of hits in all detectors
 
   virtual Int_t DefineVariables( EMode mode = kDefine );
@@ -29,4 +29,3 @@ protected:
 };
 
 #endif
-

@@ -83,8 +83,6 @@ Int_t THaScalerEvtHandler::End( THaRunBase* )
 
 Int_t THaScalerEvtHandler::Analyze(THaEvData *evdata)
 {
-  Int_t lfirst=1;
-
   if ( !IsMyEvent(evdata->GetEvType()) ) return -1;
 
   if (fDebugFile) {
@@ -93,9 +91,7 @@ Int_t THaScalerEvtHandler::Analyze(THaEvData *evdata)
     EvDump(evdata);
   }
 
-  if (lfirst && !fScalerTree) {
-
-    lfirst = 0; // Can't do this in Init for some reason
+  if (!fScalerTree) {
 
     TString sname1 = "TS";
     TString sname2 = sname1 + fName;
@@ -109,10 +105,8 @@ Int_t THaScalerEvtHandler::Analyze(THaEvData *evdata)
     fScalerTree = new TTree(sname2.Data(),sname3.Data());
     fScalerTree->SetAutoSave(200000000);
 
-    TString name, tinfo;
-
-    name = "evcount";
-    tinfo = name + "/D";
+    TString name = "evcount";
+    TString tinfo = name + "/D";
     fScalerTree->Branch(name.Data(), &evcount, tinfo.Data(), 4000);
 
     for (UInt_t i = 0; i < scalerloc.size(); i++) {
@@ -121,7 +115,7 @@ Int_t THaScalerEvtHandler::Analyze(THaEvData *evdata)
       fScalerTree->Branch(name.Data(), &dvars[i], tinfo.Data(), 4000);
     }
 
-  }  // if (lfirst && !fScalerTree)
+  }  // if (!fScalerTree)
 
 
   // Parse the data, load local data arrays.
@@ -390,7 +384,7 @@ THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& date)
     }
   }
 
-
+  fclose(fi);
   return kOK;
 }
 

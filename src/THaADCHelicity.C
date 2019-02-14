@@ -27,7 +27,8 @@ THaADCHelicity::THaADCHelicity( const char* name, const char* description,
 				THaApparatus* app ) : 
   THaHelicityDet( name, description, app ),
   fADC_hdata(kBig), fADC_Gate(kBig), fADC_Hel(kUnknown), 
-  fThreshold(kDefaultThreshold), fIgnoreGate(kFALSE), fNchan(0)
+  fThreshold(kDefaultThreshold), fIgnoreGate(kFALSE),
+  fInvertGate(kFALSE), fNchan(0)
 {
   // Constructor
 }
@@ -87,7 +88,7 @@ Int_t THaADCHelicity::ReadDatabase( const TDatime& date )
     return kInitError;
 
   if( heldef.size() != 3 ) {
-    Error( Here(here), "Incorrect defintion of helicity data channel. Must be "
+    Error( Here(here), "Incorrect definition of helicity data channel. Must be "
 	   "exactly 3 numbers (roc,slot,chan), found %u. Fix database.", 
 	   static_cast<unsigned int>(heldef.size()) );
     return kInitError;
@@ -103,7 +104,7 @@ Int_t THaADCHelicity::ReadDatabase( const TDatime& date )
     }
   }
   if( !gatedef.empty() && gatedef.size() != 3 ) {
-    Error( Here(here), "Incorrect defintion of gate data channel. Must be "
+    Error( Here(here), "Incorrect definition of gate data channel. Must be "
 	   "exactly 3 numbers (roc,slot,chan), found %u. Fix database.", 
 	   static_cast<unsigned int>(gatedef.size()) );
     return kInitError;

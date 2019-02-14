@@ -92,7 +92,7 @@ THaAnalysisObject::EStatus UserModule::Init( const TDatime& run_time )
 }
 
 //_____________________________________________________________________________
-Int_t UserModule::Process( const THaEvData& evdata )
+Int_t UserModule::Process( const THaEvData& /* evdata */ )
 {
   // Calculate results.
   // This function is called for every physics event.

@@ -288,7 +288,7 @@ Int_t UserDetector::Decode( const THaEvData& evdata )
 }
 
 //_____________________________________________________________________________
-Int_t UserDetector::CoarseProcess( TClonesArray& tracks )
+Int_t UserDetector::CoarseProcess( TClonesArray& /* tracks */ )
 {
   // Coarse processing. 'tracks' contains coarse tracks.
 
@@ -296,7 +296,7 @@ Int_t UserDetector::CoarseProcess( TClonesArray& tracks )
 }
 
 //_____________________________________________________________________________
-Int_t UserDetector::FineProcess( TClonesArray& tracks )
+Int_t UserDetector::FineProcess( TClonesArray& /* tracks */ )
 {
   // Fine processing. 'tracks' contains final tracking results.
 

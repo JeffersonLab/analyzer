@@ -16,7 +16,8 @@ class F1TDCModule : public VmeModule {
 
 public:
 
-   F1TDCModule() : VmeModule() {}
+   F1TDCModule() : fNumHits(0), fResol(ILO), fTdcData(0), IsInit(false),
+     slotmask(0), chanmask(0), datamask(0) {}
    F1TDCModule(Int_t crate, Int_t slot);
    virtual ~F1TDCModule();
 
@@ -26,7 +27,7 @@ public:
    enum EResolution { ILO = 0, IHI = 1 };
 
    virtual void Init();
-   virtual void Clear(const Option_t *opt="");
+   virtual void Clear(Option_t *opt="");
    virtual Bool_t IsSlot(UInt_t rdata);
    virtual Int_t GetData(Int_t chan, Int_t hit) const;
 

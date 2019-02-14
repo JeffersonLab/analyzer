@@ -12,7 +12,12 @@ using namespace std;
 
 namespace Decoder {
 
-FastbusModule::FastbusModule(Int_t crate, Int_t slot) : Module(crate, slot) {
+FastbusModule::FastbusModule(Int_t crate, Int_t slot)
+  : Module(crate, slot), fHasHeader(false),
+    fSlotMask(0), fSlotShift(0), fChanMask(0), fChanShift(0),
+    fDataMask(0), fOptMask(0), fOptShift(0),
+    fChan(0), fData(0), fRawData(0)
+{
   SetSlot(crate, slot);
 }
 

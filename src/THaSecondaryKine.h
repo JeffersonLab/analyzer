@@ -11,6 +11,7 @@
 #include "TLorentzVector.h"
 #include "TString.h"
 
+class THaPrimaryKine;
 class THaTrackingModule;
 typedef TLorentzVector FourVect;
 
@@ -56,8 +57,8 @@ public:
 
   Double_t          GetMX()         const { return fMX; }
 
-  const TLorentzVector* GetPX()     const { return &fX; }
-  const TLorentzVector* GetPB()     const { return &fB; }
+  const FourVect*   GetPX()     const { return &fX; }
+  const FourVect*   GetPB()     const { return &fB; }
 
   virtual EStatus   Init( const TDatime& run_time );
   virtual Int_t     Process( const THaEvData& );
@@ -96,8 +97,8 @@ protected:
   Double_t fMandelT;    // Mandelstam t for secondary vertex (GeV^2)
   Double_t fMandelU;    // Mandelstam u for secondary vertex (GeV^2)
 
-  TLorentzVector fX;    // Detected secondary particle 4-momentum (GeV)
-  TLorentzVector fB;    // Recoil system 4-momentum (GeV)
+  FourVect fX;    // Detected secondary particle 4-momentum (GeV)
+  FourVect fB;    // Recoil system 4-momentum (GeV)
 
   // Parameters
   Double_t fMX;         // Mass of secondary particle (GeV)

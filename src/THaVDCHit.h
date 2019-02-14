@@ -17,7 +17,7 @@ class THaVDCHit : public TObject {
 public:
   THaVDCHit( THaVDCWire* wire=0, Int_t rawtime=0, Double_t time=0.0 )
     : fWire(wire), fRawTime(rawtime), fTime(time), fDist(kBig), fdDist(1.0),
-      ftrDist(kBig), fTrkNum(0), fClsNum(-1) {}
+      ftrDist(kBig), fltrDist(kBig), fTrkNum(0), fClsNum(-1) {}
   virtual ~THaVDCHit() {}
 
   virtual Double_t ConvertTimeToDist(Double_t slope);

@@ -27,9 +27,10 @@
 #include <cassert>
 
 //_____________________________________________________________________________
-THaVDCChamber::THaVDCChamber( const char* name, const char* description,
+THaVDCChamber::THaVDCChamber( const char* name, const char* description, // @suppress("Class members should be properly initialized")
 			      THaDetectorBase* parent )
-  : THaSubDetector(name,description,parent)
+  : THaSubDetector(name,description,parent),
+    fSpacing(0), fSin_u(0), fCos_u(1), fSin_v(1), fCos_v(0), fInv_sin_vu(0)
 {
   // Constructor
 
@@ -68,7 +69,7 @@ THaDetectorBase::EStatus THaVDCChamber::Init( const TDatime& date )
       (status = fV->Init( date )))
     return fStatus = status;
 
-  fSpacing = fV->GetZ() - fU->GetZ();  // Space between U & V planes
+  fSpacing = fV->GetZ() - fU->GetZ();  // Space between U & V wire planes
 
   // Precompute and store values for efficiency
   fSin_u   = fU->GetSinWAngle();
@@ -99,7 +100,7 @@ THaDetectorBase::EStatus THaVDCChamber::Init( const TDatime& date )
   // Estimate our size
   fSize[0] = 0.5*TMath::Max( fU->GetXSize(), fU->GetXSize() );
   fSize[1] = 0.5*TMath::Max( fU->GetYSize(), fU->GetYSize() );
-  fSize[2] = fSpacing + TMath::Max( fU->GetZSize(), fV->GetZSize() );
+  fSize[2] = fSpacing + 0.5*fU->GetZSize() + 0.5*fV->GetZSize();
 
   return fStatus = kOK;
 }
@@ -226,6 +227,7 @@ Int_t THaVDCChamber::CalcPointCoords()
 void THaVDCChamber::Clear( Option_t* opt )
 {
   // Clear event-by-event data
+  THaSubDetector::Clear(opt);
   fU->Clear(opt);
   fV->Clear(opt);
   fPoints->Clear();

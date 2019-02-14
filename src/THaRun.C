@@ -103,7 +103,7 @@ THaRun::~THaRun()
 }
 
 //_____________________________________________________________________________
-void THaRun::Clear( const Option_t* opt )
+void THaRun::Clear( Option_t* opt )
 {
   // Reset the run object.
 

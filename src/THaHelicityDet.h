@@ -31,7 +31,7 @@ public:
   virtual const char* GetDBFileName() const;
   virtual void        MakePrefix();
 
-  THaHelicityDet() {}  // For ROOT I/O only
+  THaHelicityDet() : fHelicity(kUnknown), fSign(1) {}  // For ROOT I/O only
 
 protected:
 

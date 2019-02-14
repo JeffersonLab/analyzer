@@ -23,7 +23,10 @@ public:
   virtual void   Clear( Option_t* opt = "" );
   virtual Int_t  Decode( const THaEvData& evdata );
 
-  THaADCHelicity() {}  // For ROOT I/O only
+  THaADCHelicity()
+    : fADC_hdata(0), fADC_Gate(0), fADC_Hel(kUnknown),
+      fThreshold(0), fIgnoreGate(kFALSE), fInvertGate(kFALSE),
+      fNchan(0) {}  // For ROOT I/O only
   
   // Simplified detector map for the two data channels
   struct ChanDef_t {

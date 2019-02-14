@@ -50,7 +50,7 @@ using namespace VDC;
 // Helper structure for parsing tensor data
 typedef vector<THaVDC::THaMatrixElement> MEvec_t;
 struct MEdef_t {
-  MEdef_t() : npow(0), elems(0), isfp(false) {}
+  MEdef_t() : npow(0), elems(0), isfp(false), fpidx(0) {}
   MEdef_t( Int_t npw, MEvec_t* elemp, Bool_t is_fp = false, Int_t fp_idx = 0 )
     : npow(npw), elems(elemp), isfp(is_fp), fpidx(fp_idx) {}
   MEvec_t::size_type npow; // Number of exponents for this element type
@@ -738,6 +738,7 @@ void THaVDC::Clear( Option_t* opt )
 {
   // Clear event-by-event data
 
+  THaTrackingDetector::Clear(opt);
   fLower->Clear(opt);
   fUpper->Clear(opt);
 }

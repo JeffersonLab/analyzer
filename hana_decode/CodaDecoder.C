@@ -210,7 +210,7 @@ Int_t CodaDecoder::roc_decode( Int_t roc, const UInt_t* evbuffer,
 
   Bool_t slotdone;
 
-  Int_t status = SD_ERR;
+//  Int_t status = SD_ERR;
 
   n_slots_done = 0;
 
@@ -292,7 +292,8 @@ Int_t CodaDecoder::roc_decode( Int_t roc, const UInt_t* evbuffer,
   goto exit;
 
  err:
-  retval = (status == SD_ERR) ? HED_ERR : HED_WARN;
+  //  retval = (status == SD_ERR) ? HED_ERR : HED_WARN;
+  retval = HED_ERR;
  exit:
   if( fDoBench ) fBench->Stop("roc_decode");
   return retval;
@@ -442,7 +443,6 @@ Int_t CodaDecoder::FindRocs(const UInt_t *evbuffer) {
   return status;
 
 }
-
 
 // To initialize the THaSlotData member on first call to decoder
 int CodaDecoder::init_slotdata()

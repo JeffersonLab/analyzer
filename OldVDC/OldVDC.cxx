@@ -46,7 +46,7 @@ using THaString::Split;
 // Helper structure for parsing tensor data
 typedef vector<OldVDC::OldVDCMatrixElement> MEvec_t;
 struct MEdef_t {
-  MEdef_t() : npow(0), elems(0), isfp(false) {}
+  MEdef_t() : npow(0), elems(0), isfp(false), fpidx(0) {}
   MEdef_t( Int_t npw, MEvec_t* elemp, Bool_t is_fp = false, Int_t fp_idx = 0 )
     : npow(npw), elems(elemp), isfp(is_fp), fpidx(fp_idx) {}
   MEvec_t::size_type npow; // Number of exponents for this element type
@@ -58,7 +58,11 @@ struct MEdef_t {
 //_____________________________________________________________________________
 OldVDC::OldVDC( const char* name, const char* description,
 		THaApparatus* apparatus ) :
-  THaTrackingDetector(name,description,apparatus), fNtracks(0)
+  THaTrackingDetector(name,description,apparatus),
+  fVDCAngle(-TMath::PiOver4()), fSin_vdc(-0.5*TMath::Sqrt2()),
+  fCos_vdc(0.5*TMath::Sqrt2()), fTan_vdc(-1.0),
+  fUSpacing(0.33), fVSpacing(0.33), fNtracks(0), fNumIter(1),
+  fErrorCutoff(1e9), fCoordType(kRotatingTransport), fCentralDist(0.)
 {
   // Constructor
 
@@ -711,6 +715,7 @@ void OldVDC::Clear( Option_t* opt )
 { 
   // Clear event-by-event data
 
+  THaTrackingDetector::Clear(opt);
   fLower->Clear(opt);
   fUpper->Clear(opt);
 }

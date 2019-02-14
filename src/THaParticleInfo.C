@@ -14,7 +14,7 @@
 using namespace std;
 
 //_____________________________________________________________________________
-THaParticleInfo::THaParticleInfo()
+THaParticleInfo::THaParticleInfo() : fMass(0), fCharge(0)
 {
   // Default constructor
 }

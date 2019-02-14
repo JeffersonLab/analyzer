@@ -14,7 +14,7 @@ class THaVDCTrackID : public THaTrackID {
 
 public:
   THaVDCTrackID()
-    : fLowerU(0), fLowerV(0), fUpperU(0), fUpperV(0) {}
+    : fLowerU(-1), fLowerV(-1), fUpperU(-1), fUpperV(-1) {}
   THaVDCTrackID( Int_t lowerU, Int_t lowerV, Int_t upperU, Int_t upperV )
     : fLowerU(lowerU), fLowerV(lowerV), fUpperU(upperU), fUpperV(upperV) {}
   THaVDCTrackID( const THaVDCPoint* lower, const THaVDCPoint* upper );
@@ -26,10 +26,10 @@ public:
 
 protected:
 
-  Int_t           fLowerU;         // Lower U plane pivot wire number
-  Int_t           fLowerV;         // Lower V plane pivot wire number
-  Int_t           fUpperU;         // Upper U plane pivot wire number
-  Int_t           fUpperV;         // Upper V plane pivot wire number
+  Int_t         fLowerU;         // Lower U plane pivot wire number
+  Int_t         fLowerV;         // Lower V plane pivot wire number
+  Int_t         fUpperU;         // Upper U plane pivot wire number
+  Int_t         fUpperV;         // Upper V plane pivot wire number
 
   ClassDef(THaVDCTrackID,0)      // Track ID class
 };

@@ -60,7 +60,7 @@ Int_t F1TDCModule::GetData(Int_t chan, Int_t hit) const
   return fTdcData[idx];
 }
 
-void F1TDCModule::Clear(const Option_t* opt) {
+void F1TDCModule::Clear(Option_t* opt) {
   VmeModule::Clear(opt);
   fNumHits = 0;
   memset(fTdcData, 0, NTDCCHAN*MAXHIT*sizeof(Int_t));

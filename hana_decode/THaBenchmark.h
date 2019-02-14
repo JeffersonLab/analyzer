@@ -13,7 +13,7 @@
 //_____________________________________________________________________________
 class THaBenchmark : public TBenchmark {
 public:
-  THaBenchmark() { fNmax = 50;  }
+  THaBenchmark() { fNmax = 50; }
   virtual ~THaBenchmark() {}
 
   virtual void Begin(const char *name) {
@@ -21,12 +21,12 @@ public:
       TBenchmark::Start(name);
     else {
       Int_t bench = GetBench(name);
-      if (bench < 0 && fNbench < fNmax ) 
-	TBenchmark::Start(name);
+      if (bench < 0 && fNbench < fNmax )
+        TBenchmark::Start(name);
       else if (bench>=0) 
-	fTimer[bench].Start(kFALSE);
+        fTimer[bench].Start(kFALSE);
       else
-	Warning("Start","too many benches");
+        Warning("Start","too many benches");
     }
   }
 
@@ -34,7 +34,7 @@ public:
     if (name && name[0]!='\0') TBenchmark::Print(name);
     else {
       for (int i=0; i<fNbench; i++) {
-	TBenchmark::Print( (fNames[i]).Data() );
+        TBenchmark::Print( (fNames[i]).Data() );
       }
     }
   }

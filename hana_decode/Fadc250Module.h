@@ -25,7 +25,7 @@ namespace Decoder {
     using Module::GetData;
     using Module::LoadSlot;
 
-    virtual void Clear(const Option_t *opt="");
+    virtual void Clear(Option_t *opt="");
     virtual void Init();
     virtual void CheckDecoderStatus() const;
     virtual Int_t GetPulseIntegralData(Int_t chan, Int_t ievent) const;

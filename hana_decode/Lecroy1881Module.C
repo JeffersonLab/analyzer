@@ -13,11 +13,14 @@ namespace Decoder {
 Module::TypeIter_t Lecroy1881Module::fgThisType =
   DoRegister( ModuleType( "Decoder::Lecroy1881Module" , 1881));
 
-Lecroy1881Module::Lecroy1881Module(Int_t crate, Int_t slot) : FastbusModule(crate, slot) {
+Lecroy1881Module::Lecroy1881Module(Int_t crate, Int_t slot)
+  : FastbusModule(crate, slot)
+{
   Init();
 }
 
-void Lecroy1881Module::Init() {
+void Lecroy1881Module::Init()
+{
   fChanMask = 0x7e0000;
   fDataMask = 0x3fff;
   fWdcntMask = 0x7f;
@@ -30,7 +33,8 @@ void Lecroy1881Module::Init() {
   FastbusModule::Init();
 }
 
-Lecroy1881Module::~Lecroy1881Module() {
+Lecroy1881Module::~Lecroy1881Module()
+{
 }
 
 }

@@ -137,7 +137,7 @@ UInt_t Caen775Module::GetData(Int_t chan) const {
   return fData[chan];
 }
 
-void Caen775Module::Clear(const Option_t* opt) {
+void Caen775Module::Clear(Option_t* opt) {
   VmeModule::Clear(opt);
   fNumHits = 0;
   for (Int_t i=0; i<fNumChan; i++) fData[i]=0;
