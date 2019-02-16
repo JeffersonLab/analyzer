@@ -29,10 +29,10 @@ for a in appnames:
 # Installation
 install_prefix = env.subst('$INSTALLDIR')
 bin_dir = os.path.join(install_prefix,'bin')
-#lib_dir = os.path.join(install_prefix,'lib')
+#lib_dir = os.path.join(install_prefix,env.subst('$LIBSUBDIR'))
 rel_lib_dir = os.path.join(env['RPATH_ORIGIN_TAG'],
                            os.path.join('..',env.subst('$LIBSUBDIR')))
-src_dir = os.path.join(install_prefix,os.path.join('src',thisdir_fullpath))
+src_dir = os.path.join(install_prefix,'src',thisdir)
 
 env.InstallWithRPATH(bin_dir,apps,[rel_lib_dir])
 env.Install(src_dir,sources)

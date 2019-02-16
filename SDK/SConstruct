@@ -54,7 +54,7 @@ if not baseenv.GetOption('clean') and not baseenv.GetOption('help') \
         Exit(1)
 baseenv = conf.Finish()
 
-if os.path.exists(os.path.join(halla_dir,os.path.join('include','ha_compiledata.h'))):
+if os.path.exists(os.path.join(halla_dir,'include','ha_compiledata.h')):
     # Installation location
     baseenv.Prepend(CPPPATH = [os.path.join(halla_dir,'include')])
     baseenv.Append(LIBPATH = [os.path.join(halla_dir,baseenv.subst('$LIBSUBDIR'))])
