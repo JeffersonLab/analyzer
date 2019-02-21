@@ -19,5 +19,5 @@ date -u "+%a %b %d %H:%M:%S %Z %Y"
 echo $(uname -s)-$(uname -r)-$(uname -m)
 uname -n
 whoami
-git rev-parse --short HEAD 2>/dev/null
+git rev-parse --short HEAD 2>/dev/null || echo release
 $1 --version 2>/dev/null | head -1

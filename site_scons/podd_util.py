@@ -218,10 +218,10 @@ import time
 def write_compiledata(env, compiledata):
     if sys.version_info >= (2, 7):
         try:
-            cmd = "git rev-parse HEAD 2>/dev/null"
+            cmd = "git rev-parse --short HEAD 2>/dev/null"
             gitrev = subprocess.check_output(cmd, shell=True).rstrip()
         except:
-            gitrev = ''
+            gitrev = 'release'
         try:
             cmd = env.subst('$CXX') + " --version 2>/dev/null | head -1"
             cxxver = subprocess.check_output(cmd, shell=True).rstrip()
@@ -235,10 +235,10 @@ def write_compiledata(env, compiledata):
     else:
         FNULL = open(os.devnull, 'w')
         try:
-            gitrev = subprocess.Popen(['git', 'rev-parse', 'HEAD', '2>dev/null'],
+            gitrev = subprocess.Popen(['git', 'rev-parse', '--short', 'HEAD', '2>dev/null'],
                         stdout=subprocess.PIPE, stderr=FNULL).communicate()[0].rstrip()
         except:
-            gitrev =''
+            gitrev ='release'
         try:
             outp = subprocess.Popen([env.subst('$CXX'), '--version'],
                                     stdout=subprocess.PIPE, stderr=FNULL).communicate()[0]
