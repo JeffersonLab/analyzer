@@ -1,7 +1,7 @@
 # Makefile for local EVIO build
 
-EVIO = evio-4.4.6
-REL = master
+EVIO = hallac-evio-5.2
+REL = hallac-evio-5.2
 TAR = $(REL).tar.gz
 REPO = hallac_evio
 URL = https://github.com/JeffersonLab/$(REPO)/archive/$(TAR)
