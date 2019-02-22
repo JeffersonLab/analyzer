@@ -5,12 +5,12 @@
 set(evio_arch ${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR})
 
 if( DEFINED ENV{EVIO} )
-  set(evio_arch_lib $ENV{EVIO}/${evio_arch}/lib $ENV{EVIO}/${CMAKE_SYSTEM_NAME}/lib)
-  set(evio_arch_inc $ENV{EVIO}/${evio_arch}/include $ENV{EVIO}/common/include)
+  set(evio_arch_lib $ENV{EVIO}/${evio_arch}/lib $ENV{EVIO}/${CMAKE_SYSTEM_NAME}/lib $ENV{EVIO}/lib )
+  set(evio_arch_inc $ENV{EVIO}/${evio_arch}/include $ENV{EVIO}/common/include $ENV{EVIO}/include)
 endif()
 if( DEFINED ENV{CODA} )
-  set(coda_arch_lib $ENV{CODA}/${evio_arch}/lib $ENV{CODA}/${CMAKE_SYSTEM_NAME}/lib)
-  set(coda_arch_inc $ENV{CODA}/${evio_arch}/include $ENV{CODA}/common/include)
+  set(coda_arch_lib $ENV{CODA}/${evio_arch}/lib $ENV{CODA}/${CMAKE_SYSTEM_NAME}/lib $ENV{CODA}/lib )
+  set(coda_arch_inc $ENV{CODA}/${evio_arch}/include $ENV{CODA}/common/include $ENV{CODA}/include)
 endif()
 
 find_library(EVIO_LIBRARY evio
