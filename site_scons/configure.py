@@ -121,38 +121,58 @@ def FindEVIO(env, build_it = True, fail_if_missing = True):
     evio_lib_dir = os.getenv('EVIO_LIBDIR')
     th1 = env.FindFile(evio_header_file,evio_inc_dir)
     tl1 = env.FindFile(evio_library_file,evio_lib_dir)
-    #print ('%-12s' % ('%s:' % evio_header_file), FindFile(evio_header_file, evio_inc_dir))
-    #print ('%-12s' % ('%s:' % evio_library_file), FindFile(evio_library_file, evio_lib_dir))
+    evio_inc_dir = os.path.dirname(str(th1))
+    evio_lib_dir = os.path.dirname(str(tl1))
+    # print ('%-12s' % ('%s:' % evio_header_file), \
+    #        str(env.FindFile(evio_header_file, evio_inc_dir)))
+    # print ('%-12s' % ('%s:' % evio_library_file), \
+    #        str(env.FindFile(evio_library_file, evio_lib_dir)))
     #
     evio_dir = os.getenv('EVIO')
     evio_arch = platform + '-' + machine
     if evio_dir:
-        evio_lib_dir2 = os.path.join(evio_dir,evio_arch,'lib')
-        evio_inc_dir2 = os.path.join(evio_dir,evio_arch,'include')
+        evio_lib_dir2 = [ os.path.join(evio_dir,evio_arch,'lib'),
+                          os.path.join(evio_dir,platform,'lib'),
+                          os.path.join(evio_dir,'lib') ]
+        evio_inc_dir2 = [ os.path.join(evio_dir,evio_arch,'include'),
+                          os.path.join(evio_dir,'common','include'),
+                          os.path.join(evio_dir,'include') ]
         th2 = env.FindFile(evio_header_file,evio_inc_dir2)
         tl2 = env.FindFile(evio_library_file,evio_lib_dir2)
+        evio_inc_dir2 = os.path.dirname(str(th2))
+        evio_lib_dir2 = os.path.dirname(str(tl2))
     else:
         evio_lib_dir2 = None
         evio_inc_dir2 = None
         th2 = None
         tl2 = None
-    #print ('%-12s' % ('%s:' % evio_header_file), FindFile(evio_header_file, evio_inc_dir2))
-    #print ('%-12s' % ('%s:' % evio_library_file), FindFile(evio_library_file, evio_lib_dir2))
+    # print ('%-12s' % ('%s:' % evio_header_file), \
+    #        str(env.FindFile(evio_header_file, evio_inc_dir2)))
+    # print ('%-12s' % ('%s:' % evio_library_file), \
+    #        str(env.FindFile(evio_library_file, evio_lib_dir2)))
     #
     coda_dir = os.getenv('CODA')
     if coda_dir:
-        evio_lib_dir3 = os.path.join(coda_dir,evio_arch,'lib')
-        evio_inc_dir3 = os.path.join(coda_dir,evio_arch,'include')
+        evio_lib_dir3 = [ os.path.join(coda_dir,evio_arch,'lib'),
+                          os.path.join(coda_dir,platform,'lib'),
+                          os.path.join(coda_dir,'lib') ]
+        evio_inc_dir3 = [ os.path.join(coda_dir,evio_arch,'include'),
+                          os.path.join(coda_dir,'common','include'),
+                          os.path.join(coda_dir,'include') ]
         th3 = env.FindFile(evio_header_file,evio_inc_dir3)
         tl3 = env.FindFile(evio_library_file,evio_lib_dir3)
+        evio_inc_dir3 = os.path.dirname(str(th3))
+        evio_lib_dir3 = os.path.dirname(str(tl3))
     else:
         evio_lib_dir3 = None
         evio_inc_dir3 = None
         th3 = None
         tl3 = None
-        #print ('%-12s' % ('%s:' % evio_header_file), FindFile(evio_header_file, evio_inc_dir3))
-        #print ('%-12s' % ('%s:' % evio_library_file), FindFile(evio_library_file, evio_lib_dir3))
-        #
+    # print ('%-12s' % ('%s:' % evio_header_file), \
+    #        str(env.FindFile(evio_header_file, evio_inc_dir3)))
+    # print ('%-12s' % ('%s:' % evio_library_file), \
+    #        str(env.FindFile(evio_library_file, evio_lib_dir3)))
+    #
     if th1 and tl1:
         env.Append(EVIO_LIB = evio_lib_dir)
         env.Append(EVIO_INC = evio_inc_dir)
