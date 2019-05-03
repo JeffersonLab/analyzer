@@ -26,6 +26,7 @@ namespace Decoder {
       fHasClock(false), fClockRate(0), fNormScaler(0)
   {
     fWordsExpect = 32;
+    fNumChan = 0;
   }
 
   void GenScaler::Clear(Option_t* opt) {
@@ -128,10 +129,11 @@ namespace Decoder {
       doload=1;
       memcpy(fPrevData, fDataArray, fWordsExpect*sizeof(UInt_t));
     }
-    if (fDebugFile) *fDebugFile << "is slot 0x"<<hex<<*evbuffer<<dec<<endl;
-    fIsDecoded = kTRUE;
+    if ( !IsSlot(*evbuffer) ) return nfound;
+    if (fDebugFile) *fDebugFile << "is slot 0x"<<hex<<*evbuffer<<dec<<" num chan "<<fNumChan<<endl;
     evbuffer++;
-    for (Int_t i=0; i<fWordsExpect; i++) {
+    fIsDecoded = kTRUE;
+    for (Int_t i=0; i<fNumChan; i++) {
       fDataArray[i] = *(evbuffer++);
       nfound++;
       if (fDebugFile) *fDebugFile << "   data["<<i<<"] = 0x"<<hex<<fDataArray[i]<<dec<<endl;
@@ -256,7 +258,7 @@ namespace Decoder {
 
       // Print warning once to alert user to potential problems,
       // or for every suspect event if debugging enabled
-      if( firstwarn || fDebugFile ) {
+      if( firstwarn && fNumChan!=16 && fNumChan!=fWordsExpect) {
 	cout << "GenScaler:: ERROR:  (" << fCrate << "," << fSlot << ") "
 	     << "inconsistent number of chan."<<endl;
 	//        DoPrint();
