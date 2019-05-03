@@ -56,23 +56,6 @@ using namespace std;
 using namespace Decoder;
 using namespace THaString;
 
-static const UInt_t ICOUNT    = 1;
-static const UInt_t IRATE     = 2;
-static const UInt_t MAXCHAN   = 32;
-static const UInt_t MAXTEVT   = 5000;
-static const UInt_t defaultDT = 4;
-
-class ScalerLoc { // Utility class used by THaScalerEvtHandler
- public:
-  ScalerLoc(const TString& nm, const TString& desc, Int_t idx, Int_t sl,
-      Int_t ich, Int_t iki, Int_t iv)
-   : name(nm), description(desc), index(idx), islot(sl), ichan(ich),
-     ikind(iki), ivar(iv) {};
-  ~ScalerLoc();
-  TString name, description;
-  UInt_t index, islot, ichan, ikind, ivar;
-};
-
 THaScalerEvtHandler::THaScalerEvtHandler(const char *name,
     const char* description)
   : THaEvtTypeHandler(name,description), evcount(0), fNormIdx(-1),
