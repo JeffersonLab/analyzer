@@ -56,8 +56,8 @@ static string StrError()
 
 namespace Decoder {
 
-const UShort_t THaCrateMap::MAXCHAN = 4096;
-const UShort_t THaCrateMap::MAXDATA = 32768;
+const UShort_t THaCrateMap::MAXCHAN = 8192;
+const UShort_t THaCrateMap::MAXDATA = 65536;
 const int THaCrateMap::CM_OK = 1;
 const int THaCrateMap::CM_ERR = -1;
 
