@@ -125,7 +125,7 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
   fMaxTime = 2200;
   fMinTdiff = 3e-8;   // 30ns  -> ~20 deg track angle
   fMaxTdiff = 2.0e-7; // 200ns -> ~67 deg track angle
-  fMaxThits = 6;      // current TDC setting is to record only the last 6 hits 
+  fMaxThits = 6;      // current TDC setting is to record only the last 6 hits
   DBRequest request[] = {
     { "detmap",         &detmap,         kIntV },
     { "nwires",         &fNelem,         kInt,     0, 0, -1 },
@@ -455,8 +455,6 @@ Int_t THaVDCPlane::Decode( const THaEvData& evData )
   // Converts the raw data into hit information
   // Logical wire numbers a defined by the detector map. Wire number 0
   // corresponds to the first defined channel, etc.
-
-  // TODO: Support "reversed" detector map modules a la MWDC
 
   if (!evData.IsPhysicsTrigger()) return -1;
 
