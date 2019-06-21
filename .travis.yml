@@ -21,6 +21,7 @@ addons:
   homebrew:
     packages:
     - scons
+    update: true
 
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
