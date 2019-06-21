@@ -30,9 +30,9 @@ using namespace std;
 namespace Decoder {
 
 static const bool VERBOSE = true;
-const int THaSlotData::DEFNCHAN = 128;  // Default number of channels
-const int THaSlotData::DEFNDATA = 1024; // Default number of data words
-const int THaSlotData::DEFNHITCHAN = 1; // Default number of hits per channel
+const UInt_t THaSlotData::DEFNCHAN = 128;  // Default number of channels
+const UInt_t THaSlotData::DEFNDATA = 1024; // Default number of data words
+const UInt_t THaSlotData::DEFNHITCHAN = 1; // Default number of hits per channel
 
 THaSlotData::THaSlotData() :
   crate(-1), slot(-1), fModule(0), numhitperchan(0), numraw(0), numchanhit(0), firstfreedataidx(0),
@@ -40,7 +40,7 @@ THaSlotData::THaSlotData() :
   numMaxHits(0), rawData(0), data(0), fDebugFile(0), didini(false),
   maxc(0), maxd(0), allocd(0), alloci(0) {}
 
-THaSlotData::THaSlotData(int cra, int slo) :
+THaSlotData::THaSlotData(UInt_t cra, UInt_t slo) :
   crate(cra), slot(slo), fModule(0), numhitperchan(0), numraw(0), numchanhit(0), firstfreedataidx(0),
   numholesdataidx(0), numHits(0), xnumHits(0), chanlist(0), idxlist (0), chanindex(0), dataindex(0),
   numMaxHits(0), rawData(0), data(0), fDebugFile(0), didini(false),
@@ -61,8 +61,8 @@ THaSlotData::~THaSlotData() {
   delete [] data;
 }
 
-void THaSlotData::define(int cra, int slo, UShort_t nchan, UShort_t /*ndata*/,
-			 UShort_t nhitperchan ) {
+void THaSlotData::define(UInt_t cra, UInt_t slo, UInt_t nchan, UInt_t /*ndata*/,
+			 UInt_t nhitperchan ) {
   // Must call define once if you are really going to use this slot.
   // Otherwise its an empty slot which does not use much memory.
   crate = cra;
@@ -87,23 +87,23 @@ void THaSlotData::define(int cra, int slo, UShort_t nchan, UShort_t /*ndata*/,
   delete [] numMaxHits;
   delete [] rawData;
   delete [] data;
-  numHits   = new UShort_t[maxc];
-  xnumHits   = new Int_t[maxc];
-  chanlist  = new UShort_t[maxc];
-  idxlist  = new UShort_t[maxc];
-  chanindex = new UShort_t[maxc];
-  rawData   = new int[allocd];
-  data      = new int[allocd];
-  dataindex = new UShort_t[alloci];
-  numMaxHits = new UShort_t[maxc];
+  numHits    = new UInt_t[maxc];
+  xnumHits   = new UInt_t[maxc];
+  chanlist   = new UInt_t[maxc];
+  idxlist    = new UInt_t[maxc];
+  chanindex  = new UInt_t[maxc];
+  rawData    = new UInt_t[allocd];
+  data       = new UInt_t[allocd];
+  dataindex  = new UInt_t[alloci];
+  numMaxHits = new UInt_t[maxc];
   numchanhit = numraw = firstfreedataidx = numholesdataidx= 0;
-  memset(numHits,0,maxc*sizeof(UShort_t));
-  memset(xnumHits,0,maxc*sizeof(Int_t));
+  memset(numHits,0,maxc*sizeof(UInt_t));
+  memset(xnumHits,0,maxc*sizeof(UInt_t));
 }
 
 int THaSlotData::loadModule(const THaCrateMap *map) {
 
-  int modelnum = map->getModel(crate, slot);
+  UInt_t modelnum = map->getModel(crate, slot);
 
    Int_t err=0;
 
@@ -213,7 +213,7 @@ Int_t THaSlotData::LoadNextEvBuffer() {
 }
 
 
-int THaSlotData::loadData(const char* type, int chan, int dat, int raw) {
+int THaSlotData::loadData(const char* type, UInt_t chan, UInt_t dat, UInt_t raw) {
 
   const int very_verb=1;
 
@@ -224,7 +224,7 @@ int THaSlotData::loadData(const char* type, int chan, int dat, int raw) {
     }
     return SD_ERR;
   }
-  if (chan < 0 || chan >= (int)maxc) {
+  if (chan >= maxc) {
     if (VERBOSE) {
       cout << "THaSlotData: Warning in loadData: channel ";
       cout <<chan<<" out of bounds, ignored,"
@@ -265,7 +265,7 @@ int THaSlotData::loadData(const char* type, int chan, int dat, int raw) {
       } else {
 	compressdataindex(numMaxHits[chan]+numhitperchan);
 	numholesdataidx=numholesdataidx+numMaxHits[chan];
-	for (Int_t i=0; i<numHits[chan]; i++  ) {
+	for (UInt_t i=0; i<numHits[chan]; i++  ) {
 	  dataindex[firstfreedataidx+i]=dataindex[idxlist[chan]+i];
 	}
 	dataindex[firstfreedataidx+numHits[chan]]=numraw;
@@ -278,13 +278,13 @@ int THaSlotData::loadData(const char* type, int chan, int dat, int raw) {
 
   // Grow data arrays if really necessary (rare)
   if( numraw >= allocd ) {
-    UShort_t old_allocd = allocd;
+    UInt_t old_allocd = allocd;
     allocd *= 2; if( allocd > maxd ) allocd = maxd;
-    int* tmp = new int[allocd];
-    memcpy(tmp,data,old_allocd*sizeof(int));
+    UInt_t* tmp = new UInt_t[allocd];
+    memcpy(tmp,data,old_allocd*sizeof(UInt_t));
     delete [] data; data = tmp;
-    tmp = new int[allocd];
-    memcpy(tmp,rawData,old_allocd*sizeof(int));
+    tmp = new UInt_t[allocd];
+    memcpy(tmp,rawData,old_allocd*sizeof(UInt_t));
     delete [] rawData; rawData = tmp;
   }
   rawData[numraw] = raw;
@@ -303,7 +303,7 @@ int THaSlotData::loadData(const char* type, int chan, int dat, int raw) {
   return SD_OK;
 }
 
-int THaSlotData::loadData(int chan, int dat, int raw) {
+int THaSlotData::loadData(UInt_t chan, UInt_t dat, UInt_t raw) {
   // NEW (6/2014).
   return loadData(NULL, chan, dat, raw);
 }
@@ -321,10 +321,10 @@ void THaSlotData::print() const
   if (getNumRaw() > 0) {
     cout << "Raw Data Dump: " << hex << endl;
   } else {
-    if(getNumRaw() == SD_ERR) cout << "getNumRaw ERROR"<<endl;
+    //    if(getNumRaw() == SD_ERR) cout << "getNumRaw ERROR"<<endl;
     return;
   }
-  int i,j,k,chan,hit;
+  UInt_t i,j,k,chan,hit;
   bool first;
   k = 0;
   for (i=0; i<getNumRaw()/5; i++) {
@@ -334,7 +334,7 @@ void THaSlotData::print() const
   for (i=k; i<getNumRaw(); i++) cout << getRawData(i) << "  ";
   first = true;
   ios_base::fmtflags fmt = cout.flags();
-  for (chan=0; chan<(int)maxc; chan++) {
+  for (chan=0; chan<maxc; chan++) {
     if (getNumHits(chan) > 0) {
       if (first) {
 	cout << "\nThis is "<<devType()<<" Data : "<<endl;
@@ -344,7 +344,7 @@ void THaSlotData::print() const
       cout << "numHits : " << getNumHits(chan) << endl;
       for (hit=0; hit<getNumHits(chan); hit++) {
 	cout << "Hit # "<<dec<<hit;
-	if(getData(chan,hit) == SD_ERR) cout<<"ERROR: getData"<<endl;
+        //	if(getData(chan,hit) == SD_ERR) cout<<"ERROR: getData"<<endl;
 	cout << "  Data  = (hex) "<<hex<<getData(chan,hit);
 	cout << "   or (decimal) = "<<dec<<getData(chan,hit)<<endl;
       }
@@ -362,10 +362,10 @@ void THaSlotData::print_to_file() const {
   if (getNumRaw() > 0) {
     *fDebugFile << "Raw Data Dump: " << hex << endl;
   } else {
-    if(getNumRaw() == SD_ERR) *fDebugFile << "getNumRaw ERROR"<<endl;
+    //    if(getNumRaw() == SD_ERR) *fDebugFile << "getNumRaw ERROR"<<endl;
     return;
   }
-  int i,j,k,chan,hit;
+  UInt_t i,j,k,chan,hit;
 
   bool first;
   k = 0;
@@ -375,7 +375,7 @@ void THaSlotData::print_to_file() const {
   }
   for (i=k; i<getNumRaw(); i++) *fDebugFile << getRawData(i) << "  ";
   first = true;
-  for (chan=0; chan<(int)maxc; chan++) {
+  for (chan=0; chan<maxc; chan++) {
     if (getNumHits(chan) > 0) {
       if (first) {
 	*fDebugFile << "\nThis is "<<devType()<<" Data : "<<endl;
@@ -385,7 +385,7 @@ void THaSlotData::print_to_file() const {
       *fDebugFile << "numHits : " << getNumHits(chan) << endl;
       for (hit=0; hit<getNumHits(chan); hit++) {
 	*fDebugFile << "Hit # "<<dec<<hit;
-	if(getData(chan,hit) == SD_ERR) *fDebugFile<<"ERROR: getData"<<endl;
+        //	if(getData(chan,hit) == SD_ERR) *fDebugFile<<"ERROR: getData"<<endl;
 	*fDebugFile << "  Data  = (hex) "<<hex<<getData(chan,hit);
 	*fDebugFile << "   or (decimal) = "<<dec<<getData(chan,hit)<<endl;
       }
@@ -395,23 +395,23 @@ void THaSlotData::print_to_file() const {
 }
 
 //_____________________________________________________________________________
-int THaSlotData::compressdataindexImpl( int numidx )
+int THaSlotData::compressdataindexImpl( UInt_t numidx )
 {
   // first check if it is more favourable to expand it, or to reshuffle
   if( numholesdataidx/static_cast<double>(alloci) > 0.5 &&
       numholesdataidx > numidx ) {
     // Maybe reshuffle. But how many active dataindex entries would we need?
-    UShort_t nidx = numidx;
-    for (UShort_t i=0; i<numchanhit; i++) {
+    UInt_t nidx = numidx;
+    for (UInt_t i=0; i<numchanhit; i++) {
       nidx += numMaxHits[ chanlist[i] ];
     }
     if( nidx <= alloci ) {
       // reshuffle, lots of holes
-      UShort_t* tmp = new UShort_t[alloci];
+      UInt_t* tmp = new UInt_t[alloci];
       firstfreedataidx=0;
-      for (UShort_t i=0; i<numchanhit; i++) {
-	UShort_t chan=chanlist[i];
-	for (UShort_t j=0; j<numHits[chan]; j++) {
+      for (UInt_t i=0; i<numchanhit; i++) {
+	UInt_t chan=chanlist[i];
+	for (UInt_t j=0; j<numHits[chan]; j++) {
 	  tmp[firstfreedataidx+j]=dataindex[idxlist[chan]+j];
 	}
 	idxlist[chan] = firstfreedataidx;
@@ -422,14 +422,14 @@ int THaSlotData::compressdataindexImpl( int numidx )
     }
   }
   // If we didn't reshuffle, grow the array instead
-  UShort_t old_alloci = alloci;
+  UInt_t old_alloci = alloci;
   alloci *= 2;
-  if( firstfreedataidx+numidx > static_cast<int>(alloci) )
+  if( firstfreedataidx+numidx > alloci )
     // Still too small?
     alloci = 2*(firstfreedataidx+numidx);
   // FIXME one should check that it doesnt grow too much
-  UShort_t* tmp = new UShort_t[alloci];
-  memcpy(tmp,dataindex,old_alloci*sizeof(UShort_t));
+  UInt_t* tmp = new UInt_t[alloci];
+  memcpy(tmp,dataindex,old_alloci*sizeof(UInt_t));
   delete [] dataindex; dataindex = tmp;
 
   return 0;

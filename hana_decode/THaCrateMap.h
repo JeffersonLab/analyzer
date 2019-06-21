@@ -31,8 +31,8 @@ class THaCrateMap {
 
 
  public:
-     static const UShort_t MAXCHAN;
-     static const UShort_t MAXDATA;
+     static const UInt_t MAXCHAN;
+     static const UInt_t MAXDATA;
 
      THaCrateMap( const char* db = "cratemap" );    // Construct uninitialized
      virtual ~THaCrateMap() {}
@@ -54,15 +54,15 @@ class THaCrateMap {
      int getScalerCrate(int word) const;            // Return scaler crate if word=header
      const char* getScalerLoc(int crate) const;     // Return scaler crate location
      int setCrateType(int crate, const char* type); // set the crate type
-     int setModel(int crate, int slot, UShort_t mod,
-		  UShort_t nchan=MAXCHAN,
-		  UShort_t ndata=MAXDATA);          // set the module type
+     int setModel(int crate, int slot, UInt_t mod,
+		  UInt_t nchan=MAXCHAN,
+		  UInt_t ndata=MAXDATA);            // set the module type
      int setHeader(int crate, int slot, int head);  // set the header
      int setMask(int crate, int slot, int mask);    // set the header mask
      int setBank(int crate, int slot, int bank);    // set the bank
      int setScalerLoc(int crate, const char* location); // Sets the scaler location
-     UShort_t getNchan(int crate, int slot) const;  // Max number of channels
-     UShort_t getNdata(int crate, int slot) const;  // Max number of data words
+     UInt_t getNchan(int crate, int slot) const;  // Max number of channels
+     UInt_t getNdata(int crate, int slot) const;  // Max number of data words
      bool slotDone(int slot) const;                       // Used to speed up decoder
      bool crateUsed(int crate) const;               // True if crate is used
      bool slotUsed(int crate, int slot) const;      // True if slot in crate is used
@@ -75,8 +75,8 @@ class THaCrateMap {
      int init( FILE* fi, const TString& fname );    // Initialize from given file
      void print(std::ostream& os = std::cout) const;
 
-     static const int CM_OK;
-     static const int CM_ERR;
+     static const Int_t CM_OK;
+     static const Int_t CM_ERR;
 
      const char* GetName() const { return fDBfileName.Data(); }
 
@@ -92,17 +92,17 @@ class THaCrateMap {
        Int_t nslot, minslot, maxslot;
        bool crate_used;
        bool slot_used[MAXSLOT], slot_clear[MAXSLOT];
-       UShort_t model[MAXSLOT];
+       UInt_t model[MAXSLOT];
        Int_t header[MAXSLOT], headmask[MAXSLOT];
        Int_t bank[MAXSLOT];
-       UShort_t nchan[MAXSLOT], ndata[MAXSLOT];
+       UInt_t nchan[MAXSLOT], ndata[MAXSLOT];
        TString scalerloc;
      } crdat[MAXROC];
      bool didslot[MAXSLOT];
      void incrNslot(int crate);
      void setUsed(int crate,int slot);
      void setClear(int crate,int slot,bool clear);
-     int  SetModelSize(int crate, int slot, UShort_t model );
+     int  SetModelSize(int crate, int slot, UInt_t model );
 
      ClassDef(THaCrateMap,0) // Map of modules in DAQ crates
 };
@@ -189,14 +189,14 @@ int THaCrateMap::getBank(int crate, int slot) const
 }
 
 inline
-UShort_t THaCrateMap::getNchan(int crate, int slot) const
+UInt_t THaCrateMap::getNchan(int crate, int slot) const
 {
   assert( crate >= 0 && crate < MAXROC && slot >= 0 && slot < MAXSLOT );
   return crdat[crate].nchan[slot];
 }
 
 inline
-UShort_t THaCrateMap::getNdata(int crate, int slot) const
+UInt_t THaCrateMap::getNdata(int crate, int slot) const
 {
   assert( crate >= 0 && crate < MAXROC && slot >= 0 && slot < MAXSLOT );
   return crdat[crate].ndata[slot];

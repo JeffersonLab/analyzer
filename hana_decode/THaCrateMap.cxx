@@ -56,10 +56,10 @@ static string StrError()
 
 namespace Decoder {
 
-const UShort_t THaCrateMap::MAXCHAN = 8192;
-const UShort_t THaCrateMap::MAXDATA = 65536;
-const int THaCrateMap::CM_OK = 1;
-const int THaCrateMap::CM_ERR = -1;
+const UInt_t THaCrateMap::MAXCHAN = 8192;
+const UInt_t THaCrateMap::MAXDATA = 65536;
+const Int_t  THaCrateMap::CM_OK = 1;
+const Int_t  THaCrateMap::CM_ERR = -1;
 
 THaCrateMap::THaCrateMap( const char* db_filename )
 {
@@ -112,8 +112,8 @@ int THaCrateMap::setCrateType(int crate, const char* ctype) {
   return CM_OK;
 }
 
-int THaCrateMap::setModel(int crate, int slot, UShort_t mod,
-			  UShort_t nc, UShort_t nd ) {
+int THaCrateMap::setModel(int crate, int slot, UInt_t mod,
+			  UInt_t nc, UInt_t nd ) {
   assert( crate >= 0 && crate < MAXROC && slot >= 0 && slot < MAXSLOT );
   setUsed(crate,slot);
   crdat[crate].model[slot] = mod;
@@ -124,11 +124,11 @@ int THaCrateMap::setModel(int crate, int slot, UShort_t mod,
   return CM_OK;
 }
 
-int THaCrateMap::SetModelSize( int crate, int slot, UShort_t imodel )
+int THaCrateMap::SetModelSize( int crate, int slot, UInt_t imodel )
 {
   // Set the max number of channels and data words for some known modules
   assert( crate >= 0 && crate < MAXROC && slot >= 0 && slot < MAXSLOT );
-  struct ModelPar_t { UShort_t model, nchan, ndata; };
+  struct ModelPar_t { UInt_t model, nchan, ndata; };
   static const ModelPar_t modelpar[] = {
     { 1875, 64, 512 },  // Detector TDC
     { 1877, 96, 672 },  // Wire-chamber TDC
@@ -403,13 +403,12 @@ int THaCrateMap::init(TString the_map)
     //        slot#  model#  bank#
 
     // Default values:
-    int imodel, cword=1;
-    unsigned int mask=0, iheader=0, ichan=MAXCHAN, idata=MAXDATA;
-    int nread;
+    Int_t  cword=1, nread;
+    UInt_t imodel, mask=0, iheader=0, ichan=MAXCHAN, idata=MAXDATA;
     // must read at least the slot and model numbers
     if ( crate>=0 &&
 	 (nread=
-	  sscanf(line.c_str(),"%d %d %d %x %x %u %u",
+	  sscanf(line.c_str(),"%d %u %u %x %x %u %u",
 		 &slot,&imodel,&cword,&iheader,&mask,&ichan,&idata)) >=2 ) {
       if (nread>=6)
 	setModel(crate,slot,imodel,ichan,idata);

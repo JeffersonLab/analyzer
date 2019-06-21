@@ -36,27 +36,27 @@ class THaSlotData {
 
 public:
 
-       static const int DEFNCHAN;  // Default number of channels
-       static const int DEFNDATA; // Default number of data words
-       static const int DEFNHITCHAN; // Default number of hits per channel
+       static const UInt_t DEFNCHAN;  // Default number of channels
+       static const UInt_t DEFNDATA; // Default number of data words
+       static const UInt_t DEFNHITCHAN; // Default number of hits per channel
 
        THaSlotData();
-       THaSlotData(int crate, int slot);
+       THaSlotData(UInt_t crate, UInt_t slot);
        virtual ~THaSlotData();
        const char* devType() const;             // "adc", "tdc", "scaler"
        int loadModule(const THaCrateMap *map);
-       int getNumRaw() const { return numraw; };  // Amount of raw CODA data
-       int getRawData(int ihit) const;         // Returns raw data words
-       int getRawData(int chan, int hit) const;
-       int getNumHits(int chan) const;      // Num hits on a channel
-       int getNumChan() const;              // Num unique channels hit
-       int getNextChan(int index) const;    // List of unique channels hit
-       int getData(int chan, int hit) const;  // Data (adc,tdc,scaler) on 1 chan
-       int getCrate() const { return crate; }
-       int getSlot()  const { return slot; }
+       UInt_t getNumRaw() const { return numraw; };  // Amount of raw CODA data
+       UInt_t getRawData(UInt_t ihit) const;         // Returns raw data words
+       UInt_t getRawData(UInt_t chan, UInt_t hit) const;
+       UInt_t getNumHits(UInt_t chan) const;      // Num hits on a channel
+       UInt_t getNumChan() const;              // Num unique channels hit
+       UInt_t getNextChan(UInt_t index) const;    // List of unique channels hit
+       UInt_t getData(UInt_t chan, UInt_t hit) const;  // Data (adc,tdc,scaler) on 1 chan
+       UInt_t getCrate() const { return crate; }
+       UInt_t getSlot()  const { return slot; }
        void clearEvent();                   // clear event counters
-       int loadData(const char* type, int chan, int dat, int raw);
-       int loadData(int chan, int dat, int raw);
+       int loadData(const char* type, UInt_t chan, UInt_t dat, UInt_t raw);
+       int loadData(UInt_t chan, UInt_t dat, UInt_t raw);
 
        // new
        Int_t LoadIfSlot(const UInt_t* evbuffer, const UInt_t *pstop);
@@ -68,87 +68,87 @@ public:
        void SetDebugFile(std::ofstream *file) { fDebugFile = file; };
        Module* GetModule() { return fModule; };
 
-       void define(int crate, int slot, UShort_t nchan=DEFNCHAN,
-		   UShort_t ndata=DEFNDATA, UShort_t nhitperchan=DEFNHITCHAN );// Define crate, slot
+       void define(UInt_t crate, UInt_t slot, UInt_t nchan=DEFNCHAN,
+		   UInt_t ndata=DEFNDATA, UInt_t nhitperchan=DEFNHITCHAN );// Define crate, slot
        void print() const;
        void print_to_file() const;
-       int compressdataindex(int numidx);
+       int compressdataindex(UInt_t numidx);
 
 private:
 
 
-       int crate;
-       int slot;
+       UInt_t crate;
+       UInt_t slot;
        TString device;
        Module *fModule;
-       UShort_t numhitperchan; // expected number of hits per channel
-       UInt_t numraw;      // Hit counters (numraw, numHits, numchanhit)
-       UShort_t numchanhit;  // can be zero'd by clearEvent each event.
-       UShort_t firstfreedataidx;     // pointer to first free space in dataindex array
-       UShort_t numholesdataidx;
-       UShort_t* numHits;     // numHits[channel]
-       Int_t *xnumHits;       // same as numHits
-       UShort_t* chanlist;   // chanlist[hitindex]
-       UShort_t* idxlist;    // [channel] pointer to 1st entry in dataindex
-       UShort_t* chanindex;  // [channel] gives hitindex
-       UShort_t* dataindex;  // [idxlist] pointer to rawdata and  data
-       UShort_t* numMaxHits;  // [channel] current maximum number of hits
-       int* rawData;         // rawData[hit] (all bits)
-       int* data;            // data[hit] (only data bits)
+       UInt_t numhitperchan; // expected number of hits per channel
+       UInt_t numraw;        // Hit counters (numraw, numHits, numchanhit)
+       UInt_t numchanhit;    // can be zero'd by clearEvent each event.
+       UInt_t firstfreedataidx;  // pointer to first free space in dataindex array
+       UInt_t numholesdataidx;
+       UInt_t* numHits;     // numHits[channel]
+       UInt_t *xnumHits;    // same as numHits
+       UInt_t* chanlist;    // chanlist[hitindex]
+       UInt_t* idxlist;     // [channel] pointer to 1st entry in dataindex
+       UInt_t* chanindex;   // [channel] gives hitindex
+       UInt_t* dataindex;   // [idxlist] pointer to rawdata and  data
+       UInt_t* numMaxHits;  // [channel] current maximum number of hits
+       UInt_t* rawData;     // rawData[hit] (all bits)
+       UInt_t* data;        // data[hit] (only data bits)
        std::ofstream *fDebugFile; // debug output to this file, if nonzero
-       bool didini;          // true if object initialized via define()
-       UInt_t maxc;        // Number of channels for this device
-       UInt_t maxd;          // Max number of data words per event
-       UInt_t allocd;      // Allocated size of data arrays
-       UInt_t alloci;      // Allocated size of dataindex array
+       bool didini;         // true if object initialized via define()
+       UInt_t maxc;         // Number of channels for this device
+       UInt_t maxd;         // Max number of data words per event
+       UInt_t allocd;       // Allocated size of data arrays
+       UInt_t alloci;       // Allocated size of dataindex array
 
-       int compressdataindexImpl(int numidx);
+       int compressdataindexImpl(UInt_t numidx);
 
        ClassDef(THaSlotData,0)   //  Data in one slot of fastbus, vme, camac
 };
 
 //______________ inline functions _____________________________________________
-inline int THaSlotData::getRawData(int hit) const {
+inline UInt_t THaSlotData::getRawData(UInt_t hit) const {
   // Returns the raw data (all bits)
-  assert( hit >= 0 && hit < (int)numraw );
-  if (hit >= 0 && hit < (int)numraw) return rawData[hit];
+  assert( hit < numraw );
+  if (hit < numraw) return rawData[hit];
   return 0;
 };
 
 //_____________________________________________________________________________
 // Data (words on 1 chan)
 inline
-int THaSlotData::getRawData(int chan, int hit) const {
-  assert( chan >= 0 && chan < (int)maxc && hit >= 0 &&  hit < numHits[chan] );
-  if (chan < 0 || chan >= (int)maxc || numHits[chan]<=hit || hit<0 )
+UInt_t THaSlotData::getRawData(UInt_t chan, UInt_t hit) const {
+  assert( chan < maxc && hit < numHits[chan] );
+  if (chan >= maxc || numHits[chan]<=hit)
     return 0;
-  int index = dataindex[idxlist[chan]+hit];
-  assert(index >= 0 && index < (int)numraw);
-  if (index >= 0 && index < (int)numraw) return rawData[index];
+  UInt_t index = dataindex[idxlist[chan]+hit];
+  assert(index < numraw);
+  if (index < numraw) return rawData[index];
   return 0;
 };
 
 //_____________________________________________________________________________
 inline
-int THaSlotData::getNumHits(int chan) const {
+UInt_t THaSlotData::getNumHits(UInt_t chan) const {
   // Num hits on a channel
-  assert( chan >= 0 && chan < (int)maxc );
-  return (chan >= 0 && chan < (int)maxc) ? numHits[chan] : 0;
+  assert( chan < maxc );
+  return (chan < maxc) ? numHits[chan] : 0;
 };
 
 //_____________________________________________________________________________
 inline
-int THaSlotData::getNumChan() const {
+UInt_t THaSlotData::getNumChan() const {
   // Num unique channels # hit
   return numchanhit;
 };
 
 //_____________________________________________________________________________
 inline
-int THaSlotData::getNextChan(int index) const {
+UInt_t THaSlotData::getNextChan(UInt_t index) const {
   // List of unique channels hit
-  assert(index >= 0 && index < numchanhit);
-  if (index >= 0 && index < numchanhit)
+  assert(index < numchanhit);
+  if (index < numchanhit)
     return chanlist[index];
   return 0;
 };
@@ -156,13 +156,13 @@ int THaSlotData::getNextChan(int index) const {
 //_____________________________________________________________________________
 // Data (words on 1 chan)
 inline
-int THaSlotData::getData(int chan, int hit) const {
-  assert( chan >= 0 && chan < (int)maxc && hit >= 0 &&  hit < numHits[chan] );
-  if (chan < 0 || chan >= (int)maxc || numHits[chan]<=hit || hit<0 )
+UInt_t THaSlotData::getData(UInt_t chan, UInt_t hit) const {
+  assert( chan < maxc && hit < numHits[chan] );
+  if (chan >= maxc || numHits[chan]<=hit)
     return 0;
-  int index = dataindex[idxlist[chan]+hit];
-  assert(index >= 0 && index < (int)numraw);
-  if (index >= 0 && index < (int)numraw) return data[index];
+  UInt_t index = dataindex[idxlist[chan]+hit];
+  assert(index < numraw);
+  if (index < numraw) return data[index];
   return 0;
 };
 
@@ -186,9 +186,9 @@ void THaSlotData::clearEvent() {
 
 //_____________________________________________________________________________
 inline
-int THaSlotData::compressdataindex(int numidx) {
+int THaSlotData::compressdataindex(UInt_t numidx) {
 
-  if( firstfreedataidx+numidx >= static_cast<int>(alloci) )
+  if( firstfreedataidx+numidx >= alloci )
     return compressdataindexImpl(numidx);
 
   return 0;
