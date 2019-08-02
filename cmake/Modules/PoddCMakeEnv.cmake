@@ -148,13 +148,15 @@ macro(set_diagnostic_flags)
 endmacro(set_diagnostic_flags)
 
 #----------------------------------------------------------------------------
-# Print build configuration details (build type, project-wde compiler flags)
+# Print build configuration details (build type, project-wide compiler flags)
 function(report_build_info)
-  string(TOUPPER ${CMAKE_BUILD_TYPE} BUILD_TYPE_UC)
   message(STATUS "Compiling for ${CMAKE_SYSTEM_NAME} with ${CMAKE_CXX_COMPILER} version ${CMAKE_CXX_COMPILER_VERSION}")
-  message(STATUS "Build type ${CMAKE_BUILD_TYPE}")
+  if(CMAKE_BUILD_TYPE)
+    string(TOUPPER ${CMAKE_BUILD_TYPE} BUILD_TYPE_UC)
+    message(STATUS "Build type ${CMAKE_BUILD_TYPE}")
+    message(STATUS "CMAKE_CXX_FLAGS_${BUILD_TYPE_UC} = ${CMAKE_CXX_FLAGS_${BUILD_TYPE_UC}}")
+  endif()
   message(STATUS "${PROJECT_NAME_UC}_CXX_FLAGS = ${${PROJECT_NAME_UC}_CXX_FLAGS} ${${PROJECT_NAME_UC}_DIAG_FLAGS}")
-  message(STATUS "CMAKE_CXX_FLAGS_${BUILD_TYPE_UC} = ${CMAKE_CXX_FLAGS_${BUILD_TYPE_UC}}")
 endfunction(report_build_info)
 
 #----------------------------------------------------------------------------
