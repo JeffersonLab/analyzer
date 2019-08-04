@@ -3,6 +3,10 @@ language: cpp
 matrix:
   include:
   - os: linux
+    dist: bionic
+    name: "Ubuntu Bionic 18.04 LTS"
+    compiler: gcc
+  - os: linux
     dist: xenial
     name: "Ubuntu Xenial 16.04 LTS"
     compiler: gcc
@@ -10,6 +14,9 @@ matrix:
     dist: trusty
     name: "Ubuntu Trusty 14.04 LTS"
     compiler: gcc
+  - os: osx
+    name: "macOS 10.14 Xcode 10.2"
+    osx_image: xcode10.2
   - os: osx
     name: "macOS 10.13 Xcode 10.1"
     osx_image: xcode10.1
@@ -27,23 +34,31 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
       sudo apt-get update;
       sudo apt-get install -y scons libtbb2;
-      if [[ "$TRAVIS_JOB_NAME" == "Ubuntu Xenial 16.04 LTS" ]]; then
+      if [[ "$TRAVIS_JOB_NAME" != "Ubuntu Trusty 14.04 LTS" ]]; then
         sudo apt-get install -y patchelf;
       fi;
     fi
 
 install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+      if [[ "$TRAVIS_JOB_NAME" == "Ubuntu Bionic 18.04 LTS" ]]; then
+        wget https://root.cern/download/root_v6.18.00.Linux-ubuntu18-x86_64-gcc7.4.tar.gz -O /tmp/root.tar.gz;
+      fi;
       if [[ "$TRAVIS_JOB_NAME" == "Ubuntu Xenial 16.04 LTS" ]]; then
         wget https://root.cern.ch/download/root_v6.14.06.Linux-ubuntu16-x86_64-gcc5.4.tar.gz -O /tmp/root.tar.gz;
-      else
+      fi;
+      if [[ "$TRAVIS_JOB_NAME" == "Ubuntu Trusty 14.04 LTS" ]]; then
         wget https://root.cern.ch/download/root_v6.12.06.Linux-ubuntu14-x86_64-gcc4.8.tar.gz -O /tmp/root.tar.gz;
       fi;
     fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+      if [[ "$TRAVIS_JOB_NAME" == "macOS 10.14 Xcode 10.2" ]]; then
+        wget https://root.cern/download/root_v6.18.00.macosx64-10.14-clang100.tar.gz -O /tmp/root.tar.gz;
+      fi;
       if [[ "$TRAVIS_JOB_NAME" == "macOS 10.13 Xcode 10.1" ]]; then
         wget https://root.cern.ch/download/root_v6.14.06.macosx64-10.13-clang100.tar.gz -O /tmp/root.tar.gz;
-      else
+      fi;
+      if [[ "$TRAVIS_JOB_NAME" == "macOS 10.12 Xcode 9.2" ]]; then
          wget https://root.cern.ch/download/root_v6.14.06.macosx64-10.12-clang90.tar.gz -O /tmp/root.tar.gz;
         ln -s python2 /usr/local/bin/python;
         export PATH=/usr/local/opt/python/libexec/bin:$PATH;
