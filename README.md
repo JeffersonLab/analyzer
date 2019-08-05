@@ -5,7 +5,7 @@ Hall A C++ Analyzer
 
 This is the standard data analysis software for
 [Hall A](http://hallaweb.jlab.org/) at [Jefferson Lab](https://www.jlab.org).
-The current stable version is 1.6.3.
+The current stable version is 1.6.6.
 
 Overview
 --------
@@ -32,29 +32,20 @@ experiments.
 
 For more information, please see the [Wiki](https://redmine.jlab.org/projects/podd/wiki/).
 
-Compiling
----------
-The analyzer may be compiled with either make or SCons (recommended). The following
+Building
+--------
+The analyzer may be compiled with either CMake (recommended) or SCons. The following
 are the main prerequisites for analyzer 1.6:
 
 * [ROOT](https://root.cern.ch) version 5 or higher. The latest version
-  (currently 6.12/06) is strongly recommended. root-config must be in your PATH.
+  (currently 6.18/00) is recommended. root-config must be in your PATH.
 
 * [EVIO](https://coda.jlab.org/drupal/content/event-io-evio) version 4.0
   or higher. CODA must be set to point to the top of the installation location.
+  If you do not have EVIO on your system, the analyzer build system will download
+  a copy automatically. This requires Internet access.
 
-### Compiling with scons
-Ensure that you have SCons version is 2.1.0 or higher. Then simply do
-
-    scons
-
-### Additional SCons features
-To do the equivalent of "make clean", do
-`scons -c`
-To compile with debug capabilities, do
-`scons debug=1`
-
-### Compiling with CMake (experimental)
+### Compiling with CMake
 
 Do the usual CMake setup
 
@@ -76,8 +67,17 @@ export LD_LIBRARY_PATH=$HOME/local/analyzer/lib:$LD_LIBRARY_PATH
 
 On 64-bit Linux, the library directory is usually `lib64` instead of `lib`.
 
-### Compiling with make (deprecated)
-    make
+### Compiling with SCons (obsolescent)
+
+Ensure that you have SCons version is 2.3.0 or higher. Then simply do
+
+    scons
+
+### Additional SCons features
+To do the equivalent of "make clean", do
+`scons -c`
+To compile debug code (no optimizations, much slower), do
+`scons debug=1`
 
 
 Contributing
