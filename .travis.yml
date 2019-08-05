@@ -67,10 +67,10 @@ install:
   - tar -xzf /tmp/root.tar.gz
   - source ./root/bin/thisroot.sh
   - root-config --version
+  - cmake --version
   - python --version
   - python -c "import ssl; print(ssl.OPENSSL_VERSION)"
   - scons --version
-  - cmake --version
 
 env:
   global:
@@ -81,14 +81,14 @@ env:
     - DYLD_LIBRARY_PATH=$ANALYZER:$DYLD_LIBRARY_PATH
 
 script:
+  - mkdir build && cd build && cmake .. && make && cd ..
   - scons
-  - mkdir build; cd build; cmake ..; make; cd ..
 
 after_success:
-  - $ANALYZER/apps/analyzer --version
-  - $ANALYZER/apps/analyzer -q
   - $ANALYZER/build/apps/analyzer --version
   - $ANALYZER/build/apps/analyzer -q
+  - $ANALYZER/apps/analyzer --version
+  - $ANALYZER/apps/analyzer -q
 
 branches:
   only: master

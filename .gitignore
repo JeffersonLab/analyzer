@@ -19,7 +19,7 @@ hana_decode/apps/etclient
 hana_decode/apps/tstcoda
 apps/dbconvert
 bin/
-build/
+build*/
 
 # Generated files
 *Dict.C
