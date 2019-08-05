@@ -6,7 +6,7 @@ set(EVIO_VERSION 5.2)
 set(repo hallac_evio)
 set(release hallac-evio-${EVIO_VERSION})
 set(tarfile ${release}.tar.gz)
-set(EVIO_HASH d7fc44ce1ddc1d9e0011307621a6f3b5)
+set(EVIO_HASH cc16b9f0d3a7d09e8928ea0fc1119047)
 
 set(EVIO_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/evio/src)
 set(EVIO_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/evio/build)
