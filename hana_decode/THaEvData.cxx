@@ -53,7 +53,7 @@ TString THaEvData::fgDefaultCrateMapName = "cratemap";
 
 THaEvData::THaEvData() :
   fMap(0), first_decode(true), fTrigSupPS(true),
-  fMultiBlockMode(false), fBlockIsDone(false),
+  fMultiBlockMode(false), fBlockIsDone(false), fDataVersion(0),
   fEpicsEvtType(0), buffer(0), fDebugFile(0), event_type(0), event_length(0),
   event_num(0), run_num(0), evscaler(0), bank_tag(0), data_type(0),
   block_size(0), tbLen(0), run_type(0), fRunTime(0),
