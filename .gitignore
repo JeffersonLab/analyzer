@@ -58,11 +58,14 @@ config.log
 .sconf_temp/
 /dist/
 
-#eclipse stuff
+#IDE work files
 .project
 .cproject
 .pydevproject
-.settings/
+.settings
+.externalToolBuilders
+.idea
+cmake-build-*
 
 #Doxygen stuff
 docs/Doxygen.tag
