@@ -18,16 +18,14 @@
 #include "VarDef.h"
 #include "VarType.h"
 
-#include <cstring>
 #include <cstdio>
-#include <iostream>
 #include <vector>
 
 using namespace std;
 
 //____________________________________________________________________________
 THaTriggerTime::THaTriggerTime( const char* name, const char* desc,
-        THaApparatus* apparatus ) :
+                                THaApparatus* apparatus ) :
   THaNonTrackingDetector(name, desc, apparatus),
   fEvtTime(kBig), fEvtType(-1), fTDCRes(0),
   fGlOffset(0), fCommonStop(0),fNTrgType(0), fTrgTimes(NULL)

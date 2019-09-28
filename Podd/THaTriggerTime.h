@@ -19,7 +19,7 @@
 class THaTriggerTime : public THaNonTrackingDetector {
  public:
   THaTriggerTime( const char* name="trg", const char* description = "",
-      THaApparatus* a = NULL );
+                  THaApparatus* a = NULL );
 
   ~THaTriggerTime();
   
