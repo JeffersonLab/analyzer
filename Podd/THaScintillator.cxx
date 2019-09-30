@@ -448,15 +448,15 @@ Int_t THaScintillator::Decode( const THaEvData& evdata )
 	continue;
       }
       // Copy the data to the local variables.
-      DataDest* dest = fDataDest + k/fNelem;
+      DataDest* dest = fDataDest + k/fNelem; // FIXME: assumes fixed structure of detector map?
       k = k % fNelem;
       if( adc ) {
-	dest->adc[k]   = static_cast<Double_t>( data );
+	dest->adc[k]   = data;
 	dest->adc_p[k] = data - dest->ped[k];
 	dest->adc_c[k] = dest->adc_p[k] * dest->gain[k];
 	(*dest->nahit)++;
       } else {
-	dest->tdc[k]   = static_cast<Double_t>( data );
+	dest->tdc[k]   = data;
 	dest->tdc_c[k] = (data - dest->offset[k])*fTdc2T;
 	if( fTdc2T > 0.0 && !not_common_stop_tdc ) {
 	  // For common stop TDCs, time is negatively correlated to raw data
@@ -501,36 +501,37 @@ Int_t THaScintillator::Decode( const THaEvData& evdata )
 //_____________________________________________________________________________
 Int_t THaScintillator::ApplyCorrections()
 {
-  // Apply the ADC/TDC corrections to get the 'REAL' relevant
-  // TDC and ADC values. No tracking needs to have been done yet.
+  // Apply ADC/TDC corrections which are possible without tracking.
   //
-  // Permits the dividing up of the decoding step (events could come from
-  // a different source) to the applying of corrections. For ease when
-  // trying to optimize calibrations
-  //
-  Int_t nlt=0, nrt=0, nla=0, nra=0;
-  for (Int_t i=0; i<fNelem; i++) {
-    if (fLA[i] > 0. && fLA[i] < 0.5*kBig) {
-      fLA_p[i] = fLA[i] - fLPed[i];
-      fLA_c[i] = fLA_p[i]*fLGain[i];
-      nla++;
-    }
-    if (fRA[i] > 0. && fRA[i] < 0.5*kBig) {
-      fRA_p[i] = fRA[i] - fRPed[i];
-      fRA_c[i] = fRA_p[i]*fRGain[i];
-      nra++;
-    }
-    if (fLT[i] < 0.5*kBig) {
-      fLT_c[i] = (fLT[i] - fLOff[i])*fTdc2T - TimeWalkCorrection(i,kLeft);
-      nlt++;
-    }
-    if (fRT[i] < 0.5*kBig) {
-      fRT_c[i] = (fRT[i] - fROff[i])*fTdc2T - TimeWalkCorrection(i,kRight);
-      nrt++;
+  // Currently only TDC timewalk corrections are applied, and those only if
+  // the database parameters "MIP" and "timewalk_params" are set.
+
+  Int_t nlt = 0, nrt = 0;
+  // We need to loop over the detector map again because we need the TDC mode
+  for( Int_t i = 0; i < fDetMap->GetSize(); i++ ) {
+    THaDetMap::Module* d = fDetMap->GetModule(i);
+    if( d->model ? d->IsADC() : (i < fDetMap->GetSize()/2) )
+      continue; // ignore ADCs
+
+    Double_t sign = (fTdc2T > 0.0 && d->IsCommonStart()) ? -1.0 : 1.0;
+
+    for( Int_t chan = d->lo; chan <= d->hi; ++chan ) {
+      // Get the detector channel number, starting at 0
+      Int_t k = d->first + ((d->reverse) ? d->hi - chan : chan - d->lo) - 1;
+      if( k < 0 || k > NDEST * fNelem )
+        continue;
+      k = k % fNelem;
+      if( fLT[k] < 0.5 * kBig ) {
+        fLT_c[k] = (fLT[k] - fLOff[k]) * fTdc2T * sign - TimeWalkCorrection( i, kRight );
+        nlt++;
+      }
+      if( fRT[k] < 0.5 * kBig ) {
+        fRT_c[k] = (fRT[k] - fROff[k]) * fTdc2T * sign - TimeWalkCorrection( i, kRight );
+        nrt++;
+      }
     }
   }
-  // returns FALSE (0) if all matches up
-  return !(fLTNhit==nlt && fLANhit==nla && fRTNhit==nrt && fRANhit==nra );
+  return (fLTNhit==nlt && fRTNhit==nrt) ? 0 : 1;
 }
 
 //_____________________________________________________________________________
