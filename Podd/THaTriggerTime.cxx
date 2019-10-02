@@ -6,7 +6,7 @@
 //   for a given spectrometer, for use as a common offset to fix-up          //
 //   places where the absolute time (ie VDC) is used.                        //
 //                                                                           //
-//  Lookup in the database what the offset is for each trigger-type, and     //
+//  Lookup in the database what the offset is for each trigger type, and     //
 //  report it for each appropriate event.                                    //
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
@@ -27,8 +27,8 @@ using namespace std;
 THaTriggerTime::THaTriggerTime( const char* name, const char* desc,
                                 THaApparatus* apparatus ) :
   THaNonTrackingDetector(name, desc, apparatus),
-  fEvtTime(kBig), fEvtType(-1), fTDCRes(0),
-  fGlOffset(0), fCommonStop(0),fNTrgType(0), fTrgTimes(NULL)
+  fEvtTime(0.0), fEvtType(-1), fTDCRes(0.0),
+  fGlOffset(0.0), fCommonStop(0), fNTrgType(0), fTrgTimes(NULL)
 {
   // basic do-nothing-else contructor
 }
