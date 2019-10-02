@@ -8,13 +8,20 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "THaTriggerTime.h"
+#include "THaFormula.h"
+#include "THaCut.h"
+#include "TString.h"
+#include <set>
 
 namespace Podd {
 
 class DynamicTriggerTime : public THaTriggerTime {
 public:
-  DynamicTriggerTime( const char *name = "trg", const char *description = "",
-                      THaApparatus *a = NULL );
+  DynamicTriggerTime( const char* name, const char* description,
+                      THaApparatus* a = NULL );
+  DynamicTriggerTime( const char* name, const char* description,
+                      const char* expr, const char* cond = "",
+                      THaApparatus* a = NULL );
 
   virtual Int_t Decode( const THaEvData & );
   virtual void  Clear( Option_t *opt = "" );
@@ -23,6 +30,19 @@ public:
 protected:
 
   virtual Int_t ReadDatabase( const TDatime &date );
+
+  struct TimeCorrDef {
+    TimeCorrDef( const char* expr, const char* cond = nullptr, UInt_t prio = 0 ) :
+            fFormStr(expr), fCondStr(cond), fPrio(prio), fForm(nullptr), fCond(nullptr) {}
+    ~TimeCorrDef() { delete fForm; delete fCond; }
+    bool operator<(const TimeCorrDef& rhs) const { return fPrio < rhs.fPrio; }
+    TString     fFormStr; // Formula string
+    TString     fCondStr; // Condition string
+    UInt_t      fPrio;    // Priority of this correction (0=highest)
+    THaFormula* fForm;    // Formula for calculating time correction
+    THaCut*     fCond;    // Condition to pass for this correction to apply (optional)
+  };
+  std::multiset<TimeCorrDef> fDefs;
 
   ClassDef( DynamicTriggerTime, 0 ) // Event-by-event trigger time correction
 };

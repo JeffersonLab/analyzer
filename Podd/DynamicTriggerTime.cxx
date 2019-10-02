@@ -12,20 +12,38 @@
 #include "TMath.h"
 #include "VarDef.h"
 #include "VarType.h"
-
+#include "TError.h"
 #include <cstdio>
-#include <vector>
 
 using namespace std;
 
 namespace Podd {
 
 //____________________________________________________________________________
-DynamicTriggerTime::DynamicTriggerTime( const char *name, const char *desc,
+DynamicTriggerTime::DynamicTriggerTime( const char* name, const char* desc,
+                                        THaApparatus* apparatus ) :
+        THaTriggerTime( name, desc, apparatus )
+{
+  // Basic constructor
+}
+
+//____________________________________________________________________________
+DynamicTriggerTime::DynamicTriggerTime( const char* name, const char* desc,
+                                        const char* expr, const char* cond,
                                         THaApparatus *apparatus ) :
         THaTriggerTime( name, desc, apparatus )
 {
-  // basic do-nothing-else constructor
+  // Construct with formula 'expr' for calculating the time correction and
+  // optional condition 'cond' that must be true for applying the correction.
+  // This formula is evaluated /after/ any other definitions read from the
+  // database (like a default value).
+
+  if( !expr )
+    return;     // behave like the basic constructor
+  if( !cond )
+    cond = "";
+
+  fDefs.insert( TimeCorrDef(expr, cond, kMaxUInt) );
 }
 
 //____________________________________________________________________________
@@ -41,21 +59,13 @@ Int_t DynamicTriggerTime::ReadDatabase( const TDatime &date )
     return kFileError;
 
   fGlOffset = 0.0;
-  fCommonStop = 0.0;
-  fTrgTypes.clear();
-  fToffsets.clear();
-  fDetMap->Clear();
-  delete[] fTrgTimes;
-  fTrgTimes = 0;
-  fNTrgType = 0;
+  fDefs.clear();
 
   // Read configuration parameters
-  vector<Double_t> trigdef;
+  TString defstr;
   DBRequest config_request[] = {
-          { "tdc_res",     &fTDCRes },
-          { "trigdef",     &trigdef,     kDoubleV },
+          { "trigdef",     &defstr,     kTString, 0, 1 },
           { "glob_off",    &fGlOffset,   kDouble, 0, 1 },
-          { "common_stop", &fCommonStop, kInt,    0, 1 },
           { 0 }
   };
   Int_t err = LoadDB( file, date, config_request, fPrefix );
@@ -63,12 +73,14 @@ Int_t DynamicTriggerTime::ReadDatabase( const TDatime &date )
   if( err )
     return err;
 
-  // Sanity checks
-  if( trigdef.size() % 5 != 0 ) {
-    Error( Here( here ), "Incorrect number of elements in \"trigdef\" "
-                         "parameter = %u. Must be a multiple of 5. Fix database.",
-           static_cast<unsigned int>(trigdef.size()));
-    return kInitError;
+  if( !defstr.IsNull() ) {
+    // Parse the definition string
+
+
+//    Error( Here( here ), "Incorrect number of elements in \"trigdef\" "
+//                         "parameter = %u. Must be a multiple of 5. Fix database.",
+//           static_cast<unsigned int>(trigdef.size()));
+//    return kInitError;
   }
 
   // Read in the time offsets, in the format below, to be subtracted from
@@ -81,22 +93,22 @@ Int_t DynamicTriggerTime::ReadDatabase( const TDatime &date )
   //   1               0       crate slot chan
   //   2              10.e-9   crate slot chan
 
-  Int_t ndef = trigdef.size() / 5;
-  for( Int_t i = 0; i < ndef; ++i ) {
-    Int_t base = 5 * i;
-    Int_t itrg = TMath::Nint( trigdef[base] );
-    Double_t toff = trigdef[base + 1];
-    Int_t crate = TMath::Nint( trigdef[base + 2] );
-    Int_t slot = TMath::Nint( trigdef[base + 3] );
-    Int_t chan = TMath::Nint( trigdef[base + 4] );
-    fTrgTypes.push_back( itrg );
-    fToffsets.push_back( toff );
-    fDetMap->AddModule( crate, slot, chan, chan, itrg );
-  }
-
-  // now construct the appropriate arrays
-  fNTrgType = fTrgTypes.size();
-  fTrgTimes = new Double_t[fNTrgType];
+//  Int_t ndef = trigdef.size() / 5;
+//  for( Int_t i = 0; i < ndef; ++i ) {
+//    Int_t base = 5 * i;
+//    Int_t itrg = TMath::Nint( trigdef[base] );
+//    Double_t toff = trigdef[base + 1];
+//    Int_t crate = TMath::Nint( trigdef[base + 2] );
+//    Int_t slot = TMath::Nint( trigdef[base + 3] );
+//    Int_t chan = TMath::Nint( trigdef[base + 4] );
+//    fTrgTypes.push_back( itrg );
+//    fToffsets.push_back( toff );
+//    fDetMap->AddModule( crate, slot, chan, chan, itrg );
+//  }
+//
+//  // now construct the appropriate arrays
+//  fNTrgType = fTrgTypes.size();
+//  fTrgTimes = new Double_t[fNTrgType];
 
   return kOK;
 }
