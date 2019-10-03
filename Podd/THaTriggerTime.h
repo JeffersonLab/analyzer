@@ -22,15 +22,13 @@ class THaTriggerTime : public THaNonTrackingDetector {
                   THaApparatus* a = NULL );
 
   ~THaTriggerTime();
-  
-  virtual Int_t       Decode( const THaEvData& );
-  Double_t            TimeOffset() const { return fEvtTime; }
-  Int_t               EventType() const { return fEvtType; }
-  
-  virtual void        Clear( Option_t* opt="" );
-  
-  virtual Int_t       DefineVariables( EMode mode = kDefine );
 
+  Double_t            TimeOffset() const { return fEvtTime; }
+  Int_t               EventType()  const { return fEvtType; }
+
+  virtual Int_t       Decode( const THaEvData& );
+  virtual void        Clear( Option_t* opt="" );
+  virtual Int_t       DefineVariables( EMode mode = kDefine );
   virtual Int_t       CoarseProcess(TClonesArray&) { return 0; }
   virtual Int_t       FineProcess(TClonesArray&) { return 0; }
 
