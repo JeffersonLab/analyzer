@@ -14,6 +14,7 @@
 #include "VarType.h"
 #include "TError.h"
 #include <cstdio>
+#include <iostream>
 
 using namespace std;
 
@@ -59,13 +60,13 @@ Int_t DynamicTriggerTime::ReadDatabase( const TDatime &date )
     return kFileError;
 
   fGlOffset = 0.0;
-  fDefs.clear();
+  // fDefs.clear(); //FIXME: this would clear the definition from the constructor too
 
   // Read configuration parameters
   TString defstr;
   DBRequest config_request[] = {
-          { "trigdef",     &defstr,     kTString, 0, 1 },
-          { "glob_off",    &fGlOffset,   kDouble, 0, 1 },
+          { "t_corr",   &defstr,    kTString, 0, 1 },
+          { "glob_off", &fGlOffset, kDouble, 0, 1 },
           { 0 }
   };
   Int_t err = LoadDB( file, date, config_request, fPrefix );
@@ -74,13 +75,27 @@ Int_t DynamicTriggerTime::ReadDatabase( const TDatime &date )
     return err;
 
   if( !defstr.IsNull() ) {
-    // Parse the definition string
+    // Parse the definition string. The format is
+    //
+    // <condition>   <formula for calculating time correction>
+    //
+    // No spaces are allowed in the condition. Conditions are evaluated in
+    // the order listed. Comments (starting with '#') are ignored.
+    // Definitions may have trailing comments.
+    // Both the condition and formula may contain any global variable and/or
+    // cut name that has been calculated at the corresponding stage.
+    //
+    // Examples:
+    //
+    // L.trg.eval_at = Decode   # Evaluate expressions at Decode stage
+    // L.trg.t_corr =
+    //   DL.evtypebits&0x20!=0
+    //      L.s2.rt_c[L.s2.t_pads[0]]-R.s2.rt_c[R.s2.t_pads[0]]  # s2 L-TDC time diff
+    //   DL.evtypebits&0x10!=0
+    //      L.s2.lt_c[L.s2.t_pads[0]]-R.s2.lt_c[R.s2.t_pads[0]]  # s2 R-TDC time diff
+    //
 
-
-//    Error( Here( here ), "Incorrect number of elements in \"trigdef\" "
-//                         "parameter = %u. Must be a multiple of 5. Fix database.",
-//           static_cast<unsigned int>(trigdef.size()));
-//    return kInitError;
+    cout << defstr.Data() << endl;
   }
 
   // Read in the time offsets, in the format below, to be subtracted from
