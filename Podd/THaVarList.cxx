@@ -512,7 +512,7 @@ Int_t THaVarList::DefineVariables( const VarDef* list, const char* prefix,
 //-----------------------------------------------------------------------------
 Int_t THaVarList::DefineVariables( const RVarDef* list, const TObject* obj,
 				   const char* prefix,  const char* caller,
-				   const char* var_prefix )
+				   const char* def_prefix )
 {
   // Add all variables specified in 'list' to the list. 'list' is a C-style
   // structure defined in VarDef.h and must be terminated with a NULL name.
@@ -579,8 +579,8 @@ Int_t THaVarList::DefineVariables( const RVarDef* list, const TObject* obj,
 	       "Variable not defined.", name.Data(), desc.Data() );
       continue;
     }
-    if( var_prefix && *var_prefix )
-      def.Prepend( var_prefix );
+    if( def_prefix && *def_prefix )
+      def.Prepend(def_prefix );
 
     THaVar* var = DefineByRTTI( name, desc, def, obj, cl, errloc );
 

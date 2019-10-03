@@ -183,7 +183,7 @@ public:
 				    const TObject* obj,
 				    const char* prefix="",
 				    const char* caller="",
-				    const char* var_prefix="" );
+				    const char* def_prefix="" );
   virtual THaVar*  Find( const char* name ) const;
   virtual void     PrintFull(Option_t *opt="") const;
   virtual Int_t    RemoveName( const char* name );
