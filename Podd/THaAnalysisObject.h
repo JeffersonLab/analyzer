@@ -16,7 +16,7 @@
 #include <string>
 #include <cstdio>
 #include <map>
-//#include <stdarg.h>
+#include <cstdarg>
 
 class THaEvData; //needed by derived classes
 class TList;

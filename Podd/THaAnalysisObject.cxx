@@ -27,7 +27,6 @@
 #include "TObjArray.h"
 #include "TVirtualMutex.h"
 #include "TThread.h"
-#include "Varargs.h"
 
 #include <cstring>
 #include <cctype>
@@ -38,8 +37,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include <string>
-#include <sstream>
-#include <stdexcept>
+#include <exception>
 #include <cassert>
 #include <map>
 #include <limits>
@@ -1046,7 +1044,7 @@ static Int_t GetLine( FILE* file, char* buf, size_t bufsiz, string& line )
   // Also, convert all tabs to spaces.
   // Returns 0 on success, or EOF if no more data (or error).
 
-  char* r = buf;
+  char* r;
   line.clear();
   while( (r = fgets(buf, bufsiz, file)) ) {
     char* c = strchr(buf, '\n');
@@ -1094,6 +1092,26 @@ static void Trim( string& str )
 }
 
 //_____________________________________________________________________________
+inline
+Bool_t IsAssignment( const string& str )
+{
+  // Check if 'str' has the form of an assignment (<text> = [optional text]).
+  // Properly handles comparison operators '==', '!=', '<=', '>='
+
+  string::size_type pos = str.find( '=');
+  if( pos == string::npos )
+    // No '='
+    return false;
+  if( str.find_first_not_of(" \t") == pos )
+    // Only whitespace before '=' or '=' at start of line
+    return false;
+  assert( pos>0 );
+  // '!=', '<=', '>=' or '=='
+  return !(str[pos-1] == '!' || str[pos-1] == '<' || str[pos-1] == '>' ||
+           (pos+1 < str.length() && str[pos+1] == '='));
+}
+
+//_____________________________________________________________________________
 Int_t THaAnalysisObject::ReadDBline( FILE* file, char* buf, size_t bufsiz,
 				     string& line )
 {
@@ -1112,8 +1130,8 @@ Int_t THaAnalysisObject::ReadDBline( FILE* file, char* buf, size_t bufsiz,
 	 (r = GetLine(file,buf,bufsiz,linbuf)) == 0 ) {
     // Search for comment or continuation character.
     // If found, remove it and everything that follows.
-    bool continued = false, comment = false, has_equal = false,
-      trailing_space = false, leading_space = false;
+    bool continued = false, comment = false,
+      trailing_space = false, leading_space = false, is_assignment;
     ssiz_t pos = linbuf.find_first_of("#\\");
     if( pos != string::npos ) {
       if( linbuf[pos] == '\\' )
@@ -1137,9 +1155,9 @@ Int_t THaAnalysisObject::ReadDBline( FILE* file, char* buf, size_t bufsiz,
       continue;
 
     if( !linbuf.empty() ) {
-      has_equal = (linbuf.find('=') != string::npos);
+      is_assignment = IsAssignment(linbuf);
       // Tentative continuation is canceled by a subsequent line with a '='
-      if( maybe_continued && has_equal ) {
+      if( maybe_continued && is_assignment ) {
 	// We must have data at this point, so we can exit. However, the line
 	// we've just read is obviously a good one, so we must also rewind the
 	// file to the previous position so this line can be read again.
@@ -1156,11 +1174,11 @@ Int_t THaAnalysisObject::ReadDBline( FILE* file, char* buf, size_t bufsiz,
     } else {
       // An empty line, except for a comment or continuation, ends continuation.
       // Since we have data here, and this line is blank and would later be
-      // skipped anyay, we can simply exit
+      // skipped anyway, we can simply exit
       break;
     }
 
-    if( line.empty() && !continued && has_equal ) {
+    if( line.empty() && !continued && is_assignment ) {
       // If the first line of a potential result contains a '=', this
       // line may be continued by non-'=' lines up until the next blank line.
       // However, do not use this logic if the line also contains a
@@ -1219,7 +1237,7 @@ Int_t THaAnalysisObject::LoadDBvalue( FILE* file, const TDatime& date,
   static const size_t bufsiz = 256;
   char* buf = new char[bufsiz];
 
-  bool found = false, ignore = false;
+  bool found = false, do_ignore = false;
   string dbline;
   vector<string> lines;
   while( ReadDBline(file, buf, bufsiz, dbline) != EOF ) {
@@ -1231,16 +1249,16 @@ Int_t THaAnalysisObject::LoadDBvalue( FILE* file, const TDatime& date,
     for( vsiter_t it = lines.begin(); it != lines.end(); ++it ) {
       string& line = *it;
       Int_t status;
-      if( !ignore && (status = IsDBkey( line, key, text )) != 0 ) {
+      if( !do_ignore && (status = IsDBkey( line, key, text )) != 0 ) {
 	if( status > 0 ) {
 	  // Found a matching key for a newer date than before
 	  found = true;
 	  prevdate = keydate;
-	  // we do not set ignore to true here so that the _last_, not the first,
+	  // we do not set do_ignore to true here so that the _last_, not the first,
 	  // of multiple identical keys is evaluated.
 	}
-      } else if( IsDBdate( line, keydate ) != 0 ) 
-	ignore = ( keydate>date || keydate<prevdate );
+      } else if( IsDBdate( line, keydate ) != 0 )
+        do_ignore = (keydate > date || keydate < prevdate );
     }
   }
   delete [] buf;
@@ -1786,7 +1804,6 @@ vector<string> THaAnalysisObject::vsplit(const string& s)
   // Static utility function to split a string into
   // whitespace-separated strings
   vector<string> ret;
-  typedef string::size_type ssiz_t;
   ssiz_t i = 0;
   while ( i != s.size()) {
     while (i != s.size() && isspace(s[i])) ++i;
