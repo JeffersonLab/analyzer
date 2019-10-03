@@ -18,8 +18,6 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-#include <iostream>
-#include <fstream>
 #include "THaAnalyzer.h"
 #include "THaRunBase.h"
 #include "THaEvent.h"
@@ -27,9 +25,7 @@
 #include "THaEvData.h"
 #include "THaGlobals.h"
 #include "THaSpectrometer.h"
-#include "THaNamedList.h"
 #include "THaCutList.h"
-#include "THaCut.h"
 #include "THaPhysicsModule.h"
 #include "THaPostProcess.h"
 #include "THaBenchmark.h"
@@ -38,18 +34,15 @@
 #include "TList.h"
 #include "TTree.h"
 #include "TFile.h"
-#include "TClass.h"
 #include "TDatime.h"
-#include "TClass.h"
 #include "TError.h"
+#include "TClass.h"
 #include "TSystem.h"
 #include "TROOT.h"
-#include "TMath.h"
 #include "TDirectory.h"
 #include "THaCrateMap.h"
 
-#include <fstream>
-#include <algorithm>
+#include <iostream>
 #include <iomanip>
 #include <cstring>
 #include <exception>
@@ -336,8 +329,8 @@ THaEvData* THaAnalyzer::GetDecoder() const
   // Return the decoder object that this analyzer uses to process the input
 
   if( !fEvData ) {
-    Warning( "GetDecoder", "Decoder not yet set up. You need to intialize "
-	     "the analyzer with Init(run) first." );
+    Warning( "GetDecoder", "Decoder not yet set up. You need to "
+             "initialize the analyzer with Init(run) first." );
   }
   return fEvData;
 }
@@ -465,8 +458,9 @@ Int_t THaAnalyzer::InitModules( TList* module_list, TDatime& run_time,
       goto errexit;
     }
     if( retval != kOK || !theModule->IsOK() ) {
-      Error( here, "Error %d initializing module %s (%s). Analyzer initial"
-	     "ization failed.", retval, obj->GetName(), obj->GetTitle() );
+      Error( here, "Error %d initializing module %s (%s). "
+             "Analyzer initialization failed.",
+	     retval, obj->GetName(), obj->GetTitle() );
       if( retval == kOK )
 	retval = -1;
       break;
@@ -665,7 +659,7 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
     delete fRun;
     fRun = static_cast<THaRunBase*>(run->IsA()->New());
     if( !fRun )
-      return 252; // urgh
+      return 252; // FIXME: arbitrary
     *fRun = *run;  // Copy the run via its virtual operator=
   }
 
@@ -872,7 +866,7 @@ void THaAnalyzer::SetEpicsEvtType(Int_t itype)
 {
     if (fEpicsHandler) fEpicsHandler->SetEvtType(itype);
     if (fEvData) fEvData->SetEpicsEvtType(itype);
-};
+}
 
 //_____________________________________________________________________________
 void THaAnalyzer::AddEpicsEvtType(Int_t itype)
@@ -1085,7 +1079,7 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
     //    THaSpectrometer::Track        (only for spectrometers)
     //    THaApparatus::Reconstruct
     //
-    // Test blocks are evaulated after each of these stages
+    // Test blocks are evaluated after each of these stages
 
     //-- Coarse processing
 
