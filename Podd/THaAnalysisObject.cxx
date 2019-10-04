@@ -33,6 +33,7 @@
 #include <errno.h>
 #include <algorithm>
 #include <iostream>
+#include <sstream>
 #include <cmath>
 #include <cstdlib>
 #include <cstdio>
