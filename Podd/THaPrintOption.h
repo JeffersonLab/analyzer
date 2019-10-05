@@ -8,6 +8,7 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "Rtypes.h"
+#include <cstring>
 
 Option_t* const kPRINTLINE  = "LINE";
 Option_t* const kPRINTSTATS = "STATS";
@@ -16,7 +17,7 @@ class THaPrintOption {
   
 public:
   THaPrintOption();
-  THaPrintOption( const char* string );
+  THaPrintOption( const char* str );
   THaPrintOption( const THaPrintOption& opt );
   THaPrintOption& operator=( const THaPrintOption& rhs );
   THaPrintOption& operator=( const char* rhs );
@@ -37,7 +38,7 @@ protected:
   Int_t       fNTokens;     //Number of tokens
   char**      fTokens;      //Array of pointers to the tokens in the string
   Int_t*      fParam;       //Array of the parameter values in the string
-  char*       fEmpty;       //Pointer to \0, returned by GetOption() if error
+  const char* fEmpty;       //Pointer to \0, returned by GetOption() if error
 
   virtual void  Parse();
 

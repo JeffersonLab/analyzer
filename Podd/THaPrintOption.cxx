@@ -11,50 +11,37 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-#include <iostream>
-#include <iomanip>
-#include <algorithm>
+#include "THaPrintOption.h"
 #include <cstdlib>
 #include <cstring>
 
-#include "THaPrintOption.h"
-
-ClassImp(THaPrintOption);
+ClassImp(THaPrintOption)
 
 //_____________________________________________________________________________
 THaPrintOption::THaPrintOption() : 
-  fString(0), fTokenStr(0), fNTokens(0), fTokens(0), fParam(0)
+  fString(0), fTokenStr(0), fNTokens(0), fTokens(0), fParam(0), fEmpty("")
 {
   // Default constructor
-
-  fEmpty = new char;
-  *fEmpty = 0;
 }
 
 //_____________________________________________________________________________
-THaPrintOption::THaPrintOption( const char* string ) :
-  fString(0), fTokenStr(0), fNTokens(0), fTokens(0), fParam(0)
+THaPrintOption::THaPrintOption( const char* str ) :
+  fString(0), fTokenStr(0), fNTokens(0), fTokens(0), fParam(0), fEmpty("")
 {
   // Normal constructor
   
-  fEmpty = new char;
-  *fEmpty = 0;
-
-  if( string ) {
-    fString = new char[ strlen(string)+1 ];
-    strcpy( fString, string );
+  if( str ) {
+    fString = new char[ strlen(str) + 1 ];
+    strcpy( fString, str );
     Parse();
   } 
 }
 
 //_____________________________________________________________________________
 THaPrintOption::THaPrintOption( const THaPrintOption& rhs ) :
-  fString(0), fTokenStr(0), fNTokens(0), fTokens(0), fParam(0)
+  fString(0), fTokenStr(0), fNTokens(0), fTokens(0), fParam(0), fEmpty("")
 {
   // Copy constructor 
-
-  fEmpty = new char;
-  *fEmpty = 0;
 
   if( rhs.fString ) {
     fString = new char[ strlen(rhs.fString)+1 ];
@@ -80,7 +67,7 @@ THaPrintOption& THaPrintOption::operator=(const char* rhs)
   // Initialize object with a string
 
   delete [] fString; fString = 0;
-  *fEmpty = 0;
+  fEmpty = "";
   if( rhs ) {
     fString = new char[ strlen(rhs)+1 ];
     strcpy( fString, rhs );
@@ -98,7 +85,6 @@ THaPrintOption::~THaPrintOption()
   delete [] fTokenStr;
   delete [] fTokens;
   delete [] fParam;
-  delete fEmpty;
 }
 
 //_____________________________________________________________________________
