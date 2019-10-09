@@ -1093,7 +1093,7 @@ static void Trim( string& str )
 }
 
 //_____________________________________________________________________________
-inline
+static inline
 Bool_t IsAssignment( const string& str )
 {
   // Check if 'str' has the form of an assignment (<text> = [optional text]).
