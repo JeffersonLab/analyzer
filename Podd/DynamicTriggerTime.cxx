@@ -78,10 +78,10 @@ Int_t DynamicTriggerTime::ReadDatabase( const TDatime &date )
   }
 
   // Read configuration parameters
-  TString defstr, stagestr;
+  TString defstr, evalat;
   DBRequest config_request[] = {
     { "t_corr",   &defstr,    kTString, 0, true },
-    { "eval_at",  &stagestr,  kTString, 0, true },
+    { "eval_at",  &evalat,    kTString, 0, true },
     { "glob_off", &fGlOffset, kDouble,  0, true },
     { nullptr }
   };
@@ -236,15 +236,15 @@ Int_t DynamicTriggerTime::Decode( const THaEvData &evdata )
 }
 
 //____________________________________________________________________________
-Int_t DynamicTriggerTime::CoarseProcess( TClonesArray &array )
+Int_t DynamicTriggerTime::CoarseProcess( TClonesArray &tracks )
 {
-  return THaTriggerTime::CoarseProcess( array );
+  return THaTriggerTime::CoarseProcess( tracks );
 }
 
 //____________________________________________________________________________
-Int_t DynamicTriggerTime::FineProcess( TClonesArray &array )
+Int_t DynamicTriggerTime::FineProcess( TClonesArray &tracks )
 {
-  return THaTriggerTime::FineProcess( array );
+  return THaTriggerTime::FineProcess( tracks );
 }
 
 //____________________________________________________________________________
