@@ -94,6 +94,9 @@ macro(set_compiler_flags _suggested_flags)
   if(cxx-compiler-supports-fsigned-char)
     set(${PROJECT_NAME_UC}_CXX_FLAGS "${${PROJECT_NAME_UC}_CXX_FLAGS} -fsigned-char")
   endif()
+  if(cxx-compiler-supports-fexceptions)
+    set(${PROJECT_NAME_UC}_CXX_FLAGS "${${PROJECT_NAME_UC}_CXX_FLAGS} -fexceptions")
+  endif()
   if(cxx-compiler-supports-mtune-generic)
     set(${PROJECT_NAME_UC}_CXX_FLAGS "${${PROJECT_NAME_UC}_CXX_FLAGS} -mtune=generic")
   endif()
@@ -133,8 +136,10 @@ macro(set_diagnostic_flags)
     set(${PROJECT_NAME_UC}_DIAG_FLAGS "${${PROJECT_NAME_UC}_DIAG_FLAGS} -Wall")
   endif()
   if(SDF_WEXTRA)
+    string(CONCAT PODD_EXTRA_DIAG_FLAGS "-Wextra -Wno-missing-field-initializers"
+      " -Wno-unused-parameter -Wno-inconsistent-missing-override")
     set(${PROJECT_NAME_UC}_DIAG_FLAGS
-      "${${PROJECT_NAME_UC}_DIAG_FLAGS} -Wextra -Wno-missing-field-initializers -Wno-unused-parameter"
+      "${${PROJECT_NAME_UC}_DIAG_FLAGS} ${PODD_EXTRA_DIAG_FLAGS}"
       )
   endif()
   if(SDF_WERROR)
