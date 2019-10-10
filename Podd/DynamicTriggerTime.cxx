@@ -11,37 +11,42 @@
 #include "THaEvData.h"
 #include "THaGlobals.h"
 #include "THaCutList.h"
-#include "TMath.h"
+#include "THaFormula.h"
+#include "THaCut.h"
 #include "VarDef.h"
 #include "VarType.h"
 #include "TError.h"
 #include <cstdio>
-#include <iostream>
 #include <memory>
 #include <cassert>
+#include <map>
 
 using namespace std;
 
 namespace Podd {
 
 //____________________________________________________________________________
-DynamicTriggerTime::DynamicTriggerTime( const char *name, const char *desc,
-                                        THaApparatus *apparatus ) :
-  THaTriggerTime( name, desc, apparatus )
+DynamicTriggerTime::DynamicTriggerTime( const char* name, const char* desc,
+                                        THaApparatus* app ) :
+  THaTriggerTime(name, desc, app), fEvalAt(kDecode), fDidFormInit(false)
 {
   // Basic constructor
+
+  MakeBlockName();
 }
 
 //____________________________________________________________________________
-DynamicTriggerTime::DynamicTriggerTime( const char *name, const char *desc,
-                                        const char *expr, const char *cond,
-                                        THaApparatus *apparatus ) :
-  THaTriggerTime( name, desc, apparatus )
+DynamicTriggerTime::DynamicTriggerTime( const char* name, const char* desc,
+                                        const char* expr, const char* cond,
+                                        THaApparatus* app ) :
+  THaTriggerTime(name, desc, app), fEvalAt(kDecode), fDidFormInit(false)
 {
   // Construct with formula 'expr' for calculating the time correction and
   // optional condition 'cond' that must be true for applying the correction.
   // This formula is evaluated /after/ any other definitions read from the
   // database (like a default value).
+
+  MakeBlockName();
 
   if( !expr )
     return;     // behave like the basic constructor
@@ -56,7 +61,7 @@ DynamicTriggerTime::DynamicTriggerTime( const char *name, const char *desc,
 }
 
 //____________________________________________________________________________
-Int_t DynamicTriggerTime::ReadDatabase( const TDatime &date )
+Int_t DynamicTriggerTime::ReadDatabase( const TDatime& date )
 {
   // Read this detector's parameters from the database.
   // 'date' contains the date/time of the run being analyzed.
@@ -107,7 +112,7 @@ Int_t DynamicTriggerTime::ReadDatabase( const TDatime &date )
     //
     // Examples:
     //
-    // L.trg.eval_at = Decode   # Evaluate expressions at Decode stage
+    // L.trg.eval_at = Decode   # Evaluate expressions at Decode stage (default)
     // L.trg.t_corr =
     //   DL.evtypebits&0x20!=0
     //      L.s2.rt_c[L.s2.t_pads[0]]-R.s2.rt_c[R.s2.t_pads[0]]  # s2 L-TDC time diff
@@ -148,20 +153,35 @@ Int_t DynamicTriggerTime::ReadDatabase( const TDatime &date )
     }
   }
 
+  if( !evalat.IsNull() ) {
+    map<TString,EEvalAt> stagelookup{{ "Decode",        kDecode },
+                                     { "CoarseProcess", kCoarseProcess },
+                                     { "FineProcess",   kFineProcess }};
+    auto item = stagelookup.find( evalat);
+    if( item == stagelookup.end() ) {
+      Error( Here(here), "\"%seval_at = %s\": Unrecognized processing stage name.\n"
+                         "Must be one of \"Decode\", \"CoarseProcess\" or \"FineProcess\". "
+                         "Fix database.", fPrefix, evalat.Data() );
+      return kInitError;
+    }
+    fEvalAt = item->second;
+    if( fDebug > 0 )
+      Info( Here(here), "Configured for stage = \"%s\"", item->first.Data() );
+  }
 
   fIsInit = true;
   return kOK;
 }
 
 //____________________________________________________________________________
-void DynamicTriggerTime::Clear( Option_t *opt )
+void DynamicTriggerTime::Clear( Option_t* opt )
 {
   // Reset all variables to their default/unknown state
-  THaTriggerTime::Clear( opt );
+  THaTriggerTime::Clear(opt);
 }
 
 //____________________________________________________________________________
-Int_t DynamicTriggerTime::Process()
+Int_t DynamicTriggerTime::CalcCorrection()
 {
   // Process the defined tests in order of priority. For the first succeeding
   // test, evaluate its corresponding formula and take the result as this
@@ -173,7 +193,11 @@ Int_t DynamicTriggerTime::Process()
 
   Int_t ret = 0;
 
-  //TODO: call InitDefs here if necessary
+  if( !fDidFormInit ) {
+    InitDefs();
+    fDidFormInit = true;
+  }
+
   gHaCuts->EvalBlock(fTestBlockName);
 
   for( auto& def : fDefs ) {
@@ -181,8 +205,10 @@ Int_t DynamicTriggerTime::Process()
       fEvtTime = def.fForm->Eval();
       if( def.fForm->IsInvalid() )
         fEvtTime = kBig;
-      else
+      else {
+        fEvtTime += fGlOffset;
         ret = 1;
+      }
       break;
     }
   }
@@ -191,60 +217,58 @@ Int_t DynamicTriggerTime::Process()
 }
 
 //____________________________________________________________________________
-Int_t DynamicTriggerTime::Decode( const THaEvData &evdata )
+Int_t DynamicTriggerTime::Decode( const THaEvData& /*evdata*/ )
 {
-  // Look through the channels to determine the trigger type.
-  // Be certain to decode only once per event.
+  // Calculate the trigger time correction for the given event, if
+  // configured for the Decode stage.
+  //
+  // Doing the calculation in Decode is what one normally wants
+  // to apply trigger jitter corrections to raw tracking detector
+  // TDC values.
+  //
+  // Important: the processing order of the detectors needs to be set
+  // such that this modules runs AFTER all the variables used in
+  // the time correction formulas have been calculated at BEFORE
+  // the result is used by other detectors. Typically, that means
+  // that scintillators need to be processed first, then this module,
+  // then the tracking detectors.
 
-  //TODO: implement
+  if( fEvalAt == kDecode )
+    CalcCorrection();
 
-//  if( fEvtType > 0 ) return kOK;
-//
-//  for( Int_t i = 0; i < fDetMap->GetSize(); i++ ) {
-//    THaDetMap::Module *d = fDetMap->GetModule( i );
-//
-//    // Loop over our short-list of relevant channels.
-//    // Continuing with the assumption that each channel has its own entry in
-//    // fDetMap, so that fDetMap, fTrgTimes, fTrgTypes, and fToffsets are
-//    // parallel.
-//
-//    // look through each channel and take the earliest hit
-//    if( fCommonStop ) fTDCRes *= -1;
-//
-//    for( Int_t j = 0; j < evdata.GetNumHits( d->crate, d->slot, d->lo ); j++ ) {
-//      Double_t t = fTDCRes * evdata.GetData( d->crate, d->slot, d->lo, j );
-//      if( t < fTrgTimes[i] ) fTrgTimes[i] = t;
-//    }
-//  }
-//
-//  int earliest = -1;
-//  Double_t reftime = 0;
-//  for( Int_t i = 0; i < fNTrgType; i++ ) {
-//    if( earliest < 0 || fTrgTimes[i] < reftime ) {
-//      earliest = i;
-//      reftime = fTrgTimes[i];
-//    }
-//  }
-//
-  Double_t offset = fGlOffset;
-//  if( earliest >= 0 ) {
-//    offset += fToffsets[earliest];
-//    fEvtType = fTrgTypes[earliest];
-//  }
-  fEvtTime = offset;
+// return THaTriggerTime::Decode(evdata); //FIXME: run this too?
   return kOK;
 }
 
 //____________________________________________________________________________
-Int_t DynamicTriggerTime::CoarseProcess( TClonesArray &tracks )
+Int_t DynamicTriggerTime::CoarseProcess( TClonesArray& )
 {
-  return THaTriggerTime::CoarseProcess( tracks );
+  // Calculate the trigger time correction for the given event, if
+  // configured for the CoarseProcess stage.
+  //
+  // Important: Since the standard spectrometer class THaSpectrometer always
+  // runs CoarseTrack before CoarseProcess, doing this calculation in
+  // CoarseProcess is useful only if needed by tracking detectors in FineTrack.
+
+  if( fEvalAt == kCoarseProcess )
+    CalcCorrection();
+
+  return kOK;
 }
 
 //____________________________________________________________________________
-Int_t DynamicTriggerTime::FineProcess( TClonesArray &tracks )
+Int_t DynamicTriggerTime::FineProcess( TClonesArray& )
 {
-  return THaTriggerTime::FineProcess( tracks );
+  // Calculate the trigger time correction for the given event, if
+  // configured for the FineProcess stage.
+  //
+  // Doing the calculation in FineProcess is only useful if the result is
+  // needed by other non-tracking detectors and/or physics modules.
+
+  if( fEvalAt == kFineProcess )
+    CalcCorrection();
+
+  return kOK;
 }
 
 //____________________________________________________________________________
@@ -273,24 +297,24 @@ Int_t DynamicTriggerTime::InitDefs()
 
   Int_t ndef = 0;
   for( auto& def : fDefs ) {
-    // These should be nullptr, but it doesn't hurt to be safe
-    delete def.fCond;
+    // Delete existing formula/test, if any, to allow reinitialization
     delete def.fForm;
+    delete def.fCond;
+    def.fCond = nullptr;
 
     // Parse formula
     def.fForm = new THaFormula( "form", def.fFormStr );
-    def.fCond = nullptr;
     // Expression error? (Message already printed)
     if( def.fForm->IsZombie() or def.fForm->IsError() ) {
       delete def.fForm;
       def.fForm = nullptr;
       continue;
     }
-    //TODO: disallow array formulae
+    //TODO: disallow array formulas
 
     // Parse condition, if any
     if( !def.fCondStr.IsNull() ) {
-      def.fCond = new THaCut( "cond", def.fCondStr, "Decode" );
+      def.fCond = new THaCut( "cond", def.fCondStr, fTestBlockName );
       // If the cut cannot be parsed, the whole definition is unusable
       if( def.fCond->IsZombie() or def.fCond->IsError() ) {
         delete def.fCond;
@@ -304,6 +328,23 @@ Int_t DynamicTriggerTime::InitDefs()
 
   return ndef;
 }
+
+//____________________________________________________________________________
+void DynamicTriggerTime::MakeBlockName()
+{
+  // Create the test block name
+
+  fTestBlockName = fPrefix + fName + "_Tests";
+}
+
+//____________________________________________________________________________
+DynamicTriggerTime::TimeCorrDef::~TimeCorrDef()
+{
+  delete fForm;
+  delete fCond;
+}
+
+//____________________________________________________________________________
 
 } // namespace Podd
 

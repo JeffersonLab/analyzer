@@ -8,50 +8,57 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "THaTriggerTime.h"
-#include "THaFormula.h"
-#include "THaCut.h"
 #include "TString.h"
 #include <set>
+
+class THaFormula;
+class THaCut;
 
 namespace Podd {
 
 class DynamicTriggerTime : public THaTriggerTime {
 public:
   DynamicTriggerTime( const char* name, const char* description,
-                      THaApparatus* a = NULL );
+                      THaApparatus* app = nullptr );
   DynamicTriggerTime( const char* name, const char* description,
                       const char* expr, const char* cond = "",
-                      THaApparatus* a = NULL );
+                      THaApparatus* app = nullptr );
 
-  virtual Int_t Decode( const THaEvData& );
+  virtual Int_t Decode( const THaEvData& evdata );
   virtual Int_t CoarseProcess( TClonesArray& tracks );
   virtual Int_t FineProcess( TClonesArray& tracks );
-  virtual void  Clear( Option_t *opt = "" );
-  virtual Int_t DefineVariables( EMode mode = kDefine );
+  virtual void  Clear( Option_t* opt = "" );
 
 protected:
-
+  virtual Int_t DefineVariables( EMode mode = kDefine );
   virtual Int_t ReadDatabase( const TDatime &date );
-  Int_t InitDefs();
-  Int_t Process();
 
   struct TimeCorrDef {
     explicit TimeCorrDef( const char* expr, const char* cond = "",
                           UInt_t prio = 0 ) :
       fFormStr(expr), fCondStr(cond), fPrio(prio), fFromDB(true),
       fForm(nullptr), fCond(nullptr) {}
-    ~TimeCorrDef() { delete fForm; delete fCond; }
+    ~TimeCorrDef();
     bool operator<(const TimeCorrDef& rhs) const { return fPrio < rhs.fPrio; }
-    TString  fFormStr; // Formula string
-    TString  fCondStr; // Condition string
-    UInt_t   fPrio;    // Priority of this correction (0=highest)
-    Bool_t   fFromDB;  // True if read from database (not in constructor)
-    mutable THaFormula* fForm;    // Formula for calculating time correction
-    mutable THaCut*     fCond;    // Condition to pass for this correction to apply (optional)
+
+    TString  fFormStr;         // Formula string
+    TString  fCondStr;         // Condition string
+    UInt_t   fPrio;            // Priority of this correction (0=highest)
+    Bool_t   fFromDB;          // This definition comes from database, not constructor
+    mutable THaFormula* fForm; // Formula for calculating time correction
+    mutable THaCut*     fCond; // Condition to pass for this correction to apply (optional)
   };
   std::set<TimeCorrDef> fDefs;
 
-  TString fTestBlockName;
+  enum EEvalAt { kDecode, kCoarseProcess, kFineProcess };
+  EEvalAt    fEvalAt;          // Processing stage after which this module runs
+  TString    fTestBlockName;   // Name of test block for this module
+  Bool_t     fDidFormInit;     // Formulas and tests have been initialized
+
+private:
+  Int_t InitDefs();
+  void  MakeBlockName();
+  Int_t CalcCorrection();
 
   ClassDef( DynamicTriggerTime, 0 )  // Trigger time correction based on formula(s)
 };
