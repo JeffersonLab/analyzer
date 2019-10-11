@@ -31,8 +31,6 @@ DynamicTriggerTime::DynamicTriggerTime( const char* name, const char* desc,
   THaTriggerTime(name, desc, app), fEvalAt(kDecode), fDidFormInit(false)
 {
   // Basic constructor
-
-  MakeBlockName();
 }
 
 //____________________________________________________________________________
@@ -45,8 +43,6 @@ DynamicTriggerTime::DynamicTriggerTime( const char* name, const char* desc,
   // optional condition 'cond' that must be true for applying the correction.
   // This formula is evaluated /after/ any other definitions read from the
   // database (like a default value).
-
-  MakeBlockName();
 
   if( !expr )
     return;     // behave like the basic constructor
@@ -71,6 +67,9 @@ Int_t DynamicTriggerTime::ReadDatabase( const TDatime& date )
   FILE *file = OpenFile( date );
   if( !file )
     return kFileError;
+
+  // Make the name of our block of tests. We need fPrefix to be set
+  MakeBlockName();
 
   fGlOffset = 0.0;
   // Delete all definitions that came from the database, i.e. keep the one
@@ -144,12 +143,12 @@ Int_t DynamicTriggerTime::ReadDatabase( const TDatime& date )
       else {
         Error( Here(here), "Incorrect number of parameters = %d in database "
                            "key %st_torr. Must be pairs of formulas and "
-                           "conditions. Fix database.", nelem , GetPrefix() );
+                           "conditions. Fix database.", nelem , fPrefix );
         return kInitError;
       }
 
     } else {
-      Warning( Here( here ), "Empty database key %st_corr.", GetPrefix());
+      Warning( Here( here ), "Empty database key %st_corr.", fPrefix);
     }
   }
 
@@ -168,6 +167,9 @@ Int_t DynamicTriggerTime::ReadDatabase( const TDatime& date )
     if( fDebug > 0 )
       Info( Here(here), "Configured for stage = \"%s\"", item->first.Data() );
   }
+
+  //FIXME: debug
+  InitDefs();
 
   fIsInit = true;
   return kOK;
@@ -334,7 +336,13 @@ void DynamicTriggerTime::MakeBlockName()
 {
   // Create the test block name
 
-  fTestBlockName = fPrefix + fName + "_Tests";
+  if( fPrefix && *fPrefix ) {
+    TString no_dot_prefix(fPrefix);
+    no_dot_prefix.Chop();
+    fTestBlockName = no_dot_prefix;
+  } else
+    fTestBlockName = fName;
+  fTestBlockName.Append("_Tests");
 }
 
 //____________________________________________________________________________
