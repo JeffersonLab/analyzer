@@ -18,8 +18,6 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-#include <iostream>
-#include <fstream>
 #include "THaAnalyzer.h"
 #include "THaRunBase.h"
 #include "THaEvent.h"
@@ -27,10 +25,9 @@
 #include "THaEvData.h"
 #include "THaGlobals.h"
 #include "THaSpectrometer.h"
-#include "THaNamedList.h"
 #include "THaCutList.h"
-#include "THaCut.h"
 #include "THaPhysicsModule.h"
+#include "InterStageModule.h"
 #include "THaPostProcess.h"
 #include "THaBenchmark.h"
 #include "THaEvtTypeHandler.h"
@@ -38,25 +35,26 @@
 #include "TList.h"
 #include "TTree.h"
 #include "TFile.h"
-#include "TClass.h"
 #include "TDatime.h"
-#include "TClass.h"
 #include "TError.h"
+#include "TClass.h"
 #include "TSystem.h"
 #include "TROOT.h"
-#include "TMath.h"
 #include "TDirectory.h"
 #include "THaCrateMap.h"
 
-#include <fstream>
-#include <algorithm>
+#include <iostream>
 #include <iomanip>
 #include <cstring>
 #include <exception>
 #include <stdexcept>
+#include <cassert>
+#include <algorithm>
+#include <vector>
 
 using namespace std;
 using namespace Decoder;
+using Podd::InterStageModule;
 
 const char* const THaAnalyzer::kMasterCutName = "master";
 const char* const THaAnalyzer::kDefaultOdefFile = "output.def";
@@ -65,28 +63,29 @@ const int MAXSTAGE = 100;   // Sanity limit on number of stages
 const int MAXCOUNTER = 200; // Sanity limit on number of counters
 
 // Pointer to single instance of this object
-THaAnalyzer* THaAnalyzer::fgAnalyzer = 0;
+THaAnalyzer* THaAnalyzer::fgAnalyzer = nullptr;
 
 //FIXME:
 // do we need to "close" scalers/EPICS analysis if we reach the event limit?
 
 //_____________________________________________________________________________
 THaAnalyzer::THaAnalyzer() :
-  fFile(NULL), fOutput(NULL), fEpicsHandler(NULL),
-  fOdefFileName(kDefaultOdefFile), fEvent(NULL), fNStages(0), fNCounters(0),
+  fFile(nullptr), fOutput(nullptr), fEpicsHandler(nullptr),
+  fOdefFileName(kDefaultOdefFile), fEvent(nullptr), fNStages(0), fNCounters(0),
   fWantCodaVers(-1),
-  fStages(NULL), fCounters(NULL), fNev(0), fMarkInterval(1000), fCompress(1),
-  fVerbose(2), fCountMode(kCountRaw), fBench(NULL), fPrevEvent(NULL),
-  fRun(NULL), fEvData(NULL), fApps(NULL), fPhysics(NULL),
-  fPostProcess(NULL), fEvtHandlers(NULL),
-  fIsInit(kFALSE), fAnalysisStarted(kFALSE), fLocalEvent(kFALSE),
-  fUpdateRun(kTRUE), fOverwrite(kTRUE), fDoBench(kFALSE),
-  fDoHelicity(kFALSE), fDoPhysics(kTRUE), fDoOtherEvents(kTRUE),
-  fDoSlowControl(kTRUE), fFirstPhysics(true), fExtra(0)
+  fStages(nullptr), fCounters(nullptr), fNev(0), fMarkInterval(1000), fCompress(1),
+  fVerbose(2), fCountMode(kCountRaw), fBench(nullptr), fPrevEvent(nullptr),
+  fRun(nullptr), fEvData(nullptr), fApps(nullptr), fPhysics(nullptr),
+  fPostProcess(nullptr), fEvtHandlers(nullptr), fInterStage(nullptr),
+  fIsInit(false), fAnalysisStarted(false), fLocalEvent(false),
+  fUpdateRun(true), fOverwrite(true), fDoBench(false),
+  fDoHelicity(false), fDoPhysics(true), fDoOtherEvents(true),
+  fDoSlowControl(true), fFirstPhysics(true), fExtra(nullptr)
 
 {
   // Default constructor.
 
+  //FIXME: relax this
   // Allow only one analyzer object (because we use various global lists)
   if( fgAnalyzer ) {
     Error("THaAnalyzer", "only one instance of THaAnalyzer allowed.");
@@ -105,7 +104,6 @@ THaAnalyzer::THaAnalyzer() :
   //  fEpicsHandler->SetDebugFile("epicsdat.txt");
   fEvtHandlers->Add(fEpicsHandler);
 
-
   // Timers
   fBench = new THaBenchmark;
 }
@@ -116,13 +114,57 @@ THaAnalyzer::~THaAnalyzer()
   // Destructor.
 
   Close();
-  delete fExtra; fExtra = 0;
+  delete fExtra; fExtra = nullptr;
   delete fPostProcess;  //deletes PostProcess objects
+  delete fInterStage;
   delete fBench;
   delete [] fStages;
   delete [] fCounters;
   if( fgAnalyzer == this )
-    fgAnalyzer = NULL;
+    fgAnalyzer = nullptr;
+}
+
+//_____________________________________________________________________________
+Int_t THaAnalyzer::AddInterStage( Podd::InterStageModule* module )
+{
+  // Add 'module' to the list of inter-stage modules. See AddPostProcess()
+  // for additional comments
+
+  //FIXME: code duplication
+  const char* const here = "AddInterStage";
+
+  // No module, nothing to do
+  if( !module )
+    return 0;
+
+  // Can't add modules in the middle of things
+  if( fAnalysisStarted ) {
+    Error( Here(here), "Cannot add analysis modules while analysis "
+                             "is in progress. Close() this analysis first." );
+    return 237;
+  }
+
+  // Init this module if Analyzer already initialized. Otherwise, the
+  // module will be initialized in Init() later.
+  if( fIsInit ) {
+    // FIXME: debug
+    if( !fRun || !fRun->IsInit()) {
+      Error(Here(here),"fIsInit, but bad fRun?!?");
+      return 236;
+    }
+    TDatime run_time = fRun->GetDate();
+    Int_t retval = module->Init(run_time);
+    if( retval )
+      return retval;
+  }
+
+  // If list of modules does not yet exist, create it.
+  // Destructor will clean up.
+  if( !fInterStage )
+    fInterStage = new TList;
+
+  fInterStage->Add(module);
+  return 0;
 }
 
 //_____________________________________________________________________________
@@ -191,18 +233,18 @@ void THaAnalyzer::Close()
   }
 
   if( gHaRun && *gHaRun == *fRun )
-    gHaRun = NULL;
+    gHaRun = nullptr;
 
-  delete fEvData; fEvData = NULL;
-  delete fOutput; fOutput = NULL;
+  delete fEvData; fEvData = nullptr;
+  delete fOutput; fOutput = nullptr;
   if( TROOT::Initialized() )
     delete fFile;
-  fFile = NULL;
-  delete fRun; fRun = NULL;
+  fFile = nullptr;
+  delete fRun; fRun = nullptr;
   if( fLocalEvent ) {
-    delete fEvent; fEvent = fPrevEvent = NULL;
+    delete fEvent; fEvent = fPrevEvent = nullptr;
   }
-  fIsInit = fAnalysisStarted = kFALSE;
+  fIsInit = fAnalysisStarted = false;
 }
 
 
@@ -210,14 +252,14 @@ void THaAnalyzer::Close()
 THaAnalyzer::Stage_t* THaAnalyzer::DefineStage( const Stage_t* item )
 {
   if( !item || item->key < 0 )
-    return NULL;
+    return nullptr;
   if( item->key >= MAXSTAGE ) {
     Error("DefineStage", "Too many analysis stages.");
-    return NULL;
+    return nullptr;
   }
   if( item->key >= fNStages ) {
     Int_t newmax = item->key+1;
-    Stage_t* tmp = new Stage_t[newmax];
+    auto tmp = new Stage_t[newmax];
     memcpy(tmp,fStages,fNStages*sizeof(Stage_t));
     memset(tmp+fNStages,0,(newmax-fNStages)*sizeof(Stage_t));
     delete [] fStages;
@@ -232,14 +274,14 @@ THaAnalyzer::Stage_t* THaAnalyzer::DefineStage( const Stage_t* item )
 THaAnalyzer::Counter_t* THaAnalyzer::DefineCounter( const Counter_t* item )
 {
   if( !item || item->key < 0 )
-    return NULL;
+    return nullptr;
   if( item->key >= MAXCOUNTER ) {
     Error("DefineCounters", "Too many statistics counters.");
-    return NULL;
+    return nullptr;
   }
   if( item->key >= fNCounters ) {
     Int_t newmax = item->key+1;
-    Counter_t* tmp = new Counter_t[newmax];
+    auto tmp = new Counter_t[newmax];
     memcpy(tmp,fCounters,fNCounters*sizeof(Counter_t));
     memset(tmp+fNCounters,0,(newmax-fNCounters)*sizeof(Counter_t));
     delete [] fCounters;
@@ -318,7 +360,7 @@ bool THaAnalyzer::EvalStage( int n )
 
   bool ret = true;
   if( theStage->cut_list ) {
-    gHaCuts->EvalBlock( theStage->cut_list );
+    THaCutList::EvalBlock( theStage->cut_list );
     if( theStage->master_cut &&
 	!theStage->master_cut->GetResult() ) {
       if( theStage->countkey >= 0 ) // stage may not have a counter
@@ -336,8 +378,8 @@ THaEvData* THaAnalyzer::GetDecoder() const
   // Return the decoder object that this analyzer uses to process the input
 
   if( !fEvData ) {
-    Warning( "GetDecoder", "Decoder not yet set up. You need to intialize "
-	     "the analyzer with Init(run) first." );
+    Warning( "GetDecoder", "Decoder not yet set up. You need to "
+             "initialize the analyzer with Init(run) first." );
   }
   return fEvData;
 }
@@ -405,7 +447,7 @@ void THaAnalyzer::InitCuts()
 
   for( int i=0; i<fNStages; i++ ) {
     Stage_t* theStage = fStages+i;
-    // If block not found, this will return NULL and work just fine later.
+    // If block not found, this will return nullptr and work just fine later.
     theStage->cut_list = gHaCuts->FindBlock( theStage->name );
 
     if( theStage->cut_list ) {
@@ -414,7 +456,7 @@ void THaAnalyzer::InitCuts()
       master_cut.Append( kMasterCutName );
       theStage->master_cut = gHaCuts->FindCut( master_cut );
     } else
-      theStage->master_cut = NULL;
+      theStage->master_cut = nullptr;
   }
 }
 
@@ -441,7 +483,7 @@ Int_t THaAnalyzer::InitModules( TList* module_list, TDatime& run_time,
       retval = -2;
       break;
     }
-    THaAnalysisObject* theModule = dynamic_cast<THaAnalysisObject*>( obj );
+    auto theModule = dynamic_cast<THaAnalysisObject*>( obj );
     if( !theModule ) {
       Error( here, "Object %s (%s) is not a THaAnalysisObject. Analyzer "
 	     "initialization failed.", obj->GetName(), obj->GetTitle() );
@@ -465,8 +507,9 @@ Int_t THaAnalyzer::InitModules( TList* module_list, TDatime& run_time,
       goto errexit;
     }
     if( retval != kOK || !theModule->IsOK() ) {
-      Error( here, "Error %d initializing module %s (%s). Analyzer initial"
-	     "ization failed.", retval, obj->GetName(), obj->GetTitle() );
+      Error( here, "Error %d initializing module %s (%s). "
+             "Analyzer initialization failed.",
+	     retval, obj->GetName(), obj->GetTitle() );
       if( retval == kOK )
 	retval = -1;
       break;
@@ -527,7 +570,7 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
       return -12;
     }
     // File exists?
-    if( gSystem->AccessPathName(fOutFileName) == kFALSE ) { //sic
+    if( gSystem->AccessPathName(fOutFileName) == false ) { //sic
       if( !fOverwrite ) {
 	Error( here, "Output file %s already exists. Choose a different "
 	       "file name or enable overwriting with EnableOverwrite().",
@@ -574,14 +617,14 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
       if( !fLocalEvent || fEvent )
 	new_event = true;
       if( fLocalEvent && fEvent ) {
-	delete fPrevEvent; fPrevEvent = NULL;
-	fLocalEvent = kFALSE;
+	delete fPrevEvent; fPrevEvent = nullptr;
+	fLocalEvent = false;
       }
     }
   }
   if( !fEvent )  {
     fEvent = new THaEvent;
-    fLocalEvent = kTRUE;
+    fLocalEvent = true;
     new_event = true;
   }
   fPrevEvent = fEvent;
@@ -601,7 +644,7 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
   //--- Create our decoder from the TClass specified by the user.
   bool new_decoder = false;
   if( !fEvData || fEvData->IsA() != gHaDecoder ) {
-    delete fEvData; fEvData = NULL;
+    delete fEvData; fEvData = nullptr;
     if( gHaDecoder )
       fEvData = static_cast<THaEvData*>(gHaDecoder->New());
     if( !fEvData ) {
@@ -665,7 +708,7 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
     delete fRun;
     fRun = static_cast<THaRunBase*>(run->IsA()->New());
     if( !fRun )
-      return 252; // urgh
+      return 252; // FIXME: arbitrary
     *fRun = *run;  // Copy the run via its virtual operator=
   }
 
@@ -701,7 +744,8 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
   // Quit if any errors.
   if( !((retval = InitModules( fApps,    run_time, 20, "THaApparatus")) ||
 	(retval = InitModules( fPhysics, run_time, 40, "THaPhysicsModule")) ||
-	(retval = InitModules( fEvtHandlers, run_time, 50, "THaEvtTypeHandler"))
+	(retval = InitModules( fEvtHandlers, run_time, 50, "THaEvtTypeHandler")) ||
+        (retval = InitModules( fInterStage, run_time, 60, "Podd::InterStageModule"))
 	)) {
 
     // Set up cuts here, now that all global variables are available
@@ -766,7 +810,7 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
 
   // If initialization succeeded, set status flags accordingly
   if( retval == 0 ) {
-    fIsInit = kTRUE;
+    fIsInit = true;
   }
   return retval;
 }
@@ -784,15 +828,14 @@ Int_t THaAnalyzer::InitOutput( const TList* module_list,
     return -3-erroff;
   TIter next( module_list );
   Int_t retval = 0;
-  TObject* obj;
-  while( (obj = next()) ) {
+  while( TObject* obj = next() ) {
     if( baseclass && !obj->IsA()->InheritsFrom( baseclass )) {
       Error( here, "Object %s (%s) is not a %s. Analyzer initialization "
           "failed.", obj->GetName(), obj->GetTitle(), baseclass );
       retval = -2;
       break;
     }
-    THaAnalysisObject* theModule = dynamic_cast<THaAnalysisObject*>( obj );
+    auto theModule = dynamic_cast<THaAnalysisObject*>( obj );
     if( !theModule ) {
       Error( here, "Object %s (%s) is not a THaAnalysisObject. Analyzer "
           "initialization failed.", obj->GetName(), obj->GetTitle() );
@@ -872,7 +915,7 @@ void THaAnalyzer::SetEpicsEvtType(Int_t itype)
 {
     if (fEpicsHandler) fEpicsHandler->SetEvtType(itype);
     if (fEvData) fEvData->SetEpicsEvtType(itype);
-};
+}
 
 //_____________________________________________________________________________
 void THaAnalyzer::AddEpicsEvtType(Int_t itype)
@@ -999,18 +1042,18 @@ Int_t THaAnalyzer::BeginAnalysis()
   // Initializes subroutine-specific variables.
   // Executes Begin() for all Apparatus and Physics modules.
 
-  fFirstPhysics = kTRUE;
+  fFirstPhysics = true;
 
   TIter nexta(fApps);
-  while( THaAnalysisObject* obj = static_cast<THaAnalysisObject*>(nexta()) ) {
+  while( auto obj = static_cast<THaAnalysisObject*>(nexta()) ) {
     obj->Begin( fRun );
   }
   TIter nextp(fPhysics);
-  while( THaAnalysisObject* obj = static_cast<THaAnalysisObject*>(nextp()) ) {
+  while( auto obj = static_cast<THaAnalysisObject*>(nextp()) ) {
     obj->Begin( fRun );
   }
   TIter nexte(fEvtHandlers);
-  while( THaAnalysisObject* obj = static_cast<THaAnalysisObject*>(nexte()) ) {
+  while( auto obj = static_cast<THaAnalysisObject*>(nexte()) ) {
     obj->Begin( fRun );
   }
 
@@ -1024,18 +1067,36 @@ Int_t THaAnalyzer::EndAnalysis()
   // called right after event loop is finished for each run.
 
   TIter nexta(fApps);
-  while( THaAnalysisObject* obj = static_cast<THaAnalysisObject*>(nexta()) ) {
+  while( auto obj = static_cast<THaAnalysisObject*>(nexta()) ) {
     obj->End( fRun );
   }
   TIter nextp(fPhysics);
-  while( THaAnalysisObject* obj = static_cast<THaAnalysisObject*>(nextp()) ) {
+  while( auto obj = static_cast<THaAnalysisObject*>(nextp()) ) {
     obj->End( fRun );
   }
   TIter nexte(fEvtHandlers);
-  while( THaAnalysisObject* obj = static_cast<THaAnalysisObject*>(nexte()) ) {
+  while( auto obj = static_cast<THaAnalysisObject*>(nexte()) ) {
     obj->End( fRun );
   }
   return 0;
+}
+
+//_____________________________________________________________________________
+template<typename T>
+inline size_t ListToVector( TList* lst, vector<T*>& vec )
+{
+  if( !lst ) {
+    vec.clear();
+    return 0;
+  }
+  vec.reserve( std::max(lst->GetSize(),0) );
+  TIter next_item(lst);
+  while( TObject* obj = next_item() ) {
+    auto item = dynamic_cast<T*>(obj);
+    if( item )
+      vec.push_back(item);
+  }
+  return vec.size();
 }
 
 //_____________________________________________________________________________
@@ -1066,18 +1127,43 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
   //--- Process all apparatuses that are defined in fApps
   //    First Decode(), then Reconstruct()
 
-  TObject* obj = 0;
-  TString stage = "Decode";
-  if( fDoBench ) fBench->Begin(stage);
-  TIter next(fApps);
+  // Convert from type-unsafe ROOT containers to STL vectors
+  //FIXME: This does not have to be done for every event
+  vector<THaApparatus*> apps;
+  vector<THaSpectrometer*> spectros;
+  vector<InterStageModule*> stagemods;
+  vector<THaPhysicsModule*> physmods;
+  vector<THaAnalysisObject*> allmods;
+  ListToVector(fApps, apps);
+  ListToVector(fApps, spectros);
+  ListToVector(fInterStage, stagemods);
+  ListToVector(fPhysics, physmods);
+  ListToVector( fApps, allmods );
+  ListToVector( fInterStage, allmods );
+  ListToVector( fPhysics, allmods );
+
+  TString stage;
+  TObject* obj = nullptr;  // current module, for exception error message
+
   try {
-    while( (obj = next()) ) {
-      THaApparatus* theApparatus = static_cast<THaApparatus*>(obj);
-      theApparatus->Clear();
-      theApparatus->Decode( *fEvData );
+    stage = "Decode";
+    if( fDoBench ) fBench->Begin(stage);
+    for( auto mod : allmods ) {
+      obj = mod;
+      mod->Clear();
+    }
+    for( auto app : apps ) {
+      obj = app;
+      app->Decode(*fEvData);
+    }
+    for( auto mod : stagemods ) {
+      if( mod->GetStage() == kDecode ) {
+        obj = mod;
+        mod->Process(*fEvData);
+      }
     }
     if( fDoBench ) fBench->Stop(stage);
-    if( !EvalStage(kDecode) )  return kSkip;
+    if( !EvalStage(kDecode) ) return kSkip;
 
     //--- Main physics analysis. Calls the following for each defined apparatus
     //    THaSpectrometer::CoarseTrack  (only for spectrometers)
@@ -1085,17 +1171,21 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
     //    THaSpectrometer::Track        (only for spectrometers)
     //    THaApparatus::Reconstruct
     //
-    // Test blocks are evaulated after each of these stages
+    // Test blocks are evaluated after each of these stages
 
     //-- Coarse processing
 
     stage = "CoarseTracking";
     if( fDoBench ) fBench->Begin(stage);
-    next.Reset();
-    while( (obj = next()) ) {
-      THaSpectrometer* theSpectro = dynamic_cast<THaSpectrometer*>(obj);
-      if( theSpectro )
-	theSpectro->CoarseTrack();
+    for( auto spectro : spectros ) {
+      obj = spectro;
+      spectro->CoarseTrack();
+    }
+    for( auto mod : stagemods ) {
+      if( mod->GetStage() == kCoarseTrack ) {
+        obj = mod;
+        mod->Process(*fEvData);
+      }
     }
     if( fDoBench ) fBench->Stop(stage);
     if( !EvalStage(kCoarseTrack) )  return kSkip;
@@ -1103,10 +1193,15 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
 
     stage = "CoarseReconstruct";
     if( fDoBench ) fBench->Begin(stage);
-    next.Reset();
-    while( (obj = next()) ) {
-      THaApparatus* theApparatus = static_cast<THaApparatus*>(obj);
-      theApparatus->CoarseReconstruct();
+    for( auto app : apps ) {
+      obj = app;
+      app->CoarseReconstruct();
+    }
+    for( auto mod : stagemods ) {
+      if( mod->GetStage() == kCoarseRecon ) {
+        obj = mod;
+        mod->Process(*fEvData);
+      }
     }
     if( fDoBench ) fBench->Stop(stage);
     if( !EvalStage(kCoarseRecon) )  return kSkip;
@@ -1115,11 +1210,15 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
 
     stage = "Tracking";
     if( fDoBench ) fBench->Begin(stage);
-    next.Reset();
-    while( (obj = next()) ) {
-      THaSpectrometer* theSpectro = dynamic_cast<THaSpectrometer*>(obj);
-      if( theSpectro )
-	theSpectro->Track();
+    for( auto spectro : spectros ) {
+      obj = spectro;
+      spectro->Track();
+    }
+    for( auto mod : stagemods ) {
+      if( mod->GetStage() == kTracking ) {
+        obj = mod;
+        mod->Process(*fEvData);
+      }
     }
     if( fDoBench ) fBench->Stop(stage);
     if( !EvalStage(kTracking) )  return kSkip;
@@ -1127,10 +1226,15 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
 
     stage = "Reconstruct";
     if( fDoBench ) fBench->Begin(stage);
-    next.Reset();
-    while( (obj = next()) ) {
-      THaApparatus* theApparatus = static_cast<THaApparatus*>(obj);
-      theApparatus->Reconstruct();
+    for( auto app : apps ) {
+      obj = app;
+      app->Reconstruct();
+    }
+    for( auto mod : stagemods ) {
+      if( mod->GetStage() == kReconstruct ) {
+        obj = mod;
+        mod->Process(*fEvData);
+      }
     }
     if( fDoBench ) fBench->Stop(stage);
     if( !EvalStage(kReconstruct) )  return kSkip;
@@ -1139,16 +1243,20 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
 
     stage = "Physics";
     if( fDoBench ) fBench->Begin(stage);
-    TIter next_physics(fPhysics);
-    while( (obj = next_physics()) ) {
-      THaPhysicsModule* theModule = static_cast<THaPhysicsModule*>(obj);
-      theModule->Clear();
-      Int_t err = theModule->Process( *fEvData );
+    for( auto physmod : physmods ) {
+      obj = physmod;
+      Int_t err = physmod->Process( *fEvData );
       if( err == THaPhysicsModule::kTerminate )
-	code = kTerminate;
+        code = kTerminate;
       else if( err == THaPhysicsModule::kFatal ) {
-	code = kFatal;
-	break;
+        code = kFatal;
+        break;
+      }
+    }
+    for( auto mod : stagemods ) {
+      if( mod->GetStage() == kPhysics ) {
+        obj = mod;
+        mod->Process(*fEvData);
       }
     }
     if( fDoBench ) fBench->Stop(stage);
@@ -1162,8 +1270,8 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
 
   } // end try
   catch( exception& e ) {
-    TString module_name = (obj != 0) ? obj->GetName() : "unknown";
-    TString module_desc = (obj != 0) ? obj->GetTitle() : "unknown";
+    TString module_name = (obj != nullptr) ? obj->GetName() : "unknown";
+    TString module_desc = (obj != nullptr) ? obj->GetTitle() : "unknown";
     Error( here, "Caught exception %s in module %s (%s) during %s analysis "
 	   "stage. Terminating analysis.", e.what(), module_name.Data(),
 	   module_desc.Data(), stage.Data() );
@@ -1243,7 +1351,7 @@ Int_t THaAnalyzer::PostProcess( Int_t code )
   if( code == kFatal )
     return code;
   TIter next(fPostProcess);
-  while( THaPostProcess* obj = static_cast<THaPostProcess*>(next())) {
+  while( auto obj = static_cast<THaPostProcess*>(next())) {
     Int_t ret = obj->Process(fEvData,fRun,code);
     if( obj->TestBits(THaPostProcess::kUseReturnCode) &&
 	ret > code )
@@ -1270,7 +1378,7 @@ Int_t THaAnalyzer::MainAnalysis()
   }
 
   TIter nextp(fEvtHandlers);
-  while( THaEvtTypeHandler* obj = static_cast<THaEvtTypeHandler*>(nextp()) ) {
+  while( auto obj = static_cast<THaEvtTypeHandler*>(nextp()) ) {
     obj->Analyze(fEvData);
   }
 
@@ -1372,7 +1480,7 @@ Int_t THaAnalyzer::Process( THaRunBase* run )
   fNev = 0;
   bool terminate = false, fatal = false;
   UInt_t nlast = fRun->GetLastEvent();
-  fAnalysisStarted = kTRUE;
+  fAnalysisStarted = true;
   BeginAnalysis();
   if( fFile ) {
     fFile->cd();
@@ -1517,7 +1625,7 @@ Int_t THaAnalyzer::Process( THaRunBase* run )
     fBench->Print("Total");
 
   //keep the last run available
-  //  gHaRun = NULL;
+  //  gHaRun = nullptr;
   return fNev;
 }
 
