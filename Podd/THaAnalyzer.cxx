@@ -47,6 +47,8 @@
 #include <cstring>
 #include <exception>
 #include <stdexcept>
+#include <cassert>
+#include <algorithm>
 
 using namespace std;
 using namespace Decoder;
@@ -311,7 +313,7 @@ bool THaAnalyzer::EvalStage( int n )
 
   bool ret = true;
   if( theStage->cut_list ) {
-    gHaCuts->EvalBlock( theStage->cut_list );
+    THaCutList::EvalBlock( theStage->cut_list );
     if( theStage->master_cut &&
 	!theStage->master_cut->GetResult() ) {
       if( theStage->countkey >= 0 ) // stage may not have a counter
@@ -1060,18 +1062,33 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
   //--- Process all apparatuses that are defined in fApps
   //    First Decode(), then Reconstruct()
 
-  TObject* obj = 0;
+  TObject* obj = nullptr;
   TString stage = "Decode";
   if( fDoBench ) fBench->Begin(stage);
-  TIter next(fApps);
+  TIter applist(fApps);
+//  TIter next_
+  using pobj_t = TObject*;
   try {
-    while( (obj = next()) ) {
-      THaApparatus* theApparatus = static_cast<THaApparatus*>(obj);
-      theApparatus->Clear();
-      theApparatus->Decode( *fEvData );
+    for( auto pobj : *fApps ) {
+      auto app = dynamic_cast<THaApparatus*>(pobj);
+      assert(app);  // else bug in InitModules in DoInit
+      app->Clear();
+      app->Decode( *fEvData );
     }
+    for_each( applist.Begin(), TIter::End(), [this](pobj_t obj) {
+      auto app = dynamic_cast<THaApparatus*>(obj);
+      assert(app);  // else bug in InitModules in DoInit
+      app->Clear();
+      app->Decode( *fEvData );
+    });
+//    while( (obj = applist()) ) {
+//      auto theApparatus =
+//      theApparatus->Clear();
+//      theApparatus->Decode( *fEvData );
+//    }
     if( fDoBench ) fBench->Stop(stage);
     if( !EvalStage(kDecode) )  return kSkip;
+
 
     //--- Main physics analysis. Calls the following for each defined apparatus
     //    THaSpectrometer::CoarseTrack  (only for spectrometers)
@@ -1085,9 +1102,9 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
 
     stage = "CoarseTracking";
     if( fDoBench ) fBench->Begin(stage);
-    next.Reset();
-    while( (obj = next()) ) {
-      THaSpectrometer* theSpectro = dynamic_cast<THaSpectrometer*>(obj);
+    applist.Reset();
+    while( (obj = applist()) ) {
+      auto theSpectro = dynamic_cast<THaSpectrometer*>(obj);
       if( theSpectro )
 	theSpectro->CoarseTrack();
     }
@@ -1097,9 +1114,9 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
 
     stage = "CoarseReconstruct";
     if( fDoBench ) fBench->Begin(stage);
-    next.Reset();
-    while( (obj = next()) ) {
-      THaApparatus* theApparatus = static_cast<THaApparatus*>(obj);
+    applist.Reset();
+    while( (obj = applist()) ) {
+      auto theApparatus = dynamic_cast<THaApparatus*>(obj);
       theApparatus->CoarseReconstruct();
     }
     if( fDoBench ) fBench->Stop(stage);
@@ -1109,9 +1126,9 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
 
     stage = "Tracking";
     if( fDoBench ) fBench->Begin(stage);
-    next.Reset();
-    while( (obj = next()) ) {
-      THaSpectrometer* theSpectro = dynamic_cast<THaSpectrometer*>(obj);
+    applist.Reset();
+    while( (obj = applist()) ) {
+      auto theSpectro = dynamic_cast<THaSpectrometer*>(obj);
       if( theSpectro )
 	theSpectro->Track();
     }
@@ -1121,9 +1138,9 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
 
     stage = "Reconstruct";
     if( fDoBench ) fBench->Begin(stage);
-    next.Reset();
-    while( (obj = next()) ) {
-      THaApparatus* theApparatus = static_cast<THaApparatus*>(obj);
+    applist.Reset();
+    while( (obj = applist()) ) {
+      auto theApparatus = dynamic_cast<THaApparatus*>(obj);
       theApparatus->Reconstruct();
     }
     if( fDoBench ) fBench->Stop(stage);
@@ -1135,7 +1152,7 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
     if( fDoBench ) fBench->Begin(stage);
     TIter next_physics(fPhysics);
     while( (obj = next_physics()) ) {
-      THaPhysicsModule* theModule = static_cast<THaPhysicsModule*>(obj);
+      auto theModule = dynamic_cast<THaPhysicsModule*>(obj);
       theModule->Clear();
       Int_t err = theModule->Process( *fEvData );
       if( err == THaPhysicsModule::kTerminate )
