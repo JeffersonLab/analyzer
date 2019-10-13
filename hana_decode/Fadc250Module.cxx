@@ -87,7 +87,7 @@ namespace Decoder {
     : PipeliningModule(crate, slot), fPulseData(NADCCHAN)
   {
     memset(&fadc_data, 0, sizeof(fadc_data));
-    IsInit = kFALSE;
+    IsInit = false;
     Init();
   }
 
@@ -98,7 +98,7 @@ namespace Decoder {
   }
 
   Bool_t Fadc250Module::IsMultiFunction() {
-    return kTRUE;
+    return true;
   }
 
   Bool_t Fadc250Module::HasCapability(Decoder::EModuleType type) {
@@ -149,7 +149,7 @@ namespace Decoder {
     // fDebugFile->open("fadcdebug.dat");
 #endif
     Clear();
-    IsInit = kTRUE;
+    IsInit = true;
     fName = "FADC250 JLab Flash ADC Module";
   }
 
@@ -723,7 +723,7 @@ namespace Decoder {
     // Acquire data objects depending on the data type defining word
     switch(data_type_def)
       {
-      case 0: // Block header, indicates the begining of a block of events
+      case 0: // Block header, indicates the beginning of a block of events
 	if (data_type_id) {
 	  block_header_found = true;                     // Set to true if found
 	  fadc_data.slot_blk_hdr = (data >> 22) & 0x1F;  // Slot number (set by VME64x backplane), mask 5 bits
@@ -776,7 +776,7 @@ namespace Decoder {
 	break;
       case 2: // Event header, indicates start of an event, includes the trigger number
 	event_header_found = true;
-	// For firware versions pre 0x0C00 (06/09/2016)
+	// For firmware versions pre 0x0C00 (06/09/2016)
 	// fadc_data.slot_evt_hdr = (data >> 22) & 0x1F;  // Slot number (set by VME64x backplane), mask 5 bits
 	// fadc_data.evt_num = (data >> 0) & 0x3FFFFF;    // Event number, mask 22 bits
 	// For firmware versions post 0x0C00 (06/09/2016)
@@ -796,7 +796,7 @@ namespace Decoder {
 		      << " >> trigger number = " << fadc_data.trig_num << endl;
 #endif
 	break;
-      case 3:  // Trigger time, time of trigger occurence relative to the most recent global reset
+      case 3:  // Trigger time, time of trigger occurrence relative to the most recent global reset
 	if (data_type_id)  // Trigger time word 1
 	  fadc_data.trig_time_w1 = (data >> 0) & 0xFFFFFF;  // Time = T_D T_E T_F
 	else  // Trigger time word 2
@@ -909,7 +909,7 @@ namespace Decoder {
 	data_type_7 = true;
 	fadc_data.chan = (data >> 23) & 0xF;               // FADC channel number
 	fadc_data.pulse_num = (data >> 21) & 0x3;          // FADC pulse number
-	fadc_data.qual_factor = (data >> 19) & 0x3;        // FADC qulatity factor (0-3)
+	fadc_data.qual_factor = (data >> 19) & 0x3;        // FADC quality factor (0-3)
 	fadc_data.pulse_integral = (data >> 0) & 0x7FFFF;  // FADC pulse integral
 	// Store data in arrays of vectors
 	PopulateDataVector(fPulseData[fadc_data.chan].integral, fadc_data.pulse_integral);
@@ -927,7 +927,7 @@ namespace Decoder {
 	data_type_8 = true;
 	fadc_data.chan = (data >> 23) & 0xF;                // FADC channel number
 	fadc_data.pulse_num = (data >> 21) & 0x3;           // FADC pulse number
-	fadc_data.qual_factor = (data >> 19) & 0x3;         // FADC qulatity factor (0-3)
+	fadc_data.qual_factor = (data >> 19) & 0x3;         // FADC quality factor (0-3)
 	fadc_data.coarse_pulse_time = (data >> 6) & 0x1FF;  // FADC coarse time (4 ns/count)
 	fadc_data.fine_pulse_time = (data >> 0) & 0x3F;     // FADC fine time (0.0625 ns/count)
 	fadc_data.time = (data >> 0) & 0x7FFF;              // FADC time (0.0625 ns/count, bmoffit)

@@ -32,14 +32,14 @@ namespace Decoder {
   void GenScaler::Clear(Option_t* opt) {
     // Clear event-by-event data
     VmeModule::Clear(opt);
-    fIsDecoded=kFALSE;
+    fIsDecoded=false;
   }
 
   void GenScaler::GenInit()
   {
-    fHasClock = kFALSE;
-    fFirstTime = kTRUE;
-    fIsDecoded = kFALSE;
+    fHasClock = false;
+    fFirstTime = true;
+    fIsDecoded = false;
     fClockChan = -1;
     fClockRate = 0;
     fNormScaler = 0;
@@ -78,7 +78,7 @@ namespace Decoder {
     //     2   using deltaT, instead, for an approx time diff between readings
 
     Int_t retcode = 0;
-    fHasClock = kFALSE;
+    fHasClock = false;
     if (clockrate > 0) {
       if (fNormScaler) {
 	cout << "GenScaler:: WARNING:  Declaring this object to have"<<endl;
@@ -86,7 +86,7 @@ namespace Decoder {
 	cout << "  This makes no sense. "<<endl;
 	retcode = -1;
       }
-      fHasClock = kTRUE;
+      fHasClock = true;
     }
     if (clockchan < 0 || clockchan >= fWordsExpect) {
       cout << "GenScaler:: ERROR:  clock channel out of range "<<endl;
@@ -124,7 +124,7 @@ namespace Decoder {
     Int_t nfound=1;
     if (IsDecoded()) return nfound;
     if (fFirstTime) {
-      fFirstTime = kFALSE;
+      fFirstTime = false;
     } else {
       doload=1;
       memcpy(fPrevData, fDataArray, fWordsExpect*sizeof(UInt_t));
@@ -132,7 +132,7 @@ namespace Decoder {
     if ( !IsSlot(*evbuffer) ) return nfound;
     if (fDebugFile) *fDebugFile << "is slot 0x"<<hex<<*evbuffer<<dec<<" num chan "<<fNumChan<<endl;
     evbuffer++;
-    fIsDecoded = kTRUE;
+    fIsDecoded = true;
     for (Int_t i=0; i<fNumChan; i++) {
       fDataArray[i] = *(evbuffer++);
       nfound++;
@@ -240,14 +240,14 @@ namespace Decoder {
     /// save so that bank version of LoadSlot can skip over this module if
     /// it is not the correct one.
     Bool_t result;
-    static Bool_t firsttime=kTRUE;
-    static Bool_t firstwarn=kTRUE;
+    static Bool_t firsttime=true;
+    static Bool_t firstwarn=true;
     result = ((rdata & fHeaderMask)==fHeader);
     fNumChan = (rdata&fNumChanMask)>>fNumChanShift;
     if (fNumChan == 0) {
       fNumChan=fgNumChanDefault;
       if (firsttime) {
-	firsttime = kFALSE;
+	firsttime = false;
 	cout << "Warning::GenScaler:: (" << fCrate << "," << fSlot << ") "
 	  "using default num "<<fgNumChanDefault << " channels" << endl;
       }

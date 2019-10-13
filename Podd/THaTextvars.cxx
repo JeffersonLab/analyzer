@@ -132,7 +132,7 @@ Int_t THaTextvars::AddVerbatim( const string& name, const string& value )
   if( name.empty() )
     return 0;
 
-  vector<string> values( 1, value );;
+  vector<string> values( 1, value );
 
   Textvars_t::iterator it = fVars.find(name);
 
@@ -152,7 +152,7 @@ Int_t THaTextvars::AddVerbatim( const string& name, const string& value )
 const char* THaTextvars::Get( const string& name, Int_t idx ) const
 {
   // Get the i-th value of the text variable with the given name.
-  // Returns either the value or NULL if not found.
+  // Returns either the value or nullptr if not found.
 
   if( name.empty() || idx < 0 )
     return 0;

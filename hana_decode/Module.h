@@ -106,8 +106,8 @@ namespace Decoder {
 
     virtual void DoPrint() const;
 
-    virtual Bool_t IsMultiFunction() { return kFALSE; };
-    virtual Bool_t HasCapability(Decoder::EModuleType) { return kFALSE; };
+    virtual Bool_t IsMultiFunction() { return false; };
+    virtual Bool_t HasCapability(Decoder::EModuleType) { return false; };
 
   protected:
 

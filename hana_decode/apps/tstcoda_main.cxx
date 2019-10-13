@@ -87,7 +87,7 @@ int main(int argc, char* argv[])
 
   coda->codaClose();
   return 0;
-};
+}
 
 
 void usage() {  
@@ -99,7 +99,7 @@ void usage() {
   cout << "1 - 3 are different ways to open connection "<<endl;
   cout << "If CODA file, you have 2 choices "<<endl;
   cout << "If ET connection, you have 3 choices "<<endl;
-};
+}
 
 void do_something (UInt_t* data) {
   int len = data[0] + 1;
@@ -123,7 +123,7 @@ void do_something (UInt_t* data) {
       }
       cout << endl;
   }
-};
+}
 
 
 

@@ -22,7 +22,7 @@ using namespace std;
 //_____________________________________________________________________________
 THaBeamEloss::THaBeamEloss( const char* name, const char* description,
 			    const char* input_beam ) :
-  THaElossCorrection(name,description,input_beam), fBeamModule(NULL)
+  THaElossCorrection(name,description,input_beam), fBeamModule(nullptr)
 {
   // Normal constructor.
 

@@ -36,7 +36,7 @@ void F1TDCModule::Init() {
   fTdcData = new Int_t[NTDCCHAN*MAXHIT];
   fDebugFile=0;
   Clear();
-  IsInit = kTRUE;
+  IsInit = true;
   fName = "F1 TDC 3201";
   fNumChan = 32;
   fWdcntMask=0;
@@ -82,7 +82,7 @@ Int_t F1TDCModule::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, const UI
   //
   // In normal resolution mode, the scheme is:
   //    connector 1:  ch 0 - 15
-  //    conncetor 2:  ch 16 - 31
+  //    connector 2:  ch 16 - 31
   //    connector 33: ch 32 - 47
   //    connector 34: ch 48 - 63
   //

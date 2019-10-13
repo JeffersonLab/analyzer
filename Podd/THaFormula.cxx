@@ -130,19 +130,19 @@ Int_t THaFormula::Init( const char* name, const char* expression )
   }
   chaine.ReplaceAll("**","^");
 
-  Bool_t gausNorm = kFALSE, landauNorm = kFALSE, linear = kFALSE;
+  Bool_t gausNorm = false, landauNorm = false, linear = false;
 
   //special case for functions for linear fitting
   if (chaine.Contains("++"))
-    linear = kTRUE;
+    linear = true;
   // special case for normalized gaus
   if (chaine.Contains("gausn")) {
-    gausNorm = kTRUE;
+    gausNorm = true;
     chaine.ReplaceAll("gausn","gaus");
   }
   // special case for normalized landau
   if (chaine.Contains("landaun")) {
-    landauNorm = kTRUE;
+    landauNorm = true;
     chaine.ReplaceAll("landaun","landau");
   }
   SetTitle(chaine.Data());
@@ -374,8 +374,8 @@ Double_t THaFormula::DefinedValue( Int_t i )
 
       vector<Double_t> values;
       values.reserve(ndata);
-      for( vsiz_t i = 0; i < ndata; ++i ) {
-	values.push_back( func->EvalInstance(i) );
+      for( vsiz_t instance = 0; instance < ndata; ++instance ) {
+	values.push_back( func->EvalInstance(instance) );
       }
       if( func->IsInvalid() ) {
 	SetBit(kInvalid);

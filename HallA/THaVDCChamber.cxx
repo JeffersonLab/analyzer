@@ -88,7 +88,7 @@ THaDetectorBase::EStatus THaVDCChamber::Init( const TDatime& date )
   Double_t ubeg = fU->GetWBeg();
   Double_t vbeg = fV->GetWBeg();
   Double_t uend = fU->GetWBeg() + (fU->GetNWires()-1)*fU->GetWSpac();
-  Double_t vend = fV->GetWBeg() + (fV->GetNWires()-1)*fV->GetWSpac();;
+  Double_t vend = fV->GetWBeg() + (fV->GetNWires()-1)*fV->GetWSpac();
   Double_t xc = 0.5 * ( UVtoX(ubeg,vbeg) + UVtoX(uend,vend) );
   Double_t yc = 0.5 * ( UVtoY(ubeg,vbeg) + UVtoY(uend,vend) );
   fU->UpdateGeometry(xc,yc);
@@ -291,7 +291,7 @@ Int_t THaVDCChamber::FineTrack()
   //TODO:
   //- Redo time-to-distance conversion based on "global" track slope
   //- Refit clusters of the track (if any), using new drift distances
-  //- Recalculate cluster UV coordinates, so new "gobal" slopes can be
+  //- Recalculate cluster UV coordinates, so new "global" slopes can be
   //  computed
 
   return 0;

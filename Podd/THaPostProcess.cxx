@@ -6,7 +6,7 @@
 #include "THaPostProcess.h"
 #include "TList.h"
 
-TList* THaPostProcess::fgModules = NULL;
+TList* THaPostProcess::fgModules = nullptr;
 
 using namespace std;
 
@@ -30,7 +30,7 @@ THaPostProcess::~THaPostProcess()
 
   fgModules->Remove( this );
   if( fgModules->GetSize() == 0 ) {
-    delete fgModules; fgModules = NULL;
+    delete fgModules; fgModules = nullptr;
   }
 }
 

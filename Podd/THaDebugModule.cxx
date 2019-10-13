@@ -74,7 +74,7 @@ Int_t THaDebugModule::THaDebugModule::ParseList()
       else {
 	// Regexp matching
 	bool found = false;
-	TRegexp re( opt, kTRUE);
+	TRegexp re( opt, true);
 	TObject* obj;
 	// We can inspect analysis variables and cuts/tests
 	if( gHaVars ) {
@@ -157,7 +157,7 @@ Int_t THaDebugModule::Process( const THaEvData& evdata )
       fTest = new THaCut( fName+"_Test", fTestExpr, fName+"_Block" );
       // Expression error?
       if( !fTest || fTest->IsZombie()) {
-	delete fTest; fTest = NULL;
+	delete fTest; fTest = nullptr;
       }
     }
     fIsSetup = true;

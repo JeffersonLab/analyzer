@@ -18,7 +18,7 @@ using namespace Decoder;
 
 //_____________________________________________________________________________
 THaFilter::THaFilter( const char *cutexpr, const char* filename ) :
-  fCutExpr(cutexpr), fFileName(filename), fCodaOut(NULL), fCut(NULL)
+  fCutExpr(cutexpr), fFileName(filename), fCodaOut(nullptr), fCut(nullptr)
 {
   // Constructor
 
@@ -62,7 +62,7 @@ Int_t THaFilter::Init(const TDatime& )
   fCut = new THaCut( "Filter_Test", fCutExpr, "PostProcess" );
   // Expression error?
   if( !fCut || fCut->IsZombie()) {
-    delete fCut; fCut = NULL;
+    delete fCut; fCut = nullptr;
     Warning(here,"Illegal cut expression: %s.\nFilter is inactive.",
 	    fCutExpr.Data());
   } else {
@@ -103,7 +103,7 @@ Int_t THaFilter::Process( const THaEvData* evdata, const THaRunBase* run,
     return THaAnalyzer::kFatal;
   } else if( ret != CODA_OK ) {
     Error( here, "Error writing to CODA output file %s. Event %d not written",
-	   fFileName.Data(), (evdata != NULL) ? evdata->GetEvNum() : -1 );
+	   fFileName.Data(), (evdata != nullptr) ? evdata->GetEvNum() : -1 );
   }
   return THaAnalyzer::kOK;
 }

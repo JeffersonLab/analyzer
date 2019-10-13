@@ -24,7 +24,7 @@ public:
   // Only derived classes can construct me
   //  THaBeamDet() {}
   THaBeamDet( const char* name, const char* description ="" ,
-              THaApparatus* a = NULL ) :
+              THaApparatus* a = nullptr ) :
     THaDetector( name, description , a) {}
 
  public:

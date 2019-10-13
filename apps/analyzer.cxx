@@ -32,7 +32,7 @@ int main(int argc, char **argv)
 
   TApplication *theApp =
     new THaInterface( "The Hall A analyzer", &argc, argv, 0, 0, no_logo );
-  theApp->Run(kFALSE);
+  theApp->Run(false);
 
   cout << endl;
   delete theApp;

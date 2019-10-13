@@ -17,7 +17,7 @@ class THaCherenkov : public THaPidDetector {
 
 public:
   THaCherenkov( const char* name, const char* description = "",
-	      THaApparatus* a = NULL );
+	      THaApparatus* a = nullptr );
   THaCherenkov(); // for ROOT I/O
   virtual ~THaCherenkov();
 

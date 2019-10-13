@@ -100,7 +100,7 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
   // Reinitialization only possible for same basic configuration
   if( !err ) {
     if( fIsInit && nelem != fNelem ) {
-      Error( Here(here), "Cannot re-initalize with different number of blocks or "
+      Error( Here(here), "Cannot re-initialize with different number of blocks or "
 	     "blocks per cluster (was: %d, now: %d). Detector not re-initialized.",
 	     fNelem, nelem );
       err = kInitError;
@@ -457,7 +457,7 @@ Int_t THaShower::CoarseProcess( TClonesArray& tracks )
   if ( nmax >= 0 ) {
     short mult = 0, nr, nc, ir, ic, dr, dc;
     double  sxe = 0, sye = 0;               // Sums of xi*ei and yi*ei
-    nc = nmax/fNrows;                       // Column of the block with max engy
+    nc = nmax/fNrows;                       // Column of the block with max energy
     nr = nmax%fNrows;                       // Row of the block with max energy
                                             // Add the block to cluster (center)
     fNblk[mult]   = nmax;                   // Add number of the block (center)

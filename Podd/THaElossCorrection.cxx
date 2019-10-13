@@ -28,8 +28,8 @@ THaElossCorrection::THaElossCorrection( const char* name,
   THaPhysicsModule(name,description), fZ(hadron_charge),
   fZmed(0.0), fAmed(0.0), fDensity(0.0), fPathlength(0.0), 
   fZref(0.0), fScale(0.0),
-  fTestMode(kFALSE), fExtPathMode(kFALSE), fInputName(input_tracks),
-  fVertexModule(NULL)
+  fTestMode(false), fExtPathMode(false), fInputName(input_tracks),
+  fVertexModule(nullptr)
 {
   // Normal constructor.
 
@@ -117,7 +117,7 @@ Int_t THaElossCorrection::ReadRunDatabase( const TDatime& date )
     int i = 0;
     while( req[i].name ) {
       if( TString(req[i].name) == "pathlength" ) {
-	req[i].optional = kTRUE;
+	req[i].optional = true;
 	break;
       }
       ++i;
@@ -196,7 +196,7 @@ void THaElossCorrection::SetPathlength( Double_t pathlength )
 
   if( !IsInit() ) {
     fPathlength = pathlength;
-    fExtPathMode = kFALSE;
+    fExtPathMode = false;
   } else
     PrintInitError("SetPathlength");
 }
@@ -213,7 +213,7 @@ void THaElossCorrection::SetPathlength( const char* vertex_module,
     fZref       = z_ref;
     fScale      = scale;
     fVertexName = vertex_module;
-    fExtPathMode = kTRUE;
+    fExtPathMode = true;
   } else
     PrintInitError("SetPathlength");
 }

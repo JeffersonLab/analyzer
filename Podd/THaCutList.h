@@ -89,7 +89,7 @@ protected:
   ClassDef(THaCutList,0)  //Hash list of TCuts with support for blocks of cuts
 };
 
-// Global utitlity function
+// Global utility function
 UInt_t IntDigits( Int_t n );
 
 #endif

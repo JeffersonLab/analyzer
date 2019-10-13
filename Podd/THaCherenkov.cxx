@@ -90,7 +90,7 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
   // Reinitialization only possible for same basic configuration
   if( !err ) {
     if( fIsInit && nelem != fNelem ) {
-      Error( Here(here), "Cannot re-initalize with different number of PMTs. "
+      Error( Here(here), "Cannot re-initialize with different number of PMTs. "
 	     "(was: %d, now: %d). Detector not re-initialized.", fNelem, nelem );
       err = kInitError;
     } else
@@ -234,15 +234,15 @@ void THaCherenkov::DeleteArrays()
 {
   // Delete member arrays. Internal function used by destructor.
 
-  delete [] fA_c;    fA_c    = NULL;
-  delete [] fA_p;    fA_p    = NULL;
-  delete [] fA;      fA      = NULL;
-  delete [] fT_c;    fT_c    = NULL;
-  delete [] fT;      fT      = NULL;
+  delete [] fA_c;    fA_c    = nullptr;
+  delete [] fA_p;    fA_p    = nullptr;
+  delete [] fA;      fA      = nullptr;
+  delete [] fT_c;    fT_c    = nullptr;
+  delete [] fT;      fT      = nullptr;
 
-  delete [] fGain;   fGain   = NULL;
-  delete [] fPed;    fPed    = NULL;
-  delete [] fOff;    fOff    = NULL;
+  delete [] fGain;   fGain   = nullptr;
+  delete [] fPed;    fPed    = nullptr;
+  delete [] fOff;    fOff    = nullptr;
 }
 
 //_____________________________________________________________________________

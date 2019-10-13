@@ -137,7 +137,7 @@ void CalcTTDHists(const char *treefile, const char *planename,
 
   // read in header info
   THaRun *the_run = (THaRun *)f->Get("Run Data");
-  if(the_run == NULL) {
+  if(the_run == nullptr) {
     cerr<<"Could not read run header info. Exiting."<<endl;
     return;
   }

@@ -43,7 +43,7 @@ namespace Decoder {
     fTdcData = new Int_t[NTDCCHAN*MAXHIT];
     fDebugFile = 0;
     Clear("");
-    IsInit = kTRUE;
+    IsInit = true;
     fName = "Caen TDC 1190 Module";
   }
 

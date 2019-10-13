@@ -28,7 +28,7 @@ class THaVDCChamber : public THaSubDetector {
 public:
 
   THaVDCChamber( const char* name="", const char* description="",
-		 THaDetectorBase* parent = NULL );
+		 THaDetectorBase* parent = nullptr );
   virtual ~THaVDCChamber();
 
   virtual void    Clear( Option_t* opt="" );    // Reset event-by-event data

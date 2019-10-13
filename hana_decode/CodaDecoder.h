@@ -75,7 +75,7 @@ protected:
      uint16_t nrocs;                /* Number of ROC Banks in the Event Block (val = 1-256) */
      uint32_t len;                  /* Total Length of the Trigger Bank - including Bank header */
      int      withTimeStamp;        /* =1 if Time Stamps are available */
-     int      withRunInfo;          /* =1 if Run Informaion is available - Run # and Run Type */
+     int      withRunInfo;          /* =1 if Run information is available - Run # and Run Type */
      uint64_t evtNum;               /* Starting Event # of the Block */
      uint64_t runInfo;              /* Run Info Data */
      uint32_t *start;               /* Pointer to start of the Trigger Bank */

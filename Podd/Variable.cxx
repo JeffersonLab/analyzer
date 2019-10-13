@@ -48,7 +48,7 @@ Bool_t Variable::VerifyNonArrayName( const char* name ) const
 
   if( parsed_name.IsError() || parsed_name.IsArray() ) {
     fSelf->Error( here, "Illegal name for variable \"%s\". "
-		  "Brackets and commans not allowed.", name );
+		  "Brackets and commas not allowed.", name );
     return false;
   }
 
@@ -94,13 +94,14 @@ const Int_t* Variable::GetDim() const
 {
   // Return array of dimensions of the array. Scalers return 0
 
-  return 0;
+  return nullptr;
 }
 
 //_____________________________________________________________________________
 std::vector<Double_t> Variable::GetValues() const
 {
   std::vector<Double_t> res;
+  res.reserve(GetLen() );
   for(int i = 0 ; i < GetLen(); i++) {
     res.push_back(GetValue(i));
   }
@@ -267,11 +268,11 @@ const void* Variable::GetDataPointer( Int_t i ) const
   const char* const here = "GetDataPointer()";
 
   assert( fValueP && IsBasic() );
-  assert( sizeof(ULong_t) == sizeof(void*) );
+  static_assert( sizeof(ULong_t) == sizeof(void*) );
 
   if( i<0 || i>=GetLen() ) {
     fSelf->Error(here, "Index out of range, variable %s, index %d", GetName(), i );
-    return 0;
+    return nullptr;
   }
 
   if( fType >= kDouble && fType <= kUChar ) {
@@ -288,11 +289,11 @@ const void* Variable::GetDataPointer( Int_t i ) const
   if( fType >= kDouble2P && fType <= kUChar2P ) {
     const void** const *ptr = reinterpret_cast<const void** const *>(fValueP);
     if( !*ptr )
-      return 0;
+      return nullptr;
     return (*ptr)[i];
   }
 
-  return 0;
+  return nullptr;
 }
 
 //_____________________________________________________________________________
@@ -317,7 +318,7 @@ size_t Variable::GetData( void* buf ) const
   }
   else {
     // Non-contiguous data (e.g. pointer array) must be copied element by element
-    assert( sizeof(char) == 1 );
+    static_assert( sizeof(char) == 1 );
     nbytes = 0;
     for( Int_t i = 0; i<nelem; ++i ) {
       const void* src = GetDataPointer(i);
@@ -367,9 +368,9 @@ Bool_t Variable::HasSameSize( const Variable& rhs ) const
 
   Bool_t is_array = IsArray();
   if( is_array != rhs.IsArray())         // Must be same array/non-array
-    return kFALSE;
+    return false;
   if( !is_array )                        // Scalars always agree
-    return kTRUE;
+    return true;
   //FIXME: this isn't correct
   return (GetLen() == rhs.GetLen());     // Arrays must have same length
 }
@@ -377,7 +378,7 @@ Bool_t Variable::HasSameSize( const Variable& rhs ) const
 //_____________________________________________________________________________
 Bool_t Variable::HasSizeVar() const
 {
-  return kFALSE;
+  return false;
 }
 
 //_____________________________________________________________________________
@@ -418,7 +419,7 @@ Bool_t Variable::IsBasic() const
 {
   // Data are basic (POD variable or array)
 
-  return kTRUE;
+  return true;
 }
 
 //_____________________________________________________________________________
@@ -426,7 +427,7 @@ Bool_t Variable::IsContiguous() const
 {
   // Data are contiguous in memory
 
-  return kTRUE;
+  return true;
 }
 
 //_____________________________________________________________________________
@@ -434,7 +435,7 @@ Bool_t Variable::IsError() const
 {
   // Variable is in error state/invalid (typically because error in constructor)
 
-  return fValueP == 0;
+  return fValueP == nullptr;
 }
 
 //_____________________________________________________________________________
@@ -454,7 +455,7 @@ Bool_t Variable::IsPointerArray() const
 {
   // Data are an array of pointers to data
 
-  return kFALSE;
+  return false;
 }
 
 //_____________________________________________________________________________
@@ -470,7 +471,7 @@ Bool_t Variable::IsTObject() const
 {
   // Variable refers to an object that inherits from TObject
 
-  return kFALSE;
+  return false;
 }
 
 //_____________________________________________________________________________
@@ -478,7 +479,7 @@ Bool_t Variable::IsVarArray() const
 {
   // Variable is a variable-sized array
 
-  return kFALSE;
+  return false;
 }
 
 //_____________________________________________________________________________
@@ -499,7 +500,7 @@ void Variable::Print(Option_t* option) const
 
   fSelf->TNamed::Print(option);
 
-  if( strcmp(option, "FULL") ) return;
+  if( strcmp(option, "FULL") != 0 ) return;
 
   cout << "(" << fSelf->GetTypeName() << ")  ";
   size_t len = GetLen();

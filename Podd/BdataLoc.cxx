@@ -177,7 +177,7 @@ void BdataLoc::Print( Option_t* opt ) const
 //_____________________________________________________________________________
 Int_t CrateLoc::Configure( const TObjArray* params, Int_t start )
 {
-  // Initialize CrateLoc from given parmeters
+  // Initialize CrateLoc from given parameters
 
   Int_t ret = BdataLoc::Configure( params, start );
   if( ret )
@@ -282,7 +282,7 @@ void CrateLocMulti::Print( Option_t* opt ) const
 //_____________________________________________________________________________
 Int_t WordLoc::Configure( const TObjArray* params, Int_t start )
 {
-  // Initialize WordLoc from given parmeters
+  // Initialize WordLoc from given parameters
 
   Int_t ret = BdataLoc::Configure( params, start );
   if( ret )

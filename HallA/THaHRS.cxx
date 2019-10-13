@@ -20,7 +20,7 @@
 // However: To maintain backward compatibility with old scripts, the THaHRS
 // will auto-create the previous set of standard detectors, "vdc", "s1" and
 // "s2", if no "vdc" detector is defined at Init() time.
-// This can be turned off by calling AutoStandardDetectors(kFALSE).
+// This can be turned off by calling AutoStandardDetectors(false).
 //
 // For timing calculations, one can specify a reference detector via SetRefDet
 // (usually a scintillator) as the detector at the 'reference distance',
@@ -52,8 +52,8 @@ THaHRS::THaHRS( const char* name, const char* description ) :
 {
   // Constructor
 
-  SetTrSorting(kFALSE);
-  AutoStandardDetectors(kTRUE); // for backward compatibility
+  SetTrSorting(false);
+  AutoStandardDetectors(true); // for backward compatibility
 }
 
 //_____________________________________________________________________________
@@ -93,7 +93,7 @@ THaAnalysisObject::EStatus THaHRS::Init( const TDatime& run_time )
   // detectors" ("vdc", "s1", "s2") at the beginning of the detector list.
   // Note that the old script may have defined non-standard detectors, e.g.
   // Cherenkov, Shower, FPP etc.
-  // This behavior can be turned off by calling AutoStandardDetectors(kFALSE).
+  // This behavior can be turned off by calling AutoStandardDetectors(false).
 
   if( TestBit(kAutoStdDets) ) {
     THaDetector* pdet = static_cast<THaDetector*>( fDetectors->FindObject("vdc") );
@@ -206,14 +206,14 @@ Int_t THaHRS::FindVertices( TClonesArray& tracks )
     // Chi2/dof is a well-defined quantity, and the track selected in this
     // way is immediately physically meaningful. The geometrical match
     // criterion is mathematically less well defined and not usually used
-    // in track reconstruction. Hence, chi2 sortiing is preferable, albeit
+    // in track reconstruction. Hence, chi2 sorting is preferable, albeit
     // obviously slower.
 
     fGoldenTrack = static_cast<THaTrack*>( fTracks->At(0) );
     fTrkIfo      = *fGoldenTrack;
     fTrk         = fGoldenTrack;
   } else
-    fGoldenTrack = NULL;
+    fGoldenTrack = nullptr;
 
   return 0;
 }
@@ -221,7 +221,7 @@ Int_t THaHRS::FindVertices( TClonesArray& tracks )
 //_____________________________________________________________________________
 Int_t THaHRS::TrackCalc()
 {
-  // Additioal track calculations. At present, we only calculate beta here.
+  // Additional track calculations. At present, we only calculate beta here.
 
   return TrackTimes( fTracks );
 }

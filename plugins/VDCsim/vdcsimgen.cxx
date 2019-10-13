@@ -65,10 +65,10 @@ void usage()
 }
 
 //______________________________________________________________________________
-void getargs( int argc, char **argv, THaVDCSimConditions* s )
+void getargs( int argc, const char **argv, THaVDCSimConditions* s )
 {
   while (argc-- >1){
-    char *opt = *++argv;
+    const char *opt = *++argv;
     if(*opt == '-'){
       while (*++opt != '\0'){
 	switch (*opt){

@@ -45,7 +45,7 @@ void THaEpics::Print() {
     cout << "Size of epics vector "<<vepics.size();
     for (UInt_t k=0; k<vepics.size(); k++) {
       cout << "\n Tag = "<<vepics[k].GetTag();
-      //      if (strstr(vepics[k].GetTag().c_str(),"VMI3128")!=NULL) {
+      //      if (strstr(vepics[k].GetTag().c_str(),"VMI3128")!=nullptr) {
       //	cout << "\n GOT ONE "<<k<<endl;
       //        exit(0);
       //      }
@@ -63,8 +63,8 @@ void THaEpics::Print() {
 Bool_t THaEpics::IsLoaded(const char* tag) const
 {
   const vector<EpicsChan> ep = GetChan(tag);
-  if (ep.size() == 0) return kFALSE;
-  return kTRUE;
+  if (ep.size() == 0) return false;
+  return true;
 }
 
 Double_t THaEpics::GetData (const char* tag, int event) const

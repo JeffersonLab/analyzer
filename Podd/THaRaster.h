@@ -14,7 +14,7 @@ class THaRaster : public THaBeamDet {
 
 public:
   THaRaster( const char* name, const char* description = "",
-		   THaApparatus* a = NULL );
+		   THaApparatus* a = nullptr );
   virtual ~THaRaster();
 
   virtual void       Clear( Option_t* ="" );
@@ -25,7 +25,7 @@ public:
   virtual TVector3 GetDirection() const { return fDirection; }
 
   // As soon as someone finds a better solution, the following lines should be
-  // changed. It is ridiculus to have nine methods to get the the components
+  // changed. It is ridiculous to have nine methods to get the the components
   // of the beam position at various locations, but I do not know how else to
   // get them into histograms except for writing my own event loop
 

@@ -22,7 +22,7 @@ public:
 
   virtual Double_t ConvertTimeToDist(Double_t slope);
   Int_t  Compare ( const TObject* obj ) const;
-  Bool_t IsSortable () const { return kTRUE; }
+  Bool_t IsSortable () const { return true; }
 
   // Get and Set Functions
   THaVDCWire* GetWire() const { return fWire; }

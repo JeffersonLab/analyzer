@@ -100,7 +100,7 @@ inline
 Bool_t THaVar::HasSameSize( const THaVar* rhs ) const
 {
   if( !rhs )
-    return kFALSE;
+    return false;
   return fImpl->HasSameSize( *rhs->fImpl );
 }
 

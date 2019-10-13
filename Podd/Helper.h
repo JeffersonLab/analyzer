@@ -91,7 +91,7 @@ namespace Podd {
     bool operator==( const UniqueCombo& rhs ) const
     { return ( fN == rhs.fN and fCurrent == rhs.fCurrent ); }
     bool operator!=( const UniqueCombo& rhs ) const { return !(*this==rhs); }
-    operator bool() const  { return fGood; }
+    explicit operator bool() const  { return fGood; }
     bool operator!() const { return !((bool)*this); }
 
   private:
@@ -124,7 +124,7 @@ namespace Podd {
   inline void DeleteContainer( Container& c )
   {
     // Delete all elements of given container of pointers
-    for_each( c.begin(), c.end(), DeleteObject() );
+    std::for_each( c.begin(), c.end(), DeleteObject() );
     c.clear();
   }
 
@@ -133,7 +133,7 @@ namespace Podd {
   inline void DeleteContainerOfContainers( ContainerOfContainers& cc )
   {
     // Delete all elements of given container of containers of pointers
-    for_each( cc.begin(), cc.end(),
+    std::for_each( cc.begin(), cc.end(),
 	      DeleteContainer<typename ContainerOfContainers::value_type> );
     cc.clear();
   }

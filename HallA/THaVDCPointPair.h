@@ -32,7 +32,7 @@ public:
   Int_t           GetStatus()  const { return fStatus; }
   THaTrack*       GetTrack()   const;
   Bool_t          HasUsedCluster() const;
-  virtual Bool_t  IsSortable() const { return kTRUE; }
+  virtual Bool_t  IsSortable() const { return true; }
   virtual void    Print( Option_t* opt="" ) const;
   void            Release();
   void            SetStatus( Int_t i ) { fStatus = i; }

@@ -114,7 +114,7 @@ Bool_t VectorObjVar::HasSameSize( const Variable& rhs ) const
 
   const VectorObjVar* other = dynamic_cast<const VectorObjVar*>(&rhs);
   if( !other )
-    return kFALSE;
+    return false;
 
   return fValueP == other->fValueP;
 }

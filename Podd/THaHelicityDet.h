@@ -15,10 +15,8 @@
 
 #include "THaDetector.h"
 
-class THaHelicityDet :  public THaDetector {
-  
+class THaHelicityDet : public THaDetector {
 public:
-
   enum EHelicity { kMinus = -1, kUnknown, kPlus };
 
   virtual ~THaHelicityDet();
@@ -37,7 +35,7 @@ protected:
 
   //Only derived classes may construct me
   THaHelicityDet( const char* name, const char* description,
-		  THaApparatus* a = NULL);
+                  THaApparatus* a = nullptr );
 
   EHelicity fHelicity;  // Beam helicity. fHelicity = fSign * decoded_helicity
   Int_t     fSign;      // Overall sign of beam helicity. Default 1.

@@ -5,7 +5,7 @@
 //   author Vincent Sulkosky
 //   
 //   Decoder module to retrieve Caen 775 TDCs.  Based on CAEN 792 decoding in
-//   SkeletonModule.C in podd 1.6.   (Written by S. Wood, modified by V. Sulkosky)
+//   SkeletonModule.C in Podd 1.6.   (Written by S. Wood, modified by V. Sulkosky)
 //
 /////////////////////////////////////////////////////////////////////
 
@@ -51,7 +51,7 @@ void Caen775Module::Init() {
 #endif
   //fDebugFile=0;
   Clear();
-  IsInit = kTRUE;
+  IsInit = true;
   TString modtypeup(MyModType());
   modtypeup.ToUpper();
   fName = Form("Caen %s %s Module",modtypeup.Data(),MyModName());

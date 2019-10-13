@@ -135,7 +135,7 @@ void THaUsrstrutils::string_from_evbuffer(const UInt_t* evbuffer, int nlen )
   }
 
 // In order to make this as nearly identical to the online VME code,
-// we first unpack the buffer into lines seperated by '\n'.  
+// we first unpack the buffer into lines separated by '\n'.
 // This is like the reading of the prescale.dat file done
 // by fgets(s,255,fd) in usrstrutils.c
   string::size_type pos = 0;
@@ -203,7 +203,7 @@ void THaUsrstrutils::string_from_file(const char *ffile_name)
 /* check that filename exists */
   configstr = "";
   fd = fopen(ffile_name,"r");
-  if(fd == NULL) {
+  if(fd == nullptr) {
     printf("Failed to open usr flag file %s\n",ffile_name);  
   } else {
     /* Read till an uncommented line is found */

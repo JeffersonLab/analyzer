@@ -11,7 +11,7 @@
 //      The global variables can then appear in the Podd output tree T.
 //      In addition, a tree "TS" is created by this class; it contains
 //      just the scaler data by itself.  Note, the "fName" is concatenated
-//      with "TS" to ensure the tree is unqiue; further, "fName" is
+//      with "TS" to ensure the tree is unique; further, "fName" is
 //      concatenated with the name of the global variables, for uniqueness.
 //      The list of global variables and how they are tied to the
 //      scaler module and channels is in the scaler.map file, or could
@@ -59,15 +59,13 @@ using namespace THaString;
 THaScalerEvtHandler::THaScalerEvtHandler(const char *name,
     const char* description)
   : THaEvtTypeHandler(name,description), evcount(0), fNormIdx(-1),
-    fNormSlot(-1), dvars(0), fScalerTree(0)
+    fNormSlot(-1), dvars(nullptr), fScalerTree(nullptr)
 {
 }
 
 THaScalerEvtHandler::~THaScalerEvtHandler()
 {
-  if (fScalerTree) {
-    delete fScalerTree;
-  }
+  delete fScalerTree;
 }
 
 Int_t THaScalerEvtHandler::End( THaRunBase* )
@@ -104,7 +102,7 @@ Int_t THaScalerEvtHandler::Analyze(THaEvData *evdata)
     TString tinfo = name + "/D";
     fScalerTree->Branch(name.Data(), &evcount, tinfo.Data(), 4000);
 
-    for (UInt_t i = 0; i < scalerloc.size(); i++) {
+    for( size_t i = 0; i < scalerloc.size(); i++) {
       name = scalerloc[i]->name;
       tinfo = name + "/D";
       fScalerTree->Branch(name.Data(), &dvars[i], tinfo.Data(), 4000);
@@ -127,7 +125,7 @@ Int_t THaScalerEvtHandler::Analyze(THaEvData *evdata)
 
   const UInt_t *p = evdata->GetRawDataBuffer();
   const UInt_t *pstop = p+ndata;
-  Bool_t ifound = kFALSE;
+  Bool_t ifound = false;
 
   while (p < pstop) {
     if (fDebugFile) {
@@ -141,7 +139,7 @@ Int_t THaScalerEvtHandler::Analyze(THaEvData *evdata)
 	scalers[j]->DebugPrint(fDebugFile);
       }
       if (nskip > 1) {
-	ifound = kTRUE;
+	ifound = true;
 	break;
       }
     }
@@ -159,7 +157,7 @@ Int_t THaScalerEvtHandler::Analyze(THaEvData *evdata)
 
   if (!ifound) return 0;
 
-  // The correspondance between dvars and the scaler and the channel
+  // The correspondence between dvars and the scaler and the channel
   // will be driven by a scaler.map file, or could be hard-coded.
 
   for (size_t i = 0; i < scalerloc.size(); i++) {
@@ -178,7 +176,7 @@ Int_t THaScalerEvtHandler::Analyze(THaEvData *evdata)
 
   evcount += 1.0;
 
-  for (size_t j=0; j<scalers.size(); j++) scalers[j]->Clear();
+  for( auto s : scalers )  s->Clear();
 
   if (fDebugFile) *fDebugFile << "scaler tree ptr  "<<fScalerTree<<endl;
 
@@ -215,6 +213,7 @@ THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& date)
     return kFileError;
   }
 
+  using ssiz_t = decltype(scalers)::size_type;
   string::size_type minus1 = string::npos;
   string::size_type pos1;
   const string scomment = "#";
@@ -222,16 +221,19 @@ THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& date)
   const string smap = "map";
   vector<string> dbline;
 
-  while( fgets(cbuf,LEN,fi) != NULL) {
+  while( fgets(cbuf,LEN,fi) != nullptr) {
     if (fDebugFile) *fDebugFile << "string input "<<cbuf<<endl;
     dbline = vsplit(cbuf);
-    if (dbline.size() > 0) {
+    if (!dbline.empty()) {
       pos1 = FindNoCase(dbline[0],scomment);
       if (pos1 != minus1) continue;
       pos1 = FindNoCase(dbline[0],svariable);
       if (pos1 != minus1 && dbline.size()>4) {
-	string sdesc = "";
-	for (UInt_t j=5; j<dbline.size(); j++) sdesc = sdesc+" "+dbline[j];
+	string sdesc;
+	for (size_t j=5; j<dbline.size(); j++) {
+          sdesc += " ";
+          sdesc += dbline[j];
+        }
 	Int_t islot = atoi(dbline[1].c_str());
 	Int_t ichan = atoi(dbline[2].c_str());
 	Int_t ikind = atoi(dbline[3].c_str());
@@ -261,22 +263,24 @@ THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& date)
 	  *fDebugFile << "map line "<<dec<<imodel<<"  "<<icrate<<"  "<<islot<<endl;
 	  *fDebugFile <<"   header  0x"<<hex<<header<<"  0x"<<mask<<dec<<"  "<<inorm<<"  "<<clkchan<<"  "<<clkfreq<<endl;
 	}
-	switch (imodel) {
-	case 560:
-	  scalers.push_back(new Scaler560(icrate, islot));
-	  break;
-	case 1151:
-	  scalers.push_back(new Scaler1151(icrate, islot));
-	  break;
-	case 3800:
-	  scalers.push_back(new Scaler3800(icrate, islot));
-	  break;
-	case 3801:
-	  scalers.push_back(new Scaler3801(icrate, islot));
-	  break;
-	}
-	if (scalers.size() > 0) {
-	  UInt_t idx = scalers.size()-1;
+        switch( imodel ) {
+        case 560:
+          scalers.push_back(new Scaler560(icrate, islot));
+          break;
+        case 1151:
+          scalers.push_back(new Scaler1151(icrate, islot));
+          break;
+        case 3800:
+          scalers.push_back(new Scaler3800(icrate, islot));
+          break;
+        case 3801:
+          scalers.push_back(new Scaler3801(icrate, islot));
+          break;
+        default:
+          break;
+        }
+	if( !scalers.empty() ) {
+	  ssiz_t idx = scalers.size()-1;
 	  scalers[idx]->SetHeader(header, mask);
 // The normalization slot has the clock in it, so we automatically recognize it.
 // fNormIdx is the index in scaler[] and 
@@ -292,11 +296,12 @@ THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& date)
     }
   }
   // need to do LoadNormScaler after scalers created and if fNormIdx found.
-  Int_t nscalers = static_cast<Int_t>(scalers.size());
-  if ( fNormIdx >= 0 && fNormIdx < nscalers ) {
-    for (Int_t i = 0; i < nscalers; i++) {
-      if (i==fNormIdx) continue;
-      scalers[i]->LoadNormScaler(scalers[fNormIdx]);
+  auto normIdx = static_cast<ssiz_t>(fNormIdx);
+  if( normIdx < scalers.size() ) {
+    ssiz_t i = 0;
+    for( auto s : scalers ) {
+      if( i++ == normIdx ) continue;
+      s->LoadNormScaler(scalers[normIdx]);
     }
   }
 

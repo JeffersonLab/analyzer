@@ -48,7 +48,7 @@ using namespace std;
 typedef string::size_type ssiz_t;
 typedef vector<string>::iterator vsiter_t;
 
-TList* THaAnalysisObject::fgModules = NULL;
+TList* THaAnalysisObject::fgModules = nullptr;
 
 const Double_t THaAnalysisObject::kBig = 1.e38;
 
@@ -58,7 +58,7 @@ static TVirtualMutex* gHereMutex = 0;
 //_____________________________________________________________________________
 THaAnalysisObject::THaAnalysisObject( const char* name, 
 				      const char* description ) :
-  TNamed(name,description), fPrefix(NULL), fStatus(kNotinit), 
+  TNamed(name,description), fPrefix(nullptr), fStatus(kNotinit),
   fDebug(0), fIsInit(false), fIsSetup(false), fProperties(0),
   fOKOut(false), fInitDate(19950101,0), fNEventsWithWarnings(0),
   fExtra(0)
@@ -71,7 +71,7 @@ THaAnalysisObject::THaAnalysisObject( const char* name,
 
 //_____________________________________________________________________________
 THaAnalysisObject::THaAnalysisObject()
-  : fPrefix(NULL), fStatus(kNotinit), fDebug(0), fIsInit(false),
+  : fPrefix(nullptr), fStatus(kNotinit), fDebug(0), fIsInit(false),
     fIsSetup(false), fProperties(), fOKOut(false), fNEventsWithWarnings(0),
     fExtra(0)
 {
@@ -102,7 +102,7 @@ Int_t THaAnalysisObject::Begin( THaRunBase* /* run */ )
   // for 'run'. Begin() is similar to Init(), but since there is a default
   // Init() implementing standard database and global variable setup,
   // Begin() can be used to implement start-of-run setup tasks for each
-  // module cleanly without interfering with the standard Init() prodecure.
+  // module cleanly without interfering with the standard Init() procedure.
   //
   // The default Begin() method clears the history of warning messages
   // and warning message event counter
@@ -237,7 +237,7 @@ THaAnalysisObject* THaAnalysisObject::FindModule( const char* name,
   // Locate the object 'name' in the global list of Analysis Modules 
   // and check if it inherits from 'classname' (if given), and whether 
   // it is properly initialized.
-  // Return pointer to valid object, else return NULL.
+  // Return pointer to valid object, else return nullptr.
   // If do_error == true (default), also print error message and set fStatus
   // to kInitError.
   // If do_error == false, don't print error messages and not test if object is
@@ -253,7 +253,7 @@ THaAnalysisObject* THaAnalysisObject::FindModule( const char* name,
     if( do_error )
       Error( Here(here), "No module name given." );
     fStatus = kInitError;
-    return NULL;
+    return nullptr;
   }
 
   // Find the module in the list, comparing 'name' to the module's fPrefix
@@ -283,7 +283,7 @@ THaAnalysisObject* THaAnalysisObject::FindModule( const char* name,
     if( do_error )
       Error( Here(here), "Module %s does not exist.", name );
     fStatus = kInitError;
-    return NULL;
+    return nullptr;
   }
 
   // Type check (similar to dynamic_cast, except resolving the class name as
@@ -293,7 +293,7 @@ THaAnalysisObject* THaAnalysisObject::FindModule( const char* name,
       Error( Here(here), "Module %s (%s) is not a %s.",
 	     obj->GetName(), obj->GetTitle(), anaobj );
     fStatus = kInitError;
-    return NULL;
+    return nullptr;
   }
   if( classname && *classname && strcmp(classname,anaobj) &&
       !obj->IsA()->InheritsFrom( classname )) {
@@ -301,7 +301,7 @@ THaAnalysisObject* THaAnalysisObject::FindModule( const char* name,
       Error( Here(here), "Module %s (%s) is not a %s.",
 	     obj->GetName(), obj->GetTitle(), classname );
     fStatus = kInitError;
-    return NULL;
+    return nullptr;
   }
   THaAnalysisObject* aobj = static_cast<THaAnalysisObject*>( obj );
   if( do_error ) {
@@ -309,7 +309,7 @@ THaAnalysisObject* THaAnalysisObject::FindModule( const char* name,
       Error( Here(here), "Module %s (%s) not initialized.",
 	     obj->GetName(), obj->GetTitle() );
       fStatus = kInitError;
-      return NULL;
+      return nullptr;
     }
   }
   return aobj;
@@ -330,7 +330,7 @@ vector<string> THaAnalysisObject::GetDBFileList( const char* name,
   static const string dirsep = "/", allsep = "/";
 #endif
 
-  const char* dbdir = NULL;
+  const char* dbdir = nullptr;
   const char* result;
   void* dirp;
   size_t pos;
@@ -647,7 +647,7 @@ void THaAnalysisObject::MakePrefix( const char* basename )
 {
   // Set up name prefix for global variables. 
   // Internal function called by constructors of derived classes.
-  // If basename != NULL, 
+  // If basename != nullptr,
   //   fPrefix = basename  + "." + GetName() + ".",
   // else 
   //   fPrefix = GetName() + "."
@@ -682,14 +682,14 @@ FILE* THaAnalysisObject::OpenFile( const char *name, const TDatime& date,
 
   // Ensure input is sane
   if( !name || !*name )
-    return NULL;
+    return nullptr;
   if( !here )
     here="";
   if( !filemode )
     filemode="r";
 
   // Get list of database file candidates and try to open them in turn
-  FILE* fi = NULL;
+  FILE* fi = nullptr;
   vector<string> fnames( GetDBFileList(name, date, here) );
   if( !fnames.empty() ) {
     vsiter_t it = fnames.begin();
@@ -736,14 +736,14 @@ char* THaAnalysisObject::ReadComment( FILE* fp, char *buf, const int len )
 {
   // Read database comment lines (those not starting with a space (' ')),
   // returning the comment.
-  // If the line is data, then nothing is done and NULL is returned,
+  // If the line is data, then nothing is done and nullptr is returned,
   // so one can search for the next data line with:
   //   while ( ReadComment(fp, buf, len) );
   int ch = fgetc(fp);  // peak ahead one character
   ungetc(ch,fp);
 
   if (ch == EOF || ch == ' ')
-    return NULL; // a real line of data
+    return nullptr; // a real line of data
   
   char *s= fgets(buf,len,fp); // read the comment
   return s;
@@ -1434,8 +1434,8 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 	    if( item->type == kDouble )
 	      *((Double_t*)item->var) = dval;
 	    else {
-	      CheckLimits( Float_t, dval );
-	      *((Float_t*)item->var) = dval;
+	      CheckLimits( Float_t, dval )
+              *((Float_t*)item->var) = dval;
 	    }
 	  }
 	} else {
@@ -1451,7 +1451,7 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 		((Double_t*)item->var)[i] = dvals[i];
 	    } else {
 	      for( UInt_t i = 0; i < nelem; i++ ) {
-		CheckLimits( Float_t, dvals[i] );
+		CheckLimits( Float_t, dvals[i] )
 		((Float_t*)item->var)[i] = dvals[i];
 	      }
 	    }
@@ -1468,23 +1468,23 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 	      *((Int_t*)item->var) = ival;
 	      break;
 	    case kUInt:
-	      CheckLimitsUnsigned( UInt_t, ival );
+	      CheckLimitsUnsigned( UInt_t, ival )
 	      *((UInt_t*)item->var) = ival;
 	      break;
 	    case kShort:
-	      CheckLimits( Short_t, ival );
+	      CheckLimits( Short_t, ival )
 	      *((Short_t*)item->var) = ival;
 	      break;
 	    case kUShort:
-	      CheckLimitsUnsigned( UShort_t, ival );
+	      CheckLimitsUnsigned( UShort_t, ival )
 	      *((UShort_t*)item->var) = ival;
 	      break;
 	    case kChar:
-	      CheckLimits( Char_t, ival );
+	      CheckLimits( Char_t, ival )
 	      *((Char_t*)item->var) = ival;
 	      break;
 	    case kByte:
-	      CheckLimitsUnsigned( Byte_t, ival );
+	      CheckLimitsUnsigned( Byte_t, ival )
 	      *((Byte_t*)item->var) = ival;
 	      break;
 	    default:
@@ -1506,31 +1506,31 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 	      break;
 	    case kUInt:
 	      for( UInt_t i = 0; i < nelem; i++ ) {
-		CheckLimitsUnsigned( UInt_t, ivals[i] );
+		CheckLimitsUnsigned( UInt_t, ivals[i] )
 		((UInt_t*)item->var)[i] = ivals[i];
 	      }
 	      break;
 	    case kShort:
 	      for( UInt_t i = 0; i < nelem; i++ ) {
-		CheckLimits( Short_t, ivals[i] );
+		CheckLimits( Short_t, ivals[i] )
 		((Short_t*)item->var)[i] = ivals[i];
 	      }
 	      break;
 	    case kUShort:
 	      for( UInt_t i = 0; i < nelem; i++ ) {
-		CheckLimitsUnsigned( UShort_t, ivals[i] );
+		CheckLimitsUnsigned( UShort_t, ivals[i] )
 		((UShort_t*)item->var)[i] = ivals[i];
 	      }
 	      break;
 	    case kChar:
 	      for( UInt_t i = 0; i < nelem; i++ ) {
-		CheckLimits( Char_t, ivals[i] );
+		CheckLimits( Char_t, ivals[i] )
 		((Char_t*)item->var)[i] = ivals[i];
 	      }
 	      break;
 	    case kByte:
 	      for( UInt_t i = 0; i < nelem; i++ ) {
-		CheckLimitsUnsigned( Byte_t, ivals[i] );
+		CheckLimitsUnsigned( Byte_t, ivals[i] )
 		((Byte_t*)item->var)[i] = ivals[i];
 	      }
 	      break;

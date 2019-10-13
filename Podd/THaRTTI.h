@@ -26,7 +26,7 @@ public:
   virtual ~THaRTTI() {}
 
   Int_t        Find( TClass* cl, const TString& var,
-		     const void* const p = NULL );
+		     const void* const p = nullptr );
 
   EArrayType   GetArrayType()   const { return fArrayType; }
   TClass*      GetClass()       const;

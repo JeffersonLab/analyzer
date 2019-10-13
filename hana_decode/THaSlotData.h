@@ -62,8 +62,8 @@ public:
        Int_t LoadIfSlot(const UInt_t* evbuffer, const UInt_t *pstop);
        Int_t LoadBank(const UInt_t* p, Int_t pos, Int_t len); 
        Int_t LoadNextEvBuffer();
-       Bool_t IsMultiBlockMode() { if (fModule) return fModule->IsMultiBlockMode(); return kFALSE; };
-       Bool_t BlockIsDone() { if (fModule) return fModule->BlockIsDone(); return kFALSE; };
+       Bool_t IsMultiBlockMode() { if (fModule) return fModule->IsMultiBlockMode(); return false; };
+       Bool_t BlockIsDone() { if (fModule) return fModule->BlockIsDone(); return false; };
 
        void SetDebugFile(std::ofstream *file) { fDebugFile = file; };
        Module* GetModule() { return fModule; };
@@ -113,7 +113,7 @@ inline UInt_t THaSlotData::getRawData(UInt_t hit) const {
   assert( hit < numraw );
   if (hit < numraw) return rawData[hit];
   return 0;
-};
+}
 
 //_____________________________________________________________________________
 // Data (words on 1 chan)
@@ -126,7 +126,7 @@ UInt_t THaSlotData::getRawData(UInt_t chan, UInt_t hit) const {
   assert(index < numraw);
   if (index < numraw) return rawData[index];
   return 0;
-};
+}
 
 //_____________________________________________________________________________
 inline
@@ -134,14 +134,14 @@ UInt_t THaSlotData::getNumHits(UInt_t chan) const {
   // Num hits on a channel
   assert( chan < maxc );
   return (chan < maxc) ? numHits[chan] : 0;
-};
+}
 
 //_____________________________________________________________________________
 inline
 UInt_t THaSlotData::getNumChan() const {
   // Num unique channels # hit
   return numchanhit;
-};
+}
 
 //_____________________________________________________________________________
 inline
@@ -151,7 +151,7 @@ UInt_t THaSlotData::getNextChan(UInt_t index) const {
   if (index < numchanhit)
     return chanlist[index];
   return 0;
-};
+}
 
 //_____________________________________________________________________________
 // Data (words on 1 chan)
@@ -164,14 +164,14 @@ UInt_t THaSlotData::getData(UInt_t chan, UInt_t hit) const {
   assert(index < numraw);
   if (index < numraw) return data[index];
   return 0;
-};
+}
 
 //_____________________________________________________________________________
 // Device type (adc, tdc, scaler)
 inline
 const char* THaSlotData::devType() const {
   return device.Data();
-};
+}
 
 //_____________________________________________________________________________
 inline
@@ -182,7 +182,7 @@ void THaSlotData::clearEvent() {
   firstfreedataidx=0;
   numholesdataidx=0;
   while( numchanhit>0 ) numHits[chanlist[--numchanhit]] = 0;
-};
+}
 
 //_____________________________________________________________________________
 inline

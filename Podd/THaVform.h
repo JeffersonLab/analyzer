@@ -59,7 +59,7 @@ public:
 // an "eye" ("[I]" variable)
 
   Bool_t IsFormula() const { return (fType == kForm); }
-  Bool_t IsVarray() const  { return (fVarPtr != NULL && fType == kVarArray); }
+  Bool_t IsVarray() const  { return (fVarPtr != nullptr && fType == kVarArray); }
   Bool_t IsCut() const     { return (fType == kCut); }
   Bool_t IsEye() const     { return (fType == kEye); }
 // Get the size (dimension) of this object

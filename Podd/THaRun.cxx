@@ -148,7 +148,7 @@ Int_t THaRun::Open()
     return READ_FATAL;  // filename not set
   }
 
-  fOpened = kFALSE;
+  fOpened = false;
   Int_t st = fCodaData->codaOpen( fFilename );
   if( st == CODA_OK ) {
     // Get CODA version from data; however, if a version was set by
@@ -161,7 +161,7 @@ Int_t THaRun::Open()
     }
     cout << "in THaRun::Open:  coda version "<<fDataVersion<<endl;
     if( st == CODA_OK )
-      fOpened = kTRUE;
+      fOpened = true;
   }
   return ReturnCode( st );
 }
@@ -190,8 +190,8 @@ Int_t THaRun::ReadInitInfo()
     if( fSegment == 0 ) {
       THaEvData* evdata = static_cast<THaEvData*>(gHaDecoder->New());
       // Disable advanced processing
-      evdata->EnableScalers(kFALSE);
-      evdata->EnableHelicity(kFALSE);
+      evdata->EnableScalers(false);
+      evdata->EnableHelicity(false);
       evdata->SetDataVersion(GetCodaVersion());
       UInt_t nev = 0;
       while( nev<fMaxScan && !HasInfo(fDataRequired) &&
@@ -303,7 +303,7 @@ Int_t THaRun::SetFilename( const char* name )
 
   // The run becomes uninitialized only if this is not a continuation segment
   if( fSegment == 0 )
-    fIsInit = kFALSE;
+    fIsInit = false;
 
   return 0;
 }

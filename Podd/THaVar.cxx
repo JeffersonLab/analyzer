@@ -334,7 +334,7 @@ Int_t THaVar::Index( const char* s ) const
   // or a comma-separated list of subscripts (for multi-dimensional arrays).
   //
   // NOTE: This method is less efficient than
-  // THaVar::Index( THaArraySring& ) above because the string has
+  // THaVar::Index( THaArrayString& ) above because the string has
   // to be parsed first.
   //
   // Return -1 if subscript(s) out of bound(s) or -2 if incompatible arrays.

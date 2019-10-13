@@ -16,7 +16,7 @@ class THaShower : public THaPidDetector {
 
 public:
   THaShower( const char* name, const char* description = "",
-	     THaApparatus* a = NULL );
+	     THaApparatus* a = nullptr );
   THaShower();
   virtual ~THaShower();
 

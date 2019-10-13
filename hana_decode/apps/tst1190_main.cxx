@@ -63,7 +63,7 @@ int main(int /* argc */, char** /* argv */)
   TString filename("snippet.dat");
 
   // Define the analysis debug output
-  ofstream *debugfile = new ofstream;;
+  ofstream *debugfile = new ofstream;
   // debugfile->open ("tst1190_main_debug.txt");
   
   // Initialize the CODA decoder
@@ -112,7 +112,7 @@ int main(int /* argc */, char** /* argv */)
 	if (evdata->GetNumRaw(CRATE3, islot) != 0) {  // HMS Single arm setup
 	  Caen1190Module *tdc =
 	      dynamic_cast <Caen1190Module*> (evdata->GetModule(CRATE3, islot));   // HMS single arm setup
-	  if (tdc != NULL) {
+	  if (tdc != nullptr) {
 	    if (debugfile) *debugfile << "\n///////////////////////////////\n"
 				      << "Results for crate " 
 				      << tdc->GetCrate() << ", slot " 

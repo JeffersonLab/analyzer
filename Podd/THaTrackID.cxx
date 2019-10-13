@@ -18,7 +18,7 @@
 // dissimilar derived objects with a line like
 //
 // THaMyTrackID::operator==( const THaTrackID& rhs ) {
-//   if( IsA() != rhs.IsA() ) return kFALSE;
+//   if( IsA() != rhs.IsA() ) return false;
 //   ...
 // }
 //

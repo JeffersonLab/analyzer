@@ -35,7 +35,7 @@ OldVDCTrackPair& OldVDCTrackPair::operator=( const OldVDCTrackPair& rhs )
 //_____________________________________________________________________________
 void OldVDCTrackPair::Analyze( Double_t spacing )
 {
-  // Compute goodness of match paremeter for the two UV tracks.
+  // Compute goodness of match parameter for the two UV tracks.
   // Essentially, this is a measure of how closely the two tracks
   // point at each other. 'spacing' is the separation of the 
   // upper and lower UV planes (in m).

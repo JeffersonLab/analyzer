@@ -32,7 +32,7 @@ using namespace THaString;
 THaVform::THaVform( const char *type, const char* name, const char* formula,
 		    const THaVarList* vlst, const THaCutList* clst )
   : THaFormula(), fNvar(0), fObjSize(0), fEyeOffset(0), fData(0.0),
-    fType(kUnknown), fVarPtr(NULL), fOdata(NULL), fPrefix(kNoPrefix)
+    fType(kUnknown), fVarPtr(nullptr), fOdata(nullptr), fPrefix(kNoPrefix)
 {
   SetName(name);
   SetList(vlst);
@@ -275,7 +275,7 @@ void THaVform::ErrPrint(Int_t err) const
       cout << "Unknown prefix."<<endl;
       cout << "The presently supported prefixes are "<<endl;
       cout << "'SUM:', 'AND:', and 'OR:' "<<endl;
-      cout << "(case insenstitive)"<<endl;
+      cout << "(case insensitive)"<<endl;
       break;
 
     case kIllPre :

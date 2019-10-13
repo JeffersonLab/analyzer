@@ -276,13 +276,13 @@ TClass* THaRTTI::GetClass() const
   if( IsObjVector() )
     return fElemClass;
 
-  return NULL;
+  return nullptr;
 }
 
 //_____________________________________________________________________________
 Bool_t THaRTTI::IsPointer() const
 {
-  return fDataMember ? fDataMember->IsaPointer() : kFALSE;
+  return fDataMember ? fDataMember->IsaPointer() : false;
 }
 
 //_____________________________________________________________________________

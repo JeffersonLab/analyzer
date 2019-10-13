@@ -104,7 +104,7 @@ Int_t UserDetector::ReadDatabase( const TDatime& date )
       //== CAUTION: kFloatV here must match the type of Data_t defined in the header!
       { "pedestals", &fPed,   kFloatV, 0, 1 }, // Pedestals
       { "gains",     &fGain,  kFloatV, 0, 1 }, // Gains
-      { 0 }                                    // Last element must be NULL
+      { 0 }                                    // Last element must be nullptr
     };
 
     // Read the requested values
@@ -151,7 +151,7 @@ Int_t UserDetector::ReadDatabase( const TDatime& date )
   // so this catches database errors and simplifies the design of this class.
   if( fIsInit && nelem != fNelem ) {
     ostringstream ostr;
-    ostr << "Cannot re-initalize with different number of elements. "
+    ostr << "Cannot re-initialize with different number of elements. "
          << "(was: " << fNelem << ", now: " << nelem << "). "
          << "Detector not re-initialized.";
     Error( Here(here), "%s", ostr.str().c_str() );
@@ -322,9 +322,9 @@ void UserDetector::Print( Option_t* opt ) const
   cout << "pedestals = "; PrintArray( fPed );
   cout << "gains = ";     PrintArray( fGain );
   cout << "nhits = " << fEvtData.size() << endl;
-  PrintArrayField("channel",fEvtData,fChannel);
-  PrintArrayField("rawadc",fEvtData,fRawADC);
-  PrintArrayField("coradc",fEvtData,fCorADC);
+  PrintArrayField("channel",fEvtData,fChannel)
+  PrintArrayField("rawadc",fEvtData,fRawADC)
+  PrintArrayField("coradc",fEvtData,fCorADC)
 }
 
 ////////////////////////////////////////////////////////////////////////////////

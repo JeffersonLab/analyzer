@@ -114,7 +114,7 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   // Reinitialization only possible for same basic configuration
   if( !err ) {
     if( fIsInit && nelem != fNelem ) {
-      Error( Here(here), "Cannot re-initalize with different number of paddles. "
+      Error( Here(here), "Cannot re-initialize with different number of paddles. "
 	     "(was: %d, now: %d). Detector not re-initialized.", fNelem, nelem );
       err = kInitError;
     } else
@@ -339,32 +339,32 @@ void THaScintillator::DeleteArrays()
 {
   // Delete member arrays. Used by destructor.
 
-  delete [] fRA_c;    fRA_c    = NULL;
-  delete [] fRA_p;    fRA_p    = NULL;
-  delete [] fRA;      fRA      = NULL;
-  delete [] fLA_c;    fLA_c    = NULL;
-  delete [] fLA_p;    fLA_p    = NULL;
-  delete [] fLA;      fLA      = NULL;
-  delete [] fRT_c;    fRT_c    = NULL;
-  delete [] fRT;      fRT      = NULL;
-  delete [] fLT_c;    fLT_c    = NULL;
-  delete [] fLT;      fLT      = NULL;
+  delete [] fRA_c;    fRA_c    = nullptr;
+  delete [] fRA_p;    fRA_p    = nullptr;
+  delete [] fRA;      fRA      = nullptr;
+  delete [] fLA_c;    fLA_c    = nullptr;
+  delete [] fLA_p;    fLA_p    = nullptr;
+  delete [] fLA;      fLA      = nullptr;
+  delete [] fRT_c;    fRT_c    = nullptr;
+  delete [] fRT;      fRT      = nullptr;
+  delete [] fLT_c;    fLT_c    = nullptr;
+  delete [] fLT;      fLT      = nullptr;
 
-  delete [] fRGain;   fRGain   = NULL;
-  delete [] fLGain;   fLGain   = NULL;
-  delete [] fRPed;    fRPed    = NULL;
-  delete [] fLPed;    fLPed    = NULL;
-  delete [] fROff;    fROff    = NULL;
-  delete [] fLOff;    fLOff    = NULL;
-  delete [] fTWalkPar; fTWalkPar = NULL;
-  delete [] fTrigOff; fTrigOff = NULL;
+  delete [] fRGain;   fRGain   = nullptr;
+  delete [] fLGain;   fLGain   = nullptr;
+  delete [] fRPed;    fRPed    = nullptr;
+  delete [] fLPed;    fLPed    = nullptr;
+  delete [] fROff;    fROff    = nullptr;
+  delete [] fLOff;    fLOff    = nullptr;
+  delete [] fTWalkPar; fTWalkPar = nullptr;
+  delete [] fTrigOff; fTrigOff = nullptr;
 
-  delete [] fHitPad;  fHitPad  = NULL;
-  delete [] fTime;    fTime    = NULL;
-  delete [] fdTime;   fdTime   = NULL;
-  delete [] fAmpl;    fAmpl    = NULL;
-  delete [] fYt;      fYt      = NULL;
-  delete [] fYa;      fYa      = NULL;
+  delete [] fHitPad;  fHitPad  = nullptr;
+  delete [] fTime;    fTime    = nullptr;
+  delete [] fdTime;   fdTime   = nullptr;
+  delete [] fAmpl;    fAmpl    = nullptr;
+  delete [] fYt;      fYt      = nullptr;
+  delete [] fYa;      fYa      = nullptr;
 }
 
 //_____________________________________________________________________________

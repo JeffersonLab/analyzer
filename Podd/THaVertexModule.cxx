@@ -15,7 +15,7 @@
 using namespace std;
 
 //_____________________________________________________________________________
-THaVertexModule::THaVertexModule() : fVertexOK(kFALSE)
+THaVertexModule::THaVertexModule() : fVertexOK(false)
 {
   // Normal constructor.
 
@@ -37,7 +37,7 @@ void THaVertexModule::VertexClear()
 
   fVertex.SetXYZ(kBig,kBig,kBig);
   fVertexError.SetXYZ(1.0,1.0,1.0);
-  fVertexOK = kFALSE;
+  fVertexOK = false;
 }
 
 //_____________________________________________________________________________

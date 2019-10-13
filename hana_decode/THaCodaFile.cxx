@@ -42,7 +42,7 @@ namespace Decoder {
   THaCodaFile::~THaCodaFile () {
     //Destructor
     codaClose();
-  };
+  }
 
   Int_t THaCodaFile::codaOpen(const char* fname, Int_t mode )
   {
@@ -63,7 +63,7 @@ namespace Decoder {
     staterr("open",status);
     free(d_fname); free(d_flags);
     return ReturnCode(status);
-  };
+  }
 
   Int_t THaCodaFile::codaClose() {
 // Close the file. Do nothing if file not opened.
@@ -95,7 +95,7 @@ namespace Decoder {
       status = S_EVFILE_BADHANDLE;
     }
     return ReturnCode(status);
-  };
+  }
 
 
   Int_t THaCodaFile::codaWrite(const UInt_t* evbuf) {
@@ -110,7 +110,7 @@ namespace Decoder {
        status = S_EVFILE_BADHANDLE;
      }
      return ReturnCode(status);
-   };
+   }
 
   bool THaCodaFile::isOpen() const {
     return (handle!=0);
@@ -132,7 +132,7 @@ namespace Decoder {
 	 return CODA_ERROR;
        }
        FILE *fp;
-       if ((fp = fopen(output_file,"r")) != NULL) {
+       if ((fp = fopen(output_file,"r")) != nullptr) {
 	  if(CODA_VERBOSE) {
 	    cout << "filterToFile:  ERROR:  ";
 	    cout << "Output file `" << output_file << "' exists " << endl;
@@ -143,7 +143,7 @@ namespace Decoder {
 	  fIsGood = false;
 	  return CODA_FATAL;
        }
-       THaCodaFile* fout = new THaCodaFile(output_file,"w");
+       auto fout = new THaCodaFile(output_file,"w");
        if( !fout || !fout->isGood() ) {
          delete fout;
          fIsGood = false;
@@ -210,7 +210,7 @@ namespace Decoder {
        delete fout;
 
        return fIsGood ? fout_status : status;
-  };
+  }
 
 
 
@@ -228,8 +228,7 @@ namespace Decoder {
      evtypes[0] = evtypes[0] + 1;  // 0th element = num elements in list
      Int_t n = evtypes[0];
      evtypes[n] = evtype_to_filt;
-     return;
-  };
+  }
 
 
   void THaCodaFile::addEvListFilt(Int_t event_num_to_filt)
@@ -245,15 +244,13 @@ namespace Decoder {
      evlist[0] = evlist[0] + 1;  // 0th element = num elements in list
      Int_t n = evlist[0];
      evlist[n] = event_num_to_filt;
-     return;
-  };
+  }
 
   void THaCodaFile::setMaxEvFilt(Int_t max_event)
 // Function to set up the max number of events to filter
   {
      max_to_filt = max_event;
-     return;
-  };
+  }
 
   void THaCodaFile::init(const char* fname) {
     if( filename != fname ) {
@@ -261,7 +258,7 @@ namespace Decoder {
       filename = fname;
     }
     handle = 0;
-  };
+  }
 
   void THaCodaFile::initFilter() {
     if (!ffirst) {
@@ -273,7 +270,7 @@ namespace Decoder {
        evlist[0] = 0;
        evtypes[0] = 0;
     }
-  };
+  }
 
 }
 

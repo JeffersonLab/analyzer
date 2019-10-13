@@ -38,7 +38,7 @@ protected:
 inline
 Bool_t THaVDCTrackID::operator==( const THaTrackID& RHS )
 {
-  if( IsA() != RHS.IsA() ) return kFALSE;
+  if( IsA() != RHS.IsA() ) return false;
   const THaVDCTrackID& rhs = static_cast<const THaVDCTrackID&>(RHS);
   return ( (fLowerU == rhs.fLowerU) && (fLowerV == rhs.fLowerV) &&
 	   (fUpperU == rhs.fUpperU) && (fUpperV == rhs.fUpperV) );
@@ -48,7 +48,7 @@ Bool_t THaVDCTrackID::operator==( const THaTrackID& RHS )
 inline
 Bool_t THaVDCTrackID::operator!=( const THaTrackID& RHS )
 {
-  if( IsA() != RHS.IsA() ) return kTRUE;
+  if( IsA() != RHS.IsA() ) return true;
   const THaVDCTrackID& rhs = static_cast<const THaVDCTrackID&>(RHS);
   return ( (fLowerU != rhs.fLowerU) || (fLowerV != rhs.fLowerV) ||
 	   (fUpperU != rhs.fUpperU) || (fUpperV != rhs.fUpperV) );

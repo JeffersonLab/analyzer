@@ -35,7 +35,7 @@ class THaUsrstrutils {
                                  1 if keyword is present with no value
 				 2 if keyword is present with a value
    int getint(char *s) - If keyword present, interpret value as an integer.
-                         Value assumed deximal, unless preceeded by 0x for hex
+                         Value assumed decimal, unless preceded by 0x for hex
 			 Return 0 if keyword not present or has no value.
 
    char *getstr(char *s) - Return ptr to string value associated with

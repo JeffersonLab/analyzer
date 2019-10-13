@@ -43,7 +43,7 @@ Bool_t SeqCollectionMethodVar::IsBasic() const
 {
   // Data are basic (POD variable or array)
 
-  return kFALSE;
+  return false;
 }
 
 }// namespace Podd

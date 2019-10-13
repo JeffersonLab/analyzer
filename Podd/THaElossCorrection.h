@@ -25,7 +25,7 @@ public:
 
           void      SetInputModule( const char* name );
           void      SetMass( Double_t m /* GeV/c^2 */ );
-          void      SetTestMode( Bool_t enable=kTRUE,
+          void      SetTestMode( Bool_t enable=true,
 				 Double_t eloss_value=0.0 /* GeV */ );
           void      SetMedium( Double_t Z, Double_t A,
 			       Double_t density  /* g/cm^3 */ );

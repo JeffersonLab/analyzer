@@ -194,8 +194,8 @@ Int_t THaBPM::Decode( const THaEvData& evdata )
 Int_t THaBPM::Process( )
 {
  
-  // called by the beam apparaturs 
-  // uses the pedestal substracted signals from the antennas
+  // called by the beam apparatus
+  // uses the pedestal subtracted signals from the antennas
   // to get the position in the bpm coordinate system 
   // and uses the transformation matrix defined in the database
   // to transform it into the HCS

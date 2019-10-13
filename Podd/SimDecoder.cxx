@@ -62,9 +62,9 @@ SimDecoder::~SimDecoder()
   // delete them and set the pointers to zero (using SafeDelete, for example),
   // else we may double-delete.
 
-  SafeDelete(fMCPoints);
-  SafeDelete(fMCTracks);
-  SafeDelete(fMCHits);
+  SafeDelete(fMCPoints)
+  SafeDelete(fMCTracks)
+  SafeDelete(fMCHits)
 
   // Unregister global variables registered in the constructor
   if( gHaVars ) {
@@ -239,7 +239,7 @@ void MCHitInfo::MCPrint() const
        << ", MCtime = " << fMCTime
        << ", num_bg = " << fContam
        << endl;
-};
+}
 
 //_____________________________________________________________________________
 Int_t MCTrackPoint::Compare( const TObject* obj ) const
@@ -248,7 +248,7 @@ Int_t MCTrackPoint::Compare( const TObject* obj ) const
   // Returns -1 if this is smaller than rhs, 0 if equal, +1 if greater.
 
   assert( dynamic_cast<const MCTrackPoint*>(obj) );
-  const MCTrackPoint* rhs = static_cast<const MCTrackPoint*>(obj);
+  const auto rhs = static_cast<const MCTrackPoint*>(obj);
 
   if( fType  < rhs->fType  ) return -1;
   if( fType  > rhs->fType  ) return  1;

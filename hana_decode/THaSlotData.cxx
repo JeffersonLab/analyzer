@@ -305,7 +305,7 @@ int THaSlotData::loadData(const char* type, UInt_t chan, UInt_t dat, UInt_t raw)
 
 int THaSlotData::loadData(UInt_t chan, UInt_t dat, UInt_t raw) {
   // NEW (6/2014).
-  return loadData(NULL, chan, dat, raw);
+  return loadData(nullptr, chan, dat, raw);
 }
 
 

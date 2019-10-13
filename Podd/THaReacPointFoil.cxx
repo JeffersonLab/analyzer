@@ -22,7 +22,7 @@ ClassImp(THaReacPointFoil)
 THaReacPointFoil::THaReacPointFoil( const char* name, const char* description,
 				    const char* spectro, const char* beam ) :
   THaPhysicsModule(name,description), fSpectroName(spectro), 
-  fBeamName(beam), fSpectro(NULL), fBeam(NULL)
+  fBeamName(beam), fSpectro(nullptr), fBeam(nullptr)
 {
   // Normal constructor.
 
@@ -117,7 +117,7 @@ Int_t THaReacPointFoil::Process( const THaEvData& )
     // FIXME: preliminary
     if( theTrack == fSpectro->GetGoldenTrack() ) {
       fVertex = theTrack->GetVertex();
-      fVertexOK = kTRUE;
+      fVertexOK = true;
     }
     // FIXME: calculate vertex coordinate errors here (need beam errors)
 

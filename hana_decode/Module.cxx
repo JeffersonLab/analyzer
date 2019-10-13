@@ -42,7 +42,7 @@ Module::~Module() {
 
 void Module::Init()
 {
-// Suggestion: call this Init() before calling the inherting class's Init.
+// Suggestion: call this Init() before calling the inheriting class's Init.
 // Otherwise some variables may be undefined.  The "factory" method
 // using TClass::New does NOT call the c'tor of this base class !!
 // Make sure all your variables are defined.
@@ -65,9 +65,9 @@ Bool_t Module::IsSlot(UInt_t rdata) {
 // Simplest version of IsSlot relies on a unique header.
  if ((rdata & fHeaderMask)==fHeader) {
     fWordsExpect = (rdata & fWdcntMask)>>fWdcntShift;
-    return kTRUE;
+    return true;
   }
-  return kFALSE;
+  return false;
 }
 
 void Module::DoPrint() const {

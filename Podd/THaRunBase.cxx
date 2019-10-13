@@ -28,7 +28,7 @@ static const char* DEFRUNPARAM = "THaRunParameters";
 THaRunBase::THaRunBase( const char* description ) :
   TNamed(NOTINIT, description ),
   fNumber(-1), fType(0), fDate(UNDEFDATE,0), fNumAnalyzed(0),
-  fDBRead(kFALSE), fIsInit(kFALSE), fOpened(kFALSE), fAssumeDate(kFALSE),
+  fDBRead(false), fIsInit(false), fOpened(false), fAssumeDate(false),
   fDataSet(0), fDataRead(0), fDataRequired(kDate), fParam(0),
   fRunParamClass(DEFRUNPARAM), fDataVersion(0), fExtra(0)
 {
@@ -41,7 +41,7 @@ THaRunBase::THaRunBase( const char* description ) :
 THaRunBase::THaRunBase( const THaRunBase& rhs ) :
   TNamed( rhs ), fNumber(rhs.fNumber), fType(rhs.fType),
   fDate(rhs.fDate), fNumAnalyzed(rhs.fNumAnalyzed), fDBRead(rhs.fDBRead),
-  fIsInit(rhs.fIsInit), fOpened(kFALSE), fAssumeDate(rhs.fAssumeDate),
+  fIsInit(rhs.fIsInit), fOpened(false), fAssumeDate(rhs.fAssumeDate),
   fDataSet(rhs.fDataSet), fDataRead(rhs.fDataRead),
   fDataRequired(rhs.fDataRequired), fParam(0),
   fRunParamClass(rhs.fRunParamClass), fDataVersion(rhs.fDataVersion),
@@ -76,7 +76,7 @@ THaRunBase& THaRunBase::operator=(const THaRunBase& rhs)
      fNumAnalyzed = rhs.fNumAnalyzed;
      fDBRead     = rhs.fDBRead;
      fIsInit     = rhs.fIsInit;
-     fOpened     = kFALSE;
+     fOpened     = false;
      fAssumeDate = rhs.fAssumeDate;
      fDataSet    = rhs.fDataSet;
      fDataRead   = rhs.fDataRead;
@@ -196,7 +196,7 @@ void THaRunBase::Clear( Option_t* opt )
   fNumber = -1;
   fType = 0;
   fNumAnalyzed = 0;
-  fDBRead = fIsInit = fOpened = kFALSE;
+  fDBRead = fIsInit = fOpened = false;
   fDataSet = fDataRead = 0;
   fParam->Clear(opt);
 
@@ -218,7 +218,7 @@ void THaRunBase::ClearDate()
   // Reset the run date to "undefined"
 
   fDate.Set(UNDEFDATE,0);
-  fAssumeDate = fIsInit = kFALSE;
+  fAssumeDate = fIsInit = false;
   fDataSet &= ~kDate;
 }
 
@@ -351,7 +351,7 @@ Int_t THaRunBase::Init()
   if( retval )
     return retval;
 
-  fIsInit = kTRUE;
+  fIsInit = true;
   return READ_OK;
 }
 
@@ -450,9 +450,9 @@ void THaRunBase::SetDate( const TDatime& date )
 
   if( fDate != date ) {
     fDate = date;
-    fIsInit = kFALSE;
+    fIsInit = false;
   }
-  fAssumeDate = kTRUE;
+  fAssumeDate = true;
   fDataSet |= kDate;
 }
 

@@ -19,7 +19,7 @@ class THaHelicity : public THaADCHelicity, public THaG0HelicityReader {
   
 public:
   THaHelicity( const char* name, const char* description, 
-	       THaApparatus* a = NULL );
+	       THaApparatus* a = nullptr );
   virtual ~THaHelicity();
 
   virtual void   Clear( Option_t* opt = "" );

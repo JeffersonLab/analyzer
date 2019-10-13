@@ -239,7 +239,7 @@ Int_t THaCutList::Define( const char* cutname, const char* expr,
 //______________________________________________________________________________
 Int_t THaCutList::Eval()
 {
-  // Evaluate all tests in all blocks.  Because of possible dependences between
+  // Evaluate all tests in all blocks.  Because of possible dependencies between
   // blocks, each block is evaluated separately in the order in which the blocks
   // were defined.
 

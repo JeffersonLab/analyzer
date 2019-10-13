@@ -92,16 +92,16 @@ void THaEvtTypeHandler::SetDebugFile(const char *filename) {
 Bool_t THaEvtTypeHandler::IsMyEvent(Int_t evnum) const
 {
   for (UInt_t i=0; i < eventtypes.size(); i++) {
-    if (evnum == eventtypes[i]) return kTRUE;
+    if (evnum == eventtypes[i]) return true;
   }
 
-  return kFALSE;
+  return false;
 }
 
 //_____________________________________________________________________________
 void THaEvtTypeHandler::MakePrefix()
 {
-  THaAnalysisObject::MakePrefix( NULL );
+  THaAnalysisObject::MakePrefix( nullptr );
 }
 
 ClassImp(THaEvtTypeHandler)

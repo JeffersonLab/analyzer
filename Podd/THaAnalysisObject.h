@@ -25,7 +25,7 @@ class THaRunBase;
 class THaOutput;
 class TObjArray;
 
-const char* Here( const char* here, const char* prefix = NULL );
+const char* Here( const char* here, const char* prefix = nullptr );
 
 class THaAnalysisObject : public TNamed {
   

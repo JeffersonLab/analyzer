@@ -19,7 +19,7 @@ BdataLoc::TypeIter_t TrigBitLoc::fgThisType =
 //_____________________________________________________________________________
 Int_t TrigBitLoc::Configure( const TObjArray* params, Int_t start )
 {
-  // Initialize CrateLoc from given parmeters
+  // Initialize CrateLoc from given parameters
 
   // Load name, crate, slot, channel
   Int_t ret = CrateLocMulti::Configure( params, start );

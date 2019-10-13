@@ -78,7 +78,7 @@ THaVarList::THaVarList() : THashList(kInitVarListCapacity, kVarListRehashLevel)
 
   // THaVarList "owns" the variables put into it, i.e. if the list is deleted
   // so are the global variables in it.
-  SetOwner(kTRUE);
+  SetOwner(true);
 }
 
 //_____________________________________________________________________________
@@ -436,10 +436,10 @@ Int_t THaVarList::DefineVariables( const VarDef* list, const char* prefix,
 				   const char* caller )
 {
   // Add all variables specified in 'list' to the list. 'list' is a C-style
-  // structure defined in VarDef.h and must be terminated with a NULL name.
+  // structure defined in VarDef.h and must be terminated with a nullptr name.
   //
   // Allows definition of:
-  //    scalers
+  //    scalars
   //    fixed size arrays
   //    variable size arrays
   //    fixed size arrays of pointers
@@ -515,10 +515,10 @@ Int_t THaVarList::DefineVariables( const RVarDef* list, const TObject* obj,
 				   const char* var_prefix )
 {
   // Add all variables specified in 'list' to the list. 'list' is a C-style
-  // structure defined in VarDef.h and must be terminated with a NULL name.
+  // structure defined in VarDef.h and must be terminated with a nullptr name.
   //
   // Allows definition of:
-  //    scalers
+  //    scalars
   //    fixed size arrays
   //    variable size arrays
   //
@@ -621,7 +621,7 @@ void THaVarList::PrintFull( Option_t* option ) const
   // E.g.: option="var*" prints only variables whose names start with "var".
 
   if( !option )  option = "";
-  TRegexp re(option,kTRUE);
+  TRegexp re(option,true);
   TIter next(this);
 
   while( TObject* obj = next() ) {

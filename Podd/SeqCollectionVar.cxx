@@ -132,7 +132,7 @@ Bool_t SeqCollectionVar::HasSameSize( const Variable& rhs ) const
 
   const SeqCollectionVar* other = dynamic_cast<const SeqCollectionVar*>(&rhs);
   if( !other )
-    return kFALSE;
+    return false;
 
   return fValueP == other->fValueP;
 }
@@ -142,7 +142,7 @@ Bool_t SeqCollectionVar::IsBasic() const
 {
   // Data are basic (POD variable or array)
 
-  return kFALSE;
+  return false;
 }
 
 //_____________________________________________________________________________
@@ -150,7 +150,7 @@ Bool_t SeqCollectionVar::IsContiguous() const
 {
   // Data are contiguous in memory
 
-  return kFALSE;
+  return false;
 }
 
 //_____________________________________________________________________________
@@ -158,7 +158,7 @@ Bool_t SeqCollectionVar::IsPointerArray() const
 {
   // Data are an array of pointers to data
 
-  return kFALSE;
+  return false;
 }
 
 //_____________________________________________________________________________
@@ -166,7 +166,7 @@ Bool_t SeqCollectionVar::IsVarArray() const
 {
   // Variable is a variable-size array
 
-  return kTRUE;
+  return true;
 }
 
 //_____________________________________________________________________________

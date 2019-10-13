@@ -28,9 +28,9 @@ THaTriggerTime::THaTriggerTime( const char* name, const char* desc,
                                 THaApparatus* apparatus ) :
   THaNonTrackingDetector(name, desc, apparatus),
   fEvtTime(0.0), fEvtType(-1), fTDCRes(0.0),
-  fGlOffset(0.0), fCommonStop(0), fNTrgType(0), fTrgTimes(NULL)
+  fGlOffset(0.0), fCommonStop(0), fNTrgType(0), fTrgTimes(nullptr)
 {
-  // basic do-nothing-else contructor
+  // basic do-nothing-else constructor
 }
 
 //____________________________________________________________________________

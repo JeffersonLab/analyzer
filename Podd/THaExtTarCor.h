@@ -37,7 +37,7 @@ protected:
 
   Double_t                fDeltaP;       // Size of momentum correction (GeV)
   Double_t                fDeltaDp;      // Size of delta correction
-  Double_t                fDeltaTh;      // Size of angle corection (rad)
+  Double_t                fDeltaTh;      // Size of angle correction (rad)
 
   TString                 fSpectroName;  // Name of spectrometer/tracking module
   TString                 fVertexName;   // Name of vertex module

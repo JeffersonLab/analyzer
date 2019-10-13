@@ -2,7 +2,8 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //
-// ArrayRTTI - Test defnition of global variables of array elements via RTTI //
+// ArrayRTTI - Test definition of global variables of array elements         //
+// via RTTI                                                                  //
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 

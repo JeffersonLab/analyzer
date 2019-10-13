@@ -27,7 +27,7 @@ class THaVDCPlane : public THaSubDetector {
 public:
 
   THaVDCPlane( const char* name="", const char* description="",
-	       THaDetectorBase* parent = NULL );
+	       THaDetectorBase* parent = nullptr );
   virtual ~THaVDCPlane();
 
   virtual void    Clear( Option_t* opt="" );
@@ -130,7 +130,7 @@ protected:
   virtual Int_t DefineVariables( EMode mode = kDefine );
 
   virtual Int_t ReadGeometry( FILE* file, const TDatime& date,
-			      Bool_t required = kFALSE );
+			      Bool_t required = false );
 
   ClassDef(THaVDCPlane,0)             // VDCPlane class
 };

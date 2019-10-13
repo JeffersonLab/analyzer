@@ -108,7 +108,7 @@ Int_t OldVDCUVPlane::MatchUVClusters()
     return 0;
   }
   
-  OldVDCUVTrack* uvTrack = NULL;
+  OldVDCUVTrack* uvTrack = nullptr;
   
   // There are two cases:
   // 1) One cluster per plane
@@ -150,7 +150,7 @@ Int_t OldVDCUVPlane::MatchUVClusters()
 	Warning( "OldVDCUVPlane", "Cluster without pivot in p1, %d!", i );
 	continue;
       }
-      minClust = NULL;
+      minClust = nullptr;
       minTimeDif = 1e307;  //Arbitrary large value
       for (int j = 0; j < p2->GetNClusters(); j++) {
 	p2Clust = p2->GetCluster(j);
@@ -264,7 +264,7 @@ void OldVDCUVPlane::SetNMaxGap( Int_t val )
 {
   if( val < 0 || val > 2 ) {
     Error( Here("SetNMaxGap"),
-	   "Invalid max_gap = %d, must be betwwen 0 and 2.", val );
+	   "Invalid max_gap = %d, must be between 0 and 2.", val );
     return;
   }
   fU->SetNMaxGap(val);
@@ -276,7 +276,7 @@ void OldVDCUVPlane::SetMinTime( Int_t val )
 {
   if( val < 0 || val > 4095 ) {
     Error( Here("SetMinTime"),
-	   "Invalid min_time = %d, must be betwwen 0 and 4095.", val );
+	   "Invalid min_time = %d, must be between 0 and 4095.", val );
     return;
   }
   fU->SetMinTime(val);

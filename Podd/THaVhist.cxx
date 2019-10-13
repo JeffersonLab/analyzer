@@ -47,8 +47,8 @@ THaVhist::THaVhist( const string& type, const string& name,
 		    const string& title ) :
   fType(type), fName(name), fTitle(title), fNbinX(0), fNbinY(0), fSize(0),
   fInitStat(0), fScalar(0), fEye(0), fEyeOffset(0), fXlo(0.), fXhi(0.), fYlo(0.), fYhi(0.),
-  fFirst(kTRUE), fProc(kTRUE), fFormX(NULL), fFormY(NULL), fCut(NULL),
-  fMyFormX(kFALSE), fMyFormY(kFALSE), fMyCut(kFALSE)
+  fFirst(true), fProc(true), fFormX(nullptr), fFormY(nullptr), fCut(nullptr),
+  fMyFormX(false), fMyFormY(false), fMyCut(false)
 { 
   fH1.clear();
 }
@@ -68,19 +68,19 @@ THaVhist::~THaVhist()
 //_____________________________________________________________________________
 void THaVhist::CheckValidity( ) 
 {
-  fProc = kTRUE;
+  fProc = true;
   if (fEye == 0 && fScalar == 0 && fSize != static_cast<Int_t>(fH1.size())) {
-     fProc = kFALSE;
+     fProc = false;
      ErrPrint();
      cerr << "THaVhist:ERROR:: Inconsistent sizes."<<endl;
   }
   if (fFormX == 0) {
-     fProc = kFALSE;
+     fProc = false;
      ErrPrint();
      cerr << "THaVhist:ERROR:: No X axis defined."<<endl;
   }
   if (fInitStat != 0) {
-     fProc = kFALSE;
+     fProc = false;
      ErrPrint();
      cerr << "THaVhist:ERROR:: Improperly initialized."<<endl;
   }
@@ -128,7 +128,7 @@ Int_t THaVhist::Init( )
      } else {
        fFormX = new THaVform("formula",sname.c_str(),fVarX.c_str());
      }
-     fMyFormX = kTRUE;
+     fMyFormX = true;
 
      status = fFormX->Init();
      if (status != 0) {
@@ -151,7 +151,7 @@ Int_t THaVhist::Init( )
      } else {
        fFormY = new THaVform("formula",sname.c_str(),fVarY.c_str());
      }
-     fMyFormY = kTRUE;
+     fMyFormY = true;
 
      status = fFormY->Init();
      if (status != 0) {
@@ -163,7 +163,7 @@ Int_t THaVhist::Init( )
   if (fCut == 0 && HasCut()) {
      sname = fName+"Cut";
      fCut = new THaVform("cut",sname.c_str(),fScut.c_str());
-     fMyCut = kTRUE;
+     fMyCut = true;
 
      status = fCut->Init();
      if (status != 0) {
@@ -233,7 +233,7 @@ Bool_t THaVhist::FindEye(const string& var) {
   if (pos  != string::npos) {
     if (var.length() == eye.length()) {
       if(debug) cout << "Is an Eye var [I]"<<endl;
-      return kTRUE;
+      return true;
     } 
   }
 // If you did not find [I] there could be an offset like [I+1]. 
@@ -265,12 +265,12 @@ Bool_t THaVhist::FindEyeOffset(const string& var) {
          string cnum = var.substr(pos+3,var.length()-4);
          fEyeOffset = atoi(cnum.c_str());       
          if (debug) cout << "FindEyeOffset: substring with number "<<pos<<"   "<<pos3<<"    "<<cnum<<"   "<<fEyeOffset<<endl;
-	 return kTRUE;
+	 return true;
       }
     }
   }
   if (debug) cout << "Not an Eye variable! "<<endl;
-  return kFALSE;
+  return false;
 }
 
 //_____________________________________________________________________________
@@ -287,7 +287,7 @@ Int_t THaVhist::FindVarSize()
  // If the X and Y are both vectors they must have the same 
  // dimensions or there is an error, and the indices track.
  // The cut can be a scalar or a vector; if the cut is a 
- // vector it must have the same dimenions as the X or the Y since
+ // vector it must have the same dimensions as the X or the Y since
  // the indices track with the variable which is a vector.
  //
  // 2) potentially a vector -- the old (ca 2003) behavior.
@@ -456,7 +456,7 @@ Int_t THaVhist::Process()
   const int ldebug=0;
   if (ldebug) cout << "----------------  THaVhist :: Process  "<<fName<<"   //  "<<fTitle<<endl<<flush;
   if (fFirst) {
-    fFirst = kFALSE;  
+    fFirst = false;
     CheckValidity();
   }
   if ( !IsValid() ) return -1;

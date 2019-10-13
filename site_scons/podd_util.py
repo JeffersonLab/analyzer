@@ -1,5 +1,5 @@
 # podd_utils.py
-# Ultility functions for Podd SCons build
+# Utility functions for Podd SCons build
 
 import os
 from SCons.Action import ActionFactory
@@ -230,15 +230,15 @@ def write_compiledata(env, compiledata):
             gitrev = gitrev.decode()
             cxxver = cxxver.decode()
     else:
-        FNULL = open(os.devnull, 'w')
+        Fnullptr = open(os.devnull, 'w')
         try:
             gitrev = subprocess.Popen(['git', 'rev-parse', 'HEAD', '2>dev/null'],
-                        stdout=subprocess.PIPE, stderr=FNULL).communicate()[0].rstrip()
+                        stdout=subprocess.PIPE, stderr=Fnullptr).communicate()[0].rstrip()
         except:
             gitrev =''
         try:
             outp = subprocess.Popen([env.subst('$CXX'), '--version'],
-                                    stdout=subprocess.PIPE, stderr=FNULL).communicate()[0]
+                                    stdout=subprocess.PIPE, stderr=Fnullptr).communicate()[0]
             lines = outp.splitlines()
             cxxver = lines[0]
         except:

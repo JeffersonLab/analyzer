@@ -27,7 +27,7 @@ void Lecroy1875Module::Init()
   fOptMask = 0x800000;
   fChanShift = 16;
   fOptShift = 23;
-  fHasHeader = kFALSE;
+  fHasHeader = false;
   fHeader = 0;
   fModelNum = 1875;
   FastbusModule::Init();

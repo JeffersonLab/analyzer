@@ -25,10 +25,10 @@
 //    cantly more functionality than basic apparatuses. In particular,  //
 //    there is a standard Reconstruct() algorithm and a distinction     //
 //    between tracking and non-tracking detectors. Also, there are      //
-//    additional requirements for detectors to be used with spectrom-   //
-//    eters. Examples of spectrometers: HRS, BigBite, HMS, CLAS, OOPS.  //
+//    additional requirements for detectors to be used with spectro-    //
+//    meters. Examples of spectrometers: HRS, BigBite, HMS, CLAS, OOPS. //
 //    Spectrometers do not need to be magnetic. For example, a          //
-//    segmented photon or neutron calorimeter could be implemeted as    //
+//    segmented photon or neutron calorimeter could be implemented as   //
 //    as spectrometer, even if it provides only rather coarse           //
 //    particle track information. The resulting "tracks" (4-vectors)    //
 //    can then be used directly in kinematics calculations.             //
@@ -95,7 +95,7 @@ Int_t UserApparatus::DefineVariables( EMode mode )
 
   RVarDef vars[] = {
     { "ntot", "Total number of hits", "fNtotal" },
-    { 0 }
+    { nullptr }
   };
   return DefineVarsFromList( vars, mode );
 }
@@ -112,13 +112,13 @@ Int_t UserApparatus::Reconstruct()
 
   TIter next(fDetectors);
   while( TObject* theDetector = next()) {
-    // NB: dynamic_cast returns NULL if the cast object does not
+    // NB: dynamic_cast returns nullptr if the cast object does not
     // inherit from the requested type.
     // One could also use TClass::InheritsFrom, but dynamic_cast is faster.
-    if( THaScintillator* d = dynamic_cast<THaScintillator*>( theDetector )) {
+    if( auto d = dynamic_cast<THaScintillator*>( theDetector )) {
       fNtotal += d->GetNHits();
-    } else if( UserDetector* d = dynamic_cast<UserDetector*>( theDetector )) {
-      fNtotal += d->GetNhits();
+    } else if( auto ud = dynamic_cast<UserDetector*>( theDetector )) {
+      fNtotal += ud->GetNhits();
     } else {
       // do nothing for all other detector types
     }

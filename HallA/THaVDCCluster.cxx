@@ -218,7 +218,7 @@ void THaVDCCluster::FitTrack( EMode mode )
   //
   // kSimple:    Linear fit, ignore t0 and multihits
   // kWeighted:  Linear fit with weights, ignore t0
-  // kT0:        Fit t0, but ignore mulithits
+  // kT0:        Fit t0, but ignore multihits
 
   switch( mode ) {
   case kSimple:
@@ -392,7 +392,7 @@ Int_t THaVDCCluster::LinearClusterFitWithT0()
   // a significant negative offset d0.
   //
   // The results, m, b, and d0, are converted to the "slope" and "intercept"
-  // of the cluster geometery, where slope = 1/m and intercept = -b/m.
+  // of the cluster geometry, where slope = 1/m and intercept = -b/m.
   // d0 is simply converted to time units to give t0, using the asymptotic
   // drift velocity.
 
@@ -766,7 +766,7 @@ void THaVDCCluster::Print( Option_t* ) const
     cout << "Global residuals = ";
     DoCalcChisquare( chi2, nhits, fSlope, true );
     cout << endl;
-    cout << "Local/global chi2 = " << lchi2 << ", " << chi2 << endl;;
+    cout << "Local/global chi2 = " << lchi2 << ", " << chi2 << endl;
   }
 }
 

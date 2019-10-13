@@ -116,7 +116,7 @@ public:
   virtual ~MCTrackPoint() {}
 
   virtual Int_t  Compare( const TObject* obj ) const;
-  virtual Bool_t IsSortable() const { return kTRUE; }
+  virtual Bool_t IsSortable() const { return true; }
   virtual void   Print( Option_t* opt ) const;
 
   Double_t X()         const { return fMCPoint.X(); }

@@ -179,22 +179,22 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
   }
 
   if( fMinClustSize < 1 || fMinClustSize > 6 ) {
-    Error( Here(here), "Invalid min_clust_size = %d, must be betwwen 1 and "
+    Error( Here(here), "Invalid min_clust_size = %d, must be between 1 and "
 	   "6. Fix database.", fMinClustSize );
     return kInitError;
   }
   if( fMaxClustSpan < 2 || fMaxClustSpan > 12 ) {
-    Error( Here(here), "Invalid max_clust_span = %d, must be betwwen 1 and "
+    Error( Here(here), "Invalid max_clust_span = %d, must be between 1 and "
 	   "12. Fix database.", fMaxClustSpan );
     return kInitError;
   }
   if( fNMaxGap < 0 || fNMaxGap > 2 ) {
-    Error( Here(here), "Invalid max_gap = %d, must be betwwen 0 and 2. "
+    Error( Here(here), "Invalid max_gap = %d, must be between 0 and 2. "
 	   "Fix database.", fNMaxGap );
     return kInitError;
   }
   if( fMinTime < 0 || fMinTime > 4095 ) {
-    Error( Here(here), "Invalid min_time = %d, must be betwwen 0 and 4095. "
+    Error( Here(here), "Invalid min_time = %d, must be between 0 and 4095. "
 	   "Fix database.", fMinTime );
     return kInitError;
   }
@@ -204,7 +204,7 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
     return kInitError;
   }
 
-  // Derived geometry quatities
+  // Derived geometry quantities
   fWAngle *= TMath::DegToRad();
   fSinWAngle = TMath::Sin( fWAngle );
   fCosWAngle = TMath::Cos( fWAngle );
@@ -656,7 +656,7 @@ Int_t THaVDCPlane::FindClusters()
      //Loop through all TDC hits
      for( Int_t i = 0; i < nHits; ) {
        clushits.clear();
-       falling = kTRUE;
+       falling = true;
 
        THaVDCHit* hit = GetHit(i);
        assert(hit);
@@ -728,7 +728,7 @@ Int_t THaVDCPlane::FindClusters()
 			  // have a monotonically increasing cluster
 			  if( deltat < fMaxTdiff*ndif && span > 1 ){
 				  // now we're rising
-				  falling = kFALSE;
+				  falling = false;
 			  } else {
 				  continue;
 			  }

@@ -79,7 +79,7 @@ int LoadOldT0Data(TDatime &run_date, Double_t *old_t0, const char *planename)
   // are of form [ <prefix> ], e.g. [ R.vdc.u1 ].
   sprintf(tag, "[ %s ]", planename);
   bool found = false;
-  while (!found && fgets (buff, kBUFLEN, db_file) != NULL) {
+  while (!found && fgets (buff, kBUFLEN, db_file) != nullptr) {
     if(strlen(buff) > 0 && buff[strlen(buff)-1] == '\n')
       buff[strlen(buff)-1] = '\0';
 
@@ -120,7 +120,7 @@ int SaveNewT0Data(TDatime &run_date, Double_t *new_t0, const char *planename)
   // are of form [ <prefix> ], e.g. [ R.vdc.u1 ].
   sprintf(tag, "[ %s ]", planename);
   bool found = false;
-  while (!found && fgets (buff, kBUFLEN, db_file) != NULL) {
+  while (!found && fgets (buff, kBUFLEN, db_file) != nullptr) {
     if(strlen(buff) > 0 && buff[strlen(buff)-1] == '\n')
       buff[strlen(buff)-1] = '\0';
 
@@ -211,7 +211,7 @@ void CalcT0Table(const char *treefile, const char *planename)
 
   // read in header info
   THaRun *the_run = (THaRun *)f->Get("Run Data");
-  if(the_run == NULL) {
+  if(the_run == nullptr) {
     cerr<<"Could not read run header info. Exiting."<<endl;
     return;
   }

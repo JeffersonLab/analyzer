@@ -14,7 +14,7 @@ class THaBPM : public THaBeamDet {
 
 public:
   THaBPM( const char* name, const char* description = "",
-		   THaApparatus* a = NULL );
+		   THaApparatus* a = nullptr );
   virtual ~THaBPM();
 
   virtual void       Clear( Option_t* ="" );

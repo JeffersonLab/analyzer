@@ -91,7 +91,7 @@ const void* MethodVar::GetDataPointer( const void* obj ) const
       }
       break;
     default:
-      assert(false);  // misconstructed object (error in THaVarList::DefineByRTTI)
+      assert(false);  // ill-constructed object (error in THaVarList::DefineByRTTI)
     }
     return &fData;
   }
@@ -126,7 +126,7 @@ const void* MethodVar::GetDataPointer( const void* obj ) const
       }
       break;
     default:
-      assert(false);  // misconstructed object (error in THaVarList::DefineByRTTI)
+      assert(false);  // ill-constructed object (error in THaVarList::DefineByRTTI)
     }
     return &fData;
   }
@@ -139,7 +139,7 @@ Bool_t MethodVar::IsBasic() const
 {
   // Data are basic (POD variable or array)
 
-  return kFALSE;
+  return false;
 }
 
 //_____________________________________________________________________________

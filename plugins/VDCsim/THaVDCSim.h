@@ -21,8 +21,8 @@ class THaVDCSimConditions : public TObject {
   TString filename;           //name of output file
   TString textFile;           //name of output text file (holds track information)
   int numTrials;              //number of events generated in monte carlo
-  Double_t wireHeight[4];      // Height of each wire in Z coord
-  Double_t driftVelocities[4]; // Drift velocity in Z coord
+  Double_t wireHeight[4]{};      // Height of each wire in Z coord
+  Double_t driftVelocities[4]{}; // Drift velocity in Z coord
   TString Prefixes[4];        //array of prefixes to use in reading database
   TString databaseFile;       //name of database file to read
   int numWires;               //number of wires in each chamber
@@ -46,7 +46,7 @@ class THaVDCSimConditions : public TObject {
   const Double_t cellWidth;    //width of cell (i.e. horizontal spacing between sense wires)
   const Double_t cellHeight;   //height of cell (i.e. vertical spacing between u and v wire planes)
 
-  void set(Double_t *something,
+  static void set(Double_t *something,
 	   Double_t a, Double_t b, Double_t c, Double_t d);
 
   Int_t ReadDatabase(Double_t* timeOffsets);
@@ -128,7 +128,7 @@ class THaVDCSimTrack : public TObject {
   virtual void Clear( Option_t* opt="" );
   virtual void Print( Option_t* opt="" ) const;
 
-  ClassDef (THaVDCSimTrack, 4) // Simluated VDC track
+  ClassDef (THaVDCSimTrack, 4) // Simulated VDC track
 };
 
 #endif

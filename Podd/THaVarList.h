@@ -187,7 +187,7 @@ public:
   virtual THaVar*  Find( const char* name ) const;
   virtual void     PrintFull(Option_t *opt="") const;
   virtual Int_t    RemoveName( const char* name );
-  virtual Int_t    RemoveRegexp( const char* expr, Bool_t wildcard = kTRUE );
+  virtual Int_t    RemoveRegexp( const char* expr, Bool_t wildcard = true );
 
 protected:
 

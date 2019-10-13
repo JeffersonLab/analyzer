@@ -155,7 +155,7 @@ public:
   { return GetHelicity(); }
   virtual Int_t GetPrescaleFactor(Int_t /*trigger*/ ) const
   { assert(fgAllowUnimpl); return -1; }
-  // User can GetScaler, alternativly to GetSlotData for scalers
+  // User can GetScaler, alternatively to GetSlotData for scalers
   // spec = "left", "right", "rcs" for event type 140 scaler "events"
   // spec = "evleft" or "evright" for L,R scalers injected into datastream.
   virtual Int_t GetScaler(Int_t /*roc*/, Int_t /*slot*/, Int_t /*chan*/) const
@@ -317,14 +317,14 @@ inline Int_t THaEvData::GetNumHits(Int_t crate, Int_t slot, Int_t chan) const {
   if( crateslot[idx(crate,slot)] != 0 )
     return crateslot[idx(crate,slot)]->getNumHits(chan);
   return 0;
-};
+}
 
 inline Int_t THaEvData::GetData(Int_t crate, Int_t slot, Int_t chan,
 				Int_t hit) const {
   // Return the data in crate, slot, channel #chan and hit# hit
   assert( GoodIndex(crate,slot) );
   return crateslot[idx(crate,slot)]->getData(chan,hit);
-};
+}
 
 inline Int_t THaEvData::GetNumRaw(Int_t crate, Int_t slot) const {
   // Number of raw words in crate, slot
@@ -332,33 +332,33 @@ inline Int_t THaEvData::GetNumRaw(Int_t crate, Int_t slot) const {
   if( crateslot[idx(crate,slot)] != 0 )
     return crateslot[idx(crate,slot)]->getNumRaw();
   return 0;
-};
+}
 
 inline Int_t THaEvData::GetRawData(Int_t crate, Int_t slot, Int_t hit) const {
   // Raw words in crate, slot
   assert( GoodIndex(crate,slot) );
   return crateslot[idx(crate,slot)]->getRawData(hit);
-};
+}
 
 inline Int_t THaEvData::GetRawData(Int_t crate, Int_t slot, Int_t chan,
 				   Int_t hit) const {
   // Return the Rawdata in crate, slot, channel #chan and hit# hit
   assert( GoodIndex(crate,slot) );
   return crateslot[idx(crate,slot)]->getRawData(chan,hit);
-};
+}
 
 inline Int_t THaEvData::GetRawData(Int_t i) const {
   // Raw words in evbuffer at location #i.
   assert( buffer && i >= 0 && i < GetEvLength() );
   return buffer[i];
-};
+}
 
 inline Int_t THaEvData::GetRawData(Int_t crate, Int_t i) const {
   // Raw words in evbuffer within crate #crate.
   assert( crate >= 0 && crate < Decoder::MAXROC );
   Int_t index = rocdat[crate].pos + i;
   return GetRawData(index);
-};
+}
 
 inline const UInt_t* THaEvData::GetRawDataBuffer(Int_t crate) const {
   // Direct access to the event buffer for the given crate,
@@ -366,7 +366,7 @@ inline const UInt_t* THaEvData::GetRawDataBuffer(Int_t crate) const {
   assert( crate >= 0 && crate < Decoder::MAXROC );
   Int_t index = rocdat[crate].pos;
   return buffer+index;
-};
+}
 
 inline Bool_t THaEvData::InCrate(Int_t crate, Int_t i) const {
   // To tell if the index "i" poInt_ts to a word inside crate #crate.
@@ -376,7 +376,7 @@ inline Bool_t THaEvData::InCrate(Int_t crate, Int_t i) const {
   if (rocdat[crate].pos == 0 || rocdat[crate].len == 0) return false;
   return (i >= rocdat[crate].pos &&
 	  i <= rocdat[crate].pos+rocdat[crate].len);
-};
+}
 
 inline Int_t THaEvData::GetNumChan(Int_t crate, Int_t slot) const {
   // Get number of unique channels hit
@@ -384,7 +384,7 @@ inline Int_t THaEvData::GetNumChan(Int_t crate, Int_t slot) const {
   if( crateslot[idx(crate,slot)] != 0 )
     return crateslot[idx(crate,slot)]->getNumChan();
   return 0;
-};
+}
 
 inline Int_t THaEvData::GetNextChan(Int_t crate, Int_t slot,
 				    Int_t index) const {
@@ -392,12 +392,12 @@ inline Int_t THaEvData::GetNextChan(Int_t crate, Int_t slot,
   assert( GoodIndex(crate,slot) );
   assert( index >= 0 && index < GetNumChan(crate,slot) );
   return crateslot[idx(crate,slot)]->getNextChan(index);
-};
+}
 
 inline
 Bool_t THaEvData::IsPhysicsTrigger() const {
   return ((event_type > 0) && (event_type <= Decoder::MAX_PHYS_EVTYPE));
-};
+}
 
 inline
 Bool_t THaEvData::IsScalerEvent() const {
@@ -405,29 +405,29 @@ Bool_t THaEvData::IsScalerEvent() const {
   // of scalers (roc11, etc).
   // Important: A scaler event can also be a physics event.
   return (event_type == Decoder::SCALER_EVTYPE || evscaler == 1);
-};
+}
 
 inline
 Bool_t THaEvData::IsPrestartEvent() const {
   return (event_type == Decoder::PRESTART_EVTYPE);
-};
+}
 
 inline
 Bool_t THaEvData::IsEpicsEvent() const {
   return (event_type == fEpicsEvtType);
-};
+}
 
 inline
 Bool_t THaEvData::IsPrescaleEvent() const {
   return (event_type == Decoder::TS_PRESCALE_EVTYPE ||
 	  event_type == Decoder::PRESCALE_EVTYPE);
-};
+}
 
 inline
 Bool_t THaEvData::IsSpecialEvent() const {
   return ( (event_type == Decoder::DETMAP_FILE) ||
 	   (event_type == Decoder::TRIGGER_FILE) );
-};
+}
 
 inline
 Bool_t THaEvData::HelicityEnabled() const

@@ -22,7 +22,7 @@ using namespace std;
 
 //_____________________________________________________________________________
 THaCut::THaCut()
-  : THaFormula(), fLastResult(kFALSE), fNCalled(0), fNPassed(0), fMode(kAND)
+  : THaFormula(), fLastResult(false), fNCalled(0), fNPassed(0), fMode(kAND)
 {
   // Default constructor
 }
@@ -30,7 +30,7 @@ THaCut::THaCut()
 //_____________________________________________________________________________
 THaCut::THaCut( const char* name, const char* expression, const char* block,
 		const THaVarList* vlst, const THaCutList* clst )
-  : THaFormula(), fLastResult(kFALSE), fBlockname(block), fNCalled(0),
+  : THaFormula(), fLastResult(false), fBlockname(block), fNCalled(0),
     fNPassed(0), fMode(kAND)
 {
   // Create a cut 'name' according to 'expression'.

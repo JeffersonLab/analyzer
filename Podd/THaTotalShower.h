@@ -15,10 +15,10 @@ class THaTotalShower : public THaPidDetector {
 
 public:
   THaTotalShower( const char* name, const char* description = "",
-		  THaApparatus* a = NULL );
+		  THaApparatus* a = nullptr );
   THaTotalShower( const char* name, const char* shower_name,
 		  const char* preshower_name, const char* description = "",
-		  THaApparatus* a = NULL );
+		  THaApparatus* a = nullptr );
   virtual ~THaTotalShower();
 
   virtual void       Clear( Option_t* ="" );

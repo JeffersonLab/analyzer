@@ -103,7 +103,7 @@ DecData::DecData( const char* name, const char* descript )
     fBdataLoc( kInitHashCapacity, kRehashLevel )
 {
   fProperties &= ~kNeedsRunDB;
-  fBdataLoc.SetOwner(kTRUE);
+  fBdataLoc.SetOwner(true);
 }
 
 //_____________________________________________________________________________
@@ -149,7 +149,7 @@ Int_t DecData::DefineVariables( EMode mode )
   // Each defined decoder data location defines its own global variable(s)
   // The BdataLoc have their own equivalent of fIsSetup, so we can
   // unconditionally call their DefineVariables() here (similar to detetcor
-  // initialization in THaAppratus::Init).
+  // initialization in THaApparatus::Init).
   Int_t retval = kOK;
   TIter next( &fBdataLoc );
   while( BdataLoc* dataloc = static_cast<BdataLoc*>( next() ) ) {
@@ -326,7 +326,7 @@ Int_t DecData::ReadDatabase( const TDatime& date )
   if( !file ) return kFileError;
 
   Bool_t re_init = fIsInit;
-  fIsInit = kFALSE;
+  fIsInit = false;
   if( !re_init ) {
     fBdataLoc.Clear();
   }
@@ -369,7 +369,7 @@ Int_t DecData::ReadDatabase( const TDatime& date )
   if( err )
     return kInitError;
 
-  fIsInit = kTRUE;
+  fIsInit = true;
   return kOK;
 }
 

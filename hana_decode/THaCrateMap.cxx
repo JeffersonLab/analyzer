@@ -301,7 +301,7 @@ void THaCrateMap::print(ostream& os) const
       if( !crdat[roc].slot_used[slot] ) continue;
       os << "  " << slot << "\t" << crdat[roc].model[slot]
 	   << "\t" << crdat[roc].slot_clear[slot];
-      // using this instead of manipulators again for bckwards compat with g++-2
+      // using this instead of manipulators again for backwards compat with g++-2
       ios::fmtflags oldf = os.setf(ios::right, ios::adjustfield);
       os << "\t0x" << hex << setfill('0') << setw(8) << crdat[roc].header[slot]
 	   << "\t0x" << hex << setfill('0') << setw(8) << crdat[roc].headmask[slot]
@@ -396,7 +396,7 @@ int THaCrateMap::init(TString the_map)
 
     // The line is of the format:
     //        slot#  model#  [clear header  mask  nchan ndata ]
-    // where clear, header, mask, nchan and ndata are optional interpretted in
+    // where clear, header, mask, nchan and ndata are optional interpreted in
     // that order.
     // Another option is "bank decoding" :  all data in this CODA bank
     // belongs to this slot and model.  The line has the format

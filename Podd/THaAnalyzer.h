@@ -34,18 +34,18 @@ public:
   virtual void   Close();
   virtual Int_t  Init( THaRunBase* run );
           Int_t  Init( THaRunBase& run )    { return Init( &run ); }
-  virtual Int_t  Process( THaRunBase* run=NULL );
+  virtual Int_t  Process( THaRunBase* run=nullptr );
           Int_t  Process( THaRunBase& run ) { return Process(&run); }
   virtual void   Print( Option_t* opt="" ) const;
 
-  void           EnableBenchmarks( Bool_t b = kTRUE );
-  void           EnableHelicity( Bool_t b = kTRUE );
-  void           EnableOtherEvents( Bool_t b = kTRUE );
-  void           EnableOverwrite( Bool_t b = kTRUE );
-  void           EnablePhysicsEvents( Bool_t b = kTRUE );
-  void           EnableRunUpdate( Bool_t b = kTRUE );
-  void           EnableScalers( Bool_t b = kTRUE );   // archaic
-  void           EnableSlowControl( Bool_t b = kTRUE );
+  void           EnableBenchmarks( Bool_t b = true );
+  void           EnableHelicity( Bool_t b = true );
+  void           EnableOtherEvents( Bool_t b = true );
+  void           EnableOverwrite( Bool_t b = true );
+  void           EnablePhysicsEvents( Bool_t b = true );
+  void           EnableRunUpdate( Bool_t b = true );
+  void           EnableScalers( Bool_t b = true );   // archaic
+  void           EnableSlowControl( Bool_t b = true );
   const char*    GetOutFileName()      const  { return fOutFileName.Data(); }
   const char*    GetCutFileName()      const  { return fCutFileName.Data(); }
   const char*    GetOdefFileName()     const  { return fOdefFileName.Data(); }
@@ -56,7 +56,7 @@ public:
   THaEvData*     GetDecoder()          const;
   TList*         GetApps()             const  { return fApps; }
   TList*         GetPhysics()          const  { return fPhysics; }
-  THaEpicsEvtHandler* GetEpicsEvtHandler() { return fEpicsHandler; }
+  THaEpicsEvtHandler* GetEpicsEvtHandler() const { return fEpicsHandler; }
   TList*         GetEvtHandlers()      const  { return fEvtHandlers; }
   TList*         GetPostProcess()      const  { return fPostProcess; }
   Bool_t         HasStarted()          const  { return fAnalysisStarted; }
@@ -180,9 +180,9 @@ protected:
   virtual void   InitCuts();
   virtual void   InitStages();
   virtual Int_t  InitModules( TList* module_list, TDatime& time,
-			      Int_t erroff, const char* baseclass = NULL );
+			      Int_t erroff, const char* baseclass = nullptr );
   virtual Int_t  InitOutput( const TList* module_list, Int_t erroff,
-			     const char* baseclass = NULL );
+			     const char* baseclass = nullptr );
   virtual void   PrintCounters() const;
   virtual void   PrintScalers() const;  // archaic
   virtual void   PrintCutSummary() const;

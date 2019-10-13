@@ -5,7 +5,7 @@
 // THaSecondaryKine
 //
 // Secondary particle kinematics module. 
-// This module calculates kinematical quantities for the hadron side of 
+// This module calculates kinematic quantities for the hadron side of
 // two-arm coincidence reactions. The reaction is
 //
 // e + A -> e' + X + B 

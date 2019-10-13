@@ -65,7 +65,7 @@ THaEvent* event = new THaEvent;
 fi=fopen(harpfname,"r");
   
 filestatus=fgets( buf, 255, fi);
-while (filestatus !=NULL) {
+while (filestatus !=nullptr) {
   sscanf(buf,"%d %d %lf %lf %lf %lf %lf %lf %lf %lf",
 	 &dum1,&dum2,&dum3,&dum4,&dum5,&dum6,&dum7,&dum8,&dum9,&dum10);
   sprintf(codafname,"%s%s_%d.dat.0",exppath,expnr,dum1);

@@ -19,10 +19,10 @@ PipeliningModule::PipeliningModule(Int_t crate, Int_t slot)
   : VmeModule(crate,slot),
     fNWarnings(0), fBlockHeader(0),
     data_type_def(15),  // initialize to FILLER WORD
-    fFirstTime(kTRUE), index_buffer(0)
+    fFirstTime(true), index_buffer(0)
 {
-  fMultiBlockMode = kFALSE;
-  fBlockIsDone = kFALSE;
+  fMultiBlockMode = false;
+  fBlockIsDone = false;
   ReStart();
 }
 
@@ -34,15 +34,15 @@ Int_t PipeliningModule::SplitBuffer(const std::vector< UInt_t >& codabuffer) {
 // Split a CODA buffer into blocks.   A block is data from a traditional physics event.
 // In MultiBlock Mode, a pipelining module can have several events in each CODA buffer.
 // If block level is 1, then the buffer is a traditional physics event.
-// If finding >1 block, this will set fMultiBlockMode = kTRUE
+// If finding >1 block, this will set fMultiBlockMode = true
 
   std::vector<UInt_t > oneEventBuffer;
   eventblock.clear();
-  fBlockIsDone = kFALSE;
+  fBlockIsDone = false;
   Int_t eventnum = 1;
   Int_t evt_num_modblock;
 
-  if ((fFirstTime == kFALSE) && (IsMultiBlockMode() == kFALSE)) {
+  if ((fFirstTime == false) && (IsMultiBlockMode() == false)) {
      eventblock.push_back(codabuffer);
      index_buffer=1;
      return 1;
@@ -75,13 +75,13 @@ Int_t PipeliningModule::SplitBuffer(const std::vector< UInt_t >& codabuffer) {
 
     switch(data_type_def)
       {
-      case 0: // Block header, indicates the begining of a block of events
+      case 0: // Block header, indicates the beginning of a block of events
         if (data_type_id) {
           fBlockHeader = data;
           slot_blk_hdr = (data >> 22) & 0x1F;  // Slot number (set by VME64x backplane), mask 5 bits
           block_size = (data >> 0) & 0xFF;  // Number of events in block, mask 8 bits
-          if (block_size > 1) fMultiBlockMode = kTRUE;
-          if ((fMultiBlockMode==kTRUE) && (slot_blk_hdr==fSlot)) BlockStart=1;
+          if (block_size > 1) fMultiBlockMode = true;
+          if ((fMultiBlockMode==true) && (slot_blk_hdr==fSlot)) BlockStart=1;
           // Debug output
           if (debug >= 1 && fDebugFile != 0) {
             Int_t iblock_num = (data >> 8) & 0x3FF;  // Event block number, mask 10 bits
@@ -93,7 +93,7 @@ Int_t PipeliningModule::SplitBuffer(const std::vector< UInt_t >& codabuffer) {
       case 1: // Block trailer, indicates the end of a block of events
         {
           Int_t slot_blk_trl = (data >> 22) & 0x1F;  // Slot number (set by VME64x backplane), mask 5 bits
-          if ((fMultiBlockMode==kTRUE) && (slot_blk_trl==fSlot)) {
+          if ((fMultiBlockMode==true) && (slot_blk_trl==fSlot)) {
             BlockStart++;
             oneEventBuffer.push_back(data);
             // There is no "event trailer", but a block trailer indicates the last event in a block.
@@ -123,7 +123,7 @@ Int_t PipeliningModule::SplitBuffer(const std::vector< UInt_t >& codabuffer) {
             if (fDebugFile != 0) *fDebugFile << "evt_num logic "<< evt_num<<"  "<<block_size<<"  "<<evt_num_modblock<<"   "<<eventnum<<endl;
           }
           // for some older firmware, slot_evt_hdr is zero, so use slot_blk_hdr
-          if ((fMultiBlockMode==kTRUE) && (slot_blk_hdr==fSlot)) {
+          if ((fMultiBlockMode==true) && (slot_blk_hdr==fSlot)) {
 // There is no "event trailer", so we use the change to next event to recognize the end of an event.
 // One could look for the (evt_num_modblock != eventnum) but I find that for some data files the
 // evt_num makes no sense and is a random number.  Instead, the following logic works.
@@ -151,20 +151,20 @@ Int_t PipeliningModule::SplitBuffer(const std::vector< UInt_t >& codabuffer) {
             cerr << "PipeliningModule::WARNING : inconsistent slot num  "<<endl;
         }
         // all other data goes here
-        if ((fMultiBlockMode==kTRUE) && (slot_blk_hdr==fSlot)) oneEventBuffer.push_back(data);
+        if ((fMultiBlockMode==true) && (slot_blk_hdr==fSlot)) oneEventBuffer.push_back(data);
 
       }
 
   }
 
-  fFirstTime = kFALSE;
+  fFirstTime = false;
 
-  if (IsMultiBlockMode() == kFALSE) {
+  if (IsMultiBlockMode() == false) {
     eventblock.push_back(codabuffer);
     index_buffer=1;
     return 1;
   }
-  if (IsMultiBlockMode() == kTRUE) {
+  if (IsMultiBlockMode() == true) {
     if (static_cast<size_t>(block_size) != eventblock.size()) {
       cerr << "PipeliningModule::ERROR:  num events in block inconsistent"<<endl;
       if (fDebugFile != 0) *fDebugFile << "block_size = "<<dec<<block_size<<"   "<<eventblock.size()<<endl;
@@ -178,13 +178,13 @@ Int_t PipeliningModule::SplitBuffer(const std::vector< UInt_t >& codabuffer) {
 }
 
 void PipeliningModule::PrintBlocks() {
-// Print all the blocks(events) if in mulitblock mode.
+// Print all the blocks(events) if in multiblock mode.
 // Note, the first event buffer will have the block header
 // the last buffer will have the block trailer
 // and all buffers will have an event header
   static Int_t maxloops=5000000;
-  if (IsMultiBlockMode() == kFALSE) {
-     if (fDebugFile != 0) *fDebugFile << "PipelingModule:  Not in multiblock mode.  Bye."<<endl;
+  if (IsMultiBlockMode() == false) {
+     if (fDebugFile != 0) *fDebugFile << "PipeliningModule:  Not in multiblock mode.  Bye."<<endl;
      return;
   }
   ReStart();
@@ -210,7 +210,7 @@ void PipeliningModule::PrintBlocks() {
 
 void PipeliningModule::ReStart() {
    index_buffer = 0;
-   fBlockIsDone = kFALSE;
+   fBlockIsDone = false;
 }
 
 std::vector< UInt_t > PipeliningModule::GetNextBlock() {
@@ -219,8 +219,8 @@ std::vector< UInt_t > PipeliningModule::GetNextBlock() {
       cerr << "ERROR:  No event buffers ! "<<endl;   // Should never happen
       return vnothing;
   }
-  if (IsMultiBlockMode() == kFALSE ) return eventblock[0];
-  if (index_buffer == (eventblock.size()-1)) fBlockIsDone=kTRUE;
+  if (IsMultiBlockMode() == false ) return eventblock[0];
+  if (index_buffer == (eventblock.size()-1)) fBlockIsDone=true;
   index_buffer++;
   return eventblock[GetIndex()];
 }

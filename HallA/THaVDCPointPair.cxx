@@ -137,9 +137,9 @@ Bool_t THaVDCPointPair::HasUsedCluster() const
 
   for( int i=0; i<4; i++ ) {
     if( clust[i]->GetPointPair() != 0 )
-      return kTRUE;
+      return true;
   }
-  return kFALSE;
+  return false;
 }
 
 //_____________________________________________________________________________

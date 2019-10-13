@@ -11,6 +11,7 @@
 
 #include "THaEvtTypeHandler.h"
 #include "Decoder.h"
+#include <utility>
 #include <vector>
 #include "TString.h"  
 
@@ -24,11 +25,11 @@ static const UInt_t defaultDT = 4;
 
 class ScalerLoc { // Utility class used by THaScalerEvtHandler
  public:
-  ScalerLoc(const TString& nm, const TString& desc, Int_t idx, Int_t sl,
-      Int_t ich, Int_t iki, Int_t iv)
-   : name(nm), description(desc), index(idx), islot(sl), ichan(ich),
-     ikind(iki), ivar(iv) {};
-  ~ScalerLoc();
+  ScalerLoc( const TString& nm, const TString& desc, Int_t idx, Int_t sl,
+             Int_t ich, Int_t iki, Int_t iv) :
+    name(nm), description(desc), index(idx), islot(sl), ichan(ich),
+    ikind(iki), ivar(iv) {};
+  ~ScalerLoc() = default;
   TString name, description;
   UInt_t index, islot, ichan, ikind, ivar;
 };
@@ -38,8 +39,10 @@ class THaScalerEvtHandler : public THaEvtTypeHandler {
 
 public:
 
-   THaScalerEvtHandler(const char* name, const char* description);
-   virtual ~THaScalerEvtHandler();
+  THaScalerEvtHandler(const char* name, const char* description);
+  THaScalerEvtHandler(const THaScalerEvtHandler& fh) = delete;
+  THaScalerEvtHandler& operator=(const THaScalerEvtHandler& fh) = delete;
+  virtual ~THaScalerEvtHandler();
 
    virtual Int_t Analyze(THaEvData *evdata);
    virtual EStatus Init( const TDatime& run_time);
@@ -58,9 +61,6 @@ protected:
    Int_t fNormIdx, fNormSlot;
    Double_t *dvars;
    TTree *fScalerTree;
-
-   THaScalerEvtHandler(const THaScalerEvtHandler& fh);
-   THaScalerEvtHandler& operator=(const THaScalerEvtHandler& fh);
 
    ClassDef(THaScalerEvtHandler,0)  // Scaler Event handler
 

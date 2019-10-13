@@ -59,7 +59,7 @@ THaEvData::THaEvData() :
   block_size(0), tbLen(0), run_type(0), fRunTime(0),
   evt_time(0), recent_event(0), buffmode(false), synchmiss(false),
   synchextra(false), fNSlotUsed(0), fNSlotClear(0),
-  fDoBench(kFALSE), fBench(0), fNeedInit(true), fDebug(0), fExtra(0)
+  fDoBench(false), fBench(0), fNeedInit(true), fDebug(0), fExtra(0)
 {
   fInstance = fgInstances.FirstNullBit();
   fgInstances.SetBitNumber(fInstance);
@@ -105,8 +105,8 @@ Int_t THaEvData::Init() {
   //  if (fMap) fMap->print();
   if (ret != HED_OK) return ret;
   ret = init_slotdata();
-  first_decode = kFALSE;
-  fNeedInit = kFALSE;
+  first_decode = false;
+  fNeedInit = false;
   return ret;
 }
 
@@ -352,7 +352,7 @@ Module* THaEvData::GetModule(Int_t roc, Int_t slot) const
 {
   THaSlotData *sldat = crateslot[idx(roc,slot)];
   if (sldat) return sldat->GetModule();
-  return NULL;
+  return nullptr;
 }
 
 //_____________________________________________________________________________

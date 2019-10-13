@@ -34,7 +34,7 @@ namespace VDC {
     a.first  += b.first;
     a.second += b.second;
     return a;
-  };
+  }
 }
 
 class THaVDCCluster : public TObject {
@@ -57,7 +57,7 @@ public:
   // TObject functions redefined
   virtual void   Clear( Option_t* opt="" );
   virtual Int_t  Compare( const TObject* obj ) const;
-  virtual Bool_t IsSortable() const        { return kTRUE; }
+  virtual Bool_t IsSortable() const        { return true; }
   virtual void   Print( Option_t* opt="" ) const;
 
   //Get and Set Functions

@@ -189,7 +189,7 @@ Int_t THaDecData::ReadDatabase( const TDatime& date )
       dataloc->OptionPtr( &evtypebits );
   }
 
-  fIsInit = kTRUE;
+  fIsInit = true;
   return kOK;
 }
 

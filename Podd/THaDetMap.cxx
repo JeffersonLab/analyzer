@@ -168,11 +168,11 @@ THaDetMap::Module* THaDetMap::Find( UShort_t crate, UShort_t slot,
 {
   // Return the module containing crate, slot, and channel chan.
   // If several matching modules exist (which mean the map is misconfigured),
-  // only the first one is returned. If none match, return NULL.
+  // only the first one is returned. If none match, return nullptr.
   // Since the map is usually small and not necessarily sorted, a simple
   // linear search is done.
 
-  Module* found = NULL;
+  Module* found = nullptr;
   for( UShort_t i = 0; i < fNmodules; ++i ) {
     Module* d = uGetModule(i);
     if( d->crate == crate && d->slot == slot && 
@@ -355,7 +355,7 @@ void THaDetMap::Reset()
 
   Clear();
   delete [] fMap;
-  fMap = NULL;
+  fMap = nullptr;
   fMaplength = 0;
 }
 

@@ -10,7 +10,7 @@ using namespace std;
 //_____________________________________________________________________________
 THaTrackOut::THaTrackOut(const char* name, const char* description,
 			 const char* src, Double_t pmass /* GeV */ ) :
-  THaPhysicsModule(name,description), fM(pmass), fSrcName(src), fSrc(NULL)
+  THaPhysicsModule(name,description), fM(pmass), fSrcName(src), fSrc(nullptr)
 {
   // Prepare four-vectors for storing the output tracks from "src",
   //  assuming is has mass "pmass".

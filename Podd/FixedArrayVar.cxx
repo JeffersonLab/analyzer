@@ -26,7 +26,7 @@ FixedArrayVar::FixedArrayVar( THaVar* pvar, const void* addr, VarType type )
   // Constructor
 
   if( !VerifyArrayName(fParsedName) ) {
-    fValueP = 0;
+    fValueP = nullptr;
     return;
   }
 
@@ -72,7 +72,7 @@ Int_t FixedArrayVar::GetNdim() const
 //_____________________________________________________________________________
 const Int_t* FixedArrayVar::GetDim() const
 {
-  // Return array of dimensions of the array. Scalers are always return a
+  // Return array of dimensions of the array. Scalars always return a
   // pointer to 1 (as with array definition [1]).
 
   return fParsedName.GetDim();
@@ -84,12 +84,12 @@ Bool_t FixedArrayVar::HasSameSize( const Variable& rhs ) const
   // Compare the size (=number of elements) of this variable to that of 'rhs'.
 
   if( typeid(*this) != typeid(rhs) )
-    return kFALSE;
+    return false;
 
-  const FixedArrayVar* other = dynamic_cast<const FixedArrayVar*>(&rhs);
+  const auto other = dynamic_cast<const FixedArrayVar*>(&rhs);
   assert( other );
   if( !other )
-    return kFALSE;
+    return false;
 
   return ( fParsedName.GetNdim() == other->fParsedName.GetNdim() &&
 	   fParsedName.GetLen()  == other->fParsedName.GetLen() );
@@ -116,7 +116,7 @@ Bool_t FixedArrayVar::IsVarArray() const
 {
   // Variable is a variable-sized array
 
-  return kFALSE;
+  return false;
 }
 
 //_____________________________________________________________________________
@@ -127,7 +127,7 @@ void FixedArrayVar::Print(Option_t* option) const
 
   fSelf->TNamed::Print(option);
 
-  if( strcmp(option, "FULL") ) return;
+  if( strcmp(option, "FULL") != 0 ) return;
 
   cout << "(" << GetTypeName() << ")=[";
   fParsedName.Print("dimonly");

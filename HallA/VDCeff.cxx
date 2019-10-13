@@ -37,12 +37,6 @@ using namespace std;
 const TString nhit_suffix( "nhit" );
 const TString eff_suffix(  "eff" );
 
-#if __cplusplus < 201103L
-# define SMART_PTR std::auto_ptr
-#else
-# define SMART_PTR std::unique_ptr
-#endif
-
 //_____________________________________________________________________________
 static void SafeDeleteHist( const TString& name, TH1F*& the_hist )
 {
@@ -54,7 +48,8 @@ static void SafeDeleteHist( const TString& name, TH1F*& the_hist )
     assert( name == obj->GetName() );
     delete the_hist;
   }
-  the_hist = 0; // Zero out now-invalid pointer, regardless of who deleted it
+  // Zero out now-invalid pointer, regardless of who deleted it
+  the_hist = nullptr;
 }
 
 //_____________________________________________________________________________
@@ -101,8 +96,8 @@ void VDCeff::Reset( Option_t* opt )
   // Clear event-by-event data
 
   Clear(opt);
-  for( variter_t it = fVDCvar.begin(); it != fVDCvar.end(); ++it ) {
-    it->Reset(opt);
+  for( auto& var : fVDCvar ) {
+    var.Reset(opt);
   }
 }
 
@@ -113,8 +108,7 @@ Int_t VDCeff::Begin( THaRunBase* )
 
   if( !IsOK() ) return -1;
 
-  for( variter_t it = fVDCvar.begin(); it != fVDCvar.end(); ++it ) {
-    VDCvar_t& thePlane = *it;
+  for( auto& thePlane : fVDCvar ) {
     assert( thePlane.nwire > 0 );
     thePlane.ncnt.assign( thePlane.nwire, 0 );
     thePlane.nhit.assign( thePlane.nwire, 0 );
@@ -161,8 +155,7 @@ THaAnalysisObject::EStatus VDCeff::Init( const TDatime& run_time )
 
   // Associate global variable pointers. This can and should be done
   // at every reinitialization (pointers in VDC class may have changed)
-  for( variter_t it = fVDCvar.begin(); it != fVDCvar.end(); ++it ) {
-    VDCvar_t& thePlane = *it;
+  for( auto& thePlane : fVDCvar ) {
     assert( !thePlane.name.IsNull() );
     thePlane.pvar = gHaVars->Find( thePlane.name );
     if( !thePlane.pvar ) {
@@ -178,7 +171,7 @@ THaAnalysisObject::EStatus VDCeff::Init( const TDatime& run_time )
 Int_t VDCeff::Process( const THaEvData& /*evdata*/ )
 {
   // Update VDC efficiency histograms with current event data.
-  // The data come from the VDC detetcor and are accessed via global variables
+  // The data come from the VDC detector and are accessed via global variables
   
   const char* const here = "Process";
 
@@ -187,8 +180,7 @@ Int_t VDCeff::Process( const THaEvData& /*evdata*/ )
   ++fNevt;
   bool cycle_event = ( (fNevt%fCycle) == 0 );
 
-  for( variter_t it = fVDCvar.begin(); it != fVDCvar.end(); ++it ) {
-    VDCvar_t& thePlane = *it;
+  for( auto& thePlane : fVDCvar ) {
 
     if( !thePlane.pvar ) continue;  // global variable wasn't found
 
@@ -214,8 +206,7 @@ Int_t VDCeff::Process( const THaEvData& /*evdata*/ )
       }
     }
 
-    for( Vsiter_t iw = fWire.begin(); iw != fWire.end(); ++iw ) {
-      Int_t wire = *iw;
+    for( Int_t wire : fWire ) {
       Int_t ngh2 = wire+2;
       if( ngh2 >= nwire ) continue;
 
@@ -275,9 +266,9 @@ Int_t VDCeff::ReadDatabase( const TDatime& date )
   try {
       const DBRequest request[] = {
       { "vdcvars",    &configstr,   kTString },
-      { "cycle",      &fCycle,      kInt,     0, 1 },
-      { "maxocc",     &fMaxOcc,     kDouble,  0, 1 },
-      { 0 }
+      { "cycle",      &fCycle,      kInt,     0, true },
+      { "maxocc",     &fMaxOcc,     kDouble,  0, true },
+      { nullptr }
     };
     status = LoadDB( f, date, request );
   }
@@ -293,9 +284,9 @@ Int_t VDCeff::ReadDatabase( const TDatime& date )
   if( configstr.Length() == 0 ) {
     Error( Here(here), "No VDC variables defined. Fix database." );
     return kInitError;
-  };
+  }
   // Parse the vdcvars string and set up definition structure for each item
-  SMART_PTR<TObjArray> vdcvars( configstr.Tokenize(separators) );
+  unique_ptr<TObjArray> vdcvars( configstr.Tokenize(separators) );
   Int_t nparams = vdcvars->GetLast()+1;
   if( nparams == 0 ) {
     Error( Here(here), "No VDC variable names in vdcvars = %s. Fix database.",
@@ -331,8 +322,7 @@ Int_t VDCeff::ReadDatabase( const TDatime& date )
       return kInitError;
     }
     // Check for duplicate name or histname
-    for( variter_t it = fVDCvar.begin(); it != fVDCvar.end(); ++it ) {
-      VDCvar_t& thePlane = *it;
+    for( auto& thePlane : fVDCvar ) {
       if( thePlane.name == name ) {
 	Error( Here(here), "Duplicate global variable name %s. "
 	       "Fix database.", name.Data() );
@@ -347,7 +337,7 @@ Int_t VDCeff::ReadDatabase( const TDatime& date )
     if( fDebug>2 )
       Info( Here(here), "Defining VDC variable %s", name.Data() );
 
-    fVDCvar.push_back( VDCvar_t(name, histname, nwire) );
+    fVDCvar.emplace_back(name, histname, nwire );
     VDCvar_t& thePlane = fVDCvar.back();
     thePlane.ncnt.reserve( thePlane.nwire );
     thePlane.nhit.reserve( thePlane.nwire );
@@ -355,7 +345,7 @@ Int_t VDCeff::ReadDatabase( const TDatime& date )
   }
 
   fWire.reserve( max_nwire*fMaxOcc );
-  fHitWire.assign( max_nwire, 0 );
+  fHitWire.assign( max_nwire, false );
 
   return kOK;
 }
@@ -365,8 +355,7 @@ void VDCeff::WriteHist()
 {
   // Write all defined histograms
 
-  for( variter_t it = fVDCvar.begin(); it != fVDCvar.end(); ++it ) {
-    VDCvar_t& thePlane = *it;
+  for( auto& thePlane : fVDCvar ) {
     if( thePlane.hist_nhit )
       thePlane.hist_nhit->Write();
     if( thePlane.hist_eff )
