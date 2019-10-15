@@ -195,10 +195,10 @@ void THaInterface::PrintLogo( Bool_t lite )
      Printf("  *                                              *");
      Printf("  *  Release %16s %18s *",HA_VERSION,HA_DATE);
      Printf("  *  Based on ROOT %8s %20s *",root_version,root_date);
-     //   Printf("  *             Development version              *");
+     Printf("  *             Development version              *");
      Printf("  *                                              *");
      Printf("  *            For information visit             *");
-     Printf("  *        http://hallaweb.jlab.org/podd/        *");
+     Printf("  * https://redmine.jlab.org/projects/podd/wiki/ *");
      Printf("  *                                              *");
      Printf("  ************************************************");
 #if ROOT_VERSION_CODE >= ROOT_VERSION(5,18,0)
