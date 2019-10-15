@@ -52,14 +52,14 @@ TString THaEvData::fgDefaultCrateMapName = "cratemap";
 //_____________________________________________________________________________
 
 THaEvData::THaEvData() :
-  fMap(0), first_decode(true), fTrigSupPS(true),
+  fMap(nullptr), first_decode(true), fTrigSupPS(true),
   fMultiBlockMode(false), fBlockIsDone(false),
-  fEpicsEvtType(0), buffer(0), fDebugFile(0), event_type(0), event_length(0),
-  event_num(0), run_num(0), evscaler(0), bank_tag(0), data_type(0),
-  block_size(0), tbLen(0), run_type(0), fRunTime(0),
+  fDataVersion(0), fEpicsEvtType(0), buffer(nullptr), fDebugFile(nullptr),
+  event_type(0), event_length(0), event_num(0), run_num(0), evscaler(0),
+  bank_tag(0), data_type(0), block_size(0), tbLen(0), run_type(0), fRunTime(0),
   evt_time(0), recent_event(0), buffmode(false), synchmiss(false),
   synchextra(false), fNSlotUsed(0), fNSlotClear(0),
-  fDoBench(false), fBench(0), fNeedInit(true), fDebug(0), fExtra(0)
+  fDoBench(false), fBench(nullptr), fNeedInit(true), fDebug(0), fExtra(nullptr)
 {
   fInstance = fgInstances.FirstNullBit();
   fgInstances.SetBitNumber(fInstance);
@@ -71,7 +71,7 @@ THaEvData::THaEvData() :
   memset(bankdat,0,MAXBANK*MAXROC*sizeof(BankDat_t));
   //memset(psfact,0,MAX_PSFACT*sizeof(int));
   memset(crateslot,0,MAXROC*MAXSLOT*sizeof(THaSlotData*));
-  fRunTime = time(0); // default fRunTime is NOW
+  fRunTime = time(nullptr); // default fRunTime is NOW
   fEpicsEvtType = Decoder::EPICS_EVTYPE;  // default for Hall A
 }
 
@@ -100,8 +100,7 @@ const char* THaEvData::DevType(int crate, int slot) const {
 }
 
 Int_t THaEvData::Init() {
-  Int_t ret = HED_OK;
-  ret = init_cmap();
+  Int_t ret = init_cmap();
   //  if (fMap) fMap->print();
   if (ret != HED_OK) return ret;
   ret = init_slotdata();
@@ -130,7 +129,7 @@ void THaEvData::EnableBenchmarks( Bool_t enable )
       fBench = new THaBenchmark;
   } else {
     delete fBench;
-    fBench = 0;
+    fBench = nullptr;
   }
 }
 
@@ -203,7 +202,7 @@ void THaEvData::hexdump(const char* cbuff, size_t nlen)
       cout << " " << hex << setfill('0') << setw(2) << c << dec;
     } cout << setfill(' ') << "  ";
     for(int i=0; i<NW; i++) {
-      char c = (i<nelem) ? *(p+i) : 0;
+      char c = (i<nelem) ? *(p+i) : (char)0;
       if(isgraph(c)||c==' ') cout << c; else cout << ".";
     } cout << endl;
     p += NW;
@@ -298,7 +297,6 @@ void THaEvData::PrintSlotData(int crate, int slot) const {
       cout << "THaEvData: Warning: Crate, slot combination";
       cout << "\nexceeds limits.  Cannot print"<<endl;
   }
-  return;
 }
 
 // To initialize the THaSlotData member on first call to decoder

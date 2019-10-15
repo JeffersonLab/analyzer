@@ -138,10 +138,10 @@ Int_t THaRunParameters::ReadDatabase( const TDatime& date )
 
   DBRequest request[] = {
     { "ebeam",  &E },
-    { "mbeam",  &M,  kDouble, 0, 1 },
-    { "qbeam",  &Q,  kDouble, 0, 1 },
-    { "dEbeam", &dE, kDouble, 0, 1 },
-    { 0 }
+    { "mbeam",  &M,  kDouble, 0, true },
+    { "qbeam",  &Q,  kDouble, 0, true },
+    { "dEbeam", &dE, kDouble, 0, true },
+    { nullptr }
   };
   Int_t err = LOAD( f, date, request, "" );
   fclose(f);

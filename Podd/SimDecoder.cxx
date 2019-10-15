@@ -10,6 +10,7 @@
 #include "THaVarList.h"
 #include "THaGlobals.h"
 #include <iostream>
+#include <algorithm>
 
 using namespace std;
 
@@ -23,7 +24,7 @@ Double_t MCTrackPoint::fgWindowSize = 1e-3;
 
 //_____________________________________________________________________________
 SimDecoder::SimDecoder()
-  : fWeight(1.0), fMCHits(0), fMCTracks(0), fIsSetup(false)
+  : fWeight(1.0), fMCHits(nullptr), fMCTracks(nullptr), fIsSetup(false)
 {
   // Constructor. Derived classes must allocate the track and hit
   // TClonesArrays using their respective hit and track classes
@@ -43,7 +44,7 @@ SimDecoder::SimDecoder()
         { "evtyp",     "Event type",     kInt,    0, &event_type },
         { "evlen",     "Event Length",   kInt,    0, &event_length },
         { "evtime",    "Event time",     kULong,  0, &evt_time },
-        { 0 }
+        { nullptr }
     };
     TString prefix("g");
     // Prevent global variable clash if there are several instances of us
@@ -171,7 +172,7 @@ Int_t SimDecoder::DefineVariables( THaAnalysisObject::EMode mode )
                                 "fMCPoints.Podd::MCTrackPoint.fHitResid" },
     { "pt.trkres", "Track residual (mm)",
                               "fMCPoints.Podd::MCTrackPoint.fTrackResid" },
-    { 0 }
+    { nullptr }
   };
 
   return THaAnalysisObject::
@@ -197,24 +198,20 @@ MCTrack::MCTrack( Int_t number, Int_t pid,
   : fNumber(number), fPID(pid), fOrigin(vertex),
     fMomentum(momentum), fNHits(0), fHitBits(0), fNHitsFound(0), fFoundBits(0),
     fReconFlags(0), fContamFlags(0), fMatchval(KBIG), fFitRank(-1),
-    fTrackRank(-1)
+    fTrackRank(-1), fMCFitPar{}, fRcFitPar{}
 {
-  for( Int_t i = 0; i < NFP; ++i ) {
-    fMCFitPar[i] = KBIG;
-    fRcFitPar[i] = KBIG;
-  }
+  fill_n( fMCFitPar, NFP, KBIG );
+  fill_n( fRcFitPar, NFP, KBIG );
 }
 
 //_____________________________________________________________________________
 MCTrack::MCTrack()
   : fNumber(0), fPID(0), fNHits(0), fHitBits(0), fNHitsFound(0),
     fFoundBits(0), fReconFlags(0), fContamFlags(0), fMatchval(KBIG),
-    fFitRank(-1), fTrackRank(-1)
+    fFitRank(-1), fTrackRank(-1), fMCFitPar{}, fRcFitPar{}
 {
-  for( Int_t i = 0; i < NFP; ++i ) {
-    fMCFitPar[i] = KBIG;
-    fRcFitPar[i] = KBIG;
-  }
+  fill_n( fMCFitPar, NFP, KBIG );
+  fill_n( fRcFitPar, NFP, KBIG );
 }
 
 //_____________________________________________________________________________
@@ -248,7 +245,7 @@ Int_t MCTrackPoint::Compare( const TObject* obj ) const
   // Returns -1 if this is smaller than rhs, 0 if equal, +1 if greater.
 
   assert( dynamic_cast<const MCTrackPoint*>(obj) );
-  const auto rhs = static_cast<const MCTrackPoint*>(obj);
+  auto rhs = static_cast<const MCTrackPoint*>(obj);
 
   if( fType  < rhs->fType  ) return -1;
   if( fType  > rhs->fType  ) return  1;

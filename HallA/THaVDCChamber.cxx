@@ -22,12 +22,8 @@
 #include "THaVDCHit.h"
 #include "TMath.h"
 
-#include <cstring>
-#include <cstdio>
-#include <cassert>
-
 //_____________________________________________________________________________
-THaVDCChamber::THaVDCChamber( const char* name, const char* description, // @suppress("Class members should be properly initialized")
+THaVDCChamber::THaVDCChamber( const char* name, const char* description,
 			      THaDetectorBase* parent )
   : THaSubDetector(name,description,parent),
     fSpacing(0), fSin_u(0), fCos_u(1), fSin_v(1), fCos_v(0), fInv_sin_vu(0)
@@ -125,7 +121,7 @@ Int_t THaVDCChamber::DefineVariables( EMode mode )
     { "pt.d_th",   "Point VDC tan(theta)",   "fPoints.THaVDCPoint.fTheta" },
     { "pt.d_ph",   "Point VDC tan(phi)",     "fPoints.THaVDCPoint.fPhi" },
     { "pt.paired", "Point is paired",        "fPoints.THaVDCPoint.HasPartner()" },
-    { 0 }
+    { nullptr }
   };
   return DefineVarsFromList( vars, mode );
 }
@@ -155,11 +151,7 @@ PointCoords_t THaVDCChamber::CalcDetCoords( const THaVDCCluster* ucl,
   // Project v0 into the u plane
   Double_t v = v0 - mv * GetSpacing();
 
-  PointCoords_t c;
-  c.x     = UVtoX(u,v);
-  c.y     = UVtoY(u,v);
-  c.theta = UVtoX(mu,mv);
-  c.phi   = UVtoY(mu,mv);
+  PointCoords_t c{ UVtoX(u,v), UVtoY(u,v), UVtoX(mu,mv), UVtoY(mu,mv) };
 
   return c;
 }
@@ -183,12 +175,12 @@ Int_t THaVDCChamber::MatchUVClusters()
 
   // Consider all possible uv cluster combinations
   for( Int_t iu = 0; iu < nu; ++iu ) {
-    THaVDCCluster* uClust = fU->GetCluster(iu);
+    auto uClust = fU->GetCluster(iu);
     if( TMath::Abs(uClust->GetT0()) > max_u_t0 )
       continue;
 
     for( Int_t iv = 0; iv < nv; ++iv ) {
-      THaVDCCluster* vClust = fV->GetCluster(iv);
+      auto vClust = fV->GetCluster(iv);
       if( TMath::Abs(vClust->GetT0()) > max_v_t0 )
 	continue;
 

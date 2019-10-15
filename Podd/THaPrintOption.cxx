@@ -19,14 +19,16 @@ ClassImp(THaPrintOption)
 
 //_____________________________________________________________________________
 THaPrintOption::THaPrintOption() : 
-  fString(0), fTokenStr(0), fNTokens(0), fTokens(0), fParam(0), fEmpty("")
+  fString(nullptr), fTokenStr(nullptr), fNTokens(0), fTokens(nullptr),
+  fParam(nullptr), fEmpty("")
 {
   // Default constructor
 }
 
 //_____________________________________________________________________________
 THaPrintOption::THaPrintOption( const char* str ) :
-  fString(0), fTokenStr(0), fNTokens(0), fTokens(0), fParam(0), fEmpty("")
+  fString(nullptr), fTokenStr(nullptr), fNTokens(0), fTokens(nullptr),
+  fParam(nullptr), fEmpty("")
 {
   // Normal constructor
   
@@ -39,7 +41,8 @@ THaPrintOption::THaPrintOption( const char* str ) :
 
 //_____________________________________________________________________________
 THaPrintOption::THaPrintOption( const THaPrintOption& rhs ) :
-  fString(0), fTokenStr(0), fNTokens(0), fTokens(0), fParam(0), fEmpty("")
+  fString(nullptr), fTokenStr(nullptr), fNTokens(0), fTokens(nullptr),
+  fParam(nullptr), fEmpty("")
 {
   // Copy constructor 
 
@@ -66,7 +69,7 @@ THaPrintOption& THaPrintOption::operator=(const char* rhs)
 {
   // Initialize object with a string
 
-  delete [] fString; fString = 0;
+  delete [] fString; fString = nullptr;
   fEmpty = "";
   if( rhs ) {
     fString = new char[ strlen(rhs)+1 ];
@@ -96,9 +99,9 @@ void THaPrintOption::Parse()
 
   const char* const delim = ", ";       // token delimiters
 
-  delete [] fTokenStr; fTokenStr = 0;
-  delete [] fTokens; fTokens = 0;
-  delete [] fParam; fParam = 0;
+  delete [] fTokenStr; fTokenStr = nullptr;
+  delete [] fTokens; fTokens = nullptr;
+  delete [] fParam; fParam = nullptr;
   fNTokens = 0;
   if( !fString || !*fString ) return;
 
@@ -110,7 +113,7 @@ void THaPrintOption::Parse()
   char* t = strtok( fTokenStr, delim );
   if( t ) fNTokens = 1;
   else    return;                           //Nothing to do
-  while( strtok( 0, delim )) fNTokens++;
+  while( strtok( nullptr, delim )) fNTokens++;
 
   // Set up arrays to hold token data
 
@@ -125,7 +128,7 @@ void THaPrintOption::Parse()
   strcpy( fTokenStr, fString );
   strtok( fTokenStr, delim );
   int i = 1;
-  while( (t = strtok( 0, delim )) ) {
+  while( (t = strtok( nullptr, delim )) ) {
     fTokens[i]  = t;
     fParam[i++] = atoi(t);
   }

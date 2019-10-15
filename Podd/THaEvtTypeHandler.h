@@ -31,7 +31,7 @@ public:
    virtual void SetEvtType(int evtype);
    virtual Int_t GetNumTypes() { return eventtypes.size(); };
    virtual Int_t GetEvtType() {
-     if (eventtypes.size()==0) return -1;
+     if (eventtypes.empty()) return -1;
      return eventtypes[0];
    }
    virtual std::vector<Int_t> GetEvtTypes() { return eventtypes; };

@@ -33,10 +33,6 @@ void Lecroy1881Module::Init()
   FastbusModule::Init();
 }
 
-Lecroy1881Module::~Lecroy1881Module()
-{
-}
-
 }
 
 ClassImp(Decoder::Lecroy1881Module)

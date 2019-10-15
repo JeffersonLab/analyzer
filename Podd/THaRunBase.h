@@ -17,7 +17,7 @@ class THaEvData;
 class THaRunBase : public TNamed {
   
 public:
-  THaRunBase( const char* description="" );
+  explicit THaRunBase( const char* description="" );
   THaRunBase( const THaRunBase& run );
   virtual THaRunBase& operator=( const THaRunBase& rhs );
   virtual ~THaRunBase();

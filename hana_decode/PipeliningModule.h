@@ -40,7 +40,9 @@ public:
     : fNWarnings(0), fBlockHeader(0), data_type_def(15), fFirstTime(true),
       index_buffer(0) {}
    PipeliningModule(Int_t crate, Int_t slot);
-   virtual ~PipeliningModule();
+   PipeliningModule(const PipeliningModule &fh) = delete;
+   PipeliningModule& operator=(const PipeliningModule &fh) = delete;
+   virtual ~PipeliningModule() = default;
 
    void PrintBlocks();
 
@@ -61,10 +63,6 @@ protected:
    UInt_t index_buffer;
    UInt_t GetIndex();
 
-private:
-
-   PipeliningModule(const PipeliningModule &fh);
-   PipeliningModule& operator=(const PipeliningModule &fh);
    ClassDef(Decoder::PipeliningModule,0)  // A pipelining module
 
 };

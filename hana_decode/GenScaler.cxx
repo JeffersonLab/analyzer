@@ -20,10 +20,10 @@ namespace Decoder {
 
   GenScaler::GenScaler(Int_t crate, Int_t slot)
     : VmeModule(crate, slot),
-      fIsDecoded(false), fFirstTime(true), fDeltaT(0),
-      fDataArray(0), fPrevData(0), fRate(0),
+      fIsDecoded(false), fFirstTime(true), fDeltaT(false),
+      fDataArray(nullptr), fPrevData(nullptr), fRate(nullptr),
       fClockChan(0), fNumChanMask(0), fNumChanShift(0),
-      fHasClock(false), fClockRate(0), fNormScaler(0)
+      fHasClock(false), fClockRate(0), fNormScaler(nullptr)
   {
     fWordsExpect = 32;
     fNumChan = 0;
@@ -42,7 +42,7 @@ namespace Decoder {
     fIsDecoded = false;
     fClockChan = -1;
     fClockRate = 0;
-    fNormScaler = 0;
+    fNormScaler = nullptr;
     fNumChanMask = 0xff;
     fNumChanShift = 0;
     fDeltaT = DEFAULT_DELTAT;  // a default time interval between readings

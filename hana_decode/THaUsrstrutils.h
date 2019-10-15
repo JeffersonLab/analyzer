@@ -92,8 +92,8 @@ public:
   static const int MAX;
   static const unsigned long LONGMAX;
 
-  THaUsrstrutils() {}
-  virtual ~THaUsrstrutils() {}
+  THaUsrstrutils() = default;
+  virtual ~THaUsrstrutils() = default;
   int getflag(const char *s) const;
   char *getstr(const char *s) const;
   unsigned int getint(const char *s) const;
@@ -119,7 +119,6 @@ void THaUsrstrutils::getflagpos(const char *s, const char **pos_ret,
 				const char **val_ret) const
 {
   getflagpos_instring(configstr,s,pos_ret,val_ret);
-  return;
 }
 
 }

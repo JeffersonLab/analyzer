@@ -35,26 +35,25 @@ void THaEpics::Print() {
   cout << "\n\n====================== \n";
   cout << "Print of Epics Data : "<<endl;
   Int_t j = 0;
-  for (map<string, vector<EpicsChan> >::iterator pm =
-	 epicsData.begin(); pm != epicsData.end(); ++pm) {
-    const vector<EpicsChan>& vepics = pm->second;
-    const string& tag = pm->first;
+  for( auto& pm : epicsData ) {
+    const vector<EpicsChan>& vepics = pm.second;
+    const string& tag = pm.first;
     j++;
     cout << "\n\nEpics Var #" << j;
     cout << "   Var Name =  \""<<tag<<"\""<<endl;
     cout << "Size of epics vector "<<vepics.size();
-    for (UInt_t k=0; k<vepics.size(); k++) {
-      cout << "\n Tag = "<<vepics[k].GetTag();
+    for( const auto& chan : vepics ) {
+      cout << "\n Tag = " << chan.GetTag();
       //      if (strstr(vepics[k].GetTag().c_str(),"VMI3128")!=nullptr) {
       //	cout << "\n GOT ONE "<<k<<endl;
       //        exit(0);
       //      }
-      cout << "   Evnum = "<<vepics[k].GetEvNum();
-      cout << "   Date = "<<vepics[k].GetDate();
-      cout << "   Timestamp = "<<vepics[k].GetTimeStamp();
-      cout << "   Data = "<<vepics[k].GetData();
-      cout << "   String = "<<vepics[k].GetString();
-      cout << "   Units = "<<vepics[k].GetUnits();
+      cout << "   Evnum = " << chan.GetEvNum();
+      cout << "   Date = " << chan.GetDate();
+      cout << "   Timestamp = " << chan.GetTimeStamp();
+      cout << "   Data = " << chan.GetData();
+      cout << "   String = " << chan.GetString();
+      cout << "   Units = " << chan.GetUnits();
     }
     cout << endl;
   }
@@ -63,8 +62,7 @@ void THaEpics::Print() {
 Bool_t THaEpics::IsLoaded(const char* tag) const
 {
   const vector<EpicsChan> ep = GetChan(tag);
-  if (ep.size() == 0) return false;
-  return true;
+  return !ep.empty();
 }
 
 Double_t THaEpics::GetData (const char* tag, int event) const
@@ -97,8 +95,7 @@ vector<EpicsChan> THaEpics::GetChan(const char *tag) const
   // where 'tag' is the name of the Epics variable.
   vector<EpicsChan> ep;
   ep.clear();
-  map< string, vector<EpicsChan> >::const_iterator pm = 
-           epicsData.find(string(tag));
+  auto pm = epicsData.find(string(tag));
   if (pm != epicsData.end()) ep = pm->second;
   return ep;
 }
@@ -108,11 +105,12 @@ Int_t THaEpics::FindEvent(const vector<EpicsChan>& ep, int event) const
 {
   // Return the index in the vector of Epics data 
   // nearest in event number to event 'event'.
-  if (ep.size() == 0) return -1;
-  int myidx = ep.size()-1;
+  if (ep.empty())
+    return -1;
+  Int_t myidx = ep.size()-1;
   if (event == 0) return myidx;  // return last event 
   double min = 9999999;
-  for (UInt_t k = 0; k < ep.size(); k++) {
+  for (size_t k = 0; k < ep.size(); k++) {
     double diff = event - ep[k].GetEvNum();
     if (diff < 0) diff = -1*diff;
     if (diff < min) {

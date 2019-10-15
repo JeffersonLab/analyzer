@@ -43,8 +43,8 @@ THaSecondaryKine::THaSecondaryKine( const char* name, const char* description,
   fPX_cm(kBig), fTheta_x_cm(kBig), fPhi_x_cm(kBig), fTheta_b_cm(kBig),
   fPhi_b_cm(kBig), fTX_cm(kBig), fTB_cm(kBig), fTtot_cm(kBig), fMandelS(kBig),
   fMandelT(kBig), fMandelU(kBig),
-  fMX(secondary_mass), fSpectroName(secondary_spectro), fSpectro(0),
-  fPrimaryName(primary_kine), fPrimary(0)
+  fMX(secondary_mass), fSpectroName(secondary_spectro), fSpectro(nullptr),
+  fPrimaryName(primary_kine), fPrimary(nullptr)
 {
   // Constructor
 
@@ -117,7 +117,7 @@ Int_t THaSecondaryKine::DefineVariables( EMode mode )
     { "MandelS",  "Mandelstam s for secondary vertex (GeV^2)", "fMandelS" },
     { "MandelT",  "Mandelstam t for secondary vertex (GeV^2)", "fMandelT" },
     { "MandelU",  "Mandelstam u for secondary vertex (GeV^2)", "fMandelU" },
-    { 0 }
+    { nullptr }
   };
   return DefineVarsFromList( vars, mode );
 }

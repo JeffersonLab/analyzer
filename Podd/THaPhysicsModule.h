@@ -12,7 +12,7 @@
 class THaPhysicsModule : public THaAnalysisObject {
   
 public:
-  virtual ~THaPhysicsModule();
+  virtual ~THaPhysicsModule() = default;
   
   virtual void  Clear( Option_t* opt="" ) { 
     THaAnalysisObject::Clear(opt); 

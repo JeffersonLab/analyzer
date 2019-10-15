@@ -48,7 +48,7 @@ using namespace std;
 
 //_____________________________________________________________________________
 THaHRS::THaHRS( const char* name, const char* description ) :
-  THaSpectrometer( name, description ), fRefDet(0)
+  THaSpectrometer( name, description ), fRefDet(nullptr)
 {
   // Constructor
 
@@ -96,7 +96,7 @@ THaAnalysisObject::EStatus THaHRS::Init( const TDatime& run_time )
   // This behavior can be turned off by calling AutoStandardDetectors(false).
 
   if( TestBit(kAutoStdDets) ) {
-    THaDetector* pdet = static_cast<THaDetector*>( fDetectors->FindObject("vdc") );
+    auto pdet = static_cast<THaDetector*>( fDetectors->FindObject("vdc") );
     if( !pdet ) {
       AddDetector( new THaScintillator("s2", "S2 scintillator"), true, true );
       AddDetector( new THaScintillator("s1", "S1 scintillator"), true, true );
@@ -172,8 +172,8 @@ Int_t THaHRS::FindVertices( TClonesArray& tracks )
   TIter nextTrack( fTrackingDetectors );
 
   nextTrack.Reset();
-  while( THaTrackingDetector* theTrackDetector =
-	 static_cast<THaTrackingDetector*>( nextTrack() )) {
+  while( auto theTrackDetector =
+    static_cast<THaTrackingDetector*>( nextTrack() )) {
 #ifdef WITH_DEBUG
     if( fDebug>1 ) cout << "Call FineTrack() for " 
 			<< theTrackDetector->GetName() << "... ";
@@ -189,7 +189,7 @@ Int_t THaHRS::FindVertices( TClonesArray& tracks )
     fTracks->Sort();
     // Reassign track indexes. Sorting may have changed the order
     for( int i = 0; i < fTracks->GetLast()+1; i++ ) {
-      THaTrack* theTrack = static_cast<THaTrack*>( fTracks->At(i) );
+      auto theTrack = static_cast<THaTrack*>( fTracks->At(i) );
       assert( theTrack );
       theTrack->SetIndex(i);
     }
@@ -244,9 +244,8 @@ Int_t THaHRS::TrackTimes( TClonesArray* Tracks )
   //   t0 and beta are solved for.
   //
   for ( Int_t i=0; i < ntrack; i++ ) {
-    THaTrack* track = static_cast<THaTrack*>(Tracks->At(i));
-    THaTrackProj* tr_ref = static_cast<THaTrackProj*>
-      (fRefDet->GetTrackHits()->At(i));
+    auto track = static_cast<THaTrack*>(Tracks->At(i));
+    auto tr_ref = static_cast<THaTrackProj*>(fRefDet->GetTrackHits()->At(i));
     
     Double_t pathlref = tr_ref->GetPathLen();
     
@@ -257,10 +256,10 @@ Int_t THaHRS::TrackTimes( TClonesArray* Tracks )
     TIter nextSc( fNonTrackingDetectors );
     THaNonTrackingDetector *det;
     while ( ( det = static_cast<THaNonTrackingDetector*>(nextSc()) ) ) {
-      THaScintillator *sc = dynamic_cast<THaScintillator*>(det);
+      auto sc = dynamic_cast<THaScintillator*>(det);
       if ( !sc ) continue;
 
-      const THaTrackProj *trh = static_cast<THaTrackProj*>(sc->GetTrackHits()->At(i));
+      const auto trh = static_cast<THaTrackProj*>(sc->GetTrackHits()->At(i));
       
       Int_t pad = trh->GetChannel();
       if (pad<0) continue;

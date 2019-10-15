@@ -143,7 +143,7 @@ Int_t CodaDecoder::LoadEvent(const UInt_t* evbuffer)
      }
      recent_event = event_num;
 
-     if (fdfirst && (fDebugFile!=0)) {
+     if (fdfirst && fDebugFile) {
        fdfirst=false;
        CompareRocs();
      }
@@ -516,7 +516,6 @@ Int_t CodaDecoder::bank_decode( Int_t roc, const UInt_t* evbuffer,
   if (ihi >  GetEvLength()) ihi=GetEvLength();
   for (i=ilo; i<ihi; i++) rdat[i-ilo] = GetRawData(i);
  
-  return;
 }
 
 //_____________________________________________________________________________

@@ -60,8 +60,7 @@ THaVhist::~THaVhist()
   if (fMyFormY) delete fFormY;
   if (fMyCut) delete fCut;
   if( TROOT::Initialized() ) {
-    for (std::vector<TH1*>::iterator ith = fH1.begin();
-	 ith != fH1.end(); ++ith) delete *ith;
+    for( auto& ith : fH1 ) delete ith;
   }
 }
 
@@ -74,7 +73,7 @@ void THaVhist::CheckValidity( )
      ErrPrint();
      cerr << "THaVhist:ERROR:: Inconsistent sizes."<<endl;
   }
-  if (fFormX == 0) {
+  if (fFormX == nullptr) {
      fProc = false;
      ErrPrint();
      cerr << "THaVhist:ERROR:: No X axis defined."<<endl;
@@ -101,8 +100,7 @@ Int_t THaVhist::Init( )
 
   const int ldebug = 0;
 
-  for (std::vector<TH1*>::iterator ith = fH1.begin();
-       ith != fH1.end(); ++ith) delete *ith;
+  for( auto& ith : fH1 ) delete ith;
   fH1.clear();
   fInitStat = 0;
   Int_t status;
@@ -115,10 +113,10 @@ Int_t THaVhist::Init( )
      fInitStat = kNoBinX;
      return fInitStat;
   }
-  if (fFormX == 0) {
-     if (fVarX == "") {
-       cerr << "THaVhist:WARNING:: Empty X formula."<<endl;
-     }
+  if (fFormX == nullptr) {
+    if( fVarX.empty() ) {
+      cerr << "THaVhist:WARNING:: Empty X formula." << endl;
+    }
      sname = fName+"X";
      if (ldebug) cout << "THaVhist ::  X var "<<sname<<endl;
 
@@ -140,8 +138,8 @@ Int_t THaVhist::Init( )
 
   if (ldebug) cout << "THaVhist :: Y bins "<<fNbinY<<endl;
 
-  if (fNbinY != 0 && fFormY == 0) {
-     if (fVarY == "") {
+  if (fNbinY != 0 && fFormY == nullptr) {
+    if( fVarY.empty()) {
        cerr << "THaVhist:WARNING:: Empty Y formula."<<endl;
      }
      sname = fName+"Y";
@@ -160,7 +158,7 @@ Int_t THaVhist::Init( )
        return fInitStat;
      }
   }
-  if (fCut == 0 && HasCut()) {
+  if (fCut == nullptr && HasCut()) {
      sname = fName+"Cut";
      fCut = new THaVform("cut",sname.c_str(),fScut.c_str());
      fMyCut = true;
@@ -213,7 +211,6 @@ void THaVhist::ReAttach( )
   if (fFormX && fMyFormX) fFormX->ReAttach();
   if (fFormY && fMyFormY) fFormY->ReAttach();
   if (fCut && fMyCut) fCut->ReAttach();
-  return;
 }
 
 
@@ -551,8 +548,7 @@ Int_t THaVhist::Process()
 //_____________________________________________________________________________
 Int_t THaVhist::End() 
 {
-  for (vector<TH1* >::iterator ith = fH1.begin(); 
-      ith != fH1.end(); ++ith ) (*ith)->Write();
+  for( auto& ith : fH1 ) ith->Write();
   return 0;
 }
 

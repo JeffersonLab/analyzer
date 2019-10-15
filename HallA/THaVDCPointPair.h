@@ -19,7 +19,8 @@ public:
   THaVDCPointPair( THaVDCPoint* lp, THaVDCPoint* up, Double_t spacing )
     : fLowerPoint(lp), fUpperPoint(up), fSpacing(spacing), fError(1e38),
       fStatus(0) {}
-  virtual ~THaVDCPointPair() {}
+  THaVDCPointPair() = delete;
+  virtual ~THaVDCPointPair() = default;
 
   void            Analyze();
   void            Associate( THaTrack* track );
@@ -34,7 +35,7 @@ public:
   Bool_t          HasUsedCluster() const;
   virtual Bool_t  IsSortable() const { return true; }
   virtual void    Print( Option_t* opt="" ) const;
-  void            Release();
+//  void            Release();
   void            SetStatus( Int_t i ) { fStatus = i; }
   void            Use();
 
@@ -53,9 +54,6 @@ protected:
   Double_t        fSpacing;     // Spacing between lower and upper chambers [m]
   Double_t        fError;       // Goodness of match between the points
   Int_t           fStatus;      // Status flag
-
-private:
-  THaVDCPointPair();
 
   ClassDef(THaVDCPointPair,0)     // Pair of lower/upper VDC points
 };

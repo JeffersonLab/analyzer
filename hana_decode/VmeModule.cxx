@@ -16,9 +16,6 @@ namespace Decoder {
 VmeModule::VmeModule(Int_t crate, Int_t slot) : Module(crate,slot) {
 }
 
-VmeModule::~VmeModule() {
-}
-
 Bool_t VmeModule::IsSlot(UInt_t rdata) {
   // Simplest version of IsSlot relies on a unique header.
   if ((rdata & fHeaderMask)==fHeader) {

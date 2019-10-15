@@ -57,7 +57,7 @@ Int_t THaBPM::ReadDatabase( const TDatime& date )
     // Read configuration parameters
     DBRequest config_request[] = {
       { "detmap",    &detmap,  kIntV },
-      { 0 }
+      { nullptr }
     };
     err = LoadDB( file, date, config_request, fPrefix );
   }
@@ -73,10 +73,10 @@ Int_t THaBPM::ReadDatabase( const TDatime& date )
     memset( offsets  , 0, sizeof( offsets ) );
     DBRequest calib_request[] = {
       { "calib_rot",   &fCalibRot },
-      { "pedestals",   pedestals, kDouble, NCHAN, 1 },
-      { "rotmatrix",   rotations, kDouble, NCHAN, 1 },
-      { "offsets"  ,   offsets,   kDouble, 2    , 1 },
-      { 0 }
+      { "pedestals",   pedestals, kDouble, NCHAN, true },
+      { "rotmatrix",   rotations, kDouble, NCHAN, true },
+      { "offsets"  ,   offsets,   kDouble, 2    , true },
+      { nullptr }
     };
     err = LoadDB( file, date, calib_request, fPrefix );
   }
@@ -117,7 +117,7 @@ Int_t THaBPM::DefineVariables( EMode mode )
     { "z", "reconstructed z-position", "fPosition.fZ"},
     { "rotpos1", "position in bpm system","GetRotPosX()"},
     { "rotpos2", "position in bpm system","GetRotPosY()"},
-    { 0 }
+    { nullptr }
   };
     
 

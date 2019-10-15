@@ -93,10 +93,8 @@ protected:
     FVarDef_t( EVariableType t, void* p, Int_t i ) : type(t), obj(p), index(i) {}
     FVarDef_t( const FVarDef_t& rhs );
     FVarDef_t& operator=( const FVarDef_t& rhs );
-#if __cplusplus >= 201103L
     FVarDef_t( FVarDef_t&& rhs ) noexcept;
     FVarDef_t& operator=( FVarDef_t&& rhs ) noexcept;
-#endif
     ~FVarDef_t();
   };
   std::vector<FVarDef_t> fVarDef;      //Global variables referenced in formula

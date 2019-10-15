@@ -28,7 +28,7 @@ static const char* fgThisClass = "THaRun";
 
 //_____________________________________________________________________________
 THaRun::THaRun( const char* fname, const char* description ) :
-  THaCodaRun(description), fFilename(fname), fMaxScan(fgMaxScan)
+  THaCodaRun(description), fFilename(fname), fMaxScan(fgMaxScan), fSegment(0)
 {
   // Normal & default constructor
 
@@ -42,11 +42,11 @@ THaRun::THaRun( const char* fname, const char* description ) :
 //_____________________________________________________________________________
 THaRun::THaRun( const vector<TString>& pathList, const char* filename,
 		const char* description )
-  : THaCodaRun(description), fMaxScan(fgMaxScan)
+  : THaCodaRun(description), fMaxScan(fgMaxScan), fSegment(0)
 {
   //  cout << "Looking for file:\n";
-  for(vector<TString>::size_type i=0; i<pathList.size(); i++) {
-    fFilename = Form( "%s/%s", pathList[i].Data(), filename );
+  for(const auto & path : pathList) {
+    fFilename = Form("%s/%s", path.Data(), filename );
     //cout << "\t'" << fFilename << "'" << endl;
 
     if( !gSystem->AccessPathName(fFilename, kReadPermission) )
@@ -63,7 +63,7 @@ THaRun::THaRun( const vector<TString>& pathList, const char* filename,
 
 //_____________________________________________________________________________
 THaRun::THaRun( const THaRun& rhs ) :
-  THaCodaRun(rhs), fFilename(rhs.fFilename), fMaxScan(rhs.fMaxScan)
+  THaCodaRun(rhs), fFilename(rhs.fFilename), fMaxScan(rhs.fMaxScan), fSegment(0)
 {
   // Copy ctor
 
@@ -125,11 +125,11 @@ Int_t THaRun::Compare( const TObject* obj ) const
   // Used by ROOT containers.
 
   if (this == obj) return 0;
-  const THaRunBase* rhs = dynamic_cast<const THaRunBase*>(obj);
+  auto rhs = dynamic_cast<const THaRunBase*>(obj);
   if( !rhs ) return -1;
   if( *this < *rhs )       return -1;
   else if( *rhs < *this )  return  1;
-  const THaRun* rhsr = dynamic_cast<const THaRun*>(rhs);
+  const auto rhsr = dynamic_cast<const THaRun*>(rhs);
   if( !rhsr ) return 0;
   if( fSegment < rhsr->fSegment ) return -1;
   else if( rhsr->fSegment < fSegment ) return 1;
@@ -188,7 +188,7 @@ Int_t THaRun::ReadInitInfo()
   Int_t status = READ_OK;
   if( fMaxScan > 0 ) {
     if( fSegment == 0 ) {
-      THaEvData* evdata = static_cast<THaEvData*>(gHaDecoder->New());
+      auto evdata = static_cast<THaEvData*>(gHaDecoder->New());
       // Disable advanced processing
       evdata->EnableScalers(false);
       evdata->EnableHelicity(false);
@@ -259,14 +259,13 @@ Int_t THaRun::ReadInitInfo()
 	  fnames.push_back(s);
 	}
       }
-      for( vector<TString>::size_type i = 0; i < fnames.size(); ++i ) {
-	s = fnames[i];
+      for(const auto & fname : fnames) {
 	if( !gSystem->AccessPathName(s, kReadPermission) ) {
 	  THaCodaData* save_coda = fCodaData;
 	  Int_t        save_seg  = fSegment;
 	  fCodaData = new THaCodaFile;
 	  fSegment  = 0;
-	  if( fCodaData->codaOpen(s) == CODA_OK )
+	  if( fCodaData->codaOpen(fname) == CODA_OK )
 	    status = ReadInitInfo();
 	  delete fCodaData;
 	  fSegment  = save_seg;

@@ -195,10 +195,10 @@ static Int_t ParseMatrixElements( const string& MEstring,
 		Warning( Here(here,prefix), "Duplicate definition of focal plane "
 			"matrix element %s. Using first definition.",
 			w.c_str() );
-	      } else
-		m = ME;
-	    } else
-	      mat->push_back(ME);
+              } else
+                m = ME;
+            } else
+              mat->push_back(ME);
 	  }
 	  findnext = true;
 	  if( !havenext )
@@ -209,7 +209,7 @@ static Int_t ParseMatrixElements( const string& MEstring,
     if( findnext ) {
       cur = matrix_map.find(word);
       if( cur == matrix_map.end() ) {
-	// Error( Here(here,prefix), "Unknown matrix element type %s. Fix database.",
+        // Error( Here(here,prefix), "Unknown matrix element type %s. Fix database.",
 	// 	 word.c_str() );
 	// return THaAnalysisObject::kInitError;
 	continue;
@@ -556,7 +556,7 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
   // Mark pairs as partners, starting with the best matches,
   // until all tracks are marked.
   for( int i = 0; i < nPairs; i++ ) {
-    THaVDCPointPair* thePair = static_cast<THaVDCPointPair*>( fLUpairs->At(i) );
+    auto thePair = static_cast<THaVDCPointPair*>( fLUpairs->At(i) );
     assert( thePair );
     assert( thePair->GetError() < fErrorCutoff );
 
@@ -687,14 +687,13 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
   if( tracks && n_exist > n_mod ) {
     //    bool modified = false;
     for( int i = 0; i < tracks->GetLast()+1; i++ ) {
-      THaTrack* theTrack = static_cast<THaTrack*>( tracks->At(i) );
+      auto theTrack = static_cast<THaTrack*>( tracks->At(i) );
       // Track created by this class and not updated?
       if( (theTrack->GetCreator() == this) &&
 	  ((theTrack->GetFlag() & kStageMask) != theStage ) ) {
 	// First, release clusters pointing to this track
 	for( int j = 0; j < nPairs; j++ ) {
-	  THaVDCPointPair* thePair
-	    = static_cast<THaVDCPointPair*>( fLUpairs->At(i) );
+	  auto thePair = static_cast<THaVDCPointPair*>( fLUpairs->At(i) );
 	  assert(thePair);
 	  if( thePair->GetTrack() == theTrack ) {
 	    thePair->Associate(nullptr);
@@ -724,7 +723,7 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
   // Assign index to each track (0 = first/"best", 1 = second, etc.)
   if( tracks ) {
     for( int i = 0; i < tracks->GetLast()+1; i++ ) {
-      THaTrack* theTrack = static_cast<THaTrack*>( tracks->At(i) );
+      auto theTrack = static_cast<THaTrack*>( tracks->At(i) );
       assert( theTrack );
       theTrack->SetIndex(i);
     }
@@ -814,7 +813,7 @@ Int_t THaVDC::FindVertices( TClonesArray& tracks )
 
   Int_t n_exist = tracks.GetLast()+1;
   for( Int_t t = 0; t < n_exist; t++ ) {
-    THaTrack* theTrack = static_cast<THaTrack*>( tracks.At(t) );
+    auto theTrack = static_cast<THaTrack*>( tracks.At(t) );
     CalcTargetCoords(theTrack);
   }
 
@@ -936,7 +935,7 @@ void THaVDC::CalcTargetCoords( THaTrack* track )
   phi = CalcTargetVar(fPMatrixElems, powers)+CalcTargetVar(fPTAMatrixElems,powers);
   y = CalcTargetVar(fYMatrixElems, powers)+CalcTargetVar(fYTAMatrixElems,powers);
 
-  THaSpectrometer *app = static_cast<THaSpectrometer*>(GetApparatus());
+  auto app = static_cast<THaSpectrometer*>(GetApparatus());
   // calculate momentum
   dp = CalcTargetVar(fDMatrixElems, powers);
   p  = app->GetPcentral() * (1.0+dp);
@@ -1022,10 +1021,8 @@ void THaVDC::CorrectTimeOfFlight(TClonesArray& tracks)
   const static Double_t v = 3.0e-8;   // for now, assume that everything travels at c
 
   // get scintillator planes
-  THaScintillator* s1 = static_cast<THaScintillator*>
-    ( GetApparatus()->GetDetector("s1") );
-  THaScintillator* s2 = static_cast<THaScintillator*>
-    ( GetApparatus()->GetDetector("s2") );
+  auto s1 = static_cast<THaScintillator*>( GetApparatus()->GetDetector("s1") );
+  auto s2 = static_cast<THaScintillator*>( GetApparatus()->GetDetector("s2") );
 
   if( (s1 == nullptr) || (s2 == nullptr) )
     return;
@@ -1038,7 +1035,7 @@ void THaVDC::CorrectTimeOfFlight(TClonesArray& tracks)
   Int_t n_exist = tracks.GetLast()+1;
   //cerr<<"num tracks: "<<n_exist<<endl;
   for( Int_t t = 0; t < n_exist; t++ ) {
-    THaTrack* track = static_cast<THaTrack*>( tracks.At(t) );
+    auto track = static_cast<THaTrack*>( tracks.At(t) );
 
     // calculate the correction, since it's on a per track basis
     Double_t s1_dist, vdc_dist, dist, tdelta;
@@ -1061,8 +1058,7 @@ void THaVDC::CorrectTimeOfFlight(TClonesArray& tracks)
     // apply the correction
     Int_t n_clust = track->GetNclusters();
     for( Int_t i = 0; i < n_clust; i++ ) {
-      THaVDCPoint* the_point =
-	static_cast<THaVDCPoint*>( track->GetCluster(i) );
+      auto the_point = static_cast<THaVDCPoint*>( track->GetCluster(i) );
       if( !the_point )
 	continue;
 
@@ -1077,8 +1073,7 @@ void THaVDC::FindBadTracks(TClonesArray& tracks)
 {
   // Flag tracks that don't intercept S2 scintillator as bad
 
-  THaScintillator* s2 = static_cast<THaScintillator*>
-    ( GetApparatus()->GetDetector("s2") );
+  auto s2 = static_cast<THaScintillator*>( GetApparatus()->GetDetector("s2") );
 
   if(s2 == nullptr) {
     //cerr<<"Could not find s2 plane!!"<<endl;
@@ -1087,7 +1082,7 @@ void THaVDC::FindBadTracks(TClonesArray& tracks)
 
   Int_t n_exist = tracks.GetLast()+1;
   for( Int_t t = 0; t < n_exist; t++ ) {
-    THaTrack* track = static_cast<THaTrack*>( tracks.At(t) );
+    auto track = static_cast<THaTrack*>( tracks.At(t) );
 
     // project the current x and y positions into the s2 plane
     // if the tracks go out of the bounds of the s2 plane,

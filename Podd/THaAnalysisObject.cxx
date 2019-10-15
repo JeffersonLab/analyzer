@@ -30,7 +30,7 @@
 
 #include <cstring>
 #include <cctype>
-#include <errno.h>
+#include <cerrno>
 #include <algorithm>
 #include <iostream>
 #include <sstream>
@@ -53,7 +53,7 @@ TList* THaAnalysisObject::fgModules = nullptr;
 const Double_t THaAnalysisObject::kBig = 1.e38;
 
 // Mutex for concurrent access to global Here function
-static TVirtualMutex* gHereMutex = 0;
+static TVirtualMutex* gHereMutex = nullptr;
 
 //_____________________________________________________________________________
 THaAnalysisObject::THaAnalysisObject( const char* name, 
@@ -61,7 +61,7 @@ THaAnalysisObject::THaAnalysisObject( const char* name,
   TNamed(name,description), fPrefix(nullptr), fStatus(kNotinit),
   fDebug(0), fIsInit(false), fIsSetup(false), fProperties(0),
   fOKOut(false), fInitDate(19950101,0), fNEventsWithWarnings(0),
-  fExtra(0)
+  fExtra(nullptr)
 {
   // Constructor
 
@@ -73,7 +73,7 @@ THaAnalysisObject::THaAnalysisObject( const char* name,
 THaAnalysisObject::THaAnalysisObject()
   : fPrefix(nullptr), fStatus(kNotinit), fDebug(0), fIsInit(false),
     fIsSetup(false), fProperties(), fOKOut(false), fNEventsWithWarnings(0),
-    fExtra(0)
+    fExtra(nullptr)
 {
   // only for ROOT I/O
 }
@@ -83,16 +83,16 @@ THaAnalysisObject::~THaAnalysisObject()
 {
   // Destructor
 
-  delete fExtra; fExtra = 0;
+  delete fExtra; fExtra = nullptr;
 
   if (fgModules) {
     fgModules->Remove( this );
     if( fgModules->GetSize() == 0 ) {
       delete fgModules;
-      fgModules = 0;
+      fgModules = nullptr;
     }
   }
-  delete [] fPrefix; fPrefix = 0;
+  delete [] fPrefix; fPrefix = nullptr;
 }
 
 //_____________________________________________________________________________
@@ -123,8 +123,7 @@ Int_t THaAnalysisObject::End( THaRunBase* /* run */ )
 
   if( !fMessages.empty() ) {
     ULong64_t ntot = 0;
-    for( map<string,UInt_t>::const_iterator it = fMessages.begin();
-	 it != fMessages.end(); ++it ) {
+    for( auto it = fMessages.begin(); it != fMessages.end(); ++it ) {
       ntot += it->second;
     }
     ostringstream msg;
@@ -132,7 +131,7 @@ Int_t THaAnalysisObject::End( THaRunBase* /* run */ )
 	<< "  Encountered " << fNEventsWithWarnings << " events with "
 	<< "warnings, " << ntot << " total warnings"
 	<< endl
-	<< "  Call Print(\"WARN\") for channel list. "
+	<< R"/(  Call Print("WARN") for channel list. )/"
 	<< "Re-run with fDebug>0 for per-event details.";
     Warning( Here("End"), "%s", msg.str().c_str() );
   }
@@ -208,20 +207,20 @@ Int_t THaAnalysisObject::DefineVarsFromList( const void* list,
   }
   else if( mode == kDelete ) {
     if( type == kVarDef ) {
-      const VarDef* item;
-      const VarDef* theList = static_cast<const VarDef*>(list);
-      while( (item = theList++) && item->name ) {
+      auto item = static_cast<const VarDef*>(list);
+      while( item && item->name ) {
 	TString name(prefix);
 	name.Append( item->name );
 	gHaVars->RemoveName( name );
+	++item;
       }
     } else if( type == kRVarDef ) {
-      const RVarDef* item;
-      const RVarDef* theList = static_cast<const RVarDef*>(list);
-      while( (item = theList++) && item->name ) {
+      auto item = static_cast<const RVarDef*>(list);
+      while( item && item->name ) {
 	TString name(prefix);
 	name.Append( item->name );
 	gHaVars->RemoveName( name );
+	++item;
       }
     }
   }
@@ -258,12 +257,12 @@ THaAnalysisObject* THaAnalysisObject::FindModule( const char* name,
 
   // Find the module in the list, comparing 'name' to the module's fPrefix
   TIter next(fgModules);
-  TObject* obj = 0;
+  TObject* obj = nullptr;
   while( (obj = next()) ) {
 #ifdef NDEBUG
-    THaAnalysisObject* module = static_cast<THaAnalysisObject*>(obj);
+    auto module = static_cast<THaAnalysisObject*>(obj);
 #else
-    THaAnalysisObject* module = dynamic_cast<THaAnalysisObject*>(obj);
+    auto module = dynamic_cast<THaAnalysisObject*>(obj);
     assert(module);
 #endif
     const char* cprefix = module->GetPrefix();
@@ -295,7 +294,7 @@ THaAnalysisObject* THaAnalysisObject::FindModule( const char* name,
     fStatus = kInitError;
     return nullptr;
   }
-  if( classname && *classname && strcmp(classname,anaobj) &&
+  if( classname && *classname && strcmp(classname,anaobj) != 0 &&
       !obj->IsA()->InheritsFrom( classname )) {
     if( do_error )
       Error( Here(here), "Module %s (%s) is not a %s.",
@@ -303,7 +302,7 @@ THaAnalysisObject* THaAnalysisObject::FindModule( const char* name,
     fStatus = kInitError;
     return nullptr;
   }
-  THaAnalysisObject* aobj = static_cast<THaAnalysisObject*>( obj );
+  auto aobj = static_cast<THaAnalysisObject*>( obj );
   if( do_error ) {
     if( !aobj->IsOK() ) {
       Error( Here(here), "Module %s (%s) not initialized.",
@@ -352,10 +351,10 @@ vector<string> THaAnalysisObject::GetDBFileList( const char* name,
 
   // Build search list of directories
   if( (dbdir = gSystem->Getenv("DB_DIR")))
-    dnames.push_back( dbdir );
-  dnames.push_back( "DB" );
-  dnames.push_back( "db" );
-  dnames.push_back( "." );
+    dnames.emplace_back(dbdir);
+  dnames.emplace_back("DB");
+  dnames.emplace_back("db");
+  dnames.emplace_back(".");
 
   // Try to open the database directories in the search list.
   // The first directory that can be opened is taken as the database
@@ -388,7 +387,7 @@ vector<string> THaAnalysisObject::GetDBFileList( const char* name,
   gSystem->FreeDirectory(dirp);
 
   // Search a date-coded subdirectory that corresponds to the requested date.
-  if( time_dirs.size() > 0 ) {
+  if( !time_dirs.empty() ) {
     sort( time_dirs.begin(), time_dirs.end() );
     for( it = time_dirs.begin(); it != time_dirs.end(); ++it ) {
       item_date = atoi((*it).c_str());
@@ -500,7 +499,7 @@ const char* Here( const char* method, const char* prefix )
       txt = method;
       assert(pos >= 0 && pos < txt.Length());
       txt.Insert(pos, full_prefix);
-      method = 0;
+      method = nullptr;
     } else {
       txt = full_prefix + "::";
     }
@@ -670,7 +669,7 @@ void THaAnalysisObject::MakePrefix()
 {
   // Make default prefix: GetName() + "."
 
-  MakePrefix(0);
+  MakePrefix(nullptr);
 }
 
 //_____________________________________________________________________________
@@ -692,7 +691,7 @@ FILE* THaAnalysisObject::OpenFile( const char *name, const TDatime& date,
   FILE* fi = nullptr;
   vector<string> fnames( GetDBFileList(name, date, here) );
   if( !fnames.empty() ) {
-    vsiter_t it = fnames.begin();
+    auto it = fnames.begin();
     do {
       if( debug_flag>1 )
 	cout << "Info in <" << here << ">: Opening database file " << *it;
@@ -984,7 +983,7 @@ static Int_t IsDBkey( const string& line, const char* key, string& text )
   const char* p = eq-1;
   assert( p >= ln );
   while( *p == ' ' ) --p; // find_last_not_of(" ")
-  if( strncmp(ln, key, p-ln+1) ) return -1;
+  if( strncmp(ln, key, p-ln+1) != 0 ) return -1;
   // Key matches. Now extract the value, trimming leading whitespace.
   ln = eq+1;
   assert( !*ln || *(ln+strlen(ln)-1) != ' ' ); // Trailing space already trimmed
@@ -1247,8 +1246,7 @@ Int_t THaAnalysisObject::LoadDBvalue( FILE* file, const TDatime& date,
     // variables are supported here, although they are only sensible on the LHS
     lines.assign( 1, dbline );
     gHaTextvars->Substitute( lines );
-    for( vsiter_t it = lines.begin(); it != lines.end(); ++it ) {
-      string& line = *it;
+    for(auto & line : lines) {
       Int_t status;
       if( !do_ignore && (status = IsDBkey( line, key, text )) != 0 ) {
 	if( status > 0 ) {
@@ -1329,7 +1327,7 @@ Int_t THaAnalysisObject::LoadDBarray( FILE* file, const TDatime& date,
   text += " ";
   istringstream inp(text);
   T dval;
-  while( 1 ) {
+  while( true ) {
     inp >> dval;
     if( inp.good() )
       values.push_back(dval);
@@ -1349,7 +1347,7 @@ Int_t THaAnalysisObject::LoadDBmatrix( FILE* file, const TDatime& date,
   // Read a matrix of values of type T into a vector of vectors.
   // The matrix is square with ncols columns.
 
-  vector<T>* tmpval = new vector<T>;
+  auto tmpval = new vector<T>;
   if( !tmpval )
     return -255;
   Int_t err = LoadDBarray( file, date, key, *tmpval );
@@ -1577,17 +1575,17 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
       badtype:
 	if( item->type >= kDouble && item->type <= kObject2P )
 	  ::Error( ::Here(here,loaddb_prefix.c_str()),
-		   "Key \"%s\": Reading of data type \"%s\" not implemented",
+		   R"(Key "%s": Reading of data type "%s" not implemented)",
 		   key, THaVar::GetEnumName(item->type) );
 	else
 	  ::Error( ::Here(here,loaddb_prefix.c_str()),
-		   "Key \"%s\": Reading of data type \"(#%d)\" not implemented",
+		   R"/(Key "%s": Reading of data type "(#%d)" not implemented)/",
 		   key, item->type );
 	ret = -2;
 	break;
       rangeerr:
 	::Error( ::Here(here,loaddb_prefix.c_str()),
-		 "Key \"%s\": Value %s out of range for requested type \"%s\"",
+		 R"(Key "%s": Value %s out of range for requested type "%s")",
 		 key, errtxt.c_str(), THaVar::GetEnumName(item->type) );
 	ret = -3;
 	break;
@@ -1632,11 +1630,11 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 	else {
 	  if( item->descript ) {
 	    ::Error( ::Here(here,loaddb_prefix.c_str()),
-		     "Required key \"%s\" (%s) missing in the database.",
+		     R"/(Required key "%s" (%s) missing in the database.)/",
 		     key, item->descript );
 	  } else {
 	    ::Error( ::Here(here,loaddb_prefix.c_str()),
-		     "Required key \"%s\" missing in the database.", key );
+		     R"(Required key "%s" missing in the database.)", key );
 	  }
 	  // For missing keys, the return code is the index into the request 
 	  // array + 1. In this way the caller knows which key is missing.
@@ -1662,7 +1660,7 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 	break;
       } else {  // other ret < 0: unexpected zero pointer etc.
 	::Error( ::Here(here,loaddb_prefix.c_str()), 
-		 "Program error when trying to read database key \"%s\". "
+		 R"(Program error when trying to read database key "%s". )"
 		 "CALL EXPERT!", key );
 	break;
       }
@@ -1907,15 +1905,14 @@ void THaAnalysisObject::Print( Option_t* opt ) const
        << endl;
 
   // Print warning details
-  if( opt && strstr(opt,"WARN") != 0 && !fMessages.empty() ) {
+  if( opt && strstr(opt,"WARN") != nullptr && !fMessages.empty() ) {
     string name = GetPrefix();
     string::size_type len = name.length();
     if( len>0 && name[len-1] == '.' )
       name.erase(len-1);
     cout << "Module \"" << name << "\" encountered warnings:" << endl;
-    for( map<string,UInt_t>::const_iterator it = fMessages.begin();
-	 it != fMessages.end(); ++it ) {
-      cout << "  " << it->first << ": " << it->second << " times" << endl;
+    for( const auto& fMessage : fMessages ) {
+      cout << "  " << fMessage.first << ": " << fMessage.second << " times" << endl;
     }
   }
 }

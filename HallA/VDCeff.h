@@ -18,8 +18,8 @@ public:
   VDCeff( const char* name, const char* description );
   virtual ~VDCeff();
 
-  virtual Int_t   Begin( THaRunBase* r=0 );
-  virtual Int_t   End( THaRunBase* r=0 );
+  virtual Int_t   Begin( THaRunBase* r=nullptr );
+  virtual Int_t   End( THaRunBase* r=nullptr );
   virtual EStatus Init( const TDatime& run_time );
   virtual Int_t   Process( const THaEvData& );
 
@@ -41,13 +41,11 @@ protected:
     TH1F*    hist_nhit;
     TH1F*    hist_eff;
     VDCvar_t( const char* nm, const char* hn, Int_t nw )
-      : name(nm), histname(hn), pvar(0), nwire(nw), hist_nhit(0), hist_eff(0) {}
+      : name(nm), histname(hn), pvar(nullptr), nwire(nw), hist_nhit(nullptr),
+        hist_eff(nullptr) {}
     ~VDCvar_t();
     void     Reset( Option_t* opt ="" );
   };
-
-  typedef std::vector<Short_t>::iterator Vsiter_t;
-//  typedef std::vector<VDCvar_t>::iterator variter_t;
 
   // Internal working storage
   std::vector<VDCvar_t>  fVDCvar;

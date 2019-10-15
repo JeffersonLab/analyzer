@@ -21,13 +21,10 @@ FastbusModule::FastbusModule(Int_t crate, Int_t slot)
   SetSlot(crate, slot);
 }
 
-FastbusModule::~FastbusModule() {
-}
-
 void FastbusModule::Init() {
   fSlotMask = 0xf8000000;
   fSlotShift = 27;
-  fDebugFile=0;
+  fDebugFile=nullptr;
 }
 
 Int_t FastbusModule::Decode(const UInt_t *evbuffer) {

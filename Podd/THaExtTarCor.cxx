@@ -52,7 +52,8 @@
 THaExtTarCor::THaExtTarCor( const char* name, const char* description,
 			    const char* spectro, const char* vertex ) :
   THaPhysicsModule(name,description), fThetaCorr(0.0), fDeltaCorr(0.0),
-  fSpectroName(spectro), fVertexName(vertex), 
+  fDeltaP(0.0), fDeltaDp(0.0), fDeltaTh(0.0),
+  fSpectroName(spectro), fVertexName(vertex),
   fTrackModule(nullptr), fVertexModule(nullptr)
 {
   // Normal constructor.
@@ -123,7 +124,7 @@ Int_t THaExtTarCor::DefineVariables( EMode mode )
     { "delta_p",  "Size of momentum correction",    "fDeltaP" },
     { "delta_dp", "Size of delta correction",       "fDeltaDp" },
     { "delta_th", "Size of theta correction (rad)", "fDeltaTh" },
-    { 0 }
+    { nullptr }
   };
   DefineVarsFromList( var2, mode );
   return 0;

@@ -20,7 +20,7 @@ class THaVDCPoint : public THaCluster {
 public:
   THaVDCPoint( THaVDCCluster* u_cl, THaVDCCluster* v_cl,
 	       THaVDCChamber* chamber );
-  virtual ~THaVDCPoint() {}
+  virtual ~THaVDCPoint() = default;
 
   void CalcDetCoords();
 
@@ -40,7 +40,7 @@ public:
   Double_t       GetZU()       const;
   Double_t       GetZV()       const;
   Double_t       GetZ()        const { return GetZU(); }
-  Bool_t         HasPartner()  const { return (fPartner != 0); }
+  Bool_t         HasPartner()  const { return (fPartner != nullptr); }
 
   void CalcChisquare(Double_t &chi2, Int_t &nhits) const;
 

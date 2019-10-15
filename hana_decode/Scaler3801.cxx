@@ -21,10 +21,6 @@ Scaler3801::Scaler3801(Int_t crate, Int_t slot)
   Init();
 }
 
-Scaler3801::~Scaler3801()
-{
-}
-
 void Scaler3801::Init()
 {
   fNumChan = 32;

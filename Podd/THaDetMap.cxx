@@ -59,7 +59,7 @@ void THaDetMap::Module::SetResolution( Double_t res )
 }
 
 //_____________________________________________________________________________
-THaDetMap::THaDetMap() : fNmodules(0), fMap(0), fMaplength(0)
+THaDetMap::THaDetMap() : fNmodules(0), fMap(nullptr), fMaplength(0)
 {
   // Default constructor. Creates an empty detector map.
 }
@@ -75,7 +75,7 @@ THaDetMap::THaDetMap( const THaDetMap& rhs )
     fMap = new Module[fMaplength];
     memcpy(fMap,rhs.fMap,fNmodules*sizeof(Module));
   } else
-    fMap = 0;
+    fMap = nullptr;
 }
 
 //_____________________________________________________________________________
@@ -85,7 +85,7 @@ THaDetMap& THaDetMap::operator=( const THaDetMap& rhs )
 
   if ( this != &rhs ) {
     if ( fMaplength != rhs.fMaplength ) {
-      delete [] fMap; fMap = 0;
+      delete [] fMap; fMap = nullptr;
       fMaplength = rhs.fMaplength;
       if( fMaplength > 0 )
 	fMap = new Module[fMaplength];
@@ -131,7 +131,7 @@ Int_t THaDetMap::AddModule( UShort_t crate, UShort_t slot,
   if ( fNmodules >= fMaplength ) { // need to expand the Map
     Int_t oldlen = fMaplength;
     fMaplength += 10;
-    Module* tmpmap = new Module[fMaplength];   // expand in groups of 10
+    auto tmpmap = new Module[fMaplength];   // expand in groups of 10
     if( oldlen > 0 ) {
       memcpy(tmpmap,fMap,oldlen*sizeof(Module));
       delete [] fMap;
@@ -364,8 +364,8 @@ static int compare_modules( const void* p1, const void* p2 )
 {
   // Helper function for sort
 
-  const THaDetMap::Module* lhs = static_cast<const THaDetMap::Module*>(p1);
-  const THaDetMap::Module* rhs = static_cast<const THaDetMap::Module*>(p2);
+  auto lhs = static_cast<const THaDetMap::Module*>(p1);
+  auto rhs = static_cast<const THaDetMap::Module*>(p2);
   
   if( lhs->crate < rhs->crate )  return -1;
   if( lhs->crate > rhs->crate )  return  1;

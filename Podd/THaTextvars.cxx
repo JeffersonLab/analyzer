@@ -30,7 +30,6 @@ using namespace std;
 
 typedef string::size_type ssiz_t;
 typedef vector<string>::size_type vssiz_t;
-typedef vector<string>::iterator  vsiter_t;
 
 //_____________________________________________________________________________
 static void Tokenize( const string& s, const string& delim,
@@ -59,7 +58,7 @@ static string ValStr( const vector<string>& s )
   // Used by print functions.
 
   string val;
-  if( s.size() > 0 ) {
+  if( !s.empty() ) {
     val = "\"" + s[0] + "\"";
     for( vssiz_t i = 1; i < s.size(); ++i )
       val.append(",\"" + s[i] + "\"");
@@ -83,7 +82,7 @@ static ssiz_t Index( const string& s, ssiz_t& ext, ssiz_t start )
     const char *c2;
     do {
       // Find innermost bracket, allowing nesting
-      if( (c2 = strchr(c,'$')) && *(++c2) != '{' ) c2 = 0;
+      if( (c2 = strchr(c,'$')) && *(++c2) != '{' ) c2 = nullptr;
     }
     while( c2 && ++c2 < end && (c = c2) );
   } else
@@ -109,7 +108,7 @@ Int_t THaTextvars::Add( const string& name, const string& value )
   vector<string> tokens;
   Tokenize( value, delim, tokens );
 
-  Textvars_t::iterator it = fVars.find(name);
+  auto it = fVars.find(name);
 
   if( it != fVars.end() ) {  // already exists?
     (*it).second.swap(tokens);
@@ -134,7 +133,7 @@ Int_t THaTextvars::AddVerbatim( const string& name, const string& value )
 
   vector<string> values( 1, value );
 
-  Textvars_t::iterator it = fVars.find(name);
+  auto it = fVars.find(name);
 
   if( it != fVars.end() ) {  // already exists?
     (*it).second.swap(values);
@@ -155,13 +154,13 @@ const char* THaTextvars::Get( const string& name, Int_t idx ) const
   // Returns either the value or nullptr if not found.
 
   if( name.empty() || idx < 0 )
-    return 0;
+    return nullptr;
 
-  Textvars_t::const_iterator it = fVars.find(name);
+  auto it = fVars.find(name);
   if( it == fVars.end() )
-    return 0;
+    return nullptr;
   if( (ssiz_t)idx >= it->second.size() )
-    return 0;
+    return nullptr;
 
   return it->second[idx].c_str();
 }
@@ -176,7 +175,7 @@ UInt_t THaTextvars::GetArray( const string& name, vector<string>& array )
   if( name.empty() )
     return 0;
 
-  Textvars_t::iterator it = fVars.find(name);
+  auto it = fVars.find(name);
   if( it == fVars.end() )
     return 0;
 
@@ -206,7 +205,7 @@ UInt_t THaTextvars::GetNvalues( const string& name ) const
   if( name.empty() )
     return 0;
 
-  Textvars_t::const_iterator it = fVars.find(name);
+  auto it = fVars.find(name);
   if( it == fVars.end() )
     return 0;
 
@@ -219,16 +218,14 @@ void THaTextvars::Print( Option_t* /*opt*/ ) const
   // Print all text variables
 
   Ssiz_t maxw = 0;
-  for( Textvars_t::const_iterator it = fVars.begin();
-       it != fVars.end(); ++it ) {
-    Ssiz_t len = it->first.length();
+  for( const auto& var : fVars ) {
+    Ssiz_t len = var.first.length();
     if( len > maxw )
       maxw = len;
   }
-  for( Textvars_t::const_iterator it = fVars.begin();
-       it != fVars.end(); ++it ) {
-    cout << "Textvar:  " << setw(maxw) << it->first << " = "
-	 << ValStr((*it).second) << endl;
+  for( const auto& var : fVars ) {
+    cout << "Textvar:  " << setw(maxw) << var.first << " = "
+         << ValStr(var.second) << endl;
   }
 }
 
@@ -263,8 +260,8 @@ Int_t THaTextvars::Substitute( vector<string>& lines, bool do_multi ) const
   bool good = true;
 
   vector<string> newlines;
-  for( vsiter_t li = lines.begin(); li != lines.end() && good; ++li ) {
-    string& line = *li;
+  for( auto li = lines.begin(); li != lines.end() && good; ++li ) {
+    const string& line = *li;
     ssiz_t ext = 0, pos = Index( line, ext, 0 );
     if( pos != string::npos ) {
       assert( ext >= 3 );
@@ -286,10 +283,9 @@ Int_t THaTextvars::Substitute( vector<string>& lines, bool do_multi ) const
 	    newlines.reserve( lines.size()*repl.size() );
 	    newlines.assign( lines.begin(), li );
 	  }
-	  for( vector<string>::const_iterator jt = repl.begin();
-	       jt != repl.end(); ++jt ) {
+          for( const auto& jt : repl ) {
 	    newlines.push_back(line);
-	    newlines.back().replace( pos, ext, *jt );
+	    newlines.back().replace( pos, ext, jt );
 	  }
 	}
       } else {

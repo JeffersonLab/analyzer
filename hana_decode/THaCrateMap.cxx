@@ -25,7 +25,7 @@
 #include "TSystem.h"
 
 #include <cstdio>
-#include <errno.h>  // for errno
+#include <cerrno>  // for errno
 #include <string>
 #include <iomanip>
 #include <sstream>
@@ -198,8 +198,8 @@ void THaCrateMap::incrNslot(int crate) {
   assert( crate >= 0 && crate < MAXROC );
   //FIXME: urgh, really count every time?
   crdat[crate].nslot = 0;
-  for (int slot=0; slot<MAXSLOT; slot++) {
-    if (crdat[crate].model[slot] != 0)
+  for( unsigned int slot : crdat[crate].model ) {
+    if( slot != 0 )
       crdat[crate].nslot++;
   }
 }

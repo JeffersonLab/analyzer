@@ -18,12 +18,12 @@ class THaPrintOption;
 // Utility class that provides the PrintOpt method
 class THaHashList : public THashList {
 public:
-  THaHashList(Int_t capacity = TCollection::kInitHashTableCapacity, 
+  explicit THaHashList(Int_t capacity = TCollection::kInitHashTableCapacity,
 	      Int_t rehash = 0) : THashList(capacity,rehash) {}
-  THaHashList(TObject* parent, 
+  explicit THaHashList(TObject* parent,
 	      Int_t capacity = TCollection::kInitHashTableCapacity, 
 	      Int_t rehash = 0) : THashList(parent,capacity,rehash) {}
-  virtual ~THaHashList() {}
+  virtual ~THaHashList() = default;
 
   virtual void PrintOpt( Option_t* opt ) const;
   ClassDef(THaHashList,1) //A THashList list with a PrintOpt method
@@ -39,7 +39,7 @@ public:
 
   THaCutList();
   THaCutList( const THaCutList& clst );
-  THaCutList( const THaVarList* lst );
+  explicit THaCutList( const THaVarList* lst );
   virtual    ~THaCutList();
 
   virtual void      Clear( Option_t* opt="" );

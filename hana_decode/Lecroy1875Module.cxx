@@ -34,10 +34,6 @@ void Lecroy1875Module::Init()
 }
 
 
-Lecroy1875Module::~Lecroy1875Module()
-{
-}
-
 }
 
 ClassImp(Decoder::Lecroy1875Module)

@@ -356,15 +356,15 @@ THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& date)
 
 // Verify that the slots are not defined twice
 
-  for (UInt_t i1=0; i1 < scalers.size()-1; i1++) {
-    for (UInt_t i2=i1+1; i2 < scalers.size(); i2++) {
+  for (size_t i1=0; i1 < scalers.size()-1; i1++) {
+    for (size_t i2=i1+1; i2 < scalers.size(); i2++) {
       if (scalers[i1]->GetSlot()==scalers[i2]->GetSlot())
 	cout << "THaScalerEvtHandler:: WARN:  same slot defined twice"<<endl;
     }
   }
 // Identify indices of scalers[] vector to variables.
-  for (UInt_t i=0; i < scalers.size(); i++) {
-    for (UInt_t j = 0; j < scalerloc.size(); j++) {
+  for (size_t i=0; i < scalers.size(); i++) {
+    for (size_t j = 0; j < scalerloc.size(); j++) {
       if (scalerloc[j]->islot==static_cast<UInt_t>(scalers[i]->GetSlot()))
 	scalerloc[j]->index = i;
     }
@@ -373,7 +373,7 @@ THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& date)
 
   if(fDebugFile) {
     *fDebugFile << "THaScalerEvtHandler:: Name of scaler bank "<<fName<<endl;
-    for (UInt_t i=0; i<scalers.size(); i++) {
+    for (size_t i=0; i<scalers.size(); i++) {
       *fDebugFile << "Scaler  #  "<<i<<endl;
       scalers[i]->SetDebugFile(fDebugFile);
       scalers[i]->DebugPrint(fDebugFile);
@@ -410,8 +410,8 @@ void THaScalerEvtHandler::DefVars()
     return;
   }
   if(fDebugFile) *fDebugFile << "THaScalerEvtHandler:: scalerloc size "<<scalerloc.size()<<endl;
-  const Int_t* count = 0;
-  for (UInt_t i = 0; i < scalerloc.size(); i++) {
+  const Int_t* count = nullptr;
+  for (size_t i = 0; i < scalerloc.size(); i++) {
     gHaVars->DefineByType(scalerloc[i]->name.Data(), scalerloc[i]->description.Data(),
 			  &dvars[i], kDouble, count);
   }

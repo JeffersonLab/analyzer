@@ -99,15 +99,16 @@ THaVar* THaVarList::DefineByType( const char* name, const char* descript,
   if( ptr ) {
     Warning( errloc, "Variable %s already exists. Not redefined.",
 	     ptr->GetName() );
-    return 0;
+    return nullptr;
   }
 
-  ptr = new THaVar( name, descript, var, type, -1, 0, count );
-  if( ptr && !ptr->IsZombie() )
+  ptr = new THaVar( name, descript, var, type, -1, nullptr, count );
+  if( !ptr->IsZombie() )
     AddLast( ptr );
   else {
     Warning( errloc, "Error creating variable %s", name );
-    delete ptr; ptr = 0;
+    delete ptr;
+    ptr = nullptr;
   }
 
   return ptr;
@@ -122,19 +123,19 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
 
   typedef vector<TSeqCollection*> VecSC_t;
 
-  assert( sizeof(ULong_t) == sizeof(void*) ); // ULong_t must be of pointer size
+  static_assert( sizeof(ULong_t) == sizeof(void*) ); // ULong_t must be of pointer size
 
   if( !obj || !cl ) {
     Warning( errloc, "Invalid class or object. Variable %s not defined.",
 	     name.Data() );
-    return 0;
+    return nullptr;
   }
 
   THaVar* var = Find( name );
   if( var ) {
     Warning( errloc, "Variable %s already exists. Not redefined.",
 	     var->GetName() );
-    return 0;
+    return nullptr;
   }
 
   // Find up to two dots in the definition and extract the strings between them
@@ -154,15 +155,15 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
   if( pos != kNPOS ) {
     Warning( errloc, "Too many dots in definition of variable %s (%s). "
 	     "Variable not defined.", name.Data(), desc.Data() );
-    return 0;
+    return nullptr;
   }
   // Any zero-length strings?
   Int_t i = 0;
   while( i <= ndot )
     if( s[i++].Length() == 0 )
-      return 0;
+      return nullptr;
 
-  TClass* theClass   =  0;
+  TClass* theClass   =  nullptr;
   ULong_t loc        =  (ULong_t)obj;
 
   THaRTTI objrtti;
@@ -184,7 +185,7 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
       Warning( errloc, "Unsupported type of data member %s. "
 	       "Variable %s (%s) not defined.",
 	       s[0].Data(), name.Data(), desc.Data() );
-      return 0;
+      return nullptr;
     }
     loc += objrtti.GetOffset();
     if( objrtti.IsPointer() ) {
@@ -213,7 +214,7 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
 	Warning( errloc, "Unsupported type of data member %s. "
 		 "Variable %s (%s) not defined.",
 		 s[0].Data(), name.Data(), desc.Data() );
-	return 0;
+	return nullptr;
       }
     }
     theClass = objrtti.GetClass();
@@ -222,7 +223,7 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
       Warning( errloc, "Data member %s is not a TSeqCollection. "
 	       "Variable %s (%s) not defined.",
 	       s[0].Data(), name.Data(), desc.Data() );
-      return 0;
+      return nullptr;
     }
     loc += objrtti.GetOffset();
     if( objrtti.IsPointer() ) {
@@ -237,14 +238,14 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
 		 "Current size = %d. Variable %s (%s) not defined.",
 		 vecidx, s[0].Data(), (Int_t)vec.size(), name.Data(),
 		 desc.Data() );
-	return 0;
+	return nullptr;
       }
       loc = reinterpret_cast<ULong_t>(vec[vecidx]);
       if( !loc ) {
 	Warning( errloc, "Null pointer in std::vector %s. "
 		 "Variable %s (%s) not defined.",
 		 s[0].Data(), name.Data(), desc.Data() );
-	return 0;
+	return nullptr;
       }
       objrtti.Reset(); // clear objrtti.IsObjVector()
     }
@@ -254,7 +255,7 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
       Warning( errloc, "Cannot determine class of container "
 	       "member object %s. Variable %s (%s) not defined.",
 	       s[1].Data(), name.Data(), desc.Data() );
-      return 0;
+      return nullptr;
     }
     break;
   default:
@@ -268,23 +269,23 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
     // Member variables
 
     THaRTTI rtti;
-    rtti.Find( theClass, s[ndot], (ndot==0) ? obj : 0 );
+    rtti.Find( theClass, s[ndot], (ndot==0) ? obj : nullptr );
     if( !rtti.IsValid() ) {
       Warning( errloc, "No RTTI information for variable %s. "
 	       "Not defined.", name.Data() );
-      return 0;
+      return nullptr;
     }
     if( rtti.IsObject() ) {
       Warning( errloc, "Variable %s is an object. Must be a basic type. "
 	       "Not defined.", name.Data() );
-      return 0;
+      return nullptr;
     }
 
     if( ndot < 2 && !objrtti.IsObjVector() ) {
       // Basic data, arrays/vectors of basic data, or basic data in single objects
       loc += rtti.GetOffset();
       TString theName(name);
-      Int_t* count_loc = 0;
+      Int_t* count_loc = nullptr;
       switch( rtti.GetArrayType() ) {
       case THaRTTI::kScalar:
       case THaRTTI::kVector:
@@ -311,12 +312,12 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
 	var = new THaVar( name, desc, (void*)loc, rtti.GetType(), sz,
 			  rtti.GetOffset() );
       }
-      if( var && !var->IsZombie() )
+      if( !var->IsZombie() )
 	AddLast( var );
       else {
 	Warning( errloc, "Error creating variable %s", name.Data() );
 	delete var;
-	return 0;
+	return nullptr;
       }
     }
 
@@ -324,23 +325,23 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
     // Member functions
 
     TString funcName(s[ndot]);
-    Ssiz_t i = funcName.Index( '(' );
-    assert( i != kNPOS );  // else EndsWith("()") lied
-    funcName = funcName(0,i);
+    Ssiz_t pos2 = funcName.Index('(' );
+    assert(pos2 != kNPOS );  // else EndsWith("()") lied
+    funcName = funcName(0, pos2);
 
-    TMethodCall* theMethod = new TMethodCall( theClass, funcName, "" );
+    auto theMethod = new TMethodCall(theClass, funcName, "" );
     if( !theMethod->IsValid() ) {
       Warning( errloc, "Error getting function information for variable %s. "
 	       "Not defined.", name.Data() );
       delete theMethod;
-      return 0;
+      return nullptr;
     }
     TFunction* func = theMethod->GetMethod();
     if( !func ) {
       Warning( errloc, "Function %s does not exist. Variable %s not defined.",
 	       s[ndot].Data(), name.Data() );
       delete theMethod;
-      return 0;
+      return nullptr;
     }
 
     TMethodCall::EReturnType rtype = theMethod->ReturnType();
@@ -348,7 +349,7 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
       Warning( errloc, "Unsupported return type for function %s. "
 	       "Variable %s not defined.", s[ndot].Data(), name.Data() );
       delete theMethod;
-      return 0;
+      return nullptr;
     }
 
 #if ROOT_VERSION_CODE <  ROOT_VERSION(5,34,6)
@@ -396,7 +397,7 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
       Warning( errloc, "Unsupported return type \"%s\" for function %s. "
 	       "Variable %s not defined.", ntype.c_str(), s[ndot].Data(), name.Data() );
       delete theMethod;
-      return 0;
+      return nullptr;
     }
     if( (rtype == TMethodCall::kDouble && type != kDouble && type != kFloat) ||
 	(rtype == TMethodCall::kLong && (type == kDouble || type == kFloat)) ) {
@@ -404,7 +405,7 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
       Warning( errloc, "Ill-formed TMethodCall returned from ROOT for function %s, "
 	       "variable %s. Call expert.", s[ndot].Data(), name.Data() );
       delete theMethod;
-      return 0;
+      return nullptr;
     }
 #endif
     if( !objrtti.IsObjVector() )
@@ -417,13 +418,13 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
       Int_t sz = (otype == kObjectV) ? objrtti.GetClass()->Size() : 0;
       var = new THaVar( name, desc, (void*)loc, type, sz, 0, theMethod );
     }
-    if( var && !var->IsZombie() )
+    if( !var->IsZombie() )
       AddLast( var );
     else {
       Warning( errloc, "Error creating variable %s", name.Data() );
       delete theMethod;
       delete var;
-      return 0;
+      return nullptr;
     }
 
   } // if( !function ) else
@@ -485,7 +486,7 @@ Int_t THaVarList::DefineVariables( const VarDef* list, const char* prefix,
     name.Append(item->name);
     // size>1 means fixed-size 1-d array
     bool fixed_array = (item->size > 1);
-    bool var_array = (item->count != 0) ||
+    bool var_array = (item->count != nullptr) ||
       (item->type >= kIntV && item->type <= kDoubleV);
     if( item->size>0 && var_array ) {
       Warning( errloc, "Variable %s: variable-size arrays must have size=0. "

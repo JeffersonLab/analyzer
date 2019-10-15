@@ -97,7 +97,7 @@ void THaCodaData::staterr(const char* tried_to, Int_t status) const
     break;
   default:
     errno = status;
-    perror(0);
+    perror(nullptr);
   }
 }
 

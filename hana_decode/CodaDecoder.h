@@ -12,11 +12,7 @@
 
 #include "THaEvData.h"
 #include <vector>
-#if __cplusplus >= 201103L
 #include <cstdint>
-#else
-#include <stdint.h>
-#endif
 
 namespace Decoder {
 
@@ -69,7 +65,7 @@ protected:
 
   typedef struct trigBankObject {
      trigBankObject() : blksize(0), tag(0), nrocs(0), len(0), withTimeStamp(0),
-         withRunInfo(0), evtNum(0), runInfo(0), start(0), evTS(0), evType(0) {}
+         withRunInfo(0), evtNum(0), runInfo(0), start(nullptr), evTS(nullptr), evType(nullptr) {}
      int      blksize;              /* total number of triggers in the Bank */
      uint16_t tag;                  /* Trigger Bank Tag ID = 0xff2x */
      uint16_t nrocs;                /* Number of ROC Banks in the Event Block (val = 1-256) */

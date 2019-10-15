@@ -29,31 +29,36 @@ using namespace std;
 //_____________________________________________________________________________
 THaScintillator::THaScintillator( const char* name, const char* description,
 				  THaApparatus* apparatus )
-  : THaNonTrackingDetector(name,description,apparatus),
-    fLOff(0), fROff(0), fLPed(0), fRPed(0), fLGain(0), fRGain(0),
-    fTdc2T(0), fCn(0), fNTWalkPar(0), fTWalkPar(0), fAdcMIP(0), fTrigOff(0),
-    fAttenuation(0), fResolution(0),
-    fLTNhit(0), fLT(0), fLT_c(0), fRTNhit(0), fRT(0), fRT_c(0),
-    fLANhit(0), fLA(0), fLA_p(0), fLA_c(0), fRANhit(0), fRA(0), fRA_p(0), fRA_c(0),
-    fNhit(0), fHitPad(0), fTime(0), fdTime(0), fAmpl(0), fYt(0), fYa(0)
+  : THaNonTrackingDetector(name,description,apparatus), fDataDest{},
+    fLOff(nullptr), fROff(nullptr), fLPed(nullptr), fRPed(nullptr),
+    fLGain(nullptr), fRGain(nullptr),
+    fTdc2T(0), fCn(0), fNTWalkPar(0), fTWalkPar(nullptr), fAdcMIP(0),
+    fTrigOff(nullptr), fAttenuation(0), fResolution(0),
+    fLTNhit(0), fLT(nullptr), fLT_c(nullptr),
+    fRTNhit(0), fRT(nullptr), fRT_c(nullptr),
+    fLANhit(0), fLA(nullptr), fLA_p(nullptr), fLA_c(nullptr),
+    fRANhit(0), fRA(nullptr), fRA_p(nullptr), fRA_c(nullptr),
+    fNhit(0), fHitPad(nullptr), fTime(nullptr), fdTime(nullptr),
+    fAmpl(nullptr), fYt(nullptr), fYa(nullptr)
 {
   // Constructor
-
-  memset( fDataDest, 0, sizeof(fDataDest) );
 }
 
 //_____________________________________________________________________________
 THaScintillator::THaScintillator()
-  : THaNonTrackingDetector(),
-    fLOff(0), fROff(0), fLPed(0), fRPed(0), fLGain(0), fRGain(0),
-    fTdc2T(0), fCn(0), fNTWalkPar(0), fTWalkPar(0), fAdcMIP(0), fTrigOff(0),
-    fAttenuation(0), fResolution(0),
-    fLTNhit(0), fLT(0), fLT_c(0), fRTNhit(0), fRT(0), fRT_c(0),
-    fLANhit(0), fLA(0), fLA_p(0), fLA_c(0), fRANhit(0), fRA(0), fRA_p(0), fRA_c(0),
-    fNhit(0), fHitPad(0), fTime(0), fdTime(0), fAmpl(0), fYt(0), fYa(0)
+  : THaNonTrackingDetector(), fDataDest{},
+    fLOff(nullptr), fROff(nullptr), fLPed(nullptr), fRPed(nullptr),
+    fLGain(nullptr), fRGain(nullptr),
+    fTdc2T(0), fCn(0), fNTWalkPar(0), fTWalkPar(nullptr), fAdcMIP(0),
+    fTrigOff(nullptr), fAttenuation(0), fResolution(0),
+    fLTNhit(0), fLT(nullptr), fLT_c(nullptr),
+    fRTNhit(0), fRT(nullptr), fRT_c(nullptr),
+    fLANhit(0), fLA(nullptr), fLA_p(nullptr), fLA_c(nullptr),
+    fRANhit(0), fRA(nullptr), fRA_p(nullptr), fRA_c(nullptr),
+    fNhit(0), fHitPad(nullptr), fTime(nullptr), fdTime(nullptr),
+    fAmpl(nullptr), fYt(nullptr), fYa(nullptr)
 {
   // Default constructor (for ROOT I/O)
-  memset( fDataDest, 0, sizeof(fDataDest) );
 }
 
 //_____________________________________________________________________________
@@ -100,8 +105,8 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
     { "detmap",       &detmap,   kIntV },
     { "npaddles",     &nelem,    kInt  },
     { "tdc.res",      &fTdc2T,   kDouble },
-    { "tdc.cmnstart", &tdc_mode, kInt, 0, 1 },
-    { 0 }
+    { "tdc.cmnstart", &tdc_mode, kInt, 0, true },
+    { nullptr }
   };
   err = LoadDB( file, date, config_request, fPrefix );
 
@@ -225,19 +230,19 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   }
 
   DBRequest calib_request[] = {
-    { "L.off",            fLOff,         kDouble, nval, 1 },
-    { "R.off",            fROff,         kDouble, nval, 1 },
-    { "L.ped",            fLPed,         kDouble, nval, 1 },
-    { "R.ped",            fRPed,         kDouble, nval, 1 },
-    { "L.gain",           fLGain,        kDouble, nval, 1 },
-    { "R.gain",           fRGain,        kDouble, nval, 1 },
+    { "L.off",            fLOff,         kDouble, nval, true },
+    { "R.off",            fROff,         kDouble, nval, true },
+    { "L.ped",            fLPed,         kDouble, nval, true },
+    { "R.ped",            fRPed,         kDouble, nval, true },
+    { "L.gain",           fLGain,        kDouble, nval, true },
+    { "R.gain",           fRGain,        kDouble, nval, true },
     { "Cn",               &fCn,          kDouble },
-    { "MIP",              &fAdcMIP,      kDouble, 0, 1 },
-    { "timewalk_params",  fTWalkPar,     kDouble, nval_twalk, 1 },
-    { "retiming_offsets", fTrigOff,      kDouble, nval, 1 },
-    { "avgres",           &fResolution,  kDouble, 0, 1 },
-    { "atten",            &fAttenuation, kDouble, 0, 1 },
-    { 0 }
+    { "MIP",              &fAdcMIP,      kDouble, 0, true },
+    { "timewalk_params",  fTWalkPar,     kDouble, nval_twalk, true },
+    { "retiming_offsets", fTrigOff,      kDouble, nval, true },
+    { "avgres",           &fResolution,  kDouble, 0, true },
+    { "atten",            &fAttenuation, kDouble, 0, true },
+    { nullptr }
   };
   err = LoadDB( file, date, calib_request, fPrefix );
   fclose(file);
@@ -270,7 +275,7 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
       { "Trigger time offsets", fTrigOff,    kDouble, N   },
       { "Time resolution",      &fResolution              },
       { "Attenuation",          &fAttenuation             },
-      { 0 }
+      { nullptr }
     };
     DebugPrint( list );
   }
@@ -318,7 +323,7 @@ Int_t THaScintillator::DefineVariables( EMode mode )
     { "trpath", "TRCS pathlen of track to det plane","fTrackProj.THaTrackProj.fPathl" },
     { "trdx",   "track deviation in x-position (m)", "fTrackProj.THaTrackProj.fdX" },
     { "trpad",  "paddle-hit associated with track",  "fTrackProj.THaTrackProj.fChannel" },
-    { 0 }
+    { nullptr }
   };
   return DefineVarsFromList( vars, mode );
 }
@@ -629,7 +634,7 @@ Int_t THaScintillator::FineProcess( TClonesArray& tracks )
     Double_t dpadx = 2.0*fSize[0]/fNelem;   // Width of a paddle
     Double_t padx0 = -fSize[0]+0.5*dpadx;   // center of paddle '0'
     for( Int_t i=0; i<fTrackProj->GetLast()+1; i++ ) {
-      THaTrackProj* proj = static_cast<THaTrackProj*>( fTrackProj->At(i) );
+      auto proj = static_cast<THaTrackProj*>( fTrackProj->At(i) );
       assert( proj );
       if( !proj->IsOK() )
 	continue;

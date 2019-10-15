@@ -245,7 +245,7 @@ Int_t THaCutList::Eval()
 
   Int_t i = 0;
   TIter next( fBlocks );
-  while( THaNamedList* plist = static_cast<THaNamedList*>( next() ))
+  while( auto plist = static_cast<THaNamedList*>( next() ))
     i += EvalBlock( plist );
 
   return i;

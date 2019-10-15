@@ -32,20 +32,20 @@ using namespace std;
 //_____________________________________________________________________________
 THaShower::THaShower( const char* name, const char* description,
 		      THaApparatus* apparatus ) :
-  THaPidDetector(name,description,apparatus),
-  fNclublk(0), fNrows(0), fBlockX(0), fBlockY(0), fPed(0), fGain(0), fEmin(0),
-  fNhits(0), fA(0), fA_p(0), fA_c(0), fAsum_p(kBig), fAsum_c(kBig),
-  fNclust(0), fE(kBig), fX(kBig), fY(kBig), fMult(0), fNblk(0), fEblk(0)
+  THaPidDetector(name,description,apparatus), fNclublk(0), fNrows(0),
+  fBlockX(nullptr), fBlockY(nullptr), fPed(nullptr), fGain(nullptr), fEmin(0),
+  fNhits(0), fA(nullptr), fA_p(nullptr), fA_c(nullptr), fAsum_p(kBig), fAsum_c(kBig),
+  fNclust(0), fE(kBig), fX(kBig), fY(kBig), fMult(0), fNblk(nullptr), fEblk(nullptr)
 {
   // Constructor
 }
 
 //_____________________________________________________________________________
 THaShower::THaShower() :
-  THaPidDetector(),
-  fNclublk(0), fNrows(0), fBlockX(0), fBlockY(0), fPed(0), fGain(0), fEmin(0),
-  fNhits(0), fA(0), fA_p(0), fA_c(0), fAsum_p(kBig), fAsum_c(kBig),
-  fNclust(0), fE(kBig), fX(kBig), fY(kBig), fMult(0), fNblk(0), fEblk(0)
+  THaPidDetector(), fNclublk(0), fNrows(0),
+  fBlockX(nullptr), fBlockY(nullptr), fPed(nullptr), fGain(nullptr), fEmin(0),
+  fNhits(0), fA(nullptr), fA_p(nullptr), fA_c(nullptr), fAsum_p(kBig), fAsum_c(kBig),
+  fNclust(0), fE(kBig), fX(kBig), fY(kBig), fMult(0), fNblk(nullptr), fEblk(nullptr)
 {
   // Default constructor (for ROOT I/O)
 }
@@ -77,13 +77,13 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
   // Read mapping/geometry/configuration parameters
   DBRequest config_request[] = {
     { "detmap",       &detmap,  kIntV },
-    { "chanmap",      &chanmap, kIntV,    0, 1 },
+    { "chanmap",      &chanmap, kIntV,    0, true },
     { "ncols",        &ncols,   kInt },
     { "nrows",        &nrows,   kInt },
     { "xy",           &xy,      kDoubleV, 2 },  // center pos of block 1
     { "dxdy",         &dxy,     kDoubleV, 2 },  // dx and dy block spacings
     { "emin",         &fEmin,   kDouble },
-    { 0 }
+    { nullptr }
   };
   err = LoadDB( file, date, config_request, fPrefix );
 
@@ -202,9 +202,9 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
 
   // Read ADC pedestals and gains (in order of logical channel number)
   DBRequest calib_request[] = {
-    { "pedestals",    fPed,   kFloat, nval, 1 },
-    { "gains",        fGain,  kFloat, nval, 1 },
-    { 0 }
+    { "pedestals",    fPed,   kFloat, nval, true },
+    { "gains",        fGain,  kFloat, nval, true },
+    { nullptr }
   };
   err = LoadDB( file, date, calib_request, fPrefix );
   fclose(file);
@@ -214,7 +214,7 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
 #ifdef WITH_DEBUG
   // Debug printout
   if ( fDebug > 2 ) {
-    const UInt_t N = static_cast<UInt_t>(fNelem);
+    const auto N = static_cast<UInt_t>(fNelem);
     Double_t pos[3]; fOrigin.GetXYZ(pos);
     DBRequest list[] = {
       { "Number of blocks",       &fNelem,     kInt        },
@@ -227,7 +227,7 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
       { "ADC pedestals",          fPed,        kFloat,  N  },
       { "ADC pedestals",          fPed,        kFloat,  N  },
       { "ADC gains",              fGain,       kFloat,  N  },
-      { 0 }
+      { nullptr }
     };
     DebugPrint( list );
   }
@@ -263,7 +263,7 @@ Int_t THaShower::DefineVariables( EMode mode )
     { "trx",    "x-position of track in det plane",   "fTrackProj.THaTrackProj.fX" },
     { "try",    "y-position of track in det plane",   "fTrackProj.THaTrackProj.fY" },
     { "trpath", "TRCS pathlen of track to det plane", "fTrackProj.THaTrackProj.fPathl" },
-    { 0 }
+    { nullptr }
   };
   return DefineVarsFromList( vars, mode );
 }
@@ -285,15 +285,15 @@ void THaShower::DeleteArrays()
   // Delete member arrays. Internal function used by destructor.
 
   fChanMap.clear();
-  delete [] fBlockX;  fBlockX  = 0;
-  delete [] fBlockY;  fBlockY  = 0;
-  delete [] fPed;     fPed     = 0;
-  delete [] fGain;    fGain    = 0;
-  delete [] fA;       fA       = 0;
-  delete [] fA_p;     fA_p     = 0;
-  delete [] fA_c;     fA_c     = 0;
-  delete [] fNblk;    fNblk    = 0;
-  delete [] fEblk;    fEblk    = 0;
+  delete [] fBlockX;  fBlockX  = nullptr;
+  delete [] fBlockY;  fBlockY  = nullptr;
+  delete [] fPed;     fPed     = nullptr;
+  delete [] fGain;    fGain    = nullptr;
+  delete [] fA;       fA       = nullptr;
+  delete [] fA_p;     fA_p     = nullptr;
+  delete [] fA_c;     fA_c     = nullptr;
+  delete [] fNblk;    fNblk    = nullptr;
+  delete [] fEblk;    fEblk    = nullptr;
 }
 
 //_____________________________________________________________________________

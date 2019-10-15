@@ -27,8 +27,8 @@ namespace Decoder {
     struct ModuleType {
     public:
       ModuleType ( const char *c1, UInt_t i1 )
-	: fClassName(c1), fMapNum(i1), fTClass(0) {}
-      ModuleType() : fClassName(0), fMapNum(0), fTClass(0) {} // For ROOT RTTI
+	: fClassName(c1), fMapNum(i1), fTClass(nullptr) {}
+      ModuleType() : fClassName(nullptr), fMapNum(0), fTClass(nullptr) {} // For ROOT RTTI
       bool operator<( const ModuleType& rhs ) const { return fMapNum < rhs.fMapNum; }
       const char*      fClassName;
       UInt_t           fMapNum;
@@ -96,7 +96,7 @@ namespace Decoder {
 
     virtual void SetDebugFile(std::ofstream *file)
     {
-      if (file!=0) fDebugFile = file;
+      if (file) fDebugFile = file;
     }
 
     virtual void SetHeader(UInt_t header, UInt_t mask) {

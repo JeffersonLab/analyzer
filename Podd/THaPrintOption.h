@@ -17,7 +17,7 @@ class THaPrintOption {
   
 public:
   THaPrintOption();
-  THaPrintOption( const char* str );
+  explicit THaPrintOption( const char* str );
   THaPrintOption( const THaPrintOption& opt );
   THaPrintOption& operator=( const THaPrintOption& rhs );
   THaPrintOption& operator=( const char* rhs );
@@ -28,7 +28,7 @@ public:
   Int_t        GetValue( Int_t i=0 )  const;
   Bool_t       IsLine()               const;
   const char*  Data()                 const { return fString; }
-  operator const char*()              const { return Data(); }
+  explicit operator const char*()     const { return Data(); }
   const char* operator[]( Int_t i )   const { return GetOption(i); }
   const char* operator()( Int_t i )   const { return GetOption(i); }
 

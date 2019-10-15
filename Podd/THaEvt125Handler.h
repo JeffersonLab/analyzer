@@ -20,7 +20,7 @@ class THaEvt125Handler : public THaEvtTypeHandler {
 public:
 
    THaEvt125Handler(const char* name, const char* description);
-   virtual ~THaEvt125Handler();
+   virtual ~THaEvt125Handler() = default;
 
    virtual Int_t Analyze(THaEvData *evdata);
    virtual EStatus Init( const TDatime& run_time);

@@ -39,7 +39,7 @@ public:
   virtual Bool_t IsMultiBlockMode() { return fMultiBlockMode; };
   virtual Bool_t BlockIsDone() { return fBlockIsDone; };
   virtual void   FillBankData(UInt_t* /*rdat*/, Int_t /*roc*/, Int_t /*bank*/,
-			      Int_t /*offset*/=0, Int_t /*num*/=1) const { return; };
+			      Int_t /*offset*/=0, Int_t /*num*/=1) const {};
 
   // Derived class to implement this if multiblock mode supported
   virtual Int_t LoadFromMultiBlock() { assert(fgAllowUnimpl); return HED_ERR;};
@@ -63,7 +63,7 @@ public:
   Int_t     GetRocLength(Int_t crate) const;   // Get the ROC length
 
   Bool_t    IsPhysicsTrigger() const;  // physics trigger (event types 1-14)
-  Bool_t    IsScalerEvent()    const;  // scalers from datastream
+  Bool_t    IsScalerEvent()    const;  // scalers from data stream
   Bool_t    IsPrestartEvent()  const;  // prestart event
   Bool_t    IsEpicsEvent()     const;  // slow control data
   Bool_t    IsPrescaleEvent()  const;  // prescale factors
@@ -157,7 +157,7 @@ public:
   { assert(fgAllowUnimpl); return -1; }
   // User can GetScaler, alternatively to GetSlotData for scalers
   // spec = "left", "right", "rcs" for event type 140 scaler "events"
-  // spec = "evleft" or "evright" for L,R scalers injected into datastream.
+  // spec = "evleft" or "evright" for L,R scalers injected into data stream.
   virtual Int_t GetScaler(Int_t /*roc*/, Int_t /*slot*/, Int_t /*chan*/) const
   { assert(ScalersEnabled() && fgAllowUnimpl); return kMaxInt; };
   virtual Int_t GetScaler(const TString& /*spec*/,
@@ -237,14 +237,14 @@ protected:
   struct BankDat_t {           // Bank raw data descriptor
     Int_t pos;                 // position in evbuffer[]
     Int_t len;                 // length of data
-  } bankdat[Decoder::MAXBANK * Decoder::MAXROC];
+  } bankdat[Decoder::MAXBANK * Decoder::MAXROC]{};
   Decoder::THaSlotData** crateslot;
 
   Bool_t first_decode;
   Bool_t fTrigSupPS;
   Bool_t fMultiBlockMode, fBlockIsDone;
-  Int_t fDataVersion;    // Data format version (implementation-defined)
-  Int_t fEpicsEvtType;
+  Int_t  fDataVersion;    // Data format version (implementation-defined)
+  Int_t  fEpicsEvtType;
 
   const UInt_t *buffer;
 
@@ -303,7 +303,7 @@ inline Bool_t THaEvData::GoodCrateSlot( Int_t crate, Int_t slot ) const {
 }
 
 inline Bool_t THaEvData::GoodIndex( Int_t crate, Int_t slot ) const {
-  return ( GoodCrateSlot(crate,slot) && crateslot[idx(crate,slot)] != 0);
+  return ( GoodCrateSlot(crate,slot) && crateslot[idx(crate,slot)] != nullptr);
 }
 
 inline Int_t THaEvData::GetRocLength(Int_t crate) const {
@@ -314,7 +314,7 @@ inline Int_t THaEvData::GetRocLength(Int_t crate) const {
 inline Int_t THaEvData::GetNumHits(Int_t crate, Int_t slot, Int_t chan) const {
   // Number hits in crate, slot, channel
   assert( GoodCrateSlot(crate,slot) );
-  if( crateslot[idx(crate,slot)] != 0 )
+  if( crateslot[idx(crate,slot)] != nullptr )
     return crateslot[idx(crate,slot)]->getNumHits(chan);
   return 0;
 }
@@ -329,7 +329,7 @@ inline Int_t THaEvData::GetData(Int_t crate, Int_t slot, Int_t chan,
 inline Int_t THaEvData::GetNumRaw(Int_t crate, Int_t slot) const {
   // Number of raw words in crate, slot
   assert( GoodCrateSlot(crate,slot) );
-  if( crateslot[idx(crate,slot)] != 0 )
+  if( crateslot[idx(crate,slot)] != nullptr )
     return crateslot[idx(crate,slot)]->getNumRaw();
   return 0;
 }
@@ -381,7 +381,7 @@ inline Bool_t THaEvData::InCrate(Int_t crate, Int_t i) const {
 inline Int_t THaEvData::GetNumChan(Int_t crate, Int_t slot) const {
   // Get number of unique channels hit
   assert( GoodCrateSlot(crate,slot) );
-  if( crateslot[idx(crate,slot)] != 0 )
+  if( crateslot[idx(crate,slot)] != nullptr )
     return crateslot[idx(crate,slot)]->getNumChan();
   return 0;
 }

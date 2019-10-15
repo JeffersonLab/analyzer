@@ -16,8 +16,9 @@ class F1TDCModule : public VmeModule {
 
 public:
 
-   F1TDCModule() : fNumHits(0), fResol(ILO), fTdcData(0), IsInit(false),
-     slotmask(0), chanmask(0), datamask(0) {}
+   F1TDCModule() : fNumHits(0), fResol(ILO), fTdcData(nullptr),
+                   IsInit(false), slotmask(0), chanmask(0), datamask(0)
+                   {}
    F1TDCModule(Int_t crate, Int_t slot);
    virtual ~F1TDCModule();
 
@@ -34,7 +35,6 @@ public:
    void SetResolution(Int_t which=0) {
      fResol = IHI;
      if (which==0) fResol=ILO;
-     return;
    }
    EResolution GetResolution() const { return fResol; };
    Bool_t IsHiResolution() const { return (fResol==IHI); };

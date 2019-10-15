@@ -23,7 +23,7 @@ public:
       fDataMask(0), fOptMask(0), fOptShift(0),
       fChan(0), fData(0), fRawData(0) {}
    FastbusModule(Int_t crate, Int_t slot);
-   virtual ~FastbusModule();
+   virtual ~FastbusModule() = default;
 
    using Module::LoadSlot;
 

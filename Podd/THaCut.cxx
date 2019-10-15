@@ -191,8 +191,9 @@ THaCut::EvalMode THaCut::ParsePrefix( TString& expr )
     EvalMode    mode;
   };
   const ModeDef_t mode_defs[] = {
-    { "OR", kOR }, { "ANY", kOR }, { "AND", kAND }, { "ALL", kAND },
-    { "XOR", kXOR }, { "ONE", kXOR }, { "ONEOF", kXOR }, { 0, kModeErr }
+    { "OR", kOR }, { "ANY", kOR }, { "AND", kAND },
+    { "ALL", kAND }, { "XOR", kXOR }, { "ONE", kXOR },
+    { "ONEOF", kXOR }, { nullptr, kModeErr }
   };
 
   Ssiz_t colon = expr.Index(":");

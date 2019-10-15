@@ -47,11 +47,6 @@ using namespace std;
 using namespace THaString;
 using namespace Podd;
 
-typedef vector<THaOdata*>::iterator Iter_o_t;
-typedef vector<THaVform*>::iterator Iter_f_t;
-typedef vector<THaVhist*>::iterator Iter_h_t;
-typedef vector<string>::iterator Iter_s_t;
-
 Int_t THaOutput::fgVerbose = 1;
 //FIXME: these should be member variables
 static Bool_t fgDoBench = false;
@@ -1085,8 +1080,8 @@ Int_t THaOutput::ChkHistTitle(Int_t iden, const string& sline)
   stitle = "";   sfvarx = "";  sfvary  = "";
   iscut = fgNocut;  scut = "";
   nx = 0; ny = 0; xlo = 0; xhi = 0; ylo = 0; yhi = 0;
-  string::size_type pos1 = sline.find_first_of("'");
-  string::size_type pos2 = sline.find_last_of("'");
+  string::size_type pos1 = sline.find_first_of('\'');
+  string::size_type pos2 = sline.find_last_of('\'');
   if (pos1 != string::npos && pos2 > pos1) {
     stitle = sline.substr(pos1+1,pos2-pos1-1);
   }
