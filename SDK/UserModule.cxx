@@ -66,7 +66,7 @@ Int_t UserModule::DefineVariables( EMode mode )
   RVarDef vars[] = {
     { "A",  "Result A", "fResultA" },
     { "B",  "Result B", "fResultB" },
-    { 0 }
+    { nullptr }
   };
   return DefineVarsFromList( vars, mode );
 }

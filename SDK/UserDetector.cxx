@@ -58,7 +58,7 @@ Int_t UserDetector::ReadDatabase( const TDatime& date )
   //
   // This routine is written for the simple file-based database scheme
   // of Analyzer 1.x. The format of the database file is completely up to the
-  // author of the detector class. Here, we use tag/value pairs to allow
+  // author of the detector class. Here, we use key/value pairs to allow
   // for a free file format.
 
   const char* const here = "ReadDatabase";
@@ -98,13 +98,13 @@ Int_t UserDetector::ReadDatabase( const TDatime& date )
     const DBRequest request[] = {
       // Required items
       { "detmap",    &detmap, kIntV },         // Detector map
-      { "nelem",     &nelem,  kInt, 0, 0, -1}, // Number of elements (e.g. PMTs)
+      { "nelem",     &nelem,  kInt, 0, false, -1}, // Number of elements (e.g. PMTs)
       // Optional items
-      { "angle",     &angle,  kDouble, 0, 1 }, // Rotation angle about y (deg)
+      { "angle",     &angle,  kDouble, 0, true }, // Rotation angle about y (deg)
       //== CAUTION: kFloatV here must match the type of Data_t defined in the header!
-      { "pedestals", &fPed,   kFloatV, 0, 1 }, // Pedestals
-      { "gains",     &fGain,  kFloatV, 0, 1 }, // Gains
-      { 0 }                                    // Last element must be nullptr
+      { "pedestals", &fPed,   kFloatV, 0, true }, // Pedestals
+      { "gains",     &fGain,  kFloatV, 0, true }, // Gains
+      { nullptr }                                    // Last element must be nullptr
     };
 
     // Read the requested values
@@ -120,7 +120,7 @@ Int_t UserDetector::ReadDatabase( const TDatime& date )
   // Catch exceptions here so that we can close the file and clean up
   catch(...) {
     fclose(file);
-    throw;
+    throw; // Just rethrow the exception to exit, unless we have a better idea
   }
 
   // Normal end of reading the database
@@ -131,8 +131,8 @@ Int_t UserDetector::ReadDatabase( const TDatime& date )
   // Check all configuration values for sanity. This is the more tedious, but
   // nevertheless very important part of reading the database. In addition to
   // simple checking, this part may also include computation of derived
-  // configuration parameters, for instance an allowed hitpattern or
-  // geometry limits. See the call to DefineAxes below as an example.
+  // configuration parameters, for instance an allowed hit pattern or
+  // geometry parameters. See the call to DefineAxes below as an example.
   if( nelem <= 0 ) {
     Error( Here(here), "Cannot have zero or negative number of elements. "
 	   "Fix database." );
@@ -175,14 +175,14 @@ Int_t UserDetector::ReadDatabase( const TDatime& date )
 
   // Check if the sizes of the arrays we read make sense.
   // NB: If we have an empty vector here, there was no database entry for it.
-  if( !fPed.empty() && fPed.size() != static_cast<Vec_t::size_type>(nelem)) {
+  if( !fPed.empty() && fPed.size() != static_cast<DataVec_t::size_type>(nelem)) {
     ostringstream ostr;
     ostr << "Incorrect number of pedestal values = " << fPed.size()
          << ". Must match nelem = " << nelem << ". Fix database.";
     Error( Here(here), "%s", ostr.str().c_str() );
     return kInitError;
   }
-  if( !fGain.empty() && fGain.size() != static_cast<Vec_t::size_type>(nelem)) {
+  if( !fGain.empty() && fGain.size() != static_cast<DataVec_t::size_type>(nelem)) {
     ostringstream ostr;
     ostr << "Incorrect number of gain values = " << fGain.size()
          << ". Must match nelem = " << nelem << ". Fix database.";
@@ -221,7 +221,7 @@ Int_t UserDetector::DefineVariables( EMode mode )
     { "chan",  "Raw ADC values",  "fEvtData.fChannel" },
     { "adc",   "Raw ADC values",  "fEvtData.fRawADC" },
     { "adc_c", "Corrected ADCs",  "fEvtData.fCorADC" },
-    { 0 }
+    { nullptr }
   };
   return DefineVarsFromList( vars, mode );
 }
@@ -253,24 +253,25 @@ Int_t UserDetector::Decode( const THaEvData& evdata )
     // Loop over all channels that have a hit.
     for( Int_t j = 0; j < evdata.GetNumChan( d->crate, d->slot ); j++) {
 
-      Int_t chan = evdata.GetNextChan( d->crate, d->slot, j );
-      if( chan < d->lo || chan > d->hi ) continue;   // Not one of my channels
+      Int_t hwChan = evdata.GetNextChan(d->crate, d->slot, j );
+      if( hwChan < d->lo || hwChan > d->hi ) continue;   // Not one of my channels
 
       // Get the data. This detector is assumed to have only single hit (hit=0)
-      Int_t data = evdata.GetData( d->crate, d->slot, chan, 0 );
+      Int_t data = evdata.GetData(d->crate, d->slot, hwChan, 0 );
 
-      // Get the detector channel number, starting at 0
-      Int_t k = chan - d->lo + d->first;
+      // Get the logical channel number in this detector, starting at 0
+      Int_t chan = hwChan - d->lo + d->first;
 
       // Always ensure that index values are sane
-      if( k<0 || k>=fNelem ) {
+      if( chan < 0 || chan >= fNelem ) {
 #ifdef WITH_DEBUG
 	// Indicates bad database
-	Warning( Here("Decode()"), "Illegal detector channel: %d", k );
+	Warning(Here("Decode()"), "Illegal detector channel: %d", chan );
 #endif
 	continue;
       }
-      fEvtData.push_back( EventData(k,data,(data-fPed[k])*fGain[k]) );
+      // Add a new UserDetector::EventData object to the fEvtData vector
+      fEvtData.emplace_back(chan, data, (data - fPed[chan]) * fGain[chan]);
     }
   }
   return fEvtData.size();
@@ -294,17 +295,16 @@ Int_t UserDetector::FineProcess( TClonesArray& /* tracks */ )
 
 //_____________________________________________________________________________
 // Helper macro to print a single field of a structure in a std::vector.
-// Could be done more elegantly in C++11/14
 #define PrintArrayField(txt,var,field)          \
   cout << txt << " = ";                         \
   {                                             \
-     size_t size = var.size();                  \
-     if( size == 0 )                            \
+     if( var.empty() )                          \
        cout << "(empty)";                       \
      else {                                     \
-       for( size_t i = 0; i < size; ++i ) {     \
-         cout << var[i].field;                  \
-         if( i+1 != size ) cout << ", ";        \
+       for( auto it = var.begin();              \
+                 it != var.end(); ++it ) {      \
+         cout << (*it).field;                   \
+         if( it+1 != var.end() ) cout << ", ";  \
        }                                        \
      }                                          \
   } cout << endl;
