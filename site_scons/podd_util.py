@@ -71,7 +71,7 @@ import re
 def build_library(env, sotarget, src, extrahdrs = [], extradicthdrs = [],
                   dictname = None, useenv = True, versioned = False,
                   install_rpath = []):
-    '''
+    """
     Build shared library lib<sotarget> of ROOT classes from given sources "src"
     (space separated string). For each .cxx source file, a .h header file is
     expected.
@@ -98,7 +98,7 @@ def build_library(env, sotarget, src, extrahdrs = [], extradicthdrs = [],
     "install_rpath" is a list of directories that will be set on the installed library
     if RPATH installation is globally enabled with $ADD_INSTALL_RPATH. Literal "$" signs
     in any of these list elements (e.g. $ORIGIN) need to be given as "$$" (e.g. $$ORIGIN).
-    '''
+    """
 
     # Current location relative to top directory
     thisdir_fullpath = env.Dir('.').path
@@ -142,7 +142,6 @@ def build_library(env, sotarget, src, extrahdrs = [], extradicthdrs = [],
         else:
             libname_soname = libname_so
             shlibsuffix = env.subst('$SHLIBSUFFIX')
-            shlinkflags = ''
         shlinkflags = ['-Wl,-soname='+libname_soname]
     elif env['PLATFORM'] == 'darwin':
         # macOS
@@ -230,15 +229,15 @@ def write_compiledata(env, compiledata):
             gitrev = gitrev.decode()
             cxxver = cxxver.decode()
     else:
-        Fnullptr = open(os.devnull, 'w')
+        fnull = open(os.devnull, 'w')
         try:
             gitrev = subprocess.Popen(['git', 'rev-parse', 'HEAD', '2>dev/null'],
-                        stdout=subprocess.PIPE, stderr=Fnullptr).communicate()[0].rstrip()
+                        stdout=subprocess.PIPE, stderr=fnull).communicate()[0].rstrip()
         except:
             gitrev =''
         try:
             outp = subprocess.Popen([env.subst('$CXX'), '--version'],
-                                    stdout=subprocess.PIPE, stderr=Fnullptr).communicate()[0]
+                                    stdout=subprocess.PIPE, stderr=fnull).communicate()[0]
             lines = outp.splitlines()
             cxxver = lines[0]
         except:

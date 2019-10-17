@@ -5,13 +5,13 @@ import re
 from SCons.Script import Action, Builder
 
 def generate(env):
-    '''
+    """
     RootCint(dictionary,headers[,PCMNAME=pcmfilename])
     env.RootCint(dictionary,headers[,PCMNAME=pcmfilename])
 
     Generate ROOT dictionary source file "dictionary" from list of class
     headers "headers"
-    '''
+    """
     bld = Builder(action = Action(rootcint_builder,rootcint_print),
                   emitter = rootcint_emitter)
     env.Append(BUILDERS = {'RootCint' : bld})
@@ -25,11 +25,11 @@ def rootcint_print(target, source, env):
     return 'RootCint: generating '+tgt
 
 def rootcint_emitter(target, source, env):
-    '''
+    """
     With ROOT >= 6, rootcling generates a <dict>_rdict.pcm mapping file
     in addition to the dictionary source file. Add this "side effect" artifact
     to the list of targets so that SCons can automatically keep track of it.
-    '''
+    """
     if int(env.get('ROOTVERS','0')[0]) >= 6:
         if env['PCMNAME']:
             target.append(env['PCMNAME']+'_rdict.pcm')
@@ -39,13 +39,13 @@ def rootcint_emitter(target, source, env):
     return target, source
 
 def rootcint_builder(target, source, env):
-    '''
+    """
     Call rootcint (for ROOT < 6) or rootcling (for ROOT >= 6) to
     generate a ROOT dictionary from the given headers in 'source'.
     Any relevant -D definitions and -I include directives are taken from
     $_CCCOMCOM. The ROOT version is expected to be given in $ROOTVERS;
     if undefined, ROOT 6 is assumed.
-    '''
+    """
     dictname = target[0]
     cpppath = env.subst('$_CCCOMCOM')
     if int(env.get('verbose',0)) > 4:
