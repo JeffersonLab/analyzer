@@ -3,7 +3,7 @@
 ### Modify 'libname' and the list of source files 'src' as needed
 
 from podd_util import build_library
-Import ('baseenv')
+Import('baseenv')
 
 # Library name (lib<libname>.so will be built)
 libname = 'User'

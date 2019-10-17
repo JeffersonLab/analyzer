@@ -17,7 +17,7 @@ def config(env,args):
 
     cxxversion = env.subst('$CXXVERSION')
 
-    if float(cxxversion[0:2])>=4.0:
+    if float(cxxversion[0:2]) >= 4.0:
         env.Append(CXXFLAGS = env.Split('-Wextra -Wno-missing-field-initializers'))
         if not int(debug):
             env.Append(CXXFLAGS = '-Wno-unused-parameter')
@@ -26,4 +26,4 @@ def config(env,args):
     env.Append(SHLINKFLAGS = '-Wl,-headerpad_max_install_names')
     env.Replace(RPATH_ORIGIN_TAG = '@loader_path')
 
-#end darwin64.py
+# end darwin64.py

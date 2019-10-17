@@ -1,7 +1,7 @@
 ###### Hall A Old VDC library SConscript File #####
 
 from podd_util import build_library
-Import ('baseenv')
+Import('baseenv')
 
 libname = 'OldVDC'
 

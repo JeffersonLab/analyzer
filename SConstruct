@@ -16,7 +16,7 @@ sys.path.insert(0,'./site_scons')
 import configure
 import podd_util
 
-#baseenv.Append(verbose = 5)
+# baseenv.Append(verbose = 5)
 
 ####### Hall A Build Environment #############
 baseenv.Append(MAIN_DIR = Dir('.').abspath)
@@ -33,9 +33,9 @@ baseenv.Append(NAME = 'analyzer-'+baseenv.subst('$VERSION'))
 baseenv.Append(EXTVERS = '-devel')
 baseenv.Append(HA_VERSION = baseenv.subst('$VERSION')+baseenv.subst('$EXTVERS'))
 #print ("Main Directory = %s" % baseenv.subst('$HA_DIR'))
-print ("Software Version = %s" % baseenv.subst('$VERSION'))
+print("Software Version = %s" % baseenv.subst('$VERSION'))
 ivercode = 65536*int(float(baseenv.subst('$SOVERSION'))) + \
-           256*int(10*(float(baseenv.subst('$SOVERSION')) - \
+           256*int(10*(float(baseenv.subst('$SOVERSION')) -
                        int(float(baseenv.subst('$SOVERSION'))))) + \
                        int(float(baseenv.subst('$PATCH')))
 baseenv.Append(VERCODE = ivercode)
@@ -44,7 +44,7 @@ install_prefix = os.getenv('SCONS_INSTALL_PREFIX')
 if not install_prefix:
     install_prefix = os.path.join(os.getenv('HOME'),'.local')
 baseenv.Append(INSTALLDIR = install_prefix)
-print ('Will use INSTALLDIR = "%s"' % baseenv.subst('$INSTALLDIR'))
+print('Will use INSTALLDIR = "%s"' % baseenv.subst('$INSTALLDIR'))
 baseenv.Alias('install',baseenv.subst('$INSTALLDIR'))
 
 # Default RPATH handling like CMake's default: always set in build location,
@@ -61,7 +61,7 @@ configure.FindROOT(baseenv)
 
 conf = Configure(baseenv)
 if not baseenv.GetOption('clean') and not baseenv.GetOption('help') \
-    and not 'uninstall' in COMMAND_LINE_TARGETS:
+    and 'uninstall' not in COMMAND_LINE_TARGETS:
 
     if not conf.CheckCXX():
         print('!!! Your compiler and/or environment is not correctly configured.')
@@ -75,27 +75,29 @@ baseenv = conf.Finish()
 
 if baseenv.subst('$CPPCHECK') == '1':
     is_cppcheck = baseenv.WhereIs('cppcheck')
-    print ("Path to cppcheck is %s" % is_cppcheck)
+    print("Path to cppcheck is %s" % is_cppcheck)
 
-    if(is_cppcheck == None):
+    if is_cppcheck is None:
         print('!!! cppcheck not found on this system.  Check if cppcheck is installed and in your PATH.')
         Exit(1)
     else:
-        cppcheck_command = baseenv.Command('cppcheck_report.txt',[],"cppcheck --quiet --enable=all src/ hana_decode/ 2> $TARGET")
-        print ("cppcheck_command = %s" % cppcheck_command)
+        cppcheck_command = baseenv.Command('cppcheck_report.txt',[],
+                                           "cppcheck --quiet --enable=all src/ hana_decode/ 2> $TARGET")
+        print("cppcheck_command = %s" % cppcheck_command)
         baseenv.AlwaysBuild(cppcheck_command)
 
 ####### build source distribution tarball #############
 
 if baseenv.subst('$SRCDIST') == '1':
-    baseenv['DISTTAR_FORMAT']='gz'
+    baseenv['DISTTAR_FORMAT'] = 'gz'
     baseenv.Append(
-        DISTTAR_EXCLUDEEXTS=['.o','.os','.so','.a','.dll','.cache','.pyc','.cvsignore','.dblite','.log', '.gz', '.bz2', '.zip','.pcm','.supp','.patch','.txt','.dylib']
-        , DISTTAR_EXCLUDEDIRS=['.git','VDCsim','bin','scripts','.sconf_temp','tests','work','hana_scaler']
-        , DISTTAR_EXCLUDERES=[r'Dict\.cxx$', r'Dict\.h$',r'analyzer',r'\~$',r'\.so\.',r'\.#', r'\.dylib\.']
+        DISTTAR_EXCLUDEEXTS=['.o','.os','.so','.a','.dll','.cache','.pyc','.cvsignore','.dblite','.log',
+                             '.gz','.bz2', '.zip','.pcm','.supp','.patch','.txt','.dylib'],
+        DISTTAR_EXCLUDEDIRS=['.git','VDCsim','bin','scripts','.sconf_temp','tests','work','hana_scaler'],
+        DISTTAR_EXCLUDERES=[r'Dict\.cxx$', r'Dict\.h$',r'analyzer',r'\~$',r'\.so\.',r'\.#', r'\.dylib\.']
         )
     tar = baseenv.DistTar("dist/analyzer-"+baseenv.subst('$VERSION'),[baseenv.Dir('#')])
-    print ("tarball target = %s" % tar)
+    print("tarball target = %s" % tar)
 
 ###    tar_command = 'tar cvz -C .. -f ../' + baseenv.subst('$NAME') + '.tar.gz -X .exclude -V "JLab/Hall A C++ Analysis Software '+baseenv.subst('$VERSION') + ' `date -I`" ' + '../' + baseenv.subst('$NAME') + '/.exclude ' + '../' + baseenv.subst('$NAME') + '/Changelog ' + '../' + baseenv.subst('$NAME') + '/src ' + '../' + baseenv.subst('$NAME') + '/hana_decode ' + '../' + baseenv.subst('$NAME') + '/Makefile ' + '../' + baseenv.subst('$NAME') + '/*.py' + '../' + baseenv.subst('$NAME') + '/SConstruct'
 

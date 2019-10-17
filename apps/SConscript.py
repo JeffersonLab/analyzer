@@ -3,7 +3,7 @@
 ###### Modified for Podd 1.7 directory layout: Ole Hansen (ole@jlab.org) Sep 2018
 
 import os
-Import ('baseenv')
+Import('baseenv')
 
 thisdir_fullpath = Dir('.').path
 thisdir = os.path.basename(os.path.normpath(thisdir_fullpath))
