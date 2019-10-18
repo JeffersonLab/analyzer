@@ -86,12 +86,13 @@ public:
   // These should be ordered by severity
   enum ERetVal { kOK, kSkip, kTerminate, kFatal };
 
-protected:
-  // Test and histogram blocks
   enum {
     kRawDecode = 0, kDecode, kCoarseTrack, kCoarseRecon,
     kTracking, kReconstruct, kPhysics
   };
+
+protected:
+  // Test and histogram blocks
   struct Stage_t {
     Int_t         key;
     Int_t         countkey;

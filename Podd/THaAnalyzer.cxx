@@ -27,6 +27,7 @@
 #include "THaSpectrometer.h"
 #include "THaCutList.h"
 #include "THaPhysicsModule.h"
+#include "InterStageModule.h"
 #include "THaPostProcess.h"
 #include "THaBenchmark.h"
 #include "THaEvtTypeHandler.h"
@@ -53,6 +54,7 @@
 
 using namespace std;
 using namespace Decoder;
+using Podd::InterStageModule;
 
 const char* const THaAnalyzer::kMasterCutName = "master";
 const char* const THaAnalyzer::kDefaultOdefFile = "output.def";
@@ -112,7 +114,7 @@ THaAnalyzer::~THaAnalyzer()
   // Destructor.
 
   Close();
-  delete fExtra; fExtra = 0;
+  delete fExtra; fExtra = nullptr;
   delete fPostProcess;  //deletes PostProcess objects
   delete fBench;
   delete [] fStages;
@@ -1039,14 +1041,16 @@ Int_t THaAnalyzer::EndAnalysis()
 template<typename T>
 inline size_t ListToVector( TList* lst, vector<T*>& vec )
 {
-  if( !lst )
+  if( !lst ) {
+    vec.clear();
     return 0;
+  }
   vec.reserve( std::max(lst->GetSize(),0) );
   TIter next_item(lst);
   while( TObject* obj = next_item() ) {
     auto item = dynamic_cast<T*>(obj);
     if( item )
-      vec.emplace_back(item);
+      vec.push_back(item);
   }
   return vec.size();
 }
@@ -1079,15 +1083,15 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
   //--- Process all apparatuses that are defined in fApps
   //    First Decode(), then Reconstruct()
 
-  // Convert from the type-unsafe ROOT containers to STL vectors
+  // Convert from type-unsafe ROOT containers to STL vectors
   vector<THaApparatus*> apps;
   vector<THaSpectrometer*> spectros;
+  vector<InterStageModule*> intermods;
   vector<THaPhysicsModule*> physmods;
-//  vector<InterStageModule*> intermods;
   ListToVector(fApps, apps);
   ListToVector(fApps, spectros);
+  ListToVector(fPhysics, intermods);
   ListToVector(fPhysics, physmods);
-//  ListToVector( apps, fApps );
 
   TString stage;
   TObject* obj = nullptr;    // for exception error message
@@ -1098,11 +1102,14 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
     for( auto app : apps ) {
       obj = app;
       app->Clear();
-      app->Decode( *fEvData );
+      app->Decode(*fEvData);
+    }
+    for( auto mod : intermods ) {
+      if( mod->GetStage() == kDecode )
+        mod->Process(*fEvData);
     }
     if( fDoBench ) fBench->Stop(stage);
-    if( !EvalStage(kDecode) )  return kSkip;
-
+    if( !EvalStage(kDecode) ) return kSkip;
 
     //--- Main physics analysis. Calls the following for each defined apparatus
     //    THaSpectrometer::CoarseTrack  (only for spectrometers)
@@ -1120,6 +1127,10 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
       obj = spectro;
       spectro->CoarseTrack();
     }
+    for( auto mod : intermods ) {
+      if( mod->GetStage() == kCoarseTrack )
+        mod->Process(*fEvData);
+    }
     if( fDoBench ) fBench->Stop(stage);
     if( !EvalStage(kCoarseTrack) )  return kSkip;
 
@@ -1129,6 +1140,10 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
     for( auto app : apps ) {
       obj = app;
       app->CoarseReconstruct();
+    }
+    for( auto mod : intermods ) {
+      if( mod->GetStage() == kCoarseRecon )
+        mod->Process(*fEvData);
     }
     if( fDoBench ) fBench->Stop(stage);
     if( !EvalStage(kCoarseRecon) )  return kSkip;
@@ -1141,6 +1156,10 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
       obj = spectro;
       spectro->Track();
     }
+    for( auto mod : intermods ) {
+      if( mod->GetStage() == kTracking )
+        mod->Process(*fEvData);
+    }
     if( fDoBench ) fBench->Stop(stage);
     if( !EvalStage(kTracking) )  return kSkip;
 
@@ -1150,6 +1169,10 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
     for( auto app : apps ) {
       obj = app;
       app->Reconstruct();
+    }
+    for( auto mod : intermods ) {
+      if( mod->GetStage() == kReconstruct )
+        mod->Process(*fEvData);
     }
     if( fDoBench ) fBench->Stop(stage);
     if( !EvalStage(kReconstruct) )  return kSkip;
@@ -1168,6 +1191,10 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
         code = kFatal;
         break;
       }
+    }
+    for( auto mod : intermods ) {
+      if( mod->GetStage() == kPhysics )
+        mod->Process(*fEvData);
     }
     if( fDoBench ) fBench->Stop(stage);
     if( code == kFatal ) return kFatal;
