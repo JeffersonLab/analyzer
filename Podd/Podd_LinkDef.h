@@ -113,6 +113,7 @@
 #pragma link C++ class Podd::SimDecoder+;
 #pragma link C++ class Podd::CodaRawDecoder+;
 #pragma link C++ class Podd::InterStageModule+;
+#pragma link C++ class Podd::TimeCorrectionModule+;
 
 #ifdef ONLINE_ET
 #pragma link C++ class THaOnlRun+;
