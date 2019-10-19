@@ -23,6 +23,9 @@ class THaEvData;
 class THaPostProcess;
 class THaCrateMap;
 class THaEpicsEvtHandler;
+namespace Podd {
+  class InterStageModule;
+}
 
 class THaAnalyzer : public TObject {
 
@@ -30,6 +33,7 @@ public:
   THaAnalyzer();
   virtual ~THaAnalyzer();
 
+  virtual Int_t  AddInterStage( Podd::InterStageModule* module );
   virtual Int_t  AddPostProcess( THaPostProcess* module );
   virtual void   Close();
   virtual Int_t  Init( THaRunBase* run );
@@ -143,6 +147,7 @@ protected:
   TList*         fPhysics;         //List of physics modules
   TList*         fPostProcess;     //List of post-processing modules
   TList*         fEvtHandlers;     //List of event handlers
+  TList*         fInterStage;      //List of inter-stage modules
 
   // Status and control flags
   Bool_t         fIsInit;          // Init() called successfully
@@ -205,15 +210,15 @@ private:
 };
 
 //---------------- inlines ----------------------------------------------------
-inline UInt_t THaAnalyzer::GetCount( Int_t i ) const
+inline UInt_t THaAnalyzer::GetCount( Int_t which ) const
 {
-  return fCounters[i].count;
+  return fCounters[which].count;
 }
 
 //_____________________________________________________________________________
-inline UInt_t THaAnalyzer::Incr( Int_t i )
+inline UInt_t THaAnalyzer::Incr( Int_t which )
 {
-  return ++(fCounters[i].count);
+  return ++(fCounters[which].count);
 }
 
 #endif

@@ -27,6 +27,13 @@ InterStageModule::InterStageModule( const char* name, const char* description,
 }
 
 //_____________________________________________________________________________
+void InterStageModule::Clear( Option_t* opt )
+{
+  THaAnalysisObject::Clear(opt);
+  fDataValid = false;
+}
+
+//_____________________________________________________________________________
 void InterStageModule::PrintInitError( const char* here )
 {
   Error(Here(here), "Cannot set. Module already initialized.");

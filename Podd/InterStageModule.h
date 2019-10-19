@@ -19,10 +19,7 @@ class InterStageModule : public THaAnalysisObject {
 public:
   virtual ~InterStageModule() = default;
 
-  virtual void  Clear( Option_t* opt="" ) {
-    THaAnalysisObject::Clear(opt);
-    fDataValid = false;
-  }
+  virtual void  Clear( Option_t* opt="" );
   virtual Int_t Process( const THaEvData& ) = 0;
 
   bool  DataValid() const { return fDataValid; }

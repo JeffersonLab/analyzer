@@ -460,6 +460,7 @@ Int_t THaVDCPlane::Decode( const THaEvData& evData )
 
   // the event's T0-shift, due to the trigger-type
   // only an issue when adding in un-retimed trigger types
+  //TODO: move to CoarseTracking
   Double_t evtT0=0;
   if ( fglTrg && fglTrg->Decode(evData)==kOK ) evtT0 = fglTrg->TimeOffset();
 

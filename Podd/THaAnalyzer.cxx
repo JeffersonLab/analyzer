@@ -76,7 +76,7 @@ THaAnalyzer::THaAnalyzer() :
   fStages(nullptr), fCounters(nullptr), fNev(0), fMarkInterval(1000), fCompress(1),
   fVerbose(2), fCountMode(kCountRaw), fBench(nullptr), fPrevEvent(nullptr),
   fRun(nullptr), fEvData(nullptr), fApps(nullptr), fPhysics(nullptr),
-  fPostProcess(nullptr), fEvtHandlers(nullptr),
+  fPostProcess(nullptr), fEvtHandlers(nullptr), fInterStage(nullptr),
   fIsInit(false), fAnalysisStarted(false), fLocalEvent(false),
   fUpdateRun(true), fOverwrite(true), fDoBench(false),
   fDoHelicity(false), fDoPhysics(true), fDoOtherEvents(true),
@@ -85,6 +85,7 @@ THaAnalyzer::THaAnalyzer() :
 {
   // Default constructor.
 
+  //FIXME: relax this
   // Allow only one analyzer object (because we use various global lists)
   if( fgAnalyzer ) {
     Error("THaAnalyzer", "only one instance of THaAnalyzer allowed.");
@@ -103,7 +104,6 @@ THaAnalyzer::THaAnalyzer() :
   //  fEpicsHandler->SetDebugFile("epicsdat.txt");
   fEvtHandlers->Add(fEpicsHandler);
 
-
   // Timers
   fBench = new THaBenchmark;
 }
@@ -116,11 +116,55 @@ THaAnalyzer::~THaAnalyzer()
   Close();
   delete fExtra; fExtra = nullptr;
   delete fPostProcess;  //deletes PostProcess objects
+  delete fInterStage;
   delete fBench;
   delete [] fStages;
   delete [] fCounters;
   if( fgAnalyzer == this )
     fgAnalyzer = nullptr;
+}
+
+//_____________________________________________________________________________
+Int_t THaAnalyzer::AddInterStage( Podd::InterStageModule* module )
+{
+  // Add 'module' to the list of inter-stage modules. See AddPostProcess()
+  // for additional comments
+
+  //FIXME: code duplication
+  const char* const here = "AddInterStage";
+
+  // No module, nothing to do
+  if( !module )
+    return 0;
+
+  // Can't add modules in the middle of things
+  if( fAnalysisStarted ) {
+    Error( Here(here), "Cannot add analysis modules while analysis "
+                             "is in progress. Close() this analysis first." );
+    return 237;
+  }
+
+  // Init this module if Analyzer already initialized. Otherwise, the
+  // module will be initialized in Init() later.
+  if( fIsInit ) {
+    // FIXME: debug
+    if( !fRun || !fRun->IsInit()) {
+      Error(Here(here),"fIsInit, but bad fRun?!?");
+      return 236;
+    }
+    TDatime run_time = fRun->GetDate();
+    Int_t retval = module->Init(run_time);
+    if( retval )
+      return retval;
+  }
+
+  // If list of modules does not yet exist, create it.
+  // Destructor will clean up.
+  if( !fInterStage )
+    fInterStage = new TList;
+
+  fInterStage->Add(module);
+  return 0;
 }
 
 //_____________________________________________________________________________
@@ -1086,11 +1130,11 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
   // Convert from type-unsafe ROOT containers to STL vectors
   vector<THaApparatus*> apps;
   vector<THaSpectrometer*> spectros;
-  vector<InterStageModule*> intermods;
+  vector<InterStageModule*> stagemods;
   vector<THaPhysicsModule*> physmods;
   ListToVector(fApps, apps);
   ListToVector(fApps, spectros);
-  ListToVector(fPhysics, intermods);
+  ListToVector(fInterStage, stagemods);
   ListToVector(fPhysics, physmods);
 
   TString stage;
@@ -1104,7 +1148,7 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
       app->Clear();
       app->Decode(*fEvData);
     }
-    for( auto mod : intermods ) {
+    for( auto mod : stagemods ) {
       if( mod->GetStage() == kDecode )
         mod->Process(*fEvData);
     }
@@ -1127,7 +1171,7 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
       obj = spectro;
       spectro->CoarseTrack();
     }
-    for( auto mod : intermods ) {
+    for( auto mod : stagemods ) {
       if( mod->GetStage() == kCoarseTrack )
         mod->Process(*fEvData);
     }
@@ -1141,7 +1185,7 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
       obj = app;
       app->CoarseReconstruct();
     }
-    for( auto mod : intermods ) {
+    for( auto mod : stagemods ) {
       if( mod->GetStage() == kCoarseRecon )
         mod->Process(*fEvData);
     }
@@ -1156,7 +1200,7 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
       obj = spectro;
       spectro->Track();
     }
-    for( auto mod : intermods ) {
+    for( auto mod : stagemods ) {
       if( mod->GetStage() == kTracking )
         mod->Process(*fEvData);
     }
@@ -1170,7 +1214,7 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
       obj = app;
       app->Reconstruct();
     }
-    for( auto mod : intermods ) {
+    for( auto mod : stagemods ) {
       if( mod->GetStage() == kReconstruct )
         mod->Process(*fEvData);
     }
@@ -1192,7 +1236,7 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
         break;
       }
     }
-    for( auto mod : intermods ) {
+    for( auto mod : stagemods ) {
       if( mod->GetStage() == kPhysics )
         mod->Process(*fEvData);
     }
