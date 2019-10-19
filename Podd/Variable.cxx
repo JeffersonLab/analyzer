@@ -107,6 +107,8 @@ std::vector<Double_t> Variable::GetValues() const
   }
   return res;
 }
+
+//_____________________________________________________________________________
 Double_t Variable::GetValue( Int_t i ) const
 {
   // Retrieve current value of this global variable as double.
@@ -268,7 +270,7 @@ const void* Variable::GetDataPointer( Int_t i ) const
   const char* const here = "GetDataPointer()";
 
   assert( fValueP && IsBasic() );
-  static_assert( sizeof(ULong_t) == sizeof(void*) );
+  static_assert( sizeof(ULong_t) == sizeof(void*), "ULong_t must be of pointer size" );
 
   if( i<0 || i>=GetLen() ) {
     fSelf->Error(here, "Index out of range, variable %s, index %d", GetName(), i );
@@ -318,7 +320,7 @@ size_t Variable::GetData( void* buf ) const
   }
   else {
     // Non-contiguous data (e.g. pointer array) must be copied element by element
-    static_assert( sizeof(char) == 1 );
+    static_assert( sizeof(char) == 1, "Need sizeof(char) = 1 byte" );
     nbytes = 0;
     for( Int_t i = 0; i<nelem; ++i ) {
       const void* src = GetDataPointer(i);

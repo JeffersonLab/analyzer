@@ -123,7 +123,7 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
 
   typedef vector<TSeqCollection*> VecSC_t;
 
-  static_assert( sizeof(ULong_t) == sizeof(void*) ); // ULong_t must be of pointer size
+  static_assert( sizeof(ULong_t) == sizeof(void*), "ULong_t must be of pointer size" );
 
   if( !obj || !cl ) {
     Warning( errloc, "Invalid class or object. Variable %s not defined.",
