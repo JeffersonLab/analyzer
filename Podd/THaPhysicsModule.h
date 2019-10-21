@@ -29,7 +29,7 @@ public:
   enum ESpecialRetval { kFatal     = -16768,
 			kTerminate = -16767 };
 protected:
-
+//TODO: DefineVariables fDataValid etc.
   THaPhysicsModule( const char* name, const char* description );
 
   void PrintInitError( const char* here );
