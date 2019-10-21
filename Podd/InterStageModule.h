@@ -25,18 +25,15 @@ public:
   bool  DataValid() const { return fDataValid; }
   Int_t GetStage()  const { return fStage; }
 
-  // Special return codes for Process()
-  enum ESpecialRetval { kFatal     = -16768,
-			kTerminate = -16767 };
 protected:
+  Int_t fStage;                  // Stage after which to run
+  bool  fDataValid;              // Data valid
 
   InterStageModule( const char* name, const char* description,
                     Int_t stage );
 
   void PrintInitError( const char* here );
-
-  Int_t fStage;                  // Stage after which to run
-  bool  fDataValid;              // Data valid
+  virtual Int_t DefineVariables( EMode mode );
 
   ClassDef(InterStageModule,1)   //ABC for a physics/kinematics module
 };

@@ -744,7 +744,8 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
   // Quit if any errors.
   if( !((retval = InitModules( fApps,    run_time, 20, "THaApparatus")) ||
 	(retval = InitModules( fPhysics, run_time, 40, "THaPhysicsModule")) ||
-	(retval = InitModules( fEvtHandlers, run_time, 50, "THaEvtTypeHandler"))
+	(retval = InitModules( fEvtHandlers, run_time, 50, "THaEvtTypeHandler")) ||
+        (retval = InitModules( fInterStage, run_time, 60, "Podd::InterStageModule"))
 	)) {
 
     // Set up cuts here, now that all global variables are available

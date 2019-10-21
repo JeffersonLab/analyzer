@@ -40,7 +40,23 @@ void InterStageModule::PrintInitError( const char* here )
 }
 
 //_____________________________________________________________________________
+Int_t InterStageModule::DefineVariables( THaAnalysisObject::EMode mode )
+{
+  // Define/delete global variables for this module
+
+  if( mode == kDefine && fIsSetup ) return kOK;
+  fIsSetup = ( mode == kDefine );
+
+  static const RVarDef vars[] = {
+    { "good", "Data valid (1=ok)", "fDataValid" },
+    { nullptr }
+  };
+
+  return DefineVarsFromList( vars, mode );
+
+}
+//_____________________________________________________________________________
 
 } // namespace Podd
 
-ClassImp(InterStageModule)
+ClassImp(Podd::InterStageModule)
