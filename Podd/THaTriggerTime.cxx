@@ -50,7 +50,7 @@ Int_t THaTriggerTime::ReadDatabase( const TDatime& date )
   fTrgTypes.clear();
   fToffsets.clear();
   fDetMap->Clear();
-  delete [] fTrgTimes; fTrgTimes = 0;
+  delete [] fTrgTimes; fTrgTimes = nullptr;
   fNTrgType = 0;
 
   // Read configuration parameters
@@ -58,9 +58,9 @@ Int_t THaTriggerTime::ReadDatabase( const TDatime& date )
   DBRequest config_request[] = {
     { "tdc_res",  &fTDCRes },
     { "trigdef",  &trigdef,   kDoubleV },
-    { "glob_off", &fGlOffset, kDouble, 0, 1 },
-    { "common_stop", &fCommonStop, kInt, 0, 1 },
-    { 0 }
+    { "glob_off", &fGlOffset, kDouble, 0, true },
+    { "common_stop", &fCommonStop, kInt, 0, true },
+    { nullptr }
   };
   Int_t err = LoadDB( file, date, config_request, fPrefix );
   fclose(file);
@@ -160,7 +160,7 @@ Int_t THaTriggerTime::Decode(const THaEvData& evdata)
 //____________________________________________________________________________
 Int_t THaTriggerTime::DefineVariables( EMode mode )
 {
-  // Define/delete standard event-by-event time offsets
+  // Define/delete event-by-event global variables
 
   if( mode == kDefine && fIsSetup ) return kOK;
   fIsSetup = ( mode == kDefine );
@@ -169,7 +169,7 @@ Int_t THaTriggerTime::DefineVariables( EMode mode )
     { "evtime",  "Time-offset for event (trg based)", "fEvtTime" },
     { "evtype",  "Earliest trg-bit for the event",    "fEvtType" },
     { "trgtimes", "Times for each trg-type",          "fTrgTimes" },
-    { 0 }
+    { nullptr }
   };
 
   return DefineVarsFromList( vars, mode );

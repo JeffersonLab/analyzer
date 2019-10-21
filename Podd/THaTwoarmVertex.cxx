@@ -25,7 +25,6 @@
 #include "THaTrackInfo.h"
 #include "THaTrack.h"
 #include "TMath.h"
-#include "VarDef.h"
 
 #include <iostream>
 
@@ -62,8 +61,7 @@ void THaTwoarmVertex::Clear( Option_t* opt )
 //_____________________________________________________________________________
 Int_t THaTwoarmVertex::DefineVariables( EMode mode )
 {
-  // Define/delete standard variables for a spectrometer (tracks etc.)
-  // Can be overridden or extended by derived (actual) apparatuses
+  // Define/delete global variables for this module
 
   if( mode == kDefine && fIsSetup ) return kOK;
   fIsSetup = ( mode == kDefine );
@@ -156,6 +154,6 @@ Int_t THaTwoarmVertex::Process( const THaEvData& )
   fDataValid = true;
   return 0;
 }
-  
+
 ///////////////////////////////////////////////////////////////////////////////
 ClassImp(THaTwoarmVertex)

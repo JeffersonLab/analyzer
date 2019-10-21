@@ -18,10 +18,10 @@
 
 class THaTriggerTime : public THaNonTrackingDetector {
  public:
-  THaTriggerTime( const char* name="trg", const char* description = "",
-                  THaApparatus* a = nullptr );
+  explicit THaTriggerTime( const char* name="trg", const char* description = "",
+                           THaApparatus* a = nullptr );
 
-  ~THaTriggerTime();
+  virtual ~THaTriggerTime();
 
   Double_t            TimeOffset() const { return fEvtTime; }
   Int_t               EventType()  const { return fEvtType; }

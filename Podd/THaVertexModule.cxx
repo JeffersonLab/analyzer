@@ -50,7 +50,7 @@ const RVarDef* THaVertexModule::GetRVarDef()
     { "y",  "vertex y-position", "fVertex.fY" },
     { "z",  "vertex z-position", "fVertex.fZ" },
     { "ok", "Data valid (1=ok)", "fVertexOK" },
-    { 0 }
+    { nullptr }
   };
   return vars;
 }
