@@ -19,7 +19,6 @@
 #include "THaVDCPlane.h"
 #include "THaVDCPoint.h"
 #include "THaVDCCluster.h"
-#include "THaVDCHit.h"
 #include "TMath.h"
 
 #include <cstring>
@@ -244,6 +243,15 @@ Int_t THaVDCChamber::Decode( const THaEvData& evData )
 }
 
 //_____________________________________________________________________________
+void THaVDCChamber::ApplyTimeCorrection()
+{
+  // Apply time offset correction to all our hits
+
+  fU->ApplyTimeCorrection();
+  fV->ApplyTimeCorrection();
+}
+
+//_____________________________________________________________________________
 void THaVDCChamber::FindClusters()
 {
   // Find clusters in U & V planes
@@ -265,6 +273,10 @@ void THaVDCChamber::FitTracks()
 Int_t THaVDCChamber::CoarseTrack()
 {
   // Coarse computation of tracks
+
+  // Apply drift time offset correction obtained in prior Decode or
+  // InterStage(Decode) stage
+  ApplyTimeCorrection();
 
   // Find clusters and estimate their position/slope
   FindClusters();

@@ -1,4 +1,4 @@
-///////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 //                                                                           //
 // THaVDC                                                                    //
 //                                                                           //
@@ -11,17 +11,14 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "THaVDC.h"
-#include "THaGlobals.h"
 #include "THaEvData.h"
 #include "THaDetMap.h"
 #include "THaTrack.h"
-#include "THaVDCPlane.h"
 #include "THaVDCChamber.h"
 #include "THaVDCPoint.h"
 #include "THaVDCCluster.h"
 #include "THaVDCTrackID.h"
 #include "THaVDCPointPair.h"
-#include "THaVDCHit.h"
 #include "THaScintillator.h"
 #include "THaSpectrometer.h"
 #include "TMath.h"
@@ -30,19 +27,19 @@
 #include "VarDef.h"
 #include "TROOT.h"
 #include "THaString.h"
-
-//#include <algorithm>
+#include "TimeCorrectionModule.h"
 #include <map>
 #include <cstdio>
 #include <cstdlib>
 #include <cassert>
 #include <cctype>
 #include <sstream>
+#include <iostream>
+#include <iomanip>
 
 #ifdef WITH_DEBUG
 #include <iostream>
 #endif
-
 
 using namespace std;
 using namespace VDC;
@@ -67,7 +64,8 @@ THaVDC::THaVDC( const char* name, const char* description,
   fVDCAngle(-TMath::PiOver4()), fSin_vdc(-0.5*TMath::Sqrt2()),
   fCos_vdc(0.5*TMath::Sqrt2()), fTan_vdc(-1.0),
   fSpacing(0.33), fCentralDist(0.),
-  fNumIter(1), fErrorCutoff(1e9), fCoordType(kRotatingTransport)
+  fNumIter(1), fErrorCutoff(1e9), fCoordType(kRotatingTransport),
+  fTimeCorrectionModule(nullptr)
 {
   // Constructor
 
@@ -83,6 +81,16 @@ THaVDC::THaVDC( const char* name, const char* description,
 
   // Default behavior for now
   SetBit( kOnlyFastest | kHardTDCcut );
+}
+
+//_____________________________________________________________________________
+THaVDC::~THaVDC()
+{
+  // Destructor. Delete subdetectors.
+
+  delete fLower;
+  delete fUpper;
+  delete fLUpairs;
 }
 
 //_____________________________________________________________________________
@@ -274,10 +282,11 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   // (R. Feuerbach, October 16, 2003)
   matrix_map["L"]   = MEdef_t( 4, &fLMatrixElems );
 
-  string MEstring;
+  string MEstring, TCmodule;
   DBRequest request1[] = {
     { "matrixelem",  &MEstring, kString },
-    { 0 }
+    { "time_cor",    &TCmodule, kString, 0, true },
+    { nullptr }
   };
   err = LoadDB( file, date, request1, fPrefix );
   if( err ) {
@@ -314,6 +323,18 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   if( err ) {
     fclose(file);
     return err;
+  }
+
+  // If given, find the module for calculating an event-by-event
+  // time offset correction
+  if( !TCmodule.empty() ) {
+    fTimeCorrectionModule = dynamic_cast<Podd::TimeCorrectionModule*>
+      (FindModule(TCmodule.c_str(), "Podd::TimeCorrectionModule", false));
+    if( !fTimeCorrectionModule ) {
+       Warning( Here(here), "Time correction module \"%s\" not found. "
+      	    "Event-by-event time offsets will NOT be used!\nCheck \"time_cor\" database key",
+      	    TCmodule.c_str() );
+    }
   }
 
   // Compute derived geometry quantities
@@ -435,13 +456,20 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
 }
 
 //_____________________________________________________________________________
-THaVDC::~THaVDC()
+Int_t THaVDC::DefineVariables( EMode mode )
 {
-  // Destructor. Delete subdetectors.
+  // Initialize global variables and lookup table for decoder
 
-  delete fLower;
-  delete fUpper;
-  delete fLUpairs;
+  if( mode == kDefine && fIsSetup ) return kOK;
+  fIsSetup = ( mode == kDefine );
+
+  // Register variables in global list
+
+  RVarDef vars[] = {
+    { "time_cor", "Trigger time offset (s)", "GetTimeCorrectionUnchecked()" },
+    { nullptr }
+  };
+  return DefineVarsFromList( vars, mode );
 }
 
 //_____________________________________________________________________________
@@ -1278,6 +1306,28 @@ void THaVDC::SetDebug( Int_t level )
   THaTrackingDetector::SetDebug(level);
   fLower->SetDebug(level);
   fUpper->SetDebug(level);
+}
+
+//_____________________________________________________________________________
+// TODO: Change return type to std::optional once we support C++17
+std::pair<Double_t,bool> THaVDC::GetTimeCorrection() const
+{
+  // Return time correction for current event, if available.
+  // If time corrections are not enabled or not available for the current
+  // event, the bool in the returned pair is false.
+
+  if( fTimeCorrectionModule && fTimeCorrectionModule->DataValid() )
+    return make_pair(fTimeCorrectionModule->TimeOffset(), true);
+  return make_pair(0.0, false);
+}
+
+//_____________________________________________________________________________
+Double_t THaVDC::GetTimeCorrectionUnchecked() const
+{
+  // Version of GetTimeCorrection for global variables
+
+  auto r = GetTimeCorrection();
+  return r.first;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

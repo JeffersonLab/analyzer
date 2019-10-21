@@ -54,7 +54,7 @@ THaVDCPlane::THaVDCPlane( const char* name, const char* description,
     fMaxClustSpan(kMaxInt), fNMaxGap(0), fMinTime(0), fMaxTime(kMaxInt),
     fMaxThits(0), fMinTdiff(0), fMaxTdiff(kBig), fTDCRes(0), fDriftVel(0),
     fT0Resolution(0), fWBeg(0), fWSpac(0), fWAngle(0), fSinWAngle(0),
-    fCosWAngle(1), /*fTable(0),*/ fTTDConv(0), fglTrg(0)
+    fCosWAngle(1), /*fTable(0),*/ fTTDConv(nullptr)
 {
   // Constructor
 
@@ -255,17 +255,6 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
       wire->SetFlag(1);
   }
 
-  // finally, find the timing-offset to apply on an event-by-event basis
-  //FIXME: time offset handling should go into the enclosing apparatus -
-  //since not doing so leads to exactly this kind of mess:
-  THaApparatus* app = GetApparatus();
-  const char* nm = "trg"; // inside an apparatus, the apparatus name is assumed
-  if( !app ||
-      !(fglTrg = dynamic_cast<THaTriggerTime*>(app->GetDetector(nm))) ) {
-    // Warning(Here(here),"Trigger-time detector \"%s\" not found. "
-    //	    "Event-by-event time offsets will NOT be used!!",nm);
-  }
-
 #ifdef WITH_DEBUG
   if( fDebug > 2 ) {
     Double_t org[3]; fOrigin.GetXYZ(org);
@@ -458,11 +447,6 @@ Int_t THaVDCPlane::Decode( const THaEvData& evData )
 
   if (!evData.IsPhysicsTrigger()) return -1;
 
-  // the event's T0-shift, due to the trigger-type
-  // only an issue when adding in un-retimed trigger types
-  Double_t evtT0=0;
-  if ( fglTrg && fglTrg->Decode(evData)==kOK ) evtT0 = fglTrg->TimeOffset();
-
   Int_t nextHit = 0;
 
   bool only_fastest_hit = false, no_negative = false;
@@ -510,7 +494,7 @@ Int_t THaVDCPlane::Decode( const THaEvData& evData )
 	// TDC data to compensate for the fact that the TDC truncates, not
 	// rounds, the data.
 	Double_t xdata = static_cast<Double_t>(data) + 0.5;
-	Double_t time = fTDCRes * (toff - xdata) - evtT0;
+	Double_t time = fTDCRes * (toff - xdata);
 
 	// If requested, ignore hits with negative drift times
 	// (due to noise or miscalibration). Use with care.
@@ -534,7 +518,7 @@ Int_t THaVDCPlane::Decode( const THaEvData& evData )
       // (shortest drift time), it is recorded here.
       if( only_fastest_hit && max_data>0 ) {
 	Double_t xdata = static_cast<Double_t>(max_data) + 0.5;
-	Double_t time = fTDCRes * (toff - xdata) - evtT0;
+	Double_t time = fTDCRes * (toff - xdata);
 	new( (*fHits)[nextHit++] ) THaVDCHit( wire, max_data, time, nHits );
       }
     } // End channel index loop
@@ -574,6 +558,26 @@ Int_t THaVDCPlane::Decode( const THaEvData& evData )
   return 0;
 }
 
+
+//_____________________________________________________________________________
+Int_t THaVDCPlane::ApplyTimeCorrection()
+{
+  // Correct drift times of all hits by GetTimeCorrection() from the VDC
+  // parent detector
+
+  if( fVDC ) {
+    auto r = fVDC->GetTimeCorrection();
+    if( r.second ) {
+      Double_t evtT0 = r.first;
+      Int_t nHits = GetNHits();
+      for( Int_t i = 0; i < nHits; ++i ) {
+        auto hit = GetHit(i);
+        hit->SetTime(hit->GetTime() - evtT0);
+      }
+    }
+  }
+  return 0;
+}
 
 //_____________________________________________________________________________
 class TimeCut {
