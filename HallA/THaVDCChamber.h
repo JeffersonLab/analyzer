@@ -70,6 +70,7 @@ protected:
   Double_t fInv_sin_vu;       // 1/Sine of the difference between the
                               // V axis angle and the U axis angle
 
+  void  ApplyTimeCorrection(); // Correct hit drift times by common offset
   void  FindClusters();       // Find clusters in U and V planes
   void  FitTracks();          // Fit local tracks for each cluster
   Int_t MatchUVClusters();    // Match clusters in U with clusters in V

@@ -30,7 +30,7 @@
 #include "VarDef.h"
 #include "TROOT.h"
 #include "THaString.h"
-
+#include "VDCTimeCorrectionModule.h"
 //#include <algorithm>
 #include <map>
 #include <cstdio>
@@ -67,7 +67,8 @@ THaVDC::THaVDC( const char* name, const char* description,
   fVDCAngle(-TMath::PiOver4()), fSin_vdc(-0.5*TMath::Sqrt2()),
   fCos_vdc(0.5*TMath::Sqrt2()), fTan_vdc(-1.0),
   fSpacing(0.33), fCentralDist(0.),
-  fNumIter(1), fErrorCutoff(1e9), fCoordType(kRotatingTransport)
+  fNumIter(1), fErrorCutoff(1e9), fCoordType(kRotatingTransport),
+  fTimeCorrectionModule(nullptr)
 {
   // Constructor
 
@@ -314,6 +315,15 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   if( err ) {
     fclose(file);
     return err;
+  }
+
+  //TODO finally, find the timing-offset to apply on an event-by-event basis
+  const char* nm = "trg"; //TODO: set from database
+  if( !(fTimeCorrectionModule =
+          dynamic_cast<HallA::VDCTimeCorrectionModule*>
+          (FindModule(nm, "HallA::VDCTimeCorrectionModule", false))) ) {
+    // Warning(Here(here),"Trigger-time detector \"%s\" not found. "
+    //	    "Event-by-event time offsets will NOT be used!!",nm);
   }
 
   // Compute derived geometry quantities
@@ -1262,6 +1272,15 @@ void THaVDC::SetDebug( Int_t level )
   THaTrackingDetector::SetDebug(level);
   fLower->SetDebug(level);
   fUpper->SetDebug(level);
+}
+
+//_____________________________________________________________________________
+Double_t THaVDC::GetTimeCorrection() const
+{
+  if( fTimeCorrectionModule && fTimeCorrectionModule->DataValid() )
+    return fTimeCorrectionModule->GetTimeOffset();
+
+  return 0.0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

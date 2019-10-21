@@ -8,12 +8,16 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "THaTrackingDetector.h"
+#include "VDCTimeCorrectionModule.h"
 #include <cassert>
 
 class THaVDCChamber;
 class THaTrack;
 class TClonesArray;
 class THaVDCPoint;
+namespace HallA {
+  class VDCTimeCorrectionModule;
+}
 
 class THaVDC : public THaTrackingDetector {
 
@@ -37,6 +41,8 @@ public:
 
   Double_t GetVDCAngle() const { return fVDCAngle; }
   Double_t GetSpacing()  const { return fSpacing;  }
+
+  Double_t GetTimeCorrection() const;
 
   void Print(const Option_t* opt="") const;
 
@@ -127,6 +133,8 @@ protected:
 					    // { T, Y, P }
 
   std::vector<THaMatrixElement> fLMatrixElems;   // Path-length corrections (meters)
+
+  HallA::VDCTimeCorrectionModule* fTimeCorrectionModule;
 
   void CalcFocalPlaneCoords( THaTrack* track );
   void CalcTargetCoords( THaTrack* the_track );

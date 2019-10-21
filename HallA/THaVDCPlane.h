@@ -19,19 +19,19 @@ namespace VDC {
 }
 
 class THaEvData;
-class THaTriggerTime;
 class THaVDC;
 
 class THaVDCPlane : public THaSubDetector {
 
 public:
 
-  THaVDCPlane( const char* name="", const char* description="",
-	       THaDetectorBase* parent = nullptr );
+  explicit THaVDCPlane( const char* name="", const char* description="",
+                        THaDetectorBase* parent = nullptr );
   virtual ~THaVDCPlane();
 
   virtual void    Clear( Option_t* opt="" );
   virtual Int_t   Decode( const THaEvData& ); // Raw data -> hits
+  virtual Int_t   ApplyTimeCorrection();      // Drift time correction
   virtual Int_t   FindClusters();             // Hits -> clusters
   virtual Int_t   FitTracks();                // Clusters -> tracks
 
@@ -122,8 +122,6 @@ protected:
   VDC::TimeToDistConv* fTTDConv;  // Time-to-distance converter for this plane's wires
 
   THaVDC* fVDC;           // VDC detector to which this plane belongs
-
-  THaTriggerTime* fglTrg; //! time-offset global variable. Needed at the decode stage
 
   virtual void  MakePrefix();
   virtual Int_t ReadDatabase( const TDatime& date );
