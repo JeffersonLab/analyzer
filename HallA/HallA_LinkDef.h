@@ -30,6 +30,7 @@
 #pragma link C++ class THaQWEAKHelicityReader+;
 #pragma link C++ class THaDecData+;
 #pragma link C++ class TrigBitLoc+;
+#pragma link C++ class HallA::VDCTimeCorrectionModule+;
 #pragma link C++ class HallA::TwoarmVDCTimeCorrection+;
 
 #endif

@@ -4,7 +4,8 @@
 //
 // HallA::TwoarmVDCTimeCorrection
 //
-// Calculates a time correction for the VDC based on a generic formula.
+// Calculates a trigger time correction for the VDC from the TDC
+// difference between two scintillators.
 // Runs after Decode.
 //
 //////////////////////////////////////////////////////////////////////////
@@ -17,7 +18,6 @@
 #include <vector>
 
 using namespace std;
-using Podd::InterStageModule;
 
 namespace HallA {
 
@@ -26,28 +26,12 @@ TwoarmVDCTimeCorrection::TwoarmVDCTimeCorrection( const char* name,
                                                   const char* description,
                                                   const char* scint1,
                                                   const char* scint2 )
-  : InterStageModule(name, description, THaAnalyzer::kDecode),
+  : VDCTimeCorrectionModule(name, description, THaAnalyzer::kDecode),
     fName1(scint1), fName2(scint2), fNpads1(0), fNpads2(0),
     fRT1(nullptr), fLT1(nullptr), fNhit1(nullptr), fTPad1(nullptr),
-    fRT2(nullptr), fLT2(nullptr), fNhit2(nullptr), fTPad2(nullptr),
-    fGlOffset(0.0), fEvtTime(0.0)
+    fRT2(nullptr), fLT2(nullptr), fNhit2(nullptr), fTPad2(nullptr)
 {
   // Constructor
-}
-
-//_____________________________________________________________________________
-TwoarmVDCTimeCorrection::~TwoarmVDCTimeCorrection()
-{
-  // Destructor
-
-  RemoveVariables();
-}
-
-//_____________________________________________________________________________
-void TwoarmVDCTimeCorrection::Clear( Option_t* opt )
-{
-  InterStageModule::Clear(opt);
-  fEvtTime = fGlOffset;
 }
 
 //_____________________________________________________________________________
@@ -138,53 +122,6 @@ Int_t TwoarmVDCTimeCorrection::Process( const THaEvData& )
   fEvtTime += fGlOffset;
 
   return 0;
-}
-
-//_____________________________________________________________________________
-Int_t TwoarmVDCTimeCorrection::DefineVariables( THaAnalysisObject::EMode mode )
-{
-  // Define/delete event-by-event global variables
-
-  bool save_state = fIsSetup;
-  InterStageModule::DefineVariables(mode);  // exports fDataValid etc.
-  fIsSetup = save_state;
-
-  if( mode == kDefine && fIsSetup ) return kOK;
-  fIsSetup = ( mode == kDefine );
-
-  RVarDef vars[] = {
-    { "evtime",  "Time offset for event", "fEvtTime" },
-    { nullptr }
-  };
-
-  return DefineVarsFromList( vars, mode );
-}
-
-//_____________________________________________________________________________
-Int_t TwoarmVDCTimeCorrection::ReadDatabase( const TDatime& date )
-{
-  // Read this detector's parameters from the database.
-
-//  const char* const here = "ReadDatabase";
-
-  FILE* file = OpenFile( date );
-  if( !file )
-    return kFileError;
-
-  fIsInit = false;
-  fGlOffset = 0.0;
-  // Read configuration parameters
-  DBRequest config_request[] = {
-    { "glob_off", &fGlOffset, kDouble, 0, true },
-    { nullptr }
-  };
-  Int_t err = LoadDB( file, date, config_request, fPrefix );
-  fclose(file);
-  if( err )
-    return err;
-
-  fIsInit = true;
-  return kOK;
 }
 
 //_____________________________________________________________________________
