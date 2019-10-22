@@ -45,7 +45,7 @@ public:
   Double_t GetVDCAngle() const { return fVDCAngle; }
   Double_t GetSpacing()  const { return fSpacing;  }
 
-  Double_t GetTimeCorrection() const;
+  std::pair<Double_t,bool> GetTimeCorrection() const;
 
   void Print(const Option_t* opt="") const;
 
@@ -146,10 +146,10 @@ protected:
 //  Double_t PolyInv(const double x1, const double x2, const double xacc,
 //		 const double y, const int norder,
 //		 const std::vector<double> &a);
-  static Double_t CalcTargetVar(const std::vector<THaMatrixElement> &matrix,
-			 const double powers[][5]);
-  static Double_t CalcTarget2FPLen(const std::vector<THaMatrixElement>& matrix,
-			    const Double_t powers[][5]);
+  static Double_t CalcTargetVar( const std::vector<THaMatrixElement>& matrix,
+                                 const double powers[][5] );
+  static Double_t CalcTarget2FPLen( const std::vector<THaMatrixElement>& matrix,
+                                    const Double_t powers[][5] );
   Int_t ReadDatabase( const TDatime& date );
 
   virtual Int_t ConstructTracks( TClonesArray* tracks = nullptr, Int_t flag = 0 );

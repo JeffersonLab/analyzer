@@ -566,11 +566,14 @@ Int_t THaVDCPlane::ApplyTimeCorrection()
   // parent detector
 
   if( fVDC ) {
-    Double_t evtT0 = fVDC->GetTimeCorrection();
-    Int_t nHits = GetNHits();
-    for( Int_t i = 0; i<nHits; ++i ) {
-      auto hit = GetHit(i);
-      hit->SetTime( hit->GetTime()-evtT0 );
+    auto r = fVDC->GetTimeCorrection();
+    if( r.second ) {
+      Double_t evtT0 = r.first;
+      Int_t nHits = GetNHits();
+      for( Int_t i = 0; i < nHits; ++i ) {
+        auto hit = GetHit(i);
+        hit->SetTime(hit->GetTime() - evtT0);
+      }
     }
   }
   return 0;

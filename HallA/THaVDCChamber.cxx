@@ -19,7 +19,6 @@
 #include "THaVDCPlane.h"
 #include "THaVDCPoint.h"
 #include "THaVDCCluster.h"
-#include "THaVDCHit.h"
 #include "TMath.h"
 
 //_____________________________________________________________________________

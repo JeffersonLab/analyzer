@@ -1,4 +1,4 @@
-///////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 //                                                                           //
 // THaVDC                                                                    //
 //                                                                           //
@@ -11,17 +11,14 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "THaVDC.h"
-#include "THaGlobals.h"
 #include "THaEvData.h"
 #include "THaDetMap.h"
 #include "THaTrack.h"
-#include "THaVDCPlane.h"
 #include "THaVDCChamber.h"
 #include "THaVDCPoint.h"
 #include "THaVDCCluster.h"
 #include "THaVDCTrackID.h"
 #include "THaVDCPointPair.h"
-#include "THaVDCHit.h"
 #include "THaScintillator.h"
 #include "THaSpectrometer.h"
 #include "TMath.h"
@@ -31,18 +28,18 @@
 #include "TROOT.h"
 #include "THaString.h"
 #include "VDCTimeCorrectionModule.h"
-//#include <algorithm>
 #include <map>
 #include <cstdio>
 #include <cstdlib>
 #include <cassert>
 #include <cctype>
 #include <sstream>
+#include <iostream>
+#include <iomanip>
 
 #ifdef WITH_DEBUG
 #include <iostream>
 #endif
-
 
 using namespace std;
 using namespace VDC;
@@ -275,9 +272,10 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   // (R. Feuerbach, October 16, 2003)
   matrix_map["L"]   = MEdef_t( 4, &fLMatrixElems );
 
-  string MEstring;
+  string MEstring, TCmodule;
   DBRequest request1[] = {
     { "matrixelem",  &MEstring, kString },
+    { "time_cor",    &TCmodule, kString },
     { nullptr }
   };
   err = LoadDB( file, date, request1, fPrefix );
@@ -317,13 +315,16 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
     return err;
   }
 
-  //TODO finally, find the timing-offset to apply on an event-by-event basis
-  const char* nm = "trg"; //TODO: set from database
-  if( !(fTimeCorrectionModule =
-          dynamic_cast<HallA::VDCTimeCorrectionModule*>
-          (FindModule(nm, "HallA::VDCTimeCorrectionModule", false))) ) {
-    // Warning(Here(here),"Trigger-time detector \"%s\" not found. "
-    //	    "Event-by-event time offsets will NOT be used!!",nm);
+  // If given, find the module for calculating an event-by-event
+  // time offset correction
+  if( !TCmodule.empty() ) {
+    fTimeCorrectionModule = dynamic_cast<HallA::VDCTimeCorrectionModule*>
+      (FindModule(TCmodule.c_str(), "HallA::VDCTimeCorrectionModule", false));
+    if( !fTimeCorrectionModule ) {
+       Warning( Here(here), "Time correction module \"%s\" not found. "
+      	    "Event-by-event time offsets will NOT be used!\nCheck \"time_cor\" database key",
+      	    TCmodule.c_str() );
+    }
   }
 
   // Compute derived geometry quantities
@@ -1211,12 +1212,16 @@ void THaVDC::SetDebug( Int_t level )
 }
 
 //_____________________________________________________________________________
-Double_t THaVDC::GetTimeCorrection() const
+// TODO: Change return type to std::optional one we support C++17
+std::pair<Double_t,bool> THaVDC::GetTimeCorrection() const
 {
-  if( fTimeCorrectionModule && fTimeCorrectionModule->DataValid() )
-    return fTimeCorrectionModule->GetTimeOffset();
+  // Return time correction for current event, if available.
+  // If time corrections are not enabled or not available for the current
+  // event, the bool in the returned pair is false.
 
-  return 0.0;
+  if( fTimeCorrectionModule && fTimeCorrectionModule->DataValid() )
+    return make_pair(fTimeCorrectionModule->GetTimeOffset(), true);
+  return make_pair(0.0, false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
