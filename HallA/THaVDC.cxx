@@ -1115,6 +1115,24 @@ void THaVDC::FindBadTracks(TClonesArray& tracks)
 }
 
 //_____________________________________________________________________________
+void THaVDC::PrintME( const string& header,
+                      const vector<THaMatrixElement>& matrix )
+{
+  // Print given matrix elements
+
+  cout << header << endl;
+  for( const auto& ME : matrix ) {
+    for(int pw : ME.pw) {
+      cout << "  " << setw(2) <<  pw;
+    }
+    for( int j = 0; j < ME.order; j++ ) {
+      cout << "  " << setprecision(4) << ME.poly[j];
+    }
+    cout << endl;
+  }
+}
+
+//_____________________________________________________________________________
 void THaVDC::Print(const Option_t* opt) const
 {
   THaTrackingDetector::Print(opt);
@@ -1122,97 +1140,15 @@ void THaVDC::Print(const Option_t* opt) const
   TString sopt(opt);
   sopt.ToUpper();
   if( sopt.Contains("ME") || sopt.Contains("MATRIX") ) {
-    // Print out the optics matrices, to verify they make sense
-    printf("Matrix FP (t000, y000, p000)\n");
-
-    // TODO:Clean this up with a PrintME function
-    for( const auto& ME : fFPMatrixElems ) {
-      for(int pw : ME.pw) {
-        // TODO: printf -> ostream
-        printf("  %2d", pw);
-      }
-      for( int j = 0; j < ME.order; j++ ) {
-        printf("  %g", ME.poly[j]);
-      }
-      printf("\n");
-    }
-
-    printf("Transport Matrix:  D-terms\n");
-    for( const auto& ME : fDMatrixElems ) {
-      for(int pw : ME.pw) {
-        printf("  %2d", pw);
-      }
-      for( int j = 0; j < ME.order; j++ ) {
-        printf("  %g", ME.poly[j]);
-      }
-      printf("\n");
-    }
-
-    printf("Transport Matrix:  T-terms\n");
-    for( const auto& ME : fTMatrixElems ) {
-      for(int pw : ME.pw) {
-        printf("  %2d", pw);
-      }
-      for( int j = 0; j < ME.order; j++ ) {
-        printf("  %g", ME.poly[j]);
-      }
-      printf("\n");
-    }
-
-    printf("Transport Matrix:  Y-terms\n");
-    for( const auto& ME : fYMatrixElems ) {
-      for( int pw : ME.pw ) {
-        printf("  %2d", pw);
-      }
-      for( int j = 0; j < ME.order; j++ ) {
-        printf("  %g", ME.poly[j]);
-      }
-      printf("\n");
-    }
-
-    printf("Transport Matrix:  YTA-terms (abs(theta))\n");
-    for( const auto& ME : fYTAMatrixElems ) {
-      for( int pw : ME.pw ) {
-        printf("  %2d", pw);
-      }
-      for( int j = 0; j < ME.order; j++ ) {
-        printf("  %g", ME.poly[j]);
-      }
-      printf("\n");
-    }
-
-    printf("Transport Matrix:  P-terms\n");
-    for( const auto& ME : fPMatrixElems ) {
-      for( int pw : ME.pw ) {
-        printf("  %2d", pw);
-      }
-      for( int j = 0; j < ME.order; j++ ) {
-        printf("  %g", ME.poly[j]);
-      }
-      printf("\n");
-    }
-
-    printf("Transport Matrix:  PTA-terms\n");
-    for( const auto& ME : fPTAMatrixElems ) {
-      for( int pw : ME.pw ) {
-        printf("  %2d", pw);
-      }
-      for( int j = 0; j < ME.order; j++ ) {
-        printf("  %g", ME.poly[j]);
-      }
-      printf("\n");
-    }
-
-    printf("Matrix L\n");
-    for( const auto& ME : fLMatrixElems ) {
-      for( int pw : ME.pw ) {
-        printf("  %2d", pw);
-      }
-      for( int j = 0; j < ME.order; j++ ) {
-        printf("  %g", ME.poly[j]);
-      }
-      printf("\n");
-    }
+    // Print out the optics matrices
+    PrintME("Matrix FP (t000, y000, p000)", fFPMatrixElems);
+    PrintME("Transport Matrix:  D-terms", fDMatrixElems);
+    PrintME("Transport Matrix:  T-terms", fTMatrixElems);
+    PrintME("Transport Matrix:  Y-terms", fYMatrixElems);
+    PrintME("Transport Matrix:  YTA-terms (abs(theta))", fYTAMatrixElems);
+    PrintME("Transport Matrix:  P-terms", fPMatrixElems);
+    PrintME("Transport Matrix:  PTA-terms", fPTAMatrixElems);
+    PrintME("Matrix L", fLMatrixElems);
   }
 }
 

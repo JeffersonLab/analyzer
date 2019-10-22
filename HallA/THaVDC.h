@@ -10,6 +10,9 @@
 #include "THaTrackingDetector.h"
 #include "VDCTimeCorrectionModule.h"
 #include <cassert>
+#include <utility>
+#include <string>
+#include <vector>
 
 class THaVDCChamber;
 class THaTrack;
@@ -158,6 +161,8 @@ protected:
 			      Bool_t required = false );
 
   ClassDef(THaVDC,0)             // VDC class
+  static void PrintME( const std::string& header,
+                       const std::vector<THaMatrixElement>& matrix );
 };
 
 ////////////////////////////////////////////////////////////////////////////////
