@@ -1144,7 +1144,7 @@ Int_t THaOutput::BuildBlock(const string& blockn)
   while ((obj = next())) {
     TString s = obj->GetName();
     if ( s.Index(re) != kNPOS ) {
-      fVarnames.emplace_back(s);
+      fVarnames.emplace_back(s.Data());
       nvars++;
     }
   }
