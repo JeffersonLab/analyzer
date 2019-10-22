@@ -10,6 +10,9 @@
 #include "THaTrackingDetector.h"
 #include "TimeCorrectionModule.h"
 #include <cassert>
+#include <utility>
+#include <string>
+#include <vector>
 
 class THaVDCChamber;
 class THaTrack;
@@ -20,6 +23,8 @@ namespace Podd {
 }
 
 class THaVDC : public THaTrackingDetector {
+
+friend class THaVDCPlane;
 
 public:
   THaVDC( const char* name, const char* description = "",
@@ -41,9 +46,6 @@ public:
 
   Double_t GetVDCAngle() const { return fVDCAngle; }
   Double_t GetSpacing()  const { return fSpacing;  }
-
-  std::pair<Double_t,bool> GetTimeCorrection() const;
-  Double_t GetTimeCorrectionUnchecked() const;
 
   void Print(const Option_t* opt="") const;
 
@@ -156,10 +158,13 @@ protected:
   void CorrectTimeOfFlight(TClonesArray& tracks);
   void FindBadTracks(TClonesArray &tracks);
 
+  std::pair<Double_t,bool> GetTimeCorrection() const;
+  Double_t GetTimeCorrectionUnchecked() const;
+
   virtual Int_t ReadDatabase( const TDatime& date );
   virtual Int_t ReadGeometry( FILE* file, const TDatime& date,
 			      Bool_t required = false );
-  virtual Int_t DefineVariables( EMode mode );
+  virtual Int_t DefineVariables( EMode mode = kDefine );
 
   ClassDef(THaVDC,0)             // VDC class
 };

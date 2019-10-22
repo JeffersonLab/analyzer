@@ -74,11 +74,7 @@ protected:
   Int_t       fTrkNum;   // Number of the track using this hit (0 = unused)
   Int_t       fClsNum;   // Number of the cluster using this hit (-1 = unused)
 
- private:
-  THaVDCHit( const THaVDCHit& );
-  THaVDCHit& operator=( const THaVDCHit& );
-
-  ClassDef(THaVDCHit,2)             // VDCHit class
+  ClassDef(THaVDCHit,3)             // VDCHit class
 };
 
 ///////////////////////////////////////////////////////////////////////////////
