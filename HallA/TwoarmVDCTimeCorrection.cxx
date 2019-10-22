@@ -49,15 +49,20 @@ TwoarmVDCTimeCorrection::Init( const TDatime& run_time )
   if( InterStageModule::Init( run_time ) != kOK )
     return fStatus;
 
-  // Find scintillators
-  auto scint1 = dynamic_cast<THaScintillator*>
-    ( FindModule(fName1.Data(), "THaScintillator"));
+  // Find reference detectors
+  // In principle we should check that these are THaScintillators, but Tritium/nnL
+  // use their own TriFadcScin class, which inherits from THaNonTrackingDetector.
+  // IN fact, generic THaDetectors are fine for this purpose. As long as they
+  // export the required variables which have the expected contents (see below),
+  // there's no need to be more restrictive.
+  auto scint1 = dynamic_cast<THaDetector*>
+    ( FindModule(fName1.Data(), "THaDetector"));
   if( !scint1 ) {
     fStatus = kInitError;
     return fStatus;
   }
-  auto scint2 = dynamic_cast<THaScintillator*>
-    ( FindModule(fName2.Data(), "THaScintillator"));
+  auto scint2 = dynamic_cast<THaDetector*>
+    ( FindModule(fName2.Data(), "THaDetector"));
   if( !scint2 ) {
     fStatus = kInitError;
     return fStatus;

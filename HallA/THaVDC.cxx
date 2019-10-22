@@ -84,6 +84,16 @@ THaVDC::THaVDC( const char* name, const char* description,
 }
 
 //_____________________________________________________________________________
+THaVDC::~THaVDC()
+{
+  // Destructor. Delete subdetectors.
+
+  delete fLower;
+  delete fUpper;
+  delete fLUpairs;
+}
+
+//_____________________________________________________________________________
 THaAnalysisObject::EStatus THaVDC::Init( const TDatime& date )
 {
   // Initialize VDC. Calls standard Init(), then initializes subdetectors.
@@ -275,7 +285,7 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   string MEstring, TCmodule;
   DBRequest request1[] = {
     { "matrixelem",  &MEstring, kString },
-    { "time_cor",    &TCmodule, kString },
+    { "time_cor",    &TCmodule, kString, 0, true },
     { nullptr }
   };
   err = LoadDB( file, date, request1, fPrefix );
@@ -446,13 +456,20 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
 }
 
 //_____________________________________________________________________________
-THaVDC::~THaVDC()
+Int_t THaVDC::DefineVariables( EMode mode )
 {
-  // Destructor. Delete subdetectors.
+  // Initialize global variables and lookup table for decoder
 
-  delete fLower;
-  delete fUpper;
-  delete fLUpairs;
+  if( mode == kDefine && fIsSetup ) return kOK;
+  fIsSetup = ( mode == kDefine );
+
+  // Register variables in global list
+
+  RVarDef vars[] = {
+    { "time_cor", "Trigger time offset (s)", "GetTimeCorrectionUnchecked()" },
+    { nullptr }
+  };
+  return DefineVarsFromList( vars, mode );
 }
 
 //_____________________________________________________________________________
@@ -1212,7 +1229,7 @@ void THaVDC::SetDebug( Int_t level )
 }
 
 //_____________________________________________________________________________
-// TODO: Change return type to std::optional one we support C++17
+// TODO: Change return type to std::optional once we support C++17
 std::pair<Double_t,bool> THaVDC::GetTimeCorrection() const
 {
   // Return time correction for current event, if available.
@@ -1222,6 +1239,15 @@ std::pair<Double_t,bool> THaVDC::GetTimeCorrection() const
   if( fTimeCorrectionModule && fTimeCorrectionModule->DataValid() )
     return make_pair(fTimeCorrectionModule->GetTimeOffset(), true);
   return make_pair(0.0, false);
+}
+
+//_____________________________________________________________________________
+Double_t THaVDC::GetTimeCorrectionUnchecked() const
+{
+  // Version of GetTimeCorrection for global variables
+
+  auto r = GetTimeCorrection();
+  return r.first;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

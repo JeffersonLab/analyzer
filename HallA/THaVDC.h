@@ -46,6 +46,7 @@ public:
   Double_t GetSpacing()  const { return fSpacing;  }
 
   std::pair<Double_t,bool> GetTimeCorrection() const;
+  Double_t GetTimeCorrectionUnchecked() const;
 
   void Print(const Option_t* opt="") const;
 
@@ -150,19 +151,20 @@ protected:
                                  const double powers[][5] );
   static Double_t CalcTarget2FPLen( const std::vector<THaMatrixElement>& matrix,
                                     const Double_t powers[][5] );
-  Int_t ReadDatabase( const TDatime& date );
+  static void     PrintME( const std::string& header,
+                           const std::vector<THaMatrixElement>& matrix );
 
   virtual Int_t ConstructTracks( TClonesArray* tracks = nullptr, Int_t flag = 0 );
 
   void CorrectTimeOfFlight(TClonesArray& tracks);
   void FindBadTracks(TClonesArray &tracks);
 
+  virtual Int_t ReadDatabase( const TDatime& date );
   virtual Int_t ReadGeometry( FILE* file, const TDatime& date,
 			      Bool_t required = false );
+  virtual Int_t DefineVariables( EMode mode );
 
-  ClassDef(THaVDC,0)             // VDC class
-  static void PrintME( const std::string& header,
-                       const std::vector<THaMatrixElement>& matrix );
+ClassDef(THaVDC,0)             // VDC class
 };
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -69,12 +69,16 @@ Int_t VDCTimeCorrectionModule::ReadDatabase( const TDatime& date )
 //  const char* const here = "ReadDatabase";
 
   FILE* file = OpenFile( date );
-  if( !file )
-    return kFileError;
 
-  fIsInit = false;
   fGlOffset = 0.0;
+  if( !file ) {
+    // Missing file OK -- all keys are optional
+    fIsInit = true;
+    return kOK;
+  }
+
   // Read configuration parameters
+  fIsInit = false;
   DBRequest config_request[] = {
     { "glob_off", &fGlOffset, kDouble, 0, true },
     { nullptr }
