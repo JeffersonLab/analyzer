@@ -17,106 +17,41 @@
 #include "TMath.h"
 #include "VarDef.h"
 #include "VarType.h"
-
+#include "THaAnalyzer.h"
 #include <cstdio>
 #include <vector>
 
 using namespace std;
+using Podd::TimeCorrectionModule;
 
 //____________________________________________________________________________
-THaTriggerTime::THaTriggerTime( const char* name, const char* desc,
-                                THaApparatus* apparatus ) :
-  THaNonTrackingDetector(name, desc, apparatus),
-  fEvtTime(0.0), fEvtType(-1), fTDCRes(0.0),
-  fGlOffset(0.0), fCommonStop(0), fNTrgType(0), fTrgTimes(nullptr)
+THaTriggerTime::THaTriggerTime( const char* name, const char* desc )
+  : TimeCorrectionModule(name, desc, THaAnalyzer::kDecode),
+    fEvtType(-1), fTDCRes(0.0), fCommonStop(0), fDetMap(new THaDetMap)
 {
   // basic do-nothing-else constructor
 }
 
 //____________________________________________________________________________
-Int_t THaTriggerTime::ReadDatabase( const TDatime& date )
+THaTriggerTime::~THaTriggerTime()
 {
-  // Read this detector's parameters from the database.
-  // 'date' contains the date/time of the run being analyzed.
+  // Normal destructor
+  RemoveVariables();
 
-  const char* const here = "ReadDatabase";
-
-  FILE* file = OpenFile( date );
-  if( !file )
-    return kFileError;
-
-  fGlOffset = 0.0;
-  fCommonStop = 0.0;
-  fTrgTypes.clear();
-  fToffsets.clear();
-  fDetMap->Clear();
-  delete [] fTrgTimes; fTrgTimes = nullptr;
-  fNTrgType = 0;
-
-  // Read configuration parameters
-  vector<Double_t> trigdef;
-  DBRequest config_request[] = {
-    { "tdc_res",  &fTDCRes },
-    { "trigdef",  &trigdef,   kDoubleV },
-    { "glob_off", &fGlOffset, kDouble, 0, true },
-    { "common_stop", &fCommonStop, kInt, 0, true },
-    { nullptr }
-  };
-  Int_t err = LoadDB( file, date, config_request, fPrefix );
-  fclose(file);
-  if( err )
-    return err;
-
-  // Sanity checks
-  if( trigdef.size() % 5 != 0 ) {
-    Error( Here(here), "Incorrect number of elements in \"trigdef\" "
-     "parameter = %u. Must be a multiple of 5. Fix database.",
-     static_cast<unsigned int>(trigdef.size()) );
-    return kInitError;
-  }
-
-  // Read in the time offsets, in the format below, to be subtracted from
-  // the times measured in other detectors.
-  //
-  // Trigger types NOT listed are assumed to have a zero offset.
-  //
-  // <TrgType>   <time offset in seconds>
-  // eg:
-  //   1               0       crate slot chan
-  //   2              10.e-9   crate slot chan
-
-  Int_t ndef = trigdef.size() / 5;
-  for( Int_t i = 0; i<ndef; ++i ) {
-    Int_t base = 5*i;
-    Int_t itrg    = TMath::Nint( trigdef[base] );
-    Double_t toff = trigdef[base+1];
-    Int_t crate   = TMath::Nint( trigdef[base+2] );
-    Int_t slot    = TMath::Nint( trigdef[base+3] );
-    Int_t chan    = TMath::Nint( trigdef[base+4] );
-    fTrgTypes.push_back( itrg );
-    fToffsets.push_back( toff );
-    fDetMap->AddModule( crate, slot, chan, chan, itrg );
-  }
-
-  // now construct the appropriate arrays
-  fNTrgType = fTrgTypes.size();
-  fTrgTimes = new Double_t[fNTrgType];
-
-  return kOK;
+  delete fDetMap;
 }
 
 //____________________________________________________________________________
 void THaTriggerTime::Clear(Option_t* opt)
 {
   // Reset all variables to their default/unknown state
-  THaNonTrackingDetector::Clear(opt);
+  TimeCorrectionModule::Clear(opt);
   fEvtType = -1;
-  fEvtTime = fGlOffset;
-  for (Int_t i=0; i<fNTrgType; i++) fTrgTimes[i]=kBig * fCommonStop;
+  fTrgTimes.assign( fTrgTypes.size(), kBig * (fCommonStop ? 1 : 0) );
 }
 
 //____________________________________________________________________________
-Int_t THaTriggerTime::Decode(const THaEvData& evdata)
+Int_t THaTriggerTime::Process( const THaEvData& evdata)
 {
   // Look through the channels to determine the trigger type.
   // Be certain to decode only once per event.
@@ -158,6 +93,78 @@ Int_t THaTriggerTime::Decode(const THaEvData& evdata)
 }
 
 //____________________________________________________________________________
+Int_t THaTriggerTime::ReadDatabase( const TDatime& date )
+{
+  // Read this detector's parameters from the database.
+  // 'date' contains the date/time of the run being analyzed.
+
+  const char* const here = "ReadDatabase";
+
+  Int_t ret = Podd::TimeCorrectionModule::ReadDatabase(date);
+  if( ret != kOK )
+    return ret;
+
+  FILE* file = OpenFile( date );
+  if( !file )
+    return kFileError;
+
+  fCommonStop = 0.0;
+  fTrgTypes.clear();
+  fToffsets.clear();
+  fDetMap->Clear();
+
+  // Read configuration parameters
+  vector<Double_t> trigdef;
+  DBRequest config_request[] = {
+    { "tdc_res",  &fTDCRes },
+    { "trigdef",  &trigdef,   kDoubleV },
+    { "glob_off", &fGlOffset, kDouble, 0, true },
+    { "common_stop", &fCommonStop, kInt, 0, true },
+    { nullptr }
+  };
+  Int_t err = LoadDB( file, date, config_request, fPrefix );
+  fclose(file);
+  if( err )
+    return err;
+
+  // Sanity checks
+  if( trigdef.size() % 5 != 0 ) {
+    Error( Here(here), "Incorrect number of elements in \"trigdef\" "
+                       "parameter = %u. Must be a multiple of 5. Fix database.",
+           static_cast<unsigned int>(trigdef.size()) );
+    return kInitError;
+  }
+
+  // Read in the time offsets, in the format below, to be subtracted from
+  // the times measured in other detectors.
+  //
+  // Trigger types NOT listed are assumed to have a zero offset.
+  //
+  // <TrgType>   <time offset in seconds>
+  // eg:
+  //   1               0       crate slot chan
+  //   2              10.e-9   crate slot chan
+
+  Int_t ndef = trigdef.size() / 5;
+  for( Int_t i = 0; i<ndef; ++i ) {
+    Int_t base = 5*i;
+    Int_t itrg    = TMath::Nint( trigdef[base] );
+    Double_t toff = trigdef[base+1];
+    Int_t crate   = TMath::Nint( trigdef[base+2] );
+    Int_t slot    = TMath::Nint( trigdef[base+3] );
+    Int_t chan    = TMath::Nint( trigdef[base+4] );
+    fTrgTypes.push_back( itrg );
+    fToffsets.push_back( toff );
+    fDetMap->AddModule( crate, slot, chan, chan, itrg );
+  }
+
+  // now construct the appropriate arrays
+  fTrgTimes.resize( fTrgTypes.size() );
+
+  return kOK;
+}
+
+//____________________________________________________________________________
 Int_t THaTriggerTime::DefineVariables( EMode mode )
 {
   // Define/delete event-by-event global variables
@@ -166,9 +173,8 @@ Int_t THaTriggerTime::DefineVariables( EMode mode )
   fIsSetup = ( mode == kDefine );
 
   RVarDef vars[] = {
-    { "evtime",  "Time-offset for event (trg based)", "fEvtTime" },
-    { "evtype",  "Earliest trg-bit for the event",    "fEvtType" },
-    { "trgtimes", "Times for each trg-type",          "fTrgTimes" },
+    { "evtype",  "Earliest trg-bit for the event", "fEvtType" },
+    { "trgtimes","Times for each trg-type",        "fTrgTimes" },
     { nullptr }
   };
 
@@ -176,13 +182,4 @@ Int_t THaTriggerTime::DefineVariables( EMode mode )
 }
 
 //____________________________________________________________________________
-THaTriggerTime::~THaTriggerTime()
-{
-  // Normal destructor
-  if ( fIsSetup )
-    RemoveVariables();
-
-  delete [] fTrgTimes;
-}
-
 ClassImp(THaTriggerTime)

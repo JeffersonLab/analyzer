@@ -11,13 +11,14 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "TwoarmVDCTimeCorrection.h"
-#include "THaScintillator.h"
+#include "THaDetector.h"
 #include "THaAnalyzer.h"
 #include "THaVarList.h"
 #include "TError.h"
 #include <vector>
 
 using namespace std;
+using Podd::TimeCorrectionModule;
 
 namespace HallA {
 
@@ -26,7 +27,7 @@ TwoarmVDCTimeCorrection::TwoarmVDCTimeCorrection( const char* name,
                                                   const char* description,
                                                   const char* scint1,
                                                   const char* scint2 )
-  : VDCTimeCorrectionModule(name, description, THaAnalyzer::kDecode),
+  : TimeCorrectionModule(name, description, THaAnalyzer::kDecode),
     fName1(scint1), fName2(scint2), fNpads1(0), fNpads2(0),
     fRT1(nullptr), fLT1(nullptr), fNhit1(nullptr), fTPad1(nullptr),
     fRT2(nullptr), fLT2(nullptr), fNhit2(nullptr), fTPad2(nullptr)

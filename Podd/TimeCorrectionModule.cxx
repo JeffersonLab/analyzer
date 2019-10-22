@@ -2,24 +2,23 @@
 
 //////////////////////////////////////////////////////////////////////////
 //
-// HallA::VDCTimeCorrectionModule
+// HallA::TimeCorrectionModule
 //
 // Calculates a time correction for the VDC based on a generic formula.
 //
 //////////////////////////////////////////////////////////////////////////
 
-#include "VDCTimeCorrectionModule.h"
+#include "TimeCorrectionModule.h"
 #include "THaAnalyzer.h"
 
 using namespace std;
-using Podd::InterStageModule;
 
-namespace HallA {
+namespace Podd {
 
 //_____________________________________________________________________________
-VDCTimeCorrectionModule::VDCTimeCorrectionModule( const char* name,
-                                                  const char* description,
-                                                  Int_t stage )
+TimeCorrectionModule::TimeCorrectionModule( const char* name,
+                                            const char* description,
+                                            Int_t stage )
   : InterStageModule(name, description, stage),
     fGlOffset(0.0), fEvtTime(0.0)
 {
@@ -27,7 +26,7 @@ VDCTimeCorrectionModule::VDCTimeCorrectionModule( const char* name,
 }
 
 //_____________________________________________________________________________
-VDCTimeCorrectionModule::~VDCTimeCorrectionModule()
+TimeCorrectionModule::~TimeCorrectionModule()
 {
   // Destructor
 
@@ -35,14 +34,14 @@ VDCTimeCorrectionModule::~VDCTimeCorrectionModule()
 }
 
 //_____________________________________________________________________________
-void VDCTimeCorrectionModule::Clear( Option_t* opt )
+void TimeCorrectionModule::Clear( Option_t* opt )
 {
   InterStageModule::Clear(opt);
   fEvtTime = fGlOffset;
 }
 
 //_____________________________________________________________________________
-Int_t VDCTimeCorrectionModule::DefineVariables( THaAnalysisObject::EMode mode )
+Int_t TimeCorrectionModule::DefineVariables( THaAnalysisObject::EMode mode )
 {
   // Define/delete event-by-event global variables
 
@@ -62,7 +61,7 @@ Int_t VDCTimeCorrectionModule::DefineVariables( THaAnalysisObject::EMode mode )
 }
 
 //_____________________________________________________________________________
-Int_t VDCTimeCorrectionModule::ReadDatabase( const TDatime& date )
+Int_t TimeCorrectionModule::ReadDatabase( const TDatime& date )
 {
   // Read this detector's parameters from the database.
 
@@ -96,5 +95,5 @@ Int_t VDCTimeCorrectionModule::ReadDatabase( const TDatime& date )
 
 } // namespace HallA
 
-ClassImp(HallA::VDCTimeCorrectionModule)
+ClassImp(Podd::TimeCorrectionModule)
 

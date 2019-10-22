@@ -11,7 +11,7 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-#include "VDCTimeCorrectionModule.h"
+#include "TimeCorrectionModule.h"
 #include "TString.h"
 #include "THaVar.h"
 
@@ -19,7 +19,7 @@ class THaScintillator;
 
 namespace HallA {
 
-class TwoarmVDCTimeCorrection : public VDCTimeCorrectionModule {
+class TwoarmVDCTimeCorrection : public Podd::TimeCorrectionModule {
 public:
   TwoarmVDCTimeCorrection( const char* name, const char* description,
                            const char* scint1, const char* scint2 );

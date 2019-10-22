@@ -14,38 +14,34 @@
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "THaNonTrackingDetector.h"
+#include "TimeCorrectionModule.h"
 
-class THaTriggerTime : public THaNonTrackingDetector {
- public:
-  explicit THaTriggerTime( const char* name="trg", const char* description = "",
-                           THaApparatus* a = nullptr );
+class THaDetMap;
 
+class THaTriggerTime : public Podd::TimeCorrectionModule {
+public:
+  explicit THaTriggerTime( const char* name="trg", const char* description = "" );
   virtual ~THaTriggerTime();
 
-  Double_t            TimeOffset() const { return fEvtTime; }
   Int_t               EventType()  const { return fEvtType; }
 
-  virtual Int_t       Decode( const THaEvData& );
   virtual void        Clear( Option_t* opt="" );
-  virtual Int_t       DefineVariables( EMode mode = kDefine );
-  virtual Int_t       CoarseProcess(TClonesArray&) { return 0; }
-  virtual Int_t       FineProcess(TClonesArray&) { return 0; }
+  virtual Int_t       Process( const THaEvData& );
 
  protected:
-  Double_t  fEvtTime;     // the offset for this event
   Int_t     fEvtType;     // the relevant event type for this spectr.
 
   Double_t  fTDCRes;      // time-per-channel
-  Double_t  fGlOffset;    // overall offset shared by all
-  Int_t     fCommonStop;     // default =0 => TDC type is common-start 
+  Int_t     fCommonStop;     // default =0 => TDC type is common-start
 
-  Int_t     fNTrgType;    // number of trigger types
-  Double_t *fTrgTimes;    //[fNTrgType] array of the read-out trigger times
-  
-  std::vector<Double_t> fToffsets;   // array of trigger-timing offsets
+
   std::vector<Int_t>    fTrgTypes;   // which trigger-types to watch
-  
+  std::vector<Double_t> fToffsets;   // array of trigger-timing offsets
+  std::vector<Double_t> fTrgTimes;   // array of the read-out trigger times
+
+  THaDetMap* fDetMap;
+
+  virtual Int_t  DefineVariables( EMode mode = kDefine );
   virtual Int_t  ReadDatabase( const TDatime& date );
 
   ClassDef(THaTriggerTime,0)

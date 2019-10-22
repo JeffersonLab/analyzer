@@ -27,7 +27,7 @@
 #include "VarDef.h"
 #include "TROOT.h"
 #include "THaString.h"
-#include "VDCTimeCorrectionModule.h"
+#include "TimeCorrectionModule.h"
 #include <map>
 #include <cstdio>
 #include <cstdlib>
@@ -328,8 +328,8 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   // If given, find the module for calculating an event-by-event
   // time offset correction
   if( !TCmodule.empty() ) {
-    fTimeCorrectionModule = dynamic_cast<HallA::VDCTimeCorrectionModule*>
-      (FindModule(TCmodule.c_str(), "HallA::VDCTimeCorrectionModule", false));
+    fTimeCorrectionModule = dynamic_cast<Podd::TimeCorrectionModule*>
+      (FindModule(TCmodule.c_str(), "Podd::TimeCorrectionModule", false));
     if( !fTimeCorrectionModule ) {
        Warning( Here(here), "Time correction module \"%s\" not found. "
       	    "Event-by-event time offsets will NOT be used!\nCheck \"time_cor\" database key",
@@ -1237,7 +1237,7 @@ std::pair<Double_t,bool> THaVDC::GetTimeCorrection() const
   // event, the bool in the returned pair is false.
 
   if( fTimeCorrectionModule && fTimeCorrectionModule->DataValid() )
-    return make_pair(fTimeCorrectionModule->GetTimeOffset(), true);
+    return make_pair(fTimeCorrectionModule->TimeOffset(), true);
   return make_pair(0.0, false);
 }
 

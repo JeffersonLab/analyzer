@@ -39,7 +39,7 @@ set(src
   THaVarList.cxx          THaVertexModule.cxx          THaVform.cxx
   THaVhist.cxx            VariableArrayVar.cxx         Variable.cxx
   VectorObjMethodVar.cxx  VectorObjVar.cxx             VectorVar.cxx
-  InterStageModule.cxx
+  InterStageModule.cxx    TimeCorrectionModule.cxx
   )
 if(ONLINE_ET)
   list(APPEND src THaOnlRun.cxx)

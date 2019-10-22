@@ -14,7 +14,7 @@ set(src
   THaVDC.cxx                 THaVDCHit.cxx               THaVDCPlane.cxx
   THaVDCPoint.cxx            THaVDCPointPair.cxx         THaVDCTimeToDistConv.cxx
   THaVDCTrackID.cxx          THaVDCWire.cxx              TrigBitLoc.cxx
-  VDCeff.cxx                 VDCTimeCorrectionModule.cxx TwoarmVDCTimeCorrection.cxx
+  VDCeff.cxx                 TwoarmVDCTimeCorrection.cxx
   )
 
 string(REPLACE .cxx .h headers "${src}")

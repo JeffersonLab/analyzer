@@ -3,7 +3,7 @@
 
 //////////////////////////////////////////////////////////////////////////
 //
-// HallA::VDCTimeCorrectionModule
+// HallA::TimeCorrectionModule
 //
 // Calculates a trigger time correction for the VDC
 //
@@ -15,15 +15,15 @@
 
 class THaScintillator;
 
-namespace HallA {
+namespace Podd {
 
-class VDCTimeCorrectionModule : public Podd::InterStageModule {
+class TimeCorrectionModule : public InterStageModule {
 public:
-  VDCTimeCorrectionModule( const char* name, const char* description,
-                           Int_t stage );
-  virtual ~VDCTimeCorrectionModule();
+  TimeCorrectionModule( const char* name, const char* description,
+                        Int_t stage );
+  virtual ~TimeCorrectionModule();
 
-  Double_t        GetTimeOffset() const { return fEvtTime; }
+  Double_t        TimeOffset() const { return fEvtTime; }
 
   virtual void    Clear( Option_t* opt="" );
   virtual Int_t   Process( const THaEvData& ) = 0;
@@ -39,7 +39,7 @@ protected:
   virtual Int_t DefineVariables( EMode mode = kDefine );
   virtual Int_t ReadDatabase( const TDatime& date );
 
-  ClassDef(VDCTimeCorrectionModule, 0)   //Generic VDC time correction
+  ClassDef(TimeCorrectionModule, 0)   //Generic VDC time correction
 };
 
 } // namespace HallA
