@@ -14,6 +14,8 @@
 #include "THaDetector.h"
 #include "THaAnalyzer.h"
 #include "THaVarList.h"
+#include "THaCut.h"
+#include "THaGlobals.h"
 #include "TError.h"
 #include <vector>
 
@@ -24,15 +26,21 @@ namespace HallA {
 
 //_____________________________________________________________________________
 TwoarmVDCTimeCorrection::TwoarmVDCTimeCorrection( const char* name,
-                                                  const char* description,
-                                                  const char* scint1,
-                                                  const char* scint2 )
+  const char* description, const char* scint1, const char* scint2,
+  const char* cond )
   : TimeCorrectionModule(name, description, THaAnalyzer::kDecode),
-    fName1(scint1), fName2(scint2), fNpads1(0), fNpads2(0),
-    fRT1(nullptr), fLT1(nullptr), fNhit1(nullptr), fTPad1(nullptr),
-    fRT2(nullptr), fLT2(nullptr), fNhit2(nullptr), fTPad2(nullptr)
+    fDet{DetDef(scint1), DetDef(scint2)}, fCondExpr(cond), fCond(nullptr),
+    fDidInitDefs(false)
 {
   // Constructor
+}
+
+//_____________________________________________________________________________
+TwoarmVDCTimeCorrection::~TwoarmVDCTimeCorrection()
+{
+  // Destructor
+
+  delete fCond;
 }
 
 //_____________________________________________________________________________
@@ -50,50 +58,49 @@ TwoarmVDCTimeCorrection::Init( const TDatime& run_time )
   if( InterStageModule::Init( run_time ) != kOK )
     return fStatus;
 
+  // Make the name of our block of tests. We need fPrefix to be set
+  MakeBlockName();
+
   // Find reference detectors
   // In principle we should check that these are THaScintillators, but Tritium/nnL
   // use their own TriFadcScin class, which inherits from THaNonTrackingDetector.
   // IN fact, generic THaDetectors are fine for this purpose. As long as they
   // export the required variables which have the expected contents (see below),
   // there's no need to be more restrictive.
-  auto scint1 = dynamic_cast<THaDetector*>
-    ( FindModule(fName1.Data(), "THaDetector"));
-  if( !scint1 ) {
-    fStatus = kInitError;
-    return fStatus;
-  }
-  auto scint2 = dynamic_cast<THaDetector*>
-    ( FindModule(fName2.Data(), "THaDetector"));
-  if( !scint2 ) {
-    fStatus = kInitError;
-    return fStatus;
-  }
-  fNpads1 = scint1->GetNelem();
-  fNpads2 = scint2->GetNelem();
-
-  // Retrieve pointers to the global variables we need
-  struct VarDef {
-    TString  name;
-    THaVar*& pvar;
-  };
-  vector<VarDef> vardef {
-    {fName1+".rt_c",  fRT1},   {fName1+".lt_c", fLT1},
-    {fName1+".nthit", fNhit1}, {fName1+".t_pads", fTPad1},
-    {fName2+".rt_c",  fRT2},   {fName2+".lt_c", fLT2},
-    {fName2+".nthit", fNhit2}, {fName2+".t_pads", fTPad2}
-  };
-
-  fIsInit = true;
-  for( const auto& def : vardef ) {
-    def.pvar = gHaVars->Find(def.name);
-    if( !def.pvar ) {
-      Error(Here(here), "Global variable %s not found. Module not initialized.",
-            def.name.Data());
-      fIsInit = false;
+  fStatus = kOK;
+  for( auto& detdef : fDet ) {
+    auto obj = dynamic_cast<THaDetector*>
+    ( FindModule(detdef.fName.Data(), "THaDetector"));
+    if( !obj ) {
+      fStatus = kInitError;
+      // Keep going to get reports on all failures
+      continue;
+    }
+    detdef.fObj = obj;
+    detdef.fNelem = obj->GetNelem();
+    // Retrieve pointers to the global variables we need
+    struct VarDef {
+      TString  name;
+      THaVar*& pvar;
+    };
+    vector<VarDef> vardefs {
+      { detdef.fName + ".nthit",  detdef.fNthit },
+      { detdef.fName + ".t_pads", detdef.fTpad },
+      { detdef.fName + ".rt_c",   detdef.fRT },
+      { detdef.fName + ".lt_c",   detdef.fLT }
+    };
+    for( const auto& vardef : vardefs ) {
+      vardef.pvar = gHaVars->Find(vardef.name); // sets the relevant THaVar
+                                           // pointer in the current detdef
+      if( !vardef.pvar ) {
+        Error(Here(here), "Global variable %s not found. "
+                          "Module not initialized.", vardef.name.Data() );
+        fStatus = kInitError;
+        // Keep going to get reports on all failures
+      }
     }
   }
-  if( !fIsInit )
-    fStatus = kInitError;
+  fIsInit = (fStatus == kOK);
 
   return fStatus;
 }
@@ -108,26 +115,108 @@ Int_t TwoarmVDCTimeCorrection::Process( const THaEvData& )
   if( !fIsInit )
     return -1;
 
-  //TODO: check event type
-  Int_t nhit1 = fNhit1->GetValueInt();
-  Int_t nhit2 = fNhit2->GetValueInt();
-  if( nhit1 > 0 && nhit2 > 0 ) {
-    // Both scintillators have at least one complete hit
-    Int_t npad1 = fTPad1->GetValueInt();
-    Int_t npad2 = fTPad2->GetValueInt();
-    if( npad1 >= 0 && npad1 < fNpads1 && npad2 >= 0 && fNpads2 ) {
-      //TODO: use fLT1/fLT2
-      fEvtTime = fRT1->GetValue(npad1) - fRT2->GetValue(npad2);
+  if( !fDidInitDefs ) {
+    InitDefs();
+    fDidInitDefs = true;
+  }
+
+  fEvtTime = fGlOffset;
+  if( fCond && !fCond->EvalCut() )
+    return 0;
+
+  const DetDef& det1 = fDet[0], det2 = fDet[1];
+  if( det1.fNthit->GetValueInt() > 0 && det2.fNthit->GetValueInt() > 0 ) {
+    // Both scintillators have at least one complete hit, i.e. the TDCs on both
+    // sides of a paddle fired
+    //FIXME: taking index = 0 when fNthit > 1 not necessarily correct!
+    Int_t thePad1 = det1.fTpad->GetValueInt(0);
+    Int_t thePad2 = det2.fTpad->GetValueInt(0);
+    if( thePad1 >= 0 && thePad1 < det1.fNelem &&
+        thePad2 >= 0 && thePad2 < det2.fNelem ) {
+      //TODO: use fLT too
+      fEvtTime += det1.fRT->GetValue(thePad1) - det2.fRT->GetValue(thePad2);
       fDataValid = true;
     } else {
-      Warning(Here(here), "Bad number of pads hit %s = %d, %s = %d",
-              fTPad1->GetName(), npad1, fTPad2->GetName(), npad2 );
+      // If we get here, the detector lied to us: if fNthit > 0, then all
+      // fTpad[i] should always be valid pad numbers
+      Warning(Here(here), "Bad pad number %s = %d, %s = %d. "
+                          "Should never happen. Call expert.",
+              det1.fTpad->GetName(), thePad1, det2.fTpad->GetName(), thePad2);
       return -2;
     }
   }
-  fEvtTime += fGlOffset;
 
   return 0;
+}
+
+//_____________________________________________________________________________
+Int_t TwoarmVDCTimeCorrection::ReadDatabase( const TDatime& date )
+{
+  // Read this detector's parameters from the database.
+  // 'date' contains the date/time of the run being analyzed.
+
+  Int_t ret = TimeCorrectionModule::ReadDatabase(date);
+  if( ret != kOK )
+    return ret;
+
+  FILE* file = OpenFile(date);
+  if( !file ) {
+    // Missing file OK -- all keys are optional
+    fIsInit = true;
+    return kOK;
+  }
+
+  // Read configuration parameters
+  fIsInit = false;
+  DBRequest config_request[] = {
+    { "condition", &fCondExpr, kTString, 0, true },
+    { nullptr }
+  };
+  Int_t err = LoadDB( file, date, config_request );
+  fclose(file);
+  if( err )
+    return err;
+
+  fIsInit = true;
+  return kOK;
+}
+
+//_____________________________________________________________________________
+Int_t TwoarmVDCTimeCorrection::InitDefs()
+{
+  // Initialize tests based on the string expressions read from the database.
+  // Return number of successful definitions.
+
+  Int_t ndef = 0;
+
+  // Delete existing test, if any, to allow reinitialization
+  delete fCond;
+  fCond = nullptr;
+
+  // Parse test expression, if any
+  if( !fCondExpr.IsNull() ) {
+    fCond = new THaCut( "cond", fCondExpr, fTestBlockName );
+    if( fCond->IsZombie() or fCond->IsError() ) {
+      delete fCond;
+      fCond = nullptr;
+    }
+    ++ndef;
+  }
+
+  return ndef;
+}
+
+//____________________________________________________________________________
+void TwoarmVDCTimeCorrection::MakeBlockName()
+{
+  // Create the test block name
+
+  if( fPrefix && *fPrefix ) {
+    fTestBlockName = fPrefix;
+    fTestBlockName.Chop(); // remove trailing "."
+  } else
+    fTestBlockName = fName;
+  fTestBlockName.Append("_Tests");
 }
 
 //_____________________________________________________________________________

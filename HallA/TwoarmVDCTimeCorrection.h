@@ -15,27 +15,45 @@
 #include "TString.h"
 #include "THaVar.h"
 
-class THaScintillator;
+class THaDetector;
+class THaCut;
 
 namespace HallA {
 
 class TwoarmVDCTimeCorrection : public Podd::TimeCorrectionModule {
 public:
   TwoarmVDCTimeCorrection( const char* name, const char* description,
-                           const char* scint1, const char* scint2 );
+                           const char* scint1, const char* scint2,
+                           const char* cond="" );
+  virtual ~TwoarmVDCTimeCorrection();
 
   virtual EStatus Init( const TDatime& run_time );
   virtual Int_t   Process( const THaEvData& );
 
 protected:
   // Configuration
-  TString fName1;      // Name of scintillator 1
-  TString fName2;      // Name of scintillator 2
-  Int_t   fNpads1;     // Number of pads in scintillator 1
-  Int_t   fNpads2;     // Number of pads in scintillator 2
-  THaVar *fRT1, *fLT1, *fNhit1, *fTPad1, *fRT2, *fLT2, *fNhit2, *fTPad2;
+  struct DetDef {
+    explicit DetDef( const char* name ) :
+      fName(name), fObj(nullptr), fNelem(0),
+      fNthit(nullptr), fTpad(nullptr), fRT(nullptr), fLT(nullptr) {}
+    TString      fName;  // Detector name
+    THaDetector* fObj;   // Pointer to detector object
+    Int_t        fNelem; // Number of configured elements (pads)
+    THaVar       *fNthit, *fTpad, *fRT, *fLT;  // Required global variables
+                                               // from this detector
+  };
+  DetDef  fDet[2];
 
-  ClassDef(TwoarmVDCTimeCorrection, 0)   //Two-arm VDC time correction
+  TString fTestBlockName;
+  TString fCondExpr;
+  THaCut* fCond;
+  Bool_t  fDidInitDefs;
+
+  Int_t InitDefs();
+  void  MakeBlockName();
+  virtual Int_t ReadDatabase( const TDatime& date ) override;
+
+ClassDef(TwoarmVDCTimeCorrection, 0)   //Two-arm VDC time correction
 };
 
 } // namespace HallA
