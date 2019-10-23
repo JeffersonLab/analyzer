@@ -16,8 +16,8 @@
 
 class THaDecData : public Podd::DecData {
 public:
-  THaDecData( const char* name = "D",
-	      const char* description = "Raw Hall A decoder data" );
+  explicit THaDecData( const char* name = "D",
+                       const char* description = "Raw Hall A decoder data" );
 
 protected:
   virtual FILE*   OpenFile( const TDatime& date );
