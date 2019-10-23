@@ -29,17 +29,17 @@ public:
   virtual Int_t       Process( const THaEvData& );
 
  protected:
+  // Configuration
+  THaDetMap* fDetMap;      // Hardware channel map
+  Double_t   fTDCRes;      // time-per-channel
+  Int_t      fCommonStop;  // default =0 => TDC type is common-start
+
+  std::vector<Int_t>    fTrgTypes; // which trigger-types to watch
+  std::vector<Double_t> fToffsets; // array of trigger-timing offsets
+
+  // Event-by-event data
+  std::vector<Double_t> fTrgTimes; // array of the read-out trigger times
   Int_t     fEvtType;     // the relevant event type for this spectr.
-
-  Double_t  fTDCRes;      // time-per-channel
-  Int_t     fCommonStop;     // default =0 => TDC type is common-start
-
-
-  std::vector<Int_t>    fTrgTypes;   // which trigger-types to watch
-  std::vector<Double_t> fToffsets;   // array of trigger-timing offsets
-  std::vector<Double_t> fTrgTimes;   // array of the read-out trigger times
-
-  THaDetMap* fDetMap;
 
   virtual Int_t  DefineVariables( EMode mode = kDefine );
   virtual Int_t  ReadDatabase( const TDatime& date );

@@ -20,6 +20,7 @@
 #include "THaAnalyzer.h"
 #include <cstdio>
 #include <vector>
+#include <cassert>
 
 using namespace std;
 using Podd::TimeCorrectionModule;
@@ -27,7 +28,7 @@ using Podd::TimeCorrectionModule;
 //____________________________________________________________________________
 THaTriggerTime::THaTriggerTime( const char* name, const char* desc )
   : TimeCorrectionModule(name, desc, THaAnalyzer::kDecode),
-    fEvtType(-1), fTDCRes(0.0), fCommonStop(0), fDetMap(new THaDetMap)
+    fDetMap(new THaDetMap), fTDCRes(0.0), fCommonStop(0), fEvtType(-1)
 {
   // basic do-nothing-else constructor
 }
@@ -44,10 +45,10 @@ THaTriggerTime::~THaTriggerTime()
 //____________________________________________________________________________
 void THaTriggerTime::Clear(Option_t* opt)
 {
-  // Reset all variables to their default/unknown state
+  // Reset event-by-event variables
   TimeCorrectionModule::Clear(opt);
   fEvtType = -1;
-  fTrgTimes.assign( fTrgTypes.size(), kBig * (fCommonStop ? 1 : 0) );
+  fTrgTimes.assign( fTrgTypes.size(), kBig );
 }
 
 //____________________________________________________________________________
@@ -57,8 +58,22 @@ Int_t THaTriggerTime::Process( const THaEvData& evdata)
   // Be certain to decode only once per event.
   if (fEvtType>0) return kOK;
 
-  for( Int_t i=0; i < fDetMap->GetSize(); i++ ) {
-    THaDetMap::Module* d = fDetMap->GetModule(i);
+  // Each trigger is connected to a single TDC channel.
+  // All TDCs are started or stopped with the same signal.
+  // Whichever trigger occurs absolute first based on these TDCs is
+  // considered the event's "trigger type".
+  // Each TDC channel may have multiple hits, in which case the
+  // hit occurring first in time will be used and compared to the
+  // TDC values for the other triggers.
+  // Each trigger type is assigned a fixed time offset fToffsets,
+  // read from the database.
+  // The "event time" is reported as fToffsets[earliest] + fGlOffset.
+  // The actual TDC values of all the triggers are reported in fTrgTimes,
+  // primarily for debugging purposes.
+  Int_t earliest = -1;
+  Double_t reftime = kBig;
+  for( Int_t imod = 0; imod < fDetMap->GetSize(); imod++ ) {
+    THaDetMap::Module* d = fDetMap->GetModule(imod);
 
     // Loop over our short-list of relevant channels.
     // Continuing with the assumption that each channel has its own entry in
@@ -66,29 +81,26 @@ Int_t THaTriggerTime::Process( const THaEvData& evdata)
     // parallel.
 
     // look through each channel and take the earliest hit
-    if(fCommonStop) fTDCRes *=-1;
-
-    for( Int_t j = 0; j < evdata.GetNumHits(d->crate, d->slot, d->lo); j++ ) {
-      Double_t t = fTDCRes*evdata.GetData(d->crate,d->slot,d->lo,j);
-      if (t < fTrgTimes[i]) fTrgTimes[i] = t;
+    // In common stop mode, the earliest hit corresponds to the largest TDC data.
+    // This is taken care of by making fTDCRes and hence all fTrgTimes negative.
+    for( Int_t ihit = 0; ihit < evdata.GetNumHits(d->crate, d->slot, d->lo); ihit++ ) {
+      Double_t t = fTDCRes * evdata.GetData(d->crate, d->slot, d->lo, ihit);
+      if( t < fTrgTimes[imod] )
+        fTrgTimes[imod] = t;
+    }
+    if( earliest < 0 || fTrgTimes[imod] < reftime ) {
+      earliest = imod;
+      reftime = fTrgTimes[imod];
     }
   }
 
-  int earliest = -1;
-  Double_t reftime=0;
-  for (Int_t i=0; i<fNTrgType; i++) {
-    if (earliest<0 || fTrgTimes[i]<reftime) {
-      earliest = i;
-      reftime = fTrgTimes[i];
-    }
-  }
-
-  Double_t offset = fGlOffset;
-  if (earliest>=0) {
-    offset += fToffsets[earliest];
+  fEvtTime = fGlOffset;
+  if( earliest >= 0 ) {
+    assert( earliest < static_cast<Int_t>(fToffsets.size()) );
+    assert( earliest < static_cast<Int_t>(fTrgTypes.size()) );
+    fEvtTime += fToffsets[earliest];
     fEvtType = fTrgTypes[earliest];
   }
-  fEvtTime = offset;
   return kOK;
 }
 
@@ -108,7 +120,7 @@ Int_t THaTriggerTime::ReadDatabase( const TDatime& date )
   if( !file )
     return kFileError;
 
-  fCommonStop = 0.0;
+  fCommonStop = 0;
   fTrgTypes.clear();
   fToffsets.clear();
   fDetMap->Clear();
@@ -157,6 +169,12 @@ Int_t THaTriggerTime::ReadDatabase( const TDatime& date )
     fToffsets.push_back( toff );
     fDetMap->AddModule( crate, slot, chan, chan, itrg );
   }
+  assert( ndef == fDetMap->GetSize() );
+  assert( ndef == static_cast<Int_t>(fTrgTypes.size()) );
+  assert( ndef == static_cast<Int_t>(fToffsets.size()) );
+
+  // Use the TDC mode flag to set the sign of fTDCRes (see comments in Process)
+  fTDCRes = (fCommonStop ? 1.0 : -1.0) * TMath::Abs(fTDCRes);
 
   // now construct the appropriate arrays
   fTrgTimes.resize( fTrgTypes.size() );
