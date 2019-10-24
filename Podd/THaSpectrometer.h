@@ -58,7 +58,7 @@ public:
           Bool_t           IsDone( UInt_t stage ) const;
           Bool_t           IsPID() const       { return fPID; }
           void             SetGoldenTrack( THaTrack* t ) { fGoldenTrack = t; }
-          void             SetPID( Bool_t b = kTRUE )    { fPID = b; }
+          void             SetPID( Bool_t b = true )    { fPID = b; }
 
   // The following is specific to small-acceptance pointing spectrometers
   // using spectrometer-specific coordinates such as TRANSPORT
@@ -111,11 +111,11 @@ protected:
   TVector3        fPointingOffset;        //Optical point in lab coordinate system
   Double_t        fThetaGeo;              //In-plane geographic central angle (rad)
   Double_t        fPhiGeo;                //Out-of-plane geographic central angle (rad)
-  Double_t        fThetaSph, fPhiSph;     //Central angles in spherical coords. (rad)
-  Double_t        fSinThGeo, fCosThGeo;   //Sine and cosine of central angles
-  Double_t        fSinPhGeo, fCosPhGeo;   // in geographical coordinates
-  Double_t        fSinThSph, fCosThSph;   //Sine and cosine of central angles in 
-  Double_t        fSinPhSph, fCosPhSph;   // spherical coordinates
+  Double_t        fThetaSph{}, fPhiSph{};     //Central angles in spherical coords. (rad)
+  Double_t        fSinThGeo{}, fCosThGeo{};   //Sine and cosine of central angles
+  Double_t        fSinPhGeo{}, fCosPhGeo{};   // in geographical coordinates
+  Double_t        fSinThSph{}, fCosThSph{};   //Sine and cosine of central angles in
+  Double_t        fSinPhSph{}, fCosPhSph{};   // spherical coordinates
   Double_t        fPcentral;              //Central momentum (GeV)
   Double_t        fCollDist;              //Distance from collimator to target center (m)
 

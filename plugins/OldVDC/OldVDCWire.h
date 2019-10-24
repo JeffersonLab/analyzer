@@ -15,7 +15,7 @@ class OldVDCWire : public TObject {
 public:
 
   OldVDCWire( Int_t num=0, Double_t pos=0.0, Double_t offset=0.0,
-	      OldVDCTimeToDistConv* ttd=NULL ) :
+	      OldVDCTimeToDistConv* ttd=nullptr ) :
     fNum(num), fFlag(0), fPos(pos), fTOffset(offset), fTTDConv(ttd) {}
   virtual ~OldVDCWire() {}
 

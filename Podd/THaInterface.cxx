@@ -35,24 +35,24 @@
 
 using namespace std;
 
-THaVarList*  gHaVars     = NULL;  // List of symbolic analyzer variables
-THaCutList*  gHaCuts     = NULL;  // List of global analyzer cuts/tests
-TList*       gHaApps     = NULL;  // List of Apparatuses
-TList*       gHaPhysics  = NULL;  // List of physics modules
-TList*       gHaEvtHandlers  = NULL;  // List of event handlers
-THaRunBase*  gHaRun      = NULL;  // The currently active run
-TClass*      gHaDecoder  = NULL;  // Class(!) of decoder to use
-THaDB*       gHaDB       = NULL;  // Database system to use
-THaTextvars* gHaTextvars = NULL;  // Text variable definitions
+THaVarList*  gHaVars     = nullptr;  // List of symbolic analyzer variables
+THaCutList*  gHaCuts     = nullptr;  // List of global analyzer cuts/tests
+TList*       gHaApps     = nullptr;  // List of Apparatuses
+TList*       gHaPhysics  = nullptr;  // List of physics modules
+TList*       gHaEvtHandlers  = nullptr;  // List of event handlers
+THaRunBase*  gHaRun      = nullptr;  // The currently active run
+TClass*      gHaDecoder  = nullptr;  // Class(!) of decoder to use
+THaDB*       gHaDB       = nullptr;  // Database system to use
+THaTextvars* gHaTextvars = nullptr;  // Text variable definitions
 
-THaInterface* THaInterface::fgAint = NULL;  // Pointer to this interface
+THaInterface* THaInterface::fgAint = nullptr;  // Pointer to this interface
 
 static TString fgTZ;
 
 //_____________________________________________________________________________
 THaInterface::THaInterface( const char* appClassName, int* argc, char** argv,
 			    void* options, int numOptions, Bool_t noLogo ) :
-  TRint( appClassName, argc, argv, options, numOptions, kTRUE )
+  TRint( appClassName, argc, argv, options, numOptions, true )
 {
   // Create the Hall A analyzer application environment. The THaInterface
   // environment provides an interface to the the interactive ROOT system
@@ -147,14 +147,14 @@ THaInterface::~THaInterface()
     // Clean up the analyzer object if defined
     delete THaAnalyzer::GetInstance();
     // Delete all global lists and objects contained in them
-    delete gHaTextvars; gHaTextvars=0;
-    //    delete gHaDB;           gHaDB = 0;
-    delete gHaPhysics;   gHaPhysics=0;
-    delete gHaEvtHandlers;  gHaEvtHandlers=0;
-    delete gHaApps;         gHaApps=0;
-    delete gHaVars;         gHaVars=0;
-    delete gHaCuts;         gHaCuts=0;
-    fgAint = NULL;
+    delete gHaTextvars; gHaTextvars=nullptr;
+    //    delete gHaDB;           gHaDB = nullptr;
+    delete gHaPhysics;   gHaPhysics=nullptr;
+    delete gHaEvtHandlers;  gHaEvtHandlers=nullptr;
+    delete gHaApps;         gHaApps=nullptr;
+    delete gHaVars;         gHaVars=nullptr;
+    delete gHaCuts;         gHaCuts=nullptr;
+    fgAint = nullptr;
   }
 }
 
@@ -252,16 +252,16 @@ TClass* THaInterface::SetDecoder( TClass* c )
 {
   // Set the type of decoder to be used. Make sure the specified class
   // actually inherits from the standard THaEvData decoder.
-  // Returns the decoder class (i.e. its argument) or NULL if error.
+  // Returns the decoder class (i.e. its argument) or nullptr if error.
 
   if( !c ) {
-    ::Error("THaInterface::SetDecoder", "argument is NULL");
-    return NULL;
+    ::Error("THaInterface::SetDecoder", "argument is nullptr");
+    return nullptr;
   }
   if( !c->InheritsFrom("THaEvData")) {
     ::Error("THaInterface::SetDecoder",
 	    "decoder class must inherit from THaEvData");
-    return NULL;
+    return nullptr;
   }
 
   gHaDecoder = c;

@@ -59,7 +59,7 @@ void THaDetMap::Module::SetResolution( Double_t res )
 }
 
 //_____________________________________________________________________________
-THaDetMap::THaDetMap() : fNmodules(0), fMap(0), fMaplength(0)
+THaDetMap::THaDetMap() : fNmodules(0), fMap(nullptr), fMaplength(0)
 {
   // Default constructor. Creates an empty detector map.
 }
@@ -75,7 +75,7 @@ THaDetMap::THaDetMap( const THaDetMap& rhs )
     fMap = new Module[fMaplength];
     memcpy(fMap,rhs.fMap,fNmodules*sizeof(Module));
   } else
-    fMap = 0;
+    fMap = nullptr;
 }
 
 //_____________________________________________________________________________
@@ -85,7 +85,7 @@ THaDetMap& THaDetMap::operator=( const THaDetMap& rhs )
 
   if ( this != &rhs ) {
     if ( fMaplength != rhs.fMaplength ) {
-      delete [] fMap; fMap = 0;
+      delete [] fMap; fMap = nullptr;
       fMaplength = rhs.fMaplength;
       if( fMaplength > 0 )
 	fMap = new Module[fMaplength];
@@ -119,22 +119,22 @@ Int_t THaDetMap::AddModule( UShort_t crate, UShort_t slot,
   // numbers:
   // lo<=hi :    lo -> first
   //             hi -> first+hi-lo
-  // 
+  //
   // lo>hi  :    hi -> first
   //             lo -> first+lo-hi
-  // 
-  // To indicate the second case, The flag "reverse" is set to true in the 
+  //
+  // To indicate the second case, The flag "reverse" is set to true in the
   // module. The fields lo and hi are reversed so that lo<=hi always.
-  // 
-  bool reverse = ( chan_lo > chan_hi );
+  //
+  bool reverse = (chan_lo > chan_hi);
 
-  if ( fNmodules >= fMaplength ) { // need to expand the Map
+  if( fNmodules >= fMaplength ) { // need to expand the Map
     Int_t oldlen = fMaplength;
     fMaplength += 10;
-    Module* tmpmap = new Module[fMaplength];   // expand in groups of 10
+    auto* tmpmap = new Module[fMaplength];   // expand in groups of 10
     if( oldlen > 0 ) {
-      memcpy(tmpmap,fMap,oldlen*sizeof(Module));
-      delete [] fMap;
+      memcpy(tmpmap, fMap, oldlen * sizeof(Module));
+      delete[] fMap;
     }
     fMap = tmpmap;
   }
@@ -168,11 +168,11 @@ THaDetMap::Module* THaDetMap::Find( UShort_t crate, UShort_t slot,
 {
   // Return the module containing crate, slot, and channel chan.
   // If several matching modules exist (which mean the map is misconfigured),
-  // only the first one is returned. If none match, return NULL.
+  // only the first one is returned. If none match, return nullptr.
   // Since the map is usually small and not necessarily sorted, a simple
   // linear search is done.
 
-  Module* found = NULL;
+  Module* found = nullptr;
   for( UShort_t i = 0; i < fNmodules; ++i ) {
     Module* d = uGetModule(i);
     if( d->crate == crate && d->slot == slot && 
@@ -193,7 +193,7 @@ Int_t THaDetMap::Fill( const vector<Int_t>& values, UInt_t flags )
   // The first 4 values are interpreted as (crate,slot,start_chan,end_chan)
   // Each of the following flags causes one more value to be used as part of
   // the tuple for each module:
-  // 
+  //
   // kFillLogicalChannel - Logical channel number for 'start_chan'.
   // kFillModel          - The module's hardware model number (see AddModule())
   // kFillRefChan        - Reference channel (for pipeline TDCs etc.)
@@ -202,7 +202,7 @@ Int_t THaDetMap::Fill( const vector<Int_t>& values, UInt_t flags )
   // kFillSignal         - Which signal type (for Hall C)
   //
   // If more than one flag is present, the numbers will be interpreted
-  // in the order the flags are listed above. 
+  // in the order the flags are listed above.
   // Example:
   //      flags = kFillModel | kFillRefChan
   // ==>
@@ -210,9 +210,9 @@ Int_t THaDetMap::Fill( const vector<Int_t>& values, UInt_t flags )
   //      (crate,slot,start_chan,end_chan,model,refchan).
   //
   // If kFillLogicalChannel is not set then the first logical channel numbers
-  // are automatically calculated for each module, assuming the numbers are 
+  // are automatically calculated for each module, assuming the numbers are
   // sequential.
-  // 
+  //
   // By default, an existing map is overwritten. If the flag kDoNotClear 
   // is present, then the data are appended.
   //
@@ -287,7 +287,7 @@ Int_t THaDetMap::Fill( const vector<Int_t>& values, UInt_t flags )
 //_____________________________________________________________________________
 Int_t THaDetMap::GetTotNumChan() const
 {
-  // Get sum of the number of channels of all modules in the map. This is 
+  // Get sum of the number of channels of all modules in the map. This is
   // typically the total number of hardware channels used by the detector.
 
   Int_t sum = 0;
@@ -301,7 +301,7 @@ Int_t THaDetMap::GetTotNumChan() const
 //_____________________________________________________________________________
 void THaDetMap::GetMinMaxChan( Int_t& min, Int_t& max, ECountMode mode ) const
 {
-  // Put the minimum and maximum logical or reference channel numbers 
+  // Put the minimum and maximum logical or reference channel numbers
   // into min and max. If refidx is true, check refindex, else check logical
   // channel numbers.
 
@@ -355,7 +355,7 @@ void THaDetMap::Reset()
 
   Clear();
   delete [] fMap;
-  fMap = NULL;
+  fMap = nullptr;
   fMaplength = 0;
 }
 
@@ -364,8 +364,8 @@ static int compare_modules( const void* p1, const void* p2 )
 {
   // Helper function for sort
 
-  const THaDetMap::Module* lhs = static_cast<const THaDetMap::Module*>(p1);
-  const THaDetMap::Module* rhs = static_cast<const THaDetMap::Module*>(p2);
+  auto lhs = static_cast<const THaDetMap::Module*>(p1);
+  auto rhs = static_cast<const THaDetMap::Module*>(p2);
   
   if( lhs->crate < rhs->crate )  return -1;
   if( lhs->crate > rhs->crate )  return  1;

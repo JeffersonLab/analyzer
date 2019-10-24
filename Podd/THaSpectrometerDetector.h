@@ -39,7 +39,7 @@ public:
 protected:
   //Only derived classes may construct me
   THaSpectrometerDetector( const char* name, const char* description,
-			   THaApparatus* a = NULL );
+			   THaApparatus* a = nullptr );
 
   ClassDef(THaSpectrometerDetector,1)   //ABC for a spectrometer detector
 };

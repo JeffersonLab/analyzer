@@ -9,7 +9,7 @@
 //      in average beam position for a rastered beam
 //      but in that latter case the event by event ext-target
 //      corrections need to be skipped
-//     (e.g. using an idealbeam for the hrs reconstruction and 
+//     (e.g. using an ideal beam for the hrs reconstruction and
 //      unrastered beam to fill global variables of the beamline)
 // 
 //////////////////////////////////////////////////////////////////////////

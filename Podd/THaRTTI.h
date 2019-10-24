@@ -22,11 +22,11 @@ public:
 
   THaRTTI() :
     fOffset(-1), fType(kDouble), fArrayType(kScalar), fCountOffset(-1),
-    fDataMember(0), fRealData(0), fElemClass(0) {}
-  virtual ~THaRTTI() {}
+    fDataMember(nullptr), fRealData(nullptr), fElemClass(nullptr) {}
+  virtual ~THaRTTI() = default;
 
   Int_t        Find( TClass* cl, const TString& var,
-		     const void* const p = NULL );
+		     const void* p = nullptr );
 
   EArrayType   GetArrayType()   const { return fArrayType; }
   TClass*      GetClass()       const;
@@ -47,7 +47,7 @@ public:
   void         Print( Option_t* opt="" ) const;
   void         Reset() {
     fOffset = -1; fType = kDouble; fArrayType = kScalar; fCountOffset = -1;
-    fDataMember = 0; fRealData = 0; fElemClass = 0;
+    fDataMember = nullptr; fRealData = nullptr; fElemClass = nullptr;
   }
 
 protected:

@@ -32,7 +32,7 @@ using namespace THaString;
 THaVform::THaVform( const char *type, const char* name, const char* formula,
 		    const THaVarList* vlst, const THaCutList* clst )
   : THaFormula(), fNvar(0), fObjSize(0), fEyeOffset(0), fData(0.0),
-    fType(kUnknown), fVarPtr(NULL), fOdata(NULL), fPrefix(kNoPrefix)
+    fType(kUnknown), fVarPtr(nullptr), fOdata(nullptr), fPrefix(kNoPrefix)
 {
   SetName(name);
   SetList(vlst);
@@ -66,13 +66,11 @@ THaVform::THaVform( const THaVform& rhs ) :
   fType(rhs.fType), fAndStr(rhs.fAndStr), fOrStr(rhs.fOrStr),
   fSumStr(rhs.fSumStr), fVarName(rhs.fVarName), fVarStat(rhs.fVarStat),
   fSarray(rhs.fSarray), fVectSform(rhs.fVectSform), fStitle(rhs.fStitle),
-  fVarPtr(rhs.fVarPtr), fOdata(0), fPrefix(rhs.fPrefix)
+  fVarPtr(rhs.fVarPtr), fOdata(nullptr), fPrefix(rhs.fPrefix)
 {
   // Copy ctor
 
-  for (vector<THaCut*>::const_iterator itc = rhs.fCut.begin();
-       itc != rhs.fCut.end(); ++itc) {
-    THaCut* theCut = *itc;
+  for( auto theCut : rhs.fCut ) {
     if( theCut ) {
       //FIXME: do we really need to make copies?
       // The more formulas, the more stuff to evaluate...
@@ -86,9 +84,7 @@ THaVform::THaVform( const THaVform& rhs ) :
 #endif
     }
   }
-  for (vector<THaFormula*>::const_iterator itf = rhs.fFormula.begin();
-       itf != rhs.fFormula.end(); ++itf) {
-    THaFormula* theForm = *itf;
+  for( auto theForm : rhs.fFormula ) {
     if( theForm ) {
       //FIXME: do we really need to make copies?
 #if ROOT_VERSION_CODE >= ROOT_VERSION(3,10,0)
@@ -137,12 +133,11 @@ void THaVform::Create(const THaVform &rhs)
   fVarName = rhs.fVarName;
   fVarStat = rhs.fVarStat;
 
-  for (vector<THaFormula*>::const_iterator itf = rhs.fFormula.begin();
-       itf != rhs.fFormula.end(); ++itf) {
-    if( *itf ) {
+  for( auto itf : rhs.fFormula ) {
+    if( itf ) {
       //FIXME: do we really need to make copies?
 #if ROOT_VERSION_CODE >= ROOT_VERSION(3,10,0)
-      fFormula.push_back(new THaFormula(**itf));
+      fFormula.push_back(new THaFormula(*itf));
 #else
     // work around buggy TFormula copy constructor
       THaFormula* f = new THaFormula;
@@ -151,12 +146,11 @@ void THaVform::Create(const THaVform &rhs)
 #endif
     }
   }
-  for (vector<THaCut*>::const_iterator itc = rhs.fCut.begin();
-       itc != rhs.fCut.end(); ++itc) {
-    if( *itc ) {
+  for( auto itc : rhs.fCut ) {
+    if( itc ) {
       //FIXME: do we really need to make copies?
 #if ROOT_VERSION_CODE >= ROOT_VERSION(3,10,0)
-      fCut.push_back(new THaCut(**itc));
+      fCut.push_back(new THaCut(*itc));
 #else
     // work around buggy TFormula copy constructor
       THaCut* c = new THaCut;
@@ -170,7 +164,7 @@ void THaVform::Create(const THaVform &rhs)
   fVectSform = rhs.fVectSform;
   fStitle = rhs.fStitle;
   fVarPtr = rhs.fVarPtr;
-  delete fOdata; fOdata = 0;
+  delete fOdata; fOdata = nullptr;
   if( rhs.fOdata )
     fOdata = new THaOdata(*rhs.fOdata);
   fPrefix = rhs.fPrefix;
@@ -179,34 +173,32 @@ void THaVform::Create(const THaVform &rhs)
 //_____________________________________________________________________________
 void THaVform::Uncreate()
 {
-  delete fOdata; fOdata = 0;
-  for (vector<THaCut*>::iterator itc = fCut.begin();
-       itc != fCut.end(); ++itc) delete *itc;
-  for (vector<THaFormula*>::iterator itf = fFormula.begin();
-       itf != fFormula.end(); ++itf) delete *itf;
+  delete fOdata;
+  fOdata = nullptr;
+  for( auto& itc : fCut ) delete itc;
+  for( auto& itf : fFormula ) delete itf;
   fCut.clear();
   fFormula.clear();
 }
 
 //_____________________________________________________________________________
 void THaVform::LongPrint() const
-{ // Long printout for debugging.
+{
+  // Long printout for debugging.
   ShortPrint();
-  cout << "Num of variables "<<fNvar<<endl;
-  cout << "Object size "<<fObjSize<<endl;
-  for (Int_t i = 0; i < fNvar; ++i) {
-      cout << "Var # "<<i<<"    name = "<<
-      fVarName[i]<<"   stat = "<<fVarStat[i]<<endl;
+  cout << "Num of variables " << fNvar << endl;
+  cout << "Object size " << fObjSize << endl;
+  for( Int_t i = 0; i < fNvar; ++i ) {
+    cout << "Var # " << i << "    name = " <<
+         fVarName[i] << "   stat = " << fVarStat[i] << endl;
   }
-  for (vector<THaFormula*>::const_iterator itf = fFormula.begin();
-       itf != fFormula.end(); ++itf) {
-       cout << "Formula full printout --> "<<endl;
-       (*itf)->Print(kPRINTFULL);
+  for( auto itf : fFormula ) {
+    cout << "Formula full printout --> " << endl;
+    itf->Print(kPRINTFULL);
   }
-  for (vector<THaCut*>::const_iterator itc = fCut.begin();
-       itc != fCut.end(); ++itc) {
-       cout << "Cut full printout --> "<<endl;
-       (*itc)->Print(kPRINTFULL);
+  for( auto itc : fCut ) {
+    cout << "Cut full printout --> " << endl;
+    itc->Print(kPRINTFULL);
   }
 }
 
@@ -275,7 +267,7 @@ void THaVform::ErrPrint(Int_t err) const
       cout << "Unknown prefix."<<endl;
       cout << "The presently supported prefixes are "<<endl;
       cout << "'SUM:', 'AND:', and 'OR:' "<<endl;
-      cout << "(case insenstitive)"<<endl;
+      cout << "(case insensitive)"<<endl;
       break;
 
     case kIllPre :
@@ -415,11 +407,8 @@ void THaVform::ReAttach( )
     fVarPtr = fVarList->Find(fVarName[i].c_str());
     break;
   }
-  for (vector<THaCut*>::iterator itc = fCut.begin();
-       itc != fCut.end(); ++itc) (*itc)->Compile();
-  for (vector<THaFormula*>::iterator itf = fFormula.begin();
-       itf != fFormula.end(); ++itf) (*itf)->Compile();
-  return;
+  for( auto& itc : fCut ) itc->Compile();
+  for( auto& itf : fFormula ) itf->Compile();
 }
 
 
@@ -464,7 +453,7 @@ Int_t THaVform::MakeFormula(Int_t flo, Int_t fhi)
   } else {  // The formula had a prefix like "OR:"
             // This THaVform is therefore a scaler.
 
-    string soper="";
+    string soper;
     int iscut=0;
     switch (fPrefix) {
 
@@ -497,7 +486,7 @@ Int_t THaVform::MakeFormula(Int_t flo, Int_t fhi)
       return status;
     }
 
-    string sform="";
+    string sform;
     for (Int_t i = 0; i < fhi; ++i) {
       sform += fVectSform[i];
       if (i < (long)fVectSform.size()-1) sform += soper;
@@ -507,9 +496,8 @@ Int_t THaVform::MakeFormula(Int_t flo, Int_t fhi)
 
     if (IsCut()) {
       if( !fCut.empty() ) {  // drop what was there before
-	for (vector<THaCut* >::iterator itc = fCut.begin();
-             itc != fCut.end(); ++itc) delete *itc;
-	fCut.clear();
+        for( auto& itc : fCut ) delete itc;
+        fCut.clear();
       }
       cname += "cut";
       //FIXME: avoid duplicate cuts/formulas
@@ -517,9 +505,8 @@ Int_t THaVform::MakeFormula(Int_t flo, Int_t fhi)
 				"thavsform"));
     } else if (IsFormula()) {
       if( !fFormula.empty() ) {  // drop what was there before
-	for (vector<THaFormula* >::iterator itf = fFormula.begin();
-	     itf != fFormula.end(); ++itf)
-	  delete *itf;
+        for( auto& itf : fFormula )
+          delete itf;
 	fFormula.clear();
       }
       cname += "form";
@@ -551,7 +538,7 @@ string THaVform::StripPrefix(const char* expr)
 
   fPrefix = kNoPrefix;
   result = stitle;
-  for (int i = 0; i < (long)sprefix.size(); ++i) {
+  for (string::size_type i = 0; i < sprefix.size(); ++i) {
      pos1 = stitle.find(ToUpper(sprefix[i]),0);
      pos2 = stitle.find(ToLower(sprefix[i]),0);
      pos  = string::npos;
@@ -588,7 +575,7 @@ string THaVform::StripBracket(const string& var) const
   string::size_type pos1,pos2;
   string open_brack = "[";
   string close_brack = "]";
-  string result = "";
+  string result;
   pos1 = var.find(open_brack,0);
   pos2 = var.find(close_brack,0);
   if ((pos1 != string::npos) &&
@@ -612,8 +599,7 @@ Int_t THaVform::SetOutput(TTree *tree)
     assert(!IsVarray() && fObjSize == 1);
     string tinfo;
     tinfo = mydata + "/D";
-    string tmp = mydata;
-    tree->Branch(tmp.c_str(), &fData, tinfo.c_str(), 4000);
+    tree->Branch(mydata.c_str(), &fData, tinfo.c_str(), 4000);
   }
   return 0;
 
@@ -639,7 +625,7 @@ Int_t THaVform::Process()
         fData = theFormula->Eval();
       }
     }
-    if( fOdata != 0 ) {
+    if( fOdata != nullptr ) {
       vector<THaFormula*>::size_type i = fFormula.size();
       while( i-- > 0 ) {
 	THaFormula* theFormula = fFormula[i];
@@ -701,7 +687,7 @@ Int_t THaVform::Process()
         if (theCut->EvalCut()) fData = 1.0;
       }
     }
-    if( fOdata != 0 ) {
+    if( fOdata != nullptr ) {
       vector<THaCut*>::size_type i = fCut.size();
       while( i-- > 0 ) {
 	THaCut* theCut = fCut[i];
@@ -738,13 +724,13 @@ Int_t THaVform::DefinedGlobalVariable( TString& name )
 
   // Retrieve some of the results of the THaFormula parser
   FVarDef_t& def = fVarDef[ret];
-  const THaVar* gvar = static_cast<const THaVar*>( def.obj );
+  auto gvar = static_cast<const THaVar*>( def.obj );
   // This makes a certain assumption about the array syntax defined by ROOT
   // and THaArrayString, but in the interest of performance  we don't create
   // a full THaArrayString here just to find out if it is an array element
   Bool_t var_is_array = name.Contains("[");
 
-  fVarName.push_back(name.Data());
+  fVarName.emplace_back(name.Data());
   FAr stat;
   if( gvar->IsArray() ) {
 
@@ -783,10 +769,10 @@ Int_t THaVform::DefinedGlobalVariable( TString& name )
 void THaVform::GetForm(Int_t size)
 {
 
-  string open_brack="[";
-  string close_brack="]";
+  const string open_brack="[";
+  const string close_brack="]";
   string::size_type pos,pos1,pos2;
-  vector<Int_t> ipos;
+  vector<string::size_type> ipos;
 
   char num[11];
   string aline,acopy;
@@ -794,36 +780,34 @@ void THaVform::GetForm(Int_t size)
     acopy = fStitle;
     aline = acopy;
     sprintf(num,"%d",idx);
-    for (vector<string>::iterator is = fSarray.begin();
-        is != fSarray.end(); ++is) {
-      string sb = *is;
+    for( const auto& sb : fSarray ) {
       aline = "";
       ipos.clear();
       pos1 = 0;
-      pos  = 0;
-      while (pos != string::npos) {
-        pos  = acopy.find(sb,pos1);
+      pos = 0;
+      while( pos != string::npos ) {
+        pos = acopy.find(sb, pos1);
         pos1 = pos + sb.length();
-        pos2 = acopy.find(open_brack,pos1);
-        if (pos  != string::npos &&
-           (pos2 == string::npos || pos2 > pos1))
-               ipos.push_back(pos1);
+        pos2 = acopy.find(open_brack, pos1);
+        if( pos != string::npos &&
+            (pos2 == string::npos || pos2 > pos1))
+          ipos.push_back(pos1);
       }
       if ((long)ipos.size() == 0) continue;
 // Found at least one array,
 // now build fSarray for [0], [1], ... size
       if (idx == 0) fVectSform.clear();
       pos = 0;
-      for (int j = 0; j < (long)ipos.size(); ++j) {
-         aline += acopy.substr(pos,ipos[j]) +
-                 open_brack + num + close_brack;
-         pos = ipos[j];
-
+      for( int ipo : ipos ) {
+        aline.append(acopy.substr(pos, ipo));
+        aline.append(open_brack).append(num).append(close_brack);
+        pos = ipo;
       }
-      aline += acopy.substr(ipos[ipos.size()-1],acopy.length());
+      aline.append(acopy.substr(ipos[ipos.size()-1],acopy.length()));
       acopy = aline;
     }
-    if (aline.length() > 0) fVectSform.push_back(aline);
+    if( aline.length() > 0 )
+      fVectSform.push_back(aline);
   }
 
 }

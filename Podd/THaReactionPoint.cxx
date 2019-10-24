@@ -8,7 +8,7 @@
 //
 // This module assumes a small-acceptance pointing-type spectrometer
 // that generates tracks in TRANSPORT coordinates.
-// It is assumed that the spectrometer only reconstucts the 
+// It is assumed that the spectrometer only reconstructs the
 // position at the target transverse to the bend plane, i.e. y_tg, with 
 // relatively high precision. Any reconstructed or estimated x_tg is ignored.
 // The vertex is then defined as the intersection point of the 
@@ -34,7 +34,7 @@ ClassImp(THaReactionPoint)
 THaReactionPoint::THaReactionPoint( const char* name, const char* description,
 				    const char* spectro, const char* beam ) :
   THaPhysicsModule(name,description), fSpectroName(spectro), 
-  fBeamName(beam), fSpectro(NULL), fBeam(NULL)
+  fBeamName(beam), fSpectro(nullptr), fBeam(nullptr)
 {
   // Normal constructor.
 
@@ -128,7 +128,7 @@ Int_t THaReactionPoint::Process( const THaEvData& )
     // FIXME: preliminary
     if( theTrack == fSpectro->GetGoldenTrack() ) {
       fVertex = theTrack->GetVertex();
-      fVertexOK = kTRUE;
+      fVertexOK = true;
     }
     // FIXME: calculate vertex coordinate errors here (need beam errors)
 

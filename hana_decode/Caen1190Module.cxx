@@ -26,24 +26,23 @@ namespace Decoder {
     DoRegister( ModuleType( "Decoder::Caen1190Module" , 1190 ));
 
   Caen1190Module::Caen1190Module(Int_t crate, Int_t slot)
-    : VmeModule(crate, slot) {
-    memset(&tdc_data, 0, sizeof(tdc_data));
-    fDebugFile=0;
+    : VmeModule(crate, slot),
+      fNumHits(nullptr), fTdcData(nullptr), slot_data(nullptr), tdc_data{} {
     Init();
   }
 
   Caen1190Module::~Caen1190Module() {
-    if(fNumHits) delete [] fNumHits;
-    if(fTdcData) delete [] fTdcData;
+    delete [] fNumHits;
+    delete [] fTdcData;
   }
 
   void Caen1190Module::Init() {
     Module::Init();
     fNumHits = new Int_t[NTDCCHAN];
     fTdcData = new Int_t[NTDCCHAN*MAXHIT];
-    fDebugFile = 0;
+    fDebugFile = nullptr;
     Clear("");
-    IsInit = kTRUE;
+    IsInit = true;
     fName = "Caen TDC 1190 Module";
   }
 
@@ -86,7 +85,7 @@ namespace Decoder {
 	tdc_data.glb_hdr_slno =  *p & 0x0000001f;       // bits 4-0
 	if (tdc_data.glb_hdr_slno == static_cast <UInt_t> (fSlot)) {
 #ifdef WITH_DEBUG
-	if (fDebugFile != 0)
+	if (fDebugFile)
 	  *fDebugFile << "Caen1190Module:: 1190 GLOBAL HEADER >> data = " 
 		      << hex << *p << " >> event number = " << dec 
 		      << tdc_data.glb_hdr_evno << " >> slot number = "  
@@ -100,7 +99,7 @@ namespace Decoder {
 	tdc_data.hdr_event_id = (*p & 0x00fff000) >> 12; // bits 23-12
 	tdc_data.hdr_bunch_id =  *p & 0x00000fff;        // bits 11-0
 #ifdef WITH_DEBUG
-	if (fDebugFile != 0)
+	if (fDebugFile)
 	  *fDebugFile << "Caen1190Module:: 1190 TDC HEADER >> data = " 
 		      << hex << *p << " >> chip id = " << dec 
 		      << tdc_data.hdr_chip_id  << " >> event id = "
@@ -115,7 +114,7 @@ namespace Decoder {
 	tdc_data.raw    =  *p & 0x0007ffff;      // bits 18-0
 	tdc_data.status = slot_data->loadData("tdc", tdc_data.chan, tdc_data.raw, tdc_data.raw);
 #ifdef WITH_DEBUG
-	if (fDebugFile != 0)
+	if (fDebugFile)
 	  *fDebugFile << "Caen1190Module:: 1190 MEASURED DATA >> data = " 
 		      << hex << *p << " >> channel = " << dec
 		      << tdc_data.chan << " >> raw time = "
@@ -134,7 +133,7 @@ namespace Decoder {
 	tdc_data.trl_event_id    = (*p & 0x00fff000) >> 12; // bits 23-12
 	tdc_data.trl_word_cnt    =  *p & 0x00000fff;        // bits 11-0
 #ifdef WITH_DEBUG
-	if (fDebugFile != 0)
+	if (fDebugFile)
 	  *fDebugFile << "Caen1190Module:: 1190 TDC TRAILER >> data = " 
 		      << hex << *p << " >> chip id = " << dec 
 		      << tdc_data.trl_chip_id  << " >> event id = "
@@ -150,7 +149,7 @@ namespace Decoder {
 	cout << "TDC1190 Error: Slot " << tdc_data.glb_hdr_slno << ", Chip " << tdc_data.chip_nr_hd << 
 	  ", Flags " << hex << tdc_data.flags << dec << " " << ", Ev #" << tdc_data.glb_hdr_evno << endl;
 #ifdef WITH_DEBUG
-	if (fDebugFile != 0)
+	if (fDebugFile)
 	  *fDebugFile << "Caen1190Module:: 1190 TDC ERROR >> data = " 
 		      << hex << *p << " >> chip header = " << dec
 		      << tdc_data.chip_nr_hd << " >> error flags = " << hex
@@ -166,7 +165,7 @@ namespace Decoder {
       if (tdc_data.glb_hdr_slno == static_cast <UInt_t> (fSlot)) {
 	tdc_data.trig_time = *p & 0x7ffffff; // bits 27-0
 #ifdef WITH_DEBUG
-	if (fDebugFile != 0)
+	if (fDebugFile)
 	  *fDebugFile << "Caen1190Module:: 1190 GLOBAL TRIGGER TIME >> data = " 
 		      << hex << *p << " >> trigger time = " << dec
 		      << tdc_data.trig_time << endl;
@@ -179,7 +178,7 @@ namespace Decoder {
        tdc_data.glb_trl_wrd_cnt = (*p & 0x001fffe0) >> 5;  // bits 20-5
        tdc_data.glb_trl_slno    =  *p & 0x0000001f;        // bits 4-0   
 #ifdef WITH_DEBUG
-	if (fDebugFile != 0)
+	if (fDebugFile)
 	  *fDebugFile << "Caen1190Module:: 1190 GLOBAL TRAILER >> data = " 
 		      << hex << *p << " >> status = "
 		      << tdc_data.glb_trl_status << " >> word count = " << dec 

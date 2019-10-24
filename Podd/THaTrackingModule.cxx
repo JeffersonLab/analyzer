@@ -15,7 +15,7 @@
 using namespace std;
 
 //_____________________________________________________________________________
-THaTrackingModule::THaTrackingModule() :  fTrk(NULL)
+THaTrackingModule::THaTrackingModule() :  fTrk(nullptr)
 {
   // Normal constructor.
 
@@ -32,7 +32,7 @@ THaTrackingModule::~THaTrackingModule()
 void THaTrackingModule::TrkIfoClear()
 {
   fTrkIfo.Clear();
-  fTrk = NULL;
+  fTrk = nullptr;
 }
 
 //_____________________________________________________________________________

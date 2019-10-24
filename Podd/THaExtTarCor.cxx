@@ -31,7 +31,7 @@
 //   px,py,pz: lab momentum vector components (GeV)
 //   ok:       data valid status flag (0/1)
 //
-// The following global variables are avalable:
+// The following global variables are available:
 //
 //   delta_p:  Size of momentum correction (GeV)
 //   delta_dp: Size of delta correction
@@ -52,8 +52,9 @@
 THaExtTarCor::THaExtTarCor( const char* name, const char* description,
 			    const char* spectro, const char* vertex ) :
   THaPhysicsModule(name,description), fThetaCorr(0.0), fDeltaCorr(0.0),
-  fSpectroName(spectro), fVertexName(vertex), 
-  fTrackModule(NULL), fVertexModule(NULL)
+  fDeltaP(0.0), fDeltaDp(0.0), fDeltaTh(0.0),
+  fSpectroName(spectro), fVertexName(vertex),
+  fTrackModule(nullptr), fVertexModule(nullptr)
 {
   // Normal constructor.
 
@@ -123,7 +124,7 @@ Int_t THaExtTarCor::DefineVariables( EMode mode )
     { "delta_p",  "Size of momentum correction",    "fDeltaP" },
     { "delta_dp", "Size of delta correction",       "fDeltaDp" },
     { "delta_th", "Size of theta correction (rad)", "fDeltaTh" },
-    { 0 }
+    { nullptr }
   };
   DefineVarsFromList( var2, mode );
   return 0;
@@ -176,7 +177,7 @@ Int_t THaExtTarCor::Process( const THaEvData& )
 //_____________________________________________________________________________
 Int_t THaExtTarCor::ReadRunDatabase( const TDatime& date )
 {
-  // Qeury the run database for the correction coefficients.
+  // Query the run database for the correction coefficients.
   // Use reasonable defaults if not found.
   // First try tags "<prefix>.theta_corr" and "<prefix>.delta_corr", then
   // global names "theta_corr" and "delta_corr".

@@ -16,8 +16,8 @@ class TClonesArray;
 class THaCherenkov : public THaPidDetector {
 
 public:
-  THaCherenkov( const char* name, const char* description = "",
-	      THaApparatus* a = NULL );
+  explicit THaCherenkov( const char* name, const char* description = "",
+                         THaApparatus* a = nullptr );
   THaCherenkov(); // for ROOT I/O
   virtual ~THaCherenkov();
 

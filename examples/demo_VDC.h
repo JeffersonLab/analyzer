@@ -842,7 +842,7 @@ Bool_t demo_VDC::Notify()
   b_fL_V2_time = fChain->GetBranch("fL_V2_time");
   b_fL_V2_clpos = fChain->GetBranch("fL_V2_clpos");
   b_fL_V2_clsiz = fChain->GetBranch("fL_V2_clsiz");
-  return kTRUE;
+  return true;
 }
 
 void demo_VDC::Show(Int_t entry)

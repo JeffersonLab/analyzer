@@ -30,7 +30,7 @@ THaTriggerTime::THaTriggerTime( const char* name, const char* desc )
   : TimeCorrectionModule(name, desc, THaAnalyzer::kDecode),
     fDetMap(new THaDetMap), fTDCRes(0.0), fCommonStop(0), fEvtType(-1)
 {
-  // basic do-nothing-else contructor
+  // basic do-nothing-else constructor
 }
 
 //____________________________________________________________________________
@@ -130,9 +130,9 @@ Int_t THaTriggerTime::ReadDatabase( const TDatime& date )
   DBRequest config_request[] = {
     { "tdc_res",  &fTDCRes },
     { "trigdef",  &trigdef,   kDoubleV },
-    { "glob_off", &fGlOffset, kDouble, 0, 1 },
-    { "common_stop", &fCommonStop, kInt, 0, 1 },
-    { 0 }
+    { "glob_off", &fGlOffset, kDouble, 0, true },
+    { "common_stop", &fCommonStop, kInt, 0, true },
+    { nullptr }
   };
   Int_t err = LoadDB( file, date, config_request, fPrefix );
   fclose(file);
@@ -185,7 +185,7 @@ Int_t THaTriggerTime::ReadDatabase( const TDatime& date )
 //____________________________________________________________________________
 Int_t THaTriggerTime::DefineVariables( EMode mode )
 {
-  // Define/delete standard event-by-event time offsets
+  // Define/delete event-by-event global variables
 
   if( mode == kDefine && fIsSetup ) return kOK;
   fIsSetup = ( mode == kDefine );

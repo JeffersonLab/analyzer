@@ -47,7 +47,7 @@ using namespace VDC;
 // Helper structure for parsing tensor data
 typedef vector<THaVDC::THaMatrixElement> MEvec_t;
 struct MEdef_t {
-  MEdef_t() : npow(0), elems(0), isfp(false), fpidx(0) {}
+  MEdef_t() : npow(0), elems(nullptr), isfp(false), fpidx(0) {}
   MEdef_t( Int_t npw, MEvec_t* elemp, Bool_t is_fp = false, Int_t fp_idx = 0 )
     : npow(npw), elems(elemp), isfp(is_fp), fpidx(fp_idx) {}
   MEvec_t::size_type npow; // Number of exponents for this element type
@@ -60,7 +60,12 @@ struct MEdef_t {
 THaVDC::THaVDC( const char* name, const char* description,
                 THaApparatus* apparatus ) :
   THaTrackingDetector(name,description,apparatus),
+  // Create objects for the upper and lower chamber
+  fLower{new THaVDCChamber("uv1", "Lower VDC chamber", this)},
+  fUpper{new THaVDCChamber("uv2", "Upper VDC chamber", this)},
+  fLUpairs{new TClonesArray("THaVDCPointPair", 20)},
   fNtracks(0), fEvNum(0),
+  // Default geometry parameters. Exact values are read in ReadDatabase.
   fVDCAngle(-TMath::PiOver4()), fSin_vdc(-0.5*TMath::Sqrt2()),
   fCos_vdc(0.5*TMath::Sqrt2()), fTan_vdc(-1.0),
   fSpacing(0.33), fCentralDist(0.),
@@ -68,16 +73,10 @@ THaVDC::THaVDC( const char* name, const char* description,
   fTimeCorrectionModule(nullptr)
 {
   // Constructor
-
-  // Create objects for the upper and lower chamber
-  fLower = new THaVDCChamber( "uv1", "Lower VDC chamber", this );
-  fUpper = new THaVDCChamber( "uv2", "Upper VDC chamber", this );
-  if( !fLower || !fUpper || fLower->IsZombie() || fUpper->IsZombie() ) {
+  if( fLower->IsZombie() || fUpper->IsZombie() ) {
     Error( Here("THaVDC()"), "Failed to create subdetectors." );
     MakeZombie();
   }
-
-  fLUpairs = new TClonesArray( "THaVDCPointPair", 20 );
 
   // Default behavior for now
   SetBit( kOnlyFastest | kHardTDCcut );
@@ -125,11 +124,11 @@ static Int_t ParseMatrixElements( const string& MEstring,
 
   const char* const here = "THaVDC::ParseMatrixElements";
 
-  istringstream ist(MEstring.c_str());
+  istringstream ist(MEstring);
   string word, w;
   bool findnext = true, findpowers = true;
   Int_t powers_left = 0;
-  map<string,MEdef_t>::iterator cur = matrix_map.end();
+  auto cur = matrix_map.end();
   THaVDC::THaMatrixElement ME;
   while( ist >> word ) {
     if( !findnext ) {
@@ -359,19 +358,19 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   string coord_type;
 
   DBRequest request[] = {
-    { "max_matcherr",      &fErrorCutoff,      kDouble, 0, 1 },
-    { "num_iter",          &fNumIter,          kInt,    0, 1 },
-    { "coord_type",        &coord_type,        kString, 0, 1 },
-    { "disable_tracking",  &disable_tracking,  kInt,    0, 1 },
-    { "disable_finetrack", &disable_finetrack, kInt,    0, 1 },
-    { "only_fastest_hit",  &only_fastest_hit,  kInt,    0, 1 },
-    { "do_tdc_hardcut",    &do_tdc_hardcut,    kInt,    0, 1 },
-    { "do_tdc_softcut",    &do_tdc_softcut,    kInt,    0, 1 },
-    { "ignore_negdrift",   &ignore_negdrift,   kInt,    0, 1 },
+    { "max_matcherr",      &fErrorCutoff,      kDouble, 0, true },
+    { "num_iter",          &fNumIter,          kInt,    0, true },
+    { "coord_type",        &coord_type,        kString, 0, true },
+    { "disable_tracking",  &disable_tracking,  kInt,    0, true },
+    { "disable_finetrack", &disable_finetrack, kInt,    0, true },
+    { "only_fastest_hit",  &only_fastest_hit,  kInt,    0, true },
+    { "do_tdc_hardcut",    &do_tdc_hardcut,    kInt,    0, true },
+    { "do_tdc_softcut",    &do_tdc_softcut,    kInt,    0, true },
+    { "ignore_negdrift",   &ignore_negdrift,   kInt,    0, true },
 #ifdef MCDATA
-    { "MCdata",            &mc_data,           kInt,    0, 1 },
+    { "MCdata",            &mc_data,           kInt,    0, true },
 #endif
-    { 0 }
+    { nullptr }
   };
 
   err = LoadDB( file, date, request, fPrefix );
@@ -440,11 +439,11 @@ Int_t THaVDC::ReadDatabase( const TDatime& date )
   // figure out the track length from the origin to the s1 plane
   // since we take the VDC to be the origin of the coordinate
   // space, this is actually pretty simple
-  const THaDetector* s1 = 0;
+  const THaDetector* s1 = nullptr;
   if( GetApparatus() )
-    // TODO: neeed? if so, change to HRS reference detector
+    // TODO: need? if so, change to HRS reference detector
     s1 = GetApparatus()->GetDetector("s1");
-  if(s1 == 0)
+  if(s1 == nullptr)
     fCentralDist = 0;
   else
     fCentralDist = s1->GetOrigin().Z();
@@ -540,12 +539,12 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
         continue;
 
       // Create new point pair
-      auto thePair = new( (*fLUpairs)[nPairs++] )
+      auto* thePair = new( (*fLUpairs)[nPairs++] )
         THaVDCPointPair( lowerPoint, upperPoint, fSpacing );
 
       // Explicitly mark these points as unpartnered
-      lowerPoint->SetPartner( 0 );
-      upperPoint->SetPartner( 0 );
+      lowerPoint->SetPartner( nullptr );
+      upperPoint->SetPartner( nullptr );
 
       // Further analyze this pair
       //TODO: Several things come to mind, to be tested:
@@ -584,7 +583,7 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
   // Mark pairs as partners, starting with the best matches,
   // until all tracks are marked.
   for( int i = 0; i < nPairs; i++ ) {
-    THaVDCPointPair* thePair = static_cast<THaVDCPointPair*>( fLUpairs->At(i) );
+    auto* thePair = static_cast<THaVDCPointPair*>( fLUpairs->At(i) );
     assert( thePair );
     assert( thePair->GetError() < fErrorCutoff );
 
@@ -615,7 +614,7 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 
     // All partnered pairs must have a used cluster and hence never get here,
     // else there is a bug in the underlying logic
-    assert( lowerPoint->GetPartner() == 0 && upperPoint->GetPartner() == 0 );
+    assert( lowerPoint->GetPartner() == nullptr && upperPoint->GetPartner() == nullptr );
 
     // Use the pair. This partners the points, marks its clusters as used
     // and calculates global slopes
@@ -634,8 +633,8 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 
       // Decide whether this is a new track or an old track
       // that is being updated
-      THaVDCTrackID* thisID = new THaVDCTrackID(lowerPoint,upperPoint);
-      THaTrack* theTrack = 0;
+      auto* thisID = new THaVDCTrackID(lowerPoint,upperPoint);
+      THaTrack* theTrack = nullptr;
       bool found = false;
       int t;
       for( t = 0; t < n_exist; t++ ) {
@@ -715,13 +714,13 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
   if( tracks && n_exist > n_mod ) {
     //    bool modified = false;
     for( int i = 0; i < tracks->GetLast()+1; i++ ) {
-      THaTrack* theTrack = static_cast<THaTrack*>( tracks->At(i) );
+      auto* theTrack = static_cast<THaTrack*>( tracks->At(i) );
       // Track created by this class and not updated?
       if( (theTrack->GetCreator() == this) &&
           ((theTrack->GetFlag() & kStageMask) != theStage ) ) {
         // First, release clusters pointing to this track
         for( int j = 0; j < nPairs; j++ ) {
-          auto thePair = static_cast<THaVDCPointPair*>( fLUpairs->At(i) );
+          auto* thePair = static_cast<THaVDCPointPair*>( fLUpairs->At(i) );
           assert(thePair);
           if( thePair->GetTrack() == theTrack ) {
             thePair->Associate(nullptr);
@@ -751,7 +750,7 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
   // Assign index to each track (0 = first/"best", 1 = second, etc.)
   if( tracks ) {
     for( int i = 0; i < tracks->GetLast()+1; i++ ) {
-      THaTrack* theTrack = static_cast<THaTrack*>( tracks->At(i) );
+      auto* theTrack = static_cast<THaTrack*>( tracks->At(i) );
       assert( theTrack );
       theTrack->SetIndex(i);
     }
@@ -841,7 +840,7 @@ Int_t THaVDC::FindVertices( TClonesArray& tracks )
 
   Int_t n_exist = tracks.GetLast()+1;
   for( Int_t t = 0; t < n_exist; t++ ) {
-    THaTrack* theTrack = static_cast<THaTrack*>( tracks.At(t) );
+    auto* theTrack = static_cast<THaTrack*>( tracks.At(t) );
     CalcTargetCoords(theTrack);
   }
 
@@ -963,7 +962,7 @@ void THaVDC::CalcTargetCoords( THaTrack* track )
   phi = CalcTargetVar(fPMatrixElems, powers)+CalcTargetVar(fPTAMatrixElems,powers);
   y = CalcTargetVar(fYMatrixElems, powers)+CalcTargetVar(fYTAMatrixElems,powers);
 
-  THaSpectrometer *app = static_cast<THaSpectrometer*>(GetApparatus());
+  auto* app = static_cast<THaSpectrometer*>(GetApparatus());
   // calculate momentum
   dp = CalcTargetVar(fDMatrixElems, powers);
   p  = app->GetPcentral() * (1.0+dp);
@@ -981,7 +980,6 @@ void THaVDC::CalcTargetCoords( THaTrack* track )
   track->SetPathLen(pathl);
 
   app->TransportToLab( p, theta, phi, track->GetPvect() );
-
 }
 
 
@@ -992,14 +990,12 @@ void THaVDC::CalcMatrix( const Double_t x, vector<THaMatrixElement>& matrix )
   // by evaluating a polynomial in x of order it->order with
   // coefficients given by it->poly
 
-  for( vector<THaMatrixElement>::iterator it=matrix.begin();
-       it!=matrix.end(); ++it ) {
-    it->v = 0.0;
-
-    if(it->order > 0) {
-      for(int i=it->order-1; i>=1; --i)
-        it->v = x * (it->v + it->poly[i]);
-      it->v += it->poly[0];
+  for( auto& ME : matrix ) {
+    ME.v = 0.0;
+    if( ME.order > 0 ) {
+      for( int i = ME.order - 1; i >= 1; i-- )
+        ME.v = x * (ME.v + ME.poly[i]);
+      ME.v += ME.poly[0];
     }
   }
 }
@@ -1012,17 +1008,16 @@ Double_t THaVDC::CalcTargetVar(const vector<THaMatrixElement>& matrix,
   // the x-dependence is already in the matrix, so only 1-3 (or np) used
   Double_t retval=0.0;
   Double_t v=0;
-  for( vector<THaMatrixElement>::const_iterator it=matrix.begin();
-       it!=matrix.end(); ++it )
-    if(it->v != 0.0) {
-      v = it->v;
-      unsigned int np = it->pw.size(); // generalize for extra matrix elems.
-      for (unsigned int i=0; i<np; ++i)
-        v *= powers[it->pw[i]][i+1];
+  for( const auto& ME : matrix )
+    if( ME.v != 0.0 ) {
+      v = ME.v;
+      unsigned int np = ME.pw.size(); // generalize for extra matrix elems.
+      for( unsigned int i = 0; i < np; ++i )
+        v *= powers[ME.pw[i]][i + 1];
       retval += v;
-  //      retval += it->v * powers[it->pw[0]][1]
-  //                  * powers[it->pw[1]][2]
-  //                  * powers[it->pw[2]][3];
+      //      retval += it->v * powers[it->pw[0]][1]
+  //		      * powers[it->pw[1]][2]
+  //		      * powers[it->pw[2]][3];
     }
 
   return retval;
@@ -1036,13 +1031,12 @@ Double_t THaVDC::CalcTarget2FPLen(const vector<THaMatrixElement>& matrix,
   // to the transport plane
 
   Double_t retval=0.0;
-  for( vector<THaMatrixElement>::const_iterator it=matrix.begin();
-       it!=matrix.end(); ++it )
-    if(it->v != 0.0)
-      retval += it->v * powers[it->pw[0]][0]
-                      * powers[it->pw[1]][1]
-                      * powers[it->pw[2]][2]
-                      * powers[it->pw[3]][3];
+  for( const auto& ME : matrix )
+    if( ME.v != 0.0 )
+      retval += ME.v * powers[ME.pw[0]][0]
+                * powers[ME.pw[1]][1]
+                * powers[ME.pw[2]][2]
+                * powers[ME.pw[3]][3];
 
   return retval;
 }
@@ -1053,15 +1047,13 @@ void THaVDC::CorrectTimeOfFlight(TClonesArray& tracks)
   const static Double_t v = 3.0e-8;   // for now, assume that everything travels at c
 
   // get scintillator planes
-  THaScintillator* s1 = static_cast<THaScintillator*>
-    ( GetApparatus()->GetDetector("s1") );
-  THaScintillator* s2 = static_cast<THaScintillator*>
-    ( GetApparatus()->GetDetector("s2") );
+  auto* s1 = static_cast<THaScintillator*>( GetApparatus()->GetDetector("s1") );
+  auto* s2 = static_cast<THaScintillator*>( GetApparatus()->GetDetector("s2") );
 
-  if( (s1 == 0) || (s2 == 0) )
+  if( (s1 == nullptr) || (s2 == nullptr) )
     return;
 
-  // adjusts caluculated times so that the time of flight to S1
+  // adjusts calculated times so that the time of flight to S1
   // is the same as a track going through the middle of the VDC
   // (i.e. x_det = 0) at a 45 deg angle (theta_t and phi_t = 0)
   // assumes that at least the coarse tracking has been performed
@@ -1069,7 +1061,7 @@ void THaVDC::CorrectTimeOfFlight(TClonesArray& tracks)
   Int_t n_exist = tracks.GetLast()+1;
   //cerr<<"num tracks: "<<n_exist<<endl;
   for( Int_t t = 0; t < n_exist; t++ ) {
-    THaTrack* track = static_cast<THaTrack*>( tracks.At(t) );
+    auto* track = static_cast<THaTrack*>( tracks.At(t) );
 
     // calculate the correction, since it's on a per track basis
     Double_t s1_dist, vdc_dist, dist, tdelta;
@@ -1092,8 +1084,7 @@ void THaVDC::CorrectTimeOfFlight(TClonesArray& tracks)
     // apply the correction
     Int_t n_clust = track->GetNclusters();
     for( Int_t i = 0; i < n_clust; i++ ) {
-      THaVDCPoint* the_point =
-        static_cast<THaVDCPoint*>( track->GetCluster(i) );
+      auto* the_point = static_cast<THaVDCPoint*>( track->GetCluster(i) );
       if( !the_point )
         continue;
 
@@ -1108,17 +1099,16 @@ void THaVDC::FindBadTracks(TClonesArray& tracks)
 {
   // Flag tracks that don't intercept S2 scintillator as bad
 
-  THaScintillator* s2 = static_cast<THaScintillator*>
-    ( GetApparatus()->GetDetector("s2") );
+  auto* s2 = static_cast<THaScintillator*>( GetApparatus()->GetDetector("s2") );
 
-  if(s2 == 0) {
+  if(s2 == nullptr) {
     //cerr<<"Could not find s2 plane!!"<<endl;
     return;
   }
 
   Int_t n_exist = tracks.GetLast()+1;
   for( Int_t t = 0; t < n_exist; t++ ) {
-    THaTrack* track = static_cast<THaTrack*>( tracks.At(t) );
+    auto* track = static_cast<THaTrack*>( tracks.At(t) );
 
     // project the current x and y positions into the s2 plane
     // if the tracks go out of the bounds of the s2 plane,
@@ -1176,8 +1166,6 @@ void THaVDC::Print(const Option_t* opt) const
     PrintME("Transport Matrix:  PTA-terms", fPTAMatrixElems);
     PrintME("Matrix L", fLMatrixElems);
   }
-
-  return;
 }
 
 //_____________________________________________________________________________
@@ -1195,8 +1183,9 @@ Int_t THaVDC::ReadGeometry( FILE* file, const TDatime& date, Bool_t )
 
   vector<double> size;
   DBRequest request[] = {
-    { "size", &size, kDoubleV, 0, 1, 0, "\"size\" (detector size [m])" },
-    { 0 }
+    { "size", &size, kDoubleV, 0, true,
+      0, "\"size\" (detector size [m])" },
+    { nullptr }
   };
   Int_t err = LoadDB( file, date, request );
   if( err )

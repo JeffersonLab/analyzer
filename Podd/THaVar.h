@@ -25,13 +25,13 @@ public:
 
   // Explicit instantiations for supported types are provided in implementation
   template <typename T>
-  THaVar( const char* name, const char* descript, T& var, const Int_t* count=0 );
+  THaVar( const char* name, const char* descript, T& var, const Int_t* count=nullptr );
 
   THaVar( const char* name, const char* descript, const void* obj,
-	  VarType type, Int_t offset, TMethodCall* method=0, const Int_t* count=0 );
+	  VarType type, Int_t offset, TMethodCall* method=nullptr, const Int_t* count=nullptr );
 
   THaVar( const char* name, const char* descript, const void* obj,
-	  VarType type, Int_t elem_size, Int_t offset, TMethodCall* method=0 );
+	  VarType type, Int_t elem_size, Int_t offset, TMethodCall* method=nullptr );
 
   //TODO: copy, assignment
   virtual ~THaVar();
@@ -100,7 +100,7 @@ inline
 Bool_t THaVar::HasSameSize( const THaVar* rhs ) const
 {
   if( !rhs )
-    return kFALSE;
+    return false;
   return fImpl->HasSameSize( *rhs->fImpl );
 }
 

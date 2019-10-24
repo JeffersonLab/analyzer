@@ -22,7 +22,7 @@ class OldVDCUVPlane : public THaSubDetector {
 public:
 
   OldVDCUVPlane( const char* name="", const char* description="",
-		 THaDetectorBase* parent = NULL );
+		 THaDetectorBase* parent = nullptr );
   virtual ~OldVDCUVPlane();
 
   virtual void    Clear( Option_t* opt="" );    // Reset event-by-event data

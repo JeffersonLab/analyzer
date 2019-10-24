@@ -53,7 +53,7 @@ Int_t THaEpicsEvtHandler::End( THaRunBase* )
 }
 
 Bool_t THaEpicsEvtHandler::IsLoaded(const char* tag) const {
-  if ( !fEpics ) return kFALSE;
+  if ( !fEpics ) return false;
   return fEpics->IsLoaded(tag);
 }
 

@@ -89,12 +89,6 @@ using namespace std;
 static Int_t kInitHashCapacity = 100;
 static Int_t kRehashLevel = 3;
 
-#if __cplusplus < 201103L
-# define SMART_PTR auto_ptr
-#else
-# define SMART_PTR unique_ptr
-#endif
-
 namespace Podd {
 
 //_____________________________________________________________________________
@@ -103,7 +97,7 @@ DecData::DecData( const char* name, const char* descript )
     fBdataLoc( kInitHashCapacity, kRehashLevel )
 {
   fProperties &= ~kNeedsRunDB;
-  fBdataLoc.SetOwner(kTRUE);
+  fBdataLoc.SetOwner(true);
 }
 
 //_____________________________________________________________________________
@@ -149,10 +143,10 @@ Int_t DecData::DefineVariables( EMode mode )
   // Each defined decoder data location defines its own global variable(s)
   // The BdataLoc have their own equivalent of fIsSetup, so we can
   // unconditionally call their DefineVariables() here (similar to detetcor
-  // initialization in THaAppratus::Init).
+  // initialization in THaApparatus::Init).
   Int_t retval = kOK;
   TIter next( &fBdataLoc );
-  while( BdataLoc* dataloc = static_cast<BdataLoc*>( next() ) ) {
+  while( auto dataloc = static_cast<BdataLoc*>( next() ) ) {
     if( dataloc->DefineVariables( mode ) != kOK )
       retval = kInitError;
   }
@@ -165,7 +159,7 @@ Int_t DecData::DefineVariables( EMode mode )
   RVarDef vars[] = {
     { "evtype",     "CODA event type",             "evtype" },
     { "evtypebits", "event type bit pattern",      "evtypebits" },
-    { 0 }
+    { nullptr }
   };
   return DefineVarsFromList( vars, mode );
 }
@@ -182,7 +176,7 @@ Int_t DecData::DefineLocType( const BdataLoc::BdataLocType& loctype,
 
   // Split the string from the database into values separated by commas,
   // spaces, and/or tabs
-  SMART_PTR<TObjArray> config( configstr.Tokenize(", \t") );
+  unique_ptr<TObjArray> config( configstr.Tokenize(", \t") );
   if( !config->IsEmpty() ) {
     Int_t nparams = config->GetLast()+1;
     assert( nparams > 0 );   // else bug in IsEmpty() or GetLast()
@@ -199,8 +193,8 @@ Int_t DecData::DefineLocType( const BdataLoc::BdataLocType& loctype,
       // Prepend prefix to name in parameter array
       TString& bname = GetObjArrayString( params, ip );
       bname.Prepend(GetPrefix());
-      BdataLoc* item = static_cast<BdataLoc*>(fBdataLoc.FindObject(bname) );
-      Bool_t already_defined = ( item != 0 );
+      auto item = static_cast<BdataLoc*>(fBdataLoc.FindObject(bname) );
+      Bool_t already_defined = ( item != nullptr );
       if( already_defined ) {
 	// Name already exists
 	if( re_init ) {
@@ -235,7 +229,7 @@ Int_t DecData::DefineLocType( const BdataLoc::BdataLocType& loctype,
       // The first parameter is always the name. Note that this object's prefix
       // was already prepended above.
       err = item->Configure( params, ip );
-      if( !err && loctype.fOptptr != 0 ) {
+      if( !err && loctype.fOptptr != nullptr ) {
 	// Optional pointer to some type-specific data
 	err = item->OptionPtr( loctype.fOptptr );
       }
@@ -326,7 +320,7 @@ Int_t DecData::ReadDatabase( const TDatime& date )
   if( !file ) return kFileError;
 
   Bool_t re_init = fIsInit;
-  fIsInit = kFALSE;
+  fIsInit = false;
   if( !re_init ) {
     fBdataLoc.Clear();
   }
@@ -335,7 +329,7 @@ Int_t DecData::ReadDatabase( const TDatime& date )
   SetupDBVersion( file, db_version );
 
   Int_t err = 0;
-  for( BdataLoc::TypeIter_t it = BdataLoc::fgBdataLocTypes().begin();
+  for( auto it = BdataLoc::fgBdataLocTypes().begin();
        !err && it != BdataLoc::fgBdataLocTypes().end(); ++it ) {
     const BdataLoc::BdataLocType& loctype = *it;
 
@@ -369,7 +363,7 @@ Int_t DecData::ReadDatabase( const TDatime& date )
   if( err )
     return kInitError;
 
-  fIsInit = kTRUE;
+  fIsInit = true;
   return kOK;
 }
 
@@ -405,7 +399,7 @@ Int_t DecData::Decode(const THaEvData& evdata)
   //- MultiWordLoc uses faster search algo to scan crate buffer
 
   TIter next( &fBdataLoc );
-  while( BdataLoc *dataloc = static_cast<BdataLoc*>( next() ) ) {
+  while( auto dataloc = static_cast<BdataLoc*>(next()) ) {
     dataloc->Load( evdata );
   }
 
@@ -429,7 +423,7 @@ void DecData::Print( Option_t* opt ) const
   if( evtypebits != 0 ) {
     cout << " trigger bits set = ";
     bool cont = false;
-    for( UInt_t i = 0; i < sizeof(evtypebits)*kBitsPerByte-1; ++i ) {
+    for( size_t i = 0; i < sizeof(evtypebits)*kBitsPerByte-1; ++i ) {
       if( TESTBIT(evtypebits,i) ) {
 	if( cont ) cout << ", ";
 	else       cont = true;

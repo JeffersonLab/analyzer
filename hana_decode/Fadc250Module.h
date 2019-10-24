@@ -10,11 +10,7 @@
 
 #include "PipeliningModule.h"
 #include <vector>
-#if __cplusplus >= 201103L
 #include <cstdint>
-#else
-#include <stdint.h>
-#endif
 
 namespace Decoder {
 
@@ -95,7 +91,7 @@ namespace Decoder {
       uint32_t nsa_ext, sample_sum;                                 // FADC pulse parameters
       uint32_t samp_overflow, samp_underflow, samp_over_thresh;     // FADC pulse parameters
       // Time word object
-      uint32_t peak_beyond_nsa, peak_not_found, peak_above_maxped;  // FADC pulse paramters
+      uint32_t peak_beyond_nsa, peak_not_found, peak_above_maxped;  // FADC pulse parameters
     } fadc_data;  // fadc_data_struct
 
     struct fadc_pulse_data {
@@ -115,7 +111,7 @@ namespace Decoder {
 
     void ClearDataVectors();
     void PopulateDataVector(std::vector<uint32_t>& data_vector, uint32_t data);
-    Int_t SumVectorElements(const std::vector<uint32_t>& data_vector) const;
+    uint32_t SumVectorElements( const std::vector<uint32_t>& data_vector) const;
     void LoadTHaSlotDataObj(THaSlotData *sldat);
     Int_t LoadThisBlock(THaSlotData *sldat, std::vector<UInt_t > evb);
     void PrintDataType() const;

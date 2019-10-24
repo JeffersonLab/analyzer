@@ -173,8 +173,8 @@ static VarTypeMap_t& GetVarTypeMap()
   // Get reference to type_info cache map. Initializes map on first use.
 
   if( var_type_map.empty() ) {
-    for( size_t i=0; i<sizeof(var_type_info)/sizeof(VarTypeInfo_t); ++i ) {
-      var_type_map[ var_type_info[i].pinfo ] = var_type_info[i].type;
+    for(auto & item : var_type_info) {
+      var_type_map[ item.pinfo ] = item.type;
     }
   }
   return var_type_map;
@@ -194,7 +194,7 @@ inline
 static VarType FindType( const type_info& tinfo )
 {
   VarTypeMap_t& type_map = GetVarTypeMap();
-  VarTypeMap_t::const_iterator found = type_map.find( &tinfo );
+  auto found = type_map.find( &tinfo );
 
   return ( found != type_map.end() ) ? found->second : kVarTypeEnd;
 }
@@ -203,7 +203,7 @@ static VarType FindType( const type_info& tinfo )
 template <typename T>
 THaVar::THaVar( const char* name, const char* descript, T& var,
 		const Int_t* count )
-  : TNamed(name,descript), fImpl(0)
+  : TNamed(name,descript), fImpl(nullptr)
 {
   // Constructor for basic types and fixed and variable-size arrays
 
@@ -233,7 +233,7 @@ THaVar::THaVar( const char* name, const char* descript, T& var,
 //_____________________________________________________________________________
 THaVar::THaVar( const char* name, const char* descript, const void* obj,
 	VarType type, Int_t offset, TMethodCall* method, const Int_t* count )
-  : TNamed(name,descript), fImpl(0)
+  : TNamed(name,descript), fImpl(nullptr)
 {
   // Generic constructor (used by THaVarList::DefineByType)
 
@@ -288,7 +288,7 @@ THaVar::THaVar( const char* name, const char* descript, const void* obj,
 //_____________________________________________________________________________
 THaVar::THaVar( const char* name, const char* descript, const void* obj,
 	VarType type, Int_t elem_size, Int_t offset, TMethodCall* method )
-  : TNamed(name,descript), fImpl(0)
+  : TNamed(name,descript), fImpl(nullptr)
 {
   // Generic constructor for std::vector<TObject(*)>
   // (used by THaVarList::DefineByType)
@@ -334,7 +334,7 @@ Int_t THaVar::Index( const char* s ) const
   // or a comma-separated list of subscripts (for multi-dimensional arrays).
   //
   // NOTE: This method is less efficient than
-  // THaVar::Index( THaArraySring& ) above because the string has
+  // THaVar::Index( THaArrayString& ) above because the string has
   // to be parsed first.
   //
   // Return -1 if subscript(s) out of bound(s) or -2 if incompatible arrays.

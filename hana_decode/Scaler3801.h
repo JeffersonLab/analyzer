@@ -16,9 +16,9 @@ class Scaler3801 : public GenScaler {
 
 public:
 
-   Scaler3801() {}
    Scaler3801(Int_t crate, Int_t slot);
-   virtual ~Scaler3801();
+   Scaler3801() = default;
+   virtual ~Scaler3801() = default;
 
    virtual void Init();
 

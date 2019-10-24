@@ -17,9 +17,9 @@ class Lecroy1875Module : public FastbusModule {
 
 public:
 
-   Lecroy1875Module() {}
-   Lecroy1875Module(Int_t crate, Int_t slot);
-   virtual ~Lecroy1875Module();
+  Lecroy1875Module(Int_t crate, Int_t slot);
+   Lecroy1875Module() = default;
+   virtual ~Lecroy1875Module() = default;
    virtual void Init();
 
 private:

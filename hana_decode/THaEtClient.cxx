@@ -56,13 +56,13 @@ THaEtClient::~THaEtClient() {
   delete [] etfile;
   Int_t status = codaClose();
   if (status == CODA_ERROR) cout << "ERROR: closing THaEtClient"<<endl;
-};
+}
 
 void THaEtClient::initflags()
 {
-  daqhost = NULL;
-  session = NULL;
-  etfile  = NULL;
+  daqhost = nullptr;
+  session = nullptr;
+  etfile  = nullptr;
   DEBUG = 0;
   FAST = 25;
   SMALL_TIMEOUT = 10;
@@ -77,7 +77,7 @@ void THaEtClient::initflags()
   evsum = 0;
   xcnt = 0;
   ratesum = 0;
-};
+}
 
 Int_t THaEtClient::init(const char* mystation)
 {
@@ -138,7 +138,7 @@ Int_t THaEtClient::init(const char* mystation)
     return CODA_ERROR;
   }
   return CODA_OK;
-};
+}
 
 Int_t THaEtClient::codaClose() {
   if (didclose || firstread) return CODA_OK;
@@ -153,7 +153,7 @@ Int_t THaEtClient::codaClose() {
     return CODA_ERROR;
   }
   return CODA_OK;
-};
+}
 
 Int_t THaEtClient::codaRead()
 {
@@ -188,7 +188,7 @@ Int_t THaEtClient::codaRead()
 // pull out a ET_CHUNK_SIZE of events from ET
   if (nused >= nread) {
     if (waitflag == 0) {
-      err = et_events_get(id, my_att, evs, ET_SLEEP, NULL, ET_CHUNK_SIZE, &nread);
+      err = et_events_get(id, my_att, evs, ET_SLEEP, nullptr, ET_CHUNK_SIZE, &nread);
     } else {
       twait.tv_sec  = timeout;
       twait.tv_nsec = 0;
@@ -315,7 +315,7 @@ Int_t THaEtClient::codaOpen(const char* computer, Int_t smode)
 {
   // See comment in the above version of codaOpen()
   char* s = getenv("SESSION");
-  if (s == NULL)
+  if (s == nullptr)
     return CODA_ERROR;
   TString mysession(s);
   return codaOpen( computer, mysession, smode );

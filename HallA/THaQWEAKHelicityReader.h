@@ -27,7 +27,7 @@ public:
   UInt_t GetHelicityTir() const{return fHelicityTir;};
   UInt_t GetTSettleTir() const{return fTSettleTir;};
   UInt_t GetTimeStampTir() const{return fTimeStampTir;};
-  // in parrallel, these signals are recorded in the ring buffer of the helicity gated scaler
+  // in parallel, these signals are recorded in the ring buffer of the helicity gated scaler
   // the maximum depth of this ring is for now 500.
   UInt_t GetRingDepth() const{return fIRing;}; // how many events are in the ring
   // I should have the depth of the ring defined in the data base
@@ -50,8 +50,8 @@ protected:
   virtual Int_t ReadData( const THaEvData& evdata );
   Int_t         ReadDatabase( const char* dbfilename, const char* prefix,
 			      const TDatime& date, int debug_flag = 0 );
+  virtual void FillHisto();
   void Begin();
-  void FillHisto();
   void End();
 
   Int_t fPatternTir;

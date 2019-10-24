@@ -20,10 +20,6 @@ Scaler560::Scaler560(Int_t crate, Int_t slot)
   Init();
 }
 
-Scaler560::~Scaler560()
-{
-}
-
 void Scaler560::Init()
 {
   fNumChan = 16;

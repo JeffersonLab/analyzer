@@ -28,13 +28,13 @@ namespace Decoder {
 THaCodaData::THaCodaData() : handle(0), fIsGood(true)
 {
    evbuffer = new UInt_t[MAXEVLEN];         // Raw data
-};
+}
 
 //_____________________________________________________________________________
 THaCodaData::~THaCodaData()
 {
    delete [] evbuffer;
-};
+}
 
 //_____________________________________________________________________________
 Int_t THaCodaData::getCodaVersion()
@@ -71,7 +71,7 @@ void THaCodaData::staterr(const char* tried_to, Int_t status) const
   }
   cerr << endl << Form("THaCodaFile: ERROR while trying to %s %s: ",
       tried_to, filename.Data());
-  Long64_t code = static_cast<Long64_t>(status);
+  Long64_t code = status;
   switch( code ) {
   case S_EVFILE_TRUNC :
     cerr << "Truncated event on file read. Evbuffer size is too small. "
@@ -97,7 +97,7 @@ void THaCodaData::staterr(const char* tried_to, Int_t status) const
     break;
   default:
     errno = status;
-    perror(0);
+    perror(nullptr);
   }
 }
 

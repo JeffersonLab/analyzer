@@ -25,7 +25,7 @@ class THaRunBase;
 class THaOutput;
 class TObjArray;
 
-const char* Here( const char* here, const char* prefix = NULL );
+const char* Here( const char* here, const char* prefix = nullptr );
 
 class THaAnalysisObject : public TNamed {
   
@@ -40,9 +40,9 @@ public:
   
   virtual ~THaAnalysisObject();
   
-  virtual Int_t        Begin( THaRunBase* r=0 );
+  virtual Int_t        Begin( THaRunBase* r=nullptr );
   virtual void         Clear( Option_t* ="" ) {} // override TNamed::Clear()
-  virtual Int_t        End( THaRunBase* r=0 );
+  virtual Int_t        End( THaRunBase* r=nullptr );
   virtual const char*  GetDBFileName() const;
           const char*  GetClassName() const;
           const char*  GetConfig() const         { return fConfig.Data(); }
@@ -72,7 +72,7 @@ public:
   static  FILE*   OpenFile( const char* name, const TDatime& date,
 			    const char* here = "OpenFile()",
 			    const char* filemode = "r", 
-			    const int debug_flag = 1);
+			    int debug_flag = 1);
   static Int_t    ReadDBline( FILE* fp, char* buf, size_t bufsiz,
 			      std::string& line );
 

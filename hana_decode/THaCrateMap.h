@@ -34,8 +34,8 @@ class THaCrateMap {
      static const UInt_t MAXCHAN;
      static const UInt_t MAXDATA;
 
-     THaCrateMap( const char* db = "cratemap" );    // Construct uninitialized
-     virtual ~THaCrateMap() {}
+     explicit THaCrateMap( const char* db = "cratemap" ); // Construct uninitialized
+     virtual ~THaCrateMap() = default;
      bool isFastBus(int crate) const;               // True if fastbus crate;
      bool isVme(int crate) const;                   // True if VME crate;
      bool isCamac(int crate) const;                 // True if CAMAC crate;
@@ -277,8 +277,8 @@ inline
 void THaCrateMap::setSlotDone()
 {
   // initialize
-  for (int i=0; i<MAXSLOT; i++) {
-    didslot[i] = false;
+  for( bool& slotflag : didslot ) {
+    slotflag = false;
   }
 }
 

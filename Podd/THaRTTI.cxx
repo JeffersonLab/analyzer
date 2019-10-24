@@ -59,7 +59,7 @@ Int_t THaRTTI::Find( TClass* cl, const TString& var,
 
   // Variable names in TRealData are stored along with pointer prefixes (*)
   // and array subscripts, so we have to use a customized search function:
-  TRealData* rd = static_cast<TRealData*>( FindRealDataVar( lrd, avar ) );
+  auto rd = static_cast<TRealData*>( FindRealDataVar(lrd, avar ) );
   if( !rd )
     return -1;
 
@@ -69,7 +69,7 @@ Int_t THaRTTI::Find( TClass* cl, const TString& var,
     return -1;
 
   VarType type;
-  TClass* elemClass = 0;
+  TClass* elemClass = nullptr;
   if( m->IsBasic() || m->IsEnum() ) {
     TString typnam( m->GetTypeName() );
     if( typnam == "Double_t" || typnam == "double" )
@@ -263,7 +263,7 @@ TObject* FindRealDataVar( TList* lrd, const TString& var )
       return obj;
     lnk = lnk->Next();
   }
-  return 0;
+  return nullptr;
 }
 
 //_____________________________________________________________________________
@@ -276,13 +276,13 @@ TClass* THaRTTI::GetClass() const
   if( IsObjVector() )
     return fElemClass;
 
-  return NULL;
+  return nullptr;
 }
 
 //_____________________________________________________________________________
 Bool_t THaRTTI::IsPointer() const
 {
-  return fDataMember ? fDataMember->IsaPointer() : kFALSE;
+  return fDataMember ? fDataMember->IsaPointer() : false;
 }
 
 //_____________________________________________________________________________

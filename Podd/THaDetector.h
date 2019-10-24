@@ -33,7 +33,7 @@ protected:
 
   //Only derived classes may construct me
   THaDetector( const char* name, const char* description,
-	       THaApparatus* apparatus = 0 );
+	       THaApparatus* apparatus = nullptr );
 
 private:
   TRef  fApparatus;         // Apparatus containing this detector

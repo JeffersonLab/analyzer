@@ -62,7 +62,7 @@ protected:
   virtual void  DefineAxes( Double_t rotation_angle );
 
   virtual Int_t ReadGeometry( FILE* file, const TDatime& date,
-			      Bool_t required = kFALSE );
+			      Bool_t required = false );
 
   THaDetectorBase( const char* name, const char* description );
 

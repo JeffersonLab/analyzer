@@ -15,8 +15,8 @@
 class THaTextvars {
 
 public:
-  THaTextvars() {}
-  virtual ~THaTextvars() {}
+  THaTextvars() = default;
+  virtual ~THaTextvars() = default;
 
   Int_t    Add( const std::string& name, const std::string& value );
   Int_t    AddVerbatim( const std::string& name, const std::string& value );

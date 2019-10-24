@@ -5,7 +5,7 @@
 // THaAvgVertex
 //
 // Calculate the average of the reaction points of the Golden Track from
-// two seperate spectrometers.  Requires that the standard track-beam
+// two separate spectrometers.  Requires that the standard track-beam
 // vertex information of each of the two Golden Tracks has been calculated, 
 // for example using the THaReactionPoint module.
 //
@@ -25,7 +25,7 @@ ClassImp(THaAvgVertex)
 THaAvgVertex::THaAvgVertex( const char* name, const char* description,
 			    const char* spectro1, const char* spectro2 ) :
   THaPhysicsModule(name,description),
-  fName1(spectro1), fName2(spectro2), fSpectro1(NULL), fSpectro2(NULL)
+  fName1(spectro1), fName2(spectro2), fSpectro1(nullptr), fSpectro2(nullptr)
 {
   // Normal constructor.
 
@@ -117,7 +117,7 @@ Int_t THaAvgVertex::Process( const THaEvData& )
     // requires beam info to get x/y uncertainties right
     //    fZerror  = 1.0/TMath::Sqrt(sigsum);
   }
-  fVertexOK = kTRUE;
+  fVertexOK = true;
 
   return 0;
 }

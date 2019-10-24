@@ -36,14 +36,7 @@
 #ifdef DECDATA_LEGACY_DB
 # include "TObjArray.h"
 # include "TObjString.h"
-# include <memory>  // for unique_ptr/auto_ptr
-
-# if __cplusplus < 201103L
-#  define SMART_PTR auto_ptr
-# else
-#  define SMART_PTR unique_ptr
-# endif
-
+# include <memory>  // for unique_ptr
 #endif
 
 using namespace std;
@@ -100,7 +93,7 @@ static Int_t ReadOldFormatDB( FILE* file, map<TString,TString>& configstr_map )
     if( dbline.empty() ) continue;
     // Tokenize each line read
     TString line( dbline.c_str() );
-    SMART_PTR<TObjArray> tokens( line.Tokenize(" \t") );
+    unique_ptr<TObjArray> tokens( line.Tokenize(" \t") );
     TObjArray* params = tokens.get();
     if( params->IsEmpty() || params->GetLast() < 4 ) continue;
     // Determine data type
@@ -159,8 +152,7 @@ Int_t THaDecData::GetConfigstr( FILE* file, const TDatime& date,
 #ifdef DECDATA_LEGACY_DB
   // Retrieve old-format database parameters read above for this type
   if( db_version == 1 ) {
-    map<TString,TString>::const_iterator found =
-      fConfigstrMap.find(loctype.fDBkey);
+    auto found = fConfigstrMap.find(loctype.fDBkey);
     if( found == fConfigstrMap.end() )
       return -1;
     configstr = found->second;
@@ -184,12 +176,12 @@ Int_t THaDecData::ReadDatabase( const TDatime& date )
 
   // Configure the trigger bits with a pointer to our evtypebits
   TIter next( &fBdataLoc );
-  while( BdataLoc* dataloc = static_cast<BdataLoc*>( next() ) ) {
+  while( auto dataloc = static_cast<BdataLoc*>( next() ) ) {
     if( dataloc->IsA() == TrigBitLoc::Class() )
       dataloc->OptionPtr( &evtypebits );
   }
 
-  fIsInit = kTRUE;
+  fIsInit = true;
   return kOK;
 }
 

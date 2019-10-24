@@ -24,7 +24,7 @@ public:
       if (bench < 0 && fNbench < fNmax )
         TBenchmark::Start(name);
       else if (bench>=0) 
-        fTimer[bench].Start(kFALSE);
+        fTimer[bench].Start(false);
       else
         Warning("Start","too many benches");
     }

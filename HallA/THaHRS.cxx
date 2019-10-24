@@ -20,7 +20,7 @@
 // However: To maintain backward compatibility with old scripts, the THaHRS
 // will auto-create the previous set of standard detectors, "vdc", "s1" and
 // "s2", if no "vdc" detector is defined at Init() time.
-// This can be turned off by calling AutoStandardDetectors(kFALSE).
+// This can be turned off by calling AutoStandardDetectors(false).
 //
 // For timing calculations, one can specify a reference detector via SetRefDet
 // (usually a scintillator) as the detector at the 'reference distance',
@@ -48,12 +48,12 @@ using namespace std;
 
 //_____________________________________________________________________________
 THaHRS::THaHRS( const char* name, const char* description ) :
-  THaSpectrometer( name, description ), fRefDet(0)
+  THaSpectrometer( name, description ), fRefDet(nullptr)
 {
   // Constructor
 
-  SetTrSorting(kFALSE);
-  AutoStandardDetectors(kTRUE); // for backward compatibility
+  SetTrSorting(false);
+  AutoStandardDetectors(true); // for backward compatibility
 }
 
 //_____________________________________________________________________________
@@ -93,10 +93,10 @@ THaAnalysisObject::EStatus THaHRS::Init( const TDatime& run_time )
   // detectors" ("vdc", "s1", "s2") at the beginning of the detector list.
   // Note that the old script may have defined non-standard detectors, e.g.
   // Cherenkov, Shower, FPP etc.
-  // This behavior can be turned off by calling AutoStandardDetectors(kFALSE).
+  // This behavior can be turned off by calling AutoStandardDetectors(false).
 
   if( TestBit(kAutoStdDets) ) {
-    THaDetector* pdet = static_cast<THaDetector*>( fDetectors->FindObject("vdc") );
+    auto pdet = static_cast<THaDetector*>( fDetectors->FindObject("vdc") );
     if( !pdet ) {
       AddDetector( new THaScintillator("s2", "S2 scintillator"), true, true );
       AddDetector( new THaScintillator("s1", "S1 scintillator"), true, true );
@@ -172,8 +172,8 @@ Int_t THaHRS::FindVertices( TClonesArray& tracks )
   TIter nextTrack( fTrackingDetectors );
 
   nextTrack.Reset();
-  while( THaTrackingDetector* theTrackDetector =
-	 static_cast<THaTrackingDetector*>( nextTrack() )) {
+  while( auto theTrackDetector =
+    static_cast<THaTrackingDetector*>( nextTrack() )) {
 #ifdef WITH_DEBUG
     if( fDebug>1 ) cout << "Call FineTrack() for " 
 			<< theTrackDetector->GetName() << "... ";
@@ -189,7 +189,7 @@ Int_t THaHRS::FindVertices( TClonesArray& tracks )
     fTracks->Sort();
     // Reassign track indexes. Sorting may have changed the order
     for( int i = 0; i < fTracks->GetLast()+1; i++ ) {
-      THaTrack* theTrack = static_cast<THaTrack*>( fTracks->At(i) );
+      auto theTrack = static_cast<THaTrack*>( fTracks->At(i) );
       assert( theTrack );
       theTrack->SetIndex(i);
     }
@@ -206,14 +206,14 @@ Int_t THaHRS::FindVertices( TClonesArray& tracks )
     // Chi2/dof is a well-defined quantity, and the track selected in this
     // way is immediately physically meaningful. The geometrical match
     // criterion is mathematically less well defined and not usually used
-    // in track reconstruction. Hence, chi2 sortiing is preferable, albeit
+    // in track reconstruction. Hence, chi2 sorting is preferable, albeit
     // obviously slower.
 
     fGoldenTrack = static_cast<THaTrack*>( fTracks->At(0) );
     fTrkIfo      = *fGoldenTrack;
     fTrk         = fGoldenTrack;
   } else
-    fGoldenTrack = NULL;
+    fGoldenTrack = nullptr;
 
   return 0;
 }
@@ -221,7 +221,7 @@ Int_t THaHRS::FindVertices( TClonesArray& tracks )
 //_____________________________________________________________________________
 Int_t THaHRS::TrackCalc()
 {
-  // Additioal track calculations. At present, we only calculate beta here.
+  // Additional track calculations. At present, we only calculate beta here.
 
   return TrackTimes( fTracks );
 }
@@ -244,9 +244,8 @@ Int_t THaHRS::TrackTimes( TClonesArray* Tracks )
   //   t0 and beta are solved for.
   //
   for ( Int_t i=0; i < ntrack; i++ ) {
-    THaTrack* track = static_cast<THaTrack*>(Tracks->At(i));
-    THaTrackProj* tr_ref = static_cast<THaTrackProj*>
-      (fRefDet->GetTrackHits()->At(i));
+    auto track = static_cast<THaTrack*>(Tracks->At(i));
+    auto tr_ref = static_cast<THaTrackProj*>(fRefDet->GetTrackHits()->At(i));
     
     Double_t pathlref = tr_ref->GetPathLen();
     
@@ -257,10 +256,10 @@ Int_t THaHRS::TrackTimes( TClonesArray* Tracks )
     TIter nextSc( fNonTrackingDetectors );
     THaNonTrackingDetector *det;
     while ( ( det = static_cast<THaNonTrackingDetector*>(nextSc()) ) ) {
-      THaScintillator *sc = dynamic_cast<THaScintillator*>(det);
+      auto sc = dynamic_cast<THaScintillator*>(det);
       if ( !sc ) continue;
 
-      const THaTrackProj *trh = static_cast<THaTrackProj*>(sc->GetTrackHits()->At(i));
+      const auto trh = static_cast<THaTrackProj*>(sc->GetTrackHits()->At(i));
       
       Int_t pad = trh->GetChannel();
       if (pad<0) continue;

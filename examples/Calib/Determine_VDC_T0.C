@@ -39,7 +39,7 @@ const Int_t NWireGrp = 16;
 const Int_t kBUFLEN = 150;
 
 
-Bool_t QUIT = kFALSE;
+Bool_t QUIT = false;
 
 Double_t *table_R=0;
 Double_t *table_L=0;
@@ -132,7 +132,7 @@ Double_t *Build_T0(const char *HRS, TTree *T) {
   
   Double_t *t0_set = new Double_t[4*NWire];
   
-  bool fail=kFALSE;
+  bool fail=false;
   char cut_string[80];
   char draw_string[200];
 
@@ -204,19 +204,19 @@ Int_t Initialize_detectors(TDatime &run_time) {
   TIter next(gHaApps);
   TObject *obj;
   Int_t ret=0;
-  bool fail=kFALSE;
+  bool fail=false;
   while ( !fail && (obj = next() ) ) {
     if ( !obj->IsA()->InheritsFrom("THaApparatus")) {
       cerr << "FAILED: Apparatus " << obj->GetName() << " is not a THaApparatus." << endl;
       ret = -20;
-      fail = kTRUE;
+      fail = true;
     } else {
       THaApparatus *theApp = static_cast<THaApparatus*>(obj);
       theApp->Init(run_time);
       if ( !theApp->IsOK() ) {
 	cerr << "FAILED: Apparatus " << obj->GetName() << " is not OKAY." << endl;
 	ret = -21;
-	fail = kTRUE;
+	fail = true;
       }
     }
   }
@@ -300,7 +300,7 @@ Int_t Find_TDC0(TH1 *hist, Double_t &t0) {
   cerr << " **** NEXT? " << endl;
   char tmpc;
   cin >> tmpc;
-  if (tmpc=='Q' || tmpc=='q') QUIT=kTRUE;
+  if (tmpc=='Q' || tmpc=='q') QUIT=true;
   
   if (ret) return ret;
   
@@ -310,7 +310,7 @@ Int_t Find_TDC0(TH1 *hist, Double_t &t0) {
 
 
 Int_t Find_TDC0_2(TH1 *hist, Double_t &t0) {
-  static Bool_t stop_and_wait = kTRUE;
+  static Bool_t stop_and_wait = true;
   // look through histogram, smooth it, and then
   // look for the point of steepest descent
 
@@ -381,8 +381,8 @@ Int_t Find_TDC0_2(TH1 *hist, Double_t &t0) {
     char tmpc;
     
     cin >> tmpc;
-    if (tmpc=='Q' || tmpc=='q') QUIT=kTRUE;
-    if (tmpc=='C' || tmpc=='c') stop_and_wait=kFALSE;
+    if (tmpc=='Q' || tmpc=='q') QUIT=true;
+    if (tmpc=='C' || tmpc=='c') stop_and_wait=false;
   }
   
   if (ret) return ret;
@@ -423,14 +423,14 @@ int SaveNewT0Data(const TDatime &run_date, Double_t *new_t0, const char *planena
     
   if (!db_out) {
     fprintf(stderr,"Cannot open %s for output\n",buff);
-    return kFALSE;
+    return false;
   }
   
   // Build the search tag and find it in the file. Search tags
   // are of form [ <prefix> ], e.g. [ R.vdc.u1 ].
   sprintf(tag, "[ %s ]", planename);
   bool found = false;
-  while (!found && fgets (buff, kBUFLEN, db_file) != NULL) {
+  while (!found && fgets (buff, kBUFLEN, db_file) != nullptr) {
     if (db_out != db_file) fputs(buff, db_out);
     if(strlen(buff) > 0 && buff[strlen(buff)-1] == '\n')
       buff[strlen(buff)-1] = '\0';
@@ -440,7 +440,7 @@ int SaveNewT0Data(const TDatime &run_date, Double_t *new_t0, const char *planena
   }
   if( !found ) {
     cerr<<"Database entry "<<tag<<" not found!"<<endl;;
-    return kFALSE;
+    return false;
   }
   
   // read in other info -- skip 7 lines
@@ -475,13 +475,13 @@ int SaveNewT0Data(const TDatime &run_date, Double_t *new_t0, const char *planena
 
   fseek(db_file, 0L, SEEK_CUR); // synchronized
   // run through the rest of the file
-  while ( fgets (buff, kBUFLEN, db_file) != NULL) {
+  while ( fgets (buff, kBUFLEN, db_file) != nullptr) {
     if (db_out != db_file) fputs(buff, db_out);
   }
 
   fclose(db_file);
   if (db_file != db_out) fclose(db_out);
   
-  return kTRUE;
+  return true;
 }
 

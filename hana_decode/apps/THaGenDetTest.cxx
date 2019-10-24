@@ -25,11 +25,11 @@ using namespace std;
 
 THaGenDetTest::THaGenDetTest()
 {
-};
+}
 
 THaGenDetTest::~THaGenDetTest()
 {
-};
+}
 
 void THaGenDetTest::init()
 {
@@ -37,7 +37,7 @@ void THaGenDetTest::init()
 // channels belong to my detector.  Here "my detector" is
 // the scint and VDC on both arms.
 
-       for (int i=0; i<MAX; i++) mycrates[i]=0;
+       for (int & mycrate : mycrates) mycrate=0;
 
   // E-arm Scintillators
        mydevice[0] = "E-arm S1 ADCs on Left PMTs";
@@ -131,7 +131,7 @@ void THaGenDetTest::init()
 
        //       mycrates[50] = 14;
 
-};
+}
 
 void THaGenDetTest::process_event(THaEvData *evdata)
 {
@@ -237,10 +237,5 @@ void THaGenDetTest::process_event(THaEvData *evdata)
 	  }
         }
   }
-  return;
-};  
-
-    
-
-
+}
 

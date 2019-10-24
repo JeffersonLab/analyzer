@@ -31,7 +31,7 @@ THaDetector::THaDetector( const char* name, const char* description,
 }
 
 //_____________________________________________________________________________
-THaDetector::THaDetector() : fApparatus(0)
+THaDetector::THaDetector() : fApparatus(nullptr)
 {
   // for ROOT I/O only
 }
@@ -69,7 +69,7 @@ void THaDetector::MakePrefix()
   // during initialization.
 
   THaApparatus *app = GetApparatus();
-  const char* basename = (app != 0) ? app->GetName() : 0;
+  const char* basename = app ? app->GetName() : nullptr;
   THaDetectorBase::MakePrefix( basename );
 
 }
@@ -82,13 +82,12 @@ Int_t THaDetector::End( THaRunBase* run )
   if( !fMessages.empty() ) {
     ULong64_t ntot = 0;
     map<string,UInt_t> chan_count;
-    for( map<string,UInt_t>::const_iterator it = fMessages.begin();
-	 it != fMessages.end(); ++it ) {
-      ntot += it->second;
-      const string& m = it->first;
+    for( const auto& fMessage : fMessages ) {
+      ntot += fMessage.second;
+      const string& m = fMessage.first;
       string::size_type pos = m.find("channel");
       if( pos != string::npos ) {
-	string::size_type pos2 = m.find(".",pos+7), len = string::npos;
+	string::size_type pos2 = m.find('.',pos+7), len = string::npos;
 	if( pos > 3 ) pos -= 4;
 	if( pos2 != string::npos ) {
 	  assert( pos2 > pos );

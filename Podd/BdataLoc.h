@@ -25,8 +25,8 @@ public:
   // Helper class for holding info on BdataLoc classes
   struct BdataLocType {
   public:
-    BdataLocType( const char* cl, const char* key, Int_t np, void* ptr = 0 )
-      : fClassName(cl), fDBkey(key), fNparams(np), fOptptr(ptr), fTClass(0) {}
+    BdataLocType( const char* cl, const char* key, Int_t np, void* ptr = nullptr )
+      : fClassName(cl), fDBkey(key), fNparams(np), fOptptr(ptr), fTClass(nullptr) {}
     // The database keys have to be unique, so use them for sorting
     bool operator<( const BdataLocType& rhs ) const { return fDBkey < rhs.fDBkey; }
 
@@ -100,7 +100,7 @@ public:
   CrateLoc( const char* nm, Int_t cra, Int_t slo, Int_t cha )
     : BdataLoc(nm,cra), slot(slo), chan(cha) { ResetBit(kIsSetup); }
   CrateLoc() : slot(-1), chan(-1) {}
-  virtual ~CrateLoc() {}
+  virtual ~CrateLoc() = default;
 
   virtual void   Load( const THaEvData& evt );
   virtual Int_t  Configure( const TObjArray* params, Int_t start = 0 );
@@ -128,8 +128,8 @@ public:
   // (crate,slot,channel) allowing for multiple hits per channel
   CrateLocMulti( const char* nm, Int_t cra, Int_t slo, Int_t cha )
     : CrateLoc(nm,cra,slo,cha) { }
-  CrateLocMulti() {}
-  virtual ~CrateLocMulti() {}
+  CrateLocMulti() = default;
+  virtual ~CrateLocMulti() = default;
 
   virtual void    Load( const THaEvData& evt );
 
@@ -160,7 +160,7 @@ public:
   WordLoc( const char* nm, Int_t cra, UInt_t head, Int_t skip )
     : BdataLoc(nm,cra), header(head), ntoskip(skip) { }
   WordLoc() : header(0), ntoskip(1) {}
-  virtual ~WordLoc() {}
+  virtual ~WordLoc() = default;
 
   virtual void   Load( const THaEvData& evt );
   virtual Int_t  Configure( const TObjArray* params, Int_t start = 0 );
@@ -187,8 +187,8 @@ class RoclenLoc : public BdataLoc {
 public:
   // Event length of a crate
   RoclenLoc( const char* nm, Int_t cra ) : BdataLoc(nm,cra) { }
-  RoclenLoc() {}
-  virtual ~RoclenLoc() {}
+  RoclenLoc() = default;
+  virtual ~RoclenLoc() = default;
 
   virtual void   Load( const THaEvData& evt );
   virtual Int_t  GetNparams() const       { return fgThisType->fNparams; }

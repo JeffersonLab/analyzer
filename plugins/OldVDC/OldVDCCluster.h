@@ -17,9 +17,9 @@ class OldVDCPlane;
 class OldVDCCluster : public TObject {
 
 public:
-  OldVDCCluster( OldVDCPlane* owner = NULL ) :
+  OldVDCCluster( OldVDCPlane* owner = nullptr ) :
     fSize(0), fPlane(owner), fSlope(kBig), fSigmaSlope(kBig), fInt(kBig),
-    fSigmaInt(kBig), fT0(0.0), fSigmaT0(kBig), fPivot(NULL),
+    fSigmaInt(kBig), fT0(0.0), fSigmaT0(kBig), fPivot(nullptr),
     fTimeCorrection(0.0),
     fFitOK(false), fLocalSlope(kBig), fChi2(kBig), fNDoF(0.0)  {}
   OldVDCCluster( const OldVDCCluster& );
@@ -39,7 +39,7 @@ public:
   // TObject functions redefined
   virtual void   Clear( Option_t* opt="" );
   virtual Int_t  Compare( const TObject* obj ) const;
-  virtual Bool_t IsSortable() const        { return kTRUE; }
+  virtual Bool_t IsSortable() const        { return true; }
   virtual void   Print( Option_t* opt="" ) const;
 
   //Get and Set Functions

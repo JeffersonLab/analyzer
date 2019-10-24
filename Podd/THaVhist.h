@@ -54,18 +54,18 @@ public:
 // CheckValid() checks if this histogram is valid.
 // If invalid, you get no output.
    void CheckValidity();
-// IsScalar() is kTRUE if histogram is a scalar.
+// IsScalar() is true if histogram is a scalar.
    Bool_t IsScalar() { return (fScalar==1); };
    Int_t GetSize() { return fSize; };
 
 protected:
 
-   Int_t ParseVar();
+//   Int_t ParseVar();
    Int_t BookHisto(Int_t hfirst, Int_t hlast);
    Int_t FindVarSize();
    Bool_t FindEye(const string& var);
    Bool_t FindEyeOffset(const string& var);
-   Int_t GetCut(Int_t index=0); 
+//   Int_t GetCut(Int_t index=0);
 
    enum FEr { kOK = 0, kNoBinX, kIllFox, kIllFoy, kIllCut,
               kNoX, kAxiSiz, kCutSix, kCutSiy,
@@ -97,7 +97,7 @@ void THaVhist::SetX(Int_t nbinx, Double_t xlo, Double_t xhi,
 		    const string& varx)
 {
   fNbinX = nbinx;  fXlo = xlo;  fXhi = xhi;  fVarX = varx;
-};
+}
 
 
 inline 
@@ -106,7 +106,7 @@ void THaVhist::SetX(THaVform *varx)
   if(fMyFormX) delete fFormX;
   fFormX = varx;
   fMyFormX = false;
-};
+}
 
 
 inline 
@@ -114,7 +114,7 @@ void THaVhist::SetY(Int_t nbiny, Double_t ylo, Double_t yhi,
 		    const string& vary)
 {
   fNbinY = nbiny;  fYlo = ylo;  fYhi = yhi;  fVarY = vary;
-};
+}
 
 
 inline 
@@ -123,14 +123,14 @@ void THaVhist::SetY(THaVform *vary)
   if(fMyFormY) delete fFormY;
   fFormY = vary;
   fMyFormY = false;
-};
+}
 
 
 inline 
 void THaVhist::SetCut(const string& cut)
 {
   fScut = cut;
-};
+}
 
 
 inline 
@@ -139,7 +139,7 @@ void THaVhist::SetCut(THaVform *cut)
   if(fMyCut) delete fCut;
   fCut = cut;
   fMyCut = false;
-};
+}
 
 inline
 Int_t THaVhist::CheckCut(Int_t index) { 

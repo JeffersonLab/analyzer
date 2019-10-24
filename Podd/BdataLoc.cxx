@@ -19,7 +19,7 @@
 
 #include <cstring>   // for memchr
 #include <cstdlib>   // for strtoul
-#include <errno.h>
+#include <cerrno>
 #include <utility>
 #include <iostream>
 
@@ -87,7 +87,7 @@ Int_t BdataLoc::CheckConfigureParams( const TObjArray* params, Int_t start )
   for( Int_t ip = start; ip < start + GetNparams(); ++ip ) {
     if( params->At(ip)->IsA() != TObjString::Class() )
       return 2;
-    TObjString* os = static_cast<TObjString*>(params->At(ip));
+    auto os = static_cast<TObjString*>(params->At(ip));
     if( !os )
       return 3;
     if( os->String().IsNull() )
@@ -177,7 +177,7 @@ void BdataLoc::Print( Option_t* opt ) const
 //_____________________________________________________________________________
 Int_t CrateLoc::Configure( const TObjArray* params, Int_t start )
 {
-  // Initialize CrateLoc from given parmeters
+  // Initialize CrateLoc from given parameters
 
   Int_t ret = BdataLoc::Configure( params, start );
   if( ret )
@@ -262,9 +262,8 @@ void CrateLocMulti::PrintMultiData( Option_t* ) const
   if( rdata.empty() )
     cout << "(no hits)";
   else {
-    for( vector<UInt_t>::const_iterator it = rdata.begin();
-	 it != rdata.end(); ++it ) {
-      cout << " " << *it;
+    for( auto data : rdata ) {
+      cout << " " << data;
     }
   }
 }
@@ -282,7 +281,7 @@ void CrateLocMulti::Print( Option_t* opt ) const
 //_____________________________________________________________________________
 Int_t WordLoc::Configure( const TObjArray* params, Int_t start )
 {
-  // Initialize WordLoc from given parmeters
+  // Initialize WordLoc from given parameters
 
   Int_t ret = BdataLoc::Configure( params, start );
   if( ret )
@@ -290,7 +289,7 @@ Int_t WordLoc::Configure( const TObjArray* params, Int_t start )
 
   // Convert header word, given as a hex string, to unsigned int32
   const char* hs = GetString( params, start+2 ).Data();
-  char* p = 0;
+  char* p = nullptr;
   errno = 0;
   unsigned long li = strtoul( hs, &p, 16 );
   if( errno || *p )   return 10;

@@ -2,16 +2,16 @@
 #include "TSystem.h"
 #include "TMath.h"
 
-ClassImp(THaVDCSimWireHit);
-ClassImp(THaVDCSimEvent);
-ClassImp(THaVDCSimConditions);
-ClassImp(THaVDCSimTrack);
+ClassImp(THaVDCSimWireHit)
+ClassImp(THaVDCSimEvent)
+ClassImp(THaVDCSimConditions)
+ClassImp(THaVDCSimTrack)
 
 #include <iostream>
 #include <cstdio>
 using namespace std;
 
-void THaVDCSimWireHit::Print( Option_t* opt ) const
+void THaVDCSimWireHit::Print( Option_t* ) const
 {
   cout << "Hit: wire: " << wirenum << " TDC: " << time
        << " time: " << rawTime << " pos: " << pos
@@ -20,11 +20,11 @@ void THaVDCSimWireHit::Print( Option_t* opt ) const
 }
 
 void THaVDCSimTrack::Clear( Option_t* opt ) {
-  for (int i = 0; i < 4; i++)
-    hits[i].Clear(opt);
+  for (auto & hit : hits)
+    hit.Clear(opt);
 }
 
-void THaVDCSimTrack::Print( Option_t* opt ) const
+void THaVDCSimTrack::Print( Option_t* ) const
 {
   //TObject::Print(opt);
   cout << "Track number = " << track_num << ", type = " << type
@@ -39,12 +39,12 @@ void THaVDCSimTrack::Print( Option_t* opt ) const
        << hits[2].GetSize() << ", " << hits[3].GetSize() << endl;
   cout << "  t0 = " << timeOffset << endl;
   cout << "  intercepts =";
-  for( int i=0; i<4; i++ )
-    cout << " " << xover[i];
+  for(double i : xover)
+    cout << " " << i;
   cout << endl;
   cout << "  slopes     =";
-  for( int i=0; i<4; i++ )
-    cout << " " << slope[i];
+  for(double i : slope)
+    cout << " " << i;
   cout << endl;
 }
 
@@ -55,8 +55,8 @@ THaVDCSimEvent::~THaVDCSimEvent() {
 }
 
 void THaVDCSimEvent::Clear( Option_t* opt ) {
-  for (Int_t i = 0; i < 4; i++)
-    wirehits[i].Delete(opt);
+  for (auto & wirehit : wirehits)
+    wirehit.Delete(opt);
 
   // Debug
 #ifdef DEBUG
@@ -131,7 +131,7 @@ Int_t THaVDCSimConditions::ReadDatabase(Double_t* timeOffsets)
     tag.ToLower();
     // cout << "ReadDatabase:  tag = " << tag.Data() << endl;
     bool found = false;
-    while (!found && fgets (buff, LEN, file) != NULL) {
+    while (!found && fgets (buff, LEN, file) != nullptr) {
       char* buf = ::Compress(buff);  //strip blanks
       line = buf;
       delete [] buf;

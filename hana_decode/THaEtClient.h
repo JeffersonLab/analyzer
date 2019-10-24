@@ -35,7 +35,6 @@ class TString;
 #define ADAQEP "129.57.164.78"
 #define ADAQCP "129.57.164.79"
 #define ADAQS2 "129.57.164.44"
-#define ADAQS2 "129.57.164.44"
 #define ADAQS3 "129.57.164.45"
 
 namespace Decoder {

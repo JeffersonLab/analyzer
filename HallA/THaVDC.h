@@ -27,8 +27,8 @@ class THaVDC : public THaTrackingDetector {
 friend class THaVDCPlane;
 
 public:
-  THaVDC( const char* name, const char* description = "",
-	  THaApparatus* a = NULL );
+  explicit THaVDC( const char* name, const char* description = "",
+                   THaApparatus* a = nullptr );
 
   virtual ~THaVDC();
 
@@ -153,7 +153,7 @@ protected:
   static void     PrintME( const std::string& header,
                            const std::vector<THaMatrixElement>& matrix );
 
-  virtual Int_t ConstructTracks( TClonesArray* tracks = NULL, Int_t flag = 0 );
+  virtual Int_t ConstructTracks( TClonesArray* tracks = nullptr, Int_t flag = 0 );
 
   void CorrectTimeOfFlight(TClonesArray& tracks);
   void FindBadTracks(TClonesArray &tracks);

@@ -20,10 +20,6 @@ Scaler1151::Scaler1151(Int_t crate, Int_t slot)
   Init();
 }
 
-Scaler1151::~Scaler1151()
-{
-}
-
 void Scaler1151::Init()
 {
   fNumChan = 16;

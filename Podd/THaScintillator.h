@@ -14,8 +14,8 @@ class TClonesArray;
 class THaScintillator : public THaNonTrackingDetector {
 
 public:
-  THaScintillator( const char* name, const char* description = "",
-		   THaApparatus* a = NULL );
+  explicit THaScintillator( const char* name, const char* description = "",
+                            THaApparatus* a = nullptr );
   THaScintillator();
   virtual ~THaScintillator();
 
@@ -25,7 +25,7 @@ public:
   virtual Int_t      CoarseProcess( TClonesArray& tracks );
   virtual Int_t      FineProcess( TClonesArray& tracks );
 
-  virtual Int_t      ApplyCorrections( void );
+  virtual Int_t      ApplyCorrections();
 
   Int_t GetNHits() const { return fNhit; }
   const Double_t* GetTimes() const { return fTime; }

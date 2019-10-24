@@ -18,15 +18,9 @@
 #include <vector>
 #include <sstream>
 #include <cassert>
-#include <memory>  // for auto_ptr/unique_ptr
+#include <memory>  // for unique_ptr
 
 using namespace std;
-
-#if __cplusplus >= 201103L
-# define SMART_PTR unique_ptr
-#else
-# define SMART_PTR auto_ptr
-#endif
 
 namespace Podd {
 
@@ -63,11 +57,11 @@ Int_t CheckIncludeFilePath( string& incfile )
   // any of the directories in the include path
 
   vector<TString> paths;
-  paths.push_back( incfile.c_str() );
+  paths.emplace_back(incfile.c_str() );
 
   TString incp = gSystem->Getenv("ANALYZER_CONFIGPATH");
   if( !incp.IsNull() ) {
-    SMART_PTR<TObjArray> incdirs( incp.Tokenize(":") );
+    unique_ptr<TObjArray> incdirs( incp.Tokenize(":") );
     if( !incdirs->IsEmpty() ) {
       Int_t ndirs = incdirs->GetLast()+1;
       assert( ndirs>0 );
@@ -78,13 +72,12 @@ Int_t CheckIncludeFilePath( string& incfile )
 	if( !path.EndsWith("/") )
 	  path.Append("/");
 	path.Append( incfile.c_str() );
-	paths.push_back( path.Data() );
+	paths.emplace_back(path.Data() );
       }
     }
   }
 
-  for( vector<TString>::size_type i = 0; i<paths.size(); ++i ) {
-    TString& path = paths[i];
+  for( const auto& path : paths ) {
     if( !gSystem->ExpandPathName(path) &&
 	!gSystem->AccessPathName(path,kReadPermission) ) {
       incfile = path.Data();

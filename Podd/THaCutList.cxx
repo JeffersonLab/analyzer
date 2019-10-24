@@ -239,13 +239,13 @@ Int_t THaCutList::Define( const char* cutname, const char* expr,
 //______________________________________________________________________________
 Int_t THaCutList::Eval()
 {
-  // Evaluate all tests in all blocks.  Because of possible dependences between
+  // Evaluate all tests in all blocks.  Because of possible dependencies between
   // blocks, each block is evaluated separately in the order in which the blocks
   // were defined.
 
   Int_t i = 0;
   TIter next( fBlocks );
-  while( THaNamedList* plist = static_cast<THaNamedList*>( next() ))
+  while( auto plist = static_cast<THaNamedList*>( next() ))
     i += EvalBlock( plist );
 
   return i;

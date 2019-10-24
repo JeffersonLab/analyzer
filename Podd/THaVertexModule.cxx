@@ -15,7 +15,7 @@
 using namespace std;
 
 //_____________________________________________________________________________
-THaVertexModule::THaVertexModule() : fVertexOK(kFALSE)
+THaVertexModule::THaVertexModule() : fVertexOK(false)
 {
   // Normal constructor.
 
@@ -37,7 +37,7 @@ void THaVertexModule::VertexClear()
 
   fVertex.SetXYZ(kBig,kBig,kBig);
   fVertexError.SetXYZ(1.0,1.0,1.0);
-  fVertexOK = kFALSE;
+  fVertexOK = false;
 }
 
 //_____________________________________________________________________________
@@ -50,7 +50,7 @@ const RVarDef* THaVertexModule::GetRVarDef()
     { "y",  "vertex y-position", "fVertex.fY" },
     { "z",  "vertex z-position", "fVertex.fZ" },
     { "ok", "Data valid (1=ok)", "fVertexOK" },
-    { 0 }
+    { nullptr }
   };
   return vars;
 }

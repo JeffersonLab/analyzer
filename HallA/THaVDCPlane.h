@@ -128,7 +128,7 @@ protected:
   virtual Int_t DefineVariables( EMode mode = kDefine );
 
   virtual Int_t ReadGeometry( FILE* file, const TDatime& date,
-			      Bool_t required = kFALSE );
+			      Bool_t required = false );
 
   ClassDef(THaVDCPlane,0)             // VDCPlane class
 };

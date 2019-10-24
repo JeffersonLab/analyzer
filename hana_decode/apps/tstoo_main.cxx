@@ -19,7 +19,7 @@ int main(int /* argc */, char** /* argv */)
 {
   TString filename("snippet.dat");
 
-  ofstream *debugfile = new ofstream;;
+  ofstream *debugfile = new ofstream;
   debugfile->open ("oodecoder1.txt");
   *debugfile << "Debug of OO decoder"<<endl<<endl;
 

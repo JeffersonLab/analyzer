@@ -90,7 +90,7 @@ Int_t BankData::ReadDatabase( const TDatime& date )
   RemoveVariables();
   Podd::DeleteContainer(banklocs);
 
-  while( fgets(cbuf, LEN, fi) != NULL) {
+  while( fgets(cbuf, LEN, fi) != nullptr) {
     std::string sinput(cbuf);
     if(ldebug) cout << "database line = "<<sinput<<endl;
     dbline = vsplit(sinput);

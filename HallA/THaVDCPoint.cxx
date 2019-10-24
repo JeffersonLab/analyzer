@@ -14,7 +14,8 @@
 //_____________________________________________________________________________
 THaVDCPoint::THaVDCPoint( THaVDCCluster* u_cl, THaVDCCluster* v_cl,
 			  THaVDCChamber* chamber )
-  : fUClust(u_cl), fVClust(v_cl), fChamber(chamber), fTrack(0), fPartner(0)
+  : fUClust(u_cl), fVClust(v_cl), fChamber(chamber),
+    fTrack(nullptr), fPartner(nullptr), fX(0.0), fY(0.0), fTheta(0.0), fPhi(0.0)
 {
   // Constructor
 

@@ -29,8 +29,10 @@ using namespace std;
 //_____________________________________________________________________________
 THaCherenkov::THaCherenkov( const char* name, const char* description,
                             THaApparatus* apparatus )
-  : THaPidDetector(name,description,apparatus), fTdc2T(0), fOff(0), fPed(0),
-    fGain(0), fNThit(0), fT(0), fT_c(0), fNAhit(0), fA(0), fA_p(0), fA_c(0),
+  : THaPidDetector(name,description,apparatus), fTdc2T(0),
+    fOff(nullptr), fPed(nullptr), fGain(nullptr),
+    fNThit(0), fT(nullptr), fT_c(nullptr),
+    fNAhit(0), fA(nullptr), fA_p(nullptr), fA_c(nullptr),
     fASUM_p(kBig), fASUM_c(kBig)
 {
   // Constructor
@@ -38,8 +40,10 @@ THaCherenkov::THaCherenkov( const char* name, const char* description,
 
 //_____________________________________________________________________________
 THaCherenkov::THaCherenkov()
-  : THaPidDetector(), fTdc2T(0), fOff(0), fPed(0),
-    fGain(0), fNThit(0), fT(0), fT_c(0), fNAhit(0), fA(0), fA_p(0), fA_c(0),
+  : THaPidDetector(), fTdc2T(0),
+    fOff(nullptr), fPed(nullptr), fGain(nullptr),
+    fNThit(0), fT(nullptr), fT_c(nullptr),
+    fNAhit(0), fA(nullptr), fA_p(nullptr), fA_c(nullptr),
     fASUM_p(kBig), fASUM_c(kBig)
 {
   // Default constructor (for ROOT I/O)
@@ -74,9 +78,9 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
   DBRequest config_request[] = {
     { "detmap",       &detmap,   kIntV },
     { "npmt",         &nelem,    kInt  },
-    { "tdc.res",      &fTdc2T,   kDouble, 0, 1 }, // optional to support old DBs
-    { "tdc.cmnstart", &tdc_mode, kInt, 0, 1 },
-    { 0 }
+    { "tdc.res",      &fTdc2T,   kDouble, 0, true }, // optional to support old DBs
+    { "tdc.cmnstart", &tdc_mode, kInt, 0, true },
+    { nullptr }
   };
   err = LoadDB( file, date, config_request, fPrefix );
 
@@ -90,7 +94,7 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
   // Reinitialization only possible for same basic configuration
   if( !err ) {
     if( fIsInit && nelem != fNelem ) {
-      Error( Here(here), "Cannot re-initalize with different number of PMTs. "
+      Error( Here(here), "Cannot re-initialize with different number of PMTs. "
 	     "(was: %d, now: %d). Detector not re-initialized.", fNelem, nelem );
       err = kInitError;
     } else
@@ -161,10 +165,10 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
   }
 
   DBRequest calib_request[] = {
-    { "tdc.offsets",      fOff,         kFloat, nval, 1 },
-    { "adc.pedestals",    fPed,         kFloat, nval, 1 },
-    { "adc.gains",        fGain,        kFloat, nval, 1 },
-    { 0 }
+    { "tdc.offsets",      fOff,         kFloat, nval, true },
+    { "adc.pedestals",    fPed,         kFloat, nval, true },
+    { "adc.gains",        fGain,        kFloat, nval, true },
+    { nullptr }
   };
   err = LoadDB( file, date, calib_request, fPrefix );
   fclose(file);
@@ -174,7 +178,7 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
 #ifdef WITH_DEBUG
   // Debug printout
   if ( fDebug > 2 ) {
-    const UInt_t N = static_cast<UInt_t>(fNelem);
+    const auto N = static_cast<UInt_t>(fNelem);
     Double_t pos[3]; fOrigin.GetXYZ(pos);
     DBRequest list[] = {
       { "Number of mirrors", &fNelem,     kInt       },
@@ -183,7 +187,7 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
       { "TDC offsets",       fOff,        kFloat,  N },
       { "ADC pedestals",     fPed,        kFloat,  N },
       { "ADC gains",         fGain,       kFloat,  N },
-      { 0 }
+      { nullptr }
     };
     DebugPrint( list );
   }
@@ -213,7 +217,7 @@ Int_t THaCherenkov::DefineVariables( EMode mode )
     { "trx",    "x-position of track in det plane",  "fTrackProj.THaTrackProj.fX" },
     { "try",    "y-position of track in det plane",  "fTrackProj.THaTrackProj.fY" },
     { "trpath", "TRCS pathlen of track to det plane","fTrackProj.THaTrackProj.fPathl" },
-    { 0 }
+    { nullptr }
   };
   return DefineVarsFromList( vars, mode );
 }
@@ -234,15 +238,15 @@ void THaCherenkov::DeleteArrays()
 {
   // Delete member arrays. Internal function used by destructor.
 
-  delete [] fA_c;    fA_c    = NULL;
-  delete [] fA_p;    fA_p    = NULL;
-  delete [] fA;      fA      = NULL;
-  delete [] fT_c;    fT_c    = NULL;
-  delete [] fT;      fT      = NULL;
+  delete [] fA_c;    fA_c    = nullptr;
+  delete [] fA_p;    fA_p    = nullptr;
+  delete [] fA;      fA      = nullptr;
+  delete [] fT_c;    fT_c    = nullptr;
+  delete [] fT;      fT      = nullptr;
 
-  delete [] fGain;   fGain   = NULL;
-  delete [] fPed;    fPed    = NULL;
-  delete [] fOff;    fOff    = NULL;
+  delete [] fGain;   fGain   = nullptr;
+  delete [] fPed;    fPed    = nullptr;
+  delete [] fOff;    fOff    = nullptr;
 }
 
 //_____________________________________________________________________________

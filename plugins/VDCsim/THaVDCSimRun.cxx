@@ -26,10 +26,10 @@ THaVDCSimRun::THaVDCSimRun(const THaVDCSimRun &run)
   : THaRunBase(run), nentries(0), entry(0)
 {
   rootFileName = run.rootFileName;
-  rootFile = NULL;
-  tree = NULL;
-  event = NULL;
-  branch = NULL;
+  rootFile = nullptr;
+  tree = nullptr;
+  event = nullptr;
+  branch = nullptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -39,9 +39,9 @@ THaVDCSimRun& THaVDCSimRun::operator=(const THaRunBase& rhs)
     THaRunBase::operator=(rhs);
     if( rhs.InheritsFrom("THaVDCSimRun") )
       rootFileName = static_cast<const THaVDCSimRun&>(rhs).rootFileName;
-    rootFile = NULL;
-    tree = NULL;
-    event = NULL;
+    rootFile = nullptr;
+    tree = nullptr;
+    event = nullptr;
   }
   return *this;
 }
@@ -51,7 +51,7 @@ Int_t THaVDCSimRun::Init()
 {
   // Use the date we're familiar with, so we can use those channel mappings
   fDate.Set(2009,12,22,12,0,0);
-  fAssumeDate = kTRUE;
+  fAssumeDate = true;
   fDataSet |= kDate;
 
   return THaRunBase::Init();
@@ -85,7 +85,7 @@ Int_t THaVDCSimRun::Open()
   nentries = static_cast<Int_t>(tree->GetEntries());
   entry = 0;
 
-  fOpened = kTRUE;
+  fOpened = true;
   return 0;
 }
 
@@ -96,7 +96,7 @@ Int_t THaVDCSimRun::Close() {
     delete rootFile;
     rootFile = 0;
   }
-  fOpened = kFALSE;
+  fOpened = false;
   return 0;
 }
 
@@ -120,7 +120,7 @@ Int_t THaVDCSimRun::ReadEvent() {
 
 //-----------------------------------------------------------------------------
 const Int_t *THaVDCSimRun::GetEvBuffer() const {
-  if (!IsOpen()) return NULL;
+  if (!IsOpen()) return nullptr;
 
   return reinterpret_cast<Int_t*>(event);
 }

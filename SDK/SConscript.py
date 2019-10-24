@@ -17,5 +17,5 @@ UserScintillator.cxx SkeletonModule.cxx
 
 # Tell SCons to build this library from these sources.
 # A ROOT dictionary, defined in <libname>_LinkDef.h, will be built as well.
-# For more info, see the documention in $ANALYZER/site_scons/podd_util.py
+# For more info, see the documentation in $ANALYZER/site_scons/podd_util.py
 build_library(baseenv, libname, src)
