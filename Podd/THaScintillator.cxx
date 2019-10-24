@@ -527,11 +527,11 @@ Int_t THaScintillator::ApplyCorrections()
         continue;
       k = k % fNelem;
       if( fLT[k] < 0.5 * kBig ) {
-        fLT_c[k] = (fLT[k] - fLOff[k]) * fTdc2T * sign - TimeWalkCorrection( i, kRight );
+        fLT_c[k] = (fLT[k] - fLOff[k]) * fTdc2T * sign - TimeWalkCorrection( k, kLeft );
         nlt++;
       }
       if( fRT[k] < 0.5 * kBig ) {
-        fRT_c[k] = (fRT[k] - fROff[k]) * fTdc2T * sign - TimeWalkCorrection( i, kRight );
+        fRT_c[k] = (fRT[k] - fROff[k]) * fTdc2T * sign - TimeWalkCorrection( k, kRight );
         nrt++;
       }
     }
