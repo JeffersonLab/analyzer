@@ -51,7 +51,7 @@ protected:
 
   Int_t InitDefs();
   void  MakeBlockName();
-  virtual Int_t ReadDatabase( const TDatime& date ) override;
+  virtual Int_t ReadDatabase( const TDatime& date );
 
 ClassDef(TwoarmVDCTimeCorrection, 0)   //Two-arm VDC time correction
 };
