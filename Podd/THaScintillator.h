@@ -93,11 +93,11 @@ protected:
   Int_t*      fHitPad;     // [fNhit] list of paddles with complete TDC hits
 
   // could be done on a per-hit basis instead
-  Double_t*   fTime;       // [fNelem] corrected time for the paddle (s)
-  Double_t*   fdTime;      // [fNelem] uncertainty in time (s)
-  Double_t*   fAmpl;       // [fNelem] overall amplitude for the paddle
-  Double_t*   fYt;         // [fNelem] y-position of hit in paddle from TDC (m)
-  Double_t*   fYa;         // [fNelem] y-position of hit in paddle from ADC (m)
+  Double_t*   fTime;       // [fNhit] corrected time for the paddle (s)
+  Double_t*   fdTime;      // [fNhit] uncertainty in time (s)
+  Double_t*   fAmpl;       // [fNhit] overall amplitude for the paddle
+  Double_t*   fYt;         // [fNhit] y-position of hit in paddle from TDC (m)
+  Double_t*   fYa;         // [fNhit] y-position of hit in paddle from ADC (m)
 
   void           DeleteArrays();
   virtual Int_t  ReadDatabase( const TDatime& date );
@@ -105,8 +105,7 @@ protected:
 
   enum ESide { kLeft = 0, kRight = 1 };
 
-  virtual  Double_t TimeWalkCorrection( const Int_t& paddle,
-					const ESide side );
+  virtual  Double_t TimeWalkCorrection( Int_t paddle, ESide side );
 
   ClassDef(THaScintillator,1)   // Generic scintillator class
 };
