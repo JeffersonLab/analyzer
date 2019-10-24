@@ -23,59 +23,29 @@
 #include <cassert>
 #include <iomanip>
 #include <sstream>
+#include <algorithm>
+
+#define ALL(c) (c).begin(), (c).end()
 
 using namespace std;
 
 //_____________________________________________________________________________
 THaScintillator::THaScintillator( const char* name, const char* description,
 				  THaApparatus* apparatus )
-  : THaNonTrackingDetector(name,description,apparatus), fDataDest{},
-    fLOff(nullptr), fROff(nullptr), fLPed(nullptr), fRPed(nullptr),
-    fLGain(nullptr), fRGain(nullptr),
+  : THaNonTrackingDetector(name,description,apparatus),
     fTdc2T(0), fCn(0), fNTWalkPar(0), fTWalkPar(nullptr), fAdcMIP(0),
     fTrigOff(nullptr), fAttenuation(0), fResolution(0),
-    fLTNhit(0), fLT(nullptr), fLT_c(nullptr),
-    fRTNhit(0), fRT(nullptr), fRT_c(nullptr),
-    fLANhit(0), fLA(nullptr), fLA_p(nullptr), fLA_c(nullptr),
-    fRANhit(0), fRA(nullptr), fRA_p(nullptr), fRA_c(nullptr),
-    fNhit(0), fHitPad(nullptr), fTime(nullptr), fdTime(nullptr),
-    fAmpl(nullptr), fYt(nullptr), fYa(nullptr)
 {
   // Constructor
 }
 
 //_____________________________________________________________________________
 THaScintillator::THaScintillator()
-  : THaNonTrackingDetector(), fDataDest{},
-    fLOff(nullptr), fROff(nullptr), fLPed(nullptr), fRPed(nullptr),
-    fLGain(nullptr), fRGain(nullptr),
+  : THaNonTrackingDetector(),
     fTdc2T(0), fCn(0), fNTWalkPar(0), fTWalkPar(nullptr), fAdcMIP(0),
     fTrigOff(nullptr), fAttenuation(0), fResolution(0),
-    fLTNhit(0), fLT(nullptr), fLT_c(nullptr),
-    fRTNhit(0), fRT(nullptr), fRT_c(nullptr),
-    fLANhit(0), fLA(nullptr), fLA_p(nullptr), fLA_c(nullptr),
-    fRANhit(0), fRA(nullptr), fRA_p(nullptr), fRA_c(nullptr),
-    fNhit(0), fHitPad(nullptr), fTime(nullptr), fdTime(nullptr),
-    fAmpl(nullptr), fYt(nullptr), fYa(nullptr)
 {
-  // Default constructor (for ROOT I/O)
-}
-
-//_____________________________________________________________________________
-THaAnalysisObject::EStatus THaScintillator::Init( const TDatime& date )
-{
-  // Extra initialization for scintillators: set up DataDest map
-
-  if( THaNonTrackingDetector::Init( date ) )
-    return fStatus;
-
-  const DataDest tmp[NDEST] = {
-    { &fRTNhit, &fRANhit, fRT, fRT_c, fRA, fRA_p, fRA_c, fROff, fRPed, fRGain },
-    { &fLTNhit, &fLANhit, fLT, fLT_c, fLA, fLA_p, fLA_c, fLOff, fLPed, fLGain }
-  };
-  memcpy( fDataDest, tmp, NDEST*sizeof(DataDest) );
-
-  return fStatus = kOK;
+  // Default constructor (for ROOT RTTI)
 }
 
 //_____________________________________________________________________________
@@ -170,36 +140,13 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   if( !fIsInit ) {
     fNTWalkPar = nval_twalk;
     // Calibration data
-    fLOff  = new Double_t[ nval ];
-    fROff  = new Double_t[ nval ];
-    fLPed  = new Double_t[ nval ];
-    fRPed  = new Double_t[ nval ];
-    fLGain = new Double_t[ nval ];
-    fRGain = new Double_t[ nval ];
 
     fTrigOff = new Double_t[ nval ];
 
     // Per-event data
-    fLT   = new Double_t[ nval ];
-    fLT_c = new Double_t[ nval ];
-    fRT   = new Double_t[ nval ];
-    fRT_c = new Double_t[ nval ];
-    fLA   = new Double_t[ nval ];
-    fLA_p = new Double_t[ nval ];
-    fLA_c = new Double_t[ nval ];
-    fRA   = new Double_t[ nval ];
-    fRA_p = new Double_t[ nval ];
-    fRA_c = new Double_t[ nval ];
 
     fTWalkPar = new Double_t[ nval_twalk ];
 
-    fHitPad = new Int_t[ nval ];
-    fTime   = new Double_t[ nval ]; // analysis indexed by paddle (yes, inefficient)
-    fdTime  = new Double_t[ nval ];
-    fAmpl   = new Double_t[ nval ];
-
-    fYt     = new Double_t[ nval ];
-    fYa     = new Double_t[ nval ];
 
     fIsInit = true;
   }
@@ -220,14 +167,8 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   memset( fTrigOff, 0, nval*sizeof(fTrigOff[0]) );
 
   // Default TDC offsets (0), ADC pedestals (0) and ADC gains (1)
-  memset( fLOff, 0, nval*sizeof(fLOff[0]) );
-  memset( fROff, 0, nval*sizeof(fROff[0]) );
-  memset( fLPed, 0, nval*sizeof(fLPed[0]) );
-  memset( fRPed, 0, nval*sizeof(fRPed[0]) );
-  for( UInt_t i=0; i<nval; ++i ) {
-    fLGain[i] = 1.0;
-    fRGain[i] = 1.0;
-  }
+  for_each( ALL(fCalib[kRight]), [](PMTCalib_t& c){ c.clear(); });
+  for_each( ALL(fCalib[kLeft]),  [](PMTCalib_t& c){ c.clear(); });
 
   DBRequest calib_request[] = {
     { "L.off",            fLOff,         kDouble, nval, true },
@@ -344,32 +285,8 @@ void THaScintillator::DeleteArrays()
 {
   // Delete member arrays. Used by destructor.
 
-  delete [] fRA_c;    fRA_c    = nullptr;
-  delete [] fRA_p;    fRA_p    = nullptr;
-  delete [] fRA;      fRA      = nullptr;
-  delete [] fLA_c;    fLA_c    = nullptr;
-  delete [] fLA_p;    fLA_p    = nullptr;
-  delete [] fLA;      fLA      = nullptr;
-  delete [] fRT_c;    fRT_c    = nullptr;
-  delete [] fRT;      fRT      = nullptr;
-  delete [] fLT_c;    fLT_c    = nullptr;
-  delete [] fLT;      fLT      = nullptr;
-
-  delete [] fRGain;   fRGain   = nullptr;
-  delete [] fLGain;   fLGain   = nullptr;
-  delete [] fRPed;    fRPed    = nullptr;
-  delete [] fLPed;    fLPed    = nullptr;
-  delete [] fROff;    fROff    = nullptr;
-  delete [] fLOff;    fLOff    = nullptr;
   delete [] fTWalkPar; fTWalkPar = nullptr;
   delete [] fTrigOff; fTrigOff = nullptr;
-
-  delete [] fHitPad;  fHitPad  = nullptr;
-  delete [] fTime;    fTime    = nullptr;
-  delete [] fdTime;   fdTime   = nullptr;
-  delete [] fAmpl;    fAmpl    = nullptr;
-  delete [] fYt;      fYt      = nullptr;
-  delete [] fYa;      fYa      = nullptr;
 }
 
 //_____________________________________________________________________________
@@ -378,14 +295,10 @@ void THaScintillator::Clear( Option_t* opt )
   // Reset per-event data.
 
   THaNonTrackingDetector::Clear(opt);
-  fNhit = fLTNhit = fRTNhit = fLANhit = fRANhit = 0;
-  assert(fIsInit);
-  for( Int_t i=0; i<fNelem; ++i ) {
-    fLT[i] = fLT_c[i] = fRT[i] = fRT_c[i] = kBig;
-    fLA[i] = fLA_p[i] = fLA_c[i] = fRA[i] = fRA_p[i] = fRA_c[i] = kBig;
-    fTime[i] = fdTime[i] = fAmpl[i] = fYt[i] = fYa[i] = kBig;
-  }
-  memset( fHitPad, 0, fNelem*sizeof(fHitPad[0]) );
+  for( auto& n : fNHits ) n.clear();
+  for_each( ALL(fRightPMTs), [](PMTData_t& d){ d.clear(); });
+  for_each( ALL(fLeftPMTs),  [](PMTData_t& d){ d.clear(); });
+  fHits.clear();
 }
 
 //_____________________________________________________________________________
@@ -446,33 +359,47 @@ Int_t THaScintillator::Decode( const THaEvData& evdata )
       // Get the detector channel number, starting at 0
       Int_t k = d->first + ((d->reverse) ? d->hi - chan : chan - d->lo) - 1;
 
-      if( k<0 || k>NDEST*fNelem ) {
+      // The scintillator detector is assumed to have fNelem paddles, each
+      // with two PMTs, one on the right side, one on the left.
+      // As for the readout channels, the convention is to configure twice as
+      // many logical channels as there are paddles. The first half of the
+      // logical channels corresponds to the right-side PMTs, the second,
+      // to the left-side ones.
+      if( k<0 || k > NSIDES * fNelem ) {
 	// Indicates bad database
 	Error( Here(here), "Illegal detector channel: %d. "
 	       "Fix detector map in database", k );
 	continue;
       }
-      // Copy the data to the local variables.
-      DataDest* dest = fDataDest + k/fNelem; // FIXME: assumes fixed structure of detector map?
-      k = k % fNelem;
+      Int_t pad = k % fNelem; // Actual paddle number
+
+      // Copy the raw and calibrated ADC/TDC data to the member variables
+      ESide side = k<fNelem ? kRight : kLeft;
+      auto& PMT = (side==kRight) ? fRightPMTs[pad] : fLeftPMTs[pad];
+      auto& nhits = fNHits[side];
+      const auto& calib = fCalib[side][pad];
       if( adc ) {
-	dest->adc[k]   = data;
-	dest->adc_p[k] = data - dest->ped[k];
-	dest->adc_c[k] = dest->adc_p[k] * dest->gain[k];
-	(*dest->nahit)++;
+        PMT.adc   = data;
+        PMT.adc_p = PMT.adc - calib.ped;
+        PMT.adc_c = PMT.adc_p * calib.gain;
+        PMT.adc_set = true;
+        nhits.adc++;
       } else {
-	dest->tdc[k]   = data;
-	dest->tdc_c[k] = (data - dest->offset[k])*fTdc2T;
-	if( fTdc2T > 0.0 && !not_common_stop_tdc ) {
-	  // For common stop TDCs, time is negatively correlated to raw data
-	  // time = (offset-data)*res, so reverse the sign.
-	  // However, historically, people have been using negative TDC
-	  // resolutions to indicate common stop mode, so in that case
-	  // the sign flip has already been applied.
-	  dest->tdc_c[k] *= -1.0;
-	}
-	(*dest->nthit)++;
+        PMT.tdc = data;
+        PMT.tdc_c = (data - calib.off) * fTdc2T;
+        if( fTdc2T > 0.0 && !not_common_stop_tdc ) {
+          // For common stop TDCs, time is negatively correlated to raw data
+          // time = (offset-data)*res, so reverse the sign.
+          // However, historically, people have been using negative TDC
+          // resolutions to indicate common stop mode, so in that case
+          // the sign flip has already been applied.
+          PMT.tdc_c *= -1.0;
+        }
+        PMT.tdc_c -= TimeWalkCorrection(pad, side);
+        PMT.tdc_set = true;
+        nhits.tdc++;
       }
+
     }
   }
 
@@ -488,19 +415,21 @@ Int_t THaScintillator::Decode( const THaEvData& evdata )
     cout << right;
     for ( int i=0; i<fNelem; i++ ) {
       cout << "     "     << setw(2) << i+1;
-      cout << "        "; WriteValue(fLT[i]);
-      cout << "  ";       WriteValue(fLA[i]);
-      cout << "  ";       WriteValue(fLA_p[i]);
-      cout << "        "; WriteValue(fRT[i]);
-      cout << "  ";       WriteValue(fRA[i]);
-      cout << "  ";       WriteValue(fRA_p[i]);
+      cout << "        "; WriteValue(fLeftPMTs[i].tdc);
+      cout << "  ";       WriteValue(fLeftPMTs[i].adc);
+      cout << "  ";       WriteValue(fLeftPMTs[i].adc_p);
+      cout << "        "; WriteValue(fRightPMTs[i].tdc);
+      cout << "  ";       WriteValue(fRightPMTs[i].adc);
+      cout << "  ";       WriteValue(fRightPMTs[i].adc_p);
       cout << endl;
     }
     cout << left;
   }
 #endif
 
-  return fLTNhit+fRTNhit;
+  ApplyCorrections();
+
+  return fNHits[kRight].tdc + fNHits[kLeft].tdc;
 }
 
 //_____________________________________________________________________________
@@ -523,7 +452,7 @@ Int_t THaScintillator::ApplyCorrections()
     for( Int_t chan = d->lo; chan <= d->hi; ++chan ) {
       // Get the detector channel number, starting at 0
       Int_t k = d->first + ((d->reverse) ? d->hi - chan : chan - d->lo) - 1;
-      if( k < 0 || k > NDEST * fNelem )
+      if( k < 0 || k > NSIDES * fNelem )
         continue;
       k = k % fNelem;
       if( fLT[k] < 0.5 * kBig ) {
