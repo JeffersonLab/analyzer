@@ -255,7 +255,7 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
 #ifdef WITH_DEBUG
   // Debug printout
   if ( fDebug > 2 ) {
-    const UInt_t N = static_cast<UInt_t>(fNelem);
+    const auto N = static_cast<UInt_t>(fNelem);
     Double_t pos[3]; fOrigin.GetXYZ(pos);
     DBRequest list[] = {
       { "Number of paddles",    &fNelem,     kInt         },
@@ -540,8 +540,8 @@ Int_t THaScintillator::ApplyCorrections()
 }
 
 //_____________________________________________________________________________
-Double_t THaScintillator::TimeWalkCorrection( const Int_t& paddle,
-					      const ESide side )
+Double_t THaScintillator::TimeWalkCorrection( const Int_t paddle,
+                                              const ESide side )
 {
   // Calculate the time-walk correction. The timewalk might be
   // dependent upon the specific PMT, so information about exactly

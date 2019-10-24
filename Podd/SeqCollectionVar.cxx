@@ -31,7 +31,7 @@ SeqCollectionVar::SeqCollectionVar( THaVar* pvar, const void* addr,
   assert( offset >= 0 );
 
   if( !VerifyNonArrayName(GetName()) ) {
-    fValueP = 0;
+    fValueP = nullptr;
     return;
   }
   // Currently supported data types
@@ -40,7 +40,7 @@ SeqCollectionVar::SeqCollectionVar( THaVar* pvar, const void* addr,
     Error( "SeqCollectionVar::SeqCollectionVar", "Variable %s: "
 	   "Illegal data type = %s. Only basic types or pointers to basic "
 	   "types allowed", pvar->GetName(), THaVar::GetTypeName(fType) );
-    fValueP = 0; // Make invalid
+    fValueP = nullptr; // Make invalid
     return;
   }
 }
@@ -52,11 +52,11 @@ Int_t SeqCollectionVar::GetLen() const
 
   assert( fValueP );
 
-  const TObject* obj = static_cast<const TObject*>( fValueP );
+  const auto obj = static_cast<const TObject*>( fValueP );
   if( !obj || !obj->IsA()->InheritsFrom( TSeqCollection::Class() ))
     return kInvalidInt;
 
-  const TSeqCollection* c = static_cast<const TSeqCollection*>( obj );
+  const auto c = static_cast<const TSeqCollection*>( obj );
 
   // Get actual array size
   if( c->IsA()->InheritsFrom( TObjArray::Class() ))
@@ -91,24 +91,24 @@ const void* SeqCollectionVar::GetDataPointer( Int_t i ) const
 
   const char* const here = "GetDataPointer()";
 
-  assert( sizeof(ULong_t) == sizeof(void*) );
+  static_assert( sizeof(ULong_t) == sizeof(void*) , "ULong_t must of of pointer size");
   assert( fValueP );
 
   Int_t len = GetLen();
   if( len == 0 || len == kInvalidInt )
-    return 0;
+    return nullptr;
 
   if( i<0 || i>=len ) {
     fSelf->Error( here, "Index out of range, variable %s, index %d",
 		  GetName(), i );
-    return 0;
+    return nullptr;
   }
 
   void* obj = static_cast<const TSeqCollection*>(fValueP)->At(i);
   if( !obj ) {
     fSelf->Error( here, "Variable %s: Collection element %d does not exist. "
 		 "Check detector code for bugs.", GetName(), i );
-    return 0;
+    return nullptr;
   }
 
   // Compute location using the offset.
@@ -130,7 +130,7 @@ Bool_t SeqCollectionVar::HasSameSize( const Variable& rhs ) const
   // Trivially, TSeqCollection variables have the same size if they
   // belong to the same TSeqCollection
 
-  const SeqCollectionVar* other = dynamic_cast<const SeqCollectionVar*>(&rhs);
+  const auto other = dynamic_cast<const SeqCollectionVar*>(&rhs);
   if( !other )
     return false;
 

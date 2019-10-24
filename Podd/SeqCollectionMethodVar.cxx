@@ -32,7 +32,7 @@ const void* SeqCollectionMethodVar::GetDataPointer( Int_t i ) const
 
   const void* obj = SeqCollectionVar::GetDataPointer(i);
   if( !obj )
-    return 0;
+    return nullptr;
 
   // Get data from method, using object retrieved from TSeqCollection above
   return MethodVar::GetDataPointer(obj);
