@@ -24,6 +24,7 @@
 #include <iomanip>
 #include <sstream>
 #include <algorithm>
+#include <type_traits>
 
 #define ALL(c) (c).begin(), (c).end()
 
@@ -34,7 +35,7 @@ THaScintillator::THaScintillator( const char* name, const char* description,
 				  THaApparatus* apparatus )
   : THaNonTrackingDetector(name,description,apparatus),
     fTdc2T(0), fCn(0), fNTWalkPar(0), fTWalkPar(nullptr), fAdcMIP(0),
-    fTrigOff(nullptr), fAttenuation(0), fResolution(0),
+    fTrigOff(nullptr), fAttenuation(0), fResolution(0)
 {
   // Constructor
 }
@@ -43,7 +44,7 @@ THaScintillator::THaScintillator( const char* name, const char* description,
 THaScintillator::THaScintillator()
   : THaNonTrackingDetector(),
     fTdc2T(0), fCn(0), fNTWalkPar(0), fTWalkPar(nullptr), fAdcMIP(0),
-    fTrigOff(nullptr), fAttenuation(0), fResolution(0),
+    fTrigOff(nullptr), fAttenuation(0), fResolution(0)
 {
   // Default constructor (for ROOT RTTI)
 }
@@ -54,6 +55,12 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   // Read this detector's parameters from the database
 
   const char* const here = "ReadDatabase";
+
+  static_assert( std::is_same<Data_t, Float_t>::value ||
+                 std::is_same<Data_t, Double_t>::value,
+                 "Data_t must be Float_t or Double_t" );
+  VarType kDataType  = std::is_same<Data_t, Float_t>::value ? kFloat  : kDouble;
+  VarType kDataTypeV = std::is_same<Data_t, Float_t>::value ? kFloatV : kDoubleV;
 
   FILE* file = OpenFile( date );
   if( !file ) return kFileError;
@@ -74,7 +81,7 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   DBRequest config_request[] = {
     { "detmap",       &detmap,   kIntV },
     { "npaddles",     &nelem,    kInt  },
-    { "tdc.res",      &fTdc2T,   kDouble },
+    { "tdc.res",      &fTdc2T,   kDataType },
     { "tdc.cmnstart", &tdc_mode, kInt, 0, true },
     { nullptr }
   };
@@ -135,18 +142,22 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   }
 
   // Dimension arrays
-  //FIXME: use a structure!
   UInt_t nval = fNelem, nval_twalk = 2*nval;
   if( !fIsInit ) {
     fNTWalkPar = nval_twalk;
     // Calibration data
+    fCalib[kRight].resize(nval);
+    fCalib[kLeft].resize(nval);
 
-    fTrigOff = new Double_t[ nval ];
+    fTrigOff = new Data_t[ nval ];
 
     // Per-event data
+    fRightPMTs.resize(nval);
+    fLeftPMTs.resize(nval);
+    fPadData.resize(nval);
+    fHits.reserve(nval);
 
-    fTWalkPar = new Double_t[ nval_twalk ];
-
+    fTWalkPar = new Data_t[ nval_twalk ];
 
     fIsInit = true;
   }
@@ -170,25 +181,35 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   for_each( ALL(fCalib[kRight]), [](PMTCalib_t& c){ c.clear(); });
   for_each( ALL(fCalib[kLeft]),  [](PMTCalib_t& c){ c.clear(); });
 
+  vector<Data_t> loff, roff, lped, rped, lgain, rgain;
   DBRequest calib_request[] = {
-    { "L.off",            fLOff,         kDouble, nval, true },
-    { "R.off",            fROff,         kDouble, nval, true },
-    { "L.ped",            fLPed,         kDouble, nval, true },
-    { "R.ped",            fRPed,         kDouble, nval, true },
-    { "L.gain",           fLGain,        kDouble, nval, true },
-    { "R.gain",           fRGain,        kDouble, nval, true },
-    { "Cn",               &fCn,          kDouble },
-    { "MIP",              &fAdcMIP,      kDouble, 0, true },
-    { "timewalk_params",  fTWalkPar,     kDouble, nval_twalk, true },
-    { "retiming_offsets", fTrigOff,      kDouble, nval, true },
-    { "avgres",           &fResolution,  kDouble, 0, true },
-    { "atten",            &fAttenuation, kDouble, 0, true },
+    { "L.off",            &loff,         kDataTypeV, nval,       true },
+    { "R.off",            &roff,         kDataTypeV, nval,       true },
+    { "L.ped",            &lped,         kDataTypeV, nval,       true },
+    { "R.ped",            &rped,         kDataTypeV, nval,       true },
+    { "L.gain",           &lgain,        kDataTypeV, nval,       true },
+    { "R.gain",           &rgain,        kDataTypeV, nval,       true },
+    { "Cn",               &fCn,          kDataType                    },
+    { "MIP",              &fAdcMIP,      kDataType,  0,          true },
+    { "timewalk_params",  fTWalkPar,     kDataType,  nval_twalk, true },
+    { "retiming_offsets", fTrigOff,      kDataType,  nval,       true },
+    { "avgres",           &fResolution,  kDataType,  0,          true },
+    { "atten",            &fAttenuation, kDataType,  0,          true },
     { nullptr }
   };
   err = LoadDB( file, date, calib_request, fPrefix );
   fclose(file);
   if( err )
     return err;
+
+  for( UInt_t i = 0; i < nval; ++i ) {
+    fCalib[kRight][i].off  = roff[i];
+    fCalib[kRight][i].ped  = rped[i];
+    fCalib[kRight][i].gain = rgain[i];
+    fCalib[kLeft][i].off   = loff[i];
+    fCalib[kLeft][i].ped   = lped[i];
+    fCalib[kLeft][i].gain  = lgain[i];
+  }
 
   if( fResolution == kBig )
     fResolution = 3.*fTdc2T; // guess at timing resolution
@@ -199,23 +220,23 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
     const auto N = static_cast<UInt_t>(fNelem);
     Double_t pos[3]; fOrigin.GetXYZ(pos);
     DBRequest list[] = {
-      { "Number of paddles",    &fNelem,     kInt         },
-      { "Detector position",    pos,         kDouble, 3   },
-      { "Detector size",        fSize,       kDouble, 3   },
-      { "TDC offsets Left",     fLOff,       kDouble, N   },
-      { "TDC offsets Right",    fROff,       kDouble, N   },
-      { "ADC pedestals Left",   fLPed,       kDouble, N   },
-      { "ADC pedestals Right",  fRPed,       kDouble, N   },
-      { "ADC gains Left",       fLGain,      kDouble, N   },
-      { "ADC gains Right",      fRGain,      kDouble, N   },
-      { "TDC resolution",       &fTdc2T                   },
-      { "Light propag. speed",  &fCn                      },
-      { "ADC MIP",              &fAdcMIP                  },
-      { "Num timewalk params",  &fNTWalkPar, kInt         },
-      { "Timewalk params",      fTWalkPar,   kDouble, 2*N },
-      { "Trigger time offsets", fTrigOff,    kDouble, N   },
-      { "Time resolution",      &fResolution              },
-      { "Attenuation",          &fAttenuation             },
+      { "Number of paddles",    &fNelem,       kInt            },
+      { "Detector position",    pos,           kDouble,    3   },
+      { "Detector size",        fSize,         kDouble,    3   },
+      { "TDC offsets Left",     &loff,         kDataTypeV, N   },
+      { "TDC offsets Right",    &roff,         kDataTypeV, N   },
+      { "ADC pedestals Left",   &lped,         kDataTypeV, N   },
+      { "ADC pedestals Right",  &rped,         kDataTypeV, N   },
+      { "ADC gains Left",       &lgain,        kDataTypeV, N   },
+      { "ADC gains Right",      &rgain,        kDataTypeV, N   },
+      { "TDC resolution",       &fTdc2T,       kDataType       },
+      { "Light propag. speed",  &fCn,          kDataType       },
+      { "ADC MIP",              &fAdcMIP,      kDataType       },
+      { "Num timewalk params",  &fNTWalkPar,   kInt            },
+      { "Timewalk params",      fTWalkPar,     kDataType,  2*N },
+      { "Trigger time offsets", fTrigOff,      kDataType,  N   },
+      { "Time resolution",      &fResolution,  kDataType       },
+      { "Attenuation",          &fAttenuation, kDataType       },
       { nullptr }
     };
     DebugPrint( list );
@@ -295,9 +316,12 @@ void THaScintillator::Clear( Option_t* opt )
   // Reset per-event data.
 
   THaNonTrackingDetector::Clear(opt);
-  for( auto& n : fNHits ) n.clear();
+  for( auto& n : fNHits )
+    n.clear();
+  fHitIdx.clear();
   for_each( ALL(fRightPMTs), [](PMTData_t& d){ d.clear(); });
   for_each( ALL(fLeftPMTs),  [](PMTData_t& d){ d.clear(); });
+  for_each( ALL(fPadData),   [](HitData_t& d){ d.clear(); });
   fHits.clear();
 }
 
@@ -395,16 +419,18 @@ Int_t THaScintillator::Decode( const THaEvData& evdata )
           // the sign flip has already been applied.
           PMT.tdc_c *= -1.0;
         }
-        PMT.tdc_c -= TimeWalkCorrection(pad, side);
         PMT.tdc_set = true;
         nhits.tdc++;
       }
-
+      fHitIdx.emplace(side, pad);
     }
   }
 
   if( has_warning )
     ++fNEventsWithWarnings;
+
+  ApplyCorrections();
+  FindPaddleHits();
 
 #ifdef WITH_DEBUG
   if ( fDebug > 3 ) {
@@ -427,8 +453,6 @@ Int_t THaScintillator::Decode( const THaEvData& evdata )
   }
 #endif
 
-  ApplyCorrections();
-
   return fNHits[kRight].tdc + fNHits[kLeft].tdc;
 }
 
@@ -440,65 +464,81 @@ Int_t THaScintillator::ApplyCorrections()
   // Currently only TDC timewalk corrections are applied, and those only if
   // the database parameters "MIP" and "timewalk_params" are set.
 
-  Int_t nlt = 0, nrt = 0;
-  // We need to loop over the detector map again because we need the TDC mode
-  for( Int_t i = 0; i < fDetMap->GetSize(); i++ ) {
-    THaDetMap::Module* d = fDetMap->GetModule(i);
-    if( d->model ? d->IsADC() : (i < fDetMap->GetSize()/2) )
-      continue; // ignore ADCs
-
-    Double_t sign = (fTdc2T > 0.0 && d->IsCommonStart()) ? -1.0 : 1.0;
-
-    for( Int_t chan = d->lo; chan <= d->hi; ++chan ) {
-      // Get the detector channel number, starting at 0
-      Int_t k = d->first + ((d->reverse) ? d->hi - chan : chan - d->lo) - 1;
-      if( k < 0 || k > NSIDES * fNelem )
-        continue;
-      k = k % fNelem;
-      if( fLT[k] < 0.5 * kBig ) {
-        fLT_c[k] = (fLT[k] - fLOff[k]) * fTdc2T * sign - TimeWalkCorrection( k, kLeft );
-        nlt++;
-      }
-      if( fRT[k] < 0.5 * kBig ) {
-        fRT_c[k] = (fRT[k] - fROff[k]) * fTdc2T * sign - TimeWalkCorrection( k, kRight );
-        nrt++;
-      }
-    }
+  for( const auto idx : fHitIdx ) {
+    ESide side = idx.first;
+    Int_t pad = idx.second;
+    auto& PMT = (side == kRight) ? fRightPMTs[pad] : fLeftPMTs[pad];
+    if( PMT.adc_set && PMT.tdc_set )
+      PMT.tdc_c -= TimeWalkCorrection(idx, PMT.adc_p);
   }
-  return (fLTNhit==nlt && fRTNhit==nrt) ? 0 : 1;
+
+  return 0;
 }
 
+
 //_____________________________________________________________________________
-Double_t THaScintillator::TimeWalkCorrection( const Int_t paddle,
-                                              const ESide side )
+THaScintillator::Data_t
+THaScintillator::TimeWalkCorrection( Idx_t idx, Data_t adc )
 {
-  // Calculate the time-walk correction. The timewalk might be
-  // dependent upon the specific PMT, so information about exactly
-  // which PMT fired is required.
+  // Calculate TDC timewalk correction.
+  // The timewalk parameters depend on the specific PMT given by 'idx'.
+  // 'adc' is the PMT's ADC value above pedestal (adc_p).
 
   if (fNTWalkPar<=0 || !fTWalkPar || fNelem == 0)
-    return 0.; // uninitialized return safe 0
+    return 0.; // uninitialized or no parameters defined
 
-  Double_t adc, ref = fAdcMIP;
-  if (side == kLeft)
-    adc = fLA_p[paddle];
-  else
-    adc = fRA_p[paddle];
-
-  // get the ADC value above the pedestal
+  // Assume that for a MIP (peak ~2000 ADC channels) the correction is 0
+  Data_t ref = fAdcMIP;
   if ( adc <=0. || ref <= 0.)
     return 0.;
 
+  //FIXME: index fTWalkPar by paddle/side
   int npar = fNTWalkPar/(2*fNelem);
 
-  Double_t par = fTWalkPar[npar*(fNelem*side+paddle)];
+  ESide  side = idx.first;
+  Int_t  pad  = idx.second;
+  Data_t par  = fTWalkPar[npar*(fNelem*side + pad)];
 
   // Traditional correction according to
   // J.S.Brown et al., NIM A221, 503 (1984); T.Dreyer et al., NIM A309, 184 (1991)
-  // Assume that for a MIP (peak ~2000 ADC channels) the correction is 0
-  Double_t corr = par * ( 1./TMath::Sqrt(adc) - 1./TMath::Sqrt(ref) );
+  Data_t corr = par * ( 1./TMath::Sqrt(adc) - 1./TMath::Sqrt(ref) );
 
   return corr;
+}
+
+//_____________________________________________________________________________
+Int_t THaScintillator::FindPaddleHits()
+{
+  // Find paddles with TDC hits on both sides (likely true hits)
+
+  static const Double_t sqrt2 = TMath::Sqrt(2.);
+
+  fHits.clear();
+  for( const auto idx : fHitIdx ) {
+    const ESide side = idx.first;
+    if( side == kLeft )
+      // std::pair is sorted by first, then second, so from this point on only
+      // kLeft elements will follow, the matching ones of which we've already
+      // paired up. So no more work to do :)
+      break;
+    assert(side == kRight);
+    const Int_t pad = idx.second;
+    if( fHitIdx.find(make_pair(kLeft, pad)) != fHitIdx.end()) {
+      // There are data from both PMTs of this paddle
+      const auto& RPMT = fRightPMTs[pad], LPMT = fLeftPMTs[pad];
+      if( RPMT.tdc_set && LPMT.tdc_set ) {
+        // Calculate mean time and rough transverse (y) position
+        Data_t time = 0.5 * (RPMT.tdc_c + LPMT.tdc_c) - fSize[1] / fCn;
+        Data_t dtime = fResolution / sqrt2;
+        Data_t yt = 0.5 * fCn * (RPMT.tdc_c - LPMT.tdc_c);
+        // Record a hit on this paddle
+        fHits.emplace_back(pad, time, dtime, yt, kBig, kBig);
+        // Save the hit data in the per-paddle array
+        fPadData[pad] = fHits.back();
+      }
+    }
+  }
+  return 0;
 }
 
 //_____________________________________________________________________________
@@ -506,32 +546,33 @@ Int_t THaScintillator::CoarseProcess( TClonesArray& tracks )
 {
   // Scintillator coarse processing:
   //
-  // - Apply timewalk corrections
-  // - Calculate rough transverse (y) position and energy deposition for hits
-  //   for which PMTs on both ends of the paddle fired
+  // - Calculate rough transverse position and energy deposition from ADC data
   // - Calculate rough track crossing points
 
-  static const Double_t sqrt2 = TMath::Sqrt(2.);
-
-  ApplyCorrections();
-
-  // count the number of paddles with complete TDC hits
-  // Fill in information available from timing
-  fNhit = 0;
-  for (int i=0; i<fNelem; i++) {
-    if( fLT[i]<0.5*kBig && fRT[i]<0.5*kBig ) {
-      fHitPad[fNhit++] = i;
-      fTime[i] = .5*(fLT_c[i]+fRT_c[i])-fSize[1]/fCn;
-      fdTime[i] = fResolution/sqrt2;
-      fYt[i] = .5*fCn*(fRT_c[i]-fLT_c[i]);
-    }
-
-    // rough calculation of position from ADC reading
-    if( fLA[i]<0.5*kBig && fRA[i]<0.5*kBig && fLA_c[i]>0 && fRA_c[i]>0 ) {
-      fYa[i] = TMath::Log(fLA_c[i]/fRA_c[i])/(2.*fAttenuation);
-      // rough dE/dX-like quantity, not correcting for track angle
-      fAmpl[i] = TMath::Sqrt(fLA_c[i]*fRA_c[i]*TMath::Exp(fAttenuation*2*fSize[1]))
-	/ fSize[2];
+  for( const auto idx : fHitIdx ) {
+    const ESide side = idx.first;
+    if( side == kLeft )
+      break;
+    assert(side == kRight);
+    const Int_t pad = idx.second;
+    if( fHitIdx.find(make_pair(kLeft, pad)) != fHitIdx.end()) {
+      const auto& RPMT = fRightPMTs[pad], LPMT = fLeftPMTs[pad];
+      // rough calculation of position from ADC reading
+      if( RPMT.adc_set && RPMT.adc_c > 0 && LPMT.adc_set && LPMT.adc_c > 0 ) {
+        auto& thePad = fPadData[pad];
+        thePad.ya = TMath::Log(LPMT.adc_c / RPMT.adc_c) / (2. * fAttenuation);
+        // rough dE/dX-like quantity, not correcting for track angle
+        thePad.ampl = TMath::Sqrt(LPMT.adc_c * RPMT.adc_c *
+          TMath::Exp(fAttenuation * 2. * fSize[1])) / fSize[2];
+        // Save these ADC-derived values to the entry in the hit array as well
+        // (may not exist if TDCs didn't fire on both sides)
+        auto theHit = find_if(ALL(fHits),
+          [pad]( const HitData_t& h ) { return h.pad == pad; });
+        if( theHit != fHits.end() ) {
+          theHit->yt = thePad.yt;
+          theHit->ampl = thePad.ampl;
+        }
+      }
     }
   }
 
@@ -570,14 +611,15 @@ Int_t THaScintillator::FineProcess( TClonesArray& tracks )
       Int_t pad = -1;                      // paddle number of closest hit
       Double_t xc = proj->GetX();          // track intercept x-coordinate
       Double_t dx = kBig;                  // xc - distance paddle center
-      for( Int_t j = 0; j < fNhit; j++ ) {
-	Double_t dx2 = xc - (padx0 + fHitPad[j]*dpadx);
+//      for( Int_t j = 0; j < fNhit; j++ ) {
+      for( const auto& h : fHits ) {
+        Double_t dx2 = xc - (padx0 + h.pad*dpadx);
 	if (TMath::Abs(dx2) < TMath::Abs(dx) ) {
-	  pad = fHitPad[j];
+	  pad = h.pad;
 	  dx = dx2;
 	}
       }
-      assert( pad >= 0 || fNhit == 0 ); // Must find a pad unless no hits
+      assert( pad >= 0 || fHits.empty() ); // Must find a pad unless no hits
       if( pad >= 0 ) {
 	proj->SetdX(dx);
 	proj->SetChannel(pad);

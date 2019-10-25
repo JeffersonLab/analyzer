@@ -9,6 +9,8 @@
 
 #include "THaNonTrackingDetector.h"
 #include <vector>
+#include <set>
+#include <utility>
 
 class TClonesArray;
 
@@ -25,19 +27,18 @@ public:
   virtual Int_t      CoarseProcess( TClonesArray& tracks );
   virtual Int_t      FineProcess( TClonesArray& tracks );
 
-  virtual Int_t      ApplyCorrections();
-
   Int_t GetNHits() const { return fHits.size(); }
 
-protected:
+  using Data_t = Float_t;  // Must be Float_t or Double_t
+  enum ESide { kRight = 0, kLeft = 1 };
+  using Idx_t  = std::pair<ESide,Int_t>;
 
-  static const Int_t NSIDES = 2;
   struct PMTCalib_t {
     PMTCalib_t() : off(0.f), ped(0.f), gain(1.f) {}
     void clear() { off = 0.f; ped = 0.f; gain = 1.f; }
-    Float_t off;
-    Float_t ped;
-    Float_t gain;
+    Data_t off;
+    Data_t ped;
+    Data_t gain;
   };
   struct PMTData_t {
     PMTData_t()
@@ -45,13 +46,13 @@ protected:
         tdc_set(false), adc_set(false) {}
     void clear() { tdc = adc = kMinInt; tdc_c = adc_p = adc_c = kBig;
       tdc_set = adc_set = false; }
-    Int_t   tdc;
-    Float_t tdc_c;
-    Int_t   adc;
-    Float_t adc_p;
-    Float_t adc_c;
-    Bool_t  tdc_set;
-    Bool_t  adc_set;
+    Int_t  tdc;
+    Data_t tdc_c;
+    Int_t  adc;
+    Data_t adc_p;
+    Data_t adc_c;
+    Bool_t tdc_set;
+    Bool_t adc_set;
   };
   struct HitCount_t {
     HitCount_t() : tdc(0), adc(0) {}
@@ -60,35 +61,46 @@ protected:
     Int_t   adc;
   };
   struct HitData_t {
-    Int_t   pad;
-    Float_t time;
-    Float_t dtime;
-    Float_t ampl;
-    Float_t yt;
-    Float_t ya;
+    HitData_t()
+      : pad(-1), time(kBig), dtime(kBig), yt(kBig), ya(kBig), ampl(kBig) {}
+    HitData_t( Int_t pad, Data_t time, Data_t dtime, Data_t yt, Data_t ya, Data_t ampl )
+      : pad(pad), time(time), dtime(dtime), yt(yt), ya(ya), ampl(ampl) {}
+    void clear() { time = dtime = yt = ampl = ya = kBig; }
+    Int_t  pad;
+    Data_t time;
+    Data_t dtime;
+    Data_t yt;
+    Data_t ya;
+    Data_t ampl;
   };
+
+protected:
+
+  static const Int_t NSIDES = 2;
 
   // Calibration
   std::vector<PMTCalib_t> fCalib[NSIDES];
 
-  Float_t    fTdc2T;      // linear conversion between TDC and time (s/ch)
-  Float_t    fCn;         // speed of light in material  (meters/second)
+  Data_t    fTdc2T;      // linear conversion between TDC and time (s/ch)
+  Data_t    fCn;         // speed of light in material  (meters/second)
 
-  Int_t      fNTWalkPar;  // number of timewalk correction parameters
-  Float_t*   fTWalkPar;   // [fNTWalkPar] time walk correction parameters
-  Float_t    fAdcMIP;     // nominal ADC above pedestal for MIP
+  Int_t     fNTWalkPar;  // number of timewalk correction parameters
+  Data_t*   fTWalkPar;   // [fNTWalkPar] time walk correction parameters
+  Data_t    fAdcMIP;     // nominal ADC above pedestal for MIP
 
-  Float_t*   fTrigOff;     // [fNelem] Induced offset of trigger time from
+  Data_t*   fTrigOff;     // [fNelem] Induced offset of trigger time from
 			   // diff between trigger and retiming.
 			   // Visible in coincidence data.
 
-  Float_t    fAttenuation; // in m^-1: attenuation length of material
-  Float_t    fResolution;  // average time resolution per PMT (s)
+  Data_t    fAttenuation; // in m^-1: attenuation length of material
+  Data_t    fResolution;  // average time resolution per PMT (s)
 
   // Per-event data
   HitCount_t             fNHits[NSIDES];
+  std::set<Idx_t>        fHitIdx;
   std::vector<PMTData_t> fRightPMTs;
   std::vector<PMTData_t> fLeftPMTs;
+  std::vector<HitData_t> fPadData;
   std::vector<HitData_t> fHits;
 
 //  Int_t       fLTNhit;     // Number of Left paddles with TDC hits
@@ -121,9 +133,9 @@ protected:
   virtual Int_t  ReadDatabase( const TDatime& date );
   virtual Int_t  DefineVariables( EMode mode = kDefine );
 
-  enum ESide { kRight = 0, kLeft = 1 };
-
-  virtual  Float_t TimeWalkCorrection( Int_t paddle, ESide side );
+  virtual Int_t  ApplyCorrections();
+  virtual Data_t TimeWalkCorrection( Idx_t idx, Data_t adc );
+  virtual Int_t  FindPaddleHits();
 
   ClassDef(THaScintillator,1)   // Generic scintillator class
 };
