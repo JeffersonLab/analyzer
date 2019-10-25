@@ -1822,19 +1822,23 @@ void THaAnalysisObject::DebugPrint( const DBRequest* list )
 {
   // Print values of database parameters given in 'list'
 
+  if( !list )
+    return;
   TString prefix(fPrefix);
   if( prefix.EndsWith(".") ) prefix.Chop();
   cout << prefix << " database parameters: " << endl;
   size_t maxw = 1;
   ios_base::fmtflags fmt = cout.flags();
-  for( const DBRequest* it = list; it->name; ++it )
+  for( auto it = list; it->name; ++it )
     maxw = TMath::Max(maxw,strlen(it->name));
-  for( const DBRequest* it = list; it->name; ++it ) {
+  for( auto it = list; it->name; ++it ) {
     cout << "  " << std::left << setw(maxw) << it->name;
     size_t maxc = it->nelem;
     if( maxc == 0 ) maxc = 1;
     if( it->type == kDoubleV )
       maxc = ((vector<Double_t>*)it->var)->size();
+    else if( it->type == kFloatV )
+      maxc = ((vector<Float_t>*)it->var)->size();
     else if( it->type == kIntV )
       maxc = ((vector<Int_t>*)it->var)->size();
     for( size_t i=0; i<maxc; ++i ) {
@@ -1851,6 +1855,9 @@ void THaAnalysisObject::DebugPrint( const DBRequest* list )
 	break;
       case kIntV:
         cout << ((vector<Int_t>*)it->var)->at(i);
+        break;
+      case kFloatV:
+        cout << ((vector<Float_t>*)it->var)->at(i);
         break;
       case kDoubleV:
         cout << ((vector<Double_t>*)it->var)->at(i);
