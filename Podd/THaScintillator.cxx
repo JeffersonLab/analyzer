@@ -33,17 +33,14 @@ using namespace std;
 THaScintillator::THaScintillator( const char* name, const char* description,
 				  THaApparatus* apparatus )
   : THaNonTrackingDetector(name,description,apparatus),
-    fTdc2T(0), fCn(0), fNTWalkPar(0), fTWalkPar(nullptr), fAdcMIP(0),
-    fAttenuation(0), fResolution(0)
+    fTdc2T(0.), fCn(0.), fAdcMIP(0.), fAttenuation(0.), fResolution(0.)
 {
   // Constructor
 }
 
 //_____________________________________________________________________________
-THaScintillator::THaScintillator()
-  : THaNonTrackingDetector(),
-    fTdc2T(0), fCn(0), fNTWalkPar(0), fTWalkPar(nullptr), fAdcMIP(0),
-    fAttenuation(0), fResolution(0)
+THaScintillator::THaScintillator() : THaNonTrackingDetector(),
+   fTdc2T(0.), fCn(0.), fAdcMIP(0.), fAttenuation(0), fResolution(0)
 {
   // Default constructor (for ROOT RTTI)
 }
@@ -141,20 +138,19 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   }
 
   // Dimension arrays
-  UInt_t nval = fNelem, nval_twalk = 2*nval;
+  UInt_t nval = fNelem;
   if( !fIsInit ) {
-    fNTWalkPar = nval_twalk;
     // Calibration data
     fCalib[kRight].resize(nval);
     fCalib[kLeft].resize(nval);
+    fTWalkPar[kRight].reserve(nval);
+    fTWalkPar[kLeft].reserve(nval);
 
     // Per-event data
     fRightPMTs.resize(nval);
     fLeftPMTs.resize(nval);
     fPadData.resize(nval);
     fHits.reserve(nval);
-
-    fTWalkPar = new Data_t[ nval_twalk ];
 
     fIsInit = true;
   }
@@ -170,25 +166,29 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   // Time-walk correction parameters
   fAdcMIP = 1.e10;      // large number for offset, so reference is effectively disabled
   // timewalk coefficients for tw = coeff*(1./sqrt(ADC-Ped)-1./sqrt(ADCMip))
-  memset( fTWalkPar, 0, nval_twalk*sizeof(fTWalkPar[0]) );
+  fTWalkPar[kRight].clear();
+  fTWalkPar[kLeft].clear();
 
   // Default TDC offsets (0), ADC pedestals (0) and ADC gains (1)
   for_each( ALL(fCalib[kRight]), [](PMTCalib_t& c){ c.clear(); });
   for_each( ALL(fCalib[kLeft]),  [](PMTCalib_t& c){ c.clear(); });
 
-  vector<Data_t> loff, roff, lped, rped, lgain, rgain;
+  vector<Data_t> loff, roff, lped, rped, lgain, rgain, twalk;
   DBRequest calib_request[] = {
-    { "L.off",            &loff,         kDataTypeV, nval,       true },
-    { "R.off",            &roff,         kDataTypeV, nval,       true },
-    { "L.ped",            &lped,         kDataTypeV, nval,       true },
-    { "R.ped",            &rped,         kDataTypeV, nval,       true },
-    { "L.gain",           &lgain,        kDataTypeV, nval,       true },
-    { "R.gain",           &rgain,        kDataTypeV, nval,       true },
-    { "Cn",               &fCn,          kDataType                    },
-    { "MIP",              &fAdcMIP,      kDataType,  0,          true },
-    { "timewalk_params",  fTWalkPar,     kDataType,  nval_twalk, true },
-    { "avgres",           &fResolution,  kDataType,  0,          true },
-    { "atten",            &fAttenuation, kDataType,  0,          true },
+    { "L.off",            &loff,         kDataTypeV, nval,   true },
+    { "R.off",            &roff,         kDataTypeV, nval,   true },
+    { "L.ped",            &lped,         kDataTypeV, nval,   true },
+    { "R.ped",            &rped,         kDataTypeV, nval,   true },
+    { "L.gain",           &lgain,        kDataTypeV, nval,   true },
+    { "R.gain",           &rgain,        kDataTypeV, nval,   true },
+    { "Cn",               &fCn,          kDataType                },
+    { "MIP",              &fAdcMIP,      kDataType,  0,      true },
+    // TODO: Perhaps the timewalk parameters should be split into L/R blocks?
+    // Currently, these need to be 2*nelem numbers, first nelem for the RPMTs,
+    // then another nelem for the LPMTs. Easy to mix up.
+    { "timewalk_params",  &twalk,        kDataTypeV, 2*nval, true },
+    { "avgres",           &fResolution,  kDataType,  0,      true },
+    { "atten",            &fAttenuation, kDataType,  0,      true },
     { nullptr }
   };
   err = LoadDB( file, date, calib_request, fPrefix );
@@ -204,7 +204,12 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
     fCalib[kLeft][i].ped   = lped[i];
     fCalib[kLeft][i].gain  = lgain[i];
   }
-
+  if( !twalk.empty() ) {
+    for( UInt_t i = 0; i < nval; ++i ) {
+      fTWalkPar[kRight][i] = twalk[i];
+      fTWalkPar[kLeft][i]  = twalk[nval+i];
+    }
+  }
   if( fResolution == kBig )
     fResolution = 3.*fTdc2T; // guess at timing resolution
 
@@ -226,8 +231,7 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
       { "TDC resolution",       &fTdc2T,       kDataType       },
       { "Light propag. speed",  &fCn,          kDataType       },
       { "ADC MIP",              &fAdcMIP,      kDataType       },
-      { "Num timewalk params",  &fNTWalkPar,   kInt            },
-      { "Timewalk params",      fTWalkPar,     kDataType,  2*N },
+      { "Timewalk params",      &twalk,        kDataTypeV, 2*N },
       { "Time resolution",      &fResolution,  kDataType       },
       { "Attenuation",          &fAttenuation, kDataType       },
       { nullptr }
@@ -294,17 +298,7 @@ THaScintillator::~THaScintillator()
 
   if( fIsSetup )
     RemoveVariables();
-  if( fIsInit )
-    DeleteArrays();
 }
-
-//_____________________________________________________________________________
-void THaScintillator::DeleteArrays()
-{
-  // Delete member arrays. Used by destructor.
-
-  delete [] fTWalkPar; fTWalkPar = nullptr;
-  }
 
 //_____________________________________________________________________________
 void THaScintillator::Clear( Option_t* opt )
@@ -429,13 +423,13 @@ Int_t THaScintillator::Decode( const THaEvData& evdata )
   FindPaddleHits();
 
 #ifdef WITH_DEBUG
-  if ( fDebug > 3 ) {
+  if( fDebug > 3 ) {
     cout << endl << endl;
     cout << "Event " << evdata.GetEvNum() << "   Trigger " << evdata.GetEvType()
 	 << " Scintillator " << GetPrefix() << endl;
     cout << "   paddle  Left(TDC    ADC   ADC_p)  Right(TDC    ADC   ADC_p)" << endl;
     cout << right;
-    for ( int i=0; i<fNelem; i++ ) {
+    for( int i = 0; i < fNelem; i++ ) {
       cout << "     "     << setw(2) << i+1;
       cout << "        "; WriteValue(fLeftPMTs[i].tdc);
       cout << "  ";       WriteValue(fLeftPMTs[i].adc);
@@ -471,7 +465,6 @@ Int_t THaScintillator::ApplyCorrections()
   return 0;
 }
 
-
 //_____________________________________________________________________________
 THaScintillator::Data_t
 THaScintillator::TimeWalkCorrection( Idx_t idx, Data_t adc )
@@ -480,20 +473,18 @@ THaScintillator::TimeWalkCorrection( Idx_t idx, Data_t adc )
   // The timewalk parameters depend on the specific PMT given by 'idx'.
   // 'adc' is the PMT's ADC value above pedestal (adc_p).
 
-  if (fNTWalkPar<=0 || !fTWalkPar || fNelem == 0)
-    return 0.; // uninitialized or no parameters defined
+  ESide side = idx.first;
+  Int_t pad  = idx.second;
+
+  if( fTWalkPar[side].empty() )
+    return 0.; // no parameters defined
 
   // Assume that for a MIP (peak ~2000 ADC channels) the correction is 0
   Data_t ref = fAdcMIP;
   if ( adc <=0. || ref <= 0.)
     return 0.;
 
-  //FIXME: index fTWalkPar by paddle/side
-  int npar = fNTWalkPar/(2*fNelem);
-
-  ESide  side = idx.first;
-  Int_t  pad  = idx.second;
-  Data_t par  = fTWalkPar[npar*(fNelem*side + pad)];
+  Data_t par = fTWalkPar[side][pad];
 
   // Traditional correction according to
   // J.S.Brown et al., NIM A221, 503 (1984); T.Dreyer et al., NIM A309, 184 (1991)

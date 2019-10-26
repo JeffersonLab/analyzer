@@ -94,13 +94,10 @@ protected:
 
   Data_t    fTdc2T;      // linear conversion between TDC and time (s/ch)
   Data_t    fCn;         // speed of light in material  (m/s)
-
-  Int_t     fNTWalkPar;  // number of timewalk correction parameters
-  Data_t*   fTWalkPar;   // [fNTWalkPar] time walk correction parameters
   Data_t    fAdcMIP;     // nominal ADC above pedestal for MIP
-
   Data_t    fAttenuation; // attenuation length of material (1/m)
   Data_t    fResolution;  // average time resolution per PMT (s)
+  std::vector<Data_t> fTWalkPar[NSIDES]; // timewalk correction parameters (s)
 
   // Per-event data
   // The PMT data are stored in two vectors because the global variable system
@@ -113,7 +110,6 @@ protected:
   std::vector<HitData_t> fPadData;        // Calculated hit data, per paddle
   std::vector<HitData_t> fHits;           // Calculated hit data, per hit
 
-  void           DeleteArrays();
   virtual Int_t  ReadDatabase( const TDatime& date );
   virtual Int_t  DefineVariables( EMode mode = kDefine );
 
