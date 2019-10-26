@@ -22,7 +22,6 @@ public:
   THaScintillator();
   virtual ~THaScintillator();
 
-
   enum ESide { kRight = 0, kLeft = 1 };
   using Idx_t  = std::pair<ESide,Int_t>;
   using Data_t = Float_t;  // Data type for physics quantities. Must be Float_t or Double_t
@@ -30,42 +29,49 @@ public:
   struct PMTCalib_t {
     PMTCalib_t() : off(0.f), ped(0.f), gain(1.f) {}
     void clear() { off = 0.f; ped = 0.f; gain = 1.f; }
-    Data_t off;
-    Data_t ped;
-    Data_t gain;
+    Data_t off;       // TDC offset (channels)
+    Data_t ped;       // ADC pedestal (channels)
+    Data_t gain;      // ADC gain (a.u.)
   };
+
   struct PMTData_t {
     PMTData_t()
       : tdc(kMinInt), tdc_c(kBig), adc(kMinInt), adc_p(kBig), adc_c(kBig),
         tdc_set(false), adc_set(false) {}
     void clear() { tdc = adc = kMinInt; tdc_c = adc_p = adc_c = kBig;
       tdc_set = adc_set = false; }
-    Int_t  tdc;
-    Data_t tdc_c;
-    Int_t  adc;
-    Data_t adc_p;
-    Data_t adc_c;
-    Bool_t tdc_set;
-    Bool_t adc_set;
+    Int_t  tdc;       // Raw TDC time (channels)
+    Data_t tdc_c;     // Converted TDC time, corrected for offset (s)
+    Int_t  adc;       // Raw ADC amplitude (channels)
+    Data_t adc_p;     // Pedestal-subtracted ADC amplitude
+    Data_t adc_c;     // Gain-corrected ADC amplitude
+    Bool_t tdc_set;   // True if TDC data set
+    Bool_t adc_set;   // True if ADC data set
+
   };
   struct HitCount_t {
     HitCount_t() : tdc(0), adc(0) {}
     void clear() { tdc = adc = 0; }
-    Int_t   tdc;
-    Int_t   adc;
+    // These counters indicate for how many TDC/ADC channels, respectively,
+    // any data was found in the raw data stream, even if uninteresting
+    // (below pedestal etc.)
+    Int_t   tdc;      // Number of TDCs with hits
+    Int_t   adc;      // Number of ADCs with hits
   };
+
   struct HitData_t {
+    // A "hit" is defined as a paddle with TDC hits on both sides
     HitData_t()
       : pad(-1), time(kBig), dtime(kBig), yt(kBig), ya(kBig), ampl(kBig) {}
     HitData_t( Int_t pad, Data_t time, Data_t dtime, Data_t yt, Data_t ya, Data_t ampl )
       : pad(pad), time(time), dtime(dtime), yt(yt), ya(ya), ampl(ampl) {}
     void clear() { time = dtime = yt = ampl = ya = kBig; }
-    Int_t  pad;
-    Data_t time;
-    Data_t dtime;
-    Data_t yt;
-    Data_t ya;
-    Data_t ampl;
+    Int_t  pad;      // Paddle number
+    Data_t time;     // Average of corrected TDC times (tdc_c) (s)
+    Data_t dtime;    // Uncertainty of average time (s)
+    Data_t yt;       // Transverse track position from TDC time difference (m)
+    Data_t ya;       // Transverse track position from ADC amplitude ratio (m)
+    Data_t ampl;     // Estimated energy deposition dE/dx (a.u.)
   };
 
   virtual void      Clear( Option_t* opt="" );
@@ -87,52 +93,29 @@ protected:
   std::vector<PMTCalib_t> fCalib[NSIDES];
 
   Data_t    fTdc2T;      // linear conversion between TDC and time (s/ch)
-  Data_t    fCn;         // speed of light in material  (meters/second)
+  Data_t    fCn;         // speed of light in material  (m/s)
 
   Int_t     fNTWalkPar;  // number of timewalk correction parameters
   Data_t*   fTWalkPar;   // [fNTWalkPar] time walk correction parameters
   Data_t    fAdcMIP;     // nominal ADC above pedestal for MIP
 
   Data_t*   fTrigOff;     // [fNelem] Induced offset of trigger time from
-			   // diff between trigger and retiming.
-			   // Visible in coincidence data.
+                          // diff between trigger and retiming.
+                          // Visible in coincidence data.
 
-  Data_t    fAttenuation; // in m^-1: attenuation length of material
+  Data_t    fAttenuation; // attenuation length of material (1/m)
   Data_t    fResolution;  // average time resolution per PMT (s)
 
   // Per-event data
-  HitCount_t             fNHits[NSIDES];
-  std::set<Idx_t>        fHitIdx;
-  std::vector<PMTData_t> fRightPMTs;
-  std::vector<PMTData_t> fLeftPMTs;
-  std::vector<HitData_t> fPadData;
-  std::vector<HitData_t> fHits;
-
-//  Int_t       fLTNhit;     // Number of Left paddles with TDC hits
-//  Double_t*   fLT;         // [fNelem] Left paddles TDC times (channels)
-//  Double_t*   fLT_c;       // [fNelem] Left PMT corrected TDC times (s)
-//  Int_t       fRTNhit;     // Number of Right paddles with TDC signals
-//  Double_t*   fRT;         // [fNelem] Right paddles TDC times (channels)
-//  Double_t*   fRT_c;       // [fNelem] Right PMT corrected TDC times (s)
-//  Int_t       fLANhit;     // Number of Left paddles with ADC hits
-//  Double_t*   fLA;         // [fNelem] Left paddles ADC amplitudes
-//  Double_t*   fLA_p;       // [fNelem] Left paddles ADC minus ped values
-//  Double_t*   fLA_c;       // [fNelem] Left paddles corrected ADC ampl-s
-//  Int_t       fRANhit;     // Number of Right paddles with ADC hits
-//  Double_t*   fRA;         // [fNelem] Right paddles ADC amplitudes
-//  Double_t*   fRA_p;       // [fNelem] Right paddles ADC minus ped values
-//  Double_t*   fRA_c;       // [fNelem] Right paddles corrected ADC ampl-s
-//
-//
-//  Int_t       fNhit;       // Number of paddles with complete TDC hits (l&r)
-//  Int_t*      fHitPad;     // [fNhit] list of paddles with complete TDC hits
-//
-//  // could be done on a per-hit basis instead
-//  Double_t*   fTime;       // [fNhit] corrected time for the paddle (s)
-//  Double_t*   fdTime;      // [fNhit] uncertainty in time (s)
-//  Double_t*   fAmpl;       // [fNhit] overall amplitude for the paddle
-//  Double_t*   fYt;         // [fNhit] y-position of hit in paddle from TDC (m)
-//  Double_t*   fYa;         // [fNhit] y-position of hit in paddle from ADC (m)
+  // The PMT data are stored in two vectors because the global variable system
+  // currently cannot handle vectors of vectors of structures.
+  // fPadData duplicates the info in fHits for direct access via paddle number
+  HitCount_t             fNHits[NSIDES];  // Hit counters
+  std::set<Idx_t>        fHitIdx;         // Indices of PMTs with data
+  std::vector<PMTData_t> fRightPMTs;      // Raw PMT data (right side)
+  std::vector<PMTData_t> fLeftPMTs;       // Raw PMT data (left side)
+  std::vector<HitData_t> fPadData;        // Calculated hit data, per paddle
+  std::vector<HitData_t> fHits;           // Calculated hit data, per hit
 
   void           DeleteArrays();
   virtual Int_t  ReadDatabase( const TDatime& date );

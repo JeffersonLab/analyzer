@@ -18,7 +18,6 @@
 #include "TMath.h"
 
 #include <cstring>
-#include <cstdlib>
 #include <iostream>
 #include <cassert>
 #include <iomanip>
@@ -526,14 +525,16 @@ Int_t THaScintillator::FindPaddleHits()
     if( fHitIdx.find(make_pair(kLeft, pad)) != fHitIdx.end()) {
       // There are data from both PMTs of this paddle
       const auto& RPMT = fRightPMTs[pad], LPMT = fLeftPMTs[pad];
+
+      // Calculate mean time and rough transverse (y) position
       if( RPMT.tdc_set && LPMT.tdc_set ) {
-        // Calculate mean time and rough transverse (y) position
         Data_t time = 0.5 * (RPMT.tdc_c + LPMT.tdc_c) - fSize[1] / fCn;
         Data_t dtime = fResolution / sqrt2;
         Data_t yt = 0.5 * fCn * (RPMT.tdc_c - LPMT.tdc_c);
+
         // Record a hit on this paddle
         fHits.emplace_back(pad, time, dtime, yt, kBig, kBig);
-        // Save the hit data in the per-paddle array
+        // Also save the hit data in the per-paddle array
         fPadData[pad] = fHits.back();
       }
     }
@@ -557,13 +558,16 @@ Int_t THaScintillator::CoarseProcess( TClonesArray& tracks )
     const Int_t pad = idx.second;
     if( fHitIdx.find(make_pair(kLeft, pad)) != fHitIdx.end()) {
       const auto& RPMT = fRightPMTs[pad], LPMT = fLeftPMTs[pad];
+
       // rough calculation of position from ADC reading
       if( RPMT.adc_set && RPMT.adc_c > 0 && LPMT.adc_set && LPMT.adc_c > 0 ) {
         auto& thePad = fPadData[pad];
         thePad.ya = TMath::Log(LPMT.adc_c / RPMT.adc_c) / (2. * fAttenuation);
+
         // rough dE/dX-like quantity, not correcting for track angle
         thePad.ampl = TMath::Sqrt(LPMT.adc_c * RPMT.adc_c *
           TMath::Exp(fAttenuation * 2. * fSize[1])) / fSize[2];
+
         // Save these ADC-derived values to the entry in the hit array as well
         // (may not exist if TDCs didn't fire on both sides)
         auto theHit = find_if(ALL(fHits),
@@ -611,7 +615,6 @@ Int_t THaScintillator::FineProcess( TClonesArray& tracks )
       Int_t pad = -1;                      // paddle number of closest hit
       Double_t xc = proj->GetX();          // track intercept x-coordinate
       Double_t dx = kBig;                  // xc - distance paddle center
-//      for( Int_t j = 0; j < fNhit; j++ ) {
       for( const auto& h : fHits ) {
         Double_t dx2 = xc - (padx0 + h.pad*dpadx);
 	if (TMath::Abs(dx2) < TMath::Abs(dx) ) {
