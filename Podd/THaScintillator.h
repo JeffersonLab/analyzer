@@ -22,16 +22,10 @@ public:
   THaScintillator();
   virtual ~THaScintillator();
 
-  virtual void       Clear( Option_t* opt="" );
-  virtual Int_t      Decode( const THaEvData& );
-  virtual Int_t      CoarseProcess( TClonesArray& tracks );
-  virtual Int_t      FineProcess( TClonesArray& tracks );
 
-  Int_t GetNHits() const { return fHits.size(); }
-
-  using Data_t = Float_t;  // Must be Float_t or Double_t
   enum ESide { kRight = 0, kLeft = 1 };
   using Idx_t  = std::pair<ESide,Int_t>;
+  using Data_t = Float_t;  // Data type for physics quantities. Must be Float_t or Double_t
 
   struct PMTCalib_t {
     PMTCalib_t() : off(0.f), ped(0.f), gain(1.f) {}
@@ -74,6 +68,17 @@ public:
     Data_t ampl;
   };
 
+  virtual void      Clear( Option_t* opt="" );
+  virtual Int_t     Decode( const THaEvData& );
+  virtual Int_t     CoarseProcess( TClonesArray& tracks );
+  virtual Int_t     FineProcess( TClonesArray& tracks );
+
+  Int_t             GetNHits() const { return fHits.size(); }
+  const HitData_t&  GetHit( Int_t i ) { return fHits[i]; }
+  const HitData_t&  GetPad( Int_t i ) { return fPadData[i]; }
+  const PMTData_t&  GetPMT( ESide side, Int_t pad ) {
+    return (side==kRight) ? fRightPMTs[pad] : fLeftPMTs[pad];
+  }
 protected:
 
   static const Int_t NSIDES = 2;
