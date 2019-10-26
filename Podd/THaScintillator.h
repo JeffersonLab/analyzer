@@ -99,10 +99,6 @@ protected:
   Data_t*   fTWalkPar;   // [fNTWalkPar] time walk correction parameters
   Data_t    fAdcMIP;     // nominal ADC above pedestal for MIP
 
-  Data_t*   fTrigOff;     // [fNelem] Induced offset of trigger time from
-                          // diff between trigger and retiming.
-                          // Visible in coincidence data.
-
   Data_t    fAttenuation; // attenuation length of material (1/m)
   Data_t    fResolution;  // average time resolution per PMT (s)
 

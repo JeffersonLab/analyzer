@@ -34,7 +34,7 @@ THaScintillator::THaScintillator( const char* name, const char* description,
 				  THaApparatus* apparatus )
   : THaNonTrackingDetector(name,description,apparatus),
     fTdc2T(0), fCn(0), fNTWalkPar(0), fTWalkPar(nullptr), fAdcMIP(0),
-    fTrigOff(nullptr), fAttenuation(0), fResolution(0)
+    fAttenuation(0), fResolution(0)
 {
   // Constructor
 }
@@ -43,7 +43,7 @@ THaScintillator::THaScintillator( const char* name, const char* description,
 THaScintillator::THaScintillator()
   : THaNonTrackingDetector(),
     fTdc2T(0), fCn(0), fNTWalkPar(0), fTWalkPar(nullptr), fAdcMIP(0),
-    fTrigOff(nullptr), fAttenuation(0), fResolution(0)
+    fAttenuation(0), fResolution(0)
 {
   // Default constructor (for ROOT RTTI)
 }
@@ -148,8 +148,6 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
     fCalib[kRight].resize(nval);
     fCalib[kLeft].resize(nval);
 
-    fTrigOff = new Data_t[ nval ];
-
     // Per-event data
     fRightPMTs.resize(nval);
     fLeftPMTs.resize(nval);
@@ -173,8 +171,6 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   fAdcMIP = 1.e10;      // large number for offset, so reference is effectively disabled
   // timewalk coefficients for tw = coeff*(1./sqrt(ADC-Ped)-1./sqrt(ADCMip))
   memset( fTWalkPar, 0, nval_twalk*sizeof(fTWalkPar[0]) );
-  // trigger-timing offsets (s)
-  memset( fTrigOff, 0, nval*sizeof(fTrigOff[0]) );
 
   // Default TDC offsets (0), ADC pedestals (0) and ADC gains (1)
   for_each( ALL(fCalib[kRight]), [](PMTCalib_t& c){ c.clear(); });
@@ -191,7 +187,6 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
     { "Cn",               &fCn,          kDataType                    },
     { "MIP",              &fAdcMIP,      kDataType,  0,          true },
     { "timewalk_params",  fTWalkPar,     kDataType,  nval_twalk, true },
-    { "retiming_offsets", fTrigOff,      kDataType,  nval,       true },
     { "avgres",           &fResolution,  kDataType,  0,          true },
     { "atten",            &fAttenuation, kDataType,  0,          true },
     { nullptr }
@@ -233,7 +228,6 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
       { "ADC MIP",              &fAdcMIP,      kDataType       },
       { "Num timewalk params",  &fNTWalkPar,   kInt            },
       { "Timewalk params",      fTWalkPar,     kDataType,  2*N },
-      { "Trigger time offsets", fTrigOff,      kDataType,  N   },
       { "Time resolution",      &fResolution,  kDataType       },
       { "Attenuation",          &fAttenuation, kDataType       },
       { nullptr }
@@ -282,7 +276,6 @@ Int_t THaScintillator::DefineVariables( EMode mode )
     { "hit.time",  "Time of hit at plane (s)",       "fHits.THaScintillator::HitData_t.time" },
     { "hit.dtime", "Est. uncertainty of time (s)",   "fHits.THaScintillator::HitData_t.dtime" },
     { "hit.dedx"  ,"dEdX-like deposited in paddle",  "fHits.THaScintillator::HitData_t.ampl" },
-    { "troff",  "Trigger offset for paddles",        "fTrigOff"},
     { "trn",    "Number of tracks for hits",         "GetNTracks()" },
     { "trx",    "x-position of track in det plane",  "fTrackProj.THaTrackProj.fX" },
     { "try",    "y-position of track in det plane",  "fTrackProj.THaTrackProj.fY" },
@@ -311,8 +304,7 @@ void THaScintillator::DeleteArrays()
   // Delete member arrays. Used by destructor.
 
   delete [] fTWalkPar; fTWalkPar = nullptr;
-  delete [] fTrigOff; fTrigOff = nullptr;
-}
+  }
 
 //_____________________________________________________________________________
 void THaScintillator::Clear( Option_t* opt )
