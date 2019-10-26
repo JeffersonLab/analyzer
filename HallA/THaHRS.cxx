@@ -264,7 +264,7 @@ Int_t THaHRS::TrackTimes( TClonesArray* Tracks )
       Int_t pad = trh->GetChannel();
       if (pad<0 || pad>=sc->GetNelem()) continue;
       Double_t pathl = (trh->GetPathLen()-pathlref);
-      auto padinfo = sc->GetPad(pad);
+      const auto& padinfo = sc->GetPad(pad);
       Double_t time = padinfo.time;
       Double_t wgt = padinfo.dtime;
 
