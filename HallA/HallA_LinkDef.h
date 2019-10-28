@@ -31,5 +31,6 @@
 #pragma link C++ class THaDecData+;
 #pragma link C++ class TrigBitLoc+;
 #pragma link C++ class HallA::TwoarmVDCTimeCorrection+;
+#pragma link C++ class HallA::FadcScintillator+;
 
 #endif
