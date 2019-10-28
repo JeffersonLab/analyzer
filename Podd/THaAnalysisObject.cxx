@@ -43,6 +43,7 @@
 #include <map>
 #include <limits>
 #include <iomanip>
+#include <type_traits>
 
 using namespace std;
 typedef string::size_type ssiz_t;
@@ -1878,8 +1879,11 @@ void THaAnalysisObject::WriteValue( T val, int p, int w )
   // Helper function for printing debug information
   ios_base::fmtflags fmt = cout.flags();
   streamsize prec = cout.precision();
-  if( val < kBig )
+  if( std::is_floating_point<T>::value && val < kBig )
     cout << fixed << setprecision(p) << setw(w) << val;
+  else if( std::is_integral<T>::value && val != THaVar::kInvalidInt &&
+           TMath::Abs(val) < 10 * w )
+    cout << setw(w) << val;
   else
     cout << " --- ";
   cout.flags(fmt);
@@ -1889,6 +1893,7 @@ void THaAnalysisObject::WriteValue( T val, int p, int w )
 // Explicit instantiations
 template void THaAnalysisObject::WriteValue<Double_t>( Double_t val, int p=0, int w=5 );
 template void THaAnalysisObject::WriteValue<Float_t>( Float_t val, int p=0, int w=5 );
+template void THaAnalysisObject::WriteValue<Int_t>( Int_t val, int p=0, int w=5 );
 
 #endif
 
