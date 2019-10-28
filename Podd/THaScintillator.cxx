@@ -589,31 +589,31 @@ Int_t THaScintillator::FineProcess( TClonesArray& tracks )
   // paddles oriented along the transverse (non-dispersive, y) direction.
 
   // Redo projection of tracks since FineTrack may have changed tracks
-  Int_t n_cross = CalcTrackProj( tracks );
+  Int_t n_cross = CalcTrackProj(tracks);
 
   // Find the closest hits to the track crossing points
   if( n_cross > 0 ) {
-    Double_t dpadx = 2.0*fSize[0]/fNelem;   // Width of a paddle
-    Double_t padx0 = -fSize[0]+0.5*dpadx;   // center of paddle '0'
-    for( Int_t i=0; i<fTrackProj->GetLast()+1; i++ ) {
-      auto proj = static_cast<THaTrackProj*>( fTrackProj->At(i) );
-      assert( proj );
-      if( !proj->IsOK() )
-	continue;
+    Double_t dpadx = 2.0 * fSize[0] / fNelem;   // Width of a paddle
+    Double_t padx0 = -fSize[0] + 0.5 * dpadx;   // center of paddle '0'
+    for( Int_t i = 0; i < fTrackProj->GetLast() + 1; i++ ) {
+      auto proj = static_cast<THaTrackProj*>( fTrackProj->At(i));
+      assert(proj);
+      if( !proj->IsOK())
+        continue;
       Int_t pad = -1;                      // paddle number of closest hit
       Double_t xc = proj->GetX();          // track intercept x-coordinate
       Double_t dx = kBig;                  // xc - distance paddle center
       for( const auto& h : fHits ) {
-        Double_t dx2 = xc - (padx0 + h.pad*dpadx);
-	if (TMath::Abs(dx2) < TMath::Abs(dx) ) {
-	  pad = h.pad;
-	  dx = dx2;
-	}
+        Double_t dx2 = xc - (padx0 + h.pad * dpadx);
+        if( TMath::Abs(dx2) < TMath::Abs(dx)) {
+          pad = h.pad;
+          dx = dx2;
+        }
       }
-      assert( pad >= 0 || fHits.empty() ); // Must find a pad unless no hits
+      assert(pad >= 0 || fHits.empty());   // Must find a pad unless no hits
       if( pad >= 0 ) {
-	proj->SetdX(dx);
-	proj->SetChannel(pad);
+        proj->SetdX(dx);
+        proj->SetChannel(pad);
       }
     }
   }
