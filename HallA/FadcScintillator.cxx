@@ -174,7 +174,7 @@ Int_t FadcScintillator::Decode( const THaEvData& evdata )
       }
 #endif
       // Copy the data to the local variables.
-//      DataDest* dest = fDataDest + k / fNelem;
+      DataDest* dest = fDataDest + k / fNelem;
       //decide whether use event by event pedestal
       int jj = k / fNelem;
       k = k % fNelem;
@@ -216,25 +216,25 @@ Int_t FadcScintillator::Decode( const THaEvData& evdata )
 
         if((jj == 1 && flpedq[k] == 0) || (jj == 0 && frpedq[k] == 0)) {
           if( fFADCConfig.tflag == 1 ) {
-//            dest->ped[k] =
-//              (fFADCConfig.nsa + fFADCConfig.nsb) * (static_cast<Double_t>(evdata.GetData(kPulsePedestal, d->crate, d->slot, chan, 0))) /
-//              fFADCConfig.nped;
+            dest->ped[k] =
+              (fFADCConfig.nsa + fFADCConfig.nsb) * (static_cast<Double_t>(evdata.GetData(kPulsePedestal, d->crate, d->slot, chan, 0))) /
+              fFADCConfig.nped;
           } else {
-//            dest->ped[k] =
-//              fFADCConfig.win * (static_cast<Double_t>(evdata.GetData(kPulsePedestal, d->crate, d->slot, chan, 0))) / fFADCConfig.nped;
+            dest->ped[k] =
+              fFADCConfig.win * (static_cast<Double_t>(evdata.GetData(kPulsePedestal, d->crate, d->slot, chan, 0))) / fFADCConfig.nped;
           }
         }
       }
 
       if( adc ) {
-//        dest->adc[k] = static_cast<Double_t>( data );
-//        dest->adc_p[k] = data - dest->ped[k];
-//        dest->adc_c[k] = dest->adc_p[k] * dest->gain[k];
-//        (*dest->nahit)++;
+        dest->adc[k] = static_cast<Double_t>( data );
+        dest->adc_p[k] = data - dest->ped[k];
+        dest->adc_c[k] = dest->adc_p[k] * dest->gain[k];
+        (*dest->nahit)++;
       } else {
-//        dest->tdc[k] = static_cast<Double_t>( data );
-//        dest->tdc_c[k] = (data - dest->offset[k]) * fTdc2T;
-//        (*dest->nthit)++;
+        dest->tdc[k] = static_cast<Double_t>( data );
+        dest->tdc_c[k] = (data - dest->offset[k]) * fTdc2T;
+        (*dest->nthit)++;
       }
     }
   }

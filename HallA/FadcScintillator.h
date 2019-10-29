@@ -50,8 +50,8 @@ public:
     Int_t  frunderflow;   // FADC underflow bit Right PMT
     Int_t  frpedq;        // FADC pedestal quality bit Right PMT
 
-    Int_t fLNhits;        // Number of hits for each Left PMT
-    Int_t fRNhits;        // Number of hits for each Right PMT
+    Int_t  fLNhits;       // Number of hits for each Left PMT
+    Int_t  fRNhits;       // Number of hits for each Right PMT
   };
 
 protected:
@@ -60,11 +60,11 @@ protected:
   struct FADCConfig_t {
     FADCConfig_t() : nped(1), nsa(1), nsb(1), win(1), tflag(true) {}
     void clear() { nped = nsa = nsb = win = 1; tflag = true; }
-    Int_t nped;        //number of samples included in FADC pedestal sum
-    Int_t nsa;         //number of integrated samples after threshold crossing
-    Int_t nsb;         //number of integrated samples before threshold crossing
-    Int_t win;         //total number of samples in FADC window
-    Bool_t tflag;      //If true, threshold on
+    Int_t  nped;          // Number of samples included in FADC pedestal sum
+    Int_t  nsa;           // Number of integrated samples after threshold crossing
+    Int_t  nsb;           // Number of integrated samples before threshold crossing
+    Int_t  win;           // Total number of samples in FADC window
+    Bool_t tflag;         // If true, threshold on
   };
   FADCConfig_t  fFADCConfig;
 
