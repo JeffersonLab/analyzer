@@ -57,8 +57,8 @@ protected:
 
   Decoder::Fadc250Module*  fFADC; // FADC module currently being decoded
 
-  virtual void  SetupModule( const THaEvData& evdata, THaDetMap::Module* pModule );
-  virtual Int_t LoadData( const THaEvData& evdata, THaDetMap::Module* pModule,
+  virtual void     SetupModule( const THaEvData& evdata, DetMapItem* pModule );
+  virtual OptInt_t LoadData( const THaEvData& evdata, DetMapItem* pModule,
     Bool_t adc, Int_t chan, Int_t hit, Int_t pad, ESide side );
 
   virtual Int_t ReadDatabase( const TDatime& date );

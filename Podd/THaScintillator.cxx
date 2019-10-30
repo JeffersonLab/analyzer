@@ -24,6 +24,7 @@
 #include <sstream>
 #include <algorithm>
 #include <type_traits>
+#include <tuple>
 
 #define ALL(c) (c).begin(), (c).end()
 
@@ -260,6 +261,8 @@ Int_t THaScintillator::DefineVariables( EMode mode )
     { "nrthit", "Number of Right paddles TDC times", "fNHits[0].tdc" },
     { "nlahit", "Number of Left paddles ADCs amps",  "fNHits[1].tdc" },
     { "nrahit", "Number of Right paddles ADCs amps", "fNHits[0].adc" },
+    { "lnhits", "Number of hits for left PMT",       "fLeftPMTs.THaScintillator::PMTData_t.ntdc" },
+    { "rnhits", "Number of hits for right PMT",      "fRightPMTs.THaScintillator::PMTData_t.ntdc" },
     { "lt",     "TDC values left side",              "fLeftPMTs.THaScintillator::PMTData_t.tdc" },
     { "lt_c",   "Calibrated times left side (s)",    "fLeftPMTs.THaScintillator::PMTData_t.tdc_c" },
     { "rt",     "TDC values right side",             "fRightPMTs.THaScintillator::PMTData_t.tdc" },
@@ -337,7 +340,7 @@ Int_t THaScintillator::Decode( const THaEvData& evdata )
   for( Int_t i = 0; i < fDetMap->GetSize(); i++ ) {
     THaDetMap::Module* d = fDetMap->GetModule( i );
     bool adc = ( d->model ? d->IsADC() : (i < fDetMap->GetSize()/2) );
-    bool not_common_stop_tdc = (adc || d->IsCommonStart());
+    bool adc_or_common_start = (adc || d->IsCommonStart());
 
     SetupModule(evdata, d);
 
@@ -349,6 +352,7 @@ Int_t THaScintillator::Decode( const THaEvData& evdata )
 
       Int_t nhit = evdata.GetNumHits(d->crate, d->slot, chan);
       if( nhit > 1 || nhit == 0 ) {
+        // Multiple hits in a channel (probably noise)
 	ostringstream msg;
 	msg << nhit << " hits on " << (adc ? "ADC" : "TDC")
 	    << " channel " << d->crate << "/" << d->slot << "/" << chan;
@@ -381,8 +385,25 @@ Int_t THaScintillator::Decode( const THaEvData& evdata )
       // Get the data. If multiple hits on a TDC channel, take either first or
       // last hit, depending on TDC mode
       assert( nhit>0 );
-      Int_t ihit = ( not_common_stop_tdc ) ? 0 : nhit-1;
-      Int_t data = LoadData(evdata, d, adc, chan, ihit, pad, side);
+      Int_t ihit = adc_or_common_start ? 0 : nhit - 1;
+      Int_t data;
+      Bool_t good;
+      std::tie(data,good) = LoadData(evdata, d, adc, chan, ihit, pad, side);
+      if( !good ) {
+        // Data could not be retrieved (probably decoder bug)
+        ostringstream msg;
+        msg << "Failed to load data for " << (adc ? "ADC" : "TDC")
+            << " channel " << d->crate << "/" << d->slot << "/" << chan;
+        ++fMessages[msg.str()];
+        has_warning = true;
+#ifdef WITH_DEBUG
+        if( fDebug>0 ) {
+          Warning( Here(here), "Event %d: %s", evdata.GetEvNum(),
+                   msg.str().c_str() );
+        }
+#endif
+        continue;
+      }
 
       // Copy the raw and calibrated ADC/TDC data to the member variables
       auto& PMT = (side==kRight) ? fRightPMTs[pad] : fLeftPMTs[pad];
@@ -397,7 +418,7 @@ Int_t THaScintillator::Decode( const THaEvData& evdata )
       } else {
         PMT.tdc = data;
         PMT.tdc_c = (data - calib.off) * fTdc2T;
-        if( fTdc2T > 0.0 && !not_common_stop_tdc ) {
+        if( fTdc2T > 0.0 && !adc_or_common_start ) {
           // For common stop TDCs, time is negatively correlated to raw data
           // time = (offset-data)*res, so reverse the sign.
           // However, historically, people have been using negative TDC
@@ -443,8 +464,7 @@ Int_t THaScintillator::Decode( const THaEvData& evdata )
 }
 
 //_____________________________________________________________________________
-void THaScintillator::SetupModule( const THaEvData& evdata,
-                                   THaDetMap::Module* d )
+void THaScintillator::SetupModule( const THaEvData& evdata, DetMapItem* d )
 {
   // Callback from Decode(). Called once for each module defined in the
   // detector map.
@@ -453,15 +473,16 @@ void THaScintillator::SetupModule( const THaEvData& evdata,
 }
 
 //_____________________________________________________________________________
-Int_t THaScintillator::LoadData( const THaEvData& evdata,
-                                 THaDetMap::Module* pModule, Bool_t /*adc*/,
-                                 Int_t chan, Int_t hit,
-                                 Int_t /*pad*/, ESide /*side*/ )
+THaScintillator::OptInt_t
+THaScintillator::LoadData( const THaEvData& evdata, DetMapItem* pModule,
+                           Bool_t /*adc*/, Int_t chan, Int_t hit,
+                           Int_t /*pad*/, ESide /*side*/ )
 {
   // Callback from Decode() for loading the data for 'hit' in 'chan' of
   // 'pModule', destined for 'pad' on 'side'.
 
-  return evdata.GetData( pModule->crate, pModule->slot, chan, hit );
+  return
+    make_pair(evdata.GetData(pModule->crate, pModule->slot, chan, hit), true);
 }
 
 //_____________________________________________________________________________

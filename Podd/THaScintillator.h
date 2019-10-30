@@ -117,15 +117,17 @@ protected:
 
   Decoder::Module*       fModule;  // Hardware module currently being decoded
 
-  virtual void  SetupModule( const THaEvData& evdata, THaDetMap::Module* pModule );
-  virtual Int_t LoadData( const THaEvData& evdata, THaDetMap::Module* pModule,
+  using OptInt_t = std::pair<Int_t,bool>;
+  using DetMapItem = THaDetMap::Module;
+  virtual void     SetupModule( const THaEvData& evdata, DetMapItem* pModule );
+  virtual OptInt_t LoadData( const THaEvData& evdata, DetMapItem* pModule,
     Bool_t adc, Int_t chan, Int_t hit, Int_t pad, ESide side );
-  virtual Int_t  ApplyCorrections();
-  virtual Data_t TimeWalkCorrection( Idx_t idx, Data_t adc );
-  virtual Int_t  FindPaddleHits();
+  virtual Int_t    ApplyCorrections();
+  virtual Data_t   TimeWalkCorrection( Idx_t idx, Data_t adc );
+  virtual Int_t    FindPaddleHits();
 
-  virtual Int_t  ReadDatabase( const TDatime& date );
-  virtual Int_t  DefineVariables( EMode mode = kDefine );
+  virtual Int_t    ReadDatabase( const TDatime& date );
+  virtual Int_t    DefineVariables( EMode mode = kDefine );
 
   ClassDef(THaScintillator,1)   // Generic scintillator class
 };
