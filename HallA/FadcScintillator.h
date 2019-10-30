@@ -9,10 +9,6 @@
 
 #include "THaScintillator.h"
 
-namespace Decoder {
- class Fadc250Module;
-}
-
 namespace HallA {
 
 class FadcScintillator : public THaScintillator {
@@ -24,34 +20,17 @@ public:
   virtual ~FadcScintillator();
 
   virtual void Clear( Option_t* = "" );
-  virtual Int_t Decode( const THaEvData& );
+//  virtual Int_t Decode( const THaEvData& );
 
   struct FADCData_t {
-    FADCData_t() :
-      fLPeak(0), fLT_FADC(0), fLT_FADC_c(0), floverflow(0), flunderflow(0), flpedq(0),
-      fRPeak(0), fRT_FADC(0), fRT_FADC_c(0), froverflow(0), frunderflow(0), frpedq(0),
-      fLNhits(0), fRNhits(0) {}
-    void clear() {
-      fLPeak = fLT_FADC = fLT_FADC_c = fRPeak = fRT_FADC = fRT_FADC_c = 0.0;
-      floverflow = flunderflow = flpedq = froverflow = frunderflow = frpedq =
-      fLNhits = fRNhits = 0;
-    }
-    Data_t fLPeak;        // Left PMT FADC ADC peak value
-    Data_t fLT_FADC;      // Left PMT FADC TDC times (channels)
-    Data_t fLT_FADC_c;    // Left PMT corrected FADC TDC times (s)
-    Int_t  floverflow;    // FADC overflow bit
-    Int_t  flunderflow;   // FADC underflow bit
-    Int_t  flpedq;        // FADC pedestal quality bit
-
-    Data_t fRPeak;        // Right PMT FADC ADC peak value
-    Data_t fRT_FADC;      // Right PMT FADC TDC times (channels)
-    Data_t fRT_FADC_c;    // Right PMT corrected FADC TDC times (s)
-    Int_t  froverflow;    // FADC overflow bit Right PMT
-    Int_t  frunderflow;   // FADC underflow bit Right PMT
-    Int_t  frpedq;        // FADC pedestal quality bit Right PMT
-
-    Int_t  fLNhits;       // Number of hits for each Left PMT
-    Int_t  fRNhits;       // Number of hits for each Right PMT
+    FADCData_t() : fPeak(0), fT(0), fT_c(0), fOverflow(0), fUnderflow(0), fPedq(0) {}
+    void clear() { fPeak = fT = fT_c = 0.0; fOverflow = fUnderflow = fPedq = 0; }
+    Data_t fPeak;      // ADC peak value
+    Data_t fT;         // TDC time (channels)
+    Data_t fT_c;       // Offset-corrected TDC time (s)
+    Int_t  fOverflow;  // FADC overflow bit
+    Int_t  fUnderflow; // FADC underflow bit
+    Int_t  fPedq;      // FADC pedestal quality bit
   };
 
 protected:
@@ -69,9 +48,11 @@ protected:
   FADCConfig_t  fFADCConfig;
 
   // Per-event data
-  std::vector<FADCData_t>  fFADCData;
+  std::vector<FADCData_t>  fFADCDataR;
+  std::vector<FADCData_t>  fFADCDataL;
 
-  Decoder::Fadc250Module* fFADC;     //pointer to FADC250Module class
+  virtual Int_t LoadData( const THaEvData& evdata, THaDetMap::Module* pModule,
+    Bool_t adc, Int_t chan, Int_t hit, Int_t pad, ESide side );
 
   virtual Int_t ReadDatabase( const TDatime& date );
   virtual Int_t DefineVariables( EMode mode = kDefine );
