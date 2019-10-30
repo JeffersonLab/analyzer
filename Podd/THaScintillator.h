@@ -37,16 +37,16 @@ public:
   struct PMTData_t {
     PMTData_t()
       : tdc(kMinInt), tdc_c(kBig), adc(kMinInt), adc_p(kBig), adc_c(kBig),
-        tdc_set(false), adc_set(false) {}
+        ntdc(0), nadc(0) {}
     void clear() { tdc = adc = kMinInt; tdc_c = adc_p = adc_c = kBig;
-      tdc_set = adc_set = false; }
+      ntdc = nadc = 0; }
     Int_t  tdc;       // Raw TDC time (channels)
     Data_t tdc_c;     // Converted TDC time, corrected for offset (s)
     Int_t  adc;       // Raw ADC amplitude (channels)
     Data_t adc_p;     // Pedestal-subtracted ADC amplitude
     Data_t adc_c;     // Gain-corrected ADC amplitude
-    Bool_t tdc_set;   // True if TDC data set
-    Bool_t adc_set;   // True if ADC data set
+    Int_t  ntdc;      // Number of TDC hits
+    Int_t  nadc;      // Number of ADC hits
 
   };
   struct HitCount_t {
@@ -55,8 +55,8 @@ public:
     // These counters indicate for how many TDC/ADC channels, respectively,
     // any data was found in the raw data stream, even if uninteresting
     // (below pedestal etc.)
-    Int_t   tdc;      // Number of TDCs with hits
-    Int_t   adc;      // Number of ADCs with hits
+    Int_t   tdc;      // Count of TDCs with one or more hits
+    Int_t   adc;      // Count of ADCs with one or more hits
   };
 
   struct HitData_t {
@@ -100,13 +100,13 @@ protected:
   std::vector<Data_t> fTWalkPar[NSIDES]; // timewalk correction parameters (s)
 
   // Per-event data
+  HitCount_t             fNHits[NSIDES];  // Number of active ADCs/TDCs on each side
+  std::set<Idx_t>        fHitIdx;         // Indices of PMTs with data
   // The PMT data are stored in two vectors because the global variable system
   // currently cannot handle vectors of vectors of structures.
-  // fPadData duplicates the info in fHits for direct access via paddle number
-  HitCount_t             fNHits[NSIDES];  // Hit counters
-  std::set<Idx_t>        fHitIdx;         // Indices of PMTs with data
   std::vector<PMTData_t> fRightPMTs;      // Raw PMT data (right side)
   std::vector<PMTData_t> fLeftPMTs;       // Raw PMT data (left side)
+  // fPadData duplicates the info in fHits for direct access via paddle number
   std::vector<HitData_t> fPadData;        // Calculated hit data, per paddle
   std::vector<HitData_t> fHits;           // Calculated hit data, per hit
 

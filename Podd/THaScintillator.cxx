@@ -256,7 +256,7 @@ Int_t THaScintillator::DefineVariables( EMode mode )
   RVarDef vars[] = {
     { "nlthit", "Number of Left paddles TDC times",  "fNHits[1].tdc" },
     { "nrthit", "Number of Right paddles TDC times", "fNHits[0].tdc" },
-    { "nlahit", "Number of Left paddles ADCs amps",  "fNHits[0].tdc" },
+    { "nlahit", "Number of Left paddles ADCs amps",  "fNHits[1].tdc" },
     { "nrahit", "Number of Right paddles ADCs amps", "fNHits[0].adc" },
     { "lt",     "TDC values left side",              "fLeftPMTs.THaScintillator::PMTData_t.tdc" },
     { "lt_c",   "Calibrated times left side (s)",    "fLeftPMTs.THaScintillator::PMTData_t.tdc_c" },
@@ -370,15 +370,9 @@ Int_t THaScintillator::Decode( const THaEvData& evdata )
       Int_t ihit = ( not_common_stop_tdc ) ? 0 : nhit-1;
       Int_t data = evdata.GetData( d->crate, d->slot, chan, ihit );
 
-      // Get the detector channel number, starting at 0
+      // Get the logical detector channel number, starting at 0
       Int_t k = d->first + ((d->reverse) ? d->hi - chan : chan - d->lo) - 1;
 
-      // The scintillator detector is assumed to have fNelem paddles, each
-      // with two PMTs, one on the right side, one on the left.
-      // As for the readout channels, the convention is to configure twice as
-      // many logical channels as there are paddles. The first half of the
-      // logical channels corresponds to the right-side PMTs, the second,
-      // to the left-side ones.
       if( k<0 || k > NSIDES * fNelem ) {
 	// Indicates bad database
 	Error( Here(here), "Illegal detector channel: %d. "
@@ -390,14 +384,14 @@ Int_t THaScintillator::Decode( const THaEvData& evdata )
       // Copy the raw and calibrated ADC/TDC data to the member variables
       ESide side = k<fNelem ? kRight : kLeft;
       auto& PMT = (side==kRight) ? fRightPMTs[pad] : fLeftPMTs[pad];
-      auto& nhits = fNHits[side];
+      auto& npads = fNHits[side];
       const auto& calib = fCalib[side][pad];
       if( adc ) {
         PMT.adc   = data;
         PMT.adc_p = PMT.adc - calib.ped;
         PMT.adc_c = PMT.adc_p * calib.gain;
-        PMT.adc_set = true;
-        nhits.adc++;
+        PMT.nadc = nhit;
+        npads.adc++;
       } else {
         PMT.tdc = data;
         PMT.tdc_c = (data - calib.off) * fTdc2T;
@@ -409,8 +403,8 @@ Int_t THaScintillator::Decode( const THaEvData& evdata )
           // the sign flip has already been applied.
           PMT.tdc_c *= -1.0;
         }
-        PMT.tdc_set = true;
-        nhits.tdc++;
+        PMT.ntdc = nhit;
+        npads.tdc++;
       }
       fHitIdx.emplace(side, pad);
     }
@@ -458,7 +452,7 @@ Int_t THaScintillator::ApplyCorrections()
     ESide side = idx.first;
     Int_t pad = idx.second;
     auto& PMT = (side == kRight) ? fRightPMTs[pad] : fLeftPMTs[pad];
-    if( PMT.adc_set && PMT.tdc_set )
+    if( PMT.nadc > 0 && PMT.ntdc > 0 )
       PMT.tdc_c -= TimeWalkCorrection(idx, PMT.adc_p);
   }
 
@@ -515,7 +509,7 @@ Int_t THaScintillator::FindPaddleHits()
       const auto& RPMT = fRightPMTs[pad], LPMT = fLeftPMTs[pad];
 
       // Calculate mean time and rough transverse (y) position
-      if( RPMT.tdc_set && LPMT.tdc_set ) {
+      if( RPMT.ntdc > 0 && LPMT.ntdc > 0 ) {
         Data_t time = 0.5 * (RPMT.tdc_c + LPMT.tdc_c) - fSize[1] / fCn;
         Data_t dtime = fResolution / sqrt2;
         Data_t yt = 0.5 * fCn * (RPMT.tdc_c - LPMT.tdc_c);
@@ -548,7 +542,7 @@ Int_t THaScintillator::CoarseProcess( TClonesArray& tracks )
       const auto& RPMT = fRightPMTs[pad], LPMT = fLeftPMTs[pad];
 
       // rough calculation of position from ADC reading
-      if( RPMT.adc_set && RPMT.adc_c > 0 && LPMT.adc_set && LPMT.adc_c > 0 ) {
+      if( RPMT.nadc > 0 && RPMT.adc_c > 0 && LPMT.nadc > 0 && LPMT.adc_c > 0 ) {
         auto& thePad = fPadData[pad];
         thePad.ya = TMath::Log(LPMT.adc_c / RPMT.adc_c) / (2. * fAttenuation);
 
