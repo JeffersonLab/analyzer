@@ -363,26 +363,24 @@ Int_t THaScintillator::Decode( const THaEvData& evdata )
 	}
 #endif
       }
-
-      // Get the data. If multiple hits on a TDC channel, take
-      // either first or last hit, depending on TDC mode
-      assert( nhit>0 );
-      Int_t ihit = ( not_common_stop_tdc ) ? 0 : nhit-1;
-      Int_t data = evdata.GetData( d->crate, d->slot, chan, ihit );
-
       // Get the logical detector channel number, starting at 0
       Int_t k = d->first + ((d->reverse) ? d->hi - chan : chan - d->lo) - 1;
-
       if( k<0 || k > NSIDES * fNelem ) {
-	// Indicates bad database
-	Error( Here(here), "Illegal detector channel: %d. "
-	       "Fix detector map in database", k );
-	continue;
+        // Indicates bad database
+        Error( Here(here), "Illegal detector channel: %d. "
+                           "Fix detector map in database", k );
+        continue;
       }
       Int_t pad = k % fNelem; // Actual paddle number
+      ESide side = k<fNelem ? kRight : kLeft;
+
+      // Get the data. If multiple hits on a TDC channel, take either first or
+      // last hit, depending on TDC mode
+      assert( nhit>0 );
+      Int_t ihit = ( not_common_stop_tdc ) ? 0 : nhit-1;
+      Int_t data = LoadData(evdata, d, adc, chan, ihit, pad, side);
 
       // Copy the raw and calibrated ADC/TDC data to the member variables
-      ESide side = k<fNelem ? kRight : kLeft;
       auto& PMT = (side==kRight) ? fRightPMTs[pad] : fLeftPMTs[pad];
       auto& npads = fNHits[side];
       const auto& calib = fCalib[side][pad];
@@ -438,6 +436,18 @@ Int_t THaScintillator::Decode( const THaEvData& evdata )
 #endif
 
   return fNHits[kRight].tdc + fNHits[kLeft].tdc;
+}
+
+//_____________________________________________________________________________
+Int_t THaScintillator::LoadData( const THaEvData& evdata,
+                                 THaDetMap::Module* pModule, Bool_t /*adc*/,
+                                 Int_t chan, Int_t hit,
+                                 Int_t /*pad*/, ESide /*side*/ )
+{
+  // Callback from Decoder for loading the data for 'hit' in 'chan' of 'pModule',
+  // destined for 'pad' on 'side'.
+
+  return evdata.GetData( pModule->crate, pModule->slot, chan, hit );
 }
 
 //_____________________________________________________________________________

@@ -8,6 +8,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "THaNonTrackingDetector.h"
+#include "THaDetMap.h"
 #include <vector>
 #include <set>
 #include <utility>
@@ -110,14 +111,16 @@ protected:
   std::vector<HitData_t> fPadData;        // Calculated hit data, per paddle
   std::vector<HitData_t> fHits;           // Calculated hit data, per hit
 
-  virtual Int_t  ReadDatabase( const TDatime& date );
-  virtual Int_t  DefineVariables( EMode mode = kDefine );
-
+  virtual Int_t LoadData( const THaEvData& evdata, THaDetMap::Module* pModule,
+    Bool_t adc, Int_t chan, Int_t hit, Int_t pad, ESide side );
   virtual Int_t  ApplyCorrections();
   virtual Data_t TimeWalkCorrection( Idx_t idx, Data_t adc );
   virtual Int_t  FindPaddleHits();
 
-  ClassDef(THaScintillator,1)   // Generic scintillator class
+  virtual Int_t  ReadDatabase( const TDatime& date );
+  virtual Int_t  DefineVariables( EMode mode = kDefine );
+
+ClassDef(THaScintillator,1)   // Generic scintillator class
 };
 
 ////////////////////////////////////////////////////////////////////////////////
