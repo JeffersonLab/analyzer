@@ -15,10 +15,7 @@
 #include "VarDef.h"
 #include "VarType.h"
 #include "Fadc250Module.h"
-#include <cstring>
 #include <cstdio>
-#include <cstdlib>
-#include <iostream>
 #include <cassert>
 #include <algorithm>
 
@@ -134,6 +131,18 @@ void FadcScintillator::Clear( Option_t* opt )
 }
 
 //_____________________________________________________________________________
+void FadcScintillator::SetupModule( const THaEvData& evdata,
+                                    THaDetMap::Module* pModule )
+{
+  // Callback from THaScintillator::Decode() called once for each
+  // defined detector map module 'pModule'
+
+  THaScintillator::SetupModule(evdata, pModule);  // sets fModule
+
+  fFADC = dynamic_cast<Decoder::Fadc250Module*>(fModule);
+}
+
+//_____________________________________________________________________________
 Int_t FadcScintillator::LoadData( const THaEvData& evdata,
                                   THaDetMap::Module* d, Bool_t adc,
                                   Int_t chan, Int_t hit, Int_t pad, ESide side )
@@ -144,27 +153,30 @@ Int_t FadcScintillator::LoadData( const THaEvData& evdata,
   Int_t data;
   auto& F = (side==kRight) ? fFADCDataR[pad] : fFADCDataL[pad];
   if( adc ) {
-    data    = evdata.GetData(kPulseIntegral, d->crate, d->slot, chan, hit);
-    F.fPeak = evdata.GetData(kPulsePeak, d->crate, d->slot, chan, hit);
-    F.fT    = evdata.GetData(kPulseTime, d->crate, d->slot, chan, hit);
-    F.fT_c  = F.fT * 0.0625; //FIXME: make this mystery factor configurable
+    if( fFADC ) {
+      data = evdata.GetData(kPulseIntegral, d->crate, d->slot, chan, hit);
+      F.fPeak = evdata.GetData(kPulsePeak, d->crate, d->slot, chan, hit);
+      F.fT = evdata.GetData(kPulseTime, d->crate, d->slot, chan, hit);
+      F.fT_c = F.fT * 0.0625; //FIXME: make this mystery factor configurable
 
-    //FIXME: Add per-module callback to set up modules and put this into a member variable
-    auto fadc = dynamic_cast<Fadc250Module*> (evdata.GetModule(d->crate, d->slot));
-    if( fadc ) {
-      F.fOverflow  = fadc->GetOverflowBit(chan, 0);
-      F.fUnderflow = fadc->GetUnderflowBit(chan, 0);
-      F.fPedq      = fadc->GetPedestalQuality(chan, 0);
-      if( F.fPedq == 0 ) {
-        auto& calib = fCalib[side][pad];
-        Int_t ped = evdata.GetData(kPulsePedestal, d->crate, d->slot, chan, 0);
-        if( fFADCConfig.tflag ) {
-          calib.ped = static_cast<Double_t>(ped) *
-                      (fFADCConfig.nsa + fFADCConfig.nsb) / fFADCConfig.nped;
-        } else {
-          calib.ped = static_cast<Double_t>(ped) * fFADCConfig.win / fFADCConfig.nped;
+      if( fFADC ) {
+        F.fOverflow = fFADC->GetOverflowBit(chan, 0);
+        F.fUnderflow = fFADC->GetUnderflowBit(chan, 0);
+        F.fPedq = fFADC->GetPedestalQuality(chan, 0);
+        if( F.fPedq == 0 ) {
+          auto& calib = fCalib[side][pad];
+          Int_t ped = evdata.GetData(kPulsePedestal, d->crate, d->slot, chan, 0);
+          if( fFADCConfig.tflag ) {
+            calib.ped = static_cast<Double_t>(ped) *
+                        (fFADCConfig.nsa + fFADCConfig.nsb) / fFADCConfig.nped;
+          } else {
+            calib.ped = static_cast<Double_t>(ped) * fFADCConfig.win / fFADCConfig.nped;
+          }
         }
       }
+    } else {
+      //TODO: error! Bad configuration. ADCs must be FADC250s
+      data = 0;
     }
   } else {
     data = evdata.GetData(d->crate, d->slot, chan, hit);

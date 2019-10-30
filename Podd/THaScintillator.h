@@ -13,6 +13,10 @@
 #include <set>
 #include <utility>
 
+namespace Decoder {
+  class Module;
+}
+
 class TClonesArray;
 
 class THaScintillator : public THaNonTrackingDetector {
@@ -111,6 +115,9 @@ protected:
   std::vector<HitData_t> fPadData;        // Calculated hit data, per paddle
   std::vector<HitData_t> fHits;           // Calculated hit data, per hit
 
+  Decoder::Module*       fModule;  // Hardware module currently being decoded
+
+  virtual void  SetupModule( const THaEvData& evdata, THaDetMap::Module* pModule );
   virtual Int_t LoadData( const THaEvData& evdata, THaDetMap::Module* pModule,
     Bool_t adc, Int_t chan, Int_t hit, Int_t pad, ESide side );
   virtual Int_t  ApplyCorrections();
@@ -120,7 +127,7 @@ protected:
   virtual Int_t  ReadDatabase( const TDatime& date );
   virtual Int_t  DefineVariables( EMode mode = kDefine );
 
-ClassDef(THaScintillator,1)   // Generic scintillator class
+  ClassDef(THaScintillator,1)   // Generic scintillator class
 };
 
 ////////////////////////////////////////////////////////////////////////////////

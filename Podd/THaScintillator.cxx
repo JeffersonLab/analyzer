@@ -33,14 +33,16 @@ using namespace std;
 THaScintillator::THaScintillator( const char* name, const char* description,
 				  THaApparatus* apparatus )
   : THaNonTrackingDetector(name,description,apparatus),
-    fTdc2T(0.), fCn(0.), fAdcMIP(0.), fAttenuation(0.), fResolution(0.)
+    fTdc2T(0.), fCn(0.), fAdcMIP(0.), fAttenuation(0.), fResolution(0.),
+    fModule(nullptr)
 {
   // Constructor
 }
 
 //_____________________________________________________________________________
 THaScintillator::THaScintillator() : THaNonTrackingDetector(),
-   fTdc2T(0.), fCn(0.), fAdcMIP(0.), fAttenuation(0), fResolution(0)
+   fTdc2T(0.), fCn(0.), fAdcMIP(0.), fAttenuation(0.), fResolution(0.),
+   fModule(nullptr)
 {
   // Default constructor (for ROOT RTTI)
 }
@@ -337,6 +339,8 @@ Int_t THaScintillator::Decode( const THaEvData& evdata )
     bool adc = ( d->model ? d->IsADC() : (i < fDetMap->GetSize()/2) );
     bool not_common_stop_tdc = (adc || d->IsCommonStart());
 
+    SetupModule(evdata, d);
+
     // Loop over all channels that have a hit.
     for( Int_t j = 0; j < evdata.GetNumChan( d->crate, d->slot ); j++) {
 
@@ -439,13 +443,23 @@ Int_t THaScintillator::Decode( const THaEvData& evdata )
 }
 
 //_____________________________________________________________________________
+void THaScintillator::SetupModule( const THaEvData& evdata,
+                                   THaDetMap::Module* d )
+{
+  // Callback from Decode(). Called once for each module defined in the
+  // detector map.
+
+  fModule = evdata.GetModule(d->crate, d->slot);
+}
+
+//_____________________________________________________________________________
 Int_t THaScintillator::LoadData( const THaEvData& evdata,
                                  THaDetMap::Module* pModule, Bool_t /*adc*/,
                                  Int_t chan, Int_t hit,
                                  Int_t /*pad*/, ESide /*side*/ )
 {
-  // Callback from Decoder for loading the data for 'hit' in 'chan' of 'pModule',
-  // destined for 'pad' on 'side'.
+  // Callback from Decode() for loading the data for 'hit' in 'chan' of
+  // 'pModule', destined for 'pad' on 'side'.
 
   return evdata.GetData( pModule->crate, pModule->slot, chan, hit );
 }
