@@ -154,24 +154,23 @@ Int_t FadcScintillator::LoadData( const THaEvData& evdata,
   auto& F = (side==kRight) ? fFADCDataR[pad] : fFADCDataL[pad];
   if( adc ) {
     if( fFADC ) {
-      data = evdata.GetData(kPulseIntegral, d->crate, d->slot, chan, hit);
-      F.fPeak = evdata.GetData(kPulsePeak, d->crate, d->slot, chan, hit);
-      F.fT = evdata.GetData(kPulseTime, d->crate, d->slot, chan, hit);
-      F.fT_c = F.fT * 0.0625; //FIXME: make this mystery factor configurable
-
-      if( fFADC ) {
-        F.fOverflow = fFADC->GetOverflowBit(chan, 0);
-        F.fUnderflow = fFADC->GetUnderflowBit(chan, 0);
-        F.fPedq = fFADC->GetPedestalQuality(chan, 0);
-        if( F.fPedq == 0 ) {
-          auto& calib = fCalib[side][pad];
-          Int_t ped = evdata.GetData(kPulsePedestal, d->crate, d->slot, chan, 0);
-          if( fFADCConfig.tflag ) {
-            calib.ped = static_cast<Double_t>(ped) *
-                        (fFADCConfig.nsa + fFADCConfig.nsb) / fFADCConfig.nped;
-          } else {
-            calib.ped = static_cast<Double_t>(ped) * fFADCConfig.win / fFADCConfig.nped;
-          }
+      // Many of these items could be read through the GetData() API, but since
+      // we are assuming a Fadc250Module anyway, let's do it consistently
+      data         = fFADC->GetPulseIntegralData(chan, hit);
+      F.fPeak      = fFADC->GetPulsePeakData(chan, hit);
+      F.fT         = fFADC->GetPulseTimeData(chan, hit);
+      F.fT_c       = F.fT * 0.0625; //FIXME: make this mystery factor configurable
+      F.fOverflow  = fFADC->GetOverflowBit(chan, hit);
+      F.fUnderflow = fFADC->GetUnderflowBit(chan, hit);
+      F.fPedq      = fFADC->GetPedestalQuality(chan, hit);
+      if( F.fPedq == 0 ) {
+        auto& calib = fCalib[side][pad];
+        Int_t ped = fFADC->GetPulsePedestalData(chan, hit);
+        if( fFADCConfig.tflag ) {
+          calib.ped = static_cast<Double_t>(ped) *
+                      (fFADCConfig.nsa + fFADCConfig.nsb) / fFADCConfig.nped;
+        } else {
+          calib.ped = static_cast<Double_t>(ped) * fFADCConfig.win / fFADCConfig.nped;
         }
       }
     } else {
