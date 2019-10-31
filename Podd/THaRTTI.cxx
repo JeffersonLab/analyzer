@@ -165,9 +165,6 @@ Int_t THaRTTI::Find( TClass* cl, const TString& var,
     // Explicitly dimensioned arrays must not be pointers
     if( m->IsaPointer() )
       return -1;
-    // Must be an array of a basic type
-    if( !m->GetDataType() )
-      return -1;
     if( avar.IsArray() ) {
       // If a specific element was requested, treat the variable as a scalar.
       // Calculate the linear index of the requested element.
@@ -227,7 +224,7 @@ Int_t THaRTTI::Find( TClass* cl, const TString& var,
   switch( atype ) {
   case kScalar:
     if( element_requested >= 0 )
-      fOffset += element_requested * m->GetDataType()->Size();
+      fOffset += element_requested * m->GetUnitSize();
     break;
   case kFixed:
     fSubscript = subscript;
