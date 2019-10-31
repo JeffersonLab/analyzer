@@ -1,5 +1,5 @@
-#ifndef ROOT_TriFadcScin
-#define ROOT_TriFadcScin
+#ifndef HallA_FadcScintillator_h_
+#define HallA_FadcScintillator_h_
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //

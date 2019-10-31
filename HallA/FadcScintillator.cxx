@@ -87,7 +87,9 @@ Int_t FadcScintillator::DefineVariables( EMode mode )
   // Initialize global variables and lookup table for decoder
 
   if( mode == kDefine && fIsSetup ) return kOK;
-  fIsSetup = (mode == kDefine);
+  Int_t ret = THaScintillator::DefineVariables(mode);
+  if( ret )
+    return ret;
 
   // Register variables in global list
 
@@ -106,7 +108,10 @@ Int_t FadcScintillator::DefineVariables( EMode mode )
     { "rbadped",    "pedestal quality bit of FADC pulse", "fADCDataR.HallA::FadcScintillator::FADCData_t.fPedq" },
     { nullptr }
   };
-  return DefineVarsFromList(vars, mode);
+  ret = DefineVarsFromList(vars, mode);
+  if( ret == kOK )
+    fIsSetup = (mode == kDefine);
+  return ret;
 }
 
 //_____________________________________________________________________________
@@ -164,7 +169,8 @@ FadcScintillator::LoadData( const THaEvData& evdata, DetMapItem* d, Bool_t adc,
                             Int_t chan, Int_t hit, Int_t pad, ESide side )
 {
   // Callback from Decoder for loading the data for 'hit' in 'chan' of
-  // module 'd', destined for 'pad' on 'side'.
+  // module 'd', destined for 'pad' on 'side'. 'adc' indicates that ADC
+  // data should be loaded, otherwise load TDC data for this channel/hit.
 
   Int_t data = 0;
   Bool_t good = false;
@@ -204,8 +210,9 @@ FadcScintillator::LoadData( const THaEvData& evdata, DetMapItem* d, Bool_t adc,
       //TODO: error! Bad configuration. ADCs must be FADC250s
     }
   } else {
-    good = true;
-    data = evdata.GetData(d->crate, d->slot, chan, hit);
+    // Load TDCs like the standard scintillator does. This may change when/if
+    // we install pipelined TDCs of some kind
+    return THaScintillator::LoadData(evdata, d, adc, chan, hit, pad, side);
   }
 
   return make_pair(data,good);
