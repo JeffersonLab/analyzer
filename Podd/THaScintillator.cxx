@@ -142,21 +142,17 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
 
   // Dimension arrays
   UInt_t nval = fNelem;
-  if( !fIsInit ) {
-    // Calibration data
-    fCalib[kRight].resize(nval);
-    fCalib[kLeft].resize(nval);
-    fTWalkPar[kRight].reserve(nval);
-    fTWalkPar[kLeft].reserve(nval);
+  // Calibration data
+  fCalib[kRight].resize(nval);
+  fCalib[kLeft].resize(nval);
+  fTWalkPar[kRight].reserve(nval);
+  fTWalkPar[kLeft].reserve(nval);
 
-    // Per-event data
-    fRightPMTs.resize(nval);
-    fLeftPMTs.resize(nval);
-    fPadData.resize(nval);
-    fHits.reserve(nval);
-
-    fIsInit = true;
-  }
+  // Per-event data
+  fRightPMTs.resize(nval);
+  fLeftPMTs.resize(nval);
+  fPadData.resize(nval);
+  fHits.reserve(nval);
 
  // Read calibration parameters
 
@@ -243,6 +239,7 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   }
 #endif
 
+  fIsInit = true;
   return kOK;
 }
 
@@ -259,32 +256,32 @@ Int_t THaScintillator::DefineVariables( EMode mode )
   RVarDef vars[] = {
     { "nlthit", "Number of Left paddles TDC times",  "fNHits[1].tdc" },
     { "nrthit", "Number of Right paddles TDC times", "fNHits[0].tdc" },
-    { "nlahit", "Number of Left paddles ADCs amps",  "fNHits[1].tdc" },
+    { "nlahit", "Number of Left paddles ADCs amps",  "fNHits[1].adc" },
     { "nrahit", "Number of Right paddles ADCs amps", "fNHits[0].adc" },
-    { "lnhits", "Number of hits for left PMT",       "fLeftPMTs.THaScintillator::PMTData_t.ntdc" },
-    { "rnhits", "Number of hits for right PMT",      "fRightPMTs.THaScintillator::PMTData_t.ntdc" },
-    { "lt",     "TDC values left side",              "fLeftPMTs.THaScintillator::PMTData_t.tdc" },
-    { "lt_c",   "Calibrated times left side (s)",    "fLeftPMTs.THaScintillator::PMTData_t.tdc_c" },
-    { "rt",     "TDC values right side",             "fRightPMTs.THaScintillator::PMTData_t.tdc" },
-    { "rt_c",   "Calibrated times right side (s)",   "fRightPMTs.THaScintillator::PMTData_t.tdc_c" },
-    { "la",     "ADC values left side",              "fLeftPMTs.THaScintillator::PMTData_t.adc" },
-    { "la_p",   "Ped-sub ADC values left side",      "fLeftPMTs.THaScintillator::PMTData_t.adc_p" },
-    { "la_c",   "Corrected ADC values left side",    "fLeftPMTs.THaScintillator::PMTData_t.adc_c" },
-    { "ra",     "ADC values right side",             "fRightPMTs.THaScintillator::PMTData_t.adc" },
-    { "ra_p",   "Ped-sub ADC values right side",     "fRightPMTs.THaScintillator::PMTData_t.adc_p" },
-    { "ra_c",   "Corrected ADC values right side",   "fRightPMTs.THaScintillator::PMTData_t.adc_c" },
+    { "lnhits", "Number of hits for left PMT",       "fLeftPMTs.ntdc" },
+    { "rnhits", "Number of hits for right PMT",      "fRightPMTs.ntdc" },
+    { "lt",     "TDC values left side",              "fLeftPMTs.tdc" },
+    { "lt_c",   "Calibrated times left side (s)",    "fLeftPMTs.tdc_c" },
+    { "rt",     "TDC values right side",             "fRightPMTs.tdc" },
+    { "rt_c",   "Calibrated times right side (s)",   "fRightPMTs.tdc_c" },
+    { "la",     "ADC values left side",              "fLeftPMTs.adc" },
+    { "la_p",   "Ped-sub ADC values left side",      "fLeftPMTs.adc_p" },
+    { "la_c",   "Corrected ADC values left side",    "fLeftPMTs.adc_c" },
+    { "ra",     "ADC values right side",             "fRightPMTs.adc" },
+    { "ra_p",   "Ped-sub ADC values right side",     "fRightPMTs.adc_p" },
+    { "ra_c",   "Corrected ADC values right side",   "fRightPMTs.adc_c" },
     { "nthit",  "Number of paddles with l&r TDCs",   "GetNHits()" },
-    { "t_pads", "Paddles with l&r coincidence TDCs", "fHits.THaScintillator::HitData_t.pad" },
-    { "y_t",    "y-position from timing (m)",        "fPadData.THaScintillator::HitData_t.yt" },
-    { "y_adc",  "y-position from amplitudes (m)",    "fPadData.THaScintillator::HitData_t.ya" },
-    { "time",   "Time of hit at plane (s)",          "fPadData.THaScintillator::HitData_t.time" },
-    { "dtime",  "Est. uncertainty of time (s)",      "fPadData.THaScintillator::HitData_t.dtime" },
-    { "dedx",   "dEdX-like deposited in paddle",     "fPadData.THaScintillator::HitData_t.ampl" },
-    { "hit.y_t","y-position from timing (m)",        "fHits.THaScintillator::HitData_t.yt" },
-    { "hit.y_adc", "y-position from amplitudes (m)", "fHits.THaScintillator::HitData_t.ya" },
-    { "hit.time",  "Time of hit at plane (s)",       "fHits.THaScintillator::HitData_t.time" },
-    { "hit.dtime", "Est. uncertainty of time (s)",   "fHits.THaScintillator::HitData_t.dtime" },
-    { "hit.dedx"  ,"dEdX-like deposited in paddle",  "fHits.THaScintillator::HitData_t.ampl" },
+    { "t_pads", "Paddles with l&r coincidence TDCs", "fHits.pad" },
+    { "y_t",    "y-position from timing (m)",        "fPadData.yt" },
+    { "y_adc",  "y-position from amplitudes (m)",    "fPadData.ya" },
+    { "time",   "Time of hit at plane (s)",          "fPadData.time" },
+    { "dtime",  "Est. uncertainty of time (s)",      "fPadData.dtime" },
+    { "dedx",   "dEdX-like deposited in paddle",     "fPadData.ampl" },
+    { "hit.y_t","y-position from timing (m)",        "fHits.yt" },
+    { "hit.y_adc", "y-position from amplitudes (m)", "fHits.ya" },
+    { "hit.time",  "Time of hit at plane (s)",       "fHits.time" },
+    { "hit.dtime", "Est. uncertainty of time (s)",   "fHits.dtime" },
+    { "hit.dedx"  ,"dEdX-like deposited in paddle",  "fHits.ampl" },
     { "trn",    "Number of tracks for hits",         "GetNTracks()" },
     { "trx",    "x-position of track in det plane",  "fTrackProj.THaTrackProj.fX" },
     { "try",    "y-position of track in det plane",  "fTrackProj.THaTrackProj.fY" },

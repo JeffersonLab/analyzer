@@ -49,19 +49,14 @@ Int_t FadcScintillator::ReadDatabase( const TDatime& date )
   Int_t err = THaScintillator::ReadDatabase(date);
   if( err )
     return err;
+  fIsInit = false;
 
   FILE* file = OpenFile(date);
   if( !file ) return kFileError;
 
   // Dimension arrays
-  UInt_t nval = fNelem;
-  if( !fIsInit ) {
-    // Per-event data
-    fFADCDataR.resize(nval);
-    fFADCDataL.resize(nval);
-
-    fIsInit = true;
-  }
+  fFADCDataR.resize(fNelem);
+  fFADCDataL.resize(fNelem);
 
   // Configuration parameters (mandatory)
   fFADCConfig.clear();
@@ -78,6 +73,7 @@ Int_t FadcScintillator::ReadDatabase( const TDatime& date )
   if( err )
     return err;
 
+  fIsInit = true;
   return kOK;
 }
 
@@ -94,18 +90,18 @@ Int_t FadcScintillator::DefineVariables( EMode mode )
   // Register variables in global list
 
   RVarDef vars[] = {
-    { "lpeak",      "FADC ADC peak values left side",     "fADCDataL.HallA::FadcScintillator::FADCData_t.fPeak" },
-    { "rpeak",      "FADC ADC peak values right side",    "fADCDataR.HallA::FadcScintillator::FADCData_t.fPeak" },
-    { "lt_fadc",    "FADC TDC values left side",          "fADCDataL.HallA::FadcScintillator::FADCData_t.fT" },
-    { "ltc_fadc",   "FADC Corrected times left side",     "fADCDataL.HallA::FadcScintillator::FADCData_t.fT_c" },
-    { "rt_fadc",    "FADC TDC values right side",         "fADCDataR.HallA::FadcScintillator::FADCData_t.fT" },
-    { "rtc_fadc",   "FADC Corrected times right side",    "fADCDataR.HallA::FadcScintillator::FADCData_t.fT_c" },
-    { "loverflow",  "overflow bit of FADC pulse",         "fADCDataL.HallA::FadcScintillator::FADCData_t.fOverflow" },
-    { "lunderflow", "underflow bit of FADC pulse",        "fADCDataL.HallA::FadcScintillator::FADCData_t.fUnderflow" },
-    { "lbadped",    "pedestal quality bit of FADC pulse", "fADCDataL:.HallA::FadcScintillator::FADCData_t.fPedq" },
-    { "roverflow",  "overflow bit of FADC pulse",         "fADCDataR.HallA::FadcScintillator::FADCData_t.fOverflow" },
-    { "runderflow", "underflow bit of FADC pulse",        "fADCDataR.HallA::FadcScintillator::FADCData_t.fUnderflow" },
-    { "rbadped",    "pedestal quality bit of FADC pulse", "fADCDataR.HallA::FadcScintillator::FADCData_t.fPedq" },
+    { "lpeak",      "FADC ADC peak values left side",     "fFADCDataL.fPeak" },
+    { "rpeak",      "FADC ADC peak values right side",    "fFADCDataR.fPeak" },
+    { "lt_fadc",    "FADC TDC values left side",          "fFADCDataL.fT" },
+    { "ltc_fadc",   "FADC Corrected times left side",     "fFADCDataL.fT_c" },
+    { "rt_fadc",    "FADC TDC values right side",         "fFADCDataR.fT" },
+    { "rtc_fadc",   "FADC Corrected times right side",    "fFADCDataR.fT_c" },
+    { "loverflow",  "overflow bit of FADC pulse",         "fFADCDataL.fOverflow" },
+    { "lunderflow", "underflow bit of FADC pulse",        "fFADCDataL.fUnderflow" },
+    { "lbadped",    "pedestal quality bit of FADC pulse", "fFADCDataL.fPedq" },
+    { "roverflow",  "overflow bit of FADC pulse",         "fFADCDataR.fOverflow" },
+    { "runderflow", "underflow bit of FADC pulse",        "fFADCDataR.fUnderflow" },
+    { "rbadped",    "pedestal quality bit of FADC pulse", "fFADCDataR.fPedq" },
     { nullptr }
   };
   ret = DefineVarsFromList(vars, mode);
