@@ -1133,25 +1133,34 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
   vector<THaSpectrometer*> spectros;
   vector<InterStageModule*> stagemods;
   vector<THaPhysicsModule*> physmods;
+  vector<THaAnalysisObject*> allmods;
   ListToVector(fApps, apps);
   ListToVector(fApps, spectros);
   ListToVector(fInterStage, stagemods);
   ListToVector(fPhysics, physmods);
+  ListToVector( fApps, allmods );
+  ListToVector( fInterStage, allmods );
+  ListToVector( fPhysics, allmods );
 
   TString stage;
-  TObject* obj = nullptr;    // for exception error message
+  TObject* obj = nullptr;  // current module, for exception error message
 
   try {
     stage = "Decode";
     if( fDoBench ) fBench->Begin(stage);
+    for( auto mod : allmods ) {
+      obj = mod;
+      mod->Clear();
+    }
     for( auto app : apps ) {
       obj = app;
-      app->Clear();
       app->Decode(*fEvData);
     }
     for( auto mod : stagemods ) {
-      if( mod->GetStage() == kDecode )
+      if( mod->GetStage() == kDecode ) {
+        obj = mod;
         mod->Process(*fEvData);
+      }
     }
     if( fDoBench ) fBench->Stop(stage);
     if( !EvalStage(kDecode) ) return kSkip;
@@ -1173,8 +1182,10 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
       spectro->CoarseTrack();
     }
     for( auto mod : stagemods ) {
-      if( mod->GetStage() == kCoarseTrack )
+      if( mod->GetStage() == kCoarseTrack ) {
+        obj = mod;
         mod->Process(*fEvData);
+      }
     }
     if( fDoBench ) fBench->Stop(stage);
     if( !EvalStage(kCoarseTrack) )  return kSkip;
@@ -1187,8 +1198,10 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
       app->CoarseReconstruct();
     }
     for( auto mod : stagemods ) {
-      if( mod->GetStage() == kCoarseRecon )
+      if( mod->GetStage() == kCoarseRecon ) {
+        obj = mod;
         mod->Process(*fEvData);
+      }
     }
     if( fDoBench ) fBench->Stop(stage);
     if( !EvalStage(kCoarseRecon) )  return kSkip;
@@ -1202,8 +1215,10 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
       spectro->Track();
     }
     for( auto mod : stagemods ) {
-      if( mod->GetStage() == kTracking )
+      if( mod->GetStage() == kTracking ) {
+        obj = mod;
         mod->Process(*fEvData);
+      }
     }
     if( fDoBench ) fBench->Stop(stage);
     if( !EvalStage(kTracking) )  return kSkip;
@@ -1216,8 +1231,10 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
       app->Reconstruct();
     }
     for( auto mod : stagemods ) {
-      if( mod->GetStage() == kReconstruct )
+      if( mod->GetStage() == kReconstruct ) {
+        obj = mod;
         mod->Process(*fEvData);
+      }
     }
     if( fDoBench ) fBench->Stop(stage);
     if( !EvalStage(kReconstruct) )  return kSkip;
@@ -1228,7 +1245,6 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
     if( fDoBench ) fBench->Begin(stage);
     for( auto physmod : physmods ) {
       obj = physmod;
-      physmod->Clear();
       Int_t err = physmod->Process( *fEvData );
       if( err == THaPhysicsModule::kTerminate )
         code = kTerminate;
@@ -1238,8 +1254,10 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
       }
     }
     for( auto mod : stagemods ) {
-      if( mod->GetStage() == kPhysics )
+      if( mod->GetStage() == kPhysics ) {
+        obj = mod;
         mod->Process(*fEvData);
+      }
     }
     if( fDoBench ) fBench->Stop(stage);
     if( code == kFatal ) return kFatal;
