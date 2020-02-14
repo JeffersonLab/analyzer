@@ -55,8 +55,8 @@ public:
   // Optional data passed in via generic pointer
   virtual Int_t   OptionPtr( void* ) { return 0; }
 
-  virtual void    Clear( const Option_t* ="" )  { data = THaAnalysisObject::kBig; }
-  virtual Bool_t  DidLoad() const               { return (data != THaAnalysisObject::kBig); }
+  virtual void    Clear( const Option_t* ="" )  { data = kMaxUInt; }
+  virtual Bool_t  DidLoad() const               { return (data != kMaxUInt); }
   virtual UInt_t  NumHits() const               { return DidLoad() ? 1 : 0; }
   virtual UInt_t  Get( Int_t i = 0 ) const      { assert(DidLoad()&&i==0); return data; }
   virtual void    Print( Option_t* opt="" ) const;
@@ -77,7 +77,7 @@ public:
 protected:
   // Abstract base class constructor
   BdataLoc( const char* name, Int_t cra )
-    : TNamed(name,name), crate(cra), data(THaAnalysisObject::kBig) { }
+    : TNamed(name,name), crate(cra), data(kMaxUInt) { }
 
   Int_t   crate;   // Data location: crate number
   UInt_t  data;    // Raw data word

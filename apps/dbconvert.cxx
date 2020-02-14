@@ -48,7 +48,6 @@
 
 #define kInitError THaAnalysisObject::kInitError
 #define kOK        THaAnalysisObject::kOK
-#define kBig       THaAnalysisObject::kBig
 
 using namespace std;
 

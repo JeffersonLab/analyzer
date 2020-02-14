@@ -34,8 +34,6 @@ public:
   enum EType   { kVarDef, kRVarDef };
   enum EMode   { kDefine, kDelete };
 
-  static const Double_t kBig; // = 1.e38; // default junk value
-  
   THaAnalysisObject();  // only for ROOT I/O
   
   virtual ~THaAnalysisObject();

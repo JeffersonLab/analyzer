@@ -53,8 +53,6 @@ typedef vector<string>::iterator vsiter_t;
 
 TList* THaAnalysisObject::fgModules = nullptr;
 
-const Double_t THaAnalysisObject::kBig = 1.e38;
-
 // Mutex for concurrent access to global Here function
 static TVirtualMutex* gHereMutex = nullptr;
 

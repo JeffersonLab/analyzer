@@ -197,21 +197,21 @@ MCTrack::MCTrack( Int_t number, Int_t pid,
 		  const TVector3& vertex, const TVector3& momentum )
   : fNumber(number), fPID(pid), fOrigin(vertex),
     fMomentum(momentum), fNHits(0), fHitBits(0), fNHitsFound(0), fFoundBits(0),
-    fReconFlags(0), fContamFlags(0), fMatchval(KBIG), fFitRank(-1),
+    fReconFlags(0), fContamFlags(0), fMatchval(kBig), fFitRank(-1),
     fTrackRank(-1), fMCFitPar{}, fRcFitPar{}
 {
-  fill_n( fMCFitPar, NFP, KBIG );
-  fill_n( fRcFitPar, NFP, KBIG );
+  fill_n( fMCFitPar, NFP, kBig );
+  fill_n( fRcFitPar, NFP, kBig );
 }
 
 //_____________________________________________________________________________
 MCTrack::MCTrack()
   : fNumber(0), fPID(0), fNHits(0), fHitBits(0), fNHitsFound(0),
-    fFoundBits(0), fReconFlags(0), fContamFlags(0), fMatchval(KBIG),
+    fFoundBits(0), fReconFlags(0), fContamFlags(0), fMatchval(kBig),
     fFitRank(-1), fTrackRank(-1), fMCFitPar{}, fRcFitPar{}
 {
-  fill_n( fMCFitPar, NFP, KBIG );
-  fill_n( fRcFitPar, NFP, KBIG );
+  fill_n( fMCFitPar, NFP, kBig );
+  fill_n( fRcFitPar, NFP, kBig );
 }
 
 //_____________________________________________________________________________
