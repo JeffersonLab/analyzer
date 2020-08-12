@@ -37,9 +37,9 @@ execute_process(COMMAND ${TARPROG} --version OUTPUT_VARIABLE _tarout)
 STRING(FIND "${_tarout}" "GNU" _havegnu)
 if(_havegnu GREATER -1)
   # GNU tar: some versions want an explicit --wildcards flag
-  set(TAR_WILDCARDS_FLAG "--wildcards")
+  set(TAR_FLAGS "--wildcards")
 endif()
-execute_process(COMMAND tar -x --strip-components=3 -f ${EVIO_TARFILE} ${TAR_WILDCARDS_FLAG} "*/libsrc"
+execute_process(COMMAND ${TARPROG} -x --strip-components=3 -f ${EVIO_TARFILE} ${TAR_FLAGS} "*/libsrc"
   WORKING_DIRECTORY ${EVIO_SOURCE_DIR})
 configure_file(evio/CMakeLists.txt.in ${EVIO_SOURCE_DIR}/CMakeLists.txt @ONLY)
 file(COPY evio/EVIOConfig.cmake.in DESTINATION ${EVIO_SOURCE_DIR})
