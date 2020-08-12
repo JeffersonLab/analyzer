@@ -15,14 +15,14 @@ matrix:
     name: "Ubuntu Trusty 14.04 LTS"
     compiler: gcc
   - os: osx
+    name: "macOS 10.15 Xcode 11.6"
+    osx_image: xcode11.6
+  - os: osx
     name: "macOS 10.14 Xcode 10.2"
     osx_image: xcode10.2
   - os: osx
     name: "macOS 10.13 Xcode 10.1"
     osx_image: xcode10.1
-  - os: osx
-    name: "macOS 10.12 Xcode 9.2"
-    osx_image: xcode9.2
 
 addons:
   homebrew:
@@ -52,16 +52,14 @@ install:
       fi;
     fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+      if [[ "$TRAVIS_JOB_NAME" == "macOS 10.15 Xcode 11.6" ]]; then
+         wget https://root.cern.ch/download/root_v6.22.00.macosx64-10.15-clang110.tar.gz -O /tmp/root.tar.gz;
+      fi;
       if [[ "$TRAVIS_JOB_NAME" == "macOS 10.14 Xcode 10.2" ]]; then
         wget https://root.cern/download/root_v6.18.00.macosx64-10.14-clang100.tar.gz -O /tmp/root.tar.gz;
       fi;
       if [[ "$TRAVIS_JOB_NAME" == "macOS 10.13 Xcode 10.1" ]]; then
         wget https://root.cern.ch/download/root_v6.14.06.macosx64-10.13-clang100.tar.gz -O /tmp/root.tar.gz;
-      fi;
-      if [[ "$TRAVIS_JOB_NAME" == "macOS 10.12 Xcode 9.2" ]]; then
-         wget https://root.cern.ch/download/root_v6.14.06.macosx64-10.12-clang90.tar.gz -O /tmp/root.tar.gz;
-        ln -s python2 /usr/local/bin/python;
-        export PATH=/usr/local/opt/python/libexec/bin:$PATH;
       fi;
     fi
   - tar -xzf /tmp/root.tar.gz
