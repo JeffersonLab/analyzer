@@ -19,5 +19,6 @@ date -u "+%a %b %d %H:%M:%S %Z %Y"
 echo $(uname -s)-$(uname -r)-$(uname -m)
 uname -n
 whoami
-git rev-parse --short HEAD 2>/dev/null
+gitrev=$(git rev-parse --short HEAD 2>/dev/null)
+[ -n "$gitrev" ] && echo $gitrev || echo ""
 $1 --version 2>/dev/null | head -1
