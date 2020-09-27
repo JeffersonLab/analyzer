@@ -366,8 +366,8 @@ Double_t THaFormula::DefinedValue( Int_t i )
       if( code == kNumSetBits ) {
 	// Number of set bits is intended for unsigned int-type expressions
 	y = func->EvalInstance(fInstance);
-	if( y > kMaxULong64 || y < kMinLong64 ) {
-	  return 0;
+	if( y > static_cast<double>(kMaxULong64>>11) || y < 0.0 ) {
+          return 0;
 	}
 	return NumberOfSetBits( static_cast<ULong64_t>(y) );
       }
