@@ -198,7 +198,7 @@ void THaInterface::PrintLogo( Bool_t lite )
      //   Printf("  *             Development version              *");
      Printf("  *                                              *");
      Printf("  *            For information visit             *");
-     Printf("  *        http://hallaweb.jlab.org/podd/        *");
+     Printf("  * https://redmine.jlab.org/projects/podd/wiki/ *");
      Printf("  *                                              *");
      Printf("  ************************************************");
 #if ROOT_VERSION_CODE >= ROOT_VERSION(5,18,0)
