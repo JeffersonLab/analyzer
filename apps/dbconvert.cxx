@@ -3144,7 +3144,7 @@ int Cherenkov::ReadDB( FILE* fi, time_t /* date */, time_t /* date_until */ )
   fDetMap->Clear();
   fDetMapHasModel = false;
   while (true) {
-    Int_t crate, slot, first, last, first_chan,model;
+    Int_t crate, slot, first, last, first_chan, model;
     int pos;
     if( fgets(buf,LEN,fi) == nullptr ) return ErrPrint(fi,here);
     int n = sscanf( buf, "%6d %6d %6d %6d %6d %n",
@@ -3156,11 +3156,7 @@ int Cherenkov::ReadDB( FILE* fi, time_t /* date */, time_t /* date_until */ )
       fDetMapHasModel = true;
     if( CheckDetMapInp(crate,slot,first,last,buf,here) )
       return kInitError;
-    if( fDetMap->AddModule( crate, slot, first, last, first_chan, model ) < 0 ) {
-      Error( Here(here), "Too many DetMap modules (maximum allowed - %d).",
-	     THaDetMap::kDetMapSize);
-      return kInitError;
-    }
+    fDetMap->AddModule( crate, slot, first, last, first_chan, model );
   }
   if( fDetMap->GetTotNumChan() != 2*nelem ) {
     Error( Here(here), "Database inconsistency.\n Defined %d channels in detector map, "
@@ -3261,11 +3257,7 @@ int Scintillator::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
       fDetMapHasModel = true;
     if( CheckDetMapInp(crate,slot,first,last,buf,here) )
       return kInitError;
-    if( fDetMap->AddModule( crate, slot, first, last, first_chan, model ) < 0 ) {
-      Error( Here(here), "Too many DetMap modules (maximum allowed - %d).",
-	     THaDetMap::kDetMapSize);
-      return kInitError;
-    }
+    fDetMap->AddModule( crate, slot, first, last, first_chan, model );
   }
   if( fDetMap->GetTotNumChan() != 4*nelem ) {
     Error( Here(here), "Database inconsistency.\n Defined %d channels in detector map, "
@@ -3485,11 +3477,7 @@ int Shower::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
     if( n < 4 ) return ErrPrint(fi,here);
     if( CheckDetMapInp(crate,slot,first,last,buf,here) )
       return kInitError;
-    if( fDetMap->AddModule( crate, slot, first, last ) < 0 ) {
-      Error( Here(here), "Too many DetMap modules (maximum allowed - %d).",
-	     THaDetMap::kDetMapSize);
-      return kInitError;
-    }
+    fDetMap->AddModule( crate, slot, first, last );
   }
   if( fDetMap->GetTotNumChan() != nelem ) {
     Error( Here(here), "Database inconsistency.\n Defined %d channels in detector map, "
@@ -3889,11 +3877,7 @@ int CoincTime::ReadDB( FILE* fi, time_t, time_t )
     }
     if( CheckDetMapInp(crate,slot,first,1,buf,here) )
       return kInitError;
-    if( fDetMap->AddModule( crate, slot, first, first, k, model ) < 0 ) {
-      Error( Here(here), "Too many DetMap modules (maximum allowed - %d).",
-	     THaDetMap::kDetMapSize);
-      return kInitError;
-    }
+    fDetMap->AddModule( crate, slot, first, first, k, model );
     fTdcRes[k] = tres;
     fTdcOff[k] = toff;
     fTdcLabels[k] = label;

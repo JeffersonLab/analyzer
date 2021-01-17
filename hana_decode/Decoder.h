@@ -6,7 +6,7 @@
 namespace Decoder {
   class Module;               // abstract module
   class VmeModule;            // abstract VME module
-  class PipeliningModule;     // piplelining module
+  class PipeliningModule;     // pipelining module
   class FastbusModule;        // abstract Fastbus module
   class GenScaler;            // abstract general scaler
   class THaCodaDecoder;       // older decoder, obsolescent
@@ -51,11 +51,13 @@ namespace Decoder {
   static const Int_t TRIGGER_FILE     = 136;
   static const Int_t SCALER_EVTYPE    = 140;
 
- // Access processed data for multi-function modules
+  // Access processed data for multi-function modules
   enum EModuleType { kSampleADC, kPulseIntegral, kPulseTime,
-		     kPulsePeak, kPulsePedestal, kCoarseTime, kFineTime };
+                     kPulsePeak, kPulsePedestal, kCoarseTime, kFineTime };
 
 
+  enum class ChannelType { kUndefined, kADC, kTDC, kCommonStopTDC,
+    kMultiFunctionADC, kMultiFunctionTDC };
 }
 
 

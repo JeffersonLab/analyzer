@@ -13,7 +13,6 @@
 class THaDetMap;
 
 class THaDetectorBase : public THaAnalysisObject {
-
 public:
   virtual ~THaDetectorBase();
 
@@ -46,24 +45,25 @@ public:
 protected:
 
   // Mapping
-  THaDetMap*  fDetMap;    // Hardware channel map for this detector
+  THaDetMap*    fDetMap;    // Hardware channel map for this detector
 
   // Configuration
-  Int_t       fNelem;     // Number of detector elements (paddles, mirrors)
+  Int_t         fNelem;     // Number of detector elements (paddles, mirrors)
 
   // Geometry
-  TVector3    fOrigin;    // Center position of detector (m)
-  Double_t    fSize[3];   // Detector size in x,y,z (m) - x,y are half-widths
+  TVector3      fOrigin;    // Center position of detector (m)
+  Double_t      fSize[3];   // Detector size in x,y,z (m) - x,y are half-widths
 
-  TVector3    fXax;       // X axis of the detector plane
-  TVector3    fYax;       // Y axis of the detector plane
-  TVector3    fZax;       // Normal to the detector plane
+  TVector3      fXax;       // X axis of the detector plane
+  TVector3      fYax;       // Y axis of the detector plane
+  TVector3      fZax;       // Normal to the detector plane
 
   virtual void  DefineAxes( Double_t rotation_angle );
 
   virtual Int_t ReadGeometry( FILE* file, const TDatime& date,
 			      Bool_t required = false );
 
+  // Only derived classes may construct me
   THaDetectorBase( const char* name, const char* description );
 
   ClassDef(THaDetectorBase,2)   //ABC for a detector or subdetector

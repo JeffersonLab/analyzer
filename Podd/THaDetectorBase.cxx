@@ -24,15 +24,21 @@ using std::vector;
 //_____________________________________________________________________________
 THaDetectorBase::THaDetectorBase( const char* name,
 				  const char* description ) :
-  THaAnalysisObject(name,description), fDetMap(new THaDetMap),
-  fNelem(0), fSize{kBig,kBig,kBig},
-  fXax(1.0,0.0,0.0), fYax(0.0,1.0,0.0), fZax(0.0,0.0,1.0)
+  THaAnalysisObject(name,description),
+  fDetMap(new THaDetMap),
+  fNelem(0),
+  fSize{kBig,kBig,kBig},
+  fXax(1.0,0.0,0.0),
+  fYax(0.0,1.0,0.0),
+  fZax(0.0,0.0,1.0)
 {
   // Normal constructor. Creates a detector with an empty detector map.
 }
 
 //_____________________________________________________________________________
-THaDetectorBase::THaDetectorBase() : fDetMap(0), fNelem(0) {
+THaDetectorBase::THaDetectorBase() :
+  fDetMap(nullptr), fNelem(0), fSize{kBig,kBig,kBig}
+{
   // for ROOT I/O only
 }
 
@@ -66,10 +72,7 @@ Int_t THaDetectorBase::FillDetMap( const vector<Int_t>& values, UInt_t flags,
   Int_t ret = fDetMap->Fill( values, flags );
   if( ret == 0 ) {
     Error( Here(here), "No detector map entries found. Check database." );
-  } else if( ret == -1 ) {
-    Error( Here(here), "Too many detector map entries (maximum %d)",
-	   THaDetMap::kDetMapSize );
-  } else if( ret < -1 ) {
+  } else if( ret < 0 ) {
     Error( Here(here), "Invalid detector map data format "
 	   "(wrong number of values). Check database." );
   }

@@ -9,48 +9,41 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaDetMap.h"
+#include "Decoder.h"
 #include <iostream>
 #include <iomanip>
-#include <cstring>
-#include <cstdlib>
+#include <stdexcept>
+#include <sstream>
+#include <vector>
+#include <algorithm>
 
 using namespace std;
+using namespace Decoder;
 
-const int THaDetMap::kDetMapSize;
+#define ALL(c) (c).begin(), (c).end()
 
+// "Database" of known frontend module numbers and types
 // FIXME: load from db_cratemap
-struct ModuleType {
-  UInt_t  model;       // model identifier
-  Bool_t  adc;         // true if ADC
-  Bool_t  tdc;         // true if TDC
-};
+struct ModuleDef {
+  UInt_t      model; // model identifier
+  ChannelType type;  // Module type
+} __attribute__((aligned(8)));
 
-static const ModuleType module_list[] = {
-  { 1875, 0, 1 },
-  { 1877, 0, 1 },
-  { 1881, 1, 0 },
-  { 1872, 0, 1 },
-  { 3123, 1, 0 },
-  { 1182, 1, 0 },
-  {  792, 1, 0 },
-  {  775, 0, 1 },
-  {  767, 0, 1 },
-  { 3201, 0, 1 },
-  { 6401, 0, 1 },
-  { 1190, 0, 1 },
-  {  250, 1, 0 },
-  { 0 }
+static const vector<ModuleDef> module_list {
+  { 1875, ChannelType::kTDC },
+  { 1877, ChannelType::kTDC },
+  { 1881, ChannelType::kADC },
+  { 1872, ChannelType::kTDC },
+  { 3123, ChannelType::kADC },
+  { 1182, ChannelType::kADC },
+  { 792,  ChannelType::kADC },
+  { 775,  ChannelType::kTDC },
+  { 767,  ChannelType::kTDC },
+  { 3201, ChannelType::kTDC },
+  { 6401, ChannelType::kTDC },
+  { 1190, ChannelType::kTDC },
+  { 250,  ChannelType::kMultiFunctionADC },
 };
-
-//_____________________________________________________________________________
-void THaDetMap::Module::SetModel( UInt_t m )
-{
-  model = m & kModelMask;
-  const ModuleType* md = module_list;
-  while ( md->model && model != md->model ) md++;
-  if( md->adc ) MakeADC();
-  if( md->tdc ) MakeTDC();
-}
 
 //_____________________________________________________________________________
 void THaDetMap::Module::SetResolution( Double_t res )
@@ -59,9 +52,44 @@ void THaDetMap::Module::SetResolution( Double_t res )
 }
 
 //_____________________________________________________________________________
-THaDetMap::THaDetMap() : fNmodules(0), fMap(nullptr), fMaplength(0)
+void THaDetMap::Module::SetTDCMode( Bool_t cstart )
 {
-  // Default constructor. Creates an empty detector map.
+  cmnstart = cstart;
+  if( cstart && type == ChannelType::kCommonStopTDC )
+    type = ChannelType::kTDC;
+  else if( !cstart && type == ChannelType::kTDC )
+    type = ChannelType::kCommonStopTDC;
+}
+
+//_____________________________________________________________________________
+void THaDetMap::Module::MakeTDC()
+{
+  if( IsCommonStart() )
+    type = ChannelType::kTDC;
+  else
+    type = ChannelType::kCommonStopTDC;
+}
+
+//_____________________________________________________________________________
+void THaDetMap::Module::MakeADC()
+{
+  type = ChannelType::kADC;
+}
+
+//_____________________________________________________________________________
+void THaDetMap::CopyMap( const ModuleVec_t& map )
+{
+  // Deep-copy the vector of module pointers
+  fMap.reserve(map.capacity());
+  for( const auto& m : map ) {
+    fMap.emplace_back(
+#if __cplusplus >= 201402L
+      std::make_unique<Module>(*m)
+#else
+      new Module(*m)
+#endif
+    );
+  }
 }
 
 //_____________________________________________________________________________
@@ -69,13 +97,7 @@ THaDetMap::THaDetMap( const THaDetMap& rhs )
 {
   // Copy constructor
 
-  fMaplength = rhs.fMaplength;
-  fNmodules  = rhs.fNmodules;
-  if( fMaplength > 0 ) {
-    fMap = new Module[fMaplength];
-    memcpy(fMap,rhs.fMap,fNmodules*sizeof(Module));
-  } else
-    fMap = nullptr;
+  CopyMap(rhs.fMap);
 }
 
 //_____________________________________________________________________________
@@ -83,38 +105,21 @@ THaDetMap& THaDetMap::operator=( const THaDetMap& rhs )
 {
   // THaDetMap assignment operator
 
-  if ( this != &rhs ) {
-    if ( fMaplength != rhs.fMaplength ) {
-      delete [] fMap; fMap = nullptr;
-      fMaplength = rhs.fMaplength;
-      if( fMaplength > 0 )
-	fMap = new Module[fMaplength];
-    }
-    fNmodules = rhs.fNmodules;
-    if( fMap )
-      memcpy(fMap,rhs.fMap,fNmodules*sizeof(Module));
+  if( this != &rhs ) {
+    fMap.clear();
+    CopyMap(rhs.fMap);
   }
   return *this;
 }
 
 //_____________________________________________________________________________
-THaDetMap::~THaDetMap()
-{
-  // Destructor
-
-  delete [] fMap;
-}
-
-//_____________________________________________________________________________
-Int_t THaDetMap::AddModule( UShort_t crate, UShort_t slot, 
-			    UShort_t chan_lo, UShort_t chan_hi,
-			    UInt_t first, UInt_t model, Int_t refindex,
-			    Int_t refchan, UInt_t plane, UInt_t signal
-			    )
+Int_t THaDetMap::AddModule( UShort_t crate, UShort_t slot,
+                            UShort_t chan_lo, UShort_t chan_hi,
+                            UInt_t first, UInt_t model, Int_t refindex,
+                            Int_t refchan, UInt_t plane, UInt_t signal )
 {
   // Add a module to the map.
 
-  if( fNmodules >= kDetMapSize ) return -1;  //Map is full
   // Logical channels can run either "with" or "against" the physical channel
   // numbers:
   // lo<=hi :    lo -> first
@@ -128,18 +133,12 @@ Int_t THaDetMap::AddModule( UShort_t crate, UShort_t slot,
   //
   bool reverse = (chan_lo > chan_hi);
 
-  if( fNmodules >= fMaplength ) { // need to expand the Map
-    Int_t oldlen = fMaplength;
-    fMaplength += 10;
-    auto* tmpmap = new Module[fMaplength];   // expand in groups of 10
-    if( oldlen > 0 ) {
-      memcpy(tmpmap, fMap, oldlen * sizeof(Module));
-      delete[] fMap;
-    }
-    fMap = tmpmap;
-  }
-
-  Module& m = fMap[fNmodules];
+#if __cplusplus >= 201402L
+  auto pm = make_unique<Module>();
+#else
+  auto pm = unique_ptr<Module>(new THaDetMap::Module);
+#endif
+  Module& m = *pm;
   m.crate = crate;
   m.slot  = slot;
   if( reverse ) {
@@ -150,21 +149,34 @@ Int_t THaDetMap::AddModule( UShort_t crate, UShort_t slot,
     m.hi = chan_hi;
   }
   m.first = first;
-  m.SetModel( model );
+  m.model = model;
   m.refindex = refindex;
   m.refchan  = refchan;
   m.plane = plane;
   m.signal = signal;
-  m.SetResolution( 0.0 );
+  m.SetResolution(0.0);
   m.reverse = reverse;
   m.cmnstart = false;
 
-  return ++fNmodules;
+  // Set the module type using our lookup table of known model numbers.
+  // If the model is not predefined, this can be done manually later with
+  // calls to MakeADC()/MakeTDC().
+  if( model != 0 ) {
+    auto it = find_if(ALL(module_list),
+                      [model]( const auto& m ) { return m.model == model; });
+    m.type = (it != module_list.end()) ? it->type : ChannelType::kUndefined;
+    if( m.type == ChannelType::kTDC )
+      m.type = ChannelType::kCommonStopTDC; // common stop is the default
+  } else
+    m.type = ChannelType::kUndefined;
+
+  fMap.push_back(std::move(pm));
+  return fMap.size();
 }
 
 //_____________________________________________________________________________
 THaDetMap::Module* THaDetMap::Find( UShort_t crate, UShort_t slot,
-				    UShort_t chan )
+                                    UShort_t chan )
 {
   // Return the module containing crate, slot, and channel chan.
   // If several matching modules exist (which mean the map is misconfigured),
@@ -172,16 +184,12 @@ THaDetMap::Module* THaDetMap::Find( UShort_t crate, UShort_t slot,
   // Since the map is usually small and not necessarily sorted, a simple
   // linear search is done.
 
-  Module* found = nullptr;
-  for( UShort_t i = 0; i < fNmodules; ++i ) {
-    Module* d = uGetModule(i);
-    if( d->crate == crate && d->slot == slot && 
-	d->lo <= chan && chan <= d->hi ) {
-      found = d;
-      break;
-    }
-  }
-  return found;
+  auto found = find_if( ALL(fMap), [crate,slot,chan](const auto& d)
+  { return ( d->crate == crate && d->slot == slot &&
+             d->lo <= chan && chan <= d->hi );
+  });
+
+  return (found != fMap.end()) ? found->get() : nullptr;
 }
 
 //_____________________________________________________________________________
@@ -238,11 +246,12 @@ Int_t THaDetMap::Fill( const vector<Int_t>& values, UInt_t flags )
   if( flags & kFillSignal )
     tuple_size++;
 
-  UInt_t prev_first = 0, prev_nchan = 0;
+  // For historical reasons, logical channel numbers start at 1
+  UInt_t prev_first = 1, prev_nchan = 0;
   // Defaults for optional values
   UInt_t first = 0, model = 0;
   Int_t rchan = -1, ref = -1;
-  UInt_t plane=0, signal=0;
+  UInt_t plane = 0, signal = 0;
 
   Int_t ret = 0;
   for( vsiz_t i = 0; i < values.size(); i += tuple_size ) {
@@ -250,37 +259,36 @@ Int_t THaDetMap::Fill( const vector<Int_t>& values, UInt_t flags )
     if( values[i] < 0 )
       break;
     // Now we require a full tuple
-    if( i+tuple_size > values.size() ) {
+    if( i + tuple_size > values.size() ) {
       ret = -127;
       break;
     }
 
     vsiz_t k = 4;
     if( flags & kFillLogicalChannel )
-      first = values[i+k++];
+      first = values[i + k++];
     else {
       first = prev_first + prev_nchan;
     }
     if( flags & kFillModel )
-      model = values[i+k++];
+      model = values[i + k++];
     if( flags & kFillRefChan )
-      rchan = values[i+k++];
+      rchan = values[i + k++];
     if( flags & kFillRefIndex )
-      ref   = values[i+k++];
+      ref = values[i + k++];
     if( flags & kFillPlane )
-      plane   = values[i+k++];
+      plane = values[i + k++];
     if( flags & kFillSignal )
-      signal  = values[i+k++];
+      signal = values[i + k++];
 
-    ret = AddModule( values[i], values[i+1], values[i+2], values[i+3],
-		     first, model, ref, rchan, plane, signal
-		     );
-    if( ret<=0 )
+    ret = AddModule(values[i], values[i + 1], values[i + 2], values[i + 3],
+                    first, model, ref, rchan, plane, signal);
+    if( ret <= 0 )
       break;
     prev_first = first;
-    prev_nchan = GetNchan( ret-1 );
+    prev_nchan = GetNchan(ret - 1);
   }
-  
+
   return ret;
 }
 
@@ -291,9 +299,9 @@ Int_t THaDetMap::GetTotNumChan() const
   // typically the total number of hardware channels used by the detector.
 
   Int_t sum = 0;
-  for( UShort_t i = 0; i < fNmodules; i++ )
-    sum += GetNchan(i);
-    
+  for( const auto & m : fMap )
+    sum += m->GetNchan();
+
   return sum;
 }
 
@@ -307,9 +315,8 @@ void THaDetMap::GetMinMaxChan( Int_t& min, Int_t& max, ECountMode mode ) const
 
   min = kMaxInt;
   max = kMinInt;
-  bool do_ref = ( mode == kRefIndex );
-  for( UShort_t i = 0; i < fNmodules; i++ ) {
-    Module* m = GetModule(i);
+  bool do_ref = (mode == kRefIndex);
+  for( const auto& m : fMap ) {
     Int_t m_min = do_ref ? m->refindex : m->first;
     Int_t m_max = do_ref ? m->refindex : m->first + m->hi - m->lo;
     if( m_min < min )
@@ -325,26 +332,25 @@ void THaDetMap::Print( Option_t* ) const
 {
   // Print the contents of the map
 
-  cout << "Size: " << fNmodules << endl;
-  for( UShort_t i=0; i<fNmodules; i++ ) {
-    Module* m = GetModule(i);
-    cout << " " 
-	 << setw(5) << m->crate
-	 << setw(5) << m->slot 
-	 << setw(5) << m->lo 
-	 << setw(5) << m->hi 
-	 << setw(5) << m->first
-	 << setw(5) << GetModel(m);
-    if( IsADC(m) )
+  cout << "Size: " << GetSize() << endl;
+  for( const auto& m : fMap ) {
+    cout << " "
+         << setw(5) << m->crate
+         << setw(5) << m->slot
+         << setw(5) << m->lo
+         << setw(5) << m->hi
+         << setw(5) << m->first
+         << setw(5) << m->model;
+    if( m->IsADC() )
       cout << setw(4) << " ADC";
-    if( IsTDC(m) )
+    if( m->IsTDC() )
       cout << setw(4) << " TDC";
     cout << setw(5) << m->refchan
-	 << setw(5) << m->refindex
-	 << setw(8) << m->resolution
-	 << setw(5) << m->plane
-	 << setw(5) << m->signal
-	 << endl;
+         << setw(5) << m->refindex
+         << setw(8) << m->resolution
+         << setw(5) << m->plane
+         << setw(5) << m->signal
+         << endl;
   }
 }
 
@@ -354,38 +360,144 @@ void THaDetMap::Reset()
   // Clear() the map and reset the array size to zero, freeing memory.
 
   Clear();
-  delete [] fMap;
-  fMap = nullptr;
-  fMaplength = 0;
-}
-
-//_____________________________________________________________________________
-static int compare_modules( const void* p1, const void* p2 )
-{
-  // Helper function for sort
-
-  auto lhs = static_cast<const THaDetMap::Module*>(p1);
-  auto rhs = static_cast<const THaDetMap::Module*>(p2);
-  
-  if( lhs->crate < rhs->crate )  return -1;
-  if( lhs->crate > rhs->crate )  return  1;
-  if( lhs->slot < rhs->slot )    return -1;
-  if( lhs->slot > rhs->slot )    return  1;
-  if( lhs->lo < rhs->lo )        return -1;
-  if( lhs->lo > rhs->lo )        return  1;
-  return 0;
+  fMap.shrink_to_fit(); // FWIW
 }
 
 //_____________________________________________________________________________
 void THaDetMap::Sort()
 {
   // Sort the map by crate/slot/low channel
-  
-  if( fMap && fNmodules )
-    qsort( fMap, fNmodules, sizeof(Module), compare_modules );
 
+  sort( ALL(fMap), []( const auto& a, const auto& b) {
+    if( a->crate < b->crate ) return true;
+    if( a->crate > b->crate ) return false;
+    if( a->slot  < b->slot )  return true;
+    if( a->slot  > b->slot )  return false;
+    return (a->lo < b->lo);
+  });
+
+}
+
+//=============================================================================
+THaDetMap::Iterator
+THaDetMap::MakeIterator( const THaEvData& evdata )
+{
+  return THaDetMap::Iterator(*this, evdata);
+}
+
+//_____________________________________________________________________________
+THaDetMap::MultiHitIterator
+THaDetMap::MakeMultiHitIterator( const THaEvData& evdata )
+{
+  return THaDetMap::MultiHitIterator(*this, evdata);
+}
+
+//_____________________________________________________________________________
+THaDetMap::Iterator::Iterator( THaDetMap& detmap, const THaEvData& evdata )
+  : fDetMap(detmap), fEvData(evdata), fMod(nullptr), fNMod(fDetMap.GetSize()),
+    fNTotChan(fDetMap.GetTotNumChan()), fNChan(0), fIMod(-1), fIChan(-1)
+{
+  fHitInfo.ev = fEvData.GetEvNum();
+  // Initialize iterator state to point to the first item
+  ++(*this);
+}
+
+//_____________________________________________________________________________
+string THaDetMap::Iterator::msg( const char* txt ) const
+{
+  // Format message string for exceptions
+  ostringstream ostr;
+  ostr << "Event " << fHitInfo.ev << ", ";
+  ostr << "channel "
+       << fHitInfo.crate << "/" << fHitInfo.slot << "/"
+       << fHitInfo.chan  << "/" << fHitInfo.hit << ": ";
+  if( txt and *txt ) ostr << txt; else ostr << "Unspecified error.";
+  return ostr.str();
+}
+
+#define CRATE_SLOT( x ) (x).crate, (x).slot
+static inline bool LOOPDONE( Int_t i, Int_t n ) { return i < 0 or i >= n; }
+static inline bool NO_NEXT( Int_t& i, Int_t n ) { return i >= n or ++i >= n; }
+
+//_____________________________________________________________________________
+THaDetMap::Iterator& THaDetMap::Iterator::operator++()
+{
+  // Advance iterator to next active channel
+ nextmod:
+  if( LOOPDONE(fIChan, fNChan) ) {
+    if( NO_NEXT(fIMod, fNMod) ) {
+      fHitInfo.reset();
+      return *this;
+    }
+    fMod = fDetMap.GetModule(fIMod);
+    if( !fMod )
+      throw std::logic_error("NULL detector map module. Program bug. Call expert.");
+    fHitInfo.set_crate_slot(fMod);
+    fHitInfo.module = fEvData.GetModule(CRATE_SLOT(fHitInfo));
+    fNChan = fEvData.GetNumChan(CRATE_SLOT(fHitInfo));
+    fIChan = -1;
+  }
+ nextchan:
+  if( NO_NEXT(fIChan, fNChan) )
+    goto nextmod;
+  Int_t chan = fEvData.GetNextChan(CRATE_SLOT(fHitInfo), fIChan);
+  if( chan < fMod->lo or chan > fMod->hi )
+    goto nextchan;  // Not one of my channels
+  Int_t nhit = fEvData.GetNumHits(CRATE_SLOT(fHitInfo), chan);
+  fHitInfo.chan = chan;
+  fHitInfo.nhit = nhit;
+  if( nhit == 0 ) {
+    ostringstream ostr;
+    ostr << "No hits on active "
+         << (fHitInfo.type == Decoder::ChannelType::kADC ? "ADC" : "TDC")
+         << " channel. Should never happen. Decoder bug. Call expert.";
+    throw std::logic_error(msg(ostr.str().c_str()));
+  }
+  // If multiple hits on a TDC channel take the one earliest in time.
+  // For a common-stop TDC, this is actually the last hit.
+  fHitInfo.hit = (fHitInfo.type == Decoder::ChannelType::kCommonStopTDC) ? nhit - 1 : 0;
+  // Determine default logical channel
+  Int_t lchan = fMod->ConvertToLogicalChannel(chan);
+  if( lchan < 0 or lchan >= size() ) {
+    ostringstream ostr;
+    ostr << "Illegal logical detector channel " << lchan << "."
+         << "Must be between 0 and " << size() << ". Fix database.";
+    throw std::invalid_argument(msg(ostr.str().c_str()));
+  }
+  fHitInfo.lchan = lchan;
+
+  return *this;
+}
+
+//_____________________________________________________________________________
+void THaDetMap::Iterator::reset()
+{
+  // Reset iterator to first element, if any
+
+  fNMod = fDetMap.GetSize();
+  fIMod = fIChan = -1;
+  fHitInfo.reset();
+  ++(*this);
+}
+
+//_____________________________________________________________________________
+THaDetMap::Iterator& THaDetMap::MultiHitIterator::operator++()
+{
+  // Advance iterator to next active hit or channel, allowing multiple hits
+  // per channel
+ nexthit:
+  if( LOOPDONE(fIHit, fHitInfo.nhit) ) {
+    Iterator::operator++();
+    if( !*this )
+      return *this;
+    fIHit = -1;
+  }
+  if( NO_NEXT(fIHit, fHitInfo.nhit) )
+    goto nexthit;
+  fHitInfo.hit = fIHit; // overwrite value of single-hit case (0 or nhit-1)
+
+  return *this;
 }
 
 //_____________________________________________________________________________
 ClassImp(THaDetMap)
-
