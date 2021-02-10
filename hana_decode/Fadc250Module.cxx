@@ -837,7 +837,9 @@ namespace Decoder {
 	  PopulateDataVector(fPulseData[fadc_data.chan].samples, sample_1); // Sample 1
 	  fadc_data.invalid_samples |= invalid_1;                        // Invalid samples
 	  fadc_data.overflow = (sample_1 >> 12) & 0x1;                   // Sample 1 overflow bit
-	  if((sample_1 + 2) == fadc_data.win_width && invalid_2) break;  // Skip last sample if flagged as invalid
+	  if(invalid_2) { // Skip last sample if not expected and flagged as invalid
+	    if(fPulseData[fadc_data.chan].samples.size() == fadc_data.win_width) break;
+	  }
 
 	  PopulateDataVector(fPulseData[fadc_data.chan].samples, sample_2); // Sample 2
 	  fadc_data.invalid_samples |= invalid_2;                        // Invalid samples
@@ -889,7 +891,9 @@ namespace Decoder {
 	  PopulateDataVector(fPulseData[fadc_data.chan].samples, sample_1);  // Sample 1
 	  fadc_data.invalid_samples |= invalid_1;                         // Invalid samples
 	  fadc_data.overflow = (sample_1 >> 12) & 0x1;                    // Sample 1 overflow bit
-	  if ((sample_1 + 2) == fadc_data.win_width && invalid_2) break;  // Skip last sample if flagged as invalid
+	  if(invalid_2) { // Skip last sample if not expected and flagged as invalid
+	    if(fPulseData[fadc_data.chan].samples.size() == fadc_data.win_width) break;
+	  }
 
 	  PopulateDataVector(fPulseData[fadc_data.chan].samples, sample_2);  // Sample 2
 	  fadc_data.invalid_samples |= invalid_2;                         // Invalid samples
