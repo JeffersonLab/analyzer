@@ -205,8 +205,8 @@ namespace Decoder {
     return fTdcData[idx];
   }
 
-  Int_t Caen1190Module::GetOpt(Int_t chan, Int_t hit) const {
-    if(hit >= fNumHits[chan]) return 0;
+  Int_t Caen1190Module::GetOpt(UInt_t chan, UInt_t hit) {
+    if((Int_t)hit >= fNumHits[chan]) return 0;
     Int_t idx = chan*MAXHIT + hit;
     if (idx < 0 || idx > MAXHIT*NTDCCHAN) return 0;
     return fTdcOpt[idx];

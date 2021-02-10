@@ -28,7 +28,7 @@ namespace Decoder {
     virtual void Clear(Option_t *opt);
     virtual Int_t Decode(const UInt_t *p);
     virtual Int_t GetData(Int_t chan, Int_t hit) const;
-    virtual Int_t GetOpt(Int_t chan, Int_t hit) const;
+    virtual Int_t GetOpt(UInt_t chan, UInt_t hit);
 
     // Loads slot data.  if you don't define this, the base class's method is used
     virtual Int_t LoadSlot(THaSlotData *sldat,  const UInt_t *evbuffer, const UInt_t *pstop );
