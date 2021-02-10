@@ -88,27 +88,31 @@ Int_t Caen775Module::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, Int_t 
   Clear();
   Int_t index = 0;
   Int_t counter = 0;
+  Bool_t found_slot = kFALSE;
   Int_t nword = 0;
-
+  Int_t slot_num=0;
+  Int_t slot_counter = 0;
   const UInt_t *p = evbuffer;
   fWordsSeen = 0; 
 
 #ifdef WITH_DEBUG
   //cout << "Number of words from 775: \t" << len << endl << endl;
 #endif
-  
   while (fWordsSeen < len) {   
     index = pos + fWordsSeen;
     // first word is the header
-    if (fWordsSeen == 0) {
+    if (!found_slot) {
       nword=((p[index])&0x00003f00)>>8; // number of converted channels bits 8-13
+      slot_num = ((p[index])&0xf8000000)>>27; //
       fWordsSeen++;
-    } else if (fWordsSeen <= nword) { // excludes the End of Block (EOB) word
+      if (slot_num == fSlot) found_slot = kTRUE;
+     } else if (slot_counter < nword && found_slot) { // excludes the End of Block (EOB) word
       UInt_t chan=((p[index])&0x00ff0000)>>16; // number of channel which data are coming from bits 16-20
       UInt_t raw=((p[index])&0x00000fff);      // raw datum bits 0-11
       Int_t status = sldat->loadData(MyModType(),chan,raw,raw);
       fWordsSeen++;
       counter++;
+      slot_counter++;
       if (chan < fData.size()) fData[chan]=raw;
 #ifdef WITH_DEBUG
       //cout << "word\t"<<index<<"\t"<<chan<<"\t"<<raw<<endl;
@@ -117,7 +121,6 @@ Int_t Caen775Module::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, Int_t 
     } else fWordsSeen++; // increment the counter for the EOB word
 
 #ifdef WITH_DEBUG
-    //cout << "word   "<<i<<"   "<<chan<<"   "<<raw<<endl;
     if (fDebugFile != 0)
       *fDebugFile << "\n" << "Caen775Module::LoadSlot >> evbuffer[" << index 
 		  << "] = " << hex << evbuffer[index] << dec << " >> crate = "
