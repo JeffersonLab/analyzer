@@ -17,7 +17,7 @@ namespace Decoder {
 
   public:
 
-    Caen1190Module() : fNumHits(0), fTdcData(0), slot_data(0)
+    Caen1190Module() : fNumHits(0), fTdcData(0), fTdcOpt(0), slot_data(0)
     { memset(&tdc_data, 0, sizeof(tdc_data)); }
     Caen1190Module(Int_t crate, Int_t slot);
     virtual ~Caen1190Module();
@@ -28,6 +28,7 @@ namespace Decoder {
     virtual void Clear(Option_t *opt);
     virtual Int_t Decode(const UInt_t *p);
     virtual Int_t GetData(Int_t chan, Int_t hit) const;
+    virtual Int_t GetOpt(Int_t chan, Int_t hit) const;
 
     // Loads slot data.  if you don't define this, the base class's method is used
     virtual Int_t LoadSlot(THaSlotData *sldat,  const UInt_t *evbuffer, const UInt_t *pstop );
@@ -38,12 +39,13 @@ namespace Decoder {
 
     Int_t *fNumHits;
     Int_t *fTdcData;  // Raw data
+    Int_t *fTdcOpt;  // Edge flag =0 Leading edge, = 1 Trailing edge
 
     THaSlotData *slot_data;  // Need to fix if multi-threading becomes available
    
     struct tdc_data_struct {
       UInt_t glb_hdr_evno, glb_hdr_slno, glb_trl_wrd_cnt, glb_trl_slno, glb_trl_status;
-      UInt_t chan, raw, flags, trig_time, chip_nr_hd;
+      UInt_t chan, raw , opt , flags, trig_time, chip_nr_hd;
       UInt_t hdr_chip_id, hdr_event_id, hdr_bunch_id;
       UInt_t trl_chip_id, trl_event_id, trl_word_cnt;
       Int_t status;

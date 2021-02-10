@@ -35,12 +35,14 @@ namespace Decoder {
   Caen1190Module::~Caen1190Module() {
     if(fNumHits) delete [] fNumHits;
     if(fTdcData) delete [] fTdcData;
+    if(fTdcOpt) delete [] fTdcOpt;
   }
 
   void Caen1190Module::Init() {
     Module::Init();
     fNumHits = new Int_t[NTDCCHAN];
     fTdcData = new Int_t[NTDCCHAN*MAXHIT];
+    fTdcOpt = new Int_t[NTDCCHAN*MAXHIT];
     fDebugFile = 0;
     Clear("");
     IsInit = kTRUE;
@@ -113,18 +115,21 @@ namespace Decoder {
       if (tdc_data.glb_hdr_slno == static_cast <UInt_t> (fSlot)) {
 	tdc_data.chan   = (*p & 0x03f80000)>>19; // bits 25-19
 	tdc_data.raw    =  *p & 0x0007ffff;      // bits 18-0
-	tdc_data.status = slot_data->loadData("tdc", tdc_data.chan, tdc_data.raw, tdc_data.raw);
+	tdc_data.opt    = (*p & 0x04000000)>>26;      // bit 26
+	tdc_data.status = slot_data->loadData("tdc", tdc_data.chan, tdc_data.raw, tdc_data.opt);
 #ifdef WITH_DEBUG
 	if (fDebugFile != 0)
 	  *fDebugFile << "Caen1190Module:: 1190 MEASURED DATA >> data = " 
 		      << hex << *p << " >> channel = " << dec
-		      << tdc_data.chan << " >> raw time = "
+		      << tdc_data.chan << " >> edge = "
+		      << tdc_data.opt  << " >> raw time = "
 		      << tdc_data.raw << " >> status = "
 		      << tdc_data.status << endl;
 #endif
 	if(Int_t (tdc_data.chan) < NTDCCHAN) 
 	  if(fNumHits[tdc_data.chan] < MAXHIT)
-	    fTdcData[tdc_data.chan*MAXHIT + fNumHits[tdc_data.chan]++] = tdc_data.raw;
+	    fTdcData[tdc_data.chan*MAXHIT + fNumHits[tdc_data.chan]] = tdc_data.raw;
+	    fTdcOpt[tdc_data.chan*MAXHIT + fNumHits[tdc_data.chan]++] = tdc_data.opt;
 	if (tdc_data.status != SD_OK ) return -1;
       }
       break;
@@ -200,9 +205,17 @@ namespace Decoder {
     return fTdcData[idx];
   }
 
+  Int_t Caen1190Module::GetOpt(Int_t chan, Int_t hit) const {
+    if(hit >= fNumHits[chan]) return 0;
+    Int_t idx = chan*MAXHIT + hit;
+    if (idx < 0 || idx > MAXHIT*NTDCCHAN) return 0;
+    return fTdcOpt[idx];
+  }
+
   void Caen1190Module::Clear(Option_t*) {
     memset(fNumHits, 0, NTDCCHAN*sizeof(Int_t));
     memset(fTdcData, 0, NTDCCHAN*MAXHIT*sizeof(Int_t));
+    memset(fTdcOpt, 0, NTDCCHAN*MAXHIT*sizeof(Int_t));
   }
 }
 
