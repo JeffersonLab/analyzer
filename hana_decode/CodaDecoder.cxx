@@ -221,6 +221,7 @@ Int_t CodaDecoder::interpretCoda3(const UInt_t* evbuffer)
   	    event_type = END_EVTYPE;
 	    break;
      case 0xff50:
+     case 0xff58: // Physics event with sync bit
      case 0xff70:
   	    event_type=1;  // Physics event type
 	    break;
@@ -622,7 +623,7 @@ Int_t CodaDecoder::FindRocsCoda3(const UInt_t *evbuffer) {
 
   while (pos < event_length) {
     Int_t len = (evbuffer[pos]+1);               /* total Length of ROC Bank */
-    Int_t iroc = (evbuffer[pos+1]&0xffff0000)>>16;   /* ID of ROC */
+    Int_t iroc = (evbuffer[pos+1]&0x0fff0000)>>16;   /* ID of ROC is 12 bits*/
     rocdat[iroc].len = len;
     rocdat[iroc].pos = pos;
     irn[nroc] = iroc;
