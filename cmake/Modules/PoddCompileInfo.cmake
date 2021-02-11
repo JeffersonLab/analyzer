@@ -16,7 +16,8 @@ if(NOT GET_COMPILEINFO)
     "PoddCompileInfo: Cannot find ${_compileinfo_cmd}. Check your Podd installation.")
 endif()
 
-execute_process(COMMAND "${GET_COMPILEINFO}" "${CMAKE_CXX_COMPILER}"
+
+execute_process(COMMAND "${GET_COMPILEINFO}" "${CMAKE_CXX_COMPILER}" "${CMAKE_SOURCE_DIR}"
   OUTPUT_VARIABLE _compileinfo_out
   ERROR_VARIABLE _compileinfo_err
   OUTPUT_STRIP_TRAILING_WHITESPACE
