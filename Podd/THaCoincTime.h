@@ -54,7 +54,7 @@ public:
   Double_t*         fVxTime2;      //[fNTr2] times at vertex for tracks in spec2
   
   Double_t          fdTdc[2];      // timing of trig sp2+delay after trig sp1,
-                                   // and timiming of trig sp1+delay after trig sp2
+                                   // and timing of trig sp1+delay after trig sp2
 
   Int_t             fSzNtr;        // allocated number of time combinations
   Int_t             fNtimes;       // = fNTr1*fNTr2

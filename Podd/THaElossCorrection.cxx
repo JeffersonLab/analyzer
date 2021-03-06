@@ -25,11 +25,11 @@ THaElossCorrection::THaElossCorrection( const char* name,
 					const char* input_tracks,
 					Double_t particle_mass,
 					Int_t hadron_charge ) :
-  THaPhysicsModule(name,description), fZ(hadron_charge),
-  fZmed(0.0), fAmed(0.0), fDensity(0.0), fPathlength(0.0), 
+  THaPhysicsModule(name,description), fEloss(kBig), fM(kBig),
+  fZ(hadron_charge), fZmed(0.0), fAmed(0.0), fDensity(0.0), fPathlength(0.0),
   fZref(0.0), fScale(0.0),
-  fTestMode(kFALSE), fExtPathMode(kFALSE), fInputName(input_tracks),
-  fVertexModule(NULL)
+  fTestMode(false), fElectronMode(false), fExtPathMode(false),
+  fInputName(input_tracks), fVertexModule(nullptr)
 {
   // Normal constructor.
 
@@ -85,7 +85,7 @@ Int_t THaElossCorrection::DefineVariables( EMode mode )
   const RVarDef var[] = {
     { "eloss", "Calculated energy loss correction (GeV)", "fEloss" },
     { "pathl", "Pathlength thru medium for this event",   "fPathlength" },
-    { 0 }
+    { nullptr }
   };
   DefineVarsFromList( var, mode );
 
@@ -104,20 +104,20 @@ Int_t THaElossCorrection::ReadRunDatabase( const TDatime& date )
   if( !f ) return kFileError;
 
   DBRequest req[] = {
-    { "M",          &fM,          kDouble, 0, 0, 0, "M (particle mass [GeV/c^2])" },
-    { "Z",          &fZ,          kInt,    0, 1, 0, "Z (particle Z)" },
-    { "Z_med",      &fZmed,       kDouble, 0, 0, 0, "Z_med (Z of medium)" },
-    { "A_med",      &fAmed,       kDouble, 0, 0, 0, "A_med (A of medium)" },
-    { "density",    &fDensity,    kDouble, 0, 0, 0, "density of medium [g/cm^3]" },
-    { "pathlength", &fPathlength, kDouble, 0, 0, 0, "pathlength through medium [m]" },
-    { 0 }
+    { "M",          &fM,          kDouble, 0, false, 0, "M (particle mass [GeV/c^2])" },
+    { "Z",          &fZ,          kInt,    0, true, 0, "Z (particle Z)" },
+    { "Z_med",      &fZmed,       kDouble, 0, false, 0, "Z_med (Z of medium)" },
+    { "A_med",      &fAmed,       kDouble, 0, false, 0, "A_med (A of medium)" },
+    { "density",    &fDensity,    kDouble, 0, false, 0, "density of medium [g/cm^3]" },
+    { "pathlength", &fPathlength, kDouble, 0, false, 0, "pathlength through medium [m]" },
+    { nullptr }
   };
   // Allow pathlength key to be absent in variable pathlength mode
   if( fExtPathMode ) {
     int i = 0;
     while( req[i].name ) {
       if( TString(req[i].name) == "pathlength" ) {
-	req[i].optional = kTRUE;
+	req[i].optional = true;
 	break;
       }
       ++i;
@@ -128,7 +128,7 @@ Int_t THaElossCorrection::ReadRunDatabase( const TDatime& date )
   DBRequest* item = req;
   while( item->name ) {
     if( *((double*)item->var) != 0.0 )
-      item->var = 0;
+      item->var = nullptr;
     item++;
   }
 
@@ -196,7 +196,7 @@ void THaElossCorrection::SetPathlength( Double_t pathlength )
 
   if( !IsInit() ) {
     fPathlength = pathlength;
-    fExtPathMode = kFALSE;
+    fExtPathMode = false;
   } else
     PrintInitError("SetPathlength");
 }
@@ -213,7 +213,7 @@ void THaElossCorrection::SetPathlength( const char* vertex_module,
     fZref       = z_ref;
     fScale      = scale;
     fVertexName = vertex_module;
-    fExtPathMode = kTRUE;
+    fExtPathMode = true;
   } else
     PrintInitError("SetPathlength");
 }
@@ -654,8 +654,7 @@ void THaElossCorrection::HaDensi( Double_t z_med, Double_t d_med,
     X1 =  0.;
     M  =  0.;
   }
-     
-  return;
+
 }
 
 //_____________________________________________________________________________

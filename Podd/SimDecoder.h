@@ -87,7 +87,7 @@ public:
   MCHitInfo() : fMCTrack(0), fContam(0), fMCPos(0), fMCTime(0) {}
   MCHitInfo( Int_t mctrk, Double_t mcpos, Double_t time, Int_t contam = 0 )
     : fMCTrack(mctrk), fContam(contam), fMCPos(mcpos), fMCTime(time) {}
-  virtual ~MCHitInfo() {}
+  virtual ~MCHitInfo() = default;
 
   void MCPrint() const;
   void MCClear() { fMCTrack = fContam = 0; fMCPos = fMCTime = 0; }
@@ -113,10 +113,10 @@ public:
     : fMCTrack(mctrk), fPlane(plane), fType(type), fStatus(0), fNFound(0),
       fClustSize(0), fMCPoint(point), fMCP(pvect), fMCTime(KBIG), fDeltaE(KBIG),
       fDeflect(KBIG), fToF(KBIG), fHitResid(KBIG), fTrackResid(KBIG)  {}
-  virtual ~MCTrackPoint() {}
+  virtual ~MCTrackPoint() = default;
 
   virtual Int_t  Compare( const TObject* obj ) const;
-  virtual Bool_t IsSortable() const { return kTRUE; }
+  virtual Bool_t IsSortable() const { return true; }
   virtual void   Print( Option_t* opt ) const;
 
   Double_t X()         const { return fMCPoint.X(); }
@@ -177,14 +177,14 @@ class SimDecoder : public THaEvData {
   Double_t GetWeight() const { return fWeight; }
 
   TObject* GetMCHit( Int_t i )   const {
-    return (fMCHits) ? fMCHits->UncheckedAt(i) : 0;
+    return (fMCHits) ? fMCHits->UncheckedAt(i) : nullptr;
   }
   TObject* GetMCTrack( Int_t i ) const {
-    return (fMCTracks) ? fMCTracks->UncheckedAt(i) : 0;
+    return (fMCTracks) ? fMCTracks->UncheckedAt(i) : nullptr;
   }
   MCTrackPoint* GetMCPoint( Int_t i ) const {
     return (fMCPoints) ?
-      static_cast<Podd::MCTrackPoint*>(fMCPoints->UncheckedAt(i)) : 0;
+      static_cast<Podd::MCTrackPoint*>(fMCPoints->UncheckedAt(i)) : nullptr;
   }
   Int_t    GetNMCHits()    const {
     return (fMCHits) ? fMCHits->GetLast()+1 : 0;

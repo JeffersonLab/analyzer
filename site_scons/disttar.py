@@ -35,7 +35,7 @@ def disttar_emitter(target,source,env):
     #print "item = %s" % item
         for root, dirs, files in os.walk(str(item)):
 
-            # don't make directory dependences as that triggers full build
+            # don't make directory dependencies as that triggers full build
             # of that directory
             if root in source:
                 #print "Removing directory %s" % root

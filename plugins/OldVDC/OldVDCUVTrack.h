@@ -18,7 +18,7 @@ class OldVDCUVTrack : public THaCluster {
 
 public:
   OldVDCUVTrack() :
-    fUClust(NULL), fVClust(NULL), fUVPlane(NULL), fTrack(NULL), fPartner(NULL),
+    fUClust(nullptr), fVClust(nullptr), fUVPlane(nullptr), fTrack(nullptr), fPartner(nullptr),
     fX(0.0), fY(0.0), fTheta(0.0), fPhi(0.0) {}
 
   virtual ~OldVDCUVTrack() {}

@@ -57,7 +57,7 @@ Int_t THaBPM::ReadDatabase( const TDatime& date )
     // Read configuration parameters
     DBRequest config_request[] = {
       { "detmap",    &detmap,  kIntV },
-      { 0 }
+      { nullptr }
     };
     err = LoadDB( file, date, config_request, fPrefix );
   }
@@ -73,10 +73,10 @@ Int_t THaBPM::ReadDatabase( const TDatime& date )
     memset( offsets  , 0, sizeof( offsets ) );
     DBRequest calib_request[] = {
       { "calib_rot",   &fCalibRot },
-      { "pedestals",   pedestals, kDouble, NCHAN, 1 },
-      { "rotmatrix",   rotations, kDouble, NCHAN, 1 },
-      { "offsets"  ,   offsets,   kDouble, 2    , 1 },
-      { 0 }
+      { "pedestals",   pedestals, kDouble, NCHAN, true },
+      { "rotmatrix",   rotations, kDouble, NCHAN, true },
+      { "offsets"  ,   offsets,   kDouble, 2    , true },
+      { nullptr }
     };
     err = LoadDB( file, date, calib_request, fPrefix );
   }
@@ -117,7 +117,7 @@ Int_t THaBPM::DefineVariables( EMode mode )
     { "z", "reconstructed z-position", "fPosition.fZ"},
     { "rotpos1", "position in bpm system","GetRotPosX()"},
     { "rotpos2", "position in bpm system","GetRotPosY()"},
-    { 0 }
+    { nullptr }
   };
     
 
@@ -145,6 +145,7 @@ void THaBPM::Clear( Option_t* opt )
     fRawSignal(k)=-1;
     fCorSignal(k)=-1;
   }
+  fRotPos(0) = fRotPos(1) = 0.0;
 }
 
 //_____________________________________________________________________________
@@ -194,37 +195,31 @@ Int_t THaBPM::Decode( const THaEvData& evdata )
 Int_t THaBPM::Process( )
 {
  
-  // called by the beam apparaturs 
-  // uses the pedestal substracted signals from the antennas
+  // called by the beam apparatus
+  // uses the pedestal subtracted signals from the antennas
   // to get the position in the bpm coordinate system 
   // and uses the transformation matrix defined in the database
   // to transform it into the HCS
   // directions are not calculated, they are always set parallel to z
 
-  Double_t ap, am;
-
-  for( UInt_t k=0; k<NCHAN; k+=2 ) {
-    if( fCorSignal(k)+fCorSignal(k+1)!=0.0 ) {
-      ap=fCorSignal(k);
-      am=fCorSignal(k+1);
-      fRotPos(k/2)=fCalibRot*(ap-am)/(ap+am);
-    }
-    else {
-      fRotPos(k/2)=0.0;
+  for( UInt_t k = 0; k < NCHAN; k += 2 ) {
+    Double_t ap = fCorSignal(k);
+    Double_t am = fCorSignal(k + 1);
+    if( ap + am != 0.0 ) {
+      fRotPos(k / 2) = fCalibRot * (ap - am) / (ap + am);
+    } else {
+      fRotPos(k / 2) = 0.0;
     }
   }
-
   TVectorD dum(fRotPos);
-
-  dum*=fRot2HCSPos;
-
+  dum *= fRot2HCSPos;
   fPosition.SetXYZ(
 		   dum(0)+fOrigin(0)+fOffset(0),
 		   dum(1)+fOrigin(1)+fOffset(1),
 		   fOrigin(2)
 		   );
 
-  return 0 ;
+  return 0;
 }
 
 

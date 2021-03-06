@@ -27,8 +27,8 @@ THaADCHelicity::THaADCHelicity( const char* name, const char* description,
 				THaApparatus* app ) : 
   THaHelicityDet( name, description, app ),
   fADC_hdata(kBig), fADC_Gate(kBig), fADC_Hel(kUnknown), 
-  fThreshold(kDefaultThreshold), fIgnoreGate(kFALSE),
-  fInvertGate(kFALSE), fNchan(0)
+  fThreshold(kDefaultThreshold), fIgnoreGate(false),
+  fInvertGate(false), fNchan(0)
 {
   // Constructor
 }
@@ -96,7 +96,7 @@ Int_t THaADCHelicity::ReadDatabase( const TDatime& date )
   // Missing gate channel implies ignoring gate unless explicitly set
   if( gatedef.empty() ) {
     if( ignore_gate < 0 )
-      fIgnoreGate = kTRUE;
+      fIgnoreGate = true;
     else {
       Error( Here(here), "Missing gate data channel definition gatechan. "
 	     "Fix database." );
@@ -187,7 +187,7 @@ Int_t THaADCHelicity::Decode( const THaEvData& evdata )
   }
 
   // Logic: if gate==0 helicity remains unknown. If gate==1 
-  // (or we are ingoring the gate) then helicity is determined by 
+  // (or we are ignoring the gate) then helicity is determined by
   // the helicity bit.
   if( gate_high || fIgnoreGate ) {
     fADC_Hel = ( fADC_hdata >= fThreshold ) ? kPlus : kMinus;

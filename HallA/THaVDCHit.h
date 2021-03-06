@@ -15,14 +15,17 @@
 class THaVDCHit : public TObject {
 
 public:
-  THaVDCHit( THaVDCWire* wire=0, Int_t rawtime=0, Double_t time=0.0, Int_t nthit=0 )
-    : fWire(wire), fRawTime(rawtime), fTime(time), fNthit(nthit), fDist(kBig), fdDist(1.0),
-      ftrDist(kBig), fltrDist(kBig), fTrkNum(0), fClsNum(-1) {}
-  virtual ~THaVDCHit() {}
+  explicit THaVDCHit( THaVDCWire* wire=nullptr, Int_t rawtime=0,
+                      Double_t time=0.0, Int_t nthit=0 )
+    : fWire(wire), fRawTime(rawtime), fTime(time),
+      fNthit(nthit), fDist(kBig), fdDist(1.0), ftrDist(kBig),
+      fltrDist(kBig), fTrkNum(0), fClsNum(-1) {}
+  THaVDCHit( const THaVDCHit& ) = default;
+  THaVDCHit& operator=( const THaVDCHit& ) = default;
 
   virtual Double_t ConvertTimeToDist(Double_t slope);
   Int_t  Compare ( const TObject* obj ) const;
-  Bool_t IsSortable () const { return kTRUE; }
+  Bool_t IsSortable () const { return true; }
 
   // Get and Set Functions
   THaVDCWire* GetWire() const { return fWire; }
@@ -48,6 +51,7 @@ public:
   void     SetNthit(Int_t num)        { fNthit  = num; }
 
   // Functor for ordering hits
+  //TODO: make this a lambda?
   struct ByWireThenTime :
     public std::binary_function< THaVDCHit*, THaVDCHit*, bool >
   {
@@ -65,20 +69,16 @@ protected:
 
   THaVDCWire* fWire;     // Wire on which the hit occurred
   Int_t       fRawTime;  // TDC value (channels)
-  Double_t    fTime;     // Raw drift time, corrected for trigger time (s)
-  Double_t    fNthit;     // number of tdc hits per channel per event
+  Double_t    fTime;     // Measured drift time, corrected for trigger time (s)
+  Double_t    fNthit;    // Number of TDC hits per channel per event
   Double_t    fDist;     // (Perpendicular) Drift Distance
-  Double_t    fdDist;    // uncertainty in fDist (for chi2 calc)
+  Double_t    fdDist;    // Uncertainty in fDist (for chi2 calc)
   Double_t    ftrDist;   // (Perpendicular) distance from the global track (m)
   Double_t    fltrDist;  // (Perpendicular) distance from the local track (m)
   Int_t       fTrkNum;   // Number of the track using this hit (0 = unused)
   Int_t       fClsNum;   // Number of the cluster using this hit (-1 = unused)
 
- private:
-  THaVDCHit( const THaVDCHit& );
-  THaVDCHit& operator=( const THaVDCHit& );
-
-  ClassDef(THaVDCHit,2)             // VDCHit class
+  ClassDef(THaVDCHit,3)             // VDCHit class
 };
 
 ///////////////////////////////////////////////////////////////////////////////

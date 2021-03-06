@@ -21,7 +21,6 @@
 #include "THaSlotData.h"
 #include "THaCrateMap.h"
 #include "TClass.h"
-#include "TMath.h"
 #include <iostream>
 #include <cstring>
 
@@ -35,16 +34,18 @@ const UInt_t THaSlotData::DEFNDATA = 1024; // Default number of data words
 const UInt_t THaSlotData::DEFNHITCHAN = 1; // Default number of hits per channel
 
 THaSlotData::THaSlotData() :
-  crate(-1), slot(-1), fModule(0), numhitperchan(0), numraw(0), numchanhit(0), firstfreedataidx(0),
-  numholesdataidx(0), numHits(0), xnumHits(0), chanlist(0), idxlist (0), chanindex(0), dataindex(0),
-  numMaxHits(0), rawData(0), data(0), fDebugFile(0), didini(false),
-  maxc(0), maxd(0), allocd(0), alloci(0) {}
+  crate(-1), slot(-1), fModule(nullptr), numhitperchan(0), numraw(0), numchanhit(0),
+  firstfreedataidx(0), numholesdataidx(0), numHits(nullptr), xnumHits(nullptr),
+  chanlist(nullptr), idxlist (nullptr), chanindex(nullptr), dataindex(nullptr),
+  numMaxHits(nullptr), rawData(nullptr), data(nullptr), fDebugFile(nullptr),
+  didini(false), maxc(0), maxd(0), allocd(0), alloci(0) {}
 
 THaSlotData::THaSlotData(UInt_t cra, UInt_t slo) :
-  crate(cra), slot(slo), fModule(0), numhitperchan(0), numraw(0), numchanhit(0), firstfreedataidx(0),
-  numholesdataidx(0), numHits(0), xnumHits(0), chanlist(0), idxlist (0), chanindex(0), dataindex(0),
-  numMaxHits(0), rawData(0), data(0), fDebugFile(0), didini(false),
-  maxc(0), maxd(0), allocd(0), alloci(0) {}
+  crate(cra), slot(slo), fModule(nullptr), numhitperchan(0), numraw(0), numchanhit(0),
+  firstfreedataidx(0), numholesdataidx(0), numHits(nullptr), xnumHits(nullptr),
+  chanlist(nullptr), idxlist (nullptr), chanindex(nullptr), dataindex(nullptr),
+  numMaxHits(nullptr), rawData(nullptr), data(nullptr), fDebugFile(nullptr),
+  didini(false), maxc(0), maxd(0), allocd(0), alloci(0) {}
 
 
 THaSlotData::~THaSlotData() {
@@ -107,7 +108,7 @@ int THaSlotData::loadModule(const THaCrateMap *map) {
 
    Int_t err=0;
 
-   for( Module::TypeIter_t it = Module::fgModuleTypes().begin();
+   for( auto it = Module::fgModuleTypes().begin();
        !err && it != Module::fgModuleTypes().end(); ++it ) {
     const Module::ModuleType& loctype = *it;
 
@@ -280,7 +281,7 @@ int THaSlotData::loadData(const char* type, UInt_t chan, UInt_t dat, UInt_t raw)
   if( numraw >= allocd ) {
     UInt_t old_allocd = allocd;
     allocd *= 2; if( allocd > maxd ) allocd = maxd;
-    UInt_t* tmp = new UInt_t[allocd];
+    auto tmp = new UInt_t[allocd];
     memcpy(tmp,data,old_allocd*sizeof(UInt_t));
     delete [] data; data = tmp;
     tmp = new UInt_t[allocd];
@@ -305,7 +306,7 @@ int THaSlotData::loadData(const char* type, UInt_t chan, UInt_t dat, UInt_t raw)
 
 int THaSlotData::loadData(UInt_t chan, UInt_t dat, UInt_t raw) {
   // NEW (6/2014).
-  return loadData(NULL, chan, dat, raw);
+  return loadData(nullptr, chan, dat, raw);
 }
 
 
@@ -351,7 +352,6 @@ void THaSlotData::print() const
     }
   }
   cout.flags(fmt);
-  return;
 }
 
 void THaSlotData::print_to_file() const {
@@ -391,7 +391,6 @@ void THaSlotData::print_to_file() const {
       }
     }
   }
-  return;
 }
 
 //_____________________________________________________________________________
@@ -407,7 +406,7 @@ int THaSlotData::compressdataindexImpl( UInt_t numidx )
     }
     if( nidx <= alloci ) {
       // reshuffle, lots of holes
-      UInt_t* tmp = new UInt_t[alloci];
+      auto tmp = new UInt_t[alloci];
       firstfreedataidx=0;
       for (UInt_t i=0; i<numchanhit; i++) {
 	UInt_t chan=chanlist[i];
@@ -428,7 +427,7 @@ int THaSlotData::compressdataindexImpl( UInt_t numidx )
     // Still too small?
     alloci = 2*(firstfreedataidx+numidx);
   // FIXME one should check that it doesnt grow too much
-  UInt_t* tmp = new UInt_t[alloci];
+  auto tmp = new UInt_t[alloci];
   memcpy(tmp,dataindex,old_alloci*sizeof(UInt_t));
   delete [] dataindex; dataindex = tmp;
 

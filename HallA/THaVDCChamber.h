@@ -27,8 +27,8 @@ class THaVDCChamber : public THaSubDetector {
 
 public:
 
-  THaVDCChamber( const char* name="", const char* description="",
-		 THaDetectorBase* parent = NULL );
+  explicit THaVDCChamber( const char* name="", const char* description="",
+                          THaDetectorBase* parent = nullptr );
   virtual ~THaVDCChamber();
 
   virtual void    Clear( Option_t* opt="" );    // Reset event-by-event data
@@ -70,10 +70,11 @@ protected:
   Double_t fInv_sin_vu;       // 1/Sine of the difference between the
                               // V axis angle and the U axis angle
 
+  void  ApplyTimeCorrection(); // Correct hit drift times by common offset
   void  FindClusters();       // Find clusters in U and V planes
   void  FitTracks();          // Fit local tracks for each cluster
   Int_t MatchUVClusters();    // Match clusters in U with clusters in V
-  Int_t CalcPointCoords();
+  Int_t CalcPointCoords() const;
 
   Double_t UVtoX( Double_t u, Double_t v ) const;
   Double_t UVtoY( Double_t u, Double_t v ) const;

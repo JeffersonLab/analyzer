@@ -27,8 +27,8 @@ namespace Decoder {
     struct ModuleType {
     public:
       ModuleType ( const char *c1, UInt_t i1 )
-	: fClassName(c1), fMapNum(i1), fTClass(0) {}
-      ModuleType() : fClassName(0), fMapNum(0), fTClass(0) {} // For ROOT RTTI
+	: fClassName(c1), fMapNum(i1), fTClass(nullptr) {}
+      ModuleType() : fClassName(nullptr), fMapNum(0), fTClass(nullptr) {} // For ROOT RTTI
       bool operator<( const ModuleType& rhs ) const { return fMapNum < rhs.fMapNum; }
       const char*      fClassName;
       UInt_t           fMapNum;
@@ -39,11 +39,11 @@ namespace Decoder {
     static TypeSet_t& fgModuleTypes();
     static TypeIter_t DoRegister( const ModuleType& registration_info );
 
-    Bool_t IsMultiBlockMode() {return fMultiBlockMode; };
-    Bool_t BlockIsDone() { return fBlockIsDone; };
+    Bool_t IsMultiBlockMode() const {return fMultiBlockMode; };
+    Bool_t BlockIsDone() const { return fBlockIsDone; };
     virtual void SetFirmware(Int_t fw) {fFirmwareVers=fw;};
 
-    Int_t GetBlockSize() { return block_size; };
+    Int_t GetBlockSize() const { return block_size; };
 
     // inheriting classes need to implement one or more of these
     virtual UInt_t GetData(Int_t) const { return 0; };
@@ -98,7 +98,7 @@ namespace Decoder {
 
     virtual void SetDebugFile(std::ofstream *file)
     {
-      if (file!=0) fDebugFile = file;
+      if (file) fDebugFile = file;
     }
 
     virtual void SetHeader(UInt_t header, UInt_t mask) {
@@ -108,8 +108,8 @@ namespace Decoder {
 
     virtual void DoPrint() const;
 
-    virtual Bool_t IsMultiFunction() { return kFALSE; };
-    virtual Bool_t HasCapability(Decoder::EModuleType) { return kFALSE; };
+    virtual Bool_t IsMultiFunction() { return false; };
+    virtual Bool_t HasCapability(Decoder::EModuleType) { return false; };
 
   protected:
 

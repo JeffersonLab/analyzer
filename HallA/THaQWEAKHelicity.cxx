@@ -24,7 +24,7 @@ THaQWEAKHelicity::THaQWEAKHelicity( const char* name, const char* description,
 				    THaApparatus* app ):
   THaHelicityDet( name, description, app ), 
   fOffsetTIRvsRing(3), fQWEAKDelay(8), fMAXBIT(30), 
-  fQWEAKNPattern(4), HWPIN(kTRUE), fQrt(1), fTSettle(0),fValidHel(kFALSE),
+  fQWEAKNPattern(4), HWPIN(true), fQrt(1), fTSettle(0),fValidHel(false),
   fHelicityLastTIR(0),fPatternLastTIR(0), fErrorCode(0), fRing_NSeed(0),
   fRingU3plus(0),fRingU3minus(0),
   fRingT3plus(0),fRingT3minus(0),
@@ -33,17 +33,15 @@ THaQWEAKHelicity::THaQWEAKHelicity( const char* name, const char* description,
   fRingTimeplus(0), fRingTimeminus(0),
   fRingSeed_reported(0),fRingSeed_actual(0),
   fRingPhase_reported(0),fRing_reported_polarity(0),
-  fRing_actual_polarity(0), fEvtype(-1)
+  fRing_actual_polarity(0), fEvtype(-1), fHisto(NHIST, nullptr)
 {
-  for( Int_t i = 0; i < NHIST; ++i )
-    fHisto[i] = 0;
   //  memset(fHbits, 0, sizeof(fHbits));
 }
 
 //_____________________________________________________________________________
 THaQWEAKHelicity::THaQWEAKHelicity()
   : fOffsetTIRvsRing(3), fQWEAKDelay(8), fMAXBIT(30),
-    fQWEAKNPattern(4), HWPIN(kTRUE), fQrt(1), fTSettle(0),fValidHel(kFALSE),
+    fQWEAKNPattern(4), HWPIN(true), fQrt(1), fTSettle(0),fValidHel(false),
     fHelicityLastTIR(0),fPatternLastTIR(0), fErrorCode(0), fRing_NSeed(0),
     fRingU3plus(0),fRingU3minus(0),
     fRingT3plus(0),fRingT3minus(0),
@@ -52,12 +50,9 @@ THaQWEAKHelicity::THaQWEAKHelicity()
     fRingTimeplus(0), fRingTimeminus(0),
     fRingSeed_reported(0),fRingSeed_actual(0),
     fRingPhase_reported(0),fRing_reported_polarity(0),
-    fRing_actual_polarity(0), fEvtype(-1)
+    fRing_actual_polarity(0), fEvtype(-1), fHisto(NHIST, nullptr)
 {
   // Default constructor for ROOT I/O
-
-  for( Int_t i = 0; i < NHIST; ++i )
-    fHisto[i] = 0;
 }
 
 //_____________________________________________________________________________
@@ -98,7 +93,7 @@ Int_t THaQWEAKHelicity::DefineVariables( EMode mode )
     { "T10minus", "T10 minus",                       "fRingT10minus"},
     { "Timeminus","Time minus",                      "fRingTimeminus"},
     { "Timeplus", "Time plus",                       "fRingTimeplus"},
-    { 0 }
+    { nullptr }
   };
   cout << "now actually defining stuff, prefix = " << fPrefix << endl;
   return DefineVarsFromList( var, mode );
@@ -144,8 +139,6 @@ void THaQWEAKHelicity::PrintEvent(Int_t evtnum)
   cout<<" T10 plus="<<fRingT10plus<<"  minus="<<fRingT10minus<<" sum t10="<<sumt10<<endl;
   cout<<" time plus="<<fRingTimeplus<<" minus="<<fRingTimeminus<<" sum time="<<sumtime<<endl;
   cout<<" +++++++++++++++++++++++++++++++++++++\n";
-
-  return;
 }
 
 //_____________________________________________________________________________
@@ -175,7 +168,7 @@ Int_t THaQWEAKHelicity::ReadDatabase( const TDatime& date )
     {
       fPatternSequence.push_back(localpattern[i]);
     }
-  HWPIN=kTRUE;
+  HWPIN=true;
 
   return kOK;
 }
@@ -196,7 +189,6 @@ void THaQWEAKHelicity::FillHisto()
 {
   fHisto[0]->Fill(fRing_NSeed);
   fHisto[1]->Fill(fErrorCode);
-  return;
 }
 //_____________________________________________________________________________
 void THaQWEAKHelicity::SetErrorCode(Int_t error)
@@ -212,35 +204,30 @@ void THaQWEAKHelicity::SetErrorCode(Int_t error)
   if(fErrorCode==0)
     fErrorCode=(1<<error);
   // only one reported error at the time
-
-  return;
 }
 
 //_____________________________________________________________________________
-void THaQWEAKHelicity::Clear( Option_t* opt ) 
-{
+void THaQWEAKHelicity::Clear( Option_t* opt ) {
   // Clear event-by-event data
 
   THaHelicityDet::Clear(opt);
   THaQWEAKHelicityReader::Clear(opt);
   fEvtype = 0;
   fHelicity = kUnknown;
-  
-  fQrt=0;
-  fTSettle=0;
-  fRingU3plus=0;
-  fRingU3minus=0;
-  fRingT3plus=0;
-  fRingT3minus=0;
-  fRingT5plus=0;
-  fRingT5minus=0;
-  fRingT10plus=0;
-  fRingT10minus=0;
-  fRingTimeplus=0;
-  fRingTimeminus=0;
-  fErrorCode=0;
 
-  return;
+  fQrt = 0;
+  fTSettle = 0;
+  fRingU3plus = 0;
+  fRingU3minus = 0;
+  fRingT3plus = 0;
+  fRingT3minus = 0;
+  fRingT5plus = 0;
+  fRingT5minus = 0;
+  fRingT10plus = 0;
+  fRingT10minus = 0;
+  fRingTimeplus = 0;
+  fRingTimeminus = 0;
+  fErrorCode = 0;
 }
 
 //_____________________________________________________________________________
@@ -262,11 +249,10 @@ Int_t THaQWEAKHelicity::Decode( const THaEvData& evdata )
     PrintEvent(evdata.GetEvNum());
   CheckTIRvsRing(evdata.GetEvNum());
   if(fErrorCode==0)  
-    fValidHel=kTRUE;
+    fValidHel=true;
   else
-    fValidHel=kFALSE;
+    fValidHel=false;
   FillHisto();
-
 
   return 0;
 }
@@ -313,8 +299,6 @@ void THaQWEAKHelicity::CheckTIRvsRing(Int_t evnum)
     }
   fHelicityLastTIR= fHelicityTir;
   fPatternLastTIR=fPatternTir;
-  
-  return;
 }
 
 //_____________________________________________________________________________
@@ -386,14 +370,14 @@ void THaQWEAKHelicity::LoadHelicity(Int_t eventnumber)
 	  if(fRing_reported_polarity!=fHelicityRing[i])
 	    {
 	      if(fQWEAKDebug>0)
-		cout<<here<<" Catastrophy  !!"
+		cout<<here<<" Catastrophe  !!"
 		    <<" predicted helicity doesn't match reported helicity !!!"
 		    <<" event #="<<eventnumber
 		    <<endl;
 	      if(fQWEAKDebug>1)
-	      cout<<" iring="<<Form("%02d", i)
-		  <<" predicted helicity="<<fRing_reported_polarity
-		  <<" fHelicityRing["<<i<<"]="<<fHelicityRing[i]<<endl;
+                cout<<" iring="<<Form("%02d", i)
+                    <<" predicted helicity="<<fRing_reported_polarity
+                    <<" fHelicityRing["<<i<<"]="<<fHelicityRing[i]<<endl;
 	      fRing_NSeed=0;
 	      SetErrorCode(3);
 	    }
@@ -515,14 +499,13 @@ void THaQWEAKHelicity::LoadHelicity(Int_t eventnumber)
     {
       fHelicity=kUnknown;
     }
-
-  return;
 }
+
 //_____________________________________________________________________________
 THaHelicityDet::EHelicity THaQWEAKHelicity::SetHelicity(Int_t polarity, Int_t phase)
 {
   // here predicted_reported_helicity can have a value of 0 or 1
-  // fPatternSequence[fRingPhase_reported] canhave a value of 1 or -1  
+  // fPatternSequence[fRingPhase_reported] can have a value of 1 or -1
 
   THaHelicityDet::EHelicity localhel;
 
@@ -530,14 +513,14 @@ THaHelicityDet::EHelicity THaQWEAKHelicity::SetHelicity(Int_t polarity, Int_t ph
 	    +fPatternSequence[phase];
   if(select==-1||select==2)
     {
-      if(HWPIN==kTRUE) 
+      if(HWPIN==true)
 	localhel=kPlus;
       else
 	localhel=kMinus;
     }
   else if(select==1 || select==0)
     {
-      if(HWPIN==kTRUE)
+      if(HWPIN==true)
 	localhel=kMinus;
       else
 	localhel=kPlus;

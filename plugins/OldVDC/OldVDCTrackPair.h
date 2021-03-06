@@ -32,7 +32,7 @@ public:
   pUV             GetLower()   const { return fLowerTrack; }
   pUV             GetUpper()   const { return fUpperTrack; }
   Int_t           GetStatus()  const { return fStatus; }
-  virtual Bool_t  IsSortable() const { return kTRUE; }
+  virtual Bool_t  IsSortable() const { return true; }
   void            SetStatus( Int_t i ) { fStatus = i; }
   virtual void    Print( Option_t* opt="" ) const;
 

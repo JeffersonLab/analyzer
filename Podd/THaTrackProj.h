@@ -14,11 +14,11 @@ class THaTrackProj : public TObject {
 public:
   static const Double_t kBig;
 
-  THaTrackProj( Double_t x=kBig, Double_t y=kBig, Double_t pathl=kBig,
-		Double_t dx=kBig, Int_t ch=-1 )
+  explicit THaTrackProj( Double_t x=kBig, Double_t y=kBig, Double_t pathl=kBig,
+                         Double_t dx=kBig, Int_t ch=-1 )
     : fX(x), fY(y), fPathl(pathl), fdX(dx), fChannel(ch),
       fIsOK(x<0.5*kBig&&y<0.5*kBig) {}
-  virtual ~THaTrackProj() {}
+  virtual ~THaTrackProj() = default;
 
   virtual void Clear( Option_t* opt="" );
   virtual void Print( Option_t* opt="" ) const;

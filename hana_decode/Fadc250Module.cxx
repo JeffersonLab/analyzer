@@ -72,22 +72,27 @@ using namespace std;
 
 namespace Decoder {
 
+  using vsiz_t = vector<int>::size_type;
+
   Module::TypeIter_t Fadc250Module::fgThisType =
     DoRegister( ModuleType( "Decoder::Fadc250Module" , 250 ));
 
   Fadc250Module::Fadc250Module()
-    : fPulseData(NADCCHAN),
+    : fadc_data{}, fPulseData(NADCCHAN),
       data_type_4(false), data_type_6(false), data_type_7(false),
       data_type_8(false), data_type_9(false), data_type_10(false),
       block_header_found(false), block_trailer_found(false),
       event_header_found(false), slots_match(false)
-  { memset(&fadc_data, 0, sizeof(fadc_data)); }
+  {}
 
   Fadc250Module::Fadc250Module(Int_t crate, Int_t slot)
-    : PipeliningModule(crate, slot), fPulseData(NADCCHAN)
+    : PipeliningModule(crate, slot), fadc_data{}, fPulseData(NADCCHAN),
+      data_type_4(false), data_type_6(false), data_type_7(false),
+      data_type_8(false), data_type_9(false), data_type_10(false),
+      block_header_found(false), block_trailer_found(false),
+      event_header_found(false), slots_match(false)
   {
-    memset(&fadc_data, 0, sizeof(fadc_data));
-    IsInit = kFALSE;
+    IsInit = false;
     Init();
   }
 
@@ -98,7 +103,7 @@ namespace Decoder {
   }
 
   Bool_t Fadc250Module::IsMultiFunction() {
-    return kTRUE;
+    return true;
   }
 
   Bool_t Fadc250Module::HasCapability(Decoder::EModuleType type) {
@@ -124,10 +129,8 @@ namespace Decoder {
   }
 
   // Sum elements contained in data vector
-  Int_t Fadc250Module::SumVectorElements(const vector<uint32_t>& data_vector) const {
-    Int_t sum_of_elements = 0;
-    sum_of_elements = accumulate(data_vector.begin(), data_vector.end(), 0);
-    return sum_of_elements;
+  uint32_t Fadc250Module::SumVectorElements( const vector<uint32_t>& data_vector) const {
+    return accumulate(data_vector.begin(), data_vector.end(), 0U);
   }
 
   void Fadc250Module::Clear(Option_t* opt) {
@@ -149,7 +152,7 @@ namespace Decoder {
     // fDebugFile->open("fadcdebug.dat");
 #endif
     Clear();
-    IsInit = kTRUE;
+    IsInit = true;
     fName = "FADC250 JLab Flash ADC Module";
   }
 
@@ -213,7 +216,7 @@ namespace Decoder {
     }
     else {
 #ifdef WITH_DEBUG
-      if (fDebugFile != 0)
+      if (fDebugFile)
 	*fDebugFile << "Fadc250Module::GetPulseIntegralData channel "
 		    << chan << ", event " << ievent << " = "
 		    <<  fPulseData[chan].integral[ievent] << endl;
@@ -232,7 +235,7 @@ namespace Decoder {
     }
     else {
 #ifdef WITH_DEBUG
-      if (fDebugFile != 0)
+      if (fDebugFile)
 	*fDebugFile << "Fadc250Module::GetEmulatedPulseIntegralData channel "
 		    << chan << " = " <<  SumVectorElements(fPulseData[chan].samples) << endl;
 #endif
@@ -253,7 +256,7 @@ namespace Decoder {
     }
     else {
 #ifdef WITH_DEBUG
-      if (fDebugFile != 0)
+      if (fDebugFile)
 	*fDebugFile << "Fadc250Module::GetPulseTimeData channel "
 		    << chan << ", event " << ievent << " = "
 		    <<  fPulseData[chan].time[ievent] << endl;
@@ -275,7 +278,7 @@ namespace Decoder {
     }
     else {
 #ifdef WITH_DEBUG
-      if (fDebugFile != 0)
+      if (fDebugFile)
         *fDebugFile << "Fadc250Module::GetPulseCoarseTimeData channel "
                     << chan << ", event " << ievent << " = "
                     <<  fPulseData[chan].coarse_time[ievent] << endl;
@@ -297,7 +300,7 @@ namespace Decoder {
     }
     else {
 #ifdef WITH_DEBUG
-      if (fDebugFile != 0)
+      if (fDebugFile)
 	*fDebugFile << "Fadc250Module::GetPulseFineTimeData channel "
 		    << chan << ", event " << ievent << " = "
 		    <<  fPulseData[chan].fine_time[ievent] << endl;
@@ -319,7 +322,7 @@ namespace Decoder {
     }
     else {
 #ifdef WITH_DEBUG
-      if (fDebugFile != 0)
+      if (fDebugFile)
 	*fDebugFile << "Fadc250Module::GetPulsePeakData channel "
 		    << chan << ", event " << ievent << " = "
 		    <<  fPulseData[chan].peak[ievent] << endl;
@@ -346,7 +349,7 @@ namespace Decoder {
       }
       else {
 #ifdef WITH_DEBUG
-	if (fDebugFile != 0)
+	if (fDebugFile)
 	  *fDebugFile << "Fadc250Module::GetPulsePedestalData channel "
 		      << chan << ", event " << ievent << " = "
 		      <<  fPulseData[chan].pedestal[ievent] << endl;
@@ -360,7 +363,7 @@ namespace Decoder {
     }
     else {
 #ifdef WITH_DEBUG
-      if (fDebugFile != 0)
+      if (fDebugFile)
 	*fDebugFile << "Fadc250Module::GetPulsePedestalData channel "
 		    << chan << ", event " << ievent << " = "
 		    <<  fPulseData[chan].pedestal[0] << endl;
@@ -386,7 +389,7 @@ namespace Decoder {
     }
     else {
 #ifdef WITH_DEBUG
-      if (fDebugFile != 0)
+      if (fDebugFile)
 	*fDebugFile << "Fadc250Module::GetPedestalQuality channel "
 		    << chan << ", event " << ievent << " = "
 		    <<  fPulseData[chan].pedestal_quality[0] << endl;
@@ -408,7 +411,7 @@ namespace Decoder {
     }
     else {
 #ifdef WITH_DEBUG
-      if (fDebugFile != 0)
+      if (fDebugFile)
 	*fDebugFile << "Fadc250Module::GetOverflowBit channel "
 		    << chan << ", event " << ievent << " = "
 		    <<  fPulseData[chan].overflow[ievent] << endl;
@@ -430,7 +433,7 @@ namespace Decoder {
     }
     else {
 #ifdef WITH_DEBUG
-      if (fDebugFile != 0)
+      if (fDebugFile)
 	*fDebugFile << "Fadc250Module::GetUnderflowBit channel "
 		    << chan << ", event " << ievent << " = "
 		    <<  fPulseData[chan].underflow[ievent] << endl;
@@ -443,7 +446,7 @@ namespace Decoder {
     // Truncate to 32 bits
     Int_t shorttime=fadc_data.trig_time;
 #ifdef WITH_DEBUG
-    if (fDebugFile != 0)
+    if (fDebugFile)
       *fDebugFile << "Fadc250Module::GetTriggerTime = "
       << fadc_data.trig_time << " " << shorttime << endl;
 #endif
@@ -463,7 +466,7 @@ namespace Decoder {
     }
     else {
 #ifdef WITH_DEBUG
-      if (fDebugFile != 0)
+      if (fDebugFile)
 	*fDebugFile << "Fadc250Module::GetPulseSamplesData channel "
 		    << chan << ", event " << ievent << " = "
 		    <<  fPulseData[chan].samples[ievent] << endl;
@@ -481,7 +484,7 @@ namespace Decoder {
     }
     else {
 #ifdef WITH_DEBUG
-      if (fDebugFile != 0)
+      if (fDebugFile)
 	*fDebugFile << "Fadc250Module::GetPulseSamplesVector channel "
 		    << chan << " = " <<  &fPulseData[chan].samples << endl;
 #endif
@@ -491,7 +494,7 @@ namespace Decoder {
 
   void Fadc250Module::PrintDataType() const {
 #ifdef WITH_DEBUG
-    if (fDebugFile == 0) return;
+    if (!fDebugFile) return;
     *fDebugFile << "start,  Print Data Type "<<endl;
     if (data_type_4) *fDebugFile << "data type 4"<<endl;
     if (data_type_6) *fDebugFile << "data type 6"<<endl;
@@ -527,7 +530,7 @@ namespace Decoder {
   Int_t Fadc250Module::GetNumFadcEvents(Int_t chan) const {
     assert(chan >= 0 && static_cast <size_t> (chan) < NADCCHAN);
     size_t sz = 0;
-    if (fDebugFile != 0) PrintDataType();
+    if (fDebugFile) PrintDataType();
     // For some "old" firmware version
     if (fFirmwareVers==1) {
       if (GetFadcMode() == 7 && ((sz = fPulseData[chan].integral.size()) == fPulseData[chan].time.size())) return sz;
@@ -541,7 +544,7 @@ namespace Decoder {
 	     (fPulseData[chan].pedestal.size() == sz ) &&
 	     (fPulseData[chan].peak.size() == sz)) {
 #ifdef WITH_DEBUG
-      if (fDebugFile != 0)
+      if (fDebugFile)
 	*fDebugFile << "Fadc250Module::GetNumFadcEvents channel "
 		    << chan << " = " <<  sz << endl;
 #endif
@@ -551,7 +554,7 @@ namespace Decoder {
 	     ((sz = fPulseData[chan].time.size()) == fPulseData[chan].pedestal.size()) &&
 	     (fPulseData[chan].peak.size() == sz)) {
 #ifdef WITH_DEBUG
-      if (fDebugFile != 0)
+      if (fDebugFile)
 	*fDebugFile << "Fadc250Module::GetNumFadcEvents channel "
 		    << chan << " = " <<  sz << endl;
 #endif
@@ -562,7 +565,7 @@ namespace Decoder {
 	     (fPulseData[chan].pedestal.size() == sz) &&
 	     (fPulseData[chan].peak.size() == sz)) {
 #ifdef WITH_DEBUG
-      if (fDebugFile != 0)
+      if (fDebugFile)
 	*fDebugFile << "Fadc250Module::GetNumFadcEvents channel "
 		    << chan << " = " <<  sz << endl;
 #endif
@@ -573,7 +576,7 @@ namespace Decoder {
 	     (fPulseData[chan].pedestal.size() == sz) &&
 	     (fPulseData[chan].peak.size() == sz)) {
 #ifdef WITH_DEBUG
-      if (fDebugFile != 0)
+      if (fDebugFile)
 	*fDebugFile << "Fadc250Module::GetNumFadcEvents channel "
 		    << chan << " = " <<  sz << endl;
 #endif
@@ -581,10 +584,10 @@ namespace Decoder {
     }
     else if ((GetFadcMode() == 9) &&
 	     ((sz = fPulseData[chan].integral.size()) == fPulseData[chan].time.size()) &&
-	     (fPulseData[chan].pedestal.size() == 1 || fPulseData[chan].pedestal.size() == 0) &&
+	     (fPulseData[chan].pedestal.size() == 1 || fPulseData[chan].pedestal.empty()) &&
 	     (fPulseData[chan].peak.size() == sz)) {
 #ifdef WITH_DEBUG
-      if (fDebugFile != 0)
+      if (fDebugFile)
 	*fDebugFile << "Fadc250Module::GetNumFadcEvents channel "
 		    << chan << " = " <<  sz << endl;
 #endif
@@ -592,10 +595,10 @@ namespace Decoder {
     }
     else if ((GetFadcMode() == 10) &&
 	     ((sz = fPulseData[chan].integral.size()) == fPulseData[chan].time.size()) &&
-	     (fPulseData[chan].pedestal.size() == 1 || fPulseData[chan].pedestal.size() == 0) &&
+	     (fPulseData[chan].pedestal.size() == 1 || fPulseData[chan].pedestal.empty()) &&
 	     (fPulseData[chan].peak.size() == sz)) {
 #ifdef WITH_DEBUG
-      if (fDebugFile != 0)
+      if (fDebugFile)
 	*fDebugFile << "Fadc250Module::GetNumFadcEvents channel "
 		    << chan << " = " <<  sz << endl;
 #endif
@@ -622,7 +625,7 @@ namespace Decoder {
       }
       else  {
 #ifdef WITH_DEBUG
-	if (fDebugFile != 0)
+	if (fDebugFile)
 	  *fDebugFile << "Fadc250Module::GetNumFadcSamples channel "
 		      << chan << ", event " << ievent << " = "
 		      <<  fPulseData[chan].samples.size() << endl;
@@ -659,19 +662,19 @@ namespace Decoder {
     // Load THaSlotData
     for (uint32_t chan = 0; chan < NADCCHAN; chan++) {
       // Pulse Integral
-      for (uint32_t ievent = 0; ievent < fPulseData[chan].integral.size(); ievent++)
+      for (vsiz_t ievent = 0; ievent < fPulseData[chan].integral.size(); ievent++)
 	sldat->loadData("adc", chan, fPulseData[chan].integral[ievent], fPulseData[chan].integral[ievent]);
       // Pulse Time
-      for (uint32_t ievent = 0; ievent < fPulseData[chan].time.size(); ievent++)
+      for (vsiz_t ievent = 0; ievent < fPulseData[chan].time.size(); ievent++)
 	sldat->loadData("adc", chan, fPulseData[chan].time[ievent], fPulseData[chan].time[ievent]);
       // Pulse Peak
-      for (uint32_t ievent = 0; ievent < fPulseData[chan].peak.size(); ievent++)
+      for (vsiz_t ievent = 0; ievent < fPulseData[chan].peak.size(); ievent++)
 	sldat->loadData("adc", chan, fPulseData[chan].peak[ievent], fPulseData[chan].peak[ievent]);
       // Pulse Pedestal
-      for (uint32_t ievent = 0; ievent < fPulseData[chan].pedestal.size(); ievent++)
+      for (vsiz_t ievent = 0; ievent < fPulseData[chan].pedestal.size(); ievent++)
 	sldat->loadData("adc", chan, fPulseData[chan].pedestal[ievent], fPulseData[chan].pedestal[ievent]);
       // Pulse Samples
-      for (uint32_t ievent = 0; ievent < fPulseData[chan].samples.size(); ievent++)
+      for (vsiz_t ievent = 0; ievent < fPulseData[chan].samples.size(); ievent++)
 	sldat->loadData("adc", chan, fPulseData[chan].samples[ievent], fPulseData[chan].samples[ievent]);
     }  // Channel loop
   }
@@ -689,7 +692,7 @@ namespace Decoder {
     Clear();
 
     Int_t index = 0;
-    for (UInt_t i = 0; i<evbuffer.size(); i++)
+    for( vsiz_t i = 0; i < evbuffer.size(); i++ )
       DecodeOneWord(evbuffer[index++]);
 
     LoadTHaSlotDataObj(sldat);
@@ -704,7 +707,7 @@ namespace Decoder {
       data_type_def = (data >> 27) & 0xF;        // Data type defining words, mask 4 bits
     // Debug output
 #ifdef WITH_DEBUG
-    if (fDebugFile != 0)
+    if (fDebugFile)
       *fDebugFile << "Fadc250Module::Decode:: FADC DATA TYPES >> data = " << hex
 		  << data << dec << " >> data word id = " << data_type_id
 		  << " >> data type = " << data_type_def << endl;
@@ -714,7 +717,7 @@ namespace Decoder {
     // Ensure that slots match and do not decode if they differ
     if (!slots_match && data_type_def != 0) {
 #ifdef WITH_DEBUG
-      if (fDebugFile != 0)
+      if (fDebugFile)
 	*fDebugFile << "Fadc250Module::Decode:: fSlot & FADC slot do not match AND data type != 0" << endl;
 #endif
       return -1;
@@ -723,13 +726,13 @@ namespace Decoder {
     // Acquire data objects depending on the data type defining word
     switch(data_type_def)
       {
-      case 0: // Block header, indicates the begining of a block of events
+      case 0: // Block header, indicates the beginning of a block of events
 	if (data_type_id) {
 	  block_header_found = true;                     // Set to true if found
 	  fadc_data.slot_blk_hdr = (data >> 22) & 0x1F;  // Slot number (set by VME64x backplane), mask 5 bits
 	  // Debug output
 #ifdef WITH_DEBUG
-	  if (fDebugFile != 0)
+	  if (fDebugFile)
 	    *fDebugFile << "Fadc250Module::Decode:: Slot from FADC block header = " << fadc_data.slot_blk_hdr << endl;
 #endif
 	  // Ensure that slots from cratemap and FADC match
@@ -741,7 +744,7 @@ namespace Decoder {
 	  fadc_data.nblock_events = (data >> 0) & 0xFF;  // Number of events in block, mask 8 bits
 	  // Debug output
 #ifdef WITH_DEBUG
-	  if (fDebugFile != 0)
+	  if (fDebugFile)
 	    *fDebugFile << "Fadc250Module::Decode:: FADC BLOCK HEADER >> data = " << hex
 			<< data << dec << " >> slot = " << fadc_data.slot_blk_hdr
 			<< " >> module id = " << fadc_data.mod_id << " >> event block number = " << fadc_data.iblock_num
@@ -754,7 +757,7 @@ namespace Decoder {
 	  fadc_data.NSA = (data >> 0) & 0x1FF;  // Number of samples after threshold crossing to include processing, mask 9 bits
 	  // Debug output
 #ifdef WITH_DEBUG
-	  if (fDebugFile != 0)
+	  if (fDebugFile)
 	    *fDebugFile << "Fadc250Module::Decode:: FADC BLOCK HEADER >> data = " << hex
 			<< data << dec << " >> NSB trigger point (PL) = " <<  fadc_data.PL
 			<< " >> NSB threshold crossing = " <<  fadc_data.NSA
@@ -768,7 +771,7 @@ namespace Decoder {
 	fadc_data.nwords_inblock = (data >> 0) & 0x3FFFFF;  // Total number of words in block of events, mask 22 bits
 	// Debug output
 #ifdef WITH_DEBUG
-	if (fDebugFile != 0)
+	if (fDebugFile)
 	  *fDebugFile << "Fadc250Module::Decode:: FADC BLOCK TRAILER >> data = " << hex
 		      << data << dec << " >> slot = " <<  fadc_data.slot_blk_trl
 		      << " >> nwords in block = " << fadc_data.nwords_inblock << endl;
@@ -776,7 +779,7 @@ namespace Decoder {
 	break;
       case 2: // Event header, indicates start of an event, includes the trigger number
 	event_header_found = true;
-	// For firware versions pre 0x0C00 (06/09/2016)
+	// For firmware versions pre 0x0C00 (06/09/2016)
 	// fadc_data.slot_evt_hdr = (data >> 22) & 0x1F;  // Slot number (set by VME64x backplane), mask 5 bits
 	// fadc_data.evt_num = (data >> 0) & 0x3FFFFF;    // Event number, mask 22 bits
 	// For firmware versions post 0x0C00 (06/09/2016)
@@ -784,19 +787,19 @@ namespace Decoder {
 	fadc_data.trig_num = (data >> 0) & 0xFFF;       // Trigger number
 	// Debug output
 	// #ifdef WITH_DEBUG
-	//	if (fDebugFile != 0)
+	//	if (fDebugFile)
 	//	  *fDebugFile << "Fadc250Module::Decode:: FADC EVENT HEADER >> data = " << hex
 	//		      << data << dec << " >> slot = " << fadc_data.slot_evt_hdr
 	//		      << " >> event number = " << fadc_data.evt_num << endl;
 	// #endif
 #ifdef WITH_DEBUG
-	if (fDebugFile != 0)
+	if (fDebugFile)
 	  *fDebugFile << "Fadc250Module::Decode:: FADC EVENT HEADER >> data = " << hex
 		      << data << dec << " >> event header trigger time = " << fadc_data.eh_trig_time
 		      << " >> trigger number = " << fadc_data.trig_num << endl;
 #endif
 	break;
-      case 3:  // Trigger time, time of trigger occurence relative to the most recent global reset
+      case 3:  // Trigger time, time of trigger occurrence relative to the most recent global reset
 	if (data_type_id)  // Trigger time word 1
 	  fadc_data.trig_time_w1 = (data >> 0) & 0xFFFFFF;  // Time = T_D T_E T_F
 	else  // Trigger time word 2
@@ -805,7 +808,7 @@ namespace Decoder {
 	fadc_data.trig_time = (fadc_data.trig_time_w2 << 24) | fadc_data.trig_time_w1;
 	// Debug output
 #ifdef WITH_DEBUG
-	if (fDebugFile != 0)
+	if (fDebugFile)
 	  *fDebugFile << "Fadc250Module::Decode:: FADC TRIGGER TIME >> data = " << hex
 		      << data << dec << " >> trigger time word 1 = " << fadc_data.trig_time_w1
 		      << " >> trigger time word 2 = " << fadc_data.trig_time_w2
@@ -819,7 +822,7 @@ namespace Decoder {
 	  fadc_data.win_width = (data >> 0) & 0xFFF;  // Window width
 	  // Debug output
 #ifdef WITH_DEBUG
-	  if (fDebugFile != 0)
+	  if (fDebugFile)
 	    *fDebugFile << "Fadc250Module::Decode:: FADC WINDOW RAW DATA >> data = " << hex
 			<< data << dec << " >> channel = " << fadc_data.chan
 			<< " >> window width  = " << fadc_data.win_width << endl;
@@ -846,7 +849,7 @@ namespace Decoder {
 	  fadc_data.overflow = (sample_2 >> 12) & 0x1;                   // Sample 2 overflow bit
 	  // Debug output
 #ifdef WITH_DEBUG
-	  if (fDebugFile != 0)
+	  if (fDebugFile)
 	    *fDebugFile << "Fadc250Module::Decode:: FADC WINDOW RAW DATA >> data = " << hex
 			<< data << dec << " >> channel = " << fadc_data.chan
 			<< " >> sample 1 = " << sample_1
@@ -859,7 +862,7 @@ namespace Decoder {
       case 5:  // Undefined type
 	{
 #ifdef WITH_DEBUG
-	  if (fDebugFile != 0)
+	  if (fDebugFile)
 	    *fDebugFile << "Fadc250Module::Decode:: UNDEFINED TYPE >> data = " << hex << data
 			<< dec << " >> data type id = " << data_type_id << endl;
 #endif
@@ -873,7 +876,7 @@ namespace Decoder {
 	  fadc_data.sample_num_tc = (data >> 0) & 0x3FF;  // FADC sample number of threshold crossing
 	  // Debug output
 #ifdef WITH_DEBUG
-	  if (fDebugFile != 0)
+	  if (fDebugFile)
 	    *fDebugFile << "Fadc250Module::Decode:: FADC PULSE RAW DATA >> data = " << hex
 			<< data << dec << " >> channel = " << fadc_data.chan
 			<< " >> window width  = " << fadc_data.win_width << endl;
@@ -900,7 +903,7 @@ namespace Decoder {
 	  fadc_data.overflow = (sample_2 >> 12) & 0x1;                    // Sample 2 overflow bit
 	  // Debug output
 #ifdef WITH_DEBUG
-	  if (fDebugFile != 0)
+	  if (fDebugFile)
 	    *fDebugFile << "Fadc250Module::Decode:: FADC PULSE RAW DATA >> data = " << hex
 			<< data << dec << " >> sample 1 = " << sample_1
 			<< " >> sample 2 = " << sample_2
@@ -913,13 +916,13 @@ namespace Decoder {
 	data_type_7 = true;
 	fadc_data.chan = (data >> 23) & 0xF;               // FADC channel number
 	fadc_data.pulse_num = (data >> 21) & 0x3;          // FADC pulse number
-	fadc_data.qual_factor = (data >> 19) & 0x3;        // FADC qulatity factor (0-3)
+	fadc_data.qual_factor = (data >> 19) & 0x3;        // FADC quality factor (0-3)
 	fadc_data.pulse_integral = (data >> 0) & 0x7FFFF;  // FADC pulse integral
 	// Store data in arrays of vectors
 	PopulateDataVector(fPulseData[fadc_data.chan].integral, fadc_data.pulse_integral);
 	// Debug output
 #ifdef WITH_DEBUG
-	if (fDebugFile != 0)
+	if (fDebugFile)
 	  *fDebugFile << "Fadc250Module::Decode:: FADC PULSE INTEGRAL >> data = " << hex
 		      << data << dec << " >> chan = " << fadc_data.chan
 		      << " >> pulse num = " << fadc_data.pulse_num
@@ -931,7 +934,7 @@ namespace Decoder {
 	data_type_8 = true;
 	fadc_data.chan = (data >> 23) & 0xF;                // FADC channel number
 	fadc_data.pulse_num = (data >> 21) & 0x3;           // FADC pulse number
-	fadc_data.qual_factor = (data >> 19) & 0x3;         // FADC qulatity factor (0-3)
+	fadc_data.qual_factor = (data >> 19) & 0x3;         // FADC quality factor (0-3)
 	fadc_data.coarse_pulse_time = (data >> 6) & 0x1FF;  // FADC coarse time (4 ns/count)
 	fadc_data.fine_pulse_time = (data >> 0) & 0x3F;     // FADC fine time (0.0625 ns/count)
 	fadc_data.time = (data >> 0) & 0x7FFF;              // FADC time (0.0625 ns/count, bmoffit)
@@ -941,7 +944,7 @@ namespace Decoder {
 	PopulateDataVector(fPulseData[fadc_data.chan].time, fadc_data.time);
 	// Debug output
 #ifdef WITH_DEBUG
-	if (fDebugFile != 0)
+	if (fDebugFile)
 	  *fDebugFile << "Fadc250Module::Decode:: FADC PULSE TIME >> data = " << hex
 		      << data << dec << " >> chan = " << fadc_data.chan
 		      << " >> pulse num = " << fadc_data.pulse_num
@@ -963,7 +966,7 @@ namespace Decoder {
 	  PopulateDataVector(fPulseData[fadc_data.chan].pedestal_quality, fadc_data.qual_factor);
 	  // Debug output
 #ifdef WITH_DEBUG
-	  if (fDebugFile != 0)
+	  if (fDebugFile)
 	    *fDebugFile << "Fadc250Module::Decode:: FADC PULSE PARAMETERS >> data = " << hex
 			<< data << dec << " >> chan = " << fadc_data.chan
 			<< " >> event of block = " << fadc_data.evnt_of_blk
@@ -985,7 +988,7 @@ namespace Decoder {
 	    PopulateDataVector(fPulseData[fadc_data.chan].underflow, fadc_data.samp_underflow);
 	    // Debug output
 #ifdef WITH_DEBUG
-	    if (fDebugFile != 0)
+	    if (fDebugFile)
 	      *fDebugFile << "Fadc250Module::Decode:: FADC PULSE PARAMETERS >> data = " << hex
 			  << data << dec << " >> chan = " << fadc_data.chan
 			  << " >> integral = " << fadc_data.sample_sum
@@ -1010,7 +1013,7 @@ namespace Decoder {
 	    PopulateDataVector(fPulseData[fadc_data.chan].peak, fadc_data.pulse_peak);
 	    // Debug output
 #ifdef WITH_DEBUG
-	    if (fDebugFile != 0)
+	    if (fDebugFile)
 	      *fDebugFile << "Fadc250Module::Decode:: FADC PULSE PARAMETERS >> data = " << hex
 			  << data << dec << " >> chan = " << fadc_data.chan
 			  << " >> coarse time = " << fadc_data.coarse_pulse_time
@@ -1035,7 +1038,7 @@ namespace Decoder {
 	PopulateDataVector(fPulseData[fadc_data.chan].peak, fadc_data.pulse_peak);
 	// Debug output
 #ifdef WITH_DEBUG
-	if (fDebugFile != 0)
+	if (fDebugFile)
 	  *fDebugFile << "Fadc250Module::Decode:: FADC PULSE PEDESTAL >> data = " << hex
 		      << data << dec << " >> chan = " << fadc_data.chan
 		      << " >> pulse num = " << fadc_data.pulse_num
@@ -1047,7 +1050,7 @@ namespace Decoder {
 	{
 	  // Debug output
 #ifdef WITH_DEBUG
-	  if (fDebugFile != 0)
+	  if (fDebugFile)
 	    *fDebugFile << "Fadc250Module::Decode:: UNDEFINED TYPE >> data = " << hex << data
 			<< dec << " >> data type id = " << data_type_id << endl;
 #endif
@@ -1058,7 +1061,7 @@ namespace Decoder {
 	  fadc_data.scaler_words = (data >> 0) & 0x3F;  // FADC scaler words
 	  // Debug output
 #ifdef WITH_DEBUG
-	  if (fDebugFile != 0)
+	  if (fDebugFile)
 	    *fDebugFile << "Fadc250Module::Decode:: FADC SCALER HEADER >> data = " << hex
 			<< data << dec << " >> data words = "
 			<< hex << fadc_data.scaler_words << dec << endl;
@@ -1069,7 +1072,7 @@ namespace Decoder {
 	{
 	  // Debug output
 #ifdef WITH_DEBUG
-	  if (fDebugFile != 0)
+	  if (fDebugFile)
 	    *fDebugFile << "Fadc250Module::Decode:: UNDEFINED TYPE >> data = " << hex << data
 			<< dec << " >> data type id = " << data_type_id << endl;
 #endif
@@ -1079,7 +1082,7 @@ namespace Decoder {
 	{
 	  // Debug output
 #ifdef WITH_DEBUG
-	  if (fDebugFile != 0)
+	  if (fDebugFile)
 	    *fDebugFile << "Fadc250Module::Decode:: DATA NOT VALID >> data = " << hex << data
 			<< dec << " >> data type id = " << data_type_id << endl;
 #endif
@@ -1089,7 +1092,7 @@ namespace Decoder {
 	{
 	  // Debug output
 #ifdef WITH_DEBUG
-	  if (fDebugFile != 0)
+	  if (fDebugFile)
 	    *fDebugFile << "Fadc250Module::Decode:: FILLER WORD >> data = " << hex << data
 			<< dec << " >> data type id = " << data_type_id << endl;
 #endif
@@ -1098,7 +1101,7 @@ namespace Decoder {
       }  // data_type_def switch
 
 #ifdef WITH_DEBUG
-    if (fDebugFile != 0)
+    if (fDebugFile)
       *fDebugFile << "**********************************************************************"
 		  << "\n" << endl;
 #endif

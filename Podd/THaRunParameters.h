@@ -34,7 +34,7 @@ public:
   Double_t       GetTgtPol()      const { return fTgtPol; }
   const char*    GetRunName()     const { return fRunName; }
 
-  virtual Bool_t IsFixedTarget()  const { return kTRUE; }
+  virtual Bool_t IsFixedTarget()  const { return true; }
   Bool_t         IsPolzarized()   const { return fIsPol; }
 
   virtual void   Print( Option_t* opt="" ) const;

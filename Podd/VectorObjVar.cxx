@@ -40,14 +40,14 @@ Int_t VectorObjVar::GetLen() const
 
   assert( fValueP );
 
-  const VecType* pvec = reinterpret_cast<const VecType*>( fValueP );
+  const auto pvec = reinterpret_cast<const VecType*>( fValueP );
   if( !pvec )
     return kInvalidInt;
 
   VecType::size_type n = pvec->size();
   if( n > static_cast<VecType::size_type>(kMaxInt) )
     return kInvalidInt;
-  Int_t len = static_cast<Int_t>(n);
+  auto len = static_cast<Int_t>(n);
 #ifndef STDVECTOR_SIZE_INDEPENDENT_OF_TYPE
   // If the vector contains the objects themselves, may need to correct for the
   // actual object size (could be implementation-dependent)
@@ -66,17 +66,17 @@ const void* VectorObjVar::GetDataPointer( Int_t i ) const
 
   const char* const here = "GetDataPointer()";
 
-  assert( sizeof(ULong_t) == sizeof(void*) );
+  static_assert( sizeof(ULong_t) == sizeof(void*), "ULong_t must be of pointer size");
   assert( fValueP );
 
   Int_t len = GetLen();
   if( len == 0 || len == kInvalidInt )
-    return 0;
+    return nullptr;
 
   if( i<0 || i>=len ) {
     fSelf->Error( here, "Index out of range, variable %s, index %d",
 		  GetName(), i );
-    return 0;
+    return nullptr;
   }
 
   const VecType& vec = *reinterpret_cast<const VecType*>(fValueP);
@@ -86,7 +86,7 @@ const void* VectorObjVar::GetDataPointer( Int_t i ) const
     if( !obj ) {
       fSelf->Error( here, "Null pointer in vector, variable %s, index %d. "
 		    "Check detector code for bugs.", GetName(), i );
-      return 0;
+      return nullptr;
     }
   } else {
     obj = reinterpret_cast<void*>((ULong_t)&vec[0] + i*fElemSize);
@@ -112,9 +112,9 @@ Bool_t VectorObjVar::HasSameSize( const Variable& rhs ) const
   // Trivially, VectorObjVar variables have the same size if they
   // belong to the same std::vector
 
-  const VectorObjVar* other = dynamic_cast<const VectorObjVar*>(&rhs);
+  const auto other = dynamic_cast<const VectorObjVar*>(&rhs);
   if( !other )
-    return kFALSE;
+    return false;
 
   return fValueP == other->fValueP;
 }

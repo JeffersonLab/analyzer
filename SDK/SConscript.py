@@ -3,7 +3,7 @@
 ### Modify 'libname' and the list of source files 'src' as needed
 
 from podd_util import build_library
-Import ('baseenv')
+Import('baseenv')
 
 # Library name (lib<libname>.so will be built)
 libname = 'User'
@@ -17,5 +17,5 @@ UserScintillator.cxx SkeletonModule.cxx
 
 # Tell SCons to build this library from these sources.
 # A ROOT dictionary, defined in <libname>_LinkDef.h, will be built as well.
-# For more info, see the documention in $ANALYZER/site_scons/podd_util.py
+# For more info, see the documentation in $ANALYZER/site_scons/podd_util.py
 build_library(baseenv, libname, src)

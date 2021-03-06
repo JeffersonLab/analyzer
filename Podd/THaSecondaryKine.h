@@ -88,7 +88,7 @@ protected:
   Double_t fPX_cm;      // Magnitude of X momentum in CM system (GeV)
   Double_t fTheta_x_cm; // Polar angle of X in CM system wrt q (rad)
   Double_t fPhi_x_cm;   // Azimuth of X in CM system wrt q (rad)
-  Double_t fTheta_b_cm; // Polar angle of recoil systm in CM wrt q (rad)
+  Double_t fTheta_b_cm; // Polar angle of recoil system in CM wrt q (rad)
   Double_t fPhi_b_cm;   // Azimuth of recoil system in CM wrt q (rad)
   Double_t fTX_cm;      // Kinetic energy of X in CM (GeV)
   Double_t fTB_cm;      // Kinetic energy of B in CM (GeV)

@@ -30,7 +30,7 @@ MethodVar::MethodVar( THaVar* pvar, const void* addr,
   assert( fMethod );
 
   if( !VerifyNonArrayName(GetName()) ) {
-    fValueP = 0;
+    fValueP = nullptr;
     return;
   }
 }
@@ -56,7 +56,7 @@ const void* MethodVar::GetDataPointer( Int_t i ) const
 
   if( i != 0 ) {
     fSelf->Error( here, "Index out of range, variable %s, index %d", GetName(), i );
-    return 0;
+    return nullptr;
   }
 
   return GetDataPointer(fValueP);
@@ -91,7 +91,7 @@ const void* MethodVar::GetDataPointer( const void* obj ) const
       }
       break;
     default:
-      assert(false);  // misconstructed object (error in THaVarList::DefineByRTTI)
+      assert(false);  // ill-constructed object (error in THaVarList::DefineByRTTI)
     }
     return &fData;
   }
@@ -126,12 +126,12 @@ const void* MethodVar::GetDataPointer( const void* obj ) const
       }
       break;
     default:
-      assert(false);  // misconstructed object (error in THaVarList::DefineByRTTI)
+      assert(false);  // ill-constructed object (error in THaVarList::DefineByRTTI)
     }
     return &fData;
   }
   // Not reached
-  return 0;
+  return nullptr;
 }
 
 //_____________________________________________________________________________
@@ -139,7 +139,7 @@ Bool_t MethodVar::IsBasic() const
 {
   // Data are basic (POD variable or array)
 
-  return kFALSE;
+  return false;
 }
 
 //_____________________________________________________________________________

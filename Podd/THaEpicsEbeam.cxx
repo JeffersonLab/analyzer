@@ -18,9 +18,9 @@
 THaEpicsEbeam::THaEpicsEbeam( const char* name, const char* description,
 			      const char* beam, const char* epics_var,
 			      Double_t scale_factor ) : 
-  THaPhysicsModule( name,description ), fEcorr(0.0), fEpicsIsMomentum(kFALSE),
+  THaPhysicsModule( name,description ), fEcorr(0.0), fEpicsIsMomentum(false),
   fScaleFactor(scale_factor), fBeamName(beam), fEpicsVar(epics_var), 
-  fBeamModule(NULL)
+  fBeamModule(nullptr)
 {
   // Constructor.
 }
@@ -137,7 +137,7 @@ void THaEpicsEbeam::SetEpicsVar( const char* name )
 //_____________________________________________________________________________
 void THaEpicsEbeam::SetEpicsIsMomentum( Bool_t mode ) 
 {
-  // If mode=kTRUE, interpret EPICS data as momentum rather than energy
+  // If mode=true, interpret EPICS data as momentum rather than energy
   if( !IsInit())
     fEpicsIsMomentum = mode; 
   else
@@ -147,7 +147,7 @@ void THaEpicsEbeam::SetEpicsIsMomentum( Bool_t mode )
 //_____________________________________________________________________________
 void THaEpicsEbeam::SetScaleFactor( Double_t factor ) 
 {
-  // If mode=kTRUE, interpret EPICS data as momentum rather than energy
+  // If mode=true, interpret EPICS data as momentum rather than energy
   if( !IsInit())
     fScaleFactor = factor;
   else

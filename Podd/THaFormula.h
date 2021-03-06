@@ -35,7 +35,7 @@ public:
   static const Option_t* const kPRINTBRIEF;
 
   THaFormula();
-  THaFormula( const char* name, const char* formula, Bool_t do_register=kTRUE,
+  THaFormula( const char* name, const char* formula, Bool_t do_register=true,
 	      const THaVarList* vlst=gHaVars, const THaCutList* clst=gHaCuts );
   THaFormula( const THaFormula& rhs );
   THaFormula& operator=( const THaFormula& rhs );
@@ -93,10 +93,8 @@ protected:
     FVarDef_t( EVariableType t, void* p, Int_t i ) : type(t), obj(p), index(i) {}
     FVarDef_t( const FVarDef_t& rhs );
     FVarDef_t& operator=( const FVarDef_t& rhs );
-#if __cplusplus >= 201103L
     FVarDef_t( FVarDef_t&& rhs ) noexcept;
     FVarDef_t& operator=( FVarDef_t&& rhs ) noexcept;
-#endif
     ~FVarDef_t();
   };
   std::vector<FVarDef_t> fVarDef;      //Global variables referenced in formula
@@ -108,7 +106,7 @@ protected:
           Int_t     GetNdataUnchecked() const;
           Int_t     Init( const char* name, const char* expression );
   virtual Bool_t    IsString( Int_t oper ) const;
-  virtual void      RegisterFormula( Bool_t add = kTRUE );
+  virtual void      RegisterFormula( Bool_t add = true );
 
   ClassDef(THaFormula,0)  //Formula defined on list of variables
 };

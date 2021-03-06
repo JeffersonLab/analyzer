@@ -34,7 +34,7 @@ const void* VectorObjMethodVar::GetDataPointer( Int_t i ) const
 
   const void* obj = VectorObjVar::GetDataPointer(i);
   if( !obj )
-    return 0;
+    return nullptr;
 
   // Get data from method, using object retrieved from the std::vector above
   return MethodVar::GetDataPointer(obj);
@@ -45,7 +45,7 @@ Bool_t VectorObjMethodVar::IsBasic() const
 {
   // Data are basic (POD variable or array)
 
-  return kFALSE;
+  return false;
 }
 
 }// namespace Podd

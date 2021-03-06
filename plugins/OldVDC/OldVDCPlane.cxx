@@ -53,7 +53,7 @@ OldVDCPlane::OldVDCPlane( const char* name, const char* description,
     fMinTime(kDefaultMinTime), fMaxTime(kDefaultMaxTime),
     fFlags(0), fZ(0), fWBeg(0), fWSpac(0), fWAngle(0),
     fTDCRes(kDefaultTDCRes),
-    fDriftVel(0), /*fTable(NULL),*/ fTTDConv(0), fglTrg(0)
+    fDriftVel(0), /*fTable(nullptr),*/ fTTDConv(0), fglTrg(0)
 {
   // Constructor
 
@@ -180,12 +180,12 @@ Int_t OldVDCPlane::DoReadDatabase( FILE* file, const TDatime& date )
     fTDCRes = tdcres;
 
   if( fNMaxGap < 0 || fNMaxGap > 2 ) {
-    Error( Here(here), "Invalid max_gap = %d, must be betwwen 0 and 2. "
+    Error( Here(here), "Invalid max_gap = %d, must be between 0 and 2. "
 	   "Fix database.", fNMaxGap );
     return kInitError;
   }
   if( fMinTime < 0 || fMinTime > 4095 ) {
-    Error( Here(here), "Invalid min_time = %d, must be betwwen 0 and 4095. "
+    Error( Here(here), "Invalid min_time = %d, must be between 0 and 4095. "
 	   "Fix database.", fMinTime );
     return kInitError;
   }
@@ -479,11 +479,11 @@ Int_t OldVDCPlane::FindClusters()
   Int_t wireNum  =   0;         // Current wire number
   Int_t ndif     =   0;         // Difference between wire numbers
   Int_t nHits    = GetNHits();  // Number of hits in the plane
-  OldVDCCluster* clust = NULL;  // Current cluster
+  OldVDCCluster* clust = nullptr;  // Current cluster
   OldVDCHit* hit;               // current hit
 
 //    Int_t minTime = 0;        // Smallest TDC time for a given cluster
-//    OldVDCHit * minHit = NULL; // Hit with the smallest TDC time for
+//    OldVDCHit * minHit = nullptr; // Hit with the smallest TDC time for
                              // a given cluster
   //  const Double_t sqrt2 = 0.707106781186547462;
 

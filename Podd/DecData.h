@@ -18,8 +18,8 @@ namespace Podd {
 class DecData : public THaApparatus {
 
 public:
-  DecData( const char* name = "D",
-	   const char* description = "Raw decoder data" );
+  explicit DecData( const char* name = "D",
+                    const char* description = "Raw decoder data" );
   virtual ~DecData();
 
   virtual EStatus Init( const TDatime& run_time );

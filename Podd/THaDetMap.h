@@ -127,16 +127,16 @@ protected:
 };
 
 inline THaDetMap::Module* THaDetMap::GetModule( UShort_t i ) const {
-  return i<fNmodules ? uGetModule(i) : NULL; 
+  return i<fNmodules ? uGetModule(i) : nullptr;
 }
 
 inline Bool_t THaDetMap::IsADC(Module* d) {
-  if( !d ) return kFALSE;
+  if( !d ) return false;
   return d->IsADC();
 }
 
 inline Bool_t THaDetMap::IsTDC(Module* d) {
-  if( !d ) return kFALSE;
+  if( !d ) return false;
   return d->IsTDC();
 }
 
@@ -146,12 +146,12 @@ inline UInt_t THaDetMap::GetModel(Module* d) {
 }
 
 inline Bool_t THaDetMap::IsADC( UShort_t i ) const {
-  if( i >= fNmodules ) return kFALSE;
+  if( i >= fNmodules ) return false;
   return uGetModule(i)->IsADC();
 }
 
 inline Bool_t THaDetMap::IsTDC( UShort_t i ) const {
-  if( i >= fNmodules ) return kFALSE;
+  if( i >= fNmodules ) return false;
   return uGetModule(i)->IsTDC();
 }
 

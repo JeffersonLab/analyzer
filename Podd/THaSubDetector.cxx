@@ -104,7 +104,7 @@ void THaSubDetector::SetParent( THaDetectorBase* detector )
     return;
   }
   if( !detector ) {
-    Error( Here(here), "Cannot set detector to NULL. Detector not changed.");
+    Error( Here(here), "Cannot set detector to nullptr. Detector not changed.");
     return;
   }    
   if( detector == this ) {

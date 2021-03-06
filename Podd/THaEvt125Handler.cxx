@@ -41,11 +41,7 @@
 using namespace std;
 
 THaEvt125Handler::THaEvt125Handler(const char *name, const char* description)
-  : THaEvtTypeHandler(name,description), NVars(0), dvars(0)
-{
-}
-
-THaEvt125Handler::~THaEvt125Handler()
+  : THaEvtTypeHandler(name,description), NVars(0), dvars(nullptr)
 {
 }
 
@@ -109,7 +105,7 @@ THaAnalysisObject::EStatus THaEvt125Handler::Init(const TDatime&)
       cout << "EvtHandler:: No gHaVars ?!  Well, that is a problem !!"<<endl;
       return kInitError;
   }
-  const Int_t* count = 0;
+  const Int_t* count = nullptr;
   char cname[80];
   char cdescription[80];
   for (UInt_t i = 0; i < NVars; i++) {

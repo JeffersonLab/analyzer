@@ -74,7 +74,7 @@ Int_t UserScintillator::DefineVariables( EMode mode )
     { "padnum", "Paddle number",                                 "fPaddle" },
     { "ytrk",   "Transverse pos'n at scint plane from track (m)","fYtrk" },
     { "ytdc",   "Transverse pos'n at scint plane from TDCs (m)", "fYtdc" },
-    { 0 }
+    { nullptr }
   };
   return DefineVarsFromList( vars, mode );
 }
@@ -110,7 +110,7 @@ Int_t UserScintillator::ReadDatabase( const TDatime& date )
     // Set up an array of database requests. See VarDef.h for details.
     const DBRequest request[] = {
       { "stop", &stop, kInt, 1 },    // Common stop mode (1=yes)
-      { 0 }                          // Last element must be NULL
+      { nullptr }                          // Last element must be nullptr
     };
 
     // Read the requested values
@@ -130,12 +130,12 @@ Int_t UserScintillator::ReadDatabase( const TDatime& date )
   // Convert data types
   fCommonStop = (stop != 0);
 
-  // Check if all paramaters ok. This is just an example that allows this
+  // Check if all parameters ok. This is just an example that allows this
   // class to work even with non-spectrometer apparatuses and incomplete
   // databases. Alternatively, one could return an init error to force the
   // user to do more sane stuff and/or fix the database.
-  bool have_spectro = GetApparatus() != 0
-    && GetApparatus()->IsA()->InheritsFrom("THaSpectrometer");
+  bool have_spectro = (GetApparatus() != nullptr
+    && GetApparatus()->IsA()->InheritsFrom("THaSpectrometer") );
   fGoodToGo = have_spectro && fSize[0]!=0.0 && fNelem>0;
 
   return kOK;

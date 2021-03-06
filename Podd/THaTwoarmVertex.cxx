@@ -5,7 +5,7 @@
 // THaTwoarmVertex
 //
 // Calculate the intersection of the Golden Track from two spectrometers.
-// The resultsing vertex coordinates are in global variables x,y,z.
+// The resulting vertex coordinates are in global variables x,y,z.
 //
 // This module assumes that the spectrometers only reconstruct the 
 // target position transverse to the bend plane (y_tg) with relatively 
@@ -25,7 +25,6 @@
 #include "THaTrackInfo.h"
 #include "THaTrack.h"
 #include "TMath.h"
-#include "VarDef.h"
 
 #include <iostream>
 
@@ -35,7 +34,7 @@ using namespace std;
 THaTwoarmVertex::THaTwoarmVertex( const char* name, const char* description,
 				  const char* spectro1, const char* spectro2 ) :
   THaPhysicsModule(name,description),
-  fName1(spectro1), fName2(spectro2), fSpectro1(NULL), fSpectro2(NULL)
+  fName1(spectro1), fName2(spectro2), fSpectro1(nullptr), fSpectro2(nullptr)
 {
   // Normal constructor.
 
@@ -62,8 +61,7 @@ void THaTwoarmVertex::Clear( Option_t* opt )
 //_____________________________________________________________________________
 Int_t THaTwoarmVertex::DefineVariables( EMode mode )
 {
-  // Define/delete standard variables for a spectrometer (tracks etc.)
-  // Can be overridden or extended by derived (actual) apparatuses
+  // Define/delete global variables for this module
 
   if( mode == kDefine && fIsSetup ) return kOK;
   fIsSetup = ( mode == kDefine );
@@ -120,7 +118,7 @@ Int_t THaTwoarmVertex::Process( const THaEvData& )
   if( !IntersectPlaneWithRay( t1->GetPvect(), yax, p1, 
 			      p2, t2->GetPvect(), t, fVertex ))
     return 3; // Oops, track planes are parallel?
-  fVertexOK = kTRUE;
+  fVertexOK = true;
 
 #ifdef WITH_DEBUG
   if( fDebug<2 )
@@ -156,6 +154,6 @@ Int_t THaTwoarmVertex::Process( const THaEvData& )
   fDataValid = true;
   return 0;
 }
-  
+
 ///////////////////////////////////////////////////////////////////////////////
 ClassImp(THaTwoarmVertex)

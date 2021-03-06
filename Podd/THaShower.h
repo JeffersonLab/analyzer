@@ -15,8 +15,8 @@ class TClonesArray;
 class THaShower : public THaPidDetector {
 
 public:
-  THaShower( const char* name, const char* description = "",
-	     THaApparatus* a = NULL );
+  explicit THaShower( const char* name, const char* description = "",
+                      THaApparatus* a = nullptr );
   THaShower();
   virtual ~THaShower();
 

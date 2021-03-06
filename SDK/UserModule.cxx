@@ -30,7 +30,7 @@ UserModule::UserModule( const char* name, const char* description,
 			const char* spectro, Double_t parameter ) :
   THaPhysicsModule(name,description), 
   fResultA(kBig), fResultB(kBig), fParameter(parameter),
-  fSpectroName(spectro), fSpectro(NULL)
+  fSpectroName(spectro), fSpectro(nullptr)
 {
   // Normal constructor. 
 
@@ -66,7 +66,7 @@ Int_t UserModule::DefineVariables( EMode mode )
   RVarDef vars[] = {
     { "A",  "Result A", "fResultA" },
     { "B",  "Result B", "fResultB" },
-    { 0 }
+    { nullptr }
   };
   return DefineVarsFromList( vars, mode );
 }
@@ -111,7 +111,7 @@ Int_t UserModule::Process( const THaEvData& /* evdata */ )
   // the central ray, and tracks are assumed to be straight.
   // (Such simple results can also be obtained, more easily, using 
   // formulas in output.def.)
-  // One would normally do susbtantially more complex work here.
+  // One would normally do substantially more complex work here.
 
   // "x_sieve"
   fResultA = trkifo->GetX() + fParameter * trkifo->GetTheta();
@@ -162,12 +162,6 @@ Int_t UserModule::ReadRunDatabase( const TDatime& date )
   return kOK;
 }
   
-//_____________________________________________________________________________
-void UserModule::PrintInitError( const char* here )
-{
-  Error( Here(here), "Cannot set. Module already initialized." );
-}
-
 //_____________________________________________________________________________
 void UserModule::SetParameter( Double_t value ) 
 {

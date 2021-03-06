@@ -33,7 +33,7 @@ public:
   virtual Int_t     Process( const THaEvData& );
           void      SetBeam( const char* beam );
           void      SetEpicsVar( const char* epics_var );
-          void      SetEpicsIsMomentum( Bool_t mode=kTRUE );
+          void      SetEpicsIsMomentum( Bool_t mode=true );
           void      SetScaleFactor( Double_t fact );
 
 protected:

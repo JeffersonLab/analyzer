@@ -62,8 +62,8 @@ class THaEpics {
 
 public:
 
-   THaEpics() { }
-   virtual ~THaEpics() {}
+   THaEpics() = default;
+   virtual ~THaEpics() = default;
 // Get tagged value nearest 'event'
    Double_t GetData (const char* tag, int event=0) const;
 // Get tagged string value nearest 'event'

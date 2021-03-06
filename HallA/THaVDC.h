@@ -8,18 +8,27 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "THaTrackingDetector.h"
+#include "TimeCorrectionModule.h"
 #include <cassert>
+#include <utility>
+#include <string>
+#include <vector>
 
 class THaVDCChamber;
 class THaTrack;
 class TClonesArray;
 class THaVDCPoint;
+namespace Podd {
+  class TimeCorrectionModule;
+}
 
 class THaVDC : public THaTrackingDetector {
 
+friend class THaVDCPlane;
+
 public:
-  THaVDC( const char* name, const char* description = "",
-	  THaApparatus* a = NULL );
+  explicit THaVDC( const char* name, const char* description = "",
+                   THaApparatus* a = nullptr );
 
   virtual ~THaVDC();
 
@@ -128,26 +137,34 @@ protected:
 
   std::vector<THaMatrixElement> fLMatrixElems;   // Path-length corrections (meters)
 
-  void CalcFocalPlaneCoords( THaTrack* track );
-  void CalcTargetCoords(THaTrack *the_track );
-  void CalcMatrix(const double x, std::vector<THaMatrixElement> &matrix);
-  Double_t DoPoly(const int n, const std::vector<double> &a, const double x);
-  Double_t PolyInv(const double x1, const double x2, const double xacc,
-		 const double y, const int norder,
-		 const std::vector<double> &a);
-  Double_t CalcTargetVar(const std::vector<THaMatrixElement> &matrix,
-			 const double powers[][5]);
-  Double_t CalcTarget2FPLen(const std::vector<THaMatrixElement>& matrix,
-			    const Double_t powers[][5]);
-  Int_t ReadDatabase( const TDatime& date );
+  Podd::TimeCorrectionModule* fTimeCorrectionModule;
 
-  virtual Int_t ConstructTracks( TClonesArray* tracks = NULL, Int_t flag = 0 );
+  void CalcFocalPlaneCoords( THaTrack* track );
+  void CalcTargetCoords( THaTrack* the_track );
+  static void CalcMatrix( double x, std::vector<THaMatrixElement>& matrix );
+//  Double_t DoPoly(const int n, const std::vector<double> &a, const double x);
+//  Double_t PolyInv(const double x1, const double x2, const double xacc,
+//		 const double y, const int norder,
+//		 const std::vector<double> &a);
+  static Double_t CalcTargetVar( const std::vector<THaMatrixElement>& matrix,
+                                 const double powers[][5] );
+  static Double_t CalcTarget2FPLen( const std::vector<THaMatrixElement>& matrix,
+                                    const Double_t powers[][5] );
+  static void     PrintME( const std::string& header,
+                           const std::vector<THaMatrixElement>& matrix );
+
+  virtual Int_t ConstructTracks( TClonesArray* tracks = nullptr, Int_t flag = 0 );
 
   void CorrectTimeOfFlight(TClonesArray& tracks);
   void FindBadTracks(TClonesArray &tracks);
 
+  std::pair<Double_t,bool> GetTimeCorrection() const;
+  Double_t GetTimeCorrectionUnchecked() const;
+
+  virtual Int_t ReadDatabase( const TDatime& date );
   virtual Int_t ReadGeometry( FILE* file, const TDatime& date,
-			      Bool_t required = kFALSE );
+			      Bool_t required = false );
+  virtual Int_t DefineVariables( EMode mode = kDefine );
 
   ClassDef(THaVDC,0)             // VDC class
 };

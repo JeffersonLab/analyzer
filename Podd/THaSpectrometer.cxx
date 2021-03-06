@@ -36,9 +36,9 @@ using namespace std;
 
 //_____________________________________________________________________________
 THaSpectrometer::THaSpectrometer( const char* name, const char* desc ) : 
-  THaApparatus( name,desc ), fGoldenTrack(NULL), 
-  fPID(kFALSE), fThetaGeo(0.0), fPhiGeo(0.0), fPcentral(1.0), fCollDist(0.0),
-  fStagesDone(0), fListInit(kFALSE)
+  THaApparatus( name,desc ), fGoldenTrack(nullptr), 
+  fPID(false), fThetaGeo(0.0), fPhiGeo(0.0), fPcentral(1.0), fCollDist(0.0),
+  fStagesDone(0), fListInit(false)
 {
   // Constructor.
   // Protected. Can only be called by derived classes.
@@ -66,12 +66,12 @@ THaSpectrometer::~THaSpectrometer()
 
   fPidParticles->Delete();   //delete all THaParticleInfo objects
 
-  delete fPidParticles;          fPidParticles = 0;
-  delete fPidDetectors;          fPidDetectors = 0;
-  delete fNonTrackingDetectors;  fNonTrackingDetectors = 0;
-  delete fTrackingDetectors;     fTrackingDetectors = 0;
-  delete fTrackPID;              fTrackPID = 0;
-  delete fTracks;                fTracks = 0;
+  delete fPidParticles;          fPidParticles = nullptr;
+  delete fPidDetectors;          fPidDetectors = nullptr;
+  delete fNonTrackingDetectors;  fNonTrackingDetectors = nullptr;
+  delete fTrackingDetectors;     fTrackingDetectors = nullptr;
+  delete fTrackPID;              fTrackPID = nullptr;
+  delete fTracks;                fTracks = nullptr;
 
   DefineVariables( kDelete );
 }
@@ -96,9 +96,7 @@ Int_t THaSpectrometer::AddDetector( THaDetector* pdet, Bool_t quiet, Bool_t firs
   Int_t status = THaApparatus::AddDetector( pdet, quiet, first );
   if( status != 0 ) return status;
 
-  THaSpectrometerDetector* sdet = 
-    static_cast<THaSpectrometerDetector*>( pdet );
-
+  auto sdet = static_cast<THaSpectrometerDetector*>( pdet );
   if( sdet->IsTracking() )
     fTrackingDetectors->Add( sdet );
   else
@@ -153,7 +151,7 @@ void THaSpectrometer::Clear( Option_t* opt )
   fTracks->Clear("C");
   TrkIfoClear();
   VertexClear();
-  fGoldenTrack = NULL;
+  fGoldenTrack = nullptr;
   fStagesDone = 0;
 }
 
@@ -213,7 +211,7 @@ Int_t THaSpectrometer::DefineVariables( EMode mode )
     { "tr.beta",  "Beta of track",               "fTracks.THaTrack.GetBeta()"},
     { "tr.dbeta", "uncertainty of beta",         "fTracks.THaTrack.GetdBeta()"},
     { "status",   "Bits of completed analysis stages", "fStagesDone" },
-    { 0 }
+    { nullptr }
   };
 
   return DefineVarsFromList( vars, mode );
@@ -231,7 +229,7 @@ const TVector3& THaSpectrometer::GetVertex() const
 //_____________________________________________________________________________
 Bool_t THaSpectrometer::HasVertex() const
 {
-  return (fGoldenTrack) ? fGoldenTrack->HasVertex() : kFALSE;
+  return (fGoldenTrack) ? fGoldenTrack->HasVertex() : false;
 }
 
 //_____________________________________________________________________________
@@ -245,8 +243,7 @@ void THaSpectrometer::ListInit()
   fPidDetectors->Clear();
 
   TIter next(fDetectors);
-  while( THaSpectrometerDetector* theDetector = 
-	 static_cast<THaSpectrometerDetector*>( next() )) {
+  while( auto theDetector = static_cast<THaSpectrometerDetector*>( next() )) {
 
     if( theDetector->IsTracking() )
       fTrackingDetectors->Add( theDetector );
@@ -267,7 +264,7 @@ void THaSpectrometer::ListInit()
     new( pid[i] )  THaPIDinfo( ndet, npart );
   }
   
-  fListInit = kTRUE;
+  fListInit = true;
 }
 
 //_____________________________________________________________________________
@@ -281,7 +278,7 @@ Int_t THaSpectrometer::CoarseTrack()
   // 1st step: Coarse tracking.  This should be quick and dirty.
   // Any tracks found are put in the fTrack array.
   TIter next( fTrackingDetectors );
-  while( THaTrackingDetector* theTrackDetector =
+  while( auto theTrackDetector =
 	 static_cast<THaTrackingDetector*>( next() )) {
 #ifdef WITH_DEBUG
     if( fDebug>1 ) cout << "Call CoarseTrack() for " 
@@ -309,7 +306,7 @@ Int_t THaSpectrometer::CoarseReconstruct()
     CoarseTrack();
 
   TIter next( fNonTrackingDetectors );
-  while( THaNonTrackingDetector* theNonTrackDetector =
+  while( auto theNonTrackDetector =
 	 static_cast<THaNonTrackingDetector*>( next() )) {
 #ifdef WITH_DEBUG
     if( fDebug>1 ) cout << "Call CoarseProcess() for " 
@@ -336,7 +333,7 @@ Int_t THaSpectrometer::Track()
     CoarseReconstruct();
 
   TIter next( fTrackingDetectors );
-  while( THaTrackingDetector* theTrackDetector =
+  while( auto theTrackDetector =
 	 static_cast<THaTrackingDetector*>( next() )) {
 #ifdef WITH_DEBUG
     if( fDebug>1 ) cout << "Call FineTrack() for " 
@@ -389,7 +386,7 @@ Int_t THaSpectrometer::Reconstruct()
   // PID likelihoods should be calculated here.
 
   TIter next( fNonTrackingDetectors );
-  while( THaNonTrackingDetector* theNonTrackDetector =
+  while( auto theNonTrackDetector =
 	 static_cast<THaNonTrackingDetector*>( next() )) {
 #ifdef WITH_DEBUG
     if( fDebug>1 ) cout << "Call FineProcess() for " 
@@ -540,13 +537,13 @@ Int_t THaSpectrometer::ReadRunDatabase( const TDatime& date )
 
   const DBRequest req[] = {
     { "theta",    &th                       },
-    { "phi",      &ph,        kDouble, 0, 1 },
+    { "phi",      &ph,        kDouble, 0, true },
     { "pcentral", &fPcentral                },
-    { "colldist", &fCollDist, kDouble, 0, 1 },
-    { "off_x",    &off_x,     kDouble, 0, 1 },
-    { "off_y",    &off_y,     kDouble, 0, 1 },
-    { "off_z",    &off_z,     kDouble, 0, 1 },
-    { 0 }
+    { "colldist", &fCollDist, kDouble, 0, true },
+    { "off_x",    &off_x,     kDouble, 0, true },
+    { "off_y",    &off_y,     kDouble, 0, true },
+    { "off_z",    &off_z,     kDouble, 0, true },
+    { nullptr }
   };
   err = LoadDB( file, date, req );
   fclose(file);

@@ -22,14 +22,14 @@ public:
   THaPidDetector() {} // for ROOT I/O
   virtual ~THaPidDetector();
   
-          Bool_t   IsPid() { return kTRUE; }
+          Bool_t   IsPid() { return true; }
 
 protected:
 
   //Only derived classes may construct me
 
   THaPidDetector( const char* name, const char* description,
-		  THaApparatus* a = NULL );
+		  THaApparatus* a = nullptr );
 
   ClassDef(THaPidDetector,0)  //ABC for a PID detector
 };

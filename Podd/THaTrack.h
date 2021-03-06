@@ -183,7 +183,7 @@ public:
   void              SetVertexError( Double_t x, Double_t y, Double_t z )
   { fVertexError.SetXYZ( x, y, z ); }
 
-  virtual Bool_t    IsSortable() const { return kTRUE; }
+  virtual Bool_t    IsSortable() const { return true; }
   virtual Int_t	    Compare(const TObject* obj) const;
 
 protected:

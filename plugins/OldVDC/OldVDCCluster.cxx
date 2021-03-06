@@ -88,10 +88,10 @@ void OldVDCCluster::Clear( Option_t* )
 
   ClearFit();
   fSize  = 0;
-  fPivot = NULL;
-  fPlane = NULL;
-//    fUVTrack = NULL;
-//    fTrack = NULL;
+  fPivot = nullptr;
+  fPlane = nullptr;
+//    fUVTrack = nullptr;
+//    fTrack = nullptr;
 
 }
 

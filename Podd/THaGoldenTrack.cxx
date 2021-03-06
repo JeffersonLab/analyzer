@@ -20,8 +20,8 @@ ClassImp(THaGoldenTrack)
 //_____________________________________________________________________________
 THaGoldenTrack::THaGoldenTrack( const char* name, const char* description,
 				const char* spectro ) :
-  THaPhysicsModule(name,description), fIndex(-1), fGoldBeta(kBig), fTrack(0),
-  fSpectroName(spectro), fSpectro(0)
+  THaPhysicsModule(name,description), fIndex(-1), fGoldBeta(kBig),
+  fTrack(nullptr), fSpectroName(spectro), fSpectro(nullptr)
 {
   // Normal constructor.
 
@@ -39,7 +39,7 @@ THaGoldenTrack::~THaGoldenTrack()
 void THaGoldenTrack::Clear( Option_t* opt )
 {
   THaPhysicsModule::Clear(opt);
-  fTrkIfo.Clear(opt); fIndex = -1; fGoldBeta = kBig; fTrack = 0;
+  fTrkIfo.Clear(opt); fIndex = -1; fGoldBeta = kBig; fTrack = nullptr;
 }
 
 //_____________________________________________________________________________
@@ -80,14 +80,14 @@ Int_t THaGoldenTrack::DefineVariables( EMode mode )
     { "py",       "Lab momentum y (GeV)",           "GetPy()"},
     { "pz",       "Lab momentum z (GeV)",           "GetPz()"},
     { "ok",       "Data valid status flag (1=ok)",  "fOK" },
-    { 0 }
+    { nullptr }
   };
   DefineVarsFromList( var1, mode, var_prefix );
 
   const RVarDef var2[] = {
     { "index",    "Index of Golden Track",         "fIndex" },
     { "beta", "Beta of Golden Track",          "fGoldBeta" },
-    { 0 }
+    { nullptr }
   };
   DefineVarsFromList( var2, mode );
   return 0;
@@ -118,7 +118,7 @@ Int_t THaGoldenTrack::Process( const THaEvData& )
   else {  // ntracks>1
     TClonesArray* tracks = fSpectro->GetTracks();
     for( Int_t i=0; i<ntracks; i++ ) {
-      THaTrack* theTrack = static_cast<THaTrack*>( tracks->At(i));
+      auto theTrack = static_cast<THaTrack*>( tracks->At(i));
       if( theTrack == fTrack ) {
 	fIndex = i;
 	break;

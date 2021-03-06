@@ -177,7 +177,7 @@ Int_t THaS2CoincTime::Process( const THaEvData& evdata )
     { 0 }
   }; 
   
-  for (Spec_short* sp=SpList; sp->Sp != NULL; sp++) {
+  for (Spec_short* sp=SpList; sp->Sp != nullptr; sp++) {
     *(sp->Ntr) = sp->Sp->GetNTracks();
     if (*(sp->Ntr) <=0) continue;   // no tracks, skip
     

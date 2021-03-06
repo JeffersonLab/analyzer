@@ -499,8 +499,8 @@ Int_t OldVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
       thePair = new( (*fUVpairs)[nPairs++] ) OldVDCTrackPair( track, partner );
 
       // Explicitly mark these UV tracks as unpartnered
-      track->SetPartner( NULL );
-      partner->SetPartner( NULL );
+      track->SetPartner( nullptr );
+      partner->SetPartner( nullptr );
 
       // Compute goodness of match parameter
       thePair->Analyze( fUSpacing );
@@ -619,7 +619,7 @@ Int_t OldVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
       // Decide whether this is a new track or an old track 
       // that is being updated
       OldVDCTrackID* thisID = new OldVDCTrackID(track,partner);
-      THaTrack* theTrack = NULL;
+      THaTrack* theTrack = nullptr;
       bool found = false;
       int t;
       for( t = 0; t < n_exist; t++ ) {
@@ -933,14 +933,12 @@ void OldVDC::CalcMatrix( const Double_t x, vector<OldVDCMatrixElement>& matrix )
   // by evaluating a polynomial in x of order it->order with 
   // coefficients given by it->poly
 
-  for( vector<OldVDCMatrixElement>::iterator it=matrix.begin();
-       it!=matrix.end(); it++ ) {
-    it->v = 0.0;
-
-    if(it->order > 0) {
-      for(int i=it->order-1; i>=1; i--)
-	it->v = x * (it->v + it->poly[i]);
-      it->v += it->poly[0];
+  for( auto& ME : matrix ) {
+    ME.v = 0.0;
+    if( ME.order > 0 ) {
+      for( int i = ME.order - 1; i >= 1; i-- )
+        ME.v = x * (ME.v + ME.poly[i]);
+      ME.v += ME.poly[0];
     }
   }
 }
@@ -953,13 +951,12 @@ Double_t OldVDC::CalcTargetVar(const vector<OldVDCMatrixElement>& matrix,
   // the x-dependence is already in the matrix, so only 1-3 (or np) used
   Double_t retval=0.0;
   Double_t v=0;
-  for( vector<OldVDCMatrixElement>::const_iterator it=matrix.begin();
-       it!=matrix.end(); it++ ) 
-    if(it->v != 0.0) {
-      v = it->v;
-      unsigned int np = it->pw.size(); // generalize for extra matrix elems.
-      for (unsigned int i=0; i<np; i++)
-	v *= powers[it->pw[i]][i+1];
+  for( const auto& ME : matrix )
+    if( ME.v != 0.0 ) {
+      v = ME.v;
+      unsigned int np = ME.pw.size(); // generalize for extra matrix elems.
+      for( unsigned int i = 0; i < np; i++ )
+        v *= powers[ME.pw[i]][i + 1];
       retval += v;
   //      retval += it->v * powers[it->pw[0]][1] 
   //	              * powers[it->pw[1]][2]
@@ -977,13 +974,12 @@ Double_t OldVDC::CalcTarget2FPLen(const vector<OldVDCMatrixElement>& matrix,
   // to the transport plane
 
   Double_t retval=0.0;
-  for( vector<OldVDCMatrixElement>::const_iterator it=matrix.begin();
-       it!=matrix.end(); it++ ) 
-    if(it->v != 0.0)
-      retval += it->v * powers[it->pw[0]][0]
-	              * powers[it->pw[1]][1]
-	              * powers[it->pw[2]][2]
-	              * powers[it->pw[3]][3];
+  for( const auto& ME : matrix )
+    if( ME.v != 0.0 )
+      retval += ME.v * powers[ME.pw[0]][0]
+                * powers[ME.pw[1]][1]
+                * powers[ME.pw[2]][2]
+                * powers[ME.pw[3]][3];
 
   return retval;
 }
@@ -999,10 +995,10 @@ void OldVDC::CorrectTimeOfFlight(TClonesArray& tracks)
   THaScintillator* s2 = static_cast<THaScintillator*>
     ( GetApparatus()->GetDetector("s2") );
 
-  if( (s1 == NULL) || (s2 == NULL) )
+  if( (s1 == nullptr) || (s2 == nullptr) )
     return;
 
-  // adjusts caluculated times so that the time of flight to S1
+  // adjusts calculated times so that the time of flight to S1
   // is the same as a track going through the middle of the VDC
   // (i.e. x_det = 0) at a 45 deg angle (theta_t and phi_t = 0)
   // assumes that at least the coarse tracking has been performed
@@ -1053,7 +1049,7 @@ void OldVDC::FindBadTracks(TClonesArray& tracks)
   THaScintillator* s2 = static_cast<THaScintillator*>
     ( GetApparatus()->GetDetector("s2") );
 
-  if(s2 == NULL) {
+  if(s2 == nullptr) {
     //cerr<<"Could not find s2 plane!!"<<endl;
     return;
   }
@@ -1211,7 +1207,7 @@ void OldVDC::SetNMaxGap( Int_t val )
 {
   if( val < 0 || val > 2 ) {
     Error( Here("SetNMaxGap"),
-	   "Invalid max_gap = %d, must be betwwen 0 and 2.", val );
+	   "Invalid max_gap = %d, must be between 0 and 2.", val );
     return;
   }
   fUpper->SetNMaxGap(val);
@@ -1223,7 +1219,7 @@ void OldVDC::SetMinTime( Int_t val )
 {
   if( val < 0 || val > 4095 ) {
     Error( Here("SetMinTime"),
-	   "Invalid min_time = %d, must be betwwen 0 and 4095.", val );
+	   "Invalid min_time = %d, must be between 0 and 4095.", val );
     return;
   }
   fUpper->SetMinTime(val);

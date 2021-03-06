@@ -13,7 +13,7 @@ class UserScintillator : public THaScintillator {
 
 public:
   UserScintillator( const char* name, const char* description = "",
-		   THaApparatus* a = NULL );
+		   THaApparatus* a = nullptr );
   virtual ~UserScintillator();
 
   virtual void       Clear( Option_t* ="" );

@@ -3,7 +3,7 @@
 
 import os
 from configure import FindROOT
-Import ('dcenv')
+Import('dcenv')
 
 thisdir_fullpath = Dir('.').path
 thisdir = os.path.basename(os.path.normpath(thisdir_fullpath))

@@ -11,50 +11,40 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-#include <iostream>
-#include <iomanip>
-#include <algorithm>
+#include "THaPrintOption.h"
 #include <cstdlib>
 #include <cstring>
 
-#include "THaPrintOption.h"
-
-ClassImp(THaPrintOption);
+ClassImp(THaPrintOption)
 
 //_____________________________________________________________________________
 THaPrintOption::THaPrintOption() : 
-  fString(0), fTokenStr(0), fNTokens(0), fTokens(0), fParam(0)
+  fString(nullptr), fTokenStr(nullptr), fNTokens(0), fTokens(nullptr),
+  fParam(nullptr), fEmpty("")
 {
   // Default constructor
-
-  fEmpty = new char;
-  *fEmpty = 0;
 }
 
 //_____________________________________________________________________________
-THaPrintOption::THaPrintOption( const char* string ) :
-  fString(0), fTokenStr(0), fNTokens(0), fTokens(0), fParam(0)
+THaPrintOption::THaPrintOption( const char* str ) :
+  fString(nullptr), fTokenStr(nullptr), fNTokens(0), fTokens(nullptr),
+  fParam(nullptr), fEmpty("")
 {
   // Normal constructor
   
-  fEmpty = new char;
-  *fEmpty = 0;
-
-  if( string ) {
-    fString = new char[ strlen(string)+1 ];
-    strcpy( fString, string );
+  if( str ) {
+    fString = new char[ strlen(str) + 1 ];
+    strcpy( fString, str );
     Parse();
   } 
 }
 
 //_____________________________________________________________________________
 THaPrintOption::THaPrintOption( const THaPrintOption& rhs ) :
-  fString(0), fTokenStr(0), fNTokens(0), fTokens(0), fParam(0)
+  fString(nullptr), fTokenStr(nullptr), fNTokens(0), fTokens(nullptr),
+  fParam(nullptr), fEmpty("")
 {
   // Copy constructor 
-
-  fEmpty = new char;
-  *fEmpty = 0;
 
   if( rhs.fString ) {
     fString = new char[ strlen(rhs.fString)+1 ];
@@ -79,8 +69,8 @@ THaPrintOption& THaPrintOption::operator=(const char* rhs)
 {
   // Initialize object with a string
 
-  delete [] fString; fString = 0;
-  *fEmpty = 0;
+  delete [] fString; fString = nullptr;
+  fEmpty = "";
   if( rhs ) {
     fString = new char[ strlen(rhs)+1 ];
     strcpy( fString, rhs );
@@ -98,7 +88,6 @@ THaPrintOption::~THaPrintOption()
   delete [] fTokenStr;
   delete [] fTokens;
   delete [] fParam;
-  delete fEmpty;
 }
 
 //_____________________________________________________________________________
@@ -110,9 +99,9 @@ void THaPrintOption::Parse()
 
   const char* const delim = ", ";       // token delimiters
 
-  delete [] fTokenStr; fTokenStr = 0;
-  delete [] fTokens; fTokens = 0;
-  delete [] fParam; fParam = 0;
+  delete [] fTokenStr; fTokenStr = nullptr;
+  delete [] fTokens; fTokens = nullptr;
+  delete [] fParam; fParam = nullptr;
   fNTokens = 0;
   if( !fString || !*fString ) return;
 
@@ -124,7 +113,7 @@ void THaPrintOption::Parse()
   char* t = strtok( fTokenStr, delim );
   if( t ) fNTokens = 1;
   else    return;                           //Nothing to do
-  while( strtok( 0, delim )) fNTokens++;
+  while( strtok( nullptr, delim )) fNTokens++;
 
   // Set up arrays to hold token data
 
@@ -139,7 +128,7 @@ void THaPrintOption::Parse()
   strcpy( fTokenStr, fString );
   strtok( fTokenStr, delim );
   int i = 1;
-  while( (t = strtok( 0, delim )) ) {
+  while( (t = strtok( nullptr, delim )) ) {
     fTokens[i]  = t;
     fParam[i++] = atoi(t);
   }

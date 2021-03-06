@@ -21,7 +21,7 @@ Module::Module()
     fWordsExpect(0), fWordsSeen(0), fWdcntMask(0), fWdcntShift(0),
     fModelNum(-1), fNumChan(0), fMode(0), block_size(1), IsInit(false),
     fMultiBlockMode(false), fBlockIsDone(false), fFirmwareVers(0),
-    fDebug(0), fDebugFile(0), fExtra(0)
+    fDebug(0), fDebugFile(nullptr), fExtra(nullptr)
 {
 }
 
@@ -30,7 +30,7 @@ Module::Module(Int_t crate, Int_t slot)
     fWordsExpect(0), fWordsSeen(0), fWdcntMask(0), fWdcntShift(0),
     fModelNum(-1), fNumChan(0), fMode(0), block_size(1), IsInit(false),
     fMultiBlockMode(false), fBlockIsDone(false), fFirmwareVers(0),
-    fDebug(0), fDebugFile(0), fExtra(0)
+    fDebug(0), fDebugFile(nullptr), fExtra(nullptr)
 {
   // Warning: see comments at Init()
   fName = "";
@@ -42,7 +42,7 @@ Module::~Module() {
 
 void Module::Init()
 {
-// Suggestion: call this Init() before calling the inherting class's Init.
+// Suggestion: call this Init() before calling the inheriting class's Init.
 // Otherwise some variables may be undefined.  The "factory" method
 // using TClass::New does NOT call the c'tor of this base class !!
 // Make sure all your variables are defined.
@@ -54,7 +54,7 @@ void Module::Init()
   fWdcntMask=0;
   fWdcntShift=0;
   fDebug = 0;
-  fDebugFile=0;
+  fDebugFile=nullptr;
   fModelNum = -1;
   fName = "";
   fNumChan = 0;
@@ -65,9 +65,9 @@ Bool_t Module::IsSlot(UInt_t rdata) {
 // Simplest version of IsSlot relies on a unique header.
  if ((rdata & fHeaderMask)==fHeader) {
     fWordsExpect = (rdata & fWdcntMask)>>fWdcntShift;
-    return kTRUE;
+    return true;
   }
-  return kFALSE;
+  return false;
 }
 
 void Module::DoPrint() const {
@@ -88,7 +88,7 @@ Module::TypeSet_t& Module::fgModuleTypes()
   // Local storage for all defined Module types. Initialize here on first use
   // (cf. http://www.parashift.com/c++-faq/static-init-order-on-first-use-members.html)
 
-  static TypeSet_t* fgModuleTypes = new TypeSet_t;
+  static auto *fgModuleTypes = new TypeSet_t;
 
   return *fgModuleTypes;
 }

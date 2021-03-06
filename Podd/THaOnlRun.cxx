@@ -93,7 +93,7 @@ Int_t THaOnlRun::Open()
   Int_t st = fCodaData->codaOpen(fComputer, fSession, fMode);
   st = ReturnCode(st);
   if( st == READ_OK )
-    fOpened = kTRUE;
+    fOpened = true;
   return st;
 }
 

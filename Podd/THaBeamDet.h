@@ -13,6 +13,7 @@
 class THaBeamDet : public THaDetector {
   
 public:
+  THaBeamDet() = default;
   virtual ~THaBeamDet();
   
   virtual TVector3 GetPosition()  const = 0;
@@ -22,10 +23,9 @@ public:
  protected:
 
   // Only derived classes can construct me
-  //  THaBeamDet() {}
-  THaBeamDet( const char* name, const char* description ="" ,
-              THaApparatus* a = NULL ) :
-    THaDetector( name, description , a) {}
+  explicit THaBeamDet( const char* name, const char* description ="" ,
+                       THaApparatus* a = nullptr )
+    : THaDetector( name, description , a) {}
 
  public:
   ClassDef(THaBeamDet,0)    // ABC for an detector providing beam information

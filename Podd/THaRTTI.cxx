@@ -59,7 +59,7 @@ Int_t THaRTTI::Find( TClass* cl, const TString& var,
 
   // Variable names in TRealData are stored along with pointer prefixes (*)
   // and array subscripts, so we have to use a customized search function:
-  TRealData* rd = static_cast<TRealData*>( FindRealDataVar( lrd, avar ) );
+  auto rd = static_cast<TRealData*>( FindRealDataVar(lrd, avar ) );
   if( !rd )
     return -1;
 
@@ -69,7 +69,7 @@ Int_t THaRTTI::Find( TClass* cl, const TString& var,
     return -1;
 
   VarType type;
-  TClass* elemClass = 0;
+  TClass* elemClass = nullptr;
   if( m->IsBasic() || m->IsEnum() ) {
     TString typnam( m->GetTypeName() );
     if( typnam == "Double_t" || typnam == "double" )
@@ -165,9 +165,6 @@ Int_t THaRTTI::Find( TClass* cl, const TString& var,
     // Explicitly dimensioned arrays must not be pointers
     if( m->IsaPointer() )
       return -1;
-    // Must be an array of a basic type
-    if( !m->GetDataType() )
-      return -1;
     if( avar.IsArray() ) {
       // If a specific element was requested, treat the variable as a scalar.
       // Calculate the linear index of the requested element.
@@ -227,7 +224,7 @@ Int_t THaRTTI::Find( TClass* cl, const TString& var,
   switch( atype ) {
   case kScalar:
     if( element_requested >= 0 )
-      fOffset += element_requested * m->GetDataType()->Size();
+      fOffset += element_requested * m->GetUnitSize();
     break;
   case kFixed:
     fSubscript = subscript;
@@ -263,7 +260,7 @@ TObject* FindRealDataVar( TList* lrd, const TString& var )
       return obj;
     lnk = lnk->Next();
   }
-  return 0;
+  return nullptr;
 }
 
 //_____________________________________________________________________________
@@ -276,13 +273,13 @@ TClass* THaRTTI::GetClass() const
   if( IsObjVector() )
     return fElemClass;
 
-  return NULL;
+  return nullptr;
 }
 
 //_____________________________________________________________________________
 Bool_t THaRTTI::IsPointer() const
 {
-  return fDataMember ? fDataMember->IsaPointer() : kFALSE;
+  return fDataMember ? fDataMember->IsaPointer() : false;
 }
 
 //_____________________________________________________________________________

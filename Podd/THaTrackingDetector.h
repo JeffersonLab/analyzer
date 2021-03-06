@@ -22,8 +22,8 @@ public:
   virtual Int_t    FineTrack( TClonesArray& tracks )  = 0;
   // For backward-compatibility
   virtual Int_t    FindVertices( TClonesArray& /* tracks */ ) { return 0; }
-          Bool_t   IsTracking() { return kTRUE; }
-          Bool_t   IsPid()      { return kFALSE; }
+          Bool_t   IsTracking() { return true; }
+          Bool_t   IsPid()      { return false; }
 
 	  THaTrackingDetector();   // for ROOT I/O only
 protected:
@@ -31,12 +31,12 @@ protected:
   virtual THaTrack* AddTrack( TClonesArray& tracks,
 			      Double_t x, Double_t y, 
 			      Double_t theta, Double_t phi,
-			      THaTrackID* ID = NULL );
+			      THaTrackID* ID = nullptr );
 
   //Only derived classes may construct me
 
   THaTrackingDetector( const char* name, const char* description,
-		       THaApparatus* a = NULL );
+		       THaApparatus* a = nullptr );
 
   ClassDef(THaTrackingDetector,1)   //ABC for a generic tracking detector
 };

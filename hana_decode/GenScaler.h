@@ -17,10 +17,10 @@ namespace Decoder {
   public:
 
     GenScaler()
-      : fIsDecoded(false), fFirstTime(true), fDeltaT(0),
-        fDataArray(0), fPrevData(0), fRate(0),
+      : fIsDecoded(false), fFirstTime(true), fDeltaT(false),
+        fDataArray(nullptr), fPrevData(nullptr), fRate(nullptr),
         fClockChan(0), fNumChanMask(0), fNumChanShift(0),
-        fHasClock(false), fClockRate(0), fNormScaler(0)
+        fHasClock(false), fClockRate(0.0), fNormScaler(nullptr)
         {}
     GenScaler(Int_t crate, Int_t slot);
     virtual ~GenScaler();

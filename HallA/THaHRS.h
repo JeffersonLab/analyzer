@@ -27,8 +27,8 @@ public:
   THaNonTrackingDetector* GetRefDet() const { return fRefDet; }
 
   Bool_t GetTrSorting() const;
-  Bool_t SetTrSorting( Bool_t set = kFALSE );
-  Bool_t AutoStandardDetectors( Bool_t set = kTRUE );
+  Bool_t SetTrSorting( Bool_t set = false );
+  Bool_t AutoStandardDetectors( Bool_t set = true );
   
   virtual EStatus Init( const TDatime& run_time );
 

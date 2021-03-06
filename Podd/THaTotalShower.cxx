@@ -26,7 +26,7 @@ ClassImp(THaTotalShower)
 THaTotalShower::THaTotalShower( const char* name, const char* description,
 				THaApparatus* apparatus ) :
   THaPidDetector(name,description,apparatus), 
-  fShower(0), fPreShower(0), fMaxDx(0.0), fMaxDy(0.0)
+  fShower(nullptr), fPreShower(nullptr), fMaxDx(0.0), fMaxDy(0.0)
 {
   // Constructor. With this method, the subdetectors are created using
   // this detector's prefix followed by "sh" and "ps", respectively,
@@ -42,7 +42,7 @@ THaTotalShower::THaTotalShower( const char* name,
 				const char* description,
 				THaApparatus* apparatus ) :
   THaPidDetector(name,description,apparatus),
-  fShower(0), fPreShower(0), fMaxDx(0.0), fMaxDy(0.0)
+  fShower(nullptr), fPreShower(nullptr), fMaxDx(0.0), fMaxDy(0.0)
 {
   // Constructor. With this method, the subdetectors are created using
   // the given names 'shower_name' and 'preshower_name', and variable 
@@ -162,7 +162,7 @@ Int_t THaTotalShower::ReadDatabase( const TDatime& date )
   Double_t dxdy[2];
   DBRequest request[] = {
     { "max_dxdy",  dxdy, kDouble, 2 },
-    { 0 }
+    { nullptr }
   };
   Int_t err = LoadDB( fi, date, request, fPrefix );
   fclose(fi);
@@ -189,7 +189,7 @@ Int_t THaTotalShower::DefineVariables( EMode mode )
   RVarDef vars[] = {
     { "e",  "Energy (MeV) of largest cluster",    "fE" },
     { "id", "ID of Psh&Sh coincidence (1==good)", "fID" },
-    { 0 }
+    { nullptr }
   };
   return DefineVarsFromList( vars, mode );
 }
@@ -258,7 +258,6 @@ void THaTotalShower::SetApparatus( THaApparatus* app )
   THaPidDetector::SetApparatus( app );
   fShower->SetApparatus( app );
   fPreShower->SetApparatus( app );
-  return;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

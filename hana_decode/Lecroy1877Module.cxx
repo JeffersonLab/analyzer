@@ -27,14 +27,10 @@ void Lecroy1877Module::Init()
   fOptMask = 0x10000;
   fChanShift = 17;
   fOptShift = 16;
-  fHasHeader = kTRUE;
+  fHasHeader = true;
   fHeader = 0;
   fModelNum = 1877;
   FastbusModule::Init();
-}
-
-Lecroy1877Module::~Lecroy1877Module()
-{
 }
 
 }

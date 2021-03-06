@@ -23,6 +23,9 @@ class THaEvData;
 class THaPostProcess;
 class THaCrateMap;
 class THaEpicsEvtHandler;
+namespace Podd {
+  class InterStageModule;
+}
 
 class THaAnalyzer : public TObject {
 
@@ -30,22 +33,23 @@ public:
   THaAnalyzer();
   virtual ~THaAnalyzer();
 
+  virtual Int_t  AddInterStage( Podd::InterStageModule* module );
   virtual Int_t  AddPostProcess( THaPostProcess* module );
   virtual void   Close();
   virtual Int_t  Init( THaRunBase* run );
           Int_t  Init( THaRunBase& run )    { return Init( &run ); }
-  virtual Int_t  Process( THaRunBase* run=NULL );
+  virtual Int_t  Process( THaRunBase* run=nullptr );
           Int_t  Process( THaRunBase& run ) { return Process(&run); }
   virtual void   Print( Option_t* opt="" ) const;
 
-  void           EnableBenchmarks( Bool_t b = kTRUE );
-  void           EnableHelicity( Bool_t b = kTRUE );
-  void           EnableOtherEvents( Bool_t b = kTRUE );
-  void           EnableOverwrite( Bool_t b = kTRUE );
-  void           EnablePhysicsEvents( Bool_t b = kTRUE );
-  void           EnableRunUpdate( Bool_t b = kTRUE );
-  void           EnableScalers( Bool_t b = kTRUE );   // archaic
-  void           EnableSlowControl( Bool_t b = kTRUE );
+  void           EnableBenchmarks( Bool_t b = true );
+  void           EnableHelicity( Bool_t b = true );
+  void           EnableOtherEvents( Bool_t b = true );
+  void           EnableOverwrite( Bool_t b = true );
+  void           EnablePhysicsEvents( Bool_t b = true );
+  void           EnableRunUpdate( Bool_t b = true );
+  void           EnableScalers( Bool_t b = true );   // archaic
+  void           EnableSlowControl( Bool_t b = true );
   const char*    GetOutFileName()      const  { return fOutFileName.Data(); }
   const char*    GetCutFileName()      const  { return fCutFileName.Data(); }
   const char*    GetOdefFileName()     const  { return fOdefFileName.Data(); }
@@ -56,7 +60,7 @@ public:
   THaEvData*     GetDecoder()          const;
   TList*         GetApps()             const  { return fApps; }
   TList*         GetPhysics()          const  { return fPhysics; }
-  THaEpicsEvtHandler* GetEpicsEvtHandler() { return fEpicsHandler; }
+  THaEpicsEvtHandler* GetEpicsEvtHandler() const { return fEpicsHandler; }
   TList*         GetEvtHandlers()      const  { return fEvtHandlers; }
   TList*         GetPostProcess()      const  { return fPostProcess; }
   Bool_t         HasStarted()          const  { return fAnalysisStarted; }
@@ -86,12 +90,13 @@ public:
   // These should be ordered by severity
   enum ERetVal { kOK, kSkip, kTerminate, kFatal };
 
-protected:
-  // Test and histogram blocks
   enum {
     kRawDecode = 0, kDecode, kCoarseTrack, kCoarseRecon,
     kTracking, kReconstruct, kPhysics
   };
+
+protected:
+  // Test and histogram blocks
   struct Stage_t {
     Int_t         key;
     Int_t         countkey;
@@ -142,6 +147,7 @@ protected:
   TList*         fPhysics;         //List of physics modules
   TList*         fPostProcess;     //List of post-processing modules
   TList*         fEvtHandlers;     //List of event handlers
+  TList*         fInterStage;      //List of inter-stage modules
 
   // Status and control flags
   Bool_t         fIsInit;          // Init() called successfully
@@ -180,9 +186,9 @@ protected:
   virtual void   InitCuts();
   virtual void   InitStages();
   virtual Int_t  InitModules( TList* module_list, TDatime& time,
-			      Int_t erroff, const char* baseclass = NULL );
+			      Int_t erroff, const char* baseclass = nullptr );
   virtual Int_t  InitOutput( const TList* module_list, Int_t erroff,
-			     const char* baseclass = NULL );
+			     const char* baseclass = nullptr );
   virtual void   PrintCounters() const;
   virtual void   PrintScalers() const;  // archaic
   virtual void   PrintCutSummary() const;
@@ -204,15 +210,15 @@ private:
 };
 
 //---------------- inlines ----------------------------------------------------
-inline UInt_t THaAnalyzer::GetCount( Int_t i ) const
+inline UInt_t THaAnalyzer::GetCount( Int_t which ) const
 {
-  return fCounters[i].count;
+  return fCounters[which].count;
 }
 
 //_____________________________________________________________________________
-inline UInt_t THaAnalyzer::Incr( Int_t i )
+inline UInt_t THaAnalyzer::Incr( Int_t which )
 {
-  return ++(fCounters[i].count);
+  return ++(fCounters[which].count);
 }
 
 #endif

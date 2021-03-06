@@ -19,27 +19,21 @@
 #include "THaVDCPlane.h"
 #include "THaVDCPoint.h"
 #include "THaVDCCluster.h"
-#include "THaVDCHit.h"
 #include "TMath.h"
 
-#include <cstring>
-#include <cstdio>
-#include <cassert>
-
 //_____________________________________________________________________________
-THaVDCChamber::THaVDCChamber( const char* name, const char* description, // @suppress("Class members should be properly initialized")
-			      THaDetectorBase* parent )
-  : THaSubDetector(name,description,parent),
-    fSpacing(0), fSin_u(0), fCos_u(1), fSin_v(1), fCos_v(0), fInv_sin_vu(0)
+THaVDCChamber::THaVDCChamber( const char* name, const char* description,
+			      THaDetectorBase* parent ) :
+  THaSubDetector(name,description,parent),
+  // Create the U and V planes
+  fU{new THaVDCPlane( "u", "U plane", this )},
+  fV{new THaVDCPlane( "v", "V plane", this )},
+  // Create array for cluster pairs (points) representing hits
+  fPoints{new TClonesArray("THaVDCPoint", 10)}, // 10 is arbitrary
+  fSpacing(0), fSin_u(0), fCos_u(1), fSin_v(1), fCos_v(0), fInv_sin_vu(0)
 {
   // Constructor
 
-  // Create the U and V planes
-  fU = new THaVDCPlane( "u", "U plane", this );
-  fV = new THaVDCPlane( "v", "V plane", this );
-
-  // Create array for cluster pairs (points) representing hits
-  fPoints = new TClonesArray("THaVDCPoint", 10); // 10 is arbitrary
 }
 
 //_____________________________________________________________________________
@@ -88,7 +82,7 @@ THaDetectorBase::EStatus THaVDCChamber::Init( const TDatime& date )
   Double_t ubeg = fU->GetWBeg();
   Double_t vbeg = fV->GetWBeg();
   Double_t uend = fU->GetWBeg() + (fU->GetNWires()-1)*fU->GetWSpac();
-  Double_t vend = fV->GetWBeg() + (fV->GetNWires()-1)*fV->GetWSpac();;
+  Double_t vend = fV->GetWBeg() + (fV->GetNWires()-1)*fV->GetWSpac();
   Double_t xc = 0.5 * ( UVtoX(ubeg,vbeg) + UVtoX(uend,vend) );
   Double_t yc = 0.5 * ( UVtoY(ubeg,vbeg) + UVtoY(uend,vend) );
   fU->UpdateGeometry(xc,yc);
@@ -125,7 +119,7 @@ Int_t THaVDCChamber::DefineVariables( EMode mode )
     { "pt.d_th",   "Point VDC tan(theta)",   "fPoints.THaVDCPoint.fTheta" },
     { "pt.d_ph",   "Point VDC tan(phi)",     "fPoints.THaVDCPoint.fPhi" },
     { "pt.paired", "Point is paired",        "fPoints.THaVDCPoint.HasPartner()" },
-    { 0 }
+    { nullptr }
   };
   return DefineVarsFromList( vars, mode );
 }
@@ -155,11 +149,7 @@ PointCoords_t THaVDCChamber::CalcDetCoords( const THaVDCCluster* ucl,
   // Project v0 into the u plane
   Double_t v = v0 - mv * GetSpacing();
 
-  PointCoords_t c;
-  c.x     = UVtoX(u,v);
-  c.y     = UVtoY(u,v);
-  c.theta = UVtoX(mu,mv);
-  c.phi   = UVtoY(mu,mv);
+  PointCoords_t c{ UVtoX(u,v), UVtoY(u,v), UVtoX(mu,mv), UVtoY(mu,mv) };
 
   return c;
 }
@@ -183,12 +173,12 @@ Int_t THaVDCChamber::MatchUVClusters()
 
   // Consider all possible uv cluster combinations
   for( Int_t iu = 0; iu < nu; ++iu ) {
-    THaVDCCluster* uClust = fU->GetCluster(iu);
+    auto* uClust = fU->GetCluster(iu);
     if( TMath::Abs(uClust->GetT0()) > max_u_t0 )
       continue;
 
     for( Int_t iv = 0; iv < nv; ++iv ) {
-      THaVDCCluster* vClust = fV->GetCluster(iv);
+      auto* vClust = fV->GetCluster(iv);
       if( TMath::Abs(vClust->GetT0()) > max_v_t0 )
 	continue;
 
@@ -209,7 +199,7 @@ Int_t THaVDCChamber::MatchUVClusters()
 }
 
 //_____________________________________________________________________________
-Int_t THaVDCChamber::CalcPointCoords()
+Int_t THaVDCChamber::CalcPointCoords() const
 {
   // Compute track info (x, y, theta, phi) for the all matched points.
   // Uses TRANSPORT coordinates.
@@ -244,6 +234,15 @@ Int_t THaVDCChamber::Decode( const THaEvData& evData )
 }
 
 //_____________________________________________________________________________
+void THaVDCChamber::ApplyTimeCorrection()
+{
+  // Apply time offset correction to all our hits
+
+  fU->ApplyTimeCorrection();
+  fV->ApplyTimeCorrection();
+}
+
+//_____________________________________________________________________________
 void THaVDCChamber::FindClusters()
 {
   // Find clusters in U & V planes
@@ -265,6 +264,10 @@ void THaVDCChamber::FitTracks()
 Int_t THaVDCChamber::CoarseTrack()
 {
   // Coarse computation of tracks
+
+  // Apply drift time offset correction obtained in prior Decode or
+  // InterStage(Decode) stage
+  ApplyTimeCorrection();
 
   // Find clusters and estimate their position/slope
   FindClusters();
@@ -291,7 +294,7 @@ Int_t THaVDCChamber::FineTrack()
   //TODO:
   //- Redo time-to-distance conversion based on "global" track slope
   //- Refit clusters of the track (if any), using new drift distances
-  //- Recalculate cluster UV coordinates, so new "gobal" slopes can be
+  //- Recalculate cluster UV coordinates, so new "global" slopes can be
   //  computed
 
   return 0;

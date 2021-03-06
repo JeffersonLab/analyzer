@@ -154,7 +154,7 @@ int main(int /* argc */, char** /* argv */)
       return 1;
     }
     if (maxEvent == -1)
-      cout << "\nAll Events in Run " << runNumber << " Will be Analayzed" << endl;
+      cout << "\nAll Events in Run " << runNumber << " Will be Analyzed" << endl;
   }
   if (spectrometer == "") {
     cout << "\nEnter the Spectrometer Name (hms or shms): ";
@@ -196,7 +196,7 @@ int main(int /* argc */, char** /* argv */)
   TString filename(runFile);
 
   // Define the analysis debug output
-  ofstream *debugfile = new ofstream;;
+  ofstream *debugfile = new ofstream;
   // debugfile->open ("tstfadc_main_debug.txt");
   
   // Initialize the CODA decoder
@@ -232,18 +232,18 @@ int main(int /* argc */, char** /* argv */)
       if( status != CodaDecoder::HED_OK && status != CodaDecoder::HED_WARN ) {
         cerr << "ERROR " << status << " while decoding event " << ievent
              << ". Exiting." << endl;
-        break;;
+        break;
       }
       // Loop over slots
       for(uint32_t islot = SLOTMIN; islot < NUMSLOTS; islot++) {
         if (evdata->GetNumRaw(crateNumber, islot) != 0) {
           Fadc250Module *fadc =
               dynamic_cast <Fadc250Module*> (evdata->GetModule(crateNumber, islot));
-          if (fadc != NULL) {
+          if (fadc != nullptr) {
             //fadc->CheckDecoderStatus();
             // Loop over channels
             for (uint32_t chan = 0; chan < NADCCHAN; chan++) {
-              // Initilize variables
+              // Initialize variables
               Int_t num_fadc_events = 0, num_fadc_samples = 0;
               // Acquire the FADC mode
               Int_t fadc_mode = fadc->GetFadcMode(); fadc_mode_const = fadc_mode;
@@ -336,7 +336,7 @@ int main(int /* argc */, char** /* argv */)
     for (uint32_t chan = 0; chan < NADCCHAN; chan++) {
       for( uint32_t raw_index = 0; raw_index < NUMRAWEVENTS; raw_index++) {
         // Raw sample plots
-        if (g_psamp_event[islot][chan][raw_index] != NULL) {
+        if (g_psamp_event[islot][chan][raw_index] != nullptr) {
           UInt_t rand_int = 1 + rand->Integer(9);
           hfile->cd(Form("/mode_%d_data/slot_%d/chan_%d/raw_samples", fadc_mode_const, islot, chan));
           c_psamp[islot][chan]->cd(raw_index + 1);
@@ -351,9 +351,9 @@ int main(int /* argc */, char** /* argv */)
         }  // Graph condition
       }  // Raw event loop
       // Write the canvas to file
-      if (c_psamp[islot][chan] != NULL) c_psamp[islot][chan]->Write();
+      if (c_psamp[islot][chan] != nullptr) c_psamp[islot][chan]->Write();
       // Write the multigraphs to file
-      if (mg_psamp[islot][chan] != NULL) {
+      if (mg_psamp[islot][chan] != nullptr) {
         hfile->cd(Form("/mode_%d_data/slot_%d/chan_%d/raw_samples", fadc_mode_const, islot, chan));
         mg_psamp[islot][chan]->Draw("ACP");
         mg_psamp[islot][chan]->SetTitle(Form("%d Raw Events of FADC Mode %d Sample Data Slot %d Channel %d; Sample Number; Sample Value", raw_samp_index[islot][chan], fadc_mode_const, islot, chan));
@@ -362,7 +362,7 @@ int main(int /* argc */, char** /* argv */)
       for (uint32_t ipeak = 0; ipeak < NPEAK; ipeak++) {
 	for( uint32_t raw_index = 0; raw_index < NUMRAWEVENTS; raw_index++) {
 	  // Raw sample plots
-	  if (g_psamp_npeak_event[islot][chan][ipeak][raw_index] != NULL) {
+	  if (g_psamp_npeak_event[islot][chan][ipeak][raw_index] != nullptr) {
 	    UInt_t rand_int = 1 + rand->Integer(9);
 	    hfile->cd(Form("/mode_%d_data/slot_%d/chan_%d/raw_samples_npeak_%d", fadc_mode_const, islot, chan, ipeak+1));
 	    c_psamp_npeak[islot][chan][ipeak]->cd(raw_index + 1);
@@ -377,9 +377,9 @@ int main(int /* argc */, char** /* argv */)
 	  }  // Graph condition
 	}  // Raw event loop
 	// Write the canvas to file
-	if (c_psamp_npeak[islot][chan][ipeak] != NULL) c_psamp_npeak[islot][chan][ipeak]->Write();
+	if (c_psamp_npeak[islot][chan][ipeak] != nullptr) c_psamp_npeak[islot][chan][ipeak]->Write();
 	// Write the multigraphs to file
-	if (mg_psamp_npeak[islot][chan][ipeak] != NULL) {
+	if (mg_psamp_npeak[islot][chan][ipeak] != nullptr) {
 	  hfile->cd(Form("/mode_%d_data/slot_%d/chan_%d/raw_samples_npeak_%d", fadc_mode_const, islot, chan, ipeak+1));
 	  mg_psamp_npeak[islot][chan][ipeak]->Draw("ACP");
 	  mg_psamp_npeak[islot][chan][ipeak]->SetTitle(Form("%d Raw Events of FADC Mode %d Sample Data Slot %d Channel %d nPeak = %d; Sample Number; Sample Value", raw_samp_npeak_index[islot][chan][ipeak], fadc_mode_const, islot, chan, ipeak+1));
@@ -389,7 +389,7 @@ int main(int /* argc */, char** /* argv */)
     }  // Channel loop
   }  // Slot loop
 
-  // Write and clode the data file
+  // Write and close the data file
   hfile->Write();
   hfile->Close();
   datafile.codaClose();

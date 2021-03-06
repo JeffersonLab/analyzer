@@ -24,12 +24,12 @@ namespace Decoder {
 //_____________________________________________________________________________
 CodaDecoder::CodaDecoder() :
   nroc(0), irn(MAXROC,0), fbfound(MAXROC*MAXSLOT,false), psfact(MAX_PSFACT,-1),
-  fdfirst(kTRUE), chkfbstat(1), evcnt_coda3(0)
+  fdfirst(true), chkfbstat(1), evcnt_coda3(0)
 {
   fNeedInit=true;
-  first_decode=kFALSE;
-  fMultiBlockMode=kFALSE;
-  fBlockIsDone=kFALSE;
+  first_decode=false;
+  fMultiBlockMode=false;
+  fBlockIsDone=false;
   // Please leave these 3 lines for me to debug if I need to.  thanks, Bob
 #ifdef WANTDEBUG
   fDebugFile = new ofstream();
@@ -100,7 +100,7 @@ Int_t CodaDecoder::LoadEvent(const UInt_t* evbuffer)
      ret = init_slotdata();
      if( ret != HED_OK ) return ret;
      FindUsedSlots();
-     first_decode=kFALSE;
+     first_decode=false;
   }
   if( fDoBench ) fBench->Begin("clearEvent");
   for( Int_t i=0; i<fNSlotClear; i++ ) crateslot[fSlotClear[i]]->clearEvent();
@@ -143,8 +143,8 @@ Int_t CodaDecoder::LoadEvent(const UInt_t* evbuffer)
      }
      recent_event = event_num;
 
-     if (fdfirst && (fDebugFile!=0)) {
-       fdfirst=kFALSE;
+     if (fdfirst && fDebugFile) {
+       fdfirst=false;
        CompareRocs();
      }
 
@@ -271,7 +271,7 @@ Int_t CodaDecoder::trigBankDecode(const UInt_t* evbuffer, int blkSize) {
       tbank.evType = (uint16_t *)&evbuffer[5 + 2*blkSize + 1];
     }
   }else{
-    tbank.evTS = NULL;
+    tbank.evTS = nullptr;
     if(tbank.withRunInfo) {
       tbank.evType = (uint16_t *)&evbuffer[5 + 3];
     }else{
@@ -296,7 +296,7 @@ Int_t CodaDecoder::LoadFromMultiBlock()
   // the data remain "stale" until the next block of events.
 
   if (!fMultiBlockMode) return HED_ERR;
-  fBlockIsDone = kFALSE;
+  fBlockIsDone = false;
 
   for( Int_t i=0; i<fNSlotClear; i++ ) {
     if (crateslot[fSlotClear[i]]->GetModule()->IsMultiBlockMode()) crateslot[fSlotClear[i]]->clearEvent();
@@ -309,13 +309,13 @@ Int_t CodaDecoder::LoadFromMultiBlock()
       Int_t maxslot = fMap->getMaxSlot(roc);
       for (Int_t slot = minslot; slot <= maxslot; slot++) {
  // for CODA3, cross-check the block size (found in trigger bank and, separately, in modules)
-        if(fDebugFile) *fDebugFile << "cross chk blk size "<<roc<<"  "<<slot<<"  "<<crateslot[idx(roc,slot)]->GetModule()->GetBlockSize()<<"   "<<block_size<<endl;;
+        if(fDebugFile) *fDebugFile << "cross chk blk size "<<roc<<"  "<<slot<<"  "<<crateslot[idx(roc,slot)]->GetModule()->GetBlockSize()<<"   "<<block_size<<endl;
         if (fDataVersion > 2 && (crateslot[idx(roc,slot)]->GetModule()->GetBlockSize() != block_size)) {
 	  cout << "ERROR::CodaDecoder:: inconsistent block size between trig. bank and module"<<endl;
 	}
 	if (fMap->slotUsed(roc,slot) && crateslot[idx(roc,slot)]->GetModule()->IsMultiBlockMode()) {
 	  crateslot[idx(roc,slot)]->LoadNextEvBuffer();
-	  if (crateslot[idx(roc,slot)]->BlockIsDone()) fBlockIsDone = kTRUE;
+	  if (crateslot[idx(roc,slot)]->BlockIsDone()) fBlockIsDone = true;
 	}
       }
   }
@@ -340,7 +340,7 @@ Int_t CodaDecoder::roc_decode( Int_t roc, const UInt_t* evbuffer,
   buffmode = false;
   const UInt_t* p      = evbuffer+ipt;    // Points to ROC ID word (1 before data)
   const UInt_t* pstop  =evbuffer+istop;   // Points to last word of data
-  fBlockIsDone = kFALSE;
+  fBlockIsDone = false;
 
   Int_t firstslot, incrslot;
   Int_t n_slots_checked, n_slots_done;
@@ -383,11 +383,11 @@ Int_t CodaDecoder::roc_decode( Int_t roc, const UInt_t* evbuffer,
 
     n_slots_checked = 0;
     slot = firstslot;
-    slotdone = kFALSE;
+    slotdone = false;
 // bank structure is decoded with bank_decode
     if (fMap->getBank(roc,slot) >= 0) {
       n_slots_done++;
-      slotdone=kTRUE;
+      slotdone=true;
     }
 
     while(!slotdone && n_slots_checked < Nslot-n_slots_done && slot >= 0 && slot < MAXSLOT) {
@@ -411,11 +411,11 @@ Int_t CodaDecoder::roc_decode( Int_t roc, const UInt_t* evbuffer,
 	   fMap->setSlotDone(slot);
 	   n_slots_done++;
 	   if(fDebugFile) *fDebugFile << "CodaDecode::  slot "<<slot<<"  is DONE    "<<nwords<<endl;
-	   slotdone = kTRUE;
+	   slotdone = true;
       }
 
-      if (crateslot[idx(roc,slot)]->IsMultiBlockMode()) fMultiBlockMode = kTRUE;
-      if (crateslot[idx(roc,slot)]->BlockIsDone()) fBlockIsDone = kTRUE;
+      if (crateslot[idx(roc,slot)]->IsMultiBlockMode()) fMultiBlockMode = true;
+      if (crateslot[idx(roc,slot)]->BlockIsDone()) fBlockIsDone = true;
 
       if (fDebugFile) {
 	  *fDebugFile<< "CodaDecode:: roc_decode:: after LoadIfSlot "<<p << "  "<<pstop<<"  "<<"  "<<hex<<*p<<"  "<<dec<<nwords<<endl;
@@ -447,7 +447,7 @@ Int_t CodaDecoder::bank_decode( Int_t roc, const UInt_t* evbuffer,
   if( fDoBench ) fBench->Begin("bank_decode");
   Int_t retval = HED_OK;
   if (!fMap->isBankStructure(roc)) return retval;
-  fBlockIsDone = kFALSE;
+  fBlockIsDone = false;
 
   Int_t pos,len,bank,head;
 
@@ -484,8 +484,8 @@ Int_t CodaDecoder::bank_decode( Int_t roc, const UInt_t* evbuffer,
     len = bankdat[MAXBANK*roc+bank].len;
     if (fDebugFile) *fDebugFile << "CodaDecode:: loading bank "<<roc<<"  "<<slot<<"   "<<bank<<"  "<<pos<<"   "<<len<<endl;
     crateslot[idx(roc,slot)]->LoadBank(evbuffer,pos,len);
-    if (crateslot[idx(roc,slot)]->IsMultiBlockMode()) fMultiBlockMode = kTRUE;
-    if (crateslot[idx(roc,slot)]->BlockIsDone()) fBlockIsDone = kTRUE;
+    if (crateslot[idx(roc,slot)]->IsMultiBlockMode()) fMultiBlockMode = true;
+    if (crateslot[idx(roc,slot)]->BlockIsDone()) fBlockIsDone = true;
   }
 
   if( fDoBench ) fBench->Stop("bank_decode");
@@ -517,7 +517,6 @@ Int_t CodaDecoder::bank_decode( Int_t roc, const UInt_t* evbuffer,
   if (ihi >  GetEvLength()) ihi=GetEvLength();
   for (i=ilo; i<ihi; i++) rdat[i-ilo] = GetRawData(i);
  
-  return;
 }
 
 //_____________________________________________________________________________
@@ -634,7 +633,7 @@ Int_t CodaDecoder::FindRocsCoda3(const UInt_t *evbuffer) {
   /* Sanity check:  Check if number of ROCs matches */
   if(nroc != tbank.nrocs) {
       printf(" ****ERROR: Trigger and Physics Block sizes do not match (%d != %d)\n",nroc,tbank.nrocs);
-// If you are reading a data file orignally written with CODA 2 and then
+// If you are reading a data file originally written with CODA 2 and then
 // processed (written out) with EVIO 4, it will segfault. Do as it says below.
       printf("This might indicate a file written with EVIO 4 that was a CODA 2 file\n");
       printf("Try  analyzer->SetCodaVersion(2)  in the analyzer script.\n");
@@ -657,7 +656,7 @@ Int_t CodaDecoder::FindRocsCoda3(const UInt_t *evbuffer) {
     *fDebugFile << endl;
     *fDebugFile << "         Event #       Time Stamp       Event Type"<<endl;
     for(Int_t i=0; i<tbank.blksize; i++) {
-       if(tbank.evTS != NULL) {
+       if(tbank.evTS != nullptr) {
           *fDebugFile << "      "<<dec<<tbank.evtNum+i<<"   "<<tbank.evTS[i]<<"   "<<tbank.evType[i];
           *fDebugFile << endl;
        } else {
@@ -836,7 +835,7 @@ Int_t CodaDecoder::prescale_decode(const UInt_t* evbuffer)
 {
   // Decodes prescale factors from either
   // TS_PRESCALE_EVTYPE(default) = PS factors
-  // read from Trig. Super. registors (since 11/03)
+  // read from Trig. Super. registers (since 11/03)
   //   - or -
   // PRESCALE_EVTYPE = PS factors from traditional
   //     "prescale.dat" file.

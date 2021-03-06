@@ -40,7 +40,7 @@ ClassImp(THaEventHeader)
 ClassImp(THaEvent)
 
 //_____________________________________________________________________________
-THaEvent::THaEvent() : fInit(kFALSE), fDataMap(NULL)
+THaEvent::THaEvent() : fInit(false), fDataMap(nullptr)
 {
   // Create a THaEvent object.
   Class()->IgnoreTObjectStreamer();
@@ -51,7 +51,7 @@ THaEvent::~THaEvent()
 {
   // Destructor. Clean up all my objects.
 
-  delete [] fDataMap; fDataMap = NULL;
+  delete [] fDataMap; fDataMap = nullptr;
 }
 
 //_____________________________________________________________________________
@@ -198,12 +198,12 @@ Int_t THaEvent::Init()
       } else {
 	Warning("Init()", "Global variable %s not found. "
 		"Will be filled with zero.", datamap->name );
-	datamap->pvar = NULL;
+	datamap->pvar = nullptr;
       }
       datamap++;
     }
   }
-  fInit = kTRUE;
+  fInit = true;
   return 0;
 }
 
@@ -214,7 +214,7 @@ void THaEvent::Reset( Option_t* )
   // at next Fill(), which re-associates global variables with the
   // event structure and histograms.
 
-  fInit = kFALSE;
+  fInit = false;
 }
 
 

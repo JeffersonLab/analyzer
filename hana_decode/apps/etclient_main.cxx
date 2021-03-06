@@ -12,7 +12,7 @@ using namespace Decoder;
 int main(int argc, char *argv[]) 
 {
 
-       int mymode = 1;   // prefered mode for ET
+       int mymode = 1;   // preferred mode for ET
        THaEtClient *et;
        et = new THaEtClient("adaqcp", mymode);  // opens connection to adaqcp computer.
  

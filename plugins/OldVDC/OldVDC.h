@@ -26,7 +26,7 @@ class OldVDC : public THaTrackingDetector {
 
 public:
   OldVDC( const char* name, const char* description = "",
-	  THaApparatus* a = NULL );
+	  THaApparatus* a = nullptr );
 
   virtual ~OldVDC();
 
@@ -133,20 +133,20 @@ protected:
 
   std::vector<OldVDCMatrixElement> fLMatrixElems;   // Path-length corrections (meters)
 
-  void CalcFocalPlaneCoords( THaTrack* track, const ECoordTypes mode);
-  void CalcTargetCoords(THaTrack *the_track, const ECoordTypes mode);
-  void CalcMatrix(const double x, std::vector<OldVDCMatrixElement> &matrix);
-  Double_t DoPoly(const int n, const std::vector<double> &a, const double x);
-  Double_t PolyInv(const double x1, const double x2, const double xacc, 
-		 const double y, const int norder, 
-		 const std::vector<double> &a);
-  Double_t CalcTargetVar(const std::vector<OldVDCMatrixElement> &matrix, 
+  void CalcFocalPlaneCoords( THaTrack* track, const ECoordTypes mode );
+  void CalcTargetCoords( THaTrack* the_track, const ECoordTypes mode );
+  static void CalcMatrix( double x, std::vector<OldVDCMatrixElement>& matrix );
+//  Double_t DoPoly(const int n, const std::vector<double> &a, const double x);
+//  Double_t PolyInv(const double x1, const double x2, const double xacc,
+//		 const double y, const int norder,
+//		 const std::vector<double> &a);
+  static Double_t CalcTargetVar(const std::vector<OldVDCMatrixElement> &matrix,
 			 const double powers[][5]);
-  Double_t CalcTarget2FPLen(const std::vector<OldVDCMatrixElement>& matrix,
+  static Double_t CalcTarget2FPLen(const std::vector<OldVDCMatrixElement>& matrix,
 			    const Double_t powers[][5]);
   Int_t ReadDatabase( const TDatime& date );
 
-  virtual Int_t ConstructTracks( TClonesArray* tracks = NULL, Int_t flag = 0 );
+  virtual Int_t ConstructTracks( TClonesArray* tracks = nullptr, Int_t flag = 0 );
 
   void CorrectTimeOfFlight(TClonesArray& tracks);
   void FindBadTracks(TClonesArray &tracks);

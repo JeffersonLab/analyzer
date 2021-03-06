@@ -16,11 +16,11 @@
 
 class THaDecData : public Podd::DecData {
 public:
-  THaDecData( const char* name = "D",
-	      const char* description = "Raw Hall A decoder data" );
+  explicit THaDecData( const char* name = "D",
+                       const char* description = "Raw Hall A decoder data" );
+  virtual FILE*   OpenFile( const TDatime& date );
 
 protected:
-  virtual FILE*   OpenFile( const TDatime& date );
   virtual Int_t   ReadDatabase( const TDatime& date );
 
   // Expansion hooks for DecData::ReadDatabase

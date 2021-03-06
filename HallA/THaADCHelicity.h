@@ -20,7 +20,7 @@ class THaADCHelicity : public THaHelicityDet {
 public:
 
   THaADCHelicity( const char* name, const char* description, 
-		  THaApparatus* a = NULL );
+		  THaApparatus* a = nullptr );
   virtual ~THaADCHelicity();
 
   virtual void   Clear( Option_t* opt = "" );
@@ -28,7 +28,7 @@ public:
 
   THaADCHelicity()
     : fADC_hdata(0), fADC_Gate(0), fADC_Hel(kUnknown),
-      fThreshold(0), fIgnoreGate(kFALSE), fInvertGate(kFALSE),
+      fThreshold(0), fIgnoreGate(false), fInvertGate(false),
       fNchan(0) {}  // For ROOT I/O only
   
 protected:

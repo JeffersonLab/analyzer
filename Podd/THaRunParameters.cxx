@@ -19,7 +19,7 @@ using namespace std;
 //_____________________________________________________________________________
 THaRunParameters::THaRunParameters() :
   fBeamE(0), fBeamP(0), fBeamM(0), fBeamQ(0), fBeamdE(0), fBeamPol(0),
-  fTgtM(0), fTgtPol(0), fIsPol(kFALSE)
+  fTgtM(0), fTgtPol(0), fIsPol(false)
 {
   // Default constructor
 
@@ -79,7 +79,7 @@ void THaRunParameters::Clear( Option_t* )
   fBeamName = fTgtName = fRunName = "";
   fBeamE = fBeamP = fBeamM = fBeamdE = fBeamPol = fTgtM = fTgtPol = 0;
   fBeamQ = 0;
-  fIsPol = kFALSE;
+  fIsPol = false;
   fPrescale.Reset();
 }
 
@@ -138,10 +138,10 @@ Int_t THaRunParameters::ReadDatabase( const TDatime& date )
 
   DBRequest request[] = {
     { "ebeam",  &E },
-    { "mbeam",  &M,  kDouble, 0, 1 },
-    { "qbeam",  &Q,  kDouble, 0, 1 },
-    { "dEbeam", &dE, kDouble, 0, 1 },
-    { 0 }
+    { "mbeam",  &M,  kDouble, 0, true },
+    { "qbeam",  &Q,  kDouble, 0, true },
+    { "dEbeam", &dE, kDouble, 0, true },
+    { nullptr }
   };
   Int_t err = LOAD( f, date, request, "" );
   fclose(f);

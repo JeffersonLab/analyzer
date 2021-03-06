@@ -24,13 +24,11 @@ using std::vector;
 //_____________________________________________________________________________
 THaDetectorBase::THaDetectorBase( const char* name,
 				  const char* description ) :
-  THaAnalysisObject(name,description), fNelem(0),
+  THaAnalysisObject(name,description), fDetMap(new THaDetMap),
+  fNelem(0), fSize{kBig,kBig,kBig},
   fXax(1.0,0.0,0.0), fYax(0.0,1.0,0.0), fZax(0.0,0.0,1.0)
 {
-  // Normal constructor. Creates an empty detector map.
-
-  fSize[0] = fSize[1] = fSize[2] = kBig;
-  fDetMap = new THaDetMap;
+  // Normal constructor. Creates a detector with an empty detector map.
 }
 
 //_____________________________________________________________________________
@@ -155,9 +153,9 @@ Int_t THaDetectorBase::ReadGeometry( FILE* file, const TDatime& date,
       "\"position\" (detector position [m])" },
     { "size",     &size,     kDoubleV, 0, optional, 0,
       "\"size\" (detector size [m])" },
-    { "angle",    &angles,   kDoubleV, 0, 1, 0,
+    { "angle",    &angles,   kDoubleV, 0, true, 0,
       "\"angle\" (detector angles(s) [deg]" },
-    { 0 }
+    { nullptr }
   };
   Int_t err = LoadDB( file, date, request );
   if( err )

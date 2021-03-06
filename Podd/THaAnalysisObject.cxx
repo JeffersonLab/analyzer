@@ -26,44 +26,45 @@
 #include "TSystem.h"
 #include "TObjArray.h"
 #include "TObjString.h"
+#include "TString.h"
 #include "TVirtualMutex.h"
 #include "TThread.h"
-#include "Varargs.h"
 
 #include <cstring>
 #include <cctype>
-#include <errno.h>
+#include <cerrno>
 #include <algorithm>
 #include <iostream>
+#include <sstream>
 #include <cmath>
 #include <cstdlib>
 #include <cstdio>
 #include <string>
-#include <sstream>
-#include <stdexcept>
+#include <exception>
 #include <cassert>
 #include <map>
 #include <limits>
 #include <iomanip>
+#include <type_traits>
 
 using namespace std;
 typedef string::size_type ssiz_t;
 typedef vector<string>::iterator vsiter_t;
 
-TList* THaAnalysisObject::fgModules = NULL;
+TList* THaAnalysisObject::fgModules = nullptr;
 
 const Double_t THaAnalysisObject::kBig = 1.e38;
 
 // Mutex for concurrent access to global Here function
-static TVirtualMutex* gHereMutex = 0;
+static TVirtualMutex* gHereMutex = nullptr;
 
 //_____________________________________________________________________________
 THaAnalysisObject::THaAnalysisObject( const char* name, 
 				      const char* description ) :
-  TNamed(name,description), fPrefix(NULL), fStatus(kNotinit), 
+  TNamed(name,description), fPrefix(nullptr), fStatus(kNotinit),
   fDebug(0), fIsInit(false), fIsSetup(false), fProperties(0),
   fOKOut(false), fInitDate(19950101,0), fNEventsWithWarnings(0),
-  fExtra(0)
+  fExtra(nullptr)
 {
   // Constructor
 
@@ -73,9 +74,9 @@ THaAnalysisObject::THaAnalysisObject( const char* name,
 
 //_____________________________________________________________________________
 THaAnalysisObject::THaAnalysisObject()
-  : fPrefix(NULL), fStatus(kNotinit), fDebug(0), fIsInit(false),
+  : fPrefix(nullptr), fStatus(kNotinit), fDebug(0), fIsInit(false),
     fIsSetup(false), fProperties(), fOKOut(false), fNEventsWithWarnings(0),
-    fExtra(0)
+    fExtra(nullptr)
 {
   // only for ROOT I/O
 }
@@ -85,16 +86,16 @@ THaAnalysisObject::~THaAnalysisObject()
 {
   // Destructor
 
-  delete fExtra; fExtra = 0;
+  delete fExtra; fExtra = nullptr;
 
   if (fgModules) {
     fgModules->Remove( this );
     if( fgModules->GetSize() == 0 ) {
       delete fgModules;
-      fgModules = 0;
+      fgModules = nullptr;
     }
   }
-  delete [] fPrefix; fPrefix = 0;
+  delete [] fPrefix; fPrefix = nullptr;
 }
 
 //_____________________________________________________________________________
@@ -104,7 +105,7 @@ Int_t THaAnalysisObject::Begin( THaRunBase* /* run */ )
   // for 'run'. Begin() is similar to Init(), but since there is a default
   // Init() implementing standard database and global variable setup,
   // Begin() can be used to implement start-of-run setup tasks for each
-  // module cleanly without interfering with the standard Init() prodecure.
+  // module cleanly without interfering with the standard Init() procedure.
   //
   // The default Begin() method clears the history of warning messages
   // and warning message event counter
@@ -125,8 +126,7 @@ Int_t THaAnalysisObject::End( THaRunBase* /* run */ )
 
   if( !fMessages.empty() ) {
     ULong64_t ntot = 0;
-    for( map<string,UInt_t>::const_iterator it = fMessages.begin();
-	 it != fMessages.end(); ++it ) {
+    for( auto it = fMessages.begin(); it != fMessages.end(); ++it ) {
       ntot += it->second;
     }
     ostringstream msg;
@@ -134,7 +134,7 @@ Int_t THaAnalysisObject::End( THaRunBase* /* run */ )
 	<< "  Encountered " << fNEventsWithWarnings << " events with "
 	<< "warnings, " << ntot << " total warnings"
 	<< endl
-	<< "  Call Print(\"WARN\") for channel list. "
+	<< R"/(  Call Print("WARN") for channel list. )/"
 	<< "Re-run with fDebug>0 for per-event details.";
     Warning( Here("End"), "%s", msg.str().c_str() );
   }
@@ -151,22 +151,22 @@ Int_t THaAnalysisObject::DefineVariables( EMode /* mode */ )
 
 //_____________________________________________________________________________
 Int_t THaAnalysisObject::DefineVarsFromList( const VarDef* list, EMode mode,
-					     const char* var_prefix ) const
-{ 
-  return DefineVarsFromList( list, kVarDef, mode, var_prefix );
+					     const char* def_prefix ) const
+{
+  return DefineVarsFromList(list, kVarDef, mode, def_prefix);
 }
 
 //_____________________________________________________________________________
 Int_t THaAnalysisObject::DefineVarsFromList( const RVarDef* list, EMode mode,
-					     const char* var_prefix ) const
-{ 
-  return DefineVarsFromList( list, kRVarDef, mode, var_prefix );
+					     const char* def_prefix ) const
+{
+  return DefineVarsFromList(list, kRVarDef, mode, def_prefix);
 }
  
 //_____________________________________________________________________________
 Int_t THaAnalysisObject::DefineVarsFromList( const void* list, 
 					     EType type, EMode mode,
-					     const char* var_prefix ) const
+					     const char* def_prefix ) const
 {
   // Add/delete variables defined in 'list' to/from the list of global 
   // variables, using prefix of the current apparatus.
@@ -174,14 +174,14 @@ Int_t THaAnalysisObject::DefineVarsFromList( const void* list,
 
   TString here(GetClassName());
   here.Append("::DefineVarsFromList");
-  return DefineVarsFromList( list, type, mode, var_prefix, this, 
-			     fPrefix, here.Data() );
+  return DefineVarsFromList(list, type, mode, def_prefix, this,
+                            fPrefix, here.Data());
 }
 
 //_____________________________________________________________________________
 Int_t THaAnalysisObject::DefineVarsFromList( const void* list, 
 					     EType type, EMode mode,
-					     const char* var_prefix,
+					     const char* def_prefix,
 					     const TObject* obj,
 					     const char* prefix,
 					     const char* here )
@@ -205,25 +205,25 @@ Int_t THaAnalysisObject::DefineVarsFromList( const void* list,
       gHaVars->DefineVariables( static_cast<const VarDef*>(list),
 				prefix, ::Here(here,prefix) );
     else if( type == kRVarDef )
-      gHaVars->DefineVariables( static_cast<const RVarDef*>(list), obj,
-				prefix, ::Here(here,prefix), var_prefix );
+      gHaVars->DefineVariables(static_cast<const RVarDef*>(list), obj,
+                               prefix, ::Here(here,prefix), def_prefix );
   }
   else if( mode == kDelete ) {
     if( type == kVarDef ) {
-      const VarDef* item;
-      const VarDef* theList = static_cast<const VarDef*>(list);
-      while( (item = theList++) && item->name ) {
+      const auto *item = static_cast<const VarDef*>(list);
+      while( item && item->name ) {
 	TString name(prefix);
 	name.Append( item->name );
 	gHaVars->RemoveName( name );
+	++item;
       }
     } else if( type == kRVarDef ) {
-      const RVarDef* item;
-      const RVarDef* theList = static_cast<const RVarDef*>(list);
-      while( (item = theList++) && item->name ) {
+      const auto *item = static_cast<const RVarDef*>(list);
+      while( item && item->name ) {
 	TString name(prefix);
 	name.Append( item->name );
 	gHaVars->RemoveName( name );
+	++item;
       }
     }
   }
@@ -239,7 +239,7 @@ THaAnalysisObject* THaAnalysisObject::FindModule( const char* name,
   // Locate the object 'name' in the global list of Analysis Modules 
   // and check if it inherits from 'classname' (if given), and whether 
   // it is properly initialized.
-  // Return pointer to valid object, else return NULL.
+  // Return pointer to valid object, else return nullptr.
   // If do_error == true (default), also print error message and set fStatus
   // to kInitError.
   // If do_error == false, don't print error messages and not test if object is
@@ -255,17 +255,17 @@ THaAnalysisObject* THaAnalysisObject::FindModule( const char* name,
     if( do_error )
       Error( Here(here), "No module name given." );
     fStatus = kInitError;
-    return NULL;
+    return nullptr;
   }
 
   // Find the module in the list, comparing 'name' to the module's fPrefix
   TIter next(fgModules);
-  TObject* obj = 0;
+  TObject* obj = nullptr;
   while( (obj = next()) ) {
 #ifdef NDEBUG
-    THaAnalysisObject* module = static_cast<THaAnalysisObject*>(obj);
+    auto module = static_cast<THaAnalysisObject*>(obj);
 #else
-    THaAnalysisObject* module = dynamic_cast<THaAnalysisObject*>(obj);
+    auto module = dynamic_cast<THaAnalysisObject*>(obj);
     assert(module);
 #endif
     const char* cprefix = module->GetPrefix();
@@ -285,7 +285,7 @@ THaAnalysisObject* THaAnalysisObject::FindModule( const char* name,
     if( do_error )
       Error( Here(here), "Module %s does not exist.", name );
     fStatus = kInitError;
-    return NULL;
+    return nullptr;
   }
 
   // Type check (similar to dynamic_cast, except resolving the class name as
@@ -295,23 +295,23 @@ THaAnalysisObject* THaAnalysisObject::FindModule( const char* name,
       Error( Here(here), "Module %s (%s) is not a %s.",
 	     obj->GetName(), obj->GetTitle(), anaobj );
     fStatus = kInitError;
-    return NULL;
+    return nullptr;
   }
-  if( classname && *classname && strcmp(classname,anaobj) &&
+  if( classname && *classname && strcmp(classname,anaobj) != 0 &&
       !obj->IsA()->InheritsFrom( classname )) {
     if( do_error )
       Error( Here(here), "Module %s (%s) is not a %s.",
 	     obj->GetName(), obj->GetTitle(), classname );
     fStatus = kInitError;
-    return NULL;
+    return nullptr;
   }
-  THaAnalysisObject* aobj = static_cast<THaAnalysisObject*>( obj );
+  auto aobj = static_cast<THaAnalysisObject*>( obj );
   if( do_error ) {
     if( !aobj->IsOK() ) {
       Error( Here(here), "Module %s (%s) not initialized.",
 	     obj->GetName(), obj->GetTitle() );
       fStatus = kInitError;
-      return NULL;
+      return nullptr;
     }
   }
   return aobj;
@@ -332,7 +332,7 @@ vector<string> THaAnalysisObject::GetDBFileList( const char* name,
   static const string dirsep = "/", allsep = "/";
 #endif
 
-  const char* dbdir = NULL;
+  const char* dbdir = nullptr;
   const char* result;
   void* dirp;
   size_t pos;
@@ -354,10 +354,10 @@ vector<string> THaAnalysisObject::GetDBFileList( const char* name,
 
   // Build search list of directories
   if( (dbdir = gSystem->Getenv("DB_DIR")))
-    dnames.push_back( dbdir );
-  dnames.push_back( "DB" );
-  dnames.push_back( "db" );
-  dnames.push_back( "." );
+    dnames.emplace_back(dbdir);
+  dnames.emplace_back("DB");
+  dnames.emplace_back("db");
+  dnames.emplace_back(".");
 
   // Try to open the database directories in the search list.
   // The first directory that can be opened is taken as the database
@@ -390,7 +390,7 @@ vector<string> THaAnalysisObject::GetDBFileList( const char* name,
   gSystem->FreeDirectory(dirp);
 
   // Search a date-coded subdirectory that corresponds to the requested date.
-  if( time_dirs.size() > 0 ) {
+  if( !time_dirs.empty() ) {
     sort( time_dirs.begin(), time_dirs.end() );
     for( it = time_dirs.begin(); it != time_dirs.end(); ++it ) {
       item_date = atoi((*it).c_str());
@@ -502,7 +502,7 @@ const char* Here( const char* method, const char* prefix )
       txt = method;
       assert(pos >= 0 && pos < txt.Length());
       txt.Insert(pos, full_prefix);
-      method = 0;
+      method = nullptr;
     } else {
       txt = full_prefix + "::";
     }
@@ -649,7 +649,7 @@ void THaAnalysisObject::MakePrefix( const char* basename )
 {
   // Set up name prefix for global variables. 
   // Internal function called by constructors of derived classes.
-  // If basename != NULL, 
+  // If basename != nullptr,
   //   fPrefix = basename  + "." + GetName() + ".",
   // else 
   //   fPrefix = GetName() + "."
@@ -672,7 +672,7 @@ void THaAnalysisObject::MakePrefix()
 {
   // Make default prefix: GetName() + "."
 
-  MakePrefix(0);
+  MakePrefix(nullptr);
 }
 
 //_____________________________________________________________________________
@@ -684,17 +684,17 @@ FILE* THaAnalysisObject::OpenFile( const char *name, const TDatime& date,
 
   // Ensure input is sane
   if( !name || !*name )
-    return NULL;
+    return nullptr;
   if( !here )
     here="";
   if( !filemode )
     filemode="r";
 
   // Get list of database file candidates and try to open them in turn
-  FILE* fi = NULL;
+  FILE* fi = nullptr;
   vector<string> fnames( GetDBFileList(name, date, here) );
   if( !fnames.empty() ) {
-    vsiter_t it = fnames.begin();
+    auto it = fnames.begin();
     do {
       if( debug_flag>1 )
 	cout << "Info in <" << here << ">: Opening database file " << *it;
@@ -731,24 +731,6 @@ FILE* THaAnalysisObject::OpenRunDBFile( const TDatime& date )
   // Default method for opening run database file
 
   return OpenFile("run", date, ClassNameHere("OpenFile()"), "r", fDebug);
-}
-
-//_____________________________________________________________________________
-char* THaAnalysisObject::ReadComment( FILE* fp, char *buf, const int len )
-{
-  // Read database comment lines (those not starting with a space (' ')),
-  // returning the comment.
-  // If the line is data, then nothing is done and NULL is returned,
-  // so one can search for the next data line with:
-  //   while ( ReadComment(fp, buf, len) );
-  int ch = fgetc(fp);  // peak ahead one character
-  ungetc(ch,fp);
-
-  if (ch == EOF || ch == ' ')
-    return NULL; // a real line of data
-  
-  char *s= fgets(buf,len,fp); // read the comment
-  return s;
 }
 
 //_____________________________________________________________________________
@@ -986,7 +968,7 @@ static Int_t IsDBkey( const string& line, const char* key, string& text )
   const char* p = eq-1;
   assert( p >= ln );
   while( *p == ' ' ) --p; // find_last_not_of(" ")
-  if( strncmp(ln, key, p-ln+1) ) return -1;
+  if( strncmp(ln, key, p-ln+1) != 0 ) return -1;
   // Key matches. Now extract the value, trimming leading whitespace.
   ln = eq+1;
   assert( !*ln || *(ln+strlen(ln)-1) != ' ' ); // Trailing space already trimmed
@@ -1047,7 +1029,7 @@ static Int_t GetLine( FILE* file, char* buf, size_t bufsiz, string& line )
   // Also, convert all tabs to spaces.
   // Returns 0 on success, or EOF if no more data (or error).
 
-  char* r = buf;
+  char* r;
   line.clear();
   while( (r = fgets(buf, bufsiz, file)) ) {
     char* c = strchr(buf, '\n');
@@ -1095,6 +1077,26 @@ static void Trim( string& str )
 }
 
 //_____________________________________________________________________________
+static inline
+Bool_t IsAssignment( const string& str )
+{
+  // Check if 'str' has the form of an assignment (<text> = [optional text]).
+  // Properly handles comparison operators '==', '!=', '<=', '>='
+
+  string::size_type pos = str.find( '=');
+  if( pos == string::npos )
+    // No '='
+    return false;
+  if( str.find_first_not_of(" \t") == pos )
+    // Only whitespace before '=' or '=' at start of line
+    return false;
+  assert( pos>0 );
+  // '!=', '<=', '>=' or '=='
+  return !(str[pos-1] == '!' || str[pos-1] == '<' || str[pos-1] == '>' ||
+           (pos+1 < str.length() && str[pos+1] == '='));
+}
+
+//_____________________________________________________________________________
 Int_t THaAnalysisObject::ReadDBline( FILE* file, char* buf, size_t bufsiz,
 				     string& line )
 {
@@ -1108,13 +1110,13 @@ Int_t THaAnalysisObject::ReadDBline( FILE* file, char* buf, size_t bufsiz,
   Int_t r = 0;
   bool maybe_continued = false, unfinished = true;
   string linbuf;
-  fpos_t oldpos;
+  fpos_t oldpos = 0;
   while( unfinished && fgetpos(file, &oldpos) == 0 &&
 	 (r = GetLine(file,buf,bufsiz,linbuf)) == 0 ) {
     // Search for comment or continuation character.
     // If found, remove it and everything that follows.
-    bool continued = false, comment = false, has_equal = false,
-      trailing_space = false, leading_space = false;
+    bool continued = false, comment = false,
+      trailing_space = false, leading_space = false, is_assignment = false;
     ssiz_t pos = linbuf.find_first_of("#\\");
     if( pos != string::npos ) {
       if( linbuf[pos] == '\\' )
@@ -1138,9 +1140,9 @@ Int_t THaAnalysisObject::ReadDBline( FILE* file, char* buf, size_t bufsiz,
       continue;
 
     if( !linbuf.empty() ) {
-      has_equal = (linbuf.find('=') != string::npos);
+      is_assignment = IsAssignment(linbuf);
       // Tentative continuation is canceled by a subsequent line with a '='
-      if( maybe_continued && has_equal ) {
+      if( maybe_continued && is_assignment ) {
 	// We must have data at this point, so we can exit. However, the line
 	// we've just read is obviously a good one, so we must also rewind the
 	// file to the previous position so this line can be read again.
@@ -1157,11 +1159,11 @@ Int_t THaAnalysisObject::ReadDBline( FILE* file, char* buf, size_t bufsiz,
     } else {
       // An empty line, except for a comment or continuation, ends continuation.
       // Since we have data here, and this line is blank and would later be
-      // skipped anyay, we can simply exit
+      // skipped anyway, we can simply exit
       break;
     }
 
-    if( line.empty() && !continued && has_equal ) {
+    if( line.empty() && !continued && is_assignment ) {
       // If the first line of a potential result contains a '=', this
       // line may be continued by non-'=' lines up until the next blank line.
       // However, do not use this logic if the line also contains a
@@ -1220,7 +1222,7 @@ Int_t THaAnalysisObject::LoadDBvalue( FILE* file, const TDatime& date,
   static const size_t bufsiz = 256;
   char* buf = new char[bufsiz];
 
-  bool found = false, ignore = false;
+  bool found = false, do_ignore = false;
   string dbline;
   vector<string> lines;
   while( ReadDBline(file, buf, bufsiz, dbline) != EOF ) {
@@ -1229,19 +1231,18 @@ Int_t THaAnalysisObject::LoadDBvalue( FILE* file, const TDatime& date,
     // variables are supported here, although they are only sensible on the LHS
     lines.assign( 1, dbline );
     gHaTextvars->Substitute( lines );
-    for( vsiter_t it = lines.begin(); it != lines.end(); ++it ) {
-      string& line = *it;
+    for(auto & line : lines) {
       Int_t status;
-      if( !ignore && (status = IsDBkey( line, key, text )) != 0 ) {
+      if( !do_ignore && (status = IsDBkey( line, key, text )) != 0 ) {
 	if( status > 0 ) {
 	  // Found a matching key for a newer date than before
 	  found = true;
 	  prevdate = keydate;
-	  // we do not set ignore to true here so that the _last_, not the first,
+	  // we do not set do_ignore to true here so that the _last_, not the first,
 	  // of multiple identical keys is evaluated.
 	}
-      } else if( IsDBdate( line, keydate ) != 0 ) 
-	ignore = ( keydate>date || keydate<prevdate );
+      } else if( IsDBdate( line, keydate ) != 0 )
+        do_ignore = (keydate > date || keydate < prevdate );
     }
   }
   delete [] buf;
@@ -1311,7 +1312,7 @@ Int_t THaAnalysisObject::LoadDBarray( FILE* file, const TDatime& date,
   text += " ";
   istringstream inp(text);
   T dval;
-  while( 1 ) {
+  while( true ) {
     inp >> dval;
     if( inp.good() )
       values.push_back(dval);
@@ -1331,7 +1332,7 @@ Int_t THaAnalysisObject::LoadDBmatrix( FILE* file, const TDatime& date,
   // Read a matrix of values of type T into a vector of vectors.
   // The matrix is square with ncols columns.
 
-  vector<T>* tmpval = new vector<T>;
+  auto tmpval = new vector<T>;
   if( !tmpval )
     return -255;
   Int_t err = LoadDBarray( file, date, key, *tmpval );
@@ -1416,8 +1417,8 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 	    if( item->type == kDouble )
 	      *((Double_t*)item->var) = dval;
 	    else {
-	      CheckLimits( Float_t, dval );
-	      *((Float_t*)item->var) = dval;
+	      CheckLimits( Float_t, dval )
+              *((Float_t*)item->var) = dval;
 	    }
 	  }
 	} else {
@@ -1433,7 +1434,7 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 		((Double_t*)item->var)[i] = dvals[i];
 	    } else {
 	      for( UInt_t i = 0; i < nelem; i++ ) {
-		CheckLimits( Float_t, dvals[i] );
+		CheckLimits( Float_t, dvals[i] )
 		((Float_t*)item->var)[i] = dvals[i];
 	      }
 	    }
@@ -1450,23 +1451,23 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 	      *((Int_t*)item->var) = ival;
 	      break;
 	    case kUInt:
-	      CheckLimitsUnsigned( UInt_t, ival );
+	      CheckLimitsUnsigned( UInt_t, ival )
 	      *((UInt_t*)item->var) = ival;
 	      break;
 	    case kShort:
-	      CheckLimits( Short_t, ival );
+	      CheckLimits( Short_t, ival )
 	      *((Short_t*)item->var) = ival;
 	      break;
 	    case kUShort:
-	      CheckLimitsUnsigned( UShort_t, ival );
+	      CheckLimitsUnsigned( UShort_t, ival )
 	      *((UShort_t*)item->var) = ival;
 	      break;
 	    case kChar:
-	      CheckLimits( Char_t, ival );
+	      CheckLimits( Char_t, ival )
 	      *((Char_t*)item->var) = ival;
 	      break;
 	    case kByte:
-	      CheckLimitsUnsigned( Byte_t, ival );
+	      CheckLimitsUnsigned( Byte_t, ival )
 	      *((Byte_t*)item->var) = ival;
 	      break;
 	    default:
@@ -1488,31 +1489,31 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 	      break;
 	    case kUInt:
 	      for( UInt_t i = 0; i < nelem; i++ ) {
-		CheckLimitsUnsigned( UInt_t, ivals[i] );
+		CheckLimitsUnsigned( UInt_t, ivals[i] )
 		((UInt_t*)item->var)[i] = ivals[i];
 	      }
 	      break;
 	    case kShort:
 	      for( UInt_t i = 0; i < nelem; i++ ) {
-		CheckLimits( Short_t, ivals[i] );
+		CheckLimits( Short_t, ivals[i] )
 		((Short_t*)item->var)[i] = ivals[i];
 	      }
 	      break;
 	    case kUShort:
 	      for( UInt_t i = 0; i < nelem; i++ ) {
-		CheckLimitsUnsigned( UShort_t, ivals[i] );
+		CheckLimitsUnsigned( UShort_t, ivals[i] )
 		((UShort_t*)item->var)[i] = ivals[i];
 	      }
 	      break;
 	    case kChar:
 	      for( UInt_t i = 0; i < nelem; i++ ) {
-		CheckLimits( Char_t, ivals[i] );
+		CheckLimits( Char_t, ivals[i] )
 		((Char_t*)item->var)[i] = ivals[i];
 	      }
 	      break;
 	    case kByte:
 	      for( UInt_t i = 0; i < nelem; i++ ) {
-		CheckLimitsUnsigned( Byte_t, ivals[i] );
+		CheckLimitsUnsigned( Byte_t, ivals[i] )
 		((Byte_t*)item->var)[i] = ivals[i];
 	      }
 	      break;
@@ -1559,17 +1560,17 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
       badtype:
 	if( item->type >= kDouble && item->type <= kObject2P )
 	  ::Error( ::Here(here,loaddb_prefix.c_str()),
-		   "Key \"%s\": Reading of data type \"%s\" not implemented",
+		   R"(Key "%s": Reading of data type "%s" not implemented)",
 		   key, THaVar::GetEnumName(item->type) );
 	else
 	  ::Error( ::Here(here,loaddb_prefix.c_str()),
-		   "Key \"%s\": Reading of data type \"(#%d)\" not implemented",
+		   R"/(Key "%s": Reading of data type "(#%d)" not implemented)/",
 		   key, item->type );
 	ret = -2;
 	break;
       rangeerr:
 	::Error( ::Here(here,loaddb_prefix.c_str()),
-		 "Key \"%s\": Value %s out of range for requested type \"%s\"",
+		 R"(Key "%s": Value %s out of range for requested type "%s")",
 		 key, errtxt.c_str(), THaVar::GetEnumName(item->type) );
 	ret = -3;
 	break;
@@ -1614,11 +1615,11 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 	else {
 	  if( item->descript ) {
 	    ::Error( ::Here(here,loaddb_prefix.c_str()),
-		     "Required key \"%s\" (%s) missing in the database.",
+		     R"/(Required key "%s" (%s) missing in the database.)/",
 		     key, item->descript );
 	  } else {
 	    ::Error( ::Here(here,loaddb_prefix.c_str()),
-		     "Required key \"%s\" missing in the database.", key );
+		     R"(Required key "%s" missing in the database.)", key );
 	  }
 	  // For missing keys, the return code is the index into the request 
 	  // array + 1. In this way the caller knows which key is missing.
@@ -1644,7 +1645,7 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 	break;
       } else {  // other ret < 0: unexpected zero pointer etc.
 	::Error( ::Here(here,loaddb_prefix.c_str()), 
-		 "Program error when trying to read database key \"%s\". "
+		 R"(Program error when trying to read database key "%s". )"
 		 "CALL EXPERT!", key );
 	break;
       }
@@ -1787,7 +1788,6 @@ vector<string> THaAnalysisObject::vsplit(const string& s)
   // Static utility function to split a string into
   // whitespace-separated strings
   vector<string> ret;
-  typedef string::size_type ssiz_t;
   ssiz_t i = 0;
   while ( i != s.size()) {
     while (i != s.size() && isspace(s[i])) ++i;
@@ -1807,19 +1807,23 @@ void THaAnalysisObject::DebugPrint( const DBRequest* list )
 {
   // Print values of database parameters given in 'list'
 
+  if( !list )
+    return;
   TString prefix(fPrefix);
   if( prefix.EndsWith(".") ) prefix.Chop();
   cout << prefix << " database parameters: " << endl;
   size_t maxw = 1;
   ios_base::fmtflags fmt = cout.flags();
-  for( const DBRequest* it = list; it->name; ++it )
+  for( const auto *it = list; it->name; ++it )
     maxw = TMath::Max(maxw,strlen(it->name));
-  for( const DBRequest* it = list; it->name; ++it ) {
+  for( const auto *it = list; it->name; ++it ) {
     cout << "  " << std::left << setw(maxw) << it->name;
     size_t maxc = it->nelem;
     if( maxc == 0 ) maxc = 1;
     if( it->type == kDoubleV )
       maxc = ((vector<Double_t>*)it->var)->size();
+    else if( it->type == kFloatV )
+      maxc = ((vector<Float_t>*)it->var)->size();
     else if( it->type == kIntV )
       maxc = ((vector<Int_t>*)it->var)->size();
     for( size_t i=0; i<maxc; ++i ) {
@@ -1836,6 +1840,9 @@ void THaAnalysisObject::DebugPrint( const DBRequest* list )
 	break;
       case kIntV:
         cout << ((vector<Int_t>*)it->var)->at(i);
+        break;
+      case kFloatV:
+        cout << ((vector<Float_t>*)it->var)->at(i);
         break;
       case kDoubleV:
         cout << ((vector<Double_t>*)it->var)->at(i);
@@ -1856,8 +1863,11 @@ void THaAnalysisObject::WriteValue( T val, int p, int w )
   // Helper function for printing debug information
   ios_base::fmtflags fmt = cout.flags();
   streamsize prec = cout.precision();
-  if( val < kBig )
+  if( std::is_floating_point<T>::value && val < kBig )
     cout << fixed << setprecision(p) << setw(w) << val;
+  else if( std::is_integral<T>::value && val != THaVar::kInvalidInt &&
+           TMath::Abs(val) < 10 * w )
+    cout << setw(w) << val;
   else
     cout << " --- ";
   cout.flags(fmt);
@@ -1867,6 +1877,7 @@ void THaAnalysisObject::WriteValue( T val, int p, int w )
 // Explicit instantiations
 template void THaAnalysisObject::WriteValue<Double_t>( Double_t val, int p=0, int w=5 );
 template void THaAnalysisObject::WriteValue<Float_t>( Float_t val, int p=0, int w=5 );
+template void THaAnalysisObject::WriteValue<Int_t>( Int_t val, int p=0, int w=5 );
 
 #endif
 
@@ -1890,15 +1901,14 @@ void THaAnalysisObject::Print( Option_t* opt ) const
        << endl;
 
   // Print warning details
-  if( opt && strstr(opt,"WARN") != 0 && !fMessages.empty() ) {
+  if( opt && strstr(opt,"WARN") != nullptr && !fMessages.empty() ) {
     string name = GetPrefix();
     string::size_type len = name.length();
     if( len>0 && name[len-1] == '.' )
       name.erase(len-1);
     cout << "Module \"" << name << "\" encountered warnings:" << endl;
-    for( map<string,UInt_t>::const_iterator it = fMessages.begin();
-	 it != fMessages.end(); ++it ) {
-      cout << "  " << it->first << ": " << it->second << " times" << endl;
+    for( const auto& fMessage : fMessages ) {
+      cout << "  " << fMessage.first << ": " << fMessage.second << " times" << endl;
     }
   }
 }

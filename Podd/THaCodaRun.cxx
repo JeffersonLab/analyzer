@@ -79,7 +79,7 @@ Int_t THaCodaRun::Close()
 {
   // Close the CODA run
 
-  fOpened = kFALSE;
+  fOpened = false;
   if( !IsOpen() )
     return 0;
 

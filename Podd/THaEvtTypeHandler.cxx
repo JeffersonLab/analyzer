@@ -16,7 +16,7 @@
 using namespace std;
 
 THaEvtTypeHandler::THaEvtTypeHandler(const char* name, const char* description)
-  : THaAnalysisObject(name, description), fDebugFile(0)
+  : THaAnalysisObject(name, description), fDebugFile(nullptr)
 {
 }
 
@@ -31,7 +31,7 @@ THaEvtTypeHandler::~THaEvtTypeHandler()
 void THaEvtTypeHandler::AddEvtType(int evtype) {
   eventtypes.push_back(evtype);
 }
-  
+
 void THaEvtTypeHandler::SetEvtType(int evtype) {
   eventtypes.clear();
   AddEvtType(evtype);
@@ -43,8 +43,8 @@ void THaEvtTypeHandler::EvPrint() const
   cout << "Hello !  THaEvtTypeHandler name =  "<<GetName()<<endl;
   cout << "    description "<<GetTitle()<<endl;
   cout << "    event types handled are "<<endl;
-  for (UInt_t i=0; i < eventtypes.size(); i++) {
-    cout << "    event type "<<eventtypes[i]<<endl;
+  for( int eventtype : eventtypes ) {
+    cout << "    event type "<<eventtype<<endl;
   }
   cout << "----------------- good bye ----------------- "<<endl;
 }
@@ -91,17 +91,17 @@ void THaEvtTypeHandler::SetDebugFile(const char *filename) {
 
 Bool_t THaEvtTypeHandler::IsMyEvent(Int_t evnum) const
 {
-  for (UInt_t i=0; i < eventtypes.size(); i++) {
-    if (evnum == eventtypes[i]) return kTRUE;
+  for( int eventtype : eventtypes ) {
+    if (evnum == eventtype) return true;
   }
 
-  return kFALSE;
+  return false;
 }
 
 //_____________________________________________________________________________
 void THaEvtTypeHandler::MakePrefix()
 {
-  THaAnalysisObject::MakePrefix( NULL );
+  THaAnalysisObject::MakePrefix( nullptr );
 }
 
 ClassImp(THaEvtTypeHandler)

@@ -14,14 +14,14 @@
 class OldVDCHit : public TObject {
 
 public:
-  OldVDCHit( OldVDCWire* wire=NULL, Int_t rawtime=0, Double_t time=0.0 ) : 
+  OldVDCHit( OldVDCWire* wire=nullptr, Int_t rawtime=0, Double_t time=0.0 ) :
     fWire(wire), fRawTime(rawtime), fTime(time), fDist(0.0), fdDist(0),
     ftrDist(kBig) {}
   virtual ~OldVDCHit() {}
 
   virtual Double_t ConvertTimeToDist(Double_t slope);
   Int_t  Compare ( const TObject* obj ) const;
-  Bool_t IsSortable () const { return kTRUE; }
+  Bool_t IsSortable () const { return true; }
   
   // Get and Set Functions
   OldVDCWire* GetWire() const { return fWire; }

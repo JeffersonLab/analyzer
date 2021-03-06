@@ -28,7 +28,7 @@ class THaCodaFile : public THaCodaData {
 public:
 
   THaCodaFile();
-  THaCodaFile(const char* filename, const char* rw="r");
+  explicit THaCodaFile(const char* filename, const char* rw="r");
   ~THaCodaFile();
   Int_t codaOpen(const char* filename, Int_t mode=1);
   Int_t codaOpen(const char* filename, const char* rw, Int_t mode=1);

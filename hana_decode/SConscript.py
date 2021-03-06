@@ -63,7 +63,7 @@ dclib = build_library(dcenv, libname, src,
                       )
 
 proceed = "1" or "y" or "yes" or "Yes" or "Y"
-if dcenv.subst('$STANDALONE')==proceed or dcenv.GetOption('clean') \
+if dcenv.subst('$STANDALONE') == proceed or dcenv.GetOption('clean') \
     or 'uninstall' in COMMAND_LINE_TARGETS:
     SConscript(dirs = ['apps'], name='SConscript.py', exports='dcenv')
 

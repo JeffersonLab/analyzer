@@ -35,7 +35,7 @@
 
   // get a pointer to the current pad
   gPad;
-  gPad->SetLogy();  // logorithmic Y-axis
+  gPad->SetLogy();  // logarithmic Y-axis
 
   // Get the Tree from the file
   TTree* T = (TTree*)gDirectory->Get("T");

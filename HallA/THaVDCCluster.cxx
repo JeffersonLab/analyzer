@@ -24,10 +24,10 @@ static const Int_t kDefaultNHit = 16;
 
 //_____________________________________________________________________________
 THaVDCCluster::THaVDCCluster( THaVDCPlane* owner )
-  : fPlane(owner), fPointPair(0), fTrack(0), fTrkNum(0),
+  : fPlane(owner), fPointPair(nullptr), fTrack(nullptr), fTrkNum(0),
     fSlope(kBig), fLocalSlope(kBig), fSigmaSlope(kBig),
     fInt(kBig), fSigmaInt(kBig), fT0(kBig), fSigmaT0(kBig),
-    fPivot(0), fTimeCorrection(0),
+    fPivot(nullptr), fTimeCorrection(0),
     fFitOK(false), fChi2(kBig), fNDoF(0.0), fClsBeg(kMaxInt), fClsEnd(-1)
 {
   // Constructor
@@ -57,10 +57,10 @@ void THaVDCCluster::Clear( Option_t* )
 
   ClearFit();
   fHits.clear();
-  fPivot   = 0;
-  fPlane   = 0;
-  fPointPair = 0;
-  fTrack   = 0;
+  fPivot   = nullptr;
+  fPlane   = nullptr;
+  fPointPair = nullptr;
+  fTrack   = nullptr;
   fTrkNum  = 0;
   fClsBeg  = kMaxInt-1;
   fClsEnd  = -1;
@@ -93,7 +93,7 @@ Int_t THaVDCCluster::Compare( const TObject* obj ) const
   if( !obj || IsA() != obj->IsA() )
     return -1;
 
-  const THaVDCCluster* rhs = static_cast<const THaVDCCluster*>( obj );
+  auto rhs = static_cast<const THaVDCCluster*>( obj );
   if( GetPivotWireNum() < rhs->GetPivotWireNum() )
     return -1;
   if( GetPivotWireNum() > rhs->GetPivotWireNum() )
@@ -218,7 +218,7 @@ void THaVDCCluster::FitTrack( EMode mode )
   //
   // kSimple:    Linear fit, ignore t0 and multihits
   // kWeighted:  Linear fit with weights, ignore t0
-  // kT0:        Fit t0, but ignore mulithits
+  // kT0:        Fit t0, but ignore multihits
 
   switch( mode ) {
   case kSimple:
@@ -392,7 +392,7 @@ Int_t THaVDCCluster::LinearClusterFitWithT0()
   // a significant negative offset d0.
   //
   // The results, m, b, and d0, are converted to the "slope" and "intercept"
-  // of the cluster geometery, where slope = 1/m and intercept = -b/m.
+  // of the cluster geometry, where slope = 1/m and intercept = -b/m.
   // d0 is simply converted to time units to give t0, using the asymptotic
   // drift velocity.
 
@@ -766,7 +766,7 @@ void THaVDCCluster::Print( Option_t* ) const
     cout << "Global residuals = ";
     DoCalcChisquare( chi2, nhits, fSlope, true );
     cout << endl;
-    cout << "Local/global chi2 = " << lchi2 << ", " << chi2 << endl;;
+    cout << "Local/global chi2 = " << lchi2 << ", " << chi2 << endl;
   }
 }
 

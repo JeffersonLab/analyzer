@@ -26,7 +26,7 @@ class THaOdata {
 // Utility class used by THaOutput to store arrays 
 // up to size 'nsize' for tree output.
 public:
-  THaOdata(int n=1) : tree(NULL), ndata(0), nsize(n)
+  THaOdata(int n=1) : tree(nullptr), ndata(0), nsize(n)
   { data = new Double_t[n]; }
   THaOdata(const THaOdata& other);
   THaOdata& operator=(const THaOdata& rhs);

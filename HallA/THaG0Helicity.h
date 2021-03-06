@@ -19,7 +19,7 @@ class THaG0Helicity : public THaHelicityDet, public THaG0HelicityReader {
 public:
 
   THaG0Helicity( const char* name, const char* description, 
-		 THaApparatus* a = NULL );
+		 THaApparatus* a = nullptr );
   THaG0Helicity();
   virtual ~THaG0Helicity();
 

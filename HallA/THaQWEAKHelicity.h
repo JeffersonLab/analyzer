@@ -11,6 +11,7 @@
 
 #include "THaHelicityDet.h"
 #include "THaQWEAKHelicityReader.h"
+#include <vector>
 
 class TH1F;
 
@@ -19,21 +20,21 @@ class THaQWEAKHelicity : public THaHelicityDet, public THaQWEAKHelicityReader {
 public:
 
   THaQWEAKHelicity( const char* name, const char* description, 
-		 THaApparatus* a = NULL );
+                    THaApparatus* a = nullptr );
   THaQWEAKHelicity();
   virtual ~THaQWEAKHelicity();
 
-  virtual Int_t  Begin( THaRunBase* r=0 );
+  virtual Int_t  Begin( THaRunBase* r=nullptr );
   virtual void   Clear( Option_t* opt = "" );
   virtual Int_t  Decode( const THaEvData& evdata );
-  virtual Int_t  End( THaRunBase* r=0 );
+  virtual Int_t  End( THaRunBase* r=nullptr );
   virtual void   SetDebug( Int_t level );
   virtual Bool_t HelicityValid() const { return fValidHel; }
 
   void PrintEvent(Int_t evtnum);
 
 protected:
-  void  FillHisto();
+  virtual void  FillHisto();
   void  CheckTIRvsRing(Int_t eventnumber);
   void  LoadHelicity(Int_t eventnumber);
   Int_t RanBit30(Int_t& ranseed);
@@ -46,7 +47,7 @@ protected:
   Int_t fQWEAKDelay;  
   // delay of helicity (# windows)
   Int_t fMAXBIT; 
-  //number of bit in the pseudo random helcity generator
+  //number of bit in the pseudo random helicity generator
   std::vector<Int_t> fPatternSequence; // sequence of 0 and 1 in the pattern
   Int_t fQWEAKNPattern; // maximum of event in the pattern
   Bool_t HWPIN;
@@ -78,7 +79,7 @@ protected:
   Int_t fEvtype; // Current CODA event type
  
   static const Int_t NHIST = 2;
-  TH1F* fHisto[NHIST];  
+  std::vector<TH1F*> fHisto;
 
   virtual Int_t DefineVariables( EMode mode = kDefine );
   virtual Int_t ReadDatabase( const TDatime& date );

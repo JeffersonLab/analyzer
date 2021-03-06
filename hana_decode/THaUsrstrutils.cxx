@@ -51,7 +51,7 @@ char* THaUsrstrutils::getstr(const char *s) const
 
   getflagpos(s,&pos,&val);
   if(!val){
-    return(0);
+    return nullptr;
   }
   end = strchr(val,',');	/* value string ends at next keyword */
   if(end)
@@ -69,7 +69,7 @@ unsigned int THaUsrstrutils::getint(const char *s) const
 {
   char* sval = getstr(s);
   if(!sval) return(0);		/* Just return zero if no value string */
-  unsigned int retval = strtol(sval,0,0);
+  unsigned int retval = strtol(sval,nullptr,0);
   if(retval == LONGMAX && (sval[1]=='x' || sval[1]=='X')) {/* Probably hex */
      sscanf(sval,"%12x",&retval);
    }
@@ -98,10 +98,9 @@ void THaUsrstrutils::getflagpos_instring(const char *constr, const char *s,
     if(pos[slen] == '=') {
       *val_ret = pos + slen + 1;
     } else 
-      *val_ret = 0;
+      *val_ret = nullptr;
   } else
-    *val_ret = 0;
-  return;
+    *val_ret = nullptr;
 }
   
 void THaUsrstrutils::string_from_evbuffer(const UInt_t* evbuffer, int nlen )
@@ -117,10 +116,6 @@ void THaUsrstrutils::string_from_evbuffer(const UInt_t* evbuffer, int nlen )
 
   size_t bufsize = sizeof(int)*nlen;
   char* ctemp = new char[bufsize+1];
-  if( !ctemp ) {
-    configstr = "";
-    return;
-  }
   strncpy( ctemp, reinterpret_cast<const char*>(evbuffer), bufsize );
   ctemp[bufsize] = 0;  // terminate C-string for sure
   string strbuff = ctemp;
@@ -135,12 +130,12 @@ void THaUsrstrutils::string_from_evbuffer(const UInt_t* evbuffer, int nlen )
   }
 
 // In order to make this as nearly identical to the online VME code,
-// we first unpack the buffer into lines seperated by '\n'.  
+// we first unpack the buffer into lines separated by '\n'.
 // This is like the reading of the prescale.dat file done
 // by fgets(s,255,fd) in usrstrutils.c
   string::size_type pos = 0;
   while (pos < strbuff.length()) {
-     string::size_type pos1 = strdynamic.find_first_of("\n",0), pos2;
+     string::size_type pos1 = strdynamic.find_first_of('\n',0), pos2;
      if (pos1 != string::npos) {
        pos2 = pos1;
      } else {   // It may happen that the last line has no '\n'
@@ -160,8 +155,8 @@ void THaUsrstrutils::string_from_evbuffer(const UInt_t* evbuffer, int nlen )
 
 // Next we loop over the lines of the 'prescale.dat file' and 
 // use the exact same code as in usrstrutils.c
-   char s[256], *flag_line=0;
-   if (strlines.size() == 0) {
+   char s[256], *flag_line=nullptr;
+  if( strlines.empty()) {
       configstr="";
       return;
    }
@@ -188,8 +183,6 @@ void THaUsrstrutils::string_from_evbuffer(const UInt_t* evbuffer, int nlen )
    if (DEBUG >= 1) printf("flag_line = %s \n",flag_line);
 
    configstr = flag_line;
-
-   return;
 }
       
 // This routine reads a file to load file_configustr.
@@ -203,11 +196,11 @@ void THaUsrstrutils::string_from_file(const char *ffile_name)
 /* check that filename exists */
   configstr = "";
   fd = fopen(ffile_name,"r");
-  if(fd == NULL) {
+  if(fd == nullptr) {
     printf("Failed to open usr flag file %s\n",ffile_name);  
   } else {
     /* Read till an uncommented line is found */
-    flag_line = 0;
+    flag_line = nullptr;
     while(fgets(s,255,fd)){
       char *arg;
       arg = strchr(s,COMMENT_CHAR);

@@ -16,7 +16,7 @@
 #include <string>
 #include <cstdio>
 #include <map>
-//#include <stdarg.h>
+#include <cstdarg>
 
 class THaEvData; //needed by derived classes
 class TList;
@@ -25,7 +25,7 @@ class THaRunBase;
 class THaOutput;
 class TObjArray;
 
-const char* Here( const char* here, const char* prefix = NULL );
+const char* Here( const char* here, const char* prefix = nullptr );
 
 class THaAnalysisObject : public TNamed {
   
@@ -40,9 +40,9 @@ public:
   
   virtual ~THaAnalysisObject();
   
-  virtual Int_t        Begin( THaRunBase* r=0 );
+  virtual Int_t        Begin( THaRunBase* r=nullptr );
   virtual void         Clear( Option_t* ="" ) {} // override TNamed::Clear()
-  virtual Int_t        End( THaRunBase* r=0 );
+  virtual Int_t        End( THaRunBase* r=nullptr );
   virtual const char*  GetDBFileName() const;
           const char*  GetClassName() const;
           const char*  GetConfig() const         { return fConfig.Data(); }
@@ -62,7 +62,9 @@ public:
           EStatus      Status() const            { return fStatus; }
 
   virtual Int_t        InitOutput( THaOutput * );
-          Bool_t       IsOKOut()                 { return fOKOut; }
+          Bool_t       IsOKOut() const           { return fOKOut; }
+  virtual FILE*        OpenFile( const TDatime& date );
+  virtual FILE*        OpenRunDBFile( const TDatime& date );
   virtual void         Print( Option_t* opt="" ) const;
 
   // Static functions to provide easy access to database files
@@ -70,7 +72,7 @@ public:
   static  FILE*   OpenFile( const char* name, const TDatime& date,
 			    const char* here = "OpenFile()",
 			    const char* filemode = "r", 
-			    const int debug_flag = 1);
+			    int debug_flag = 1);
   static Int_t    ReadDBline( FILE* fp, char* buf, size_t bufsiz,
 			      std::string& line );
 
@@ -122,7 +124,7 @@ public:
 
   static Int_t    DefineVarsFromList( const void* list, 
 				      EType type, EMode mode,
-				      const char* var_prefix,
+				      const char* def_prefix,
 				      const TObject* obj, 
 				      const char* prefix, 
 				      const char* here );
@@ -152,13 +154,13 @@ protected:
   virtual Int_t        DefineVariables( EMode mode = kDefine );
           Int_t        DefineVarsFromList( const VarDef* list, 
 					   EMode mode = kDefine,
-					   const char* var_prefix="" ) const;
+					   const char* def_prefix="" ) const;
           Int_t        DefineVarsFromList( const RVarDef* list, 
 					   EMode mode = kDefine,
-					   const char* var_prefix="" ) const;
+					   const char* def_prefix="" ) const;
           Int_t        DefineVarsFromList( const void* list, 
 					   EType type, EMode mode,
-					   const char* var_prefix="" ) const;
+					   const char* def_prefix= "" ) const;
 
   virtual void         DoError( int level, const char* location,
 				const char* fmt, va_list va) const;
@@ -172,8 +174,6 @@ protected:
 			       const DBRequest* req, Int_t search = 0 );
           void         MakePrefix( const char* basename );
   virtual void         MakePrefix();
-  virtual FILE*        OpenFile( const TDatime& date );
-  virtual FILE*        OpenRunDBFile( const TDatime& date );
   virtual Int_t        ReadDatabase( const TDatime& date );
   virtual Int_t        ReadRunDatabase( const TDatime& date );
   virtual Int_t        RemoveVariables();
@@ -183,12 +183,10 @@ protected:
     GetDBFileList( const char* name, const TDatime& date,
 		   const char* here = "GetDBFileList()" );
   
-  static char* ReadComment( FILE* fp, char* buf, const int len );
-
 #ifdef WITH_DEBUG
   void DebugPrint( const DBRequest* list );
 
-  template <typename T>  // available for double and float
+  template <typename T>  // available for Double_t, Float_t and Int_t
   static void WriteValue( T val, int p=0, int w=5 );
 #endif
 

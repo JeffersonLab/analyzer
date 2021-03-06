@@ -5,7 +5,7 @@
 //   author Vincent Sulkosky
 //   
 //   Decoder module to retrieve Caen 775 TDCs.  Based on CAEN 792 decoding in
-//   SkeletonModule.C in podd 1.6.   (Written by S. Wood, modified by V. Sulkosky)
+//   SkeletonModule.C in Podd 1.6.   (Written by S. Wood, modified by V. Sulkosky)
 //
 /////////////////////////////////////////////////////////////////////
 
@@ -43,15 +43,11 @@ void Caen775Module::Init() {
   // This will make a HUGE output
   delete fDebugFile; fDebugFile = 0;
   fDebugFile = new ofstream;
-#if __cplusplus >= 201103L
   fDebugFile->open(string("v")+MyModName()+"debug.txt");
-#else
-  fDebugFile->open((string("v")+MyModName()+"debug.txt").c_str());
-#endif
 #endif
   //fDebugFile=0;
   Clear();
-  IsInit = kTRUE;
+  IsInit = true;
   TString modtypeup(MyModType());
   modtypeup.ToUpper();
   fName = Form("Caen %s %s Module",modtypeup.Data(),MyModName());

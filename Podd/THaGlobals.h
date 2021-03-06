@@ -2,7 +2,7 @@
 #define Podd_THaGlobals_h_
 
 // Pick up definition of R__EXTERN
-#ifndef Podd_DllImport_h_
+#ifndef R__EXTERN
 #include "DllImport.h"
 #endif
 

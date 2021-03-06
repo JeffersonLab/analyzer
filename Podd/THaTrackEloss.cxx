@@ -28,7 +28,7 @@ THaTrackEloss::THaTrackEloss( const char* name,
 			      Double_t particle_mass,
 			      Int_t hadron_charge ) :
   THaElossCorrection(name,description,input_tracks,particle_mass,
-		     hadron_charge), fTrackModule(NULL)
+		     hadron_charge), fTrackModule(nullptr)
 {
   // Normal constructor.
 
@@ -101,7 +101,7 @@ THaAnalysisObject::EStatus THaTrackEloss::Init( const TDatime& run_time )
   fTrkIfo.SetSpectrometer( spectro );
 
   // Standard initialization. Calls this object's DefineVariables() and
-  // reads meterial properties from the run database.
+  // reads material properties from the run database.
   THaElossCorrection::Init( run_time );
 
   return fStatus;

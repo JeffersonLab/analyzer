@@ -40,7 +40,7 @@ string::size_type FindNoCase( string data, string chunk )
   Lower(data);
   Lower(chunk);
   return data.find(chunk);
-};
+}
 
 //_____________________________________________________________________________
 vector<string> Split( const string& s )

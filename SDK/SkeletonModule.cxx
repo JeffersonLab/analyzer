@@ -32,7 +32,7 @@ void SkeletonModule::Init() {
   for (Int_t i=0; i<fNumChan; i++) fData.push_back(0);
   fDebugFile=0;
   Clear();
-  IsInit = kTRUE;
+  IsInit = true;
   fName = "Skeleton Module (example)";
 }
 

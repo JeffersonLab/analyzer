@@ -27,10 +27,10 @@ static const char* DEFRUNPARAM = "THaRunParameters";
 //_____________________________________________________________________________
 THaRunBase::THaRunBase( const char* description ) :
   TNamed(NOTINIT, description ),
-  fNumber(-1), fType(0), fDate(UNDEFDATE,0), fNumAnalyzed(0),
-  fDBRead(kFALSE), fIsInit(kFALSE), fOpened(kFALSE), fAssumeDate(kFALSE),
-  fDataSet(0), fDataRead(0), fDataRequired(kDate), fParam(0),
-  fRunParamClass(DEFRUNPARAM), fDataVersion(0), fExtra(0)
+  fNumber(-1), fType(0), fDate(UNDEFDATE,0), fEvtRange{1,kMaxUInt}, fNumAnalyzed(0),
+  fDBRead(false), fIsInit(false), fOpened(false), fAssumeDate(false),
+  fDataSet(0), fDataRead(0), fDataRequired(kDate), fParam(nullptr),
+  fRunParamClass(DEFRUNPARAM), fDataVersion(0), fExtra(nullptr)
 {
   // Normal & default constructor
 
@@ -40,17 +40,16 @@ THaRunBase::THaRunBase( const char* description ) :
 //_____________________________________________________________________________
 THaRunBase::THaRunBase( const THaRunBase& rhs ) :
   TNamed( rhs ), fNumber(rhs.fNumber), fType(rhs.fType),
-  fDate(rhs.fDate), fNumAnalyzed(rhs.fNumAnalyzed), fDBRead(rhs.fDBRead),
-  fIsInit(rhs.fIsInit), fOpened(kFALSE), fAssumeDate(rhs.fAssumeDate),
+  fDate(rhs.fDate), fEvtRange{rhs.fEvtRange[0],rhs.fEvtRange[1]},
+  fNumAnalyzed(rhs.fNumAnalyzed), fDBRead(rhs.fDBRead),
+  fIsInit(rhs.fIsInit), fOpened(false), fAssumeDate(rhs.fAssumeDate),
   fDataSet(rhs.fDataSet), fDataRead(rhs.fDataRead),
-  fDataRequired(rhs.fDataRequired), fParam(0),
+  fDataRequired(rhs.fDataRequired), fParam(nullptr),
   fRunParamClass(rhs.fRunParamClass), fDataVersion(rhs.fDataVersion),
-  fExtra(0)
+  fExtra(nullptr)
 {
   // Copy ctor
 
-  fEvtRange[0] = rhs.fEvtRange[0];
-  fEvtRange[1] = rhs.fEvtRange[1];
   // NB: the run parameter object might inherit from THaRunParameters
   if( rhs.fParam ) {
     fParam = static_cast<THaRunParameters*>(rhs.fParam->IsA()->New());
@@ -76,7 +75,7 @@ THaRunBase& THaRunBase::operator=(const THaRunBase& rhs)
      fNumAnalyzed = rhs.fNumAnalyzed;
      fDBRead     = rhs.fDBRead;
      fIsInit     = rhs.fIsInit;
-     fOpened     = kFALSE;
+     fOpened     = false;
      fAssumeDate = rhs.fAssumeDate;
      fDataSet    = rhs.fDataSet;
      fDataRead   = rhs.fDataRead;
@@ -86,14 +85,14 @@ THaRunBase& THaRunBase::operator=(const THaRunBase& rhs)
        fParam = static_cast<THaRunParameters*>(rhs.fParam->IsA()->New());
        *fParam = *rhs.fParam;
      } else
-       fParam    = 0;
+       fParam    = nullptr;
      fRunParamClass = rhs.fRunParamClass;
      fDataVersion   = rhs.fDataVersion;
      delete fExtra;
      if( rhs.fExtra )
        fExtra = rhs.fExtra->Clone();
      else
-       fExtra = 0;
+       fExtra = nullptr;
   }
   return *this;
 }
@@ -103,8 +102,8 @@ THaRunBase::~THaRunBase()
 {
   // Destructor
 
-  delete fExtra; fExtra = 0;
-  delete fParam; fParam = 0;
+  delete fExtra; fExtra = nullptr;
+  delete fParam; fParam = nullptr;
 }
 
 //_____________________________________________________________________________
@@ -196,7 +195,7 @@ void THaRunBase::Clear( Option_t* opt )
   fNumber = -1;
   fType = 0;
   fNumAnalyzed = 0;
-  fDBRead = fIsInit = fOpened = kFALSE;
+  fDBRead = fIsInit = fOpened = false;
   fDataSet = fDataRead = 0;
   fParam->Clear(opt);
 
@@ -218,7 +217,7 @@ void THaRunBase::ClearDate()
   // Reset the run date to "undefined"
 
   fDate.Set(UNDEFDATE,0);
-  fAssumeDate = fIsInit = kFALSE;
+  fAssumeDate = fIsInit = false;
   fDataSet &= ~kDate;
 }
 
@@ -238,7 +237,7 @@ Int_t THaRunBase::Compare( const TObject* obj ) const
   // -1 when 'this' is smaller and +1 when bigger (like strcmp).
 
   if (this == obj) return 0;
-  const THaRunBase* rhs = dynamic_cast<const THaRunBase*>(obj);
+  auto rhs = dynamic_cast<const THaRunBase*>(obj);
   if( !rhs ) return -1;
   if      ( fNumber < rhs->fNumber ) return -1;
   else if ( fNumber > rhs->fNumber ) return  1;
@@ -273,7 +272,7 @@ Int_t THaRunBase::Init()
   Int_t retval = READ_OK;
 
   // Set up the run parameter object
-  delete fParam; fParam = 0;
+  delete fParam; fParam = nullptr;
   const char* s = fRunParamClass.Data();
   TClass* cl = TClass::GetClass(s);
   if( !cl ) {
@@ -298,7 +297,7 @@ Int_t THaRunBase::Init()
   }
  err:
   if( retval != READ_OK ) {
-    delete fParam; fParam = 0;
+    delete fParam; fParam = nullptr;
     return retval;
   }
 
@@ -325,7 +324,7 @@ Int_t THaRunBase::Init()
 
   if( !HasInfo(fDataRequired) ) {
     const char* errmsg[] = { "run date", "run number", "run type",
-			     "prescale factors", 0 };
+			     "prescale factors", nullptr };
     TString errtxt("Missing run parameters: ");
     UInt_t i = 0, n = 0;
     const char** msg = errmsg;
@@ -351,7 +350,7 @@ Int_t THaRunBase::Init()
   if( retval )
     return retval;
 
-  fIsInit = kTRUE;
+  fIsInit = true;
   return READ_OK;
 }
 
@@ -450,9 +449,9 @@ void THaRunBase::SetDate( const TDatime& date )
 
   if( fDate != date ) {
     fDate = date;
-    fIsInit = kFALSE;
+    fIsInit = false;
   }
-  fAssumeDate = kTRUE;
+  fAssumeDate = true;
   fDataSet |= kDate;
 }
 

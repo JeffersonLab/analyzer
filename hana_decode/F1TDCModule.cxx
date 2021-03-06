@@ -24,19 +24,18 @@ namespace Decoder {
     DoRegister( ModuleType( "Decoder::F1TDCModule" , 3201 ));
 
 F1TDCModule::F1TDCModule(Int_t crate, Int_t slot) : VmeModule(crate, slot) {
-  fDebugFile=0;
   Init();
 }
 
 F1TDCModule::~F1TDCModule() {
-  if (fTdcData) delete [] fTdcData;
+  delete [] fTdcData;
 }
 
 void F1TDCModule::Init() {
   fTdcData = new Int_t[NTDCCHAN*MAXHIT];
-  fDebugFile=0;
+  fDebugFile=nullptr;
   Clear();
-  IsInit = kTRUE;
+  IsInit = true;
   fName = "F1 TDC 3201";
   fNumChan = 32;
   fWdcntMask=0;
@@ -82,7 +81,7 @@ Int_t F1TDCModule::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, const UI
   //
   // In normal resolution mode, the scheme is:
   //    connector 1:  ch 0 - 15
-  //    conncetor 2:  ch 16 - 31
+  //    connector 2:  ch 16 - 31
   //    connector 33: ch 32 - 47
   //    connector 34: ch 48 - 63
   //
@@ -111,20 +110,20 @@ Int_t F1TDCModule::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, const UI
    // look at all the data
    const UInt_t *loc = evbuffer;
 #ifdef WITH_DEBUG
-   if(fDebug > 1 && fDebugFile!=0)
+   if(fDebug > 1 && fDebugFile)
      *fDebugFile<< "Debug of F1TDC data, fResol =  "<<fResol<<"  model num  "<<fModelNum<<endl;
 #endif
    while ( loc <= pstop && IsSlot(*loc) ) {
      if ( !( (*loc) & DATA_MARKER ) ) {
        // header/trailer word, to be ignored
 #ifdef WITH_DEBUG
-       if(fDebug > 1 && fDebugFile!=0)
+       if(fDebug > 1 && fDebugFile)
          *fDebugFile<< "[" << (loc-evbuffer) << "] header/trailer  0x"
          <<hex<<*loc<<dec<<endl;
 #endif
      } else {
 #ifdef WITH_DEBUG
-       if (fDebug > 1 && fDebugFile!=0)
+       if (fDebug > 1 && fDebugFile)
          *fDebugFile<< "[" << (loc-evbuffer) << "] data            0x"
          <<hex<<*loc<<dec<<endl;
 #endif
@@ -158,7 +157,7 @@ Int_t F1TDCModule::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, const UI
 
        Int_t raw= (*loc) & 0xffff;
 #ifdef WITH_DEBUG
-       if(fDebug > 1 && fDebugFile!=0) {
+       if(fDebug > 1 && fDebugFile) {
          *fDebugFile<<" int_chn chan data "<<dec<<chn<<"  "<<chan
              <<"  0x"<<hex<<raw<<dec<<endl;
        }
