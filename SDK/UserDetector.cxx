@@ -295,18 +295,18 @@ Int_t UserDetector::FineProcess( TClonesArray& /* tracks */ )
 
 //_____________________________________________________________________________
 // Helper macro to print a single field of a structure in a std::vector.
-#define PrintArrayField(txt,var,field)          \
-  cout << txt << " = ";                         \
-  {                                             \
-     if( var.empty() )                          \
-       cout << "(empty)";                       \
-     else {                                     \
-       for( auto it = var.begin();              \
-                 it != var.end(); ++it ) {      \
-         cout << (*it).field;                   \
-         if( it+1 != var.end() ) cout << ", ";  \
-       }                                        \
-     }                                          \
+#define PrintArrayField(txt,var,field)           \
+  cout << (txt) << " = ";                        \
+  {                                              \
+     if( (var).empty() )                         \
+       cout << "(empty)";                        \
+     else {                                      \
+       for( auto it = (var).begin();             \
+                 it != (var).end(); ++it ) {     \
+         cout << (*it).field;                    \
+         if( it+1 != (var).end() ) cout << ", "; \
+       }                                         \
+     }                                           \
   } cout << endl;
 
 //_____________________________________________________________________________

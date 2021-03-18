@@ -12,8 +12,8 @@
 class UserApparatus : public THaApparatus {
 
 public:
-  UserApparatus( const char* name="U",
-		 const char* description="User Apparatus" );
+  explicit UserApparatus( const char* name="U",
+                          const char* description="User Apparatus" );
   virtual ~UserApparatus();
 
   virtual void  Clear( Option_t* opt="");

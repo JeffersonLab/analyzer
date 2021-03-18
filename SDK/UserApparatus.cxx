@@ -115,9 +115,9 @@ Int_t UserApparatus::Reconstruct()
     // NB: dynamic_cast returns nullptr if the cast object does not
     // inherit from the requested type.
     // One could also use TClass::InheritsFrom, but dynamic_cast is faster.
-    if( auto d = dynamic_cast<THaScintillator*>( theDetector )) {
+    if( auto* d = dynamic_cast<THaScintillator*>( theDetector )) {
       fNtotal += d->GetNHits();
-    } else if( auto ud = dynamic_cast<UserDetector*>( theDetector )) {
+    } else if( auto* ud = dynamic_cast<UserDetector*>( theDetector )) {
       fNtotal += ud->GetNhits();
     } else {
       // do nothing for all other detector types

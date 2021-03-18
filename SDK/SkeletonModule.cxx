@@ -17,20 +17,22 @@ using namespace std;
 Module::TypeIter_t SkeletonModule::fgThisType =
   DoRegister( ModuleType( "Decoder::SkeletonModule" , 4444 ));
 
-SkeletonModule::SkeletonModule(Int_t crate, Int_t slot) : VmeModule(crate, slot) {
-  fDebugFile=0;
+SkeletonModule::SkeletonModule(Int_t crate, Int_t slot)
+  : VmeModule(crate, slot), fNumHits(0)
+{
+  fDebugFile = nullptr;
   Init();
 }
 
-SkeletonModule::~SkeletonModule() {
+SkeletonModule::~SkeletonModule() = default;
 
-}
-
-void SkeletonModule::Init() {
+void SkeletonModule::Init()
+{
   Module::Init();
-  fNumChan=32;
-  for (Int_t i=0; i<fNumChan; i++) fData.push_back(0);
-  fDebugFile=0;
+  fNumChan = 32;
+  for( Int_t i = 0; i < fNumChan; i++ )
+    fData.push_back(0);
+  fDebugFile = nullptr;
   Clear();
   IsInit = true;
   fName = "Skeleton Module (example)";
@@ -38,7 +40,8 @@ void SkeletonModule::Init() {
 
 #ifdef LIKEV792
 Int_t SkeletonModule::LoadSlot(THaSlotData* sldat, const UInt_t* evbuffer,
-			       const UInt_t* pstop ) {
+			       const UInt_t* pstop )
+{
   // This is a simple, default method for loading a slot
   // pstop points to last word of data
   const UInt_t* p = evbuffer;
@@ -47,29 +50,31 @@ Int_t SkeletonModule::LoadSlot(THaSlotData* sldat, const UInt_t* evbuffer,
   ++p;
   Int_t nword=*p-2;
   ++p;
-  for (Int_t i=0;i<nword && p<pstop;i++) {
-       ++p;
-       UInt_t chan=((*p)&0x00ff0000)>>16;
-       UInt_t raw=((*p)&0x00000fff);
-       Int_t status = sldat->loadData("adc",chan,raw,raw);
-       fWordsSeen++;
-       if (chan < fData.size()) fData[chan]=raw;
+  for( Int_t i = 0; i < nword && p < pstop; i++ ) {
+    ++p;
+    UInt_t chan = ((*p) & 0x00ff0000) >> 16;
+    UInt_t raw = ((*p) & 0x00000fff);
+    Int_t status = sldat->loadData("adc", chan, raw, raw);
+    fWordsSeen++;
+    if( chan < fData.size() ) fData[chan] = raw;
 //       cout << "word   "<<i<<"   "<<chan<<"   "<<raw<<endl;
-       if( status != SD_OK ) return -1;
+    if( status != SD_OK ) return -1;
   }
   return fWordsSeen;
 }
 #endif
 
-UInt_t SkeletonModule::GetData(Int_t chan) const {
-  if (chan < 0 || chan > fNumChan) return 0;
+UInt_t SkeletonModule::GetData(Int_t chan) const
+{
+  if( chan < 0 || chan > fNumChan ) return 0;
   return fData[chan];
 }
 
-void SkeletonModule::Clear(const Option_t* opt) {
+void SkeletonModule::Clear(const Option_t* opt)
+{
   VmeModule::Clear(opt);
   fNumHits = 0;
-  for (Int_t i=0; i<fNumChan; i++) fData[i]=0;
+  for( Int_t i = 0; i < fNumChan; i++ ) fData[i] = 0;
 }
 
 ClassImp(SkeletonModule)

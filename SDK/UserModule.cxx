@@ -148,11 +148,11 @@ Int_t UserModule::ReadRunDatabase( const TDatime& date )
   if( !f ) return kFileError;
 
   // Search database for "<prefix>.param"
-  TString name(fPrefix), tag("param"); name += tag;
+  TString name(fPrefix), key("param"); name += key;
   Int_t st = LoadDBvalue( f, date, name.Data(), fParameter );
   // Not found? Search for "param".
   if( st )
-    st = LoadDBvalue( f, date, tag.Data(), fParameter );
+    st = LoadDBvalue(f, date, key.Data(), fParameter );
   // Still not found? Use some default value.
   // (Alternatively, print message and return error code)
   if( st ) 
