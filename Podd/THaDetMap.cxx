@@ -163,7 +163,7 @@ Int_t THaDetMap::AddModule( UShort_t crate, UShort_t slot,
   // calls to MakeADC()/MakeTDC().
   if( model != 0 ) {
     auto it = find_if(ALL(module_list),
-                      [model]( const auto& m ) { return m.model == model; });
+                      [model]( const ModuleDef& m ) { return m.model == model; });
     m.type = (it != module_list.end()) ? it->type : ChannelType::kUndefined;
     if( m.type == ChannelType::kTDC )
       m.type = ChannelType::kCommonStopTDC; // common stop is the default
@@ -184,7 +184,7 @@ THaDetMap::Module* THaDetMap::Find( UShort_t crate, UShort_t slot,
   // Since the map is usually small and not necessarily sorted, a simple
   // linear search is done.
 
-  auto found = find_if( ALL(fMap), [crate,slot,chan](const auto& d)
+  auto found = find_if( ALL(fMap), [crate,slot,chan](const unique_ptr<Module>& d)
   { return ( d->crate == crate && d->slot == slot &&
              d->lo <= chan && chan <= d->hi );
   });
@@ -368,7 +368,8 @@ void THaDetMap::Sort()
 {
   // Sort the map by crate/slot/low channel
 
-  sort( ALL(fMap), []( const auto& a, const auto& b) {
+  sort( ALL(fMap),
+	[]( const unique_ptr<Module>& a, const unique_ptr<Module>& b) {
     if( a->crate < b->crate ) return true;
     if( a->crate > b->crate ) return false;
     if( a->slot  < b->slot )  return true;

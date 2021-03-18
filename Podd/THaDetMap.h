@@ -34,8 +34,8 @@ public:
   // Configuration data for a frontend module
   struct Module {
     Module() = default;
-    Module( const Module& rhs ) = default;
-    Module& operator=( const Module& rhs ) = default;
+    Module( Module& rhs ) = default;
+    Module& operator=( Module& rhs ) = default;
     UShort_t crate;
     UShort_t slot;
     UShort_t lo;

@@ -1110,7 +1110,7 @@ Int_t THaAnalysisObject::ReadDBline( FILE* file, char* buf, size_t bufsiz,
   Int_t r = 0;
   bool maybe_continued = false, unfinished = true;
   string linbuf;
-  fpos_t oldpos = 0;
+  fpos_t oldpos{};
   while( unfinished && fgetpos(file, &oldpos) == 0 &&
 	 (r = GetLine(file,buf,bufsiz,linbuf)) == 0 ) {
     // Search for comment or continuation character.
