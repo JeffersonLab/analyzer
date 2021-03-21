@@ -125,11 +125,12 @@ namespace Decoder {
 		      << tdc_data.raw << " >> status = "
 		      << tdc_data.status << endl;
 #endif
-	if(Int_t (tdc_data.chan) < NTDCCHAN) 
-	  if(fNumHits[tdc_data.chan] < MAXHIT)
-	    fTdcData[tdc_data.chan*MAXHIT + fNumHits[tdc_data.chan]] = tdc_data.raw;
-	    fTdcOpt[tdc_data.chan*MAXHIT + fNumHits[tdc_data.chan]++] = tdc_data.opt;
-	if (tdc_data.status != SD_OK ) return -1;
+        if(Int_t (tdc_data.chan) < NTDCCHAN &&
+           fNumHits[tdc_data.chan] < MAXHIT) {
+          fTdcData[tdc_data.chan * MAXHIT + fNumHits[tdc_data.chan]] = tdc_data.raw;
+          fTdcOpt[tdc_data.chan * MAXHIT + fNumHits[tdc_data.chan]++] = tdc_data.opt;
+        }
+        if (tdc_data.status != SD_OK ) return -1;
       }
       break;
     case 0x18000000 : // tdc trailer
