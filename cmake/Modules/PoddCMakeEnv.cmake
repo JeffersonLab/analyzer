@@ -137,7 +137,12 @@ macro(set_diagnostic_flags)
   endif()
   if(SDF_WEXTRA)
     string(CONCAT PODD_EXTRA_DIAG_FLAGS "-Wextra -Wno-missing-field-initializers"
-      " -Wno-unused-parameter -Wno-inconsistent-missing-override")
+      " -Wno-unused-parameter")
+    check_cxx_compiler_flag(-Wno-inconsistent-missing-override cxx-imo-supported)
+    if(cxx-imo-supported)
+      string(CONCAT PODD_EXTRA_DIAG_FLAGS "-Wno-inconsistent-missing-override")
+    endif()
+    unset(cxx-imo-supported)
     set(${PROJECT_NAME_UC}_DIAG_FLAGS
       "${${PROJECT_NAME_UC}_DIAG_FLAGS} ${PODD_EXTRA_DIAG_FLAGS}"
       )
