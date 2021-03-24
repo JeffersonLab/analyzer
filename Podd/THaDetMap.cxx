@@ -94,6 +94,7 @@ void THaDetMap::CopyMap( const ModuleVec_t& map )
 
 //_____________________________________________________________________________
 THaDetMap::THaDetMap( const THaDetMap& rhs )
+  : fStartAtZero(rhs.fStartAtZero)
 {
   // Copy constructor
 
@@ -108,6 +109,7 @@ THaDetMap& THaDetMap::operator=( const THaDetMap& rhs )
   if( this != &rhs ) {
     fMap.clear();
     CopyMap(rhs.fMap);
+    fStartAtZero = rhs.fStartAtZero;
   }
   return *this;
 }
@@ -265,9 +267,16 @@ Int_t THaDetMap::Fill( const vector<Int_t>& values, UInt_t flags )
     }
 
     vsiz_t k = 4;
-    if( flags & kFillLogicalChannel )
+    if( flags & kFillLogicalChannel ) {
       first = values[i + k++];
-    else {
+      if( first == 0 )
+        // This map appears to start counting channels at zero
+        // This is actually the exception. For historical reasons (Fortran),
+        // most maps start counting at 1.
+        // This flag is used by the hit iterators only; existing Decode()
+        // methods will not be affected.
+        fStartAtZero = true;
+    } else {
       first = prev_first + prev_nchan;
     }
     if( flags & kFillModel )
@@ -432,7 +441,8 @@ THaDetMap::Iterator& THaDetMap::Iterator::operator++()
     }
     fMod = fDetMap.GetModule(fIMod);
     if( !fMod )
-      throw std::logic_error("NULL detector map module. Program bug. Call expert.");
+      throw std::logic_error("NULL detector map module. Program bug. "
+                             "Call expert.");
     fHitInfo.set_crate_slot(fMod);
     fHitInfo.module = fEvData.GetModule(CRATE_SLOT(fHitInfo));
     fNChan = fEvData.GetNumChan(CRATE_SLOT(fHitInfo));
@@ -450,19 +460,24 @@ THaDetMap::Iterator& THaDetMap::Iterator::operator++()
   if( nhit == 0 ) {
     ostringstream ostr;
     ostr << "No hits on active "
-         << (fHitInfo.type == Decoder::ChannelType::kADC ? "ADC" : "TDC")
+         << (fHitInfo.type == ChannelType::kADC ? "ADC" : "TDC")
          << " channel. Should never happen. Decoder bug. Call expert.";
     throw std::logic_error(msg(ostr.str().c_str()));
   }
   // If multiple hits on a TDC channel take the one earliest in time.
   // For a common-stop TDC, this is actually the last hit.
-  fHitInfo.hit = (fHitInfo.type == Decoder::ChannelType::kCommonStopTDC) ? nhit - 1 : 0;
-  // Determine default logical channel
+  fHitInfo.hit = (fHitInfo.type == ChannelType::kCommonStopTDC) ? nhit - 1 : 0;
+  // Determine logical channel. Decode() methods that use this hit iterator
+  // should always assume that logical channel numbers start counting from zero.
   Int_t lchan = fMod->ConvertToLogicalChannel(chan);
+  if( fDetMap.fStartAtZero )
+    ++lchan; // ConvertToLogicalChannel subtracts 1; undo that here
   if( lchan < 0 or lchan >= size() ) {
     ostringstream ostr;
+    size_t lmin = 1, lmax = size(); // Apparent range in the database file
+    if( fDetMap.fStartAtZero ) { --lmin; --lmax; }
     ostr << "Illegal logical detector channel " << lchan << "."
-         << "Must be between 0 and " << size() << ". Fix database.";
+         << "Must be between " << lmin << " and " << lmax << ". Fix database.";
     throw std::invalid_argument(msg(ostr.str().c_str()));
   }
   fHitInfo.lchan = lchan;

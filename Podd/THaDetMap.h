@@ -7,7 +7,7 @@
 //
 // Standard detector map.
 // The detector map defines the hardware channels that correspond to a
-// single detector. Typically, "channels" are Fastbus or VMW addresses 
+// single detector. Typically, "channels" are Fastbus or VME addresses
 // characterized by
 //
 //   Crate, Slot, range of channels
@@ -92,7 +92,7 @@ public:
     kFillSignal          = BIT(15)    // Parse the signal type (for Hall C)
   };
 
-  THaDetMap() = default;
+  THaDetMap() : fStartAtZero(false) {}
   THaDetMap( const THaDetMap& );
   THaDetMap& operator=( const THaDetMap& );
   virtual ~THaDetMap() = default;
@@ -126,12 +126,17 @@ public:
   virtual void      Reset();
   virtual void      Sort();
 
+  void SetStartAtZero( Bool_t value ) { fStartAtZero = value; }
+
 protected:
   using ModuleVec_t = std::vector<std::unique_ptr<Module>>;
   ModuleVec_t fMap;     // Modules of this detector map
 
   Module* uGetModule( UShort_t i ) const { return fMap[i].get(); }
   void CopyMap( const ModuleVec_t& map );
+
+  // Channels in this map start counting at 0. Used by hit iterators.
+  Bool_t fStartAtZero;
 
   //___________________________________________________________________________
   // Utility classes for iterating over active channels in current event data
