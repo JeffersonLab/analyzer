@@ -20,8 +20,9 @@ public:
   OldVDCUVTrack() :
     fUClust(nullptr), fVClust(nullptr), fUVPlane(nullptr), fTrack(nullptr), fPartner(nullptr),
     fX(0.0), fY(0.0), fTheta(0.0), fPhi(0.0) {}
-
-  virtual ~OldVDCUVTrack() {}
+  OldVDCUVTrack( const OldVDCUVTrack& ) = delete;
+  OldVDCUVTrack& operator=( const OldVDCUVTrack& ) = delete;
+  virtual ~OldVDCUVTrack() = default;
 
   void CalcDetCoords();
 
@@ -65,11 +66,6 @@ protected:
   Double_t fY;     // Y position of track in U wire-plane 
   Double_t fTheta; // Angle between z-axis and projection of track into xz plane
   Double_t fPhi;   // Angle between z-axis and projection of track into yz plane
-  
-private:
-  // Hide copy ctor and op=
-  OldVDCUVTrack( const OldVDCUVTrack& );
-  OldVDCUVTrack& operator=( const OldVDCUVTrack& );
 
   ClassDef(OldVDCUVTrack,0)             // VDCUVTrack class
 };

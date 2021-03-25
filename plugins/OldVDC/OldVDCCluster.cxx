@@ -10,7 +10,6 @@
 #include "OldVDCHit.h"
 #include "OldVDCPlane.h"
 #include "OldVDCUVTrack.h"
-#include "THaTrack.h"
 #include "TMath.h"
 #include "TClass.h"
 
@@ -121,7 +120,7 @@ Int_t OldVDCCluster::Compare( const TObject* obj ) const
   if( !obj || IsA() != obj->IsA() )
     return -1;
 
-  const OldVDCCluster* rhs = static_cast<const OldVDCCluster*>( obj );
+  const auto* rhs = static_cast<const OldVDCCluster*>( obj );
   if( GetPivotWireNum() < rhs->GetPivotWireNum() )
     return -1;
   if( GetPivotWireNum() > rhs->GetPivotWireNum() )
@@ -233,12 +232,9 @@ void OldVDCCluster::FitSimpleTrack()
              // Do keep current values of slope and intercept
 
   Double_t N = fSize;  //Ensure that floating point calculations are used
-  Double_t m, sigmaM;  // Slope, St. Dev. in slope
-  Double_t b, sigmaB;  // Intercept, St. Dev in Intercept
-  Double_t sigmaY;     // St Dev in delta Y values
 
-  Double_t* xArr = new Double_t[fSize];
-  Double_t* yArr = new Double_t[fSize];
+  auto* xArr = new Double_t[fSize];
+  auto* yArr = new Double_t[fSize];
 
   Double_t bestFit = 0.0;
 
@@ -280,19 +276,19 @@ void OldVDCCluster::FitSimpleTrack()
     }
 
     // Standard formulae
-    m  = (N * sumXY - sumX * sumY) / (N * sumXX - sumX * sumX);
-    b  = (sumXX * sumY - sumX * sumXY) / (N * sumXX - sumX * sumX);
+    Double_t m = (N * sumXY - sumX * sumY) / (N * sumXX - sumX * sumX);
+    Double_t b = (sumXX * sumY - sumX * sumXY) / (N * sumXX - sumX * sumX);
 
     // Calculate sum of delta y values
     for (int j = 0; j < fSize; j++) {
       Double_t y = yArr[j];
       Double_t Y = m * xArr[j] + b;
       sumDY2 += (y - Y) * (y - Y);
-    } 
-    
-    sigmaY = TMath::Sqrt (sumDY2 / (N - 2));
-    sigmaM = sigmaY * TMath::Sqrt ( N / ( N * sumXX - sumX * sumX) );
-    sigmaB = sigmaY * TMath::Sqrt (sumXX / ( N * sumXX - sumX * sumX) );
+    }
+
+    Double_t sigmaY = TMath::Sqrt(sumDY2 / (N - 2));
+    Double_t sigmaM = sigmaY * TMath::Sqrt(N / (N * sumXX - sumX * sumX));
+    Double_t sigmaB = sigmaY * TMath::Sqrt(sumXX / (N * sumXX - sumX * sumX));
     
     // Pick the best value
     if (i == 0 || sigmaY < bestFit) {
@@ -340,12 +336,9 @@ void OldVDCCluster::FitSimpleTrackWgt()
              // Do keep current values of slope and intercept
   }
   
-  Double_t m, sigmaM;  // Slope, St. Dev. in slope
-  Double_t b, sigmaB;  // Intercept, St. Dev in Intercept
-
-  Double_t* xArr = new Double_t[fSize];
-  Double_t* yArr = new Double_t[fSize];
-  Double_t* wtArr= new Double_t[fSize];
+  auto* xArr = new Double_t[fSize];
+  auto* yArr = new Double_t[fSize];
+  auto* wtArr= new Double_t[fSize];
   
   Double_t bestFit = 0.0;
   
@@ -374,10 +367,6 @@ void OldVDCCluster::FitSimpleTrackWgt()
   
   const Int_t nSignCombos = 2; //Number of different sign combinations
   for (int i = 0; i < nSignCombos; i++) {
-    Double_t F, sigmaF2;  // intermediate slope and St. Dev.**2
-    Double_t G, sigmaG2;  // intermediate intercept and St. Dev.**2
-    Double_t sigmaFG;     // correlated uncertainty
-    
     Double_t sumX  = 0.0;   //Positions
     Double_t sumXW = 0.0;
     Double_t sumXX = 0.0;
@@ -415,18 +404,22 @@ void OldVDCCluster::FitSimpleTrackWgt()
     // Standard formulae for linear regression (see Bevington)
     Double_t Delta = W * sumXX - sumX * sumX;
 
-    F  = (sumXX * sumY - sumX * sumXY) / Delta;
-    G  = (W * sumXY - sumX * sumY) / Delta;
-    sigmaF2 = ( sumXX / Delta );
-    sigmaG2 = ( W / Delta );
-    sigmaFG = ( sumXW * W * sumXX - sumXXW * W * sumX
-		- WW * sumX * sumXX + sumXW * sumX * sumX ) / (Delta*Delta);
+    // intermediate slope and St. Dev.**2
+    Double_t F = (sumXX * sumY - sumX * sumXY) / Delta;
+    Double_t sigmaF2 = (sumXX / Delta);
+    // intermediate intercept and St. Dev.**2
+    Double_t G = (W * sumXY - sumX * sumY) / Delta;
+    Double_t sigmaG2 = (W / Delta);
+    // correlated uncertainty
+    Double_t sigmaFG = (sumXW * W * sumXX - sumXXW * W * sumX
+                        - WW * sumX * sumXX + sumXW * sumX * sumX) /
+                       (Delta * Delta);
 
-    m  =   1/G;
-    b  = - F/G;
+    Double_t m  =   1/G;
+    Double_t b  = - F/G;
 
-    sigmaM = m * m * TMath::Sqrt( sigmaG2 );
-    sigmaB = TMath::Sqrt( sigmaF2/(G*G) + F*F/(G*G*G*G)*sigmaG2 - 2*F/(G*G*G)*sigmaFG);
+    Double_t sigmaM = m * m * TMath::Sqrt( sigmaG2 );
+    Double_t sigmaB = TMath::Sqrt( sigmaF2/(G*G) + F*F/(G*G*G*G)*sigmaG2 - 2*F/(G*G*G)*sigmaFG);
     
     // calculate the best possible chi2 for the track given this slope and intercept
     Double_t chi2 = 0.;

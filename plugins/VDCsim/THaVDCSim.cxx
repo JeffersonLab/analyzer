@@ -1,6 +1,9 @@
 #include "THaVDCSim.h"
 #include "TSystem.h"
 #include "TMath.h"
+#include "VarDef.h"
+#include "THaAnalysisObject.h"
+#include "TDatime.h"
 
 ClassImp(THaVDCSimWireHit)
 ClassImp(THaVDCSimEvent)
@@ -20,8 +23,18 @@ void THaVDCSimWireHit::Print( Option_t* ) const
 }
 
 void THaVDCSimTrack::Clear( Option_t* opt ) {
-  for (auto & hit : hits)
-    hit.Clear(opt);
+  origin.Clear();
+  momentum.Clear();
+  for( auto& r : ray )
+    r = 0.0;
+  type = 0;
+  layer = 0;
+  track_num = 0;
+  timeOffset = 0;
+  for( int i = 0; i<4; i++ )
+    slope[i] = xover[i] = 0.0;
+  for( auto& planeHits : hits )
+    planeHits.clear();
 }
 
 void THaVDCSimTrack::Print( Option_t* ) const
@@ -35,44 +48,34 @@ void THaVDCSimTrack::Print( Option_t* ) const
        << momentum.Z() << ")" << endl;
   cout << "  TRANSPORT = (" << ray[0] << ", " << ray[1] << ", " << ray[2] << ", "
        << ray[3] << ", " << ray[4] << ")" << endl;
-  cout << "  #hits = " << hits[0].GetSize() << ", " << hits[1].GetSize() << ", "
-       << hits[2].GetSize() << ", " << hits[3].GetSize() << endl;
+  cout << "  #hits = " << hits[0].size() << ", " << hits[1].size() << ", "
+       << hits[2].size() << ", " << hits[3].size() << endl;
   cout << "  t0 = " << timeOffset << endl;
   cout << "  intercepts =";
-  for(double i : xover)
+  for(auto i : xover)
     cout << " " << i;
   cout << endl;
   cout << "  slopes     =";
-  for(double i : slope)
+  for(auto i : slope)
     cout << " " << i;
   cout << endl;
 }
 
 THaVDCSimEvent::THaVDCSimEvent() : event_num(0) {}
 
-THaVDCSimEvent::~THaVDCSimEvent() {
-  Clear();
-}
+THaVDCSimEvent::~THaVDCSimEvent() = default;
 
 void THaVDCSimEvent::Clear( Option_t* opt ) {
-  for (auto & wirehit : wirehits)
-    wirehit.Delete(opt);
+  for( auto& planehits : wirehits )
+    planehits.clear();
 
-  // Debug
-#ifdef DEBUG
-  cout << tracks.GetSize() << endl;
-  for( int i=0; i<tracks.GetSize(); i++ ) {
-    THaVDCSimTrack* track = (THaVDCSimTrack*)tracks.At(i);
-    track->Print();
-  }
-#endif
-
-  tracks.Delete(opt);
+  tracks.clear();
 }
 
 THaVDCSimConditions::THaVDCSimConditions()
   //set defaults conditions
   : filename("vdctracks.root"), numTrials(10000),
+    wireHeight{}, driftVelocities{}, Prefixes{},
     numWires(368), noiseSigma(4.5), noiseMean(0.0), wireEff(1.0), tdcTimeLimit(900.0),
     emissionRate(0.000002), probWireNoise(0.0), x1(-1.8), x2(-0.1),ymean(0.0),
     ysigma(0.01), z0(-1.0),
@@ -92,15 +95,10 @@ THaVDCSimConditions::THaVDCSimConditions()
     databaseFile = analyzerDir;
     databaseFile += "/DB/";
   }
-  else
-    databaseFile = "/u/home/orsborn/vdcsim/DB/";
-  databaseFile += "20030415/db_L.vdc.dat";
+  databaseFile += "db_L.vdc.dat";
 }
 
-THaVDCSimConditions::~THaVDCSimConditions()
-{
-  // Destructor
-}
+THaVDCSimConditions::~THaVDCSimConditions() = default;
 
 void THaVDCSimConditions::set(Double_t *something,
 			      Double_t a, Double_t b, Double_t c, Double_t d) {
@@ -116,57 +114,44 @@ Int_t THaVDCSimConditions::ReadDatabase(Double_t* timeOffsets)
   FILE* file = fopen(databaseFile, "r");
   if( !file ) return 1;
 
-
-  // Use default values until ready to read from database
-
-  const int LEN = 100;
-  char buff[LEN];
-
+  TDatime now;
+  Int_t err = THaAnalysisObject::kOK;
+  vector<Float_t> tdc_offsets;
+  tdc_offsets.reserve(numWires);
   for( int j = 0; j<4; j++ ) {
-    rewind(file);
-    // Build the search tag and find it in the file. Search tags
-    // are of form [ <prefix> ], e.g. [ R.vdc.u1 ].
-    TString tag(Prefixes[j]); tag.Prepend("["); tag.Append("]");
-    TString line, tag2(tag);
-    tag.ToLower();
-    // cout << "ReadDatabase:  tag = " << tag.Data() << endl;
-    bool found = false;
-    while (!found && fgets (buff, LEN, file) != nullptr) {
-      char* buf = ::Compress(buff);  //strip blanks
-      line = buf;
-      delete [] buf;
-      if( line.EndsWith("\n") ) line.Chop();  //delete trailing newline
-      line.ToLower();
-      if ( tag == line )
-	found = true;
-    }
-    if( !found ) {
-      fclose(file);
-      return 1;
-    }
-
-    for(int i = 0; i<5; i++)
-      fgets(buff, LEN, file);  //skip 5 lines to get to drift velocity
-
-    //read in drift velocity
     Double_t driftVel = 0.0;
-    fscanf(file, "%lf", &driftVel);
+    tdc_offsets.clear();
+    DBRequest request[] = {
+      { "driftvel",    &driftVel,    kDouble, 0, false, -1 },
+      { "tdc.offsets", &tdc_offsets, kFloatV },
+      { nullptr }
+    };
+    try {
+      TString prefix = Prefixes[j];
+      prefix.Append(".");
+      err = THaAnalysisObject::LoadDB(file, now, request, prefix.Data());
+      if( err )
+        break;
+    }
+    catch( const exception& e ) {
+      err = THaAnalysisObject::kFileError;
+      break;
+    }
+
+    // Move database parameters to destination variables
     driftVelocities[j] = driftVel/1e9;   //convert to m/ns
 
-    fgets(buff, LEN, file); // Read to end of line
-    fgets(buff, LEN, file); // Skip line
-
-    //Found the offset entries for this plane, so read time offsets and wire numbers
-
-    for (int i = j*numWires; i < (j+1)*numWires; i++) {
-      int wnum = 0;
-      Double_t offset = 0.0;
-      fscanf(file, " %d %lf", &wnum, &offset);
-      timeOffsets[i] = offset;
+    if( tdc_offsets.size() != (size_t)numWires ) {
+      cerr << "Database error: "
+           << "Number of TDC offset values (" << tdc_offsets.size() << ") "
+           << "disagrees with number of wires (" << numWires << ")" << endl;
     }
+    int start = j*numWires;
+    for (int i = 0; i < numWires; i++)
+      timeOffsets[start+i] = tdc_offsets[i];
   }
 
   fclose(file);
-  return 0;
+  return err;
 }
 

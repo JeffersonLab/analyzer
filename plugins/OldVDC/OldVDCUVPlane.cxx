@@ -186,7 +186,7 @@ Int_t OldVDCUVPlane::MatchUVClusters()
 }
 
 //_____________________________________________________________________________
-Int_t OldVDCUVPlane::CalcUVTrackCoords()
+Int_t OldVDCUVPlane::CalcUVTrackCoords() const
 {
   // Compute track info (x, y, theta, phi) for the tracks based on
   // information contained in the clusters of the tracks and on 

@@ -19,7 +19,7 @@ using namespace std;
 #define MC_PREFIX "MC."
 
 //-----------------------------------------------------------------------------
-THaVDCSimDecoder::THaVDCSimDecoder()
+THaVDCSimDecoder::THaVDCSimDecoder() : fIsSetup{false}
 {
   // Constructor
 
@@ -43,24 +43,24 @@ Int_t THaVDCSimDecoder::DefineVariables( THaAnalysisObject::EMode mode )
 
   RVarDef vars[] = {
     { "tr.n",    "Number of tracks",             "GetNTracks()" },
-    { "tr.x",    "Track x coordinate (m)",       "fTracks.THaVDCSimTrack.TX()" },
-    { "tr.y",    "Track x coordinate (m)",       "fTracks.THaVDCSimTrack.TY()" },
-    { "tr.th",   "Tangent of track theta angle", "fTracks.THaVDCSimTrack.TTheta()" },
-    { "tr.ph",   "Tangent of track phi angle",   "fTracks.THaVDCSimTrack.TPhi()" },
-    { "tr.p",    "Track momentum (GeV)",         "fTracks.THaVDCSimTrack.P()" },
-    { "tr.type", "Track type",                   "fTracks.THaVDCSimTrack.type" },
-    { "tr.layer","Layer of track origin",        "fTracks.THaVDCSimTrack.layer" },
-    { "tr.no",   "Track number",                 "fTracks.THaVDCSimTrack.track_num" },
-    { "tr.t0",   "Track time offset",            "fTracks.THaVDCSimTrack.timeOffset" },
-    { "vdc.u1.pos",  "U1 crossing point (m)",    "fTracks.THaVDCSimTrack.U1Pos()" },
-    { "vdc.v1.pos",  "V1 crossing point (m)",    "fTracks.THaVDCSimTrack.V1Pos()" },
-    { "vdc.u2.pos",  "U2 crossing point (m)",    "fTracks.THaVDCSimTrack.U2Pos()" },
-    { "vdc.v2.pos",  "V2 crossing point (m)",    "fTracks.THaVDCSimTrack.V2Pos()" },
-    { "vdc.u1.slope","U1 track slope",           "fTracks.THaVDCSimTrack.U1Slope()" },
-    { "vdc.v1.slope","V1 track slope",           "fTracks.THaVDCSimTrack.V1Slope()" },
-    { "vdc.u2.slope","U2 track slope",           "fTracks.THaVDCSimTrack.U2Slope()" },
-    { "vdc.v2.slope","V2 track slope",           "fTracks.THaVDCSimTrack.V2Slope()" },
-    { 0 }
+    { "tr.x",    "Track x coordinate (m)",       "fTracks.TX()" },
+    { "tr.y",    "Track x coordinate (m)",       "fTracks.TY()" },
+    { "tr.th",   "Tangent of track theta angle", "fTracks.TTheta()" },
+    { "tr.ph",   "Tangent of track phi angle",   "fTracks.TPhi()" },
+    { "tr.p",    "Track momentum (GeV)",         "fTracks.P()" },
+    { "tr.type", "Track type",                   "fTracks.type" },
+    { "tr.layer","Layer of track origin",        "fTracks.layer" },
+    { "tr.no",   "Track number",                 "fTracks.track_num" },
+    { "tr.t0",   "Track time offset",            "fTracks.timeOffset" },
+    { "vdc.u1.pos",  "U1 crossing point (m)",    "fTracks.U1Pos()" },
+    { "vdc.v1.pos",  "V1 crossing point (m)",    "fTracks.V1Pos()" },
+    { "vdc.u2.pos",  "U2 crossing point (m)",    "fTracks.U2Pos()" },
+    { "vdc.v2.pos",  "V2 crossing point (m)",    "fTracks.V2Pos()" },
+    { "vdc.u1.slope","U1 track slope",           "fTracks.U1Slope()" },
+    { "vdc.v1.slope","V1 track slope",           "fTracks.V1Slope()" },
+    { "vdc.u2.slope","U2 track slope",           "fTracks.U2Slope()" },
+    { "vdc.v2.slope","V2 track slope",           "fTracks.V2Slope()" },
+    { nullptr }
   };
 
   Int_t ret =
@@ -78,15 +78,13 @@ void THaVDCSimDecoder::Clear( Option_t* opt )
 
   THaEvData::Clear();
 
-  // Never delete the tracks, only clear the list. The tracks are deleted
-  // in THaVDCSimRun::ReadEvent() by the call to event->Clear().
-  fTracks.Clear("nodelete");
+  fTracks.clear();
 }
 
 //-----------------------------------------------------------------------------
 Int_t THaVDCSimDecoder::GetNTracks() const
 {
-  return fTracks.GetSize();
+  return fTracks.size();
 }
 
 //-----------------------------------------------------------------------------
@@ -104,7 +102,7 @@ int THaVDCSimDecoder::LoadEvent(const UInt_t* evbuffer )
   // just for compatibility with the standard decoder.
   // Note: simEvent can't be constant - ROOT does not like to iterate
   // over const TList.
-  THaVDCSimEvent* simEvent = (THaVDCSimEvent*)(evbuffer);
+  const auto* simEvent = (const THaVDCSimEvent*)(evbuffer);
 
   if(DEBUG) PrintOut();
   if (first_decode) {
@@ -133,27 +131,18 @@ int THaVDCSimDecoder::LoadEvent(const UInt_t* evbuffer )
 
   // Decode the digitized data.  Populate crateslot array.
   for (int i = 0; i < 4; i++) { // for each plane
-    TIter nextHit( &simEvent->wirehits[i] );
+    for( auto& hit : simEvent->wirehits[i] ) {
     // iterate over hits
-    while( THaVDCSimWireHit *hit =
-	   static_cast<THaVDCSimWireHit*>( nextHit() )) {
 
       // FIXME: HardCode crate/slot/chan nums for now...
-      Int_t chan = hit->wirenum % 96;
-      Int_t raw = static_cast<Int_t>(hit->time);
+      Int_t chan = hit.wirenum % 96;
+      Int_t raw = hit.time;
       Int_t roc = 3;
-      //  Int_t slot = hit->wirenum / 96 + 6 + i*4;
+      //  Int_t slot = hit.wirenum / 96 + 6 + i*4;
 
-      Int_t inislot = hit->wirenum / 96 + 3 + i*4;
-      Int_t slot;
-
-      if(inislot <= 11){
-	slot = inislot;
-      }else{
-	slot = inislot + 4;
-      }
-      // cout << inislot << " > " << slot << endl;
-
+      Int_t slot = hit.wirenum / 96 + 3 + i*4;
+      if(slot > 11)
+	slot += 4;
       //   cout << slot << endl;
 
       if (crateslot[idx(roc,slot)]->loadData("tdc",chan,raw,raw)
@@ -167,10 +156,7 @@ int THaVDCSimDecoder::LoadEvent(const UInt_t* evbuffer )
   // FIXME: However, we have to copy the list because the global variable system
   // cannot handle variable pointers.
 
-  TIter nextTrack( &simEvent->tracks );
-  while( THaVDCSimTrack* track = (THaVDCSimTrack*)nextTrack() ) {
-    fTracks.Add( track );
-  }
+  fTracks.assign( simEvent->tracks.begin(), simEvent->tracks.end() );
 
   if( fDoBench ) fBench->Stop("physics_decode");
 

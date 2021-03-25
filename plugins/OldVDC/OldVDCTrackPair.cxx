@@ -51,7 +51,6 @@ void OldVDCTrackPair::Analyze( Double_t spacing )
   fError  = GetProjectedDistance( fLowerTrack, fUpperTrack, spacing );
   fError += GetProjectedDistance( fUpperTrack, fLowerTrack, -spacing );
 
-  return;
 }
 
 //_____________________________________________________________________________
@@ -79,7 +78,7 @@ Int_t OldVDCTrackPair::Compare( const TObject* obj ) const
   if( !obj || IsA() != obj->IsA() )
     return -1;
 
-  const OldVDCTrackPair* rhs = static_cast<const OldVDCTrackPair*>( obj );
+  const auto* rhs = static_cast<const OldVDCTrackPair*>( obj );
 
   if( fError < rhs->fError )
     return -1;

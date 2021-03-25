@@ -21,8 +21,8 @@ class OldVDCUVPlane : public THaSubDetector {
 
 public:
 
-  OldVDCUVPlane( const char* name="", const char* description="",
-		 THaDetectorBase* parent = nullptr );
+  explicit OldVDCUVPlane( const char* name="", const char* description="",
+                          THaDetectorBase* parent = nullptr );
   virtual ~OldVDCUVPlane();
 
   virtual void    Clear( Option_t* opt="" );    // Reset event-by-event data
@@ -74,7 +74,7 @@ protected:
     { fU->FitTracks(); fV->FitTracks(); }
 
   // For Both
-  Int_t CalcUVTrackCoords(); // Compute UV track coords in detector cs
+  Int_t CalcUVTrackCoords() const; // Compute UV track coords in detector cs
   
   ClassDef(OldVDCUVPlane,0)             // VDCUVPlane class
 };

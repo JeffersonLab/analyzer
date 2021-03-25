@@ -4,15 +4,13 @@
 #include "TFile.h"
 #include "TTree.h"
 #include "TError.h"
-#include <cstdio>
-#include <evio.h>
 
 using namespace std;
 
 //-----------------------------------------------------------------------------
 THaVDCSimRun::THaVDCSimRun(const char* filename, const char* description) :
-  THaRunBase(description), rootFileName(filename), rootFile(0), tree(0), 
-  branch(0), event(0), nentries(0), entry(0)
+  THaRunBase(description), rootFileName(filename), rootFile(nullptr),
+  tree(nullptr), branch(nullptr), event(nullptr), nentries(0), entry(0)
 {
   // Constructor
 
@@ -23,13 +21,9 @@ THaVDCSimRun::THaVDCSimRun(const char* filename, const char* description) :
 
 //-----------------------------------------------------------------------------
 THaVDCSimRun::THaVDCSimRun(const THaVDCSimRun &run)
-  : THaRunBase(run), nentries(0), entry(0)
+  : THaRunBase(run), rootFileName(run.rootFileName), rootFile(nullptr),
+    tree(nullptr), branch(nullptr), event(nullptr), nentries(0), entry(0)
 {
-  rootFileName = run.rootFileName;
-  rootFile = nullptr;
-  tree = nullptr;
-  event = nullptr;
-  branch = nullptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -63,22 +57,22 @@ Int_t THaVDCSimRun::Open()
   rootFile = new TFile(rootFileName, "READ", "VDC Tracks");
   if (!rootFile || rootFile->IsZombie()) {
     if (rootFile->IsOpen()) Close();
-    return -1;
+    return READ_FATAL;
   }
 
-  event = 0;
+  event = nullptr;
 
   tree = static_cast<TTree*>(rootFile->Get("tree"));
   if( !tree ) {
     Error( "THaVDCSimRun:Open", 
 	   "Tree 'tree' does not exist in the input file. Have a nice day." );
-    return -2;
+    return READ_FATAL;
   }
   branch = tree->GetBranch("event");
   if( !branch ) {
     Error( "THaVDCSimRun:Open", 
 	   "Branch 'event' does not exist in the input tree. Have a nice day." );
-    return -3;
+    return READ_FATAL;
   }
   branch->SetAddress(&event);
 
@@ -94,35 +88,34 @@ Int_t THaVDCSimRun::Close() {
   if (rootFile) {
     rootFile->Close();
     delete rootFile;
-    rootFile = 0;
+    rootFile = nullptr;
   }
   fOpened = false;
-  return 0;
+  return READ_OK;
 }
 
 //-----------------------------------------------------------------------------
 Int_t THaVDCSimRun::ReadEvent() {
-  Int_t ret;
   if (!IsOpen()) {
-    ret = Open();
+    Int_t ret = Open();
     if (ret) return ret;
   }
 
   // Clear the event to get rid of anything still hanging around
   event->Clear();
-  ret = branch->GetEntry(entry++);
+  Int_t ret = branch->GetEntry(entry++);
   if( ret > 0 )
-    return S_SUCCESS;
+    return READ_OK;
   else if ( ret == 0 )
-    return EOF;
-  return -128;  // CODA_ERR
+    return READ_EOF;
+  return READ_ERROR;
 }
 
 //-----------------------------------------------------------------------------
-const Int_t *THaVDCSimRun::GetEvBuffer() const {
+const UInt_t* THaVDCSimRun::GetEvBuffer() const {
   if (!IsOpen()) return nullptr;
 
-  return reinterpret_cast<Int_t*>(event);
+  return reinterpret_cast<const UInt_t*>(event);
 }
 
 //-----------------------------------------------------------------------------

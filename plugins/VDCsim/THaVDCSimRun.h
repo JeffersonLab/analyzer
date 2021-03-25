@@ -11,14 +11,14 @@ class TBranch;
 
 class THaVDCSimRun : public THaRunBase {
  public:
-  THaVDCSimRun(const char* filename = "", const char* description = "");
+  explicit THaVDCSimRun(const char* filename = "", const char* description = "");
   THaVDCSimRun(const THaVDCSimRun &run);
   virtual ~THaVDCSimRun();
   virtual THaVDCSimRun &operator=(const THaRunBase &rhs);
 
   Int_t Close();
   Int_t Open();
-  const Int_t* GetEvBuffer() const;
+  const UInt_t* GetEvBuffer() const;
   Int_t ReadEvent();
   Int_t Init();
   const char* GetFileName() const { return rootFileName.Data(); }

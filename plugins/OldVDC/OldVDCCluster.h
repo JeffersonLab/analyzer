@@ -17,7 +17,7 @@ class OldVDCPlane;
 class OldVDCCluster : public TObject {
 
 public:
-  OldVDCCluster( OldVDCPlane* owner = nullptr ) :
+  explicit OldVDCCluster( OldVDCPlane* owner = nullptr ) :
     fSize(0), fPlane(owner), fSlope(kBig), fSigmaSlope(kBig), fInt(kBig),
     fSigmaInt(kBig), fT0(0.0), fSigmaT0(kBig), fPivot(nullptr),
     fTimeCorrection(0.0),

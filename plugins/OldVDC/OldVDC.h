@@ -25,8 +25,8 @@ class OldVDCUVTrack;
 class OldVDC : public THaTrackingDetector {
 
 public:
-  OldVDC( const char* name, const char* description = "",
-	  THaApparatus* a = nullptr );
+  explicit OldVDC( const char* name, const char* description = "",
+                   THaApparatus* a = nullptr );
 
   virtual ~OldVDC();
 
@@ -133,8 +133,8 @@ protected:
 
   std::vector<OldVDCMatrixElement> fLMatrixElems;   // Path-length corrections (meters)
 
-  void CalcFocalPlaneCoords( THaTrack* track, const ECoordTypes mode );
-  void CalcTargetCoords( THaTrack* the_track, const ECoordTypes mode );
+  void CalcFocalPlaneCoords( THaTrack* track, ECoordTypes mode );
+  void CalcTargetCoords( THaTrack* the_track, ECoordTypes mode );
   static void CalcMatrix( double x, std::vector<OldVDCMatrixElement>& matrix );
 //  Double_t DoPoly(const int n, const std::vector<double> &a, const double x);
 //  Double_t PolyInv(const double x1, const double x2, const double xacc,

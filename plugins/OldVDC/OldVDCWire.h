@@ -14,10 +14,12 @@ class OldVDCWire : public TObject {
 
 public:
 
-  OldVDCWire( Int_t num=0, Double_t pos=0.0, Double_t offset=0.0,
-	      OldVDCTimeToDistConv* ttd=nullptr ) :
+  explicit OldVDCWire( Int_t num = 0, Double_t pos = 0.0, Double_t offset = 0.0,
+                       OldVDCTimeToDistConv* ttd = nullptr ) :
     fNum(num), fFlag(0), fPos(pos), fTOffset(offset), fTTDConv(ttd) {}
-  virtual ~OldVDCWire() {}
+  OldVDCWire( const OldVDCWire& ) = delete;
+  OldVDCWire& operator=( const OldVDCWire& ) = delete;
+  virtual ~OldVDCWire() = default;
 
   // Get and Set Functions
   Int_t    GetNum()     const { return fNum;  }
@@ -39,10 +41,6 @@ protected:
   Double_t fTOffset;                      //Timing Offset
   OldVDCTimeToDistConv* fTTDConv;     //!Time to Distance Converter
 
-private:
-  OldVDCWire( const OldVDCWire& );
-  OldVDCWire& operator=( const OldVDCWire& );
- 
   ClassDef(OldVDCWire,1)             // VDCWire class
 };
 

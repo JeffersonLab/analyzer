@@ -14,7 +14,7 @@ class OldVDCAnalyticTTDConv : public OldVDCTimeToDistConv{
 
 public:
   OldVDCAnalyticTTDConv( );
-  OldVDCAnalyticTTDConv(Double_t vel);
+  explicit OldVDCAnalyticTTDConv(Double_t vel);
 
   virtual ~OldVDCAnalyticTTDConv();
 
@@ -23,7 +23,7 @@ public:
 
 
   // Get and Set Functions 
-  Double_t GetDriftVel() { return fDriftVel; }
+  Double_t GetDriftVel() const { return fDriftVel; }
 
   void SetDriftVel(Double_t v) {fDriftVel = v; }
 

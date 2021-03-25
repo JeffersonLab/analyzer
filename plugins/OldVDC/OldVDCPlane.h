@@ -23,8 +23,8 @@ class OldVDCPlane : public THaSubDetector {
 
 public:
 
-  OldVDCPlane( const char* name="", const char* description="",
-	       THaDetectorBase* parent = nullptr );
+  explicit OldVDCPlane( const char* name="", const char* description="",
+                        THaDetectorBase* parent = nullptr );
   virtual ~OldVDCPlane();
 
   virtual void    Clear( Option_t* opt="" );

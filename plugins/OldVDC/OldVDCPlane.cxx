@@ -29,6 +29,7 @@
 #include "THaTriggerTime.h"
 
 #include <cstring>
+#include <cassert>
 #include <vector>
 #include <iostream>
 #include <iomanip>
@@ -53,7 +54,7 @@ OldVDCPlane::OldVDCPlane( const char* name, const char* description,
     fMinTime(kDefaultMinTime), fMaxTime(kDefaultMaxTime),
     fFlags(0), fZ(0), fWBeg(0), fWSpac(0), fWAngle(0),
     fTDCRes(kDefaultTDCRes),
-    fDriftVel(0), /*fTable(nullptr),*/ fTTDConv(0), fglTrg(0)
+    fDriftVel(0), /*fTable(nullptr),*/ fTTDConv(nullptr), fglTrg(0)
 {
   // Constructor
 
@@ -122,20 +123,20 @@ Int_t OldVDCPlane::DoReadDatabase( FILE* file, const TDatime& date )
 
   DBRequest request[] = {
     { "detmap",         &detmap,         kIntV },
-    { "nwires",         &fNelem,         kInt,     0, 0, -1 },
+    { "nwires",         &fNelem,         kInt,     0, false, -1 },
     { "wire.start",     &fWBeg,          kDouble },
-    { "wire.spacing",   &fWSpac,         kDouble,  0, 0, -1 },
-    { "wire.angle",     &fWAngle,        kDouble,  0, 0 },
-    { "wire.badlist",   &bad_wirelist,   kIntV,    0, 1 },
-    { "driftvel",       &fDriftVel,      kDouble,  0, 0, -1 },
-    { "maxgap",         &maxgap,         kInt,     0, 1, -1 },
-    { "tdc.min",        &mintime,        kInt,     0, 1, -1 },
-    { "tdc.max",        &maxtime,        kInt,     0, 1, -1 },
-    { "tdc.res",        &tdcres,         kDouble,  0, 0, -1 },
+    { "wire.spacing",   &fWSpac,         kDouble,  0, false, -1 },
+    { "wire.angle",     &fWAngle,        kDouble,  0, false },
+    { "wire.badlist",   &bad_wirelist,   kIntV,    0, true },
+    { "driftvel",       &fDriftVel,      kDouble,  0, false, -1 },
+    { "maxgap",         &maxgap,         kInt,     0, true, -1 },
+    { "tdc.min",        &mintime,        kInt,     0, true, -1 },
+    { "tdc.max",        &maxtime,        kInt,     0, true, -1 },
+    { "tdc.res",        &tdcres,         kDouble,  0, false, -1 },
     { "tdc.offsets",    &tdc_offsets,    kFloatV },
-    { "ttd.param",      &ttd_param,      kDoubleV, 0, 0, -1 },
-    { "description",    &fTitle,         kTString, 0, 1 },
-    { 0 }
+    { "ttd.param",      &ttd_param,      kDoubleV, 0, false, -1 },
+    { "description",    &fTitle,         kTString, 0, true },
+    { nullptr }
   };
 
   err = LoadDB( file, date, request, fPrefix );
@@ -206,7 +207,7 @@ Int_t OldVDCPlane::DoReadDatabase( FILE* file, const TDatime& date )
   
   // Initialize wires
   for (int i = 0; i < fNelem; i++) {
-    OldVDCWire* wire = new((*fWires)[i])
+    auto* wire = new((*fWires)[i])
       OldVDCWire( i, fWBeg+i*fWSpac, tdc_offsets[i], fTTDConv );
     if( bad_wires.find(i) != bad_wires.end() )
       wire->SetFlag(1);
@@ -243,7 +244,7 @@ Int_t OldVDCPlane::DoReadDatabase( FILE* file, const TDatime& date )
       { "Max gap in cluster",      &fNMaxGap,   kInt       },
       { "Min TDC raw time",        &fMinTime,   kInt       },
       { "Max TDC raw time",        &fMaxTime,   kInt       },
-      { 0 }
+      { nullptr }
     };
     DebugPrint( list );
   }
@@ -299,7 +300,7 @@ Int_t OldVDCPlane::DefineVariables( EMode mode )
     { "clchi2", "Cluster chi2",               "fClusters.OldVDCCluster.fChi2" },
     { "clndof", "Cluster NDoF",               "fClusters.OldVDCCluster.fNDoF" },
     { "cltcor", "Cluster Time correction",    "fClusters.OldVDCCluster.fTimeCorrection" },
-    { 0 }
+    { nullptr }
   };
   return DefineVarsFromList( vars, mode );
 
@@ -342,18 +343,17 @@ Int_t OldVDCPlane::Decode( const THaEvData& evData)
   // the event's T0-shift, due to the trigger-type
   // only an issue when adding in un-retimed trigger types
   Double_t evtT0=0;
-  if ( fglTrg && fglTrg->Decode(evData)==kOK ) evtT0 = fglTrg->TimeOffset();
+//  if ( fglTrg && fglTrg->Decode(evData)==kOK ) evtT0 = fglTrg->TimeOffset();
   
   Int_t nextHit = 0;
 
-  bool only_fastest_hit, no_negative;
+  bool only_fastest_hit{false}, no_negative{false};
   if( fVDC ) {
     // If true, add only the first (earliest) hit for each wire
     only_fastest_hit = fVDC->TestBit(OldVDC::kOnlyFastest);
     // If true, ignore negativ drift times completely
     no_negative      = fVDC->TestBit(OldVDC::kIgnoreNegDrift);
-  } else
-    only_fastest_hit = no_negative = false;
+  }
 
   // Loop over all detector modules for this wire plane
   for (Int_t i = 0; i < fDetMap->GetSize(); i++) {
@@ -437,7 +437,7 @@ Int_t OldVDCPlane::Decode( const THaEvData& evData)
       for (int c=0; c<ncol; c++) {
 	int ind = c*nextHit/ncol+i;
 	if (ind < nextHit) {
-	  OldVDCHit* hit = static_cast<OldVDCHit*>(fHits->At(ind));
+	  auto* hit = static_cast<OldVDCHit*>(fHits->At(ind));
 	  cout << "     " << setw(3) << hit->GetWireNum()
 	       << "    "  << setw(5) << hit->GetRawTime() << " ";
 	} else {
@@ -535,6 +535,7 @@ Int_t OldVDCPlane::FindClusters()
       clust = new ( (*fClusters)[nextClust++] ) OldVDCCluster(this);
     }
     //Add hit to the cluster
+    assert(clust); // else logic error in ndif or fNMaxGap
     clust->AddHit(hit);
 
   } // End looping through hits
@@ -551,10 +552,10 @@ Int_t OldVDCPlane::FitTracks()
 {
   // Fit tracks to cluster positions and drift distances.
   
-  OldVDCCluster* clust;
   Int_t nClust = GetNClusters();
   for (int i = 0; i < nClust; i++) {
-    if( !(clust = static_cast<OldVDCCluster*>( (*fClusters)[i] )))
+    auto* clust = static_cast<OldVDCCluster*>( (*fClusters)[i] );
+    if( !clust )
       continue;
 
     // Convert drift times to distances.

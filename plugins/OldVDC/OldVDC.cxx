@@ -11,9 +11,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "OldVDC.h"
-#include "THaGlobals.h"
 #include "THaEvData.h"
-#include "THaDetMap.h"
 #include "THaTrack.h"
 #include "OldVDCUVPlane.h"
 #include "OldVDCUVTrack.h"
@@ -46,7 +44,7 @@ using THaString::Split;
 // Helper structure for parsing tensor data
 typedef vector<OldVDC::OldVDCMatrixElement> MEvec_t;
 struct MEdef_t {
-  MEdef_t() : npow(0), elems(0), isfp(false), fpidx(0) {}
+  MEdef_t() : npow(0), elems(nullptr), isfp(false), fpidx(0) {}
   MEdef_t( Int_t npw, MEvec_t* elemp, Bool_t is_fp = false, Int_t fp_idx = 0 )
     : npow(npw), elems(elemp), isfp(is_fp), fpidx(fp_idx) {}
   MEvec_t::size_type npow; // Number of exponents for this element type
@@ -89,11 +87,10 @@ THaAnalysisObject::EStatus OldVDC::Init( const TDatime& date )
   if( IsZombie() || !fUpper || !fLower )
     return fStatus = kInitError;
 
-  EStatus status;
-  if( (status = THaTrackingDetector::Init( date )) ||
-      (status = fLower->Init( date )) ||
-      (status = fUpper->Init( date )) )
-    return fStatus = status;
+  if( (fStatus = THaTrackingDetector::Init(date)) ||
+      (fStatus = fLower->Init(date)) ||
+      (fStatus = fUpper->Init(date)) )
+    return fStatus;
 
   // Get the spacing between the VDC planes from the planes' geometry
   fUSpacing = fUpper->GetUPlane()->GetZ() - fLower->GetUPlane()->GetZ();
@@ -114,11 +111,11 @@ static Int_t ParseMatrixElements( const string& MEstring,
 
   const char* const here = "OldVDC::ParseMatrixElements";
 
-  istringstream ist(MEstring.c_str());
+  istringstream ist(MEstring);
   string word, w;
   bool findnext = true, findpowers = true;
   Int_t powers_left = 0;
-  map<string,MEdef_t>::iterator cur = matrix_map.end();
+  auto cur = matrix_map.end();
   OldVDC::OldVDCMatrixElement ME;
   while( ist >> word ) {
     if( !findnext ) {
@@ -152,7 +149,7 @@ static Int_t ParseMatrixElements( const string& MEstring,
 	    MEvec_t* mat = cur->second.elems;
 	    assert(mat);
 	    bool match = false;
-	    for( MEvec_t::iterator it = mat->begin();
+	    for( auto it = mat->begin();
 		 it != mat->end() && !(match = it->match(ME)); ++it ) {}
 	    if( match ) {
 	      Warning( Here(here,prefix), "Duplicate definition of matrix element %s. "
@@ -274,7 +271,7 @@ Int_t OldVDC::ReadDatabase( const TDatime& date )
   string MEstring;
   DBRequest request1[] = {
     { "matrixelem",  &MEstring, kString },
-    { 0 }
+    { nullptr }
   };
   err = LoadDB( file, date, request1, fPrefix );
   if( err ) {
@@ -334,16 +331,16 @@ Int_t OldVDC::ReadDatabase( const TDatime& date )
   string coord_type;
 
   DBRequest request[] = {
-    { "max_matcherr",      &fErrorCutoff,      kDouble, 0, 1 },
-    { "num_iter",          &fNumIter,          kInt,    0, 1 },
-    { "coord_type",        &coord_type,        kString, 0, 1 },
-    { "disable_tracking",  &disable_tracking,  kInt,    0, 1 },
-    { "disable_finetrack", &disable_finetrack, kInt,    0, 1 },
-    { "only_fastest_hit",  &only_fastest_hit,  kInt,    0, 1 },
-    { "do_tdc_hardcut",    &do_tdc_hardcut,    kInt,    0, 1 },
-    { "do_tdc_softcut",    &do_tdc_softcut,    kInt,    0, 1 },
-    { "ignore_negdrift",   &ignore_negdrift,   kInt,    0, 1 },
-    { 0 }
+    { "max_matcherr",      &fErrorCutoff,      kDouble, 0, true },
+    { "num_iter",          &fNumIter,          kInt,    0, true },
+    { "coord_type",        &coord_type,        kString, 0, true },
+    { "disable_tracking",  &disable_tracking,  kInt,    0, true },
+    { "disable_finetrack", &disable_finetrack, kInt,    0, true },
+    { "only_fastest_hit",  &only_fastest_hit,  kInt,    0, true },
+    { "do_tdc_hardcut",    &do_tdc_hardcut,    kInt,    0, true },
+    { "do_tdc_softcut",    &do_tdc_softcut,    kInt,    0, true },
+    { "ignore_negdrift",   &ignore_negdrift,   kInt,    0, true },
+    { nullptr }
   };
 
   err = LoadDB( file, date, request, fPrefix );
@@ -401,11 +398,11 @@ Int_t OldVDC::ReadDatabase( const TDatime& date )
   // figure out the track length from the origin to the s1 plane
   // since we take the VDC to be the origin of the coordinate
   // space, this is actually pretty simple
-  const THaDetector* s1 = 0;
+  const THaDetector* s1 = nullptr;
   if( GetApparatus() )
     // TODO: neeed? if so, change to HRS reference detector
     s1 = GetApparatus()->GetDetector("s1");
-  if(s1 == 0)
+  if( !s1 )
     fCentralDist = 0;
   else
     fCentralDist = s1->GetOrigin().Z();
@@ -618,11 +615,11 @@ Int_t OldVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
 
       // Decide whether this is a new track or an old track 
       // that is being updated
-      OldVDCTrackID* thisID = new OldVDCTrackID(track,partner);
+      auto* thisID = new OldVDCTrackID(track,partner);
       THaTrack* theTrack = nullptr;
       bool found = false;
-      int t;
-      for( t = 0; t < n_exist; t++ ) {
+      int t = 0;
+      for( ; t < n_exist; t++ ) {
 	theTrack = static_cast<THaTrack*>( tracks->At(t) );
 	// This test is true if an existing track has exactly the same clusters
 	// as the current one (defined by track/partner)
@@ -685,7 +682,7 @@ Int_t OldVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
   if( tracks && n_exist > n_mod ) {
     bool modified = false;
     for( int i = 0; i < tracks->GetLast()+1; i++ ) {
-      THaTrack* theTrack = static_cast<THaTrack*>( tracks->At(i) );
+      auto* theTrack = static_cast<THaTrack*>( tracks->At(i) );
       // Track created by this class and not updated?
       if( (theTrack->GetCreator() == this) &&
 	  ((theTrack->GetFlag() & kStageMask) != theStage ) ) {
@@ -803,7 +800,7 @@ Int_t OldVDC::FindVertices( TClonesArray& tracks )
 
   Int_t n_exist = tracks.GetLast()+1;
   for( Int_t t = 0; t < n_exist; t++ ) {
-    THaTrack* theTrack = static_cast<THaTrack*>( tracks.At(t) );
+    auto* theTrack = static_cast<THaTrack*>( tracks.At(t) );
     CalcTargetCoords(theTrack, fCoordType);
   }
 
@@ -815,47 +812,46 @@ void OldVDC::CalcFocalPlaneCoords( THaTrack* track, const ECoordTypes mode )
 {
   // calculates focal plane coordinates from detector coordinates
 
-  Double_t tan_rho, cos_rho, tan_rho_loc, cos_rho_loc;
   // TRANSPORT coordinates (projected to z=0)
-  Double_t x, y, theta, phi;
+  //   x, y, theta, phi;
   // Rotating TRANSPORT coordinates
-  Double_t r_x, r_y, r_theta, r_phi;
+  //   r_x, r_y, r_theta, r_phi;
   
   // tan rho (for the central ray) is stored as a matrix element 
-  tan_rho = fFPMatrixElems[T000].poly[0];
-  cos_rho = 1.0/sqrt(1.0+tan_rho*tan_rho);
+  Double_t tan_rho = fFPMatrixElems[T000].poly[0];
+  Double_t cos_rho = 1.0/sqrt(1.0+tan_rho*tan_rho);
 
   // first calculate the transport frame coordinates
-  theta = (track->GetDTheta()+tan_rho) /
-    (1.0-track->GetDTheta()*tan_rho);
-  x = track->GetDX() * cos_rho * (1.0 + theta * tan_rho);
-  phi = track->GetDPhi() / (1.0-track->GetDTheta()*tan_rho) / cos_rho;
-  y = track->GetDY() + tan_rho*phi*track->GetDX()*cos_rho;
+  Double_t theta = (track->GetDTheta() + tan_rho) /
+                   (1.0 - track->GetDTheta() * tan_rho);
+  Double_t x = track->GetDX() * cos_rho * (1.0 + theta * tan_rho);
+  Double_t phi = track->GetDPhi() / (1.0 - track->GetDTheta() * tan_rho) /
+                 cos_rho;
+  Double_t y = track->GetDY() + tan_rho * phi * track->GetDX() * cos_rho;
   
   // then calculate the rotating transport frame coordinates
-  r_x = x;
+  Double_t r_x = x;
 
   // calculate the focal-plane matrix elements
-  if(mode == kTransport)
-    CalcMatrix( x, fFPMatrixElems );
-  else if (mode == kRotatingTransport)
-    CalcMatrix( r_x, fFPMatrixElems );
+  if( mode == kTransport )
+    CalcMatrix(x, fFPMatrixElems);
+  else if( mode == kRotatingTransport )
+    CalcMatrix(r_x, fFPMatrixElems);
 
-  r_y = y - fFPMatrixElems[Y000].v;  // Y000
+  Double_t r_y = y - fFPMatrixElems[Y000].v;  // Y000
 
   // Calculate now the tan(rho) and cos(rho) of the local rotation angle.
-  tan_rho_loc = fFPMatrixElems[T000].v;   // T000
-  cos_rho_loc = 1.0/sqrt(1.0+tan_rho_loc*tan_rho_loc);
-  
-  r_phi = (track->GetDPhi() - fFPMatrixElems[P000].v /* P000 */ ) / 
-    (1.0-track->GetDTheta()*tan_rho_loc) / cos_rho_loc;
-  r_theta = (track->GetDTheta()+tan_rho_loc) /
-    (1.0-track->GetDTheta()*tan_rho_loc);
+  Double_t tan_rho_loc = fFPMatrixElems[T000].v;   // T000
+  Double_t cos_rho_loc = 1.0 / sqrt(1.0 + tan_rho_loc * tan_rho_loc);
+
+  Double_t r_phi = (track->GetDPhi() - fFPMatrixElems[P000].v /* P000 */ ) /
+                   (1.0 - track->GetDTheta() * tan_rho_loc) / cos_rho_loc;
+  Double_t r_theta = (track->GetDTheta() + tan_rho_loc) /
+                     (1.0 - track->GetDTheta() * tan_rho_loc);
 
   // set the values we calculated
   track->Set(x, y, theta, phi);
   track->SetR(r_x, r_y, r_theta, r_phi);
-
 }
 
 //_____________________________________________________________________________
@@ -867,7 +863,6 @@ void OldVDC::CalcTargetCoords(THaTrack *track, const ECoordTypes mode)
 
   Double_t x_fp, y_fp, th_fp, ph_fp;
   Double_t powers[kNUM_PRECOMP_POW][5];  // {(x), th, y, ph, abs(th) }
-  Double_t x, y, theta, phi, dp, p, pathl;
 
   // first select the coords to use
   if(mode == kTransport) {
@@ -900,20 +895,22 @@ void OldVDC::CalcTargetCoords(THaTrack *track, const ECoordTypes mode)
   CalcMatrix(x_fp, fPTAMatrixElems);
 
   // calculate the coordinates at the target
-  theta = CalcTargetVar(fTMatrixElems, powers);
-  phi = CalcTargetVar(fPMatrixElems, powers)+CalcTargetVar(fPTAMatrixElems,powers);
-  y = CalcTargetVar(fYMatrixElems, powers)+CalcTargetVar(fYTAMatrixElems,powers);
+  Double_t theta = CalcTargetVar(fTMatrixElems, powers);
+  Double_t phi   = CalcTargetVar(fPMatrixElems, powers)
+                   + CalcTargetVar(fPTAMatrixElems, powers);
+  Double_t y     = CalcTargetVar(fYMatrixElems, powers)
+                   + CalcTargetVar(fYTAMatrixElems, powers);
 
-  THaSpectrometer *app = static_cast<THaSpectrometer*>(GetApparatus());
+  auto* app = static_cast<THaSpectrometer*>(GetApparatus());
   // calculate momentum
-  dp = CalcTargetVar(fDMatrixElems, powers);
-  p  = app->GetPcentral() * (1.0+dp);
+  Double_t dp = CalcTargetVar(fDMatrixElems, powers);
+  Double_t p  = app->GetPcentral() * (1.0+dp);
 
   // pathlength matrix is for the Transport coord plane
-  pathl = CalcTarget2FPLen(fLMatrixElems, powers);
+  Double_t pathl = CalcTarget2FPLen(fLMatrixElems, powers);
 
   //FIXME: estimate x ??
-  x = 0.0;
+  Double_t x = 0.0;
 
   // Save the target quantities with the tracks
   track->SetTarget(x, y, theta, phi);
@@ -922,7 +919,6 @@ void OldVDC::CalcTargetCoords(THaTrack *track, const ECoordTypes mode)
   track->SetPathLen(pathl);
   
   app->TransportToLab( p, theta, phi, track->GetPvect() );
-
 }
 
 
@@ -990,9 +986,9 @@ void OldVDC::CorrectTimeOfFlight(TClonesArray& tracks)
   const static Double_t v = 3.0e-8;   // for now, assume that everything travels at c
 
   // get scintillator planes
-  THaScintillator* s1 = static_cast<THaScintillator*>
+  auto* s1 = static_cast<THaScintillator*>
     ( GetApparatus()->GetDetector("s1") );
-  THaScintillator* s2 = static_cast<THaScintillator*>
+  auto* s2 = static_cast<THaScintillator*>
     ( GetApparatus()->GetDetector("s2") );
 
   if( (s1 == nullptr) || (s2 == nullptr) )
@@ -1006,30 +1002,26 @@ void OldVDC::CorrectTimeOfFlight(TClonesArray& tracks)
   Int_t n_exist = tracks.GetLast()+1;
   //cerr<<"num tracks: "<<n_exist<<endl;
   for( Int_t t = 0; t < n_exist; t++ ) {
-    THaTrack* track = static_cast<THaTrack*>( tracks.At(t) );
+    auto* track = static_cast<THaTrack*>( tracks.At(t) );
     
     // calculate the correction, since it's on a per track basis
-    Double_t s1_dist, vdc_dist, dist, tdelta;
-    if(!s1->CalcPathLen(track, s1_dist))
-      s1_dist = 0.0;
-    if(!CalcPathLen(track, vdc_dist))
-      vdc_dist = 0.0;
+    Double_t s1_dist = 0.0, vdc_dist = 0.0;
+    s1->CalcPathLen(track, s1_dist);
+    CalcPathLen(track, vdc_dist);
 
     // since the z=0 of the transport coords is inclined with respect
     // to the VDC plane, the VDC correction depends on the location of
     // the track
-    if( track->GetX() < 0 )
-      dist = s1_dist + vdc_dist;
-    else
-      dist = s1_dist - vdc_dist;
+    Double_t dist = (track->GetX() < 0) ? s1_dist + vdc_dist
+                                        : s1_dist - vdc_dist;
     
-    tdelta = ( fCentralDist - dist) / v;
+    Double_t tdelta = ( fCentralDist - dist) / v;
     //cout<<"time correction: "<<tdelta<<endl;
 
     // apply the correction
     Int_t n_clust = track->GetNclusters();
     for( Int_t i = 0; i < n_clust; i++ ) {
-      OldVDCUVTrack* the_uvtrack = 
+      auto* the_uvtrack =
 	static_cast<OldVDCUVTrack*>( track->GetCluster(i) );
       if( !the_uvtrack )
 	continue;
@@ -1046,7 +1038,7 @@ void OldVDC::FindBadTracks(TClonesArray& tracks)
 {
   // Flag tracks that don't intercept S2 scintillator as bad
 
-  THaScintillator* s2 = static_cast<THaScintillator*>
+  auto* s2 = static_cast<THaScintillator*>
     ( GetApparatus()->GetDetector("s2") );
 
   if(s2 == nullptr) {
@@ -1056,7 +1048,7 @@ void OldVDC::FindBadTracks(TClonesArray& tracks)
 
   Int_t n_exist = tracks.GetLast()+1;
   for( Int_t t = 0; t < n_exist; t++ ) {
-    THaTrack* track = static_cast<THaTrack*>( tracks.At(t) );
+    auto* track = static_cast<THaTrack*>( tracks.At(t) );
     Double_t x2, y2;
 
     // project the current x and y positions into the s2 plane
@@ -1085,107 +1077,97 @@ void OldVDC::FindBadTracks(TClonesArray& tracks)
 }
 
 //_____________________________________________________________________________
-void OldVDC::Print(const Option_t* opt) const {
+void OldVDC::Print(const Option_t* opt) const
+{
   THaTrackingDetector::Print(opt);
   // Print out the optics matrices, to verify they make sense
   printf("Matrix FP (t000, y000, p000)\n");
-  typedef vector<OldVDCMatrixElement>::size_type vsiz_t;
-  for (vsiz_t i=0; i<fFPMatrixElems.size(); i++) {
-    const OldVDCMatrixElement& m = fFPMatrixElems[i];
-    for (vsiz_t j=0; j<m.pw.size(); j++) {
-      printf("  %2d",m.pw[j]);
+  for( const auto& m : fFPMatrixElems ) {
+    for( int pw : m.pw ) {
+      printf("  %2d", pw);
     }
-    for (int j=0; j<m.order; j++) {
-      printf("  %g",m.poly[j]);
+    for( int j = 0; j < m.order; j++ ) {
+      printf("  %g", m.poly[j]);
     }
     printf("\n");
   }
 
   printf("Transport Matrix:  D-terms\n");
-  for (vsiz_t i=0; i<fDMatrixElems.size(); i++) {
-    const OldVDCMatrixElement& m = fDMatrixElems[i];
-    for (vsiz_t j=0; j<m.pw.size(); j++) {
-      printf("  %2d",m.pw[j]);
+  for (const auto & m : fDMatrixElems) {
+    for( int pw : m.pw ) {
+      printf("  %2d", pw);
     }
-    for (int j=0; j<m.order; j++) {
-      printf("  %g",m.poly[j]);
+    for( int j = 0; j < m.order; j++ ) {
+      printf("  %g", m.poly[j]);
     }
     printf("\n");
   }
 
   printf("Transport Matrix:  T-terms\n");
-  for (vsiz_t i=0; i<fTMatrixElems.size(); i++) {
-    const OldVDCMatrixElement& m = fTMatrixElems[i];
-    for (vsiz_t j=0; j<m.pw.size(); j++) {
-      printf("  %2d",m.pw[j]);
+  for( const auto& m : fTMatrixElems ) {
+    for( int pw : m.pw ) {
+      printf("  %2d", pw);
     }
-    for (int j=0; j<m.order; j++) {
-      printf("  %g",m.poly[j]);
+    for( int j = 0; j < m.order; j++ ) {
+      printf("  %g", m.poly[j]);
     }
     printf("\n");
   }
 
   printf("Transport Matrix:  Y-terms\n");
-  for (vsiz_t i=0; i<fYMatrixElems.size(); i++) {
-    const OldVDCMatrixElement& m = fYMatrixElems[i];
-    for (vsiz_t j=0; j<m.pw.size(); j++) {
-      printf("  %2d",m.pw[j]);
+  for( const auto& m : fYMatrixElems ) {
+    for( int pw : m.pw ) {
+      printf("  %2d", pw);
     }
-    for (int j=0; j<m.order; j++) {
-      printf("  %g",m.poly[j]);
+    for( int j = 0; j < m.order; j++ ) {
+      printf("  %g", m.poly[j]);
     }
     printf("\n");
   }
 
   printf("Transport Matrix:  YTA-terms (abs(theta))\n");
-  for (vsiz_t i=0; i<fYTAMatrixElems.size(); i++) {
-    const OldVDCMatrixElement& m = fYTAMatrixElems[i];
-    for (vsiz_t j=0; j<m.pw.size(); j++) {
-      printf("  %2d",m.pw[j]);
+  for( const auto& m : fYTAMatrixElems ) {
+    for( int pw : m.pw ) {
+      printf("  %2d", pw);
     }
-    for (int j=0; j<m.order; j++) {
-      printf("  %g",m.poly[j]);
+    for( int j = 0; j < m.order; j++ ) {
+      printf("  %g", m.poly[j]);
     }
     printf("\n");
   }
 
   printf("Transport Matrix:  P-terms\n");
-  for (vsiz_t i=0; i<fPMatrixElems.size(); i++) {
-    const OldVDCMatrixElement& m = fPMatrixElems[i];
-    for (vsiz_t j=0; j<m.pw.size(); j++) {
-      printf("  %2d",m.pw[j]);
+  for( const auto& m : fPMatrixElems ) {
+    for( int pw : m.pw ) {
+      printf("  %2d", pw);
     }
-    for (int j=0; j<m.order; j++) {
-      printf("  %g",m.poly[j]);
+    for( int j = 0; j < m.order; j++ ) {
+      printf("  %g", m.poly[j]);
     }
     printf("\n");
   }
 
   printf("Transport Matrix:  PTA-terms\n");
-  for (vsiz_t i=0; i<fPTAMatrixElems.size(); i++) {
-    const OldVDCMatrixElement& m = fPTAMatrixElems[i];
-    for (vsiz_t j=0; j<m.pw.size(); j++) {
-      printf("  %2d",m.pw[j]);
+  for( const auto& m : fPTAMatrixElems ) {
+    for( int pw : m.pw ) {
+      printf("  %2d", pw);
     }
-    for (int j=0; j<m.order; j++) {
-      printf("  %g",m.poly[j]);
+    for( int j = 0; j < m.order; j++ ) {
+      printf("  %g", m.poly[j]);
     }
     printf("\n");
   }
 
   printf("Matrix L\n");
-  for (vsiz_t i=0; i<fLMatrixElems.size(); i++) {
-    const OldVDCMatrixElement& m = fLMatrixElems[i];
-    for (vsiz_t j=0; j<m.pw.size(); j++) {
-      printf("  %2d",m.pw[j]);
+  for( const auto& m : fLMatrixElems ) {
+    for( int pw : m.pw ) {
+      printf("  %2d", pw);
     }
-    for (int j=0; j<m.order; j++) {
-      printf("  %g",m.poly[j]);
+    for( int j = 0; j < m.order; j++ ) {
+      printf("  %g", m.poly[j]);
     }
     printf("\n");
   }
-
-  return;
 }
 
 //_____________________________________________________________________________

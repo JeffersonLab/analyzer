@@ -11,8 +11,8 @@
 #include "TClonesArray.h"
 #include "THaAnalysisObject.h"
 #include "TList.h"
-
-class THaCrateMap;
+#include "THaVDCSim.h"
+#include <vector>
 
 class THaVDCSimDecoder : public THaEvData {
  public:
@@ -28,7 +28,7 @@ class THaVDCSimDecoder : public THaEvData {
 
  protected:
 
-  TList   fTracks;    // Monte Carlo tracks
+  std::vector<THaVDCSimTrack> fTracks;  // Monte Carlo tracks
 
   bool    fIsSetup;
 

@@ -14,10 +14,13 @@
 class OldVDCHit : public TObject {
 
 public:
-  OldVDCHit( OldVDCWire* wire=nullptr, Int_t rawtime=0, Double_t time=0.0 ) :
+  explicit OldVDCHit( OldVDCWire* wire=nullptr, Int_t rawtime=0,
+                      Double_t time=0.0 ) :
     fWire(wire), fRawTime(rawtime), fTime(time), fDist(0.0), fdDist(0),
     ftrDist(kBig) {}
-  virtual ~OldVDCHit() {}
+  OldVDCHit( const OldVDCHit& ) = delete;
+  OldVDCHit& operator=( const OldVDCHit& ) = delete;
+  virtual ~OldVDCHit() = default;
 
   virtual Double_t ConvertTimeToDist(Double_t slope);
   Int_t  Compare ( const TObject* obj ) const;
@@ -48,10 +51,6 @@ protected:
   Double_t    fDist;     // (Perpendicular) Drift Distance
   Double_t    fdDist;    // uncertainty in fDist (for chi2 calc)
   Double_t    ftrDist;   // (Perpendicular) distance from the track
-  
- private:
-  OldVDCHit( const OldVDCHit& );
-  OldVDCHit& operator=( const OldVDCHit& );
   
   ClassDef(OldVDCHit,2)             // VDCHit class
 };
