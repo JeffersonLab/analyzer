@@ -17,7 +17,7 @@ THaVDCAnalyticTTDConv.cxx  THaVDCChamber.cxx           THaVDCCluster.cxx
 THaVDC.cxx                 THaVDCHit.cxx               THaVDCPlane.cxx
 THaVDCPoint.cxx            THaVDCPointPair.cxx         THaVDCTimeToDistConv.cxx
 THaVDCTrackID.cxx          THaVDCWire.cxx              TrigBitLoc.cxx
-VDCeff.cxx
+VDCeff.cxx                 TwoarmVDCTimeCorrection.cxx
 """
 
 build_library(baseenv, libname, src, useenv = False, versioned = True)

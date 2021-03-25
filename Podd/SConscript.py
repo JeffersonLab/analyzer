@@ -41,6 +41,7 @@ THaTwoarmVertex.cxx     THaUnRasteredBeam.cxx        THaVar.cxx
 THaVarList.cxx          THaVertexModule.cxx          THaVform.cxx
 THaVhist.cxx            VariableArrayVar.cxx         Variable.cxx
 VectorObjMethodVar.cxx  VectorObjVar.cxx             VectorVar.cxx
+InterStageModule.cxx    TimeCorrectionModule.cxx
 """
 
 # Generate ha_compiledata.h header file
