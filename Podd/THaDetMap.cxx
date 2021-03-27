@@ -25,25 +25,37 @@ using namespace Decoder;
 // "Database" of known frontend module numbers and types
 // FIXME: load from db_cratemap
 struct ModuleDef {
-  UInt_t      model; // model identifier
+  Int_t       model; // model identifier
   ChannelType type;  // Module type
 };
 
 static const vector<ModuleDef> module_list {
-  { 1875, ChannelType::kTDC },
-  { 1877, ChannelType::kTDC },
+  { 1875, ChannelType::kCommonStopTDC },
+  { 1877, ChannelType::kCommonStopTDC },
   { 1881, ChannelType::kADC },
-  { 1872, ChannelType::kTDC },
+  { 1872, ChannelType::kCommonStopTDC },
   { 3123, ChannelType::kADC },
   { 1182, ChannelType::kADC },
   { 792,  ChannelType::kADC },
-  { 775,  ChannelType::kTDC },
-  { 767,  ChannelType::kTDC },
-  { 3201, ChannelType::kTDC },
-  { 6401, ChannelType::kTDC },
-  { 1190, ChannelType::kTDC },
+  { 775,  ChannelType::kCommonStopTDC },
+  { 767,  ChannelType::kCommonStopTDC },
+  { 3201, ChannelType::kCommonStopTDC },
+  { 6401, ChannelType::kCommonStopTDC },
+  { 1190, ChannelType::kCommonStopTDC },
   { 250,  ChannelType::kMultiFunctionADC },
 };
+
+//_____________________________________________________________________________
+void THaDetMap::Module::SetModel( Int_t mod )
+{
+  model = mod;
+  auto it = find_if(ALL(module_list),
+                    [mod]( const ModuleDef& m ) { return m.model == mod; });
+  if( it != module_list.end() )
+    type = it->type;
+  else
+    type = ChannelType::kUndefined;
+}
 
 //_____________________________________________________________________________
 void THaDetMap::Module::SetResolution( Double_t res )
@@ -56,8 +68,8 @@ void THaDetMap::Module::SetTDCMode( Bool_t cstart )
 {
   cmnstart = cstart;
   if( cstart && type == ChannelType::kCommonStopTDC )
-    type = ChannelType::kTDC;
-  else if( !cstart && type == ChannelType::kTDC )
+    type = ChannelType::kCommonStartTDC;
+  else if( !cstart && type == ChannelType::kCommonStartTDC )
     type = ChannelType::kCommonStopTDC;
 }
 
@@ -65,7 +77,7 @@ void THaDetMap::Module::SetTDCMode( Bool_t cstart )
 void THaDetMap::Module::MakeTDC()
 {
   if( IsCommonStart() )
-    type = ChannelType::kTDC;
+    type = ChannelType::kCommonStartTDC;
   else
     type = ChannelType::kCommonStopTDC;
 }
@@ -115,10 +127,10 @@ THaDetMap& THaDetMap::operator=( const THaDetMap& rhs )
 }
 
 //_____________________________________________________________________________
-Int_t THaDetMap::AddModule( UShort_t crate, UShort_t slot,
-                            UShort_t chan_lo, UShort_t chan_hi,
-                            UInt_t first, UInt_t model, Int_t refindex,
-                            Int_t refchan, UInt_t plane, UInt_t signal )
+Int_t THaDetMap::AddModule( Int_t crate, Int_t slot,
+                            Int_t chan_lo, Int_t chan_hi,
+                            Int_t first, Int_t model, Int_t refindex,
+                            Int_t refchan, Int_t plane, Int_t signal )
 {
   // Add a module to the map.
 
@@ -166,9 +178,11 @@ Int_t THaDetMap::AddModule( UShort_t crate, UShort_t slot,
   if( model != 0 ) {
     auto it = find_if(ALL(module_list),
                       [model]( const ModuleDef& m ) { return m.model == model; });
-    m.type = (it != module_list.end()) ? it->type : ChannelType::kUndefined;
-    if( m.type == ChannelType::kTDC )
-      m.type = ChannelType::kCommonStopTDC; // common stop is the default
+    if( it != module_list.end() )
+      m.type = it->type;
+    else
+      m.type = ChannelType::kUndefined;
+      //      return -1;  // Unknown module TODO do when module_list is in a database
   } else
     m.type = ChannelType::kUndefined;
 
@@ -177,8 +191,8 @@ Int_t THaDetMap::AddModule( UShort_t crate, UShort_t slot,
 }
 
 //_____________________________________________________________________________
-THaDetMap::Module* THaDetMap::Find( UShort_t crate, UShort_t slot,
-                                    UShort_t chan )
+THaDetMap::Module* THaDetMap::Find( Int_t crate, Int_t slot,
+                                    Int_t chan )
 {
   // Return the module containing crate, slot, and channel chan.
   // If several matching modules exist (which mean the map is misconfigured),
@@ -249,11 +263,10 @@ Int_t THaDetMap::Fill( const vector<Int_t>& values, UInt_t flags )
     tuple_size++;
 
   // For historical reasons, logical channel numbers start at 1
-  UInt_t prev_first = 1, prev_nchan = 0;
+  Int_t prev_first = 1, prev_nchan = 0;
   // Defaults for optional values
-  UInt_t first = 0, model = 0;
-  Int_t rchan = -1, ref = -1;
-  UInt_t plane = 0, signal = 0;
+  Int_t first = 0, plane = 0, signal = 0;
+  Int_t model = 0, rchan = -1, ref = -1;
 
   Int_t ret = 0;
   for( vsiz_t i = 0; i < values.size(); i += tuple_size ) {
@@ -403,13 +416,15 @@ THaDetMap::MakeMultiHitIterator( const THaEvData& evdata )
 }
 
 //_____________________________________________________________________________
-THaDetMap::Iterator::Iterator( THaDetMap& detmap, const THaEvData& evdata )
+THaDetMap::Iterator::Iterator( THaDetMap& detmap, const THaEvData& evdata,
+                               bool do_init )
   : fDetMap(detmap), fEvData(evdata), fMod(nullptr), fNMod(fDetMap.GetSize()),
     fNTotChan(fDetMap.GetTotNumChan()), fNChan(0), fIMod(-1), fIChan(-1)
 {
   fHitInfo.ev = fEvData.GetEvNum();
   // Initialize iterator state to point to the first item
-  ++(*this);
+  if( do_init )
+    ++(*this);
 }
 
 //_____________________________________________________________________________
@@ -497,6 +512,16 @@ void THaDetMap::Iterator::reset()
 }
 
 //_____________________________________________________________________________
+THaDetMap::MultiHitIterator::MultiHitIterator( THaDetMap& detmap,
+                                               const THaEvData& evdata,
+                                               bool do_init )
+  : Iterator(detmap, evdata, false), fIHit(-1)
+{
+  if( do_init )
+    ++(*this);
+}
+
+//_____________________________________________________________________________
 THaDetMap::Iterator& THaDetMap::MultiHitIterator::operator++()
 {
   // Advance iterator to next active hit or channel, allowing multiple hits
@@ -513,6 +538,13 @@ THaDetMap::Iterator& THaDetMap::MultiHitIterator::operator++()
   fHitInfo.hit = fIHit; // overwrite value of single-hit case (0 or nhit-1)
 
   return *this;
+}
+
+//_____________________________________________________________________________
+void THaDetMap::MultiHitIterator::reset()
+{
+  fIHit = -1;
+  Iterator::reset();
 }
 
 //_____________________________________________________________________________

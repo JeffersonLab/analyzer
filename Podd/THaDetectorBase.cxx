@@ -72,6 +72,9 @@ Int_t THaDetectorBase::FillDetMap( const vector<Int_t>& values, UInt_t flags,
   Int_t ret = fDetMap->Fill( values, flags );
   if( ret == 0 ) {
     Error( Here(here), "No detector map entries found. Check database." );
+  } else if( ret == -1 ) {
+    Error( Here(here), "Unknown hardware module number. "
+                       "Check database or add module in THaDetMap.cxx." );
   } else if( ret < 0 ) {
     Error( Here(here), "Invalid detector map data format "
 	   "(wrong number of values). Check database." );

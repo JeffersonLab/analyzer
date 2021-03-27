@@ -56,7 +56,7 @@ namespace Decoder {
                      kPulsePeak, kPulsePedestal, kCoarseTime, kFineTime };
 
 
-  enum class ChannelType { kUndefined, kADC, kTDC, kCommonStopTDC,
+  enum class ChannelType { kUndefined, kADC, kCommonStopTDC, kCommonStartTDC,
     kMultiFunctionADC, kMultiFunctionTDC };
 }
 

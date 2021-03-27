@@ -42,15 +42,15 @@ public:
     Module( Module& rhs ) = default;
     Module& operator=( Module& rhs ) = default;
 #endif
-    UShort_t crate;
-    UShort_t slot;
-    UShort_t lo;
-    UShort_t hi;
-    UInt_t   first;  // logical number of first channel
-    UInt_t   model;  // model number of module (for ADC/TDC identification).
+    Int_t    crate;
+    Int_t    slot;
+    Int_t    lo;
+    Int_t    hi;
+    Int_t    first;      // logical number of first channel
+    Int_t    model;      // model number of module (for ADC/TDC identification).
     Decoder::ChannelType type;
-    UInt_t   plane;  // Detector plane
-    UInt_t   signal; // (eg. PosADC, NegADC, PosTDC, NegTDC)
+    Int_t    plane;      // Detector plane
+    Int_t    signal;     // (eg. PosADC, NegADC, PosTDC, NegTDC)
     Int_t    refchan;    // for pipeline TDCs: reference channel number
     Int_t    refindex;   // for pipeline TDCs: index into reference channel map
     Double_t resolution; // Resolution (s/chan) for TDCs
@@ -62,15 +62,16 @@ public:
     bool   operator!=( const Module& rhs ) const
     { return !(*this==rhs); }
     Int_t  GetNchan() const { return hi-lo+1; }
-    UInt_t GetModel() const { return model; }
+    Int_t  GetModel() const { return model; }
     Bool_t IsTDC()    const { return
-        type == Decoder::ChannelType::kTDC ||
         type == Decoder::ChannelType::kCommonStopTDC ||
+        type == Decoder::ChannelType::kCommonStartTDC ||
         type == Decoder::ChannelType::kMultiFunctionTDC; }
     Bool_t IsADC()    const { return
         type == Decoder::ChannelType::kADC ||
         type == Decoder::ChannelType::kMultiFunctionADC; }
     Bool_t IsCommonStart() const { return cmnstart; }
+    void   SetModel( Int_t model );
     void   SetResolution( Double_t resolution );
     // For legacy modules
     void   SetTDCMode( Bool_t cstart );
@@ -106,25 +107,25 @@ public:
   THaDetMap::Iterator MakeIterator( const THaEvData& evdata );
   THaDetMap::MultiHitIterator MakeMultiHitIterator( const THaEvData& evdata );
 
-  virtual Int_t     AddModule( UShort_t crate, UShort_t slot,
-			       UShort_t chan_lo, UShort_t chan_hi,
-			       UInt_t first=0, UInt_t model=0,
-			       Int_t refindex=-1, Int_t refchan = -1,
-			       UInt_t plane=0, UInt_t signal=0 );
+  virtual Int_t     AddModule( Int_t crate, Int_t slot,
+                               Int_t chan_lo, Int_t chan_hi,
+                               Int_t first= 0, Int_t model= 0,
+                               Int_t refindex= -1, Int_t refchan= -1,
+                               Int_t plane= 0, Int_t signal= 0 );
           void      Clear()  { fMap.clear(); }
-  virtual Module*   Find( UShort_t crate, UShort_t slot, UShort_t chan );
+  virtual Module*   Find( Int_t crate, Int_t slot, Int_t chan );
   virtual Int_t     Fill( const std::vector<Int_t>& values, UInt_t flags = 0 );
           void      GetMinMaxChan( Int_t& min, Int_t& max,
 				   ECountMode mode = kLogicalChan ) const;
-          Module*   GetModule( UShort_t i ) const ;
-          Int_t     GetNchan( UShort_t i ) const;
+          Module*   GetModule( UInt_t i ) const;
+          Int_t     GetNchan( UInt_t i ) const;
           Int_t     GetTotNumChan() const;
           Int_t     GetSize() const { return fMap.size(); }
 
-          UInt_t    GetModel( UShort_t i ) const;
-          Bool_t    IsADC( UShort_t i ) const;
-          Bool_t    IsTDC( UShort_t i ) const;
-  static  UInt_t    GetModel( Module* d );
+          Int_t     GetModel( UInt_t i ) const;
+          Bool_t    IsADC( UInt_t i ) const;
+          Bool_t    IsTDC( UInt_t i ) const;
+  static  Int_t     GetModel( Module* d );
   static  Bool_t    IsADC( Module* d );
   static  Bool_t    IsTDC( Module* d );
 
@@ -138,7 +139,7 @@ protected:
   using ModuleVec_t = std::vector<std::unique_ptr<Module>>;
   ModuleVec_t fMap;     // Modules of this detector map
 
-  Module* uGetModule( UShort_t i ) const { return fMap[i].get(); }
+  Module* uGetModule( UInt_t i ) const { return fMap[i].get(); }
   void CopyMap( const ModuleVec_t& map );
 
   // Channels in this map start counting at 0. Used by hit iterators.
@@ -149,27 +150,23 @@ protected:
 public:
   class Iterator {
   public:
-    Iterator( THaDetMap& detmap, const THaEvData& evdata );
+    Iterator( THaDetMap& detmap, const THaEvData& evdata, bool do_init = true );
     Iterator() = delete;
     virtual ~Iterator() = default;
 
     // Positioning
     virtual Iterator& operator++();
-    const Iterator operator++( int) {
+    const Iterator operator++(int) {
       Iterator clone(*this); ++(*this); return clone;
     }
-    void reset();
+    virtual void reset();
     Int_t size() const { return fNTotChan; }
 
-    // Comparisons
-    bool operator==( const Iterator& rhs ) const {
-      return true; //TODO
-    }
-    bool operator!=( const Iterator& rhs ) const { return !(*this == rhs); }
-    explicit operator bool() const {
+    // Status
+    explicit virtual operator bool() const {
       return fIMod>=0 and fIMod<fNMod and fIChan>=0 and fIChan<fNChan;
     }
-    bool operator!() const { return !((bool)*this); }
+    bool operator!() const { return !static_cast<bool>(*this); }
 
     // Current value
     struct HitInfo_t {
@@ -180,13 +177,13 @@ public:
         if( mod->IsADC() )
           type = Decoder::ChannelType::kADC;
         else if( mod->IsTDC() )
-          type = mod->IsCommonStart() ? Decoder::ChannelType::kTDC
+          type = mod->IsCommonStart() ? Decoder::ChannelType::kCommonStartTDC
                                       : Decoder::ChannelType::kCommonStopTDC;
         crate = mod->crate;
         slot  = mod->slot;
       }
       void reset() {
-        module = nullptr; type = Decoder::ChannelType::kUndefined; ev = -1;
+        module = nullptr; type = Decoder::ChannelType::kUndefined;
         crate = -1; slot = -1; chan = -1; nhit = 0; hit = -1; lchan = -1;
       }
       Decoder::Module*     module; // Current frontend module being decoded
@@ -220,11 +217,15 @@ public:
 
   class MultiHitIterator : public Iterator {
   public:
-    MultiHitIterator( THaDetMap& detmap, const THaEvData& evdata )
-      : Iterator(detmap, evdata), fIHit(-1) {}
+    MultiHitIterator( THaDetMap& detmap, const THaEvData& evdata,
+                      bool do_init = true );
     MultiHitIterator() = delete;
     virtual ~MultiHitIterator() = default;
+    explicit virtual operator bool() const {
+      return Iterator::operator bool() and fIHit>=0 and fIHit<fHitInfo.nhit;
+    }
     virtual Iterator& operator++();
+    virtual void reset();
   protected:
     Int_t fIHit;         // Current raw hit number
   };
@@ -233,7 +234,7 @@ public:
 };
 
 //________ inlines ____________________________________________________________
-inline THaDetMap::Module* THaDetMap::GetModule( UShort_t i ) const {
+inline THaDetMap::Module* THaDetMap::GetModule( UInt_t i ) const {
   return i<fMap.size() ? uGetModule(i) : nullptr;
 }
 
@@ -247,27 +248,27 @@ inline Bool_t THaDetMap::IsTDC(Module* d) {
   return d->IsTDC();
 }
 
-inline UInt_t THaDetMap::GetModel(Module* d) {
+inline Int_t THaDetMap::GetModel(Module* d) {
   if( !d ) return 0;
   return d->GetModel();
 }
 
-inline Bool_t THaDetMap::IsADC( UShort_t i ) const {
+inline Bool_t THaDetMap::IsADC( UInt_t i ) const {
   if( i >= fMap.size() ) return false;
   return uGetModule(i)->IsADC();
 }
 
-inline Bool_t THaDetMap::IsTDC( UShort_t i ) const {
+inline Bool_t THaDetMap::IsTDC( UInt_t i ) const {
   if( i >= fMap.size() ) return false;
   return uGetModule(i)->IsTDC();
 }
 
-inline UInt_t THaDetMap::GetModel( UShort_t i ) const {
+inline Int_t THaDetMap::GetModel( UInt_t i ) const {
   if( i >= fMap.size() ) return 0;
   return uGetModule(i)->GetModel();
 }
 
-inline Int_t THaDetMap::GetNchan( UShort_t i ) const {
+inline Int_t THaDetMap::GetNchan( UInt_t i ) const {
   // Return the number of channels of the i-th module
   if( i >= fMap.size() ) return 0;
   return uGetModule(i)->GetNchan();
