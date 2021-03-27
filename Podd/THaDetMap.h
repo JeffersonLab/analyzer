@@ -80,7 +80,7 @@ public:
     // For historical reasons, 'first' starts at 1, so
     Int_t  ConvertToLogicalChannel( Int_t chan ) const
     { return first + (reverse ? hi - chan : chan - lo) - 1; }
-  } __attribute__((aligned(64)));
+  };
 
   // Flags for GetMinMaxChan()
   enum ECountMode {
@@ -198,7 +198,7 @@ public:
       Int_t  nhit;    // Number of hits in current channel
       Int_t  hit;     // Hit number in current channel
       Int_t  lchan;   // Logical channel according to detector map
-    } __attribute__((aligned(64)));
+    };
 
     const HitInfo_t* operator->() const { return &fHitInfo; }
     const HitInfo_t& operator* () const { return fHitInfo; }

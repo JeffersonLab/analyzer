@@ -27,7 +27,7 @@ using namespace Decoder;
 struct ModuleDef {
   UInt_t      model; // model identifier
   ChannelType type;  // Module type
-} __attribute__((aligned(8)));
+};
 
 static const vector<ModuleDef> module_list {
   { 1875, ChannelType::kTDC },
