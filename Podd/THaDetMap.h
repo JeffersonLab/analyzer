@@ -34,8 +34,14 @@ public:
   // Configuration data for a frontend module
   struct Module {
     Module() = default;
+#if __clang__ || __GNUC__ > 4
+    Module( const Module& rhs ) = default;
+    Module& operator=( const Module& rhs ) = default;
+#else
+    // work around apparent g++ 4 bug
     Module( Module& rhs ) = default;
     Module& operator=( Module& rhs ) = default;
+#endif
     UShort_t crate;
     UShort_t slot;
     UShort_t lo;
@@ -57,14 +63,14 @@ public:
     { return !(*this==rhs); }
     Int_t  GetNchan() const { return hi-lo+1; }
     UInt_t GetModel() const { return model; }
-    Bool_t IsADC()    const { return
+    Bool_t IsTDC()    const { return
         type == Decoder::ChannelType::kTDC ||
         type == Decoder::ChannelType::kCommonStopTDC ||
         type == Decoder::ChannelType::kMultiFunctionTDC; }
-    Bool_t IsTDC()    const { return
+    Bool_t IsADC()    const { return
         type == Decoder::ChannelType::kADC ||
         type == Decoder::ChannelType::kMultiFunctionADC; }
-    Bool_t IsCommonStart() const { return (IsTDC() && cmnstart); }
+    Bool_t IsCommonStart() const { return cmnstart; }
     void   SetResolution( Double_t resolution );
     // For legacy modules
     void   SetTDCMode( Bool_t cstart );
