@@ -87,6 +87,7 @@ THaVDC::~THaVDC()
 {
   // Destructor. Delete subdetectors.
 
+  RemoveVariables();
   delete fLower;
   delete fUpper;
   delete fLUpairs;
