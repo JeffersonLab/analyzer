@@ -55,7 +55,7 @@ THaSecondaryKine::~THaSecondaryKine()
 {
   // Destructor
 
-  DefineVariables( kDelete );
+  RemoveVariables();
 }
 
 //_____________________________________________________________________________
@@ -77,9 +77,6 @@ void THaSecondaryKine::Clear( Option_t* opt )
 Int_t THaSecondaryKine::DefineVariables( EMode mode )
 {
   // Define/delete global variables.
-
-  if( mode == kDefine && fIsSetup ) return kOK;
-  fIsSetup = ( mode == kDefine );
 
   RVarDef vars[] = {
     { "th_xq",    "Polar angle of detected particle with q (rad)",

@@ -129,7 +129,7 @@ namespace Decoder {
   }
 
   // Sum elements contained in data vector
-  uint32_t Fadc250Module::SumVectorElements( const vector<uint32_t>& data_vector) const {
+  uint32_t Fadc250Module::SumVectorElements( const vector<uint32_t>& data_vector) {
     return accumulate(data_vector.begin(), data_vector.end(), 0U);
   }
 

@@ -42,7 +42,7 @@ THaElossCorrection::~THaElossCorrection()
 {
   // Destructor
 
-  DefineVariables( kDelete );
+  RemoveVariables();
 }
 
 //_____________________________________________________________________________
@@ -78,18 +78,13 @@ Int_t THaElossCorrection::DefineVariables( EMode mode )
 {
   // Define/delete global variables.
 
-  if( mode == kDefine && fIsSetup ) return kOK;
-  fIsSetup = ( mode == kDefine );
-
   // Locally computed data
   const RVarDef var[] = {
     { "eloss", "Calculated energy loss correction (GeV)", "fEloss" },
     { "pathl", "Pathlength thru medium for this event",   "fPathlength" },
     { nullptr }
   };
-  DefineVarsFromList( var, mode );
-
-  return 0;
+  return DefineVarsFromList( var, mode );
 }
 
 //_____________________________________________________________________________

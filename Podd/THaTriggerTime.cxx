@@ -187,9 +187,6 @@ Int_t THaTriggerTime::DefineVariables( EMode mode )
 {
   // Define/delete event-by-event global variables
 
-  if( mode == kDefine && fIsSetup ) return kOK;
-  fIsSetup = ( mode == kDefine );
-
   RVarDef vars[] = {
     { "evtype",  "Earliest trg-bit for the event", "fEvtType" },
     { "trgtimes","Times for each trg-type",        "fTrgTimes" },

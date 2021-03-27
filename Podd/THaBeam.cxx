@@ -63,25 +63,22 @@ Int_t THaBeam::DefineVariables( EMode mode )
 {
   // Initialize global variables and lookup table for decoder
 
-  if( mode == kDefine && fIsSetup ) return kOK;
-  fIsSetup = ( mode == kDefine );
-
   RVarDef vars[] = {
-    { "x", "reconstructed x-position at nom. interaction point", "fPosition.fX"},
-    { "y", "reconstructed y-position at nom. interaction point", "fPosition.fY"},
-    { "z", "reconstructed z-position at nom. interaction point", "fPosition.fZ"},
-    { "dir.x", "reconstructed x-component of beam direction", "fDirection.fX"},
-    { "dir.y", "reconstructed y-component of beam direction", "fDirection.fY"},
-    { "dir.z", "reconstructed z-component of beam direction", "fDirection.fZ"},
-    { 0 }
+    { "x",     "reconstructed x-position at nom. interaction point", "fPosition.fX" },
+    { "y",     "reconstructed y-position at nom. interaction point", "fPosition.fY" },
+    { "z",     "reconstructed z-position at nom. interaction point", "fPosition.fZ" },
+    { "dir.x", "reconstructed x-component of beam direction",        "fDirection.fX" },
+    { "dir.y", "reconstructed y-component of beam direction",        "fDirection.fY" },
+    { "dir.z", "reconstructed z-component of beam direction",        "fDirection.fZ" },
+    { nullptr }
   };
-    
-  DefineVarsFromList( vars, mode );
+
+  Int_t ret = DefineVarsFromList(vars, mode);
+  if( ret )
+    return ret;
 
   // Define the variables for the beam info subobject
-  DefineVarsFromList( GetRVarDef(), mode );
-
-  return 0;
+  return DefineVarsFromList(GetRVarDef(), mode);
 }
 
 //_____________________________________________________________________________

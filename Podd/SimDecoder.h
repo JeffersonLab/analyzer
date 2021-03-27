@@ -34,12 +34,12 @@ public:
 	   const TVector3& vertex, const TVector3& momentum );
   MCTrack();
 
-  Double_t VX()     { return fOrigin.X(); }
-  Double_t VY()     { return fOrigin.Y(); }
-  Double_t VZ()     { return fOrigin.Z(); }
-  Double_t P()      { return fMomentum.Mag(); }
-  Double_t PTheta() { return fMomentum.Theta(); }
-  Double_t PPhi()   { return fMomentum.Phi(); }
+  Double_t VX() const     { return fOrigin.X(); }
+  Double_t VY() const     { return fOrigin.Y(); }
+  Double_t VZ() const     { return fOrigin.Z(); }
+  Double_t P()  const     { return fMomentum.Mag(); }
+  Double_t PTheta() const { return fMomentum.Theta(); }
+  Double_t PPhi() const   { return fMomentum.Phi(); }
 
   virtual void Print( const Option_t* opt="" ) const;
 

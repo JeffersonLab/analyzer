@@ -87,6 +87,7 @@ THaVDC::~THaVDC()
 {
   // Destructor. Delete subdetectors.
 
+  RemoveVariables();
   delete fLower;
   delete fUpper;
   delete fLUpairs;
@@ -459,8 +460,9 @@ Int_t THaVDC::DefineVariables( EMode mode )
 {
   // Initialize global variables and lookup table for decoder
 
-  if( mode == kDefine && fIsSetup ) return kOK;
-  fIsSetup = ( mode == kDefine );
+  Int_t ret = THaTrackingDetector::DefineVariables(mode);
+  if( ret )
+    return ret;
 
   // Register variables in global list
 

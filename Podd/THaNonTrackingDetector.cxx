@@ -39,6 +39,7 @@ THaNonTrackingDetector::~THaNonTrackingDetector()
 {
   // Destructor
 
+  RemoveVariables();
   delete fTrackProj; fTrackProj = nullptr;
 }
 
@@ -50,6 +51,26 @@ void THaNonTrackingDetector::Clear( Option_t* opt )
   THaSpectrometerDetector::Clear(opt);
 
   fTrackProj->Clear();
+}
+
+//_____________________________________________________________________________
+Int_t THaNonTrackingDetector::DefineVariables( EMode mode )
+{
+  // Define global analysis variables
+
+  Int_t ret = THaSpectrometerDetector::DefineVariables(mode);
+  if( ret )
+    return ret;
+
+  // Define analysis variables on our data members
+  RVarDef vars[] = {
+    { "trn",    "Number of tracks for hits",         "GetNTracks()" },
+    { "trx",    "x-position of track in det plane",  "fTrackProj.THaTrackProj.fX" },
+    { "try",    "y-position of track in det plane",  "fTrackProj.THaTrackProj.fY" },
+    { "trpath", "TRCS pathlen of track to det plane","fTrackProj.THaTrackProj.fPathl" },
+    { nullptr }
+  };
+  return DefineVarsFromList( vars, mode );
 }
 
 //_____________________________________________________________________________

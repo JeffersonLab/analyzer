@@ -84,6 +84,8 @@ THaAnalysisObject::~THaAnalysisObject()
 {
   // Destructor
 
+  RemoveVariables();
+
   delete fExtra; fExtra = nullptr;
 
   if (fgModules) {
@@ -140,31 +142,67 @@ Int_t THaAnalysisObject::End( THaRunBase* /* run */ )
 }
 
 //_____________________________________________________________________________
+Int_t THaAnalysisObject::DefineVariablesWrapper( EMode mode )
+{
+  // Wrapper for calling this object's virtual DefineVariables method.
+  // It takes care of setting/unsetting the guard variable fIsSetup which
+  // prevents multiple attempts to define variables.
+
+  if( mode == kDefine && fIsSetup )
+    // Exit if already set up.
+    // Multiple attempts to remove variables are OK: If this detector's
+    // variables have already been removed, nothing will be done.
+    // This test can be present in DefineVariables as well, but does not
+    // have to be. However, unlike in analyzer versions before 1.7,
+    // DefineVariables methods should NOT set or clear fIsSetup themselves.
+    return kOK;
+
+  Int_t ret = DefineVariables(mode);
+  if( ret )
+    // If setting or removing failed, allow retry. Currently, this would only
+    // happen if no global variable list was defined.
+    // Inability to define individual variables simply triggers warnings.
+    // TODO: Have this behave differently? Failing variable definitions can
+    // TODO: be hard to spot and so may waste quite a bit of time ...
+    // Inability to find variables for removal will not even be reported since
+    // it has no practical effect.
+    return ret;
+
+  fIsSetup = (mode == kDefine);
+
+  return ret;
+}
+
+//_____________________________________________________________________________
 Int_t THaAnalysisObject::DefineVariables( EMode /* mode */ )
 { 
   // Default method for defining global variables. Currently does nothing.
+  // If there should be any common variables for all analysis objects,
+  // define them here.
 
   return kOK;
 }
 
 //_____________________________________________________________________________
 Int_t THaAnalysisObject::DefineVarsFromList( const VarDef* list, EMode mode,
-					     const char* def_prefix ) const
+                                             const char* def_prefix,
+                                             const char* comment_subst ) const
 {
-  return DefineVarsFromList(list, kVarDef, mode, def_prefix);
+  return DefineVarsFromList(list, kVarDef, mode, def_prefix, comment_subst);
 }
 
 //_____________________________________________________________________________
 Int_t THaAnalysisObject::DefineVarsFromList( const RVarDef* list, EMode mode,
-					     const char* def_prefix ) const
+                                             const char* def_prefix,
+                                             const char* comment_subst ) const
 {
-  return DefineVarsFromList(list, kRVarDef, mode, def_prefix);
+  return DefineVarsFromList(list, kRVarDef, mode, def_prefix, comment_subst);
 }
  
 //_____________________________________________________________________________
-Int_t THaAnalysisObject::DefineVarsFromList( const void* list, 
-					     EType type, EMode mode,
-					     const char* def_prefix ) const
+Int_t THaAnalysisObject::DefineVarsFromList( const void* list, EType type,
+                                             EMode mode, const char* def_prefix,
+                                             const char* comment_subst ) const
 {
   // Add/delete variables defined in 'list' to/from the list of global 
   // variables, using prefix of the current apparatus.
@@ -173,16 +211,17 @@ Int_t THaAnalysisObject::DefineVarsFromList( const void* list,
   TString here(GetClassName());
   here.Append("::DefineVarsFromList");
   return DefineVarsFromList(list, type, mode, def_prefix, this,
-                            fPrefix, here.Data());
+                            fPrefix, here.Data(), comment_subst);
 }
 
 //_____________________________________________________________________________
-Int_t THaAnalysisObject::DefineVarsFromList( const void* list, 
-					     EType type, EMode mode,
-					     const char* def_prefix,
-					     const TObject* obj,
-					     const char* prefix,
-					     const char* here )
+Int_t THaAnalysisObject::DefineVarsFromList( const void* list,
+                                             EType type, EMode mode,
+                                             const char* def_prefix,
+                                             const TObject* obj,
+                                             const char* prefix,
+                                             const char* here,
+                                             const char* comment_subst )
 {
   // Actual implementation of the variable definition utility function.
   // Static function that can be used by classes other than THaAnalysisObjects
@@ -204,7 +243,8 @@ Int_t THaAnalysisObject::DefineVarsFromList( const void* list,
 				prefix, ::Here(here,prefix) );
     else if( type == kRVarDef )
       gHaVars->DefineVariables(static_cast<const RVarDef*>(list), obj,
-                               prefix, ::Here(here,prefix), def_prefix );
+                               prefix, ::Here(here, prefix), def_prefix,
+                               comment_subst);
   }
   else if( mode == kDelete ) {
     if( type == kVarDef ) {
@@ -610,7 +650,7 @@ THaAnalysisObject::EStatus THaAnalysisObject::Init( const TDatime& date )
   }
 
   // Define this object's variables.
-  status = DefineVariables(kDefine);
+  status = DefineVariablesWrapper(kDefine);
 
   Clear("I");
   goto exit;
@@ -767,9 +807,13 @@ Int_t THaAnalysisObject::ReadRunDatabase( const TDatime& date )
 //_____________________________________________________________________________
 Int_t THaAnalysisObject::RemoveVariables()
 {
-  // Default method for removing global variables of this object
+  // Remove global variables of this object.
+  // Should be called form the destructor of every class that defines any
+  // global variables via the standard DefineVariables mechanism.
 
-  return DefineVariables( kDelete );
+  if( fIsSetup )
+    DefineVariablesWrapper( kDelete );
+  return kOK;
 }
 
 //_____________________________________________________________________________

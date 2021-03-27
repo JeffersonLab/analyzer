@@ -71,7 +71,7 @@ public:
     void   MakeTDC();
     void   MakeADC();
     // Get logical detector channel from physical one, starting at 0.
-    // For historical reasons, 'first' starts at 1, so
+    // For historical reasons, 'first' starts at 1, so subtract 1 here.
     Int_t  ConvertToLogicalChannel( Int_t chan ) const
     { return first + (reverse ? hi - chan : chan - lo) - 1; }
   } __attribute__((aligned(64)));
@@ -110,7 +110,7 @@ public:
   virtual Int_t     Fill( const std::vector<Int_t>& values, UInt_t flags = 0 );
           void      GetMinMaxChan( Int_t& min, Int_t& max,
 				   ECountMode mode = kLogicalChan ) const;
-          Module*   GetModule( UShort_t i ) const ;
+          Module*   GetModule( UShort_t i ) const;
           Int_t     GetNchan( UShort_t i ) const;
           Int_t     GetTotNumChan() const;
           Int_t     GetSize() const { return fMap.size(); }
@@ -220,6 +220,8 @@ public:
 
   ClassDef(THaDetMap,1)   //The standard detector map
 };
+
+using DigitizerHitInfo_t = THaDetMap::Iterator::HitInfo_t;
 
 //________ inlines ____________________________________________________________
 inline THaDetMap::Module* THaDetMap::GetModule( UShort_t i ) const {

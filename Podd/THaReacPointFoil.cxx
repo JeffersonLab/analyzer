@@ -33,7 +33,7 @@ THaReacPointFoil::~THaReacPointFoil()
 {
   // Destructor
 
-  DefineVariables( kDelete );
+  RemoveVariables();
 }
 
 //_____________________________________________________________________________
@@ -49,9 +49,6 @@ void THaReacPointFoil::Clear( Option_t* opt )
 Int_t THaReacPointFoil::DefineVariables( EMode mode )
 {
   // Define/delete analysis variables
-
-  if( mode == kDefine && fIsSetup ) return kOK;
-  fIsSetup = ( mode == kDefine );
 
   return DefineVarsFromList( THaVertexModule::GetRVarDef(), mode );
 }

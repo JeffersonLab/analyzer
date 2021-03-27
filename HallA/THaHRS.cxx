@@ -262,11 +262,12 @@ Int_t THaHRS::TrackTimes( TClonesArray* Tracks )
       const auto trh = static_cast<THaTrackProj*>(sc->GetTrackHits()->At(i));
       
       Int_t pad = trh->GetChannel();
-      if (pad<0) continue;
+      if (pad<0 || pad>=sc->GetNelem()) continue;
       Double_t pathl = (trh->GetPathLen()-pathlref);
-      Double_t time = (sc->GetTimes())[pad];
-      Double_t wgt = (sc->GetTuncer())[pad];
-      
+      const auto& padinfo = sc->GetPad(pad);
+      Double_t time = padinfo.time;
+      Double_t wgt = padinfo.dtime;
+
       if (pathl>.5*kBig || time>.5*kBig) continue;
       if (wgt>0) wgt = 1./(wgt*wgt);
       else continue;

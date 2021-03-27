@@ -153,9 +153,6 @@ Int_t DecData::DefineVariables( EMode mode )
   if( retval != kOK )
     return retval;
 
-  if( mode == kDefine && fIsSetup ) return kOK;
-  fIsSetup = ( mode == kDefine );
-
   RVarDef vars[] = {
     { "evtype",     "CODA event type",             "evtype" },
     { "evtypebits", "event type bit pattern",      "evtypebits" },

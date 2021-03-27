@@ -9,7 +9,9 @@
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 
-#if __cplusplus >= 201701L
+#include "DataType.h"
+
+#if __cplusplus >= 201703L
 #include <optional>
 template <typename T>
 using Optional_t = std::optional<T>;
@@ -20,6 +22,9 @@ using Optional_t = std::experimental::optional<T>;
 using std::experimental::nullopt;
 using std::experimental::make_optional;
 
-#endif /* __cplusplus >= 201701L */
+#endif /* __cplusplus >= 201703L */
+
+using OptInt_t  = Optional_t<Int_t>;
+using OptData_t = Optional_t<Data_t>;
 
 #endif //Podd_OptionalType_h_

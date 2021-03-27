@@ -58,7 +58,7 @@ THaPrimaryKine::~THaPrimaryKine()
 {
   // Destructor
 
-  DefineVariables( kDelete );
+  RemoveVariables();
 }
 
 //_____________________________________________________________________________
@@ -79,9 +79,6 @@ void THaPrimaryKine::Clear( Option_t* opt )
 Int_t THaPrimaryKine::DefineVariables( EMode mode )
 {
   // Define/delete global variables.
-
-  if( mode == kDefine && fIsSetup ) return kOK;
-  fIsSetup = ( mode == kDefine );
 
   RVarDef vars[] = {
     { "Q2",      "4-momentum transfer squared (GeV^2)",     "fQ2" },

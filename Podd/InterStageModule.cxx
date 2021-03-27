@@ -27,6 +27,12 @@ InterStageModule::InterStageModule( const char* name, const char* description,
 }
 
 //_____________________________________________________________________________
+InterStageModule::~InterStageModule()
+{
+  RemoveVariables();
+}
+
+//_____________________________________________________________________________
 void InterStageModule::Clear( Option_t* opt )
 {
   THaAnalysisObject::Clear(opt);
@@ -43,9 +49,6 @@ void InterStageModule::PrintInitError( const char* here )
 Int_t InterStageModule::DefineVariables( THaAnalysisObject::EMode mode )
 {
   // Define/delete global variables for this module
-
-  if( mode == kDefine && fIsSetup ) return kOK;
-  fIsSetup = ( mode == kDefine );
 
   static const RVarDef vars[] = {
     { "good", "Data valid (1=ok)", "fDataValid" },

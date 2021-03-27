@@ -15,11 +15,15 @@
 
 #include "THaDetectorBase.h"
 #include "THaDetMap.h"
+#include "THaEvData.h"
 #include "TMath.h"
 #include "VarType.h"
 #include "TRotation.h"
 
-using std::vector;
+#include <sstream>
+#include <stdexcept>
+
+using namespace std;
 
 //_____________________________________________________________________________
 THaDetectorBase::THaDetectorBase( const char* name,
@@ -27,6 +31,7 @@ THaDetectorBase::THaDetectorBase( const char* name,
   THaAnalysisObject(name,description),
   fDetMap(new THaDetMap),
   fNelem(0),
+  fNviews(1),
   fSize{kBig,kBig,kBig},
   fXax(1.0,0.0,0.0),
   fYax(0.0,1.0,0.0),
@@ -37,7 +42,7 @@ THaDetectorBase::THaDetectorBase( const char* name,
 
 //_____________________________________________________________________________
 THaDetectorBase::THaDetectorBase() :
-  fDetMap(nullptr), fNelem(0), fSize{kBig,kBig,kBig}
+  fDetMap(nullptr), fNelem(0), fNviews(1), fSize{kBig,kBig,kBig}
 {
   // for ROOT I/O only
 }
@@ -46,7 +51,30 @@ THaDetectorBase::THaDetectorBase() :
 THaDetectorBase::~THaDetectorBase()
 {
   // Destructor
+  RemoveVariables();
   delete fDetMap;
+}
+
+//_____________________________________________________________________________
+void THaDetectorBase::Clear( Option_t* opt )
+{
+  // Clear event-by-event data in fDetectorData objects
+  THaAnalysisObject::Clear(opt);
+
+  for( auto& detData : fDetectorData ) {
+    detData->Clear(opt);
+  }
+}
+
+//_____________________________________________________________________________
+void THaDetectorBase::Reset( Option_t* opt )
+{
+  // Clear event-by-event data and calibration data in fDetectorData objects
+  Clear(opt);
+
+  for( auto& detData : fDetectorData ) {
+    detData->Reset(opt);
+  }
 }
 
 //_____________________________________________________________________________
@@ -60,6 +88,36 @@ void THaDetectorBase::DefineAxes( Double_t rotation_angle )
   fYax.SetXYZ( 0.0, 1.0, 0.0 );
   fZax = fXax.Cross(fYax);
 
+}
+
+//_____________________________________________________________________________
+Int_t THaDetectorBase::GetView( const DigitizerHitInfo_t& hitinfo ) const
+{
+  // Default method for getting the readout number of a detector element
+  // from the hardware channel given in 'hitinfo'. The the detector map is
+  // assumed to be organized in groups of fNelem consecutive channels
+  // corresponding to each view.
+  //
+  // For example, a detector may have 6 elements (e.g. paddles), each with two
+  // readouts, one on the right side, the other on the left, for a total of
+  // 12 channels. The detector map should then specify the 6 right-side
+  // channels first, followed by the 6 left-side channels (or vice versa).
+  //
+  // Derived classes may implement other schemes, for example alternating
+  // left/right channels.
+  //
+  // Throws an exception if the view number exceeds the number of defined
+  // views (fNviews).
+
+  if( fNelem == 0 ) return 0; // don't crash if unset
+  Int_t view = hitinfo.lchan / fNelem;
+  if( view < 0 || view >= fNviews ) {
+    ostringstream msg;
+    msg << "View out of range (= " << view << ", max " << fNviews << "). "
+        << "Should never happen. Call expert.";
+    throw logic_error(msg.str());
+  }
+  return view;
 }
 
 //_____________________________________________________________________________
@@ -232,6 +290,174 @@ Int_t THaDetectorBase::ReadGeometry( FILE* file, const TDatime& date,
     DefineAxes(0);
 
   return 0;
+}
+
+//_____________________________________________________________________________
+void THaDetectorBase::DebugWarning( const char* here, const char* msg,
+                                    Int_t evnum )
+{
+  if( fDebug > 0 ) {
+    Warning( Here(here), "Event %d: %s", evnum, msg );
+  }
+}
+
+//_____________________________________________________________________________
+void THaDetectorBase::MultipleHitWarning( const DigitizerHitInfo_t& hitinfo,
+                                          const char* here )
+{
+  ostringstream msg;
+  msg << hitinfo.nhit << " hits on "
+      << (hitinfo.type == Decoder::ChannelType::kADC ? "ADC" : "TDC")
+      << " channel "
+      << hitinfo.crate << "/" << hitinfo.slot << "/" << hitinfo.chan;
+  ++fMessages[msg.str()];
+
+  DebugWarning(here, msg.str().c_str(), hitinfo.ev);
+}
+
+//_____________________________________________________________________________
+void THaDetectorBase::DataLoadWarning( const DigitizerHitInfo_t& hitinfo,
+                                       const char* here )
+{
+  ostringstream msg;
+  msg << "Failed to load data for "
+      << (hitinfo.type == Decoder::ChannelType::kADC ? "ADC" : "TDC")
+      << " channel "
+      << hitinfo.crate << "/" << hitinfo.slot << "/" << hitinfo.chan
+      << ". Skipping channel.";
+  ++fMessages[msg.str()];
+
+  DebugWarning(here, msg.str().c_str(), hitinfo.ev);
+}
+
+//_____________________________________________________________________________
+Int_t THaDetectorBase::DefineVariables( EMode mode )
+{
+  // Define variables. Calls DefineVariables for all objects in fDetectorData
+
+  Int_t ret = THaAnalysisObject::DefineVariables(mode);
+  if( ret )
+    return ret;
+
+  for( auto& detData : fDetectorData )
+    if( (mode == kDefine) xor detData->IsSetup() )
+      detData->DefineVariables(mode);
+
+  return kOK;
+}
+
+//_____________________________________________________________________________
+Int_t THaDetectorBase::ReadDatabase( const TDatime& date )
+{
+  // Read database. Resets all objects in fDetectorData
+
+  Int_t status = THaAnalysisObject::ReadDatabase(date);
+  if( status != kOK )
+    return status;
+
+  for( auto& detData : fDetectorData )
+    detData->Reset();
+
+  return kOK;
+}
+
+//_____________________________________________________________________________
+Int_t THaDetectorBase::StoreHit( const DigitizerHitInfo_t& hitinfo, Int_t data )
+{
+  // Put decoded frontend data into fDetectorData. Used by Decode().
+  // hitinfo: channel info (crate/slot/channel/hit/type)
+  // data:    data registered in this channel
+
+  for( auto& detData : fDetectorData ) {
+    if( !detData->HitDone() )
+      detData->StoreHit(hitinfo, data);
+  }
+
+  return 0;
+}
+
+//_____________________________________________________________________________
+OptInt_t THaDetectorBase::LoadData( const THaEvData& evdata,
+                                    const DigitizerHitInfo_t& hitinfo )
+{
+  // Default method for loading the data for the hit referenced in 'hitinfo'.
+  // Callback from Decode().
+
+  return evdata.GetData(hitinfo.crate, hitinfo.slot, hitinfo.chan, hitinfo.hit);
+}
+
+//_____________________________________________________________________________
+Int_t THaDetectorBase::Decode( const THaEvData& evdata )
+{
+  // Generic Decode method. It loops over all active channels (= hit) in
+  // 'evdata' that are associated with this detector's detector map.
+  // For each hit, the following callbacks are made:
+  //
+  //   LoadData(evdata,hitinfo):  Returns data for the 'hitinfo' channel
+  //
+  //   StoreData(hitinfo,data):   Save data in member variables
+  //
+  // The default LoadData and StoreData may be enough for simple detectors.
+  // The default StoreData sends the data to the StoreData function of all
+  // 'detector data' objects that his detector has placed in fDetectorData.
+  //
+  // For debugging, each detector may define a PrintDecodedData function.
+  // The default version calls Print on all objects in fDetectorData.
+
+  const char* const here = "Decode";
+
+  // Loop over all modules defined for this detector
+  bool has_warning = false;
+  Int_t nhits = 0;
+
+  auto hitIter = fDetMap->MakeIterator(evdata);
+  while( hitIter ) {
+    const auto& hitinfo = *hitIter;
+    if( hitinfo.nhit > 1 ) {
+      // Multiple hits in a channel (usually noise)
+      MultipleHitWarning(hitinfo, here);
+      has_warning = true;
+    }
+
+    // Get the data for this hit
+    OptInt_t data = LoadData(evdata, hitinfo);
+    if( !data ) {
+      // Data could not be retrieved (probably decoder bug)
+      DataLoadWarning(hitinfo, here);
+      has_warning = true;
+      continue;
+    }
+
+    // Store hit data (and derived quantities) in fDetectorData.
+    // Multi-function modules can load additional data here.
+    StoreHit(hitinfo, data.value());
+
+    // Clear the hit-done flag which can be used in custom StoreHit methods
+    // to reorder module processing
+    for( auto& detData : fDetectorData )
+      detData->ClearHitDone();
+
+    // Next active channel
+    ++hitIter;
+    ++nhits;
+  }
+  if( has_warning )
+    ++fNEventsWithWarnings;
+
+#ifdef WITH_DEBUG
+  if ( fDebug > 3 )
+    PrintDecodedData(evdata);
+#endif
+
+  return nhits;
+}
+
+//_____________________________________________________________________________
+void THaDetectorBase::PrintDecodedData( const THaEvData& evdata ) const
+{
+  // Default Print function for decoded data
+
+  //TODO implement
 }
 
 //_____________________________________________________________________________

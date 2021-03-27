@@ -505,8 +505,9 @@ Int_t THaVarList::DefineVariables( const VarDef* list, const char* prefix,
 
 //-----------------------------------------------------------------------------
 Int_t THaVarList::DefineVariables( const RVarDef* list, const TObject* obj,
-				   const char* prefix,  const char* caller,
-				   const char* def_prefix )
+                                   const char* prefix, const char* caller,
+                                   const char* def_prefix,
+                                   const char* comment_subst )
 {
   // Add all variables specified in 'list' to the list. 'list' is a C-style
   // structure defined in VarDef.h and must be terminated with a nullptr name.
@@ -562,7 +563,20 @@ Int_t THaVarList::DefineVariables( const RVarDef* list, const TObject* obj,
     if( prefix )
       name.Prepend(prefix);
 
-    TString desc( (item->desc && *item->desc ) ? item->desc : name.Data() );
+    TString desc;
+    if( item->desc && *item->desc ) {
+      desc = item->desc;
+      if( !comment_subst )
+        comment_subst = "";
+      // Substitute "%s" in description string with 'comment_subst'
+      desc.ReplaceAll("%s", comment_subst);
+    } else
+      desc = name;
+    // Trim string, collapse whitespace
+    desc.Remove(TString::EStripType::kLeading,' ')
+        .Remove(TString::EStripType::kTrailing,' ');
+    while( desc.Index("  ") != kNPOS )
+      desc.ReplaceAll("  "," ");
 
     // Process the variable definition
     char* c = ::Compress( item->def );
@@ -574,7 +588,7 @@ Int_t THaVarList::DefineVariables( const RVarDef* list, const TObject* obj,
       continue;
     }
     if( def_prefix && *def_prefix )
-      def.Prepend(def_prefix );
+      def.Prepend(def_prefix);
 
     THaVar* var = DefineByRTTI( name, desc, def, obj, cl, errloc );
 

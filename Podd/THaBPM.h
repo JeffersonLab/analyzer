@@ -20,9 +20,10 @@ public:
   THaBPM& operator=( const THaBPM& ) = delete;
   virtual ~THaBPM();
 
-  virtual void       Clear( Option_t* ="" );
-  virtual Int_t      Decode( const THaEvData& );
-  virtual Int_t      Process();
+  virtual void   Clear( Option_t* ="" );
+  virtual Int_t  StoreHit( const DigitizerHitInfo_t& hitinfo, Int_t data );
+  virtual Int_t  Decode( const THaEvData& );
+  virtual Int_t  Process();
 
   virtual TVector3 GetPosition()  const { return fPosition; }
   virtual TVector3 GetDirection()  const { return fDirection; }
@@ -34,7 +35,6 @@ public:
 
   Double_t GetRotPosX() {return fRotPos(0); }
   Double_t GetRotPosY() {return fRotPos(1); }
-
 
 protected:
 

@@ -109,9 +109,6 @@ Int_t THaCoincTime::DefineVariables( EMode mode )
 {
   // Define/delete global variables.
   
-  if( mode == kDefine && fIsSetup ) return kOK;
-  fIsSetup = ( mode == kDefine );
-
   RVarDef vars[] = {
     { "d_trig","Measured TDC start+delay of spec 2 (1), by spec 1 (2)", "fdTdc" },
     { "ntr1",  "Number of tracks in first spec.",  "fNTr1" },
@@ -123,7 +120,7 @@ Int_t THaCoincTime::DefineVariables( EMode mode )
     { "ct_1by2", "Coinc. times of tracks, d_trig from spec 2", "fDiffT1by2" },
     { "trind1",  "Track indices for spec1 match entries in ct_*", "fTrInd1" },
     { "trind2",  "Track indices for spec2 match entries in ct_*", "fTrInd2" },
-    { 0 }
+    { nullptr }
   };
   return DefineVarsFromList( vars, mode );
 }

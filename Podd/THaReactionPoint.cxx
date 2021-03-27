@@ -45,7 +45,7 @@ THaReactionPoint::~THaReactionPoint()
 {
   // Destructor
 
-  DefineVariables( kDelete );
+  RemoveVariables();
 }
 
 //_____________________________________________________________________________
@@ -61,9 +61,6 @@ void THaReactionPoint::Clear( Option_t* opt )
 Int_t THaReactionPoint::DefineVariables( EMode mode )
 {
   // Define/delete analysis variables
-
-  if( mode == kDefine && fIsSetup ) return kOK;
-  fIsSetup = ( mode == kDefine );
 
   return DefineVarsFromList( THaVertexModule::GetRVarDef(), mode );
 }

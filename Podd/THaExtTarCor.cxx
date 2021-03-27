@@ -66,7 +66,7 @@ THaExtTarCor::~THaExtTarCor()
 {
   // Destructor
 
-  DefineVariables( kDelete );
+  RemoveVariables();
 }
 
 //_____________________________________________________________________________
@@ -115,10 +115,9 @@ Int_t THaExtTarCor::DefineVariables( EMode mode )
 {
   // Define/delete global variables.
 
-  if( mode == kDefine && fIsSetup ) return kOK;
-  fIsSetup = ( mode == kDefine );
-
-  DefineVarsFromList( THaTrackingModule::GetRVarDef(), mode );
+  Int_t ret = DefineVarsFromList(THaTrackingModule::GetRVarDef(), mode);
+  if( ret )
+    return ret;
 
   const RVarDef var2[] = {
     { "delta_p",  "Size of momentum correction",    "fDeltaP" },
@@ -126,8 +125,7 @@ Int_t THaExtTarCor::DefineVariables( EMode mode )
     { "delta_th", "Size of theta correction (rad)", "fDeltaTh" },
     { nullptr }
   };
-  DefineVarsFromList( var2, mode );
-  return 0;
+  return DefineVarsFromList( var2, mode );
 }
 
 //_____________________________________________________________________________

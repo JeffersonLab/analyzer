@@ -32,7 +32,7 @@ THaGoldenTrack::~THaGoldenTrack()
 {
   // Destructor
 
-  DefineVariables( kDelete );
+  RemoveVariables();
 }
 
 //_____________________________________________________________________________
@@ -64,9 +64,6 @@ Int_t THaGoldenTrack::DefineVariables( EMode mode )
 {
   // Define/delete global variables.
 
-  if( mode == kDefine && fIsSetup ) return kOK;
-  fIsSetup = ( mode == kDefine );
-
   const char* var_prefix = "fTrkIfo.";
 
   const RVarDef var1[] = {
@@ -82,15 +79,16 @@ Int_t THaGoldenTrack::DefineVariables( EMode mode )
     { "ok",       "Data valid status flag (1=ok)",  "fOK" },
     { nullptr }
   };
-  DefineVarsFromList( var1, mode, var_prefix );
+  Int_t ret = DefineVarsFromList( var1, mode, var_prefix );
+  if( ret )
+    return ret;
 
   const RVarDef var2[] = {
     { "index",    "Index of Golden Track",         "fIndex" },
     { "beta", "Beta of Golden Track",          "fGoldBeta" },
     { nullptr }
   };
-  DefineVarsFromList( var2, mode );
-  return 0;
+  return DefineVarsFromList( var2, mode );
 }
 
 //_____________________________________________________________________________

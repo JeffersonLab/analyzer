@@ -60,15 +60,11 @@ Int_t UserScintillator::DefineVariables( EMode mode )
 {
   // Define/delete global variables
 
-  // Don't redefine variables
-  if( mode == kDefine && fIsSetup ) return kOK;
-  // NB: This is a virtual function, and the base class does define its
-  // own variables, so we MUST call the base class instance here.
-  // Remember that the base class instance normally tests and sets fIsSetup,
-  // so we must not do it before this call
-  THaScintillator::DefineVariables( mode );
-  //and then, we don't need to do it at all
-  //  fIsSetup = ( mode == kDefine );
+  // Since the base class defines its own variables, call the base class
+  // implementation here to get those variables.
+  Int_t ret = THaScintillator::DefineVariables( mode );
+  if( ret )
+    return ret;
 
   RVarDef vars[] = {
     { "padnum", "Paddle number",                                 "fPaddle" },
@@ -91,7 +87,7 @@ Int_t UserScintillator::ReadDatabase( const TDatime& date )
   // Now read the database file
   // First read base class parameters
   Int_t ret = THaScintillator::ReadDatabase(date);
-  if( ret != kOK )
+  if( ret )
     return ret;
 
   // Read our parameters. For detailed comments, see UserDetector.cxx.
@@ -193,13 +189,13 @@ Int_t UserScintillator::FineProcess( TClonesArray& tracks )
   // Determine the paddle number using the focal plane coordinates
   // x and y are the coordinates of the track in the scintillator plane
   // (scintillator plane coordinate system)
-  double fpe_x  = theTrack->GetX();
-  double fpe_th = theTrack->GetTheta();
-  double fpe_y  = theTrack->GetY();
-  double fpe_ph = theTrack->GetPhi();
-  double cos_angle = fXax.X(), sin_angle = fXax.Z();
-  double x = ( fpe_x + fpe_th * fOrigin.Z() ) /
-    ( cos_angle + fpe_th * sin_angle );
+  Double_t fpe_x  = theTrack->GetX();
+  Double_t fpe_th = theTrack->GetTheta();
+  Double_t fpe_y  = theTrack->GetY();
+  Double_t fpe_ph = theTrack->GetPhi();
+  Double_t cos_angle = fXax.X(), sin_angle = fXax.Z();
+  Double_t x = (fpe_x + fpe_th * fOrigin.Z()) /
+               (cos_angle + fpe_th * sin_angle);
   // transverse position from track data
   fYtrk = fpe_y + fpe_ph * fOrigin.Z() - fpe_ph * sin_angle * x;
 
@@ -208,12 +204,11 @@ Int_t UserScintillator::FineProcess( TClonesArray& tracks )
   if(fPaddle <0 || fPaddle >= fNelem)
     fPaddle = -255;
 
-  // Compute y-position from TDC data if possible
+  // Compute y-position from TDC data
   else {
-    if( fCommonStop )
-      fYtdc = 0.5*fCn*(fRT_c[fPaddle]-fLT_c[fPaddle]);
-    else
-      fYtdc = 0.5*fCn*(fLT_c[fPaddle]-fRT_c[fPaddle]);
+    Double_t ltdc = fLeftPMTs ->GetPMT(fPaddle).tdc_c;
+    Double_t rtdc = fRightPMTs->GetPMT(fPaddle).tdc_c;
+    fYtdc = 0.5 * fCn * ((fCommonStop) ? rtdc - ltdc : ltdc - rtdc);
   }
 
   return 0;

@@ -177,7 +177,7 @@ Int_t SimDecoder::DefineVariables( THaAnalysisObject::EMode mode )
 
   return THaAnalysisObject::
     DefineVarsFromList( vars, THaAnalysisObject::kRVarDef,
-			mode, "", this, MC_PREFIX, here );
+			mode, "", this, MC_PREFIX, here, "" );
 }
 
 //_____________________________________________________________________________

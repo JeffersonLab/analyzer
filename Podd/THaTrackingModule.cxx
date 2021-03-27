@@ -51,7 +51,7 @@ const RVarDef* THaTrackingModule::GetRVarDef()
     { "py",       "Lab momentum y (GeV)",           "fTrkIfo.GetPy()"},
     { "pz",       "Lab momentum z (GeV)",           "fTrkIfo.GetPz()"},
     { "ok",       "Data valid status flag (1=ok)",  "fTrkIfo.fOK"},
-    { 0 }
+    { nullptr }
   };
 
   return vars;

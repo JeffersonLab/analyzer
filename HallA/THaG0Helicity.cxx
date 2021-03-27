@@ -68,7 +68,7 @@ THaG0Helicity::THaG0Helicity()
 //_____________________________________________________________________________
 THaG0Helicity::~THaG0Helicity() 
 {
-  DefineVariables( kDelete );
+  RemoveVariables();
 
   delete fHisto;
 }
@@ -78,10 +78,10 @@ Int_t THaG0Helicity::DefineVariables( EMode mode )
 {
   // Initialize global variables
 
-  if( mode == kDefine && fIsSetup ) return kOK;
-
   // Define standard variables from base class
-  THaHelicityDet::DefineVariables( mode );
+  Int_t ret = THaHelicityDet::DefineVariables( mode );
+  if( ret )
+    return ret;
 
   const RVarDef var[] = {
     { "qrt",       "qrt from ROC",                 "fQrt" },
@@ -93,7 +93,7 @@ Int_t THaG0Helicity::DefineVariables( EMode mode )
     { "timestamp", "Timestamp from ROC",           "fTimestamp" },
     { "validtime", "validtime flag",               "fValidTime" },
     { "validHel",  "validHel flag",                "fValidHel" },
-    { 0 }
+    { nullptr }
   };
   return DefineVarsFromList( var, mode );
 }

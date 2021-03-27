@@ -11,12 +11,15 @@
 #include "THaGlobals.h"
 #include "TDatime.h"
 #include "VarDef.h"
+#include "DataType.h"
+#include "OptionalType.h"
 
 #include <vector>
 #include <string>
 #include <cstdio>
 #include <map>
 #include <cstdarg>
+#include <utility>
 
 class THaEvData; //needed by derived classes
 class TList;
@@ -120,12 +123,13 @@ public:
 					 Double_t& length,
 					 TVector3& intersect );
 
-  static Int_t    DefineVarsFromList( const void* list, 
-				      EType type, EMode mode,
-				      const char* def_prefix,
-				      const TObject* obj, 
-				      const char* prefix, 
-				      const char* here );
+  static Int_t    DefineVarsFromList( const void* list,
+                                      EType type, EMode mode,
+                                      const char* def_prefix,
+                                      const TObject* obj,
+                                      const char* prefix,
+                                      const char* here,
+                                      const char* comment_subst = "" );
 
   static void     PrintObjects( Option_t* opt="" );
 
@@ -150,15 +154,16 @@ protected:
   TObject*        fExtra;     // Additional member data (for binary compat.)
 
   virtual Int_t        DefineVariables( EMode mode = kDefine );
-          Int_t        DefineVarsFromList( const VarDef* list, 
-					   EMode mode = kDefine,
-					   const char* def_prefix="" ) const;
-          Int_t        DefineVarsFromList( const RVarDef* list, 
-					   EMode mode = kDefine,
-					   const char* def_prefix="" ) const;
-          Int_t        DefineVarsFromList( const void* list, 
-					   EType type, EMode mode,
-					   const char* def_prefix= "" ) const;
+          Int_t        DefineVarsFromList( const VarDef* list,
+                                           EMode mode = kDefine,
+                                           const char* def_prefix = "",
+                                           const char* comment_subst = "" ) const;
+          Int_t        DefineVarsFromList( const RVarDef* list, EMode mode,
+                                           const char* def_prefix = "",
+                                           const char* comment_subst = "" ) const;
+          Int_t        DefineVarsFromList( const void* list, EType type,
+                                           EMode mode, const char* def_prefix = "",
+                                           const char* comment_subst = "" ) const;
 
   virtual void         DoError( int level, const char* location,
 				const char* fmt, va_list va) const;
@@ -174,7 +179,7 @@ protected:
   virtual void         MakePrefix();
   virtual Int_t        ReadDatabase( const TDatime& date );
   virtual Int_t        ReadRunDatabase( const TDatime& date );
-  virtual Int_t        RemoveVariables();
+          Int_t        RemoveVariables();
 
   // Support function for reading database files
   static std::vector<std::string> 
@@ -195,6 +200,8 @@ private:
   // Prevent default construction, copying, assignment
   THaAnalysisObject( const THaAnalysisObject& );
   THaAnalysisObject& operator=( const THaAnalysisObject& );
+
+  Int_t DefineVariablesWrapper( EMode mode = kDefine );
 
   static TList* fgModules;  // List of all currently existing Analysis Modules
 

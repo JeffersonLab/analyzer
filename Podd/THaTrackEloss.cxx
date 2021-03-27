@@ -40,7 +40,7 @@ THaTrackEloss::~THaTrackEloss()
 {
   // Destructor
 
-  DefineVariables( kDelete );
+  RemoveVariables();
 }
 
 //_____________________________________________________________________________
@@ -112,8 +112,9 @@ Int_t THaTrackEloss::DefineVariables( EMode mode )
 {
   // Define/delete global variables.
 
-  if( mode == kDefine && fIsSetup ) return kOK;
-  THaElossCorrection::DefineVariables( mode );
+  Int_t ret = THaElossCorrection::DefineVariables( mode );
+  if( ret )
+    return ret;
 
   return DefineVarsFromList( THaTrackingModule::GetRVarDef(), mode );
 }

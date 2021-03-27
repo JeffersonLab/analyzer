@@ -111,7 +111,7 @@ namespace Decoder {
 
     void ClearDataVectors();
     void PopulateDataVector(std::vector<uint32_t>& data_vector, uint32_t data);
-    uint32_t SumVectorElements( const std::vector<uint32_t>& data_vector) const;
+    static uint32_t SumVectorElements( const std::vector<uint32_t>& data_vector) ;
     void LoadTHaSlotDataObj(THaSlotData *sldat);
     Int_t LoadThisBlock(THaSlotData *sldat, std::vector<UInt_t > evb);
     void PrintDataType() const;
