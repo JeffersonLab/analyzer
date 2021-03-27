@@ -47,6 +47,9 @@ public:
   Double_t GetVDCAngle() const { return fVDCAngle; }
   Double_t GetSpacing()  const { return fSpacing;  }
 
+  std::pair<Double_t,bool> GetTimeCorrection() const;
+  Double_t GetTimeCorrectionUnchecked() const;
+
   void Print(const Option_t* opt="") const;
 
   // Bits & and bit masks for THaTrack
@@ -157,9 +160,6 @@ protected:
 
   void CorrectTimeOfFlight(TClonesArray& tracks);
   void FindBadTracks(TClonesArray &tracks);
-
-  std::pair<Double_t,bool> GetTimeCorrection() const;
-  Double_t GetTimeCorrectionUnchecked() const;
 
   virtual Int_t ReadDatabase( const TDatime& date );
   virtual Int_t ReadGeometry( FILE* file, const TDatime& date,
