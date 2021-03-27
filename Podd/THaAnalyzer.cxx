@@ -99,7 +99,7 @@ THaAnalyzer::THaAnalyzer() :
   fPhysics = gHaPhysics;
   fEvtHandlers = gHaEvtHandlers;
 
-  // EPICs data
+  // EPICS data
   fEpicsHandler = new THaEpicsEvtHandler("epics","EPICS event type");
   //  fEpicsHandler->SetDebugFile("epicsdat.txt");
   fEvtHandlers->Add(fEpicsHandler);
@@ -470,8 +470,11 @@ Int_t THaAnalyzer::InitModules( TList* module_list, TDatime& run_time,
 
   static const char* const here = "InitModules()";
 
-  if( !module_list || !baseclass || !*baseclass )
-    return -3-erroff;
+  // Treat an unset list like an empty one
+  if( !module_list )
+    return 0;
+
+  assert(baseclass && *baseclass); // else logic error in caller
 
   TIter next( module_list );
   Int_t retval = 0;
@@ -1085,16 +1088,14 @@ Int_t THaAnalyzer::EndAnalysis()
 template<typename T>
 inline size_t ListToVector( TList* lst, vector<T*>& vec )
 {
-  if( !lst ) {
-    vec.clear();
-    return 0;
-  }
-  vec.reserve( std::max(lst->GetSize(),0) );
-  TIter next_item(lst);
-  while( TObject* obj = next_item() ) {
-    auto item = dynamic_cast<T*>(obj);
-    if( item )
-      vec.push_back(item);
+  if( lst ) {
+    vec.reserve(std::max(lst->GetSize(), 0));
+    TIter next_item(lst);
+    while( TObject* obj = next_item() ) {
+      auto* item = dynamic_cast<T*>(obj);
+      if( item )
+        vec.push_back(item);
+    }
   }
   return vec.size();
 }
