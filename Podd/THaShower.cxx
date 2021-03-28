@@ -156,7 +156,7 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
   fBlockPos.clear(); fBlockPos.reserve(nval);
   fClBlk.clear();    fClBlk.reserve(nclbl);
   fDetectorData.clear();
-  auto detdata = MKADCDATA(fPrefix, fTitle.Data(), nval, fChanMap);
+  auto detdata = MKADCDATA(GetPrefixName(), fTitle, nval, fChanMap);
   fADCData = detdata.get();
   fDetectorData.emplace_back(std::move(detdata));
   fIsInit = true;

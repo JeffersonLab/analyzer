@@ -167,7 +167,7 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   // Per-event data
   fDetectorData.clear();
   for( int i = kRight; i <= kLeft; ++i ) {
-    auto detdata = MKPMTDATA(fPrefix, fTitle.Data(), nval);
+    auto detdata = MKPMTDATA(GetPrefixName(), fTitle, nval);
     // Keep pointers to the elements around for convenient access
     PMTData*& pmtData = (i == kRight) ? fRightPMTs : fLeftPMTs;
     pmtData = detdata.get();

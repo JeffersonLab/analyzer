@@ -306,16 +306,13 @@ THaAnalysisObject* THaAnalysisObject::FindModule( const char* name,
     auto module = dynamic_cast<THaAnalysisObject*>(obj);
     assert(module);
 #endif
-    const char* cprefix = module->GetPrefix();
-    if( !cprefix ) {
+    TString prefix = module->GetPrefixName();
+    if( prefix.IsNull() ) {
       module->MakePrefix();
-      cprefix = module->GetPrefix();
-      if( !cprefix )
+      prefix = module->GetPrefixName();
+      if( prefix.IsNull() )
 	continue;
     }
-    TString prefix(cprefix);
-    if( prefix.EndsWith(".") )
-      prefix.Chop();
     if( prefix == name )
       break;
   }
@@ -1851,9 +1848,7 @@ void THaAnalysisObject::DebugPrint( const DBRequest* list )
 
   if( !list )
     return;
-  TString prefix(fPrefix);
-  if( prefix.EndsWith(".") ) prefix.Chop();
-  cout << prefix << " database parameters: " << endl;
+  cout << GetPrefixName() << " database parameters: " << endl;
   size_t maxw = 1;
   ios_base::fmtflags fmt = cout.flags();
   for( const auto *it = list; it->name; ++it )
@@ -1965,6 +1960,18 @@ void THaAnalysisObject::PrintObjects( Option_t* opt )
   while( (obj = next()) ) {
     obj->Print(opt);
   }
+}
+
+//_____________________________________________________________________________
+TString THaAnalysisObject::GetPrefixName() const
+{
+  // Get current prefix without the trailing ".", which turns out to be
+  // frequently needed task
+
+  TString prefix(GetPrefix());
+  if( prefix.EndsWith(".") )
+    prefix.Chop();
+  return prefix;
 }
 
 //_____________________________________________________________________________

@@ -37,7 +37,8 @@ pair<unique_ptr<FADCData>,Int_t> MakeFADCData( const TDatime& date,
     return ret;
 
   // Create new FADC data object
-  auto detdata = MKFADCDATA(det->GetPrefix(), det->GetTitle(), det->GetNelem());
+  auto detdata = MKFADCDATA(det->GetPrefixName(), det->GetTitle(),
+                            det->GetNelem());
 
   // Initialize FADC configuration parameters, using the detector's database
   FILE* file = det->OpenFile(date);

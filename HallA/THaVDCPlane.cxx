@@ -614,7 +614,7 @@ void THaVDCPlane::PrintDecodedData( const THaEvData& evdata ) const
   if( fDebug > 3 ) {
     Int_t nhits = GetNHits();
     cout << endl
-         << "VDC plane " << GetPrefix() << ": " << nhits << " hits" << endl;
+         << "VDC plane " << GetPrefixName() << ": " << nhits << " hits" << endl;
     const int ncol = 6;
     for( int i = 0; i < TMath::Min(ncol, nhits); i++ )
       cout << "  Wire  TDC ";

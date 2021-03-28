@@ -157,7 +157,7 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
   UInt_t nval = fNelem;
   if( !fIsInit || !fPMTData ) {
     fDetectorData.clear();
-    auto detdata = MKPMTDATA(fPrefix, fTitle.Data(), nval);
+    auto detdata = MKPMTDATA(GetPrefixName(), fTitle, nval);
     fPMTData = detdata.get();
     fDetectorData.emplace_back(std::move(detdata));
     fIsInit = true;

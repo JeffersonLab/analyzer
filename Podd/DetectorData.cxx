@@ -21,12 +21,6 @@ DetectorData::DetectorData( const char* name, const char* desc )
   : TNamed(name,desc), fVarOK(false), fHitDone(false)
 {
   // Base class constructor
-
-  TString s(name);
-  if( s.EndsWith(".") ) {
-    s.Chop();
-    SetName(s);
-  }
 }
 
 //_____________________________________________________________________________

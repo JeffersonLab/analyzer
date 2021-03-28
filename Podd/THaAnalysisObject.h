@@ -49,6 +49,7 @@ public:
           const char*  GetConfig() const         { return fConfig.Data(); }
           Int_t        GetDebug() const          { return fDebug; }
           const char*  GetPrefix() const         { return fPrefix; }
+          TString      GetPrefixName() const;
           EStatus      Init();
   virtual EStatus      Init( const TDatime& run_time );
           Bool_t       IsInit() const            { return IsOK(); }
