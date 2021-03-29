@@ -8,10 +8,6 @@
   CodaDecoder (replaces THaCodaDecoder) which is chosen by
   the appropriate lines in /src/THaInterface.
         gHaDecoder = CodaDecoder::Class();
-  For now, the old decoder classes remain in place, but
-  the following will eventually be obsolete
-  THaCodaDecoder, THaFastBusWord, THaEpics (would be replaced
-  by an event handler, as yet unwritten)
 
  Notes from March 29, 2000
 

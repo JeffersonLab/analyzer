@@ -9,11 +9,9 @@ namespace Decoder {
   class PipeliningModule;     // pipelining module
   class FastbusModule;        // abstract Fastbus module
   class GenScaler;            // abstract general scaler
-  class THaCodaDecoder;       // older decoder, obsolescent
   class THaSlotData;          // modified to use modules
   class THaEpics;
   class EpicsChan;
-  class THaFastBusWord;
   class THaCrateMap;
   class THaUsrstrutils;
   class THaCodaData;
