@@ -559,7 +559,11 @@ Int_t THaOutput::Process()
   THaVar *pvar;
   for (Int_t ivar = 0; ivar < fNvar; ivar++) {
     pvar = fVariables[ivar];
-    if (pvar) fVar[ivar] = pvar->GetValue();
+    if( pvar ) {
+      Double_t x = pvar->GetValue();
+      if( x == kMinInt ) x = THaAnalysisObject::kBig;
+      fVar[ivar] = x;
+    }
   }
   Int_t k = 0;
   for (auto it = fOdata.begin(); it != fOdata.end(); ++it, ++k) {
@@ -573,7 +577,9 @@ Int_t THaOutput::Process()
     while( i-- > 0 ) {
       // FIXME: for better efficiency, should use pointer to data and 
       // Fill(int n,double* data) method in case of a contiguous array
-      if (pdat->Fill(i,pvar->GetValue(i)) != 1) {
+      Double_t x = pvar->GetValue(i);
+      if( x == kMinInt ) x = THaAnalysisObject::kBig;
+      if (pdat->Fill(i,x) != 1) {
 	if( fgVerbose>0 && first ) {
 	  cerr << "THaOutput::ERROR: storing too much variable sized data: " 
 	       << pvar->GetName() <<"  "<<pvar->GetLen()<<endl;
