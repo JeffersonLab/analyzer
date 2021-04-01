@@ -45,12 +45,9 @@ Int_t TimeCorrectionModule::DefineVariables( THaAnalysisObject::EMode mode )
 {
   // Define/delete event-by-event global variables
 
-  bool save_state = fIsSetup;
-  InterStageModule::DefineVariables(mode);  // exports fDataValid etc.
-  fIsSetup = save_state;
-
-  if( mode == kDefine && fIsSetup ) return kOK;
-  fIsSetup = ( mode == kDefine );
+  Int_t ret = InterStageModule::DefineVariables(mode);// exports fDataValid etc.
+  if( ret )
+    return ret;
 
   RVarDef vars[] = {
     { "evtime",  "Time offset for event", "fEvtTime" },

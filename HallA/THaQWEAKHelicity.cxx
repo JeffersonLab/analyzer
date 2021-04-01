@@ -58,7 +58,7 @@ THaQWEAKHelicity::THaQWEAKHelicity()
 //_____________________________________________________________________________
 THaQWEAKHelicity::~THaQWEAKHelicity() 
 {
-  DefineVariables( kDelete );
+  RemoveVariables();
 
   // for( Int_t i = 0; i < NHIST; ++i ) {
   //   delete fHisto[i];
@@ -70,14 +70,13 @@ Int_t THaQWEAKHelicity::DefineVariables( EMode mode )
 {
   // Initialize global variables
 
-  cout << "Called THaQWEAKHelicity::DefineVariables with mode == "
-       << mode << endl;
-
-  if( mode == kDefine && fIsSetup ) return kOK;
-  fIsSetup = ( mode == kDefine );
+  //  cout << "Called THaQWEAKHelicity::DefineVariables with mode == "
+  //       << mode << endl;
 
   // Define standard variables from base class
-  THaHelicityDet::DefineVariables( mode );
+  Int_t ret = THaHelicityDet::DefineVariables( mode );
+  if( ret )
+    return ret;
 
   const RVarDef var[] = {
     { "qrt",      "actual qrt for TIR event",        "fQrt" },
@@ -95,7 +94,7 @@ Int_t THaQWEAKHelicity::DefineVariables( EMode mode )
     { "Timeplus", "Time plus",                       "fRingTimeplus"},
     { nullptr }
   };
-  cout << "now actually defining stuff, prefix = " << fPrefix << endl;
+  //  cout << "now actually defining stuff, prefix = " << fPrefix << endl;
   return DefineVarsFromList( var, mode );
 }
 //_____________________________________________________________________________

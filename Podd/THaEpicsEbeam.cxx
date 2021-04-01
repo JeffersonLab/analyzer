@@ -63,19 +63,13 @@ THaAnalysisObject::EStatus THaEpicsEbeam::Init( const TDatime& run_time )
 //_____________________________________________________________________________
 Int_t THaEpicsEbeam::DefineVariables( EMode mode )
 {
-  // Initialize global variables and lookup table for decoder
-
-  if( mode == kDefine && fIsSetup ) return kOK;
-  fIsSetup = ( mode == kDefine );
+  // Initialize global variables
 
   RVarDef vars[] = {
     { "ecorr", "Beam energy correction (output-input) (GeV)", "fEcorr" },
-    { 0 }
+    { nullptr }
   };
-  DefineVarsFromList( vars, mode );
-
-  // Define the variables for the beam info subobject
-  return DefineVarsFromList( GetRVarDef(), mode );
+  return DefineVarsFromList( vars, mode );
 }
 
 //_____________________________________________________________________________

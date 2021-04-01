@@ -36,7 +36,7 @@ THaADCHelicity::THaADCHelicity( const char* name, const char* description,
 //____________________________________________________________________
 THaADCHelicity::~THaADCHelicity() 
 {
-  DefineVariables( kDelete );
+  RemoveVariables();
 }
 
 //_____________________________________________________________________________
@@ -44,8 +44,9 @@ Int_t THaADCHelicity::DefineVariables( EMode mode )
 {
   // Initialize global variables
 
-  if( mode == kDefine && fIsSetup ) return kOK;
-  THaHelicityDet::DefineVariables( mode );
+  Int_t ret = THaHelicityDet::DefineVariables( mode );
+  if( ret )
+    return ret;
 
   const RVarDef var[] = {
     { "adc",       "Helicity ADC raw data",  "fADC_hdata" },

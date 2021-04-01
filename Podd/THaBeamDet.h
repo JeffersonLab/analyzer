@@ -23,9 +23,9 @@ public:
  protected:
 
   // Only derived classes can construct me
-  explicit THaBeamDet( const char* name, const char* description ="" ,
+  explicit THaBeamDet( const char* name, const char* description = "",
                        THaApparatus* a = nullptr )
-    : THaDetector( name, description , a) {}
+    : THaDetector(name, description, a) {}
 
  public:
   ClassDef(THaBeamDet,0)    // ABC for an detector providing beam information

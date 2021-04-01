@@ -115,8 +115,7 @@ THaTotalShower::~THaTotalShower()
 
   delete fPreShower;
   delete fShower;
-  if( fIsSetup )
-    RemoveVariables();
+  RemoveVariables();
 }
 
 //_____________________________________________________________________________
@@ -180,9 +179,6 @@ Int_t THaTotalShower::ReadDatabase( const TDatime& date )
 Int_t THaTotalShower::DefineVariables( EMode mode )
 {
   // Initialize global variables and lookup table for decoder
-
-  if( mode == kDefine && fIsSetup ) return kOK;
-  fIsSetup = ( mode == kDefine );
 
   // Register global variables
 

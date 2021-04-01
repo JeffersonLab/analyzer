@@ -78,7 +78,7 @@ public:
     void   MakeTDC();
     void   MakeADC();
     // Get logical detector channel from physical one, starting at 0.
-    // For historical reasons, 'first' starts at 1, so
+    // For historical reasons, 'first' starts at 1, so subtract 1 here.
     Int_t  ConvertToLogicalChannel( Int_t chan ) const
     { return first + (reverse ? hi - chan : chan - lo) - 1; }
   };
@@ -232,6 +232,8 @@ public:
 
   ClassDef(THaDetMap,1)   //The standard detector map
 };
+
+using DigitizerHitInfo_t = THaDetMap::Iterator::HitInfo_t;
 
 //________ inlines ____________________________________________________________
 inline THaDetMap::Module* THaDetMap::GetModule( UInt_t i ) const {

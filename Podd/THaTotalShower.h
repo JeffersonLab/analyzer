@@ -25,7 +25,7 @@ public:
   virtual Int_t      Decode( const THaEvData& );
   virtual Int_t      CoarseProcess( TClonesArray& tracks );
   virtual Int_t      FineProcess( TClonesArray& tracks );
-          Float_t    GetE() const           { return fE; }
+          Data_t     GetE() const           { return fE; }
 	  Int_t      GetID() const          { return fID; }
       	  THaShower* GetShower() const      { return fShower; }
 	  THaShower* GetPreShower() const   { return fPreShower; }
@@ -39,11 +39,11 @@ protected:
   THaShower* fPreShower;   // Preshower subdetector
 
   // Parameters
-  Float_t    fMaxDx;       // Maximum dx between shower and preshower centers
-  Float_t    fMaxDy;       // Maximum dx between shower and preshower centers
+  Data_t     fMaxDx;       // Maximum dx between shower and preshower centers
+  Data_t     fMaxDy;       // Maximum dx between shower and preshower centers
 
   // Per event data
-  Float_t    fE;           // Total shower energy
+  Data_t     fE;           // Total shower energy
   Int_t      fID;          // ID of Presh and Shower coincidence
 
   virtual Int_t  ReadDatabase( const TDatime& date );

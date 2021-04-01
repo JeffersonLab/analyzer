@@ -46,7 +46,7 @@ THaTwoarmVertex::~THaTwoarmVertex()
 {
   // Destructor
 
-  DefineVariables( kDelete );
+  RemoveVariables();
 }
 
 //_____________________________________________________________________________
@@ -62,9 +62,6 @@ void THaTwoarmVertex::Clear( Option_t* opt )
 Int_t THaTwoarmVertex::DefineVariables( EMode mode )
 {
   // Define/delete global variables for this module
-
-  if( mode == kDefine && fIsSetup ) return kOK;
-  fIsSetup = ( mode == kDefine );
 
   return DefineVarsFromList( THaVertexModule::GetRVarDef(), mode );
 }

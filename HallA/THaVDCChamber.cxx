@@ -41,8 +41,7 @@ THaVDCChamber::~THaVDCChamber()
 {
   // Destructor. Delete plane objects and point array.
 
-  if( fIsSetup )
-    RemoveVariables();
+  RemoveVariables();
   delete fU;
   delete fV;
   delete fPoints;
@@ -104,10 +103,10 @@ Int_t THaVDCChamber::DefineVariables( EMode mode )
 {
   // initialize global variables
 
-  if( mode == kDefine && fIsSetup ) return kOK;
-  fIsSetup = ( mode == kDefine );
-
   // Register variables in global list
+  Int_t ret = THaSubDetector::DefineVariables(mode);
+  if( ret )
+    return ret;
 
   RVarDef vars[] = {
     { "npt",       "Number of space points", "GetNPoints()" },

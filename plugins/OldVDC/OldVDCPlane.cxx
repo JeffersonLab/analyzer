@@ -274,9 +274,6 @@ Int_t OldVDCPlane::DefineVariables( EMode mode )
 {
   // initialize global variables
 
-  if( mode == kDefine && fIsSetup ) return kOK;
-  fIsSetup = ( mode == kDefine );
-
   // Register variables in global list
 
   RVarDef vars[] = {
@@ -311,8 +308,7 @@ OldVDCPlane::~OldVDCPlane()
 {
   // Destructor.
 
-  if( fIsSetup )
-    RemoveVariables();
+  RemoveVariables();
   delete fWires;
   delete fHits;
   delete fClusters;

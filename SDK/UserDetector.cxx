@@ -46,6 +46,16 @@ UserDetector::~UserDetector()
 {
   // Destructor. Remove variables from global list.
 
+  // Unfortunately, we can't rely on one of the base classes to remove our
+  // variables because of the way virtual functions are resolved in the scope
+  // of destructors.
+  // The following calls THaAnalysisObject::DefineVariablesWrapper(), and
+  // the virtual function call to DefineVariables(kDelete) within that function
+  // resolves to the DefineVariables implementation in this class, which would
+  // not be the case if called from THaAnalysisObject's destructor.
+  // Hence, RemoveVariables() should be called from the destructor of
+  // every class that defines its own global variables through the standard
+  // DefineVariables() mechanism, like this one does.
   RemoveVariables();
 }
 
@@ -212,9 +222,6 @@ Int_t UserDetector::ReadDatabase( const TDatime& date )
 Int_t UserDetector::DefineVariables( EMode mode )
 {
   // Define (or delete) global variables of the detector
-
-  if( mode == kDefine && fIsSetup ) return kOK;
-  fIsSetup = ( mode == kDefine );
 
   RVarDef vars[] = {
     { "nhit",  "Number of hits",  "GetNhits()" },

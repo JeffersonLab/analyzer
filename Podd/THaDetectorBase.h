@@ -8,20 +8,28 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaAnalysisObject.h"
+#include "THaDetMap.h"
 #include "TVector3.h"
-
-class THaDetMap;
+#include "DetectorData.h"
+#include <vector>
+#include <memory>
 
 class THaDetectorBase : public THaAnalysisObject {
 public:
+  using VecDetData_t = std::vector<std::unique_ptr<Podd::DetectorData>>;
+
   virtual ~THaDetectorBase();
 
   THaDetectorBase(); // only for ROOT I/O
 
-  virtual Int_t    Decode( const THaEvData& ) = 0;
+  virtual void     Clear( Option_t* ="" );
+  virtual Int_t    Decode( const THaEvData& );
+  virtual void     Reset( Option_t* opt="" );
 
+  VecDetData_t&    GetDetectorData() { return fDetectorData; }
   THaDetMap*       GetDetMap() const { return fDetMap; }
   Int_t            GetNelem()  const { return fNelem; }
+  Int_t            GetNviews() const { return fNviews; }
   const TVector3&  GetOrigin() const { return fOrigin; }
   const Double_t*  GetSize()   const { return fSize; }
   Double_t         GetXSize()  const { return 2.0*fSize[0]; }
@@ -42,31 +50,48 @@ public:
 			       const char* here = "FillDetMap" );
   void             PrintDetMap( Option_t* opt="") const;
 
-protected:
+  virtual Int_t    GetView( const DigitizerHitInfo_t& hitinfo ) const;
 
+protected:
   // Mapping
   THaDetMap*    fDetMap;    // Hardware channel map for this detector
 
   // Configuration
   Int_t         fNelem;     // Number of detector elements (paddles, mirrors)
+  Int_t         fNviews;    // Number of readouts per element (e.g. L/R side)
 
   // Geometry
-  TVector3      fOrigin;    // Center position of detector (m)
+  TVector3      fOrigin;    // Position of detector (m)
   Double_t      fSize[3];   // Detector size in x,y,z (m) - x,y are half-widths
 
   TVector3      fXax;       // X axis of the detector plane
   TVector3      fYax;       // Y axis of the detector plane
   TVector3      fZax;       // Normal to the detector plane
 
+  // Generic per-event data (optional)
+  VecDetData_t  fDetectorData;
+
   virtual void  DefineAxes( Double_t rotation_angle );
 
+  virtual Int_t DefineVariables( EMode mode = kDefine );
+  virtual Int_t ReadDatabase( const TDatime& date );
   virtual Int_t ReadGeometry( FILE* file, const TDatime& date,
 			      Bool_t required = false );
+
+  // Callbacks from Decode()
+  virtual Int_t    StoreHit( const DigitizerHitInfo_t& hitinfo, Int_t data );
+  virtual OptInt_t LoadData( const THaEvData& evdata,
+                             const DigitizerHitInfo_t& hitinfo );
+  virtual void     PrintDecodedData( const THaEvData& evdata ) const;
+
+  void DebugWarning( const char* here, const char* msg, Int_t evnum );
+  void MultipleHitWarning( const DigitizerHitInfo_t& hitinfo, const char* here );
+  void DataLoadWarning( const DigitizerHitInfo_t& hitinfo, const char* here );
 
   // Only derived classes may construct me
   THaDetectorBase( const char* name, const char* description );
 
-  ClassDef(THaDetectorBase,2)   //ABC for a detector or subdetector
+  ClassDef(THaDetectorBase,3)   //ABC for a detector or subdetector
 };
 
 #endif

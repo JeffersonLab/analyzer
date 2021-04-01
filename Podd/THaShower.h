@@ -8,6 +8,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "THaPidDetector.h"
+#include "DetectorData.h"
 #include <vector>
 
 class TClonesArray;
@@ -17,56 +18,66 @@ class THaShower : public THaPidDetector {
 public:
   explicit THaShower( const char* name, const char* description = "",
                       THaApparatus* a = nullptr );
-  THaShower();
+  THaShower(); // for ROOT I/O
   virtual ~THaShower();
 
+  // THaShower now uses THaDetectorBase::Decode()
   virtual void       Clear( Option_t* ="" );
-  virtual Int_t      Decode( const THaEvData& );
   virtual Int_t      CoarseProcess( TClonesArray& tracks );
   virtual Int_t      FineProcess( TClonesArray& tracks );
+          Int_t      GetMainClusterSize() const { return fClBlk.size(); }
           Int_t      GetNclust() const { return fNclust; }
-          Int_t      GetNhits() const  { return fNhits; }
-          Float_t    GetE() const      { return fE; }
-          Float_t    GetX() const      { return fX; }
-          Float_t    GetY() const      { return fY; }
+          Int_t      GetNhits() const  { return fADCData->GetHitCount(); }
+          Data_t     GetE() const      { return fE; }
+          Data_t     GetX() const      { return fX; }
+          Data_t     GetY() const      { return fY; }
+
+  // Extension of standard ADCData to handle channel mapping
+  class ShowerADCData : public Podd::ADCData {
+  public:
+    ShowerADCData( const char* name, const char* desc, Int_t nelem,
+                   const std::vector<UShort_t>& chanmap )
+      : Podd::ADCData(name,desc,nelem), fChanMap(chanmap) {}
+    Int_t GetLogicalChannel( const DigitizerHitInfo_t& hitinfo ) const override;
+  protected:
+    const std::vector<UShort_t>& fChanMap;
+  };
 
 protected:
 
   // Mapping (see also fDetMap)
-  std::vector< std::vector<UShort_t> > fChanMap; // Logical channel numbers
-                                                 // for each detector map module
+  std::vector<UShort_t> fChanMap; // Map physical -> logical channel numbers
 
   // Configuration
-  Int_t      fNclublk;   // Max. number of blocks composing a cluster
   Int_t      fNrows;     // Number of rows
+  Data_t     fEmin;      // Minimum energy for a cluster center
 
   // Geometry
-  Float_t*   fBlockX;    // [fNelem] x positions (cm) of block centers
-  Float_t*   fBlockY;    // [fNelem] y positions (cm) of block centers
-
-  // Calibration
-  Float_t*   fPed;       // [fNelem] Pedestals for each block
-  Float_t*   fGain;      // [fNelem] Gains for each block
-
-  // Other parameters
-  Float_t    fEmin;      // Minimum energy for a cluster center
+  struct CenterPos {
+    Data_t x;  // x-position of block center (m)
+    Data_t y;  // y-position of block center (m)
+  };
+  std::vector<CenterPos> fBlockPos;  // Block center positions
 
   // Per-event data
-  Int_t      fNhits;     // Number of hits
-  Float_t*   fA;         // [fNelem] Array of ADC amplitudes of blocks
-  Float_t*   fA_p;       // [fNelem] Array of ADC minus pedestal values of blocks
-  Float_t*   fA_c;       // [fNelem] Array of corrected ADC amplitudes of blocks
-  Float_t    fAsum_p;    // Sum of blocks ADC minus pedestal values
-  Float_t    fAsum_c;    // Sum of blocks corrected ADC amplitudes
+  Data_t     fAsum_p;    // Sum of blocks ADC minus pedestal values
+  Data_t     fAsum_c;    // Sum of blocks corrected ADC amplitudes
   Int_t      fNclust;    // Number of clusters
-  Float_t    fE;         // Energy (MeV) of main cluster
-  Float_t    fX;         // x position (cm) of main cluster
-  Float_t    fY;         // y position (cm) of main cluster
-  Int_t      fMult;      // Number of blocks in main cluster
-  Int_t*     fNblk;      // [fNclublk] Numbers of blocks composing main cluster
-  Float_t*   fEblk;      // [fNclublk] Energies of blocks composing main cluster
+  Data_t     fE;         // Energy (MeV) of main cluster
+  Data_t     fX;         // Energy-weighted x position (m) of main cluster
+  Data_t     fY;         // Energy-weighted y position (m) of main cluster
 
-  void           DeleteArrays();
+  struct ClusterBlock {
+    Int_t  n;  // Block number (0..fNelem-1)
+    Data_t E;  // Energy deposit (MeV) for current event
+  };
+  std::vector<ClusterBlock> fClBlk; // Blocks of main cluster
+
+  ShowerADCData* fADCData; // Convenience pointer to ADC data in fDetectorData
+
+  virtual Int_t  StoreHit( const DigitizerHitInfo_t& hitinfo, Int_t data );
+  virtual void   PrintDecodedData( const THaEvData& evdata ) const;
+
   virtual Int_t  ReadDatabase( const TDatime& date );
   virtual Int_t  DefineVariables( EMode mode = kDefine );
 

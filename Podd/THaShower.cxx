@@ -6,12 +6,11 @@
 // (preshower or shower).                                                    //
 // Currently, only the "main" cluster, i.e. cluster with the largest energy  //
 // deposition is considered. Units of measurements are MeV for energy of     //
-// shower and centimeters for coordinates.                                   //
+// shower and meters for coordinates.                                        //
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "THaShower.h"
-#include "THaGlobals.h"
 #include "THaEvData.h"
 #include "THaDetMap.h"
 #include "VarDef.h"
@@ -21,31 +20,36 @@
 #include "TDatime.h"
 #include "TMath.h"
 
-#include <cstring>
 #include <iostream>
 #include <iomanip>
 #include <cassert>
-#include <sstream>
+#include <cstdlib>
 
 using namespace std;
+using namespace Podd;
+
+// Macro for better readability
+#if __cplusplus >= 201402L
+# define MKADCDATA(name,title,nelem,chanmap) make_unique<ShowerADCData>((name),(title),(nelem),(chanmap))
+#else
+# define MKADCDATA(name,title,nelem,chanmap) unique_ptr<ShowerADCData>(new ShowerADCData((name),(title),(nelem),(chanmap)))
+#endif
 
 //_____________________________________________________________________________
 THaShower::THaShower( const char* name, const char* description,
 		      THaApparatus* apparatus ) :
-  THaPidDetector(name,description,apparatus), fNclublk(0), fNrows(0),
-  fBlockX(nullptr), fBlockY(nullptr), fPed(nullptr), fGain(nullptr), fEmin(0),
-  fNhits(0), fA(nullptr), fA_p(nullptr), fA_c(nullptr), fAsum_p(kBig), fAsum_c(kBig),
-  fNclust(0), fE(kBig), fX(kBig), fY(kBig), fMult(0), fNblk(nullptr), fEblk(nullptr)
+  THaPidDetector(name,description,apparatus),
+  fNrows(0), fEmin(0), fAsum_p(kBig), fAsum_c(kBig),
+  fNclust(0), fE(kBig), fX(kBig), fY(kBig), fADCData(nullptr)
 {
   // Constructor
 }
 
 //_____________________________________________________________________________
 THaShower::THaShower() :
-  THaPidDetector(), fNclublk(0), fNrows(0),
-  fBlockX(nullptr), fBlockY(nullptr), fPed(nullptr), fGain(nullptr), fEmin(0),
-  fNhits(0), fA(nullptr), fA_p(nullptr), fA_c(nullptr), fAsum_p(kBig), fAsum_c(kBig),
-  fNclust(0), fE(kBig), fX(kBig), fY(kBig), fMult(0), fNblk(nullptr), fEblk(nullptr)
+  THaPidDetector(),
+  fNrows(0), fEmin(0), fAsum_p(kBig), fAsum_c(kBig),
+  fNclust(0), fE(kBig), fX(kBig), fY(kBig), fADCData(nullptr)
 {
   // Default constructor (for ROOT I/O)
 }
@@ -58,13 +62,19 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
 
   const char* const here = "ReadDatabase";
 
+  VarType kDataType  = std::is_same<Data_t, Float_t>::value ? kFloat  : kDouble;
+  VarType kDataTypeV = std::is_same<Data_t, Float_t>::value ? kFloatV : kDoubleV;
+
   // Read database
+  Int_t err = THaPidDetector::ReadDatabase(date);
+  if( err )
+    return err;
 
   FILE* file = OpenFile( date );
   if( !file ) return kFileError;
 
   // Read fOrigin and fSize (required!)
-  Int_t err = ReadGeometry( file, date, true );
+  err = ReadGeometry( file, date, true );
   if( err ) {
     fclose(file);
     return err;
@@ -72,7 +82,7 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
 
   vector<Int_t> detmap, chanmap;
   vector<Double_t> xy, dxy;
-  Int_t ncols, nrows;
+  Int_t ncols = 0, nrows = 0;
 
   // Read mapping/geometry/configuration parameters
   DBRequest config_request[] = {
@@ -82,7 +92,7 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
     { "nrows",        &nrows,   kInt },
     { "xy",           &xy,      kDoubleV, 2 },  // center pos of block 1
     { "dxdy",         &dxy,     kDoubleV, 2 },  // dx and dy block spacings
-    { "emin",         &fEmin,   kDouble },
+    { "emin",         &fEmin,   kDataType },
     { nullptr }
   };
   err = LoadDB( file, date, config_request, fPrefix );
@@ -107,7 +117,6 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
     } else {
       fNelem = nelem;
       fNrows = nrows;
-      fNclublk = nclbl;
     }
   }
 
@@ -122,37 +131,19 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
       err = kInitError;
     }
   }
-  if( !err ) {
-    if( !chanmap.empty() ) {
-      // If a map is found in the database, ensure it has the correct size
-      Int_t cmapsize = chanmap.size();
-      if( cmapsize != fNelem ) {
-	Error( Here(here), "Channel map size (%d) and number of detector "
-	       "channels (%d) must be equal. Fix database.", cmapsize, fNelem );
-	err = kInitError;
-      }
+  if( !err && !chanmap.empty() ) {
+    // If a map is found in the database, ensure it has the correct size
+    Int_t cmapsize = chanmap.size();
+    if( cmapsize != fNelem ) {
+      Error(Here(here), "Channel map size (%d) and number of detector "
+                        "channels (%d) must be equal. Fix database.", cmapsize, fNelem);
+      err = kInitError;
     }
     if( !err ) {
-      // Set up the new channel map
-      Int_t nmodules = fDetMap->GetSize();
-      assert( nmodules > 0 );
-      fChanMap.resize(nmodules);
-      for( Int_t i=0, k=0; i < nmodules && !err; i++ ) {
-	THaDetMap::Module* module = fDetMap->GetModule(i);
-	Int_t nchan = module->hi - module->lo + 1;
-	if( nchan > 0 ) {
-	  fChanMap.at(i).resize(nchan);
-	  for( Int_t j=0; j<nchan; ++j ) {
-	    assert( k < fNelem );
-	    fChanMap.at(i).at(j) = chanmap.empty() ? k+1 : chanmap[k];
-	    ++k;
-	  }
-	} else {
-	  Error( Here(here), "No channels defined for module %d.", i);
-	  fChanMap.clear();
-	  err = kInitError;
-	}
-      }
+      // Set up the new channel map. The index into the map is the physical
+      // channel (sequence number in the detector map), the value at that index,
+      // the logical channel. If the map is empty, the mapping is 1-1.
+      fChanMap.assign(chanmap.begin(), chanmap.end());
     }
   }
 
@@ -161,55 +152,46 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
     return err;
   }
 
-  // Dimension arrays
-  //FIXME: use a structure!
   UInt_t nval = fNelem;
-  if( !fIsInit ) {
-    // Geometry
-    fBlockX = new Float_t[ nval ];
-    fBlockY = new Float_t[ nval ];
-
-    // Calibrations
-    fPed    = new Float_t[ nval ];
-    fGain   = new Float_t[ nval ];
-
-    // Per-event data
-    fA    = new Float_t[ nval ];
-    fA_p  = new Float_t[ nval ];
-    fA_c  = new Float_t[ nval ];
-    fNblk = new Int_t[ fNclublk ];
-    fEblk = new Float_t[ fNclublk ];
-
-    fIsInit = true;
-  }
+  fBlockPos.clear(); fBlockPos.reserve(nval);
+  fClBlk.clear();    fClBlk.reserve(nclbl);
+  fDetectorData.clear();
+  auto detdata = MKADCDATA(GetPrefixName(), fTitle, nval, fChanMap);
+  fADCData = detdata.get();
+  fDetectorData.emplace_back(std::move(detdata));
+  fIsInit = true;
+  assert( fADCData->GetSize()-nval == 0 );
 
   // Compute block positions
   for( int c=0; c<ncols; c++ ) {
     for( int r=0; r<nrows; r++ ) {
       int k = nrows*c + r;
       // Units are meters
-      fBlockX[k] = xy[0] + r*dxy[0];
-      fBlockY[k] = xy[1] + c*dxy[1];
+      fBlockPos[k].x = xy[0] + r * dxy[0];
+      fBlockPos[k].y = xy[1] + c * dxy[1];
     }
   }
 
   // Read calibration parameters
 
-  // Set DEFAULT values here
-  // Default ADC pedestals (0) and ADC gains (1)
-  memset( fPed, 0, nval*sizeof(fPed[0]) );
-  for( UInt_t i=0; i<nval; ++i ) { fGain[i] = 1.0; }
-
-  // Read ADC pedestals and gains (in order of logical channel number)
+  // Read ADC pedestals and gains
+  // (in order of **logical** channel number = block number)
+  vector<Data_t> ped, gain;
   DBRequest calib_request[] = {
-    { "pedestals",    fPed,   kFloat, nval, true },
-    { "gains",        fGain,  kFloat, nval, true },
+    { "pedestals",    &ped,   kDataTypeV, nval, true },
+    { "gains",        &gain,  kDataTypeV, nval, true },
     { nullptr }
   };
   err = LoadDB( file, date, calib_request, fPrefix );
   fclose(file);
   if( err )
     return err;
+
+  for( UInt_t i = 0; i < nval; ++i ) {
+    auto& calib = fADCData->GetCalib(i);
+    calib.ped   = ped[i];
+    calib.gain  = gain[i];
+  }
 
 #ifdef WITH_DEBUG
   // Debug printout
@@ -223,10 +205,9 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
       { "Channel map",            &chanmap,    kIntV       },
       { "Position of block 1",    &xy,         kDoubleV    },
       { "Block x/y spacings",     &dxy,        kDoubleV    },
-      { "Minimum cluster energy", &fEmin,      kFloat,  1  },
-      { "ADC pedestals",          fPed,        kFloat,  N  },
-      { "ADC pedestals",          fPed,        kFloat,  N  },
-      { "ADC gains",              fGain,       kFloat,  N  },
+      { "Minimum cluster energy", &fEmin,      kDataType,  1  },
+      { "ADC pedestals",          &ped,        kDataTypeV,  N  },
+      { "ADC gains",              &gain,       kDataTypeV,  N  },
       { nullptr }
     };
     DebugPrint( list );
@@ -241,28 +222,21 @@ Int_t THaShower::DefineVariables( EMode mode )
 {
   // Initialize global variables
 
-  if( mode == kDefine && fIsSetup ) return kOK;
-  fIsSetup = ( mode == kDefine );
-
-  // Register variables in global list
+  // Set up standard variables, including the objects in fDetectorData
+  Int_t ret = THaPidDetector::DefineVariables(mode);
+  if( ret )
+    return ret;
 
   RVarDef vars[] = {
-    { "nhit",   "Number of hits",                     "fNhits" },
-    { "a",      "Raw ADC amplitudes",                 "fA" },
-    { "a_p",    "Ped-subtracted ADC amplitudes",      "fA_p" },
-    { "a_c",    "Calibrated ADC amplitudes",          "fA_c" },
     { "asum_p", "Sum of ped-subtracted ADCs",         "fAsum_p" },
     { "asum_c", "Sum of calibrated ADCs",             "fAsum_c" },
     { "nclust", "Number of clusters",                 "fNclust" },
     { "e",      "Energy (MeV) of largest cluster",    "fE" },
-    { "x",      "x-position (cm) of largest cluster", "fX" },
-    { "y",      "y-position (cm) of largest cluster", "fY" },
-    { "mult",   "Multiplicity of largest cluster",    "fMult" },
-    { "nblk",   "Numbers of blocks in main cluster",  "fNblk" },
-    { "eblk",   "Energies of blocks in main cluster", "fEblk" },
-    { "trx",    "x-position of track in det plane",   "fTrackProj.THaTrackProj.fX" },
-    { "try",    "y-position of track in det plane",   "fTrackProj.THaTrackProj.fY" },
-    { "trpath", "TRCS pathlen of track to det plane", "fTrackProj.THaTrackProj.fPathl" },
+    { "x",      "x-position of largest cluster",      "fX" },
+    { "y",      "y-position of largest cluster",      "fY" },
+    { "mult",   "Multiplicity of largest cluster",    "GetMainClusterSize()" },
+    { "nblk",   "Numbers of blocks in main cluster",  "fClBlk.n" },
+    { "eblk",   "Energies of blocks in main cluster", "fClBlk.E" },
     { nullptr }
   };
   return DefineVarsFromList( vars, mode );
@@ -271,29 +245,9 @@ Int_t THaShower::DefineVariables( EMode mode )
 //_____________________________________________________________________________
 THaShower::~THaShower()
 {
-  // Destructor. Removes internal arrays and global variables.
+  // Destructor. Removes global variables.
 
-  if( fIsSetup )
-    RemoveVariables();
-  if( fIsInit )
-    DeleteArrays();
-}
-
-//_____________________________________________________________________________
-void THaShower::DeleteArrays()
-{
-  // Delete member arrays. Internal function used by destructor.
-
-  fChanMap.clear();
-  delete [] fBlockX;  fBlockX  = nullptr;
-  delete [] fBlockY;  fBlockY  = nullptr;
-  delete [] fPed;     fPed     = nullptr;
-  delete [] fGain;    fGain    = nullptr;
-  delete [] fA;       fA       = nullptr;
-  delete [] fA_p;     fA_p     = nullptr;
-  delete [] fA_c;     fA_c     = nullptr;
-  delete [] fNblk;    fNblk    = nullptr;
-  delete [] fEblk;    fEblk    = nullptr;
+  RemoveVariables();
 }
 
 //_____________________________________________________________________________
@@ -302,128 +256,47 @@ void THaShower::Clear( Option_t* opt )
   // Clear event data
 
   THaPidDetector::Clear(opt);
-  fNhits = fNclust = fMult = 0;
-  assert(fIsInit);
-  for( Int_t i=0; i<fNelem; ++i ) {
-    fA[i] = fA_p[i] = fA_c[i] = kBig;
-  }
   fAsum_p = fAsum_c = 0.0;
   fE = fX = fY = kBig;
-  memset( fNblk, 0, fNclublk*sizeof(fNblk[0]) );
-  for( Int_t i=0; i<fNclublk; ++i ) {
-    fEblk[i] = kBig;
-  }
+  fClBlk.clear();
 }
 
 //_____________________________________________________________________________
-Int_t THaShower::Decode( const THaEvData& evdata )
+Int_t THaShower::
+ShowerADCData::GetLogicalChannel( const DigitizerHitInfo_t& hitinfo ) const
 {
-  // Decode shower data, scale the data to energy deposition
-  // ( in MeV ), and copy the data into the following local data structure:
-  //
-  // fNhits           -  Number of hits on shower;
-  // fA[]             -  Array of ADC values of shower blocks;
-  // fA_p[]           -  Array of ADC minus ped values of shower blocks;
-  // fA_c[]           -  Array of corrected ADC values of shower blocks;
-  // fAsum_p          -  Sum of shower blocks ADC minus pedestal values;
-  // fAsum_c          -  Sum of shower blocks corrected ADC values;
+  // Get the sequence number in the detector map
+  Int_t k = ADCData::GetLogicalChannel(hitinfo);
 
-  const char* const here = "Decode";
-
-  // Loop over all modules defined for shower detector
-  bool has_warning = false;
-  Int_t nmodules = fDetMap->GetSize();
-  for( Int_t i = 0; i < nmodules; i++ ) {
-    THaDetMap::Module* d = fDetMap->GetModule( i );
-
-    // Loop over all channels that have a hit.
-    for( Int_t j = 0; j < evdata.GetNumChan( d->crate, d->slot ); j++) {
-
-      Int_t chan = evdata.GetNextChan( d->crate, d->slot, j );
-      if( chan > d->hi || chan < d->lo ) continue;    // Not one of my channels.
-
-      Int_t nhit = evdata.GetNumHits(d->crate, d->slot, chan);
-      if( nhit > 1 || nhit == 0 ) {
-	ostringstream msg;
-	msg << nhit << " hits on " << "ADC channel "
-	    << d->crate << "/" << d->slot << "/" << chan;
-	++fMessages[msg.str()];
-	has_warning = true;
-	if( nhit == 0 ) {
-	  msg << ". Should never happen. Decoder bug. Call expert.";
-	  Warning( Here(here), "Event %d: %s", evdata.GetEvNum(),
-		   msg.str().c_str() );
-	  continue;
-	}
-#ifdef WITH_DEBUG
-	if( fDebug>0 ) {
-	  Warning( Here(here), "Event %d: %s", evdata.GetEvNum(),
-		   msg.str().c_str() );
-	}
-#endif
-      }
-      // Get the data. If multiple hits on a channel, take the first (ADC)
-      Int_t data = evdata.GetData( d->crate, d->slot, chan, 0 );
-
-      Int_t jchan = (d->reverse) ? d->hi - chan : chan-d->lo;
-      if( jchan<0 || jchan>=fNelem ) {
-	Error( Here(here), "Illegal detector channel: %d", jchan );
-	continue;
-      }
-#ifdef NDEBUG
-      Int_t k = fChanMap[i][jchan] - 1;
+  // Translate to logical channel number. Recall that logical channel
+  // numbers in the map start at 1, but array indices need to start at 0,
+  // so we subtract 1.
+  if( !fChanMap.empty() )
+  #ifdef NDEBUG
+    k = fChanMap[k] - 1;
 #else
-      Int_t k = fChanMap.at(i).at(jchan) - 1;
+    k = fChanMap.at(k) - 1;
 #endif
-      if( k<0 || k>=fNelem ) {
-	Error( Here(here), "Bad array index: %d. Your channel map is "
-	       "invalid. Data skipped.", k );
-	continue;
-      }
+  return k;
+}
 
-      // Copy the data and apply calibrations
-      fA[k]   = data;                   // ADC value
-      fA_p[k] = data - fPed[k];         // ADC minus ped
-      fA_c[k] = fA_p[k] * fGain[k];     // ADC corrected
-      if( fA_p[k] > 0.0 )
-	fAsum_p += fA_p[k];             // Sum of ADC minus ped
-      if( fA_c[k] > 0.0 )
-	fAsum_c += fA_c[k];             // Sum of ADC corrected
-      fNhits++;
-    }
-  }
+//_____________________________________________________________________________
+Int_t THaShower::StoreHit( const DigitizerHitInfo_t& hitinfo, Int_t data )
+{
+  // Put decoded frontend data into fDetectorData. Used by Decode().
+  // hitinfo: channel info (crate/slot/channel/hit/type)
+  // data:    data registered in this channel
 
-  if( has_warning )
-    ++fNEventsWithWarnings;
+  THaPidDetector::StoreHit(hitinfo, data);
 
-#ifdef WITH_DEBUG
-  if ( fDebug > 3 ) {
-    cout << endl << "Shower Detector " << GetPrefix() << ":" << endl;
-    int ncol=3;
-    for (int i=0; i<ncol; i++) {
-      cout << "  Block  ADC  ADC_p  ";
-    }
-    cout << endl;
+  // Add channels with signals to the amplitude sums
+  const auto& ADC = fADCData->GetADC(hitinfo);
+  if( ADC.adc_p > 0 )
+    fAsum_p += ADC.adc_p;             // Sum of ADC minus ped
+  if( ADC.adc_c > 0 )
+    fAsum_c += ADC.adc_c;             // Sum of ADC corrected
 
-    for (int i=0; i<(fNelem+ncol-1)/ncol; i++ ) {
-      for (int c=0; c<ncol; c++) {
-	int ind = c*fNelem/ncol+i;
-	if (ind < fNelem) {
-	  cout << "  " << setw(3) << ind+1;
-	  cout << "  "; WriteValue(fA[ind]);
-	  cout << "  "; WriteValue(fA_p[ind]);
-	  cout << "  ";
-	} else {
-	  //	  cout << endl;
-	  break;
-	}
-      }
-      cout << endl;
-    }
-  }
-#endif
-
-  return fNhits;
+  return 0;
 }
 
 //_____________________________________________________________________________
@@ -432,60 +305,58 @@ Int_t THaShower::CoarseProcess( TClonesArray& tracks )
   // Reconstruct Clusters in shower detector and copy the data
   // into the following local data structure:
   //
-  // fNclust        -  Number of clusters in shower;
-  // fE             -  Energy (in MeV) of the "main" cluster;
-  // fX             -  X-coordinate (in cm) of the cluster;
-  // fY             -  Y-coordinate (in cm) of the cluster;
-  // fMult          -  Number of blocks in the cluster;
-  // fNblk[0]...[5] -  Numbers of blocks composing the cluster;
-  // fEblk[0]...[5] -  Energies in blocks composing the cluster;
+  // fNclust        -  Number of clusters in shower
+  // fE             -  Energy (in MeV) of the "main" cluster
+  // fX             -  X-coordinate (in m) of the cluster
+  // fY             -  Y-coordinate (in m) of the cluster
+  // fClBlk         -  Numbers and energies of blocks composing the cluster
   //
   // Only one ("main") cluster, i.e. the cluster with the largest energy
-  // deposition is considered. Units are MeV for energies and cm for
+  // deposition is considered. Units are MeV for energies and meters for
   // coordinates.
 
   fNclust = 0;
+  fClBlk.clear();
+
+  // Find block with maximum energy deposit
   int nmax = -1;
-  double  emax = fEmin;                     // Min threshold of energy in center
-  for ( int  i = 0; i < fNelem; i++) {      // Find the block with max energy:
-    double  ei = fA_c[i];                   // Energy in next block
-    if ( ei > emax) {
+  double emax = fEmin;                      // Min threshold of energy in center
+  for( int i = 0; i < fNelem; i++ ) {       // Find the block with max energy:
+    double ei = fADCData->GetADC(i).adc_c;  // Energy in next block
+    if( ei > 0.5*kBig ) continue;           // Skip invalid data
+    if( ei > emax ) {
       nmax = i;                             // Number of block with max energy
       emax = ei;                            // Max energy per a blocks
     }
   }
   if ( nmax >= 0 ) {
-    short mult = 0, nr, nc, ir, ic, dr, dc;
-    double  sxe = 0, sye = 0;               // Sums of xi*ei and yi*ei
-    nc = nmax/fNrows;                       // Column of the block with max energy
-    nr = nmax%fNrows;                       // Row of the block with max energy
-                                            // Add the block to cluster (center)
-    fNblk[mult]   = nmax;                   // Add number of the block (center)
-    fEblk[mult++] = emax;                   // Add energy in the block (center)
-    sxe = emax * fBlockX[nmax];             // Sum of xi*ei
-    sye = emax * fBlockY[nmax];             // Sum of yi*ei
-    for ( int  i = 0; i < fNelem; i++) {    // Detach surround blocks:
-      double  ei = fA_c[i];                 // Energy in next block
-      if ( ei>0 && i!=nmax ) {              // Some energy out of cluster center
-	ic = i/fNrows;                      // Column of next block
-	ir = i%fNrows;                      // Row of next block
-	dr = nr - ir;                       // Distance on row up to center
-	dc = nc - ic;                       // Distance on column up to center
-	if ( -2<dr&&dr<2&&-2<dc&&dc<2 ) {   // Surround block:
-	                                    // Add block to cluster (surround)
-	  fNblk[mult]   = i;                // Add number of block (surround)
-	  fEblk[mult++] = ei;               // Add energy of block (surround)
-	  sxe  += ei * fBlockX[i];          // Sum of xi*ei of cluster blocks
-	  sye  += ei * fBlockY[i];          // Sum of yi*ei of cluster blocks
-	  emax += ei;                       // Sum of energies in cluster blocks
-	}
+    int nc = nmax/fNrows;                   // Column of the block with max energy
+    int nr = nmax%fNrows;                   // Row of the block with max energy
+
+    fClBlk.push_back( {nmax,emax} );        // Add the block to cluster (center)
+    double sxe = emax * fBlockPos[nmax].x;  // Sum of xi*ei
+    double sye = emax * fBlockPos[nmax].y;  // Sum of yi*ei
+    for( int i = 0; i < fNelem; i++ ) {     // Detach surround blocks:
+      double ei = fADCData->GetADC(i).adc_c;// Energy in next block
+      if( ei > 0.5*kBig ) continue;         // Skip invalid data
+      if( ei > 0 && i != nmax ) {           // Some energy out of cluster center
+        int ic = i / fNrows;                // Column of next block
+        int ir = i % fNrows;                // Row of next block
+        int dr = nr - ir;                   // Distance on row up to center
+        int dc = nc - ic;                   // Distance on column up to center
+        if( -2<dr && dr<2 && -2<dc && dc<2 ) {   // Surround block:
+                                            // Add block to cluster (surround)
+          fClBlk.push_back( {i,ei} );       // Add surround block to cluster
+          sxe += ei * fBlockPos[i].x;       // Sum of xi*ei of cluster blocks
+          sye += ei * fBlockPos[i].y;       // Sum of yi*ei of cluster blocks
+          emax += ei;                       // Sum of energies in cluster blocks
+        }
       }
     }
     fNclust = 1;                            // One ("main") cluster detected
     fE      = emax;                         // Energy (MeV) in "main" cluster
-    fX      = sxe/emax;                     // X coordinate (cm) of the cluster
-    fY      = sye/emax;                     // Y coordinate (cm) of the cluster
-    fMult   = mult;                         // Number of blocks in "main" clust.
+    fX      = sxe/emax;                     // X coordinate (m) of the cluster
+    fY      = sye/emax;                     // Y coordinate (m) of the cluster
   }
 
   // Calculate track projections onto shower plane
@@ -506,6 +377,39 @@ Int_t THaShower::FineProcess( TClonesArray& tracks )
   CalcTrackProj( tracks );
 
   return 0;
+}
+
+//_____________________________________________________________________________
+void THaShower::PrintDecodedData( const THaEvData& evdata ) const
+{
+  // Print decoded data (for debugging). Called form Decode()
+
+  cout << "Event " << evdata.GetEvNum() << "   Trigger " << evdata.GetEvType()
+       << " Shower Detector " << GetPrefix() << endl;
+  int ncol = 3;
+  for( int i = 0; i < ncol; i++ ) {
+    cout << "  Block  ADC  ADC_p  ";
+  }
+  cout << endl;
+
+  for( int i = 0; i < (fNelem + ncol - 1) / ncol; i++ ) {
+    for( int c = 0; c < ncol; c++ ) {
+      int ind = c * fNelem / ncol + i;
+      if( ind < fNelem ) {
+        const auto& ADC = fADCData->GetADC(ind);
+        cout << "  " << setw(3) << ind + 1;
+        cout << "  ";
+        WriteValue(ADC.adc);
+        cout << "  ";
+        WriteValue(ADC.adc_p);
+        cout << "  ";
+      } else {
+//	  cout << endl;
+        break;
+      }
+    }
+    cout << endl;
+  }
 }
 
 //_____________________________________________________________________________

@@ -34,7 +34,7 @@ THaBeamEloss::~THaBeamEloss()
 {
   // Destructor
 
-  DefineVariables( kDelete );
+  RemoveVariables();
 }
 
 //_____________________________________________________________________________
@@ -113,8 +113,9 @@ Int_t THaBeamEloss::DefineVariables( EMode mode )
 {
   // Define/delete global variables.
 
-  if( mode == kDefine && fIsSetup ) return kOK;
-  THaElossCorrection::DefineVariables( mode );
+  Int_t ret = THaElossCorrection::DefineVariables( mode );
+  if( ret )
+    return ret;
 
   // Define the variables for the beam info subobject
   return DefineVarsFromList( THaBeamModule::GetRVarDef(), mode );

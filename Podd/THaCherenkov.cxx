@@ -16,23 +16,25 @@
 #include "TDatime.h"
 #include "TMath.h"
 
-#include <cstring>
 #include <cstdlib>
-#include <vector>
 #include <cassert>
 #include <iostream>
 #include <iomanip>
-#include <sstream>
 
 using namespace std;
+using namespace Podd;
+
+// Macro for better readability
+#if __cplusplus >= 201402L
+# define MKPMTDATA(name,title,nelem) make_unique<PMTData>((name),(title),(nelem))
+#else
+# define MKPMTDATA(name,title,nelem) unique_ptr<PMTData>(new PMTData((name),(title),(nelem)))
+#endif
 
 //_____________________________________________________________________________
 THaCherenkov::THaCherenkov( const char* name, const char* description,
                             THaApparatus* apparatus )
-  : THaPidDetector(name,description,apparatus), fTdc2T(0),
-    fOff(nullptr), fPed(nullptr), fGain(nullptr),
-    fNThit(0), fT(nullptr), fT_c(nullptr),
-    fNAhit(0), fA(nullptr), fA_p(nullptr), fA_c(nullptr),
+  : THaPidDetector(name,description,apparatus), fPMTData(nullptr),
     fASUM_p(kBig), fASUM_c(kBig)
 {
   // Constructor
@@ -40,11 +42,7 @@ THaCherenkov::THaCherenkov( const char* name, const char* description,
 
 //_____________________________________________________________________________
 THaCherenkov::THaCherenkov()
-  : THaPidDetector(), fTdc2T(0),
-    fOff(nullptr), fPed(nullptr), fGain(nullptr),
-    fNThit(0), fT(nullptr), fT_c(nullptr),
-    fNAhit(0), fA(nullptr), fA_p(nullptr), fA_c(nullptr),
-    fASUM_p(kBig), fASUM_c(kBig)
+  : THaPidDetector(), fPMTData(nullptr), fASUM_p(kBig), fASUM_c(kBig)
 {
   // Default constructor (for ROOT I/O)
 }
@@ -57,29 +55,37 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
 
   const char* const here = "ReadDatabase";
 
+  VarType kDataType  = std::is_same<Data_t, Float_t>::value ? kFloat  : kDouble;
+  VarType kDataTypeV = std::is_same<Data_t, Float_t>::value ? kFloatV : kDoubleV;
+
   // Read database
+  Int_t err = THaPidDetector::ReadDatabase(date);
+  if( err )
+    return err;
 
   FILE* file = OpenFile( date );
   if( !file ) return kFileError;
 
   // Read fOrigin and fSize (required!)
-  Int_t err = ReadGeometry( file, date, true );
+  err = ReadGeometry( file, date, true );
   if( err ) {
     fclose(file);
     return err;
   }
 
+  enum { kModeUnset = -255, kCommonStop = 0, kCommonStart = 1 };
+
   vector<Int_t> detmap;
-  Int_t nelem;
-  Int_t tdc_mode = -255; // indicates unset
-  fTdc2T = 0.5e-9; // TDC resolution (s/channel)
+  Int_t nelem = 0;
+  Int_t tdc_mode = kModeUnset;
+  Data_t tdc2t = 5e-10;  // TDC resolution (s/channel)
 
   // Read configuration parameters
   DBRequest config_request[] = {
     { "detmap",       &detmap,   kIntV },
     { "npmt",         &nelem,    kInt  },
-    { "tdc.res",      &fTdc2T,   kDouble, 0, true }, // optional to support old DBs
-    { "tdc.cmnstart", &tdc_mode, kInt, 0, true },
+    { "tdc.res",      &tdc2t,    kDataType, 0, true }, // optional to support old DBs
+    { "tdc.cmnstart", &tdc_mode, kInt,      0, true },
     { nullptr }
   };
   err = LoadDB( file, date, config_request, fPrefix );
@@ -112,22 +118,35 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
     err = kInitError;
   }
 
-  // Set TDCs to common start mode, if set
-  if( tdc_mode != -255 ) {
-    // TDC mode was specified. Configure all TDC modules accordingly
-    Int_t nmodules = fDetMap->GetSize();
-    for( Int_t i = 0; i < nmodules; i++ ) {
-      THaDetMap::Module* d = fDetMap->GetModule(i);
-      if( d->model ? d->IsTDC() : i>=nmodules/2 ) {
-	if( !d->model ) d->MakeTDC();
-	d->SetTDCMode(tdc_mode);
-      }
+  // Deal with the TDC mode (common stop (default) vs. common start).
+  if( tdc_mode == kModeUnset ) {
+    // TDC mode not specified. Mimic the behavior of previous analyzer versions.
+    // TDCs are always common stop unless c.start mode is explicitly requested.
+    tdc_mode = kCommonStop;
+  } else {
+    // TDC mode IS explicitly specified
+    if( tdc_mode != kCommonStop && tdc2t < 0.0 ) {
+      // A negative TDC resolution, tdc2t, in a legacy databases indicates
+      // common stop mode. Warn user if tdc_mode and tdc2t are inconsistent.
+      // tdc_mode takes preference.
+      Warning(Here(here), "Negative TDC resolution = %lf converted to "
+                          "positive since TDC mode explicitly set to common start.",tdc2t);
     }
-    // If the TDC mode was set explicitly, assume that negative TDC
-    // resolutions are database errors
-    Warning( Here(here), "Negative TDC resolution = %lf converted to "
-	     "positive since TDC mode explicitly set.", fTdc2T );
-    fTdc2T = TMath::Abs(fTdc2T);
+  }
+  assert( tdc_mode != kModeUnset );
+  // Ensure tdc2t is positive. The tdc_mode flag handles the sign now.
+  tdc2t = TMath::Abs(tdc2t);
+
+  // Set module capability flags for legacy databases without model info
+  Int_t nmodules = fDetMap->GetSize();
+  for( Int_t i = 0; i < nmodules; i++ ) {
+    THaDetMap::Module* d = fDetMap->GetModule(i);
+    if( !d->model ) {
+      if( i < nmodules/2 ) d->MakeADC(); else d->MakeTDC();
+    }
+    if( d->IsTDC() ) {
+      d->SetTDCMode(tdc_mode);
+    }
   }
 
   if( err ) {
@@ -135,39 +154,22 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
     return err;
   }
 
-  // Dimension arrays
-  //FIXME: use a structure!
   UInt_t nval = fNelem;
-  if( !fIsInit ) {
-    // Calibration data
-    fOff  = new Float_t[ nval ];
-    fPed  = new Float_t[ nval ];
-    fGain = new Float_t[ nval ];
-
-    // Per-event data
-    fT    = new Float_t[ nval ];
-    fT_c  = new Float_t[ nval ];
-    fA    = new Float_t[ nval ];
-    fA_p  = new Float_t[ nval ];
-    fA_c  = new Float_t[ nval ];
-
+  if( !fIsInit || !fPMTData ) {
+    fDetectorData.clear();
+    auto detdata = MKPMTDATA(GetPrefixName(), fTitle, nval);
+    fPMTData = detdata.get();
+    fDetectorData.emplace_back(std::move(detdata));
     fIsInit = true;
   }
+  assert(fPMTData->GetSize() - nval == 0);
 
   // Read calibration parameters
-
-  // Set DEFAULT values here
-  // Default TDC offsets (0), ADC pedestals (0) and ADC gains (1)
-  memset( fOff, 0, nval*sizeof(fOff[0]) );
-  memset( fPed, 0, nval*sizeof(fPed[0]) );
-  for( UInt_t i=0; i<nval; ++i ) {
-    fGain[i] = 1.0;
-  }
-
+  vector<Data_t> off, ped, gain;
   DBRequest calib_request[] = {
-    { "tdc.offsets",      fOff,         kFloat, nval, true },
-    { "adc.pedestals",    fPed,         kFloat, nval, true },
-    { "adc.gains",        fGain,        kFloat, nval, true },
+    { "tdc.offsets",    &off,  kDataTypeV, nval, true },
+    { "adc.pedestals",  &ped,  kDataTypeV, nval, true },
+    { "adc.gains",      &gain, kDataTypeV, nval, true },
     { nullptr }
   };
   err = LoadDB( file, date, calib_request, fPrefix );
@@ -175,18 +177,26 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
   if( err )
     return err;
 
+  for( UInt_t i = 0; i < nval; ++i ) {
+    auto& calib = fPMTData->GetCalib(i);
+    calib.tdc2t = tdc2t;
+    calib.off   = off[i];
+    calib.ped   = ped[i];
+    calib.gain  = gain[i];
+  }
+
 #ifdef WITH_DEBUG
   // Debug printout
   if ( fDebug > 2 ) {
     const auto N = static_cast<UInt_t>(fNelem);
     Double_t pos[3]; fOrigin.GetXYZ(pos);
     DBRequest list[] = {
-      { "Number of mirrors", &fNelem,     kInt       },
-      { "Detector position", pos,         kDouble, 3 },
-      { "Detector size",     fSize,       kDouble, 3 },
-      { "TDC offsets",       fOff,        kFloat,  N },
-      { "ADC pedestals",     fPed,        kFloat,  N },
-      { "ADC gains",         fGain,       kFloat,  N },
+      { "Number of mirrors", &fNelem, kInt       },
+      { "Detector position", pos,     kDouble, 3 },
+      { "Detector size",     fSize,   kDouble, 3 },
+      { "TDC offsets",       &off,    kDataTypeV,  N },
+      { "ADC pedestals",     &ped,    kDataTypeV,  N },
+      { "ADC gains",         &gain,   kDataTypeV,  N },
       { nullptr }
     };
     DebugPrint( list );
@@ -201,25 +211,17 @@ Int_t THaCherenkov::DefineVariables( EMode mode )
 {
   // Initialize global variables
 
-  if( mode == kDefine && fIsSetup ) return kOK;
-  fIsSetup = ( mode == kDefine );
+  // Set up standard variables, including objects in fDetectorData
+  Int_t ret = THaPidDetector::DefineVariables(mode);
+  if( ret )
+    return ret;
 
   RVarDef vars[] = {
-    { "nthit",  "Number of PMTs with valid TDC",     "fNThit" },
-    { "nahit",  "Number of PMTs with ADC signal",    "fNAhit" },
-    { "t",      "Raw TDC values",                    "fT" },
-    { "t_c",    "Calibrated TDC times (s)",          "fT_c" },
-    { "a",      "Raw ADC values",                    "fA" },
-    { "a_p",    "Pedestal-subtracted ADC values ",   "fA_p" },
-    { "a_c",    "Gain-corrected ADC values",         "fA_c" },
-    { "asum_p", "Sum of ADC minus pedestal values",  "fASUM_p" },
-    { "asum_c", "Sum of corrected ADC amplitudes",   "fASUM_c" },
-    { "trx",    "x-position of track in det plane",  "fTrackProj.THaTrackProj.fX" },
-    { "try",    "y-position of track in det plane",  "fTrackProj.THaTrackProj.fY" },
-    { "trpath", "TRCS pathlen of track to det plane","fTrackProj.THaTrackProj.fPathl" },
-    { nullptr }
+    {"asum_p", "Sum of ADC minus pedestal values",   "fASUM_p"},
+    {"asum_c", "Sum of corrected ADC amplitudes",    "fASUM_c"},
+    {nullptr}
   };
-  return DefineVarsFromList( vars, mode );
+  return DefineVarsFromList(vars, mode);
 }
 
 //_____________________________________________________________________________
@@ -227,26 +229,7 @@ THaCherenkov::~THaCherenkov()
 {
   // Destructor. Remove variables from global list.
 
-  if( fIsSetup )
-    RemoveVariables();
-  if( fIsInit )
-    DeleteArrays();
-}
-
-//_____________________________________________________________________________
-void THaCherenkov::DeleteArrays()
-{
-  // Delete member arrays. Internal function used by destructor.
-
-  delete [] fA_c;    fA_c    = nullptr;
-  delete [] fA_p;    fA_p    = nullptr;
-  delete [] fA;      fA      = nullptr;
-  delete [] fT_c;    fT_c    = nullptr;
-  delete [] fT;      fT      = nullptr;
-
-  delete [] fGain;   fGain   = nullptr;
-  delete [] fPed;    fPed    = nullptr;
-  delete [] fOff;    fOff    = nullptr;
+  RemoveVariables();
 }
 
 //_____________________________________________________________________________
@@ -255,130 +238,26 @@ void THaCherenkov::Clear( Option_t* opt )
   // Clear event data
 
   THaPidDetector::Clear(opt);
-  fNThit = fNAhit = 0;
-  assert(fIsInit);
-  for( Int_t i=0; i<fNelem; ++i ) {
-    fT[i] = fT_c[i] = fA[i] = fA_p[i] = fA_c[i] = kBig;
-  }
-  fASUM_p = fASUM_c = 0.0;
+  fASUM_p = fASUM_c = 0;
 }
 
 //_____________________________________________________________________________
-Int_t THaCherenkov::Decode( const THaEvData& evdata )
+Int_t THaCherenkov::StoreHit( const DigitizerHitInfo_t& hitinfo, Int_t data )
 {
-  // Decode Cherenkov data, correct TDC times and ADC amplitudes, and copy
-  // the data into the local data members.
-  // This implementation assumes that the first half of the detector map
-  // entries corresponds to ADCs, and the second half, to TDCs.
+  // Put decoded frontend data into fDetectorData. Used by Decode().
+  // hitinfo: channel info (crate/slot/channel/hit/type)
+  // data:    data registered in this channel
 
-  const char* const here = "Decode";
+  THaPidDetector::StoreHit(hitinfo, data);
 
-  // Loop over all modules defined for Cherenkov detector
-  bool has_warning = false;
-  for( Int_t i = 0; i < fDetMap->GetSize(); i++ ) {
-    THaDetMap::Module* d = fDetMap->GetModule( i );
-    bool adc = (d->model ? d->IsADC() : i < fDetMap->GetSize()/2 );
-    bool not_common_stop_tdc = (adc || d->IsCommonStart());
+  // Add channels with signals to the amplitude sums
+  const auto& PMT = fPMTData->GetPMT(hitinfo);
+  if( PMT.adc_p > 0 )
+    fASUM_p += PMT.adc_p;             // Sum of ADC minus ped
+  if( PMT.adc_c > 0 )
+    fASUM_c += PMT.adc_c;             // Sum of ADC corrected
 
-    // Loop over all channels that have a hit.
-    for( Int_t j = 0; j < evdata.GetNumChan( d->crate, d->slot ); j++) {
-
-      Int_t chan = evdata.GetNextChan( d->crate, d->slot, j );
-      if( chan < d->lo || chan > d->hi ) continue;     // Not one of my channels
-
-      Int_t nhit = evdata.GetNumHits(d->crate, d->slot, chan);
-      if( nhit > 1 || nhit == 0 ) {
-	ostringstream msg;
-	msg << nhit << " hits on " << (adc ? "ADC" : "TDC")
-	    << " channel " << d->crate << "/" << d->slot << "/" << chan;
-	++fMessages[msg.str()];
-	has_warning = true;
-	if( nhit == 0 ) {
-	  msg << ". Should never happen. Decoder bug. Call expert.";
-	  Warning( Here(here), "Event %d: %s", evdata.GetEvNum(),
-		   msg.str().c_str() );
-	  continue;
-	}
-#ifdef WITH_DEBUG
-	if( fDebug>0 ) {
-	  Warning( Here(here), "Event %d: %s", evdata.GetEvNum(),
-		   msg.str().c_str() );
-	}
-#endif
-      }
-
-      // Get the data. If multiple hits on a TDC channel, take
-      // either first or last hit, depending on TDC mode
-      assert( nhit>0 );
-      Int_t ihit = ( not_common_stop_tdc ) ? 0 : nhit-1;
-      Int_t data = evdata.GetData( d->crate, d->slot, chan, ihit );
-
-      // Get the detector channel number, starting at 0
-      Int_t k = d->first + ((d->reverse) ? d->hi - chan : chan - d->lo) - 1;
-
-      if( k<0 || k>= fNelem ) {
-	Error( Here(here), "Illegal detector channel: %d", k );
-        continue;
-      }
-
-      // Copy the data to the local variables.
-      if ( adc ) {
-	fA[k]   = data;
-	fA_p[k] = data - fPed[k];
-	fA_c[k] = fA_p[k] * fGain[k];
-	// only add channels with signals to the sums
-	if( fA_p[k] > 0.0 )
-	  fASUM_p += fA_p[k];
-	if( fA_c[k] > 0.0 )
-	  fASUM_c += fA_c[k];
-	fNAhit++;
-      } else {
-	fT[k]   = data;
-	fT_c[k] = (data - fOff[k]) * fTdc2T;
-	if( fTdc2T > 0.0 && !not_common_stop_tdc ) {
-	  // For common stop TDCs, time is negatively correlated to raw data
-	  // time = (offset-data)*res, so reverse the sign.
-	  // Assume that a negative TDC resolution indicates common stop mode
-	  // as well, so the sign flip has already been applied.
-	  fT_c[k] *= -1.0;
-	}
-	fNThit++;
-      }
-    }
-  }
-
-  if( has_warning )
-    ++fNEventsWithWarnings;
-
-#ifdef WITH_DEBUG
-  if ( fDebug > 3 ) {
-    cout << endl << "Cherenkov " << GetPrefix() << ":" << endl;
-    int ncol=3;
-    for (int i=0; i<ncol; i++) {
-      cout << "  Mirror TDC   ADC  ADC_p  ";
-    }
-    cout << endl;
-
-    for (int i=0; i<(fNelem+ncol-1)/ncol; i++ ) {
-      for (int c=0; c<ncol; c++) {
-	int ind = c*fNelem/ncol+i;
-	if (ind < fNelem) {
-	  cout << "  " << setw(3) << ind+1;
-	  cout << "  "; WriteValue(fT[ind]);
-	  cout << "  "; WriteValue(fA[ind]);
-	  cout << "  "; WriteValue(fA_p[ind]);
-	  cout << "  ";
-	} else {
-	  //	  cout << endl;
-	  break;
-	}
-      }
-      cout << endl;
-    }
-  }
-#endif
-
-  return fNThit;
+  return 0;
 }
 
 //_____________________________________________________________________________
@@ -403,6 +282,39 @@ Int_t THaCherenkov::FineProcess( TClonesArray& tracks )
   CalcTrackProj( tracks );
 
   return 0;
+}
+
+//_____________________________________________________________________________
+void THaCherenkov::PrintDecodedData( const THaEvData& evdata ) const
+{
+  // Print decoded data (for debugging). Called form Decode()
+
+//  cout << endl << endl;
+  cout << "Event " << evdata.GetEvNum() << "   Trigger " << evdata.GetEvType()
+       << " Cherenkov " << GetPrefix() << endl;
+  int ncol=3;
+  for (int i=0; i<ncol; i++) {
+    cout << "  Mirror TDC   ADC  ADC_p  ";
+  }
+  cout << endl;
+
+  for (int i=0; i<(fNelem+ncol-1)/ncol; i++ ) {
+    for (int c=0; c<ncol; c++) {
+      int ind = c*fNelem/ncol+i;
+      if (ind < fNelem) {
+        const auto& PMT = fPMTData->GetPMT(ind);
+        cout << "  " << setw(3) << ind+1;
+        cout << "  "; WriteValue(PMT.tdc);
+        cout << "  "; WriteValue(PMT.adc);
+        cout << "  "; WriteValue(PMT.adc_p);
+        cout << "  ";
+      } else {
+        //	  cout << endl;
+        break;
+      }
+    }
+    cout << endl;
+  }
 }
 
 //_____________________________________________________________________________

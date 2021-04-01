@@ -7,21 +7,24 @@ set(LIBNAME HallA)
 #----------------------------------------------------------------------------
 # Sources and headers
 set(src
-  THaADCHelicity.cxx         THaDecData.cxx              THaG0Helicity.cxx
-  THaG0HelicityReader.cxx    THaHelicity.cxx             THaHRS.cxx
-  THaQWEAKHelicity.cxx       THaQWEAKHelicityReader.cxx  THaS2CoincTime.cxx
-  THaVDCAnalyticTTDConv.cxx  THaVDCChamber.cxx           THaVDCCluster.cxx
-  THaVDC.cxx                 THaVDCHit.cxx               THaVDCPlane.cxx
-  THaVDCPoint.cxx            THaVDCPointPair.cxx         THaVDCTimeToDistConv.cxx
-  THaVDCTrackID.cxx          THaVDCWire.cxx              TrigBitLoc.cxx
-  VDCeff.cxx                 TwoarmVDCTimeCorrection.cxx
+  FADCData.cxx                 FadcBPM.cxx                  FadcCherenkov.cxx
+  FadcScintillator.cxx         FadcShower.cxx               THaADCHelicity.cxx
+  THaDecData.cxx               THaG0Helicity.cxx            THaG0HelicityReader.cxx
+  THaHRS.cxx                   THaHelicity.cxx              THaQWEAKHelicity.cxx
+  THaQWEAKHelicityReader.cxx   THaS2CoincTime.cxx           THaVDC.cxx
+  THaVDCAnalyticTTDConv.cxx    THaVDCChamber.cxx            THaVDCCluster.cxx
+  THaVDCHit.cxx                THaVDCPlane.cxx              THaVDCPoint.cxx
+  THaVDCPointPair.cxx          THaVDCTimeToDistConv.cxx     THaVDCTrackID.cxx
+  THaVDCWire.cxx               TrigBitLoc.cxx               TwoarmVDCTimeCorrection.cxx
+  VDCeff.cxx
   )
 
 string(REPLACE .cxx .h headers "${src}")
+set(allheaders ${headers})
 
 #----------------------------------------------------------------------------
 # libHallA
-add_library(${LIBNAME} SHARED ${src} ${headers} ${LIBNAME}Dict.cxx)
+add_library(${LIBNAME} SHARED ${src} ${allheaders} ${LIBNAME}Dict.cxx)
 add_library(${PROJECT_NAME}::${LIBNAME} ALIAS ${LIBNAME})
 
 target_include_directories(${LIBNAME}
@@ -57,7 +60,7 @@ install(TARGETS ${LIBNAME}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   )
-install(FILES ${headers} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(FILES ${allheaders} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 #----------------------------------------------------------------------------
 # libHallADict

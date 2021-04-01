@@ -10,12 +10,10 @@
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "Rtypes.h"
+#include "DataType.h"
 #include <vector>
 
 namespace VDC {
-
-  extern const Double_t kBig;
 
   class TimeToDistConv {
 

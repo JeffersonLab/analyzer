@@ -16,7 +16,6 @@
 #include "VarDef.h"
 #include "VarType.h"
 #include "TMath.h"
-#include <iostream>
 
 using namespace std;
 
@@ -34,7 +33,6 @@ THaRaster::THaRaster( const char* name, const char* description,
   fRaw2Pos[0].ResizeTo(NPOS,NBPM);
   fRaw2Pos[1].ResizeTo(NPOS,NBPM);
   fRaw2Pos[2].ResizeTo(NPOS,NBPM);
-
 }
 
 
@@ -56,18 +54,18 @@ Int_t THaRaster::ReadDatabase( const TDatime& date )
     return kInitError;
 
   // fOrigin.SetXYZ(0,0,0);
-  Int_t err = kOK;// = ReadGeometry( file, date );
+  //Int_t err = ReadGeometry( file, date );
 
-  if( !err ) {
-    memset( zpos, 0, sizeof(zpos) );
-    // Read configuration parameters
-    DBRequest config_request[] = {
-      { "detmap",   &detmap,  kIntV },
-      { "zpos",     zpos,     kDouble, NPOS, 1 },
-      { 0 }
-    };
-    err = LoadDB( file, date, config_request, fPrefix );
-  }
+//  if( !err ) {
+  memset(zpos, 0, sizeof(zpos));
+  // Read configuration parameters
+  DBRequest config_request[] = {
+    {"detmap", &detmap, kIntV},
+    {"zpos",   zpos,    kDouble, NPOS, true},
+    {nullptr}
+  };
+  Int_t err = LoadDB(file, date, config_request, fPrefix);
+//  }
 
   UInt_t flags = THaDetMap::kFillLogicalChannel | THaDetMap::kFillModel;
   if( !err && FillDetMap(detmap, flags, here) <= 0 ) {
@@ -84,12 +82,12 @@ Int_t THaRaster::ReadDatabase( const TDatime& date )
 
     DBRequest calib_request[] = {
       { "freqs",      freq,     kDouble, NBPM },
-      { "rast_peds",  rped,     kDouble, NBPM, 1 },
-      { "slope_peds", sped,     kDouble, NBPM, 1 },
+      { "rast_peds",  rped,     kDouble, NBPM, true },
+      { "slope_peds", sped,     kDouble, NBPM, true },
       { "raw2posA",   raw2posA, kDouble, NBPM*NPOS },
       { "raw2posB",   raw2posB, kDouble, NBPM*NPOS },
       { "raw2posT",   raw2posT, kDouble, NBPM*NPOS },
-      { 0 }
+      { nullptr }
     };
     err = LoadDB( file, date, calib_request, fPrefix );
   }
@@ -130,9 +128,6 @@ Int_t THaRaster::DefineVariables( EMode mode )
 {
   // Initialize global variables and lookup table for decoder
 
-  if( mode == kDefine && fIsSetup ) return kOK;
-  fIsSetup = ( mode == kDefine );
-
   // Register variables in global list
   
   RVarDef vars[] = {
@@ -152,11 +147,10 @@ Int_t THaRaster::DefineVariables( EMode mode )
     { "target.dir.x", "reconstructed x-component of beam direction", "fDirection.fX"},
     { "target.dir.y", "reconstructed y-component of beam direction", "fDirection.fY"},
     { "target.dir.z", "reconstructed z-component of beam direction", "fDirection.fZ"},
-    { 0 }
+    { nullptr }
   };
     
   return DefineVarsFromList( vars, mode );
-
 }
 
 //_____________________________________________________________________________
@@ -164,9 +158,7 @@ THaRaster::~THaRaster()
 {
   // Destructor. Remove variables from global list.
 
-  if( fIsSetup )
-    RemoveVariables();
-
+  RemoveVariables();
 }
 
 //_____________________________________________________________________________
@@ -188,7 +180,6 @@ void THaRaster::Clear( Option_t* opt )
 //_____________________________________________________________________________
 Int_t THaRaster::Decode( const THaEvData& evdata )
 {
-
   // clears the event structure
   // loops over all modules defined in the detector map
   // copies raw data into local variables
@@ -219,10 +210,7 @@ Int_t THaRaster::Decode( const THaEvData& evdata )
 	  Warning( Here(here), "Illegal detector channel: %d", k );
 	}
       }
-
-
     }
-
     chancnt+=d->hi-d->lo+1;
   }
 
@@ -235,11 +223,10 @@ Int_t THaRaster::Decode( const THaEvData& evdata )
 
 //____________________________________________________
 
-Int_t THaRaster::Process( )
+Int_t THaRaster::Process()
 {
+  for( UInt_t i = 0; i < NPOS; i++ ) {
 
-  for ( UInt_t i = 0; i<NPOS; i++) {
-    
     //      fPosition[i] = fRaw2Pos[i]*fRawPos+fPosOff[i] ;
     //    this is how i wish it would look like,
     //    but unluckily multiplications between tmatrix and tvector
@@ -247,16 +234,16 @@ Int_t THaRaster::Process( )
     //    so i have to do it by hand instead ):
 
     TVectorD dum(fRawPos);
-    dum*=fRaw2Pos[i];
-    fPosition[i].SetXYZ( dum(0)+fPosOff[i](0),
-			 dum(1)+fPosOff[i](1),
-			 dum(2)+fPosOff[i](2)  );
+    dum *= fRaw2Pos[i];
+    fPosition[i].SetXYZ(dum(0) + fPosOff[i](0),
+                        dum(1) + fPosOff[i](1),
+                        dum(2) + fPosOff[i](2));
 
   }
-  
+
   fDirection = fPosition[1] - fPosition[0];
-  
-  return 0 ;
+
+  return 0;
 }
 
 

@@ -90,9 +90,6 @@ Int_t UserApparatus::DefineVariables( EMode mode )
   // Define/delete the global variables for this apparatus.
   // Typically these are results computed in Reconstruct().
 
-  if( mode == kDefine && fIsSetup ) return kOK;
-  fIsSetup = ( mode == kDefine );
-
   RVarDef vars[] = {
     { "ntot", "Total number of hits", "fNtotal" },
     { nullptr }

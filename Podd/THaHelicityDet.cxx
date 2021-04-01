@@ -25,6 +25,7 @@ THaHelicityDet::THaHelicityDet( const char* name, const char* description ,
 THaHelicityDet::~THaHelicityDet()
 {
   // Destructor
+  RemoveVariables();
 }
 
 //_____________________________________________________________________________
@@ -32,12 +33,9 @@ Int_t THaHelicityDet::DefineVariables( EMode mode )
 {
   // Initialize global variables
 
-  if( mode == kDefine && fIsSetup ) return kOK;
-  fIsSetup = ( mode == kDefine );
-
   const RVarDef var[] = {
     { "helicity", "Beam helicity",  "fHelicity" },
-    { 0 }
+    { nullptr }
   };
   return DefineVarsFromList( var, mode );
 }

@@ -1,4 +1,3 @@
-
 #ifndef Podd_THaVarList_h_
 #define Podd_THaVarList_h_
 
@@ -179,11 +178,12 @@ public:
   virtual Int_t    DefineVariables( const VarDef* list, 
 				    const char* prefix="",
 				    const char* caller="" );
-  virtual Int_t    DefineVariables( const RVarDef* list, 
-				    const TObject* obj,
-				    const char* prefix="",
-				    const char* caller="",
-				    const char* def_prefix="" );
+  virtual Int_t    DefineVariables( const RVarDef* list,
+                                    const TObject* obj,
+                                    const char* prefix = "",
+                                    const char* caller = "",
+                                    const char* def_prefix = "",
+                                    const char* comment_subst = "");
   virtual THaVar*  Find( const char* name ) const;
   virtual void     PrintFull(Option_t *opt="") const;
   virtual Int_t    RemoveName( const char* name );

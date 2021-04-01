@@ -56,11 +56,26 @@ THaVDCPlane::THaVDCPlane( const char* name, const char* description,
   fNHits(0), fNWiresHit(0), fNpass(0), fMinClustSize(0),
   fMaxClustSpan(kMaxInt), fNMaxGap(0), fMinTime(0), fMaxTime(kMaxInt),
   fMaxThits(0), fMinTdiff(0), fMaxTdiff(kBig), fTDCRes(0), fDriftVel(0),
-  fT0Resolution(0), fWBeg(0), fWSpac(0), fWAngle(0), fSinWAngle(0),
+  fT0Resolution(0), fOnlyFastestHit(false), fNoNegativeTime(false),
+  fWBeg(0), fWSpac(0), fWAngle(0), fSinWAngle(0),
   fCosWAngle(1), /*fTable(0),*/ fTTDConv(nullptr),
-  fVDC{dynamic_cast<THaVDC*>( GetMainDetector() )}
+  fVDC{dynamic_cast<THaVDC*>( GetMainDetector() )},
+  fMaxData(-1), fNextHit(0), fPrevWire(nullptr)
 {
   // Constructor
+}
+
+//_____________________________________________________________________________
+THaVDCPlane::~THaVDCPlane()
+{
+  // Destructor.
+
+  RemoveVariables();
+  delete fWires;
+  delete fHits;
+  delete fClusters;
+  delete fTTDConv;
+//   delete [] fTable;
 }
 
 //_____________________________________________________________________________
@@ -97,11 +112,11 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
 
   const char* const here = "ReadDatabase";
 
-  FILE* file = OpenFile( date );
+  FILE* file = OpenFile(date);
   if( !file ) return kFileError;
 
   // Read fCenter and fSize
-  Int_t err = ReadGeometry( file, date );
+  Int_t err = ReadGeometry(file, date);
   if( err ) {
     fclose(file);
     return err;
@@ -148,7 +163,7 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
     { nullptr }
   };
 
-  err = LoadDB( file, date, request, fPrefix );
+  err = LoadDB(file, date, request, fPrefix);
   fclose(file);
   if( err )
     return err;
@@ -156,98 +171,52 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
   if( FillDetMap(detmap, THaDetMap::kFillLogicalChannel, here) <= 0 )
     return kInitError; // Error already printed by FillDetMap
 
-  // Sanity checks
-  if( fNelem <= 0 ) {
-    Error( Here(here), "Invalid number of wires: %d", fNelem );
-    return kInitError;
+  // All our frontend modules are common stop TDCs
+  Int_t nmodules = fDetMap->GetSize();
+  for( Int_t i = 0; i < nmodules; i++ ) {
+    THaDetMap::Module* d = fDetMap->GetModule(i);
+    d->MakeTDC();
+    d->SetTDCMode(false);
   }
 
-  Int_t nchan = fDetMap->GetTotNumChan();
-  if( nchan != fNelem ) {
-    Error( Here(here), "Number of detector map channels (%d) "
-           "disagrees with number of wires (%d)", nchan, fNelem );
-    return kInitError;
-  }
-  nchan = tdc_offsets.size();
-  if( nchan != fNelem ) {
-    Error( Here(here), "Number of TDC offset values (%d) "
-           "disagrees with number of wires (%d)", nchan, fNelem );
-    return kInitError;
-  }
-
-  if( fMinClustSize < 1 || fMinClustSize > 6 ) {
-    Error( Here(here), "Invalid min_clust_size = %d, must be between 1 and "
-           "6. Fix database.", fMinClustSize );
-    return kInitError;
-  }
-  if( fMaxClustSpan < 2 || fMaxClustSpan > 12 ) {
-    Error( Here(here), "Invalid max_clust_span = %d, must be between 1 and "
-           "12. Fix database.", fMaxClustSpan );
-    return kInitError;
-  }
-  if( fNMaxGap < 0 || fNMaxGap > 2 ) {
-    Error( Here(here), "Invalid max_gap = %d, must be between 0 and 2. "
-           "Fix database.", fNMaxGap );
-    return kInitError;
-  }
-  if( fMinTime < 0 || fMinTime > 4095 ) {
-    Error( Here(here), "Invalid min_time = %d, must be between 0 and 4095. "
-           "Fix database.", fMinTime );
-    return kInitError;
-  }
-  if( fMaxTime < 1 || fMaxTime > 4096 || fMinTime >= fMaxTime ) {
-    Error( Here(here), "Invalid max_time = %d. Must be between 1 and 4096 "
-           "and >= min_time = %d. Fix database.", fMaxTime, fMinTime );
-    return kInitError;
-  }
+  err = ReadDatabaseErrcheck(tdc_offsets, here);
+  if( err )
+    return err;
 
   // Derived geometry quantities
   fWAngle *= TMath::DegToRad();
-  fSinWAngle = TMath::Sin( fWAngle );
-  fCosWAngle = TMath::Cos( fWAngle );
+  fSinWAngle = TMath::Sin(fWAngle);
+  fCosWAngle = TMath::Cos(fWAngle);
 
-  if( fVDC )
-    DefineAxes( fVDC->GetVDCAngle() );
-  else
-    DefineAxes( 0 );
+  if( fVDC ) {
+    // The parent VDC should be initialized at this point
+    assert(fVDC->Status() == kOK);
+
+    DefineAxes(fVDC->GetVDCAngle());
+
+    // If true, add only the first (earliest) hit for each wire
+    fOnlyFastestHit = fVDC->TestBit(THaVDC::kOnlyFastest);
+    // If true, ignore negative drift times completely
+    fNoNegativeTime = fVDC->TestBit(THaVDC::kIgnoreNegDrift);
+  } else
+    DefineAxes(0);
 
   // Searchable list of bad wire numbers, if any (usually none :-) )
-  set<Int_t> bad_wires( ALL(bad_wirelist) );
-  bad_wirelist.clear(); bad_wirelist.shrink_to_fit();
+  set<Int_t> bad_wires(ALL(bad_wirelist));
+  bad_wirelist.clear();
+  bad_wirelist.shrink_to_fit();
 
   // Create time-to-distance converter
   if( !ttd_conv.Contains("::") )
     ttd_conv.Prepend("VDC::");
-  const char* s = ttd_conv.Data();
-  TClass* cl = TClass::GetClass( s );
-  if( !cl ) {
-    Error( Here(here), "Drift time-to-distance converter \"%s\" not "
-           "available. Load library or fix database.", s?s:"" );
-    return kInitError;
-  }
-  if( !cl->InheritsFrom( VDC::TimeToDistConv::Class() )) {
-    Error( Here(here), "Class \"%s\" is not a drift time-to-distance "
-           "converter. Fix database.", s );
-    return kInitError;
-  }
-  fTTDConv = static_cast<VDC::TimeToDistConv*>( cl->New() );
-  if( !fTTDConv ) {
-    Error( Here(here), "Unexpected error creating drift time-to-distance "
-           "converter object \"%s\". Call expert.", s );
-    return kInitError;
-  }
-  // Set the converters parameters
-  fTTDConv->SetDriftVel( fDriftVel );
-  if( fTTDConv->SetParameters( ttd_param ) != 0 ) {
-    Error( Here(here), "Error initializing drift time-to-distance converter "
-           "\"%s\". Check ttd.param in database.", s );
-    return kInitError;
-  }
+  err = CreateTTDConv(ttd_conv, ttd_param, here);
+  if( err )
+    return err;
 
   // Initialize wires
-  for (int i = 0; i < fNelem; i++) {
+  for( int i = 0; i < fNelem; i++ ) {
     auto* wire = new((*fWires)[i])
-      THaVDCWire( i, fWBeg+i*fWSpac, tdc_offsets[i], fTTDConv );
+      THaVDCWire(i, fWBeg + i * fWSpac, tdc_offsets[i], fTTDConv);
     if( bad_wires.find(i) != bad_wires.end() )
       wire->SetFlag(1);
   }
@@ -300,7 +269,7 @@ Int_t THaVDCPlane::ReadGeometry( FILE* file, const TDatime& date, Bool_t )
 
   const char* const here = "ReadGeometry";
 
-  vector<double> position, size;
+  vector<Double_t> position, size;
   DBRequest request[] = {
     { "position", &position, kDoubleV, 0, false, 0, "\"position\" (detector position [m])" },
     { "size",     &size,     kDoubleV, 0, true, 0, "\"size\" (detector size [m])" },
@@ -311,29 +280,13 @@ Int_t THaVDCPlane::ReadGeometry( FILE* file, const TDatime& date, Bool_t )
     return kInitError;
 
   assert( !position.empty() );  // else LoadDB didn't honor "required" flag
-  if( position.size() != 3 ) {
-    Error( Here(here), "Incorrect number of values = %u for "
-           "detector position. Must be exactly 3. Fix database.",
-           static_cast<unsigned int>(position.size()) );
-    return 1;
-  }
+  err = ReadGeometryErrcheck(position, size, here);
+  if( err )
+    return err;
+
   fCenter.SetXYZ( position[0], position[1], position[2] );
 
   if( !size.empty() ) {
-    if( size.size() != 3 ) {
-      Error( Here(here), "Incorrect number of values = %u for "
-             "detector size. Must be exactly 3. Fix database.",
-             static_cast<unsigned int>(size.size()) );
-      return 2;
-    }
-    if( size[0] == 0 || size[1] == 0 || size[2] == 0 ) {
-      Error( Here(here), "Illegal zero detector dimension. Fix database." );
-      return 3;
-    }
-    if( size[0] < 0 || size[1] < 0 || size[2] < 0 ) {
-      Warning( Here(here), "Illegal negative value for detector dimension. "
-               "Taking absolute. Check database." );
-    }
     fSize[0] = 0.5 * TMath::Abs(size[0]);
     fSize[1] = 0.5 * TMath::Abs(size[1]);
     fSize[2] = TMath::Abs(size[2]);
@@ -348,6 +301,129 @@ Int_t THaVDCPlane::ReadGeometry( FILE* file, const TDatime& date, Bool_t )
   }
 
   return 0;
+}
+
+//_____________________________________________________________________________
+Int_t THaVDCPlane::ReadDatabaseErrcheck( const vector<Float_t>& tdc_offsets,
+                                         const char* here ) {
+  // Sanity checks
+  if( fNelem <= 0 ) {
+    Error(Here(here), "Invalid number of wires: %d", fNelem);
+    return kInitError;
+  }
+
+  Int_t nchan = fDetMap->GetTotNumChan();
+  if( nchan != fNelem ) {
+    Error(Here(here),
+          "Number of detector map channels (%d) disagrees with "
+          "number of wires (%d)", nchan, fNelem);
+    return kInitError;
+  }
+  nchan = tdc_offsets.size();
+  if( nchan != fNelem ) {
+    Error(Here(here),
+          "Number of TDC offset values (%d) disagrees with "
+          "number of wires (%d)", nchan, fNelem);
+    return kInitError;
+  }
+
+  if( fMinClustSize < 1 || fMinClustSize > 6 ) {
+    Error(Here(here),
+          "Invalid min_clust_size = %d, must be between 1 and 6. "
+          "Fix database.", fMinClustSize);
+    return kInitError;
+  }
+  if( fMaxClustSpan < 2 || fMaxClustSpan > 12 ) {
+    Error(Here(here),
+          "Invalid max_clust_span = %d, must be between 1 and 12. "
+          "Fix database.", fMaxClustSpan);
+    return kInitError;
+  }
+  if( fNMaxGap < 0 || fNMaxGap > 2 ) {
+    Error(Here(here),
+          "Invalid max_gap = %d, must be between 0 and 2. Fix database.",
+          fNMaxGap);
+    return kInitError;
+  }
+  if( fMinTime < 0 || fMinTime > 4095 ) {
+    Error(Here(here),
+          "Invalid min_time = %d, must be between 0 and 4095. Fix database.",
+          fMinTime);
+    return kInitError;
+  }
+  if( fMaxTime < 1 || fMaxTime > 4096 || fMinTime >= fMaxTime ) {
+    Error(Here(here),
+          "Invalid max_time = %d. Must be between 1 and 4096 "
+          "and >= min_time = %d. Fix database.", fMaxTime, fMinTime);
+    return kInitError;
+  }
+  return kOK;
+}
+
+//_____________________________________________________________________________
+Int_t THaVDCPlane::ReadGeometryErrcheck( const vector<Double_t>& position,
+                                         const vector<Double_t>& size,
+                                         const char* const here )
+{
+  if( position.size() != 3 ) {
+    Error( Here(here), "Incorrect number of values = %u for "
+                       "detector position. Must be exactly 3. Fix database.",
+           static_cast<unsigned int>(position.size()) );
+    return kInitError;
+  }
+  if( !size.empty() ) {
+    if( size.size() != 3 ) {
+      Error(Here(here), "Incorrect number of values = %u for "
+                        "detector size. Must be exactly 3. Fix database.",
+            static_cast<unsigned int>(size.size()));
+      return kInitError;
+    }
+    if( size[0] == 0 || size[1] == 0 || size[2] == 0 ) {
+      Error(Here(here), "Illegal zero detector dimension. Fix database.");
+      return kInitError;
+    }
+    if( size[0] < 0 || size[1] < 0 || size[2] < 0 ) {
+      Warning(Here(here), "Illegal negative value for detector dimension. "
+                          "Taking absolute. Check database.");
+    }
+  }
+  return kOK;
+}
+
+//_____________________________________________________________________________
+Int_t THaVDCPlane::CreateTTDConv( const char* classname,
+                                  const vector<Double_t>& ttd_param,
+                                  const char* here )
+{
+  TClass* cl = TClass::GetClass(classname);
+  if( !cl ) {
+    Error(Here(here),
+          "Drift time-to-distance converter \"%s\" not available. "
+          "Load library or fix database.", classname ? classname : "");
+    return kInitError;
+  }
+  if( !cl->InheritsFrom(VDC::TimeToDistConv::Class()) ) {
+    Error(Here(here),
+          "Class \"%s\" is not a drift time-to-distance "
+          "converter. Fix database.", classname);
+    return kInitError;
+  }
+  fTTDConv = static_cast<VDC::TimeToDistConv*>( cl->New() );
+  if( !fTTDConv ) {
+    Error(Here(here),
+          "Unexpected error creating drift time-to-distance converter "
+          "object \"%s\". Call expert.", classname);
+    return kInitError;
+  }
+  // Set the converters parameters
+  fTTDConv->SetDriftVel(fDriftVel);
+  if( fTTDConv->SetParameters(ttd_param) != 0 ) {
+    Error(Here(here),
+          "Error initializing drift time-to-distance converter "
+          "\"%s\". Check ttd.param in database.", classname);
+    return kInitError;
+  }
+  return kOK;
 }
 
 //_____________________________________________________________________________
@@ -369,9 +445,6 @@ void THaVDCPlane::UpdateGeometry( Double_t x, Double_t y, bool force )
 Int_t THaVDCPlane::DefineVariables( EMode mode )
 {
   // initialize global variables
-
-  if( mode == kDefine && fIsSetup ) return kOK;
-  fIsSetup = ( mode == kDefine );
 
   // Register variables in global list
 
@@ -412,20 +485,6 @@ Int_t THaVDCPlane::DefineVariables( EMode mode )
 }
 
 //_____________________________________________________________________________
-THaVDCPlane::~THaVDCPlane()
-{
-  // Destructor.
-
-  if( fIsSetup )
-    RemoveVariables();
-  delete fWires;
-  delete fHits;
-  delete fClusters;
-  delete fTTDConv;
-//   delete [] fTable;
-}
-
-//_____________________________________________________________________________
 void THaVDCPlane::Clear( Option_t* opt )
 {
   // Clears the contents of the and hits and clusters
@@ -433,6 +492,68 @@ void THaVDCPlane::Clear( Option_t* opt )
   fNHits = fNWiresHit = 0;
   fHits->Clear();
   fClusters->Delete();
+}
+
+//_____________________________________________________________________________
+Int_t THaVDCPlane::StoreHit( const DigitizerHitInfo_t& hitinfo, Int_t data )
+{
+
+  assert( hitinfo.nhit > 0 );
+
+  Int_t wireNum = hitinfo.lchan;
+  auto* wire = GetWire(wireNum);
+  if( !wire || wire->GetFlag() != 0 )
+    // Wire is disabled (maybe noisy)
+    return -1;
+
+  // Count hits
+  ++fNHits;
+  if( wire != fPrevWire ) {
+    fMaxData = -1;
+    ++fNWiresHit;
+  }
+  // Bugcheck: identical wires -> multihit
+  assert(wire != fPrevWire || hitinfo.nhit > 1);
+  fPrevWire = wire;
+
+  // Keep maximum data value seen for this series of hits
+  if( data > fMaxData )
+    fMaxData = data;
+
+  // Convert the TDC value to the drift time.
+  // Being perfectionist, we apply a 1/2 channel correction to the raw
+  // TDC data to compensate for the fact that the TDC truncates, not
+  // rounds, the data.
+  Double_t toff  = wire->GetTOffset();
+  Double_t xdata = static_cast<Double_t>(data) + 0.5;
+  Double_t time  = fTDCRes * (toff - xdata);
+
+  // If requested, ignore hits with negative drift times
+  // (due to noise or miscalibration). Use with care.
+  if( fNoNegativeTime && time <= 0.0 )
+    return -2;
+
+  // If there are multiple hits on this channel and only the fastest hit is
+  // requested, find maximum TDC value and record the corresponding hit at
+  // the end of the hit loop.
+  if( hitinfo.nhit > 1 && fOnlyFastestHit ) {
+    if( hitinfo.hit + 1 < hitinfo.nhit || fMaxData <= 0 )
+      // Keep going. More hits to come (or nothing valid found)
+      return 0;
+
+    // Got all the hits on this channel. Record the max TDC value.
+    if( data != fMaxData ) {
+      assert(data < fMaxData);
+      data = fMaxData;
+      xdata = static_cast<Double_t>(data) + 0.5;
+      time = fTDCRes * (toff - xdata);
+    }
+  }
+
+  // Record hit on this wire
+  new((*fHits)[fNextHit++])  THaVDCHit(wire, data, time, hitinfo.nhit);
+
+  return 0;
 }
 
 //_____________________________________________________________________________
@@ -444,106 +565,75 @@ Int_t THaVDCPlane::Decode( const THaEvData& evData )
 
   if (!evData.IsPhysicsTrigger()) return -1;
 
-  Int_t nextHit = 0;
+  const char* const here = "Decode";
+  bool has_warning = false;
 
-  bool only_fastest_hit = false, no_negative = false;
-  if( fVDC ) {
-    // If true, add only the first (earliest) hit for each wire
-    only_fastest_hit = fVDC->TestBit(THaVDC::kOnlyFastest);
-    // If true, ignore negative drift times completely
-    no_negative      = fVDC->TestBit(THaVDC::kIgnoreNegDrift);
+  fNextHit = 0;
+  fMaxData = -1;
+  fPrevWire = nullptr;
+
+  auto hitIter = fDetMap->MakeMultiHitIterator(evData);
+  while( hitIter ) {
+    const auto& hitinfo = *hitIter;
+
+    // Get the TDC data for this hit
+    OptInt_t data = LoadData(evData, hitinfo);
+    if( !data ) {
+      // Data could not be retrieved (probably decoder bug)
+      DataLoadWarning(hitinfo, here);
+      has_warning = true;
+      continue;
+    }
+
+    // Store hit data in fHits
+    StoreHit(hitinfo, data.value());
+
+    // Next active hit or channel
+    ++hitIter;
   }
-
-  // Loop over all detector modules for this wire plane
-  for (Int_t i = 0; i < fDetMap->GetSize(); i++) {
-    THaDetMap::Module * d = fDetMap->GetModule(i);
-
-    // Get number of channels with hits
-    Int_t nChan = evData.GetNumChan(d->crate, d->slot);
-    for (Int_t chNdx = 0; chNdx < nChan; chNdx++) {
-      // Use channel index to loop through channels that have hits
-
-      Int_t chan = evData.GetNextChan(d->crate, d->slot, chNdx);
-      if (chan < d->lo || chan > d->hi)
-        continue; //Not part of this detector
-
-      // Wire numbers count up in the order in which channels are defined
-      // in the detector map. That order may be forward or reverse, e.g.
-      // forward: lo hi first = 0  95 1 --> channels 0..95 -> wire# = 1...96
-      // reverse: lo hi first = 95  0 1 --> channels 0..95 -> wire# = 96...1
-      Int_t wireNum  = d->first + ((d->reverse) ? d->hi - chan : chan - d->lo);
-      THaVDCWire* wire = GetWire(wireNum);
-      if( !wire || wire->GetFlag() != 0 ) continue;
-
-      // Get number of hits for this channel and loop through hits
-      Int_t nHits = evData.GetNumHits(d->crate, d->slot, chan);
-
-      Int_t max_data = -1;
-      Double_t toff = wire->GetTOffset();
-
-      for (Int_t hit = 0; hit < nHits; hit++) {
-
-        // Now get the TDC data for this hit
-        Int_t data = evData.GetData(d->crate, d->slot, chan, hit);
-
-        // Convert the TDC value to the drift time.
-        // Being perfectionist, we apply a 1/2 channel correction to the raw
-        // TDC data to compensate for the fact that the TDC truncates, not
-        // rounds, the data.
-        Double_t xdata = static_cast<Double_t>(data) + 0.5;
-        Double_t time = fTDCRes * (toff - xdata);
-
-        // If requested, ignore hits with negative drift times
-        // (due to noise or miscalibration). Use with care.
-        // If only fastest hit requested, find maximum TDC value and record the
-        // hit after the hit loop is done (see below).
-        // Otherwise just record all hits.
-        if( !no_negative || time > 0.0 ) {
-          if( only_fastest_hit ) {
-            if( data > max_data )
-              max_data = data;
-          } else
-            new( (*fHits)[nextHit++] )  THaVDCHit( wire, data, time, nHits );
-        }
-
-    // Count all hits and wires with hits
-    //    fNWiresHit++;
-
-      } // End hit loop
-
-      // If we are only interested in the hit with the largest TDC value
-      // (shortest drift time), it is recorded here.
-      if( only_fastest_hit && max_data>0 ) {
-        Double_t xdata = static_cast<Double_t>(max_data) + 0.5;
-        Double_t time = fTDCRes * (toff - xdata);
-        new( (*fHits)[nextHit++] ) THaVDCHit( wire, max_data, time, nHits );
-      }
-    } // End channel index loop
-  } // End slot loop
 
   // Sort the hits in order of increasing wire number and (for the same wire
   // number) increasing time (NOT rawtime)
-
   fHits->Sort();
 
+  if( has_warning )
+    ++fNEventsWithWarnings;
+
 #ifdef WITH_DEBUG
-  if ( fDebug > 3 ) {
-    cout << endl << "VDC plane " << GetPrefix() << endl;
-    int ncol=4;
-    for (int i=0; i<ncol; i++) {
-      cout << "     Wire    TDC  ";
-    }
+  if ( fDebug > 3 )
+    PrintDecodedData(evData);
+#endif
+
+  return GetNHits();
+}
+
+//_____________________________________________________________________________
+void THaVDCPlane::PrintDecodedData( const THaEvData& evdata ) const
+{
+#ifdef WITH_DEBUG
+  if( fDebug > 3 ) {
+    Int_t nhits = GetNHits();
+    cout << endl
+         << "VDC plane " << GetPrefixName() << ": " << nhits << " hits" << endl;
+    const int ncol = 6;
+    for( int i = 0; i < TMath::Min(ncol, nhits); i++ )
+      cout << "  Wire  TDC ";
     cout << endl;
 
-    for (int i=0; i<(nextHit+ncol-1)/ncol; i++ ) {
-      for (int c=0; c<ncol; c++) {
-        int ind = c*nextHit/ncol+i;
-        if (ind < nextHit) {
-          auto hit = static_cast<THaVDCHit*>(fHits->At(ind));
-          cout << "     " << setw(3) << hit->GetWireNum()
-               << "    "  << setw(5) << hit->GetRawTime() << " ";
+    for( int i = 0; i < (nhits+ncol-1)/ncol; i++ ) {
+      for( int c = ncol*i; c < ncol*(i+1); c++ ) {
+        if( c < nhits ) {
+          auto* hit = dynamic_cast<THaVDCHit*>(fHits->At(c));
+          if( hit )
+            cout << right
+                 << "  " << setw(3) << hit->GetWireNum()
+                 << "  " << setw(5) << hit->GetRawTime()
+                 << left;
+          else {
+            assert(false); // else bug in Decode()
+            cout << right << setw(12) << "<null>" << left;
+          }
         } else {
-          //      cout << endl;
           break;
         }
       }
@@ -551,10 +641,7 @@ Int_t THaVDCPlane::Decode( const THaEvData& evData )
     }
   }
 #endif
-
-  return 0;
 }
-
 
 //_____________________________________________________________________________
 Int_t THaVDCPlane::ApplyTimeCorrection()

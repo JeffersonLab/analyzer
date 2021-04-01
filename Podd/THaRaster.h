@@ -13,8 +13,8 @@
 class THaRaster : public THaBeamDet {
 
 public:
-  THaRaster( const char* name, const char* description = "",
-		   THaApparatus* a = nullptr );
+  explicit THaRaster( const char* name, const char* description = "",
+                      THaApparatus* a = nullptr );
   virtual ~THaRaster();
 
   virtual void       Clear( Option_t* ="" );

@@ -17,7 +17,7 @@ namespace Podd {
 class InterStageModule : public THaAnalysisObject {
 
 public:
-  virtual ~InterStageModule() = default;
+  virtual ~InterStageModule();
 
   virtual void  Clear( Option_t* opt="" );
   virtual Int_t Process( const THaEvData& ) = 0;

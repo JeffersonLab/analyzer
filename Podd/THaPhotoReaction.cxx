@@ -64,14 +64,11 @@ Int_t THaPhotoReaction::DefineVariables( EMode mode )
 {
   // Define/delete global variables.
 
-  if( mode == kDefine && fIsSetup ) return kOK;
-  fIsSetup = ( mode == kDefine );
-
   RVarDef vars[] = {
     { "EGamma",   "Real Brem. Photon Energy (GeV)", "fEGamma"},
     { "angle",    "Scattering Angle (rad)",         "fScatAngle"},
     { "angle_cm", "Scattering Angle(rad) in CM",    "fScatAngleCM"},
-    { 0 }
+    { nullptr }
   };
   return DefineVarsFromList( vars, mode );
 }

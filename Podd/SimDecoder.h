@@ -13,12 +13,9 @@
 
 #include "THaEvData.h"
 #include "THaAnalysisObject.h"
+#include "DataType.h"  // for kBig
 #include "TClonesArray.h"
 #include "TVector3.h"
-
-#ifndef KBIG
-#define KBIG THaAnalysisObject::kBig
-#endif
 
 namespace Podd {
 
@@ -37,12 +34,12 @@ public:
 	   const TVector3& vertex, const TVector3& momentum );
   MCTrack();
 
-  Double_t VX()     { return fOrigin.X(); }
-  Double_t VY()     { return fOrigin.Y(); }
-  Double_t VZ()     { return fOrigin.Z(); }
-  Double_t P()      { return fMomentum.Mag(); }
-  Double_t PTheta() { return fMomentum.Theta(); }
-  Double_t PPhi()   { return fMomentum.Phi(); }
+  Double_t VX() const     { return fOrigin.X(); }
+  Double_t VY() const     { return fOrigin.Y(); }
+  Double_t VZ() const     { return fOrigin.Z(); }
+  Double_t P()  const     { return fMomentum.Mag(); }
+  Double_t PTheta() const { return fMomentum.Theta(); }
+  Double_t PPhi() const   { return fMomentum.Phi(); }
 
   virtual void Print( const Option_t* opt="" ) const;
 
@@ -105,14 +102,14 @@ public:
 class MCTrackPoint : public TObject {
 public:
   MCTrackPoint() : fMCTrack(0), fPlane(-1), fType(-1), fStatus(0), fNFound(0),
-		   fClustSize(0), fMCPoint(KBIG,KBIG,KBIG), fMCP(KBIG,KBIG,KBIG),
-		   fMCTime(KBIG), fDeltaE(KBIG), fDeflect(KBIG), fToF(KBIG),
-		   fHitResid(KBIG), fTrackResid(KBIG)  {}
+		   fClustSize(0), fMCPoint(kBig,kBig,kBig), fMCP(kBig,kBig,kBig),
+		   fMCTime(kBig), fDeltaE(kBig), fDeflect(kBig), fToF(kBig),
+		   fHitResid(kBig), fTrackResid(kBig)  {}
   MCTrackPoint( Int_t mctrk, Int_t plane, Int_t type, const TVector3& point,
 		const TVector3& pvect )
     : fMCTrack(mctrk), fPlane(plane), fType(type), fStatus(0), fNFound(0),
-      fClustSize(0), fMCPoint(point), fMCP(pvect), fMCTime(KBIG), fDeltaE(KBIG),
-      fDeflect(KBIG), fToF(KBIG), fHitResid(KBIG), fTrackResid(KBIG)  {}
+      fClustSize(0), fMCPoint(point), fMCP(pvect), fMCTime(kBig), fDeltaE(kBig),
+      fDeflect(kBig), fToF(kBig), fHitResid(kBig), fTrackResid(kBig)  {}
   virtual ~MCTrackPoint() = default;
 
   virtual Int_t  Compare( const TObject* obj ) const;

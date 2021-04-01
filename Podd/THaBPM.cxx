@@ -15,9 +15,8 @@
 #include "THaDetMap.h"
 #include "VarDef.h"
 #include "VarType.h"
-#include "TMath.h"
-
 #include <vector>
+#include <stdexcept>
 
 static const UInt_t NCHAN = 4;
 
@@ -99,14 +98,9 @@ Int_t THaBPM::ReadDatabase( const TDatime& date )
 //_____________________________________________________________________________
 Int_t THaBPM::DefineVariables( EMode mode )
 {
-  // Initialize global variables and lookup table for decoder
-
-
-  if( mode == kDefine && fIsSetup ) return kOK;
-  fIsSetup = ( mode == kDefine );
+  // Initialize global variables
 
   // Register variables in global list
-
   RVarDef vars[] = {
     { "rawcur.1", "current in antenna 1", "GetRawSignal0()"},
     { "rawcur.2", "current in antenna 2", "GetRawSignal1()"},
@@ -119,10 +113,8 @@ Int_t THaBPM::DefineVariables( EMode mode )
     { "rotpos2", "position in bpm system","GetRotPosY()"},
     { nullptr }
   };
-    
 
   return DefineVarsFromList( vars, mode );
-
 }
 
 //_____________________________________________________________________________
@@ -130,8 +122,7 @@ THaBPM::~THaBPM()
 {
   // Destructor. Remove variables from global list.
 
-  if( fIsSetup )
-    RemoveVariables();
+  RemoveVariables();
 }
 
 //_____________________________________________________________________________
@@ -139,11 +130,11 @@ void THaBPM::Clear( Option_t* opt )
 {
   // Reset per-event data.
   THaBeamDet::Clear(opt);
-  fPosition.SetXYZ(0.,0.,-10000.);
-  fDirection.SetXYZ(0.,0.,1.);
-  for( UInt_t k=0; k<NCHAN; ++k ) {
-    fRawSignal(k)=-1;
-    fCorSignal(k)=-1;
+  fPosition.SetXYZ(0., 0., -10000.);
+  fDirection.SetXYZ(0., 0., 1.);
+  for( UInt_t k = 0; k < NCHAN; ++k ) {
+    fRawSignal(k) = -1;
+    fCorSignal(k) = -1;
   }
   fRotPos(0) = fRotPos(1) = 0.0;
 }
@@ -151,50 +142,40 @@ void THaBPM::Clear( Option_t* opt )
 //_____________________________________________________________________________
 Int_t THaBPM::Decode( const THaEvData& evdata )
 {
-
-  // clears the event structure
+  // Decode BPM
   // loops over all modules defined in the detector map
   // copies raw data into local variables
   // performs pedestal subtraction
 
-  const char* const here = "Decode()";
+  UInt_t nfired = THaBeamDet::Decode(evdata);
 
-  UInt_t nfired = 0;
-  for (Int_t i = 0; i < fDetMap->GetSize(); i++ ){
-    THaDetMap::Module* d = fDetMap->GetModule( i );
-    for (Int_t j=0; j< evdata.GetNumChan( d->crate, d->slot ); j++) {
-      Int_t chan = evdata.GetNextChan( d->crate, d->slot, j);
-      if ((chan>=d->lo)&&(chan<=d->hi)) {
-	Int_t data = evdata.GetData( d->crate, d->slot, chan, 0 );
-	UInt_t k = d->first + ((d->reverse) ? d->hi - chan : chan - d->lo) -1;
-	if ((k<NCHAN)&&(fRawSignal(k)==-1)) {
-	  fRawSignal(k)= data;
-	  nfired++;
-	}
-	else {
-	  Warning( Here(here), "Illegal detector channel: %d", k );
-	}
-      }
-    }
-  }
-
-  if (nfired!=NCHAN) {
-    Warning( Here(here), "Number of fired Channels out of range. "
-	     "Setting beam position to nominal values");
-  }
-  else {
-    fCorSignal=fRawSignal;
-    fCorSignal-=fPedestals;
+  if( nfired == NCHAN ) {
+    fCorSignal = fRawSignal - fPedestals;
+  } else {
+    Warning(Here("Decode"), "Number of fired Channels out of range. "
+                            "Setting beam position to nominal values");
   }
 
   return 0;
 }
 
-//____________________________________________________
-//  
-Int_t THaBPM::Process( )
+//_____________________________________________________________________________
+Int_t THaBPM::StoreHit( const DigitizerHitInfo_t& hitinfo, Int_t data )
 {
- 
+  // Store 'data' from single hit in channel 'hitinfo'. Called from Decode()
+
+  UInt_t k = hitinfo.lchan;
+  if( k < NCHAN && fRawSignal(k) == -1 ) {
+    fRawSignal(k) = data;
+  } else
+    Warning(Here("StoreHit"), "Illegal detector channel %d", k);
+
+  return 0;
+}
+
+//_____________________________________________________________________________
+Int_t THaBPM::Process()
+{
   // called by the beam apparatus
   // uses the pedestal subtracted signals from the antennas
   // to get the position in the bpm coordinate system 
@@ -214,14 +195,13 @@ Int_t THaBPM::Process( )
   TVectorD dum(fRotPos);
   dum *= fRot2HCSPos;
   fPosition.SetXYZ(
-		   dum(0)+fOrigin(0)+fOffset(0),
-		   dum(1)+fOrigin(1)+fOffset(1),
-		   fOrigin(2)
-		   );
+    dum(0) + fOrigin(0) + fOffset(0),
+    dum(1) + fOrigin(1) + fOffset(1),
+    fOrigin(2)
+  );
 
   return 0;
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////
 ClassImp(THaBPM)

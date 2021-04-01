@@ -8,6 +8,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "TObject.h"
+#include "DataType.h"
 #include <utility>
 #include <vector>
 
@@ -27,8 +28,6 @@ namespace VDC {
   typedef THaVDCPointPair VDCpp_t;
   typedef std::vector<THaVDCHit*> Vhit_t;
   typedef std::vector<FitCoord_t> Vcoord_t;
-
-  extern const Double_t kBig;
 
   inline chi2_t operator+( chi2_t a, const chi2_t& b ) {
     a.first  += b.first;

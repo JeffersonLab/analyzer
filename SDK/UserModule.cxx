@@ -60,9 +60,6 @@ Int_t UserModule::DefineVariables( EMode mode )
 {
   // Define/delete global variables.
 
-  if( mode == kDefine && fIsSetup ) return kOK;
-  fIsSetup = ( mode == kDefine );
-
   RVarDef vars[] = {
     { "A",  "Result A", "fResultA" },
     { "B",  "Result B", "fResultB" },

@@ -73,7 +73,7 @@ THaSpectrometer::~THaSpectrometer()
   delete fTrackPID;              fTrackPID = nullptr;
   delete fTracks;                fTracks = nullptr;
 
-  DefineVariables( kDelete );
+  RemoveVariables();
 }
 
 //_____________________________________________________________________________
@@ -173,9 +173,6 @@ Int_t THaSpectrometer::DefineVariables( EMode mode )
 {
   // Define/delete standard variables for a spectrometer (tracks etc.)
   // Can be overridden or extended by derived (actual) apparatuses
-
-  if( mode == kDefine && fIsSetup ) return kOK;
-  fIsSetup = ( mode == kDefine );
 
   RVarDef vars[] = {
     { "tr.n",    "Number of tracks",             "GetNTracks()" },

@@ -31,7 +31,8 @@ protected:
 
   TClonesArray*  fTrackProj;  // projection of track(s) onto detector plane
 
-  Int_t CalcTrackProj( TClonesArray& tracks );
+  virtual Int_t  DefineVariables( EMode mode = kDefine );
+  Int_t          CalcTrackProj( TClonesArray& tracks );
 
   //Only derived classes may construct me
   THaNonTrackingDetector( const char* name, const char* description,

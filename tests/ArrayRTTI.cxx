@@ -63,9 +63,6 @@ Int_t ArrayRTTI::DefineVariables( EMode mode )
 {
   // Define (or delete) global variables
 
-  if( mode == kDefine && fIsSetup ) return kOK;
-  fIsSetup = ( mode == kDefine );
-
   return DefineVarsFromList( vars, mode );
 }
 
