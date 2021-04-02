@@ -41,14 +41,14 @@ THaTwoarmVertex.cxx     THaUnRasteredBeam.cxx        THaVar.cxx
 THaVarList.cxx          THaVertexModule.cxx          THaVform.cxx
 THaVhist.cxx            VariableArrayVar.cxx         Variable.cxx
 VectorObjMethodVar.cxx  VectorObjVar.cxx             VectorVar.cxx
-InterStageModule.cxx    TimeCorrectionModule.cxx
+InterStageModule.cxx    TimeCorrectionModule.cxx     DetectorData.cxx
 """
 
 # Generate ha_compiledata.h header file
 compiledata = 'ha_compiledata.h'
 write_compiledata(baseenv,compiledata)
 
-extrahdrs = ['Helper.h','VarDef.h','VarType.h',compiledata]
+extrahdrs = ['Helper.h','VarDef.h','VarType.h','DataType.h','OptionalType.h',compiledata]
 
 poddlib = build_library(baseenv, libname, src, extrahdrs,
                         extradicthdrs = ['THaGlobals.h'], useenv = False,
