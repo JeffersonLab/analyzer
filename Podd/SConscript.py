@@ -48,7 +48,8 @@ InterStageModule.cxx    TimeCorrectionModule.cxx     DetectorData.cxx
 compiledata = 'ha_compiledata.h'
 write_compiledata(baseenv,compiledata)
 
-extrahdrs = ['Helper.h','VarDef.h','VarType.h','DataType.h','OptionalType.h',compiledata]
+extrahdrs = ['Helper.h','VarDef.h','VarType.h','DataType.h','OptionalType.h',
+             'optional.hpp',compiledata]
 
 poddlib = build_library(baseenv, libname, src, extrahdrs,
                         extradicthdrs = ['THaGlobals.h'], useenv = False,
