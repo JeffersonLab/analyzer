@@ -529,7 +529,7 @@ THaDetMap::Iterator& THaDetMap::MultiHitIterator::operator++()
  nexthit:
   if( LOOPDONE(fIHit, fHitInfo.nhit) ) {
     Iterator::operator++();
-    if( !*this )
+    if( !Iterator::operator bool() )
       return *this;
     fIHit = -1;
   }
