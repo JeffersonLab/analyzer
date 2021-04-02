@@ -22,7 +22,7 @@ FadcBPM::FadcBPM( const char* name, const char* description,
 }
 
 //_____________________________________________________________________________
-OptInt_t FadcBPM::LoadData( const THaEvData& evdata,
+OptInt_t FadcBPM::LoadData( const THaEvData& /*evdata*/,
                             const DigitizerHitInfo_t& hitinfo )
 {
   // Retrieve pulse integral data from FADC for the channel in 'hitinfo'

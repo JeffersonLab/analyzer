@@ -55,7 +55,7 @@ namespace Decoder {
 			  Int_t, Int_t, Int_t) const {return 0;};
     virtual Int_t GetOpt(UInt_t /* rdata */) { return 0; };
 
-    virtual Int_t GetOpt(UInt_t chan,UInt_t hit ) { return 0; }; //1190
+    virtual Int_t GetOpt(UInt_t /*chan*/,UInt_t /*hit*/ ) { return 0; }; //1190
 
     virtual Int_t Decode(const UInt_t *p) = 0; // implement in derived class
     // Loads slot data

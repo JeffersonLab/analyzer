@@ -608,7 +608,7 @@ Int_t THaVDCPlane::Decode( const THaEvData& evData )
 }
 
 //_____________________________________________________________________________
-void THaVDCPlane::PrintDecodedData( const THaEvData& evdata ) const
+void THaVDCPlane::PrintDecodedData( const THaEvData& /*evdata*/ ) const
 {
 #ifdef WITH_DEBUG
   if( fDebug > 3 ) {

@@ -456,7 +456,7 @@ Int_t THaDetectorBase::Decode( const THaEvData& evdata )
 }
 
 //_____________________________________________________________________________
-void THaDetectorBase::PrintDecodedData( const THaEvData& evdata ) const
+void THaDetectorBase::PrintDecodedData( const THaEvData& /*evdata*/ ) const
 {
   // Default Print function for decoded data
 
