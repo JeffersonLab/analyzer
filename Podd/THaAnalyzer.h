@@ -81,10 +81,10 @@ public:
   Bool_t         SlowControlEnabled()  const  { return fDoSlowControl; }
   virtual Int_t  SetCountMode( Int_t mode );
   void           SetCrateMapFileName( const char* name );
-  void           SetEvent( THaEvent* event )     { fEvent = event; }
-  void           SetOutFile( const char* name )  { fOutFileName = name; }
-  void           SetCutFile( const char* name )  { fCutFileName = name; }
-  void           SetOdefFile( const char* name ) { fOdefFileName = name; }
+  void           SetEvent( THaEvent* event )        { fEvent = event; }
+  void           SetOutFile( const char* name )     { fOutFileName = name; }
+  void           SetCutFile( const char* name )     { fCutFileName = name; }
+  void           SetOdefFile( const char* name )    { fOdefFileName = name; }
   void           SetSummaryFile( const char* name ) { fSummaryFileName = name; }
   void           SetCompressionLevel( Int_t level ) { fCompress = level; }
   void           SetMarkInterval( UInt_t interval ) { fMarkInterval = interval; }
@@ -109,6 +109,9 @@ public:
 protected:
   // Test and histogram blocks
   struct Stage_t {
+    Stage_t( Int_t _key, Int_t _countkey, const char* _name )
+      : key(_key), countkey(_countkey), name(_name), cut_list(nullptr),
+        hist_list(nullptr), master_cut(nullptr) {}
     Int_t         key;
     Int_t         countkey;
     const char*   name;
@@ -124,9 +127,11 @@ protected:
     kCoarseReconTest, kTrackTest, kReconstructTest, kPhysicsTest
   };
   struct Counter_t {
+    Counter_t( Int_t _key, const char* _description )
+      : key(_key), count(0), description(_description) {}
     Int_t       key;
-    const char* description;
     UInt_t      count;
+    const char* description;
   };
 
   enum ECountMode { kCountPhysics, kCountAll, kCountRaw };
@@ -140,11 +145,9 @@ protected:
   TString        fOdefFileName;    //Name of output definition file
   TString        fSummaryFileName; //Name of test/cut statistics output file
   THaEvent*      fEvent;           //The event structure to be written to file.
-  Int_t          fNStages;         //Number of analysis stages
-  Int_t          fNCounters;       //Number of counters
-  Int_t          fWantCodaVers;    // Version of CODA assumed for file
-  Stage_t*       fStages;          //[fNStages] Parameters for analysis stages
-  Counter_t*     fCounters;        //[fNCounters] Statistics counters
+  Int_t          fWantCodaVers;    //Version of CODA assumed for file
+  std::vector<Stage_t>   fStages;  //Parameters for analysis stages
+  std::vector<Counter_t> fCounters;//Statistics counters
   UInt_t         fNev;             //Number of events read during most recent replay
   UInt_t         fMarkInterval;    //Interval for printing event numbers
   Int_t          fCompress;        //Compression level for ROOT output file
@@ -195,8 +198,6 @@ protected:
 
   // Support methods & data
   void           ClearCounters();
-  Stage_t*       DefineStage( const Stage_t* stage );
-  Counter_t*     DefineCounter( const Counter_t* counter );
   UInt_t         GetCount( Int_t which ) const;
   UInt_t         Incr( Int_t which );
   virtual bool   EvalStage( int n );

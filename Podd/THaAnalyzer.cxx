@@ -46,10 +46,8 @@
 
 #include <iostream>
 #include <iomanip>
-#include <cstring>
 #include <exception>
 #include <stdexcept>
-#include <cassert>
 #include <algorithm>
 #include <vector>
 
@@ -61,9 +59,6 @@ using namespace Podd;
 
 const char* const THaAnalyzer::kMasterCutName = "master";
 const char* const THaAnalyzer::kDefaultOdefFile = "output.def";
-
-const int MAXSTAGE = 100;   // Sanity limit on number of stages
-const int MAXCOUNTER = 200; // Sanity limit on number of counters
 
 // Pointer to single instance of this object
 THaAnalyzer* THaAnalyzer::fgAnalyzer = nullptr;
@@ -98,9 +93,8 @@ inline size_t ListToVector( TList* lst, vector<T*>& vec )
 //_____________________________________________________________________________
 THaAnalyzer::THaAnalyzer() :
   fFile(nullptr), fOutput(nullptr), fEpicsHandler(nullptr),
-  fOdefFileName(kDefaultOdefFile), fEvent(nullptr), fNStages(0), fNCounters(0),
-  fWantCodaVers(-1),
-  fStages(nullptr), fCounters(nullptr), fNev(0), fMarkInterval(1000), fCompress(1),
+  fOdefFileName(kDefaultOdefFile), fEvent(nullptr), fWantCodaVers(-1),
+  fNev(0), fMarkInterval(1000), fCompress(1),
   fVerbose(2), fCountMode(kCountRaw), fBench(nullptr), fPrevEvent(nullptr),
   fRun(nullptr), fEvData(nullptr),
   fIsInit(false), fAnalysisStarted(false), fLocalEvent(false),
@@ -140,8 +134,6 @@ THaAnalyzer::~THaAnalyzer()
   DeleteContainer(fInterStage);
   delete fExtra; fExtra = nullptr;
   delete fBench;
-  delete [] fStages;
-  delete [] fCounters;
   if( fgAnalyzer == this )
     fgAnalyzer = nullptr;
 }
@@ -225,8 +217,8 @@ Int_t THaAnalyzer::AddPostProcess( THaPostProcess* module )
 void THaAnalyzer::ClearCounters()
 {
   // Clear statistics counters
-  for( int i=0; i<fNCounters; i++ ) {
-    fCounters[i].count = 0;
+  for( auto& theCounter : fCounters ) {
+    theCounter.count = 0;
   }
 }
 
@@ -262,50 +254,6 @@ void THaAnalyzer::Close()
   fIsInit = fAnalysisStarted = false;
 }
 
-
-//_____________________________________________________________________________
-THaAnalyzer::Stage_t* THaAnalyzer::DefineStage( const Stage_t* item )
-{
-  if( !item || item->key < 0 )
-    return nullptr;
-  if( item->key >= MAXSTAGE ) {
-    Error("DefineStage", "Too many analysis stages.");
-    return nullptr;
-  }
-  if( item->key >= fNStages ) {
-    Int_t newmax = item->key+1;
-    auto tmp = new Stage_t[newmax];
-    memcpy(tmp,fStages,fNStages*sizeof(Stage_t));
-    memset(tmp+fNStages,0,(newmax-fNStages)*sizeof(Stage_t));
-    delete [] fStages;
-    fStages = tmp;
-    fNStages = newmax;
-  }
-  return static_cast<Stage_t*>
-    ( memcpy(fStages+item->key,item,sizeof(Stage_t)) );
-}
-
-//_____________________________________________________________________________
-THaAnalyzer::Counter_t* THaAnalyzer::DefineCounter( const Counter_t* item )
-{
-  if( !item || item->key < 0 )
-    return nullptr;
-  if( item->key >= MAXCOUNTER ) {
-    Error("DefineCounters", "Too many statistics counters.");
-    return nullptr;
-  }
-  if( item->key >= fNCounters ) {
-    Int_t newmax = item->key+1;
-    auto tmp = new Counter_t[newmax];
-    memcpy(tmp,fCounters,fNCounters*sizeof(Counter_t));
-    memset(tmp+fNCounters,0,(newmax-fNCounters)*sizeof(Counter_t));
-    delete [] fCounters;
-    fCounters = tmp;
-    fNCounters = newmax;
-  }
-  return static_cast<Counter_t*>
-    ( memcpy(fCounters+item->key,item,sizeof(Counter_t)) );
-}
 
 //_____________________________________________________________________________
 void THaAnalyzer::EnableBenchmarks( Bool_t b )
@@ -366,20 +314,20 @@ bool THaAnalyzer::EvalStage( int n )
 
   if( fDoBench ) fBench->Begin("Cuts");
 
-  const Stage_t* theStage = fStages+n;
+  const Stage_t& theStage = fStages[n];
 
   //FIXME: support stage-wise blocks of histograms
-  //  if( theStage->hist_list ) {
+  //  if( theStage.hist_list ) {
     // Fill histograms
   //  }
 
   bool ret = true;
-  if( theStage->cut_list ) {
-    THaCutList::EvalBlock( theStage->cut_list );
-    if( theStage->master_cut &&
-	!theStage->master_cut->GetResult() ) {
-      if( theStage->countkey >= 0 ) // stage may not have a counter
-	Incr(theStage->countkey);
+  if( theStage.cut_list ) {
+    THaCutList::EvalBlock( theStage.cut_list );
+    if( theStage.master_cut &&
+	!theStage.master_cut->GetResult() ) {
+      if( theStage.countkey >= 0 ) // stage may not have a counter
+	Incr(theStage.countkey);
       ret = false;
     }
   }
@@ -406,50 +354,45 @@ void THaAnalyzer::InitStages()
   // Derived classes can override this method to define their own
   // stages or additional stages. This should be done with caution.
 
-  if( fNStages>0 )  return;
-  const Stage_t stagedef[] = {
-    { kRawDecode,   kRawDecodeTest,   "RawDecode" },
-    { kDecode,      kDecodeTest,      "Decode" },
-    { kCoarseTrack, kCoarseTrackTest, "CoarseTracking" },
-    { kCoarseRecon, kCoarseReconTest, "CoarseReconstruct" },
-    { kTracking,    kTrackTest,       "Tracking" },
-    { kReconstruct, kReconstructTest, "Reconstruct" },
-    { kPhysics,     kPhysicsTest,     "Physics" },
-    { -1 }
+  if( !fStages.empty() )  return;
+  fStages.reserve(kPhysics - kRawDecode + 1);
+  fStages = {
+    {kRawDecode,   kRawDecodeTest,   "RawDecode"},
+    {kDecode,      kDecodeTest,      "Decode"},
+    {kCoarseTrack, kCoarseTrackTest, "CoarseTracking"},
+    {kCoarseRecon, kCoarseReconTest, "CoarseReconstruct"},
+    {kTracking,    kTrackTest,       "Tracking"},
+    {kReconstruct, kReconstructTest, "Reconstruct"},
+    {kPhysics,     kPhysicsTest,     "Physics"}
   };
-  const Stage_t* idef = stagedef;
-  while( DefineStage(idef++) ) {}
 }
 
 //_____________________________________________________________________________
-void THaAnalyzer::InitCounters()
-{
+void THaAnalyzer::InitCounters() {
   // Allocate statistics counters.
   // See notes for InitStages() for additional information.
 
-  if( fNCounters>0 )  return;
-  const Counter_t counterdef[] = {
-    { kNevRead,            "events read" },
-    { kNevGood,            "events decoded" },
-    { kNevPhysics,         "physics events" },
-    { kNevEpics,           "slow control events" },
-    { kNevOther,           "other event types" },
-    { kNevPostProcess,     "events post-processed" },
-    { kNevAnalyzed,        "physics events analyzed" },
-    { kNevAccepted,        "events accepted" },
-    { kDecodeErr,          "decoding error" },
-    { kCodaErr,            "CODA errors" },
-    { kRawDecodeTest,      "skipped after raw decoding" },
-    { kDecodeTest,         "skipped after Decode" },
-    { kCoarseTrackTest,    "skipped after Coarse Tracking" },
-    { kCoarseReconTest,    "skipped after Coarse Reconstruct" },
-    { kTrackTest,          "skipped after Tracking" },
-    { kReconstructTest,    "skipped after Reconstruct" },
-    { kPhysicsTest,        "skipped after Physics" },
-    { -1 }
+  if( !fCounters.empty() ) return;
+  fCounters.reserve(kPhysicsTest - kNevRead + 1);
+  fCounters = {
+    {kNevRead,         "events read"},
+    {kNevGood,         "events decoded"},
+    {kNevPhysics,      "physics events"},
+    {kNevEpics,        "slow control events"},
+    {kNevOther,        "other event types"},
+    {kNevPostProcess,  "events post-processed"},
+    {kNevAnalyzed,     "physics events analyzed"},
+    {kNevAccepted,     "events accepted"},
+    {kDecodeErr,       "decoding error"},
+    {kCodaErr,         "CODA errors"},
+    {kRawDecodeTest,   "skipped after raw decoding"},
+    {kDecodeTest,      "skipped after Decode"},
+    {kCoarseTrackTest, "skipped after Coarse Tracking"},
+    {kCoarseReconTest, "skipped after Coarse Reconstruct"},
+    {kTrackTest,       "skipped after Tracking"},
+    {kReconstructTest, "skipped after Reconstruct"},
+    {kPhysicsTest,     "skipped after Physics"}
   };
-  const Counter_t* jdef = counterdef;
-  while( DefineCounter(jdef++) ) {}
 }
 
 //_____________________________________________________________________________
@@ -460,18 +403,17 @@ void THaAnalyzer::InitCuts()
   // - Find pointers to the THaNamedList lists that hold the cut blocks.
   // - find pointer to each block's master cut
 
-  for( int i=0; i<fNStages; i++ ) {
-    Stage_t* theStage = fStages+i;
+  for( auto& theStage : fStages ) {
     // If block not found, this will return nullptr and work just fine later.
-    theStage->cut_list = gHaCuts->FindBlock( theStage->name );
+    theStage.cut_list = gHaCuts->FindBlock( theStage.name );
 
-    if( theStage->cut_list ) {
-      TString master_cut( theStage->name );
+    if( theStage.cut_list ) {
+      TString master_cut( theStage.name );
       master_cut.Append( '_' );
       master_cut.Append( kMasterCutName );
-      theStage->master_cut = gHaCuts->FindCut( master_cut );
+      theStage.master_cut = gHaCuts->FindCut( master_cut );
     } else
-      theStage->master_cut = nullptr;
+      theStage.master_cut = nullptr;
   }
 }
 
@@ -956,14 +898,14 @@ void THaAnalyzer::PrintCounters() const
 {
   // Print statistics counters
   UInt_t w = 0;
-  for (int i = 0; i < fNCounters; i++) {
+  for (size_t i = 0; i < fCounters.size(); i++) {
     if( GetCount(i) > w )
       w = GetCount(i);
   }
   w = IntDigits(w);
 
   bool first = true;
-  for (int i = 0; i < fNCounters; i++) {
+  for (size_t i = 0; i < fCounters.size(); i++) {
     const char* text = fCounters[i].description;
     if( GetCount(i) != 0 && text && *text ) {
       if( first ) {
