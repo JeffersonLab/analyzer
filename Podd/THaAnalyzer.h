@@ -9,6 +9,7 @@
 
 #include "TObject.h"
 #include "TString.h"
+#include <vector>
 
 class THaEvent;
 class THaRunBase;
@@ -22,7 +23,12 @@ class THaBenchmark;
 class THaEvData;
 class THaPostProcess;
 class THaCrateMap;
+class THaEvtTypeHandler;
 class THaEpicsEvtHandler;
+class THaApparatus;
+class THaSpectrometer;
+class THaPhysicsModule;
+class THaAnalysisObject;
 namespace Podd {
   class InterStageModule;
 }
@@ -58,11 +64,16 @@ public:
   Int_t          GetCompressionLevel() const  { return fCompress; }
   THaEvent*      GetEvent()            const  { return fEvent; }
   THaEvData*     GetDecoder()          const;
-  TList*         GetApps()             const  { return fApps; }
-  TList*         GetPhysics()          const  { return fPhysics; }
-  THaEpicsEvtHandler* GetEpicsEvtHandler() const { return fEpicsHandler; }
-  TList*         GetEvtHandlers()      const  { return fEvtHandlers; }
-  TList*         GetPostProcess()      const  { return fPostProcess; }
+  const std::vector<THaApparatus*>&
+                 GetApps()             const  { return fApps; }
+  const std::vector<THaPhysicsModule*>&
+                 GetPhysics()          const  { return fPhysics; }
+  THaEpicsEvtHandler*
+                 GetEpicsEvtHandler()  const  { return fEpicsHandler; }
+  const std::vector<THaEvtTypeHandler*>&
+                 GetEvtHandlers()      const  { return fEvtHandlers; }
+  const std::vector<THaPostProcess*>&
+                 GetPostProcess()      const  { return fPostProcess; }
   Bool_t         HasStarted()          const  { return fAnalysisStarted; }
   Bool_t         HelicityEnabled()     const  { return fDoHelicity; }
   Bool_t         PhysicsEnabled()      const  { return fDoPhysics; }
@@ -143,11 +154,18 @@ protected:
   THaEvent*      fPrevEvent;       //Event structure from last Init()
   THaRunBase*    fRun;             //Pointer to current run
   THaEvData*     fEvData;          //Instance of decoder used by us
-  TList*         fApps;            //List of apparatuses
-  TList*         fPhysics;         //List of physics modules
-  TList*         fPostProcess;     //List of post-processing modules
-  TList*         fEvtHandlers;     //List of event handlers
-  TList*         fInterStage;      //List of inter-stage modules
+
+  // Lists of processing modules defined for current analysis
+  std::vector<THaApparatus*>           fApps;            // Apparatuses
+  std::vector<THaSpectrometer*>        fSpectrometers;   // Spectrometers
+  std::vector<THaPhysicsModule*>       fPhysics;         // Physics modules
+  // Modules in the following lists are owned by this THaAnalyzer
+  std::vector<Podd::InterStageModule*> fInterStage;      // Inter-stage modules
+  std::vector<THaEvtTypeHandler*>      fEvtHandlers;     // Event type handlers
+  std::vector<THaPostProcess*>         fPostProcess;     // Post-processing mods
+  // Combined list of fApps, fInterStage and fPhysics for PhysicsAnalysis.
+  // Does not include fPostProcess and fEvtHandlers.
+  std::vector<THaAnalysisObject*>      fAnalysisModules; // Analysis modules
 
   // Status and control flags
   Bool_t         fIsInit;          // Init() called successfully
@@ -185,10 +203,10 @@ protected:
   virtual void   InitCounters();
   virtual void   InitCuts();
   virtual void   InitStages();
-  virtual Int_t  InitModules( TList* module_list, TDatime& time,
-			      Int_t erroff, const char* baseclass = nullptr );
-  virtual Int_t  InitOutput( const TList* module_list, Int_t erroff,
-			     const char* baseclass = nullptr );
+  virtual Int_t  InitModules( const std::vector<THaAnalysisObject*>& module_list,
+                              TDatime& run_time );
+  virtual Int_t  InitOutput( const std::vector<THaAnalysisObject*>& module_list );
+  virtual void   PrepareModuleList();
   virtual void   PrintCounters() const;
   virtual void   PrintScalers() const;  // archaic
   virtual void   PrintCutSummary() const;

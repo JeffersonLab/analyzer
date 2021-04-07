@@ -42,6 +42,7 @@
 #include "TROOT.h"
 #include "TDirectory.h"
 #include "THaCrateMap.h"
+#include "Helper.h"
 
 #include <iostream>
 #include <iomanip>
@@ -54,7 +55,9 @@
 
 using namespace std;
 using namespace Decoder;
-using Podd::InterStageModule;
+using namespace Podd;
+
+#define ALL(c) (c).begin(), (c).end()
 
 const char* const THaAnalyzer::kMasterCutName = "master";
 const char* const THaAnalyzer::kDefaultOdefFile = "output.def";
@@ -69,14 +72,37 @@ THaAnalyzer* THaAnalyzer::fgAnalyzer = nullptr;
 // do we need to "close" scalers/EPICS analysis if we reach the event limit?
 
 //_____________________________________________________________________________
+// Convert from type-unsafe ROOT containers to STL vectors
+template<typename T>
+inline size_t ListToVector( TList* lst, vector<T*>& vec )
+{
+  if( lst ) {
+    vec.reserve(std::max(lst->GetSize(), 0));
+    TIter next_item(lst);
+    while( TObject* obj = next_item() ) {
+      if( obj->IsZombie() )
+        // Skip objects whose constructor failed
+        continue;
+      auto* item = dynamic_cast<T*>(obj);
+      if( item ) {
+        // Skip duplicates
+        auto it = std::find(ALL(vec), item);
+        if( it == vec.end() )
+          vec.push_back(item);
+      }
+    }
+  }
+  return vec.size();
+}
+
+//_____________________________________________________________________________
 THaAnalyzer::THaAnalyzer() :
   fFile(nullptr), fOutput(nullptr), fEpicsHandler(nullptr),
   fOdefFileName(kDefaultOdefFile), fEvent(nullptr), fNStages(0), fNCounters(0),
   fWantCodaVers(-1),
   fStages(nullptr), fCounters(nullptr), fNev(0), fMarkInterval(1000), fCompress(1),
   fVerbose(2), fCountMode(kCountRaw), fBench(nullptr), fPrevEvent(nullptr),
-  fRun(nullptr), fEvData(nullptr), fApps(nullptr), fPhysics(nullptr),
-  fPostProcess(nullptr), fEvtHandlers(nullptr), fInterStage(nullptr),
+  fRun(nullptr), fEvData(nullptr),
   fIsInit(false), fAnalysisStarted(false), fLocalEvent(false),
   fUpdateRun(true), fOverwrite(true), fDoBench(false),
   fDoHelicity(false), fDoPhysics(true), fDoOtherEvents(true),
@@ -94,15 +120,10 @@ THaAnalyzer::THaAnalyzer() :
   }
   fgAnalyzer = this;
 
-  // Use the global lists of analysis objects.
-  fApps    = gHaApps;
-  fPhysics = gHaPhysics;
-  fEvtHandlers = gHaEvtHandlers;
-
   // EPICS data
   fEpicsHandler = new THaEpicsEvtHandler("epics","EPICS event type");
   //  fEpicsHandler->SetDebugFile("epicsdat.txt");
-  fEvtHandlers->Add(fEpicsHandler);
+  fEvtHandlers.push_back(fEpicsHandler);
 
   // Timers
   fBench = new THaBenchmark;
@@ -114,9 +135,10 @@ THaAnalyzer::~THaAnalyzer()
   // Destructor.
 
   Close();
+  DeleteContainer(fPostProcess);
+  DeleteContainer(fEvtHandlers);
+  DeleteContainer(fInterStage);
   delete fExtra; fExtra = nullptr;
-  delete fPostProcess;  //deletes PostProcess objects
-  delete fInterStage;
   delete fBench;
   delete [] fStages;
   delete [] fCounters;
@@ -158,12 +180,7 @@ Int_t THaAnalyzer::AddInterStage( Podd::InterStageModule* module )
       return retval;
   }
 
-  // If list of modules does not yet exist, create it.
-  // Destructor will clean up.
-  if( !fInterStage )
-    fInterStage = new TList;
-
-  fInterStage->Add(module);
+  fInterStage.push_back(module);
   return 0;
 }
 
@@ -200,12 +217,7 @@ Int_t THaAnalyzer::AddPostProcess( THaPostProcess* module )
       return retval;
   }
 
-  // If list of modules does not yet exist, create it.
-  // Destructor will clean up.
-  if( !fPostProcess )
-    fPostProcess = new TList;
-
-  fPostProcess->Add(module);
+  fPostProcess.push_back(module);
   return 0;
 }
 
@@ -226,11 +238,14 @@ void THaAnalyzer::Close()
 
   // Close all Post-process objects, but do not delete them
   // (destructor does that)
-  TIter nextp(fPostProcess);
-  TObject *obj;
-  while((obj=nextp())) {
-    (static_cast<THaPostProcess*>(obj))->Close();
-  }
+  for( auto* postProc : fPostProcess)
+    postProc->Close();
+
+  // After Close(), will need to Init() again, where these lists will be filled
+  fApps.clear();
+  fSpectrometers.clear();
+  fPhysics.clear();
+  fEvtHandlers.clear();
 
   if( gHaRun && *gHaRun == *fRun )
     gHaRun = nullptr;
@@ -461,8 +476,8 @@ void THaAnalyzer::InitCuts()
 }
 
 //_____________________________________________________________________________
-Int_t THaAnalyzer::InitModules( TList* module_list, TDatime& run_time,
-				Int_t erroff, const char* baseclass )
+Int_t THaAnalyzer::InitModules(
+  const std::vector<THaAnalysisObject*>& module_list, TDatime& run_time )
 {
   // Initialize a list of THaAnalysisObjects for time 'run_time'.
   // If 'baseclass' given, ensure that each object in the list inherits
@@ -470,56 +485,30 @@ Int_t THaAnalyzer::InitModules( TList* module_list, TDatime& run_time,
 
   static const char* const here = "InitModules()";
 
-  // Treat an unset list like an empty one
-  if( !module_list )
-    return 0;
-
-  assert(baseclass && *baseclass); // else logic error in caller
-
-  TIter next( module_list );
   Int_t retval = 0;
-  TObject* obj;
-  while( (obj = next()) ) {
-    if( !obj->IsA()->InheritsFrom( baseclass )) {
-      Error( here, "Object %s (%s) is not a %s. Analyzer initialization "
-	     "failed.", obj->GetName(), obj->GetTitle(), baseclass );
-      retval = -2;
-      break;
-    }
-    auto theModule = dynamic_cast<THaAnalysisObject*>( obj );
-    if( !theModule ) {
-      Error( here, "Object %s (%s) is not a THaAnalysisObject. Analyzer "
-	     "initialization failed.", obj->GetName(), obj->GetTitle() );
-      retval = -2;
-      break;
-    } else if( theModule->IsZombie() ) {
-      Warning( here, "Removing zombie module %s (%s) from list of %s objects",
-	       obj->GetName(), obj->GetTitle(), baseclass );
-      module_list->Remove( theModule );
-      delete theModule;
-      continue;
-    }
+  for( auto it = module_list.begin(); it != module_list.end(); ) {
+    auto* theModule = *it;
     try {
       retval = theModule->Init( run_time );
     }
     catch( exception& e ) {
-      Error( here, "Exception %s caught during initialization of module "
+      Error(here, "Exception %s caught during initialization of module "
 	     "%s (%s). Analyzer initialization failed.",
-	     e.what(), obj->GetName(), obj->GetTitle() );
+            e.what(), theModule->GetName(), theModule->GetTitle() );
       retval = -1;
       goto errexit;
     }
     if( retval != kOK || !theModule->IsOK() ) {
       Error( here, "Error %d initializing module %s (%s). "
              "Analyzer initialization failed.",
-	     retval, obj->GetName(), obj->GetTitle() );
+            retval, theModule->GetName(), theModule->GetTitle() );
       if( retval == kOK )
 	retval = -1;
       break;
     }
+    ++it;
   }
  errexit:
-  if( retval != 0 ) retval -= erroff;
   return retval;
 }
 
@@ -743,13 +732,25 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
   // Tell the decoder about the run's CODA version
   fEvData->SetDataVersion( run->GetDataVersion() );
 
-  // Initialize all apparatuses, scalers, and physics modules.
-  // Quit if any errors.
-  if( !((retval = InitModules( fApps,    run_time, 20, "THaApparatus")) ||
-	(retval = InitModules( fPhysics, run_time, 40, "THaPhysicsModule")) ||
-	(retval = InitModules( fEvtHandlers, run_time, 50, "THaEvtTypeHandler")) ||
-        (retval = InitModules( fInterStage, run_time, 60, "Podd::InterStageModule"))
-	)) {
+  // Use the global lists of analysis objects.
+  if( !fAnalysisStarted ) {
+    ListToVector(gHaApps, fApps);
+    ListToVector(gHaApps, fSpectrometers);
+    ListToVector(gHaPhysics, fPhysics);
+    ListToVector(gHaEvtHandlers, fEvtHandlers);
+  }
+
+  // Initialize all apparatuses, physics modules, event type handlers
+  // and inter-stage modules in that order. Quit on any errors.
+  vector<THaAnalysisObject*> modulesToInit;
+  modulesToInit.reserve(fApps.size() + fPhysics.size() +
+                        fEvtHandlers.size() + fInterStage.size());
+  modulesToInit.insert(modulesToInit.end(), ALL(fApps));
+  modulesToInit.insert(modulesToInit.end(), ALL(fPhysics));
+  modulesToInit.insert(modulesToInit.end(), ALL(fEvtHandlers));
+  modulesToInit.insert(modulesToInit.end(), ALL(fInterStage));
+  retval = InitModules(modulesToInit, run_time);
+  if( retval == 0 ) {
 
     // Set up cuts here, now that all global variables are available
     if( fCutFileName.IsNull() ) {
@@ -792,10 +793,10 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
     olddir->cd();
 
     // Post-process has to be initialized after all cuts are known
-    TIter nextp(fPostProcess);
-    TObject *obj;
-    while ( !retval && (obj=nextp()) ) {
-      retval = (static_cast<THaPostProcess*>(obj))->Init(run_time);
+    for( auto* obj : fPostProcess) {
+      retval = obj->Init(run_time);
+      if( retval != 0 )
+        break;
     }
   }
 
@@ -806,8 +807,7 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
     } else {
       // call the apparatuses again, to permit them to write more
       // complex output directly to the TTree
-      (retval = InitOutput( fApps, 20, "THaApparatus")) ||
-	(retval = InitOutput( fPhysics, 40, "THaPhysicsModule"));
+      retval = InitOutput(modulesToInit);
     }
   }
 
@@ -819,41 +819,25 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
 }
 
 //_____________________________________________________________________________
-Int_t THaAnalyzer::InitOutput( const TList* module_list,
-			       Int_t erroff, const char* baseclass )
+Int_t THaAnalyzer::InitOutput( const std::vector<THaAnalysisObject*>& module_list )
 {
   // Initialize a list of THaAnalysisObject's for output
   // If 'baseclass' given, ensure that each object in the list inherits
   // from 'baseclass'.
   static const char* const here = "InitOutput()";
 
-  if( !module_list )
-    return -3-erroff;
-  TIter next( module_list );
   Int_t retval = 0;
-  while( TObject* obj = next() ) {
-    if( baseclass && !obj->IsA()->InheritsFrom( baseclass )) {
-      Error( here, "Object %s (%s) is not a %s. Analyzer initialization "
-          "failed.", obj->GetName(), obj->GetTitle(), baseclass );
-      retval = -2;
-      break;
-    }
-    auto theModule = dynamic_cast<THaAnalysisObject*>( obj );
-    if( !theModule ) {
-      Error( here, "Object %s (%s) is not a THaAnalysisObject. Analyzer "
-          "initialization failed.", obj->GetName(), obj->GetTitle() );
-      retval = -2;
-      break;
-    }
+  for( auto* theModule : module_list ) {
     theModule->InitOutput( fOutput );
     if( !theModule->IsOKOut() ) {
       Error( here, "Error initializing output for  %s (%s). "
-          "Analyzer initialization failed.", obj->GetName(), obj->GetTitle() );
+          "Analyzer initialization failed.",
+          theModule->GetName(), theModule->GetTitle() );
       retval = -1;
       break;
     }
   }
-  return (retval == 0) ? 0 : retval - erroff;
+  return retval;
 }
 
 
@@ -997,15 +981,9 @@ void THaAnalyzer::PrintScalers() const
   // may want to loop over scaler event handlers and use their print methods.
   // but that can be done with the End method of the event handler
   // Print scaler statistics
-  bool first = true;
-    if( first ) {
-      cout << "Scalers are event handlers now and can be summarized by "<<endl;
-      cout << "those objects"<<endl;
-      first = false;
-    }
-    cout << endl;
-    //OLD WAY    theScaler->PrintSummary();
-   if( !first ) cout << endl;
+  cout << "Scalers are event handlers now and can be summarized by "<<endl;
+  cout << "those objects"<<endl;
+  //OLD WAY    theScaler->PrintSummary();
 }
 
 //_____________________________________________________________________________
@@ -1047,17 +1025,8 @@ Int_t THaAnalyzer::BeginAnalysis()
 
   fFirstPhysics = true;
 
-  TIter nexta(fApps);
-  while( auto obj = static_cast<THaAnalysisObject*>(nexta()) ) {
-    obj->Begin( fRun );
-  }
-  TIter nextp(fPhysics);
-  while( auto obj = static_cast<THaAnalysisObject*>(nextp()) ) {
-    obj->Begin( fRun );
-  }
-  TIter nexte(fEvtHandlers);
-  while( auto obj = static_cast<THaAnalysisObject*>(nexte()) ) {
-    obj->Begin( fRun );
+  for( auto* theModule : fAnalysisModules ) {
+    theModule->Begin( fRun );
   }
 
   return 0;
@@ -1069,35 +1038,10 @@ Int_t THaAnalyzer::EndAnalysis()
   // Execute End() for all Apparatus and Physics modules. Internal function
   // called right after event loop is finished for each run.
 
-  TIter nexta(fApps);
-  while( auto obj = static_cast<THaAnalysisObject*>(nexta()) ) {
-    obj->End( fRun );
-  }
-  TIter nextp(fPhysics);
-  while( auto obj = static_cast<THaAnalysisObject*>(nextp()) ) {
-    obj->End( fRun );
-  }
-  TIter nexte(fEvtHandlers);
-  while( auto obj = static_cast<THaAnalysisObject*>(nexte()) ) {
-    obj->End( fRun );
+  for( auto* theModule : fAnalysisModules ) {
+    theModule->End( fRun );
   }
   return 0;
-}
-
-//_____________________________________________________________________________
-template<typename T>
-inline size_t ListToVector( TList* lst, vector<T*>& vec )
-{
-  if( lst ) {
-    vec.reserve(std::max(lst->GetSize(), 0));
-    TIter next_item(lst);
-    while( TObject* obj = next_item() ) {
-      auto* item = dynamic_cast<T*>(obj);
-      if( item )
-        vec.push_back(item);
-    }
-  }
-  return vec.size();
 }
 
 //_____________________________________________________________________________
@@ -1128,36 +1072,21 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
   //--- Process all apparatuses that are defined in fApps
   //    First Decode(), then Reconstruct()
 
-  // Convert from type-unsafe ROOT containers to STL vectors
-  //FIXME: This does not have to be done for every event
-  vector<THaApparatus*> apps;
-  vector<THaSpectrometer*> spectros;
-  vector<InterStageModule*> stagemods;
-  vector<THaPhysicsModule*> physmods;
-  vector<THaAnalysisObject*> allmods;
-  ListToVector(fApps, apps);
-  ListToVector(fApps, spectros);
-  ListToVector(fInterStage, stagemods);
-  ListToVector(fPhysics, physmods);
-  ListToVector( fApps, allmods );
-  ListToVector( fInterStage, allmods );
-  ListToVector( fPhysics, allmods );
-
-  TString stage;
-  TObject* obj = nullptr;  // current module, for exception error message
+  const char* stage = "";
+  THaAnalysisObject* obj = nullptr;  // current module, for exception error message
 
   try {
     stage = "Decode";
     if( fDoBench ) fBench->Begin(stage);
-    for( auto mod : allmods ) {
+    for( auto* mod : fAnalysisModules ) {
       obj = mod;
       mod->Clear();
     }
-    for( auto app : apps ) {
+    for( auto* app : fApps ) {
       obj = app;
       app->Decode(*fEvData);
     }
-    for( auto mod : stagemods ) {
+    for( auto* mod : fInterStage ) {
       if( mod->GetStage() == kDecode ) {
         obj = mod;
         mod->Process(*fEvData);
@@ -1178,11 +1107,11 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
 
     stage = "CoarseTracking";
     if( fDoBench ) fBench->Begin(stage);
-    for( auto spectro : spectros ) {
+    for( auto* spectro : fSpectrometers ) {
       obj = spectro;
       spectro->CoarseTrack();
     }
-    for( auto mod : stagemods ) {
+    for( auto* mod : fInterStage ) {
       if( mod->GetStage() == kCoarseTrack ) {
         obj = mod;
         mod->Process(*fEvData);
@@ -1194,11 +1123,11 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
 
     stage = "CoarseReconstruct";
     if( fDoBench ) fBench->Begin(stage);
-    for( auto app : apps ) {
+    for( auto* app : fApps ) {
       obj = app;
       app->CoarseReconstruct();
     }
-    for( auto mod : stagemods ) {
+    for( auto* mod : fInterStage ) {
       if( mod->GetStage() == kCoarseRecon ) {
         obj = mod;
         mod->Process(*fEvData);
@@ -1211,11 +1140,11 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
 
     stage = "Tracking";
     if( fDoBench ) fBench->Begin(stage);
-    for( auto spectro : spectros ) {
+    for( auto* spectro : fSpectrometers ) {
       obj = spectro;
       spectro->Track();
     }
-    for( auto mod : stagemods ) {
+    for( auto* mod : fInterStage ) {
       if( mod->GetStage() == kTracking ) {
         obj = mod;
         mod->Process(*fEvData);
@@ -1227,11 +1156,11 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
 
     stage = "Reconstruct";
     if( fDoBench ) fBench->Begin(stage);
-    for( auto app : apps ) {
+    for( auto* app : fApps ) {
       obj = app;
       app->Reconstruct();
     }
-    for( auto mod : stagemods ) {
+    for( auto* mod : fInterStage ) {
       if( mod->GetStage() == kReconstruct ) {
         obj = mod;
         mod->Process(*fEvData);
@@ -1244,7 +1173,7 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
 
     stage = "Physics";
     if( fDoBench ) fBench->Begin(stage);
-    for( auto physmod : physmods ) {
+    for( auto* physmod : fPhysics ) {
       obj = physmod;
       Int_t err = physmod->Process( *fEvData );
       if( err == THaPhysicsModule::kTerminate )
@@ -1254,7 +1183,7 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
         break;
       }
     }
-    for( auto mod : stagemods ) {
+    for( auto* mod : fInterStage ) {
       if( mod->GetStage() == kPhysics ) {
         obj = mod;
         mod->Process(*fEvData);
@@ -1275,7 +1204,7 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
     TString module_desc = (obj != nullptr) ? obj->GetTitle() : "unknown";
     Error( here, "Caught exception %s in module %s (%s) during %s analysis "
 	   "stage. Terminating analysis.", e.what(), module_name.Data(),
-	   module_desc.Data(), stage.Data() );
+	   module_desc.Data(), stage );
     if( fDoBench ) fBench->Stop(stage);
     code = kFatal;
     goto errexit;
@@ -1351,8 +1280,7 @@ Int_t THaAnalyzer::PostProcess( Int_t code )
 
   if( code == kFatal )
     return code;
-  TIter next(fPostProcess);
-  while( auto obj = static_cast<THaPostProcess*>(next())) {
+  for( auto* obj : fPostProcess ) {
     Int_t ret = obj->Process(fEvData,fRun,code);
     if( obj->TestBits(THaPostProcess::kUseReturnCode) &&
 	ret > code )
@@ -1378,8 +1306,7 @@ Int_t THaAnalyzer::MainAnalysis()
     rawfail = true;
   }
 
-  TIter nextp(fEvtHandlers);
-  while( auto obj = static_cast<THaEvtTypeHandler*>(nextp()) ) {
+  for( auto* obj : fEvtHandlers ) {
     obj->Analyze(fEvData);
   }
 
@@ -1408,7 +1335,7 @@ Int_t THaAnalyzer::MainAnalysis()
 
 
   //=== Post-processing (e.g. event filtering) ===
-  if( fPostProcess ) {
+  if( !fPostProcess.empty() ) {
     Incr(kNevPostProcess);
     retval = PostProcess(retval);
   }
@@ -1482,6 +1409,7 @@ Int_t THaAnalyzer::Process( THaRunBase* run )
   bool terminate = false, fatal = false;
   UInt_t nlast = fRun->GetLastEvent();
   fAnalysisStarted = true;
+  PrepareModuleList();
   BeginAnalysis();
   if( fFile ) {
     fFile->cd();
@@ -1639,6 +1567,20 @@ void THaAnalyzer::SetCodaVersion( Int_t vers )
     vers = 2;
   }
   fWantCodaVers = vers;
+}
+
+//_____________________________________________________________________________
+void THaAnalyzer::PrepareModuleList()
+{
+  // Fill fAnalysisModules in the order fApps, fInterStage, fPhysics to be
+  // used with PhysicsAnalysis().
+
+  fAnalysisModules.clear();
+  fAnalysisModules.reserve(fApps.size() + fInterStage.size() +
+                           fPhysics.size());
+  fAnalysisModules.insert(fAnalysisModules.end(), ALL(fApps));
+  fAnalysisModules.insert(fAnalysisModules.end(), ALL(fInterStage));
+  fAnalysisModules.insert(fAnalysisModules.end(), ALL(fPhysics));
 }
 
 //_____________________________________________________________________________
