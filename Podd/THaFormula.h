@@ -8,13 +8,7 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "RVersion.h"
-
-#if ROOT_VERSION_CODE < 394240
-#include "TFormula.h"
-#else
 #include "v5/TFormula.h"
-#endif
-
 #include "THaGlobals.h"
 #include <vector>
 #include <iostream>
@@ -24,11 +18,7 @@ class THaCutList;
 class THaVar;
 
 
-#if ROOT_VERSION_CODE < 394240
-class THaFormula : public TFormula {
-#else
 class THaFormula : public ROOT::v5::TFormula {
-#endif
 
 public:
   static const Option_t* const kPRINTFULL;
@@ -65,11 +55,6 @@ public:
   virtual void        Print( Option_t* option="" ) const;
           void        SetList( const THaVarList* lst )    { fVarList = lst; }
           void        SetCutList( const THaCutList* lst ) { fCutList = lst; }
-
-#if ROOT_VERSION_CODE >= 331529 && ROOT_VERSION_CODE < 334336// 5.15/09-5.26/00
-  // Workaround for buggy TFormula
-  virtual TString     GetExpFormula( Option_t* opt="" ) const;
-#endif
 
 protected:
 

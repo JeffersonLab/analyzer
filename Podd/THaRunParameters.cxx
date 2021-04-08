@@ -106,12 +106,7 @@ void THaRunParameters::Print( Option_t* ) const
   if( np > 0 ){
     cout << "  Prescale factors: (1-"<<np<<")\n   ";
     for( int i=0; i<np; i++ ) {
-#if ROOT_VERSION_CODE >= ROOT_VERSION(3,3,0)
       cout << fPrescale[i];
-#else
-      // const version of operator[] missing in ROOT < 3.3
-      cout << const_cast<THaRunParameters*>(this)->fPrescale[i];
-#endif
       if( i != np-1 )
 	cout << "/";
     }

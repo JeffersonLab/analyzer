@@ -294,11 +294,7 @@ Int_t THaCoincTime::Process( const THaEvData& evdata )
       Double_t p;
       if ( tr && tr->GetBeta()!=0. && (p=tr->GetP())>0. ) {
 	Double_t beta = p/TMath::Sqrt(p*p+sp->Mass*sp->Mass);
-#if ROOT_VERSION_CODE >= ROOT_VERSION(3,4,0)
 	Double_t c = TMath::C();
-#else
-	Double_t c = 2.99792458e8;
-#endif
 	sp->Vxtime[i] = tr->GetTime() - tr->GetPathLen()/(beta*c);
       } else {
 	// Using (i+1)*kBig here prevents differences from being zero

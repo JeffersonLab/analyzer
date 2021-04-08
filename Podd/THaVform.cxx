@@ -74,27 +74,13 @@ THaVform::THaVform( const THaVform& rhs ) :
     if( theCut ) {
       //FIXME: do we really need to make copies?
       // The more formulas, the more stuff to evaluate...
-#if ROOT_VERSION_CODE >= ROOT_VERSION(3,10,0)
       fCut.push_back(new THaCut(*theCut));
-#else
-      // work around buggy TFormula copy constructor
-      THaCut* c = new THaCut;
-      *c = *theCut;
-      fCut.push_back(c);
-#endif
     }
   }
   for( auto theForm : rhs.fFormula ) {
     if( theForm ) {
       //FIXME: do we really need to make copies?
-#if ROOT_VERSION_CODE >= ROOT_VERSION(3,10,0)
       fFormula.push_back(new THaFormula(*theForm));
-#else
-      // work around buggy TFormula copy constructor
-      THaFormula* f = new THaFormula;
-      *f = *theForm;
-      fFormula.push_back(f);
-#endif
     }
   }
   if( rhs.fOdata )
@@ -136,27 +122,13 @@ void THaVform::Create(const THaVform &rhs)
   for( auto itf : rhs.fFormula ) {
     if( itf ) {
       //FIXME: do we really need to make copies?
-#if ROOT_VERSION_CODE >= ROOT_VERSION(3,10,0)
       fFormula.push_back(new THaFormula(*itf));
-#else
-    // work around buggy TFormula copy constructor
-      THaFormula* f = new THaFormula;
-      *f = **itf;
-      fFormula.push_back(f);
-#endif
     }
   }
   for( auto itc : rhs.fCut ) {
     if( itc ) {
       //FIXME: do we really need to make copies?
-#if ROOT_VERSION_CODE >= ROOT_VERSION(3,10,0)
       fCut.push_back(new THaCut(*itc));
-#else
-    // work around buggy TFormula copy constructor
-      THaCut* c = new THaCut;
-      *c = **itc;
-      fCut.push_back(c);
-#endif
     }
   }
 

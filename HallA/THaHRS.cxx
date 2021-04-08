@@ -292,11 +292,7 @@ Int_t THaHRS::TrackTimes( TClonesArray* Tracks )
       dt = TMath::Sqrt(wx2/delta);
       Double_t invbeta = (wgt_sum*wxy-wx*wy)/delta;
       if (invbeta != 0.) {
-#if ROOT_VERSION_CODE >= ROOT_VERSION(3,4,0)
 	Double_t c = TMath::C();
-#else
-	Double_t c = 2.99792458e8;
-#endif
 	beta = 1./(c*invbeta);
 	dbeta = TMath::Sqrt(wgt_sum/delta)/(c*invbeta*invbeta);
       }

@@ -345,9 +345,6 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
       return nullptr;
     }
 
-#if ROOT_VERSION_CODE <  ROOT_VERSION(5,34,6)
-    VarType type = ( rtype == TMethodCall::kLong ) ? kLong : kDouble;
-#else
     // Attempt to get the real function return type
     VarType type = kVarTypeEnd;
     string ntype = func->GetReturnTypeNormalizedName();
@@ -400,7 +397,6 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
       delete theMethod;
       return nullptr;
     }
-#endif
     if( !objrtti.IsObjVector() )
       var = new THaVar( name, desc, (void*)loc, type, ((ndot==2) ? 0 : -1),
 			theMethod );

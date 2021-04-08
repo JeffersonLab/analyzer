@@ -725,26 +725,6 @@ Double_t THaFormula::EvalInstance( Int_t instance )
 }
 
 //_____________________________________________________________________________
-#if ROOT_VERSION_CODE >= ROOT_VERSION(5,15,9) && \
-    ROOT_VERSION_CODE <  ROOT_VERSION(5,26,0)
-TString THaFormula::GetExpFormula( Option_t* ) const
-{
-  // Override ROOT's buggy TFormula::GetExpFormula because it does not handle
-  // kDefinedVariable and kDefinedString opcodes.
-  // This bug became apparent with the change to TFormula::Analyze on Mar 9, 2007:
-  // http://root.cern.ch/gitweb?p=root.git;a=commit;h=dd7d9db6417e006e575518b209a9d11f85726684
-  // (approximately ROOT 5.15/09)
-  // and was fixed on Aug 4, 2009 during the ROOT 5.26 development cycle:
-  // http://root.cern.ch/gitweb?p=root.git;a=commit;h=3c6b681704ba8a8d61c407fabb6be14722925d0b
-  // The workaround here is a quick fix that reverts to the old behavior before
-  // ROOT 5.15/09, i.e. does not allow more than one level of recursion for
-  // defining forumulas of formulas, but that's good enough for our purposes.
-
-  return fTitle;
-}
-#endif
-
-//_____________________________________________________________________________
 Int_t THaFormula::GetNdataUnchecked() const
 {
   // Return minimum of sizes of all referenced arrays

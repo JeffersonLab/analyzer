@@ -505,15 +505,7 @@ void THaSpectrometer::SetCentralAngles( Double_t th, Double_t ph,
   TVector3 ny( ct/norm,          0.0,   -st*cp/norm   );
   TVector3 nz( st*cp,            st*sp, ct            );
   if( bend_down ) { nx *= -1.0; ny *= -1.0; }
-#if ROOT_VERSION_CODE >= ROOT_VERSION(3,5,4)
   fToLabRot.SetToIdentity().RotateAxes( nx, ny, nz );
-#else
-  if( !fToLabRot.IsIdentity()) {
-    TRotation tmp; //Identity
-    fToLabRot = tmp;
-  }
-  fToLabRot.RotateAxes( nx, ny, nz );
-#endif
   fToTraRot = fToLabRot.Inverse();
 }
 

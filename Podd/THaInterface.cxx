@@ -159,11 +159,7 @@ THaInterface::~THaInterface()
 }
 
 //_____________________________________________________________________________
-#if ROOT_VERSION_CODE < ROOT_VERSION(5,18,0)
-void THaInterface::PrintLogo()
-#else
 void THaInterface::PrintLogo( Bool_t lite )
-#endif
 {
    // Print the Hall A analyzer logo on standard output.
 
@@ -185,9 +181,7 @@ void THaInterface::PrintLogo( Bool_t lite )
      mille = iyear;
    char* root_date = Form("%s %d %4d",months[imonth],iday,mille);
 
-#if ROOT_VERSION_CODE >= ROOT_VERSION(5,18,0)
    if( !lite ) {
-#endif
      Printf("  ************************************************");
      Printf("  *                                              *");
      Printf("  *            W E L C O M E  to  the            *");
@@ -195,15 +189,13 @@ void THaInterface::PrintLogo( Bool_t lite )
      Printf("  *                                              *");
      Printf("  *  Release %16s %18s *",HA_VERSION,HA_DATE);
      Printf("  *  Based on ROOT %8s %20s *",root_version,root_date);
-     Printf("  *             Development version              *");
+//     Printf("  *             Development version              *");
      Printf("  *                                              *");
      Printf("  *            For information visit             *");
      Printf("  * https://redmine.jlab.org/projects/podd/wiki/ *");
      Printf("  *                                              *");
      Printf("  ************************************************");
-#if ROOT_VERSION_CODE >= ROOT_VERSION(5,18,0)
    }
-#endif
 
 #ifdef R__UNIX
    //   if (!strcmp(gGXW->GetName(), "X11TTF"))
@@ -275,9 +267,6 @@ const char* THaInterface::SetPrompt( const char* newPrompt )
   // interpreter prompt for every line without respect to any user-set
   // default prompt.
 
-#if ROOT_VERSION_CODE < ROOT_VERSION(6,0,0)
-  return TRint::SetPrompt(newPrompt);
-#else
   TString s;
   if( newPrompt ) {
     s = newPrompt;
@@ -285,7 +274,6 @@ const char* THaInterface::SetPrompt( const char* newPrompt )
       s.Replace(0,4,"analyzer");
   }
   return TRint::SetPrompt(s.Data());
-#endif
 }
 
 //_____________________________________________________________________________
