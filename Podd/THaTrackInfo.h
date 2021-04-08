@@ -8,6 +8,8 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "TVector3.h"
+#include "DataType.h"  // for kBig
+
 class THaTrack;
 class THaSpectrometer;
 
@@ -77,9 +79,6 @@ protected:
   Int_t     fOK;        // Data ok (0:no 1:yes)
 
   THaSpectrometer* fSpectro; //! Spectrometer creating this track
-
-private:
-  static const Double_t kBig;
 
   ClassDef(THaTrackInfo,1)  // Track information
 };

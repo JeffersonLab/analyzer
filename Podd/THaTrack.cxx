@@ -15,8 +15,6 @@
 
 using namespace std;
 
-const Double_t THaTrack::kBig = 1e38;
-
 //_____________________________________________________________________________
 THaTrack::~THaTrack()
 {

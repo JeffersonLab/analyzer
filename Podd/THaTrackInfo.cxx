@@ -15,8 +15,6 @@
 
 using namespace std;
 
-const Double_t THaTrackInfo::kBig = 1e38;
-
 //_____________________________________________________________________________
 THaTrackInfo& THaTrackInfo::operator=( const THaTrackInfo& rhs )
 {

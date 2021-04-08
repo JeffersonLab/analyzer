@@ -54,15 +54,15 @@
 #include "SeqCollectionMethodVar.h"
 #include "VectorObjMethodVar.h"
 #include "TError.h"
+#include "DataType.h"  // for kBig
 #include <cassert>
 #include <typeinfo>
-#include <string>
 #include <map>
 
 using namespace std;
 
 const Long64_t THaVar::kInvalidInt = kMaxLong64;
-const Double_t THaVar::kInvalid    = 1e38;
+const Double_t THaVar::kInvalid    = kBig;
 
 static const char* const here = "THaVar";
 

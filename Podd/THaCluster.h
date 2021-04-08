@@ -9,6 +9,7 @@
 
 #include "TObject.h"
 #include "TVector3.h"
+#include "DataType.h" // for kBig
 
 class THaCluster : public TObject {
 
@@ -28,8 +29,6 @@ public:
   // TObject functions redefined
   virtual void     Clear( Option_t* opt="" );
   virtual void     Print( Option_t* opt="" ) const;
-
-  static const Double_t kBig;
 
 protected:
 

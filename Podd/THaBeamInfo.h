@@ -8,6 +8,8 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "TVector3.h"
+#include "DataType.h"
+
 class THaBeam;
 
 class THaBeamInfo {
@@ -77,9 +79,6 @@ protected:
   Int_t     fOK;        // Data ok (0:no 1:yes)
 
   THaBeam*  fBeam;      //! Beam apparatus for this beam information
-
-private:
-  static const Double_t kBig;
 
   ClassDef(THaBeamInfo,1)  // Beam information for physics modules
 };

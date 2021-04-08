@@ -11,6 +11,7 @@
 
 #include "THaVertexModule.h"
 #include "VarDef.h"
+#include "DataType.h"  // for kBig
 
 using namespace std;
 
@@ -32,8 +33,6 @@ THaVertexModule::~THaVertexModule()
 void THaVertexModule::VertexClear()
 {
   // Reset vertex object
-
-  const Double_t kBig = 1e38;
 
   fVertex.SetXYZ(kBig,kBig,kBig);
   fVertexError.SetXYZ(1.0,1.0,1.0);

@@ -14,8 +14,6 @@
 
 using namespace std;
 
-const Double_t THaTrackProj::kBig = 1.e38;
-
 //_____________________________________________________________________________
 void THaTrackProj::Clear( Option_t* )
 {

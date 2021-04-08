@@ -22,6 +22,7 @@
 #include "TError.h"
 #include "TVirtualMutex.h"
 #include "TMath.h"
+#include "DataType.h"
 
 #include <cstring>
 #include <cassert>
@@ -32,8 +33,6 @@ using namespace std;
 
 const Option_t* const THaFormula::kPRINTFULL  = "FULL";
 const Option_t* const THaFormula::kPRINTBRIEF = "BRIEF";
-
-static const Double_t kBig = 1e38; // Error value
 
 enum EFuncCode { kLength, kSum, kMean, kStdDev, kMax, kMin,
 		 kGeoMean, kMedian, kIteration, kNumSetBits };

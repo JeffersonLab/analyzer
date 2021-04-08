@@ -9,6 +9,7 @@
 
 #include "TObject.h"
 #include "THaVDCCluster.h"   // for chi2_t
+#include "DataType.h"        // for kBig
 
 class THaVDCPoint;
 class THaTrack;
@@ -17,7 +18,7 @@ class THaVDCPointPair : public TObject {
 
 public:
   THaVDCPointPair( THaVDCPoint* lp, THaVDCPoint* up, Double_t spacing )
-    : fLowerPoint(lp), fUpperPoint(up), fSpacing(spacing), fError(1e38),
+    : fLowerPoint(lp), fUpperPoint(up), fSpacing(spacing), fError(kBig),
       fStatus(0) {}
   THaVDCPointPair() = delete;
   virtual ~THaVDCPointPair() = default;

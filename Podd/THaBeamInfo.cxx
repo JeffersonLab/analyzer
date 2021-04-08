@@ -15,8 +15,6 @@
 
 using namespace std;
 
-const Double_t THaBeamInfo::kBig = 1e38;
-
 //_____________________________________________________________________________
 Double_t THaBeamInfo::GetE() const
 {

@@ -8,12 +8,11 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "TObject.h"
+#include "DataType.h" // for kBig
 
 class THaTrackProj : public TObject {
 
 public:
-  static const Double_t kBig;
-
   explicit THaTrackProj( Double_t x=kBig, Double_t y=kBig, Double_t pathl=kBig,
                          Double_t dx=kBig, Int_t ch=-1 )
     : fX(x), fY(y), fPathl(pathl), fdX(dx), fChannel(ch),

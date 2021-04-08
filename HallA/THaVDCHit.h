@@ -9,6 +9,7 @@
 
 #include "TObject.h"
 #include "THaVDCWire.h"
+#include "DataType.h"
 #include <cassert>
 #include <functional>
 
@@ -65,7 +66,6 @@ public:
   };
 
 protected:
-  static const Double_t kBig;  //! Arbitrary lrg number indicating invalid data
 
   THaVDCWire* fWire;     // Wire on which the hit occurred
   Int_t       fRawTime;  // TDC value (channels)

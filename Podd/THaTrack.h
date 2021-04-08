@@ -10,6 +10,7 @@
 #include "TObject.h"
 #include "TVector3.h"
 #include "THaPIDinfo.h"
+#include "DataType.h"  // for kBig
 #include <cstring>   // for memset
 
 class TClonesArray;
@@ -251,8 +252,6 @@ protected:
   Int_t             fGoodPlane3; // Track hit a plane 3 paddle
   Int_t             fGoodPlane4; // Track hit a plane 4 paddle
   
-  static const Double_t kBig;
-
   ClassDef(THaTrack,5)       // A generic particle track
 };
 

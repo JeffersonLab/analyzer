@@ -11,8 +11,6 @@
 
 using namespace std;
 
-const Double_t THaCluster::kBig = 1e38;
-
 //_____________________________________________________________________________
 void THaCluster::Clear( Option_t* )
 {
