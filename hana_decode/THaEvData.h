@@ -203,8 +203,6 @@ public:
   void SetCrateMapName( const char* name );
   static void SetDefaultCrateMapName( const char* name );
 
-  enum { MAX_PSFACT = 12 };
-
 protected:
   // Initialization routines
   virtual Int_t init_cmap();

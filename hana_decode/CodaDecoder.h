@@ -29,6 +29,8 @@ public:
   virtual Int_t SetDataVersion( Int_t version ) { return SetCodaVersion(version); }
           Int_t SetCodaVersion( Int_t version );
 
+  enum { MAX_PSFACT = 12 };
+
 protected:
   virtual Int_t LoadIfFlagData(const UInt_t* evbuffer);
 
