@@ -12,31 +12,19 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-#include <iostream>
-
-//#include "TLorentzVector.h"
-//#include "TVector3.h"
 #include "TMath.h"
-
 #include "THaCoincTime.h"
-
 #include "THaTrack.h"
-//#include "THaScintillator.h"
 #include "THaDetMap.h"
 #include "THaSpectrometer.h"
 #include "THaEvData.h"
-//#include "THaTrackProj.h"
-
 #include "VarDef.h"
-//#include "THaString.h"
-//#include "THaDB.h"
+#include <cassert>
 
 using namespace std;
 
-// Default to a maximum of 10 tracks per spectrometer
+// Reserve initial space for 10 tracks per spectrometer (can grow dynamically)
 #define NTR 10
-// If true, allow dynamic increase of number of allowed tracks
-#define CAN_RESIZE 0
 
 //_____________________________________________________________________________
 THaCoincTime::THaCoincTime( const char* name,
@@ -45,11 +33,16 @@ THaCoincTime::THaCoincTime( const char* name,
 			    Double_t m1, Double_t m2,
 			    const char* ch_name1, const char* ch_name2 )
   : THaPhysicsModule(name,description), fSpectN1(spec1), fSpectN2(spec2),
-    fpmass1(m1), fpmass2(m2), fSpect1(0), fSpect2(0), fSz1(NTR), fSz2(NTR),
-    fNTr1(0), fNTr2(0), fSzNtr(NTR*NTR), fNtimes(0)
+    fpmass1(m1), fpmass2(m2), fSpect1(nullptr), fSpect2(nullptr),
+    fDetMap{new THaDetMap()},
+    fTdcRes{0,0}, fTdcOff{0,0}, fTdcData{0, 0}
+
 {
   // Normal constructor.
-  fDetMap = new THaDetMap();
+
+  fVxTime1.reserve(NTR);
+  fVxTime2.reserve(NTR);
+  fTimeCombos.reserve(NTR*NTR);
 
   if (ch_name1 && strlen(ch_name1)>0) {
     fTdcLabels[0] = ch_name1;
@@ -61,14 +54,6 @@ THaCoincTime::THaCoincTime( const char* name,
   } else {
     fTdcLabels[1] = Form("%sby%s",spec1,spec2);
   }
-
-  // Allocate arrays
-  fVxTime1   = new Double_t[fSz1];
-  fVxTime2   = new Double_t[fSz2];
-  fTrInd1    = new Int_t   [fSzNtr];
-  fTrInd2    = new Int_t   [fSzNtr];
-  fDiffT2by1 = new Double_t[fSzNtr];
-  fDiffT1by2 = new Double_t[fSzNtr];
 }
 
 //_____________________________________________________________________________
@@ -76,13 +61,6 @@ THaCoincTime::~THaCoincTime()
 {
   // Destructor
   RemoveVariables();
-  delete fDetMap;
-  delete [] fVxTime1;
-  delete [] fVxTime2;
-  delete [] fTrInd1;
-  delete [] fTrInd2;
-  delete [] fDiffT2by1;
-  delete [] fDiffT1by2;
 }
 
 //_____________________________________________________________________________
@@ -91,17 +69,9 @@ void THaCoincTime::Clear( Option_t* opt )
   // Clear all internal variables
   // some overkill, but is event-independent (back to a known state)
   THaPhysicsModule::Clear(opt);
-  memset(fVxTime1,0,fSz1*sizeof(*fVxTime1));
-  memset(fVxTime2,0,fSz2*sizeof(*fVxTime2));
-  memset(fdTdc,0,2*sizeof(*fdTdc));
-
-  memset(fDiffT1by2,0,fSzNtr*sizeof(*fDiffT1by2));
-  memset(fDiffT2by1,0,fSzNtr*sizeof(*fDiffT2by1));
-  memset(fTrInd1,0,fSzNtr*sizeof(*fTrInd1));
-  memset(fTrInd2,0,fSzNtr*sizeof(*fTrInd2));
-  
-  fNTr1 = fNTr2 = 0;
-  fNtimes = 0;
+  fVxTime1.clear();
+  fVxTime2.clear();
+  fTimeCombos.clear();
 }
 
 //_____________________________________________________________________________
@@ -111,15 +81,15 @@ Int_t THaCoincTime::DefineVariables( EMode mode )
   
   RVarDef vars[] = {
     { "d_trig","Measured TDC start+delay of spec 2 (1), by spec 1 (2)", "fdTdc" },
-    { "ntr1",  "Number of tracks in first spec.",  "fNTr1" },
-    { "ntr2",  "Number of tracks in first spec.",  "fNTr2" },
+    { "ntr1",  "Number of tracks in first spec.",  "GetNTr1()" },
+    { "ntr2",  "Number of tracks in first spec.",  "GetNTr2()" },
     { "vx_t1", "Time of track from spec1 at target vertex", "fVxTime1" },
     { "vx_t2", "Time of track from spec2 at target vertex", "fVxTime2" },
-    { "ncomb", "Number of track combinations considered",   "fNtimes" },
-    { "ct_2by1", "Coinc. times of tracks, d_trig from spec 1", "fDiffT2by1" },
-    { "ct_1by2", "Coinc. times of tracks, d_trig from spec 2", "fDiffT1by2" },
-    { "trind1",  "Track indices for spec1 match entries in ct_*", "fTrInd1" },
-    { "trind2",  "Track indices for spec2 match entries in ct_*", "fTrInd2" },
+    { "ncomb", "Number of track combinations considered",   "GetNTimes()" },
+    { "ct_2by1", "Coinc. times of tracks, d_trig from spec 1", "fTimeCombos.fDiffT2by1" },
+    { "ct_1by2", "Coinc. times of tracks, d_trig from spec 2", "fTimeCombos.fDiffT1by2" },
+    { "trind1",  "Track indices for spec1 match entries in ct_*", "fTimeCombos.fTrInd1" },
+    { "trind2",  "Track indices for spec2 match entries in ct_*", "fTimeCombos.fTrInd2" },
     { nullptr }
   };
   return DefineVarsFromList( vars, mode );
@@ -133,9 +103,6 @@ THaAnalysisObject::EStatus THaCoincTime::Init( const TDatime& run_time )
 
   // Locate the spectrometer apparatus named in fSpectroName and save
   // pointer to it.
-  if (!fIsInit) {
-    fIsInit = true;
-  }
 
   // Standard initialization. Calls this object's DefineVariables().
   if( THaPhysicsModule::Init( run_time ) != kOK )
@@ -221,28 +188,29 @@ Int_t THaCoincTime::ReadDatabase( const TDatime& date )
     return kInitError;
   }
 
+  fIsInit = true;
   return kOK;
 }
 
 //_____________________________________________________________________________
 Int_t THaCoincTime::Process( const THaEvData& evdata )
 {
-  // Read in coincidence TDC's
+  // Read in coincidence TDCs
 
   const char* const here = "Process";
 
   if( !IsOK() ) return -1;
-  if (!fDetMap) return -1;
 
   // read in the two relevant channels
   int detmap_pos=0;
-  for ( Int_t i=0; i < 2; i++ ) {
-    if (fTdcRes[i] != 0.) {
+  for( double tdcres : fTdcRes ) {
+    if( tdcres != 0. ) {
       THaDetMap::Module* d = fDetMap->GetModule(detmap_pos);
       // grab only the first hit in a TDC
-      if ( evdata.GetNumHits(d->crate,d->slot,d->lo) > 0 ) {
-	fdTdc[d->first] = evdata.GetData(d->crate,d->slot,d->lo,0)*fTdcRes[d->first]
-	  -fTdcOff[d->first];
+      if( evdata.GetNumHits(d->crate, d->slot, d->lo) > 0 ) {
+        fTdcData[d->first] =
+          evdata.GetData(d->crate, d->slot, d->lo, 0) * fTdcRes[d->first]
+          - fTdcOff[d->first];
       }
       detmap_pos++;
     }
@@ -251,89 +219,53 @@ Int_t THaCoincTime::Process( const THaEvData& evdata )
   // Calculate the time at the vertex (relative to the trigger time)
   // for each track in each spectrometer
   // Use the Beta of the assumed particle type.
-  struct Spec_short {
-    THaSpectrometer* Sp;
-    Int_t&           Ntr;
-    Double_t*&       Vxtime;
-    Int_t&           Sz;
-    Double_t         Mass;
+  class Spec_short {
+  public:
+    THaSpectrometer*  Sp;
+    vector<Double_t>& Vxtime;
+    Double_t          Mass;
   };
 
-  Spec_short SpList[] = {
-    { fSpect1, fNTr1, fVxTime1, fSz1, fpmass1 },
-    { fSpect2, fNTr2, fVxTime2, fSz2, fpmass2 },
+  const vector<Spec_short> SpList = {
+    { fSpect1, fVxTime1, fpmass1 },
+    { fSpect2, fVxTime2, fpmass2 },
   };
 
-  for (Spec_short* sp=SpList; sp-SpList < 2; ++sp) {
-    sp->Ntr = sp->Sp->GetNTracks();
-    if( sp->Ntr > sp->Sz ) {  // expand array if necessary
-    // disable the automatic array re-sizing for now
-#if CAN_RESIZE
-      //FIXME: this looks buggy. What about fSzNtr? Better to use vectors anyway ...
-      delete [] sp->Vxtime;
-      sp->Sz = sp->Ntr+5;
-      sp->Vxtime = new Double_t[sp->Sz];
-#else
-      Warning(Here(here), "Using only first %d out of %d tracks in "
-	      "spectrometer.", sp->Sz, sp->Ntr);
-      sp->Ntr = sp->Sz; // only look at the permitted number of tracks
-#endif
-    }
-
-    TClonesArray* tracks = sp->Sp->GetTracks();
-    for ( Int_t i=0; i<sp->Ntr && i<sp->Sz; i++ ) {
-      THaTrack* tr = dynamic_cast<THaTrack*>(tracks->At(i));
-#ifdef WITH_DEBUG
-      // this should be safe to assume -- only THaTrack's go into the tracks array
-      if (!tr) {
-	Warning(Here(here),"non-THaTrack in %s's tracks array at %d.",
-		sp->Sp->GetName(),i);
-	continue;
+  for( const auto& sp : SpList ) {
+    assert(sp.Vxtime.empty());  // else Clear() not called in order
+    Int_t ntr = sp.Sp->GetNTracks();
+    TClonesArray* tracks = sp.Sp->GetTracks();
+    for( Int_t i = 0; i < ntr; i++ ) {
+      auto* tr = dynamic_cast<THaTrack*>(tracks->At(i));
+      // this should be safe to assume -- only THaTracks go into the tracks array
+      if( !tr ) {
+        Warning(Here(here), "non-THaTrack in %s's tracks array at %d.",
+                sp.Sp->GetName(), i);
+        continue;
       }
-#endif
-      Double_t p;
-      if ( tr && tr->GetBeta()!=0. && (p=tr->GetP())>0. ) {
-	Double_t beta = p/TMath::Sqrt(p*p+sp->Mass*sp->Mass);
+      Double_t p = tr->GetP();
+      if( tr->GetBeta() != 0. && p > 0. ) {
+        Double_t beta = p / TMath::Sqrt(p * p + sp.Mass * sp.Mass);
 	Double_t c = TMath::C();
-	sp->Vxtime[i] = tr->GetTime() - tr->GetPathLen()/(beta*c);
+        sp.Vxtime.push_back(tr->GetTime() - tr->GetPathLen() / (beta * c));
       } else {
 	// Using (i+1)*kBig here prevents differences from being zero
-	sp->Vxtime[i] = (i+1)*kBig;
+        sp.Vxtime.push_back((i + 1) * kBig);
       }
     }
   }
 
   // now, we have the vertex times -- go through the combinations
-  fNtimes = fNTr1*fNTr2;
-  if (fNtimes > fSzNtr) {  // expand the array if necessary
-#if CAN_RESIZE
-    delete [] fTrInd1;
-    delete [] fTrInd2;
-    delete [] fDiffT2by1;
-    delete [] fDiffT1by2;
-
-    fSzNtr = fNtimes+5;
-    fTrInd1 = new Int_t[fSzNtr];
-    fTrInd2 = new Int_t[fSzNtr];
-    fDiffT2by1 = new Double_t[fSzNtr];
-    fDiffT1by2 = new Double_t[fSzNtr];
-#else
-    Warning(Here("Process()"), "Using only first %d out of %d track combinations.", fSzNtr, fNtimes);
-    fNtimes = fSzNtr; // only look at the permitted number of tracks
-#endif
-  }
 
   // Take the tracks and the coincidence TDC and construct
   // the coincidence time
-  Int_t cnt=0;
-  for ( Int_t i=0; i<fNTr1; i++ ) {
-    for ( Int_t j=0; j<fNTr2; j++ ) {
-      if (cnt>=fNtimes) break;
-      fTrInd1[cnt] = i;
-      fTrInd2[cnt] = j;
-      fDiffT2by1[cnt] = fVxTime2[j] - fVxTime1[i] + fdTdc[0];
-      fDiffT1by2[cnt] = fVxTime1[i] - fVxTime2[j] + fdTdc[1];
-      cnt++;
+  assert(fTimeCombos.empty());  // else Clear() not called in order
+  for( size_t i = 0; i < fVxTime1.size(); i++ ) {
+    for( size_t j = 0; j < fVxTime2.size(); j++ ) {
+      fTimeCombos.emplace_back( i, j,
+                                fVxTime2[j] - fVxTime1[i] + fTdcData[0],
+                                fVxTime1[i] - fVxTime2[j] + fTdcData[1]
+      );
     }
   }
 

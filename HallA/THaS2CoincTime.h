@@ -22,13 +22,12 @@ public:
   THaS2CoincTime( const char* name, const char* description,
 		  const char* spec1="L", const char* spec2="R",
 		  Double_t mass1 = .938272, Double_t mass2 = 0.000511,
-		  const char* ch_name1=0, const char* ch_name2=0,
+		  const char* ch_name1=nullptr, const char* ch_name2=nullptr,
 		  const char* detname1="s2", const char* detname2="");
   
   virtual ~THaS2CoincTime();
   
   virtual Int_t     Process( const THaEvData& );
-
   virtual EStatus   Init( const TDatime& run_time );
   
 protected:
