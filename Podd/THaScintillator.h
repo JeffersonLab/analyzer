@@ -25,7 +25,8 @@ public:
   enum ESide { kNone = -1, kRight = 0, kLeft = 1 };
   using Idx_t  = std::pair<ESide,Int_t>;
 
-  struct HitData_t {
+  class HitData_t {
+  public:
     // A "hit" is defined as a paddle with TDC hits on both sides
     HitData_t()
       : pad(-1), time(kBig), dtime(kBig), yt(kBig), ya(kBig), ampl(kBig) {}
@@ -46,7 +47,7 @@ public:
   virtual Int_t     CoarseProcess( TClonesArray& tracks );
   virtual Int_t     FineProcess( TClonesArray& tracks );
 
-  Int_t             GetNHits() const  { return fHits.size(); }
+  Int_t             GetNHits() const  { return static_cast<Int_t>(fHits.size()); }
   const HitData_t&  GetHit( Int_t i ) { return fHits[i]; }
   const HitData_t&  GetPad( Int_t i ) { return fPadData[i]; }
 

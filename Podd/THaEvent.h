@@ -8,6 +8,7 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "TObject.h"
+#include <vector>
 
 class THaVar;
 
@@ -17,7 +18,7 @@ public:
   THaEventHeader() : 
     fEvtTime(0), fEvtNum(0), fEvtType(0), fEvtLen(0), fHelicity(0),
     fTargetPol(0), fRun(0) {}
-  virtual ~THaEventHeader() {}
+  virtual ~THaEventHeader() = default;
 
   void Set( UInt_t num, Int_t type, Int_t len, ULong64_t time,
 	    Int_t hel, Int_t pol, Int_t run ) { 
@@ -61,7 +62,7 @@ class THaEvent : public TObject {
 
 public:
   THaEvent();
-  virtual ~THaEvent();
+  virtual ~THaEvent() = default;
 
   THaEventHeader*   GetHeader() { return &fEvtHdr; }
 
@@ -76,14 +77,15 @@ protected:
 
   Bool_t            fInit;       //! Fill() initialized
 
-  struct DataMap {
+  class DataMap {
+  public:
     Int_t        ncopy;          //! Number of elements to copy
     const char*  name;           //! Global variable name
     void*        dest;           //! Address of corresponding member variable
     Int_t*       ncopyvar;       //! Variable holding value of ncopy (if ncopy=-1)
     THaVar*      pvar;           //! Pointer to global variable object
   };
-  DataMap*       fDataMap;       //! Map of global variables to copy
+  std::vector<DataMap> fDataMap; //! Map of global variables to copy
 
   ClassDef(THaEvent,3)  //Base class for event structure definition
 };

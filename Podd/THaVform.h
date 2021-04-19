@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <memory>
 
 class THaVar;
 class THaVarList;
@@ -25,8 +26,9 @@ class THaVform : public THaFormula {
 public:
 
   THaVform() : THaFormula(), fNvar(0), fObjSize(0), fEyeOffset(0),
-    fData(0), fType(kUnknown), fVarPtr(0), fOdata(0), fPrefix(0) {}
-  THaVform( const char *type, const char* name, const char* formula,
+    fData(0), fType(kUnknown), fDebug(0), fVarPtr(nullptr), fOdata(nullptr),
+    fPrefix(0) {}
+  THaVform( const char* type, const char* name, const char* formula,
       const THaVarList* vlst=gHaVars, const THaCutList* clst=gHaCuts );
   virtual  ~THaVform();
   THaVform(const THaVform& vform);
@@ -59,7 +61,7 @@ public:
 // an "eye" ("[I]" variable)
 
   Bool_t IsFormula() const { return (fType == kForm); }
-  Bool_t IsVarray() const  { return (fVarPtr != nullptr && fType == kVarArray); }
+  Bool_t IsVarray() const  { return (fVarPtr && fType == kVarArray); }
   Bool_t IsCut() const     { return (fType == kCut); }
   Bool_t IsEye() const     { return (fType == kEye); }
 // Get the size (dimension) of this object
@@ -78,7 +80,7 @@ protected:
   Double_t fData;
   FTy fType;
 
-  static const Int_t fgDebug  = 0;
+  Int_t fDebug;
   static const Int_t fgVFORM_HUGE = 10000;
   std::string fAndStr, fOrStr, fSumStr;
 
@@ -110,7 +112,7 @@ inline
 Double_t THaVform::GetData(Int_t index) const {
   if (IsEye())
     return (Double_t)(index + fEyeOffset);
-  if (fOdata == 0)
+  if (!fOdata)
     return fData;
   return (fObjSize > 1) ? fOdata->Get(index) : fOdata->Get();
 }

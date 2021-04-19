@@ -30,9 +30,9 @@ public:
 
   EArrayType   GetArrayType()   const { return fArrayType; }
   TClass*      GetClass()       const;
-  Int_t        GetCountOffset() const { return fCountOffset; }
+  Long_t       GetCountOffset() const { return fCountOffset; }
   TDataMember* GetDataMember()  const { return fDataMember; }
-  Int_t        GetOffset()      const { return fOffset; }
+  Long_t       GetOffset()      const { return fOffset; }
   TRealData*   GetRealData()    const { return fRealData; }
   const char*  GetSubscript()   const { return fSubscript.Data(); }
   VarType      GetType()        const { return fType; }
@@ -52,11 +52,11 @@ public:
 
 protected:
 
-  Int_t        fOffset;       // Offset with respect to THIS pointer
+  Long_t       fOffset;       // Offset with respect to THIS pointer
   VarType      fType;         // Variable type (kObject if object)
   EArrayType   fArrayType;    // Array type (see EArrayType)
   TString      fSubscript;    // For fixed array: Description of dimension(s)
-  Int_t        fCountOffset;  // For var array: Offset of length specifier
+  Long_t       fCountOffset;  // For var array: Offset of length specifier
   TDataMember* fDataMember;   // Associated ROOT TDataMember
   TRealData*   fRealData;     // Associated ROOT TRealData
   TClass*      fElemClass;    // Class of object vector element type

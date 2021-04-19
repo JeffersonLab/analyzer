@@ -214,7 +214,7 @@ protected:
   // Helper functions
   Int_t  idx(Int_t crate, Int_t slot) const;
   Int_t  idx(Int_t crate, Int_t slot);
-  Bool_t GoodCrateSlot(Int_t crate, Int_t slot) const;
+  static Bool_t GoodCrateSlot(Int_t crate, Int_t slot);
   Bool_t GoodIndex(Int_t crate, Int_t slot) const;
 
   // Data
@@ -233,9 +233,10 @@ protected:
   };
 
   struct BankDat_t {           // Bank raw data descriptor
+    BankDat_t() : pos(0), len(0) {}
     Int_t pos;                 // position in evbuffer[]
     Int_t len;                 // length of data
-  } bankdat[Decoder::MAXBANK * Decoder::MAXROC]{};
+  } bankdat[Decoder::MAXBANK * Decoder::MAXROC];
   Decoder::THaSlotData** crateslot;
 
   Bool_t first_decode;
@@ -295,7 +296,7 @@ inline Int_t THaEvData::idx( Int_t crate, Int_t slot) {
   return ix;
 }
 
-inline Bool_t THaEvData::GoodCrateSlot( Int_t crate, Int_t slot ) const {
+inline Bool_t THaEvData::GoodCrateSlot( Int_t crate, Int_t slot ) {
   return ( crate >= 0 && crate < Decoder::MAXROC &&
 	   slot >= 0 && slot < Decoder::MAXSLOT );
 }

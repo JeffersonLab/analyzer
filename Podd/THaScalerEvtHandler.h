@@ -11,9 +11,8 @@
 
 #include "THaEvtTypeHandler.h"
 #include "Decoder.h"
-#include <utility>
+#include "TString.h"
 #include <vector>
-#include "TString.h"  
 
 class TTree;
 
@@ -25,15 +24,14 @@ static const UInt_t defaultDT = 4;
 
 class ScalerLoc { // Utility class used by THaScalerEvtHandler
  public:
-  ScalerLoc( const TString& nm, const TString& desc, Int_t idx, Int_t sl,
-             Int_t ich, Int_t iki, Int_t iv) :
-    name(nm), description(desc), index(idx), islot(sl), ichan(ich),
-    ikind(iki), ivar(iv) {};
+  ScalerLoc( TString nm, TString desc, Int_t idx, Int_t sl,
+             Int_t ich, Int_t iki) :
+    name(std::move(nm)), description(std::move(desc)), index(idx), islot(sl),
+    ichan(ich),  ikind(iki) {};
   ~ScalerLoc() = default;
   TString name, description;
-  UInt_t index, islot, ichan, ikind, ivar;
+  Int_t index, islot, ichan, ikind;
 };
-
 
 class THaScalerEvtHandler : public THaEvtTypeHandler {
 

@@ -13,6 +13,7 @@
 #include "THaUsrstrutils.h"
 #include "TError.h"
 #include <iostream>
+#include <stdexcept>
 
 using namespace std;
 
@@ -39,9 +40,7 @@ CodaDecoder::CodaDecoder() :
 }
 
 //_____________________________________________________________________________
-CodaDecoder::~CodaDecoder()
-{
-}
+CodaDecoder::~CodaDecoder() = default;
 
 //_____________________________________________________________________________
 Int_t CodaDecoder::GetPrescaleFactor(Int_t trigger_type) const
@@ -167,8 +166,6 @@ Int_t CodaDecoder::LoadEvent(const UInt_t* evbuffer)
 	  }
       }
 
-      Int_t status;
-
  // If at least one module is in a bank, must split the banks for this roc
 
       if (fMap->isBankStructure(iroc)) {
@@ -178,7 +175,7 @@ Int_t CodaDecoder::LoadEvent(const UInt_t* evbuffer)
 
       if (fDebugFile) *fDebugFile << "\nCodaDecode::Calling roc_decode "<<i<<"   "<<evbuffer<<"  "<<iroc<<"  "<<ipt<<"  "<<iptmax<<endl;
 
-      status = roc_decode(iroc,evbuffer, ipt, iptmax);
+      Int_t status = roc_decode(iroc,evbuffer, ipt, iptmax);
 
       // do something with status
       if (status == -1) break;
@@ -329,109 +326,99 @@ Int_t CodaDecoder::roc_decode( Int_t roc, const UInt_t* evbuffer,
   // Decode a Readout controller
   assert( evbuffer && fMap );
   if( fDoBench ) fBench->Begin("roc_decode");
-  Int_t slot;
-  Int_t Nslot = fMap->getNslot(roc);
-  Int_t minslot = fMap->getMinSlot(roc);
-  Int_t maxslot = fMap->getMaxSlot(roc);
   Int_t retval = HED_OK;
-  Int_t nwords;
-  synchmiss = false;
-  synchextra = false;
-  buffmode = false;
-  const UInt_t* p      = evbuffer+ipt;    // Points to ROC ID word (1 before data)
-  const UInt_t* pstop  =evbuffer+istop;   // Points to last word of data
-  fBlockIsDone = false;
+  try {
+    Int_t Nslot = fMap->getNslot(roc);
+    Int_t minslot = fMap->getMinSlot(roc);
+    Int_t maxslot = fMap->getMaxSlot(roc);
+    synchmiss = false;
+    synchextra = false;
+    buffmode = false;
+    const UInt_t* p = evbuffer + ipt;    // Points to ROC ID word (1 before data)
+    const UInt_t* pstop = evbuffer + istop;   // Points to last word of data
+    fBlockIsDone = false;
 
-  Int_t firstslot, incrslot;
-  Int_t n_slots_checked, n_slots_done;
+    if( istop > event_length )
+      throw runtime_error("ERROR:: roc_decode:  stop point exceeds event length (?!)");
 
-  Bool_t slotdone;
-
-//  Int_t status = SD_ERR;
-
-  n_slots_done = 0;
-
-  if (istop > event_length) {
-    cerr << "ERROR:: roc_decode:  stop point exceeds event length (?!)"<<endl;
-    goto err;
-  }
-
-  if (fMap->isFastBus(roc)) {  // higher slot # appears first in multiblock mode
-      firstslot=maxslot;       // the decoding order improves efficiency
+    Int_t firstslot = minslot, incrslot = 1;
+    if( fMap->isFastBus(roc) ) {  // higher slot # appears first in multiblock mode
+      firstslot = maxslot;       // the decoding order improves efficiency
       incrslot = -1;
-  } else {
-      firstslot=minslot;
-      incrslot = 1;
+    }
+
+    if( fDebugFile ) {
+      *fDebugFile << "CodaDecode:: roc_decode:: roc#  " << dec << roc << " nslot " << Nslot << endl;
+      *fDebugFile << "CodaDecode:: roc_decode:: firstslot " << dec << firstslot << "  incrslot " << incrslot << endl;
+    }
+
+    if( Nslot <= 0 )
+      throw runtime_error("ERROR: Nsloc <=0");
+    fMap->setSlotDone();      // clears the "done" bits
+
+    Int_t n_slots_done = 0;
+    while( p++ < pstop && n_slots_done < Nslot ) {
+
+      if( fDebugFile ) {
+        *fDebugFile << "CodaDecode::roc_decode:: evbuff " << (p - evbuffer) << "  " << hex << *p << dec << endl;
+        *fDebugFile << "CodaDecode::roc_decode:: n_slots_done " << n_slots_done << "  " << firstslot << endl;
+      }
+
+      LoadIfFlagData(p);
+
+      Int_t n_slots_checked = 0;
+      Int_t slot = firstslot;
+      Bool_t slotdone = false;
+      // bank structure is decoded with bank_decode
+      if( fMap->getBank(roc, slot) >= 0 ) {
+        n_slots_done++;
+        slotdone = true;
+      }
+
+      while( !slotdone && n_slots_checked < Nslot - n_slots_done && slot >= 0 && slot < MAXSLOT ) {
+
+
+        if( !fMap->slotUsed(roc, slot) || fMap->slotDone(slot) ) {
+          slot = slot + incrslot;
+          continue;
+        }
+
+        ++n_slots_checked;
+
+        if( fDebugFile ) {
+          *fDebugFile << "roc_decode:: slot logic " << roc << "  " << slot << "  " << firstslot << "  "
+                      << n_slots_checked << "  " << Nslot - n_slots_done << endl;
+        }
+
+        Int_t nwords = crateslot[idx(roc, slot)]->LoadIfSlot(p, pstop);
+
+        if( nwords > 0 ) {
+          p = p + nwords - 1;
+          fMap->setSlotDone(slot);
+          n_slots_done++;
+          if( fDebugFile ) *fDebugFile << "CodaDecode::  slot " << slot << "  is DONE    " << nwords << endl;
+          slotdone = true;
+        }
+
+        if( crateslot[idx(roc, slot)]->IsMultiBlockMode() ) fMultiBlockMode = true;
+        if( crateslot[idx(roc, slot)]->BlockIsDone() ) fBlockIsDone = true;
+
+        if( fDebugFile ) {
+          *fDebugFile << "CodaDecode:: roc_decode:: after LoadIfSlot " << p << "  " << pstop << "  " << "  " << hex
+                      << *p << "  " << dec << nwords << endl;
+        }
+
+        slot = slot + incrslot;
+
+      }
+
+    } //end while(p++<pstop)
+  }
+  catch( const exception& e ) {
+    cerr << e.what() << endl;
+    retval = HED_ERR;
   }
 
-  if (fDebugFile) {
-    *fDebugFile << "CodaDecode:: roc_decode:: roc#  "<<dec<<roc<<" nslot "<<Nslot<<endl;
-    *fDebugFile << "CodaDecode:: roc_decode:: firstslot "<<dec<<firstslot<<"  incrslot "<<incrslot<<endl;
-  }
-
-  if (Nslot <= 0) goto err;
-  fMap->setSlotDone();      // clears the "done" bits
-
-  while ( p++ < pstop && n_slots_done < Nslot ) {
-
-    if (fDebugFile) {
-	 *fDebugFile << "CodaDecode::roc_decode:: evbuff "<<(p-evbuffer)<<"  "<<hex<<*p<<dec<<endl;
-	 *fDebugFile << "CodaDecode::roc_decode:: n_slots_done "<<n_slots_done<<"  "<<firstslot<<endl;
-    }
-
-    LoadIfFlagData(p);
-
-    n_slots_checked = 0;
-    slot = firstslot;
-    slotdone = false;
-// bank structure is decoded with bank_decode
-    if (fMap->getBank(roc,slot) >= 0) {
-      n_slots_done++;
-      slotdone=true;
-    }
-
-    while(!slotdone && n_slots_checked < Nslot-n_slots_done && slot >= 0 && slot < MAXSLOT) {
-
-
-      if (!fMap->slotUsed(roc,slot) || fMap->slotDone(slot)) {
-	 slot = slot + incrslot;
-	 continue;
-      }
-
-      ++n_slots_checked;
-
-     if (fDebugFile) {
-       *fDebugFile<< "roc_decode:: slot logic "<<roc<<"  "<<slot<<"  "<<firstslot<<"  "<<n_slots_checked<<"  "<<Nslot-n_slots_done<<endl;
-     }
-
-      nwords = crateslot[idx(roc,slot)]->LoadIfSlot(p, pstop);
-
-      if (nwords > 0) {
-	   p = p + nwords - 1;
-	   fMap->setSlotDone(slot);
-	   n_slots_done++;
-	   if(fDebugFile) *fDebugFile << "CodaDecode::  slot "<<slot<<"  is DONE    "<<nwords<<endl;
-	   slotdone = true;
-      }
-
-      if (crateslot[idx(roc,slot)]->IsMultiBlockMode()) fMultiBlockMode = true;
-      if (crateslot[idx(roc,slot)]->BlockIsDone()) fBlockIsDone = true;
-
-      if (fDebugFile) {
-	  *fDebugFile<< "CodaDecode:: roc_decode:: after LoadIfSlot "<<p << "  "<<pstop<<"  "<<"  "<<hex<<*p<<"  "<<dec<<nwords<<endl;
-      }
-
-      slot = slot + incrslot;
-
-    }
-
-  } //end while(p++<pstop)
-  goto exit;
-
- err:
-  //  retval = (status == SD_ERR) ? HED_ERR : HED_WARN;
-  retval = HED_ERR;
- exit:
   if( fDoBench ) fBench->Stop("roc_decode");
   return retval;
 }
@@ -449,16 +436,14 @@ Int_t CodaDecoder::bank_decode( Int_t roc, const UInt_t* evbuffer,
   if (!fMap->isBankStructure(roc)) return retval;
   fBlockIsDone = false;
 
-  Int_t pos,len,bank,head;
-
   if (fDebugFile) *fDebugFile << "CodaDecode:: bank_decode  ... "<<roc<<"   "<<ipt<<"  "<<istop<<endl;
 
-  pos = ipt+1;  // ipt points to ROC ID word
+  Int_t pos = ipt+1;  // ipt points to ROC ID word
 
   while (pos < istop) {
-    len = evbuffer[pos];
-    head = evbuffer[pos+1];
-    bank = (head>>16)&0xffff;
+    Int_t len = evbuffer[pos];
+    Int_t head = evbuffer[pos+1];
+    Int_t bank = (head>>16)&0xffff;
     if (fDebugFile) *fDebugFile << "bank 0x"<<hex<<bank<<"  head 0x"<<head<<"    len 0x"<<len<<dec<<endl;
 
     if (bank >= 0 && bank < MAXBANK) {
@@ -475,13 +460,13 @@ Int_t CodaDecoder::bank_decode( Int_t roc, const UInt_t* evbuffer,
 
   for (Int_t slot = minslot; slot <= maxslot; slot++) {
     if (!fMap->slotUsed(roc,slot)) continue;
-    bank=fMap->getBank(roc,slot);
+    Int_t bank=fMap->getBank(roc,slot);
     if (bank < 0 || bank >= Decoder::MAXBANK) {
       cerr << "CodaDecoder::ERROR:  bank number out of range "<<endl;
       return 0;
     }
     pos = bankdat[MAXBANK*roc+bank].pos;
-    len = bankdat[MAXBANK*roc+bank].len;
+    Int_t len = bankdat[MAXBANK*roc+bank].len;
     if (fDebugFile) *fDebugFile << "CodaDecode:: loading bank "<<roc<<"  "<<slot<<"   "<<bank<<"  "<<pos<<"   "<<len<<endl;
     crateslot[idx(roc,slot)]->LoadBank(evbuffer,pos,len);
     if (crateslot[idx(roc,slot)]->IsMultiBlockMode()) fMultiBlockMode = true;
@@ -495,27 +480,25 @@ Int_t CodaDecoder::bank_decode( Int_t roc, const UInt_t* evbuffer,
 //_____________________________________________________________________________
  void CodaDecoder::FillBankData(UInt_t *rdat, Int_t roc, Int_t bank, Int_t offset, Int_t num) const
 {
-  const int ldebug=0;
-  Int_t pos,len,i,ilo,ihi,jk;
-  jk =  MAXBANK*roc + bank;
+  Int_t jk = MAXBANK*roc + bank;
 
-  if (ldebug) cout << "Into FillBankData v1 "<<dec<<roc<<"  "<<bank<<"  "<<offset<<"  "<<num<<"   "<<jk<<endl;  
+  if (fDebug>1) cout << "Into FillBankData v1 "<<dec<<roc<<"  "<<bank<<"  "<<offset<<"  "<<num<<"   "<<jk<<endl;
   if(fDebugFile) *fDebugFile << "Check FillBankData "<<roc<<"  "<<bank<<"   "<<jk<<endl;
 
  if (jk < 0 || jk >= MAXROC*MAXBANK) {
       cerr << "FillBankData::ERROR:  bankdat index out of range "<<endl;
       return;
   }  
-  pos = bankdat[jk].pos;
-  len = bankdat[jk].len;
-  if (ldebug) cout << "FillBankData: pos "<<pos<<"  "<<len<<endl;
+  Int_t pos = bankdat[jk].pos;
+  Int_t len = bankdat[jk].len;
+  if (fDebug>1) cout << "FillBankData: pos "<<pos<<"  "<<len<<endl;
   if(fDebugFile) *fDebugFile << "FillBankData  pos, len "<<pos<<"   "<<len<<endl;
   if (offset > len-2) return;
   if (num > len) num = len;
-  ilo = pos+offset;
-  ihi = pos+offset+num;
+  Int_t ilo = pos+offset;
+  Int_t ihi = pos+offset+num;
   if (ihi >  GetEvLength()) ihi=GetEvLength();
-  for (i=ilo; i<ihi; i++) rdat[i-ilo] = GetRawData(i);
+  for (Int_t i=ilo; i<ihi; i++) rdat[i-ilo] = GetRawData(i);
  
 }
 

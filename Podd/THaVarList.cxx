@@ -59,7 +59,6 @@
 #include "TFunction.h"
 #include "TROOT.h"
 
-#include <cstring>
 #include <string>  // for TFunction::GetReturnTypeNormalizedName
 #include <cassert>
 
@@ -322,7 +321,7 @@ THaVar* THaVarList::DefineByRTTI( const TString& name, const TString& desc,
     assert(pos2 != kNPOS );  // else EndsWith("()") lied
     funcName = funcName(0, pos2);
 
-    auto theMethod = new TMethodCall(theClass, funcName, "" );
+    auto* theMethod = new TMethodCall(theClass, funcName, "" );
     if( !theMethod->IsValid() ) {
       Warning( errloc, "Error getting function information for variable %s. "
 	       "Not defined.", name.Data() );

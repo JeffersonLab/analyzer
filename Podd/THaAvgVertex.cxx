@@ -12,12 +12,10 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaAvgVertex.h"
-#include "THaTrackingModule.h"
-#include "THaTrackInfo.h"
 #include "TMath.h"
-#include "VarDef.h"
+#include <vector>
 
-#include <iostream>
+using namespace std;
 
 ClassImp(THaAvgVertex)
 
@@ -86,25 +84,23 @@ Int_t THaAvgVertex::Process( const THaEvData& )
 {
   // Calculate the average vertex coordinates and uncertainties.
 
-  static const int N = 2;  // consider two tracks
-
-  THaVertexModule* t[N] = { fSpectro1, fSpectro2 }; 
+  // consider two tracks
+  const vector<const THaVertexModule*> tracks{fSpectro1, fSpectro2};
 
   if( !IsOK() ) return -1;
-  if( !t[0]->HasVertex() ) return 1;
-  if( !t[1]->HasVertex() ) return 2;
 
   // Compute the weighted average of the vertex positions.
   // Use the uncertainty in each vertex z as the weight for each vertex.
   fVertex.SetXYZ( 0.0, 0.0, 0.0 ); 
   Double_t sigsum = 0.0;
-  for( Int_t it=0; it<N; it++ ) {
-    Double_t sigma = t[it]->GetVertexError()(2);
+  for( const auto* trk : tracks ) {
+    if( !trk->HasVertex() ) return 1;
+    Double_t sigma = trk->GetVertexError()(2);
     Double_t sig2  = sigma*sigma;
     if( sig2 > 0.0 ) {
       sigsum += 1.0/sig2;
       for( Int_t i=0; i<3; i++ ) {
-	Double_t x  = t[it]->GetVertex()(i);
+	Double_t x  = trk->GetVertex()(i);
 	fVertex(i) += x/sig2;
       }
     }
@@ -118,4 +114,4 @@ Int_t THaAvgVertex::Process( const THaEvData& )
 
   return 0;
 }
-  
+

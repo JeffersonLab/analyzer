@@ -57,10 +57,7 @@ THaHRS::THaHRS( const char* name, const char* description ) :
 }
 
 //_____________________________________________________________________________
-THaHRS::~THaHRS()
-{
-  // Destructor
-}
+THaHRS::~THaHRS() = default;
 
 //_____________________________________________________________________________
 Bool_t THaHRS::SetTrSorting( Bool_t set )
@@ -96,7 +93,7 @@ THaAnalysisObject::EStatus THaHRS::Init( const TDatime& run_time )
   // This behavior can be turned off by calling AutoStandardDetectors(false).
 
   if( TestBit(kAutoStdDets) ) {
-    auto pdet = static_cast<THaDetector*>( fDetectors->FindObject("vdc") );
+    auto* pdet = static_cast<THaDetector*>( fDetectors->FindObject("vdc") );
     if( !pdet ) {
       AddDetector( new THaScintillator("s2", "S2 scintillator"), true, true );
       AddDetector( new THaScintillator("s1", "S1 scintillator"), true, true );
@@ -112,7 +109,7 @@ THaAnalysisObject::EStatus THaHRS::Init( const TDatime& run_time )
   // If the reference detector hasn't been defined yet (via SetRefDet),
   // use "s1", if it exists.
   if( !fRefDet )
-    fRefDet = static_cast<THaScintillator*>( GetDetector("s1") );
+    fRefDet = dynamic_cast<THaScintillator*>( GetDetector("s1") );
 
   // Continue with standard initialization as before
   return THaSpectrometer::Init(run_time);
@@ -131,7 +128,7 @@ Int_t THaHRS::SetRefDet( const char* name )
     return 1;
   }
 
-  fRefDet = static_cast<THaNonTrackingDetector*>
+  fRefDet = dynamic_cast<THaNonTrackingDetector*>
     ( fNonTrackingDetectors->FindObject(name) );
 
   if( !fRefDet ) {
@@ -152,7 +149,7 @@ Int_t THaHRS::SetRefDet( const THaNonTrackingDetector* obj )
     return 1;
   }
 
-  fRefDet = static_cast<THaNonTrackingDetector*>
+  fRefDet = dynamic_cast<THaNonTrackingDetector*>
     ( fNonTrackingDetectors->FindObject(obj) );
 
   if( !fRefDet ) {
@@ -172,7 +169,7 @@ Int_t THaHRS::FindVertices( TClonesArray& tracks )
   TIter nextTrack( fTrackingDetectors );
 
   nextTrack.Reset();
-  while( auto theTrackDetector =
+  while( auto* theTrackDetector =
     static_cast<THaTrackingDetector*>( nextTrack() )) {
 #ifdef WITH_DEBUG
     if( fDebug>1 ) cout << "Call FineTrack() for " 
@@ -189,7 +186,7 @@ Int_t THaHRS::FindVertices( TClonesArray& tracks )
     fTracks->Sort();
     // Reassign track indexes. Sorting may have changed the order
     for( int i = 0; i < fTracks->GetLast()+1; i++ ) {
-      auto theTrack = static_cast<THaTrack*>( fTracks->At(i) );
+      auto* theTrack = static_cast<THaTrack*>( fTracks->At(i) );
       assert( theTrack );
       theTrack->SetIndex(i);
     }
@@ -244,8 +241,8 @@ Int_t THaHRS::TrackTimes( TClonesArray* Tracks )
   //   t0 and beta are solved for.
   //
   for ( Int_t i=0; i < ntrack; i++ ) {
-    auto track = static_cast<THaTrack*>(Tracks->At(i));
-    auto tr_ref = static_cast<THaTrackProj*>(fRefDet->GetTrackHits()->At(i));
+    auto* track = static_cast<THaTrack*>(Tracks->At(i));
+    auto* tr_ref = static_cast<THaTrackProj*>(fRefDet->GetTrackHits()->At(i));
     
     Double_t pathlref = tr_ref->GetPathLen();
     
@@ -254,12 +251,11 @@ Int_t THaHRS::TrackTimes( TClonesArray* Tracks )
     
     // linear regression to get beta and time at ref.
     TIter nextSc( fNonTrackingDetectors );
-    THaNonTrackingDetector *det;
-    while ( ( det = static_cast<THaNonTrackingDetector*>(nextSc()) ) ) {
-      auto sc = dynamic_cast<THaScintillator*>(det);
+    while( auto* det = static_cast<THaNonTrackingDetector*>(nextSc()) ) {
+      auto* sc = dynamic_cast<THaScintillator*>(det);
       if ( !sc ) continue;
 
-      const auto trh = static_cast<THaTrackProj*>(sc->GetTrackHits()->At(i));
+      const auto* trh = static_cast<THaTrackProj*>(sc->GetTrackHits()->At(i));
       
       Int_t pad = trh->GetChannel();
       if (pad<0 || pad>=sc->GetNelem()) continue;

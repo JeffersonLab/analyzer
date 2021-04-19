@@ -133,9 +133,9 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
   }
   if( !err && !chanmap.empty() ) {
     // If a map is found in the database, ensure it has the correct size
-    Int_t cmapsize = chanmap.size();
+    size_t cmapsize = chanmap.size();
     if( cmapsize != fNelem ) {
-      Error(Here(here), "Channel map size (%d) and number of detector "
+      Error(Here(here), "Channel map size (%ld) and number of detector "
                         "channels (%d) must be equal. Fix database.", cmapsize, fNelem);
       err = kInitError;
     }

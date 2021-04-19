@@ -10,7 +10,6 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "BankData.h"
-#include "VarDef.h"
 #include "THaString.h"
 #include "THaVar.h"
 #include "THaVarList.h"
@@ -18,6 +17,7 @@
 #include "THaGlobals.h"
 #include "Helper.h"
 #include <sstream>
+#include <iterator>
 
 using namespace std;
 using namespace THaString;
@@ -26,14 +26,15 @@ using namespace THaString;
 class BankLoc { // Utility class used by BankData
 public:
   BankLoc(std::string svar, Int_t iroc, Int_t ibank, Int_t ioff, Int_t inum)
-    : svarname(svar), roc(iroc), bank(ibank), offset(ioff), numwords(inum) {}
+    : svarname(std::move(svar)), roc(iroc), bank(ibank), offset(ioff),
+      numwords(inum) {}
   std::string svarname;
   Int_t roc,bank,offset,numwords;
 };
 
 //_____________________________________________________________________________
 BankData::BankData( const char* name, const char* description) :
-  THaPhysicsModule(name,description), fDebug(0), Nvars(0), dvars(0), vardata(0)
+  THaPhysicsModule(name,description), Nvars(0), dvars(nullptr), vardata(nullptr)
 {
   // Normal constructor.
 }
@@ -43,7 +44,6 @@ BankData::~BankData()
 {
   // Destructor
   RemoveVariables();
-  Podd::DeleteContainer(banklocs);
   delete[] dvars;
   delete[] vardata;
 }
@@ -55,10 +55,10 @@ Int_t BankData::Process( const THaEvData& evdata )
   if( !IsOK() ) return -1;
 
   Int_t k=0;
-  for (UInt_t i=0; i<banklocs.size(); i++) {
-    evdata.FillBankData(vardata, banklocs[i]->roc, banklocs[i]->bank,
-        banklocs[i]->offset, banklocs[i]->numwords);
-    for (Int_t j=0; j<banklocs[i]->numwords; j++, k++) {
+  for( const auto& bankloc : banklocs ) {
+    evdata.FillBankData(vardata, bankloc->roc, bankloc->bank,
+        bankloc->offset, bankloc->numwords);
+    for( Int_t j = 0; j < bankloc->numwords; j++, k++ ) {
       dvars[k] = vardata[j];
     }
   }
@@ -72,11 +72,8 @@ Int_t BankData::ReadDatabase( const TDatime& date )
 {
   // Read the parameters of this module from the run database
 
-  const int ldebug=0;
   const int LEN = 200;
   char cbuf[LEN];
-  const string::size_type minus1 = string::npos;
-  string::size_type pos1;
   const string scomment = "#";
   vector<string> dbline;
 
@@ -88,17 +85,16 @@ Int_t BankData::ReadDatabase( const TDatime& date )
   if( !fi ) return kFileError;
 
   RemoveVariables();
-  Podd::DeleteContainer(banklocs);
 
   while( fgets(cbuf, LEN, fi) != nullptr) {
     std::string sinput(cbuf);
-    if(ldebug) cout << "database line = "<<sinput<<endl;
+    if(fDebug) cout << "database line = " << sinput << endl;
     dbline = vsplit(sinput);
-    std::string svar="";
+    std::string svar;
     Int_t iroc = 0,  ibank = 0, ioff = 0,  inum = 1;
     if(dbline.size() > 2) {
-      pos1 = FindNoCase(dbline[0],scomment);
-      if (pos1 != minus1) continue;
+      auto pos1 = FindNoCase(dbline[0],scomment);
+      if (pos1 != string::npos) continue;
       svar = dbline[0];
       iroc  = atoi(dbline[1].c_str());
       ibank = atoi(dbline[2].c_str());
@@ -109,35 +105,36 @@ Int_t BankData::ReadDatabase( const TDatime& date )
 	  }
 	}
       }
-     if(svar.length()==0) continue;
-     if (ldebug) cout << "svar "<<svar<<"  len "<<svar.length()
-		      <<"  iroc "<<iroc<<"  ibank "<<ibank
-		      <<"  offset "<<ioff<<"  num "<<inum<<endl;
-     banklocs.push_back( new BankLoc(svar, iroc, ibank, ioff, inum) );
+     if(svar.empty()) continue;
+     if (fDebug) cout << "svar " << svar << "  len " << svar.length()
+                      << "  iroc " << iroc << "  ibank " << ibank
+                      << "  offset " << ioff << "  num " << inum << endl;
+    banklocs.emplace_back(new BankLoc(svar, iroc, ibank, ioff, inum));
 
   }
 
-  Int_t maxwords = 1;
-  const Int_t too_big = 1000000;
+  Int_t maxwords = 1, ibank = 0;
   Nvars = 0;
-  for (UInt_t i=0; i<banklocs.size(); i++) {
-    if (ldebug) cout << "bankloc "<<i<<"   "<<banklocs[i]->roc<<"   "
-		     <<banklocs[i]->bank<<"  "<<banklocs[i]->offset<<"  "
-		     <<banklocs[i]->numwords<<endl;
-    if(banklocs[i]->numwords > maxwords) maxwords = banklocs[i]->numwords;
-    Nvars += banklocs[i]->numwords;
+  for( const auto& bankloc : banklocs) {
+    if (fDebug) cout << "bankloc " << ibank++ << "   " << bankloc->roc << "   "
+                     << bankloc->bank << "  " << bankloc->offset << "  "
+                     << bankloc->numwords << endl;
+    if( bankloc->numwords > maxwords) maxwords = bankloc->numwords;
+    Nvars += bankloc->numwords;
   }
   // maxwords is the biggest number of words for all banklocs.
   // dvars must be of length Nvars in order to fit all the data
   // for this class; it's the global data.
   // Check that neither of these are "too_big" for some reason.
+  const Int_t too_big = 1000000;
   if (maxwords > too_big || Nvars > too_big) {
-    cerr << "BankData::ERROR:  very huge number of words "<<maxwords<<"  "<<Nvars<<endl;
+    cerr << "BankData::ERROR:  very huge number of words "
+         <<maxwords<<"  "<<Nvars<<endl;
     return kInitError;
   }
 
   delete [] vardata;
-  delete [] dvars; dvars = 0;
+  delete [] dvars; dvars = nullptr;
   vardata = new UInt_t[maxwords];
   if( Nvars > 0 ) {
     dvars = new Double_t[Nvars];
@@ -161,29 +158,28 @@ Int_t BankData::DefineVariables( EMode mode )
 {
   // Define/delete global variables.
 
-  const Int_t ldebug=0;
   if (!gHaVars) {
     cerr << "BankData::ERROR: No gHaVars ?!  Well, that's a problem !!"<<endl;
     return kInitError;
   }
 
-  if (ldebug) cout << "BankData:: DefVars "<<fName<<"  "<<Nvars<<endl;
+  if (fDebug) cout << "BankData:: DefVars " << fName << "  " << Nvars << endl;
   Int_t k=0;
-  for (UInt_t i = 0; i < banklocs.size(); i++) {
-    string svarname = std::string(fName.Data()) + "." + banklocs[i]->svarname;
-    string cdesc = "Bank Data " + banklocs[i]->svarname;
-    if (banklocs[i]->numwords == 1) {
-       if (ldebug) cout << "numwords = 1, svarname = "<<svarname<<endl;
+  for( const auto& bankloc : banklocs ) {
+    string svarname = std::string(fName.Data()) + "." + bankloc->svarname;
+    string cdesc = "Bank Data " + bankloc->svarname;
+    if (bankloc->numwords == 1) {
+       if (fDebug) cout << "numwords = 1, svarname = " << svarname << endl;
        if( mode == kDefine )
 	 gHaVars->Define(svarname.c_str(), cdesc.c_str(), dvars[k]);
        else
 	 gHaVars->RemoveName(svarname.c_str());
        k++;
     } else {
-      for (Int_t j=0; j<banklocs[i]->numwords; j++) {
+      for (Int_t j=0; j<bankloc->numwords; j++) {
 	ostringstream os;
 	os << svarname << j;
-	if (ldebug) cout << "numwords > 1, svarname = "<<os.str()<<endl;
+	if (fDebug) cout << "numwords > 1, svarname = " << os.str() << endl;
 	if( mode == kDefine )
 	  gHaVars->Define(os.str().c_str(), cdesc.c_str(), dvars[k]);
 	else

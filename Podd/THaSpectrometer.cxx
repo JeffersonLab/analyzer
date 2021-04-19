@@ -35,20 +35,26 @@
 using namespace std;
 
 //_____________________________________________________________________________
-THaSpectrometer::THaSpectrometer( const char* name, const char* desc ) : 
-  THaApparatus( name,desc ), fGoldenTrack(nullptr), 
-  fPID(false), fThetaGeo(0.0), fPhiGeo(0.0), fPcentral(1.0), fCollDist(0.0),
-  fStagesDone(0), fListInit(false)
+THaSpectrometer::THaSpectrometer( const char* name, const char* desc ) :
+  THaApparatus(name, desc),
+  fTracks{new TClonesArray("THaTrack", kInitTrackMultiplicity)},
+  fTrackPID{new TClonesArray("THaPIDinfo", kInitTrackMultiplicity)},
+  fTrackingDetectors{new TList},
+  fNonTrackingDetectors{new TList},
+  fPidDetectors{new TObjArray},
+  fPidParticles{new TObjArray},
+  fGoldenTrack{nullptr},
+  fPID{false},
+  fThetaGeo{0.0}, fPhiGeo{0.0},   fThetaSph{0.0}, fPhiSph{0.0},
+  fSinThGeo{0.0}, fCosThGeo{1.0}, fSinPhGeo{0.0}, fCosPhGeo{1.0},
+  fSinThSph{0.0}, fCosThSph{1.0}, fSinPhSph{0.0}, fCosPhSph{1.0},
+  fPcentral{1.0},
+  fCollDist{0.0},
+  fStagesDone{0},
+  fListInit{false}
 {
   // Constructor.
   // Protected. Can only be called by derived classes.
-
-  fTracks     = new TClonesArray( "THaTrack",   kInitTrackMultiplicity );
-  fTrackPID   = new TClonesArray( "THaPIDinfo", kInitTrackMultiplicity );
-  fTrackingDetectors    = new TList;
-  fNonTrackingDetectors = new TList;
-  fPidDetectors         = new TObjArray;
-  fPidParticles         = new TObjArray;
 
   Clear();
   DefinePidParticles();
@@ -96,7 +102,7 @@ Int_t THaSpectrometer::AddDetector( THaDetector* pdet, Bool_t quiet, Bool_t firs
   Int_t status = THaApparatus::AddDetector( pdet, quiet, first );
   if( status != 0 ) return status;
 
-  auto sdet = static_cast<THaSpectrometerDetector*>( pdet );
+  auto* sdet = dynamic_cast<THaSpectrometerDetector*>( pdet );
   if( sdet->IsTracking() )
     fTrackingDetectors->Add( sdet );
   else
@@ -128,13 +134,11 @@ Int_t THaSpectrometer::CalcPID()
   // This is just a loop over all tracks.
   // Called by Reconstruct().
 
-  THaTrack* theTrack;
-  THaPIDinfo* pid;
-
   for( int i = 0; i < fTracks->GetLast()+1; i++ ) {
-    if( (theTrack = static_cast<THaTrack*>( fTracks->At(i) ))) 
-      if( (pid = theTrack->GetPIDinfo() )) {
-	pid->CombinePID();
+    if( auto* theTrack = static_cast<THaTrack*>( fTracks->At(i) ) ) {
+      if( THaPIDinfo* pid = theTrack->GetPIDinfo() ) {
+        pid->CombinePID();
+      }
     }
   }    
   return 0;
@@ -226,7 +230,7 @@ const TVector3& THaSpectrometer::GetVertex() const
 //_____________________________________________________________________________
 Bool_t THaSpectrometer::HasVertex() const
 {
-  return (fGoldenTrack) ? fGoldenTrack->HasVertex() : false;
+  return (fGoldenTrack) != nullptr && fGoldenTrack->HasVertex();
 }
 
 //_____________________________________________________________________________
@@ -240,7 +244,7 @@ void THaSpectrometer::ListInit()
   fPidDetectors->Clear();
 
   TIter next(fDetectors);
-  while( auto theDetector = static_cast<THaSpectrometerDetector*>( next() )) {
+  while( auto* theDetector = dynamic_cast<THaSpectrometerDetector*>( next() )) {
 
     if( theDetector->IsTracking() )
       fTrackingDetectors->Add( theDetector );
@@ -275,7 +279,7 @@ Int_t THaSpectrometer::CoarseTrack()
   // 1st step: Coarse tracking.  This should be quick and dirty.
   // Any tracks found are put in the fTrack array.
   TIter next( fTrackingDetectors );
-  while( auto theTrackDetector =
+  while( auto* theTrackDetector =
 	 static_cast<THaTrackingDetector*>( next() )) {
 #ifdef WITH_DEBUG
     if( fDebug>1 ) cout << "Call CoarseTrack() for " 
@@ -303,7 +307,7 @@ Int_t THaSpectrometer::CoarseReconstruct()
     CoarseTrack();
 
   TIter next( fNonTrackingDetectors );
-  while( auto theNonTrackDetector =
+  while( auto* theNonTrackDetector =
 	 static_cast<THaNonTrackingDetector*>( next() )) {
 #ifdef WITH_DEBUG
     if( fDebug>1 ) cout << "Call CoarseProcess() for " 
@@ -330,7 +334,7 @@ Int_t THaSpectrometer::Track()
     CoarseReconstruct();
 
   TIter next( fTrackingDetectors );
-  while( auto theTrackDetector =
+  while( auto* theTrackDetector =
 	 static_cast<THaTrackingDetector*>( next() )) {
 #ifdef WITH_DEBUG
     if( fDebug>1 ) cout << "Call FineTrack() for " 
@@ -383,7 +387,7 @@ Int_t THaSpectrometer::Reconstruct()
   // PID likelihoods should be calculated here.
 
   TIter next( fNonTrackingDetectors );
-  while( auto theNonTrackDetector =
+  while( auto* theNonTrackDetector =
 	 static_cast<THaNonTrackingDetector*>( next() )) {
 #ifdef WITH_DEBUG
     if( fDebug>1 ) cout << "Call FineProcess() for " 
@@ -495,9 +499,10 @@ void THaSpectrometer::SetCentralAngles( Double_t th, Double_t ph,
   GeoToSph( fThetaGeo, fPhiGeo, fThetaSph, fPhiSph );
   fSinThGeo = TMath::Sin( fThetaGeo ); fCosThGeo = TMath::Cos( fThetaGeo );
   fSinPhGeo = TMath::Sin( fPhiGeo );   fCosPhGeo = TMath::Cos( fPhiGeo );
-  Double_t st, ct, sp, cp;
-  st = fSinThSph = TMath::Sin( fThetaSph ); ct = fCosThSph = TMath::Cos( fThetaSph );
-  sp = fSinPhSph = TMath::Sin( fPhiSph );   cp = fCosPhSph = TMath::Cos( fPhiSph );
+  Double_t st = fSinThSph = TMath::Sin(fThetaSph);
+  Double_t ct = fCosThSph = TMath::Cos(fThetaSph);
+  Double_t sp = fSinPhSph = TMath::Sin(fPhiSph);
+  Double_t cp = fCosPhSph = TMath::Cos(fPhiSph);
 
   // Compute the rotation from TRANSPORT to lab and vice versa.
   Double_t norm = TMath::Sqrt(ct*ct + st*st*cp*cp);

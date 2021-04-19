@@ -16,7 +16,6 @@
 class THaEvtTypeHandler : public THaAnalysisObject {
 
 public:
-
    THaEvtTypeHandler(const char* name, const char* description);
    virtual ~THaEvtTypeHandler();
 
@@ -37,13 +36,12 @@ public:
    virtual std::vector<Int_t> GetEvtTypes() { return eventtypes; };
 
 protected:
-
    std::vector<Int_t> eventtypes;
-   virtual void MakePrefix();
    std::ofstream *fDebugFile;
 
-private:
+   virtual void MakePrefix();
 
+private:
    THaEvtTypeHandler(const THaEvtTypeHandler &fh);
    THaEvtTypeHandler& operator=(const THaEvtTypeHandler &fh);
 

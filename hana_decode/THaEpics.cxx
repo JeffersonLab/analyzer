@@ -22,12 +22,13 @@
 /////////////////////////////////////////////////////////////////////
 
 #include "THaEpics.h"
-#include "TMath.h"
 #include <iostream>
 #include <string>
 #include <sstream>
 
 using namespace std;
+
+static int DEBUGL = 0;
 
 namespace Decoder {
 
@@ -101,7 +102,7 @@ vector<EpicsChan> THaEpics::GetChan(const char *tag) const
 }
 
 
-Int_t THaEpics::FindEvent(const vector<EpicsChan>& ep, int event) const
+Int_t THaEpics::FindEvent(const vector<EpicsChan>& ep, int event)
 {
   // Return the index in the vector of Epics data 
   // nearest in event number to event 'event'.
@@ -127,7 +128,6 @@ int THaEpics::LoadData(const UInt_t* evbuffer, int evnum)
   // load data from the event buffer 'evbuffer' 
   // for event nearest 'evnum'.
 
-  const unsigned int DEBUGL = 0;
   const string::size_type MAX_VAL_LEN = 32;
 
   const char* cbuff = (const char*)evbuffer;
@@ -161,7 +161,7 @@ int THaEpics::LoadData(const UInt_t* evbuffer, int evnum)
     if( wtag.empty() || wtag[0] == 0 ) continue;
     istringstream::pos_type spos = il.tellg();
     il >> wval;
-    Double_t dval;
+    Double_t dval = 0;
     bool got_val = false;
     if( !wval.empty() && wval.length() <= MAX_VAL_LEN ) {
       iv.clear(); iv.str(wval);

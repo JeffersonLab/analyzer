@@ -71,7 +71,8 @@ protected:
                         kCutScaler, kCutNCalled }; // These for hcana
 
   virtual Int_t       DefinedCutWithType( TString& variable, EVariableType type );
-  struct FVarDef_t {
+  class FVarDef_t {
+  public:
     EVariableType type;                //Type of variable in the formula
     void*         obj;                 //Pointer to the respective object
     Int_t         index;               //Linear index into array, if fixed-size

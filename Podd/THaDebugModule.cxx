@@ -24,12 +24,10 @@
 
 using namespace std;
 
-typedef vector<const TObject*>::const_iterator VIter_t;
-
 //_____________________________________________________________________________
 THaDebugModule::THaDebugModule( const char* var_list, const char* test ) :
   THaPhysicsModule("DebugModule",var_list),
-  fVarString(var_list), fFlags(kStop), fCount(0), fTestExpr(test), fTest(0)
+  fVarString(var_list), fFlags(kStop), fCount(0), fTestExpr(test), fTest(nullptr)
 {
   // Normal constructor.
 
@@ -75,11 +73,10 @@ Int_t THaDebugModule::THaDebugModule::ParseList()
 	// Regexp matching
 	bool found = false;
 	TRegexp re( opt, true);
-	TObject* obj;
 	// We can inspect analysis variables and cuts/tests
 	if( gHaVars ) {
 	  TIter next( gHaVars );
-	  while( (obj = next()) ) {
+	  while( TObject* obj = next() ) {
 	    TString s = obj->GetName();
 	    if( s.Index(re) != kNPOS ) {
 	      found = true;
@@ -91,7 +88,7 @@ Int_t THaDebugModule::THaDebugModule::ParseList()
 	  const TList* lst = gHaCuts->GetCutList();
 	  if( lst ) {
 	    TIter next( lst );
-	    while( (obj = next()) ) {
+	    while( TObject* obj = next() ) {
 	      TString s = obj->GetName();
 	      if( s.Index(re) != kNPOS ) {
 		found = true;
@@ -124,8 +121,7 @@ void THaDebugModule::Print( Option_t* opt ) const
 	cout << "Test name: " << fTestExpr << " (undefined)\n";
     }
     cout << "Number of variables: " << fVars.size() << endl;
-    for( VIter_t it = fVars.begin(); it != fVars.end(); ++it ) {
-      const TObject* obj = *it;
+    for( const auto* obj : fVars ) {
       cout << obj->GetName() << "  ";
     }
     cout << endl;
@@ -168,7 +164,7 @@ Int_t THaDebugModule::Process( const THaEvData& evdata )
   // Print() the variables
   if( good && (fFlags & kQuiet) == 0) {
     PrintEvNum( evdata );
-    VIter_t it = fVars.begin();
+    auto it = fVars.begin();
     for( ; it != fVars.end(); ++it ) {
       const char* opt = "";
       if( (*it)->IsA()->InheritsFrom("THaVar") ) 

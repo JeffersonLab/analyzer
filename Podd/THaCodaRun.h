@@ -13,7 +13,7 @@
 class THaCodaRun : public THaRunBase {
   
 public:
-  THaCodaRun( const char* description="" );
+  explicit THaCodaRun( const char* description="" );
   THaCodaRun( const THaCodaRun& rhs );
   virtual THaCodaRun& operator=( const THaRunBase& );
   virtual ~THaCodaRun();

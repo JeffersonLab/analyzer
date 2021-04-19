@@ -16,9 +16,9 @@ public:
   THaParticleInfo( const char* shortname, const char* name, 
 		   Double_t mass, Int_t charge )
     : TNamed( shortname, name ), fMass(mass), fCharge(charge) {}
-  THaParticleInfo( const THaParticleInfo& rhs );
+  THaParticleInfo( const THaParticleInfo& rhs ) = default;
   THaParticleInfo& operator=( const THaParticleInfo& rhs );
-  virtual ~THaParticleInfo() {}
+  virtual ~THaParticleInfo() = default;
 
   Double_t          GetMass() const          { return fMass; }
   Double_t          GetMass2() const         { return fMass*fMass; }

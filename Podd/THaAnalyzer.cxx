@@ -823,6 +823,11 @@ Int_t THaAnalyzer::ReadOneEvent()
     case THaEvData::HED_FATAL:
       status = THaRunBase::READ_FATAL;
       break;
+    default:
+      Error("THaAnalyzer::ReadEvent",
+            "Unsupported decoder return code %d. Call expert.", status);
+      status = THaRunBase::READ_FATAL;
+      break;
     }
     break;
 

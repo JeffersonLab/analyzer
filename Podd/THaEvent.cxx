@@ -25,33 +25,17 @@
 #include "THaEvent.h"
 #include "THaVarList.h"
 #include "THaGlobals.h"
-#include "TROOT.h"
-#include "TMath.h"
 #include "TClass.h"
-
-#include <cstring>
-#include <cstdlib>
-#include <fstream>
-#include <string>
-#include <vector>
-#include <iomanip>
+#include <cstring>   // for memcpy
 
 ClassImp(THaEventHeader)
 ClassImp(THaEvent)
 
 //_____________________________________________________________________________
-THaEvent::THaEvent() : fInit(false), fDataMap(nullptr)
+THaEvent::THaEvent() : fInit(false)
 {
   // Create a THaEvent object.
   Class()->IgnoreTObjectStreamer();
-}
-
-//_____________________________________________________________________________
-THaEvent::~THaEvent()
-{
-  // Destructor. Clean up all my objects.
-
-  delete [] fDataMap; fDataMap = nullptr;
 }
 
 //_____________________________________________________________________________
@@ -84,101 +68,99 @@ Int_t THaEvent::Fill()
   // variable system); we really have to convert the data retrieved via
   // GetData() to the type of the destination.
   //
-  // These complications will go away completely once this class is rewritten
+  // These complications would go away if this class were ever rewritten
   // with an intelligent streamer.
   //
 
   Int_t nvar = 0;
-  Int_t ncopy;
-  THaVar* pvar;
-  if( DataMap* datamap = fDataMap ) {
-    while( datamap->ncopy ) {
-      if( (pvar = datamap->pvar) ) {
-	if( datamap->ncopy>0 )
-	  ncopy = datamap->ncopy;
-	else if( datamap->ncopyvar )
-	  ncopy = *datamap->ncopyvar;
-	else {
-	  ncopy = pvar->GetLen();
-	  if( ncopy == THaVar::kInvalidInt ) 
-	    continue;
-	}
-	Int_t       type = pvar->GetType();
-	size_t      size = pvar->GetTypeSize();
-	const void* src  = pvar->GetValuePointer();
-	if( !src ) continue;
-	if( pvar->IsBasic() ) {
-	  if( type >= kDoubleP ) {
-	    // Pointers to pointers - get the pointer they currently point to
-	    void** loc = (void**)src;
-	           src = (const void*)(*loc);
-	  }
-	  if( !src ) continue;
-	  if( !pvar->IsPointerArray() )
-	    memcpy( datamap->dest, src, ncopy*size );
-	  else {
-	    // For pointer arrays, we need to copy the elements one by one
-	    // Type doesn't matter for memcpy, but size does ;)
-	    for( int i=0; i<ncopy; i++ ) {
-	      const int** psrc = (const int**)src;
-	      int*        dest = static_cast<int*>( datamap->dest );
-	      memcpy( dest+i, *(psrc+i), size );
-	    }
-	  }
-	} else {
-	  // Object variables: Now we have to worry about the type of
-	  // the destination. We assume it is the same type as the
-	  // source. Ugly and inefficient, but good enough for now I guess.
-	  // Note: Function return values are either Long_t or Double_t,
-	  // regardless of the actual return value of the function.
-	  // This is a ROOT limitation.
-	  for( int i=0, j=0; i<ncopy; i++, j++ ) {
-	    Double_t val = pvar->GetValue(i);
-	    if( val == THaVar::kInvalid )
-	      continue;
-	    switch( type ) {
-	    case kDouble: case kDoubleP:
-	      *(((Double_t*)datamap->dest)+j) = val;
-	      break;
-	    case kFloat:  case kFloatP:
-	      *(((Float_t*)datamap->dest)+j)  = static_cast<Float_t>(val);
-	      break;
-	    case kInt:    case kIntP:
-	      *(((Int_t*)datamap->dest)+j)    = static_cast<Int_t>(val);
-	      break;
-	    case kUInt:   case kUIntP:
-	      *(((UInt_t*)datamap->dest)+j)   = static_cast<UInt_t>(val);
-	      break;
-	    case kShort:  case kShortP:
-	      *(((Short_t*)datamap->dest)+j)  = static_cast<Short_t>(val);
-	      break;
-	    case kUShort: case kUShortP:
-	      *(((UShort_t*)datamap->dest)+j) = static_cast<UShort_t>(val);
-	      break;
-	    case kLong:   case kLongP:
-	      *(((Long64_t*)datamap->dest)+j) = static_cast<Long64_t>(val);
-	      break;
-	    case kULong:  case kULongP:
-	      *(((ULong64_t*)datamap->dest)+j)= static_cast<ULong64_t>(val);
-	      break;
-	    case kChar:   case kCharP:
-	      *(((Char_t*)datamap->dest)+j)   = static_cast<Char_t>(val);
-	      break;
-	    case kByte:   case kByteP:
-	      *(((Byte_t*)datamap->dest)+j)   = static_cast<Byte_t>(val);
-	      break;
-	    default:
-	      Warning( here, "Unknown type for variable %s "
-		 "Not filled.", pvar->GetName() );
-	      j--; nvar--;
-	      break;
-	    }
-	  }
-	}
-	nvar += ncopy;
+  for( const auto& datamap : fDataMap ) {
+    if( datamap.ncopy == 0 ) break;
+    if( !datamap.pvar ) continue;
+
+    THaVar* pvar = datamap.pvar;
+    Int_t ncopy = datamap.ncopy;
+    if( ncopy < 0 ) {
+      if( datamap.ncopyvar )
+        ncopy = *datamap.ncopyvar;
+      else {
+        ncopy = pvar->GetLen();
+        if( ncopy == THaVar::kInvalidInt )
+          continue;
       }
-      datamap++;
     }
+    Int_t       type = pvar->GetType();
+    size_t      size = pvar->GetTypeSize();
+    const void* src  = pvar->GetValuePointer();
+    if( !src ) continue;
+    if( pvar->IsBasic() ) {
+      if( type >= kDoubleP ) {
+        // Pointers to pointers - get the pointer they currently point to
+        void** loc = (void**)src;
+        src = (const void*)(*loc);
+      }
+      if( !src ) continue;
+      if( !pvar->IsPointerArray() )
+        memcpy( datamap.dest, src, ncopy*size );
+      else {
+        // For pointer arrays, we need to copy the elements one by one
+        // Type doesn't matter for memcpy, but size does ;)
+        for( int i=0; i<ncopy; i++ ) {
+          const int** psrc = (const int**)src;
+          int*        dest = static_cast<int*>( datamap.dest );
+          memcpy( dest+i, *(psrc+i), size );
+        }
+      }
+    } else {
+      // Object variables: Now we have to worry about the type of
+      // the destination. We assume it is the same type as the
+      // source. Ugly and inefficient, but good enough for now I guess.
+      // Note: Function return values are either Long_t or Double_t,
+      // regardless of the actual return value of the function.
+      // This is a ROOT limitation.
+      for( int i=0, j=0; i<ncopy; i++, j++ ) {
+        Double_t val = pvar->GetValue(i);
+        if( val == THaVar::kInvalid )
+          continue;
+        switch( type ) {
+        case kDouble: case kDoubleP:
+          *(((Double_t*)datamap.dest)+j) = val;
+          break;
+        case kFloat:  case kFloatP:
+          *(((Float_t*)datamap.dest)+j)  = static_cast<Float_t>(val);
+          break;
+        case kInt:    case kIntP:
+          *(((Int_t*)datamap.dest)+j)    = static_cast<Int_t>(val);
+          break;
+        case kUInt:   case kUIntP:
+          *(((UInt_t*)datamap.dest)+j)   = static_cast<UInt_t>(val);
+          break;
+        case kShort:  case kShortP:
+          *(((Short_t*)datamap.dest)+j)  = static_cast<Short_t>(val);
+          break;
+        case kUShort: case kUShortP:
+          *(((UShort_t*)datamap.dest)+j) = static_cast<UShort_t>(val);
+          break;
+        case kLong:   case kLongP:
+          *(((Long64_t*)datamap.dest)+j) = static_cast<Long64_t>(val);
+          break;
+        case kULong:  case kULongP:
+          *(((ULong64_t*)datamap.dest)+j)= static_cast<ULong64_t>(val);
+          break;
+        case kChar:   case kCharP:
+          *(((Char_t*)datamap.dest)+j)   = static_cast<Char_t>(val);
+          break;
+        case kByte:   case kByteP:
+          *(((Byte_t*)datamap.dest)+j)   = static_cast<Byte_t>(val);
+          break;
+        default:
+          Warning( here, "Unknown type for variable %s "
+             "Not filled.", pvar->GetName() );
+          j--; nvar--;
+          break;
+        }
+      }
+    }
+    nvar += ncopy;
   }
 
   return nvar;
@@ -191,16 +173,14 @@ Int_t THaEvent::Init()
 
   if( !gHaVars ) return -2;
 
-  if( DataMap* datamap = fDataMap ) {
-    while( datamap->ncopy ) {
-      if( THaVar* pvar = gHaVars->Find( datamap->name )) {
-	datamap->pvar = pvar;
-      } else {
-	Warning("Init()", "Global variable %s not found. "
-		"Will be filled with zero.", datamap->name );
-	datamap->pvar = nullptr;
-      }
-      datamap++;
+  for( auto& datamap : fDataMap ) {
+    if( datamap.ncopy == 0 ) break;
+    if( THaVar* pvar = gHaVars->Find( datamap.name )) {
+      datamap.pvar = pvar;
+    } else {
+      Warning("Init()", "Global variable %s not found. "
+                        "Will be filled with zero.", datamap.name );
+      datamap.pvar = nullptr;
     }
   }
   fInit = true;

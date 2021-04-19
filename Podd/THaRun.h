@@ -14,7 +14,7 @@
 class THaRun : public THaCodaRun {
 
 public:
-  THaRun( const char* filename="", const char* description="" );
+  explicit THaRun( const char* filename="", const char* description="" );
   THaRun( const THaRun& run );
   THaRun( const std::vector<TString>& pathList, const char* filename,
 	  const char* description="" );

@@ -34,13 +34,14 @@ protected:
   // Configuration
   struct DetDef {
     explicit DetDef( const char* name ) :
-      fName(name), fObj(nullptr), fNelem(0),
-      fNthit(nullptr), fTpad(nullptr), fRT(nullptr), fLT(nullptr) {}
+      fName(name), fObj(nullptr),
+      fNthit(nullptr), fTpad(nullptr), fRT(nullptr), fLT(nullptr),
+      fNelem(0) {}
     TString      fName;  // Detector name
     THaDetector* fObj;   // Pointer to detector object
-    Int_t        fNelem; // Number of configured elements (pads)
     THaVar       *fNthit, *fTpad, *fRT, *fLT;  // Required global variables
                                                // from this detector
+    Int_t        fNelem; // Number of configured elements (pads)
   };
   DetDef  fDet[2];
 
@@ -53,7 +54,7 @@ protected:
   void  MakeBlockName();
   virtual Int_t ReadDatabase( const TDatime& date );
 
-ClassDef(TwoarmVDCTimeCorrection, 0)   //Two-arm VDC time correction
+  ClassDef(TwoarmVDCTimeCorrection, 0)   //Two-arm VDC time correction
 };
 
 } // namespace HallA

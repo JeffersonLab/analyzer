@@ -17,6 +17,7 @@
 #include <iomanip>
 #include <algorithm>
 #include <cstring>
+#include <vector>
 
 using namespace std;
 
@@ -57,34 +58,6 @@ THaCut::THaCut( const char* name, const char* expression, const char* block,
   // This calls THaFormula::Compile(), which calls TFormula::Analyze(),
   // which then calls our own DefinedVariable()
   Compile();
-}
-
-//_____________________________________________________________________________
-THaCut::THaCut( const THaCut& rhs ) :
-  THaFormula(rhs), fLastResult(rhs.fLastResult), fBlockname(rhs.fBlockname),
-  fNCalled(rhs.fNCalled), fNPassed(rhs.fNPassed), fMode(rhs.fMode)
-{
-  // Copy ctor
-}
-
-//_____________________________________________________________________________
-THaCut& THaCut::operator=( const THaCut& rhs )
-{
-  if( this != &rhs ) {
-    THaFormula::operator=(rhs);
-    fLastResult = rhs.fLastResult;
-    fBlockname  = rhs.fBlockname;
-    fNCalled    = rhs.fNCalled;
-    fNPassed    = rhs.fNPassed;
-    fMode       = rhs.fMode;
-  }
-  return *this;
-}
-
-//_____________________________________________________________________________
-THaCut::~THaCut()
-{
-  // Destructor
 }
 
 //_____________________________________________________________________________
@@ -186,33 +159,33 @@ THaCut::EvalMode THaCut::ParsePrefix( TString& expr )
   const EvalMode kDefaultMode = kOR;
   const char* const here = "THaCut";
 
-  struct ModeDef_t {
+  class ModeDef_t {
+  public:
     const char* prefix;
     EvalMode    mode;
   };
-  const ModeDef_t mode_defs[] = {
-    { "OR", kOR }, { "ANY", kOR }, { "AND", kAND },
-    { "ALL", kAND }, { "XOR", kXOR }, { "ONE", kXOR },
-    { "ONEOF", kXOR }, { nullptr, kModeErr }
+  const vector<ModeDef_t> mode_defs = {
+    { "OR", kOR },     { "ANY", kOR },  { "AND", kAND },
+    { "ALL", kAND },   { "XOR", kXOR }, { "ONE", kXOR },
+    { "ONEOF", kXOR },
   };
 
   Ssiz_t colon = expr.Index(":");
   if( colon == kNPOS )
     return kDefaultMode;
 
-  const ModeDef_t* def = mode_defs;
-  while( def->prefix ) {
-    if( expr.BeginsWith(def->prefix) &&
-	static_cast<Ssiz_t>(strlen(def->prefix)) == colon ) {
-      expr.Remove(0,colon+1);
+  EvalMode mode = kModeErr;
+  for( const auto& def : mode_defs ) {
+    if( expr.BeginsWith(def.prefix) &&
+	static_cast<Ssiz_t>(strlen(def.prefix)) == colon ) {
+      expr.Remove(0, colon + 1);
+      mode = def.mode;
       break;
     }
-    ++def;
   }
-  EvalMode mode = def->mode;
 
   if( mode == kModeErr ) {
-    TString prefix = expr(0,colon);
+    TString prefix = expr(0, colon);
     Error(here, "Unknown prefix %s", prefix.Data() );
   } else if( expr.Length() == 0 ) {
     Error(here, "expression may not be empty");

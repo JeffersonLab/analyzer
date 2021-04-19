@@ -32,10 +32,7 @@ Variable::Variable( THaVar* pvar, const void* addr, VarType type )
 }
 
 //_____________________________________________________________________________
-Variable::~Variable()
-{
-  // Destructor
-}
+Variable::~Variable() = default;
 
 //_____________________________________________________________________________
 Bool_t Variable::VerifyNonArrayName( const char* name ) const

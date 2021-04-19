@@ -149,7 +149,7 @@ Int_t THaCoincTime::ReadDatabase( const TDatime& date )
       { "detmap",      &detmap, kIntV },
       { "tdc_res",     &fTdcRes[i] },
       { "tdc_offset",  &fTdcOff[i], kDouble, 1 },
-      { 0 }
+      { nullptr }
     };
     TString pref(fPrefix); pref.Append(fTdcLabels[i]); pref.Append(".");
     err = LoadDB( file, date, request, pref );

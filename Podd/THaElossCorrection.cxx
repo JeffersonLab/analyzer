@@ -8,14 +8,14 @@
 
 #include "THaElossCorrection.h"
 #include "THaSpectrometer.h"
-#include "THaTrack.h"
-#include "THaTrackInfo.h"
 #include "THaVertexModule.h"
 #include "TMath.h"
-#include "TVector3.h"
 #include "VarDef.h"
 #include "VarType.h"
 #include <iostream>
+
+// Default tolerance for floating-point equality comparisons of z_med
+static const Double_t eps = 0.1;
 
 using namespace std;
 
@@ -100,7 +100,7 @@ Int_t THaElossCorrection::ReadRunDatabase( const TDatime& date )
 
   DBRequest req[] = {
     { "M",          &fM,          kDouble, 0, false, 0, "M (particle mass [GeV/c^2])" },
-    { "Z",          &fZ,          kInt,    0, true, 0, "Z (particle Z)" },
+    { "Z",          &fZ,          kInt,    0, true,  0, "Z (particle Z)" },
     { "Z_med",      &fZmed,       kDouble, 0, false, 0, "Z_med (Z of medium)" },
     { "A_med",      &fAmed,       kDouble, 0, false, 0, "A_med (A of medium)" },
     { "density",    &fDensity,    kDouble, 0, false, 0, "density of medium [g/cm^3]" },
@@ -279,9 +279,6 @@ Double_t THaElossCorrection::ElossElectron( Double_t beta, Double_t z_med,
   //-----------------------------------------------------------------------
 
 
-  Double_t BETA2,BETA3,PLAS,EKIN,TAU,FTAU;
-  Double_t BETH,DENS,ESTP,EXEN,GAMMA;
-
   //---- Constant factor corresponding to 2*pi*N_a*(r_e)^2*m_e*c^2
   //     Its units are MeV.cm2/g          
 
@@ -303,31 +300,31 @@ Double_t THaElossCorrection::ElossElectron( Double_t beta, Double_t z_med,
 
   pathlength *= 1e2;  // internal units are cm
 
-  BETA2 = beta * beta;
-  BETA3 = 1.0 - BETA2;
-  GAMMA = 1.0/TMath::Sqrt(BETA3);
+  Double_t BETA2 = beta * beta;
+  Double_t BETA3 = 1.0 - BETA2;
+  Double_t GAMMA = 1.0/TMath::Sqrt(BETA3);
 
   //---- Reduced Bethe-Bloch stopping power
 
-  EXEN = ExEnerg(z_med,d_med);
+  Double_t EXEN = ExEnerg(z_med,d_med);
   if( EXEN == 0.0 )
     return 0.0;
 
-  EKIN = EMAS * ( GAMMA - 1.0 );
-  TAU  = EKIN / EMAS;
-  FTAU = 1.0+(TAU*TAU/8.0)-((2.0*TAU+1.0)*log2);
-  BETH = 2.0 * TMath::Log(1e6*EKIN/EXEN) + BETA3 * FTAU;
+  Double_t EKIN = EMAS * ( GAMMA - 1.0 );
+  Double_t TAU  = EKIN / EMAS;
+  Double_t FTAU = 1.0+(TAU*TAU/8.0)-((2.0*TAU+1.0)*log2);
+  Double_t BETH = 2.0 * TMath::Log(1e6*EKIN/EXEN) + BETA3 * FTAU;
   BETH = BETH + TMath::Log(1.0+(0.5*TAU));
 
   //---- Reduced density correction
 
-  PLAS = 28.8084 * TMath::Sqrt(d_med*z_med/a_med);
-  DENS = 2.0*(TMath::Log(PLAS)+TMath::Log(beta*GAMMA)-TMath::Log(EXEN))-1.0;
+  Double_t PLAS = 28.8084 * TMath::Sqrt(d_med*z_med/a_med);
+  Double_t DENS = 2.0*(TMath::Log(PLAS)+TMath::Log(beta*GAMMA)-TMath::Log(EXEN))-1.0;
   if(DENS < 0.0) DENS = 0.0;
 
   //---- Total electron stopping power
 
-  ESTP = COEF * z_med * ( BETH - DENS ) / a_med / BETA2;
+  Double_t ESTP = COEF * z_med * ( BETH - DENS ) / a_med / BETA2;
 
   //---- Electron energy loss
 
@@ -372,10 +369,6 @@ Double_t THaElossCorrection:: ElossHadron( Int_t Z_hadron, Double_t beta,
   //-----------------------------------------------------------------------
 
 
-  Double_t BETA2,GAMA2,GAMA,PLAS,ETA,ETA2,ETA4,ETA6;
-  Double_t BETH,DENS,SHE0,SHE1,SHEL,HSTP;
-  Double_t X,X0,X1,M,EXEN,C,A;
-
   //---- Constant factor corresponding to 4*pi*N_a*(r_e)^2*m_e*c^2
   //     Its units are MeV.cm2/g          
 
@@ -397,30 +390,32 @@ Double_t THaElossCorrection:: ElossHadron( Int_t Z_hadron, Double_t beta,
 
   pathlength *= 1e2;  // internal units are cm
 
-  BETA2 = beta * beta;
-  GAMA2 = 1.0 / (1.0 - BETA2);
-  GAMA  = TMath::Sqrt( GAMA2 );
-  ETA  = beta * GAMA ;
+  Double_t BETA2 = beta * beta;
+  Double_t GAMA2 = 1.0 / (1.0 - BETA2);
+  Double_t GAMA  = TMath::Sqrt( GAMA2 );
+  Double_t ETA  = beta * GAMA ;
 
   //---- Reduced Bethe-Bloch stopping power
 
-  EXEN = ExEnerg(z_med,d_med);  // in eV!
+  Double_t EXEN = ExEnerg(z_med,d_med);  // in eV!
   //-    Tabulated material check
   if( EXEN == 0.0 ) 
     return 0.0;
 
-  BETH = TMath::Log(2e6*EMAS*BETA2*GAMA2/EXEN) - BETA2;
+  Double_t BETH = TMath::Log(2e6*EMAS*BETA2*GAMA2/EXEN) - BETA2;
 
   //---- Reduced density correction
 
-  PLAS = 28.8084 * TMath::Sqrt(d_med*z_med/a_med);
-  C = 2.0*TMath::Log(PLAS) - 2.0*TMath::Log(EXEN) - 1.0;
-  X = TMath::Log10(ETA);
+  Double_t PLAS = 28.8084 * TMath::Sqrt(d_med*z_med/a_med);
+  Double_t C = 2.0*TMath::Log(PLAS) - 2.0*TMath::Log(EXEN) - 1.0;
+  Double_t X = TMath::Log10(ETA);
+  Double_t X0,X1,M;
   HaDensi(z_med,d_med,X0,X1,M);
   //-    Tabulated density consistency
   if((X0+X1+M) == 0.0)
     return 0.0;
-  A = -1.0 * ( C + log100*X0 ) / TMath::Power(X1-X0,M);
+  Double_t A = -1.0 * ( C + log100*X0 ) / TMath::Power(X1-X0,M);
+  Double_t DENS;
   if(X<X0)
     DENS = 0.0;
   else if(X<X1)
@@ -429,19 +424,19 @@ Double_t THaElossCorrection:: ElossHadron( Int_t Z_hadron, Double_t beta,
     DENS = log100*X + C;
   DENS *= 0.5;
 
-  ETA2 = 1.0 / (ETA*ETA) ;
-  ETA4 = ETA2 * ETA2 ;
-  ETA6 = ETA4 * ETA2 ;
+  Double_t ETA2 = 1.0 / (ETA*ETA) ;
+  Double_t ETA4 = ETA2 * ETA2 ;
+  Double_t ETA6 = ETA4 * ETA2 ;
 
   //---- Reduced shell correction
 
-  SHE0 = 4.2237e-1*ETA2 + 3.040e-2*ETA4 - 3.80e-4*ETA6;
-  SHE1 = 3.8580e0 *ETA2 - 1.668e-1*ETA4 + 1.58e-3*ETA6;
-  SHEL = 1e-6 * EXEN * EXEN * (SHE0 + 1e-3*SHE1*EXEN) / z_med;
+  Double_t SHE0 = 4.2237e-1*ETA2 + 3.040e-2*ETA4 - 3.80e-4*ETA6;
+  Double_t SHE1 = 3.8580e0 *ETA2 - 1.668e-1*ETA4 + 1.58e-3*ETA6;
+  Double_t SHEL = 1e-6 * EXEN * EXEN * (SHE0 + 1e-3*SHE1*EXEN) / z_med;
 
   //---- Total hadron stopping power
    
-  HSTP = COEF * z_med * Double_t(Z_hadron*Z_hadron) / a_med;
+  Double_t HSTP = COEF * z_med * Double_t(Z_hadron*Z_hadron) / a_med;
   HSTP = HSTP * ( BETH - DENS - SHEL ) / BETA2;
 
   //---- Electron energy loss
@@ -455,7 +450,7 @@ Double_t THaElossCorrection:: ElossHadron( Int_t Z_hadron, Double_t beta,
 Double_t THaElossCorrection::ExEnerg( Double_t z_med, Double_t d_med )
 {
 
-  Double_t EXEN;
+  Double_t EXEN = 0.0;
 
 //---- Some Z=1 isotopes
 
@@ -474,48 +469,48 @@ Double_t THaElossCorrection::ExEnerg( Double_t z_med, Double_t d_med )
 
   //-    Gaseous/Liquid Helium
 
-  else if( TMath::Abs(z_med-2.0)<0.1 )
+  else if( TMath::Abs(z_med-2.0)<eps )
     EXEN = 41.8;
 
   //---- Plastic scintillator (Polyvinyltolulene 2-CH[3]C[6]H[4]CH=CH[2])
   //     
   //     z_eff = 3.36842    a_eff =  6.21996    d_med = 1.03200
 
-  else if( TMath::Abs(z_med-3.37)<0.1 )
+  else if( TMath::Abs(z_med-3.37)<eps )
     EXEN = 64.7;
 
   //---- Kapton (Polymide film C[22]H[10]N[2]O[5])
   //     
   //     z_eff = 5.02564    a_eff =  9.80345    d_med = 1.42000
 
-  else if( TMath::Abs(z_med-5.03)<0.1 )
+  else if( TMath::Abs(z_med-5.03)<eps )
     EXEN = 79.6;
 
   //---- Some Z=6 isotopes
 
-  else if( TMath::Abs(z_med-6.0)<0.1 )
+  else if( TMath::Abs(z_med-6.0)<eps )
     EXEN = 78.0;
 
   //---- Air (dry, near sea level, 78% N2 + 22% O2)
   //     
   //     z_eff = 7.22000    a_eff = 14.46343    d_med = 1.20480E-03
 
-  else if( TMath::Abs(z_med-7.22)<0.1 )
+  else if( TMath::Abs(z_med-7.22)<eps )
     EXEN = 85.7;
 
 //---- Aluminum
 
-  else if( TMath::Abs(z_med-13.0)<0.1 )
+  else if( TMath::Abs(z_med-13.0)<eps )
     EXEN = 166.0;
 
 //---- Copper
 
-  else if( TMath::Abs(z_med-29.0)<0.1 )
+  else if( TMath::Abs(z_med-29.0)<eps )
     EXEN = 322.0;
 
 //---- Titanium
 
-  else if( TMath::Abs(z_med-22.0)<0.1 )
+  else if( TMath::Abs(z_med-22.0)<eps )
     EXEN = 233.0;
 
 //---- Table overflow
@@ -526,7 +521,6 @@ Double_t THaElossCorrection::ExEnerg( Double_t z_med, Double_t d_med )
     cout << "z_med = " << z_med << " d_med = " << d_med << endl;
     cout << "Implement THaElossCorrection::ExEnerg routine for proper use." 
 	 << endl << endl;
-    EXEN = 0.0;
   }
 
   return EXEN;
@@ -539,7 +533,7 @@ void THaElossCorrection::HaDensi( Double_t z_med, Double_t d_med,
 
   //---- Some Z=1 isotopes
 
-  if( TMath::Abs( z_med-1.0 ) < 0.1 ) {
+  if( TMath::Abs( z_med-1.0 ) < eps ) {
     //-    Gaseous hydrogen
     if( d_med < 0.01 ) {
       X0 =  1.8639;
@@ -547,13 +541,17 @@ void THaElossCorrection::HaDensi( Double_t z_med, Double_t d_med,
       M  =  5.7273;
     }
     //-    Liquid Hydrogen
-    else if( d_med < 0.1 ) {
-      X0 =  0.4759;
-      X1 =  1.9215;
-      M  =  5.6249;
-    }
+//FIXME: these numbers are identical to the liquid deuterium case below, which
+// looks suspiciously like a copy-and-paste error. It is like this already in
+// the original Fortran code (I checked). See also a similar case in ExEnerg()
+// above. We should verify/correct these data.
+//    else if( d_med < 0.1 ) {
+//      X0 =  0.4759;
+//      X1 =  1.9215;
+//      M  =  5.6249;
+//    }
     //---- Liquid Deuterium
-    else if( d_med >= 0.1 ) {
+    else {
       X0 =  0.4759;
       X1 =  1.9215;
       M  =  5.6249;
@@ -561,7 +559,7 @@ void THaElossCorrection::HaDensi( Double_t z_med, Double_t d_med,
   }
   //---- Some Z=2 isotopes
 
-  else if( TMath::Abs( z_med-2.0 ) < 0.1 ) {
+  else if( TMath::Abs( z_med-2.0 ) < eps ) {
     //-    Gaseous/Liquid Helium
     X0 =   2.2017;
     X1 =   3.6122;
@@ -572,7 +570,7 @@ void THaElossCorrection::HaDensi( Double_t z_med, Double_t d_med,
   //     
   //     z_eff = 3.36842    a_eff =  6.21996    d_med = 1.03200
 
-  else if( TMath::Abs( z_med-3.37 ) < 0.1 ) {
+  else if( TMath::Abs( z_med-3.37 ) < eps ) {
     X0 =  0.1464;
     X1 =  2.4855;
     M  =  3.2393;
@@ -582,7 +580,7 @@ void THaElossCorrection::HaDensi( Double_t z_med, Double_t d_med,
   //     
   //     z_eff = 5.02564    a_eff =  9.80345    d_med = 1.42000
 
-  else if( TMath::Abs( z_med-5.03 ) < 0.1 ) {
+  else if( TMath::Abs( z_med-5.03 ) < eps ) {
     X0 =  0.1509;
     X1 =  2.5631;
     M  =  3.1921;
@@ -590,7 +588,7 @@ void THaElossCorrection::HaDensi( Double_t z_med, Double_t d_med,
 
   //---- Some Z=6 isotopes
 
-  else if( TMath::Abs( z_med-6.0 ) < 0.1 ) {
+  else if( TMath::Abs( z_med-6.0 ) < eps ) {
     //-    Carbon (graphite, density 1.700 g/cm3)
     if( d_med < 1.750) {
       X0 =  0.0480;
@@ -615,7 +613,7 @@ void THaElossCorrection::HaDensi( Double_t z_med, Double_t d_med,
 //     
 //     z_eff = 7.22000    a_eff = 14.46343    d_med = 1.20480E-03
 
-  else if( TMath::Abs( z_med-7.22 ) < 0.1 ) {
+  else if( TMath::Abs( z_med-7.22 ) < eps ) {
     X0 =   1.7418;
     X1 =   4.2759;
     M  =   3.3994;
@@ -623,7 +621,7 @@ void THaElossCorrection::HaDensi( Double_t z_med, Double_t d_med,
 
 //---- Aluminum
 
-  else if( TMath::Abs( z_med-13.0 ) < 0.1 ) {
+  else if( TMath::Abs( z_med-13.0 ) < eps ) {
     X0 =  0.1708;
     X1 =  3.0127;
     M  =  3.6345;
@@ -631,7 +629,7 @@ void THaElossCorrection::HaDensi( Double_t z_med, Double_t d_med,
 
 //---- Titanium
 
-  else if( TMath::Abs( z_med-22.0 ) < 0.1 ) {
+  else if( TMath::Abs( z_med-22.0 ) < eps ) {
     X0 =  0.0957;
     X1 =  3.0386;
     M  =  3.0302;

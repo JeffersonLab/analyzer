@@ -225,8 +225,8 @@ Int_t THaTotalShower::CoarseProcess( TClonesArray& tracks )
     fID = -1;
   else {
     fE = fShower->GetE() + fPreShower->GetE();
-    Float_t dx = fPreShower->GetX() - fShower->GetX();
-    Float_t dy = fPreShower->GetY() - fShower->GetY();
+    Data_t dx = fPreShower->GetX() - fShower->GetX();
+    Data_t dy = fPreShower->GetY() - fShower->GetY();
     if( TMath::Abs(dx) < fMaxDx && TMath::Abs(dy) < fMaxDy )
       fID = 1;
   }

@@ -69,7 +69,6 @@
 
 #include "DecData.h"
 #include "THaVarList.h"
-#include "THaGlobals.h"
 #include "TDatime.h"
 #include "TClass.h"
 #include "TObjArray.h"
@@ -86,8 +85,8 @@
 
 using namespace std;
 
-static Int_t kInitHashCapacity = 100;
-static Int_t kRehashLevel = 3;
+static const Int_t kInitHashCapacity = 100;
+static const Int_t kRehashLevel = 3;
 
 namespace Podd {
 
@@ -146,7 +145,7 @@ Int_t DecData::DefineVariables( EMode mode )
   // initialization in THaApparatus::Init).
   Int_t retval = kOK;
   TIter next( &fBdataLoc );
-  while( auto dataloc = static_cast<BdataLoc*>( next() ) ) {
+  while( auto* dataloc = dynamic_cast<BdataLoc*>( next() ) ) {
     if( dataloc->DefineVariables( mode ) != kOK )
       retval = kInitError;
   }
@@ -190,7 +189,7 @@ Int_t DecData::DefineLocType( const BdataLoc::BdataLocType& loctype,
       // Prepend prefix to name in parameter array
       TString& bname = GetObjArrayString( params, ip );
       bname.Prepend(GetPrefix());
-      auto item = static_cast<BdataLoc*>(fBdataLoc.FindObject(bname) );
+      auto* item = dynamic_cast<BdataLoc*>(fBdataLoc.FindObject(bname) );
       Bool_t already_defined = ( item != nullptr );
       if( already_defined ) {
 	// Name already exists
@@ -396,7 +395,7 @@ Int_t DecData::Decode(const THaEvData& evdata)
   //- MultiWordLoc uses faster search algo to scan crate buffer
 
   TIter next( &fBdataLoc );
-  while( auto dataloc = static_cast<BdataLoc*>(next()) ) {
+  while( auto* dataloc = static_cast<BdataLoc*>(next()) ) {
     dataloc->Load( evdata );
   }
 

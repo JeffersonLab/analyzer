@@ -19,10 +19,3 @@ THaPidDetector::THaPidDetector( const char* name, const char* description,
 
 }
 
-//______________________________________________________________________________
-THaPidDetector::~THaPidDetector()
-{
-  // Destructor
-
-}
-

@@ -22,19 +22,6 @@ THaSpectrometerDetector::THaSpectrometerDetector( const char* name,
 
 }
 
-//______________________________________________________________________________
-THaSpectrometerDetector::THaSpectrometerDetector( )
-{
-  // Constructor for ROOT I/O only
-}
-
-//______________________________________________________________________________
-THaSpectrometerDetector::~THaSpectrometerDetector()
-{
-  // Destructor
-
-}
-
 //_____________________________________________________________________________
 Bool_t THaSpectrometerDetector::CalcTrackIntercept( THaTrack* theTrack,
 						    TVector3& icept,

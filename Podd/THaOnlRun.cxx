@@ -20,7 +20,7 @@
 using namespace std;
 
 //______________________________________________________________________________
-THaOnlRun::THaOnlRun() : THaCodaRun()
+THaOnlRun::THaOnlRun() : THaCodaRun(), fMode(1)
 {
   // Default constructor
 
@@ -29,7 +29,6 @@ THaOnlRun::THaOnlRun() : THaCodaRun()
   SetDate(now);
   // Use ET client as data source
   fCodaData = new Decoder::THaEtClient();
-  fMode = 1;
 }
 
 //______________________________________________________________________________

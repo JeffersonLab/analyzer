@@ -20,15 +20,6 @@ THaParticleInfo::THaParticleInfo() : fMass(0), fCharge(0)
 }
 
 //_____________________________________________________________________________
-THaParticleInfo::THaParticleInfo( const THaParticleInfo& rhs ) : TNamed(rhs)
-{
-  // Copy ctor
-
-  fMass    = rhs.fMass;
-  fCharge  = rhs.fCharge;
-}
-
-//_____________________________________________________________________________
 THaParticleInfo& THaParticleInfo::operator=(const THaParticleInfo& rhs )
 {
   // Assignment operator

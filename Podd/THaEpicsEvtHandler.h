@@ -12,22 +12,22 @@
 /////////////////////////////////////////////////////////////////////
 
 #include "THaEvtTypeHandler.h"
-#include "Decoder.h"
+#include "THaEpics.h"
+#include "TString.h"
 #include <string>
 #include <vector>
-#include "TTree.h"
-#include "TString.h"  
+#include <memory>
 
 class THaEpicsEvtHandler : public THaEvtTypeHandler {
 
 public:
 
    THaEpicsEvtHandler(const char* name, const char* description);
-   virtual ~THaEpicsEvtHandler();
+   virtual ~THaEpicsEvtHandler() = default;
 
    virtual Int_t Analyze(THaEvData *evdata);
    virtual EStatus Init( const TDatime& run_time);
-   virtual Int_t End( THaRunBase* r=0 );
+   virtual Int_t End( THaRunBase* r=nullptr );
    Bool_t IsLoaded(const char* tag) const; 
    Double_t GetData(const char* tag, Int_t event=0) const;  
    Double_t GetTime(const char* tag, Int_t event=0) const; 
@@ -35,7 +35,7 @@ public:
 
 private:
 
-   Decoder::THaEpics *fEpics;
+   std::unique_ptr<Decoder::THaEpics> fEpics;
    static const Int_t MAXDATA=20000;
 
    THaEpicsEvtHandler(const THaEpicsEvtHandler& fh);

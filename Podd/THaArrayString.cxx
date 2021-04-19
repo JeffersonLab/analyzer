@@ -96,7 +96,7 @@ Int_t THaArrayString::Parse( const char* string )
 
   static const size_t MAXLEN = 255;
   bool changed = false, dyn = false;
-  char *str = 0, *s, *t;
+  char *str = nullptr, *s, *t;
   const char *cs;
   size_t len;
   Int_t ncomma = 0, nl = 0, nr = 0;

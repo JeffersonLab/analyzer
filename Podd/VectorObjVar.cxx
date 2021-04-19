@@ -40,7 +40,7 @@ Int_t VectorObjVar::GetLen() const
 
   assert( fValueP );
 
-  const auto pvec = reinterpret_cast<const VecType*>( fValueP );
+  const auto *const pvec = reinterpret_cast<const VecType*>( fValueP );
   if( !pvec )
     return kInvalidInt;
 
@@ -112,7 +112,7 @@ Bool_t VectorObjVar::HasSameSize( const Variable& rhs ) const
   // Trivially, VectorObjVar variables have the same size if they
   // belong to the same std::vector
 
-  const auto other = dynamic_cast<const VectorObjVar*>(&rhs);
+  const auto *const other = dynamic_cast<const VectorObjVar*>(&rhs);
   if( !other )
     return false;
 

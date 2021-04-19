@@ -58,7 +58,7 @@ THaExtTarCor::THaExtTarCor( const char* name, const char* description,
 {
   // Normal constructor.
 
-  Clear();
+  THaExtTarCor::Clear();
 }
 
 //_____________________________________________________________________________

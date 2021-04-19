@@ -20,10 +20,10 @@ public:
   
   virtual Int_t        AddDetector( THaDetector* det, Bool_t quiet = false,
 				    Bool_t first = false );
-  virtual Int_t        Begin( THaRunBase* r=0 );
+  virtual Int_t        Begin( THaRunBase* r=nullptr );
   virtual void         Clear( Option_t* opt="" );
   virtual Int_t        Decode( const THaEvData& );
-  virtual Int_t        End( THaRunBase* r=0 );
+  virtual Int_t        End( THaRunBase* r=nullptr );
           Int_t        GetNumDets() const;
   virtual THaDetector* GetDetector( const char* name );
           TList*       GetDetectors() { return fDetectors; }

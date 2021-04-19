@@ -35,7 +35,6 @@
 #include "THaVarList.h"
 #include <cstring>
 #include <cstdio>
-#include <cstdlib>
 #include <iostream>
 
 using namespace std;
@@ -57,24 +56,24 @@ Float_t THaEvt125Handler::GetData(const std::string& tag)
 Int_t THaEvt125Handler::Analyze(THaEvData *evdata) 
 {
 
-  Bool_t ldebug = true;  // FIXME: use fDebug
-  UInt_t index;
   const Int_t startidx = 3;
 
   if ( !IsMyEvent(evdata->GetEvType()) ) return -1;
 
-  if (ldebug) cout << "------------------\n  Event type 125 \n\n"<<endl;
+  if (fDebug) cout << "------------------\n  Event type 125 \n\n" << endl;
 
   for (Int_t i = 0; i < evdata->GetEvLength(); i++) {
 
-    if (ldebug) cout << "data["<<dec<<i<<"] =  0x"<<hex<<evdata->GetRawData(i)<<"  = decimal "<<dec<<evdata->GetRawData(i)<<endl;
+    if (fDebug) cout << "data[" << dec << i
+                     << "] =  0x" << hex << evdata->GetRawData(i)
+                     << "  = decimal " << dec << evdata->GetRawData(i) << endl;
 
 // This is a fake example of how to decode.  Modify it as you wish,
 // and then change these comments.
 // The data in "dvars" appears as global variables.
 
     if (i >= startidx) {
-      index = i-startidx;
+      Int_t index = i-startidx;
       if (index < NVars) dvars[index] = evdata->GetRawData(i);
     }
 
@@ -89,7 +88,7 @@ THaAnalysisObject::EStatus THaEvt125Handler::Init(const TDatime&)
 
   cout << "Howdy !  We are initializing THaEvt125Handler !!   name =   "<<fName<<endl;
 
-  eventtypes.push_back(125);  // what events to look for
+  AddEvtType(125);  // what events to look for
 
 // dvars is a member of this class.
 // The index of the dvars array track the array of global variables created.

@@ -49,7 +49,7 @@ Int_t THaVDCHit::Compare( const TObject* obj ) const
     return 0;
 
 #ifndef NDEBUG
-  const THaVDCHit* other = dynamic_cast<const THaVDCHit*>( obj );
+  const auto* other = dynamic_cast<const THaVDCHit*>( obj );
   assert( other );
 #else
   const THaVDCHit* other = static_cast<const THaVDCHit*>( obj );

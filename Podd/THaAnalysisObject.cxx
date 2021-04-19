@@ -126,8 +126,8 @@ Int_t THaAnalysisObject::End( THaRunBase* /* run */ )
 
   if( !fMessages.empty() ) {
     ULong64_t ntot = 0;
-    for( auto it = fMessages.begin(); it != fMessages.end(); ++it ) {
-      ntot += it->second;
+    for(const auto& fMessage : fMessages) {
+      ntot += fMessage.second;
     }
     ostringstream msg;
     msg << endl
@@ -301,9 +301,9 @@ THaAnalysisObject* THaAnalysisObject::FindModule( const char* name,
   TObject* obj = nullptr;
   while( (obj = next()) ) {
 #ifdef NDEBUG
-    auto module = static_cast<THaAnalysisObject*>(obj);
+    auto* module = static_cast<THaAnalysisObject*>(obj);
 #else
-    auto module = dynamic_cast<THaAnalysisObject*>(obj);
+    auto* module = dynamic_cast<THaAnalysisObject*>(obj);
     assert(module);
 #endif
     TString prefix = module->GetPrefixName();
@@ -340,7 +340,7 @@ THaAnalysisObject* THaAnalysisObject::FindModule( const char* name,
     fStatus = kInitError;
     return nullptr;
   }
-  auto aobj = static_cast<THaAnalysisObject*>( obj );
+  auto* aobj = static_cast<THaAnalysisObject*>( obj );
   if( do_error ) {
     if( !aobj->IsOK() ) {
       Error( Here(here), "Module %s (%s) not initialized.",
@@ -367,28 +367,20 @@ vector<string> THaAnalysisObject::GetDBFileList( const char* name,
   static const string dirsep = "/", allsep = "/";
 #endif
 
-  const char* dbdir = nullptr;
-  const char* result;
-  void* dirp;
-  size_t pos;
-  vector<string> time_dirs, dnames, fnames;
-  vsiter_t it;
-  string item, filename, thedir;
-  Int_t item_date;
-  bool have_defaultdir = false, found = false;
-
+  vector<string> fnames;
   if( !name || !*name )
-    goto exit;
+    return fnames;
 
   // If name contains a directory separator, we take the name verbatim
-  filename = name;
+  string filename = name;
   if( filename.find_first_of(allsep) != string::npos ) {
     fnames.push_back( filename );
-    goto exit;
+    return fnames;
   }
 
   // Build search list of directories
-  if( (dbdir = gSystem->Getenv("DB_DIR")))
+  vector<string> dnames;
+  if( const char* dbdir = gSystem->Getenv("DB_DIR"))
     dnames.emplace_back(dbdir);
   dnames.emplace_back("DB");
   dnames.emplace_back("db");
@@ -397,25 +389,29 @@ vector<string> THaAnalysisObject::GetDBFileList( const char* name,
   // Try to open the database directories in the search list.
   // The first directory that can be opened is taken as the database
   // directory. Subsequent directories are ignored.
-  it = dnames.begin();
-  while( !(dirp = gSystem->OpenDirectory( (*it).c_str() )) && 
-	 (++it != dnames.end()) ) {}
+  auto it = dnames.begin();
+  void* dirp = nullptr;
+  while( !(dirp = gSystem->OpenDirectory((*it).c_str())) &&
+         (++it != dnames.end()) ) {}
 
   // None of the directories can be opened?
   if( it == dnames.end() ) {
     ::Error( here, "Cannot open any database directories. Check your disk!");
-    goto exit;
+    return fnames;
   }
 
   // Pointer to database directory string
-  thedir = *it;
+  string thedir = *it;
 
   // In the database directory, get the names of all subdirectories matching 
   // a YYYYMMDD pattern.
-  while( (result = gSystem->GetDirEntry(dirp)) ) {
-    item = result;
+  vector<string> time_dirs;
+  bool have_defaultdir = false;
+  while( const char* result = gSystem->GetDirEntry(dirp) ) {
+    string item = result;
     if( item.length() == 8 ) {
-      for( pos=0; pos<8; ++pos )
+      Int_t pos = 0;
+      for( ; pos<8; ++pos )
 	if( !isdigit(item[pos])) break;
       if( pos==8 )
 	time_dirs.push_back( item );
@@ -425,10 +421,11 @@ vector<string> THaAnalysisObject::GetDBFileList( const char* name,
   gSystem->FreeDirectory(dirp);
 
   // Search a date-coded subdirectory that corresponds to the requested date.
+  bool found = false;
   if( !time_dirs.empty() ) {
     sort( time_dirs.begin(), time_dirs.end() );
     for( it = time_dirs.begin(); it != time_dirs.end(); ++it ) {
-      item_date = atoi((*it).c_str());
+      Int_t item_date = atoi((*it).c_str());
       if( it == time_dirs.begin() && date.GetDate() < item_date )
 	break;
       if( it != time_dirs.begin() && date.GetDate() < item_date ) {
@@ -437,7 +434,7 @@ vector<string> THaAnalysisObject::GetDBFileList( const char* name,
 	break;
       }
       // Assume that the last directory is valid until infinity.
-      if( it+1 == time_dirs.end() && date.GetDate() >= item_date ) {
+      if( it + 1 == time_dirs.end() && date.GetDate() >= item_date ) {
 	found = true;
 	break;
       }
@@ -454,7 +451,7 @@ vector<string> THaAnalysisObject::GetDBFileList( const char* name,
   // should never happen
   assert( filename.length() >= 4 );
 #else
-  if( filename.length() < 4 ) { fnames.clear(); goto exit; }
+  if( filename.length() < 4 ) { fnames.clear(); return fnames; }
 #endif
   if( *filename.rbegin() == '.' ) {
     filename += "dat";
@@ -467,16 +464,15 @@ vector<string> THaAnalysisObject::GetDBFileList( const char* name,
   //    <dbdir>/DEFAULT/filename <dbdir>/filename
   fnames.push_back( filename );
   if( found ) {
-    item = thedir + dirsep + *it + dirsep + filename;
+    string item = thedir + dirsep + *it + dirsep + filename;
     fnames.push_back( item );
   }
   if( have_defaultdir ) {
-    item = thedir + dirsep + defaultdir + dirsep + filename;
+    string item = thedir + dirsep + defaultdir + dirsep + filename;
     fnames.push_back( item );
   }
   fnames.push_back( thedir + dirsep + filename );
 
- exit:
   return fnames;
 }
 
@@ -531,7 +527,7 @@ const char* Here( const char* method, const char* prefix )
     if( full_prefix.EndsWith(".") )
       full_prefix.Chop();
     full_prefix.Prepend("(\""); full_prefix.Append("\")");
-    const char* scope;
+    const char* scope = nullptr;
     if( method && *method && (scope = strstr(method, "::")) ) {
       Ssiz_t pos = scope - method;
       txt = method;
@@ -1023,24 +1019,21 @@ static Int_t ChopPrefix( string& s )
   // Remove trailing level from prefix. Example "L.vdc." -> "L."
   // Return remaining number of dots, or zero if empty/invalid prefix
 
-  ssiz_t len = s.size(), pos;
-  Int_t ndot = 0;
-  if( len<2 )
-    goto null;
-  pos = s.rfind('.',len-2);
-  if( pos == string::npos ) 
-    goto null;
-  s.erase(pos+1);
-  for( ssiz_t i = 0; i <= pos; i++ ) {
-    if( s[i] == '.' )
-      ndot++;
+  auto len = s.size();
+  if( len >= 2 ) {
+    Int_t ndot = 0;
+    auto pos = s.rfind('.', len - 2);
+    if( pos != string::npos ) {
+      s.erase(pos + 1);
+      for( ssiz_t i = 0; i <= pos; i++ ) {
+        if( s[i] == '.' )
+          ndot++;
+      }
+      return ndot;
+    }
   }
-  return ndot;
-
- null:
   s.clear();
   return 0;
-
 }
 
 //_____________________________________________________________________________
@@ -1068,7 +1061,7 @@ static Int_t GetLine( FILE* file, char* buf, size_t bufsiz, string& line )
   // Also, convert all tabs to spaces.
   // Returns 0 on success, or EOF if no more data (or error).
 
-  char* r;
+  char* r = nullptr;
   line.clear();
   while( (r = fgets(buf, bufsiz, file)) ) {
     char* c = strchr(buf, '\n');
@@ -1271,7 +1264,7 @@ Int_t THaAnalysisObject::LoadDBvalue( FILE* file, const TDatime& date,
     lines.assign( 1, dbline );
     gHaTextvars->Substitute( lines );
     for(auto & line : lines) {
-      Int_t status;
+      Int_t status = 0;
       if( !do_ignore && (status = IsDBkey( line, key, text )) != 0 ) {
 	if( status > 0 ) {
 	  // Found a matching key for a newer date than before
@@ -1400,7 +1393,7 @@ Int_t THaAnalysisObject::LoadDBmatrix( FILE* file, const TDatime& date,
 
 //_____________________________________________________________________________
 Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
-				 const DBRequest* req, Int_t search )
+				 const DBRequest* req, Int_t search ) const
 {
   // Member function version of LoadDB, uses current object's fPrefix and
   // class name
@@ -1842,7 +1835,7 @@ vector<string> THaAnalysisObject::vsplit(const string& s)
 
 #ifdef WITH_DEBUG
 //_____________________________________________________________________________
-void THaAnalysisObject::DebugPrint( const DBRequest* list )
+void THaAnalysisObject::DebugPrint( const DBRequest* list ) const
 {
   // Print values of database parameters given in 'list'
 
@@ -1956,8 +1949,7 @@ void THaAnalysisObject::PrintObjects( Option_t* opt )
   // Print all defined analysis objects (useful for debugging)
 
   TIter next(fgModules);
-  TObject* obj;
-  while( (obj = next()) ) {
+  while( TObject* obj = next() ) {
     obj->Print(opt);
   }
 }

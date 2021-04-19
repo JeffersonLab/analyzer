@@ -69,7 +69,7 @@ TwoarmVDCTimeCorrection::Init( const TDatime& run_time )
   // there's no need to be more restrictive.
   fStatus = kOK;
   for( auto& detdef : fDet ) {
-    auto obj = dynamic_cast<THaDetector*>
+    auto* obj = dynamic_cast<THaDetector*>
     ( FindModule(detdef.fName.Data(), "THaDetector"));
     if( !obj ) {
       fStatus = kInitError;

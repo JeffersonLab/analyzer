@@ -52,10 +52,10 @@ public:
   void     SetNthit(Int_t num)        { fNthit  = num; }
 
   // Functor for ordering hits
-  //TODO: make this a lambda?
-  struct ByWireThenTime :
+  class ByWireThenTime :
     public std::binary_function< THaVDCHit*, THaVDCHit*, bool >
   {
+  public:
     bool operator() ( const THaVDCHit* a, const THaVDCHit* b ) const
     {
       assert( a && b );

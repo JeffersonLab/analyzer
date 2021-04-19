@@ -15,9 +15,9 @@ public:
   THaCut();
   THaCut( const char* name, const char* expression, const char* block,
 	  const THaVarList* vlst = gHaVars, const THaCutList* clst = gHaCuts );
-  THaCut( const THaCut& rhs );
-  THaCut& operator=( const THaCut& rhs );
-  virtual ~THaCut();
+  THaCut( const THaCut& rhs ) = default;
+  THaCut& operator=( const THaCut& rhs ) = default;
+  virtual ~THaCut() = default;
 
   using THaFormula::Eval;
 

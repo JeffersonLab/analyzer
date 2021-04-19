@@ -44,13 +44,6 @@ THaSAProtonEP::THaSAProtonEP( const char* name, const char* description,
 }
 
 //_____________________________________________________________________________
-THaSAProtonEP::~THaSAProtonEP()
-{
-  // Destructor
-
-}
-
-//_____________________________________________________________________________
 Int_t THaSAProtonEP::Process( const THaEvData& )
 {
   // Calculate the electron kinematics for elastic eX -> eX using the 

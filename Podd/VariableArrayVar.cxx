@@ -10,9 +10,7 @@
 
 #include "VariableArrayVar.h"
 #include "THaVar.h"
-#include <iostream>
-#include <cstring>
-#include <typeinfo>
+#include <typeinfo>   // for typeid
 #include <cassert>
 
 using namespace std;
@@ -29,7 +27,7 @@ VariableArrayVar::VariableArrayVar( THaVar* pvar, const void* addr,
   assert( fCount );
 
   if( !VerifyNonArrayName(GetName()) ) {
-    fValueP = 0;
+    fValueP = nullptr;
     return;
   }
 }
@@ -69,7 +67,7 @@ Bool_t VariableArrayVar::HasSameSize( const Variable& rhs ) const
   if( typeid(*this) != typeid(rhs) )
     return false;
 
-  const auto other = dynamic_cast<const VariableArrayVar*>(&rhs);
+  const auto *const other = dynamic_cast<const VariableArrayVar*>(&rhs);
   assert( other );
   if( !other )
     return false;

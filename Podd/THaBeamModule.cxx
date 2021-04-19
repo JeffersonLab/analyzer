@@ -16,18 +16,10 @@
 using namespace std;
 
 //_____________________________________________________________________________
-THaBeamModule::THaBeamModule()
-{
-  // Normal constructor.
-
-}
+THaBeamModule::THaBeamModule() = default;
 
 //_____________________________________________________________________________
-THaBeamModule::~THaBeamModule()
-{
-  // Destructor
-
-}
+THaBeamModule::~THaBeamModule() = default;
 
 //_____________________________________________________________________________
 const RVarDef* THaBeamModule::GetRVarDef()
@@ -52,7 +44,6 @@ const RVarDef* THaBeamModule::GetRVarDef()
 
   return vars;
 }
-
 
 //_____________________________________________________________________________
 ClassImp(THaBeamModule)

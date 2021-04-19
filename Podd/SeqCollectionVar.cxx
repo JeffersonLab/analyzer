@@ -52,11 +52,11 @@ Int_t SeqCollectionVar::GetLen() const
 
   assert( fValueP );
 
-  const auto obj = static_cast<const TObject*>( fValueP );
+  const auto *const obj = static_cast<const TObject*>( fValueP );
   if( !obj || !obj->IsA()->InheritsFrom( TSeqCollection::Class() ))
     return kInvalidInt;
 
-  const auto c = static_cast<const TSeqCollection*>( obj );
+  const auto *const c = static_cast<const TSeqCollection*>( obj );
 
   // Get actual array size
   if( c->IsA()->InheritsFrom( TObjArray::Class() ))
@@ -130,7 +130,7 @@ Bool_t SeqCollectionVar::HasSameSize( const Variable& rhs ) const
   // Trivially, TSeqCollection variables have the same size if they
   // belong to the same TSeqCollection
 
-  const auto other = dynamic_cast<const SeqCollectionVar*>(&rhs);
+  const auto *const other = dynamic_cast<const SeqCollectionVar*>(&rhs);
   if( !other )
     return false;
 

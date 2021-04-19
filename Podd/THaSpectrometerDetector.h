@@ -20,7 +20,7 @@ class TVector3;
 class THaSpectrometerDetector : public THaDetector {
 
 public:
-  virtual ~THaSpectrometerDetector();
+  virtual ~THaSpectrometerDetector() = default;
 
   virtual Bool_t   IsTracking() = 0;
   virtual Bool_t   IsPid()      = 0;
@@ -34,7 +34,7 @@ public:
           Bool_t   CalcTrackIntercept( THaTrack* track, Double_t& pathl,
 				       Double_t& xdet, Double_t& ydet );
 
-  THaSpectrometerDetector();       // for ROOT I/O only
+  THaSpectrometerDetector() = default;    // for ROOT I/O only
 
 protected:
   //Only derived classes may construct me

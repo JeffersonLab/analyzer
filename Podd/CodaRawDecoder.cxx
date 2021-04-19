@@ -33,7 +33,7 @@ CodaRawDecoder::CodaRawDecoder()
         { "evtyp",     "Event type",     kInt,    0, &event_type },
         { "evlen",     "Event Length",   kInt,    0, &event_length },
         { "evtime",    "Event time",     kULong,  0, &evt_time },
-        { 0 }
+        { nullptr }
     };
     TString prefix("g");
     // Prevent global variable clash if there are several instances of us

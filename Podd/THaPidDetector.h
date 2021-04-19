@@ -19,8 +19,8 @@
 class THaPidDetector : public THaNonTrackingDetector {
   
 public:
-  THaPidDetector() {} // for ROOT I/O
-  virtual ~THaPidDetector();
+  THaPidDetector() = default; // for ROOT I/O
+  virtual ~THaPidDetector() = default;
   
           Bool_t   IsPid() { return true; }
 

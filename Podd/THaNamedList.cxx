@@ -14,33 +14,28 @@
 #include "TNamed.h"
 #include "TClass.h"
 #include <iostream>
-#include <cstring>
 
 using namespace std;
 
 
 //_____________________________________________________________________________
-THaNamedList::THaNamedList()
+THaNamedList::THaNamedList() : fNamed(new TNamed)
 {
   // THaNamedList default constructor
-
-  fNamed = new TNamed();
 }
 
 //_____________________________________________________________________________
-THaNamedList::THaNamedList( const char* name )
+THaNamedList::THaNamedList( const char* name ) :
+  fNamed(new TNamed(name,name))
 {
   // Normal THaNamedList constructor with single argument
-
-  fNamed = new TNamed( name, name );
 }
 
 //_____________________________________________________________________________
-THaNamedList::THaNamedList( const char* name, const char* title )
+THaNamedList::THaNamedList( const char* name, const char* title ) :
+  fNamed(new TNamed(name,title))
 {
   // Normal THaNamedList constructor with name and title
-
-  fNamed = new TNamed( name, title );
 }
 
 //_____________________________________________________________________________
@@ -58,8 +53,7 @@ void THaNamedList::PrintOpt( Option_t* opt ) const
   // being printed. (This is the old ROOT 2,x behavior).
 
   TIter next(this);
-  TObject* object;
-  while((object = next()))
+  while( TObject* object = next() )
     object->Print(opt);
 }
 

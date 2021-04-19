@@ -8,7 +8,6 @@
 
 #include "THaDetector.h"
 #include "THaApparatus.h"
-#include "THaDetMap.h"
 
 #include <cassert>
 #include <sstream>
@@ -37,10 +36,7 @@ THaDetector::THaDetector() : fApparatus(nullptr)
 }
 
 //_____________________________________________________________________________
-THaDetector::~THaDetector()
-{
-  // Destructor
-}
+THaDetector::~THaDetector() = default;
 
 //_____________________________________________________________________________
 THaApparatus* THaDetector::GetApparatus() const

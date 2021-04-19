@@ -13,7 +13,7 @@
 #include "TError.h"
 #include <iostream>
 #include <cstring>
-#include <typeinfo>
+#include <typeinfo>  // for typeid
 
 using namespace std;
 
@@ -86,7 +86,7 @@ Bool_t FixedArrayVar::HasSameSize( const Variable& rhs ) const
   if( typeid(*this) != typeid(rhs) )
     return false;
 
-  const auto other = dynamic_cast<const FixedArrayVar*>(&rhs);
+  const auto* const other = dynamic_cast<const FixedArrayVar*>(&rhs);
   assert( other );
   if( !other )
     return false;

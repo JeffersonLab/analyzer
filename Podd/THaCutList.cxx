@@ -44,15 +44,14 @@ void THaHashList::PrintOpt( Option_t* opt ) const
   // being printed. (This is the old ROOT 2.x behavior).
 
   TIter next(this);
-  TObject* object;
-  while((object = next()))
-    object->Print(opt);
+  while( TObject* obj = next() )
+    obj->Print(opt);
 }
 
 //______________________________________________________________________________
 THaCutList::THaCutList()
   : fCuts(new THaHashList()), fBlocks(new THaHashList()),
-    fVarList(0)
+    fVarList(nullptr)
 {
   // Default constructor. No variable list is defined. Either define it
   // later with SetList() or pass the list as an argument to Define().
@@ -105,7 +104,7 @@ void THaCutList::ClearAll( Option_t* )
   // Clear the results of all defined cuts
 
   TIter next( fCuts );
-  while( THaCut* pcut = static_cast<THaCut*>( next() ))
+  while( auto* pcut = static_cast<THaCut*>( next() ))
     pcut->ClearResult();
 }
 
@@ -115,7 +114,7 @@ void THaCutList::ClearBlock( const char* block, Option_t* )
   // Clear the results of the defined cuts in the named block
 
   TIter next( FindBlock(block) );
-  while( THaCut* pcut = static_cast<THaCut*>( next() ))
+  while( auto* pcut = static_cast<THaCut*>( next() ))
     pcut->ClearResult();
 }
 
@@ -126,28 +125,19 @@ void THaCutList::Compile()
   // Since cuts are compiled when we Define() them, this routine typically only 
   // needs to be called when global variable pointers need to be updated.
 
-  TList* bad_cuts = 0;
-  bool have_bad = false;
+  vector<THaCut*> bad_cuts;
 
   TIter next( fCuts );
-  while( THaCut* pcut = static_cast<THaCut*>( next() )) {
+  while( auto* pcut = static_cast<THaCut*>( next() )) {
     pcut->Compile();
     if( pcut->IsError() ) { 
       Error( "Compile", "expression error, cut removed: %s %s block: %s",
 	     pcut->GetName(), pcut->GetTitle(), pcut->GetBlockname() );
-      if( !bad_cuts ) bad_cuts = new TList;
-      bad_cuts->Add( new TNamed( *pcut ));
-      have_bad = true;
+      bad_cuts.push_back(pcut);
     }
   }
-  if( have_bad ) {
-    TIter next_bad( bad_cuts );
-    while( TNamed* pbad = static_cast<TNamed*>( next_bad() )) {
-      Remove( pbad->GetName() );
-    }
-    bad_cuts->Delete();
-  }
-  delete bad_cuts;
+  for( const auto* pbad : bad_cuts )
+    Remove( pbad->GetName() );
 }
 
 //______________________________________________________________________________
@@ -214,9 +204,8 @@ Int_t THaCutList::Define( const char* cutname, const char* expr,
 
   // Create new cut using the given expression. Bail out if error.
 
-  THaCut* pcut = new THaCut( cutname, expr, block, lst, this );
-  if( !pcut ) return -2;
-  if( pcut->IsError() ) { 
+  auto* pcut = new THaCut( cutname, expr, block, lst, this );
+  if( pcut->IsError() ) {
     Error( here, "expression error, cut not created: %s %s block: %s",
 	   cutname, expr, block );
     delete pcut; 
@@ -225,7 +214,7 @@ Int_t THaCutList::Define( const char* cutname, const char* expr,
 
   // Formula ok -> add it to the lists. If this is a new block, create it.
 
-  THaNamedList* plist = FindBlock( block );
+  auto* plist = FindBlock( block );
   if( !plist ) {
     plist = new THaNamedList( block );
     fBlocks->Add( plist );
@@ -245,7 +234,7 @@ Int_t THaCutList::Eval()
 
   Int_t i = 0;
   TIter next( fBlocks );
-  while( auto plist = static_cast<THaNamedList*>( next() ))
+  while( auto* plist = static_cast<THaNamedList*>( next() ))
     i += EvalBlock( plist );
 
   return i;
@@ -401,10 +390,8 @@ Int_t THaCutList::Load( const char* filename )
     if( gHaTextvars->Substitute(lines) )
       continue;
 
-    for( vector<string>::iterator it = lines.begin(); 
-	 it != lines.end(); ++it ) {
+    for( const auto& str : lines ) {
       nlines_read++;
-      const string& str = *it;
       string arg1, arg2;
 
       // Extract first argument (cut name or "Block:")
@@ -450,11 +437,10 @@ void THaCutList::MakePrintOption( THaPrintOption& opt, const TList* plist )
   // to the print option.
   // This is an internal utility function used by Print() and PrintBlock().
 
-  const int NF = 4;         // Number of fields
   if( opt.IsLine() && !strcmp(opt.GetOption(1),"") ) {
-    UInt_t width[NF] = { 0, 0, 0, 0 };
+    vector<UInt_t> width{ 0, 0, 0, 0 };
     TIter next( plist );
-    while( THaCut* pcut = static_cast<THaCut*>( next() )) {
+    while( auto* pcut = static_cast<THaCut*>( next() )) {
       width[0] = max( width[0], static_cast<UInt_t>
 		      (strlen(pcut->GetName())) );
       width[1] = max( width[1], static_cast<UInt_t>
@@ -465,9 +451,9 @@ void THaCutList::MakePrintOption( THaPrintOption& opt, const TList* plist )
 					   (pcut->GetNPassed()) ));
     }
     TString newopt = opt.GetOption(0);
-    for( int i=0; i<NF; i++ ) {
+    for( UInt_t i : width ) {
       newopt += ",";
-      newopt += width[i];
+      newopt += i;
     }
     opt = newopt;
   }
@@ -487,7 +473,7 @@ void THaCutList::Print( Option_t* option ) const
   PrintHeader( opt );
   if( opt.IsLine() ) {
     TIter next( fBlocks );
-    while( THaNamedList* plist = static_cast<THaNamedList*>( next() )) {
+    while( auto* plist = static_cast<THaNamedList*>( next() )) {
       bool is_stats = !strcmp( opt.GetOption(0), kPRINTSTATS );
       if(  is_stats && strlen( plist->GetName() ) )
 	cout << "BLOCK: " << plist->GetName() << endl;
@@ -517,7 +503,7 @@ void THaCutList::PrintCut( const char* cutname, Option_t* option ) const
 {
   // Print the definition of a single cut
 
-  THaCut* pcut = static_cast<THaCut*>( fCuts->FindObject( cutname ));
+  auto* pcut = dynamic_cast<THaCut*>( fCuts->FindObject( cutname ));
   if( !pcut ) return;
   pcut->Print( option );
 }
@@ -555,7 +541,7 @@ void THaCutList::Reset()
   // Reset all cut and block counters to zero
 
   TIter next( fCuts );
-  while( THaCut* pcut = static_cast<THaCut*>( next() ))
+  while( auto* pcut = static_cast<THaCut*>( next() ))
     pcut->Reset();
 }
 
@@ -566,7 +552,7 @@ Int_t THaCutList::Result( const char* cutname, EWarnMode mode )
   // (0 if false, 1 if true).
   // If cut does not exist, return -1. Also, print warning if mode=kWarn.
 
-  THaCut* pcut = static_cast<THaCut*>( fCuts->FindObject( cutname ));
+  auto* pcut = static_cast<THaCut*>( fCuts->FindObject( cutname ));
   if( !pcut ) {
     if( mode == kWarn )
       Warning("Result", "No such cut: %s", cutname );
@@ -580,10 +566,10 @@ Int_t THaCutList::Remove( const char* cutname )
 {
   // Remove the named cut completely
 
-  THaCut* pcut = static_cast<THaCut*>( fCuts->FindObject( cutname ));
+  auto* pcut = static_cast<THaCut*>( fCuts->FindObject( cutname ));
   if ( !pcut ) return 0;
   const char* block = pcut->GetBlockname();
-  THaNamedList* plist = static_cast<THaNamedList*>(fBlocks->FindObject( block ));
+  auto* plist = static_cast<THaNamedList*>(fBlocks->FindObject( block ));
   if ( plist ) plist->Remove( pcut );
   fCuts->Remove( pcut );
   delete pcut;
@@ -600,7 +586,7 @@ Int_t THaCutList::RemoveBlock( const char* block )
   Int_t i = 0;
   TObjLink* lnk = plist->FirstLink();
   while( lnk ) {
-    THaCut* pcut = static_cast<THaCut*>( lnk->GetObject() );
+    auto* pcut = static_cast<THaCut*>( lnk->GetObject() );
     if( pcut ) i++;
     lnk = lnk->Next();
     fCuts->Remove( pcut );

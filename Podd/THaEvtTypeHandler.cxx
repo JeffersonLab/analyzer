@@ -10,8 +10,7 @@
 #include "THaCrateMap.h"
 #include "TMath.h"
 #include <iostream>
-#include <string>
-#include <sstream>
+#include <algorithm>
 
 using namespace std;
 
@@ -91,11 +90,8 @@ void THaEvtTypeHandler::SetDebugFile(const char *filename) {
 
 Bool_t THaEvtTypeHandler::IsMyEvent(Int_t evnum) const
 {
-  for( int eventtype : eventtypes ) {
-    if (evnum == eventtype) return true;
-  }
-
-  return false;
+  return any_of(eventtypes.begin(), eventtypes.end(),
+                [evnum](Int_t evtype){ return evnum == evtype; });
 }
 
 //_____________________________________________________________________________

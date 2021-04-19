@@ -23,15 +23,17 @@ const char* const MC_PREFIX = "MC.";
 Double_t MCTrackPoint::fgWindowSize = 1e-3;
 
 //_____________________________________________________________________________
-SimDecoder::SimDecoder()
-  : fWeight(1.0), fMCHits(nullptr), fMCTracks(nullptr), fIsSetup(false)
+SimDecoder::SimDecoder() :
+  fWeight{1.0},
+  fMCHits{nullptr},
+  fMCTracks{nullptr},
+  fMCPoints{new TClonesArray("Podd::MCTrackPoint", 50)},
+  fIsSetup{false}
 {
   // Constructor. Derived classes must allocate the track and hit
   // TClonesArrays using their respective hit and track classes
 
   const char* const here = "SimDecoder::SimDecoder";
-
-  fMCPoints = new TClonesArray( "Podd::MCTrackPoint", 50 );
 
   // Register standard global variables for event header data
   // (It is up to the actual implementation of SimDecoder to fill these)
@@ -245,7 +247,7 @@ Int_t MCTrackPoint::Compare( const TObject* obj ) const
   // Returns -1 if this is smaller than rhs, 0 if equal, +1 if greater.
 
   assert( dynamic_cast<const MCTrackPoint*>(obj) );
-  auto rhs = static_cast<const MCTrackPoint*>(obj);
+  const auto* rhs = static_cast<const MCTrackPoint*>(obj);
 
   if( fType  < rhs->fType  ) return -1;
   if( fType  > rhs->fType  ) return  1;

@@ -16,7 +16,6 @@
 #include "TSystem.h"
 
 #include <vector>
-#include <sstream>
 #include <cassert>
 #include <memory>  // for unique_ptr
 

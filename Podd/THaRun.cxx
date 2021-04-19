@@ -96,11 +96,7 @@ THaRun& THaRun::operator=(const THaRunBase& rhs)
 }
 
 //_____________________________________________________________________________
-THaRun::~THaRun()
-{
-  // Destructor.
-
-}
+THaRun::~THaRun() = default;
 
 //_____________________________________________________________________________
 void THaRun::Clear( Option_t* opt )
@@ -125,11 +121,11 @@ Int_t THaRun::Compare( const TObject* obj ) const
   // Used by ROOT containers.
 
   if (this == obj) return 0;
-  auto rhs = dynamic_cast<const THaRunBase*>(obj);
+  const auto* rhs = dynamic_cast<const THaRunBase*>(obj);
   if( !rhs ) return -1;
   if( *this < *rhs )       return -1;
   else if( *rhs < *this )  return  1;
-  const auto rhsr = dynamic_cast<const THaRun*>(rhs);
+  const auto* rhsr = dynamic_cast<const THaRun*>(rhs);
   if( !rhsr ) return 0;
   if( fSegment < rhsr->fSegment ) return -1;
   else if( rhsr->fSegment < fSegment ) return 1;
@@ -188,7 +184,7 @@ Int_t THaRun::ReadInitInfo()
   Int_t status = READ_OK;
   if( fMaxScan > 0 ) {
     if( fSegment == 0 ) {
-      auto evdata = static_cast<THaEvData*>(gHaDecoder->New());
+      auto* evdata = static_cast<THaEvData*>(gHaDecoder->New());
       // Disable advanced processing
       evdata->EnableScalers(false);
       evdata->EnableHelicity(false);

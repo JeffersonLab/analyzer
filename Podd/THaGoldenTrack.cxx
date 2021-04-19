@@ -116,8 +116,7 @@ Int_t THaGoldenTrack::Process( const THaEvData& )
   else {  // ntracks>1
     TClonesArray* tracks = fSpectro->GetTracks();
     for( Int_t i=0; i<ntracks; i++ ) {
-      auto theTrack = static_cast<THaTrack*>( tracks->At(i));
-      if( theTrack == fTrack ) {
+      if( tracks->At(i) == fTrack ) {
 	fIndex = i;
 	break;
       }

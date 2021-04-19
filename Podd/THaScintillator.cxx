@@ -277,7 +277,8 @@ Int_t THaScintillator::DefineVariables( EMode mode )
   // Define global analysis variables
 
   // Add variables for left- and right-side PMT raw data
-  struct VarDefInfo {
+  class VarDefInfo {
+  public:
     PMTData* pmtData;
     const char* key_prefix;
     const char* comment_subst;
@@ -288,9 +289,8 @@ Int_t THaScintillator::DefineVariables( EMode mode )
     { fRightPMTs, "r", "right-side" },
     { fLeftPMTs,  "l", "left-side"  }
   };
-  Int_t ret = kOK;
   for( const auto& side : sides )
-    if( (ret = side.DefineVariables(mode)) )
+    if( Int_t ret = side.DefineVariables(mode) )
       return ret;
 
   // Define variables on the remaining event data
@@ -311,7 +311,7 @@ Int_t THaScintillator::DefineVariables( EMode mode )
     { "trpad",  "paddle-hit associated with track",  "fTrackProj.THaTrackProj.fChannel" },
     { nullptr }
   };
-  ret = DefineVarsFromList( vars, mode );
+  Int_t ret = DefineVarsFromList( vars, mode );
   if( ret )
     return ret;
 

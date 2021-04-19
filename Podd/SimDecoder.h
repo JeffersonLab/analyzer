@@ -1,7 +1,7 @@
 //*-- Author:  Ole Hansen<mailto:ole@jlab.org>; Jefferson Lab; 5-Jul-2014
 //
-#ifndef __SimDecoder_h
-#define __SimDecoder_h
+#ifndef Podd_SimDecoder_h_
+#define Podd_SimDecoder_h_
 
 /////////////////////////////////////////////////////////////////////
 //

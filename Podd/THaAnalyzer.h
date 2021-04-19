@@ -108,7 +108,8 @@ public:
 
 protected:
   // Test and histogram blocks
-  struct Stage_t {
+  class Stage_t {
+  public:
     Stage_t( Int_t _key, Int_t _countkey, const char* _name )
       : key(_key), countkey(_countkey), name(_name), cut_list(nullptr),
         hist_list(nullptr), master_cut(nullptr) {}
@@ -126,7 +127,8 @@ protected:
     kDecodeErr, kCodaErr, kRawDecodeTest, kDecodeTest, kCoarseTrackTest,
     kCoarseReconTest, kTrackTest, kReconstructTest, kPhysicsTest
   };
-  struct Counter_t {
+  class Counter_t {
+  public:
     Counter_t( Int_t _key, const char* _description )
       : key(_key), count(0), description(_description) {}
     Int_t       key;

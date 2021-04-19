@@ -15,7 +15,6 @@
 #include "THaBeam.h"
 #include "THaVertexModule.h"
 #include "TMath.h"
-#include "TVector3.h"
 
 using namespace std;
 

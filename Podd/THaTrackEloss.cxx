@@ -15,9 +15,7 @@
 #include "THaSpectrometer.h"
 #include "THaTrack.h"
 #include "THaTrackInfo.h"
-#include "THaVertexModule.h"
 #include "TMath.h"
-#include "TVector3.h"
 
 using namespace std;
 

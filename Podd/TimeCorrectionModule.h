@@ -1,5 +1,5 @@
-#ifndef HallA_VDCTimeCorrectionModule_h_
-#define HallA_VDCTimeCorrectionModule_h_
+#ifndef Podd_TimeCorrectionModule_h_
+#define Podd_TimeCorrectionModule_h_
 
 //////////////////////////////////////////////////////////////////////////
 //
@@ -35,7 +35,6 @@ protected:
   // Event-by-event data
   Double_t  fEvtTime;    // Time offset for this event (s)
 
-protected:
   virtual Int_t DefineVariables( EMode mode = kDefine );
   virtual Int_t ReadDatabase( const TDatime& date );
 

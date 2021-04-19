@@ -22,33 +22,22 @@
 #include "THaCodaData.h"
 #include "THaEvData.h"
 #include "THaEpics.h"
-#include "TNamed.h"
-#include "TMath.h"
+#include "TTree.h"
 #include "TString.h"
-#include <cstring>
-#include <cstdio>
-#include <cstdlib>
 #include <iostream>
-#include <sstream>
 #include "THaVarList.h"
-#include "VarDef.h"
 
 using namespace std;
 using namespace Decoder;
 
-THaEpicsEvtHandler::THaEpicsEvtHandler(const char *name, const char* description)
-  : THaEvtTypeHandler(name,description)
+THaEpicsEvtHandler::THaEpicsEvtHandler( const char* name,
+                                        const char* description ) :
+  THaEvtTypeHandler(name, description),
+  fEpics{new Decoder::THaEpics()}
 {
-  fEpics = new Decoder::THaEpics();
 }
 
-THaEpicsEvtHandler::~THaEpicsEvtHandler()
-{
-  delete fEpics;
-}
-
-Int_t THaEpicsEvtHandler::End( THaRunBase* )
-{
+Int_t THaEpicsEvtHandler::End( THaRunBase* ) {
   return 0;
 }
 
@@ -97,13 +86,15 @@ Int_t THaEpicsEvtHandler::Analyze(THaEvData *evdata)
   return 1;
 }
 
-THaAnalysisObject::EStatus THaEpicsEvtHandler::Init(const TDatime&)
-{
+THaAnalysisObject::EStatus THaEpicsEvtHandler::Init( const TDatime& ) {
 
-  cout << "Howdy !  We are initializing THaEpicsEvtHandler !!   name =   "<<fName<<endl;
+  if( fDebug )
+    cout << "Howdy !  We are initializing THaEpicsEvtHandler !!   "
+            "name =   " << fName << endl;
 
 // Set the event type to the default unless the client has already defined it.
-  if (GetNumTypes()==0) SetEvtType(Decoder::EPICS_EVTYPE); 
+  if( GetNumTypes() == 0 )
+    SetEvtType(Decoder::EPICS_EVTYPE);
 
   fStatus = kOK;
   return kOK;

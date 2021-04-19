@@ -17,12 +17,8 @@
 #include "THaVarList.h"
 #include "THaCut.h"
 #include "TTree.h"
-#include "TROOT.h"
 
 #include <iostream>
-#include <cstring>
-#include <cstdlib>
-#include <cctype>
 #include <cassert>
 
 using namespace std;
@@ -32,7 +28,8 @@ using namespace THaString;
 THaVform::THaVform( const char *type, const char* name, const char* formula,
 		    const THaVarList* vlst, const THaCutList* clst )
   : THaFormula(), fNvar(0), fObjSize(0), fEyeOffset(0), fData(0.0),
-    fType(kUnknown), fVarPtr(nullptr), fOdata(nullptr), fPrefix(kNoPrefix)
+    fType(kUnknown), fDebug(0), fVarPtr(nullptr), fOdata(nullptr),
+    fPrefix(kNoPrefix)
 {
   SetName(name);
   SetList(vlst);
@@ -41,17 +38,14 @@ THaVform::THaVform( const char *type, const char* name, const char* formula,
   SetTitle(stemp1.c_str());
 
   if( type && *type ) {
-    size_t len = strlen(type); char* buf = new char[len+1];
-    strcpy(buf,type); char* c = buf; while((*c = tolower(*c))) ++c;
-    if( !strcmp(buf,"cut") )
+    if( !CmpNoCase(type, "cut") )
       fType = kCut;
-    else if( !strcmp(buf,"formula") )
+    else if( !CmpNoCase(type, "formula") )
       fType = kForm;
-    else if( !strcmp(buf,"eye") )
+    else if( !CmpNoCase(type, "eye") )
       fType = kEye;
-    else if( !strcmp(buf,"vararray") )
+    else if( !CmpNoCase(type, "vararray") )
       fType = kVarArray;
-    delete [] buf;
   }
 
   // Call THaFormula's Compile() unless it's an "eye"
@@ -63,21 +57,21 @@ THaVform::THaVform( const char *type, const char* name, const char* formula,
 THaVform::THaVform( const THaVform& rhs ) :
   THaFormula(rhs), fNvar(rhs.fNvar), fObjSize(rhs.fObjSize),
   fEyeOffset(rhs.fEyeOffset), fData(rhs.fData),
-  fType(rhs.fType), fAndStr(rhs.fAndStr), fOrStr(rhs.fOrStr),
+  fType(rhs.fType), fDebug(rhs.fDebug), fAndStr(rhs.fAndStr), fOrStr(rhs.fOrStr),
   fSumStr(rhs.fSumStr), fVarName(rhs.fVarName), fVarStat(rhs.fVarStat),
   fSarray(rhs.fSarray), fVectSform(rhs.fVectSform), fStitle(rhs.fStitle),
   fVarPtr(rhs.fVarPtr), fOdata(nullptr), fPrefix(rhs.fPrefix)
 {
   // Copy ctor
 
-  for( auto theCut : rhs.fCut ) {
+  for( const auto* theCut : rhs.fCut ) {
     if( theCut ) {
       //FIXME: do we really need to make copies?
       // The more formulas, the more stuff to evaluate...
       fCut.push_back(new THaCut(*theCut));
     }
   }
-  for( auto theForm : rhs.fFormula ) {
+  for( const auto* theForm : rhs.fFormula ) {
     if( theForm ) {
       //FIXME: do we really need to make copies?
       fFormula.push_back(new THaFormula(*theForm));
@@ -96,11 +90,10 @@ THaVform::~THaVform()
 //_____________________________________________________________________________
 THaVform &THaVform::operator=(const THaVform &fv)
 {
-  if ( &fv != this )
-    {
-      Uncreate();
-      Create (fv);
-    }
+  if( &fv != this ) {
+    Uncreate();
+    Create(fv);
+  }
   return *this;
 }
 
@@ -113,19 +106,20 @@ void THaVform::Create(const THaVform &rhs)
   fEyeOffset = rhs.fEyeOffset;
   fData = rhs.fData;
   fType = rhs.fType;
+  fDebug = rhs.fDebug;
   fAndStr = rhs.fAndStr;
   fOrStr = rhs.fOrStr;
   fSumStr = rhs.fSumStr;
   fVarName = rhs.fVarName;
   fVarStat = rhs.fVarStat;
 
-  for( auto itf : rhs.fFormula ) {
+  for( const auto* itf : rhs.fFormula ) {
     if( itf ) {
       //FIXME: do we really need to make copies?
       fFormula.push_back(new THaFormula(*itf));
     }
   }
-  for( auto itc : rhs.fCut ) {
+  for( const auto* itc : rhs.fCut ) {
     if( itc ) {
       //FIXME: do we really need to make copies?
       fCut.push_back(new THaCut(*itc));
@@ -164,11 +158,11 @@ void THaVform::LongPrint() const
     cout << "Var # " << i << "    name = " <<
          fVarName[i] << "   stat = " << fVarStat[i] << endl;
   }
-  for( auto itf : fFormula ) {
+  for( const auto* itf : fFormula ) {
     cout << "Formula full printout --> " << endl;
     itf->Print(kPRINTFULL);
   }
-  for( auto itc : fCut ) {
+  for( const auto* itc : fCut ) {
     cout << "Cut full printout --> " << endl;
     itc->Print(kPRINTFULL);
   }
@@ -176,7 +170,8 @@ void THaVform::LongPrint() const
 
 //_____________________________________________________________________________
 void THaVform::ShortPrint() const
-{ // Short printout for self identification.
+{
+  // Short printout for self identification.
   cout << "Print of ";
   if (IsVarray()) cout << " variable sized array: ";
   if (IsFormula()) cout << " formula: ";
@@ -261,8 +256,7 @@ vector<string> THaVform::GetVars() const
 {
 // Get names of variable that are used by this formula.
   vector<string> result;
-  result.clear();
-  for (Int_t i = 0; i < fNvar; ++i) {
+  for( Int_t i = 0; i < fNvar; ++i ) {
     result.push_back(fVarName[i]);
   }
   return result;
@@ -275,7 +269,6 @@ Int_t THaVform::Init()
   // Initialize the variables of this Vform.
   // For explanation of return status see "ExplainErr"
 
-  THaVar *pvar1, *pvar2;
   fObjSize = 0;
   fSarray.clear();
 
@@ -284,15 +277,15 @@ Int_t THaVform::Init()
   fStitle = GetTitle();
   Int_t status = 0;
 
-  for (Int_t i = 0; i < fNvar; ++i) {
-    if (fVarStat[i] == kVAType) {  // This obj is a var. sized array.
-      if (StripBracket(fStitle) == fVarName[i]) {
+  for( Int_t i = 0; i < fNvar; ++i ) {
+    if( fVarStat[i] == kVAType ) {  // This obj is a var. sized array.
+      if( StripBracket(fStitle) == fVarName[i] ) {
  	 status = 0;
          fVarPtr = fVarList->Find(fVarName[i].c_str());
-         if (fVarPtr) {
+         if( fVarPtr ) {
            fType = kVarArray;
            fObjSize = fVarPtr->GetLen();
-           if (fPrefix == kNoPrefix) {
+           if( fPrefix == kNoPrefix ) {
 	      delete fOdata;
 	      fOdata = new THaOdata();
 	   } else {
@@ -311,38 +304,40 @@ Int_t THaVform::Init()
 
 // Check that all fixed arrays have the same size.
 
-  for (Int_t i = 0; i < fNvar; ++i) {
+  for( Int_t i = 0; i < fNvar; ++i ) {
 
-    if (fVarStat[i] == kVAType ) {
+    if( fVarStat[i] == kVAType ) {
       cout << "ERROR:THaVform:: Cannot mix variable arrays with ";
       cout << "other variables or formula."<<endl;
       return kIllMix;
     }
     if (fVarStat[i] != kFAType ) continue;
-    pvar1 = fVarList->Find(fVarName[i].c_str());
+    auto* pvar1 = fVarList->Find(fVarName[i].c_str());
     fVarPtr = pvar1; // Store one pointer to be able to get the size
                      // later since it may change. This works since all
                      // elements were verified to be the same size.
     if (i == fNvar) continue;
-    for (Int_t j = i+1; j < fNvar; ++j) {
-      if (fVarStat[j] != kFAType ) continue;
-      pvar2 = fVarList->Find(fVarName[j].c_str());
+    for( Int_t j = i + 1; j < fNvar; ++j ) {
+      if( fVarStat[j] != kFAType )
+        continue;
+      const auto* pvar2 = fVarList->Find(fVarName[j].c_str());
       if (!pvar1 || !pvar2) {
         status = kArrZer;
         cout << "THaVform:ERROR: Trying to use zero pointer."<<endl;
         continue;
       }
-      if ( !(pvar1->HasSameSize(pvar2)) ) {
+      if( !(pvar1->HasSameSize(pvar2)) ) {
 	cout << "THaVform::ERROR: Var "<<fVarName[i]<<"  and ";
         cout << fVarName[j]<<"  have different sizes "<<endl;
         status = kArrSiz;
       }
     }
   }
-  if (status != 0) return status;
+  if( status != 0 )
+    return status;
 
-  for (Int_t i = 0; i < fNvar; ++i) {
-    if (fVarStat[i] == kFAType) fSarray.push_back(fVarName[i]);
+  for( Int_t i = 0; i < fNvar; ++i ) {
+    if( fVarStat[i] == kFAType ) fSarray.push_back(fVarName[i]);
   }
 
   Int_t varsize = 1;
@@ -494,31 +489,26 @@ Int_t THaVform::MakeFormula(Int_t flo, Int_t fhi)
 //_____________________________________________________________________________
 string THaVform::StripPrefix(const char* expr)
 {
-  string::size_type pos,pos1,pos2;
-  string result,stitle;
-  vector<string> sprefix;
-  vector<Int_t> ipflg;
   fAndStr = "AND:";
   fOrStr  = "OR:";
   fSumStr = "SUM:";
-  sprefix.push_back(fAndStr);  ipflg.push_back(kAnd);
-  sprefix.push_back(fOrStr);   ipflg.push_back(kOr);
-  sprefix.push_back(fSumStr);  ipflg.push_back(kSum);
+  const vector<string> sprefix{ fAndStr, fOrStr, fSumStr };
+  static const vector<Int_t> ipflg{ kAnd, kOr, kSum };
 // If we ever invent new prefixes, add them here...
 
-  stitle = string(expr);
+  string stitle = string(expr);
 
   fPrefix = kNoPrefix;
-  result = stitle;
+  string result = stitle;
   for (string::size_type i = 0; i < sprefix.size(); ++i) {
-     pos1 = stitle.find(ToUpper(sprefix[i]),0);
-     pos2 = stitle.find(ToLower(sprefix[i]),0);
-     pos  = string::npos;
+     auto pos1 = stitle.find(ToUpper(sprefix[i]),0);
+     auto pos2 = stitle.find(ToLower(sprefix[i]),0);
+     auto pos  = string::npos;
      if (pos1 != string::npos) pos = pos1;
      if (pos2 != string::npos) pos = pos2;
      if (pos != string::npos) {
        if (fPrefix != kNoPrefix) {
-         cout << "THaVform:ERROR:: Cannot have >1 prefix."<<endl;
+         cerr << "THaVform:ERROR:: Cannot have >1 prefix."<<endl;
        }
        fPrefix = ipflg[i];
        pos = pos + sprefix[i].length();
@@ -528,11 +518,11 @@ string THaVform::StripPrefix(const char* expr)
 
 // If the variable is like "L.s1.lt[I]" strip the [I]
 // from the end since it is implicit
-  string eye = "[I]";
+  const string eye = "[I]";
   string stemp = result;
-  pos1 = result.find(ToUpper(eye),0);
-  pos2 = result.find(ToLower(eye),0);
-  pos = string::npos;
+  auto pos1 = result.find(ToUpper(eye),0);
+  auto pos2 = result.find(ToLower(eye),0);
+  auto pos = string::npos;
   if (pos1 != string::npos) pos = pos1;
   if (pos2 != string::npos) pos = pos2;
   if (pos  != string::npos) result = stemp.substr(0,pos);
@@ -544,14 +534,11 @@ string THaVform::StripBracket(const string& var) const
 {
 // If the string contains "[anything]", we strip
 // it away.
-  string::size_type pos1,pos2;
-  string open_brack = "[";
-  string close_brack = "]";
   string result;
-  pos1 = var.find(open_brack,0);
-  pos2 = var.find(close_brack,0);
-  if ((pos1 != string::npos) &&
-      (pos2 != string::npos)) {
+  auto pos1 = var.find('[',0);
+  auto pos2 = var.find(']',0);
+  if( (pos1 != string::npos) &&
+      (pos2 != string::npos) && pos2 > pos1 ) {
       result = var.substr(0,pos1);
       result += var.substr(pos2+1,var.length());
   } else {
@@ -688,7 +675,7 @@ Int_t THaVform::DefinedGlobalVariable( TString& name )
   // tell if the variables are global variables and, if so,
   // if they are arrays or elements of arrays.
 
-  if (fgDebug) cout << "THaVform::DefinedGlob for name = "<<name<<endl;
+  if (fDebug) cout << "THaVform::DefinedGlob for name = " << name << endl;
 
   Int_t ret = THaFormula::DefinedGlobalVariable( name );
   if( ret < 0 )
@@ -696,14 +683,14 @@ Int_t THaVform::DefinedGlobalVariable( TString& name )
 
   // Retrieve some of the results of the THaFormula parser
   FVarDef_t& def = fVarDef[ret];
-  auto gvar = static_cast<const THaVar*>( def.obj );
+  const auto* gvar = static_cast<const THaVar*>( def.obj );
   // This makes a certain assumption about the array syntax defined by ROOT
   // and THaArrayString, but in the interest of performance  we don't create
   // a full THaArrayString here just to find out if it is an array element
   Bool_t var_is_array = name.Contains("[");
 
   fVarName.emplace_back(name.Data());
-  FAr stat;
+  FAr stat = kScaler;
   if( gvar->IsArray() ) {
 
     if( var_is_array ) {
@@ -715,12 +702,10 @@ Int_t THaVform::DefinedGlobalVariable( TString& name )
       stat = kVAType;
     }
 
-  } else {
-    stat = kScaler;
   }
   fVarStat.push_back(stat);
 
-  if (fgDebug) {
+  if (fDebug) {
     if (gvar->IsArray()) cout << "gvar is array"<<endl;
     if (gvar->IsBasic()) cout << "gvar is basic"<<endl;
     if (gvar->IsPointerArray()) cout << "gvar is pointer array"<<endl;
@@ -740,37 +725,33 @@ Int_t THaVform::DefinedGlobalVariable( TString& name )
 //_____________________________________________________________________________
 void THaVform::GetForm(Int_t size)
 {
-
   const string open_brack="[";
   const string close_brack="]";
-  string::size_type pos,pos1,pos2;
-  vector<string::size_type> ipos;
 
-  char num[11];
-  string aline,acopy;
   for (int idx = 0; idx < size; ++idx) {
-    acopy = fStitle;
-    aline = acopy;
+    string acopy = fStitle;
+    string aline = acopy;
+    char num[11];
     sprintf(num,"%d",idx);
     for( const auto& sb : fSarray ) {
-      aline = "";
-      ipos.clear();
-      pos1 = 0;
-      pos = 0;
+      vector<string::size_type> ipos;
+      string::size_type pos1 = 0;
+      string::size_type pos = 0;
+      aline.clear();
       while( pos != string::npos ) {
         pos = acopy.find(sb, pos1);
         pos1 = pos + sb.length();
-        pos2 = acopy.find(open_brack, pos1);
+        auto pos2 = acopy.find(open_brack, pos1);
         if( pos != string::npos &&
             (pos2 == string::npos || pos2 > pos1))
           ipos.push_back(pos1);
       }
-      if ((long)ipos.size() == 0) continue;
+      if( ipos.empty() ) continue;
 // Found at least one array,
 // now build fSarray for [0], [1], ... size
       if (idx == 0) fVectSform.clear();
       pos = 0;
-      for( int ipo : ipos ) {
+      for( auto ipo : ipos ) {
         aline.append(acopy.substr(pos, ipo));
         aline.append(open_brack).append(num).append(close_brack);
         pos = ipo;

@@ -63,11 +63,11 @@ Int_t THaIdealBeam::ReadRunDatabase( const TDatime& date )
   Double_t x = 0.0, y = 0.0, th = 0.0, ph = 0.0;
 
   const DBRequest req[] = {
-    { "x",     &x,  kDouble, 0, 1 },
-    { "y",     &y,  kDouble, 0, 1 },
-    { "theta", &th, kDouble, 0, 1 },
-    { "phi",   &ph, kDouble, 0, 1 },
-    { 0 }
+    { "x",     &x,  kDouble, 0, true },
+    { "y",     &y,  kDouble, 0, true },
+    { "theta", &th, kDouble, 0, true },
+    { "phi",   &ph, kDouble, 0, true },
+    { nullptr }
   };
   err = LoadDB( file, date, req );
   if( err )

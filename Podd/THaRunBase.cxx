@@ -234,7 +234,7 @@ Int_t THaRunBase::Compare( const TObject* obj ) const
   // -1 when 'this' is smaller and +1 when bigger (like strcmp).
 
   if (this == obj) return 0;
-  auto rhs = dynamic_cast<const THaRunBase*>(obj);
+  const auto *rhs = dynamic_cast<const THaRunBase*>(obj);
   if( !rhs ) return -1;
   if      ( fNumber < rhs->fNumber ) return -1;
   else if ( fNumber > rhs->fNumber ) return  1;

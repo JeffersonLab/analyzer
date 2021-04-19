@@ -16,25 +16,23 @@ class THaSpectrometer;
 class THaTrackInfo {
 public:
   THaTrackInfo() : fP(kBig), fDp(kBig), fX(kBig), fY(kBig), fTheta(kBig), 
-    fPhi(kBig), fPvect(kBig,kBig,kBig), fOK(0), fSpectro(0) {}
+    fPhi(kBig), fPvect(kBig,kBig,kBig), fOK(0), fSpectro(nullptr) {}
 
   THaTrackInfo( Double_t p, Double_t dp, Double_t x, Double_t y, Double_t th,
 		Double_t ph, Double_t px, Double_t py, Double_t pz ) :
-    fP(p), fDp(dp), fX(x), fY(y), fTheta(th), fPhi(ph), fOK(1), fSpectro(0)
+    fP(p), fDp(dp), fX(x), fY(y), fTheta(th), fPhi(ph), fOK(1), fSpectro(nullptr)
   { fPvect.SetXYZ(px,py,pz); }
 
   THaTrackInfo( Double_t p, Double_t dp, Double_t x, Double_t y, Double_t th,
 		Double_t ph, const TVector3& pvect ) :
     fP(p), fDp(dp), fX(x), fY(y), fTheta(th), fPhi(ph), fPvect(pvect), fOK(1),
-    fSpectro(0)
+    fSpectro(nullptr)
   {}
 
-  THaTrackInfo( const THaTrackInfo& t ) :
-    fP(t.fP), fDp(t.fDp), fX(t.fX), fY(t.fY), fTheta(t.fTheta), 
-    fPhi(t.fPhi), fPvect(t.fPvect), fOK(t.fOK), fSpectro(t.fSpectro) {}
+  THaTrackInfo( const THaTrackInfo& t ) = default;
   THaTrackInfo& operator=( const THaTrackInfo& );
   THaTrackInfo& operator=( const THaTrack& );
-  virtual ~THaTrackInfo() {}
+  virtual ~THaTrackInfo() = default;
 
   void      Clear( Option_t* opt="" );
 

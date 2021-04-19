@@ -34,13 +34,13 @@ namespace Podd {
 
     assert( !vec.empty() );
 
-    UInt_t vsiz = vec.size(), k;
-    selected.resize( vsiz );
+    selected.resize( vec.size() );
     typename vector< vector<VectorElem> >::const_iterator iv = vec.begin();
     typename vector<VectorElem>::iterator is = selected.begin();
     while( iv != vec.end() ) {
       typename std::vector<VectorElem>::size_type npt = (*iv).size();
       assert(npt);
+      UInt_t k;
       if( npt == 1 )
 	k = 0;
       else {
@@ -114,7 +114,8 @@ namespace Podd {
   };
 
   //___________________________________________________________________________
-  struct DeleteObject {
+  class DeleteObject {
+  public:
     template< typename T >
     void operator() ( const T* ptr ) const { delete ptr; }
   };

@@ -175,7 +175,7 @@ protected:
   virtual const char*  Here( const char* ) const;
   virtual const char*  ClassNameHere( const char* ) const;
           Int_t        LoadDB( FILE* f, const TDatime& date,
-			       const DBRequest* req, Int_t search = 0 );
+			       const DBRequest* req, Int_t search = 0 ) const;
           void         MakePrefix( const char* basename );
   virtual void         MakePrefix();
   virtual Int_t        ReadDatabase( const TDatime& date );
@@ -188,7 +188,7 @@ protected:
 		   const char* here = "GetDBFileList()" );
   
 #ifdef WITH_DEBUG
-  void DebugPrint( const DBRequest* list );
+  void DebugPrint( const DBRequest* list ) const;
 
   template <typename T>  // available for Double_t, Float_t and Int_t
   static void WriteValue( T val, int p=0, int w=5 );

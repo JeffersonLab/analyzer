@@ -14,7 +14,7 @@ class THaIdealBeam : public THaBeam {
 public:
   THaIdealBeam( const char* name, const char* description );
 
-  virtual ~THaIdealBeam() {}
+  virtual ~THaIdealBeam() = default;
   
   virtual EStatus Init( const TDatime& run_time );
   virtual Int_t   Reconstruct() { return 0; }

@@ -163,23 +163,23 @@ void THaInterface::PrintLogo( Bool_t lite )
 {
    // Print the Hall A analyzer logo on standard output.
 
-   Int_t iday,imonth,iyear,mille;
    static const char* months[] = {"???","Jan","Feb","Mar","Apr","May",
                                   "Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
    const char* root_version = gROOT->GetVersion();
    Int_t idatqq = gROOT->GetVersionDate();
-   iday   = idatqq%100;
-   imonth = (idatqq/100)%100;
+   Int_t iday   = idatqq%100;
+   Int_t imonth = (idatqq/100)%100;
    if( imonth < 1 || imonth > 12 ) // should never happen, but to be safe,
      imonth = 0;                   // print "???"
-   iyear  = (idatqq/10000);
+   Int_t iyear  = (idatqq/10000);
+   Int_t mille = iyear;
    if ( iyear < 90 )
      mille = 2000 + iyear;
    else if ( iyear < 1900 )
      mille = 1900 + iyear;
-   else
-     mille = iyear;
-   char* root_date = Form("%s %d %4d",months[imonth],iday,mille);
+   ostringstream ostr;
+   ostr << months[imonth] << " " << iday << " " << mille;
+   TString root_date = ostr.str().c_str();
 
    if( !lite ) {
      Printf("  ************************************************");
@@ -188,7 +188,7 @@ void THaInterface::PrintLogo( Bool_t lite )
      Printf("  *       H A L L A   C++  A N A L Y Z E R       *");
      Printf("  *                                              *");
      Printf("  *  Release %16s %18s *",HA_VERSION,HA_DATE);
-     Printf("  *  Based on ROOT %8s %20s *",root_version,root_date);
+     Printf("  *  Based on ROOT %8s %20s *",root_version,root_date.Data());
 //     Printf("  *             Development version              *");
      Printf("  *                                              *");
      Printf("  *            For information visit             *");

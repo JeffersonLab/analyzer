@@ -11,10 +11,6 @@
 
 #include "THaBeamDet.h"
 
-THaBeamDet::~THaBeamDet()
-{
-}
-
 ClassImp(THaBeamDet)
 
 //_____________________________________________________________________________

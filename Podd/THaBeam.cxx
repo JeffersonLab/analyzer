@@ -17,7 +17,7 @@
 
 //_____________________________________________________________________________
 THaBeam::THaBeam( const char* name, const char* desc ) : 
-  THaApparatus( name,desc ), fRunParam(0)
+  THaApparatus( name,desc ), fRunParam(nullptr)
 {
   // Constructor.
   // Protected. Can only be called by derived classes.

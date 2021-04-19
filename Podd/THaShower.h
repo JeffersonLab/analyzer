@@ -25,7 +25,7 @@ public:
   virtual void       Clear( Option_t* ="" );
   virtual Int_t      CoarseProcess( TClonesArray& tracks );
   virtual Int_t      FineProcess( TClonesArray& tracks );
-          Int_t      GetMainClusterSize() const { return fClBlk.size(); }
+          Int_t      GetMainClusterSize() const;
           Int_t      GetNclust() const { return fNclust; }
           Int_t      GetNhits() const  { return fADCData->GetHitCount(); }
           Data_t     GetE() const      { return fE; }
@@ -53,7 +53,8 @@ protected:
   Data_t     fEmin;      // Minimum energy for a cluster center
 
   // Geometry
-  struct CenterPos {
+  class CenterPos {
+  public:
     Data_t x;  // x-position of block center (m)
     Data_t y;  // y-position of block center (m)
   };
@@ -67,7 +68,8 @@ protected:
   Data_t     fX;         // Energy-weighted x position (m) of main cluster
   Data_t     fY;         // Energy-weighted y position (m) of main cluster
 
-  struct ClusterBlock {
+  class ClusterBlock {
+  public:
     Int_t  n;  // Block number (0..fNelem-1)
     Data_t E;  // Energy deposit (MeV) for current event
   };
@@ -83,6 +85,11 @@ protected:
 
   ClassDef(THaShower,0)     //Generic shower detector class
 };
+
+inline Int_t THaShower::GetMainClusterSize() const
+{
+  return static_cast<Int_t>(fClBlk.size());
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 

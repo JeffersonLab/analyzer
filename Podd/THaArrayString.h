@@ -16,9 +16,10 @@ public:
   enum EStatus { kOK, kBadsyntax, kIllegalchars, kToolarge,  kToolong,
 		 kNotinit };
 
-  THaArrayString() : fNdim(0), fDim(0), fLen(-1), fStatus(kNotinit) {}
+  THaArrayString() : fNdim(0), fDim(nullptr), fLen(-1), fStatus(kNotinit) {}
   THaArrayString( const char* string )
-    : fName(string), fNdim(0), fDim(0), fLen(-1) { Parse(); }
+    : fName(string), fNdim(0), fDim(nullptr), fLen(-1), fStatus(kNotinit)
+  { Parse(); }
   THaArrayString( const THaArrayString& );
   THaArrayString& operator=( const THaArrayString& );
   THaArrayString& operator=( const char* rhs ) { Parse( rhs ); return *this; }

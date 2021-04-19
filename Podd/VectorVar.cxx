@@ -47,7 +47,7 @@ Int_t VectorVar::GetLen() const
     return vec.size();
   }
   case kUIntV: {
-    const vector<unsigned int>& vec =	*static_cast< const vector<unsigned int>* >(fValueP);
+    const vector<unsigned int>& vec = *static_cast< const vector<unsigned int>* >(fValueP);
     return vec.size();
   }
   case kFloatV: {

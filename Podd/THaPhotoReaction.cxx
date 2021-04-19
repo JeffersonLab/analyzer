@@ -25,7 +25,7 @@ THaPhotoReaction::THaPhotoReaction( const char* name, const char* description,
 //				    Double target_mass )
   : THaPhysicsModule(name,description),
     fEGamma(kBig), fScatAngle(kBig), fScatAngleCM(kBig), fMA(target_mass),
-    fSpectroName(spectro), fSpectro(0), fBeam(0)
+    fSpectroName(spectro), fSpectro(nullptr), fBeam(nullptr)
 {
   // Standard constructor. Assume an ideal beam along z_lab.
 }
@@ -36,7 +36,7 @@ THaPhotoReaction::THaPhotoReaction( const char* name, const char* description,
 //				    Double_t target_mass ) 
   : THaPhysicsModule(name,description),
     fEGamma(kBig), fScatAngle(kBig), fScatAngleCM(kBig), fMA(target_mass),
-    fSpectroName(spectro), fBeamName(beam), fSpectro(0), fBeam(0)
+    fSpectroName(spectro), fBeamName(beam), fSpectro(nullptr), fBeam(nullptr)
 {
   // Constructor with specification of optional beam module.
 }

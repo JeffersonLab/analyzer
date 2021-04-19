@@ -10,6 +10,7 @@
 #include "THaPhysicsModule.h"
 #include "TDatime.h"
 #include <vector>
+#include <memory>
 
 class BankLoc;
 
@@ -30,12 +31,11 @@ protected:
 
 private:
 
-  Int_t fDebug;
   Int_t Nvars;
   Double_t *dvars;  // FIXME: make UInt_t once THaOutput supports integer branches
   UInt_t *vardata;
 
-  std::vector<BankLoc*> banklocs;
+  std::vector<std::unique_ptr<BankLoc>> banklocs;
 
   ClassDef(BankData,0)   // process bank data.
 };

@@ -17,14 +17,14 @@ using namespace Decoder;
 
 //_____________________________________________________________________________
 THaCodaRun::THaCodaRun( const char* description )
-  : THaRunBase(description), fCodaData(0)
+  : THaRunBase(description), fCodaData(nullptr)
 {
   // Normal & default constructor
 }
 
 //_____________________________________________________________________________
 THaCodaRun::THaCodaRun( const THaCodaRun& rhs )
-  : THaRunBase(rhs), fCodaData(0)
+  : THaRunBase(rhs), fCodaData(nullptr)
 {
   // Normal & default constructor
 }
@@ -35,7 +35,7 @@ THaCodaRun::~THaCodaRun()
   // Destructor. The CODA data will be closed by the THaCodaData
   // destructor if necessary.
 
-  delete fCodaData; fCodaData = 0;
+  delete fCodaData; fCodaData = nullptr;
 }
 
 //_____________________________________________________________________________
@@ -45,7 +45,7 @@ THaCodaRun& THaCodaRun::operator=(const THaRunBase& rhs)
 
   if( this != &rhs ) {
     THaRunBase::operator=(rhs);
-    delete fCodaData; fCodaData = 0;
+    delete fCodaData; fCodaData = nullptr;
   }
   return *this;
 }
@@ -71,7 +71,7 @@ Int_t THaCodaRun::ReturnCode( Int_t coda_retcode )
   default:
     return READ_ERROR;
   }
-  return READ_FATAL; // not reached
+  // not reached
 }
 
 //_____________________________________________________________________________

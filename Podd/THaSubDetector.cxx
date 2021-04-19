@@ -31,19 +31,12 @@ THaSubDetector::THaSubDetector( const char* name, const char* description,
 }
 
 //_____________________________________________________________________________
-THaSubDetector::~THaSubDetector()
-{
-  // Destructor
-
-}
-
-//_____________________________________________________________________________
 THaApparatus* THaSubDetector::GetApparatus() const
 {
   // Return parent apparatus (parent of parent detector)
 
   THaDetector* det = GetMainDetector();
-  return det ? det->GetApparatus() : 0;
+  return det ? det->GetApparatus() : nullptr;
 }
 
 //_____________________________________________________________________________

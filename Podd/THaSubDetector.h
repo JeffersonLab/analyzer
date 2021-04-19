@@ -20,7 +20,7 @@ class THaApparatus;
 class THaSubDetector : public THaDetectorBase {
   
 public:
-  virtual ~THaSubDetector();
+  virtual ~THaSubDetector() = default;
   
   // Get parent (sub)detector (one level up)
   THaDetectorBase* GetParent() const {

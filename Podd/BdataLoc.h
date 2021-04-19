@@ -82,7 +82,7 @@ protected:
   Int_t   crate;   // Data location: crate number
   UInt_t  data;    // Raw data word
 
-  Int_t    CheckConfigureParams( const TObjArray* params, Int_t start );
+  Int_t    CheckConfigureParams( const TObjArray* params, Int_t start ) const;
   void     PrintNameType( Option_t* opt="" ) const;
 
   static TypeIter_t DoRegister( const BdataLocType& registration_info );

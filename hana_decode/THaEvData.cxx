@@ -52,27 +52,47 @@ TString THaEvData::fgDefaultCrateMapName = "cratemap";
 //_____________________________________________________________________________
 
 THaEvData::THaEvData() :
-  fMap(nullptr), first_decode(true), fTrigSupPS(true),
-  fMultiBlockMode(false), fBlockIsDone(false), fDataVersion(0),
-  fEpicsEvtType(0), buffer(nullptr), fDebugFile(nullptr),
-  event_type(0), event_length(0), event_num(0), run_num(0), evscaler(0),
-  bank_tag(0), data_type(0), block_size(0), tbLen(0), run_type(0), fRunTime(0),
-  evt_time(0), recent_event(0), buffmode(false), synchmiss(false),
-  synchextra(false), fNSlotUsed(0), fNSlotClear(0),
-  fDoBench(false), fBench(nullptr), fNeedInit(true), fDebug(0), fExtra(nullptr)
+  fMap{nullptr},
+  crateslot{new THaSlotData*[MAXROC*MAXSLOT]},  // FIXME: allocate dynamically
+  first_decode{true},
+  fTrigSupPS{true},
+  fMultiBlockMode{false},
+  fBlockIsDone{false},
+  fDataVersion{0},
+  fEpicsEvtType{Decoder::EPICS_EVTYPE},  // default for Hall A
+  buffer{nullptr},
+  fDebugFile{nullptr},
+  event_type{0},
+  event_length{0},
+  event_num{0},
+  run_num{0},
+  evscaler{0},
+  bank_tag{0},
+  data_type{0},
+  block_size{0},
+  tbLen{0},
+  run_type{0},
+  fRunTime(time(nullptr)),    // default fRunTime is NOW
+  evt_time{0},
+  recent_event{0},
+  buffmode{false},
+  synchmiss{false},
+  synchextra{false},
+  fNSlotUsed{0},
+  fNSlotClear{0},
+  fSlotUsed{new UShort_t[MAXROC*MAXSLOT]},
+  fSlotClear{new UShort_t[MAXROC*MAXSLOT]},
+  fDoBench{false},
+  fBench{nullptr},
+  fInstance{fgInstances.FirstNullBit()},
+  fNeedInit{true},
+  fDebug{0},
+  fExtra{nullptr}
 {
-  fInstance = fgInstances.FirstNullBit();
   fgInstances.SetBitNumber(fInstance);
   fInstance++;
-  // FIXME: dynamic allocation
-  crateslot = new THaSlotData*[MAXROC*MAXSLOT];
-  fSlotUsed  = new UShort_t[MAXROC*MAXSLOT];
-  fSlotClear = new UShort_t[MAXROC*MAXSLOT];
   memset(bankdat,0,MAXBANK*MAXROC*sizeof(BankDat_t));
-  //memset(psfact,0,MAX_PSFACT*sizeof(int));
-  memset(crateslot,0,MAXROC*MAXSLOT*sizeof(THaSlotData*));
-  fRunTime = time(nullptr); // default fRunTime is NOW
-  fEpicsEvtType = Decoder::EPICS_EVTYPE;  // default for Hall A
+  memset(crateslot,0,MAXROC*MAXSLOT*sizeof(void*));
 }
 
 

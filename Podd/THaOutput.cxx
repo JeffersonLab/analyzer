@@ -39,7 +39,7 @@
 #include <iostream>
 #include <sstream>
 #include <utility>
-//#include <iterator>
+#include <vector>
 
 #include "THaBenchmark.h"
 
@@ -68,13 +68,11 @@ public:
 // and only if its enclosed in single spaces.
 // E.g. "Yes=1" "No=2", "'RF On'", etc
    typedef map<string, double>::value_type valType;
-   string::size_type pos;
-   string sdata,temp1,temp2;
-   sdata = findQuotes(input);
-   pos = sdata.find('=');
+   string sdata = findQuotes(input);
+   auto pos = sdata.find('=');
    if (pos != string::npos) {
-      temp1.assign(sdata.substr(0,pos));
-      temp2.assign(sdata.substr(pos+1,sdata.length()));
+      string temp1{sdata.substr(0,pos)};
+      string temp2{sdata.substr(pos+1,sdata.length())};
 // In case someone used "==" instead of "="
       if (temp2.find('=') != string::npos)
             temp2.assign
@@ -88,13 +86,11 @@ public:
    }
   };
   static string findQuotes(const string& input) {
-    string result,temp1;
-    string::size_type pos1,pos2;
-    result = input;
-    pos1 = input.find('\'');
+    string result{input};
+    auto pos1 = input.find('\'');
     if (pos1 != string::npos) {
-     temp1.assign(input.substr(pos1+1,input.length()));
-     pos2 = temp1.find('\'');
+     string temp1{input.substr(pos1+1,input.length())};
+     auto pos2 = temp1.find('\'');
      if (pos2 != string::npos) {
       result.assign(temp1.substr(0,pos2));
       result += temp1.substr(pos2+1,temp1.length());
@@ -105,7 +101,7 @@ public:
   Bool_t IsString() { return !fAssign.empty(); };
   Double_t Eval(const string& input) {
     if (fAssign.empty()) return 0;
-    for (auto & pm : fAssign) {
+    for( const auto& pm : fAssign ) {
       if (input == pm.first) {
         return pm.second;
       }
@@ -125,10 +121,10 @@ private:
 
 //_____________________________________________________________________________
 THaOdata::THaOdata( const THaOdata& other )
-  : tree(other.tree), name(other.name), nsize(other.nsize) 
+  : tree{other.tree}, name{other.name}, ndata{other.ndata}, nsize{other.nsize},
+    data{new Double_t[nsize]}
 {
-  data = new Double_t[nsize]; ndata = other.ndata;
-  memcpy( data, other.data, nsize*sizeof(Double_t));
+  memcpy(data, other.data, nsize * sizeof(Double_t));
 }
 
 //_____________________________________________________________________________
@@ -164,7 +160,7 @@ Bool_t THaOdata::Resize(Int_t i)
   if( i > MAX ) return true;
   Int_t newsize = nsize;
   while ( i >= newsize ) { newsize *= 2; } 
-  auto tmp = new Double_t[newsize];
+  auto* tmp = new Double_t[newsize];
   memcpy( tmp, data, nsize*sizeof(Double_t) );
   delete [] data; data = tmp; nsize = newsize;
   if( tree )
@@ -254,9 +250,8 @@ Int_t THaOutput::Init( const char* filename )
   fArrayNames.clear();
   fVNames.clear();
 
-  THaVar *pvar;
   for (Int_t ivar = 0; ivar < fNvar; ivar++) {
-    pvar = gHaVars->Find(fVarnames[ivar].c_str());
+    const auto* pvar = gHaVars->Find(fVarnames[ivar].c_str());
     if (pvar) {
       if (pvar->IsArray()) {
 	fArrayNames.push_back(fVarnames[ivar]);
@@ -274,7 +269,7 @@ Int_t THaOutput::Init( const char* filename )
   for (auto inam = fFormnames.begin(); inam != fFormnames.end(); ++inam, ++k) {
     string tinfo = Form("f%d",k);
     // FIXME: avoid duplicate formulas
-    auto pform = new THaVform("formula",inam->c_str(),fFormdef[k].c_str());
+    auto* pform = new THaVform("formula",inam->c_str(),fFormdef[k].c_str());
     Int_t status = pform->Init();
     if ( status != 0) {
       cout << "THaOutput::Init: WARNING: Error in formula ";
@@ -292,9 +287,9 @@ Int_t THaOutput::Init( const char* filename )
 // Add variables (i.e. those var's used by the formula) to tree.
 // Reason is that TTree::Draw() may otherwise fail with ERROR 26 
     vector<string> avar = pform->GetVars();
-    for(auto & str : avar) {
+    for( const auto& str : avar ) {
       string svar = StripBracket(str);
-      pvar = gHaVars->Find(svar.c_str());
+      const auto* pvar = gHaVars->Find(svar.c_str());
       if (pvar) {
 	if (pvar->IsArray()) {
           auto found = find(fArrayNames.begin(), fArrayNames.end(), svar);
@@ -322,7 +317,7 @@ Int_t THaOutput::Init( const char* filename )
   k = 0;
   for( auto inam = fCutnames.begin(); inam != fCutnames.end(); ++inam, ++k ) {
     // FIXME: avoid duplicate cuts
-    auto pcut = new THaVform("cut", inam->c_str(), fCutdef[k].c_str());
+    auto* pcut = new THaVform("cut", inam->c_str(), fCutdef[k].c_str());
     Int_t status = pcut->Init();
     if ( status != 0 ) {
       cout << "THaOutput::Init: WARNING: Error in formula ";
@@ -338,7 +333,7 @@ Int_t THaOutput::Init( const char* filename )
     if( fgVerbose>2 )
       pcut->LongPrint();  // for debug
   }
-  for( auto pVhist : fHistos ) {
+  for( auto* pVhist : fHistos ) {
 
 // After initializing formulas and cuts, must sort through
 // histograms and potentially reassign variables.  
@@ -346,7 +341,7 @@ Int_t THaOutput::Init( const char* filename )
 // encode a formula) or an externally defined THaVform. 
     sfvarx = pVhist->GetVarX();
     sfvary = pVhist->GetVarY();
-    for( auto pVform : fFormulas ) {
+    for( auto* pVform : fFormulas ) {
       string stemp(pVform->GetName());
       if (CmpNoCase(sfvarx,stemp) == 0) { 
 	pVhist->SetX(pVform);
@@ -357,7 +352,7 @@ Int_t THaOutput::Init( const char* filename )
     }
     if (pVhist->HasCut()) {
       scut   = pVhist->GetCutStr();
-      for( auto pcut : fCuts ) {
+      for( auto* pcut : fCuts ) {
         string stemp(pcut->GetName());
         if (CmpNoCase(scut,stemp) == 0) { 
 	  pVhist->SetCut(pcut);
@@ -443,7 +438,6 @@ Int_t THaOutput::Attach()
   
   if( !gHaVars ) return -2;
 
-  THaVar *pvar;
   Int_t NAry = fArrayNames.size();
   Int_t NVar = fVNames.size();
 
@@ -452,7 +446,7 @@ Int_t THaOutput::Attach()
   
   // simple variable-type names
   for (Int_t ivar = 0; ivar < NVar; ivar++) {
-    pvar = gHaVars->Find(fVNames[ivar].c_str());
+    auto* pvar = gHaVars->Find(fVNames[ivar].c_str());
     if (pvar) {
       if ( !pvar->IsArray() ) {
 	fVariables[ivar] = pvar;
@@ -471,7 +465,7 @@ Int_t THaOutput::Attach()
 
   // arrays
   for (Int_t ivar = 0; ivar < NAry; ivar++) {
-    pvar = gHaVars->Find(fArrayNames[ivar].c_str());
+    auto* pvar = gHaVars->Find(fArrayNames[ivar].c_str());
     if (pvar) {
       if ( pvar->IsArray() ) {
 	fArrays[ivar] = pvar;
@@ -556,9 +550,8 @@ Int_t THaOutput::Process()
   if( fgDoBench ) fgBench.Stop("Cuts");
 
   if( fgDoBench ) fgBench.Begin("Variables");
-  THaVar *pvar;
   for (Int_t ivar = 0; ivar < fNvar; ivar++) {
-    pvar = fVariables[ivar];
+    const auto* pvar = fVariables[ivar];
     if( pvar ) {
       Double_t x = pvar->GetValue();
       if( x == kMinInt ) x = kBig;
@@ -569,7 +562,7 @@ Int_t THaOutput::Process()
   for (auto it = fOdata.begin(); it != fOdata.end(); ++it, ++k) {
     THaOdata* pdat(*it);
     pdat->Clear();
-    pvar = fArrays[k];
+    const auto* pvar = fArrays[k];
     if ( pvar == nullptr ) continue;
     // Fill array in reverse order so that fOdata[k] gets resized just once
     Int_t i = pvar->GetLen();
@@ -645,7 +638,6 @@ Int_t THaOutput::LoadFile( const char* filename )
     ErrFile(-1, loadfile);
     return -1;
   }
-  string::size_type pos;
   vector<string> strvect;
   string sline;
 
@@ -680,6 +672,7 @@ Int_t THaOutput::LoadFile( const char* filename )
       continue;
     }
     // Blank line or comment line?
+    string::size_type pos = 0;
     if( sline.empty() ||
 	(pos = sline.find_first_not_of(kWhiteSpace)) == string::npos ||
 	sline[pos] == comment )
@@ -817,11 +810,12 @@ Int_t THaOutput::FindKey(const string& key) const
   // case-insensitive keyword "key" if it exists
   
   // Map of keywords to internal logical type numbers
-  struct KeyMap {
+  class KeyMap {
+  public:
     const char* name;
     EId keyval;
   };
-  static const KeyMap keymap[] = { 
+  static const vector<KeyMap> keymap = {
     { "variable", kVar },
     { "formula",  kForm },
     { "cut",      kCut },
@@ -831,16 +825,12 @@ Int_t THaOutput::FindKey(const string& key) const
     { "th2d",     kH2d },
     { "block",    kBlock },
     { "begin",    kBegin },
-    { "end",      kEnd },
-    { nullptr }
+    { "end",      kEnd }
   };
 
-  if( const KeyMap* it = keymap ) {
-    while( it->name ) {
-      if( CmpNoCase( key, it->name ) == 0 )
-	return it->keyval;
-      it++;
-    }
+  for( const auto& it : keymap ) {
+    if( CmpNoCase( key, it.name ) == 0 )
+      return it.keyval;
   }
   return -1;
 }
@@ -851,12 +841,11 @@ string THaOutput::StripBracket(const string& var) const
 // If the string contains "[anything]", we strip
 // it away.  In practice this should not be fatal 
 // because your variable will still show up in the tree.
-  string::size_type pos1,pos2;
-  string open_brack("[");
-  string close_brack("]");
+  static const string open_brack("[");
+  static const string close_brack("]");
   string result;
-  pos1 = var.find(open_brack,0);
-  pos2 = var.find(close_brack,0);
+  auto pos1 = var.find(open_brack,0);
+  auto pos2 = var.find(close_brack,0);
   if ((pos1 != string::npos) &&
       (pos2 != string::npos)) {
       result = var.substr(0,pos1);
@@ -870,27 +859,25 @@ string THaOutput::StripBracket(const string& var) const
 }
 
 //_____________________________________________________________________________
-vector<string> THaOutput::reQuote(const vector<string>& input) const {
+vector<string> THaOutput::reQuote(const vector<string>& input) {
   // Specialist private function needed by EPICs line parser:
   // The problem is that the line was split by white space, so
   // a line like "'RF On'=42"  must be repackaged into
   // one string, i.e. "'RF" and "On'=42" put back together.
   vector<string> result;
-  result.clear();
   int first_quote = 1;
   int to_add = 0;
   string temp1,temp2,temp3;
-  string::size_type pos1,pos2;
   for( const auto& str : input ) {
     temp1 = str;
-    pos1 = temp1.find('\'');
+    auto pos1 = temp1.find('\'');
     if (pos1 != string::npos) {
       if (first_quote) {
         temp2.assign(temp1.substr(pos1,temp1.length()));
 // But there might be a 2nd "'" with no spaces
 // like "'Yes'" (silly, but understandable & allowed)
         temp3.assign(temp1.substr(pos1+1,temp1.length()));
-        pos2 = temp3.find('\'');
+        auto pos2 = temp3.find('\'');
         if (pos2 != string::npos) {
           temp1.assign(temp3.substr(0,pos2));
           temp2.assign(temp3.substr
@@ -922,7 +909,7 @@ vector<string> THaOutput::reQuote(const vector<string>& input) const {
 }
 
 //_____________________________________________________________________________
-string THaOutput::CleanEpicsName(const string& input) const
+string THaOutput::CleanEpicsName( const string& input )
 {
 // To clean up EPICS variable names that contain
 // bad characters like ":" and arithmetic operations
@@ -1144,10 +1131,9 @@ Int_t THaOutput::BuildBlock(const string& blockn)
 
   TRegexp re(blockn.c_str(),true);
   TIter next(gHaVars);
-  TObject *obj;
 
   Int_t nvars=0;
-  while ((obj = next())) {
+  while( TObject* obj = next() ) {
     TString s = obj->GetName();
     if ( s.Index(re) != kNPOS ) {
       fVarnames.emplace_back(s.Data());

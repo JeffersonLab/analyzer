@@ -46,7 +46,7 @@ string::size_type FindNoCase( string data, string chunk )
 vector<string> Split( const string& s )
 {
   // Split on whitespace.
-  istringstream ist(s.c_str());
+  istringstream ist(s);
   string w;
   vector<string> v;
 
@@ -59,7 +59,7 @@ vector<string> Split( const string& s )
 unsigned int Hex( const string& s )
 {
   // Conversion to unsigned interpreting as hex.
-  istringstream ist(s.c_str());
+  istringstream ist(s);
   unsigned int in;
   ist >> hex >> in;
   return in;
@@ -91,7 +91,6 @@ void Lower( string& s )
   // Convert this string to lower case
 
   transform( s.begin(), s.end(), s.begin(), (int(*)(int))tolower );
-  return;
 }
 
 //_____________________________________________________________________________
@@ -99,7 +98,6 @@ void Upper( string& s )
 {
   // Convert this string to upper case
   transform( s.begin(), s.end(), s.begin(), (int(*)(int))toupper );
-  return;
 }
 
 //_____________________________________________________________________________

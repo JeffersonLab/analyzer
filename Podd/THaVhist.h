@@ -23,7 +23,7 @@ class THaVhist {
   
 public:
 
-   THaVhist(const string& type, const string& name, const string& title);
+   THaVhist(string type, string name, string title);
    virtual ~THaVhist(); 
 
 // Set up the axis and cuts, as applicable.
@@ -55,8 +55,8 @@ public:
 // If invalid, you get no output.
    void CheckValidity();
 // IsScalar() is true if histogram is a scalar.
-   Bool_t IsScalar() { return (fScalar==1); };
-   Int_t GetSize() { return fSize; };
+   Bool_t IsScalar() const { return (fScalar==1); };
+   Int_t GetSize() const { return fSize; };
 
 protected:
 
@@ -82,6 +82,7 @@ protected:
    std::vector<TH1* > fH1;
    THaVform *fFormX, *fFormY, *fCut;
    Bool_t fMyFormX, fMyFormY, fMyCut;
+   Int_t fDebug;
 
 private:
 
