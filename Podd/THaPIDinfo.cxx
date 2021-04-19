@@ -4,58 +4,69 @@
 //
 // THaPIDinfo
 //
+// Implements a basic Baysian likelihood analysis.
+//
+// One can define an arbitrary number of detectors (= measurements) and
+// particle types (hypotheses). Each detector is expected to calculate
+// the probability that the event or track to which this object is
+// attached corresponds to each of the particle types.
+//
+// After the per-detector/per-particle type probabilities are set,
+// CombinePID() calculates the overall conditional (posterior)
+// probabilities for each particle hypothesis.
+//
+// For accurate results, prior probabilities (prevalences) should be set
+// for each particle type via SetPrior(). Such numbers will typically
+// come from simulations. By default, all prior probabilities are assumed
+// equal (=no prior knowledge).
+//
+// Prior probabilities may be different for each event or track,
+// especially for large-acceptance detectors, as they usually depend on
+// the reaction kinematics and thus on track 4-momentum. For small
+// acceptance spectrometers, one may get away with constant values
+// (averages) calculated for a given spectrometer setting (angle,
+// momentum).
+//
 //////////////////////////////////////////////////////////////////////////
 
 #include "THaPIDinfo.h"
 #include "THaTrack.h"
 #include "THaSpectrometer.h"
 #include "THaTrackingDetector.h"
-
 #include <iostream>
 
 using namespace std;
 
-
 //_____________________________________________________________________________
-THaPIDinfo::THaPIDinfo() : fProb(0), fCombinedProb(0), fNdet(0), fNpart(0)
+THaPIDinfo::THaPIDinfo() : fNdet{0}, fNpart{0}
 {
   // Default constructor
 }
 
 //_____________________________________________________________________________
-THaPIDinfo::THaPIDinfo( UInt_t ndet, UInt_t npart ) : fNdet(ndet), fNpart(npart)
+THaPIDinfo::THaPIDinfo( UInt_t ndet, UInt_t npart ) :
+  fPrior(npart), fProb(ndet*npart), fCombinedProb(npart),
+  fNdet{ndet}, fNpart{npart}
 {
   // Normal constructor
-
-  SetupArrays( ndet, npart );
+  SetDefaultPriors();
 }
 
 //_____________________________________________________________________________
-THaPIDinfo::THaPIDinfo( const THaTrack* track )
+THaPIDinfo::THaPIDinfo( const THaTrack* track ) : fNdet{0}, fNpart{0}
 {
   // Normal constructor from a track. Retrieves array dimensions from
   // the size of the detector and particle arrays of the track's spectrometer.
 
-  const THaSpectrometer* sp;
-  const THaTrackingDetector* td;
-  if( track && (td = track->GetCreator()) &&
-      (sp = static_cast<THaSpectrometer*>(td->GetApparatus())) ) {
-    fNdet  = sp->GetNpidDetectors();
-    fNpart = sp->GetNpidParticles();
-    SetupArrays( fNdet, fNpart );
-  } else {
-    fNdet = fNpart = 0;
-    fProb = fCombinedProb = 0;
+  if( track ) {
+    if( const auto* td = track->GetCreator() ) {
+      if( const auto* sp = dynamic_cast<THaSpectrometer*>(td->GetApparatus()) ) {
+        UInt_t ndet = sp->GetNpidDetectors();
+        UInt_t npart = sp->GetNpidParticles();
+        SetSize(ndet, npart);
+      }
+    }
   }
-}
-
-//_____________________________________________________________________________
-THaPIDinfo::~THaPIDinfo()
-{
-  // Destructor
-
-  delete fCombinedProb;
-  delete fProb;
 }
 
 //_____________________________________________________________________________
@@ -63,35 +74,49 @@ void THaPIDinfo::Clear( Option_t* )
 {
   // Zero contents of the arrays
 
-  if( fProb )          fProb->Reset();
-  if( fCombinedProb )  fCombinedProb->Reset();
+  fProb.assign(fProb.size(), 0.0);
+  fCombinedProb.assign(fCombinedProb.size(), 0.0);
 }
 
 //_____________________________________________________________________________
 void THaPIDinfo::CombinePID()
 {
-  // Compute combined PID for all detectors
-  // FIXME: Check normalization!
+  // Compute combined PID of all detectors
 
+  // Likelihood products per particle hypothesis across all detectors
   for( UInt_t p = 0; p < fNpart; p++ ) {
-    (*fCombinedProb)[p] = 1.0;
+    fCombinedProb[p] = 1.0;
     for( UInt_t d = 0; d < fNdet; d++ ) {
-      (*fCombinedProb)[p] *= (*fProb)[idx(d,p)];
+      fCombinedProb[p] *= fProb[idx(d, p)];
     }
   }
+
+  // Weigh above results with the priors to get the conditional
+  // probabilities for each particle hypothesis
+  Double_t sum = 0.0;
+  for( UInt_t p = 0; p < fNpart; p++ ) {
+    sum += fPrior[p] * fCombinedProb[p];
+  }
+  if( sum != 0.0 ) {
+    for( UInt_t p = 0; p < fNpart; p++ ) {
+      fCombinedProb[p] *= fPrior[p] / sum;
+    }
+  }
+
 }
-    
+
 //_____________________________________________________________________________
 void THaPIDinfo::Print( Option_t* ) const
 {
   // Display contents of arrays
-
-  for( UInt_t d = 0; d < fNdet; d++ ) {
+  // The first line shows the combined probabilities, followed by the
+  // probabilities for each detector
+  for( UInt_t d = 0; d <= fNdet; d++ ) {
     for( UInt_t p = 0; p < fNpart; p++ ) {
       if( d == 0 )
-	cout << (*fCombinedProb)[p];
+	cout << fCombinedProb[p];
       else
-	cout << (*fProb)[ idx(d-1,p) ];
+        cout << fProb[idx(d-1,p)];
       if( p != fNpart-1 ) cout << "   ";
     }
     cout << endl;
@@ -99,16 +124,12 @@ void THaPIDinfo::Print( Option_t* ) const
 }
 
 //_____________________________________________________________________________
-void THaPIDinfo::SetupArrays( UInt_t ndet, UInt_t npart )
+void THaPIDinfo::SetDefaultPriors()
 {
-  // Dimension arrays. Protected function used by constructors.
+  // Set prior probabilities equal to 1/fNpart (= no prior knowledge).
 
-  if( ndet > 0 && npart > 0 ) {
-    fProb         = new TArrayD( ndet*npart );
-    fCombinedProb = new TArrayD( npart );
-  } else {
-    fProb = fCombinedProb = 0;
-    fNdet = fNpart = 0;
+  for( UInt_t p = 0; p < fNpart; p++ ) {
+    fPrior[p] = 1.0/fNpart;
   }
 }
 
@@ -120,27 +141,25 @@ void THaPIDinfo::SetSize( UInt_t ndet, UInt_t npart )
 
   if( ndet == fNdet && npart == fNpart ) return;
   if( ndet == 0 || npart == 0 ) {
-    delete fProb;
-    delete fCombinedProb;
-    fProb = fCombinedProb = 0;
+    fPrior.clear();
+    fProb.clear();
+    fCombinedProb.clear();
     fNdet = fNpart = 0;
     return;
   }
-  if( fProb ) {
-    if( ndet != fNdet || npart != fNpart ) {
-      fProb->Set( ndet*npart );
-    }
-  } else
-    fProb = new TArrayD( ndet*npart );
+  if( ndet != fNdet || npart != fNpart )
+    fProb.resize(ndet * npart);
 
-  if( fCombinedProb ) {
-    if( npart != fNpart ) fCombinedProb->Set( npart );
-  } else
-    fCombinedProb = new TArrayD( npart );
+  if( npart != fNpart ) {
+    fPrior.resize(npart);
+    fCombinedProb.resize(npart);
+    if( fNpart == 0 )
+      SetDefaultPriors();
+  }
 
   fNdet  = ndet;
   fNpart = npart;
-}  
+}
 
 //_____________________________________________________________________________
 ClassImp(THaPIDinfo)
