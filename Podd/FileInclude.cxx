@@ -77,7 +77,7 @@ Int_t CheckIncludeFilePath( string& incfile )
     }
   }
 
-  for( const auto& path : paths ) {
+  for( auto& path : paths ) {
     if( !gSystem->ExpandPathName(path) &&
 	!gSystem->AccessPathName(path,kReadPermission) ) {
       incfile = path.Data();
