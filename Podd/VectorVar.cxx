@@ -13,6 +13,7 @@
 #include "TError.h"
 #include <vector>
 #include <cassert>
+#include <stdexcept>
 
 #define kInvalid     THaVar::kInvalid
 #define kInvalidInt  THaVar::kInvalidInt
@@ -41,29 +42,36 @@ Int_t VectorVar::GetLen() const
   assert( fValueP && IsVector() );
 
   // To be safe, cast the pointer to the exact type of vector
+  vector<int>::size_type siz = kInvalidInt;
   switch( fType ) {
   case kIntV: {
     const vector<int>& vec = *static_cast< const vector<int>* >(fValueP);
-    return vec.size();
+    siz = vec.size();
+    break;
   }
   case kUIntV: {
     const vector<unsigned int>& vec = *static_cast< const vector<unsigned int>* >(fValueP);
-    return vec.size();
+    siz = vec.size();
+    break;
   }
   case kFloatV: {
     const vector<float>& vec = *static_cast< const vector<float>* >(fValueP);
-    return vec.size();
+    siz = vec.size();
+    break;
   }
   case kDoubleV: {
     const vector<double>& vec = *static_cast< const vector<double>* >(fValueP);
-    return vec.size();
+    siz = vec.size();
+    break;
   }
   //TODO: support matrix types
   default:
     assert(false); // should never happen, object ill-constructed
     break;
   }
-  return kInvalidInt;
+  if( siz > kMaxInt )
+    throw overflow_error("Podd::VectorVar array size overflow");
+  return static_cast<Int_t>(siz);
 }
 
 //_____________________________________________________________________________

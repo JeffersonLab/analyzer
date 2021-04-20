@@ -161,25 +161,37 @@ namespace Decoder {
   }
 
   Int_t Fadc250Module::GetNumEvents(Decoder::EModuleType emode, Int_t chan) const {
-    switch(emode)
-      {
-      case kSampleADC:
-	return fPulseData[chan].samples.size();
-      case kPulseIntegral:
-	return fPulseData[chan].integral.size();
-      case kPulseTime:
-	return fPulseData[chan].time.size();
-      case kPulsePeak:
-	return fPulseData[chan].peak.size();
-      case kPulsePedestal:
-	if (fFirmwareVers == 2) return fPulseData[chan].pedestal.size();
-	else return fPulseData[chan].integral.size();
-      case kCoarseTime:
-	return fPulseData[chan].coarse_time.size();
-      case kFineTime:
-	return fPulseData[chan].fine_time.size();
-      }
-    return 0;
+    vsiz_t ret = 0;
+    switch( emode ) {
+    case kSampleADC:
+      ret = fPulseData[chan].samples.size();
+      break;
+    case kPulseIntegral:
+      ret = fPulseData[chan].integral.size();
+      break;
+    case kPulseTime:
+      ret = fPulseData[chan].time.size();
+      break;
+    case kPulsePeak:
+      ret = fPulseData[chan].peak.size();
+      break;
+    case kPulsePedestal:
+      if( fFirmwareVers == 2 )
+        ret = fPulseData[chan].pedestal.size();
+      else
+        ret = fPulseData[chan].integral.size();
+      break;
+    case kCoarseTime:
+      ret = fPulseData[chan].coarse_time.size();
+      break;
+    case kFineTime:
+      ret = fPulseData[chan].fine_time.size();
+      break;
+    }
+    if( ret > kMaxInt )
+      throw overflow_error("ERROR! Fadc250Module::GetNumEvents: "
+                           "integer overflow");
+    return static_cast<Int_t>(ret);
   }
 
   Int_t Fadc250Module::GetData(Decoder::EModuleType emode, Int_t chan, Int_t ievent) const {
