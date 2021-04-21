@@ -30,13 +30,13 @@ public:
 
   // Public base class functions that one typically overrides
   // (see comments in UserDetector.cxx for details)
-  virtual void       Clear( Option_t* opt="" );
-  virtual Int_t      Decode( const THaEvData& );
-  virtual Int_t      CoarseProcess( TClonesArray& tracks );
-  virtual Int_t      FineProcess( TClonesArray& tracks );
-  virtual void       Print( Option_t* opt="" ) const;
+  virtual void   Clear( Option_t* opt="" );
+  virtual Int_t  StoreHit( const DigitizerHitInfo_t& hitinfo, Int_t data );
+  virtual Int_t  CoarseProcess( TClonesArray& tracks );
+  virtual Int_t  FineProcess( TClonesArray& tracks );
+  virtual void   Print( Option_t* opt="" ) const;
 
-  Int_t GetNhits() const { return fEvtData.size(); }
+  Int_t GetNhits() const { return static_cast<Int_t>(fEventData.size()); }
 
 protected:
   // Almost every detector needs to override these functions:
@@ -47,9 +47,6 @@ protected:
 
   //---- Data stored with this detector follow here ----
 
-  // Typical experimental data are far less precise than even single precision
-  // floating point, so floats are usually just fine for storing them.
-  typedef Float_t Data_t;
   typedef std::vector<Data_t> DataVec_t;
 
   // Calibration data from database
@@ -58,17 +55,18 @@ protected:
 
   // Per-event data
   // Define a structure to hold the information of one hit
-  struct EventData {
+  class EventData {
+  public:
     Int_t   fChannel;   // Logical channel number
     Data_t  fRawADC;    // Raw ADC data
-    Data_t  fCorADC;    // ADC data corrected for pedestal and gain
+    Data_t  fCalADC;    // Pedestal-subtracted and gain-calibrated ADC data
     // Define a constructor so we can fill all fields in one line
-    EventData(Int_t chan, Data_t raw, Data_t cor)
-      : fChannel(chan), fRawADC(raw), fCorADC(cor) {}
+    EventData(Int_t chan, Data_t raw, Data_t cal)
+      : fChannel(chan), fRawADC(raw), fCalADC(cal) {}
   };
 
   // Vector with the hit information for the current event
-  std::vector<EventData> fEvtData;
+  std::vector<EventData> fEventData;
 
   ClassDef(UserDetector,0)   // Example detector
 };
