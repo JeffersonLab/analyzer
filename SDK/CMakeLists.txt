@@ -25,9 +25,17 @@ set(src
   )
 
 # Headers.
-# If you have any standalone headers, add them here. Otherwise, leave the
-# following line untouched.
+# Leave the following line untouched.
 string(REPLACE .cxx .h headers "${src}")
+
+# If you have any extra headers needed for building the ROOT dictionary,
+# add them here. Otherwise leave this line commented out.
+#list(APPEND headers UserClassHeader.h)
+
+# If you have other headers NOT needed for the ROOT dictionary but needed for
+# the library, add them here as shown in the line commented out below.
+set(allheaders ${headers})
+#set(allheaders ${headers} StandaloneHeader1.h StandaloneHeader2.h)
 
 #------------------------------------------------------------------------------
 # Do not change anything below here unless you know what you are doing
@@ -48,7 +56,7 @@ set_diagnostic_flags(WALL WEXTRA)
 
 #----------------------------------------------------------------------------
 # Library
-add_library(${PACKAGE} SHARED ${src} ${headers} ${PACKAGE}Dict.cxx)
+add_library(${PACKAGE} SHARED ${src} ${allheaders} ${PACKAGE}Dict.cxx)
 
 target_compile_options(${PACKAGE} PRIVATE ${${PROJECT_NAME_UC}_DIAG_FLAGS_LIST})
 
@@ -66,7 +74,7 @@ install(TARGETS ${PACKAGE}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   )
-install(FILES ${headers} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(FILES ${allheaders} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 #----------------------------------------------------------------------------
 # ROOT dictionary
