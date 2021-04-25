@@ -11,26 +11,20 @@
 //
 /////////////////////////////////////////////////////////////////////
 
-#define COMMENT_CHAR ';'
-
 #include "THaUsrstrutils.h"
-#include "TMath.h"
-#include "TRegexp.h"
-#include <cctype>
+#include <cctype>    // for isspace
 #include <cstring>
 #include <cstdio>
 #include <cstdlib>
-#include <string>
-#include <vector>
+#include <algorithm> // find_if_not
+#include <iterator>  // for std::distance
 #include <iostream>
 
 using namespace std;
 
 namespace Decoder {
 
-const int           THaUsrstrutils::MAX     = 5000;
-const unsigned long THaUsrstrutils::LONGMAX = 0x7FFFFFFF;
-static const int DEBUG = 0;
+static const int BUFLEN=256;
 
 int THaUsrstrutils::getflag(const char *s) const
 {
@@ -45,21 +39,15 @@ int THaUsrstrutils::getflag(const char *s) const
 char* THaUsrstrutils::getstr(const char *s) const
 {
   const char *pos,*val;
-  const char *end;
-  char *ret;
-  int slen;
 
   getflagpos(s,&pos,&val);
   if(!val){
     return nullptr;
   }
-  end = strchr(val,',');	/* value string ends at next keyword */
-  if(end)
-    slen = end - val;
-  else				/* No more keywords, value is rest of string */
-    slen = strlen(val);
-
-  ret = new char[slen+1];
+  const char* end = strchr(val,',');	/* value string ends at next keyword */
+  size_t slen = (end) ? end - val
+                      :	strlen(val); /* No more keywords, value is rest of string */
+  char* ret = new char[slen+1];
   strncpy(ret,val,slen);
   ret[slen] = '\0';
   return(ret);
@@ -68,39 +56,37 @@ char* THaUsrstrutils::getstr(const char *s) const
 unsigned int THaUsrstrutils::getint(const char *s) const
 {
   char* sval = getstr(s);
-  if(!sval) return(0);		/* Just return zero if no value string */
-  unsigned int retval = strtol(sval,nullptr,0);
-  if(retval == LONGMAX && (sval[1]=='x' || sval[1]=='X')) {/* Probably hex */
-     sscanf(sval,"%12x",&retval);
-   }
+  if(!sval) return(0);     /* Just return zero if no value string */
+  long retval = strtol(sval,nullptr,0);
+  if( retval < 0 || retval > kMaxUInt )
+    retval = 0;            /* Return zero if out of range of unsigned int */
   delete [] sval;
   return(retval);
 }
 
-void THaUsrstrutils::getflagpos_instring(const char *constr, const char *s,
-					 const char **pos_ret, const char **val_ret)
+void THaUsrstrutils::getflagpos_instring( const char* confstr,
+                                          const char* s,
+                                          const char** pos_ret,
+                                          const char** val_ret )
 {
-  int slen = strlen(s);
-  const char *pos = constr;
+  size_t slen = strlen(s);
+  const char *pos = confstr;
+  *val_ret = nullptr;
 
   while(pos) {
     pos = strstr(pos,s);
-    if(pos) {			/* Make sure it is really the keyword */
+    if(pos) {
       /* Make sure it is an isolated keyword */
-      if((pos != constr && pos[-1] != ',') ||
+      if((pos != confstr && pos[-1] != ',') ||
 	 (pos[slen] != '=' && pos[slen] != ',' && pos[slen] != '\0')) {
-	pos += 1;	continue;
+	pos++; continue;
       } else break;		/* It's good */
     }
   }
   *pos_ret = pos;
-  if(pos) {
-    if(pos[slen] == '=') {
-      *val_ret = pos + slen + 1;
-    } else 
-      *val_ret = nullptr;
-  } else
-    *val_ret = nullptr;
+  if( pos && pos[slen] == '=' ) {
+    *val_ret = pos + slen + 1;
+  }
 }
   
 void THaUsrstrutils::string_from_evbuffer(const UInt_t* evbuffer, int nlen )
@@ -113,76 +99,69 @@ void THaUsrstrutils::string_from_evbuffer(const UInt_t* evbuffer, int nlen )
 //
 // R. Michaels, updated to make the algorithm closely resemble the
 //              usrstrutils.c used by trigger supervisor.
+// O. Hansen,   converted the C code to C++, painstakingly preserving the
+//              original algorithm.
 
-  size_t bufsize = sizeof(int)*nlen;
-  char* ctemp = new char[bufsize+1];
-  strncpy( ctemp, reinterpret_cast<const char*>(evbuffer), bufsize );
-  ctemp[bufsize] = 0;  // terminate C-string for sure
-  string strbuff = ctemp;
-  string strdynamic = strbuff;
-  delete [] ctemp;
-  vector<string> strlines;
-  
-  if (DEBUG >= 1) {
-    cout << "Check THaUsrstrutils::string_from_buffer "<<endl;
-    cout << "strbuff length "<<strbuff.length()<<endl;
-    cout << "strbuff == \n"<<strbuff<<endl<<endl;
-  }
+  // The following could be written in C without requiring any new memory
+  // allocations, albeit it would be much less readable and more error-prone
+
+  // Copy the entire input buffer to a std::string, which is safe even if the
+  // buffer isn't null-terminated. This usually costs less than 500 bytes.
+  string strbuff(reinterpret_cast<const char*>(evbuffer), sizeof(UInt_t) * nlen);
+
+  // Remove trailing zero padding, if any
+  string::size_type pos = strbuff.find('\0');
+  if( pos != string::npos )
+    strbuff.erase(pos);
+
+  #ifdef USRSTRDEBUG
+  cout << "Check THaUsrstrutils::string_from_buffer "<<endl;
+  cout << "strbuff length "<<strbuff.length()<<endl;
+  cout << "strbuff == \n"<<strbuff<<endl<<endl;
+#endif
+
+  configstr.clear();
 
 // In order to make this as nearly identical to the online VME code,
-// we first unpack the buffer into lines separated by '\n'.
+// we unpack the buffer into lines separated by '\n'.
 // This is like the reading of the prescale.dat file done
 // by fgets(s,255,fd) in usrstrutils.c
-  string::size_type pos = 0;
-  while (pos < strbuff.length()) {
-     string::size_type pos1 = strdynamic.find_first_of('\n',0), pos2;
-     if (pos1 != string::npos) {
-       pos2 = pos1;
-     } else {   // It may happen that the last line has no '\n'
-       pos2 = strdynamic.length(); 
-     } 
-     string sline = strdynamic.substr(0,pos2);
-     strlines.push_back(sline);
-     pos += pos2 + 1;
-     if (DEBUG >= 2) {
-         cout << "pos = "<< pos << "   pos1 "<<pos1<<"  pos2 "<<pos2<<"  sline =  "<<sline<<"\n dynamic str  "<<strdynamic<<"  len "<<strdynamic.length()<<endl;
-     }
-     if (pos < strbuff.length()) {
-        string stemp = strdynamic.substr(pos2+1,pos2+strdynamic.length());
-        strdynamic = stemp;
-     } 
-   }
-
-// Next we loop over the lines of the 'prescale.dat file' and 
-// use the exact same code as in usrstrutils.c
-   char s[256], *flag_line=nullptr;
-  if( strlines.empty()) {
-      configstr="";
-      return;
-   }
-   for( size_t i=0; i<strlines.size(); ++i ) {
-     if( strlines[i].size() > sizeof(s)-1 ) {
-       cerr << "WARNING: string_from_evbuffer: line \""
-            << strlines[i].substr(0,32) << "...\" truncated, "
-            << "prescales may be decoded incorrectly!" << endl;
-     }
-     strncpy(s,strlines[i].c_str(),sizeof(s)-1);
-     if (DEBUG >= 1) printf("prescale line[%lu]  =  %s \n",i,s);
-     char *arg;
-     arg = strchr(s,COMMENT_CHAR);
-     if(arg) *arg = '\0';       /* Blow away comments */
-     arg = s;			/* Skip whitespace */
-     while(*arg && isspace(*arg)){
-	arg++;
-     }
-     if(*arg) {
-	flag_line = arg;
-	break;
-     }
-   }
-   if (DEBUG >= 1) printf("flag_line = %s \n",flag_line);
-
-   configstr = flag_line;
+// For each line, we extract the configuration strings using the same
+// algorithm as in usrstrutils.c
+  pos = 0;
+  string::size_type buflen = strbuff.length();
+  while( pos < buflen ) {
+    // Inspect each line until an uncommented, non-empty line is found
+    string::size_type pos1 = strbuff.find('\n', pos);
+#ifdef USRSTRDEBUG
+    cout << "strbuff parse pos,pos1,line=" << pos << "," << pos1
+         << ",\"" << strbuff.substr(pos, pos1 - pos) << "\"" << endl;
+#endif
+    string sline = strbuff.substr(pos, pos1 - pos);
+    // Skip lines starting with a comment character
+    auto p = sline.find(COMMENT_CHAR);
+    if( p > 0 ) {
+      // Blow away trailing comments
+      if( p != string::npos )
+        sline.erase(p);
+      // Skip leading whitespace using isspace(), like the C version does
+      auto it = find_if_not(sline.begin(), sline.end(),
+                            static_cast<int(*)(int)>(isspace));
+      if( it != sline.end() ) {
+        // We have a config string
+        auto textstart = distance(sline.begin(), it);
+        configstr = sline.substr(textstart);
+        break;
+      }
+    }
+    if( pos1 == string::npos )
+      // Last line did not end with \n
+      break;
+    pos = pos1 + 1;
+  }
+#ifdef USRSTRDEBUG
+  cout << "configstr =  " << configstr << endl;
+#endif
 }
       
 // This routine reads a file to load file_configustr.
@@ -190,36 +169,35 @@ void THaUsrstrutils::string_from_evbuffer(const UInt_t* evbuffer, int nlen )
 
 void THaUsrstrutils::string_from_file(const char *ffile_name)
 {
-  FILE *fd;
-  char s[256], *flag_line;
-
-/* check that filename exists */
-  configstr = "";
-  fd = fopen(ffile_name,"r");
+  /* check that filename exists */
+  configstr.clear();
+  FILE* fd = fopen(ffile_name,"r");
   if(fd == nullptr) {
-    printf("Failed to open usr flag file %s\n",ffile_name);  
-  } else {
-    /* Read till an uncommented line is found */
-    flag_line = nullptr;
-    while(fgets(s,255,fd)){
-      char *arg;
-      arg = strchr(s,COMMENT_CHAR);
-      if(arg) *arg = '\0'; /* Blow away comments */
-      arg = s;			/* Skip whitespace */
-      while(*arg && isspace(*arg)){
-	arg++;
-      }
-      if(*arg) {
-	flag_line = arg;
-	break;
-      }
-    }
-    if(flag_line) {		/* We have a config usrstr */
-      configstr = flag_line;
-      if(DEBUG) cout << "configstr =  " << configstr << endl;
-    }
-    fclose(fd);
+    cerr << "Failed to open usr flag file " << ffile_name << endl;
+    return;
   }
+  /* Read till an uncommented line is found */
+  char buf[BUFLEN];
+  char* flag_line = nullptr;
+  while( fgets(buf, BUFLEN, fd) ) {
+    char* arg = strchr(buf, COMMENT_CHAR);
+    if( arg ) *arg = '\0';   /* Blow away comments */
+    arg = buf;               /* Skip whitespace */
+    while( *arg && isspace(*arg) ) {
+      arg++;
+    }
+    if( *arg ) {
+      flag_line = arg;
+      break;
+    }
+  }
+  if( flag_line ) {            /* We have a config string */
+    configstr = string(flag_line);
+#ifdef USRSTRDEBUG
+    cout << "configstr =  " << configstr << endl;
+#endif
+  }
+  fclose(fd);
 }
 
 }

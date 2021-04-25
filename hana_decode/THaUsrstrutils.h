@@ -13,7 +13,8 @@
 //
 /////////////////////////////////////////////////////////////////////
 
-#include "TString.h"
+#include "Rtypes.h"
+#include <string>
 
 namespace Decoder {
 
@@ -41,7 +42,7 @@ class THaUsrstrutils {
    char *getstr(char *s) - Return ptr to string value associated with
                            the keyword.  Return null if keyword not present.
 			   return null string if keyword has no value.
-			   Caller must delete the string.
+			   Caller must delete [] the string.
 
     string_from_evbuffer(int evbuffer) - load the confuguration
                          string using event buffer 'evbuffer'
@@ -88,25 +89,21 @@ class THaUsrstrutils {
 #define COMMENT_CHAR ';'
 
 public:
-
-  static const int MAX;
-  static const unsigned long LONGMAX;
-
   THaUsrstrutils() = default;
   virtual ~THaUsrstrutils() = default;
   int getflag(const char *s) const;
   char *getstr(const char *s) const;
   unsigned int getint(const char *s) const;
-  void string_from_evbuffer(const UInt_t* evbuffer, int nlen=MAX);
+  void string_from_evbuffer(const UInt_t* evbuffer, int nlen);
   void string_from_file(const char *ffile_name);
 
 protected:
 
-  TString configstr;
+  std::string configstr;
   void getflagpos(const char *s, const char **pos_ret,
 		  const char **val_ret) const;
-  static void getflagpos_instring(const char *constr, const char *s,
-				  const char **pos_ret, const char **val_ret);
+  static void getflagpos_instring( const char *confstr, const char *s,
+                                   const char **pos_ret, const char **val_ret);
 
    ClassDef(THaUsrstrutils,0)   //  User string utilities, DAQ parsing code.
 
@@ -118,27 +115,9 @@ inline
 void THaUsrstrutils::getflagpos(const char *s, const char **pos_ret,
 				const char **val_ret) const
 {
-  getflagpos_instring(configstr,s,pos_ret,val_ret);
+  getflagpos_instring(configstr.c_str(),s,pos_ret,val_ret);
 }
 
 }
 
 #endif  /* _USRSTRUTILS_INCLUDED */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
