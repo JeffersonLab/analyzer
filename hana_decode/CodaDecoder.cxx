@@ -784,40 +784,32 @@ void CodaDecoder::ChkFbSlots()
   // This checks the fastbus slots to see if slots are appearing in both the
   // data and the cratemap.  If they appear in one but not the other, a warning
   // is issued, which usually means the cratemap is wrong.
-  Int_t slotstat[MAXROC*MAXSLOT];
-  for (Int_t iroc=0; iroc<MAXROC; iroc++) {
-    if ( !fMap->isFastBus(iroc) ) continue;
-    for (Int_t islot=0; islot<MAXSLOT; islot++) {
-      Int_t index = MAXSLOT*iroc + islot;
-      slotstat[index]=0;
-      if (fbfound[index] && fMap->slotUsed(iroc, islot)) {
-	  if (fDebugFile) *fDebugFile << "FB slot in cratemap and in data.  (good!).  roc = "<<iroc<<"   slot = "<<islot<<endl;
-	  slotstat[index]=1;
+  for( Int_t iroc = 0; iroc < MAXROC; iroc++ ) {
+    if( !fMap->isFastBus(iroc) ) continue;
+    for( Int_t islot = 0; islot < MAXSLOT; islot++ ) {
+      Int_t index = MAXSLOT * iroc + islot;
+      bool inEvent = fbfound[index], inMap = fMap->slotUsed(iroc, islot);
+      if( inEvent ) {
+        if( inMap ) {
+          if (fDebugFile)
+            *fDebugFile << "FB slot in cratemap and in data.  (good!).  "
+                        << "roc = "<<iroc<<"   slot = "<<islot<<endl;
+        } else {
+          if (fDebugFile)
+            *fDebugFile << "FB slot in data, but NOT in cratemap  (bad!).  "
+                        << "roc = "<<iroc<<"   slot = "<<islot<<endl;
+          Warning("ChkFbSlots", "Fastbus module in (roc,slot) = (%d,%d)  "
+                                "found in data but NOT in cratemap !", iroc, islot);
+        }
+      } else if( inMap ) {
+        if (fDebugFile)
+          *fDebugFile << "FB slot NOT in data, but in cratemap  (bad!).  "
+                      << "roc = "<<iroc<<"   slot = "<<islot<<endl;
+        // Why do we care? If the cratemap has info about additional hardware
+        // that just wasn't read out by the DAQ, so what?
+        //Warning("ChkFbSlots", "Fastbus module in (roc,slot) = = (%d,%d)  "
+        //               "found in cratemap but NOT in data !", iroc, islot);
       }
-      if ( !fbfound[index] && fMap->slotUsed(iroc, islot)) {
-	if (fDebugFile) *fDebugFile << "FB slot NOT in data, but in cratemap  (bad!).  roc = "<<iroc<<"   slot = "<<islot<<endl;
-	slotstat[index]=2;
-      }
-      if ( fbfound[index] && !fMap->slotUsed(iroc, islot)) {
-	if (fDebugFile) *fDebugFile << "FB slot in data, but NOT in cratemap  (bad!).  roc = "<<iroc<<"   slot = "<<islot<<endl;
-	slotstat[index]=3;
-      }
-    }
-  }
-  // Why do we care? If the cratemap has info about additional hardware
-  // that just wasn't read out by the DAQ, so what?
-  // for (Int_t iroc=0; iroc<MAXROC; iroc++) {
-  //   if ( !fMap->isFastBus(iroc) ) continue;
-  //   for (Int_t islot=0; islot<MAXSLOT; islot++) {
-  //     Int_t index = MAXSLOT*iroc + islot;
-  //     if (slotstat[index]==2) cout << "Decoder:: WARNING:  Fastbus module in (roc,slot) = ("<<iroc<<","<<islot<<")  found in cratemap but NOT in data !"<<endl;
-  //   }
-  // }
-  for (Int_t iroc=0; iroc<MAXROC; iroc++) {
-    if ( !fMap->isFastBus(iroc) ) continue;
-    for (Int_t islot=0; islot<MAXSLOT; islot++) {
-      Int_t index = MAXSLOT*iroc + islot;
-      if (slotstat[index]==3) cout << "Decoder:: WARNING:  Fastbus module in (roc,slot) = ("<<iroc<<","<<islot<<")  found in data but NOT in cratemap !"<<endl;
     }
   }
 }
