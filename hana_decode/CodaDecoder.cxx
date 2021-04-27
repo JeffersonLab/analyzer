@@ -14,6 +14,7 @@
 #include "TError.h"
 #include <iostream>
 #include <stdexcept>
+#include <sstream>
 
 using namespace std;
 
@@ -178,7 +179,8 @@ Int_t CodaDecoder::LoadEvent(const UInt_t* evbuffer)
       Int_t status = roc_decode(iroc,evbuffer, ipt, iptmax);
 
       // do something with status
-      if (status == -1) break;
+      if( status )
+        break;
 
     }
   }
@@ -329,6 +331,28 @@ Int_t CodaDecoder::roc_decode( Int_t roc, const UInt_t* evbuffer,
   Int_t retval = HED_OK;
   try {
     Int_t Nslot = fMap->getNslot(roc);
+    if( Nslot <= 0 ) {
+      if( Nslot < 0 ) {
+        ostringstream ostr;
+        ostr << "ERROR: roc_decode:  Nslot = " << Nslot << " < 0 for ROC = "
+             << roc << ", event " << event_num << ". "
+             << "Should never happen. Check the cratemap code.";
+        throw runtime_error(ostr.str());
+      }
+      // Found data for a ROC which is not defined in the crate map.
+      // Just ignore it. Do debug log occurrences and warn user once about it.
+      if( fDebugFile ) {
+        *fDebugFile << "CodaDecode:: roc_decode:: WARNING: Undefined ROC # "
+                    << dec << roc << ", event " << event_num << endl;
+      }
+      UInt_t ibit = roc;
+      if( !fMsgPrinted.TestBitNumber(ibit) ) {
+        Warning("roc_decode", "ROC %d found in data but NOT in cratemap. "
+                           "Ignoring it.", roc);
+        fMsgPrinted.SetBitNumber(ibit);
+      }
+      return HED_OK;
+    }
     Int_t minslot = fMap->getMinSlot(roc);
     Int_t maxslot = fMap->getMaxSlot(roc);
     synchmiss = false;
@@ -352,8 +376,6 @@ Int_t CodaDecoder::roc_decode( Int_t roc, const UInt_t* evbuffer,
       *fDebugFile << "CodaDecode:: roc_decode:: firstslot " << dec << firstslot << "  incrslot " << incrslot << endl;
     }
 
-    if( Nslot <= 0 )
-      throw runtime_error("ERROR: Nsloc <=0");
     fMap->setSlotDone();      // clears the "done" bits
 
     Int_t n_slots_done = 0;

@@ -277,6 +277,8 @@ protected:
 
   Int_t  fDebug;     // Debug/verbosity level
 
+  TBits fMsgPrinted; // Flags indicating one-time warnings printed
+
   TObject* fExtra;   // additional member data, for binary compatibility
 
   ClassDef(THaEvData,0)  // Base class for raw data decoders

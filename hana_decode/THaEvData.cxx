@@ -126,6 +126,7 @@ Int_t THaEvData::Init() {
   ret = init_slotdata();
   first_decode = false;
   fNeedInit = false;
+  fMsgPrinted.ResetAllBits();
   return ret;
 }
 
