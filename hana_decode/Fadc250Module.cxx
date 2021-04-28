@@ -64,6 +64,7 @@
 #include <iomanip>
 #include <numeric>
 #include <cassert>
+#include <stdexcept>
 
 using namespace std;
 
@@ -216,9 +217,8 @@ namespace Decoder {
   }
 
   Int_t Fadc250Module::GetPulseIntegralData(Int_t chan, Int_t ievent) const {
-    Int_t nevent = 0;
-    nevent = fPulseData[chan].integral.size();
-    if (ievent < 0 || ievent > nevent) {
+    vsiz_t nevent = fPulseData[chan].integral.size();
+    if (ievent < 0 || ievent >= nevent) {
       cout << "ERROR:: Fadc250Module:: GetPulseIntegralData:: invalid event number for slot = " << fSlot << ", channel = " << chan << endl;
       return -1;
     }
@@ -238,8 +238,7 @@ namespace Decoder {
   }
 
   Int_t Fadc250Module::GetEmulatedPulseIntegralData(Int_t chan) const {
-    Int_t nevent = 0;
-    nevent = fPulseData[chan].samples.size();
+    vsiz_t nevent = fPulseData[chan].samples.size();
     if (nevent == 0) {
       cout << "ERROR:: Fadc250Module:: GetEmulatedPulseIntegralData:: data vector empty  for slot = " << fSlot << ", channel = " << chan << "\n"
 	   << "Ensure that FADC is operating in mode 1 OR 8" << endl;
@@ -256,9 +255,8 @@ namespace Decoder {
   }
 
   Int_t Fadc250Module::GetPulseTimeData(Int_t chan, Int_t ievent) const {
-    Int_t nevent = 0;
-    nevent = fPulseData[chan].time.size();
-    if (ievent < 0 || ievent > nevent) {
+    vsiz_t nevent = fPulseData[chan].time.size();
+    if (ievent < 0 || ievent >= nevent) {
       cout << "ERROR:: Fadc250Module:: GetPulseTimeData:: invalid event number for slot = " << fSlot << ", channel = " << chan << endl;
       return -1;
     }
@@ -278,9 +276,8 @@ namespace Decoder {
   }
 
   Int_t Fadc250Module::GetPulseCoarseTimeData(Int_t chan, Int_t ievent) const {
-    Int_t nevent = 0;
-    nevent = fPulseData[chan].coarse_time.size();
-    if (ievent < 0 || ievent > nevent) {
+    vsiz_t nevent = fPulseData[chan].coarse_time.size();
+    if (ievent < 0 || ievent >= nevent) {
       cout << "ERROR:: Fadc250Module:: GetPulseCoarseTimeData:: invalid event number for slot = " << fSlot << ", channel = " << chan << endl;
       return -1;
     }
@@ -300,9 +297,8 @@ namespace Decoder {
   }
 
   Int_t Fadc250Module::GetPulseFineTimeData(Int_t chan, Int_t ievent) const {
-    Int_t nevent = 0;
-    nevent = fPulseData[chan].fine_time.size();
-    if (ievent < 0 || ievent > nevent) {
+    vsiz_t nevent = fPulseData[chan].fine_time.size();
+    if (ievent < 0 || ievent >= nevent) {
       cout << "ERROR:: Fadc250Module:: GetPulseCoarseTimeData:: invalid event number for slot = " << fSlot << ", channel = " << chan << endl;
       return -1;
     }
@@ -322,9 +318,8 @@ namespace Decoder {
   }
 
   Int_t Fadc250Module::GetPulsePeakData(Int_t chan, Int_t ievent) const {
-    Int_t nevent = 0;
-    nevent = fPulseData[chan].peak.size();
-    if (ievent < 0 || ievent > nevent) {
+    vsiz_t nevent = fPulseData[chan].peak.size();
+    if (ievent < 0 || ievent >= nevent) {
       cout << "ERROR:: Fadc250Module:: GetPulsePeakData:: invalid event number for slot = " << fSlot << ", channel = " << chan << endl;
       return -1;
     }
@@ -344,8 +339,7 @@ namespace Decoder {
   }
 
   Int_t Fadc250Module::GetPulsePedestalData(Int_t chan, Int_t ievent) const {
-    Int_t nevent = 0;
-    nevent = fPulseData[chan].pedestal.size();
+    vsiz_t nevent = fPulseData[chan].pedestal.size();
     if (ievent < 0) {
       cout << "ERROR:: Fadc250Module:: GetPulsePedestalData:: invalid event number for slot = " << fSlot << ", channel = " << chan << endl;
       return -1;
@@ -355,7 +349,7 @@ namespace Decoder {
       return -1;
     }
     if (fFirmwareVers == 2) {
-      if (ievent > nevent) {
+      if (ievent >= nevent) {
 	cout << "ERROR:: Fadc250Module:: GetPulsePedestalData:: invalid data vector size = " << fSlot << ", channel = " << chan << endl;
 	return -1;
       }
@@ -385,8 +379,7 @@ namespace Decoder {
   }
 
   Int_t Fadc250Module::GetPedestalQuality(Int_t chan, Int_t ievent) const {
-    Int_t nevent = 0;
-    nevent = fPulseData[chan].pedestal_quality.size();
+    vsiz_t nevent = fPulseData[chan].pedestal_quality.size();
     if (ievent < 0) {
       cout << "ERROR:: Fadc250Module:: GetPedestalQuality:: invalid event number for slot = " << fSlot << ", channel = " << chan << endl;
       return -1;
@@ -411,9 +404,8 @@ namespace Decoder {
   }
 
   Int_t Fadc250Module::GetOverflowBit(Int_t chan, Int_t ievent) const {
-    Int_t nevent = 0;
-    nevent = fPulseData[chan].overflow.size();
-    if (ievent < 0) {
+    vsiz_t nevent = fPulseData[chan].overflow.size();
+    if (ievent < 0 || ievent >= nevent) {
       cout << "ERROR:: Fadc250Module:: GetOverflowBit:: invalid event number for slot = " << fSlot << ", channel = " << chan << endl;
       return -1;
     }
@@ -433,9 +425,8 @@ namespace Decoder {
   }
 
   Int_t Fadc250Module::GetUnderflowBit(Int_t chan, Int_t ievent) const {
-    Int_t nevent = 0;
-    nevent = fPulseData[chan].underflow.size();
-    if (ievent < 0) {
+    vsiz_t nevent = fPulseData[chan].underflow.size();
+    if (ievent < 0 || ievent >= nevent) {
       cout << "ERROR:: Fadc250Module:: GetUnderflowBit:: invalid event number for slot = " << fSlot << ", channel = " << chan << endl;
       return -1;
     }
@@ -466,9 +457,8 @@ namespace Decoder {
   }
 
   Int_t Fadc250Module::GetPulseSamplesData(Int_t chan, Int_t ievent) const {
-    Int_t nevent = 0;
-    nevent = fPulseData[chan].samples.size();
-    if (ievent < 0 || ievent > nevent) {
+    vsiz_t nevent = fPulseData[chan].samples.size();
+    if (ievent < 0 || ievent >= nevent) {
       cout << "ERROR:: Fadc250Module:: GetPulseSamplesData:: invalid event number for slot = " << fSlot << ", channel = " << chan << endl;
       return -1;
     }
@@ -488,8 +478,7 @@ namespace Decoder {
   }
 
   vector<uint32_t> Fadc250Module::GetPulseSamplesVector(Int_t chan) const {
-    Int_t nevent = 0;
-    nevent = fPulseData[chan].samples.size();
+    vsiz_t nevent = fPulseData[chan].samples.size();
     if (nevent == 0) {
       cout << "ERROR:: Fadc250Module:: GetPulseSamplesVector:: data vector empty for slot = " << fSlot << ", channel = " << chan << endl;
       return vector<uint32_t>();
@@ -625,9 +614,8 @@ namespace Decoder {
 
   Int_t Fadc250Module::GetNumFadcSamples(Int_t chan, Int_t ievent) const {
     if ((GetFadcMode() == 1) || (GetFadcMode() == 8) || (GetFadcMode() == 10)) {
-      Int_t nsamples = 0;
-      nsamples = fPulseData[chan].samples.size();
-      if (ievent < 0) {
+      vsiz_t nsamples = fPulseData[chan].samples.size();
+      if (ievent < 0 || ievent >= nsamples) {
 	cout << "ERROR:: Fadc250Module:: GetNumFadcSamples:: invalid event number for slot = " << fSlot << ", channel = " << chan << endl;
 	return -1;
       }
