@@ -13,7 +13,6 @@
 
 #include "THaADCHelicity.h"
 #include "THaEvData.h"
-#include "THaDetMap.h"
 #include "VarDef.h"
 #include <iostream>
 #include <vector>
@@ -52,7 +51,7 @@ Int_t THaADCHelicity::DefineVariables( EMode mode )
     { "adc",       "Helicity ADC raw data",  "fADC_hdata" },
     { "gate_adc",  "Gate ADC raw data",      "fADC_Gate" },
     { "adc_hel",   "Beam helicity from ADC", "fADC_Hel" },
-    { 0 }
+    { nullptr }
   };
   return DefineVarsFromList( var, mode );
 }
@@ -75,12 +74,12 @@ Int_t THaADCHelicity::ReadDatabase( const TDatime& date )
   fThreshold  = kDefaultThreshold;
   Int_t ignore_gate = -1, invert_gate = 0;
   const  DBRequest request[] = {
-    { "helchan",      &heldef,       kIntV,   0, 0, -2 },
-    { "gatechan",     &gatedef,      kIntV,   0, 1, -2 },
-    { "threshold",    &fThreshold,   kDouble, 0, 1, -2 },
-    { "ignore_gate",  &ignore_gate,  kInt,    0, 1, -2 },
-    { "invert_gate",  &invert_gate,  kInt,    0, 1, -2 },
-    { 0 }
+    { "helchan",      &heldef,       kIntV,   0, false, -2 },
+    { "gatechan",     &gatedef,      kIntV,   0, true,  -2 },
+    { "threshold",    &fThreshold,   kDouble, 0, true,  -2 },
+    { "ignore_gate",  &ignore_gate,  kInt,    0, true,  -2 },
+    { "invert_gate",  &invert_gate,  kInt,    0, true,  -2 },
+    { nullptr }
   };
   // Database keys are prefixed with this detector's name, not apparatus.name
   err = LoadDB( file, date, request, fPrefix );
@@ -163,8 +162,7 @@ Int_t THaADCHelicity::Decode( const THaEvData& evdata )
     if ( !evdata.GetNumHits( roc, slot, chan ))
       continue;
 
-    Double_t data = 
-      static_cast<Double_t>(evdata.GetData( roc, slot, chan, 0 ));
+    auto data = static_cast<Double_t>(evdata.GetData( roc, slot, chan, 0 ));
 
     if (fDebug >= 3) {
       cout << "crate "<<roc<<"   slot "<<slot<<"   chan "
@@ -183,6 +181,8 @@ Int_t THaADCHelicity::Decode( const THaEvData& evdata )
     case 1:
       fADC_Gate = data;
       gate_high = fInvertGate ? (data < fThreshold) : (data >= fThreshold);
+      break;
+    default:
       break;
     }
   }

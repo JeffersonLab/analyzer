@@ -18,7 +18,7 @@ class THaG0HelicityReader {
   
 public:
   THaG0HelicityReader();
-  virtual ~THaG0HelicityReader();
+  virtual ~THaG0HelicityReader() = default;
   
   Bool_t GetValidTime() const { return fValidTime; }
 
@@ -31,7 +31,9 @@ protected:
 
   // Used by ReadDatabase
   enum EROC { kHel = 0, kTime, kROC2, kROC3 };
-  struct ROCinfo {
+  class ROCinfo {
+  public:
+    ROCinfo() : roc(0), header(0), index(0) {}
     Int_t  roc;               // ROC to read out
     Int_t  header;            // Headers to search for (0 = ignore)
     Int_t  index;             // Index into buffer

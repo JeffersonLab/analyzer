@@ -518,15 +518,15 @@ Int_t THaVhist::Process()
     }    
 
     // Slightly tricky coding here to avoid redundant testing inside the loop
-    Int_t zero = 0, i;
+    Int_t zero = 0, i = 0;
     Int_t* idx = (fEye == 1) ? &zero : &i;
     if( fFormY ) {
-      for (i = 0; i < fSize; ++i) {
+      for( ; i < fSize; ++i ) {
 	if ( CheckCut(i)==0 ) continue; 
 	fH1[*idx]->Fill(fFormX->GetData(i), fFormY->GetData(i));
       }
     } else {
-      for (i = 0; i < fSize; ++i) {
+      for( ; i < fSize; ++i ) {
 	if ( CheckCut(i)==0 ) continue; 
 	fH1[*idx]->Fill(fFormX->GetData(i));
       }

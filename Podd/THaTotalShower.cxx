@@ -26,7 +26,8 @@ ClassImp(THaTotalShower)
 THaTotalShower::THaTotalShower( const char* name, const char* description,
 				THaApparatus* apparatus ) :
   THaPidDetector(name,description,apparatus), 
-  fShower(nullptr), fPreShower(nullptr), fMaxDx(0.0), fMaxDy(0.0)
+  fShower(nullptr), fPreShower(nullptr), fMaxDx(0.0), fMaxDy(0.0),
+  fE(kBig), fID(-1)
 {
   // Constructor. With this method, the subdetectors are created using
   // this detector's prefix followed by "sh" and "ps", respectively,
@@ -42,7 +43,8 @@ THaTotalShower::THaTotalShower( const char* name,
 				const char* description,
 				THaApparatus* apparatus ) :
   THaPidDetector(name,description,apparatus),
-  fShower(nullptr), fPreShower(nullptr), fMaxDx(0.0), fMaxDy(0.0)
+  fShower(nullptr), fPreShower(nullptr), fMaxDx(0.0), fMaxDy(0.0),
+  fE(kBig), fID(-1)
 {
   // Constructor. With this method, the subdetectors are created using
   // the given names 'shower_name' and 'preshower_name', and variable 
@@ -129,13 +131,12 @@ THaAnalysisObject::EStatus THaTotalShower::Init( const TDatime& run_time )
   if( IsZombie() || !fShower || !fPreShower )
     return fStatus = kInitError;
 
-  EStatus status;
-  if( (status = THaPidDetector::Init( run_time )) ||
-      (status = fShower->Init( run_time )) ||
-      (status = fPreShower->Init( run_time )) )
-    return fStatus = status;
+  if( (fStatus = THaPidDetector::Init(run_time )) ||
+      (fStatus = fShower->Init(run_time )) ||
+      (fStatus = fPreShower->Init(run_time )) )
+    return fStatus;
 
-  return fStatus;
+  return fStatus = kOK;
 }
 
 //_____________________________________________________________________________

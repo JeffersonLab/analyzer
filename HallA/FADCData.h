@@ -23,7 +23,8 @@ class THaDetectorBase;
 namespace HallA {
 
 //_____________________________________________________________________________
-struct FADCData_t {
+class FADCData_t {
+public:
   //TODO: init/clear to kBig?
   FADCData_t() : fIntegral(0), fPeak(0), fT(0), fT_c(0),
                  fOverflow(0), fUnderflow(0), fPedq(0), fPedestal(0) {}
@@ -43,8 +44,9 @@ struct FADCData_t {
 };
 
 // Calibration
-constexpr static const Data_t kDefaultTDCscale = 0.0625;
-struct FADCConfig_t {
+static const Data_t kDefaultTDCscale = 0.0625;
+class FADCConfig_t {
+public:
   FADCConfig_t() : nped(1), nsa(1), nsb(1), win(1), tflag(true),
                    tdcscale(kDefaultTDCscale) {}
   void reset() {

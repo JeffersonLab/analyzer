@@ -18,7 +18,7 @@ FastbusModule::FastbusModule(Int_t crate, Int_t slot)
     fDataMask(0), fOptMask(0), fOptShift(0),
     fChan(0), fData(0), fRawData(0)
 {
-  SetSlot(crate, slot);
+  FastbusModule::SetSlot(crate, slot);
 }
 
 void FastbusModule::Init() {
@@ -73,7 +73,7 @@ Int_t FastbusModule::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const 
     if (p > pstop) break;
   }
   if (fHeader) {
-    Int_t fWordsExpect = (fHeader&fWdcntMask);
+    UInt_t fWordsExpect = (fHeader&fWdcntMask);
     if (fDebugFile) *fDebugFile << "FastbusModule:: words expected  "<<dec<<fWordsExpect<<endl;
     if (fWordsExpect != fWordsSeen) {
       if (fDebugFile) *fDebugFile << "ERROR:  FastbusModule:  crate "<<fCrate<<"   slot "<<fSlot<<" number of words expected "<<fWordsExpect<<"  not equal num words seen "<<fWordsSeen<<endl;

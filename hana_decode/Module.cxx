@@ -36,10 +36,6 @@ Module::Module(Int_t crate, Int_t slot)
   fName = "";
 }
 
-Module::~Module() {
-}
-
-
 void Module::Init()
 {
 // Suggestion: call this Init() before calling the inheriting class's Init.

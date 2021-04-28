@@ -16,7 +16,8 @@
 class THaEvData;
 
 // Coordinates of a point in this chamber
-struct PointCoords_t {
+class PointCoords_t {
+public:
   Double_t x;
   Double_t y;
   Double_t theta;  // TRANSPORT x' = dx/dz

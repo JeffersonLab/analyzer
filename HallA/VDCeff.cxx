@@ -117,7 +117,7 @@ Int_t VDCeff::Begin( THaRunBase* )
     if( !thePlane.hist_nhit ) {
       TString name = thePlane.histname + nhit_suffix;
       TString title = "Num hits " + thePlane.histname;
-      Int_t nmax = TMath::Nint( thePlane.nwire * fMaxOcc );
+      Int_t nmax = TMath::Nint(TMath::Ceil(thePlane.nwire * fMaxOcc));
       thePlane.hist_nhit = new TH1F( name, title, nmax, -1, nmax-1 );
     }
     if( !thePlane.hist_eff ) {
@@ -199,7 +199,7 @@ Int_t VDCeff::Process( const THaEvData& /*evdata*/ )
     }
 
     for( Int_t i = 0; i < nhit; ++i ) {
-      Int_t wire = TMath::Nint( thePlane.pvar->GetValue(i) );
+      auto wire = static_cast<Short_t>(TMath::Nint(thePlane.pvar->GetValue(i)));
       if( wire >= 0 && wire < nwire ) {
 	fWire.push_back(wire);
 	fHitWire[wire] = true;
@@ -344,8 +344,9 @@ Int_t VDCeff::ReadDatabase( const TDatime& date )
     max_nwire = TMath::Max(max_nwire,thePlane.nwire);
   }
 
-  fWire.reserve( max_nwire*fMaxOcc );
-  fHitWire.assign( max_nwire, false );
+  fMaxOcc = TMath::Min(TMath::Abs(fMaxOcc), 1.0);
+  fWire.reserve(TMath::Nint(TMath::Ceil(max_nwire * fMaxOcc)));
+  fHitWire.assign(max_nwire, false);
 
   return kOK;
 }

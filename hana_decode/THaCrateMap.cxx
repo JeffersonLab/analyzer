@@ -18,9 +18,7 @@
 #include "Decoder.h"
 #include "THaCrateMap.h"
 #include <iostream>
-#include <ctime>
 
-#include "TDatime.h"
 #include "TError.h"
 #include "TSystem.h"
 
@@ -62,6 +60,7 @@ const Int_t  THaCrateMap::CM_OK = 1;
 const Int_t  THaCrateMap::CM_ERR = -1;
 
 THaCrateMap::THaCrateMap( const char* db_filename )
+  : didslot{}
 {
 
   // Construct uninitialized crate map. The argument is the name of

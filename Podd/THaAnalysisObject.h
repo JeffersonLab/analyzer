@@ -75,7 +75,7 @@ public:
 			    const char* here = "OpenFile()",
 			    const char* filemode = "r", 
 			    int debug_flag = 1);
-  static Int_t    ReadDBline( FILE* fp, char* buf, size_t bufsiz,
+  static Int_t    ReadDBline( FILE* fp, char* buf, Int_t bufsiz,
 			      std::string& line );
 
   // Access functions for reading tag/value pairs from database files

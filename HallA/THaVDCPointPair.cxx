@@ -15,6 +15,7 @@
 
 #include <iostream>
 #include <cassert>
+#include <algorithm>
 
 using namespace std;
 using namespace VDC;
@@ -71,7 +72,7 @@ Int_t THaVDCPointPair::Compare( const TObject* obj ) const
   if( !obj || IsA() != obj->IsA() )
     return -1;
 
-  auto rhs = static_cast<const THaVDCPointPair*>( obj );
+  const auto *rhs = static_cast<const THaVDCPointPair*>( obj );
   if( fError < rhs->fError )
     return -1;
   if( fError > rhs->fError )
@@ -134,11 +135,9 @@ Bool_t THaVDCPointPair::HasUsedCluster() const
     { fLowerPoint->GetUCluster(), fLowerPoint->GetVCluster(),
       fUpperPoint->GetUCluster(), fUpperPoint->GetVCluster() };
 
-  for( auto& cl : clust ) {
-    if( cl->GetPointPair() != 0 )
-      return true;
-  }
-  return false;
+  return any_of(clust, clust + 4, []( const THaVDCCluster* cl ) {
+    return (cl->GetPointPair() != nullptr);
+  });
 }
 
 //_____________________________________________________________________________

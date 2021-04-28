@@ -16,7 +16,7 @@ class THaTrackingModule {
   
 public:
   THaTrackingModule(); // needed public for ROOT I/O
-  virtual ~THaTrackingModule();
+  virtual ~THaTrackingModule() = default;
   
   THaTrackInfo*  GetTrackInfo() { return &fTrkIfo; }
   THaTrack*      GetTrack()     { return fTrk; }

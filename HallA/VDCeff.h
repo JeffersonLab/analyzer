@@ -31,7 +31,13 @@ protected:
   typedef const THaVar CVar_t;
 
   // Data needed for efficiency calculation for one VDC plane/wire spectrum
-  struct VDCvar_t {
+  class VDCvar_t {
+  public:
+    VDCvar_t( const char* nm, const char* hn, Int_t nw )
+      : name(nm), histname(hn), pvar(nullptr), nwire(nw), hist_nhit(nullptr),
+        hist_eff(nullptr) {}
+    ~VDCvar_t();
+    void     Reset( Option_t* opt ="" );
     TString  name;
     TString  histname;
     CVar_t*  pvar;
@@ -40,11 +46,6 @@ protected:
     Vcnt_t   nhit;
     TH1F*    hist_nhit;
     TH1F*    hist_eff;
-    VDCvar_t( const char* nm, const char* hn, Int_t nw )
-      : name(nm), histname(hn), pvar(nullptr), nwire(nw), hist_nhit(nullptr),
-        hist_eff(nullptr) {}
-    ~VDCvar_t();
-    void     Reset( Option_t* opt ="" );
   };
 
   // Internal working storage

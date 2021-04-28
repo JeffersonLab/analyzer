@@ -23,7 +23,6 @@ namespace Decoder {
     virtual ~Fadc250Module();                // Virtual constructor
 
     using Module::GetData;
-    using Module::LoadSlot;
 
     virtual void Clear(Option_t *opt="");
     virtual void Init();
@@ -48,7 +47,7 @@ namespace Decoder {
     virtual Int_t LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, Int_t pos, Int_t len);
     virtual Int_t DecodeOneWord(UInt_t pdat);
     Int_t Decode(const UInt_t*) { return 0; }
-    virtual Bool_t IsMultiFunction();
+    virtual Bool_t IsMultiFunction() { return true; }
     virtual Bool_t HasCapability(Decoder::EModuleType type);
     Int_t LoadNextEvBuffer(THaSlotData *sldat);
     Int_t GetData(Decoder::EModuleType mtype, Int_t chan, Int_t ievent) const;

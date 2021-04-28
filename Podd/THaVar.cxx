@@ -67,7 +67,8 @@ const Double_t THaVar::kInvalid    = kBig;
 static const char* const here = "THaVar";
 
 // NB: Must match definition order in VarDef.h
-static struct VarTypeInfo_t {
+static class VarTypeInfo_t {
+public:
   VarType      type;
   const char*  enum_name;  // name of enumeration constant to use for this type
   const char*  cpp_name;   // C++ type as understood by compiler
@@ -156,8 +157,8 @@ size_t THaVar::GetTypeSize( VarType itype )
 // Lookup map for use in constructors.
 // Allows fast lookup of VarType from type_info.
 //_____________________________________________________________________________
-struct ByTypeInfo
-{
+class ByTypeInfo {
+public:
   bool operator() ( const type_info* a, const type_info* b ) const {
     assert(b);
     return a->before(*b);

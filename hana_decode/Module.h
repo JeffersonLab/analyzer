@@ -22,9 +22,9 @@ namespace Decoder {
 
     Module();   // for ROOT TClass & I/O
     Module(Int_t crate, Int_t slot);
-    virtual ~Module();
+    virtual ~Module() = default;
 
-    struct ModuleType {
+    class ModuleType {
     public:
       ModuleType ( const char *c1, UInt_t i1 )
 	: fClassName(c1), fMapNum(i1), fTClass(nullptr) {}
@@ -53,9 +53,9 @@ namespace Decoder {
 			  Int_t, Int_t ) const { return 0; };
     virtual Int_t GetData(Decoder::EModuleType,
 			  Int_t, Int_t, Int_t) const {return 0;};
-    virtual Int_t GetOpt(UInt_t /* rdata */) { return 0; };
+    virtual Int_t GetOpt(UInt_t /* rdata */) const { return 0; };
 
-    virtual Int_t GetOpt(UInt_t /*chan*/,UInt_t /*hit*/ ) { return 0; }; //1190
+    virtual Int_t GetOpt(Int_t /*chan*/, Int_t /*hit*/) const { return 0; }; //1190
 
     virtual Int_t Decode(const UInt_t *p) = 0; // implement in derived class
     // Loads slot data

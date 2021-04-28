@@ -17,6 +17,7 @@
 /////////////////////////////////////////////////////////////////////
 
 #include "THaCodaData.h"
+#include <ctime>
 
 #define ET_CHUNK_SIZE 50
 #ifndef __CINT__
@@ -44,9 +45,9 @@ class THaEtClient : public THaCodaData
 
 public:
 
-    THaEtClient(Int_t mode=1);      // By default, gets data from ADAQS2
+    explicit THaEtClient(Int_t mode=1);   // By default, gets data from ADAQS2
 // find data on 'computer'.  e.g. computer="129.57.164.44"
-    THaEtClient(const char* computer, Int_t mode=1);
+    explicit THaEtClient(const char* computer, Int_t mode=1);
     THaEtClient(const char* computer, const char* session, Int_t mode=1);
     ~THaEtClient();
 
@@ -60,11 +61,6 @@ private:
 
     THaEtClient(const THaEtClient &fn);
     THaEtClient& operator=(const THaEtClient &fn);
-    Int_t CHUNK;
-    Int_t DEBUG;
-    Int_t FAST;
-    Int_t SMALL_TIMEOUT;
-    Int_t BIG_TIMEOUT;
     Int_t nread, nused, timeout;
 #ifndef __CINT__
     et_sys_id id;
@@ -75,7 +71,6 @@ private:
 #endif
     char *daqhost,*session,*etfile;
     Int_t waitflag,didclose,notopened,firstread;
-    void initflags();
     Int_t init(const char* computer="hana_sta");
 
 // rate calculation

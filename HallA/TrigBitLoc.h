@@ -19,8 +19,8 @@ public:
 	      UInt_t num, UInt_t lo, UInt_t hi, UInt_t* loc )
     : CrateLocMulti(nm,cra,slo,cha), bitnum(num), cutlo(lo), cuthi(hi),
       bitloc(loc) { }
-  TrigBitLoc() : bitnum(0), cutlo(0), cuthi(kMaxUInt), bitloc(0) {}
-  virtual ~TrigBitLoc() {}
+  TrigBitLoc() : bitnum(0), cutlo(0), cuthi(kMaxUInt), bitloc(nullptr) {}
+  virtual ~TrigBitLoc() = default;
 
   virtual void    Load( const THaEvData& evt );
   virtual Int_t   Configure( const TObjArray* params, Int_t start = 0 );

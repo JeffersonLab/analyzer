@@ -32,7 +32,8 @@ public:
   class MultiHitIterator;
 
   // Configuration data for a frontend module
-  struct Module {
+  class Module {
+  public:
     Module() = default;
 #if __clang__ || __GNUC__ > 4
     Module( const Module& rhs ) = default;
@@ -120,7 +121,7 @@ public:
           Module*   GetModule( UInt_t i ) const;
           Int_t     GetNchan( UInt_t i ) const;
           Int_t     GetTotNumChan() const;
-          Int_t     GetSize() const { return fMap.size(); }
+          Int_t     GetSize() const { return static_cast<Int_t>(fMap.size()); }
 
           Int_t     GetModel( UInt_t i ) const;
           Bool_t    IsADC( UInt_t i ) const;
@@ -169,7 +170,8 @@ public:
     bool operator!() const { return !static_cast<bool>(*this); }
 
     // Current value
-    struct HitInfo_t {
+    class HitInfo_t {
+    public:
       HitInfo_t()
         : module{nullptr}, type{Decoder::ChannelType::kUndefined}, ev{-1},
           crate{-1}, slot{-1}, chan{-1}, nhit{0}, hit{-1}, lchan{-1} {}

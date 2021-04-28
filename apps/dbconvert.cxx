@@ -33,6 +33,7 @@
 #include <dirent.h>   // for opendir/readdir
 #include <getopt.h>   // got getopt_long
 #include <libgen.h>   // for POSIX basename()
+#include <memory>
 
 #include "TString.h"
 #include "TDatime.h"
@@ -135,7 +136,7 @@ struct Filenames_t {
   bool operator<( const Filenames_t& rhs ) const {
     return val_start < rhs.val_start;
   }
-};
+} __attribute__((aligned(32)));
 
 typedef map<string, multiset<Filenames_t> > FilenameMap_t;
 typedef multiset<Filenames_t>::iterator fiter_t;
@@ -388,7 +389,7 @@ static int MkTimezone( string& zone )
   // characters: Timezone file name.
   if( zone.empty() )
     return -1;
-  int off;
+  int off = 0;
   istringstream istr(zone);
   if( istr >> off ) {
     // Convert HHMM to seconds
@@ -537,8 +538,8 @@ static void getargs( int argc, char* const argv[] )
   if( c_out_subdirs && *c_out_subdirs ) {
     istringstream istr(c_out_subdirs);
     string item;
-    time_t date;
     while( getline(istr,item,',') ) {
+      time_t date{};  // dummy
       if( item != "DEFAULT" && IsDBSubDir(item,date) )
 	out_subdirs.push_back(item);
     }
@@ -715,7 +716,7 @@ size_t GetSignificantDigits( T x, T round_level )
   // Now 0 <= xx < 1. Deal with leading zeros
   if( xx < 0.1 )
     xx += 0.1;
-  Int_t ix = xx/round_level + 0.5;
+  Int_t ix = lround(xx/round_level);
   size_t nn = Order(ix), n = nn;
   for( size_t j = 1; j < nn; ++j ) {
     // Remove trailing zeros until we find a non-zero digit
@@ -760,7 +761,7 @@ void PrepareStreamImpl( ostringstream& str, const vector<T>& arr, T round_level 
       ndigits = max( ndigits, GetSignificantDigits(x,round_level) );
     }
     if( ndigits > 0 )
-      str << scientific << setprecision(ndigits-1);
+      str << scientific << setprecision(static_cast<int>(ndigits-1));
     return;
   }
   else if( format_fixed ) {
@@ -770,7 +771,7 @@ void PrepareStreamImpl( ostringstream& str, const vector<T>& arr, T round_level 
       ndigits = max( ndigits, GetSignificantDigits(x,round_level) );
     }
     if( ndigits > 0 )
-      str << fixed << setprecision(ndigits);
+      str << fixed << setprecision(static_cast<int>(ndigits));
   }
 }
 
@@ -808,7 +809,7 @@ struct Value_t {
   string value;
   int    nelem;
   ssiz_t width;
-};
+} __attribute__((aligned(64)));
 
 //-----------------------------------------------------------------------------
 template <class T> static inline
@@ -829,15 +830,23 @@ Value_t MakeValue( const T* array, int size = 1 )
 }
 
 //-----------------------------------------------------------------------------
-static inline
-Value_t MakeDetmapElemValue( const THaDetMap* detmap, int n, int extras )
+template<class T> static inline
+Value_t MakeValueP( const unique_ptr<T>& array, int size = 1 )
+{
+  return MakeValue(array.get(), size);
+}
+
+//-----------------------------------------------------------------------------
+static inline Value_t
+MakeDetmapElemValue( const unique_ptr<THaDetMap>& pmap, int n, int extras )
 {
   ostringstream ostr;
+  auto* detmap = pmap.get();
   THaDetMap::Module* d = detmap->GetModule(n);
-  ssiz_t len, w = 0;
-  ostr << d->crate; w = ostr.str().size();
+  ostr << d->crate;
+  ssiz_t w = ostr.str().size();
   ostr << " ";
-  len = ostr.str().size();
+  ssiz_t len = ostr.str().size();
   ostr << d->slot; w = max(ostr.str().size()-len,w);
   ostr << " ";
   len = ostr.str().size();
@@ -860,13 +869,13 @@ Value_t MakeDetmapElemValue( const THaDetMap* detmap, int n, int extras )
 
 //-----------------------------------------------------------------------------
 template<> inline
-Value_t MakeValue( const THaDetMap* detmap, int extras )
+Value_t MakeValueP( const unique_ptr<THaDetMap>& detmap, int extras )
 {
   ostringstream ostr;
   ssiz_t w = 0;
   int nelem = 0;
   for( Int_t i = 0; i < detmap->GetSize(); ++i ) {
-    Value_t v = MakeDetmapElemValue( detmap, i, extras );
+    Value_t v = MakeDetmapElemValue(detmap, i, extras);
     ostr << v.value;
     w = max(w,v.width);
     nelem += v.nelem;
@@ -920,7 +929,7 @@ struct DBvalue {
   bool operator==( const DBvalue& rhs ) const {
     return validity_start == rhs.validity_start && version == rhs.version;
   }
-};
+} __attribute__((aligned(128)));
 
 typedef set<DBvalue> ValSet_t;
 
@@ -929,7 +938,7 @@ struct KeyAttr_t {
   bool isCopy;
   string comment;
   ValSet_t values;
-};
+} __attribute__((aligned(64)));
 
 typedef map<string, KeyAttr_t > DB;
 typedef map<string, string> StrMap_t;
@@ -1041,7 +1050,7 @@ static int WriteAllKeysForTime( ofstream& ofs,
 	if( num_to_do == ncol )
 	  ofs << " "; // New line indentation
 	assert( vt->width > 0 );
-	ofs << setw(vt->width + 2);
+	ofs << setw(static_cast<int>(vt->width) + 2);
 	ofs << val;
 	++nelem;
 	if( --num_to_do == 0 ) {
@@ -1083,7 +1092,7 @@ static int WriteFileDB( const string& target_dir, const vector<string>& subdirs 
     dir_names.insert(make_pair(0,target_dir));
   } else {
     for(const auto& subdir : subdirs) {
-      time_t date;
+      time_t date{};
       if( IsDBSubDir(subdir,date) ) {
 	dir_times.insert(date);
 	dir_names.insert( make_pair(date, MakePath(target_dir,subdir)) );
@@ -1180,13 +1189,14 @@ public:
   }
   Detector( const Detector& rhs )
     : fName(rhs.fName), fDBName(rhs.fDBName), fRealName(rhs.fRealName),
-      fConfig(rhs.fConfig), fDetMapHasLogicalChan(rhs.fDetMapHasLogicalChan),
+      fConfig(rhs.fConfig),
+      fDetMap(new THaDetMap(*rhs.fDetMap)),
+      fDetMapHasLogicalChan(rhs.fDetMapHasLogicalChan),
       fDetMapHasModel(rhs.fDetMapHasModel),
       fNelem(rhs.fNelem), fAngle(rhs.fAngle), fOrigin(rhs.fOrigin),
       fDefaults(rhs.fDefaults)
   {
     memcpy( fSize, rhs.fSize, 3*sizeof(fSize[0]) );
-    fDetMap = new THaDetMap(*rhs.fDetMap);
   }
   Detector& operator=( const Detector& rhs ) {
     if( this != &rhs ) {
@@ -1195,13 +1205,16 @@ public:
       fDetMapHasModel = rhs.fDetMapHasModel; fNelem = rhs.fNelem;
       fAngle = rhs.fAngle; fOrigin = rhs.fOrigin; fDefaults = rhs.fDefaults;
       memcpy( fSize, rhs.fSize, 3*sizeof(fSize[0]) );
-      delete fDetMap;
-      fDetMap = new THaDetMap(*rhs.fDetMap);
+#if __cplusplus >= 201402L
+      fDetMap = make_unique<THaDetMap>(*rhs.fDetMap);
+#else
+      fDetMap = unique_ptr<THaDetMap>{new THaDetMap(*rhs.fDetMap)};
+#endif
       fErrmsg.Clear();
     }
     return *this;
   }
-  virtual ~Detector() { delete fDetMap; fDetMap = nullptr; }
+  virtual ~Detector() = default;
 
   virtual void Clear() {
     fConfig = ""; fDetMap->Clear();
@@ -1280,7 +1293,7 @@ protected:
   string      fDBName;  // Database file name for this detector
   string      fRealName;// Actual detector name (top level dropped)
   TString     fConfig;  // TString for compatibility with old API
-  THaDetMap*  fDetMap;
+  unique_ptr<THaDetMap> fDetMap;
   bool        fDetMapHasLogicalChan;
   bool        fDetMapHasModel;
   Int_t       fNelem;
@@ -1309,7 +1322,7 @@ public:
     : Detector(name), fDoingFileCopy(doingFileCopy) {}
 
   virtual void Clear();
-  virtual int ReadDB( FILE* infile, time_t date_from, time_t date_until );
+  virtual int ReadDB( FILE* fi, time_t date_from, time_t date_until );
   virtual int Save( time_t start, const string& version = string() ) const;
   virtual const char* GetClassName() const { return "CopyFile"; }
 
@@ -1325,20 +1338,17 @@ protected:
 // Cherenkov
 class Cherenkov : public Detector {
 public:
-  explicit Cherenkov( const string& name )
-    : Detector(name), fOff(nullptr), fPed(nullptr), fGain(nullptr) {}
-  virtual ~Cherenkov() { DeleteArrays(); }
+  explicit Cherenkov( const string& name ): Detector(name) {}
+  virtual ~Cherenkov() = default;
 
-  virtual int ReadDB( FILE* infile, time_t date_from, time_t date_until );
+  virtual int ReadDB( FILE* fi, time_t date_from, time_t date_until );
   virtual int Save( time_t start, const string& version = string() ) const;
   virtual const char* GetClassName() const { return "Cherenkov"; }
   virtual void RegisterDefaults();
 
 private:
   // Calibrations
-  Float_t *fOff, *fPed, *fGain;
-
-  void DeleteArrays() { delete [] fOff; delete [] fPed; delete [] fGain; }
+  unique_ptr<Float_t[]> fOff, fPed, fGain;
 };
 
 //-----------------------------------------------------------------------------
@@ -1347,12 +1357,10 @@ class Scintillator : public Detector {
 public:
   explicit Scintillator( const string& name )
     : Detector(name), fTdc2T(0), fCn(3e8), fAdcMIP(0), fAttenuation(0),
-      fResolution(5e-10), fNTWalkPar(0),
-      fLOff(nullptr), fROff(nullptr), fLPed(nullptr), fRPed(nullptr), fLGain(nullptr),
-      fRGain(nullptr), fTWalkPar(nullptr), fTrigOff(nullptr), fHaveExtras(false) {}
-  virtual ~Scintillator() { DeleteArrays(); }
+      fResolution(5e-10), fNTWalkPar(0), fHaveExtras(false) {}
+  virtual ~Scintillator() = default;
 
-  virtual int ReadDB( FILE* infile, time_t date_from, time_t date_until );
+  virtual int ReadDB( FILE* fi, time_t date_from, time_t date_until );
   virtual int Save( time_t start, const string& version = string() ) const;
   virtual const char* GetClassName() const { return "Scintillator"; }
   virtual bool SupportsTimestamps()  const { return true; }
@@ -1364,14 +1372,9 @@ private:
   Double_t  fTdc2T, fCn, fAdcMIP, fAttenuation, fResolution;
   Int_t     fNTWalkPar;
   // Calibrations
-  Double_t  *fLOff, *fROff, *fLPed, *fRPed, *fLGain, *fRGain;
-  Double_t  *fTWalkPar, *fTrigOff;
+  unique_ptr<Double_t[]> fLOff, fROff, fLPed, fRPed, fLGain, fRGain;
+  unique_ptr<Double_t[]> fTWalkPar, fTrigOff;
   bool      fHaveExtras;
-
-  void DeleteArrays() {
-    delete [] fLOff; delete [] fROff; delete [] fLPed; delete [] fRPed;
-    delete [] fLGain; delete [] fRGain; delete [] fTWalkPar; delete [] fTrigOff;
-  }
 };
 
 //-----------------------------------------------------------------------------
@@ -1379,12 +1382,12 @@ private:
 class Shower : public Detector {
 public:
   explicit Shower( const string& name )
-    : Detector(name), fNcols(0), fNrows(0), fEmin(0),fMaxCl(kMaxInt),
-      fPed(nullptr), fGain(nullptr) { fDetMapHasLogicalChan = false; }
-  virtual ~Shower() { DeleteArrays(); }
+    : Detector(name), fNcols(0), fNrows(0), fEmin(0), fMaxCl(kMaxInt)
+      { fDetMapHasLogicalChan = false; }
+  virtual ~Shower() = default;
 
   virtual void Clear() { Detector::Clear(); fMaxCl = -1; }
-  virtual int ReadDB( FILE* infile, time_t date_from, time_t date_until );
+  virtual int ReadDB( FILE* fi, time_t date_from, time_t date_until );
   virtual int Save( time_t start, const string& version = string() ) const;
   virtual const char* GetClassName() const { return "Shower"; }
   virtual bool SupportsTimestamps()  const { return true; }
@@ -1403,9 +1406,7 @@ private:
   Int_t      fMaxCl;   // Maximum number of clusters, used by BigBite shower code
 
   // Calibrations
-  Float_t   *fPed, *fGain;
-
-  void DeleteArrays() { delete [] fPed; delete [] fGain; }
+  unique_ptr<Float_t[]> fPed, fGain;
 };
 
 //-----------------------------------------------------------------------------
@@ -1414,7 +1415,7 @@ class TotalShower : public Detector {
 public:
   explicit TotalShower( const string& name ) : Detector(name) {}
 
-  virtual int ReadDB( FILE* infile, time_t date_from, time_t date_until );
+  virtual int ReadDB( FILE* fi, time_t date_from, time_t date_until );
   virtual int Save( time_t start, const string& version = string() ) const;
   virtual const char* GetClassName() const { return "TotalShower"; }
 
@@ -1429,7 +1430,7 @@ class BPM : public Detector {
 public:
   explicit BPM( const string& name ) : Detector(name), fCalibRot(0) {}
 
-  virtual int ReadDB( FILE* infile, time_t date_from, time_t date_until );
+  virtual int ReadDB( FILE* fi, time_t date_from, time_t date_until );
   virtual int Save( time_t start, const string& version = string() ) const;
   virtual const char* GetClassName() const { return "BPM"; }
   virtual void RegisterDefaults();
@@ -1446,7 +1447,7 @@ class Raster : public Detector {
 public:
   explicit Raster( const string& name ) : Detector(name) {}
 
-  virtual int ReadDB( FILE* infile, time_t date_from, time_t date_until );
+  virtual int ReadDB( FILE* fi, time_t date_from, time_t date_until );
   virtual int Save( time_t start, const string& version = string() ) const;
   virtual const char* GetClassName() const { return "Raster"; }
   virtual bool SupportsTimestamps()  const { return true; }
@@ -1465,7 +1466,7 @@ public:
   explicit CoincTime( const string& name ) : Detector(name) {
     fTdcOff[0] = fTdcOff[1] = 0;
   }
-  virtual int ReadDB( FILE* infile, time_t date_from, time_t date_until );
+  virtual int ReadDB( FILE* fi, time_t date_from, time_t date_until );
   virtual int Save( time_t start, const string& version = string() ) const;
   virtual const char* GetClassName() const { return "CoincTime"; }
   virtual void RegisterDefaults();
@@ -1482,7 +1483,7 @@ public:
   explicit TriggerTime( const string& name )
     : Detector(name), fGlOffset(0), fTDCRes(-0.5e-9) {}
 
-  virtual int ReadDB( FILE* infile, time_t date_from, time_t date_until );
+  virtual int ReadDB( FILE* fi, time_t date_from, time_t date_until );
   virtual int Save( time_t start, const string& version = string() ) const;
   virtual const char* GetClassName() const { return "TriggerTime"; }
 
@@ -1602,7 +1603,7 @@ static NameTypeMap_t dettype_map;
 struct StringToType_t {
   const char*   name;
   EDetectorType type;
-};
+} __attribute__((aligned(16)));
 
 //-----------------------------------------------------------------------------
 static Detector* MakeDetector( EDetectorType type, const string& name )
@@ -1839,13 +1840,12 @@ static int ForAllFilesInDir( const string& sdir, Action action, int depth = 0 )
   }
 
   // Loop over all directory entries and pass their names to action
-  struct dirent *ent = nullptr;
-  int err = 0;
-  bool unfinished;
   errno = 0;
+  int err = 0;
+  bool unfinished = true;
   do {
     unfinished = false;
-    while( (ent = readdir(dir)) ) {
+    while( struct dirent *ent = readdir(dir) ) {
       // Skip trivial file names
       string fname(ent->d_name);
       if( fname.empty() || fname == "." || fname == ".." )
@@ -1904,7 +1904,7 @@ public:
 
     // Recurse down one level into valid subdirectories ("YYYYMMDD" and "DEFAULT")
     else if( S_ISDIR(sb.st_mode) && depth == 0 ) {
-      time_t date;
+      time_t date{};
       if( IsDBSubDir(fname,date) ) {
         int ret =
           ForAllFilesInDir(fpath, CopyDBFileName(fFilenames,fSubdirs,date),
@@ -1933,7 +1933,7 @@ public:
 
   int operator() ( const string& dir, const string& fname, int depth )
   {
-    time_t date;
+    time_t date{};
     struct stat sb{};
 
     string fpath = MakePath(dir, fname);
@@ -1952,7 +1952,7 @@ public:
         bool delete_all = (depth > 0 || fname != "DEFAULT");
         if( ForAllFilesInDir(fpath, DeleteDBFile(delete_all), depth+1) )
           return -2;
-        int err;
+        int err = 0;
         if( (err = rmdir(cpath)) && errno != ENOTEMPTY ) {
           perror(cpath);
           return -2;
@@ -2065,7 +2065,7 @@ static int PrepareOutputDir( const string& topdir, const vector<string>& subdirs
     bool do_delete = true;
     if( do_verify ) {
       cout << "Really delete all database files in \'" << topdir << "\'? " << flush;
-      char c;
+      char c = 'n';
       cin >> c;
       if( c != 'y' && c != 'Y' )
 	do_delete = false;
@@ -2092,7 +2092,7 @@ static int PrepareOutputDir( const string& topdir, const vector<string>& subdirs
 }
 
 //_____________________________________________________________________________
-static Int_t GetLine( FILE* file, char* buf, size_t bufsiz, string& line )
+static Int_t GetLine( FILE* file, char* buf, Int_t bufsiz, string& line )
 {
   // Get a line (possibly longer than 'bufsiz') from 'file' using
   // using the provided buffer 'buf'. Put result into string 'line'.
@@ -2129,14 +2129,14 @@ static bool ParseTimestamps( FILE* fi, set<time_t>& timestamps )
   // If any data lines are present before the first timestamp,
   // return 1, else return 0;
 
-  const size_t LEN = 256;
+  const Int_t LEN = 256;
   char buf[LEN];
   string line;
   bool got_tstamp = false, have_unstamped = false;
 
   rewind(fi);
   while( GetLine(fi,buf,LEN,line) == 0 ) {
-    time_t date;
+    time_t date{};
     if( IsDBdate(line, date) ) {
       timestamps.insert(date);
       got_tstamp = true;
@@ -2166,11 +2166,9 @@ public:
     if( subdir == "DEFAULT" )
       return true;
     string chunk = "/" + subdir + "/db_";
-    for(const auto & fname : fFnames) {
-      if( fname.path.find(chunk) != string::npos )
-	return true;
-    }
-    return false;
+    return any_of(ALL(fFnames),[&chunk](const Filenames_t& fname) {
+      return fname.path.find(chunk) != string::npos;
+    });
   }
 private:
   multiset<Filenames_t>& fFnames;
@@ -2184,7 +2182,7 @@ static int InsertDefaultFiles( const vector<string>& subdirs,
   // i.e. give preference to topdir/DEFAULT/ over topdir/
   Filenames_t defval(0);
   pair<fiter_t,fiter_t> defs = filenames.equal_range(defval);
-  int ndef = distance( defs.first, defs.second );
+  auto ndef = distance( defs.first, defs.second );
   string deffile;
   switch( ndef ) {
   case 0:
@@ -2224,7 +2222,7 @@ static int InsertDefaultFiles( const vector<string>& subdirs,
     remove_copy_if( ALL(subdirs), back_inserter(missing), match );
     if( !missing.empty() ) {
       for(const auto& subdir : missing) {
-        time_t date;
+        time_t date{};
 	bool good = IsDBSubDir(subdir,date);
 	assert(good);
 	if( !good ) {
@@ -2370,7 +2368,7 @@ static int CopyFiles( const string& target_dir, const vector<string>& subdirs,
     dir_names.insert(make_pair(0,target_dir));
   } else {
     for(const auto & subdir : subdirs) {
-      time_t date;
+      time_t date{};
       if( IsDBSubDir(subdir,date) ) {
 	dir_times.insert(date);
 	dir_names.insert( make_pair(date, MakePath(target_dir,subdir)) );
@@ -2410,7 +2408,7 @@ static int CopyFiles( const string& target_dir, const vector<string>& subdirs,
     //    size_t nlines = 0; // Number of non-comment lines written to output
 
     for( auto st = these_files.begin(); st != lasttf; ) {
-      const size_t LEN = 256;
+      const Int_t LEN = 256;
       char buf[LEN];
       string line;
       const string& path = st->path;
@@ -2470,7 +2468,7 @@ static int CopyFiles( const string& target_dir, const vector<string>& subdirs,
       string chunk;
       bool skip = false;
       while( GetLine(fi,buf,LEN,line) == 0 ) {
-	time_t date;
+	time_t date{};
 	if( IsDBdate(line,date) ) {
 	  // Save the previous section's data
 	  if( !skip && !chunk.empty() && (cur_date == 0 || ndata > 0) ) {
@@ -2550,7 +2548,7 @@ static int CopyFiles( const string& target_dir, const vector<string>& subdirs,
 	    }
 	    if( ndata2 > 0 || ncomments > 0 ) {
 	      // Collapse 3 or more consecutive newlines to 2
-	      string::size_type pos;
+	      string::size_type pos = 0;
 	      while( (pos = new_chunk.find("\n\n\n")) != string::npos )
 		new_chunk.replace(pos,3,2,'\n');
 	      // Save the pruned new text block
@@ -2664,7 +2662,7 @@ int main( int argc, char* const argv[] )
       continue;
     }
     EDetectorType type = it->second;
-    Detector* det = MakeDetector( type, detname );
+    unique_ptr<Detector> det{MakeDetector( type, detname )};
     if( !det )
       continue;
 
@@ -2673,7 +2671,7 @@ int main( int argc, char* const argv[] )
 
     filenames.insert( Filenames_t(numeric_limits<time_t>::max()) );
 
-    ExtractKeys( det, filenames );
+    ExtractKeys( det.get(), filenames );
 
     // If requested, remove keys for this detector that only have default values
     if( purge_all_default_keys )
@@ -2684,7 +2682,6 @@ int main( int argc, char* const argv[] )
       copy_dets.insert( detname );
 
     // Done with this detector
-    delete det;
   } // end for ft = filemap
 
   reset_tz();
@@ -2750,7 +2747,7 @@ static char* ReadComment( FILE* fp, char *buf, const int len )
   if( !s )
     return nullptr;
 
-  int ch = *s;
+  int ch = static_cast<unsigned char>(*s);
 
   if( ch == '#' )
     goto comment;
@@ -2857,7 +2854,7 @@ Detector::EReadBlockRetval Detector::ReadBlock( FILE* fi, T* data, int nval,
   // a digit or "-" followed by a digit.
 
   const char* const digits = "01234567890";
-  const int LEN = 128;
+  const Int_t LEN = 128;
   char buf[LEN];
   string line;
   int nread = 0;
@@ -2877,7 +2874,7 @@ Detector::EReadBlockRetval Detector::ReadBlock( FILE* fi, T* data, int nval,
           line.substr(0,48).c_str() );
       return kBadInput;
     }
-    int c = line[0];
+    int c = static_cast<unsigned char>(line[0]);
     bool maybe_data = (c && strchr(digits,c)) ||
       (c == '-' && line.length()>1 && strchr(digits,line[1]));
     if( maybe_data && TestBit(flags,kWarnOnDataGuess) )
@@ -3048,8 +3045,9 @@ int CopyFile::ReadDB( FILE* fi, time_t date, time_t date_until )
 
   assert( date < date_until );
 
-  const size_t bufsiz = 256;
-  char* buf = new char[bufsiz];
+  const Int_t bufsiz = 256;
+  unique_ptr<char []> pbuf(new char[bufsiz]);
+  auto* buf = pbuf.get();
   string line, version;
   time_t curdate = date;
   bool do_ignore = false;
@@ -3084,7 +3082,6 @@ int CopyFile::ReadDB( FILE* fi, time_t date, time_t date_until )
     // TODO: parse version tags
   }
 
-  delete [] buf;
   return 0;
 }
 
@@ -3131,7 +3128,7 @@ int Cherenkov::ReadDB( FILE* fi, time_t /* date */, time_t /* date_until */ )
 
   const int LEN = 256;
   char buf[LEN];
-  Int_t nelem;
+  Int_t nelem = 0;
   Int_t flags = kErrOnTooManyValues|kWarnOnDataGuess;
 
   if( ReadBlock(fi,&nelem,1,here,flags|kNoNegativeValues) )
@@ -3143,14 +3140,14 @@ int Cherenkov::ReadDB( FILE* fi, time_t /* date */, time_t /* date_until */ )
   fDetMap->Clear();
   fDetMapHasModel = false;
   while (true) {
-    Int_t crate, slot, first, last, first_chan, model;
-    int pos;
+    Int_t crate, slot, first, last, first_chan;
+    int pos = -1;
     if( fgets(buf,LEN,fi) == nullptr ) return ErrPrint(fi,here);
     int n = sscanf( buf, "%6d %6d %6d %6d %6d %n",
 		    &crate, &slot, &first, &last, &first_chan, &pos );
     if( crate < 0 ) break;
     if( n < 5 ) return ErrPrint(fi,here);
-    model=atoi(buf+pos); // if there is no model number given, set to zero
+    Int_t model=atoi(buf+pos); // if there is no model number given, set to zero
     if( model != 0 )
       fDetMapHasModel = true;
     if( CheckDetMapInp(crate,slot,first,last,buf,here) )
@@ -3198,21 +3195,20 @@ int Cherenkov::ReadDB( FILE* fi, time_t /* date */, time_t /* date_until */ )
 
   // Calibration data
   if( nelem != fNelem ) {
-    DeleteArrays();
     fNelem = nelem;
-    fOff = new Float_t[ fNelem ];
-    fPed = new Float_t[ fNelem ];
-    fGain = new Float_t[ fNelem ];
+    fOff  = unique_ptr<Float_t[]>(new Float_t[fNelem]);
+    fPed  = unique_ptr<Float_t[]>(new Float_t[fNelem]);
+    fGain = unique_ptr<Float_t[]>(new Float_t[fNelem]);
   }
 
   // Read calibrations
-  if( ReadBlock(fi,fOff,fNelem,here,flags) )
+  if( ReadBlock(fi,fOff.get(),fNelem,here,flags) )
     return kInitError;
 
-  if( ReadBlock(fi,fPed,fNelem,here,flags|kNoNegativeValues) )
+  if( ReadBlock(fi,fPed.get(),fNelem,here,flags|kNoNegativeValues) )
     return kInitError;
 
-  if( ReadBlock(fi,fGain,fNelem,here,flags|kNoNegativeValues) )
+  if( ReadBlock(fi,fGain.get(),fNelem,here,flags|kNoNegativeValues) )
     return kInitError;
 
   return kOK;
@@ -3226,9 +3222,8 @@ int Scintillator::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
   const char* const here = "Scintillator::ReadDB";
   const int LEN = 256;
   char buf[LEN];
-  Int_t nelem;
+  Int_t nelem = 0;
   Int_t flags = kErrOnTooManyValues|kWarnOnDataGuess;
-  int n;
 
   fDetMapHasModel = fHaveExtras = false;
 
@@ -3243,15 +3238,14 @@ int Scintillator::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
   while( ReadComment(fi, buf, LEN) );
   fDetMap->Clear();
   while (true) {
-    int pos;
-    Int_t first_chan, model;
-    Int_t crate, slot, first, last;
+    int pos = -1;
+    Int_t crate, slot, first, last, first_chan;
     if( fgets(buf,LEN,fi ) == nullptr ) return ErrPrint(fi,here);
-    n = sscanf( buf, "%6d %6d %6d %6d %6d %n",
-		&crate, &slot, &first, &last, &first_chan, &pos );
+    int n = sscanf( buf, "%6d %6d %6d %6d %6d %n",
+                    &crate, &slot, &first, &last, &first_chan, &pos );
     if( crate < 0 ) break;
     if( n < 5 ) return ErrPrint(fi,here);
-    model=atoi(buf+pos); // if there is no model number given, set to zero
+    Int_t model=atoi(buf+pos); // if there is no model number given, set to zero
     if( model != 0 )
       fDetMapHasModel = true;
     if( CheckDetMapInp(crate,slot,first,last,buf,here) )
@@ -3279,20 +3273,19 @@ int Scintillator::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
 
   // Calibration data
   if( nelem != fNelem ) {
-    DeleteArrays();
     fNelem = nelem;
-    fLOff  = new Double_t[ fNelem ];
-    fROff  = new Double_t[ fNelem ];
-    fLPed  = new Double_t[ fNelem ];
-    fRPed  = new Double_t[ fNelem ];
-    fLGain = new Double_t[ fNelem ];
-    fRGain = new Double_t[ fNelem ];
-    fTrigOff = new Double_t[ fNelem ];
+    fLOff    = unique_ptr<Double_t[]>(new Double_t[fNelem]);
+    fROff    = unique_ptr<Double_t[]>(new Double_t[fNelem]);
+    fLPed    = unique_ptr<Double_t[]>(new Double_t[fNelem]);
+    fRPed    = unique_ptr<Double_t[]>(new Double_t[fNelem]);
+    fLGain   = unique_ptr<Double_t[]>(new Double_t[fNelem]);
+    fRGain   = unique_ptr<Double_t[]>(new Double_t[fNelem]);
+    fTrigOff = unique_ptr<Double_t[]>(new Double_t[fNelem]);
 
     fNTWalkPar = 2*fNelem; // 1 paramter per PMT
-    fTWalkPar = new Double_t[ fNTWalkPar ];
+    fTWalkPar = unique_ptr<Double_t[]>(new Double_t[fNTWalkPar]);
   }
-  memset(fTrigOff,0,fNelem*sizeof(fTrigOff[0]));
+  memset(fTrigOff.get(),0,fNelem*sizeof(fTrigOff[0]));
 
   // Set DEFAULT values here
   // TDC resolution (s/channel)
@@ -3348,7 +3341,7 @@ int Scintillator::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
   // line without the check for "too many values".
 
   // Left pads TDC offsets
-  Int_t err = ReadBlock(fi,fLOff,fNelem,here,flags|kStopAtNval|kQuietOnTooMany);
+  Int_t err = ReadBlock(fi,fLOff.get(),fNelem,here,flags|kStopAtNval|kQuietOnTooMany);
   if( err ) {
     if( fNelem > 1 || err != kTooManyValues )
       return kInitError;
@@ -3361,12 +3354,12 @@ int Scintillator::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
     fROff[0] = dval[1];
   } else {
     // Right pads TDC offsets
-    if( ReadBlock(fi,fROff,fNelem,here,flags) )
+    if( ReadBlock(fi,fROff.get(),fNelem,here,flags) )
       return kInitError;
   }
 
   // Left pads ADC pedestals
-  err = ReadBlock(fi,fLPed,fNelem,here,flags|kNoNegativeValues|kStopAtNval|kQuietOnTooMany);
+  err = ReadBlock(fi,fLPed.get(),fNelem,here,flags|kNoNegativeValues|kStopAtNval|kQuietOnTooMany);
   if( err ) {
     if( fNelem > 1 || err != kTooManyValues )
       return kInitError;
@@ -3377,12 +3370,12 @@ int Scintillator::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
     fRPed[0] = dval[1];
   } else {
     // Right pads ADC pedestals
-    if( ReadBlock(fi,fRPed,fNelem,here,flags|kNoNegativeValues) )
+    if( ReadBlock(fi,fRPed.get(),fNelem,here,flags|kNoNegativeValues) )
       return kInitError;
   }
 
   // Left pads ADC gains
-  err = ReadBlock(fi,fLGain,fNelem,here,flags|kNoNegativeValues|kStopAtNval|kQuietOnTooMany);
+  err = ReadBlock(fi,fLGain.get(),fNelem,here,flags|kNoNegativeValues|kStopAtNval|kQuietOnTooMany);
   if( err ) {
     if( fNelem > 1 || err != kTooManyValues )
       return kInitError;
@@ -3393,7 +3386,7 @@ int Scintillator::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
     fRGain[0] = dval[1];
   } else {
     // Right pads ADC gains
-    if( ReadBlock(fi,fRGain,fNelem,here,flags|kNoNegativeValues) )
+    if( ReadBlock(fi,fRGain.get(),fNelem,here,flags|kNoNegativeValues) )
       return kInitError;
   }
 
@@ -3415,10 +3408,10 @@ int Scintillator::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
   if( (err = ReadBlock(fi,&fAdcMIP,1,here,flags|kRequireGreaterZero)) )
     goto exit;
   // Timewalk coefficients (1 for each PMT) -- seconds*1/sqrt(ADC)
-  if( (err = ReadBlock(fi,fTWalkPar,fNTWalkPar,here,flags)) )
+  if( (err = ReadBlock(fi,fTWalkPar.get(),fNTWalkPar,here,flags)) )
     goto exit;
   // Trigger-timing offsets -- seconds offset per paddle
-  err = ReadBlock(fi,fTrigOff,fNelem,here,flags);
+  err = ReadBlock(fi,fTrigOff.get(),fNelem,here,flags);
 
  exit:
   if( err && err != kNoValues )
@@ -3507,10 +3500,9 @@ int Shower::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
 
   // Arrays for per-block geometry and calibration data
   if( nelem != fNelem ) {
-    DeleteArrays();
     fNelem  = nelem;
-    fPed    = new Float_t[ fNelem ];
-    fGain   = new Float_t[ fNelem ];
+    fPed    = unique_ptr<Float_t[]>{new Float_t[fNelem]};
+    fGain   = unique_ptr<Float_t[]>{new Float_t[fNelem]};
   }
 
   // Read geometry
@@ -3535,34 +3527,33 @@ int Shower::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
 
   if( old_format ) {
     Double_t u = 1e-2; // Old database values are in cm
-    Double_t dx = 0, dy = 0, dx1, dy1, eps = 1e-4;
-    auto xpos = new Double_t[ fNelem ];
-    auto ypos = new Double_t[ fNelem ];
+    Double_t dx = 0, dy = 0, eps = 1e-4;
+    unique_ptr<Double_t[]> xpos{new Double_t[fNelem]};
+    unique_ptr<Double_t[]> ypos{new Double_t[fNelem]};
 
     fOrigin *= u;
     for(double & d : fSize)
       d *= u;
 
-    if( (err = ReadBlock(fi,xpos,fNelem,here,flags)) )     // Block x positions
-      goto err;
-    if( (err = ReadBlock(fi,ypos,fNelem,here,flags)) )     // Block y positions
-      goto err;
+    if( ReadBlock(fi,xpos.get(),fNelem,here,flags) )     // Block x positions
+      return kInitError;
+    if( ReadBlock(fi,ypos.get(),fNelem,here,flags) )     // Block y positions
+      return kInitError;
 
-    fXY[0] = u*xpos[0];
-    fXY[1] = u*ypos[0];
+    fXY[0] = static_cast<Float_t>(u * xpos[0]);
+    fXY[1] = static_cast<Float_t>(u * ypos[0]);
 
     // Determine the block spacings. Irregular spacings are not supported.
     for( Int_t i = 1; i < fNelem; ++i ) {
-      dx1 = xpos[i] - xpos[i-1];
-      dy1 = ypos[i] - ypos[i-1];
+      Double_t dx1 = xpos[i] - xpos[i-1];
+      Double_t dy1 = ypos[i] - ypos[i-1];
       if( dx == 0 ) {
 	if( dx1 != 0 )
 	  dx = dx1;
       } else if( dx1 != 0 && dx*dx1 > 0 && TMath::Abs(dx1-dx) > eps ) {
 	Error( Here(here), "Irregular x block positions not supported, "
 	       "dx = %lf, dx1 = %lf", dx, dx1 );
-	err = -1;
-	goto err;
+        return kInitError;
       }
       if( dy == 0 ) {
 	if( dy1 != 0 )
@@ -3570,17 +3561,11 @@ int Shower::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
       } else if( dy1 != 0 && dy*dy1 > 0 && TMath::Abs(dy1-dy) > eps ) {
 	Error( Here(here), "Irregular y block positions not supported, "
 	       "dy = %lf, dy1 = %lf", dy, dy1 );
-	err = -1;
-	goto err;
+        return kInitError;
       }
     }
-    fDXY[0] = u*dx;
-    fDXY[1] = u*dy;
-  err:
-    delete [] xpos;
-    delete [] ypos;
-    if( err )
-      return kInitError;
+    fDXY[0] = static_cast<Float_t>(u * dx);
+    fDXY[1] = static_cast<Float_t>(u * dy);
   }
   else {
     // New format
@@ -3594,7 +3579,7 @@ int Shower::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
     // Attempt to read it
     if( fNelem > 1 ) {
       // Read as double to detect "too many values" from the pedestals block reliably
-      Double_t maxcl;
+      Double_t maxcl = 0;
       err = ReadBlock(fi,&maxcl,1,here,flags|kNoNegativeValues|kQuietOnTooMany );
       if( err == kSuccess )
 	fMaxCl = TMath::Nint(maxcl);
@@ -3608,10 +3593,10 @@ int Shower::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
 
   // Read calibrations
   // ADC pedestals (in order of logical channel number)
-  if( ReadBlock(fi,fPed,fNelem,here,flags) )
+  if( ReadBlock(fi,fPed.get(),fNelem,here,flags) )
     return kInitError;
   // ADC gains
-  if( ReadBlock(fi,fGain,fNelem,here,flags|kNoNegativeValues) )
+  if( ReadBlock(fi,fGain.get(),fNelem,here,flags|kNoNegativeValues) )
     return kInitError;
 
   if( old_format ) {
@@ -3646,14 +3631,13 @@ int BPM::ReadDB( FILE* fi, time_t, time_t )
 
   const int LEN=100;
   char buf[LEN];
-  char *filestatus;
+  char *filestatus = nullptr;
   char keyword[LEN];
 
-  sprintf(keyword,"[%s_detmap]",fRealName.c_str());
-  Int_t n=strlen(keyword);
+  snprintf(keyword,LEN,"[%s_detmap]",fRealName.c_str());
   do {
     filestatus=fgets( buf, LEN, fi);
-  } while ((filestatus!=nullptr)&&(strncmp(buf,keyword,n)!=0));
+  } while ((filestatus!=nullptr)&&(strncmp(buf,keyword,LEN-1)!=0));
   if (filestatus==nullptr) {
     Error( Here(here), "Unexpected end of BPM configuration file");
     return kInitError;
@@ -3663,8 +3647,8 @@ int BPM::ReadDB( FILE* fi, time_t, time_t )
   int first_chan, crate, dummy, slot, first, last, modulid = 0;
   do {
     if( fgets(buf,LEN,fi ) == nullptr ) return ErrPrint(fi,here);
-    n = sscanf(buf,"%6d %6d %6d %6d %6d %6d %6d",
-	       &first_chan, &crate, &dummy, &slot, &first, &last, &modulid);
+    int n = sscanf(buf,"%6d %6d %6d %6d %6d %6d %6d",
+                   &first_chan, &crate, &dummy, &slot, &first, &last, &modulid);
     if( n < 1 ) return ErrPrint(fi,here);
     if( n == 7 )
       fDetMapHasModel = true;
@@ -3683,11 +3667,10 @@ int BPM::ReadDB( FILE* fi, time_t, time_t )
     return kInitError;
   }
 
-  sprintf(keyword,"[%s]",fRealName.c_str());
-  n=strlen(keyword);
+  snprintf(keyword,LEN,"[%s]",fRealName.c_str());
   do {
     filestatus=fgets( buf, LEN, fi);
-  } while ((filestatus!=nullptr)&&(strncmp(buf,keyword,n)!=0));
+  } while ((filestatus!=nullptr)&&(strncmp(buf,keyword,LEN-1)!=0));
   if (filestatus==nullptr) {
     Error( Here(here), "Unexpected end of BPM configuration file");
     return kInitError;
@@ -3695,7 +3678,7 @@ int BPM::ReadDB( FILE* fi, time_t, time_t )
 
   double dummy1,dummy2,dummy3,dummy4,dummy5,dummy6;
   if( fgets(buf,LEN,fi ) == nullptr ) return ErrPrint(fi,here);
-  n = sscanf(buf,"%15lf %15lf %15lf %15lf",&dummy1,&dummy2,&dummy3,&dummy4);
+  int n = sscanf(buf,"%15lf %15lf %15lf %15lf",&dummy1,&dummy2,&dummy3,&dummy4);
   if( n < 2 ) return ErrPrint(fi,here);
 
   // dummy 1 is the z position of the bpm. Used below to set fOrigin.
@@ -3730,15 +3713,14 @@ int Raster::ReadDB( FILE* fi, time_t date, time_t )
 
   const int LEN=100;
   char buf[LEN];
-  char *filestatus;
+  char *filestatus = nullptr;
   char keyword[LEN];
 
   // Seek our detmap section (e.g. "Raster_detmap")
-  sprintf(keyword,"[%s_detmap]",fRealName.c_str());
-  Int_t n=strlen(keyword);
+  snprintf(keyword,LEN,"[%s_detmap]",fRealName.c_str());
   do {
     filestatus=fgets( buf, LEN, fi);
-  } while ((filestatus!=nullptr)&&(strncmp(buf,keyword,n)!=0));
+  } while ((filestatus!=nullptr)&&(strncmp(buf,keyword,LEN-1)!=0));
   if (filestatus==nullptr) {
     Error( Here(here), "Unexpected end of raster configuration file");
     return kInitError;
@@ -3748,8 +3730,8 @@ int Raster::ReadDB( FILE* fi, time_t date, time_t )
   int first_chan, crate, dummy, slot, first, last, modulid = 0;
   do {
     if( fgets(buf,LEN,fi ) == nullptr ) return ErrPrint(fi,here);
-    n = sscanf(buf,"%6d %6d %6d %6d %6d %6d %6d",
-	       &first_chan, &crate, &dummy, &slot, &first, &last, &modulid);
+    int n = sscanf(buf,"%6d %6d %6d %6d %6d %6d %6d",
+                   &first_chan, &crate, &dummy, &slot, &first, &last, &modulid);
     if( n < 1 ) return ErrPrint(fi,here);
     if( n == 7 )
       fDetMapHasModel = true;
@@ -3769,11 +3751,10 @@ int Raster::ReadDB( FILE* fi, time_t date, time_t )
   }
 
   // Seek our database section
-  sprintf(keyword,"[%s]",fRealName.c_str());
-  n=strlen(keyword);
+  snprintf(keyword,LEN,"[%s]",fRealName.c_str());
   do {
     filestatus=fgets( buf, LEN, fi);
-  } while ((filestatus!=nullptr)&&(strncmp(buf,keyword,n)!=0));
+  } while ((filestatus!=nullptr)&&(strncmp(buf,keyword,LEN-1)!=0));
   if (filestatus==nullptr) {
     Error( Here(here), "Unexpected end of raster configuration file");
     return kInitError;
@@ -3783,8 +3764,8 @@ int Raster::ReadDB( FILE* fi, time_t date, time_t )
   // NB: dummy1 is never used. Comment in old db files says it is "z-pos",
   // which are read from the following lines - probably dummy1 is leftover junk
   double dummy1;
-  n = sscanf(buf,"%15lf %15lf %15lf %15lf %15lf %15lf %15lf",
-	     &dummy1,fFreq,fFreq+1,fRPed,fRPed+1,fSPed,fSPed+1);
+  int n = sscanf(buf,"%15lf %15lf %15lf %15lf %15lf %15lf %15lf",
+                 &dummy1,fFreq,fFreq+1,fRPed,fRPed+1,fSPed,fSPed+1);
   if( n != 7 ) return ErrPrint(fi,here);
 
   // z positions of BPMA, BPMB, and target reference point (usually 0)
@@ -3803,7 +3784,7 @@ int Raster::ReadDB( FILE* fi, time_t date, time_t )
   THaAnalysisObject::SeekDBdate( fi, datime, true );
 
   // Raster constants: offx/y,amplx/y,slopex/y for BPMA, BPMB, target
-  if( fgets(buf,LEN,fi ) == 0 ) return ErrPrint(fi,here);
+  if( fgets(buf,LEN,fi ) == nullptr ) return ErrPrint(fi,here);
   n = sscanf(buf,"%15lf %15lf %15lf %15lf %15lf %15lf",
 	     fCalibA,fCalibA+1,fCalibA+2,fCalibA+3,fCalibA+4,fCalibA+5);
   if( n != 6 ) return ErrPrint(fi,here);
@@ -3836,16 +3817,17 @@ int CoincTime::ReadDB( FILE* fi, time_t, time_t )
 
   Int_t k = 0;
   while (true) {
-    Int_t crate, slot, first, model, nread;
+    Int_t crate, slot, first, model;
     Double_t tres;       // TDC resolution
     Double_t toff = 0.;  // TDC offset (in seconds)
     char label[21];      // string label for TDC = Stop_by_Start
 
     while( ReadComment(fi, buf, LEN) );
     if( fgets(buf,LEN,fi ) == nullptr ) return ErrPrint(fi,here);
-    nread = sscanf( buf, "%6d %6d %6d %6d %15lf %20s %15lf",
-		    &crate, &slot, &first, &model, &tres, label, &toff );
+    int nread = sscanf( buf, "%6d %6d %6d %6d %15lf %20s %15lf",
+                        &crate, &slot, &first, &model, &tres, label, &toff );
     if( crate < 0 ) break;
+    if( nread < 3 ) return ErrPrint(fi,here);
     if( CheckDetMapInp(crate,slot,first,1,buf,here) )
       return kInitError;
     if( k > 1 ) {
@@ -4094,14 +4076,14 @@ int VDC::ReadDB( FILE* file, time_t date, time_t date_until )
     THaMatrixElement ME;
     ME.pw.resize(npow);
     ME.poly.resize(kPORDER);
-    vsiz_t pos2;
-    for ( pos2=1; pos2 < npow + 1; pos2++) {
+    vsiz_t pos2 = 1;
+    for( ; pos2 < npow + 1; pos2++ ) {
       assert(pos2 < line_spl.size());
       ME.pw[pos2 - 1] = atoi(line_spl[pos2].c_str());
     }
-    vsiz_t p_cnt;
-    for ( p_cnt=0; pos2 < line_spl.size() && p_cnt < kPORDER && pos2 < npow + kPORDER + 1;
-          pos2++,p_cnt++ ) {
+    vsiz_t p_cnt = 0;
+    for( ; pos2 < line_spl.size() && p_cnt < kPORDER &&
+           pos2 < npow + kPORDER + 1; pos2++, p_cnt++ ) {
       ME.poly[p_cnt] = atof(line_spl[pos2].c_str());
       if (ME.poly[p_cnt] != 0.0) {
 	ME.iszero = false;
@@ -4358,7 +4340,7 @@ int VDC::Plane::ReadDB( FILE* file, time_t /* date */, time_t )
   // For backward compatibility with database version 1, these parameters
   // are in an optional section, labelled [ <prefix>.extra_param ]
   // (e.g. [ R.vdc.u1.extra_param ]) or [ R.extra_param ].  If this tag is
-  // not found, a warning is printed and defaults are used.
+  // not found, defaults are used.
 
   tag = "["; tag.Append(fName); tag.Append(".extra_param]");
   TString tag2(tag);
@@ -4470,7 +4452,7 @@ int Detector::Save( time_t start, const string& version ) const
     if( fDetMapHasModel )
       flags++;
   }
-  AddToMap( prefix+"detmap",   MakeValue(fDetMap,flags), start, version, 4+flags );
+  AddToMap( prefix+"detmap",   MakeValueP(fDetMap,flags), start, version, 4+flags );
   if( !fNelemName.empty() )
     AddToMap( prefix+fNelemName, MakeValue(&fNelem),     start, version );
   AddToMap( prefix+"angle",    MakeValue(&fAngle),       start, version );
@@ -4495,9 +4477,9 @@ int Cherenkov::Save( time_t start, const string& version ) const
   fNelemName = "npmt";
   Detector::Save( start, version );
 
-  AddToMap( prefix+"tdc.offsets",   MakeValue(fOff,fNelem),  start, version );
-  AddToMap( prefix+"adc.pedestals", MakeValue(fPed,fNelem),  start, version );
-  AddToMap( prefix+"adc.gains",     MakeValue(fGain,fNelem), start, version );
+  AddToMap( prefix+"tdc.offsets",   MakeValueP(fOff,fNelem),  start, version );
+  AddToMap( prefix+"adc.pedestals", MakeValueP(fPed,fNelem),  start, version );
+  AddToMap( prefix+"adc.gains",     MakeValueP(fGain,fNelem), start, version );
 
   return 0;
 }
@@ -4512,12 +4494,12 @@ int Scintillator::Save( time_t start, const string& version ) const
   fNelemName = "npaddles";
   Detector::Save( start, version );
 
-  AddToMap( prefix+"L.off",    MakeValue(fLOff,fNelem),  start, version );
-  AddToMap( prefix+"R.off",    MakeValue(fROff,fNelem),  start, version );
-  AddToMap( prefix+"L.ped",    MakeValue(fLPed,fNelem),  start, version );
-  AddToMap( prefix+"R.ped",    MakeValue(fRPed,fNelem),  start, version );
-  AddToMap( prefix+"L.gain",   MakeValue(fLGain,fNelem), start, version );
-  AddToMap( prefix+"R.gain",   MakeValue(fRGain,fNelem), start, version );
+  AddToMap( prefix+"L.off",    MakeValueP(fLOff,fNelem),  start, version );
+  AddToMap( prefix+"R.off",    MakeValueP(fROff,fNelem),  start, version );
+  AddToMap( prefix+"L.ped",    MakeValueP(fLPed,fNelem),  start, version );
+  AddToMap( prefix+"R.ped",    MakeValueP(fRPed,fNelem),  start, version );
+  AddToMap( prefix+"L.gain",   MakeValueP(fLGain,fNelem), start, version );
+  AddToMap( prefix+"R.gain",   MakeValueP(fRGain,fNelem), start, version );
 
   if( fHaveExtras ) {
     AddToMap( prefix+"avgres",   MakeValue(&fResolution), start, version );
@@ -4526,9 +4508,9 @@ int Scintillator::Save( time_t start, const string& version ) const
     AddToMap( prefix+"MIP",      MakeValue(&fAdcMIP), start, version );
     AddToMap( prefix+"tdc.res",  MakeValue(&fTdc2T), start, version );
 
-    AddToMap( prefix+"timewalk_params",  MakeValue(fTWalkPar,fNTWalkPar),
+    AddToMap( prefix+"timewalk_params",  MakeValueP(fTWalkPar,fNTWalkPar),
 	      start, version, fNelem );
-    AddToMap( prefix+"retiming_offsets", MakeValue(fTrigOff,fNelem), start, version );
+    AddToMap( prefix+"retiming_offsets", MakeValueP(fTrigOff,fNelem), start, version );
   }
 
   return 0;
@@ -4557,8 +4539,8 @@ int Shower::Save( time_t start, const string& version ) const
   if( fMaxCl != -1 )
     AddToMap( prefix+"maxcl",   MakeValue(&fMaxCl), start, version );
 
-  AddToMap( prefix+"pedestals", MakeValue(fPed,fNelem),  start, version, fNcols );
-  AddToMap( prefix+"gains",     MakeValue(fGain,fNelem), start, version, fNcols );
+  AddToMap( prefix+"pedestals", MakeValueP(fPed,fNelem),  start, version, fNcols );
+  AddToMap( prefix+"gains",     MakeValueP(fGain,fNelem), start, version, fNcols );
 
   return 0;
 }
@@ -4657,7 +4639,8 @@ static void WriteME( ostream& s, const THaVDC::THaMatrixElement& ME,
   ios_base::fmtflags fmt = s.flags();
   streamsize prec = s.precision();
   for( int k = 0; k < ME.order; ++k ) {
-    s << scientific << setw(w) << setprecision(6) << ME.poly[k];
+    s << scientific << setw(static_cast<int>(w)) << setprecision(6)
+      << ME.poly[k];
   }
   s.flags(fmt);
   s.precision(prec);
@@ -4748,8 +4731,8 @@ int VDC::Plane::Save( time_t start, const string& version ) const
   string prefix = fName + ".";
 
   int flags = 1;
-  AddToMap( prefix+"detmap", MakeValue(fDetMap,flags), start, version, 4+flags );
-  AddToMap( prefix+"position", MakeValue(&fOrigin),      start, version );
+  AddToMap( prefix+"detmap",   MakeValueP(fDetMap,flags), start, version, 4+flags );
+  AddToMap( prefix+"position", MakeValue(&fOrigin),       start, version );
 
   UInt_t cbits = fVDC->GetCommon();
   if( !TestBit(cbits,kNelem) )

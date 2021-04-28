@@ -42,8 +42,8 @@ protected:
   Bool_t     fInvertGate; // Invert polarity of gate signal, so that 0=active
 
   // Simplified detector map for the two data channels
-  // Simplified detector map for the two data channels
-  struct ChanDef_t {
+  class ChanDef_t {
+  public:
     ChanDef_t() : roc(-1), slot(-1), chan(-1) {}
     ChanDef_t& operator=(const std::vector<int>& rhs) {
       if( rhs.size() < 3 ) {

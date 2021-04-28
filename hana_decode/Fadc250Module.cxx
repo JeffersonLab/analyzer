@@ -54,13 +54,8 @@
 #include "TMath.h"
 
 #include <unistd.h>
-#include <cstdio>
 #include <cstdlib>
-#include <cstring>  // for memset
 #include <iostream>
-#include <string>
-#include <sstream>
-#include <cmath>
 #include <iomanip>
 #include <numeric>
 #include <cassert>
@@ -70,6 +65,10 @@ using namespace std;
 
 // #define DEBUG
 // #define WITH_DEBUG
+
+#ifdef DEBUG
+#include <fstream>
+#endif
 
 namespace Decoder {
 
@@ -94,18 +93,16 @@ namespace Decoder {
       event_header_found(false), slots_match(false)
   {
     IsInit = false;
-    Init();
+    Fadc250Module::Init();
   }
 
-  Fadc250Module::~Fadc250Module() {
 #if defined DEBUG && defined WITH_DEBUG
+  Fadc250Module::~Fadc250Module() {
     // delete fDebugFile; fDebugFile = 0;
+}
+#else
+  Fadc250Module::~Fadc250Module() = default;
 #endif
-  }
-
-  Bool_t Fadc250Module::IsMultiFunction() {
-    return true;
-  }
 
   Bool_t Fadc250Module::HasCapability(Decoder::EModuleType type) {
     return ( type == kSampleADC || type == kPulseIntegral || type == kPulseTime

@@ -502,11 +502,11 @@ void Variable::Print(Option_t* option) const
   if( strcmp(option, "FULL") != 0 ) return;
 
   cout << "(" << fSelf->GetTypeName() << ")  ";
-  size_t len = GetLen();
+  Int_t len = GetLen();
   if( IsArray() )
     cout << "[" << len << "]";
 
-  for( size_t i=0; i<len; i++ ) {
+  for( Int_t i=0; i<len; i++ ) {
     cout << "  ";
     if( IsFloat() )
       cout << GetValue(i);

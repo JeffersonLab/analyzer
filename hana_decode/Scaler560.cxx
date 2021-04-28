@@ -17,7 +17,7 @@ Module::TypeIter_t Scaler560::fgThisType =
 Scaler560::Scaler560(Int_t crate, Int_t slot)
   : GenScaler(crate, slot)
 {
-  Init();
+  Scaler560::Init();
 }
 
 void Scaler560::Init()

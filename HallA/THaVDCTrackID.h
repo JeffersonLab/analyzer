@@ -18,7 +18,7 @@ public:
   THaVDCTrackID( Int_t lowerU, Int_t lowerV, Int_t upperU, Int_t upperV )
     : fLowerU(lowerU), fLowerV(lowerV), fUpperU(upperU), fUpperV(upperV) {}
   THaVDCTrackID( const THaVDCPoint* lower, const THaVDCPoint* upper );
-  virtual ~THaVDCTrackID() {}
+  virtual ~THaVDCTrackID() = default;
 
   virtual Bool_t  operator==( const THaTrackID& );
   virtual Bool_t  operator!=( const THaTrackID& );
@@ -39,7 +39,7 @@ inline
 Bool_t THaVDCTrackID::operator==( const THaTrackID& RHS )
 {
   if( IsA() != RHS.IsA() ) return false;
-  const THaVDCTrackID& rhs = static_cast<const THaVDCTrackID&>(RHS);
+  const auto& rhs = static_cast<const THaVDCTrackID&>(RHS);
   return ( (fLowerU == rhs.fLowerU) && (fLowerV == rhs.fLowerV) &&
 	   (fUpperU == rhs.fUpperU) && (fUpperV == rhs.fUpperV) );
 }
@@ -49,7 +49,7 @@ inline
 Bool_t THaVDCTrackID::operator!=( const THaTrackID& RHS )
 {
   if( IsA() != RHS.IsA() ) return true;
-  const THaVDCTrackID& rhs = static_cast<const THaVDCTrackID&>(RHS);
+  const auto& rhs = static_cast<const THaVDCTrackID&>(RHS);
   return ( (fLowerU != rhs.fLowerU) || (fLowerV != rhs.fLowerV) ||
 	   (fUpperU != rhs.fUpperU) || (fUpperV != rhs.fUpperV) );
 }

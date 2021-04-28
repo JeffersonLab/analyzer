@@ -35,7 +35,6 @@ THaQWEAKHelicity::THaQWEAKHelicity( const char* name, const char* description,
   fRingPhase_reported(0),fRing_reported_polarity(0),
   fRing_actual_polarity(0), fEvtype(-1), fHisto(NHIST, nullptr)
 {
-  //  memset(fHbits, 0, sizeof(fHbits));
 }
 
 //_____________________________________________________________________________
@@ -159,14 +158,9 @@ Int_t THaQWEAKHelicity::ReadDatabase( const TDatime& date )
   fMAXBIT=30;
   fOffsetTIRvsRing=3;
   fQWEAKDelay=8;
-  fQWEAKNPattern=4; 
   // maximum of event in the pattern, for now we are working with quartets
-  Int_t localpattern[4]={1,-1,-1,1}; 
   // careful, the first value here should always +1
-  for(int i=0;i<fQWEAKNPattern;i++)
-    {
-      fPatternSequence.push_back(localpattern[i]);
-    }
+  fPatternSequence = {1,-1,-1,1};
   HWPIN=true;
 
   return kOK;
@@ -342,10 +336,11 @@ void THaQWEAKHelicity::LoadHelicity(Int_t eventnumber)
       if(fRingPhase_reported>fQWEAKNPattern)
 	{
 	  if(fQWEAKDebug>0)
-	    cout<<here<<" Reset seed: The pattern has to much elements !! Should only goes up to "
-		<<fQWEAKNPattern<<" and it now "<<fRingPhase_reported
-		<<" event #="<<eventnumber		  
-		<<endl;
+            cout << here << " Reset seed: The pattern has too many elements !! "
+                 << "Should only go up to " << fQWEAKNPattern
+                 << " but is now " << fRingPhase_reported
+                 << " at event #=" << eventnumber
+                 << endl;
 	  fRing_NSeed=0;
 	  SetErrorCode(0);
 	}
@@ -397,7 +392,7 @@ void THaQWEAKHelicity::LoadHelicity(Int_t eventnumber)
 	      for(int j=0;j<fQWEAKDelay;j++)
 		{	      
 		  advance+=1;
-		  if(advance==fQWEAKNPattern)
+		  if( advance == fQWEAKNPattern)
 		    {
 		      fRing_actual_polarity=RanBit30(fRingSeed_actual);
 		      advance=0;
@@ -474,7 +469,7 @@ void THaQWEAKHelicity::LoadHelicity(Int_t eventnumber)
 	  for(int i=0; i<fOffsetTIRvsRing;i++)
 	    {
 	      localfPhase+=1;
-	      if(localfPhase==fQWEAKNPattern)
+	      if( localfPhase == fQWEAKNPattern)
 		{
 		  localfPhase=0;
 		  localfPolarity=RanBit30(localfSeed);
@@ -506,28 +501,20 @@ THaHelicityDet::EHelicity THaQWEAKHelicity::SetHelicity(Int_t polarity, Int_t ph
   // here predicted_reported_helicity can have a value of 0 or 1
   // fPatternSequence[fRingPhase_reported] can have a value of 1 or -1
 
-  THaHelicityDet::EHelicity localhel;
+  THaHelicityDet::EHelicity localhel = kUnknown;
 
-  Int_t select=polarity+
-	    +fPatternSequence[phase];
-  if(select==-1||select==2)
-    {
-      if(HWPIN==true)
-	localhel=kPlus;
-      else
-	localhel=kMinus;
-    }
-  else if(select==1 || select==0)
-    {
-      if(HWPIN==true)
-	localhel=kMinus;
-      else
-	localhel=kPlus;
-    }
-  else
-    {
-      localhel=kUnknown;
-    }
+  Int_t select = polarity + fPatternSequence[phase];
+  if( select == -1 || select == 2 ) {
+    if( HWPIN )
+      localhel = kPlus;
+    else
+      localhel = kMinus;
+  } else if( select == 1 || select == 0 ) {
+    if( HWPIN )
+      localhel = kMinus;
+    else
+      localhel = kPlus;
+  }
 
   // std::cout<<" ++++ THaQWEAKHelicity::SetHelicity \n";
   // std::cout<<" actual ring  polarity="<<polarity
@@ -542,15 +529,14 @@ THaHelicityDet::EHelicity THaQWEAKHelicity::SetHelicity(Int_t polarity, Int_t ph
 //_____________________________________________________________________________
 Int_t  THaQWEAKHelicity::RanBit30(Int_t& ranseed)
 {
-  
-  UInt_t bit7    = (ranseed & 0x00000040) != 0;
-  UInt_t bit28   = (ranseed & 0x08000000) != 0;
-  UInt_t bit29   = (ranseed & 0x10000000) != 0;
-  UInt_t bit30   = (ranseed & 0x20000000) != 0;
 
-  UInt_t newbit = (bit30 ^ bit29 ^ bit28 ^ bit7) & 0x1;
+  bool bit7    = (ranseed & 0x00000040) != 0;
+  bool bit28   = (ranseed & 0x08000000) != 0;
+  bool bit29   = (ranseed & 0x10000000) != 0;
+  bool bit30   = (ranseed & 0x20000000) != 0;
 
-  
+  Int_t newbit = (bit30 ^ bit29 ^ bit28 ^ bit7) & 0x1;
+
   if(ranseed<=0) {
     if(fQWEAKDebug>1)
       std::cerr<<"ranseed must be greater than zero!"<<"\n";
@@ -559,13 +545,11 @@ Int_t  THaQWEAKHelicity::RanBit30(Int_t& ranseed)
   }
   ranseed =  ( (ranseed<<1) | newbit ) & 0x3FFFFFFF;
   //here ranseed is changed
-  if(fQWEAKDebug>1)
-    {
-      cout<< "THaQWEAKHelicity::RanBit30, newbit="<<newbit<<"\n";
-    }
+  if( fQWEAKDebug > 1 ) {
+    cout << "THaQWEAKHelicity::RanBit30, newbit=" << newbit << "\n";
+  }
 
   return newbit;
-
 }
 
 ClassImp(THaQWEAKHelicity)

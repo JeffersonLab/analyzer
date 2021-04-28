@@ -56,11 +56,10 @@ THaDetectorBase::EStatus THaVDCChamber::Init( const TDatime& date )
   if( IsZombie() || !fV || !fU )
     return fStatus = kInitError;
 
-  EStatus status;
-  if( (status = THaSubDetector::Init( date )) ||
-      (status = fU->Init( date )) ||
-      (status = fV->Init( date )))
-    return fStatus = status;
+  if( (fStatus = THaSubDetector::Init(date )) ||
+      (fStatus = fU->Init(date )) ||
+      (fStatus = fV->Init(date )))
+    return fStatus;
 
   fSpacing = fV->GetZ() - fU->GetZ();  // Space between U & V wire planes
 

@@ -14,7 +14,7 @@
 class THaBenchmark : public TBenchmark {
 public:
   THaBenchmark() { fNmax = 50; }
-  virtual ~THaBenchmark() {}
+  virtual ~THaBenchmark() = default;
 
   virtual void Begin(const char *name) {
     if (!fNbench)

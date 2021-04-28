@@ -166,14 +166,14 @@ void THaEvData::EnableScalers( Bool_t enable )
   SetBit(kScalersEnabled, enable);
 }
 
-void THaEvData::SetVerbose( UInt_t level )
+void THaEvData::SetVerbose( Int_t level )
 {
   // Set verbosity level. Identical to SetDebug(). Kept for compatibility.
 
   SetDebug(level);
 }
 
-void THaEvData::SetDebug( UInt_t level )
+void THaEvData::SetDebug( Int_t level )
 {
   // Set debug level
 
@@ -217,7 +217,7 @@ void THaEvData::hexdump(const char* cbuff, size_t nlen)
   const int NW = 16; const char* p = cbuff;
   while( p<cbuff+nlen ) {
     cout << dec << setw(4) << setfill('0') << (size_t)(p-cbuff) << " ";
-    int nelem = TMath::Min((Long_t)NW,(Long_t)(cbuff+nlen-p));
+    Long_t nelem = TMath::Min((Long_t)NW,(Long_t)(cbuff+nlen-p));
     for(int i=0; i<NW; i++) {
       UInt_t c = (i<nelem) ? *(const unsigned char*)(p+i) : 0;
       cout << " " << hex << setfill('0') << setw(2) << c << dec;

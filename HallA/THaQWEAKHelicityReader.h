@@ -19,7 +19,7 @@ class THaQWEAKHelicityReader {
   
 public:
   THaQWEAKHelicityReader();
-  virtual ~THaQWEAKHelicityReader();
+  virtual ~THaQWEAKHelicityReader() = default;
   
   // when an event trigger the acquisition the reported helicity, T_settle and Pattern sync
   //signals are recorded by the an Input Register.
@@ -34,7 +34,9 @@ public:
   // let call it kHelRingDepth for now
   void Print();
 
-  struct ROCinfo {
+  class ROCinfo {
+  public:
+    ROCinfo() : roc(0), header(0), index(0) {}
     Int_t  roc;               // ROC to read out
     Int_t  header;            // Headers to search for (0 = ignore)
     Int_t  index;             // Index into buffer

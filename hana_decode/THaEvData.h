@@ -34,7 +34,7 @@ public:
   virtual Int_t LoadEvent(const UInt_t* evbuffer) = 0;
 
   // return a pointer to a full event
-  const UInt_t* GetRawDataBuffer() const { return buffer;}  
+  const UInt_t*  GetRawDataBuffer() const { return buffer;}
 
   virtual Bool_t IsMultiBlockMode() { return fMultiBlockMode; };
   virtual Bool_t BlockIsDone() { return fBlockIsDone; };
@@ -194,8 +194,8 @@ public:
   Decoder::THaCrateMap* GetCrateMap() const { return fMap; }
 
   // Reporting level
-  void SetVerbose( UInt_t level );
-  void SetDebug( UInt_t level );
+  void SetVerbose( Int_t level );
+  void SetDebug( Int_t level );
 
   // Utility function for hexdumping any sort of data
   static void hexdump(const char* cbuff, size_t len);
@@ -220,7 +220,8 @@ protected:
   // Data
   Decoder::THaCrateMap* fMap;      // Pointer to active crate map
 
-  struct RocDat_t {           // ROC raw data descriptor
+  class RocDat_t {            // ROC raw data descriptor
+  public:
     RocDat_t() : pos(0), len(0) {}
     Int_t pos;                // position in evbuffer[]
     Int_t len;                // length of data
@@ -232,7 +233,8 @@ protected:
     kScalersEnabled  = BIT(15),
   };
 
-  struct BankDat_t {           // Bank raw data descriptor
+  class BankDat_t {            // Bank raw data descriptor
+  public:
     BankDat_t() : pos(0), len(0) {}
     Int_t pos;                 // position in evbuffer[]
     Int_t len;                 // length of data

@@ -88,8 +88,9 @@ Double_t AnalyticTTDConv::GetParameter( UInt_t i ) const
     return fA2tdcCor[i-4];
   case 8:
     return fdtime;
+  default:
+    return kBig;
   }
-  return kBig;
 }
 
 //_____________________________________________________________________________

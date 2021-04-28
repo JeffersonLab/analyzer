@@ -18,25 +18,17 @@ using namespace std;
 
 //____________________________________________________________________
 THaG0HelicityReader::THaG0HelicityReader() :
-  fPresentReading(0), fQrt(0), fGate(0), fTimestamp(0),
+  fPresentReading(false), fQrt(false), fGate(false), fTimestamp(0),
   fOldT1(-1.0), fOldT2(-1.0), fOldT3(-1.0), fValidTime(false),
   fG0Debug(0), fHaveROCs(false), fNegGate(false)
 {
   // Default constructor
-
-  memset( fROCinfo, 0, sizeof(fROCinfo) );
-}
-
-//____________________________________________________________________
-THaG0HelicityReader::~THaG0HelicityReader()
-{
-  // Destructor
 }
 
 //____________________________________________________________________
 void THaG0HelicityReader::Clear( Option_t* ) 
 {
-  fPresentReading = fQrt = fGate = 0;
+  fPresentReading = fQrt = fGate = false;
   fTimestamp = 0.0;
   fValidTime = false;
 }
@@ -49,11 +41,11 @@ Int_t THaG0HelicityReader::FindWord( const THaEvData& evdata,
   if (len <= 4) 
     return -1;
 
-  Int_t i;
+  Int_t i = 0;
   if( info.header == 0 )
     i = info.index;
   else {
-    for( i=0; i<len && evdata.GetRawData(info.roc, i) != info.header; 
+    for( ; i<len && evdata.GetRawData(info.roc, i) != info.header;
 	 ++i) {}
     i += info.index;
   }
@@ -77,12 +69,12 @@ Int_t THaG0HelicityReader::ReadDatabase( const char* dbfilename,
   Int_t invert_gate = 0;
   fROCinfo[kROC2].roc = fROCinfo[kROC3].roc = -1;
   DBRequest req[] = {
-    { "helroc",      &fROCinfo[kHel],  kInt, 3, 0, -2 },
-    { "timeroc",     &fROCinfo[kTime], kInt, 3, 0, -2 },
-    { "time2roc",    &fROCinfo[kROC2], kInt, 3, 1, -2 },
-    { "time3roc",    &fROCinfo[kROC3], kInt, 3, 1, -2 },
-    { "neg_g0_gate", &invert_gate,     kInt, 0, 1, -2 },
-    { 0 }
+    { "helroc",      &fROCinfo[kHel],  kInt, 3, false, -2 },
+    { "timeroc",     &fROCinfo[kTime], kInt, 3, false, -2 },
+    { "time2roc",    &fROCinfo[kROC2], kInt, 3, true,  -2 },
+    { "time3roc",    &fROCinfo[kROC3], kInt, 3, true,  -2 },
+    { "neg_g0_gate", &invert_gate,     kInt, 0, true, -2 },
+    { nullptr }
   };
   Int_t st = THaAnalysisObject::LoadDB( file, date, req, prefix );
   fclose(file);

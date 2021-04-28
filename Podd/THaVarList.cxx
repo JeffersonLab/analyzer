@@ -95,14 +95,13 @@ THaVar* THaVarList::DefineByType( const char* name, const char* descript,
   }
 
   ptr = new THaVar( name, descript, var, type, -1, nullptr, count );
-  if( !ptr->IsZombie() )
-    AddLast( ptr );
-  else {
+  if( ptr->IsZombie() ) {
     Warning( errloc, "Error creating variable %s", name );
     delete ptr;
-    ptr = nullptr;
+    return nullptr;
   }
 
+  AddLast( ptr );
   return ptr;
 }
 

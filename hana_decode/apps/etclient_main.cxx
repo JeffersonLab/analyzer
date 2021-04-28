@@ -13,11 +13,9 @@ int main(int argc, char *argv[])
 {
 
        int mymode = 1;   // preferred mode for ET
-       THaEtClient *et;
-       et = new THaEtClient("adaqcp", mymode);  // opens connection to adaqcp computer.
+       // open connection to adaqcp computer.
+       auto* et = new THaEtClient("adaqcp", mymode);
  
-       UInt_t* evbuff = new UInt_t[et->getBuffSize()];   // raw data buffer
-
        int NUMEVT = 10000;
        ULong64_t lensum=0;
        ULong64_t dummysum = 0;
@@ -50,6 +48,4 @@ int main(int argc, char *argv[])
 	 //	 if (PRINTOUT) usleep(5000);
        }
        cout << "END, processes "<<NUMEVT<<" events,  sums "<<lensum<<"  "<<dummysum<<endl;
-
-       delete [] evbuff;
 }

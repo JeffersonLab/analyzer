@@ -19,7 +19,7 @@ namespace Decoder {
     DoRegister( ModuleType( "Decoder::Caen792Module" , 792 ));
 
   Caen792Module::Caen792Module(Int_t crate, Int_t slot) : Caen775Module(crate, slot) {
-    fDebugFile=0;
+    fDebugFile=nullptr;
   }
 
 }

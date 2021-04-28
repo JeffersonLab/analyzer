@@ -24,7 +24,8 @@ using namespace Decoder;
 
 // "Database" of known frontend module numbers and types
 // FIXME: load from db_cratemap
-struct ModuleDef {
+class ModuleDef {
+public:
   Int_t       model; // model identifier
   ChannelType type;  // Module type
 };
@@ -187,7 +188,7 @@ Int_t THaDetMap::AddModule( Int_t crate, Int_t slot,
     m.type = ChannelType::kUndefined;
 
   fMap.push_back(std::move(pm));
-  return fMap.size();
+  return GetSize();
 }
 
 //_____________________________________________________________________________

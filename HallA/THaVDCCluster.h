@@ -18,7 +18,8 @@ class THaVDCPointPair;
 class THaTrack;
 
 namespace VDC {
-  struct FitCoord_t {
+  class FitCoord_t {
+  public:
     FitCoord_t( Double_t _x, Double_t _y, Double_t _w = 1.0, Int_t _s = 1 )
       : x(_x), y(_y), w(_w), s(_s) {}
     Double_t x, y, w;
@@ -40,8 +41,8 @@ class THaVDCCluster : public TObject {
 
 public:
 
-  THaVDCCluster( THaVDCPlane* owner = 0 );
-  virtual ~THaVDCCluster() {}
+  explicit THaVDCCluster( THaVDCPlane* owner = nullptr );
+  virtual ~THaVDCCluster() = default;
 
   enum EMode { kSimple, kWeighted, kT0 };
 
@@ -62,7 +63,7 @@ public:
   //Get and Set Functions
   THaVDCHit*     GetHit(Int_t i)     const { return fHits[i]; }
   THaVDCPlane*   GetPlane()          const { return fPlane; }
-  Int_t          GetSize ()          const { return fHits.size(); }
+  Int_t          GetSize ()          const { return static_cast<Int_t>(fHits.size()); }
   Double_t       GetSlope()          const { return fSlope; }
   Double_t       GetLocalSlope()     const { return fLocalSlope; }
   Double_t       GetSigmaSlope()     const { return fSigmaSlope; }
@@ -80,7 +81,7 @@ public:
   Double_t       GetChi2()           const { return fChi2; }
   Double_t       GetNDoF()           const { return fNDoF; }
   Bool_t         IsFitOK()           const { return fFitOK; }
-  Bool_t         IsUsed()            const { return (fTrack != 0); }
+  Bool_t         IsUsed()            const { return (fTrack != nullptr); }
 
   void           SetPlane( THaVDCPlane* plane )     { fPlane = plane; }
   void           SetIntercept( Double_t intercept ) { fInt = intercept; }
@@ -119,7 +120,7 @@ protected:
   void   CalcLocalDist();     // calculate the local track to wire distances
 
   void   FitSimpleTrack( Bool_t weighted = false );
-  void   FitNLTrack();        // Non-linear 3-parameter fit
+  //void   FitNLTrack();        // Non-linear 3-parameter fit
 
   VDC::chi2_t CalcChisquare( Double_t slope, Double_t icpt, Double_t d0 ) const;
   void   DoCalcChisquare( Double_t& chi2, Int_t& nhits,

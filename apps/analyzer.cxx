@@ -7,6 +7,7 @@
 #include "THaInterface.h"
 #include <iostream>
 #include <cstring>
+#include <memory>
 
 using namespace std;
 
@@ -30,12 +31,11 @@ int main(int argc, char **argv)
     return 0;
   }
 
-  TApplication *theApp =
-    new THaInterface( "The Hall A analyzer", &argc, argv, 0, 0, no_logo );
+  unique_ptr<TApplication> theApp{
+    new THaInterface("The Hall A analyzer", &argc, argv, nullptr, 0, no_logo)};
   theApp->Run(false);
 
   cout << endl;
-  delete theApp;
 
   return 0;
 }

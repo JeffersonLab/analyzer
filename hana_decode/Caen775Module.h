@@ -16,12 +16,11 @@ class Caen775Module : public VmeModule {
 
 public:
 
-   Caen775Module() : fNumHits(0) {}
+   Caen775Module() = default;
    Caen775Module(Int_t crate, Int_t slot);
-   virtual ~Caen775Module();
+   virtual ~Caen775Module() = default;
 
    using Module::GetData;
-   using Module::LoadSlot;
 
    virtual UInt_t GetData(Int_t chan) const;
    virtual void Init();
@@ -35,8 +34,6 @@ public:
 private:
 
    static const size_t NTDCCHAN = 32;
-
-   Int_t *fNumHits;
 
    static TypeIter_t fgThisType;
    ClassDef(Caen775Module,0)  //  Caen775 of a module; make your replacements

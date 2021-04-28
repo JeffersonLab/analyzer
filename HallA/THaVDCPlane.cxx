@@ -319,7 +319,7 @@ Int_t THaVDCPlane::ReadDatabaseErrcheck( const vector<Float_t>& tdc_offsets,
           "number of wires (%d)", nchan, fNelem);
     return kInitError;
   }
-  nchan = tdc_offsets.size();
+  nchan = static_cast<Int_t>(tdc_offsets.size());
   if( nchan != fNelem ) {
     Error(Here(here),
           "Number of TDC offset values (%d) disagrees with "

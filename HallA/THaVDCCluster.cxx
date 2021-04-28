@@ -92,7 +92,7 @@ Int_t THaVDCCluster::Compare( const TObject* obj ) const
   if( !obj || IsA() != obj->IsA() )
     return -1;
 
-  auto rhs = static_cast<const THaVDCCluster*>( obj );
+  const auto* rhs = static_cast<const THaVDCCluster*>( obj );
   if( GetPivotWireNum() < rhs->GetPivotWireNum() )
     return -1;
   if( GetPivotWireNum() > rhs->GetPivotWireNum() )
@@ -114,9 +114,9 @@ void THaVDCCluster::EstTrackParameters()
     return;
 
   // Find pivot
-  Double_t time = 0, minTime = 1000;  // drift-times in seconds
+  Double_t minTime = 1000;  // drift-times in seconds
   for (int i = 0; i < GetSize(); i++) {
-    time = fHits[i]->GetTime();
+    Double_t time = fHits[i]->GetTime();
     if (time < minTime) { // look for lowest time
       minTime = time;
       fPivot = fHits[i];
@@ -251,9 +251,6 @@ void THaVDCCluster::FitSimpleTrack( Bool_t weighted )
 	     // Do keep current values of slope and intercept
   }
 
-  Double_t m, sigmaM;  // Slope, St. Dev. in slope
-  Double_t b, sigmaB;  // Intercept, St. Dev in Intercept
-
   fCoord.clear();
 
   Double_t bestFit = 0.0;
@@ -275,7 +272,7 @@ void THaVDCCluster::FitSimpleTrack( Bool_t weighted )
 
     Double_t x = fHits[i]->GetPos();
     Double_t y = fHits[i]->GetDist() + fTimeCorrection;
-    Double_t w;
+    Double_t w = 1.0;
     if( weighted ) {
       w = fHits[i]->GetdDist();
       // the hit will be ignored if the uncertainty is < 0
@@ -283,18 +280,12 @@ void THaVDCCluster::FitSimpleTrack( Bool_t weighted )
 	w = 1./(w*w); // sigma^-2 is the weight
       else
 	w = -1.;
-    } else {
-      w = 1.0;
     }
     fCoord.push_back( FitCoord_t(x,y,w) );
   }
 
   const Int_t nSignCombos = 2; //Number of different sign combinations
   for (int i = 0; i < nSignCombos; i++) {
-    Double_t F, sigmaF2;  // intermediate slope and St. Dev.**2
-    Double_t G, sigmaG2;  // intermediate intercept and St. Dev.**2
-    Double_t sigmaFG;     // correlated uncertainty
-
     Double_t sumX  = 0.0;   //Positions
     Double_t sumXW = 0.0;
     Double_t sumXX = 0.0;
@@ -332,21 +323,27 @@ void THaVDCCluster::FitSimpleTrack( Bool_t weighted )
     // Standard formulae for linear regression (see Bevington)
     Double_t Delta = W * sumXX - sumX * sumX;
 
-    F  = (sumXX * sumY - sumX * sumXY) / Delta;
-    G  = (W * sumXY - sumX * sumY) / Delta;
-    sigmaF2 = ( sumXX / Delta );
-    sigmaG2 = ( W / Delta );
-    sigmaFG = ( -sumX / Delta );
+    // intermediate slope and St. Dev.**2
+    Double_t F  = (sumXX * sumY - sumX * sumXY) / Delta;
+    Double_t sigmaF2 = ( sumXX / Delta );
+    // intermediate intercept and St. Dev.**2
+    Double_t G  = (W * sumXY - sumX * sumY) / Delta;
+    Double_t sigmaG2 = ( W / Delta );
+
+    // correlated uncertainty
+    Double_t sigmaFG = ( -sumX / Delta );
 
     // calculate chi2 for the track given this slope and intercept
     chi2_t chi2 = CalcChisquare( G, F, 0 );
 
-    m  =   1/G;
-    b  = - F/G;
+    // Slope, St. Dev. in slope
+    Double_t m  =   1/G;
+    Double_t sigmaM = m * m * TMath::Sqrt( sigmaG2 );
+    // Intercept, St. Dev in Intercept
+    Double_t b  = - F/G;
+    Double_t sigmaB = TMath::Sqrt(sigmaF2 + F * F / (G * G) * sigmaG2
+                                  - 2 * F / G * sigmaFG) / TMath::Abs(G);
 
-    sigmaM = m * m * TMath::Sqrt( sigmaG2 );
-    sigmaB = TMath::Sqrt( sigmaF2 + F*F/(G*G)*sigmaG2 - 2*F/G*sigmaFG ) /
-      TMath::Abs(G);
 
     // scale the uncertainty of the fit parameters based upon the
     // quality of the fit. This really should not be necessary if
@@ -402,25 +399,18 @@ Int_t THaVDCCluster::LinearClusterFitWithT0()
 		// Do keep current values of slope and intercept
   }
 
-  Double_t m, sigmaM;   // Slope, St. Dev. in slope
-  Double_t b, sigmaB;   // Intercept, St. Dev in Intercept
-  Double_t d0, sigmaD0;
-
-  sigmaM = sigmaB = sigmaD0 = 0;
+  Double_t sigmaM = 0, sigmaB = 0, sigmaD0 = 0;
 
   fCoord.clear();
 
   //--- Copy hit data into local arrays
-  Int_t ihit, incr, ilast = GetSize()-1;
+  Int_t ihit = 0, incr = 1, ilast = GetSize()-1;
   // Ensure that the first element of the local arrays always corresponds
   // to the wire with the smallest x position
   bool reversed = ( fPlane->GetWSpac() < 0 );
   if( reversed ) {
     ihit = ilast;
     incr = -1;
-  } else {
-    ihit = 0;
-    incr = 1;
   }
   for( Int_t i = 0; i < GetSize(); ihit += incr, ++i ) {
     assert( ihit >= 0 && ihit < GetSize() );
@@ -455,6 +445,7 @@ Int_t THaVDCCluster::LinearClusterFitWithT0()
       fCoord[ipivot].s *= -1;
 
     // Do the fit
+    Double_t m = kBig, b = kBig, d0 = kBig;
     Linear3DFit( m, b, d0 );
 
     // calculate chi2 for the track given this slope,

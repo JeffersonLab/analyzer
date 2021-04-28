@@ -11,7 +11,6 @@
 #include "TError.h"
 #include "THaAnalysisObject.h"   // For LoadDB
 #include <iostream>
-#include <vector>
 #include "TH1F.h"
 
 using namespace std;
@@ -20,27 +19,26 @@ using namespace std;
 THaQWEAKHelicityReader::THaQWEAKHelicityReader()
   : fPatternTir(0), fHelicityTir(0), fTSettleTir(0), fTimeStampTir(0),
     fOldTimeStampTir(0), fIRing(0),
+    fHelicityRing{}, fPatternRing{},
+    fTimeStampRing{}, fT3Ring{}, fU3Ring{}, fT5Ring{}, fT10Ring{},
     fQWEAKDebug(0),      // Debug level
     fHaveROCs(false),   // Required ROCs are defined
-    fNegGate(false)     // Invert polarity of gate, so that 0=active
+    fNegGate(false),    // Invert polarity of gate, so that 0=active
+    fHistoR{}
 {
   // Default constructor
-  
-  memset( fROCinfo, 0, 3*sizeof(ROCinfo) );
-  for(auto & i : fHistoR)
-    i = nullptr;
 }
 
 //____________________________________________________________________
-THaQWEAKHelicityReader::~THaQWEAKHelicityReader() 
-{
-  // Destructor
-
-  // Histograms will be deleted by ROOT
-  // for( Int_t i = 0; i < NHISTR; ++i ) {
-  //   delete fHistoR[i];
-  // }
-}
+//THaQWEAKHelicityReader::~THaQWEAKHelicityReader()
+//{
+//  // Destructor
+//
+//  // Histograms will be deleted by ROOT
+//  // for( Int_t i = 0; i < NHISTR; ++i ) {
+//  //   delete fHistoR[i];
+//  // }
+//}
 
 //____________________________________________________________________
 void THaQWEAKHelicityReader::Print() 
@@ -108,11 +106,11 @@ Int_t THaQWEAKHelicityReader::FindWord( const THaEvData& evdata,
   if (len <= 4) 
     return -1;
 
-  Int_t i;
+  Int_t i = 0;
   if( info.header == 0 )
     i = info.index;
   else {
-    for( i=0; i<len &&
+    for( ; i<len &&
 	   (evdata.GetRawData(info.roc, i) & 0xffff000) != info.header;
 	 ++i) {}
     i += info.index;
@@ -220,8 +218,8 @@ Int_t THaQWEAKHelicityReader::ReadData( const THaEvData& evdata )
     ::Error( here, "Cannot find timestamp" );
     return -1;
   }
-  
-  fTimeStampTir=static_cast<UInt_t> (evdata.GetRawData( hroc, itime ));  
+
+  fTimeStampTir = evdata.GetRawData(hroc, itime);
   
   // Invert the gate polarity if requested
   //  if( fNegGate )

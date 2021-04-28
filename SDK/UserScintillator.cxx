@@ -61,7 +61,7 @@ Int_t UserScintillator::DefineVariables( EMode mode )
   // Define/delete global variables
 
   // Since the base class defines its own variables, call the base class
-  // implementation here to get those variables.
+  // implementation here to create them.
   Int_t ret = THaScintillator::DefineVariables( mode );
   if( ret )
     return ret;

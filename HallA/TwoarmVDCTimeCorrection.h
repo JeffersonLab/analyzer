@@ -32,7 +32,8 @@ public:
 
 protected:
   // Configuration
-  struct DetDef {
+  class DetDef {
+  public:
     explicit DetDef( const char* name ) :
       fName(name), fObj(nullptr),
       fNthit(nullptr), fTpad(nullptr), fRT(nullptr), fLT(nullptr),

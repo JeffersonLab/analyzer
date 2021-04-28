@@ -15,9 +15,6 @@
 #include "THaCodaFile.h"
 #include "TSystem.h"
 #include <iostream>
-#include <cstdlib>
-#include <cstring>
-#include <cerrno>
 #include "evio.h"
 
 using namespace std;
@@ -36,13 +33,13 @@ namespace Decoder {
     : ffirst(0), max_to_filt(0), maxflist(0), maxftype(0)
   {
     // Standard constructor. Pass read or write flag
-    if( codaOpen(fname,readwrite) != CODA_OK )
+    if( THaCodaFile::codaOpen(fname,readwrite) != CODA_OK )
       fIsGood = false;
   }
 
   THaCodaFile::~THaCodaFile () {
     //Destructor
-    codaClose();
+    THaCodaFile::codaClose();
   }
 
   Int_t THaCodaFile::codaOpen(const char* fname, Int_t mode )
@@ -56,13 +53,9 @@ namespace Decoder {
   {
     // Open CODA file 'fname' with 'readwrite' access
     init(fname);
-    // evOpen really wants char*, so we need to do this safely. (The string
-    // _might_ be modified internally ...) Silly, really.
-    char *d_fname = strdup(fname), *d_flags = strdup(readwrite);
-    Int_t status = evOpen(d_fname,d_flags,&handle);
+    Int_t status = evOpen((char*)fname, (char*)readwrite, &handle);
     fIsGood = (status == S_SUCCESS);
     staterr("open",status);
-    free(d_fname); free(d_flags);
     return ReturnCode(status);
   }
 
@@ -84,7 +77,7 @@ namespace Decoder {
 // Must be called once per event.
     Int_t status;
     if( handle ) {
-      status = evRead(handle, evbuffer, MAXEVLEN);
+      status = evRead(handle, getEvBuffer(), MAXEVLEN);
       fIsGood = (status == S_SUCCESS || status == EOF );
       staterr("read",status);
     } else {
@@ -142,7 +135,7 @@ Int_t THaCodaFile::filterToFile( const char* output_file )
     fIsGood = false;
     return CODA_FATAL;
   }
-  auto fout = new THaCodaFile(output_file, "w");
+  auto* fout = new THaCodaFile(output_file, "w");
   if( !fout->isGood()) {
     delete fout;
     fIsGood = false;
@@ -150,7 +143,7 @@ Int_t THaCodaFile::filterToFile( const char* output_file )
   }
   Int_t nfilt = 0;
 
-  Int_t status, fout_status;
+  Int_t status = CODA_OK, fout_status = CODA_OK;
   while((status = codaRead()) == CODA_OK ) {
     UInt_t* rawbuff = getEvBuffer();
     Int_t evtype = rawbuff[1] >> 16;

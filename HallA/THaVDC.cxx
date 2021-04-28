@@ -12,7 +12,6 @@
 
 #include "THaVDC.h"
 #include "THaEvData.h"
-#include "THaDetMap.h"
 #include "THaTrack.h"
 #include "THaVDCChamber.h"
 #include "THaVDCPoint.h"
@@ -37,23 +36,20 @@
 #include <iostream>
 #include <iomanip>
 
-#ifdef WITH_DEBUG
-#include <iostream>
-#endif
-
 using namespace std;
 using namespace VDC;
 
 // Helper structure for parsing tensor data
 typedef vector<THaVDC::THaMatrixElement> MEvec_t;
-struct MEdef_t {
-  MEdef_t() : npow(0), elems(nullptr), isfp(false), fpidx(0) {}
+class MEdef_t {
+public:
+  MEdef_t() : elems(nullptr), npow(0), fpidx(0), isfp(false) {}
   MEdef_t( Int_t npw, MEvec_t* elemp, Bool_t is_fp = false, Int_t fp_idx = 0 )
-    : npow(npw), elems(elemp), isfp(is_fp), fpidx(fp_idx) {}
-  MEvec_t::size_type npow; // Number of exponents for this element type
-  MEvec_t* elems;          // Pointer to member variable holding data
-  Bool_t isfp;             // This defines a focal plane matrix element
-  Int_t fpidx;             // Index into fFPMatrixElems
+    : elems(elemp), npow(npw), fpidx(fp_idx), isfp(is_fp) {}
+  MEvec_t* elems;     // Pointer to member variable holding data
+  Int_t    npow;      // Number of exponents for this element type
+  Int_t    fpidx;     // Index into fFPMatrixElems
+  Bool_t   isfp;      // This defines a focal plane matrix element
 };
 
 //_____________________________________________________________________________
@@ -101,11 +97,10 @@ THaAnalysisObject::EStatus THaVDC::Init( const TDatime& date )
   if( IsZombie() || !fUpper || !fLower )
     return fStatus = kInitError;
 
-  EStatus status;
-  if( (status = THaTrackingDetector::Init( date )) ||
-      (status = fLower->Init( date )) ||
-      (status = fUpper->Init( date )) )
-    return fStatus = status;
+  if( (fStatus = THaTrackingDetector::Init( date )) ||
+      (fStatus = fLower->Init( date )) ||
+      (fStatus = fUpper->Init( date )) )
+    return fStatus;
 
   // Get the spacing between the VDC chambers
   fSpacing = fUpper->GetUPlane()->GetZ() - fLower->GetUPlane()->GetZ();
@@ -182,7 +177,7 @@ static Int_t ParseMatrixElements( const string& MEstring,
             ME.poly.push_back( atof(word.c_str()) );
             if( ME.poly.back() != 0.0 ) {
               ME.iszero = false;
-              ME.order = ME.poly.size();
+              ME.order = static_cast<int>(ME.poly.size());
             }
           }
         }
@@ -638,8 +633,8 @@ Int_t THaVDC::ConstructTracks( TClonesArray* tracks, Int_t mode )
       auto* thisID = new THaVDCTrackID(lowerPoint,upperPoint);
       THaTrack* theTrack = nullptr;
       bool found = false;
-      int t;
-      for( t = 0; t < n_exist; t++ ) {
+      int t = 0;
+      for( ; t < n_exist; t++ ) {
         theTrack = static_cast<THaTrack*>( tracks->At(t) );
         // This test is true if an existing track has exactly the same clusters
         // as the current one (defined by lowerPoint/upperPoint)
@@ -925,11 +920,8 @@ void THaVDC::CalcTargetCoords( THaTrack* track )
 
   const Int_t kNUM_PRECOMP_POW = 10;
 
-  Double_t x_fp, y_fp, th_fp, ph_fp;
-  Double_t powers[kNUM_PRECOMP_POW][5];  // {(x), th, y, ph, abs(th) }
-  Double_t x, y, theta, phi, dp, p, pathl;
-
   // first select the coords to use
+  Double_t x_fp, y_fp, th_fp, ph_fp;
   if( fCoordType == kTransport ) {
     x_fp = track->GetX();
     y_fp = track->GetY();
@@ -943,6 +935,7 @@ void THaVDC::CalcTargetCoords( THaTrack* track )
   }
 
   // calculate the powers we need
+  Double_t powers[kNUM_PRECOMP_POW][5];  // {(x), th, y, ph, abs(th) }
   for(int i=0; i<kNUM_PRECOMP_POW; i++) {
     powers[i][0] = pow(x_fp, i);
     powers[i][1] = pow(th_fp, i);
@@ -960,20 +953,22 @@ void THaVDC::CalcTargetCoords( THaTrack* track )
   CalcMatrix(x_fp, fPTAMatrixElems);
 
   // calculate the coordinates at the target
-  theta = CalcTargetVar(fTMatrixElems, powers);
-  phi = CalcTargetVar(fPMatrixElems, powers)+CalcTargetVar(fPTAMatrixElems,powers);
-  y = CalcTargetVar(fYMatrixElems, powers)+CalcTargetVar(fYTAMatrixElems,powers);
+  Double_t theta = CalcTargetVar(fTMatrixElems, powers);
+  Double_t phi = CalcTargetVar(fPMatrixElems, powers) +
+                 CalcTargetVar(fPTAMatrixElems, powers);
+  Double_t y = CalcTargetVar(fYMatrixElems, powers) +
+               CalcTargetVar(fYTAMatrixElems, powers);
 
   auto* app = static_cast<THaSpectrometer*>(GetApparatus());
   // calculate momentum
-  dp = CalcTargetVar(fDMatrixElems, powers);
-  p  = app->GetPcentral() * (1.0+dp);
+  Double_t dp = CalcTargetVar(fDMatrixElems, powers);
+  Double_t p  = app->GetPcentral() * (1.0+dp);
 
   // pathlength matrix is for the Transport coord plane
-  pathl = CalcTarget2FPLen(fLMatrixElems, powers);
+  Double_t pathl = CalcTarget2FPLen(fLMatrixElems, powers);
 
   //FIXME: estimate x ??
-  x = 0.0;
+  Double_t x = 0.0;
 
   // Save the target quantities with the tracks
   track->SetTarget(x, y, theta, phi);
@@ -1009,12 +1004,11 @@ Double_t THaVDC::CalcTargetVar(const vector<THaMatrixElement>& matrix,
   // calculates the value of a variable at the target
   // the x-dependence is already in the matrix, so only 1-3 (or np) used
   Double_t retval=0.0;
-  Double_t v=0;
   for( const auto& ME : matrix )
     if( ME.v != 0.0 ) {
-      v = ME.v;
-      unsigned int np = ME.pw.size(); // generalize for extra matrix elems.
-      for( unsigned int i = 0; i < np; ++i )
+      Double_t v = ME.v;
+      auto np = ME.pw.size(); // generalize for extra matrix elems.
+      for( size_t i = 0; i < np; ++i )
         v *= powers[ME.pw[i]][i + 1];
       retval += v;
       //      retval += it->v * powers[it->pw[0]][1]
@@ -1066,21 +1060,17 @@ void THaVDC::CorrectTimeOfFlight(TClonesArray& tracks)
     auto* track = static_cast<THaTrack*>( tracks.At(t) );
 
     // calculate the correction, since it's on a per track basis
-    Double_t s1_dist, vdc_dist, dist, tdelta;
-    if(!s1->CalcPathLen(track, s1_dist))
-      s1_dist = 0.0;
-    if(!CalcPathLen(track, vdc_dist))
-      vdc_dist = 0.0;
+    Double_t s1_dist = 0.0, vdc_dist = 0.0;
+    s1->CalcPathLen(track, s1_dist);
+    CalcPathLen(track, vdc_dist);
 
     // since the z=0 of the transport coords is inclined with respect
     // to the VDC plane, the VDC correction depends on the location of
     // the track
-    if( track->GetX() < 0 )
-      dist = s1_dist + vdc_dist;
-    else
-      dist = s1_dist - vdc_dist;
+    Double_t dist = (track->GetX() < 0) ? s1_dist + vdc_dist
+                                        : s1_dist - vdc_dist;
 
-    tdelta = ( fCentralDist - dist) / v;
+    Double_t tdelta = ( fCentralDist - dist) / v;
     //cout<<"time correction: "<<tdelta<<endl;
 
     // apply the correction
@@ -1115,8 +1105,9 @@ void THaVDC::FindBadTracks(TClonesArray& tracks)
     // project the current x and y positions into the s2 plane
     // if the tracks go out of the bounds of the s2 plane,
     // toss the track out
-    Double_t x2, y2;
-    if( !s2->CalcInterceptCoords(track, x2, y2) || !s2->IsInActiveArea(x2,y2) ) {
+    Double_t x2, y2; // dummy variables
+    if( !s2->CalcInterceptCoords(track, x2, y2) ||
+        !s2->IsInActiveArea(x2, y2) ) {
 
       // for now, we just flag the tracks as bad
       track->SetFlag( track->GetFlag() | kBadTrack );

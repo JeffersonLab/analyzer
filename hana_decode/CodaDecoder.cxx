@@ -41,7 +41,14 @@ CodaDecoder::CodaDecoder() :
 }
 
 //_____________________________________________________________________________
+#ifndef WANTDEBUG
 CodaDecoder::~CodaDecoder() = default;
+#else
+CodaDecoder::~CodaDecoder()
+{
+  delete fDebugFile; fDebugFile = nullptr;
+}
+#endif
 
 //_____________________________________________________________________________
 Int_t CodaDecoder::GetPrescaleFactor(Int_t trigger_type) const
@@ -323,7 +330,7 @@ Int_t CodaDecoder::LoadFromMultiBlock()
 
 //_____________________________________________________________________________
 Int_t CodaDecoder::roc_decode( Int_t roc, const UInt_t* evbuffer,
-				  Int_t ipt, Int_t istop )
+                               Int_t ipt, Int_t istop )
 {
   // Decode a Readout controller
   assert( evbuffer && fMap );
@@ -447,7 +454,7 @@ Int_t CodaDecoder::roc_decode( Int_t roc, const UInt_t* evbuffer,
 
 //_____________________________________________________________________________
 Int_t CodaDecoder::bank_decode( Int_t roc, const UInt_t* evbuffer,
-				  Int_t ipt, Int_t istop )
+                                Int_t ipt, Int_t istop )
 {
   // Split a roc into banks, if using bank structure
   // Then loop over slots and decode it from a bank if the slot
@@ -766,8 +773,8 @@ void CodaDecoder::CompareRocs()
 }
 
 //_____________________________________________________________________________
-void CodaDecoder::ChkFbSlot( Int_t roc, const UInt_t* evbuffer,
-				  Int_t ipt, Int_t istop )
+void CodaDecoder::ChkFbSlot( Int_t roc, const UInt_t* evbuffer, Int_t ipt,
+                             Int_t istop )
 {
   const UInt_t* p      = evbuffer+ipt;    // Points to ROC ID word (1 before data)
   const UInt_t* pstop  =evbuffer+istop;   // Points to last word of data in roc
@@ -813,7 +820,6 @@ void CodaDecoder::ChkFbSlots()
     }
   }
 }
-
 
 //_____________________________________________________________________________
 void CodaDecoder::SetRunTime( ULong64_t tloc )

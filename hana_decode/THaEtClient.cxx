@@ -17,66 +17,58 @@
 #include <iostream>
 #include <cstdlib>
 #include <unistd.h>
-#include <errno.h>
-#include <limits.h>
-#include <float.h>
+#include <cerrno>
+#include <climits>
+#include <cfloat>
 #include <cstring>
 #include <strings.h>
 #include <ctime>
-#include <sys/time.h>
+#include <sys/time.h>  // for timespec
 #include <netdb.h>
 
 using namespace std;
 
+
+static const int FAST          = 25;
+static const int SMALL_TIMEOUT = 10;
+static const int BIG_TIMEOUT   = 20;
+
 namespace Decoder {
 
+// Common member initialization for our constructors
+#define initflags \
+nread(0), nused(0), timeout(BIG_TIMEOUT),               \
+id(0), sconfig(0), my_stat(0), my_att(0), openconfig(0),\
+daqhost(nullptr), session(nullptr), etfile(nullptr),    \
+waitflag(0), didclose(0), notopened(0), firstread(1),   \
+firstRateCalc(1), evsum(0), xcnt(0), daqt1(-1), ratesum(0)
+
 THaEtClient::THaEtClient(Int_t smode)
+  : initflags
 {
   // uses default server (where CODA runs)
-  initflags();
   const char* defaultcomputer = ADAQS2;
-  codaOpen(defaultcomputer,smode);
+  THaEtClient::codaOpen(defaultcomputer,smode);
 }
 
 THaEtClient::THaEtClient(const char* computer,Int_t smode)
+  : initflags
 {
-  initflags();
-  codaOpen(computer,smode);
+  THaEtClient::codaOpen(computer,smode);
 }
 
 THaEtClient::THaEtClient(const char* computer, const char* mysession, Int_t smode)
+  : initflags
 {
-  initflags();
-  codaOpen(computer, mysession, smode);
+  THaEtClient::codaOpen(computer, mysession, smode);
 }
 
 THaEtClient::~THaEtClient() {
   delete [] daqhost;
   delete [] session;
   delete [] etfile;
-  Int_t status = codaClose();
+  Int_t status = THaEtClient::codaClose();
   if (status == CODA_ERROR) cout << "ERROR: closing THaEtClient"<<endl;
-}
-
-void THaEtClient::initflags()
-{
-  daqhost = nullptr;
-  session = nullptr;
-  etfile  = nullptr;
-  DEBUG = 0;
-  FAST = 25;
-  SMALL_TIMEOUT = 10;
-  BIG_TIMEOUT = 20;
-  didclose = 0;
-  notopened = 0;
-  firstread = 1;
-  nread = 0;
-  nused = 0;
-  timeout = BIG_TIMEOUT;
-  firstRateCalc = 1;
-  evsum = 0;
-  xcnt = 0;
-  ratesum = 0;
 }
 
 Int_t THaEtClient::init(const char* mystation)

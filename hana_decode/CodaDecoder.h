@@ -65,8 +65,9 @@ protected:
   // CODA3 stuff
   Int_t evcnt_coda3;
 
-  typedef struct trigBankObject {
-     trigBankObject() : blksize(0), tag(0), nrocs(0), len(0), withTimeStamp(0),
+  class TBOBJ {
+  public:
+     TBOBJ() : blksize(0), tag(0), nrocs(0), len(0), withTimeStamp(0),
          withRunInfo(0), evtNum(0), runInfo(0), start(nullptr), evTS(nullptr), evType(nullptr) {}
      int      blksize;              /* total number of triggers in the Bank */
      uint16_t tag;                  /* Trigger Bank Tag ID = 0xff2x */
@@ -79,7 +80,7 @@ protected:
      uint32_t *start;               /* Pointer to start of the Trigger Bank */
      uint64_t *evTS;                /* Pointer to the array of Time Stamps */
      uint16_t *evType;              /* Pointer to the array of Event Types */
-   } TBOBJ;
+   };
 
   TBOBJ tbank;
 

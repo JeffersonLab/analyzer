@@ -75,7 +75,7 @@ void TrigBitLoc::Load( const THaEvData& evdata )
 
   // Figure out which triggers got a hit.  These are multihit TDCs, so we
   // need to sort out which hit we want to take by applying cuts.
-  for( UInt_t ihit = 0; ihit < NumHits(); ++ihit ) {
+  for( Int_t ihit = 0; ihit < NumHits(); ++ihit ) {
     if( Get(ihit) > cutlo && Get(ihit) < cuthi ) {
       data = 1;
       if( bitloc )

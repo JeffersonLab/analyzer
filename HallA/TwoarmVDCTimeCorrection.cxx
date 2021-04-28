@@ -79,7 +79,8 @@ TwoarmVDCTimeCorrection::Init( const TDatime& run_time )
     detdef.fObj = obj;
     detdef.fNelem = obj->GetNelem();
     // Retrieve pointers to the global variables we need
-    struct VarDef {
+    class VarDef {
+    public:
       TString  name;
       THaVar*& pvar;
     };
@@ -129,8 +130,8 @@ Int_t TwoarmVDCTimeCorrection::Process( const THaEvData& )
     // Both scintillators have at least one complete hit, i.e. the TDCs on both
     // sides of a paddle fired
     //FIXME: taking index = 0 when fNthit > 1 not necessarily correct!
-    Int_t thePad1 = det1.fTpad->GetValueInt(0);
-    Int_t thePad2 = det2.fTpad->GetValueInt(0);
+    auto thePad1 = static_cast<Int_t>( det1.fTpad->GetValueInt(0) );
+    auto thePad2 = static_cast<Int_t>( det2.fTpad->GetValueInt(0) );
     if( thePad1 >= 0 && thePad1 < det1.fNelem &&
         thePad2 >= 0 && thePad2 < det2.fNelem ) {
       //TODO: use fLT too

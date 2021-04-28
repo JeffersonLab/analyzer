@@ -160,7 +160,7 @@ THaAnalysisObject::EStatus UserEvtHandler::Init(const TDatime& /* date */ )
 
   // initialize map elements to -1 (means not found yet)
   for( auto& dataKey : dataKeys ) {
-    if( theDataMap.insert(make_pair(dataKey, -1)).second == false ) {
+    if( !theDataMap.insert(make_pair(dataKey, -1)).second ) {
       Warning(Here("UserEvtHandler::Init"), "Element %s already defined",
               dataKey.c_str());
     }

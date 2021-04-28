@@ -36,7 +36,7 @@
 #include <algorithm>
 #include <iostream>
 #include <sstream>
-#include <cmath>
+#include <iterator>  // for std::distance
 #include <cstdlib>
 #include <cstdio>
 #include <string>
@@ -529,7 +529,8 @@ const char* Here( const char* method, const char* prefix )
     full_prefix.Prepend("(\""); full_prefix.Append("\")");
     const char* scope = nullptr;
     if( method && *method && (scope = strstr(method, "::")) ) {
-      Ssiz_t pos = scope - method;
+      assert( scope >= method );
+      auto pos = static_cast<Ssiz_t>(std::distance(method,scope));
       txt = method;
       assert(pos >= 0 && pos < txt.Length());
       txt.Insert(pos, full_prefix);
@@ -1053,7 +1054,7 @@ bool THaAnalysisObject::IsTag( const char* buf )
 }
 
 //_____________________________________________________________________________
-static Int_t GetLine( FILE* file, char* buf, size_t bufsiz, string& line )
+static Int_t GetLine( FILE* file, char* buf, Int_t bufsiz, string& line )
 {
   // Get a line (possibly longer than 'bufsiz') from 'file' using
   // using the provided buffer 'buf'. Put result into string 'line'.
@@ -1129,7 +1130,7 @@ Bool_t IsAssignment( const string& str )
 }
 
 //_____________________________________________________________________________
-Int_t THaAnalysisObject::ReadDBline( FILE* file, char* buf, size_t bufsiz,
+Int_t THaAnalysisObject::ReadDBline( FILE* file, char* buf, Int_t bufsiz,
 				     string& line )
 {
   // Get a text line from the database file 'file'. Ignore all comments
@@ -1251,7 +1252,7 @@ Int_t THaAnalysisObject::LoadDBvalue( FILE* file, const TDatime& date,
   errtxt.clear();
   rewind(file);
 
-  static const size_t bufsiz = 256;
+  static const Int_t bufsiz = 256;
   char* buf = new char[bufsiz];
 
   bool found = false, do_ignore = false;
@@ -1443,21 +1444,21 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
       const char* key = keystr.c_str();
       if( item->type == kDouble || item->type == kFloat ) {
 	if( nelem < 2 ) {
-	  Double_t dval;
+	  Double_t dval = 0;
 	  ret = LoadDBvalue( f, date, key, dval );
 	  if( ret == 0 ) {
 	    if( item->type == kDouble )
 	      *((Double_t*)item->var) = dval;
 	    else {
 	      CheckLimits( Float_t, dval )
-              *((Float_t*)item->var) = dval;
+              *((Float_t*)item->var) = static_cast<Float_t>(dval);
 	    }
 	  }
 	} else {
 	  // Array of reals requested
 	  vector<double> dvals;
 	  ret = LoadDBarray( f, date, key, dvals );
-	  if( ret == 0 && static_cast<UInt_t>(dvals.size()) != nelem ) {
+	  if( ret == 0 && dvals.size() != nelem ) {
 	    nelem = dvals.size();
 	    ret = -130;
 	  } else if( ret == 0 ) {
@@ -1467,7 +1468,7 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 	    } else {
 	      for( UInt_t i = 0; i < nelem; i++ ) {
 		CheckLimits( Float_t, dvals[i] )
-		((Float_t*)item->var)[i] = dvals[i];
+		((Float_t*)item->var)[i] = static_cast<Float_t>(dvals[i]);
 	      }
 	    }
 	  }
@@ -1475,7 +1476,7 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
       } else if( item->type >= kInt && item->type <= kByte ) {
 	// Implies a certain order of definitions in VarType.h
 	if( nelem < 2 ) {
-	  Int_t ival;
+	  Int_t ival = 0;
 	  ret = LoadDBvalue( f, date, key, ival );
 	  if( ret == 0 ) {
 	    switch( item->type ) {
@@ -1484,23 +1485,23 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 	      break;
 	    case kUInt:
 	      CheckLimitsUnsigned( UInt_t, ival )
-	      *((UInt_t*)item->var) = ival;
+	      *((UInt_t*)item->var) = static_cast<UInt_t>(ival);
 	      break;
 	    case kShort:
 	      CheckLimits( Short_t, ival )
-	      *((Short_t*)item->var) = ival;
+	      *((Short_t*)item->var) = static_cast<Short_t>(ival);
 	      break;
 	    case kUShort:
 	      CheckLimitsUnsigned( UShort_t, ival )
-	      *((UShort_t*)item->var) = ival;
+	      *((UShort_t*)item->var) = static_cast<UShort_t>(ival);
 	      break;
 	    case kChar:
 	      CheckLimits( Char_t, ival )
-	      *((Char_t*)item->var) = ival;
+	      *((Char_t*)item->var) = static_cast<Char_t>(ival);
 	      break;
 	    case kByte:
 	      CheckLimitsUnsigned( Byte_t, ival )
-	      *((Byte_t*)item->var) = ival;
+	      *((Byte_t*)item->var) = static_cast<Byte_t>(ival);
 	      break;
 	    default:
 	      goto badtype;
@@ -1510,7 +1511,7 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 	  // Array of integers requested
 	  vector<Int_t> ivals;
 	  ret = LoadDBarray( f, date, key, ivals );
-	  if( ret == 0 && static_cast<UInt_t>(ivals.size()) != nelem ) {
+	  if( ret == 0 && ivals.size() != nelem ) {
 	    nelem = ivals.size();
 	    ret = -130;
 	  } else if( ret == 0 ) {
@@ -1522,31 +1523,31 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 	    case kUInt:
 	      for( UInt_t i = 0; i < nelem; i++ ) {
 		CheckLimitsUnsigned( UInt_t, ivals[i] )
-		((UInt_t*)item->var)[i] = ivals[i];
+		((UInt_t*)item->var)[i] = static_cast<UInt_t>(ivals[i]);
 	      }
 	      break;
 	    case kShort:
 	      for( UInt_t i = 0; i < nelem; i++ ) {
 		CheckLimits( Short_t, ivals[i] )
-		((Short_t*)item->var)[i] = ivals[i];
+		((Short_t*)item->var)[i] = static_cast<Short_t>(ivals[i]);
 	      }
 	      break;
 	    case kUShort:
 	      for( UInt_t i = 0; i < nelem; i++ ) {
 		CheckLimitsUnsigned( UShort_t, ivals[i] )
-		((UShort_t*)item->var)[i] = ivals[i];
+		((UShort_t*)item->var)[i] = static_cast<UShort_t>(ivals[i]);
 	      }
 	      break;
 	    case kChar:
 	      for( UInt_t i = 0; i < nelem; i++ ) {
 		CheckLimits( Char_t, ivals[i] )
-		((Char_t*)item->var)[i] = ivals[i];
+		((Char_t*)item->var)[i] = static_cast<Char_t>(ivals[i]);
 	      }
 	      break;
 	    case kByte:
 	      for( UInt_t i = 0; i < nelem; i++ ) {
 		CheckLimitsUnsigned( Byte_t, ivals[i] )
-		((Byte_t*)item->var)[i] = ivals[i];
+		((Byte_t*)item->var)[i] = static_cast<Byte_t>(ivals[i]);
 	      }
 	      break;
 	    default:
@@ -1655,7 +1656,7 @@ Int_t THaAnalysisObject::LoadDB( FILE* f, const TDatime& date,
 	  }
 	  // For missing keys, the return code is the index into the request 
 	  // array + 1. In this way the caller knows which key is missing.
-	  ret = 1+(item-req);
+          ret = 1 + static_cast<Int_t>(std::distance(req, item));
 	  break;
 	}
       } else if( ret == -128 ) {  // Line too long
@@ -1847,7 +1848,7 @@ void THaAnalysisObject::DebugPrint( const DBRequest* list ) const
   for( const auto *it = list; it->name; ++it )
     maxw = TMath::Max(maxw,strlen(it->name));
   for( const auto *it = list; it->name; ++it ) {
-    cout << "  " << std::left << setw(maxw) << it->name;
+    cout << "  " << std::left << setw(static_cast<int>(maxw)) << it->name;
     size_t maxc = it->nelem;
     if( maxc == 0 ) maxc = 1;
     if( it->type == kDoubleV )

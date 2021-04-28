@@ -81,7 +81,7 @@ static Int_t ReadOldFormatDB( FILE* file, map<TString,TString>& configstr_map )
   // Old-style "crate" objects are all assumed to be multihit channels, even
   // though they usually are not.
 
-  const size_t bufsiz = 256;
+  const Int_t bufsiz = 256;
   char* buf = new char[bufsiz];
   string dbline;
   const int nkeys = 3;
@@ -176,7 +176,7 @@ Int_t THaDecData::ReadDatabase( const TDatime& date )
 
   // Configure the trigger bits with a pointer to our evtypebits
   TIter next( &fBdataLoc );
-  while( auto dataloc = static_cast<BdataLoc*>( next() ) ) {
+  while( auto* dataloc = static_cast<BdataLoc*>( next() ) ) {
     if( dataloc->IsA() == TrigBitLoc::Class() )
       dataloc->OptionPtr( &evtypebits );
   }

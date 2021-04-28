@@ -20,6 +20,7 @@
 #include "TString.h"
 #include "Decoder.h"
 #include <cstdio>
+#include <memory>
 
 // Return cods from codaNNN routines
 #define CODA_OK     0      // OK
@@ -38,12 +39,12 @@ class THaCodaData {
 public:
 
    THaCodaData();
-   virtual ~THaCodaData();
+   virtual ~THaCodaData() = default;
    virtual Int_t codaOpen(const char* file_name, Int_t mode=1) = 0;
    virtual Int_t codaOpen(const char* file_name, const char* session, Int_t mode=1) = 0;
    virtual Int_t codaClose()=0;
    virtual Int_t codaRead()=0;
-   virtual UInt_t* getEvBuffer() { return evbuffer; }
+   UInt_t*       getEvBuffer() { return evbuffer.get(); }
    virtual Int_t getBuffSize() const { return MAXEVLEN; }
    virtual Bool_t isOpen() const = 0;
    virtual Int_t getCodaVersion();
@@ -61,7 +62,7 @@ protected:
 
    TString  filename;
    Int_t    handle;       // EVIO data handle
-   UInt_t*  evbuffer;     // Raw data
+   std::unique_ptr<UInt_t>  evbuffer;     // Raw data
    Bool_t   fIsGood;
 
    ClassDef(THaCodaData,0) // Base class of CODA data (file, ET conn, etc)

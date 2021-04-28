@@ -93,7 +93,7 @@ THaAnalysisObject::EStatus THaHRS::Init( const TDatime& run_time )
   // This behavior can be turned off by calling AutoStandardDetectors(false).
 
   if( TestBit(kAutoStdDets) ) {
-    auto* pdet = static_cast<THaDetector*>( fDetectors->FindObject("vdc") );
+    auto* pdet = dynamic_cast<THaDetector*>( fDetectors->FindObject("vdc") );
     if( !pdet ) {
       AddDetector( new THaScintillator("s2", "S2 scintillator"), true, true );
       AddDetector( new THaScintillator("s1", "S1 scintillator"), true, true );

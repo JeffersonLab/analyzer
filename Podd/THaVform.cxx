@@ -254,12 +254,8 @@ void THaVform::ErrPrint(Int_t err) const
 //_____________________________________________________________________________
 vector<string> THaVform::GetVars() const
 {
-// Get names of variable that are used by this formula.
-  vector<string> result;
-  for( Int_t i = 0; i < fNvar; ++i ) {
-    result.push_back(fVarName[i]);
-  }
-  return result;
+  // Get names of variable that are used by this formula.
+  return fVarName;
 }
 
 
@@ -646,7 +642,7 @@ Int_t THaVform::Process()
         if (theCut->EvalCut()) fData = 1.0;
       }
     }
-    if( fOdata != nullptr ) {
+    if( fOdata ) {
       vector<THaCut*>::size_type i = fCut.size();
       while( i-- > 0 ) {
 	THaCut* theCut = fCut[i];

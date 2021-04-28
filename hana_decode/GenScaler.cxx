@@ -10,7 +10,6 @@
 #include "TMath.h"
 #include <iostream>
 #include <string>
-#include <sstream>
 
 using namespace std;
 
@@ -286,14 +285,13 @@ namespace Decoder {
     /// len = ndata in event, pos = word number for block header in event
     fWordsSeen = 0;
     Clear();
-    Int_t index = 0;
 
     // How can set set this just once?
     //    fHeader = fSlot << 8;
     //    fHeaderMask = 0x3f00;
 
     while(fWordsSeen < len) {
-      index = pos + fWordsSeen;
+      Int_t index = pos + fWordsSeen;
       if(IsSlot(evbuffer[index])) {
 	Decode(&evbuffer[index]);
 	for (Int_t ichan = 0; ichan < fNumChan; ichan++) {

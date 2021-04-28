@@ -14,7 +14,6 @@
 #include "THaVDCPoint.h"
 #include <iostream>
 #include <iomanip>
-#include <cstring>
 
 using namespace std;
 
@@ -26,17 +25,16 @@ THaVDCTrackID::THaVDCTrackID( const THaVDCPoint* lower,
   // Constructor that automatically determines pivot numbers
   // from the given THaVDCPoints.
 
-  THaVDCCluster* cluster;
   if( lower ) {
-    if( (cluster = lower->GetUCluster()))
+    if( auto* cluster = lower->GetUCluster())
       fLowerU = cluster->GetPivotWireNum();
-    if( (cluster = lower->GetVCluster()))
+    if( auto* cluster = lower->GetVCluster())
       fLowerV = cluster->GetPivotWireNum();
   }
   if( upper ) {
-    if( (cluster = upper->GetUCluster()))
+    if( auto* cluster = upper->GetUCluster())
       fUpperU = cluster->GetPivotWireNum();
-    if( (cluster = upper->GetVCluster()))
+    if( auto* cluster = upper->GetVCluster())
       fUpperV = cluster->GetPivotWireNum();
   }
 }

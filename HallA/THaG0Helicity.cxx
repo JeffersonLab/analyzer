@@ -38,12 +38,12 @@ THaG0Helicity::THaG0Helicity( const char* name, const char* description,
   fT9count(0), fPredicted_reading(0), fQ1_reading(0),
   fPresent_helicity(kUnknown), fSaved_helicity(kUnknown),
   fQ1_present_helicity(kUnknown), fMaxMissed(kDefaultMissQ),
+  fHbits{}, // zero-initialize array
   fNqrt(0), fHisto(nullptr), fNB(0), fIseed(0), fIseed_earlier(0),
   fInquad(0), fTET9Index(0), fTELastEvtQrt(-1), fTELastEvtTime(-1.),
   fTELastTime(-1.), fTEPresentReadingQ1(-1), fTEStartup(3), fTETime(-1.),
-  fTEType9(false), fManuallySet(0)
+  fTEType9(false), fManuallySet(0), fDelayedQrt(true)
 {
-  memset(fHbits, 0, sizeof(fHbits));
 }
 
 //_____________________________________________________________________________
@@ -57,10 +57,11 @@ THaG0Helicity::THaG0Helicity()
     fT9count(0), fPredicted_reading(0), fQ1_reading(0),
     fPresent_helicity(kUnknown), fSaved_helicity(kUnknown),
     fQ1_present_helicity(kUnknown), fMaxMissed(kDefaultMissQ),
+    fHbits{}, // zero-initialize array
     fNqrt(0), fHisto(nullptr), fNB(0), fIseed(0), fIseed_earlier(0),
     fInquad(0), fTET9Index(0), fTELastEvtQrt(-1), fTELastEvtTime(-1.),
     fTELastTime(-1.), fTEPresentReadingQ1(-1), fTEStartup(3), fTETime(-1.),
-    fTEType9(false), fManuallySet(0)
+    fTEType9(false), fManuallySet(0), fDelayedQrt(true)
 {
   // Default constructor for ROOT I/O
 }
@@ -125,11 +126,11 @@ Int_t THaG0Helicity::ReadDatabase( const TDatime& date )
   Int_t    missqrt = kDefaultMissQ;
 
   DBRequest req[] = {
-    { "delay",    &delay,      kInt,    0, 1, -2 },
-    { "tdavg",    &tdavg,      kDouble, 0, 1, -2 },
-    { "ttol",     &ttol,       kDouble, 0, 1, -2 },
-    { "missqrt",  &missqrt,    kInt,    0, 1, -2 },
-    { 0 }
+    { "delay",    &delay,      kInt,    0, true, -2 },
+    { "tdavg",    &tdavg,      kDouble, 0, true, -2 },
+    { "ttol",     &ttol,       kDouble, 0, true, -2 },
+    { "missqrt",  &missqrt,    kInt,    0, true, -2 },
+    { nullptr }
   };
   st = LoadDB( file, date, req );
   fclose(file);
@@ -330,7 +331,7 @@ void THaG0Helicity::TimingEvent()
       // Look for missed timing events
       Double_t t9diff = 0.25 * fTdavg;
       Double_t tdiff = fTETime - fTELastTime;
-      Int_t nt9miss = (Int_t) (tdiff / t9diff - 0.5);
+      auto nt9miss = static_cast<Int_t>(tdiff / t9diff - 0.5);
       fTET9Index += nt9miss;
       if (fTET9Index > 3) {
 	fTEPresentReadingQ1 = -1;
@@ -366,8 +367,6 @@ void THaG0Helicity::TimingEvent()
   fTELastTime = fTETime;
   fTELastEvtQrt = fQrt;
   fTELastEvtTime = fTimestamp;
-
-  return;
 }
 
 //_____________________________________________________________________________
@@ -377,13 +376,9 @@ void THaG0Helicity::QuadCalib()
 
   const char* const here = "QuadCalib";
 
-  // Is the Qrt signal delayed such that the evt9 at the beginning of
-  // a Qrt does NOT contain the qrt flag?
-  const int delayed_qrt = 1; 
-
   if (fEvtype == 9) {
     fT9count += 1;
-    if ( delayed_qrt && fQrt ) {
+    if ( fDelayedQrt && fQrt ) {
       // don't record this time     
     } else {
       fT9 = fTimestamp; // this sets the timing reference.
@@ -403,7 +398,7 @@ void THaG0Helicity::QuadCalib()
       fTdiff > (1.25*fTdavg + fTtol)) {
     // Try a recovery.  Use time to flip helicity by the number of
     // missed quads, unless this are more than 30 (~1 sec).  
-    Int_t nqmiss = (Int_t)(fTdiff/fTdavg);
+    auto nqmiss = static_cast<Int_t>(fTdiff/fTdavg);
     if (fDebug >= 1)
       Info( Here(here), "Recovering large DT, nqmiss = %d "
 	    "at timestamp %f, tdiff %f", nqmiss, fTimestamp, fTdiff );
@@ -522,7 +517,6 @@ void THaG0Helicity::QuadCalib()
     }
   }
   fTdiff = fTimestamp - fT0;
-  return;
 }
 
 
@@ -602,7 +596,6 @@ void THaG0Helicity::LoadHelicity()
     cout << "   Helicity "<<fPresent_helicity<<endl;
   }
   fQuad = fInquad;
-  return;
 }
 
 //_____________________________________________________________________________
@@ -672,7 +665,6 @@ void THaG0Helicity::QuadHelicity( Int_t cond )
     fQuad_calibrated = true;
 
   }
-  return;
 }
 
 //_____________________________________________________________________________

@@ -17,23 +17,18 @@
 #include <cassert>
 #include <iostream>
 #include <cstring>  // for strdup
-#include <cstdlib>  // for free
-#include <errno.h>
+#include <cerrno>
 
 using namespace std;
 
 namespace Decoder {
 
 //_____________________________________________________________________________
-THaCodaData::THaCodaData() : handle(0), fIsGood(true)
+THaCodaData::THaCodaData() :
+  handle(0),
+  evbuffer{new UInt_t[MAXEVLEN]},  // Raw data
+  fIsGood(true)
 {
-   evbuffer = new UInt_t[MAXEVLEN];         // Raw data
-}
-
-//_____________________________________________________________________________
-THaCodaData::~THaCodaData()
-{
-   delete [] evbuffer;
 }
 
 //_____________________________________________________________________________
@@ -41,10 +36,8 @@ Int_t THaCodaData::getCodaVersion()
 {
   // Get CODA version from current data source
   int32_t EvioVersion = 0;
-  char *d_v = strdup("v");
-  int status = evIoctl(handle, d_v, &EvioVersion);
+  int status = evIoctl(handle, (char*)"v", &EvioVersion);
   fIsGood = (status == S_SUCCESS);
-  free(d_v);
   if( status != S_SUCCESS ) {
     staterr("ioctl",status);
     codaClose();
@@ -106,8 +99,7 @@ Int_t THaCodaData::ReturnCode( Int_t evio_retcode )
 {
   // Convert EVIO return codes to THaRunBase codes
 
-  Long64_t code = static_cast<Long64_t>(evio_retcode);
-  switch( code ) {
+  switch( static_cast<Long64_t>(evio_retcode) ) {
 
   case S_SUCCESS:
     return CODA_OK;

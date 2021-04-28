@@ -22,13 +22,6 @@ THaTrackingModule::THaTrackingModule() :  fTrk(nullptr)
 }
 
 //_____________________________________________________________________________
-THaTrackingModule::~THaTrackingModule()
-{
-  // Destructor
-
-}
-
-//_____________________________________________________________________________
 void THaTrackingModule::TrkIfoClear()
 {
   fTrkIfo.Clear();

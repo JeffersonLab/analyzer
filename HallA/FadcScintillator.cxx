@@ -73,7 +73,8 @@ Int_t FadcScintillator::DefineVariables( EMode mode )
   // Define global analysis variables
 
   // Add FADC-specific variables for left- and right-side readouts
-  struct VarDefInfo {
+  class VarDefInfo {
+  public:
     FADCData* fadcData;
     const char* key_prefix;
     const char* comment_subst;
@@ -84,9 +85,8 @@ Int_t FadcScintillator::DefineVariables( EMode mode )
     { fFADCDataR, "r", "right side" },
     { fFADCDataL, "l", "left side"  }
   };
-  Int_t ret = kOK;
   for( const auto& side : sides )
-    if( (ret = side.DefineVariables(mode)) )
+    if( Int_t ret = side.DefineVariables(mode) )
       return ret;
 
   // Define standard scintillator variables. This must come last so that our

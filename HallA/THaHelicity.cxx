@@ -9,7 +9,6 @@
 #include "THaEvData.h"
 #include "VarDef.h"
 #include <iostream>
-#include <cstring>
 
 using namespace std;
 
@@ -85,8 +84,8 @@ Int_t THaHelicity::ReadDatabase( const TDatime& date )
   if( !file ) return kFileError;
 
   DBRequest req[] = {
-    { "verbose",       &fDebug,      kInt, 0, 1, -2 },
-    { 0 }
+    { "verbose",       &fDebug,      kInt, 0, true, -2 },
+    { nullptr }
   };
   st = LoadDB( file, date, req );
   fclose(file);

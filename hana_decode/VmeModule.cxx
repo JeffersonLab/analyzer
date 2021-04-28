@@ -43,12 +43,11 @@ Int_t VmeModule::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer,
     p++;
     Decode(p);
     for (size_t ichan = 0, nchan = GetNumChan(); ichan < nchan; ichan++) {
-      Int_t mdata,rdata;
       fWordsSeen++;
       p++;
       if (p >= pstop) break;
-      rdata = *p;
-      mdata = rdata;
+      UInt_t rdata = *p;
+      UInt_t mdata = rdata;
       sldat->loadData(ichan, mdata, rdata);
       if (ichan < fData.size()) fData[ichan]=rdata;
     }

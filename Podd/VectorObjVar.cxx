@@ -96,7 +96,6 @@ const void* VectorObjVar::GetDataPointer( Int_t i ) const
   // Now obj points to the object. Compute data location using the offset, if needed
   if( fOffset > 0 ) {
     ULong_t loc = reinterpret_cast<ULong_t>(obj) + fOffset;
-    assert( loc ); // obj != already assured
     if( fType >= kDoubleP && fType <= kUCharP )
       obj = *reinterpret_cast<void**>(loc);
     else

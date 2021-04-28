@@ -25,7 +25,6 @@ namespace Decoder {
     GenScaler(Int_t crate, Int_t slot);
 
     using Module::GetData;
-    using Module::LoadSlot;
 
     virtual void  Clear(Option_t* opt="");
     virtual Int_t Decode(const UInt_t *evbuffer);
@@ -39,7 +38,7 @@ namespace Decoder {
     Double_t GetTimeSincePrev() const;  // returns deltaT since last reading
     Bool_t IsDecoded() const { return fIsDecoded; };
     void LoadNormScaler(GenScaler *scal);  // loads pointer to norm. scaler
-    void DebugPrint(std::ofstream *file=0) const;
+    void DebugPrint(std::ofstream *file=nullptr) const;
 
     // Loads sldat
     virtual Int_t LoadSlot(THaSlotData *sldat,  const UInt_t *evbuffer, const UInt_t *pstop );

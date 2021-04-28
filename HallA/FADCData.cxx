@@ -158,7 +158,7 @@ Int_t FADCData::StoreHit( const DigitizerHitInfo_t& hitinfo, Int_t data )
   FDAT.fUnderflow = fadc->GetUnderflowBit(hitinfo.chan, hitinfo.hit);
   FDAT.fPedq      = fadc->GetPedestalQuality(hitinfo.chan, hitinfo.hit);
 
-  struct TypeItem { EModuleType type; const string name; };
+  class TypeItem { public: EModuleType type; const string name; };
   static const vector<TypeItem> items = {
     { kPulsePeak,     "kPulsePeak" },
     { kPulseTime,     "kPulseTime" },
