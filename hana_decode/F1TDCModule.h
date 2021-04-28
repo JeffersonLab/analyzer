@@ -9,6 +9,7 @@
 /////////////////////////////////////////////////////////////////////
 
 #include "VmeModule.h"
+#include <vector>
 
 namespace Decoder {
 
@@ -16,11 +17,10 @@ class F1TDCModule : public VmeModule {
 
 public:
 
-   F1TDCModule() : fNumHits(0), fResol(ILO), fTdcData(nullptr),
-                   IsInit(false), slotmask(0), chanmask(0), datamask(0)
-                   {}
+   F1TDCModule() : fNumHits(0), fResol(ILO), IsInit(false),
+                   slotmask(0), chanmask(0), datamask(0) {}
    F1TDCModule(Int_t crate, Int_t slot);
-   virtual ~F1TDCModule();
+   virtual ~F1TDCModule() = default;
 
    using Module::GetData;
    using Module::LoadSlot;
@@ -49,7 +49,7 @@ private:
 
    Int_t fNumHits;
    EResolution fResol;
-   Int_t *fTdcData;  // Raw data (either samples or pulse integrals)
+   std::vector<Int_t> fTdcData;  // Raw data (either samples or pulse integrals)
    Bool_t IsInit;
    Int_t slotmask, chanmask, datamask;
 

@@ -21,7 +21,6 @@ namespace Decoder {
   GenScaler::GenScaler(Int_t crate, Int_t slot)
     : VmeModule(crate, slot),
       fIsDecoded(false), fFirstTime(true), fDeltaT(0.0),
-      fDataArray(nullptr), fPrevData(nullptr), fRate(nullptr),
       fClockChan(0), fNumChanMask(0), fNumChanShift(0),
       fHasClock(false), fClockRate(0), fNormScaler(nullptr),
       firsttime(true), firstwarn(true)
@@ -47,12 +46,12 @@ namespace Decoder {
     fNumChanMask = 0xff;
     fNumChanShift = 0;
     fDeltaT = DEFAULT_DELTAT;  // a default time interval between readings
-    fDataArray = new UInt_t[fWordsExpect];
-    fPrevData = new UInt_t[fWordsExpect];
-    fRate = new Double_t[fWordsExpect];
-    memset(fDataArray, 0, fWordsExpect*sizeof(Int_t));
-    memset(fPrevData, 0, fWordsExpect*sizeof(Int_t));
-    memset(fRate, 0, fWordsExpect*sizeof(Double_t));
+    fDataArray.resize(fWordsExpect);
+    fPrevData.resize(fWordsExpect);
+    fRate.resize(fWordsExpect);
+    fDataArray.assign(fDataArray.size(), 0);
+    fPrevData.assign(fPrevData.size(), 0);
+    fRate.assign(fRate.size(), 0.0);
   }
 
   void GenScaler::SetBank(Int_t bank) {
@@ -62,12 +61,6 @@ namespace Decoder {
       fHeader = fSlot << 8;
       fHeaderMask = 0xff00;
     }
-  }
-
-  GenScaler::~GenScaler() {
-    delete [] fDataArray;
-    delete [] fPrevData;
-    delete [] fRate;
   }
 
   Int_t GenScaler::SetClock(Double_t deltaT, Int_t clockchan, Double_t clockrate) {
@@ -128,7 +121,7 @@ namespace Decoder {
       fFirstTime = false;
     } else {
       doload=1;
-      memcpy(fPrevData, fDataArray, fWordsExpect*sizeof(UInt_t));
+      fPrevData = fDataArray;
     }
     if ( !IsSlot(*evbuffer) ) return nfound;
     if (fDebugFile) *fDebugFile << "is slot 0x"<<hex<<*evbuffer<<dec<<" num chan "<<fNumChan<<endl;
@@ -177,7 +170,7 @@ namespace Decoder {
     if (IsDecoded()) {
       Double_t dtime = GetTimeSincePrev();
       if (dtime==0) {
-	memset(fRate, 0, fWordsExpect*sizeof(Double_t));
+	fRate.assign(fRate.size(), 0);
 	return;
       }
       for (Int_t i=0; i<fWordsExpect; i++) {

@@ -9,6 +9,7 @@
 /////////////////////////////////////////////////////////////////////
 
 #include "VmeModule.h"
+#include <vector>
 
 namespace Decoder {
 
@@ -18,12 +19,10 @@ namespace Decoder {
 
     GenScaler()
       : fIsDecoded(false), fFirstTime(true), fDeltaT(0.0),
-        fDataArray(nullptr), fPrevData(nullptr), fRate(nullptr),
         fClockChan(0), fNumChanMask(0), fNumChanShift(0),
         fHasClock(false), fClockRate(0.0), fNormScaler(nullptr),
         firsttime(true), firstwarn(true) {}
     GenScaler(Int_t crate, Int_t slot);
-    virtual ~GenScaler();
 
     using Module::GetData;
     using Module::LoadSlot;
@@ -56,8 +55,8 @@ namespace Decoder {
     Bool_t checkchan(Int_t chan) const { return (chan >=0 && chan < fWordsExpect); }
     Bool_t fIsDecoded, fFirstTime;
     Double_t fDeltaT;
-    UInt_t *fDataArray, *fPrevData;
-    Double_t *fRate;
+    std::vector<UInt_t> fDataArray, fPrevData;
+    std::vector<Double_t> fRate;
     Int_t fClockChan, fNumChanMask, fNumChanShift;
     Bool_t fHasClock;
     Double_t fClockRate;

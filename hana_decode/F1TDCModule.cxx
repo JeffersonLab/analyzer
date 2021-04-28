@@ -11,7 +11,6 @@
 #include "TMath.h"
 #include <iostream>
 #include <string>
-#include <sstream>
 
 using namespace std;
 
@@ -23,17 +22,17 @@ namespace Decoder {
   Module::TypeIter_t F1TDCModule::fgThisType =
     DoRegister( ModuleType( "Decoder::F1TDCModule" , 3201 ));
 
-F1TDCModule::F1TDCModule(Int_t crate, Int_t slot) : VmeModule(crate, slot) {
-  Init();
-}
-
-F1TDCModule::~F1TDCModule() {
-  delete [] fTdcData;
+F1TDCModule::F1TDCModule(Int_t crate, Int_t slot) :
+  VmeModule(crate, slot), fNumHits(0), fResol(ILO),
+  fTdcData(NTDCCHAN*MAXHIT),
+  IsInit(false), slotmask(0), chanmask(0), datamask(0)
+{
+  F1TDCModule::Init();
 }
 
 void F1TDCModule::Init() {
-  fTdcData = new Int_t[NTDCCHAN*MAXHIT];
-  fDebugFile=nullptr;
+  VmeModule::Init();
+  fTdcData.resize(NTDCCHAN*MAXHIT);
   Clear();
   IsInit = true;
   fName = "F1 TDC 3201";
@@ -62,10 +61,11 @@ Int_t F1TDCModule::GetData(Int_t chan, Int_t hit) const
 void F1TDCModule::Clear(Option_t* opt) {
   VmeModule::Clear(opt);
   fNumHits = 0;
-  memset(fTdcData, 0, NTDCCHAN*MAXHIT*sizeof(Int_t));
+  fTdcData.assign(NTDCCHAN*MAXHIT,0);
 }
 
-Int_t F1TDCModule::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, const UInt_t *pstop) {
+Int_t F1TDCModule::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer,
+                            const UInt_t *pstop) {
 // this increments evbuffer
   if (fDebugFile) *fDebugFile << "F1TDCModule:: loadslot "<<endl;
   fWordsSeen = 0;
@@ -102,11 +102,11 @@ Int_t F1TDCModule::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, const UI
   // triggertime and eventnumber are not yet read out, they will again
   // be useful when multiblock mode (buffered mode) is used
 
-   const UInt_t F1_HIT_OFLW = 1<<24; // bad
-   const UInt_t F1_OUT_OFLW = 1<<25; // bad
-   const UInt_t F1_RES_LOCK = 1<<26; // good
+   const UInt_t F1_HIT_OFLW = BIT(24); // bad
+   const UInt_t F1_OUT_OFLW = BIT(25); // bad
+   const UInt_t F1_RES_LOCK = BIT(26); // good
    const UInt_t DATA_CHK = F1_HIT_OFLW | F1_OUT_OFLW | F1_RES_LOCK;
-   const UInt_t DATA_MARKER = 1<<23;
+   const UInt_t DATA_MARKER = BIT(23);
    // look at all the data
    const UInt_t *loc = evbuffer;
 #ifdef WITH_DEBUG
@@ -127,9 +127,9 @@ Int_t F1TDCModule::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, const UI
          *fDebugFile<< "[" << (loc-evbuffer) << "] data            0x"
          <<hex<<*loc<<dec<<endl;
 #endif
-       Int_t chn = ((*loc)>>16) & 0x3f;  // internal channel number
+       UInt_t chn = ((*loc)>>16) & 0x3f;  // internal channel number
 
-       Int_t chan;
+       UInt_t chan;
        if (IsHiResolution()) {
          // drop last bit for channel renumbering
          chan=(chn >> 1);
@@ -138,9 +138,9 @@ Int_t F1TDCModule::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, const UI
          // odd numbered TDC channels from the board -> +16
          chan = (chn & 0x20) + 16*(chn & 0x01) + ((chn & 0x1e)>>1);
        }
-       Int_t f1slot = ((*loc)&0xf8000000)>>27;
        //FIXME: cross-check slot number here
        if ( ((*loc) & DATA_CHK) != F1_RES_LOCK ) {
+         UInt_t f1slot = ((*loc)&0xf8000000)>>27;
          cout << "\tWarning: F1 TDC " << hex << (*loc) << dec;
          cout << "\tSlot (Ch) = " << f1slot << "(" << chan << ")";
          if ( (*loc) & F1_HIT_OFLW ) {
@@ -155,7 +155,7 @@ Int_t F1TDCModule::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, const UI
          cout << endl;
        }
 
-       Int_t raw= (*loc) & 0xffff;
+       UInt_t raw= (*loc) & 0xffff;
 #ifdef WITH_DEBUG
        if(fDebug > 1 && fDebugFile) {
          *fDebugFile<<" int_chn chan data "<<dec<<chn<<"  "<<chan
@@ -163,8 +163,8 @@ Int_t F1TDCModule::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, const UI
        }
 #endif
        /*Int_t status = */sldat->loadData("tdc",chan,raw,raw);
-       Int_t idx = chan*MAXHIT + 0;  // 1 hit per chan ???
-       if (idx >= 0 && idx < MAXHIT*NTDCCHAN) fTdcData[idx] = raw;
+       UInt_t idx = chan*MAXHIT + 0;  // 1 hit per chan ???
+       if (idx < MAXHIT*NTDCCHAN) fTdcData[idx] = static_cast<Int_t>(raw);
        fWordsSeen++;
      }
      loc++;

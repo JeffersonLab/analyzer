@@ -26,29 +26,24 @@ namespace Decoder {
     DoRegister( ModuleType( "Decoder::Caen1190Module" , 1190 ));
 
   Caen1190Module::Caen1190Module(Int_t crate, Int_t slot)
-    : VmeModule(crate, slot),
-      fNumHits(nullptr), fTdcData(nullptr), slot_data(nullptr), tdc_data{} {
-    Init();
-  }
-
-  Caen1190Module::~Caen1190Module() {
-    delete [] fNumHits;
-    delete [] fTdcData;
-    delete [] fTdcOpt;
+    : VmeModule(crate, slot), fNumHits(NTDCCHAN), fTdcData(NTDCCHAN*MAXHIT),
+      fTdcOpt(NTDCCHAN*MAXHIT), slot_data(nullptr)
+  {
+    Caen1190Module::Init();
   }
 
   void Caen1190Module::Init() {
     Module::Init();
-    fNumHits = new Int_t[NTDCCHAN];
-    fTdcData = new Int_t[NTDCCHAN*MAXHIT];
-    fTdcOpt  = new Int_t[NTDCCHAN*MAXHIT];
-    fDebugFile = nullptr;
-    Clear("");
+    fNumHits.resize(NTDCCHAN);
+    fTdcData.resize(NTDCCHAN*MAXHIT);
+    fTdcOpt.resize(NTDCCHAN*MAXHIT);
+    Clear();
     IsInit = true;
     fName = "Caen TDC 1190 Module";
   }
 
-  Int_t Caen1190Module::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, const UInt_t *pstop) {
+  Int_t Caen1190Module::LoadSlot( THaSlotData* sldat, const UInt_t* evbuffer,
+                                  const UInt_t *pstop) {
     // This is a simple, default method for loading a slot
     const UInt_t *p = evbuffer;
     slot_data = sldat;
@@ -62,16 +57,15 @@ namespace Decoder {
     return fWordsSeen;
   }
 
-  Int_t Caen1190Module::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, Int_t pos, Int_t len) {
+  Int_t Caen1190Module::LoadSlot( THaSlotData* sldat, const UInt_t* evbuffer,
+                                  Int_t pos, Int_t len ) {
     // Fill data structures of this class, utilizing bank structure
     // Read until out of data or until decode says that the slot is finished
     // len = ndata in event, pos = word number for block header in event
     slot_data = sldat;
     fWordsSeen = 0;
-    Int_t index = 0;
     while(fWordsSeen < len) {
-      index = pos + fWordsSeen;
-      Decode(&evbuffer[index]);
+      Decode(&evbuffer[pos+fWordsSeen]);
       fWordsSeen++;
     }
     return fWordsSeen;
@@ -205,7 +199,7 @@ namespace Decoder {
     return fTdcData[idx];
   }
 
-  Int_t Caen1190Module::GetOpt(UInt_t chan, UInt_t hit) {
+  Int_t Caen1190Module::GetOpt(Int_t chan, Int_t hit) const {
     if((Int_t)hit >= fNumHits[chan]) return 0;
     Int_t idx = chan*MAXHIT + hit;
     if (idx < 0 || idx > MAXHIT*NTDCCHAN) return 0;
@@ -213,9 +207,9 @@ namespace Decoder {
   }
 
   void Caen1190Module::Clear(Option_t*) {
-    memset(fNumHits, 0, NTDCCHAN*sizeof(Int_t));
-    memset(fTdcData, 0, NTDCCHAN*MAXHIT*sizeof(Int_t));
-    memset(fTdcOpt, 0, NTDCCHAN*MAXHIT*sizeof(Int_t));
+    fNumHits.assign(NTDCCHAN,0);
+    fTdcData.assign(NTDCCHAN*MAXHIT, 0);
+    fTdcOpt.assign(NTDCCHAN*MAXHIT, 0);
   }
 }
 
