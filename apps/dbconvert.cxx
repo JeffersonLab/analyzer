@@ -4305,9 +4305,16 @@ int VDC::Plane::ReadDB( FILE* file, time_t /* date */, time_t )
       Error( Here(here), "Error reading TDC offsets, line: %s", buff );
       return kInitError;
     }
-    fTDCOffsets[wnum-1] = offset;
+    if( wnum == 0 || TMath::Abs(wnum) > nWires ) {
+      Error( Here(here),
+             "Illegal wire number %d (1-%d allowed) in time offset block, "
+             "VDC plane %s, line: %s", wnum, nWires, fName.c_str(), buff );
+      return kInitError;
+    }
+    // Wire numbers in file start at 1
+    fTDCOffsets[TMath::Abs(wnum)-1] = offset;
     if( wnum < 0 )
-      fBadWires.push_back(wnum-1); // Wire numbers in file start at 1
+      fBadWires.push_back(-wnum-1);
   }
 
   // now read in the time-to-drift-distance lookup table
@@ -4404,19 +4411,21 @@ int VDC::Plane::ReadDB( FILE* file, time_t /* date */, time_t )
     fTTDPar.assign( par, par+9 );
     if( fgets(buff,LEN,file) == nullptr ) return kInitError;  // Read to end of line
 
+    // Some databases specify the detector dimensions at the end of extra_params
     Double_t h, w;
-
-    if( fscanf(file, "%lf %lf", &h, &w) != 2) {
-      Error( Here(here), "Error reading height/width parameters\n"
-	     "Line = %s\nExpect 2 floating point numbers. Fix database.",
-	     buff );
-      return kInitError;
-    } else {
+    if( fscanf(file, "%lf %lf", &h, &w) == 2) {
       fSize[0] = h/2.0;
       fSize[1] = w/2.0;
     }
+    // Ignore if not present
+//    else {
+//      Error( Here(here), "Error reading height/width parameters\n"
+//                         "Line = %s\nExpect 2 floating point numbers. Fix database.",
+//             buff );
+//      return kInitError;
+//    }
 
-    if( fgets(buff,LEN,file) == nullptr ) return kInitError;  // Read to end of line
+    //if( fgets(buff,LEN,file) == nullptr ) return kInitError;  // Read to end of line
   } else {
     // Warning( Here(here), "No database section \"%s\" or \"%s\" found. "
     //	     "Using defaults.", tag.Data(), tag2.Data() );
