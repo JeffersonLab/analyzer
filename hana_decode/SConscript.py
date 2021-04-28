@@ -55,7 +55,7 @@ else:
 
 # Decoder library
 dclib = build_library(dcenv, libname, src,
-                      extrahdrs = ['Decoder.h'],
+                      extrahdrs = ['Decoder.h','CustomAlloc.h'],
                       extradicthdrs = ['THaBenchmark.h'],
                       dictname = altname,
                       install_rpath = dc_install_rpath,

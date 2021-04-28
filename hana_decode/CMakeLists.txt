@@ -71,7 +71,7 @@ endif()
 
 string(REPLACE .cxx .h headers "${src}")
 list(APPEND headers THaBenchmark.h)
-set(allheaders ${headers} Decoder.h)
+set(allheaders ${headers} Decoder.h CustomAlloc.h)
 
 #----------------------------------------------------------------------------
 # libdc
