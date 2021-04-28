@@ -20,10 +20,11 @@ namespace Decoder {
 
   GenScaler::GenScaler(Int_t crate, Int_t slot)
     : VmeModule(crate, slot),
-      fIsDecoded(false), fFirstTime(true), fDeltaT(false),
+      fIsDecoded(false), fFirstTime(true), fDeltaT(0.0),
       fDataArray(nullptr), fPrevData(nullptr), fRate(nullptr),
       fClockChan(0), fNumChanMask(0), fNumChanShift(0),
-      fHasClock(false), fClockRate(0), fNormScaler(nullptr)
+      fHasClock(false), fClockRate(0), fNormScaler(nullptr),
+      firsttime(true), firstwarn(true)
   {
     fWordsExpect = 32;
     fNumChan = 0;
@@ -239,10 +240,7 @@ namespace Decoder {
     /// Get the number of channels in this module from the header and
     /// save so that bank version of LoadSlot can skip over this module if
     /// it is not the correct one.
-    Bool_t result;
-    static Bool_t firsttime=true;
-    static Bool_t firstwarn=true;
-    result = ((rdata & fHeaderMask)==fHeader);
+    Bool_t result = ((rdata & fHeaderMask)==fHeader);
     fNumChan = (rdata&fNumChanMask)>>fNumChanShift;
     if (fNumChan == 0) {
       fNumChan=fgNumChanDefault;
