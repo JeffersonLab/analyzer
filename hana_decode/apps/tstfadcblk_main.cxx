@@ -25,7 +25,6 @@
 #include "TROOT.h"
 #include "TFile.h"
 #include "TH1.h"
-#include "TH2.h"
 
 using namespace std;
 using namespace Decoder;
@@ -33,18 +32,17 @@ using namespace Decoder;
 vector <TH1F * > hsnaps;
 TH1F *hinteg, *hinteg2;
 
-Int_t use_module = 0;
-Int_t nsnaps = 5;
+Bool_t use_module = false;
+UInt_t nsnaps = 5;
 
-void dump(UInt_t *buffer, ofstream *file);
-void process(Int_t i, THaEvData *evdata, ofstream *file);
+void dump(UInt_t *data, ofstream *file);
+void process(UInt_t trignum, THaEvData *evdata, ofstream *file);
 
 int main(int /* argc */, char** /* argv */)
 {
   TString filename("snippet.dat");  // data file, can be a link
 
-  ofstream *debugfile = 0;
-  UInt_t *data;
+  ofstream* debugfile = nullptr;
 
 #ifdef DEBUG
   debugfile = new ofstream;
@@ -59,7 +57,7 @@ int main(int /* argc */, char** /* argv */)
     cerr << "... exiting." << endl;
     exit(2);
   }
-  CodaDecoder *evdata = new CodaDecoder();
+  auto *evdata = new CodaDecoder();
 
   evdata->SetDebug(1);
   evdata->SetDebugFile(debugfile);
@@ -78,10 +76,10 @@ int main(int /* argc */, char** /* argv */)
   hinteg2 = new TH1F("hinteg2","Integral of ADC",1000,0,10000);
 
   // Loop over events
-  int NUMEVT=50;
-  int trigcnt=0;
+  UInt_t NUMEVT = 50;
+  UInt_t trigcnt = 0;
 
-  for (int iev=0; iev<NUMEVT; iev++) {
+  for (UInt_t iev=0; iev<NUMEVT; iev++) {
 
     if (debugfile) {
       if (evdata->IsMultiBlockMode()) {
@@ -97,11 +95,12 @@ int main(int /* argc */, char** /* argv */)
     }
 
 
-    Int_t to_read_file = 0;
-    if ( !evdata->IsMultiBlockMode() ||
-        (evdata->IsMultiBlockMode() && evdata->BlockIsDone()) ) to_read_file=1;
+    Bool_t to_read_file = false;
+    if( !evdata->IsMultiBlockMode() ||
+        (evdata->IsMultiBlockMode() && evdata->BlockIsDone()) )
+      to_read_file = true;
 
-    if (to_read_file) {
+    if( to_read_file ) {
 
       cout << "CODA read --- "<<endl;
 
@@ -120,7 +119,7 @@ int main(int /* argc */, char** /* argv */)
 
       } else {
 
-        data = datafile.getEvBuffer();
+        UInt_t *data = datafile.getEvBuffer();
         dump(data, debugfile);
 
         cout << "LoadEvent --- "<<endl;
@@ -148,7 +147,8 @@ int main(int /* argc */, char** /* argv */)
 
     }
 
-    if (evdata->GetEvType() == MYTYPE) process (trigcnt++, evdata, debugfile);
+    if( evdata->GetEvType() == MYTYPE )
+      process(trigcnt++, evdata, debugfile);
 
   }
 
@@ -161,32 +161,30 @@ int main(int /* argc */, char** /* argv */)
 void dump( UInt_t* data, ofstream *debugfile) {
   // Crude event dump
   if (!debugfile) return;
-  int evnum = data[4];
-  int len = data[0] + 1;
-  int evtype = data[1]>>16;
+  UInt_t evnum = data[4];
+  UInt_t len = data[0] + 1;
+  UInt_t evtype = data[1]>>16;
 
   *debugfile << "\n\n Event number " << dec << evnum << endl;
   *debugfile << " length " << len << " type " << evtype << endl;
-  int ipt = 0;
-  for (int j=0; j<(len/5); j++) {
+  UInt_t ipt = 0;
+  for (UInt_t j=0; j<(len/5); j++) {
     *debugfile << dec << "\n evbuffer[" << ipt << "] = ";
-    for (int k=j; k<j+5; k++) {
+    for (UInt_t k=j; k<j+5; k++) {
       *debugfile << hex << data[ipt++] << " ";
     }
     *debugfile << endl;
   }
   if (ipt < len) {
     *debugfile << dec << "\n evbuffer[" << ipt << "] = ";
-    for (int k=ipt; k<len; k++) {
+    for (UInt_t k=ipt; k<len; k++) {
       *debugfile << hex << data[ipt++] << " ";
     }
     *debugfile << endl;
   }
 }
 
-void process (Int_t trignum, THaEvData *evdata, ofstream *debugfile) {
-
-  Int_t rdata;
+void process (UInt_t trignum, THaEvData *evdata, ofstream *debugfile) {
 
   if (debugfile) {
     *debugfile << "\n\nHello.  Now we process evdata : "<<endl;
@@ -202,24 +200,22 @@ void process (Int_t trignum, THaEvData *evdata, ofstream *debugfile) {
 
   if (use_module) {  // Using data directly from the module from THaEvData
 
-    Module *fadc;
-
-    fadc = evdata->GetModule(MYCRATE,MYSLOT);
+    Module *fadc = evdata->GetModule(MYCRATE,MYSLOT);
     if (debugfile) *debugfile << "main:  using module, fadc ptr = "<<fadc<<endl;
 
     if (fadc) {
       if (debugfile) *debugfile << "main: num events "<<fadc->GetNumEvents(MYCHAN)<<endl;
       if (debugfile) *debugfile << "main: fadc mode "<<fadc->GetMode()<<endl;
       if (fadc->GetMode()==1 || fadc->GetMode()==8) {
-        for (Int_t i = 0; i < fadc->GetNumEvents(kSampleADC,MYCHAN); i++) {
-          rdata = fadc->GetData(kSampleADC,MYCHAN, i);
+        for ( UInt_t i = 0; i < fadc->GetNumEvents(kSampleADC, MYCHAN); i++) {
+          UInt_t rdata = fadc->GetData(kSampleADC,MYCHAN, i);
           if (debugfile) *debugfile << "main:  SAMPLE fadc data on ch.   "<<dec<<MYCHAN<<"  "<<i<<"  "<<rdata<<endl;
           if (trignum < nsnaps) hsnaps[trignum]->Fill(i,rdata);
         }
       }
       if (fadc->GetMode()==7) {
-        for (Int_t i = 0; i < fadc->GetNumEvents(kPulseIntegral,MYCHAN); i++) {
-          rdata = fadc->GetData(kPulseIntegral,MYCHAN,i);
+        for ( UInt_t i = 0; i < fadc->GetNumEvents(kPulseIntegral, MYCHAN); i++) {
+          UInt_t rdata = fadc->GetData(kPulseIntegral,MYCHAN,i);
           if (debugfile) *debugfile << "main:  INTEG fadc data on ch.   "<<dec<<MYCHAN<<"  "<<i<<"  "<<rdata<<endl;
           hinteg->Fill(rdata);
           hinteg2->Fill(rdata);
@@ -233,21 +229,21 @@ void process (Int_t trignum, THaEvData *evdata, ofstream *debugfile) {
     if (debugfile) *debugfile << "main:  using THaEvData  "<<endl;
     if (debugfile) {
       *debugfile << "main:  num hits "<< evdata->GetNumEvents(kSampleADC,MYCRATE,MYSLOT,MYCHAN)<<"   "<<evdata->GetNumEvents(kPulseIntegral,MYCRATE,MYSLOT,MYCHAN)<<endl;
-      for (Int_t jj=0; jj<10; jj++) {
-        for (Int_t kk=0; kk<15; kk++) {
+      for (UInt_t jj=0; jj<10; jj++) {
+        for (UInt_t kk=0; kk<15; kk++) {
           *debugfile << "burger "<<jj<<"  "<<kk<<"  "<< evdata->GetNumEvents(kSampleADC,MYCRATE,jj,kk)<<"   "<<evdata->GetNumEvents(kPulseIntegral,MYCRATE,jj,kk)<<endl;
         }
       }
     }
 
 
-    for (Int_t i=0; i < evdata->GetNumEvents(kSampleADC,MYCRATE,MYSLOT,MYCHAN); i++) {
-      rdata = evdata->GetData(kSampleADC,MYCRATE,MYSLOT,MYCHAN,i);
+    for (UInt_t i=0; i < evdata->GetNumEvents(kSampleADC,MYCRATE,MYSLOT,MYCHAN); i++) {
+      UInt_t rdata = evdata->GetData(kSampleADC,MYCRATE,MYSLOT,MYCHAN,i);
       if (debugfile) *debugfile << "main:  SAMPLE fadc data on ch.   "<<dec<<MYCHAN<<"  "<<i<<"  "<<rdata<<endl;
       if (trignum < nsnaps) hsnaps[trignum]->Fill(i,rdata);
     }
-    for (Int_t i=0; i < evdata->GetNumEvents(kPulseIntegral,MYCRATE,MYSLOT,MYCHAN); i++) {
-      rdata = evdata->GetData(kPulseIntegral,MYCRATE,MYSLOT,MYCHAN,i);
+    for (UInt_t i=0; i < evdata->GetNumEvents(kPulseIntegral,MYCRATE,MYSLOT,MYCHAN); i++) {
+      UInt_t rdata = evdata->GetData(kPulseIntegral,MYCRATE,MYSLOT,MYCHAN,i);
       if (debugfile) *debugfile << "main:  INTEG fadc data on ch.   "<<dec<<MYCHAN<<"  "<<i<<"  "<<rdata<<endl;
       hinteg->Fill(rdata);
       hinteg2->Fill(rdata);

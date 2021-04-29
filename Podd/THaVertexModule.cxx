@@ -23,13 +23,6 @@ THaVertexModule::THaVertexModule() : fVertexOK(false)
 }
 
 //_____________________________________________________________________________
-THaVertexModule::~THaVertexModule()
-{
-  // Destructor
-
-}
-
-//_____________________________________________________________________________
 void THaVertexModule::VertexClear()
 {
   // Reset vertex object

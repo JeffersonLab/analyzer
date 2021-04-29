@@ -89,17 +89,17 @@ protected:
   TClonesArray*  fHits;      // Fired wires
   TClonesArray*  fClusters;  // Clusters
 
-  Int_t fNHits;           // Total number of hits (including multihits)
-  Int_t fNWiresHit;       // Number of wires with one or more hits
-  Int_t fNpass;           // Number of passes over hits in FindClusters()
+  Int_t  fNHits;          // Total number of hits (including multihits)
+  Int_t  fNWiresHit;      // Number of wires with one or more hits
+  Int_t  fNpass;          // Number of passes over hits in FindClusters()
 
   // Configuration
-  Int_t fMinClustSize;    // Minimum number of wires needed for a cluster
-  Int_t fMaxClustSpan;    // Maximum size of cluster in wire spacings
-  Int_t fNMaxGap;         // Max gap in wire numbers in a cluster
-  Int_t fMinTime;         // Min and Max limits of TDC times for clusters
-  Int_t fMaxTime;
-  Int_t fMaxThits;        // Max allowed number of hits per wire per event
+  Int_t  fMinClustSize;   // Minimum number of wires needed for a cluster
+  Int_t  fMaxClustSpan;   // Maximum size of cluster in wire spacings
+  Int_t  fNMaxGap;        // Max gap in wire numbers in a cluster
+  Int_t  fMinTime;        // Min and Max limits of TDC times for clusters
+  Int_t  fMaxTime;
+  UInt_t fMaxThits;       // Max allowed number of hits per wire per event
   Double_t fMinTdiff;     // Min and Max limits of times between wires in cluster
   Double_t fMaxTdiff;
   Double_t fTDCRes;       // TDC Resolution ( s / channel)
@@ -127,8 +127,8 @@ protected:
   THaVDC* fVDC;           // VDC detector to which this plane belongs
 
   // Temporary storage shared between member functions
-  Int_t fMaxData;
-  Int_t fNextHit;
+  UInt_t fMaxData;
+  Int_t  fNextHit;
   THaVDCWire* fPrevWire;
 
   virtual void  MakePrefix();
@@ -137,7 +137,7 @@ protected:
   virtual Int_t ReadGeometry( FILE* file, const TDatime& date,
 			      Bool_t required = false );
 
-  virtual Int_t StoreHit( const DigitizerHitInfo_t& hitinfo, Int_t data );
+  virtual Int_t StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data );
   virtual void  PrintDecodedData( const THaEvData& evdata ) const;
 
 private:

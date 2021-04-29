@@ -28,48 +28,46 @@
 namespace Decoder {
 
 class THaCrateMap {
-
-
  public:
      static const UInt_t MAXCHAN;
      static const UInt_t MAXDATA;
 
      explicit THaCrateMap( const char* db = "cratemap" ); // Construct uninitialized
      virtual ~THaCrateMap() = default;
-     bool isFastBus(int crate) const;               // True if fastbus crate;
-     bool isVme(int crate) const;                   // True if VME crate;
-     bool isCamac(int crate) const;                 // True if CAMAC crate;
-     bool isScalerCrate(int crate) const;           // True if a Scaler crate
-     bool isBankStructure(int crate) const;         // True if modules in banks
-     int getNslot(int crate) const;                 // Returns num occupied slots
-     int getMinSlot(int crate) const;               // Returns min slot number
-     int getMaxSlot(int crate) const;               // Returns max slot number
+     bool isFastBus( UInt_t crate ) const;          // True if fastbus crate;
+     bool isVme( UInt_t crate ) const;              // True if VME crate;
+     bool isCamac( UInt_t crate ) const;            // True if CAMAC crate;
+     bool isScalerCrate( UInt_t crate ) const;      // True if a Scaler crate
+     bool isBankStructure( UInt_t crate ) const;    // True if modules in banks
+     UInt_t getNslot( UInt_t crate ) const;         // Returns num occupied slots
+     UInt_t getMinSlot( UInt_t crate ) const;       // Returns min slot number
+     UInt_t getMaxSlot( UInt_t crate ) const;       // Returns max slot number
 
  // This class must inform the crateslot where the modules are.
 
-     int getModel(int crate, int slot) const;       // Return module type
-     int getHeader(int crate, int slot) const;      // Return header
-     int getMask(int crate, int slot) const;        // Return header mask
-     int getBank(int crate, int slot) const;        // Return bank number
-     int getScalerCrate(int word) const;            // Return scaler crate if word=header
-     const char* getScalerLoc(int crate) const;     // Return scaler crate location
-     int setCrateType(int crate, const char* type); // set the crate type
-     int setModel(int crate, int slot, UInt_t mod,
-		  UInt_t nchan=MAXCHAN,
-		  UInt_t ndata=MAXDATA);            // set the module type
-     int setHeader(int crate, int slot, int head);  // set the header
-     int setMask(int crate, int slot, int mask);    // set the header mask
-     int setBank(int crate, int slot, int bank);    // set the bank
-     int setScalerLoc(int crate, const char* location); // Sets the scaler location
-     UInt_t getNchan(int crate, int slot) const;  // Max number of channels
-     UInt_t getNdata(int crate, int slot) const;  // Max number of data words
-     bool slotDone(int slot) const;                       // Used to speed up decoder
-     bool crateUsed(int crate) const;               // True if crate is used
-     bool slotUsed(int crate, int slot) const;      // True if slot in crate is used
-     bool slotClear(int crate, int slot) const;     // Decide if not clear ea event
-     void setSlotDone(int slot);                    // Used to speed up decoder
+     Int_t  getModel( UInt_t crate, UInt_t slot ) const;       // Return module type
+     UInt_t getHeader( UInt_t crate, UInt_t slot ) const;      // Return header
+     UInt_t getMask( UInt_t crate, UInt_t slot ) const;        // Return header mask
+     Int_t  getBank( UInt_t crate, UInt_t slot ) const;        // Return bank number
+     UInt_t getScalerCrate( UInt_t word) const;            // Return scaler crate if word=header
+     const char* getScalerLoc( UInt_t crate ) const;     // Return scaler crate location
+     Int_t  setCrateType( UInt_t crate, const char* stype ); // set the crate type
+     Int_t  setModel( UInt_t crate, UInt_t slot, Int_t mod,
+                      UInt_t nchan= MAXCHAN,
+                      UInt_t ndata= MAXDATA );            // set the module type
+     Int_t  setHeader( UInt_t crate, UInt_t slot, UInt_t head );  // set the header
+     Int_t  setMask( UInt_t crate, UInt_t slot, UInt_t mask );    // set the header mask
+     Int_t  setBank( UInt_t crate, UInt_t slot, Int_t bank );    // set the bank
+     Int_t  setScalerLoc( UInt_t crate, const char* location ); // Sets the scaler location
+     UInt_t getNchan( UInt_t crate, UInt_t slot ) const;  // Max number of channels
+     UInt_t getNdata( UInt_t crate, UInt_t slot ) const;  // Max number of data words
+     bool slotDone( UInt_t slot ) const;                       // Used to speed up decoder
+     bool crateUsed( UInt_t crate ) const;               // True if crate is used
+     bool slotUsed( UInt_t crate, UInt_t slot ) const;      // True if slot in crate is used
+     bool slotClear( UInt_t crate, UInt_t slot ) const;     // Decide if not clear ea event
+     void setSlotDone( UInt_t slot );                    // Used to speed up decoder
      void setSlotDone();                            // Used to speed up decoder
-     void setUnused(int crate,int slot);            // Disables this crate,slot
+     void setUnused( UInt_t crate, UInt_t slot );            // Disables this crate,slot
      int init(TString the_map);                     // Initialize from text-block
      int init(ULong64_t time = 0);                  // Initialize by Unix time.
      int init( FILE* fi, const TString& fname );    // Initialize from given file
@@ -89,187 +87,189 @@ class THaCrateMap {
        TString crate_type;
        bool bank_structure;
        ECrateCode crate_code;
-       Int_t nslot, minslot, maxslot;
+       UInt_t nslot, minslot, maxslot;
        bool crate_used;
        bool slot_used[MAXSLOT], slot_clear[MAXSLOT];
-       UInt_t model[MAXSLOT];
-       Int_t header[MAXSLOT], headmask[MAXSLOT];
+       Int_t model[MAXSLOT];
+       UInt_t header[MAXSLOT], headmask[MAXSLOT];
        Int_t bank[MAXSLOT];
        UInt_t nchan[MAXSLOT], ndata[MAXSLOT];
        TString scalerloc;
      } crdat[MAXROC];
+
      bool didslot[MAXSLOT];
-     void incrNslot(int crate);
-     void setUsed(int crate,int slot);
-     void setClear(int crate,int slot,bool clear);
-     int  SetModelSize(int crate, int slot, UInt_t model );
+
+     void  incrNslot( UInt_t crate );
+     void  setUsed( UInt_t crate, UInt_t slot );
+     void  setClear( UInt_t crate, UInt_t slot, bool clear);
+     Int_t SetModelSize( UInt_t crate, UInt_t slot, UInt_t model );
 
      ClassDef(THaCrateMap,0) // Map of modules in DAQ crates
 };
 
 //=============== inline functions ================================
 inline
-bool THaCrateMap::isFastBus(int crate) const
+bool THaCrateMap::isFastBus( UInt_t crate ) const
 {
-  assert( crate >= 0 && crate < MAXROC );
+  assert( crate < MAXROC );
   return (crdat[crate].crate_code == kFastbus);
 }
 
 inline
-bool THaCrateMap::isVme(int crate) const
+bool THaCrateMap::isVme( UInt_t crate ) const
 {
-  assert( crate >= 0 && crate < MAXROC );
+  assert( crate < MAXROC );
   return  (crdat[crate].crate_code == kVME ||
 	   crdat[crate].crate_code == kScaler );
 }
 
 inline
-bool THaCrateMap::isCamac(int crate) const
+bool THaCrateMap::isCamac( UInt_t crate ) const
 {
-  assert( crate >= 0 && crate < MAXROC );
+  assert( crate < MAXROC );
   return (crdat[crate].crate_code == kCamac);
 }
 
 inline
-bool THaCrateMap::isScalerCrate(int crate) const
+bool THaCrateMap::isScalerCrate( UInt_t crate ) const
 {
-  assert( crate >= 0 && crate < MAXROC );
+  assert( crate < MAXROC );
   return (crdat[crate].crate_code == kScaler);
 }
 
 inline
-bool THaCrateMap::isBankStructure(int crate) const
+bool THaCrateMap::isBankStructure( UInt_t crate ) const
 {
-  assert( crate >= 0 && crate < MAXROC );
+  assert( crate < MAXROC );
   return (crdat[crate].bank_structure);
 }
 
 inline
-bool THaCrateMap::crateUsed(int crate) const
+bool THaCrateMap::crateUsed( UInt_t crate ) const
 {
-  assert( crate >= 0 && crate < MAXROC );
+  assert( crate < MAXROC );
   return crdat[crate].crate_used;
 }
 
 inline
-bool THaCrateMap::slotUsed(int crate, int slot) const
+bool THaCrateMap::slotUsed( UInt_t crate, UInt_t slot ) const
 {
-  assert( crate >= 0 && crate < MAXROC && slot >= 0 && slot < MAXSLOT );
-  if( crate < 0 || crate >= MAXROC || slot < 0 || slot >= MAXSLOT )
+  assert( crate < MAXROC && slot < MAXSLOT );
+  if( crate >= MAXROC || slot >= MAXSLOT )
     return false;
   return crdat[crate].slot_used[slot];
 }
 
 inline
-bool THaCrateMap::slotClear(int crate, int slot) const
+bool THaCrateMap::slotClear( UInt_t crate, UInt_t slot ) const
 {
-  assert( crate >= 0 && crate < MAXROC && slot >= 0 && slot < MAXSLOT );
+  assert( crate < MAXROC && slot < MAXSLOT );
   return crdat[crate].slot_clear[slot];
 }
 
 inline
-int THaCrateMap::getModel(int crate, int slot) const
+Int_t THaCrateMap::getModel( UInt_t crate, UInt_t slot ) const
 {
-  assert( crate >= 0 && crate < MAXROC && slot >= 0 && slot < MAXSLOT );
+  assert( crate < MAXROC && slot < MAXSLOT );
   return crdat[crate].model[slot];
 }
 
 inline
-int THaCrateMap::getMask(int crate, int slot) const
+UInt_t THaCrateMap::getMask( UInt_t crate, UInt_t slot ) const
 {
-  assert( crate >= 0 && crate < MAXROC && slot >= 0 && slot < MAXSLOT );
+  assert( crate < MAXROC && slot < MAXSLOT );
   return crdat[crate].headmask[slot];
 }
 
 inline
-int THaCrateMap::getBank(int crate, int slot) const
+Int_t THaCrateMap::getBank( UInt_t crate, UInt_t slot ) const
 {
-  assert( crate >= 0 && crate < MAXROC && slot >= 0 && slot < MAXSLOT );
+  assert( crate < MAXROC && slot < MAXSLOT );
   return crdat[crate].bank[slot];
 }
 
 inline
-UInt_t THaCrateMap::getNchan(int crate, int slot) const
+UInt_t THaCrateMap::getNchan( UInt_t crate, UInt_t slot ) const
 {
-  assert( crate >= 0 && crate < MAXROC && slot >= 0 && slot < MAXSLOT );
+  assert( crate < MAXROC && slot < MAXSLOT );
   return crdat[crate].nchan[slot];
 }
 
 inline
-UInt_t THaCrateMap::getNdata(int crate, int slot) const
+UInt_t THaCrateMap::getNdata( UInt_t crate, UInt_t slot ) const
 {
-  assert( crate >= 0 && crate < MAXROC && slot >= 0 && slot < MAXSLOT );
+  assert( crate < MAXROC && slot < MAXSLOT );
   return crdat[crate].ndata[slot];
 }
 
 inline
-int THaCrateMap::getNslot(int crate) const
+UInt_t THaCrateMap::getNslot( UInt_t crate ) const
 {
-  assert( crate >= 0 && crate < MAXROC );
+  assert( crate < MAXROC );
   return crdat[crate].nslot;
 }
 
 inline
-const char* THaCrateMap::getScalerLoc(int crate) const
+const char* THaCrateMap::getScalerLoc( UInt_t crate ) const
 {
-  assert( crate >= 0 && crate < MAXROC );
+  assert( crate < MAXROC );
   return crdat[crate].scalerloc.Data();
 }
 
 inline
-int THaCrateMap::getMinSlot(int crate) const
+UInt_t THaCrateMap::getMinSlot( UInt_t crate ) const
 {
-  assert( crate >= 0 && crate < MAXROC );
+  assert( crate < MAXROC );
   return crdat[crate].minslot;
 }
 
 inline
-int THaCrateMap::getMaxSlot(int crate) const
+UInt_t THaCrateMap::getMaxSlot( UInt_t crate ) const
 {
-  assert( crate >= 0 && crate < MAXROC );
+  assert( crate < MAXROC );
   return crdat[crate].maxslot;
 }
 
 inline
-int THaCrateMap::getHeader(int crate, int slot) const
+UInt_t THaCrateMap::getHeader( UInt_t crate, UInt_t slot ) const
 {
-  assert( crate >= 0 && crate < MAXROC && slot >= 0 && slot < MAXSLOT );
+  assert( crate < MAXROC && slot < MAXSLOT );
   return crdat[crate].header[slot];
 }
 
 inline
-void THaCrateMap::setUsed(int crate, int slot)
+void THaCrateMap::setUsed( UInt_t crate, UInt_t slot )
 {
-  assert( crate >= 0 && crate < MAXROC && slot >= 0 && slot < MAXSLOT );
+  assert( crate < MAXROC && slot < MAXSLOT );
   crdat[crate].crate_used = true;
   crdat[crate].slot_used[slot] = true;
 }
 
 inline
-void THaCrateMap::setUnused(int crate, int slot)
+void THaCrateMap::setUnused( UInt_t crate, UInt_t slot )
 {
-  assert( crate >= 0 && crate < MAXROC && slot >= 0 && slot < MAXSLOT );
+  assert( crate < MAXROC && slot < MAXSLOT );
   crdat[crate].slot_used[slot] = false;
 }
 
 inline
-void THaCrateMap::setClear(int crate, int slot, bool clear)
+void THaCrateMap::setClear( UInt_t crate, UInt_t slot, bool clear)
 {
-  assert( crate >= 0 && crate < MAXROC && slot >= 0 && slot < MAXSLOT );
+  assert( crate < MAXROC && slot < MAXSLOT );
   crdat[crate].slot_clear[slot] = clear;
 }
 
 inline
-bool THaCrateMap::slotDone(int slot) const
+bool THaCrateMap::slotDone( UInt_t slot ) const
 {
-  assert( slot >= 0 && slot < MAXSLOT );
+  assert( slot < MAXSLOT );
   return didslot[slot];
 }
 
 inline
-void THaCrateMap::setSlotDone(int slot)
+void THaCrateMap::setSlotDone( UInt_t slot )
 {
-  assert( slot >= 0 && slot < MAXSLOT );
+  assert( slot < MAXSLOT );
   didslot[slot] = true;
 }
 

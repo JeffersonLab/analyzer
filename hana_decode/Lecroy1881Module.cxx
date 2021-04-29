@@ -13,10 +13,10 @@ namespace Decoder {
 Module::TypeIter_t Lecroy1881Module::fgThisType =
   DoRegister( ModuleType( "Decoder::Lecroy1881Module" , 1881));
 
-Lecroy1881Module::Lecroy1881Module(Int_t crate, Int_t slot)
+Lecroy1881Module::Lecroy1881Module( UInt_t crate, UInt_t slot )
   : FastbusModule(crate, slot)
 {
-  Init();
+  Lecroy1881Module::Init();
 }
 
 void Lecroy1881Module::Init()

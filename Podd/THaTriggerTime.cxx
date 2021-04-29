@@ -70,9 +70,9 @@ Int_t THaTriggerTime::Process( const THaEvData& evdata)
   // The "event time" is reported as fToffsets[earliest] + fGlOffset.
   // The actual TDC values of all the triggers are reported in fTrgTimes,
   // primarily for debugging purposes.
-  Int_t earliest = -1;
+  UInt_t earliest = kMaxUInt;
   Double_t reftime = kBig;
-  for( Int_t imod = 0; imod < fDetMap->GetSize(); imod++ ) {
+  for( UInt_t imod = 0; imod < fDetMap->GetSize(); imod++ ) {
     THaDetMap::Module* d = fDetMap->GetModule(imod);
 
     // Loop over our short-list of relevant channels.
@@ -83,21 +83,21 @@ Int_t THaTriggerTime::Process( const THaEvData& evdata)
     // look through each channel and take the earliest hit
     // In common stop mode, the earliest hit corresponds to the largest TDC data.
     // This is taken care of by making fTDCRes and hence all fTrgTimes negative.
-    for( Int_t ihit = 0; ihit < evdata.GetNumHits(d->crate, d->slot, d->lo); ihit++ ) {
+    for( UInt_t ihit = 0; ihit < evdata.GetNumHits(d->crate, d->slot, d->lo); ihit++ ) {
       Double_t t = fTDCRes * evdata.GetData(d->crate, d->slot, d->lo, ihit);
       if( t < fTrgTimes[imod] )
         fTrgTimes[imod] = t;
     }
-    if( earliest < 0 || fTrgTimes[imod] < reftime ) {
+    if( earliest == kMaxUInt || fTrgTimes[imod] < reftime ) {
       earliest = imod;
       reftime = fTrgTimes[imod];
     }
   }
 
   fEvtTime = fGlOffset;
-  if( earliest >= 0 ) {
-    assert( earliest < static_cast<Int_t>(fToffsets.size()) );
-    assert( earliest < static_cast<Int_t>(fTrgTypes.size()) );
+  if( earliest != kMaxUInt ) {
+    assert( earliest < fToffsets.size() );
+    assert( earliest < fTrgTypes.size() );
     fEvtTime += fToffsets[earliest];
     fEvtType = fTrgTypes[earliest];
   }
@@ -157,9 +157,9 @@ Int_t THaTriggerTime::ReadDatabase( const TDatime& date )
   //   1               0       crate slot chan
   //   2              10.e-9   crate slot chan
 
-  Int_t ndef = trigdef.size() / 5;
-  for( Int_t i = 0; i<ndef; ++i ) {
-    Int_t base = 5*i;
+  UInt_t ndef = trigdef.size() / 5;
+  for( UInt_t i = 0; i<ndef; ++i ) {
+    UInt_t base   = 5*i;
     Int_t itrg    = TMath::Nint( trigdef[base] );
     Double_t toff = trigdef[base+1];
     Int_t crate   = TMath::Nint( trigdef[base+2] );
@@ -170,8 +170,8 @@ Int_t THaTriggerTime::ReadDatabase( const TDatime& date )
     fDetMap->AddModule( crate, slot, chan, chan, itrg );
   }
   assert( ndef == fDetMap->GetSize() );
-  assert( ndef == static_cast<Int_t>(fTrgTypes.size()) );
-  assert( ndef == static_cast<Int_t>(fToffsets.size()) );
+  assert( ndef == fTrgTypes.size() );
+  assert( ndef == fToffsets.size() );
 
   // Use the TDC mode flag to set the sign of fTDCRes (see comments in Process)
   fTDCRes = (fCommonStop ? 1.0 : -1.0) * TMath::Abs(fTDCRes);

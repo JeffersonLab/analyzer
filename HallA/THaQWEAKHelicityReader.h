@@ -23,30 +23,31 @@ public:
   
   // when an event trigger the acquisition the reported helicity, T_settle and Pattern sync
   //signals are recorded by the an Input Register.
-  UInt_t GetPatternTir() const{return fPatternTir;};
-  UInt_t GetHelicityTir() const{return fHelicityTir;};
-  UInt_t GetTSettleTir() const{return fTSettleTir;};
-  UInt_t GetTimeStampTir() const{return fTimeStampTir;};
+  UInt_t GetPatternTir() const { return fPatternTir; };
+  UInt_t GetHelicityTir() const { return fHelicityTir; };
+  UInt_t GetTSettleTir() const { return fTSettleTir; };
+  UInt_t GetTimeStampTir() const { return fTimeStampTir; };
   // in parallel, these signals are recorded in the ring buffer of the helicity gated scaler
   // the maximum depth of this ring is for now 500.
-  UInt_t GetRingDepth() const{return fIRing;}; // how many events are in the ring
+  UInt_t GetRingDepth() const { return fIRing; }; // how many events are in the ring
   // I should have the depth of the ring defined in the data base
   // let call it kHelRingDepth for now
   void Print();
 
   class ROCinfo {
   public:
-    ROCinfo() : roc(0), header(0), index(0) {}
-    Int_t  roc;               // ROC to read out
-    Int_t  header;            // Headers to search for (0 = ignore)
-    Int_t  index;             // Index into buffer
+    ROCinfo() : roc(kMaxUInt), header(0), index(0) {}
+    Bool_t  valid() const;
+    UInt_t  roc;              // ROC to read out
+    UInt_t  header;           // Headers to search for (0 = ignore)
+    UInt_t  index;            // Index into buffer
   };
   
 protected:
 
   // Used by ReadDatabase
   enum EROC { kHel = 0, kTime, kRing, kROC3 };
-  Int_t SetROCinfo( EROC which, Int_t roc, Int_t header, Int_t index );
+  Int_t SetROCinfo( EROC which, UInt_t roc, UInt_t header, UInt_t index );
 
   virtual void  Clear( Option_t* opt="" );
   virtual Int_t ReadData( const THaEvData& evdata );
@@ -56,23 +57,23 @@ protected:
   void Begin();
   void End();
 
-  Int_t fPatternTir;
-  Int_t fHelicityTir;
-  Int_t fTSettleTir;
-  Int_t fTimeStampTir;
-  Int_t fOldTimeStampTir;
-  Int_t fIRing;
+  UInt_t fPatternTir;
+  UInt_t fHelicityTir;
+  UInt_t fTSettleTir;
+  UInt_t fTimeStampTir;
+  UInt_t fOldTimeStampTir;
+  UInt_t fIRing;
   // the ring map is defined in 
   // http://www.jlab.org/~adaq/halog/html/1011_archive/101101100943.html
   // this map is valid after November 1rst
   enum { kHelRingDepth = 500 };
-  Int_t fHelicityRing[kHelRingDepth];
-  Int_t fPatternRing[kHelRingDepth];
-  Int_t fTimeStampRing[kHelRingDepth];
-  Int_t fT3Ring[kHelRingDepth];
-  Int_t fU3Ring[kHelRingDepth];
-  Int_t fT5Ring[kHelRingDepth];
-  Int_t fT10Ring[kHelRingDepth];
+  UInt_t fHelicityRing[kHelRingDepth];
+  UInt_t fPatternRing[kHelRingDepth];
+  UInt_t fTimeStampRing[kHelRingDepth];
+  UInt_t fT3Ring[kHelRingDepth];
+  UInt_t fU3Ring[kHelRingDepth];
+  UInt_t fT5Ring[kHelRingDepth];
+  UInt_t fT10Ring[kHelRingDepth];
 
   // ROC information
   // If a header is zero the index is taken to be from the start of
@@ -89,7 +90,7 @@ protected:
 
 private:
 
-  static Int_t FindWord( const THaEvData& evdata, const ROCinfo& info );
+  static UInt_t FindWord( const THaEvData& evdata, const ROCinfo& info );
 
   ClassDef(THaQWEAKHelicityReader,0) // Helper class for reading QWEAK helicity data
 

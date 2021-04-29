@@ -107,17 +107,17 @@ Int_t THaReactionPoint::Process( const THaEvData& )
   }
   static const TVector3 yax( 0.0, 1.0, 0.0 );
   TVector3 org, v; 
-  Double_t t;
 
   for( Int_t i = 0; i<ntracks; i++ ) {
-    THaTrack* theTrack = static_cast<THaTrack*>( tracks->At(i) );
+    auto* theTrack = static_cast<THaTrack*>( tracks->At(i) );
     // Ignore junk tracks
     if( !theTrack || !theTrack->HasTarget() ) 
       continue;  
     org.SetXYZ( 0.0, theTrack->GetTY(), 0.0 );
     org *= fSpectro->GetToLabRot();
     org += fSpectro->GetPointingOffset();
-    if( !IntersectPlaneWithRay( theTrack->GetPvect(), yax, org, 
+    Double_t t = 0; // dummy
+    if( !IntersectPlaneWithRay( theTrack->GetPvect(), yax, org,
 				beam_org, beam_ray, t, v ))
       continue; // Oops, track and beam parallel?
     theTrack->SetVertex(v);

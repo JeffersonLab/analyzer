@@ -52,7 +52,7 @@ protected:
 
   Int_t     fG0delay;  // delay of helicity (# windows)
 
-  Int_t     fEvtype;               // Current CODA event type
+  UInt_t    fEvtype;               // Current CODA event type
   Double_t  fTdavg, fTdiff, fT0, fT9;
   Bool_t    fT0T9; // Was fT0 computed using fT9?
   Bool_t    fQuad_calibrated;

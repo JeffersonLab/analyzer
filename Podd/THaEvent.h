@@ -20,8 +20,8 @@ public:
     fTargetPol(0), fRun(0) {}
   virtual ~THaEventHeader() = default;
 
-  void Set( UInt_t num, Int_t type, Int_t len, ULong64_t time,
-	    Int_t hel, Int_t pol, Int_t run ) { 
+  void Set( UInt_t num, UInt_t type, UInt_t len, ULong64_t time,
+	    Int_t hel, Int_t pol, UInt_t run ) {
     fEvtNum    = num; 
     fEvtType   = type;
     fEvtLen    = len;
@@ -31,30 +31,30 @@ public:
     fRun       = run;
   }
   // Old Set() for backwards compatibility
-  void Set( UInt_t num, Int_t type, Int_t len, Double_t time,
-	    Int_t hel, Int_t run ) { 
+  void Set( UInt_t num, UInt_t type, UInt_t len, Double_t time,
+	    Int_t hel, UInt_t run ) {
     Set( num, type, len, static_cast<ULong64_t>( 1e6*time ),
 	 hel, 0, run );
   }
   UInt_t    GetEvtNum()    const  { return fEvtNum; }
-  Int_t     GetEvtType()   const  { return fEvtType; }
-  Int_t     GetEvtLen()    const  { return fEvtLen; }
+  UInt_t    GetEvtType()   const  { return fEvtType; }
+  UInt_t    GetEvtLen()    const  { return fEvtLen; }
   ULong64_t GetEvtTime()   const  { return fEvtTime; }
   Int_t     GetHelicity()  const  { return fHelicity; }
   Int_t     GetTargetPol() const  { return fTargetPol; }
-  Int_t     GetRun()       const  { return fRun; }
+  UInt_t    GetRun()       const  { return fRun; }
 
 private:
   // The units of these data are entirely up to the experiment
   ULong64_t fEvtTime;         // Event time stamp
   UInt_t    fEvtNum;          // Event number
-  Int_t     fEvtType;         // Event type
-  Int_t     fEvtLen;          // Event length
+  UInt_t    fEvtType;         // Event type
+  UInt_t    fEvtLen;          // Event length
   Int_t     fHelicity;        // Beam helicity
   Int_t     fTargetPol;       // Target polarization
-  Int_t     fRun;             // Run number
+  UInt_t    fRun;             // Run number
 
-  ClassDef(THaEventHeader,5)  // Header for analyzed event data in ROOT file
+  ClassDef(THaEventHeader,6)  // Header for analyzed event data in ROOT file
 };
 
 

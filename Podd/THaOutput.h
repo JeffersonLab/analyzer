@@ -98,7 +98,7 @@ protected:
   void BuildList(const std::vector<std::string>& vdata);
   void Print() const;
   // Variables, Formulas, Cuts, Histograms
-  Int_t fNvar;
+  UInt_t fNvar;
   Double_t *fVar, *fEpicsVar;
   std::vector<std::string> fVarnames, 
                            fFormnames, fFormdef,

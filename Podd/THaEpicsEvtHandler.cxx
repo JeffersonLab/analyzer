@@ -46,38 +46,37 @@ Bool_t THaEpicsEvtHandler::IsLoaded(const char* tag) const {
   return fEpics->IsLoaded(tag);
 }
 
-Double_t THaEpicsEvtHandler::GetData(const char* tag, Int_t event) const {
+Double_t THaEpicsEvtHandler::GetData( const char* tag, UInt_t event ) const {
   assert( IsLoaded(tag) ); // Should never ask for non-existent data
   if ( !fEpics ) return 0;
   return fEpics->GetData(tag, event);
 }
 
-Double_t THaEpicsEvtHandler::GetTime(const char* tag, Int_t event) const {
+Double_t THaEpicsEvtHandler::GetTime( const char* tag, UInt_t event ) const {
   assert( IsLoaded(tag) );
   if ( !fEpics ) return 0;
   return fEpics->GetTimeStamp(tag, event);
 }
 
-TString THaEpicsEvtHandler::GetString(const char* tag, Int_t event) const {
+TString THaEpicsEvtHandler::GetString( const char* tag, UInt_t event ) const {
   assert( IsLoaded(tag) );
   if ( !fEpics ) return TString("nothing");
   return TString(fEpics->GetString(tag, event).c_str());
 }
 
-Int_t THaEpicsEvtHandler::Analyze(THaEvData *evdata)
-{
+Int_t THaEpicsEvtHandler::Analyze( THaEvData* evdata ) {
 
   if ( !IsMyEvent(evdata->GetEvType()) ) return -1;
 
   UInt_t evbuffer[MAXDATA];
-  Int_t recent_event = evdata->GetEvNum();  
+  UInt_t recent_event = evdata->GetEvNum();
 
   if (evdata->GetEvLength() >= MAXDATA) 
       cerr << "EpicsHandler:  need a bigger buffer ! "<<endl;
 
 // Copy the buffer.  EPICS events are infrequent, so no harm.
-  for (Int_t i = 0; i < evdata->GetEvLength(); i++) 
-         evbuffer[i] = evdata->GetRawData(i);
+  for( UInt_t i = 0; i < evdata->GetEvLength(); i++ )
+    evbuffer[i] = evdata->GetRawData(i);
 
   if (fDebugFile) EvDump(evdata);
 

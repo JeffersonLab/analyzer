@@ -249,7 +249,7 @@ void CrateLocMulti::Load( const THaEvData& evdata )
   // Load all decoded hits from crate/slot/chan address
 
   data = 0;
-  for (Int_t i = 0; i < evdata.GetNumHits(crate,slot,chan); ++i) {
+  for( UInt_t i = 0; i < evdata.GetNumHits(crate, slot, chan); ++i ) {
     rdata.push_back( evdata.GetData(crate,slot,chan,i) );
   }
 }
@@ -309,7 +309,7 @@ void WordLoc::Load( const THaEvData& evdata )
 
   using rawdata_t = const UInt_t;
 
-  Int_t roclen = evdata.GetRocLength(crate);
+  UInt_t roclen = evdata.GetRocLength(crate);
   if( roclen < ntoskip+1 ) return;
 
   rawdata_t* cratebuf = evdata.GetRawDataBuffer(crate);

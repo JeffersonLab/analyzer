@@ -27,11 +27,11 @@ THaEvtTypeHandler::~THaEvtTypeHandler()
   }
 }
 
-void THaEvtTypeHandler::AddEvtType(int evtype) {
+void THaEvtTypeHandler::AddEvtType( UInt_t evtype) {
   eventtypes.push_back(evtype);
 }
 
-void THaEvtTypeHandler::SetEvtType(int evtype) {
+void THaEvtTypeHandler::SetEvtType( UInt_t evtype) {
   eventtypes.clear();
   AddEvtType(evtype);
 }
@@ -88,10 +88,10 @@ void THaEvtTypeHandler::SetDebugFile(const char *filename) {
     fDebugFile->open(filename);
 }
 
-Bool_t THaEvtTypeHandler::IsMyEvent(Int_t evnum) const
+Bool_t THaEvtTypeHandler::IsMyEvent( UInt_t type ) const
 {
   return any_of(eventtypes.begin(), eventtypes.end(),
-                [evnum](Int_t evtype){ return evnum == evtype; });
+                [type](UInt_t evtype){ return type == evtype; });
 }
 
 //_____________________________________________________________________________

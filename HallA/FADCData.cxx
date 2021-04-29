@@ -106,23 +106,23 @@ Int_t FADCData::ReadConfig( FILE* file, const TDatime& date, const char* prefix 
 
 //_____________________________________________________________________________
 static inline
-OptInt_t GetFADCValue( EModuleType type, const DigitizerHitInfo_t& hitinfo,
-                       Fadc250Module* fadc ) {
+OptUInt_t GetFADCValue( EModuleType type, const DigitizerHitInfo_t& hitinfo,
+                        Fadc250Module* fadc ) {
   // Get item 'm.type' from FADC module pointed to by fFADC
 
   assert(fadc);
-  OptInt_t val;
+  OptUInt_t val;
   if( fadc->HasCapability(type) &&
       hitinfo.hit < fadc->GetNumEvents(type, hitinfo.chan) ) {
     val = fadc->GetData(type, hitinfo.chan, hitinfo.hit);
-    if( val == -1 ) // error return code
+    if( val == kMaxUInt ) // error return code
       val = nullopt;
   }
   return val;
 }
 
 //_____________________________________________________________________________
-OptInt_t FADCData::LoadFADCData( const DigitizerHitInfo_t& hitinfo )
+OptUInt_t FADCData::LoadFADCData( const DigitizerHitInfo_t& hitinfo )
 {
   // Retrieve "pulse integral" value from FADC channel given in 'hitinfo'
 
@@ -135,7 +135,7 @@ OptInt_t FADCData::LoadFADCData( const DigitizerHitInfo_t& hitinfo )
 }
 
 //_____________________________________________________________________________
-Int_t FADCData::StoreHit( const DigitizerHitInfo_t& hitinfo, Int_t data )
+Int_t FADCData::StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data )
 {
   // Retrieve full set of FADC data and store it in our data members.
   // Must call LoadData first. Pass LoadData's return value (= pulse integral
@@ -166,7 +166,7 @@ Int_t FADCData::StoreHit( const DigitizerHitInfo_t& hitinfo, Int_t data )
   };
 
   for( const auto& item : items ) {
-    OptInt_t val = GetFADCValue(item.type, hitinfo, fadc);
+    OptUInt_t val = GetFADCValue(item.type, hitinfo, fadc);
     if( !val ) {
       string s("Error retrieving FADC item type ");
       s += item.name; s += ". Decoder bug. Call expert.";

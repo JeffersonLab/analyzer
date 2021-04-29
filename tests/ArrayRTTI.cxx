@@ -25,7 +25,7 @@ static RVarDef vars[] = {
   { "elem30", "f2D[3][0]", "f2D[3][0]" },
   { "vararr", "Var size",  "fVarArr" },
   { "vecarr", "std::vector", "fVectorF" },
-  { 0 }
+  { nullptr }
 };
 
 #define NDIG 5
@@ -35,16 +35,16 @@ namespace Tests {
 
 //_____________________________________________________________________________
 ArrayRTTI::ArrayRTTI( const char* name, const char* description ) :
-  UnitTest(name,description), fN(0), fVarArr(0)
+  UnitTest(name,description), fN(0), fVarArr(nullptr)
 {
   // Constructor. Initialize fixed variables with with kBig
 
-  for( Int_t i = 0; i < fgD1; ++i )
-    fArray[i] = kBig;
+  for( auto& i : fArray )
+    i = kBig;
 
-  for( Int_t i = 0; i < fgD21; ++i ) {
-    for( Int_t j = 0; j < fgD22; ++j ) {
-      f2D[i][j] = kBig;
+  for( auto& i : f2D ) {
+    for( auto& j : i ) {
+      j = kBig;
     }
   }
 }
@@ -117,7 +117,7 @@ Int_t ArrayRTTI::Test()
 
     // General tests
     THaVar* var = gHaVars->Find(varname.Data());
-    if( var == 0 ) {
+    if( !var ) {
       Error( Here(here), "Variable %s not defined",
 	     varname.Data() );
       return 1;
@@ -139,7 +139,7 @@ Int_t ArrayRTTI::Test()
 	return 3;
       }
       const Int_t* dim = var->GetDim();
-      if( dim == 0 ) {
+      if( !dim ) {
 	Error( Here(here), "Variable %s does not have array size info "
 	       "GetDim()", varname.Data() );
 	return 4;

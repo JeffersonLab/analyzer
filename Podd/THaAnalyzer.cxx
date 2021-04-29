@@ -504,7 +504,7 @@ Int_t THaAnalyzer::DoInit( THaRunBase* run )
       return -12;
     }
     // File exists?
-    if( gSystem->AccessPathName(fOutFileName) == false ) { //sic
+    if( !gSystem->AccessPathName(fOutFileName) ) { //sic
       if( !fOverwrite ) {
 	Error( here, "Output file %s already exists. Choose a different "
 	       "file name or enable overwriting with EnableOverwrite().",
@@ -903,14 +903,15 @@ void THaAnalyzer::PrintCounters() const
 {
   // Print statistics counters
   UInt_t w = 0;
-  for (size_t i = 0; i < fCounters.size(); i++) {
+  auto ncounters = static_cast<Int_t>(fCounters.size());
+  for( Int_t i = 0; i < ncounters; i++ ) {
     if( GetCount(i) > w )
       w = GetCount(i);
   }
   w = IntDigits(w);
 
   bool first = true;
-  for (size_t i = 0; i < fCounters.size(); i++) {
+  for( Int_t i = 0; i < ncounters; i++ ) {
     const char* text = fCounters[i].description;
     if( GetCount(i) != 0 && text && *text ) {
       if( first ) {
@@ -1162,11 +1163,12 @@ Int_t THaAnalyzer::PhysicsAnalysis( Int_t code )
   try {
     //--- If Event defined, fill it.
     if( fEvent ) {
-      fEvent->GetHeader()->Set( static_cast<UInt_t>(fEvData->GetEvNum()),
+      fEvent->GetHeader()->Set( fEvData->GetEvNum(),
 				fEvData->GetEvType(),
 				fEvData->GetEvLength(),
 				fEvData->GetEvTime(),
 				fEvData->GetHelicity(),
+				0,
 				fRun->GetNumber()
 				);
       fEvent->Fill();
@@ -1266,11 +1268,13 @@ Int_t THaAnalyzer::MainAnalysis()
   }
 
   //=== EPICS data ===
-  fEvData->SetEpicsEvtType(fEpicsHandler->GetEvtType());
-  if( fDoSlowControl && fEpicsHandler->IsMyEvent(fEvData->GetEvType()) ) {
-    Incr(kNevEpics);
-    retval = SlowControlAnalysis(retval);
-    evdone = true;
+  if( fEpicsHandler->GetNumTypes() > 0 ) {
+    fEvData->SetEpicsEvtType(fEpicsHandler->GetEvtType());
+    if( fDoSlowControl && fEpicsHandler->IsMyEvent(fEvData->GetEvType()) ) {
+      Incr(kNevEpics);
+      retval = SlowControlAnalysis(retval);
+      evdone = true;
+    }
   }
 
   //=== Other events ===

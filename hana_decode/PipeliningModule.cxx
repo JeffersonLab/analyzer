@@ -9,13 +9,13 @@
 #include "PipeliningModule.h"
 #include "THaSlotData.h"
 #include <iostream>
-#include <cstdlib>  // for exit()
+#include <stdexcept>
 
 using namespace std;
 
 namespace Decoder {
 
-PipeliningModule::PipeliningModule(Int_t crate, Int_t slot)
+PipeliningModule::PipeliningModule( UInt_t crate, UInt_t slot )
   : VmeModule(crate,slot),
     fNWarnings(0), fBlockHeader(0),
     data_type_def(15),  // initialize to FILLER WORD
@@ -26,17 +26,17 @@ PipeliningModule::PipeliningModule(Int_t crate, Int_t slot)
   ReStart();
 }
 
-Int_t PipeliningModule::SplitBuffer(const std::vector< UInt_t >& codabuffer) {
+Int_t PipeliningModule::SplitBuffer( const std::vector<UInt_t>& codabuffer ) {
 
 // Split a CODA buffer into blocks.   A block is data from a traditional physics event.
 // In MultiBlock Mode, a pipelining module can have several events in each CODA buffer.
 // If block level is 1, then the buffer is a traditional physics event.
 // If finding >1 block, this will set fMultiBlockMode = true
 
-  std::vector<UInt_t > oneEventBuffer;
+  std::vector<UInt_t> oneEventBuffer;
   eventblock.clear();
   fBlockIsDone = false;
-  Int_t eventnum = 1;
+  UInt_t eventnum = 1;
 
   if ( !fFirstTime && !IsMultiBlockMode() ) {
      eventblock.push_back(codabuffer);
@@ -44,12 +44,12 @@ Int_t PipeliningModule::SplitBuffer(const std::vector< UInt_t >& codabuffer) {
      return 1;
   }
 
-  Int_t slot_blk_hdr = 0, slot_evt_hdr = 0;
-  Int_t BlockStart=0;
+  UInt_t slot_blk_hdr = 0, slot_evt_hdr = 0;
+  Int_t BlockStart = 0;
 
   block_size = 0;   // member of the base class Module.h
 
-  for( unsigned int data : codabuffer ) {
+  for( UInt_t data : codabuffer ) {
 
     if ( fDebug >= 1) {
       if (fDebugFile) *fDebugFile << hex <<"SplitBuffer, data = "<<hex<<data<<dec<<endl;
@@ -76,7 +76,7 @@ Int_t PipeliningModule::SplitBuffer(const std::vector< UInt_t >& codabuffer) {
           if (fMultiBlockMode && slot_blk_hdr==fSlot) BlockStart=1;
           // Debug output
           if ( fDebug >= 1 && fDebugFile) {
-            Int_t iblock_num = (data >> 8) & 0x3FF;  // Event block number, mask 10 bits
+            UInt_t iblock_num = (data >> 8) & 0x3FF;  // Event block number, mask 10 bits
             *fDebugFile << "SplitBuffer:  %% data BLOCK header: slot_blk_hdr = " << dec<<slot_blk_hdr
                 << " iblock_num = " << iblock_num << " block_size = " << block_size << endl;
           }
@@ -84,7 +84,7 @@ Int_t PipeliningModule::SplitBuffer(const std::vector< UInt_t >& codabuffer) {
         break;
       case 1: // Block trailer, indicates the end of a block of events
         {
-          Int_t slot_blk_trl = (data >> 22) & 0x1F;  // Slot number (set by VME64x backplane), mask 5 bits
+          UInt_t slot_blk_trl = (data >> 22) & 0x1F;  // Slot number (set by VME64x backplane), mask 5 bits
           if (fMultiBlockMode && slot_blk_trl==fSlot) {
             BlockStart++;
             oneEventBuffer.push_back(data);
@@ -95,7 +95,7 @@ Int_t PipeliningModule::SplitBuffer(const std::vector< UInt_t >& codabuffer) {
 
           // Debug output
           if ( fDebug >= 1 && fDebugFile) {
-            Int_t nwords_inblock = (data >> 0) & 0x3FFFFF;  // Total number of words in block of events, mask 22 bits
+            UInt_t nwords_inblock = (data >> 0) & 0x3FFFFF;  // Total number of words in block of events, mask 22 bits
             *fDebugFile << "SplitBuffer: %% data BLOCK trailer: slot_blk_trl = " <<  slot_blk_trl
                 << " nwords_inblock = " << nwords_inblock << endl;
           }
@@ -104,8 +104,8 @@ Int_t PipeliningModule::SplitBuffer(const std::vector< UInt_t >& codabuffer) {
       case 2: // Event header, indicates start of an event, includes the trigger number
         {
           slot_evt_hdr = (data >> 22) & 0x1F;  // Slot number (set by VME64x backplane), mask 5 bits
-          Int_t evt_num = (data & 0x3FFFFF);   // Total number of words in block of events, mask 22 bits
-          Int_t evt_num_modblock = (block_size == 0) ? 0 : (evt_num % block_size);
+          UInt_t evt_num = (data & 0x3FFFFF);   // Total number of words in block of events, mask 22 bits
+          UInt_t evt_num_modblock = (block_size == 0) ? 0 : (evt_num % block_size);
           if (slot_blk_hdr==fSlot) {
             BlockStart++;
             if (fDebugFile) *fDebugFile << "evt_num logic "<< evt_num<<"  "<<block_size<<"  "<<evt_num_modblock<<"   "<<eventnum<<endl;
@@ -169,7 +169,7 @@ void PipeliningModule::PrintBlocks() {
 // Note, the first event buffer will have the block header
 // the last buffer will have the block trailer
 // and all buffers will have an event header
-  static Int_t maxloops=5000000;
+  const UInt_t maxloops = 5000000;
   if (!IsMultiBlockMode()) {
      if (fDebugFile) *fDebugFile << "PipeliningModule:  Not in multiblock mode.  Bye."<<endl;
      return;
@@ -179,12 +179,11 @@ void PipeliningModule::PrintBlocks() {
       *fDebugFile << "PipeliningModule :: Number of events in block = "<<eventblock.size()<<endl;
       *fDebugFile << "fSlot = "<<fSlot<<endl;
   }
-  Int_t iblk=1;
-  Int_t icnt=0;
+  UInt_t iblk=1;
+  UInt_t icnt=0;
   while (!BlockIsDone()) {
-    if (icnt++ > maxloops) {
-       cerr << "PipeliningModule:: ERROR: infinite loop PrintBlocks "<<endl;
-       exit(1);  //  should never happen
+    if( icnt++ > maxloops ) {
+      throw runtime_error("PipeliningModule:: ERROR: infinite loop PrintBlocks ");
     }
     std::vector<UInt_t> evbuffer = GetNextBlock();
     if (fDebugFile) *fDebugFile << "Block number " << iblk++ <<endl;

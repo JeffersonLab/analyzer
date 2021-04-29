@@ -98,7 +98,7 @@ Int_t THaQWEAKHelicity::DefineVariables( EMode mode )
 }
 //_____________________________________________________________________________
 
-void THaQWEAKHelicity::PrintEvent(Int_t evtnum)
+void THaQWEAKHelicity::PrintEvent( UInt_t evtnum )
 {
 
   cout<<" ++++++ THaQWEAKHelicity::Print ++++++\n";
@@ -109,13 +109,13 @@ void THaQWEAKHelicity::PrintEvent(Int_t evtnum)
   cout << " helicity="<<fHelicityTir<<" Pattern ="<<fPatternTir
        <<" TSettle="<<fTSettleTir<<" TimeStamp="<<fTimeStampTir<<endl;
   cout << " == Ring data =="<<endl;
-  Int_t sumu3=0;
-  Int_t sumt3=0;
-  Int_t sumt5=0;
-  Int_t sumt10=0;
-  Int_t sumtime=0;
+  UInt_t sumu3=0;
+  UInt_t sumt3=0;
+  UInt_t sumt5=0;
+  UInt_t sumt10=0;
+  UInt_t sumtime=0;
     
-  for (int i=0;i<fIRing;i++)
+  for (UInt_t i=0;i<fIRing;i++)
     {
       cout<<" iring="<< i<<" helicity="<<fHelicityRing[i]
 	  <<" Pattern="<<fPatternRing[i]<<" timestamp="<<fTimeStampRing[i]
@@ -250,7 +250,7 @@ Int_t THaQWEAKHelicity::Decode( const THaEvData& evdata )
   return 0;
 }
 //_____________________________________________________________________________
-void THaQWEAKHelicity::CheckTIRvsRing(Int_t evnum)
+void THaQWEAKHelicity::CheckTIRvsRing( UInt_t eventnumber )
 {
   // here one checks that the offset between the TIR helicity reports 
   // and the Ring report is as expected (fQWEAKOffset)
@@ -272,7 +272,7 @@ void THaQWEAKHelicity::CheckTIRvsRing(Int_t evnum)
 	  if(fQWEAKDebug>0)
 	    {
 	      cout<<here<<" BAD !! the offset between the helicity ring and the input register ";
-	      cout<<"is not what is expected: reset the seed !! event#"<<evnum<<"\n";
+	      cout << "is not what is expected: reset the seed !! event#" << eventnumber << "\n";
 	    }
 	  SetErrorCode(1);
 
@@ -280,7 +280,7 @@ void THaQWEAKHelicity::CheckTIRvsRing(Int_t evnum)
 	    {
 	      cout<<"=====================================\n";
 	      cout<<here<<endl;
-	      cout<<" Event number ="<<evnum<<endl;
+	      cout << " Event number =" << eventnumber << endl;
 	      cout<<" fOffsetTIRvsRing ="<<fOffsetTIRvsRing;
 	      cout<<" fHelicityLastTIR ="<<fHelicityLastTIR;
 	      cout<<" fPatternLastTIR ="<<fPatternLastTIR;
@@ -317,11 +317,11 @@ void THaQWEAKHelicity::SetDebug( Int_t level )
 }
 
 //_____________________________________________________________________________
-void THaQWEAKHelicity::LoadHelicity(Int_t eventnumber)
+void THaQWEAKHelicity::LoadHelicity( UInt_t eventnumber )
 {
   static const char* const here = "THaQWEAKHelicity::LoadHelicity";
 
-  for (int i=0;i<fIRing;i++)
+  for (UInt_t i=0;i<fIRing;i++)
     { 
       //Check for the number of events between two Pattern signals
       if(fPatternRing[i]==1)
@@ -387,9 +387,9 @@ void THaQWEAKHelicity::LoadHelicity(Int_t eventnumber)
 	  if (fRing_NSeed==fMAXBIT)
 	    {
 	      fRingSeed_actual=fRingSeed_reported;
-	      Int_t advance=0;
+	      UInt_t advance=0;
 	      //take the delay into account
-	      for(int j=0;j<fQWEAKDelay;j++)
+	      for(UInt_t j=0;j<fQWEAKDelay;j++)
 		{	      
 		  advance+=1;
 		  if( advance == fQWEAKNPattern)
@@ -462,11 +462,11 @@ void THaQWEAKHelicity::LoadHelicity(Int_t eventnumber)
       else
 	{
 	  fTSettle=0;
-	  Int_t localfPhase=fRingPhase_reported;
-	  Int_t localfSeed=fRingSeed_actual;
-	  Int_t localfPolarity=fRing_actual_polarity;
+	  UInt_t localfPhase=fRingPhase_reported;
+	  UInt_t localfSeed=fRingSeed_actual;
+	  UInt_t localfPolarity=fRing_actual_polarity;
 	  
-	  for(int i=0; i<fOffsetTIRvsRing;i++)
+	  for(UInt_t i=0; i<fOffsetTIRvsRing;i++)
 	    {
 	      localfPhase+=1;
 	      if( localfPhase == fQWEAKNPattern)
@@ -496,14 +496,15 @@ void THaQWEAKHelicity::LoadHelicity(Int_t eventnumber)
 }
 
 //_____________________________________________________________________________
-THaHelicityDet::EHelicity THaQWEAKHelicity::SetHelicity(Int_t polarity, Int_t phase)
+THaHelicityDet::EHelicity
+THaQWEAKHelicity::SetHelicity( UInt_t polarity, UInt_t phase )
 {
   // here predicted_reported_helicity can have a value of 0 or 1
   // fPatternSequence[fRingPhase_reported] can have a value of 1 or -1
 
   THaHelicityDet::EHelicity localhel = kUnknown;
 
-  Int_t select = polarity + fPatternSequence[phase];
+  Int_t select = static_cast<Int_t>(polarity) + fPatternSequence[phase];
   if( select == -1 || select == 2 ) {
     if( HWPIN )
       localhel = kPlus;
@@ -527,7 +528,7 @@ THaHelicityDet::EHelicity THaQWEAKHelicity::SetHelicity(Int_t polarity, Int_t ph
 }
 
 //_____________________________________________________________________________
-Int_t  THaQWEAKHelicity::RanBit30(Int_t& ranseed)
+UInt_t THaQWEAKHelicity::RanBit30( UInt_t& ranseed )
 {
 
   bool bit7    = (ranseed & 0x00000040) != 0;
@@ -535,7 +536,7 @@ Int_t  THaQWEAKHelicity::RanBit30(Int_t& ranseed)
   bool bit29   = (ranseed & 0x10000000) != 0;
   bool bit30   = (ranseed & 0x20000000) != 0;
 
-  Int_t newbit = (bit30 ^ bit29 ^ bit28 ^ bit7) & 0x1;
+  UInt_t newbit = (bit30 ^ bit29 ^ bit28 ^ bit7) & 0x1;
 
   if(ranseed<=0) {
     if(fQWEAKDebug>1)
@@ -549,6 +550,7 @@ Int_t  THaQWEAKHelicity::RanBit30(Int_t& ranseed)
     cout << "THaQWEAKHelicity::RanBit30, newbit=" << newbit << "\n";
   }
 
+  // Returns 0 or 1
   return newbit;
 }
 

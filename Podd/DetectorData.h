@@ -28,9 +28,9 @@ class DetectorData : public TNamed {
 public:
   DetectorData() = delete;
 
-  virtual Int_t StoreHit( const DigitizerHitInfo_t& hitinfo, Int_t data ) = 0;
-  virtual Int_t GetLogicalChannel( const DigitizerHitInfo_t& hitinfo ) const;
-  virtual Int_t GetSize() const = 0;
+  virtual Int_t  StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data ) = 0;
+  virtual Int_t  GetLogicalChannel( const DigitizerHitInfo_t& hitinfo ) const;
+  virtual UInt_t GetSize() const = 0;
 
   void          Clear( Option_t* ="" ) override;
   virtual void  Reset( Option_t* ="" ) {};
@@ -77,12 +77,12 @@ struct ADCCalib_t {
 
 struct ADCData_t {
   ADCData_t()
-    : adc(kMinInt), adc_p(kBig), adc_c(kBig), nadc(0) {}
+    : adc(kMaxUInt), adc_p(kBig), adc_c(kBig), nadc(0) {}
   void adc_clear() { adc = kMinInt; adc_p = adc_c = kBig; nadc = 0; }
-  Int_t  adc;       // Raw ADC amplitude (channels)
+  UInt_t adc;       // Raw ADC amplitude (channels)
   Data_t adc_p;     // Pedestal-subtracted ADC amplitude
   Data_t adc_c;     // Gain-corrected ADC amplitude
-  Int_t  nadc;      // Number of hits on this ADC
+  UInt_t nadc;      // Number of hits on this ADC
 };
 
 // TDC info
@@ -94,11 +94,11 @@ struct TDCCalib_t {
 };
 
 struct TDCData_t {
-  TDCData_t() : tdc(kMinInt), tdc_c(kBig), ntdc(0) {}
+  TDCData_t() : tdc(kMaxUInt), tdc_c(kBig), ntdc(0) {}
   void tdc_clear() { tdc = kMinInt; tdc_c = kBig; ntdc = 0; }
-  Int_t  tdc;       // Raw TDC time (channels)
+  UInt_t tdc;       // Raw TDC time (channels)
   Data_t tdc_c;     // Converted TDC time, corrected for offset (s)
-  Int_t  ntdc;      // Number of hits on this TDC
+  UInt_t ntdc;      // Number of hits on this TDC
 };
 
 // ADC and TDC combined
@@ -118,23 +118,23 @@ struct HitCount_t {
   // These counters indicate for how many TDC/ADC channels, respectively,
   // any data was found in the raw data stream, even if uninteresting
   // (below pedestal etc.)
-  Int_t tdc;      // Count of TDCs with one or more hits
-  Int_t adc;      // Count of ADCs with one or more hits
+  UInt_t tdc;     // Count of TDCs with one or more hits
+  UInt_t adc;     // Count of ADCs with one or more hits
 };
 
 //_____________________________________________________________________________
 class ADCData : public DetectorData {
 public:
-  ADCData( const char* name, const char* desc, Int_t nelem );
+  ADCData( const char* name, const char* desc, UInt_t nelem );
 
   Int_t       StoreHit( const DigitizerHitInfo_t& hitinfo,
-                        Int_t data ) override;
+                        UInt_t data ) override;
 
   void        Clear( Option_t* ="" ) override;
   void        Reset( Option_t* ="" ) override;
 
-  Int_t       GetHitCount() const      { return fNHits; }
-  Int_t       GetSize() const override { return fCalib.size(); }
+  UInt_t      GetHitCount() const      { return fNHits; }
+  UInt_t      GetSize() const override { return fCalib.size(); }
 #ifdef NDEBUG
   ADCCalib_t& GetCalib( size_t i )     { return fCalib[i]; }
   ADCData_t&  GetADC( size_t i )       { return fADCs[i]; }
@@ -153,7 +153,7 @@ protected:
 
   // Per-event data
   std::vector<ADCData_t>  fADCs;    // ADC data
-  Int_t                   fNHits;   // Number of ADCs with signal
+  UInt_t                  fNHits;   // Number of ADCs with signal
 
   Int_t DefineVariablesImpl(
     THaAnalysisObject::EMode mode = THaAnalysisObject::kDefine,
@@ -166,16 +166,16 @@ protected:
 //_____________________________________________________________________________
 class PMTData : public DetectorData {
 public:
-  PMTData( const char* name, const char* desc, Int_t nelem );
+  PMTData( const char* name, const char* desc, UInt_t nelem );
 
   Int_t       StoreHit( const DigitizerHitInfo_t& hitinfo,
-                        Int_t data ) override;
+                        UInt_t data ) override;
 
   void        Clear( Option_t* ="" ) override;
   void        Reset( Option_t* ="" ) override;
 
   HitCount_t& GetHitCount()            { return fNHits; }
-  Int_t       GetSize() const override { return fCalib.size(); }
+  UInt_t      GetSize() const override { return fCalib.size(); }
 #ifdef NDEBUG
   PMTCalib_t& GetCalib( size_t i ) { return fCalib[i]; }
   PMTData_t&  GetPMT( size_t i )   { return fPMTs[i]; }

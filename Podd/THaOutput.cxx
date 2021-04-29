@@ -250,7 +250,7 @@ Int_t THaOutput::Init( const char* filename )
   fArrayNames.clear();
   fVNames.clear();
 
-  for (Int_t ivar = 0; ivar < fNvar; ivar++) {
+  for (UInt_t ivar = 0; ivar < fNvar; ivar++) {
     const auto* pvar = gHaVars->Find(fVarnames[ivar].c_str());
     if (pvar) {
       if (pvar->IsArray()) {
@@ -265,7 +265,7 @@ Int_t THaOutput::Init( const char* filename )
       cout << "There is probably a typo error... "<<endl;
     }
   }
-  Int_t k = 0;
+  UInt_t k = 0;
   for (auto inam = fFormnames.begin(); inam != fFormnames.end(); ++inam, ++k) {
     string tinfo = Form("f%d",k);
     // FIXME: avoid duplicate formulas
@@ -438,14 +438,14 @@ Int_t THaOutput::Attach()
   
   if( !gHaVars ) return -2;
 
-  Int_t NAry = fArrayNames.size();
-  Int_t NVar = fVNames.size();
+  UInt_t NAry = fArrayNames.size();
+  UInt_t NVar = fVNames.size();
 
   fVariables.resize(NVar);
   fArrays.resize(NAry);
   
   // simple variable-type names
-  for (Int_t ivar = 0; ivar < NVar; ivar++) {
+  for (UInt_t ivar = 0; ivar < NVar; ivar++) {
     auto* pvar = gHaVars->Find(fVNames[ivar].c_str());
     if (pvar) {
       if ( !pvar->IsArray() ) {
@@ -464,7 +464,7 @@ Int_t THaOutput::Attach()
   }
 
   // arrays
-  for (Int_t ivar = 0; ivar < NAry; ivar++) {
+  for (UInt_t ivar = 0; ivar < NAry; ivar++) {
     auto* pvar = gHaVars->Find(fArrayNames[ivar].c_str());
     if (pvar) {
       if ( pvar->IsArray() ) {
@@ -550,7 +550,7 @@ Int_t THaOutput::Process()
   if( fgDoBench ) fgBench.Stop("Cuts");
 
   if( fgDoBench ) fgBench.Begin("Variables");
-  for (Int_t ivar = 0; ivar < fNvar; ivar++) {
+  for (UInt_t ivar = 0; ivar < fNvar; ivar++) {
     const auto* pvar = fVariables[ivar];
     if( pvar ) {
       Double_t x = pvar->GetValue();
@@ -1082,7 +1082,7 @@ Int_t THaOutput::ChkHistTitle(Int_t iden, const string& sline)
   vector<string> stemp = Split(ctemp);
   if (stemp.size() > 1) {
      sfvarx = stemp[0];
-     Int_t ssize = stemp.size();
+     UInt_t ssize = stemp.size();
      if (ssize == 4 || ssize == 5) {
        sscanf(stemp[1].c_str(),"%8d",&nx);
        sscanf(stemp[2].c_str(),"%16f",&xlo);

@@ -24,13 +24,13 @@ static const UInt_t defaultDT = 4;
 
 class ScalerLoc { // Utility class used by THaScalerEvtHandler
  public:
-  ScalerLoc( TString nm, TString desc, Int_t idx, Int_t sl,
-             Int_t ich, Int_t iki) :
+  ScalerLoc( TString nm, TString desc, UInt_t idx, UInt_t sl,
+             UInt_t ich, UInt_t iki ) :
     name(std::move(nm)), description(std::move(desc)), index(idx), islot(sl),
-    ichan(ich),  ikind(iki) {};
+    ichan(ich), ikind(iki) {};
   ~ScalerLoc() = default;
   TString name, description;
-  Int_t index, islot, ichan, ikind;
+  UInt_t index, islot, ichan, ikind;
 };
 
 class THaScalerEvtHandler : public THaEvtTypeHandler {
@@ -44,19 +44,19 @@ public:
 
    virtual Int_t Analyze(THaEvData *evdata);
    virtual EStatus Init( const TDatime& run_time);
-   virtual Int_t End( THaRunBase* r=0 );
+   virtual Int_t End( THaRunBase* r=nullptr );
 
 
 protected:
 
-   void AddVars(const TString& name, const TString& desc, Int_t iscal,
-       Int_t ichan, Int_t ikind);
+   void AddVars( const TString& name, const TString& desc, UInt_t iscal,
+                 UInt_t ichan, UInt_t ikind );
    void DefVars();
 
    std::vector<Decoder::GenScaler*> scalers;
    std::vector<ScalerLoc*> scalerloc;
    Double_t evcount;
-   Int_t fNormIdx, fNormSlot;
+   UInt_t fNormIdx, fNormSlot;
    Double_t *dvars;
    TTree *fScalerTree;
 

@@ -21,55 +21,56 @@ public:
   CodaDecoder();
   virtual ~CodaDecoder();
 
-  virtual Int_t LoadEvent(const UInt_t* evbuffer);
-  virtual Int_t LoadFromMultiBlock();
+  virtual Int_t  LoadEvent(const UInt_t* evbuffer);
+  virtual Int_t  LoadFromMultiBlock();
 
-  virtual Int_t GetPrescaleFactor(Int_t trigger) const;
-  virtual void  SetRunTime(ULong64_t tloc);
-  virtual Int_t SetDataVersion( Int_t version ) { return SetCodaVersion(version); }
-          Int_t SetCodaVersion( Int_t version );
+  virtual UInt_t GetPrescaleFactor( UInt_t trigger ) const;
+  virtual void   SetRunTime( ULong64_t tloc );
+  virtual Int_t  SetDataVersion( Int_t version ) { return SetCodaVersion(version); }
+          Int_t  SetCodaVersion( Int_t version );
 
   enum { MAX_PSFACT = 12 };
 
 protected:
-  virtual Int_t LoadIfFlagData(const UInt_t* evbuffer);
+  virtual Int_t  LoadIfFlagData(const UInt_t* evbuffer);
 
-  void  FillBankData(UInt_t *rdat, Int_t roc, Int_t bank, Int_t offset=0, Int_t num=1) const;
+  void FillBankData( UInt_t* rdat, UInt_t roc, Int_t bank, UInt_t offset = 0,
+                     UInt_t num = 1 ) const;
 
   Int_t FindRocs(const UInt_t *evbuffer);  // CODA2 version
   Int_t FindRocsCoda3(const UInt_t *evbuffer); // CODA3 version
-  Int_t roc_decode( Int_t roc, const UInt_t* evbuffer, Int_t ipt, Int_t istop );
-  Int_t bank_decode( Int_t roc, const UInt_t* evbuffer, Int_t ipt, Int_t istop );
+  Int_t roc_decode( UInt_t roc, const UInt_t* evbuffer, UInt_t ipt, UInt_t istop );
+  Int_t bank_decode( UInt_t roc, const UInt_t* evbuffer, UInt_t ipt, UInt_t istop );
 
   void CompareRocs();
-  void ChkFbSlot( Int_t roc, const UInt_t* evbuffer, Int_t ipt, Int_t istop );
+  void ChkFbSlot( UInt_t roc, const UInt_t* evbuffer, UInt_t ipt, UInt_t istop );
   void ChkFbSlots();
 
-  virtual Int_t init_slotdata();
-  virtual Int_t interpretCoda3(const UInt_t* buffer);
-  virtual Int_t trigBankDecode(const UInt_t *tb, int blkSize);
-  Int_t prescale_decode(const UInt_t* evbuffer);
-  void dump(const UInt_t* evbuffer) const;
+  virtual Int_t  init_slotdata();
+  virtual Int_t  interpretCoda3( const UInt_t* buffer );
+  virtual UInt_t trigBankDecode( const UInt_t* evbuffer, UInt_t blkSize );
+  Int_t prescale_decode( const UInt_t* evbuffer );
+  void  dump( const UInt_t* evbuffer ) const;
 
   // Data
   //  Int_t   synchflag; // unused
   //  Bool_t  buffmode,synchmiss,synchextra; // already defined in base class
 
-  Int_t nroc;
-  std::vector<Int_t> irn;
-  std::vector<bool>  fbfound;
-  std::vector<Int_t> psfact;
+  UInt_t nroc;
+  std::vector<UInt_t> irn;
+  std::vector<bool>   fbfound;
+  std::vector<UInt_t> psfact;
   Bool_t fdfirst;
   Int_t  chkfbstat;
 
   // CODA3 stuff
-  Int_t evcnt_coda3;
+  UInt_t evcnt_coda3;
 
   class TBOBJ {
   public:
      TBOBJ() : blksize(0), tag(0), nrocs(0), len(0), withTimeStamp(0),
          withRunInfo(0), evtNum(0), runInfo(0), start(nullptr), evTS(nullptr), evType(nullptr) {}
-     int      blksize;              /* total number of triggers in the Bank */
+     uint32_t blksize;              /* total number of triggers in the Bank */
      uint16_t tag;                  /* Trigger Bank Tag ID = 0xff2x */
      uint16_t nrocs;                /* Number of ROC Banks in the Event Block (val = 1-256) */
      uint32_t len;                  /* Total Length of the Trigger Bank - including Bank header */

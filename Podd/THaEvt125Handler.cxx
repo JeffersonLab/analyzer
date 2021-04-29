@@ -56,13 +56,13 @@ Float_t THaEvt125Handler::GetData(const std::string& tag)
 Int_t THaEvt125Handler::Analyze(THaEvData *evdata) 
 {
 
-  const Int_t startidx = 3;
+  const UInt_t startidx = 3;
 
   if ( !IsMyEvent(evdata->GetEvType()) ) return -1;
 
   if (fDebug) cout << "------------------\n  Event type 125 \n\n" << endl;
 
-  for (Int_t i = 0; i < evdata->GetEvLength(); i++) {
+  for (UInt_t i = 0; i < evdata->GetEvLength(); i++) {
 
     if (fDebug) cout << "data[" << dec << i
                      << "] =  0x" << hex << evdata->GetRawData(i)
@@ -73,7 +73,7 @@ Int_t THaEvt125Handler::Analyze(THaEvData *evdata)
 // The data in "dvars" appears as global variables.
 
     if (i >= startidx) {
-      Int_t index = i-startidx;
+      UInt_t index = i-startidx;
       if (index < NVars) dvars[index] = evdata->GetRawData(i);
     }
 

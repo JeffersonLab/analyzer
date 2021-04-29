@@ -28,10 +28,10 @@ public:
    virtual Int_t Analyze(THaEvData *evdata);
    virtual EStatus Init( const TDatime& run_time);
    virtual Int_t End( THaRunBase* r=nullptr );
-   Bool_t IsLoaded(const char* tag) const; 
-   Double_t GetData(const char* tag, Int_t event=0) const;  
-   Double_t GetTime(const char* tag, Int_t event=0) const; 
-   TString GetString (const char* tag, int event=0) const;
+   Bool_t IsLoaded(const char* tag) const;
+   Double_t GetData( const char* tag, UInt_t event = 0 ) const;
+   Double_t GetTime( const char* tag, UInt_t event = 0 ) const;
+   TString GetString( const char* tag, UInt_t event = 0 ) const;
 
 private:
 

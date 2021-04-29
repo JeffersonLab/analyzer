@@ -103,7 +103,7 @@ THaEvData::~THaEvData() {
   }
   delete fBench;
   // We must delete every array element since not all may be in fSlotUsed.
-  for( int i=0; i<MAXROC*MAXSLOT; i++ )
+  for( UInt_t i = 0; i < MAXROC*MAXSLOT; i++ )
     delete crateslot[i];
   delete [] crateslot;
   delete [] fSlotUsed;
@@ -113,7 +113,7 @@ THaEvData::~THaEvData() {
   fgInstances.ResetBitNumber(fInstance);
 }
 
-const char* THaEvData::DevType(int crate, int slot) const {
+const char* THaEvData::DevType( UInt_t crate, UInt_t slot) const {
 // Device type in crate, slot
   return ( GoodIndex(crate,slot) ) ?
     crateslot[idx(crate,slot)]->devType() : " ";
@@ -286,10 +286,10 @@ int THaEvData::init_cmap()  {
   return HED_OK;
 }
 
-void THaEvData::makeidx(int crate, int slot)
+void THaEvData::makeidx( UInt_t crate, UInt_t slot)
 {
   // Activate crate/slot
-  int idx = slot+MAXSLOT*crate;
+  UInt_t idx = slot+MAXSLOT*crate;
   delete crateslot[idx];  // just in case
   crateslot[idx] = new THaSlotData(crate,slot);
   if (fDebugFile) crateslot[idx]->SetDebugFile(fDebugFile);
@@ -310,7 +310,7 @@ void THaEvData::PrintOut() const {
   cout << "THaEvData::PrintOut() called" << endl;
 }
 
-void THaEvData::PrintSlotData(int crate, int slot) const {
+void THaEvData::PrintSlotData( UInt_t crate, UInt_t slot) const {
   // Print the contents of (crate, slot).
   if( GoodIndex(crate,slot)) {
     crateslot[idx(crate,slot)]->print();
@@ -325,24 +325,24 @@ int THaEvData::init_slotdata()
 {
   // Update lists of used/clearable slots in case crate map changed
   if(!fMap) return HED_ERR;
-  for( int i=0; i<fNSlotUsed; i++ ) {
+  for( UInt_t i=0; i<fNSlotUsed; i++ ) {
     THaSlotData* module = crateslot[fSlotUsed[i]];
-    int crate = module->getCrate();
-    int slot  = module->getSlot();
+    UInt_t crate = module->getCrate();
+    UInt_t slot  = module->getSlot();
     if( !fMap->crateUsed(crate) || !fMap->slotUsed(crate,slot) ||
 	!fMap->slotClear(crate,slot)) {
-      for( int k=0; k<fNSlotClear; k++ ) {
+      for( UInt_t k = 0; k < fNSlotClear; k++ ) {
 	if( module == crateslot[fSlotClear[k]] ) {
-	  for( int j=k+1; j<fNSlotClear; j++ )
+	  for( UInt_t j=k+1; j<fNSlotClear; j++ )
 	    fSlotClear[j-1] = fSlotClear[j];
 	  fNSlotClear--;
 	  break;
 	}
       }
     }
-    if( !fMap->crateUsed(crate) || !fMap->slotUsed(crate,slot)) {
-      for( int j=i+1; j<fNSlotUsed; j++ )
-	fSlotUsed[j-1] = fSlotUsed[j];
+    if( !fMap->crateUsed(crate) || !fMap->slotUsed(crate, slot) ) {
+      for( UInt_t j = i+1; j < fNSlotUsed; j++ )
+        fSlotUsed[j-1] = fSlotUsed[j];
       fNSlotUsed--;
     }
   }
@@ -353,8 +353,8 @@ int THaEvData::init_slotdata()
 void THaEvData::FindUsedSlots() {
   // Disable slots for which no module is defined.
   // This speeds up the decoder.
-  for (Int_t roc=0; roc<MAXROC; roc++) {
-    for (Int_t slot=0; slot<MAXSLOT; slot++) {
+  for( UInt_t roc = 0; roc < MAXROC; roc++ ) {
+    for( UInt_t slot = 0; slot < MAXSLOT; slot++ ) {
       if ( !fMap->slotUsed(roc,slot) ) continue;
       if ( !crateslot[idx(roc,slot)]->GetModule() ) {
 	cout << "WARNING:  No module defined for crate "<<roc<<"   slot "<<slot<<endl;
@@ -367,7 +367,7 @@ void THaEvData::FindUsedSlots() {
 }
 
 //_____________________________________________________________________________
-Module* THaEvData::GetModule(Int_t roc, Int_t slot) const
+Module* THaEvData::GetModule( UInt_t roc, UInt_t slot) const
 {
   THaSlotData *sldat = crateslot[idx(roc,slot)];
   if (sldat) return sldat->GetModule();

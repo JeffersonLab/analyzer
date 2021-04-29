@@ -66,7 +66,7 @@ protected:
   // fPadData duplicates the info in fHits for direct access via paddle number
   std::vector<HitData_t> fPadData;        // Calculated hit data, per paddle
 
-  virtual Int_t  StoreHit( const DigitizerHitInfo_t& hitinfo, Int_t data );
+  virtual Int_t  StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data );
   virtual void   PrintDecodedData( const THaEvData& evdata ) const;
 
   virtual Int_t  ApplyCorrections();

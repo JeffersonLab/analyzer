@@ -12,7 +12,7 @@ using namespace std;
 
 namespace Decoder {
 
-FastbusModule::FastbusModule(Int_t crate, Int_t slot)
+FastbusModule::FastbusModule( UInt_t crate, UInt_t slot )
   : Module(crate, slot), fHasHeader(false),
     fSlotMask(0), fSlotShift(0), fChanMask(0), fChanShift(0),
     fDataMask(0), fOptMask(0), fOptShift(0),
@@ -34,14 +34,14 @@ Int_t FastbusModule::Decode(const UInt_t *evbuffer) {
   return 1;
 }
 
-Int_t FastbusModule::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const UInt_t *pstop) {
+UInt_t FastbusModule::LoadSlot( THaSlotData *sldat, const UInt_t* evbuffer, const UInt_t *pstop) {
   static int first_load=true;
   if (first_load) {
-    if (fCrate < 0 || fCrate > MAXROC) {
+    if( fCrate >= MAXROC ) {
        cerr << "FastBusModule::ERROR: crate out of bounds"<<endl;
        fCrate = 0;
     }
-    if (fSlot < 0 || fSlot > MAXSLOT_FB) {
+    if( fSlot > MAXSLOT_FB ) {
        cerr << "FastBusModule::ERROR: slot out of bounds"<<endl;
        fSlot = 0;
     }

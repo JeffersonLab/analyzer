@@ -43,11 +43,11 @@ public:
     Module( Module& rhs ) = default;
     Module& operator=( Module& rhs ) = default;
 #endif
-    Int_t    crate;
-    Int_t    slot;
-    Int_t    lo;
-    Int_t    hi;
-    Int_t    first;      // logical number of first channel
+    UInt_t   crate;
+    UInt_t   slot;
+    UInt_t   lo;
+    UInt_t   hi;
+    UInt_t   first;      // logical number of first channel
     Int_t    model;      // model number of module (for ADC/TDC identification).
     Decoder::ChannelType type;
     Int_t    plane;      // Detector plane
@@ -62,7 +62,7 @@ public:
     { return crate == rhs.crate && slot == rhs.slot; }
     bool   operator!=( const Module& rhs ) const
     { return !(*this==rhs); }
-    Int_t  GetNchan() const { return hi-lo+1; }
+    UInt_t GetNchan() const { return hi-lo+1; }
     Int_t  GetModel() const { return model; }
     Bool_t IsTDC()    const { return
         type == Decoder::ChannelType::kCommonStopTDC ||
@@ -80,8 +80,8 @@ public:
     void   MakeADC();
     // Get logical detector channel from physical one, starting at 0.
     // For historical reasons, 'first' starts at 1, so subtract 1 here.
-    Int_t  ConvertToLogicalChannel( Int_t chan ) const
-    { return first + (reverse ? hi - chan : chan - lo) - 1; }
+    Int_t  ConvertToLogicalChannel( UInt_t chan ) const
+    { return static_cast<Int_t>(first + (reverse ? hi-chan : chan-lo) - 1); }
   };
 
   // Flags for GetMinMaxChan()
@@ -108,20 +108,20 @@ public:
   THaDetMap::Iterator MakeIterator( const THaEvData& evdata );
   THaDetMap::MultiHitIterator MakeMultiHitIterator( const THaEvData& evdata );
 
-  virtual Int_t     AddModule( Int_t crate, Int_t slot,
-                               Int_t chan_lo, Int_t chan_hi,
-                               Int_t first= 0, Int_t model= 0,
-                               Int_t refindex= -1, Int_t refchan= -1,
-                               Int_t plane= 0, Int_t signal= 0 );
+  virtual Int_t     AddModule( UInt_t crate, UInt_t slot,
+                               UInt_t chan_lo, UInt_t chan_hi,
+                               UInt_t first = 0, Int_t model = 0,
+                               Int_t refindex = -1, Int_t refchan = -1,
+                               Int_t plane = 0, Int_t signal = 0 );
           void      Clear()  { fMap.clear(); }
-  virtual Module*   Find( Int_t crate, Int_t slot, Int_t chan );
+  virtual Module*   Find( UInt_t crate, UInt_t slot, UInt_t chan );
   virtual Int_t     Fill( const std::vector<Int_t>& values, UInt_t flags = 0 );
-          void      GetMinMaxChan( Int_t& min, Int_t& max,
-				   ECountMode mode = kLogicalChan ) const;
+          void      GetMinMaxChan( UInt_t& min, UInt_t& max,
+                                   ECountMode mode = kLogicalChan ) const;
           Module*   GetModule( UInt_t i ) const;
-          Int_t     GetNchan( UInt_t i ) const;
-          Int_t     GetTotNumChan() const;
-          Int_t     GetSize() const { return static_cast<Int_t>(fMap.size()); }
+          UInt_t    GetNchan( UInt_t i ) const;
+          UInt_t    GetTotNumChan() const;
+          UInt_t    GetSize() const { return fMap.size(); }
 
           Int_t     GetModel( UInt_t i ) const;
           Bool_t    IsADC( UInt_t i ) const;
@@ -161,20 +161,22 @@ public:
       Iterator clone(*this); ++(*this); return clone;
     }
     virtual void reset();
-    Int_t size() const { return fNTotChan; }
+    UInt_t size() const { return fNTotChan; }
 
     // Status
     explicit virtual operator bool() const {
-      return fIMod>=0 and fIMod<fNMod and fIChan>=0 and fIChan<fNChan;
+      return (fIMod >= 0 and fIMod < static_cast<Int_t>(fNMod) and
+              fIChan >= 0 and fIChan < static_cast<Int_t>(fNChan));
     }
     bool operator!() const { return !static_cast<bool>(*this); }
 
     // Current value
     class HitInfo_t {
     public:
-      HitInfo_t()
-        : module{nullptr}, type{Decoder::ChannelType::kUndefined}, ev{-1},
-          crate{-1}, slot{-1}, chan{-1}, nhit{0}, hit{-1}, lchan{-1} {}
+      HitInfo_t() :
+        module{nullptr}, type{Decoder::ChannelType::kUndefined},
+        ev{kMaxUInt}, crate{kMaxUInt}, slot{kMaxUInt}, chan{kMaxUInt}, nhit{0},
+        hit{kMaxUInt}, lchan{-1} {}
       void set_crate_slot( const THaDetMap::Module* mod ) {
         if( mod->IsADC() )
           type = Decoder::ChannelType::kADC;
@@ -186,17 +188,17 @@ public:
       }
       void reset() {
         module = nullptr; type = Decoder::ChannelType::kUndefined;
-        crate = -1; slot = -1; chan = -1; nhit = 0; hit = -1; lchan = -1;
+        crate = slot = chan = hit = kMaxUInt; nhit = 0; lchan = -1;
       }
       Decoder::Module*     module; // Current frontend module being decoded
       Decoder::ChannelType type;   // Type of measurement recorded in current channel
-      Int_t  ev;      // Event number (for error messages)
-      Int_t  crate;   // Hardware crate
-      Int_t  slot;    // Hardware slot
-      Int_t  chan;    // Physical channel in current module
-      Int_t  nhit;    // Number of hits in current channel
-      Int_t  hit;     // Hit number in current channel
-      Int_t  lchan;   // Logical channel according to detector map
+      UInt_t  ev;      // Event number (for error messages)
+      UInt_t  crate;   // Hardware crate
+      UInt_t  slot;    // Hardware slot
+      UInt_t  chan;    // Physical channel in current module
+      UInt_t  nhit;    // Number of hits in current channel
+      UInt_t  hit;     // Hit number in current channel
+      Int_t   lchan;   // Logical channel according to detector map
     };
 
     const HitInfo_t* operator->() const { return &fHitInfo; }
@@ -206,12 +208,12 @@ public:
     THaDetMap& fDetMap;
     const THaEvData& fEvData;
     const THaDetMap::Module* fMod;
-    Int_t fNMod;         // Number of modules in detector map (cached)
-    Int_t fNTotChan;     // Total number of detector map channels (cached)
-    Int_t fNChan;        // Number of channels active in current module
-    Int_t fIMod;         // Current module index in detector map
-    Int_t fIChan;        // Current channel
-    HitInfo_t fHitInfo;  // Current state of this iterator
+    UInt_t fNMod;         // Number of modules in detector map (cached)
+    UInt_t fNTotChan;     // Total number of detector map channels (cached)
+    UInt_t fNChan;        // Number of channels active in current module
+    Int_t  fIMod;         // Current module index in detector map
+    Int_t  fIChan;        // Current channel
+    HitInfo_t fHitInfo;   // Current state of this iterator
 
     // Formatter for exception messages
     std::string msg( const char* txt ) const;
@@ -224,7 +226,8 @@ public:
     MultiHitIterator() = delete;
     virtual ~MultiHitIterator() = default;
     explicit virtual operator bool() const {
-      return Iterator::operator bool() and fIHit>=0 and fIHit<fHitInfo.nhit;
+      return (Iterator::operator bool() and fIHit >= 0 and
+              fIHit < static_cast<Int_t>(fHitInfo.nhit));
     }
     virtual Iterator& operator++();
     virtual void reset();
@@ -272,7 +275,7 @@ inline Int_t THaDetMap::GetModel( UInt_t i ) const {
   return uGetModule(i)->GetModel();
 }
 
-inline Int_t THaDetMap::GetNchan( UInt_t i ) const {
+inline UInt_t THaDetMap::GetNchan( UInt_t i ) const {
   // Return the number of channels of the i-th module
   if( i >= fMap.size() ) return 0;
   return uGetModule(i)->GetNchan();

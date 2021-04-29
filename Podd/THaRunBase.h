@@ -50,8 +50,8 @@ public:
           UInt_t       GetDataRequired() const { return fDataRequired; }
   virtual Int_t        GetDataVersion()       { return fDataVersion; }
           UInt_t       GetNumAnalyzed() const { return fNumAnalyzed; }
-          Int_t        GetNumber()      const { return fNumber; }
-          Int_t        GetType()        const { return fType; }
+          UInt_t       GetNumber()      const { return fNumber; }
+          UInt_t       GetType()        const { return fType; }
           UInt_t       GetFirstEvent()  const { return fEvtRange[0]; }
           UInt_t       GetLastEvent()   const { return fEvtRange[1]; }
   THaRunParameters*    GetParameters()  const { return fParam; }
@@ -67,9 +67,9 @@ public:
           void         SetFirstEvent( UInt_t n );
           void         SetLastEvent(  UInt_t n );
           void         SetEventRange( UInt_t first, UInt_t last );
-  virtual void         SetNumber( Int_t number );
+  virtual void         SetNumber( UInt_t number );
           void         SetRunParamClass( const char* classname );
-  virtual void         SetType( Int_t type );
+  virtual void         SetType( UInt_t type );
   virtual Int_t        Update( const THaEvData* evdata );
 
   enum EInfoType { kDate      = BIT(0), 
@@ -78,8 +78,8 @@ public:
 		   kPrescales = BIT(3) };
 
 protected:
-  Int_t         fNumber;        // Run number
-  Int_t         fType;          // Run type/mode/etc.
+  UInt_t        fNumber;        // Run number
+  UInt_t        fType;          // Run type/mode/etc.
   TDatime       fDate;          // Run date and time
   UInt_t        fEvtRange[2];   // Event range to analyze
   UInt_t        fNumAnalyzed;   // Number of physics events actually analyzed

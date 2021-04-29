@@ -297,7 +297,7 @@ Int_t THaDetectorBase::ReadGeometry( FILE* file, const TDatime& date,
 
 //_____________________________________________________________________________
 void THaDetectorBase::DebugWarning( const char* here, const char* msg,
-                                    Int_t evnum )
+                                    UInt_t evnum )
 {
   if( fDebug > 0 ) {
     Warning( Here(here), "Event %d: %s", evnum, msg );
@@ -365,7 +365,7 @@ Int_t THaDetectorBase::ReadDatabase( const TDatime& date )
 }
 
 //_____________________________________________________________________________
-Int_t THaDetectorBase::StoreHit( const DigitizerHitInfo_t& hitinfo, Int_t data )
+Int_t THaDetectorBase::StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data )
 {
   // Put decoded frontend data into fDetectorData. Used by Decode().
   // hitinfo: channel info (crate/slot/channel/hit/type)
@@ -380,7 +380,7 @@ Int_t THaDetectorBase::StoreHit( const DigitizerHitInfo_t& hitinfo, Int_t data )
 }
 
 //_____________________________________________________________________________
-OptInt_t THaDetectorBase::LoadData( const THaEvData& evdata,
+OptUInt_t THaDetectorBase::LoadData( const THaEvData& evdata,
                                     const DigitizerHitInfo_t& hitinfo )
 {
   // Default method for loading the data for the hit referenced in 'hitinfo'.
@@ -423,7 +423,7 @@ Int_t THaDetectorBase::Decode( const THaEvData& evdata )
     }
 
     // Get the data for this hit
-    OptInt_t data = LoadData(evdata, hitinfo);
+    auto data = LoadData(evdata, hitinfo);
     if( !data ) {
       // Data could not be retrieved (probably decoder bug)
       DataLoadWarning(hitinfo, here);

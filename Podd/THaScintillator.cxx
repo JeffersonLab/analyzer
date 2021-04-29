@@ -114,10 +114,15 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
     err = kInitError;  // Error already printed by FillDetMap
   }
 
-  if( !err && (nelem = fDetMap->GetTotNumChan()) != 4*fNelem ) {
-    Error( Here(here), "Number of detector map channels (%d) "
-	   "inconsistent with 4*number of paddles (%d)", nelem, 4*fNelem );
-    err = kInitError;
+  UInt_t nval = fNelem;
+  if( !err ) {
+    UInt_t tot_nchan = fDetMap->GetTotNumChan();
+    if( tot_nchan != 4 * nval ) {
+      Error(Here(here), "Number of detector map channels (%u) "
+                        "inconsistent with 4*number of paddles (%d)",
+            tot_nchan, 4*fNelem);
+      err = kInitError;
+    }
   }
 
   // Deal with the TDC mode (common stop (default) vs. common start).
@@ -146,8 +151,8 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   // - The first fNelem detector channels correspond to the PMTs on the
   //   right hand side, the next fNelem channels, to the left hand side.
   //   (Thus channel numbering for each module must be consecutive.)
-  Int_t nmodules = fDetMap->GetSize();
-  for( Int_t i = 0; i < nmodules; i++ ) {
+  UInt_t nmodules = fDetMap->GetSize();
+  for( UInt_t i = 0; i < nmodules; i++ ) {
     THaDetMap::Module* d = fDetMap->GetModule(i);
     if( !d->model ) {
       if( i < nmodules/2 ) d->MakeADC(); else d->MakeTDC();
@@ -162,8 +167,6 @@ Int_t THaScintillator::ReadDatabase( const TDatime& date )
   }
 
   // Set up storage for basic detector data
-  UInt_t nval = fNelem;
-
   // Per-event data
   fDetectorData.clear();
   for( int i = kRight; i <= kLeft; ++i ) {
@@ -341,7 +344,7 @@ void THaScintillator::Clear( Option_t* opt )
 }
 
 //_____________________________________________________________________________
-Int_t THaScintillator::StoreHit( const DigitizerHitInfo_t& hitinfo, Int_t data )
+Int_t THaScintillator::StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data )
 {
   // Put decoded frontend data into fDetectorData.
   // Called from ThaDetectorBase::Decode().
@@ -404,7 +407,8 @@ Int_t THaScintillator::Decode( const THaEvData& evdata )
   ApplyCorrections();
   FindPaddleHits();
 
-  return fRightPMTs->GetHitCount().tdc + fLeftPMTs->GetHitCount().tdc;
+  return static_cast<Int_t>(fRightPMTs->GetHitCount().tdc +
+                            fLeftPMTs->GetHitCount().tdc);
 }
 
 //_____________________________________________________________________________

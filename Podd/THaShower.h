@@ -25,9 +25,9 @@ public:
   virtual void       Clear( Option_t* ="" );
   virtual Int_t      CoarseProcess( TClonesArray& tracks );
   virtual Int_t      FineProcess( TClonesArray& tracks );
-          Int_t      GetMainClusterSize() const;
-          Int_t      GetNclust() const { return fNclust; }
-          Int_t      GetNhits() const  { return fADCData->GetHitCount(); }
+          UInt_t     GetMainClusterSize() const { return fClBlk.size(); }
+          UInt_t     GetNclust() const { return fNclust; }
+          UInt_t     GetNhits() const  { return fADCData->GetHitCount(); }
           Data_t     GetE() const      { return fE; }
           Data_t     GetX() const      { return fX; }
           Data_t     GetY() const      { return fY; }
@@ -63,7 +63,7 @@ protected:
   // Per-event data
   Data_t     fAsum_p;    // Sum of blocks ADC minus pedestal values
   Data_t     fAsum_c;    // Sum of blocks corrected ADC amplitudes
-  Int_t      fNclust;    // Number of clusters
+  UInt_t     fNclust;    // Number of clusters
   Data_t     fE;         // Energy (MeV) of main cluster
   Data_t     fX;         // Energy-weighted x position (m) of main cluster
   Data_t     fY;         // Energy-weighted y position (m) of main cluster
@@ -77,7 +77,7 @@ protected:
 
   ShowerADCData* fADCData; // Convenience pointer to ADC data in fDetectorData
 
-  virtual Int_t  StoreHit( const DigitizerHitInfo_t& hitinfo, Int_t data );
+  virtual Int_t  StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data );
   virtual void   PrintDecodedData( const THaEvData& evdata ) const;
 
   virtual Int_t  ReadDatabase( const TDatime& date );
@@ -85,11 +85,6 @@ protected:
 
   ClassDef(THaShower,0)     //Generic shower detector class
 };
-
-inline Int_t THaShower::GetMainClusterSize() const
-{
-  return static_cast<Int_t>(fClBlk.size());
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 

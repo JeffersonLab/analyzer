@@ -22,17 +22,17 @@ public:
       fSlotMask(0), fSlotShift(0), fChanMask(0), fChanShift(0),
       fDataMask(0), fOptMask(0), fOptShift(0),
       fChan(0), fData(0), fRawData(0) {}
-   FastbusModule(Int_t crate, Int_t slot);
+   FastbusModule( UInt_t crate, UInt_t slot );
    virtual ~FastbusModule() = default;
 
    using Module::LoadSlot;
 
-   virtual Int_t Decode(const UInt_t *evbuffer);
+   virtual Int_t  Decode(const UInt_t *evbuffer);
    virtual Bool_t IsSlot(UInt_t rdata) { return (Slot(rdata)==fSlot); };
-   virtual Int_t LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const UInt_t *pstop);
+   virtual UInt_t LoadSlot( THaSlotData *sldat, const UInt_t* evbuffer, const UInt_t *pstop);
    void DoPrint() const;
 
-   Int_t GetOpt(UInt_t rdata) const { return Opt(rdata); };
+   UInt_t GetOpt( UInt_t rdata) const { return Opt(rdata); };
 
    UInt_t Slot(UInt_t rdata) const { return (rdata>>fSlotShift); };
    UInt_t Chan(UInt_t rdata) const { return (rdata&fChanMask)>>fChanShift; };

@@ -24,6 +24,7 @@
 #include <iomanip>
 #include <cassert>
 #include <cstdlib>
+#include <iterator>
 
 using namespace std;
 using namespace Podd;
@@ -119,24 +120,31 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
       fNrows = nrows;
     }
   }
+  assert( fNelem >= 0 );
+  UInt_t nval = fNelem;
 
   if( !err ) {
     // Clear out the old channel map before reading a new one
     fChanMap.clear();
     if( FillDetMap(detmap, 0, here) <= 0 ) {
       err = kInitError;  // Error already printed by FillDetMap
-    } else if( (nelem = fDetMap->GetTotNumChan()) != fNelem ) {
-      Error( Here(here), "Number of detector map channels (%d) "
-	     "inconsistent with number of blocks (%d)", nelem, fNelem );
-      err = kInitError;
+    } else {
+      UInt_t tot_nchan = fDetMap->GetTotNumChan();
+      if( tot_nchan != nval ) {
+        Error(Here(here), "Number of detector map channels (%u) "
+                          "inconsistent with number of blocks (%u)",
+              tot_nchan, nval);
+        err = kInitError;
+      }
     }
   }
   if( !err && !chanmap.empty() ) {
     // If a map is found in the database, ensure it has the correct size
     size_t cmapsize = chanmap.size();
-    if( cmapsize != fNelem ) {
-      Error(Here(here), "Channel map size (%ld) and number of detector "
-                        "channels (%d) must be equal. Fix database.", cmapsize, fNelem);
+    if( cmapsize != nval ) {
+      Error(Here(here), "Channel map size (%lu) and number of detector "
+                        "channels (%u) must be equal. Fix database.",
+            cmapsize, nval);
       err = kInitError;
     }
     if( !err ) {
@@ -152,7 +160,6 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
     return err;
   }
 
-  UInt_t nval = fNelem;
   fBlockPos.clear(); fBlockPos.reserve(nval);
   fClBlk.clear();    fClBlk.reserve(nclbl);
   fDetectorData.clear();
@@ -160,7 +167,7 @@ Int_t THaShower::ReadDatabase( const TDatime& date )
   fADCData = detdata.get();
   fDetectorData.emplace_back(std::move(detdata));
   fIsInit = true;
-  assert( fADCData->GetSize()-nval == 0 );
+  assert( fADCData->GetSize() == nval );
 
   // Compute block positions
   for( int c=0; c<ncols; c++ ) {
@@ -281,7 +288,7 @@ ShowerADCData::GetLogicalChannel( const DigitizerHitInfo_t& hitinfo ) const
 }
 
 //_____________________________________________________________________________
-Int_t THaShower::StoreHit( const DigitizerHitInfo_t& hitinfo, Int_t data )
+Int_t THaShower::StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data )
 {
   // Put decoded frontend data into fDetectorData. Used by Decode().
   // hitinfo: channel info (crate/slot/channel/hit/type)

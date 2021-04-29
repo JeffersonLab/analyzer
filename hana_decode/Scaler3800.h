@@ -16,7 +16,7 @@ class Scaler3800 : public GenScaler {
 
 public:
 
-   Scaler3800(Int_t crate, Int_t slot);
+   Scaler3800( UInt_t crate, UInt_t slot);
    Scaler3800() = default;
    virtual ~Scaler3800() = default;
 

@@ -94,7 +94,7 @@ public:
   int getflag(const char *s) const;
   char *getstr(const char *s) const;
   unsigned int getint(const char *s) const;
-  void string_from_evbuffer(const UInt_t* evbuffer, int nlen);
+  void string_from_evbuffer(const UInt_t* evbuffer, UInt_t nlen);
   void string_from_file(const char *ffile_name);
 
 protected:

@@ -105,7 +105,7 @@ Double_t THaFormula::EvalInstanceUnchecked( Int_t instance )
   if( fNoper == 1 && fVarDef.size() == 1 )
     return DefinedValue(0);
   else
-    return EvalPar(0);
+    return EvalPar(nullptr);
 }
 
 #endif

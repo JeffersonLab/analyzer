@@ -21,8 +21,8 @@ public:
   FadcBPM() = default;
 
 protected:
-  OptInt_t LoadData( const THaEvData& evdata,
-                     const DigitizerHitInfo_t& hitinfo ) override;
+  OptUInt_t LoadData( const THaEvData& evdata,
+                      const DigitizerHitInfo_t& hitinfo ) override;
 
   ClassDef(FadcBPM,0)   // Generic BPM class
 };

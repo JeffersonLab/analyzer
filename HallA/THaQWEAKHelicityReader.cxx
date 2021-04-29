@@ -16,6 +16,12 @@
 using namespace std;
 
 //____________________________________________________________________
+Bool_t THaQWEAKHelicityReader::ROCinfo::valid() const
+{
+  return roc < Decoder::MAXROC;
+}
+
+//____________________________________________________________________
 THaQWEAKHelicityReader::THaQWEAKHelicityReader()
   : fPatternTir(0), fHelicityTir(0), fTSettleTir(0), fTimeStampTir(0),
     fOldTimeStampTir(0), fIRing(0),
@@ -50,7 +56,7 @@ void THaQWEAKHelicityReader::Print()
       <<" , "<<fHelicityTir<<" , "<<fTSettleTir<<endl;
   cout<<"fTimeStampTir ="<<fTimeStampTir<<endl;
   cout<<"fIRing="<<fIRing<<endl<<endl;
-  for (int j=0;j<fIRing;j++)
+  for (UInt_t j=0;j<fIRing;j++)
     {
       cout<<j<<"Pattern, helicity, time, T3, U3, T5, T10="
 	  <<fHelicityRing[j]<<" , "
@@ -96,17 +102,17 @@ void THaQWEAKHelicityReader::Clear( Option_t* )
 }
 
 //____________________________________________________________________
-Int_t THaQWEAKHelicityReader::FindWord( const THaEvData& evdata, 
-				     const ROCinfo& info )
+UInt_t THaQWEAKHelicityReader::FindWord( const THaEvData& evdata,
+                                         const ROCinfo& info )
 // find the index of the word we are looking for given a header
 // or simply return the index already stored in ROC info (in that case
 // the header stored in ROC info needs to be 0 
 {
-  Int_t len = evdata.GetRocLength(info.roc);
+  UInt_t len = evdata.GetRocLength(info.roc);
   if (len <= 4) 
     return -1;
 
-  Int_t i = 0;
+  UInt_t i = 0;
   if( info.header == 0 )
     i = info.index;
   else {
@@ -115,7 +121,7 @@ Int_t THaQWEAKHelicityReader::FindWord( const THaEvData& evdata,
 	 ++i) {}
     i += info.index;
   }
-  return (i < len) ? i : -1;
+  return (i < len) ? i : kMaxUInt;
 }
 
 //_____________________________________________________________________________
@@ -191,17 +197,17 @@ Int_t THaQWEAKHelicityReader::ReadData( const THaEvData& evdata )
     ::Error( here, "ROC data (detector map) not properly set up." );
     return -1;
   }
-  Int_t hroc = fROCinfo[kHel].roc;
-  Int_t len = evdata.GetRocLength(hroc);
+  UInt_t hroc = fROCinfo[kHel].roc;
+  UInt_t len = evdata.GetRocLength(hroc);
   if (len <= 4) 
     return -1;
 
-  Int_t ihel = FindWord( evdata, fROCinfo[kHel] );
-  if (ihel < 0) {
+  UInt_t ihel = FindWord( evdata, fROCinfo[kHel] );
+  if (ihel == kMaxUInt) {
     ::Error( here , "Cannot find helicity" );
     return -1;
   }
-  Int_t data = evdata.GetRawData( hroc, ihel );  
+  UInt_t data = evdata.GetRawData( hroc, ihel );
   fPatternTir =(data & 0x20)>>5;
   fHelicityTir=(data & 0x10)>>4;
   fTSettleTir =(data & 0x40)>>6;
@@ -213,8 +219,8 @@ Int_t THaQWEAKHelicityReader::ReadData( const THaEvData& evdata )
       ::Error( here, "length of roc event not matching expectation ");
       return -1;
     }
-  Int_t itime = FindWord (evdata, fROCinfo[kTime] );
-  if (itime < 0) {
+  UInt_t itime = FindWord (evdata, fROCinfo[kTime] );
+  if (itime == kMaxUInt) {
     ::Error( here, "Cannot find timestamp" );
     return -1;
   }
@@ -234,10 +240,10 @@ Int_t THaQWEAKHelicityReader::ReadData( const THaEvData& evdata )
       //      std::cout<<"kRING="<<kRing<<" hroc="<<hroc<<endl;
       return -1;
     }
-  Int_t index=0;
-  while (index < len && fIRing == 0) 
+  UInt_t index = 0;
+  while( index < len && fIRing == 0 )
     {
-      Int_t header=evdata.GetRawData(hroc,index++);
+      UInt_t header=evdata.GetRawData(hroc,index++);
       if ((header & 0xffff0000) == 0xfb1b0000) 
 	{
 	  fIRing = header & 0x3ff;
@@ -252,7 +258,7 @@ Int_t THaQWEAKHelicityReader::ReadData( const THaEvData& evdata )
       ::Error( here, "Ring depth to large ");
       return -1;
     }
-  for(int i=0;i<fIRing; i++)
+  for(UInt_t i=0;i<fIRing; i++)
     {
       fTimeStampRing[i]=evdata.GetRawData(hroc,index++);
       data=evdata.GetRawData(hroc,index++);
@@ -281,7 +287,7 @@ void THaQWEAKHelicityReader::FillHisto()
   fHistoR[2]->Fill(fHelicityTir);
   fHistoR[3]->Fill(fTimeStampTir-fOldTimeStampTir);
   fOldTimeStampTir=fTimeStampTir;
-  for(int i=0;i<fIRing;i++)
+  for(UInt_t i=0;i<fIRing;i++)
     {
       fHistoR[4]->Fill(fPatternRing[i]);
       fHistoR[5]->Fill(fHelicityRing[i]);
@@ -297,8 +303,8 @@ void THaQWEAKHelicityReader::FillHisto()
 
 //TODO: this should not be needed once LoadDB can fill fROCinfo directly
 //____________________________________________________________________
-Int_t THaQWEAKHelicityReader::SetROCinfo( EROC which, Int_t roc,
-				       Int_t header, Int_t index )
+Int_t THaQWEAKHelicityReader::SetROCinfo( EROC which, UInt_t roc,
+                                          UInt_t header, UInt_t index )
 {
 
   // Define source and offset of data.  Normally called by ReadDatabase
@@ -324,4 +330,3 @@ Int_t THaQWEAKHelicityReader::SetROCinfo( EROC which, Int_t roc,
 
 //____________________________________________________________________
 ClassImp(THaQWEAKHelicityReader)
-

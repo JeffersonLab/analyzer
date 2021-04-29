@@ -185,28 +185,28 @@ Int_t UserDetector::ReadDatabase( const TDatime& date )
   // Check detector map size. We assume that each detector element (e.g. paddle)
   // has exactly one hardware channel. This could be different, e.g. if each PMT
   // is read by an ADC and a TDC, etc. Modify as appropriate.
-  Int_t nchan = fDetMap->GetTotNumChan();
-  if( nchan != nelem ) {
+  UInt_t nchan = fDetMap->GetTotNumChan(), nval = nelem;
+  if( nchan != nval ) {
     ostringstream ostr;
     ostr << "Incorrect number of detector map channels = " << nchan
-         << ". Must equal nelem = " << nelem << ". Fix database.";
+         << ". Must equal nelem = " << nval << ". Fix database.";
     Error( Here(here), "%s", ostr.str().c_str() );
     return kInitError;
   }
 
   // Check if the sizes of the arrays we read make sense.
   // NB: If we have an empty vector here, there was no database entry for it.
-  if( !fPed.empty() && fPed.size() != nelem) {
+  if( !fPed.empty() && fPed.size() != nval) {
     ostringstream ostr;
     ostr << "Incorrect number of pedestal values = " << fPed.size()
-         << ". Must match nelem = " << nelem << ". Fix database.";
+         << ". Must match nelem = " << nval << ". Fix database.";
     Error( Here(here), "%s", ostr.str().c_str() );
     return kInitError;
   }
-  if( !fGain.empty() && fGain.size() != nelem) {
+  if( !fGain.empty() && fGain.size() != nval) {
     ostringstream ostr;
     ostr << "Incorrect number of gain values = " << fGain.size()
-         << ". Must match nelem = " << nelem << ". Fix database.";
+         << ". Must match nelem = " << nval << ". Fix database.";
     Error( Here(here), "%s", ostr.str().c_str() );
     return kInitError;
   }
@@ -255,7 +255,7 @@ void UserDetector::Clear( Option_t* opt )
 }
 
 //_____________________________________________________________________________
-Int_t UserDetector::StoreHit( const DigitizerHitInfo_t& hitinfo, Int_t data )
+Int_t UserDetector::StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data )
 {
   // Simple example method for storing decoded data.
   // NB: All detectors use THaDetectorBase::Decode as the default Decode method.

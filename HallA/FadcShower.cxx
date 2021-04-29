@@ -70,8 +70,8 @@ Int_t FadcShower::ReadDatabase( const TDatime& date )
 }
 
 //_____________________________________________________________________________
-OptInt_t FadcShower::LoadData( const THaEvData& evdata,
-                               const DigitizerHitInfo_t& hitinfo )
+OptUInt_t FadcShower::LoadData( const THaEvData& evdata,
+                                const DigitizerHitInfo_t& hitinfo )
 {
   // Callback from Decoder for loading the data for the 'hitinfo' channel.
   // This routine supports FADC modules and returns the pulse amplitude integral.
@@ -85,7 +85,7 @@ OptInt_t FadcShower::LoadData( const THaEvData& evdata,
 }
 
 //_____________________________________________________________________________
-Int_t FadcShower::StoreHit( const DigitizerHitInfo_t& hitinfo, Int_t data )
+Int_t FadcShower::StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data )
 {
   // Put decoded frontend data into fDetectorData. Called from Decode().
 

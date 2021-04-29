@@ -58,8 +58,8 @@ THaTrack* THaTrackingDetector::AddTrack( TClonesArray& tracks,
   // Returns the index of the created track in the TClonesArray.
 
   Int_t i = tracks.GetLast()+1;
-  THaPIDinfo* pid = 0;
-  THaSpectrometer* spect = static_cast<THaSpectrometer*>( GetApparatus() );
+  THaPIDinfo* pid = nullptr;
+  auto* spect = static_cast<THaSpectrometer*>( GetApparatus() );
 
   if( spect ) {
 

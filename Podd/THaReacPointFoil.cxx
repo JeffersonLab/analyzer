@@ -96,17 +96,17 @@ Int_t THaReacPointFoil::Process( const THaEvData& )
   static const TVector3 yax( 0.0, 1.0, 0.0 );
   static const TVector3 xax( 1.0, 0.0, 0.0 );
   TVector3 org, v; 
-  Double_t t;
 
   for( Int_t i = 0; i<ntracks; i++ ) {
-    THaTrack* theTrack = static_cast<THaTrack*>( tracks->At(i) );
+    auto* theTrack = static_cast<THaTrack*>( tracks->At(i) );
     // Ignore junk tracks
     if( !theTrack || !theTrack->HasTarget() ) 
       continue;  
     org.SetX( 0. );
     org.SetZ( 0. ); 
     org.SetY( 0. );
-    if( !IntersectPlaneWithRay( xax, yax, org, 
+    Double_t t = 0;  // dummy
+    if( !IntersectPlaneWithRay( xax, yax, org,
 				beam_org, beam_ray, t, v ))
       continue; // Oops, track and beam parallel?
     theTrack->SetVertex(v);

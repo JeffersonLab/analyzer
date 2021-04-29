@@ -72,7 +72,7 @@ Int_t UserEvtHandler::Analyze(THaEvData *evdata)
   }
 
 // Copy the buffer.  If the events are infrequent this causes no harm.
-  for (Int_t i = 0; i < evdata->GetEvLength(); i++)
+  for( UInt_t i = 0; i < evdata->GetEvLength(); i++ )
     evbuffer[i] = evdata->GetRawData(i);
 
   auto* cbuff = (char*)evbuffer;

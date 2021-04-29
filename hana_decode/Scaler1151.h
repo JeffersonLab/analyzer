@@ -16,7 +16,7 @@ class Scaler1151 : public GenScaler {
 
 public:
 
-   Scaler1151(Int_t crate, Int_t slot);
+   Scaler1151( UInt_t crate, UInt_t slot );
    Scaler1151() = default;
    virtual ~Scaler1151() = default;
 

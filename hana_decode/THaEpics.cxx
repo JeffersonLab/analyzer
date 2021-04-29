@@ -66,27 +66,27 @@ Bool_t THaEpics::IsLoaded(const char* tag) const
   return !ep.empty();
 }
 
-Double_t THaEpics::GetData (const char* tag, int event) const
+Double_t THaEpics::GetData ( const char* tag, UInt_t event) const
 {
   const vector<EpicsChan> ep = GetChan(tag);
-  Int_t k = FindEvent(ep, event);
-  if ( k < 0) return 0;
+  UInt_t k = FindEvent(ep, event);
+  if( k == kMaxUInt ) return 0;
   return ep[k].GetData();
 }  
 
-string THaEpics::GetString (const char* tag, int event) const
+string THaEpics::GetString ( const char* tag, UInt_t event) const
 {
   const vector<EpicsChan> ep = GetChan(tag);
-  Int_t k = FindEvent(ep, event);
-  if ( k < 0) return "";
+  UInt_t k = FindEvent(ep, event);
+  if( k == kMaxUInt ) return "";
   return ep[k].GetString();
 }  
 
-Double_t THaEpics::GetTimeStamp(const char* tag, int event) const
+Double_t THaEpics::GetTimeStamp( const char* tag, UInt_t event) const
 {
   const vector<EpicsChan> ep = GetChan(tag);
-  Int_t k = FindEvent(ep, event);
-  if ( k < 0) return 0;
+  UInt_t k = FindEvent(ep, event);
+  if( k == kMaxUInt ) return 0;
   return ep[k].GetTimeStamp();
 }
 
@@ -102,19 +102,19 @@ vector<EpicsChan> THaEpics::GetChan(const char *tag) const
 }
 
 
-Int_t THaEpics::FindEvent(const vector<EpicsChan>& ep, int event)
+UInt_t THaEpics::FindEvent( const vector<EpicsChan>& ep, UInt_t event )
 {
   // Return the index in the vector of Epics data 
   // nearest in event number to event 'event'.
   if (ep.empty())
-    return -1;
-  Int_t myidx = ep.size()-1;
+    return kMaxUInt;
+  UInt_t myidx = ep.size()-1;
   if (event == 0) return myidx;  // return last event 
-  double min = 9999999;
-  for (size_t k = 0; k < ep.size(); k++) {
-    double diff = event - ep[k].GetEvNum();
-    if (diff < 0) diff = -1*diff;
-    if (diff < min) {
+  Long64_t min = 9999999;
+  for( size_t k = 0; k < ep.size(); k++ ) {
+    Long64_t diff = event - ep[k].GetEvNum();
+    if( diff < 0 ) diff = -diff;
+    if( diff < min ) {
       min = diff;
       myidx = k;
     }
@@ -123,7 +123,7 @@ Int_t THaEpics::FindEvent(const vector<EpicsChan>& ep, int event)
 }
         
 
-int THaEpics::LoadData(const UInt_t* evbuffer, int evnum)
+int THaEpics::LoadData( const UInt_t* evbuffer, UInt_t event)
 { 
   // load data from the event buffer 'evbuffer' 
   // for event nearest 'evnum'.
@@ -131,7 +131,7 @@ int THaEpics::LoadData(const UInt_t* evbuffer, int evnum)
   const string::size_type MAX_VAL_LEN = 32;
 
   const char* cbuff = (const char*)evbuffer;
-  size_t len = sizeof(int)*(evbuffer[0]+1);  
+  size_t len = sizeof(UInt_t)*(evbuffer[0]+1);
   if (DEBUGL>1) cout << "Enter loadData, len = "<<len<<endl;
   if( len<16 ) return 0;
   // The first 16 bytes of the buffer are the event header
@@ -145,7 +145,7 @@ int THaEpics::LoadData(const UInt_t* evbuffer, int evnum)
   string date;
   istringstream ib(buf);
   if( !getline(ib,date) || date.size() < 16 ) {
-    cerr << "Invalid time stamp for EPICS event at evnum = " << evnum << endl;
+    cerr << "Invalid time stamp for EPICS event at evnum = " << event << endl;
     return 0;
   }
   if(DEBUGL>1) cout << "Timestamp: " << date <<endl;
@@ -181,7 +181,7 @@ int THaEpics::LoadData(const UInt_t* evbuffer, int evnum)
 		      << "   dval = "<<dval<<"   wunits = "<<wunits<<endl;
 
     // Add tag/value/units to the EPICS data.    
-    epicsData[wtag].push_back( EpicsChan(wtag,date,evnum,wval,wunits,dval) );
+    epicsData[wtag].push_back( EpicsChan(wtag, date, event, wval, wunits, dval) );
   }
   if(DEBUGL) Print();
   return 1;

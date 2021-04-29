@@ -48,7 +48,7 @@ void THaTrack::Clear( Option_t* opt )
     fChi2 = kBig; fNDoF = 0;
     memset( fClusters, 0, kMAXCL*sizeof(THaCluster*) );
   }
-  delete fID; fID = 0;
+  delete fID; fID = nullptr;
 }
 
 //_____________________________________________________________________________
@@ -94,7 +94,7 @@ Int_t THaTrack::Compare(const TObject * obj) const
   // compare two tracks by chi2/ndof
   // for track array sorting
 
-  const THaTrack* tr = dynamic_cast<const THaTrack*>(obj);
+  const auto* tr = dynamic_cast<const THaTrack*>(obj);
   if (!tr) return 0;
 
   Double_t v1 = GetChi2() / SafeNDoF( GetNDoF() );

@@ -16,11 +16,7 @@ class TDatime;
 class THaRunParameters : public TObject {
 public:
   THaRunParameters();
-  // Derived classes must implement operator= and copy ctor!
-  THaRunParameters( const THaRunParameters& run );
-  virtual THaRunParameters& operator=( const THaRunParameters& rhs );
-  virtual ~THaRunParameters();
-  
+
   virtual void   Clear( Option_t* opt="" );
   const char*    GetBeamName()    const { return fBeamName.Data(); }
   Double_t       GetBeamE()       const { return fBeamE; }

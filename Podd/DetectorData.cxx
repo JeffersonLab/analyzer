@@ -42,11 +42,11 @@ Int_t DetectorData::GetLogicalChannel( const DigitizerHitInfo_t& hitinfo ) const
   // Derived classes may use a different mapping here, e.g. a lookup table to
   // handle an irregular wiring scheme.
 
-  Int_t nelem = GetSize();
-  if( nelem <= 0 )
+  UInt_t nelem = GetSize();
+  if( nelem == 0 )
     throw logic_error(msg(hitinfo, "DetectorData: bad size. "
                                    "Should never happen. Call expert."));
-  return hitinfo.lchan % nelem;
+  return hitinfo.lchan % static_cast<Int_t>(nelem);
 }
 
 //_____________________________________________________________________________
@@ -113,7 +113,7 @@ string DetectorData::msg( const DigitizerHitInfo_t& hitinfo, const char* txt )
 }
 
 //=============================================================================
-ADCData::ADCData( const char* name, const char* desc, Int_t nelem )
+ADCData::ADCData( const char* name, const char* desc, UInt_t nelem )
   : DetectorData(name, desc), fCalib(nelem), fADCs(nelem), fNHits(0)
 {
   // Constructor. Creates data structures for 'nelem' ADC channels, i.e.
@@ -147,7 +147,7 @@ void ADCData::Reset( Option_t* opt )
 
 //_____________________________________________________________________________
 static void StoreADC( ADCData_t& ADC, const ADCCalib_t& CALIB,
-                      const DigitizerHitInfo_t& hitinfo, Int_t data )
+                      const DigitizerHitInfo_t& hitinfo, UInt_t data )
 {
   ADC.adc   = data;
   ADC.adc_p = ADC.adc - CALIB.ped;
@@ -157,7 +157,7 @@ static void StoreADC( ADCData_t& ADC, const ADCCalib_t& CALIB,
 
 //_____________________________________________________________________________
 static void StoreTDC( TDCData_t& TDC, const TDCCalib_t& CALIB,
-                      const DigitizerHitInfo_t& hitinfo, Int_t data )
+                      const DigitizerHitInfo_t& hitinfo, UInt_t data )
 {
   TDC.tdc   = data;
   TDC.tdc_c = (TDC.tdc - CALIB.off) * CALIB.tdc2t;
@@ -171,7 +171,7 @@ static void StoreTDC( TDCData_t& TDC, const TDCCalib_t& CALIB,
 }
 
 //_____________________________________________________________________________
-Int_t ADCData::StoreHit( const DigitizerHitInfo_t& hitinfo, Int_t data )
+Int_t ADCData::StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data )
 {
   // Copy the raw and calibrated ADC/TDC data to the member variables.
   // This is the single-hit version of this function.
@@ -222,7 +222,7 @@ Int_t ADCData::DefineVariablesImpl( THaAnalysisObject::EMode mode,
 }
 
 //=============================================================================
-PMTData::PMTData( const char* name, const char* desc, Int_t nelem )
+PMTData::PMTData( const char* name, const char* desc, UInt_t nelem )
   : DetectorData(name, desc), fCalib(nelem), fPMTs(nelem)
 {
   // Constructor. Creates data structures for 'nelem' ADC+TDC channels, i.e.
@@ -255,7 +255,7 @@ void PMTData::Reset( Option_t* opt )
 }
 
 //_____________________________________________________________________________
-Int_t PMTData::StoreHit( const DigitizerHitInfo_t& hitinfo, Int_t data )
+Int_t PMTData::StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data )
 {
   // Copy the raw and calibrated ADC/TDC data to the member variables.
   // This is the single-hit version of this function.

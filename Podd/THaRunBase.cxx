@@ -523,7 +523,7 @@ void THaRunBase::SetLastEvent( UInt_t n )
 }
 
 //_____________________________________________________________________________
-void THaRunBase::SetNumber( Int_t number )
+void THaRunBase::SetNumber( UInt_t number )
 {
   // Change/set the number of the Run.
 
@@ -533,7 +533,7 @@ void THaRunBase::SetNumber( Int_t number )
 }
 
 //_____________________________________________________________________________
-void THaRunBase::SetType( Int_t type )
+void THaRunBase::SetType( UInt_t type )
 {
   // Set run type
   fType = type;

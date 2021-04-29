@@ -22,12 +22,12 @@ public:
   ~FadcShower() override;
 
 protected:
-  Int_t    StoreHit( const DigitizerHitInfo_t& hitinfo, Int_t data ) override;
-  OptInt_t LoadData( const THaEvData& evdata,
-                     const DigitizerHitInfo_t& hitinfo ) override;
+  Int_t     StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data ) override;
+  OptUInt_t LoadData( const THaEvData& evdata,
+                      const DigitizerHitInfo_t& hitinfo ) override;
 
-  Int_t    DefineVariables( EMode mode = kDefine ) override;
-  Int_t    ReadDatabase( const TDatime& date ) override;
+  Int_t     DefineVariables( EMode mode = kDefine ) override;
+  Int_t     ReadDatabase( const TDatime& date ) override;
 
   FADCData* fFADCData;  // Pointer to FADC readout data (owned by fDetectorData)
 

@@ -60,7 +60,7 @@ THaVDCPlane::THaVDCPlane( const char* name, const char* description,
   fWBeg(0), fWSpac(0), fWAngle(0), fSinWAngle(0),
   fCosWAngle(1), /*fTable(0),*/ fTTDConv(nullptr),
   fVDC{dynamic_cast<THaVDC*>( GetMainDetector() )},
-  fMaxData(-1), fNextHit(0), fPrevWire(nullptr)
+  fMaxData(kMaxUInt), fNextHit(0), fPrevWire(nullptr)
 {
   // Constructor
 }
@@ -148,7 +148,7 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
     { "driftvel",       &fDriftVel,      kDouble,  0, false, -1 },
     { "tdc.min",        &fMinTime,       kInt,     0, true, -1 },
     { "tdc.max",        &fMaxTime,       kInt,     0, true, -1 },
-    { "tdc.hits"     ,  &fMaxThits,      kInt,     0, true, -1 },
+    { "tdc.hits"     ,  &fMaxThits,      kUInt,    0, true, -1 },
     { "tdc.res",        &fTDCRes,        kDouble,  0, false, -1 },
     { "tdc.offsets",    &tdc_offsets,    kFloatV },
     { "ttd.converter",  &ttd_conv,       kTString, 0, true, -1 },
@@ -172,8 +172,8 @@ Int_t THaVDCPlane::ReadDatabase( const TDatime& date )
     return kInitError; // Error already printed by FillDetMap
 
   // All our frontend modules are common stop TDCs
-  Int_t nmodules = fDetMap->GetSize();
-  for( Int_t i = 0; i < nmodules; i++ ) {
+  UInt_t nmodules = fDetMap->GetSize();
+  for( UInt_t i = 0; i < nmodules; i++ ) {
     THaDetMap::Module* d = fDetMap->GetModule(i);
     d->MakeTDC();
     d->SetTDCMode(false);
@@ -311,19 +311,19 @@ Int_t THaVDCPlane::ReadDatabaseErrcheck( const vector<Float_t>& tdc_offsets,
     Error(Here(here), "Invalid number of wires: %d", fNelem);
     return kInitError;
   }
-
-  Int_t nchan = fDetMap->GetTotNumChan();
-  if( nchan != fNelem ) {
+  UInt_t nwires = fNelem;
+  UInt_t nchan = fDetMap->GetTotNumChan();
+  if( nchan != nwires ) {
     Error(Here(here),
-          "Number of detector map channels (%d) disagrees with "
-          "number of wires (%d)", nchan, fNelem);
+          "Number of detector map channels (%u) disagrees with "
+          "number of wires (%u)", nchan, nwires);
     return kInitError;
   }
-  nchan = static_cast<Int_t>(tdc_offsets.size());
-  if( nchan != fNelem ) {
+  nchan = tdc_offsets.size();
+  if( nchan != nwires ) {
     Error(Here(here),
-          "Number of TDC offset values (%d) disagrees with "
-          "number of wires (%d)", nchan, fNelem);
+          "Number of TDC offset values (%u) disagrees with "
+          "number of wires (%u)", nchan, nwires);
     return kInitError;
   }
 
@@ -495,7 +495,7 @@ void THaVDCPlane::Clear( Option_t* opt )
 }
 
 //_____________________________________________________________________________
-Int_t THaVDCPlane::StoreHit( const DigitizerHitInfo_t& hitinfo, Int_t data )
+Int_t THaVDCPlane::StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data )
 {
 
   assert( hitinfo.nhit > 0 );
@@ -509,7 +509,7 @@ Int_t THaVDCPlane::StoreHit( const DigitizerHitInfo_t& hitinfo, Int_t data )
   // Count hits
   ++fNHits;
   if( wire != fPrevWire ) {
-    fMaxData = -1;
+    fMaxData = kMaxUInt;
     ++fNWiresHit;
   }
   // Bugcheck: identical wires -> multihit
@@ -517,7 +517,7 @@ Int_t THaVDCPlane::StoreHit( const DigitizerHitInfo_t& hitinfo, Int_t data )
   fPrevWire = wire;
 
   // Keep maximum data value seen for this series of hits
-  if( data > fMaxData )
+  if( data > fMaxData || fMaxData == kMaxUInt )
     fMaxData = data;
 
   // Convert the TDC value to the drift time.
@@ -537,7 +537,7 @@ Int_t THaVDCPlane::StoreHit( const DigitizerHitInfo_t& hitinfo, Int_t data )
   // requested, find maximum TDC value and record the corresponding hit at
   // the end of the hit loop.
   if( hitinfo.nhit > 1 && fOnlyFastestHit ) {
-    if( hitinfo.hit + 1 < hitinfo.nhit || fMaxData <= 0 )
+    if( hitinfo.hit + 1 < hitinfo.nhit || fMaxData == kMaxUInt )
       // Keep going. More hits to come (or nothing valid found)
       return 0;
 
@@ -577,7 +577,7 @@ Int_t THaVDCPlane::Decode( const THaEvData& evData )
     const auto& hitinfo = *hitIter;
 
     // Get the TDC data for this hit
-    OptInt_t data = LoadData(evData, hitinfo);
+    OptUInt_t data = LoadData(evData, hitinfo);
     if( !data ) {
       // Data could not be retrieved (probably decoder bug)
       DataLoadWarning(hitinfo, here);

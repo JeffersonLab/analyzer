@@ -804,23 +804,23 @@ void PrepareStream( ostringstream& str, const float* array, int size )
 // (possibly an array) as a string and metadata: number of array elements,
 // printing width needed to accommodate all values.
 struct Value_t {
-  Value_t( string  v, int n, ssiz_t w ) :
+  Value_t( string  v, size_t n, ssiz_t w ) :
     value(std::move(v)), nelem(n), width(w) {}
   string value;
-  int    nelem;
+  size_t nelem;
   ssiz_t width;
 } __attribute__((aligned(64)));
 
 //-----------------------------------------------------------------------------
 template <class T> static inline
-Value_t MakeValue( const T* array, int size = 1 )
+Value_t MakeValue( const T* array, size_t size = 1 )
 {
   ostringstream ostr;
   ssiz_t w = 0;
   if( size <= 0 ) size = 1;
   if( format_fp )
     PrepareStream( ostr, array, size );
-  for( int i = 0; i < size; ++i ) {
+  for( size_t i = 0; i < size; ++i ) {
     ssiz_t len = ostr.str().size();
     ostr << array[i];
     w = max(w, ostr.str().size()-len);
@@ -831,14 +831,14 @@ Value_t MakeValue( const T* array, int size = 1 )
 
 //-----------------------------------------------------------------------------
 template<class T> static inline
-Value_t MakeValueP( const unique_ptr<T>& array, int size = 1 )
+Value_t MakeValueP( const unique_ptr<T>& array, size_t size = 1 )
 {
   return MakeValue(array.get(), size);
 }
 
 //-----------------------------------------------------------------------------
 static inline Value_t
-MakeDetmapElemValue( const unique_ptr<THaDetMap>& pmap, int n, int extras )
+MakeDetmapElemValue( const unique_ptr<THaDetMap>& pmap, UInt_t n, size_t extras )
 {
   ostringstream ostr;
   auto* detmap = pmap.get();
@@ -869,12 +869,12 @@ MakeDetmapElemValue( const unique_ptr<THaDetMap>& pmap, int n, int extras )
 
 //-----------------------------------------------------------------------------
 template<> inline
-Value_t MakeValueP( const unique_ptr<THaDetMap>& detmap, int extras )
+Value_t MakeValueP( const unique_ptr<THaDetMap>& detmap, size_t extras )
 {
   ostringstream ostr;
   ssiz_t w = 0;
-  int nelem = 0;
-  for( Int_t i = 0; i < detmap->GetSize(); ++i ) {
+  size_t nelem = 0;
+  for( UInt_t i = 0; i < detmap->GetSize(); ++i ) {
     Value_t v = MakeDetmapElemValue(detmap, i, extras);
     ostr << v.value;
     w = max(w,v.width);
@@ -886,7 +886,7 @@ Value_t MakeValueP( const unique_ptr<THaDetMap>& detmap, int extras )
 
 //-----------------------------------------------------------------------------
 template<> inline
-Value_t MakeValue( const TVector3* vec3, int )
+Value_t MakeValue( const TVector3* vec3, size_t )
 {
   Double_t darr[3];
   vec3->GetXYZ( darr );
@@ -917,7 +917,7 @@ struct DBvalue {
   string value;
   time_t validity_start;
   string version;
-  int    nelem;
+  size_t nelem;
   ssiz_t width;
   int    max_per_line;    // Number of values per line (for formatting text db)
   // Order values by validity start time, then version
@@ -1256,13 +1256,11 @@ protected:
     Error( Here(here), "%s", msg.str().c_str() );
     return kInitError;
   }
-  Bool_t CheckDetMapInp( Int_t crate, Int_t slot, Int_t lo, Int_t hi,
-      const char* buff, const char* here )
+  Bool_t CheckDetMapInp( UInt_t crate, UInt_t slot, UInt_t lo, UInt_t hi,
+                         const char* buff, const char* here )
   {
-    Bool_t is_err = ( crate <= 0 || crate > Decoder::MAXROC  ||
-        slot  <= 0 || slot  > Decoder::MAXSLOT ||
-        lo < 0 || lo > std::numeric_limits<UShort_t>::max() ||
-        hi < 0 || lo > std::numeric_limits<UShort_t>::max() );
+    Bool_t is_err = ( crate >= Decoder::MAXROC  || slot >= Decoder::MAXSLOT ||
+                      lo > kMaxInt ||hi > kMaxInt );
     if( is_err )
       Error( Here(here), "Illegal detector map parameter, line: %s", buff );
     return is_err;
@@ -3154,8 +3152,9 @@ int Cherenkov::ReadDB( FILE* fi, time_t /* date */, time_t /* date_until */ )
       return kInitError;
     fDetMap->AddModule( crate, slot, first, last, first_chan, model );
   }
-  if( fDetMap->GetTotNumChan() != 2*nelem ) {
-    Error( Here(here), "Database inconsistency.\n Defined %d channels in detector map, "
+  UInt_t nval = nelem;
+  if( fDetMap->GetTotNumChan() != 2*nval ) {
+    Error( Here(here), "Database inconsistency.\n Defined %u channels in detector map, "
 	   "but have %d total channels (%d mirrors with 1 ADC and 1 TDC each)",
 	   fDetMap->GetTotNumChan(), 2*nelem, nelem );
     return kInitError;
@@ -3171,7 +3170,7 @@ int Cherenkov::ReadDB( FILE* fi, time_t /* date */, time_t /* date_until */ )
 	     "even number of modules." );
       return kInitError;
     }
-    for( Int_t i = 0; i < fDetMap->GetSize(); i++ ) {
+    for( UInt_t i = 0; i < fDetMap->GetSize(); i++ ) {
       THaDetMap::Module* d = fDetMap->GetModule( i );
       if( i < fDetMap->GetSize()/2 )
 	d->model = 1881; // Standard ADC
@@ -3252,8 +3251,9 @@ int Scintillator::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
       return kInitError;
     fDetMap->AddModule( crate, slot, first, last, first_chan, model );
   }
-  if( fDetMap->GetTotNumChan() != 4*nelem ) {
-    Error( Here(here), "Database inconsistency.\n Defined %d channels in detector map, "
+  UInt_t nval = nelem;
+  if( fDetMap->GetTotNumChan() != 4*nval ) {
+    Error( Here(here), "Database inconsistency.\n Defined %u channels in detector map, "
 	   "but have %d total channels (%d paddles with 2 ADCs and 2 TDCs each)",
 	   fDetMap->GetTotNumChan(), 4*nelem, nelem );
     return kInitError;
@@ -3471,8 +3471,9 @@ int Shower::ReadDB( FILE* fi, time_t date, time_t /* date_until */ )
       return kInitError;
     fDetMap->AddModule( crate, slot, first, last );
   }
-  if( fDetMap->GetTotNumChan() != nelem ) {
-    Error( Here(here), "Database inconsistency.\n Defined %d channels in detector map, "
+  UInt_t nval = nelem;
+  if( fDetMap->GetTotNumChan() != nval ) {
+    Error( Here(here), "Database inconsistency.\n Defined %u channels in detector map, "
 	   "but have %d total channels (%d blocks with 1 ADC each)",
 	   fDetMap->GetTotNumChan(), nelem, nelem );
     return kInitError;
@@ -3891,14 +3892,15 @@ int TriggerTime::ReadDB( FILE* fi, time_t, time_t )
   //   0              10   -0.5e-9  # global-offset shared by all triggers and s/TDC
   //   1               0       crate slot chan
   //   2              10.e-9
-  Double_t toff, ch2t=-0.5e-9; // assume 1872 TDC's.
-  Int_t trg,crate,slot,chan;
+  Double_t ch2t=-0.5e-9; // assume 1872 TDC's.
   fTrgDef.clear();
   fTDCRes = ch2t;
 
   while( ReadComment(fi,buf,LEN) );
 
   while ( fgets(buf,LEN,fi) ) {
+    Double_t toff;
+    Int_t trg,crate,slot,chan;
     int fnd = sscanf( buf,"%8d %16lf %16lf",&trg,&toff,&ch2t);
     if( fnd < 2 ) goto err;
     if( trg == 0 ) {

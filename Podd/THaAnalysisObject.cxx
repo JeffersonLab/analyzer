@@ -1910,6 +1910,21 @@ template void THaAnalysisObject::WriteValue<Double_t>( Double_t val, int p=0, in
 template void THaAnalysisObject::WriteValue<Float_t>( Float_t val, int p=0, int w=5 );
 template void THaAnalysisObject::WriteValue<Int_t>( Int_t val, int p=0, int w=5 );
 
+template<>
+void THaAnalysisObject::WriteValue<UInt_t>( UInt_t val, int p, int w )
+{
+  // Helper function for printing debug information -- for unsigned int
+  ios_base::fmtflags fmt = cout.flags();
+  streamsize prec = cout.precision();
+  if( val != THaVar::kInvalidInt && val != kMaxUInt &&
+      val < 10 * static_cast<UInt_t>(w) )
+    cout << setw(w) << val;
+  else
+    cout << " --- ";
+  cout.flags(fmt);
+  cout.precision(prec);
+}
+
 #endif
 
 //_____________________________________________________________________________

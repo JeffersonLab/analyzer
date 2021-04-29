@@ -13,7 +13,7 @@ using namespace std;
 
 namespace Decoder {
 
-VmeModule::VmeModule(Int_t crate, Int_t slot) : Module(crate,slot) {
+VmeModule::VmeModule(UInt_t crate, UInt_t slot) : Module(crate,slot) {
 }
 
 Bool_t VmeModule::IsSlot(UInt_t rdata) {
@@ -25,8 +25,8 @@ Bool_t VmeModule::IsSlot(UInt_t rdata) {
   return false;
 }
 
-Int_t VmeModule::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer,
-			  const UInt_t *pstop)
+UInt_t VmeModule::LoadSlot( THaSlotData *sldat, const UInt_t* evbuffer,
+                            const UInt_t *pstop)
 {
   // This is a simple, default method for loading a slot
   const UInt_t *p = evbuffer;
@@ -42,7 +42,7 @@ Int_t VmeModule::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer,
     if (fDebugFile) *fDebugFile << "IsSlot ... data = "<<*p<<endl;
     p++;
     Decode(p);
-    for (size_t ichan = 0, nchan = GetNumChan(); ichan < nchan; ichan++) {
+    for( UInt_t ichan = 0, nchan = GetNumChan(); ichan < nchan; ichan++ ) {
       fWordsSeen++;
       p++;
       if (p >= pstop) break;

@@ -106,7 +106,7 @@ int THaSlotData::loadModule(const THaCrateMap *map) {
 	  cout << "ERROR: Failure to make module on crate "<<dec<<crate<<"  slot "<<slot<<endl;
 	  cout << "usually because the module class is abstract; make sure base class methods are defined"<<endl;
 	  if (fDebugFile) *fDebugFile << "failure to make module on crate "<<dec<<crate<<"  slot "<<slot<<endl;
-	  return -1;
+	  return SD_ERR;
 	}
 	// Init first, then SetSlot
 	fModule->Init();
@@ -125,11 +125,11 @@ int THaSlotData::loadModule(const THaCrateMap *map) {
 
    }
 
-   return 1;
+   return SD_OK;
 
 }
 
-Int_t THaSlotData::LoadIfSlot(const UInt_t* p, const UInt_t *pstop) {
+UInt_t THaSlotData::LoadIfSlot( const UInt_t* evbuffer, const UInt_t *pstop) {
   // returns how many words seen.
   if ( !fModule ) {
 // This is bad and should not happen; it means you didn't define a module
@@ -137,19 +137,19 @@ Int_t THaSlotData::LoadIfSlot(const UInt_t* p, const UInt_t *pstop) {
     cerr << "THaSlotData::ERROR:   No module defined for slot. "<<crate<<"  "<<slot<<endl;
     return 0;
   }
-  if (fDebugFile) *fDebugFile << "THaSlotData::LoadIfSlot:  " << dec<<crate<<"  "<<slot<<"   p "<<hex<<p<<"  "<<*p<<"  "<<dec<<((UInt_t(*p))>>27)<<hex<<"  "<<pstop<<"  "<<fModule<<dec<<endl;
-  if ( !fModule->IsSlot( *p ) ) {
+  if (fDebugFile) *fDebugFile << "THaSlotData::LoadIfSlot:  " << dec << crate << "  " << slot << "   p " << hex << evbuffer << "  " << *evbuffer << "  " << dec << ((UInt_t(*evbuffer)) >> 27) << hex << "  " << pstop << "  " << fModule << dec << endl;
+  if ( !fModule->IsSlot( *evbuffer ) ) {
     if(fDebugFile) *fDebugFile << "THaSlotData:: Not slot ... return ... "<<endl;
     return 0;
   }
   if (fDebugFile) fModule->DoPrint();
   fModule->Clear("");
-  Int_t wordseen = fModule->LoadSlot(this, p, pstop);  // increments p
+  UInt_t wordseen = fModule->LoadSlot(this, evbuffer, pstop);  // increments p
   if (fDebugFile) *fDebugFile << "THaSlotData:: after LoadIfSlot:  wordseen =  "<<dec<<"  "<<wordseen<<endl;
   return wordseen;
 }
 
-Int_t THaSlotData::LoadBank(const UInt_t* p, Int_t pos, Int_t len) {
+UInt_t THaSlotData::LoadBank( const UInt_t* p, UInt_t pos, UInt_t len) {
   // returns how many words seen.
   if ( !fModule ) {
 // This is bad and should not happen; it means you didn't define a module
@@ -160,12 +160,12 @@ Int_t THaSlotData::LoadBank(const UInt_t* p, Int_t pos, Int_t len) {
   if (fDebugFile) *fDebugFile << "THaSlotData::LoadBank:  " << dec<<crate<<"  "<<slot<<"  pos "<<pos<<"   len "<<len<<"   start word "<<hex<<*p<<"  module ptr  "<<fModule<<dec<<endl;
   if (fDebugFile) fModule->DoPrint();
   fModule->Clear("");
-  Int_t wordseen = fModule->LoadSlot(this, p, pos, len);
+  UInt_t wordseen = fModule->LoadSlot(this, p, pos, len);
   if (fDebugFile) *fDebugFile << "THaSlotData:: after LoadBank:  wordseen =  "<<dec<<"  "<<wordseen<<endl;
   return wordseen;
 }
 
-Int_t THaSlotData::LoadNextEvBuffer() {
+UInt_t THaSlotData::LoadNextEvBuffer() {
 // for modules that are in multiblock mode, load the next event in the block
   if ( !fModule ) {
     cerr << "THaSlotData::ERROR:   No module defined for slot. "<<crate<<"  "<<slot<<endl;
@@ -175,7 +175,7 @@ Int_t THaSlotData::LoadNextEvBuffer() {
 }
 
 
-int THaSlotData::loadData(const char* type, UInt_t chan, UInt_t dat, UInt_t raw) {
+Int_t THaSlotData::loadData(const char* type, UInt_t chan, UInt_t dat, UInt_t raw) {
 
   const int very_verb=1;
 
@@ -261,7 +261,6 @@ int THaSlotData::loadData(UInt_t chan, UInt_t dat, UInt_t raw) {
   // NEW (6/2014).
   return loadData(nullptr, chan, dat, raw);
 }
-
 
 void THaSlotData::print() const
 {

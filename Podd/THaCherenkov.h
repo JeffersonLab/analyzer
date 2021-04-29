@@ -34,7 +34,7 @@ protected:
   Data_t         fASUM_p;    // Sum of ADC minus pedestal values of channels
   Data_t         fASUM_c;    // Sum of corrected ADC amplitudes of channels
 
-  virtual Int_t    StoreHit( const DigitizerHitInfo_t& hitinfo, Int_t data );
+  virtual Int_t    StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data );
   virtual void     PrintDecodedData( const THaEvData& evdata ) const;
 
   virtual Int_t    DefineVariables( EMode mode = kDefine );

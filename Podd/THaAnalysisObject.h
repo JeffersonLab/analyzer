@@ -190,7 +190,7 @@ protected:
 #ifdef WITH_DEBUG
   void DebugPrint( const DBRequest* list ) const;
 
-  template <typename T>  // available for Double_t, Float_t and Int_t
+  template <typename T>  // available for Double_t, Float_t, UInt_t and Int_t
   static void WriteValue( T val, int p=0, int w=5 );
 #endif
 

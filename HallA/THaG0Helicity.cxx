@@ -506,7 +506,7 @@ void THaG0Helicity::QuadCalib()
       fPresent_helicity = kUnknown;
     }
     if (fDebug>=3) {
-      Info(Here(here), "%5d  %1d  %1d %1d %2d  %10.0f  %10.0f  %10.0f",fNqrt,
+      Info(Here(here), "%5d  %1u  %1d %1d %2d  %10.0f  %10.0f  %10.0f",fNqrt,
 	 fEvtype,fQrt,fQ1_reading,fQ1_present_helicity,fTimestamp,fT0,fTdiff);
     }
     if (fDebug==-1) { // Only used during an initial calibration.

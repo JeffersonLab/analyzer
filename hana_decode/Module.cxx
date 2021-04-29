@@ -25,7 +25,7 @@ Module::Module()
 {
 }
 
-Module::Module(Int_t crate, Int_t slot)
+Module::Module(UInt_t crate, UInt_t slot)
   : fCrate(crate), fSlot(slot), fHeader(0), fHeaderMask(0xffffffff), fBank(-1),
     fWordsExpect(0), fWordsSeen(0), fWdcntMask(0), fWdcntShift(0),
     fModelNum(-1), fNumChan(0), fMode(0), block_size(1), IsInit(false),
@@ -112,8 +112,8 @@ Module::TypeIter_t Module::DoRegister( const ModuleType& info )
   return ins.first;
 }
 
-Int_t Module::LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer,
-			  const Int_t pos, const Int_t len)
+UInt_t Module::LoadSlot( THaSlotData *sldat, const UInt_t* evbuffer,
+                         UInt_t pos, UInt_t len)
 {
   // Load slot from pos to pos+len
 

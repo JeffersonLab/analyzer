@@ -39,7 +39,7 @@ public:
    PipeliningModule()
     : fNWarnings(0), fBlockHeader(0), data_type_def(15), fFirstTime(true),
       index_buffer(0) {}
-   PipeliningModule(Int_t crate, Int_t slot);
+   PipeliningModule( UInt_t crate, UInt_t slot );
    PipeliningModule(const PipeliningModule &fh) = delete;
    PipeliningModule& operator=(const PipeliningModule &fh) = delete;
    virtual ~PipeliningModule() = default;
@@ -48,18 +48,18 @@ public:
 
 protected:
 
-   Int_t SplitBuffer(const std::vector< UInt_t >& bigbuffer);
+   Int_t SplitBuffer( const std::vector<UInt_t>& bigbuffer );
    void ReStart();
    std::vector< UInt_t >GetNextBlock();
-   Int_t LoadNextEvBuffer(THaSlotData *sldat)=0;
-   virtual Int_t LoadThisBlock(THaSlotData *sldat, std::vector<UInt_t > evb)=0;
-   Int_t fNWarnings;
+   UInt_t LoadNextEvBuffer( THaSlotData *sldat)=0;
+   virtual UInt_t LoadThisBlock( THaSlotData *sldat, std::vector<UInt_t > evb)=0;
+   UInt_t fNWarnings;
    UInt_t fBlockHeader;
    UInt_t data_type_def;
 
    Bool_t fFirstTime;
 
-   std::vector< std::vector<  UInt_t > > eventblock;
+   std::vector<std::vector<UInt_t>> eventblock;
    UInt_t index_buffer;
    UInt_t GetIndex();
 

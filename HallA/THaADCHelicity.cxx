@@ -157,8 +157,8 @@ Int_t THaADCHelicity::Decode( const THaEvData& evdata )
   Int_t ret = 0;
   bool gate_high = false;
 
-  for( Int_t i = 0; i < fNchan; ++i ) {
-    Int_t roc = fAddr[i].roc, slot = fAddr[i].slot, chan = fAddr[i].chan;
+  for( UInt_t i = 0; i < fNchan; ++i ) {
+    UInt_t roc = fAddr[i].roc, slot = fAddr[i].slot, chan = fAddr[i].chan;
     if ( !evdata.GetNumHits( roc, slot, chan ))
       continue;
 

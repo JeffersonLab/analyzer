@@ -19,7 +19,7 @@ public:
 
    F1TDCModule() : fNumHits(0), fResol(ILO), IsInit(false),
                    slotmask(0), chanmask(0), datamask(0) {}
-   F1TDCModule(Int_t crate, Int_t slot);
+   F1TDCModule( UInt_t crate, UInt_t slot );
    virtual ~F1TDCModule() = default;
 
    using Module::GetData;
@@ -30,28 +30,27 @@ public:
    virtual void Init();
    virtual void Clear(Option_t *opt="");
    virtual Bool_t IsSlot(UInt_t rdata);
-   virtual Int_t GetData(Int_t chan, Int_t hit) const;
+   virtual UInt_t GetData( UInt_t chan, UInt_t hit) const;
 
    void SetResolution(Int_t which=0) {
-     fResol = IHI;
-     if (which==0) fResol=ILO;
+     fResol = (which==0) ? ILO : IHI;
    }
    EResolution GetResolution() const { return fResol; };
    Bool_t IsHiResolution() const { return (fResol==IHI); };
 
-   Int_t GetNumHits() const { return fNumHits; };
+   UInt_t GetNumHits() const { return fNumHits; };
    Int_t Decode(const UInt_t*) { return 0; };
 
 private:
 
 // Loads sldat and increments ptr to evbuffer
-   Int_t LoadSlot(THaSlotData *sldat,  const UInt_t* evbuffer, const UInt_t *pstop );
+  UInt_t LoadSlot( THaSlotData* sldat, const UInt_t* evbuffer, const UInt_t* pstop );
 
-   Int_t fNumHits;
+   UInt_t fNumHits;
    EResolution fResol;
-   std::vector<Int_t> fTdcData;  // Raw data (either samples or pulse integrals)
+   std::vector<UInt_t> fTdcData;  // Raw data (either samples or pulse integrals)
    Bool_t IsInit;
-   Int_t slotmask, chanmask, datamask;
+   UInt_t slotmask, chanmask, datamask;
 
    static TypeIter_t fgThisType;
    ClassDef(F1TDCModule,0)  //  JLab F1 TDC Module

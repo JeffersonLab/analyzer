@@ -277,7 +277,7 @@ TClass* THaRTTI::GetClass() const
 //_____________________________________________________________________________
 Bool_t THaRTTI::IsPointer() const
 {
-  return fDataMember ? fDataMember->IsaPointer() : false;
+  return fDataMember != nullptr && fDataMember->IsaPointer();
 }
 
 //_____________________________________________________________________________

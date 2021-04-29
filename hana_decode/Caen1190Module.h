@@ -27,19 +27,19 @@ namespace Decoder {
     virtual void  Init();
     virtual void  Clear(Option_t *opt="");
     virtual Int_t Decode(const UInt_t *p);
-    virtual Int_t GetData(Int_t chan, Int_t hit) const;
-    virtual Int_t GetOpt(Int_t chan, Int_t hit) const;
+    virtual UInt_t GetData( UInt_t chan, UInt_t hit) const;
+    virtual UInt_t GetOpt( UInt_t chan, UInt_t hit) const;
 
     // Loads slot data.  if you don't define this, the base class's method is used
-    virtual Int_t LoadSlot(THaSlotData *sldat,  const UInt_t *evbuffer, const UInt_t *pstop );
+    virtual UInt_t LoadSlot( THaSlotData *sldat, const UInt_t *evbuffer, const UInt_t *pstop );
     // Loads slot data for bank structures
-    virtual Int_t LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer, Int_t pos, Int_t len);
+    virtual UInt_t LoadSlot( THaSlotData *sldat, const UInt_t *evbuffer, UInt_t pos, UInt_t len);
 
   private:
 
-    std::vector<Int_t> fNumHits;
-    std::vector<Int_t> fTdcData;  // Raw data
-    std::vector<Int_t> fTdcOpt;  // Edge flag =0 Leading edge, = 1 Trailing edge
+    std::vector<UInt_t> fNumHits;
+    std::vector<UInt_t> fTdcData;  // Raw data
+    std::vector<UInt_t> fTdcOpt;  // Edge flag =0 Leading edge, = 1 Trailing edge
 
     THaSlotData *slot_data;  // Need to fix if multi-threading becomes available
    

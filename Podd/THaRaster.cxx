@@ -189,13 +189,13 @@ Int_t THaRaster::Decode( const THaEvData& evdata )
 
   UInt_t chancnt = 0;
 
-  for (Int_t i = 0; i < fDetMap->GetSize(); i++ ){
+  for( UInt_t i = 0; i < fDetMap->GetSize(); i++ ) {
     THaDetMap::Module* d = fDetMap->GetModule( i );
 
-    for (Int_t j=0; j< evdata.GetNumChan( d->crate, d->slot ); j++) {
-      Int_t chan = evdata.GetNextChan( d->crate, d->slot, j);
-      if ((chan>=d->lo)&&(chan<=d->hi)) {
-	Int_t data = evdata.GetData( d->crate, d->slot, chan, 0 );
+    for( UInt_t j = 0; j < evdata.GetNumChan(d->crate, d->slot); j++ ) {
+      UInt_t chan = evdata.GetNextChan( d->crate, d->slot, j);
+      if( (chan >= d->lo) && (chan <= d->hi) ) {
+        UInt_t data = evdata.GetData( d->crate, d->slot, chan, 0 );
 	UInt_t k = chancnt + d->first +
 	  ((d->reverse) ? d->hi - chan : chan - d->lo) -1;
 	if (k<NBPM) {

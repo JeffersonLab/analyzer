@@ -15,7 +15,7 @@ class THaUnRasteredBeam : public THaBeam {
 public:
   THaUnRasteredBeam( const char* name, const char* description, Int_t runningsum_depth = 0 ) ;
 
-  virtual ~THaUnRasteredBeam() {}
+  virtual ~THaUnRasteredBeam() = default;
   
   virtual Int_t Reconstruct() ;
 

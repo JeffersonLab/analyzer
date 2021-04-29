@@ -29,50 +29,6 @@ THaRunParameters::THaRunParameters() :
 }
 
 //_____________________________________________________________________________
-THaRunParameters::THaRunParameters( const THaRunParameters& rhs ) :
-  TObject(rhs),
-  fBeamName(rhs.fBeamName), fBeamE(rhs.fBeamE), fBeamP(rhs.fBeamP),
-  fBeamM(rhs.fBeamM), fBeamQ(rhs.fBeamQ), fBeamdE(rhs.fBeamdE), 
-  fBeamPol(rhs.fBeamPol),
-  fTgtName(rhs.fTgtName), fTgtM(rhs.fTgtM), fTgtPol(rhs.fTgtPol),
-  fIsPol(rhs.fIsPol),
-  fRunName(rhs.fRunName), fPrescale(rhs.fPrescale)
-{
-  // Copy ctor. Explicitly implemented to work around limitations of CINT
-  // with derived classes.
-
-}
-
-//_____________________________________________________________________________
-THaRunParameters& THaRunParameters::operator=(const THaRunParameters& rhs)
-{
-  // THaRunParameters assignment operator.
-
-  if (this != &rhs) {
-    fBeamName = rhs.fBeamName;
-    fBeamE    = rhs.fBeamE; 
-    fBeamP    = rhs.fBeamP;
-    fBeamM    = rhs.fBeamM;
-    fBeamQ    = rhs.fBeamQ; 
-    fBeamdE   = rhs.fBeamdE; 
-    fBeamPol  = rhs.fBeamPol;
-    fTgtName  = rhs.fTgtName; 
-    fTgtM     = rhs.fTgtM;
-    fTgtPol   = rhs.fTgtPol;
-    fIsPol    = rhs.fIsPol;
-    fRunName  = rhs.fRunName;
-    fPrescale = rhs.fPrescale;
-  }
-  return *this;
-}
-
-//_____________________________________________________________________________
-THaRunParameters::~THaRunParameters()
-{
-  // Destructor
-}
-
-//_____________________________________________________________________________
 void THaRunParameters::Clear( Option_t* )
 {
   // Clear run parameters
@@ -143,8 +99,7 @@ Int_t THaRunParameters::ReadDatabase( const TDatime& date )
   if( err )
     return err;
 
-  Int_t iq = int(Q);
-  SetBeam( E, M, iq, dE );
+  SetBeam( E, M, int(Q), dE );
 
   return 0;
 }

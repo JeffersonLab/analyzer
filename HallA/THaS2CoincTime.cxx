@@ -134,7 +134,7 @@ Int_t THaS2CoincTime::Process( const THaEvData& evdata )
   // read in the two relevant channels
   // Use of the logical channel number ensures matching of the TDC with
   // the correct difference (1by2 vs 2by1)
-  for ( Int_t i=0; i < fDetMap->GetSize(); i++ ) {
+  for ( UInt_t i=0; i < fDetMap->GetSize(); i++ ) {
     THaDetMap::Module* d = fDetMap->GetModule(i);
     if (fTdcRes[d->first] != 0.) {
       // grab only the first hit in a TDC

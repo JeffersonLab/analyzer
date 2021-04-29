@@ -33,11 +33,6 @@ THaElectronKine::THaElectronKine( const char* name, const char* description,
   SetMass( electron_mass );
 }
 
-//_____________________________________________________________________________
-THaElectronKine::~THaElectronKine()
-{
-  // Destructor
-}
 
   
   

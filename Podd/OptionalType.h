@@ -25,6 +25,7 @@ using std::experimental::make_optional;
 #endif /* __cplusplus >= 201703L */
 
 using OptInt_t  = Optional_t<Int_t>;
+using OptUInt_t = Optional_t<UInt_t>;
 using OptData_t = Optional_t<Data_t>;
 
 #endif //Podd_OptionalType_h_

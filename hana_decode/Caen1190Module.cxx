@@ -19,8 +19,8 @@ using namespace std;
 
 namespace Decoder {
 
-  const Int_t NTDCCHAN = 128;
-  const Int_t MAXHIT = 100;
+  const UInt_t NTDCCHAN = 128;
+  const UInt_t MAXHIT = 100;
 
   Module::TypeIter_t Caen1190Module::fgThisType =
     DoRegister( ModuleType( "Decoder::Caen1190Module" , 1190 ));
@@ -42,8 +42,8 @@ namespace Decoder {
     fName = "Caen TDC 1190 Module";
   }
 
-  Int_t Caen1190Module::LoadSlot( THaSlotData* sldat, const UInt_t* evbuffer,
-                                  const UInt_t *pstop) {
+  UInt_t Caen1190Module::LoadSlot( THaSlotData* sldat, const UInt_t* evbuffer,
+                                   const UInt_t *pstop) {
     // This is a simple, default method for loading a slot
     const UInt_t *p = evbuffer;
     slot_data = sldat;
@@ -57,8 +57,8 @@ namespace Decoder {
     return fWordsSeen;
   }
 
-  Int_t Caen1190Module::LoadSlot( THaSlotData* sldat, const UInt_t* evbuffer,
-                                  Int_t pos, Int_t len ) {
+  UInt_t Caen1190Module::LoadSlot( THaSlotData* sldat, const UInt_t* evbuffer,
+                                   UInt_t pos, UInt_t len ) {
     // Fill data structures of this class, utilizing bank structure
     // Read until out of data or until decode says that the slot is finished
     // len = ndata in event, pos = word number for block header in event
@@ -79,7 +79,7 @@ namespace Decoder {
     case 0x40000000 : // global header
       	tdc_data.glb_hdr_evno = (*p & 0x07ffffe0) >> 5; // bits 26-5
 	tdc_data.glb_hdr_slno =  *p & 0x0000001f;       // bits 4-0
-	if (tdc_data.glb_hdr_slno == static_cast <UInt_t> (fSlot)) {
+	if (tdc_data.glb_hdr_slno == fSlot) {
 #ifdef WITH_DEBUG
 	if (fDebugFile)
 	  *fDebugFile << "Caen1190Module:: 1190 GLOBAL HEADER >> data = " 
@@ -90,7 +90,7 @@ namespace Decoder {
       }
       break;
     case 0x08000000 : // tdc header
-      if (tdc_data.glb_hdr_slno == static_cast <UInt_t> (fSlot)) {
+      if (tdc_data.glb_hdr_slno == fSlot) {
 	tdc_data.hdr_chip_id  = (*p & 0x03000000) >> 24; // bits 25-24
 	tdc_data.hdr_event_id = (*p & 0x00fff000) >> 12; // bits 23-12
 	tdc_data.hdr_bunch_id =  *p & 0x00000fff;        // bits 11-0
@@ -105,7 +105,7 @@ namespace Decoder {
       }
       break;
     case  0x00000000 : // tdc measurement
-      if (tdc_data.glb_hdr_slno == static_cast <UInt_t> (fSlot)) {
+      if (tdc_data.glb_hdr_slno == fSlot) {
 	tdc_data.chan   = (*p & 0x03f80000)>>19; // bits 25-19
 	tdc_data.raw    =  *p & 0x0007ffff;      // bits 18-0
 	tdc_data.opt    = (*p & 0x04000000)>>26;      // bit 26
@@ -119,7 +119,7 @@ namespace Decoder {
 		      << tdc_data.raw << " >> status = "
 		      << tdc_data.status << endl;
 #endif
-        if(Int_t (tdc_data.chan) < NTDCCHAN &&
+        if(tdc_data.chan < NTDCCHAN &&
            fNumHits[tdc_data.chan] < MAXHIT) {
           fTdcData[tdc_data.chan * MAXHIT + fNumHits[tdc_data.chan]] = tdc_data.raw;
           fTdcOpt[tdc_data.chan * MAXHIT + fNumHits[tdc_data.chan]++] = tdc_data.opt;
@@ -128,7 +128,7 @@ namespace Decoder {
       }
       break;
     case 0x18000000 : // tdc trailer
-      if (tdc_data.glb_hdr_slno == static_cast <UInt_t> (fSlot)) {
+      if (tdc_data.glb_hdr_slno == fSlot) {
 	tdc_data.trl_chip_id     = (*p & 0x03000000) >> 24; // bits 25-24
 	tdc_data.trl_event_id    = (*p & 0x00fff000) >> 12; // bits 23-12
 	tdc_data.trl_word_cnt    =  *p & 0x00000fff;        // bits 11-0
@@ -143,7 +143,7 @@ namespace Decoder {
       }
       break;
     case 0x20000000 : // tdc error
-      if (tdc_data.glb_hdr_slno == static_cast <UInt_t> (fSlot)) {
+      if (tdc_data.glb_hdr_slno == fSlot) {
 	tdc_data.chip_nr_hd = (*p & 0x03000000) >> 24; // bits 25-24
 	tdc_data.flags      =  *p & 0x00007fff;	       // bits 14-0
 	cout << "TDC1190 Error: Slot " << tdc_data.glb_hdr_slno << ", Chip " << tdc_data.chip_nr_hd << 
@@ -162,7 +162,7 @@ namespace Decoder {
       }
       break;
     case 0x88000000 :  // extended trigger time tag
-      if (tdc_data.glb_hdr_slno == static_cast <UInt_t> (fSlot)) {
+      if (tdc_data.glb_hdr_slno == fSlot) {
 	tdc_data.trig_time = *p & 0x7ffffff; // bits 27-0
 #ifdef WITH_DEBUG
 	if (fDebugFile)
@@ -173,7 +173,7 @@ namespace Decoder {
       }
       break;
     case 0x80000000 : // global trailer
-     if (tdc_data.glb_hdr_slno == static_cast <UInt_t> (fSlot)) {
+     if (tdc_data.glb_hdr_slno == fSlot) {
        tdc_data.glb_trl_status  = (*p & 0x07000000) >> 24; // bits 24-26
        tdc_data.glb_trl_wrd_cnt = (*p & 0x001fffe0) >> 5;  // bits 20-5
        tdc_data.glb_trl_slno    =  *p & 0x0000001f;        // bits 4-0   
@@ -192,24 +192,24 @@ namespace Decoder {
     return glbl_trl;
   }
  
-  Int_t Caen1190Module::GetData(Int_t chan, Int_t hit) const {
-    if(hit >= fNumHits[chan]) return 0;
-    Int_t idx = chan*MAXHIT + hit;
-    if (idx < 0 || idx > MAXHIT*NTDCCHAN) return 0;
+  UInt_t Caen1190Module::GetData( UInt_t chan, UInt_t hit ) const {
+    if( hit >= fNumHits[chan] ) return 0;
+    UInt_t idx = chan * MAXHIT + hit;
+    if( idx > MAXHIT * NTDCCHAN ) return 0;
     return fTdcData[idx];
   }
 
-  Int_t Caen1190Module::GetOpt(Int_t chan, Int_t hit) const {
-    if((Int_t)hit >= fNumHits[chan]) return 0;
-    Int_t idx = chan*MAXHIT + hit;
-    if (idx < 0 || idx > MAXHIT*NTDCCHAN) return 0;
+  UInt_t Caen1190Module::GetOpt( UInt_t chan, UInt_t hit ) const {
+    if( hit >= fNumHits[chan] ) return 0;
+    UInt_t idx = chan * MAXHIT + hit;
+    if( idx > MAXHIT * NTDCCHAN ) return 0;
     return fTdcOpt[idx];
   }
 
-  void Caen1190Module::Clear(Option_t*) {
-    fNumHits.assign(NTDCCHAN,0);
-    fTdcData.assign(NTDCCHAN*MAXHIT, 0);
-    fTdcOpt.assign(NTDCCHAN*MAXHIT, 0);
+  void Caen1190Module::Clear( Option_t* ) {
+    fNumHits.assign(NTDCCHAN, 0);
+    fTdcData.assign(NTDCCHAN * MAXHIT, 0);
+    fTdcOpt.assign(NTDCCHAN * MAXHIT, 0);
   }
 }
 

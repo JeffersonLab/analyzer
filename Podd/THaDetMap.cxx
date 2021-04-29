@@ -128,9 +128,9 @@ THaDetMap& THaDetMap::operator=( const THaDetMap& rhs )
 }
 
 //_____________________________________________________________________________
-Int_t THaDetMap::AddModule( Int_t crate, Int_t slot,
-                            Int_t chan_lo, Int_t chan_hi,
-                            Int_t first, Int_t model, Int_t refindex,
+Int_t THaDetMap::AddModule( UInt_t crate, UInt_t slot,
+                            UInt_t chan_lo, UInt_t chan_hi,
+                            UInt_t first, Int_t model, Int_t refindex,
                             Int_t refchan, Int_t plane, Int_t signal )
 {
   // Add a module to the map.
@@ -188,12 +188,12 @@ Int_t THaDetMap::AddModule( Int_t crate, Int_t slot,
     m.type = ChannelType::kUndefined;
 
   fMap.push_back(std::move(pm));
-  return GetSize();
+  return static_cast<Int_t>(GetSize());
 }
 
 //_____________________________________________________________________________
-THaDetMap::Module* THaDetMap::Find( Int_t crate, Int_t slot,
-                                    Int_t chan )
+THaDetMap::Module* THaDetMap::Find( UInt_t crate, UInt_t slot,
+                                    UInt_t chan )
 {
   // Return the module containing crate, slot, and channel chan.
   // If several matching modules exist (which mean the map is misconfigured),
@@ -264,10 +264,10 @@ Int_t THaDetMap::Fill( const vector<Int_t>& values, UInt_t flags )
     tuple_size++;
 
   // For historical reasons, logical channel numbers start at 1
-  Int_t prev_first = 1, prev_nchan = 0;
+  UInt_t prev_first = 1, prev_nchan = 0;
   // Defaults for optional values
-  Int_t first = 0, plane = 0, signal = 0;
-  Int_t model = 0, rchan = -1, ref = -1;
+  UInt_t first = 0;
+  Int_t  plane = 0, signal = 0, model = 0, rchan = -1, ref = -1;
 
   Int_t ret = 0;
   for( vsiz_t i = 0; i < values.size(); i += tuple_size ) {
@@ -304,7 +304,11 @@ Int_t THaDetMap::Fill( const vector<Int_t>& values, UInt_t flags )
     if( flags & kFillSignal )
       signal = values[i + k++];
 
-    ret = AddModule(values[i], values[i + 1], values[i + 2], values[i + 3],
+    auto crate = static_cast<UInt_t>(values[i]);
+    auto slot  = static_cast<UInt_t>(values[i+1]);
+    auto ch_lo = static_cast<UInt_t>(values[i+2]);
+    auto ch_hi = static_cast<UInt_t>(values[i+3]);
+    ret = AddModule(crate, slot, ch_lo, ch_hi,
                     first, model, ref, rchan, plane, signal);
     if( ret <= 0 )
       break;
@@ -316,12 +320,12 @@ Int_t THaDetMap::Fill( const vector<Int_t>& values, UInt_t flags )
 }
 
 //_____________________________________________________________________________
-Int_t THaDetMap::GetTotNumChan() const
+UInt_t THaDetMap::GetTotNumChan() const
 {
   // Get sum of the number of channels of all modules in the map. This is
   // typically the total number of hardware channels used by the detector.
 
-  Int_t sum = 0;
+  UInt_t sum = 0;
   for( const auto & m : fMap )
     sum += m->GetNchan();
 
@@ -330,7 +334,7 @@ Int_t THaDetMap::GetTotNumChan() const
 
 
 //_____________________________________________________________________________
-void THaDetMap::GetMinMaxChan( Int_t& min, Int_t& max, ECountMode mode ) const
+void THaDetMap::GetMinMaxChan( UInt_t& min, UInt_t& max, ECountMode mode ) const
 {
   // Put the minimum and maximum logical or reference channel numbers
   // into min and max. If refidx is true, check refindex, else check logical
@@ -340,8 +344,8 @@ void THaDetMap::GetMinMaxChan( Int_t& min, Int_t& max, ECountMode mode ) const
   max = kMinInt;
   bool do_ref = (mode == kRefIndex);
   for( const auto& m : fMap ) {
-    Int_t m_min = do_ref ? m->refindex : m->first;
-    Int_t m_max = do_ref ? m->refindex : m->first + m->hi - m->lo;
+    UInt_t m_min = do_ref ? m->refindex : m->first;
+    UInt_t m_max = do_ref ? m->refindex : m->first + m->hi - m->lo;
     if( m_min < min )
       min = m_min;
     if( m_max > max )
@@ -442,8 +446,8 @@ string THaDetMap::Iterator::msg( const char* txt ) const
 }
 
 #define CRATE_SLOT( x ) (x).crate, (x).slot
-static inline bool LOOPDONE( Int_t i, Int_t n ) { return i < 0 or i >= n; }
-static inline bool NO_NEXT( Int_t& i, Int_t n ) { return i >= n or ++i >= n; }
+static inline bool LOOPDONE( Int_t i, UInt_t n ) { return i < 0 or static_cast<UInt_t>(i) >= n; }
+static inline bool NO_NEXT( Int_t& i, UInt_t n ) { return i >= static_cast<Int_t>(n) or ++i >= static_cast<Int_t>(n); }
 
 //_____________________________________________________________________________
 THaDetMap::Iterator& THaDetMap::Iterator::operator++()
@@ -467,10 +471,10 @@ THaDetMap::Iterator& THaDetMap::Iterator::operator++()
  nextchan:
   if( NO_NEXT(fIChan, fNChan) )
     goto nextmod;
-  Int_t chan = fEvData.GetNextChan(CRATE_SLOT(fHitInfo), fIChan);
+  UInt_t chan = fEvData.GetNextChan(CRATE_SLOT(fHitInfo), fIChan);
   if( chan < fMod->lo or chan > fMod->hi )
     goto nextchan;  // Not one of my channels
-  Int_t nhit = fEvData.GetNumHits(CRATE_SLOT(fHitInfo), chan);
+  UInt_t nhit = fEvData.GetNumHits(CRATE_SLOT(fHitInfo), chan);
   fHitInfo.chan = chan;
   fHitInfo.nhit = nhit;
   if( nhit == 0 ) {
@@ -488,7 +492,7 @@ THaDetMap::Iterator& THaDetMap::Iterator::operator++()
   Int_t lchan = fMod->ConvertToLogicalChannel(chan);
   if( fDetMap.fStartAtZero )
     ++lchan; // ConvertToLogicalChannel subtracts 1; undo that here
-  if( lchan < 0 or lchan >= size() ) {
+  if( lchan < 0 or static_cast<UInt_t>(lchan) >= size() ) {
     ostringstream ostr;
     size_t lmin = 1, lmax = size(); // Apparent range in the database file
     if( fDetMap.fStartAtZero ) { --lmin; --lmax; }

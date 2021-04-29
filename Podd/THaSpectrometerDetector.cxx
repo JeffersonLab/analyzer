@@ -73,8 +73,8 @@ Bool_t THaSpectrometerDetector::CalcTrackIntercept( THaTrack* theTrack,
 //_____________________________________________________________________________
 Bool_t THaSpectrometerDetector::CheckIntercept( THaTrack *track )
 {
-  TVector3 icept;
-  Double_t t;
+  TVector3 icept; // dummy
+  Double_t t = 0; // dummy
   return CalcTrackIntercept(track, icept, t);
 }
 
@@ -82,13 +82,13 @@ Bool_t THaSpectrometerDetector::CheckIntercept( THaTrack *track )
 Bool_t THaSpectrometerDetector::CalcInterceptCoords( THaTrack* track,
 						     Double_t& x, Double_t& y)
 {
-  Double_t t;
+  Double_t t = 0; // dummy
   return CalcTrackIntercept(track, t, x, y);
 }
 
 //_____________________________________________________________________________
 Bool_t THaSpectrometerDetector::CalcPathLen( THaTrack* track, Double_t& t )
 {
-  TVector3 icept;
+  TVector3 icept; // dummy
   return CalcTrackIntercept(track, icept, t);
 }

@@ -37,9 +37,9 @@ public:
   Data_t fPeak;      // ADC peak value
   Data_t fT;         // TDC time (channels)
   Data_t fT_c;       // Offset-corrected TDC time (s)
-  Int_t  fOverflow;  // FADC overflow bit
-  Int_t  fUnderflow; // FADC underflow bit
-  Int_t  fPedq;      // FADC pedestal quality bit
+  UInt_t fOverflow;  // FADC overflow bit
+  UInt_t fUnderflow; // FADC underflow bit
+  UInt_t fPedq;      // FADC pedestal quality bit
   Data_t fPedestal;  // Extracted pedestal value
 };
 
@@ -67,13 +67,13 @@ class FADCData : public Podd::DetectorData {
 public:
   FADCData( const char* name, const char* desc, Int_t nelem );
 
-  static OptInt_t LoadFADCData( const DigitizerHitInfo_t& hitinfo );
-  Int_t StoreHit( const DigitizerHitInfo_t& hitinfo, Int_t data ) override;
+  static OptUInt_t LoadFADCData( const DigitizerHitInfo_t& hitinfo );
+  Int_t StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data ) override;
 
   void  Clear( Option_t* ="" ) override;
   void  Reset( Option_t* ="" ) override;
 
-  Int_t           GetSize() const override { return fFADCData.size(); }
+  UInt_t          GetSize() const override { return fFADCData.size(); }
   FADCConfig_t&   GetConfig()              { return fConfig; }
 #ifdef NDEBUG
   FADCData_t&     GetData( size_t i )      { return fFADCData[i]; }

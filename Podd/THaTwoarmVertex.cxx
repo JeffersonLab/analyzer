@@ -111,7 +111,7 @@ Int_t THaTwoarmVertex::Process( const THaEvData& )
   p1 += s1->GetPointingOffset();
   p2 *= s2->GetToLabRot();
   p2 += s2->GetPointingOffset();
-  Double_t t;
+  Double_t t = 0; // dummy
   if( !IntersectPlaneWithRay( t1->GetPvect(), yax, p1, 
 			      p2, t2->GetPvect(), t, fVertex ))
     return 3; // Oops, track planes are parallel?

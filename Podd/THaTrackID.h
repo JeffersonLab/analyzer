@@ -12,8 +12,8 @@
 class THaTrackID : public TObject {
 
 public:
-  THaTrackID() {}
-  virtual ~THaTrackID() {}
+  THaTrackID() = default;
+  virtual ~THaTrackID() = default;
 
   virtual Bool_t  operator==( const THaTrackID& ) = 0;
   virtual Bool_t  operator!=( const THaTrackID& ) = 0;

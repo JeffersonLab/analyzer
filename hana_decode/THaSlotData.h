@@ -44,33 +44,34 @@ public:
        THaSlotData();
        THaSlotData(UInt_t crate, UInt_t slot);
        virtual ~THaSlotData();
-       const char* devType() const;             // "adc", "tdc", "scaler"
-       int loadModule(const THaCrateMap *map);
+       const char* devType() const;                  // "adc", "tdc", "scaler"
+       Int_t  loadModule( const THaCrateMap* map );
        UInt_t getNumRaw() const { return numraw; };  // Amount of raw CODA data
        UInt_t getRawData(UInt_t ihit) const;         // Returns raw data words
        UInt_t getRawData(UInt_t chan, UInt_t hit) const;
-       UInt_t getNumHits(UInt_t chan) const;      // Num hits on a channel
-       UInt_t getNumChan() const;              // Num unique channels hit
-       UInt_t getNextChan(UInt_t index) const;    // List of unique channels hit
-       UInt_t getData(UInt_t chan, UInt_t hit) const;  // Data (adc,tdc,scaler) on 1 chan
+       UInt_t getNumHits(UInt_t chan) const;         // Num hits on a channel
+       UInt_t getNumChan() const;                    // Num unique channels hit
+       UInt_t getNextChan(UInt_t index) const;       // List of unique channels hit
+       UInt_t getData(UInt_t chan, UInt_t hit) const;// Data (adc,tdc,scaler) on 1 chan
        UInt_t getCrate() const { return crate; }
        UInt_t getSlot()  const { return slot; }
-       void clearEvent();                   // clear event counters
-       int loadData(const char* type, UInt_t chan, UInt_t dat, UInt_t raw);
-       int loadData(UInt_t chan, UInt_t dat, UInt_t raw);
+       void   clearEvent();                          // clear event counters
+       Int_t  loadData( const char* type, UInt_t chan, UInt_t dat, UInt_t raw );
+       Int_t  loadData( UInt_t chan, UInt_t dat, UInt_t raw );
 
        // new
-       Int_t LoadIfSlot(const UInt_t* evbuffer, const UInt_t *pstop);
-       Int_t LoadBank(const UInt_t* p, Int_t pos, Int_t len); 
-       Int_t LoadNextEvBuffer();
+       UInt_t LoadIfSlot( const UInt_t* evbuffer, const UInt_t* pstop );
+       UInt_t LoadBank( const UInt_t* p, UInt_t pos, UInt_t len );
+       UInt_t LoadNextEvBuffer();
        Bool_t IsMultiBlockMode() { if (fModule) return fModule->IsMultiBlockMode(); return false; };
        Bool_t BlockIsDone() { if (fModule) return fModule->BlockIsDone(); return false; };
 
        void SetDebugFile(std::ofstream *file) { fDebugFile = file; };
        Module* GetModule() { return fModule; };
 
-       void define(UInt_t crate, UInt_t slot, UInt_t nchan=DEFNCHAN,
-		   UInt_t ndata=DEFNDATA, UInt_t nhitperchan=DEFNHITCHAN );// Define crate, slot
+       // Define crate, slot
+       void define( UInt_t crate, UInt_t slot, UInt_t nchan = DEFNCHAN,
+                    UInt_t ndata = DEFNDATA, UInt_t nhitperchan = DEFNHITCHAN );
        void print() const;
        void print_to_file() const;
        void compressdataindex(UInt_t numidx);

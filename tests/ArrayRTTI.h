@@ -16,8 +16,8 @@ namespace Tests {
 class ArrayRTTI : public UnitTest {
 
 public:
-  ArrayRTTI( const char* name = "array_rtti",
-	     const char* description = "Array RTTI unit test" );
+  explicit ArrayRTTI( const char* name = "array_rtti",
+                      const char* description = "Array RTTI unit test" );
   virtual ~ArrayRTTI();
 
   virtual Int_t Test();

@@ -79,12 +79,12 @@ protected:
 			      Bool_t required = false );
 
   // Callbacks from Decode()
-  virtual Int_t    StoreHit( const DigitizerHitInfo_t& hitinfo, Int_t data );
-  virtual OptInt_t LoadData( const THaEvData& evdata,
-                             const DigitizerHitInfo_t& hitinfo );
-  virtual void     PrintDecodedData( const THaEvData& evdata ) const;
+  virtual Int_t     StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data );
+  virtual OptUInt_t LoadData( const THaEvData& evdata,
+                              const DigitizerHitInfo_t& hitinfo );
+  virtual void      PrintDecodedData( const THaEvData& evdata ) const;
 
-  void DebugWarning( const char* here, const char* msg, Int_t evnum );
+  void DebugWarning( const char* here, const char* msg, UInt_t evnum );
   void MultipleHitWarning( const DigitizerHitInfo_t& hitinfo, const char* here );
   void DataLoadWarning( const DigitizerHitInfo_t& hitinfo, const char* here );
 

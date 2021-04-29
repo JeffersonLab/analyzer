@@ -9,6 +9,7 @@
 
 #include "THaBeamDet.h"
 #include "TVectorT.h"
+#include "TMatrixD.h"
 
 class THaRaster : public THaBeamDet {
 
@@ -65,7 +66,7 @@ protected:
   TVector3  fPosition[3];   // Beam position at 1st, 2nd BPM or at the target (meters)
   TVector3  fDirection;  // Beam angle at the target (meters)
 
-  TMatrix   fRaw2Pos[3];
+  TMatrixD  fRaw2Pos[3];
   TVector3  fPosOff[3];
 
   TVectorD  fRasterFreq;

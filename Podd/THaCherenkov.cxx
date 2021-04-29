@@ -112,10 +112,15 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
     err = kInitError;  // Error already printed by FillDetMap
   }
 
-  if( !err && (nelem = fDetMap->GetTotNumChan()) != 2*fNelem ) {
-    Error( Here(here), "Number of detector map channels (%d) "
-	   "inconsistent with 2*number of PMTs (%d)", nelem, 2*fNelem );
-    err = kInitError;
+  const UInt_t nval = fNelem;
+  if( !err ) {
+    UInt_t tot_nchan = fDetMap->GetTotNumChan();
+    if( tot_nchan != 2*nval ) {
+      Error(Here(here), "Number of detector map channels (%u) "
+                        "inconsistent with 2*number of PMTs (%d)",
+            tot_nchan, 2*fNelem);
+      err = kInitError;
+    }
   }
 
   // Deal with the TDC mode (common stop (default) vs. common start).
@@ -138,8 +143,8 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
   tdc2t = TMath::Abs(tdc2t);
 
   // Set module capability flags for legacy databases without model info
-  Int_t nmodules = fDetMap->GetSize();
-  for( Int_t i = 0; i < nmodules; i++ ) {
+  UInt_t nmodules = fDetMap->GetSize();
+  for( UInt_t i = 0; i < nmodules; i++ ) {
     THaDetMap::Module* d = fDetMap->GetModule(i);
     if( !d->model ) {
       if( i < nmodules/2 ) d->MakeADC(); else d->MakeTDC();
@@ -154,7 +159,6 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
     return err;
   }
 
-  UInt_t nval = fNelem;
   if( !fIsInit || !fPMTData ) {
     fDetectorData.clear();
     auto detdata = MKPMTDATA(GetPrefixName(), fTitle, nval);
@@ -162,7 +166,7 @@ Int_t THaCherenkov::ReadDatabase( const TDatime& date )
     fDetectorData.emplace_back(std::move(detdata));
     fIsInit = true;
   }
-  assert(fPMTData->GetSize() - nval == 0);
+  assert(fPMTData->GetSize() == nval);
 
   // Read calibration parameters
   vector<Data_t> off, ped, gain;
@@ -242,7 +246,7 @@ void THaCherenkov::Clear( Option_t* opt )
 }
 
 //_____________________________________________________________________________
-Int_t THaCherenkov::StoreHit( const DigitizerHitInfo_t& hitinfo, Int_t data )
+Int_t THaCherenkov::StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data )
 {
   // Put decoded frontend data into fDetectorData. Used by Decode().
   // hitinfo: channel info (crate/slot/channel/hit/type)

@@ -14,7 +14,7 @@ struct RVarDef;
 class THaVertexModule {
   
 public:
-  virtual ~THaVertexModule();
+  virtual ~THaVertexModule() = default;
   
   virtual const TVector3&   GetVertex()      const { return fVertex; }
   virtual const TVector3&   GetVertexError() const { return fVertexError; }

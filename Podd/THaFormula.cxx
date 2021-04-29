@@ -248,7 +248,7 @@ Int_t THaFormula::Compile( const char* expression )
 
   SetBit(kError, (status != 0));
   if( !IsError() ) {
-    assert( fNval+fNstring == (Int_t)fVarDef.size() );
+    assert( fNval+fNstring - fVarDef.size() == 0 );
     assert( fNstring >= 0 && fNval >= 0 );
     // If the formula is good, then fix the variable counters that TFormula
     // may have messed with when reverting lone kDefinedString variables to
@@ -257,7 +257,7 @@ Int_t THaFormula::Compile( const char* expression )
     // that the loops in EvalPar calculate all the values. This is inefficient,
     // but the best we can do with the implementation of TFormula.
     if( fNstring > 0 && fNval > 0 )
-      fNval = fNstring = fVarDef.size();
+      fNval = fNstring = static_cast<Int_t>(fVarDef.size());
   }
   return status;
 }
@@ -296,9 +296,6 @@ Double_t THaFormula::DefinedValue( Int_t i )
   // a cut has been evaluated.  These types can only exist if hcana's
   // THcFormula is used.
   // 
-
-  typedef vector<Double_t>::size_type vsiz_t;
-  //  typedef vector<Double_t>::iterator  viter_t;
 
   assert( i>=0 && i<(Int_t)fVarDef.size() );
 
@@ -346,7 +343,7 @@ Double_t THaFormula::DefinedValue( Int_t i )
       auto* func = static_cast<THaFormula*>(def.obj);
       assert(func);
 
-      vsiz_t ndata = func->GetNdata();
+      Int_t ndata = func->GetNdata();
       if( code == kLength )
 	return ndata;
 
@@ -367,7 +364,7 @@ Double_t THaFormula::DefinedValue( Int_t i )
 
       vector<Double_t> values;
       values.reserve(ndata);
-      for( vsiz_t instance = 0; instance < ndata; ++instance ) {
+      for( Int_t instance = 0; instance < ndata; ++instance ) {
 	values.push_back( func->EvalInstance(instance) );
       }
       if( func->IsInvalid() ) {
@@ -405,14 +402,14 @@ Double_t THaFormula::DefinedValue( Int_t i )
     break;
   case kCutScaler:
     {
-      auto cut = static_cast<const THaCut*>(def.obj);
+      const auto* cut = static_cast<const THaCut*>(def.obj);
       assert(cut);
       return cut->GetNPassed();
     }
     break;
   case kCutNCalled:
     {
-      auto cut = static_cast<const THaCut*>(def.obj);
+      const auto* cut = static_cast<const THaCut*>(def.obj);
       assert(cut);
       return cut->GetNCalled();
     }

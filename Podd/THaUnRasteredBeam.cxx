@@ -13,13 +13,10 @@
 //      unrastered beam to fill global variables of the beamline)
 // 
 //////////////////////////////////////////////////////////////////////////
-#include <iostream>
+
 #include "THaUnRasteredBeam.h"
 #include "THaBPM.h"
-#include "TMath.h"
 #include "TDatime.h"
-#include "VarDef.h"
-#include "TVector.h"
 #include "TList.h"
 
 using namespace std;
@@ -59,15 +56,15 @@ Int_t THaUnRasteredBeam::Reconstruct()
   // to the nominal target point
   // the following detectors are processed, but not used
 
-  TVector3 p[2];
+  TVector3 pos[2];
 
   TIter nextDet( fDetectors );
   nextDet.Reset();
-  for( Int_t i = 0; i<2; i++ ) {
-    THaBeamDet* theBeamDet = static_cast<THaBeamDet*>( nextDet() );
+  for( auto& thePos : pos ) {
+    auto* theBeamDet = static_cast<THaBeamDet*>( nextDet() );
     if( theBeamDet ) {
       theBeamDet->Process();
-      p[i] = theBeamDet->GetPosition();
+      thePos = theBeamDet->GetPosition();
     } else {
       Error( Here("Reconstruct"), 
 	     "Beamline Detectors Missing in Detector List" );
@@ -75,12 +72,11 @@ Int_t THaUnRasteredBeam::Reconstruct()
   }
 
   // Process any other detectors we may have
-  while (THaBeamDet * theBeamDet=
-	 static_cast<THaBeamDet*>( nextDet() )) {
+  while( auto* theBeamDet = static_cast<THaBeamDet*>(nextDet()) ) {
     theBeamDet->Process();
   }
 
-  if (fRunningSumDepth !=0 ) {
+  if( fRunningSumDepth != 0 ) {
 
 
     if (fRunningSumWrap) {
@@ -89,9 +85,9 @@ Int_t THaUnRasteredBeam::Reconstruct()
 
     }      
 
-    fRSDirection[fRunningSumNext] = p[1]-p[0] ;
-    fRSPosition[fRunningSumNext]  = p[1] + 
-      (p[1](2)/(p[0](2)-p[1](2))) * fRSDirection[fRunningSumNext] ;
+    fRSDirection[fRunningSumNext] = pos[1] - pos[0] ;
+    fRSPosition[fRunningSumNext]  = pos[1] +
+                                    (pos[1](2) / (pos[0](2) - pos[1](2))) * fRSDirection[fRunningSumNext] ;
 
     if (fRunningSumWrap) {
       fRSAvPos = fRSAvPos + ( ( 1./fRunningSumDepth) * fRSPosition[fRunningSumNext] );
@@ -117,8 +113,8 @@ Int_t THaUnRasteredBeam::Reconstruct()
 
   } else {
 
-    fDirection = p[1]-p[0];
-    fPosition = p[1] + (p[1](2)/(p[0](2)-p[1](2))) * fDirection ;
+    fDirection = pos[1] - pos[0];
+    fPosition = pos[1] + (pos[1](2) / (pos[0](2) - pos[1](2))) * fDirection ;
 
   }
   Update();

@@ -160,7 +160,7 @@ Int_t THaBPM::Decode( const THaEvData& evdata )
 }
 
 //_____________________________________________________________________________
-Int_t THaBPM::StoreHit( const DigitizerHitInfo_t& hitinfo, Int_t data )
+Int_t THaBPM::StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data )
 {
   // Store 'data' from single hit in channel 'hitinfo'. Called from Decode()
 

@@ -31,7 +31,7 @@ public:
   // Public base class functions that one typically overrides
   // (see comments in UserDetector.cxx for details)
   virtual void   Clear( Option_t* opt="" );
-  virtual Int_t  StoreHit( const DigitizerHitInfo_t& hitinfo, Int_t data );
+  virtual Int_t  StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data );
   virtual Int_t  CoarseProcess( TClonesArray& tracks );
   virtual Int_t  FineProcess( TClonesArray& tracks );
   virtual void   Print( Option_t* opt="" ) const;

@@ -13,7 +13,6 @@
 #include "THaHelicityDet.h"
 #include <vector>
 #include <stdexcept>
-#include <limits>
 
 class THaADCHelicity : public THaHelicityDet {
 
@@ -59,13 +58,13 @@ protected:
       roc = rhs[0]; slot = rhs[1]; chan = rhs[3];
       return *this;
     }
-    Int_t roc;            // ROC to read out
-    Int_t slot;           // Slot of module
-    Int_t chan;           // Channel within module
+    UInt_t roc;            // ROC to read out
+    UInt_t slot;           // Slot of module
+    UInt_t chan;           // Channel within module
   };
 
   ChanDef_t  fAddr[2];    // Definitions of helicity and gate channels
-  Int_t      fNchan;      // Number of channels to read out (1 or 2)
+  UInt_t     fNchan;      // Number of channels to read out (1 or 2)
 
   virtual Int_t DefineVariables( EMode mode = kDefine );
   virtual Int_t ReadDatabase( const TDatime& date );

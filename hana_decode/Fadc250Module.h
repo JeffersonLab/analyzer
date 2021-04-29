@@ -14,48 +14,48 @@
 
 namespace Decoder {
 
-  class Fadc250Module : public PipeliningModule {   // Inheritance
+  class Fadc250Module : public PipeliningModule {
 
   public:
     
-    Fadc250Module();                         // Default constructor
-    Fadc250Module(Int_t crate, Int_t slot);  // Constructor
-    virtual ~Fadc250Module();                // Virtual constructor
+    Fadc250Module();
+    Fadc250Module( UInt_t crate, UInt_t slot );
+    virtual ~Fadc250Module();
 
     using Module::GetData;
 
-    virtual void Clear(Option_t *opt="");
+    virtual void Clear( Option_t *opt="" );
     virtual void Init();
     virtual void CheckDecoderStatus() const;
-    virtual Int_t GetPulseIntegralData(Int_t chan, Int_t ievent) const;
-    virtual Int_t GetEmulatedPulseIntegralData(Int_t chan) const;
-    virtual Int_t GetPulseTimeData(Int_t chan, Int_t ievent) const;
-    virtual Int_t GetPulseCoarseTimeData(Int_t chan, Int_t ievent) const;
-    virtual Int_t GetPulseFineTimeData(Int_t chan, Int_t ievent) const;
-    virtual Int_t GetPulsePeakData(Int_t chan, Int_t ievent) const;
-    virtual Int_t GetPulsePedestalData(Int_t chan, Int_t ievent) const;
-    virtual Int_t GetPulseSamplesData(Int_t chan, Int_t ievent) const;
-    virtual Int_t GetPedestalQuality(Int_t chan, Int_t ievent) const;
-    virtual Int_t GetOverflowBit(Int_t chan, Int_t ievent) const;
-    virtual Int_t GetUnderflowBit(Int_t chan, Int_t ievent) const;
-    virtual std::vector<uint32_t> GetPulseSamplesVector(Int_t chan) const;
-    virtual Int_t GetFadcMode() const;
-    virtual Int_t GetMode() const { return GetFadcMode(); };
-    virtual Int_t GetNumFadcEvents(Int_t chan) const;
-    virtual Int_t GetNumFadcSamples(Int_t chan, Int_t ievent) const;
-    virtual Int_t LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, const UInt_t *pstop);
-    virtual Int_t LoadSlot(THaSlotData *sldat, const UInt_t* evbuffer, Int_t pos, Int_t len);
-    virtual Int_t DecodeOneWord(UInt_t pdat);
-    Int_t Decode(const UInt_t*) { return 0; }
+    virtual UInt_t GetPulseIntegralData( UInt_t chan, UInt_t ievent ) const;
+    virtual UInt_t GetEmulatedPulseIntegralData( UInt_t chan ) const;
+    virtual UInt_t GetPulseTimeData( UInt_t chan, UInt_t ievent ) const;
+    virtual UInt_t GetPulseCoarseTimeData( UInt_t chan, UInt_t ievent ) const;
+    virtual UInt_t GetPulseFineTimeData( UInt_t chan, UInt_t ievent ) const;
+    virtual UInt_t GetPulsePeakData( UInt_t chan, UInt_t ievent ) const;
+    virtual UInt_t GetPulsePedestalData( UInt_t chan, UInt_t ievent ) const;
+    virtual UInt_t GetPulseSamplesData( UInt_t chan, UInt_t ievent ) const;
+    virtual UInt_t GetPedestalQuality( UInt_t chan, UInt_t ievent ) const;
+    virtual UInt_t GetOverflowBit( UInt_t chan, UInt_t ievent ) const;
+    virtual UInt_t GetUnderflowBit( UInt_t chan, UInt_t ievent ) const;
+    virtual std::vector<uint32_t> GetPulseSamplesVector( UInt_t chan ) const;
+    virtual Int_t  GetFadcMode() const;
+    virtual Int_t  GetMode() const { return GetFadcMode(); };
+    virtual UInt_t GetNumFadcEvents( UInt_t chan ) const;
+    virtual UInt_t GetNumFadcSamples( UInt_t chan, UInt_t ievent ) const;
+    virtual UInt_t LoadSlot( THaSlotData *sldat, const UInt_t* evbuffer, const UInt_t *pstop );
+    virtual UInt_t LoadSlot( THaSlotData *sldat, const UInt_t* evbuffer, UInt_t pos, UInt_t len );
+    virtual UInt_t DecodeOneWord( UInt_t pdat);
+    virtual Int_t  Decode( const UInt_t* ) { return 0; }
     virtual Bool_t IsMultiFunction() { return true; }
-    virtual Bool_t HasCapability(Decoder::EModuleType type);
-    Int_t LoadNextEvBuffer(THaSlotData *sldat);
-    Int_t GetData(Decoder::EModuleType mtype, Int_t chan, Int_t ievent) const;
-    Int_t GetNumEvents(Decoder::EModuleType mtype, Int_t ichan) const;
-    Int_t GetNumEvents() const { return GetNumEvents(0); } ;
-    Int_t GetNumEvents(Int_t ichan) const { return GetNumFadcEvents(ichan); } ;
-    Int_t GetNumSamples(Int_t ichan) const { return GetNumFadcSamples(ichan, 0);};
-    Int_t GetTriggerTime() const;
+    virtual Bool_t HasCapability( Decoder::EModuleType type );
+    virtual UInt_t LoadNextEvBuffer( THaSlotData *sldat );
+    virtual UInt_t GetData( Decoder::EModuleType mtype, UInt_t chan, UInt_t ievent ) const;
+    virtual UInt_t GetNumEvents( Decoder::EModuleType mtype, UInt_t ichan ) const;
+    virtual UInt_t GetNumEvents() const { return GetNumEvents(0); } ;
+    virtual UInt_t GetNumEvents( UInt_t ichan) const { return GetNumFadcEvents(ichan); } ;
+    virtual UInt_t GetNumSamples( UInt_t ichan) const { return GetNumFadcSamples(ichan, 0);};
+    virtual UInt_t GetTriggerTime() const;
             
   private:
 
@@ -109,10 +109,10 @@ namespace Decoder {
     Bool_t block_header_found, block_trailer_found, event_header_found, slots_match;
 
     void ClearDataVectors();
-    void PopulateDataVector(std::vector<uint32_t>& data_vector, uint32_t data);
-    static uint32_t SumVectorElements( const std::vector<uint32_t>& data_vector) ;
-    void LoadTHaSlotDataObj(THaSlotData *sldat);
-    Int_t LoadThisBlock(THaSlotData *sldat, std::vector<UInt_t > evb);
+    void PopulateDataVector( std::vector<uint32_t>& data_vector, uint32_t data );
+    static uint32_t SumVectorElements( const std::vector<uint32_t>& data_vector );
+    void LoadTHaSlotDataObj( THaSlotData* sldat );
+    UInt_t LoadThisBlock( THaSlotData *sldat, std::vector<UInt_t > evb );
     void PrintDataType() const;
 
     static TypeIter_t fgThisType;

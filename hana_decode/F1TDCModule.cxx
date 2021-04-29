@@ -10,7 +10,6 @@
 #include "THaEvData.h"
 #include "TMath.h"
 #include <iostream>
-#include <string>
 
 using namespace std;
 
@@ -22,7 +21,7 @@ namespace Decoder {
   Module::TypeIter_t F1TDCModule::fgThisType =
     DoRegister( ModuleType( "Decoder::F1TDCModule" , 3201 ));
 
-F1TDCModule::F1TDCModule(Int_t crate, Int_t slot) :
+F1TDCModule::F1TDCModule( UInt_t crate, UInt_t slot ) :
   VmeModule(crate, slot), fNumHits(0), fResol(ILO),
   fTdcData(NTDCCHAN*MAXHIT),
   IsInit(false), slotmask(0), chanmask(0), datamask(0)
@@ -51,10 +50,10 @@ Bool_t F1TDCModule::IsSlot(UInt_t rdata)
   return ((rdata != 0xffffffff) & ((rdata & fHeaderMask)==fHeader));
 }
 
-Int_t F1TDCModule::GetData(Int_t chan, Int_t hit) const
+UInt_t F1TDCModule::GetData( UInt_t chan, UInt_t hit ) const
 {
-  Int_t idx = chan*MAXHIT + hit;
-  if (idx < 0 || idx > MAXHIT*NTDCCHAN) return 0;
+  UInt_t idx = chan*MAXHIT + hit;
+  if( idx > MAXHIT * NTDCCHAN ) return 0;
   return fTdcData[idx];
 }
 
@@ -64,8 +63,8 @@ void F1TDCModule::Clear(Option_t* opt) {
   fTdcData.assign(NTDCCHAN*MAXHIT,0);
 }
 
-Int_t F1TDCModule::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer,
-                            const UInt_t *pstop) {
+UInt_t F1TDCModule::LoadSlot( THaSlotData *sldat, const UInt_t *evbuffer,
+                              const UInt_t *pstop ) {
 // this increments evbuffer
   if (fDebugFile) *fDebugFile << "F1TDCModule:: loadslot "<<endl;
   fWordsSeen = 0;
@@ -122,40 +121,39 @@ Int_t F1TDCModule::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer,
          <<hex<<*loc<<dec<<endl;
 #endif
      } else {
+       UInt_t chan = ((*loc) >> 16) & 0x3f;  // internal channel number
 #ifdef WITH_DEBUG
+       UInt_t chn = chan; // save original for debug message below
        if (fDebug > 1 && fDebugFile)
          *fDebugFile<< "[" << (loc-evbuffer) << "] data            0x"
          <<hex<<*loc<<dec<<endl;
 #endif
-       UInt_t chn = ((*loc)>>16) & 0x3f;  // internal channel number
-
-       UInt_t chan;
-       if (IsHiResolution()) {
+       if( IsHiResolution() ) {
          // drop last bit for channel renumbering
-         chan=(chn >> 1);
+         chan >>= 1;
        } else {
          // do the reordering of the channels, for contiguous groups
          // odd numbered TDC channels from the board -> +16
-         chan = (chn & 0x20) + 16*(chn & 0x01) + ((chn & 0x1e)>>1);
+         chan = (chan & 0x20) + ((chan & 0x01) << 4) + ((chan & 0x1e) >> 1);
        }
        //FIXME: cross-check slot number here
-       if ( ((*loc) & DATA_CHK) != F1_RES_LOCK ) {
-         UInt_t f1slot = ((*loc)&0xf8000000)>>27;
+       if( ((*loc) & DATA_CHK) != F1_RES_LOCK ) {
+         UInt_t f1slot = ((*loc) & 0xf8000000) >> 27;
          cout << "\tWarning: F1 TDC " << hex << (*loc) << dec;
          cout << "\tSlot (Ch) = " << f1slot << "(" << chan << ")";
-         if ( (*loc) & F1_HIT_OFLW ) {
+         if( (*loc) & F1_HIT_OFLW ) {
            cout << "\tHit-FIFO overflow";
          }
-         if ( (*loc) & F1_OUT_OFLW ) {
+         if( (*loc) & F1_OUT_OFLW ) {
            cout << "\tOutput FIFO overflow";
          }
-         if ( ! ((*loc) & F1_RES_LOCK ) ) {
+         if( !((*loc) & F1_RES_LOCK) ) {
            cout << "\tResolution lock failure!";
          }
          cout << endl;
        }
 
-       UInt_t raw= (*loc) & 0xffff;
+       UInt_t raw = (*loc) & 0xffff;
 #ifdef WITH_DEBUG
        if(fDebug > 1 && fDebugFile) {
          *fDebugFile<<" int_chn chan data "<<dec<<chn<<"  "<<chan
@@ -163,8 +161,8 @@ Int_t F1TDCModule::LoadSlot(THaSlotData *sldat, const UInt_t *evbuffer,
        }
 #endif
        /*Int_t status = */sldat->loadData("tdc",chan,raw,raw);
-       UInt_t idx = chan*MAXHIT + 0;  // 1 hit per chan ???
-       if (idx < MAXHIT*NTDCCHAN) fTdcData[idx] = static_cast<Int_t>(raw);
+       UInt_t idx = chan * MAXHIT + 0;  // 1 hit per chan ???
+       if( idx < MAXHIT * NTDCCHAN ) fTdcData[idx] = raw;
        fWordsSeen++;
      }
      loc++;

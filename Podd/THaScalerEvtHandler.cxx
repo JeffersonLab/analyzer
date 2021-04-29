@@ -32,7 +32,6 @@
 
 #include "THaEvtTypeHandler.h"
 #include "THaScalerEvtHandler.h"
-#include "GenScaler.h"
 #include "Scaler3800.h"
 #include "Scaler3801.h"
 #include "Scaler1151.h"
@@ -158,8 +157,8 @@ Int_t THaScalerEvtHandler::Analyze(THaEvData *evdata)
   // will be driven by a scaler.map file, or could be hard-coded.
 
   for (size_t i = 0; i < scalerloc.size(); i++) {
-    Int_t idx = scalerloc[i]->index;
-    Int_t ichan = scalerloc[i]->ichan;
+    UInt_t idx = scalerloc[i]->index;
+    UInt_t ichan = scalerloc[i]->ichan;
     if (fDebugFile) *fDebugFile << "Debug dvars "<<i<<"  "<<idx<<"  "<<ichan<<endl;
     if( idx < scalers.size() && ichan < MAXCHAN ) {
       if (scalerloc[i]->ikind == ICOUNT) dvars[i] = scalers[idx]->GetData(ichan);
@@ -237,15 +236,15 @@ THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& date)
       }
       pos1 = FindNoCase(dbline[0],smap);
       if (pos1 != string::npos && dbline.size()>6) {
-	Int_t imodel = 0, icrate = 0, islot = 0, inorm = 0;
-	UInt_t header = 0, mask = 0;
+	Int_t imodel = 0;
+	UInt_t icrate = 0, islot = 0, inorm = 0, header = 0, mask = 0;
 	char cdum[21];
-	sscanf(cbuf,"%20s %d %d %d %x %x %d \n",
-	    cdum, &imodel, &icrate, &islot, &header, &mask, &inorm);
-        if (fNormSlot >= 0 && fNormSlot != inorm)
+	sscanf(cbuf,"%20s %d %u %u %x %x %u \n",
+               cdum, &imodel, &icrate, &islot, &header, &mask, &inorm);
+        if( fNormSlot != inorm )
           cout << "THaScalerEvtHandler:: WARN: contradictory norm slot "<<inorm<<endl;
         fNormSlot = inorm;  // slot number used for normalization.  This variable is not used but is checked.
-	Int_t clkchan = -1;
+	UInt_t clkchan = kMaxUInt;
 	Double_t clkfreq = 1;
 	if (dbline.size()>8) {
           clkchan = atoi(dbline[7].c_str());
@@ -277,7 +276,7 @@ THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& date)
 // The normalization slot has the clock in it, so we automatically recognize it.
 // fNormIdx is the index in scaler[] and 
 // fNormSlot is the slot#, checked for consistency
-	  if (clkchan >= 0) {  
+          if( clkchan != kMaxUInt ) {
              scalers[idx]->SetClock(defaultDT, clkchan, clkfreq);
              fNormIdx = idx;
              if (islot != fNormSlot) cout << "THaScalerEvtHandler:: WARN: contradictory norm slot ! "<<islot<<endl;  
@@ -288,12 +287,11 @@ THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& date)
     }
   }
   // need to do LoadNormScaler after scalers created and if fNormIdx found.
-  auto normIdx = static_cast<ssiz_t>(fNormIdx);
-  if( normIdx < scalers.size() ) {
-    ssiz_t i = 0;
+  if( fNormIdx < scalers.size() ) {
+    UInt_t i = 0;
     for( auto* s : scalers ) {
-      if( i++ == normIdx ) continue;
-      s->LoadNormScaler(scalers[normIdx]);
+      if( i++ == fNormIdx ) continue;
+      s->LoadNormScaler(scalers[fNormIdx]);
     }
   }
 
@@ -357,7 +355,7 @@ THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& date)
 // Identify indices of scalers[] vector to variables.
   for (size_t i=0; i < scalers.size(); i++) {
     for( auto& loc : scalerloc ) {
-      if( loc->islot == static_cast<UInt_t>(scalers[i]->GetSlot()) )
+      if( loc->islot == scalers[i]->GetSlot() )
         loc->index = i;
     }
   }
@@ -376,13 +374,13 @@ THaAnalysisObject::EStatus THaScalerEvtHandler::Init(const TDatime& date)
   return kOK;
 }
 
-void THaScalerEvtHandler::AddVars(const TString& name, const TString& desc,
-    Int_t islot, Int_t ichan, Int_t ikind)
+void THaScalerEvtHandler::AddVars( const TString& name, const TString& desc,
+                                   UInt_t iscal, UInt_t ichan, UInt_t ikind)
 {
   // need to add fName here to make it a unique variable.  (Left vs Right HRS, for example)
   // We don't yet know the correspondence between index of scalers[] and slots.
   // Will put that in later.
-  scalerloc.push_back(new ScalerLoc(fName + name, fName + desc, 0, islot, ichan, ikind));
+  scalerloc.push_back(new ScalerLoc(fName + name, fName + desc, 0, iscal, ichan, ikind));
 }
 
 void THaScalerEvtHandler::DefVars()

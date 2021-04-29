@@ -9,6 +9,7 @@
 
 #include "THaBeamDet.h"
 #include "TVectorT.h"
+#include "TMatrixD.h"
 
 class THaBPM : public THaBeamDet {
 
@@ -21,7 +22,7 @@ public:
   virtual ~THaBPM();
 
   virtual void   Clear( Option_t* ="" );
-  virtual Int_t  StoreHit( const DigitizerHitInfo_t& hitinfo, Int_t data );
+  virtual Int_t  StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data );
   virtual Int_t  Decode( const THaEvData& );
   virtual Int_t  Process();
 
@@ -42,7 +43,7 @@ protected:
   TVectorD fPedestals;
   TVectorD fCorSignal;     // pedestal subtracted signal
   TVectorD fRotPos;        // position in the BPM system, arbitrary units
-  TMatrix  fRot2HCSPos;
+  TMatrixD fRot2HCSPos;
   TVector3 fOffset;
   TVector3 fPosition;      // Beam position at the BPM (meters)
   TVector3 fDirection;     // Beam direction at the BPM
