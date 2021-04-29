@@ -140,7 +140,7 @@ macro(set_diagnostic_flags)
       " -Wno-unused-parameter")
     check_cxx_compiler_flag(-Wno-inconsistent-missing-override cxx-imo-supported)
     if(cxx-imo-supported)
-      string(CONCAT PODD_EXTRA_DIAG_FLAGS "-Wno-inconsistent-missing-override")
+      string(APPEND PODD_EXTRA_DIAG_FLAGS " -Wno-inconsistent-missing-override")
     endif()
     unset(cxx-imo-supported)
     set(${PROJECT_NAME_UC}_DIAG_FLAGS
