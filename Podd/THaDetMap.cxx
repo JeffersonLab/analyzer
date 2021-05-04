@@ -131,7 +131,7 @@ THaDetMap& THaDetMap::operator=( const THaDetMap& rhs )
 Int_t THaDetMap::AddModule( UInt_t crate, UInt_t slot,
                             UInt_t chan_lo, UInt_t chan_hi,
                             UInt_t first, Int_t model, Int_t refindex,
-                            Int_t refchan, Int_t plane, Int_t signal )
+                            Int_t refchan, UInt_t plane, UInt_t signal )
 {
   // Add a module to the map.
 

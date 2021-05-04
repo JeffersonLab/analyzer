@@ -50,8 +50,8 @@ public:
     UInt_t   first;      // logical number of first channel
     Int_t    model;      // model number of module (for ADC/TDC identification).
     Decoder::ChannelType type;
-    Int_t    plane;      // Detector plane
-    Int_t    signal;     // (eg. PosADC, NegADC, PosTDC, NegTDC)
+    UInt_t   plane;      // Detector plane
+    UInt_t   signal;     // (eg. PosADC, NegADC, PosTDC, NegTDC)
     Int_t    refchan;    // for pipeline TDCs: reference channel number
     Int_t    refindex;   // for pipeline TDCs: index into reference channel map
     Double_t resolution; // Resolution (s/chan) for TDCs
@@ -112,7 +112,7 @@ public:
                                UInt_t chan_lo, UInt_t chan_hi,
                                UInt_t first = 0, Int_t model = 0,
                                Int_t refindex = -1, Int_t refchan = -1,
-                               Int_t plane = 0, Int_t signal = 0 );
+                               UInt_t plane = 0, UInt_t signal = 0 );
           void      Clear()  { fMap.clear(); }
   virtual Module*   Find( UInt_t crate, UInt_t slot, UInt_t chan );
   virtual Int_t     Fill( const std::vector<Int_t>& values, UInt_t flags = 0 );
