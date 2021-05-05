@@ -643,7 +643,7 @@ namespace Decoder {
     return LoadThisBlock(sldat, GetNextBlock());
   }
 
-  UInt_t Fadc250Module::LoadThisBlock( THaSlotData *sldat, std::vector< UInt_t>evb) {
+  UInt_t Fadc250Module::LoadThisBlock( THaSlotData *sldat, const vector<UInt_t>& evb) {
 
     // Fill data structures of this class using the event buffer of one "event".
     // An "event" is defined in the traditional way -- a scattering from a target, etc.

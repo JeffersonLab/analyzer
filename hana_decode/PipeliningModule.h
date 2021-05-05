@@ -48,11 +48,11 @@ public:
 
 protected:
 
-   Int_t SplitBuffer( const std::vector<UInt_t>& bigbuffer );
+   virtual Int_t SplitBuffer( const std::vector<UInt_t>& bigbuffer );
    void ReStart();
    std::vector< UInt_t >GetNextBlock();
-   UInt_t LoadNextEvBuffer( THaSlotData *sldat)=0;
-   virtual UInt_t LoadThisBlock( THaSlotData *sldat, std::vector<UInt_t > evb)=0;
+   virtual UInt_t LoadNextEvBuffer( THaSlotData *sldat )=0;
+   virtual UInt_t LoadThisBlock( THaSlotData *sldat, const std::vector<UInt_t>& evb ) = 0;
    UInt_t fNWarnings;
    UInt_t fBlockHeader;
    UInt_t data_type_def;
