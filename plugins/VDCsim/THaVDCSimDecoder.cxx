@@ -112,7 +112,7 @@ int THaVDCSimDecoder::LoadEvent(const UInt_t* evbuffer )
   }
   if( fDoBench ) fBench->Begin("clearEvent");
   Clear();
-  for( int i=0; i<fNSlotClear; i++ )
+  for( UInt_t i=0; i<fNSlotClear; i++ )
     crateslot[fSlotClear[i]]->clearEvent();
   if( fDoBench ) fBench->Stop("clearEvent");
 
@@ -131,7 +131,7 @@ int THaVDCSimDecoder::LoadEvent(const UInt_t* evbuffer )
 
   // Decode the digitized data.  Populate crateslot array.
   for (int i = 0; i < 4; i++) { // for each plane
-    for( auto& hit : simEvent->wirehits[i] ) {
+    for( const auto& hit : simEvent->wirehits[i] ) {
     // iterate over hits
 
       // FIXME: HardCode crate/slot/chan nums for now...

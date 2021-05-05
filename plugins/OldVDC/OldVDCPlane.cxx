@@ -352,15 +352,15 @@ Int_t OldVDCPlane::Decode( const THaEvData& evData)
   }
 
   // Loop over all detector modules for this wire plane
-  for (Int_t i = 0; i < fDetMap->GetSize(); i++) {
+  for (UInt_t i = 0; i < fDetMap->GetSize(); i++) {
     THaDetMap::Module * d = fDetMap->GetModule(i);
     
     // Get number of channels with hits
-    Int_t nChan = evData.GetNumChan(d->crate, d->slot);
-    for (Int_t chNdx = 0; chNdx < nChan; chNdx++) {
+    UInt_t nChan = evData.GetNumChan(d->crate, d->slot);
+    for (UInt_t chNdx = 0; chNdx < nChan; chNdx++) {
       // Use channel index to loop through channels that have hits
 
-      Int_t chan = evData.GetNextChan(d->crate, d->slot, chNdx);
+      UInt_t chan = evData.GetNextChan(d->crate, d->slot, chNdx);
       if (chan < d->lo || chan > d->hi)
 	continue; //Not part of this detector
 
@@ -373,12 +373,12 @@ Int_t OldVDCPlane::Decode( const THaEvData& evData)
       if( !wire || wire->GetFlag() != 0 ) continue;
 
       // Get number of hits for this channel and loop through hits
-      Int_t nHits = evData.GetNumHits(d->crate, d->slot, chan);
+      UInt_t nHits = evData.GetNumHits(d->crate, d->slot, chan);
    
       Int_t max_data = -1;
       Double_t toff = wire->GetTOffset();
 
-      for (Int_t hit = 0; hit < nHits; hit++) {
+      for (UInt_t hit = 0; hit < nHits; hit++) {
 	
 	// Now get the TDC data for this hit
 	Int_t data = evData.GetData(d->crate, d->slot, chan, hit);
