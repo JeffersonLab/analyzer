@@ -227,9 +227,9 @@ Int_t THaDetectorBase::ReadGeometry( FILE* file, const TDatime& date,
 
   if( !position.empty() ) {
     if( position.size() != 3 ) {
-      Error( Here(here), "Incorrect number of values = %u for "
+      Error( Here(here), "Incorrect number of values = %lu for "
 	     "detector position. Must be exactly 3. Fix database.",
-	     static_cast<unsigned int>(position.size()) );
+             position.size() );
       return 1;
     }
     fOrigin.SetXYZ( position[0], position[1], position[2] );
@@ -239,9 +239,8 @@ Int_t THaDetectorBase::ReadGeometry( FILE* file, const TDatime& date,
 
   if( !size.empty() ) {
     if( size.size() != 3 ) {
-      Error( Here(here), "Incorrect number of values = %u for "
-	     "detector size. Must be exactly 3. Fix database.",
-	     static_cast<unsigned int>(size.size()) );
+      Error( Here(here), "Incorrect number of values = %lu for "
+	     "detector size. Must be exactly 3. Fix database.", size.size() );
       return 2;
     }
     if( size[0] == 0 || size[1] == 0 || size[2] == 0 ) {
@@ -261,9 +260,9 @@ Int_t THaDetectorBase::ReadGeometry( FILE* file, const TDatime& date,
 
   if( !angles.empty() ) {
     if( angles.size() != 1 && angles.size() != 3 ) {
-      Error( Here(here), "Incorrect number of values = %u for "
+      Error( Here(here), "Incorrect number of values = %lu for "
 	     "detector angle(s). Must be either 1 or 3. Fix database.",
-	     static_cast<unsigned int>(angles.size()) );
+	     angles.size() );
       return 4;
     }
     // If one angle is given, it indicates a rotation about y, as before.
@@ -381,7 +380,7 @@ Int_t THaDetectorBase::StoreHit( const DigitizerHitInfo_t& hitinfo, UInt_t data 
 
 //_____________________________________________________________________________
 OptUInt_t THaDetectorBase::LoadData( const THaEvData& evdata,
-                                    const DigitizerHitInfo_t& hitinfo )
+                                     const DigitizerHitInfo_t& hitinfo )
 {
   // Default method for loading the data for the hit referenced in 'hitinfo'.
   // Callback from Decode().
