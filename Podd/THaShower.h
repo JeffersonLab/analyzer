@@ -36,17 +36,17 @@ public:
   class ShowerADCData : public Podd::ADCData {
   public:
     ShowerADCData( const char* name, const char* desc, Int_t nelem,
-                   const std::vector<UShort_t>& chanmap )
+                   const std::vector<Int_t>& chanmap )
       : Podd::ADCData(name,desc,nelem), fChanMap(chanmap) {}
     Int_t GetLogicalChannel( const DigitizerHitInfo_t& hitinfo ) const override;
   protected:
-    const std::vector<UShort_t>& fChanMap;
+    const std::vector<Int_t>& fChanMap;
   };
 
 protected:
 
   // Mapping (see also fDetMap)
-  std::vector<UShort_t> fChanMap; // Map physical -> logical channel numbers
+  std::vector<Int_t> fChanMap; // Map physical -> logical channel numbers
 
   // Configuration
   Int_t      fNrows;     // Number of rows

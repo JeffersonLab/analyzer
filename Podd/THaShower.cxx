@@ -279,7 +279,7 @@ ShowerADCData::GetLogicalChannel( const DigitizerHitInfo_t& hitinfo ) const
   // numbers in the map start at 1, but array indices need to start at 0,
   // so we subtract 1.
   if( !fChanMap.empty() )
-  #ifdef NDEBUG
+#ifdef NDEBUG
     k = fChanMap[k] - 1;
 #else
     k = fChanMap.at(k) - 1;
