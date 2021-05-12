@@ -1,0 +1,38 @@
+#%Module 1.0
+#
+# ROOT modulefile
+#
+proc ModulesHelp { } {
+    global version
+
+    puts stderr "\tSets up ROOT $version."
+    puts stderr "\tFor more information see https://root.cern"
+}
+
+set version @ROOT_CONFIG_VERSION@
+set osname  [uname sysname]
+set prefix  @ROOTSYS@
+
+module-whatis   "ROOT data analysis framework version $version"
+conflict        root
+
+setenv          ROOTSYS                 $prefix
+prepend-path    PATH                    $prefix/bin
+prepend-path    PYTHONPATH              $prefix/lib
+prepend-path    MANPATH                 $prefix/man
+prepend-path    CMAKE_PREFIX_PATH       $prefix
+prepend-path    JUPYTER_PATH            $prefix/etc/notebook
+prepend-path    JUPYTER_CONFIG_DIR      $prefix/etc/notebook
+
+if { $osname eq "Darwin" } then {
+    prepend-path     DYLD_LIBRARY_PATH   $prefix/lib
+} else {
+    prepend-path     LD_LIBRARY_PATH     $prefix/lib
+}
+
+setenv          CLING_STANDARD_PCH      none
+
+# Local Variables:
+# mode: Tcl
+# comment-column: 0
+# End:

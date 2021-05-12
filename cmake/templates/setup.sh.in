@@ -1,0 +1,15 @@
+# Set up analyzer environment, including ROOT.
+#
+# This script is suitable for sh/dash/bash. For other shells and relocation
+# support, consider using the environment modules in $ANALYZER/share/modulefiles.
+
+# Make an effort to set up the same ROOT that was used to build this analyzer ...
+if [ "$ROOTSYS" != "@ROOTSYS@" ]; then
+    . "@ROOTSYS@/bin/thisroot.sh"
+fi
+
+export ANALYZER="@CMAKE_INSTALL_PREFIX@"
+export PATH="$ANALYZER/@CMAKE_INSTALL_BINDIR@${PATH:+:$PATH}"
+export @DY@LD_LIBRARY_PATH="$ANALYZER/@CMAKE_INSTALL_LIBDIR@${@DY@LD_LIBRARY_PATH:+:$@DY@LD_LIBRARY_PATH}"
+export ROOT_INCLUDE_PATH="$ANALYZER/@CMAKE_INSTALL_INCLUDEDIR@${ROOT_INCLUDE_PATH:+:$ROOT_INCLUDE_PATH}"
+export CMAKE_PREFIX_PATH="$ANALYZER${CMAKE_PREFIX_PATH:+:$CMAKE_PREFIX_PATH}"

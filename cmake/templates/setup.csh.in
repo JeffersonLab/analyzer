@@ -1,0 +1,31 @@
+# Set up ANALYZER environment, including ROOT.
+#
+# This script is suitable for csh/tcsh. For other shells and relocation support,
+# consider using the environment modules in $ANALYZER/share/modulefiles.
+#
+# Tedious csh code follows. That shell should die.
+
+# Make an effort to set up the same ROOT that was used to build this analyzer ...
+if ( ! ${?ROOTSYS} ) then
+  source "@ROOTSYS@/bin/thisroot.csh"
+else if ( "${ROOTSYS}" != "@ROOTSYS" ) then
+  source "@ROOTSYS@/bin/thisroot.csh"
+endif
+
+setenv ANALYZER "@CMAKE_INSTALL_PREFIX@"
+setenv PATH "${ANALYZER}/@CMAKE_INSTALL_BINDIR@:${PATH}"
+if ( ${?@DY@LD_LIBRARY_PATH} ) then
+  setenv @DY@LD_LIBRARY_PATH "${ANALYZER}/@CMAKE_INSTALL_LIBDIR@:${@DY@LD_LIBRARY_PATH}"
+else
+  setenv @DY@LD_LIBRARY_PATH "${ANALYZER}/@CMAKE_INSTALL_LIBDIR@"
+endif
+if ( ${?ROOT_INCLUDE_PATH} ) then
+  setenv ROOT_INCLUDE_PATH "${ANALYZER}/@CMAKE_INSTALL_INCLUDEDIR@:${ROOT_INCLUDE_PATH}"
+else
+  setenv ROOT_INCLUDE_PATH "${ANALYZER}/@CMAKE_INSTALL_INCLUDEDIR@"
+endif
+if ( ${?CMAKE_PREFIX_PATH} ) then
+  setenv CMAKE_PREFIX_PATH "${ANALYZER}:${CMAKE_PREFIX_PATH}"
+else
+  setenv CMAKE_PREFIX_PATH "${ANALYZER}"
+endif

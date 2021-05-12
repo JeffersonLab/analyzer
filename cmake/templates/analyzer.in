@@ -1,0 +1,36 @@
+#%Module 1.0
+#
+# Analyzer modulefile
+#
+proc ModulesHelp { } {
+    global version
+
+    puts stderr "\tSets up environment for analyzer v$version and matching ROOT version @ROOT_CONFIG_VERSION@."
+    puts stderr "\tFor more information see https://redmine.jlab.org/projects/podd/wiki."
+}
+
+set version @PROJECT_VERSION@@EXTVERS@
+set osname  [uname sysname]
+# Support relocation
+set prefix  [file dirname [file normalize [info script]/../..]]
+
+module load root
+
+module-whatis   "Hall A data analysis software \"Podd\" version $version"
+conflict        analyzer
+setenv          ANALYZER                $prefix
+setenv          PODD                    $prefix
+prepend-path    PATH                    $prefix/bin
+prepend-path    CMAKE_PREFIX_PATH       $prefix
+prepend-path    ROOT_INCLUDE_PATH       $prefix/include
+
+if { $osname eq "Darwin" } then {
+    prepend-path     DYLD_LIBRARY_PATH   $prefix/lib
+} else {
+    prepend-path     LD_LIBRARY_PATH     $prefix/lib
+}
+
+# Local Variables:
+# mode: Tcl
+# comment-column: 0
+# End:
