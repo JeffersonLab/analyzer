@@ -13,6 +13,7 @@ endif()
 #----------------------------------------------------------------------------
 # Build options
 option(WITH_DEBUG "Enable support for detailed debug messages" ON)
+option(PODD_SET_RPATH "Set RPATH on installed executables & libraries" ON)
 
 #----------------------------------------------------------------------------
 # Project-specific build flags
@@ -185,6 +186,9 @@ function(report_build_info)
   endif()
   message(STATUS "${PROJECT_NAME_UC}_CXX_FLAGS = ${${PROJECT_NAME_UC}_CXX_FLAGS} ${${PROJECT_NAME_UC}_DIAG_FLAGS}")
   message(STATUS "CMAKE_CXX_STANDARD = ${CMAKE_CXX_STANDARD}")
+  if(CMAKE_INSTALL_RPATH)
+    message(STATUS "CMAKE_INSTALL_RPATH = ${CMAKE_INSTALL_RPATH}")
+  endif()
 endfunction(report_build_info)
 
 #----------------------------------------------------------------------------
@@ -220,3 +224,22 @@ function(config_add_dependency item)
     endif()
   endif()
 endfunction()
+
+#----------------------------------------------------------------------------
+# RPATH handling
+macro(set_install_rpath)
+  if(UNIX)
+    set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+    list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_FULL_LIBDIR}" isSystemDir)
+    # Don't set RPATH if installing into a system directory
+    if(isSystemDir STREQUAL "-1")
+      if(NOT CMAKE_SYSTEM_NAME STREQUAL Darwin)
+        # Linux etc.
+        set(CMAKE_INSTALL_RPATH "\$ORIGIN/../${CMAKE_INSTALL_LIBDIR}")
+      else()
+        # macOS
+        set(CMAKE_INSTALL_RPATH "@loader_path/../${CMAKE_INSTALL_LIBDIR}")
+      endif()
+    endif()
+  endif()
+endmacro()

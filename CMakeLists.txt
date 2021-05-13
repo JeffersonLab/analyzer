@@ -13,8 +13,13 @@ include(PoddCMakeEnv)
 
 #----------------------------------------------------------------------------
 # Install in GNU-style directory layout
-include(GNUInstallDirs)
-set(INSTALL_CONFIGDIR ${CMAKE_INSTALL_LIBDIR}/${MAIN_PROJECT_NAME_LC})
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+  include(GNUInstallDirs)
+  set(INSTALL_CONFIGDIR "${CMAKE_INSTALL_LIBDIR}/${MAIN_PROJECT_NAME_LC}")
+  if(PODD_SET_RPATH)
+    set_install_rpath()
+  endif()
+endif()
 
 #----------------------------------------------------------------------------
 # Find ROOT (using our custom FindROOT.cmake)
