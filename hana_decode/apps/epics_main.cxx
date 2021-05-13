@@ -29,7 +29,7 @@ int main(int argc, char* argv[])
     exit(2);
   }
 
-  CodaDecoder *evdata = new CodaDecoder();
+  auto *evdata = new CodaDecoder();
   evdata->SetCodaVersion(datafile.getCodaVersion());
 
   // Loop over a finite number of events

@@ -3,8 +3,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include <numeric>
-#include <vector>
-#include <time.h>
+#include <ctime>
 #include "THaCodaFile.h"
 #include "CodaDecoder.h"
 #include "Caen1190Module.h"
@@ -12,12 +11,7 @@
 #include "TROOT.h"
 #include "TFile.h"
 #include "TH1.h"
-#include "TH2.h"
 #include "TDirectory.h"
-#include "TGraph.h"
-#include "TVector.h"
-#include "TMultiGraph.h"
-#include "TRandom3.h"
 #include "TCanvas.h"
 
 //#define DEBUG
@@ -63,7 +57,7 @@ int main(int /* argc */, char** /* argv */)
   TString filename("snippet.dat");
 
   // Define the analysis debug output
-  ofstream *debugfile = new ofstream;
+  auto *debugfile = new ofstream;
   // debugfile->open ("tst1190_main_debug.txt");
   
   // Initialize the CODA decoder
@@ -74,7 +68,7 @@ int main(int /* argc */, char** /* argv */)
     cerr << "... exiting." << endl;
     exit(2);
   }
-  CodaDecoder *evdata = new CodaDecoder();
+  auto *evdata = new CodaDecoder();
   evdata->SetCodaVersion(datafile.getCodaVersion());
 
   // Initialize the evdata debug output
@@ -110,7 +104,7 @@ int main(int /* argc */, char** /* argv */)
       // Loop over slots
       for(uint32_t islot = SLOTMIN; islot < NUMSLOTS; islot++) {
 	if (evdata->GetNumRaw(CRATE3, islot) != 0) {  // HMS Single arm setup
-	  Caen1190Module *tdc =
+	  auto *tdc =
 	      dynamic_cast <Caen1190Module*> (evdata->GetModule(CRATE3, islot));   // HMS single arm setup
 	  if (tdc != nullptr) {
 	    if (debugfile) *debugfile << "\n///////////////////////////////\n"

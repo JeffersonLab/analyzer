@@ -4,7 +4,7 @@
 #include <cstdio>
 #include <numeric>
 #include <vector>
-#include <time.h>
+#include <ctime>
 #include "THaCodaFile.h"
 #include "CodaDecoder.h"
 #include "Fadc250Module.h"
@@ -15,7 +15,6 @@
 #include "TH2.h"
 #include "TDirectory.h"
 #include "TGraph.h"
-#include "TVector.h"
 #include "TMultiGraph.h"
 #include "TRandom3.h"
 #include "TCanvas.h"
@@ -50,72 +49,115 @@ static int fadc_mode_const;
 void GeneratePlots(Int_t mode, uint32_t islot, uint32_t chan) {
   // Mode Directory
   mode_dir = dynamic_cast <TDirectory*> (hfile->Get(Form("mode_%d_data", mode)));
-  if(!mode_dir) {mode_dir = hfile->mkdir(Form("mode_%d_data", mode)); mode_dir->cd();}
-  else hfile->cd(Form("/mode_%d_data", mode));
+  if( !mode_dir ) {
+    mode_dir = hfile->mkdir(Form("mode_%d_data", mode));
+    mode_dir->cd();
+  } else
+    hfile->cd(Form("/mode_%d_data", mode));
   // Slot directory
-  slot_dir[islot] = dynamic_cast <TDirectory*> (mode_dir->Get(Form("slot_%d", islot)));
-  if (!slot_dir[islot]) {slot_dir[islot] = mode_dir->mkdir(Form("slot_%d", islot)); slot_dir[islot]->cd();}
-  else hfile->cd(Form("/mode_%d_data/slot_%d", mode, islot));
+  slot_dir[islot] = dynamic_cast <TDirectory*> (mode_dir->Get(Form("slot_%u", islot)));
+  if( !slot_dir[islot] ) {
+    slot_dir[islot] = mode_dir->mkdir(Form("slot_%u", islot));
+    slot_dir[islot]->cd();
+  } else
+    hfile->cd(Form("/mode_%d_data/slot_%u", mode, islot));
   if (mode != 1) {
-    if (!h2_pinteg[islot]) h2_pinteg[islot] = new TH2I("h2_pinteg", Form("FADC Mode %d Pulse Integral Data Slot %d; Channel Number; FADC Units (Channels)", mode, islot), 16, -0.5, 15.5, 4096, 0, 40095);
-    if (!h2_ptime[islot]) h2_ptime[islot]   = new TH2I("h2_ptime", Form("FADC Mode %d Pulse Time Data Slot %d; Channel Number; FADC Units (Channels)", mode, islot), 16, -0.5, 15.5, 40096, 0, 40095);
-    if (!h2_pped[islot]) h2_pped[islot]     = new TH2I("h2_pped", Form("FADC Mode %d Pulse Pedestal Data Slot %d; Channel Number; FADC Units (Channels)", mode, islot), 16, -0.5, 15.5, 4096, 0, 4095);
-    if (!h2_ppeak[islot]) h2_ppeak[islot]   = new TH2I("h2_ppeak", Form("FADC Mode %d Pulse Peak Data Slot %d; Channel Number; FADC Units (Channels)", mode, islot), 16, -0.5, 15.5, 4096, 0, 4095);
+    if( !h2_pinteg[islot] )
+      h2_pinteg[islot] = new TH2I("h2_pinteg", Form(
+        "FADC Mode %d Pulse Integral Data Slot %u; Channel Number; FADC Units (Channels)", mode, islot), 16, -0.5, 15.5,
+                                  4096, 0, 40095);
+    if( !h2_ptime[islot] )
+      h2_ptime[islot] = new TH2I("h2_ptime", Form(
+        "FADC Mode %d Pulse Time Data Slot %u; Channel Number; FADC Units (Channels)", mode, islot), 16, -0.5, 15.5,
+                                 40096, 0, 40095);
+    if( !h2_pped[islot] )
+      h2_pped[islot] = new TH2I("h2_pped", Form(
+        "FADC Mode %d Pulse Pedestal Data Slot %u; Channel Number; FADC Units (Channels)", mode, islot), 16, -0.5, 15.5,
+                                4096, 0, 4095);
+    if( !h2_ppeak[islot] )
+      h2_ppeak[islot] = new TH2I("h2_ppeak", Form(
+        "FADC Mode %d Pulse Peak Data Slot %u; Channel Number; FADC Units (Channels)", mode, islot), 16, -0.5, 15.5,
+                                 4096, 0, 4095);
   }
   // Channel directory
-  chan_dir[chan] = dynamic_cast <TDirectory*> (slot_dir[islot]->Get(Form("chan_%d", chan)));
-  if (!chan_dir[chan]) {chan_dir[chan] = slot_dir[islot]->mkdir(Form("chan_%d", chan)); chan_dir[chan]->cd();}
-  else hfile->cd(Form("/mode_%d_data/slot_%d/chan_%d", mode, islot, chan));
+  chan_dir[chan] = dynamic_cast <TDirectory*> (slot_dir[islot]->Get(Form("chan_%u", chan)));
+  if( !chan_dir[chan] ) {
+    chan_dir[chan] = slot_dir[islot]->mkdir(Form("chan_%u", chan));
+    chan_dir[chan]->cd();
+  } else
+    hfile->cd(Form("/mode_%d_data/slot_%u/chan_%u", mode, islot, chan));
   // Histos
-  if (!h_pinteg[islot][chan]) h_pinteg[islot][chan] = new TH1I("h_pinteg", Form("FADC Mode %d Pulse Integral Data Slot %d Channel %d; FADC Units (Channels); Counts / 10 Channels", mode, islot, chan), 4096, 0, 40095);
-  if (mode != 1) {
-    if (!h_ptime[islot][chan]) h_ptime[islot][chan]  = new TH1I("h_ptime",  Form("FADC Mode %d Pulse Time Data Slot %d Channel %d; FADC Units (Channels); Counts / Channel", mode, islot, chan), 40096, 0, 40095);
-    if (!h_pped[islot][chan])  h_pped[islot][chan]   = new TH1I("h_pped",   Form("FADC Mode %d Pulse Pedestal Data Slot %d Channel %d; FADC Units (Channels); Counts / Channel", mode, islot, chan), 4096, 0, 4095);
-    if (!h_ppeak[islot][chan]) h_ppeak[islot][chan]  = new TH1I("h_ppeak",  Form("FADC Mode %d Pulse Peak Data Slot %d Channel %d; FADC Units (Channels); Counts / Channel", mode, islot, chan), 4096, 0, 4095);
+  if( !h_pinteg[islot][chan] ) h_pinteg[islot][chan] = new TH1I("h_pinteg", Form(
+      "FADC Mode %d Pulse Integral Data Slot %u Channel %u; FADC Units (Channels); Counts / 10 Channels", mode, islot,
+      chan), 4096, 0, 40095);
+  if( mode != 1 ) {
+    if( !h_ptime[islot][chan] )
+      h_ptime[islot][chan] = new TH1I("h_ptime", Form(
+        "FADC Mode %d Pulse Time Data Slot %u Channel %u; FADC Units (Channels); Counts / Channel", mode, islot, chan),
+                                      40096, 0, 40095);
+    if( !h_pped[islot][chan] )
+      h_pped[islot][chan] = new TH1I("h_pped", Form(
+        "FADC Mode %d Pulse Pedestal Data Slot %u Channel %u; FADC Units (Channels); Counts / Channel", mode, islot,
+        chan), 4096, 0, 4095);
+    if( !h_ppeak[islot][chan] )
+      h_ppeak[islot][chan] = new TH1I("h_ppeak", Form(
+        "FADC Mode %d Pulse Peak Data Slot %u Channel %u; FADC Units (Channels); Counts / Channel", mode, islot, chan),
+                                      4096, 0, 4095);
   }
   // Graphs
-  if (!mg_psamp[islot][chan] && ((mode == 1) || (mode == 8) || (mode == 10))) {
+  if( !mg_psamp[islot][chan] && ((mode == 1) || (mode == 8) || (mode == 10)) ) {
     mg_psamp[islot][chan] = new TMultiGraph("samples", "samples");
-    for (uint32_t ipeak = 0; ipeak < NPEAK; ipeak++) 
-      mg_psamp_npeak[islot][chan][ipeak] = new TMultiGraph(Form("samples_npeak_%d", ipeak+1), Form("samples_npeak_%d", ipeak+1));
+    for( uint32_t ipeak = 0; ipeak < NPEAK; ipeak++ )
+      mg_psamp_npeak[islot][chan][ipeak] = new TMultiGraph(Form("samples_npeak_%u", ipeak + 1),
+                                                           Form("samples_npeak_%u", ipeak + 1));
   }
   // Canvas'
-  if (!c_psamp[islot][chan] && ((mode == 1) || (mode == 8) || (mode == 10))) {
-    c_psamp[islot][chan] = new TCanvas(Form("c_psamp_slot_%d_chan_%d", islot, chan), Form("c_psamp_slot_%d_chan_%d", islot, chan), 800, 800);
+  if( !c_psamp[islot][chan] && ((mode == 1) || (mode == 8) || (mode == 10)) ) {
+    c_psamp[islot][chan] = new TCanvas(Form("c_psamp_slot_%u_chan_%u", islot, chan),
+                                       Form("c_psamp_slot_%u_chan_%u", islot, chan), 800, 800);
     c_psamp[islot][chan]->Divide(5, 5);
-    for (uint32_t ipeak = 0; ipeak < NPEAK; ipeak++) {
-      c_psamp_npeak[islot][chan][ipeak] = new TCanvas(Form("c_psamp_npeak_%d_slot_%d_chan_%d", ipeak+1, islot, chan), Form("c_psamp_npeak_%d_slot_%d_chan_%d", ipeak+1, islot, chan), 800, 800);
+    for( uint32_t ipeak = 0; ipeak < NPEAK; ipeak++ ) {
+      c_psamp_npeak[islot][chan][ipeak] = new TCanvas(Form("c_psamp_npeak_%u_slot_%u_chan_%u", ipeak + 1, islot, chan),
+                                                      Form("c_psamp_npeak_%u_slot_%u_chan_%u", ipeak + 1, islot, chan),
+                                                      800, 800);
       c_psamp_npeak[islot][chan][ipeak]->Divide(5, 5);
     }
   }
   // Raw samples directories & graphs
-  if ((mode == 1) || (mode == 8) || (mode == 10)) {   
+  if( (mode == 1) || (mode == 8) || (mode == 10) ) {
     raw_samples_dir[chan] = dynamic_cast <TDirectory*> (chan_dir[chan]->Get("raw_samples"));
-    if (!raw_samples_dir[chan]) {raw_samples_dir[chan] = chan_dir[chan]->mkdir("raw_samples"); raw_samples_dir[chan]->cd();}
-    else hfile->cd(Form("/mode_%d_data/slot_%d/chan_%d/raw_samples", mode, islot, chan));
-    for (uint32_t raw_index = 0; raw_index < NUMRAWEVENTS; raw_index++) {
-      if (!g_psamp_event[islot][chan][raw_index]) {
-	g_psamp_event[islot][chan][raw_index] = new TGraph();
-	g_psamp_event[islot][chan][raw_index]->SetName(Form("g_psamp_event_%d", raw_index));
+    if( !raw_samples_dir[chan] ) {
+      raw_samples_dir[chan] = chan_dir[chan]->mkdir("raw_samples");
+      raw_samples_dir[chan]->cd();
+    } else
+      hfile->cd(Form("/mode_%d_data/slot_%u/chan_%u/raw_samples", mode, islot, chan));
+    for( uint32_t raw_index = 0; raw_index < NUMRAWEVENTS; raw_index++ ) {
+      if( !g_psamp_event[islot][chan][raw_index] ) {
+        g_psamp_event[islot][chan][raw_index] = new TGraph();
+        g_psamp_event[islot][chan][raw_index]->SetName(Form("g_psamp_event_%u", raw_index));
       }
     }
-    for (uint32_t ipeak = 0; ipeak < NPEAK; ipeak++) {
-      raw_samples_npeak_dir[chan][ipeak] = dynamic_cast <TDirectory*> (chan_dir[chan]->Get(Form("raw_samples_npeak_%d", ipeak+1)));
-      if (!raw_samples_npeak_dir[chan][ipeak]) {raw_samples_npeak_dir[chan][ipeak] = chan_dir[chan]->mkdir(Form("raw_samples_npeak_%d", ipeak+1)); raw_samples_npeak_dir[chan][ipeak]->cd();}
-      else hfile->cd(Form("/mode_%d_data/slot_%d/chan_%d/raw_samples_npeak_%d", mode, islot, chan, ipeak+1));
-      for (uint32_t raw_index = 0; raw_index < NUMRAWEVENTS; raw_index++) {
-	if (!g_psamp_npeak_event[islot][chan][ipeak][raw_index]) {
-	  g_psamp_npeak_event[islot][chan][ipeak][raw_index] = new TGraph();
-	  g_psamp_npeak_event[islot][chan][ipeak][raw_index]->SetName(Form("g_psamp_npeak_%d_event_%d", ipeak+1, raw_index));
-	}
+    for( uint32_t ipeak = 0; ipeak < NPEAK; ipeak++ ) {
+      raw_samples_npeak_dir[chan][ipeak] = dynamic_cast <TDirectory*> (chan_dir[chan]->Get(
+        Form("raw_samples_npeak_%u", ipeak + 1)));
+      if( !raw_samples_npeak_dir[chan][ipeak] ) {
+        raw_samples_npeak_dir[chan][ipeak] = chan_dir[chan]->mkdir(Form("raw_samples_npeak_%u", ipeak + 1));
+        raw_samples_npeak_dir[chan][ipeak]->cd();
+      } else
+        hfile->cd(Form("/mode_%d_data/slot_%u/chan_%u/raw_samples_npeak_%u", mode, islot, chan, ipeak + 1));
+      for( uint32_t raw_index = 0; raw_index < NUMRAWEVENTS; raw_index++ ) {
+        if( !g_psamp_npeak_event[islot][chan][ipeak][raw_index] ) {
+          g_psamp_npeak_event[islot][chan][ipeak][raw_index] = new TGraph();
+          g_psamp_npeak_event[islot][chan][ipeak][raw_index]->SetName(
+            Form("g_psamp_npeak_%u_event_%u", ipeak + 1, raw_index));
+        }
       }
     }
   }
 }
 
-Int_t SumVectorElements(const vector<uint32_t>& data_vector) {
-  Int_t sum_of_elements = 0;
-  sum_of_elements = accumulate(data_vector.begin(), data_vector.end(), 0);
+UInt_t SumVectorElements(const vector<uint32_t>& data_vector) {
+  UInt_t sum_of_elements = accumulate(data_vector.begin(), data_vector.end(), 0U);
   return sum_of_elements;
 }
 
@@ -189,14 +231,13 @@ int main(int /* argc */, char** /* argv */)
   memset(raw_samp_npeak_index, 0, sizeof(raw_samp_npeak_index));
   
   // Initialize the analysis clock
-  clock_t t;
-  t = clock();
+  clock_t t = clock();
 
   // Define the data file to be analyzed
   TString filename(runFile);
 
   // Define the analysis debug output
-  ofstream *debugfile = new ofstream;
+  auto *debugfile = new ofstream;
   // debugfile->open ("tstfadc_main_debug.txt");
   
   // Initialize the CODA decoder
@@ -207,7 +248,7 @@ int main(int /* argc */, char** /* argv */)
     cerr << "... exiting." << endl;
     exit(2);
   }
-  CodaDecoder *evdata = new CodaDecoder();
+  auto *evdata = new CodaDecoder();
   evdata->SetCodaVersion(datafile.getCodaVersion());
 
   // Initialize the evdata debug output
@@ -219,14 +260,11 @@ int main(int /* argc */, char** /* argv */)
   hfile = new TFile("fadc_data.root", "RECREATE", "fadc module data");
 
   // Set the number of event to be analyzed
-  uint32_t iievent;
-  if (maxEvent == -1) iievent = 1;
-  else iievent = maxEvent;   
+  uint32_t iievent = (maxEvent == -1) ? 1 : maxEvent;
   // Loop over events
-  int status = 0;
   for(uint32_t ievent = 0; ievent < iievent; ievent++) {
     // Read in data file
-    status = datafile.codaRead();
+    Int_t status = datafile.codaRead();
     if (status == CODA_OK) {
       status = evdata->LoadEvent(datafile.getEvBuffer());
       if( status != CodaDecoder::HED_OK && status != CodaDecoder::HED_WARN ) {
@@ -237,49 +275,58 @@ int main(int /* argc */, char** /* argv */)
       // Loop over slots
       for(uint32_t islot = SLOTMIN; islot < NUMSLOTS; islot++) {
         if (evdata->GetNumRaw(crateNumber, islot) != 0) {
-          Fadc250Module *fadc =
+          auto *fadc =
               dynamic_cast <Fadc250Module*> (evdata->GetModule(crateNumber, islot));
           if (fadc != nullptr) {
             //fadc->CheckDecoderStatus();
             // Loop over channels
             for (uint32_t chan = 0; chan < NADCCHAN; chan++) {
-              // Initialize variables
-              Int_t num_fadc_events = 0, num_fadc_samples = 0;
               // Acquire the FADC mode
               Int_t fadc_mode = fadc->GetFadcMode(); fadc_mode_const = fadc_mode;
               if (debugfile) *debugfile << "Channel " << chan << " is in FADC Mode " << fadc_mode << endl;
               Bool_t raw_mode  = ((fadc_mode == 1) || (fadc_mode == 8) || (fadc_mode == 10));
 
               // Acquire the number of FADC events
-              num_fadc_events = fadc->GetNumFadcEvents(chan);
+              UInt_t num_fadc_events = fadc->GetNumFadcEvents(chan);
               // If in raw mode, acquire the number of FADC samples
+              UInt_t num_fadc_samples = 0;
               if (raw_mode) {
                 num_fadc_samples = fadc->GetNumFadcSamples(chan, ievent);
               }
               if (num_fadc_events > 0) {
                 // Generate FADC plots
                 GeneratePlots(fadc_mode, islot, chan);
-                for (Int_t jevent = 0; jevent < num_fadc_events; jevent++) {
+                for (UInt_t jevent = 0; jevent < num_fadc_events; jevent++) {
                   // Debug output
-                  if ((fadc_mode == 1 || fadc_mode == 8) && num_fadc_samples > 0)
-                    if (debugfile) *debugfile << "FADC EMULATED PI DATA = " << fadc->GetEmulatedPulseIntegralData(chan) << endl;
-                  if (fadc_mode == 7 || fadc_mode == 8 || fadc_mode == 9 || fadc_mode == 10) {
-                    if (fadc_mode != 8) {if (debugfile) *debugfile << "FADC PI DATA = " << fadc->GetPulseIntegralData(chan, jevent) << endl;}
-                    if (debugfile) *debugfile << "FADC PT DATA = " << fadc->GetPulseTimeData(chan, jevent) << endl;
-                    if (debugfile) *debugfile << "FADC PPED DATA = " << fadc->GetPulsePedestalData(chan, jevent) / NPED << endl;
-                    if (debugfile) *debugfile << "FADC PPEAK DATA = " << fadc->GetPulsePeakData(chan, jevent) << endl;
+                  if (debugfile) {
+                    if ((fadc_mode == 1 || fadc_mode == 8) && num_fadc_samples > 0)
+                      *debugfile << "FADC EMULATED PI DATA = " << fadc->GetEmulatedPulseIntegralData(chan) << endl;
+                    if (fadc_mode == 7 || fadc_mode == 8 || fadc_mode == 9 || fadc_mode == 10) {
+                      if( fadc_mode != 8 )
+                        *debugfile << "FADC PI DATA = " << fadc->GetPulseIntegralData(chan, jevent) << endl;
+                      *debugfile << "FADC PT DATA = " << fadc->GetPulseTimeData(chan, jevent) << endl;
+                      *debugfile << "FADC PPED DATA = " << fadc->GetPulsePedestalData(chan, jevent) / NPED << endl;
+                      *debugfile << "FADC PPEAK DATA = " << fadc->GetPulsePeakData(chan, jevent) << endl;
+                    }
                   }
                   // Fill histos
-                  if ((fadc_mode == 1 || fadc_mode == 8) && num_fadc_samples > 0) h_pinteg[islot][chan]->Fill(fadc->GetEmulatedPulseIntegralData(chan));
+                  if ((fadc_mode == 1 || fadc_mode == 8) && num_fadc_samples > 0)
+                    h_pinteg[islot][chan]->Fill(fadc->GetEmulatedPulseIntegralData(chan));
                   else if (fadc_mode == 7 || fadc_mode == 8 || fadc_mode == 9 || fadc_mode == 10) {
-                    if (fadc_mode != 8) {h_pinteg[islot][chan]->Fill(fadc->GetPulseIntegralData(chan, jevent));}
-                    if (fadc_mode == 8 || fadc_mode == 1) {h_pinteg[islot][chan]->Fill(fadc->GetEmulatedPulseIntegralData(chan));}
+                    if (fadc_mode != 8) {
+                      h_pinteg[islot][chan]->Fill(fadc->GetPulseIntegralData(chan, jevent));
+                    } else {
+                      h_pinteg[islot][chan]->Fill(fadc->GetEmulatedPulseIntegralData(chan));
+                    }
                     h_ptime[islot][chan]->Fill(fadc->GetPulseTimeData(chan, jevent));
                     h_pped[islot][chan]->Fill(fadc->GetPulsePedestalData(chan, jevent) / NPED);
                     h_ppeak[islot][chan]->Fill(fadc->GetPulsePeakData(chan, jevent));
                     // 2D Histos
-                    if (fadc_mode != 8) {h2_pinteg[islot]->Fill(chan, fadc->GetPulseIntegralData(chan, jevent));}
-                    if (fadc_mode == 8 || fadc_mode == 1) {h2_pinteg[islot]->Fill(chan, fadc->GetEmulatedPulseIntegralData(chan));}
+                    if (fadc_mode != 8) {
+                      h2_pinteg[islot]->Fill(chan, fadc->GetPulseIntegralData(chan, jevent));
+                    } else {
+                      h2_pinteg[islot]->Fill(chan, fadc->GetEmulatedPulseIntegralData(chan));
+                    }
                     h2_ptime[islot]->Fill(chan, fadc->GetPulseTimeData(chan, jevent));
                     h2_pped[islot]->Fill(chan, fadc->GetPulsePedestalData(chan, jevent) / NPED);
                     h2_ppeak[islot]->Fill(chan, fadc->GetPulsePeakData(chan, jevent));
@@ -295,16 +342,22 @@ int main(int /* argc */, char** /* argv */)
                         raw_samples_npeak_vector[islot][chan][ipeak] = fadc->GetPulseSamplesVector(chan);
                     }
                     if (raw_samp_index[islot][chan] < NUMRAWEVENTS) {
-                      for (Int_t sample_num = 0; sample_num < Int_t (raw_samples_vector[islot][chan].size()); sample_num++)
-                        g_psamp_event[islot][chan][raw_samp_index[islot][chan]]->SetPoint(sample_num, sample_num + 1, Int_t (raw_samples_vector[islot][chan][sample_num]));
+                      for (uint32_t sample_num = 0; sample_num < raw_samples_vector[islot][chan].size(); sample_num++) {
+                        g_psamp_event[islot][chan][raw_samp_index[islot][chan]]->SetPoint(
+                          static_cast<Int_t>(sample_num), sample_num + 1,
+                          raw_samples_vector[islot][chan][sample_num]);
+                      }
                       mg_psamp[islot][chan]->Add(g_psamp_event[islot][chan][raw_samp_index[islot][chan]], "ACP");
                       raw_samp_index[islot][chan] += 1;
                     }  // NUMRAWEVENTS condition
                     for (uint32_t ipeak = 0; ipeak < NPEAK; ipeak++) {
-                      if (uint32_t (num_fadc_events) == ipeak+1) {
+                      if (num_fadc_events == ipeak+1) {
                         if (raw_samp_npeak_index[islot][chan][ipeak] < NUMRAWEVENTS) {
-                          for (Int_t sample_num = 0; sample_num < Int_t (raw_samples_npeak_vector[islot][chan][ipeak].size()); sample_num++)
-                            g_psamp_npeak_event[islot][chan][ipeak][raw_samp_npeak_index[islot][chan][ipeak]]->SetPoint(sample_num, sample_num + 1, Int_t (raw_samples_npeak_vector[islot][chan][ipeak][sample_num]));
+                          for (uint32_t sample_num = 0; sample_num < raw_samples_npeak_vector[islot][chan][ipeak].size(); sample_num++) {
+                            g_psamp_npeak_event[islot][chan][ipeak][raw_samp_npeak_index[islot][chan][ipeak]]->SetPoint(
+                              static_cast<Int_t>(sample_num), sample_num + 1,
+                              raw_samples_npeak_vector[islot][chan][ipeak][sample_num]);
+                          }
                           mg_psamp_npeak[islot][chan][ipeak]->Add(g_psamp_npeak_event[islot][chan][ipeak][raw_samp_npeak_index[islot][chan][ipeak]], "ACP");
                           raw_samp_npeak_index[islot][chan][ipeak] += 1;
                         } // NUMRAWEVENTS condition
@@ -331,14 +384,14 @@ int main(int /* argc */, char** /* argv */)
   }  // Event loop 
 
   // Populate waveform graphs and multigraphs and write to root file
-  TRandom3 *rand = new TRandom3();
+  auto *rand = new TRandom3();
   for(uint32_t islot = 3; islot < NUMSLOTS; islot++) {
     for (uint32_t chan = 0; chan < NADCCHAN; chan++) {
       for( uint32_t raw_index = 0; raw_index < NUMRAWEVENTS; raw_index++) {
         // Raw sample plots
         if (g_psamp_event[islot][chan][raw_index] != nullptr) {
-          UInt_t rand_int = 1 + rand->Integer(9);
-          hfile->cd(Form("/mode_%d_data/slot_%d/chan_%d/raw_samples", fadc_mode_const, islot, chan));
+          Color_t rand_int = 1 + rand->Integer(9);
+          hfile->cd(Form("/mode_%d_data/slot_%u/chan_%u/raw_samples", fadc_mode_const, islot, chan));
           c_psamp[islot][chan]->cd(raw_index + 1);
           g_psamp_event[islot][chan][raw_index]->Draw("ACP");
           g_psamp_event[islot][chan][raw_index]->SetTitle(Form("FADC Mode %d Pulse Peak Data Slot %d Channel %d Event %d", fadc_mode_const, islot, chan, raw_index+1));
@@ -363,7 +416,7 @@ int main(int /* argc */, char** /* argv */)
 	for( uint32_t raw_index = 0; raw_index < NUMRAWEVENTS; raw_index++) {
 	  // Raw sample plots
 	  if (g_psamp_npeak_event[islot][chan][ipeak][raw_index] != nullptr) {
-	    UInt_t rand_int = 1 + rand->Integer(9);
+	    Color_t rand_int = 1 + rand->Integer(9);
 	    hfile->cd(Form("/mode_%d_data/slot_%d/chan_%d/raw_samples_npeak_%d", fadc_mode_const, islot, chan, ipeak+1));
 	    c_psamp_npeak[islot][chan][ipeak]->cd(raw_index + 1);
 	    g_psamp_npeak_event[islot][chan][ipeak][raw_index]->Draw("ACP");

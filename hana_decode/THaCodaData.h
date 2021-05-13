@@ -1,5 +1,5 @@
-#ifndef Podd_THaCodaDatah_h_
-#define Podd_THaCodaDatah_h_
+#ifndef Podd_THaCodaData_h_
+#define Podd_THaCodaData_h_
 
 /////////////////////////////////////////////////////////////////////
 //
@@ -45,7 +45,7 @@ public:
    virtual Int_t codaClose()=0;
    virtual Int_t codaRead()=0;
    UInt_t*       getEvBuffer() { return evbuffer.get(); }
-   virtual Int_t getBuffSize() const { return MAXEVLEN; }
+   virtual UInt_t getBuffSize() const { return MAXEVLEN; }
    virtual Bool_t isOpen() const = 0;
    virtual Int_t getCodaVersion();
    Bool_t isGood() const { return fIsGood; }

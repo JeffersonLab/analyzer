@@ -23,7 +23,7 @@ using namespace Decoder;
 TH1F *h1,*h2,*h3,*h4,*h5;
 TH1F *hinteg;
 
-void dump(UInt_t *buffer, ofstream *file);
+void dump(UInt_t *data, ofstream *file);
 void process(Int_t i, THaEvData *evdata, ofstream *file);
 
 int main(int /* argc */, char** /* argv */)
@@ -31,7 +31,7 @@ int main(int /* argc */, char** /* argv */)
 
    TString filename("snippet.dat");
 
-   ofstream *debugfile = new ofstream;
+   auto *debugfile = new ofstream;
    debugfile->open ("oodecoder2.txt");
    *debugfile << "Debug of OO decoder\n\n";
 
@@ -42,7 +42,7 @@ int main(int /* argc */, char** /* argv */)
      cerr << "... exiting." << endl;
      exit(2);
    }
-   CodaDecoder *evdata = new CodaDecoder();
+   auto *evdata = new CodaDecoder();
    evdata->SetCodaVersion(datafile.getCodaVersion());
 
    evdata->SetDebug(1);
@@ -97,22 +97,22 @@ int main(int /* argc */, char** /* argv */)
 
 void dump( UInt_t* data, ofstream *debugfile) {
   // Crude event dump
-  int evnum = data[4];
-  int len = data[0] + 1;
-  int evtype = data[1]>>16;
+  unsigned evnum = data[4];
+  unsigned len = data[0] + 1;
+  unsigned evtype = data[1]>>16;
   *debugfile << "\n\n Event number " << dec << evnum << endl;
   *debugfile << " length " << len << " type " << evtype << endl;
-  int ipt = 0;
-  for (int j=0; j<(len/5); j++) {
+  unsigned ipt = 0;
+  for (unsigned j=0; j<(len/5); j++) {
     *debugfile << dec << "\n evbuffer[" << ipt << "] = ";
-    for (int k=j; k<j+5; k++) {
+    for (unsigned k=j; k<j+5; k++) {
       *debugfile << hex << data[ipt++] << " ";
     }
     *debugfile << endl;
   }
   if (ipt < len) {
     *debugfile << dec << "\n evbuffer[" << ipt << "] = ";
-    for (int k=ipt; k<len; k++) {
+    for (unsigned k=ipt; k<len; k++) {
       *debugfile << hex << data[ipt++] << " ";
     }
     *debugfile << endl;
@@ -131,15 +131,13 @@ void process (Int_t iev, THaEvData *evdata, ofstream *debugfile) {
     *debugfile << "Physics trigger " << endl;
   }
 
-  Module *fadc;
-
-  fadc = evdata->GetModule(9,5);
+  Module *fadc = evdata->GetModule(9,5);
   *debugfile << "main:  fadc ptr = "<<fadc<<endl;
 
   if (fadc) {
     *debugfile << "main: num events "<<fadc->GetNumEvents()<<endl;
     *debugfile << "main: fadc mode "<<fadc->GetMode()<<endl;
-    for (Int_t i=0; i < 500; i++) {
+    for (unsigned i=0; i < 500; i++) {
       *debugfile << "main:  fadc data on ch. 11   "<<dec<<i<<"  "<<fadc->GetData(1, 11,i)<<endl;
       if (fadc->GetMode()==1) {
         if (iev==5) h1->Fill(i,fadc->GetData(1,11,i));
@@ -158,14 +156,13 @@ void process (Int_t iev, THaEvData *evdata, ofstream *debugfile) {
   // E.g. crates are 1,2,3,13,14,15 (roc numbers), Slots are 1,2,3...
   // This is like what one might do in a detector decode() routine.
 
-  int crate = 1;    // for example
-  int slot = 25;
+  unsigned crate = 1;    // for example
+  unsigned slot = 25;
 
   //  Here are raw 32-bit CODA words for this crate and slot
   *debugfile << "Raw Data Dump for crate "<<dec<<crate<<" slot "<<slot<<endl;
-  int hit;
   *debugfile << "Num raw "<<evdata->GetNumRaw(crate,slot)<<endl;
-  for(hit=0; hit<evdata->GetNumRaw(crate,slot); hit++) {
+  for(unsigned hit=0; hit<evdata->GetNumRaw(crate,slot); hit++) {
     *debugfile<<dec<<"raw["<<hit<<"] =   ";
     *debugfile<<hex<<evdata->GetRawData(crate,slot,hit)<<endl;
   }

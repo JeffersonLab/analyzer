@@ -28,7 +28,7 @@ int main(int argc, char* argv[])
     exit(2);
   }
 
-  CodaDecoder* evdata = new CodaDecoder();
+  auto* evdata = new CodaDecoder();
   evdata->SetCodaVersion(datafile.getCodaVersion());
 
   // Can tell evdata whether to use evtype
@@ -37,9 +37,9 @@ int main(int argc, char* argv[])
   cout << "Origin of PS data "<<evdata->GetOrigPS()<<endl;
 
   // Loop over a finite number of events
-  int NUMEVT = 500;
+  UInt_t NUMEVT = 500;
   bool found = false;
-  for (int i=0; i<NUMEVT; i++) {
+  for (UInt_t i=0; i<NUMEVT; i++) {
 
     int status = datafile.codaRead();
 
@@ -66,12 +66,11 @@ int main(int argc, char* argv[])
       cout << endl << " Prescale factors from CODA file = "
           << filename << endl;
       cout << endl << " Trigger      Prescale Factor" << endl;
-      for (int trig=1; trig<=8; trig++) {
+      for (UInt_t trig=1; trig<=8; trig++) {
         cout <<"   "<<dec<<trig<<"             ";
-        int ps = evdata->GetPrescaleFactor(trig);
-        int psmax;
-        if (trig <= 4) psmax = 16777216;  // 2^24
-        if (trig >= 5) psmax = 65536;     // 2^16
+        UInt_t ps = evdata->GetPrescaleFactor(trig);
+        UInt_t psmax = (trig <= 4) ? 16777216  // 2^24
+                                   : 65536;    // 2^16
         ps = ps % psmax;
         if (ps == 0) ps = psmax;
         cout << ps << endl;

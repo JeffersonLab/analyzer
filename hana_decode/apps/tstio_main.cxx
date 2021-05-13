@@ -37,8 +37,8 @@ int main(int argc, char* argv[])
   case 1: {
     // Loop over events
 
-    int NUMEVT=100;
-    for (int iev=0; iev<NUMEVT; iev++) {
+    unsigned NUMEVT=100;
+    for (unsigned iev=0; iev<NUMEVT; iev++) {
       int status = datafile.codaRead();
       if (status != CODA_OK) {
         if ( status == EOF) {
@@ -72,8 +72,8 @@ int main(int argc, char* argv[])
 
     // Optionally filter a list of event numbers
     int my_event_list[] = { 4, 15, 20, 1050, 80014, 5605001 };
-    for (int jlist=0; jlist<6; jlist++) {
-      datafile.addEvListFilt(my_event_list[jlist]);
+    for (auto ievnum : my_event_list) {
+      datafile.addEvListFilt(ievnum);
     }
 
     // Max num of events to filter to output file.
@@ -89,24 +89,24 @@ int main(int argc, char* argv[])
   default: {
     // Rapidly read file and count event types
 
-    static const int MAXEVTYPE = 200;
-    int evtype_sum[MAXEVTYPE];
-    for (int kk=0; kk<MAXEVTYPE; kk++) evtype_sum[kk] = 0;
-    int nevt=0;
+    static const unsigned MAXEVTYPE = 200;
+    unsigned evtype_sum[MAXEVTYPE];
+    for (auto & isum : evtype_sum) isum = 0;
+    unsigned nevt=0;
     cout << "Scanning " << filename << endl;
     while (datafile.codaRead() == CODA_OK) {
       if( (nevt%1000)==0 ) cout << "." << flush;
       nevt++;
       UInt_t* dbuff = datafile.getEvBuffer();
-      int event_type = dbuff[1]>>16;
-      if ((event_type >= 0) && (event_type < MAXEVTYPE)) {
+      unsigned event_type = dbuff[1]>>16;
+      if (event_type < MAXEVTYPE) {
         evtype_sum[event_type]++;
       }
     }
     ios_base::fmtflags fmt = cout.flags();
     cout << endl << "Summary of event types";
     cout << endl << " Total number events read "<<dec<<nevt<<endl;
-    for (int ety=0; ety<MAXEVTYPE; ety++) {
+    for (unsigned ety=0; ety<MAXEVTYPE; ety++) {
       if (evtype_sum[ety] != 0) {
         cout << " Event type " << setw(3) << right << ety;
         cout << ", count = "   << setw(7) << right << evtype_sum[ety] << endl;

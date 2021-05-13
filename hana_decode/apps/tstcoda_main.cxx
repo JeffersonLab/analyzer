@@ -16,8 +16,6 @@ void do_something(UInt_t* data);
 int main(int argc, char* argv[])
 {
 
-  THaCodaData *coda;      // THaCodaData is abstract
-
   if (argc < 3) {
      usage();
      return 1;
@@ -25,6 +23,8 @@ int main(int argc, char* argv[])
 
   int choice1 = atoi(argv[1]);
   int choice2 = atoi(argv[2]);
+
+  THaCodaData *coda;      // THaCodaData is abstract
 
   if (choice1 == 1) {  // CODA File
 
@@ -62,9 +62,9 @@ int main(int argc, char* argv[])
   }
 
 // Loop over events
-  int NUMEVT=20000;
+  unsigned NUMEVT=20000;
 
-  for (int iev = 0; iev < NUMEVT; iev++) {
+  for (unsigned iev = 0; iev < NUMEVT; iev++) {
 
       int status = coda->codaRead();  
 
@@ -102,23 +102,23 @@ void usage() {
 }
 
 void do_something (UInt_t* data) {
-  int len = data[0] + 1;
-  int evtype = data[1]>>16;
-  int evnum = data[4];
+  unsigned len = data[0] + 1;
+  unsigned evtype = data[1]>>16;
+  unsigned evnum = data[4];
  // Crude event dump
   cout << "\n\n Event number " << dec << evnum;
   cout << " length " << len << " type " << evtype << endl;
-  int ipt = 0;
-  for (int j = 0; j < (len/5); j++) {
+  unsigned ipt = 0;
+  for (unsigned j = 0; j < (len/5); j++) {
       cout << dec << "\n evbuffer[" << ipt << "] = ";
-      for (int k=j; k<j+5; k++) {
+      for (unsigned k=j; k<j+5; k++) {
     	 cout << hex << data[ipt++] << " ";
       }
       cout << endl;
   }
   if (ipt < len) {
       cout << dec << "\n evbuffer[" << ipt << "] = ";
-      for (int k=ipt; k<len; k++) {
+      for (unsigned k=ipt; k<len; k++) {
 	 cout << hex << data[ipt++] << " ";
       }
       cout << endl;

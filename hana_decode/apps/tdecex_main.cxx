@@ -35,16 +35,16 @@ int main(int argc, char* argv[])
         cout << "... exiting." << endl;
         exit(2);
    }
-   CodaDecoder *evdata = new CodaDecoder();
+   auto *evdata = new CodaDecoder();
    evdata->SetCodaVersion(datafile.getCodaVersion());
    THaGenDetTest mydetector;
    mydetector.init();
 
 // Loop over a finite number of events
 
-   int NUMEVT=50000;   
-   int ievent;
-   for (ievent=0; ievent<NUMEVT; ievent++) {
+   unsigned NUMEVT=50000;
+   unsigned ievent = 0;
+   for (; ievent<NUMEVT; ievent++) {
      if ( ievent > 0 && (
         ( (ievent <= 1000) && ((ievent%100) == 0) ) ||
         ( (ievent > 1000) && ((ievent%1000) == 0) ) ) )

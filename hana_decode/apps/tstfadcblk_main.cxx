@@ -42,12 +42,12 @@ int main(int /* argc */, char** /* argv */)
 {
   TString filename("snippet.dat");  // data file, can be a link
 
-  ofstream* debugfile = nullptr;
-
 #ifdef DEBUG
-  debugfile = new ofstream;
+  auto* debugfile = new ofstream;
   debugfile->open ("oodecoder1.txt");
   *debugfile << "Debug of OO decoder"<<endl<<endl;
+#else
+  ofstream* debugfile = nullptr;
 #endif
 
   THaCodaFile datafile;
@@ -67,7 +67,7 @@ int main(int /* argc */, char** /* argv */)
   TFile hfile("fadc.root","RECREATE","FADC data");
 
   char cnum[50],ctitle[80];
-  for (Int_t i = 0; i<nsnaps; i++) {
+  for (UInt_t i = 0; i<nsnaps; i++) {
     sprintf(cnum,"h%d",i+1);
     sprintf(ctitle,"snapshot %d",i+1);
     hsnaps.push_back(new TH1F(cnum,ctitle,1020,-5,505));

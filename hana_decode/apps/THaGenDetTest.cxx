@@ -19,15 +19,11 @@
 
 //#define SIMPLELOOP 
 
-static const int PRINTOUT = 1;  // to printout (1) or not (0)
+#define PRINTOUT 1 // to printout or not
 
 using namespace std;
 
-THaGenDetTest::THaGenDetTest()
-{
-}
-
-THaGenDetTest::~THaGenDetTest()
+THaGenDetTest::THaGenDetTest() : mycrates{}, myslots{}, chanlo{}, chanhi{}
 {
 }
 
@@ -37,7 +33,7 @@ void THaGenDetTest::init()
 // channels belong to my detector.  Here "my detector" is
 // the scint and VDC on both arms.
 
-       for (int & mycrate : mycrates) mycrate=0;
+       for (auto& mycrate : mycrates) mycrate=0;
 
   // E-arm Scintillators
        mydevice[0] = "E-arm S1 ADCs on Left PMTs";
@@ -135,79 +131,79 @@ void THaGenDetTest::init()
 
 void THaGenDetTest::process_event(THaEvData *evdata)
 {
-  if (PRINTOUT) {
-    cout << "\n\n------------------------------------------------"<<endl;
-    cout << "Event type " << dec << evdata->GetEvType() << endl;
-    cout << "Event length " << evdata->GetEvLength() << endl;
-    cout << "Event number " << evdata->GetEvNum() << endl;
-    cout << "Run number " << evdata->GetRunNum() << endl;
-    if (evdata->IsPhysicsTrigger()) cout << "Physics trigger" << endl;
-    if (evdata->IsScalerEvent()) cout << "Scaler event" << endl;
-    if (evdata->IsEpicsEvent()) cout << "Epics data" << endl;
-    if (evdata->IsPrescaleEvent()) {
-        cout << "Prescale data: \n  Trig    Prescale factor" << endl;
-        for (int trig = 1; trig<=8; trig++) {
-	    cout << dec << "   " << trig << "       ";
-            cout << evdata->GetPrescaleFactor(trig) << endl;
-	}
+#ifdef PRINTOUT
+  cout << "\n\n------------------------------------------------"<<endl;
+  cout << "Event type " << dec << evdata->GetEvType() << endl;
+  cout << "Event length " << evdata->GetEvLength() << endl;
+  cout << "Event number " << evdata->GetEvNum() << endl;
+  cout << "Run number " << evdata->GetRunNum() << endl;
+  if (evdata->IsPhysicsTrigger()) cout << "Physics trigger" << endl;
+  if (evdata->IsScalerEvent()) cout << "Scaler event" << endl;
+  if (evdata->IsEpicsEvent()) cout << "Epics data" << endl;
+  if (evdata->IsPrescaleEvent()) {
+    cout << "Prescale data: \n  Trig    Prescale factor" << endl;
+    for (int trig = 1; trig<=8; trig++) {
+      cout << dec << "   " << trig << "       ";
+      cout << evdata->GetPrescaleFactor(trig) << endl;
     }
-    if (evdata->IsScalerEvent()) {
-     cout << "Scaler data. (it will remain static until";
-     cout << " next scaler event): "<<endl;
+  }
+  if (evdata->IsScalerEvent()) {
+    cout << "Scaler data. (it will remain static until";
+    cout << " next scaler event): "<<endl;
 //FIXME: needs update for Podd 1.6+
-     cout << "Scaler handling not (yet) implemented in this example class" << endl;
+    cout << "Scaler handling not (yet) implemented in this example class" << endl;
 #if 0
-     for (int sca = 0; sca < 3; sca++) { // 1st 3 scaler banks, left spectrom.
-       for (int cha = 0; cha < 16; cha++)  {
+    for (unsigned sca = 0; sca < 3; sca++) { // 1st 3 scaler banks, left spectrom.
+       for (unsigned cha = 0; cha < 16; cha++)  {
         cout << "Scaler " << dec << sca << " channel " << cha;
         cout << "  data = (decimal) " << evdata->GetScaler("left",sca,cha);
         cout << "  data = (hex) "<<hex<<evdata->GetScaler("left",sca,cha)<<endl;
        }
      }
 #endif
-    }
   }
+#endif // PRINTOUT
   if (evdata->IsEpicsEvent()) {
 //FIXME: needs update for Podd 1.6+
-    if (PRINTOUT) {
-      cout << "EPICS data handling not (yet) implemented in this example class" << endl;
+#ifdef PRINTOUT
+    cout << "EPICS data handling not (yet) implemented in this example class" << endl;
 #if 0
-      cout << "BPM 3A, X   IPM1H03A.XPOS  =  ";
-      cout << evdata->GetEpicsData("IPM1H03A.XPOS")<<endl;
-      cout << "BPM 3A, Y   IPM1H03A.YPOS  =  ";
-      cout << evdata->GetEpicsData("IPM1H03A.YPOS")<<endl;
-      cout << "BPM 3B, X   IPM1H03B.XPOS  =  ";
-      cout << evdata->GetEpicsData("IPM1H03B.XPOS")<<endl;
-      cout << "BPM 3B, Y   IPM1H03B.YPOS  =  ";
-      cout << evdata->GetEpicsData("IPM1H03B.YPOS")<<endl;
-      cout << "Avg of 2 BCM,   hac_bcm_average = ";
-      cout << evdata->GetEpicsData("hac_bcm_average")<<endl;
-      cout << "Energy   halla_MeV  =  ";
-      cout << evdata->GetEpicsData("halla_MeV")<<endl; 
+    cout << "BPM 3A, X   IPM1H03A.XPOS  =  ";
+    cout << evdata->GetEpicsData("IPM1H03A.XPOS")<<endl;
+    cout << "BPM 3A, Y   IPM1H03A.YPOS  =  ";
+    cout << evdata->GetEpicsData("IPM1H03A.YPOS")<<endl;
+    cout << "BPM 3B, X   IPM1H03B.XPOS  =  ";
+    cout << evdata->GetEpicsData("IPM1H03B.XPOS")<<endl;
+    cout << "BPM 3B, Y   IPM1H03B.YPOS  =  ";
+    cout << evdata->GetEpicsData("IPM1H03B.YPOS")<<endl;
+    cout << "Avg of 2 BCM,   hac_bcm_average = ";
+    cout << evdata->GetEpicsData("hac_bcm_average")<<endl;
+    cout << "Energy   halla_MeV  =  ";
+    cout << evdata->GetEpicsData("halla_MeV")<<endl;
 #endif
-    }
   }
+#endif
   if (!evdata->IsPhysicsTrigger()) return;
 #if 0
-  if (PRINTOUT) {
-  int crate = 16;  
+#ifdef PRINTOUT
+  unsigned crate = 16;
   cout << "--------  Test of RICH raw data  ---------"<<endl;
-  for (int slot = 1; slot <= 16; slot++) {  // Actually ADCs (2 ADCs per 8 VME slots)
+  for (unsigned slot = 1; slot <= 16; slot++) {  // Actually ADCs (2 ADCs per 8 VME slots)
     cout << "Slot "<<slot<<endl;
-    for (int chan = 0; chan < 500; chan++) {    // channel numbers start at 0
-     cout<<"channel "<<chan<<" num hits "<<evdata->GetNumHits(crate,slot,chan)<<endl;
-     for (int hit = 0; hit < evdata->GetNumHits(crate,slot,chan); hit++) {
+    for (unsigned chan = 0; chan < 500; chan++) {    // channel numbers start at 0
+      cout<<"channel "<<chan<<" num hits "<<evdata->GetNumHits(crate,slot,chan)<<endl;
+      for (unsigned hit = 0; hit < evdata->GetNumHits(crate,slot,chan); hit++) {
         cout << "  ADC data = "<<evdata->GetData(crate,slot,chan,hit)<<endl;
-     }
+      }
     }
   }
-  }
+#endif
 #endif
   unsigned long sum = 0;
-  for (int j = 0; j < MAX; j++) {
+  for (unsigned j = 0; j < MAX; j++) {
       if (!mycrates[j]) continue;
-      int crate = mycrates[j];
-      int slot = myslots[j];
+      unsigned crate = mycrates[j];
+      unsigned slot = myslots[j];
       //      if (PRINTOUT) evdata->PrintSlotData(crate,slot);
       bool firstone = true;
 
@@ -215,15 +211,15 @@ void THaGenDetTest::process_event(THaEvData *evdata)
 // and 2) loop over list of unique channels which were hit (faster). 
 
 #ifdef SIMPLELOOP
-        for (int chan = chanlo[j]; chan <= chanhi[j]; chan++) {
+        for (unsigned chan = chanlo[j]; chan <= chanhi[j]; chan++) {
 #else
-	for (int list = 0; list < evdata->GetNumChan(crate,slot); list++) {
-          int chan = evdata->GetNextChan(crate,slot,list);       
+	for (unsigned list = 0; list < evdata->GetNumChan(crate,slot); list++) {
+          unsigned chan = evdata->GetNextChan(crate,slot,list);
 #endif
           if (( chan > chanhi[j]) || (chan < chanlo[j])) continue;
-          for (int hit = 0; hit < evdata->GetNumHits(crate,slot,chan); hit++) {
-            int data = evdata->GetData(crate,slot,chan,hit);
-	    if (PRINTOUT) {
+          for (unsigned hit = 0; hit < evdata->GetNumHits(crate,slot,chan); hit++) {
+            unsigned data = evdata->GetData(crate,slot,chan,hit);
+#ifdef PRINTOUT
               if(firstone) {
 		cout << "\n Data in " << mydevice[j]<<"     / ";
                  cout << "crate "<<dec<<crate<<" /  slot "<<slot<<endl;  
@@ -232,7 +228,7 @@ void THaGenDetTest::process_event(THaEvData *evdata)
 	      cout << "channel " << dec << chan << "  hit # " << hit;
               cout << "   data (decimal) = " << data;
               cout << "   data (hex) = " << hex << data << endl;
-	    }
+#endif
             if (sum < 200000000) sum += data;   // Do something with data...
 	  }
         }

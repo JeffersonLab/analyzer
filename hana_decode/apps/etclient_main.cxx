@@ -16,13 +16,13 @@ int main(int argc, char *argv[])
        // open connection to adaqcp computer.
        auto* et = new THaEtClient("adaqcp", mymode);
  
-       int NUMEVT = 10000;
+       UInt_t NUMEVT = 10000;
        ULong64_t lensum=0;
        ULong64_t dummysum = 0;
 
        if (argc > 1) NUMEVT = atoi(argv[1]);
 
-       for (int iev=0; iev<NUMEVT; iev++) {
+       for (UInt_t iev=0; iev<NUMEVT; iev++) {
          if ((iev%1000) == 0) {
 	   cout << "Event "<<dec<<iev<<"  sums "<<lensum<<"  "<<dummysum<<endl;
 	 }
@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
          if (PRINTOUT) 
            cout << "Event "<<dec<<iev<<" length "<<evbuff[0]+1<<endl;
          for (UInt_t i=0; i<evbuff[0]+1; i++) {
-           if(i < static_cast<UInt_t>(et->getBuffSize())) {
+           if(i < et->getBuffSize()) {
              if(PRINTOUT) {
 	       cout<<"evbuffer " <<dec<<i<< "  = "<<hex<<evbuff[i]<<endl;
 	     } else {

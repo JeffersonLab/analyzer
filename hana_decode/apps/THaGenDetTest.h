@@ -27,17 +27,16 @@ class THaGenDetTest
  public:
 
 	 THaGenDetTest();
-	 virtual ~THaGenDetTest();
 // Called at initialization phase of code
 	 void init();
 // Processing of event data
 	 void process_event(THaEvData *evdata);
 
  private:
-         static const int MAX = 100;
-	 int mycrates[MAX];
-	 int myslots[MAX];
-	 int chanlo[MAX],chanhi[MAX];
+         static const unsigned MAX = 100;
+	 unsigned mycrates[MAX];
+	 unsigned myslots[MAX];
+	 unsigned chanlo[MAX],chanhi[MAX];
 	 TString mydevice[MAX];
 
 };

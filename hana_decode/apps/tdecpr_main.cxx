@@ -31,14 +31,14 @@ int main(int /* argc */, char** /* argv */ )
         exit(1);
    }
       
-   CodaDecoder *evdata = new CodaDecoder();
+   auto *evdata = new CodaDecoder();
    evdata->SetCodaVersion(datafile.getCodaVersion());
 
 // Loop over events
  
-   int NUMEVT=100;
-   int ievent;
-   for (ievent=0; ievent<NUMEVT; ievent++) {
+   unsigned NUMEVT=100;
+   unsigned ievent=0;
+   for (; ievent<NUMEVT; ievent++) {
 
      int status = datafile.codaRead();  
 	                                            
@@ -75,13 +75,12 @@ int main(int /* argc */, char** /* argv */ )
 // E.g. crates are 1,2,3,13,14,15 (roc numbers), Slots are 1,2,3... 
 // This is like what one might do in a detector decode() routine.
 
-      int crate = 1;    // for example
-      int slot = 24;
+      unsigned crate = 1;    // for example
+      unsigned slot = 24;
 
 //  Here are raw 32-bit CODA words for this crate and slot
       cout << "Raw Data Dump for crate "<<crate<<" slot "<<slot<<endl;
-      int hit;
-      for(hit=0; hit<evdata->GetNumRaw(crate,slot); hit++) {
+      for(unsigned hit=0; hit<evdata->GetNumRaw(crate,slot); hit++) {
         cout<<"raw["<<hit<<"] =   ";
         cout<<hex<<evdata->GetRawData(crate,slot,hit)<<dec<<endl;
       }
@@ -91,10 +90,10 @@ int main(int /* argc */, char** /* argv */ )
       if (evdata->IsPhysicsTrigger()) {
 // Below are interpreted data, device types are ADC, TDC, or scaler.
 // One needs to know the channel number within the device
-        int channel = 7;    // for example
+        unsigned channel = 7;    // for example
         cout << "Device type = ";
         cout << evdata->DevType(crate,slot) << endl;
-        for (hit=0; hit<evdata->GetNumHits(crate,slot,channel); hit++) {
+        for (unsigned hit=0; hit<evdata->GetNumHits(crate,slot,channel); hit++) {
 	   cout << "Channel " <<channel<<" hit # "<<hit<<"  ";
            cout << "data = " << evdata->GetData(crate,slot,channel,hit)<<endl;
         }
@@ -109,9 +108,9 @@ int main(int /* argc */, char** /* argv */ )
 // another way to get scalers directly from evdata
 //FIXME: needs update for Podd 1.6+
 #if 0
-      for (slot=0; slot<5; slot++) {
+      for (unsigned slot=0; slot<5; slot++) {
         cout << endl << " scaler slot -> " << slot << endl;;
-        for (int chan=0; chan<16; chan++) {
+        for (unsigned chan=0; chan<16; chan++) {
 	  cout << "Scaler chan " <<  chan << "  ";
           cout << evdata->GetScaler("left",slot,chan);
           cout << "  "  << evdata->GetScaler(7,slot,chan) << endl;
