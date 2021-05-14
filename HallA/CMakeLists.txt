@@ -35,9 +35,9 @@ target_include_directories(${LIBNAME}
 
 target_compile_options(${LIBNAME}
   PUBLIC
-    ${${PROJECT_NAME_UC}_CXX_FLAGS_LIST}
+    ${${MAIN_PROJECT_NAME_UC}_CXX_FLAGS_LIST}
   PRIVATE
-    ${${PROJECT_NAME_UC}_DIAG_FLAGS_LIST}
+    ${${MAIN_PROJECT_NAME_UC}_DIAG_FLAGS_LIST}
   )
 if(WITH_DEBUG)
   target_compile_definitions(${LIBNAME} PUBLIC WITH_DEBUG)

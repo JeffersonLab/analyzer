@@ -33,7 +33,7 @@ foreach(exe IN LISTS allexe)
   )
   target_compile_options(${exe}
     PRIVATE
-      ${${PROJECT_NAME_UC}_DIAG_FLAGS_LIST}
+      ${${MAIN_PROJECT_NAME_UC}_DIAG_FLAGS_LIST}
   )
 endforeach()
 
