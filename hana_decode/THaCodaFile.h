@@ -19,7 +19,7 @@
 
 #include "THaCodaData.h"
 #include "Decoder.h"
-#include "TArrayI.h"
+#include <vector>
 
 namespace Decoder {
 
@@ -36,9 +36,9 @@ public:
   virtual Int_t codaRead();
   Int_t codaWrite(const UInt_t* evbuffer);
   Int_t filterToFile(const char* output_file); // filter to an output file
-  void  addEvTypeFilt(Int_t evtype_to_filt);   // add an event type to list
-  void  addEvListFilt(Int_t event_to_filt);    // add an event num to list
-  void  setMaxEvFilt(Int_t max_event);         // max num events to filter
+  void  addEvTypeFilt(UInt_t evtype_to_filt);  // add an event type to list
+  void  addEvListFilt(UInt_t event_to_filt);   // add an event num to list
+  void  setMaxEvFilt(UInt_t max_event);        // max num events to filter
   virtual bool isOpen() const;
 
 private:
@@ -46,16 +46,14 @@ private:
   THaCodaFile(const THaCodaFile &fn);
   THaCodaFile& operator=(const THaCodaFile &fn);
   void init(const char* fname="");
-  void initFilter();
-  Int_t ffirst;
-  Int_t max_to_filt;
-  Int_t maxflist,maxftype;
-  TArrayI evlist, evtypes;
+  UInt_t max_to_filt;
+  UInt_t maxflist,maxftype;
+  std::vector<UInt_t> evlist, evtypes;
 
   ClassDef(THaCodaFile,0)   //  File of CODA data
 
 };
 
-}
+} // namespace Decoder
 
 #endif
