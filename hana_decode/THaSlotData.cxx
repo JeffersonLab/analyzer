@@ -32,21 +32,25 @@ const UInt_t THaSlotData::DEFNCHAN = 128;  // Default number of channels
 const UInt_t THaSlotData::DEFNDATA = 1024; // Default number of data words
 const UInt_t THaSlotData::DEFNHITCHAN = 1; // Default number of hits per channel
 
+//_____________________________________________________________________________
 THaSlotData::THaSlotData() :
   crate(-1), slot(-1), fModule(nullptr), numhitperchan(0), numraw(0), numchanhit(0),
   firstfreedataidx(0), numholesdataidx(0), fDebugFile(nullptr),
   didini(false), fNchan(0) {}
 
+//_____________________________________________________________________________
 THaSlotData::THaSlotData(UInt_t cra, UInt_t slo) :
   crate(cra), slot(slo), fModule(nullptr), numhitperchan(0), numraw(0), numchanhit(0),
   firstfreedataidx(0), numholesdataidx(0), fDebugFile(nullptr),
   didini(false), fNchan(0) {}
 
 
+//_____________________________________________________________________________
 THaSlotData::~THaSlotData() {
   delete fModule;
 }
 
+//_____________________________________________________________________________
 void THaSlotData::define(UInt_t cra, UInt_t slo, UInt_t nchan,
                          UInt_t /*ndata*/, // legacy parameter, no longer needed
                                            // since data arrays grow as needed
@@ -70,6 +74,7 @@ void THaSlotData::define(UInt_t cra, UInt_t slo, UInt_t nchan,
   numHits.assign(numHits.size(),0);
 }
 
+//_____________________________________________________________________________
 int THaSlotData::loadModule(const THaCrateMap *map) {
 
   UInt_t modelnum = map->getModel(crate, slot);
@@ -83,8 +88,8 @@ int THaSlotData::loadModule(const THaCrateMap *map) {
       *fDebugFile << "THaSlotData:: fTClass ptr =  "<<loctype.fTClass<<endl;
     }
 
+    // Get the ROOT class for this type
     if( !loctype.fTClass ) {
-
       loctype.fTClass = TClass::GetClass( loctype.fClassName );
       if (fDebugFile) {
 	 *fDebugFile << "defining fTClass ptr =  "<<loctype.fTClass<<endl;
@@ -94,7 +99,7 @@ int THaSlotData::loadModule(const THaCrateMap *map) {
 
     if (modelnum == loctype.fMapNum) {
 
-      if (fDebugFile) *fDebugFile << "THaSlotData::  Found Module !!!! "<<dec<<modelnum<<endl;
+    if (fDebugFile) *fDebugFile << "THaSlotData::  Found Module !!!! "<<dec<<modelnum<<endl;
 
       if (loctype.fTClass) {
 	if (fDebugFile) *fDebugFile << "THaSlotData:: Creating fModule"<<endl;
@@ -129,6 +134,7 @@ int THaSlotData::loadModule(const THaCrateMap *map) {
 
 }
 
+//_____________________________________________________________________________
 UInt_t THaSlotData::LoadIfSlot( const UInt_t* evbuffer, const UInt_t *pstop) {
   // returns how many words seen.
   if ( !fModule ) {
@@ -137,7 +143,13 @@ UInt_t THaSlotData::LoadIfSlot( const UInt_t* evbuffer, const UInt_t *pstop) {
     cerr << "THaSlotData::ERROR:   No module defined for slot. "<<crate<<"  "<<slot<<endl;
     return 0;
   }
-  if (fDebugFile) *fDebugFile << "THaSlotData::LoadIfSlot:  " << dec << crate << "  " << slot << "   p " << hex << evbuffer << "  " << *evbuffer << "  " << dec << ((UInt_t(*evbuffer)) >> 27) << hex << "  " << pstop << "  " << fModule << dec << endl;
+  if (fDebugFile)
+    *fDebugFile << "THaSlotData::LoadIfSlot:  "
+                << dec << crate << "  " << slot
+                << "   p " << hex << evbuffer << "  " << *evbuffer
+                << "  " << dec << ((UInt_t(*evbuffer)) >> 27)
+                << hex << "  " << pstop << "  " << fModule
+                << dec << endl;
   if ( !fModule->IsSlot( *evbuffer ) ) {
     if(fDebugFile) *fDebugFile << "THaSlotData:: Not slot ... return ... "<<endl;
     return 0;
@@ -145,10 +157,13 @@ UInt_t THaSlotData::LoadIfSlot( const UInt_t* evbuffer, const UInt_t *pstop) {
   if (fDebugFile) fModule->DoPrint();
   fModule->Clear("");
   UInt_t wordseen = fModule->LoadSlot(this, evbuffer, pstop);  // increments p
-  if (fDebugFile) *fDebugFile << "THaSlotData:: after LoadIfSlot:  wordseen =  "<<dec<<"  "<<wordseen<<endl;
+  if (fDebugFile)
+    *fDebugFile << "THaSlotData:: after LoadIfSlot:  wordseen =  "
+                << dec << "  " << wordseen << endl;
   return wordseen;
 }
 
+//_____________________________________________________________________________
 UInt_t THaSlotData::LoadBank( const UInt_t* p, UInt_t pos, UInt_t len) {
   // returns how many words seen.
   if ( !fModule ) {
@@ -165,6 +180,7 @@ UInt_t THaSlotData::LoadBank( const UInt_t* p, UInt_t pos, UInt_t len) {
   return wordseen;
 }
 
+//_____________________________________________________________________________
 UInt_t THaSlotData::LoadNextEvBuffer() {
 // for modules that are in multiblock mode, load the next event in the block
   if ( !fModule ) {
@@ -174,7 +190,7 @@ UInt_t THaSlotData::LoadNextEvBuffer() {
   return fModule->LoadNextEvBuffer(this);
 }
 
-
+//_____________________________________________________________________________
 Int_t THaSlotData::loadData(const char* type, UInt_t chan, UInt_t dat, UInt_t raw) {
 
   const int very_verb=1;
@@ -257,11 +273,13 @@ Int_t THaSlotData::loadData(const char* type, UInt_t chan, UInt_t dat, UInt_t ra
   return SD_OK;
 }
 
+//_____________________________________________________________________________
 int THaSlotData::loadData(UInt_t chan, UInt_t dat, UInt_t raw) {
   // NEW (6/2014).
   return loadData(nullptr, chan, dat, raw);
 }
 
+//_____________________________________________________________________________
 void THaSlotData::print() const
 {
   if (fDebugFile) {
@@ -304,6 +322,7 @@ void THaSlotData::print() const
   cout.flags(fmt);
 }
 
+//_____________________________________________________________________________
 void THaSlotData::print_to_file() const {
   if (!fDebugFile) return;
   *fDebugFile << "\n THaSlotData contents : " << endl;
@@ -377,6 +396,7 @@ void THaSlotData::compressdataindexImpl( UInt_t numidx )
   dataindex.resize(alloci);
 }
 
-}
+} // namespace Decoder
 
+//_____________________________________________________________________________
 ClassImp(Decoder::THaSlotData)

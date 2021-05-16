@@ -22,7 +22,7 @@
 #include <cstdio>
 #include <memory>
 
-// Return cods from codaNNN routines
+// Return codes from codaNNN routines
 #define CODA_OK     0      // OK
 #define CODA_EOF    EOF    // End of file
 #define CODA_ERROR  -128   // Generic error return code

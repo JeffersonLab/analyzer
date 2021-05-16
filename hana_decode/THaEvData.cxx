@@ -95,7 +95,7 @@ THaEvData::THaEvData() :
   memset(crateslot,0,MAXROC*MAXSLOT*sizeof(void*));
 }
 
-
+//_____________________________________________________________________________
 THaEvData::~THaEvData() {
   if( fDoBench ) {
     Float_t a,b;
@@ -113,13 +113,16 @@ THaEvData::~THaEvData() {
   fgInstances.ResetBitNumber(fInstance);
 }
 
+//_____________________________________________________________________________
 const char* THaEvData::DevType( UInt_t crate, UInt_t slot) const {
 // Device type in crate, slot
   return ( GoodIndex(crate,slot) ) ?
     crateslot[idx(crate,slot)]->devType() : " ";
 }
 
-Int_t THaEvData::Init() {
+//_____________________________________________________________________________
+Int_t THaEvData::Init()
+{
   Int_t ret = init_cmap();
   //  if (fMap) fMap->print();
   if (ret != HED_OK) return ret;
@@ -130,6 +133,7 @@ Int_t THaEvData::Init() {
   return ret;
 }
 
+//_____________________________________________________________________________
 void THaEvData::SetRunTime( ULong64_t tloc )
 {
   // Set run time and re-initialize crate map (and possibly other
@@ -141,6 +145,7 @@ void THaEvData::SetRunTime( ULong64_t tloc )
   init_cmap();
 }
 
+//_____________________________________________________________________________
 void THaEvData::EnableBenchmarks( Bool_t enable )
 {
   // Enable/disable run time reporting
@@ -154,18 +159,21 @@ void THaEvData::EnableBenchmarks( Bool_t enable )
   }
 }
 
+//_____________________________________________________________________________
 void THaEvData::EnableHelicity( Bool_t enable )
 {
   // Enable/disable helicity decoding
   SetBit(kHelicityEnabled, enable);
 }
 
+//_____________________________________________________________________________
 void THaEvData::EnableScalers( Bool_t enable )
 {
   // Enable/disable scaler decoding
   SetBit(kScalersEnabled, enable);
 }
 
+//_____________________________________________________________________________
 void THaEvData::SetVerbose( Int_t level )
 {
   // Set verbosity level. Identical to SetDebug(). Kept for compatibility.
@@ -173,6 +181,7 @@ void THaEvData::SetVerbose( Int_t level )
   SetDebug(level);
 }
 
+//_____________________________________________________________________________
 void THaEvData::SetDebug( Int_t level )
 {
   // Set debug level
@@ -180,6 +189,7 @@ void THaEvData::SetDebug( Int_t level )
   fDebug = level;
 }
 
+//_____________________________________________________________________________
 void THaEvData::SetOrigPS(Int_t evtyp)
 {
   switch(evtyp) {
@@ -198,6 +208,7 @@ void THaEvData::SetOrigPS(Int_t evtyp)
   }
 }
 
+//_____________________________________________________________________________
 TString THaEvData::GetOrigPS() const
 {
   TString answer = "PS from ";
@@ -211,6 +222,7 @@ TString THaEvData::GetOrigPS() const
   return answer;
 }
 
+//_____________________________________________________________________________
 void THaEvData::hexdump(const char* cbuff, size_t nlen)
 {
   // Hexdump buffer 'cbuff' of length 'nlen'
@@ -230,6 +242,7 @@ void THaEvData::hexdump(const char* cbuff, size_t nlen)
   }
 }
 
+//_____________________________________________________________________________
 void THaEvData::SetDefaultCrateMapName( const char* name )
 {
   // Static function to set fgDefaultCrateMapName. Call this function to set a
@@ -245,6 +258,7 @@ void THaEvData::SetDefaultCrateMapName( const char* name )
   }
 }
 
+//_____________________________________________________________________________
 void THaEvData::SetCrateMapName( const char* name )
 {
   // Set fCrateMapName for this decoder instance only
@@ -260,6 +274,7 @@ void THaEvData::SetCrateMapName( const char* name )
   }
 }
 
+//_____________________________________________________________________________
 // Set up and initialize the crate map
 int THaEvData::init_cmap()  {
   if( fCrateMapName.IsNull() )
@@ -286,7 +301,8 @@ int THaEvData::init_cmap()  {
   return HED_OK;
 }
 
-void THaEvData::makeidx( UInt_t crate, UInt_t slot)
+//_____________________________________________________________________________
+void THaEvData::makeidx( UInt_t crate, UInt_t slot )
 {
   // Activate crate/slot
   UInt_t idx = slot+MAXSLOT*crate;
@@ -305,11 +321,13 @@ void THaEvData::makeidx( UInt_t crate, UInt_t slot)
   }
 }
 
+//_____________________________________________________________________________
 void THaEvData::PrintOut() const {
   //TODO
   cout << "THaEvData::PrintOut() called" << endl;
 }
 
+//_____________________________________________________________________________
 void THaEvData::PrintSlotData( UInt_t crate, UInt_t slot) const {
   // Print the contents of (crate, slot).
   if( GoodIndex(crate,slot)) {
@@ -320,6 +338,7 @@ void THaEvData::PrintSlotData( UInt_t crate, UInt_t slot) const {
   }
 }
 
+//_____________________________________________________________________________
 // To initialize the THaSlotData member on first call to decoder
 int THaEvData::init_slotdata()
 {

@@ -37,6 +37,7 @@
 
 using namespace std;
 
+//_____________________________________________________________________________
 static string StrError()
 {
   // Return description of current errno as a std::string
@@ -52,6 +53,7 @@ static string StrError()
   return ret;
 }
 
+//_____________________________________________________________________________
 namespace Decoder {
 
 const UInt_t THaCrateMap::MAXCHAN = 8192;
@@ -59,6 +61,7 @@ const UInt_t THaCrateMap::MAXDATA = 65536;
 const Int_t  THaCrateMap::CM_OK = 1;
 const Int_t  THaCrateMap::CM_ERR = -1;
 
+//_____________________________________________________________________________
 THaCrateMap::THaCrateMap( const char* db_filename )
   : didslot{}
 {
@@ -75,6 +78,7 @@ THaCrateMap::THaCrateMap( const char* db_filename )
 
 }
 
+//_____________________________________________________________________________
 UInt_t THaCrateMap::getScalerCrate( UInt_t word) const {
   for (UInt_t crate=0; crate<MAXROC; crate++) {
     if( !crdat[crate].crate_used ) continue;
@@ -89,7 +93,7 @@ UInt_t THaCrateMap::getScalerCrate( UInt_t word) const {
   return 0;
 }
 
-
+//_____________________________________________________________________________
 int THaCrateMap::setCrateType( UInt_t crate, const char* type ) {
   assert(crate < MAXROC);
   TString stype(type);
@@ -112,6 +116,7 @@ int THaCrateMap::setCrateType( UInt_t crate, const char* type ) {
   return CM_OK;
 }
 
+//_____________________________________________________________________________
 int THaCrateMap::setModel( UInt_t crate, UInt_t slot, Int_t mod,
                            UInt_t nchan, UInt_t ndata ) {
   assert( crate < MAXROC && slot < MAXSLOT );
@@ -124,6 +129,7 @@ int THaCrateMap::setModel( UInt_t crate, UInt_t slot, Int_t mod,
   return CM_OK;
 }
 
+//_____________________________________________________________________________
 int THaCrateMap::SetModelSize( UInt_t crate, UInt_t slot, UInt_t model )
 {
   // Set the max number of channels and data words for some known modules
@@ -162,6 +168,7 @@ int THaCrateMap::SetModelSize( UInt_t crate, UInt_t slot, UInt_t model )
   return 0;
 }
 
+//_____________________________________________________________________________
 int THaCrateMap::setHeader( UInt_t crate, UInt_t slot, UInt_t head ) {
   assert( crate < MAXROC && slot < MAXSLOT );
   incrNslot(crate);
@@ -170,6 +177,7 @@ int THaCrateMap::setHeader( UInt_t crate, UInt_t slot, UInt_t head ) {
   return CM_OK;
 }
 
+//_____________________________________________________________________________
 int THaCrateMap::setMask( UInt_t crate, UInt_t slot, UInt_t mask ) {
   assert( crate < MAXROC && slot < MAXSLOT );
   incrNslot(crate);
@@ -178,6 +186,7 @@ int THaCrateMap::setMask( UInt_t crate, UInt_t slot, UInt_t mask ) {
   return CM_OK;
 }
 
+//_____________________________________________________________________________
 int THaCrateMap::setBank( UInt_t crate, UInt_t slot, Int_t bank ) {
   assert( crate < MAXROC && slot < MAXSLOT );
   incrNslot(crate);
@@ -186,6 +195,7 @@ int THaCrateMap::setBank( UInt_t crate, UInt_t slot, Int_t bank ) {
   return CM_OK;
 }
 
+//_____________________________________________________________________________
 int THaCrateMap::setScalerLoc( UInt_t crate, const char* location ) {
   assert( crate < MAXROC );
   incrNslot(crate);
@@ -236,8 +246,8 @@ int THaCrateMap::init( FILE* fi, const TString& fname )
   return init(db);
 }
 
-int THaCrateMap::init(ULong64_t /*tloc*/)
-{
+//_____________________________________________________________________________
+int THaCrateMap::init(ULong64_t /*tloc*/) {
   // Initialize the crate map from the database.
   //
   // If a time-dependent or run-number indexed database is available,
