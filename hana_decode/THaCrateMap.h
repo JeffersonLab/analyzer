@@ -24,6 +24,8 @@
 #include <cstdio>  // for FILE
 #include <cassert>
 #include <iostream>
+#include <string>
+#include <vector>
 
 namespace Decoder {
 
@@ -67,9 +69,9 @@ class THaCrateMap {
      bool slotClear( UInt_t crate, UInt_t slot ) const;     // Decide if not clear ea event
      void setSlotDone( UInt_t slot );                    // Used to speed up decoder
      void setSlotDone();                            // Used to speed up decoder
-     void setUnused( UInt_t crate, UInt_t slot );            // Disables this crate,slot
-     int init(TString the_map);                     // Initialize from text-block
-     int init(ULong64_t time = 0);                  // Initialize by Unix time.
+     void setUnused( UInt_t crate, UInt_t slot );   // Disables this crate,slot
+     int  init(const std::string& the_map);         // Initialize from text-block
+     int  init(ULong64_t time = 0);                 // Initialize by Unix time.
      int init( FILE* fi, const TString& fname );    // Initialize from given file
      void print(std::ostream& os = std::cout) const;
 

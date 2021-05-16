@@ -229,12 +229,23 @@ int THaCrateMap::init( FILE* fi, const TString& fname )
     return CM_ERR;
   }
   // Build the string to parse
-  TString db;
-  int ch;
-  while( (ch = fgetc(fi)) != EOF ) {
-    db += static_cast<char>(ch);
+  string db;
+  bool ok = false;
+  errno = 0;
+  if( fseek(fi, 0, SEEK_END) == 0 ) {
+    long size = ftell(fi);
+    if( size > 0 ) {
+      rewind(fi);
+      unique_ptr<char[]> fbuf{new char[size]};
+      size_t nread = fread(fbuf.get(), sizeof(char), size, fi);
+      if( nread == static_cast<size_t>(size) ) {
+        db.reserve(nread);
+        db.assign(fbuf.get(), fbuf.get()+nread);
+        ok = true;
+      }
+    }
   }
-  if( ferror(fi) ) {
+  if( !ok || ferror(fi) ) {
     ::Error( here, "Error reading crate map database file %s: %s",
         fname.Data(), StrError().c_str() );
     fclose(fi);
@@ -324,21 +335,20 @@ void THaCrateMap::print(ostream& os) const
   }
 }
 
-int THaCrateMap::init(TString the_map)
-{
+//_____________________________________________________________________________
+int THaCrateMap::init(const string& the_map) {
   // initialize the crate-map according to the lines in the string 'the_map'
   // parse each line separately, to ensure that the format is correct
 
   const char* const here = "THaCrateMap::init";
 
-  if ( the_map.IsNull() ) {
+  if ( the_map.empty() ) {
     // Warn if we didn't get any data
     ::Warning( here, "Empty crate map definition. Decoder will not be usable. "
         "Check database." );
   }
-  // be certain the_map ends with a '\0' so we can make a stringstream from it
-  the_map += '\0';
-  istringstream s(the_map.Data());
+
+  istringstream s(the_map);
 
   UInt_t linecnt = 0;
   string line;
