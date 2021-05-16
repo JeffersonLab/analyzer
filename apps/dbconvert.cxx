@@ -1208,7 +1208,7 @@ public:
 #if __cplusplus >= 201402L
       fDetMap = make_unique<THaDetMap>(*rhs.fDetMap);
 #else
-      fDetMap = unique_ptr<THaDetMap>{new THaDetMap(*rhs.fDetMap)};
+      fDetMap.reset(new THaDetMap(*rhs.fDetMap));
 #endif
       fErrmsg.Clear();
     }
